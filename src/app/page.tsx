@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { FamilyGreeting, HouseholdRow, WelcomeCard } from "@/components/HouseholdCard";
+import { TodayLine } from "@/components/plan/TodayLine";
 import { NextWeekCard } from "@/components/week/NextWeekCard";
 import { APP_NAME } from "@/lib/app";
 
 const AREAS = [
   {
-    // Vorerst direkt zum Wochen-Check, bis der Wochenplan gebaut ist.
-    href: "/woche/check",
+    href: "/wochenplan",
     title: "Wochenplan",
     text: "Die ganze Woche entspannt planen",
     emoji: "📅",
@@ -61,7 +61,10 @@ export default function Home() {
             </span>
             <span className="flex flex-col">
               <span className="text-2xl font-extrabold">{area.title}</span>
-              <span className="text-base opacity-80">{area.text}</span>
+              <span className="text-base opacity-80">
+                {/* Wochenplan: "Heute: <Gericht>", falls eingetragen */}
+                {area.href === "/wochenplan" ? <TodayLine fallback={area.text} /> : area.text}
+              </span>
             </span>
           </Link>
         ))}

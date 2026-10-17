@@ -81,6 +81,32 @@ export function nextMonday(today: Date): string {
   return toIsoDate(date);
 }
 
+/** Montag der Woche, in der `today` liegt */
+export function currentMonday(today: Date): string {
+  const date = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
+  return toIsoDate(date);
+}
+
+/** Datum `days` Tage nach `iso` */
+export function addDays(iso: string, days: number): string {
+  const date = fromIsoDate(iso);
+  date.setDate(date.getDate() + days);
+  return toIsoDate(date);
+}
+
+/** Ist `iso` ein gültiges Datum an einem Montag? */
+export function isMondayIso(iso: string | null): iso is string {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+  const date = fromIsoDate(iso);
+  return toIsoDate(date) === iso && date.getDay() === 1;
+}
+
+/** Wochentag-Name ("Montag" …) eines Datums */
+export function weekdayName(date: Date): string {
+  return WEEKDAYS[(date.getDay() + 6) % 7];
+}
+
 /** Freitag bis Montag: Zeit, die nächste Woche zu planen. */
 export function isPlanningTime(today: Date): boolean {
   return [5, 6, 0, 1].includes(today.getDay());

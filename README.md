@@ -53,11 +53,13 @@ dauerhafte HTTPS-Adresse.
 | --- | --- |
 | `src/app/page.tsx` | Startseite mit den drei Bereichen |
 | `src/app/profil/` | Haushaltsprofil: Assistent beim ersten Anlegen, danach Übersicht „Unsere Familie“ mit Einzel-Bearbeitung |
-| `src/app/wochenplan`, `schnellkueche`, `einkaufsliste` | Platzhalter |
+| `src/app/schnellkueche`, `einkaufsliste` | Platzhalter |
 | `src/app/manifest.ts` | Web-App-Manifest |
 | `public/sw.js` | Service Worker (Offline-Cache) |
 | `public/icons/` | App-Icons (Platzhalter, Quelle: `icon.svg`) |
-| `src/app/woche/check/` | Wochen-Check: Vorgaben für die Woche ab nächstem Montag |
+| `src/app/wochenplan/` | Wochenplan: Gerichte pro Tag und Mahlzeit (diese/nächste Woche) |
+| `src/lib/mealPlan.ts` | Datenmodell Wochenplan, `buildWeek()` |
+| `src/app/woche/check/` | Wochen-Check: Vorgaben für eine Woche (Standard: ab nächstem Montag, `?woche=`) |
 | `src/app/kochbuch/` | Unser Kochbuch: Übersicht, Rezept, Rezept bearbeiten |
 | `src/lib/cookbook.ts` | Datenmodell Rezepte (auch für spätere KI-Rezepte) |
 | `src/lib/profile.ts` | Datenmodell Haushaltsprofil |

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { PRIMARY_BUTTON, SECONDARY_BUTTON, StickyActions } from "@/components/StickyActions";
@@ -23,6 +23,8 @@ import {
   formatWeekRange,
   nextMonday,
   CATEGORY_COUNT_KEY,
+  currentMonday,
+  isMondayIso,
   nextWishKid,
   saveWeekPlan,
   useToday,
@@ -40,7 +42,15 @@ const SKELETON = <div className="m-4 h-64 animate-pulse rounded-3xl bg-white/70"
  */
 export function WeekCheck() {
   const today = useToday();
-  const weekStart = today ? nextMonday(today) : undefined;
+  // ?woche=YYYY-MM-DD (Montag, nicht in der Vergangenheit), z. B. vom Wochenplan;
+  // sonst die Woche ab nächstem Montag.
+  const requested = useSearchParams().get("woche");
+  const weekStart = today
+    ? isMondayIso(requested) && requested >= currentMonday(today)
+      ? requested
+      : nextMonday(today)
+    : undefined;
+  const fromPlan = Boolean(requested);
   const profile = useProfile();
   const weeks = useWeekPlans();
   // Jede neue Navigation startet mit dem gespeicherten Stand (Next.js hält
@@ -52,7 +62,15 @@ export function WeekCheck() {
   const saved = weeks[weekStart] ?? null;
   const base = saved ?? createWeekPlan(weekStart, (profile ?? createEmptyProfile()).weekRules);
   const initial = { ...base, wish: initialWish(base, profile, weeks) };
-  return <WeekCheckForm key={`${bfcacheId}|${weekStart}`} initial={initial} profile={profile} />;
+  return (
+    <WeekCheckForm
+      key={`${bfcacheId}|${weekStart}`}
+      initial={initial}
+      profile={profile}
+      isCurrentWeek={weekStart === currentMonday(today!)}
+      backHref={fromPlan ? "/wochenplan" : "/"}
+    />
+  );
 }
 
 /**
@@ -77,9 +95,14 @@ function initialWish(
 function WeekCheckForm({
   initial,
   profile,
+  isCurrentWeek,
+  backHref,
 }: {
   initial: WeekPlan;
   profile: HouseholdProfile | null;
+  isCurrentWeek: boolean;
+  /** Wohin Speichern/Abbrechen führen (zurück zum Wochenplan, falls von dort) */
+  backHref: string;
 }) {
   const router = useRouter();
   const [plan, setPlan] = useState(initial);
@@ -127,7 +150,7 @@ function WeekCheckForm({
 
   const save = () => {
     saveWeekPlan(plan);
-    router.push("/");
+    router.push(backHref);
   };
 
   return (
@@ -135,7 +158,9 @@ function WeekCheckForm({
       <PageHeader title="Wochen-Check" />
       <main className="flex flex-1 flex-col gap-4 px-4 pb-6 pt-2">
         <div>
-          <h2 className="text-2xl font-extrabold">Wie sieht eure nächste Woche aus?</h2>
+          <h2 className="text-2xl font-extrabold">
+            {isCurrentWeek ? "Wie sieht eure Woche aus?" : "Wie sieht eure nächste Woche aus?"}
+          </h2>
           <p className="text-stone-600">
             Woche vom <span className="whitespace-nowrap">{formatWeekRange(plan.weekStart)}</span>
             {" – "}
@@ -281,7 +306,7 @@ function WeekCheckForm({
       </main>
 
       <StickyActions>
-        <Link href="/" className={SECONDARY_BUTTON}>
+        <Link href={backHref} className={SECONDARY_BUTTON}>
           Abbrechen
         </Link>
         <button type="button" onClick={save} disabled={invalid} className={PRIMARY_BUTTON}>
