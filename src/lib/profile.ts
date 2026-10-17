@@ -160,12 +160,16 @@ export function syncPersons(
   return [...resize("erwachsen", adults), ...resize("kind", kids)];
 }
 
-/** Anzeigename, falls kein Name eingetragen wurde, z. B. "Erwachsene:r 2". */
-export function personLabel(person: Person, persons: Person[]): string {
-  if (person.name.trim()) return person.name.trim();
+/** Rolle mit laufender Nummer, z. B. "Erwachsene:r 2" oder "Kind 1". */
+export function personRoleLabel(person: Person, persons: Person[]): string {
   const sameRole = persons.filter((p) => p.role === person.role);
   const index = sameRole.findIndex((p) => p.id === person.id) + 1;
   return person.role === "erwachsen" ? `Erwachsene:r ${index}` : `Kind ${index}`;
+}
+
+/** Anzeigename: der eingetragene Name, sonst z. B. "Erwachsene:r 2". */
+export function personLabel(person: Person, persons: Person[]): string {
+  return person.name.trim() || personRoleLabel(person, persons);
 }
 
 /**
