@@ -17,6 +17,7 @@ export function StickyActions({ children }: { children: ReactNode }) {
   const keyboardOpen = useMobileKeyboard();
   return (
     <nav
+      data-sticky-actions
       aria-hidden={keyboardOpen}
       className={`safe-bottom sticky bottom-0 flex gap-3 bg-background/95 px-4 pt-3 backdrop-blur ${keyboardOpen ? "pointer-events-none invisible" : ""}`}
     >

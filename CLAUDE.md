@@ -14,11 +14,16 @@
 
 ## Produktentscheidungen
 
-- Der Assistent (6 Schritte) wird nur beim ersten Anlegen verwendet. Danach
+- Der Assistent (7 Schritte) wird nur beim ersten Anlegen verwendet. Danach
   zeigt `/profil` die Übersicht "Unsere Familie"; Personen und Bereiche werden
   dort einzeln bearbeitet (eigene Seiten unter `/profil/...`).
-- Im Assistenten werden Namen nur in Schritt 1 eingegeben; spätere Schritte
-  zeigen sie nur an.
+- Im Assistenten werden Namen nur in Schritt 2 "Wie heißen alle?" eingegeben;
+  spätere Schritte zeigen sie nur an. Schritt 1 muss ohne Scrollen aufs iPhone
+  passen.
+- Grundregel im Assistenten: Ist ein Schritt länger als der Bildschirm und noch
+  nicht bis unten gescrollt, scrollt "Weiter" erst zum nächsten offenen
+  Abschnitt (`src/lib/stepScroll.ts`). Wischen links = Weiter, rechts = Zurück
+  (nicht in Eingabefeldern und Elementen mit `data-no-swipe`).
 - In den Personen-Schritten des Assistenten (Allergien, Mittagessen) gibt es
   eine Person pro Ansicht mit Personen-Leiste oben.
 - "Standardwoche" (früher "Wochenregeln") ist die Vorlage im Profil. Der
