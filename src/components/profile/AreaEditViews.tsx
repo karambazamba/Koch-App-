@@ -1,8 +1,11 @@
 "use client";
 
+import { Info } from "lucide-react";
+import { CARD, INPUT, SUBTLE, tileClass } from "@/components/ui/styles";
 import { ProfileEditPage } from "@/components/profile/ProfileEditPage";
 import {
   FavoritesEditor,
+  NOTE,
   STANDARD_WEEK_HINT,
   WarmMealEditor,
   WeekRulesEditor,
@@ -46,7 +49,8 @@ export function StandardWeekEditView() {
     >
       {(draft, setDraft) => (
         <>
-          <p className="rounded-2xl bg-sky-50 px-4 py-3 text-base text-sky-900">
+          <p className={NOTE}>
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted" strokeWidth={2.25} aria-hidden />
             {STANDARD_WEEK_HINT}
           </p>
           <WeekRulesEditor
@@ -71,8 +75,8 @@ export function HouseholdNameEditView() {
   return (
     <ProfileEditPage title="Haushalt">
       {(draft, setDraft) => (
-        <label className="flex flex-col gap-2 rounded-3xl bg-white p-4 shadow-sm">
-          <span className="text-lg font-bold">Name eures Haushalts (optional)</span>
+        <label className={`${CARD} flex flex-col gap-2 p-4`}>
+          <span className="text-base font-bold">Name eures Haushalts (optional)</span>
           <input
             type="text"
             value={draft.householdName}
@@ -85,7 +89,7 @@ export function HouseholdNameEditView() {
             onKeyDown={(e) => {
               if (e.key === "Enter") e.currentTarget.blur();
             }}
-            className="h-14 rounded-2xl border-2 border-stone-200 px-4 text-lg outline-none focus:border-orange-400"
+            className={INPUT}
           />
         </label>
       )}
@@ -98,12 +102,12 @@ export function ShoppingDayEditView() {
     <ProfileEditPage title="Einkaufstag">
       {(draft, setDraft) => (
         <>
-          <fieldset className="rounded-3xl bg-white p-4 shadow-sm">
+          <fieldset className={`${CARD} p-4`}>
             <legend className="sr-only">Einkaufstag</legend>
-            <p className="mb-1 text-lg font-bold" aria-hidden>
+            <p className="mb-1 text-base font-bold" aria-hidden>
               An welchem Tag kauft ihr ein?
             </p>
-            <p className="mb-3 text-sm text-stone-500">
+            <p className={`mb-3 ${SUBTLE}`}>
               Ab diesem Tag läuft eure Planungswoche 7 Tage – für Wochenplan und Wochen-Check.
             </p>
             <div className="grid grid-cols-4 gap-2">
@@ -116,11 +120,7 @@ export function ShoppingDayEditView() {
                     aria-pressed={selected}
                     aria-label={`Einkaufstag ${day}`}
                     onClick={() => setDraft((d) => ({ ...d, shoppingDay: day }))}
-                    className={`h-14 rounded-2xl border-2 text-base font-bold active:scale-95 ${
-                      selected
-                        ? "border-orange-500 bg-orange-50 text-orange-700"
-                        : "border-stone-200 text-stone-700"
-                    }`}
+                    className={tileClass(selected)}
                   >
                     {day.slice(0, 2)}
                   </button>
@@ -128,7 +128,8 @@ export function ShoppingDayEditView() {
               })}
             </div>
           </fieldset>
-          <p className="rounded-2xl bg-sky-50 px-4 py-3 text-base text-sky-900" role="status">
+          <p className={NOTE} role="status">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted" strokeWidth={2.25} aria-hidden />
             Planungswoche: {planningWeekLabel(draft.shoppingDay)}
           </p>
         </>

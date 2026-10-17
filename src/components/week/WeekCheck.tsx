@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { Check, MapPin, Repeat, Sparkles, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { PRIMARY_BUTTON, SECONDARY_BUTTON, StickyActions } from "@/components/StickyActions";
 import { WeekRulesEditor, tooManyDays } from "@/components/profile/editors";
+import { CARD, INPUT, buttonClass, tileClass } from "@/components/ui/styles";
 import { FixedMealsSection } from "@/components/week/FixedMealsSection";
 import {
   WISH_MEAL_LABELS,
@@ -36,7 +38,7 @@ import {
   type WeekPlan,
 } from "@/lib/weekPlan";
 
-const SKELETON = <div className="m-4 h-64 animate-pulse rounded-3xl bg-white/70" />;
+const SKELETON = <div className={`${CARD} m-4 h-64 animate-pulse`} />;
 
 /**
  * Wochen-Check: Vorgaben für eine Planungswoche (ab Einkaufstag, 7 Tage).
@@ -162,10 +164,10 @@ function WeekCheckForm({
       <PageHeader title="Wochen-Check" />
       <main className="flex flex-1 flex-col gap-4 px-4 pb-6 pt-2">
         <div>
-          <h2 className="text-2xl font-extrabold">
+          <h2 className="text-xl font-extrabold tracking-tight">
             {isCurrentWeek ? "Wie sieht eure Woche aus?" : "Wie sieht eure nächste Woche aus?"}
           </h2>
-          <p className="text-stone-600">
+          <p className="mt-1 text-sm text-muted">
             Woche vom <span className="whitespace-nowrap">{formatWeekRange(plan.weekStart)}</span>
             {" – "}
             {hasProfile
@@ -174,11 +176,14 @@ function WeekCheckForm({
           </p>
         </div>
 
-        <fieldset className="rounded-3xl bg-white p-4 shadow-sm">
+        <fieldset className={`${CARD} p-4`}>
           <legend className="sr-only">Ausflug / auswärts</legend>
           <div className="mb-3" aria-hidden>
-            <p className="text-lg font-bold">🚗 Ausflug / auswärts</p>
-            <p className="text-sm text-stone-500">An diesen Tagen planen wir kein Gericht.</p>
+            <p className="flex items-center gap-2 text-base font-bold">
+              <MapPin className="h-5 w-5 text-accent" strokeWidth={2} />
+              Ausflug / auswärts
+            </p>
+            <p className="text-sm text-muted">An diesen Tagen planen wir kein Gericht.</p>
           </div>
           <div className="grid grid-cols-4 gap-2">
             {weekDayNames(plan.weekStart).map((day) => {
@@ -190,14 +195,12 @@ function WeekCheckForm({
                   aria-pressed={away}
                   aria-label={`${day}: Ausflug / auswärts`}
                   onClick={() => toggleAway(day)}
-                  className={`flex h-16 flex-col items-center justify-center rounded-2xl border-2 text-base font-bold active:scale-95 ${
-                    away
-                      ? "border-sky-500 bg-sky-50 text-sky-800"
-                      : "border-stone-200 bg-white text-stone-700"
-                  }`}
+                  className={`${tileClass(away)} h-16 gap-0 font-bold`}
                 >
                   {day.slice(0, 2)}
-                  <span className="text-xs font-semibold">{away ? "unterwegs" : "zu Hause"}</span>
+                  <span className={`text-xs font-semibold ${away ? "" : "text-muted"}`}>
+                    {away ? "unterwegs" : "zu Hause"}
+                  </span>
                 </button>
               );
             })}
@@ -205,12 +208,12 @@ function WeekCheckForm({
         </fieldset>
 
         {plan.wish && wishKid && profile && (
-          <section className="flex flex-col gap-3 rounded-3xl border-2 border-amber-300 bg-amber-50 p-4 shadow-sm">
+          <section className={`${CARD} flex flex-col gap-3 border-accent/40 p-4`}>
             <div>
-              <h3 className="text-xl font-extrabold text-amber-900">
+              <h3 className="text-lg font-bold">
                 Diese Woche wünscht sich {personLabel(wishKid, profile.persons)} was 🎉
               </h3>
-              <p className="text-sm text-amber-900">
+              <p className="text-sm text-muted">
                 <span className="whitespace-nowrap">
                   {plan.wish.weekday} {WISH_MEAL_LABELS[plan.wish.meal]}
                 </span>
@@ -218,13 +221,13 @@ function WeekCheckForm({
               </p>
             </div>
             {!wishIsActive(plan) && (
-              <p className="rounded-2xl bg-white px-3 py-2 text-sm font-semibold text-rose-700">
+              <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
                 Am {plan.wish.weekday} seid ihr unterwegs – der Wunsch wird diese Woche
                 nicht eingeplant.
               </p>
             )}
             <label className="flex flex-col gap-1">
-              <span className="font-bold text-amber-900">
+              <span className="text-sm font-semibold text-muted">
                 Was wünschst du dir, {personLabel(wishKid, profile.persons)}?
               </span>
               <input
@@ -239,7 +242,7 @@ function WeekCheckForm({
                 onKeyDown={(e) => {
                   if (e.key === "Enter") e.currentTarget.blur();
                 }}
-                className="h-14 rounded-2xl border-2 border-amber-300 bg-white px-4 text-lg outline-none focus:border-amber-500"
+                className={`${INPUT} h-14 text-lg`}
               />
             </label>
             {canSwapKid && (
@@ -253,9 +256,10 @@ function WeekCheckForm({
                     return kidId ? { ...p, wish: { ...p.wish, kidId, text: "" } } : p;
                   })
                 }
-                className="h-12 self-start rounded-2xl bg-white px-4 font-bold text-amber-900 shadow-sm active:scale-95"
+                className={`${buttonClass("secondary")} self-start`}
               >
-                🔄 Anderes Kind
+                <Repeat className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
+                Anderes Kind
               </button>
             )}
           </section>
@@ -272,8 +276,11 @@ function WeekCheckForm({
           intro="Wie oft soll es diese Woche was geben?"
         />
 
-        <label className="flex flex-col gap-2 rounded-3xl bg-white p-4 shadow-sm">
-          <span className="text-lg font-bold">💶 Budget (optional)</span>
+        <label className={`${CARD} flex flex-col gap-2 p-4`}>
+          <span className="flex items-center gap-2 text-base font-bold">
+            <Wallet className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
+            Budget (optional)
+          </span>
           <span className="flex items-center gap-2">
             <input
               type="number"
@@ -291,20 +298,23 @@ function WeekCheckForm({
               onKeyDown={(e) => {
                 if (e.key === "Enter") e.currentTarget.blur();
               }}
-              className="h-14 w-40 rounded-2xl border-2 border-stone-200 px-4 text-lg outline-none focus:border-orange-400"
+              className={`${INPUT} w-40`}
             />
-            <span className="text-lg font-bold">€ für die Woche</span>
+            <span className="text-base font-semibold text-muted">€ für die Woche</span>
           </span>
         </label>
 
-        <label className="flex flex-col gap-2 rounded-3xl bg-white p-4 shadow-sm">
-          <span className="text-lg font-bold">✨ Besondere Wünsche</span>
+        <label className={`${CARD} flex flex-col gap-2 p-4`}>
+          <span className="flex items-center gap-2 text-base font-bold">
+            <Sparkles className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
+            Besondere Wünsche
+          </span>
           <textarea
             value={plan.wishes}
             onChange={(e) => update({ wishes: e.target.value })}
             placeholder="z. B. Mittwoch Kindergeburtstag, einmal Suppe, Reste von Sonntag verwerten"
             rows={3}
-            className="rounded-2xl border-2 border-stone-200 px-4 py-3 text-lg outline-none focus:border-orange-400"
+            className={`${INPUT} h-auto py-3`}
           />
         </label>
       </main>
@@ -314,7 +324,8 @@ function WeekCheckForm({
           Abbrechen
         </Link>
         <button type="button" onClick={save} disabled={invalid} className={PRIMARY_BUTTON}>
-          Speichern ✓
+          <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+          Speichern
         </button>
       </StickyActions>
     </div>

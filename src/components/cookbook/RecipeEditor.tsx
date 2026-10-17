@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { Check, PenLine, Plus, Sparkles, X } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { PRIMARY_BUTTON, SECONDARY_BUTTON, StickyActions } from "@/components/StickyActions";
 import { ChoiceGroup } from "@/components/form/ChoiceGroup";
 import { NumberStepper } from "@/components/form/NumberStepper";
+import { CARD, INPUT, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
 import {
   RECIPE_CATEGORIES,
   UNITS,
@@ -24,8 +26,10 @@ import {
 /** Zutat im Formular: Menge als Text, damit "1," beim Tippen nicht verloren geht */
 type IngredientRow = { id: string; amountText: string; unit: string; name: string };
 
-const INPUT =
-  "h-14 rounded-2xl border-2 border-stone-200 bg-white px-4 text-lg outline-none focus:border-orange-400";
+/** Feldstil ohne feste Breite/Höhe, für schmale Felder und Textbereiche */
+const FIELD = INPUT.replace("h-12 w-full ", "");
+const ADD_ROW = `${buttonClass("soft")} w-full`;
+const REMOVE = "flex h-12 w-10 shrink-0 items-center justify-center text-stone-400 transition active:scale-90";
 
 /** /kochbuch/bearbeiten (neu) bzw. /kochbuch/bearbeiten?id=… (ändern) */
 export function RecipeEditor() {
@@ -35,13 +39,13 @@ export function RecipeEditor() {
   const { bfcacheId } = useRouter();
   const id = params.get("id");
 
-  if (recipes === undefined) return <div className="m-4 h-64 animate-pulse rounded-3xl bg-white/70" />;
+  if (recipes === undefined) return <div className={`${CARD} m-4 h-64 animate-pulse`} />;
   const existing = id ? recipes[id] : undefined;
   if (id && !existing) {
     return (
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
         <PageHeader title="Rezept bearbeiten" backHref="/kochbuch" />
-        <p className="px-6 pt-10 text-center text-lg">Dieses Rezept gibt es nicht (mehr).</p>
+        <p className="px-6 pt-10 text-center text-base">Dieses Rezept gibt es nicht (mehr).</p>
       </div>
     );
   }
@@ -81,9 +85,9 @@ function EditorForm({ existing }: { existing?: Recipe }) {
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
       <PageHeader title={existing ? "Rezept bearbeiten" : "Neues Rezept"} backHref={backHref} />
-      <main className="flex flex-1 flex-col gap-4 px-4 pb-6 pt-2">
-        <label className="flex flex-col gap-2 rounded-3xl bg-white p-4 shadow-sm">
-          <span className="text-lg font-bold">Titel</span>
+      <main className="flex flex-1 flex-col gap-4 px-4 pb-8 pt-2">
+        <label className={`${CARD} flex flex-col gap-2 p-4`}>
+          <span className={SECTION_TITLE}>Titel</span>
           <input
             type="text"
             value={recipe.title}
@@ -105,7 +109,7 @@ function EditorForm({ existing }: { existing?: Recipe }) {
           columns={2}
         />
 
-        <div className="divide-y divide-stone-100 rounded-3xl bg-white px-4 py-1 shadow-sm">
+        <div className={`${CARD} divide-y divide-line px-4 py-1`}>
           <NumberStepper
             label="Personen"
             value={recipe.servings}
@@ -115,7 +119,7 @@ function EditorForm({ existing }: { existing?: Recipe }) {
             variant="plain"
           />
           <label className="flex items-center justify-between gap-3 py-3">
-            <span className="text-lg font-bold">Zubereitungszeit</span>
+            <span className="text-base font-bold">Zubereitungszeit</span>
             <span className="flex items-center gap-2">
               <input
                 type="number"
@@ -132,15 +136,15 @@ function EditorForm({ existing }: { existing?: Recipe }) {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") e.currentTarget.blur();
                 }}
-                className="h-14 w-24 rounded-2xl border-2 border-stone-200 px-3 text-center text-lg font-bold outline-none focus:border-orange-400"
+                className={`${FIELD} h-12 w-20 px-3 text-center font-bold`}
               />
-              <span className="text-lg">Min.</span>
+              <span className="text-base text-muted">Min.</span>
             </span>
           </label>
         </div>
 
-        <section className="flex flex-col gap-3 rounded-3xl bg-white p-4 shadow-sm">
-          <h3 className="text-lg font-bold">Zutaten</h3>
+        <section className={`${CARD} flex flex-col gap-3 p-4`}>
+          <h3 className={SECTION_TITLE}>Zutaten</h3>
           {rows.map((row, index) => (
             <div key={row.id} className="flex items-center gap-2">
               <input
@@ -150,13 +154,13 @@ function EditorForm({ existing }: { existing?: Recipe }) {
                 onChange={(e) => setRow(row.id, { amountText: e.target.value })}
                 placeholder="Menge"
                 aria-label={`Zutat ${index + 1}: Menge`}
-                className="h-12 w-20 shrink-0 rounded-xl border-2 border-stone-200 px-2 text-center text-lg outline-none focus:border-orange-400"
+                className={`${FIELD} h-12 w-20 shrink-0 px-2 text-center`}
               />
               <select
                 value={row.unit}
                 onChange={(e) => setRow(row.id, { unit: e.target.value })}
                 aria-label={`Zutat ${index + 1}: Einheit`}
-                className="h-12 w-24 shrink-0 rounded-xl border-2 border-stone-200 bg-white px-1 text-lg outline-none focus:border-orange-400"
+                className={`${FIELD} h-12 w-24 shrink-0 px-1`}
               >
                 {UNITS.map((u) => (
                   <option key={u} value={u}>
@@ -174,15 +178,15 @@ function EditorForm({ existing }: { existing?: Recipe }) {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") e.currentTarget.blur();
                 }}
-                className="h-12 min-w-0 flex-1 rounded-xl border-2 border-stone-200 px-3 text-lg outline-none focus:border-orange-400"
+                className={`${FIELD} h-12 flex-1 px-3`}
               />
               <button
                 type="button"
                 onClick={() => setRows((list) => list.filter((r) => r.id !== row.id))}
                 aria-label={`Zutat ${index + 1} entfernen`}
-                className="h-12 w-10 shrink-0 text-2xl text-stone-400 active:scale-90"
+                className={REMOVE}
               >
-                ×
+                <X className="h-5 w-5" strokeWidth={2.25} aria-hidden />
               </button>
             </div>
           ))}
@@ -192,17 +196,18 @@ function EditorForm({ existing }: { existing?: Recipe }) {
               const i = createIngredient();
               setRows((list) => [...list, { id: i.id, amountText: "", unit: "", name: "" }]);
             }}
-            className="h-12 rounded-2xl border-2 border-dashed border-orange-300 font-bold text-orange-700 active:scale-95"
+            className={ADD_ROW}
           >
-            + Zutat
+            <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+            Zutat
           </button>
         </section>
 
-        <section className="flex flex-col gap-3 rounded-3xl bg-white p-4 shadow-sm">
-          <h3 className="text-lg font-bold">Zubereitung</h3>
+        <section className={`${CARD} flex flex-col gap-3 p-4`}>
+          <h3 className={SECTION_TITLE}>Zubereitung</h3>
           {steps.map((step, index) => (
             <div key={index} className="flex items-start gap-2">
-              <span className="mt-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-100 font-bold text-orange-700">
+              <span className="mt-2.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-sm font-bold text-accent-strong">
                 {index + 1}
               </span>
               <textarea
@@ -211,35 +216,36 @@ function EditorForm({ existing }: { existing?: Recipe }) {
                 placeholder={index === 0 ? "z. B. Zwiebeln schälen und würfeln" : "Nächster Schritt"}
                 aria-label={`Schritt ${index + 1}`}
                 rows={2}
-                className="min-w-0 flex-1 rounded-xl border-2 border-stone-200 px-3 py-2 text-lg outline-none focus:border-orange-400"
+                className={`${FIELD} flex-1 px-3 py-2`}
               />
               <button
                 type="button"
                 onClick={() => setSteps((list) => list.filter((_, i) => i !== index))}
                 aria-label={`Schritt ${index + 1} entfernen`}
-                className="mt-2 h-12 w-10 shrink-0 text-2xl text-stone-400 active:scale-90"
+                className={`${REMOVE} mt-1`}
               >
-                ×
+                <X className="h-5 w-5" strokeWidth={2.25} aria-hidden />
               </button>
             </div>
           ))}
           <button
             type="button"
             onClick={() => setSteps((list) => [...list, ""])}
-            className="h-12 rounded-2xl border-2 border-dashed border-orange-300 font-bold text-orange-700 active:scale-95"
+            className={ADD_ROW}
           >
-            + Schritt
+            <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+            Schritt
           </button>
         </section>
 
-        <label className="flex flex-col gap-2 rounded-3xl bg-white p-4 shadow-sm">
-          <span className="text-lg font-bold">Notiz</span>
+        <label className={`${CARD} flex flex-col gap-2 p-4`}>
+          <span className={SECTION_TITLE}>Notiz</span>
           <textarea
             value={recipe.note}
             onChange={(e) => update({ note: e.target.value })}
             placeholder="z. B. Kinder mögen es mit weniger Paprika"
             rows={3}
-            className="rounded-2xl border-2 border-stone-200 px-4 py-3 text-lg outline-none focus:border-orange-400"
+            className={`${FIELD} w-full py-3`}
           />
         </label>
 
@@ -248,8 +254,8 @@ function EditorForm({ existing }: { existing?: Recipe }) {
           value={recipe.source}
           onChange={(source) => update({ source })}
           options={[
-            { value: "eigenes", label: "Eigenes", emoji: "✍️" },
-            { value: "ki", label: "KI", emoji: "✨" },
+            { value: "eigenes", label: "Eigenes", icon: PenLine },
+            { value: "ki", label: "KI", icon: Sparkles },
           ]}
           columns={2}
         />
@@ -260,7 +266,8 @@ function EditorForm({ existing }: { existing?: Recipe }) {
           Abbrechen
         </Link>
         <button type="button" onClick={save} disabled={!recipe.title.trim()} className={PRIMARY_BUTTON}>
-          Speichern ✓
+          <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+          Speichern
         </button>
       </StickyActions>
     </div>

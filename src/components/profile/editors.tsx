@@ -3,9 +3,24 @@
 // Formular-Bausteine des Haushaltsprofils. Werden im Assistenten (erstes
 // Anlegen) und in den einzelnen Bearbeiten-Ansichten verwendet.
 
+import {
+  AlertTriangle,
+  Backpack,
+  Baby,
+  Briefcase,
+  CheckCircle2,
+  Home,
+  Moon,
+  RefreshCw,
+  School,
+  Smile,
+  Sun,
+  Users,
+} from "lucide-react";
 import { ChoiceGroup, MultiChoiceGroup } from "@/components/form/ChoiceGroup";
 import { NumberStepper } from "@/components/form/NumberStepper";
 import { TagInput } from "@/components/form/TagInput";
+import { CARD, INPUT, tileClass } from "@/components/ui/styles";
 import {
   COMMON_ALLERGIES,
   KID_AGE_GROUP_LABELS,
@@ -41,23 +56,32 @@ export const FAVORITE_SUGGESTIONS = [
 
 const DISLIKE_SUGGESTIONS = ["Pilze", "Zwiebeln", "Paprika", "Oliven", "Scharfes"];
 
-const WARM_MEAL_OPTIONS: { value: WarmMeal; label: string; emoji: string }[] = [
-  { value: "mittags", label: "Mittags", emoji: "☀️" },
-  { value: "abends", label: "Abends", emoji: "🌙" },
-  { value: "flexibel", label: "Mal so, mal so", emoji: "🔄" },
-];
+const WARM_MEAL_OPTIONS = [
+  { value: "mittags", label: "Mittags", icon: Sun },
+  { value: "abends", label: "Abends", icon: Moon },
+  { value: "flexibel", label: "Mal so, mal so", icon: RefreshCw },
+] satisfies { value: WarmMeal; label: string }[];
 
-const ADULT_LUNCH_OPTIONS: { value: WeekdayLunch; label: string; emoji: string }[] = [
-  { value: "zuhause", label: "Ist mittags zu Hause", emoji: "🏠" },
-  { value: "auswaerts", label: "Isst auswärts (z. B. Arbeit)", emoji: "💼" },
-  { value: "manchmal", label: "Manchmal", emoji: "🔄" },
-];
+const ADULT_LUNCH_OPTIONS = [
+  { value: "zuhause", label: "Ist mittags zu Hause", icon: Home },
+  { value: "auswaerts", label: "Isst auswärts (z. B. Arbeit)", icon: Briefcase },
+  { value: "manchmal", label: "Manchmal", icon: RefreshCw },
+] satisfies { value: WeekdayLunch; label: string }[];
 
-const KID_LUNCH_OPTIONS: { value: WeekdayLunch; label: string; emoji: string }[] = [
-  { value: "auswaerts", label: "Isst in Kita/Schule", emoji: "🏫" },
-  { value: "zuhause", label: "Isst zu Hause", emoji: "🏠" },
-  { value: "manchmal", label: "Manchmal", emoji: "🔄" },
-];
+const KID_LUNCH_OPTIONS = [
+  { value: "auswaerts", label: "Isst in Kita/Schule", icon: School },
+  { value: "zuhause", label: "Isst zu Hause", icon: Home },
+  { value: "manchmal", label: "Manchmal", icon: RefreshCw },
+] satisfies { value: WeekdayLunch; label: string }[];
+
+/** Altersgruppen mit Icon (auch im Assistenten) */
+export const AGE_GROUP_ICONS = { kleinkind: Baby, kitakind: Smile, schulkind: Backpack } as const;
+
+/** Neutraler Hinweis-Kasten */
+export const NOTE = "flex items-start gap-2 rounded-xl bg-stone-100 px-4 py-3 text-sm text-stone-700";
+/** Warnung (z. B. zu viele Tage) */
+export const WARNING =
+  "flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700";
 
 /** Kurzform fürs Mittagessen unter der Woche, z. B. für die Übersicht. */
 export function lunchSummary(person: Person): string {
@@ -149,7 +173,7 @@ export function PersonLunchFields({ person, onChange }: PersonFieldsProps) {
   return (
     <>
       <label className="flex items-center justify-between gap-3">
-        <span className="text-lg font-bold">Alter (optional)</span>
+        <span className="text-base font-bold">Alter (optional)</span>
         <input
           type="number"
           inputMode="numeric"
@@ -163,7 +187,7 @@ export function PersonLunchFields({ person, onChange }: PersonFieldsProps) {
             if (e.key === "Enter") e.currentTarget.blur();
           }}
           aria-label="Alter in Jahren (optional)"
-          className="h-14 w-24 shrink-0 rounded-2xl border-2 border-stone-200 px-3 text-center text-lg font-bold outline-none focus:border-orange-400"
+          className={`${INPUT} w-24 shrink-0 px-3 text-center text-lg font-bold`}
         />
       </label>
       <ChoiceGroup<KidAgeGroup>
@@ -171,9 +195,9 @@ export function PersonLunchFields({ person, onChange }: PersonFieldsProps) {
         value={person.ageGroup ?? "kitakind"}
         onChange={(ageGroup) => onChange({ ageGroup })}
         options={[
-          { value: "kleinkind", label: KID_AGE_GROUP_LABELS.kleinkind, emoji: "👶" },
-          { value: "kitakind", label: KID_AGE_GROUP_LABELS.kitakind, emoji: "🧸" },
-          { value: "schulkind", label: KID_AGE_GROUP_LABELS.schulkind, emoji: "🎒" },
+          { value: "kleinkind", label: KID_AGE_GROUP_LABELS.kleinkind, icon: AGE_GROUP_ICONS.kleinkind },
+          { value: "kitakind", label: KID_AGE_GROUP_LABELS.kitakind, icon: AGE_GROUP_ICONS.kitakind },
+          { value: "schulkind", label: KID_AGE_GROUP_LABELS.schulkind, icon: AGE_GROUP_ICONS.schulkind },
         ]}
         variant="plain"
       />
@@ -196,8 +220,8 @@ export function FavoritesEditor({
   onChange: (values: string[]) => void;
 }) {
   return (
-    <section className="rounded-3xl bg-white p-4 shadow-sm">
-      <p className="mb-4 text-stone-600">
+    <section className={`${CARD} p-4`}>
+      <p className="mb-4 text-base text-muted">
         Was kommt bei euch immer gut an? Tippe an oder schreib eigene Gerichte dazu.
       </p>
       <TagInput
@@ -219,7 +243,7 @@ export function WarmMealEditor({
   onChange: (warmMeal: WarmMealSchedule) => void;
 }) {
   return (
-    <section className="flex flex-col gap-5 rounded-3xl bg-white p-4 shadow-sm">
+    <section className={`${CARD} flex flex-col gap-6 p-4`}>
       <p className="text-lg font-bold">Wann gibt es die warme Mahlzeit?</p>
       <MultiChoiceGroup<WarmMeal>
         label="Unter der Woche (Mo–Fr)"
@@ -246,13 +270,15 @@ export function WarmMealEditor({
 export function LunchHeadcountNote({ profile }: { profile: HouseholdProfile }) {
   const lunch = weekdayLunchHeadcount(profile);
   return (
-    <p
-      className="rounded-2xl bg-emerald-100 px-4 py-3 text-base font-semibold text-emerald-800"
-      role="status"
-    >
-      Mittagessen unter der Woche zu Hause:{" "}
-      {lunch.min === lunch.max ? lunch.min : `${lunch.min}–${lunch.max}`}{" "}
-      {lunch.min === 1 && lunch.max === 1 ? "Person" : "Personen"}
+    <p className={NOTE} role="status">
+      <Users className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={2.25} aria-hidden />
+      <span>
+        Mittagessen unter der Woche zu Hause:{" "}
+        <span className="font-bold text-ink">
+          {lunch.min === lunch.max ? lunch.min : `${lunch.min}–${lunch.max}`}{" "}
+          {lunch.min === 1 && lunch.max === 1 ? "Person" : "Personen"}
+        </span>
+      </span>
     </p>
   );
 }
@@ -309,16 +335,16 @@ export function WeekRulesEditor({
 
   return (
     <>
-      {intro && <p className="text-stone-600">{intro}</p>}
-      {stepper("meatDays", "🥩 Fleisch")}
-      {stepper("vegetarianDays", "🥦 Vegetarisch")}
-      {stepper("fishDays", "🐟 Fisch")}
-      <p
-        className={`rounded-2xl px-4 py-3 text-base font-semibold ${
-          planned > available ? "bg-rose-100 text-rose-800" : "bg-emerald-100 text-emerald-800"
-        }`}
-        role="status"
-      >
+      {intro && <p className="text-base text-muted">{intro}</p>}
+      {stepper("meatDays", "Fleisch")}
+      {stepper("vegetarianDays", "Vegetarisch")}
+      {stepper("fishDays", "Fisch")}
+      <p className={planned > available ? WARNING : NOTE} role="status">
+        {planned > available ? (
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
+        ) : (
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={2.25} aria-hidden />
+        )}
         {planned > available
           ? available === 7
             ? `Zusammen ${planned} Tage – eine Woche hat nur 7. Bitte etwas reduzieren.`
@@ -337,9 +363,9 @@ export function WeekRulesEditor({
         ]}
       />
       {rules.cheatDay && (
-        <fieldset className="rounded-3xl bg-white p-4 shadow-sm">
+        <fieldset className={`${CARD} p-4`}>
           <legend className="sr-only">An welchem Tag?</legend>
-          <p className="mb-3 text-lg font-bold" aria-hidden>
+          <p className="mb-3 text-base font-bold" aria-hidden>
             An welchem Tag?
           </p>
           <div className="grid grid-cols-4 gap-2">
@@ -354,11 +380,7 @@ export function WeekRulesEditor({
                   aria-label={day ? (blocked ? `${day} (nicht wählbar)` : day) : "Egal"}
                   disabled={blocked}
                   onClick={() => onChange({ cheatDayWeekday: day })}
-                  className={`h-14 rounded-2xl border-2 text-base font-bold active:scale-95 disabled:opacity-30 ${
-                    selected
-                      ? "border-orange-500 bg-orange-50 text-orange-700"
-                      : "border-stone-200 text-stone-700"
-                  }`}
+                  className={`${tileClass(selected)} disabled:opacity-30`}
                 >
                   {day ? day.slice(0, 2) : "Egal"}
                 </button>
@@ -400,7 +422,7 @@ export function WishDayEditor({
   const names = (list: typeof kids) => list.map((k) => personLabel(k, profile.persons)).join(", ");
 
   return (
-    <section className="flex flex-col gap-5 rounded-3xl bg-white p-4 shadow-sm">
+    <section className={`${CARD} flex flex-col gap-6 p-4`}>
       <ChoiceGroup<"ja" | "nein">
         label="🎉 Wunschtag für Kinder"
         hint="Die Kinder kommen reihum dran – eins pro Woche darf sich ein Gericht wünschen."
@@ -417,7 +439,7 @@ export function WishDayEditor({
         <>
           <fieldset>
             <legend className="sr-only">Wunschtag: Wochentag</legend>
-            <p className="mb-3 text-lg font-bold" aria-hidden>
+            <p className="mb-3 text-base font-bold" aria-hidden>
               An welchem Tag?
             </p>
             <div className="grid grid-cols-4 gap-2">
@@ -430,11 +452,7 @@ export function WishDayEditor({
                     aria-pressed={selected}
                     aria-label={`Wunschtag ${day}`}
                     onClick={() => set({ weekday: day })}
-                    className={`h-14 rounded-2xl border-2 text-base font-bold active:scale-95 ${
-                      selected
-                        ? "border-orange-500 bg-orange-50 text-orange-700"
-                        : "border-stone-200 text-stone-700"
-                    }`}
+                    className={tileClass(selected)}
                   >
                     {day.slice(0, 2)}
                   </button>
@@ -448,8 +466,8 @@ export function WishDayEditor({
             onChange={(meal) => set({ meal })}
             columns={2}
             options={[
-              { value: "mittags", label: "Mittag", emoji: "☀️" },
-              { value: "abends", label: "Abend", emoji: "🌙" },
+              { value: "mittags", label: "Mittag", icon: Sun },
+              { value: "abends", label: "Abend", icon: Moon },
             ]}
             variant="plain"
           />
@@ -461,7 +479,8 @@ export function WishDayEditor({
             max={LIMITS.wishMinAge.max}
             onChange={(minAge) => set({ minAge })}
           />
-          <p className="rounded-2xl bg-orange-50 px-4 py-3 text-base text-orange-900" role="note">
+          <p className={`${NOTE} flex-col gap-1`} role="note">
+            <span>
             {joining.length > 0 ? (
               <>
                 <span className="font-semibold">Reihum dabei:</span> {names(joining)}
@@ -469,12 +488,13 @@ export function WishDayEditor({
             ) : (
               "Noch kein Kind alt genug – ohne Alter zählen Kita- und Schulkinder."
             )}
+            </span>
             {tooYoung.length > 0 && (
-              <span className="block text-sm text-orange-800">
+              <span className="block text-muted">
                 Noch zu jung: {names(tooYoung)}
               </span>
             )}
-            <span className="block text-sm text-orange-800">
+            <span className="block text-muted">
               Der Wunsch zählt nicht bei Fleisch/Veggie/Fisch.
             </span>
           </p>

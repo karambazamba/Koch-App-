@@ -2,7 +2,26 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import {
+  Beef,
+  Carrot,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Croissant,
+  CupSoda,
+  Milk,
+  Package,
+  PenLine,
+  Plus,
+  Share2,
+  ShoppingBag,
+  Snowflake,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { CARD, CARD_LIST, ICON_BUTTON, INPUT, LABEL, PAGE_MAIN, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
 import {
   SECTIONS,
   addManualItem,
@@ -16,7 +35,19 @@ import {
 import { useWeekShoppingList, type WeekChoice } from "@/lib/useWeekShoppingList";
 import { formatWeekRange } from "@/lib/weekPlan";
 
-const SKELETON = <div className="m-4 h-64 animate-pulse rounded-3xl bg-white/70" />;
+const SKELETON = <div className={`${CARD} m-4 h-64 animate-pulse`} />;
+
+/** Abteilungen als Linien-Icons (das Emoji in SECTIONS bleibt für den Teilen-Text) */
+const SECTION_ICONS: Record<Section, LucideIcon> = {
+  "obst-gemuese": Carrot,
+  "fleisch-fisch": Beef,
+  kuehlregal: Milk,
+  brot: Croissant,
+  vorrat: Package,
+  tiefkuehl: Snowflake,
+  getraenke: CupSoda,
+  sonstiges: ShoppingBag,
+};
 
 /** /einkaufsliste: automatisch aus dem Wochenplan, plus eigene Artikel. */
 export function ShoppingListView() {
@@ -52,68 +83,72 @@ export function ShoppingListView() {
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
       <PageHeader title="Einkaufsliste" />
-      <main className="safe-bottom flex flex-1 flex-col gap-4 px-4 pb-8 pt-2">
+      <main className={PAGE_MAIN}>
         <div className="flex items-center justify-between gap-2">
           <button
             type="button"
             onClick={() => setChoice("current")}
             disabled={!isNext}
             aria-label="Diese Woche"
-            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-2xl shadow-sm active:scale-95 disabled:opacity-30"
+            className={ICON_BUTTON}
           >
-            ‹
+            <ChevronLeft className="h-6 w-6" strokeWidth={2.25} aria-hidden />
           </button>
           <div className="text-center">
-            <p className="text-xl font-extrabold">{isNext ? "Nächste Woche" : "Diese Woche"}</p>
-            <p className="whitespace-nowrap text-sm text-stone-500">{range}</p>
+            <p className="text-lg font-bold">{isNext ? "Nächste Woche" : "Diese Woche"}</p>
+            <p className="whitespace-nowrap text-sm text-muted">{range}</p>
           </div>
           <button
             type="button"
             onClick={() => setChoice("next")}
             disabled={isNext}
             aria-label="Nächste Woche"
-            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-2xl shadow-sm active:scale-95 disabled:opacity-30"
+            className={ICON_BUTTON}
           >
-            ›
+            <ChevronRight className="h-6 w-6" strokeWidth={2.25} aria-hidden />
           </button>
         </div>
 
-        <section className="flex items-center justify-between gap-3 rounded-3xl bg-white p-4 shadow-sm" aria-label="Stand">
-          <p className="text-lg font-extrabold" role="status">
+        <section className={`${CARD} flex items-center justify-between gap-3 p-4`} aria-label="Stand">
+          <p className="text-lg font-bold" role="status">
             {open.length === 0 && done.length > 0
               ? "Alles erledigt ✓"
               : `${open.length} ${open.length === 1 ? "Sache" : "Sachen"} offen`}
             {done.length > 0 && open.length > 0 && (
-              <span className="block text-sm font-semibold text-stone-500">{done.length} erledigt</span>
+              <span className="block text-sm font-normal text-muted">{done.length} erledigt</span>
             )}
           </p>
           <button
             type="button"
             onClick={share}
             disabled={open.length === 0}
-            className="h-12 shrink-0 rounded-2xl bg-emerald-500 px-4 font-bold text-white shadow-sm active:scale-95 disabled:opacity-40"
+            className={buttonClass("primary")}
           >
-            📤 Teilen
+            <Share2 className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+            Teilen
           </button>
         </section>
         {shareNote && (
-          <p className="rounded-2xl bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800">{shareNote}</p>
+          <p className="rounded-xl bg-accent-soft px-4 py-2 text-sm font-semibold text-accent-strong">{shareNote}</p>
         )}
 
         {list.missing.length > 0 && (
-          <section className="flex flex-col gap-1 rounded-3xl border-2 border-amber-200 bg-amber-50 p-4 text-amber-900">
+          <section className={`${CARD} flex flex-col gap-2 p-4`}>
             {list.missing.map((m) => (
-              <p key={m}>
-                ✏️ Für <span className="font-bold">{m}</span> fehlen Zutaten – selbst ergänzen.
+              <p key={m} className="flex items-start gap-2 text-sm text-muted">
+                <PenLine className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
+                <span>
+                  Für <span className="font-bold text-ink">{m}</span> fehlen Zutaten – selbst ergänzen.
+                </span>
               </p>
             ))}
           </section>
         )}
 
         {list.items.length === 0 && list.missing.length === 0 && (
-          <p className="rounded-3xl bg-white p-5 text-center text-stone-600 shadow-sm">
+          <p className={`${CARD} p-5 text-center text-muted`}>
             Im Wochenplan stehen noch keine Gerichte mit Rezept.{" "}
-            <Link href="/wochenplan" className="font-bold text-orange-700 underline">
+            <Link href="/wochenplan" className="font-bold text-accent-strong underline">
               Zum Wochenplan
             </Link>
           </p>
@@ -122,12 +157,14 @@ export function ShoppingListView() {
         {SECTIONS.map((section) => {
           const items = open.filter((i) => i.section === section.value);
           if (items.length === 0) return null;
+          const Icon = SECTION_ICONS[section.value];
           return (
             <section key={section.value} aria-label={section.label} className="flex flex-col gap-2">
-              <h2 className="px-1 text-lg font-extrabold">
-                {section.emoji} {section.label}
+              <h2 className={`${SECTION_TITLE} flex items-center gap-2 px-1`}>
+                <Icon className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
+                {section.label}
               </h2>
-              <ul className="divide-y divide-stone-100 overflow-hidden rounded-3xl bg-white shadow-sm">
+              <ul className={CARD_LIST}>
                 {items.map((item) => (
                   <ItemRow key={item.key} item={item} weekStart={weekStart} />
                 ))}
@@ -138,8 +175,11 @@ export function ShoppingListView() {
 
         {done.length > 0 && (
           <section aria-label="Erledigt" className="flex flex-col gap-2">
-            <h2 className="px-1 text-lg font-extrabold text-stone-500">✓ Erledigt</h2>
-            <ul className="divide-y divide-stone-100 overflow-hidden rounded-3xl bg-white/70 shadow-sm">
+            <h2 className={`${SECTION_TITLE} flex items-center gap-2 px-1 text-muted`}>
+              <Check className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+              Erledigt
+            </h2>
+            <ul className={`${CARD_LIST} opacity-80`}>
               {done.map((item) => (
                 <ItemRow key={item.key} item={item} weekStart={weekStart} />
               ))}
@@ -152,22 +192,22 @@ export function ShoppingListView() {
             <button
               type="button"
               onClick={() => setShowHidden((v) => !v)}
-              className="self-start px-1 text-sm font-semibold text-stone-500 underline"
+              className="self-start px-1 text-sm font-semibold text-muted underline"
             >
               {hidden.length} Artikel haben wir schon –{" "}
               {showHidden ? "ausblenden" : "anzeigen"}
             </button>
             {showHidden && (
-              <ul className="divide-y divide-stone-100 overflow-hidden rounded-3xl bg-white/70 shadow-sm">
+              <ul className={CARD_LIST}>
                 {hidden.map((item) => (
                   <li key={item.key} className="flex items-center gap-3 px-4 py-3">
-                    <span className="min-w-0 flex-1 text-stone-500">
+                    <span className="min-w-0 flex-1 text-muted">
                       {item.amount} {item.name}
                     </span>
                     <button
                       type="button"
                       onClick={() => setHave(weekStart, item.key, false)}
-                      className="shrink-0 rounded-xl bg-orange-100 px-3 py-2 text-sm font-bold text-orange-800 active:scale-95"
+                      className={buttonClass("soft", "sm")}
                     >
                       Doch kaufen
                     </button>
@@ -193,37 +233,37 @@ function ItemRow({ item, weekStart }: { item: ListItem; weekStart: string }) {
         aria-checked={item.checked}
         aria-label={`${item.name} ${item.checked ? "nicht mehr abhaken" : "abhaken"}`}
         onClick={() => toggleChecked(weekStart, item)}
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 text-2xl font-bold active:scale-90 ${
-          item.checked ? "border-emerald-500 bg-emerald-500 text-white" : "border-stone-300 bg-white text-transparent"
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 transition active:scale-90 ${
+          item.checked ? "border-accent bg-accent text-white" : "border-stone-300 bg-surface text-transparent"
         }`}
       >
-        ✓
+        <Check className="h-5 w-5" strokeWidth={3} aria-hidden />
       </button>
       <span className={`min-w-0 flex-1 ${item.checked ? "text-stone-400 line-through" : ""}`}>
-        <span className="block text-lg font-semibold leading-tight">
+        <span className="block text-base font-semibold leading-snug">
           {item.amount && <span className="whitespace-nowrap font-bold">{item.amount} </span>}
           {item.name}
         </span>
         {item.dishes.length > 0 && (
-          <span className="block text-xs text-stone-500">für {item.dishes.join(", ")}</span>
+          <span className="block text-xs text-muted">für {item.dishes.join(", ")}</span>
         )}
-        {item.manualId && <span className="block text-xs text-stone-500">selbst hinzugefügt</span>}
+        {item.manualId && <span className="block text-xs text-muted">selbst hinzugefügt</span>}
       </span>
       {item.manualId ? (
         <button
           type="button"
           onClick={() => removeManualItem(weekStart, item.manualId!)}
           aria-label={`${item.name} entfernen`}
-          className="h-11 w-11 shrink-0 text-2xl text-stone-400 active:scale-90"
+          className="flex h-11 w-11 shrink-0 items-center justify-center text-stone-400 transition active:scale-90"
         >
-          ×
+          <X className="h-5 w-5" strokeWidth={2.25} aria-hidden />
         </button>
       ) : (
         !item.checked && (
           <button
             type="button"
             onClick={() => setHave(weekStart, item.key, true)}
-            className="shrink-0 rounded-xl bg-stone-100 px-2 py-2 text-xs font-bold text-stone-600 active:scale-95"
+            className="shrink-0 rounded-lg border border-line px-2.5 py-2 text-xs font-bold text-muted transition active:scale-95"
           >
             Haben wir schon
           </button>
@@ -232,6 +272,9 @@ function ItemRow({ item, weekStart }: { item: ListItem; weekStart: string }) {
     </li>
   );
 }
+
+/** Feldstil ohne feste Breite/Höhe, für nebeneinanderliegende Felder */
+const FIELD = INPUT.replace("h-12 w-full ", "");
 
 function AddItemForm({ weekStart }: { weekStart: string }) {
   const [name, setName] = useState("");
@@ -246,8 +289,8 @@ function AddItemForm({ weekStart }: { weekStart: string }) {
   };
 
   return (
-    <section className="flex flex-col gap-3 rounded-3xl bg-white p-4 shadow-sm" aria-label="Artikel hinzufügen">
-      <h2 className="text-lg font-bold">+ Eigener Artikel</h2>
+    <section className={`${CARD} flex flex-col gap-3 p-4`} aria-label="Artikel hinzufügen">
+      <h2 className={SECTION_TITLE}>Eigener Artikel</h2>
       <div className="flex gap-2">
         <input
           type="text"
@@ -255,7 +298,7 @@ function AddItemForm({ weekStart }: { weekStart: string }) {
           onChange={(e) => setAmount(e.target.value)}
           placeholder="Menge"
           aria-label="Menge"
-          className="h-14 w-24 shrink-0 rounded-2xl border-2 border-stone-200 px-3 text-lg outline-none focus:border-orange-400"
+          className={`${FIELD} h-12 w-24 shrink-0 px-3`}
         />
         <input
           type="text"
@@ -270,19 +313,19 @@ function AddItemForm({ weekStart }: { weekStart: string }) {
               e.currentTarget.blur();
             }
           }}
-          className="h-14 min-w-0 flex-1 rounded-2xl border-2 border-stone-200 px-4 text-lg outline-none focus:border-orange-400"
+          className={`${FIELD} h-12 flex-1`}
         />
       </div>
       <label className="flex flex-col gap-1">
-        <span className="text-sm font-semibold text-stone-600">Abteilung</span>
+        <span className={LABEL}>Abteilung</span>
         <select
           value={section}
           onChange={(e) => setSection(e.target.value as Section)}
-          className="h-14 rounded-2xl border-2 border-stone-200 bg-white px-3 text-lg outline-none focus:border-orange-400"
+          className={INPUT}
         >
           {SECTIONS.map((s) => (
             <option key={s.value} value={s.value}>
-              {s.emoji} {s.label}
+              {s.label}
             </option>
           ))}
         </select>
@@ -291,8 +334,9 @@ function AddItemForm({ weekStart }: { weekStart: string }) {
         type="button"
         onClick={add}
         disabled={!name.trim()}
-        className="h-14 rounded-2xl bg-orange-500 text-lg font-extrabold text-white shadow-md active:scale-95 disabled:opacity-40"
+        className={`${buttonClass("primary", "lg")} w-full`}
       >
+        <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
         Hinzufügen
       </button>
     </section>

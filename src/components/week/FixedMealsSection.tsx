@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { BookOpen, Moon, Plus, Sun, X } from "lucide-react";
 import { ChoiceGroup } from "@/components/form/ChoiceGroup";
+import { CategoryDot } from "@/components/ui/Category";
+import { CARD, INPUT, LABEL, buttonClass, tileClass } from "@/components/ui/styles";
 import {
   RECIPE_CATEGORIES,
   categoryInfo,
@@ -93,24 +96,25 @@ export function FixedMealsSection({
     setPlan((p) => ({ ...p, fixedMeals: p.fixedMeals.filter((m) => m.id !== id) }));
 
   return (
-    <section className="flex flex-col gap-3 rounded-3xl bg-white p-4 shadow-sm">
+    <section className={`${CARD} flex flex-col gap-3 p-4`}>
       <div>
-        <h3 className="text-lg font-bold">📖 Feste Gerichte diese Woche</h3>
-        <p className="text-sm text-stone-500">
+        <h3 className="flex items-center gap-2 text-base font-bold">
+          <BookOpen className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
+          Feste Gerichte diese Woche
+        </h3>
+        <p className="text-sm text-muted">
           Aus eurem Kochbuch – zählen in ihre Kategorie (z.&nbsp;B. Gulasch = Fleisch).
         </p>
       </div>
 
       {plan.fixedMeals.length > 0 && (
-        <ul className="divide-y divide-stone-100 rounded-2xl border-2 border-stone-100">
+        <ul className="divide-y divide-line rounded-xl border border-line">
           {plan.fixedMeals.map((m) => (
-            <li key={m.id} className="flex items-center gap-3 py-2 pl-3">
-              <span className="text-2xl" aria-hidden>
-                {categoryInfo(m.category).emoji}
-              </span>
+            <li key={m.id} className="flex items-center gap-3 py-2 pl-4">
+              <CategoryDot category={m.category} />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-lg font-bold">{m.title}</span>
-                <span className="block text-sm text-stone-500">
+                <span className="block truncate text-base font-bold">{m.title}</span>
+                <span className="block text-sm text-muted">
                   <span className="whitespace-nowrap">
                     {m.weekday} {WISH_MEAL_LABELS[m.meal]}
                   </span>
@@ -122,9 +126,9 @@ export function FixedMealsSection({
                 type="button"
                 onClick={() => remove(m.id)}
                 aria-label={`${m.title} am ${m.weekday} entfernen`}
-                className="h-12 w-12 shrink-0 text-2xl text-stone-400 active:scale-90"
+                className="flex h-12 w-12 shrink-0 items-center justify-center text-stone-400 active:scale-90"
               >
-                ×
+                <X className="h-5 w-5" strokeWidth={2.25} aria-hidden />
               </button>
             </li>
           ))}
@@ -132,9 +136,9 @@ export function FixedMealsSection({
       )}
 
       {recipes !== undefined && list.length === 0 ? (
-        <p className="rounded-2xl bg-stone-50 px-4 py-3 text-stone-600">
+        <p className="rounded-xl bg-stone-50 px-4 py-3 text-muted">
           Noch keine Rezepte im Kochbuch.{" "}
-          <Link href="/kochbuch/bearbeiten" className="font-bold text-orange-700 underline">
+          <Link href="/kochbuch/bearbeiten" className="font-bold text-accent-strong underline">
             Rezept anlegen
           </Link>
         </p>
@@ -142,14 +146,15 @@ export function FixedMealsSection({
         <button
           type="button"
           onClick={() => setAdding(true)}
-          className="h-12 rounded-2xl border-2 border-dashed border-orange-300 font-bold text-orange-700 active:scale-95"
+          className={`${buttonClass("soft")} w-full`}
         >
-          + Festes Gericht
+          <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+          Festes Gericht
         </button>
       ) : (
-        <div className="flex flex-col gap-4 rounded-2xl bg-orange-50/60 p-3">
+        <div className="flex flex-col gap-4 rounded-xl border border-line bg-stone-50/60 p-3">
           <fieldset>
-            <legend className="mb-2 font-bold">Tag</legend>
+            <legend className="mb-2 text-base font-bold">Tag</legend>
             <div className="grid grid-cols-4 gap-2">
               {weekDayNames(plan.weekStart).map((day) => {
                 const away = plan.awayDays.includes(day);
@@ -161,11 +166,7 @@ export function FixedMealsSection({
                     aria-label={away ? `${day} (unterwegs)` : `Festes Gericht am ${day}`}
                     disabled={away}
                     onClick={() => setWeekday(day)}
-                    className={`h-12 rounded-2xl border-2 text-base font-bold active:scale-95 disabled:opacity-30 ${
-                      weekday === day
-                        ? "border-orange-500 bg-white text-orange-700"
-                        : "border-stone-200 bg-white text-stone-700"
-                    }`}
+                    className={`${tileClass(weekday === day)} min-h-12 py-2 font-bold disabled:opacity-30`}
                   >
                     {day.slice(0, 2)}
                   </button>
@@ -179,23 +180,23 @@ export function FixedMealsSection({
             onChange={setMeal}
             columns={2}
             options={[
-              { value: "mittags", label: "Mittag", emoji: "☀️" },
-              { value: "abends", label: "Abend", emoji: "🌙" },
+              { value: "mittags", label: "Mittag", icon: Sun },
+              { value: "abends", label: "Abend", icon: Moon },
             ]}
             variant="plain"
           />
           <label className="flex flex-col gap-2">
-            <span className="font-bold">Rezept</span>
+            <span className={LABEL}>Rezept</span>
             <select
               value={recipeId}
               onChange={(e) => setRecipeId(e.target.value)}
-              className="h-14 rounded-2xl border-2 border-stone-200 bg-white px-3 text-lg outline-none focus:border-orange-400"
+              className={`${INPUT} px-3`}
             >
               <option value="">Rezept wählen …</option>
               {RECIPE_CATEGORIES.map((c) => {
                 const inCategory = list.filter((r: Recipe) => r.category === c.value);
                 return inCategory.length > 0 ? (
-                  <optgroup key={c.value} label={`${c.emoji} ${c.label}`}>
+                  <optgroup key={c.value} label={c.label}>
                     {inCategory.map((r) => (
                       <option key={r.id} value={r.id}>
                         {r.favorite ? "♥ " : ""}
@@ -208,12 +209,12 @@ export function FixedMealsSection({
             </select>
           </label>
           {wishSlot && (
-            <p className="text-sm font-semibold text-amber-800">
+            <p className="text-sm font-semibold text-red-700">
               Hier ist schon der Wunschtag – bitte anderen Tag oder andere Mahlzeit wählen.
             </p>
           )}
           {recipeId && recipes?.[recipeId] && CATEGORY_COUNT_KEY[recipes[recipeId].category] && (
-            <p className="text-sm text-stone-500">
+            <p className="text-sm text-muted">
               Zählt als {categoryInfo(recipes[recipeId].category).label}.
             </p>
           )}
@@ -221,7 +222,7 @@ export function FixedMealsSection({
             <button
               type="button"
               onClick={() => setAdding(false)}
-              className="h-12 rounded-2xl bg-white font-bold text-stone-700 shadow-sm active:scale-95"
+              className={buttonClass("secondary")}
             >
               Abbrechen
             </button>
@@ -229,7 +230,7 @@ export function FixedMealsSection({
               type="button"
               onClick={add}
               disabled={!canAdd}
-              className="h-12 rounded-2xl bg-orange-500 font-extrabold text-white shadow-sm active:scale-95 disabled:opacity-40"
+              className={buttonClass("primary")}
             >
               Hinzufügen
             </button>
