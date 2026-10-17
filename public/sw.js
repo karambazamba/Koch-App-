@@ -1,7 +1,7 @@
 // Service Worker von "Was gibt's?": macht die App offline nutzbar.
 // Seiten: erst Netz, bei Ausfall aus dem Cache. Statische Dateien: erst Cache.
 // CACHE_VERSION erhöhen, wenn sich die Liste der vorab gecachten Seiten ändert.
-const CACHE_VERSION = "v4";
+const CACHE_VERSION = "v5";
 // Interner Name (alter Arbeitsname) bleibt, damit alte Caches sauber aufgeräumt werden.
 const CACHE_NAME = `familienkueche-${CACHE_VERSION}`;
 
@@ -14,6 +14,9 @@ const PRECACHE_URLS = [
   "/profil/warme-mahlzeit",
   "/profil/standardwoche",
   "/woche/check",
+  "/kochbuch",
+  "/kochbuch/rezept",
+  "/kochbuch/bearbeiten",
   "/wochenplan",
   "/schnellkueche",
   "/einkaufsliste",

@@ -26,6 +26,13 @@ const AREAS = [
     emoji: "🛒",
     color: "bg-sky-100 text-sky-900",
   },
+  {
+    href: "/kochbuch",
+    title: "Unser Kochbuch",
+    text: "Eure Lieblingsrezepte",
+    emoji: "📖",
+    color: "bg-rose-100 text-rose-900",
+  },
 ];
 
 export default function Home() {

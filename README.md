@@ -58,6 +58,8 @@ dauerhafte HTTPS-Adresse.
 | `public/sw.js` | Service Worker (Offline-Cache) |
 | `public/icons/` | App-Icons (Platzhalter, Quelle: `icon.svg`) |
 | `src/app/woche/check/` | Wochen-Check: Vorgaben für die Woche ab nächstem Montag |
+| `src/app/kochbuch/` | Unser Kochbuch: Übersicht, Rezept, Rezept bearbeiten |
+| `src/lib/cookbook.ts` | Datenmodell Rezepte (auch für spätere KI-Rezepte) |
 | `src/lib/profile.ts` | Datenmodell Haushaltsprofil |
 | `src/lib/weekPlan.ts` | Datenmodell Wochen-Vorgaben (pro Woche, Schlüssel = Montag) |
 | `src/lib/localStore.ts` | Lokale Speicherung (localStorage) – später hier auf Supabase umstellen |

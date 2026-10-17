@@ -6,6 +6,7 @@ import { useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { PRIMARY_BUTTON, SECONDARY_BUTTON, StickyActions } from "@/components/StickyActions";
 import { WeekRulesEditor, tooManyDays } from "@/components/profile/editors";
+import { FixedMealsSection } from "@/components/week/FixedMealsSection";
 import {
   WEEKDAYS,
   WISH_MEAL_LABELS,
@@ -21,6 +22,7 @@ import {
   createWeekPlan,
   formatWeekRange,
   nextMonday,
+  CATEGORY_COUNT_KEY,
   nextWishKid,
   saveWeekPlan,
   useToday,
@@ -92,16 +94,36 @@ function WeekCheckForm({
 
   const update = (changes: Partial<WeekPlan>) => setPlan((p) => ({ ...p, ...changes }));
 
-  const toggleAway = (day: string) =>
+  // Feste Gerichte je Kategorie für Untergrenze und Hinweis an den Zählern
+  const fixedByCategory: Partial<Record<"meatDays" | "vegetarianDays" | "fishDays", string[]>> = {};
+  for (const m of plan.fixedMeals) {
+    const key = CATEGORY_COUNT_KEY[m.category];
+    if (key) (fixedByCategory[key] ??= []).push(`${m.title} (${m.weekday.slice(0, 2)})`);
+  }
+
+  const toggleAway = (day: string) => {
+    const becomesAway = !plan.awayDays.includes(day);
+    const fixedThatDay = plan.fixedMeals.filter((m) => m.weekday === day);
+    if (
+      becomesAway &&
+      fixedThatDay.length > 0 &&
+      !window.confirm(
+        `Am ${day} ist schon ${fixedThatDay.map((m) => `„${m.title}“`).join(" und ")} geplant. Trotzdem als Ausflugstag markieren? Das Gericht wird dann entfernt.`,
+      )
+    ) {
+      return;
+    }
     setPlan((p) => {
       const away = p.awayDays.includes(day)
         ? p.awayDays.filter((d) => d !== day)
         : WEEKDAYS.filter((d) => d === day || p.awayDays.includes(d));
+      const fixedMeals = becomesAway ? p.fixedMeals.filter((m) => m.weekday !== day) : p.fixedMeals;
       // Cheat Day an einem Ausflugs- oder Wunschtag ergibt keinen Sinn → auf "egal" zurück.
       const blocked = p.wish ? [...away, p.wish.weekday] : away;
       const cheatDayWeekday = blocked.includes(p.cheatDayWeekday) ? "" : p.cheatDayWeekday;
-      return { ...p, awayDays: away, cheatDayWeekday };
+      return { ...p, awayDays: away, cheatDayWeekday, fixedMeals };
     });
+  };
 
   const save = () => {
     saveWeekPlan(plan);
@@ -210,11 +232,14 @@ function WeekCheckForm({
           </section>
         )}
 
+        <FixedMealsSection plan={plan} setPlan={setPlan} />
+
         <WeekRulesEditor
           rules={plan}
           onChange={(changes: Partial<WeekRules>) => update(changes)}
           available={available}
           blockedWeekdays={blockedWeekdays}
+          fixed={fixedByCategory}
           intro="Wie oft soll es diese Woche was geben?"
         />
 
