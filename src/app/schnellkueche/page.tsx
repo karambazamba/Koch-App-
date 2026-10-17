@@ -1,13 +1,7 @@
-import { ComingSoon } from "@/components/ComingSoon";
+import { LeftoversView } from "@/components/pantry/LeftoversView";
 
 export const metadata = { title: "Was ist noch da?" };
 
 export default function SchnellkuechePage() {
-  return (
-    <ComingSoon
-      title="Was ist noch da?"
-      emoji="🥕"
-      text="Sag, was übrig ist – wir zaubern was draus. Kommt bald!"
-    />
-  );
+  return <LeftoversView />;
 }

@@ -3,7 +3,7 @@
 Koch-App für Familien als PWA (installierbar auf dem Homescreen) – Next.js + Tailwind CSS.
 
 **Etappe 1:** Grundgerüst, PWA (Manifest, Icons, offline-fähig), Startseite mit
-Wochenplan, „Was ist noch da?“ (Platzhalter), Einkaufsliste, Kochbuch und Onboarding „Haushaltsprofil“.
+Wochenplan, „Was ist noch da?“ (Vorrat per Sprache oder Text, Treffer aus dem Kochbuch), Einkaufsliste, Kochbuch und Onboarding „Haushaltsprofil“.
 Das Profil wird vorerst lokal im Browser gespeichert (`localStorage`).
 
 ## Lokal starten
@@ -53,7 +53,7 @@ dauerhafte HTTPS-Adresse.
 | --- | --- |
 | `src/app/page.tsx` | Startseite mit den drei Bereichen |
 | `src/app/profil/` | Haushaltsprofil: Assistent beim ersten Anlegen, danach Übersicht „Unsere Familie“ mit Einzel-Bearbeitung |
-| `src/app/schnellkueche` | „Was ist noch da?“ (Platzhalter, Route bleibt) |
+| `src/app/schnellkueche` | „Was ist noch da?“: Vorrat per Spracheingabe/Text, Kochbuch-Treffer (`src/lib/pantry.ts`) |
 | `src/app/einkaufsliste` | Einkaufsliste aus dem Wochenplan (`src/lib/shoppingList.ts`) |
 | `src/app/manifest.ts` | Web-App-Manifest |
 | `public/sw.js` | Service Worker (Offline-Cache) |
