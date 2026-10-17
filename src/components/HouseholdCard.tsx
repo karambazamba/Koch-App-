@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { WARM_MEAL_LABELS } from "@/lib/profile";
+import { formatWarmMeals } from "@/lib/profile";
 import { useProfile } from "@/lib/useProfile";
 
 /** Zeigt auf der Startseite den Stand des Haushaltsprofils. */
@@ -48,9 +48,10 @@ export function HouseholdCard() {
         </h2>
         <p className="text-stone-600">{people}</p>
         <p className="text-stone-600">
-          Warm essen: {WARM_MEAL_LABELS[profile.warmMeal.weekday]}
-          {profile.warmMeal.weekend !== profile.warmMeal.weekday &&
-            ` (Wochenende: ${WARM_MEAL_LABELS[profile.warmMeal.weekend]})`}
+          Warm essen: {formatWarmMeals(profile.warmMeal.weekday)}
+          {formatWarmMeals(profile.warmMeal.weekend) !==
+            formatWarmMeals(profile.warmMeal.weekday) &&
+            ` (Wochenende: ${formatWarmMeals(profile.warmMeal.weekend)})`}
           {allergyCount > 0 &&
             ` · ${allergyCount} ${allergyCount === 1 ? "Allergie" : "Allergien"}`}
         </p>

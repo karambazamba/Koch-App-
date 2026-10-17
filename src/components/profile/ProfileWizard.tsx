@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { ChoiceGroup } from "@/components/form/ChoiceGroup";
+import { ChoiceGroup, MultiChoiceGroup } from "@/components/form/ChoiceGroup";
 import { NumberStepper } from "@/components/form/NumberStepper";
 import { NameField } from "@/components/form/NameField";
 import { TagInput } from "@/components/form/TagInput";
@@ -22,9 +22,9 @@ import {
   weekdayLunchHeadcount,
   type HouseholdProfile,
   type KidAgeGroup,
-  type KidLunch,
   type Person,
   type WarmMeal,
+  type WeekdayLunch,
   type WeekRules,
 } from "@/lib/profile";
 import { useProfile } from "@/lib/useProfile";
@@ -332,6 +332,7 @@ function StepDailyLife({
   update: (changes: Partial<HouseholdProfile>) => void;
   updatePerson: (id: string, changes: Partial<Person>) => void;
 }) {
+  const adults = profile.persons.filter((p) => p.role === "erwachsen");
   const kids = profile.persons.filter((p) => p.role === "kind");
   const lunch = weekdayLunchHeadcount(profile);
 
@@ -339,47 +340,91 @@ function StepDailyLife({
     <>
       <section className="flex flex-col gap-5 rounded-3xl bg-white p-4 shadow-sm">
         <p className="text-lg font-bold">Wann gibt es die warme Mahlzeit?</p>
-        <ChoiceGroup<WarmMeal>
+        <MultiChoiceGroup<WarmMeal>
           label="Unter der Woche (Mo–Fr)"
-          value={profile.warmMeal.weekday}
+          hint="Mittags und abends gleichzeitig = zwei warme Mahlzeiten"
+          values={profile.warmMeal.weekday}
           onChange={(weekday) => update({ warmMeal: { ...profile.warmMeal, weekday } })}
           options={WARM_MEAL_OPTIONS}
+          exclusive={["flexibel"]}
           variant="plain"
         />
-        <ChoiceGroup<WarmMeal>
+        <MultiChoiceGroup<WarmMeal>
           label="Am Wochenende (Sa–So)"
-          value={profile.warmMeal.weekend}
+          hint="Mittags und abends gleichzeitig = zwei warme Mahlzeiten"
+          values={profile.warmMeal.weekend}
           onChange={(weekend) => update({ warmMeal: { ...profile.warmMeal, weekend } })}
           options={WARM_MEAL_OPTIONS}
+          exclusive={["flexibel"]}
           variant="plain"
         />
       </section>
 
-      {kids.length > 0 && (
-        <>
-          <p className="mt-2 text-lg font-bold">
-            Wo essen die Kinder unter der Woche mittags?
-          </p>
-          {kids.map((kid) => (
-            <KidLunchCard
-              key={kid.id}
-              kid={kid}
-              persons={profile.persons}
-              updatePerson={updatePerson}
-            />
-          ))}
-        </>
-      )}
+      <p className="mt-2 text-lg font-bold">Wer isst unter der Woche mittags zu Hause?</p>
+      {adults.map((adult) => (
+        <AdultLunchCard
+          key={adult.id}
+          adult={adult}
+          persons={profile.persons}
+          updatePerson={updatePerson}
+        />
+      ))}
+      {kids.map((kid) => (
+        <KidLunchCard
+          key={kid.id}
+          kid={kid}
+          persons={profile.persons}
+          updatePerson={updatePerson}
+        />
+      ))}
 
       <p className="rounded-2xl bg-emerald-100 px-4 py-3 text-base font-semibold text-emerald-800" role="status">
         Mittagessen unter der Woche zu Hause:{" "}
         {lunch.min === lunch.max ? lunch.min : `${lunch.min}–${lunch.max}`}{" "}
-        {lunch.max === 1 ? "Person" : "Personen"}
-        <span className="block text-sm font-normal">
-          Erwachsene zählen wir vorerst immer mit.
-        </span>
+        {lunch.min === 1 && lunch.max === 1 ? "Person" : "Personen"}
       </p>
     </>
+  );
+}
+
+function AdultLunchCard({
+  adult,
+  persons,
+  updatePerson,
+}: {
+  adult: Person;
+  persons: Person[];
+  updatePerson: (id: string, changes: Partial<Person>) => void;
+}) {
+  const employed = adult.employed === true ? "ja" : adult.employed === false ? "nein" : "";
+
+  return (
+    <section className="flex flex-col gap-5 rounded-3xl bg-white p-4 shadow-sm">
+      <PersonHeading person={adult} persons={persons} />
+      <ChoiceGroup<WeekdayLunch>
+        label="Mittagessen unter der Woche"
+        value={adult.weekdayLunch ?? "zuhause"}
+        onChange={(weekdayLunch) => updatePerson(adult.id, { weekdayLunch })}
+        options={[
+          { value: "zuhause", label: "Ist mittags zu Hause", emoji: "🏠" },
+          { value: "auswaerts", label: "Isst auswärts (z.\u00A0B. Arbeit)", emoji: "💼" },
+          { value: "manchmal", label: "Manchmal", emoji: "🔄" },
+        ]}
+        variant="plain"
+      />
+      <ChoiceGroup<"ja" | "nein" | "">
+        label="Berufstätig?"
+        hint="Optional, nur als Info"
+        value={employed}
+        onChange={(v) => updatePerson(adult.id, { employed: v === "ja" })}
+        options={[
+          { value: "ja", label: "Ja" },
+          { value: "nein", label: "Nein" },
+        ]}
+        columns={2}
+        variant="plain"
+      />
+    </section>
   );
 }
 
@@ -431,7 +476,7 @@ function KidLunchCard({
         ]}
         variant="plain"
       />
-      <ChoiceGroup<KidLunch>
+      <ChoiceGroup<WeekdayLunch>
         label="Mittagessen unter der Woche"
         value={kid.weekdayLunch ?? "auswaerts"}
         onChange={(weekdayLunch) => updatePerson(kid.id, { weekdayLunch })}
