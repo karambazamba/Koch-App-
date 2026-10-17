@@ -12,6 +12,8 @@ type Props<T extends string> = {
   value: T;
   onChange: (value: T) => void;
   columns?: 2 | 3 | 4;
+  /** "plain" ohne eigene Karte, z. B. innerhalb einer anderen Karte */
+  variant?: "card" | "plain";
 };
 
 const GRID = { 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4" };
@@ -23,9 +25,10 @@ export function ChoiceGroup<T extends string>({
   value,
   onChange,
   columns = 3,
+  variant = "card",
 }: Props<T>) {
   return (
-    <fieldset className="rounded-3xl bg-white p-4 shadow-sm">
+    <fieldset className={variant === "card" ? "rounded-3xl bg-white p-4 shadow-sm" : ""}>
       <legend className="sr-only">{label}</legend>
       <p className="mb-3 text-lg font-bold" aria-hidden>
         {label}
