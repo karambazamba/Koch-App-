@@ -275,6 +275,7 @@ export function WeekRulesEditor({
   available = 7,
   blockedWeekdays = [],
   intro = "Wie oft pro Woche soll es was geben?",
+  fixed = {},
 }: {
   rules: WeekRules;
   onChange: (changes: Partial<WeekRules>) => void;
@@ -283,40 +284,35 @@ export function WeekRulesEditor({
   /** Wochentage, die nicht Cheat Day sein können (z. B. Ausflug) */
   blockedWeekdays?: string[];
   intro?: string;
+  /** Feste Gerichte je Kategorie (Wochen-Check): Untergrenze + Hinweis "davon fest: …" */
+  fixed?: Partial<Record<"meatDays" | "vegetarianDays" | "fishDays", string[]>>;
 }) {
   const planned = rules.meatDays + rules.vegetarianDays + rules.fishDays;
   const { min } = LIMITS.daysPerWeek;
   const max = Math.max(min, available);
+  const stepper = (key: "meatDays" | "vegetarianDays" | "fishDays", label: string) => {
+    const dishes = fixed[key] ?? [];
+    return (
+      <NumberStepper
+        label={label}
+        hint={dishes.length > 0 ? `davon fest: ${dishes.join(", ")}` : "Tage pro Woche"}
+        value={rules[key]}
+        // Weniger als feste Gerichte geht nicht – die zählen ja mit.
+        min={Math.max(min, dishes.length)}
+        max={Math.max(max, dishes.length)}
+        onChange={(value) => onChange({ [key]: value })}
+      />
+    );
+  };
   const free = available - planned;
   const daysWord = (n: number) => (n === 1 ? "Tag" : "Tage");
 
   return (
     <>
       {intro && <p className="text-stone-600">{intro}</p>}
-      <NumberStepper
-        label="🥩 Fleisch"
-        hint="Tage pro Woche"
-        value={rules.meatDays}
-        min={min}
-        max={max}
-        onChange={(meatDays) => onChange({ meatDays })}
-      />
-      <NumberStepper
-        label="🥦 Vegetarisch"
-        hint="Tage pro Woche"
-        value={rules.vegetarianDays}
-        min={min}
-        max={max}
-        onChange={(vegetarianDays) => onChange({ vegetarianDays })}
-      />
-      <NumberStepper
-        label="🐟 Fisch"
-        hint="Tage pro Woche"
-        value={rules.fishDays}
-        min={min}
-        max={max}
-        onChange={(fishDays) => onChange({ fishDays })}
-      />
+      {stepper("meatDays", "🥩 Fleisch")}
+      {stepper("vegetarianDays", "🥦 Vegetarisch")}
+      {stepper("fishDays", "🐟 Fisch")}
       <p
         className={`rounded-2xl px-4 py-3 text-base font-semibold ${
           planned > available ? "bg-rose-100 text-rose-800" : "bg-emerald-100 text-emerald-800"

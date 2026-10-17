@@ -4,6 +4,7 @@
 
 import { useSyncExternalStore } from "react";
 import { createLocalStore } from "./localStore";
+import type { RecipeCategory } from "./cookbook";
 import {
   WEEKDAYS,
   wishDayKids,
@@ -22,6 +23,17 @@ export type WeekWish = {
   meal: WishMeal;
 };
 
+/** Festes Gericht aus dem Kochbuch für einen Tag dieser Woche */
+export type FixedMeal = {
+  id: string;
+  weekday: string;
+  meal: WishMeal;
+  recipeId: string;
+  /** Titel und Kategorie zum Zeitpunkt der Planung – bleibt lesbar, falls das Rezept gelöscht wird */
+  title: string;
+  category: RecipeCategory;
+};
+
 export type WeekPlan = WeekRules & {
   /** Montag der Woche als "YYYY-MM-DD" */
   weekStart: string;
@@ -33,11 +45,13 @@ export type WeekPlan = WeekRules & {
   wishes: string;
   /** Wunschtag dieser Woche, null = kein Wunschtag */
   wish: WeekWish | null;
+  /** Feste Gerichte aus dem Kochbuch; zählen in ihre Kategorie */
+  fixedMeals: FixedMeal[];
   updatedAt: string;
 };
 
 type WeekPlanStore = {
-  version: 2;
+  version: 3;
   /** Vorgaben je Woche, Schlüssel = weekStart */
   weeks: Record<string, WeekPlan>;
 };
@@ -110,8 +124,28 @@ export function createWeekPlan(weekStart: string, rules: WeekRules): WeekPlan {
     budgetEuro: null,
     wishes: "",
     wish: null,
+    fixedMeals: [],
     updatedAt: "",
   };
+}
+
+type CountKey = "meatDays" | "vegetarianDays" | "fishDays";
+
+/** Kategorie eines Rezepts → Zähler im Wochen-Check (Cheat Day zählt nicht mit) */
+export const CATEGORY_COUNT_KEY: Partial<Record<RecipeCategory, CountKey>> = {
+  fleisch: "meatDays",
+  vegetarisch: "vegetarianDays",
+  fisch: "fishDays",
+};
+
+/** Wie viele feste Gerichte je Kategorie – Untergrenze für die Zähler */
+export function fixedMealCounts(plan: Pick<WeekPlan, "fixedMeals">): Record<CountKey, number> {
+  const counts = { meatDays: 0, vegetarianDays: 0, fishDays: 0 };
+  for (const meal of plan.fixedMeals) {
+    const key = CATEGORY_COUNT_KEY[meal.category];
+    if (key) counts[key]++;
+  }
+  return counts;
 }
 
 /** Ist der Wunschtag in dieser Woche wirksam (nicht auf einem Ausflugstag)? */
@@ -158,8 +192,8 @@ export function nextWishKid(profile: HouseholdProfile, currentId: string | null)
 function migrateStore(raw: unknown): WeekPlanStore | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as { version?: number; weeks?: Record<string, unknown> };
-  // v1 kannte noch keinen Wunschtag → wish = null.
-  if ((data.version !== 1 && data.version !== 2) || !data.weeks || typeof data.weeks !== "object")
+  // v1 kannte noch keinen Wunschtag (wish = null), v1/v2 keine festen Gerichte.
+  if (![1, 2, 3].includes(data.version as number) || !data.weeks || typeof data.weeks !== "object")
     return null;
   const weeks: Record<string, WeekPlan> = {};
   for (const [key, week] of Object.entries(data.weeks)) {
@@ -179,10 +213,25 @@ function migrateStore(raw: unknown): WeekPlanStore | null {
       budgetEuro: typeof w.budgetEuro === "number" ? w.budgetEuro : null,
       wishes: typeof w.wishes === "string" ? w.wishes : "",
       wish: migrateWish(w.wish),
+      fixedMeals: Array.isArray(w.fixedMeals) ? w.fixedMeals.filter(isFixedMeal) : [],
       updatedAt: typeof w.updatedAt === "string" ? w.updatedAt : "",
     };
   }
-  return { version: 2, weeks };
+  return { version: 3, weeks };
+}
+
+function isFixedMeal(raw: unknown): raw is FixedMeal {
+  if (!raw || typeof raw !== "object") return false;
+  const m = raw as Partial<FixedMeal>;
+  return (
+    typeof m.id === "string" &&
+    typeof m.recipeId === "string" &&
+    typeof m.title === "string" &&
+    typeof m.weekday === "string" &&
+    WEEKDAYS.includes(m.weekday) &&
+    (m.meal === "mittags" || m.meal === "abends") &&
+    ["fleisch", "vegetarisch", "fisch", "cheatday"].includes(m.category as string)
+  );
 }
 
 function migrateWish(raw: unknown): WeekWish | null {
@@ -200,7 +249,7 @@ function migrateWish(raw: unknown): WeekWish | null {
 const store = createLocalStore(STORAGE_KEY, migrateStore);
 
 export function saveWeekPlan(plan: WeekPlan): void {
-  const current = store.load() ?? { version: 2 as const, weeks: {} };
+  const current = store.load() ?? { version: 3 as const, weeks: {} };
   store.save({
     ...current,
     weeks: {

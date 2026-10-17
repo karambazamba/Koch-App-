@@ -35,3 +35,8 @@
   Reihum in `wishDay.order`; wer dran ist, ergibt sich aus der letzten
   gespeicherten Woche mit Wunsch. Der Wunschtag belegt einen Kochtag und zählt
   nicht bei Fleisch/Veggie/Fisch.
+- Kochbuch (`/kochbuch`, `src/lib/cookbook.ts`): Rezepte mit Kategorie
+  Fleisch/Vegetarisch/Fisch/Cheat Day, Herkunft "eigenes" oder "ki".
+  KI-Rezepte später über `saveAiRecipe()` direkt (als Favorit) übernehmen.
+  Feste Gerichte im Wochen-Check zählen in ihre Kategorie (Zähler kann nicht
+  darunter sinken); ein Cheat-Day-Rezept setzt den Cheat Day auf diesen Tag.
