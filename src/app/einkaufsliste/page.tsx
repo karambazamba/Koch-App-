@@ -1,13 +1,7 @@
-import { ComingSoon } from "@/components/ComingSoon";
+import { ShoppingListView } from "@/components/shopping/ShoppingListView";
 
 export const metadata = { title: "Einkaufsliste" };
 
 export default function EinkaufslistePage() {
-  return (
-    <ComingSoon
-      title="Einkaufsliste"
-      emoji="🛒"
-      text="Hier entsteht bald automatisch eure Einkaufsliste aus dem Wochenplan."
-    />
-  );
+  return <ShoppingListView />;
 }

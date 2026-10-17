@@ -1,7 +1,7 @@
 "use client";
 
 import { useRecipes } from "@/lib/cookbook";
-import { useOpenShoppingCount } from "@/lib/shoppingList";
+import { useWeekShoppingList } from "@/lib/useWeekShoppingList";
 
 /** Kochbuch-Kachel: "<n> Rezepte", sonst "Gerichte, die wir lieben" */
 export function CookbookSubtitle() {
@@ -12,6 +12,7 @@ export function CookbookSubtitle() {
 
 /** Einkaufsliste-Kachel: "<n> Sachen offen", sonst "Alles für den Einkauf" */
 export function ShoppingSubtitle() {
-  const open = useOpenShoppingCount() ?? 0;
+  // Woche, für die gerade eingekauft wird (ab 2 Tage vor dem Einkaufstag die nächste)
+  const open = useWeekShoppingList("planning")?.list.openCount ?? 0;
   return <>{open > 0 ? `${open} ${open === 1 ? "Sache" : "Sachen"} offen` : "Alles für den Einkauf"}</>;
 }

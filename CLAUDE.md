@@ -58,3 +58,9 @@
   und verteilt Kategorie-Hinweise auf freie Tage. Gespeichert werden nur
   eigene Einträge und Überschreibungen ("cleared") – der Wochen-Check bleibt
   unverändert. Die Kachel "Wochenplan" führt hierher, nicht zum Wochen-Check.
+- Einkaufsliste (`/einkaufsliste`, `src/lib/shoppingList.ts`): Artikel aus
+  Rezepten im Wochenplan werden immer neu berechnet (`buildShoppingList`,
+  Mengen je Einheitenfamilie g/kg, ml/l addiert, Abteilung per Stichwort).
+  Gespeichert pro Woche nur eigene Artikel, Häkchen und "Haben wir schon"
+  (Schlüssel Zutat + Einheit). Standard-Woche und Kachel-Zähler: die Woche,
+  für die gerade eingekauft wird (`planningWeekStart`).
