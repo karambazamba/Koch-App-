@@ -18,6 +18,22 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+@layer base {
+  /* Mindestens 16px, sonst zoomt iOS Safari beim Antippen ins Feld.
+     Größere Tailwind-Klassen (z. B. text-lg) haben Vorrang. */
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
+  /* Natives "Feld in Sicht scrollen" berücksichtigt die fixierte Kopfzeile */
+  html {
+    scroll-padding-top: 6rem;
+    scroll-padding-bottom: 1rem;
+  }
+}
+
 /* Platz für die Home-Leiste bei installierter App auf dem iPhone */
 .safe-bottom {
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
