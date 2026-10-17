@@ -7,7 +7,7 @@ import { Check, MapPin, Repeat, Sparkles, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { PRIMARY_BUTTON, SECONDARY_BUTTON, StickyActions } from "@/components/StickyActions";
 import { WeekRulesEditor, tooManyDays } from "@/components/profile/editors";
-import { CARD, INPUT, buttonClass, tileClass } from "@/components/ui/styles";
+import { CARD, INPUT_BASE, buttonClass, tileClass } from "@/components/ui/styles";
 import { FixedMealsSection } from "@/components/week/FixedMealsSection";
 import {
   WISH_MEAL_LABELS,
@@ -195,7 +195,7 @@ function WeekCheckForm({
                   aria-pressed={away}
                   aria-label={`${day}: Ausflug / auswärts`}
                   onClick={() => toggleAway(day)}
-                  className={`${tileClass(away)} h-16 gap-0 font-bold`}
+                  className={tileClass(away)}
                 >
                   {day.slice(0, 2)}
                   <span className={`text-xs font-semibold ${away ? "" : "text-muted"}`}>
@@ -208,7 +208,7 @@ function WeekCheckForm({
         </fieldset>
 
         {plan.wish && wishKid && profile && (
-          <section className={`${CARD} flex flex-col gap-3 border-accent/40 p-4`}>
+          <section className={`${CARD} flex flex-col gap-3 p-4`}>
             <div>
               <h3 className="text-lg font-bold">
                 Diese Woche wünscht sich {personLabel(wishKid, profile.persons)} was 🎉
@@ -242,7 +242,7 @@ function WeekCheckForm({
                 onKeyDown={(e) => {
                   if (e.key === "Enter") e.currentTarget.blur();
                 }}
-                className={`${INPUT} h-14 text-lg`}
+                className={`${INPUT_BASE} h-14 w-full px-4 text-lg`}
               />
             </label>
             {canSwapKid && (
@@ -298,7 +298,7 @@ function WeekCheckForm({
               onKeyDown={(e) => {
                 if (e.key === "Enter") e.currentTarget.blur();
               }}
-              className={`${INPUT} w-40`}
+              className={`${INPUT_BASE} h-12 w-40 px-4`}
             />
             <span className="text-base font-semibold text-muted">€ für die Woche</span>
           </span>
@@ -314,7 +314,7 @@ function WeekCheckForm({
             onChange={(e) => update({ wishes: e.target.value })}
             placeholder="z. B. Mittwoch Kindergeburtstag, einmal Suppe, Reste von Sonntag verwerten"
             rows={3}
-            className={`${INPUT} h-auto py-3`}
+            className={`${INPUT_BASE} w-full px-4 py-3`}
           />
         </label>
       </main>

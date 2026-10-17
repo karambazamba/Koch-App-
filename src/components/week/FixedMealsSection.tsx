@@ -5,7 +5,7 @@ import { useState } from "react";
 import { BookOpen, Moon, Plus, Sun, X } from "lucide-react";
 import { ChoiceGroup } from "@/components/form/ChoiceGroup";
 import { CategoryDot } from "@/components/ui/Category";
-import { CARD, INPUT, LABEL, buttonClass, tileClass } from "@/components/ui/styles";
+import { CARD, INPUT_BASE, LABEL, buttonClass, tileClass } from "@/components/ui/styles";
 import {
   RECIPE_CATEGORIES,
   categoryInfo,
@@ -166,7 +166,7 @@ export function FixedMealsSection({
                     aria-label={away ? `${day} (unterwegs)` : `Festes Gericht am ${day}`}
                     disabled={away}
                     onClick={() => setWeekday(day)}
-                    className={`${tileClass(weekday === day)} min-h-12 py-2 font-bold disabled:opacity-30`}
+                    className={`${tileClass(weekday === day)} disabled:opacity-30`}
                   >
                     {day.slice(0, 2)}
                   </button>
@@ -190,7 +190,7 @@ export function FixedMealsSection({
             <select
               value={recipeId}
               onChange={(e) => setRecipeId(e.target.value)}
-              className={`${INPUT} px-3`}
+              className={`${INPUT_BASE} h-12 w-full px-3`}
             >
               <option value="">Rezept wählen …</option>
               {RECIPE_CATEGORIES.map((c) => {

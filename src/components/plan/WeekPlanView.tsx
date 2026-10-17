@@ -27,6 +27,7 @@ import {
   CARD_LIST,
   ICON_BUTTON,
   INPUT,
+  INPUT_BASE,
   PAGE_MAIN,
   buttonClass,
   chipClass,
@@ -259,7 +260,7 @@ function DayCard({
   return (
     <section
       aria-label={day.weekday}
-      className={`${CARD} flex flex-col gap-3 p-4 ${isToday ? "border-accent ring-1 ring-accent" : ""}`}
+      className={`${CARD} flex flex-col gap-3 p-4 ${isToday ? "ring-2 ring-accent" : ""}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-base font-bold">
@@ -340,7 +341,7 @@ function SlotRow({
         <button
           type="button"
           onClick={() => onOpen(slot, "pick")}
-          className={`${buttonClass("soft", "sm")} h-auto min-h-14 flex-col gap-1 px-1 py-2 leading-tight`}
+          className={`${tileClass(false, "soft")} leading-tight`}
         >
           <BookOpen className="h-5 w-5" strokeWidth={2} aria-hidden />
           Aus Kochbuch wählen
@@ -348,7 +349,7 @@ function SlotRow({
         <button
           type="button"
           onClick={() => onOpen(slot, "text")}
-          className={`${buttonClass("secondary", "sm")} h-auto min-h-14 flex-col gap-1 px-1 py-2 leading-tight`}
+          className={`${tileClass(false)} leading-tight`}
         >
           <PenLine className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
           Selbst eintragen
@@ -406,15 +407,15 @@ function EntrySheet({
         )}
       </div>
       <div className="grid grid-cols-3 gap-2">
-        <button type="button" onClick={onSwap} className={buttonClass("secondary", "lg")}>
+        <button type="button" onClick={onSwap} className={tileClass(false)}>
           <Repeat className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
           Tauschen
         </button>
-        <button type="button" onClick={onMove} className={buttonClass("secondary", "lg")}>
+        <button type="button" onClick={onMove} className={tileClass(false)}>
           <ArrowLeftRight className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
           Verschieben
         </button>
-        <button type="button" onClick={onDelete} className={buttonClass("danger", "lg")}>
+        <button type="button" onClick={onDelete} className={tileClass(false, "danger")}>
           <Trash2 className="h-5 w-5" strokeWidth={2} aria-hidden />
           Löschen
         </button>
@@ -536,7 +537,7 @@ function TextEntrySheet({
         onKeyDown={(e) => {
           if (e.key === "Enter" && text.trim()) onSave(text.trim(), category);
         }}
-        className={`${INPUT} h-14 text-lg`}
+        className={`${INPUT_BASE} h-14 w-full px-4 text-lg`}
       />
       <div role="group" aria-label="Kategorie" className="grid grid-cols-2 gap-2">
         {RECIPE_CATEGORIES.map((c) => (
@@ -545,7 +546,7 @@ function TextEntrySheet({
             type="button"
             aria-pressed={category === c.value}
             onClick={() => setCategory(category === c.value ? null : c.value)}
-            className={`${tileClass(category === c.value)} flex-row gap-2`}
+            className={chipClass(category === c.value)}
           >
             <CategoryDot category={c.value} />
             {c.label}

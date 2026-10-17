@@ -5,7 +5,7 @@ import { useState } from "react";
 import { BookOpen, Clock, Heart, Plus, Search, Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { CategoryDot } from "@/components/ui/Category";
-import { CARD, CARD_LIST, INPUT, PAGE_MAIN, buttonClass, chipClass } from "@/components/ui/styles";
+import { CARD, CARD_LIST, INPUT_BASE, PAGE_MAIN, buttonClass, chipClass } from "@/components/ui/styles";
 import {
   RECIPE_CATEGORIES,
   categoryInfo,
@@ -67,7 +67,7 @@ export function CookbookList() {
           onKeyDown={(e) => {
             if (e.key === "Enter") e.currentTarget.blur();
           }}
-          className={`${INPUT} pl-12`}
+          className={`${INPUT_BASE} h-12 w-full pl-12 pr-4`}
           />
         </div>
 

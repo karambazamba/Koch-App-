@@ -6,8 +6,10 @@ import { useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   CalendarRange,
+  Check,
   Clock,
   Heart,
+  Info,
   PenLine,
   UtensilsCrossed,
   Users,
@@ -19,7 +21,7 @@ import { PRIMARY_BUTTON, SECONDARY_BUTTON, StickyActions } from "@/components/St
 import { NumberStepper } from "@/components/form/NumberStepper";
 import { NameField, PERSON_ICONS } from "@/components/form/NameField";
 import { IconBadge } from "@/components/ui/IconBadge";
-import { CARD, INPUT, PAGE_MAIN, buttonClass } from "@/components/ui/styles";
+import { CARD, INPUT, buttonClass } from "@/components/ui/styles";
 import { FamilyOverview } from "@/components/profile/FamilyOverview";
 import { PersonHeading } from "@/components/profile/PersonHeading";
 import { LunchQuestion, PreferencesQuestion } from "@/components/profile/PersonQuestions";
@@ -27,6 +29,7 @@ import { PersonSwitcher } from "@/components/profile/PersonSwitcher";
 import {
   FavoritesEditor,
   LunchHeadcountNote,
+  NOTE,
   PersonLunchFields,
   PersonPreferencesFields,
   STANDARD_WEEK_HINT,
@@ -421,17 +424,22 @@ function ProfileWizard() {
           className={
             missingNames
               ? // Dezenter, damit niemand aus Versehen die Namen überspringt
-                `${buttonClass("secondary", "lg")} min-w-0 flex-[2] truncate border-accent/50 px-3 text-accent-strong`
-              : `${PRIMARY_BUTTON} min-w-0 truncate px-3`
+                `${buttonClass("soft", "lg")} min-w-0 flex-[2] truncate`
+              : `${PRIMARY_BUTTON} min-w-0 truncate`
           }
         >
-          {isLast
-            ? "Speichern ✓"
-            : missingNames
-              ? "Ohne Namen weiter"
-              : nextPerson
-                ? `Weiter zu ${personLabel(nextPerson, persons)} →`
-                : "Weiter"}
+          {isLast ? (
+            <>
+              <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+              Speichern
+            </>
+          ) : missingNames ? (
+            "Ohne Namen weiter"
+          ) : nextPerson ? (
+            `Weiter zu ${personLabel(nextPerson, persons)} →`
+          ) : (
+            "Weiter"
+          )}
         </button>
       </StickyActions>
     </div>

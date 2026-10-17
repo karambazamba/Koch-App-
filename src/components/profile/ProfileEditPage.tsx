@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
+import { Check } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { PRIMARY_BUTTON, SECONDARY_BUTTON, StickyActions } from "@/components/StickyActions";
 import { CARD, PAGE_MAIN } from "@/components/ui/styles";
@@ -81,7 +82,8 @@ function EditForm({
           disabled={canSave ? !canSave(draft) : false}
           className={PRIMARY_BUTTON}
         >
-          Speichern ✓
+          <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+          Speichern
         </button>
       </StickyActions>
     </div>

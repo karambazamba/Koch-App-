@@ -1,7 +1,7 @@
 "use client";
 
 import { Baby, PenLine, User, type LucideIcon } from "lucide-react";
-import { INPUT } from "@/components/ui/styles";
+import { INPUT_BASE } from "@/components/ui/styles";
 import { focusNextInChain } from "@/lib/useMobileKeyboard";
 
 export const PERSON_ICONS: Record<"erwachsen" | "kind", LucideIcon> = { erwachsen: User, kind: Baby };
@@ -51,7 +51,7 @@ export function NameField({
               focusNextInChain(e.currentTarget);
             }
           }}
-          className={`${INPUT} ${compact ? "" : "h-14"} pl-12 text-lg font-semibold placeholder:font-normal`}
+          className={`${INPUT_BASE} ${compact ? "h-12" : "h-14"} w-full pl-12 pr-4 text-lg font-semibold placeholder:font-normal`}
         />
       </span>
     </label>

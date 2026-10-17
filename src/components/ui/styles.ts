@@ -45,10 +45,21 @@ export function chipClass(selected = false, tone: "accent" | "danger" = "accent"
   }`;
 }
 
-/** Auswahl-Kachel (Einfach-/Mehrfachauswahl) */
-export function tileClass(selected: boolean): string {
+/**
+ * Kachel mit Icon über dem Text: Auswahl (Einfach-/Mehrfach) oder Aktion;
+ * "soft" = hervorgehobene Aktion, "danger" = Löschen.
+ * Hinweis: keine widersprüchlichen Klassen anhängen (h-, px-, gap-, border-…) –
+ * Tailwind entscheidet dann nach CSS-Reihenfolge, nicht nach Klassen-Reihenfolge.
+ */
+export function tileClass(selected: boolean, tone: "default" | "danger" | "soft" = "default"): string {
+  const idle =
+    tone === "danger"
+      ? "border-line bg-surface text-red-600"
+      : tone === "soft"
+        ? "border-transparent bg-accent-soft text-accent-strong"
+        : "border-line bg-surface text-ink";
   return `flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl border px-2 py-3 text-[15px] font-semibold transition active:scale-[0.98] ${
-    selected ? "border-accent bg-accent-soft text-accent-strong" : "border-line bg-surface text-ink"
+    selected ? "border-accent bg-accent-soft text-accent-strong" : idle
   }`;
 }
 
@@ -67,6 +78,13 @@ export const SECTION_TITLE = "text-lg font-bold text-ink";
 
 /** Grauer Untertitel / Hinweis */
 export const SUBTLE = "text-sm text-muted";
+
+/** Neutraler Hinweis-Kasten (Icon + Text) */
+export const NOTE = "flex items-start gap-2 rounded-xl bg-stone-100 px-4 py-3 text-sm text-stone-700";
+
+/** Warnung (z. B. zu viele Tage) – Rot nur für Warnungen und Löschen */
+export const WARNING =
+  "flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700";
 
 /** Inhaltsbereich einer Unterseite: 16px Rand, 16px Abstand zwischen Karten */
 export const PAGE_MAIN = "safe-bottom flex flex-1 flex-col gap-4 px-4 pb-8 pt-2";

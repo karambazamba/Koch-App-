@@ -21,7 +21,7 @@ import {
 import { ChoiceGroup, MultiChoiceGroup } from "@/components/form/ChoiceGroup";
 import { NumberStepper } from "@/components/form/NumberStepper";
 import { TagInput } from "@/components/form/TagInput";
-import { CARD, INPUT, tileClass } from "@/components/ui/styles";
+import { CARD, INPUT_BASE, NOTE, WARNING, tileClass } from "@/components/ui/styles";
 import {
   COMMON_ALLERGIES,
   KID_AGE_GROUP_LABELS,
@@ -78,11 +78,7 @@ const KID_LUNCH_OPTIONS = [
 /** Altersgruppen mit Icon (auch im Assistenten) */
 export const AGE_GROUP_ICONS = { kleinkind: Baby, kitakind: Smile, schulkind: Backpack } as const;
 
-/** Neutraler Hinweis-Kasten */
-export const NOTE = "flex items-start gap-2 rounded-xl bg-stone-100 px-4 py-3 text-sm text-stone-700";
-/** Warnung (z. B. zu viele Tage) */
-export const WARNING =
-  "flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700";
+export { NOTE, WARNING };
 
 /** Kurzform fürs Mittagessen unter der Woche, z. B. für die Übersicht. */
 export function lunchSummary(person: Person): string {
@@ -188,7 +184,7 @@ export function PersonLunchFields({ person, onChange }: PersonFieldsProps) {
             if (e.key === "Enter") e.currentTarget.blur();
           }}
           aria-label="Alter in Jahren (optional)"
-          className={`${INPUT} w-24 shrink-0 px-3 text-center text-lg font-bold`}
+          className={`${INPUT_BASE} h-12 w-24 shrink-0 px-3 text-center text-lg font-bold`}
         />
       </label>
       <ChoiceGroup<KidAgeGroup>

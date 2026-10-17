@@ -22,7 +22,7 @@
 - Bausteine in `src/components/ui`: `CARD`/`CARD_LIST`/`<Card>`,
   `buttonClass()`/`<Button>` (primary, secondary, soft, ghost, danger; sm/md/lg),
   `ICON_BUTTON`, `chipClass()`, `tileClass()`, `INPUT`, `LABEL`,
-  `SECTION_TITLE`, `SUBTLE`, `PAGE_MAIN`, `<ListRow>` (Icon links, Titel +
+  `SECTION_TITLE`, `SUBTLE`, `NOTE`, `WARNING`, `PAGE_MAIN`, `INPUT_BASE`, `<ListRow>` (Icon links, Titel +
   Untertitel, Pfeil rechts), `<IconBadge>`, `<CategoryChip>`/`<CategoryDot>`.
   Neue Seiten nur daraus bauen; fehlt etwas, dort ergänzen.
 - Nur EINE Akzentfarbe (Orange) für Buttons, aktive Zustände und Logo. Karten
