@@ -44,3 +44,9 @@
   KI-Rezepte später über `saveAiRecipe()` direkt (als Favorit) übernehmen.
   Feste Gerichte im Wochen-Check zählen in ihre Kategorie (Zähler kann nicht
   darunter sinken); ein Cheat-Day-Rezept setzt den Cheat Day auf diesen Tag.
+- Wochenplan (`/wochenplan`, `src/lib/mealPlan.ts`): aktuelle und nächste
+  Woche. `buildWeek()` setzt Plätze laut Profil (warme Mahlzeit), feste
+  Gerichte, Wunsch, Ausflugstage und Cheat Day aus dem Wochen-Check zusammen
+  und verteilt Kategorie-Hinweise auf freie Tage. Gespeichert werden nur
+  eigene Einträge und Überschreibungen ("cleared") – der Wochen-Check bleibt
+  unverändert. Die Kachel "Wochenplan" führt hierher, nicht zum Wochen-Check.
