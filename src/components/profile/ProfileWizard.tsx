@@ -9,6 +9,7 @@ import { NumberStepper } from "@/components/form/NumberStepper";
 import { TagInput } from "@/components/form/TagInput";
 import {
   COMMON_ALLERGIES,
+  KID_AGE_GROUP_LABELS,
   LIMITS,
   WEEKDAYS,
   clearProfile,
@@ -16,8 +17,10 @@ import {
   personLabel,
   saveProfile,
   syncPersons,
+  weekdayLunchHeadcount,
   type HouseholdProfile,
-  type KidsLunch,
+  type KidAgeGroup,
+  type KidLunch,
   type Person,
   type WarmMeal,
   type WeekRules,
@@ -155,7 +158,9 @@ function ProfileWizard({
             />
           </section>
         )}
-        {step === 3 && <StepDailyLife profile={profile} update={update} />}
+        {step === 3 && (
+          <StepDailyLife profile={profile} update={update} updatePerson={updatePerson} />
+        )}
         {step === 4 && <StepWeekRules rules={profile.weekRules} updateRules={updateRules} />}
 
         {isLast && !isNew && (
@@ -291,38 +296,149 @@ function StepPersons({
   );
 }
 
+const WARM_MEAL_OPTIONS: { value: WarmMeal; label: string; emoji: string }[] = [
+  { value: "mittags", label: "Mittags", emoji: "☀️" },
+  { value: "abends", label: "Abends", emoji: "🌙" },
+  { value: "flexibel", label: "Mal so, mal so", emoji: "🔄" },
+];
+
+/** Vorschlag für die Altersgruppe, wenn ein Alter eingetragen wird. */
+function ageGroupForAge(age: number): KidAgeGroup {
+  if (age < 3) return "kleinkind";
+  if (age < 6) return "kitakind";
+  return "schulkind";
+}
+
 function StepDailyLife({
   profile,
   update,
+  updatePerson,
 }: {
   profile: HouseholdProfile;
   update: (changes: Partial<HouseholdProfile>) => void;
+  updatePerson: (id: string, changes: Partial<Person>) => void;
 }) {
+  const kids = profile.persons.filter((p) => p.role === "kind");
+  const lunch = weekdayLunchHeadcount(profile);
+
   return (
     <>
-      <ChoiceGroup<WarmMeal>
-        label="Wann gibt es die warme Mahlzeit?"
-        value={profile.warmMeal}
-        onChange={(warmMeal) => update({ warmMeal })}
-        options={[
-          { value: "mittags", label: "Mittags", emoji: "☀️" },
-          { value: "abends", label: "Abends", emoji: "🌙" },
-          { value: "flexibel", label: "Mal so, mal so", emoji: "🔄" },
-        ]}
-      />
-      {profile.kids > 0 && (
-        <ChoiceGroup<KidsLunch>
-          label="Essen die Kinder mittags in Schule oder Kita?"
-          value={profile.kidsLunchAway}
-          onChange={(kidsLunchAway) => update({ kidsLunchAway })}
-          options={[
-            { value: "ja", label: "Ja", emoji: "🏫" },
-            { value: "teilweise", label: "Manchmal", emoji: "🤏" },
-            { value: "nein", label: "Nein", emoji: "🏠" },
-          ]}
+      <section className="flex flex-col gap-5 rounded-3xl bg-white p-4 shadow-sm">
+        <p className="text-lg font-bold">Wann gibt es die warme Mahlzeit?</p>
+        <ChoiceGroup<WarmMeal>
+          label="Unter der Woche (Mo–Fr)"
+          value={profile.warmMeal.weekday}
+          onChange={(weekday) => update({ warmMeal: { ...profile.warmMeal, weekday } })}
+          options={WARM_MEAL_OPTIONS}
+          variant="plain"
         />
+        <ChoiceGroup<WarmMeal>
+          label="Am Wochenende (Sa–So)"
+          value={profile.warmMeal.weekend}
+          onChange={(weekend) => update({ warmMeal: { ...profile.warmMeal, weekend } })}
+          options={WARM_MEAL_OPTIONS}
+          variant="plain"
+        />
+      </section>
+
+      {kids.length > 0 && (
+        <>
+          <p className="mt-2 text-lg font-bold">
+            Wo essen die Kinder unter der Woche mittags?
+          </p>
+          {kids.map((kid) => (
+            <KidLunchCard
+              key={kid.id}
+              kid={kid}
+              persons={profile.persons}
+              updatePerson={updatePerson}
+            />
+          ))}
+        </>
       )}
+
+      <p className="rounded-2xl bg-emerald-100 px-4 py-3 text-base font-semibold text-emerald-800" role="status">
+        Mittagessen unter der Woche zu Hause:{" "}
+        {lunch.min === lunch.max ? lunch.min : `${lunch.min}–${lunch.max}`}{" "}
+        {lunch.max === 1 ? "Person" : "Personen"}
+        <span className="block text-sm font-normal">
+          Erwachsene zählen wir vorerst immer mit.
+        </span>
+      </p>
     </>
+  );
+}
+
+function KidLunchCard({
+  kid,
+  persons,
+  updatePerson,
+}: {
+  kid: Person;
+  persons: Person[];
+  updatePerson: (id: string, changes: Partial<Person>) => void;
+}) {
+  const { min, max } = LIMITS.kidAge;
+
+  const setAge = (value: string) => {
+    if (value === "") {
+      updatePerson(kid.id, { age: null });
+      return;
+    }
+    const age = Math.min(max, Math.max(min, Math.round(Number(value))));
+    if (Number.isNaN(age)) return;
+    updatePerson(kid.id, { age, ageGroup: ageGroupForAge(age) });
+  };
+
+  return (
+    <section className="flex flex-col gap-5 rounded-3xl bg-white p-4 shadow-sm">
+      <div className="flex items-center gap-3">
+        <span className="text-3xl" aria-hidden>
+          🧒
+        </span>
+        <input
+          type="text"
+          value={kid.name}
+          onChange={(e) => updatePerson(kid.id, { name: e.target.value })}
+          placeholder={personLabel(kid, persons)}
+          aria-label="Name (optional)"
+          className="h-14 min-w-0 flex-1 rounded-2xl border-2 border-stone-200 px-4 text-lg font-bold outline-none focus:border-orange-400"
+        />
+        <input
+          type="number"
+          inputMode="numeric"
+          min={min}
+          max={max}
+          value={kid.age ?? ""}
+          onChange={(e) => setAge(e.target.value)}
+          placeholder="Alter"
+          aria-label="Alter in Jahren (optional)"
+          className="h-14 w-24 shrink-0 rounded-2xl border-2 border-stone-200 px-3 text-center text-lg font-bold outline-none focus:border-orange-400"
+        />
+      </div>
+      <ChoiceGroup<KidAgeGroup>
+        label="Alter oder Gruppe"
+        value={kid.ageGroup ?? "kitakind"}
+        onChange={(ageGroup) => updatePerson(kid.id, { ageGroup })}
+        options={[
+          { value: "kleinkind", label: KID_AGE_GROUP_LABELS.kleinkind, emoji: "👶" },
+          { value: "kitakind", label: KID_AGE_GROUP_LABELS.kitakind, emoji: "🧸" },
+          { value: "schulkind", label: KID_AGE_GROUP_LABELS.schulkind, emoji: "🎒" },
+        ]}
+        variant="plain"
+      />
+      <ChoiceGroup<KidLunch>
+        label="Mittagessen unter der Woche"
+        value={kid.weekdayLunch ?? "auswaerts"}
+        onChange={(weekdayLunch) => updatePerson(kid.id, { weekdayLunch })}
+        options={[
+          { value: "auswaerts", label: "Isst in Kita/Schule", emoji: "🏫" },
+          { value: "zuhause", label: "Isst zu Hause", emoji: "🏠" },
+          { value: "manchmal", label: "Manchmal", emoji: "🔄" },
+        ]}
+        variant="plain"
+      />
+    </section>
   );
 }
 
