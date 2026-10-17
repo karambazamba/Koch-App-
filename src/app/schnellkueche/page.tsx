@@ -1,13 +1,13 @@
 import { ComingSoon } from "@/components/ComingSoon";
 
-export const metadata = { title: "Schnellküche" };
+export const metadata = { title: "Was ist noch da?" };
 
 export default function SchnellkuechePage() {
   return (
     <ComingSoon
-      title="Schnellküche"
-      emoji="⚡"
-      text="Wenig Zeit? Hier findest du bald schnelle Gerichte, die allen schmecken."
+      title="Was ist noch da?"
+      emoji="🥕"
+      text="Sag, was übrig ist – wir zaubern was draus. Kommt bald!"
     />
   );
 }

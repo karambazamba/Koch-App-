@@ -10,10 +10,11 @@ import {
   useRecipes,
   type Recipe,
 } from "@/lib/cookbook";
-import { WEEKDAYS, WISH_MEAL_LABELS, type WishMeal } from "@/lib/profile";
+import { WISH_MEAL_LABELS, type WishMeal } from "@/lib/profile";
 import {
   CATEGORY_COUNT_KEY,
   fixedMealCounts,
+  weekDayNames,
   wishIsActive,
   type FixedMeal,
   type WeekPlan,
@@ -35,7 +36,9 @@ export function addFixedMeal(plan: WeekPlan, meal: FixedMeal): WeekPlan {
     meal,
   ].sort(
     (a, b) =>
-      WEEKDAYS.indexOf(a.weekday) - WEEKDAYS.indexOf(b.weekday) ||
+      // Reihenfolge der Planungswoche (ab Einkaufstag)
+      weekDayNames(plan.weekStart).indexOf(a.weekday) -
+        weekDayNames(plan.weekStart).indexOf(b.weekday) ||
       (a.meal === b.meal ? 0 : a.meal === "mittags" ? -1 : 1),
   );
   const next: WeekPlan = { ...plan, fixedMeals };
@@ -148,7 +151,7 @@ export function FixedMealsSection({
           <fieldset>
             <legend className="mb-2 font-bold">Tag</legend>
             <div className="grid grid-cols-4 gap-2">
-              {WEEKDAYS.map((day) => {
+              {weekDayNames(plan.weekStart).map((day) => {
                 const away = plan.awayDays.includes(day);
                 return (
                   <button

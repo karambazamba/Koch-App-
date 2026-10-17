@@ -8,7 +8,6 @@ import { PRIMARY_BUTTON, SECONDARY_BUTTON, StickyActions } from "@/components/St
 import { WeekRulesEditor, tooManyDays } from "@/components/profile/editors";
 import { FixedMealsSection } from "@/components/week/FixedMealsSection";
 import {
-  WEEKDAYS,
   WISH_MEAL_LABELS,
   createEmptyProfile,
   personLabel,
@@ -21,10 +20,13 @@ import {
   availableDays,
   createWeekPlan,
   formatWeekRange,
-  nextMonday,
   CATEGORY_COUNT_KEY,
-  currentMonday,
-  isMondayIso,
+  DEFAULT_SHOPPING_DAY,
+  isWeekStartIso,
+  planForWeek,
+  planningWeekStart,
+  weekDayNames,
+  weekStartFor,
   nextWishKid,
   saveWeekPlan,
   useToday,
@@ -37,19 +39,14 @@ import {
 const SKELETON = <div className="m-4 h-64 animate-pulse rounded-3xl bg-white/70" />;
 
 /**
- * Wochen-Check: Vorgaben für die Woche ab nächstem Montag. Vorausgefüllt aus
- * bereits gespeicherten Vorgaben dieser Woche, sonst aus der Standardwoche.
+ * Wochen-Check: Vorgaben für eine Planungswoche (ab Einkaufstag, 7 Tage).
+ * Ohne ?woche= die Woche, die gerade zu planen ist (ab 2 Tage vor dem
+ * Einkaufstag die nächste). Vorausgefüllt aus gespeicherten Vorgaben dieser
+ * Woche, sonst aus der Standardwoche.
  */
 export function WeekCheck() {
   const today = useToday();
-  // ?woche=YYYY-MM-DD (Montag, nicht in der Vergangenheit), z. B. vom Wochenplan;
-  // sonst die Woche ab nächstem Montag.
   const requested = useSearchParams().get("woche");
-  const weekStart = today
-    ? isMondayIso(requested) && requested >= currentMonday(today)
-      ? requested
-      : nextMonday(today)
-    : undefined;
   const fromPlan = Boolean(requested);
   const profile = useProfile();
   const weeks = useWeekPlans();
@@ -57,9 +54,16 @@ export function WeekCheck() {
   // besuchte Seiten sonst mit altem Entwurf am Leben).
   const { bfcacheId } = useRouter();
 
-  if (!weekStart || profile === undefined || weeks === undefined) return SKELETON;
+  if (!today || profile === undefined || weeks === undefined) return SKELETON;
 
-  const saved = weeks[weekStart] ?? null;
+  const shoppingDay = profile?.shoppingDay ?? DEFAULT_SHOPPING_DAY;
+  const currentStart = weekStartFor(today, shoppingDay);
+  // ?woche=… (z. B. vom Wochenplan): nur ein Einkaufstag, nicht in der Vergangenheit
+  const weekStart =
+    isWeekStartIso(requested, shoppingDay) && requested >= currentStart
+      ? requested
+      : planningWeekStart(today, shoppingDay).weekStart;
+  const saved = planForWeek(weeks, weekStart);
   const base = saved ?? createWeekPlan(weekStart, (profile ?? createEmptyProfile()).weekRules);
   const initial = { ...base, wish: initialWish(base, profile, weeks) };
   return (
@@ -67,7 +71,7 @@ export function WeekCheck() {
       key={`${bfcacheId}|${weekStart}`}
       initial={initial}
       profile={profile}
-      isCurrentWeek={weekStart === currentMonday(today!)}
+      isCurrentWeek={weekStart === currentStart}
       backHref={fromPlan ? "/wochenplan" : "/"}
     />
   );
@@ -139,7 +143,7 @@ function WeekCheckForm({
     setPlan((p) => {
       const away = p.awayDays.includes(day)
         ? p.awayDays.filter((d) => d !== day)
-        : WEEKDAYS.filter((d) => d === day || p.awayDays.includes(d));
+        : weekDayNames(p.weekStart).filter((d) => d === day || p.awayDays.includes(d));
       const fixedMeals = becomesAway ? p.fixedMeals.filter((m) => m.weekday !== day) : p.fixedMeals;
       // Cheat Day an einem Ausflugs- oder Wunschtag ergibt keinen Sinn → auf "egal" zurück.
       const blocked = p.wish ? [...away, p.wish.weekday] : away;
@@ -177,7 +181,7 @@ function WeekCheckForm({
             <p className="text-sm text-stone-500">An diesen Tagen planen wir kein Gericht.</p>
           </div>
           <div className="grid grid-cols-4 gap-2">
-            {WEEKDAYS.map((day) => {
+            {weekDayNames(plan.weekStart).map((day) => {
               const away = plan.awayDays.includes(day);
               return (
                 <button

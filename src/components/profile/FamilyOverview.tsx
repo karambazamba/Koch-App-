@@ -10,6 +10,7 @@ import {
   formatWarmMeals,
   personLabel,
   personRoleLabel,
+  planningWeekLabel,
   weekdayLunchHeadcount,
   WISH_MEAL_LABELS,
   type HouseholdProfile,
@@ -78,6 +79,13 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
                 <Nowrap>Mo–Fr: {formatWarmMeals(profile.warmMeal.weekday)}</Nowrap>
                 {" · "}
                 <Nowrap>Sa–So: {formatWarmMeals(profile.warmMeal.weekend)}</Nowrap>
+              </span>
+            </Row>
+            <Row href="/profil/einkaufstag" icon="🛒" title="Einkaufstag">
+              <span className="text-sm text-stone-500">
+                <Nowrap>{profile.shoppingDay}</Nowrap>
+                {" · "}
+                <Nowrap>Planungswoche {planningWeekLabel(profile.shoppingDay)}</Nowrap>
               </span>
             </Row>
           </List>

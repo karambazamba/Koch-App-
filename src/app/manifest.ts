@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: `${APP_NAME} – Kochen für die ganze Familie`,
     short_name: APP_SHORT_NAME,
     description:
-      "Wochenplan, Schnellküche und Einkaufsliste – passend zu deinem Haushalt.",
+      "Wochenplan, Resteküche, Kochbuch und Einkaufsliste – passend zu eurer Familie.",
     lang: "de",
     start_url: "/",
     scope: "/",

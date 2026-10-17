@@ -10,13 +10,19 @@ import { useSyncExternalStore } from "react";
 import type { Recipe, RecipeCategory } from "./cookbook";
 import { createLocalStore } from "./localStore";
 import {
-  WEEKDAYS,
   personLabel,
   type HouseholdProfile,
   type WarmMeal,
   type WishMeal,
 } from "./profile";
-import { CATEGORY_COUNT_KEY, addDays, wishIsActive, type WeekPlan } from "./weekPlan";
+import {
+  CATEGORY_COUNT_KEY,
+  addDays,
+  resolveWeekKey,
+  weekDayNames,
+  wishIsActive,
+  type WeekPlan,
+} from "./weekPlan";
 
 export type SlotMeal = WishMeal;
 
@@ -149,8 +155,9 @@ export function buildWeek(
     return { origin: "eigen", stored: entry, title: entry.title, category: entry.category };
   };
 
-  const days: PlanDay[] = WEEKDAYS.map((weekday, i) => {
-    const weekend = i >= 5;
+  // Die Woche beginnt am Einkaufstag, nicht unbedingt am Montag.
+  const days: PlanDay[] = weekDayNames(weekStart).map((weekday, i) => {
+    const weekend = weekday === "Samstag" || weekday === "Sonntag";
     const meals = new Set<SlotMeal>(
       baseMeals(weekend ? profile?.warmMeal.weekend : profile?.warmMeal.weekday),
     );
@@ -278,9 +285,11 @@ function updateWeek(
   change: (entries: Record<string, StoredEntry>) => Record<string, StoredEntry>,
 ) {
   const current = store.load() ?? { version: 1 as const, weeks: {} };
+  // Neue Woche (z. B. nach Wechsel des Einkaufstags) übernimmt die überlappenden Einträge.
+  const base = storedForWeek(current.weeks, weekStart);
   store.save({
     ...current,
-    weeks: { ...current.weeks, [weekStart]: change({ ...(current.weeks[weekStart] ?? {}) }) },
+    weeks: { ...current.weeks, [weekStart]: change({ ...base }) },
   });
 }
 
@@ -321,9 +330,11 @@ export function useMealPlans(): Record<string, Record<string, StoredEntry>> | un
 
 const EMPTY_WEEKS: Record<string, Record<string, StoredEntry>> = {};
 
+/** Einträge der Woche – nach Wechsel des Einkaufstags auch aus der überlappenden Woche */
 export function storedForWeek(
   weeks: Record<string, Record<string, StoredEntry>>,
   weekStart: string,
 ): Record<string, StoredEntry> {
-  return weeks[weekStart] ?? EMPTY;
+  const key = resolveWeekKey(Object.keys(weeks), weekStart);
+  return key ? weeks[key] : EMPTY;
 }

@@ -73,20 +73,10 @@ function fromIsoDate(iso: string): Date {
   return new Date(y, m - 1, d);
 }
 
-/** Der nächste Montag nach `today` (an einem Montag: der Montag in 7 Tagen). */
-export function nextMonday(today: Date): string {
-  const date = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const daysUntil = ((8 - date.getDay()) % 7) || 7;
-  date.setDate(date.getDate() + daysUntil);
-  return toIsoDate(date);
-}
+// Die Planungswoche beginnt am Einkaufstag (Profil, Standard Montag) und
+// dauert 7 Tage. Gespeichert wird je Woche unter dem Datum ihres ersten Tags.
 
-/** Montag der Woche, in der `today` liegt */
-export function currentMonday(today: Date): string {
-  const date = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
-  return toIsoDate(date);
-}
+export const DEFAULT_SHOPPING_DAY = "Montag";
 
 /** Datum `days` Tage nach `iso` */
 export function addDays(iso: string, days: number): string {
@@ -95,21 +85,58 @@ export function addDays(iso: string, days: number): string {
   return toIsoDate(date);
 }
 
-/** Ist `iso` ein gültiges Datum an einem Montag? */
-export function isMondayIso(iso: string | null): iso is string {
-  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
-  const date = fromIsoDate(iso);
-  return toIsoDate(date) === iso && date.getDay() === 1;
-}
-
 /** Wochentag-Name ("Montag" …) eines Datums */
 export function weekdayName(date: Date): string {
   return WEEKDAYS[(date.getDay() + 6) % 7];
 }
 
-/** Freitag bis Montag: Zeit, die nächste Woche zu planen. */
-export function isPlanningTime(today: Date): boolean {
-  return [5, 6, 0, 1].includes(today.getDay());
+/** Beginn der Planungswoche, in der `today` liegt (letzter Einkaufstag ≤ heute) */
+export function weekStartFor(today: Date, shoppingDay: string): string {
+  const date = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const target = Math.max(0, WEEKDAYS.indexOf(shoppingDay));
+  const current = (date.getDay() + 6) % 7;
+  date.setDate(date.getDate() - ((current - target + 7) % 7));
+  return toIsoDate(date);
+}
+
+/** Beginn der nächsten Planungswoche (nächster Einkaufstag) */
+export function nextWeekStartFor(today: Date, shoppingDay: string): string {
+  return addDays(weekStartFor(today, shoppingDay), 7);
+}
+
+/**
+ * Welche Woche gerade zu planen ist: ab 2 Tage vor dem nächsten Einkaufstag
+ * die nächste Woche, vorher die laufende.
+ */
+export function planningWeekStart(today: Date, shoppingDay: string): { weekStart: string; isNext: boolean } {
+  const next = nextWeekStartFor(today, shoppingDay);
+  const isNext = toIsoDate(today) >= addDays(next, -2);
+  return { weekStart: isNext ? next : weekStartFor(today, shoppingDay), isNext };
+}
+
+/** Ist `iso` ein gültiges Datum, das auf den Einkaufstag fällt? */
+export function isWeekStartIso(iso: string | null, shoppingDay: string): iso is string {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+  const date = fromIsoDate(iso);
+  return toIsoDate(date) === iso && weekdayName(date) === shoppingDay;
+}
+
+/** Die 7 Wochentag-Namen der Woche in Reihenfolge ab `weekStart` */
+export function weekDayNames(weekStart: string): string[] {
+  return Array.from({ length: 7 }, (_, i) => weekdayName(fromIsoDate(addDays(weekStart, i))));
+}
+
+/**
+ * Gespeicherte Woche zu `weekStart` finden. Nach einem Wechsel des
+ * Einkaufstags passen die Schlüssel nicht mehr genau – dann zählt die Woche,
+ * in deren 7 Tage `weekStart` fällt (bisherige Daten bleiben nutzbar).
+ */
+export function resolveWeekKey(keys: string[], weekStart: string): string | undefined {
+  if (keys.includes(weekStart)) return weekStart;
+  return keys
+    .filter((key) => key <= weekStart && weekStart < addDays(key, 7))
+    .sort()
+    .pop();
 }
 
 /** z. B. "20.10. – 26.10." */
@@ -285,6 +312,12 @@ export function saveWeekPlan(plan: WeekPlan): void {
   });
 }
 
+/** Vorgaben für `weekStart` (auch aus einer überlappenden älteren Woche), sonst null */
+export function planForWeek(weeks: Record<string, WeekPlan>, weekStart: string): WeekPlan | null {
+  const key = resolveWeekKey(Object.keys(weeks), weekStart);
+  return key ? { ...weeks[key], weekStart } : null;
+}
+
 /** Alle gespeicherten Wochen (`undefined` = noch nicht geladen) */
 export function useWeekPlans(): Record<string, WeekPlan> | undefined {
   const data = useSyncExternalStore(store.subscribe, store.load, () => undefined);
@@ -301,5 +334,5 @@ const EMPTY_WEEKS: Record<string, WeekPlan> = {};
 export function useWeekPlan(weekStart: string | undefined): WeekPlan | null | undefined {
   const data = useSyncExternalStore(store.subscribe, store.load, () => undefined);
   if (data === undefined || !weekStart) return undefined;
-  return data?.weeks[weekStart] ?? null;
+  return data ? planForWeek(data.weeks, weekStart) : null;
 }
