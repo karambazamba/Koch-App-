@@ -1,3 +1,5 @@
+import { PERSON_ICONS } from "@/components/form/NameField";
+import { IconBadge } from "@/components/ui/IconBadge";
 import { personLabel, personRoleLabel, type Person } from "@/lib/profile";
 
 /** Überschrift einer Personen-Karte: Name (falls eingetragen) und Rolle. */
@@ -6,12 +8,10 @@ export function PersonHeading({ person, persons }: { person: Person; persons: Pe
   const role = personRoleLabel(person, persons);
   return (
     <div className="flex items-center gap-3">
-      <span className="text-3xl" aria-hidden>
-        {person.role === "erwachsen" ? "🧑" : "🧒"}
-      </span>
+      <IconBadge icon={PERSON_ICONS[person.role]} />
       <div className="min-w-0">
-        <h3 className="truncate text-xl font-extrabold">{name}</h3>
-        {name !== role && <p className="text-sm text-stone-500">{role}</p>}
+        <h3 className="truncate text-xl font-extrabold tracking-tight">{name}</h3>
+        {name !== role && <p className="text-sm text-muted">{role}</p>}
       </div>
     </div>
   );

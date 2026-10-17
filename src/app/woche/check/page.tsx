@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { CARD } from "@/components/ui/styles";
 import { WeekCheck } from "@/components/week/WeekCheck";
 
 export const metadata = { title: "Wochen-Check" };
@@ -6,7 +7,7 @@ export const metadata = { title: "Wochen-Check" };
 export default function WeekCheckPage() {
   return (
     // useSearchParams (?woche=…) braucht eine Suspense-Grenze, damit die Seite statisch bleibt.
-    <Suspense fallback={<div className="m-4 h-64 animate-pulse rounded-3xl bg-white/70" />}>
+    <Suspense fallback={<div className={`${CARD} m-4 h-64 animate-pulse`} />}>
       <WeekCheck />
     </Suspense>
   );

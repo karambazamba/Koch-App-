@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { NameField } from "@/components/form/NameField";
+import { Trash2 } from "lucide-react";
+import { NameField, PERSON_ICONS } from "@/components/form/NameField";
 import { ProfileEditPage } from "@/components/profile/ProfileEditPage";
+import { PersonHeading } from "@/components/profile/PersonHeading";
+import { CARD, buttonClass } from "@/components/ui/styles";
 import { PersonLunchFields, PersonPreferencesFields } from "@/components/profile/editors";
 import {
   LIMITS,
@@ -77,8 +80,8 @@ function PersonEditor({ newRole, id }: { newRole: PersonRole | null; id: string 
         if (!person) {
           return (
             <div className="flex flex-col items-center gap-4 pt-8 text-center">
-              <p className="text-lg">Diese Person gibt es nicht (mehr).</p>
-              <Link href="/profil" className="font-bold text-orange-700 underline">
+              <p className="text-base text-muted">Diese Person gibt es nicht (mehr).</p>
+              <Link href="/profil" className={buttonClass("secondary")}>
                 Zur Übersicht
               </Link>
             </div>
@@ -91,30 +94,29 @@ function PersonEditor({ newRole, id }: { newRole: PersonRole | null; id: string 
           }));
         return (
           <>
-            <h2 className="text-2xl font-extrabold">
-              {person.role === "erwachsen" ? "🧑" : "🧒"} {personLabel(person, draft.persons)}
-            </h2>
-            <section className="rounded-3xl bg-white p-4 shadow-sm">
+            <PersonHeading person={person} persons={draft.persons} />
+            <section className={`${CARD} p-4`}>
               <NameField
                 who={personRoleLabel(person, draft.persons)}
-                emoji={person.role === "erwachsen" ? "🧑" : "🧒"}
+                icon={PERSON_ICONS[person.role]}
                 value={person.name}
                 onChange={(name) => change({ name })}
                 isLast
               />
             </section>
-            <section className="flex flex-col gap-5 rounded-3xl bg-white p-4 shadow-sm">
+            <section className={`${CARD} flex flex-col gap-6 p-4`}>
               <PersonPreferencesFields person={person} onChange={change} />
             </section>
-            <section className="flex flex-col gap-5 rounded-3xl bg-white p-4 shadow-sm">
+            <section className={`${CARD} flex flex-col gap-6 p-4`}>
               <PersonLunchFields person={person} onChange={change} />
             </section>
             {!newPerson && (person.role === "kind" || draft.adults > LIMITS.adults.min) && (
               <button
                 type="button"
                 onClick={() => remove(person, personLabel(person, draft.persons))}
-                className="mt-2 self-center rounded-2xl px-4 py-3 font-semibold text-rose-700 underline"
+                className={`${buttonClass("danger")} mt-2 self-center`}
               >
+                <Trash2 className="h-5 w-5" strokeWidth={2.25} aria-hidden />
                 Person entfernen
               </button>
             )}

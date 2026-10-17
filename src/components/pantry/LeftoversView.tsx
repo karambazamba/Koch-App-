@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Check, ChevronRight, Mic, MicOff, Plus, Sparkles, Square, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { NumberStepper } from "@/components/form/NumberStepper";
 import { Sheet } from "@/components/plan/Sheet";
-import { categoryInfo, formatAmount, parseAmount, useRecipes } from "@/lib/cookbook";
+import { CategoryDot } from "@/components/ui/Category";
+import { CARD, CARD_LIST, INPUT, INPUT_BASE, PAGE_MAIN, SECTION_TITLE, buttonClass, chipClass } from "@/components/ui/styles";
+import { formatAmount, parseAmount, useRecipes } from "@/lib/cookbook";
 import {
   PANTRY_UNITS,
   addPantryItems,
@@ -76,7 +79,7 @@ export function LeftoversView() {
   useEffect(() => () => recognitionRef.current?.stop(), []);
 
   if (pantry === undefined || recipes === undefined || profile === undefined || !today) {
-    return <div className="m-4 h-64 animate-pulse rounded-3xl bg-white/70" />;
+    return <div className={`${CARD} m-4 h-64 animate-pulse`} />;
   }
 
   const shownPersons = persons ?? personsForNow(profile, new Date());
@@ -128,13 +131,14 @@ export function LeftoversView() {
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
       <PageHeader title="Was ist noch da?" />
-      <main className="safe-bottom flex flex-1 flex-col gap-4 px-4 pb-8 pt-2">
-        <p className="text-lg text-stone-600">Sag, was übrig ist – wir zaubern was draus.</p>
+      <main className={PAGE_MAIN}>
+        <p className="text-base text-muted">Sag, was übrig ist – wir zaubern was draus.</p>
 
-        <section className="flex flex-col items-center gap-3 rounded-3xl bg-white p-5 shadow-sm">
+        <section className={`${CARD} flex flex-col items-center gap-3 p-6`}>
           {speechSupported === false ? (
-            <p className="rounded-2xl bg-amber-50 px-4 py-3 text-center text-amber-900" role="note">
-              🎙️ Spracheingabe gibt es in diesem Browser leider nicht – tipp die Reste einfach unten ein.
+            <p className="flex items-start gap-3 text-base text-muted" role="note">
+              <MicOff className="mt-0.5 h-5 w-5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
+              <span>Spracheingabe gibt es in diesem Browser leider nicht – tipp die Reste einfach unten ein.</span>
             </p>
           ) : (
             <>
@@ -144,21 +148,25 @@ export function LeftoversView() {
                 disabled={speechSupported === null}
                 aria-pressed={listening}
                 aria-label={listening ? "Zuhören beenden" : "Reste einsprechen"}
-                className={`flex h-28 w-28 items-center justify-center rounded-full text-5xl text-white shadow-lg active:scale-95 disabled:opacity-40 ${
-                  listening ? "animate-pulse bg-rose-500" : "bg-orange-500"
+                className={`flex h-28 w-28 items-center justify-center rounded-full bg-accent text-white shadow-lg transition active:scale-95 disabled:opacity-40 ${
+                  listening ? "animate-pulse ring-8 ring-accent/20" : ""
                 }`}
               >
-                {listening ? "■" : "🎙️"}
+                {listening ? (
+                  <Square className="h-10 w-10 fill-current" strokeWidth={2} aria-hidden />
+                ) : (
+                  <Mic className="h-12 w-12" strokeWidth={2} aria-hidden />
+                )}
               </button>
-              <p className="min-h-6 text-center font-semibold text-stone-600" role="status">
+              <p className="min-h-6 text-center font-semibold text-ink" role="status">
                 {listening ? interim || "Ich höre zu …" : "Antippen und sagen, was noch da ist"}
               </p>
-              <p className="text-center text-sm text-stone-500">
+              <p className="text-center text-sm text-muted">
                 z. B. „zwei Karotten, eine Aubergine, Bacon und Joghurt“ – kurze Pausen oder „und“ zwischen den Zutaten helfen.
               </p>
             </>
           )}
-          {speechError && <p className="text-center text-sm font-semibold text-rose-700">{speechError}</p>}
+          {speechError && <p className="text-center text-sm font-semibold text-red-600">{speechError}</p>}
         </section>
 
         <div className="flex gap-2">
@@ -176,7 +184,7 @@ export function LeftoversView() {
                 e.currentTarget.blur();
               }
             }}
-            className="h-14 min-w-0 flex-1 rounded-2xl border-2 border-stone-200 bg-white px-4 text-lg outline-none focus:border-orange-400"
+            className={`${INPUT} flex-1`}
           />
           <button
             type="button"
@@ -185,27 +193,28 @@ export function LeftoversView() {
               addText(text);
               setText("");
             }}
-            className="h-14 shrink-0 rounded-2xl bg-orange-500 px-5 text-lg font-bold text-white active:scale-95 disabled:opacity-40"
+            className={buttonClass("primary")}
           >
-            + Dazu
+            <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+            Dazu
           </button>
         </div>
 
-        <section className="flex flex-col gap-3 rounded-3xl bg-white p-4 shadow-sm" aria-label="Vorrat">
+        <section className={`${CARD} flex flex-col gap-3 p-4`} aria-label="Vorrat">
           <div className="flex items-baseline justify-between gap-2">
-            <h2 className="text-lg font-extrabold">🧺 Noch da ({pantry.length})</h2>
+            <h2 className={SECTION_TITLE}>Noch da ({pantry.length})</h2>
             {pantry.length > 0 && (
               <button
                 type="button"
                 onClick={() => window.confirm("Alle Reste aus der Liste nehmen?") && clearPantry()}
-                className="text-sm font-semibold text-stone-500 underline"
+                className="text-sm font-semibold text-muted underline"
               >
                 Alles leeren
               </button>
             )}
           </div>
           {pantry.length === 0 ? (
-            <p className="text-stone-500">Noch nichts eingetragen.</p>
+            <p className="text-sm text-muted">Noch nichts eingetragen.</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {pantry.map((item) => (
@@ -213,14 +222,14 @@ export function LeftoversView() {
                   key={item.id}
                   type="button"
                   onClick={() => setEditing(item)}
-                  className="h-11 rounded-full border-2 border-orange-200 bg-orange-50 px-4 text-base font-semibold text-orange-900 active:scale-95"
+                  className={chipClass(true)}
                 >
                   {formatPantryItem(item)}
                 </button>
               ))}
             </div>
           )}
-          {pantry.length > 0 && <p className="text-xs text-stone-500">Antippen zum Ändern oder Löschen.</p>}
+          {pantry.length > 0 && <p className="text-xs text-muted">Antippen zum Ändern oder Löschen.</p>}
         </section>
 
         <NumberStepper
@@ -233,36 +242,36 @@ export function LeftoversView() {
         />
 
         <section className="flex flex-col gap-3" aria-label="Treffer aus dem Kochbuch">
-          <h2 className="px-1 text-lg font-extrabold">📖 Passt aus eurem Kochbuch</h2>
+          <h2 className={`${SECTION_TITLE} px-1`}>Passt aus eurem Kochbuch</h2>
           {pantry.length === 0 ? (
-            <p className="px-1 text-stone-500">Sobald Reste eingetragen sind, zeigen wir passende Rezepte.</p>
+            <p className="px-1 text-sm text-muted">Sobald Reste eingetragen sind, zeigen wir passende Rezepte.</p>
           ) : matches.length === 0 ? (
-            <p className="rounded-3xl bg-white p-4 text-stone-600 shadow-sm">
+            <p className={`${CARD} p-4 text-muted`}>
               Kein Rezept im Kochbuch nutzt diese Reste.{" "}
-              <Link href="/kochbuch/bearbeiten" className="font-bold text-orange-700 underline">
+              <Link href="/kochbuch/bearbeiten" className="font-bold text-accent-strong underline">
                 Rezept anlegen
               </Link>
             </p>
           ) : (
-            <ul className="divide-y divide-stone-100 overflow-hidden rounded-3xl bg-white shadow-sm">
+            <ul className={CARD_LIST}>
               {matches.map((m) => (
                 <li key={m.recipe.id}>
                   <Link
                     href={`/kochbuch/rezept?id=${encodeURIComponent(m.recipe.id)}`}
-                    className="flex items-center gap-3 px-4 py-3 active:bg-orange-50"
+                    className="flex items-center gap-3 px-4 py-3 transition active:bg-stone-50"
                   >
-                    <span className="text-2xl" aria-hidden>
-                      {categoryInfo(m.recipe.category).emoji}
-                    </span>
+                    <CategoryDot category={m.recipe.category} />
                     <span className="min-w-0 flex-1">
-                      <span className="block text-lg font-bold leading-tight">{m.recipe.title}</span>
-                      <span className="block text-sm text-stone-600">
-                        <span className="whitespace-nowrap font-semibold text-emerald-700">
+                      <span className="block text-base font-bold leading-snug">{m.recipe.title}</span>
+                      <span className="block text-sm text-muted">
+                        <span className="whitespace-nowrap font-semibold text-accent-strong">
                           nutzt {m.used.length} von {pantry.length} {pantry.length === 1 ? "Rest" : "Resten"}
                         </span>
                         {" · "}
                         {m.missing.length === 0 ? (
-                          <span className="font-semibold text-emerald-700">nichts fehlt ✓</span>
+                          <span className="inline-flex items-center gap-1 font-semibold text-accent-strong">
+                            nichts fehlt <Check className="h-4 w-4" strokeWidth={2.5} aria-label="✓" />
+                          </span>
                         ) : (
                           <>
                             fehlt: {m.missing.slice(0, 3).join(", ")}
@@ -271,14 +280,12 @@ export function LeftoversView() {
                         )}
                       </span>
                       {m.recipe.servings !== shownPersons && (
-                        <span className="block text-xs text-stone-500">
+                        <span className="block text-xs text-muted">
                           Rezept für {m.recipe.servings}, ihr seid {shownPersons}
                         </span>
                       )}
                     </span>
-                    <span className="text-xl text-stone-300" aria-hidden>
-                      ›
-                    </span>
+                    <ChevronRight className="h-5 w-5 shrink-0 text-stone-300" strokeWidth={2.25} aria-hidden />
                   </Link>
                 </li>
               ))}
@@ -290,10 +297,13 @@ export function LeftoversView() {
           type="button"
           disabled
           title="Kommt bald"
-          className="flex min-h-16 flex-col items-center justify-center rounded-2xl bg-violet-50 px-4 text-lg font-bold text-violet-400"
+          className="flex min-h-16 flex-col items-center justify-center rounded-xl border border-dashed border-line px-4 text-base font-bold text-muted"
         >
-          ✨ KI-Ideen für diese Reste
-          <span className="text-sm font-semibold">kommt bald</span>
+          <span className="inline-flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
+            KI-Ideen für diese Reste
+          </span>
+          <span className="text-sm font-semibold text-stone-400">kommt bald</span>
         </button>
       </main>
 
@@ -301,6 +311,8 @@ export function LeftoversView() {
     </div>
   );
 }
+
+/** Feldstil ohne feste Breite/Höhe, für nebeneinanderliegende Felder */
 
 function EditSheet({ item, onClose }: { item: PantryItem; onClose: () => void }) {
   const [name, setName] = useState(item.name);
@@ -311,7 +323,7 @@ function EditSheet({ item, onClose }: { item: PantryItem; onClose: () => void })
   return (
     <Sheet title="Rest ändern" onClose={onClose}>
       {item.addedAt && (
-        <p className="text-sm text-stone-500">
+        <p className="text-sm text-muted">
           Eingetragen am {Number(d)}.{Number(m)}.{y}
         </p>
       )}
@@ -323,13 +335,13 @@ function EditSheet({ item, onClose }: { item: PantryItem; onClose: () => void })
           onChange={(e) => setAmount(e.target.value)}
           placeholder="Menge"
           aria-label="Menge"
-          className="h-14 w-24 shrink-0 rounded-2xl border-2 border-stone-200 bg-white px-3 text-center text-lg outline-none focus:border-orange-400"
+          className={`${INPUT_BASE} h-12 w-20 shrink-0 px-2 text-center`}
         />
         <select
           value={unit}
           onChange={(e) => setUnit(e.target.value)}
           aria-label="Einheit"
-          className="h-14 w-28 shrink-0 rounded-2xl border-2 border-stone-200 bg-white px-2 text-lg outline-none focus:border-orange-400"
+          className={`${INPUT_BASE} h-12 w-24 shrink-0 px-2`}
         >
           {PANTRY_UNITS.map((u) => (
             <option key={u} value={u}>
@@ -342,7 +354,7 @@ function EditSheet({ item, onClose }: { item: PantryItem; onClose: () => void })
           value={name}
           onChange={(e) => setName(e.target.value)}
           aria-label="Zutat"
-          className="h-14 min-w-0 flex-1 rounded-2xl border-2 border-stone-200 bg-white px-3 text-lg outline-none focus:border-orange-400"
+          className={`${INPUT_BASE} h-12 flex-1 px-3`}
         />
       </div>
       <div className="grid grid-cols-2 gap-2">
@@ -352,9 +364,10 @@ function EditSheet({ item, onClose }: { item: PantryItem; onClose: () => void })
             removePantryItem(item.id);
             onClose();
           }}
-          className="h-14 rounded-2xl bg-white font-bold text-rose-700 shadow-sm active:scale-95"
+          className={buttonClass("danger", "lg")}
         >
-          🗑 Löschen
+          <Trash2 className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+          Löschen
         </button>
         <button
           type="button"
@@ -363,9 +376,10 @@ function EditSheet({ item, onClose }: { item: PantryItem; onClose: () => void })
             updatePantryItem(item.id, { name: name.trim(), amount: parseAmount(amount), unit });
             onClose();
           }}
-          className="h-14 rounded-2xl bg-orange-500 font-extrabold text-white shadow-md active:scale-95 disabled:opacity-40"
+          className={buttonClass("primary", "lg")}
         >
-          Speichern ✓
+          <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+          Speichern
         </button>
       </div>
     </Sheet>

@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
+import { Check } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { PRIMARY_BUTTON, SECONDARY_BUTTON, StickyActions } from "@/components/StickyActions";
+import { CARD, PAGE_MAIN } from "@/components/ui/styles";
 import { saveProfile, type HouseholdProfile } from "@/lib/profile";
 import { useProfile } from "@/lib/useProfile";
 
@@ -31,15 +33,15 @@ export function ProfileEditPage(props: Props) {
   // Entwurf – bfcacheId wechselt bei jeder neuen Navigation (nicht bei Zurück).
   const { bfcacheId } = useRouter();
   if (profile === undefined) {
-    return <div className="m-4 h-64 animate-pulse rounded-3xl bg-white/70" />;
+    return <div className={`${CARD} m-4 h-64 animate-pulse`} />;
   }
   if (profile === null) {
     return (
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
         <PageHeader title={props.title} backHref="/profil" />
         <main className="flex flex-col items-center gap-4 px-6 pt-10 text-center">
-          <p className="text-lg">Es gibt noch kein Haushaltsprofil.</p>
-          <Link href="/profil" className={`${PRIMARY_BUTTON} flex w-full items-center justify-center`}>
+          <p className="text-base text-muted">Es gibt noch kein Haushaltsprofil.</p>
+          <Link href="/profil" className={`${PRIMARY_BUTTON} w-full`}>
             Profil anlegen
           </Link>
         </main>
@@ -67,7 +69,7 @@ function EditForm({
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
       <PageHeader title={title} backHref="/profil" />
-      <main className="flex flex-1 flex-col gap-4 px-4 pb-6 pt-2">
+      <main className={PAGE_MAIN}>
         {children(draft, setDraft)}
       </main>
       <StickyActions>
@@ -80,7 +82,8 @@ function EditForm({
           disabled={canSave ? !canSave(draft) : false}
           className={PRIMARY_BUTTON}
         >
-          Speichern ✓
+          <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+          Speichern
         </button>
       </StickyActions>
     </div>

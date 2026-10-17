@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { Check, Clock, PenLine, Sparkles, ThumbsDown, ThumbsUp, Trash2, Users } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { CategoryChip } from "@/components/ui/Category";
+import { CARD, PAGE_MAIN, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
 import { FavoriteButton } from "@/components/cookbook/CookbookList";
 import {
-  categoryInfo,
   deleteRecipe,
   formatAmount,
   recordCooked,
@@ -32,7 +34,7 @@ function RecipeDetails({ id }: { id: string }) {
   const recipes = useRecipes();
   const [justCooked, setJustCooked] = useState(false);
 
-  if (recipes === undefined) return <div className="m-4 h-64 animate-pulse rounded-3xl bg-white/70" />;
+  if (recipes === undefined) return <div className={`${CARD} m-4 h-64 animate-pulse`} />;
   const recipe = recipes[id];
 
   if (!recipe) {
@@ -40,8 +42,8 @@ function RecipeDetails({ id }: { id: string }) {
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
         <PageHeader title="Rezept" backHref="/kochbuch" />
         <main className="flex flex-col items-center gap-4 px-6 pt-10 text-center">
-          <p className="text-lg">Dieses Rezept gibt es nicht (mehr).</p>
-          <Link href="/kochbuch" className="font-bold text-orange-700 underline">
+          <p className="text-base">Dieses Rezept gibt es nicht (mehr).</p>
+          <Link href="/kochbuch" className={buttonClass("secondary")}>
             Zum Kochbuch
           </Link>
         </main>
@@ -49,7 +51,6 @@ function RecipeDetails({ id }: { id: string }) {
     );
   }
 
-  const cat = categoryInfo(recipe.category);
   const cooked = (rating: "up" | "down" | null) => {
     recordCooked(recipe.id, rating);
     setJustCooked(true);
@@ -63,40 +64,49 @@ function RecipeDetails({ id }: { id: string }) {
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
       <PageHeader title="Rezept" backHref="/kochbuch" />
-      <main className="safe-bottom flex flex-1 flex-col gap-4 px-4 pb-8 pt-2">
+      <main className={PAGE_MAIN}>
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">
-            <h2 className="text-2xl font-extrabold leading-tight">{recipe.title}</h2>
-            <p className="mt-1 text-stone-600">
-              <span className="whitespace-nowrap">
-                {cat.emoji} {cat.label}
+            <h2 className="text-2xl font-extrabold leading-tight tracking-tight">{recipe.title}</h2>
+            <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
+              <CategoryChip category={recipe.category} />
+              <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                <Users className="h-4 w-4" strokeWidth={2} aria-hidden />
+                {recipe.servings} Personen
               </span>
-              {" · "}
-              <span className="whitespace-nowrap">{recipe.servings} Personen</span>
               {recipe.prepMinutes !== null && (
-                <>
-                  {" · "}
-                  <span className="whitespace-nowrap">⏱ {recipe.prepMinutes} Min.</span>
-                </>
+                <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                  <Clock className="h-4 w-4" strokeWidth={2} aria-hidden />
+                  {recipe.prepMinutes} Min.
+                </span>
               )}
-              {" · "}
-              <span className="whitespace-nowrap">
-                {recipe.source === "ki" ? "✨ von der KI" : "✍️ Eigenes"}
+              <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                {recipe.source === "ki" ? (
+                  <>
+                    <Sparkles className="h-4 w-4" strokeWidth={2} aria-hidden />
+                    von der KI
+                  </>
+                ) : (
+                  <>
+                    <PenLine className="h-4 w-4" strokeWidth={2} aria-hidden />
+                    Eigenes
+                  </>
+                )}
               </span>
             </p>
           </div>
           <FavoriteButton recipe={recipe} />
         </div>
 
-        <section className="rounded-3xl bg-white p-4 shadow-sm">
-          <h3 className="mb-2 text-lg font-bold">Zutaten für {recipe.servings} Personen</h3>
+        <section className={`${CARD} p-4`}>
+          <h3 className={`${SECTION_TITLE} mb-2`}>Zutaten für {recipe.servings} Personen</h3>
           {recipe.ingredients.length === 0 ? (
-            <p className="text-stone-500">Keine Zutaten eingetragen.</p>
+            <p className="text-sm text-muted">Keine Zutaten eingetragen.</p>
           ) : (
-            <ul className="divide-y divide-stone-100">
+            <ul className="divide-y divide-line">
               {recipe.ingredients.map((i) => (
-                <li key={i.id} className="flex gap-3 py-2 text-lg">
-                  <span className="w-24 shrink-0 whitespace-nowrap text-right font-semibold text-stone-700">
+                <li key={i.id} className="flex gap-3 py-2 text-base">
+                  <span className="w-24 shrink-0 whitespace-nowrap text-right font-semibold text-muted">
                     {formatAmount(i.amount)} {i.unit}
                   </span>
                   <span>{i.name}</span>
@@ -107,12 +117,12 @@ function RecipeDetails({ id }: { id: string }) {
         </section>
 
         {recipe.steps.length > 0 && (
-          <section className="rounded-3xl bg-white p-4 shadow-sm">
-            <h3 className="mb-2 text-lg font-bold">Zubereitung</h3>
+          <section className={`${CARD} p-4`}>
+            <h3 className={`${SECTION_TITLE} mb-3`}>Zubereitung</h3>
             <ol className="flex flex-col gap-3">
               {recipe.steps.map((step, index) => (
-                <li key={index} className="flex gap-3 text-lg">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-100 font-bold text-orange-700">
+                <li key={index} className="flex gap-3 text-base">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-sm font-bold text-accent-strong">
                     {index + 1}
                   </span>
                   <span className="pt-0.5">{step}</span>
@@ -123,46 +133,44 @@ function RecipeDetails({ id }: { id: string }) {
         )}
 
         {recipe.note.trim() && (
-          <section className="rounded-3xl bg-amber-50 p-4 text-lg text-amber-900 shadow-sm">
-            <h3 className="mb-1 font-bold">Notiz</h3>
-            <p className="whitespace-pre-line">{recipe.note}</p>
+          <section className={`${CARD} p-4`}>
+            <h3 className={`${SECTION_TITLE} mb-1`}>Notiz</h3>
+            <p className="whitespace-pre-line text-base text-muted">{recipe.note}</p>
           </section>
         )}
 
-        <section className="flex flex-col gap-3 rounded-3xl bg-white p-4 shadow-sm">
-          <h3 className="text-lg font-bold">Heute gekocht? Wie war&apos;s?</h3>
+        <section className={`${CARD} flex flex-col gap-3 p-4`}>
+          <h3 className={SECTION_TITLE}>Heute gekocht? Wie war&apos;s?</h3>
           {justCooked ? (
-            <p className="rounded-2xl bg-emerald-100 px-4 py-3 font-semibold text-emerald-800" role="status">
-              Gespeichert – danke! ✓
+            <p
+              className="flex items-center gap-2 rounded-xl bg-accent-soft px-4 py-3 font-semibold text-accent-strong"
+              role="status"
+            >
+              <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+              Gespeichert – danke!
             </p>
           ) : (
             <>
               <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => cooked("up")}
-                  className="h-16 rounded-2xl border-2 border-emerald-300 bg-emerald-50 text-lg font-bold text-emerald-800 active:scale-95"
-                >
-                  👍 Lecker
+                <button type="button" onClick={() => cooked("up")} className={buttonClass("soft", "lg")}>
+                  <ThumbsUp className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+                  Lecker
                 </button>
-                <button
-                  type="button"
-                  onClick={() => cooked("down")}
-                  className="h-16 rounded-2xl border-2 border-stone-200 bg-white text-lg font-bold text-stone-700 active:scale-95"
-                >
-                  👎 Eher nicht
+                <button type="button" onClick={() => cooked("down")} className={buttonClass("secondary", "lg")}>
+                  <ThumbsDown className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+                  Eher nicht
                 </button>
               </div>
               <button
                 type="button"
                 onClick={() => cooked(null)}
-                className="self-center text-sm font-semibold text-stone-500 underline"
+                className="self-center text-sm font-semibold text-muted underline"
               >
                 Nur als gekocht markieren
               </button>
             </>
           )}
-          <p className="text-sm text-stone-500">
+          <p className="flex flex-wrap items-center gap-x-1 text-sm text-muted">
             {recipe.cookedCount > 0 ? (
               <>
                 <span className="whitespace-nowrap">{recipe.cookedCount}× gekocht</span>
@@ -173,8 +181,9 @@ function RecipeDetails({ id }: { id: string }) {
                   </>
                 )}
                 {" · "}
-                <span className="whitespace-nowrap">
-                  👍 {recipe.thumbsUp} 👎 {recipe.thumbsDown}
+                <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                  <ThumbsUp className="h-3.5 w-3.5" strokeWidth={2} aria-label="gut" /> {recipe.thumbsUp}
+                  <ThumbsDown className="ml-1 h-3.5 w-3.5" strokeWidth={2} aria-label="nicht so" /> {recipe.thumbsDown}
                 </span>
               </>
             ) : (
@@ -184,17 +193,12 @@ function RecipeDetails({ id }: { id: string }) {
         </section>
 
         <div className="grid grid-cols-2 gap-3">
-          <Link
-            href={`/kochbuch/bearbeiten?id=${encodeURIComponent(recipe.id)}`}
-            className="flex h-14 items-center justify-center rounded-2xl bg-orange-100 text-lg font-bold text-orange-700 active:scale-95"
-          >
-            ✏️ Bearbeiten
+          <Link href={`/kochbuch/bearbeiten?id=${encodeURIComponent(recipe.id)}`} className={buttonClass("soft", "lg")}>
+            <PenLine className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+            Bearbeiten
           </Link>
-          <button
-            type="button"
-            onClick={remove}
-            className="h-14 rounded-2xl bg-white text-lg font-bold text-rose-700 shadow-sm active:scale-95"
-          >
+          <button type="button" onClick={remove} className={buttonClass("danger", "lg")}>
+            <Trash2 className="h-5 w-5" strokeWidth={2.25} aria-hidden />
             Löschen
           </button>
         </div>

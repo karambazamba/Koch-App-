@@ -1,6 +1,8 @@
 "use client";
 
 import { useId, useState } from "react";
+import { Check, Plus, X } from "lucide-react";
+import { INPUT, buttonClass, chipClass } from "@/components/ui/styles";
 
 type Props = {
   label: string;
@@ -12,10 +14,6 @@ type Props = {
   tone?: "orange" | "red";
 };
 
-const TONES = {
-  orange: "border-orange-500 bg-orange-50 text-orange-800",
-  red: "border-rose-500 bg-rose-50 text-rose-800",
-};
 
 /**
  * Liste von Begriffen: Vorschläge antippen oder eigene Einträge hinzufügen.
@@ -52,14 +50,12 @@ export function TagInput({
     (v) => !suggestions.some((s) => s.toLowerCase() === v.toLowerCase()),
   );
 
-  const chipClass = (selected: boolean) =>
-    `rounded-full border-2 px-4 py-2 text-base font-semibold transition active:scale-95 ${
-      selected ? TONES[tone] : "border-stone-200 bg-white text-stone-700"
-    }`;
+  // Allergien in Rot – ein Warnhinweis, keine Deko
+  const chip = (selected: boolean) => chipClass(selected, tone === "red" ? "danger" : "accent");
 
   return (
     <div className="flex flex-col gap-3">
-      <label htmlFor={inputId} className="text-lg font-bold">
+      <label htmlFor={inputId} className="text-base font-bold">
         {label}
       </label>
 
@@ -71,9 +67,9 @@ export function TagInput({
               type="button"
               aria-pressed={has(item)}
               onClick={() => toggle(item)}
-              className={chipClass(has(item))}
+              className={chip(has(item))}
             >
-              {has(item) ? "✓ " : ""}
+              {has(item) && <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden />}
               {item}
             </button>
           ))}
@@ -83,9 +79,10 @@ export function TagInput({
               type="button"
               onClick={() => toggle(item)}
               aria-label={`${item} entfernen`}
-              className={chipClass(true)}
+              className={chip(true)}
             >
-              {item} ✕
+              {item}
+              <X className="h-4 w-4" strokeWidth={2.5} aria-hidden />
             </button>
           ))}
         </div>
@@ -107,15 +104,16 @@ export function TagInput({
             }
           }}
           enterKeyHint="done"
-          className="h-14 min-w-0 flex-1 rounded-2xl border-2 border-stone-200 bg-white px-4 text-lg outline-none focus:border-orange-400"
+          className={`${INPUT} flex-1`}
         />
         <button
           type="button"
           onClick={addDraft}
           disabled={!draft.trim()}
-          className="h-14 shrink-0 rounded-2xl bg-orange-500 px-5 text-lg font-bold text-white active:scale-95 disabled:opacity-40"
+          className={buttonClass("primary")}
         >
-          + Dazu
+          <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+          Dazu
         </button>
       </div>
     </div>
