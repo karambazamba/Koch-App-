@@ -14,5 +14,8 @@
 
 ## Produktentscheidungen
 
-- Namen der Personen werden nur in Schritt 1 des Haushaltsprofils bearbeitet;
-  spätere Schritte zeigen sie nur an.
+- Der 5-Schritte-Assistent wird nur beim ersten Anlegen verwendet. Danach
+  zeigt `/profil` die Übersicht "Unsere Familie"; Personen und Bereiche werden
+  dort einzeln bearbeitet (eigene Seiten unter `/profil/...`).
+- Im Assistenten werden Namen nur in Schritt 1 eingegeben; spätere Schritte
+  zeigen sie nur an.

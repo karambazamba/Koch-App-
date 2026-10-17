@@ -31,7 +31,7 @@ export default function Home() {
       <header>
         <p className="text-lg font-semibold text-orange-600">Familienküche</p>
         <h1 className="text-3xl font-extrabold leading-tight">
-          Was kochen wir heute? 🍲
+          Was kochen wir heute?
         </h1>
       </header>
 

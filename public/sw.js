@@ -1,12 +1,17 @@
 // Service Worker der Familienküche: macht die App offline nutzbar.
 // Seiten: erst Netz, bei Ausfall aus dem Cache. Statische Dateien: erst Cache.
 // CACHE_VERSION erhöhen, wenn sich die Liste der vorab gecachten Seiten ändert.
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const CACHE_NAME = `familienkueche-${CACHE_VERSION}`;
 
 const PRECACHE_URLS = [
   "/",
   "/profil",
+  "/profil/person",
+  "/profil/haushalt",
+  "/profil/lieblingsgerichte",
+  "/profil/warme-mahlzeit",
+  "/profil/wochenregeln",
   "/wochenplan",
   "/schnellkueche",
   "/einkaufsliste",
