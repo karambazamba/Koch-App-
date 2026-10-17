@@ -15,6 +15,7 @@ import {
   LunchHeadcountNote,
   PersonLunchFields,
   PersonPreferencesFields,
+  STANDARD_WEEK_HINT,
   WarmMealEditor,
   WeekRulesEditor,
   tooManyDays,
@@ -38,7 +39,7 @@ const STEPS = [
   { title: "Lieblingsgerichte", emoji: "😋" },
   { title: "Warme Mahlzeit", emoji: "🍽️" },
   { title: "Mittagessen unter der Woche", emoji: "🕛", perPerson: true },
-  { title: "Wochenregeln", emoji: "📋" },
+  { title: "Standardwoche", emoji: "📋" },
 ];
 
 const STEP = { household: 0, preferences: 1, favorites: 2, warmMeal: 3, lunch: 4, rules: 5 };
@@ -212,12 +213,17 @@ function ProfileWizard() {
           </>
         )}
         {step === STEP.rules && (
-          <WeekRulesEditor
-            rules={profile.weekRules}
-            onChange={(changes) =>
-              update({ weekRules: { ...profile.weekRules, ...changes } })
-            }
-          />
+          <>
+            <p className="rounded-2xl bg-sky-50 px-4 py-3 text-base text-sky-900">
+              {STANDARD_WEEK_HINT}
+            </p>
+            <WeekRulesEditor
+              rules={profile.weekRules}
+              onChange={(changes) =>
+                update({ weekRules: { ...profile.weekRules, ...changes } })
+              }
+            />
+          </>
         )}
       </main>
 

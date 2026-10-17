@@ -31,11 +31,10 @@ export function HouseholdCard() {
   }
 
   const allergyCount = new Set(profile.persons.flatMap((p) => p.allergies)).size;
-  const people =
-    `${profile.adults} ${profile.adults === 1 ? "Erwachsene:r" : "Erwachsene"}` +
-    (profile.kids > 0
-      ? ` · ${profile.kids} ${profile.kids === 1 ? "Kind" : "Kinder"}`
-      : "");
+  const adults = `${profile.adults} ${profile.adults === 1 ? "Erwachsene:r" : "Erwachsene"}`;
+  const kids = `${profile.kids} ${profile.kids === 1 ? "Kind" : "Kinder"}`;
+  const weekday = formatWarmMeals(profile.warmMeal.weekday);
+  const weekend = formatWarmMeals(profile.warmMeal.weekend);
 
   return (
     <section className="flex items-center gap-4 rounded-3xl bg-white p-5 shadow-sm">
@@ -46,14 +45,27 @@ export function HouseholdCard() {
         <h2 className="text-xl font-extrabold">
           {profile.householdName.trim() || "Euer Haushalt"}
         </h2>
-        <p className="text-stone-600">{people}</p>
+        {/* Zahl und Wort zusammenhalten – kein Umbruch zwischen "1" und "Kind" */}
         <p className="text-stone-600">
-          Warm essen: {formatWarmMeals(profile.warmMeal.weekday)}
-          {formatWarmMeals(profile.warmMeal.weekend) !==
-            formatWarmMeals(profile.warmMeal.weekday) &&
-            ` (Wochenende: ${formatWarmMeals(profile.warmMeal.weekend)})`}
-          {allergyCount > 0 &&
-            ` · ${allergyCount} ${allergyCount === 1 ? "Allergie" : "Allergien"}`}
+          <span className="whitespace-nowrap">{adults}</span>
+          {profile.kids > 0 && (
+            <>
+              {" · "}
+              <span className="whitespace-nowrap">{kids}</span>
+            </>
+          )}
+        </p>
+        <p className="text-stone-600">
+          Warm essen: {weekday}
+          {weekend !== weekday && ` (Wochenende: ${weekend})`}
+          {allergyCount > 0 && (
+            <>
+              {" · "}
+              <span className="whitespace-nowrap">
+                {allergyCount} {allergyCount === 1 ? "Allergie" : "Allergien"}
+              </span>
+            </>
+          )}
         </p>
       </div>
       <Link

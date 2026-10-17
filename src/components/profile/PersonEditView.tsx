@@ -7,9 +7,12 @@ import { NameField } from "@/components/form/NameField";
 import { ProfileEditPage } from "@/components/profile/ProfileEditPage";
 import { PersonLunchFields, PersonPreferencesFields } from "@/components/profile/editors";
 import {
+  LIMITS,
   createPerson,
+  loadProfile,
   personLabel,
   personRoleLabel,
+  saveProfile,
   type Person,
   type PersonRole,
 } from "@/lib/profile";
@@ -36,8 +39,23 @@ export function PersonEditView() {
 }
 
 function PersonEditor({ newRole, id }: { newRole: PersonRole | null; id: string | null }) {
+  const router = useRouter();
   const [newPerson] = useState(() => (newRole ? createPerson(newRole) : null));
   const personId = newPerson?.id ?? id;
+
+  /** Entfernt die Person aus dem gespeicherten Profil (ungespeicherte Änderungen verfallen). */
+  const remove = (person: Person, label: string) => {
+    const saved = loadProfile();
+    if (!saved || !window.confirm(`${label} wirklich aus der Familie entfernen?`)) return;
+    const isKid = person.role === "kind";
+    saveProfile({
+      ...saved,
+      adults: isKid ? saved.adults : saved.adults - 1,
+      kids: isKid ? saved.kids - 1 : saved.kids,
+      persons: saved.persons.filter((p) => p.id !== person.id),
+    });
+    router.push("/profil");
+  };
 
   return (
     <ProfileEditPage
@@ -91,6 +109,15 @@ function PersonEditor({ newRole, id }: { newRole: PersonRole | null; id: string 
             <section className="flex flex-col gap-5 rounded-3xl bg-white p-4 shadow-sm">
               <PersonLunchFields person={person} onChange={change} />
             </section>
+            {!newPerson && (person.role === "kind" || draft.adults > LIMITS.adults.min) && (
+              <button
+                type="button"
+                onClick={() => remove(person, personLabel(person, draft.persons))}
+                className="mt-2 self-center rounded-2xl px-4 py-3 font-semibold text-rose-700 underline"
+              >
+                Person entfernen
+              </button>
+            )}
           </>
         );
       }}

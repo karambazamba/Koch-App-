@@ -21,3 +21,7 @@
   zeigen sie nur an.
 - In den Personen-Schritten des Assistenten (Allergien, Mittagessen) gibt es
   eine Person pro Ansicht mit Personen-Leiste oben.
+- "Standardwoche" (früher "Wochenregeln") ist die Vorlage im Profil. Der
+  Wochen-Check (`/woche/check`) übernimmt sie als Startwert und speichert
+  Vorgaben pro Woche (ab nächstem Montag) separat. Die Startseiten-Karte dazu
+  erscheint Freitag bis Montag.

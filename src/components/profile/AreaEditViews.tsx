@@ -3,6 +3,7 @@
 import { ProfileEditPage } from "@/components/profile/ProfileEditPage";
 import {
   FavoritesEditor,
+  STANDARD_WEEK_HINT,
   WarmMealEditor,
   WeekRulesEditor,
   tooManyDays,
@@ -34,16 +35,21 @@ export function WarmMealEditView() {
   );
 }
 
-export function WeekRulesEditView() {
+export function StandardWeekEditView() {
   return (
-    <ProfileEditPage title="Wochenregeln" canSave={(d) => !tooManyDays(d.weekRules)}>
+    <ProfileEditPage title="Standardwoche" canSave={(d) => !tooManyDays(d.weekRules)}>
       {(draft, setDraft) => (
-        <WeekRulesEditor
+        <>
+          <p className="rounded-2xl bg-sky-50 px-4 py-3 text-base text-sky-900">
+            {STANDARD_WEEK_HINT}
+          </p>
+          <WeekRulesEditor
           rules={draft.weekRules}
-          onChange={(changes) =>
-            setDraft((d) => ({ ...d, weekRules: { ...d.weekRules, ...changes } }))
-          }
-        />
+            onChange={(changes) =>
+              setDraft((d) => ({ ...d, weekRules: { ...d.weekRules, ...changes } }))
+            }
+          />
+        </>
       )}
     </ProfileEditPage>
   );
