@@ -25,3 +25,8 @@
   Wochen-Check (`/woche/check`) übernimmt sie als Startwert und speichert
   Vorgaben pro Woche (ab nächstem Montag) separat. Die Startseiten-Karte dazu
   erscheint Freitag bis Montag.
+- Wunschtag: in der Standardwoche einstellbar (Tag, Mahlzeit, Mindestalter).
+  Teilnahme ab Mindestalter, ohne Alter Schul-/Kitakinder ja, Kleinkinder nein.
+  Reihum in `wishDay.order`; wer dran ist, ergibt sich aus der letzten
+  gespeicherten Woche mit Wunsch. Der Wunschtag belegt einen Kochtag und zählt
+  nicht bei Fleisch/Veggie/Fisch.

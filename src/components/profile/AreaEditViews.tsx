@@ -6,8 +6,11 @@ import {
   STANDARD_WEEK_HINT,
   WarmMealEditor,
   WeekRulesEditor,
+  WishDayEditor,
   tooManyDays,
+  withWishDay,
 } from "@/components/profile/editors";
+import { standardWeekDays } from "@/lib/profile";
 
 export function FavoritesEditView() {
   return (
@@ -37,17 +40,26 @@ export function WarmMealEditView() {
 
 export function StandardWeekEditView() {
   return (
-    <ProfileEditPage title="Standardwoche" canSave={(d) => !tooManyDays(d.weekRules)}>
+    <ProfileEditPage
+      title="Standardwoche"
+      canSave={(d) => !tooManyDays(d.weekRules, standardWeekDays(d))}
+    >
       {(draft, setDraft) => (
         <>
           <p className="rounded-2xl bg-sky-50 px-4 py-3 text-base text-sky-900">
             {STANDARD_WEEK_HINT}
           </p>
           <WeekRulesEditor
-          rules={draft.weekRules}
+            rules={draft.weekRules}
             onChange={(changes) =>
               setDraft((d) => ({ ...d, weekRules: { ...d.weekRules, ...changes } }))
             }
+            available={standardWeekDays(draft)}
+            blockedWeekdays={draft.wishDay.enabled ? [draft.wishDay.weekday] : []}
+          />
+          <WishDayEditor
+            profile={draft}
+            onChange={(wishDay) => setDraft((d) => withWishDay(d, wishDay))}
           />
         </>
       )}

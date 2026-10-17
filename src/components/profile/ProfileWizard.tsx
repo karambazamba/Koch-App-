@@ -17,6 +17,8 @@ import {
   PersonPreferencesFields,
   STANDARD_WEEK_HINT,
   WarmMealEditor,
+  WishDayEditor,
+  withWishDay,
   WeekRulesEditor,
   tooManyDays,
 } from "@/components/profile/editors";
@@ -26,6 +28,7 @@ import {
   personLabel,
   personRoleLabel,
   saveProfile,
+  standardWeekDays,
   syncPersons,
   type HouseholdProfile,
   type Person,
@@ -222,6 +225,12 @@ function ProfileWizard() {
               onChange={(changes) =>
                 update({ weekRules: { ...profile.weekRules, ...changes } })
               }
+              available={standardWeekDays(profile)}
+              blockedWeekdays={profile.wishDay.enabled ? [profile.wishDay.weekday] : []}
+            />
+            <WishDayEditor
+              profile={profile}
+              onChange={(wishDay) => setProfile((p) => withWishDay(p, wishDay))}
             />
           </>
         )}
@@ -240,7 +249,7 @@ function ProfileWizard() {
         <button
           type="button"
           onClick={isLast ? finish : forward}
-          disabled={isLast && tooManyDays(profile.weekRules)}
+          disabled={isLast && tooManyDays(profile.weekRules, standardWeekDays(profile))}
           className={`${PRIMARY_BUTTON} min-w-0 truncate px-3`}
         >
           {isLast

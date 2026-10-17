@@ -6,16 +6,27 @@ import { useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { PRIMARY_BUTTON, SECONDARY_BUTTON, StickyActions } from "@/components/StickyActions";
 import { WeekRulesEditor, tooManyDays } from "@/components/profile/editors";
-import { WEEKDAYS, createEmptyProfile, type WeekRules } from "@/lib/profile";
+import {
+  WEEKDAYS,
+  WISH_MEAL_LABELS,
+  createEmptyProfile,
+  personLabel,
+  wishDayKids,
+  type HouseholdProfile,
+  type WeekRules,
+} from "@/lib/profile";
 import { useProfile } from "@/lib/useProfile";
 import {
   availableDays,
   createWeekPlan,
   formatWeekRange,
   nextMonday,
+  nextWishKid,
   saveWeekPlan,
   useToday,
-  useWeekPlan,
+  useWeekPlans,
+  wishIsActive,
+  wishKidForWeek,
   type WeekPlan,
 } from "@/lib/weekPlan";
 
@@ -29,22 +40,54 @@ export function WeekCheck() {
   const today = useToday();
   const weekStart = today ? nextMonday(today) : undefined;
   const profile = useProfile();
-  const saved = useWeekPlan(weekStart);
+  const weeks = useWeekPlans();
   // Jede neue Navigation startet mit dem gespeicherten Stand (Next.js hält
   // besuchte Seiten sonst mit altem Entwurf am Leben).
   const { bfcacheId } = useRouter();
 
-  if (!weekStart || profile === undefined || saved === undefined) return SKELETON;
+  if (!weekStart || profile === undefined || weeks === undefined) return SKELETON;
 
-  const rules = (profile ?? createEmptyProfile()).weekRules;
-  const initial = saved ?? createWeekPlan(weekStart, rules);
-  return <WeekCheckForm key={`${bfcacheId}|${weekStart}`} initial={initial} hasProfile={!!profile} />;
+  const saved = weeks[weekStart] ?? null;
+  const base = saved ?? createWeekPlan(weekStart, (profile ?? createEmptyProfile()).weekRules);
+  const initial = { ...base, wish: initialWish(base, profile, weeks) };
+  return <WeekCheckForm key={`${bfcacheId}|${weekStart}`} initial={initial} profile={profile} />;
 }
 
-function WeekCheckForm({ initial, hasProfile }: { initial: WeekPlan; hasProfile: boolean }) {
+/**
+ * Wunsch für das Formular: gespeicherter Wunsch, falls das Kind noch dabei ist,
+ * sonst das Kind, das reihum dran ist. Ohne Wunschtag im Profil: keiner.
+ */
+function initialWish(
+  plan: WeekPlan,
+  profile: HouseholdProfile | null,
+  weeks: Record<string, WeekPlan>,
+): WeekPlan["wish"] {
+  if (!profile?.wishDay.enabled) return null;
+  const { weekday, meal } = profile.wishDay;
+  const kids = wishDayKids(profile);
+  if (plan.wish && kids.some((k) => k.id === plan.wish!.kidId)) {
+    return { ...plan.wish, weekday, meal };
+  }
+  const kidId = wishKidForWeek(profile, weeks, plan.weekStart);
+  return kidId ? { kidId, text: "", weekday, meal } : null;
+}
+
+function WeekCheckForm({
+  initial,
+  profile,
+}: {
+  initial: WeekPlan;
+  profile: HouseholdProfile | null;
+}) {
   const router = useRouter();
   const [plan, setPlan] = useState(initial);
+  const hasProfile = Boolean(profile);
   const available = availableDays(plan);
+  const wishKid = plan.wish ? profile?.persons.find((p) => p.id === plan.wish!.kidId) : undefined;
+  const canSwapKid = profile ? wishDayKids(profile).length > 1 : false;
+  // Cheat Day nicht auf Ausflugs- oder Wunschtag
+  const blockedWeekdays =
+    plan.wish && wishIsActive(plan) ? [...plan.awayDays, plan.wish.weekday] : plan.awayDays;
   const invalid = tooManyDays(plan, available);
 
   const update = (changes: Partial<WeekPlan>) => setPlan((p) => ({ ...p, ...changes }));
@@ -54,8 +97,9 @@ function WeekCheckForm({ initial, hasProfile }: { initial: WeekPlan; hasProfile:
       const away = p.awayDays.includes(day)
         ? p.awayDays.filter((d) => d !== day)
         : WEEKDAYS.filter((d) => d === day || p.awayDays.includes(d));
-      // Cheat Day an einem Ausflugstag ergibt keinen Sinn → auf "egal" zurück.
-      const cheatDayWeekday = away.includes(p.cheatDayWeekday) ? "" : p.cheatDayWeekday;
+      // Cheat Day an einem Ausflugs- oder Wunschtag ergibt keinen Sinn → auf "egal" zurück.
+      const blocked = p.wish ? [...away, p.wish.weekday] : away;
+      const cheatDayWeekday = blocked.includes(p.cheatDayWeekday) ? "" : p.cheatDayWeekday;
       return { ...p, awayDays: away, cheatDayWeekday };
     });
 
@@ -109,11 +153,68 @@ function WeekCheckForm({ initial, hasProfile }: { initial: WeekPlan; hasProfile:
           </div>
         </fieldset>
 
+        {plan.wish && wishKid && profile && (
+          <section className="flex flex-col gap-3 rounded-3xl border-2 border-amber-300 bg-amber-50 p-4 shadow-sm">
+            <div>
+              <h3 className="text-xl font-extrabold text-amber-900">
+                Diese Woche wünscht sich {personLabel(wishKid, profile.persons)} was 🎉
+              </h3>
+              <p className="text-sm text-amber-900">
+                <span className="whitespace-nowrap">
+                  {plan.wish.weekday} {WISH_MEAL_LABELS[plan.wish.meal]}
+                </span>
+                {" · "}zählt nicht bei Fleisch/Veggie/Fisch
+              </p>
+            </div>
+            {!wishIsActive(plan) && (
+              <p className="rounded-2xl bg-white px-3 py-2 text-sm font-semibold text-rose-700">
+                Am {plan.wish.weekday} seid ihr unterwegs – der Wunsch wird diese Woche
+                nicht eingeplant.
+              </p>
+            )}
+            <label className="flex flex-col gap-1">
+              <span className="font-bold text-amber-900">
+                Was wünschst du dir, {personLabel(wishKid, profile.persons)}?
+              </span>
+              <input
+                type="text"
+                value={plan.wish.text}
+                onChange={(e) => {
+                  const text = e.target.value;
+                  setPlan((p) => (p.wish ? { ...p, wish: { ...p.wish, text } } : p));
+                }}
+                placeholder="z. B. Pfannkuchen mit Apfelmus"
+                enterKeyHint="done"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.currentTarget.blur();
+                }}
+                className="h-14 rounded-2xl border-2 border-amber-300 bg-white px-4 text-lg outline-none focus:border-amber-500"
+              />
+            </label>
+            {canSwapKid && (
+              <button
+                type="button"
+                onClick={() =>
+                  setPlan((p) => {
+                    if (!p.wish || !profile) return p;
+                    const kidId = nextWishKid(profile, p.wish.kidId);
+                    // Der Text gehörte zum vorigen Kind → leeren.
+                    return kidId ? { ...p, wish: { ...p.wish, kidId, text: "" } } : p;
+                  })
+                }
+                className="h-12 self-start rounded-2xl bg-white px-4 font-bold text-amber-900 shadow-sm active:scale-95"
+              >
+                🔄 Anderes Kind
+              </button>
+            )}
+          </section>
+        )}
+
         <WeekRulesEditor
           rules={plan}
           onChange={(changes: Partial<WeekRules>) => update(changes)}
           available={available}
-          blockedWeekdays={plan.awayDays}
+          blockedWeekdays={blockedWeekdays}
           intro="Wie oft soll es diese Woche was geben?"
         />
 

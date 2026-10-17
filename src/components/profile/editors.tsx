@@ -11,7 +11,10 @@ import {
   KID_AGE_GROUP_LABELS,
   LIMITS,
   WEEKDAYS,
+  isWishDayEligible,
+  personLabel,
   weekdayLunchHeadcount,
+  wishDayOrder,
   type HouseholdProfile,
   type KidAgeGroup,
   type Person,
@@ -19,6 +22,8 @@ import {
   type WarmMealSchedule,
   type WeekdayLunch,
   type WeekRules,
+  type WishDaySettings,
+  type WishMeal,
 } from "@/lib/profile";
 
 export const FAVORITE_SUGGESTIONS = [
@@ -350,7 +355,7 @@ export function WeekRulesEditor({
                   key={day || "egal"}
                   type="button"
                   aria-pressed={selected}
-                  aria-label={day ? (blocked ? `${day} (unterwegs)` : day) : "Egal"}
+                  aria-label={day ? (blocked ? `${day} (nicht wählbar)` : day) : "Egal"}
                   disabled={blocked}
                   onClick={() => onChange({ cheatDayWeekday: day })}
                   className={`h-14 rounded-2xl border-2 text-base font-bold active:scale-95 disabled:opacity-30 ${
@@ -367,5 +372,118 @@ export function WeekRulesEditor({
         </fieldset>
       )}
     </>
+  );
+}
+
+/**
+ * Wunschtag ein-/ausschalten und einstellen. Wunschtag und Cheat Day dürfen
+ * nicht auf denselben Tag fallen – ein kollidierender Cheat Day wird auf
+ * "egal" gesetzt.
+ */
+export function withWishDay(profile: HouseholdProfile, wishDay: WishDaySettings): HouseholdProfile {
+  const clash = wishDay.enabled && profile.weekRules.cheatDayWeekday === wishDay.weekday;
+  return {
+    ...profile,
+    wishDay,
+    weekRules: clash ? { ...profile.weekRules, cheatDayWeekday: "" } : profile.weekRules,
+  };
+}
+
+export function WishDayEditor({
+  profile,
+  onChange,
+}: {
+  profile: HouseholdProfile;
+  onChange: (wishDay: WishDaySettings) => void;
+}) {
+  const { wishDay } = profile;
+  const kids = wishDayOrder(profile);
+  const joining = kids.filter((k) => isWishDayEligible(k, wishDay.minAge));
+  const tooYoung = kids.filter((k) => !isWishDayEligible(k, wishDay.minAge));
+  const set = (changes: Partial<WishDaySettings>) => onChange({ ...wishDay, ...changes });
+  const names = (list: typeof kids) => list.map((k) => personLabel(k, profile.persons)).join(", ");
+
+  return (
+    <section className="flex flex-col gap-5 rounded-3xl bg-white p-4 shadow-sm">
+      <ChoiceGroup<"ja" | "nein">
+        label="🎉 Wunschtag für Kinder"
+        hint="Die Kinder kommen reihum dran – eins pro Woche darf sich ein Gericht wünschen."
+        value={wishDay.enabled ? "ja" : "nein"}
+        onChange={(v) => set({ enabled: v === "ja" })}
+        columns={2}
+        options={[
+          { value: "ja", label: "Ja" },
+          { value: "nein", label: "Nein" },
+        ]}
+        variant="plain"
+      />
+      {wishDay.enabled && (
+        <>
+          <fieldset>
+            <legend className="sr-only">Wunschtag: Wochentag</legend>
+            <p className="mb-3 text-lg font-bold" aria-hidden>
+              An welchem Tag?
+            </p>
+            <div className="grid grid-cols-4 gap-2">
+              {WEEKDAYS.map((day) => {
+                const selected = wishDay.weekday === day;
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    aria-pressed={selected}
+                    aria-label={`Wunschtag ${day}`}
+                    onClick={() => set({ weekday: day })}
+                    className={`h-14 rounded-2xl border-2 text-base font-bold active:scale-95 ${
+                      selected
+                        ? "border-orange-500 bg-orange-50 text-orange-700"
+                        : "border-stone-200 text-stone-700"
+                    }`}
+                  >
+                    {day.slice(0, 2)}
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+          <ChoiceGroup<WishMeal>
+            label="Zu welcher Mahlzeit?"
+            value={wishDay.meal}
+            onChange={(meal) => set({ meal })}
+            columns={2}
+            options={[
+              { value: "mittags", label: "Mittag", emoji: "☀️" },
+              { value: "abends", label: "Abend", emoji: "🌙" },
+            ]}
+            variant="plain"
+          />
+          <NumberStepper
+            label="Mindestalter"
+            hint="Jahre"
+            value={wishDay.minAge}
+            min={LIMITS.wishMinAge.min}
+            max={LIMITS.wishMinAge.max}
+            onChange={(minAge) => set({ minAge })}
+          />
+          <p className="rounded-2xl bg-orange-50 px-4 py-3 text-base text-orange-900" role="note">
+            {joining.length > 0 ? (
+              <>
+                <span className="font-semibold">Reihum dabei:</span> {names(joining)}
+              </>
+            ) : (
+              "Noch kein Kind alt genug – ohne Alter zählen Kita- und Schulkinder."
+            )}
+            {tooYoung.length > 0 && (
+              <span className="block text-sm text-orange-800">
+                Noch zu jung: {names(tooYoung)}
+              </span>
+            )}
+            <span className="block text-sm text-orange-800">
+              Der Wunsch zählt nicht bei Fleisch/Veggie/Fisch.
+            </span>
+          </p>
+        </>
+      )}
+    </section>
   );
 }

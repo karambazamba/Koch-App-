@@ -4,7 +4,23 @@
 
 import { useSyncExternalStore } from "react";
 import { createLocalStore } from "./localStore";
-import { WEEKDAYS, type WeekRules } from "./profile";
+import {
+  WEEKDAYS,
+  wishDayKids,
+  wishDayOrder,
+  type HouseholdProfile,
+  type WeekRules,
+  type WishMeal,
+} from "./profile";
+
+/** Wunsch eines Kindes – feste Vorgabe für einen Tag, zählt nicht bei Fleisch/Veggie/Fisch */
+export type WeekWish = {
+  kidId: string;
+  /** Was sich das Kind wünscht; darf leer bleiben (wird später nachgetragen) */
+  text: string;
+  weekday: string;
+  meal: WishMeal;
+};
 
 export type WeekPlan = WeekRules & {
   /** Montag der Woche als "YYYY-MM-DD" */
@@ -15,11 +31,13 @@ export type WeekPlan = WeekRules & {
   budgetEuro: number | null;
   /** Freitext "Besondere Wünsche" */
   wishes: string;
+  /** Wunschtag dieser Woche, null = kein Wunschtag */
+  wish: WeekWish | null;
   updatedAt: string;
 };
 
 type WeekPlanStore = {
-  version: 1;
+  version: 2;
   /** Vorgaben je Woche, Schlüssel = weekStart */
   weeks: Record<string, WeekPlan>;
 };
@@ -91,19 +109,58 @@ export function createWeekPlan(weekStart: string, rules: WeekRules): WeekPlan {
     awayDays: [],
     budgetEuro: null,
     wishes: "",
+    wish: null,
     updatedAt: "",
   };
 }
 
-/** Tage, an denen zu Hause gekocht wird */
-export function availableDays(plan: Pick<WeekPlan, "awayDays">): number {
-  return 7 - plan.awayDays.length;
+/** Ist der Wunschtag in dieser Woche wirksam (nicht auf einem Ausflugstag)? */
+export function wishIsActive(plan: Pick<WeekPlan, "awayDays" | "wish">): boolean {
+  return Boolean(plan.wish && !plan.awayDays.includes(plan.wish.weekday));
+}
+
+/** Tage für Fleisch/Veggie/Fisch: 7 minus Ausflugstage minus Wunschtag */
+export function availableDays(plan: Pick<WeekPlan, "awayDays" | "wish">): number {
+  return 7 - plan.awayDays.length - (wishIsActive(plan) ? 1 : 0);
+}
+
+/**
+ * Welches Kind ist in dieser Woche mit dem Wunsch dran? Reihum in der
+ * gespeicherten Reihenfolge – nach dem Kind, das zuletzt (vor dieser Woche)
+ * gewünscht hat. Wer zu jung ist, wird übersprungen.
+ */
+export function wishKidForWeek(
+  profile: HouseholdProfile,
+  weeks: Record<string, WeekPlan>,
+  weekStart: string,
+): string | null {
+  const lastKidId = Object.keys(weeks)
+    .filter((key) => key < weekStart && weeks[key].wish)
+    .sort()
+    .map((key) => weeks[key].wish!.kidId)
+    .pop();
+  return nextWishKid(profile, lastKidId ?? null);
+}
+
+/** Nächstes teilnehmende Kind nach `currentId` (ringsum); ohne `currentId` das erste. */
+export function nextWishKid(profile: HouseholdProfile, currentId: string | null): string | null {
+  const eligible = wishDayKids(profile);
+  if (eligible.length === 0) return null;
+  const order = wishDayOrder(profile);
+  const start = currentId ? order.findIndex((k) => k.id === currentId) : -1;
+  for (let step = 1; step <= order.length; step++) {
+    const kid = order[(start + step + order.length) % order.length];
+    if (eligible.includes(kid)) return kid.id;
+  }
+  return eligible[0].id;
 }
 
 function migrateStore(raw: unknown): WeekPlanStore | null {
   if (!raw || typeof raw !== "object") return null;
-  const data = raw as Partial<WeekPlanStore>;
-  if (data.version !== 1 || !data.weeks || typeof data.weeks !== "object") return null;
+  const data = raw as { version?: number; weeks?: Record<string, unknown> };
+  // v1 kannte noch keinen Wunschtag → wish = null.
+  if ((data.version !== 1 && data.version !== 2) || !data.weeks || typeof data.weeks !== "object")
+    return null;
   const weeks: Record<string, WeekPlan> = {};
   for (const [key, week] of Object.entries(data.weeks)) {
     if (!week || typeof week !== "object") continue;
@@ -121,16 +178,29 @@ function migrateStore(raw: unknown): WeekPlanStore | null {
         : [],
       budgetEuro: typeof w.budgetEuro === "number" ? w.budgetEuro : null,
       wishes: typeof w.wishes === "string" ? w.wishes : "",
+      wish: migrateWish(w.wish),
       updatedAt: typeof w.updatedAt === "string" ? w.updatedAt : "",
     };
   }
-  return { version: 1, weeks };
+  return { version: 2, weeks };
+}
+
+function migrateWish(raw: unknown): WeekWish | null {
+  if (!raw || typeof raw !== "object") return null;
+  const w = raw as Partial<WeekWish>;
+  if (typeof w.kidId !== "string") return null;
+  return {
+    kidId: w.kidId,
+    text: typeof w.text === "string" ? w.text : "",
+    weekday: typeof w.weekday === "string" && WEEKDAYS.includes(w.weekday) ? w.weekday : "Freitag",
+    meal: w.meal === "mittags" ? "mittags" : "abends",
+  };
 }
 
 const store = createLocalStore(STORAGE_KEY, migrateStore);
 
 export function saveWeekPlan(plan: WeekPlan): void {
-  const current = store.load() ?? { version: 1 as const, weeks: {} };
+  const current = store.load() ?? { version: 2 as const, weeks: {} };
   store.save({
     ...current,
     weeks: {
@@ -139,6 +209,15 @@ export function saveWeekPlan(plan: WeekPlan): void {
     },
   });
 }
+
+/** Alle gespeicherten Wochen (`undefined` = noch nicht geladen) */
+export function useWeekPlans(): Record<string, WeekPlan> | undefined {
+  const data = useSyncExternalStore(store.subscribe, store.load, () => undefined);
+  if (data === undefined) return undefined;
+  return data?.weeks ?? EMPTY_WEEKS;
+}
+
+const EMPTY_WEEKS: Record<string, WeekPlan> = {};
 
 /**
  * Gespeicherte Vorgaben für eine Woche:
