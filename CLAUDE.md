@@ -14,8 +14,10 @@
 
 ## Produktentscheidungen
 
-- Der 5-Schritte-Assistent wird nur beim ersten Anlegen verwendet. Danach
+- Der Assistent (6 Schritte) wird nur beim ersten Anlegen verwendet. Danach
   zeigt `/profil` die Übersicht "Unsere Familie"; Personen und Bereiche werden
   dort einzeln bearbeitet (eigene Seiten unter `/profil/...`).
 - Im Assistenten werden Namen nur in Schritt 1 eingegeben; spätere Schritte
   zeigen sie nur an.
+- In den Personen-Schritten des Assistenten (Allergien, Mittagessen) gibt es
+  eine Person pro Ansicht mit Personen-Leiste oben.

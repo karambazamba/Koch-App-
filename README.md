@@ -52,7 +52,7 @@ dauerhafte HTTPS-Adresse.
 | Pfad | Inhalt |
 | --- | --- |
 | `src/app/page.tsx` | Startseite mit den drei Bereichen |
-| `src/app/profil/` | Onboarding „Haushaltsprofil“ (5 Schritte) |
+| `src/app/profil/` | Haushaltsprofil: Assistent beim ersten Anlegen, danach Übersicht „Unsere Familie“ mit Einzel-Bearbeitung |
 | `src/app/wochenplan`, `schnellkueche`, `einkaufsliste` | Platzhalter |
 | `src/app/manifest.ts` | Web-App-Manifest |
 | `public/sw.js` | Service Worker (Offline-Cache) |
