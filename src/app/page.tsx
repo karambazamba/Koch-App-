@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { HouseholdCard } from "@/components/HouseholdCard";
+import { APP_NAME } from "@/lib/app";
 
 const AREAS = [
   {
@@ -29,7 +30,7 @@ export default function Home() {
   return (
     <main className="safe-bottom mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-4 pt-[max(1.5rem,env(safe-area-inset-top))]">
       <header>
-        <p className="text-lg font-semibold text-orange-600">Familienküche</p>
+        <p className="text-lg font-semibold text-orange-600">{APP_NAME}</p>
         <h1 className="text-3xl font-extrabold leading-tight">
           Was kochen wir heute?
         </h1>

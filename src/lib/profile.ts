@@ -113,6 +113,7 @@ export const LIMITS = {
   kidAge: { min: 0, max: 17 },
 };
 
+// Interner Schlüssel (alter Arbeitsname) – nicht ändern, sonst sind gespeicherte Profile weg.
 const STORAGE_KEY = "familienkueche.haushaltsprofil";
 
 function newId(): string {

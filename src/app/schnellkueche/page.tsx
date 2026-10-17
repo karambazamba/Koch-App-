@@ -1,6 +1,6 @@
 import { ComingSoon } from "@/components/ComingSoon";
 
-export const metadata = { title: "Schnellküche · Familienküche" };
+export const metadata = { title: "Schnellküche" };
 
 export default function SchnellkuechePage() {
   return (

@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
+import { APP_NAME, APP_SHORT_NAME } from "@/lib/app";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Familienküche – Kochen für die ganze Familie",
-    short_name: "Familienküche",
+    name: `${APP_NAME} – Kochen für die ganze Familie`,
+    short_name: APP_SHORT_NAME,
     description:
       "Wochenplan, Schnellküche und Einkaufsliste – passend zu deinem Haushalt.",
     lang: "de",

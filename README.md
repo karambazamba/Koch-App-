@@ -1,4 +1,4 @@
-# Familienküche 🍲
+# Was gibt's? 🍲
 
 Koch-App für Familien als PWA (installierbar auf dem Homescreen) – Next.js + Tailwind CSS.
 
