@@ -1,0 +1,68 @@
+// Gemeinsamer Baustein für lokal gespeicherte Daten (localStorage).
+// Liefert load/save/clear/subscribe in der Form, die useSyncExternalStore
+// erwartet. Beim Laden wird `migrate` aufgerufen, damit ältere gespeicherte
+// Versionen weiter funktionieren. Später durch Supabase ersetzbar.
+
+export type LocalStore<T> = {
+  load: () => T | null;
+  save: (value: T) => void;
+  clear: () => void;
+  subscribe: (listener: () => void) => () => void;
+};
+
+export function createLocalStore<T>(
+  key: string,
+  migrate: (raw: unknown) => T | null,
+): LocalStore<T> {
+  const listeners = new Set<() => void>();
+  let cachedRaw: string | null | undefined;
+  let cachedValue: T | null = null;
+
+  const notify = () => listeners.forEach((listener) => listener());
+
+  const readStorage = (): string | null => {
+    try {
+      return window.localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  };
+
+  return {
+    load() {
+      const raw = readStorage();
+      // Gleiches Objekt zurückgeben, solange sich nichts geändert hat
+      // (wichtig für useSyncExternalStore).
+      if (raw === cachedRaw) return cachedValue;
+      cachedRaw = raw;
+      cachedValue = null;
+      if (raw) {
+        try {
+          cachedValue = migrate(JSON.parse(raw));
+        } catch {
+          // Defekte Daten ignorieren – es wird dann neu angelegt.
+        }
+      }
+      return cachedValue;
+    },
+    save(value) {
+      window.localStorage.setItem(key, JSON.stringify(value));
+      notify();
+    },
+    clear() {
+      window.localStorage.removeItem(key);
+      notify();
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      const onStorage = (event: StorageEvent) => {
+        if (event.key === key) listener();
+      };
+      window.addEventListener("storage", onStorage);
+      return () => {
+        listeners.delete(listener);
+        window.removeEventListener("storage", onStorage);
+      };
+    },
+  };
+}

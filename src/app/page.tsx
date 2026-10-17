@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { HouseholdCard } from "@/components/HouseholdCard";
+import { NextWeekCard } from "@/components/week/NextWeekCard";
 import { APP_NAME } from "@/lib/app";
 
 const AREAS = [
   {
-    href: "/wochenplan",
+    // Vorerst direkt zum Wochen-Check, bis der Wochenplan gebaut ist.
+    href: "/woche/check",
     title: "Wochenplan",
     text: "Die ganze Woche entspannt planen",
     emoji: "📅",
@@ -35,6 +37,8 @@ export default function Home() {
           Was kochen wir heute?
         </h1>
       </header>
+
+      <NextWeekCard />
 
       <HouseholdCard />
 

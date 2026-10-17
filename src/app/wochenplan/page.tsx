@@ -7,7 +7,7 @@ export default function WochenplanPage() {
     <ComingSoon
       title="Wochenplan"
       emoji="📅"
-      text="Hier planst du bald die Mahlzeiten der ganzen Woche – passend zu euren Wochenregeln."
+      text="Hier planst du bald die Mahlzeiten der ganzen Woche – passend zu eurer Standardwoche."
     />
   );
 }

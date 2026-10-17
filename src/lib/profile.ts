@@ -3,6 +3,8 @@
 // laufen über loadProfile/saveProfile/clearProfile, damit später nur diese
 // Datei auf Supabase umgestellt werden muss.
 
+import { createLocalStore } from "./localStore";
+
 export type PersonRole = "erwachsen" | "kind";
 
 export type KidAgeGroup = "kleinkind" | "kitakind" | "schulkind";
@@ -319,34 +321,11 @@ export function migrateProfile(raw: unknown): HouseholdProfile | null {
 
 // --- Speicherung -----------------------------------------------------------
 
-const listeners = new Set<() => void>();
-let cachedRaw: string | null | undefined;
-let cachedProfile: HouseholdProfile | null = null;
+const store = createLocalStore(STORAGE_KEY, migrateProfile);
 
-function readStorage(): string | null {
-  try {
-    return window.localStorage.getItem(STORAGE_KEY);
-  } catch {
-    return null;
-  }
-}
-
-export function loadProfile(): HouseholdProfile | null {
-  const raw = readStorage();
-  // Gleiches Objekt zurückgeben, solange sich nichts geändert hat
-  // (wichtig für useSyncExternalStore).
-  if (raw === cachedRaw) return cachedProfile;
-  cachedRaw = raw;
-  cachedProfile = null;
-  if (raw) {
-    try {
-      cachedProfile = migrateProfile(JSON.parse(raw));
-    } catch {
-      // Defekte Daten ignorieren – das Onboarding startet dann neu.
-    }
-  }
-  return cachedProfile;
-}
+export const loadProfile = store.load;
+export const clearProfile = store.clear;
+export const subscribeProfile = store.subscribe;
 
 export function saveProfile(profile: HouseholdProfile): HouseholdProfile {
   const toSave: HouseholdProfile = {
@@ -354,24 +333,6 @@ export function saveProfile(profile: HouseholdProfile): HouseholdProfile {
     persons: syncPersons(profile.persons, profile.adults, profile.kids),
     updatedAt: new Date().toISOString(),
   };
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
-  listeners.forEach((listener) => listener());
+  store.save(toSave);
   return toSave;
-}
-
-export function clearProfile(): void {
-  window.localStorage.removeItem(STORAGE_KEY);
-  listeners.forEach((listener) => listener());
-}
-
-export function subscribeProfile(listener: () => void): () => void {
-  listeners.add(listener);
-  const onStorage = (event: StorageEvent) => {
-    if (event.key === STORAGE_KEY) listener();
-  };
-  window.addEventListener("storage", onStorage);
-  return () => {
-    listeners.delete(listener);
-    window.removeEventListener("storage", onStorage);
-  };
 }

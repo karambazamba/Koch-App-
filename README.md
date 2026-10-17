@@ -57,4 +57,7 @@ dauerhafte HTTPS-Adresse.
 | `src/app/manifest.ts` | Web-App-Manifest |
 | `public/sw.js` | Service Worker (Offline-Cache) |
 | `public/icons/` | App-Icons (Platzhalter, Quelle: `icon.svg`) |
-| `src/lib/profile.ts` | Datenmodell + Speicherung – später hier auf Supabase umstellen |
+| `src/app/woche/check/` | Wochen-Check: Vorgaben für die Woche ab nächstem Montag |
+| `src/lib/profile.ts` | Datenmodell Haushaltsprofil |
+| `src/lib/weekPlan.ts` | Datenmodell Wochen-Vorgaben (pro Woche, Schlüssel = Montag) |
+| `src/lib/localStore.ts` | Lokale Speicherung (localStorage) – später hier auf Supabase umstellen |

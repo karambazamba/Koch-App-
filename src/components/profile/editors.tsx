@@ -252,23 +252,42 @@ export function LunchHeadcountNote({ profile }: { profile: HouseholdProfile }) {
   );
 }
 
-export function tooManyDays(rules: WeekRules): boolean {
-  return rules.meatDays + rules.vegetarianDays + rules.fishDays > 7;
+export const STANDARD_WEEK_HINT =
+  "Vorlage für jede neue Woche – im Wochen-Check pro Woche anpassbar.";
+
+/** Mehr Tage verplant als zum Kochen da sind? */
+export function tooManyDays(rules: WeekRules, available = 7): boolean {
+  return rules.meatDays + rules.vegetarianDays + rules.fishDays > available;
 }
 
+/**
+ * Fleisch/vegetarisch/Fisch pro Woche und Cheat Day. Für die Standardwoche
+ * (7 Tage) und den Wochen-Check (7 Tage minus Ausflugstage).
+ */
 export function WeekRulesEditor({
   rules,
   onChange,
+  available = 7,
+  blockedWeekdays = [],
+  intro = "Wie oft pro Woche soll es was geben?",
 }: {
   rules: WeekRules;
   onChange: (changes: Partial<WeekRules>) => void;
+  /** Tage, an denen gekocht wird */
+  available?: number;
+  /** Wochentage, die nicht Cheat Day sein können (z. B. Ausflug) */
+  blockedWeekdays?: string[];
+  intro?: string;
 }) {
   const planned = rules.meatDays + rules.vegetarianDays + rules.fishDays;
-  const { min, max } = LIMITS.daysPerWeek;
+  const { min } = LIMITS.daysPerWeek;
+  const max = Math.max(min, available);
+  const free = available - planned;
+  const daysWord = (n: number) => (n === 1 ? "Tag" : "Tage");
 
   return (
     <>
-      <p className="text-stone-600">Wie oft pro Woche soll es was geben?</p>
+      {intro && <p className="text-stone-600">{intro}</p>}
       <NumberStepper
         label="🥩 Fleisch"
         hint="Tage pro Woche"
@@ -295,13 +314,15 @@ export function WeekRulesEditor({
       />
       <p
         className={`rounded-2xl px-4 py-3 text-base font-semibold ${
-          planned > 7 ? "bg-rose-100 text-rose-800" : "bg-emerald-100 text-emerald-800"
+          planned > available ? "bg-rose-100 text-rose-800" : "bg-emerald-100 text-emerald-800"
         }`}
         role="status"
       >
-        {planned > 7
-          ? `Zusammen ${planned} Tage – eine Woche hat nur 7. Bitte etwas reduzieren.`
-          : `${planned} von 7 Tagen verplant${planned < 7 ? ` – ${7 - planned} ${7 - planned === 1 ? "Tag bleibt" : "Tage bleiben"} frei.` : "."}`}
+        {planned > available
+          ? available === 7
+            ? `Zusammen ${planned} Tage – eine Woche hat nur 7. Bitte etwas reduzieren.`
+            : `Zusammen ${planned} Tage – es sind nur ${available} Kochtage frei. Bitte etwas reduzieren.`
+          : `${planned} von ${available} ${available === 7 ? "Tagen" : "Kochtagen"} verplant${free > 0 ? ` – ${free} ${daysWord(free)} ${free === 1 ? "bleibt" : "bleiben"} frei.` : "."}`}
       </p>
 
       <ChoiceGroup<"ja" | "nein">
@@ -323,13 +344,16 @@ export function WeekRulesEditor({
           <div className="grid grid-cols-4 gap-2">
             {["", ...WEEKDAYS].map((day) => {
               const selected = rules.cheatDayWeekday === day;
+              const blocked = blockedWeekdays.includes(day);
               return (
                 <button
                   key={day || "egal"}
                   type="button"
                   aria-pressed={selected}
+                  aria-label={day ? (blocked ? `${day} (unterwegs)` : day) : "Egal"}
+                  disabled={blocked}
                   onClick={() => onChange({ cheatDayWeekday: day })}
-                  className={`h-14 rounded-2xl border-2 text-base font-bold active:scale-95 ${
+                  className={`h-14 rounded-2xl border-2 text-base font-bold active:scale-95 disabled:opacity-30 ${
                     selected
                       ? "border-orange-500 bg-orange-50 text-orange-700"
                       : "border-stone-200 text-stone-700"
