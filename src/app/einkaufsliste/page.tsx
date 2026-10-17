@@ -1,6 +1,6 @@
 import { ComingSoon } from "@/components/ComingSoon";
 
-export const metadata = { title: "Einkaufsliste · Familienküche" };
+export const metadata = { title: "Einkaufsliste" };
 
 export default function EinkaufslistePage() {
   return (

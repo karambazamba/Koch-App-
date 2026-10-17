@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { PersonEditView } from "@/components/profile/PersonEditView";
 
-export const metadata = { title: "Person bearbeiten · Familienküche" };
+export const metadata = { title: "Person bearbeiten" };
 
 export default function PersonPage() {
   return (

@@ -1,6 +1,6 @@
 import { ComingSoon } from "@/components/ComingSoon";
 
-export const metadata = { title: "Wochenplan · Familienküche" };
+export const metadata = { title: "Wochenplan" };
 
 export default function WochenplanPage() {
   return (

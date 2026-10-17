@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Nunito } from "next/font/google";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
+import { APP_NAME, APP_SHORT_NAME } from "@/lib/app";
 import "./globals.css";
 
 const nunito = Nunito({
@@ -9,13 +10,17 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "Familienküche",
+  title: {
+    default: APP_NAME,
+    // Unterseiten setzen nur ihren eigenen Namen, z. B. "Wochenplan · Was gibt's?"
+    template: `%s · ${APP_NAME}`,
+  },
   description:
     "Wochenplan, Schnellküche und Einkaufsliste – passend zu deinem Haushalt.",
-  applicationName: "Familienküche",
+  applicationName: APP_NAME,
   appleWebApp: {
     capable: true,
-    title: "Familienküche",
+    title: APP_SHORT_NAME,
     statusBarStyle: "default",
   },
   icons: {
