@@ -1,15 +1,19 @@
 "use client";
 
+import { focusNextInChain } from "@/lib/useMobileKeyboard";
+
 type Props = {
   /** Wer gemeint ist, z. B. "Erwachsene:r 1" */
   who: string;
   emoji: string;
   value: string;
   onChange: (value: string) => void;
+  /** Letztes Feld der Eingabekette → Enter schließt die Tastatur */
+  isLast?: boolean;
 };
 
 /** Deutlich erkennbares Namensfeld mit Label und Stift-Symbol. */
-export function NameField({ who, emoji, value, onChange }: Props) {
+export function NameField({ who, emoji, value, onChange, isLast = false }: Props) {
   return (
     <label className="flex flex-col gap-2">
       <span className="flex items-center gap-2 text-base font-bold text-stone-700">
@@ -36,7 +40,14 @@ export function NameField({ who, emoji, value, onChange }: Props) {
           onChange={(e) => onChange(e.target.value)}
           placeholder="Name eingeben (optional)"
           autoComplete="off"
-          enterKeyHint="next"
+          enterKeyHint={isLast ? "done" : "next"}
+          data-enter-chain
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              focusNextInChain(e.currentTarget);
+            }
+          }}
           className="h-14 w-full rounded-2xl border-2 border-orange-200 bg-orange-50/60 pl-13 pr-4 text-lg font-semibold outline-none placeholder:font-normal placeholder:text-stone-400 focus:border-orange-500 focus:bg-white"
         />
       </span>

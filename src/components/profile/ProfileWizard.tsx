@@ -27,6 +27,7 @@ import {
   type WeekdayLunch,
   type WeekRules,
 } from "@/lib/profile";
+import { focusNextInChain, useMobileKeyboard } from "@/lib/useMobileKeyboard";
 import { useProfile } from "@/lib/useProfile";
 
 const STEPS = [
@@ -71,6 +72,7 @@ function ProfileWizard({
   const router = useRouter();
   const [profile, setProfile] = useState(initial);
   const [step, setStep] = useState(0);
+  const keyboardOpen = useMobileKeyboard();
 
   const update = (changes: Partial<HouseholdProfile>) =>
     setProfile((p) => ({ ...p, ...changes }));
@@ -181,7 +183,13 @@ function ProfileWizard({
         )}
       </main>
 
-      <nav className="safe-bottom sticky bottom-0 flex gap-3 bg-background/95 px-4 pt-3 backdrop-blur">
+      {/* Bei offener Tastatur ausblenden – sonst schiebt iOS die Leiste über das
+          Formular. "invisible" statt "hidden", damit sich die Seitenhöhe nicht
+          ändert und nichts springt. */}
+      <nav
+        aria-hidden={keyboardOpen}
+        className={`safe-bottom sticky bottom-0 flex gap-3 bg-background/95 px-4 pt-3 backdrop-blur ${keyboardOpen ? "pointer-events-none invisible" : ""}`}
+      >
         {step > 0 ? (
           <button
             type="button"
@@ -231,6 +239,14 @@ function StepHousehold({
           value={profile.householdName}
           onChange={(e) => update({ householdName: e.target.value })}
           placeholder="z. B. Familie Müller"
+          enterKeyHint="next"
+          data-enter-chain
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              focusNextInChain(e.currentTarget);
+            }
+          }}
           className="h-14 rounded-2xl border-2 border-stone-200 px-4 text-lg outline-none focus:border-orange-400"
         />
       </label>
@@ -256,9 +272,10 @@ function StepHousehold({
             Freiwillig – hilft aber in den nächsten Schritten.
           </p>
         </div>
-        {profile.persons.map((person) => (
+        {profile.persons.map((person, index) => (
           <NameField
             key={person.id}
+            isLast={index === profile.persons.length - 1}
             who={personRoleLabel(person, profile.persons)}
             emoji={person.role === "erwachsen" ? "🧑" : "🧒"}
             value={person.name}
@@ -461,6 +478,10 @@ function KidLunchCard({
           value={kid.age ?? ""}
           onChange={(e) => setAge(e.target.value)}
           placeholder="Alter"
+          enterKeyHint="done"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+          }}
           aria-label="Alter in Jahren (optional)"
           className="h-14 w-24 shrink-0 rounded-2xl border-2 border-stone-200 px-3 text-center text-lg font-bold outline-none focus:border-orange-400"
         />

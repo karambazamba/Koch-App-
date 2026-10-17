@@ -7,7 +7,9 @@ type Props = {
 
 export function PageHeader({ title, backHref = "/" }: Props) {
   return (
-    <header className="sticky top-0 z-10 flex items-center gap-3 bg-background/90 px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur">
+    <header
+      data-sticky-header
+      className="sticky top-0 z-10 flex items-center gap-3 bg-background/90 px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur">
       <Link
         href={backHref}
         aria-label="Zurück"

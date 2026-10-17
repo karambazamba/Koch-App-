@@ -102,6 +102,8 @@ export function TagInput({
             if (e.key === "Enter") {
               e.preventDefault();
               addDraft();
+              // Eintrag übernommen → Tastatur schließen
+              e.currentTarget.blur();
             }
           }}
           enterKeyHint="done"
