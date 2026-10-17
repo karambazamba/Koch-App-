@@ -9,6 +9,7 @@ import { NumberStepper } from "@/components/form/NumberStepper";
 import { NameField } from "@/components/form/NameField";
 import { FamilyOverview } from "@/components/profile/FamilyOverview";
 import { PersonHeading } from "@/components/profile/PersonHeading";
+import { PersonSwitcher } from "@/components/profile/PersonSwitcher";
 import {
   FavoritesEditor,
   LunchHeadcountNote,
@@ -21,6 +22,7 @@ import {
 import {
   LIMITS,
   createEmptyProfile,
+  personLabel,
   personRoleLabel,
   saveProfile,
   syncPersons,
@@ -32,11 +34,14 @@ import { useProfile } from "@/lib/useProfile";
 
 const STEPS = [
   { title: "Wer isst mit?", emoji: "👨‍👩‍👧" },
-  { title: "Allergien & Abneigungen", emoji: "🥜" },
+  { title: "Allergien & Abneigungen", emoji: "🥜", perPerson: true },
   { title: "Lieblingsgerichte", emoji: "😋" },
-  { title: "Euer Alltag", emoji: "🕛" },
+  { title: "Warme Mahlzeit", emoji: "🍽️" },
+  { title: "Mittagessen unter der Woche", emoji: "🕛", perPerson: true },
   { title: "Wochenregeln", emoji: "📋" },
 ];
+
+const STEP = { household: 0, preferences: 1, favorites: 2, warmMeal: 3, lunch: 4, rules: 5 };
 
 /**
  * /profil: Gibt es schon ein Profil, zeigt es die Übersicht "Unsere Familie".
@@ -51,11 +56,15 @@ export function ProfilePageContent() {
   return <ProfileWizard />;
 }
 
-/** Assistent in 5 Schritten – nur beim ersten Anlegen. */
+/** Assistent in mehreren Schritten – nur beim ersten Anlegen. */
 function ProfileWizard() {
   const router = useRouter();
   const [profile, setProfile] = useState(createEmptyProfile);
   const [step, setStep] = useState(0);
+  // In Schritten mit einer Person pro Ansicht: welche Person gerade dran ist
+  // und welche pro Schritt schon erledigt sind.
+  const [personIndex, setPersonIndex] = useState(0);
+  const [doneIds, setDoneIds] = useState<Record<number, string[]>>({});
 
   const update = (changes: Partial<HouseholdProfile>) =>
     setProfile((p) => ({ ...p, ...changes }));
@@ -77,10 +86,44 @@ function ProfileWizard() {
     }));
 
   const isLast = step === STEPS.length - 1;
+  const perPerson = Boolean(STEPS[step].perPerson);
+  const persons = profile.persons;
+  const currentPerson = persons[Math.min(personIndex, persons.length - 1)];
+  const nextPerson = perPerson ? persons[personIndex + 1] : undefined;
 
-  const goTo = (next: number) => {
+  const scrollTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
+
+  const markDone = () => {
+    if (!perPerson || !currentPerson) return;
+    setDoneIds((d) => {
+      const ids = d[step] ?? [];
+      return ids.includes(currentPerson.id) ? d : { ...d, [step]: [...ids, currentPerson.id] };
+    });
+  };
+
+  /** Zu einem Schritt springen; rückwärts landet man bei der letzten Person. */
+  const goTo = (next: number, entry: "start" | "end" = "start") => {
+    markDone();
     setStep(next);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setPersonIndex(entry === "end" && STEPS[next].perPerson ? persons.length - 1 : 0);
+    scrollTop();
+  };
+
+  const selectPerson = (index: number) => {
+    if (index === personIndex) return;
+    markDone();
+    setPersonIndex(index);
+    scrollTop();
+  };
+
+  const forward = () => {
+    if (nextPerson) selectPerson(personIndex + 1);
+    else goTo(step + 1);
+  };
+
+  const back = () => {
+    if (perPerson && personIndex > 0) selectPerson(personIndex - 1);
+    else goTo(step - 1, "end");
   };
 
   const finish = () => {
@@ -113,7 +156,7 @@ function ProfileWizard() {
       </div>
 
       <main className="flex flex-1 flex-col gap-4 px-4 pb-6 pt-4">
-        {step === 0 && (
+        {step === STEP.household && (
           <StepHousehold
             profile={profile}
             update={update}
@@ -121,55 +164,54 @@ function ProfileWizard() {
             updatePerson={updatePerson}
           />
         )}
-        {step === 1 && (
-          <>
-            <p className="text-stone-600">
-              Für jede Person einzeln – so können wir später passende Gerichte
-              vorschlagen.
-            </p>
-            {profile.persons.map((person) => (
-              <section
-                key={person.id}
-                className="flex flex-col gap-5 rounded-3xl bg-white p-4 shadow-sm"
-              >
-                <PersonHeading person={person} persons={profile.persons} />
-                <PersonPreferencesFields
-                  person={person}
-                  onChange={(changes) => updatePerson(person.id, changes)}
-                />
-              </section>
-            ))}
-          </>
+        {step === STEP.preferences && currentPerson && (
+          <PersonSwitcher
+            persons={persons}
+            index={personIndex}
+            doneIds={doneIds[step] ?? []}
+            onSelect={selectPerson}
+          >
+            <section className="flex flex-col gap-5 rounded-3xl bg-white p-4 shadow-sm">
+              <PersonHeading person={currentPerson} persons={persons} />
+              <PersonPreferencesFields
+                person={currentPerson}
+                onChange={(changes) => updatePerson(currentPerson.id, changes)}
+              />
+            </section>
+          </PersonSwitcher>
         )}
-        {step === 2 && (
+        {step === STEP.favorites && (
           <FavoritesEditor
             values={profile.favoriteDishes}
             onChange={(favoriteDishes) => update({ favoriteDishes })}
           />
         )}
-        {step === 3 && (
+        {step === STEP.warmMeal && (
+          <WarmMealEditor
+            warmMeal={profile.warmMeal}
+            onChange={(warmMeal) => update({ warmMeal })}
+          />
+        )}
+        {step === STEP.lunch && currentPerson && (
           <>
-            <WarmMealEditor
-              warmMeal={profile.warmMeal}
-              onChange={(warmMeal) => update({ warmMeal })}
-            />
-            <p className="mt-2 text-lg font-bold">Wer isst unter der Woche mittags zu Hause?</p>
-            {profile.persons.map((person) => (
-              <section
-                key={person.id}
-                className="flex flex-col gap-5 rounded-3xl bg-white p-4 shadow-sm"
-              >
-                <PersonHeading person={person} persons={profile.persons} />
+            <PersonSwitcher
+              persons={persons}
+              index={personIndex}
+              doneIds={doneIds[step] ?? []}
+              onSelect={selectPerson}
+            >
+              <section className="flex flex-col gap-5 rounded-3xl bg-white p-4 shadow-sm">
+                <PersonHeading person={currentPerson} persons={persons} />
                 <PersonLunchFields
-                  person={person}
-                  onChange={(changes) => updatePerson(person.id, changes)}
+                  person={currentPerson}
+                  onChange={(changes) => updatePerson(currentPerson.id, changes)}
                 />
               </section>
-            ))}
+            </PersonSwitcher>
             <LunchHeadcountNote profile={profile} />
           </>
         )}
-        {step === 4 && (
+        {step === STEP.rules && (
           <WeekRulesEditor
             rules={profile.weekRules}
             onChange={(changes) =>
@@ -181,7 +223,7 @@ function ProfileWizard() {
 
       <StickyActions>
         {step > 0 ? (
-          <button type="button" onClick={() => goTo(step - 1)} className={SECONDARY_BUTTON}>
+          <button type="button" onClick={back} className={SECONDARY_BUTTON}>
             Zurück
           </button>
         ) : (
@@ -191,11 +233,15 @@ function ProfileWizard() {
         )}
         <button
           type="button"
-          onClick={isLast ? finish : () => goTo(step + 1)}
+          onClick={isLast ? finish : forward}
           disabled={isLast && tooManyDays(profile.weekRules)}
-          className={PRIMARY_BUTTON}
+          className={`${PRIMARY_BUTTON} min-w-0 truncate px-3`}
         >
-          {isLast ? "Speichern ✓" : "Weiter"}
+          {isLast
+            ? "Speichern ✓"
+            : nextPerson
+              ? `Weiter zu ${personLabel(nextPerson, persons)} →`
+              : "Weiter"}
         </button>
       </StickyActions>
     </div>
