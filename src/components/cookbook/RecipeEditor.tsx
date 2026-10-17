@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { PRIMARY_BUTTON, SECONDARY_BUTTON, StickyActions } from "@/components/StickyActions";
 import { ChoiceGroup } from "@/components/form/ChoiceGroup";
 import { NumberStepper } from "@/components/form/NumberStepper";
-import { CARD, INPUT, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
+import { CARD, INPUT, INPUT_BASE, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
 import {
   RECIPE_CATEGORIES,
   UNITS,
@@ -27,7 +27,6 @@ import {
 type IngredientRow = { id: string; amountText: string; unit: string; name: string };
 
 /** Feldstil ohne feste Breite/Höhe, für schmale Felder und Textbereiche */
-const FIELD = INPUT.replace("h-12 w-full ", "");
 const ADD_ROW = `${buttonClass("soft")} w-full`;
 const REMOVE = "flex h-12 w-10 shrink-0 items-center justify-center text-stone-400 transition active:scale-90";
 
@@ -136,7 +135,7 @@ function EditorForm({ existing }: { existing?: Recipe }) {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") e.currentTarget.blur();
                 }}
-                className={`${FIELD} h-12 w-20 px-3 text-center font-bold`}
+                className={`${INPUT_BASE} h-12 w-20 px-3 text-center font-bold`}
               />
               <span className="text-base text-muted">Min.</span>
             </span>
@@ -154,13 +153,13 @@ function EditorForm({ existing }: { existing?: Recipe }) {
                 onChange={(e) => setRow(row.id, { amountText: e.target.value })}
                 placeholder="Menge"
                 aria-label={`Zutat ${index + 1}: Menge`}
-                className={`${FIELD} h-12 w-20 shrink-0 px-2 text-center`}
+                className={`${INPUT_BASE} h-12 w-20 shrink-0 px-2 text-center`}
               />
               <select
                 value={row.unit}
                 onChange={(e) => setRow(row.id, { unit: e.target.value })}
                 aria-label={`Zutat ${index + 1}: Einheit`}
-                className={`${FIELD} h-12 w-24 shrink-0 px-1`}
+                className={`${INPUT_BASE} h-12 w-24 shrink-0 px-1`}
               >
                 {UNITS.map((u) => (
                   <option key={u} value={u}>
@@ -178,7 +177,7 @@ function EditorForm({ existing }: { existing?: Recipe }) {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") e.currentTarget.blur();
                 }}
-                className={`${FIELD} h-12 flex-1 px-3`}
+                className={`${INPUT_BASE} h-12 flex-1 px-3`}
               />
               <button
                 type="button"
@@ -216,7 +215,7 @@ function EditorForm({ existing }: { existing?: Recipe }) {
                 placeholder={index === 0 ? "z. B. Zwiebeln schälen und würfeln" : "Nächster Schritt"}
                 aria-label={`Schritt ${index + 1}`}
                 rows={2}
-                className={`${FIELD} flex-1 px-3 py-2`}
+                className={`${INPUT_BASE} flex-1 px-3 py-2`}
               />
               <button
                 type="button"
@@ -245,7 +244,7 @@ function EditorForm({ existing }: { existing?: Recipe }) {
             onChange={(e) => update({ note: e.target.value })}
             placeholder="z. B. Kinder mögen es mit weniger Paprika"
             rows={3}
-            className={`${FIELD} w-full py-3`}
+            className={`${INPUT_BASE} w-full px-4 py-3`}
           />
         </label>
 

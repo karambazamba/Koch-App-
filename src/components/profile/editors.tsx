@@ -16,6 +16,7 @@ import {
   Smile,
   Sun,
   Users,
+  type LucideIcon,
 } from "lucide-react";
 import { ChoiceGroup, MultiChoiceGroup } from "@/components/form/ChoiceGroup";
 import { NumberStepper } from "@/components/form/NumberStepper";
@@ -60,19 +61,19 @@ const WARM_MEAL_OPTIONS = [
   { value: "mittags", label: "Mittags", icon: Sun },
   { value: "abends", label: "Abends", icon: Moon },
   { value: "flexibel", label: "Mal so, mal so", icon: RefreshCw },
-] satisfies { value: WarmMeal; label: string }[];
+] satisfies { value: WarmMeal; label: string; icon: LucideIcon }[];
 
 const ADULT_LUNCH_OPTIONS = [
   { value: "zuhause", label: "Ist mittags zu Hause", icon: Home },
   { value: "auswaerts", label: "Isst auswärts (z. B. Arbeit)", icon: Briefcase },
   { value: "manchmal", label: "Manchmal", icon: RefreshCw },
-] satisfies { value: WeekdayLunch; label: string }[];
+] satisfies { value: WeekdayLunch; label: string; icon: LucideIcon }[];
 
 const KID_LUNCH_OPTIONS = [
   { value: "auswaerts", label: "Isst in Kita/Schule", icon: School },
   { value: "zuhause", label: "Isst zu Hause", icon: Home },
   { value: "manchmal", label: "Manchmal", icon: RefreshCw },
-] satisfies { value: WeekdayLunch; label: string }[];
+] satisfies { value: WeekdayLunch; label: string; icon: LucideIcon }[];
 
 /** Altersgruppen mit Icon (auch im Assistenten) */
 export const AGE_GROUP_ICONS = { kleinkind: Baby, kitakind: Smile, schulkind: Backpack } as const;

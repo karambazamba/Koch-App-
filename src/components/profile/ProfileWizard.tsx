@@ -4,10 +4,22 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { flushSync } from "react-dom";
+import {
+  CalendarRange,
+  Clock,
+  Heart,
+  PenLine,
+  UtensilsCrossed,
+  Users,
+  Wheat,
+  type LucideIcon,
+} from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { PRIMARY_BUTTON, SECONDARY_BUTTON, StickyActions } from "@/components/StickyActions";
 import { NumberStepper } from "@/components/form/NumberStepper";
-import { NameField } from "@/components/form/NameField";
+import { NameField, PERSON_ICONS } from "@/components/form/NameField";
+import { IconBadge } from "@/components/ui/IconBadge";
+import { CARD, INPUT, PAGE_MAIN, buttonClass } from "@/components/ui/styles";
 import { FamilyOverview } from "@/components/profile/FamilyOverview";
 import { PersonHeading } from "@/components/profile/PersonHeading";
 import { LunchQuestion, PreferencesQuestion } from "@/components/profile/PersonQuestions";
@@ -39,14 +51,14 @@ import {
 import { scrollToNextOpenSection } from "@/lib/stepScroll";
 import { useProfile } from "@/lib/useProfile";
 
-const STEPS = [
-  { title: "Wer isst mit?", emoji: "👨‍👩‍👧" },
-  { title: "Wie heißen alle?", emoji: "✏️" },
-  { title: "Allergien & Abneigungen", emoji: "🥜", perPerson: true },
-  { title: "Lieblingsgerichte", emoji: "😋" },
-  { title: "Warme Mahlzeit", emoji: "🍽️" },
-  { title: "Mittagessen unter der Woche", emoji: "🕛", perPerson: true },
-  { title: "Standardwoche", emoji: "📋" },
+const STEPS: { title: string; icon: LucideIcon; perPerson?: boolean }[] = [
+  { title: "Wer isst mit?", icon: Users },
+  { title: "Wie heißen alle?", icon: PenLine },
+  { title: "Allergien & Abneigungen", icon: Wheat, perPerson: true },
+  { title: "Lieblingsgerichte", icon: Heart },
+  { title: "Warme Mahlzeit", icon: UtensilsCrossed },
+  { title: "Mittagessen unter der Woche", icon: Clock, perPerson: true },
+  { title: "Standardwoche", icon: CalendarRange },
 ];
 
 const STEP = {
@@ -69,7 +81,7 @@ const SWIPE_DISTANCE = 60;
 export function ProfilePageContent() {
   const profile = useProfile();
   if (profile === undefined) {
-    return <div className="m-4 h-64 animate-pulse rounded-3xl bg-white/70" />;
+    return <div className={`${CARD} m-4 h-64 animate-pulse`} />;
   }
   if (profile) return <FamilyOverview profile={profile} />;
   return <ProfileWizard />;
@@ -274,16 +286,17 @@ function ProfileWizard() {
               type="button"
               tabIndex={-1}
               onClick={() => goTo(i)}
-              className={`h-2.5 flex-1 rounded-full ${i <= step ? "bg-orange-500" : "bg-orange-200"}`}
+              className={`h-1.5 flex-1 rounded-full ${i <= step ? "bg-accent" : "bg-stone-200"}`}
             />
           ))}
         </div>
-        <p className="mt-3 text-base font-semibold text-stone-500">
+        <p className="mt-3 text-sm font-semibold text-muted">
           Schritt {step + 1} von {STEPS.length}
         </p>
-        <h2 className="text-2xl font-extrabold">
-          {STEPS[step].emoji} {STEPS[step].title}
-        </h2>
+        <div className="mt-1 flex items-center gap-3">
+          <IconBadge icon={STEPS[step].icon} size="sm" />
+          <h2 className="text-2xl font-extrabold tracking-tight">{STEPS[step].title}</h2>
+        </div>
       </div>
 
       <main ref={mainRef} className="flex flex-1 flex-col gap-4 px-4 pb-6 pt-4">
@@ -307,7 +320,7 @@ function ProfileWizard() {
             doneIds={doneIds[step] ?? []}
             onSelect={selectPerson}
           >
-            <section className="flex flex-col gap-5 rounded-3xl bg-white p-4 shadow-sm">
+            <section className={`${CARD} flex flex-col gap-6 p-4`}>
               <PersonHeading person={currentPerson} persons={persons} />
               <PersonPreferencesFields
                 person={currentPerson}
@@ -357,7 +370,7 @@ function ProfileWizard() {
               doneIds={doneIds[step] ?? []}
               onSelect={selectPerson}
             >
-              <section className="flex flex-col gap-5 rounded-3xl bg-white p-4 shadow-sm">
+              <section className={`${CARD} flex flex-col gap-6 p-4`}>
                 <PersonHeading person={currentPerson} persons={persons} />
                 <PersonLunchFields
                   person={currentPerson}
@@ -371,7 +384,8 @@ function ProfileWizard() {
         )}
         {step === STEP.rules && (
           <>
-            <p className="rounded-2xl bg-sky-50 px-4 py-3 text-base text-sky-900">
+            <p className={NOTE}>
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted" strokeWidth={2.25} aria-hidden />
               {STANDARD_WEEK_HINT}
             </p>
             <WeekRulesEditor
@@ -407,7 +421,7 @@ function ProfileWizard() {
           className={
             missingNames
               ? // Dezenter, damit niemand aus Versehen die Namen überspringt
-                "h-16 min-w-0 flex-[2] truncate rounded-2xl border-2 border-orange-300 bg-white px-3 text-lg font-bold text-orange-700 active:scale-95"
+                `${buttonClass("secondary", "lg")} min-w-0 flex-[2] truncate border-accent/50 px-3 text-accent-strong`
               : `${PRIMARY_BUTTON} min-w-0 truncate px-3`
           }
         >
@@ -429,7 +443,7 @@ function SkipLink({ onClick, children }: { onClick: () => void; children: string
     <button
       type="button"
       onClick={onClick}
-      className="mt-3 w-full rounded-2xl py-3 text-center text-base font-semibold text-stone-500 underline"
+      className="mt-3 w-full py-3 text-center text-sm font-semibold text-muted underline"
     >
       {children}
     </button>
@@ -447,7 +461,7 @@ function StepHousehold({
 }) {
   return (
     <>
-      <label className="flex flex-col gap-2 rounded-3xl bg-white p-4 shadow-sm">
+      <label className={`${CARD} flex flex-col gap-2 p-4`}>
         <span className="text-base font-bold">Name eures Haushalts (optional)</span>
         <input
           type="text"
@@ -458,11 +472,11 @@ function StepHousehold({
           onKeyDown={(e) => {
             if (e.key === "Enter") e.currentTarget.blur();
           }}
-          className="h-14 rounded-2xl border-2 border-stone-200 px-4 text-lg outline-none focus:border-orange-400"
+          className={INPUT}
         />
       </label>
       {/* Beide Zähler in einer Karte – Schritt 1 soll ohne Scrollen aufs Handy passen */}
-      <div className="divide-y divide-stone-100 rounded-3xl bg-white px-4 py-1 shadow-sm">
+      <div className={`${CARD} divide-y divide-line px-4 py-1`}>
         <NumberStepper
           label="Erwachsene"
           value={profile.adults}
@@ -494,15 +508,15 @@ function StepNames({
 }) {
   return (
     <>
-      <p className="text-stone-600">Freiwillig – hilft aber in den nächsten Schritten.</p>
-      <section className="flex flex-col gap-3 rounded-3xl bg-white p-4 shadow-sm">
+      <p className="text-base text-muted">Freiwillig – hilft aber in den nächsten Schritten.</p>
+      <section className={`${CARD} flex flex-col gap-3 p-4`}>
         {profile.persons.map((person, index) => (
           <NameField
             key={person.id}
             isLast={index === profile.persons.length - 1}
             compact
             who={personRoleLabel(person, profile.persons)}
-            emoji={person.role === "erwachsen" ? "🧑" : "🧒"}
+            icon={PERSON_ICONS[person.role]}
             value={person.name}
             onChange={(name) => updatePerson(person.id, { name })}
           />

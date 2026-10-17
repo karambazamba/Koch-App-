@@ -52,9 +52,12 @@ export function tileClass(selected: boolean): string {
   }`;
 }
 
-/** Text-Eingabefeld */
-export const INPUT =
-  "h-12 w-full min-w-0 rounded-xl border border-line bg-surface px-4 text-base text-ink outline-none transition placeholder:text-stone-400 focus:border-accent focus:ring-2 focus:ring-accent/20";
+/** Feld-Stil ohne Größe (für schmale Felder mit eigener Breite/Höhe) */
+export const INPUT_BASE =
+  "min-w-0 rounded-xl border border-line bg-surface text-base text-ink outline-none transition placeholder:text-stone-400 focus:border-accent focus:ring-2 focus:ring-accent/20";
+
+/** Text-Eingabefeld in voller Breite */
+export const INPUT = `${INPUT_BASE} h-12 w-full px-4`;
 
 /** Feld-Beschriftung über einem Eingabefeld */
 export const LABEL = "text-sm font-semibold text-muted";

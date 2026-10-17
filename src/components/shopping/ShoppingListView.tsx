@@ -21,7 +21,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
-import { CARD, CARD_LIST, ICON_BUTTON, INPUT, LABEL, PAGE_MAIN, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
+import { CARD, CARD_LIST, ICON_BUTTON, INPUT, INPUT_BASE, LABEL, PAGE_MAIN, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
 import {
   SECTIONS,
   addManualItem,
@@ -274,7 +274,6 @@ function ItemRow({ item, weekStart }: { item: ListItem; weekStart: string }) {
 }
 
 /** Feldstil ohne feste Breite/Höhe, für nebeneinanderliegende Felder */
-const FIELD = INPUT.replace("h-12 w-full ", "");
 
 function AddItemForm({ weekStart }: { weekStart: string }) {
   const [name, setName] = useState("");
@@ -298,7 +297,7 @@ function AddItemForm({ weekStart }: { weekStart: string }) {
           onChange={(e) => setAmount(e.target.value)}
           placeholder="Menge"
           aria-label="Menge"
-          className={`${FIELD} h-12 w-24 shrink-0 px-3`}
+          className={`${INPUT_BASE} h-12 w-24 shrink-0 px-3`}
         />
         <input
           type="text"
@@ -313,7 +312,7 @@ function AddItemForm({ weekStart }: { weekStart: string }) {
               e.currentTarget.blur();
             }
           }}
-          className={`${FIELD} h-12 flex-1`}
+          className={`${INPUT_BASE} h-12 flex-1 px-4`}
         />
       </div>
       <label className="flex flex-col gap-1">
