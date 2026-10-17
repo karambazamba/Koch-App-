@@ -30,10 +30,18 @@
   Personen-Leiste; "Doch nichts – überspringen" setzt sie zurück. Mittagessen
   "wie üblich" = `usualLunch()`: Erwachsene zu Hause, Kita-/Schulkinder
   auswärts, Kleinkinder zu Hause.
+- Planungswoche = 7 Tage ab dem Einkaufstag (Profil `shoppingDay`, Standard
+  Montag). Wochen werden unter dem Datum ihres ersten Tags gespeichert; nach
+  einem Wechsel des Einkaufstags findet `resolveWeekKey()` die überlappende
+  alte Woche. Datumslogik zentral in `src/lib/weekPlan.ts`
+  (`weekStartFor`, `planningWeekStart`, `weekDayNames`).
 - "Standardwoche" (früher "Wochenregeln") ist die Vorlage im Profil. Der
-  Wochen-Check (`/woche/check`) übernimmt sie als Startwert und speichert
-  Vorgaben pro Woche (ab nächstem Montag) separat. Die Startseiten-Karte dazu
-  erscheint Freitag bis Montag.
+  Wochen-Check (`/woche/check`, optional `?woche=`) übernimmt sie als Startwert
+  und speichert Vorgaben pro Woche separat. Startseiten-Karte: bis 2 Tage vor
+  dem nächsten Einkaufstag "Diese Woche planen" (mit Vorgaben ausgeblendet),
+  danach "Nächste Woche planen" bzw. "Nächste Woche steht ✓".
+- Startseite: Kachel "Was ist noch da?" (Route bleibt `/schnellkueche`).
+  Untertitel von Wochenplan, Einkaufsliste und Kochbuch sind dynamisch.
 - Wunschtag: in der Standardwoche einstellbar (Tag, Mahlzeit, Mindestalter).
   Teilnahme ab Mindestalter, ohne Alter Schul-/Kitakinder ja, Kleinkinder nein.
   Reihum in `wishDay.order`; wer dran ist, ergibt sich aus der letzten

@@ -26,10 +26,12 @@ import {
 import { WISH_MEAL_LABELS } from "@/lib/profile";
 import { useProfile } from "@/lib/useProfile";
 import {
-  currentMonday,
+  DEFAULT_SHOPPING_DAY,
   formatWeekRange,
-  nextMonday,
+  nextWeekStartFor,
+  planForWeek,
   toIsoDate,
+  weekStartFor,
   useToday,
   useWeekPlans,
 } from "@/lib/weekPlan";
@@ -63,11 +65,13 @@ export function WeekPlanView() {
 
   if (!today || profile === undefined || !weekPlans || !mealPlans || !recipes) return SKELETON;
 
-  const weekStart = showNext ? nextMonday(today) : currentMonday(today);
+  // Planungswoche ab Einkaufstag (Profil), 7 Tage
+  const shoppingDay = profile?.shoppingDay ?? DEFAULT_SHOPPING_DAY;
+  const weekStart = showNext ? nextWeekStartFor(today, shoppingDay) : weekStartFor(today, shoppingDay);
   const week = buildWeek(
     weekStart,
     profile,
-    weekPlans[weekStart] ?? null,
+    planForWeek(weekPlans, weekStart),
     storedForWeek(mealPlans, weekStart),
     recipes,
   );

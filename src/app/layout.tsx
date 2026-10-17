@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     template: `%s · ${APP_NAME}`,
   },
   description:
-    "Wochenplan, Schnellküche und Einkaufsliste – passend zu deinem Haushalt.",
+    "Wochenplan, Resteküche, Kochbuch und Einkaufsliste – passend zu eurer Familie.",
   applicationName: APP_NAME,
   appleWebApp: {
     capable: true,

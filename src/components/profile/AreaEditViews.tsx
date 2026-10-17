@@ -10,7 +10,7 @@ import {
   tooManyDays,
   withWishDay,
 } from "@/components/profile/editors";
-import { standardWeekDays } from "@/lib/profile";
+import { WEEKDAYS, planningWeekLabel, standardWeekDays } from "@/lib/profile";
 
 export function FavoritesEditView() {
   return (
@@ -88,6 +88,50 @@ export function HouseholdNameEditView() {
             className="h-14 rounded-2xl border-2 border-stone-200 px-4 text-lg outline-none focus:border-orange-400"
           />
         </label>
+      )}
+    </ProfileEditPage>
+  );
+}
+
+export function ShoppingDayEditView() {
+  return (
+    <ProfileEditPage title="Einkaufstag">
+      {(draft, setDraft) => (
+        <>
+          <fieldset className="rounded-3xl bg-white p-4 shadow-sm">
+            <legend className="sr-only">Einkaufstag</legend>
+            <p className="mb-1 text-lg font-bold" aria-hidden>
+              An welchem Tag kauft ihr ein?
+            </p>
+            <p className="mb-3 text-sm text-stone-500">
+              Ab diesem Tag läuft eure Planungswoche 7 Tage – für Wochenplan und Wochen-Check.
+            </p>
+            <div className="grid grid-cols-4 gap-2">
+              {WEEKDAYS.map((day) => {
+                const selected = draft.shoppingDay === day;
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    aria-pressed={selected}
+                    aria-label={`Einkaufstag ${day}`}
+                    onClick={() => setDraft((d) => ({ ...d, shoppingDay: day }))}
+                    className={`h-14 rounded-2xl border-2 text-base font-bold active:scale-95 ${
+                      selected
+                        ? "border-orange-500 bg-orange-50 text-orange-700"
+                        : "border-stone-200 text-stone-700"
+                    }`}
+                  >
+                    {day.slice(0, 2)}
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+          <p className="rounded-2xl bg-sky-50 px-4 py-3 text-base text-sky-900" role="status">
+            Planungswoche: {planningWeekLabel(draft.shoppingDay)}
+          </p>
+        </>
       )}
     </ProfileEditPage>
   );

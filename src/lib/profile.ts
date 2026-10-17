@@ -69,7 +69,7 @@ export type WishDaySettings = {
 };
 
 export type HouseholdProfile = {
-  version: 4;
+  version: 5;
   householdName: string;
   adults: number;
   kids: number;
@@ -78,6 +78,8 @@ export type HouseholdProfile = {
   warmMeal: WarmMealSchedule;
   weekRules: WeekRules;
   wishDay: WishDaySettings;
+  /** Einkaufstag: ab hier läuft die Planungswoche 7 Tage */
+  shoppingDay: string;
   updatedAt: string;
 };
 
@@ -111,6 +113,13 @@ export const KID_AGE_GROUP_LABELS: Record<KidAgeGroup, string> = {
   kitakind: "Kitakind",
   schulkind: "Schulkind",
 };
+
+/** "Montag" → Planungswoche als Kürzel, z. B. "Do–Mi" */
+export function planningWeekLabel(shoppingDay: string): string {
+  const start = Math.max(0, WEEKDAYS.indexOf(shoppingDay));
+  const end = (start + 6) % 7;
+  return `${WEEKDAYS[start].slice(0, 2)}–${WEEKDAYS[end].slice(0, 2)}`;
+}
 
 export const WEEKDAYS = [
   "Montag",
@@ -155,7 +164,7 @@ export function createPerson(role: PersonRole): Person {
 
 export function createEmptyProfile(): HouseholdProfile {
   return {
-    version: 4,
+    version: 5,
     householdName: "",
     adults: 2,
     kids: 1,
@@ -174,6 +183,7 @@ export function createEmptyProfile(): HouseholdProfile {
       cheatDayWeekday: "Samstag",
     },
     wishDay: createWishDay(),
+    shoppingDay: "Montag",
     updatedAt: "",
   };
 }
@@ -322,7 +332,7 @@ export function normalizeWarmMeals(value: unknown, fallback: WarmMealSlots): War
 export function migrateProfile(raw: unknown): HouseholdProfile | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as Record<string, unknown>;
-  if (![1, 2, 3, 4].includes(data.version as number)) return null;
+  if (![1, 2, 3, 4, 5].includes(data.version as number)) return null;
 
   const defaults = createEmptyProfile();
 
@@ -383,6 +393,8 @@ export function migrateProfile(raw: unknown): HouseholdProfile | null {
     },
     // Bis v3 gab es keinen Wunschtag → standardmäßig aus.
     wishDay: migrateWishDay(data.wishDay, defaults.wishDay),
+    // Bis v4 lief die Woche immer Mo–So → Einkaufstag Montag.
+    shoppingDay: pick(data.shoppingDay, WEEKDAYS, defaults.shoppingDay),
     updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : "",
   };
 }

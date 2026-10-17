@@ -1,35 +1,37 @@
 import Link from "next/link";
 import { FamilyGreeting, HouseholdRow, WelcomeCard } from "@/components/HouseholdCard";
+import { CookbookSubtitle, ShoppingSubtitle } from "@/components/home/TileSubtitles";
 import { TodayLine } from "@/components/plan/TodayLine";
 import { NextWeekCard } from "@/components/week/NextWeekCard";
 import { APP_NAME } from "@/lib/app";
 
+// Untertitel sind teils dynamisch (Client-Komponenten), daher als Element.
 const AREAS = [
   {
     href: "/wochenplan",
     title: "Wochenplan",
-    text: "Die ganze Woche entspannt planen",
+    subtitle: <TodayLine />,
     emoji: "📅",
     color: "bg-emerald-100 text-emerald-900",
   },
   {
     href: "/schnellkueche",
-    title: "Schnellküche",
-    text: "Schnelle Ideen für heute",
-    emoji: "⚡",
+    title: "Was ist noch da?",
+    subtitle: "Sag, was übrig ist – wir zaubern was draus",
+    emoji: "🥕",
     color: "bg-amber-100 text-amber-900",
   },
   {
     href: "/einkaufsliste",
     title: "Einkaufsliste",
-    text: "Alles für den Einkauf auf einen Blick",
+    subtitle: <ShoppingSubtitle />,
     emoji: "🛒",
     color: "bg-sky-100 text-sky-900",
   },
   {
     href: "/kochbuch",
     title: "Unser Kochbuch",
-    text: "Eure Lieblingsrezepte",
+    subtitle: <CookbookSubtitle />,
     emoji: "📖",
     color: "bg-rose-100 text-rose-900",
   },
@@ -37,7 +39,7 @@ const AREAS = [
 
 export default function Home() {
   return (
-    <main className="safe-bottom mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-4 pt-[max(1.5rem,env(safe-area-inset-top))]">
+    <main className="safe-bottom mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-4 pt-[calc(env(safe-area-inset-top)+1.25rem)]">
       <header>
         {/* App-Name als Logo-Schriftzug */}
         <h1 className="text-5xl font-black tracking-tight text-orange-500">{APP_NAME}</h1>
@@ -61,10 +63,7 @@ export default function Home() {
             </span>
             <span className="flex flex-col">
               <span className="text-2xl font-extrabold">{area.title}</span>
-              <span className="text-base opacity-80">
-                {/* Wochenplan: "Heute: <Gericht>", falls eingetragen */}
-                {area.href === "/wochenplan" ? <TodayLine fallback={area.text} /> : area.text}
-              </span>
+              <span className="text-base opacity-80">{area.subtitle}</span>
             </span>
           </Link>
         ))}
