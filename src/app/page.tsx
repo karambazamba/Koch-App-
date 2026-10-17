@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { HouseholdCard } from "@/components/HouseholdCard";
+import { FamilyGreeting, HouseholdRow, WelcomeCard } from "@/components/HouseholdCard";
 import { NextWeekCard } from "@/components/week/NextWeekCard";
 import { APP_NAME } from "@/lib/app";
 
@@ -32,15 +32,15 @@ export default function Home() {
   return (
     <main className="safe-bottom mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-4 pt-[max(1.5rem,env(safe-area-inset-top))]">
       <header>
-        <p className="text-lg font-semibold text-orange-600">{APP_NAME}</p>
-        <h1 className="text-3xl font-extrabold leading-tight">
-          Was kochen wir heute?
-        </h1>
+        {/* App-Name als Logo-Schriftzug */}
+        <h1 className="text-5xl font-black tracking-tight text-orange-500">{APP_NAME}</h1>
+        <FamilyGreeting />
       </header>
 
-      <NextWeekCard />
+      {/* Ohne Profil zuerst die Einladung zum Anlegen */}
+      <WelcomeCard />
 
-      <HouseholdCard />
+      <NextWeekCard />
 
       <nav aria-label="Bereiche" className="flex flex-col gap-4">
         {AREAS.map((area) => (
@@ -59,6 +59,8 @@ export default function Home() {
           </Link>
         ))}
       </nav>
+
+      <HouseholdRow />
     </main>
   );
 }
