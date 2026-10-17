@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { Settings, Users } from "lucide-react";
+import { IconBadge } from "@/components/ui/IconBadge";
+import { CARD, buttonClass } from "@/components/ui/styles";
 import { formatWarmMeals } from "@/lib/profile";
 import { useProfile } from "@/lib/useProfile";
 
@@ -13,7 +16,7 @@ export function FamilyGreeting() {
   const name = profile?.householdName.trim() ?? "";
   // Feste Höhe, damit beim Laden nichts springt
   return (
-    <p className="min-h-6 text-base text-stone-500">
+    <p className="min-h-6 text-base text-muted">
       {name && (/^familie\s/i.test(name) ? `Hallo ${name}` : `Hallo Familie ${name}`)}
     </p>
   );
@@ -24,15 +27,15 @@ export function WelcomeCard() {
   const profile = useProfile();
   if (profile !== null) return null;
   return (
-    <section className="rounded-3xl bg-orange-500 p-5 text-white shadow-md">
-      <h2 className="text-xl font-extrabold">Willkommen! 👋</h2>
-      <p className="mt-1 text-lg">
+    <section className={`${CARD} p-5`}>
+      <div className="flex items-center gap-3">
+        <IconBadge icon={Users} />
+        <h2 className="text-xl font-extrabold tracking-tight">Willkommen! 👋</h2>
+      </div>
+      <p className="mt-3 text-base text-muted">
         Erzähl uns kurz von deinem Haushalt – dann passen alle Vorschläge zu euch.
       </p>
-      <Link
-        href="/profil"
-        className="mt-4 flex h-14 items-center justify-center rounded-2xl bg-white text-lg font-extrabold text-orange-600 active:scale-95"
-      >
+      <Link href="/profil" className={`${buttonClass("primary", "lg")} mt-4 w-full`}>
         Haushaltsprofil anlegen
       </Link>
     </section>
@@ -44,7 +47,7 @@ export function HouseholdRow() {
   const profile = useProfile();
 
   if (profile === undefined) {
-    return <div className="h-14 animate-pulse rounded-2xl bg-white/70" />;
+    return <div className={`${CARD} h-14 animate-pulse`} />;
   }
   if (profile === null) return null;
 
@@ -56,10 +59,10 @@ export function HouseholdRow() {
     <Link
       href="/profil"
       aria-label="Haushaltsprofil bearbeiten"
-      className="flex min-h-14 items-center gap-3 rounded-2xl bg-white/70 px-4 py-3 text-stone-600 shadow-sm active:scale-[0.98]"
+      className={`${CARD} flex min-h-14 items-center gap-3 px-4 py-3 text-sm text-muted transition active:scale-[0.99]`}
     >
-      <span className="flex-1 text-base">
-        <span className="whitespace-nowrap font-semibold text-stone-700">
+      <span className="flex-1">
+        <span className="whitespace-nowrap font-semibold text-ink">
           {count} {count === 1 ? "Person" : "Personen"}
         </span>
         {" · "}
@@ -71,17 +74,7 @@ export function HouseholdRow() {
           </>
         )}
       </span>
-      <svg
-        viewBox="0 0 24 24"
-        aria-hidden
-        className="h-6 w-6 shrink-0 fill-none stroke-stone-400"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <circle cx="12" cy="12" r="3" />
-        <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
-      </svg>
+      <Settings className="h-5 w-5 shrink-0 text-stone-400" strokeWidth={2} aria-hidden />
     </Link>
   );
 }

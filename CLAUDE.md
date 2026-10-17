@@ -12,6 +12,34 @@
 - Gespeicherte Profile müssen bei Datenmodell-Änderungen weiter funktionieren
   (Version in `src/lib/profile.ts` erhöhen, `migrateProfile` erweitern).
 
+## Design-System
+
+- Tokens in `src/app/globals.css` (`@theme`): `bg-background` (warmes
+  Off-White), `bg-surface` (weiß), `border-line`, `text-ink`, `text-muted`,
+  Akzent `bg-accent`/`text-accent`/`text-accent-strong`/`bg-accent-soft`,
+  `rounded-card`, `shadow-card`. Keine `orange-*`-Klassen direkt, keine
+  weiteren Farben für Flächen.
+- Bausteine in `src/components/ui`: `CARD`/`CARD_LIST`/`<Card>`,
+  `buttonClass()`/`<Button>` (primary, secondary, soft, ghost, danger; sm/md/lg),
+  `ICON_BUTTON`, `chipClass()`, `tileClass()`, `INPUT`, `LABEL`,
+  `SECTION_TITLE`, `SUBTLE`, `PAGE_MAIN`, `<ListRow>` (Icon links, Titel +
+  Untertitel, Pfeil rechts), `<IconBadge>`, `<CategoryChip>`/`<CategoryDot>`.
+  Neue Seiten nur daraus bauen; fehlt etwas, dort ergänzen.
+- Nur EINE Akzentfarbe (Orange) für Buttons, aktive Zustände und Logo. Karten
+  weiß mit feinem Rahmen und leisem Schatten, keine farbigen Kachel-Flächen.
+  Kategorien nur als kleiner farbiger Punkt (`CATEGORY_DOT`). Rot nur für
+  Allergien/Löschen.
+- Icons: `lucide-react`, Akzentfarbe oder Grau, Strichstärke 2. Emojis nur
+  für Spaß-Momente (Wunschtag, Cheat Day, Willkommen).
+- Typografie: Seitentitel 26px extrabold (`PageHeader`), Abschnitte
+  `text-lg font-bold`, Text `text-base`, Untertitel `text-sm text-muted`.
+  Abstände im 8er-Raster (gap-2/3/4, p-4/p-5), Seitenrand 16px.
+- Unterseiten: `PageHeader` (Zurück-Pfeil + Titel), Inhalt in `PAGE_MAIN`,
+  Fuß-Buttons über `StickyActions` (`PRIMARY_BUTTON`/`SECONDARY_BUTTON`).
+- Startseite: Logo, Gruß, Karte "Heute" (heutiges Gericht,
+  `src/components/home/TodayCard.tsx`), Wochen-Check-Karte, Bereiche als
+  `ListRow`-Liste, Haushalts-Zeile.
+
 ## Produktentscheidungen
 
 - Der Assistent (7 Schritte) wird nur beim ersten Anlegen verwendet. Danach

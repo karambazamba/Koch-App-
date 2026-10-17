@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
+import { Check } from "lucide-react";
+import { chipClass } from "@/components/ui/styles";
 import { personLabel, type Person } from "@/lib/profile";
 
 type Props = {
@@ -61,15 +63,18 @@ export function PersonSwitcher({
               aria-selected={current}
               aria-current={current ? "step" : undefined}
               onClick={() => onSelect(i)}
-              className={`flex h-12 shrink-0 items-center gap-1.5 rounded-full border-2 px-4 text-base font-bold transition active:scale-95 ${
-                current
-                  ? "border-orange-500 bg-orange-500 text-white"
-                  : done
-                    ? "border-emerald-300 bg-emerald-50 text-emerald-800"
-                    : "border-stone-200 bg-white text-stone-700"
-              }`}
+              className={`${
+                current ? "inline-flex min-h-10 items-center gap-1.5 rounded-full border border-accent bg-accent px-3.5 py-1.5 text-[15px] font-semibold text-white transition active:scale-95" : chipClass(false)
+              } h-11 shrink-0`}
             >
-              {done && <span aria-label="erledigt">✓</span>}
+              {done && (
+                <Check
+                  className={`h-4 w-4 ${current ? "" : "text-accent"}`}
+                  strokeWidth={2.75}
+                  aria-label="erledigt"
+                  role="img"
+                />
+              )}
               {personLabel(person, everyone)}
             </button>
           );

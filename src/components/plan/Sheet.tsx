@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
+import { X } from "lucide-react";
+import { ICON_BUTTON } from "@/components/ui/styles";
 
 /** Fenster, das von unten hereinkommt (z. B. Aktionen zu einem Eintrag). */
 export function Sheet({
@@ -30,18 +32,14 @@ export function Sheet({
         type="button"
         aria-label="Schließen"
         onClick={onClose}
-        className="absolute inset-0 bg-black/30"
+        className="absolute inset-0 bg-black/25"
       />
-      <div className="safe-bottom relative flex max-h-[85vh] w-full max-w-lg flex-col gap-4 overflow-y-auto rounded-t-3xl bg-background px-4 pt-4 shadow-2xl">
+      <div className="safe-bottom relative flex max-h-[85vh] w-full max-w-lg flex-col gap-4 overflow-y-auto rounded-t-3xl bg-background px-4 pt-2 shadow-sheet">
+        <span className="mx-auto h-1 w-10 rounded-full bg-stone-300" aria-hidden />
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xl font-extrabold">{title}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Schließen"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-2xl shadow-sm active:scale-95"
-          >
-            ×
+          <h2 className="text-xl font-extrabold tracking-tight">{title}</h2>
+          <button type="button" onClick={onClose} aria-label="Schließen" className={ICON_BUTTON}>
+            <X className="h-5 w-5" strokeWidth={2.25} aria-hidden />
           </button>
         </div>
         {children}

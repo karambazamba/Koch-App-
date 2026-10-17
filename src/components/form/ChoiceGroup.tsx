@@ -1,9 +1,12 @@
 "use client";
 
+import type { LucideIcon } from "lucide-react";
+import { CARD, tileClass } from "@/components/ui/styles";
+
 type Option<T extends string> = {
   value: T;
   label: string;
-  emoji?: string;
+  icon?: LucideIcon;
 };
 
 type BaseProps<T extends string> = {
@@ -28,11 +31,11 @@ function ChoiceTiles<T extends string>({
   onPick,
 }: BaseProps<T> & { isSelected: (value: T) => boolean; onPick: (value: T) => void }) {
   return (
-    <fieldset className={variant === "card" ? "rounded-3xl bg-white p-4 shadow-sm" : ""}>
+    <fieldset className={variant === "card" ? `${CARD} p-4` : ""}>
       <legend className="sr-only">{label}</legend>
       <div className="mb-3" aria-hidden>
-        <p className="text-lg font-bold">{label}</p>
-        {hint && <p className="text-sm text-stone-500">{hint}</p>}
+        <p className="text-base font-bold">{label}</p>
+        {hint && <p className="text-sm text-muted">{hint}</p>}
       </div>
       <div className={`grid gap-2 ${GRID[columns]}`}>
         {options.map((option) => {
@@ -43,17 +46,9 @@ function ChoiceTiles<T extends string>({
               type="button"
               aria-pressed={selected}
               onClick={() => onPick(option.value)}
-              className={`flex min-h-16 flex-col items-center justify-center gap-1 rounded-2xl border-2 px-2 py-3 text-base font-bold transition active:scale-95 ${
-                selected
-                  ? "border-orange-500 bg-orange-50 text-orange-700"
-                  : "border-stone-200 bg-white text-stone-700"
-              }`}
+              className={tileClass(selected)}
             >
-              {option.emoji && (
-                <span className="text-2xl" aria-hidden>
-                  {option.emoji}
-                </span>
-              )}
+              {option.icon && <option.icon className="h-5 w-5" strokeWidth={2} aria-hidden />}
               {option.label}
             </button>
           );

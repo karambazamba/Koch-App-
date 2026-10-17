@@ -1,6 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { CalendarCheck, ClipboardList } from "lucide-react";
+import { IconBadge } from "@/components/ui/IconBadge";
+import { ListRow } from "@/components/ui/ListRow";
+import { CARD, buttonClass } from "@/components/ui/styles";
 import { useProfile } from "@/lib/useProfile";
 import {
   DEFAULT_SHOPPING_DAY,
@@ -36,36 +40,32 @@ export function NextWeekCard() {
   if (plan) {
     if (!isNext) return null;
     return (
-      <Link
-        href={href}
-        className="flex items-center gap-4 rounded-3xl bg-emerald-100 p-5 text-emerald-900 shadow-sm active:scale-[0.98]"
-      >
-        <span className="text-4xl" aria-hidden>
-          ✅
-        </span>
-        <span className="flex-1">
-          <span className="block text-lg font-extrabold">Nächste Woche steht ✓</span>
-          <span className="block text-sm">
-            <span className="whitespace-nowrap">{range}</span> · Tippen zum Ändern
-          </span>
-        </span>
-      </Link>
+      <div className={CARD}>
+        <ListRow
+          href={href}
+          icon={CalendarCheck}
+          title="Nächste Woche steht ✓"
+          subtitle={
+            <>
+              <span className="whitespace-nowrap">{range}</span> · Tippen zum Ändern
+            </>
+          }
+        />
+      </div>
     );
   }
 
   return (
-    <section className="rounded-3xl bg-orange-500 p-5 text-white shadow-md">
-      <h2 className="text-xl font-extrabold">
-        📅 {isNext ? "Nächste Woche planen" : "Diese Woche planen"}
-      </h2>
-      <p className="mt-1 text-lg">
+    <section className={`${CARD} p-5`}>
+      <div className="flex items-center gap-3">
+        <IconBadge icon={ClipboardList} />
+        <h2 className="text-lg font-bold">{isNext ? "Nächste Woche planen" : "Diese Woche planen"}</h2>
+      </div>
+      <p className="mt-3 text-base text-muted">
         Kurzer Wochen-Check für <span className="whitespace-nowrap">{range}</span>: Ausflüge,
         Fleisch/Veggie/Fisch, Budget.
       </p>
-      <Link
-        href={href}
-        className="mt-4 flex h-14 items-center justify-center rounded-2xl bg-white text-lg font-extrabold text-orange-600 active:scale-95"
-      >
+      <Link href={href} className={`${buttonClass("primary")} mt-4 w-full`}>
         Zum Wochen-Check
       </Link>
     </section>
