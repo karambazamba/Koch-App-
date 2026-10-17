@@ -55,8 +55,21 @@ export type WeekRules = {
   cheatDayWeekday: string;
 };
 
+export type WishMeal = "mittags" | "abends";
+
+/** Wunschtag: Kinder dürfen sich reihum einmal pro Woche ein Gericht wünschen. */
+export type WishDaySettings = {
+  enabled: boolean;
+  weekday: string;
+  meal: WishMeal;
+  /** Mindestalter in Jahren */
+  minAge: number;
+  /** Reihenfolge der Kinder (IDs); wer teilnehmen darf, entscheidet das Alter */
+  order: string[];
+};
+
 export type HouseholdProfile = {
-  version: 3;
+  version: 4;
   householdName: string;
   adults: number;
   kids: number;
@@ -64,6 +77,7 @@ export type HouseholdProfile = {
   favoriteDishes: string[];
   warmMeal: WarmMealSchedule;
   weekRules: WeekRules;
+  wishDay: WishDaySettings;
   updatedAt: string;
 };
 
@@ -113,6 +127,7 @@ export const LIMITS = {
   kids: { min: 0, max: 8 },
   daysPerWeek: { min: 0, max: 7 },
   kidAge: { min: 0, max: 17 },
+  wishMinAge: { min: 0, max: 17 },
 };
 
 // Interner Schlüssel (alter Arbeitsname) – nicht ändern, sonst sind gespeicherte Profile weg.
@@ -140,7 +155,7 @@ export function createPerson(role: PersonRole): Person {
 
 export function createEmptyProfile(): HouseholdProfile {
   return {
-    version: 3,
+    version: 4,
     householdName: "",
     adults: 2,
     kids: 1,
@@ -158,8 +173,50 @@ export function createEmptyProfile(): HouseholdProfile {
       cheatDay: true,
       cheatDayWeekday: "Samstag",
     },
+    wishDay: createWishDay(),
     updatedAt: "",
   };
+}
+
+export function createWishDay(): WishDaySettings {
+  return { enabled: false, weekday: "Freitag", meal: "abends", minAge: 4, order: [] };
+}
+
+export const WISH_MEAL_LABELS: Record<WishMeal, string> = {
+  mittags: "mittags",
+  abends: "abends",
+};
+
+/**
+ * Darf das Kind beim Wunschtag mitmachen? Mit Alter: ab Mindestalter.
+ * Ohne Alter: Schul- und Kitakinder ja, Kleinkinder nein.
+ */
+export function isWishDayEligible(person: Person, minAge: number): boolean {
+  if (person.role !== "kind") return false;
+  if (typeof person.age === "number") return person.age >= minAge;
+  return person.ageGroup === "schulkind" || person.ageGroup === "kitakind";
+}
+
+/**
+ * Reihenfolge aller Kinder für den Wunschtag: gespeicherte Reihenfolge,
+ * neue Kinder hinten angehängt, entfernte Kinder fallen weg.
+ */
+export function wishDayOrder(profile: Pick<HouseholdProfile, "persons" | "wishDay">): Person[] {
+  const kids = profile.persons.filter((p) => p.role === "kind");
+  const known = profile.wishDay.order
+    .map((id) => kids.find((k) => k.id === id))
+    .filter((k): k is Person => Boolean(k));
+  return [...known, ...kids.filter((k) => !known.includes(k))];
+}
+
+/** Kinder, die beim Wunschtag dran sein können – in Reihenfolge */
+export function wishDayKids(profile: Pick<HouseholdProfile, "persons" | "wishDay">): Person[] {
+  return wishDayOrder(profile).filter((k) => isWishDayEligible(k, profile.wishDay.minAge));
+}
+
+/** Kochtage der Standardwoche für Fleisch/Veggie/Fisch (Wunschtag zählt nicht mit) */
+export function standardWeekDays(profile: Pick<HouseholdProfile, "wishDay">): number {
+  return profile.wishDay.enabled ? 6 : 7;
 }
 
 /**
@@ -256,7 +313,7 @@ export function normalizeWarmMeals(value: unknown, fallback: WarmMealSlots): War
 export function migrateProfile(raw: unknown): HouseholdProfile | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as Record<string, unknown>;
-  if (data.version !== 1 && data.version !== 2 && data.version !== 3) return null;
+  if (![1, 2, 3, 4].includes(data.version as number)) return null;
 
   const defaults = createEmptyProfile();
 
@@ -315,7 +372,23 @@ export function migrateProfile(raw: unknown): HouseholdProfile | null {
       ...defaults.weekRules,
       ...(data.weekRules as Partial<WeekRules> | undefined),
     },
+    // Bis v3 gab es keinen Wunschtag → standardmäßig aus.
+    wishDay: migrateWishDay(data.wishDay, defaults.wishDay),
     updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : "",
+  };
+}
+
+function migrateWishDay(raw: unknown, fallback: WishDaySettings): WishDaySettings {
+  if (!raw || typeof raw !== "object") return fallback;
+  const w = raw as Partial<WishDaySettings>;
+  const { min, max } = LIMITS.wishMinAge;
+  return {
+    enabled: w.enabled === true,
+    weekday: pick(w.weekday, WEEKDAYS, fallback.weekday),
+    meal: pick(w.meal, ["mittags", "abends"] as WishMeal[], fallback.meal),
+    minAge:
+      typeof w.minAge === "number" ? Math.min(max, Math.max(min, w.minAge)) : fallback.minAge,
+    order: Array.isArray(w.order) ? w.order.filter((id) => typeof id === "string") : [],
   };
 }
 
@@ -328,9 +401,15 @@ export const clearProfile = store.clear;
 export const subscribeProfile = store.subscribe;
 
 export function saveProfile(profile: HouseholdProfile): HouseholdProfile {
+  const persons = syncPersons(profile.persons, profile.adults, profile.kids);
   const toSave: HouseholdProfile = {
     ...profile,
-    persons: syncPersons(profile.persons, profile.adults, profile.kids),
+    persons,
+    // Reihenfolge fürs Wunschtag-Reihum mit den aktuellen Kindern abgleichen.
+    wishDay: {
+      ...profile.wishDay,
+      order: wishDayOrder({ persons, wishDay: profile.wishDay }).map((k) => k.id),
+    },
     updatedAt: new Date().toISOString(),
   };
   store.save(toSave);

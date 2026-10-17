@@ -11,6 +11,7 @@ import {
   personLabel,
   personRoleLabel,
   weekdayLunchHeadcount,
+  WISH_MEAL_LABELS,
   type HouseholdProfile,
   type Person,
 } from "@/lib/profile";
@@ -96,6 +97,15 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
                   Cheat Day:{" "}
                   {weekRules.cheatDay ? weekRules.cheatDayWeekday || "ja" : "nein"}
                 </Nowrap>
+                {profile.wishDay.enabled && (
+                  <>
+                    {" · "}
+                    <Nowrap>
+                      🎉 Wunschtag: {profile.wishDay.weekday.slice(0, 2)}{" "}
+                      {WISH_MEAL_LABELS[profile.wishDay.meal]}
+                    </Nowrap>
+                  </>
+                )}
               </span>
             </Row>
           </List>
