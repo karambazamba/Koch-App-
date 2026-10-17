@@ -4,7 +4,10 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { personLabel, type Person } from "@/lib/profile";
 
 type Props = {
+  /** Personen in der Leiste (z. B. nur die ausgewählten) */
   persons: Person[];
+  /** Alle Personen – für Bezeichnungen wie "Kind 2", falls kein Name */
+  everyone?: Person[];
   index: number;
   /** IDs der Personen, die in diesem Schritt schon erledigt sind */
   doneIds: string[];
@@ -17,7 +20,14 @@ type Props = {
  * darunter nur die Karte der aktuellen Person. (Wischen übernimmt der
  * Assistent: links = Weiter, also zur nächsten Person.)
  */
-export function PersonSwitcher({ persons, index, doneIds, onSelect, children }: Props) {
+export function PersonSwitcher({
+  persons,
+  everyone = persons,
+  index,
+  doneIds,
+  onSelect,
+  children,
+}: Props) {
   const barRef = useRef<HTMLDivElement>(null);
 
   // Aktuellen Chip in der waagrecht scrollbaren Leiste mittig halten. Nur die
@@ -60,7 +70,7 @@ export function PersonSwitcher({ persons, index, doneIds, onSelect, children }: 
               }`}
             >
               {done && <span aria-label="erledigt">✓</span>}
-              {personLabel(person, persons)}
+              {personLabel(person, everyone)}
             </button>
           );
         })}

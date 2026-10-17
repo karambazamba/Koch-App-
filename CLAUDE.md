@@ -24,8 +24,12 @@
   nicht bis unten gescrollt, scrollt "Weiter" erst zum nächsten offenen
   Abschnitt (`src/lib/stepScroll.ts`). Wischen links = Weiter, rechts = Zurück
   (nicht in Eingabefeldern und Elementen mit `data-no-swipe`).
-- In den Personen-Schritten des Assistenten (Allergien, Mittagessen) gibt es
-  eine Person pro Ansicht mit Personen-Leiste oben.
+- Personen-Schritte im Assistenten (Allergien, Mittagessen) beginnen mit einer
+  Vorfrage ("Nein, alle essen alles" bzw. "Passt so – alle wie üblich" oder
+  Personen auswählen). Nur ausgewählte Personen bekommen eine Einzelseite mit
+  Personen-Leiste; "Doch nichts – überspringen" setzt sie zurück. Mittagessen
+  "wie üblich" = `usualLunch()`: Erwachsene zu Hause, Kita-/Schulkinder
+  auswärts, Kleinkinder zu Hause.
 - "Standardwoche" (früher "Wochenregeln") ist die Vorlage im Profil. Der
   Wochen-Check (`/woche/check`) übernimmt sie als Startwert und speichert
   Vorgaben pro Woche (ab nächstem Montag) separat. Die Startseiten-Karte dazu
