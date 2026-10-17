@@ -10,6 +10,7 @@ import { NumberStepper } from "@/components/form/NumberStepper";
 import { NameField } from "@/components/form/NameField";
 import { FamilyOverview } from "@/components/profile/FamilyOverview";
 import { PersonHeading } from "@/components/profile/PersonHeading";
+import { LunchQuestion, PreferencesQuestion } from "@/components/profile/PersonQuestions";
 import { PersonSwitcher } from "@/components/profile/PersonSwitcher";
 import {
   FavoritesEditor,
@@ -30,6 +31,7 @@ import {
   personRoleLabel,
   saveProfile,
   standardWeekDays,
+  usualLunch,
   syncPersons,
   type HouseholdProfile,
   type Person,
@@ -82,6 +84,10 @@ function ProfileWizard() {
   // und welche pro Schritt schon erledigt sind.
   const [personIndex, setPersonIndex] = useState(0);
   const [doneIds, setDoneIds] = useState<Record<number, string[]>>({});
+  // Personen-Schritte beginnen mit einer Vorfrage; nur die dort ausgewählten
+  // Personen bekommen eine Einzelseite.
+  const [phase, setPhase] = useState<"question" | "persons">("question");
+  const [selected, setSelected] = useState<Record<number, string[]>>({});
   const mainRef = useRef<HTMLElement>(null);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
 
@@ -107,8 +113,14 @@ function ProfileWizard() {
   const isLast = step === STEPS.length - 1;
   const perPerson = Boolean(STEPS[step].perPerson);
   const persons = profile.persons;
-  const currentPerson = persons[Math.min(personIndex, persons.length - 1)];
-  const nextPerson = perPerson ? persons[personIndex + 1] : undefined;
+  const showQuestion = perPerson && phase === "question";
+  const selectedIds = selected[step] ?? [];
+  // In Personen-Schritten nur die ausgewählten Personen, in Profil-Reihenfolge
+  const stepPersons = perPerson ? persons.filter((p) => selectedIds.includes(p.id)) : persons;
+  const currentPerson = showQuestion
+    ? undefined
+    : stepPersons[Math.min(personIndex, stepPersons.length - 1)];
+  const nextPerson = perPerson && !showQuestion ? stepPersons[personIndex + 1] : undefined;
 
   const scrollTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
@@ -127,7 +139,12 @@ function ProfileWizard() {
     // kann – nur dann öffnet iOS die Tastatur.
     flushSync(() => {
       setStep(next);
-      setPersonIndex(entry === "end" && STEPS[next].perPerson ? persons.length - 1 : 0);
+      // Rückwärts in einen Personen-Schritt: zur letzten ausgewählten Person,
+      // ohne Auswahl zur Vorfrage. Vorwärts immer erst die Vorfrage.
+      const count = (selected[next] ?? []).length;
+      const toLastPerson = entry === "end" && STEPS[next].perPerson && count > 0;
+      setPhase(toLastPerson ? "persons" : "question");
+      setPersonIndex(toLastPerson ? count - 1 : 0);
     });
     if (next === STEP.names && entry === "start") {
       mainRef.current?.querySelector<HTMLInputElement>("[data-enter-chain]")?.focus();
@@ -142,17 +159,74 @@ function ProfileWizard() {
     scrollTop();
   };
 
+  /**
+   * Wer in der Vorfrage nicht ausgewählt ist, hat keine Besonderheiten:
+   * keine Allergien/Abneigungen bzw. Mittagessen wie üblich.
+   */
+  const applyUnselected = (ids: string[]) =>
+    setProfile((p) => ({
+      ...p,
+      persons: p.persons.map((person) => {
+        if (ids.includes(person.id)) return person;
+        return step === STEP.preferences
+          ? { ...person, allergies: [], dislikes: [] }
+          : { ...person, weekdayLunch: usualLunch(person) };
+      }),
+    }));
+
+  /** "Nein, alle essen alles" / "Passt so – alle wie üblich" */
+  const answerNone = () => {
+    applyUnselected([]);
+    setSelected((s) => ({ ...s, [step]: [] }));
+    goTo(step + 1);
+  };
+
+  const toggleSelected = (id: string) =>
+    setSelected((s) => {
+      const ids = s[step] ?? [];
+      return { ...s, [step]: ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id] };
+    });
+
+  /** "Doch nichts – überspringen": Person ohne Besonderheiten, weiter zur nächsten */
+  const skipPerson = () => {
+    if (!currentPerson) return;
+    updatePerson(
+      currentPerson.id,
+      step === STEP.preferences
+        ? { allergies: [], dislikes: [] }
+        : { weekdayLunch: usualLunch(currentPerson) },
+    );
+    const remaining = selectedIds.filter((id) => id !== currentPerson.id);
+    setSelected((s) => ({ ...s, [step]: remaining }));
+    if (personIndex < remaining.length) {
+      // Die nächste Person rückt auf denselben Platz nach.
+      scrollTop();
+    } else {
+      goTo(step + 1);
+    }
+  };
+
   const forward = () => {
     // Erst den Rest des Schritts zeigen, falls noch nicht bis unten gescrollt.
     if (scrollToNextOpenSection(mainRef.current)) return;
     if (isLast) finish();
-    else if (nextPerson) selectPerson(personIndex + 1);
+    else if (showQuestion) {
+      if (selectedIds.length === 0) return answerNone();
+      applyUnselected(selectedIds);
+      setPhase("persons");
+      setPersonIndex(0);
+      scrollTop();
+    } else if (nextPerson) selectPerson(personIndex + 1);
     else goTo(step + 1);
   };
 
   const back = () => {
-    if (perPerson && personIndex > 0) selectPerson(personIndex - 1);
-    else goTo(step - 1, "end");
+    if (perPerson && !showQuestion && personIndex > 0) selectPerson(personIndex - 1);
+    else if (perPerson && !showQuestion) {
+      markDone();
+      setPhase("question");
+      scrollTop();
+    } else goTo(step - 1, "end");
   };
 
   function finish() {
@@ -217,9 +291,18 @@ function ProfileWizard() {
           <StepHousehold profile={profile} update={update} setCounts={setCounts} />
         )}
         {step === STEP.names && <StepNames profile={profile} updatePerson={updatePerson} />}
+        {step === STEP.preferences && showQuestion && (
+          <PreferencesQuestion
+            persons={persons}
+            selectedIds={selectedIds}
+            onToggle={toggleSelected}
+            onNone={answerNone}
+          />
+        )}
         {step === STEP.preferences && currentPerson && (
           <PersonSwitcher
-            persons={persons}
+            persons={stepPersons}
+            everyone={persons}
             index={personIndex}
             doneIds={doneIds[step] ?? []}
             onSelect={selectPerson}
@@ -231,6 +314,7 @@ function ProfileWizard() {
                 onChange={(changes) => updatePerson(currentPerson.id, changes)}
               />
             </section>
+            <SkipLink onClick={skipPerson}>Doch nichts – überspringen</SkipLink>
           </PersonSwitcher>
         )}
         {step === STEP.favorites && (
@@ -245,10 +329,30 @@ function ProfileWizard() {
             onChange={(warmMeal) => update({ warmMeal })}
           />
         )}
+        {step === STEP.lunch && showQuestion && (
+          <>
+            <LunchQuestion
+              persons={persons}
+              selectedIds={selectedIds}
+              onToggle={toggleSelected}
+              onUsual={answerNone}
+              updatePerson={updatePerson}
+            />
+            <LunchHeadcountNote
+              profile={{
+                ...profile,
+                persons: persons.map((p) =>
+                  selectedIds.includes(p.id) ? p : { ...p, weekdayLunch: usualLunch(p) },
+                ),
+              }}
+            />
+          </>
+        )}
         {step === STEP.lunch && currentPerson && (
           <>
             <PersonSwitcher
-              persons={persons}
+              persons={stepPersons}
+              everyone={persons}
               index={personIndex}
               doneIds={doneIds[step] ?? []}
               onSelect={selectPerson}
@@ -260,6 +364,7 @@ function ProfileWizard() {
                   onChange={(changes) => updatePerson(currentPerson.id, changes)}
                 />
               </section>
+              <SkipLink onClick={skipPerson}>Doch wie üblich – überspringen</SkipLink>
             </PersonSwitcher>
             <LunchHeadcountNote profile={profile} />
           </>
@@ -316,6 +421,18 @@ function ProfileWizard() {
         </button>
       </StickyActions>
     </div>
+  );
+}
+
+function SkipLink({ onClick, children }: { onClick: () => void; children: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="mt-3 w-full rounded-2xl py-3 text-center text-base font-semibold text-stone-500 underline"
+    >
+      {children}
+    </button>
   );
 }
 

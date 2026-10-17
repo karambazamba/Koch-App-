@@ -248,6 +248,15 @@ export function personLabel(person: Person, persons: Person[]): string {
   return person.name.trim() || personRoleLabel(person, persons);
 }
 
+/**
+ * Mittagessen unter der Woche "wie üblich": Erwachsene zu Hause, Kita- und
+ * Schulkinder in Kita/Schule, Kleinkinder zu Hause.
+ */
+export function usualLunch(person: Pick<Person, "role" | "ageGroup">): WeekdayLunch {
+  if (person.role === "erwachsen") return "zuhause";
+  return person.ageGroup === "kleinkind" ? "zuhause" : "auswaerts";
+}
+
 /** Wer isst unter der Woche mittags zu Hause – nach der Angabe jeder Person? */
 export function weekdayLunchEaters(profile: HouseholdProfile): {
   atHome: Person[];
