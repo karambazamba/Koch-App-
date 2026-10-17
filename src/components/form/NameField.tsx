@@ -10,14 +10,25 @@ type Props = {
   onChange: (value: string) => void;
   /** Letztes Feld der Eingabekette → Enter schließt die Tastatur */
   isLast?: boolean;
+  /** Kompakter, für viele Namensfelder untereinander */
+  compact?: boolean;
 };
 
 /** Deutlich erkennbares Namensfeld mit Label und Stift-Symbol. */
-export function NameField({ who, emoji, value, onChange, isLast = false }: Props) {
+export function NameField({
+  who,
+  emoji,
+  value,
+  onChange,
+  isLast = false,
+  compact = false,
+}: Props) {
   return (
-    <label className="flex flex-col gap-2">
-      <span className="flex items-center gap-2 text-base font-bold text-stone-700">
-        <span className="text-xl" aria-hidden>
+    <label className={`flex flex-col ${compact ? "gap-1" : "gap-2"}`}>
+      <span
+        className={`flex items-center gap-2 font-bold text-stone-700 ${compact ? "text-sm" : "text-base"}`}
+      >
+        <span className={compact ? "text-base" : "text-xl"} aria-hidden>
           {emoji}
         </span>
         {who} – Name
@@ -48,7 +59,7 @@ export function NameField({ who, emoji, value, onChange, isLast = false }: Props
               focusNextInChain(e.currentTarget);
             }
           }}
-          className="h-14 w-full rounded-2xl border-2 border-orange-200 bg-orange-50/60 pl-13 pr-4 text-lg font-semibold outline-none placeholder:font-normal placeholder:text-stone-400 focus:border-orange-500 focus:bg-white"
+          className={`${compact ? "h-12" : "h-14"} w-full rounded-2xl border-2 border-orange-200 bg-orange-50/60 pl-13 pr-4 text-lg font-semibold outline-none placeholder:font-normal placeholder:text-stone-400 focus:border-orange-500 focus:bg-white`}
         />
       </span>
     </label>

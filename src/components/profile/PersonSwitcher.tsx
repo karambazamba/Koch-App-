@@ -3,9 +3,6 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { personLabel, type Person } from "@/lib/profile";
 
-/** Mindestweg in Pixeln, ab dem eine waagrechte Wischbewegung zählt */
-const SWIPE_DISTANCE = 60;
-
 type Props = {
   persons: Person[];
   index: number;
@@ -17,12 +14,11 @@ type Props = {
 
 /**
  * Eine Person pro Ansicht: oben eine Leiste mit allen Personen als Chips,
- * darunter nur die Karte der aktuellen Person. Wischen nach links/rechts
- * wechselt zur nächsten/vorherigen Person.
+ * darunter nur die Karte der aktuellen Person. (Wischen übernimmt der
+ * Assistent: links = Weiter, also zur nächsten Person.)
  */
 export function PersonSwitcher({ persons, index, doneIds, onSelect, children }: Props) {
   const barRef = useRef<HTMLDivElement>(null);
-  const touchStart = useRef<{ x: number; y: number } | null>(null);
 
   // Aktuellen Chip in der waagrecht scrollbaren Leiste mittig halten. Nur die
   // Leiste scrollen – scrollIntoView würde auch die Seite verschieben und das
@@ -41,6 +37,7 @@ export function PersonSwitcher({ persons, index, doneIds, onSelect, children }: 
         ref={barRef}
         role="tablist"
         aria-label="Personen"
+        data-no-swipe
         className="relative -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]"
       >
         {persons.map((person, i) => {
@@ -69,27 +66,7 @@ export function PersonSwitcher({ persons, index, doneIds, onSelect, children }: 
         })}
       </div>
 
-      <div
-        onTouchStart={(e) => {
-          const t = e.touches[0];
-          touchStart.current = t ? { x: t.clientX, y: t.clientY } : null;
-        }}
-        onTouchEnd={(e) => {
-          const start = touchStart.current;
-          const t = e.changedTouches[0];
-          touchStart.current = null;
-          if (!start || !t) return;
-          // In Textfeldern verschiebt Wischen den Cursor – nicht die Person.
-          if ((e.target as HTMLElement).closest("input, textarea")) return;
-          const dx = t.clientX - start.x;
-          const dy = t.clientY - start.y;
-          if (Math.abs(dx) < SWIPE_DISTANCE || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-          if (dx < 0 && index < persons.length - 1) onSelect(index + 1);
-          if (dx > 0 && index > 0) onSelect(index - 1);
-        }}
-      >
-        {children}
-      </div>
+      <div>{children}</div>
     </>
   );
 }

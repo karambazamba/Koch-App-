@@ -7,15 +7,29 @@ type Props = {
   min: number;
   max: number;
   onChange: (value: number) => void;
+  /** "plain" ohne eigene Karte, z. B. mehrere Zähler in einer gemeinsamen Karte */
+  variant?: "card" | "plain";
 };
 
 /** Zahlenauswahl mit großen Plus-/Minus-Knöpfen statt Tastatur. */
-export function NumberStepper({ label, hint, value, min, max, onChange }: Props) {
+export function NumberStepper({
+  label,
+  hint,
+  value,
+  min,
+  max,
+  onChange,
+  variant = "card",
+}: Props) {
   const buttonClass =
     "flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-100 text-3xl font-bold text-orange-700 active:scale-95 disabled:opacity-30";
 
   return (
-    <div className="flex items-center justify-between gap-4 rounded-3xl bg-white p-4 shadow-sm">
+    <div
+      className={`flex items-center justify-between gap-4 ${
+        variant === "card" ? "rounded-3xl bg-white p-4 shadow-sm" : "py-3"
+      }`}
+    >
       <div>
         <p className="text-lg font-bold">{label}</p>
         {hint && <p className="text-stone-500">{hint}</p>}
