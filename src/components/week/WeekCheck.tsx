@@ -7,7 +7,7 @@ import { Check, MapPin, Repeat, Sparkles, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { PRIMARY_BUTTON, SECONDARY_BUTTON, StickyActions } from "@/components/StickyActions";
 import { WeekRulesEditor, tooManyDays } from "@/components/profile/editors";
-import { CARD, INPUT_BASE, buttonClass, tileClass } from "@/components/ui/styles";
+import { CARD, INPUT_BASE, PAGE_MAIN, buttonClass, tileClass } from "@/components/ui/styles";
 import { FixedMealsSection } from "@/components/week/FixedMealsSection";
 import {
   createEmptyProfile,
@@ -161,7 +161,7 @@ function WeekCheckForm({
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
       <PageHeader title="Wochen-Check" />
-      <main className="flex flex-1 flex-col gap-4 px-4 pb-6 pt-2">
+      <main className={PAGE_MAIN}>
         <div>
           <h2 className="text-xl font-extrabold tracking-tight">
             {isCurrentWeek ? "Wie sieht eure Woche aus?" : "Wie sieht eure nächste Woche aus?"}

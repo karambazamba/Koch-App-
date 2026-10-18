@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { PRIMARY_BUTTON, SECONDARY_BUTTON, StickyActions } from "@/components/StickyActions";
 import { ChoiceGroup } from "@/components/form/ChoiceGroup";
 import { NumberStepper } from "@/components/form/NumberStepper";
-import { CARD, INPUT, INPUT_BASE, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
+import { CARD, INPUT, INPUT_BASE, PAGE_MAIN, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
 import {
   RECIPE_CATEGORIES,
   UNITS,
@@ -84,7 +84,7 @@ function EditorForm({ existing }: { existing?: Recipe }) {
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
       <PageHeader title={existing ? "Rezept bearbeiten" : "Neues Rezept"} backHref={backHref} />
-      <main className="flex flex-1 flex-col gap-4 px-4 pb-8 pt-2">
+      <main className={PAGE_MAIN}>
         <label className={`${CARD} flex flex-col gap-2 p-4`}>
           <span className={SECTION_TITLE}>Titel</span>
           <input

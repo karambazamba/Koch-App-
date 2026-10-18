@@ -316,6 +316,7 @@ function ProfileWizard({ initial }: { initial?: HouseholdProfile | null }) {
         </div>
       </div>
 
+      {/* Ohne Profil ist der Küchenhelfer-Knopf hier ausgeblendet → kein FAB_CLEARANCE */}
       <main ref={mainRef} className="flex flex-1 flex-col gap-4 px-4 pb-6 pt-4">
         {step === STEP.household && (
           <StepHousehold profile={profile} update={update} setCounts={setCounts} />

@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Check, Clock, PenLine, Sparkles, ThumbsDown, ThumbsUp, Trash2, Users } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { CategoryChip } from "@/components/ui/Category";
-import { CARD, PAGE_MAIN, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
+import { CARD, FAB_CLEARANCE, PAGE_MAIN, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
 import { FavoriteButton } from "@/components/cookbook/CookbookList";
 import {
   deleteRecipe,
@@ -41,7 +41,7 @@ function RecipeDetails({ id }: { id: string }) {
     return (
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
         <PageHeader title="Rezept" backHref="/kochbuch" />
-        <main className="flex flex-col items-center gap-4 px-6 pt-10 text-center">
+        <main className={`flex flex-col items-center gap-4 px-6 pt-10 text-center ${FAB_CLEARANCE}`}>
           <p className="text-base">Dieses Rezept gibt es nicht (mehr).</p>
           <Link href="/kochbuch" className={buttonClass("secondary")}>
             Zum Kochbuch
