@@ -459,7 +459,9 @@ Bei ALLEN Änderungen beachten.
   `/api/kuechenhelfer` leitet dorthin): schwebender
   Knopf auf allen Seiten außer der Startseite (`KitchenHelper` im Layout, über `StickyActions`,
   bei offener Tastatur ausgeblendet), Panel mit Chat, Mikrofon
-  (`useSpeechInput`, Fallback Tastatur-Diktat) und optionalem Vorlesen; die
+  (`useSpeechInput`, Fallback Tastatur-Diktat; jede Aufnahme ist eine frische
+  Sitzung, der Hook liefert den ganzen Text dieser Aufnahme – nie anhängen;
+  nach dem Abschicken oder Abbrechen ist alles leer) und optionalem Vorlesen; die
   Eingabeleiste der Startseite öffnet es.
   Die App schickt nur das Nötige mit (Profil, diese/nächste Woche, Kochbuch
   ohne Schritte, Vorrat); der Server führt die Claude-Tool-Schleife aus

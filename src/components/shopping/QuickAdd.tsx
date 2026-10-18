@@ -96,7 +96,6 @@ function QuickAddSheet({
   const [added, setAdded] = useState<string[]>([]);
   const [unsure, setUnsure] = useState<QuickAddUnsure[]>([]);
   const [hint, setHint] = useState("");
-  const collected = useRef("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const add = (name: string, amount: string, shop: string) => {
@@ -141,13 +140,9 @@ function QuickAddSheet({
   }, []);
 
   const speech = useSpeechInput({
-    onFinal: (t) => {
-      collected.current = `${collected.current} ${t}`.trim();
-      setInput(collected.current);
-    },
-    onEnd: () => {
-      const t = collected.current;
-      collected.current = "";
+    onTranscript: (t) => setInput(t),
+    onEnd: (t) => {
+      setInput("");
       if (t && mounted.current) submit(t);
     },
   });
@@ -160,7 +155,6 @@ function QuickAddSheet({
     }
     if (speech.listening) speech.stop();
     else {
-      collected.current = "";
       setInput("");
       speech.start();
     }
