@@ -3,6 +3,8 @@
 // Änderung für die Vorschau vor und wenden sie nur auf eine Arbeitskopie an,
 // damit spätere Lese-Aufrufe den Vorschlag schon sehen.
 
+import { recipeBase } from "../bases";
+import { isNeverAgain } from "../ratings";
 import type Anthropic from "@anthropic-ai/sdk";
 import { RECIPE_CATEGORIES, type RecipeCategory } from "../cookbook";
 import { guessDishCategory } from "../dishCategory";
@@ -308,6 +310,8 @@ export function runTool(ctx: ToolContext, name: string, raw: unknown): ToolResul
           zutaten: r.ingredients.map((i) => i.name).join(", "),
           favorit: r.favorite || undefined,
           gekocht: r.cookedCount || undefined,
+          daumen_hoch: r.thumbsUp || undefined,
+          basis: recipeBase(r) ?? undefined,
         }));
       return { content: JSON.stringify({ treffer: list.length, rezepte: list }) };
     }
@@ -356,6 +360,7 @@ export function runTool(ctx: ToolContext, name: string, raw: unknown): ToolResul
         return { content: `Vorgemerkt: ${weekday} – ${created.recipe.title} (neues Rezept)${doubleNote}.` };
       }
       const title = str(input.gericht);
+      if (isNeverAgain(title, data.profile.neverAgain)) return fail(`"${title}" steht auf der Nie-wieder-Liste – etwas anderes wählen.`);
       const cat = category(input.kategorie) ?? guessDishCategory(title, Object.values(data.recipes));
       propose(ctx, { id: nextId(ctx), type: "set_meal", slot, dish: { kind: "text", title, category: cat }, ...double });
       return { content: `Vorgemerkt: ${weekday} – ${title}${doubleNote}.` };
@@ -458,6 +463,9 @@ export function runTool(ctx: ToolContext, name: string, raw: unknown): ToolResul
           name: str(z.name),
         }))
         .filter((z) => z.name);
+      if (isNeverAgain(title, data.profile.neverAgain)) {
+        return fail(`Abgelehnt – "${title}" steht auf der Nie-wieder-Liste. Etwas deutlich anderes erstellen.`);
+      }
       const conflicts = dietConflicts(title, ingredients.map((i) => i.name), data.profile.persons);
       if (conflicts.length > 0) {
         return fail(

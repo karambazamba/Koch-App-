@@ -64,7 +64,31 @@ function intentText(messages: Anthropic.Beta.BetaMessageParam[]): string {
 function cookbookTitles(system: string): string[] {
   const line = system.split("\n").find((l) => l.startsWith("Kochbuch:")) ?? "";
   const list = line.split(" – ")[1];
-  return list ? list.split(", ") : [];
+  return list ? list.split(", ").map((t) => t.replace(/ \(👍\d+\)$/, "")) : [];
+}
+
+/** Titel der Nie-wieder-Liste aus dem Kontext */
+function neverAgainTitles(system: string): string[] {
+  const start = system.indexOf("NIE WIEDER");
+  if (start < 0) return [];
+  return system
+    .slice(start)
+    .split("\n")
+    .slice(1)
+    .filter((l) => l.startsWith("- "))
+    .map((l) => l.slice(2).split(";")[0].trim());
+}
+
+/** Reste-Ideen im Testmodus: Kochbuch-Rezepte (ohne Nie-wieder) plus Beispielideen */
+function leftoverReply(intentValue: string, system: string): string | null {
+  const m = intentValue.match(/Ideen für unsere Reste: (.*)\. Basis: ([^.]+)\./);
+  if (!m) return null;
+  const base = m[2].trim();
+  const banned = neverAgainTitles(system).map((t) => t.toLowerCase());
+  const fromBook = cookbookTitles(system).filter((t) => !banned.includes(t.toLowerCase()));
+  const extra = base === "egal" ? ["Resteomelett", "Gemüsepfanne", "Bunte Suppe"] : [`Resteauflauf mit ${base}`, `Gemüsepfanne mit ${base}`, `Bunte Bowl mit ${base}`];
+  const ideas = [...fromBook.slice(0, 1), ...extra].slice(0, 3);
+  return `Aus ${m[1]} fallen mir drei Sachen ein (Testmodus): ${ideas[0]}, ${ideas[1]} oder ${ideas[2]}. Welche soll's werden?`;
 }
 
 /** Rezepte aus dem Kochbuch in der Reihenfolge, in der sie genannt werden */
@@ -141,6 +165,16 @@ export function createMockModel(): CreateMessage {
 
     // 1. Neue Frage: unklar → nachfragen, sonst Woche und Kochbuch lesen
     if (typeof last.content === "string") {
+      const leftovers = leftoverReply(last.content, system);
+      if (leftovers) return text(leftovers);
+      const latest = last.content;
+      const prevAssistant = [...msgs].reverse().find((x, i) => i > 0 && x.role === "assistant" && typeof x.content === "string");
+      if (/(neues rezept|neue rezepte|denk dir|rezeptidee|was neues)/i.test(latest)) {
+        return text("Klar, mach ich! Was soll die Basis sein – Kartoffeln, Reis, Nudeln oder was anderes?");
+      }
+      if (typeof prevAssistant?.content === "string" && /basis/i.test(prevAssistant.content)) {
+        return text(`Mit ${latest} – wie wär's mit einer cremigen Gemüsepfanne dazu? Sag Bescheid, für welchen Tag (Testmodus).`);
+      }
       if (intent.myDays.length > 0 && intent.named.length < intent.myDays.length) {
         const choice = intent.titles.slice(0, 6).join(", ");
         return text(

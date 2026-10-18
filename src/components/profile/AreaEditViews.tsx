@@ -14,6 +14,8 @@ import {
   withWishDay,
   HelperEditor,
 } from "@/components/profile/editors";
+import { NumberStepper } from "@/components/form/NumberStepper";
+import { sortedBases } from "@/lib/bases";
 import { WEEKDAYS, planningWeekLabel, standardWeekDays } from "@/lib/profile";
 
 export function FavoritesEditView() {
@@ -143,6 +145,37 @@ export function ShoppingDayEditView() {
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted" strokeWidth={2.25} aria-hidden />
             Planungswoche: {planningWeekLabel(draft.shoppingDay)}
           </p>
+        </>
+      )}
+    </ProfileEditPage>
+  );
+}
+
+/** "Eure Lieblings-Basen": wie oft welche Basis gewählt bzw. gut bewertet wurde */
+export function BasesEditView() {
+  return (
+    <ProfileEditPage title="Lieblings-Basen">
+      {(draft, setDraft) => (
+        <>
+          <p className={SUBTLE}>
+            Merke ich mir, wenn ihr bei Reste-Ideen oder neuen Rezepten eine Basis wählt oder ein Gericht gut bewertet.
+            Die beliebtesten schlage ich zuerst vor.
+          </p>
+          <div className={`${CARD} flex flex-col divide-y divide-line px-4`}>
+            {sortedBases(draft.bases).map((b) => (
+              <div key={b.id} className="py-2">
+                <NumberStepper
+                  variant="plain"
+                  label={b.label}
+                  hint={draft.bases[b.id] === 1 ? "1-mal gewählt" : `${draft.bases[b.id]}-mal gewählt`}
+                  value={draft.bases[b.id]}
+                  min={0}
+                  max={999}
+                  onChange={(value) => setDraft((d) => ({ ...d, bases: { ...d.bases, [b.id]: value } }))}
+                />
+              </div>
+            ))}
+          </div>
         </>
       )}
     </ProfileEditPage>

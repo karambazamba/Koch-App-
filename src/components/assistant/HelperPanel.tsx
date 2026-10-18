@@ -2,7 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import { ArrowUp, Mic, MicOff, Sparkles, Square, Volume2, VolumeX, X } from "lucide-react";
+import { ArrowUp, Check, ChevronRight, CircleHelp, Mic, MicOff, Sparkles, Square, Volume2, VolumeX, X } from "lucide-react";
+import { CategoryDot } from "@/components/ui/Category";
+import { baseFromText, baseLabel, bumpBase, sortedBases, type BaseId } from "@/lib/bases";
+import { parseLeftovers, type ParsedLeftover } from "@/lib/leftovers/parser";
+import { leftoverIdeas, type LeftoverIdea } from "@/lib/leftovers/suggest";
+import { addPantryItems, formatPantryItem, usePantry } from "@/lib/pantry";
 import { helperName, helperTitle, saveProfile } from "@/lib/profile";
 import { finalizeProfile, startAddPerson, type OnboardingState } from "@/lib/onboarding/engine";
 import { isAddPersonRequest } from "@/lib/onboarding/recognize";
@@ -30,10 +35,30 @@ export type ChatTurnView = ChatTurn & {
   error?: boolean;
   /** Nur in der App erzeugt ("Übernommen ✓") – wird nicht an die KI geschickt */
   local?: boolean;
+  /** An die KI geschickt statt `text` (z. B. Reste + Basis ausführlich) */
+  send?: string;
+  /** Reste-Modus: erkannte bzw. schon notierte Zutaten als Chips */
+  items?: string[];
+  /** Reste-Modus: unbekannte Wörter ("Meintest du …?") */
+  unsure?: ParsedLeftover[];
+  /** Reste-Modus: Vorschläge aus dem Kochbuch */
+  ideas?: LeftoverIdea[];
+  /** Darunter die Basis-Chips anzeigen */
+  bases?: boolean;
+  /** Erste Frage im Reste-Modus */
+  resteStart?: boolean;
 };
 
 export type Proposal = { ops: ChangeOp[]; selected: Set<string> };
-export type ChatState = { turns: ChatTurnView[]; proposal: Proposal | null };
+/** `reste`: Reste-Modus ("Was ist noch da?") – erst Zutaten, dann Basis */
+export type ChatState = { turns: ChatTurnView[]; proposal: Proposal | null; reste: "items" | "base" | null };
+
+/** Fragt die KI nach der Basis? Dann Basis-Chips anbieten */
+function asksForBase(turn: ChatTurnView | undefined): boolean {
+  return Boolean(turn && turn.role === "assistant" && !turn.local && !turn.error && /basis/i.test(turn.text) && turn.text.includes("?"));
+}
+
+const BUBBLE = "max-w-[85%] whitespace-pre-line rounded-2xl px-4 py-2.5 text-base leading-snug";
 
 const EXAMPLES = [
   "Donnerstag und Freitag gibt es meine Rezepte, der Rest vegetarisch",
@@ -70,21 +95,18 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
   // Neue Person: geführtes Gespräch wie beim Kennenlernen
   const [guided, setGuided] = useState<OnboardingState | null>(null);
   const voice = data?.profile.helper.voice ?? "weiblich";
+  const pantry = usePantry();
 
-  const ask = async (text: string) => {
+  /** Frage an die KI; `display` = was im Chat steht, wenn anders als die Frage */
+  const ask = async (text: string, display?: string) => {
     const question = text.trim();
     if (!question || busy || !data || !today) return;
-    if (isAddPersonRequest(question)) {
-      setInput("");
-      setGuided(startAddPerson(data.profile, question));
-      return;
-    }
     if (!ready) {
       setChat((c) => ({
         ...c,
         turns: [
           ...c.turns,
-          { role: "user", text: question },
+          { role: "user", text: display ?? question },
           { role: "assistant", text: "Dafür brauche ich die KI – die ist noch nicht eingerichtet.", error: true },
         ],
       }));
@@ -92,10 +114,10 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
       return;
     }
     const history: ChatTurn[] = [
-      ...chat.turns.filter((t) => !t.error && !t.local).map(({ role, text: t }) => ({ role, text: t })),
+      ...chat.turns.filter((t) => !t.error && !t.local).map(({ role, text: t, send }) => ({ role, text: send ?? t })),
       { role: "user", text: question },
     ];
-    setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: question }] }));
+    setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: display ?? question, send: display ? question : undefined }] }));
     setInput("");
     setAdjusting(false);
     setBusy(true);
@@ -109,6 +131,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
           result.ops.filter((op) => !previous.has(op.id) || c.proposal?.selected.has(op.id)).map((op) => op.id),
         );
         return {
+          ...c,
           turns: [...c.turns, { role: "assistant", text: result.reply }],
           proposal: result.ops.length > 0 ? { ops: result.ops, selected } : null,
         };
@@ -120,6 +143,89 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
     } finally {
       setBusy(false);
     }
+  };
+
+  // --- Reste-Modus ("Was ist noch da?") -------------------------------------
+
+  const baseQuestion: ChatTurnView = { role: "assistant", text: "Und worauf habt ihr Lust – was soll die Basis sein?", local: true, bases: true };
+
+  /** Gesagtes im Reste-Modus: Zutaten in den Vorrat – oder die Basis */
+  const resteInput = async (text: string) => {
+    if (!today) return;
+    setInput("");
+    if (chat.reste === "base") {
+      const base = baseFromText(text);
+      if (base || /egal|wurscht|überrasch|keine ahnung/i.test(text)) return chooseBase(base, text);
+    }
+    const parsed = await parseLeftovers(text);
+    const known = parsed.filter((p) => p.known);
+    const unsure = parsed.filter((p) => !p.known);
+    if (known.length) addPantryItems(known.map(({ name, amount, unit }) => ({ name, amount, unit })), toIsoDate(today));
+    setChat((c) => {
+      const turns: ChatTurnView[] = [...c.turns, { role: "user", text, local: true }];
+      if (!known.length && !unsure.length) {
+        return {
+          ...c,
+          turns: [...turns, { role: "assistant", local: true, text: "Hab ich nicht ganz verstanden – sag z. B. „2 Karotten, Reis und Joghurt“." }],
+        };
+      }
+      const noted: ChatTurnView = {
+        role: "assistant",
+        local: true,
+        text: known.length ? (c.reste === "base" ? "Auch notiert ✓" : "Notiert ✓") : "Das kenne ich nicht ganz:",
+        items: known.map(formatPantryItem),
+        unsure,
+      };
+      return { ...c, reste: "base", turns: [...turns, noted, baseQuestion] };
+    });
+  };
+
+  /** Basis gewählt (null = egal): merken, dann 3 Vorschläge */
+  const chooseBase = (base: BaseId | null, label: string) => {
+    if (!data || busy) return;
+    if (base) saveProfile({ ...data.profile, bases: bumpBase(data.profile.bases, base) });
+    const items = (pantry ?? []).map(formatPantryItem);
+    if (ready) {
+      setChat((c) => ({ ...c, reste: null }));
+      void ask(
+        `Ideen für unsere Reste: ${items.join(", ") || "(nichts notiert)"}. Basis: ${base ? baseLabel(base) : "egal"}. Bitte genau 3 Vorschläge.`,
+        label,
+      );
+      return;
+    }
+    const result = leftoverIdeas(data.recipes, pantry ?? [], base, data.profile.neverAgain);
+    setChat((c) => ({
+      ...c,
+      reste: null,
+      turns: [...c.turns, { role: "user", text: label, local: true }, { role: "assistant", text: result.text, local: true, ideas: result.ideas }],
+    }));
+  };
+
+  /** Unbekanntes Wort übernehmen (Vorschlag oder wie gehört) */
+  const acceptUnsure = (turnIndex: number, item: ParsedLeftover) => {
+    if (!today) return;
+    addPantryItems([{ name: item.suggestion ?? item.name, amount: item.amount, unit: item.unit }], toIsoDate(today));
+    setChat((c) => ({
+      ...c,
+      turns: c.turns.map((t, i) =>
+        i === turnIndex
+          ? { ...t, unsure: t.unsure?.filter((u) => u !== item), items: [...(t.items ?? []), formatPantryItem({ ...item, name: item.suggestion ?? item.name })] }
+          : t,
+      ),
+    }));
+  };
+
+  /** Eingabe abschicken: neue Person, Reste-Modus oder Frage an die KI */
+  const submit = (text: string) => {
+    const t = text.trim();
+    if (!t || busy || !data || !today) return;
+    if (isAddPersonRequest(t)) {
+      setInput("");
+      setGuided(startAddPerson(data.profile, t));
+      return;
+    }
+    if (chat.reste) return void resteInput(t);
+    void ask(t);
   };
 
   // Panel geschlossen → eine noch laufende Aufnahme nicht mehr abschicken
@@ -141,7 +247,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
     onEnd: () => {
       const t = collected.current;
       collected.current = "";
-      if (t && mounted.current) void ask(t);
+      if (t && mounted.current) submit(t);
     },
   });
 
@@ -252,7 +358,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
         <div ref={scrollRef} className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4" aria-live="polite">
           {status === undefined || data === undefined ? (
             <div className="h-20 animate-pulse rounded-card bg-surface" />
-          ) : !status.configured ? (
+          ) : !status.configured && !chat.reste && chat.turns.length === 0 ? (
             <p className={NOTE} role="note">
               <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
               <span>
@@ -287,20 +393,115 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
             </div>
           )}
 
-          {chat.turns.map((turn, i) => (
-            <p
-              key={i}
-              className={`max-w-[85%] whitespace-pre-line rounded-2xl px-4 py-2.5 text-base leading-snug ${
-                turn.role === "user"
-                  ? "self-end rounded-br-md bg-accent text-white"
-                  : turn.error
-                    ? "self-start rounded-bl-md border border-red-200 bg-red-50 text-red-700"
-                    : "self-start rounded-bl-md border border-line bg-surface text-ink"
-              }`}
-            >
-              {turn.text}
-            </p>
-          ))}
+          {chat.turns.map((turn, i) => {
+            const last = i === chat.turns.length - 1;
+            const showBases = last && !busy && ((turn.bases && chat.reste === "base") || (!chat.reste && asksForBase(turn)));
+            return (
+              <div key={i} className={`flex flex-col gap-2 ${turn.role === "user" ? "items-end" : "items-start"}`}>
+                <div
+                  className={`${BUBBLE} ${
+                    turn.role === "user"
+                      ? "rounded-br-md bg-accent text-white"
+                      : turn.error
+                        ? "rounded-bl-md border border-red-200 bg-red-50 text-red-700"
+                        : "rounded-bl-md border border-line bg-surface text-ink"
+                  }`}
+                >
+                  {turn.text}
+                  {(turn.items?.length || turn.unsure?.length) ? (
+                    <span className="mt-2 flex flex-wrap gap-1.5">
+                      {turn.items?.map((item) => (
+                        <span key={item} className={chipClass(true)}>
+                          {item}
+                        </span>
+                      ))}
+                      {turn.unsure?.map((u) => (
+                        <button
+                          key={u.heard}
+                          type="button"
+                          onClick={() => acceptUnsure(i, u)}
+                          className={chipClass(false, "muted")}
+                        >
+                          {u.suggestion ? `Meintest du ${u.suggestion}?` : `${u.name} übernehmen?`}
+                          <CircleHelp className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                        </button>
+                      ))}
+                    </span>
+                  ) : null}
+                  {turn.items?.length ? (
+                    <Link href="/schnellkueche" onClick={onClose} className="mt-2 block text-sm font-semibold text-accent-strong underline">
+                      Liste „Noch da“ ansehen
+                    </Link>
+                  ) : null}
+                </div>
+                {turn.ideas && turn.ideas.length > 0 && (
+                  <ul className="w-full overflow-hidden rounded-card border border-line bg-surface shadow-card">
+                    {turn.ideas.map((idea) => (
+                      <li key={idea.id} className="border-b border-line last:border-b-0">
+                        <Link
+                          href={`/kochbuch/rezept?id=${encodeURIComponent(idea.id)}`}
+                          onClick={onClose}
+                          className="flex items-center gap-3 px-4 py-3 active:bg-stone-50"
+                        >
+                          <CategoryDot category={idea.category} />
+                          <span className="min-w-0 flex-1">
+                            <span className="block font-bold leading-snug">{idea.title}</span>
+                            <span className="block text-sm text-muted">
+                              nutzt {idea.used} {idea.used === 1 ? "Rest" : "Reste"} ·{" "}
+                              {idea.missing.length === 0 ? (
+                                <span className="inline-flex items-center gap-1 font-semibold text-accent-strong">
+                                  nichts fehlt <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                                </span>
+                              ) : (
+                                `fehlt: ${idea.missing.slice(0, 3).join(", ")}${idea.missing.length > 3 ? " …" : ""}`
+                              )}
+                            </span>
+                          </span>
+                          <ChevronRight className="h-5 w-5 shrink-0 text-stone-300" strokeWidth={2.25} aria-hidden />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {turn.resteStart && last && chat.reste === "items" && (pantry?.length ?? 0) > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setChat((c) => ({ ...c, reste: "base", turns: [...c.turns, { role: "user", text: "Reicht so – weiter", local: true }, baseQuestion] }))}
+                    className={chipClass(true)}
+                  >
+                    Reicht so – weiter
+                  </button>
+                )}
+                {showBases && data && (
+                  <div className="flex flex-wrap gap-2" aria-label="Basis wählen">
+                    {sortedBases(data.profile.bases).map((b) => (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() => {
+                          if (chat.reste) chooseBase(b.id, b.label);
+                          else {
+                            saveProfile({ ...data.profile, bases: bumpBase(data.profile.bases, b.id) });
+                            void ask(b.label);
+                          }
+                        }}
+                        className={chipClass(false)}
+                      >
+                        {b.label}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => (chat.reste ? chooseBase(null, "Egal") : void ask("Egal"))}
+                      className={chipClass(false, "muted")}
+                    >
+                      Egal
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
           {busy && (
             <p className="self-start rounded-2xl rounded-bl-md border border-line bg-surface px-4 py-2.5 text-muted" role="status">
@@ -329,7 +530,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
               }}
               onDiscard={() => {
                 setAdjusting(false);
-                setChat((c) => ({ turns: [...c.turns, { role: "assistant", text: "Okay, verworfen.", local: true }], proposal: null }));
+                setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text: "Okay, verworfen.", local: true }], proposal: null }));
               }}
             />
           )}
@@ -346,7 +547,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
             className="flex items-center gap-2"
             onSubmit={(e) => {
               e.preventDefault();
-              void ask(input);
+              submit(input);
             }}
           >
             <button
@@ -378,9 +579,13 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
               placeholder={
                 speech.listening
                   ? speech.interim || "Ich höre zu …"
-                  : adjusting
-                    ? "Was soll anders sein?"
-                    : `Frag ${name} …`
+                  : chat.reste === "items"
+                    ? "z. B. 2 Karotten, Reis, Joghurt"
+                    : chat.reste === "base"
+                      ? "Basis – oder noch mehr Reste"
+                      : adjusting
+                        ? "Was soll anders sein?"
+                        : `Frag ${name} …`
               }
               className={`${INPUT_BASE} h-12 flex-1 px-4`}
             />

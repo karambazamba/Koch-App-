@@ -4,7 +4,9 @@ import { ChevronRight, type LucideIcon } from "lucide-react";
 import { IconBadge } from "./IconBadge";
 
 type Props = {
-  href: string;
+  /** Ziel – oder statt Link ein Knopf mit `onClick` */
+  href?: string;
+  onClick?: () => void;
   title: ReactNode;
   subtitle?: ReactNode;
   icon?: LucideIcon;
@@ -17,9 +19,9 @@ type Props = {
 };
 
 /** Zeile mit Icon links, Titel + grauem Untertitel und Pfeil rechts */
-export function ListRow({ href, title, subtitle, icon, leading, trailing, className = "", ...rest }: Props) {
-  return (
-    <Link href={href} className={`flex min-h-16 items-center gap-3 px-4 py-3 transition active:bg-stone-50 ${className}`} {...rest}>
+export function ListRow({ href, onClick, title, subtitle, icon, leading, trailing, className = "", ...rest }: Props) {
+  const content = (
+    <>
       {leading ?? (icon && <IconBadge icon={icon} />)}
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="text-base font-bold leading-snug text-ink">{title}</span>
@@ -27,6 +29,19 @@ export function ListRow({ href, title, subtitle, icon, leading, trailing, classN
       </span>
       {trailing}
       <ChevronRight className="h-5 w-5 shrink-0 text-stone-300" strokeWidth={2.25} aria-hidden />
+    </>
+  );
+  const rowClass = `flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left transition active:bg-stone-50 ${className}`;
+  if (!href) {
+    return (
+      <button type="button" onClick={onClick} className={rowClass} {...rest}>
+        {content}
+      </button>
+    );
+  }
+  return (
+    <Link href={href} onClick={onClick} className={rowClass} {...rest}>
+      {content}
     </Link>
   );
 }

@@ -3,6 +3,7 @@
 // laufen über loadProfile/saveProfile/clearProfile, damit später nur diese
 // Datei auf Supabase umgestellt werden muss.
 
+import { EMPTY_BASES, migrateBases, type BaseCounts } from "./bases";
 import { createLocalStore } from "./localStore";
 
 export type PersonRole = "erwachsen" | "kind";
@@ -101,8 +102,22 @@ export function helperMessage(profile: Pick<HouseholdProfile, "helper"> | null |
   return `${helperName(profile)}: ${text}`;
 }
 
+/** Gericht, das nie wieder vorgeschlagen werden soll (👎 nach dem Kochen) */
+export type NeverAgainEntry = {
+  id: string;
+  title: string;
+  /** Hauptzutaten – damit auch sehr ähnliche Gerichte vermieden werden */
+  ingredients: string[];
+  /** Grund, z. B. "zu scharf"; leer = ohne Grund */
+  reason: string;
+  /** Wann eingetragen, "YYYY-MM-DD" */
+  addedAt: string;
+  /** Gelöschtes Rezept aus dem Kochbuch – beim Wiederherstellen zurück */
+  recipe?: unknown;
+};
+
 export type HouseholdProfile = {
-  version: 7;
+  version: 8;
   householdName: string;
   adults: number;
   kids: number;
@@ -115,6 +130,10 @@ export type HouseholdProfile = {
   shoppingDay: string;
   /** Küchenhelfer: Name und Stimme */
   helper: HelperSettings;
+  /** Wie oft welche Basis gewählt bzw. gut bewertet wurde (Profil v8) */
+  bases: BaseCounts;
+  /** "Nie wieder"-Liste (Profil v8) */
+  neverAgain: NeverAgainEntry[];
   updatedAt: string;
 };
 
@@ -210,7 +229,7 @@ export function createPerson(role: PersonRole): Person {
 
 export function createEmptyProfile(): HouseholdProfile {
   return {
-    version: 7,
+    version: 8,
     householdName: "",
     adults: 2,
     kids: 1,
@@ -231,6 +250,8 @@ export function createEmptyProfile(): HouseholdProfile {
     wishDay: createWishDay(),
     shoppingDay: "Montag",
     helper: DEFAULT_HELPER,
+    bases: EMPTY_BASES,
+    neverAgain: [],
     updatedAt: "",
   };
 }
@@ -375,7 +396,7 @@ export function normalizeMealTime(value: unknown, fallback: MealTime): MealTime 
 export function migrateProfile(raw: unknown): HouseholdProfile | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as Record<string, unknown>;
-  if (![1, 2, 3, 4, 5, 6, 7].includes(data.version as number)) return null;
+  if (![1, 2, 3, 4, 5, 6, 7, 8].includes(data.version as number)) return null;
 
   const defaults = createEmptyProfile();
 
@@ -440,8 +461,26 @@ export function migrateProfile(raw: unknown): HouseholdProfile | null {
     shoppingDay: pick(data.shoppingDay, WEEKDAYS, defaults.shoppingDay),
     // Bis v6 hatte der Küchenhelfer keinen Namen → Lotte.
     helper: migrateHelper(data.helper),
+    // Bis v7 keine Basis-Statistik und keine "Nie wieder"-Liste
+    bases: migrateBases(data.bases),
+    neverAgain: migrateNeverAgain(data.neverAgain),
     updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : "",
   };
+}
+
+function migrateNeverAgain(raw: unknown): NeverAgainEntry[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((e): e is Partial<NeverAgainEntry> => Boolean(e) && typeof e === "object")
+    .filter((e) => typeof e.title === "string" && e.title.trim() !== "")
+    .map((e) => ({
+      id: typeof e.id === "string" ? e.id : newId(),
+      title: e.title!.trim(),
+      ingredients: Array.isArray(e.ingredients) ? e.ingredients.filter((i): i is string => typeof i === "string").slice(0, 8) : [],
+      reason: typeof e.reason === "string" ? e.reason.slice(0, 200) : "",
+      addedAt: typeof e.addedAt === "string" ? e.addedAt : "",
+      ...(e.recipe && typeof e.recipe === "object" ? { recipe: e.recipe } : {}),
+    }));
 }
 
 function migrateHelper(raw: unknown): HelperSettings {

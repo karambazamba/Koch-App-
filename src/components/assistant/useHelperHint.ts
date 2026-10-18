@@ -3,6 +3,7 @@
 // Kurzer aktueller Hinweis des Küchenhelfers für die Sprechblase auf der
 // Startseite, z. B. "Lotte: Für morgen fehlt Sahne". Ohne Anlass: "Frag Lotte".
 
+import { useRatingCandidate } from "@/components/home/useRatingCandidate";
 import { useRecipes } from "@/lib/cookbook";
 import { composeWeek, useMealPlans } from "@/lib/mealPlan";
 import { helperMessage, helperName } from "@/lib/profile";
@@ -24,8 +25,12 @@ export function useHelperHint(): string | null {
   const recipes = useRecipes();
   const current = useWeekShoppingList("current");
   const next = useWeekShoppingList("next");
+  const rating = useRatingCandidate();
   if (!today || profile === undefined || !weekPlans || !mealPlans || !recipes || !current || !next) return null;
   if (profile === null) return null;
+
+  // Nach dem Kochen zuerst nach der Bewertung fragen
+  if (rating) return helperMessage(profile, `Wie war ${rating.title}?`);
 
   const shoppingDay = profile.shoppingDay ?? DEFAULT_SHOPPING_DAY;
   const todayIso = toIsoDate(today);
