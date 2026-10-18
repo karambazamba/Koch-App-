@@ -69,7 +69,30 @@ abgeben kann – wie an eine Haushaltskraft, mit der man ganz natürlich spricht
 
 ## Produktentscheidungen
 
-- Der Assistent (8 Schritte, der letzte: Name des Küchenhelfers) wird nur beim ersten Anlegen verwendet. Danach
+- Erstes Kennenlernen als Gespräch (`/profil` ohne Profil → `OnboardingChat`,
+  Vollbild im Stil des Küchenhelfer-Panels). Ablauf rein in
+  `src/lib/onboarding/engine.ts` (Begrüßung, Name/Stimme der Küchenhilfe,
+  Familienname, "Wer isst bei euch mit?", Namen bestätigen mit antippbaren
+  Chips und Schreibvarianten aus `names.ts`, pro Person "Erzähl mir kurz was
+  über …" – nachgefragt wird nur Pflicht: Rolle, bei Kindern Gruppe –,
+  Allergien/Abneigungen, warme Mahlzeit, Einkaufstag, Standardwoche,
+  Abschluss mit Zusammenfassung und "Erste Woche planen"/"Erstmal umschauen").
+  Antworten per Sprache, Tippen oder Chips; jede Frage hat "Überspringen"
+  (sinnvolle Standardwerte). Bestätigungen ("Notiert ✓ …") und die
+  aufklappbare Familienkarte sind antippbar → Frage nochmal (`revisit`), danach
+  geht's an der alten Stelle weiter. Zwischenstand unter `wasgibts.kennenlernen`
+  (`progress.ts`) nach jeder Antwort, beim Abschluss gelöscht. Erkennung freier
+  Antworten: Regeln in `recognize.ts` (Füllwörter, Namen, Alter, Gruppe,
+  Mittag, Allergien …); mit `ANTHROPIC_API_KEY` vorher Claude über
+  `/api/kennenlernen` (`ai.ts`, festes JSON-Schema je Art names/person/diet,
+  geprüft, Modell `KENNENLERNEN_MODEL`, Standard `claude-haiku-5-5`) – Client
+  `recognizeAnswer()` in `recognizer.ts` ist austauschbar und fällt bei Fehlern
+  auf die Regeln zurück. Die Oberfläche (`GuidedChat`) nutzt auch der
+  Küchenhelfer: "X wohnt jetzt bei uns" o. ä. (`isAddPersonRequest`) startet
+  dort `startAddPerson()` – Namen bestätigen, kurz vorstellen, "Fertig ✓"
+  speichert (geht auch ohne KI).
+- "Lieber Formular" öffnet den bisherigen Assistenten (8 Schritte) mit dem
+  bisher Erzählten als Startwert. Der Assistent wird nur beim ersten Anlegen verwendet. Danach
   zeigt `/profil` die Übersicht "Unsere Familie"; Personen und Bereiche werden
   dort einzeln bearbeitet (eigene Seiten unter `/profil/...`).
 - Im Assistenten werden Namen nur in Schritt 2 "Wie heißen alle?" eingegeben;
@@ -171,11 +194,12 @@ abgeben kann – wie an eine Haushaltskraft, mit der man ganz natürlich spricht
   Theo, Bruno oder eigener (max. 20 Zeichen, Standard Lotte), Stimme
   weiblich/männlich (bei Vorschlägen passend zum Namen; `pickVoice()` wählt
   eine passende deutsche Systemstimme, sonst Standard). Einstellbar im
-  Assistenten (letzter Schritt) und unter `/profil/kuechenhelfer`. Knopf mit
-  Topf-Gesicht (`HelperAvatar`), nur auf der Startseite einmal pro App-Start
+  Kennenlernen (erste Frage), im Assistenten (letzter Schritt) und unter `/profil/kuechenhelfer`. Knopf mit
+  Topf-Gesicht (`HelperAvatar`); Anrede `helperTitle()`: "deine
+  Küchenhelferin" bei weiblicher, "dein Küchenhelfer" bei männlicher Stimme, nur auf der Startseite einmal pro App-Start
   eine Sprechblase ("Frag Lotte" bzw. aktueller Hinweis aus `useHelperHint`,
   z. B. "Lotte: Für morgen fehlt Sahne"), klappt nach 5 s oder beim Scrollen
-  zu. Panel-Kopf: Avatar, Name, "dein Küchenhelfer"; erste Nachricht
+  zu. Panel-Kopf: Avatar, Name, `helperTitle()`; erste Nachricht
   "Hi, ich bin <Name> – was steht an?". Mitteilungen im Namen des
   Küchenhelfers (auch künftige Push) immer über `helperMessage()` →
   "<Name>: …". Die KI bekommt Name, Familie und Ton aus dem Leitbild

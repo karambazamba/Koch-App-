@@ -91,6 +91,11 @@ export function helperName(profile: Pick<HouseholdProfile, "helper"> | null | un
   return profile?.helper.name.trim() || DEFAULT_HELPER.name;
 }
 
+/** "deine Küchenhelferin" bzw. "dein Küchenhelfer" – passend zur Stimme */
+export function helperTitle(profile: Pick<HouseholdProfile, "helper"> | null | undefined): string {
+  return (profile?.helper ?? DEFAULT_HELPER).voice === "maennlich" ? "dein Küchenhelfer" : "deine Küchenhelferin";
+}
+
 /** Mitteilung im Namen des Küchenhelfers, z. B. "Lotte: Heute gibt's Gulasch" (auch für Push) */
 export function helperMessage(profile: Pick<HouseholdProfile, "helper"> | null | undefined, text: string): string {
   return `${helperName(profile)}: ${text}`;

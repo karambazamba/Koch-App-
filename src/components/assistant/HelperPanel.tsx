@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { ArrowUp, Mic, MicOff, Sparkles, Square, Volume2, VolumeX, X } from "lucide-react";
-import { helperName } from "@/lib/profile";
+import { helperName, helperTitle, saveProfile } from "@/lib/profile";
+import { finalizeProfile, startAddPerson, type OnboardingState } from "@/lib/onboarding/engine";
+import { isAddPersonRequest } from "@/lib/onboarding/recognize";
+import { GuidedChat } from "@/components/onboarding/GuidedChat";
 import { HelperAvatar } from "./HelperAvatar";
 import {
   askAssistant,
@@ -61,12 +64,33 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
   const collected = useRef("");
 
   const ready = Boolean(status?.configured && data && today);
+  // Eingabe auch ohne KI möglich – z. B. für "neue Person" (ohne KI per Regeln)
+  const canType = Boolean(data && today);
   const name = helperName(data?.profile);
+  // Neue Person: geführtes Gespräch wie beim Kennenlernen
+  const [guided, setGuided] = useState<OnboardingState | null>(null);
   const voice = data?.profile.helper.voice ?? "weiblich";
 
   const ask = async (text: string) => {
     const question = text.trim();
     if (!question || busy || !data || !today) return;
+    if (isAddPersonRequest(question)) {
+      setInput("");
+      setGuided(startAddPerson(data.profile, question));
+      return;
+    }
+    if (!ready) {
+      setChat((c) => ({
+        ...c,
+        turns: [
+          ...c.turns,
+          { role: "user", text: question },
+          { role: "assistant", text: "Dafür brauche ich die KI – die ist noch nicht eingerichtet.", error: true },
+        ],
+      }));
+      setInput("");
+      return;
+    }
     const history: ChatTurn[] = [
       ...chat.turns.filter((t) => !t.error && !t.local).map(({ role, text: t }) => ({ role, text: t })),
       { role: "user", text: question },
@@ -164,7 +188,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-40" role="dialog" aria-modal aria-label={`${name} – Küchenhelfer`}>
+    <div className="fixed inset-0 z-40" role="dialog" aria-modal aria-label={`${name} – ${helperTitle(data?.profile)}`}>
       <button type="button" aria-label="Küchenhelfer schließen" onClick={onClose} className="absolute inset-0 bg-black/25" />
       <section
         className="absolute inset-x-0 mx-auto flex w-full max-w-lg flex-col rounded-t-3xl bg-background shadow-sheet"
@@ -184,7 +208,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
                   <span className="ml-2 align-middle rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold text-stone-600">Testmodus</span>
                 )}
               </h2>
-              <p className="text-sm text-muted">dein Küchenhelfer</p>
+              <p className="text-sm text-muted">{helperTitle(data?.profile)}</p>
             </div>
             {voiceSupported() && (
               <button
@@ -207,6 +231,24 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
           </div>
         </header>
 
+        {guided ? (
+          <GuidedChat
+            state={guided}
+            onChange={setGuided}
+            onFinish={() => {
+              const added = guided.draft.persons.length > (data?.profile.persons.length ?? 0);
+              saveProfile(finalizeProfile(guided));
+              setGuided(null);
+              if (added) {
+                setChat((c) => ({
+                  ...c,
+                  turns: [...c.turns, { role: "assistant", text: "Gespeichert ✓ Ab jetzt plane ich mit.", local: true }],
+                }));
+              }
+            }}
+          />
+        ) : (
+          <>
         <div ref={scrollRef} className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4" aria-live="polite">
           {status === undefined || data === undefined ? (
             <div className="h-20 animate-pulse rounded-card bg-surface" />
@@ -310,7 +352,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
             <button
               type="button"
               onClick={toggleMic}
-              disabled={!ready || busy}
+              disabled={!canType || busy}
               aria-pressed={speech.listening}
               aria-label={speech.listening ? "Zuhören beenden" : "Frage einsprechen"}
               className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-white shadow-md transition active:scale-95 disabled:opacity-40 ${
@@ -330,7 +372,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              disabled={!ready}
+              disabled={!canType}
               enterKeyHint="send"
               aria-label="Nachricht an den Küchenhelfer"
               placeholder={
@@ -344,7 +386,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
             />
             <button
               type="submit"
-              disabled={!ready || busy || !input.trim()}
+              disabled={!canType || busy || !input.trim()}
               aria-label="Senden"
               className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-white shadow-sm transition active:scale-95 disabled:opacity-40"
             >
@@ -352,6 +394,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
             </button>
           </form>
         </footer>
+          </>
+        )}
       </section>
     </div>
   );
