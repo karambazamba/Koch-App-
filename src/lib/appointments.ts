@@ -18,3 +18,11 @@ export function useAppointments(date: string | undefined): Appointment[] {
   void date;
   return [];
 }
+
+/** Farbpunkt je Person (nur als kleiner Punkt, Reihenfolge wie im Profil) */
+const PERSON_DOTS = ["bg-accent", "bg-sky-500", "bg-emerald-500", "bg-violet-500", "bg-amber-400", "bg-pink-500"];
+
+export function personDotClass(personId: string | null, persons: { id: string }[]): string {
+  const index = personId ? persons.findIndex((p) => p.id === personId) : -1;
+  return index < 0 ? "bg-stone-300" : PERSON_DOTS[index % PERSON_DOTS.length];
+}

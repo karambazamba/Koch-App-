@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Info, Plus, X } from "lucide-react";
-import { CARD, INPUT, INPUT_BASE, SUBTLE, buttonClass, chipClass, tileClass } from "@/components/ui/styles";
+import { CARD, INPUT, INPUT_BASE, SECTION_TITLE, SUBTLE, buttonClass, chipClass, tileClass } from "@/components/ui/styles";
 import { ProfileEditPage } from "@/components/profile/ProfileEditPage";
 import {
   FavoritesEditor,
@@ -18,7 +18,7 @@ import {
 import { NumberStepper } from "@/components/form/NumberStepper";
 import { sortedBases } from "@/lib/bases";
 import { LIKE_WEIGHTS, likeLevel, sortedLikes, withLikes, withoutLike } from "@/lib/likes";
-import { HEALTH_TIP_LEVELS, WEEKDAYS, WEEKEND_STYLES, planningWeekLabel, standardWeekDays } from "@/lib/profile";
+import { COOKING_STYLES, HEALTH_TIP_LEVELS, NEW_DISHES_OPTIONS, WEEKDAYS, WEEKEND_STYLES, planningWeekLabel, standardWeekDays } from "@/lib/profile";
 
 export function FavoritesEditView() {
   return (
@@ -295,6 +295,54 @@ export function HealthTipsEditView() {
                 <span className="flex flex-col self-stretch px-2 text-left">
                   <span className="text-base font-bold">{level.label}</span>
                   <span className="text-sm text-muted">{level.hint}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </ProfileEditPage>
+  );
+}
+
+/** So kocht ihr: nach Gefühl oder nach Rezept, wie viel Neues pro Woche */
+export function CookingStyleEditView() {
+  return (
+    <ProfileEditPage title="So kocht ihr">
+      {(draft, setDraft) => (
+        <>
+          <div className="flex flex-col gap-2" role="radiogroup" aria-label="Kochstil">
+            {COOKING_STYLES.map((style) => (
+              <button
+                key={style.value}
+                type="button"
+                role="radio"
+                aria-checked={draft.cookingStyle === style.value}
+                onClick={() => setDraft((d) => ({ ...d, cookingStyle: style.value }))}
+                className={tileClass(draft.cookingStyle === style.value)}
+              >
+                <span className="flex flex-col self-stretch px-2 text-left">
+                  <span className="text-base font-bold">{style.label}</span>
+                  <span className="text-sm text-muted">{style.hint}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+          <h2 className={`${SECTION_TITLE} mt-2`}>Wie viel Neues?</h2>
+          <p className={SUBTLE}>Beim Planen nehme ich vor allem Bewährtes und Schnelles – und so viel Neues, wie ihr mögt.</p>
+          <div className="flex flex-col gap-2" role="radiogroup" aria-label="Neue Gerichte pro Woche">
+            {NEW_DISHES_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                role="radio"
+                aria-checked={draft.newPerWeek === option.value}
+                onClick={() => setDraft((d) => ({ ...d, newPerWeek: option.value }))}
+                className={tileClass(draft.newPerWeek === option.value)}
+              >
+                <span className="flex flex-col self-stretch px-2 text-left">
+                  <span className="text-base font-bold">{option.label}</span>
+                  <span className="text-sm text-muted">{option.hint}</span>
                 </span>
               </button>
             ))}

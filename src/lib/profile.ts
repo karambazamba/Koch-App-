@@ -148,6 +148,22 @@ export const WEEKEND_STYLES: { value: WeekendStyle; emoji: string; label: string
   { value: "normal", emoji: "📅", label: "Wie unter der Woche", hint: "Ganz normal planen" },
 ];
 
+/** Wie die Familie kocht (Profil v12): nach Gefühl oder lieber nach Rezept */
+export type CookingStyle = "gefuehl" | "rezept";
+
+export const COOKING_STYLES: { value: CookingStyle; label: string; hint: string }[] = [
+  { value: "gefuehl", label: "Wir kochen meist nach Gefühl", hint: "Bei bekannten Gerichten reicht der Name – das Rezept gibt's auf Antippen" },
+  { value: "rezept", label: "Wir kochen gern nach Rezept", hint: "Das Rezept steht immer im Vordergrund" },
+];
+
+/** Wie viele neue Gerichte pro Woche (Abenteuerlust, Profil v12) */
+export type NewDishesPerWeek = 1 | 2;
+
+export const NEW_DISHES_OPTIONS: { value: NewDishesPerWeek; label: string; hint: string }[] = [
+  { value: 1, label: "Lieber Bewährtes", hint: "Etwa ein neues Gericht pro Woche" },
+  { value: 2, label: "Gern was Neues", hint: "Etwa zwei neue Gerichte pro Woche" },
+];
+
 /** Pause (Urlaub …): von – bis (bis = offen) */
 export type PauseSettings = { from: string; until: string | null };
 
@@ -155,7 +171,7 @@ export type PauseSettings = { from: string; until: string | null };
 export type WeatherSettings = { consent: boolean; postcode: string };
 
 export type HouseholdProfile = {
-  version: 11;
+  version: 12;
   householdName: string;
   adults: number;
   kids: number;
@@ -186,6 +202,10 @@ export type HouseholdProfile = {
   pause: PauseSettings | null;
   /** Wetter für die Grill-Idee (Profil v11) */
   weather: WeatherSettings;
+  /** Nach Gefühl oder nach Rezept (Profil v12, Standard "gefuehl") */
+  cookingStyle: CookingStyle;
+  /** Neue Gerichte pro Woche bei der Planung (Profil v12, Standard 1) */
+  newPerWeek: NewDishesPerWeek;
   updatedAt: string;
 };
 
@@ -281,7 +301,7 @@ export function createPerson(role: PersonRole): Person {
 
 export function createEmptyProfile(): HouseholdProfile {
   return {
-    version: 11,
+    version: 12,
     householdName: "",
     adults: 2,
     kids: 1,
@@ -311,6 +331,8 @@ export function createEmptyProfile(): HouseholdProfile {
     weekendStyle: "locker",
     pause: null,
     weather: { consent: false, postcode: "" },
+    cookingStyle: "gefuehl",
+    newPerWeek: 1,
     updatedAt: "",
   };
 }
@@ -455,7 +477,7 @@ export function normalizeMealTime(value: unknown, fallback: MealTime): MealTime 
 export function migrateProfile(raw: unknown): HouseholdProfile | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as Record<string, unknown>;
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].includes(data.version as number)) return null;
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(data.version as number)) return null;
 
   const defaults = createEmptyProfile();
 
@@ -535,6 +557,9 @@ export function migrateProfile(raw: unknown): HouseholdProfile | null {
     weekendStyle: data.weekendStyle === "frei" || data.weekendStyle === "normal" ? data.weekendStyle : "locker",
     pause: migratePause(data.pause),
     weather: migrateWeather(data.weather),
+    // Bis v11: nach Gefühl, ein neues Gericht pro Woche
+    cookingStyle: data.cookingStyle === "rezept" ? "rezept" : "gefuehl",
+    newPerWeek: data.newPerWeek === 2 ? 2 : 1,
     updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : "",
   };
 }

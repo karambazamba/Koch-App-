@@ -8,6 +8,7 @@ import { bumpBase, baseFromText, recipeBase } from "./bases";
 import { deleteRecipe, rateRecipeUp, restoreRecipe, type Recipe } from "./cookbook";
 import { learnFromRecipe, LIKE_WEIGHTS } from "./likes";
 import { createLocalStore } from "./localStore";
+import { dishStatus } from "./dishStatus";
 import { composeWeek, entriesWithoutSlot, mealPlansWithWeek, replaceMealPlans, type PlanWeek, type ResolvedEntry, type StoredEntry } from "./mealPlan";
 import { saveProfile, type HouseholdProfile, type NeverAgainEntry } from "./profile";
 import { addDays, nextWeekStartFor, toIsoDate, weekStartFor, type WeekPlan } from "./weekPlan";
@@ -109,7 +110,8 @@ export function ratingCandidate(
   // Am Wochenende (frei/locker) keine Bewertungsfragen
   if (!day || day.away || !entry || day.weekend) return null;
   if (now.getHours() * 60 + now.getMinutes() < minutesOf(profile.mealClock[day.mealTime]) + ASK_AFTER_MINUTES) return null;
-  if (!isFirstTime(entry, iso, week, mealPlans, recipes)) return null;
+  // Nur bei Neuem: bekannte Gerichte (Kochbuch-Klassiker, Freitext, Wunsch) nie
+  if (dishStatus(entry, recipes) !== "neu" || !isFirstTime(entry, iso, week, mealPlans, recipes)) return null;
   return { date: iso, weekday: day.weekday, title: entry.title, recipeId: entry.recipeId };
 }
 

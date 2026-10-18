@@ -9,7 +9,8 @@ import { ArrowLeftRight, BookOpen, Check, Heart, Repeat, Trash2 } from "lucide-r
 import { Sheet } from "@/components/plan/Sheet";
 import { CategoryChip, CategoryDot, categoryLabel } from "@/components/ui/Category";
 import { CARD, CARD_LIST, INPUT, INPUT_BASE, buttonClass, chipClass, tileClass } from "@/components/ui/styles";
-import { RECIPE_CATEGORIES, sortRecipes, type Recipe, type RecipeCategory } from "@/lib/cookbook";
+import { RECIPE_CATEGORIES, setRecipeKnown, sortRecipes, type Recipe, type RecipeCategory } from "@/lib/cookbook";
+import { recipeIsKnown } from "@/lib/dishStatus";
 import { guessDishCategory } from "@/lib/dishCategory";
 import type { DaySlot, PlanDay, PlanWeek } from "@/lib/mealPlan";
 import { deleteTemplate, type TemplateDish, type WeekTemplate } from "@/lib/templates";
@@ -17,6 +18,7 @@ import { deleteTemplate, type TemplateDish, type WeekTemplate } from "@/lib/temp
 export function EntrySheet({
   slot,
   day,
+  recipe,
   onDouble,
   onClose,
   onSwap,
@@ -25,6 +27,8 @@ export function EntrySheet({
 }: {
   slot: DaySlot;
   day: PlanDay;
+  /** Rezept aus dem Kochbuch (für "Kennen wir") */
+  recipe?: Recipe;
   onDouble: (double: boolean) => void;
   onClose: () => void;
   onSwap: () => void;
@@ -53,6 +57,7 @@ export function EntrySheet({
           </Link>
         )}
       </div>
+      {recipe && <KnownSwitch recipe={recipe} />}
       <label className={`${CARD} flex cursor-pointer items-center gap-3 p-4`}>
         <span className="min-w-0 flex-1">
           <span className="block font-bold">Doppelt kochen – Reste für morgen</span>
@@ -81,6 +86,32 @@ export function EntrySheet({
         </button>
       </div>
     </Sheet>
+  );
+}
+
+/** "Kennen wir": bekannte Gerichte zeigen auf der Startseite nur den Namen */
+export function KnownSwitch({ recipe }: { recipe: Recipe }) {
+  const known = recipeIsKnown(recipe);
+  // Oft genug gekocht → bekannt, auch ohne Markierung
+  const automatic = !recipe.known && known;
+  return (
+    <label className={`${CARD} flex cursor-pointer items-center gap-3 p-4`}>
+      <span className="min-w-0 flex-1">
+        <span className="block font-bold">Kennen wir</span>
+        <span className="block text-sm text-muted">
+          {automatic ? "Schon öfter gekocht – das Rezept gibt's trotzdem auf Antippen." : "Dann reicht auf der Startseite der Name, das Rezept gibt's auf Antippen."}
+        </span>
+      </span>
+      <input
+        type="checkbox"
+        role="switch"
+        aria-label="Kennen wir"
+        checked={known}
+        disabled={automatic}
+        onChange={(e) => setRecipeKnown(recipe.id, e.target.checked)}
+        className="h-6 w-6 shrink-0 accent-accent"
+      />
+    </label>
   );
 }
 

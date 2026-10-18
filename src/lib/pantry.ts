@@ -64,7 +64,8 @@ export function ingredientStem(name: string): string {
   return n;
 }
 
-function sameIngredient(a: string, b: string): boolean {
+/** Dieselbe Zutat? (Einzahl/Mehrzahl, Synonyme, "rote Zwiebeln" = "Zwiebel") */
+export function sameIngredient(a: string, b: string): boolean {
   const x = ingredientStem(a);
   const y = ingredientStem(b);
   if (!x || !y) return false;

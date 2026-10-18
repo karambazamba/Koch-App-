@@ -28,14 +28,12 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Segmented } from "@/components/ui/Segmented";
-import { CARD, CARD_LIST, ICON_BUTTON, INPUT_BASE, PAGE_MAIN, buttonClass, chipClass } from "@/components/ui/styles";
+import { CARD, CARD_LIST, ICON_BUTTON, PAGE_MAIN, buttonClass, chipClass } from "@/components/ui/styles";
 import {
   SECTIONS,
-  addManualItem,
   dueStaples,
   removeManualItem,
   renameItem,
-  sectionFor,
   setHave,
   setItemShop,
   shoppingListText,
@@ -47,7 +45,7 @@ import {
   type Section,
   type Staple,
 } from "@/lib/shoppingList";
-import { parseShoppingText } from "@/lib/shoppingParse";
+import { QuickAddButton } from "./QuickAdd";
 import { useWeekShoppingList, type WeekChoice } from "@/lib/useWeekShoppingList";
 import { addDays, formatWeekRange, toIsoDate, useToday } from "@/lib/weekPlan";
 import { EditItemSheet, ItemContent, StaplesSheet, SwipeRow, type RowAction } from "./ShoppingParts";
@@ -83,7 +81,6 @@ export function ShoppingListView() {
   const [info, setInfo] = useState<string | null>(null);
   const [editing, setEditing] = useState<ListItem | null>(null);
   const [staplesOpen, setStaplesOpen] = useState(false);
-  const [input, setInput] = useState("");
 
   if (!data || !today) return SKELETON;
   const { weekStart, isNext, list, weekList, settings } = data;
@@ -126,15 +123,6 @@ export function ShoppingListView() {
             .map((shop) => ({ id: `laden:${shop}`, label: shop, icon: Store, shop, items: visible.filter((i) => i.shop === shop) })),
           { id: "laden:", label: "Ohne Laden", icon: ShoppingBag, items: visible.filter((i) => !i.shop) },
         ];
-
-  const add = () => {
-    const parsed = parseShoppingText(input, settings.shops);
-    for (const p of parsed) {
-      addManualItem(weekStart, { name: p.name, amount: p.amount, section: sectionFor(p.name) });
-      if (p.shop) setItemShop(settings.products[p.name.toLowerCase()] ?? p.name, p.shop);
-    }
-    setInput("");
-  };
 
   const actionsFor = (item: ListItem): RowAction[] => [
     item.manualId
@@ -183,6 +171,7 @@ export function ShoppingListView() {
           <button type="button" onClick={() => share()} disabled={done === visible.length} aria-label="Liste teilen" className={ICON_BUTTON}>
             <Share2 className="h-5 w-5" strokeWidth={2.25} aria-hidden />
           </button>
+          <QuickAddButton weekStart={weekStart} settings={settings} className="-mr-1.5" />
         </section>
         {shareNote && <p className="rounded-xl bg-accent-soft px-4 py-2 text-sm font-semibold text-accent-strong">{shareNote}</p>}
 
@@ -240,7 +229,7 @@ export function ShoppingListView() {
                   {allDone && (
                     <span className="inline-flex items-center gap-1 normal-case tracking-normal text-accent-strong">
                       <Check className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-                      alles da
+                      erledigt
                       <ChevronDown className={`h-3.5 w-3.5 transition ${show ? "rotate-180" : ""}`} strokeWidth={2.25} aria-hidden />
                     </span>
                   )}
@@ -296,26 +285,6 @@ export function ShoppingListView() {
           </div>
         )}
 
-        <form
-          className="flex gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            add();
-          }}
-        >
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="z. B. Müsli von Rossmann, Windeln"
-            aria-label="Artikel hinzufügen"
-            enterKeyHint="done"
-            className={`${INPUT_BASE} h-12 min-w-0 flex-1 px-4`}
-          />
-          <button type="submit" disabled={!input.trim()} className={buttonClass("primary")}>
-            <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-            Dazu
-          </button>
-        </form>
         <button type="button" onClick={() => setStaplesOpen(true)} className="-mt-1 flex items-center gap-1.5 self-start px-1 text-sm font-semibold text-muted">
           <Repeat className="h-4 w-4" strokeWidth={2} aria-hidden />
           Stammliste ansehen

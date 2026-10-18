@@ -157,6 +157,8 @@ export type ManualItem = {
   amount: string;
   section: Section;
   done: boolean;
+  /** Für einen bestimmten Tag (Wochentag) – erscheint dann unter "Heute holen" */
+  day?: string;
 };
 
 export type WeekList = {
@@ -223,6 +225,7 @@ function migrateManual(raw: unknown): ManualItem[] {
       amount: typeof m.amount === "string" ? m.amount : "",
       section: SECTION_VALUES.includes(m.section) ? m.section : sectionFor(m.name),
       done: m.done === true,
+      ...(typeof m.day === "string" && m.day ? { day: m.day } : {}),
     }));
 }
 
@@ -356,8 +359,16 @@ export function setHave(weekStart: string, key: string, have: boolean) {
   }));
 }
 
-export function addManualItem(weekStart: string, item: Omit<ManualItem, "id" | "done">) {
-  updateList(weekStart, (l) => ({ ...l, manual: [...l.manual, { ...item, id: newId(), done: false }] }));
+/** Eigenen Artikel hinzufügen; gibt seine ID zurück (für "Rückgängig") */
+export function addManualItem(weekStart: string, item: Omit<ManualItem, "id" | "done">): string {
+  const id = newId();
+  updateList(weekStart, (l) => ({ ...l, manual: [...l.manual, { ...item, id, done: false }] }));
+  return id;
+}
+
+/** Mehrere eigene Artikel auf einmal entfernen (Rückgängig) */
+export function removeManualItems(weekStart: string, ids: string[]) {
+  updateList(weekStart, (l) => ({ ...l, manual: l.manual.filter((m) => !ids.includes(m.id)) }));
 }
 
 export function updateManualItem(weekStart: string, id: string, changes: Partial<Omit<ManualItem, "id">>) {
@@ -672,7 +683,7 @@ export function buildShoppingList(
       amount: m.amount,
       section: m.section,
       dishes: [],
-      days: [],
+      days: m.day ? [m.day] : [],
       shop: shopOf(name),
       manualId: m.id,
       checked: m.done,

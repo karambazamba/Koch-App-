@@ -2,11 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import { ArrowUp, Check, ChevronRight, CircleHelp, Mic, MicOff, Sparkles, Square, Volume2, VolumeX, X } from "lucide-react";
-import { CategoryDot } from "@/components/ui/Category";
-import { baseFromText, baseLabel, bumpBase, sortedBases, type BaseId } from "@/lib/bases";
+import { ArrowUp, CircleHelp, Mic, MicOff, Sparkles, Square, Volume2, VolumeX, X } from "lucide-react";
+import { bumpBase, sortedBases } from "@/lib/bases";
 import { parseLeftovers, type ParsedLeftover } from "@/lib/leftovers/parser";
-import { leftoverIdeas, type LeftoverIdea } from "@/lib/leftovers/suggest";
 import { addPantryItems, formatPantryItem, usePantry } from "@/lib/pantry";
 import { helperName, helperTitle, saveProfile } from "@/lib/profile";
 import { finalizeProfile, startAddPerson, type OnboardingState } from "@/lib/onboarding/engine";
@@ -30,7 +28,10 @@ import { useSpeechInput } from "@/lib/useSpeechInput";
 import { DEFAULT_SHOPPING_DAY, planningWeekStart, toIsoDate, useToday, weekStartFor } from "@/lib/weekPlan";
 import { addManualItem, sectionFor, setItemShop, setProduct, useShoppingSettings } from "@/lib/shoppingList";
 import { isShoppingRequest, parseProductStatement, parseShoppingText } from "@/lib/shoppingParse";
-import { isQuickRequest, isSnackRequest, parsePauseRequest, pauseLabel, quickIdeas, snackReply } from "@/lib/spontan";
+import { SPONTAN_FILTERS, isQuickRequest, isSnackRequest, parsePauseRequest, pauseLabel, quickIdeas, snackReply, type SpontanFilter, type SpontanIdea } from "@/lib/spontan";
+import { takeForToday } from "@/lib/spontanTake";
+import { replaceMealPlans } from "@/lib/mealPlan";
+import { SpontanBoard } from "./SpontanBoard";
 import { ICON_BUTTON, INPUT_BASE, NOTE, chipClass } from "@/components/ui/styles";
 import { ProposalCard } from "./ProposalCard";
 import { TipBubble } from "./TipBubble";
@@ -44,21 +45,31 @@ export type ChatTurnView = ChatTurn & {
   local?: boolean;
   /** An die KI geschickt statt `text` (z. B. Reste + Basis ausführlich) */
   send?: string;
-  /** Reste-Modus: erkannte bzw. schon notierte Zutaten als Chips */
+  /** Spontan kochen: erkannte bzw. schon notierte Zutaten als Chips */
   items?: string[];
-  /** Reste-Modus: unbekannte Wörter ("Meintest du …?") */
+  /** Spontan kochen: unbekannte Wörter ("Meintest du …?") */
   unsure?: ParsedLeftover[];
-  /** Reste-Modus: Vorschläge aus dem Kochbuch */
-  ideas?: LeftoverIdea[];
-  /** Darunter die Basis-Chips anzeigen */
-  bases?: boolean;
-  /** Erste Frage im Reste-Modus */
-  resteStart?: boolean;
+  /** Darunter die Spontan-Ideen (nur beim letzten solchen Eintrag, live) */
+  spontan?: boolean;
+  /** "Rückgängig" für eine gerade gemachte Änderung */
+  undo?: () => void;
 };
 
 export type Proposal = { ops: ChangeOp[]; selected: Set<string> };
-/** `reste`: Reste-Modus ("Was ist noch da?") – erst Zutaten, dann Basis */
-export type ChatState = { turns: ChatTurnView[]; proposal: Proposal | null; reste: "items" | "base" | null };
+/** `spontan`: Spontan kochen ("mit dem, was da ist") mit gewählten Filtern; null = aus */
+export type ChatState = { turns: ChatTurnView[]; proposal: Proposal | null; spontan: SpontanFilter[] | null };
+
+/** Erster Eintrag im Spontan-Modus */
+export function spontanStartTurn(hasPantry: boolean): ChatTurnView {
+  return {
+    role: "assistant",
+    local: true,
+    spontan: true,
+    text: hasPantry
+      ? "Mit dem, was da ist – schnellste zuerst:"
+      : "Was ist noch da? Erzähl einfach. Bis dahin drei schnelle Sachen, die meistens gehen:",
+  };
+}
 
 /** Fragt die KI nach der Basis? Dann Basis-Chips anbieten */
 function asksForBase(turn: ChatTurnView | undefined): boolean {
@@ -159,60 +170,89 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     }
   };
 
-  // --- Reste-Modus ("Was ist noch da?") -------------------------------------
+  // --- Spontan kochen ("mit dem, was da ist") ---------------------------------
 
-  const baseQuestion: ChatTurnView = { role: "assistant", text: "Und worauf habt ihr Lust – was soll die Basis sein?", local: true, bases: true };
-
-  /** Gesagtes im Reste-Modus: Zutaten in den Vorrat – oder die Basis */
-  const resteInput = async (text: string) => {
-    if (!today) return;
-    setInput("");
-    if (chat.reste === "base") {
-      const base = baseFromText(text);
-      if (base || /egal|wurscht|überrasch|keine ahnung/i.test(text)) return chooseBase(base, text);
-    }
+  /**
+   * Gesagtes im Spontan-Modus: Zutaten in den Vorrat, die Ideen rechnen sich
+   * neu. Ist nichts Essbares dabei, ist es eine normale Frage (Modus endet).
+   */
+  const spontanInput = async (text: string): Promise<boolean> => {
+    if (!today) return false;
     const parsed = await parseLeftovers(text);
     const known = parsed.filter((p) => p.known);
     const unsure = parsed.filter((p) => !p.known);
+    // Nur Unbekanntes in einem ganzen Satz/einer Frage → eher eine normale Frage
+    const short = text.trim().split(/\s+/).length <= 3 && !text.includes("?");
+    if (!known.length && (!unsure.length || !short)) return false;
+    setInput("");
     if (known.length) addPantryItems(known.map(({ name, amount, unit }) => ({ name, amount, unit })), toIsoDate(today));
-    setChat((c) => {
-      const turns: ChatTurnView[] = [...c.turns, { role: "user", text, local: true }];
-      if (!known.length && !unsure.length) {
-        return {
-          ...c,
-          turns: [...turns, { role: "assistant", local: true, text: "Hab ich nicht ganz verstanden – sag z. B. „2 Karotten, Reis und Joghurt“." }],
-        };
-      }
-      const noted: ChatTurnView = {
-        role: "assistant",
-        local: true,
-        text: known.length ? (c.reste === "base" ? "Auch notiert ✓" : "Notiert ✓") : "Das kenne ich nicht ganz:",
-        items: known.map(formatPantryItem),
-        unsure,
-      };
-      return { ...c, reste: "base", turns: [...turns, noted, baseQuestion] };
-    });
-  };
-
-  /** Basis gewählt (null = egal): merken, dann 3 Vorschläge */
-  const chooseBase = (base: BaseId | null, label: string) => {
-    if (!data || busy) return;
-    if (base) saveProfile({ ...data.profile, bases: bumpBase(data.profile.bases, base) });
-    const items = (pantry ?? []).map(formatPantryItem);
-    if (ready) {
-      setChat((c) => ({ ...c, reste: null }));
-      void ask(
-        `Ideen für unsere Reste: ${items.join(", ") || "(nichts notiert)"}. Basis: ${base ? baseLabel(base) : "egal"}. Bitte genau 3 Vorschläge.`,
-        label,
-      );
-      return;
-    }
-    const result = leftoverIdeas(data.recipes, pantry ?? [], base, data.profile.neverAgain);
     setChat((c) => ({
       ...c,
-      reste: null,
-      turns: [...c.turns, { role: "user", text: label, local: true }, { role: "assistant", text: result.text, local: true, ideas: result.ideas }],
+      turns: [
+        ...c.turns,
+        { role: "user", text, local: true },
+        {
+          role: "assistant",
+          local: true,
+          spontan: true,
+          text: known.length ? "Notiert ✓ Damit geht:" : "Das kenne ich nicht ganz:",
+          items: known.map(formatPantryItem),
+          unsure,
+        },
+      ],
     }));
+    return true;
+  };
+
+  /** Spontan-Modus starten (Kachel, Knopf, "Was ist noch da?") */
+  const startSpontan = (said?: string, filters: SpontanFilter[] = []) => {
+    setInput("");
+    setChat((c) => ({
+      ...c,
+      spontan: filters,
+      turns: [...c.turns, ...(said ? [{ role: "user" as const, text: said, local: true }] : []), spontanStartTurn((pantry?.length ?? 0) > 0)],
+    }));
+  };
+
+  /** "Für heute übernehmen": heutiges Gericht ersetzen, das alte rutscht weiter (mit Rückgängig) */
+  const takeIdea = (idea: SpontanIdea) => {
+    if (!data || !today) return;
+    const before = data.mealPlans;
+    const result = takeForToday(data, today, idea);
+    if (result.ok) {
+      replaceMealPlans(result.weeks);
+      if (idea.recipeId) learnFromRecipe(data.recipes[idea.recipeId], LIKE_WEIGHTS.chosen);
+    }
+    setChat((c) => ({
+      ...c,
+      spontan: null,
+      turns: [
+        ...c.turns,
+        { role: "user", text: `${idea.title} – für heute`, local: true },
+        {
+          role: "assistant",
+          local: true,
+          text: result.text,
+          undo: result.ok
+            ? () => {
+                replaceMealPlans(before);
+                setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig gemacht – alles wie vorher.", local: true }] }));
+              }
+            : undefined,
+        },
+      ],
+    }));
+  };
+
+  /** Mit KI: andere Ideen zum Vorrat */
+  const askMoreIdeas = () => {
+    const items = (pantry ?? []).map(formatPantryItem);
+    const filters = (chat.spontan ?? []).map((f) => SPONTAN_FILTERS.find((x) => x.value === f)?.label).filter(Boolean);
+    setChat((c) => ({ ...c, spontan: null }));
+    void ask(
+      `Spontan kochen mit dem, was da ist: ${items.join(", ") || "(nichts notiert)"}.${filters.length ? ` Wünsche: ${filters.join(", ")}.` : ""} Bitte genau 3 schnelle Ideen ohne Einkauf, schnellste zuerst.`,
+      "Andere Ideen?",
+    );
   };
 
   /** Unbekanntes Wort übernehmen (Vorschlag oder wie gehört) */
@@ -280,17 +320,26 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       setGuided(startAddPerson(data.profile, t));
       return;
     }
-    if (chat.reste) return void resteInput(t);
-    // "Was ist noch da?" → Reste-Modus
-    if (/^(was ist noch da|reste( verwerten)?|was kann ich aus (den |meinen |unseren )?resten)/i.test(t)) {
-      setInput("");
-      setChat((c) => ({
-        ...c,
-        reste: "items",
-        turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text: "Was ist noch da? Erzähl einfach.", local: true, resteStart: true, items: (pantry ?? []).map(formatPantryItem) }],
-      }));
+    if (chat.spontan) {
+      void spontanInput(t).then((handled) => {
+        if (handled) return;
+        // Keine Zutaten → normale Frage, Spontan-Modus endet
+        setChat((c) => ({ ...c, spontan: null }));
+        submitNormal(t);
+      });
       return;
     }
+    // "Was ist noch da?", "Reste", "Spontan kochen" → Spontan-Modus
+    if (/^(was ist noch da|reste( verwerten)?|was kann ich aus (den |meinen |unseren )?resten|spontan (was )?kochen)/i.test(t)) {
+      startSpontan(t);
+      return;
+    }
+    submitNormal(t);
+  };
+
+  /** Alles außer Spontan-Modus und neuer Person */
+  const submitNormal = (t: string) => {
+    if (!data || !today) return;
     // Pause, Ausflugs-Snacks, schnelle Ideen und Einkaufsliste direkt erledigen (auch ohne KI)
     const local = spontanReply(t) ?? shoppingReply(t);
     if (local) {
@@ -464,7 +513,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
         <div ref={scrollRef} className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4" aria-live="polite">
           {status === undefined || data === undefined ? (
             <div className="h-20 animate-pulse rounded-card bg-surface" />
-          ) : !status.configured && !chat.reste && chat.turns.length === 0 ? (
+          ) : !status.configured && !chat.spontan && chat.turns.length === 0 ? (
             <p className={NOTE} role="note">
               <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
               <span>
@@ -501,7 +550,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
 
           {chat.turns.map((turn, i) => {
             const last = i === chat.turns.length - 1;
-            const showBases = last && !busy && ((turn.bases && chat.reste === "base") || (!chat.reste && asksForBase(turn)));
+            const showBases = last && !busy && !chat.spontan && asksForBase(turn);
+            const lastSpontan = chat.spontan !== null && turn.spontan && !chat.turns.slice(i + 1).some((t) => t.spontan);
             return (
               <div key={i} className={`flex flex-col gap-2 ${turn.role === "user" ? "items-end" : "items-start"}`}>
                 <div
@@ -540,47 +590,26 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                     </Link>
                   ) : null}
                 </div>
-                {turn.ideas && turn.ideas.length > 0 && (
-                  <ul className="w-full overflow-hidden rounded-card border border-line bg-surface shadow-card">
-                    {turn.ideas.map((idea) => (
-                      <li key={idea.id} className="border-b border-line last:border-b-0">
-                        <Link
-                          href={`/kochbuch/rezept?id=${encodeURIComponent(idea.id)}`}
-                          onClick={() => {
-                            // Gewählter Vorschlag → Zutaten zählen als Vorliebe
-                            learnFromRecipe(data?.recipes[idea.id], LIKE_WEIGHTS.chosen);
-                            onClose();
-                          }}
-                          className="flex items-center gap-3 px-4 py-3 active:bg-stone-50"
-                        >
-                          <CategoryDot category={idea.category} />
-                          <span className="min-w-0 flex-1">
-                            <span className="block font-bold leading-snug">{idea.title}</span>
-                            <span className="block text-sm text-muted">
-                              nutzt {idea.used} {idea.used === 1 ? "Rest" : "Reste"} ·{" "}
-                              {idea.missing.length === 0 ? (
-                                <span className="inline-flex items-center gap-1 font-semibold text-accent-strong">
-                                  nichts fehlt <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-                                </span>
-                              ) : (
-                                `fehlt: ${idea.missing.slice(0, 3).join(", ")}${idea.missing.length > 3 ? " …" : ""}`
-                              )}
-                            </span>
-                          </span>
-                          <ChevronRight className="h-5 w-5 shrink-0 text-stone-300" strokeWidth={2.25} aria-hidden />
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {turn.resteStart && last && chat.reste === "items" && (pantry?.length ?? 0) > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setChat((c) => ({ ...c, reste: "base", turns: [...c.turns, { role: "user", text: "Reicht so – weiter", local: true }, baseQuestion] }))}
-                    className={chipClass(true)}
-                  >
-                    Reicht so – weiter
+                {turn.undo && last && (
+                  <button type="button" onClick={turn.undo} className={chipClass(false, "muted")}>
+                    Rückgängig
                   </button>
+                )}
+                {lastSpontan && data && (
+                  <SpontanBoard
+                    recipes={data.recipes}
+                    pantry={pantry ?? []}
+                    neverAgain={data.profile.neverAgain}
+                    filters={chat.spontan ?? []}
+                    helperName={name}
+                    ready={ready}
+                    onToggle={(f) =>
+                      setChat((c) => ({ ...c, spontan: c.spontan?.includes(f) ? c.spontan.filter((x) => x !== f) : [...(c.spontan ?? []), f] }))
+                    }
+                    onTake={takeIdea}
+                    onAskMore={askMoreIdeas}
+                    onNavigate={onClose}
+                  />
                 )}
                 {showBases && data && (
                   <div className="flex flex-wrap gap-2" aria-label="Basis wählen">
@@ -589,11 +618,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                         key={b.id}
                         type="button"
                         onClick={() => {
-                          if (chat.reste) chooseBase(b.id, b.label);
-                          else {
-                            saveProfile({ ...data.profile, bases: bumpBase(data.profile.bases, b.id) });
-                            void ask(b.label);
-                          }
+                          saveProfile({ ...data.profile, bases: bumpBase(data.profile.bases, b.id) });
+                          void ask(b.label);
                         }}
                         className={chipClass(false)}
                       >
@@ -602,7 +628,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                     ))}
                     <button
                       type="button"
-                      onClick={() => (chat.reste ? chooseBase(null, "Egal") : void ask("Egal"))}
+                      onClick={() => void ask("Egal")}
                       className={chipClass(false, "muted")}
                     >
                       Egal
@@ -614,7 +640,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           })}
 
           {/* Sanfter Gesundheits-Tipp (laut Einstellung, nie als Pop-up) */}
-          {data && !chat.reste && !busy && <TipBubble recipes={data.recipes} />}
+          {data && !chat.spontan && !busy && <TipBubble recipes={data.recipes} />}
 
           {busy && (
             <p className="self-start rounded-2xl rounded-bl-md border border-line bg-surface px-4 py-2.5 text-muted" role="status">
@@ -692,11 +718,9 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
               placeholder={
                 speech.listening
                   ? speech.interim || "Ich höre zu …"
-                  : chat.reste === "items"
-                    ? "z. B. 2 Karotten, Reis, Joghurt"
-                    : chat.reste === "base"
-                      ? "Basis – oder noch mehr Reste"
-                      : adjusting
+                  : chat.spontan
+                    ? "Was ist noch da? z. B. 2 Karotten, Reis"
+                    : adjusting
                         ? "Was soll anders sein?"
                         : `Frag ${name} …`
               }

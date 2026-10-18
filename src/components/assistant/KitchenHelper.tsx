@@ -6,7 +6,7 @@ import { Undo2 } from "lucide-react";
 import { commitOps } from "@/lib/assistant/client";
 import { onOpenHelper } from "@/lib/assistant/open";
 import { learnLikes, likesFromIngredients, LIKE_WEIGHTS } from "@/lib/likes";
-import { formatPantryItem, usePantry } from "@/lib/pantry";
+import { usePantry } from "@/lib/pantry";
 import { useRecipes } from "@/lib/cookbook";
 import { useMealPlans } from "@/lib/mealPlan";
 import { useShoppingLists } from "@/lib/shoppingList";
@@ -17,7 +17,7 @@ import { recordOpen } from "@/lib/activity";
 import type { AssistantData } from "@/lib/assistant/ops";
 import { helperName, helperTitle } from "@/lib/profile";
 import { HelperAvatar } from "./HelperAvatar";
-import { HelperPanel, type ChatState } from "./HelperPanel";
+import { HelperPanel, spontanStartTurn, type ChatState } from "./HelperPanel";
 
 const UNDO_SECONDS = 10;
 
@@ -47,7 +47,7 @@ function useStickyActionsHeight(): number {
   return height;
 }
 
-const EMPTY_CHAT: ChatState = { turns: [], proposal: null, reste: null };
+const EMPTY_CHAT: ChatState = { turns: [], proposal: null, spontan: null };
 
 /**
  * Küchenhelfer: schwebender Knopf unten rechts auf allen Seiten, Panel mit
@@ -83,7 +83,7 @@ export function KitchenHelper() {
     if (today) recordOpen(toIsoDate(today));
   }, [today]);
 
-  // Von außen öffnen, z. B. Kachel "Was ist noch da?" → Reste-Modus
+  // Von außen öffnen, z. B. "Spontan kochen" → Spontan-Modus
   const pantry = usePantry();
   const pantryRef = useRef(pantry);
   useEffect(() => {
@@ -94,22 +94,9 @@ export function KitchenHelper() {
       onOpenHelper((mode, ask) => {
         setOpen(true);
         if (mode === "voice" || ask) setStart({ listen: mode === "voice", ask });
-        if (mode !== "reste") return;
-        const items = (pantryRef.current ?? []).map(formatPantryItem);
-        setChat((c) => ({
-          ...c,
-          reste: "items",
-          turns: [
-            ...c.turns,
-            {
-              role: "assistant",
-              local: true,
-              resteStart: true,
-              text: items.length ? "Was ist noch da? Erzähl einfach. Schon notiert:" : "Was ist noch da? Erzähl einfach.",
-              items,
-            },
-          ],
-        }));
+        if (mode !== "spontan") return;
+        const hasPantry = (pantryRef.current ?? []).length > 0;
+        setChat((c) => ({ ...c, spontan: c.spontan ?? [], turns: [...c.turns, spontanStartTurn(hasPantry)] }));
       }),
     [],
   );
@@ -179,8 +166,8 @@ export function KitchenHelper() {
           onClose={() => {
             setOpen(false);
             setStart(null);
-            // Reste-Modus endet mit dem Schließen
-            setChat((c) => (c.reste ? { ...c, reste: null } : c));
+            // Spontan-Modus endet mit dem Schließen
+            setChat((c) => (c.spontan ? { ...c, spontan: null } : c));
             // Fokus zurück auf den Knopf
             setTimeout(() => fabRef.current?.focus(), 0);
           }}
