@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { replaceRecipes } from "../cookbook";
 import { replaceMealPlans } from "../mealPlan";
 import { replaceShoppingLists } from "../shoppingList";
+import type { HelperVoice } from "../profile";
 import { addDays, replaceWeekPlans } from "../weekPlan";
 import { applyOps, selectedOps, type AssistantData, type ChangeOp } from "./ops";
 import { ASSISTANT_ENDPOINT, type AssistantError, type AssistantReply, type AssistantStatus, type ChatTurn } from "./protocol";
@@ -117,14 +118,41 @@ export function saveVoicePreference(on: boolean) {
   }
 }
 
-export function speak(text: string) {
+// Bekannte deutsche Systemstimmen (iOS, macOS, Android/Chrome, Windows/Edge).
+// Die Web Speech API kennt kein Geschlecht – daher über den Namen.
+const FEMALE = /anna|petra|helena|katja|marlene|vicki|hedda|amala|seraphina|louisa|tanja|elke|gisela|ingrid|klara|maja|frauke|sabine|female|weiblich|google deutsch/i;
+const MALE = /markus|yannick|viktor|hans|conrad|stefan|killian|florian|martin|ralf|bernd|kasper|klaus|\bmale\b|männlich|maennlich/i;
+
+/** Passende deutsche Stimme für "weiblich"/"männlich", sonst irgendeine deutsche, sonst Standard */
+export function pickVoice(voices: SpeechSynthesisVoice[], voice: HelperVoice): SpeechSynthesisVoice | null {
+  const german = voices.filter((v) => v.lang.toLowerCase().startsWith("de"));
+  const wanted = voice === "maennlich" ? MALE : FEMALE;
+  const other = voice === "maennlich" ? FEMALE : MALE;
+  return (
+    german.find((v) => wanted.test(v.name)) ??
+    german.find((v) => !other.test(v.name)) ??
+    german[0] ??
+    null
+  );
+}
+
+/** Vorlesen – Fehler der Sprachausgabe dürfen den Chat nie stören */
+export function speak(text: string, voice: HelperVoice = "weiblich") {
   if (!voiceSupported()) return;
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "de-DE";
-  const voice = window.speechSynthesis.getVoices().find((v) => v.lang.startsWith("de"));
-  if (voice) utterance.voice = voice;
-  window.speechSynthesis.speak(utterance);
+  try {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "de-DE";
+    const chosen = pickVoice(window.speechSynthesis.getVoices(), voice);
+    try {
+      if (chosen) utterance.voice = chosen;
+    } catch {
+      // Stimme nicht setzbar → Standardstimme
+    }
+    window.speechSynthesis.speak(utterance);
+  } catch {
+    // Sprachausgabe nicht verfügbar – einfach nicht vorlesen
+  }
 }
 
 export function stopSpeaking() {

@@ -12,6 +12,7 @@ import {
   WishDayEditor,
   tooManyDays,
   withWishDay,
+  HelperEditor,
 } from "@/components/profile/editors";
 import { WEEKDAYS, planningWeekLabel, standardWeekDays } from "@/lib/profile";
 
@@ -36,6 +37,16 @@ export function WarmMealEditView() {
           warmMeal={draft.warmMeal}
           onChange={(warmMeal) => setDraft((d) => ({ ...d, warmMeal }))}
         />
+      )}
+    </ProfileEditPage>
+  );
+}
+
+export function HelperEditView() {
+  return (
+    <ProfileEditPage title="Küchenhelfer">
+      {(draft, setDraft) => (
+        <HelperEditor helper={draft.helper} onChange={(helper) => setDraft((d) => ({ ...d, helper }))} />
       )}
     </ProfileEditPage>
   );

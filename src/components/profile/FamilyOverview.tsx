@@ -13,6 +13,7 @@ import {
   ShoppingCart,
   UtensilsCrossed,
   type LucideIcon,
+  Sparkles,
 } from "lucide-react";
 import { PERSON_ICONS } from "@/components/form/NameField";
 import { PageHeader } from "@/components/PageHeader";
@@ -29,6 +30,7 @@ import {
   weekdayLunchHeadcount,
   type HouseholdProfile,
   type Person,
+  helperName,
 } from "@/lib/profile";
 
 const LUNCH_ICONS: Record<"zuhause" | "auswaerts" | "manchmal", LucideIcon> = {
@@ -107,6 +109,13 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
                 <Nowrap>{profile.shoppingDay}</Nowrap>
                 {" · "}
                 <Nowrap>Planungswoche {planningWeekLabel(profile.shoppingDay)}</Nowrap>
+              </span>
+            </Row>
+            <Row href="/profil/kuechenhelfer" icon={Sparkles} title="Küchenhelfer">
+              <span>
+                <Nowrap>{helperName(profile)}</Nowrap>
+                {" · "}
+                <Nowrap>{profile.helper.voice === "maennlich" ? "männliche" : "weibliche"} Stimme</Nowrap>
               </span>
             </Row>
           </List>

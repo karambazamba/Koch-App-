@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { ArrowUp, Mic, MicOff, Sparkles, Square, Volume2, VolumeX, X } from "lucide-react";
+import { helperName } from "@/lib/profile";
+import { HelperAvatar } from "./HelperAvatar";
 import {
   askAssistant,
   loadVoicePreference,
@@ -59,6 +61,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
   const collected = useRef("");
 
   const ready = Boolean(status?.configured && data && today);
+  const name = helperName(data?.profile);
+  const voice = data?.profile.helper.voice ?? "weiblich";
 
   const ask = async (text: string) => {
     const question = text.trim();
@@ -85,7 +89,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
           proposal: result.ops.length > 0 ? { ops: result.ops, selected } : null,
         };
       });
-      if (voiceOn) speak(result.reply);
+      if (voiceOn) speak(result.reply, voice);
     } catch (e) {
       const message = e instanceof Error ? e.message : "Da ist etwas schiefgelaufen.";
       setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text: message, error: true }] }));
@@ -160,7 +164,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-40" role="dialog" aria-modal aria-label="Küchenhelfer">
+    <div className="fixed inset-0 z-40" role="dialog" aria-modal aria-label={`${name} – Küchenhelfer`}>
       <button type="button" aria-label="Küchenhelfer schließen" onClick={onClose} className="absolute inset-0 bg-black/25" />
       <section
         className="absolute inset-x-0 mx-auto flex w-full max-w-lg flex-col rounded-t-3xl bg-background shadow-sheet"
@@ -172,15 +176,16 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
         <header className="flex flex-col gap-2 px-4 pt-2">
           <span className="mx-auto h-1 w-10 rounded-full bg-stone-300" aria-hidden />
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-soft text-accent" aria-hidden>
-              <Sparkles className="h-5 w-5" strokeWidth={2} />
-            </span>
-            <h2 className="flex-1 text-xl font-extrabold tracking-tight">
-              Küchenhelfer
-              {status?.mock && (
-                <span className="ml-2 align-middle rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold text-stone-600">Testmodus</span>
-              )}
-            </h2>
+            <HelperAvatar size={44} variant="badge" />
+            <div className="min-w-0 flex-1">
+              <h2 className="truncate text-2xl font-extrabold leading-tight tracking-tight">
+                {name}
+                {status?.mock && (
+                  <span className="ml-2 align-middle rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold text-stone-600">Testmodus</span>
+                )}
+              </h2>
+              <p className="text-sm text-muted">dein Küchenhelfer</p>
+            </div>
             {voiceSupported() && (
               <button
                 type="button"
@@ -223,11 +228,13 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
                 an – dann weiß der Küchenhelfer, für wen er plant.
               </span>
             </p>
-          ) : chat.turns.length === 0 ? (
+          ) : (
+            <p className="max-w-[85%] self-start rounded-2xl rounded-bl-md border border-line bg-surface px-4 py-2.5 text-base leading-snug text-ink">
+              Hi, ich bin {name} – was steht an?
+            </p>
+          )}
+          {ready && chat.turns.length === 0 && (
             <div className="flex flex-col gap-3">
-              <p className="text-base text-muted">
-                Sag mir, was diese Woche auf den Tisch soll – ich mache einen Vorschlag, du entscheidest.
-              </p>
               <div className="flex flex-col items-start gap-2">
                 {EXAMPLES.map((example) => (
                   <button key={example} type="button" onClick={() => void ask(example)} className={`${chipClass(false)} text-left`}>
@@ -236,7 +243,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
                 ))}
               </div>
             </div>
-          ) : null}
+          )}
 
           {chat.turns.map((turn, i) => (
             <p
@@ -331,7 +338,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
                   ? speech.interim || "Ich höre zu …"
                   : adjusting
                     ? "Was soll anders sein?"
-                    : "Frag den Küchenhelfer …"
+                    : `Frag ${name} …`
               }
               className={`${INPUT_BASE} h-12 flex-1 px-4`}
             />
