@@ -90,8 +90,13 @@ export const NOTE = "flex items-start gap-2 rounded-xl bg-stone-100 px-4 py-3 te
 export const WARNING =
   "flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700";
 
-/** Unterer Abstand: Home-Leiste (Safe-Area) plus Platz für den Küchenhelfer-Knopf */
-export const FAB_CLEARANCE = "pb-[calc(max(1rem,env(safe-area-inset-bottom))+5.5rem)]";
+/**
+ * Unterer Abstand: Home-Leiste (Safe-Area) plus Platz für den Küchenhelfer-Knopf
+ * (56px + Rand + Luft), damit am Seitenende nichts unter dem Knopf liegt.
+ * Auf allen Seiten ans <main> – auch über einer StickyActions-Leiste, denn der
+ * Knopf schwebt dann direkt über der Leiste.
+ */
+export const FAB_CLEARANCE = "pb-[calc(max(1rem,env(safe-area-inset-bottom))+6.5rem)]";
 
 /**
  * Inhaltsbereich einer Unterseite: 16px Rand, 16px Abstand zwischen Karten,

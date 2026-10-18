@@ -43,7 +43,8 @@ abgeben kann – wie an eine Haushaltskraft, mit der man ganz natürlich spricht
   `buttonClass()`/`<Button>` (primary, secondary, soft, ghost, danger; sm/md/lg),
   `ICON_BUTTON`, `chipClass()`, `tileClass()`, `INPUT`, `LABEL`,
   `SECTION_TITLE`, `SUBTLE`, `NOTE`, `WARNING`, `PAGE_MAIN` (unten Platz für den
-  Küchenhelfer-Knopf, `FAB_CLEARANCE`), `INPUT_BASE`, `<ListRow>` (Icon links, Titel +
+  Küchenhelfer-Knopf, `FAB_CLEARANCE` – jedes `<main>` mit Knopf braucht ihn,
+  auch über `StickyActions`, damit am Seitenende nichts unter dem Knopf liegt), `INPUT_BASE`, `<ListRow>` (Icon links, Titel +
   Untertitel, Pfeil rechts), `<IconBadge>`, `<CategoryChip>`/`<CategoryDot>`.
   Neue Seiten nur daraus bauen; fehlt etwas, dort ergänzen.
 - Nur EINE Akzentfarbe (Orange) für Buttons, aktive Zustände und Logo. Karten

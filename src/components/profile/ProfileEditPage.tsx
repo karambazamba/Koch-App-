@@ -6,7 +6,7 @@ import { useState, type ReactNode } from "react";
 import { Check } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { PRIMARY_BUTTON, SECONDARY_BUTTON, StickyActions } from "@/components/StickyActions";
-import { CARD, PAGE_MAIN } from "@/components/ui/styles";
+import { CARD, FAB_CLEARANCE, PAGE_MAIN } from "@/components/ui/styles";
 import { saveProfile, type HouseholdProfile } from "@/lib/profile";
 import { useProfile } from "@/lib/useProfile";
 
@@ -39,7 +39,7 @@ export function ProfileEditPage(props: Props) {
     return (
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
         <PageHeader title={props.title} backHref="/profil" />
-        <main className="flex flex-col items-center gap-4 px-6 pt-10 text-center">
+        <main className={`flex flex-col items-center gap-4 px-6 pt-10 text-center ${FAB_CLEARANCE}`}>
           <p className="text-base text-muted">Es gibt noch kein Haushaltsprofil.</p>
           <Link href="/profil" className={`${PRIMARY_BUTTON} w-full`}>
             Profil anlegen
