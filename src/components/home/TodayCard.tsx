@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Carrot, ChevronRight, MapPin, Moon, Soup, Sun, UtensilsCrossed } from "lucide-react";
 import { CategoryChip } from "@/components/ui/Category";
 import { CARD, buttonClass } from "@/components/ui/styles";
+import { openHelper } from "@/lib/assistant/open";
 import { useRecipes } from "@/lib/cookbook";
 import { composeWeek, useMealPlans, type PlanWeek } from "@/lib/mealPlan";
 import { useProfile } from "@/lib/useProfile";
@@ -58,12 +59,16 @@ function SecondMeal({ leftovers }: { leftovers: string | null }) {
     );
   }
   return (
-    <Link href="/schnellkueche" className="flex items-center gap-2 border-t border-line pt-3 text-sm text-muted">
+    <button
+      type="button"
+      onClick={() => openHelper("reste")}
+      className="flex items-center gap-2 border-t border-line pt-3 text-left text-sm text-muted"
+    >
       <Carrot className="h-4 w-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
       <span className="flex-1">
         Zweite Mahlzeit: Schnelle Idee? <span className="font-semibold text-accent-strong">→ Was ist noch da?</span>
       </span>
-    </Link>
+    </button>
   );
 }
 

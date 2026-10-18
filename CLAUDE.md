@@ -161,19 +161,39 @@ abgeben kann – wie an eine Haushaltskraft, mit der man ganz natürlich spricht
   einzeln abschaltbar.
 - Migrationen: `createLocalStore` schreibt einen migrierten Stand einmalig
   zurück, wenn sich die Version geändert hat.
-- "Was ist noch da?" (`/schnellkueche`, `src/lib/pantry.ts`): Vorrat unter
-  `wasgibts.vorrat` mit Datum. Spracheingabe (Web Speech API, de-DE) oder Text.
-  Zerlegen über die austauschbare Schnittstelle `parseLeftovers()` in
-  `src/lib/leftovers/parser.ts` (heute regelbasiert in `ruleParser.ts`, später
-  KI – nur dort umstellen): Füllwörter raus, Zahlwörter → Ziffern, Einheiten,
-  Abgleich mit der Lebensmittel-Liste `foods.ts` (unscharf, korrigiert
-  Schreibweise). Unbekanntes wird als grauer Chip "Meintest du …?" nachgefragt
-  (nicht gespeichert, bis übernommen). Gleiche Zutaten werden zusammengezählt
-  (2 Karotten + 1 Karotte = 3 Karotten). Fehlermeldung der Spracheingabe nur
-  bei echtem Fehler (nicht nach selbst Beenden oder wenn schon Text kam). Treffer aus dem
-  Kochbuch über `matchRecipes()` (Synonyme, Grundzutaten wie Salz fehlen nie).
-  Personenzahl vorausgefüllt (vor 15 Uhr werktags Mittagsrunde, sonst alle).
-  KI-Ideen-Button ist vorerst deaktiviert ("kommt bald").
+- "Was ist noch da?" läuft über den Küchenhelfer: Die Startseiten-Kachel
+  (und "Schnelle Idee?" in der Heute-Karte) öffnet das Panel im Reste-Modus
+  (`openHelper("reste")`, `src/lib/assistant/open.ts`; `ChatState.reste`)
+  mit "Was ist noch da? Erzähl einfach." Gesagtes zerlegt `parseLeftovers()`
+  (`src/lib/leftovers/parser.ts`, austauschbar; Füllwörter, Zahlwörter,
+  Einheiten, unscharfer Abgleich mit `foods.ts`); erkannte Zutaten erscheinen
+  als Chips und landen im Vorrat (`wasgibts.vorrat`, `src/lib/pantry.ts`,
+  gleiche Zutaten werden zusammengezählt), Unbekanntes als grauer Chip
+  "Meintest du …?". Danach die Basis-Frage, dann 3 Vorschläge: mit KI über
+  den normalen Chat (Reste + Basis als Nachricht), ohne KI Kochbuch-Treffer
+  (`leftoverIdeas()` in `src/lib/leftovers/suggest.ts`: `matchRecipes()`,
+  gefiltert nach Basis, ohne "Nie wieder", Beliebtes zuerst). Die Seite
+  `/schnellkueche` ist nur noch die Übersicht "Noch da" (ändern/löschen) mit
+  Knopf "Mit <Name> kochen" – kein eigenes Mikrofon.
+- Basis (`src/lib/bases.ts`): Kartoffeln, Reis, Nudeln, Quinoa/Couscous, Brot,
+  Salat oder "Egal". Gefragt bei Reste-Ideen und neuen Rezeptvorschlägen
+  (KI fragt laut System-Prompt; fragt sie nach der "Basis", zeigt das Panel
+  die Chips). Chips nach Beliebtheit (Profil v8 `bases`: Zähler je Basis,
+  erhöht bei Wahl und bei 👍 über `recipeBase()`), im Profil unter
+  Essgewohnheiten "Eure Lieblings-Basen" (`/profil/basen`) bearbeitbar.
+- Bewerten nach dem Kochen (`src/lib/ratings.ts`, Speicher
+  `wasgibts.bewertungen` je Kochtag): Am Kochtag ab 19 Uhr (bzw. 14 Uhr bei
+  "mittags") oder beim nächsten Öffnen (bis 2 Tage zurück) fragt die Karte
+  auf der Startseite (`RatingCard`, auch als Sprechblase) "Wie war …?".
+  👍: Zähler hoch, KI-Rezept wird Favorit, Basis-Statistik. 👎: Grund per
+  Chip ("zu scharf", "zu aufwendig", "Kinder mögen's nicht", "schmeckt
+  nicht") oder Freitext → Profil `neverAgain` (Titel, Hauptzutaten, Grund,
+  Kopie des Rezepts), Rezept raus aus dem Kochbuch, künftige Plätze mit dem
+  Gericht werden geleert. "Haben wir nicht gekocht" fragt nicht mehr. Die
+  "Nie wieder"-Liste geht immer an die KI (`prompt.ts`, mit Anweisung: diese
+  und sehr ähnliche Gerichte nie, Gründe beachten); `rezept_erstellen` und
+  freie Gerichte lehnen Einträge der Liste ab (`isNeverAgain`). Einsehbar
+  und einzeln wiederherstellbar unter `/profil/nie-wieder`.
 - Küchenhelfer (KI, `src/lib/assistant/`, API `/api/kuechenhelfer`): schwebender
   Knopf auf allen Seiten (`KitchenHelper` im Layout, über `StickyActions`,
   bei offener Tastatur ausgeblendet), Panel mit Chat, Mikrofon

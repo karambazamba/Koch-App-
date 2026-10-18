@@ -264,6 +264,28 @@ export function recordCooked(id: string, rating: "up" | "down" | null) {
   }));
 }
 
+/**
+ * Bewertung nach dem Kochen (👍): mitzählen und Daumen hoch. Ein KI-Rezept
+ * wird dabei als Favorit fest ins Kochbuch übernommen.
+ */
+export function rateRecipeUp(id: string) {
+  patch(id, (r) => ({
+    cookedCount: r.cookedCount + 1,
+    lastCookedAt: new Date().toISOString(),
+    thumbsUp: r.thumbsUp + 1,
+    favorite: r.source === "ki" ? true : r.favorite,
+  }));
+}
+
+/** Gespeicherte Kopie eines Rezepts (z. B. aus der "Nie wieder"-Liste) zurück ins Kochbuch */
+export function restoreRecipe(raw: unknown): Recipe | null {
+  const id = raw && typeof raw === "object" && typeof (raw as Recipe).id === "string" ? (raw as Recipe).id : newId();
+  const recipe = migrateRecipe(id, raw);
+  if (!recipe) return null;
+  update((recipes) => ({ ...recipes, [recipe.id]: recipe }));
+  return recipe;
+}
+
 const EMPTY: Record<string, Recipe> = {};
 
 /** Alle Rezepte (`undefined` = noch nicht geladen) */

@@ -4,6 +4,8 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Undo2 } from "lucide-react";
 import { commitOps } from "@/lib/assistant/client";
+import { onOpenHelper } from "@/lib/assistant/open";
+import { formatPantryItem, usePantry } from "@/lib/pantry";
 import { useRecipes } from "@/lib/cookbook";
 import { useMealPlans } from "@/lib/mealPlan";
 import { useShoppingLists } from "@/lib/shoppingList";
@@ -44,7 +46,7 @@ function useStickyActionsHeight(): number {
   return height;
 }
 
-const EMPTY_CHAT: ChatState = { turns: [], proposal: null };
+const EMPTY_CHAT: ChatState = { turns: [], proposal: null, reste: null };
 
 /** Sprechblase höchstens einmal pro App-Start (Modul-Zustand = bis zum Neuladen) */
 let bubbleDone = false;
@@ -113,6 +115,36 @@ export function KitchenHelper() {
         ? null
         : { profile, weekPlans, mealPlans, recipes, shopping };
 
+  // Von außen öffnen, z. B. Kachel "Was ist noch da?" → Reste-Modus
+  const pantry = usePantry();
+  const pantryRef = useRef(pantry);
+  useEffect(() => {
+    pantryRef.current = pantry;
+  });
+  useEffect(
+    () =>
+      onOpenHelper((mode) => {
+        setOpen(true);
+        if (mode !== "reste") return;
+        const items = (pantryRef.current ?? []).map(formatPantryItem);
+        setChat((c) => ({
+          ...c,
+          reste: "items",
+          turns: [
+            ...c.turns,
+            {
+              role: "assistant",
+              local: true,
+              resteStart: true,
+              text: items.length ? "Was ist noch da? Erzähl einfach. Schon notiert:" : "Was ist noch da? Erzähl einfach.",
+              items,
+            },
+          ],
+        }));
+      }),
+    [],
+  );
+
   // "Rückgängig" verschwindet nach 10 Sekunden
   useEffect(() => {
     if (!undo) return;
@@ -129,7 +161,7 @@ export function KitchenHelper() {
     if (!data || !chat.proposal) return;
     const prompt = [...chat.turns].reverse().find((t) => t.role === "user")?.text ?? "";
     const run = commitOps(data, chat.proposal.ops, selected, prompt);
-    setChat((c) => ({ turns: [...c.turns, { role: "assistant", text: "Übernommen ✓", local: true }], proposal: null }));
+    setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text: "Übernommen ✓", local: true }], proposal: null }));
     setUndo({ run, key: Date.now() });
     setUndone(false);
   };
@@ -166,6 +198,8 @@ export function KitchenHelper() {
           onApply={apply}
           onClose={() => {
             setOpen(false);
+            // Reste-Modus endet mit dem Schließen
+            setChat((c) => (c.reste ? { ...c, reste: null } : c));
             // Fokus zurück auf den Knopf
             setTimeout(() => fabRef.current?.focus(), 0);
           }}

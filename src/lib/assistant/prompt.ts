@@ -1,6 +1,7 @@
 // Küchenhelfer: System-Prompt (fest, wird gecacht) und Kontext (pro Anfrage).
 
 import { KID_AGE_GROUP_LABELS, MEAL_TIME_LABELS, helperName, personLabel, type HouseholdProfile } from "../profile";
+import { sortedBases } from "../bases";
 import { formatWeekRange, planningWeekStart } from "../weekPlan";
 import type { AssistantData } from "./ops";
 
@@ -33,6 +34,10 @@ So arbeitest du:
 - Ausflugstage bekommen kein Gericht.
 - "Doppelt kochen" bzw. "Reste für morgen": bei gericht_setzen doppelt_kochen=true oder doppelt_kochen-Werkzeug. Rezeptmengen bleiben für eine Mahlzeit; die Einkaufsliste verdoppelt automatisch.
 - Neue Rezepte für die Personenzahl des Tages (woche_lesen: personen).
+- Basis: Bei Reste-Ideen und wenn du neue Rezepte vorschlagen sollst, frag kurz nach der Basis ("Was soll die Basis sein – Kartoffeln, Reis, Nudeln …?"), außer sie ist schon genannt oder egal. Nur einmal fragen. Die App zeigt dazu Knöpfe.
+- Reste-Ideen ("Ideen für unsere Reste: …"): nenne genau 3 kurze Vorschläge (Name und ein halber Satz), die möglichst viele der Reste nutzen und zur Basis passen. Bevorzuge passende Kochbuch-Rezepte (besonders mit Daumen hoch), sonst eigene Ideen. Schlag erst etwas für den Plan vor, wenn die Familie eins auswählt.
+- "Nie wieder"-Liste (im Kontext): Diese Gerichte und sehr ähnliche nie vorschlagen – auch nicht abgewandelt. Die Gründe berücksichtigen (z. B. "zu scharf" → allgemein milder, "zu aufwendig" → einfacher, "Kinder mögen's nicht" → kinderfreundlicher).
+- Gerichte mit Daumen hoch und Lieblings-Basen bevorzugt vorschlagen.
 
 Antworte kurz (2–4 Sätze), ohne Markdown, ohne Listen-Zeichen und ohne IDs – die Antwort wird evtl. vorgelesen.`;
 
@@ -56,9 +61,29 @@ function profileSummary(profile: HouseholdProfile): string {
     `Standardwoche: ${rules.meatDays}× Fleisch, ${rules.vegetarianDays}× vegetarisch, ${rules.fishDays}× Fisch${rules.cheatDay ? `, Cheat Day ${rules.cheatDayWeekday || "(Tag frei)"}` : ""}`,
     profile.wishDay.enabled ? `Wunschtag: ${profile.wishDay.weekday}` : "Wunschtag: aus",
     profile.favoriteDishes.length ? `Lieblingsgerichte: ${profile.favoriteDishes.join(", ")}` : "",
+    favoriteBases(profile),
+    neverAgainText(profile),
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+/** "Lieblings-Basen: Nudeln (5×), Reis (2×)" */
+function favoriteBases(profile: HouseholdProfile): string {
+  const liked = sortedBases(profile.bases).filter((b) => profile.bases[b.id] > 0);
+  return liked.length ? `Lieblings-Basen: ${liked.map((b) => `${b.label} (${profile.bases[b.id]}×)`).join(", ")}` : "";
+}
+
+/** Nie-wieder-Liste – geht immer an die KI */
+function neverAgainText(profile: HouseholdProfile): string {
+  if (profile.neverAgain.length === 0) return "";
+  const lines = profile.neverAgain.slice(-40).map((e) => {
+    const parts = [e.title];
+    if (e.ingredients.length) parts.push(`Zutaten: ${e.ingredients.join(", ")}`);
+    parts.push(e.reason ? `Grund: ${e.reason}` : "ohne Grund");
+    return `- ${parts.join("; ")}`;
+  });
+  return `NIE WIEDER (diese und sehr ähnliche Gerichte nie vorschlagen, Gründe beachten):\n${lines.join("\n")}`;
 }
 
 /** Kontext für diese Anfrage: Datum, Wochen, Profil, Kochbuch-Überblick */
@@ -76,6 +101,6 @@ export function contextText(data: AssistantData, todayIso: string, weeks: { aktu
     "",
     profileSummary(data.profile),
     "",
-    `Kochbuch: ${recipes.length} Rezepte${recipes.length ? ` – ${recipes.slice(0, 60).map((r) => r.title).join(", ")}` : ""}`,
+    `Kochbuch: ${recipes.length} Rezepte${recipes.length ? ` – ${recipes.slice(0, 60).map((r) => `${r.title}${r.thumbsUp > 0 ? ` (👍${r.thumbsUp})` : ""}`).join(", ")}` : ""}`,
   ].join("\n");
 }

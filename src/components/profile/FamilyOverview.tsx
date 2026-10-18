@@ -14,7 +14,10 @@ import {
   UtensilsCrossed,
   type LucideIcon,
   Sparkles,
+  Ban,
+  Wheat,
 } from "lucide-react";
+import { sortedBases } from "@/lib/bases";
 import { PERSON_ICONS } from "@/components/form/NameField";
 import { PageHeader } from "@/components/PageHeader";
 import { ListRow } from "@/components/ui/ListRow";
@@ -95,6 +98,24 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
                 {profile.favoriteDishes.length > 0
                   ? profile.favoriteDishes.join(", ")
                   : "Noch keine eingetragen"}
+              </span>
+            </Row>
+            <Row href="/profil/basen" icon={Wheat} title="Eure Lieblings-Basen">
+              <span className="line-clamp-2">
+                {sortedBases(profile.bases).some((b) => profile.bases[b.id] > 0)
+                  ? sortedBases(profile.bases)
+                      .filter((b) => profile.bases[b.id] > 0)
+                      .slice(0, 3)
+                      .map((b) => b.label)
+                      .join(", ")
+                  : "Lerne ich beim Kochen"}
+              </span>
+            </Row>
+            <Row href="/profil/nie-wieder" icon={Ban} title="Nie wieder">
+              <span className="line-clamp-2">
+                {profile.neverAgain.length > 0
+                  ? profile.neverAgain.map((e) => e.title).join(", ")
+                  : "Noch nichts – bisher hat alles geschmeckt"}
               </span>
             </Row>
             <Row href="/profil/warme-mahlzeit" icon={UtensilsCrossed} title="Zusammen warm essen">
