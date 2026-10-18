@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ChevronRight, Sparkles } from "lucide-react";
 import { CategoryDot } from "@/components/ui/Category";
 import { buttonClass, chipClass } from "@/components/ui/styles";
+import { sortedBases, type BaseCounts } from "@/lib/bases";
 import type { Recipe } from "@/lib/cookbook";
 import { formatPantryItem, type PantryItem } from "@/lib/pantry";
 import type { NeverAgainEntry } from "@/lib/profile";
@@ -20,6 +21,7 @@ export function SpontanBoard({
   recipes,
   pantry,
   neverAgain,
+  baseCounts,
   filters,
   helperName,
   ready,
@@ -31,6 +33,8 @@ export function SpontanBoard({
   recipes: Record<string, Recipe>;
   pantry: PantryItem[];
   neverAgain: NeverAgainEntry[];
+  /** Beliebtheit der Basen (Reihenfolge der Basis-Chips) */
+  baseCounts: BaseCounts;
   filters: SpontanFilter[];
   helperName: string;
   /** KI eingerichtet → "Andere Ideen?" */
@@ -47,7 +51,7 @@ export function SpontanBoard({
         <p className="text-sm text-muted">
           Noch da: {pantry.slice(0, 6).map(formatPantryItem).join(", ")}
           {pantry.length > 6 ? " …" : ""}{" "}
-          <Link href="/schnellkueche" onClick={onNavigate} className="font-semibold text-accent-strong underline">
+          <Link href="/vorrat" onClick={onNavigate} className="font-semibold text-accent-strong underline">
             ändern
           </Link>
         </p>
@@ -58,6 +62,17 @@ export function SpontanBoard({
             {f.label}
           </button>
         ))}
+        {/* Basis nach Beliebtheit (ohne Quinoa – selten spontan da) */}
+        {sortedBases(baseCounts)
+          .filter((b) => b.id !== "quinoa")
+          .map((b) => {
+            const value: SpontanFilter = `basis:${b.id}`;
+            return (
+              <button key={b.id} type="button" aria-pressed={filters.includes(value)} onClick={() => onToggle(value)} className={chipClass(filters.includes(value))}>
+                {b.label}
+              </button>
+            );
+          })}
       </div>
       {ideas.length === 0 ? (
         <p className="rounded-2xl rounded-bl-md border border-line bg-surface px-4 py-2.5 text-base leading-snug">

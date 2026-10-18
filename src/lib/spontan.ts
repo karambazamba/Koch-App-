@@ -8,6 +8,8 @@ import type { PantryItem } from "./pantry";
 import { formatPantryItem, sameIngredient } from "./pantry";
 import type { NeverAgainEntry, PauseSettings } from "./profile";
 import { isNeverAgain } from "./ratings";
+import { baseFromText, recipeBase, type BaseId } from "./bases";
+import { guessDishCategory } from "./dishCategory";
 import { sectionFor } from "./shoppingList";
 import { WEEKDAYS } from "./profile";
 
@@ -123,7 +125,8 @@ export function perishables(pantry: PantryItem[]): string[] {
 
 // --- Spontan kochen: mit dem, was da ist ------------------------------------------
 
-export type SpontanFilter = "schnell" | "reste" | "einkauf";
+/** Filter-Chips; "basis:<id>" = nur mit dieser Basis (mehrere = eine davon) */
+export type SpontanFilter = "schnell" | "reste" | "einkauf" | `basis:${BaseId}`;
 
 export const SPONTAN_FILTERS: { value: SpontanFilter; label: string }[] = [
   { value: "schnell", label: "⚡ unter 20 Min" },
@@ -132,7 +135,7 @@ export const SPONTAN_FILTERS: { value: SpontanFilter; label: string }[] = [
 ];
 
 export type SpontanIdea = {
-  /** Rezept-ID oder "k:<Titel>" für einen Klassiker */
+  /** Rezept-ID, "k:<Titel>" für einen Klassiker, "f:<Name>" für ein Fertigprodukt aus dem Vorrat */
   id: string;
   title: string;
   minutes: number | null;
@@ -165,6 +168,18 @@ const CLASSICS: { title: string; minutes: number; needs: string[]; category: Rec
   { title: "Milchreis", minutes: 30, needs: ["Reis", "Milch"], category: "vegetarisch" },
 ];
 
+/** Fertigprodukte im Vorrat – sind selbst schon eine Idee (Minuten grob) */
+const READY: { words: RegExp; minutes: number }[] = [
+  { words: /pizza|flammkuchen/i, minutes: 15 },
+  { words: /fischstäbchen|chicken nuggets|nuggets|kroketten|pommes|rösti/i, minutes: 20 },
+  { words: /maultasche|tortellini|ravioli|gnocchi|schupfnudel/i, minutes: 10 },
+  { words: /fertig|tütensuppe|dosensuppe|ravioli in|eintopf.*dose|tk-|tiefkühl.*(gericht|pfanne)|gemüsepfanne tk|lasagne tk|tk lasagne/i, minutes: 15 },
+];
+
+function readyMinutes(name: string): number | null {
+  return READY.find((r) => r.words.test(name))?.minutes ?? null;
+}
+
 /** Ohne Vorrat: schnelle Klassiker, die meistens gehen */
 const USUALLY_THERE = ["Rührei mit Brot", "Nudeln mit Tomatensoße", "Pfannkuchen", "Käsebrot mit Rohkost", "Nudeln mit Pesto"];
 
@@ -182,11 +197,17 @@ export function spontanIdeas(
 ): SpontanIdea[] {
   const fast = filters.includes("schnell");
   const allowed = filters.includes("einkauf") ? 1 : 0;
+  const bases = filters.filter((f) => f.startsWith("basis:")).map((f) => f.slice(6) as BaseId);
   const byTime = (a: SpontanIdea, b: SpontanIdea) => (a.minutes ?? 999) - (b.minutes ?? 999);
-  const allowedIdea = (i: SpontanIdea) => !isNeverAgain(i.title, neverAgain) && (!fast || (i.minutes !== null && i.minutes <= 20));
+  const baseOf = (i: SpontanIdea) => (i.recipeId && recipes[i.recipeId] ? recipeBase(recipes[i.recipeId]) : baseFromText(i.title));
+  const allowedIdea = (i: SpontanIdea) =>
+    !isNeverAgain(i.title, neverAgain) &&
+    (!fast || (i.minutes !== null && i.minutes <= 20)) &&
+    (bases.length === 0 || bases.includes(baseOf(i) as BaseId));
 
   if (pantry.length === 0) {
-    return CLASSICS.filter((c) => USUALLY_THERE.includes(c.title))
+    const pool = bases.length ? CLASSICS : CLASSICS.filter((c) => USUALLY_THERE.includes(c.title));
+    return pool
       .map((c) => ({ id: `k:${c.title}`, title: c.title, minutes: c.minutes, category: c.category, uses: [], extra: [] }))
       .filter(allowedIdea)
       .sort(byTime)
@@ -208,7 +229,11 @@ export function spontanIdeas(
     ...check(r.ingredients.map((i) => i.name)),
   }));
   const classics: SpontanIdea[] = CLASSICS.map((c) => ({ id: `k:${c.title}`, title: c.title, minutes: c.minutes, category: c.category, ...check(c.needs) }));
-  const ideas = [...fromBook, ...classics].filter((i) => i.uses.length > 0 && i.extra.length <= allowed && allowedIdea(i));
+  // Fertigprodukte aus dem Vorrat (Tiefkühlpizza, Maultaschen …) zählen mit
+  const ready: SpontanIdea[] = pantry
+    .filter((p) => readyMinutes(p.name) !== null)
+    .map((p) => ({ id: `f:${p.name}`, title: p.name, minutes: readyMinutes(p.name), category: guessDishCategory(p.name), uses: [p.name], extra: [] }));
+  const ideas = [...fromBook, ...classics, ...ready].filter((i) => i.uses.length > 0 && i.extra.length <= allowed && allowedIdea(i));
   const sorted = filters.includes("reste")
     ? ideas.sort((a, b) => b.uses.length - a.uses.length || byTime(a, b))
     : ideas.sort((a, b) => byTime(a, b) || b.uses.length - a.uses.length);

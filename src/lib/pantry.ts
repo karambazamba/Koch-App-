@@ -6,6 +6,25 @@ import { useExternalStore } from "./useExternalStore";
 import { formatAmount, type Recipe } from "./cookbook";
 import { findFood, foodName } from "./leftovers/foods";
 import { createLocalStore } from "./localStore";
+import { sectionFor } from "./shoppingList";
+
+/** Wo es liegt (Vorrat v2): Reiter auf der Vorrat-Seite */
+export type PantryPlace = "kuehlschrank" | "tiefkuehler" | "schrank";
+
+export const PANTRY_PLACES: { value: PantryPlace; label: string; short: string; emoji: string }[] = [
+  { value: "kuehlschrank", label: "Kühlschrank", short: "Kühlschrank", emoji: "🧊" },
+  { value: "tiefkuehler", label: "Tiefkühler", short: "Tiefkühler", emoji: "❄️" },
+  { value: "schrank", label: "Vorratsschrank", short: "Schrank", emoji: "🥫" },
+];
+
+/** Naheliegender Ort für eine Zutat (Tiefkühlware, Haltbares, sonst Kühlschrank) */
+export function placeFor(name: string): PantryPlace {
+  if (/^(tk|tiefkühl)|gefroren|eiscreme|^eis$|fischstäbchen|tiefkühlpizza/i.test(name.trim())) return "tiefkuehler";
+  const section = sectionFor(name);
+  if (section === "tiefkuehl") return "tiefkuehler";
+  if (section === "vorrat" || section === "getraenke") return "schrank";
+  return "kuehlschrank";
+}
 
 export type PantryItem = {
   id: string;
@@ -16,6 +35,7 @@ export type PantryItem = {
   unit: string;
   /** Wann hinzugefügt, "YYYY-MM-DD" */
   addedAt: string;
+  place: PantryPlace;
 };
 
 export const PANTRY_UNITS = [
@@ -110,14 +130,17 @@ export function matchRecipes(recipes: Recipe[], pantry: PantryItem[]): RecipeMat
 
 // --- Speicherung ----------------------------------------------------------------
 
-type PantryStore = { version: 1; items: PantryItem[] };
+/** v2: Ort (Kühlschrank, Tiefkühler, Vorratsschrank) */
+type PantryStore = { version: 2; items: PantryItem[] };
+
+const PLACES = PANTRY_PLACES.map((p) => p.value);
 
 function migrateStore(raw: unknown): PantryStore | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as { version?: number; items?: unknown };
-  if (data.version !== 1 || !Array.isArray(data.items)) return null;
+  if (![1, 2].includes(data.version as number) || !Array.isArray(data.items)) return null;
   return {
-    version: 1,
+    version: 2,
     items: data.items
       .filter((i): i is Partial<PantryItem> => Boolean(i) && typeof i === "object")
       .filter((i) => typeof i.id === "string" && typeof i.name === "string")
@@ -127,6 +150,8 @@ function migrateStore(raw: unknown): PantryStore | null {
         amount: typeof i.amount === "number" ? i.amount : null,
         unit: typeof i.unit === "string" ? i.unit : "",
         addedAt: typeof i.addedAt === "string" ? i.addedAt : "",
+        // Bis v1 ohne Ort → naheliegender Ort
+        place: PLACES.includes(i.place as PantryPlace) ? (i.place as PantryPlace) : placeFor(i.name!),
       })),
   };
 }
@@ -135,7 +160,7 @@ const store = createLocalStore("wasgibts.vorrat", migrateStore);
 const EMPTY: PantryItem[] = [];
 
 function update(change: (items: PantryItem[]) => PantryItem[]) {
-  const current = store.load() ?? { version: 1 as const, items: [] };
+  const current = store.load() ?? { version: 2 as const, items: [] };
   store.save({ ...current, items: change(current.items) });
 }
 
@@ -154,11 +179,12 @@ function sameItemKey(name: string): string {
  * Neue Zutaten hinzufügen; gleiche Zutat (gleiches Lebensmittel und Einheit)
  * wird zusammengezählt – 2 Karotten + 1 Karotte = 3 Karotten.
  */
-export function addPantryItems(items: Omit<PantryItem, "id" | "addedAt">[], addedAt: string) {
+export function addPantryItems(items: (Omit<PantryItem, "id" | "addedAt" | "place"> & { place?: PantryPlace })[], addedAt: string) {
   update((current) => {
     const next = current.map((p) => ({ ...p }));
-    for (const item of items) {
-      const same = next.find((p) => sameItemKey(p.name) === sameItemKey(item.name) && p.unit === item.unit);
+    for (const raw of items) {
+      const item = { ...raw, place: raw.place ?? placeFor(raw.name) };
+      const same = next.find((p) => sameItemKey(p.name) === sameItemKey(item.name) && p.unit === item.unit && p.place === item.place);
       if (!same) {
         next.push({ ...item, id: newId(), addedAt });
         continue;
@@ -184,6 +210,12 @@ export function removePantryItem(id: string) {
 
 export function clearPantry() {
   update(() => []);
+}
+
+/** Wurde der Vorrat je genutzt? (dann Kachel "Vorrat" statt "Rezepte"; `undefined` = lädt) */
+export function usePantryUsed(): boolean | undefined {
+  const data = useExternalStore(store.subscribe, store.load, () => undefined);
+  return data === undefined ? undefined : data !== null;
 }
 
 /** Vorrat (`undefined` = noch nicht geladen) */

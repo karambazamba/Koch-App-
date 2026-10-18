@@ -11,7 +11,7 @@ import { toIsoDate, useToday, useWeekPlans } from "@/lib/weekPlan";
 const noop = () => () => {};
 
 /** Minuten seit Mitternacht (im Browser) */
-function useMinutes(): number | undefined {
+export function useMinutes(): number | undefined {
   return useExternalStore(noop, () => new Date().getHours() * 60 + new Date().getMinutes(), () => undefined);
 }
 

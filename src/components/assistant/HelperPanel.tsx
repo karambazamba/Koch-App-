@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { ArrowUp, CircleHelp, Mic, MicOff, Sparkles, Square, Volume2, VolumeX, X } from "lucide-react";
-import { bumpBase, sortedBases } from "@/lib/bases";
+import { baseLabel, bumpBase, sortedBases, type BaseId } from "@/lib/bases";
 import { parseLeftovers, type ParsedLeftover } from "@/lib/leftovers/parser";
 import { addPantryItems, formatPantryItem, usePantry } from "@/lib/pantry";
 import { helperName, helperTitle, saveProfile } from "@/lib/profile";
@@ -98,6 +99,7 @@ type Props = {
 
 /** Panel von unten: Chatverlauf, Vorschlag, großes Mikrofon und Textfeld */
 export function HelperPanel({ data, chat, setChat, onApply, onClose, startListening, initialAsk }: Props) {
+  const router = useRouter();
   const status = useAssistantStatus(true);
   const today = useToday();
   const inset = useKeyboardInset();
@@ -247,7 +249,9 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   /** Mit KI: andere Ideen zum Vorrat */
   const askMoreIdeas = () => {
     const items = (pantry ?? []).map(formatPantryItem);
-    const filters = (chat.spontan ?? []).map((f) => SPONTAN_FILTERS.find((x) => x.value === f)?.label).filter(Boolean);
+    const filters = (chat.spontan ?? [])
+      .map((f) => (f.startsWith("basis:") ? `Basis ${baseLabel(f.slice(6) as BaseId)}` : SPONTAN_FILTERS.find((x) => x.value === f)?.label))
+      .filter(Boolean);
     setChat((c) => ({ ...c, spontan: null }));
     void ask(
       `Spontan kochen mit dem, was da ist: ${items.join(", ") || "(nichts notiert)"}.${filters.length ? ` Wünsche: ${filters.join(", ")}.` : ""} Bitte genau 3 schnelle Ideen ohne Einkauf, schnellste zuerst.`,
@@ -340,6 +344,14 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   /** Alles außer Spontan-Modus und neuer Person */
   const submitNormal = (t: string) => {
     if (!data || !today) return;
+    // "Zeig mir unsere Rezepte" / "Was haben wir im Vorrat?" → hinführen
+    const page = /\b(zeig|öffne|wo sind|wo finde)\w*\b.*\b(rezepte|kochbuch)\b/i.test(t) ? "/kochbuch" : /\b(zeig|öffne)\w*\b.*\b(vorrat|tiefkühler|kühlschrank)\b/i.test(t) ? "/vorrat" : null;
+    if (page) {
+      setInput("");
+      router.push(page);
+      onClose();
+      return;
+    }
     // Pause, Ausflugs-Snacks, schnelle Ideen und Einkaufsliste direkt erledigen (auch ohne KI)
     const local = spontanReply(t) ?? shoppingReply(t);
     if (local) {
@@ -585,8 +597,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                     </span>
                   ) : null}
                   {turn.items?.length ? (
-                    <Link href="/schnellkueche" onClick={onClose} className="mt-2 block text-sm font-semibold text-accent-strong underline">
-                      Liste „Noch da“ ansehen
+                    <Link href="/vorrat" onClick={onClose} className="mt-2 block text-sm font-semibold text-accent-strong underline">
+                      Im Vorrat ansehen
                     </Link>
                   ) : null}
                 </div>
@@ -600,12 +612,16 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                     recipes={data.recipes}
                     pantry={pantry ?? []}
                     neverAgain={data.profile.neverAgain}
+                    baseCounts={data.profile.bases}
                     filters={chat.spontan ?? []}
                     helperName={name}
                     ready={ready}
-                    onToggle={(f) =>
-                      setChat((c) => ({ ...c, spontan: c.spontan?.includes(f) ? c.spontan.filter((x) => x !== f) : [...(c.spontan ?? []), f] }))
-                    }
+                    onToggle={(f) => {
+                      // Gewählte Basis zählt für die Beliebtheit
+                      const on = !chat.spontan?.includes(f);
+                      if (on && f.startsWith("basis:")) saveProfile({ ...data.profile, bases: bumpBase(data.profile.bases, f.slice(6) as BaseId) });
+                      setChat((c) => ({ ...c, spontan: c.spontan?.includes(f) ? c.spontan.filter((x) => x !== f) : [...(c.spontan ?? []), f] }));
+                    }}
                     onTake={takeIdea}
                     onAskMore={askMoreIdeas}
                     onNavigate={onClose}

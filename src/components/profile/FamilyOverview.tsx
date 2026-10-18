@@ -3,8 +3,11 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import {
+  BookOpen,
   Briefcase,
+  Refrigerator,
   ChefHat,
+  Lightbulb,
   CalendarRange,
   Heart,
   Home,
@@ -42,6 +45,7 @@ import {
   type Person,
   helperName,
   HEALTH_TIP_LEVELS,
+  TIP_LEVELS,
   WEEKEND_STYLES,
 } from "@/lib/profile";
 
@@ -148,6 +152,17 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
           </List>
         </Section>
 
+        <Section title="Küche">
+          <List>
+            <Row href="/kochbuch" icon={BookOpen} title="Unsere Rezepte">
+              <span>Alle Rezepte, neue anlegen</span>
+            </Row>
+            <Row href="/vorrat" icon={Refrigerator} title="Vorrat">
+              <span>Kühlschrank, Tiefkühler, Vorratsschrank</span>
+            </Row>
+          </List>
+        </Section>
+
         <Section title="Küchenstil">
           <List>
             <Row href="/profil/kochstil" icon={ChefHat} title="So kocht ihr">
@@ -187,6 +202,9 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
             </Row>
             <Row href="/profil/produkte" icon={ShoppingBasket} title="Eure Produkte & Läden">
               <span>Was bei euch auf der Einkaufsliste steht</span>
+            </Row>
+            <Row href="/profil/tipps" icon={Lightbulb} title="Tipps">
+              <span>{TIP_LEVELS.find((l) => l.value === profile.tips)?.label}</span>
             </Row>
             <Row href="/profil/gesundheit" icon={Sprout} title="Gesundheits-Tipps">
               <span>{HEALTH_TIP_LEVELS.find((l) => l.value === profile.healthTips)?.label}</span>

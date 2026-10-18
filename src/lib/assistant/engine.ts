@@ -22,8 +22,8 @@ const OP_TYPES = new Set(["set_meal", "set_double", "clear_slot", "move_meal", "
 export function parseRequest(body: unknown): AssistantRequest {
   if (!body || typeof body !== "object") throw new AssistantInputError("Leere Anfrage.");
   const b = body as Partial<AssistantRequest>;
-  if (typeof b.deviceId !== "string" || !/^[\w-]{8,64}$/.test(b.deviceId)) throw new AssistantInputError("Geräte-Kennung fehlt.");
-  if (typeof b.today !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(b.today)) throw new AssistantInputError("Datum fehlt.");
+  if (typeof b.deviceId !== "string" || !/^[\w-]{8,64}$/.test(b.deviceId)) throw new AssistantInputError("Geräte-Kennung nicht erkannt.");
+  if (typeof b.today !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(b.today)) throw new AssistantInputError("Datum nicht erkannt.");
   const messages = (Array.isArray(b.messages) ? b.messages : [])
     .filter((m): m is ChatTurn => Boolean(m) && (m.role === "user" || m.role === "assistant") && typeof m.text === "string")
     .map((m) => ({ role: m.role, text: m.text.slice(0, LIMITS.messageChars) }))
