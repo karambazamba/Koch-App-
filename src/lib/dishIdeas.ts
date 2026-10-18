@@ -36,7 +36,7 @@ export const DISHES: DishIdea[] = [
   { title: "Wraps mit Gemüse", minutes: 15, category: "vegetarisch", needs: ["Wraps", "Paprika", "Gurke"] },
   { title: "Nudeln mit Zucchini", minutes: 20, category: "vegetarisch", needs: ["Nudeln", "Zucchini"] },
   { title: "Zucchini-Puffer", minutes: 25, category: "vegetarisch", needs: ["Zucchini", "Eier"] },
-  { title: "Gemüsepfanne mit Reis", minutes: 25, category: "vegetarisch", needs: ["Reis", "Möhren", "Paprika"] },
+  { title: "Gemüsepfanne mit Reis", minutes: 25, category: "vegetarisch", needs: ["Reis", "Möhren"] },
   { title: "Gemüsecurry mit Reis", minutes: 30, category: "vegetarisch", needs: ["Reis", "Kokosmilch", "Paprika", "Zucchini"] },
   { title: "Kartoffel-Gemüse-Pfanne", minutes: 30, category: "vegetarisch", needs: ["Kartoffeln", "Paprika", "Zucchini"] },
   { title: "Pellkartoffeln mit Quark", minutes: 30, category: "vegetarisch", needs: ["Kartoffeln", "Quark"] },
