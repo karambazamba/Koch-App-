@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, ClipboardList, FolderOpen, History, Save } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight, ClipboardList, FolderOpen, History, Save } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { CategoryDot } from "@/components/ui/Category";
 import { Segmented } from "@/components/ui/Segmented";
@@ -233,6 +233,10 @@ export function WeekPlanView() {
             </button>
           </div>
         )}
+        <Link href="/kochbuch" className={`${buttonClass("soft")} w-full`}>
+          <BookOpen className="h-5 w-5" strokeWidth={2} aria-hidden />
+          Unsere Rezepte
+        </Link>
         {toast && (
           <p role="status" className="rounded-xl bg-accent-soft px-4 py-2 text-sm font-semibold text-accent-strong">
             {toast}

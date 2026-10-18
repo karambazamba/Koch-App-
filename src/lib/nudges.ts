@@ -12,7 +12,20 @@ import { createLocalStore } from "./localStore";
 import { helperMessage, type HouseholdProfile } from "./profile";
 import { addDays } from "./weekPlan";
 
-export type NudgeKind = "bewertung" | "einkauf-morgen" | "wochenplanung" | "lob" | "tipp" | "pause" | "wochenende" | "grill";
+export type NudgeKind =
+  | "bewertung"
+  | "einkauf-morgen"
+  | "startzeit"
+  | "auftauen"
+  | "einweichen"
+  | "vorrat"
+  | "reste"
+  | "wochenplanung"
+  | "lob"
+  | "tipp"
+  | "pause"
+  | "wochenende"
+  | "grill";
 
 export const IGNORE_LIMIT = 3;
 export const PAUSE_DAYS = 14;

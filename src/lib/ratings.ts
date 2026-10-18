@@ -89,10 +89,13 @@ export function isFirstTime(
   return !week.days.some((d) => d.date < date && d.slot.entry && same(d.slot.entry.stored));
 }
 
+/** Bis zu dieser Uhrzeit am nächsten Morgen wird noch nach dem Vortag gefragt */
+export const ASK_UNTIL_NEXT_MORNING = 10 * 60;
+
 /**
- * Nach dem Kochen fragen – nur heute, ab 1 Stunde nach der Essenszeit, und
- * nur bei Gerichten, die es zum ersten Mal gab (keine Wiederholungen oder
- * Kochbuch-Klassiker). Am nächsten Tag ist die Frage weg.
+ * Nach dem Kochen fragen – abends ab 1 Stunde nach der Essenszeit bis zum
+ * nächsten Morgen (10 Uhr), und nur bei neuen Gerichten beim ersten Mal (keine
+ * Wiederholungen oder Kochbuch-Klassiker). Danach ist die Frage weg.
  */
 export function ratingCandidate(
   now: Date,
@@ -102,14 +105,18 @@ export function ratingCandidate(
   recipes: Record<string, Recipe>,
   rated: Record<string, Rating>,
 ): RatingCandidate | null {
-  const iso = toIsoDate(now);
+  const minutesNow = now.getHours() * 60 + now.getMinutes();
+  // Morgens: noch der Vortag; sonst heute
+  const morning = minutesNow < ASK_UNTIL_NEXT_MORNING;
+  const day0 = morning ? new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 12) : now;
+  const iso = toIsoDate(day0);
   if (rated[iso]) return null;
-  const week = composeWeek(weekStartFor(now, profile.shoppingDay || "Montag"), profile, weekPlans, mealPlans, recipes);
+  const week = composeWeek(weekStartFor(day0, profile.shoppingDay || "Montag"), profile, weekPlans, mealPlans, recipes);
   const day = week.days.find((d) => d.date === iso);
   const entry = day?.slot.entry;
   // Am Wochenende (frei/locker) keine Bewertungsfragen
   if (!day || day.away || !entry || day.weekend) return null;
-  if (now.getHours() * 60 + now.getMinutes() < minutesOf(profile.mealClock[day.mealTime]) + ASK_AFTER_MINUTES) return null;
+  if (!morning && minutesNow < minutesOf(profile.mealClock[day.mealTime]) + ASK_AFTER_MINUTES) return null;
   // Nur bei Neuem: bekannte Gerichte (Kochbuch-Klassiker, Freitext, Wunsch) nie
   if (dishStatus(entry, recipes) !== "neu" || !isFirstTime(entry, iso, week, mealPlans, recipes)) return null;
   return { date: iso, weekday: day.weekday, title: entry.title, recipeId: entry.recipeId };

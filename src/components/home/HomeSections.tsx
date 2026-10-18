@@ -2,22 +2,19 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { BookOpen, CalendarDays, ChevronRight, Mic, Settings, ShoppingCart, ThumbsDown, ThumbsUp, X, type LucideIcon } from "lucide-react";
+import { BookOpen, CalendarDays, ChevronRight, Mic, Refrigerator, Settings, ShoppingCart, type LucideIcon } from "lucide-react";
 import { HelperAvatar } from "@/components/assistant/HelperAvatar";
 import { AppLogo } from "@/components/AppLogo";
 import { CARD, buttonClass, chipClass } from "@/components/ui/styles";
 import { personDotClass, useAppointments } from "@/lib/appointments";
 import { dishStatus, type DishStatus } from "@/lib/dishStatus";
+import { usePantry, usePantryUsed } from "@/lib/pantry";
 import { QuickAddButton } from "@/components/shopping/QuickAdd";
-import { TwistBox } from "./TwistBox";
 import { useAssistantStatus } from "@/lib/assistant/client";
 import { openHelper } from "@/lib/assistant/open";
 import { dishEmoji } from "@/lib/dishEmoji";
-import { noteAnswered, noteDismissed, noteShown } from "@/lib/nudges";
 import { helperName, mealClockFor, saveProfile } from "@/lib/profile";
 import { dismissWelcome } from "@/lib/activity";
-import { DOWN_REASONS, rateDown, rateUp, type RatingCandidate } from "@/lib/ratings";
 import { entriesWithoutSlot, mealPlansWithWeek, replaceMealPlans, useMealPlans } from "@/lib/mealPlan";
 import { useWeekShoppingList } from "@/lib/useWeekShoppingList";
 import type { HomeData } from "./useHomeData";
@@ -62,7 +59,7 @@ function StatusLabel({ status }: { status: DishStatus }) {
  * (Rezept und Tauschen dezent), neue das Rezept Schritt für Schritt.
  * `afterMeal`: Essenszeit vorbei (dann kein "Los geht's" mehr).
  */
-export function HeroCard({ data, afterMeal, twist }: { data: HomeData; afterMeal: boolean; twist: boolean }) {
+export function HeroCard({ data, afterMeal }: { data: HomeData; afterMeal: boolean }) {
   const { day, recipes, profile } = data;
   const appointments = useAppointments(data.todayIso);
   const entry = day?.slot.entry;
@@ -186,8 +183,6 @@ export function HeroCard({ data, afterMeal, twist }: { data: HomeData; afterMeal
       ) : (
         <div className="pb-3" />
       )}
-      {/* Bekanntes Gericht: gelegentlich ein Twist (nie beim Wunschessen) */}
-      {twist && status === "bekannt" && !wish && !afterMeal && entry && <TwistBox data={data} title={title} />}
       {appointments.length > 0 && (
         <ul className="border-t border-line px-4 py-2" aria-label="Termine">
           {appointments.map((a) => (
@@ -270,76 +265,12 @@ export function WelcomeBack({ data }: { data: HomeData }) {
 
 const LONG_DATE = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "numeric", month: "long" });
 
-/** Schmale Zeile "Wie war …?" 👍 / 👎 / ✕ – nur bei neuen Gerichten */
-export function RatingRow({ candidate, data }: { candidate: RatingCandidate; data: HomeData }) {
-  const mealPlans = useMealPlans();
-  const [down, setDown] = useState(false);
-  const [thanks, setThanks] = useState("");
-  const { todayIso } = data;
-
-  useEffect(() => {
-    noteShown("bewertung", todayIso);
-  }, [todayIso]);
-
-  if (thanks === "zu") return null;
-  if (thanks) return <p className="px-1 text-sm text-muted" role="status">{thanks}</p>;
-  if (down) {
-    const finish = (reason: string) => {
-      if (mealPlans) rateDown(candidate, reason, { profile: data.profile, recipes: data.recipes, weekPlans: data.weekPlans, mealPlans }, data.today);
-      noteAnswered("bewertung", todayIso);
-      setThanks(`Alles klar – ${candidate.title} kommt nicht wieder.`);
-    };
-    return (
-      <div className="flex items-center gap-2 overflow-x-auto px-1 text-sm" aria-label="Grund" data-no-swipe>
-        <span className="shrink-0 text-muted">{"Woran lag's?"}</span>
-        {DOWN_REASONS.slice(0, 3).map((r) => (
-          <button key={r} type="button" onClick={() => finish(r)} className={`${chipClass(false)} shrink-0`}>
-            {r}
-          </button>
-        ))}
-        <button type="button" onClick={() => finish("")} className={`${chipClass(false, "muted")} shrink-0`}>
-          egal
-        </button>
-      </div>
-    );
-  }
-  return (
-    <div className="flex items-center gap-1 px-1" aria-label="Bewerten">
-      <p className="min-w-0 flex-1 truncate text-sm text-muted">Wie war {candidate.title}?</p>
-      <button
-        type="button"
-        aria-label="Lecker"
-        onClick={() => {
-          rateUp(candidate, data.profile, data.recipes);
-          noteAnswered("bewertung", todayIso);
-          setThanks("Freut mich! 😋");
-        }}
-        className="flex h-9 w-9 items-center justify-center rounded-full text-accent active:bg-stone-100"
-      >
-        <ThumbsUp className="h-5 w-5" strokeWidth={2} aria-hidden />
-      </button>
-      <button type="button" aria-label="Nicht so" onClick={() => setDown(true)} className="flex h-9 w-9 items-center justify-center rounded-full text-muted active:bg-stone-100">
-        <ThumbsDown className="h-5 w-5" strokeWidth={2} aria-hidden />
-      </button>
-      <button
-        type="button"
-        aria-label="Nicht fragen"
-        onClick={() => {
-          noteDismissed("bewertung", todayIso);
-          setThanks("zu");
-        }}
-        className="flex h-9 w-9 items-center justify-center rounded-full text-stone-400 active:bg-stone-100"
-      >
-        <X className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-      </button>
-    </div>
-  );
-}
-
 /** Drei kleine Karten nebeneinander mit Live-Inhalt */
 export function BentoCards({ data }: { data: HomeData }) {
   const shopping = useWeekShoppingList("planning");
   const recipeCount = Object.keys(data.recipes).length;
+  const pantryUsed = usePantryUsed();
+  const pantryCount = usePantry()?.length ?? 0;
   const tomorrowDish = data.tomorrow && !data.tomorrow.away ? data.tomorrow.slot.entry?.title : undefined;
   const count = shopping?.list.openCount ?? 0;
   // Für welchen Einkauf: nächster Einkaufstag, heute oder die laufende Woche
@@ -362,7 +293,12 @@ export function BentoCards({ data }: { data: HomeData }) {
         )}
         {shopping && <QuickAddButton weekStart={shopping.weekStart} settings={shopping.settings} small className="absolute -right-1.5 -top-1.5" />}
       </div>
-      <BentoCard href="/kochbuch" label="Kochbuch" icon={BookOpen} value={`${recipeCount} ${recipeCount === 1 ? "Rezept" : "Rezepte"}`} />
+      {/* Dritte Kachel: Vorrat, sobald er je genutzt wurde – sonst Rezepte */}
+      {pantryUsed ? (
+        <BentoCard href="/vorrat" label="Vorrat" icon={Refrigerator} value={`${pantryCount} ${pantryCount === 1 ? "Sache" : "Sachen"}`} />
+      ) : (
+        <BentoCard href="/kochbuch" label="Rezepte" icon={BookOpen} value={`${recipeCount} ${recipeCount === 1 ? "Rezept" : "Rezepte"}`} />
+      )}
     </nav>
   );
 }

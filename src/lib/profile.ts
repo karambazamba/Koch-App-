@@ -134,6 +134,15 @@ export const HEALTH_TIP_LEVELS: { value: HealthTipLevel; label: string; hint: st
   { value: "oefter", label: "Gern öfter", hint: "Bis zu drei Tipps pro Woche" },
 ];
 
+/** Wie oft Tipps auf Lottes Platz kommen (Profil v13) */
+export type TipLevel = "aus" | "ab_und_zu" | "taeglich";
+
+export const TIP_LEVELS: { value: TipLevel; label: string; hint: string }[] = [
+  { value: "aus", label: "Aus", hint: "Keine Tipps auf der Startseite" },
+  { value: "ab_und_zu", label: "Ab und zu", hint: "An höchstens 4 Tagen pro Woche" },
+  { value: "taeglich", label: "Täglich", hint: "Jeden Tag, wenn nichts Wichtigeres ansteht" },
+];
+
 /** Uhrzeit "HH:MM" je Essenszeit (Profil v10) */
 export type MealClock = Record<MealTime, string>;
 
@@ -171,7 +180,7 @@ export type PauseSettings = { from: string; until: string | null };
 export type WeatherSettings = { consent: boolean; postcode: string };
 
 export type HouseholdProfile = {
-  version: 12;
+  version: 13;
   householdName: string;
   adults: number;
   kids: number;
@@ -206,6 +215,8 @@ export type HouseholdProfile = {
   cookingStyle: CookingStyle;
   /** Neue Gerichte pro Woche bei der Planung (Profil v12, Standard 1) */
   newPerWeek: NewDishesPerWeek;
+  /** Tipps auf Lottes Platz (Profil v13, Standard "ab und zu") */
+  tips: TipLevel;
   updatedAt: string;
 };
 
@@ -301,7 +312,7 @@ export function createPerson(role: PersonRole): Person {
 
 export function createEmptyProfile(): HouseholdProfile {
   return {
-    version: 12,
+    version: 13,
     householdName: "",
     adults: 2,
     kids: 1,
@@ -333,6 +344,7 @@ export function createEmptyProfile(): HouseholdProfile {
     weather: { consent: false, postcode: "" },
     cookingStyle: "gefuehl",
     newPerWeek: 1,
+    tips: "ab_und_zu",
     updatedAt: "",
   };
 }
@@ -477,7 +489,7 @@ export function normalizeMealTime(value: unknown, fallback: MealTime): MealTime 
 export function migrateProfile(raw: unknown): HouseholdProfile | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as Record<string, unknown>;
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(data.version as number)) return null;
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(data.version as number)) return null;
 
   const defaults = createEmptyProfile();
 
@@ -560,6 +572,8 @@ export function migrateProfile(raw: unknown): HouseholdProfile | null {
     // Bis v11: nach Gefühl, ein neues Gericht pro Woche
     cookingStyle: data.cookingStyle === "rezept" ? "rezept" : "gefuehl",
     newPerWeek: data.newPerWeek === 2 ? 2 : 1,
+    // Bis v12: Tipps "ab und zu"
+    tips: data.tips === "aus" || data.tips === "taeglich" ? data.tips : "ab_und_zu",
     updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : "",
   };
 }

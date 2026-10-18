@@ -14,6 +14,7 @@ import { useTextFieldFocused } from "@/lib/useMobileKeyboard";
 import { useProfile } from "@/lib/useProfile";
 import { toIsoDate, useToday, useWeekPlans } from "@/lib/weekPlan";
 import { recordOpen } from "@/lib/activity";
+import type { SpontanFilter } from "@/lib/spontan";
 import type { AssistantData } from "@/lib/assistant/ops";
 import { helperName, helperTitle } from "@/lib/profile";
 import { HelperAvatar } from "./HelperAvatar";
@@ -91,12 +92,12 @@ export function KitchenHelper() {
   });
   useEffect(
     () =>
-      onOpenHelper((mode, ask) => {
+      onOpenHelper((mode, ask, filters) => {
         setOpen(true);
         if (mode === "voice" || ask) setStart({ listen: mode === "voice", ask });
         if (mode !== "spontan") return;
         const hasPantry = (pantryRef.current ?? []).length > 0;
-        setChat((c) => ({ ...c, spontan: c.spontan ?? [], turns: [...c.turns, spontanStartTurn(hasPantry)] }));
+        setChat((c) => ({ ...c, spontan: (filters as SpontanFilter[] | undefined) ?? c.spontan ?? [], turns: [...c.turns, spontanStartTurn(hasPantry)] }));
       }),
     [],
   );

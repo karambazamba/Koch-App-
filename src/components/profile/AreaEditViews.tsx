@@ -18,7 +18,7 @@ import {
 import { NumberStepper } from "@/components/form/NumberStepper";
 import { sortedBases } from "@/lib/bases";
 import { LIKE_WEIGHTS, likeLevel, sortedLikes, withLikes, withoutLike } from "@/lib/likes";
-import { COOKING_STYLES, HEALTH_TIP_LEVELS, NEW_DISHES_OPTIONS, WEEKDAYS, WEEKEND_STYLES, planningWeekLabel, standardWeekDays } from "@/lib/profile";
+import { COOKING_STYLES, HEALTH_TIP_LEVELS, NEW_DISHES_OPTIONS, TIP_LEVELS, WEEKDAYS, WEEKEND_STYLES, planningWeekLabel, standardWeekDays } from "@/lib/profile";
 
 export function FavoritesEditView() {
   return (
@@ -268,6 +268,40 @@ export function LikesEditView() {
           </>
         );
       }}
+    </ProfileEditPage>
+  );
+}
+
+/** Tipps auf Lottes Platz: aus / ab und zu / täglich */
+export function TipsEditView() {
+  return (
+    <ProfileEditPage title="Tipps">
+      {(draft, setDraft) => (
+        <>
+          <p className={SUBTLE}>
+            Profi-Tricks, Tipps zum heutigen Gericht, Spar- und Reste-Ideen – nur wenn nichts Wichtigeres ansteht. Nach links wischen = für heute
+            weg, nach rechts = nächster Tipp.
+          </p>
+          <div className="flex flex-col gap-2" role="radiogroup" aria-label="Tipps">
+            {TIP_LEVELS.map((level) => (
+              <button
+                key={level.value}
+                type="button"
+                role="radio"
+                aria-checked={draft.tips === level.value}
+                onClick={() => setDraft((d) => ({ ...d, tips: level.value }))}
+                className={tileClass(draft.tips === level.value)}
+              >
+                <span className="flex flex-col self-stretch px-2 text-left">
+                  <span className="text-base font-bold">{level.label}</span>
+                  <span className="text-sm text-muted">{level.hint}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className={SUBTLE}>Gesundheits-Tipps haben ihre eigene Einstellung.</p>
+        </>
+      )}
     </ProfileEditPage>
   );
 }
