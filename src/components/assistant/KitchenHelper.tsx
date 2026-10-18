@@ -11,7 +11,7 @@ import { useTextFieldFocused } from "@/lib/useMobileKeyboard";
 import { useProfile } from "@/lib/useProfile";
 import { useWeekPlans } from "@/lib/weekPlan";
 import type { AssistantData } from "@/lib/assistant/ops";
-import { helperName } from "@/lib/profile";
+import { helperName, helperTitle } from "@/lib/profile";
 import { HelperAvatar } from "./HelperAvatar";
 import { HelperPanel, type ChatState } from "./HelperPanel";
 import { useHelperHint } from "./useHelperHint";
@@ -134,16 +134,19 @@ export function KitchenHelper() {
     setUndone(false);
   };
 
+  // Beim ersten Kennenlernen (Vollbild-Gespräch) kein schwebender Knopf
+  const onboarding = profile === null && pathname === "/profil";
+
   const bottom = `calc(max(1rem, env(safe-area-inset-bottom)) + ${stickyHeight}px)`;
 
   return (
     <>
-      {!open && !typing && (
+      {!open && !typing && !onboarding && (
         <button
           ref={fabRef}
           type="button"
           onClick={() => setOpen(true)}
-          aria-label={`${helperName(profile)} öffnen – dein Küchenhelfer`}
+          aria-label={`${helperName(profile)} öffnen – ${helperTitle(profile)}`}
           data-kuechenhelfer-knopf
           style={{ bottom }}
           className="fixed right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-accent shadow-lg ring-4 ring-background transition active:scale-95"

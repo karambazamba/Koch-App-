@@ -16,7 +16,7 @@ import { ASSISTANT_ENDPOINT, type AssistantError, type AssistantReply, type Assi
 const DEVICE_KEY = "wasgibts.geraet";
 const VOICE_KEY = "wasgibts.kuechenhelfer.vorlesen";
 
-function deviceId(): string {
+export function deviceId(): string {
   try {
     let id = localStorage.getItem(DEVICE_KEY);
     if (!id) {

@@ -55,6 +55,8 @@ import {
 } from "@/lib/profile";
 import { scrollToNextOpenSection } from "@/lib/stepScroll";
 import { useProfile } from "@/lib/useProfile";
+import { OnboardingChat } from "@/components/onboarding/OnboardingChat";
+import { clearOnboarding } from "@/lib/onboarding/progress";
 
 const STEPS: { title: string; icon: LucideIcon; perPerson?: boolean }[] = [
   { title: "Wer isst mit?", icon: Users },
@@ -91,13 +93,20 @@ export function ProfilePageContent() {
     return <div className={`${CARD} m-4 h-64 animate-pulse`} />;
   }
   if (profile) return <FamilyOverview profile={profile} />;
-  return <ProfileWizard />;
+  return <FirstSetup />;
 }
 
-/** Assistent in mehreren Schritten – nur beim ersten Anlegen. */
-function ProfileWizard() {
+/** Ohne Profil: Kennenlernen als Gespräch, auf Wunsch das Formular */
+function FirstSetup() {
+  const [form, setForm] = useState<{ draft: HouseholdProfile | null } | null>(null);
+  if (form) return <ProfileWizard initial={form.draft} />;
+  return <OnboardingChat onForm={(draft) => setForm({ draft })} />;
+}
+
+/** Assistent in mehreren Schritten – Formular-Weg beim ersten Anlegen. */
+function ProfileWizard({ initial }: { initial?: HouseholdProfile | null }) {
   const router = useRouter();
-  const [profile, setProfile] = useState(createEmptyProfile);
+  const [profile, setProfile] = useState(() => initial ?? createEmptyProfile());
   const [step, setStep] = useState(0);
   // In Schritten mit einer Person pro Ansicht: welche Person gerade dran ist
   // und welche pro Schritt schon erledigt sind.
@@ -250,6 +259,7 @@ function ProfileWizard() {
 
   function finish() {
     saveProfile(profile);
+    clearOnboarding();
     router.push("/");
   }
 
