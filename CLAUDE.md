@@ -486,7 +486,14 @@ Bei ALLEN Änderungen beachten.
   Einstellungen pro Gerät unter `wasgibts.vorlesen`: Modus automatisch = nur
   wenn per Mikrofon gefragt (Standard) / immer / nie, Stimme (`voiceURI`, leer
   = automatisch passend zu weiblich/männlich, sonst beste deutsche),
-  Tempo langsam/normal/schnell; alter Schalter wird übernommen). Vor dem
+  Tempo langsam/normal/schnell; alter Schalter wird übernommen). Stimmenwahl
+  nach Natürlichkeit (`voiceScore` aus Name + voiceURI: Natural/Neural >
+  Premium > Erweitert/Enhanced > Google/Netz > einfach/compact; Spaß-Stimmen
+  wie Eddy, Rocko, Grandma nie, auch nicht in der Auswahl), erst dann
+  Geschlecht. In der Auswahl Etikett "Natürlich/Gut/Einfach" und "So klinge
+  ich natürlicher" (Anleitung je Gerät zum Laden einer besseren Stimme,
+  aufgeklappt, wenn keine natürliche da ist). Klammern, Schrägstriche,
+  Auslassungen und "Mo–Fr" werden für flüssigeres Vorlesen umgeschrieben. Vor dem
   Vorlesen `cleanForSpeech()` (ohne Emojis/Markdown, Einheiten und
   Abkürzungen ausgeschrieben, "17:30" → "17 Uhr 30") und `speechChunks()`
   (Sätze bis 200 Zeichen, gegen Chromes Abbruch). iPhone: `unlockSpeech()`
