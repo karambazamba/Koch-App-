@@ -9,11 +9,15 @@ import { useProfile } from "@/lib/useProfile";
 import { isPaused, useNudges } from "@/lib/nudges";
 import { toIsoDate, useToday, useWeekPlans, weekStartFor } from "@/lib/weekPlan";
 
-const noop = () => () => {};
+/** Jede halbe Minute neu nachsehen (z. B. damit das Gericht nach dem Essen von selbst verschwindet) */
+const everyHalfMinute = (onChange: () => void) => {
+  const timer = window.setInterval(onChange, 30_000);
+  return () => window.clearInterval(timer);
+};
 
-/** Minuten seit Mitternacht (im Browser) */
+/** Minuten seit Mitternacht (im Browser, läuft mit) */
 export function useMinutes(): number | undefined {
-  return useExternalStore(noop, () => new Date().getHours() * 60 + new Date().getMinutes(), () => undefined);
+  return useExternalStore(everyHalfMinute, () => new Date().getHours() * 60 + new Date().getMinutes(), () => undefined);
 }
 
 /** Gekochtes Gericht, nach dem gefragt werden soll ("Wie war …?") */

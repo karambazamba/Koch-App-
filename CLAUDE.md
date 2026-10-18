@@ -131,7 +131,10 @@ Bei ALLEN Änderungen beachten.
      Schritt" (nach der Essenszeit nicht mehr). Kein Gericht für heute:
      `IdeasCard` "Was gibt's heute?" mit genau 3 kompakten Ideen-Karten wie
      im Chat (alle Kochstile; rechts oben "Mehr Ideen" bzw. "Sag mir, was da
-     ist").
+     ist"). Nach dem Essen (Essenszeit + 90 Min. oder "Gekocht" getippt,
+     `mealIsOver`) zeigt die Karte schon das nächste Essen: "MORGEN · 12:30 ·
+     Gulasch" (`HeroCard when="morgen"`), ohne Gericht "Was gibt's morgen?"
+     mit Ideen (Knopf "Morgen").
   3. Lottes Platz (`useLottePlace` in `src/components/home/LottePlace.tsx`):
      genau EINE Sache oder Stille, Avatar + Sprechblase, max. 2 Chips, immer
      als Angebot. Die erste zutreffende Stufe gewinnt:
@@ -140,7 +143,10 @@ Bei ALLEN Änderungen beachten.
         morgen liegt im Tiefkühler), Einweichen (getrocknete Hülsenfrüchte),
         Einkauf für morgen ("Für morgen hab ich … schon auf die Liste
         gesetzt"). Antippen der Blase öffnet die Checkliste "Für morgen".
-     2. Vorrat: ❄️ seit 60+ Tagen im Tiefkühler, Reste verwandeln (Frisches
+     2. Vorrat: nach dem Essen einmal "Ist was übrig geblieben?" bei
+        Gerichten mit Resten (Eintopf, Curry, Bolognese … `leftoverProne`,
+        nicht bei "doppelt") → "Kühlschrank"/"Eingefroren" (in den Vorrat)/
+        "Nein", wegwischen = nein, bis zum nächsten Morgen; ❄️ seit 60+ Tagen im Tiefkühler, Reste verwandeln (Frisches
         seit 2+ Tagen im Kühlschrank → Spontan mit "Reste zuerst"), vor einer
         Pause aufbrauchen.
      3. Planung: "Nächste Woche ist noch frei – in 2 Minuten geplant?",
@@ -438,6 +444,19 @@ Bei ALLEN Änderungen beachten.
   mit Zustimmung, Ort grob per PLZ, Open-Meteo, `src/lib/weather.ts`).
 - Planen ist optional: Ohne Gericht für heute zeigt die Startseite "Was gibt's
   heute?" mit 3 Ideen (siehe Ideen für heute) – nie als Fehler oder Warnung.
+- Nach dem Essen (`src/lib/mealDone.ts`, Speicher `wasgibts.gekocht` je
+  Kochtag, `AutoCooked` im Layout): ab Essenszeit + 90 Minuten zählt das
+  Gericht ohne Nachfrage als gekocht (auch für gestern, falls die App zu war;
+  nicht bei Pause/Ausflug, nicht am lockeren/freien Wochenende, bei "spontan"
+  nur aus den Ideen Gewähltes). Dann: Kochbuch "<n>× gekocht" +1
+  (`countCookedOn`, Bewertung zählt nicht doppelt, Status "Neu" und erste
+  Bewertung rechnen mit dem Stand vor dem Kochtag – `recipeBeforeDay`),
+  Zutaten aus Kühlschrank/Tiefkühler raus (Vorratsschrank bleibt), Gekauftes
+  zählt 7 Tage nicht mehr als "da" (`usedRecently` in `useStock`). "Gekocht"
+  auf der Rezeptseite beim heutigen Gericht beendet das Essen sofort.
+  Wochenplan heute: "✓ Gekocht · Doch nicht? Auf morgen verschieben"
+  (`moveToTomorrow`: morgiges Gericht rutscht auf den nächsten freien Tag;
+  Zähler und Vorrat zurück, mit Rückgängig).
 - Bewerten nach dem Kochen – klein und nur bei Neuem (`src/lib/ratings.ts`,
   Speicher `wasgibts.bewertungen` je Kochtag): nur für neue Gerichte
   (Status "Neu", siehe dishStatus) beim ersten Mal (`isFirstTime`: noch nie

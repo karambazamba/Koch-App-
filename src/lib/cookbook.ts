@@ -331,13 +331,35 @@ export function recordCooked(id: string, rating: "up" | "down" | null) {
 }
 
 /**
+ * Nach dem Essen automatisch mitzählen (Kochtag `date`). Gibt das vorherige
+ * "zuletzt gekocht" zurück, damit "Doch nicht gekocht" es zurücksetzen kann.
+ */
+export function countCookedOn(id: string, date: string): string | null {
+  const before = store.load()?.recipes?.[id]?.lastCookedAt ?? null;
+  // Mittags UTC: das Datum stimmt in jeder Zeitzone hierzulande
+  patch(id, (r) => ({ cookedCount: r.cookedCount + 1, lastCookedAt: `${date}T12:00:00.000Z` }));
+  return before;
+}
+
+/** Automatisches Mitzählen zurücknehmen */
+export function uncountCooked(id: string, lastCookedAt: string | null) {
+  patch(id, (r) => ({ cookedCount: Math.max(0, r.cookedCount - 1), lastCookedAt }));
+}
+
+/** Rezept so, wie es vor dem Kochtag `date` war (für "Neu" und die Bewertung) */
+export function recipeBeforeDay(recipe: Recipe, date: string): Recipe {
+  return recipe.lastCookedAt?.startsWith(date) && recipe.cookedCount > 0 ? { ...recipe, cookedCount: recipe.cookedCount - 1 } : recipe;
+}
+
+/**
  * Bewertung nach dem Kochen (👍): mitzählen und Daumen hoch. Ein KI-Rezept
  * wird dabei als Favorit fest ins Kochbuch übernommen.
  */
-export function rateRecipeUp(id: string) {
+export function rateRecipeUp(id: string, opts: { count?: boolean } = {}) {
+  const count = opts.count ?? true;
   patch(id, (r) => ({
-    cookedCount: r.cookedCount + 1,
-    lastCookedAt: new Date().toISOString(),
+    cookedCount: r.cookedCount + (count ? 1 : 0),
+    lastCookedAt: count ? new Date().toISOString() : r.lastCookedAt,
     thumbsUp: r.thumbsUp + 1,
     favorite: r.source === "ki" ? true : r.favorite,
   }));

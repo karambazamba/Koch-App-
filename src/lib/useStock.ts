@@ -2,10 +2,12 @@
 
 // Was gerade da ist: Vorrat (Kühlschrank, Tiefkühler, Schrank) plus auf der
 // Einkaufsliste Abgehaktes (= gekauft) und "Haben wir schon" – aus dieser und
-// der Einkaufswoche. Immer live aus den Speichern, nie zwischengespeichert.
+// der Einkaufswoche – ohne das, was nach dem Essen schon verkocht ist. Immer
+// live aus den Speichern, nie zwischengespeichert.
 
 import { mergeStock, stockItem } from "./dishIdeas";
-import { usePantry, type PantryItem } from "./pantry";
+import { usedRecently, useCookedDays } from "./mealDone";
+import { sameIngredient, usePantry, type PantryItem } from "./pantry";
 import { useWeekShoppingList } from "./useWeekShoppingList";
 import { toIsoDate, useToday } from "./weekPlan";
 
@@ -15,10 +17,13 @@ export function useStock(): PantryItem[] | undefined {
   const today = useToday();
   const current = useWeekShoppingList("current");
   const planning = useWeekShoppingList("planning");
-  if (!pantry || !today || !current || !planning) return undefined;
+  const cooked = useCookedDays();
+  if (!pantry || !today || !current || !planning || !cooked) return undefined;
   const todayIso = toIsoDate(today);
+  // Schon verkocht (nach dem Essen automatisch vermerkt) → nicht mehr da
+  const used = usedRecently(cooked, todayIso);
   const bought = [...current.list.items, ...(planning.weekStart === current.weekStart ? [] : planning.list.items)]
-    .filter((i) => i.checked || i.hidden)
+    .filter((i) => (i.checked || i.hidden) && !used.some((u) => sameIngredient(u, i.name)))
     .map((i) => stockItem(i.name, "b", todayIso));
   return mergeStock(pantry, bought);
 }

@@ -7,7 +7,8 @@ import { useLottePlace } from "./LottePlace";
 import { BentoCards, HeroCard, HomeBottomBar, HomeHeader, PauseCard } from "./HomeSections";
 import { useActivity, welcomeDue } from "@/lib/activity";
 import { useHomeData } from "./useHomeData";
-import { useRatingCandidate } from "./useRatingCandidate";
+import { useMinutes, useRatingCandidate } from "./useRatingCandidate";
+import { mealIsOver, useCookedDays } from "@/lib/mealDone";
 
 /**
  * Startseite "Heute" – genau sechs Elemente: Kopf, Heute-Karte, Lottes Platz
@@ -22,6 +23,10 @@ export function HomeView() {
   const activity = useActivity();
   const paused = Boolean(data && pausedOn(data.profile, data.todayIso));
   const welcome = Boolean(data && activity && !paused && welcomeDue(activity, data.todayIso));
+  const minutes = useMinutes();
+  const cooked = useCookedDays();
+  // Nach dem Essen (Essenszeit + 90 Min. oder "gekocht"): schon das nächste Essen zeigen
+  const over = Boolean(data && minutes !== undefined && cooked && mealIsOver(data.day, data.profile, minutes, cooked));
   const lotte = useLottePlace(data, { welcome });
 
   return (
@@ -34,7 +39,7 @@ export function HomeView() {
           <WelcomeCard />
         ) : (
           <>
-            {paused ? <PauseCard data={data} /> : <HeroCard data={data} afterMeal={rating?.date === data.todayIso} />}
+            {paused ? <PauseCard data={data} /> : <HeroCard data={data} afterMeal={rating?.date === data.todayIso} when={over ? "morgen" : "heute"} />}
             {lotte}
             <BentoCards data={data} />
           </>

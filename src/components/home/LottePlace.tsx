@@ -29,10 +29,12 @@ import { addDays, nextWeekStartFor, planningWeekStart, toIsoDate, useWeekPlan, w
 import { WelcomeBack } from "./HomeSections";
 import { TipCard } from "./TipCard";
 import { useMinutes, useRatingCandidate } from "./useRatingCandidate";
+import { answerLeftovers, leftoverProne, useCookedDays, type CookedDay, type LeftoverAnswer } from "@/lib/mealDone";
 import type { HomeData } from "./useHomeData";
 
 type Chip = { label: string; href?: string; onClick?: () => void; quiet?: boolean };
-type Note = { kind: NudgeKind; text: string; chips: Chip[]; onOpen?: () => void };
+/** `maxChips`: sonst höchstens 2; `onSwipe`: seitlich wegwischen */
+type Note = { kind: NudgeKind; text: string; chips: Chip[]; onOpen?: () => void; maxChips?: number; onSwipe?: () => void };
 
 const WEEKDAY = new Intl.DateTimeFormat("de-DE", { weekday: "long" });
 const MONTH = new Intl.DateTimeFormat("de-DE", { month: "long" });
@@ -80,6 +82,7 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
   const activity = useActivity();
   const mealPlans = useMealPlans();
   const rated = useRatings();
+  const cooked = useCookedDays();
   const pantry = usePantry();
   const minutes = useMinutes();
   const rating = useRatingCandidate();
@@ -97,9 +100,12 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
   const praise = useWeekPraise();
   const [done, setDone] = useState<{ text: string; undo?: () => void } | null>(null);
   const [tomorrowOpen, setTomorrowOpen] = useState(false);
+  // Bewertungsfrage festhalten, damit nach der Antwort kurz "Freut mich!" stehen bleibt
+  const [keptRating, setKeptRating] = useState<RatingCandidate | null>(null);
+  if (rating && rating.date !== keptRating?.date) setKeptRating(rating);
 
   const ready = Boolean(
-    data && target && nudges && current && next && targetPlan !== undefined && activity && mealPlans && rated && pantry && minutes !== undefined && tipState && twists,
+    data && target && nudges && current && next && targetPlan !== undefined && activity && mealPlans && rated && cooked && pantry && minutes !== undefined && tipState && twists,
   );
   const allowed = (kind: NudgeKind) => Boolean(nudges && !isPaused(nudges, kind, todayIso));
   const once = (key: string, label: string, onClick?: () => void): Chip => ({
@@ -203,7 +209,35 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
     // Modus "Ganz locker": nur Zeitkritisches
     if (mode === "locker") return null;
 
-    // 2. Vorrat: ❄️ lange im Tiefkühler, Reste verwandeln, vor der Pause aufbrauchen
+    // 2. Vorrat. Zuerst nach dem Essen einmal: "Ist was übrig geblieben?" (bis zum nächsten Morgen)
+    const mealDate = minutes < 10 * 60 ? addDays(todayIso, -1) : todayIso;
+    const meal = cooked?.[mealDate];
+    // Erst die Bewertung eines neuen Gerichts (und ihr "Freut mich!"), dann die Reste-Frage
+    const ratingFirst = (rating && rating.date === mealDate) || keptRating?.date === mealDate;
+    if (meal && !meal.leftovers && !ratingFirst && leftoverProne(meal.title) && !(mealDate === todayIso && day?.slot.entry?.double) && allowed("reste")) {
+      const answer = (a: LeftoverAnswer, text: string) => () => {
+        const undo = answerLeftovers(mealDate, a, todayIso);
+        if (a !== "nein") setDone({ text, undo });
+      };
+      return {
+        kind: "reste",
+        // Kurz (eine Zeile, passt auch aufs kleine iPhone) – welches Gericht, ist klar
+        text: mealDate === todayIso ? "Ist was übrig geblieben?" : "Ist von gestern was übrig?",
+        chips: [
+          { label: "Kühlschrank", onClick: answer("kuehlschrank", `Notiert ✓ ${meal.title} steht im Kühlschrank.`) },
+          { label: "Eingefroren", onClick: answer("tiefkuehler", `Notiert ✓ ${meal.title} liegt im Tiefkühler.`) },
+          { label: "Nein", onClick: answer("nein", "") },
+        ],
+        maxChips: 3,
+        // Wegwischen = nichts übrig
+        onSwipe: () => {
+          noteAnswered("reste", todayIso);
+          answerLeftovers(mealDate, "nein", todayIso);
+        },
+      };
+    }
+
+    // ❄️ lange im Tiefkühler, Reste verwandeln, vor der Pause aufbrauchen
     const oldFrozen = pantry
       .filter((p) => p.place === "tiefkuehler" && p.addedAt && p.addedAt <= addDays(todayIso, -60) && !wasAsked(activity, `tk:${p.id}`))
       .sort((a, b) => a.addedAt.localeCompare(b.addedAt))[0];
@@ -384,7 +418,7 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
         ],
       };
     }
-    if (!spontan && profile.weekendStyle !== "frei" && !wasAsked(activity, "wochenende-frei") && weekendsSkipped(data, mealPlans, rated) >= 3) {
+    if (!spontan && profile.weekendStyle !== "frei" && !wasAsked(activity, "wochenende-frei") && weekendsSkipped(data, mealPlans, rated, cooked ?? {}) >= 3) {
       return {
         kind: "wochenende",
         text: `Am Wochenende ${isSolo(profile) ? "kochst du" : "kocht ihr"} oft spontan – soll ich Samstag und Sonntag einfach frei lassen?`,
@@ -403,9 +437,6 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
   // --- Stufe 4: Bewertung, Stufe 5: Lob und Tipps --------------------------------
   // "Ganz locker": keine Bewertungsfragen, kein Lob, keine Tipps
   const quietDay = !ready || !data || !activity || pausedOn(data.profile, todayIso) || isQuiet(activity, todayIso) || data.day?.weekend === "frei" || mode === "locker";
-  // Frage festhalten, damit nach der Antwort kurz "Freut mich!" stehen bleibt
-  const [keptRating, setKeptRating] = useState<RatingCandidate | null>(null);
-  if (rating && rating.date !== keptRating?.date) setKeptRating(rating);
   const ratingNow = rating ?? (keptRating && keptRating.date >= addDays(todayIso, -1) ? keptRating : null);
   const showRating = !note && !quietDay && ratingNow ? ratingNow : null;
   const showPraise = !note && !showRating && !quietDay && praise && allowed("lob") ? praise : null;
@@ -472,8 +503,8 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
   if (note) {
     return (
       <>
-        <Bubble text={note.text} onOpen={note.onOpen}>
-          {note.chips.slice(0, 2).map((c) =>
+        <Bubble text={note.text} onOpen={note.onOpen} onSwipe={note.onSwipe}>
+          {note.chips.slice(0, note.maxChips ?? 2).map((c) =>
             c.href ? (
               <Link key={c.label} href={c.href} onClick={() => noteAnswered(note.kind, todayIso)} className={chipClass(false)}>
                 {c.label}
@@ -690,7 +721,12 @@ function RatingBubble({ candidate, data }: { candidate: RatingCandidate; data: H
  * denen keins gekocht wurde (keine Bewertung, Rezept nicht als gekocht
  * vermerkt)? Ein Wochenende ohne Plan beendet die Folge.
  */
-function weekendsSkipped(data: HomeData, mealPlans: Record<string, Record<string, StoredEntry>>, rated: Record<string, Rating>): number {
+function weekendsSkipped(
+  data: HomeData,
+  mealPlans: Record<string, Record<string, StoredEntry>>,
+  rated: Record<string, Rating>,
+  cookedDays: Record<string, CookedDay>,
+): number {
   let count = 0;
   const today = data.today;
   // Letzter vergangener Samstag
@@ -706,7 +742,9 @@ function weekendsSkipped(data: HomeData, mealPlans: Record<string, Record<string
     if (planned.length === 0) break;
     const cooked = planned.some(({ date, entry }) => {
       const recipe = entry.recipeId ? data.recipes[entry.recipeId] : undefined;
-      return rated[date] === "up" || rated[date] === "down" || Boolean(recipe?.lastCookedAt?.startsWith(date));
+      // Von selbst nach dem Essen vermerkt zählt hier nicht – nur, was jemand selbst getan hat
+      const auto = cookedDays[date]?.how === "auto";
+      return rated[date] === "up" || rated[date] === "down" || cookedDays[date]?.how === "marked" || (!auto && Boolean(recipe?.lastCookedAt?.startsWith(date)));
     });
     if (cooked) break;
     count++;
@@ -715,9 +753,28 @@ function weekendsSkipped(data: HomeData, mealPlans: Record<string, Record<string
 }
 
 /** Avatar + Sprechblase; `onOpen`: Antippen der Blase öffnet mehr (z. B. "Für morgen") */
-function Bubble({ text, children, onOpen }: { text: string; children?: ReactNode; onOpen?: () => void }) {
+function Bubble({ text, children, onOpen, onSwipe }: { text: string; children?: ReactNode; onOpen?: () => void; onSwipe?: () => void }) {
+  const [startX, setStartX] = useState<number | null>(null);
+  const [dx, setDx] = useState(0);
+  const swipe = onSwipe
+    ? {
+        onPointerDown: (e: React.PointerEvent) => setStartX(e.clientX),
+        onPointerMove: (e: React.PointerEvent) => startX !== null && setDx(e.clientX - startX),
+        onPointerUp: () => {
+          if (Math.abs(dx) > 70) onSwipe();
+          setStartX(null);
+          setDx(0);
+        },
+        onPointerCancel: () => {
+          setStartX(null);
+          setDx(0);
+        },
+        style: { transform: dx ? `translateX(${dx}px)` : undefined, opacity: dx ? Math.max(0.3, 1 - Math.abs(dx) / 250) : undefined, touchAction: "pan-y" as const },
+        "data-no-swipe": true,
+      }
+    : {};
   return (
-    <section className="flex items-start gap-2.5" aria-label="Küchenhelfer">
+    <section className="flex items-start gap-2.5" aria-label="Küchenhelfer" {...swipe}>
       <HelperAvatar size={40} variant="badge" />
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         {onOpen ? (
@@ -727,7 +784,7 @@ function Bubble({ text, children, onOpen }: { text: string; children?: ReactNode
         ) : (
           <p className="rounded-2xl rounded-tl-md border border-line bg-surface px-3.5 py-2.5 text-[15px] leading-snug text-ink">{text}</p>
         )}
-        {children && <div className="flex flex-wrap gap-2">{children}</div>}
+        {children && <div className="flex flex-wrap gap-x-1.5 gap-y-2">{children}</div>}
       </div>
     </section>
   );

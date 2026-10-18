@@ -18,6 +18,7 @@ import { dismissWelcome } from "@/lib/activity";
 import { entriesWithoutSlot, loadMealPlans, mealPlansWithWeek, replaceMealPlans, useMealPlans } from "@/lib/mealPlan";
 import { useWeekShoppingList } from "@/lib/useWeekShoppingList";
 import { useTodayIdeas } from "@/lib/useIdeas";
+import { weekStartFor } from "@/lib/weekPlan";
 import { isSpontanEntry, type HomeData } from "./useHomeData";
 import { IdeasCard } from "@/components/ideas/IdeasCard";
 import { showToast } from "@/lib/toast";
@@ -63,22 +64,27 @@ function StatusLabel({ status, solo = false }: { status: DishStatus; solo?: bool
  * (Rezept und Tauschen dezent), neue das Rezept Schritt für Schritt.
  * `afterMeal`: Essenszeit vorbei (dann kein "Los geht's" mehr).
  */
-export function HeroCard({ data, afterMeal }: { data: HomeData; afterMeal: boolean }) {
-  const { day, recipes, profile } = data;
-  const appointments = useAppointments(data.todayIso);
+export function HeroCard({ data, afterMeal, when = "heute" }: { data: HomeData; afterMeal: boolean; when?: "heute" | "morgen" }) {
+  const { recipes, profile } = data;
+  // Nach dem Essen: schon das nächste Essen (morgen)
+  const tomorrowView = when === "morgen";
+  const day = tomorrowView ? data.tomorrow : data.day;
+  const appointments = useAppointments(day?.date ?? data.todayIso);
   const entry = day?.slot.entry;
   const recipe = entry?.recipeId ? recipes[entry.recipeId] : undefined;
   const clock = day ? mealClockFor(profile, day.weekday) : "";
 
   if (day?.away) {
     return (
-      <section className={`${CARD} flex items-center gap-4 p-5`} aria-label="Heute">
+      <section className={`${CARD} flex items-center gap-4 p-5`} aria-label={tomorrowView ? "Morgen" : "Heute"}>
         <span className="text-5xl" aria-hidden>
           🏕️
         </span>
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-accent-strong">Heute</p>
-          <p className="mt-1 text-xl font-extrabold leading-tight tracking-tight">Ausflug – heute wird nicht gekocht</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-accent-strong">{tomorrowView ? "Morgen" : "Heute"}</p>
+          <p className="mt-1 text-xl font-extrabold leading-tight tracking-tight">
+            {tomorrowView ? (day.paused ? "Pause – genießt die Zeit" : "Ausflug – morgen wird nicht gekocht") : "Ausflug – heute wird nicht gekocht"}
+          </p>
         </div>
       </section>
     );
@@ -89,7 +95,7 @@ export function HeroCard({ data, afterMeal }: { data: HomeData; afterMeal: boole
     // Planen ist freiwillig – nie als Fehler oder Warnung
     if (day?.weekend === "frei") {
       return (
-        <section className={`${CARD} flex flex-col items-center gap-2 p-6 text-center`} aria-label="Heute">
+        <section className={`${CARD} flex flex-col items-center gap-2 p-6 text-center`} aria-label={tomorrowView ? "Morgen" : "Heute"}>
           <span className="text-5xl" aria-hidden>
             🏖
           </span>
@@ -98,8 +104,8 @@ export function HeroCard({ data, afterMeal }: { data: HomeData; afterMeal: boole
         </section>
       );
     }
-    // Kein Gericht für heute: ganz normal – drei Ideen (für alle Kochstile)
-    return <IdeasCard />;
+    // Kein Gericht für heute (bzw. morgen): ganz normal – drei Ideen (für alle Kochstile)
+    return <IdeasCard when={when} />;
   }
 
   const title = entry ? entry.title : `Reste von ${day!.leftovers}`;
@@ -122,13 +128,14 @@ export function HeroCard({ data, afterMeal }: { data: HomeData; afterMeal: boole
   const emoji = wish ? "🎉" : dishEmoji(title, entry?.category ?? null);
   const recipeHref = recipe ? `/kochbuch/rezept?id=${encodeURIComponent(recipe.id)}` : null;
   // Neu (oder "gern nach Rezept"): das Rezept steht im Vordergrund
-  const recipeFirst = Boolean(recipe && !afterMeal && (status === "neu" || profile.cookingStyle === "rezept"));
+  const recipeFirst = Boolean(recipe && !afterMeal && !tomorrowView && (status === "neu" || profile.cookingStyle === "rezept"));
   // Aus den Ideen gewählt: "Andere Idee" statt Tauschen im Plan
   const spontanChoice = isSpontanEntry(day);
   const otherIdea = () => {
     if (!day) return;
     const before = loadMealPlans();
-    replaceMealPlans(mealPlansWithWeek(before, data.week.weekStart, (entries) => entriesWithoutSlot(entries, day.slot)));
+    const weekStart = weekStartFor(new Date(`${day.date}T12:00:00`), profile.shoppingDay || "Montag");
+    replaceMealPlans(mealPlansWithWeek(before, weekStart, (entries) => entriesWithoutSlot(entries, day.slot)));
     showToast({ text: "Okay – hier sind wieder Ideen.", undo: () => replaceMealPlans(before) });
   };
   const facts = [
@@ -140,7 +147,7 @@ export function HeroCard({ data, afterMeal }: { data: HomeData; afterMeal: boole
   ].filter(Boolean);
 
   return (
-    <section className={`${CARD} flex flex-col overflow-hidden`} aria-label="Heute">
+    <section className={`${CARD} flex flex-col overflow-hidden`} aria-label={tomorrowView ? "Morgen" : "Heute"}>
       <Link href={recipeHref ?? (data.planStyle === "spontan" ? "/ideen" : "/wochenplan")} className="flex flex-col active:opacity-90">
         {/* Bildfeld: so groß, wie der Bildschirm hergibt (ohne Scrollen) */}
         {/* Mit Terminen wird das Bildfeld auf kleinen Bildschirmen noch etwas flacher */}
@@ -151,7 +158,9 @@ export function HeroCard({ data, afterMeal }: { data: HomeData; afterMeal: boole
         >
           <span className="absolute left-4 top-3 rounded-full bg-surface/90 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-accent-strong">
             {/* Lockeres Wochenende: eine Idee ohne Uhrzeit */}
-            {day?.weekend === "locker" ? (isSolo(profile) ? "Falls du Lust hast" : "Falls ihr Lust habt") : `Heute · ${clock}`}
+            {day?.weekend === "locker"
+              ? `${tomorrowView ? "Morgen – f" : "F"}alls ${isSolo(profile) ? "du Lust hast" : "ihr Lust habt"}`
+              : `${tomorrowView ? "Morgen" : "Heute"} · ${clock}`}
           </span>
           <span className={`drop-shadow-sm [@media(min-height:740px)]:text-6xl ${appointments.length ? "text-3xl leading-none" : "text-5xl"}`} aria-hidden>
             {emoji}
@@ -203,7 +212,7 @@ export function HeroCard({ data, afterMeal }: { data: HomeData; afterMeal: boole
               Andere Idee
             </button>
           ) : (
-            <Link href="/wochenplan?tauschen=heute" className="font-semibold underline-offset-2 active:underline">
+            <Link href={tomorrowView ? "/wochenplan" : "/wochenplan?tauschen=heute"} className="font-semibold underline-offset-2 active:underline">
               Tauschen
             </Link>
           )}

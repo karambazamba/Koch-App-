@@ -10,7 +10,19 @@ import type { Idea } from "@/lib/ideas";
 const list = (items: string[]) => (items.length <= 1 ? items.join("") : `${items.slice(0, -1).join(", ")} und ${items[items.length - 1]}`);
 
 /** "Mehr" zu einer Idee: Grund, Zeit, was es noch braucht, Rezept */
-export function IdeaSheet({ idea, onChoose, onDismiss, onClose }: { idea: Idea; onChoose: () => void; onDismiss: () => void; onClose: () => void }) {
+export function IdeaSheet({
+  idea,
+  onChoose,
+  onDismiss,
+  onClose,
+  when = "heute",
+}: {
+  idea: Idea;
+  onChoose: () => void;
+  onDismiss: () => void;
+  onClose: () => void;
+  when?: "heute" | "morgen";
+}) {
   return (
     <Sheet title={idea.title} onClose={onClose}>
       <div className={`${CARD} flex items-center gap-4 p-4`}>
@@ -44,7 +56,7 @@ export function IdeaSheet({ idea, onChoose, onDismiss, onClose }: { idea: Idea; 
           Nicht jetzt
         </button>
         <button type="button" onClick={onChoose} className={buttonClass("primary", "lg")}>
-          Das gibt&apos;s heute
+          Das gibt&apos;s {when}
         </button>
       </div>
     </Sheet>
