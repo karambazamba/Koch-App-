@@ -37,11 +37,15 @@ export function buttonClass(variant: ButtonVariant = "primary", size: ButtonSize
 export const ICON_BUTTON =
   "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line bg-surface text-ink transition active:scale-95 disabled:opacity-30";
 
-/** Antippbarer Chip; ausgewählt in der Akzentfarbe ("danger" nur für Allergien) */
-export function chipClass(selected = false, tone: "accent" | "danger" = "accent"): string {
+/**
+ * Antippbarer Chip; ausgewählt in der Akzentfarbe ("danger" nur für Allergien).
+ * "muted" = unsicherer Eintrag (grau, gestrichelt), z. B. "Meintest du …?".
+ */
+export function chipClass(selected = false, tone: "accent" | "danger" | "muted" = "accent"): string {
   const active = tone === "danger" ? "border-red-300 bg-red-50 text-red-700" : "border-accent bg-accent-soft text-accent-strong";
+  const idle = tone === "muted" ? "border-dashed border-stone-300 bg-stone-100 text-stone-500" : "border-line bg-surface text-ink";
   return `inline-flex min-h-10 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[15px] font-semibold transition active:scale-95 ${
-    selected ? active : "border-line bg-surface text-ink"
+    selected ? active : idle
   }`;
 }
 

@@ -93,8 +93,15 @@
   (Schlüssel Zutat + Einheit). Standard-Woche und Kachel-Zähler: die Woche,
   für die gerade eingekauft wird (`planningWeekStart`).
 - "Was ist noch da?" (`/schnellkueche`, `src/lib/pantry.ts`): Vorrat unter
-  `wasgibts.vorrat` mit Datum. Spracheingabe (Web Speech API, de-DE) oder Text;
-  `parseIngredientText()` zerlegt in Zutaten mit Menge/Einheit. Treffer aus dem
+  `wasgibts.vorrat` mit Datum. Spracheingabe (Web Speech API, de-DE) oder Text.
+  Zerlegen über die austauschbare Schnittstelle `parseLeftovers()` in
+  `src/lib/leftovers/parser.ts` (heute regelbasiert in `ruleParser.ts`, später
+  KI – nur dort umstellen): Füllwörter raus, Zahlwörter → Ziffern, Einheiten,
+  Abgleich mit der Lebensmittel-Liste `foods.ts` (unscharf, korrigiert
+  Schreibweise). Unbekanntes wird als grauer Chip "Meintest du …?" nachgefragt
+  (nicht gespeichert, bis übernommen). Gleiche Zutaten werden zusammengezählt
+  (2 Karotten + 1 Karotte = 3 Karotten). Fehlermeldung der Spracheingabe nur
+  bei echtem Fehler (nicht nach selbst Beenden oder wenn schon Text kam). Treffer aus dem
   Kochbuch über `matchRecipes()` (Synonyme, Grundzutaten wie Salz fehlen nie).
   Personenzahl vorausgefüllt (vor 15 Uhr werktags Mittagsrunde, sonst alle).
   KI-Ideen-Button ist vorerst deaktiviert ("kommt bald").

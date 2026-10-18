@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { Check, ChevronRight, Mic, MicOff, Plus, Sparkles, Square, Trash2 } from "lucide-react";
+import { Check, ChevronRight, CircleHelp, Mic, MicOff, Plus, Sparkles, Square, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { NumberStepper } from "@/components/form/NumberStepper";
 import { Sheet } from "@/components/plan/Sheet";
@@ -15,12 +15,12 @@ import {
   clearPantry,
   formatPantryItem,
   matchRecipes,
-  parseIngredientText,
   removePantryItem,
   updatePantryItem,
   usePantry,
   type PantryItem,
 } from "@/lib/pantry";
+import { parseLeftovers, type ParsedLeftover } from "@/lib/leftovers/parser";
 import { weekdayLunchHeadcount, type HouseholdProfile } from "@/lib/profile";
 import { useProfile } from "@/lib/useProfile";
 import { toIsoDate, useToday } from "@/lib/weekPlan";
@@ -60,6 +60,9 @@ function personsForNow(profile: HouseholdProfile | null, now: Date): number {
   return Math.max(1, count);
 }
 
+/** Nicht als Lebensmittel erkannt – wartet auf "Meintest du …?" */
+type UnsureItem = ParsedLeftover & { id: string };
+
 /** /schnellkueche: "Was ist noch da?" – Reste erfassen, passende Rezepte finden. */
 export function LeftoversView() {
   const pantry = usePantry();
@@ -72,8 +75,13 @@ export function LeftoversView() {
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState("");
   const [speechError, setSpeechError] = useState("");
+  const [unsure, setUnsure] = useState<UnsureItem[]>([]);
+  const [asking, setAsking] = useState<UnsureItem | null>(null);
   const speechSupported = useSpeechSupported();
   const recognitionRef = useRef<Recognition | null>(null);
+  // Für die Fehlermeldung: selbst beendet bzw. schon etwas erkannt → kein Fehler
+  const stoppedByUserRef = useRef(false);
+  const heardRef = useRef(false);
 
   // Beim Verlassen der Seite nicht weiter zuhören
   useEffect(() => () => recognitionRef.current?.stop(), []);
@@ -84,15 +92,27 @@ export function LeftoversView() {
 
   const shownPersons = persons ?? personsForNow(profile, new Date());
   const mealLabel = new Date().getHours() < 15 ? "mittags" : "abends";
-  const addText = (value: string) => {
-    const items = parseIngredientText(value);
-    if (items.length > 0) addPantryItems(items, toIsoDate(today));
+  const addText = async (value: string) => {
+    const items = await parseLeftovers(value);
+    const known = items.filter((i) => i.known);
+    if (known.length > 0) addPantryItems(known.map(({ name, amount, unit }) => ({ name, amount, unit })), toIsoDate(today));
+    const unknown = items.filter((i) => !i.known);
+    if (unknown.length > 0) {
+      setUnsure((prev) => [...prev, ...unknown.map((i) => ({ ...i, id: `${Date.now()}-${Math.random()}` }))]);
+    }
+  };
+  const resolveUnsure = (item: UnsureItem, name: string | null) => {
+    if (name) addPantryItems([{ name, amount: item.amount, unit: item.unit }], toIsoDate(today));
+    setUnsure((prev) => prev.filter((u) => u.id !== item.id));
+    setAsking(null);
   };
 
   const startListening = () => {
     const Recognition = speechRecognitionClass();
     if (!Recognition) return;
     setSpeechError("");
+    stoppedByUserRef.current = false;
+    heardRef.current = false;
     const recognition = new Recognition();
     recognition.lang = "de-DE";
     recognition.continuous = true;
@@ -101,6 +121,7 @@ export function LeftoversView() {
       let pending = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const result = e.results[i];
+        if (result[0].transcript.trim()) heardRef.current = true;
         // Jede Sprechpause ist ein eigener Abschnitt → eigene Zutat(en)
         if (result.isFinal) addText(result[0].transcript);
         else pending += result[0].transcript;
@@ -108,8 +129,11 @@ export function LeftoversView() {
       setInterim(pending);
     };
     recognition.onerror = (e) => {
+      const blocked = e.error === "not-allowed" || e.error === "service-not-allowed";
+      // Kein Fehler, wenn selbst beendet ("aborted") oder schon etwas erkannt wurde
+      if (!blocked && (e.error === "aborted" || stoppedByUserRef.current || heardRef.current)) return;
       setSpeechError(
-        e.error === "not-allowed" || e.error === "service-not-allowed"
+        blocked
           ? "Das Mikrofon ist nicht erlaubt – bitte in den Einstellungen freigeben oder einfach tippen."
           : e.error === "no-speech"
             ? "Ich habe nichts gehört – nochmal versuchen?"
@@ -125,7 +149,10 @@ export function LeftoversView() {
     setListening(true);
   };
 
-  const stopListening = () => recognitionRef.current?.stop();
+  const stopListening = () => {
+    stoppedByUserRef.current = true;
+    recognitionRef.current?.stop();
+  };
   const matches = matchRecipes(Object.values(recipes), pantry);
 
   return (
@@ -213,7 +240,7 @@ export function LeftoversView() {
               </button>
             )}
           </div>
-          {pantry.length === 0 ? (
+          {pantry.length === 0 && unsure.length === 0 ? (
             <p className="text-sm text-muted">Noch nichts eingetragen.</p>
           ) : (
             <div className="flex flex-wrap gap-2">
@@ -227,7 +254,23 @@ export function LeftoversView() {
                   {formatPantryItem(item)}
                 </button>
               ))}
+              {unsure.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  data-unsure
+                  onClick={() => setAsking(item)}
+                  aria-label={`${formatPantryItem(item)} – unsicher, nachfragen`}
+                  className={chipClass(false, "muted")}
+                >
+                  {formatPantryItem(item)}
+                  <CircleHelp className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                </button>
+              ))}
             </div>
+          )}
+          {unsure.length > 0 && (
+            <p className="text-xs text-muted">Graue Einträge kennen wir nicht – antippen zum Übernehmen oder Löschen.</p>
           )}
           {pantry.length > 0 && <p className="text-xs text-muted">Antippen zum Ändern oder Löschen.</p>}
         </section>
@@ -308,11 +351,50 @@ export function LeftoversView() {
       </main>
 
       {editing && <EditSheet item={editing} onClose={() => setEditing(null)} />}
+      {asking && <UnsureSheet item={asking} onResolve={(name) => resolveUnsure(asking, name)} onClose={() => setAsking(null)} />}
     </div>
   );
 }
 
-/** Feldstil ohne feste Breite/Höhe, für nebeneinanderliegende Felder */
+/** Unbekanntes Wort: Vorschlag übernehmen, so übernehmen oder löschen */
+function UnsureSheet({
+  item,
+  onResolve,
+  onClose,
+}: {
+  item: UnsureItem;
+  onResolve: (name: string | null) => void;
+  onClose: () => void;
+}) {
+  const amount = formatPantryItem({ ...item, name: "" }).trim();
+  const withAmount = (name: string) => (amount ? `${amount} ${name}` : name);
+  return (
+    <Sheet title={item.suggestion ? `Meintest du ${item.suggestion}?` : "Kennen wir nicht"} onClose={onClose}>
+      <p className="text-base text-muted">
+        Gehört: „{item.heard}“ – das ist nicht in unserer Lebensmittel-Liste.
+      </p>
+      <div className="flex flex-col gap-2">
+        {item.suggestion && (
+          <button type="button" onClick={() => onResolve(item.suggestion)} className={buttonClass("primary", "lg")}>
+            <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+            {withAmount(item.suggestion)} übernehmen
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => onResolve(item.name)}
+          className={buttonClass(item.suggestion ? "secondary" : "primary", "lg")}
+        >
+          {item.suggestion ? `So lassen: ${withAmount(item.name)}` : `${withAmount(item.name)} übernehmen`}
+        </button>
+        <button type="button" onClick={() => onResolve(null)} className={buttonClass("danger", "lg")}>
+          <Trash2 className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+          Löschen
+        </button>
+      </div>
+    </Sheet>
+  );
+}
 
 function EditSheet({ item, onClose }: { item: PantryItem; onClose: () => void }) {
   const [name, setName] = useState(item.name);
