@@ -1,6 +1,6 @@
 // Tipps auf Lottes Platz: eingebaute Sammlung (später per KI erweiterbar).
 
-export type TipCategory = "profi" | "gericht" | "sparen" | "reste" | "vorrat";
+export type TipCategory = "profi" | "gericht" | "sparen" | "reste" | "vorrat" | "wochenende";
 
 export type Tip = {
   /** Eindeutig, kurz, nur a–z, 0–9 und "-", z. B. "bolognese-milch" */
@@ -16,4 +16,6 @@ export type Tip = {
   steps?: string[];
   /** Nur Kategorie "gericht": passt zu Gerichten, deren Name hierauf passt */
   match?: RegExp;
+  /** Nur für Haushalte mit Kindern, ohne Kinder bzw. nur zu zweit */
+  audience?: "kids" | "nokids" | "paar";
 };

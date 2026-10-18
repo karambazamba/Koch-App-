@@ -7,7 +7,7 @@ import { ArrowUp, CircleHelp, Mic, MicOff, Sparkles, Square, Volume2, VolumeX, X
 import { baseLabel, bumpBase, sortedBases, type BaseId } from "@/lib/bases";
 import { parseLeftovers, type ParsedLeftover } from "@/lib/leftovers/parser";
 import { addPantryItems, formatPantryItem, usePantry } from "@/lib/pantry";
-import { helperName, helperTitle, saveProfile } from "@/lib/profile";
+import { hasKids, helperName, helperTitle, mealClockFor, saveProfile } from "@/lib/profile";
 import { finalizeProfile, startAddPerson, type OnboardingState } from "@/lib/onboarding/engine";
 import { noteUserAction } from "@/lib/activity";
 import { isAddPersonRequest } from "@/lib/onboarding/recognize";
@@ -26,13 +26,19 @@ import type { AssistantData, ChangeOp } from "@/lib/assistant/ops";
 import type { ChatTurn } from "@/lib/assistant/protocol";
 import { useKeyboardInset } from "@/lib/useMobileKeyboard";
 import { useSpeechInput } from "@/lib/useSpeechInput";
-import { DEFAULT_SHOPPING_DAY, planningWeekStart, toIsoDate, useToday, weekStartFor } from "@/lib/weekPlan";
-import { addManualItem, sectionFor, setItemShop, setProduct, useShoppingSettings } from "@/lib/shoppingList";
+import { DEFAULT_SHOPPING_DAY, addDays, planningWeekStart, toIsoDate, useToday, weekStartFor } from "@/lib/weekPlan";
+import { addManualItem, removeManualItems, sectionFor, setItemShop, setProduct, useShoppingSettings } from "@/lib/shoppingList";
+import { useWeekShoppingList } from "@/lib/useWeekShoppingList";
+import { isMarketSituation, marketIdeas, marketProduct, marketTargetDay, type MarketAnswer, type MarketIdea } from "@/lib/market";
+import { bakingIdeas, isBakingRequest } from "@/lib/baking";
+import type { Recipe } from "@/lib/cookbook";
 import { isShoppingRequest, parseProductStatement, parseShoppingText } from "@/lib/shoppingParse";
 import { SPONTAN_FILTERS, isQuickRequest, isSnackRequest, parsePauseRequest, pauseLabel, quickIdeas, snackReply, type SpontanFilter, type SpontanIdea } from "@/lib/spontan";
-import { takeForToday } from "@/lib/spontanTake";
-import { replaceMealPlans } from "@/lib/mealPlan";
+import { takeForDay, takeForToday } from "@/lib/spontanTake";
+import { composeWeek, replaceMealPlans } from "@/lib/mealPlan";
 import { SpontanBoard } from "./SpontanBoard";
+import { MarketBoard, type MarketTarget } from "./MarketBoard";
+import { BakingBoard } from "./BakingBoard";
 import { ICON_BUTTON, INPUT_BASE, NOTE, chipClass } from "@/components/ui/styles";
 import { ProposalCard } from "./ProposalCard";
 import { TipBubble } from "./TipBubble";
@@ -54,6 +60,10 @@ export type ChatTurnView = ChatTurn & {
   spontan?: boolean;
   /** "Rückgängig" für eine gerade gemachte Änderung */
   undo?: () => void;
+  /** Im Supermarkt: Ideen zum Produkt, darunter Liste und "Statt <Tag>" */
+  market?: MarketAnswer & { target: MarketTarget | null };
+  /** Backwunsch: passende Rezepte mit "Zusammen backen" */
+  baking?: Recipe[];
 };
 
 export type Proposal = { ops: ChangeOp[]; selected: Set<string> };
@@ -122,6 +132,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   const pantry = usePantry();
   const tipStore = useTipStore();
   const shoppingSettings = useShoppingSettings();
+  const shopping = useWeekShoppingList("planning");
 
   /** Frage an die KI; `display` = was im Chat steht, wenn anders als die Frage */
   const ask = async (text: string, display?: string) => {
@@ -314,6 +325,107 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     return `Steht drauf ✓ ${names.join(", ")}`;
   };
 
+  /** "Lachs ist im Angebot", "Ich steh grad im Rewe …" → Ideen mit Zeit, kurz */
+  const marketTurn = (t: string): ChatTurnView | null => {
+    if (!data || !today || !isMarketSituation(t)) return null;
+    const product = marketProduct(t);
+    if (!product) return null;
+    const listNames = (shopping?.list.items ?? []).filter((i) => !i.checked && !i.hidden).map((i) => i.name);
+    const ideas = marketIdeas(product, data.recipes, pantry ?? [], listNames, data.profile.neverAgain);
+    if (!ideas.length) return null;
+    // Passender Tag: heute (vor der Essenszeit) oder später in dieser bzw. nächster Woche
+    const shoppingDay = data.profile.shoppingDay || DEFAULT_SHOPPING_DAY;
+    const todayIso = toIsoDate(today);
+    const weekStart = weekStartFor(today, shoppingDay);
+    const week = composeWeek(weekStart, data.profile, data.weekPlans, data.mealPlans, data.recipes);
+    const todayDay = week.days.find((d) => d.date === todayIso);
+    const now = new Date();
+    const clock = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    const beforeMeal = Boolean(todayDay) && clock < mealClockFor(data.profile, todayDay!.weekday);
+    const target =
+      marketTargetDay(week, todayIso, beforeMeal) ??
+      marketTargetDay(composeWeek(addDays(weekStart, 7), data.profile, data.weekPlans, data.mealPlans, data.recipes), todayIso, false);
+    return {
+      role: "assistant",
+      local: true,
+      text: `${product}? Damit geht z. B.:`,
+      market: { product, source: "text", ideas, target },
+    };
+  };
+
+  /** "Auf die Liste": Produkt und was fehlt → "Jetzt mitnehmen" (mit Rückgängig) */
+  const addMarketItems = (product: string, idea: MarketIdea) => {
+    if (!data || !today) return;
+    const weekStart = planningWeekStart(today, data.profile.shoppingDay || DEFAULT_SHOPPING_DAY).weekStart;
+    const names = [product, ...idea.needs];
+    const ids = names.map((n) => addManualItem(weekStart, { name: n, amount: "", section: sectionFor(n), now: true }));
+    noteUserAction(toIsoDate(today));
+    setChat((c) => ({
+      ...c,
+      turns: [
+        ...c.turns,
+        {
+          role: "assistant",
+          local: true,
+          text: `Steht oben unter „Jetzt mitnehmen“ ✓ ${names.join(", ")}`,
+          undo: () => {
+            removeManualItems(weekStart, ids);
+            setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig gemacht – wieder runter von der Liste.", local: true }] }));
+          },
+        },
+      ],
+    }));
+  };
+
+  /** "Statt <Tag> einplanen": Idee auf den Tag, das bisherige Gericht rutscht weiter */
+  const planMarketIdea = (idea: MarketIdea, target: MarketTarget) => {
+    if (!data || !today) return;
+    const before = data.mealPlans;
+    const result = takeForDay(data, today, idea, target.date);
+    if (result.ok) {
+      replaceMealPlans(result.weeks);
+      if (idea.recipeId) learnFromRecipe(data.recipes[idea.recipeId], LIKE_WEIGHTS.chosen);
+    }
+    noteUserAction(toIsoDate(today));
+    setChat((c) => ({
+      ...c,
+      turns: [
+        ...c.turns,
+        {
+          role: "assistant",
+          local: true,
+          text: result.text,
+          undo: result.ok
+            ? () => {
+                replaceMealPlans(before);
+                setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig gemacht – alles wie vorher.", local: true }] }));
+              }
+            : undefined,
+        },
+      ],
+    }));
+  };
+
+  /** Backwunsch → eigene Backrezepte und die eingebaute Backstube */
+  const bakingTurn = (t: string): ChatTurnView | null => {
+    if (!data || !isBakingRequest(t)) return null;
+    const withKids = hasKids(data.profile);
+    const lower = t.toLowerCase();
+    const own = Object.values(data.recipes).filter(
+      (r) => r.kind === "backen" && r.title.toLowerCase().split(/[\s-]+/).some((w) => w.length >= 4 && lower.includes(w.replace(/(en|n|e|s)$/, ""))),
+    );
+    const builtin = bakingIdeas(t, withKids).filter((b) => !own.some((r) => r.title.toLowerCase() === b.title.toLowerCase()));
+    const recipes = [...own, ...builtin].slice(0, 3);
+    if (!recipes.length) return null;
+    const kidsWanted = withKids && /kind|kinder|kleinen|zusammen|mit den/i.test(t);
+    return {
+      role: "assistant",
+      local: true,
+      text: kidsWanted ? "Oh ja, backen wir zusammen! 🧁 Das klappt gut mit Kindern:" : "Gern! 🧁 Wie wär's damit:",
+      baking: recipes,
+    };
+  };
+
   /** Eingabe abschicken: neue Person, Reste-Modus oder Frage an die KI */
   const submit = (text: string) => {
     const t = text.trim();
@@ -357,6 +469,13 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     if (local) {
       setInput("");
       setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text: local, local: true }] }));
+      return;
+    }
+    // Im Supermarkt bzw. Backwunsch → kurze Antwort mit Karten (auch ohne KI)
+    const special = marketTurn(t) ?? bakingTurn(t);
+    if (special) {
+      setInput("");
+      setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, special] }));
       return;
     }
     // "Wir lieben Käse" → Lieblingszutaten merken
@@ -607,6 +726,15 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                     Rückgängig
                   </button>
                 )}
+                {turn.market && (
+                  <MarketBoard
+                    answer={turn.market}
+                    target={turn.market.target}
+                    onAdd={(idea) => addMarketItems(turn.market!.product, idea)}
+                    onPlan={planMarketIdea}
+                  />
+                )}
+                {turn.baking && data && <BakingBoard recipes={turn.baking} withKids={hasKids(data.profile)} onNavigate={onClose} />}
                 {lastSpontan && data && (
                   <SpontanBoard
                     recipes={data.recipes}

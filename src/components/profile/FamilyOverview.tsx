@@ -35,6 +35,9 @@ import { CARD_LIST, PAGE_MAIN, SECTION_TITLE, SUBTLE } from "@/components/ui/sty
 import { STANDARD_WEEK_HINT, lunchSummary } from "@/components/profile/editors";
 import {
   LIMITS,
+  HOUSEHOLD_TYPES,
+  householdNoun,
+  wishDayActive,
   clearProfile,
   MEAL_TIME_LABELS,
   personLabel,
@@ -55,6 +58,12 @@ const LUNCH_ICONS: Record<"zuhause" | "auswaerts" | "manchmal", LucideIcon> = {
   manchmal: RefreshCw,
 };
 
+/** "Unsere Familie" bzw. "Mein Haushalt" / "Unser Haushalt" */
+function householdTitle(profile: HouseholdProfile): string {
+  if (profile.householdType === "familie") return "Unsere Familie";
+  return profile.householdType === "single" ? "Mein Haushalt" : "Unser Haushalt";
+}
+
 /**
  * Übersicht "Unsere Familie" in drei Abschnitten: Familie, Essgewohnheiten,
  * Standardwoche. Jede Zeile öffnet die passende Bearbeiten-Ansicht.
@@ -72,14 +81,15 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
-      <PageHeader title="Unsere Familie" />
+      <PageHeader title={householdTitle(profile)} />
 
       <main className={`${PAGE_MAIN} gap-8`}>
-        <Section title="Familie">
+        <Section title={householdNoun(profile).noun}>
           <List>
             <Row href="/profil/haushalt" icon={Home} title={profile.householdName.trim() || "Haushalt"}>
               <span>
-                {profile.householdName.trim() ? "Haushalt" : "Name des Haushalts eintragen"}
+                {HOUSEHOLD_TYPES.find((t) => t.value === profile.householdType)?.emoji}{" "}
+                {HOUSEHOLD_TYPES.find((t) => t.value === profile.householdType)?.label}
               </span>
             </Row>
             {persons.map((person) => (
@@ -170,6 +180,12 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
                 <Nowrap>{profile.cookingStyle === "rezept" ? "Gern nach Rezept" : "Meist nach Gefühl"}</Nowrap>
                 {" · "}
                 <Nowrap>{profile.newPerWeek === 2 ? "2 neue pro Woche" : "1 neues pro Woche"}</Nowrap>
+                {profile.kitchenMachine === "thermomix" && (
+                  <>
+                    {" · "}
+                    <Nowrap>mit Thermomix</Nowrap>
+                  </>
+                )}
               </span>
             </Row>
             <Row href="/profil/das-moegt-ihr" icon={Salad} title="Das mögt ihr">
@@ -226,7 +242,7 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
                   Cheat Day:{" "}
                   {weekRules.cheatDay ? weekRules.cheatDayWeekday || "ja" : "nein"}
                 </Nowrap>
-                {profile.wishDay.enabled && (
+                {wishDayActive(profile) && (
                   <>
                     {" · "}
                     <Nowrap>

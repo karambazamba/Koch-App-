@@ -13,7 +13,7 @@ import { QuickAddButton } from "@/components/shopping/QuickAdd";
 import { useAssistantStatus } from "@/lib/assistant/client";
 import { openHelper } from "@/lib/assistant/open";
 import { dishEmoji } from "@/lib/dishEmoji";
-import { helperName, mealClockFor, saveProfile } from "@/lib/profile";
+import { helperName, isSmallHousehold, isSolo, mealClockFor, saveProfile } from "@/lib/profile";
 import { dismissWelcome } from "@/lib/activity";
 import { entriesWithoutSlot, mealPlansWithWeek, replaceMealPlans, useMealPlans } from "@/lib/mealPlan";
 import { useWeekShoppingList } from "@/lib/useWeekShoppingList";
@@ -46,9 +46,9 @@ export function HomeHeader({ today }: { today: Date | undefined }) {
 const possessive = (name: string) => (/[sxzß]$/i.test(name) ? `${name}'` : `${name}s`);
 
 /** "✓ kennt ihr" bzw. "Neu ✨" neben dem Gerichtnamen */
-function StatusLabel({ status }: { status: DishStatus }) {
+function StatusLabel({ status, solo = false }: { status: DishStatus; solo?: boolean }) {
   return status === "bekannt" ? (
-    <span className="whitespace-nowrap text-sm font-bold text-emerald-700">✓ kennt ihr</span>
+    <span className="whitespace-nowrap text-sm font-bold text-emerald-700">{solo ? "✓ kennst du" : "✓ kennt ihr"}</span>
   ) : (
     <span className="whitespace-nowrap text-sm font-bold text-accent-strong">Neu ✨</span>
   );
@@ -90,7 +90,7 @@ export function HeroCard({ data, afterMeal }: { data: HomeData; afterMeal: boole
             🏖
           </span>
           <p className="text-lg font-bold leading-snug">Wochenende – genießt es.</p>
-          <p className="text-sm text-muted">Wenn ihr was braucht, fragt {helperName(profile)} einfach.</p>
+          <p className="text-sm text-muted">{isSolo(profile) ? `Wenn du was brauchst, frag ${helperName(profile)} einfach.` : `Wenn ihr was braucht, fragt ${helperName(profile)} einfach.`}</p>
         </section>
       );
     }
@@ -121,7 +121,9 @@ export function HeroCard({ data, afterMeal }: { data: HomeData; afterMeal: boole
         : day?.leftovers
           ? `Reste von ${day.leftovers}`
           : entry?.double
-            ? "doppelt – Reste für morgen"
+            ? isSmallHousehold(profile)
+              ? "reicht für morgen"
+              : "doppelt – Reste für morgen"
             : "";
   const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   const emoji = wish ? "🎉" : dishEmoji(title, entry?.category ?? null);
@@ -143,7 +145,7 @@ export function HeroCard({ data, afterMeal }: { data: HomeData; afterMeal: boole
         <div className="relative flex h-[clamp(3.5rem,calc(100dvh-38rem),11rem)] items-center justify-center bg-linear-to-br from-accent-soft via-accent-soft to-accent/45">
           <span className="absolute left-4 top-3 rounded-full bg-surface/90 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-accent-strong">
             {/* Lockeres Wochenende: eine Idee ohne Uhrzeit */}
-            {day?.weekend === "locker" ? "Falls ihr Lust habt" : `Heute · ${clock}`}
+            {day?.weekend === "locker" ? (isSolo(profile) ? "Falls du Lust hast" : "Falls ihr Lust habt") : `Heute · ${clock}`}
           </span>
           <span className="text-5xl drop-shadow-sm [@media(min-height:740px)]:text-6xl" aria-hidden>
             {emoji}
@@ -152,7 +154,7 @@ export function HeroCard({ data, afterMeal }: { data: HomeData; afterMeal: boole
         <div className="px-4 pt-3">
           <div className="flex flex-wrap items-baseline gap-x-2">
             <h2 className="text-2xl font-extrabold leading-tight tracking-tight">{title}</h2>
-            {status && <StatusLabel status={status} />}
+            {status && <StatusLabel status={status} solo={isSolo(profile)} />}
           </div>
           {facts.length > 0 && <p className="mt-0.5 text-sm text-muted">{facts.join(" · ")}</p>}
         </div>
@@ -241,7 +243,7 @@ export function WelcomeBack({ data }: { data: HomeData }) {
       <HelperAvatar size={40} variant="badge" />
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <p className="rounded-2xl rounded-tl-md border border-line bg-surface px-3.5 py-2.5 text-[15px] leading-snug text-ink">
-          Hey, schön, dass du da bist! 😊 Hattet ihr eine gute Zeit? Frisch starten oder noch Pause?
+          Hey, schön, dass du da bist! 😊 {isSolo(profile) ? "Hattest du" : "Hattet ihr"} eine gute Zeit? Frisch starten oder noch Pause?
         </p>
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={fresh} className={chipClass(false)}>

@@ -6,17 +6,20 @@
 import {
   DEFAULT_HELPER,
   HELPER_NAMES,
+  HOUSEHOLD_TYPES,
   HELPER_NAME_MAX,
   KID_AGE_GROUP_LABELS,
   MEAL_TIME_LABELS,
   WEEKDAYS,
   createEmptyProfile,
   createPerson,
+  fitHouseholdType,
   personLabel,
   syncPersons,
   usualLunch,
   type HelperVoice,
   type HouseholdProfile,
+  type HouseholdType,
   type KidAgeGroup,
   type MealTime,
   type Person,
@@ -40,6 +43,7 @@ import {
 } from "./recognize";
 
 export type StepId =
+  | "householdType"
   | "helperName"
   | "helperNameCustom"
   | "helperVoice"
@@ -62,6 +66,7 @@ export type StepId =
 
 /** Was ein antippbarer Eintrag korrigiert */
 export type Target =
+  | { kind: "type" }
   | { kind: "helper" }
   | { kind: "household" }
   | { kind: "names" }
@@ -102,11 +107,12 @@ export type Recognized = { names?: NameHint[]; person?: PersonInfo; diet?: DietI
 
 export type Answer = { text?: string; chip?: string; recognized?: Recognized };
 
-type Block = "helper" | "household" | "members" | "persons" | "extras" | "warm" | "shopping" | "rules" | "done";
-const BLOCKS: Block[] = ["helper", "household", "members", "persons", "extras", "warm", "shopping", "rules", "done"];
+type Block = "type" | "helper" | "household" | "members" | "persons" | "extras" | "warm" | "shopping" | "rules" | "done";
+const BLOCKS: Block[] = ["type", "helper", "household", "members", "persons", "extras", "warm", "shopping", "rules", "done"];
 const ADD_BLOCKS: Block[] = ["members", "persons", "done"];
 
 const BLOCK_OF: Record<StepId, Block> = {
+  householdType: "type",
   helperName: "helper",
   helperNameCustom: "helper",
   helperVoice: "helper",
@@ -129,7 +135,7 @@ const BLOCK_OF: Record<StepId, Block> = {
 };
 
 export const GREETING =
-  "Hi! 👋 Ich bin eure neue Küchenhilfe. Ich nehme euch das Planen, Einkaufen und Kochen-Organisieren ab. Dafür lerne ich euch kurz kennen – ca. 2 Minuten. Du kannst einfach reden oder tippen.";
+  "Hi! 👋 Ich bin deine neue Küchenhilfe. Ich nehme dir das Planen, Einkaufen und Kochen-Organisieren ab. Dafür lernen wir uns kurz kennen – ca. 2 Minuten. Du kannst einfach reden oder tippen.";
 
 const RULE_PRESETS = [
   { value: "2-1-4", label: "2× Fleisch · 1× Fisch · 4× Veggie" },
@@ -149,6 +155,20 @@ const heard = (s: OnboardingState, text: string): OnboardingState =>
   text.trim()
     ? { ...s, counter: s.counter + 1, messages: [...s.messages, { id: `m${s.counter + 1}`, from: "user", text: text.trim() }] }
     : s;
+
+/** Nur für mich → "du" statt "ihr" */
+const solo = (s: OnboardingState) => s.mode === "onboarding" && s.draft.householdType === "single";
+const typeOf = (s: OnboardingState): HouseholdType => s.draft.householdType;
+
+/** "Für wen kochst du?" aus freier Antwort */
+export function householdTypeFrom(text: string): HouseholdType | null {
+  const t = text.toLowerCase();
+  if (/\bwg\b|mitbewohner|wohngemeinschaft|mehrere|mehrpersonen|kollegen/.test(t)) return "wg";
+  if (/kind|kinder|familie|tochter|sohn|baby|kids/.test(t)) return "familie";
+  if (/zu zweit|\bpaar\b|partner|freund(in)?\b|frau und|mann und|wir beide|uns beide|für zwei/.test(t)) return "paar";
+  if (/nur (für )?mich|allein|single|\bich\b|für mich/.test(t)) return "single";
+  return null;
+}
 
 const personById = (s: OnboardingState, id: string | null) => s.draft.persons.find((p) => p.id === id);
 const kids = (s: OnboardingState) => s.draft.persons.filter((p) => p.role === "kind");
@@ -190,19 +210,28 @@ export function personSummary(p: Person, persons: Person[]): string {
 function question(s: OnboardingState, step: StepId): string {
   const p = personById(s, s.personId);
   const name = p ? personLabel(p, s.draft.persons) : "";
+  const one = solo(s);
   switch (step) {
+    case "householdType":
+      return "Für wen kochst du?";
     case "helperName":
-      return "Zuerst das Wichtigste: Wie soll ich heißen?";
+      return "Wie soll ich heißen?";
     case "helperNameCustom":
       return "Wie denn? Sag oder schreib mir den Namen.";
     case "helperVoice":
       return "Schöner Name! Soll ich beim Vorlesen eher eine Frauen- oder eine Männerstimme haben?";
     case "household":
-      return "Wie heißt eure Familie?";
+      return typeOf(s) === "wg" ? "Habt ihr einen Namen für eure WG? (Geht auch ohne.)" : "Wie heißt eure Familie?";
     case "members":
-      return s.mode === "addPerson" ? "Wie heißt die neue Person?" : "Wer isst bei euch mit? Sag mir einfach alle Namen – deinen auch.";
+      return s.mode === "addPerson"
+        ? "Wie heißt die neue Person?"
+        : one
+          ? "Wie heißt du?"
+          : typeOf(s) === "paar"
+            ? "Wie heißt ihr beide?"
+            : "Wer isst bei euch mit? Sag mir einfach alle Namen – deinen auch.";
     case "confirmNames":
-      return "Hab ich alle richtig geschrieben?";
+      return one ? "Richtig geschrieben?" : "Hab ich alle richtig geschrieben?";
     case "personIntro":
       return `Erzähl mir kurz was über ${name}.`;
     case "personRole":
@@ -210,17 +239,21 @@ function question(s: OnboardingState, step: StepId): string {
     case "personGroup":
       return `Ist ${name} noch zu Hause oder in der Krippe, in der Kita oder in der Schule?`;
     case "extras":
-      return "Gibt's sonst noch Allergien oder Sachen, die jemand gar nicht mag?";
+      return one
+        ? "Gibt's Allergien oder Sachen, die du gar nicht magst?"
+        : typeOf(s) === "familie"
+          ? "Gibt's sonst noch Allergien oder Sachen, die jemand gar nicht mag?"
+          : "Gibt's Allergien oder Sachen, die jemand gar nicht mag?";
     case "extrasWho":
       return "Wen betrifft das?";
     case "warmWeekday":
-      return "Wann esst ihr unter der Woche meistens zusammen warm?";
+      return one ? "Wann isst du unter der Woche meistens warm?" : "Wann esst ihr unter der Woche meistens zusammen warm?";
     case "warmWeekend":
       return "Und am Wochenende – anders?";
     case "weekendStyle":
-      return "Wie seid ihr am Wochenende?";
+      return one ? "Wie bist du am Wochenende?" : "Wie seid ihr am Wochenende?";
     case "shoppingDay":
-      return "An welchem Tag kauft ihr meistens ein? Ab da plane ich immer eine Woche.";
+      return one ? "An welchem Tag kaufst du meistens ein? Ab da plane ich immer eine Woche." : "An welchem Tag kauft ihr meistens ein? Ab da plane ich immer eine Woche.";
     case "weekRules":
       return "Wie soll's die Woche über aussehen? Ich hab schon mal was Ausgewogenes vorbereitet.";
     case "cheatDay":
@@ -235,6 +268,8 @@ function question(s: OnboardingState, step: StepId): string {
 /** Antwort-Chips zur aktuellen Frage */
 export function chipsFor(s: OnboardingState): Chip[] {
   switch (s.step) {
+    case "householdType":
+      return HOUSEHOLD_TYPES.map((t) => ({ label: `${t.emoji} ${t.label}`, value: t.value }));
     case "helperName":
       return [...HELPER_NAMES.map((h) => ({ label: h.name, value: h.name })), { label: "Eigener Name", value: "custom" }];
     case "helperVoice":
@@ -313,15 +348,23 @@ export function placeholderFor(s: OnboardingState): string {
     case "helperNameCustom":
       return "z. B. Oma Hilde";
     case "household":
-      return "z. B. Müller";
+      return typeOf(s) === "wg" ? "z. B. Villa Kunterbunt" : "z. B. Müller";
     case "members":
-      return s.mode === "addPerson" ? "z. B. Oma Rosi" : "z. B. Ich bin Lisa, Felix, Mattis und Ella";
+      return s.mode === "addPerson"
+        ? "z. B. Oma Rosi"
+        : solo(s)
+          ? "z. B. Lisa"
+          : typeOf(s) === "paar"
+            ? "z. B. Lisa und Felix"
+            : typeOf(s) === "wg"
+              ? "z. B. Ich bin Lisa, dazu Tom und Sara"
+              : "z. B. Ich bin Lisa, Felix, Mattis und Ella";
     case "confirmNames":
       return "Noch jemand? Einfach dazuschreiben";
     case "personIntro":
       return "z. B. 7, Schulkind, mag keine Pilze";
     case "extras":
-      return "z. B. Ella mag keine Pilze";
+      return solo(s) ? "z. B. keine Pilze" : "z. B. Ella mag keine Pilze";
     default:
       return "Antworten oder Chip antippen …";
   }
@@ -344,12 +387,17 @@ function goto(s: OnboardingState, step: StepId, prefix = ""): OnboardingState {
   return q ? say(next, prefix ? `${prefix} ${q}` : q) : next;
 }
 
+/** Ohne Kinder kürzer: kein Familienname (außer WG, optional), keine Personen-Runde */
 function blocksFor(s: OnboardingState): Block[] {
-  return s.mode === "addPerson" ? ADD_BLOCKS : BLOCKS;
+  if (s.mode === "addPerson") return ADD_BLOCKS;
+  const type = typeOf(s);
+  return BLOCKS.filter((b) => (b === "household" ? type === "familie" || type === "wg" : b === "persons" ? type === "familie" : true));
 }
 
 function startBlock(s: OnboardingState, block: Block, prefix = ""): OnboardingState {
   switch (block) {
+    case "type":
+      return goto(s, "householdType", prefix);
     case "helper":
       return goto(s, "helperName", prefix);
     case "household":
@@ -383,7 +431,10 @@ function finishBlock(s: OnboardingState, block: Block): OnboardingState {
     return goto(cleared, back, "Weiter geht's:");
   }
   const order = blocksFor(s);
-  return startBlock(s, order[order.indexOf(block) + 1] ?? "done");
+  // Block evtl. nicht (mehr) in der Folge (z. B. Typ geändert) → nach fester Reihenfolge weiter
+  const index = order.indexOf(block);
+  const next = index >= 0 ? order[index + 1] : order.find((b) => BLOCKS.indexOf(b) > BLOCKS.indexOf(block));
+  return startBlock(s, next ?? "done");
 }
 
 export function startOnboarding(): OnboardingState {
@@ -391,7 +442,7 @@ export function startOnboarding(): OnboardingState {
   const s: OnboardingState = {
     version: 1,
     mode: "onboarding",
-    step: "helperName",
+    step: "householdType",
     draft,
     names: [],
     queue: [],
@@ -402,7 +453,7 @@ export function startOnboarding(): OnboardingState {
     messages: [],
     counter: 0,
   };
-  return goto(say(s, GREETING), "helperName");
+  return goto(say(s, GREETING), "householdType");
 }
 
 /** Neue Person(en) später per Küchenhelfer: Namen bestätigen + kurz vorstellen */
@@ -433,6 +484,8 @@ export function revisit(s: OnboardingState, target: Target): OnboardingState {
   if (s.step === "done" && s.mode === "addPerson") return s;
   const base = { ...s, returnTo: s.returnTo ?? s.step };
   switch (target.kind) {
+    case "type":
+      return goto(base, "householdType", "Klar, nochmal:");
     case "helper":
       return goto(base, "helperName", "Klar, nochmal:");
     case "household":
@@ -481,18 +534,20 @@ function applyNames(s: OnboardingState): OnboardingState {
     const entry = s.names.find((n) => n.id === p.id);
     return entry ? { ...p, name: entry.name } : p;
   });
+  // Ohne Kinder sind alle erwachsen – keine Personen-Runde
+  const adultsOnly = s.mode === "onboarding" && typeOf(s) !== "familie";
   for (const n of s.names.filter((x) => !x.id)) {
-    const person = createPerson(n.role ?? "erwachsen");
+    const person = createPerson(adultsOnly ? "erwachsen" : (n.role ?? "erwachsen"));
     person.name = n.name;
     if (n.age !== undefined) {
       person.age = n.role === "kind" || n.age < 18 ? n.age : null;
       if (person.role === "kind") person.ageGroup = n.age < 3 ? "kleinkind" : n.age < 6 ? "kitakind" : "schulkind";
     }
-    known[person.id] = { role: Boolean(n.role), group: person.role === "kind" && n.age !== undefined };
+    known[person.id] = { role: adultsOnly || Boolean(n.role), group: person.role === "kind" && n.age !== undefined };
     created.push(person.id);
     persons = [...persons, person];
   }
-  return { ...s, known, names: [], draft: { ...s.draft, persons }, queue: [...s.queue, ...created] };
+  return { ...s, known, names: [], draft: { ...s.draft, persons }, queue: adultsOnly ? [] : [...s.queue, ...created] };
 }
 
 // --- Personen ------------------------------------------------------------------
@@ -584,6 +639,14 @@ export function answer(state: OnboardingState, a: Answer): OnboardingState {
   const chip = a.chip;
 
   switch (state.step) {
+    case "householdType": {
+      const type = (HOUSEHOLD_TYPES.find((t) => t.value === chip)?.value ?? householdTypeFrom(text)) as HouseholdType | null;
+      if (!type) return goto(s, "householdType", "Hm, nicht ganz verstanden.");
+      s = { ...s, draft: { ...s.draft, householdType: type } };
+      const reply =
+        type === "single" ? "Schön – dann kümmere ich mich ganz um dich! 😊" : type === "paar" ? "Zu zweit – schön! 👫" : type === "familie" ? "Eine Familie – da ist immer was los! 😄" : "Eine WG – ich mag Trubel! 🏠";
+      return finishBlock(say(s, reply, { kind: "type" }), "type");
+    }
     case "helperName":
     case "helperNameCustom": {
       if (chip === "custom") return goto(s, "helperNameCustom");
@@ -603,7 +666,8 @@ export function answer(state: OnboardingState, a: Answer): OnboardingState {
     case "household": {
       const name = chip === "skip" ? "" : extractHouseholdName(text);
       s = { ...s, draft: { ...s.draft, householdName: name } };
-      return finishBlock(say(s, name ? `Hallo, Familie ${name}! 😊` : "Kein Problem – dann eben ohne Nachnamen.", { kind: "household" }), "household");
+      const hello = typeOf(s) === "wg" ? (name ? `Hallo, ${name}! 😊` : "Kein Problem – dann eben ohne Namen.") : name ? `Hallo, Familie ${name}! 😊` : "Kein Problem – dann eben ohne Nachnamen.";
+      return finishBlock(say(s, hello, { kind: "household" }), "household");
     }
     case "members": {
       const helper = s.draft.helper.name.toLowerCase();
@@ -612,7 +676,7 @@ export function answer(state: OnboardingState, a: Answer): OnboardingState {
         (n) => n.name.toLowerCase() !== helper && !existing.has(n.name.toLowerCase()),
       );
       if (names.length === 0) {
-        return say(s, "Hm, da hab ich keinen Namen rausgehört. Sag mir einfach die Vornamen, z. B. „Lisa, Felix und Ella“.");
+        return say(s, solo(s) ? "Hm, da hab ich keinen Namen rausgehört. Sag mir einfach deinen Vornamen." : "Hm, da hab ich keinen Namen rausgehört. Sag mir einfach die Vornamen, z. B. „Lisa, Felix und Ella“.");
       }
       return goto({ ...s, names: [...s.names, ...names] }, "confirmNames");
     }
@@ -620,7 +684,8 @@ export function answer(state: OnboardingState, a: Answer): OnboardingState {
       if (chip === "ok") {
         if (s.names.length === 0) return goto(s, "members");
         const applied = applyNames(s);
-        return finishBlock(say(applied, "Prima! 👍", { kind: "names" }), "members");
+        const hi = solo(applied) && applied.draft.persons[0]?.name ? `Hallo, ${applied.draft.persons[0].name}! 👋` : "Prima! 👍";
+        return finishBlock(say(applied, hi, { kind: "names" }), "members");
       }
       // Weitere Namen dazugesagt
       const more = (a.recognized?.names ?? extractNames(text)).filter((n) => !s.names.some((x) => x.name.toLowerCase() === n.name.toLowerCase()));
@@ -663,6 +728,11 @@ export function answer(state: OnboardingState, a: Answer): OnboardingState {
       }
       const assigned = items.filter((i) => i.person);
       if (assigned.length) next = say(next, `Notiert ✓ ${dietText(assigned)}`);
+      // Nur eine Person → betrifft sie
+      if (unassigned.length && s.draft.persons.length === 1) {
+        next = applyDiet(next, [s.draft.persons[0].id], unassigned);
+        return say(say(next, `Notiert ✓ ${unassigned.map((i) => (i.kind === "Allergie" ? `Allergie ${i.term}` : `kein(e) ${i.term}`)).join(", ")}`), "Noch was?");
+      }
       if (unassigned.length) return goto({ ...next, pendingDiet: unassigned.map(({ kind, term }) => ({ kind, term })) }, "extrasWho");
       return say(next, "Noch was?");
     }
@@ -773,6 +843,8 @@ export function answer(state: OnboardingState, a: Answer): OnboardingState {
 /** "Überspringen": aktuelle Frage mit sinnvollen Standardwerten beantworten */
 export function skip(s: OnboardingState): OnboardingState {
   switch (s.step) {
+    case "householdType":
+      return answer(s, { chip: "familie" });
     case "helperName":
     case "helperNameCustom":
       return answer(s, { chip: "Lotte" });
@@ -820,7 +892,7 @@ export function skip(s: OnboardingState): OnboardingState {
 function warmText(s: OnboardingState): string {
   const { weekday, weekend } = s.draft.warmMeal;
   return weekday === weekend
-    ? `Notiert ✓ Warm esst ihr meistens ${MEAL_TIME_LABELS[weekday]}.`
+    ? `Notiert ✓ Warm ${solo(s) ? "isst du" : "esst ihr"} meistens ${MEAL_TIME_LABELS[weekday]}.`
     : `Notiert ✓ Unter der Woche ${MEAL_TIME_LABELS[weekday]}, am Wochenende ${MEAL_TIME_LABELS[weekend]}.`;
 }
 
@@ -837,12 +909,18 @@ function doneText(s: OnboardingState): string {
   const persons = p.persons.filter((x) => x.name.trim());
   if (s.mode === "addPerson") return "Alles notiert ✓ Willkommen in der Runde!";
   const who = persons.length ? listJoin(persons.map((x) => x.name)) : `${p.persons.length} Person${p.persons.length === 1 ? "" : "en"}`;
-  const family = p.householdName ? `Familie ${p.householdName}` : "euch";
   const r = p.weekRules;
+  const one = solo(s);
+  const family = p.householdName ? (p.householdType === "wg" ? p.householdName : `Familie ${p.householdName}`) : "euch";
+  const intro = one
+    ? `Perfekt, ich kenne dich jetzt! 🎉 Kurz zusammengefasst: Ich bin ${p.helper.name} und kümmere mich um dich${persons.length ? `, ${who}` : ""}.`
+    : `Perfekt, ich kenne euch jetzt! 🎉 Kurz zusammengefasst: Ich bin ${p.helper.name} und kümmere mich um ${family} – ${who}.`;
+  const small = p.householdType === "single" || p.householdType === "paar";
   return [
-    `Perfekt, ich kenne euch jetzt! 🎉 Kurz zusammengefasst: Ich bin ${p.helper.name} und kümmere mich um ${family} – ${who}.`,
-    `Warm esst ihr meistens ${MEAL_TIME_LABELS[p.warmMeal.weekday]}${p.warmMeal.weekend !== p.warmMeal.weekday ? ` (am Wochenende ${MEAL_TIME_LABELS[p.warmMeal.weekend]})` : ""}, eingekauft wird ${p.shoppingDay.toLowerCase()}s.`,
+    intro,
+    `Warm ${one ? "isst du" : "esst ihr"} meistens ${MEAL_TIME_LABELS[p.warmMeal.weekday]}${p.warmMeal.weekend !== p.warmMeal.weekday ? ` (am Wochenende ${MEAL_TIME_LABELS[p.warmMeal.weekend]})` : ""}, eingekauft wird ${p.shoppingDay.toLowerCase()}s.`,
     `Pro Woche: ${r.meatDays}× Fleisch, ${r.fishDays}× Fisch, ${r.vegetarianDays}× Veggie${r.cheatDay ? `, Cheat Day ${r.cheatDayWeekday.toLowerCase()}s` : ""}.`,
+    ...(small ? ["Ich plane kleine Mengen – und wo's passt, bewusst so, dass es für morgen reicht."] : []),
   ].join(" ");
 }
 
@@ -851,7 +929,7 @@ export function finalizeProfile(s: OnboardingState): HouseholdProfile {
   const persons = s.draft.persons.length ? s.draft.persons : [createPerson("erwachsen")];
   const adults = persons.filter((p) => p.role === "erwachsen").length;
   const kidCount = persons.filter((p) => p.role === "kind").length;
-  return { ...s.draft, adults, kids: kidCount, persons: syncPersons(persons, adults, kidCount) };
+  return { ...s.draft, adults, kids: kidCount, persons: syncPersons(persons, adults, kidCount), householdType: fitHouseholdType(s.draft.householdType, persons) };
 }
 
 /** Familienkarte: Einträge mit Ziel zum Korrigieren */
@@ -859,8 +937,12 @@ export function familyCard(s: OnboardingState): { label: string; value: string; 
   const p = s.draft;
   const rows: { label: string; value: string; target: Target }[] = [];
   const reached = (step: StepId) => BLOCKS.indexOf(BLOCK_OF[s.step]) > BLOCKS.indexOf(BLOCK_OF[step]) || s.step === "done";
+  if (reached("householdType")) {
+    const t = HOUSEHOLD_TYPES.find((x) => x.value === p.householdType);
+    rows.push({ label: "Für wen", value: t ? `${t.emoji} ${t.label}` : "–", target: { kind: "type" } });
+  }
   if (reached("helperName") || s.returnTo) rows.push({ label: "Küchenhilfe", value: p.helper.name, target: { kind: "helper" } });
-  if (reached("household") || p.householdName) rows.push({ label: "Familie", value: p.householdName || "–", target: { kind: "household" } });
+  if ((reached("household") && blocksFor(s).includes("household")) || p.householdName) rows.push({ label: p.householdType === "wg" ? "WG" : "Familie", value: p.householdName || "–", target: { kind: "household" } });
   for (const person of p.persons) {
     const [name, ...details] = personSummary(person, p.persons).split(", ");
     rows.push({ label: name, value: details.join(", "), target: { kind: "person", id: person.id } });

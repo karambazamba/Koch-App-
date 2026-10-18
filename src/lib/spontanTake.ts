@@ -21,14 +21,27 @@ export type TakeResult =
   | { ok: true; weeks: Record<string, Record<string, StoredEntry>>; text: string }
   | { ok: false; text: string };
 
-export function takeForToday(data: Data, today: Date, idea: SpontanIdea): TakeResult {
+/** Idee mit Titel, evtl. Rezept und Kategorie (Spontan-Idee, Supermarkt-Idee) */
+type Idea = Pick<SpontanIdea, "title" | "recipeId" | "category">;
+
+export function takeForToday(data: Data, today: Date, idea: Idea): TakeResult {
+  return takeForDay(data, today, idea, toIsoDate(today));
+}
+
+/**
+ * Idee für einen Tag (diese Woche) einplanen: das bisherige Gericht rutscht
+ * auf den nächsten freien Tag danach – nichts geht verloren.
+ */
+export function takeForDay(data: Data, today: Date, idea: Idea, date: string): TakeResult {
   const shoppingDay = data.profile.shoppingDay || DEFAULT_SHOPPING_DAY;
-  const todayIso = toIsoDate(today);
-  const weekStart = weekStartFor(today, shoppingDay);
+  const todayIso = date;
+  const isToday = date === toIsoDate(today);
+  const weekStart = weekStartFor(new Date(`${date}T12:00:00`), shoppingDay);
   const week = composeWeek(weekStart, data.profile, data.weekPlans, data.mealPlans, data.recipes);
   const day = week.days.find((d) => d.date === todayIso);
   if (!day) return { ok: false, text: "Das hat gerade nicht geklappt." };
-  if (day.away) return { ok: false, text: "Heute ist eigentlich kein Kochtag eingetragen – guten Appetit trotzdem! 😊" };
+  if (day.away) return { ok: false, text: isToday ? "Heute ist eigentlich kein Kochtag eingetragen – guten Appetit trotzdem! 😊" : `${day.weekday} ist kein Kochtag eingetragen.` };
+  const when = isToday ? "Heute" : `Am ${day.weekday}`;
 
   const entry: StoredEntry = idea.recipeId
     ? { kind: "recipe", recipeId: idea.recipeId, title: idea.title, category: idea.category ?? "vegetarisch" }
@@ -36,7 +49,7 @@ export function takeForToday(data: Data, today: Date, idea: SpontanIdea): TakeRe
   let weeks = mealPlansWithWeek(data.mealPlans, weekStart, (e) => ({ ...e, [day.slot.key]: entry }));
   const old = day.slot.entry;
   if (!old || old.title.toLowerCase() === idea.title.toLowerCase()) {
-    return { ok: true, weeks, text: `Übernommen ✓ Heute gibt's ${idea.title}.` };
+    return { ok: true, weeks, text: `Übernommen ✓ ${when} gibt's ${idea.title}.` };
   }
 
   // Bisheriges Gericht auf den nächsten freien Tag (ohne Ausflug, kein freies Wochenende)
@@ -51,7 +64,7 @@ export function takeForToday(data: Data, today: Date, idea: SpontanIdea): TakeRe
     const { double: _double, ...moved } = old.stored;
     void _double;
     weeks = mealPlansWithWeek(weeks, target.start, (e) => ({ ...e, [target.d.slot.key]: moved }));
-    return { ok: true, weeks, text: `Übernommen ✓ Heute gibt's ${idea.title}. ${old.title} hab ich auf ${target.d.weekday} geschoben.` };
+    return { ok: true, weeks, text: `Übernommen ✓ ${when} gibt's ${idea.title}. ${old.title} hab ich auf ${target.d.weekday} geschoben.` };
   }
-  return { ok: true, weeks, text: `Übernommen ✓ Heute gibt's ${idea.title}. ${old.title} ist erst mal raus – sag Bescheid, wenn's woanders hin soll.` };
+  return { ok: true, weeks, text: `Übernommen ✓ ${when} gibt's ${idea.title}. ${old.title} ist erst mal raus – sag Bescheid, wenn's woanders hin soll.` };
 }

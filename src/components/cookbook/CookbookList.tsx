@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { BookOpen, Clock, Heart, Plus, Search } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
-import { CARD, INPUT_BASE, PAGE_MAIN, chipClass } from "@/components/ui/styles";
+import { CARD, INPUT_BASE, PAGE_MAIN, SECTION_TITLE, chipClass } from "@/components/ui/styles";
+import { BUILTIN_BAKING, KID_FRIENDLY } from "@/lib/baking";
 import { sortRecipes, toggleFavorite, useRecipes, type Recipe } from "@/lib/cookbook";
 import { dishEmoji } from "@/lib/dishEmoji";
 import { useMealPlans, type StoredEntry } from "@/lib/mealPlan";
@@ -12,12 +13,13 @@ import { personLabel, type HouseholdProfile } from "@/lib/profile";
 import { useProfile } from "@/lib/useProfile";
 import { NewRecipeSheet } from "./NewRecipeSheet";
 
-type Filter = "alle" | "lieblinge" | "schnell" | "vegetarisch" | "fleisch" | "fisch" | "cheatday";
+type Filter = "alle" | "lieblinge" | "schnell" | "backen" | "vegetarisch" | "fleisch" | "fisch" | "cheatday";
 
 const FILTERS: { value: Filter; label: string }[] = [
   { value: "alle", label: "Alle" },
   { value: "lieblinge", label: "❤️ Lieblinge" },
   { value: "schnell", label: "⚡ Schnell" },
+  { value: "backen", label: "🧁 Backen" },
   { value: "vegetarisch", label: "🥦 Veggie" },
   { value: "fleisch", label: "🥩 Fleisch" },
   { value: "fisch", label: "🐟 Fisch" },
@@ -29,7 +31,13 @@ const QUICK_MINUTES = 25;
 
 const matches = (r: Recipe, f: Filter) =>
   f === "alle" ||
-  (f === "lieblinge" ? r.favorite : f === "schnell" ? r.prepMinutes !== null && r.prepMinutes <= QUICK_MINUTES : r.category === f);
+  (f === "lieblinge"
+    ? r.favorite
+    : f === "schnell"
+      ? r.prepMinutes !== null && r.prepMinutes <= QUICK_MINUTES
+      : f === "backen"
+        ? r.kind === "backen"
+        : r.kind !== "backen" && r.category === f);
 
 /** "Mathis' Liebling": Rezept, das sich ein Kind schon gewünscht hat */
 function kidFavorites(profile: HouseholdProfile | null | undefined, mealPlans: Record<string, Record<string, StoredEntry>> | undefined): Map<string, string> {
@@ -63,6 +71,12 @@ export function CookbookList() {
     "zuletzt",
   );
   const favorites = kidFavorites(profile, mealPlans);
+  // Backen: dazu die eingebaute Sammlung (ohne schon übernommene)
+  const own = new Set(all.map((r) => r.title.trim().toLowerCase()));
+  const bakery =
+    filter === "backen"
+      ? BUILTIN_BAKING.filter((r) => !own.has(r.title.trim().toLowerCase()) && (!q || r.title.toLowerCase().includes(q) || r.ingredients.some((i) => i.name.toLowerCase().includes(q))))
+      : [];
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
@@ -110,19 +124,33 @@ export function CookbookList() {
 
         {recipes === undefined ? (
           <div className={`${CARD} h-40 animate-pulse`} />
-        ) : all.length === 0 ? (
+        ) : all.length === 0 && filter !== "backen" ? (
           <div className={`${CARD} flex flex-col items-center gap-3 p-6 text-center`}>
             <BookOpen className="h-10 w-10 text-accent" strokeWidth={1.75} aria-hidden />
             <p className="text-base text-muted">Noch keine Rezepte – erzähl Lotte euer erstes Lieblingsrezept!</p>
           </div>
-        ) : visible.length === 0 ? (
+        ) : visible.length === 0 && bakery.length === 0 ? (
           <p className="px-1 text-sm text-muted">Dazu finde ich kein Rezept.</p>
         ) : (
-          <ul className="grid grid-cols-2 gap-3" aria-label="Rezepte">
-            {visible.map((recipe) => (
-              <RecipeTile key={recipe.id} recipe={recipe} kid={favorites.get(recipe.title.trim().toLowerCase())} />
-            ))}
-          </ul>
+          <>
+            {visible.length > 0 && (
+              <ul className="grid grid-cols-2 gap-3" aria-label="Rezepte">
+                {visible.map((recipe) => (
+                  <RecipeTile key={recipe.id} recipe={recipe} kid={favorites.get(recipe.title.trim().toLowerCase())} />
+                ))}
+              </ul>
+            )}
+            {bakery.length > 0 && (
+              <>
+                <h2 className={`${SECTION_TITLE} mt-1`}>Aus unserer Backstube</h2>
+                <ul className="grid grid-cols-2 gap-3" aria-label="Backstube">
+                  {bakery.map((recipe) => (
+                    <RecipeTile key={recipe.id} recipe={recipe} builtin kidFriendly={KID_FRIENDLY.has(recipe.id)} />
+                  ))}
+                </ul>
+              </>
+            )}
+          </>
         )}
       </main>
       {adding && <NewRecipeSheet onClose={() => setAdding(false)} />}
@@ -130,8 +158,18 @@ export function CookbookList() {
   );
 }
 
-function RecipeTile({ recipe, kid }: { recipe: Recipe; kid?: string }) {
-  const extra = kid ? `${possessive(kid)} Liebling` : recipe.cookedCount > 0 ? `${recipe.cookedCount}× gekocht` : recipe.source === "ki" ? "Neu ✨" : "";
+function RecipeTile({ recipe, kid, builtin = false, kidFriendly = false }: { recipe: Recipe; kid?: string; builtin?: boolean; kidFriendly?: boolean }) {
+  const extra = builtin
+    ? kidFriendly
+      ? "mit Kindern 🧒"
+      : ""
+    : kid
+      ? `${possessive(kid)} Liebling`
+      : recipe.cookedCount > 0
+        ? `${recipe.cookedCount}× ${recipe.kind === "backen" ? "gebacken" : "gekocht"}`
+        : recipe.source === "ki"
+          ? "Neu ✨"
+          : "";
   return (
     <li className={`${CARD} relative overflow-hidden`}>
       <Link href={`/kochbuch/rezept?id=${encodeURIComponent(recipe.id)}`} className="flex h-full flex-col active:opacity-90">
@@ -151,9 +189,11 @@ function RecipeTile({ recipe, kid }: { recipe: Recipe; kid?: string }) {
           </span>
         </span>
       </Link>
-      <span className="absolute right-1 top-1">
-        <FavoriteButton recipe={recipe} small />
-      </span>
+      {!builtin && (
+        <span className="absolute right-1 top-1">
+          <FavoriteButton recipe={recipe} small />
+        </span>
+      )}
     </li>
   );
 }

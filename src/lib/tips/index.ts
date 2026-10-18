@@ -8,18 +8,19 @@
 
 import { useExternalStore } from "../useExternalStore";
 import { createLocalStore } from "../localStore";
-import type { TipLevel } from "../profile";
+import type { HouseholdType, TipLevel } from "../profile";
 import { addDays } from "../weekPlan";
 import { GERICHT_TIPS } from "./data/gericht";
 import { PROFI_TIPS } from "./data/profi";
 import { RESTE_TIPS } from "./data/reste";
 import { SPAR_TIPS } from "./data/sparen";
 import { VORRAT_TIPS } from "./data/vorrat";
+import { WOCHENENDE_TIPS } from "./data/wochenende";
 import type { Tip, TipCategory } from "./types";
 
 export type { Tip, TipCategory } from "./types";
 
-export const ALL_TIPS: Tip[] = [...GERICHT_TIPS, ...PROFI_TIPS, ...SPAR_TIPS, ...RESTE_TIPS, ...VORRAT_TIPS];
+export const ALL_TIPS: Tip[] = [...GERICHT_TIPS, ...PROFI_TIPS, ...SPAR_TIPS, ...RESTE_TIPS, ...VORRAT_TIPS, ...WOCHENENDE_TIPS];
 
 export const CATEGORY_TITLES: Record<TipCategory, string> = {
   profi: "Profi-Trick aus der Gastro",
@@ -27,6 +28,7 @@ export const CATEGORY_TITLES: Record<TipCategory, string> = {
   sparen: "Spartipp",
   reste: "Reste-Idee",
   vorrat: "Vorrat & Vorkochen",
+  wochenende: "Idee fürs Wochenende",
 };
 
 /** Höchstens so viele Tipps an einem Tag (nach rechts wischen) */
@@ -146,6 +148,10 @@ export type TipContext = {
   twist: { key: string; idea: string; minutes: number; item?: string } | null;
   /** Sanfter Gesundheits-Tipp laut eigener Einstellung */
   health: { key: string; title: string; text: string } | null;
+  /** Haushaltstyp: kleine Haushalte bekommen eher Vorrat/Einfrieren, Wochenend-Ideen je Typ */
+  household?: HouseholdType;
+  /** Kinder im Haushalt? Ohne Kinder keine Kinder-Tipps */
+  kids?: boolean;
 };
 
 /** Darf heute überhaupt ein Tipp kommen? (Einstellung, "ab und zu" = 4 Tage pro Woche) */
@@ -161,7 +167,16 @@ function dayNumber(date: string): number {
   return Math.floor(new Date(`${date}T12:00:00Z`).getTime() / 86_400_000);
 }
 
-const fresh = (tip: Tip, ctx: TipContext) => !ctx.state.seen[tip.id] || ctx.state.seen[tip.id] === ctx.date;
+const fresh = (tip: Tip, ctx: TipContext) => (!ctx.state.seen[tip.id] || ctx.state.seen[tip.id] === ctx.date) && fits(tip, ctx);
+
+/** Passt der Tipp zum Haushalt? (Kinder-Tipps nur mit Kindern, Wochenend-Ideen je Typ) */
+function fits(tip: Tip, ctx: TipContext): boolean {
+  const kids = ctx.kids ?? true;
+  if (tip.audience === "kids") return kids;
+  if (tip.audience === "nokids") return !kids;
+  if (tip.audience === "paar") return !kids && ctx.household === "paar";
+  return kids || !/kinder/i.test(`${tip.text} ${tip.detail}`);
+}
 
 const card = (tip: Tip): TipCardData => ({
   kind: "tip",
@@ -194,8 +209,10 @@ export function tipDeck(ctx: TipContext): TipCardData[] {
       title: "Lust auf einen Twist?",
       text: `${ctx.twist.idea} – ${ctx.twist.minutes} Min extra.`,
       detail: ctx.twist.item
-        ? `Kleine Abwandlung für ein Gericht, das ihr kennt. Wenn du „Übernehmen“ tippst, setze ich ${ctx.twist.item} für heute auf die Liste.`
-        : "Kleine Abwandlung für ein Gericht, das ihr kennt – einfach ausprobieren, wenn ihr Lust habt.",
+        ? `Kleine Abwandlung für ein Gericht, das ${ctx.household === "single" ? "du kennst" : "ihr kennt"}. Wenn du „Übernehmen“ tippst, setze ich ${ctx.twist.item} für heute auf die Liste.`
+        : ctx.household === "single"
+          ? "Kleine Abwandlung für ein Gericht, das du kennst – einfach ausprobieren, wenn du Lust hast."
+          : "Kleine Abwandlung für ein Gericht, das ihr kennt – einfach ausprobieren, wenn ihr Lust habt.",
     });
   }
   if (general && ctx.dish && allowedCat("gericht")) {
@@ -215,7 +232,12 @@ export function tipDeck(ctx: TipContext): TipCardData[] {
   if (general) {
     // Allgemeine Kategorien reihum, Start je Tag versetzt
     const cats: TipCategory[] = ["profi", "sparen", "reste", "vorrat"];
-    const order = cats.map((_, i) => cats[(today + i) % cats.length]).filter(allowedCat);
+    let order = cats.map((_, i) => cats[(today + i) % cats.length]);
+    // Kleiner Haushalt: Vorrat & Einfrieren (Portionen) zuerst
+    if (ctx.household === "single" || ctx.household === "paar") order = ["vorrat", ...order.filter((c) => c !== "vorrat")];
+    // Fr–So: zuerst eine Wochenend-Idee passend zum Haushalt
+    if ([5, 6, 0].includes(new Date(`${ctx.date}T12:00:00Z`).getUTCDay())) order = ["wochenende", ...order];
+    order = order.filter(allowedCat);
     for (const cat of order) {
       if (deck.length >= TIPS_PER_DAY) break;
       const pool = ALL_TIPS.filter((t) => t.category === cat && fresh(t, ctx));

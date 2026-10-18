@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { Check, ChefHat, Clock, PenLine, Sparkles, ThumbsDown, ThumbsUp, Trash2, Users } from "lucide-react";
+import { Check, ChefHat, Clock, PenLine, Plus, Sparkles, ThumbsDown, ThumbsUp, Trash2, Users } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { CategoryChip } from "@/components/ui/Category";
 import { CARD, FAB_CLEARANCE, PAGE_MAIN, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
@@ -16,6 +16,10 @@ import {
   useRecipes,
 } from "@/lib/cookbook";
 import { learnFromRecipe, LIKE_WEIGHTS } from "@/lib/likes";
+import { adoptBuiltin, findRecipe, isBuiltin } from "@/lib/baking";
+import { ovenText } from "@/lib/baking/steps";
+import { useProfile } from "@/lib/useProfile";
+import { MachineStepView, MachineToggle, useMachineView } from "./MachineSteps";
 /** Datum (lokale Zeit) aus Zeitstempel oder "YYYY-MM-DD", z. B. "23.10.2026" */
 function formatDate(iso: string): string {
   const date = iso.length === 10 ? new Date(`${iso}T12:00:00`) : new Date(iso);
@@ -34,10 +38,14 @@ export function RecipeView() {
 function RecipeDetails({ id }: { id: string }) {
   const router = useRouter();
   const recipes = useRecipes();
+  const profile = useProfile();
   const [justCooked, setJustCooked] = useState(false);
+  const machine = useMachineView(profile);
 
   if (recipes === undefined) return <div className={`${CARD} m-4 h-64 animate-pulse`} />;
-  const recipe = recipes[id];
+  // Auch eingebaute Backrezepte ("b:…") lassen sich ansehen
+  const recipe = findRecipe(recipes, id);
+  const builtin = isBuiltin(id);
 
   if (!recipe) {
     return (
@@ -46,12 +54,16 @@ function RecipeDetails({ id }: { id: string }) {
         <main className={`flex flex-col items-center gap-4 px-6 pt-10 text-center ${FAB_CLEARANCE}`}>
           <p className="text-base">Dieses Rezept gibt es nicht (mehr).</p>
           <Link href="/kochbuch" className={buttonClass("secondary")}>
-            Zum Kochbuch
+            Zu den Rezepten
           </Link>
         </main>
       </div>
     );
   }
+
+  const baking = recipe.kind === "backen";
+  const machineOn = machine.on && recipe.machineSteps.length > 0;
+  const kids = profile ? profile.persons.filter((p) => p.role === "kind") : [];
 
   const cooked = (rating: "up" | "down" | null) => {
     recordCooked(recipe.id, rating);
@@ -73,10 +85,10 @@ function RecipeDetails({ id }: { id: string }) {
           <div className="min-w-0 flex-1">
             <h2 className="text-2xl font-extrabold leading-tight tracking-tight">{recipe.title}</h2>
             <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
-              <CategoryChip category={recipe.category} />
+              {baking ? <span className="whitespace-nowrap font-semibold">🧁 Backen</span> : <CategoryChip category={recipe.category} />}
               <span className="inline-flex items-center gap-1 whitespace-nowrap">
                 <Users className="h-4 w-4" strokeWidth={2} aria-hidden />
-                {recipe.servings} Personen
+                {recipe.servings} {baking ? "Stück" : "Personen"}
               </span>
               {recipe.prepMinutes !== null && (
                 <span className="inline-flex items-center gap-1 whitespace-nowrap">
@@ -85,7 +97,12 @@ function RecipeDetails({ id }: { id: string }) {
                 </span>
               )}
               <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                {recipe.source === "ki" ? (
+                {builtin ? (
+                  <>
+                    <Sparkles className="h-4 w-4" strokeWidth={2} aria-hidden />
+                    Aus unserer Backstube
+                  </>
+                ) : recipe.source === "ki" ? (
                   <>
                     <Sparkles className="h-4 w-4" strokeWidth={2} aria-hidden />
                     von der KI
@@ -99,19 +116,40 @@ function RecipeDetails({ id }: { id: string }) {
               </span>
             </p>
           </div>
-          <FavoriteButton recipe={recipe} />
+          {!builtin && <FavoriteButton recipe={recipe} />}
         </div>
 
         {recipe.steps.length > 0 && (
           <Link href={`/kochbuch/kochen?id=${encodeURIComponent(recipe.id)}`} className={`${buttonClass("primary", "lg")} w-full`}>
             <ChefHat className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-            Los geht&apos;s – Schritt für Schritt
+            {baking ? "Zusammen backen" : "Los geht's – Schritt für Schritt"}
           </Link>
         )}
-        <KnownSwitch recipe={recipe} />
+        {builtin ? (
+          <button
+            type="button"
+            onClick={() => router.push(`/kochbuch/rezept?id=${encodeURIComponent(adoptBuiltin(recipe))}`)}
+            className={`${buttonClass("soft", "lg")} w-full`}
+          >
+            <Plus className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+            In unsere Rezepte
+          </button>
+        ) : (
+          <KnownSwitch recipe={recipe} />
+        )}
+
+        {(recipe.oven || recipe.pan) && (
+          <p className={`${CARD} flex flex-wrap gap-x-3 gap-y-1 p-4 text-base`} aria-label="Backofen">
+            {recipe.oven && <span className="font-bold">🔥 {ovenText(recipe.oven)}</span>}
+            {recipe.pan && <span className="text-muted">{recipe.pan}</span>}
+          </p>
+        )}
+        {recipe.machineSteps.length > 0 && <MachineToggle view={machine} />}
 
         <section className={`${CARD} p-4`}>
-          <h3 className={`${SECTION_TITLE} mb-2`}>Zutaten für {recipe.servings} Personen</h3>
+          <h3 className={`${SECTION_TITLE} mb-2`}>
+            Zutaten für {recipe.servings} {baking ? "Stück" : "Personen"}
+          </h3>
           {recipe.ingredients.length === 0 ? (
             <p className="text-sm text-muted">Keine Zutaten eingetragen.</p>
           ) : (
@@ -128,20 +166,42 @@ function RecipeDetails({ id }: { id: string }) {
           )}
         </section>
 
-        {recipe.steps.length > 0 && (
-          <section className={`${CARD} p-4`}>
-            <h3 className={`${SECTION_TITLE} mb-3`}>Zubereitung</h3>
+        {machineOn ? (
+          <section className={`${CARD} p-4`} aria-label="Schritte für Thermomix">
+            <h3 className={`${SECTION_TITLE} mb-3`}>Schritte für Thermomix</h3>
             <ol className="flex flex-col gap-3">
-              {recipe.steps.map((step, index) => (
+              {recipe.machineSteps.map((step, index) => (
                 <li key={index} className="flex gap-3 text-base">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-sm font-bold text-accent-strong">
                     {index + 1}
                   </span>
-                  <span className="pt-0.5">{step}</span>
+                  <span className="flex flex-col gap-1.5 pt-0.5">
+                    {step.text}
+                    <MachineStepView step={step} />
+                  </span>
                 </li>
               ))}
             </ol>
           </section>
+        ) : (
+          recipe.steps.length > 0 && (
+            <section className={`${CARD} p-4`}>
+              <h3 className={`${SECTION_TITLE} mb-3`}>Zubereitung</h3>
+              <ol className="flex flex-col gap-3">
+                {recipe.steps.map((step, index) => (
+                  <li key={index} className="flex gap-3 text-base">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-sm font-bold text-accent-strong">
+                      {index + 1}
+                    </span>
+                    <span className="pt-0.5">
+                      {kids.length > 0 && recipe.kidSteps.includes(index) && <span className="mr-1 font-semibold text-accent-strong">🧒</span>}
+                      {step}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )
         )}
 
         {recipe.note.trim() && (
@@ -151,6 +211,9 @@ function RecipeDetails({ id }: { id: string }) {
           </section>
         )}
 
+        {/* Eingebaute Rezepte: erst "In unsere Rezepte", dann bewerten/bearbeiten */}
+        {!builtin && (
+          <>
         <section className={`${CARD} flex flex-col gap-3 p-4`}>
           <h3 className={SECTION_TITLE}>Heute gekocht? Wie war&apos;s?</h3>
           {justCooked ? (
@@ -214,6 +277,8 @@ function RecipeDetails({ id }: { id: string }) {
             Löschen
           </button>
         </div>
+          </>
+        )}
       </main>
     </div>
   );

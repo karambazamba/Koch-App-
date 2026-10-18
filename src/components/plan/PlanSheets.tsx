@@ -1,5 +1,8 @@
 "use client";
 
+import { useProfile } from "@/lib/useProfile";
+import { isSmallHousehold } from "@/lib/profile";
+
 // Bottom-Sheets des Wochenplans: Eintrag bearbeiten, aus dem Kochbuch wählen,
 // selbst eintragen, verschieben, Vorlagen und "Nochmal kochen".
 
@@ -37,6 +40,8 @@ export function EntrySheet({
 }) {
   const entry = slot.entry!;
   const wish = entry.stored.kind === "wish";
+  const profile = useProfile();
+  const small = profile ? isSmallHousehold(profile) : false;
   return (
     <Sheet title={`${day.weekday} · Hauptgericht`} onClose={onClose}>
       <div className={`${CARD} p-4`}>
@@ -60,8 +65,10 @@ export function EntrySheet({
       {recipe && <KnownSwitch recipe={recipe} />}
       <label className={`${CARD} flex cursor-pointer items-center gap-3 p-4`}>
         <span className="min-w-0 flex-1">
-          <span className="block font-bold">Doppelt kochen – Reste für morgen</span>
-          <span className="block text-sm text-muted">Doppelte Mengen auf der Einkaufsliste, morgen gibt es die Reste.</span>
+          <span className="block font-bold">{small ? "Reicht für morgen" : "Doppelt kochen – Reste für morgen"}</span>
+          <span className="block text-sm text-muted">
+            {small ? "Gleich für zwei Tage einkaufen und kochen – morgen ist schon was da." : "Doppelte Mengen auf der Einkaufsliste, morgen gibt es die Reste."}
+          </span>
         </span>
         <input
           type="checkbox"

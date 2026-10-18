@@ -149,6 +149,16 @@ function formatTotal(total: number, family: string): string {
   return `${formatNumber(total)} ${family}`.trim();
 }
 
+/**
+ * Kleiner Haushalt: umgerechnete Mengen auf übliche Größen aufrunden
+ * (g/ml auf 50 bzw. 10, Löffel auf halbe, sonst ganze Stück).
+ */
+function roundSmall(total: number, family: string): number {
+  if (family === "g" || family === "ml") return total >= 50 ? Math.ceil(total / 50) * 50 : Math.ceil(total / 10) * 10;
+  if (/^(el|tl|prise|msp)/i.test(family)) return Math.ceil(total * 2) / 2;
+  return Math.ceil(total - 1e-9);
+}
+
 // --- Gespeicherter Teil ---------------------------------------------------------
 
 export type ManualItem = {
@@ -159,6 +169,8 @@ export type ManualItem = {
   done: boolean;
   /** Für einen bestimmten Tag (Wochentag) – erscheint dann unter "Heute holen" */
   day?: string;
+  /** "Jetzt mitnehmen" (aus dem Supermarkt-Gespräch) – steht oben, bis abgehakt */
+  now?: boolean;
 };
 
 export type WeekList = {
@@ -226,6 +238,7 @@ function migrateManual(raw: unknown): ManualItem[] {
       section: SECTION_VALUES.includes(m.section) ? m.section : sectionFor(m.name),
       done: m.done === true,
       ...(typeof m.day === "string" && m.day ? { day: m.day } : {}),
+      ...(m.now === true ? { now: true } : {}),
     }));
 }
 
@@ -601,6 +614,8 @@ export type ListItem = {
   optional?: boolean;
   /** Nur bei eigenen Artikeln */
   manualId?: string;
+  /** "Jetzt mitnehmen" – oben in der Liste */
+  now?: boolean;
   checked: boolean;
   /** "Haben wir schon" – für diese Woche ausgeblendet */
   hidden: boolean;
@@ -619,8 +634,10 @@ export function buildShoppingList(
   recipes: Record<string, Recipe>,
   list: WeekList = EMPTY_LIST,
   settings: Pick<ShoppingSettings, "products" | "itemShops"> = { products: {}, itemShops: {} },
+  /** Kleiner Haushalt (1–2 Personen): Rezeptmengen auf die Personen des Tages umrechnen */
+  options: { small?: boolean } = {},
 ): ShoppingList {
-  type Acc = { name: string; family: string; total: number; hasAmount: boolean; dishes: string[]; days: string[]; optional: boolean };
+  type Acc = { name: string; family: string; total: number; hasAmount: boolean; dishes: string[]; days: string[]; optional: boolean; scaled: boolean };
   const acc = new Map<string, Acc>();
   const missing: string[] = [];
 
@@ -637,17 +654,21 @@ export function buildShoppingList(
       continue;
     }
     // Doppelt kochen → doppelte Mengen
-    const times = entry.double ? 2 : 1;
+    let times = entry.double ? 2 : 1;
+    // Kleiner Haushalt: nur so viel wie für die Personen des Tages (Backen bleibt ganz)
+    const scale = options.small && recipe && recipe.kind !== "backen" && day.persons && recipe.servings > day.persons * times;
+    if (scale) times = (day.persons! * times) / recipe!.servings;
     const dish = `${entry.title} (${short})${entry.double ? " ×2" : ""}`;
     for (const ing of ingredients) {
       const { family, factor } = unitFamily(ing.unit);
       const key = `${ing.name.trim().toLowerCase()}|${family}`;
-      const item = acc.get(key) ?? { name: ing.name.trim(), family, total: 0, hasAmount: false, dishes: [], days: [], optional: true };
+      const item = acc.get(key) ?? { name: ing.name.trim(), family, total: 0, hasAmount: false, dishes: [], days: [], optional: true, scaled: false };
       // Lockeres Wochenende: nur eine Idee – Zutaten optional
       if (day.weekend !== "locker") item.optional = false;
       if (ing.amount !== null) {
         item.total += ing.amount * factor * times;
         item.hasAmount = true;
+        if (scale) item.scaled = true;
       }
       if (!item.dishes.includes(dish)) item.dishes.push(dish);
       if (!item.days.includes(day.weekday)) item.days.push(day.weekday);
@@ -664,7 +685,7 @@ export function buildShoppingList(
       key,
       name,
       originalName: a.name,
-      amount: a.hasAmount ? formatTotal(a.total, a.family) : a.family,
+      amount: a.hasAmount ? formatTotal(a.scaled ? roundSmall(a.total, a.family) : a.total, a.family) : a.family,
       section: sectionFor(a.name),
       dishes: a.dishes,
       days: a.days,
@@ -686,6 +707,7 @@ export function buildShoppingList(
       days: m.day ? [m.day] : [],
       shop: shopOf(name),
       manualId: m.id,
+      ...(m.now ? { now: true } : {}),
       checked: m.done,
       hidden: false,
     };

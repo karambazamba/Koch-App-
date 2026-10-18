@@ -7,8 +7,13 @@
 
 import { useExternalStore } from "./useExternalStore";
 import { createLocalStore } from "./localStore";
+import type { MachineStep, OvenSettings } from "./baking/types";
+
+export type { MachineStep, OvenSettings, OvenMode } from "./baking/types";
 
 export type RecipeCategory = "fleisch" | "vegetarisch" | "fisch" | "cheatday";
+/** Kochen oder Backen (Kochbuch v3) – Backen: Mengen in g/ml, Backofen, Form */
+export type RecipeKind = "kochen" | "backen";
 export type RecipeSource = "eigenes" | "ki";
 
 export type Ingredient = {
@@ -48,6 +53,16 @@ export type Recipe = {
    * siehe `recipeIsKnown()` in dishStatus.ts.
    */
   known: boolean;
+  /** Kochen oder Backen (Kochbuch v3) */
+  kind: RecipeKind;
+  /** Backofen: Heizart, Temperatur, Backzeit (vor allem beim Backen) */
+  oven: OvenSettings | null;
+  /** Formgröße, z. B. "Springform 26 cm" */
+  pan: string;
+  /** Schritte (Index), die Kinder übernehmen können */
+  kidSteps: number[];
+  /** Schritte für Thermomix bzw. Küchenmaschine mit Kochfunktion */
+  machineSteps: MachineStep[];
   createdAt: string;
   updatedAt: string;
 };
@@ -57,8 +72,8 @@ export type RecipeDraft = Pick<Recipe, "title" | "category"> &
   Partial<Omit<Recipe, "id" | "createdAt" | "updatedAt">>;
 
 type CookbookStore = {
-  /** v2: `known` ("kennen wir") */
-  version: 2;
+  /** v2: `known` ("kennen wir"); v3: Typ, Backofen, Form, Kinder- und Maschinenschritte */
+  version: 3;
   recipes: Record<string, Recipe>;
 };
 
@@ -102,6 +117,11 @@ export function createRecipe(draft: RecipeDraft): Recipe {
     cookedCount: 0,
     lastCookedAt: null,
     known: false,
+    kind: "kochen",
+    oven: null,
+    pan: "",
+    kidSteps: [],
+    machineSteps: [],
     ...draft,
     id: newId(),
     createdAt: now,
@@ -186,27 +206,57 @@ function migrateRecipe(id: string, raw: unknown): Recipe | null {
     // Bis v1 gab es keine Markierung: was schon im Kochbuch stand (eigene
     // Rezepte) bzw. mindestens 2× gekocht wurde, kennt die Familie.
     known: typeof r.known === "boolean" ? r.known : r.source !== "ki" || num(r.cookedCount, 0) >= 2,
+    // Bis v2 ohne Typ: Kuchen, Muffins & Co. sind Backen
+    kind: r.kind === "backen" || r.kind === "kochen" ? r.kind : guessRecipeKind(r.title),
+    oven: migrateOven(r.oven),
+    pan: str(r.pan),
+    kidSteps: Array.isArray(r.kidSteps) ? r.kidSteps.filter((i): i is number => Number.isInteger(i) && i >= 0) : [],
+    machineSteps: Array.isArray(r.machineSteps)
+      ? r.machineSteps
+          .filter((m): m is MachineStep => Boolean(m) && typeof m === "object" && typeof m.text === "string")
+          .map((m) => ({
+            text: m.text,
+            ...(typeof m.time === "string" ? { time: m.time } : {}),
+            ...(typeof m.temp === "string" ? { temp: m.temp } : {}),
+            ...(typeof m.speed === "string" ? { speed: m.speed } : {}),
+            ...(m.reverse === true ? { reverse: true } : {}),
+          }))
+      : [],
     createdAt: str(r.createdAt),
     updatedAt: str(r.updatedAt),
   };
 }
 
+/** Backen oder Kochen am Namen erkennen */
+export function guessRecipeKind(title: string): RecipeKind {
+  return /kuchen|torte|muffin|cupcake|keks|plätzchen|cookie|brownie|waffel|hefezopf|zopf|schnecke|stollen|brötchen|bananenbrot|brot backen|tarte|crumble|scone|gebäck/i.test(title)
+    ? "backen"
+    : "kochen";
+}
+
+function migrateOven(raw: unknown): OvenSettings | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Partial<OvenSettings>;
+  if (typeof o.temp !== "number" || typeof o.minutes !== "number") return null;
+  return { mode: o.mode === "umluft" ? "umluft" : "ober-unter", temp: o.temp, minutes: o.minutes };
+}
+
 function migrateStore(raw: unknown): CookbookStore | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as { version?: number; recipes?: Record<string, unknown> };
-  if (![1, 2].includes(data.version as number) || !data.recipes || typeof data.recipes !== "object") return null;
+  if (![1, 2, 3].includes(data.version as number) || !data.recipes || typeof data.recipes !== "object") return null;
   const recipes: Record<string, Recipe> = {};
   for (const [id, r] of Object.entries(data.recipes)) {
     const recipe = migrateRecipe(id, r);
     if (recipe) recipes[id] = recipe;
   }
-  return { version: 2, recipes };
+  return { version: 3, recipes };
 }
 
 const store = createLocalStore(STORAGE_KEY, migrateStore);
 
 function update(change: (recipes: Record<string, Recipe>) => Record<string, Recipe>) {
-  const current = store.load() ?? { version: 2 as const, recipes: {} };
+  const current = store.load() ?? { version: 3 as const, recipes: {} };
   store.save({ ...current, recipes: change(current.recipes) });
 }
 
@@ -232,7 +282,7 @@ export function saveAiRecipe(draft: RecipeDraft, prompt?: string): Recipe {
 
 /** Alle Rezepte auf einmal ersetzen (Küchenhelfer: Übernehmen/Rückgängig) */
 export function replaceRecipes(recipes: Record<string, Recipe>) {
-  store.save({ version: 2, recipes });
+  store.save({ version: 3, recipes });
 }
 
 /** KI-Rezept ohne Speichern anlegen (wie `saveAiRecipe`), z. B. für eine Vorschau */

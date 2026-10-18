@@ -148,7 +148,7 @@ export type SpontanIdea = {
 };
 
 /** Hat man meistens im Haus – zählt nicht als Einkauf */
-const AT_HOME = /^(salz|pfeffer|öl|olivenöl|rapsöl|wasser|zucker|mehl|essig|butter|brühe|gemüsebrühe|gewürze?|zwiebeln?|knoblauch|knoblauchzehen?|tomatenmark|senf|ketchup|kräuter|petersilie|schnittlauch|paprikapulver|currypulver|curry|muskat|oregano|basilikum|thymian|zimt|backpulver|honig|sojasoße|sojasauce|lorbeer\w*)$/i;
+export const AT_HOME = /^(salz|pfeffer|öl|olivenöl|rapsöl|wasser|zucker|mehl|essig|butter|brühe|gemüsebrühe|gewürze?|zwiebeln?|knoblauch|knoblauchzehen?|tomatenmark|senf|ketchup|kräuter|petersilie|schnittlauch|paprikapulver|currypulver|curry|muskat|oregano|basilikum|thymian|zimt|backpulver|honig|sojasoße|sojasauce|lorbeer\w*)$/i;
 
 /** Einfache Klassiker, die oft mit dem gehen, was da ist */
 const CLASSICS: { title: string; minutes: number; needs: string[]; category: RecipeCategory }[] = [

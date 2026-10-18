@@ -134,6 +134,64 @@ export const HEALTH_TIP_LEVELS: { value: HealthTipLevel; label: string; hint: st
   { value: "oefter", label: "Gern öfter", hint: "Bis zu drei Tipps pro Woche" },
 ];
 
+/** Für wen gekocht wird (Profil v14) – Sprache, Portionen, Kinder-Funktionen */
+export type HouseholdType = "single" | "paar" | "familie" | "wg";
+
+export const HOUSEHOLD_TYPES: { value: HouseholdType; emoji: string; label: string }[] = [
+  { value: "single", emoji: "🙋", label: "Nur für mich" },
+  { value: "paar", emoji: "👫", label: "Zu zweit" },
+  { value: "familie", emoji: "👨‍👩‍👧‍👦", label: "Familie mit Kindern" },
+  { value: "wg", emoji: "🏠", label: "WG/Mehrpersonen" },
+];
+
+/** Aus den Personen ableiten (bestehende Profile, Formular) */
+export function deriveHouseholdType(adults: number, kids: number): HouseholdType {
+  if (kids > 0) return "familie";
+  if (adults <= 1) return "single";
+  if (adults === 2) return "paar";
+  return "wg";
+}
+
+/**
+ * Typ passend halten, wenn sich die Personen ändern: Kinder → Familie, mehr
+ * Leute als "Nur für mich"/"Zu zweit" → Zu zweit bzw. WG. Sonst bleibt die Wahl
+ * (Kinder-Funktionen hängen ohnehin an `hasKids`).
+ */
+export function fitHouseholdType(type: HouseholdType, persons: Pick<Person, "role">[]): HouseholdType {
+  const kids = persons.filter((p) => p.role === "kind").length;
+  const adults = persons.length - kids;
+  if (kids > 0) return "familie";
+  if (type === "single" && adults > 1) return deriveHouseholdType(adults, 0);
+  if (type === "paar" && adults > 2) return "wg";
+  return type;
+}
+
+/** Kinder im Haushalt? (Wunschtag, Kinder-Schritte, Kita/Schule …) */
+export function hasKids(profile: Pick<HouseholdProfile, "persons">): boolean {
+  return profile.persons.some((p) => p.role === "kind");
+}
+
+/** Nur für mich → "du" statt "ihr" */
+export function isSolo(profile: Pick<HouseholdProfile, "householdType"> | null | undefined): boolean {
+  return profile?.householdType === "single";
+}
+
+/** Kleiner Haushalt (1–2 Personen): kleine Mengen, Reste bewusst einplanen */
+export function isSmallHousehold(profile: Pick<HouseholdProfile, "householdType">): boolean {
+  return profile.householdType === "single" || profile.householdType === "paar";
+}
+
+/** "eure Familie" / "dein Haushalt" / "euer Haushalt" */
+export function householdNoun(profile: Pick<HouseholdProfile, "householdType"> | null | undefined): { noun: string; your: string } {
+  const type = profile?.householdType ?? "familie";
+  if (type === "familie") return { noun: "Familie", your: "eure Familie" };
+  if (type === "single") return { noun: "Haushalt", your: "dein Haushalt" };
+  return { noun: "Haushalt", your: "euer Haushalt" };
+}
+
+/** Küchenmaschine mit Kochfunktion (Profil v14) */
+export type KitchenMachine = "keine" | "thermomix";
+
 /** Wie oft Tipps auf Lottes Platz kommen (Profil v13) */
 export type TipLevel = "aus" | "ab_und_zu" | "taeglich";
 
@@ -180,7 +238,7 @@ export type PauseSettings = { from: string; until: string | null };
 export type WeatherSettings = { consent: boolean; postcode: string };
 
 export type HouseholdProfile = {
-  version: 13;
+  version: 14;
   householdName: string;
   adults: number;
   kids: number;
@@ -217,6 +275,10 @@ export type HouseholdProfile = {
   newPerWeek: NewDishesPerWeek;
   /** Tipps auf Lottes Platz (Profil v13, Standard "ab und zu") */
   tips: TipLevel;
+  /** Für wen gekocht wird (Profil v14) */
+  householdType: HouseholdType;
+  /** Thermomix bzw. Küchenmaschine mit Kochfunktion (Profil v14) */
+  kitchenMachine: KitchenMachine;
   updatedAt: string;
 };
 
@@ -312,7 +374,7 @@ export function createPerson(role: PersonRole): Person {
 
 export function createEmptyProfile(): HouseholdProfile {
   return {
-    version: 13,
+    version: 14,
     householdName: "",
     adults: 2,
     kids: 1,
@@ -345,6 +407,8 @@ export function createEmptyProfile(): HouseholdProfile {
     cookingStyle: "gefuehl",
     newPerWeek: 1,
     tips: "ab_und_zu",
+    householdType: "familie",
+    kitchenMachine: "keine",
     updatedAt: "",
   };
 }
@@ -381,8 +445,13 @@ export function wishDayKids(profile: Pick<HouseholdProfile, "persons" | "wishDay
 }
 
 /** Kochtage der Standardwoche für Fleisch/Veggie/Fisch (Wunschtag zählt nicht mit) */
-export function standardWeekDays(profile: Pick<HouseholdProfile, "wishDay">): number {
-  return profile.wishDay.enabled ? 6 : 7;
+export function standardWeekDays(profile: Pick<HouseholdProfile, "wishDay" | "persons">): number {
+  return wishDayActive(profile) ? 6 : 7;
+}
+
+/** Wunschtag gilt nur mit Kindern im Haushalt */
+export function wishDayActive(profile: Pick<HouseholdProfile, "wishDay" | "persons">): boolean {
+  return profile.wishDay.enabled && hasKids(profile);
 }
 
 /**
@@ -489,7 +558,7 @@ export function normalizeMealTime(value: unknown, fallback: MealTime): MealTime 
 export function migrateProfile(raw: unknown): HouseholdProfile | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as Record<string, unknown>;
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(data.version as number)) return null;
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].includes(data.version as number)) return null;
 
   const defaults = createEmptyProfile();
 
@@ -574,6 +643,14 @@ export function migrateProfile(raw: unknown): HouseholdProfile | null {
     newPerWeek: data.newPerWeek === 2 ? 2 : 1,
     // Bis v12: Tipps "ab und zu"
     tips: data.tips === "aus" || data.tips === "taeglich" ? data.tips : "ab_und_zu",
+    // Bis v13: aus den Personen ableiten (Kinder → Familie), keine Küchenmaschine
+    householdType: HOUSEHOLD_TYPES.some((t) => t.value === data.householdType)
+      ? (data.householdType as HouseholdType)
+      : deriveHouseholdType(
+          persons.filter((p) => p.role === "erwachsen").length || adults,
+          persons.filter((p) => p.role === "kind").length || (persons.length ? 0 : kids),
+        ),
+    kitchenMachine: data.kitchenMachine === "thermomix" ? "thermomix" : "keine",
     updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : "",
   };
 }

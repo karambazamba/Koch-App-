@@ -159,7 +159,8 @@ Bei ALLEN Änderungen beachten.
 
 - Erstes Kennenlernen als Gespräch (`/profil` ohne Profil → `OnboardingChat`,
   Vollbild im Stil des Küchenhelfer-Panels). Ablauf rein in
-  `src/lib/onboarding/engine.ts` (Begrüßung, Name/Stimme der Küchenhilfe,
+  `src/lib/onboarding/engine.ts` (Begrüßung, "Für wen kochst du?" (Haushaltstyp,
+  siehe unten), Name/Stimme der Küchenhilfe,
   Familienname, "Wer isst bei euch mit?", Namen bestätigen mit antippbaren
   Chips und Schreibvarianten aus `names.ts`, pro Person "Erzähl mir kurz was
   über …" – nachgefragt wird nur Pflicht: Rolle, bei Kindern Gruppe –,
@@ -466,3 +467,52 @@ Bei ALLEN Änderungen beachten.
   Küchenhelfers (auch künftige Push) immer über `helperMessage()` →
   "<Name>: …". Die KI bekommt Name, Familie und Ton aus dem Leitbild
   (`identityPrompt()`).
+- Haushaltstypen (Profil v14 `householdType`: single/paar/familie/wg,
+  `HOUSEHOLD_TYPES`): erste Frage im Kennenlernen "Für wen kochst du?" (🙋 Nur
+  für mich / 👫 Zu zweit / 👨‍👩‍👧‍👦 Familie mit Kindern / 🏠 WG/Mehrpersonen,
+  auch frei per `householdTypeFrom`). Ohne Kinder kürzer: keine Personen-Runde
+  (alle erwachsen), Familienname nur bei Familie (WG optional "Name eurer WG"),
+  bei "Nur für mich" du-Form ("Wie heißt du?", `isSolo()`). Einstellbar unter
+  `/profil/haushalt` (Kacheln). Sprache: "Unsere Familie" nur bei Familie,
+  sonst "Mein/Unser Haushalt" (`householdNoun`). Bestehende Profile: Typ aus
+  den Personen (`deriveHouseholdType`, Kinder → Familie); kommen Personen
+  dazu, passt `fitHouseholdType` an. Kinder-Funktionen (Wunschtag –
+  `wishDayActive`, Kinder-Schritte beim Backen, Kita/Schule-Fragen,
+  Kinder-Tipps) nur mit Kindern (`hasKids`). Kleiner Haushalt
+  (`isSmallHousehold`, 1–2 Personen): Einkaufsliste rechnet Rezeptmengen auf
+  die Personen des Tages um und rundet auf (g/ml auf 50, Stück ganz;
+  `buildShoppingList(…, { small })`), "doppelt kochen" heißt "Reicht für
+  morgen", bei Resten im Kühlschrank bietet Lotte "Einfrieren" an, Tipps
+  Vorrat/Einfrieren zuerst. Wochenend-Ideen (Tipp-Kategorie `wochenende`,
+  Fr–So, `audience` kids/nokids/paar): ohne Kinder Freunde einladen,
+  Wochenmarkt, Kochabend zu zweit, Brunch, Ausflug, Neues ausprobieren.
+- Backen (Kochbuch v3: `kind` "kochen"/"backen", `oven` {mode, temp, minutes},
+  `pan`, `kidSteps`, `machineSteps`): Backrezepte immer in g/ml. Eingebaute
+  Backstube `src/lib/baking/` (20 Familienrezepte, IDs `b:<id>`, lesbar und
+  backbar wie eigene; "In unsere Rezepte" = `adoptBuiltin`). Filter
+  "🧁 Backen" in "Unsere Rezepte" zeigt eigene Backrezepte und darunter "Aus
+  unserer Backstube". "Zusammen backen" (`CookMode`): Backofen + Form auf der
+  Zutatenseite, Schritte mit Zeit bieten "<n> Min – ich sag Bescheid" →
+  sichtbarer Timer (`role="timer"`, läuft über alle Schritte, am Ende Ton per
+  Web Audio + Vibration); Kinder-Schritte "🧒 <Kind> darf jetzt:" reihum
+  (`kidStepLabel`). Küchenhelfer: Backwünsche ("Können wir einen Apfelkuchen
+  backen?", "Was kann ich mit den Kindern backen?", `isBakingRequest`) →
+  bis zu 3 Rezepte mit "Zusammen backen"/"Rezept" (ohne KI). KI-Backrezepte
+  später.
+- Im Supermarkt fragen (`src/lib/market.ts`): "im Angebot", "ich steh grad
+  im …", "hier gibt's …" (`isMarketSituation`, Produkt `marketProduct`) →
+  besonders kurze Antwort mit 2–3 Ideen samt Zeit (Kochbuch zuerst, dann
+  Vorlagen; `marketIdeas`), "Was du dafür noch brauchst: …" (ohne Vorrat,
+  Einkaufsliste und Grundzutaten). "Auf die Liste" legt Produkt + Fehlendes
+  als `now`-Artikel an → Abschnitt "Jetzt mitnehmen" ganz oben in der
+  Einkaufsliste (bis abgehakt), mit Rückgängig. "Statt <Tag> einplanen"
+  (`marketTargetDay`: heute vor der Essenszeit oder nächstes geplantes
+  Gericht) → `takeForDay`, das bisherige Gericht rutscht auf den nächsten
+  freien Tag, mit Rückgängig. `MarketAnswer.source` ist offen für "foto"
+  (Produkt/Angebotsschild per KI später).
+- Thermomix (Profil v14 `kitchenMachine` "keine"/"thermomix", Küchenstil →
+  "So kocht ihr" → Küchenmaschine): Rezepte mit `machineSteps` zeigen den
+  Umschalter "Mit Thermomix"/"Klassisch" (`MachineSteps.tsx`, gemerkt unter
+  `wasgibts.maschinenansicht`), "Schritte für Thermomix" mit Zeit/Temperatur/
+  Stufe/Linkslauf. Rein beschreibend – keine Logos, keine Partnerschaft.
+  Vorerst nur eingebaute Rezepte, KI später.

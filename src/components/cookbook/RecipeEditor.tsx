@@ -19,7 +19,9 @@ import {
   saveRecipe,
   useRecipes,
   type Recipe,
+  type OvenMode,
   type RecipeCategory,
+  type RecipeKind,
   type RecipeSource,
 } from "@/lib/cookbook";
 
@@ -100,6 +102,66 @@ function EditorForm({ existing }: { existing?: Recipe }) {
           />
         </label>
 
+        <ChoiceGroup<RecipeKind>
+          label="Typ"
+          value={recipe.kind}
+          onChange={(kind) => update({ kind, oven: kind === "backen" ? (recipe.oven ?? { mode: "ober-unter", temp: 180, minutes: 40 }) : recipe.oven })}
+          options={[
+            { value: "kochen", label: "🍲 Kochen" },
+            { value: "backen", label: "🧁 Backen" },
+          ]}
+          columns={2}
+        />
+
+        {recipe.kind === "backen" && (
+          <section className={`${CARD} flex flex-col gap-3 p-4`} aria-label="Backofen">
+            <h3 className={SECTION_TITLE}>Backofen</h3>
+            <div className="flex gap-2">
+              <select
+                value={recipe.oven?.mode ?? "ober-unter"}
+                onChange={(e) => update({ oven: { ...(recipe.oven ?? { temp: 180, minutes: 40 }), mode: e.target.value as OvenMode } })}
+                aria-label="Heizart"
+                className={`${INPUT_BASE} h-12 min-w-0 flex-1 px-2`}
+              >
+                <option value="ober-unter">Ober-/Unterhitze</option>
+                <option value="umluft">Umluft</option>
+              </select>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={recipe.oven?.temp ?? ""}
+                onChange={(e) => update({ oven: { ...(recipe.oven ?? { mode: "ober-unter", minutes: 40 }), temp: Number(e.target.value) || 0 } })}
+                aria-label="Temperatur in Grad"
+                className={`${INPUT_BASE} h-12 w-20 px-2 text-center font-bold`}
+              />
+              <span className="self-center text-muted">°C</span>
+            </div>
+            <label className="flex items-center justify-between gap-3">
+              <span className="text-base font-bold">Backzeit</span>
+              <span className="flex items-center gap-2">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={recipe.oven?.minutes ?? ""}
+                  onChange={(e) => update({ oven: { ...(recipe.oven ?? { mode: "ober-unter", temp: 180 }), minutes: Number(e.target.value) || 0 } })}
+                  aria-label="Backzeit in Minuten"
+                  className={`${INPUT_BASE} h-12 w-20 px-2 text-center font-bold`}
+                />
+                <span className="text-muted">Min.</span>
+              </span>
+            </label>
+            <input
+              type="text"
+              value={recipe.pan}
+              onChange={(e) => update({ pan: e.target.value })}
+              placeholder="Form, z. B. Springform 26 cm"
+              aria-label="Formgröße"
+              className={INPUT}
+            />
+            <p className="text-sm text-muted">Beim Backen Mengen am besten in g und ml – das wird genauer.</p>
+          </section>
+        )}
+
         <ChoiceGroup<RecipeCategory>
           label="Kategorie"
           value={recipe.category}
@@ -110,7 +172,7 @@ function EditorForm({ existing }: { existing?: Recipe }) {
 
         <div className={`${CARD} divide-y divide-line px-4 py-1`}>
           <NumberStepper
-            label="Personen"
+            label={recipe.kind === "backen" ? "Stück" : "Personen"}
             value={recipe.servings}
             min={1}
             max={12}

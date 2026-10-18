@@ -13,6 +13,7 @@ import {
   createEmptyProfile,
   personLabel,
   wishDayKids,
+  wishDayActive,
   type HouseholdProfile,
   type WeekRules,
 } from "@/lib/profile";
@@ -87,7 +88,7 @@ function initialWish(
   profile: HouseholdProfile | null,
   weeks: Record<string, WeekPlan>,
 ): WeekPlan["wish"] {
-  if (!profile?.wishDay.enabled) return null;
+  if (!profile || !wishDayActive(profile)) return null;
   const { weekday } = profile.wishDay;
   const kids = wishDayKids(profile);
   if (plan.wish && kids.some((k) => k.id === plan.wish!.kidId)) {
