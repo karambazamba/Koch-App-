@@ -9,8 +9,8 @@ import { WEEKDAYS } from "../profile";
 import type { CreateMessage } from "./engine";
 
 type ToolUse = { name: string; input: Record<string, unknown>; id?: string };
-type WeekResult = { tage: { tag: string; ausflug?: boolean; gericht?: string | null }[] };
-type CookbookResult = { rezepte: { rezept_id: string; titel: string }[] };
+type WeekResult = { tage: { tag: string; ausflug?: boolean; gericht?: string | null; pause?: boolean; wochenende?: string }[] };
+type CookbookResult = { rezepte: { rezept_id: string; titel: string; bekannt?: boolean; minuten?: number }[] };
 
 const DAY_RE = new RegExp(`\\b(${WEEKDAYS.join("|")})\\b`, "gi");
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
@@ -79,14 +79,13 @@ function neverAgainTitles(system: string): string[] {
     .map((l) => l.slice(2).split(";")[0].trim());
 }
 
-/** Reste-Ideen im Testmodus: Kochbuch-Rezepte (ohne Nie-wieder) plus Beispielideen */
+/** Spontan-Ideen im Testmodus: Kochbuch-Rezepte (ohne Nie-wieder) plus Beispielideen */
 function leftoverReply(intentValue: string, system: string): string | null {
-  const m = intentValue.match(/Ideen für unsere Reste: (.*)\. Basis: ([^.]+)\./);
+  const m = intentValue.match(/Spontan kochen mit dem, was da ist: (.*?)\.(?: Wünsche: ([^.]+)\.)? Bitte/);
   if (!m) return null;
-  const base = m[2].trim();
   const banned = neverAgainTitles(system).map((t) => t.toLowerCase());
   const fromBook = cookbookTitles(system).filter((t) => !banned.includes(t.toLowerCase()));
-  const extra = base === "egal" ? ["Resteomelett", "Gemüsepfanne", "Bunte Suppe"] : [`Resteauflauf mit ${base}`, `Gemüsepfanne mit ${base}`, `Bunte Bowl mit ${base}`];
+  const extra = ["Resteomelett (10 Min.)", "Gemüsepfanne (15 Min.)", "Bunte Suppe (20 Min.)"];
   const ideas = [...fromBook.slice(0, 1), ...extra].slice(0, 3);
   return `Aus ${m[1]} fallen mir drei Sachen ein (Testmodus): ${ideas[0]}, ${ideas[1]} oder ${ideas[2]}. Welche soll's werden?`;
 }
@@ -125,6 +124,7 @@ function plan(intent: string, system: string) {
     titles,
     wish: wish ? { kind: wish[1], tag: cap(wish[2]), gericht: wish[3].trim() } : null,
     restVeggie: /\b(der |den )?rest\b/i.test(intent) && /veg/i.test(intent),
+    planWeek: /\bplan\w*\s+(mir |uns )?(bitte )?(die |unsere )?(nächste |diese )?woche\b|\bwoche planen\b|was für die nächsten tage/i.test(intent),
     clear: /(leer|lösch|streich)/i.test(intent) ? daysIn(intent) : [],
     double: /(doppelt|reste für morgen)/i.test(intent) ? daysIn(intent) : [],
     swap: /(tausch|verschieb)/i.test(intent) ? daysIn(intent) : [],
@@ -133,6 +133,30 @@ function plan(intent: string, system: string) {
       intent.match(/einkaufsliste\s*:\s*(.+)$/i)?.[1] ??
       null,
   };
+}
+
+/**
+ * Wochenplanung im Testmodus: bekannte Gerichte, schnellste zuerst, und
+ * `perWeek` neue (unbekannte Kochbuch-Rezepte, sonst ein KI-Rezept = recipe
+ * null) – verteilt auf die Wochenmitte. Reichen die bekannten nicht, bleiben
+ * Tage frei.
+ */
+export function pickWeekDishes(
+  book: CookbookResult["rezepte"],
+  free: string[],
+  perWeek: number,
+): { tag: string; recipe: CookbookResult["rezepte"][number] | null }[] {
+  const known = book.filter((r) => r.bekannt).sort((a, b) => (a.minuten ?? 999) - (b.minuten ?? 999));
+  const fresh = book.filter((r) => r.bekannt === false);
+  const newCount = Math.min(perWeek, free.length);
+  const newDays = new Set(Array.from({ length: newCount }, (_, i) => free[Math.floor(((i + 1) * free.length) / (newCount + 1))]));
+  let k = 0;
+  let f = 0;
+  return free.flatMap((tag) => {
+    if (newDays.has(tag)) return [{ tag, recipe: fresh[f++] ?? null }];
+    const recipe = known[k++];
+    return recipe ? [{ tag, recipe }] : [];
+  });
 }
 
 const parse = <T,>(s: unknown): T | null => {
@@ -190,7 +214,7 @@ export function createMockModel(): CreateMessage {
         );
       }
       const actionable =
-        intent.myDays.length || intent.wish || intent.restVeggie || intent.clear.length || intent.double.length || intent.swap.length >= 2 || intent.shopping;
+        intent.myDays.length || intent.wish || intent.restVeggie || intent.planWeek || intent.clear.length || intent.double.length || intent.swap.length >= 2 || intent.shopping;
       if (!actionable) {
         const name = system.match(/^Du bist ([^,]+),/)?.[1] ?? "dein Küchenhelfer";
         return text(`Ich bin ${name} (Testmodus). Sag zum Beispiel: „Donnerstag und Freitag gibt es meine Rezepte, Mattis wünscht sich Sonntag Milchreis, der Rest vegetarische KI-Rezepte.“`);
@@ -267,6 +291,33 @@ export function createMockModel(): CreateMessage {
             },
           });
         }
+      }
+      if (intent.planWeek && book) {
+        // Überwiegend Bekanntes und Schnelles, dazu so viel Neues wie gewünscht
+        const free = week.tage.filter((d) => main(d.tag) && !main(d.tag)!.gericht && !d.pause && d.wochenende !== "frei" && !taken.has(d.tag)).map((d) => d.tag);
+        const perWeek = Number(system.match(/Neue Gerichte pro Woche: (\d)/)?.[1] ?? 1);
+        const picks = pickWeekDishes(book.rezepte, free, perWeek);
+        const persons = Number(system.match(/, (\d+) Personen/)?.[1] ?? 4);
+        picks.forEach(({ tag, recipe }, n) => {
+          if (recipe) {
+            uses.push({ name: "gericht_setzen", input: { woche: intent.week, tag, rezept_id: recipe.rezept_id } });
+            return;
+          }
+          const r = VEGGIE[n % VEGGIE.length];
+          uses.push({
+            id: `mock_rezept_${tag}_${n}`,
+            name: "rezept_erstellen",
+            input: {
+              titel: r.titel,
+              kategorie: "vegetarisch",
+              portionen: persons,
+              zubereitungszeit_min: r.zeit,
+              zutaten: r.zutaten.map(([menge, einheit, name]) => ({ menge: scale(menge, einheit, persons), einheit, name })),
+              schritte: r.schritte,
+              fuer_plan: true,
+            },
+          });
+        });
       }
       return uses.length ? tools(uses) : text("Ich habe nichts gefunden, was ich ändern könnte – sag mir gern genauer, was du möchtest.");
     }

@@ -142,7 +142,7 @@ export function buildWeek(
       return {
         origin: "wunsch",
         stored: { kind: "wish", kidId: activeWish.kidId, text: activeWish.text },
-        title: activeWish.text.trim() || "Wunsch noch offen",
+        title: activeWish.text.trim() || "Wunsch kommt noch",
         category: null,
         kidName: kid && profile ? personLabel(kid, profile.persons) : "Kind",
         double: false,
@@ -180,7 +180,7 @@ export function buildWeek(
       return {
         origin: "eigen",
         stored: entry,
-        title: entry.text.trim() || "Wunsch noch offen",
+        title: entry.text.trim() || "Wunsch kommt noch",
         category: null,
         kidName: kid && profile ? personLabel(kid, profile.persons) : "Kind",
         double,

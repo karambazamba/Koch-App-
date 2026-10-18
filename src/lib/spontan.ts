@@ -3,9 +3,9 @@
 // 20 Minuten – funktioniert alles ohne Wochenplan und ohne KI.
 
 import { germanNumber } from "./leftovers/ruleParser";
-import type { Recipe } from "./cookbook";
+import type { Recipe, RecipeCategory } from "./cookbook";
 import type { PantryItem } from "./pantry";
-import { formatPantryItem } from "./pantry";
+import { formatPantryItem, sameIngredient } from "./pantry";
 import type { NeverAgainEntry, PauseSettings } from "./profile";
 import { isNeverAgain } from "./ratings";
 import { sectionFor } from "./shoppingList";
@@ -119,4 +119,99 @@ export function quickIdeas(recipes: Record<string, Recipe>, neverAgain: NeverAga
 /** Verderbliches im Vorrat (für "vor der Pause aufbrauchen") */
 export function perishables(pantry: PantryItem[]): string[] {
   return pantry.filter((p) => ["obst-gemuese", "kuehlregal", "fleisch-fisch", "brot"].includes(sectionFor(p.name))).map((p) => p.name).slice(0, 4);
+}
+
+// --- Spontan kochen: mit dem, was da ist ------------------------------------------
+
+export type SpontanFilter = "schnell" | "reste" | "einkauf";
+
+export const SPONTAN_FILTERS: { value: SpontanFilter; label: string }[] = [
+  { value: "schnell", label: "⚡ unter 20 Min" },
+  { value: "reste", label: "♻️ Reste zuerst" },
+  { value: "einkauf", label: "🛒 1 Sache darf fehlen" },
+];
+
+export type SpontanIdea = {
+  /** Rezept-ID oder "k:<Titel>" für einen Klassiker */
+  id: string;
+  title: string;
+  minutes: number | null;
+  category: RecipeCategory | null;
+  recipeId?: string;
+  /** Genutzte Sachen aus dem Vorrat */
+  uses: string[];
+  /** Was noch geholt werden müsste (höchstens 1, nur mit Filter) */
+  extra: string[];
+};
+
+/** Hat man meistens im Haus – zählt nicht als Einkauf */
+const AT_HOME = /^(salz|pfeffer|öl|olivenöl|rapsöl|wasser|zucker|mehl|essig|butter|brühe|gemüsebrühe|gewürze?|zwiebeln?|knoblauch|knoblauchzehen?|tomatenmark|senf|ketchup|kräuter|petersilie|schnittlauch|paprikapulver|currypulver|curry|muskat|oregano|basilikum|thymian|zimt|backpulver|honig|sojasoße|sojasauce|lorbeer\w*)$/i;
+
+/** Einfache Klassiker, die oft mit dem gehen, was da ist */
+const CLASSICS: { title: string; minutes: number; needs: string[]; category: RecipeCategory }[] = [
+  { title: "Rührei mit Brot", minutes: 10, needs: ["Eier", "Brot"], category: "vegetarisch" },
+  { title: "Käsebrot mit Rohkost", minutes: 10, needs: ["Brot", "Käse"], category: "vegetarisch" },
+  { title: "Grießbrei", minutes: 10, needs: ["Grieß", "Milch"], category: "vegetarisch" },
+  { title: "Nudeln mit Pesto", minutes: 15, needs: ["Nudeln", "Pesto"], category: "vegetarisch" },
+  { title: "Omelett mit Gemüse", minutes: 15, needs: ["Eier", "Paprika"], category: "vegetarisch" },
+  { title: "Wraps mit Gemüse", minutes: 15, needs: ["Wraps", "Paprika"], category: "vegetarisch" },
+  { title: "Ofen-Baguette", minutes: 15, needs: ["Baguette", "Käse"], category: "vegetarisch" },
+  { title: "Tomatensuppe mit Toast", minutes: 15, needs: ["Tomaten", "Toast"], category: "vegetarisch" },
+  { title: "Nudeln mit Tomatensoße", minutes: 20, needs: ["Nudeln", "Tomaten"], category: "vegetarisch" },
+  { title: "Pfannkuchen", minutes: 20, needs: ["Eier", "Milch"], category: "vegetarisch" },
+  { title: "Gemüsepfanne mit Reis", minutes: 25, needs: ["Reis", "Möhren"], category: "vegetarisch" },
+  { title: "Bratkartoffeln mit Spiegelei", minutes: 25, needs: ["Kartoffeln", "Eier"], category: "vegetarisch" },
+  { title: "Kartoffelsuppe", minutes: 30, needs: ["Kartoffeln", "Möhren"], category: "vegetarisch" },
+  { title: "Milchreis", minutes: 30, needs: ["Reis", "Milch"], category: "vegetarisch" },
+];
+
+/** Ohne Vorrat: schnelle Klassiker, die meistens gehen */
+const USUALLY_THERE = ["Rührei mit Brot", "Nudeln mit Tomatensoße", "Pfannkuchen", "Käsebrot mit Rohkost", "Nudeln mit Pesto"];
+
+/**
+ * Drei Ideen mit dem, was da ist: Kochbuch und Klassiker, ohne Einkauf
+ * (Filter "einkauf": eine Sache darf fehlen), schnellste zuerst bzw. mit
+ * "reste" die mit den meisten Resten. Leerer Vorrat → Klassiker, die meistens
+ * gehen.
+ */
+export function spontanIdeas(
+  recipes: Record<string, Recipe>,
+  pantry: PantryItem[],
+  filters: SpontanFilter[],
+  neverAgain: NeverAgainEntry[],
+): SpontanIdea[] {
+  const fast = filters.includes("schnell");
+  const allowed = filters.includes("einkauf") ? 1 : 0;
+  const byTime = (a: SpontanIdea, b: SpontanIdea) => (a.minutes ?? 999) - (b.minutes ?? 999);
+  const allowedIdea = (i: SpontanIdea) => !isNeverAgain(i.title, neverAgain) && (!fast || (i.minutes !== null && i.minutes <= 20));
+
+  if (pantry.length === 0) {
+    return CLASSICS.filter((c) => USUALLY_THERE.includes(c.title))
+      .map((c) => ({ id: `k:${c.title}`, title: c.title, minutes: c.minutes, category: c.category, uses: [], extra: [] }))
+      .filter(allowedIdea)
+      .sort(byTime)
+      .slice(0, 3);
+  }
+
+  const check = (names: string[]) => {
+    const needed = names.filter((n) => n.trim() && !AT_HOME.test(n.trim()));
+    const uses = pantry.filter((p) => needed.some((n) => sameIngredient(n, p.name))).map((p) => p.name);
+    const extra = needed.filter((n) => !pantry.some((p) => sameIngredient(n, p.name)));
+    return { uses, extra };
+  };
+  const fromBook: SpontanIdea[] = Object.values(recipes).map((r) => ({
+    id: r.id,
+    title: r.title,
+    minutes: r.prepMinutes,
+    category: r.category,
+    recipeId: r.id,
+    ...check(r.ingredients.map((i) => i.name)),
+  }));
+  const classics: SpontanIdea[] = CLASSICS.map((c) => ({ id: `k:${c.title}`, title: c.title, minutes: c.minutes, category: c.category, ...check(c.needs) }));
+  const ideas = [...fromBook, ...classics].filter((i) => i.uses.length > 0 && i.extra.length <= allowed && allowedIdea(i));
+  const sorted = filters.includes("reste")
+    ? ideas.sort((a, b) => b.uses.length - a.uses.length || byTime(a, b))
+    : ideas.sort((a, b) => byTime(a, b) || b.uses.length - a.uses.length);
+  // Gleiche Titel (Kochbuch + Klassiker) nur einmal
+  return sorted.filter((i, n) => sorted.findIndex((o) => o.title.toLowerCase() === i.title.toLowerCase()) === n).slice(0, 3);
 }

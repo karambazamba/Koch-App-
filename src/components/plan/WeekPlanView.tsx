@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, ClipboardList, FolderOpen, History, Save } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
@@ -88,8 +89,13 @@ export function WeekPlanView() {
   const [view, setView] = useState<"tag" | "woche">("tag");
   const [offset, setOffset] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
-  const [sheet, setSheet] = useState<SheetState>(null);
+  const [openSheet, setSheet] = useState<SheetState>(null);
   const [toast, setToast] = useState("");
+  // Von der Startseite "Tauschen" (?tauschen=heute): Rezeptauswahl für heute
+  // öffnen – einmal je Aufruf (bfcacheId wechselt bei jeder neuen Navigation)
+  const params = useSearchParams();
+  const { bfcacheId } = useRouter();
+  const [swapHandled, setSwapHandled] = useState<string | null>(null);
 
   if (!today || profile === undefined || !weekPlans || !mealPlans || !recipes || !templates) return SKELETON;
 
@@ -103,7 +109,12 @@ export function WeekPlanView() {
   const defaultDay = week.days.find((d) => d.date === todayIso)?.weekday ?? week.days[0].weekday;
   const selectedDay = week.days.find((d) => d.weekday === selected) ?? week.days.find((d) => d.weekday === defaultDay)!;
   const index = week.days.indexOf(selectedDay);
-  const close = () => setSheet(null);
+  const swapToday = params.get("tauschen") === "heute" && swapHandled !== bfcacheId && offset === 0;
+  const sheet: SheetState = openSheet ?? (swapToday ? { type: "pick", weekday: defaultDay } : null);
+  const close = () => {
+    setSheet(null);
+    setSwapHandled(bfcacheId);
+  };
   const sheetDay = sheet && "weekday" in sheet ? week.days.find((d) => d.weekday === sheet.weekday) : undefined;
   const budget = planForWeek(weekPlans, weekStart)?.budgetEuro ?? null;
   const cost = weekCost(week, recipes);
@@ -233,6 +244,7 @@ export function WeekPlanView() {
         <EntrySheet
           slot={sheetDay.slot}
           day={sheetDay}
+          recipe={sheetDay.slot.entry?.recipeId ? recipes[sheetDay.slot.entry.recipeId] : undefined}
           onDouble={(double) => setDouble(weekStart, sheetDay.slot, double)}
           onClose={close}
           onSwap={() => setSheet({ type: "pick", weekday: sheetDay.weekday })}

@@ -26,6 +26,7 @@ Bei ALLEN Änderungen beachten.
 - Pause-Modus respektieren: dann absolute Ruhe.
 - Planen ist optional; alles funktioniert auch spontan.
 - Nie "Ich vermisse dich" oder Ähnliches – kein Buhlen um Aufmerksamkeit.
+- Wortwahl: In der ganzen App keine Wörter wie "fehlt", "offen", "überfällig", "noch zu erledigen", "verpasst", "Alles da". Stattdessen vorbereitend formulieren ("Für Montag", "Ich hab schon …", "Bereit für …").
 
 ## 4. Kennt die Familie
 - Profil, Küchenstil, Lieblingszutaten, Nie-wieder-Liste, eigene Produkte, Läden und bisherige Entscheidungen immer berücksichtigen.
@@ -107,24 +108,37 @@ Bei ALLEN Änderungen beachten.
   (`src/components/AppLogo.tsx`): Startseite Icon 44px + Schriftzug,
   Unterseiten 32px oben rechts im `PageHeader` als Link "Zur Startseite".
 - Startseite "Heute" (`src/components/home/HomeView.tsx`), passt ohne
-  Scrollen aufs iPhone, wenig Text, viel Weißraum:
+  Scrollen aufs iPhone (auch mit 375 px Breite), wenig Text, viel Weißraum:
   - Kopf: Logo, darunter klein das Datum, rechts Zahnrad zu `/profil`.
   - Große Heute-Karte (`HeroCard`): Bildfeld mit Akzent-Verlauf und Emoji
-    (später Rezeptbild), Label "HEUTE · 18:30" (Profil v10 `mealClock`),
-    Gerichtname, eine ruhige Zeile (Besonderheit wie "Mathis' Wunsch 🎉",
-    "Neu", "Reste" · Zeit · Personen), darunter Termine des Tages
-    (`src/lib/appointments.ts`, vorerst leer – Platz für Premium-Kalender).
-    Tippen öffnet das Rezept. Nichts geplant: "Spontan heute? Frag <Name>
-    einfach 😊" (mit KI im Chat, sonst zum Wochenplan).
+    (später Rezeptbild; Höhe passt sich dem Bildschirm an), Label
+    "HEUTE · 18:30" (Profil v10 `mealClock`), Gerichtname groß mit Status
+    "✓ kennt ihr" (grün) bzw. "Neu ✨", eine ruhige Zeile (Besonderheit wie
+    "Mathis' Wunsch 🎉", "Reste von …" · Zeit · Personen). Bekannt: dezent
+    "Rezept ansehen · Tauschen" (`/wochenplan?tauschen=heute` öffnet dort die
+    Rezeptauswahl für heute). Neu (oder Kochstil "nach Rezept"): "<n> Schritte
+    · <n> Zutaten" und Knopf "Los geht's – Schritt für Schritt"
+    (`/kochbuch/kochen`, nach der Essenszeit nicht mehr). Darunter evtl. der
+    Twist und die Termine des Tages (`src/lib/appointments.ts`, Uhrzeit ·
+    Farbpunkt der Person · Titel · wer bringt/holt; vorerst leer – Platz für
+    Premium-Kalender). Nichts geplant: "Noch nichts für heute – spontan was
+    kochen?" mit Knopf in den Spontan-Modus.
   - Darunter evtl. die schmale Bewertungszeile (`RatingRow`).
-  - Höchstens ein Satz vom Küchenhelfer (`HelperNote`, Avatar + Sprechblase,
-    max. 2 Chips), nur bei Wichtigem: fehlt etwas für morgen → wochenplanung
-    für nächste Woche → Lob → Gesundheits-Tipp; sonst nichts.
-  - Drei Bento-Karten Woche ("Morgen: Lachs" bzw. "5/7 geplant"), Einkauf
-    ("12 offen"), Kochbuch ("23 Rezepte").
-  - Unten fest `HomeAskBar`: "Sag <Name>, was ansteht …" (öffnet das Panel)
-    und großes Mikrofon (`openHelper("voice")`, Sprache startet direkt).
-    Auf der Startseite gibt es keinen schwebenden Knopf.
+  - Höchstens ein Satz vom Küchenhelfer (`useHelperNote` in `HelperNote.tsx`,
+    Avatar + Sprechblase, max. 2 Chips), nur bei Wichtigem: Einkauf für
+    morgen ("Für morgen hab ich … schon auf die Liste gesetzt") →
+    wochenplanung für nächste Woche → Lob → Gesundheits-Tipp; sonst nichts.
+    Ist ein Satz da, gibt es keinen Twist (immer nur ein Angebot).
+  - Drei Bento-Karten (unten, über "Spontan kochen"): Woche ("Morgen: Lachs"
+    bzw. "5/7 geplant"), Einkauf mit rundem "+" (leer: nur "Einkaufsliste";
+    sonst "Für Montag" bzw. "Diese Woche"/"Für heute" und klein "<n> Sachen";
+    nie "offen"/"Alles da"; Stammartikel nur in der Liste), Kochbuch
+    ("23 Rezepte"). Kartentitel nicht in Großbuchstaben, nie abgeschnitten.
+  - Unten fest `HomeBottomBar`: breiter Knopf "🥕 Spontan kochen – mit dem,
+    was da ist" (weiß, oranger Rand) und darunter EINE Leiste "Sag <Name>,
+    was ansteht …" mit Smiley-Topf links und Mikrofon im Feld rechts
+    (`openHelper("voice")`, Sprache startet direkt). Auf der Startseite gibt
+    es keinen schwebenden Knopf.
 
 ## Produktentscheidungen
 
@@ -243,27 +257,59 @@ Bei ALLEN Änderungen beachten.
   (`planningWeekStart`).
 - Migrationen: `createLocalStore` schreibt einen migrierten Stand einmalig
   zurück, wenn sich die Version geändert hat.
-- "Was ist noch da?" läuft über den Küchenhelfer: "Was ist noch da?" bzw.
-  "Reste" im Chat (oder `openHelper("reste")`) öffnet den Reste-Modus
-  (`openHelper("reste")`, `src/lib/assistant/open.ts`; `ChatState.reste`)
-  mit "Was ist noch da? Erzähl einfach." Gesagtes zerlegt `parseLeftovers()`
-  (`src/lib/leftovers/parser.ts`, austauschbar; Füllwörter, Zahlwörter,
-  Einheiten, unscharfer Abgleich mit `foods.ts`); erkannte Zutaten erscheinen
-  als Chips und landen im Vorrat (`wasgibts.vorrat`, `src/lib/pantry.ts`,
-  gleiche Zutaten werden zusammengezählt), Unbekanntes als grauer Chip
-  "Meintest du …?". Danach die Basis-Frage, dann 3 Vorschläge: mit KI über
-  den normalen Chat (Reste + Basis als Nachricht), ohne KI Kochbuch-Treffer
-  (`leftoverIdeas()` in `src/lib/leftovers/suggest.ts`: `matchRecipes()`,
-  gefiltert nach Basis, ohne "Nie wieder", Beliebtes zuerst). Die Seite
-  `/schnellkueche` ist nur noch die Übersicht "Noch da" (ändern/löschen) mit
-  Knopf "Mit <Name> kochen" – kein eigenes Mikrofon.
+- Spontan kochen (ein Knopf für "Was ist noch da?" und "Schnell"):
+  `openHelper("spontan")`, "Was ist noch da?"/"Reste"/"Spontan kochen" im Chat
+  oder die Seite `/schnellkueche` (Übersicht "Noch da" mit Knopf) öffnen den
+  Spontan-Modus im Küchenhelfer (`ChatState.spontan` = gewählte Filter,
+  `SpontanBoard`). Sofort 3 Ideen aus Vorrat und Kochbuch (`spontanIdeas()` in
+  `src/lib/spontan.ts`: Kochbuch + eingebaute Klassiker, ohne "Nie wieder",
+  ohne Einkauf – Gewürze/Öl/Zwiebel u. Ä. zählen als "hat man da" –,
+  schnellste zuerst; leerer Vorrat → Klassiker, die meistens gehen). Filter-
+  Chips (mehrfach): "⚡ unter 20 Min", "♻️ Reste zuerst", "🛒 1 Sache darf
+  fehlen". Gesagtes zerlegt `parseLeftovers()` (`src/lib/leftovers/parser.ts`,
+  austauschbar) und landet im Vorrat (`wasgibts.vorrat`, gleiche Zutaten
+  zusammengezählt), die Ideen rechnen sich live neu; Unbekanntes als grauer
+  Chip "Meintest du …?"; ein normaler Satz ohne Zutaten beendet den Modus.
+  "Für heute übernehmen" (`takeForToday()` in `src/lib/spontanTake.ts`)
+  ersetzt das heutige Gericht, das alte rutscht auf den nächsten freien Tag
+  (diese/nächste Woche), mit "Rückgängig"; ohne Übernehmen ändert sich nichts.
+  Mit KI zusätzlich "Andere Ideen von <Name>".
+- "Kennt ihr" oder "Neu" (`src/lib/dishStatus.ts`): bekannt = von Hand
+  "Kennen wir" (Kochbuch v2 `known`; Schalter im Wochenplan-Eintrag und auf
+  der Rezeptseite), 2× gekocht, eigenes Rezept schon gekocht, Wunsch und
+  Freitext. Neu = KI-Rezepte und neu angelegte Rezepte, die noch nie gekocht
+  wurden. Bei der Migration auf Kochbuch v2 gelten vorhandene eigene Rezepte
+  als bekannt. Kochstil im Küchenstil (`/profil/kochstil`, Profil v12
+  `cookingStyle`: "Wir kochen meist nach Gefühl" (Standard) / "gern nach
+  Rezept" = Rezept immer im Vordergrund; `newPerWeek` 1 oder 2 = Abenteuerlust).
+  Wochenplanung (KI-Prompt, `kochbuch_durchsuchen` liefert `bekannt` und
+  `minuten`; Testmodus `pickWeekDishes()`): überwiegend bekannte, schnelle
+  Gerichte, so viele neue wie `newPerWeek`.
+- Twist (`src/lib/twists.ts`, Speicher `wasgibts.twists`): bei bekannten
+  Gerichten höchstens 2× pro Planungswoche, nie an zwei Tagen hintereinander,
+  nie beim Wunschessen, nur ohne Helfer-Satz: dezent umrandet "✨ Lust auf
+  einen Twist? <Idee> – <x> Min extra." Antippen übernimmt ihn für heute
+  (Zutat als eigener Artikel mit Tag → "Heute holen"), mit "Rückgängig".
+  Vorerst feste Liste für gängige Gerichte, später KI.
+- Schritt für Schritt kochen (`/kochbuch/kochen?id=`, `CookMode`): erst die
+  Zutaten, dann ein Schritt pro Seite, Weiter/Zurück am Inhaltsende,
+  Bildschirm bleibt an (Wake Lock, wo möglich).
+- Plus für die Einkaufsliste (`QuickAddButton` in
+  `src/components/shopping/QuickAdd.tsx`, auf der Einkauf-Karte und oben auf
+  `/einkaufsliste`): rundes "+" (Trefferfläche 44×44) öffnet ein kleines
+  Panel mit Textfeld (Fokus) und Mikrofon. `parseQuickAdd()`
+  (`src/lib/quickAdd.ts`): Artikel, Menge und Laden ("Müsli von Rossmann"),
+  erkannt über Lebensmittel-Liste, Abteilungs-Stichwörter, Drogerie-/
+  Haushaltsartikel und eigene Produkte/Läden/Stammliste – nie automatisch
+  "korrigiert". Danach "<n> Sachen hinzugefügt ✓" mit "Rückgängig", Panel
+  schließt; Unbekanntes als grauer Chip zum Bestätigen.
 - Basis (`src/lib/bases.ts`): Kartoffeln, Reis, Nudeln, Quinoa/Couscous, Brot,
-  Salat oder "Egal". Gefragt bei Reste-Ideen und neuen Rezeptvorschlägen
-  (KI fragt laut System-Prompt; fragt sie nach der "Basis", zeigt das Panel
+  Salat oder "Egal". Gefragt bei neuen Rezeptvorschlägen (nicht beim
+  Spontan kochen – da gibt's sofort Ideen; KI fragt laut System-Prompt; fragt sie nach der "Basis", zeigt das Panel
   die Chips). Chips nach Beliebtheit (Profil v8 `bases`: Zähler je Basis,
   erhöht bei Wahl und bei 👍 über `recipeBase()`), im Profil unter
   Essgewohnheiten "Eure Lieblings-Basen" (`/profil/basen`) bearbeitbar.
-- Küchenstil (Profil-Abschnitt): "Das mögt ihr", Lieblings-Basen,
+- Küchenstil (Profil-Abschnitt): "So kocht ihr", "Das mögt ihr", Lieblings-Basen,
   Gesundheits-Tipps, Nie wieder.
 - "Das mögt ihr" (`src/lib/likes.ts`, Profil v9 `likes` gewichtet,
   `likesBlocked`): gelernt aus 👍 (+2), "Gekocht" im Rezept (+1), gewählten
@@ -318,18 +364,19 @@ Bei ALLEN Änderungen beachten.
   - 📅 Wie unter der Woche: normale Planung.
   - Wurden 3 Wochenenden in Folge geplante Gerichte nicht gekocht (keine
     Bewertung, nicht als gekocht vermerkt), bietet der Helfer EINMAL "frei" an.
-- Spontan-Hilfe (immer, auch ohne Plan und ohne KI, `src/lib/spontan.ts`):
+- Spontan-Hilfe im Chat (immer, auch ohne Plan und ohne KI, `src/lib/spontan.ts`):
   Ausflugs-Snacks aus dem Vorrat ("Wir fahren spontan los, was nehmen wir
   mit?"), drei schnelle Ideen unter 20 Minuten ("Wir kommen erst um 19 Uhr
   heim"; ohne KI aus dem Kochbuch, sonst Klassiker). Freitags höchstens EIN
   Grill-Vorschlag, wenn fürs Wochenende gutes Wetter vorhergesagt ist (nur
   mit Zustimmung, Ort grob per PLZ, Open-Meteo, `src/lib/weather.ts`).
-- Planen ist optional: Ohne Plan zeigt die Startseite "Spontan heute? Frag
-  <Name> einfach 😊" mit "Ideen holen" – nie als Fehler oder Warnung.
+- Planen ist optional: Ohne Plan zeigt die Startseite "Noch nichts für heute –
+  spontan was kochen?" mit Knopf in den Spontan-Modus – nie als Fehler oder
+  Warnung.
 - Bewerten nach dem Kochen – klein und nur bei Neuem (`src/lib/ratings.ts`,
-  Speicher `wasgibts.bewertungen` je Kochtag): nur für Gerichte, die es zum
-  ersten Mal gibt (`isFirstTime`: Rezept noch nie gekocht/bewertet und nicht
-  schon früher im Plan; keine Wiederholungen oder Klassiker), nur am Kochtag
+  Speicher `wasgibts.bewertungen` je Kochtag): nur für neue Gerichte
+  (Status "Neu", siehe dishStatus) beim ersten Mal (`isFirstTime`: noch nie
+  gekocht/bewertet und nicht schon früher im Plan), nur am Kochtag
   ab 1 Stunde nach der Essenszeit. Auf der Startseite eine schmale Zeile
   unter der Heute-Karte "Wie war …?" 👍 / 👎 / ✕ (`RatingRow`); weg nach
   Antwort, nach ✕ oder am nächsten Tag. Nach 3 ignorierten Fragen in Folge 2

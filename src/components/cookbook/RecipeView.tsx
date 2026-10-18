@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { Check, Clock, PenLine, Sparkles, ThumbsDown, ThumbsUp, Trash2, Users } from "lucide-react";
+import { Check, ChefHat, Clock, PenLine, Sparkles, ThumbsDown, ThumbsUp, Trash2, Users } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { CategoryChip } from "@/components/ui/Category";
 import { CARD, FAB_CLEARANCE, PAGE_MAIN, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
 import { FavoriteButton } from "@/components/cookbook/CookbookList";
+import { KnownSwitch } from "@/components/plan/PlanSheets";
 import {
   deleteRecipe,
   formatAmount,
@@ -100,6 +101,14 @@ function RecipeDetails({ id }: { id: string }) {
           </div>
           <FavoriteButton recipe={recipe} />
         </div>
+
+        {recipe.steps.length > 0 && (
+          <Link href={`/kochbuch/kochen?id=${encodeURIComponent(recipe.id)}`} className={`${buttonClass("primary", "lg")} w-full`}>
+            <ChefHat className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+            Los geht&apos;s – Schritt für Schritt
+          </Link>
+        )}
+        <KnownSwitch recipe={recipe} />
 
         <section className={`${CARD} p-4`}>
           <h3 className={`${SECTION_TITLE} mb-2`}>Zutaten für {recipe.servings} Personen</h3>

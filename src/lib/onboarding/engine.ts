@@ -317,7 +317,7 @@ export function placeholderFor(s: OnboardingState): string {
     case "members":
       return s.mode === "addPerson" ? "z. B. Oma Rosi" : "z. B. Ich bin Lisa, Felix, Mattis und Ella";
     case "confirmNames":
-      return "Fehlt jemand? Einfach dazuschreiben";
+      return "Noch jemand? Einfach dazuschreiben";
     case "personIntro":
       return "z. B. 7, Schulkind, mag keine Pilze";
     case "extras":

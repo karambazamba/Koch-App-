@@ -67,9 +67,9 @@ export function LeftoversView() {
           )}
         </section>
 
-        <button type="button" onClick={() => openHelper("reste")} className={`${buttonClass("primary", "lg")} w-full`}>
+        <button type="button" onClick={() => openHelper("spontan")} className={`${buttonClass("primary", "lg")} w-full`}>
           <HelperAvatar size={28} />
-          Mit {name} kochen
+          Spontan kochen mit {name}
         </button>
       </main>
 

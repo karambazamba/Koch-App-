@@ -42,6 +42,12 @@ export type Recipe = {
    * zählt die Uhrzeit mit, angezeigt wird nur das Datum.
    */
   lastCookedAt: string | null;
+  /**
+   * "Kennen wir": von Hand markiert (Rezeptseite, Wochenplan). Bekannt ist
+   * ein Rezept auch ohne Markierung, wenn es oft genug gekocht wurde –
+   * siehe `recipeIsKnown()` in dishStatus.ts.
+   */
+  known: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -51,7 +57,8 @@ export type RecipeDraft = Pick<Recipe, "title" | "category"> &
   Partial<Omit<Recipe, "id" | "createdAt" | "updatedAt">>;
 
 type CookbookStore = {
-  version: 1;
+  /** v2: `known` ("kennen wir") */
+  version: 2;
   recipes: Record<string, Recipe>;
 };
 
@@ -94,6 +101,7 @@ export function createRecipe(draft: RecipeDraft): Recipe {
     thumbsDown: 0,
     cookedCount: 0,
     lastCookedAt: null,
+    known: false,
     ...draft,
     id: newId(),
     createdAt: now,
@@ -175,6 +183,9 @@ function migrateRecipe(id: string, raw: unknown): Recipe | null {
     thumbsDown: num(r.thumbsDown, 0),
     cookedCount: num(r.cookedCount, 0),
     lastCookedAt: typeof r.lastCookedAt === "string" ? r.lastCookedAt : null,
+    // Bis v1 gab es keine Markierung: was schon im Kochbuch stand (eigene
+    // Rezepte) bzw. mindestens 2× gekocht wurde, kennt die Familie.
+    known: typeof r.known === "boolean" ? r.known : r.source !== "ki" || num(r.cookedCount, 0) >= 2,
     createdAt: str(r.createdAt),
     updatedAt: str(r.updatedAt),
   };
@@ -183,19 +194,19 @@ function migrateRecipe(id: string, raw: unknown): Recipe | null {
 function migrateStore(raw: unknown): CookbookStore | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as { version?: number; recipes?: Record<string, unknown> };
-  if (data.version !== 1 || !data.recipes || typeof data.recipes !== "object") return null;
+  if (![1, 2].includes(data.version as number) || !data.recipes || typeof data.recipes !== "object") return null;
   const recipes: Record<string, Recipe> = {};
   for (const [id, r] of Object.entries(data.recipes)) {
     const recipe = migrateRecipe(id, r);
     if (recipe) recipes[id] = recipe;
   }
-  return { version: 1, recipes };
+  return { version: 2, recipes };
 }
 
 const store = createLocalStore(STORAGE_KEY, migrateStore);
 
 function update(change: (recipes: Record<string, Recipe>) => Record<string, Recipe>) {
-  const current = store.load() ?? { version: 1 as const, recipes: {} };
+  const current = store.load() ?? { version: 2 as const, recipes: {} };
   store.save({ ...current, recipes: change(current.recipes) });
 }
 
@@ -221,7 +232,7 @@ export function saveAiRecipe(draft: RecipeDraft, prompt?: string): Recipe {
 
 /** Alle Rezepte auf einmal ersetzen (Küchenhelfer: Übernehmen/Rückgängig) */
 export function replaceRecipes(recipes: Record<string, Recipe>) {
-  store.save({ version: 1, recipes });
+  store.save({ version: 2, recipes });
 }
 
 /** KI-Rezept ohne Speichern anlegen (wie `saveAiRecipe`), z. B. für eine Vorschau */
@@ -248,6 +259,11 @@ function patch(id: string, change: (recipe: Recipe) => Partial<Recipe>) {
     if (!recipe) return recipes;
     return { ...recipes, [id]: { ...recipe, ...change(recipe), updatedAt: new Date().toISOString() } };
   });
+}
+
+/** "Kennen wir" an/aus */
+export function setRecipeKnown(id: string, known: boolean) {
+  patch(id, () => ({ known }));
 }
 
 export function toggleFavorite(id: string) {

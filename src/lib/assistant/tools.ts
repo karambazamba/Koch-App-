@@ -8,6 +8,7 @@ import { isNeverAgain } from "../ratings";
 import type Anthropic from "@anthropic-ai/sdk";
 import { RECIPE_CATEGORIES, type RecipeCategory } from "../cookbook";
 import { guessDishCategory } from "../dishCategory";
+import { recipeIsKnown } from "../dishStatus";
 import { personLabel, WEEKDAYS, type Person } from "../profile";
 import { SECTIONS, sectionFor, type Section } from "../shoppingList";
 import { formatWeekRange, planForWeek } from "../weekPlan";
@@ -57,7 +58,7 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
   {
     name: "kochbuch_durchsuchen",
     description:
-      "Sucht im Kochbuch der Familie nach Titel oder Zutat, optional nach Kategorie. Liefert Rezept-IDs, Titel, Kategorie, Portionen und Zutaten. Für 'meine/unsere Rezepte' immer hier suchen; nie Rezept-IDs erfinden.",
+      "Sucht im Kochbuch der Familie nach Titel oder Zutat, optional nach Kategorie. Liefert Rezept-IDs, Titel, Kategorie, Portionen, Zutaten, Zubereitungszeit (minuten) und ob die Familie das Gericht kennt (bekannt). Für 'meine/unsere Rezepte' immer hier suchen; nie Rezept-IDs erfinden.",
     input_schema: {
       type: "object",
       properties: {
@@ -311,6 +312,8 @@ export function runTool(ctx: ToolContext, name: string, raw: unknown): ToolResul
           portionen: r.servings,
           zutaten: r.ingredients.map((i) => i.name).join(", "),
           favorit: r.favorite || undefined,
+          bekannt: recipeIsKnown(r),
+          minuten: r.prepMinutes ?? undefined,
           gekocht: r.cookedCount || undefined,
           daumen_hoch: r.thumbsUp || undefined,
           basis: recipeBase(r) ?? undefined,

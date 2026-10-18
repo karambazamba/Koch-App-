@@ -1,7 +1,14 @@
+import { Suspense } from "react";
+import { CARD } from "@/components/ui/styles";
 import { WeekPlanView } from "@/components/plan/WeekPlanView";
 
 export const metadata = { title: "Wochenplan" };
 
 export default function WochenplanPage() {
-  return <WeekPlanView />;
+  return (
+    // useSearchParams braucht eine Suspense-Grenze, damit die Seite statisch bleibt.
+    <Suspense fallback={<div className={`${CARD} m-4 h-64 animate-pulse`} />}>
+      <WeekPlanView />
+    </Suspense>
+  );
 }

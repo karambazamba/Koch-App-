@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { HelperAvatar } from "@/components/assistant/HelperAvatar";
 import { useHealthTip, useWeekPraise } from "@/components/assistant/useHealthTip";
 import { chipClass } from "@/components/ui/styles";
@@ -38,33 +38,36 @@ function names(list: string[]): string {
  * immer als Angebot oder Erledigt-Meldung, mit höchstens 2 Antworten.
  * Reihenfolge: Einkauf für morgen, nächste Woche planen, Lob, Gesundheits-Tipp.
  * Eine Art, die 3× ignoriert wurde, pausiert 2 Wochen.
+ *
+ * Als Hook, damit die Startseite weiß, ob gerade ein Satz da ist (dann kein
+ * Twist – immer nur ein Angebot auf einmal). `data` null = aus.
  */
-export function HelperNote({ data }: { data: HomeData }) {
+export function useHelperNote(data: HomeData | null | undefined): ReactNode | null {
   const nudges = useNudges();
   const status = useAssistantStatus(true);
   const current = useWeekShoppingList("current");
   const next = useWeekShoppingList("next");
-  const target = planningWeekStart(data.today, data.profile.shoppingDay || "Montag");
-  const targetPlan = useWeekPlan(target.weekStart);
+  const target = data ? planningWeekStart(data.today, data.profile.shoppingDay || "Montag") : null;
+  const targetPlan = useWeekPlan(target?.weekStart);
   const tip = useHealthTip();
   const activity = useActivity();
   const mealPlans = useMealPlans();
   const rated = useRatings();
   const pantry = usePantry();
   const router = useRouter();
-  const isFriday = WEEKDAY.format(data.today) === "Freitag";
+  const isFriday = data ? WEEKDAY.format(data.today) === "Freitag" : false;
+  const todayIso = data?.todayIso ?? "";
   const forecast = useWeekendForecast(
-    data.profile.weather,
-    isFriday && !pausedOn(data.profile, data.todayIso) ? data.todayIso : null,
-    addDays(data.todayIso, 1),
-    addDays(data.todayIso, 2),
+    data?.profile.weather,
+    data && isFriday && !pausedOn(data.profile, todayIso) ? todayIso : null,
+    todayIso ? addDays(todayIso, 1) : "",
+    todayIso ? addDays(todayIso, 2) : "",
   );
   const praise = useWeekPraise();
   const [done, setDone] = useState<{ text: string; undo?: () => void } | null>(null);
-  const { todayIso } = data;
 
   const note = ((): Note | null => {
-    if (!nudges || !current || !next || targetPlan === undefined || !activity || !mealPlans || !rated) return null;
+    if (!data || !target || !nudges || !current || !next || targetPlan === undefined || !activity || !mealPlans || !rated) return null;
     const allowed = (kind: NudgeKind) => !isPaused(nudges, kind, todayIso);
     const { profile } = data;
     const once = (key: string, label: string, onClick?: () => void): Chip => ({
@@ -109,7 +112,7 @@ export function HelperNote({ data }: { data: HomeData }) {
           text: `Im Kühlschrank ist noch ${names(fresh)} – soll ich das in die letzten Tage einplanen?`,
           chips: [
             once(key, "Ja, gern", () =>
-              status?.configured ? openHelper(undefined, `Plan bitte ${names(fresh)} in die Tage bis zur Pause ein.`) : openHelper("reste"),
+              status?.configured ? openHelper(undefined, `Plan bitte ${names(fresh)} in die Tage bis zur Pause ein.`) : openHelper("spontan"),
             ),
             once(key, "Nein danke"),
           ],
@@ -128,7 +131,7 @@ export function HelperNote({ data }: { data: HomeData }) {
       if (shopping && missing.length > 0) {
         return {
           kind: "einkauf-morgen",
-          text: `Für morgen fehlen noch ${names(missing.map((i) => i.name))} – steht schon auf der Liste.`,
+          text: `Für morgen hab ich ${names(missing.map((i) => i.name))} schon auf die Liste gesetzt.`,
           chips: [
             { label: "Zur Liste", href: "/einkaufsliste" },
             {
@@ -221,6 +224,7 @@ export function HelperNote({ data }: { data: HomeData }) {
     if (kind === "tipp" && tip) markTipShown(tip.weekStart, tip.tip.key);
   }, [kind, todayIso, tip]);
 
+  if (!data) return null;
   if (done) {
     return (
       <Bubble text={done.text}>

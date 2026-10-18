@@ -139,7 +139,7 @@ export function DayCard({ day, recipes, readOnly, onPlan, onSwap, onMore, onCook
             <h2 className="mt-1 text-2xl font-extrabold leading-tight tracking-tight">{dishTitle(day)}</h2>
           ) : (
             <h2 className="mt-1 text-2xl font-extrabold leading-tight tracking-tight text-muted">
-              {day.weekend === "frei" ? "Wochenende – frei 🏖" : day.cheat ? "Cheat Day – noch offen" : readOnly ? "Nichts eingetragen" : "Noch frei"}
+              {day.weekend === "frei" ? "Wochenende – frei 🏖" : day.cheat ? "Cheat Day – worauf habt ihr Lust? 🍕" : readOnly ? "Nichts eingetragen" : "Noch frei"}
             </h2>
           )}
         </div>
@@ -263,7 +263,7 @@ export function UpcomingDays({ days, onSelect }: { days: PlanDay[]; onSelect: (w
               <span className="w-8 shrink-0 text-sm font-bold text-muted">{d.weekday.slice(0, 2)}</span>
               <span className={`h-2 w-2 shrink-0 rounded-full ${dayDot(d)}`} aria-hidden />
               <span className={`min-w-0 flex-1 truncate ${d.slot.entry ? "font-semibold" : "text-muted"}`}>
-                {d.paused ? "Pause ☀️" : d.away ? "Ausflug" : d.slot.entry ? dishTitle(d) : d.weekend === "frei" ? "Wochenende frei 🏖" : d.cheat ? "Cheat Day – offen" : "frei"}
+                {d.paused ? "Pause ☀️" : d.away ? "Ausflug" : d.slot.entry ? dishTitle(d) : d.weekend === "frei" ? "Wochenende frei 🏖" : d.cheat ? "Cheat Day 🍕" : "frei"}
               </span>
             </button>
           </li>

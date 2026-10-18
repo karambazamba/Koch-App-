@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import {
   Briefcase,
+  ChefHat,
   CalendarRange,
   Heart,
   Home,
@@ -149,6 +150,13 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
 
         <Section title="Küchenstil">
           <List>
+            <Row href="/profil/kochstil" icon={ChefHat} title="So kocht ihr">
+              <span>
+                <Nowrap>{profile.cookingStyle === "rezept" ? "Gern nach Rezept" : "Meist nach Gefühl"}</Nowrap>
+                {" · "}
+                <Nowrap>{profile.newPerWeek === 2 ? "2 neue pro Woche" : "1 neues pro Woche"}</Nowrap>
+              </span>
+            </Row>
             <Row href="/profil/das-moegt-ihr" icon={Salad} title="Das mögt ihr">
               <span className="line-clamp-2">
                 {profile.likes.length > 0

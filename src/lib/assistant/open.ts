@@ -2,9 +2,10 @@
 
 // Küchenhelfer-Panel von überall öffnen (z. B. Eingabeleiste der Startseite).
 // Der Küchenhelfer im Layout hört auf dieses Ereignis.
-// "reste" = Reste-Modus, "voice" = Mikrofon startet direkt; `ask` = gleich fragen.
+// "spontan" = Spontan kochen (mit dem, was da ist; früher "reste"),
+// "voice" = Mikrofon startet direkt; `ask` = gleich fragen.
 
-export type HelperMode = "reste" | "voice";
+export type HelperMode = "spontan" | "voice";
 
 type Detail = { mode?: HelperMode; ask?: string };
 
