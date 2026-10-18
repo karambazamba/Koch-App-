@@ -61,6 +61,9 @@ Bei ALLEN Änderungen beachten.
 - Eingabefelder mindestens 16px Schrift (kein iOS-Zoom), Safe-Areas beachten.
 - KI nur serverseitig (ANTHROPIC_API_KEY aus Vercel), Änderungen der KI immer als Vorschau mit "Übernehmen".
 - Datenschutz: so wenig Daten wie nötig, besonders bei Kindern; alles löschbar.
+- Zurück = eine Ebene zurück, Pfeil und Geste identisch, Scrollposition bleibt erhalten.
+- Neue Farben/Komponenten immer über die Design-Tokens, damit alle Ansichten funktionieren.
+- Versionsnummer (`package.json` und `APP_VERSION` in `src/lib/app.ts`) und `CACHE_VERSION` in `public/sw.js` bei jeder Auslieferung erhöhen.
 
 # Hinweise für Claude
 
@@ -182,7 +185,7 @@ Bei ALLEN Änderungen beachten.
   speichert (geht auch ohne KI).
 - "Lieber Formular" öffnet den bisherigen Assistenten (8 Schritte) mit dem
   bisher Erzählten als Startwert. Der Assistent wird nur beim ersten Anlegen verwendet. Danach
-  zeigt `/profil` die Übersicht "Unsere Familie"; Personen und Bereiche werden
+  zeigt `/profil` die Übersicht "Einstellungen" (siehe unten); Personen und Bereiche werden
   dort einzeln bearbeitet (eigene Seiten unter `/profil/...`).
 - Im Assistenten werden Namen nur in Schritt 2 "Wie heißen alle?" eingegeben;
   spätere Schritte zeigen sie nur an. Schritt 1 muss ohne Scrollen aufs iPhone
@@ -516,3 +519,49 @@ Bei ALLEN Änderungen beachten.
   `wasgibts.maschinenansicht`), "Schritte für Thermomix" mit Zeit/Temperatur/
   Stufe/Linkslauf. Rein beschreibend – keine Logos, keine Partnerschaft.
   Vorerst nur eingebaute Rezepte, KI später.
+- Einstellungen (`/profil`, `FamilyOverview`) in sechs Gruppen: "Unsere
+  Familie" (bzw. "Mein/Unser Haushalt": Personen – nach links wischen =
+  "Entfernen" –, hinzufügen, "Für wen kochst du?"), Lotte (Name & Stimme,
+  Modus, Tipps, Wochenend-Ideen als Schalter, Pause, Gesundheits-Tipps),
+  Ansicht & Darstellung, Essgewohnheiten & Küchenstil (Kochstil, Wochenend-
+  Stil, Das mögt ihr, Lieblingsgerichte, warm essen, Einkaufstag,
+  Wochenvorlage; Basen, Nie wieder, Produkte & Läden), Küche (Vorrat, Unsere
+  Rezepte), Daten & App (sichern/einspielen als JSON-Datei `src/lib/backup.ts`,
+  Versionsnummer, alles löschen). Jede Seite hat oben einen kurzen
+  Erklärsatz (`intro`). Schalter und die Seiten Ansicht/Modus
+  (`InstantSettingsPage`) wirken sofort, Formulare mit "Speichern".
+  Optionen, die es noch nicht gibt (Joker, Kochstil "plane gern / spontan"),
+  werden nicht angezeigt.
+- Profil v15: `theme` (warm/nacht/frisch/auto), `helperMode`
+  (locker/normal/dranbleiben), `display` (einfach/alles), `weekendIdeas`;
+  Migration: Warm, Normal, Einfach, an.
+- Ansichten (`/profil/ansicht`, Vorschau-Karten als Mini-Startseite): Farben
+  nur als CSS-Variablen in `globals.css` (`--app-*` → Tokens; Nacht stellt
+  zusätzlich Grau-/Rottöne um, `text-on-accent` für Text auf Akzentflächen,
+  Toasts `bg-ink text-background`). `data-theme` am `<html>`, gesetzt vor dem
+  ersten Zeichnen (`THEME_BOOT_SCRIPT`) und von `ThemeSync` (auch
+  theme-color). Automatisch folgt `prefers-color-scheme`. App-Icon und
+  Lottes Smiley-Topf bleiben immer orange.
+- Darstellung "Einfach": seltene Einstellungen hinter "Mehr anzeigen", keine
+  Kosten-Schätzungen im Wochenplan (außer mit Budget); "Alles zeigen" zeigt
+  alles.
+- Lotte-Modus (`/profil/modus`, steuert nur Lottes Platz, Regeln ohne KI):
+  "Ganz locker" = nur Stufe 1 (zeitkritisch), keine Bewertung/Lob/Tipps;
+  "Normal" = wie beschrieben; "Dranbleiben" = zusätzlich ab 4 Tage vorher
+  "Soll ich die nächste Woche schon mal vorbereiten?" und für freie Tage der
+  nächsten zwei Tage "<Tag> ist noch frei – soll ich dir was Schnelles
+  vorschlagen?" (je einmal). Die KI bekommt den Modus im Kontext.
+- Personen entfernen (`src/lib/removePerson.ts`, `usePersonRemoval`):
+  Rückfrage "<Name> entfernen?" (`ConfirmDialog`), danach Toast mit
+  "Rückgängig" (`showToast`, `ToastHost` im Layout). Aufgeräumt werden
+  Personenzahl, Wunschtag-Reihenfolge, Wünsche in Wochen-Vorgaben (→ keiner)
+  und im Plan (→ normales Gericht). Die letzte Person bleibt (freundlicher
+  Hinweis).
+- Zurück-Navigation (`src/lib/navigation.ts`, `NavigationMemory` im Layout,
+  `BackButton` im `PageHeader`, `useGoBack()`): eigener Verlauf in
+  sessionStorage; der Pfeil macht `router.back()`, nur ohne Verlauf geht's zu
+  `backHref`. Scrollhöhe je Verlaufs-Eintrag gemerkt (beim Verlassen, beim
+  Scrollen), beim Zurück nach dem Rendern wiederhergestellt; vorwärts oben.
+  Speichern/Abbrechen in Formularen nutzen ebenfalls `useGoBack()`;
+  `router.replace` immer mit `expectReplace()`.
+

@@ -22,7 +22,7 @@ import { COOKING_STYLES, HEALTH_TIP_LEVELS, HOUSEHOLD_TYPES, hasKids, wishDayAct
 
 export function FavoritesEditView() {
   return (
-    <ProfileEditPage title="Lieblingsgerichte">
+    <ProfileEditPage title="Lieblingsgerichte" intro="Was bei euch immer geht – das plane ich gern öfter ein.">
       {(draft, setDraft) => (
         <FavoritesEditor
           values={draft.favoriteDishes}
@@ -35,7 +35,7 @@ export function FavoritesEditView() {
 
 export function WarmMealEditView() {
   return (
-    <ProfileEditPage title="Zusammen warm essen">
+    <ProfileEditPage title="Zusammen warm essen" intro="Wann es das warme Essen gibt – danach richte ich Uhrzeit und Personenzahl.">
       {(draft, setDraft) => (
         <>
           <WarmMealEditor
@@ -65,7 +65,7 @@ export function WarmMealEditView() {
 
 export function HelperEditView() {
   return (
-    <ProfileEditPage title="Küchenhelfer">
+    <ProfileEditPage title="Name & Stimme" intro="Wie ich heiße und wie ich klinge, wenn ich vorlese.">
       {(draft, setDraft) => (
         <HelperEditor helper={draft.helper} onChange={(helper) => setDraft((d) => ({ ...d, helper }))} />
       )}
@@ -76,7 +76,8 @@ export function HelperEditView() {
 export function StandardWeekEditView() {
   return (
     <ProfileEditPage
-      title="Standardwoche"
+      title="Wochenvorlage"
+      intro="Eure typische Woche – damit starte ich jede neue Planung."
       canSave={(d) => !tooManyDays(d.weekRules, standardWeekDays(d))}
     >
       {(draft, setDraft) => (
@@ -107,7 +108,7 @@ export function StandardWeekEditView() {
 
 export function HouseholdNameEditView() {
   return (
-    <ProfileEditPage title="Haushalt">
+    <ProfileEditPage title="Für wen kochst du?" intro="Danach richte ich Mengen, Einkauf und Ideen aus.">
       {(draft, setDraft) => (
         <>
         <p className="text-lg font-bold">Für wen kochst du?</p>
@@ -156,7 +157,7 @@ export function HouseholdNameEditView() {
 
 export function ShoppingDayEditView() {
   return (
-    <ProfileEditPage title="Einkaufstag">
+    <ProfileEditPage title="Einkaufstag" intro="Ab diesem Tag plane ich immer eine Woche.">
       {(draft, setDraft) => (
         <>
           <fieldset className={`${CARD} p-4`}>
@@ -198,7 +199,7 @@ export function ShoppingDayEditView() {
 /** "Eure Lieblings-Basen": wie oft welche Basis gewählt bzw. gut bewertet wurde */
 export function BasesEditView() {
   return (
-    <ProfileEditPage title="Lieblings-Basen">
+    <ProfileEditPage title="Lieblings-Basen" intro="Kartoffeln, Reis, Nudeln & Co. – was ihr am liebsten dazu esst.">
       {(draft, setDraft) => (
         <>
           <p className={SUBTLE}>
@@ -230,7 +231,7 @@ export function BasesEditView() {
 export function LikesEditView() {
   const [input, setInput] = useState("");
   return (
-    <ProfileEditPage title="Das mögt ihr">
+    <ProfileEditPage title="Das mögt ihr" intro="Lieblingszutaten, die ich gern einbaue. Lerne ich mit, ihr könnt alles ändern.">
       {(draft, setDraft) => {
         const likes = sortedLikes(draft.likes);
         const add = () => {
@@ -300,7 +301,7 @@ export function LikesEditView() {
 /** Tipps auf Lottes Platz: aus / ab und zu / täglich */
 export function TipsEditView() {
   return (
-    <ProfileEditPage title="Tipps">
+    <ProfileEditPage title="Tipps" intro="Kleine Küchen-Tipps auf der Startseite – so oft, wie ihr mögt.">
       {(draft, setDraft) => (
         <>
           <p className={SUBTLE}>
@@ -334,7 +335,7 @@ export function TipsEditView() {
 /** Gesundheits-Tipps: aus / ab und zu / gern öfter */
 export function HealthTipsEditView() {
   return (
-    <ProfileEditPage title="Gesundheits-Tipps">
+    <ProfileEditPage title="Gesundheits-Tipps" intro="Ab und zu ein freiwilliger, leckerer Tausch – nie belehrend.">
       {(draft, setDraft) => (
         <>
           <p className={SUBTLE}>
@@ -367,7 +368,7 @@ export function HealthTipsEditView() {
 /** So kocht ihr: nach Gefühl oder nach Rezept, wie viel Neues pro Woche */
 export function CookingStyleEditView() {
   return (
-    <ProfileEditPage title="So kocht ihr">
+    <ProfileEditPage title="Kochstil" intro="Nach Gefühl oder nach Rezept, wie viel Neues – und ob eine Küchenmaschine mitkocht.">
       {(draft, setDraft) => (
         <>
           <div className="flex flex-col gap-2" role="radiogroup" aria-label="Kochstil">
@@ -439,7 +440,7 @@ const KITCHEN_MACHINES: { value: KitchenMachine; label: string; hint: string }[]
 /** "Wie seid ihr am Wochenende?" + Grill-Idee bei gutem Wetter */
 export function WeekendEditView() {
   return (
-    <ProfileEditPage title="Wochenende">
+    <ProfileEditPage title="Wochenend-Stil" intro="Wie viel ich am Wochenende plane – von gar nicht bis wie unter der Woche.">
       {(draft, setDraft) => (
         <>
           <p className="text-lg font-bold">Wie seid ihr am Wochenende?</p>
@@ -500,7 +501,7 @@ export function WeekendEditView() {
 /** Pause-Modus: an/aus, ab wann, optional bis wann */
 export function PauseEditView() {
   return (
-    <ProfileEditPage title="Pause">
+    <ProfileEditPage title="Pause" intro="Urlaub oder einfach mal frei: Dann plane ich nichts und bin still.">
       {(draft, setDraft) => {
         const on = Boolean(draft.pause);
         const today = new Date();

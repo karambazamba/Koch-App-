@@ -7,21 +7,117 @@
  * rounded-card, shadow-card. Bausteine in src/components/ui.
  */
 @theme inline {
-  --color-background: #faf7f2;
-  --color-surface: #ffffff;
-  --color-line: #ece6de;
-  --color-ink: #1f1b16;
-  --color-muted: #7a726a;
-  --color-accent: #f97316;
-  --color-accent-strong: #ea580c;
-  --color-accent-soft: #fff3e8;
+  /* Werte kommen aus der gewählten Ansicht (siehe unten) – nie feste Farben verwenden */
+  --color-background: var(--app-background);
+  --color-surface: var(--app-surface);
+  --color-line: var(--app-line);
+  --color-ink: var(--app-ink);
+  --color-muted: var(--app-muted);
+  --color-accent: var(--app-accent);
+  --color-accent-strong: var(--app-accent-strong);
+  --color-accent-soft: var(--app-accent-soft);
+  /* Text/Icons auf Akzent-Flächen (Buttons, Sprechblasen des Nutzers) */
+  --color-on-accent: var(--app-on-accent);
   --color-foreground: var(--color-ink);
 
   --radius-card: 1.25rem;
-  --shadow-card: 0 1px 2px rgb(31 27 22 / 0.04), 0 2px 8px rgb(31 27 22 / 0.03);
-  --shadow-sheet: 0 -8px 32px rgb(31 27 22 / 0.12);
+  --shadow-card: var(--app-shadow-card);
+  --shadow-sheet: var(--app-shadow-sheet);
 
   --font-sans: var(--font-nunito);
+}
+
+/*
+ * Ansichten (Profil v15 `theme`, gesetzt als data-theme am <html>):
+ * Warm (Standard), Nacht, Frisch, Automatisch (hell = Warm, dunkel = Nacht).
+ * Nacht stellt zusätzlich die wenigen Grau-/Rottöne um, damit alle Seiten
+ * genug Kontrast haben.
+ */
+:root {
+  --app-background: #f8f4ee;
+  --app-surface: #ffffff;
+  --app-line: #ece6de;
+  --app-ink: #1f1b16;
+  --app-muted: #6f675f;
+  --app-accent: #f26b21;
+  --app-accent-strong: #c2410c;
+  --app-accent-soft: #fdeee3;
+  --app-on-accent: #ffffff;
+  --app-shadow-card: 0 1px 2px rgb(31 27 22 / 0.04), 0 2px 8px rgb(31 27 22 / 0.03);
+  --app-shadow-sheet: 0 -8px 32px rgb(31 27 22 / 0.12);
+  color-scheme: light;
+}
+
+:root[data-theme="frisch"] {
+  --app-background: #f3f6f2;
+  --app-surface: #ffffff;
+  --app-line: #dde6dc;
+  --app-ink: #18211b;
+  --app-muted: #5f6b62;
+  --app-accent: #3f8f5b;
+  --app-accent-strong: #2c6b42;
+  --app-accent-soft: #e2efe5;
+  --app-on-accent: #ffffff;
+}
+
+:root[data-theme="nacht"] {
+  --app-background: #17191c;
+  --app-surface: #23262b;
+  --app-line: #353a41;
+  --app-ink: #f2eee9;
+  --app-muted: #aaa49c;
+  --app-accent: #ff8a4c;
+  --app-accent-strong: #ffa774;
+  --app-accent-soft: #3b2a20;
+  --app-on-accent: #1c1206;
+  --app-shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
+  --app-shadow-sheet: 0 -8px 32px rgb(0 0 0 / 0.5);
+  --color-stone-50: #2a2e34;
+  --color-stone-100: #30343b;
+  --color-stone-200: #3b4048;
+  --color-stone-300: #4b515a;
+  --color-stone-400: #8d929a;
+  --color-stone-500: #a3a8af;
+  --color-stone-600: #bcc0c6;
+  --color-stone-700: #d3d6da;
+  --color-red-50: #3a2022;
+  --color-red-200: #6e2f33;
+  --color-red-300: #8c3d42;
+  --color-red-600: #ff8f86;
+  --color-red-700: #ffb3ac;
+  --color-emerald-700: #74d6a0;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="auto"] {
+    --app-background: #17191c;
+    --app-surface: #23262b;
+    --app-line: #353a41;
+    --app-ink: #f2eee9;
+    --app-muted: #aaa49c;
+    --app-accent: #ff8a4c;
+    --app-accent-strong: #ffa774;
+    --app-accent-soft: #3b2a20;
+    --app-on-accent: #1c1206;
+    --app-shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
+    --app-shadow-sheet: 0 -8px 32px rgb(0 0 0 / 0.5);
+    --color-stone-50: #2a2e34;
+    --color-stone-100: #30343b;
+    --color-stone-200: #3b4048;
+    --color-stone-300: #4b515a;
+    --color-stone-400: #8d929a;
+    --color-stone-500: #a3a8af;
+    --color-stone-600: #bcc0c6;
+    --color-stone-700: #d3d6da;
+    --color-red-50: #3a2022;
+    --color-red-200: #6e2f33;
+    --color-red-300: #8c3d42;
+    --color-red-600: #ff8f86;
+    --color-red-700: #ffb3ac;
+    --color-emerald-700: #74d6a0;
+    color-scheme: dark;
+  }
 }
 
 body {

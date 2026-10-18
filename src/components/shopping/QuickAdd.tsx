@@ -46,7 +46,7 @@ export function QuickAddButton({
         aria-label="Etwas auf die Einkaufsliste setzen"
         className={`flex h-11 w-11 items-center justify-center ${className}`}
       >
-        <span className={`flex items-center justify-center rounded-full bg-accent text-white shadow-sm transition active:scale-95 ${small ? "h-7 w-7" : "h-9 w-9"}`}>
+        <span className={`flex items-center justify-center rounded-full bg-accent text-on-accent shadow-sm transition active:scale-95 ${small ? "h-7 w-7" : "h-9 w-9"}`}>
           <Plus className={small ? "h-4 w-4" : "h-5 w-5"} strokeWidth={2.75} aria-hidden />
         </span>
       </button>
@@ -63,7 +63,7 @@ export function QuickAddButton({
       {toast && (
         <div
           role="status"
-          className="fixed inset-x-0 top-[calc(env(safe-area-inset-top)+0.75rem)] z-50 mx-auto flex w-[calc(100%-2rem)] max-w-md items-center gap-3 rounded-2xl bg-ink px-4 py-3 text-white shadow-lg"
+          className="fixed inset-x-0 top-[calc(env(safe-area-inset-top)+0.75rem)] z-50 mx-auto flex w-[calc(100%-2rem)] max-w-md items-center gap-3 rounded-2xl bg-ink px-4 py-3 text-background shadow-lg"
         >
           <span className="flex-1 font-semibold">{toast.text}</span>
           <button
@@ -72,7 +72,7 @@ export function QuickAddButton({
               removeManualItems(weekStart, toast.ids);
               setToast({ text: "Wieder runtergenommen.", ids: [], key: Date.now() });
             }}
-            className={toast.ids.length ? "h-10 rounded-xl bg-white/15 px-3 font-bold" : "hidden"}
+            className={toast.ids.length ? "h-10 rounded-xl bg-background/15 px-3 font-bold" : "hidden"}
           >
             Rückgängig
           </button>
@@ -256,7 +256,7 @@ function QuickAddSheet({
             className={`${INPUT_BASE} h-12 min-w-0 flex-1 px-4`}
           />
           {input.trim() ? (
-            <button type="submit" aria-label="Hinzufügen" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-white shadow-sm active:scale-95">
+            <button type="submit" aria-label="Hinzufügen" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-on-accent shadow-sm active:scale-95">
               <ArrowUp className="h-5 w-5" strokeWidth={2.5} aria-hidden />
             </button>
           ) : (
@@ -265,7 +265,7 @@ function QuickAddSheet({
               onClick={toggleMic}
               aria-pressed={speech.listening}
               aria-label={speech.listening ? "Zuhören beenden" : "Einsprechen"}
-              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-white shadow-md active:scale-95 ${
+              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-md active:scale-95 ${
                 speech.listening ? "animate-pulse ring-4 ring-accent/25" : ""
               }`}
             >

@@ -102,6 +102,7 @@ function profileSummary(profile: HouseholdProfile): string {
     `Wochenend-Stil: ${WEEKEND_TEXT[profile.weekendStyle]}`,
     `Kochstil: ${profile.cookingStyle === "rezept" ? "kocht gern nach Rezept" : "kocht meist nach Gefühl"}`,
     `Neue Gerichte pro Woche: ${profile.newPerWeek}`,
+    `Modus: ${profile.helperMode === "locker" ? "ganz locker – nur melden, wenn es wirklich zeitkritisch ist, keine ungefragten Hinweise" : profile.helperMode === "dranbleiben" ? "dranbleiben – gern öfter beim Planen helfen und an freie Tage erinnern, immer freundlich und als Angebot" : "normal"}`,
     `Küchenmaschine: ${profile.kitchenMachine === "thermomix" ? "Thermomix (Küchenmaschine mit Kochfunktion)" : "keine"}`,
     profile.pause ? `Pause: ${profile.pause.from}${profile.pause.until ? ` bis ${profile.pause.until}` : " (ohne Enddatum)"} – an diesen Tagen nichts planen` : "",
     profile.favoriteDishes.length ? `Lieblingsgerichte: ${profile.favoriteDishes.join(", ")}` : "",

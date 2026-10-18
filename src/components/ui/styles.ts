@@ -21,7 +21,7 @@ const BUTTON_SIZES: Record<ButtonSize, string> = {
 };
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
-  primary: "bg-accent text-white shadow-sm",
+  primary: "bg-accent text-on-accent shadow-sm",
   secondary: "border border-line bg-surface text-ink",
   soft: "bg-accent-soft text-accent-strong",
   ghost: "text-muted",

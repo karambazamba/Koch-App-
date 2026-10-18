@@ -9,13 +9,12 @@ import { ProfileEditPage } from "@/components/profile/ProfileEditPage";
 import { PersonHeading } from "@/components/profile/PersonHeading";
 import { CARD, buttonClass } from "@/components/ui/styles";
 import { PersonLunchFields, PersonPreferencesFields } from "@/components/profile/editors";
+import { LAST_PERSON_HINT, usePersonRemoval } from "@/components/profile/PersonRemoval";
+import { useGoBack } from "@/lib/useGoBack";
 import {
-  LIMITS,
   createPerson,
-  loadProfile,
   personLabel,
   personRoleLabel,
-  saveProfile,
   fitHouseholdType,
   type Person,
   type PersonRole,
@@ -43,23 +42,12 @@ export function PersonEditView() {
 }
 
 function PersonEditor({ newRole, id }: { newRole: PersonRole | null; id: string | null }) {
-  const router = useRouter();
   const [newPerson] = useState(() => (newRole ? createPerson(newRole) : null));
   const personId = newPerson?.id ?? id;
 
-  /** Entfernt die Person aus dem gespeicherten Profil (ungespeicherte Änderungen verfallen). */
-  const remove = (person: Person, label: string) => {
-    const saved = loadProfile();
-    if (!saved || !window.confirm(`${label} wirklich entfernen?`)) return;
-    const isKid = person.role === "kind";
-    saveProfile({
-      ...saved,
-      adults: isKid ? saved.adults : saved.adults - 1,
-      kids: isKid ? saved.kids - 1 : saved.kids,
-      persons: saved.persons.filter((p) => p.id !== person.id),
-    });
-    router.push("/profil");
-  };
+  const goBack = useGoBack();
+  // Entfernt die Person aus dem gespeicherten Profil (ungespeicherte Änderungen verfallen)
+  const removal = usePersonRemoval(() => goBack("/profil"));
 
   return (
     <ProfileEditPage
@@ -75,6 +63,7 @@ function PersonEditor({ newRole, id }: { newRole: PersonRole | null; id: string 
             }
           : profile
       }
+      intro="Name, Allergien und was jemand nicht mag – Allergien halte ich immer strikt ein."
       canSave={(draft) => draft.persons.some((p) => p.id === personId)}
     >
       {(draft, setDraft) => {
@@ -112,16 +101,20 @@ function PersonEditor({ newRole, id }: { newRole: PersonRole | null; id: string 
             <section className={`${CARD} flex flex-col gap-6 p-4`}>
               <PersonLunchFields person={person} onChange={change} />
             </section>
-            {!newPerson && (person.role === "kind" || draft.adults > LIMITS.adults.min) && (
-              <button
-                type="button"
-                onClick={() => remove(person, personLabel(person, draft.persons))}
-                className={`${buttonClass("danger")} mt-2 self-center`}
-              >
-                <Trash2 className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-                Person entfernen
-              </button>
-            )}
+            {!newPerson &&
+              (draft.persons.length > 1 ? (
+                <button
+                  type="button"
+                  onClick={() => removal.ask(person, draft.persons)}
+                  className={`${buttonClass("danger")} mt-2 self-center`}
+                >
+                  <Trash2 className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+                  {personLabel(person, draft.persons)} entfernen
+                </button>
+              ) : (
+                <p className="mt-2 px-1 text-center text-sm text-muted">{LAST_PERSON_HINT}</p>
+              ))}
+            {removal.dialog}
           </>
         );
       }}

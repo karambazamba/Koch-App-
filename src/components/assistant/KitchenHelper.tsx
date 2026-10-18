@@ -178,7 +178,7 @@ export function KitchenHelper() {
       {(undo || undone) && (
         <div
           role="status"
-          className="fixed inset-x-0 z-50 mx-auto flex w-[calc(100%-2rem)] max-w-md items-center gap-3 overflow-hidden rounded-2xl bg-ink px-4 py-3 text-white shadow-lg"
+          className="fixed inset-x-0 z-50 mx-auto flex w-[calc(100%-2rem)] max-w-md items-center gap-3 overflow-hidden rounded-2xl bg-ink px-4 py-3 text-background shadow-lg"
           style={{ bottom: `calc(${bottom} + 4.5rem)` }}
         >
           {undo ? (
@@ -191,7 +191,7 @@ export function KitchenHelper() {
                   setUndo(null);
                   setUndone(true);
                 }}
-                className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-white/15 px-3 font-bold"
+                className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-background/15 px-3 font-bold"
               >
                 <Undo2 className="h-4 w-4" strokeWidth={2.5} aria-hidden />
                 Rückgängig
