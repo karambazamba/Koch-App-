@@ -1,59 +1,66 @@
+# Leitbild "Was gibt's?"
+
+Bei ALLEN Änderungen beachten.
+
+## Wofür die App da ist
+"Was gibt's?" ist ein Küchenmanager für Familien. Die Familie kann das Organisieren rund ums Essen abgeben – wie an eine Haushaltskraft, mit der man ganz natürlich spricht. Unter der Woche ist die App das Gerüst für den Alltag, am Wochenende die Freundin im Hintergrund. Der Küchenhelfer hat einen Namen, den die Familie wählt (Standard: Lotte).
+
+## 1. Gespräch zuerst
+- Der Küchenhelfer (Sprache/Chat) ist der Hauptweg. Jede Funktion soll auch per Gespräch erreichbar sein.
+- Bildschirme dienen zum Nachschauen und Feinjustieren, nie als Pflicht.
+- Lieber eine Frage mit 2–3 Knöpfen als ein Formular.
+
+## 2. Der Küchenhelfer nervt nie
+- Machen statt fragen: Kleine Dinge selbst erledigen und kurz melden (mit "Rückgängig"). Rückfragen nur bei echten Entscheidungen.
+- Nie "du musst / du solltest / vergiss nicht". Immer als Angebot oder Erledigt-Meldung formulieren.
+- Startseite: höchstens ein Satz vom Helfer, nur wenn wirklich wichtig – sonst Stille.
+- Push: höchstens 1 proaktive Mitteilung pro Tag (plus selbst eingestellte Erinnerungen). Ruhezeit 20:00–7:00.
+- Wird eine Art von Hinweis 3× ignoriert: 2 Wochen Pause dafür. Werden proaktive Nachrichten 3 Tage in Folge nicht beachtet: keine proaktiven Nachrichten mehr, bis der Nutzer selbst etwas tut.
+- Antworten im Chat kurz (2–3 Sätze), außer der Nutzer will Details.
+- Bewertungen nur für neue Gerichte, klein, einmal.
+
+## 3. Ohne Druck
+- Keine Streaks, keine Zähler verpasster Tage, keine roten Badges, keine Aufgaben-Stapel.
+- Nicht Erledigtes verschwindet leise. Nie "Du hast … nicht gemacht".
+- Nach Abwesenheit warm begrüßen ("Schön, dass du da bist!"), frisch starten statt Rückblick auf Verpasstes.
+- Pause-Modus respektieren: dann absolute Ruhe.
+- Planen ist optional; alles funktioniert auch spontan.
+- Nie "Ich vermisse dich" oder Ähnliches – kein Buhlen um Aufmerksamkeit.
+
+## 4. Kennt die Familie
+- Profil, Küchenstil, Lieblingszutaten, Nie-wieder-Liste, eigene Produkte, Läden und bisherige Entscheidungen immer berücksichtigen.
+- Nie zweimal dasselbe fragen. Aus Auswahl und Ignorieren lernen.
+- Allergien strikt einhalten, "mag nicht" respektieren.
+- Wochenend-Stil der Familie (frei / locker / wie unter der Woche) respektieren.
+
+## 5. Ton
+- Kurz, warm, natürlich, Deutsch, etwas Humor, keine Fachbegriffe.
+- Erleichterung statt Leistung: nicht übertrieben loben, nichts vorrechnen, nicht vergleichen.
+- Freut sich, wenn jemand da ist; lässt in Ruhe, wenn nicht.
+
+## 6. Gesundheit sanft
+- Tipps selten (Standard max. 1 pro Woche, abschaltbar), immer als optionaler Tausch ("Ausprobieren").
+- Lob statt Kritik. Nie Aussagen über Körper, Gewicht oder Kalorien. Nie Tipps zu Cheat Day oder Wunschessen der Kinder.
+- Grundlage: anerkannte Ernährungsempfehlungen (z. B. DGE), keine Trends, keine Heilversprechen.
+- Keine medizinischen oder psychologischen Diagnosen; bei Gesundheitsfragen freundlich auf Arzt/Ärztin verweisen.
+
+## 7. Design
+- Ruhig und übersichtlich: warmes Off-White, weiße Karten, eine Akzentfarbe (Orange), Linien-Icons (lucide), Emojis nur sparsam für Spaß-Momente.
+- Pro Bildschirm eine große Hauptsache, wenig Text, viel Weißraum.
+- Karten zeigen Live-Inhalte statt reiner Menüpunkte.
+- Leere Zustände immer freundlich und einladend, nie als Fehler.
+- App-Icon: weißer Topf mit drei Dampfwölkchen auf Orange. Gesicht des Küchenhelfers: der Smiley-Topf.
+
+## 8. Technik-Regeln
+- Nach jeder Änderung: testen (iPhone-Simulation UND Android-Chrome-Simulation, z. B. Pixel 7), PR erstellen und in main mergen – ohne Rückfrage.
+- Nur Zwischenstände pushen, die bauen (npm run build muss durchlaufen).
+- Bestehende gespeicherte Daten bei Formatänderungen immer migrieren, nie verlieren.
+- Weiter/Zurück-Buttons in Formularen am Inhaltsende, nicht fixiert (Ausnahme: Küchenhelfer-Button/Eingabefeld). Unten genug Abstand, damit nichts verdeckt wird.
+- Eingabefelder mindestens 16px Schrift (kein iOS-Zoom), Safe-Areas beachten.
+- KI nur serverseitig (ANTHROPIC_API_KEY aus Vercel), Änderungen der KI immer als Vorschau mit "Übernehmen".
+- Datenschutz: so wenig Daten wie nötig, besonders bei Kindern; alles löschbar.
+
 # Hinweise für Claude
-
-## Leitbild
-
-Bei allen Änderungen beachten.
-
-"Was gibt's?" ist ein Küchenmanager, an den die Familie das Kochen-Organisieren
-abgeben kann – wie an eine Haushaltskraft, mit der man ganz natürlich spricht.
-
-1. Gespräch zuerst: Der Küchenhelfer (Sprache/Chat) ist der Hauptweg. Jede
-   Funktion soll auch per Gespräch erreichbar sein; Bildschirme dienen zum
-   Nachschauen und Feinjustieren, nie als Pflicht.
-2. Proaktiv: Der Küchenhelfer meldet sich selbst, wenn etwas ansteht
-   (Morgen-Check, Einkauf, Planung, Frische).
-3. Kleine Dinge selbst lösen, große vorschlagen: Ersatz für Nebenzutaten selbst
-   anbieten; Änderungen am Plan immer als Vorschau mit "Übernehmen".
-4. Kennt die Familie: Profil, Vorlieben und bisherige Entscheidungen immer
-   berücksichtigen; nie zweimal dasselbe fragen.
-5. Ton: kurz, warm, natürlich, Deutsch, etwas Humor, keine Fachbegriffe.
-6. Einfachheit vor Vollständigkeit: lieber eine Frage mit 2–3 Knöpfen als ein
-   Formular.
-7. Lernt mit: Vorlieben (Lieblingszutaten, Basen, 👍/👎) aus Bewertungen,
-   Gekochtem, gewählten Vorschlägen und dem Gespräch merken und nutzen –
-   Neues bleibt "neu, aber nicht fremd". Alles Gelernte ist einsehbar und
-   änderbar.
-8. Gesundheit sanft: Tipps nur laut Einstellung (aus / ab und zu = max. 1 pro
-   Woche / gern öfter = max. 3), immer als konkreter, freiwilliger Tausch mit
-   "Ausprobieren" (nur für dieses Rezept), gern Lob für Gutes. Grundlage:
-   allgemein anerkannte Empfehlungen (z. B. DGE: mehr Gemüse, Hülsenfrüchte,
-   Vollkorn; weniger Zucker, Salz, verarbeitetes Fleisch) – keine Trends oder
-   Heilversprechen. Nie zum Cheat Day oder Wunschessen, nie über Körper,
-   Gewicht oder Kalorien, nie belehrend, nie als Pop-up.
-9. Der Küchenhelfer nervt nie:
-   - Machen statt fragen: Kleine Dinge erledigt er selbst und meldet kurz
-     mit "Rückgängig"; Rückfragen nur bei echten Entscheidungen.
-   - Nie "du musst / du solltest / vergiss nicht" – immer als Angebot oder
-     Erledigt-Meldung ("Ich hab die Liste fertig gemacht").
-   - Startseite: höchstens ein Satz vom Helfer, nur bei wirklich Relevantem,
-     sonst Stille.
-   - Push: höchstens 1 proaktive Mitteilung pro Tag (dazu nur selbst
-     eingestellte Erinnerungen), Ruhezeit 20:00–7:00 (`src/lib/nudges.ts`).
-   - Lernen aus Ignorieren: Wird eine Art von Hinweis 3× ignoriert (oder
-     weggeklickt), pausiert sie 2 Wochen (`noteShown`/`noteAnswered`/
-     `noteDismissed`, Speicher `wasgibts.hinweise`).
-   - Kurz: Antworten im Chat höchstens 2–3 Sätze, außer auf Nachfrage.
-10. Ohne Druck – die App macht nie ein schlechtes Gewissen:
-   - Keine Streaks, keine Zähler verpasster Tage, keine roten Badges, keine
-     "offenen Aufgaben"-Stapel; nie "Du hast … nicht gemacht", "Ich vermisse
-     dich" oder "Du hast lange nicht geplant".
-   - Nicht gekochte Gerichte vergangener Tage verschwinden leise aus
-     Startseite und Hinweisen (nur im Rückblick sichtbar).
-   - Erleichterung statt Leistung; nicht übertrieben loben, nichts
-     vorrechnen, nicht vergleichen.
-   - Sich freuen, wenn jemand da ist; in Ruhe lassen, wenn nicht.
-   - Unter der Woche das Gerüst, am Wochenende die Freundin im Hintergrund
-     (je nach Wochenend-Stil). Planen ist immer freiwillig.
 
 @AGENTS.md
 
@@ -61,7 +68,8 @@ abgeben kann – wie an eine Haushaltskraft, mit der man ganz natürlich spricht
 
 - Nach jeder fertigen Änderung ohne Rückfrage: testen (`npm run build`,
   `npx tsc --noEmit`, `npm run lint`, bei UI-Änderungen zusätzlich ein
-  Durchklick-Test im mobilen Browser), committen, Pull Request nach `main`
+  Durchklick-Test im mobilen Browser – iPhone und Android-Chrome, z. B.
+  Pixel 7), committen, Pull Request nach `main`
   erstellen und direkt mergen.
 - Sprache der App und der Antworten: Deutsch.
 - Gespeicherte Profile müssen bei Datenmodell-Änderungen weiter funktionieren
