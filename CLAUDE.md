@@ -69,7 +69,7 @@ abgeben kann – wie an eine Haushaltskraft, mit der man ganz natürlich spricht
 
 ## Produktentscheidungen
 
-- Der Assistent (7 Schritte) wird nur beim ersten Anlegen verwendet. Danach
+- Der Assistent (8 Schritte, der letzte: Name des Küchenhelfers) wird nur beim ersten Anlegen verwendet. Danach
   zeigt `/profil` die Übersicht "Unsere Familie"; Personen und Bereiche werden
   dort einzeln bearbeitet (eigene Seiten unter `/profil/...`).
 - Im Assistenten werden Namen nur in Schritt 2 "Wie heißen alle?" eingegeben;
@@ -167,3 +167,16 @@ abgeben kann – wie an eine Haushaltskraft, mit der man ganz natürlich spricht
   `KUECHENHELFER_MOCK=1` = Testmodus (`mock.ts`, nutzt dieselben Werkzeuge).
   Daten-Module importieren React nur über `useExternalStore.ts`, damit der
   Server ihre reine Logik nutzen kann.
+- Küchenhelfer hat Namen und Gesicht (Profil v7 `helper`): Name Lotte, Ida,
+  Theo, Bruno oder eigener (max. 20 Zeichen, Standard Lotte), Stimme
+  weiblich/männlich (bei Vorschlägen passend zum Namen; `pickVoice()` wählt
+  eine passende deutsche Systemstimme, sonst Standard). Einstellbar im
+  Assistenten (letzter Schritt) und unter `/profil/kuechenhelfer`. Knopf mit
+  Topf-Gesicht (`HelperAvatar`), nur auf der Startseite einmal pro App-Start
+  eine Sprechblase ("Frag Lotte" bzw. aktueller Hinweis aus `useHelperHint`,
+  z. B. "Lotte: Für morgen fehlt Sahne"), klappt nach 5 s oder beim Scrollen
+  zu. Panel-Kopf: Avatar, Name, "dein Küchenhelfer"; erste Nachricht
+  "Hi, ich bin <Name> – was steht an?". Mitteilungen im Namen des
+  Küchenhelfers (auch künftige Push) immer über `helperMessage()` →
+  "<Name>: …". Die KI bekommt Name, Familie und Ton aus dem Leitbild
+  (`identityPrompt()`).

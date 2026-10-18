@@ -150,7 +150,8 @@ export function createMockModel(): CreateMessage {
       const actionable =
         intent.myDays.length || intent.wish || intent.restVeggie || intent.clear.length || intent.double.length || intent.swap.length >= 2 || intent.shopping;
       if (!actionable) {
-        return text("Ich bin der Küchenhelfer (Testmodus). Sag zum Beispiel: „Donnerstag und Freitag gibt es meine Rezepte, Mattis wünscht sich Sonntag Milchreis, der Rest vegetarische KI-Rezepte.“");
+        const name = system.match(/^Du bist ([^,]+),/)?.[1] ?? "dein Küchenhelfer";
+        return text(`Ich bin ${name} (Testmodus). Sag zum Beispiel: „Donnerstag und Freitag gibt es meine Rezepte, Mattis wünscht sich Sonntag Milchreis, der Rest vegetarische KI-Rezepte.“`);
       }
       return tools([
         { name: "woche_lesen", input: { woche: intent.week } },

@@ -5,7 +5,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { migrateProfile } from "../profile";
 import { nextWeekStartFor, weekStartFor } from "../weekPlan";
 import { applyOps, compactOps, type AssistantData, type ChangeOp } from "./ops";
-import { contextText, SYSTEM_PROMPT } from "./prompt";
+import { contextText, identityPrompt, SYSTEM_PROMPT } from "./prompt";
 import { LIMITS, type AssistantReply, type AssistantRequest, type ChatTurn } from "./protocol";
 import { runTool, TOOLS, type ToolContext } from "./tools";
 
@@ -93,7 +93,8 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
   if (messages[0].role !== "user") messages.shift();
 
   const system: Anthropic.Beta.BetaTextBlockParam[] = [
-    { type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
+    // Name/Ton und Arbeitsweise ändern sich selten → gecacht; Kontext pro Anfrage
+    { type: "text", text: `${identityPrompt(req.data.profile)}\n\n${SYSTEM_PROMPT}`, cache_control: { type: "ephemeral" } },
     { type: "text", text: contextText(req.data, req.today, weeks) + pendingSummary(req.pending) },
   ];
 

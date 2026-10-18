@@ -12,6 +12,7 @@ import {
   Info,
   PenLine,
   UtensilsCrossed,
+  Sparkles,
   Users,
   Wheat,
   type LucideIcon,
@@ -38,6 +39,7 @@ import {
   withWishDay,
   WeekRulesEditor,
   tooManyDays,
+  HelperEditor,
 } from "@/components/profile/editors";
 import {
   LIMITS,
@@ -62,6 +64,7 @@ const STEPS: { title: string; icon: LucideIcon; perPerson?: boolean }[] = [
   { title: "Zusammen warm essen", icon: UtensilsCrossed },
   { title: "Mittagessen unter der Woche", icon: Clock, perPerson: true },
   { title: "Standardwoche", icon: CalendarRange },
+  { title: "Euer Küchenhelfer", icon: Sparkles },
 ];
 
 const STEP = {
@@ -72,6 +75,7 @@ const STEP = {
   warmMeal: 4,
   lunch: 5,
   rules: 6,
+  helper: 7,
 };
 
 /** Mindestweg in Pixeln, ab dem eine waagrechte Wischbewegung zählt */
@@ -384,6 +388,9 @@ function ProfileWizard() {
             </PersonSwitcher>
             <LunchHeadcountNote profile={profile} />
           </>
+        )}
+        {step === STEP.helper && (
+          <HelperEditor helper={profile.helper} onChange={(helper) => update({ helper })} />
         )}
         {step === STEP.rules && (
           <>

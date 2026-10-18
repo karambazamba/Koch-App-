@@ -65,8 +65,39 @@ export type WishDaySettings = {
   order: string[];
 };
 
+/** Stimme des Küchenhelfers für die Sprachausgabe */
+export type HelperVoice = "weiblich" | "maennlich";
+
+/** Der Küchenhelfer: Name und Stimme (Profil v7) */
+export type HelperSettings = {
+  name: string;
+  voice: HelperVoice;
+};
+
+/** Vorgeschlagene Namen – die Stimme passt automatisch */
+export const HELPER_NAMES: { name: string; voice: HelperVoice }[] = [
+  { name: "Lotte", voice: "weiblich" },
+  { name: "Ida", voice: "weiblich" },
+  { name: "Theo", voice: "maennlich" },
+  { name: "Bruno", voice: "maennlich" },
+];
+
+export const HELPER_NAME_MAX = 20;
+
+export const DEFAULT_HELPER: HelperSettings = { name: "Lotte", voice: "weiblich" };
+
+/** Name des Küchenhelfers (leer → Lotte) */
+export function helperName(profile: Pick<HouseholdProfile, "helper"> | null | undefined): string {
+  return profile?.helper.name.trim() || DEFAULT_HELPER.name;
+}
+
+/** Mitteilung im Namen des Küchenhelfers, z. B. "Lotte: Heute gibt's Gulasch" (auch für Push) */
+export function helperMessage(profile: Pick<HouseholdProfile, "helper"> | null | undefined, text: string): string {
+  return `${helperName(profile)}: ${text}`;
+}
+
 export type HouseholdProfile = {
-  version: 6;
+  version: 7;
   householdName: string;
   adults: number;
   kids: number;
@@ -77,6 +108,8 @@ export type HouseholdProfile = {
   wishDay: WishDaySettings;
   /** Einkaufstag: ab hier läuft die Planungswoche 7 Tage */
   shoppingDay: string;
+  /** Küchenhelfer: Name und Stimme */
+  helper: HelperSettings;
   updatedAt: string;
 };
 
@@ -172,7 +205,7 @@ export function createPerson(role: PersonRole): Person {
 
 export function createEmptyProfile(): HouseholdProfile {
   return {
-    version: 6,
+    version: 7,
     householdName: "",
     adults: 2,
     kids: 1,
@@ -192,6 +225,7 @@ export function createEmptyProfile(): HouseholdProfile {
     },
     wishDay: createWishDay(),
     shoppingDay: "Montag",
+    helper: DEFAULT_HELPER,
     updatedAt: "",
   };
 }
@@ -336,7 +370,7 @@ export function normalizeMealTime(value: unknown, fallback: MealTime): MealTime 
 export function migrateProfile(raw: unknown): HouseholdProfile | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as Record<string, unknown>;
-  if (![1, 2, 3, 4, 5, 6].includes(data.version as number)) return null;
+  if (![1, 2, 3, 4, 5, 6, 7].includes(data.version as number)) return null;
 
   const defaults = createEmptyProfile();
 
@@ -399,7 +433,19 @@ export function migrateProfile(raw: unknown): HouseholdProfile | null {
     wishDay: migrateWishDay(data.wishDay, defaults.wishDay),
     // Bis v4 lief die Woche immer Mo–So → Einkaufstag Montag.
     shoppingDay: pick(data.shoppingDay, WEEKDAYS, defaults.shoppingDay),
+    // Bis v6 hatte der Küchenhelfer keinen Namen → Lotte.
+    helper: migrateHelper(data.helper),
     updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : "",
+  };
+}
+
+function migrateHelper(raw: unknown): HelperSettings {
+  if (!raw || typeof raw !== "object") return DEFAULT_HELPER;
+  const h = raw as Partial<HelperSettings>;
+  const name = typeof h.name === "string" ? h.name.trim().slice(0, HELPER_NAME_MAX) : "";
+  return {
+    name: name || DEFAULT_HELPER.name,
+    voice: h.voice === "maennlich" ? "maennlich" : "weiblich",
   };
 }
 

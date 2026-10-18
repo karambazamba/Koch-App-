@@ -3,6 +3,7 @@
 // Formular-Bausteine des Haushaltsprofils. Werden im Assistenten (erstes
 // Anlegen) und in den einzelnen Bearbeiten-Ansichten verwendet.
 
+import { useState } from "react";
 import {
   AlertTriangle,
   Backpack,
@@ -21,9 +22,12 @@ import {
 import { ChoiceGroup } from "@/components/form/ChoiceGroup";
 import { NumberStepper } from "@/components/form/NumberStepper";
 import { TagInput } from "@/components/form/TagInput";
-import { CARD, INPUT_BASE, NOTE, WARNING, tileClass } from "@/components/ui/styles";
+import { HelperAvatar } from "@/components/assistant/HelperAvatar";
+import { CARD, INPUT, INPUT_BASE, NOTE, WARNING, chipClass, tileClass } from "@/components/ui/styles";
 import {
   COMMON_ALLERGIES,
+  HELPER_NAMES,
+  HELPER_NAME_MAX,
   KID_AGE_GROUP_LABELS,
   LIMITS,
   WEEKDAYS,
@@ -31,6 +35,8 @@ import {
   personLabel,
   weekdayLunchHeadcount,
   wishDayOrder,
+  type HelperSettings,
+  type HelperVoice,
   type HouseholdProfile,
   type KidAgeGroup,
   type Person,
@@ -485,6 +491,96 @@ export function WishDayEditor({
               Der Wunsch zählt nicht bei Fleisch/Veggie/Fisch.
             </span>
           </p>
+        </>
+      )}
+    </section>
+  );
+}
+
+const VOICE_OPTIONS = [
+  { value: "weiblich", label: "Weiblich" },
+  { value: "maennlich", label: "Männlich" },
+] satisfies { value: HelperVoice; label: string }[];
+
+/**
+ * "Wie soll euer Küchenhelfer heißen?" – vier Namen als große Chips oder ein
+ * eigener. Bei den Vorschlägen passt die Stimme automatisch, beim eigenen
+ * Namen ist sie frei wählbar.
+ */
+export function HelperEditor({
+  helper,
+  onChange,
+}: {
+  helper: HelperSettings;
+  onChange: (helper: HelperSettings) => void;
+}) {
+  const preset = HELPER_NAMES.find((h) => h.name === helper.name);
+  // Eigener Name: angetippt oder ein Name, der kein Vorschlag ist
+  const [custom, setCustom] = useState(!preset);
+  return (
+    <section className={`${CARD} flex flex-col gap-5 p-4`}>
+      <div className="flex items-center gap-3">
+        <HelperAvatar size={48} variant="badge" />
+        <div>
+          <p className="text-lg font-bold leading-snug">Wie soll euer Küchenhelfer heißen?</p>
+          <p className="text-sm text-muted">Mit {helper.name.trim() || "ihm"} plant ihr per Sprache oder Chat.</p>
+        </div>
+      </div>
+      <div role="group" aria-label="Name des Küchenhelfers" className="grid grid-cols-2 gap-2">
+        {HELPER_NAMES.map((h) => {
+          const selected = !custom && helper.name === h.name;
+          return (
+            <button
+              key={h.name}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => {
+                setCustom(false);
+                onChange({ name: h.name, voice: h.voice });
+              }}
+              className={`${chipClass(selected)} min-h-14 justify-center text-lg`}
+            >
+              {h.name}
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          aria-pressed={custom}
+          onClick={() => {
+            setCustom(true);
+            if (preset) onChange({ ...helper, name: "" });
+          }}
+          className={`${chipClass(custom)} col-span-2 min-h-12 justify-center`}
+        >
+          Eigener Name
+        </button>
+      </div>
+      {custom && (
+        <>
+          <label className="flex flex-col gap-2">
+            <span className="text-base font-bold">Name</span>
+            <input
+              type="text"
+              value={helper.name}
+              maxLength={HELPER_NAME_MAX}
+              onChange={(e) => onChange({ ...helper, name: e.target.value.slice(0, HELPER_NAME_MAX) })}
+              placeholder="z. B. Oma Hilde"
+              autoComplete="off"
+              enterKeyHint="done"
+              onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+              className={INPUT}
+            />
+            <span className="text-xs text-muted">Höchstens {HELPER_NAME_MAX} Zeichen. Leer = Lotte.</span>
+          </label>
+          <ChoiceGroup<HelperVoice>
+            label="Stimme beim Vorlesen"
+            value={helper.voice}
+            onChange={(voice) => onChange({ ...helper, voice })}
+            options={VOICE_OPTIONS}
+            columns={2}
+            variant="plain"
+          />
         </>
       )}
     </section>
