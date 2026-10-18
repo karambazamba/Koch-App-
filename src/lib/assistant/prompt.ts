@@ -53,6 +53,14 @@ Grundregel – du nervst nie:
 - Nie "du musst", "du solltest", "vergiss nicht". Immer als Angebot ("Soll ich …?") oder Erledigt-Meldung ("Ich hab die Liste fertig gemacht").
 - Kein Nachhaken, keine ungefragten Zusatz-Hinweise; höchstens ein Tipp, und nur wenn er passt.
 
+Ohne Druck – du machst nie ein schlechtes Gewissen:
+- Erleichterung statt Leistung. Nicht übertrieben loben, nichts vorrechnen, nicht vergleichen.
+- Keine Streaks, keine Zähler verpasster Tage, nie "Du hast … nicht gemacht", "Ich vermisse dich" oder "Du hast lange nicht geplant". Vergangenes, nicht Gekochtes erwähnst du nicht.
+- Freu dich, wenn jemand da ist; lass die Familie in Ruhe, wenn nicht.
+- Unter der Woche bist du das Gerüst, am Wochenende die Freundin im Hintergrund – je nach Wochenend-Stil im Kontext: "frei" = Sa/So nichts planen; "locker" = höchstens eine Idee pro Wochenendtag, ohne Uhrzeit.
+- Pause (im Kontext): An Pausentagen nichts planen (woche_lesen: pause). Planen ist immer freiwillig; Ideen, Rezepte und Einkaufsliste gehen auch ohne Wochenplan.
+- Spontan-Hilfe: "Wir kommen erst um 19 Uhr heim" → drei schnelle Ideen unter 20 Minuten.
+
 Antworte kurz (höchstens 2–3 Sätze, außer die Familie fragt nach Details), ohne Markdown, ohne Listen-Zeichen und ohne IDs – die Antwort wird evtl. vorgelesen.`;
 
 const WEEKDAY_FORMAT = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
@@ -74,6 +82,8 @@ function profileSummary(profile: HouseholdProfile): string {
     `Zusammen warm essen meistens: Mo–Fr ${MEAL_TIME_LABELS[profile.warmMeal.weekday]}, Sa–So ${MEAL_TIME_LABELS[profile.warmMeal.weekend]}`,
     `Standardwoche: ${rules.meatDays}× Fleisch, ${rules.vegetarianDays}× vegetarisch, ${rules.fishDays}× Fisch${rules.cheatDay ? `, Cheat Day ${rules.cheatDayWeekday || "(Tag frei)"}` : ""}`,
     profile.wishDay.enabled ? `Wunschtag: ${profile.wishDay.weekday}` : "Wunschtag: aus",
+    `Wochenend-Stil: ${WEEKEND_TEXT[profile.weekendStyle]}`,
+    profile.pause ? `Pause: ${profile.pause.from}${profile.pause.until ? ` bis ${profile.pause.until}` : " (offen)"} – an diesen Tagen nichts planen` : "",
     profile.favoriteDishes.length ? `Lieblingsgerichte: ${profile.favoriteDishes.join(", ")}` : "",
     favoriteBases(profile),
     likesText(profile),
@@ -82,6 +92,12 @@ function profileSummary(profile: HouseholdProfile): string {
     .filter(Boolean)
     .join("\n");
 }
+
+const WEEKEND_TEXT = {
+  frei: "frei – Sa/So nichts planen, nur auf Nachfrage helfen",
+  locker: "locker – Sa/So höchstens eine Idee pro Tag, ohne Uhrzeit, ohne Erinnerungen",
+  normal: "wie unter der Woche",
+} as const;
 
 /** "Lieblings-Basen: Nudeln (5×), Reis (2×)" */
 function favoriteBases(profile: HouseholdProfile): string {

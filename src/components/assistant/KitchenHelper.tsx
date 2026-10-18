@@ -12,7 +12,8 @@ import { useMealPlans } from "@/lib/mealPlan";
 import { useShoppingLists } from "@/lib/shoppingList";
 import { useTextFieldFocused } from "@/lib/useMobileKeyboard";
 import { useProfile } from "@/lib/useProfile";
-import { useWeekPlans } from "@/lib/weekPlan";
+import { toIsoDate, useToday, useWeekPlans } from "@/lib/weekPlan";
+import { recordOpen } from "@/lib/activity";
 import type { AssistantData } from "@/lib/assistant/ops";
 import { helperName, helperTitle } from "@/lib/profile";
 import { HelperAvatar } from "./HelperAvatar";
@@ -75,6 +76,12 @@ export function KitchenHelper() {
       : profile === null
         ? null
         : { profile, weekPlans, mealPlans, recipes, shopping };
+
+  // App geöffnet (für "Willkommen zurück" nach 3+ Tagen)
+  const today = useToday();
+  useEffect(() => {
+    if (today) recordOpen(toIsoDate(today));
+  }, [today]);
 
   // Von außen öffnen, z. B. Kachel "Was ist noch da?" → Reste-Modus
   const pantry = usePantry();

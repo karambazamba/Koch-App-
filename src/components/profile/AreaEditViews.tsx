@@ -18,7 +18,7 @@ import {
 import { NumberStepper } from "@/components/form/NumberStepper";
 import { sortedBases } from "@/lib/bases";
 import { LIKE_WEIGHTS, likeLevel, sortedLikes, withLikes, withoutLike } from "@/lib/likes";
-import { HEALTH_TIP_LEVELS, WEEKDAYS, planningWeekLabel, standardWeekDays } from "@/lib/profile";
+import { HEALTH_TIP_LEVELS, WEEKDAYS, WEEKEND_STYLES, planningWeekLabel, standardWeekDays } from "@/lib/profile";
 
 export function FavoritesEditView() {
   return (
@@ -301,6 +301,124 @@ export function HealthTipsEditView() {
           </div>
         </>
       )}
+    </ProfileEditPage>
+  );
+}
+
+/** "Wie seid ihr am Wochenende?" + Grill-Idee bei gutem Wetter */
+export function WeekendEditView() {
+  return (
+    <ProfileEditPage title="Wochenende">
+      {(draft, setDraft) => (
+        <>
+          <p className="text-lg font-bold">Wie seid ihr am Wochenende?</p>
+          <div className="flex flex-col gap-2" role="radiogroup" aria-label="Wochenend-Stil">
+            {WEEKEND_STYLES.map((w) => (
+              <button
+                key={w.value}
+                type="button"
+                role="radio"
+                aria-checked={draft.weekendStyle === w.value}
+                onClick={() => setDraft((d) => ({ ...d, weekendStyle: w.value }))}
+                className={tileClass(draft.weekendStyle === w.value)}
+              >
+                <span className="flex flex-col self-stretch px-2 text-left">
+                  <span className="text-base font-bold">
+                    {w.emoji} {w.label}
+                  </span>
+                  <span className="text-sm text-muted">{w.hint}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className={`${CARD} flex flex-col gap-3 p-4`}>
+            <label className="flex items-center gap-3">
+              <span className="min-w-0 flex-1">
+                <span className="block font-bold">Grill-Idee bei gutem Wetter</span>
+                <span className="block text-sm text-muted">
+                  Freitags schaue ich in die Wettervorhersage (Open-Meteo, nur grob per Postleitzahl) und schlage höchstens einmal Grillen vor.
+                </span>
+              </span>
+              <input
+                type="checkbox"
+                role="switch"
+                checked={draft.weather.consent}
+                onChange={(e) => setDraft((d) => ({ ...d, weather: { ...d.weather, consent: e.target.checked } }))}
+                className="h-6 w-6 shrink-0 accent-accent"
+                aria-label="Grill-Idee bei gutem Wetter"
+              />
+            </label>
+            {draft.weather.consent && (
+              <input
+                inputMode="numeric"
+                maxLength={5}
+                value={draft.weather.postcode}
+                onChange={(e) => setDraft((d) => ({ ...d, weather: { ...d.weather, postcode: e.target.value.replace(/\D/g, "").slice(0, 5) } }))}
+                placeholder="Postleitzahl, z. B. 10115"
+                aria-label="Postleitzahl"
+                className={INPUT}
+              />
+            )}
+          </div>
+        </>
+      )}
+    </ProfileEditPage>
+  );
+}
+
+/** Pause-Modus: an/aus, ab wann, optional bis wann */
+export function PauseEditView() {
+  return (
+    <ProfileEditPage title="Pause">
+      {(draft, setDraft) => {
+        const on = Boolean(draft.pause);
+        const today = new Date();
+        const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+        return (
+          <>
+            <p className={SUBTLE}>
+              Urlaub oder einfach mal Ruhe: In der Pause plane ich nichts, schicke keine Hinweise und keine Mitteilungen. Kurz vor
+              dem Ende frage ich höchstens einmal, ob ich etwas vorbereiten soll.
+            </p>
+            <label className={`${CARD} flex items-center gap-3 p-4`}>
+              <span className="min-w-0 flex-1 font-bold">Pause</span>
+              <input
+                type="checkbox"
+                role="switch"
+                checked={on}
+                onChange={(e) => setDraft((d) => ({ ...d, pause: e.target.checked ? { from: todayIso, until: null } : null }))}
+                className="h-6 w-6 shrink-0 accent-accent"
+                aria-label="Pause"
+              />
+            </label>
+            {draft.pause && (
+              <div className={`${CARD} flex flex-col gap-3 p-4`}>
+                <label className="flex items-center justify-between gap-3">
+                  <span className="font-semibold">Ab</span>
+                  <input
+                    type="date"
+                    value={draft.pause.from}
+                    onChange={(e) => e.target.value && setDraft((d) => ({ ...d, pause: { from: e.target.value, until: d.pause?.until ?? null } }))}
+                    aria-label="Pause ab"
+                    className={`${INPUT_BASE} h-12 px-3`}
+                  />
+                </label>
+                <label className="flex items-center justify-between gap-3">
+                  <span className="font-semibold">Bis (optional)</span>
+                  <input
+                    type="date"
+                    value={draft.pause.until ?? ""}
+                    min={draft.pause.from}
+                    onChange={(e) => setDraft((d) => ({ ...d, pause: d.pause ? { ...d.pause, until: e.target.value || null } : null }))}
+                    aria-label="Pause bis"
+                    className={`${INPUT_BASE} h-12 px-3`}
+                  />
+                </label>
+              </div>
+            )}
+          </>
+        );
+      }}
     </ProfileEditPage>
   );
 }

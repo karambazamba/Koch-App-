@@ -15,7 +15,9 @@ import {
   type LucideIcon,
   Sparkles,
   Ban,
+  Palmtree,
   Salad,
+  Sun,
   ShoppingBasket,
   Sprout,
   Wheat,
@@ -39,6 +41,7 @@ import {
   type Person,
   helperName,
   HEALTH_TIP_LEVELS,
+  WEEKEND_STYLES,
 } from "@/lib/profile";
 
 const LUNCH_ICONS: Record<"zuhause" | "auswaerts" | "manchmal", LucideIcon> = {
@@ -110,6 +113,21 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
                 <Nowrap>Mo–Fr {MEAL_TIME_LABELS[profile.warmMeal.weekday]}</Nowrap>
                 {" · "}
                 <Nowrap>Sa–So {MEAL_TIME_LABELS[profile.warmMeal.weekend]}</Nowrap>
+              </span>
+            </Row>
+            <Row href="/profil/wochenende" icon={Sun} title="Wochenende">
+              <span>
+                {WEEKEND_STYLES.find((w) => w.value === profile.weekendStyle)?.emoji}{" "}
+                {WEEKEND_STYLES.find((w) => w.value === profile.weekendStyle)?.label}
+              </span>
+            </Row>
+            <Row href="/profil/pause" icon={Palmtree} title="Pause">
+              <span>
+                {profile.pause
+                  ? profile.pause.until
+                    ? `Pause bis ${new Date(`${profile.pause.until}T12:00:00`).toLocaleDateString("de-DE", { day: "numeric", month: "numeric" })}`
+                    : "Pause an"
+                  : "Aus"}
               </span>
             </Row>
             <Row href="/profil/einkaufstag" icon={ShoppingCart} title="Einkaufstag">

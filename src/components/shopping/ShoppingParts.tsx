@@ -147,6 +147,7 @@ export function ItemContent({
         </button>
         <span className={`min-w-0 flex-1 truncate text-base font-semibold ${item.checked ? "text-stone-400 line-through" : "text-ink"}`}>
           {item.name}
+          {item.optional && <span className="ml-1.5 text-xs font-normal text-muted">optional</span>}
         </span>
         {item.dishes.length > 0 && (
           <button

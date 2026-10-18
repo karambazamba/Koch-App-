@@ -7,11 +7,12 @@
 // höchstens 1 proaktive Mitteilung pro Tag, Ruhezeit 20:00–7:00.
 
 import { useExternalStore } from "./useExternalStore";
+import { noteProactiveAnswered, noteProactiveShown } from "./activity";
 import { createLocalStore } from "./localStore";
 import { helperMessage, type HouseholdProfile } from "./profile";
 import { addDays } from "./weekPlan";
 
-export type NudgeKind = "bewertung" | "einkauf-morgen" | "wochenplanung" | "lob" | "tipp";
+export type NudgeKind = "bewertung" | "einkauf-morgen" | "wochenplanung" | "lob" | "tipp" | "pause" | "wochenende" | "grill";
 
 export const IGNORE_LIMIT = 3;
 export const PAUSE_DAYS = 14;
@@ -71,6 +72,7 @@ function update(kind: NudgeKind, today: string, change: (s: KindState) => KindSt
 
 /** Gezeigt (einmal pro Tag zählt) */
 export function noteShown(kind: NudgeKind, today: string) {
+  noteProactiveShown(today);
   const current = (store.load() ?? EMPTY).kinds[kind];
   if (current?.lastShown === today) return;
   update(kind, today, (s) => ({ ...s, lastShown: today, answered: false }));
@@ -78,11 +80,13 @@ export function noteShown(kind: NudgeKind, today: string) {
 
 /** Darauf reagiert → Zähler zurück */
 export function noteAnswered(kind: NudgeKind, today: string) {
+  noteProactiveAnswered(today);
   update(kind, today, (s) => ({ ...s, lastShown: today, answered: true, ignored: 0 }));
 }
 
 /** Weggeklickt (✕, "Später") → zählt wie Ignorieren */
 export function noteDismissed(kind: NudgeKind, today: string) {
+  noteProactiveAnswered(today);
   update(kind, today, (s) => {
     const ignored = s.ignored + 1;
     return ignored >= IGNORE_LIMIT
@@ -99,10 +103,17 @@ export const MAX_PROACTIVE_PER_DAY = 1;
 
 /**
  * Darf jetzt eine proaktive Mitteilung raus? Nicht in der Ruhezeit
- * (20:00–7:00) und höchstens eine pro Tag. Selbst eingestellte Erinnerungen
+ * (20:00–7:00), höchstens eine pro Tag, nie in der Pause, nach "leiser
+ * werden" oder am freien Wochenende. Selbst eingestellte Erinnerungen
  * zählen nicht und laufen nicht hierüber.
  */
-export function pushAllowed(now: Date, sentToday: number): boolean {
+export function pushAllowed(
+  now: Date,
+  sentToday: number,
+  context?: { paused?: boolean; quiet?: boolean; weekendFree?: boolean },
+): boolean {
+  // Pause, "leiser werden" und freies Wochenende: gar keine proaktiven Mitteilungen
+  if (context?.paused || context?.quiet || context?.weekendFree) return false;
   const h = now.getHours();
   if (h >= QUIET_FROM || h < QUIET_UNTIL) return false;
   return sentToday < MAX_PROACTIVE_PER_DAY;

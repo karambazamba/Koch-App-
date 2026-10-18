@@ -139,8 +139,23 @@ export type MealClock = Record<MealTime, string>;
 
 export const DEFAULT_MEAL_CLOCK: MealClock = { mittags: "12:30", abends: "18:30" };
 
+/** Wie die Familie am Wochenende ist (Profil v11) */
+export type WeekendStyle = "frei" | "locker" | "normal";
+
+export const WEEKEND_STYLES: { value: WeekendStyle; emoji: string; label: string; hint: string }[] = [
+  { value: "frei", emoji: "🏖", label: "Frei", hint: "Sa/So nichts planen, keine Hinweise – nur auf Nachfrage" },
+  { value: "locker", emoji: "🌿", label: "Locker", hint: "Höchstens eine Idee pro Tag, ohne Uhrzeit und ohne Erinnerungen" },
+  { value: "normal", emoji: "📅", label: "Wie unter der Woche", hint: "Ganz normal planen" },
+];
+
+/** Pause (Urlaub …): von – bis (bis = offen) */
+export type PauseSettings = { from: string; until: string | null };
+
+/** Grill-Idee bei gutem Wetter: nur mit Zustimmung, Ort grob per PLZ */
+export type WeatherSettings = { consent: boolean; postcode: string };
+
 export type HouseholdProfile = {
-  version: 10;
+  version: 11;
   householdName: string;
   adults: number;
   kids: number;
@@ -165,6 +180,12 @@ export type HouseholdProfile = {
   healthTips: HealthTipLevel;
   /** Uhrzeit des gemeinsamen Essens (Profil v10) – für "HEUTE · 18:30" und Bewertung */
   mealClock: MealClock;
+  /** Wochenend-Stil (Profil v11, Standard "locker") */
+  weekendStyle: WeekendStyle;
+  /** Pause-Modus (Profil v11), null = aus */
+  pause: PauseSettings | null;
+  /** Wetter für die Grill-Idee (Profil v11) */
+  weather: WeatherSettings;
   updatedAt: string;
 };
 
@@ -260,7 +281,7 @@ export function createPerson(role: PersonRole): Person {
 
 export function createEmptyProfile(): HouseholdProfile {
   return {
-    version: 10,
+    version: 11,
     householdName: "",
     adults: 2,
     kids: 1,
@@ -287,6 +308,9 @@ export function createEmptyProfile(): HouseholdProfile {
     likesBlocked: [],
     healthTips: "ab_und_zu",
     mealClock: DEFAULT_MEAL_CLOCK,
+    weekendStyle: "locker",
+    pause: null,
+    weather: { consent: false, postcode: "" },
     updatedAt: "",
   };
 }
@@ -431,7 +455,7 @@ export function normalizeMealTime(value: unknown, fallback: MealTime): MealTime 
 export function migrateProfile(raw: unknown): HouseholdProfile | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as Record<string, unknown>;
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(data.version as number)) return null;
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].includes(data.version as number)) return null;
 
   const defaults = createEmptyProfile();
 
@@ -507,11 +531,39 @@ export function migrateProfile(raw: unknown): HouseholdProfile | null {
     healthTips: data.healthTips === "aus" || data.healthTips === "oefter" ? data.healthTips : "ab_und_zu",
     // Bis v9 keine Uhrzeiten → Standard 12:30 / 18:30
     mealClock: migrateMealClock(data.mealClock),
+    // Bis v10: Wochenende "locker", keine Pause, kein Wetter
+    weekendStyle: data.weekendStyle === "frei" || data.weekendStyle === "normal" ? data.weekendStyle : "locker",
+    pause: migratePause(data.pause),
+    weather: migrateWeather(data.weather),
     updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : "",
   };
 }
 
 const CLOCK = /^([01]\d|2[0-3]):[0-5]\d$/;
+const ISO = /^\d{4}-\d{2}-\d{2}$/;
+
+function migratePause(raw: unknown): PauseSettings | null {
+  if (!raw || typeof raw !== "object") return null;
+  const p = raw as Partial<PauseSettings>;
+  if (typeof p.from !== "string" || !ISO.test(p.from)) return null;
+  return { from: p.from, until: typeof p.until === "string" && ISO.test(p.until) ? p.until : null };
+}
+
+function migrateWeather(raw: unknown): WeatherSettings {
+  const w = (raw && typeof raw === "object" ? raw : {}) as Partial<WeatherSettings>;
+  return { consent: w.consent === true, postcode: typeof w.postcode === "string" ? w.postcode.replace(/\D/g, "").slice(0, 5) : "" };
+}
+
+/** Ist an diesem Tag ("YYYY-MM-DD") Pause? */
+export function pausedOn(profile: Pick<HouseholdProfile, "pause"> | null | undefined, iso: string): boolean {
+  const p = profile?.pause;
+  return Boolean(p && p.from <= iso && (!p.until || iso <= p.until));
+}
+
+/** Samstag oder Sonntag? */
+export function isWeekendDay(weekday: string): boolean {
+  return weekday === "Samstag" || weekday === "Sonntag";
+}
 
 function migrateMealClock(raw: unknown): MealClock {
   const r = (raw && typeof raw === "object" ? raw : {}) as Partial<MealClock>;

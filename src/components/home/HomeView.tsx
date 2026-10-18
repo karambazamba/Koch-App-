@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { WelcomeCard } from "@/components/HouseholdCard";
 import { CARD } from "@/components/ui/styles";
-import { helperName } from "@/lib/profile";
+import { helperName, pausedOn } from "@/lib/profile";
 import { HelperNote } from "./HelperNote";
-import { BentoCards, HeroCard, HomeAskBar, HomeHeader, RatingRow, useSuggestToday } from "./HomeSections";
+import { BentoCards, HeroCard, HomeAskBar, HomeHeader, PauseCard, RatingRow, WelcomeBack, useSuggestToday } from "./HomeSections";
+import { useActivity, welcomeDue } from "@/lib/activity";
 import { useHomeData } from "./useHomeData";
 import { useRatingCandidate } from "./useRatingCandidate";
 import type { RatingCandidate } from "@/lib/ratings";
@@ -23,6 +24,9 @@ export function HomeView() {
   const [kept, setKept] = useState<RatingCandidate | null>(null);
   if (rating && rating.date !== kept?.date) setKept(rating);
   const shownRating = kept && kept.date === data?.todayIso ? kept : null;
+  const activity = useActivity();
+  const paused = Boolean(data && pausedOn(data.profile, data.todayIso));
+  const welcome = Boolean(data && activity && welcomeDue(activity, data.todayIso));
 
   return (
     <>
@@ -34,11 +38,15 @@ export function HomeView() {
           <WelcomeCard />
         ) : (
           <>
-            <div className="flex flex-col gap-2">
-              <HeroCard data={data} onSuggest={suggest} />
-              {shownRating && <RatingRow key={shownRating.date} candidate={shownRating} data={data} />}
-            </div>
-            <HelperNote data={data} />
+            {paused ? (
+              <PauseCard data={data} />
+            ) : (
+              <div className="flex flex-col gap-2">
+                <HeroCard data={data} onSuggest={suggest} />
+                {shownRating && <RatingRow key={shownRating.date} candidate={shownRating} data={data} />}
+              </div>
+            )}
+            {welcome && !paused ? <WelcomeBack data={data} /> : <HelperNote data={data} />}
             <BentoCards data={data} />
           </>
         )}

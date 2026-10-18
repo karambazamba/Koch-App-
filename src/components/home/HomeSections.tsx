@@ -12,9 +12,10 @@ import { useAssistantStatus } from "@/lib/assistant/client";
 import { openHelper } from "@/lib/assistant/open";
 import { dishEmoji } from "@/lib/dishEmoji";
 import { noteAnswered, noteDismissed, noteShown } from "@/lib/nudges";
-import { helperName, mealClockFor } from "@/lib/profile";
+import { helperName, mealClockFor, saveProfile } from "@/lib/profile";
+import { dismissWelcome } from "@/lib/activity";
 import { DOWN_REASONS, rateDown, rateUp, type RatingCandidate } from "@/lib/ratings";
-import { useMealPlans } from "@/lib/mealPlan";
+import { entriesWithoutSlot, mealPlansWithWeek, replaceMealPlans, useMealPlans } from "@/lib/mealPlan";
 import { useWeekShoppingList } from "@/lib/useWeekShoppingList";
 import type { HomeData } from "./useHomeData";
 
@@ -68,14 +69,26 @@ export function HeroCard({ data, onSuggest }: { data: HomeData; onSuggest: () =>
 
   const leftoversOnly = !entry && day?.leftovers;
   if (!entry && !leftoversOnly) {
+    // Planen ist freiwillig – nie als Fehler oder Warnung
+    if (day?.weekend === "frei") {
+      return (
+        <section className={`${CARD} flex flex-col items-center gap-2 p-6 text-center`} aria-label="Heute">
+          <span className="text-5xl" aria-hidden>
+            🏖
+          </span>
+          <p className="text-lg font-bold leading-snug">Wochenende – genießt es.</p>
+          <p className="text-sm text-muted">Wenn ihr was braucht, fragt {helperName(profile)} einfach.</p>
+        </section>
+      );
+    }
     return (
       <section className={`${CARD} flex flex-col items-center gap-3 p-6 text-center`} aria-label="Heute">
         <span className="text-5xl" aria-hidden>
           🍽️
         </span>
-        <p className="text-lg font-bold leading-snug">Noch nichts für heute – soll {helperName(profile)} was vorschlagen?</p>
-        <button type="button" onClick={onSuggest} className={`${buttonClass("primary", "lg")} w-full`}>
-          Ja, schlag was vor
+        <p className="text-lg font-bold leading-snug">Spontan heute? Frag {helperName(profile)} einfach 😊</p>
+        <button type="button" onClick={onSuggest} className={`${buttonClass("secondary", "lg")} w-full`}>
+          Ideen holen
         </button>
       </section>
     );
@@ -101,7 +114,8 @@ export function HeroCard({ data, onSuggest }: { data: HomeData; onSuggest: () =>
       <Link href={entry?.recipeId ? `/kochbuch/rezept?id=${encodeURIComponent(entry.recipeId)}` : "/wochenplan"} className="block active:opacity-90">
         <div className="relative flex h-28 items-center justify-center [@media(max-height:620px)]:h-16 bg-linear-to-br from-accent-soft via-accent-soft to-accent/45">
           <span className="absolute left-4 top-3 rounded-full bg-surface/90 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-accent-strong">
-            Heute · {clock}
+            {/* Lockeres Wochenende: eine Idee ohne Uhrzeit */}
+            {day?.weekend === "locker" ? "Falls ihr Lust habt" : `Heute · ${clock}`}
           </span>
           <span className="text-6xl drop-shadow-sm [@media(max-height:620px)]:text-4xl" aria-hidden>
             {emoji}
@@ -127,6 +141,72 @@ export function HeroCard({ data, onSuggest }: { data: HomeData; onSuggest: () =>
     </section>
   );
 }
+
+/** Pause: ruhig, ohne Hinweise – mit "Pause beenden" */
+export function PauseCard({ data }: { data: HomeData }) {
+  const pause = data.profile.pause;
+  return (
+    <section className={`${CARD} flex flex-col items-center gap-3 p-6 text-center`} aria-label="Pause">
+      <span className="text-5xl" aria-hidden>
+        ☀️
+      </span>
+      <p className="text-lg font-bold leading-snug">
+        {pause?.until ? `Pause bis ${LONG_DATE.format(new Date(`${pause.until}T12:00:00`))}` : "Pause"} – genießt die Zeit ☀️
+      </p>
+      <button type="button" onClick={() => saveProfile({ ...data.profile, pause: null })} className={`${buttonClass("secondary", "lg")} w-full`}>
+        Pause beenden
+      </button>
+    </section>
+  );
+}
+
+/** Nach 3+ Tagen einmal warm begrüßen – kein Rückblick auf Verpasstes */
+export function WelcomeBack({ data }: { data: HomeData }) {
+  const mealPlans = useMealPlans();
+  const status = useAssistantStatus(true);
+  const router = useRouter();
+  const { todayIso, profile, week } = data;
+  const fresh = () => {
+    // Alte, unerledigte Planung ab heute still verwerfen
+    if (mealPlans) {
+      const weeks = mealPlansWithWeek(mealPlans, week.weekStart, (entries) =>
+        week.days.filter((d) => d.date >= todayIso && d.slot.entry).reduce((acc, d) => entriesWithoutSlot(acc, d.slot), entries),
+      );
+      replaceMealPlans(weeks);
+    }
+    if (profile.pause) saveProfile({ ...profile, pause: null });
+    dismissWelcome(todayIso);
+    if (status?.configured) openHelper(undefined, "Wir starten frisch – schlag mir bitte was für die nächsten Tage vor.");
+    else router.push("/wochenplan");
+  };
+  return (
+    <section className="flex items-start gap-2.5" aria-label="Willkommen zurück">
+      <HelperAvatar size={40} variant="badge" />
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <p className="rounded-2xl rounded-tl-md border border-line bg-surface px-3.5 py-2.5 text-[15px] leading-snug text-ink">
+          Hey, schön, dass du da bist! 😊 Hattet ihr eine gute Zeit? Frisch starten oder noch Pause?
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={fresh} className={chipClass(false)}>
+            Frisch starten
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              saveProfile({ ...profile, pause: { from: todayIso, until: null } });
+              dismissWelcome(todayIso);
+            }}
+            className={chipClass(false)}
+          >
+            Noch Pause
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const LONG_DATE = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "numeric", month: "long" });
 
 /** Schmale Zeile "Wie war …?" 👍 / 👎 / ✕ – nur bei neuen Gerichten */
 export function RatingRow({ candidate, data }: { candidate: RatingCandidate; data: HomeData }) {

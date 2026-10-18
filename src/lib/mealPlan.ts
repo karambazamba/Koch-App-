@@ -9,11 +9,14 @@
 import { useExternalStore } from "./useExternalStore";
 import type { Recipe, RecipeCategory } from "./cookbook";
 import { guessDishCategory } from "./dishCategory";
+import { noteUserAction, todayIso } from "./activity";
 import { createLocalStore } from "./localStore";
 import {
   loadProfile,
   mainMealHeadcount,
   mainMealTime,
+  isWeekendDay,
+  pausedOn,
   personLabel,
   type HouseholdProfile,
   type MealTime,
@@ -100,6 +103,10 @@ export type PlanDay = {
   note: string;
   /** Zweite Mahlzeit: Reste vom Vortag (Titel), sonst null */
   leftovers: string | null;
+  /** Pause-Modus an diesem Tag (zählt wie ein Ausflugstag) */
+  paused: boolean;
+  /** Wochenend-Stil an Sa/So: "frei" (nichts planen) oder "locker" (eine Idee, optional); sonst null */
+  weekend: "frei" | "locker" | null;
 };
 
 export type PlanWeek = {
@@ -189,10 +196,15 @@ export function buildWeek(
     const derived = derivedFor(weekday);
     const entry = s && s.kind !== "note" ? (s.kind === "cleared" ? null : resolveStored(s)) : derived;
     const note = stored[noteKey(weekday)];
+    const date = addDays(weekStart, i);
+    const paused = pausedOn(profile, date);
+    const style = profile?.weekendStyle ?? "locker";
     return {
       weekday,
-      date: addDays(weekStart, i),
-      away: Boolean(weekPlan?.awayDays.includes(weekday)),
+      date,
+      away: Boolean(weekPlan?.awayDays.includes(weekday)) || paused,
+      paused,
+      weekend: isWeekendDay(weekday) && style !== "normal" ? style : null,
       cheat: Boolean(rules?.cheatDay && rules.cheatDayWeekday === weekday),
       slot: { key, entry, hint: null, hasDerived: Boolean(derived) },
       mealTime: mainMealTime(profile, weekday),
@@ -218,6 +230,8 @@ export function buildWeek(
   let total = 0;
   for (const day of days) {
     if (day.away) continue;
+    // Freies Wochenende zählt nicht mit, außer es steht doch etwas drin
+    if (day.weekend === "frei" && !day.slot.entry) continue;
     total++;
     const entry = day.slot.entry;
     if (!entry) continue;
@@ -233,7 +247,7 @@ export function buildWeek(
   };
   let previous: RecipeCategory | null = null;
   for (const day of days) {
-    if (day.away || day.slot.entry) continue;
+    if (day.away || day.slot.entry || day.weekend === "frei") continue;
     if (day.cheat) {
       day.slot.hint = "cheatday";
       continue;
@@ -364,6 +378,7 @@ function updateWeek(
 ) {
   const current = store.load() ?? { version: 3 as const, weeks: {} };
   store.save({ ...current, weeks: mealPlansWithWeek(current.weeks, weekStart, change) });
+  noteUserAction(todayIso());
 }
 
 // Reine Änderungen an den Einträgen einer Woche – genutzt vom Wochenplan und

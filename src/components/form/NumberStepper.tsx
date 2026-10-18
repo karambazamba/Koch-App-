@@ -35,7 +35,7 @@ export function NumberStepper({
     >
       <div>
         <p className="text-base font-bold">{label}</p>
-        {hint && <p className="text-sm text-muted">{hint}</p>}
+        {hint && <p className="whitespace-nowrap text-sm text-muted">{hint}</p>}
       </div>
       <div className="flex items-center gap-3">
         <button

@@ -21,6 +21,8 @@ import {
   type MealTime,
   type Person,
   type PersonRole,
+  type WeekendStyle,
+  WEEKEND_STYLES,
 } from "../profile";
 import {
   extractDietItems,
@@ -51,6 +53,7 @@ export type StepId =
   | "extrasWho"
   | "warmWeekday"
   | "warmWeekend"
+  | "weekendStyle"
   | "shoppingDay"
   | "weekRules"
   | "cheatDay"
@@ -117,6 +120,7 @@ const BLOCK_OF: Record<StepId, Block> = {
   extrasWho: "extras",
   warmWeekday: "warm",
   warmWeekend: "warm",
+  weekendStyle: "warm",
   shoppingDay: "shopping",
   weekRules: "rules",
   cheatDay: "rules",
@@ -213,6 +217,8 @@ function question(s: OnboardingState, step: StepId): string {
       return "Wann esst ihr unter der Woche meistens zusammen warm?";
     case "warmWeekend":
       return "Und am Wochenende – anders?";
+    case "weekendStyle":
+      return "Wie seid ihr am Wochenende?";
     case "shoppingDay":
       return "An welchem Tag kauft ihr meistens ein? Ab da plane ich immer eine Woche.";
     case "weekRules":
@@ -272,6 +278,8 @@ export function chipsFor(s: OnboardingState): Chip[] {
         { label: "Mittags", value: "mittags" },
         { label: "Abends", value: "abends" },
       ];
+    case "weekendStyle":
+      return WEEKEND_STYLES.map((w) => ({ label: `${w.emoji} ${w.label}`, value: w.value, primary: w.value === "locker" }));
     case "shoppingDay":
       return WEEKDAYS.map((d) => ({ label: d, value: d }));
     case "weekRules":
@@ -681,7 +689,7 @@ export function answer(state: OnboardingState, a: Answer): OnboardingState {
       s = { ...s, draft: { ...s.draft, warmMeal: { ...s.draft.warmMeal, weekday: weekday ?? s.draft.warmMeal.weekday } } };
       if (times.weekend) {
         s = { ...s, draft: { ...s.draft, warmMeal: { ...s.draft.warmMeal, weekend: times.weekend } } };
-        return finishBlock(say(s, warmText(s), { kind: "warm" }), "warm");
+        return goto(say(s, warmText(s), { kind: "warm" }), "weekendStyle");
       }
       return goto(s, "warmWeekend");
     }
@@ -694,7 +702,26 @@ export function answer(state: OnboardingState, a: Answer): OnboardingState {
             ? s.draft.warmMeal.weekday
             : times.any;
       s = { ...s, draft: { ...s.draft, warmMeal: { ...s.draft.warmMeal, weekend } } };
-      return finishBlock(say(s, warmText(s), { kind: "warm" }), "warm");
+      return goto(say(s, warmText(s), { kind: "warm" }), "weekendStyle");
+    }
+    case "weekendStyle": {
+      const t = text.toLowerCase();
+      const style: WeekendStyle =
+        chip === "frei" || chip === "locker" || chip === "normal"
+          ? chip
+          : /frei|nichts planen|in ruhe/.test(t)
+            ? "frei"
+            : /wie unter der woche|normal|planen|genauso/.test(t)
+              ? "normal"
+              : "locker";
+      s = { ...s, draft: { ...s.draft, weekendStyle: style } };
+      const reply =
+        style === "frei"
+          ? "Gebongt – am Wochenende halte ich mich raus 🏖"
+          : style === "locker"
+            ? "Schön locker 🌿 – höchstens eine Idee pro Tag, ganz ohne Erinnerungen."
+            : "Alles klar – Wochenende plane ich wie unter der Woche 📅";
+      return finishBlock(say(s, reply, { kind: "warm" }), "warm");
     }
     case "shoppingDay": {
       const day = chip && WEEKDAYS.includes(chip) ? chip : weekdaysIn(text)[0];
@@ -773,9 +800,11 @@ export function skip(s: OnboardingState): OnboardingState {
     case "extrasWho":
       return finishBlock({ ...s, pendingDiet: [] }, "extras");
     case "warmWeekday":
-      return finishBlock(s, "warm");
+      return goto(s, "weekendStyle");
     case "warmWeekend":
       return answer(s, { chip: "same" });
+    case "weekendStyle":
+      return answer(s, { chip: "locker" });
     case "shoppingDay":
       return answer(s, { chip: "Montag" });
     case "weekRules":

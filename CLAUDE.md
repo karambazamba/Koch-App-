@@ -43,6 +43,17 @@ abgeben kann – wie an eine Haushaltskraft, mit der man ganz natürlich spricht
      weggeklickt), pausiert sie 2 Wochen (`noteShown`/`noteAnswered`/
      `noteDismissed`, Speicher `wasgibts.hinweise`).
    - Kurz: Antworten im Chat höchstens 2–3 Sätze, außer auf Nachfrage.
+10. Ohne Druck – die App macht nie ein schlechtes Gewissen:
+   - Keine Streaks, keine Zähler verpasster Tage, keine roten Badges, keine
+     "offenen Aufgaben"-Stapel; nie "Du hast … nicht gemacht", "Ich vermisse
+     dich" oder "Du hast lange nicht geplant".
+   - Nicht gekochte Gerichte vergangener Tage verschwinden leise aus
+     Startseite und Hinweisen (nur im Rückblick sichtbar).
+   - Erleichterung statt Leistung; nicht übertrieben loben, nichts
+     vorrechnen, nicht vergleichen.
+   - Sich freuen, wenn jemand da ist; in Ruhe lassen, wenn nicht.
+   - Unter der Woche das Gerüst, am Wochenende die Freundin im Hintergrund
+     (je nach Wochenend-Stil). Planen ist immer freiwillig.
 
 @AGENTS.md
 
@@ -95,8 +106,8 @@ abgeben kann – wie an eine Haushaltskraft, mit der man ganz natürlich spricht
     Gerichtname, eine ruhige Zeile (Besonderheit wie "Mathis' Wunsch 🎉",
     "Neu", "Reste" · Zeit · Personen), darunter Termine des Tages
     (`src/lib/appointments.ts`, vorerst leer – Platz für Premium-Kalender).
-    Tippen öffnet das Rezept. Nichts geplant: "Noch nichts für heute – soll
-    <Name> was vorschlagen?" (mit KI im Chat, sonst zum Wochenplan).
+    Tippen öffnet das Rezept. Nichts geplant: "Spontan heute? Frag <Name>
+    einfach 😊" (mit KI im Chat, sonst zum Wochenplan).
   - Darunter evtl. die schmale Bewertungszeile (`RatingRow`).
   - Höchstens ein Satz vom Küchenhelfer (`HelperNote`, Avatar + Sprechblase,
     max. 2 Chips), nur bei Wichtigem: fehlt etwas für morgen → wochenplanung
@@ -268,6 +279,45 @@ abgeben kann – wie an eine Haushaltskraft, mit der man ganz natürlich spricht
   vorletzten Tag der Planungswoche, z. B. "Diese Woche 5 Gemüsetage – stark!
   💪"). Die KI bekommt Einstellung, Zahl der Tipps dieser Woche und die
   Regeln (Systemanweisung).
+- Ohne Druck (`src/lib/activity.ts`, Speicher `wasgibts.aktivitaet`):
+  - Willkommen zurück: Nach 3+ Tagen ohne Öffnen begrüßt der Helfer auf der
+    Startseite einmalig ("Hey, schön, dass du da bist! 😊 Hattet ihr eine
+    gute Zeit? Frisch starten oder noch Pause?"). "Frisch starten" verwirft
+    still die Planung ab heute (mit KI fragt der Chat nach Ideen, sonst
+    Wochenplan), "Noch Pause" schaltet den Pause-Modus ein. Kein Rückblick
+    auf Verpasstes.
+  - Leiser werden: Bleiben proaktive Nachrichten (Helfer-Satz,
+    Bewertungszeile) an 3 Tagen seit dem letzten eigenen Tun unbeachtet,
+    schweigt der Helfer, bis wieder jemand selbst etwas tut (Plan oder Liste
+    ändern, Chat, Chip antippen – `noteUserAction`).
+- Pause-Modus (Profil v11 `pause` {from, until|null}; per Chat "Wir sind
+  ab Freitag eine Woche im Urlaub" / "Wir sind wieder da" – `parsePauseRequest`
+  in `src/lib/spontan.ts` – oder unter `/profil/pause`): Pausentage zählen wie
+  Ausflugstage (`PlanDay.paused`, kein Platz, keine Einkäufe), keine
+  Hinweise und keine Push. Startseite: "Pause bis <Datum> – genießt die
+  Zeit ☀️" mit "Pause beenden". Bis 3 Tage vor Beginn einmal "Im Kühlschrank
+  ist noch … – soll ich das in die letzten Tage einplanen?", 2 Tage vor Ende
+  einmal "Ihr seid bald wieder da – soll ich für <Tag> schon was
+  vorbereiten?" (`markAsked`, nie wiederholt).
+- Wochenend-Stil (Profil v11 `weekendStyle`, Standard "locker"; Kennenlernen
+  "Wie seid ihr am Wochenende?" und `/profil/wochenende`):
+  - 🏖 Frei: Sa/So keine Kategorie-Hinweise, zählen nicht bei "x/7 geplant",
+    keine Hinweise/Push/Bewertung; Startseite "Wochenende – genießt es".
+  - 🌿 Locker: Startseite "Falls ihr Lust habt: <Gericht>" ohne Uhrzeit,
+    Zutaten auf der Einkaufsliste als "optional", keine Erinnerungen ans
+    Wochenend-Essen, keine Bewertungsfragen (das Angebot, die nächste Woche
+    zu planen, darf am Wochenende kommen).
+  - 📅 Wie unter der Woche: normale Planung.
+  - Wurden 3 Wochenenden in Folge geplante Gerichte nicht gekocht (keine
+    Bewertung, nicht als gekocht vermerkt), bietet der Helfer EINMAL "frei" an.
+- Spontan-Hilfe (immer, auch ohne Plan und ohne KI, `src/lib/spontan.ts`):
+  Ausflugs-Snacks aus dem Vorrat ("Wir fahren spontan los, was nehmen wir
+  mit?"), drei schnelle Ideen unter 20 Minuten ("Wir kommen erst um 19 Uhr
+  heim"; ohne KI aus dem Kochbuch, sonst Klassiker). Freitags höchstens EIN
+  Grill-Vorschlag, wenn fürs Wochenende gutes Wetter vorhergesagt ist (nur
+  mit Zustimmung, Ort grob per PLZ, Open-Meteo, `src/lib/weather.ts`).
+- Planen ist optional: Ohne Plan zeigt die Startseite "Spontan heute? Frag
+  <Name> einfach 😊" mit "Ideen holen" – nie als Fehler oder Warnung.
 - Bewerten nach dem Kochen – klein und nur bei Neuem (`src/lib/ratings.ts`,
   Speicher `wasgibts.bewertungen` je Kochtag): nur für Gerichte, die es zum
   ersten Mal gibt (`isFirstTime`: Rezept noch nie gekocht/bewertet und nicht
