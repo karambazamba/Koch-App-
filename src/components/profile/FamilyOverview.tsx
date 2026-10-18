@@ -15,8 +15,11 @@ import {
   type LucideIcon,
   Sparkles,
   Ban,
+  Salad,
+  Sprout,
   Wheat,
 } from "lucide-react";
+import { sortedLikes } from "@/lib/likes";
 import { sortedBases } from "@/lib/bases";
 import { PERSON_ICONS } from "@/components/form/NameField";
 import { PageHeader } from "@/components/PageHeader";
@@ -34,6 +37,7 @@ import {
   type HouseholdProfile,
   type Person,
   helperName,
+  HEALTH_TIP_LEVELS,
 } from "@/lib/profile";
 
 const LUNCH_ICONS: Record<"zuhause" | "auswaerts" | "manchmal", LucideIcon> = {
@@ -100,24 +104,6 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
                   : "Noch keine eingetragen"}
               </span>
             </Row>
-            <Row href="/profil/basen" icon={Wheat} title="Eure Lieblings-Basen">
-              <span className="line-clamp-2">
-                {sortedBases(profile.bases).some((b) => profile.bases[b.id] > 0)
-                  ? sortedBases(profile.bases)
-                      .filter((b) => profile.bases[b.id] > 0)
-                      .slice(0, 3)
-                      .map((b) => b.label)
-                      .join(", ")
-                  : "Lerne ich beim Kochen"}
-              </span>
-            </Row>
-            <Row href="/profil/nie-wieder" icon={Ban} title="Nie wieder">
-              <span className="line-clamp-2">
-                {profile.neverAgain.length > 0
-                  ? profile.neverAgain.map((e) => e.title).join(", ")
-                  : "Noch nichts – bisher hat alles geschmeckt"}
-              </span>
-            </Row>
             <Row href="/profil/warme-mahlzeit" icon={UtensilsCrossed} title="Zusammen warm essen">
               <span>
                 <Nowrap>Mo–Fr {MEAL_TIME_LABELS[profile.warmMeal.weekday]}</Nowrap>
@@ -138,6 +124,42 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
                 {" · "}
                 <Nowrap>{profile.helper.voice === "maennlich" ? "männliche" : "weibliche"} Stimme</Nowrap>
               </span>
+            </Row>
+          </List>
+        </Section>
+
+        <Section title="Küchenstil">
+          <List>
+            <Row href="/profil/das-moegt-ihr" icon={Salad} title="Das mögt ihr">
+              <span className="line-clamp-2">
+                {profile.likes.length > 0
+                  ? sortedLikes(profile.likes)
+                      .slice(0, 5)
+                      .map((l) => l.name)
+                      .join(", ")
+                  : "Lerne ich beim Kochen – oder sag's mir"}
+              </span>
+            </Row>
+            <Row href="/profil/basen" icon={Wheat} title="Eure Lieblings-Basen">
+              <span className="line-clamp-2">
+                {sortedBases(profile.bases).some((b) => profile.bases[b.id] > 0)
+                  ? sortedBases(profile.bases)
+                      .filter((b) => profile.bases[b.id] > 0)
+                      .slice(0, 3)
+                      .map((b) => b.label)
+                      .join(", ")
+                  : "Lerne ich beim Kochen"}
+              </span>
+            </Row>
+            <Row href="/profil/nie-wieder" icon={Ban} title="Nie wieder">
+              <span className="line-clamp-2">
+                {profile.neverAgain.length > 0
+                  ? profile.neverAgain.map((e) => e.title).join(", ")
+                  : "Noch nichts – bisher hat alles geschmeckt"}
+              </span>
+            </Row>
+            <Row href="/profil/gesundheit" icon={Sprout} title="Gesundheits-Tipps">
+              <span>{HEALTH_TIP_LEVELS.find((l) => l.value === profile.healthTips)?.label}</span>
             </Row>
           </List>
         </Section>

@@ -19,6 +19,17 @@ abgeben kann – wie an eine Haushaltskraft, mit der man ganz natürlich spricht
 5. Ton: kurz, warm, natürlich, Deutsch, etwas Humor, keine Fachbegriffe.
 6. Einfachheit vor Vollständigkeit: lieber eine Frage mit 2–3 Knöpfen als ein
    Formular.
+7. Lernt mit: Vorlieben (Lieblingszutaten, Basen, 👍/👎) aus Bewertungen,
+   Gekochtem, gewählten Vorschlägen und dem Gespräch merken und nutzen –
+   Neues bleibt "neu, aber nicht fremd". Alles Gelernte ist einsehbar und
+   änderbar.
+8. Gesundheit sanft: Tipps nur laut Einstellung (aus / ab und zu = max. 1 pro
+   Woche / gern öfter = max. 3), immer als konkreter, freiwilliger Tausch mit
+   "Ausprobieren" (nur für dieses Rezept), gern Lob für Gutes. Grundlage:
+   allgemein anerkannte Empfehlungen (z. B. DGE: mehr Gemüse, Hülsenfrüchte,
+   Vollkorn; weniger Zucker, Salz, verarbeitetes Fleisch) – keine Trends oder
+   Heilversprechen. Nie zum Cheat Day oder Wunschessen, nie über Körper,
+   Gewicht oder Kalorien, nie belehrend, nie als Pop-up.
 
 @AGENTS.md
 
@@ -181,6 +192,30 @@ abgeben kann – wie an eine Haushaltskraft, mit der man ganz natürlich spricht
   die Chips). Chips nach Beliebtheit (Profil v8 `bases`: Zähler je Basis,
   erhöht bei Wahl und bei 👍 über `recipeBase()`), im Profil unter
   Essgewohnheiten "Eure Lieblings-Basen" (`/profil/basen`) bearbeitbar.
+- Küchenstil (Profil-Abschnitt): "Das mögt ihr", Lieblings-Basen,
+  Gesundheits-Tipps, Nie wieder.
+- "Das mögt ihr" (`src/lib/likes.ts`, Profil v9 `likes` gewichtet,
+  `likesBlocked`): gelernt aus 👍 (+2), "Gekocht" im Rezept (+1), gewählten
+  Vorschlägen (Reste-Idee angetippt, KI-Vorschlag übernommen: +1) und Sätzen
+  im Chat ("wir lieben Käse", "Paprika geht immer": +3, `extractLikeStatements`;
+  reine Aussagen beantwortet die App selbst mit "Gemerkt ✓ …"). Nur bekannte
+  Lebensmittel, ohne Grundzutaten, Basen, Allergien und "mag nicht".
+  `/profil/das-moegt-ihr`: Chips mit Stufe (♥–♥♥♥), entfernen (wird dann nicht
+  wieder gelernt) und ergänzen. Geht an die KI: bevorzugt einbauen, auch in
+  Entdecker-Rezepten ("neu, aber nicht fremd").
+- Gesundheits-Tipps (`src/lib/healthTips.ts`, Profil v9 `healthTips`, Standard
+  "ab und zu"; Einstellung `/profil/gesundheit`): regelbasierte Tausch-Ideen
+  (`SWAPS`: halbe Sahne → Joghurt, Vollkornnudeln halb/halb, Naturreis, Hack
+  zu einem Drittel → rote Linsen, halbe Menge Wurst/Speck + Paprika, weniger
+  Zucker, Vollkornbrot) für geplante Rezepte ab heute – nie Cheat Day,
+  Wunschessen oder bei Allergie-Konflikt. Hinweis des Tages (Sprechblase
+  "Kleiner Tipp für …") und im Chat (`TipBubble`: "Ausprobieren" ändert nur
+  dieses Rezept, Notiz "🌱 Ausprobiert", mit "Rückgängig"; "Nein danke").
+  Wochenlimit über `wasgibts.tipps` (gezeigte Tipps je Woche, erledigte
+  kommen nicht wieder). Lob zum Wochenrückblick (`weekPraise`, ab dem
+  vorletzten Tag der Planungswoche, z. B. "Diese Woche 5 Gemüsetage – stark!
+  💪"). Die KI bekommt Einstellung, Zahl der Tipps dieser Woche und die
+  Regeln (Systemanweisung).
 - Bewerten nach dem Kochen (`src/lib/ratings.ts`, Speicher
   `wasgibts.bewertungen` je Kochtag): Am Kochtag ab 19 Uhr (bzw. 14 Uhr bei
   "mittags") oder beim nächsten Öffnen (bis 2 Tage zurück) fragt die Karte

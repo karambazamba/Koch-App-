@@ -44,7 +44,8 @@ export function parseRequest(body: unknown): AssistantRequest {
   const pending = (Array.isArray(b.pending) ? b.pending : []).filter(
     (op): op is ChangeOp => Boolean(op) && typeof op === "object" && typeof op.id === "string" && OP_TYPES.has(op.type),
   );
-  return { deviceId: b.deviceId, today: b.today, messages, pending, data };
+  const tipsThisWeek = typeof b.tipsThisWeek === "number" && b.tipsThisWeek >= 0 ? Math.min(10, Math.round(b.tipsThisWeek)) : 0;
+  return { deviceId: b.deviceId, today: b.today, messages, pending, data, tipsThisWeek };
 }
 
 /** Nach einer Ausweich-Antwort (fallback) nur den Teil ab dem letzten Wechsel weitergeben */
@@ -95,7 +96,7 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
   const system: Anthropic.Beta.BetaTextBlockParam[] = [
     // Name/Ton und Arbeitsweise ändern sich selten → gecacht; Kontext pro Anfrage
     { type: "text", text: `${identityPrompt(req.data.profile)}\n\n${SYSTEM_PROMPT}`, cache_control: { type: "ephemeral" } },
-    { type: "text", text: contextText(req.data, req.today, weeks) + pendingSummary(req.pending) },
+    { type: "text", text: contextText(req.data, req.today, weeks, req.tipsThisWeek) + pendingSummary(req.pending) },
   ];
 
   let reply = "";

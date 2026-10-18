@@ -29,6 +29,9 @@ import { useSpeechInput } from "@/lib/useSpeechInput";
 import { DEFAULT_SHOPPING_DAY, toIsoDate, useToday, weekStartFor } from "@/lib/weekPlan";
 import { ICON_BUTTON, INPUT_BASE, NOTE, chipClass } from "@/components/ui/styles";
 import { ProposalCard } from "./ProposalCard";
+import { TipBubble } from "./TipBubble";
+import { tipsShown, useTipStore } from "@/lib/healthTips";
+import { extractLikeStatements, learnFromRecipe, learnLikes, LIKE_WEIGHTS } from "@/lib/likes";
 
 export type ChatTurnView = ChatTurn & {
   /** Fehlermeldung – wird nicht an die KI geschickt */
@@ -96,6 +99,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
   const [guided, setGuided] = useState<OnboardingState | null>(null);
   const voice = data?.profile.helper.voice ?? "weiblich";
   const pantry = usePantry();
+  const tipStore = useTipStore();
 
   /** Frage an die KI; `display` = was im Chat steht, wenn anders als die Frage */
   const ask = async (text: string, display?: string) => {
@@ -123,7 +127,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
     setBusy(true);
     try {
       const shoppingDay = data.profile.shoppingDay || DEFAULT_SHOPPING_DAY;
-      const result = await askAssistant(history, chat.proposal?.ops ?? [], data, toIsoDate(today), weekStartFor(today, shoppingDay));
+      const weekStart = weekStartFor(today, shoppingDay);
+      const result = await askAssistant(history, chat.proposal?.ops ?? [], data, toIsoDate(today), weekStart, tipsShown(weekStart, tipStore));
       setChat((c) => {
         // Bisher abgewählte Punkte bleiben abgewählt, neue sind ausgewählt
         const previous = new Set(c.proposal?.ops.map((op) => op.id));
@@ -225,6 +230,26 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
       return;
     }
     if (chat.reste) return void resteInput(t);
+    // "Wir lieben Käse" → Lieblingszutaten merken
+    const liked = extractLikeStatements(t);
+    if (liked.length) {
+      learnLikes(liked, LIKE_WEIGHTS.chat);
+      const names = liked.length === 1 ? liked[0] : `${liked.slice(0, -1).join(", ")} und ${liked[liked.length - 1]}`;
+      const reply: ChatTurnView = {
+        role: "assistant",
+        local: true,
+        text: `Gemerkt ✓ ${names} ${liked.length === 1 ? "kommt" : "kommen"} auf eure Liste „Das mögt ihr“ – baue ich gern öfter ein.`,
+      };
+      // Reine Aussage → nur merken; steckt noch eine Frage drin, auch die KI fragen
+      const more = /\?|plan|setz|woche|rezept|vorschlag|idee|koch/i.test(t);
+      setInput("");
+      if (!more || !ready) {
+        setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, reply] }));
+        return;
+      }
+      void ask(t).then(() => setChat((c) => ({ ...c, turns: [...c.turns, reply] })));
+      return;
+    }
     void ask(t);
   };
 
@@ -440,7 +465,11 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
                       <li key={idea.id} className="border-b border-line last:border-b-0">
                         <Link
                           href={`/kochbuch/rezept?id=${encodeURIComponent(idea.id)}`}
-                          onClick={onClose}
+                          onClick={() => {
+                            // Gewählter Vorschlag → Zutaten zählen als Vorliebe
+                            learnFromRecipe(data?.recipes[idea.id], LIKE_WEIGHTS.chosen);
+                            onClose();
+                          }}
                           className="flex items-center gap-3 px-4 py-3 active:bg-stone-50"
                         >
                           <CategoryDot category={idea.category} />
@@ -502,6 +531,9 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
               </div>
             );
           })}
+
+          {/* Sanfter Gesundheits-Tipp (laut Einstellung, nie als Pop-up) */}
+          {data && !chat.reste && !busy && <TipBubble recipes={data.recipes} />}
 
           {busy && (
             <p className="self-start rounded-2xl rounded-bl-md border border-line bg-surface px-4 py-2.5 text-muted" role="status">

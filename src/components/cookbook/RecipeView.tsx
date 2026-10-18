@@ -14,6 +14,7 @@ import {
   recordCooked,
   useRecipes,
 } from "@/lib/cookbook";
+import { learnFromRecipe, LIKE_WEIGHTS } from "@/lib/likes";
 /** Datum (lokale Zeit) aus Zeitstempel oder "YYYY-MM-DD", z. B. "23.10.2026" */
 function formatDate(iso: string): string {
   const date = iso.length === 10 ? new Date(`${iso}T12:00:00`) : new Date(iso);
@@ -53,6 +54,8 @@ function RecipeDetails({ id }: { id: string }) {
 
   const cooked = (rating: "up" | "down" | null) => {
     recordCooked(recipe.id, rating);
+    // Gekocht (und evtl. 👍) → Zutaten zählen als Vorliebe
+    if (rating !== "down") learnFromRecipe(recipe, rating === "up" ? LIKE_WEIGHTS.up : LIKE_WEIGHTS.cooked);
     setJustCooked(true);
   };
   const remove = () => {

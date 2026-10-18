@@ -6,6 +6,7 @@
 import { useExternalStore } from "./useExternalStore";
 import { bumpBase, baseFromText, recipeBase } from "./bases";
 import { deleteRecipe, rateRecipeUp, restoreRecipe, type Recipe } from "./cookbook";
+import { learnFromRecipe, LIKE_WEIGHTS } from "./likes";
 import { createLocalStore } from "./localStore";
 import { composeWeek, entriesWithoutSlot, mealPlansWithWeek, replaceMealPlans, type StoredEntry } from "./mealPlan";
 import { saveProfile, type HouseholdProfile, type MealTime, type NeverAgainEntry } from "./profile";
@@ -95,6 +96,8 @@ export function rateUp(candidate: RatingCandidate, profile: HouseholdProfile, re
   if (recipe) rateRecipeUp(recipe.id);
   const base = recipe ? recipeBase(recipe) : baseFromText(candidate.title);
   if (base) saveProfile({ ...profile, bases: bumpBase(profile.bases, base) });
+  // Zutaten des Gerichts zählen als Vorliebe
+  learnFromRecipe(recipe, LIKE_WEIGHTS.up);
 }
 
 /** "Haben wir nicht gekocht" – nicht mehr fragen */
