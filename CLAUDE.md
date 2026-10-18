@@ -147,29 +147,55 @@ abgeben kann – wie an eine Haushaltskraft, mit der man ganz natürlich spricht
   KI-Rezepte später über `saveAiRecipe()` direkt (als Favorit) übernehmen.
   Feste Gerichte im Wochen-Check zählen in ihre Kategorie (Zähler kann nicht
   darunter sinken); ein Cheat-Day-Rezept setzt den Cheat Day auf diesen Tag.
-- Wochenplan (`/wochenplan`, `src/lib/mealPlan.ts`): aktuelle und nächste
-  Woche, je Tag ein Platz "Hauptgericht" (Speicher v3, Schlüssel = Wochentag;
-  Notiz am Tag unter "Tag:notiz" – dorthin hat die Migration das frühere
-  zweite Gericht gelegt). `buildWeek()`/`composeWeek()` setzen feste Gerichte,
-  Wunsch, Ausflugstage und Cheat Day aus dem Wochen-Check zusammen und
-  verteilen Kategorie-Hinweise auf freie Tage. "Doppelt kochen – Reste für
-  morgen" (`double` am Eintrag) verdoppelt die Mengen in der Einkaufsliste und
-  zeigt am Folgetag "Zweite Mahlzeit: Reste von …" (auch über die Wochengrenze,
-  `composeWeek`). Gespeichert werden nur
-  eigene Einträge und Überschreibungen ("cleared") – der Wochen-Check bleibt
-  unverändert. Die Kachel "Wochenplan" führt hierher, nicht zum Wochen-Check.
-  Die Kategorie eines Eintrags kommt immer vom Gericht (Rezept bzw. beim
-  Selbst-Eintragen gewählt oder per `guessDishCategory()` erkannt), nie vom
-  Kategorie-Hinweis des Platzes; ohne Kategorie wird keine angezeigt.
-- Einkaufsliste (`/einkaufsliste`, `src/lib/shoppingList.ts`): Artikel aus
-  Rezepten im Wochenplan werden immer neu berechnet (`buildShoppingList`,
-  Mengen je Einheitenfamilie g/kg, ml/l addiert, Abteilung per Stichwort).
-  Gespeichert pro Woche nur eigene Artikel, Häkchen und "Haben wir schon"
-  (Schlüssel Zutat + Einheit). Standard-Woche und Kachel-Zähler: die Woche,
-  für die gerade eingekauft wird (`planningWeekStart`). "Immer da"-Basics
-  (Brot, Aufschnitt, Joghurt, Obst …, Speicher v3 `basics`, null =
-  Standardliste) kommen jede Woche automatisch dazu, frei bearbeitbar und
-  einzeln abschaltbar.
+- Wochenplan (`/wochenplan`, `src/lib/mealPlan.ts`, Oberfläche
+  `src/components/plan/`): Umschalter "Tag" (Standard) / "Woche"
+  (`Segmented`), darunter eine schmale Zusammenfassung (x/7 geplant,
+  Kategorien, ~Kosten von Budget). Tag-Ansicht: Tagesleiste (7 Tage ab
+  Einkaufstag, gewählter Tag in Akzentfarbe, Kategorie-Punkt: Veggie grün,
+  Fleisch rot, Fisch blau, Cheat Day orange, leer grau), große Karte
+  (`DayCard`: Emoji auf Akzent-Verlauf als Platzhalter fürs Rezeptbild
+  (`dishEmoji`), "WOCHENTAG · MAHLZEIT", Name, Chips Kategorie/Zeit/Personen/
+  ~Kosten (`estimateCost` in `src/lib/costs.ts`, grobe Richtwerte),
+  "Tauschen"/"Rezept", "…" für doppelt kochen/verschieben/löschen; leer
+  "+ Planen"; Ausflug, Wunschtag, Cheat Day eigen gestaltet), seitlich
+  wischen wechselt den Tag, darunter "Danach" (nächste 2 Tage). Woche-Ansicht
+  (`WeekListView`): eine Zeile pro Tag, Gerichte am Griff ziehen (Pointer
+  Events, auch Touch) = tauschen, Tippen öffnet den Tag. Zurückblättern bis
+  26 Wochen = Rückblick (nur lesen, "Nochmal kochen" setzt das Gericht auf
+  einen Tag dieser/nächster Woche). Lieblingswochen (`src/lib/templates.ts`,
+  `wasgibts.vorlagen`): "Vorlage speichern" (Name, je Wochentag Rezept/
+  Freitext) und "Vorlage laden" (Tage abwählbar, belegte Tage: "Überschreiben"
+  oder "Nur freie Tage"). `buildWeek()`/`composeWeek()` setzen Plätze,
+  feste Gerichte, Wunsch, Ausflugstage und Cheat Day aus dem Wochen-Check
+  zusammen (Speicher v3, Schlüssel = Wochentag, Notiz unter "Tag:notiz",
+  "doppelt" am Eintrag). Gespeichert werden nur eigene Einträge und
+  Überschreibungen ("cleared"). Die Kategorie eines Eintrags kommt immer vom
+  Gericht, nie vom Kategorie-Hinweis des Platzes.
+- Einkaufsliste (`/einkaufsliste`, `src/lib/shoppingList.ts` Speicher v4,
+  Oberfläche `src/components/shopping/`): Artikel aus Rezepten im Wochenplan
+  werden immer neu berechnet (`buildShoppingList`, Mengen je Einheitenfamilie
+  addiert, doppelt kochen ×2, Abteilung per Stichwort). Je Artikel nur
+  Häkchen, Name, Menge rechtsbündig; Info-Symbol oder langes Drücken zeigt
+  die Gerichte. Abteilungen als kleine Großbuchstaben-Überschrift mit Icon,
+  Artikel in einer weißen Karte; Abgehaktes durchgestrichen ans Ende, ganz
+  erledigte Abteilung zugeklappt. Oben Fortschrittsbalken, "Heute holen"
+  (offene Artikel für heute/morgen) und fällige Stammartikel. Wischen nach
+  links (`SwipeRow`): "Haben wir" bzw. "Löschen" und "Bearbeiten". Umschalter
+  "Nach Abteilung | Nach Laden", Teilen gesamt oder pro Laden.
+  Gespeichert je Woche: eigene Artikel, Häkchen, "Haben wir schon",
+  einmalige Umbenennungen, übersprungene Stammartikel. Für den Haushalt:
+  eigene Produkte (`products`: Zutat → Produkt, aus "Immer so?" beim
+  Umbenennen oder Chat "Wir nehmen immer Alsan statt Butter"; Rezepte bleiben
+  unverändert; Verwaltung `/profil/produkte` "Eure Produkte & Läden"),
+  Läden je Artikel (`itemShops`, Vorschläge `SHOP_SUGGESTIONS` + eigene),
+  Stammliste (`staples`: Kaufrhythmus gelernt aus abgehakten Artikeln,
+  Median der Abstände; die frühere "Immer da"-Liste wurde zu Stammartikeln
+  mit festem Wochenrhythmus migriert; fällig = Vorschlag, antippen =
+  übernehmen, wischen/× = diesmal nicht). Chat/Sprache: "Müsli von Rossmann
+  und Windeln auf die Liste" (`src/lib/shoppingParse.ts`) wird ohne KI
+  erkannt (Artikel, Menge, Laden) und in die Planungswoche einsortiert.
+  Standard-Woche und Kachel-Zähler: die Woche, für die gerade eingekauft wird
+  (`planningWeekStart`).
 - Migrationen: `createLocalStore` schreibt einen migrierten Stand einmalig
   zurück, wenn sich die Version geändert hat.
 - "Was ist noch da?" läuft über den Küchenhelfer: Die Startseiten-Kachel

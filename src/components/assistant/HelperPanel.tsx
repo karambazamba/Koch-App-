@@ -26,7 +26,9 @@ import type { AssistantData, ChangeOp } from "@/lib/assistant/ops";
 import type { ChatTurn } from "@/lib/assistant/protocol";
 import { useKeyboardInset } from "@/lib/useMobileKeyboard";
 import { useSpeechInput } from "@/lib/useSpeechInput";
-import { DEFAULT_SHOPPING_DAY, toIsoDate, useToday, weekStartFor } from "@/lib/weekPlan";
+import { DEFAULT_SHOPPING_DAY, planningWeekStart, toIsoDate, useToday, weekStartFor } from "@/lib/weekPlan";
+import { addManualItem, sectionFor, setItemShop, setProduct, useShoppingSettings } from "@/lib/shoppingList";
+import { isShoppingRequest, parseProductStatement, parseShoppingText } from "@/lib/shoppingParse";
 import { ICON_BUTTON, INPUT_BASE, NOTE, chipClass } from "@/components/ui/styles";
 import { ProposalCard } from "./ProposalCard";
 import { TipBubble } from "./TipBubble";
@@ -100,6 +102,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
   const voice = data?.profile.helper.voice ?? "weiblich";
   const pantry = usePantry();
   const tipStore = useTipStore();
+  const shoppingSettings = useShoppingSettings();
 
   /** Frage an die KI; `display` = was im Chat steht, wenn anders als die Frage */
   const ask = async (text: string, display?: string) => {
@@ -220,6 +223,26 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
     }));
   };
 
+  /** "… auf die Liste" bzw. "Wir nehmen immer Alsan statt Butter" → erledigen und Antwort */
+  const shoppingReply = (t: string): string | null => {
+    if (!data || !today) return null;
+    const product = parseProductStatement(t);
+    if (product) {
+      setProduct(product.ingredient, product.product);
+      return `Gemerkt ✓ Statt ${product.ingredient} steht ab jetzt ${product.product} auf der Einkaufsliste – die Rezepte bleiben gleich.`;
+    }
+    if (!isShoppingRequest(t)) return null;
+    const items = parseShoppingText(t, shoppingSettings?.shops ?? []);
+    if (items.length === 0) return null;
+    const weekStart = planningWeekStart(today, data.profile.shoppingDay || DEFAULT_SHOPPING_DAY).weekStart;
+    for (const item of items) {
+      addManualItem(weekStart, { name: item.name, amount: item.amount, section: sectionFor(item.name) });
+      if (item.shop) setItemShop(shoppingSettings?.products[item.name.toLowerCase()] ?? item.name, item.shop);
+    }
+    const names = items.map((i) => `${i.amount ? `${i.amount} ` : ""}${i.name}${i.shop ? ` (${i.shop})` : ""}`);
+    return `Steht drauf ✓ ${names.join(", ")}`;
+  };
+
   /** Eingabe abschicken: neue Person, Reste-Modus oder Frage an die KI */
   const submit = (text: string) => {
     const t = text.trim();
@@ -230,6 +253,13 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
       return;
     }
     if (chat.reste) return void resteInput(t);
+    // Einkaufsliste und eigene Produkte direkt erledigen (auch ohne KI)
+    const local = shoppingReply(t);
+    if (local) {
+      setInput("");
+      setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text: local, local: true }] }));
+      return;
+    }
     // "Wir lieben Käse" → Lieblingszutaten merken
     const liked = extractLikeStatements(t);
     if (liked.length) {

@@ -6,35 +6,51 @@ import {
   Beef,
   Carrot,
   Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Croissant,
   CupSoda,
+  EyeOff,
   Milk,
   Package,
+  Pencil,
   PenLine,
   Plus,
+  Repeat,
   Share2,
   ShoppingBag,
   Snowflake,
+  Store,
+  Trash2,
   X,
   type LucideIcon,
 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
-import { CARD, CARD_LIST, ICON_BUTTON, INPUT, INPUT_BASE, LABEL, PAGE_MAIN, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
+import { Segmented } from "@/components/ui/Segmented";
+import { CARD, CARD_LIST, ICON_BUTTON, INPUT_BASE, PAGE_MAIN, buttonClass, chipClass } from "@/components/ui/styles";
 import {
   SECTIONS,
   addManualItem,
+  dueStaples,
   removeManualItem,
+  renameItem,
+  sectionFor,
   setHave,
+  setItemShop,
   shoppingListText,
+  skipStaple,
+  takeStaple,
   toggleChecked,
+  updateManualItem,
   type ListItem,
   type Section,
+  type Staple,
 } from "@/lib/shoppingList";
+import { parseShoppingText } from "@/lib/shoppingParse";
 import { useWeekShoppingList, type WeekChoice } from "@/lib/useWeekShoppingList";
-import { BasicsSection } from "./BasicsSection";
-import { formatWeekRange } from "@/lib/weekPlan";
+import { addDays, formatWeekRange, toIsoDate, useToday } from "@/lib/weekPlan";
+import { EditItemSheet, ItemContent, StaplesSheet, SwipeRow, type RowAction } from "./ShoppingParts";
 
 const SKELETON = <div className={`${CARD} m-4 h-64 animate-pulse`} />;
 
@@ -50,100 +66,148 @@ const SECTION_ICONS: Record<Section, LucideIcon> = {
   sonstiges: ShoppingBag,
 };
 
-/** /einkaufsliste: automatisch aus dem Wochenplan, plus eigene Artikel. */
+const WEEKDAY = new Intl.DateTimeFormat("de-DE", { weekday: "long" });
+
+type Group = { id: string; label: string; icon: LucideIcon; items: ListItem[]; shop?: string };
+
+/** /einkaufsliste: automatisch aus dem Wochenplan, plus eigene Artikel und Stammartikel. */
 export function ShoppingListView() {
   // Start mit der Woche, für die gerade eingekauft wird; dann umschaltbar.
   const [choice, setChoice] = useState<WeekChoice>("planning");
   const data = useWeekShoppingList(choice);
+  const today = useToday();
+  const [mode, setMode] = useState<"abteilung" | "laden">("abteilung");
   const [showHidden, setShowHidden] = useState(false);
   const [shareNote, setShareNote] = useState("");
+  const [expanded, setExpanded] = useState<string[]>([]);
+  const [info, setInfo] = useState<string | null>(null);
+  const [editing, setEditing] = useState<ListItem | null>(null);
+  const [staplesOpen, setStaplesOpen] = useState(false);
+  const [input, setInput] = useState("");
 
-  if (!data) return SKELETON;
-  const { weekStart, isNext, list } = data;
+  if (!data || !today) return SKELETON;
+  const { weekStart, isNext, list, weekList, settings } = data;
+  const todayIso = toIsoDate(today);
   const range = formatWeekRange(weekStart);
   const visible = list.items.filter((i) => !i.hidden);
-  const open = visible.filter((i) => !i.checked);
-  const done = visible.filter((i) => i.checked);
+  const done = visible.filter((i) => i.checked).length;
   const hidden = list.items.filter((i) => i.hidden);
+  const due = dueStaples(settings.staples, weekStart, list, weekList);
 
-  const share = async () => {
-    const text = shoppingListText(list, `🛒 Einkaufsliste ${range}`);
+  // "Heute holen": offene Artikel für heute und morgen (nur in der laufenden Woche)
+  const inWeek = todayIso >= weekStart && todayIso <= addDays(weekStart, 6);
+  const soon = [WEEKDAY.format(today), WEEKDAY.format(new Date(today.getTime() + 86_400_000))];
+  const todayItems = inWeek ? visible.filter((i) => !i.checked && i.days.some((d) => soon.includes(d))) : [];
+
+  const toggle = (item: ListItem) => toggleChecked(weekStart, item, todayIso);
+
+  const share = async (shop?: string) => {
+    const text = shoppingListText(list, `🛒 Einkaufsliste ${range}${shop ? ` – ${shop}` : ""}`, shop);
     try {
       if (navigator.share) {
         await navigator.share({ title: "Einkaufsliste", text });
         return;
       }
       await navigator.clipboard.writeText(text);
-      setShareNote("Liste kopiert – jetzt in WhatsApp oder eine Nachricht einfügen.");
+      setShareNote(`Liste${shop ? ` für ${shop}` : ""} kopiert – jetzt in WhatsApp oder eine Nachricht einfügen.`);
     } catch (error) {
       // Abbrechen im Teilen-Menü ist kein Fehler
       if ((error as Error)?.name !== "AbortError") setShareNote("Teilen hat nicht geklappt.");
     }
   };
 
+  // Gruppen: nach Abteilung (Supermarkt-Reihenfolge) oder nach Laden
+  const groups: Group[] =
+    mode === "abteilung"
+      ? SECTIONS.map((s) => ({ id: s.value, label: s.label, icon: SECTION_ICONS[s.value], items: visible.filter((i) => i.section === s.value) }))
+      : [
+          ...[...new Set(visible.map((i) => i.shop).filter(Boolean))]
+            .sort((a, b) => a.localeCompare(b, "de"))
+            .map((shop) => ({ id: `laden:${shop}`, label: shop, icon: Store, shop, items: visible.filter((i) => i.shop === shop) })),
+          { id: "laden:", label: "Ohne Laden", icon: ShoppingBag, items: visible.filter((i) => !i.shop) },
+        ];
+
+  const add = () => {
+    const parsed = parseShoppingText(input, settings.shops);
+    for (const p of parsed) {
+      addManualItem(weekStart, { name: p.name, amount: p.amount, section: sectionFor(p.name) });
+      if (p.shop) setItemShop(settings.products[p.name.toLowerCase()] ?? p.name, p.shop);
+    }
+    setInput("");
+  };
+
+  const actionsFor = (item: ListItem): RowAction[] => [
+    item.manualId
+      ? { label: "Löschen", icon: Trash2, tone: "danger", onClick: () => removeManualItem(weekStart, item.manualId!) }
+      : { label: "Haben wir", icon: EyeOff, onClick: () => setHave(weekStart, item.key, true) },
+    { label: "Bearbeiten", icon: Pencil, onClick: () => setEditing(item) },
+  ];
+
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
       <PageHeader title="Einkaufsliste" />
       <main className={PAGE_MAIN}>
         <div className="flex items-center justify-between gap-2">
-          <button
-            type="button"
-            onClick={() => setChoice("current")}
-            disabled={!isNext}
-            aria-label="Diese Woche"
-            className={ICON_BUTTON}
-          >
+          <button type="button" onClick={() => setChoice("current")} disabled={!isNext} aria-label="Diese Woche" className={ICON_BUTTON}>
             <ChevronLeft className="h-6 w-6" strokeWidth={2.25} aria-hidden />
           </button>
           <div className="text-center">
             <p className="text-lg font-bold">{isNext ? "Nächste Woche" : "Diese Woche"}</p>
             <p className="whitespace-nowrap text-sm text-muted">{range}</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setChoice("next")}
-            disabled={isNext}
-            aria-label="Nächste Woche"
-            className={ICON_BUTTON}
-          >
+          <button type="button" onClick={() => setChoice("next")} disabled={isNext} aria-label="Nächste Woche" className={ICON_BUTTON}>
             <ChevronRight className="h-6 w-6" strokeWidth={2.25} aria-hidden />
           </button>
         </div>
 
-        <section className={`${CARD} flex items-center justify-between gap-3 p-4`} aria-label="Stand">
-          <p className="text-lg font-bold" role="status">
-            {open.length === 0 && done.length > 0
-              ? "Alles erledigt ✓"
-              : `${open.length} ${open.length === 1 ? "Sache" : "Sachen"} offen`}
-            {done.length > 0 && open.length > 0 && (
-              <span className="block text-sm font-normal text-muted">{done.length} erledigt</span>
-            )}
-          </p>
-          <button
-            type="button"
-            onClick={share}
-            disabled={open.length === 0}
-            className={buttonClass("primary")}
-          >
+        <Segmented
+          label="Sortierung"
+          value={mode}
+          onChange={setMode}
+          options={[
+            { value: "abteilung", label: "Nach Abteilung" },
+            { value: "laden", label: "Nach Laden" },
+          ]}
+        />
+
+        {/* Fortschritt */}
+        <section className="flex items-center gap-3" aria-label="Fortschritt">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold" role="status">
+              {visible.length > 0 && done === visible.length ? "Alles erledigt ✓" : `${done} / ${visible.length} erledigt`}
+            </p>
+            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-stone-200" aria-hidden>
+              <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${visible.length ? (done / visible.length) * 100 : 0}%` }} />
+            </div>
+          </div>
+          <button type="button" onClick={() => share()} disabled={done === visible.length} aria-label="Liste teilen" className={ICON_BUTTON}>
             <Share2 className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-            Teilen
           </button>
         </section>
-        {shareNote && (
-          <p className="rounded-xl bg-accent-soft px-4 py-2 text-sm font-semibold text-accent-strong">{shareNote}</p>
+        {shareNote && <p className="rounded-xl bg-accent-soft px-4 py-2 text-sm font-semibold text-accent-strong">{shareNote}</p>}
+
+        {todayItems.length > 0 && (
+          <section className={`${CARD} flex flex-col gap-2 p-3`} aria-label="Heute holen">
+            <h2 className="px-1 text-xs font-bold uppercase tracking-wider text-accent">Heute holen</h2>
+            <div className="flex flex-wrap gap-2">
+              {todayItems.map((i) => (
+                <button key={i.key} type="button" onClick={() => toggle(i)} className={chipClass(false)}>
+                  {i.name}
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {due.length > 0 && (
+          <StapleBar staples={due} onTake={(st) => takeStaple(weekStart, st)} onSkip={(st) => skipStaple(weekStart, st)} onManage={() => setStaplesOpen(true)} />
         )}
 
         {list.missing.length > 0 && (
-          <section className={`${CARD} flex flex-col gap-2 p-4`}>
-            {list.missing.map((m) => (
-              <p key={m} className="flex items-start gap-2 text-sm text-muted">
-                <PenLine className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
-                <span>
-                  Für <span className="font-bold text-ink">{m}</span> fehlen Zutaten – selbst ergänzen.
-                </span>
-              </p>
-            ))}
-          </section>
+          <p className="flex items-start gap-2 px-1 text-sm text-muted">
+            <PenLine className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
+            <span>Ohne Zutaten: {list.missing.join(", ")} – selbst ergänzen.</span>
+          </p>
         )}
 
         {list.items.length === 0 && list.missing.length === 0 && (
@@ -155,61 +219,74 @@ export function ShoppingListView() {
           </p>
         )}
 
-        {SECTIONS.map((section) => {
-          const items = open.filter((i) => i.section === section.value);
-          if (items.length === 0) return null;
-          const Icon = SECTION_ICONS[section.value];
+        {groups.map((group) => {
+          if (group.items.length === 0) return null;
+          const open = group.items.filter((i) => !i.checked);
+          const checked = group.items.filter((i) => i.checked);
+          const allDone = open.length === 0;
+          const show = !allDone || expanded.includes(group.id);
+          const Icon = group.icon;
           return (
-            <section key={section.value} aria-label={section.label} className="flex flex-col gap-2">
-              <h2 className={`${SECTION_TITLE} flex items-center gap-2 px-1`}>
-                <Icon className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
-                {section.label}
-              </h2>
-              <ul className={CARD_LIST}>
-                {items.map((item) => (
-                  <ItemRow key={item.key} item={item} weekStart={weekStart} />
-                ))}
-              </ul>
+            <section key={group.id} aria-label={group.label} className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2 px-1">
+                <button
+                  type="button"
+                  onClick={() => allDone && setExpanded((e) => (e.includes(group.id) ? e.filter((x) => x !== group.id) : [...e, group.id]))}
+                  aria-expanded={show}
+                  className="flex min-w-0 flex-1 items-center gap-1.5 text-left text-xs font-bold uppercase tracking-wider text-muted"
+                >
+                  <Icon className="h-4 w-4 text-accent" strokeWidth={2} aria-hidden />
+                  <span className="truncate">{group.label}</span>
+                  {allDone && (
+                    <span className="inline-flex items-center gap-1 normal-case tracking-normal text-accent-strong">
+                      <Check className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                      alles da
+                      <ChevronDown className={`h-3.5 w-3.5 transition ${show ? "rotate-180" : ""}`} strokeWidth={2.25} aria-hidden />
+                    </span>
+                  )}
+                </button>
+                {group.shop && open.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => share(group.shop)}
+                    aria-label={`Liste für ${group.shop} teilen`}
+                    className="flex h-8 w-8 items-center justify-center text-muted"
+                  >
+                    <Share2 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                  </button>
+                )}
+              </div>
+              {show && (
+                <ul className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
+                  {[...open, ...checked].map((item) => (
+                    <SwipeRow key={item.key} label={item.name} actions={actionsFor(item)} onLongPress={() => setInfo(info === item.key ? null : item.key)}>
+                      <ItemContent
+                        item={item}
+                        onToggle={() => toggle(item)}
+                        onInfo={() => setInfo(info === item.key ? null : item.key)}
+                        infoOpen={info === item.key}
+                      />
+                    </SwipeRow>
+                  ))}
+                </ul>
+              )}
             </section>
           );
         })}
 
-        {done.length > 0 && (
-          <section aria-label="Erledigt" className="flex flex-col gap-2">
-            <h2 className={`${SECTION_TITLE} flex items-center gap-2 px-1 text-muted`}>
-              <Check className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-              Erledigt
-            </h2>
-            <ul className={`${CARD_LIST} opacity-80`}>
-              {done.map((item) => (
-                <ItemRow key={item.key} item={item} weekStart={weekStart} />
-              ))}
-            </ul>
-          </section>
-        )}
+        {visible.length > 0 && <p className="-mt-2 px-1 text-xs text-muted">Nach links wischen: „Haben wir schon“ oder bearbeiten.</p>}
 
         {hidden.length > 0 && (
           <div className="flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={() => setShowHidden((v) => !v)}
-              className="self-start px-1 text-sm font-semibold text-muted underline"
-            >
-              {hidden.length} Artikel haben wir schon –{" "}
-              {showHidden ? "ausblenden" : "anzeigen"}
+            <button type="button" onClick={() => setShowHidden((v) => !v)} className="self-start px-1 text-sm font-semibold text-muted underline">
+              {hidden.length} Artikel haben wir schon – {showHidden ? "ausblenden" : "anzeigen"}
             </button>
             {showHidden && (
               <ul className={CARD_LIST}>
                 {hidden.map((item) => (
-                  <li key={item.key} className="flex items-center gap-3 px-4 py-3">
-                    <span className="min-w-0 flex-1 text-muted">
-                      {item.amount} {item.name}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setHave(weekStart, item.key, false)}
-                      className={buttonClass("soft", "sm")}
-                    >
+                  <li key={item.key} className="flex items-center gap-3 px-4 py-2">
+                    <span className="min-w-0 flex-1 truncate text-muted">{item.name}</span>
+                    <button type="button" onClick={() => setHave(weekStart, item.key, false)} className={buttonClass("soft", "sm")}>
                       Doch kaufen
                     </button>
                   </li>
@@ -219,129 +296,102 @@ export function ShoppingListView() {
           </div>
         )}
 
-        <AddItemForm weekStart={weekStart} />
-
-        <BasicsSection />
+        <form
+          className="flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            add();
+          }}
+        >
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="z. B. Müsli von Rossmann, Windeln"
+            aria-label="Artikel hinzufügen"
+            enterKeyHint="done"
+            className={`${INPUT_BASE} h-12 min-w-0 flex-1 px-4`}
+          />
+          <button type="submit" disabled={!input.trim()} className={buttonClass("primary")}>
+            <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+            Dazu
+          </button>
+        </form>
+        <button type="button" onClick={() => setStaplesOpen(true)} className="-mt-1 flex items-center gap-1.5 self-start px-1 text-sm font-semibold text-muted">
+          <Repeat className="h-4 w-4" strokeWidth={2} aria-hidden />
+          Stammliste ansehen
+        </button>
       </main>
+
+      {editing && (
+        <EditItemSheet
+          item={editing}
+          settings={settings}
+          onClose={() => setEditing(null)}
+          onSave={({ name, always, shop, amount }) => {
+            if (name.trim() !== editing.name) renameItem(weekStart, editing, name, always);
+            if (editing.manualId && amount !== editing.amount) updateManualItem(weekStart, editing.manualId, { amount });
+            const finalName = name.trim() || editing.name;
+            if (shop !== editing.shop || finalName !== editing.name) setItemShop(finalName, shop);
+            setEditing(null);
+          }}
+        />
+      )}
+      {staplesOpen && <StaplesSheet settings={settings} onClose={() => setStaplesOpen(false)} />}
     </div>
   );
 }
 
-function ItemRow({ item, weekStart }: { item: ListItem; weekStart: string }) {
+/**
+ * Fällige Stammartikel als Vorschläge: antippen = übernehmen, zur Seite
+ * wischen (oder ×) = diesmal nicht.
+ */
+function StapleBar({
+  staples,
+  onTake,
+  onSkip,
+  onManage,
+}: {
+  staples: Staple[];
+  onTake: (staple: Staple) => void;
+  onSkip: (staple: Staple) => void;
+  onManage: () => void;
+}) {
   return (
-    <li className="flex items-center gap-3 py-2 pl-3 pr-2">
-      <button
-        type="button"
-        role="checkbox"
-        aria-checked={item.checked}
-        aria-label={`${item.name} ${item.checked ? "nicht mehr abhaken" : "abhaken"}`}
-        onClick={() => toggleChecked(weekStart, item)}
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 transition active:scale-90 ${
-          item.checked ? "border-accent bg-accent text-white" : "border-stone-300 bg-surface text-transparent"
-        }`}
-      >
-        <Check className="h-5 w-5" strokeWidth={3} aria-hidden />
-      </button>
-      <span className={`min-w-0 flex-1 ${item.checked ? "text-stone-400 line-through" : ""}`}>
-        <span className="block text-base font-semibold leading-snug">
-          {item.amount && <span className="whitespace-nowrap font-bold">{item.amount} </span>}
-          {item.name}
-        </span>
-        {item.dishes.length > 0 && (
-          <span className="block text-xs text-muted">für {item.dishes.join(", ")}</span>
-        )}
-        {item.manualId && <span className="block text-xs text-muted">selbst hinzugefügt</span>}
-        {item.basic && <span className="block text-xs text-muted">immer da</span>}
-      </span>
-      {item.manualId ? (
-        <button
-          type="button"
-          onClick={() => removeManualItem(weekStart, item.manualId!)}
-          aria-label={`${item.name} entfernen`}
-          className="flex h-11 w-11 shrink-0 items-center justify-center text-stone-400 transition active:scale-90"
-        >
-          <X className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+    <section className={`${CARD} flex flex-col gap-2 p-3`} aria-label="Stammartikel">
+      <div className="flex items-center justify-between px-1">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-muted">Stammartikel</h2>
+        <button type="button" onClick={onManage} className="text-xs font-semibold text-muted underline">
+          Stammliste
         </button>
-      ) : (
-        !item.checked && (
-          <button
-            type="button"
-            onClick={() => setHave(weekStart, item.key, true)}
-            className="shrink-0 rounded-lg border border-line px-2.5 py-2 text-xs font-bold text-muted transition active:scale-95"
-          >
-            Haben wir schon
-          </button>
-        )
-      )}
-    </li>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {staples.map((st) => (
+          <StapleChip key={st.id} staple={st} onTake={() => onTake(st)} onSkip={() => onSkip(st)} />
+        ))}
+      </div>
+    </section>
   );
 }
 
-/** Feldstil ohne feste Breite/Höhe, für nebeneinanderliegende Felder */
-
-function AddItemForm({ weekStart }: { weekStart: string }) {
-  const [name, setName] = useState("");
-  const [amount, setAmount] = useState("");
-  const [section, setSection] = useState<Section>("sonstiges");
-
-  const add = () => {
-    if (!name.trim()) return;
-    addManualItem(weekStart, { name: name.trim(), amount: amount.trim(), section });
-    setName("");
-    setAmount("");
-  };
-
+function StapleChip({ staple, onTake, onSkip }: { staple: Staple; onTake: () => void; onSkip: () => void }) {
+  const [start, setStart] = useState<number | null>(null);
   return (
-    <section className={`${CARD} flex flex-col gap-3 p-4`} aria-label="Artikel hinzufügen">
-      <h2 className={SECTION_TITLE}>Eigener Artikel</h2>
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="Menge"
-          aria-label="Menge"
-          className={`${INPUT_BASE} h-12 w-24 shrink-0 px-3`}
-        />
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="z. B. Klopapier, Kaffee"
-          aria-label="Artikel"
-          enterKeyHint="done"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              add();
-              e.currentTarget.blur();
-            }
-          }}
-          className={`${INPUT_BASE} h-12 flex-1 px-4`}
-        />
-      </div>
-      <label className="flex flex-col gap-1">
-        <span className={LABEL}>Abteilung</span>
-        <select
-          value={section}
-          onChange={(e) => setSection(e.target.value as Section)}
-          className={INPUT}
-        >
-          {SECTIONS.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <button
-        type="button"
-        onClick={add}
-        disabled={!name.trim()}
-        className={`${buttonClass("primary", "lg")} w-full`}
-      >
-        <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-        Hinzufügen
+    <span
+      className={`${chipClass(false)} gap-1 pr-1`}
+      style={{ touchAction: "pan-y" }}
+      onPointerDown={(e) => setStart(e.clientX)}
+      onPointerUp={(e) => {
+        if (start !== null && Math.abs(e.clientX - start) > 40) onSkip();
+        setStart(null);
+      }}
+    >
+      <button type="button" onClick={onTake} aria-label={`${staple.name} übernehmen`} className="flex items-center gap-1">
+        <Plus className="h-4 w-4 text-accent" strokeWidth={2.5} aria-hidden />
+        {staple.name}
       </button>
-    </section>
+      <button type="button" onClick={onSkip} aria-label={`${staple.name} diesmal nicht`} className="flex h-6 w-6 items-center justify-center text-stone-400">
+        <X className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+      </button>
+    </span>
   );
 }

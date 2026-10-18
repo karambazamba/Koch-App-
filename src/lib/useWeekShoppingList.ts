@@ -2,7 +2,7 @@
 
 import { useRecipes } from "./cookbook";
 import { composeWeek, useMealPlans } from "./mealPlan";
-import { buildShoppingList, useShoppingBasics, useShoppingLists, type ShoppingList } from "./shoppingList";
+import { buildShoppingList, useShoppingLists, useShoppingSettings, type ShoppingList, type ShoppingSettings, type WeekList } from "./shoppingList";
 import { useProfile } from "./useProfile";
 import {
   DEFAULT_SHOPPING_DAY,
@@ -22,16 +22,16 @@ export type WeekChoice = "planning" | "current" | "next";
  */
 export function useWeekShoppingList(
   choice: WeekChoice,
-): { weekStart: string; isNext: boolean; list: ShoppingList } | undefined {
+): { weekStart: string; isNext: boolean; list: ShoppingList; weekList: WeekList | undefined; settings: ShoppingSettings } | undefined {
   const today = useToday();
   const profile = useProfile();
   const weekPlans = useWeekPlans();
   const mealPlans = useMealPlans();
   const recipes = useRecipes();
   const lists = useShoppingLists();
-  const basics = useShoppingBasics();
+  const settings = useShoppingSettings();
 
-  if (!today || profile === undefined || !weekPlans || !mealPlans || !recipes || !lists || !basics) return undefined;
+  if (!today || profile === undefined || !weekPlans || !mealPlans || !recipes || !lists || !settings) return undefined;
 
   const shoppingDay = profile?.shoppingDay ?? DEFAULT_SHOPPING_DAY;
   const current = weekStartFor(today, shoppingDay);
@@ -45,6 +45,8 @@ export function useWeekShoppingList(
   return {
     weekStart,
     isNext: weekStart !== current,
-    list: buildShoppingList(week, recipes, lists[weekStart], basics),
+    list: buildShoppingList(week, recipes, lists[weekStart], settings),
+    weekList: lists[weekStart],
+    settings,
   };
 }
