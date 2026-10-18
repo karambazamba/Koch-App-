@@ -5,6 +5,8 @@
 // "spontan" = Spontan kochen (mit dem, was da ist; früher "reste"),
 // "voice" = Mikrofon startet direkt; `ask` = gleich fragen.
 
+import { unlockSpeech } from "../speech";
+
 export type HelperMode = "spontan" | "voice";
 
 type Detail = { mode?: HelperMode; ask?: string; filters?: string[] };
@@ -13,6 +15,8 @@ const EVENT = "kuechenhelfer:oeffnen";
 
 /** `filters`: im Spontan-Modus schon gewählte Filter-Chips (z. B. "reste") */
 export function openHelper(mode?: HelperMode, ask?: string, filters?: string[]) {
+  // Wird beim Antippen aufgerufen – schaltet auf dem iPhone die Sprachausgabe frei
+  unlockSpeech();
   window.dispatchEvent(new CustomEvent<Detail>(EVENT, { detail: { mode, ask, filters } }));
 }
 

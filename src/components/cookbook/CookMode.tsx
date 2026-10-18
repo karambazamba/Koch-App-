@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Timer, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, RotateCcw, Timer, Volume2, VolumeX, X } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { CARD, FAB_CLEARANCE, PAGE_MAIN, SECTION_TITLE, buttonClass, chipClass } from "@/components/ui/styles";
 import { formatAmount, type Recipe } from "@/lib/cookbook";
 import { useRecipeLookup } from "@/lib/baking";
 import { kidStepLabel, ovenText, stepMinutes } from "@/lib/baking/steps";
 import { personLabel, type HouseholdProfile } from "@/lib/profile";
+import { saveSpeechSettings, speak, speechSupported, stopSpeaking, unlockSpeech, useSpeechSettings } from "@/lib/speech";
 import { useProfile } from "@/lib/useProfile";
 import { MachineToggle, MachineStepView, useMachineView } from "./MachineSteps";
 
@@ -30,7 +31,16 @@ function CookSteps({ id }: { id: string }) {
   const [step, setStep] = useState(0);
   const [timer, setTimer] = useState<RunningTimer | null>(null);
   const machine = useMachineView(profile);
+  const speech = useSpeechSettings();
+  const reading = speech.mode === "an";
+  const [said, setSaid] = useState("");
   useWakeLock();
+  // Beim Verlassen nicht weiterreden
+  useEffect(() => () => stopSpeaking(), []);
+  // Jeder Schritt wird beim Öffnen vorgelesen, wenn Vorlesen an ist
+  useEffect(() => {
+    if (reading && said) speak(said, { id: "kochen", gender: profile?.helper.voice });
+  }, [said, reading, profile?.helper.voice]);
 
   if (lookup === undefined || profile === undefined) return <div className={`${CARD} m-4 h-64 animate-pulse`} />;
   const recipe = lookup(id);
@@ -58,6 +68,21 @@ function CookSteps({ id }: { id: string }) {
   const current = step >= 1 && step <= total ? steps[step - 1] : "";
   const minutes = current ? stepMinutes(current) : null;
   const kid = !useMachine && step >= 1 && !done ? kidFor(recipe, step - 1, profile) : null;
+  const spoken = stepSpeech(recipe, step, total, current, kid, baking);
+  if (spoken !== said) setSaid(spoken);
+  const toggleReading = () => {
+    unlockSpeech();
+    if (reading) {
+      saveSpeechSettings({ mode: "aus" });
+      stopSpeaking();
+    } else {
+      saveSpeechSettings({ mode: "an" });
+    }
+  };
+  const again = () => {
+    unlockSpeech();
+    speak(spoken, { id: "kochen", gender: profile?.helper.voice });
+  };
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
@@ -73,6 +98,19 @@ function CookSteps({ id }: { id: string }) {
         </div>
 
         {recipe.machineSteps.length > 0 && <MachineToggle view={machine} />}
+
+        {speechSupported() && (
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={toggleReading} aria-pressed={reading} className={chipClass(reading)}>
+              {reading ? <Volume2 className="h-4 w-4" strokeWidth={2.25} aria-hidden /> : <VolumeX className="h-4 w-4" strokeWidth={2.25} aria-hidden />}
+              Vorlesen {reading ? "an" : "aus"}
+            </button>
+            <button type="button" onClick={again} className={chipClass(false)}>
+              <RotateCcw className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+              Nochmal
+            </button>
+          </div>
+        )}
 
         {timer && <TimerBar timer={timer} onClear={() => setTimer(null)} />}
 
@@ -153,6 +191,16 @@ function CookSteps({ id }: { id: string }) {
       </main>
     </div>
   );
+}
+
+/** Was beim Vorlesen gesagt wird: Zutaten, ein Schritt oder "Fertig" */
+function stepSpeech(recipe: Recipe, step: number, total: number, current: string, kid: string | null, baking: boolean): string {
+  if (step === 0) {
+    const items = recipe.ingredients.map((i) => [formatAmount(i.amount), i.unit, i.name].filter(Boolean).join(" "));
+    return items.length ? `${recipe.title}. Das brauchst du: ${items.join(", ")}.` : recipe.title;
+  }
+  if (step > total) return baking ? "Fertig – lasst es euch schmecken!" : "Fertig – guten Appetit!";
+  return `Schritt ${step} von ${total}. ${kid ? `${kid} darf jetzt: ` : ""}${current}`;
 }
 
 /** Kinder-Schritt: nur mit Kindern im Haushalt, Namen reihum */

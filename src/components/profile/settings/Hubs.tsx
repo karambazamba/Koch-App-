@@ -24,7 +24,8 @@ import { useProfile } from "@/lib/useProfile";
 import { AddRow, ChoiceCards, DataSection, Group, PersonRow, Row, SettingsPage, SwitchRow } from "./SettingsParts";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { clearProfile } from "@/lib/profile";
-import { Sun } from "lucide-react";
+import { Sun, Volume2 } from "lucide-react";
+import { READ_MODES, useSpeechSettings } from "@/lib/speech";
 
 /** "Unsere Familie" bzw. "Mein Haushalt" / "Unser Haushalt" */
 export function householdTitle(profile: { householdType: string } | null | undefined): string {
@@ -35,6 +36,7 @@ export function householdTitle(profile: { householdType: string } | null | undef
 /** /profil/lotte: Wie oft meldet sich Lotte? Modus, Tipps, Wochenend-Ideen, Name, Pause */
 export function LotteHubView() {
   const title = helperName(useProfile());
+  const reading = useSpeechSettings();
   return (
     <SettingsPage title={title}>
       {(profile, set) => {
@@ -46,6 +48,9 @@ export function LotteHubView() {
             <p className="mt-2 px-1 text-lg font-bold">Küchen-Tipps auf der Startseite?</p>
             <ChoiceCards label="Tipps" value={profile.tips} onChange={(tips) => set({ tips })} options={TIP_LEVELS} />
             <Group title="Mehr">
+              <Row href="/profil/vorlesen" icon={Volume2} title="Vorlesen" value={READ_MODES.find((m) => m.value === reading.mode)?.short}>
+                Stimme und Tempo
+              </Row>
               <SwitchRow
                 icon={Sun}
                 title="Wochenend-Ideen"

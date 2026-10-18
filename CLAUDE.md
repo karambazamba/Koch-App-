@@ -482,6 +482,23 @@ Bei ALLEN Änderungen beachten.
   dieselben Werkzeuge, versteht die Alltags-Sätze). Daten-Module importieren
   React nur über `useExternalStore.ts`, damit der Server ihre reine Logik
   nutzen kann.
+- Lotte liest vor (`src/lib/speech.ts`, Web Speech API, ohne Server;
+  Einstellungen pro Gerät unter `wasgibts.vorlesen`: Modus automatisch = nur
+  wenn per Mikrofon gefragt (Standard) / immer / nie, Stimme (`voiceURI`, leer
+  = automatisch passend zu weiblich/männlich, sonst beste deutsche),
+  Tempo langsam/normal/schnell; alter Schalter wird übernommen). Vor dem
+  Vorlesen `cleanForSpeech()` (ohne Emojis/Markdown, Einheiten und
+  Abkürzungen ausgeschrieben, "17:30" → "17 Uhr 30") und `speechChunks()`
+  (Sätze bis 200 Zeichen, gegen Chromes Abbruch). iPhone: `unlockSpeech()`
+  beim ersten Tippen (Mikrofon, Lautsprecher, Eingabeleiste); Stimmen über
+  `useVoices()` (voiceschanged + Nachschauen). Im Chat: Lautsprecher an jeder
+  Nachricht von Lotte (`SpeakButton`, nochmal = Stopp), Schalter "Antworten
+  vorlesen" im Kopf (setzt immer/nie), Mikrofon stoppt sofort. Kochansicht:
+  "Vorlesen an/aus" und "Nochmal", jeder Schritt (auch Zutaten, Fertig) wird
+  bei "immer" beim Öffnen vorgelesen. Einstellung unter Lotte → Vorlesen
+  (`/profil/vorlesen`, Probehören je Stimme); per Chat "Lies mir vor", "Nicht
+  mehr vorlesen", "Sprich langsamer/schneller" (`speechChat.ts`). Geht es
+  nicht (kein Ton, stumm, keine Stimme): nichts tun, keine Meldung.
 - Küchenhelfer hat Namen und Gesicht (Profil v7 `helper`): Name Lotte, Ida,
   Theo, Bruno oder eigener (max. 20 Zeichen, Standard Lotte), Stimme
   weiblich/männlich (bei Vorschlägen passend zum Namen; `pickVoice()` wählt
@@ -547,7 +564,7 @@ Bei ALLEN Änderungen beachten.
   `src/components/profile/settings/`) nach Häufigkeit: KOCHEN (Kochstil,
   Essen & Vorlieben, Wochenende – nicht bei spontan), UNSERE KÜCHE (Rezepte,
   Vorrat mit Anzahl), LOTTE ("Wie oft meldet sich Lotte?" → `/profil/lotte`:
-  Modus, Tipps, Wochenend-Ideen, Name & Stimme, Pause), AUSSEHEN (Ansicht,
+  Modus, Tipps, Vorlesen, Wochenend-Ideen, Name & Stimme, Pause), AUSSEHEN (Ansicht,
   Darstellung), EINMAL EINGERICHTET (grau: Unsere Familie `/profil/familie`
   mit Personen, Haushaltstyp, warm essen, Einkaufstag, Produkte; Daten & App
   `/profil/daten`). Gruppenüberschrift klein in Großbuchstaben, darunter eine

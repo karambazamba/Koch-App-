@@ -69,7 +69,7 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
 
         <Group title={name}>
           <Row href="/profil/lotte" icon={MessageCircle} title={`Wie oft meldet sich ${name}?`} value={HELPER_MODES.find((m) => m.value === profile.helperMode)?.label}>
-            Modus, Tipps, Wochenend-Ideen, Name
+            Modus, Tipps, Vorlesen, Name
           </Row>
         </Group>
 

@@ -102,7 +102,7 @@ export function snackReply(pantry: PantryItem[]): string {
 // --- Drei schnelle Ideen -----------------------------------------------------------
 
 export function isQuickRequest(text: string): boolean {
-  return /(erst um \d|spät (heim|nach hause|zu hause)|keine zeit|schnell (was|etwas)|was schnelles|unter 20|20 min)/i.test(text);
+  return /(erst um \d|spät (heim|nach hause|zu hause)|keine zeit|schnell (was|etwas)|was schnelles|heute schnelles|(etwas|was) schnelles|schnelle (idee|sachen|gerichte)|unter 20|20 min)/i.test(text);
 }
 
 const QUICK_FALLBACK = ["Rührei mit Brot", "Nudeln mit Pesto", "Wraps mit Gemüse", "Ofen-Baguette", "Tomatensuppe mit Toast"];
