@@ -357,10 +357,22 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
         ],
       };
     }
+    // "Mal so, mal so" mit "Ganze Woche": höchstens einmal pro Woche anbieten, die nächste Woche vorzubereiten
+    const weekKey = `ganze-woche:${data.week.weekStart}`;
+    if (data.planStyle === "mix" && profile.mixSuggest === "woche" && target.isNext && !targetPlan && !wasAsked(activity, weekKey) && allowed("wochenplanung")) {
+      return {
+        kind: "wochenplanung",
+        text: "Soll ich dir für nächste Woche ein paar Gerichte vorschlagen?",
+        chips: [
+          once(weekKey, "Ja, gern", () => (status?.configured ? openHelper(undefined, "Schlag mir bitte Gerichte für die nächste Woche vor – freie Tage dürfen frei bleiben.") : router.push("/woche/check"))),
+          once(weekKey, "Nein danke"),
+        ],
+      };
+    }
     // "Mal so, mal so": höchstens einmal pro Woche die nächsten 2 Tage anbieten
     const twoDaysKey = `zwei-tage:${data.week.weekStart}`;
     const nextTwo = [tomorrow, ...data.week.days.filter((d) => d.date === addDays(todayIso, 2))].filter(Boolean);
-    if (data.planStyle === "mix" && !wasAsked(activity, twoDaysKey) && nextTwo.some((d) => d && !d.away && !d.paused && d.weekend !== "frei" && !d.slot.entry) && allowed("wochenplanung")) {
+    if (data.planStyle === "mix" && profile.mixSuggest === "zwei" && !wasAsked(activity, twoDaysKey) && nextTwo.some((d) => d && !d.away && !d.paused && d.weekend !== "frei" && !d.slot.entry) && allowed("wochenplanung")) {
       return {
         kind: "wochenplanung",
         text: "Soll ich dir die nächsten 2 Tage vorschlagen?",

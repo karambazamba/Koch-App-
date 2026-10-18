@@ -14,20 +14,25 @@ type Props = {
   leading?: ReactNode;
   /** Zusatz rechts vor dem Pfeil */
   trailing?: ReactNode;
+  /** Aktueller Wert rechts (in Akzentfarbe) */
+  value?: ReactNode;
+  /** Icon-Hintergrund: Akzent (Standard) oder zurückhaltend grau */
+  tone?: "accent" | "neutral";
   className?: string;
   "aria-label"?: string;
 };
 
 /** Zeile mit Icon links, Titel + grauem Untertitel und Pfeil rechts */
-export function ListRow({ href, onClick, title, subtitle, icon, leading, trailing, className = "", ...rest }: Props) {
+export function ListRow({ href, onClick, title, subtitle, icon, leading, trailing, value, tone = "accent", className = "", ...rest }: Props) {
   const content = (
     <>
-      {leading ?? (icon && <IconBadge icon={icon} />)}
+      {leading ?? (icon && <IconBadge icon={icon} tone={tone} />)}
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="text-base font-bold leading-snug text-ink">{title}</span>
         {subtitle && <span className="text-sm leading-snug text-muted">{subtitle}</span>}
       </span>
       {trailing}
+      {value !== undefined && value !== "" && <span className="max-w-[40%] shrink-0 truncate text-right text-sm font-bold text-accent-strong">{value}</span>}
       <ChevronRight className="h-5 w-5 shrink-0 text-stone-300" strokeWidth={2.25} aria-hidden />
     </>
   );

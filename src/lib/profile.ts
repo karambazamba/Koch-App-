@@ -264,7 +264,7 @@ export type PauseSettings = { from: string; until: string | null };
 export type WeatherSettings = { consent: boolean; postcode: string };
 
 export type HouseholdProfile = {
-  version: 16;
+  version: 17;
   householdName: string;
   adults: number;
   kids: number;
@@ -317,8 +317,19 @@ export type HouseholdProfile = {
   planStyle: PlanStyle;
   /** Spontan, aber "nur diese Woche planen": erster Tag dieser Woche, sonst null */
   planWeek: string | null;
+  /** "Mal so, mal so": darf Lotte vorschlagen? (Profil v17, Standard 2 Tage) */
+  mixSuggest: MixSuggest;
   updatedAt: string;
 };
+
+/** Was Lotte bei "Mal so, mal so" von sich aus vorschlagen darf (Profil v17) */
+export type MixSuggest = "nie" | "zwei" | "woche";
+
+export const MIX_SUGGESTS: { value: MixSuggest; label: string; hint: string }[] = [
+  { value: "nie", label: "Nie", hint: "Ich schlage nichts von mir aus vor – fragt einfach, wenn ihr was braucht." },
+  { value: "zwei", label: "2 Tage", hint: "Ab und zu biete ich die nächsten 2 Tage an." },
+  { value: "woche", label: "Ganze Woche", hint: "Ab und zu biete ich an, die nächste Woche vorzubereiten." },
+];
 
 /** Wie ihr kocht: mit Plan, spontan oder mal so, mal so (Profil v16) */
 export type PlanStyle = "plan" | "spontan" | "mix";
@@ -448,7 +459,7 @@ export function createPerson(role: PersonRole): Person {
 
 export function createEmptyProfile(): HouseholdProfile {
   return {
-    version: 16,
+    version: 17,
     householdName: "",
     adults: 2,
     kids: 1,
@@ -489,6 +500,7 @@ export function createEmptyProfile(): HouseholdProfile {
     weekendIdeas: true,
     planStyle: "mix",
     planWeek: null,
+    mixSuggest: "zwei",
     updatedAt: "",
   };
 }
@@ -638,7 +650,7 @@ export function normalizeMealTime(value: unknown, fallback: MealTime): MealTime 
 export function migrateProfile(raw: unknown): HouseholdProfile | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as Record<string, unknown>;
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].includes(data.version as number)) return null;
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17].includes(data.version as number)) return null;
 
   const defaults = createEmptyProfile();
 
@@ -738,6 +750,8 @@ export function migrateProfile(raw: unknown): HouseholdProfile | null {
     weekendIdeas: data.weekendIdeas !== false,
     // Bis v15: wer schon Gerichte im Plan hat, plant gern – sonst "mal so, mal so"
     planStyle: PLAN_STYLES.some((p) => p.value === data.planStyle) ? (data.planStyle as PlanStyle) : hasPlannedMeals() ? "plan" : "mix",
+    // Bis v16: 2 Tage
+    mixSuggest: data.mixSuggest === "nie" || data.mixSuggest === "woche" ? data.mixSuggest : "zwei",
     planWeek: typeof data.planWeek === "string" && /^\d{4}-\d{2}-\d{2}$/.test(data.planWeek) ? data.planWeek : null,
     updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : "",
   };

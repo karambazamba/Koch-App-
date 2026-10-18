@@ -63,6 +63,7 @@ Bei ALLEN Änderungen beachten.
 - Datenschutz: so wenig Daten wie nötig, besonders bei Kindern; alles löschbar.
 - Zurück = eine Ebene zurück, Pfeil und Geste identisch, Scrollposition bleibt erhalten.
 - Neue Farben/Komponenten immer über die Design-Tokens, damit alle Ansichten funktionieren.
+- Einstellungen nach Nutzungshäufigkeit sortieren – Häufiges oben, Einmaliges unten. Aktueller Wert immer rechts sichtbar.
 - Spontan ist gleichwertig zur Planung. Neue Funktionen müssen für alle drei Kochstile funktionieren. Bei ‚Spontan' niemals Planungs-Hinweise oder Lücken-Texte zeigen.
 - Versionsnummer (`package.json` und `APP_VERSION` in `src/lib/app.ts`) und `CACHE_VERSION` in `public/sw.js` bei jeder Auslieferung erhöhen.
 
@@ -520,19 +521,31 @@ Bei ALLEN Änderungen beachten.
   `wasgibts.maschinenansicht`), "Schritte für Thermomix" mit Zeit/Temperatur/
   Stufe/Linkslauf. Rein beschreibend – keine Logos, keine Partnerschaft.
   Vorerst nur eingebaute Rezepte, KI später.
-- Einstellungen (`/profil`, `FamilyOverview`) in sechs Gruppen: "Unsere
-  Familie" (bzw. "Mein/Unser Haushalt": Personen – nach links wischen =
-  "Entfernen" –, hinzufügen, "Für wen kochst du?"), Lotte (Name & Stimme,
-  Modus, Tipps, Wochenend-Ideen als Schalter, Pause, Gesundheits-Tipps),
-  Ansicht & Darstellung, Essgewohnheiten & Küchenstil (Kochstil, Wochenend-
-  Stil, Das mögt ihr, Lieblingsgerichte, warm essen, Einkaufstag,
-  Wochenvorlage; Basen, Nie wieder, Produkte & Läden), Küche (Vorrat, Unsere
-  Rezepte), Daten & App (sichern/einspielen als JSON-Datei `src/lib/backup.ts`,
-  Versionsnummer, alles löschen). Jede Seite hat oben einen kurzen
-  Erklärsatz (`intro`). Schalter und die Seiten Ansicht/Modus
-  (`InstantSettingsPage`) wirken sofort, Formulare mit "Speichern".
-  Optionen, die es noch nicht gibt (Joker, Kochstil "plane gern / spontan"),
-  werden nicht angezeigt.
+- Einstellungen (`/profil`, `FamilyOverview`, Bausteine in
+  `src/components/profile/settings/`) nach Häufigkeit: KOCHEN (Kochstil,
+  Essen & Vorlieben, Wochenende – nicht bei spontan), UNSERE KÜCHE (Rezepte,
+  Vorrat mit Anzahl), LOTTE ("Wie oft meldet sich Lotte?" → `/profil/lotte`:
+  Modus, Tipps, Wochenend-Ideen, Name & Stimme, Pause), AUSSEHEN (Ansicht,
+  Darstellung), EINMAL EINGERICHTET (grau: Unsere Familie `/profil/familie`
+  mit Personen, Haushaltstyp, warm essen, Einkaufstag, Produkte; Daten & App
+  `/profil/daten`). Gruppenüberschrift klein in Großbuchstaben, darunter eine
+  weiße Karte; jede Zeile Icon, Titel + Untertitel, rechts der Wert in
+  Akzentfarbe (`ListRow value`). Unterseiten stellen eine klare Frage mit
+  Antwort-Karten (`ChoiceCards`, `SettingsPage`) und wirken sofort – auch die
+  Formulare (`ProfileEditPage` speichert jede gültige Änderung); unten "Gilt
+  sofort – nichts wird gelöscht." "Essen & Vorlieben" (`/profil/essen`):
+  Veggie-Tage & Woche (nur mit Planung), Das mögt ihr, Mag nicht & Allergien,
+  Lieblingsgerichte; bei "Einfach" hinter "Mehr anzeigen": Basen, Nie
+  wieder, Gesundheits-Tipps. Joker gibt es (noch) nicht – wird nicht
+  angezeigt. Per Lotte (`src/lib/settingsChat.ts`, ohne KI, mit
+  Rückgängig): "Jonne isst jetzt vegetarisch/vegan/wieder Fleisch", "Lisa mag
+  keine Pilze", "… allergisch gegen …", "Ich koche jetzt spontan", "Mach die
+  Ansicht dunkel", "Melde dich seltener/öfter", "Keine Tipps mehr", "Zeig mir
+  alles" u. a.
+- Profil v17 `mixSuggest` (nie / zwei / woche, Standard 2 Tage): bei "Mal so,
+  mal so" auf der Kochstil-Seite "Darf ich von mir aus was vorschlagen?";
+  "Ganze Woche" = höchstens einmal pro Woche "Soll ich dir für nächste Woche
+  ein paar Gerichte vorschlagen?".
 - Profil v15: `theme` (warm/nacht/frisch/auto), `helperMode`
   (locker/normal/dranbleiben), `display` (einfach/alles), `weekendIdeas`;
   Migration: Warm, Normal, Einfach, an.

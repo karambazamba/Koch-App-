@@ -1,9 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
-import { Segmented } from "@/components/ui/Segmented";
-import { SECTION_TITLE } from "@/components/ui/styles";
-import { APP_THEMES, DISPLAY_MODES, type AppTheme } from "@/lib/profile";
+import { APP_THEMES, type AppTheme } from "@/lib/profile";
 import { THEME_COLORS } from "@/lib/theme";
 import { InstantSettingsPage } from "./InstantSettingsPage";
 
@@ -40,14 +38,6 @@ export function AppearanceView() {
               );
             })}
           </div>
-          <h2 className={`${SECTION_TITLE} mt-2 px-1`}>Darstellung</h2>
-          <Segmented
-            label="Darstellung"
-            value={profile.display}
-            onChange={(display) => set({ display })}
-            options={DISPLAY_MODES.map((d) => ({ value: d.value, label: d.label }))}
-          />
-          <p className="px-1 text-sm text-muted">{DISPLAY_MODES.find((d) => d.value === profile.display)?.hint}</p>
         </>
       )}
     </InstantSettingsPage>

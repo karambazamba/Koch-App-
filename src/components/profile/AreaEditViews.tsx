@@ -17,8 +17,9 @@ import {
 } from "@/components/profile/editors";
 import { NumberStepper } from "@/components/form/NumberStepper";
 import { sortedBases } from "@/lib/bases";
+import { ChoiceCards } from "@/components/profile/settings/SettingsParts";
 import { LIKE_WEIGHTS, likeLevel, sortedLikes, withLikes, withoutLike } from "@/lib/likes";
-import { COOKING_STYLES, PLAN_STYLES, HEALTH_TIP_LEVELS, HOUSEHOLD_TYPES, hasKids, wishDayActive, NEW_DISHES_OPTIONS, TIP_LEVELS, WEEKDAYS, WEEKEND_STYLES, planningWeekLabel, standardWeekDays, type KitchenMachine } from "@/lib/profile";
+import { COOKING_STYLES, PLAN_STYLES, MIX_SUGGESTS, HEALTH_TIP_LEVELS, HOUSEHOLD_TYPES, hasKids, wishDayActive, NEW_DISHES_OPTIONS, WEEKDAYS, WEEKEND_STYLES, planningWeekLabel, standardWeekDays, type KitchenMachine } from "@/lib/profile";
 
 export function FavoritesEditView() {
   return (
@@ -299,40 +300,6 @@ export function LikesEditView() {
 }
 
 /** Tipps auf Lottes Platz: aus / ab und zu / täglich */
-export function TipsEditView() {
-  return (
-    <ProfileEditPage title="Tipps" intro="Kleine Küchen-Tipps auf der Startseite – so oft, wie ihr mögt.">
-      {(draft, setDraft) => (
-        <>
-          <p className={SUBTLE}>
-            Profi-Tricks, Tipps zum heutigen Gericht, Spar- und Reste-Ideen – nur wenn nichts Wichtigeres ansteht. Nach links wischen = für heute
-            weg, nach rechts = nächster Tipp.
-          </p>
-          <div className="flex flex-col gap-2" role="radiogroup" aria-label="Tipps">
-            {TIP_LEVELS.map((level) => (
-              <button
-                key={level.value}
-                type="button"
-                role="radio"
-                aria-checked={draft.tips === level.value}
-                onClick={() => setDraft((d) => ({ ...d, tips: level.value }))}
-                className={tileClass(draft.tips === level.value)}
-              >
-                <span className="flex flex-col self-stretch px-2 text-left">
-                  <span className="text-base font-bold">{level.label}</span>
-                  <span className="text-sm text-muted">{level.hint}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-          <p className={SUBTLE}>Gesundheits-Tipps haben ihre eigene Einstellung.</p>
-        </>
-      )}
-    </ProfileEditPage>
-  );
-}
-
-/** Gesundheits-Tipps: aus / ab und zu / gern öfter */
 export function HealthTipsEditView() {
   return (
     <ProfileEditPage title="Gesundheits-Tipps" intro="Ab und zu ein freiwilliger, leckerer Tausch – nie belehrend.">
@@ -371,7 +338,7 @@ export function CookingStyleEditView() {
     <ProfileEditPage title="Kochstil" intro="Mit Plan oder spontan, nach Gefühl oder Rezept, wie viel Neues – und ob eine Küchenmaschine mitkocht.">
       {(draft, setDraft) => (
         <>
-          <h2 className={`${SECTION_TITLE} px-1`}>Mit Plan oder spontan?</h2>
+          <h2 className={`${SECTION_TITLE} px-1`}>Wie kocht ihr meistens?</h2>
           <div className="flex flex-col gap-2" role="radiogroup" aria-label="Planen oder spontan">
             {PLAN_STYLES.map((style) => (
               <button
@@ -390,6 +357,12 @@ export function CookingStyleEditView() {
             ))}
           </div>
           {draft.planStyle === "spontan" && <p className={`${SUBTLE} px-1`}>Wochenplan & Co. blende ich dann aus – gespeichert bleibt alles.</p>}
+          {draft.planStyle === "mix" && (
+            <>
+              <h2 className={`${SECTION_TITLE} mt-2 px-1`}>Darf ich von mir aus was vorschlagen?</h2>
+              <ChoiceCards label="Lotte darf vorschlagen" value={draft.mixSuggest} onChange={(mixSuggest) => setDraft((d) => ({ ...d, mixSuggest }))} options={MIX_SUGGESTS} />
+            </>
+          )}
           <h2 className={`${SECTION_TITLE} mt-2 px-1`}>Nach Gefühl oder nach Rezept?</h2>
           <div className="flex flex-col gap-2" role="radiogroup" aria-label="Kochstil">
             {COOKING_STYLES.map((style) => (
