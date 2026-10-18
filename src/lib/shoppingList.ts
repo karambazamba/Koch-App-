@@ -2,9 +2,12 @@
 //
 // Artikel aus Rezepten werden nicht gespeichert, sondern bei jedem Anzeigen
 // aus dem Wochenplan berechnet (buildShoppingList) – so ist die Liste immer
-// aktuell. Gespeichert werden nur eigene Artikel, Häkchen und "Haben wir
-// schon"; Häkchen hängen an einem festen Schlüssel (Zutat + Einheit), damit
-// sie Änderungen am Plan überstehen. Speicherung lokal über localStore.
+// aktuell. "Doppelt kochen" verdoppelt die Mengen eines Gerichts. Dazu kommen
+// die "Immer da"-Basics (Brot, Obst …), die jede Woche automatisch auf der
+// Liste stehen. Gespeichert werden nur eigene Artikel, Basics, Häkchen und
+// "Haben wir schon"; Häkchen hängen an einem festen Schlüssel (Zutat +
+// Einheit), damit sie Änderungen am Plan überstehen. Speicherung lokal über
+// localStore.
 
 import { useExternalStore } from "./useExternalStore";
 import type { Recipe } from "./cookbook";
@@ -65,8 +68,10 @@ const KEYWORDS: [string, Section][] = [
   ["chili", "obst-gemuese"], ["radieschen", "obst-gemuese"], ["rote bete", "obst-gemuese"],
   ["mango", "obst-gemuese"], ["traube", "obst-gemuese"], ["kiwi", "obst-gemuese"],
   ["ananas", "obst-gemuese"], ["koriander", "obst-gemuese"], ["dill", "obst-gemuese"],
+  ["obst", "obst-gemuese"], ["gemüse", "obst-gemuese"],
   // Fleisch & Fisch
   ["fleisch", "fleisch-fisch"], ["rind", "fleisch-fisch"], ["schwein", "fleisch-fisch"],
+  ["aufschnitt", "fleisch-fisch"], ["salami", "fleisch-fisch"],
   ["hähnchen", "fleisch-fisch"], ["huhn", "fleisch-fisch"], ["hühn", "fleisch-fisch"],
   ["pute", "fleisch-fisch"], ["hack", "fleisch-fisch"], ["wurst", "fleisch-fisch"],
   ["würstchen", "fleisch-fisch"], ["speck", "fleisch-fisch"], ["schinken", "fleisch-fisch"],
@@ -159,7 +164,32 @@ export type WeekList = {
   have: string[];
 };
 
-type ShoppingListStore = { version: 2; weeks: Record<string, WeekList> };
+/** "Immer da": kommt jede Woche automatisch auf die Liste, solange aktiv */
+export type BasicItem = {
+  id: string;
+  name: string;
+  amount: string;
+  section: Section;
+  active: boolean;
+};
+
+type ShoppingListStore = {
+  /** v3: dazu die "Immer da"-Basics (null = noch die Standardliste) */
+  version: 3;
+  weeks: Record<string, WeekList>;
+  basics: BasicItem[] | null;
+};
+
+const DEFAULT_BASIC_NAMES = ["Brot", "Aufschnitt", "Käse", "Butter", "Milch", "Joghurt", "Obst"];
+
+/** Standard-Basics, solange die Familie nichts geändert hat */
+export const DEFAULT_BASICS: BasicItem[] = DEFAULT_BASIC_NAMES.map((name) => ({
+  id: `standard-${name.toLowerCase()}`,
+  name,
+  amount: "",
+  section: sectionFor(name),
+  active: true,
+}));
 
 const SECTION_VALUES = SECTIONS.map((s) => s.value);
 
@@ -167,8 +197,8 @@ function migrateStore(raw: unknown): ShoppingListStore | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as { version?: number; weeks?: Record<string, unknown> };
   // v1 war nur ein Datenmodell ohne Seite – es gibt dort keine echten Daten.
-  if (data.version === 1) return { version: 2, weeks: {} };
-  if (data.version !== 2 || !data.weeks || typeof data.weeks !== "object") return null;
+  if (data.version === 1) return { version: 3, weeks: {}, basics: null };
+  if ((data.version !== 2 && data.version !== 3) || !data.weeks || typeof data.weeks !== "object") return null;
   const strings = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
   const weeks: Record<string, WeekList> = {};
   for (const [key, raw] of Object.entries(data.weeks)) {
@@ -188,15 +218,29 @@ function migrateStore(raw: unknown): ShoppingListStore | null {
       have: strings(w.have),
     };
   }
-  return { version: 2, weeks };
+  const rawBasics = (raw as { basics?: unknown }).basics;
+  const basics = Array.isArray(rawBasics)
+    ? rawBasics
+        .filter((b): b is BasicItem => Boolean(b) && typeof b.id === "string" && typeof b.name === "string")
+        .map((b) => ({
+          id: b.id,
+          name: b.name,
+          amount: typeof b.amount === "string" ? b.amount : "",
+          section: SECTION_VALUES.includes(b.section) ? b.section : sectionFor(b.name),
+          active: b.active !== false,
+        }))
+    : null;
+  return { version: 3, weeks, basics };
 }
 
 const store = createLocalStore("wasgibts.einkaufsliste", migrateStore);
 const EMPTY_LIST: WeekList = { manual: [], checked: [], have: [] };
 const EMPTY_WEEKS: Record<string, WeekList> = {};
 
+const emptyStore = (): ShoppingListStore => ({ version: 3, weeks: {}, basics: null });
+
 function updateList(weekStart: string, change: (list: WeekList) => WeekList) {
-  const current = store.load() ?? { version: 2 as const, weeks: {} };
+  const current = store.load() ?? emptyStore();
   store.save({
     ...current,
     weeks: { ...current.weeks, [weekStart]: change(current.weeks[weekStart] ?? EMPTY_LIST) },
@@ -231,7 +275,41 @@ export function addManualItem(weekStart: string, item: Omit<ManualItem, "id" | "
 
 /** Alle Listen auf einmal ersetzen (Küchenhelfer: Übernehmen/Rückgängig) */
 export function replaceShoppingLists(weeks: Record<string, WeekList>) {
-  store.save({ version: 2, weeks });
+  const current = store.load() ?? emptyStore();
+  store.save({ ...current, weeks });
+}
+
+// --- "Immer da" ------------------------------------------------------------------
+
+function updateBasics(change: (basics: BasicItem[]) => BasicItem[]) {
+  const current = store.load() ?? emptyStore();
+  store.save({ ...current, basics: change(current.basics ?? DEFAULT_BASICS) });
+}
+
+export function addBasic(name: string, amount = "") {
+  const id = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+  updateBasics((b) => [...b, { id, name: name.trim(), amount: amount.trim(), section: sectionFor(name), active: true }]);
+}
+
+export function updateBasic(id: string, changes: Partial<Omit<BasicItem, "id">>) {
+  updateBasics((b) =>
+    b.map((item) =>
+      item.id === id
+        ? { ...item, ...changes, section: changes.name !== undefined ? sectionFor(changes.name) : item.section }
+        : item,
+    ),
+  );
+}
+
+export function removeBasic(id: string) {
+  updateBasics((b) => b.filter((item) => item.id !== id));
+}
+
+/** "Immer da"-Basics (`undefined` = noch nicht geladen) */
+export function useShoppingBasics(): BasicItem[] | undefined {
+  const data = useExternalStore(store.subscribe, store.load, () => undefined);
+  if (data === undefined) return undefined;
+  return data?.basics ?? DEFAULT_BASICS;
 }
 
 export function removeManualItem(weekStart: string, id: string) {
@@ -256,6 +334,8 @@ export type ListItem = {
   dishes: string[];
   /** Nur bei eigenen Artikeln */
   manualId?: string;
+  /** Aus "Immer da" */
+  basic?: boolean;
   checked: boolean;
   /** "Haben wir schon" – für diese Woche ausgeblendet */
   hidden: boolean;
@@ -273,6 +353,7 @@ export function buildShoppingList(
   week: PlanWeek,
   recipes: Record<string, Recipe>,
   list: WeekList = EMPTY_LIST,
+  basics: BasicItem[] = [],
 ): ShoppingList {
   type Acc = { name: string; family: string; total: number; hasAmount: boolean; dishes: string[] };
   const acc = new Map<string, Acc>();
@@ -281,28 +362,28 @@ export function buildShoppingList(
   for (const day of week.days) {
     if (day.away) continue;
     const short = day.weekday.slice(0, 2);
-    for (const slot of day.slots) {
-      const entry = slot.entry;
-      if (!entry) continue;
-      const recipe = entry.recipeId ? recipes[entry.recipeId] : undefined;
-      const ingredients = recipe?.ingredients.filter((i) => i.name.trim()) ?? [];
-      const label = entry.stored.kind === "wish" ? `${entry.kidName}s Wunsch „${entry.title}“` : entry.title;
-      if (ingredients.length === 0) {
-        missing.push(`${label} (${short})`);
-        continue;
+    const entry = day.slot.entry;
+    if (!entry) continue;
+    const recipe = entry.recipeId ? recipes[entry.recipeId] : undefined;
+    const ingredients = recipe?.ingredients.filter((i) => i.name.trim()) ?? [];
+    const label = entry.stored.kind === "wish" ? `${entry.kidName}s Wunsch „${entry.title}“` : entry.title;
+    if (ingredients.length === 0) {
+      missing.push(`${label} (${short})`);
+      continue;
+    }
+    // Doppelt kochen → doppelte Mengen
+    const times = entry.double ? 2 : 1;
+    const dish = `${entry.title} (${short})${entry.double ? " ×2" : ""}`;
+    for (const ing of ingredients) {
+      const { family, factor } = unitFamily(ing.unit);
+      const key = `${ing.name.trim().toLowerCase()}|${family}`;
+      const item = acc.get(key) ?? { name: ing.name.trim(), family, total: 0, hasAmount: false, dishes: [] };
+      if (ing.amount !== null) {
+        item.total += ing.amount * factor * times;
+        item.hasAmount = true;
       }
-      const dish = `${entry.title} (${short})`;
-      for (const ing of ingredients) {
-        const { family, factor } = unitFamily(ing.unit);
-        const key = `${ing.name.trim().toLowerCase()}|${family}`;
-        const item = acc.get(key) ?? { name: ing.name.trim(), family, total: 0, hasAmount: false, dishes: [] };
-        if (ing.amount !== null) {
-          item.total += ing.amount * factor;
-          item.hasAmount = true;
-        }
-        if (!item.dishes.includes(dish)) item.dishes.push(dish);
-        acc.set(key, item);
-      }
+      if (!item.dishes.includes(dish)) item.dishes.push(dish);
+      acc.set(key, item);
     }
   }
 
@@ -326,7 +407,23 @@ export function buildShoppingList(
     hidden: false,
   }));
 
-  const items = [...generated, ...manual].sort(
+  const basicItems: ListItem[] = basics
+    .filter((b) => b.active && b.name.trim())
+    .map((b) => {
+      const key = `b:${b.id}`;
+      return {
+        key,
+        name: b.name,
+        amount: b.amount,
+        section: b.section,
+        dishes: [],
+        basic: true,
+        checked: list.checked.includes(key),
+        hidden: list.have.includes(key),
+      };
+    });
+
+  const items = [...generated, ...basicItems, ...manual].sort(
     (a, b) =>
       SECTION_VALUES.indexOf(a.section) - SECTION_VALUES.indexOf(b.section) ||
       a.name.localeCompare(b.name, "de"),

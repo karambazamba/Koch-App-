@@ -28,19 +28,19 @@ export type Person = {
   employed?: boolean | null;
 };
 
-export type WarmMeal = "mittags" | "abends" | "flexibel";
+/** Tageszeit einer Mahlzeit */
+export type MealTime = "mittags" | "abends";
 
 /**
- * Wann es warm gibt: "mittags", "abends", beides (= zwei warme Mahlzeiten)
- * oder allein "flexibel". Nie leer.
+ * Wann die Familie meistens zusammen warm isst. Es wird immer nur EIN
+ * Hauptgericht pro Tag geplant – die Zeit bestimmt nur, wer dabei ist
+ * (Personenzahl) und die Anzeige, nicht die Anzahl der Plätze.
  */
-export type WarmMealSlots = WarmMeal[];
-
 export type WarmMealSchedule = {
   /** Montag bis Freitag */
-  weekday: WarmMealSlots;
+  weekday: MealTime;
   /** Samstag und Sonntag */
-  weekend: WarmMealSlots;
+  weekend: MealTime;
 };
 
 export type WeekRules = {
@@ -55,13 +55,10 @@ export type WeekRules = {
   cheatDayWeekday: string;
 };
 
-export type WishMeal = "mittags" | "abends";
-
 /** Wunschtag: Kinder dürfen sich reihum einmal pro Woche ein Gericht wünschen. */
 export type WishDaySettings = {
   enabled: boolean;
   weekday: string;
-  meal: WishMeal;
   /** Mindestalter in Jahren */
   minAge: number;
   /** Reihenfolge der Kinder (IDs); wer teilnehmen darf, entscheidet das Alter */
@@ -69,7 +66,7 @@ export type WishDaySettings = {
 };
 
 export type HouseholdProfile = {
-  version: 5;
+  version: 6;
   householdName: string;
   adults: number;
   kids: number;
@@ -97,15 +94,26 @@ export const COMMON_ALLERGIES = [
   "Sesam",
 ];
 
-export const WARM_MEAL_LABELS: Record<WarmMeal, string> = {
+export const MEAL_TIME_LABELS: Record<MealTime, string> = {
   mittags: "mittags",
   abends: "abends",
-  flexibel: "mal so, mal so",
 };
 
-/** z. B. "mittags & abends" */
-export function formatWarmMeals(slots: WarmMealSlots): string {
-  return slots.map((slot) => WARM_MEAL_LABELS[slot]).join(" & ");
+const WEEKEND = ["Samstag", "Sonntag"];
+
+/** Wann es an diesem Wochentag das Hauptgericht gibt */
+export function mainMealTime(profile: Pick<HouseholdProfile, "warmMeal"> | null, weekday: string): MealTime {
+  if (!profile) return "abends";
+  return WEEKEND.includes(weekday) ? profile.warmMeal.weekend : profile.warmMeal.weekday;
+}
+
+/**
+ * Wie viele essen beim Hauptgericht mit? Mittags unter der Woche nur, wer
+ * dann zu Hause ist (inkl. "manchmal"), sonst alle.
+ */
+export function mainMealHeadcount(profile: HouseholdProfile, weekday: string): number {
+  const lunchOnWeekday = !WEEKEND.includes(weekday) && profile.warmMeal.weekday === "mittags";
+  return Math.max(1, lunchOnWeekday ? weekdayLunchHeadcount(profile).max : profile.persons.length);
 }
 
 export const KID_AGE_GROUP_LABELS: Record<KidAgeGroup, string> = {
@@ -164,7 +172,7 @@ export function createPerson(role: PersonRole): Person {
 
 export function createEmptyProfile(): HouseholdProfile {
   return {
-    version: 5,
+    version: 6,
     householdName: "",
     adults: 2,
     kids: 1,
@@ -174,7 +182,7 @@ export function createEmptyProfile(): HouseholdProfile {
       createPerson("kind"),
     ],
     favoriteDishes: [],
-    warmMeal: { weekday: ["abends"], weekend: ["mittags"] },
+    warmMeal: { weekday: "abends", weekend: "mittags" },
     weekRules: {
       meatDays: 2,
       vegetarianDays: 3,
@@ -189,13 +197,8 @@ export function createEmptyProfile(): HouseholdProfile {
 }
 
 export function createWishDay(): WishDaySettings {
-  return { enabled: false, weekday: "Freitag", meal: "abends", minAge: 4, order: [] };
+  return { enabled: false, weekday: "Freitag", minAge: 4, order: [] };
 }
-
-export const WISH_MEAL_LABELS: Record<WishMeal, string> = {
-  mittags: "mittags",
-  abends: "abends",
-};
 
 /**
  * Darf das Kind beim Wunschtag mitmachen? Mit Alter: ab Mindestalter.
@@ -297,7 +300,6 @@ export function weekdayLunchHeadcount(profile: HouseholdProfile): {
 
 // --- Migration älterer Profile ----------------------------------------------
 
-const WARM_MEALS: WarmMeal[] = ["mittags", "abends", "flexibel"];
 const KID_AGE_GROUPS: KidAgeGroup[] = ["kleinkind", "kitakind", "schulkind"];
 const WEEKDAY_LUNCHES: WeekdayLunch[] = ["auswaerts", "zuhause", "manchmal"];
 
@@ -312,17 +314,19 @@ const V1_KIDS_LUNCH: Record<string, WeekdayLunch> = {
 };
 
 /**
- * Macht aus einem gespeicherten Wert gültige Slots:
- * v1/v2 speicherten einen einzelnen Wert, ab v3 ist es eine Liste.
- * "flexibel" schließt mittags/abends aus.
+ * Aus einer gespeicherten Angabe die Zeit, zu der meistens zusammen warm
+ * gegessen wird. v1/v2: einzelner Wert, v3–v5: Liste ("mittags", "abends",
+ * beides oder "flexibel"), ab v6: "mittags" | "abends".
+ * Eindeutig mittags/abends bleibt; beides oder "mal so, mal so" → `fallback`
+ * (unter der Woche abends, am Wochenende mittags).
  */
-export function normalizeWarmMeals(value: unknown, fallback: WarmMealSlots): WarmMealSlots {
-  const list = (Array.isArray(value) ? value : [value]).filter((v): v is WarmMeal =>
-    WARM_MEALS.includes(v as WarmMeal),
-  );
-  if (list.includes("flexibel")) return ["flexibel"];
-  const slots = WARM_MEALS.filter((meal) => list.includes(meal));
-  return slots.length > 0 ? slots : fallback;
+export function normalizeMealTime(value: unknown, fallback: MealTime): MealTime {
+  const list = Array.isArray(value) ? value : [value];
+  const lunch = list.includes("mittags");
+  const dinner = list.includes("abends");
+  if (lunch && !dinner) return "mittags";
+  if (dinner && !lunch) return "abends";
+  return fallback;
 }
 
 /**
@@ -332,7 +336,7 @@ export function normalizeWarmMeals(value: unknown, fallback: WarmMealSlots): War
 export function migrateProfile(raw: unknown): HouseholdProfile | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as Record<string, unknown>;
-  if (![1, 2, 3, 4, 5].includes(data.version as number)) return null;
+  if (![1, 2, 3, 4, 5, 6].includes(data.version as number)) return null;
 
   const defaults = createEmptyProfile();
 
@@ -343,8 +347,8 @@ export function migrateProfile(raw: unknown): HouseholdProfile | null {
       ? (oldWarmMeal as Record<string, unknown>)
       : { weekday: oldWarmMeal, weekend: oldWarmMeal };
   const warmMeal: WarmMealSchedule = {
-    weekday: normalizeWarmMeals(oldSchedule.weekday, defaults.warmMeal.weekday),
-    weekend: normalizeWarmMeals(oldSchedule.weekend, defaults.warmMeal.weekend),
+    weekday: normalizeMealTime(oldSchedule.weekday, defaults.warmMeal.weekday),
+    weekend: normalizeMealTime(oldSchedule.weekend, defaults.warmMeal.weekend),
   };
 
   const kidLunchFallback =
@@ -406,7 +410,6 @@ function migrateWishDay(raw: unknown, fallback: WishDaySettings): WishDaySetting
   return {
     enabled: w.enabled === true,
     weekday: pick(w.weekday, WEEKDAYS, fallback.weekday),
-    meal: pick(w.meal, ["mittags", "abends"] as WishMeal[], fallback.meal),
     minAge:
       typeof w.minAge === "number" ? Math.min(max, Math.max(min, w.minAge)) : fallback.minAge,
     order: Array.isArray(w.order) ? w.order.filter((id) => typeof id === "string") : [],

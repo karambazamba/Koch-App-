@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Settings, Users } from "lucide-react";
 import { IconBadge } from "@/components/ui/IconBadge";
 import { CARD, buttonClass } from "@/components/ui/styles";
-import { formatWarmMeals } from "@/lib/profile";
+import { MEAL_TIME_LABELS } from "@/lib/profile";
 import { useProfile } from "@/lib/useProfile";
 
 /**
@@ -42,7 +42,7 @@ export function WelcomeCard() {
   );
 }
 
-/** Kompakte Haushalts-Zeile ganz unten, z. B. "5 Personen · warm mittags & abends". */
+/** Kompakte Haushalts-Zeile ganz unten, z. B. "5 Personen · zusammen warm abends, Sa–So mittags". */
 export function HouseholdRow() {
   const profile = useProfile();
 
@@ -52,8 +52,8 @@ export function HouseholdRow() {
   if (profile === null) return null;
 
   const count = profile.persons.length;
-  const weekday = formatWarmMeals(profile.warmMeal.weekday);
-  const weekend = formatWarmMeals(profile.warmMeal.weekend);
+  const weekday = MEAL_TIME_LABELS[profile.warmMeal.weekday];
+  const weekend = MEAL_TIME_LABELS[profile.warmMeal.weekend];
 
   return (
     <Link
@@ -66,7 +66,7 @@ export function HouseholdRow() {
           {count} {count === 1 ? "Person" : "Personen"}
         </span>
         {" · "}
-        <span className="whitespace-nowrap">warm {weekday}</span>
+        <span className="whitespace-nowrap">zusammen warm {weekday}</span>
         {weekend !== weekday && (
           <>
             {", "}

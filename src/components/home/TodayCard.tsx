@@ -1,15 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, MapPin, Moon, Sun, UtensilsCrossed } from "lucide-react";
+import { Carrot, ChevronRight, MapPin, Moon, Soup, Sun, UtensilsCrossed } from "lucide-react";
 import { CategoryChip } from "@/components/ui/Category";
 import { CARD, buttonClass } from "@/components/ui/styles";
 import { useRecipes } from "@/lib/cookbook";
-import { buildWeek, storedForWeek, useMealPlans, type PlanWeek } from "@/lib/mealPlan";
+import { composeWeek, useMealPlans, type PlanWeek } from "@/lib/mealPlan";
 import { useProfile } from "@/lib/useProfile";
 import {
   DEFAULT_SHOPPING_DAY,
-  planForWeek,
   toIsoDate,
   useToday,
   useWeekPlans,
@@ -27,13 +26,7 @@ function useCurrentWeek(): { today: Date; week: PlanWeek } | null | undefined {
   if (!today || profile === undefined || !weekPlans || !mealPlans || !recipes) return undefined;
   if (profile === null) return null;
   const weekStart = weekStartFor(today, profile.shoppingDay ?? DEFAULT_SHOPPING_DAY);
-  const week = buildWeek(
-    weekStart,
-    profile,
-    planForWeek(weekPlans, weekStart),
-    storedForWeek(mealPlans, weekStart),
-    recipes,
-  );
+  const week = composeWeek(weekStart, profile, weekPlans, mealPlans, recipes);
   return { today, week };
 }
 
@@ -52,7 +45,29 @@ export function WeekSubtitle() {
 
 const DATE_LABEL = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "2-digit", month: "2-digit" });
 
-/** Blickfang auf der Startseite: das heutige Gericht. */
+/** Zweite Mahlzeit: Reste vom Vortag oder eine schnelle Idee aus dem Vorrat */
+function SecondMeal({ leftovers }: { leftovers: string | null }) {
+  if (leftovers) {
+    return (
+      <p className="flex items-center gap-2 border-t border-line pt-3 text-sm text-muted">
+        <Soup className="h-4 w-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
+        <span>
+          Zweite Mahlzeit: <span className="font-semibold text-ink">Reste von {leftovers}</span>
+        </span>
+      </p>
+    );
+  }
+  return (
+    <Link href="/schnellkueche" className="flex items-center gap-2 border-t border-line pt-3 text-sm text-muted">
+      <Carrot className="h-4 w-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
+      <span className="flex-1">
+        Zweite Mahlzeit: Schnelle Idee? <span className="font-semibold text-accent-strong">→ Was ist noch da?</span>
+      </span>
+    </Link>
+  );
+}
+
+/** Blickfang auf der Startseite: das heutige Hauptgericht, darunter klein die zweite Mahlzeit. */
 export function TodayCard() {
   const data = useCurrentWeek();
 
@@ -61,10 +76,6 @@ export function TodayCard() {
 
   const { today, week } = data;
   const day = week.days.find((d) => d.date === toIsoDate(today));
-  const entries = day?.slots.flatMap((s) => (s.entry ? [{ meal: s.meal, entry: s.entry }] : [])) ?? [];
-  const single = entries.length === 1 ? entries[0].entry : null;
-  const href = single?.recipeId ? `/kochbuch/rezept?id=${single.recipeId}` : "/wochenplan";
-
   const label = (
     <p className="text-xs font-bold uppercase tracking-wider text-accent">Heute · {DATE_LABEL.format(today)}</p>
   );
@@ -81,42 +92,43 @@ export function TodayCard() {
     );
   }
 
-  if (entries.length === 0) {
-    return (
-      <section className={`${CARD} p-5`} aria-label="Heute">
-        {label}
-        <p className="mt-1 text-2xl font-extrabold tracking-tight">Noch nichts geplant</p>
-        <p className="mt-1 text-sm text-muted">Tragt ein Gericht ein oder schaut, was noch da ist.</p>
-        <Link href="/wochenplan" className={`${buttonClass("primary")} mt-4 w-full`}>
-          <UtensilsCrossed className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-          Zum Wochenplan
-        </Link>
-      </section>
-    );
-  }
+  const entry = day?.slot.entry ?? null;
+  const MealIcon = day?.mealTime === "mittags" ? Sun : Moon;
 
   return (
-    <Link href={href} aria-label="Heute" className={`${CARD} flex items-center gap-3 p-5 transition active:scale-[0.99]`}>
-      <span className="flex min-w-0 flex-1 flex-col gap-3">
-        {label}
-        {entries.map(({ meal, entry }) => {
-          const MealIcon = meal === "mittags" ? Sun : Moon;
-          return (
-            <span key={meal} className="flex flex-col gap-1.5">
-              <span className="text-2xl font-extrabold leading-tight tracking-tight">{entry.title}</span>
-              <span className="flex flex-wrap items-center gap-2 text-sm text-muted">
-                <span className="inline-flex items-center gap-1">
-                  <MealIcon className="h-4 w-4" strokeWidth={2} aria-hidden />
-                  {meal === "mittags" ? "Mittags" : "Abends"}
-                </span>
-                {entry.category && <CategoryChip category={entry.category} short />}
-                {entry.origin === "wunsch" && entry.kidName && <span>Wunsch von {entry.kidName} 🎉</span>}
+    <section className={`${CARD} flex flex-col gap-3 p-5`} aria-label="Heute">
+      {entry ? (
+        <Link
+          href={entry.recipeId ? `/kochbuch/rezept?id=${encodeURIComponent(entry.recipeId)}` : "/wochenplan"}
+          className="flex items-center gap-3 transition active:scale-[0.99]"
+        >
+          <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+            {label}
+            <span className="text-2xl font-extrabold leading-tight tracking-tight">{entry.title}</span>
+            <span className="flex flex-wrap items-center gap-2 text-sm text-muted">
+              <span className="inline-flex items-center gap-1">
+                <MealIcon className="h-4 w-4" strokeWidth={2} aria-hidden />
+                {day?.mealTime === "mittags" ? "Mittags" : "Abends"}
+                {day?.persons ? ` · ${day.persons} Pers.` : ""}
               </span>
+              {entry.category && <CategoryChip category={entry.category} short />}
+              {entry.origin === "wunsch" && entry.kidName && <span>Wunsch von {entry.kidName} 🎉</span>}
+              {entry.double && <span className="font-semibold text-accent-strong">doppelt – Reste für morgen</span>}
             </span>
-          );
-        })}
-      </span>
-      <ChevronRight className="h-5 w-5 shrink-0 text-stone-300" strokeWidth={2.25} aria-hidden />
-    </Link>
+          </span>
+          <ChevronRight className="h-5 w-5 shrink-0 text-stone-300" strokeWidth={2.25} aria-hidden />
+        </Link>
+      ) : (
+        <div>
+          {label}
+          <p className="mt-1 text-2xl font-extrabold tracking-tight">Noch nichts geplant</p>
+          <Link href="/wochenplan" className={`${buttonClass("primary")} mt-4 w-full`}>
+            <UtensilsCrossed className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+            Zum Wochenplan
+          </Link>
+        </div>
+      )}
+      <SecondMeal leftovers={day?.leftovers ?? null} />
+    </section>
   );
 }

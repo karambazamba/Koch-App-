@@ -38,7 +38,16 @@ export function createLocalStore<T>(
       cachedValue = null;
       if (raw) {
         try {
-          cachedValue = migrate(JSON.parse(raw));
+          const parsed = JSON.parse(raw);
+          cachedValue = migrate(parsed);
+          // Ältere Version → migrierten Stand einmalig zurückschreiben, damit
+          // die Umstellung nicht bei jedem Laden neu (und evtl. anders) passiert.
+          const version = (v: unknown) => (v && typeof v === "object" ? (v as { version?: unknown }).version : undefined);
+          if (cachedValue && version(cachedValue) !== undefined && version(cachedValue) !== version(parsed)) {
+            const migrated = JSON.stringify(cachedValue);
+            window.localStorage.setItem(key, migrated);
+            cachedRaw = migrated;
+          }
         } catch {
           // Defekte Daten ignorieren – es wird dann neu angelegt.
         }

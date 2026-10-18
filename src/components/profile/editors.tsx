@@ -18,7 +18,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { ChoiceGroup, MultiChoiceGroup } from "@/components/form/ChoiceGroup";
+import { ChoiceGroup } from "@/components/form/ChoiceGroup";
 import { NumberStepper } from "@/components/form/NumberStepper";
 import { TagInput } from "@/components/form/TagInput";
 import { CARD, INPUT_BASE, NOTE, WARNING, tileClass } from "@/components/ui/styles";
@@ -34,12 +34,11 @@ import {
   type HouseholdProfile,
   type KidAgeGroup,
   type Person,
-  type WarmMeal,
+  type MealTime,
   type WarmMealSchedule,
   type WeekdayLunch,
   type WeekRules,
   type WishDaySettings,
-  type WishMeal,
 } from "@/lib/profile";
 
 export const FAVORITE_SUGGESTIONS = [
@@ -57,11 +56,10 @@ export const FAVORITE_SUGGESTIONS = [
 
 const DISLIKE_SUGGESTIONS = ["Pilze", "Zwiebeln", "Paprika", "Oliven", "Scharfes"];
 
-const WARM_MEAL_OPTIONS = [
+const MEAL_TIME_OPTIONS = [
   { value: "mittags", label: "Mittags", icon: Sun },
   { value: "abends", label: "Abends", icon: Moon },
-  { value: "flexibel", label: "Mal so, mal so", icon: RefreshCw },
-] satisfies { value: WarmMeal; label: string; icon: LucideIcon }[];
+] satisfies { value: MealTime; label: string; icon: LucideIcon }[];
 
 const ADULT_LUNCH_OPTIONS = [
   { value: "zuhause", label: "Ist mittags zu Hause", icon: Home },
@@ -241,23 +239,26 @@ export function WarmMealEditor({
 }) {
   return (
     <section className={`${CARD} flex flex-col gap-6 p-4`}>
-      <p className="text-lg font-bold">Wann gibt es die warme Mahlzeit?</p>
-      <MultiChoiceGroup<WarmMeal>
+      <div>
+        <p className="text-lg font-bold">Wann esst ihr meistens zusammen warm?</p>
+        <p className="text-sm text-muted">
+          Wir planen ein Hauptgericht pro Tag. Die Zeit bestimmt nur, wer dabei ist.
+        </p>
+      </div>
+      <ChoiceGroup<MealTime>
         label="Unter der Woche (Mo–Fr)"
-        hint="Mittags und abends gleichzeitig = zwei warme Mahlzeiten"
-        values={warmMeal.weekday}
+        value={warmMeal.weekday}
         onChange={(weekday) => onChange({ ...warmMeal, weekday })}
-        options={WARM_MEAL_OPTIONS}
-        exclusive={["flexibel"]}
+        options={MEAL_TIME_OPTIONS}
+        columns={2}
         variant="plain"
       />
-      <MultiChoiceGroup<WarmMeal>
+      <ChoiceGroup<MealTime>
         label="Am Wochenende (Sa–So)"
-        hint="Mittags und abends gleichzeitig = zwei warme Mahlzeiten"
-        values={warmMeal.weekend}
+        value={warmMeal.weekend}
         onChange={(weekend) => onChange({ ...warmMeal, weekend })}
-        options={WARM_MEAL_OPTIONS}
-        exclusive={["flexibel"]}
+        options={MEAL_TIME_OPTIONS}
+        columns={2}
         variant="plain"
       />
     </section>
@@ -457,17 +458,6 @@ export function WishDayEditor({
               })}
             </div>
           </fieldset>
-          <ChoiceGroup<WishMeal>
-            label="Zu welcher Mahlzeit?"
-            value={wishDay.meal}
-            onChange={(meal) => set({ meal })}
-            columns={2}
-            options={[
-              { value: "mittags", label: "Mittag", icon: Sun },
-              { value: "abends", label: "Abend", icon: Moon },
-            ]}
-            variant="plain"
-          />
           <NumberStepper
             label="Mindestalter"
             hint="Jahre"

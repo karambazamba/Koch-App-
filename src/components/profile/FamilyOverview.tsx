@@ -22,12 +22,11 @@ import { STANDARD_WEEK_HINT, lunchSummary } from "@/components/profile/editors";
 import {
   LIMITS,
   clearProfile,
-  formatWarmMeals,
+  MEAL_TIME_LABELS,
   personLabel,
   personRoleLabel,
   planningWeekLabel,
   weekdayLunchHeadcount,
-  WISH_MEAL_LABELS,
   type HouseholdProfile,
   type Person,
 } from "@/lib/profile";
@@ -96,11 +95,11 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
                   : "Noch keine eingetragen"}
               </span>
             </Row>
-            <Row href="/profil/warme-mahlzeit" icon={UtensilsCrossed} title="Warme Mahlzeit">
+            <Row href="/profil/warme-mahlzeit" icon={UtensilsCrossed} title="Zusammen warm essen">
               <span>
-                <Nowrap>Mo–Fr: {formatWarmMeals(profile.warmMeal.weekday)}</Nowrap>
+                <Nowrap>Mo–Fr {MEAL_TIME_LABELS[profile.warmMeal.weekday]}</Nowrap>
                 {" · "}
-                <Nowrap>Sa–So: {formatWarmMeals(profile.warmMeal.weekend)}</Nowrap>
+                <Nowrap>Sa–So {MEAL_TIME_LABELS[profile.warmMeal.weekend]}</Nowrap>
               </span>
             </Row>
             <Row href="/profil/einkaufstag" icon={ShoppingCart} title="Einkaufstag">
@@ -131,8 +130,7 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
                   <>
                     {" · "}
                     <Nowrap>
-                      🎉 Wunschtag: {profile.wishDay.weekday.slice(0, 2)}{" "}
-                      {WISH_MEAL_LABELS[profile.wishDay.meal]}
+                      🎉 Wunschtag: {profile.wishDay.weekday}
                     </Nowrap>
                   </>
                 )}

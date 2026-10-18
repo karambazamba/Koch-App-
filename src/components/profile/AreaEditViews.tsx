@@ -30,7 +30,7 @@ export function FavoritesEditView() {
 
 export function WarmMealEditView() {
   return (
-    <ProfileEditPage title="Warme Mahlzeit">
+    <ProfileEditPage title="Zusammen warm essen">
       {(draft, setDraft) => (
         <WarmMealEditor
           warmMeal={draft.warmMeal}

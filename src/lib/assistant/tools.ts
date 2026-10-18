@@ -6,7 +6,6 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { RECIPE_CATEGORIES, type RecipeCategory } from "../cookbook";
 import { guessDishCategory } from "../dishCategory";
-import type { SlotMeal } from "../mealPlan";
 import { personLabel, WEEKDAYS, type Person } from "../profile";
 import { SECTIONS, sectionFor, type Section } from "../shoppingList";
 import { formatWeekRange, planForWeek } from "../weekPlan";
@@ -44,14 +43,13 @@ const WEEK_PROP = {
   description: "Welche Planungswoche: die aktuelle oder die nächste",
 } as const;
 const DAY_PROP = { type: "string", enum: WEEKDAYS, description: "Wochentag" } as const;
-const MEAL_PROP = { type: "string", enum: ["mittags", "abends"], description: "Mahlzeit" } as const;
 const CATEGORY_PROP = { type: "string", enum: CATEGORY_VALUES } as const;
 
 export const TOOLS: Anthropic.Beta.BetaTool[] = [
   {
     name: "woche_lesen",
     description:
-      "Liest eine Planungswoche: Tage mit Datum, Plätze (mittags/abends) mit eingetragenem Gericht, Kategorie-Hinweisen, Ausflugstagen, Cheat Day, Wunsch und die Vorgaben (Anzahl Fleisch/Veggie/Fisch-Tage). Bereits vorgeschlagene Änderungen sind schon enthalten. Vor jeder Änderung an einer Woche aufrufen.",
+      "Liest eine Planungswoche: je Tag Datum, das eine Hauptgericht (oder frei mit Kategorie-Hinweis), ob doppelt gekocht wird, Reste vom Vortag, Notiz, Essenszeit und Personenzahl, dazu Ausflugstage, Cheat Day, Wunsch und die Vorgaben (Anzahl Fleisch/Veggie/Fisch-Tage). Bereits vorgeschlagene Änderungen sind schon enthalten. Vor jeder Änderung an einer Woche aufrufen.",
     input_schema: { type: "object", properties: { woche: WEEK_PROP }, required: ["woche"], additionalProperties: false },
   },
   {
@@ -70,45 +68,49 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
   {
     name: "gericht_setzen",
     description:
-      "Schlägt ein Gericht für einen Platz vor (ersetzt, was dort steht). Genau eine Quelle angeben: rezept_id (aus dem Kochbuch), neues_rezept (ref aus rezept_erstellen) oder gericht (freier Text, z. B. 'Pizza vom Italiener').",
+      "Schlägt das Hauptgericht für einen Tag vor (ersetzt, was dort steht). Genau eine Quelle angeben: rezept_id (aus dem Kochbuch), neues_rezept (ref aus rezept_erstellen) oder gericht (freier Text, z. B. 'Pizza vom Italiener'). doppelt_kochen=true: doppelte Menge, am nächsten Tag gibt es die Reste.",
     input_schema: {
       type: "object",
       properties: {
         woche: WEEK_PROP,
         tag: DAY_PROP,
-        mahlzeit: MEAL_PROP,
         rezept_id: { type: "string" },
         neues_rezept: { type: "string", description: "ref aus rezept_erstellen" },
         gericht: { type: "string", description: "Freier Text, nur wenn es kein Rezept gibt" },
         kategorie: { ...CATEGORY_PROP, description: "Nur bei freiem Text, wenn eindeutig" },
+        doppelt_kochen: { type: "boolean" },
       },
-      required: ["woche", "tag", "mahlzeit"],
+      required: ["woche", "tag"],
       additionalProperties: false,
     },
   },
   {
     name: "platz_leeren",
-    description: "Schlägt vor, einen Platz zu leeren (auch Gerichte aus dem Wochen-Check).",
+    description: "Schlägt vor, das Hauptgericht eines Tages zu entfernen (auch Gerichte aus dem Wochen-Check).",
     input_schema: {
       type: "object",
-      properties: { woche: WEEK_PROP, tag: DAY_PROP, mahlzeit: MEAL_PROP },
-      required: ["woche", "tag", "mahlzeit"],
+      properties: { woche: WEEK_PROP, tag: DAY_PROP },
+      required: ["woche", "tag"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "doppelt_kochen",
+    description: "Schaltet für das Gericht eines Tages 'Doppelt kochen – Reste für morgen' an oder aus (doppelte Mengen, am Folgetag Reste als zweite Mahlzeit).",
+    input_schema: {
+      type: "object",
+      properties: { woche: WEEK_PROP, tag: DAY_PROP, an: { type: "boolean" } },
+      required: ["woche", "tag", "an"],
       additionalProperties: false,
     },
   },
   {
     name: "gericht_verschieben",
-    description: "Schlägt vor, ein Gericht auf einen anderen Platz derselben Woche zu verschieben. Ist das Ziel belegt, wird getauscht.",
+    description: "Schlägt vor, ein Gericht auf einen anderen Tag derselben Woche zu verschieben. Ist der Tag belegt, wird getauscht.",
     input_schema: {
       type: "object",
-      properties: {
-        woche: WEEK_PROP,
-        von_tag: DAY_PROP,
-        von_mahlzeit: MEAL_PROP,
-        nach_tag: DAY_PROP,
-        nach_mahlzeit: MEAL_PROP,
-      },
-      required: ["woche", "von_tag", "von_mahlzeit", "nach_tag", "nach_mahlzeit"],
+      properties: { woche: WEEK_PROP, von_tag: DAY_PROP, nach_tag: DAY_PROP },
+      required: ["woche", "von_tag", "nach_tag"],
       additionalProperties: false,
     },
   },
@@ -132,9 +134,8 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
             kind: { type: "string", description: "Name des Kindes" },
             gericht: { type: "string" },
             tag: DAY_PROP,
-            mahlzeit: MEAL_PROP,
           },
-          required: ["kind", "gericht", "tag", "mahlzeit"],
+          required: ["kind", "gericht", "tag"],
           additionalProperties: false,
         },
         wunsch_entfernen: { type: "boolean" },
@@ -146,7 +147,7 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
   {
     name: "rezept_erstellen",
     description:
-      "Erstellt ein neues, vollständiges Rezept (KI-Rezept) – Zutaten mit Mengen für die angegebene Personenzahl und Zubereitungsschritte. Allergien und 'mag nicht' aller Personen werden geprüft; bei Treffern wird abgelehnt. Gibt eine ref zurück, die du bei gericht_setzen als neues_rezept nutzt. fuer_plan=false nur, wenn das Rezept ohne Platz ins Kochbuch soll.",
+      "Erstellt ein neues, vollständiges Rezept (KI-Rezept) – Zutaten mit Mengen für die angegebene Personenzahl (siehe 'personen' des Tages in woche_lesen) und Zubereitungsschritte. Allergien und 'mag nicht' aller Personen werden geprüft; bei Treffern wird abgelehnt. Gibt eine ref zurück, die du bei gericht_setzen als neues_rezept nutzt. fuer_plan=false nur, wenn das Rezept ohne Platz ins Kochbuch soll.",
     input_schema: {
       type: "object",
       properties: {
@@ -214,9 +215,6 @@ function weekStartOf(ctx: ToolContext, input: Input): string | null {
   const w = input.woche;
   return w === "aktuell" || w === "naechste" ? ctx.weeks[w] : null;
 }
-function meal(v: unknown): SlotMeal | null {
-  return v === "mittags" || v === "abends" ? v : null;
-}
 function day(v: unknown): string | null {
   return typeof v === "string" && WEEKDAYS.includes(v) ? v : null;
 }
@@ -280,16 +278,16 @@ export function runTool(ctx: ToolContext, name: string, raw: unknown): ToolResul
             datum: dateLabel(d.date),
             ausflug: d.away || undefined,
             cheat_day: d.cheat || undefined,
-            plaetze: d.away
-              ? []
-              : d.slots.map((s) => ({
-                  mahlzeit: s.meal,
-                  gericht: s.entry?.title ?? null,
-                  kategorie: s.entry?.category ?? undefined,
-                  rezept_id: s.entry?.recipeId,
-                  herkunft: s.entry ? { eigen: "eingetragen", fest: "fest (Wochen-Check)", wunsch: "Wunsch" }[s.entry.origin] : undefined,
-                  hinweis: !s.entry && s.hint ? s.hint : undefined,
-                })),
+            essenszeit: d.mealTime,
+            personen: d.persons ?? undefined,
+            gericht: d.away ? undefined : (d.slot.entry?.title ?? null),
+            kategorie: d.slot.entry?.category ?? undefined,
+            rezept_id: d.slot.entry?.recipeId,
+            herkunft: d.slot.entry ? { eigen: "eingetragen", fest: "fest (Wochen-Check)", wunsch: "Wunsch" }[d.slot.entry.origin] : undefined,
+            doppelt_kochen: d.slot.entry?.double || undefined,
+            reste_vom_vortag: d.leftovers ?? undefined,
+            notiz: d.note || undefined,
+            hinweis: !d.away && !d.slot.entry && d.slot.hint ? d.slot.hint : undefined,
           })),
         }),
       };
@@ -317,13 +315,14 @@ export function runTool(ctx: ToolContext, name: string, raw: unknown): ToolResul
     case "gericht_setzen": {
       const weekStart = weekStartOf(ctx, input);
       const weekday = day(input.tag);
-      const m = meal(input.mahlzeit);
-      if (!weekStart || !weekday || !m) return fail("woche, tag und mahlzeit angeben.");
+      if (!weekStart || !weekday) return fail("woche und tag angeben.");
       const week = weekOf(data, weekStart);
       if (week.days.find((d) => d.weekday === weekday)?.away) {
         return fail(`${weekday} ist ein Ausflugstag. Erst mit vorgaben_aendern den Ausflug entfernen oder einen anderen Tag wählen.`);
       }
-      const slot = { weekStart, weekday, meal: m };
+      const slot = { weekStart, weekday };
+      const double = input.doppelt_kochen === true ? { double: true } : {};
+      const doubleNote = input.doppelt_kochen === true ? " (doppelt – Reste für morgen)" : "";
       const sources = [input.rezept_id, input.neues_rezept, input.gericht].filter((v) => str(v)).length;
       if (sources !== 1) return fail("Genau eine Quelle angeben: rezept_id, neues_rezept oder gericht.");
       let warning = "";
@@ -339,8 +338,9 @@ export function runTool(ctx: ToolContext, name: string, raw: unknown): ToolResul
           type: "set_meal",
           slot,
           dish: { kind: "recipe", recipeId: recipe.id, title: recipe.title, category: recipe.category },
+          ...double,
         });
-        return { content: `Vorgemerkt: ${weekday} ${m} – ${recipe.title}.${warning}` };
+        return { content: `Vorgemerkt: ${weekday} – ${recipe.title}${doubleNote}.${warning}` };
       }
       if (str(input.neues_rezept)) {
         const ref = str(input.neues_rezept);
@@ -351,48 +351,56 @@ export function runTool(ctx: ToolContext, name: string, raw: unknown): ToolResul
           type: "set_meal",
           slot,
           dish: { kind: "new_recipe", ref, title: created.recipe.title, category: created.recipe.category },
+          ...double,
         });
-        return { content: `Vorgemerkt: ${weekday} ${m} – ${created.recipe.title} (neues Rezept).` };
+        return { content: `Vorgemerkt: ${weekday} – ${created.recipe.title} (neues Rezept)${doubleNote}.` };
       }
       const title = str(input.gericht);
       const cat = category(input.kategorie) ?? guessDishCategory(title, Object.values(data.recipes));
-      propose(ctx, { id: nextId(ctx), type: "set_meal", slot, dish: { kind: "text", title, category: cat } });
-      return { content: `Vorgemerkt: ${weekday} ${m} – ${title}.` };
+      propose(ctx, { id: nextId(ctx), type: "set_meal", slot, dish: { kind: "text", title, category: cat }, ...double });
+      return { content: `Vorgemerkt: ${weekday} – ${title}${doubleNote}.` };
     }
 
     case "platz_leeren": {
       const weekStart = weekStartOf(ctx, input);
       const weekday = day(input.tag);
-      const m = meal(input.mahlzeit);
-      if (!weekStart || !weekday || !m) return fail("woche, tag und mahlzeit angeben.");
-      const slot = findSlot(weekOf(data, weekStart), weekday, m);
-      if (!slot?.entry) return fail(`${weekday} ${m} ist schon leer.`);
-      propose(ctx, { id: nextId(ctx), type: "clear_slot", slot: { weekStart, weekday, meal: m } });
-      return { content: `Vorgemerkt: ${weekday} ${m} leeren (${slot.entry.title}).` };
+      if (!weekStart || !weekday) return fail("woche und tag angeben.");
+      const slot = findSlot(weekOf(data, weekStart), weekday);
+      if (!slot?.entry) return fail(`${weekday} ist schon frei.`);
+      propose(ctx, { id: nextId(ctx), type: "clear_slot", slot: { weekStart, weekday } });
+      return { content: `Vorgemerkt: ${weekday} leeren (${slot.entry.title}).` };
+    }
+
+    case "doppelt_kochen": {
+      const weekStart = weekStartOf(ctx, input);
+      const weekday = day(input.tag);
+      if (!weekStart || !weekday || typeof input.an !== "boolean") return fail("woche, tag und an angeben.");
+      const slot = findSlot(weekOf(data, weekStart), weekday);
+      if (!slot?.entry) return fail(`${weekday} hat noch kein Gericht.`);
+      propose(ctx, { id: nextId(ctx), type: "set_double", slot: { weekStart, weekday }, double: input.an });
+      return { content: `Vorgemerkt: ${slot.entry.title} am ${weekday} ${input.an ? "doppelt kochen – Reste für morgen" : "nicht mehr doppelt kochen"}.` };
     }
 
     case "gericht_verschieben": {
       const weekStart = weekStartOf(ctx, input);
       const fromDay = day(input.von_tag);
-      const fromMeal = meal(input.von_mahlzeit);
       const toDay = day(input.nach_tag);
-      const toMeal = meal(input.nach_mahlzeit);
-      if (!weekStart || !fromDay || !fromMeal || !toDay || !toMeal) return fail("Alle Angaben zu von/nach nötig.");
+      if (!weekStart || !fromDay || !toDay) return fail("woche, von_tag und nach_tag angeben.");
       const week = weekOf(data, weekStart);
-      const from = findSlot(week, fromDay, fromMeal);
-      if (!from?.entry) return fail(`${fromDay} ${fromMeal} ist leer – nichts zu verschieben.`);
+      const from = findSlot(week, fromDay);
+      if (!from?.entry) return fail(`${fromDay} ist frei – nichts zu verschieben.`);
       if (week.days.find((d) => d.weekday === toDay)?.away) return fail(`${toDay} ist ein Ausflugstag.`);
-      const to = findSlot(week, toDay, toMeal);
+      const to = findSlot(week, toDay);
       propose(ctx, {
         id: nextId(ctx),
         type: "move_meal",
-        from: { weekStart, weekday: fromDay, meal: fromMeal },
-        to: { weekStart, weekday: toDay, meal: toMeal },
+        from: { weekStart, weekday: fromDay },
+        to: { weekStart, weekday: toDay },
       });
       return {
         content: to?.entry
           ? `Vorgemerkt: ${from.entry.title} und ${to.entry.title} tauschen.`
-          : `Vorgemerkt: ${from.entry.title} auf ${toDay} ${toMeal} verschieben.`,
+          : `Vorgemerkt: ${from.entry.title} auf ${toDay} verschieben.`,
       };
     }
 
@@ -418,14 +426,13 @@ export function runTool(ctx: ToolContext, name: string, raw: unknown): ToolResul
         const w = input.wunsch as Input;
         const kids = findKid(data.profile.persons, str(w.kind));
         const weekday = day(w.tag);
-        const m = meal(w.mahlzeit);
         if (kids.length === 0) {
           const names = data.profile.persons.filter((p) => p.role === "kind").map((p) => personLabel(p, data.profile.persons));
           return fail(`Kein Kind namens "${str(w.kind)}". Kinder im Profil: ${names.join(", ") || "keine"}. Nachfragen.`);
         }
         if (kids.length > 1) return fail(`Name nicht eindeutig (${kids.map((k) => k.name).join(", ")}). Nachfragen.`);
-        if (!weekday || !m) return fail("Für den Wunsch tag und mahlzeit angeben.");
-        changes.wish = { kidId: kids[0].id, text: str(w.gericht), weekday, meal: m };
+        if (!weekday) return fail("Für den Wunsch den tag angeben.");
+        changes.wish = { kidId: kids[0].id, text: str(w.gericht), weekday };
       }
       const current = weekOf(data, weekStart).counts;
       const total =

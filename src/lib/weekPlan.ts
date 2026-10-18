@@ -7,27 +7,26 @@ import { createLocalStore } from "./localStore";
 import type { RecipeCategory } from "./cookbook";
 import {
   WEEKDAYS,
+  loadProfile,
+  mainMealTime,
   wishDayKids,
   wishDayOrder,
   type HouseholdProfile,
   type WeekRules,
-  type WishMeal,
 } from "./profile";
 
-/** Wunsch eines Kindes – feste Vorgabe für einen Tag, zählt nicht bei Fleisch/Veggie/Fisch */
+/** Wunsch eines Kindes – das Hauptgericht eines Tages, zählt nicht bei Fleisch/Veggie/Fisch */
 export type WeekWish = {
   kidId: string;
   /** Was sich das Kind wünscht; darf leer bleiben (wird später nachgetragen) */
   text: string;
   weekday: string;
-  meal: WishMeal;
 };
 
 /** Festes Gericht aus dem Kochbuch für einen Tag dieser Woche */
 export type FixedMeal = {
   id: string;
   weekday: string;
-  meal: WishMeal;
   recipeId: string;
   /** Titel und Kategorie zum Zeitpunkt der Planung – bleibt lesbar, falls das Rezept gelöscht wird */
   title: string;
@@ -51,7 +50,8 @@ export type WeekPlan = WeekRules & {
 };
 
 type WeekPlanStore = {
-  version: 3;
+  /** v4: ein Hauptgericht pro Tag – Wunsch und feste Gerichte ohne Mahlzeit */
+  version: 4;
   /** Vorgaben je Woche, Schlüssel = weekStart */
   weeks: Record<string, WeekPlan>;
 };
@@ -245,8 +245,9 @@ export function nextWishKid(profile: HouseholdProfile, currentId: string | null)
 function migrateStore(raw: unknown): WeekPlanStore | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as { version?: number; weeks?: Record<string, unknown> };
-  // v1 kannte noch keinen Wunschtag (wish = null), v1/v2 keine festen Gerichte.
-  if (![1, 2, 3].includes(data.version as number) || !data.weeks || typeof data.weeks !== "object")
+  // v1 kannte noch keinen Wunschtag (wish = null), v1/v2 keine festen Gerichte,
+  // bis v3 hatten Wunsch und feste Gerichte eine Mahlzeit (mittags/abends).
+  if (![1, 2, 3, 4].includes(data.version as number) || !data.weeks || typeof data.weeks !== "object")
     return null;
   const weeks: Record<string, WeekPlan> = {};
   for (const [key, week] of Object.entries(data.weeks)) {
@@ -266,11 +267,28 @@ function migrateStore(raw: unknown): WeekPlanStore | null {
       budgetEuro: typeof w.budgetEuro === "number" ? w.budgetEuro : null,
       wishes: typeof w.wishes === "string" ? w.wishes : "",
       wish: migrateWish(w.wish),
-      fixedMeals: Array.isArray(w.fixedMeals) ? w.fixedMeals.filter(isFixedMeal) : [],
+      fixedMeals: migrateFixedMeals(w.fixedMeals),
       updatedAt: typeof w.updatedAt === "string" ? w.updatedAt : "",
     };
   }
-  return { version: 3, weeks };
+  return { version: 4, weeks };
+}
+
+/**
+ * Feste Gerichte: höchstens eins pro Tag. Gab es früher mittags und abends
+ * eins, bleibt das der Hauptmahlzeit (laut Profil), sonst das erste.
+ */
+function migrateFixedMeals(raw: unknown): FixedMeal[] {
+  const list = (Array.isArray(raw) ? raw : []).filter(isFixedMeal) as (FixedMeal & { meal?: string })[];
+  const profile = loadProfile();
+  const result: FixedMeal[] = [];
+  for (const weekday of WEEKDAYS) {
+    const sameDay = list.filter((m) => m.weekday === weekday);
+    if (sameDay.length === 0) continue;
+    const main = sameDay.find((m) => m.meal === mainMealTime(profile, weekday)) ?? sameDay[0];
+    result.push({ id: main.id, weekday, recipeId: main.recipeId, title: main.title, category: main.category });
+  }
+  return result;
 }
 
 function isFixedMeal(raw: unknown): raw is FixedMeal {
@@ -282,7 +300,6 @@ function isFixedMeal(raw: unknown): raw is FixedMeal {
     typeof m.title === "string" &&
     typeof m.weekday === "string" &&
     WEEKDAYS.includes(m.weekday) &&
-    (m.meal === "mittags" || m.meal === "abends") &&
     ["fleisch", "vegetarisch", "fisch", "cheatday"].includes(m.category as string)
   );
 }
@@ -295,14 +312,13 @@ function migrateWish(raw: unknown): WeekWish | null {
     kidId: w.kidId,
     text: typeof w.text === "string" ? w.text : "",
     weekday: typeof w.weekday === "string" && WEEKDAYS.includes(w.weekday) ? w.weekday : "Freitag",
-    meal: w.meal === "mittags" ? "mittags" : "abends",
   };
 }
 
 const store = createLocalStore(STORAGE_KEY, migrateStore);
 
 export function saveWeekPlan(plan: WeekPlan): void {
-  const current = store.load() ?? { version: 3 as const, weeks: {} };
+  const current = store.load() ?? { version: 4 as const, weeks: {} };
   store.save({
     ...current,
     weeks: {
@@ -314,7 +330,7 @@ export function saveWeekPlan(plan: WeekPlan): void {
 
 /** Alle Wochen-Vorgaben auf einmal ersetzen (Küchenhelfer: Übernehmen/Rückgängig) */
 export function replaceWeekPlans(weeks: Record<string, WeekPlan>): void {
-  store.save({ version: 3, weeks });
+  store.save({ version: 4, weeks });
 }
 
 /** Vorgaben für `weekStart` (auch aus einer überlappenden älteren Woche), sonst null */

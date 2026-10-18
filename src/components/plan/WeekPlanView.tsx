@@ -14,9 +14,12 @@ import {
   Moon,
   PenLine,
   Repeat,
+  Soup,
   Sparkles,
+  StickyNote,
   Sun,
   Trash2,
+  X,
 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Sheet } from "@/components/plan/Sheet";
@@ -41,24 +44,24 @@ import {
   type RecipeCategory,
 } from "@/lib/cookbook";
 import {
-  buildWeek,
   clearSlot,
+  composeWeek,
   moveEntry,
+  setDouble,
   setEntry,
-  storedForWeek,
+  setNote,
   useMealPlans,
   type DaySlot,
   type PlanDay,
   type PlanWeek,
 } from "@/lib/mealPlan";
 import { guessDishCategory } from "@/lib/dishCategory";
-import { WISH_MEAL_LABELS } from "@/lib/profile";
+import { MEAL_TIME_LABELS } from "@/lib/profile";
 import { useProfile } from "@/lib/useProfile";
 import {
   DEFAULT_SHOPPING_DAY,
   formatWeekRange,
   nextWeekStartFor,
-  planForWeek,
   toIsoDate,
   weekStartFor,
   useToday,
@@ -89,18 +92,12 @@ export function WeekPlanView() {
   // Planungswoche ab Einkaufstag (Profil), 7 Tage
   const shoppingDay = profile?.shoppingDay ?? DEFAULT_SHOPPING_DAY;
   const weekStart = showNext ? nextWeekStartFor(today, shoppingDay) : weekStartFor(today, shoppingDay);
-  const week = buildWeek(
-    weekStart,
-    profile,
-    planForWeek(weekPlans, weekStart),
-    storedForWeek(mealPlans, weekStart),
-    recipes,
-  );
+  const week = composeWeek(weekStart, profile, weekPlans, mealPlans, recipes);
   const todayIso = toIsoDate(today);
-  const allSlots = week.days.filter((d) => !d.away).flatMap((d) => d.slots);
-  const slotFor = (key: string) => allSlots.find((s) => s.key === key);
+  const dayFor = (key: string) => week.days.find((d) => !d.away && d.slot.key === key);
   const close = () => setSheet(null);
-  const sheetSlot = sheet ? slotFor(sheet.key) : undefined;
+  const sheetDay = sheet ? dayFor(sheet.key) : undefined;
+  const sheetSlot = sheetDay?.slot;
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
@@ -155,14 +152,16 @@ export function WeekPlanView() {
             day={day}
             isToday={day.date === todayIso}
             onOpen={(slot, type) => setSheet({ type, key: slot.key })}
+            onRemoveNote={() => setNote(weekStart, day.weekday, "")}
           />
         ))}
       </main>
 
-      {sheet && sheetSlot && sheet.type === "entry" && sheetSlot.entry && (
+      {sheet && sheetSlot && sheetDay && sheet.type === "entry" && sheetSlot.entry && (
         <EntrySheet
           slot={sheetSlot}
-          day={week.days.find((d) => d.slots.includes(sheetSlot))!}
+          day={sheetDay}
+          onDouble={(double) => setDouble(weekStart, sheetSlot, double)}
           onClose={close}
           onSwap={() => setSheet({ type: "pick", key: sheetSlot.key })}
           onMove={() => setSheet({ type: "move", key: sheetSlot.key })}
@@ -217,9 +216,9 @@ export function WeekPlanView() {
   );
 }
 
+/** Der Schlüssel des Hauptgerichts ist der Wochentag */
 function slotTitle(slot: DaySlot): string {
-  const [weekday] = slot.key.split("|");
-  return `${weekday} ${WISH_MEAL_LABELS[slot.meal]}`;
+  return slot.key;
 }
 
 function Summary({ week }: { week: PlanWeek }) {
@@ -253,10 +252,12 @@ function DayCard({
   day,
   isToday,
   onOpen,
+  onRemoveNote,
 }: {
   day: PlanDay;
   isToday: boolean;
   onOpen: (slot: DaySlot, type: "entry" | "pick" | "text") => void;
+  onRemoveNote: () => void;
 }) {
   const [, m, d] = day.date.split("-");
   return (
@@ -282,24 +283,49 @@ function DayCard({
           Ausflug – nichts kochen
         </p>
       ) : (
-        day.slots.map((slot) => <SlotRow key={slot.key} slot={slot} onOpen={onOpen} />)
+        <SlotRow day={day} onOpen={onOpen} />
+      )}
+      {day.leftovers && !day.away && (
+        <p className="flex items-center gap-2 text-sm text-muted">
+          <Soup className="h-4 w-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
+          <span>
+            Zweite Mahlzeit: <span className="font-semibold text-ink">Reste von {day.leftovers}</span>
+          </span>
+        </p>
+      )}
+      {day.note && (
+        <p className="flex items-start gap-2 rounded-xl bg-stone-50 px-3 py-2 text-sm text-stone-700">
+          <StickyNote className="mt-0.5 h-4 w-4 shrink-0 text-muted" strokeWidth={2} aria-hidden />
+          <span className="min-w-0 flex-1">{day.note}</span>
+          <button
+            type="button"
+            onClick={onRemoveNote}
+            aria-label={`Notiz am ${day.weekday} entfernen`}
+            className="-m-1 flex h-8 w-8 shrink-0 items-center justify-center text-stone-400"
+          >
+            <X className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+          </button>
+        </p>
       )}
     </section>
   );
 }
 
 function SlotRow({
-  slot,
+  day,
   onOpen,
 }: {
-  slot: DaySlot;
+  day: PlanDay;
   onOpen: (slot: DaySlot, type: "entry" | "pick" | "text") => void;
 }) {
-  const MealIcon = slot.meal === "mittags" ? Sun : Moon;
+  const { slot } = day;
+  const MealIcon = day.mealTime === "mittags" ? Sun : Moon;
+  // Hauptgericht · abends · 4 Pers. – die Zeit bestimmt nur, wer mitisst
   const label = (
     <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted">
       <MealIcon className="h-4 w-4" strokeWidth={2} aria-hidden />
-      {slot.meal === "mittags" ? "Mittag" : "Abend"}
+      {MEAL_TIME_LABELS[day.mealTime]}
+      {day.persons && <span className="font-normal">· {day.persons} Pers.</span>}
     </span>
   );
   const { entry } = slot;
@@ -314,15 +340,16 @@ function SlotRow({
           wish ? "border-accent/40 bg-accent-soft" : "border-line bg-stone-50/60"
         }`}
       >
-        <span className="w-20 shrink-0">{label}</span>
         <span className="min-w-0 flex-1">
+          {label}
           <span className="block font-bold leading-snug">
             {wish ? `${entry.kidName} wünscht sich: ${entry.title} 🎉` : entry.title}
           </span>
-          <span className="flex items-center gap-1.5 text-sm text-muted">
+          <span className="flex flex-wrap items-center gap-x-1.5 text-sm text-muted">
             {entry.category && <CategoryDot category={entry.category} />}
             {entry.category ? categoryLabel(entry.category, true) : wish ? "Wunschtag" : "ohne Kategorie"}
             {entry.origin === "fest" && " · fest eingeplant"}
+            {entry.double && <span className="font-semibold text-accent-strong">· doppelt – Reste für morgen</span>}
           </span>
         </span>
         <ChevronRight className="h-5 w-5 shrink-0 text-stone-300" strokeWidth={2.25} aria-hidden />
@@ -374,6 +401,7 @@ function SlotRow({
 function EntrySheet({
   slot,
   day,
+  onDouble,
   onClose,
   onSwap,
   onMove,
@@ -381,6 +409,7 @@ function EntrySheet({
 }: {
   slot: DaySlot;
   day: PlanDay;
+  onDouble: (double: boolean) => void;
   onClose: () => void;
   onSwap: () => void;
   onMove: () => void;
@@ -389,7 +418,7 @@ function EntrySheet({
   const entry = slot.entry!;
   const wish = entry.stored.kind === "wish";
   return (
-    <Sheet title={`${day.weekday} ${WISH_MEAL_LABELS[slot.meal]}`} onClose={onClose}>
+    <Sheet title={`${day.weekday} · Hauptgericht`} onClose={onClose}>
       <div className={`${CARD} p-4`}>
         <p className="text-xl font-extrabold tracking-tight">
           {wish ? `${entry.kidName} wünscht sich: ${entry.title} 🎉` : entry.title}
@@ -408,6 +437,19 @@ function EntrySheet({
           </Link>
         )}
       </div>
+      <label className={`${CARD} flex cursor-pointer items-center gap-3 p-4`}>
+        <span className="min-w-0 flex-1">
+          <span className="block font-bold">Doppelt kochen – Reste für morgen</span>
+          <span className="block text-sm text-muted">Doppelte Mengen auf der Einkaufsliste, morgen gibt es die Reste.</span>
+        </span>
+        <input
+          type="checkbox"
+          role="switch"
+          checked={entry.double}
+          onChange={(e) => onDouble(e.target.checked)}
+          className="h-6 w-6 shrink-0 accent-accent"
+        />
+      </label>
       <div className="grid grid-cols-3 gap-2">
         <button type="button" onClick={onSwap} className={tileClass(false)}>
           <Repeat className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
@@ -593,34 +635,28 @@ function MoveSheet({
       <p className="text-sm text-muted">Ist der Platz belegt, werden die Gerichte getauscht.</p>
       <ul className={CARD_LIST}>
         {week.days
-          .filter((d) => !d.away)
-          .flatMap((d) =>
-            d.slots
-              .filter((s) => s.key !== from.key)
-              .map((s) => (
-                <li key={s.key}>
-                  <button
-                    type="button"
-                    onClick={() => onMove(s)}
-                    className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-2 text-left active:bg-stone-50"
-                  >
-                    <span className="whitespace-nowrap font-bold">
-                      {d.weekday.slice(0, 2)} {WISH_MEAL_LABELS[s.meal]}
-                    </span>
-                    <span className="flex min-w-0 items-center gap-1 truncate text-sm text-muted">
-                      {s.entry ? (
-                        <>
-                          <ArrowLeftRight className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-                          <span className="truncate">{s.entry.title}</span>
-                        </>
-                      ) : (
-                        "frei"
-                      )}
-                    </span>
-                  </button>
-                </li>
-              )),
-          )}
+          .filter((d) => !d.away && d.slot.key !== from.key)
+          .map((d) => (
+            <li key={d.slot.key}>
+              <button
+                type="button"
+                onClick={() => onMove(d.slot)}
+                className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-2 text-left active:bg-stone-50"
+              >
+                <span className="whitespace-nowrap font-bold">{d.weekday}</span>
+                <span className="flex min-w-0 items-center gap-1 truncate text-sm text-muted">
+                  {d.slot.entry ? (
+                    <>
+                      <ArrowLeftRight className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+                      <span className="truncate">{d.slot.entry.title}</span>
+                    </>
+                  ) : (
+                    "frei"
+                  )}
+                </span>
+              </button>
+            </li>
+          ))}
       </ul>
     </Sheet>
   );

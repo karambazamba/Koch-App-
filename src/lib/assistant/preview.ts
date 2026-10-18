@@ -3,7 +3,7 @@
 // Übernehmen; abgewählte Änderungen zählen für spätere Zeilen nicht mit.
 
 import type { RecipeCategory } from "../cookbook";
-import { personLabel } from "../profile";
+import { MEAL_TIME_LABELS, personLabel } from "../profile";
 import { SECTIONS } from "../shoppingList";
 import { formatWeekRange, planForWeek } from "../weekPlan";
 import {
@@ -32,7 +32,6 @@ export type PreviewRow = {
   lines?: string[];
 };
 
-const MEAL = { mittags: "mittags", abends: "abends" } as const;
 const dayDate = (iso: string) => {
   const [, m, d] = iso.split("-");
   return `${Number(d)}.${Number(m)}.`;
@@ -68,37 +67,62 @@ function describe(
   recipesByRef: Record<string, NewRecipe>,
   weekIndex: (ws: string) => number,
 ): PreviewRow | null {
+  /** Gruppe und Reihenfolge eines Tages */
+  const place = (weekStart: string, weekday: string) => {
+    const week = weekOf(state, weekStart);
+    const index = week.days.findIndex((d) => d.weekday === weekday);
+    const day = week.days[index];
+    return {
+      week,
+      day,
+      group: `${weekday.slice(0, 2)} ${day ? dayDate(day.date) : ""}`.trim(),
+      order: weekIndex(weekStart) * 100 + Math.max(0, index),
+      label: day ? `Hauptgericht · ${MEAL_TIME_LABELS[day.mealTime]}` : "Hauptgericht",
+    };
+  };
+
   switch (op.type) {
     case "set_meal":
     case "clear_slot": {
-      const week = weekOf(state, op.slot.weekStart);
-      const index = week.days.findIndex((d) => d.weekday === op.slot.weekday);
-      const day = week.days[index];
-      const before = findSlot(week, op.slot.weekday, op.slot.meal)?.entry?.title ?? "frei";
-      const after = op.type === "set_meal" ? op.dish.title : "frei";
+      const p = place(op.slot.weekStart, op.slot.weekday);
+      const before = findSlot(p.week, op.slot.weekday)?.entry?.title ?? "frei";
+      const after = op.type === "set_meal" ? `${op.dish.title}${op.double ? " (doppelt – Reste für morgen)" : ""}` : "frei";
       if (before === after && op.type === "clear_slot") return null;
       return {
         opId: op.id,
-        group: `${op.slot.weekday.slice(0, 2)} ${day ? dayDate(day.date) : ""}`.trim(),
-        order: weekIndex(op.slot.weekStart) * 100 + index * 2 + (op.slot.meal === "abends" ? 1 : 0),
-        label: MEAL[op.slot.meal],
+        group: p.group,
+        order: p.order,
+        label: p.label,
         before,
         after,
         category: op.type === "set_meal" ? op.dish.category : null,
         newRecipe: op.type === "set_meal" && op.dish.kind === "new_recipe" ? recipesByRef[op.dish.ref] : undefined,
       };
     }
+    case "set_double": {
+      const p = place(op.slot.weekStart, op.slot.weekday);
+      const entry = findSlot(p.week, op.slot.weekday)?.entry;
+      if (!entry || entry.double === op.double) return null;
+      return {
+        opId: op.id,
+        group: p.group,
+        order: p.order,
+        label: p.label,
+        before: null,
+        after: op.double ? `${entry.title} doppelt kochen – Reste für morgen` : `${entry.title} nicht mehr doppelt kochen`,
+        category: entry.category,
+      };
+    }
     case "move_meal": {
-      const week = weekOf(state, op.from.weekStart);
-      const index = week.days.findIndex((d) => d.weekday === op.from.weekday);
-      const from = findSlot(week, op.from.weekday, op.from.meal)?.entry;
-      const to = findSlot(week, op.to.weekday, op.to.meal)?.entry;
+      const p = place(op.from.weekStart, op.from.weekday);
+      const from = findSlot(p.week, op.from.weekday)?.entry;
+      const to = findSlot(p.week, op.to.weekday)?.entry;
       if (!from) return null;
       return {
         opId: op.id,
-        group: `${op.from.weekday.slice(0, 2)} ${dayDate(week.days[index].date)}`,
-        order: weekIndex(op.from.weekStart) * 100 + index * 2 + (op.from.meal === "abends" ? 1 : 0),
-        label: `${MEAL[op.from.meal]} → ${op.to.weekday.slice(0, 2)} ${MEAL[op.to.meal]}`,
+        group: p.group,
+        order: p.order,
+        label: `verschieben → ${op.to.weekday}`,
         before: from.title,
         after: to ? `getauscht mit ${to.title}` : "verschoben",
         category: from.category,
@@ -110,15 +134,14 @@ function describe(
       // Nur ein Wunsch → beim Tag des Wunsches zeigen
       if (keys.length === 1 && op.changes.wish) {
         const wish = op.changes.wish;
-        const week = weekOf(state, op.weekStart);
-        const index = week.days.findIndex((d) => d.weekday === wish.weekday);
-        const kid = state.profile.persons.find((p) => p.id === wish.kidId);
+        const p = place(op.weekStart, wish.weekday);
+        const kid = state.profile.persons.find((x) => x.id === wish.kidId);
         return {
           opId: op.id,
-          group: `${wish.weekday.slice(0, 2)} ${index >= 0 ? dayDate(week.days[index].date) : ""}`.trim(),
-          order: weekIndex(op.weekStart) * 100 + Math.max(0, index) * 2 + (wish.meal === "abends" ? 1 : 0),
-          label: MEAL[wish.meal],
-          before: findSlot(week, wish.weekday, wish.meal)?.entry?.title ?? "frei",
+          group: p.group,
+          order: p.order,
+          label: p.label,
+          before: findSlot(p.week, wish.weekday)?.entry?.title ?? "frei",
           after: `${wish.text || "Wunsch"} – Wunsch von ${kid ? personLabel(kid, state.profile.persons) : "Kind"} 🎉`,
         };
       }
@@ -139,9 +162,9 @@ function describe(
       }
       if (c.wish === null) lines.push("Wunsch entfernt");
       if (c.wish) {
-        const kid = state.profile.persons.find((p) => p.id === c.wish!.kidId);
+        const kid = state.profile.persons.find((x) => x.id === c.wish!.kidId);
         const name = kid ? personLabel(kid, state.profile.persons) : "Kind";
-        lines.push(`Wunsch 🎉: ${name} wünscht sich ${c.wish.text || "etwas"} (${c.wish.weekday.slice(0, 2)} ${MEAL[c.wish.meal]})`);
+        lines.push(`Wunsch 🎉: ${name} wünscht sich ${c.wish.text || "etwas"} (${c.wish.weekday})`);
       }
       if (lines.length === 0) return null;
       return {
