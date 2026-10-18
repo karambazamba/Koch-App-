@@ -40,7 +40,6 @@ export function GuidedChat({ state, onChange, onFinish }: Props) {
   const [dictationHint, setDictationHint] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const collected = useRef("");
   // Immer mit dem neuesten Stand antworten (auch nach der Spracheingabe)
   const latest = useRef(state);
   useEffect(() => {
@@ -75,13 +74,9 @@ export function GuidedChat({ state, onChange, onFinish }: Props) {
   };
 
   const speech = useSpeechInput({
-    onFinal: (t) => {
-      collected.current = `${collected.current} ${t}`.trim();
-      setInput(collected.current);
-    },
-    onEnd: () => {
-      const t = collected.current;
-      collected.current = "";
+    onTranscript: (t) => setInput(t),
+    onEnd: (t) => {
+      setInput("");
       if (t) void send(t);
     },
   });
@@ -94,7 +89,6 @@ export function GuidedChat({ state, onChange, onFinish }: Props) {
     }
     if (speech.listening) speech.stop();
     else {
-      collected.current = "";
       setInput("");
       speech.start();
     }

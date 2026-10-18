@@ -137,7 +137,6 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   const [codeLater, setCodeLater] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const collected = useRef("");
 
   const ready = Boolean(status?.ready && data && today);
   // Eingabe auch ohne KI möglich – z. B. für "neue Person" (ohne KI per Regeln)
@@ -743,15 +742,11 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     };
   }, []);
 
-  // Gesprochenes sammeln; wenn die Aufnahme endet, wird es abgeschickt
+  // Gesprochenes dieser Aufnahme anzeigen; wenn sie endet, wird genau das abgeschickt
   const speech = useSpeechInput({
-    onFinal: (t) => {
-      collected.current = `${collected.current} ${t}`.trim();
-      setInput(collected.current);
-    },
-    onEnd: () => {
-      const t = collected.current;
-      collected.current = "";
+    onTranscript: (t) => setInput(t),
+    onEnd: (t) => {
+      setInput("");
       if (t && mounted.current) submit(t, true);
     },
   });
@@ -770,7 +765,6 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       speech.stop();
     } else {
       stopSpeaking();
-      collected.current = "";
       setInput("");
       speech.start();
     }
@@ -1100,6 +1094,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
             className="flex items-center gap-2"
             onSubmit={(e) => {
               e.preventDefault();
+              // Selbst abgeschickt, während das Mikrofon läuft: Aufnahme verwerfen
+              if (speech.listening) speech.cancel();
               submit(input);
             }}
           >

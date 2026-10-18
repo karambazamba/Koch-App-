@@ -65,7 +65,8 @@ function TellRecipe({ name, onClose }: { name: string; onClose: () => void }) {
   const [text, setText] = useState("");
   const [parsed, setParsed] = useState<SpokenRecipe | null>(null);
   const [hint, setHint] = useState("");
-  const collected = useRef("");
+  /** Text vor der Aufnahme – die Aufnahme ergänzt ihn (Erzählen in mehreren Anläufen) */
+  const base = useRef("");
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
@@ -85,13 +86,10 @@ function TellRecipe({ name, onClose }: { name: string; onClose: () => void }) {
   };
 
   const speech = useSpeechInput({
-    onFinal: (t) => {
-      collected.current = `${collected.current} ${t}`.trim();
-      setText(collected.current);
-    },
-    onEnd: () => {
-      const t = collected.current;
-      if (t && mounted.current) understand(t);
+    onTranscript: (t) => setText(`${base.current} ${t}`.trim()),
+    onEnd: (t) => {
+      const all = `${base.current} ${t}`.trim();
+      if (t && mounted.current) understand(all);
     },
   });
 
@@ -152,10 +150,7 @@ function TellRecipe({ name, onClose }: { name: string; onClose: () => void }) {
         <p className="text-sm text-muted">Name, Zutaten mit Mengen, dann wie es geht – ganz normal erzählt.</p>
         <textarea
           value={speech.listening ? speech.interim || text : text}
-          onChange={(e) => {
-            collected.current = e.target.value;
-            setText(e.target.value);
-          }}
+          onChange={(e) => setText(e.target.value)}
           rows={4}
           aria-label="Rezept erzählen"
           placeholder="z. B. „Pfannkuchen. 200 Gramm Mehl, drei Eier und 300 ml Milch. Zuerst alles verrühren, dann in der Pfanne backen.“"
@@ -168,7 +163,7 @@ function TellRecipe({ name, onClose }: { name: string; onClose: () => void }) {
             onClick={() => {
               if (speech.listening) speech.stop();
               else {
-                collected.current = text;
+                base.current = text;
                 speech.start();
               }
             }}
