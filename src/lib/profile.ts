@@ -116,8 +116,26 @@ export type NeverAgainEntry = {
   recipe?: unknown;
 };
 
+/** Zutat, die die Familie mag – gelernt oder selbst eingetragen (Profil v9) */
+export type LikedIngredient = {
+  name: string;
+  /** Gewicht: je öfter gemocht, desto höher */
+  weight: number;
+  /** Selbst eingetragen (nicht nur gelernt) */
+  manual?: boolean;
+};
+
+/** Wie oft der Küchenhelfer sanfte Gesundheits-Tipps gibt */
+export type HealthTipLevel = "aus" | "ab_und_zu" | "oefter";
+
+export const HEALTH_TIP_LEVELS: { value: HealthTipLevel; label: string; hint: string }[] = [
+  { value: "aus", label: "Aus", hint: "Keine Tipps" },
+  { value: "ab_und_zu", label: "Ab und zu", hint: "Höchstens ein Tipp pro Woche" },
+  { value: "oefter", label: "Gern öfter", hint: "Bis zu drei Tipps pro Woche" },
+];
+
 export type HouseholdProfile = {
-  version: 8;
+  version: 9;
   householdName: string;
   adults: number;
   kids: number;
@@ -134,6 +152,12 @@ export type HouseholdProfile = {
   bases: BaseCounts;
   /** "Nie wieder"-Liste (Profil v8) */
   neverAgain: NeverAgainEntry[];
+  /** "Das mögt ihr": Lieblingszutaten, gewichtet (Profil v9) */
+  likes: LikedIngredient[];
+  /** Selbst entfernte Zutaten – werden nicht wieder gelernt */
+  likesBlocked: string[];
+  /** Gesundheits-Tipps (Profil v9, Standard "ab und zu") */
+  healthTips: HealthTipLevel;
   updatedAt: string;
 };
 
@@ -229,7 +253,7 @@ export function createPerson(role: PersonRole): Person {
 
 export function createEmptyProfile(): HouseholdProfile {
   return {
-    version: 8,
+    version: 9,
     householdName: "",
     adults: 2,
     kids: 1,
@@ -252,6 +276,9 @@ export function createEmptyProfile(): HouseholdProfile {
     helper: DEFAULT_HELPER,
     bases: EMPTY_BASES,
     neverAgain: [],
+    likes: [],
+    likesBlocked: [],
+    healthTips: "ab_und_zu",
     updatedAt: "",
   };
 }
@@ -396,7 +423,7 @@ export function normalizeMealTime(value: unknown, fallback: MealTime): MealTime 
 export function migrateProfile(raw: unknown): HouseholdProfile | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as Record<string, unknown>;
-  if (![1, 2, 3, 4, 5, 6, 7, 8].includes(data.version as number)) return null;
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9].includes(data.version as number)) return null;
 
   const defaults = createEmptyProfile();
 
@@ -464,8 +491,27 @@ export function migrateProfile(raw: unknown): HouseholdProfile | null {
     // Bis v7 keine Basis-Statistik und keine "Nie wieder"-Liste
     bases: migrateBases(data.bases),
     neverAgain: migrateNeverAgain(data.neverAgain),
+    // Bis v8 keine Lieblingszutaten und keine Gesundheits-Tipps-Einstellung
+    likes: migrateLikes(data.likes),
+    likesBlocked: Array.isArray(data.likesBlocked)
+      ? (data.likesBlocked as unknown[]).filter((n): n is string => typeof n === "string").slice(0, 200)
+      : [],
+    healthTips: data.healthTips === "aus" || data.healthTips === "oefter" ? data.healthTips : "ab_und_zu",
     updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : "",
   };
+}
+
+function migrateLikes(raw: unknown): LikedIngredient[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((l): l is Partial<LikedIngredient> => Boolean(l) && typeof l === "object")
+    .filter((l) => typeof l.name === "string" && l.name.trim() !== "")
+    .map((l) => ({
+      name: l.name!.trim().slice(0, 40),
+      weight: typeof l.weight === "number" && l.weight > 0 ? Math.min(999, l.weight) : 1,
+      ...(l.manual ? { manual: true } : {}),
+    }))
+    .slice(0, 200);
 }
 
 function migrateNeverAgain(raw: unknown): NeverAgainEntry[] {

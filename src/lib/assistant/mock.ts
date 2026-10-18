@@ -169,6 +169,14 @@ export function createMockModel(): CreateMessage {
       if (leftovers) return text(leftovers);
       const latest = last.content;
       const prevAssistant = [...msgs].reverse().find((x, i) => i > 0 && x.role === "assistant" && typeof x.content === "string");
+      if (/entdecker|was neues ausprobieren/i.test(latest)) {
+        const likes = system.match(/Das mögt ihr \(Lieblingszutaten, bevorzugt einbauen\): (.+)/)?.[1]?.split(", ") ?? [];
+        return text(
+          likes.length
+            ? `Neu, aber nicht fremd: Wie wär's mit einer Shakshuka mit ${likes.slice(0, 2).join(" und ")}? (Testmodus)`
+            : "Wie wär's mit einer Shakshuka? (Testmodus)",
+        );
+      }
       if (/(neues rezept|neue rezepte|denk dir|rezeptidee|was neues)/i.test(latest)) {
         return text("Klar, mach ich! Was soll die Basis sein – Kartoffeln, Reis, Nudeln oder was anderes?");
       }

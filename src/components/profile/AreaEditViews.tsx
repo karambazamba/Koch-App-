@@ -1,7 +1,8 @@
 "use client";
 
-import { Info } from "lucide-react";
-import { CARD, INPUT, SUBTLE, tileClass } from "@/components/ui/styles";
+import { useState } from "react";
+import { Info, Plus, X } from "lucide-react";
+import { CARD, INPUT, INPUT_BASE, SUBTLE, buttonClass, chipClass, tileClass } from "@/components/ui/styles";
 import { ProfileEditPage } from "@/components/profile/ProfileEditPage";
 import {
   FavoritesEditor,
@@ -16,7 +17,8 @@ import {
 } from "@/components/profile/editors";
 import { NumberStepper } from "@/components/form/NumberStepper";
 import { sortedBases } from "@/lib/bases";
-import { WEEKDAYS, planningWeekLabel, standardWeekDays } from "@/lib/profile";
+import { LIKE_WEIGHTS, likeLevel, sortedLikes, withLikes, withoutLike } from "@/lib/likes";
+import { HEALTH_TIP_LEVELS, WEEKDAYS, planningWeekLabel, standardWeekDays } from "@/lib/profile";
 
 export function FavoritesEditView() {
   return (
@@ -174,6 +176,110 @@ export function BasesEditView() {
                   onChange={(value) => setDraft((d) => ({ ...d, bases: { ...d.bases, [b.id]: value } }))}
                 />
               </div>
+            ))}
+          </div>
+        </>
+      )}
+    </ProfileEditPage>
+  );
+}
+
+/** "Das mögt ihr": gelernte Lieblingszutaten, gewichtet – entfernen und ergänzen */
+export function LikesEditView() {
+  const [input, setInput] = useState("");
+  return (
+    <ProfileEditPage title="Das mögt ihr">
+      {(draft, setDraft) => {
+        const likes = sortedLikes(draft.likes);
+        const add = () => {
+          const names = input.split(/,|\bund\b/).map((n) => n.trim()).filter(Boolean);
+          if (names.length) setDraft((d) => withLikes(d, names, LIKE_WEIGHTS.manual, true));
+          setInput("");
+        };
+        return (
+          <>
+            <p className={SUBTLE}>
+              Lerne ich aus euren Bewertungen, gekochten Gerichten und dem, was ihr mir erzählt. Kommt bevorzugt in
+              neue Rezepte – auch in Entdecker-Rezepte: neu, aber nicht fremd.
+            </p>
+            <div className={`${CARD} flex flex-col gap-3 p-4`}>
+              {likes.length === 0 ? (
+                <p className="text-sm text-muted">Noch nichts gelernt. Sag mir einfach „Wir lieben Käse“ – oder trag es hier ein.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {likes.map((l) => {
+                    const level = likeLevel(l, likes);
+                    return (
+                      <span key={l.name} className={chipClass(level === 3)}>
+                        <span className={level === 1 ? "font-medium" : "font-bold"}>{l.name}</span>
+                        <span className="text-xs text-accent" aria-label={`Stufe ${level} von 3`}>
+                          {"♥".repeat(level)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setDraft((d) => withoutLike(d, l.name))}
+                          aria-label={`${l.name} entfernen`}
+                          className="-mr-1 ml-0.5 rounded-full p-0.5 text-muted"
+                        >
+                          <X className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+              <form
+                className="flex gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  add();
+                }}
+              >
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="z. B. Käse, Knoblauch"
+                  aria-label="Zutat hinzufügen"
+                  className={`${INPUT_BASE} h-12 min-w-0 flex-1 px-4`}
+                />
+                <button type="submit" disabled={!input.trim()} className={buttonClass("primary")}>
+                  <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+                  Dazu
+                </button>
+              </form>
+            </div>
+          </>
+        );
+      }}
+    </ProfileEditPage>
+  );
+}
+
+/** Gesundheits-Tipps: aus / ab und zu / gern öfter */
+export function HealthTipsEditView() {
+  return (
+    <ProfileEditPage title="Gesundheits-Tipps">
+      {(draft, setDraft) => (
+        <>
+          <p className={SUBTLE}>
+            Ab und zu schlage ich einen kleinen Tausch vor, z. B. „Halbe Sahne durch Joghurt ersetzen“ – immer freiwillig,
+            nur für das eine Rezept. Nie beim Cheat Day oder Wunschessen.
+          </p>
+          <div className="flex flex-col gap-2" role="radiogroup" aria-label="Gesundheits-Tipps">
+            {HEALTH_TIP_LEVELS.map((level) => (
+              <button
+                key={level.value}
+                type="button"
+                role="radio"
+                aria-checked={draft.healthTips === level.value}
+                onClick={() => setDraft((d) => ({ ...d, healthTips: level.value }))}
+                className={tileClass(draft.healthTips === level.value)}
+              >
+                <span className="flex flex-col self-stretch px-2 text-left">
+                  <span className="text-base font-bold">{level.label}</span>
+                  <span className="text-sm text-muted">{level.hint}</span>
+                </span>
+              </button>
             ))}
           </div>
         </>

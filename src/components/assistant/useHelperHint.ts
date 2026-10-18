@@ -4,6 +4,7 @@
 // Startseite, z. B. "Lotte: Für morgen fehlt Sahne". Ohne Anlass: "Frag Lotte".
 
 import { useRatingCandidate } from "@/components/home/useRatingCandidate";
+import { useHealthTip, useWeekPraise } from "./useHealthTip";
 import { useRecipes } from "@/lib/cookbook";
 import { composeWeek, useMealPlans } from "@/lib/mealPlan";
 import { helperMessage, helperName } from "@/lib/profile";
@@ -26,11 +27,15 @@ export function useHelperHint(): string | null {
   const current = useWeekShoppingList("current");
   const next = useWeekShoppingList("next");
   const rating = useRatingCandidate();
+  const tip = useHealthTip();
+  const praise = useWeekPraise();
   if (!today || profile === undefined || !weekPlans || !mealPlans || !recipes || !current || !next) return null;
   if (profile === null) return null;
 
   // Nach dem Kochen zuerst nach der Bewertung fragen
   if (rating) return helperMessage(profile, `Wie war ${rating.title}?`);
+  // Wochenrückblick: Lob, wenn es passt
+  if (praise) return helperMessage(profile, praise);
 
   const shoppingDay = profile.shoppingDay ?? DEFAULT_SHOPPING_DAY;
   const todayIso = toIsoDate(today);
@@ -61,6 +66,9 @@ export function useHelperHint(): string | null {
   if (todayDay && !todayDay.away && !todayDay.slot.entry) {
     return helperMessage(profile, "Heute ist noch nichts geplant – soll ich was vorschlagen?");
   }
+
+  // Sanfter Gesundheits-Tipp (Details und "Ausprobieren" im Chat)
+  if (tip) return helperMessage(profile, `Kleiner Tipp für ${tip.tip.title} 🌱`);
 
   return `Frag ${helperName(profile)}`;
 }

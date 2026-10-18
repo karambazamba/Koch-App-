@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Undo2 } from "lucide-react";
 import { commitOps } from "@/lib/assistant/client";
 import { onOpenHelper } from "@/lib/assistant/open";
+import { learnLikes, likesFromIngredients, LIKE_WEIGHTS } from "@/lib/likes";
 import { formatPantryItem, usePantry } from "@/lib/pantry";
 import { useRecipes } from "@/lib/cookbook";
 import { useMealPlans } from "@/lib/mealPlan";
@@ -161,6 +162,17 @@ export function KitchenHelper() {
     if (!data || !chat.proposal) return;
     const prompt = [...chat.turns].reverse().find((t) => t.role === "user")?.text ?? "";
     const run = commitOps(data, chat.proposal.ops, selected, prompt);
+    // Gewählte Gerichte → deren Zutaten zählen als Vorliebe
+    const chosen = chat.proposal.ops
+      .filter((op) => selected.has(op.id))
+      .flatMap((op) =>
+        op.type === "add_recipe"
+          ? op.recipe.ingredients
+          : op.type === "set_meal" && op.dish.kind === "recipe"
+            ? (data.recipes[op.dish.recipeId]?.ingredients ?? [])
+            : [],
+      );
+    learnLikes(likesFromIngredients(chosen), LIKE_WEIGHTS.chosen);
     setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text: "Übernommen ✓", local: true }], proposal: null }));
     setUndo({ run, key: Date.now() });
     setUndone(false);

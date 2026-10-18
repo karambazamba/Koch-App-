@@ -64,13 +64,14 @@ export async function askAssistant(
   data: AssistantData,
   today: string,
   currentWeekStart: string,
+  tipsThisWeek = 0,
 ): Promise<AssistantReply> {
   let response: Response;
   try {
     response = await fetch(ASSISTANT_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ deviceId: deviceId(), today, messages, pending, data: trimmed(data, currentWeekStart) }),
+      body: JSON.stringify({ deviceId: deviceId(), today, messages, pending, data: trimmed(data, currentWeekStart), tipsThisWeek }),
     });
   } catch {
     throw new Error("Keine Verbindung – der Küchenhelfer braucht Internet.");

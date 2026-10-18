@@ -2,6 +2,7 @@
 
 import { KID_AGE_GROUP_LABELS, MEAL_TIME_LABELS, helperName, personLabel, type HouseholdProfile } from "../profile";
 import { sortedBases } from "../bases";
+import { sortedLikes } from "../likes";
 import { formatWeekRange, planningWeekStart } from "../weekPlan";
 import type { AssistantData } from "./ops";
 
@@ -38,6 +39,14 @@ So arbeitest du:
 - Reste-Ideen ("Ideen für unsere Reste: …"): nenne genau 3 kurze Vorschläge (Name und ein halber Satz), die möglichst viele der Reste nutzen und zur Basis passen. Bevorzuge passende Kochbuch-Rezepte (besonders mit Daumen hoch), sonst eigene Ideen. Schlag erst etwas für den Plan vor, wenn die Familie eins auswählt.
 - "Nie wieder"-Liste (im Kontext): Diese Gerichte und sehr ähnliche nie vorschlagen – auch nicht abgewandelt. Die Gründe berücksichtigen (z. B. "zu scharf" → allgemein milder, "zu aufwendig" → einfacher, "Kinder mögen's nicht" → kinderfreundlicher).
 - Gerichte mit Daumen hoch und Lieblings-Basen bevorzugt vorschlagen.
+- "Das mögt ihr" (Lieblingszutaten, im Kontext): bevorzugt einbauen. Auch bei Entdecker-Rezepten (etwas Neues ausprobieren): neu, aber nicht fremd – ein unbekanntes Gericht mit bekannten Lieblingszutaten.
+
+Gesundheits-Tipps (sanft, nur laut Einstellung im Kontext):
+- Bei "aus" nie. Bei "ab und zu" höchstens 1 Tipp pro Woche, bei "gern öfter" höchstens 3 – der Kontext sagt, wie viele diese Woche schon gezeigt wurden. Höchstens ein Tipp pro Antwort und nur, wenn er zum Gespräch passt.
+- Immer als konkreter, freiwilliger Tausch für ein bestimmtes Rezept, z. B. "Halbe Sahne durch Joghurt ersetzen – schmeckt fast gleich, ist leichter." Die Familie entscheidet; wenn sie will, änderst du nur dieses Rezept (als Vorschlag).
+- Grundlage sind allgemein anerkannte Empfehlungen (z. B. DGE): mehr Gemüse, Hülsenfrüchte und Vollkorn, weniger Zucker, Salz und verarbeitetes Fleisch. Keine Trends, keine Superfoods, keine Heilversprechen.
+- Nie zum Cheat Day oder zum Wunschessen der Kinder. Nie Aussagen über Körper, Gewicht, Abnehmen oder Kalorien. Kein belehrender Ton, kein "solltet", kein schlechtes Gewissen.
+- Lob ist willkommen, wenn es stimmt (z. B. "Diese Woche 5 Gemüsetage – stark! 💪").
 
 Antworte kurz (2–4 Sätze), ohne Markdown, ohne Listen-Zeichen und ohne IDs – die Antwort wird evtl. vorgelesen.`;
 
@@ -62,6 +71,7 @@ function profileSummary(profile: HouseholdProfile): string {
     profile.wishDay.enabled ? `Wunschtag: ${profile.wishDay.weekday}` : "Wunschtag: aus",
     profile.favoriteDishes.length ? `Lieblingsgerichte: ${profile.favoriteDishes.join(", ")}` : "",
     favoriteBases(profile),
+    likesText(profile),
     neverAgainText(profile),
   ]
     .filter(Boolean)
@@ -73,6 +83,14 @@ function favoriteBases(profile: HouseholdProfile): string {
   const liked = sortedBases(profile.bases).filter((b) => profile.bases[b.id] > 0);
   return liked.length ? `Lieblings-Basen: ${liked.map((b) => `${b.label} (${profile.bases[b.id]}×)`).join(", ")}` : "";
 }
+
+/** "Das mögt ihr: Käse, Knoblauch, Paprika" (stärkste zuerst) */
+function likesText(profile: HouseholdProfile): string {
+  const likes = sortedLikes(profile.likes).slice(0, 15);
+  return likes.length ? `Das mögt ihr (Lieblingszutaten, bevorzugt einbauen): ${likes.map((l) => l.name).join(", ")}` : "";
+}
+
+const TIP_LABEL = { aus: "aus", ab_und_zu: "ab und zu (höchstens 1 pro Woche)", oefter: "gern öfter (höchstens 3 pro Woche)" } as const;
 
 /** Nie-wieder-Liste – geht immer an die KI */
 function neverAgainText(profile: HouseholdProfile): string {
@@ -87,7 +105,12 @@ function neverAgainText(profile: HouseholdProfile): string {
 }
 
 /** Kontext für diese Anfrage: Datum, Wochen, Profil, Kochbuch-Überblick */
-export function contextText(data: AssistantData, todayIso: string, weeks: { aktuell: string; naechste: string }): string {
+export function contextText(
+  data: AssistantData,
+  todayIso: string,
+  weeks: { aktuell: string; naechste: string },
+  tipsThisWeek = 0,
+): string {
   const today = new Date(`${todayIso}T00:00:00Z`);
   const shoppingDay = data.profile.shoppingDay || "Montag";
   const planning = planningWeekStart(new Date(`${todayIso}T12:00:00`), shoppingDay);
@@ -100,6 +123,7 @@ export function contextText(data: AssistantData, todayIso: string, weeks: { aktu
     `Planungswoche, wenn nichts gesagt wird: ${planning.isNext ? "naechste" : "aktuell"}`,
     "",
     profileSummary(data.profile),
+    `Gesundheits-Tipps: ${TIP_LABEL[data.profile.healthTips]}${data.profile.healthTips === "aus" ? "" : ` – diese Woche schon ${tipsThisWeek} gezeigt`}`,
     "",
     `Kochbuch: ${recipes.length} Rezepte${recipes.length ? ` – ${recipes.slice(0, 60).map((r) => `${r.title}${r.thumbsUp > 0 ? ` (👍${r.thumbsUp})` : ""}`).join(", ")}` : ""}`,
   ].join("\n");

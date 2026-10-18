@@ -14,6 +14,8 @@ export type AssistantRequest = {
   /** Noch nicht übernommener Vorschlag ("Anpassen") – wird weitergeführt */
   pending: ChangeOp[];
   data: AssistantData;
+  /** Wie viele Gesundheits-Tipps diese Woche schon gezeigt wurden */
+  tipsThisWeek?: number;
 };
 
 export type AssistantReply = {
