@@ -227,13 +227,20 @@ export function extractDietItems(text: string, names: string[]): DietItem[] {
   const segments = marks.length
     ? marks.map((m, i) => ({ person: m.name as string | null, text: text.slice(m.at, marks[i + 1]?.at ?? text.length) }))
     : [{ person: null, text }];
-  return segments.flatMap((s) => {
+  const items = segments.flatMap((s) => {
     const d = extractDiet(s.text);
     return [
       ...d.allergies.map((term) => ({ person: s.person, kind: "Allergie" as const, term })),
       ...d.dislikes.map((term) => ({ person: s.person, kind: "mag nicht" as const, term })),
     ];
   });
+  if (items.length) return items;
+  // Kurz geantwortet: "keine Pilze", "kein Koriander und keine Oliven"
+  const bare = [...text.matchAll(/\bkeine?n?\s+([A-ZÄÖÜa-zäöüß][\wäöüß-]+)/gi)]
+    .map((m) => m[1])
+    .filter((w) => !/^(allergien?|ahnung|ausnahmen|sorge|problem\w*|einschränkung\w*|weiteren?|ander\w*|sonst\w*)$/i.test(w))
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1));
+  return bare.map((term) => ({ person: null, kind: "mag nicht" as const, term }));
 }
 
 /** "Nenn mich Oma Hilde" → "Oma Hilde" */

@@ -69,7 +69,7 @@ export function OnboardingChat({ onForm }: Props) {
                 className="flex w-full items-center gap-2 px-4 py-2.5 text-left"
               >
                 <span className="flex-1 text-sm font-bold text-ink">
-                  Familienkarte <span className="font-semibold text-muted">· {rows.length} Einträge</span>
+                  {state.draft.householdType === "familie" ? "Familienkarte" : "Steckbrief"} <span className="font-semibold text-muted">· {rows.length} Einträge</span>
                 </span>
                 <ChevronDown
                   className={`h-4 w-4 text-muted transition ${cardOpen ? "rotate-180" : ""}`}

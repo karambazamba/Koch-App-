@@ -47,6 +47,9 @@ import {
   personLabel,
   personRoleLabel,
   saveProfile,
+  fitHouseholdType,
+  hasKids,
+  wishDayActive,
   standardWeekDays,
   usualLunch,
   syncPersons,
@@ -258,7 +261,7 @@ function ProfileWizard({ initial }: { initial?: HouseholdProfile | null }) {
   };
 
   function finish() {
-    saveProfile(profile);
+    saveProfile({ ...profile, householdType: fitHouseholdType(profile.householdType, profile.persons) });
     clearOnboarding();
     router.push("/");
   }
@@ -415,12 +418,14 @@ function ProfileWizard({ initial }: { initial?: HouseholdProfile | null }) {
                 update({ weekRules: { ...profile.weekRules, ...changes } })
               }
               available={standardWeekDays(profile)}
-              blockedWeekdays={profile.wishDay.enabled ? [profile.wishDay.weekday] : []}
+              blockedWeekdays={wishDayActive(profile) ? [profile.wishDay.weekday] : []}
             />
-            <WishDayEditor
-              profile={profile}
-              onChange={(wishDay) => setProfile((p) => withWishDay(p, wishDay))}
-            />
+            {hasKids(profile) && (
+              <WishDayEditor
+                profile={profile}
+                onChange={(wishDay) => setProfile((p) => withWishDay(p, wishDay))}
+              />
+            )}
           </>
         )}
       </main>

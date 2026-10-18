@@ -1,14 +1,18 @@
 // Küchenhelfer: System-Prompt (fest, wird gecacht) und Kontext (pro Anfrage).
 
-import { KID_AGE_GROUP_LABELS, MEAL_TIME_LABELS, helperName, personLabel, type HouseholdProfile } from "../profile";
+import { HOUSEHOLD_TYPES, KID_AGE_GROUP_LABELS, MEAL_TIME_LABELS, helperName, isSmallHousehold, personLabel, wishDayActive, type HouseholdProfile } from "../profile";
 import { sortedBases } from "../bases";
 import { sortedLikes } from "../likes";
 import { formatWeekRange, planningWeekStart } from "../weekPlan";
 import type { AssistantData } from "./ops";
 
-/** "Familie Müller" (ohne doppeltes "Familie"), ohne Namen "eurer Familie" */
+/** "Familie Müller" (ohne doppeltes "Familie"), ohne Namen "der Familie"; ohne Kinder "des Haushalts" */
 function familyLabel(profile: HouseholdProfile): string {
   const name = profile.householdName.trim();
+  if (profile.householdType !== "familie") {
+    if (profile.householdType === "single") return profile.persons[0]?.name ? `von ${profile.persons[0].name}` : "für einen Ein-Personen-Haushalt";
+    return name ? `von ${name}` : profile.householdType === "wg" ? "der WG" : "des Paars";
+  }
   if (!name) return "der Familie";
   return /^familie\s/i.test(name) ? `der ${name}` : `der Familie ${name}`;
 }
@@ -63,6 +67,17 @@ Ohne Druck – du machst nie ein schlechtes Gewissen:
 - Spontan-Hilfe: "Wir kommen erst um 19 Uhr heim" → drei schnelle Ideen unter 20 Minuten. "Spontan kochen" heißt: mit dem, was da ist (der Vorrat steht dann in der Nachricht), schnellste zuerst, ohne Einkauf.
 - Wortwahl: nie "fehlt", "offen", "überfällig", "noch zu erledigen", "verpasst" oder "Alles da". Stattdessen vorbereitend: "Für Montag", "Ich hab schon …", "Bereit für …".
 
+Haushalt (Typ im Kontext):
+- "Familie" sagst du nur bei Familien mit Kindern. Sonst "dein Haushalt" (eine Person, du-Form) bzw. "euer Haushalt" (Paar, WG).
+- Kleiner Haushalt (1–2 Personen): kleine Mengen und übliche Packungsgrößen; Reste bewusst einplanen ("reicht für morgen" = doppelt kochen), Einfrieren in Portionen anbieten.
+- Kinder-Sachen (Wunschtag, Kinder-Schritte, Kita/Schule) nur, wenn Kinder im Haushalt sind. Wochenend-Ideen ohne Kinder: Freunde einladen, Wochenmarkt, Kochabend zu zweit, Brunch, Ausflug, Neues ausprobieren.
+
+Küchenmaschine (im Kontext): Bei "Thermomix" bei neuen Rezepten auf Wunsch auch die Maschinen-Schritte nennen (Zeit / Temperatur / Stufe, z. B. "10 Sek / Stufe 5", Linkslauf). Rein beschreibend – keine Marken-Werbung, keine Partnerschaft behaupten.
+
+Backen: Backrezepte immer mit Mengen in g/ml, Backofen (Ober-/Unterhitze oder Umluft, Temperatur, Zeit) und Formgröße. Mit Kindern: Schritte nennen, bei denen die Kinder helfen können.
+
+Im Supermarkt ("im Angebot", "ich steh grad im …"): besonders kurz – 2–3 Ideen mit Zeit und was dafür noch gebraucht wird; die App zeigt dazu Knöpfe.
+
 Antworte kurz (höchstens 2–3 Sätze, außer die Familie fragt nach Details), ohne Markdown, ohne Listen-Zeichen und ohne IDs – die Antwort wird evtl. vorgelesen.`;
 
 const WEEKDAY_FORMAT = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
@@ -79,14 +94,15 @@ function profileSummary(profile: HouseholdProfile): string {
   });
   const rules = profile.weekRules;
   return [
-    `Haushalt: ${profile.householdName || "ohne Namen"}, ${profile.persons.length} Personen`,
+    `Haushalt: ${profile.householdName || "ohne Namen"}, ${profile.persons.length} Personen, Typ: ${HOUSEHOLD_TYPES.find((t) => t.value === profile.householdType)?.label ?? "Familie"}${isSmallHousehold(profile) ? " (kleine Mengen, Reste bewusst einplanen)" : ""}`,
     ...persons,
     `Zusammen warm essen meistens: Mo–Fr ${MEAL_TIME_LABELS[profile.warmMeal.weekday]}, Sa–So ${MEAL_TIME_LABELS[profile.warmMeal.weekend]}`,
     `Standardwoche: ${rules.meatDays}× Fleisch, ${rules.vegetarianDays}× vegetarisch, ${rules.fishDays}× Fisch${rules.cheatDay ? `, Cheat Day ${rules.cheatDayWeekday || "(Tag frei)"}` : ""}`,
-    profile.wishDay.enabled ? `Wunschtag: ${profile.wishDay.weekday}` : "Wunschtag: aus",
+    wishDayActive(profile) ? `Wunschtag: ${profile.wishDay.weekday}` : "Wunschtag: aus",
     `Wochenend-Stil: ${WEEKEND_TEXT[profile.weekendStyle]}`,
     `Kochstil: ${profile.cookingStyle === "rezept" ? "kocht gern nach Rezept" : "kocht meist nach Gefühl"}`,
     `Neue Gerichte pro Woche: ${profile.newPerWeek}`,
+    `Küchenmaschine: ${profile.kitchenMachine === "thermomix" ? "Thermomix (Küchenmaschine mit Kochfunktion)" : "keine"}`,
     profile.pause ? `Pause: ${profile.pause.from}${profile.pause.until ? ` bis ${profile.pause.until}` : " (ohne Enddatum)"} – an diesen Tagen nichts planen` : "",
     profile.favoriteDishes.length ? `Lieblingsgerichte: ${profile.favoriteDishes.join(", ")}` : "",
     favoriteBases(profile),

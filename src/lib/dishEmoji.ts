@@ -4,6 +4,11 @@ import type { RecipeCategory } from "./cookbook";
 
 const WORDS: [RegExp, string][] = [
   [/pizza/, "🍕"],
+  [/muffin|cupcake/, "🧁"],
+  [/keks|cookie|plätzchen/, "🍪"],
+  [/brownie/, "🍫"],
+  [/(?<!pfann|eier)kuchen|torte|crumble|schnecke/, "🍰"],
+  [/hefezopf|brötchen|bananenbrot/, "🥐"],
   [/burger/, "🍔"],
   [/pommes/, "🍟"],
   [/spaghetti|nudel|pasta|lasagne|penne|tagliatelle|makkaroni|bolognese|carbonara|spätzle/, "🍝"],

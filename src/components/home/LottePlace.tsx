@@ -15,7 +15,7 @@ import { declineTip, markTipShown, tryTip, undoTip } from "@/lib/healthTips";
 import { composeWeek, useMealPlans, type PlanDay, type StoredEntry } from "@/lib/mealPlan";
 import { isPaused, noteAnswered, noteDismissed, noteShown, useNudges, type NudgeKind } from "@/lib/nudges";
 import { sameIngredient, updatePantryItem, usePantry, type PantryItem } from "@/lib/pantry";
-import { mealClockFor, pausedOn, saveProfile } from "@/lib/profile";
+import { hasKids, isSmallHousehold, isSolo, mealClockFor, pausedOn, saveProfile } from "@/lib/profile";
 import { DOWN_REASONS, rateDown, rateUp, useRatings, type Rating, type RatingCandidate } from "@/lib/ratings";
 import { addManualItem, removeManualItems, sectionFor, setHave, toggleChecked, type ListItem } from "@/lib/shoppingList";
 import { perishables } from "@/lib/spontan";
@@ -215,14 +215,28 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
       .sort((a, b) => a.addedAt.localeCompare(b.addedAt))[0];
     if (leftover && allowed("reste")) {
       const from = WEEKDAY.format(new Date(`${leftover.addedAt}T12:00:00`));
-      return {
-        kind: "reste",
-        text: `Seit ${from} im Kühlschrank: ${leftover.name} – soll ich was Schnelles draus zaubern?`,
-        chips: [
-          once(`rest:${leftover.id}:${leftover.addedAt}`, "Ja, zeig mal", () => openHelper("spontan", undefined, ["reste"])),
-          once(`rest:${leftover.id}:${leftover.addedAt}`, "Nein danke"),
-        ],
-      };
+      const restKey = `rest:${leftover.id}:${leftover.addedAt}`;
+      // Kleiner Haushalt: portionsweise Einfrieren gleich mit anbieten
+      return isSmallHousehold(profile)
+        ? {
+            kind: "reste",
+            text: `Seit ${from} im Kühlschrank: ${leftover.name} – was Schnelles draus machen oder portionsweise einfrieren?`,
+            chips: [
+              once(restKey, "Was draus machen", () => openHelper("spontan", undefined, ["reste"])),
+              once(restKey, "Einfrieren", () => {
+                updatePantryItem(leftover.id, { place: "tiefkuehler", addedAt: todayIso });
+                setDone({ text: `Ab in den Tiefkühler ✓ ${leftover.name}`, undo: () => updatePantryItem(leftover.id, { place: "kuehlschrank", addedAt: leftover.addedAt }) });
+              }),
+            ],
+          }
+        : {
+            kind: "reste",
+            text: `Seit ${from} im Kühlschrank: ${leftover.name} – soll ich was Schnelles draus zaubern?`,
+            chips: [
+              once(restKey, "Ja, zeig mal", () => openHelper("spontan", undefined, ["reste"])),
+              once(restKey, "Nein danke"),
+            ],
+          };
     }
     const pause = profile.pause;
     if (pause && todayIso < pause.from && pause.from <= addDays(todayIso, 3)) {
@@ -272,7 +286,7 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
     if (profile.weekendStyle !== "frei" && !wasAsked(activity, "wochenende-frei") && weekendsSkipped(data, mealPlans, rated) >= 3) {
       return {
         kind: "wochenende",
-        text: "Am Wochenende kocht ihr oft spontan – soll ich Samstag und Sonntag einfach frei lassen?",
+        text: `Am Wochenende ${isSolo(profile) ? "kochst du" : "kocht ihr"} oft spontan – soll ich Samstag und Sonntag einfach frei lassen?`,
         chips: [
           once("wochenende-frei", "Ja, gern", () => {
             saveProfile({ ...profile, weekendStyle: "frei" });
@@ -310,6 +324,8 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
           dish: entry && entry.stored.kind !== "wish" && !data.day?.cheat ? entry.title : null,
           twist: twistBase,
           health: health ? { key: health.tip.key, title: health.tip.title, text: health.tip.text } : null,
+          household: data.profile.householdType,
+          kids: hasKids(data.profile),
         })
       : [];
   const tipToday = tipState?.today?.date === todayIso ? tipState.today : null;

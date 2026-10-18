@@ -3,6 +3,7 @@
 import { useRecipes } from "./cookbook";
 import { composeWeek, useMealPlans } from "./mealPlan";
 import { buildShoppingList, useShoppingLists, useShoppingSettings, type ShoppingList, type ShoppingSettings, type WeekList } from "./shoppingList";
+import { isSmallHousehold } from "./profile";
 import { useProfile } from "./useProfile";
 import {
   DEFAULT_SHOPPING_DAY,
@@ -45,7 +46,7 @@ export function useWeekShoppingList(
   return {
     weekStart,
     isNext: weekStart !== current,
-    list: buildShoppingList(week, recipes, lists[weekStart], settings),
+    list: buildShoppingList(week, recipes, lists[weekStart], settings, { small: profile ? isSmallHousehold(profile) : false }),
     weekList: lists[weekStart],
     settings,
   };

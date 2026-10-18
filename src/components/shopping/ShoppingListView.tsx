@@ -94,7 +94,10 @@ export function ShoppingListView() {
   // "Heute holen": offene Artikel für heute und morgen (nur in der laufenden Woche)
   const inWeek = todayIso >= weekStart && todayIso <= addDays(weekStart, 6);
   const soon = [WEEKDAY.format(today), WEEKDAY.format(new Date(today.getTime() + 86_400_000))];
-  const todayItems = inWeek ? visible.filter((i) => !i.checked && i.days.some((d) => soon.includes(d))) : [];
+  // "Jetzt mitnehmen" (aus dem Supermarkt-Gespräch): oben, bis abgehakt
+  const nowItems = visible.filter((i) => i.now && !i.checked);
+  const grouped = visible.filter((i) => !(i.now && !i.checked));
+  const todayItems = inWeek ? grouped.filter((i) => !i.checked && i.days.some((d) => soon.includes(d))) : [];
 
   const toggle = (item: ListItem) => toggleChecked(weekStart, item, todayIso);
 
@@ -116,12 +119,12 @@ export function ShoppingListView() {
   // Gruppen: nach Abteilung (Supermarkt-Reihenfolge) oder nach Laden
   const groups: Group[] =
     mode === "abteilung"
-      ? SECTIONS.map((s) => ({ id: s.value, label: s.label, icon: SECTION_ICONS[s.value], items: visible.filter((i) => i.section === s.value) }))
+      ? SECTIONS.map((s) => ({ id: s.value, label: s.label, icon: SECTION_ICONS[s.value], items: grouped.filter((i) => i.section === s.value) }))
       : [
-          ...[...new Set(visible.map((i) => i.shop).filter(Boolean))]
+          ...[...new Set(grouped.map((i) => i.shop).filter(Boolean))]
             .sort((a, b) => a.localeCompare(b, "de"))
-            .map((shop) => ({ id: `laden:${shop}`, label: shop, icon: Store, shop, items: visible.filter((i) => i.shop === shop) })),
-          { id: "laden:", label: "Ohne Laden", icon: ShoppingBag, items: visible.filter((i) => !i.shop) },
+            .map((shop) => ({ id: `laden:${shop}`, label: shop, icon: Store, shop, items: grouped.filter((i) => i.shop === shop) })),
+          { id: "laden:", label: "Ohne Laden", icon: ShoppingBag, items: grouped.filter((i) => !i.shop) },
         ];
 
   const actionsFor = (item: ListItem): RowAction[] => [
@@ -174,6 +177,22 @@ export function ShoppingListView() {
           <QuickAddButton weekStart={weekStart} settings={settings} className="-mr-1.5" />
         </section>
         {shareNote && <p className="rounded-xl bg-accent-soft px-4 py-2 text-sm font-semibold text-accent-strong">{shareNote}</p>}
+
+        {nowItems.length > 0 && (
+          <section aria-label="Jetzt mitnehmen" className="flex flex-col gap-1.5">
+            <h2 className="flex items-center gap-1.5 px-1 text-xs font-bold uppercase tracking-wider text-accent">
+              <ShoppingBag className="h-4 w-4" strokeWidth={2} aria-hidden />
+              Jetzt mitnehmen
+            </h2>
+            <ul className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
+              {nowItems.map((item) => (
+                <SwipeRow key={item.key} label={item.name} actions={actionsFor(item)} onLongPress={() => setInfo(info === item.key ? null : item.key)}>
+                  <ItemContent item={item} onToggle={() => toggle(item)} onInfo={() => setInfo(info === item.key ? null : item.key)} infoOpen={info === item.key} />
+                </SwipeRow>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {todayItems.length > 0 && (
           <section className={`${CARD} flex flex-col gap-2 p-3`} aria-label="Heute holen">

@@ -18,7 +18,7 @@ import {
 import { NumberStepper } from "@/components/form/NumberStepper";
 import { sortedBases } from "@/lib/bases";
 import { LIKE_WEIGHTS, likeLevel, sortedLikes, withLikes, withoutLike } from "@/lib/likes";
-import { COOKING_STYLES, HEALTH_TIP_LEVELS, NEW_DISHES_OPTIONS, TIP_LEVELS, WEEKDAYS, WEEKEND_STYLES, planningWeekLabel, standardWeekDays } from "@/lib/profile";
+import { COOKING_STYLES, HEALTH_TIP_LEVELS, HOUSEHOLD_TYPES, hasKids, wishDayActive, NEW_DISHES_OPTIONS, TIP_LEVELS, WEEKDAYS, WEEKEND_STYLES, planningWeekLabel, standardWeekDays, type KitchenMachine } from "@/lib/profile";
 
 export function FavoritesEditView() {
   return (
@@ -91,12 +91,14 @@ export function StandardWeekEditView() {
               setDraft((d) => ({ ...d, weekRules: { ...d.weekRules, ...changes } }))
             }
             available={standardWeekDays(draft)}
-            blockedWeekdays={draft.wishDay.enabled ? [draft.wishDay.weekday] : []}
+            blockedWeekdays={wishDayActive(draft) ? [draft.wishDay.weekday] : []}
           />
-          <WishDayEditor
-            profile={draft}
-            onChange={(wishDay) => setDraft((d) => withWishDay(d, wishDay))}
-          />
+          {hasKids(draft) && (
+            <WishDayEditor
+              profile={draft}
+              onChange={(wishDay) => setDraft((d) => withWishDay(d, wishDay))}
+            />
+          )}
         </>
       )}
     </ProfileEditPage>
@@ -107,8 +109,30 @@ export function HouseholdNameEditView() {
   return (
     <ProfileEditPage title="Haushalt">
       {(draft, setDraft) => (
+        <>
+        <p className="text-lg font-bold">Für wen kochst du?</p>
+        <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Für wen kochst du?">
+          {HOUSEHOLD_TYPES.map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              role="radio"
+              aria-checked={draft.householdType === t.value}
+              onClick={() => setDraft((d) => ({ ...d, householdType: t.value }))}
+              className={tileClass(draft.householdType === t.value)}
+            >
+              <span className="text-2xl" aria-hidden>
+                {t.emoji}
+              </span>
+              <span className="text-sm font-bold leading-tight">{t.label}</span>
+            </button>
+          ))}
+        </div>
+        <p className={SUBTLE}>
+          Danach richte ich Portionen, Einkauf und Ideen aus – Kinder-Sachen wie den Wunschtag gibt es nur mit Kindern.
+        </p>
         <label className={`${CARD} flex flex-col gap-2 p-4`}>
-          <span className="text-base font-bold">Name eures Haushalts (optional)</span>
+          <span className="text-base font-bold">{draft.householdType === "single" ? "Name deines Haushalts (optional)" : draft.householdType === "wg" ? "Name eurer WG (optional)" : "Name eures Haushalts (optional)"}</span>
           <input
             type="text"
             value={draft.householdName}
@@ -116,7 +140,7 @@ export function HouseholdNameEditView() {
               const householdName = e.target.value;
               setDraft((d) => ({ ...d, householdName }));
             }}
-            placeholder="z. B. Familie Müller"
+            placeholder={draft.householdType === "familie" ? "z. B. Familie Müller" : draft.householdType === "wg" ? "z. B. Villa Kunterbunt" : "z. B. Lisas Küche"}
             enterKeyHint="done"
             onKeyDown={(e) => {
               if (e.key === "Enter") e.currentTarget.blur();
@@ -124,6 +148,7 @@ export function HouseholdNameEditView() {
             className={INPUT}
           />
         </label>
+        </>
       )}
     </ProfileEditPage>
   );
@@ -381,11 +406,35 @@ export function CookingStyleEditView() {
               </button>
             ))}
           </div>
+          <h2 className={`${SECTION_TITLE} mt-2`}>Küchenmaschine</h2>
+          <p className={SUBTLE}>Mit Küchenmaschine zeige ich bei Rezepten auch die Maschinen-Schritte (Zeit, Temperatur, Stufe).</p>
+          <div className="flex flex-col gap-2" role="radiogroup" aria-label="Küchenmaschine">
+            {KITCHEN_MACHINES.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                role="radio"
+                aria-checked={draft.kitchenMachine === option.value}
+                onClick={() => setDraft((d) => ({ ...d, kitchenMachine: option.value }))}
+                className={tileClass(draft.kitchenMachine === option.value)}
+              >
+                <span className="flex flex-col self-stretch px-2 text-left">
+                  <span className="text-base font-bold">{option.label}</span>
+                  <span className="text-sm text-muted">{option.hint}</span>
+                </span>
+              </button>
+            ))}
+          </div>
         </>
       )}
     </ProfileEditPage>
   );
 }
+
+const KITCHEN_MACHINES: { value: KitchenMachine; label: string; hint: string }[] = [
+  { value: "keine", label: "Klassisch", hint: "Herd, Ofen, Pfanne" },
+  { value: "thermomix", label: "Küchenmaschine mit Kochfunktion", hint: "z. B. Thermomix – Schritte mit Zeit, Temperatur und Stufe" },
+];
 
 /** "Wie seid ihr am Wochenende?" + Grill-Idee bei gutem Wetter */
 export function WeekendEditView() {

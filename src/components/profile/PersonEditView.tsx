@@ -16,6 +16,7 @@ import {
   personLabel,
   personRoleLabel,
   saveProfile,
+  fitHouseholdType,
   type Person,
   type PersonRole,
 } from "@/lib/profile";
@@ -49,7 +50,7 @@ function PersonEditor({ newRole, id }: { newRole: PersonRole | null; id: string 
   /** Entfernt die Person aus dem gespeicherten Profil (ungespeicherte Änderungen verfallen). */
   const remove = (person: Person, label: string) => {
     const saved = loadProfile();
-    if (!saved || !window.confirm(`${label} wirklich aus der Familie entfernen?`)) return;
+    if (!saved || !window.confirm(`${label} wirklich entfernen?`)) return;
     const isKid = person.role === "kind";
     saveProfile({
       ...saved,
@@ -70,6 +71,7 @@ function PersonEditor({ newRole, id }: { newRole: PersonRole | null; id: string 
               adults: profile.adults + (newPerson.role === "erwachsen" ? 1 : 0),
               kids: profile.kids + (newPerson.role === "kind" ? 1 : 0),
               persons: [...profile.persons, newPerson],
+              householdType: fitHouseholdType(profile.householdType, [...profile.persons, newPerson]),
             }
           : profile
       }
