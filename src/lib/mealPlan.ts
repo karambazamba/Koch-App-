@@ -8,6 +8,7 @@
 
 import { useSyncExternalStore } from "react";
 import type { Recipe, RecipeCategory } from "./cookbook";
+import { guessDishCategory } from "./dishCategory";
 import { createLocalStore } from "./localStore";
 import {
   personLabel,
@@ -34,7 +35,8 @@ export type StoredEntry =
   | { kind: "cleared" };
 
 type MealPlanStore = {
-  version: 1;
+  /** v2: Kategorie selbst eingetragener Gerichte kommt aus dem Gericht, nicht vom Platz-Hinweis */
+  version: 2;
   /** Je Woche (Montag "YYYY-MM-DD") die Einträge je Platz "Montag|abends" */
   weeks: Record<string, Record<string, StoredEntry>>;
 };
@@ -239,7 +241,7 @@ export function buildWeek(
 
 // --- Speicherung ------------------------------------------------------------
 
-function migrateEntry(raw: unknown): StoredEntry | null {
+function migrateEntry(raw: unknown, version: number): StoredEntry | null {
   if (!raw || typeof raw !== "object") return null;
   const e = raw as Record<string, unknown>;
   const cat = (v: unknown) =>
@@ -252,7 +254,10 @@ function migrateEntry(raw: unknown): StoredEntry | null {
         ? { kind: "recipe", recipeId: e.recipeId, title: e.title, category: cat(e.category) ?? "vegetarisch" }
         : null;
     case "text":
-      return typeof e.title === "string" ? { kind: "text", title: e.title, category: cat(e.category) } : null;
+      if (typeof e.title !== "string") return null;
+      // Bis v1 wurde der Platz-Hinweis als Kategorie übernommen ("Milchreis" → Fisch):
+      // einmalig aus dem Gericht neu bestimmen, ohne Treffer keine Kategorie.
+      return { kind: "text", title: e.title, category: version < 2 ? guessDishCategory(e.title) : cat(e.category) };
     case "wish":
       return typeof e.kidId === "string"
         ? { kind: "wish", kidId: e.kidId, text: typeof e.text === "string" ? e.text : "" }
@@ -265,17 +270,17 @@ function migrateEntry(raw: unknown): StoredEntry | null {
 function migrateStore(raw: unknown): MealPlanStore | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as { version?: number; weeks?: Record<string, unknown> };
-  if (data.version !== 1 || !data.weeks || typeof data.weeks !== "object") return null;
+  if ((data.version !== 1 && data.version !== 2) || !data.weeks || typeof data.weeks !== "object") return null;
   const weeks: MealPlanStore["weeks"] = {};
   for (const [week, entries] of Object.entries(data.weeks)) {
     if (!entries || typeof entries !== "object") continue;
     weeks[week] = {};
     for (const [key, entry] of Object.entries(entries as Record<string, unknown>)) {
-      const migrated = migrateEntry(entry);
+      const migrated = migrateEntry(entry, data.version);
       if (migrated) weeks[week][key] = migrated;
     }
   }
-  return { version: 1, weeks };
+  return { version: 2, weeks };
 }
 
 const store = createLocalStore(STORAGE_KEY, migrateStore);
@@ -284,7 +289,7 @@ function updateWeek(
   weekStart: string,
   change: (entries: Record<string, StoredEntry>) => Record<string, StoredEntry>,
 ) {
-  const current = store.load() ?? { version: 1 as const, weeks: {} };
+  const current = store.load() ?? { version: 2 as const, weeks: {} };
   // Neue Woche (z. B. nach Wechsel des Einkaufstags) übernimmt die überlappenden Einträge.
   const base = storedForWeek(current.weeks, weekStart);
   store.save({

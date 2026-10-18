@@ -51,6 +51,7 @@ import {
   type PlanDay,
   type PlanWeek,
 } from "@/lib/mealPlan";
+import { guessDishCategory } from "@/lib/dishCategory";
 import { WISH_MEAL_LABELS } from "@/lib/profile";
 import { useProfile } from "@/lib/useProfile";
 import {
@@ -193,6 +194,7 @@ export function WeekPlanView() {
         <TextEntrySheet
           title={slotTitle(sheetSlot)}
           hint={sheetSlot.hint}
+          recipes={Object.values(recipes)}
           onClose={close}
           onSave={(title, category) => {
             setEntry(weekStart, sheetSlot.key, { kind: "text", title, category });
@@ -515,16 +517,20 @@ function RecipePickerSheet({
 function TextEntrySheet({
   title,
   hint,
+  recipes,
   onClose,
   onSave,
 }: {
   title: string;
   hint: RecipeCategory | null;
+  recipes: Recipe[];
   onClose: () => void;
   onSave: (title: string, category: RecipeCategory | null) => void;
 }) {
   const [text, setText] = useState("");
-  const [category, setCategory] = useState<RecipeCategory | null>(hint);
+  // Kategorie kommt vom Gericht (gewählt oder erkannt), nie vom Platz-Hinweis
+  const [picked, setPicked] = useState<RecipeCategory | null | undefined>(undefined);
+  const category = picked === undefined ? guessDishCategory(text, recipes) : picked;
   return (
     <Sheet title={`Selbst eintragen: ${title}`} onClose={onClose}>
       <input
@@ -539,13 +545,18 @@ function TextEntrySheet({
         }}
         className={`${INPUT_BASE} h-14 w-full px-4 text-lg`}
       />
+      {hint && (
+        <p className="text-sm text-muted">
+          Vorschlag für diesen Tag: {categoryLabel(hint)} – Kategorie nur wählen, wenn das Gericht dazu passt.
+        </p>
+      )}
       <div role="group" aria-label="Kategorie" className="grid grid-cols-2 gap-2">
         {RECIPE_CATEGORIES.map((c) => (
           <button
             key={c.value}
             type="button"
             aria-pressed={category === c.value}
-            onClick={() => setCategory(category === c.value ? null : c.value)}
+            onClick={() => setPicked(category === c.value ? null : c.value)}
             className={chipClass(category === c.value)}
           >
             <CategoryDot category={c.value} />

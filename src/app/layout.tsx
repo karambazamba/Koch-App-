@@ -24,8 +24,9 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
   },
   icons: {
-    icon: "/favicon.ico",
-    apple: "/icons/apple-touch-icon.png",
+    // favicon.ico bindet Next aus src/app automatisch ein
+    icon: { url: "/icons/icon.svg", type: "image/svg+xml" },
+    apple: { url: "/icons/apple-touch-icon.png", sizes: "180x180" },
   },
 };
 
