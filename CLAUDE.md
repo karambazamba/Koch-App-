@@ -1,5 +1,25 @@
 # Hinweise für Claude
 
+## Leitbild
+
+Bei allen Änderungen beachten.
+
+"Was gibt's?" ist ein Küchenmanager, an den die Familie das Kochen-Organisieren
+abgeben kann – wie an eine Haushaltskraft, mit der man ganz natürlich spricht.
+
+1. Gespräch zuerst: Der Küchenhelfer (Sprache/Chat) ist der Hauptweg. Jede
+   Funktion soll auch per Gespräch erreichbar sein; Bildschirme dienen zum
+   Nachschauen und Feinjustieren, nie als Pflicht.
+2. Proaktiv: Der Küchenhelfer meldet sich selbst, wenn etwas ansteht
+   (Morgen-Check, Einkauf, Planung, Frische).
+3. Kleine Dinge selbst lösen, große vorschlagen: Ersatz für Nebenzutaten selbst
+   anbieten; Änderungen am Plan immer als Vorschau mit "Übernehmen".
+4. Kennt die Familie: Profil, Vorlieben und bisherige Entscheidungen immer
+   berücksichtigen; nie zweimal dasselbe fragen.
+5. Ton: kurz, warm, natürlich, Deutsch, etwas Humor, keine Fachbegriffe.
+6. Einfachheit vor Vollständigkeit: lieber eine Frage mit 2–3 Knöpfen als ein
+   Formular.
+
 @AGENTS.md
 
 ## Arbeitsweise
