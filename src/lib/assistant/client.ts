@@ -95,13 +95,25 @@ function todayCount(): { day: string; n: number } {
   }
 }
 
-function countRequest() {
+/**
+ * Eine KI-Anfrage zählen – gemeinsames Tageslimit für alle KI-Aufrufe der App
+ * (Lotte, Kennenlernen). false = Limit für heute erreicht, nicht fragen.
+ */
+export function takeAiSlot(): boolean {
   const c = todayCount();
+  if (c.n >= LIMITS.dailyPerDevice) return false;
   try {
     localStorage.setItem(COUNT_KEY, JSON.stringify({ day: c.day, n: c.n + 1 }));
   } catch {
     // ohne Speicher zählt nur der Server
   }
+  return true;
+}
+
+/** Header für KI-Anfragen: gemerkter Zugangscode, falls vorhanden */
+export function accessHeaders(): Record<string, string> {
+  const code = loadAccessCode();
+  return code ? { [ACCESS_HEADER]: code } : {};
 }
 
 export function deviceId(): string {
@@ -139,6 +151,12 @@ function fetchStatus(): Promise<AssistantStatus> {
       return OFF;
     });
   return statusPromise;
+}
+
+/** Darf die App die KI gerade fragen? (eingerichtet und – falls verlangt – Code gemerkt) */
+export async function aiUsable(): Promise<boolean> {
+  const s = await fetchStatus();
+  return s.configured && (!s.needsCode || s.access === "ok");
 }
 
 export type LotteStatus = AssistantStatus & {
@@ -201,15 +219,13 @@ export async function askAssistant(
   currentWeekStart: string,
   tipsThisWeek = 0,
 ): Promise<AssistantReply> {
-  if (todayCount().n >= LIMITS.dailyPerDevice) throw new LotteUnavailable("limit");
   if (typeof navigator !== "undefined" && navigator.onLine === false) throw new LotteUnavailable("offline");
-  const code = loadAccessCode();
+  if (!takeAiSlot()) throw new LotteUnavailable("limit");
   let response: Response;
   try {
-    countRequest();
     response = await fetch(ASSISTANT_ENDPOINT, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...(code ? { [ACCESS_HEADER]: code } : {}) },
+      headers: { "Content-Type": "application/json", ...accessHeaders() },
       body: JSON.stringify({ deviceId: deviceId(), today, messages, pending, data: trimmed(data, currentWeekStart, loadPantry()), tipsThisWeek }),
     });
   } catch {
