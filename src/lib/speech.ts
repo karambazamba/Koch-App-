@@ -31,8 +31,9 @@ export const READ_MODES: { value: ReadMode; label: string; hint: string; short: 
 ];
 
 export const SPEECH_RATES: { value: SpeechRate; label: string; rate: number }[] = [
-  { value: "langsam", label: "Langsam", rate: 0.85 },
-  { value: "normal", label: "Normal", rate: 1 },
+  { value: "langsam", label: "Langsam", rate: 0.8 },
+  // Etwas langsamer als der Standard des Geräts – klingt ruhiger
+  { value: "normal", label: "Normal", rate: 0.95 },
   { value: "schnell", label: "Schnell", rate: 1.2 },
 ];
 
@@ -94,29 +95,27 @@ const MALE = /markus|yannick|viktor|hans|conrad|stefan|killian|florian|martin|ra
 // Spaß-/Effektstimmen (iPhone/Mac "Eloquence" & Co.) klingen sehr nach Roboter – nie automatisch nehmen
 const NOVELTY = /\b(eddy|flo|grandma|grandpa|oma|opa|reed|rocko|sandy|shelley|albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|fred|junior|kathy|ralph)\b|eloquence|novelty/i;
 
-export type VoiceQuality = "natuerlich" | "gut" | "einfach" | "effekt";
+/** "Natürlichere" Stimmen: Premium/Enhanced/Erweitert (iPhone, Mac) – auch Natural/Neural (Edge) */
+const NATURAL = /premium|enhanced|erweitert|natural|neural/i;
+
+export function isNaturalVoice(v: SpeechSynthesisVoice): boolean {
+  return NATURAL.test(`${v.name} ${v.voiceURI}`) && !NOVELTY.test(`${v.name} ${v.voiceURI}`);
+}
 
 /**
- * Wie natürlich klingt eine Stimme? Aus Name und Kennung (voiceURI):
- * Edge "Online (Natural)", iPhone/Mac "Premium"/"Erweitert", Google- und
- * Netz-Stimmen klingen deutlich besser als "compact"/"Desktop"-Stimmen.
+ * Reihenfolge der deutschen Stimmen: zuerst die natürlicheren (Premium vor
+ * Enhanced/Erweitert), danach die übrigen – Google-/Netzstimmen vor
+ * einfachen "compact"-Stimmen. Spaß-/Effektstimmen bekommen −10.
  */
 export function voiceScore(v: SpeechSynthesisVoice): number {
   const id = `${v.name} ${v.voiceURI}`;
   if (NOVELTY.test(id)) return -10;
   let score = 0;
-  if (/natural|neural|wavenet|studio/i.test(id)) score += 6;
-  else if (/premium/i.test(id)) score += 5;
-  else if (/enhanced|erweitert|verbessert/i.test(id)) score += 4;
-  else if (/google|network|online/i.test(id) || v.localService === false) score += 3;
+  if (isNaturalVoice(v)) score += /premium|natural|neural/i.test(id) ? 6 : 5;
+  else if (/google|network|online/i.test(id) || v.localService === false) score += 2;
   if (/compact|kompakt|desktop/i.test(id)) score -= 1;
   if (/de[-_]de/i.test(v.lang)) score += 1;
   return score;
-}
-
-export function voiceQuality(v: SpeechSynthesisVoice): VoiceQuality {
-  const s = voiceScore(v);
-  return s < 0 ? "effekt" : s >= 5 ? "natuerlich" : s >= 3 ? "gut" : "einfach";
 }
 
 /** Deutsche Stimmen des Geräts, natürlichste zuerst, ohne Spaß-/Effektstimmen */
@@ -304,7 +303,7 @@ function say(chunks: string[], options: { id?: string; gender?: HelperVoice; voi
   // `voice` (Probehören): genau diese Stimme, "" = automatisch
   const chosen = options.voice === undefined ? settings : { ...settings, voice: options.voice };
   const voice = chooseVoice(currentVoices(), chosen, options.gender ?? "weiblich");
-  const rate = SPEECH_RATES.find((r) => r.value === settings.rate)?.rate ?? 1;
+  const rate = SPEECH_RATES.find((r) => r.value === settings.rate)?.rate ?? 0.95;
   try {
     chunks.forEach((chunk, i) => {
       const u = new SpeechSynthesisUtterance(chunk);
