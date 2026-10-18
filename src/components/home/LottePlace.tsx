@@ -302,21 +302,6 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
         ],
       };
     }
-    // "Mal so, mal so": höchstens einmal pro Woche die nächsten 2 Tage anbieten
-    const twoDaysKey = `zwei-tage:${data.week.weekStart}`;
-    const nextTwo = [tomorrow, ...data.week.days.filter((d) => d.date === addDays(todayIso, 2))].filter(Boolean);
-    if (data.planStyle === "mix" && !wasAsked(activity, twoDaysKey) && nextTwo.some((d) => d && !d.away && !d.paused && d.weekend !== "frei" && !d.slot.entry) && allowed("wochenplanung")) {
-      return {
-        kind: "wochenplanung",
-        text: "Soll ich dir die nächsten 2 Tage vorschlagen?",
-        chips: [
-          once(twoDaysKey, "Ja, gern", () =>
-            status?.configured ? openHelper(undefined, "Schlag mir bitte Gerichte für die nächsten 2 Tage vor.") : router.push("/ideen"),
-          ),
-          once(twoDaysKey, "Nein danke"),
-        ],
-      };
-    }
     if (data.planStyle === "plan" && target.isNext && !targetPlan && allowed("wochenplanung")) {
       return {
         kind: "wochenplanung",
@@ -369,6 +354,21 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
             setDone({ text: "Steht drauf ✓ Würstchen, Grillgemüse, Grillkäse und Baguette." });
           }),
           once(grillKey, "Nein danke"),
+        ],
+      };
+    }
+    // "Mal so, mal so": höchstens einmal pro Woche die nächsten 2 Tage anbieten
+    const twoDaysKey = `zwei-tage:${data.week.weekStart}`;
+    const nextTwo = [tomorrow, ...data.week.days.filter((d) => d.date === addDays(todayIso, 2))].filter(Boolean);
+    if (data.planStyle === "mix" && !wasAsked(activity, twoDaysKey) && nextTwo.some((d) => d && !d.away && !d.paused && d.weekend !== "frei" && !d.slot.entry) && allowed("wochenplanung")) {
+      return {
+        kind: "wochenplanung",
+        text: "Soll ich dir die nächsten 2 Tage vorschlagen?",
+        chips: [
+          once(twoDaysKey, "Ja, gern", () =>
+            status?.configured ? openHelper(undefined, "Schlag mir bitte Gerichte für die nächsten 2 Tage vor.") : router.push("/ideen"),
+          ),
+          once(twoDaysKey, "Nein danke"),
         ],
       };
     }
