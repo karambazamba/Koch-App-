@@ -5,15 +5,15 @@
 
 import { createAiRecipe, type Recipe, type RecipeCategory } from "../cookbook";
 import {
-  buildWeek,
+  composeWeek,
+  entriesWithDouble,
   entriesWithMove,
   entriesWithoutSlot,
   mealPlansWithWeek,
   slotKey,
-  storedForWeek,
   type DaySlot,
+  type MealEntry,
   type PlanWeek,
-  type SlotMeal,
   type StoredEntry,
 } from "../mealPlan";
 import type { HouseholdProfile } from "../profile";
@@ -29,7 +29,8 @@ export type AssistantData = {
   shopping: Record<string, WeekList>;
 };
 
-export type SlotRef = { weekStart: string; weekday: string; meal: SlotMeal };
+/** Ein Tag einer Planungswoche – es gibt genau ein Hauptgericht pro Tag */
+export type SlotRef = { weekStart: string; weekday: string };
 
 /** Neues (KI-)Rezept – vollständig, wie es ins Kochbuch kommt */
 export type NewRecipe = {
@@ -54,37 +55,34 @@ export type WeekChanges = Partial<
 > & { wish?: WeekWish | null };
 
 export type ChangeOp =
-  | { id: string; type: "set_meal"; slot: SlotRef; dish: Dish }
+  | { id: string; type: "set_meal"; slot: SlotRef; dish: Dish; double?: boolean }
+  | { id: string; type: "set_double"; slot: SlotRef; double: boolean }
   | { id: string; type: "clear_slot"; slot: SlotRef }
   | { id: string; type: "move_meal"; from: SlotRef; to: SlotRef }
   | { id: string; type: "update_week"; weekStart: string; changes: WeekChanges }
   | { id: string; type: "add_recipe"; recipe: NewRecipe }
   | { id: string; type: "add_shopping"; weekStart: string; name: string; amount: string; section: Section };
 
-export const slotKeyOf = (slot: Pick<SlotRef, "weekday" | "meal">) => slotKey(slot.weekday, slot.meal);
+export const slotKeyOf = (slot: Pick<SlotRef, "weekday">) => slotKey(slot.weekday);
 
 /** Woche so, wie der Wochenplan sie zeigt */
 export function weekOf(data: AssistantData, weekStart: string): PlanWeek {
-  return buildWeek(
-    weekStart,
-    data.profile,
-    planForWeek(data.weekPlans, weekStart),
-    storedForWeek(data.mealPlans, weekStart),
-    data.recipes,
-  );
+  return composeWeek(weekStart, data.profile, data.weekPlans, data.mealPlans, data.recipes);
 }
 
-export function findSlot(week: PlanWeek, weekday: string, meal: SlotMeal): DaySlot | undefined {
-  return week.days.find((d) => d.weekday === weekday)?.slots.find((s) => s.meal === meal);
+/** Das Hauptgericht eines Tages (Platz) */
+export function findSlot(week: PlanWeek, weekday: string): DaySlot | undefined {
+  return week.days.find((d) => d.weekday === weekday)?.slot;
 }
 
-function storedFor(dish: Dish, refs: Record<string, string>): Exclude<StoredEntry, { kind: "cleared" }> {
-  if (dish.kind === "recipe") return dish;
+function storedFor(dish: Dish, refs: Record<string, string>, double: boolean): MealEntry {
+  const extra = double ? { double: true } : {};
+  if (dish.kind === "recipe") return { kind: "recipe", recipeId: dish.recipeId, title: dish.title, category: dish.category, ...extra };
   if (dish.kind === "new_recipe" && refs[dish.ref]) {
-    return { kind: "recipe", recipeId: refs[dish.ref], title: dish.title, category: dish.category };
+    return { kind: "recipe", recipeId: refs[dish.ref], title: dish.title, category: dish.category, ...extra };
   }
   // Rezept nicht mit übernommen → als selbst eingetragenes Gericht
-  return { kind: "text", title: dish.title, category: dish.category };
+  return { kind: "text", title: dish.title, category: dish.category, ...extra };
 }
 
 /**
@@ -117,31 +115,30 @@ export function applyOps(
         break;
       }
       case "set_meal": {
-        const entry = storedFor(op.dish, refs);
+        const entry = storedFor(op.dish, refs, op.double === true);
         next = {
           ...next,
           mealPlans: mealPlansWithWeek(next.mealPlans, op.slot.weekStart, (e) => ({ ...e, [slotKeyOf(op.slot)]: entry })),
         };
         break;
       }
+      case "set_double": {
+        const slot = findSlot(weekOf(next, op.slot.weekStart), op.slot.weekday);
+        if (!slot?.entry) break;
+        next = { ...next, mealPlans: mealPlansWithWeek(next.mealPlans, op.slot.weekStart, (e) => entriesWithDouble(e, slot, op.double)) };
+        break;
+      }
       case "clear_slot": {
-        const slot = findSlot(weekOf(next, op.slot.weekStart), op.slot.weekday, op.slot.meal);
+        const slot = findSlot(weekOf(next, op.slot.weekStart), op.slot.weekday);
         if (!slot) break;
         next = { ...next, mealPlans: mealPlansWithWeek(next.mealPlans, op.slot.weekStart, (e) => entriesWithoutSlot(e, slot)) };
         break;
       }
       case "move_meal": {
         const week = weekOf(next, op.from.weekStart);
-        const from = findSlot(week, op.from.weekday, op.from.meal);
-        // Ziel-Platz gibt es evtl. noch nicht (z. B. mittags) → leer anlegen
-        const to = findSlot(week, op.to.weekday, op.to.meal) ?? {
-          key: slotKeyOf(op.to),
-          meal: op.to.meal,
-          entry: null,
-          hint: null,
-          hasDerived: false,
-        };
-        if (!from?.entry) break;
+        const from = findSlot(week, op.from.weekday);
+        const to = findSlot(week, op.to.weekday);
+        if (!from?.entry || !to) break;
         next = { ...next, mealPlans: mealPlansWithWeek(next.mealPlans, op.from.weekStart, (e) => entriesWithMove(e, from, to)) };
         break;
       }
@@ -175,8 +172,12 @@ export function applyOps(
 }
 
 const slotOps = (op: ChangeOp): SlotRef[] =>
-  op.type === "set_meal" || op.type === "clear_slot" ? [op.slot] : op.type === "move_meal" ? [op.from, op.to] : [];
-const sameSlot = (a: SlotRef, b: SlotRef) => a.weekStart === b.weekStart && a.weekday === b.weekday && a.meal === b.meal;
+  op.type === "set_meal" || op.type === "clear_slot" || op.type === "set_double"
+    ? [op.slot]
+    : op.type === "move_meal"
+      ? [op.from, op.to]
+      : [];
+const sameSlot = (a: SlotRef, b: SlotRef) => a.weekStart === b.weekStart && a.weekday === b.weekday;
 
 /**
  * Überholte Änderungen entfernen (z. B. nach "Anpassen"): ein späteres

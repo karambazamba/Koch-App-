@@ -42,7 +42,8 @@
   maskable, apple-touch-icon, favicon.ico). In der App `AppIcon`/`AppLogo`
   (`src/components/AppLogo.tsx`): Startseite Icon 44px + Schriftzug,
   Unterseiten 32px oben rechts im `PageHeader` als Link "Zur Startseite".
-- Startseite: Logo, Gruß, Karte "Heute" (heutiges Gericht,
+- Startseite: Logo, Gruß, Karte "Heute" (Hauptgericht groß, darunter klein die
+  zweite Mahlzeit: "Reste von …" oder Link "Schnelle Idee? → Was ist noch da?";
   `src/components/home/TodayCard.tsx`), Wochen-Check-Karte, Bereiche als
   `ListRow`-Liste, Haushalts-Zeile.
 
@@ -76,7 +77,12 @@
   danach "Nächste Woche planen" bzw. "Nächste Woche steht ✓".
 - Startseite: Kachel "Was ist noch da?" (Route bleibt `/schnellkueche`).
   Untertitel von Wochenplan, Einkaufsliste und Kochbuch sind dynamisch.
-- Wunschtag: in der Standardwoche einstellbar (Tag, Mahlzeit, Mindestalter).
+- Es wird genau EIN Hauptgericht pro Tag geplant. Profil `warmMeal`
+  ("Wann esst ihr meistens zusammen warm?", Profil v6): mittags oder abends,
+  getrennt für Mo–Fr und Sa–So – bestimmt nur Anzeige und Personenzahl
+  (`mainMealTime`, `mainMealHeadcount`: mittags unter der Woche nur, wer dann
+  zu Hause ist), nicht die Anzahl der Plätze.
+- Wunschtag: in der Standardwoche einstellbar (Tag, Mindestalter).
   Teilnahme ab Mindestalter, ohne Alter Schul-/Kitakinder ja, Kleinkinder nein.
   Reihum in `wishDay.order`; wer dran ist, ergibt sich aus der letzten
   gespeicherten Woche mit Wunsch. Der Wunschtag belegt einen Kochtag und zählt
@@ -87,9 +93,14 @@
   Feste Gerichte im Wochen-Check zählen in ihre Kategorie (Zähler kann nicht
   darunter sinken); ein Cheat-Day-Rezept setzt den Cheat Day auf diesen Tag.
 - Wochenplan (`/wochenplan`, `src/lib/mealPlan.ts`): aktuelle und nächste
-  Woche. `buildWeek()` setzt Plätze laut Profil (warme Mahlzeit), feste
-  Gerichte, Wunsch, Ausflugstage und Cheat Day aus dem Wochen-Check zusammen
-  und verteilt Kategorie-Hinweise auf freie Tage. Gespeichert werden nur
+  Woche, je Tag ein Platz "Hauptgericht" (Speicher v3, Schlüssel = Wochentag;
+  Notiz am Tag unter "Tag:notiz" – dorthin hat die Migration das frühere
+  zweite Gericht gelegt). `buildWeek()`/`composeWeek()` setzen feste Gerichte,
+  Wunsch, Ausflugstage und Cheat Day aus dem Wochen-Check zusammen und
+  verteilen Kategorie-Hinweise auf freie Tage. "Doppelt kochen – Reste für
+  morgen" (`double` am Eintrag) verdoppelt die Mengen in der Einkaufsliste und
+  zeigt am Folgetag "Zweite Mahlzeit: Reste von …" (auch über die Wochengrenze,
+  `composeWeek`). Gespeichert werden nur
   eigene Einträge und Überschreibungen ("cleared") – der Wochen-Check bleibt
   unverändert. Die Kachel "Wochenplan" führt hierher, nicht zum Wochen-Check.
   Die Kategorie eines Eintrags kommt immer vom Gericht (Rezept bzw. beim
@@ -100,7 +111,12 @@
   Mengen je Einheitenfamilie g/kg, ml/l addiert, Abteilung per Stichwort).
   Gespeichert pro Woche nur eigene Artikel, Häkchen und "Haben wir schon"
   (Schlüssel Zutat + Einheit). Standard-Woche und Kachel-Zähler: die Woche,
-  für die gerade eingekauft wird (`planningWeekStart`).
+  für die gerade eingekauft wird (`planningWeekStart`). "Immer da"-Basics
+  (Brot, Aufschnitt, Joghurt, Obst …, Speicher v3 `basics`, null =
+  Standardliste) kommen jede Woche automatisch dazu, frei bearbeitbar und
+  einzeln abschaltbar.
+- Migrationen: `createLocalStore` schreibt einen migrierten Stand einmalig
+  zurück, wenn sich die Version geändert hat.
 - "Was ist noch da?" (`/schnellkueche`, `src/lib/pantry.ts`): Vorrat unter
   `wasgibts.vorrat` mit Datum. Spracheingabe (Web Speech API, de-DE) oder Text.
   Zerlegen über die austauschbare Schnittstelle `parseLeftovers()` in
@@ -119,7 +135,8 @@
   bei offener Tastatur ausgeblendet), Panel mit Chat, Mikrofon
   (`useSpeechInput`, Fallback Tastatur-Diktat) und optionalem Vorlesen.
   Die App schickt einen Daten-Schnappschuss mit; der Server führt die
-  Claude-Tool-Schleife aus (`engine.ts`, Werkzeuge in `tools.ts`, Modell
+  Claude-Tool-Schleife aus (`engine.ts`, Werkzeuge in `tools.ts` – je Tag ein
+  Hauptgericht, inkl. "doppelt kochen", Modell
   `KUECHENHELFER_MODEL`, Standard `claude-sonnet-5-5`). Schreib-Werkzeuge ändern
   nichts, sie liefern `ChangeOp`s (`ops.ts`). Vorschau (`preview.ts`) und
   Übernehmen rechnen mit denselben reinen Funktionen (`applyOps`); Übernehmen

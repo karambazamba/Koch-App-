@@ -16,7 +16,7 @@ export const ENGINE_LIMITS = { maxTokens: 8000, maxRounds: 8 };
 
 export class AssistantInputError extends Error {}
 
-const OP_TYPES = new Set(["set_meal", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping"]);
+const OP_TYPES = new Set(["set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping"]);
 
 /** Anfrage prüfen und auf das Nötige kürzen */
 export function parseRequest(body: unknown): AssistantRequest {
@@ -61,11 +61,13 @@ function pendingSummary(ops: ChangeOp[]): string {
   const lines = ops.map((op) => {
     switch (op.type) {
       case "set_meal":
-        return `${op.slot.weekday} ${op.slot.meal}: ${op.dish.title}`;
+        return `${op.slot.weekday}: ${op.dish.title}${op.double ? " (doppelt)" : ""}`;
+      case "set_double":
+        return `${op.slot.weekday}: ${op.double ? "doppelt kochen" : "nicht doppelt"}`;
       case "clear_slot":
-        return `${op.slot.weekday} ${op.slot.meal}: leeren`;
+        return `${op.slot.weekday}: leeren`;
       case "move_meal":
-        return `${op.from.weekday} ${op.from.meal} → ${op.to.weekday} ${op.to.meal}`;
+        return `${op.from.weekday} → ${op.to.weekday}`;
       case "update_week":
         return `Vorgaben: ${JSON.stringify(op.changes)}`;
       case "add_recipe":

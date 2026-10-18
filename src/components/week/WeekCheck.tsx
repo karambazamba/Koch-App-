@@ -10,7 +10,6 @@ import { WeekRulesEditor, tooManyDays } from "@/components/profile/editors";
 import { CARD, INPUT_BASE, buttonClass, tileClass } from "@/components/ui/styles";
 import { FixedMealsSection } from "@/components/week/FixedMealsSection";
 import {
-  WISH_MEAL_LABELS,
   createEmptyProfile,
   personLabel,
   wishDayKids,
@@ -89,13 +88,13 @@ function initialWish(
   weeks: Record<string, WeekPlan>,
 ): WeekPlan["wish"] {
   if (!profile?.wishDay.enabled) return null;
-  const { weekday, meal } = profile.wishDay;
+  const { weekday } = profile.wishDay;
   const kids = wishDayKids(profile);
   if (plan.wish && kids.some((k) => k.id === plan.wish!.kidId)) {
-    return { ...plan.wish, weekday, meal };
+    return { ...plan.wish, weekday };
   }
   const kidId = wishKidForWeek(profile, weeks, plan.weekStart);
-  return kidId ? { kidId, text: "", weekday, meal } : null;
+  return kidId ? { kidId, text: "", weekday } : null;
 }
 
 function WeekCheckForm({
@@ -215,7 +214,7 @@ function WeekCheckForm({
               </h3>
               <p className="text-sm text-muted">
                 <span className="whitespace-nowrap">
-                  {plan.wish.weekday} {WISH_MEAL_LABELS[plan.wish.meal]}
+                  {plan.wish.weekday}
                 </span>
                 {" · "}zählt nicht bei Fleisch/Veggie/Fisch
               </p>

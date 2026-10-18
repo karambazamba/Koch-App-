@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { BookOpen, Moon, Plus, Sun, X } from "lucide-react";
-import { ChoiceGroup } from "@/components/form/ChoiceGroup";
+import { BookOpen, Plus, X } from "lucide-react";
 import { CategoryDot } from "@/components/ui/Category";
 import { CARD, INPUT_BASE, LABEL, buttonClass, tileClass } from "@/components/ui/styles";
 import {
@@ -13,7 +12,6 @@ import {
   useRecipes,
   type Recipe,
 } from "@/lib/cookbook";
-import { WISH_MEAL_LABELS, type WishMeal } from "@/lib/profile";
 import {
   CATEGORY_COUNT_KEY,
   fixedMealCounts,
@@ -29,20 +27,14 @@ function newId(): string {
 }
 
 /**
- * Festes Gericht eintragen: ersetzt ein vorhandenes am selben Tag und zur
- * selben Mahlzeit, zählt in seine Kategorie (Zähler wird bei Bedarf erhöht)
- * und setzt bei einem Cheat-Day-Rezept den Cheat Day auf diesen Tag.
+ * Festes Gericht eintragen: ersetzt ein vorhandenes am selben Tag (ein
+ * Hauptgericht pro Tag), zählt in seine Kategorie (Zähler wird bei Bedarf
+ * erhöht) und setzt bei einem Cheat-Day-Rezept den Cheat Day auf diesen Tag.
  */
 export function addFixedMeal(plan: WeekPlan, meal: FixedMeal): WeekPlan {
-  const fixedMeals = [
-    ...plan.fixedMeals.filter((m) => !(m.weekday === meal.weekday && m.meal === meal.meal)),
-    meal,
-  ].sort(
-    (a, b) =>
-      // Reihenfolge der Planungswoche (ab Einkaufstag)
-      weekDayNames(plan.weekStart).indexOf(a.weekday) -
-        weekDayNames(plan.weekStart).indexOf(b.weekday) ||
-      (a.meal === b.meal ? 0 : a.meal === "mittags" ? -1 : 1),
+  const fixedMeals = [...plan.fixedMeals.filter((m) => m.weekday !== meal.weekday), meal].sort(
+    // Reihenfolge der Planungswoche (ab Einkaufstag)
+    (a, b) => weekDayNames(plan.weekStart).indexOf(a.weekday) - weekDayNames(plan.weekStart).indexOf(b.weekday),
   );
   const next: WeekPlan = { ...plan, fixedMeals };
   const counts = fixedMealCounts(next);
@@ -66,12 +58,11 @@ export function FixedMealsSection({
   const recipes = useRecipes();
   const [adding, setAdding] = useState(false);
   const [weekday, setWeekday] = useState("");
-  const [meal, setMeal] = useState<WishMeal>("abends");
   const [recipeId, setRecipeId] = useState("");
 
   const list = recipes ? sortRecipes(Object.values(recipes), "beliebt") : [];
   const wishSlot =
-    plan.wish && wishIsActive(plan) && weekday === plan.wish.weekday && meal === plan.wish.meal;
+    plan.wish && wishIsActive(plan) && weekday === plan.wish.weekday;
   const canAdd = Boolean(weekday && recipeId && recipes?.[recipeId] && !wishSlot);
 
   const add = () => {
@@ -81,7 +72,6 @@ export function FixedMealsSection({
       addFixedMeal(p, {
         id: newId(),
         weekday,
-        meal,
         recipeId: recipe.id,
         title: recipe.title,
         category: recipe.category,
@@ -116,7 +106,7 @@ export function FixedMealsSection({
                 <span className="block truncate text-base font-bold">{m.title}</span>
                 <span className="block text-sm text-muted">
                   <span className="whitespace-nowrap">
-                    {m.weekday} {WISH_MEAL_LABELS[m.meal]}
+                    {m.weekday}
                   </span>
                   {" · "}
                   {categoryInfo(m.category).label}
@@ -174,17 +164,6 @@ export function FixedMealsSection({
               })}
             </div>
           </fieldset>
-          <ChoiceGroup<WishMeal>
-            label="Mahlzeit"
-            value={meal}
-            onChange={setMeal}
-            columns={2}
-            options={[
-              { value: "mittags", label: "Mittag", icon: Sun },
-              { value: "abends", label: "Abend", icon: Moon },
-            ]}
-            variant="plain"
-          />
           <label className="flex flex-col gap-2">
             <span className={LABEL}>Rezept</span>
             <select

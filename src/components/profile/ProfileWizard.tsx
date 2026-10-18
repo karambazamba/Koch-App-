@@ -59,7 +59,7 @@ const STEPS: { title: string; icon: LucideIcon; perPerson?: boolean }[] = [
   { title: "Wie heißen alle?", icon: PenLine },
   { title: "Allergien & Abneigungen", icon: Wheat, perPerson: true },
   { title: "Lieblingsgerichte", icon: Heart },
-  { title: "Warme Mahlzeit", icon: UtensilsCrossed },
+  { title: "Zusammen warm essen", icon: UtensilsCrossed },
   { title: "Mittagessen unter der Woche", icon: Clock, perPerson: true },
   { title: "Standardwoche", icon: CalendarRange },
 ];

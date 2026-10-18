@@ -9,7 +9,7 @@ import { WEEKDAYS } from "../profile";
 import type { CreateMessage } from "./engine";
 
 type ToolUse = { name: string; input: Record<string, unknown>; id?: string };
-type WeekResult = { tage: { tag: string; ausflug?: boolean; plaetze: { mahlzeit: string; gericht: string | null }[] }[] };
+type WeekResult = { tage: { tag: string; ausflug?: boolean; gericht?: string | null }[] };
 type CookbookResult = { rezepte: { rezept_id: string; titel: string }[] };
 
 const DAY_RE = new RegExp(`\\b(${WEEKDAYS.join("|")})\\b`, "gi");
@@ -102,6 +102,7 @@ function plan(intent: string, system: string) {
     wish: wish ? { kind: wish[1], tag: cap(wish[2]), gericht: wish[3].trim() } : null,
     restVeggie: /\b(der |den )?rest\b/i.test(intent) && /veg/i.test(intent),
     clear: /(leer|lösch|streich)/i.test(intent) ? daysIn(intent) : [],
+    double: /(doppelt|reste für morgen)/i.test(intent) ? daysIn(intent) : [],
     swap: /(tausch|verschieb)/i.test(intent) ? daysIn(intent) : [],
     shopping:
       intent.match(/(?:setz|pack|schreib)\w*\s+(.+?)\s+auf die einkaufsliste/i)?.[1] ??
@@ -146,7 +147,8 @@ export function createMockModel(): CreateMessage {
           `Gern! Welche deiner Rezepte soll es am ${intent.myDays.join(" und am ")} geben?${choice ? ` Zur Auswahl hast du zum Beispiel: ${choice}.` : " Im Kochbuch ist noch nichts – sag mir einfach die Gerichte."}`,
         );
       }
-      const actionable = intent.myDays.length || intent.wish || intent.restVeggie || intent.clear.length || intent.swap.length >= 2 || intent.shopping;
+      const actionable =
+        intent.myDays.length || intent.wish || intent.restVeggie || intent.clear.length || intent.double.length || intent.swap.length >= 2 || intent.shopping;
       if (!actionable) {
         return text("Ich bin der Küchenhelfer (Testmodus). Sag zum Beispiel: „Donnerstag und Freitag gibt es meine Rezepte, Mattis wünscht sich Sonntag Milchreis, der Rest vegetarische KI-Rezepte.“");
       }
@@ -161,10 +163,10 @@ export function createMockModel(): CreateMessage {
       const week = parse<WeekResult>(resultFor("woche_lesen"));
       const book = parse<CookbookResult>(resultFor("kochbuch_durchsuchen"));
       if (!week) return text("Ich konnte die Woche gerade nicht lesen.");
+      // Der Tag mit seinem einen Hauptgericht (null bei Ausflug)
       const main = (tag: string) => {
         const d = week.tage.find((x) => x.tag === tag);
-        if (!d || d.ausflug || d.plaetze.length === 0) return null;
-        return d.plaetze.find((p) => p.mahlzeit === "abends") ?? d.plaetze[0];
+        return !d || d.ausflug ? null : { gericht: d.gericht ?? null };
       };
       const uses: ToolUse[] = [];
       const taken = new Set<string>();
@@ -174,26 +176,28 @@ export function createMockModel(): CreateMessage {
         const recipe = book?.rezepte.find((r) => r.titel === title);
         const slot = main(tag);
         if (!recipe || !slot) return;
-        uses.push({ name: "gericht_setzen", input: { woche: intent.week, tag, mahlzeit: slot.mahlzeit, rezept_id: recipe.rezept_id } });
+        uses.push({ name: "gericht_setzen", input: { woche: intent.week, tag, rezept_id: recipe.rezept_id } });
         taken.add(tag);
       });
       if (intent.wish) {
-        const slot = main(intent.wish.tag);
         uses.push({
           name: "vorgaben_aendern",
-          input: { woche: intent.week, wunsch: { kind: intent.wish.kind, gericht: intent.wish.gericht, tag: intent.wish.tag, mahlzeit: slot?.mahlzeit ?? "abends" } },
+          input: { woche: intent.week, wunsch: { kind: intent.wish.kind, gericht: intent.wish.gericht, tag: intent.wish.tag } },
         });
         taken.add(intent.wish.tag);
       }
       for (const tag of intent.clear) {
         const slot = main(tag);
-        if (slot?.gericht) uses.push({ name: "platz_leeren", input: { woche: intent.week, tag, mahlzeit: slot.mahlzeit } });
+        if (slot?.gericht) uses.push({ name: "platz_leeren", input: { woche: intent.week, tag } });
+      }
+      for (const tag of intent.double) {
+        if (main(tag)?.gericht) uses.push({ name: "doppelt_kochen", input: { woche: intent.week, tag, an: true } });
       }
       if (intent.swap.length >= 2) {
         const [a, b] = intent.swap;
         const from = main(a);
         const to = main(b);
-        if (from && to) uses.push({ name: "gericht_verschieben", input: { woche: intent.week, von_tag: a, von_mahlzeit: from.mahlzeit, nach_tag: b, nach_mahlzeit: to.mahlzeit } });
+        if (from && to) uses.push({ name: "gericht_verschieben", input: { woche: intent.week, von_tag: a, nach_tag: b } });
       }
       if (intent.shopping) {
         const artikel = intent.shopping.split(/,|\bund\b/).map((s) => s.trim()).filter(Boolean).map((name) => ({ name }));
@@ -207,7 +211,7 @@ export function createMockModel(): CreateMessage {
           if (!slot || slot.gericht || taken.has(d.tag)) continue;
           const r = VEGGIE[n++ % VEGGIE.length];
           uses.push({
-            id: `mock_rezept_${d.tag}_${slot.mahlzeit}_${n}`,
+            id: `mock_rezept_${d.tag}_${n}`,
             name: "rezept_erstellen",
             input: {
               titel: r.titel,
@@ -229,8 +233,8 @@ export function createMockModel(): CreateMessage {
     if (created.length > 0) {
       const uses: ToolUse[] = created.flatMap((u) => {
         const ref = String(results.find((r) => r.tool_use_id === u.id)?.content ?? "").match(/ref: (\S+)/)?.[1];
-        const [, , tag, mahlzeit] = u.id.split("_");
-        return ref ? [{ name: "gericht_setzen", input: { woche: intent.week, tag, mahlzeit, neues_rezept: ref } }] : [];
+        const [, , tag] = u.id.split("_");
+        return ref ? [{ name: "gericht_setzen", input: { woche: intent.week, tag, neues_rezept: ref } }] : [];
       });
       if (uses.length) return tools(uses);
     }

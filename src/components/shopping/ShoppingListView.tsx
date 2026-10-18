@@ -33,6 +33,7 @@ import {
   type Section,
 } from "@/lib/shoppingList";
 import { useWeekShoppingList, type WeekChoice } from "@/lib/useWeekShoppingList";
+import { BasicsSection } from "./BasicsSection";
 import { formatWeekRange } from "@/lib/weekPlan";
 
 const SKELETON = <div className={`${CARD} m-4 h-64 animate-pulse`} />;
@@ -219,6 +220,8 @@ export function ShoppingListView() {
         )}
 
         <AddItemForm weekStart={weekStart} />
+
+        <BasicsSection />
       </main>
     </div>
   );
@@ -248,6 +251,7 @@ function ItemRow({ item, weekStart }: { item: ListItem; weekStart: string }) {
           <span className="block text-xs text-muted">für {item.dishes.join(", ")}</span>
         )}
         {item.manualId && <span className="block text-xs text-muted">selbst hinzugefügt</span>}
+        {item.basic && <span className="block text-xs text-muted">immer da</span>}
       </span>
       {item.manualId ? (
         <button
