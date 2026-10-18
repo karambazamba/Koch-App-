@@ -4,6 +4,7 @@
 
 import { useSyncExternalStore } from "react";
 import { formatAmount, type Recipe } from "./cookbook";
+import { findFood, foodName } from "./leftovers/foods";
 import { createLocalStore } from "./localStore";
 
 export type PantryItem = {
@@ -17,106 +18,27 @@ export type PantryItem = {
   addedAt: string;
 };
 
-export const PANTRY_UNITS = ["", "g", "kg", "ml", "l", "EL", "TL", "Stück", "Prise", "Dose", "Bund", "Packung", "Becher", "Glas", "Scheibe"];
+export const PANTRY_UNITS = [
+  "", "g", "kg", "Pfund", "ml", "l", "EL", "TL", "Stück", "Prise", "Dose", "Bund", "Packung", "Becher",
+  "Glas", "Scheibe", "Flasche", "Tüte", "Zehe", "Kopf", "Netz", "Schale",
+];
 
-// --- Gesagtes/Getipptes zerlegen ----------------------------------------------
+// Gesagtes/Getipptes zerlegen: src/lib/leftovers/parser.ts (austauschbar, später KI)
 
-const NUMBER_WORDS: Record<string, number> = {
-  ein: 1, eine: 1, einen: 1, einem: 1, einer: 1, eins: 1,
-  zwei: 2, drei: 3, vier: 4, fünf: 5, sechs: 6, sieben: 7, acht: 8, neun: 9, zehn: 10,
-  elf: 11, zwölf: 12, halb: 0.5, halbe: 0.5, halben: 0.5, halber: 0.5,
-  anderthalb: 1.5, eineinhalb: 1.5,
-};
+const FRACTIONS: Record<number, string> = { 0.25: "¼", 0.5: "½", 0.75: "¾" };
 
-/** Gesprochene/geschriebene Einheit → Einheit im Vorrat */
-const UNIT_WORDS: Record<string, string> = {
-  g: "g", gr: "g", gramm: "g",
-  kg: "kg", kilo: "kg", kilogramm: "kg",
-  ml: "ml", milliliter: "ml",
-  l: "l", liter: "l",
-  el: "EL", esslöffel: "EL", tl: "TL", teelöffel: "TL",
-  stück: "Stück", stk: "Stück",
-  prise: "Prise", prisen: "Prise",
-  dose: "Dose", dosen: "Dose",
-  bund: "Bund",
-  packung: "Packung", packungen: "Packung", päckchen: "Packung", pck: "Packung",
-  becher: "Becher", glas: "Glas", gläser: "Glas",
-  scheibe: "Scheibe", scheiben: "Scheibe",
-};
-
-function capitalize(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1);
+/** Menge mit Bruch-Zeichen: 0,5 → "½", 1,5 → "1½", sonst wie im Kochbuch */
+export function formatPantryAmount(amount: number | null): string {
+  if (amount === null) return "";
+  const whole = Math.floor(amount);
+  const fraction = FRACTIONS[Math.round((amount - whole) * 100) / 100];
+  if (fraction) return `${whole > 0 ? whole : ""}${fraction}`;
+  return formatAmount(amount);
 }
 
-const isAmountWord = (word: string) =>
-  /^\d+([.,]\d+)?[a-zä]*$/i.test(word) || word.toLowerCase() in NUMBER_WORDS;
-const isHalf = (word: string) => /^halbe?[nr]?$/i.test(word);
-
-/**
- * Teile ohne Trenner (typisch bei Spracheingabe: "zwei Karotten eine
- * Aubergine") vor jedem Zahlwort mitten im Satz aufteilen.
- */
-function splitAtAmounts(part: string): string[] {
-  const chunks: string[][] = [[]];
-  for (const word of part.split(/\s+/).filter(Boolean)) {
-    const current = chunks[chunks.length - 1];
-    const hasName = current.some((w) => !isAmountWord(w) && !isHalf(w) && !(w.toLowerCase() in UNIT_WORDS));
-    if (hasName && isAmountWord(word) && !isHalf(word)) chunks.push([word]);
-    else current.push(word);
-  }
-  return chunks.map((c) => c.join(" ")).filter(Boolean);
-}
-
-function parsePart(part: string): Omit<PantryItem, "id" | "addedAt"> {
-  const words = part.split(/\s+/);
-  let amount: number | null = null;
-  const first = words[0].toLowerCase();
-  if (/^\d+([.,]\d+)?$/.test(first)) {
-    amount = Number(first.replace(",", "."));
-    words.shift();
-  } else if (/^\d+([.,]\d+)?[a-zä]+$/i.test(first)) {
-    // "200g Hack"
-    const [, num, unitWord] = first.match(/^(\d+(?:[.,]\d+)?)([a-zä]+)$/i)!;
-    amount = Number(num.replace(",", "."));
-    words[0] = unitWord;
-  } else if (first in NUMBER_WORDS && words.length > 1) {
-    amount = NUMBER_WORDS[first];
-    words.shift();
-  }
-  // "eine halbe Zucchini" → 0,5
-  if (amount !== null && words.length > 1 && isHalf(words[0])) {
-    amount = amount * 0.5;
-    words.shift();
-  }
-  let unit = "";
-  const maybeUnit = words[0]?.toLowerCase().replace(/\.$/, "");
-  if (words.length > 1 && maybeUnit && maybeUnit in UNIT_WORDS) {
-    unit = UNIT_WORDS[maybeUnit];
-    words.shift();
-  }
-  // Füllwörter wie "noch", "etwas" am Anfang weglassen
-  while (words.length > 1 && /^(noch|etwas|bisschen|paar|ein|eine)$/i.test(words[0])) words.shift();
-  return { name: capitalize(words.join(" ")), amount, unit };
-}
-
-/**
- * "zwei Karotten, eine Aubergine, 200 Gramm Bacon und Joghurt" →
- * [{2, "", Karotten}, {1, "", Aubergine}, {200, "g", Bacon}, {null, "", Joghurt}]
- */
-export function parseIngredientText(text: string): Omit<PantryItem, "id" | "addedAt">[] {
-  return text
-    // Komma zwischen Ziffern ist ein Dezimalkomma ("1,5 Liter"), kein Trenner
-    .split(/(?<!\d),|,(?!\d)|;|\n|\bund\b|\bsowie\b/i)
-    .map((part) => part.trim().replace(/[.!?]+$/, ""))
-    .filter(Boolean)
-    .flatMap(splitAtAmounts)
-    .map(parsePart)
-    .filter((item) => item.name);
-}
-
-/** "2 Karotten", "200 g Bacon", "Joghurt" */
+/** "2 Karotten", "½ Brot", "200 g Bacon", "Joghurt" */
 export function formatPantryItem(item: Pick<PantryItem, "name" | "amount" | "unit">): string {
-  return [formatAmount(item.amount), item.unit, item.name].filter(Boolean).join(" ");
+  return [formatPantryAmount(item.amount), item.unit, item.name].filter(Boolean).join(" ");
 }
 
 // --- Abgleich mit dem Kochbuch ------------------------------------------------
@@ -221,23 +143,33 @@ function newId(): string {
   return Math.random().toString(36).slice(2);
 }
 
-/** Neue Zutaten hinzufügen; gleiche Zutat (gleicher Name und Einheit) wird zusammengezählt. */
+/** Vergleichsschlüssel: gleiches Lebensmittel in Einzahl/Mehrzahl ("Karotte" = "Karotten") */
+function sameItemKey(name: string): string {
+  const food = findFood(name)?.food;
+  return food ? food.singular.toLowerCase() : name.trim().toLowerCase();
+}
+
+/**
+ * Neue Zutaten hinzufügen; gleiche Zutat (gleiches Lebensmittel und Einheit)
+ * wird zusammengezählt – 2 Karotten + 1 Karotte = 3 Karotten.
+ */
 export function addPantryItems(items: Omit<PantryItem, "id" | "addedAt">[], addedAt: string) {
   update((current) => {
-    const next = [...current];
+    const next = current.map((p) => ({ ...p }));
     for (const item of items) {
-      const same = next.find(
-        (p) => p.name.toLowerCase() === item.name.toLowerCase() && p.unit === item.unit,
-      );
-      if (same) {
-        same.amount =
-          same.amount === null && item.amount === null ? null : (same.amount ?? 0) + (item.amount ?? 0);
-        same.addedAt = addedAt;
-      } else {
+      const same = next.find((p) => sameItemKey(p.name) === sameItemKey(item.name) && p.unit === item.unit);
+      if (!same) {
         next.push({ ...item, id: newId(), addedAt });
+        continue;
       }
+      same.amount =
+        same.amount === null && item.amount === null ? null : (same.amount ?? 0) + (item.amount ?? 0);
+      same.addedAt = addedAt;
+      // Form zur neuen Menge: "3 Karotten" statt "3 Karotte"
+      const match = findFood(same.name);
+      if (match) same.name = foodName(match.food, same.amount, same.unit, match.form);
     }
-    return next.map((p) => ({ ...p }));
+    return next;
   });
 }
 
