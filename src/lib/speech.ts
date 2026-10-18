@@ -91,19 +91,44 @@ const isGerman = (v: SpeechSynthesisVoice) => v.lang.replace("_", "-").toLowerCa
 // Die Web Speech API kennt kein Geschlecht – daher über den Namen.
 const FEMALE = /anna|petra|helena|katja|marlene|vicki|hedda|amala|seraphina|louisa|tanja|elke|gisela|ingrid|klara|maja|frauke|sabine|female|weiblich|google deutsch/i;
 const MALE = /markus|yannick|viktor|hans|conrad|stefan|killian|florian|martin|ralf|bernd|kasper|klaus|\bmale\b|männlich|maennlich/i;
-const QUALITY = /premium|enhanced|erweitert|natural|neural|online/i;
+// Spaß-/Effektstimmen (iPhone/Mac "Eloquence" & Co.) klingen sehr nach Roboter – nie automatisch nehmen
+const NOVELTY = /\b(eddy|flo|grandma|grandpa|oma|opa|reed|rocko|sandy|shelley|albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|fred|junior|kathy|ralph)\b|eloquence|novelty/i;
 
-/** Bessere Stimmen zuerst: hohe Qualität, dann de-DE vor de-AT/de-CH */
-function quality(v: SpeechSynthesisVoice): number {
-  return (QUALITY.test(v.name) ? 2 : 0) + (/de[-_]de/i.test(v.lang) ? 1 : 0);
+export type VoiceQuality = "natuerlich" | "gut" | "einfach" | "effekt";
+
+/**
+ * Wie natürlich klingt eine Stimme? Aus Name und Kennung (voiceURI):
+ * Edge "Online (Natural)", iPhone/Mac "Premium"/"Erweitert", Google- und
+ * Netz-Stimmen klingen deutlich besser als "compact"/"Desktop"-Stimmen.
+ */
+export function voiceScore(v: SpeechSynthesisVoice): number {
+  const id = `${v.name} ${v.voiceURI}`;
+  if (NOVELTY.test(id)) return -10;
+  let score = 0;
+  if (/natural|neural|wavenet|studio/i.test(id)) score += 6;
+  else if (/premium/i.test(id)) score += 5;
+  else if (/enhanced|erweitert|verbessert/i.test(id)) score += 4;
+  else if (/google|network|online/i.test(id) || v.localService === false) score += 3;
+  if (/compact|kompakt|desktop/i.test(id)) score -= 1;
+  if (/de[-_]de/i.test(v.lang)) score += 1;
+  return score;
 }
 
-/** Deutsche Stimmen des Geräts, beste zuerst */
+export function voiceQuality(v: SpeechSynthesisVoice): VoiceQuality {
+  const s = voiceScore(v);
+  return s < 0 ? "effekt" : s >= 5 ? "natuerlich" : s >= 3 ? "gut" : "einfach";
+}
+
+/** Deutsche Stimmen des Geräts, natürlichste zuerst, ohne Spaß-/Effektstimmen */
 export function germanVoices(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice[] {
-  return voices.filter(isGerman).sort((a, b) => quality(b) - quality(a));
+  return voices.filter((v) => isGerman(v) && voiceScore(v) >= 0).sort((a, b) => voiceScore(b) - voiceScore(a));
 }
 
-/** Passende deutsche Stimme für "weiblich"/"männlich", sonst die beste deutsche, sonst keine (Standard) */
+/**
+ * Passende deutsche Stimme für "weiblich"/"männlich": die natürlichste mit
+ * passendem Namen, sonst die natürlichste ohne erkennbar anderes Geschlecht,
+ * sonst die beste deutsche, sonst keine (Standard des Geräts).
+ */
 export function pickVoice(voices: SpeechSynthesisVoice[], voice: HelperVoice): SpeechSynthesisVoice | null {
   const german = germanVoices(voices);
   const wanted = voice === "maennlich" ? MALE : FEMALE;
@@ -174,13 +199,20 @@ export function cleanForSpeech(text: string): string {
     .replace(/[*_`#>~|]+/g, " ")
     .replace(/\s*[→⇒]\s*/g, ", ")
     .replace(/\s+[·–—]\s+/g, ", ")
-    .replace(/[„“”"«»]/g, "");
+    .replace(/[„“”"«»]/g, "")
+    // Klammern, Schrägstriche und Auslassungen klingen vorgelesen holprig
+    .replace(/\s*\(([^)]*)\)/g, ", $1,")
+    .replace(/(\d+)\s*\/\s*(\d+)/g, "$1 von $2")
+    .replace(/([A-Za-zÄÖÜäöüß])\s*\/\s*(?=[A-Za-zÄÖÜäöüß])/g, "$1 oder ")
+    .replace(/…|\.{3}/g, ".")
+    .replace(/\bMo\s*[–-]\s*Fr\b/g, "Montag bis Freitag")
+    .replace(/\bSa\s*[–-]\s*So\b/g, "Samstag und Sonntag");
   // Uhrzeiten: "07:30" → "7 Uhr 30", "18:00" → "18 Uhr"
   t = t.replace(/\b([01]?\d|2[0-3]):([0-5]\d)\b/g, (_, h: string, m: string) => `${Number(h)} Uhr${m === "00" ? "" : ` ${Number(m)}`}`);
   for (const [re, to] of UNITS) t = t.replace(re, to);
   return t
     .replace(/\s+([,.!?])/g, "$1")
-    .replace(/([,.!?])(?:\s*,)+/g, "$1")
+    .replace(/([,.!?:])(?:\s*,)+/g, "$1")
     .replace(/^[\s,]+/, "")
     .replace(/\s{2,}/g, " ")
     .trim();
