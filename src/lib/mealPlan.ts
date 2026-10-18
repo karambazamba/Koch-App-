@@ -6,7 +6,7 @@
 // überschreibt sie nur hier ("cleared" bzw. eigener Eintrag) – die Vorgaben
 // im Wochen-Check bleiben unverändert.
 
-import { useSyncExternalStore } from "react";
+import { useExternalStore } from "./useExternalStore";
 import type { Recipe, RecipeCategory } from "./cookbook";
 import { guessDishCategory } from "./dishCategory";
 import { createLocalStore } from "./localStore";
@@ -285,17 +285,47 @@ function migrateStore(raw: unknown): MealPlanStore | null {
 
 const store = createLocalStore(STORAGE_KEY, migrateStore);
 
+/** Wie `updateWeek`, aber rein: neue Wochen-Map zurückgeben */
+export function mealPlansWithWeek(
+  weeks: Record<string, Record<string, StoredEntry>>,
+  weekStart: string,
+  change: (entries: Record<string, StoredEntry>) => Record<string, StoredEntry>,
+): Record<string, Record<string, StoredEntry>> {
+  // Neue Woche (z. B. nach Wechsel des Einkaufstags) übernimmt die überlappenden Einträge.
+  return { ...weeks, [weekStart]: change({ ...storedForWeek(weeks, weekStart) }) };
+}
+
 function updateWeek(
   weekStart: string,
   change: (entries: Record<string, StoredEntry>) => Record<string, StoredEntry>,
 ) {
   const current = store.load() ?? { version: 2 as const, weeks: {} };
-  // Neue Woche (z. B. nach Wechsel des Einkaufstags) übernimmt die überlappenden Einträge.
-  const base = storedForWeek(current.weeks, weekStart);
-  store.save({
-    ...current,
-    weeks: { ...current.weeks, [weekStart]: change({ ...base }) },
-  });
+  store.save({ ...current, weeks: mealPlansWithWeek(current.weeks, weekStart, change) });
+}
+
+// Reine Änderungen an den Einträgen einer Woche – genutzt vom Wochenplan und
+// vom Küchenhelfer (Vorschau und Übernehmen), damit beide gleich rechnen.
+
+/** Platz leeren; Einträge aus dem Wochen-Check werden dafür überschrieben. */
+export function entriesWithoutSlot(entries: Record<string, StoredEntry>, slot: DaySlot): Record<string, StoredEntry> {
+  const next = { ...entries };
+  if (slot.hasDerived) next[slot.key] = { kind: "cleared" };
+  else delete next[slot.key];
+  return next;
+}
+
+/** Eintrag auf einen anderen Platz verschieben; ist der belegt, wird getauscht. */
+export function entriesWithMove(
+  entries: Record<string, StoredEntry>,
+  from: DaySlot,
+  to: DaySlot,
+): Record<string, StoredEntry> {
+  if (!from.entry || from.key === to.key) return entries;
+  const next = { ...entries, [to.key]: from.entry.stored };
+  if (to.entry) next[from.key] = to.entry.stored;
+  else if (from.hasDerived) next[from.key] = { kind: "cleared" };
+  else delete next[from.key];
+  return next;
 }
 
 /** Eintrag auf einen Platz setzen (neu oder tauschen) */
@@ -305,30 +335,24 @@ export function setEntry(weekStart: string, key: string, entry: Exclude<StoredEn
 
 /** Platz leeren; Einträge aus dem Wochen-Check werden dafür überschrieben. */
 export function clearSlot(weekStart: string, slot: DaySlot) {
-  updateWeek(weekStart, (entries) => {
-    if (slot.hasDerived) entries[slot.key] = { kind: "cleared" };
-    else delete entries[slot.key];
-    return entries;
-  });
+  updateWeek(weekStart, (entries) => entriesWithoutSlot(entries, slot));
 }
 
 /** Eintrag auf einen anderen Platz verschieben; ist der belegt, wird getauscht. */
 export function moveEntry(weekStart: string, from: DaySlot, to: DaySlot) {
-  if (!from.entry || from.key === to.key) return;
-  updateWeek(weekStart, (entries) => {
-    entries[to.key] = from.entry!.stored;
-    if (to.entry) entries[from.key] = to.entry.stored;
-    else if (from.hasDerived) entries[from.key] = { kind: "cleared" };
-    else delete entries[from.key];
-    return entries;
-  });
+  updateWeek(weekStart, (entries) => entriesWithMove(entries, from, to));
+}
+
+/** Alle Wochen auf einmal ersetzen (Küchenhelfer: Übernehmen/Rückgängig) */
+export function replaceMealPlans(weeks: Record<string, Record<string, StoredEntry>>) {
+  store.save({ version: 2, weeks });
 }
 
 const EMPTY: Record<string, StoredEntry> = {};
 
 /** Gespeicherte Einträge aller Wochen (`undefined` = noch nicht geladen) */
 export function useMealPlans(): Record<string, Record<string, StoredEntry>> | undefined {
-  const data = useSyncExternalStore(store.subscribe, store.load, () => undefined);
+  const data = useExternalStore(store.subscribe, store.load, () => undefined);
   if (data === undefined) return undefined;
   return data?.weeks ?? EMPTY_WEEKS;
 }

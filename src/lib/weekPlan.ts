@@ -2,7 +2,7 @@
 // Standardwoche des Profils, pro Woche anpassbar. Gespeichert lokal wie das
 // Profil – versioniert, mit Migration, später auf Supabase umstellbar.
 
-import { useSyncExternalStore } from "react";
+import { useExternalStore } from "./useExternalStore";
 import { createLocalStore } from "./localStore";
 import type { RecipeCategory } from "./cookbook";
 import {
@@ -155,7 +155,7 @@ const noop = () => () => {};
  * `undefined`, damit kein falsches Datum ins HTML gebacken wird).
  */
 export function useToday(): Date | undefined {
-  const iso = useSyncExternalStore(
+  const iso = useExternalStore(
     noop,
     () => toIsoDate(new Date()),
     () => undefined,
@@ -312,6 +312,11 @@ export function saveWeekPlan(plan: WeekPlan): void {
   });
 }
 
+/** Alle Wochen-Vorgaben auf einmal ersetzen (Küchenhelfer: Übernehmen/Rückgängig) */
+export function replaceWeekPlans(weeks: Record<string, WeekPlan>): void {
+  store.save({ version: 3, weeks });
+}
+
 /** Vorgaben für `weekStart` (auch aus einer überlappenden älteren Woche), sonst null */
 export function planForWeek(weeks: Record<string, WeekPlan>, weekStart: string): WeekPlan | null {
   const key = resolveWeekKey(Object.keys(weeks), weekStart);
@@ -320,7 +325,7 @@ export function planForWeek(weeks: Record<string, WeekPlan>, weekStart: string):
 
 /** Alle gespeicherten Wochen (`undefined` = noch nicht geladen) */
 export function useWeekPlans(): Record<string, WeekPlan> | undefined {
-  const data = useSyncExternalStore(store.subscribe, store.load, () => undefined);
+  const data = useExternalStore(store.subscribe, store.load, () => undefined);
   if (data === undefined) return undefined;
   return data?.weeks ?? EMPTY_WEEKS;
 }
@@ -332,7 +337,7 @@ const EMPTY_WEEKS: Record<string, WeekPlan> = {};
  * `undefined` = noch nicht geladen, `null` = keine Vorgaben.
  */
 export function useWeekPlan(weekStart: string | undefined): WeekPlan | null | undefined {
-  const data = useSyncExternalStore(store.subscribe, store.load, () => undefined);
+  const data = useExternalStore(store.subscribe, store.load, () => undefined);
   if (data === undefined || !weekStart) return undefined;
   return data ? planForWeek(data.weeks, weekStart) : null;
 }

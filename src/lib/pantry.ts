@@ -2,7 +2,7 @@
 // Datum, damit Wochenplan und später die KI sie nutzen können. Gespeichert
 // lokal über localStore wie alles andere (später Supabase).
 
-import { useSyncExternalStore } from "react";
+import { useExternalStore } from "./useExternalStore";
 import { formatAmount, type Recipe } from "./cookbook";
 import { findFood, foodName } from "./leftovers/foods";
 import { createLocalStore } from "./localStore";
@@ -187,7 +187,7 @@ export function clearPantry() {
 
 /** Vorrat (`undefined` = noch nicht geladen) */
 export function usePantry(): PantryItem[] | undefined {
-  const data = useSyncExternalStore(store.subscribe, store.load, () => undefined);
+  const data = useExternalStore(store.subscribe, store.load, () => undefined);
   if (data === undefined) return undefined;
   return data?.items ?? EMPTY;
 }

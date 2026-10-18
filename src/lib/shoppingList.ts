@@ -6,7 +6,7 @@
 // schon"; Häkchen hängen an einem festen Schlüssel (Zutat + Einheit), damit
 // sie Änderungen am Plan überstehen. Speicherung lokal über localStore.
 
-import { useSyncExternalStore } from "react";
+import { useExternalStore } from "./useExternalStore";
 import type { Recipe } from "./cookbook";
 import { createLocalStore } from "./localStore";
 import type { PlanWeek } from "./mealPlan";
@@ -229,13 +229,18 @@ export function addManualItem(weekStart: string, item: Omit<ManualItem, "id" | "
   updateList(weekStart, (l) => ({ ...l, manual: [...l.manual, { ...item, id, done: false }] }));
 }
 
+/** Alle Listen auf einmal ersetzen (Küchenhelfer: Übernehmen/Rückgängig) */
+export function replaceShoppingLists(weeks: Record<string, WeekList>) {
+  store.save({ version: 2, weeks });
+}
+
 export function removeManualItem(weekStart: string, id: string) {
   updateList(weekStart, (l) => ({ ...l, manual: l.manual.filter((m) => m.id !== id) }));
 }
 
 /** Gespeicherte Listen aller Wochen (`undefined` = noch nicht geladen) */
 export function useShoppingLists(): Record<string, WeekList> | undefined {
-  const data = useSyncExternalStore(store.subscribe, store.load, () => undefined);
+  const data = useExternalStore(store.subscribe, store.load, () => undefined);
   if (data === undefined) return undefined;
   return data?.weeks ?? EMPTY_WEEKS;
 }

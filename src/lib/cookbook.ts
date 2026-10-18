@@ -5,7 +5,7 @@
 // saveAiRecipe() direkt (als Favorit, Herkunft "ki") ins Kochbuch übernommen
 // werden – dieselbe Struktur wie eigene Rezepte, plus optionale `ai`-Angaben.
 
-import { useSyncExternalStore } from "react";
+import { useExternalStore } from "./useExternalStore";
 import { createLocalStore } from "./localStore";
 
 export type RecipeCategory = "fleisch" | "vegetarisch" | "fisch" | "cheatday";
@@ -216,14 +216,22 @@ export function saveRecipe(recipe: Recipe): Recipe {
  * Herkunft "ki" gespeichert.
  */
 export function saveAiRecipe(draft: RecipeDraft, prompt?: string): Recipe {
-  return saveRecipe(
-    createRecipe({
-      ...draft,
-      source: "ki",
-      favorite: true,
-      ai: { generatedAt: new Date().toISOString(), prompt },
-    }),
-  );
+  return saveRecipe(createAiRecipe(draft, prompt));
+}
+
+/** Alle Rezepte auf einmal ersetzen (Küchenhelfer: Übernehmen/Rückgängig) */
+export function replaceRecipes(recipes: Record<string, Recipe>) {
+  store.save({ version: 1, recipes });
+}
+
+/** KI-Rezept ohne Speichern anlegen (wie `saveAiRecipe`), z. B. für eine Vorschau */
+export function createAiRecipe(draft: RecipeDraft, prompt?: string): Recipe {
+  return createRecipe({
+    ...draft,
+    source: "ki",
+    favorite: true,
+    ai: { generatedAt: new Date().toISOString(), prompt },
+  });
 }
 
 export function deleteRecipe(id: string) {
@@ -260,7 +268,7 @@ const EMPTY: Record<string, Recipe> = {};
 
 /** Alle Rezepte (`undefined` = noch nicht geladen) */
 export function useRecipes(): Record<string, Recipe> | undefined {
-  const data = useSyncExternalStore(store.subscribe, store.load, () => undefined);
+  const data = useExternalStore(store.subscribe, store.load, () => undefined);
   if (data === undefined) return undefined;
   return data?.recipes ?? EMPTY;
 }

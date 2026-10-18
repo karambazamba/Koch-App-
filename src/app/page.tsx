@@ -4,7 +4,7 @@ import { FamilyGreeting, HouseholdRow, WelcomeCard } from "@/components/Househol
 import { TodayCard, WeekSubtitle } from "@/components/home/TodayCard";
 import { CookbookSubtitle, ShoppingSubtitle } from "@/components/home/TileSubtitles";
 import { ListRow } from "@/components/ui/ListRow";
-import { CARD_LIST } from "@/components/ui/styles";
+import { CARD_LIST, FAB_CLEARANCE } from "@/components/ui/styles";
 import { NextWeekCard } from "@/components/week/NextWeekCard";
 
 // Untertitel sind teils dynamisch (Client-Komponenten), daher als Element.
@@ -17,7 +17,7 @@ const AREAS = [
 
 export default function Home() {
   return (
-    <main className="safe-bottom mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 px-4 pb-8 pt-[calc(env(safe-area-inset-top)+1.5rem)]">
+    <main className={`mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 px-4 ${FAB_CLEARANCE} pt-[calc(env(safe-area-inset-top)+1.5rem)]`}>
       <header className="mb-2 flex flex-col gap-1.5">
         {/* Icon + Schriftzug als gemeinsames Logo */}
         <h1>
