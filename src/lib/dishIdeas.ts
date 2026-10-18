@@ -141,7 +141,7 @@ export function usesLine(uses: string[], needs: string[], max = 3): string {
 export function isCookIdeasRequest(text: string): boolean {
   const t = text.trim().toLowerCase();
   if (/\b(mit|aus)\b/.test(t)) return false;
-  return /^(was|wat)\s+(kann|könnte|soll|sollen|können|mach|mache|machen)\s+(ich|wir|man)\s+(denn\s+)?(heute|jetzt|heut|gleich|später|zu mittag|zu abend|zum abendessen)?\s*(noch\s+)?(kochen|essen|machen)\b|^was\s+koch(e)?\s+(ich|wir)\b|^hast du\s+(eine\s+|ne\s+)?idee\b.*(essen|kochen|abend|mittag)|^was\s+essen\s+wir\b/.test(t);
+  return /^(was|wat)\s+(kann|könnte|soll|sollen|können|mach|mache|machen)\s+(ich|wir|man)\s+(denn\s+)?(heute|jetzt|heut|gleich|später|zu mittag|zu abend|zum abendessen)?\s*(noch\s+)?(kochen|essen|machen)\b|^was\s+koch(e)?\s+(ich|wir)\b|^hast du\s+(eine\s+|ne\s+)?idee\b.*(essen|kochen|abend|mittag)|^was\s+essen\s+wir\b|^was\s+gibt['’]?s\s+(denn\s+)?(heute|jetzt|gleich)\b/.test(t);
 }
 
 /** "Was mach ich mit Hack und Paprika?" → ["Hack", "Paprika"] (sonst null) */

@@ -547,7 +547,16 @@ Bei ALLEN Änderungen beachten.
   Topf-Gesicht (`HelperAvatar`); Anrede `helperTitle()`: "deine
   Küchenhelferin" bei weiblicher, "dein Küchenhelfer" bei männlicher Stimme.
   Panel-Kopf: Avatar, Name, `helperTitle()`; erste Nachricht
-  "Hi, ich bin <Name> – was steht an?". Mitteilungen im Namen des
+  "Hi, ich bin <Name> – was steht an?". Darunter keine Beispiel-Blasen,
+  sondern über dem Eingabefeld klein "Zum Beispiel:" mit höchstens 3 Chips
+  mit Rahmen (waagerecht scrollbar, `chatSuggestions()` in
+  `src/lib/chatSuggestions.ts`): vor dem Essen "Was gibt's heute?", danach
+  "Was machen wir morgen?" (ohne KI "Was ist noch da?"), Wunsch mit einer
+  zufälligen Person aus dem Profil (allein "Ich wünsche mir …"), gelegentlich
+  Vorrat ("Was mach ich mit Blumenkohl?") oder Einkauf. Antippen = eigene
+  Nachricht; weg nach der ersten eigenen Nachricht (auch Mikrofon) und in
+  diesem Chat nicht wieder; nach 10 eigenen Nachrichten nie mehr
+  (`wasgibts.chatnutzung`). Mitteilungen im Namen des
   Küchenhelfers (auch künftige Push) immer über `helperMessage()` →
   "<Name>: …". Die KI bekommt Name, Familie und Ton aus dem Leitbild
   (`identityPrompt()`).
