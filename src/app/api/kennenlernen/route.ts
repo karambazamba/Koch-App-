@@ -1,9 +1,12 @@
 // Kennenlernen: freie Antwort → feste Struktur per Claude (wenn eingerichtet).
-// Ohne Schlüssel antwortet die Route mit 503 – die App erkennt dann selbst
-// (Regeln). Im Mock liefert sie das Regel-Ergebnis.
+// Es gelten dieselben Regeln wie für Lotte (`guard.ts`): KI nur mit Schlüssel
+// UND Zugangscode, gemeinsames Tageslimit pro Gerät. Sonst 503/401/429 – die
+// App erkennt dann selbst (Regeln). Im Mock liefert sie das Regel-Ergebnis.
 
 import Anthropic from "@anthropic-ai/sdk";
 import { aiRecognize, parseRecognizeRequest, ruleRecognize } from "@/lib/onboarding/ai";
+import { aiSetup, checkAccess, clientIp, takeDailySlot } from "@/lib/assistant/guard";
+import type { AssistantErrorCode } from "@/lib/assistant/protocol";
 import { allowRequest } from "@/lib/assistant/rateLimit";
 
 export const maxDuration = 30;
@@ -11,37 +14,40 @@ export const maxDuration = 30;
 /** Schnelles Modell fürs Herauslesen, per Umgebungsvariable änderbar */
 const MODEL = process.env.KENNENLERNEN_MODEL || "claude-haiku-5-5";
 
-const error = (message: string, code: number) => Response.json({ error: message }, { status: code });
+const fail = (code: AssistantErrorCode, status: number) => Response.json({ error: code }, { status });
 
 export async function POST(request: Request) {
-  const mock = process.env.KUECHENHELFER_MOCK === "1";
-  if (!mock && !process.env.ANTHROPIC_API_KEY) return error("Die KI ist noch nicht eingerichtet.", 503);
+  const { configured, mock } = aiSetup();
+  if (!configured) return fail("aus", 503);
+  const denied = checkAccess(request);
+  if (denied) return fail(denied, denied === "limit" ? 429 : 401);
 
   const raw = await request.text();
-  if (raw.length > 4000) return error("Die Anfrage ist zu groß.", 413);
+  if (raw.length > 4000) return fail("fehler", 413);
   let body: unknown;
   try {
     body = JSON.parse(raw);
   } catch {
-    return error("Die Anfrage war ungültig.", 400);
+    return fail("fehler", 400);
   }
   const req = parseRecognizeRequest(body);
   const device = (body as { deviceId?: unknown }).deviceId;
-  if (!req || typeof device !== "string" || !/^[\w-]{8,64}$/.test(device)) return error("Die Anfrage war ungültig.", 400);
+  if (!req || typeof device !== "string" || !/^[\w-]{8,64}$/.test(device)) return fail("fehler", 400);
 
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unbekannt";
-  // Kennenlernen braucht viele kurze Anfragen → eigener, großzügigerer Zähler
-  if (!allowRequest(`kennenlernen:${device}`, 3) || !allowRequest(`kennenlernen-ip:${ip}`, 9)) {
-    return error("Kurze Pause bitte.", 429);
+  // Kennenlernen braucht viele kurze Anfragen → eigener, großzügigerer Kurzzeit-Zähler
+  if (!mock && (!allowRequest(`kennenlernen:${device}`, 3) || !allowRequest(`kennenlernen-ip:${clientIp(request)}`, 9))) {
+    return fail("limit", 429);
   }
+  // Gemeinsames Tageslimit mit Lotte
+  if (!takeDailySlot(request, device)) return fail("limit", 429);
 
   if (mock) return Response.json(ruleRecognize(req));
   try {
     const client = new Anthropic({ maxRetries: 1, timeout: 20_000 });
     return Response.json(await aiRecognize(req, (params) => client.messages.create(params), MODEL));
   } catch (e) {
-    if (e instanceof Anthropic.APIError) console.error("Kennenlernen API-Fehler", e.status, e.message);
-    else console.error("Kennenlernen Fehler", e);
-    return error("Die KI hat gerade ein Problem.", 502);
+    // Ins Log nur Art und Status – nie Schlüssel oder Inhalte
+    console.error("Kennenlernen: KI-Fehler", e instanceof Anthropic.APIError ? (e.status ?? "ohne Status") : e instanceof Error ? e.name : typeof e);
+    return fail(e instanceof Anthropic.RateLimitError ? "limit" : "fehler", 502);
   }
 }

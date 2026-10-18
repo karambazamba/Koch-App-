@@ -465,11 +465,14 @@ Bei ALLEN Änderungen beachten.
   "Rückgängig" (10 s) stellt alles wieder her. Einzelne Änderungen abwählbar;
   "Ändern" schickt den offenen Vorschlag mit (`pending`). Neue KI-Rezepte
   prüfen Allergien/"mag nicht" strikt (`diet.ts`).
-  Schutz: Die KI ist nur an, wenn `ANTHROPIC_API_KEY` UND `APP_ACCESS_CODE`
-  gesetzt sind. Die App fragt den Zugangscode einmal im Panel
+  Schutz (`src/lib/assistant/guard.ts`, gilt für ALLE KI-Aufrufe – Lotte und
+  `/api/kennenlernen`; neue KI-Routen immer darüber): Die KI ist nur an, wenn
+  `ANTHROPIC_API_KEY` UND `APP_ACCESS_CODE` gesetzt sind. Die App fragt den Zugangscode einmal im Panel
   (`AccessCodeCard`, gemerkt unter `wasgibts.zugangscode`, Header
   `x-lotte-code`, Vergleich in konstanter Zeit, falsche Versuche begrenzt);
-  Tageslimit 100 Anfragen pro Gerät (Server und App). Reihenfolge im Chat:
+  gemeinsames Tageslimit 100 KI-Anfragen pro Gerät für alle Aufrufe (Server
+  `takeDailySlot`, App `takeAiSlot`). Ohne Code nutzt auch das Kennenlernen nur
+  die Regeln. Reihenfolge im Chat:
   Navigation, Pause, Produkte, Einstellungen, Supermarkt, Backen, "Wir
   lieben …" lokal; alles andere an die KI. Ist sie nicht da (offline, aus,
   Limit, Code, kein Guthaben), greifen die Regeln (Einkaufsliste inkl. "Wir

@@ -1,12 +1,15 @@
 // Einfaches Rate-Limit pro Gerät (und IP) im Speicher der Server-Instanz.
 // Auf Vercel hat jede Instanz ihren eigenen Zähler – als Schutz gegen
-// Dauerfeuer reicht das; für harte Grenzen später einen gemeinsamen Speicher.
+// Dauerfeuer reicht das; die App zählt das Tageslimit zusätzlich selbst.
 
+import { LIMITS } from "./protocol";
+
+/** Kurzfristige Grenzen je Aufruf-Art (gegen Dauerfeuer) */
 const WINDOWS = [
   { ms: 60_000, max: 10 }, // pro Minute
   { ms: 60 * 60_000, max: 60 }, // pro Stunde
-  { ms: 24 * 60 * 60_000, max: 100 }, // pro Tag (LIMITS.dailyPerDevice)
 ];
+const DAY = 24 * 60 * 60_000;
 
 const hits = new Map<string, number[]>();
 
@@ -25,6 +28,20 @@ export function allowRequest(key: string, factor = 1, now = Date.now()): boolean
     for (const [k, v] of hits) if (v.every((t) => now - t >= longest)) hits.delete(k);
   }
   return !blocked;
+}
+
+/** Gemeinsames Tageslimit aller KI-Aufrufe (LIMITS.dailyPerDevice); true = erlaubt und gezählt */
+const daily = new Map<string, number[]>();
+
+export function allowDaily(key: string, factor = 1, now = Date.now()): boolean {
+  const list = (daily.get(key) ?? []).filter((t) => now - t < DAY);
+  const ok = list.length < LIMITS.dailyPerDevice * factor;
+  if (ok) list.push(now);
+  daily.set(key, list);
+  if (daily.size > 5000) {
+    for (const [k, v] of daily) if (v.every((t) => now - t >= DAY)) daily.delete(k);
+  }
+  return ok;
 }
 
 /** Falsche Zugangscodes: höchstens 10 Versuche pro Stunde und Adresse */

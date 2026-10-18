@@ -4,54 +4,24 @@
 // nie in die App. Ohne Schlüssel oder ohne Zugangscode (APP_ACCESS_CODE) ist
 // die KI aus – die App arbeitet dann mit ihren Regeln weiter.
 
-import { createHash, timingSafeEqual } from "node:crypto";
 import Anthropic from "@anthropic-ai/sdk";
 import { connection } from "next/server";
 import { AssistantInputError, parseRequest, runAssistant, type CreateMessage } from "@/lib/assistant/engine";
+import { aiSetup, checkAccess, clientIp, takeDailySlot } from "@/lib/assistant/guard";
 import { createMockModel } from "@/lib/assistant/mock";
 import { ACCESS_HEADER, LIMITS, type AssistantErrorCode, type AssistantStatus } from "@/lib/assistant/protocol";
-import { allowRequest, codeAttemptsLeft, noteWrongCode } from "@/lib/assistant/rateLimit";
+import { allowRequest } from "@/lib/assistant/rateLimit";
 
 export const maxDuration = 60;
 
 /** Standard: das aktuelle Haiku-Modell (schnell, günstig), per Umgebungsvariable änderbar */
 const MODEL = process.env.LOTTE_MODEL || process.env.KUECHENHELFER_MODEL || "claude-haiku-5-5";
 
-const digest = (s: string) => createHash("sha256").update(s).digest();
-
-/** Zugangscode in konstanter Zeit vergleichen */
-function codeMatches(given: string | null): boolean {
-  const expected = process.env.APP_ACCESS_CODE?.trim();
-  if (!expected || !given) return false;
-  return timingSafeEqual(digest(given.trim()), digest(expected));
-}
-
-function setup() {
-  const mock = process.env.KUECHENHELFER_MOCK === "1";
-  const needsCode = Boolean(process.env.APP_ACCESS_CODE?.trim());
-  // Echte KI nur mit Schlüssel UND Zugangscode – sonst könnte jeder sie nutzen
-  const configured = mock || (Boolean(process.env.ANTHROPIC_API_KEY) && needsCode);
-  return { mock, needsCode, configured };
-}
-
-const clientIp = (request: Request) => request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unbekannt";
-
-/** Prüft den mitgeschickten Code; null = in Ordnung */
-function checkAccess(request: Request): AssistantErrorCode | null {
-  const { needsCode } = setup();
-  if (!needsCode) return null;
-  const ip = clientIp(request);
-  if (!codeAttemptsLeft(ip)) return "limit";
-  if (codeMatches(request.headers.get(ACCESS_HEADER))) return null;
-  noteWrongCode(ip);
-  return "zugangscode";
-}
-
 const fail = (code: AssistantErrorCode, status: number) => Response.json({ error: code }, { status });
 
 export async function GET(request: Request) {
   await connection(); // zur Laufzeit prüfen, nicht beim Bauen
-  const { mock, needsCode, configured } = setup();
+  const { mock, needsCode, configured } = aiSetup();
   const status: AssistantStatus = { configured, mock, needsCode };
   if (configured && needsCode && request.headers.has(ACCESS_HEADER)) {
     status.access = checkAccess(request) === null ? "ok" : "falsch";
@@ -60,7 +30,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { configured, mock } = setup();
+  const { configured, mock } = aiSetup();
   if (!configured) return fail("aus", 503);
   const denied = checkAccess(request);
   if (denied) return fail(denied, denied === "limit" ? 429 : 401);
@@ -76,7 +46,8 @@ export async function POST(request: Request) {
   }
 
   // Testmodus kostet nichts – dort keine Mengengrenzen
-  if (!mock && (!allowRequest(`gerät:${req.deviceId}`) || !allowRequest(`ip:${clientIp(request)}`, 3))) return fail("limit", 429);
+  if (!mock && (!allowRequest(`lotte:${req.deviceId}`) || !allowRequest(`lotte-ip:${clientIp(request)}`, 3))) return fail("limit", 429);
+  if (!takeDailySlot(request, req.deviceId)) return fail("limit", 429);
 
   let create: CreateMessage;
   if (mock) {
