@@ -9,6 +9,7 @@ import { parseLeftovers, type ParsedLeftover } from "@/lib/leftovers/parser";
 import { addPantryItems, formatPantryItem, usePantry } from "@/lib/pantry";
 import { effectivePlanStyle, hasKids, helperName, helperTitle, mealClockFor, saveProfile } from "@/lib/profile";
 import { addWish, parseWish, removeWish, wishLabel } from "@/lib/wishes";
+import { settingsChange } from "@/lib/settingsChat";
 import { isPlanUnlockRequest, unlockPlanning, type UnlockChoice } from "@/lib/planUnlock";
 import { finalizeProfile, startAddPerson, type OnboardingState } from "@/lib/onboarding/engine";
 import { noteUserAction } from "@/lib/activity";
@@ -545,6 +546,30 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                   })),
               },
             ],
+          },
+        ],
+      }));
+      return;
+    }
+    // Einstellungen per Gespräch ("Jonne isst jetzt vegetarisch", "Mach die Ansicht dunkel")
+    const setting = settingsChange(t, data.profile);
+    if (setting) {
+      setInput("");
+      const before = data.profile;
+      saveProfile(setting.profile);
+      setChat((c) => ({
+        ...c,
+        turns: [
+          ...c.turns,
+          { role: "user", text: t, local: true },
+          {
+            role: "assistant",
+            local: true,
+            text: setting.reply,
+            undo: () => {
+              saveProfile(before);
+              setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig gemacht – alles wie vorher.", local: true }] }));
+            },
           },
         ],
       }));

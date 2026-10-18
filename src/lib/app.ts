@@ -5,4 +5,4 @@ export const APP_NAME = "Was gibt's?";
 export const APP_SHORT_NAME = "Was gibt's";
 
 /** Versionsnummer (wie in package.json) – in den Einstellungen unter "Daten & App" */
-export const APP_VERSION = "0.3.0";
+export const APP_VERSION = "0.4.0";
