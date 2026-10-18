@@ -57,7 +57,7 @@ dauerhafte HTTPS-Adresse.
 | `src/app/einkaufsliste` | Einkaufsliste aus dem Wochenplan (`src/lib/shoppingList.ts`) |
 | `src/app/manifest.ts` | Web-App-Manifest |
 | `public/sw.js` | Service Worker (Offline-Cache) |
-| `public/icons/` | App-Icons (Platzhalter, Quelle: `icon.svg`) |
+| `public/icons/` | App-Icons, erzeugt mit `npm run icons` (`scripts/generate-icons.mjs`) |
 | `src/app/wochenplan/` | Wochenplan: Gerichte pro Tag und Mahlzeit (diese/nächste Woche) |
 | `src/lib/mealPlan.ts` | Datenmodell Wochenplan, `buildWeek()` |
 | `src/app/woche/check/` | Wochen-Check: Vorgaben für eine Woche (Standard: ab nächstem Montag, `?woche=`) |
@@ -66,3 +66,31 @@ dauerhafte HTTPS-Adresse.
 | `src/lib/profile.ts` | Datenmodell Haushaltsprofil |
 | `src/lib/weekPlan.ts` | Datenmodell Wochen-Vorgaben (pro Woche, Schlüssel = Montag) |
 | `src/lib/localStore.ts` | Lokale Speicherung (localStorage) – später hier auf Supabase umstellen |
+| `src/app/api/kuechenhelfer/` | Küchenhelfer-API (Claude, serverseitig) |
+| `src/lib/assistant/` | Küchenhelfer: Änderungen (`ops.ts`), Werkzeuge, Prompt, Mock, Vorschau |
+| `src/components/assistant/` | Küchenhelfer-Knopf, Panel, Vorschau |
+
+## Küchenhelfer (KI) einrichten
+
+Der Küchenhelfer (runder Knopf unten rechts) plant per Sprache oder Text mit
+Claude. Die KI ändert nichts direkt: Sie schlägt Änderungen vor, die App zeigt
+eine Vorschau (pro Tag vorher → nachher), erst „Übernehmen“ speichert – mit
+„Rückgängig“ für 10 Sekunden.
+
+Umgebungsvariablen (in Vercel unter *Settings → Environment Variables*):
+
+| Variable | Bedeutung |
+| --- | --- |
+| `ANTHROPIC_API_KEY` | API-Schlüssel von Anthropic. Ohne ihn zeigt der Küchenhelfer „KI noch nicht eingerichtet“. |
+| `KUECHENHELFER_MODEL` | Optional, Standard `claude-sonnet-5-5`. |
+| `KUECHENHELFER_MOCK` | `1` = Testmodus mit Beispielantworten (ohne Schlüssel, ohne Kosten). |
+
+Lokal testen ohne Schlüssel:
+
+```bash
+npm run build
+KUECHENHELFER_MOCK=1 npm start
+```
+
+Grenzen: höchstens 6 Fragen pro Minute, 40 pro Stunde und 150 pro Tag je Gerät
+(pro IP das Dreifache), `max_tokens` 8000 je Antwort, höchstens 8 Werkzeug-Runden.

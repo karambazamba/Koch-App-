@@ -135,3 +135,42 @@ export function focusNextInChain(current: HTMLElement) {
   if (next) next.focus();
   else current.blur();
 }
+
+/**
+ * Nur melden, ob gerade ein Textfeld fokussiert ist (ohne Scroll-Hilfen) –
+ * z. B. um schwebende Knöpfe über der Tastatur auszublenden.
+ */
+export function useTextFieldFocused(): boolean {
+  const [focused, setFocused] = useState(false);
+  useEffect(() => {
+    const update = () => setTimeout(() => setFocused(isTextField(document.activeElement)), 0);
+    document.addEventListener("focusin", update);
+    document.addEventListener("focusout", update);
+    return () => {
+      document.removeEventListener("focusin", update);
+      document.removeEventListener("focusout", update);
+    };
+  }, []);
+  return focused;
+}
+
+/**
+ * Wie weit die Bildschirmtastatur unten in die Seite ragt (iOS verkleinert
+ * nur den sichtbaren Bereich, fixierte Elemente unten würden verdeckt).
+ */
+export function useKeyboardInset(): number {
+  const [inset, setInset] = useState(0);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => setInset(Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)));
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
+  return inset;
+}

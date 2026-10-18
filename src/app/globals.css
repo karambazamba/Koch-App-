@@ -47,6 +47,16 @@ body {
   }
 }
 
+/* Restzeit-Balken (z. B. "Rückgängig" beim Küchenhelfer) */
+@keyframes shrink {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
 /* Platz für die Home-Leiste bei installierter App auf dem iPhone */
 .safe-bottom {
   padding-bottom: max(1rem, env(safe-area-inset-bottom));

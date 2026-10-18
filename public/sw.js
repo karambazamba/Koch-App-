@@ -1,7 +1,7 @@
 // Service Worker von "Was gibt's?": macht die App offline nutzbar.
 // Seiten: erst Netz, bei Ausfall aus dem Cache. Statische Dateien: erst Cache.
 // CACHE_VERSION erhöhen, wenn sich die Liste der vorab gecachten Seiten ändert.
-const CACHE_VERSION = "v12";
+const CACHE_VERSION = "v13";
 // Interner Name (alter Arbeitsname) bleibt, damit alte Caches sauber aufgeräumt werden.
 const CACHE_NAME = `familienkueche-${CACHE_VERSION}`;
 
@@ -87,6 +87,8 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+  // API (Küchenhelfer) nie aus dem Cache beantworten
+  if (url.pathname.startsWith("/api/")) return;
 
   // Gehashte Build-Dateien ändern sich nie → Cache zuerst.
   if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/")) {

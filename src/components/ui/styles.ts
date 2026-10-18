@@ -90,5 +90,11 @@ export const NOTE = "flex items-start gap-2 rounded-xl bg-stone-100 px-4 py-3 te
 export const WARNING =
   "flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700";
 
-/** Inhaltsbereich einer Unterseite: 16px Rand, 16px Abstand zwischen Karten */
-export const PAGE_MAIN = "safe-bottom flex flex-1 flex-col gap-4 px-4 pb-8 pt-2";
+/** Unterer Abstand: Home-Leiste (Safe-Area) plus Platz für den Küchenhelfer-Knopf */
+export const FAB_CLEARANCE = "pb-[calc(max(1rem,env(safe-area-inset-bottom))+5.5rem)]";
+
+/**
+ * Inhaltsbereich einer Unterseite: 16px Rand, 16px Abstand zwischen Karten,
+ * unten Platz für den schwebenden Küchenhelfer-Knopf
+ */
+export const PAGE_MAIN = `flex flex-1 flex-col gap-4 px-4 pt-2 ${FAB_CLEARANCE}`;

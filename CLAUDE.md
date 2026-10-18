@@ -22,7 +22,8 @@
 - Bausteine in `src/components/ui`: `CARD`/`CARD_LIST`/`<Card>`,
   `buttonClass()`/`<Button>` (primary, secondary, soft, ghost, danger; sm/md/lg),
   `ICON_BUTTON`, `chipClass()`, `tileClass()`, `INPUT`, `LABEL`,
-  `SECTION_TITLE`, `SUBTLE`, `NOTE`, `WARNING`, `PAGE_MAIN`, `INPUT_BASE`, `<ListRow>` (Icon links, Titel +
+  `SECTION_TITLE`, `SUBTLE`, `NOTE`, `WARNING`, `PAGE_MAIN` (unten Platz für den
+  Küchenhelfer-Knopf, `FAB_CLEARANCE`), `INPUT_BASE`, `<ListRow>` (Icon links, Titel +
   Untertitel, Pfeil rechts), `<IconBadge>`, `<CategoryChip>`/`<CategoryDot>`.
   Neue Seiten nur daraus bauen; fehlt etwas, dort ergänzen.
 - Nur EINE Akzentfarbe (Orange) für Buttons, aktive Zustände und Logo. Karten
@@ -113,3 +114,19 @@
   Kochbuch über `matchRecipes()` (Synonyme, Grundzutaten wie Salz fehlen nie).
   Personenzahl vorausgefüllt (vor 15 Uhr werktags Mittagsrunde, sonst alle).
   KI-Ideen-Button ist vorerst deaktiviert ("kommt bald").
+- Küchenhelfer (KI, `src/lib/assistant/`, API `/api/kuechenhelfer`): schwebender
+  Knopf auf allen Seiten (`KitchenHelper` im Layout, über `StickyActions`,
+  bei offener Tastatur ausgeblendet), Panel mit Chat, Mikrofon
+  (`useSpeechInput`, Fallback Tastatur-Diktat) und optionalem Vorlesen.
+  Die App schickt einen Daten-Schnappschuss mit; der Server führt die
+  Claude-Tool-Schleife aus (`engine.ts`, Werkzeuge in `tools.ts`, Modell
+  `KUECHENHELFER_MODEL`, Standard `claude-sonnet-5-5`). Schreib-Werkzeuge ändern
+  nichts, sie liefern `ChangeOp`s (`ops.ts`). Vorschau (`preview.ts`) und
+  Übernehmen rechnen mit denselben reinen Funktionen (`applyOps`); Übernehmen
+  ersetzt die Speicherstände, "Rückgängig" (10 s) stellt sie wieder her.
+  Einzelne Änderungen abwählbar; "Anpassen" schickt den offenen Vorschlag mit
+  (`pending`). Neue KI-Rezepte prüfen Allergien/"mag nicht" strikt (`diet.ts`).
+  Ohne `ANTHROPIC_API_KEY`: Hinweis "KI noch nicht eingerichtet";
+  `KUECHENHELFER_MOCK=1` = Testmodus (`mock.ts`, nutzt dieselben Werkzeuge).
+  Daten-Module importieren React nur über `useExternalStore.ts`, damit der
+  Server ihre reine Logik nutzen kann.

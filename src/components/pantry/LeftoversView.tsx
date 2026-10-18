@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { Check, ChevronRight, CircleHelp, Mic, MicOff, Plus, Sparkles, Square, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { NumberStepper } from "@/components/form/NumberStepper";
@@ -23,33 +23,8 @@ import {
 import { parseLeftovers, type ParsedLeftover } from "@/lib/leftovers/parser";
 import { weekdayLunchHeadcount, type HouseholdProfile } from "@/lib/profile";
 import { useProfile } from "@/lib/useProfile";
+import { useSpeechInput } from "@/lib/useSpeechInput";
 import { toIsoDate, useToday } from "@/lib/weekPlan";
-
-// Minimal-Typen für die Web Speech API (nicht in allen TS-Libs enthalten)
-type SpeechResultList = ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>;
-type Recognition = {
-  lang: string;
-  continuous: boolean;
-  interimResults: boolean;
-  start: () => void;
-  stop: () => void;
-  onresult: ((e: { resultIndex: number; results: SpeechResultList }) => void) | null;
-  onerror: ((e: { error: string }) => void) | null;
-  onend: (() => void) | null;
-};
-
-function speechRecognitionClass(): (new () => Recognition) | null {
-  if (typeof window === "undefined") return null;
-  const w = window as unknown as { SpeechRecognition?: new () => Recognition; webkitSpeechRecognition?: new () => Recognition };
-  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
-}
-
-const noopSubscribe = () => () => {};
-
-/** Gibt es Spracheingabe? Erst im Browser bekannt (beim Vorrendern `null`). */
-function useSpeechSupported(): boolean | null {
-  return useSyncExternalStore(noopSubscribe, () => Boolean(speechRecognitionClass()), () => null);
-}
 
 /** Personen für die aktuelle Mahlzeit laut Profil (mittags unter der Woche: wer zu Hause isst) */
 function personsForNow(profile: HouseholdProfile | null, now: Date): number {
@@ -72,19 +47,12 @@ export function LeftoversView() {
   const [text, setText] = useState("");
   const [editing, setEditing] = useState<PantryItem | null>(null);
   const [persons, setPersons] = useState<number | null>(null);
-  const [listening, setListening] = useState(false);
-  const [interim, setInterim] = useState("");
-  const [speechError, setSpeechError] = useState("");
   const [unsure, setUnsure] = useState<UnsureItem[]>([]);
   const [asking, setAsking] = useState<UnsureItem | null>(null);
-  const speechSupported = useSpeechSupported();
-  const recognitionRef = useRef<Recognition | null>(null);
-  // Für die Fehlermeldung: selbst beendet bzw. schon etwas erkannt → kein Fehler
-  const stoppedByUserRef = useRef(false);
-  const heardRef = useRef(false);
-
-  // Beim Verlassen der Seite nicht weiter zuhören
-  useEffect(() => () => recognitionRef.current?.stop(), []);
+  // Jede Sprechpause ist ein eigener Abschnitt → eigene Zutat(en)
+  const speech = useSpeechInput({ onFinal: (value) => void addText(value) });
+  const { listening, interim, error: speechError } = speech;
+  const speechSupported = speech.supported;
 
   if (pantry === undefined || recipes === undefined || profile === undefined || !today) {
     return <div className={`${CARD} m-4 h-64 animate-pulse`} />;
@@ -107,52 +75,8 @@ export function LeftoversView() {
     setAsking(null);
   };
 
-  const startListening = () => {
-    const Recognition = speechRecognitionClass();
-    if (!Recognition) return;
-    setSpeechError("");
-    stoppedByUserRef.current = false;
-    heardRef.current = false;
-    const recognition = new Recognition();
-    recognition.lang = "de-DE";
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.onresult = (e) => {
-      let pending = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const result = e.results[i];
-        if (result[0].transcript.trim()) heardRef.current = true;
-        // Jede Sprechpause ist ein eigener Abschnitt → eigene Zutat(en)
-        if (result.isFinal) addText(result[0].transcript);
-        else pending += result[0].transcript;
-      }
-      setInterim(pending);
-    };
-    recognition.onerror = (e) => {
-      const blocked = e.error === "not-allowed" || e.error === "service-not-allowed";
-      // Kein Fehler, wenn selbst beendet ("aborted") oder schon etwas erkannt wurde
-      if (!blocked && (e.error === "aborted" || stoppedByUserRef.current || heardRef.current)) return;
-      setSpeechError(
-        blocked
-          ? "Das Mikrofon ist nicht erlaubt – bitte in den Einstellungen freigeben oder einfach tippen."
-          : e.error === "no-speech"
-            ? "Ich habe nichts gehört – nochmal versuchen?"
-            : "Spracheingabe hat nicht geklappt – tipp es einfach ein.",
-      );
-    };
-    recognition.onend = () => {
-      setListening(false);
-      setInterim("");
-    };
-    recognitionRef.current = recognition;
-    recognition.start();
-    setListening(true);
-  };
-
-  const stopListening = () => {
-    stoppedByUserRef.current = true;
-    recognitionRef.current?.stop();
-  };
+  const startListening = speech.start;
+  const stopListening = speech.stop;
   const matches = matchRecipes(Object.values(recipes), pantry);
 
   return (

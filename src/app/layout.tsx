@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Nunito } from "next/font/google";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
+import { KitchenHelper } from "@/components/assistant/KitchenHelper";
 import { APP_NAME, APP_SHORT_NAME } from "@/lib/app";
 import "./globals.css";
 
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="de" className={`${nunito.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         {children}
+        <KitchenHelper />
         <ServiceWorkerRegistration />
       </body>
     </html>
