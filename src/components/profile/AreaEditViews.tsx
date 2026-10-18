@@ -37,10 +37,27 @@ export function WarmMealEditView() {
   return (
     <ProfileEditPage title="Zusammen warm essen">
       {(draft, setDraft) => (
-        <WarmMealEditor
-          warmMeal={draft.warmMeal}
-          onChange={(warmMeal) => setDraft((d) => ({ ...d, warmMeal }))}
-        />
+        <>
+          <WarmMealEditor
+            warmMeal={draft.warmMeal}
+            onChange={(warmMeal) => setDraft((d) => ({ ...d, warmMeal }))}
+          />
+          <div className={`${CARD} flex flex-col gap-3 p-4`}>
+            <p className="text-lg font-bold">Um wie viel Uhr ungefähr?</p>
+            {(["mittags", "abends"] as const).map((time) => (
+              <label key={time} className="flex items-center justify-between gap-3">
+                <span className="font-semibold">{time === "mittags" ? "Mittags" : "Abends"}</span>
+                <input
+                  type="time"
+                  value={draft.mealClock[time]}
+                  onChange={(e) => e.target.value && setDraft((d) => ({ ...d, mealClock: { ...d.mealClock, [time]: e.target.value } }))}
+                  aria-label={`Uhrzeit ${time}`}
+                  className={`${INPUT_BASE} h-12 w-32 px-3`}
+                />
+              </label>
+            ))}
+          </div>
+        </>
       )}
     </ProfileEditPage>
   );

@@ -17,7 +17,6 @@ import type { AssistantData } from "@/lib/assistant/ops";
 import { helperName, helperTitle } from "@/lib/profile";
 import { HelperAvatar } from "./HelperAvatar";
 import { HelperPanel, type ChatState } from "./HelperPanel";
-import { useHelperHint } from "./useHelperHint";
 
 const UNDO_SECONDS = 10;
 
@@ -49,46 +48,6 @@ function useStickyActionsHeight(): number {
 
 const EMPTY_CHAT: ChatState = { turns: [], proposal: null, reste: null };
 
-/** Sprechblase höchstens einmal pro App-Start (Modul-Zustand = bis zum Neuladen) */
-let bubbleDone = false;
-const BUBBLE_SECONDS = 5;
-
-/**
- * Nur auf der Startseite: kleine Sprechblase neben dem Knopf ("Frag Lotte"
- * bzw. ein aktueller Hinweis). Klappt nach 5 Sekunden oder beim Scrollen zu.
- */
-function HelperBubble({ text, bottom, onOpen }: { text: string; bottom: string; onOpen: () => void }) {
-  const [visible, setVisible] = useState(true);
-  useEffect(() => {
-    const hide = () => {
-      bubbleDone = true;
-      setVisible(false);
-    };
-    const timer = setTimeout(hide, BUBBLE_SECONDS * 1000);
-    window.addEventListener("scroll", hide, { passive: true, once: true });
-    return () => {
-      bubbleDone = true;
-      clearTimeout(timer);
-      window.removeEventListener("scroll", hide);
-    };
-  }, []);
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      aria-hidden={!visible}
-      tabIndex={visible ? 0 : -1}
-      data-kuechenhelfer-blase
-      style={{ bottom: `calc(${bottom} + 0.5rem)` }}
-      className={`fixed right-[5.25rem] z-20 max-w-[calc(100vw-6.5rem)] origin-right rounded-2xl rounded-br-md border border-line bg-surface px-3.5 py-2 text-left text-sm font-semibold text-ink shadow-card transition duration-300 ${
-        visible ? "scale-100 opacity-100" : "pointer-events-none scale-90 opacity-0"
-      }`}
-    >
-      {text}
-    </button>
-  );
-}
-
 /**
  * Küchenhelfer: schwebender Knopf unten rechts auf allen Seiten, Panel mit
  * Chat und Vorschlags-Vorschau, nach dem Übernehmen 10 Sekunden "Rückgängig".
@@ -102,7 +61,8 @@ export function KitchenHelper() {
   const stickyHeight = useStickyActionsHeight();
   const fabRef = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
-  const hint = useHelperHint();
+  // Von der Startseite: Mikrofon direkt starten bzw. gleich fragen
+  const [start, setStart] = useState<{ listen?: boolean; ask?: string } | null>(null);
 
   const profile = useProfile();
   const weekPlans = useWeekPlans();
@@ -124,8 +84,9 @@ export function KitchenHelper() {
   });
   useEffect(
     () =>
-      onOpenHelper((mode) => {
+      onOpenHelper((mode, ask) => {
         setOpen(true);
+        if (mode === "voice" || ask) setStart({ listen: mode === "voice", ask });
         if (mode !== "reste") return;
         const items = (pantryRef.current ?? []).map(formatPantryItem);
         setChat((c) => ({
@@ -178,14 +139,15 @@ export function KitchenHelper() {
     setUndone(false);
   };
 
-  // Beim ersten Kennenlernen (Vollbild-Gespräch) kein schwebender Knopf
-  const onboarding = profile === null && pathname === "/profil";
+  // Kein schwebender Knopf beim ersten Kennenlernen (Vollbild-Gespräch) und
+  // auf der Startseite (dort gibt es die Eingabeleiste)
+  const hidden = (profile === null && pathname === "/profil") || pathname === "/";
 
   const bottom = `calc(max(1rem, env(safe-area-inset-bottom)) + ${stickyHeight}px)`;
 
   return (
     <>
-      {!open && !typing && !onboarding && (
+      {!open && !typing && !hidden && (
         <button
           ref={fabRef}
           type="button"
@@ -198,9 +160,6 @@ export function KitchenHelper() {
           <HelperAvatar size={38} />
         </button>
       )}
-      {!open && !typing && !bubbleDone && pathname === "/" && hint && (
-        <HelperBubble text={hint} bottom={bottom} onOpen={() => setOpen(true)} />
-      )}
 
       {open && (
         <HelperPanel
@@ -208,8 +167,11 @@ export function KitchenHelper() {
           chat={chat}
           setChat={setChat}
           onApply={apply}
+          startListening={start?.listen}
+          initialAsk={start?.ask}
           onClose={() => {
             setOpen(false);
+            setStart(null);
             // Reste-Modus endet mit dem Schließen
             setChat((c) => (c.reste ? { ...c, reste: null } : c));
             // Fokus zurück auf den Knopf
