@@ -448,6 +448,11 @@ export function setNote(weekStart: string, weekday: string, text: string) {
   updateWeek(weekStart, (entries) => entriesWithNote(entries, weekday, text));
 }
 
+/** Alle gespeicherten Einträge (ohne React, z. B. für Aufräumen/Rückgängig) */
+export function loadMealPlans(): Record<string, Record<string, StoredEntry>> {
+  return store.load()?.weeks ?? {};
+}
+
 /** Alle Wochen auf einmal ersetzen (Küchenhelfer: Übernehmen/Rückgängig) */
 export function replaceMealPlans(weeks: Record<string, Record<string, StoredEntry>>) {
   store.save({ version: 3, weeks });

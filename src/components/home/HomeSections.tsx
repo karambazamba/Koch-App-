@@ -347,7 +347,7 @@ export function HomeBottomBar({ name }: { name: string }) {
             type="button"
             onClick={() => openHelper("voice")}
             aria-label={`${name} etwas sagen`}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-white shadow-md transition active:scale-95"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-md transition active:scale-95"
           >
             <Mic className="h-6 w-6" strokeWidth={2} aria-hidden />
           </button>

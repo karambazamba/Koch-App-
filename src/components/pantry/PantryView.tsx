@@ -111,7 +111,7 @@ export function PantryView() {
               enterKeyHint="done"
               className={`${INPUT_BASE} h-12 min-w-0 flex-1 px-4`}
             />
-            <button type="submit" disabled={!input.trim()} aria-label="Eintragen" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-white shadow-sm active:scale-95 disabled:opacity-40">
+            <button type="submit" disabled={!input.trim()} aria-label="Eintragen" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-on-accent shadow-sm active:scale-95 disabled:opacity-40">
               <ArrowUp className="h-5 w-5" strokeWidth={2.5} aria-hidden />
             </button>
           </form>

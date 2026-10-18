@@ -102,7 +102,7 @@ export function CookbookList() {
             type="button"
             onClick={() => setAdding(true)}
             aria-label="Neues Rezept"
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-white shadow-lg transition active:scale-95"
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-lg transition active:scale-95"
           >
             <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
           </button>

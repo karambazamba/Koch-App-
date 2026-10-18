@@ -1,7 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Nunito } from "next/font/google";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { KitchenHelper } from "@/components/assistant/KitchenHelper";
+import { ThemeSync } from "@/components/ThemeSync";
+import { ToastHost } from "@/components/ui/ToastHost";
+import { NavigationMemory } from "@/components/NavigationMemory";
+import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 import { APP_NAME, APP_SHORT_NAME } from "@/lib/app";
 import "./globals.css";
 
@@ -40,9 +45,18 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="de" className={`${nunito.variable} h-full antialiased`}>
+    <html lang="de" data-theme="warm" className={`${nunito.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        {/* Ansicht vor dem ersten Zeichnen setzen (kein Aufblitzen) */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">
         {children}
+        <ThemeSync />
+        <ToastHost />
+        <Suspense fallback={null}>
+          <NavigationMemory />
+        </Suspense>
         <KitchenHelper />
         <ServiceWorkerRegistration />
       </body>

@@ -1,5 +1,7 @@
 "use client";
 
+import { expectReplace } from "@/lib/navigation";
+
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { openHelper } from "@/lib/assistant/open";
@@ -14,6 +16,7 @@ export function SpontanRedirect() {
   useEffect(() => {
     if (fired.current) return;
     fired.current = true;
+    expectReplace();
     router.replace("/");
     // Der Küchenhelfer lebt im Layout und bleibt beim Seitenwechsel offen;
     // kurz warten, bis er beim ersten Laden zuhört (nicht abbrechen – die

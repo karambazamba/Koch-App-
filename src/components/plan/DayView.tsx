@@ -10,6 +10,7 @@ import { estimateCost } from "@/lib/costs";
 import { dishEmoji } from "@/lib/dishEmoji";
 import type { PlanDay } from "@/lib/mealPlan";
 import { MEAL_TIME_LABELS } from "@/lib/profile";
+import { useProfile } from "@/lib/useProfile";
 
 const SHORT_DATE = (iso: string) => {
   const [, m, d] = iso.split("-");
@@ -56,12 +57,12 @@ export function DayStrip({
             aria-label={`${d.weekday} ${SHORT_DATE(d.date)}${today ? " (heute)" : ""}`}
             onClick={() => onSelect(d.weekday)}
             className={`flex flex-col items-center gap-1 rounded-xl py-2 transition ${
-              active ? "bg-accent text-white shadow-card" : today ? "text-accent-strong" : "text-ink"
+              active ? "bg-accent text-on-accent shadow-card" : today ? "text-accent-strong" : "text-ink"
             }`}
           >
-            <span className={`text-xs font-bold uppercase ${active ? "text-white/90" : today ? "" : "text-muted"}`}>{d.weekday.slice(0, 2)}</span>
+            <span className={`text-xs font-bold uppercase ${active ? "text-on-accent/90" : today ? "" : "text-muted"}`}>{d.weekday.slice(0, 2)}</span>
             <span className="text-base font-extrabold leading-none">{SHORT_DATE(d.date).split(".")[0]}</span>
-            <span className={`h-1.5 w-1.5 rounded-full ${active && !d.slot.entry && !d.cheat ? "bg-white/60" : dayDot(d)}`} aria-hidden />
+            <span className={`h-1.5 w-1.5 rounded-full ${active && !d.slot.entry && !d.cheat ? "bg-on-accent/60" : dayDot(d)}`} aria-hidden />
           </button>
         );
       })}
@@ -88,7 +89,9 @@ export function DayCard({ day, recipes, readOnly, onPlan, onSwap, onMore, onCook
   const entry = day.slot.entry;
   const recipe = entry?.recipeId ? recipes[entry.recipeId] : undefined;
   const wish = entry?.stored.kind === "wish";
-  const cost = recipe ? estimateCost(recipe, day.persons) : null;
+  // Kosten-Schätzung nur bei Darstellung "Alles zeigen"
+  const showCost = useProfile()?.display === "alles";
+  const cost = recipe && showCost ? estimateCost(recipe, day.persons) : null;
   const emoji = day.paused ? "☀️" : day.away ? "🏕️" : entry ? (wish ? "🎉" : dishEmoji(entry.title, entry.category)) : day.cheat ? "🍕" : "🍽️";
   const overline = `${day.weekday} · ${day.paused ? "Pause" : day.away ? "Ausflug" : day.weekend === "locker" ? "Falls ihr Lust habt" : MEAL_TIME_LABELS[day.mealTime]}`;
 

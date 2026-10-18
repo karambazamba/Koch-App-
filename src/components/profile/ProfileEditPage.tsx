@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useGoBack } from "@/lib/useGoBack";
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { Check } from "lucide-react";
@@ -12,6 +13,8 @@ import { useProfile } from "@/lib/useProfile";
 
 type Props = {
   title: string;
+  /** Kurzer, freundlicher Erklärsatz oben */
+  intro?: string;
   /** Formular; bekommt den Entwurf und eine Funktion zum Ändern */
   children: (
     draft: HouseholdProfile,
@@ -53,29 +56,31 @@ export function ProfileEditPage(props: Props) {
 
 function EditForm({
   title,
+  intro,
   children,
   prepare,
   canSave,
   profile,
 }: Props & { profile: HouseholdProfile }) {
-  const router = useRouter();
+  const goBack = useGoBack();
   const [draft, setDraft] = useState(() => (prepare ? prepare(profile) : profile));
 
   const save = () => {
     saveProfile(draft);
-    router.push("/profil");
+    goBack("/profil");
   };
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
       <PageHeader title={title} backHref="/profil" />
       <main className={PAGE_MAIN}>
+        {intro && <p className="px-1 text-base text-muted">{intro}</p>}
         {children(draft, setDraft)}
       </main>
       <StickyActions>
-        <Link href="/profil" className={SECONDARY_BUTTON}>
+        <button type="button" onClick={() => goBack("/profil")} className={SECONDARY_BUTTON}>
           Abbrechen
-        </Link>
+        </button>
         <button
           type="button"
           onClick={save}

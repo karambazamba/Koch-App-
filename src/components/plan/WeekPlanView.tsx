@@ -173,7 +173,7 @@ export function WeekPlanView() {
           ]}
         />
 
-        <SummaryLine week={week} cost={cost} budget={budget} />
+        <SummaryLine week={week} cost={profile?.display === "alles" || budget ? cost : 0} budget={budget} />
 
         {!readOnly && !week.hasPlanRules && (
           <Link href={`/woche/check?woche=${weekStart}`} className="-mt-2 flex items-center gap-1.5 px-1 text-sm font-semibold text-accent-strong">
@@ -347,7 +347,7 @@ function againEntry(entry: ResolvedEntry): MealEntry {
   return rest;
 }
 
-/** Schmale Zusammenfassung: x/7 geplant · Kategorien · Budget */
+/** Schmale Zusammenfassung: x/7 geplant · Kategorien · Budget (Kosten nur bei "Alles zeigen" oder mit Budget) */
 function SummaryLine({ week, cost, budget }: { week: PlanWeek; cost: number; budget: number | null }) {
   return (
     <p className="-mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-sm text-muted" aria-label="Zusammenfassung">

@@ -24,7 +24,7 @@ import { markTwistShown, markTwistTaken, twistAllowed, twistFor, unmarkTwistTake
 import { dishStatus } from "@/lib/dishStatus";
 import { useWeekShoppingList } from "@/lib/useWeekShoppingList";
 import { useWeekendForecast } from "@/lib/weather";
-import { addDays, planningWeekStart, toIsoDate, useWeekPlan, weekStartFor } from "@/lib/weekPlan";
+import { addDays, nextWeekStartFor, planningWeekStart, toIsoDate, useWeekPlan, weekStartFor } from "@/lib/weekPlan";
 import { WelcomeBack } from "./HomeSections";
 import { TipCard } from "./TipCard";
 import { useMinutes, useRatingCandidate } from "./useRatingCandidate";
@@ -71,6 +71,10 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
   const next = useWeekShoppingList("next");
   const target = data ? planningWeekStart(data.today, data.profile.shoppingDay || "Montag") : null;
   const targetPlan = useWeekPlan(target?.weekStart);
+  // "Dranbleiben": nächste Woche schon ab 4 Tage vorher anbieten
+  const nextStart = data ? nextWeekStartFor(data.today, data.profile.shoppingDay || "Montag") : undefined;
+  const nextPlan = useWeekPlan(nextStart);
+  const mode = data?.profile.helperMode ?? "normal";
   const health = useHealthTip();
   const activity = useActivity();
   const mealPlans = useMealPlans();
@@ -193,6 +197,9 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
       };
     }
 
+    // Modus "Ganz locker": nur Zeitkritisches
+    if (mode === "locker") return null;
+
     // 2. Vorrat: ❄️ lange im Tiefkühler, Reste verwandeln, vor der Pause aufbrauchen
     const oldFrozen = pantry
       .filter((p) => p.place === "tiefkuehler" && p.addedAt && p.addedAt <= addDays(todayIso, -60) && !wasAsked(activity, `tk:${p.id}`))
@@ -269,6 +276,35 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
         ],
       };
     }
+    // Modus "Dranbleiben": früher an die nächste Woche denken, freie Tage der
+    // nächsten zwei Tage anbieten – immer als Angebot
+    if (mode === "dranbleiben" && nextStart && nextPlan === null && nextStart <= addDays(todayIso, 4) && allowed("wochenplanung")) {
+      return {
+        kind: "wochenplanung",
+        text: "Soll ich die nächste Woche schon mal vorbereiten? Dauert nur 2 Minuten.",
+        chips: [
+          status?.configured
+            ? { label: "Ja, gern", onClick: () => openHelper(undefined, "Plan mir bitte die nächste Woche.") }
+            : { label: "Ja, gern", href: `/woche/check?woche=${nextStart}` },
+          { label: "Später", onClick: () => noteDismissed("wochenplanung", todayIso), quiet: true },
+        ],
+      };
+    }
+    const freeDay = mode === "dranbleiben"
+      ? data.week.days.find((d) => d.date >= todayIso && d.date <= addDays(todayIso, 2) && !d.away && !d.paused && !d.weekend && !d.slot.entry && !wasAsked(activity, `frei:${d.date}`))
+      : undefined;
+    if (freeDay && allowed("wochenplanung")) {
+      const key = `frei:${freeDay.date}`;
+      const when = freeDay.date === todayIso ? "Heute" : freeDay.weekday;
+      return {
+        kind: "wochenplanung",
+        text: `${when} ist noch frei – soll ich dir was Schnelles vorschlagen?`,
+        chips: [
+          once(key, "Ja, gern", () => (status?.configured ? openHelper(undefined, `Schlag mir bitte was Schnelles für ${freeDay.weekday} vor.`) : router.push("/wochenplan"))),
+          once(key, "Nein danke"),
+        ],
+      };
+    }
     const grillKey = `grill:${todayIso}`;
     if (forecast?.good && !wasAsked(activity, grillKey) && allowed("grill")) {
       return {
@@ -300,7 +336,8 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
   })();
 
   // --- Stufe 4: Bewertung, Stufe 5: Lob und Tipps --------------------------------
-  const quietDay = !ready || !data || !activity || pausedOn(data.profile, todayIso) || isQuiet(activity, todayIso) || data.day?.weekend === "frei";
+  // "Ganz locker": keine Bewertungsfragen, kein Lob, keine Tipps
+  const quietDay = !ready || !data || !activity || pausedOn(data.profile, todayIso) || isQuiet(activity, todayIso) || data.day?.weekend === "frei" || mode === "locker";
   // Frage festhalten, damit nach der Antwort kurz "Freut mich!" stehen bleibt
   const [keptRating, setKeptRating] = useState<RatingCandidate | null>(null);
   if (rating && rating.date !== keptRating?.date) setKeptRating(rating);
@@ -326,6 +363,7 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
           health: health ? { key: health.tip.key, title: health.tip.title, text: health.tip.text } : null,
           household: data.profile.householdType,
           kids: hasKids(data.profile),
+          weekendIdeas: data.profile.weekendIdeas,
         })
       : [];
   const tipToday = tipState?.today?.date === todayIso ? tipState.today : null;

@@ -185,11 +185,11 @@ function TimerBar({ timer, onClear }: { timer: RunningTimer; onClear: () => void
   const mm = Math.floor(left / 60_000);
   const ss = Math.floor((left % 60_000) / 1000);
   return (
-    <div role="timer" aria-live={finished ? "assertive" : "off"} className={`sticky top-2 z-10 flex items-center gap-3 rounded-2xl px-4 py-3 shadow-card ${finished ? "bg-accent text-white" : "border border-line bg-surface"}`}>
+    <div role="timer" aria-live={finished ? "assertive" : "off"} className={`sticky top-2 z-10 flex items-center gap-3 rounded-2xl px-4 py-3 shadow-card ${finished ? "bg-accent text-on-accent" : "border border-line bg-surface"}`}>
       <Timer className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
       <span className="min-w-0 flex-1">
         <span className="block text-lg font-extrabold tabular-nums">{finished ? "Zeit ist um! ⏰" : `${mm}:${String(ss).padStart(2, "0")}`}</span>
-        <span className={`block truncate text-xs ${finished ? "text-white/90" : "text-muted"}`}>{timer.label}</span>
+        <span className={`block truncate text-xs ${finished ? "text-on-accent/90" : "text-muted"}`}>{timer.label}</span>
       </span>
       <button type="button" onClick={onClear} aria-label={finished ? "Timer schließen" : "Timer abbrechen"} className="flex h-10 w-10 items-center justify-center rounded-full active:bg-black/10">
         <X className="h-5 w-5" strokeWidth={2.25} aria-hidden />

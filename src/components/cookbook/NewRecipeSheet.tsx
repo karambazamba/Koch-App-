@@ -175,7 +175,7 @@ function TellRecipe({ name, onClose }: { name: string; onClose: () => void }) {
             disabled={speech.supported === false}
             aria-pressed={speech.listening}
             aria-label={speech.listening ? "Zuhören beenden" : "Rezept einsprechen"}
-            className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-white shadow-md active:scale-95 disabled:opacity-40 ${speech.listening ? "animate-pulse ring-4 ring-accent/25" : ""}`}
+            className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-md active:scale-95 disabled:opacity-40 ${speech.listening ? "animate-pulse ring-4 ring-accent/25" : ""}`}
           >
             {speech.listening ? (
               <Square className="h-5 w-5 fill-current" strokeWidth={2} aria-hidden />

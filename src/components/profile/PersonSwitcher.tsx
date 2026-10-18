@@ -64,7 +64,7 @@ export function PersonSwitcher({
               aria-current={current ? "step" : undefined}
               onClick={() => onSelect(i)}
               className={`${
-                current ? "inline-flex min-h-10 items-center gap-1.5 rounded-full border border-accent bg-accent px-3.5 py-1.5 text-[15px] font-semibold text-white transition active:scale-95" : chipClass(false)
+                current ? "inline-flex min-h-10 items-center gap-1.5 rounded-full border border-accent bg-accent px-3.5 py-1.5 text-[15px] font-semibold text-on-accent transition active:scale-95" : chipClass(false)
               } h-11 shrink-0`}
             >
               {done && (

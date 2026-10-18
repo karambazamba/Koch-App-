@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { useGoBack } from "@/lib/useGoBack";
+import { expectReplace } from "@/lib/navigation";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Check, PenLine, Plus, Sparkles, X } from "lucide-react";
@@ -55,6 +56,7 @@ export function RecipeEditor() {
 
 function EditorForm({ existing }: { existing?: Recipe }) {
   const router = useRouter();
+  const goBack = useGoBack();
   const [recipe, setRecipe] = useState<Recipe>(
     () => existing ?? createRecipe({ title: "", category: "fleisch" }),
   );
@@ -80,7 +82,12 @@ function EditorForm({ existing }: { existing?: Recipe }) {
       })),
       steps,
     });
-    router.push(`/kochbuch/rezept?id=${encodeURIComponent(saved.id)}`);
+    // Bearbeiten: zurück zum Rezept; neu: das Rezept ersetzt den Editor im Verlauf
+    if (existing) goBack(backHref);
+    else {
+      expectReplace();
+      router.replace(`/kochbuch/rezept?id=${encodeURIComponent(saved.id)}`);
+    }
   };
 
   return (
@@ -323,9 +330,9 @@ function EditorForm({ existing }: { existing?: Recipe }) {
       </main>
 
       <StickyActions>
-        <Link href={backHref} className={SECONDARY_BUTTON}>
+        <button type="button" onClick={() => goBack(backHref)} className={SECONDARY_BUTTON}>
           Abbrechen
-        </Link>
+        </button>
         <button type="button" onClick={save} disabled={!recipe.title.trim()} className={PRIMARY_BUTTON}>
           <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
           Speichern

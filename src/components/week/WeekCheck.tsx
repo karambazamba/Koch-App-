@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useGoBack } from "@/lib/useGoBack";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Check, MapPin, Repeat, Sparkles, Wallet } from "lucide-react";
@@ -110,7 +110,7 @@ function WeekCheckForm({
   /** Wohin Speichern/Abbrechen führen (zurück zum Wochenplan, falls von dort) */
   backHref: string;
 }) {
-  const router = useRouter();
+  const goBack = useGoBack();
   const [plan, setPlan] = useState(initial);
   const hasProfile = Boolean(profile);
   const available = availableDays(plan);
@@ -156,12 +156,12 @@ function WeekCheckForm({
 
   const save = () => {
     saveWeekPlan(plan);
-    router.push(backHref);
+    goBack(backHref);
   };
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
-      <PageHeader title="Wochen-Check" />
+      <PageHeader title="Wochen-Check" backHref={backHref} />
       <main className={PAGE_MAIN}>
         <div>
           <h2 className="text-xl font-extrabold tracking-tight">
@@ -320,9 +320,9 @@ function WeekCheckForm({
       </main>
 
       <StickyActions>
-        <Link href={backHref} className={SECONDARY_BUTTON}>
+        <button type="button" onClick={() => goBack(backHref)} className={SECONDARY_BUTTON}>
           Abbrechen
-        </Link>
+        </button>
         <button type="button" onClick={save} disabled={invalid} className={PRIMARY_BUTTON}>
           <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
           Speichern

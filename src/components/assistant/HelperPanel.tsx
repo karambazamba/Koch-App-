@@ -688,7 +688,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                 <div
                   className={`${BUBBLE} ${
                     turn.role === "user"
-                      ? "rounded-br-md bg-accent text-white"
+                      ? "rounded-br-md bg-accent text-on-accent"
                       : turn.error
                         ? "rounded-bl-md border border-red-200 bg-red-50 text-red-700"
                         : "rounded-bl-md border border-line bg-surface text-ink"
@@ -839,7 +839,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
               disabled={!canType || busy}
               aria-pressed={speech.listening}
               aria-label={speech.listening ? "Zuhören beenden" : "Frage einsprechen"}
-              className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-white shadow-md transition active:scale-95 disabled:opacity-40 ${
+              className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-md transition active:scale-95 disabled:opacity-40 ${
                 speech.listening ? "animate-pulse ring-4 ring-accent/25" : ""
               }`}
             >
@@ -874,7 +874,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
               type="submit"
               disabled={!canType || busy || !input.trim()}
               aria-label="Senden"
-              className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-white shadow-sm transition active:scale-95 disabled:opacity-40"
+              className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-on-accent shadow-sm transition active:scale-95 disabled:opacity-40"
             >
               <ArrowUp className="h-5 w-5" strokeWidth={2.5} aria-hidden />
             </button>

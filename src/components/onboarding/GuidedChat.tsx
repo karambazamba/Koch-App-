@@ -116,7 +116,7 @@ export function GuidedChat({ state, onChange, onFinish }: Props) {
       <div ref={scrollRef} className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4" aria-live="polite">
         {state.messages.map((m) =>
           m.from === "user" ? (
-            <p key={m.id} className={`${BUBBLE} self-end rounded-br-md bg-accent text-white`}>
+            <p key={m.id} className={`${BUBBLE} self-end rounded-br-md bg-accent text-on-accent`}>
               {m.text}
             </p>
           ) : m.target && !(done && state.mode === "addPerson") ? (
@@ -264,7 +264,7 @@ export function GuidedChat({ state, onChange, onFinish }: Props) {
                 disabled={busy}
                 aria-pressed={speech.listening}
                 aria-label={speech.listening ? "Zuhören beenden" : "Antwort einsprechen"}
-                className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-white shadow-md transition active:scale-95 disabled:opacity-40 ${
+                className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-md transition active:scale-95 disabled:opacity-40 ${
                   speech.listening ? "animate-pulse ring-4 ring-accent/25" : ""
                 }`}
               >
@@ -291,7 +291,7 @@ export function GuidedChat({ state, onChange, onFinish }: Props) {
                 type="submit"
                 disabled={busy || !input.trim()}
                 aria-label="Senden"
-                className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-white shadow-sm transition active:scale-95 disabled:opacity-40"
+                className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-on-accent shadow-sm transition active:scale-95 disabled:opacity-40"
               >
                 <ArrowUp className="h-5 w-5" strokeWidth={2.5} aria-hidden />
               </button>

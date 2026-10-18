@@ -238,7 +238,7 @@ export type PauseSettings = { from: string; until: string | null };
 export type WeatherSettings = { consent: boolean; postcode: string };
 
 export type HouseholdProfile = {
-  version: 14;
+  version: 15;
   householdName: string;
   adults: number;
   kids: number;
@@ -279,8 +279,43 @@ export type HouseholdProfile = {
   householdType: HouseholdType;
   /** Thermomix bzw. Küchenmaschine mit Kochfunktion (Profil v14) */
   kitchenMachine: KitchenMachine;
+  /** Ansicht (Profil v15, Standard "warm") */
+  theme: AppTheme;
+  /** Wie oft sich Lotte meldet (Profil v15, Standard "normal") */
+  helperMode: HelperMode;
+  /** Darstellung (Profil v15, Standard "einfach") */
+  display: DisplayMode;
+  /** Wochenend-Ideen auf Lottes Platz (Profil v15, Standard an) */
+  weekendIdeas: boolean;
   updatedAt: string;
 };
+
+/** Ansicht der App (Profil v15) – "auto" folgt Hell/Dunkel des Handys */
+export type AppTheme = "warm" | "nacht" | "frisch" | "auto";
+
+export const APP_THEMES: { value: AppTheme; label: string; hint: string }[] = [
+  { value: "warm", label: "Warm", hint: "Hell und gemütlich" },
+  { value: "nacht", label: "Nacht", hint: "Dunkel, schont die Augen" },
+  { value: "frisch", label: "Frisch", hint: "Hell mit Grün" },
+  { value: "auto", label: "Automatisch", hint: "Wie das Handy: hell = Warm, dunkel = Nacht" },
+];
+
+/** Wie oft sich Lotte von selbst meldet (Profil v15) */
+export type HelperMode = "locker" | "normal" | "dranbleiben";
+
+export const HELPER_MODES: { value: HelperMode; label: string; hint: string }[] = [
+  { value: "locker", label: "Ganz locker", hint: "Meldet sich selten – nur wenn's wirklich zeitkritisch ist." },
+  { value: "normal", label: "Normal", hint: "Freundliche Erinnerungen, wenn sie helfen." },
+  { value: "dranbleiben", label: "Dranbleiben", hint: "Schubst öfter und hilft beim Planen – immer freundlich." },
+];
+
+/** Einfach = nur das Wichtigste, Alles zeigen = auch Details (Profil v15) */
+export type DisplayMode = "einfach" | "alles";
+
+export const DISPLAY_MODES: { value: DisplayMode; label: string; hint: string }[] = [
+  { value: "einfach", label: "Einfach", hint: "Nur das Wichtigste – seltene Einstellungen und Kosten-Schätzungen bleiben weg." },
+  { value: "alles", label: "Alles zeigen", hint: "Alle Einstellungen und Details auf einen Blick." },
+];
 
 export const COMMON_ALLERGIES = [
   "Gluten",
@@ -374,7 +409,7 @@ export function createPerson(role: PersonRole): Person {
 
 export function createEmptyProfile(): HouseholdProfile {
   return {
-    version: 14,
+    version: 15,
     householdName: "",
     adults: 2,
     kids: 1,
@@ -409,6 +444,10 @@ export function createEmptyProfile(): HouseholdProfile {
     tips: "ab_und_zu",
     householdType: "familie",
     kitchenMachine: "keine",
+    theme: "warm",
+    helperMode: "normal",
+    display: "einfach",
+    weekendIdeas: true,
     updatedAt: "",
   };
 }
@@ -558,7 +597,7 @@ export function normalizeMealTime(value: unknown, fallback: MealTime): MealTime 
 export function migrateProfile(raw: unknown): HouseholdProfile | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as Record<string, unknown>;
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].includes(data.version as number)) return null;
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(data.version as number)) return null;
 
   const defaults = createEmptyProfile();
 
@@ -651,6 +690,11 @@ export function migrateProfile(raw: unknown): HouseholdProfile | null {
           persons.filter((p) => p.role === "kind").length || (persons.length ? 0 : kids),
         ),
     kitchenMachine: data.kitchenMachine === "thermomix" ? "thermomix" : "keine",
+    // Bis v14: Warm, Normal, Einfach, Wochenend-Ideen an
+    theme: APP_THEMES.some((t) => t.value === data.theme) ? (data.theme as AppTheme) : "warm",
+    helperMode: HELPER_MODES.some((m) => m.value === data.helperMode) ? (data.helperMode as HelperMode) : "normal",
+    display: data.display === "alles" ? "alles" : "einfach",
+    weekendIdeas: data.weekendIdeas !== false,
     updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : "",
   };
 }

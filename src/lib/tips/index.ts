@@ -152,6 +152,8 @@ export type TipContext = {
   household?: HouseholdType;
   /** Kinder im Haushalt? Ohne Kinder keine Kinder-Tipps */
   kids?: boolean;
+  /** Wochenend-Ideen erwünscht? (Profil v15, Standard an) */
+  weekendIdeas?: boolean;
 };
 
 /** Darf heute überhaupt ein Tipp kommen? (Einstellung, "ab und zu" = 4 Tage pro Woche) */
@@ -236,7 +238,7 @@ export function tipDeck(ctx: TipContext): TipCardData[] {
     // Kleiner Haushalt: Vorrat & Einfrieren (Portionen) zuerst
     if (ctx.household === "single" || ctx.household === "paar") order = ["vorrat", ...order.filter((c) => c !== "vorrat")];
     // Fr–So: zuerst eine Wochenend-Idee passend zum Haushalt
-    if ([5, 6, 0].includes(new Date(`${ctx.date}T12:00:00Z`).getUTCDay())) order = ["wochenende", ...order];
+    if (ctx.weekendIdeas !== false && [5, 6, 0].includes(new Date(`${ctx.date}T12:00:00Z`).getUTCDay())) order = ["wochenende", ...order];
     order = order.filter(allowedCat);
     for (const cat of order) {
       if (deck.length >= TIPS_PER_DAY) break;

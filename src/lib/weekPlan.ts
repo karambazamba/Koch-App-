@@ -328,6 +328,11 @@ export function saveWeekPlan(plan: WeekPlan): void {
   });
 }
 
+/** Alle gespeicherten Wochen-Vorgaben (ohne React, z. B. für Aufräumen/Rückgängig) */
+export function loadWeekPlans(): Record<string, WeekPlan> {
+  return store.load()?.weeks ?? {};
+}
+
 /** Alle Wochen-Vorgaben auf einmal ersetzen (Küchenhelfer: Übernehmen/Rückgängig) */
 export function replaceWeekPlans(weeks: Record<string, WeekPlan>): void {
   store.save({ version: 4, weeks });
