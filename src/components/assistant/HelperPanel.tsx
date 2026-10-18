@@ -1049,8 +1049,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
             );
           })}
 
-          {adjusting2 && (
-            <AdjustSheet filters={adjusting2.ideaFilters ?? []} onApply={(f) => applyFilters(adjusting2, f)} onClose={() => setAdjusting2(null)} />
+          {adjusting2 && data && (
+            <AdjustSheet filters={adjusting2.ideaFilters ?? []} bases={data.profile.bases} onApply={(f) => applyFilters(adjusting2, f)} onClose={() => setAdjusting2(null)} />
           )}
 
           {/* Sanfter Gesundheits-Tipp (laut Einstellung, nie als Pop-up) */}

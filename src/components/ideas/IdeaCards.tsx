@@ -59,14 +59,14 @@ export function IdeaCards({
         const body = (
           <>
             <span
-              className={`flex shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-accent-soft to-accent/30 ${dense ? "h-10 w-10 text-2xl" : "h-12 w-12 text-[1.75rem]"}`}
+              className={`flex shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-accent-soft to-accent/30 ${dense ? "h-9 w-9 text-xl" : "h-12 w-12 text-[1.75rem]"}`}
               aria-hidden
             >
               {dishEmoji(idea.title, idea.category)}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate font-bold leading-snug">{idea.title}</span>
-              <span className="flex min-w-0 items-center gap-1 text-sm text-muted">
+              <span className={`block truncate font-bold ${dense ? "leading-tight" : "leading-snug"}`}>{idea.title}</span>
+              <span className={`flex min-w-0 items-center gap-1 text-sm text-muted ${dense ? "leading-tight" : ""}`}>
                 {idea.note && <span className="truncate font-semibold text-accent-strong">{idea.note} ·</span>}
                 {meta.time && <span className="shrink-0">{meta.time} ·</span>}
                 <span className={`truncate ${meta.ready ? "font-semibold text-emerald-700" : ""}`}>{meta.stock}</span>
@@ -75,7 +75,7 @@ export function IdeaCards({
             {(idea.recipeId || onOpen) && <ChevronRight className="h-4 w-4 shrink-0 text-stone-400" strokeWidth={2.25} aria-hidden />}
           </>
         );
-        const area = `flex min-w-0 flex-1 items-center gap-3 text-left ${dense ? "py-2" : "py-2.5"}`;
+        const area = `flex min-w-0 flex-1 items-center gap-3 text-left ${dense ? "py-1" : "py-2.5"}`;
         return (
           <li key={idea.id} className="flex items-center gap-2 pl-3 pr-3">
             {idea.recipeId ? (
@@ -89,7 +89,7 @@ export function IdeaCards({
             ) : (
               <span className={area}>{body}</span>
             )}
-            <button type="button" onClick={() => onToday(idea)} aria-label={`${idea.title} heute`} className={`${buttonClass("soft", "sm")} shrink-0`}>
+            <button type="button" onClick={() => onToday(idea)} aria-label={`${idea.title} heute`} className={`${buttonClass("soft", "sm")} shrink-0 ${dense ? "my-1" : ""}`}>
               Heute
             </button>
           </li>

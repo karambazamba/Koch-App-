@@ -9,7 +9,7 @@ import { buttonClass, chipClass } from "@/components/ui/styles";
 import { EMPTY_STOCK_HINT } from "@/lib/dishIdeas";
 import { formatPantryItem, type PantryItem } from "@/lib/pantry";
 import { SPONTAN_FILTERS, type SpontanFilter, type SpontanIdea } from "@/lib/spontan";
-import { BASES } from "@/lib/bases";
+import { sortedBases, type BaseCounts } from "@/lib/bases";
 
 const FILTER_KEY = "wasgibts.spontan.filter";
 
@@ -134,7 +134,18 @@ export function EarlierIdeas({ titles }: { titles: string[] }) {
 }
 
 /** "Ideen anpassen": Zeit, Vorrang, Beilage – dann 3 neue Ideen */
-export function AdjustSheet({ filters, onApply, onClose }: { filters: SpontanFilter[]; onApply: (filters: SpontanFilter[]) => void; onClose: () => void }) {
+export function AdjustSheet({
+  filters,
+  bases,
+  onApply,
+  onClose,
+}: {
+  filters: SpontanFilter[];
+  /** Beliebtheit der Beilagen (Reihenfolge) */
+  bases: BaseCounts;
+  onApply: (filters: SpontanFilter[]) => void;
+  onClose: () => void;
+}) {
   const [draft, setDraft] = useState<SpontanFilter[]>(filters);
   const toggle = (f: SpontanFilter) => setDraft((d) => (d.includes(f) ? d.filter((x) => x !== f) : [...d, f]));
   const fast = draft.includes("schnell");
@@ -157,7 +168,7 @@ export function AdjustSheet({ filters, onApply, onClose }: { filters: SpontanFil
         ))}
       </Group>
       <Group title="Beilage" multi>
-        {BASES.filter((b) => b.id !== "quinoa").map((b) => {
+        {sortedBases(bases).filter((b) => b.id !== "quinoa").map((b) => {
           const f: SpontanFilter = `basis:${b.id}`;
           return (
             <button key={b.id} type="button" aria-pressed={draft.includes(f)} onClick={() => toggle(f)} className={chipClass(draft.includes(f))}>

@@ -62,7 +62,7 @@ export function IdeasCard() {
   const byId = (card: CardIdea) => deck.find((i) => i.id === card.id);
 
   return (
-    <section className="flex flex-col gap-2" aria-label="Heute">
+    <section className="flex flex-col gap-1.5" aria-label="Heute">
       <div className="flex items-center justify-between px-1">
         <p className="text-xs font-bold uppercase tracking-wider text-accent-strong">Was gibt&apos;s heute?</p>
         {data.nearlyEmpty ? (
