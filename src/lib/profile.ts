@@ -134,8 +134,13 @@ export const HEALTH_TIP_LEVELS: { value: HealthTipLevel; label: string; hint: st
   { value: "oefter", label: "Gern öfter", hint: "Bis zu drei Tipps pro Woche" },
 ];
 
+/** Uhrzeit "HH:MM" je Essenszeit (Profil v10) */
+export type MealClock = Record<MealTime, string>;
+
+export const DEFAULT_MEAL_CLOCK: MealClock = { mittags: "12:30", abends: "18:30" };
+
 export type HouseholdProfile = {
-  version: 9;
+  version: 10;
   householdName: string;
   adults: number;
   kids: number;
@@ -158,6 +163,8 @@ export type HouseholdProfile = {
   likesBlocked: string[];
   /** Gesundheits-Tipps (Profil v9, Standard "ab und zu") */
   healthTips: HealthTipLevel;
+  /** Uhrzeit des gemeinsamen Essens (Profil v10) – für "HEUTE · 18:30" und Bewertung */
+  mealClock: MealClock;
   updatedAt: string;
 };
 
@@ -253,7 +260,7 @@ export function createPerson(role: PersonRole): Person {
 
 export function createEmptyProfile(): HouseholdProfile {
   return {
-    version: 9,
+    version: 10,
     householdName: "",
     adults: 2,
     kids: 1,
@@ -279,6 +286,7 @@ export function createEmptyProfile(): HouseholdProfile {
     likes: [],
     likesBlocked: [],
     healthTips: "ab_und_zu",
+    mealClock: DEFAULT_MEAL_CLOCK,
     updatedAt: "",
   };
 }
@@ -423,7 +431,7 @@ export function normalizeMealTime(value: unknown, fallback: MealTime): MealTime 
 export function migrateProfile(raw: unknown): HouseholdProfile | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as Record<string, unknown>;
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9].includes(data.version as number)) return null;
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(data.version as number)) return null;
 
   const defaults = createEmptyProfile();
 
@@ -497,8 +505,25 @@ export function migrateProfile(raw: unknown): HouseholdProfile | null {
       ? (data.likesBlocked as unknown[]).filter((n): n is string => typeof n === "string").slice(0, 200)
       : [],
     healthTips: data.healthTips === "aus" || data.healthTips === "oefter" ? data.healthTips : "ab_und_zu",
+    // Bis v9 keine Uhrzeiten → Standard 12:30 / 18:30
+    mealClock: migrateMealClock(data.mealClock),
     updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : "",
   };
+}
+
+const CLOCK = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+function migrateMealClock(raw: unknown): MealClock {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Partial<MealClock>;
+  return {
+    mittags: typeof r.mittags === "string" && CLOCK.test(r.mittags) ? r.mittags : DEFAULT_MEAL_CLOCK.mittags,
+    abends: typeof r.abends === "string" && CLOCK.test(r.abends) ? r.abends : DEFAULT_MEAL_CLOCK.abends,
+  };
+}
+
+/** Uhrzeit des Hauptgerichts an diesem Wochentag, z. B. "18:30" */
+export function mealClockFor(profile: Pick<HouseholdProfile, "warmMeal" | "mealClock">, weekday: string): string {
+  return profile.mealClock[mainMealTime(profile, weekday)];
 }
 
 function migrateLikes(raw: unknown): LikedIngredient[] {

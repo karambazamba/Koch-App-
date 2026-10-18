@@ -8,20 +8,14 @@ import { bumpBase, baseFromText, recipeBase } from "./bases";
 import { deleteRecipe, rateRecipeUp, restoreRecipe, type Recipe } from "./cookbook";
 import { learnFromRecipe, LIKE_WEIGHTS } from "./likes";
 import { createLocalStore } from "./localStore";
-import { composeWeek, entriesWithoutSlot, mealPlansWithWeek, replaceMealPlans, type StoredEntry } from "./mealPlan";
-import { saveProfile, type HouseholdProfile, type MealTime, type NeverAgainEntry } from "./profile";
+import { composeWeek, entriesWithoutSlot, mealPlansWithWeek, replaceMealPlans, type PlanWeek, type ResolvedEntry, type StoredEntry } from "./mealPlan";
+import { saveProfile, type HouseholdProfile, type NeverAgainEntry } from "./profile";
 import { addDays, nextWeekStartFor, toIsoDate, weekStartFor, type WeekPlan } from "./weekPlan";
 
 export type Rating = "up" | "down" | "skip";
 
 /** Gründe für 👎 als Chips */
 export const DOWN_REASONS = ["zu scharf", "zu aufwendig", "Kinder mögen's nicht", "schmeckt nicht"];
-
-/** Ab dieser Uhrzeit wird am Kochtag selbst gefragt */
-const ASK_FROM_HOUR: Record<MealTime, number> = { mittags: 14, abends: 19 };
-
-/** Wie viele Tage zurück noch gefragt wird (heute eingeschlossen) */
-const LOOK_BACK_DAYS = 3;
 
 export type RatingCandidate = {
   /** Kochtag, "YYYY-MM-DD" */
@@ -62,9 +56,42 @@ function markRated(date: string, rating: Rating) {
   store.save({ version: 1, rated: { ...rated, [date]: rating } });
 }
 
+/** "HH:MM" + Minuten → Minuten seit Mitternacht */
+const minutesOf = (clock: string) => {
+  const [h, m] = clock.split(":").map(Number);
+  return h * 60 + m;
+};
+
+/** Wird so lange nach dem Essen gefragt */
+export const ASK_AFTER_MINUTES = 60;
+
 /**
- * Welches gekochte Gericht als Nächstes bewertet werden soll: heute ab dem
- * Abend (bzw. nach dem Mittagessen), sonst die letzten Tage – jüngstes zuerst.
+ * Gibt es das Gericht zum ersten Mal? Rezepte: noch nie gekocht/bewertet und
+ * nicht schon früher im Plan; Freitext/Wunsch: Titel nicht schon früher im Plan.
+ */
+export function isFirstTime(
+  entry: ResolvedEntry,
+  date: string,
+  week: PlanWeek,
+  mealPlans: Record<string, Record<string, StoredEntry>>,
+  recipes: Record<string, Recipe>,
+): boolean {
+  const recipe = entry.recipeId ? recipes[entry.recipeId] : undefined;
+  if (recipe && (recipe.cookedCount > 0 || recipe.thumbsUp > 0)) return false;
+  const title = entry.title.trim().toLowerCase();
+  const same = (s: StoredEntry) =>
+    (entry.recipeId && s.kind === "recipe" && s.recipeId === entry.recipeId) ||
+    ((s.kind === "recipe" || s.kind === "text") && s.title.trim().toLowerCase() === title) ||
+    (s.kind === "wish" && s.text.trim().toLowerCase() === title);
+  const earlierWeeks = Object.entries(mealPlans).filter(([start]) => start < week.weekStart);
+  if (earlierWeeks.some(([, entries]) => Object.values(entries).some(same))) return false;
+  return !week.days.some((d) => d.date < date && d.slot.entry && same(d.slot.entry.stored));
+}
+
+/**
+ * Nach dem Kochen fragen – nur heute, ab 1 Stunde nach der Essenszeit, und
+ * nur bei Gerichten, die es zum ersten Mal gab (keine Wiederholungen oder
+ * Kochbuch-Klassiker). Am nächsten Tag ist die Frage weg.
  */
 export function ratingCandidate(
   now: Date,
@@ -74,19 +101,15 @@ export function ratingCandidate(
   recipes: Record<string, Recipe>,
   rated: Record<string, Rating>,
 ): RatingCandidate | null {
-  const shoppingDay = profile.shoppingDay || "Montag";
-  for (let back = 0; back < LOOK_BACK_DAYS; back++) {
-    const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - back, 12);
-    const iso = toIsoDate(date);
-    if (rated[iso]) continue;
-    const week = composeWeek(weekStartFor(date, shoppingDay), profile, weekPlans, mealPlans, recipes);
-    const day = week.days.find((d) => d.date === iso);
-    const entry = day?.slot.entry;
-    if (!day || day.away || !entry) continue;
-    if (back === 0 && now.getHours() < ASK_FROM_HOUR[day.mealTime]) continue;
-    return { date: iso, weekday: day.weekday, title: entry.title, recipeId: entry.recipeId };
-  }
-  return null;
+  const iso = toIsoDate(now);
+  if (rated[iso]) return null;
+  const week = composeWeek(weekStartFor(now, profile.shoppingDay || "Montag"), profile, weekPlans, mealPlans, recipes);
+  const day = week.days.find((d) => d.date === iso);
+  const entry = day?.slot.entry;
+  if (!day || day.away || !entry) return null;
+  if (now.getHours() * 60 + now.getMinutes() < minutesOf(profile.mealClock[day.mealTime]) + ASK_AFTER_MINUTES) return null;
+  if (!isFirstTime(entry, iso, week, mealPlans, recipes)) return null;
+  return { date: iso, weekday: day.weekday, title: entry.title, recipeId: entry.recipeId };
 }
 
 /** 👍: Zähler hoch, KI-Rezept als Favorit behalten, Basis-Statistik */

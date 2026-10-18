@@ -30,6 +30,19 @@ abgeben kann – wie an eine Haushaltskraft, mit der man ganz natürlich spricht
    Vollkorn; weniger Zucker, Salz, verarbeitetes Fleisch) – keine Trends oder
    Heilversprechen. Nie zum Cheat Day oder Wunschessen, nie über Körper,
    Gewicht oder Kalorien, nie belehrend, nie als Pop-up.
+9. Der Küchenhelfer nervt nie:
+   - Machen statt fragen: Kleine Dinge erledigt er selbst und meldet kurz
+     mit "Rückgängig"; Rückfragen nur bei echten Entscheidungen.
+   - Nie "du musst / du solltest / vergiss nicht" – immer als Angebot oder
+     Erledigt-Meldung ("Ich hab die Liste fertig gemacht").
+   - Startseite: höchstens ein Satz vom Helfer, nur bei wirklich Relevantem,
+     sonst Stille.
+   - Push: höchstens 1 proaktive Mitteilung pro Tag (dazu nur selbst
+     eingestellte Erinnerungen), Ruhezeit 20:00–7:00 (`src/lib/nudges.ts`).
+   - Lernen aus Ignorieren: Wird eine Art von Hinweis 3× ignoriert (oder
+     weggeklickt), pausiert sie 2 Wochen (`noteShown`/`noteAnswered`/
+     `noteDismissed`, Speicher `wasgibts.hinweise`).
+   - Kurz: Antworten im Chat höchstens 2–3 Sätze, außer auf Nachfrage.
 
 @AGENTS.md
 
@@ -74,10 +87,25 @@ abgeben kann – wie an eine Haushaltskraft, mit der man ganz natürlich spricht
   maskable, apple-touch-icon, favicon.ico). In der App `AppIcon`/`AppLogo`
   (`src/components/AppLogo.tsx`): Startseite Icon 44px + Schriftzug,
   Unterseiten 32px oben rechts im `PageHeader` als Link "Zur Startseite".
-- Startseite: Logo, Gruß, Karte "Heute" (Hauptgericht groß, darunter klein die
-  zweite Mahlzeit: "Reste von …" oder Link "Schnelle Idee? → Was ist noch da?";
-  `src/components/home/TodayCard.tsx`), Wochen-Check-Karte, Bereiche als
-  `ListRow`-Liste, Haushalts-Zeile.
+- Startseite "Heute" (`src/components/home/HomeView.tsx`), passt ohne
+  Scrollen aufs iPhone, wenig Text, viel Weißraum:
+  - Kopf: Logo, darunter klein das Datum, rechts Zahnrad zu `/profil`.
+  - Große Heute-Karte (`HeroCard`): Bildfeld mit Akzent-Verlauf und Emoji
+    (später Rezeptbild), Label "HEUTE · 18:30" (Profil v10 `mealClock`),
+    Gerichtname, eine ruhige Zeile (Besonderheit wie "Mathis' Wunsch 🎉",
+    "Neu", "Reste" · Zeit · Personen), darunter Termine des Tages
+    (`src/lib/appointments.ts`, vorerst leer – Platz für Premium-Kalender).
+    Tippen öffnet das Rezept. Nichts geplant: "Noch nichts für heute – soll
+    <Name> was vorschlagen?" (mit KI im Chat, sonst zum Wochenplan).
+  - Darunter evtl. die schmale Bewertungszeile (`RatingRow`).
+  - Höchstens ein Satz vom Küchenhelfer (`HelperNote`, Avatar + Sprechblase,
+    max. 2 Chips), nur bei Wichtigem: fehlt etwas für morgen → wochenplanung
+    für nächste Woche → Lob → Gesundheits-Tipp; sonst nichts.
+  - Drei Bento-Karten Woche ("Morgen: Lachs" bzw. "5/7 geplant"), Einkauf
+    ("12 offen"), Kochbuch ("23 Rezepte").
+  - Unten fest `HomeAskBar`: "Sag <Name>, was ansteht …" (öffnet das Panel)
+    und großes Mikrofon (`openHelper("voice")`, Sprache startet direkt).
+    Auf der Startseite gibt es keinen schwebenden Knopf.
 
 ## Produktentscheidungen
 
@@ -127,11 +155,9 @@ abgeben kann – wie an eine Haushaltskraft, mit der man ganz natürlich spricht
   (`weekStartFor`, `planningWeekStart`, `weekDayNames`).
 - "Standardwoche" (früher "Wochenregeln") ist die Vorlage im Profil. Der
   Wochen-Check (`/woche/check`, optional `?woche=`) übernimmt sie als Startwert
-  und speichert Vorgaben pro Woche separat. Startseiten-Karte: bis 2 Tage vor
-  dem nächsten Einkaufstag "Diese Woche planen" (mit Vorgaben ausgeblendet),
-  danach "Nächste Woche planen" bzw. "Nächste Woche steht ✓".
-- Startseite: Kachel "Was ist noch da?" (Route bleibt `/schnellkueche`).
-  Untertitel von Wochenplan, Einkaufsliste und Kochbuch sind dynamisch.
+  und speichert Vorgaben pro Woche separat. Ist ab 2 Tage vor dem nächsten
+  Einkaufstag die nächste Woche noch ohne Vorgaben, bietet der Helfer-Satz
+  auf der Startseite an, sie zu planen.
 - Es wird genau EIN Hauptgericht pro Tag geplant. Profil `warmMeal`
   ("Wann esst ihr meistens zusammen warm?", Profil v6): mittags oder abends,
   getrennt für Mo–Fr und Sa–So – bestimmt nur Anzeige und Personenzahl
@@ -198,8 +224,8 @@ abgeben kann – wie an eine Haushaltskraft, mit der man ganz natürlich spricht
   (`planningWeekStart`).
 - Migrationen: `createLocalStore` schreibt einen migrierten Stand einmalig
   zurück, wenn sich die Version geändert hat.
-- "Was ist noch da?" läuft über den Küchenhelfer: Die Startseiten-Kachel
-  (und "Schnelle Idee?" in der Heute-Karte) öffnet das Panel im Reste-Modus
+- "Was ist noch da?" läuft über den Küchenhelfer: "Was ist noch da?" bzw.
+  "Reste" im Chat (oder `openHelper("reste")`) öffnet den Reste-Modus
   (`openHelper("reste")`, `src/lib/assistant/open.ts`; `ChatState.reste`)
   mit "Was ist noch da? Erzähl einfach." Gesagtes zerlegt `parseLeftovers()`
   (`src/lib/leftovers/parser.ts`, austauschbar; Füllwörter, Zahlwörter,
@@ -234,29 +260,33 @@ abgeben kann – wie an eine Haushaltskraft, mit der man ganz natürlich spricht
   (`SWAPS`: halbe Sahne → Joghurt, Vollkornnudeln halb/halb, Naturreis, Hack
   zu einem Drittel → rote Linsen, halbe Menge Wurst/Speck + Paprika, weniger
   Zucker, Vollkornbrot) für geplante Rezepte ab heute – nie Cheat Day,
-  Wunschessen oder bei Allergie-Konflikt. Hinweis des Tages (Sprechblase
-  "Kleiner Tipp für …") und im Chat (`TipBubble`: "Ausprobieren" ändert nur
+  Wunschessen oder bei Allergie-Konflikt. Als Helfer-Satz auf der Startseite
+  ("Kleine Idee für …" mit "Ausprobieren"/"Nein danke") und im Chat (`TipBubble`: "Ausprobieren" ändert nur
   dieses Rezept, Notiz "🌱 Ausprobiert", mit "Rückgängig"; "Nein danke").
   Wochenlimit über `wasgibts.tipps` (gezeigte Tipps je Woche, erledigte
   kommen nicht wieder). Lob zum Wochenrückblick (`weekPraise`, ab dem
   vorletzten Tag der Planungswoche, z. B. "Diese Woche 5 Gemüsetage – stark!
   💪"). Die KI bekommt Einstellung, Zahl der Tipps dieser Woche und die
   Regeln (Systemanweisung).
-- Bewerten nach dem Kochen (`src/lib/ratings.ts`, Speicher
-  `wasgibts.bewertungen` je Kochtag): Am Kochtag ab 19 Uhr (bzw. 14 Uhr bei
-  "mittags") oder beim nächsten Öffnen (bis 2 Tage zurück) fragt die Karte
-  auf der Startseite (`RatingCard`, auch als Sprechblase) "Wie war …?".
+- Bewerten nach dem Kochen – klein und nur bei Neuem (`src/lib/ratings.ts`,
+  Speicher `wasgibts.bewertungen` je Kochtag): nur für Gerichte, die es zum
+  ersten Mal gibt (`isFirstTime`: Rezept noch nie gekocht/bewertet und nicht
+  schon früher im Plan; keine Wiederholungen oder Klassiker), nur am Kochtag
+  ab 1 Stunde nach der Essenszeit. Auf der Startseite eine schmale Zeile
+  unter der Heute-Karte "Wie war …?" 👍 / 👎 / ✕ (`RatingRow`); weg nach
+  Antwort, nach ✕ oder am nächsten Tag. Nach 3 ignorierten Fragen in Folge 2
+  Wochen Pause (`nudges.ts`, Art "bewertung"). Push später: "<Name>: Wie war
+  …? 👍 👎" ca. 1 Stunde nach dem Essen (`ratingPushText`, `ratingPushTime`).
   👍: Zähler hoch, KI-Rezept wird Favorit, Basis-Statistik. 👎: Grund per
-  Chip ("zu scharf", "zu aufwendig", "Kinder mögen's nicht", "schmeckt
-  nicht") oder Freitext → Profil `neverAgain` (Titel, Hauptzutaten, Grund,
+  Chip ("zu scharf", "zu aufwendig", "Kinder mögen's nicht") oder ohne → Profil `neverAgain` (Titel, Hauptzutaten, Grund,
   Kopie des Rezepts), Rezept raus aus dem Kochbuch, künftige Plätze mit dem
-  Gericht werden geleert. "Haben wir nicht gekocht" fragt nicht mehr. Die
+  Gericht werden geleert. Die
   "Nie wieder"-Liste geht immer an die KI (`prompt.ts`, mit Anweisung: diese
   und sehr ähnliche Gerichte nie, Gründe beachten); `rezept_erstellen` und
   freie Gerichte lehnen Einträge der Liste ab (`isNeverAgain`). Einsehbar
   und einzeln wiederherstellbar unter `/profil/nie-wieder`.
 - Küchenhelfer (KI, `src/lib/assistant/`, API `/api/kuechenhelfer`): schwebender
-  Knopf auf allen Seiten (`KitchenHelper` im Layout, über `StickyActions`,
+  Knopf auf allen Seiten außer der Startseite (`KitchenHelper` im Layout, über `StickyActions`,
   bei offener Tastatur ausgeblendet), Panel mit Chat, Mikrofon
   (`useSpeechInput`, Fallback Tastatur-Diktat) und optionalem Vorlesen.
   Die App schickt einen Daten-Schnappschuss mit; der Server führt die
@@ -278,10 +308,8 @@ abgeben kann – wie an eine Haushaltskraft, mit der man ganz natürlich spricht
   eine passende deutsche Systemstimme, sonst Standard). Einstellbar im
   Kennenlernen (erste Frage), im Assistenten (letzter Schritt) und unter `/profil/kuechenhelfer`. Knopf mit
   Topf-Gesicht (`HelperAvatar`); Anrede `helperTitle()`: "deine
-  Küchenhelferin" bei weiblicher, "dein Küchenhelfer" bei männlicher Stimme, nur auf der Startseite einmal pro App-Start
-  eine Sprechblase ("Frag Lotte" bzw. aktueller Hinweis aus `useHelperHint`,
-  z. B. "Lotte: Für morgen fehlt Sahne"), klappt nach 5 s oder beim Scrollen
-  zu. Panel-Kopf: Avatar, Name, `helperTitle()`; erste Nachricht
+  Küchenhelferin" bei weiblicher, "dein Küchenhelfer" bei männlicher Stimme.
+  Panel-Kopf: Avatar, Name, `helperTitle()`; erste Nachricht
   "Hi, ich bin <Name> – was steht an?". Mitteilungen im Namen des
   Küchenhelfers (auch künftige Push) immer über `helperMessage()` →
   "<Name>: …". Die KI bekommt Name, Familie und Ton aus dem Leitbild

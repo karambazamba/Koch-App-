@@ -77,10 +77,14 @@ type Props = {
   setChat: Dispatch<SetStateAction<ChatState>>;
   onApply: (selected: Set<string>) => void;
   onClose: () => void;
+  /** Mikrofon beim Öffnen direkt starten */
+  startListening?: boolean;
+  /** Beim Öffnen gleich diese Frage stellen */
+  initialAsk?: string;
 };
 
 /** Panel von unten: Chatverlauf, Vorschlag, großes Mikrofon und Textfeld */
-export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
+export function HelperPanel({ data, chat, setChat, onApply, onClose, startListening, initialAsk }: Props) {
   const status = useAssistantStatus(true);
   const today = useToday();
   const inset = useKeyboardInset();
@@ -253,6 +257,16 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
       return;
     }
     if (chat.reste) return void resteInput(t);
+    // "Was ist noch da?" → Reste-Modus
+    if (/^(was ist noch da|reste( verwerten)?|was kann ich aus (den |meinen |unseren )?resten)/i.test(t)) {
+      setInput("");
+      setChat((c) => ({
+        ...c,
+        reste: "items",
+        turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text: "Was ist noch da? Erzähl einfach.", local: true, resteStart: true, items: (pantry ?? []).map(formatPantryItem) }],
+      }));
+      return;
+    }
     // Einkaufsliste und eigene Produkte direkt erledigen (auch ohne KI)
     const local = shoppingReply(t);
     if (local) {
@@ -322,6 +336,19 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose }: Props) {
       speech.start();
     }
   };
+
+  // Von der Startseite geöffnet: einmalig Mikrofon starten bzw. Frage stellen
+  const latest = useRef({ submit, toggleMic });
+  useEffect(() => {
+    latest.current = { submit, toggleMic };
+  });
+  const started = useRef(false);
+  useEffect(() => {
+    if (started.current || !data || !today) return;
+    started.current = true;
+    if (initialAsk) latest.current.submit(initialAsk);
+    else if (startListening) latest.current.toggleMic();
+  }, [data, today, initialAsk, startListening]);
 
   // Escape schließt, Seite dahinter scrollt nicht mit
   useEffect(() => {
