@@ -171,6 +171,32 @@ export function hasKids(profile: Pick<HouseholdProfile, "persons">): boolean {
   return profile.persons.some((p) => p.role === "kind");
 }
 
+/** Stehen schon Gerichte im Wochenplan? (nur für die Migration auf v16, liest den Speicher direkt) */
+function hasPlannedMeals(): boolean {
+  try {
+    if (typeof localStorage === "undefined") return false;
+    const raw = JSON.parse(localStorage.getItem("wasgibts.wochenplan") ?? "null") as { weeks?: Record<string, Record<string, { kind?: string }>> } | null;
+    return Object.values(raw?.weeks ?? {}).some((w) => Object.values(w ?? {}).some((e) => e && (e.kind === "recipe" || e.kind === "text" || e.kind === "wish")));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Welcher Planstil gilt heute? Spontan mit "nur diese Woche planen" zählt
+ * in dieser Woche wie "mal so, mal so".
+ */
+export function effectivePlanStyle(profile: Pick<HouseholdProfile, "planStyle" | "planWeek"> | null | undefined, currentWeekStart?: string): PlanStyle {
+  if (!profile) return "mix";
+  if (profile.planStyle === "spontan" && profile.planWeek && currentWeekStart && profile.planWeek === currentWeekStart) return "mix";
+  return profile.planStyle;
+}
+
+/** Wochenplan, Wochen-Check, Einkaufstag … sichtbar? (nicht bei "spontan") */
+export function planningVisible(profile: Pick<HouseholdProfile, "planStyle" | "planWeek"> | null | undefined, currentWeekStart?: string): boolean {
+  return effectivePlanStyle(profile, currentWeekStart) !== "spontan";
+}
+
 /** Nur für mich → "du" statt "ihr" */
 export function isSolo(profile: Pick<HouseholdProfile, "householdType"> | null | undefined): boolean {
   return profile?.householdType === "single";
@@ -238,7 +264,7 @@ export type PauseSettings = { from: string; until: string | null };
 export type WeatherSettings = { consent: boolean; postcode: string };
 
 export type HouseholdProfile = {
-  version: 15;
+  version: 16;
   householdName: string;
   adults: number;
   kids: number;
@@ -287,8 +313,21 @@ export type HouseholdProfile = {
   display: DisplayMode;
   /** Wochenend-Ideen auf Lottes Platz (Profil v15, Standard an) */
   weekendIdeas: boolean;
+  /** Planen oder spontan (Profil v16, Standard "mix") */
+  planStyle: PlanStyle;
+  /** Spontan, aber "nur diese Woche planen": erster Tag dieser Woche, sonst null */
+  planWeek: string | null;
   updatedAt: string;
 };
+
+/** Wie ihr kocht: mit Plan, spontan oder mal so, mal so (Profil v16) */
+export type PlanStyle = "plan" | "spontan" | "mix";
+
+export const PLAN_STYLES: { value: PlanStyle; label: string; hint: string }[] = [
+  { value: "plan", label: "Ich plane gern", hint: "Wochenplan, Einkaufstag und Liste für die ganze Woche." },
+  { value: "spontan", label: "Ich koche spontan", hint: "Kein Plan – jeden Tag frische Ideen, die Liste nur bei Bedarf." },
+  { value: "mix", label: "Mal so, mal so", hint: "Plan, wenn ihr Lust habt – freie Tage sind ganz normal." },
+];
 
 /** Ansicht der App (Profil v15) – "auto" folgt Hell/Dunkel des Handys */
 export type AppTheme = "warm" | "nacht" | "frisch" | "auto";
@@ -409,7 +448,7 @@ export function createPerson(role: PersonRole): Person {
 
 export function createEmptyProfile(): HouseholdProfile {
   return {
-    version: 15,
+    version: 16,
     householdName: "",
     adults: 2,
     kids: 1,
@@ -448,6 +487,8 @@ export function createEmptyProfile(): HouseholdProfile {
     helperMode: "normal",
     display: "einfach",
     weekendIdeas: true,
+    planStyle: "mix",
+    planWeek: null,
     updatedAt: "",
   };
 }
@@ -597,7 +638,7 @@ export function normalizeMealTime(value: unknown, fallback: MealTime): MealTime 
 export function migrateProfile(raw: unknown): HouseholdProfile | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as Record<string, unknown>;
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(data.version as number)) return null;
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].includes(data.version as number)) return null;
 
   const defaults = createEmptyProfile();
 
@@ -695,6 +736,9 @@ export function migrateProfile(raw: unknown): HouseholdProfile | null {
     helperMode: HELPER_MODES.some((m) => m.value === data.helperMode) ? (data.helperMode as HelperMode) : "normal",
     display: data.display === "alles" ? "alles" : "einfach",
     weekendIdeas: data.weekendIdeas !== false,
+    // Bis v15: wer schon Gerichte im Plan hat, plant gern – sonst "mal so, mal so"
+    planStyle: PLAN_STYLES.some((p) => p.value === data.planStyle) ? (data.planStyle as PlanStyle) : hasPlannedMeals() ? "plan" : "mix",
+    planWeek: typeof data.planWeek === "string" && /^\d{4}-\d{2}-\d{2}$/.test(data.planWeek) ? data.planWeek : null,
     updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : "",
   };
 }

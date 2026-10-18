@@ -3,7 +3,7 @@
 import { useRecipes } from "./cookbook";
 import { composeWeek, useMealPlans } from "./mealPlan";
 import { buildShoppingList, useShoppingLists, useShoppingSettings, type ShoppingList, type ShoppingSettings, type WeekList } from "./shoppingList";
-import { isSmallHousehold } from "./profile";
+import { isSmallHousehold, planningVisible } from "./profile";
 import { useProfile } from "./useProfile";
 import {
   DEFAULT_SHOPPING_DAY,
@@ -23,7 +23,7 @@ export type WeekChoice = "planning" | "current" | "next";
  */
 export function useWeekShoppingList(
   choice: WeekChoice,
-): { weekStart: string; isNext: boolean; list: ShoppingList; weekList: WeekList | undefined; settings: ShoppingSettings } | undefined {
+): { weekStart: string; isNext: boolean; list: ShoppingList; weekList: WeekList | undefined; settings: ShoppingSettings; planning: boolean } | undefined {
   const today = useToday();
   const profile = useProfile();
   const weekPlans = useWeekPlans();
@@ -36,8 +36,11 @@ export function useWeekShoppingList(
 
   const shoppingDay = profile?.shoppingDay ?? DEFAULT_SHOPPING_DAY;
   const current = weekStartFor(today, shoppingDay);
-  const weekStart =
-    choice === "current"
+  // Spontan: immer die laufende Woche, ohne Artikel aus dem (ausgeblendeten) Plan
+  const planning = planningVisible(profile, current);
+  const weekStart = !planning
+    ? current
+    : choice === "current"
       ? current
       : choice === "next"
         ? nextWeekStartFor(today, shoppingDay)
@@ -46,7 +49,8 @@ export function useWeekShoppingList(
   return {
     weekStart,
     isNext: weekStart !== current,
-    list: buildShoppingList(week, recipes, lists[weekStart], settings, { small: profile ? isSmallHousehold(profile) : false }),
+    list: buildShoppingList(week, recipes, lists[weekStart], settings, { small: profile ? isSmallHousehold(profile) : false, manualOnly: !planning }),
+    planning,
     weekList: lists[weekStart],
     settings,
   };

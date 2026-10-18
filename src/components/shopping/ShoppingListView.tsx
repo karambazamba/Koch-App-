@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Beef,
+  CalendarCheck,
   Carrot,
   Check,
   ChevronDown,
@@ -31,6 +32,7 @@ import { Segmented } from "@/components/ui/Segmented";
 import { CARD, CARD_LIST, ICON_BUTTON, PAGE_MAIN, buttonClass, chipClass } from "@/components/ui/styles";
 import {
   SECTIONS,
+  carryOverManual,
   dueStaples,
   removeManualItem,
   renameItem,
@@ -81,6 +83,13 @@ export function ShoppingListView() {
   const [info, setInfo] = useState<string | null>(null);
   const [editing, setEditing] = useState<ListItem | null>(null);
   const [staplesOpen, setStaplesOpen] = useState(false);
+  // "Für heute" kommt immer aus der laufenden Woche (auch wenn die nächste angezeigt wird)
+  const current = useWeekShoppingList("current");
+  // Spontan: offene Artikel früherer Wochen in die laufende Woche holen
+  const carryWeek = data && !data.planning ? data.weekStart : null;
+  useEffect(() => {
+    if (carryWeek) carryOverManual(carryWeek);
+  }, [carryWeek]);
 
   if (!data || !today) return SKELETON;
   const { weekStart, isNext, list, weekList, settings } = data;
@@ -91,13 +100,15 @@ export function ShoppingListView() {
   const hidden = list.items.filter((i) => i.hidden);
   const due = dueStaples(settings.staples, weekStart, list, weekList);
 
-  // "Heute holen": offene Artikel für heute und morgen (nur in der laufenden Woche)
+  // "Für heute": offene Artikel für heute (aus Ideen, Twist oder Plan) – immer aus der laufenden Woche
   const inWeek = todayIso >= weekStart && todayIso <= addDays(weekStart, 6);
-  const soon = [WEEKDAY.format(today), WEEKDAY.format(new Date(today.getTime() + 86_400_000))];
+  const todayName = WEEKDAY.format(today);
+  const forToday = (i: ListItem) => !i.checked && !i.hidden && i.days.includes(todayName);
   // "Jetzt mitnehmen" (aus dem Supermarkt-Gespräch): oben, bis abgehakt
   const nowItems = visible.filter((i) => i.now && !i.checked);
-  const grouped = visible.filter((i) => !(i.now && !i.checked));
-  const todayItems = inWeek ? grouped.filter((i) => !i.checked && i.days.some((d) => soon.includes(d))) : [];
+  const todayItems = inWeek ? visible.filter((i) => forToday(i) && !nowItems.includes(i)) : (current?.list.items.filter(forToday) ?? []);
+  const todayWeek = inWeek ? weekStart : (current?.weekStart ?? weekStart);
+  const grouped = visible.filter((i) => !(i.now && !i.checked) && !(inWeek && todayItems.includes(i)));
 
   const toggle = (item: ListItem) => toggleChecked(weekStart, item, todayIso);
 
@@ -138,6 +149,7 @@ export function ShoppingListView() {
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
       <PageHeader title="Einkaufsliste" />
       <main className={PAGE_MAIN}>
+        {data.planning && (
         <div className="flex items-center justify-between gap-2">
           <button type="button" onClick={() => setChoice("current")} disabled={!isNext} aria-label="Diese Woche" className={ICON_BUTTON}>
             <ChevronLeft className="h-6 w-6" strokeWidth={2.25} aria-hidden />
@@ -150,6 +162,7 @@ export function ShoppingListView() {
             <ChevronRight className="h-6 w-6" strokeWidth={2.25} aria-hidden />
           </button>
         </div>
+        )}
 
         <Segmented
           label="Sortierung"
@@ -180,7 +193,7 @@ export function ShoppingListView() {
 
         {nowItems.length > 0 && (
           <section aria-label="Jetzt mitnehmen" className="flex flex-col gap-1.5">
-            <h2 className="flex items-center gap-1.5 px-1 text-xs font-bold uppercase tracking-wider text-accent">
+            <h2 className="flex items-center gap-1.5 px-1 text-xs font-bold uppercase tracking-wider text-accent-strong">
               <ShoppingBag className="h-4 w-4" strokeWidth={2} aria-hidden />
               Jetzt mitnehmen
             </h2>
@@ -195,35 +208,45 @@ export function ShoppingListView() {
         )}
 
         {todayItems.length > 0 && (
-          <section className={`${CARD} flex flex-col gap-2 p-3`} aria-label="Heute holen">
-            <h2 className="px-1 text-xs font-bold uppercase tracking-wider text-accent">Heute holen</h2>
-            <div className="flex flex-wrap gap-2">
-              {todayItems.map((i) => (
-                <button key={i.key} type="button" onClick={() => toggle(i)} className={chipClass(false)}>
-                  {i.name}
-                </button>
+          <section aria-label="Für heute" className="flex flex-col gap-1.5">
+            <h2 className="flex items-center gap-1.5 px-1 text-xs font-bold uppercase tracking-wider text-accent-strong">
+              <CalendarCheck className="h-4 w-4" strokeWidth={2} aria-hidden />
+              Für heute
+            </h2>
+            <ul className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
+              {todayItems.map((item) => (
+                <SwipeRow key={item.key} label={item.name} actions={inWeek ? actionsFor(item) : []} onLongPress={() => setInfo(info === item.key ? null : item.key)}>
+                  <ItemContent item={item} onToggle={() => toggleChecked(todayWeek, item, todayIso)} onInfo={() => setInfo(info === item.key ? null : item.key)} infoOpen={info === item.key} />
+                </SwipeRow>
               ))}
-            </div>
+            </ul>
           </section>
         )}
+        {todayItems.length > 0 && grouped.length > 0 && <h2 className="-mb-1 mt-1 px-1 text-xs font-bold uppercase tracking-wider text-muted">Einkaufsliste</h2>}
 
         {due.length > 0 && (
           <StapleBar staples={due} onTake={(st) => takeStaple(weekStart, st)} onSkip={(st) => skipStaple(weekStart, st)} onManage={() => setStaplesOpen(true)} />
         )}
 
-        {list.missing.length > 0 && (
+        {data.planning && list.missing.length > 0 && (
           <p className="flex items-start gap-2 px-1 text-sm text-muted">
             <PenLine className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
             <span>Ohne Zutaten: {list.missing.join(", ")} – selbst ergänzen.</span>
           </p>
         )}
 
-        {list.items.length === 0 && list.missing.length === 0 && (
+        {list.items.length === 0 && list.missing.length === 0 && todayItems.length === 0 && (
           <p className={`${CARD} p-5 text-center text-muted`}>
-            Im Wochenplan stehen noch keine Gerichte mit Rezept.{" "}
-            <Link href="/wochenplan" className="font-bold text-accent-strong underline">
-              Zum Wochenplan
-            </Link>
+            {data.planning ? (
+              <>
+                Für Gerichte mit Rezept im Wochenplan schreibe ich die Liste von selbst.{" "}
+                <Link href="/wochenplan" className="font-bold text-accent-strong underline">
+                  Zum Wochenplan
+                </Link>
+              </>
+            ) : (
+              "Hier ist gerade nichts drauf – sag mir einfach, was auf die Liste soll, oder tipp aufs Plus."
+            )}
           </p>
         )}
 

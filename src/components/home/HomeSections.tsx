@@ -15,9 +15,13 @@ import { openHelper } from "@/lib/assistant/open";
 import { dishEmoji } from "@/lib/dishEmoji";
 import { helperName, isSmallHousehold, isSolo, mealClockFor, saveProfile } from "@/lib/profile";
 import { dismissWelcome } from "@/lib/activity";
-import { entriesWithoutSlot, mealPlansWithWeek, replaceMealPlans, useMealPlans } from "@/lib/mealPlan";
+import { entriesWithoutSlot, loadMealPlans, mealPlansWithWeek, replaceMealPlans, useMealPlans } from "@/lib/mealPlan";
 import { useWeekShoppingList } from "@/lib/useWeekShoppingList";
-import type { HomeData } from "./useHomeData";
+import { useTodayIdeas } from "@/lib/useIdeas";
+import { isSpontanEntry, type HomeData } from "./useHomeData";
+import { IdeasCard } from "@/components/ideas/IdeasCard";
+import { showToast } from "@/lib/toast";
+import { Lightbulb } from "lucide-react";
 
 const DATE = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long" });
 
@@ -73,7 +77,7 @@ export function HeroCard({ data, afterMeal }: { data: HomeData; afterMeal: boole
           🏕️
         </span>
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-accent">Heute</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-accent-strong">Heute</p>
           <p className="mt-1 text-xl font-extrabold leading-tight tracking-tight">Ausflug – heute wird nicht gekocht</p>
         </div>
       </section>
@@ -94,19 +98,8 @@ export function HeroCard({ data, afterMeal }: { data: HomeData; afterMeal: boole
         </section>
       );
     }
-    return (
-      <section className={`${CARD} flex flex-col gap-3 p-4`} aria-label="Heute">
-        <div className="flex items-center gap-3">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-accent-soft text-3xl" aria-hidden>
-            🍳
-          </span>
-          <p className="text-lg font-bold leading-snug">Noch nichts für heute – spontan was kochen?</p>
-        </div>
-        <button type="button" onClick={() => openHelper("spontan")} className={`${buttonClass("secondary")} w-full`}>
-          Ja, zeig mir Ideen
-        </button>
-      </section>
-    );
+    // Kein Gericht für heute: ganz normal – drei Ideen (für alle Kochstile)
+    return <IdeasCard />;
   }
 
   const title = entry ? entry.title : `Reste von ${day!.leftovers}`;
@@ -130,6 +123,14 @@ export function HeroCard({ data, afterMeal }: { data: HomeData; afterMeal: boole
   const recipeHref = recipe ? `/kochbuch/rezept?id=${encodeURIComponent(recipe.id)}` : null;
   // Neu (oder "gern nach Rezept"): das Rezept steht im Vordergrund
   const recipeFirst = Boolean(recipe && !afterMeal && (status === "neu" || profile.cookingStyle === "rezept"));
+  // Aus den Ideen gewählt: "Andere Idee" statt Tauschen im Plan
+  const spontanChoice = isSpontanEntry(day);
+  const otherIdea = () => {
+    if (!day) return;
+    const before = loadMealPlans();
+    replaceMealPlans(mealPlansWithWeek(before, data.week.weekStart, (entries) => entriesWithoutSlot(entries, day.slot)));
+    showToast({ text: "Okay – hier sind wieder Ideen.", undo: () => replaceMealPlans(before) });
+  };
   const facts = [
     special,
     recipe?.prepMinutes ? `${recipe.prepMinutes} Min.` : "",
@@ -140,7 +141,7 @@ export function HeroCard({ data, afterMeal }: { data: HomeData; afterMeal: boole
 
   return (
     <section className={`${CARD} flex flex-col overflow-hidden`} aria-label="Heute">
-      <Link href={recipeHref ?? "/wochenplan"} className="flex flex-col active:opacity-90">
+      <Link href={recipeHref ?? (data.planStyle === "spontan" ? "/ideen" : "/wochenplan")} className="flex flex-col active:opacity-90">
         {/* Bildfeld: so groß, wie der Bildschirm hergibt (ohne Scrollen) */}
         <div className="relative flex h-[clamp(3.5rem,calc(100dvh-38rem),11rem)] items-center justify-center bg-linear-to-br from-accent-soft via-accent-soft to-accent/45">
           <span className="absolute left-4 top-3 rounded-full bg-surface/90 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-accent-strong">
@@ -178,9 +179,15 @@ export function HeroCard({ data, afterMeal }: { data: HomeData; afterMeal: boole
               <span aria-hidden>·</span>
             </>
           )}
-          <Link href="/wochenplan?tauschen=heute" className="font-semibold underline-offset-2 active:underline">
-            Tauschen
-          </Link>
+          {spontanChoice ? (
+            <button type="button" onClick={otherIdea} className="font-semibold underline-offset-2 active:underline">
+              Andere Idee
+            </button>
+          ) : (
+            <Link href="/wochenplan?tauschen=heute" className="font-semibold underline-offset-2 active:underline">
+              Tauschen
+            </Link>
+          )}
         </p>
       ) : (
         <div className="pb-3" />
@@ -236,7 +243,7 @@ export function WelcomeBack({ data }: { data: HomeData }) {
     if (profile.pause) saveProfile({ ...profile, pause: null });
     dismissWelcome(todayIso);
     if (status?.configured) openHelper(undefined, "Wir starten frisch – schlag mir bitte was für die nächsten Tage vor.");
-    else router.push("/wochenplan");
+    else router.push(data.planStyle === "spontan" ? "/ideen" : "/wochenplan");
   };
   return (
     <section className="flex items-start gap-2.5" aria-label="Willkommen zurück">
@@ -275,9 +282,12 @@ export function BentoCards({ data }: { data: HomeData }) {
   const pantryCount = usePantry()?.length ?? 0;
   const tomorrowDish = data.tomorrow && !data.tomorrow.away ? data.tomorrow.slot.entry?.title : undefined;
   const count = shopping?.list.openCount ?? 0;
+  const ideaCount = Math.min(3, useTodayIdeas()?.ideas.length ?? 0);
   // Für welchen Einkauf: nächster Einkaufstag, heute oder die laufende Woche
   const forLabel = !shopping
     ? ""
+    : data.planStyle === "spontan"
+      ? "Einkaufsliste"
     : shopping.isNext
       ? `Für ${data.profile.shoppingDay || "Montag"}`
       : shopping.weekStart === data.todayIso
@@ -285,7 +295,17 @@ export function BentoCards({ data }: { data: HomeData }) {
         : "Diese Woche";
   return (
     <nav aria-label="Bereiche" className="mt-auto grid grid-cols-3 gap-2.5">
-      <BentoCard href="/wochenplan" label="Woche" icon={CalendarDays} value={tomorrowDish ? `Morgen: ${tomorrowDish}` : `${data.week.planned}/${data.week.total} geplant`} />
+      {data.planStyle === "spontan" ? (
+        <BentoCard href="/ideen" label="Ideen" icon={Lightbulb} value={ideaCount ? `${ideaCount} für heute` : "Für heute"} />
+      ) : (
+        <BentoCard
+          href="/wochenplan"
+          label="Woche"
+          icon={CalendarDays}
+          // "Mal so, mal so": freie Tage sind normal – kein Zähler
+          value={tomorrowDish ? `Morgen: ${tomorrowDish}` : data.planStyle === "mix" ? "Plan & Ideen" : `${data.week.planned}/${data.week.total} geplant`}
+        />
+      )}
       <div className="relative">
         {count > 0 ? (
           <BentoCard href="/einkaufsliste" label="Einkauf" icon={ShoppingCart} value={forLabel} sub={`${count} ${count === 1 ? "Sache" : "Sachen"}`} />

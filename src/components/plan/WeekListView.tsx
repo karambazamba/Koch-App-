@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { ChevronRight, GripVertical } from "lucide-react";
 import type { PlanDay } from "@/lib/mealPlan";
+import { usePlanStyle } from "@/lib/usePlanStyle";
 import { dayDot, dishTitle } from "./DayView";
 
 type Drag = { from: string; startY: number; y: number; over: string | null };
@@ -25,6 +26,7 @@ export function WeekListView({
   onMove: (from: PlanDay, to: PlanDay) => void;
 }) {
   const [drag, setDrag] = useState<Drag | null>(null);
+  const mixed = usePlanStyle()?.style === "mix";
   const rows = useRef(new Map<string, HTMLLIElement>());
 
   /** Tag unter dem Finger (nur Tage ohne Ausflug; die gezogene Zeile selbst zählt nicht) */
@@ -66,7 +68,7 @@ export function WeekListView({
                 </span>
                 <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${dayDot(d)}`} aria-hidden />
                 <span className={`min-w-0 flex-1 truncate ${d.slot.entry ? "font-semibold" : "text-muted"}`}>
-                  {d.paused ? "Pause ☀️" : d.away ? "Ausflug" : d.slot.entry ? dishTitle(d) : d.weekend === "frei" ? "Wochenende frei 🏖" : d.cheat ? "Cheat Day 🍕" : "frei"}
+                  {d.paused ? "Pause ☀️" : d.away ? "Ausflug" : d.slot.entry ? dishTitle(d) : d.weekend === "frei" ? "Wochenende frei 🏖" : d.cheat ? "Cheat Day 🍕" : mixed ? "spontan" : "frei"}
                 </span>
                 {readOnly && <ChevronRight className="mr-2 h-5 w-5 shrink-0 text-stone-300" strokeWidth={2.25} aria-hidden />}
               </button>

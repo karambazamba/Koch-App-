@@ -24,6 +24,7 @@ import { markTwistShown, markTwistTaken, twistAllowed, twistFor, unmarkTwistTake
 import { dishStatus } from "@/lib/dishStatus";
 import { useWeekShoppingList } from "@/lib/useWeekShoppingList";
 import { useWeekendForecast } from "@/lib/weather";
+import { plansOften, plansRarely } from "@/lib/planDetect";
 import { addDays, nextWeekStartFor, planningWeekStart, toIsoDate, useWeekPlan, weekStartFor } from "@/lib/weekPlan";
 import { WelcomeBack } from "./HomeSections";
 import { TipCard } from "./TipCard";
@@ -113,6 +114,8 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
   const note = ((): Note | null => {
     if (!ready || !data || !target || !activity || !pantry || minutes === undefined || !mealPlans || !rated) return null;
     const { profile, day, tomorrow } = data;
+    // Spontan: nie Planungs-Hinweise, keine Lücken-Texte
+    const spontan = data.planStyle === "spontan";
 
     // Pause: nur kurz vor dem Ende höchstens eine Nachricht
     if (pausedOn(profile, todayIso)) {
@@ -124,7 +127,7 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
           kind: "pause",
           text: `Ihr seid bald wieder da – soll ich für ${back} schon was vorbereiten?`,
           chips: [
-            once(key, "Ja, gern", () => (status?.configured ? openHelper(undefined, `Bereite bitte schon was für ${back} vor.`) : router.push("/wochenplan"))),
+            once(key, "Ja, gern", () => (status?.configured ? openHelper(undefined, `Bereite bitte schon was für ${back} vor.`) : router.push(spontan ? "/ideen" : "/wochenplan"))),
             once(key, "Nein danke"),
           ],
         };
@@ -208,10 +211,16 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
       const since = MONTH.format(new Date(`${oldFrozen.addedAt}T12:00:00`));
       return {
         kind: "vorrat",
-        text: `❄️ Im Tiefkühler liegt seit ${since} noch ${oldFrozen.name} – soll ich's diese Woche einplanen?`,
+        text: spontan
+          ? `❄️ Im Tiefkühler liegt seit ${since} noch ${oldFrozen.name} – soll ich dir was damit vorschlagen?`
+          : `❄️ Im Tiefkühler liegt seit ${since} noch ${oldFrozen.name} – soll ich's diese Woche einplanen?`,
         chips: [
           once(`tk:${oldFrozen.id}`, "Ja, gern", () =>
-            status?.configured ? openHelper(undefined, `Plan bitte ${oldFrozen.name} aus dem Tiefkühler diese Woche ein.`) : router.push("/wochenplan"),
+            spontan
+              ? openHelper("spontan")
+              : status?.configured
+                ? openHelper(undefined, `Plan bitte ${oldFrozen.name} aus dem Tiefkühler diese Woche ein.`)
+                : router.push("/wochenplan"),
           ),
           { label: "Nicht jetzt", onClick: () => noteDismissed("vorrat", todayIso), quiet: true },
         ],
@@ -252,10 +261,12 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
       if (fresh.length > 0 && !wasAsked(activity, key)) {
         return {
           kind: "pause",
-          text: `Im Kühlschrank ist noch ${names(fresh)} – soll ich das in die letzten Tage einplanen?`,
+          text: spontan
+            ? `Im Kühlschrank ist noch ${names(fresh)} – soll ich dir bis zur Pause Ideen dafür zeigen?`
+            : `Im Kühlschrank ist noch ${names(fresh)} – soll ich das in die letzten Tage einplanen?`,
           chips: [
             once(key, "Ja, gern", () =>
-              status?.configured ? openHelper(undefined, `Plan bitte ${names(fresh)} in die Tage bis zur Pause ein.`) : openHelper("spontan", undefined, ["reste"]),
+              status?.configured && !spontan ? openHelper(undefined, `Plan bitte ${names(fresh)} in die Tage bis zur Pause ein.`) : openHelper("spontan", undefined, ["reste"]),
             ),
             once(key, "Nein danke"),
           ],
@@ -263,8 +274,50 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
       }
     }
 
-    // 3. Planung
-    if (target.isNext && !targetPlan && allowed("wochenplanung")) {
+    // 3. Planung – je nach Kochstil. Erst die einmaligen Fragen (sanft erkennen)
+    const shoppingDay = profile.shoppingDay || "Montag";
+    if (profile.planStyle === "plan" && !wasAsked(activity, "frage-spontan") && plansRarely(mealPlans, shoppingDay, todayIso, activity.since) && allowed("wochenplanung")) {
+      return {
+        kind: "wochenplanung",
+        text: `${isSolo(profile) ? "Du kochst" : "Ihr kocht"} eher spontan, oder? Soll ich die Planung ausblenden?`,
+        chips: [
+          once("frage-spontan", "Ja", () => {
+            saveProfile({ ...profile, planStyle: "spontan", planWeek: null });
+            setDone({ text: "Gemacht ✓ Die Planung ist ausgeblendet – gespeichert bleibt alles.", undo: () => saveProfile(profile) });
+          }),
+          once("frage-spontan", "Nein, passt so"),
+        ],
+      };
+    }
+    if (profile.planStyle === "spontan" && !wasAsked(activity, "frage-planen") && plansOften(activity.asked, todayIso) && allowed("wochenplanung")) {
+      return {
+        kind: "wochenplanung",
+        text: `${isSolo(profile) ? "Du planst" : "Ihr plant"} ja öfter mal selbst – soll ich die Planung wieder einblenden?`,
+        chips: [
+          once("frage-planen", "Ja", () => {
+            saveProfile({ ...profile, planStyle: "mix", planWeek: null });
+            setDone({ text: "Gemacht ✓ Wochenplan ist wieder da – freie Tage sind ganz normal.", undo: () => saveProfile(profile) });
+          }),
+          once("frage-planen", "Nein, passt so"),
+        ],
+      };
+    }
+    // "Mal so, mal so": höchstens einmal pro Woche die nächsten 2 Tage anbieten
+    const twoDaysKey = `zwei-tage:${data.week.weekStart}`;
+    const nextTwo = [tomorrow, ...data.week.days.filter((d) => d.date === addDays(todayIso, 2))].filter(Boolean);
+    if (data.planStyle === "mix" && !wasAsked(activity, twoDaysKey) && nextTwo.some((d) => d && !d.away && !d.paused && d.weekend !== "frei" && !d.slot.entry) && allowed("wochenplanung")) {
+      return {
+        kind: "wochenplanung",
+        text: "Soll ich dir die nächsten 2 Tage vorschlagen?",
+        chips: [
+          once(twoDaysKey, "Ja, gern", () =>
+            status?.configured ? openHelper(undefined, "Schlag mir bitte Gerichte für die nächsten 2 Tage vor.") : router.push("/ideen"),
+          ),
+          once(twoDaysKey, "Nein danke"),
+        ],
+      };
+    }
+    if (data.planStyle === "plan" && target.isNext && !targetPlan && allowed("wochenplanung")) {
       return {
         kind: "wochenplanung",
         text: "Nächste Woche ist noch frei – in 2 Minuten geplant?",
@@ -278,7 +331,7 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
     }
     // Modus "Dranbleiben": früher an die nächste Woche denken, freie Tage der
     // nächsten zwei Tage anbieten – immer als Angebot
-    if (mode === "dranbleiben" && nextStart && nextPlan === null && nextStart <= addDays(todayIso, 4) && allowed("wochenplanung")) {
+    if (data.planStyle === "plan" && mode === "dranbleiben" && nextStart && nextPlan === null && nextStart <= addDays(todayIso, 4) && allowed("wochenplanung")) {
       return {
         kind: "wochenplanung",
         text: "Soll ich die nächste Woche schon mal vorbereiten? Dauert nur 2 Minuten.",
@@ -290,7 +343,7 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
         ],
       };
     }
-    const freeDay = mode === "dranbleiben"
+    const freeDay = data.planStyle === "plan" && mode === "dranbleiben"
       ? data.week.days.find((d) => d.date >= todayIso && d.date <= addDays(todayIso, 2) && !d.away && !d.paused && !d.weekend && !d.slot.entry && !wasAsked(activity, `frei:${d.date}`))
       : undefined;
     if (freeDay && allowed("wochenplanung")) {
@@ -319,7 +372,7 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
         ],
       };
     }
-    if (profile.weekendStyle !== "frei" && !wasAsked(activity, "wochenende-frei") && weekendsSkipped(data, mealPlans, rated) >= 3) {
+    if (!spontan && profile.weekendStyle !== "frei" && !wasAsked(activity, "wochenende-frei") && weekendsSkipped(data, mealPlans, rated) >= 3) {
       return {
         kind: "wochenende",
         text: `Am Wochenende ${isSolo(profile) ? "kochst du" : "kocht ihr"} oft spontan – soll ich Samstag und Sonntag einfach frei lassen?`,
@@ -364,6 +417,7 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
           household: data.profile.householdType,
           kids: hasKids(data.profile),
           weekendIdeas: data.profile.weekendIdeas,
+          planning: data.planStyle !== "spontan",
         })
       : [];
   const tipToday = tipState?.today?.date === todayIso ? tipState.today : null;
@@ -472,7 +526,7 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
               : undefined;
             markTwistTaken(todayIso, { key: twistBase.key, manualId, weekStart });
             setDone({
-              text: `Gemacht ✓ Heute mit Twist: ${twistBase.idea}.${twistBase.item ? ` ${twistBase.item} steht unter „Heute holen“.` : ""}`,
+              text: `Gemacht ✓ Heute mit Twist: ${twistBase.idea}.${twistBase.item ? ` ${twistBase.item} steht unter „Für heute“ auf der Liste.` : ""}`,
               undo: () => {
                 if (manualId) removeManualItems(weekStart, [manualId]);
                 unmarkTwistTaken(todayIso);

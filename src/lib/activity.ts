@@ -11,6 +11,8 @@ type ActivityStore = {
   version: 1;
   /** Zuletzt geöffnet "YYYY-MM-DD" */
   lastOpen?: string;
+  /** Seit wann die App genutzt wird (erstes Öffnen, für "3 Wochen kaum geplant") */
+  since?: string;
   /** Willkommen zurück fällig an diesem Tag (bis beantwortet) */
   welcomeDue?: string | null;
   /** Zuletzt selbst etwas getan */
@@ -31,6 +33,7 @@ function migrate(raw: unknown): ActivityStore | null {
   return {
     version: 1,
     lastOpen: typeof d.lastOpen === "string" ? d.lastOpen : undefined,
+    since: typeof d.since === "string" ? d.since : undefined,
     welcomeDue: typeof d.welcomeDue === "string" ? d.welcomeDue : null,
     lastAction: typeof d.lastAction === "string" ? d.lastAction : undefined,
     proactive: d.proactive && typeof d.proactive === "object" ? d.proactive : {},
@@ -59,7 +62,7 @@ export function recordOpen(today: string) {
   const a = store.load() ?? EMPTY;
   if (a.lastOpen === today) return;
   const away = a.lastOpen ? days(a.lastOpen, today) : 0;
-  store.save({ ...a, lastOpen: today, welcomeDue: away >= AWAY_DAYS ? today : (a.welcomeDue ?? null) });
+  store.save({ ...a, lastOpen: today, since: a.since ?? today, welcomeDue: away >= AWAY_DAYS ? today : (a.welcomeDue ?? null) });
 }
 
 export function welcomeDue(a: ActivityStore, today: string): boolean {

@@ -12,7 +12,7 @@ export type Twist = {
   idea: string;
   /** So viele Minuten mehr */
   minutes: number;
-  /** Zutat, die dafür evtl. noch gebraucht wird → "Heute holen" */
+  /** Zutat, die dafür evtl. noch gebraucht wird → "Für heute" */
   item?: string;
 };
 

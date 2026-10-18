@@ -24,15 +24,15 @@ export type TakeResult =
 /** Idee mit Titel, evtl. Rezept und Kategorie (Spontan-Idee, Supermarkt-Idee) */
 type Idea = Pick<SpontanIdea, "title" | "recipeId" | "category">;
 
-export function takeForToday(data: Data, today: Date, idea: Idea): TakeResult {
-  return takeForDay(data, today, idea, toIsoDate(today));
+export function takeForToday(data: Data, today: Date, idea: Idea, opts: { spontan?: boolean } = {}): TakeResult {
+  return takeForDay(data, today, idea, toIsoDate(today), opts);
 }
 
 /**
  * Idee für einen Tag (diese Woche) einplanen: das bisherige Gericht rutscht
  * auf den nächsten freien Tag danach – nichts geht verloren.
  */
-export function takeForDay(data: Data, today: Date, idea: Idea, date: string): TakeResult {
+export function takeForDay(data: Data, today: Date, idea: Idea, date: string, opts: { spontan?: boolean } = {}): TakeResult {
   const shoppingDay = data.profile.shoppingDay || DEFAULT_SHOPPING_DAY;
   const todayIso = date;
   const isToday = date === toIsoDate(today);
@@ -40,15 +40,17 @@ export function takeForDay(data: Data, today: Date, idea: Idea, date: string): T
   const week = composeWeek(weekStart, data.profile, data.weekPlans, data.mealPlans, data.recipes);
   const day = week.days.find((d) => d.date === todayIso);
   if (!day) return { ok: false, text: "Das hat gerade nicht geklappt." };
-  if (day.away) return { ok: false, text: isToday ? "Heute ist eigentlich kein Kochtag eingetragen – guten Appetit trotzdem! 😊" : `${day.weekday} ist kein Kochtag eingetragen.` };
+  if (day.away && !opts.spontan) return { ok: false, text: isToday ? "Heute ist eigentlich kein Kochtag eingetragen – guten Appetit trotzdem! 😊" : `${day.weekday} ist kein Kochtag eingetragen.` };
   const when = isToday ? "Heute" : `Am ${day.weekday}`;
 
+  // Spontan: als "aus den Ideen gewählt" markieren, nichts verschieben (es gibt keinen Plan)
+  const mark = opts.spontan ? { spontan: true } : {};
   const entry: StoredEntry = idea.recipeId
-    ? { kind: "recipe", recipeId: idea.recipeId, title: idea.title, category: idea.category ?? "vegetarisch" }
-    : { kind: "text", title: idea.title, category: idea.category ?? guessDishCategory(idea.title) };
+    ? { kind: "recipe", recipeId: idea.recipeId, title: idea.title, category: idea.category ?? "vegetarisch", ...mark }
+    : { kind: "text", title: idea.title, category: idea.category ?? guessDishCategory(idea.title), ...mark };
   let weeks = mealPlansWithWeek(data.mealPlans, weekStart, (e) => ({ ...e, [day.slot.key]: entry }));
   const old = day.slot.entry;
-  if (!old || old.title.toLowerCase() === idea.title.toLowerCase()) {
+  if (!old || opts.spontan || old.title.toLowerCase() === idea.title.toLowerCase()) {
     return { ok: true, weeks, text: `Übernommen ✓ ${when} gibt's ${idea.title}.` };
   }
 

@@ -1,12 +1,13 @@
 "use client";
 
 import { useRecipes } from "@/lib/cookbook";
-import { useMealPlans } from "@/lib/mealPlan";
+import { storedForWeek, useMealPlans } from "@/lib/mealPlan";
+import { effectivePlanStyle } from "@/lib/profile";
 import { ratingCandidate, useRatings, type RatingCandidate } from "@/lib/ratings";
 import { useExternalStore } from "@/lib/useExternalStore";
 import { useProfile } from "@/lib/useProfile";
 import { isPaused, useNudges } from "@/lib/nudges";
-import { toIsoDate, useToday, useWeekPlans } from "@/lib/weekPlan";
+import { toIsoDate, useToday, useWeekPlans, weekStartFor } from "@/lib/weekPlan";
 
 const noop = () => () => {};
 
@@ -30,5 +31,11 @@ export function useRatingCandidate(): RatingCandidate | null | undefined {
   // Nach 3 ignorierten Fragen in Folge 2 Wochen Pause
   if (isPaused(nudges, "bewertung", toIsoDate(today))) return null;
   const now = new Date(today.getFullYear(), today.getMonth(), today.getDate(), Math.floor(minutes / 60), minutes % 60);
-  return ratingCandidate(now, profile, weekPlans, mealPlans, recipes, rated);
+  const candidate = ratingCandidate(now, profile, weekPlans, mealPlans, recipes, rated);
+  // Spontan: der ausgeblendete Plan zählt nicht – nur, was aus den Ideen gewählt wurde
+  if (candidate && effectivePlanStyle(profile, weekStartFor(today, profile.shoppingDay || "Montag")) === "spontan") {
+    const stored = storedForWeek(mealPlans, weekStartFor(new Date(`${candidate.date}T12:00:00`), profile.shoppingDay || "Montag"))[candidate.weekday];
+    if (!stored || !(stored.kind === "recipe" || stored.kind === "text") || !stored.spontan) return null;
+  }
+  return candidate;
 }

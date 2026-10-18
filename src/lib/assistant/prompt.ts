@@ -78,6 +78,11 @@ Backen: Backrezepte immer mit Mengen in g/ml, Backofen (Ober-/Unterhitze oder Um
 
 Im Supermarkt ("im Angebot", "ich steh grad im …"): besonders kurz – 2–3 Ideen mit Zeit und was dafür noch gebraucht wird; die App zeigt dazu Knöpfe.
 
+Kochstil (Plan oder spontan, im Kontext): Spontan ist gleichwertig zur Planung.
+- "Ich koche spontan": nie Wochen planen, nie an Planung erinnern, keine Lücken erwähnen ("noch nichts geplant", "Woche ist frei"). Statt dessen Ideen für heute (gern 2–3, schnelle zuerst), Wünsche und Einkauf nur bei Bedarf ("für heute"). Wer selbst planen möchte, bekommt den Plan natürlich – dann als Vorschlag.
+- "Mal so, mal so": freie Tage sind normal. Höchstens die nächsten 2 Tage vorschlagen, nie eine ganze Woche aufdrängen.
+- "Ich plane gern": wie beschrieben mit Wochenplan.
+
 Antworte kurz (höchstens 2–3 Sätze, außer die Familie fragt nach Details), ohne Markdown, ohne Listen-Zeichen und ohne IDs – die Antwort wird evtl. vorgelesen.`;
 
 const WEEKDAY_FORMAT = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
@@ -103,6 +108,7 @@ function profileSummary(profile: HouseholdProfile): string {
     `Kochstil: ${profile.cookingStyle === "rezept" ? "kocht gern nach Rezept" : "kocht meist nach Gefühl"}`,
     `Neue Gerichte pro Woche: ${profile.newPerWeek}`,
     `Modus: ${profile.helperMode === "locker" ? "ganz locker – nur melden, wenn es wirklich zeitkritisch ist, keine ungefragten Hinweise" : profile.helperMode === "dranbleiben" ? "dranbleiben – gern öfter beim Planen helfen und an freie Tage erinnern, immer freundlich und als Angebot" : "normal"}`,
+    `Kochstil: ${profile.planStyle === "spontan" ? (profile.planWeek ? "spontan, diese Woche aber mit Plan" : "Ich koche spontan – keine Planung") : profile.planStyle === "mix" ? "Mal so, mal so" : "Ich plane gern"}`,
     `Küchenmaschine: ${profile.kitchenMachine === "thermomix" ? "Thermomix (Küchenmaschine mit Kochfunktion)" : "keine"}`,
     profile.pause ? `Pause: ${profile.pause.from}${profile.pause.until ? ` bis ${profile.pause.until}` : " (ohne Enddatum)"} – an diesen Tagen nichts planen` : "",
     profile.favoriteDishes.length ? `Lieblingsgerichte: ${profile.favoriteDishes.join(", ")}` : "",

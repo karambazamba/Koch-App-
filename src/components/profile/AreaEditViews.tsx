@@ -18,7 +18,7 @@ import {
 import { NumberStepper } from "@/components/form/NumberStepper";
 import { sortedBases } from "@/lib/bases";
 import { LIKE_WEIGHTS, likeLevel, sortedLikes, withLikes, withoutLike } from "@/lib/likes";
-import { COOKING_STYLES, HEALTH_TIP_LEVELS, HOUSEHOLD_TYPES, hasKids, wishDayActive, NEW_DISHES_OPTIONS, TIP_LEVELS, WEEKDAYS, WEEKEND_STYLES, planningWeekLabel, standardWeekDays, type KitchenMachine } from "@/lib/profile";
+import { COOKING_STYLES, PLAN_STYLES, HEALTH_TIP_LEVELS, HOUSEHOLD_TYPES, hasKids, wishDayActive, NEW_DISHES_OPTIONS, TIP_LEVELS, WEEKDAYS, WEEKEND_STYLES, planningWeekLabel, standardWeekDays, type KitchenMachine } from "@/lib/profile";
 
 export function FavoritesEditView() {
   return (
@@ -368,9 +368,29 @@ export function HealthTipsEditView() {
 /** So kocht ihr: nach Gefühl oder nach Rezept, wie viel Neues pro Woche */
 export function CookingStyleEditView() {
   return (
-    <ProfileEditPage title="Kochstil" intro="Nach Gefühl oder nach Rezept, wie viel Neues – und ob eine Küchenmaschine mitkocht.">
+    <ProfileEditPage title="Kochstil" intro="Mit Plan oder spontan, nach Gefühl oder Rezept, wie viel Neues – und ob eine Küchenmaschine mitkocht.">
       {(draft, setDraft) => (
         <>
+          <h2 className={`${SECTION_TITLE} px-1`}>Mit Plan oder spontan?</h2>
+          <div className="flex flex-col gap-2" role="radiogroup" aria-label="Planen oder spontan">
+            {PLAN_STYLES.map((style) => (
+              <button
+                key={style.value}
+                type="button"
+                role="radio"
+                aria-checked={draft.planStyle === style.value}
+                onClick={() => setDraft((d) => ({ ...d, planStyle: style.value, planWeek: null }))}
+                className={tileClass(draft.planStyle === style.value)}
+              >
+                <span className="flex flex-col self-stretch px-2 text-left">
+                  <span className="text-base font-bold">{style.label}</span>
+                  <span className="text-sm text-muted">{style.hint}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+          {draft.planStyle === "spontan" && <p className={`${SUBTLE} px-1`}>Wochenplan & Co. blende ich dann aus – gespeichert bleibt alles.</p>}
+          <h2 className={`${SECTION_TITLE} mt-2 px-1`}>Nach Gefühl oder nach Rezept?</h2>
           <div className="flex flex-col gap-2" role="radiogroup" aria-label="Kochstil">
             {COOKING_STYLES.map((style) => (
               <button

@@ -17,6 +17,7 @@ import {
   Wheat,
   type LucideIcon,
 } from "lucide-react";
+import { ChoiceGroup } from "@/components/form/ChoiceGroup";
 import { PageHeader } from "@/components/PageHeader";
 import { PRIMARY_BUTTON, SECONDARY_BUTTON, StickyActions } from "@/components/StickyActions";
 import { NumberStepper } from "@/components/form/NumberStepper";
@@ -48,6 +49,8 @@ import {
   personRoleLabel,
   saveProfile,
   fitHouseholdType,
+  PLAN_STYLES,
+  type PlanStyle,
   hasKids,
   wishDayActive,
   standardWeekDays,
@@ -68,7 +71,7 @@ const STEPS: { title: string; icon: LucideIcon; perPerson?: boolean }[] = [
   { title: "Lieblingsgerichte", icon: Heart },
   { title: "Zusammen warm essen", icon: UtensilsCrossed },
   { title: "Mittagessen unter der Woche", icon: Clock, perPerson: true },
-  { title: "Standardwoche", icon: CalendarRange },
+  { title: "Mit Plan oder spontan?", icon: CalendarRange },
   { title: "Euer Küchenhelfer", icon: Sparkles },
 ];
 
@@ -408,6 +411,21 @@ function ProfileWizard({ initial }: { initial?: HouseholdProfile | null }) {
         )}
         {step === STEP.rules && (
           <>
+            <ChoiceGroup<PlanStyle>
+              label="Wie kocht ihr eher – mit Plan oder spontan?"
+              hint={PLAN_STYLES.find((p) => p.value === profile.planStyle)?.hint}
+              value={profile.planStyle}
+              onChange={(planStyle) => update({ planStyle, planWeek: null })}
+              columns={3}
+              options={PLAN_STYLES.map((p) => ({ value: p.value, label: p.label }))}
+            />
+            {profile.planStyle === "spontan" ? (
+              <p className={NOTE}>
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted" strokeWidth={2.25} aria-hidden />
+                Ohne Plan brauche ich keine Wochenvorlage – ich hab jeden Tag ein paar Ideen parat.
+              </p>
+            ) : (
+            <>
             <p className={NOTE}>
               <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted" strokeWidth={2.25} aria-hidden />
               {STANDARD_WEEK_HINT}
@@ -425,6 +443,8 @@ function ProfileWizard({ initial }: { initial?: HouseholdProfile | null }) {
                 profile={profile}
                 onChange={(wishDay) => setProfile((p) => withWishDay(p, wishDay))}
               />
+            )}
+            </>
             )}
           </>
         )}

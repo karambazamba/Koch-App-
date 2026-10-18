@@ -68,7 +68,9 @@ import {
   HELPER_MODES,
   DISPLAY_MODES,
   saveProfile,
+  PLAN_STYLES,
 } from "@/lib/profile";
+import { usePlanStyle } from "@/lib/usePlanStyle";
 
 const LUNCH_ICONS: Record<"zuhause" | "auswaerts" | "manchmal", LucideIcon> = {
   zuhause: Home,
@@ -100,6 +102,8 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
   const set = (changes: Partial<HouseholdProfile>) => saveProfile({ ...profile, ...changes });
   const type = HOUSEHOLD_TYPES.find((t) => t.value === profile.householdType);
   const showAll = !simple || more;
+  // "Ich koche spontan": keine Planungs-Einstellungen (Daten bleiben gespeichert)
+  const planning = usePlanStyle()?.planning ?? true;
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
@@ -208,6 +212,8 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
           <List>
             <Row href="/profil/kochstil" icon={ChefHat} title="Kochstil">
               <span>
+                <Nowrap>{PLAN_STYLES.find((p) => p.value === profile.planStyle)?.label}</Nowrap>
+                {" · "}
                 <Nowrap>{profile.cookingStyle === "rezept" ? "Gern nach Rezept" : "Meist nach Gefühl"}</Nowrap>
                 {" · "}
                 <Nowrap>{profile.newPerWeek === 2 ? "2 neue pro Woche" : "1 neues pro Woche"}</Nowrap>
@@ -219,12 +225,14 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
                 )}
               </span>
             </Row>
+            {planning && (
             <Row href="/profil/wochenende" icon={Sun} title="Wochenend-Stil">
               <span>
                 {WEEKEND_STYLES.find((w) => w.value === profile.weekendStyle)?.emoji}{" "}
                 {WEEKEND_STYLES.find((w) => w.value === profile.weekendStyle)?.label}
               </span>
             </Row>
+            )}
             <Row href="/profil/das-moegt-ihr" icon={Salad} title="Das mögt ihr">
               <span className="line-clamp-2">
                 {profile.likes.length > 0
@@ -249,6 +257,8 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
                 <Nowrap>Sa–So {MEAL_TIME_LABELS[profile.warmMeal.weekend]}</Nowrap>
               </span>
             </Row>
+            {planning && (
+              <>
             <Row href="/profil/einkaufstag" icon={ShoppingCart} title="Einkaufstag">
               <span>
                 <Nowrap>{profile.shoppingDay}</Nowrap>
@@ -277,6 +287,8 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
                 )}
               </span>
             </Row>
+              </>
+            )}
             {showAll && (
               <>
                 <Row href="/profil/basen" icon={Wheat} title="Eure Lieblings-Basen">

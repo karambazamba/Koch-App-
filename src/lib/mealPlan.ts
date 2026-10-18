@@ -33,8 +33,9 @@ import {
 
 /** Was im Plan gespeichert wird. `double` = doppelt kochen, Reste für morgen. */
 export type StoredEntry =
-  | { kind: "recipe"; recipeId: string; title: string; category: RecipeCategory; double?: boolean }
-  | { kind: "text"; title: string; category: RecipeCategory | null; double?: boolean }
+  /** `spontan` = aus den Ideen für heute gewählt (zählt nicht als "geplant") */
+  | { kind: "recipe"; recipeId: string; title: string; category: RecipeCategory; double?: boolean; spontan?: boolean }
+  | { kind: "text"; title: string; category: RecipeCategory | null; double?: boolean; spontan?: boolean }
   | { kind: "wish"; kidId: string; text: string; double?: boolean }
   | { kind: "cleared" }
   /** Notiz am Tag (z. B. das frühere zweite Gericht) – unter `noteKey(tag)` */
@@ -292,6 +293,7 @@ function migrateEntry(raw: unknown, version: number): StoredEntry | null {
   const cat = (v: unknown) =>
     ["fleisch", "vegetarisch", "fisch", "cheatday"].includes(v as string) ? (v as RecipeCategory) : null;
   const double = e.double === true ? { double: true } : {};
+  const spontan = e.spontan === true ? { spontan: true } : {};
   switch (e.kind) {
     case "cleared":
       return { kind: "cleared" };
@@ -299,13 +301,13 @@ function migrateEntry(raw: unknown, version: number): StoredEntry | null {
       return typeof e.text === "string" ? { kind: "note", text: e.text } : null;
     case "recipe":
       return typeof e.recipeId === "string" && typeof e.title === "string"
-        ? { kind: "recipe", recipeId: e.recipeId, title: e.title, category: cat(e.category) ?? "vegetarisch", ...double }
+        ? { kind: "recipe", recipeId: e.recipeId, title: e.title, category: cat(e.category) ?? "vegetarisch", ...double, ...spontan }
         : null;
     case "text":
       if (typeof e.title !== "string") return null;
       // Bis v1 wurde der Platz-Hinweis als Kategorie übernommen ("Milchreis" → Fisch):
       // einmalig aus dem Gericht neu bestimmen, ohne Treffer keine Kategorie.
-      return { kind: "text", title: e.title, category: version < 2 ? guessDishCategory(e.title) : cat(e.category), ...double };
+      return { kind: "text", title: e.title, category: version < 2 ? guessDishCategory(e.title) : cat(e.category), ...double, ...spontan };
     case "wish":
       return typeof e.kidId === "string"
         ? { kind: "wish", kidId: e.kidId, text: typeof e.text === "string" ? e.text : "", ...double }

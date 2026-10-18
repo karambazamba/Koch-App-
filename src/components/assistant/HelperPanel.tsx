@@ -7,7 +7,9 @@ import { ArrowUp, CircleHelp, Mic, MicOff, Sparkles, Square, Volume2, VolumeX, X
 import { baseLabel, bumpBase, sortedBases, type BaseId } from "@/lib/bases";
 import { parseLeftovers, type ParsedLeftover } from "@/lib/leftovers/parser";
 import { addPantryItems, formatPantryItem, usePantry } from "@/lib/pantry";
-import { hasKids, helperName, helperTitle, mealClockFor, saveProfile } from "@/lib/profile";
+import { effectivePlanStyle, hasKids, helperName, helperTitle, mealClockFor, saveProfile } from "@/lib/profile";
+import { addWish, parseWish, removeWish, wishLabel } from "@/lib/wishes";
+import { isPlanUnlockRequest, unlockPlanning, type UnlockChoice } from "@/lib/planUnlock";
 import { finalizeProfile, startAddPerson, type OnboardingState } from "@/lib/onboarding/engine";
 import { noteUserAction } from "@/lib/activity";
 import { isAddPersonRequest } from "@/lib/onboarding/recognize";
@@ -64,6 +66,8 @@ export type ChatTurnView = ChatTurn & {
   market?: MarketAnswer & { target: MarketTarget | null };
   /** Backwunsch: passende Rezepte mit "Zusammen backen" */
   baking?: Recipe[];
+  /** Antwort-Knöpfe unter der Nachricht (nur beim letzten Eintrag) */
+  choices?: { label: string; onClick: () => void }[];
 };
 
 export type Proposal = { ops: ChangeOp[]; selected: Set<string> };
@@ -94,6 +98,9 @@ const EXAMPLES = [
   "Tausch Dienstag und Mittwoch",
   "Setz Milch und Haferflocken auf die Einkaufsliste",
 ];
+
+/** Spontan: Beispiele ohne Planung */
+const SPONTAN_EXAMPLES = ["Was gibt's heute Schnelles?", "Mathis wünscht sich Pfannkuchen", "Setz Milch und Haferflocken auf die Einkaufsliste"];
 
 type Props = {
   data: AssistantData | null | undefined;
@@ -133,6 +140,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   const tipStore = useTipStore();
   const shoppingSettings = useShoppingSettings();
   const shopping = useWeekShoppingList("planning");
+  // "Ich koche spontan" (diese Woche): keine Planungs-Beispiele, Wünsche und "doch planen" lokal
+  const spontanStyle = Boolean(data && today && effectivePlanStyle(data.profile, weekStartFor(today, data.profile.shoppingDay || "Montag")) === "spontan");
 
   /** Frage an die KI; `display` = was im Chat steht, wenn anders als die Frage */
   const ask = async (text: string, display?: string) => {
@@ -231,7 +240,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   const takeIdea = (idea: SpontanIdea) => {
     if (!data || !today) return;
     const before = data.mealPlans;
-    const result = takeForToday(data, today, idea);
+    const result = takeForToday(data, today, idea, { spontan: spontanStyle });
     if (result.ok) {
       replaceMealPlans(result.weeks);
       if (idea.recipeId) learnFromRecipe(data.recipes[idea.recipeId], LIKE_WEIGHTS.chosen);
@@ -342,8 +351,12 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     const now = new Date();
     const clock = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
     const beforeMeal = Boolean(todayDay) && clock < mealClockFor(data.profile, todayDay!.weekday);
-    const target =
-      marketTargetDay(week, todayIso, beforeMeal) ??
+    // Spontan: kein Plan – höchstens "Heute kochen"
+    const target = spontanStyle
+      ? beforeMeal && todayDay
+        ? { date: todayIso, weekday: todayDay.weekday, replaces: null, label: "Heute kochen" }
+        : null
+      : marketTargetDay(week, todayIso, beforeMeal) ??
       marketTargetDay(composeWeek(addDays(weekStart, 7), data.profile, data.weekPlans, data.mealPlans, data.recipes), todayIso, false);
     return {
       role: "assistant",
@@ -381,7 +394,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   const planMarketIdea = (idea: MarketIdea, target: MarketTarget) => {
     if (!data || !today) return;
     const before = data.mealPlans;
-    const result = takeForDay(data, today, idea, target.date);
+    const result = takeForDay(data, today, idea, target.date, { spontan: spontanStyle });
     if (result.ok) {
       replaceMealPlans(result.weeks);
       if (idea.recipeId) learnFromRecipe(data.recipes[idea.recipeId], LIKE_WEIGHTS.chosen);
@@ -469,6 +482,72 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     if (local) {
       setInput("");
       setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text: local, local: true }] }));
+      return;
+    }
+    // "Mathis wünscht sich Pfannkuchen" → Wunsch-Idee (ohne Tag oder ohne Planung immer lokal)
+    const wish = parseWish(t, data.profile.persons);
+    if (wish && (!wish.weekday || spontanStyle || !ready)) {
+      setInput("");
+      const created = addWish({ personId: wish.personId, who: wish.who, dish: wish.dish }, toIsoDate(today));
+      setChat((c) => ({
+        ...c,
+        turns: [
+          ...c.turns,
+          { role: "user", text: t, local: true },
+          {
+            role: "assistant",
+            local: true,
+            text: `Notiert ✓ ${wishLabel(wish.who)}: ${wish.dish} – steht ganz oben bei den Ideen.`,
+            undo: () => {
+              removeWish(created.id);
+              setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig gemacht – Wunsch ist wieder weg.", local: true }] }));
+            },
+          },
+        ],
+      }));
+      return;
+    }
+    // Spontan: "Ich will doch mal planen" → nur diese Woche oder ab jetzt immer?
+    if (spontanStyle && isPlanUnlockRequest(t)) {
+      setInput("");
+      const finish = (choice: UnlockChoice) => {
+        const result = unlockPlanning(data.profile, today, choice);
+        setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", local: true, text: result.text, undo: () => { result.undo(); setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Okay, alles wie vorher – weiter spontan.", local: true }] })); } }] }));
+      };
+      setChat((c) => ({
+        ...c,
+        turns: [
+          ...c.turns,
+          { role: "user", text: t, local: true },
+          {
+            role: "assistant",
+            local: true,
+            text: "Gern! Nur diese Woche oder ab jetzt immer?",
+            choices: [
+              { label: "Nur diese Woche", onClick: () => finish({ kind: "woche" }) },
+              {
+                label: "Ab jetzt immer",
+                onClick: () =>
+                  setChat((c2) => ({
+                    ...c2,
+                    turns: [
+                      ...c2.turns,
+                      {
+                        role: "assistant",
+                        local: true,
+                        text: "Mal so, mal so – oder richtig mit Wochenplan?",
+                        choices: [
+                          { label: "Mal so, mal so", onClick: () => finish({ kind: "immer", style: "mix" }) },
+                          { label: "Ich plane gern", onClick: () => finish({ kind: "immer", style: "plan" }) },
+                        ],
+                      },
+                    ],
+                  })),
+              },
+            ],
+          },
+        ],
+      }));
       return;
     }
     // Im Supermarkt bzw. Backwunsch → kurze Antwort mit Karten (auch ohne KI)
@@ -670,8 +749,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           {ready && chat.turns.length === 0 && (
             <div className="flex flex-col gap-3">
               <div className="flex flex-col items-start gap-2">
-                {EXAMPLES.map((example) => (
-                  <button key={example} type="button" onClick={() => void ask(example)} className={`${chipClass(false)} text-left`}>
+                {(spontanStyle ? SPONTAN_EXAMPLES : EXAMPLES).map((example) => (
+                  <button key={example} type="button" onClick={() => (spontanStyle ? submit(example) : void ask(example))} className={`${chipClass(false)} text-left`}>
                     „{example}“
                   </button>
                 ))}
@@ -721,6 +800,15 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                     </Link>
                   ) : null}
                 </div>
+                {turn.choices && last && (
+                  <div className="flex flex-wrap gap-2">
+                    {turn.choices.map((c) => (
+                      <button key={c.label} type="button" onClick={c.onClick} className={chipClass(false)}>
+                        {c.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {turn.undo && last && (
                   <button type="button" onClick={turn.undo} className={chipClass(false, "muted")}>
                     Rückgängig

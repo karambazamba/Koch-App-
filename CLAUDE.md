@@ -63,6 +63,7 @@ Bei ALLEN Änderungen beachten.
 - Datenschutz: so wenig Daten wie nötig, besonders bei Kindern; alles löschbar.
 - Zurück = eine Ebene zurück, Pfeil und Geste identisch, Scrollposition bleibt erhalten.
 - Neue Farben/Komponenten immer über die Design-Tokens, damit alle Ansichten funktionieren.
+- Spontan ist gleichwertig zur Planung. Neue Funktionen müssen für alle drei Kochstile funktionieren. Bei ‚Spontan' niemals Planungs-Hinweise oder Lücken-Texte zeigen.
 - Versionsnummer (`package.json` und `APP_VERSION` in `src/lib/app.ts`) und `CACHE_VERSION` in `public/sw.js` bei jeder Auslieferung erhöhen.
 
 # Hinweise für Claude
@@ -124,8 +125,8 @@ Bei ALLEN Änderungen beachten.
      bis 17:30", nie "wird knapp"; vorerst leer). Bekannt: dezent "Rezept
      ansehen · Tauschen" (`/wochenplan?tauschen=heute`). Neu (oder Kochstil
      "nach Rezept"): "<n> Schritte · <n> Zutaten" und "Los geht's – Schritt für
-     Schritt" (nach der Essenszeit nicht mehr). Nichts geplant: "Noch nichts
-     für heute – spontan was kochen?" mit Knopf in den Spontan-Modus.
+     Schritt" (nach der Essenszeit nicht mehr). Kein Gericht für heute:
+     `IdeasCard` "Was gibt's heute?" mit 3 Ideen (alle Kochstile).
   3. Lottes Platz (`useLottePlace` in `src/components/home/LottePlace.tsx`):
      genau EINE Sache oder Stille, Avatar + Sprechblase, max. 2 Chips, immer
      als Angebot. Die erste zutreffende Stufe gewinnt:
@@ -147,7 +148,8 @@ Bei ALLEN Änderungen beachten.
      Ende), "leiser werden", freies Wochenende. Jede Art, die 3× ignoriert
      wird, pausiert 2 Wochen. Es gibt keine eigenen Karten mehr für Hinweis
      des Tages, Morgen-Check, Wochen-Check oder Bewertung.
-  4. Drei Kacheln (Bento): Woche ("Morgen: Lachs" bzw. "5/7 geplant"),
+  4. Drei Kacheln (Bento): Woche ("Morgen: Lachs" bzw. "5/7 geplant"; "Mal
+     so, mal so" ohne Zähler; "spontan": Kachel "Ideen" → `/ideen`),
      Einkauf mit rundem "+" (leer: nur "Einkaufsliste"; sonst "Für Montag"
      bzw. "Diese Woche"/"Für heute" und klein "<n> Sachen"; Stammartikel nur
      in der Liste), dritte Kachel "Vorrat" ("<n> Sachen"), sobald der Vorrat
@@ -268,7 +270,7 @@ Bei ALLEN Änderungen beachten.
   Häkchen, Name, Menge rechtsbündig; Info-Symbol oder langes Drücken zeigt
   die Gerichte. Abteilungen als kleine Großbuchstaben-Überschrift mit Icon,
   Artikel in einer weißen Karte; Abgehaktes durchgestrichen ans Ende, ganz
-  erledigte Abteilung zugeklappt. Oben Fortschrittsbalken, "Heute holen"
+  erledigte Abteilung zugeklappt. Oben Fortschrittsbalken, "Für heute"
   (offene Artikel für heute/morgen) und fällige Stammartikel. Wischen nach
   links (`SwipeRow`): "Haben wir" bzw. "Löschen" und "Bearbeiten". Umschalter
   "Nach Abteilung | Nach Laden", Teilen gesamt oder pro Laden.
@@ -334,7 +336,7 @@ Bei ALLEN Änderungen beachten.
   "← weg · tippen = mehr · nächster →". Twist (`src/lib/twists.ts`, bei
   bekannten Gerichten höchstens 2× pro Planungswoche, nie zwei Tage
   hintereinander, nie beim Wunschessen) ist eine Tipp-Karte mit "Übernehmen"
-  (Zutat → "Heute holen", mit Rückgängig); der Gesundheits-Tipp eine mit
+  (Zutat → "Für heute", mit Rückgängig); der Gesundheits-Tipp eine mit
   "Ausprobieren" (links wischen = "Nein danke").
 - Vorrat (`/vorrat`, `PantryView`, Speicher `wasgibts.vorrat` v2 mit Ort
   `place`): Reiter Kühlschrank (die frühere Liste "Noch da"), Tiefkühler (mit
@@ -421,9 +423,8 @@ Bei ALLEN Änderungen beachten.
   heim"; ohne KI aus dem Kochbuch, sonst Klassiker). Freitags höchstens EIN
   Grill-Vorschlag, wenn fürs Wochenende gutes Wetter vorhergesagt ist (nur
   mit Zustimmung, Ort grob per PLZ, Open-Meteo, `src/lib/weather.ts`).
-- Planen ist optional: Ohne Plan zeigt die Startseite "Noch nichts für heute –
-  spontan was kochen?" mit Knopf in den Spontan-Modus – nie als Fehler oder
-  Warnung.
+- Planen ist optional: Ohne Gericht für heute zeigt die Startseite "Was gibt's
+  heute?" mit 3 Ideen (siehe Ideen für heute) – nie als Fehler oder Warnung.
 - Bewerten nach dem Kochen – klein und nur bei Neuem (`src/lib/ratings.ts`,
   Speicher `wasgibts.bewertungen` je Kochtag): nur für neue Gerichte
   (Status "Neu", siehe dishStatus) beim ersten Mal (`isFirstTime`: noch nie
@@ -564,4 +565,49 @@ Bei ALLEN Änderungen beachten.
   Scrollen), beim Zurück nach dem Rendern wiederhergestellt; vorwärts oben.
   Speichern/Abbrechen in Formularen nutzen ebenfalls `useGoBack()`;
   `router.replace` immer mit `expectReplace()`.
+- Kochstil "Plan oder spontan" (Profil v16 `planStyle`: plan / spontan / mix,
+  `PLAN_STYLES`; Migration: Gerichte im Plan → "Ich plane gern", sonst "Mal
+  so, mal so"; `planWeek` = "nur diese Woche planen"). Einstellbar unter
+  Kochstil (`/profil/kochstil`), im Kennenlernen (Frage "Wie kocht ihr eher –
+  mit Plan oder spontan?" nach dem Wochenend-Stil; spontan → ohne Einkaufstag
+  und Wochenvorgaben) und im Formular (Schritt "Mit Plan oder spontan?").
+  `effectivePlanStyle()`/`usePlanStyle()`: spontan mit `planWeek` dieser
+  Woche zählt wie "mix".
+- "Ich koche spontan": Daten bleiben, nur ausgeblendet. Wochenplan,
+  Wochen-Check, Wochenvorlage und Einkaufstag leiten weiter (`PlanningGate`),
+  Einstellungen ohne Einkaufstag/Wochenvorlage/Wochenend-Stil. Startseite:
+  `useHomeData` zeigt vom Plan nur, was aus den Ideen gewählt wurde
+  (`spontan: true` am Eintrag); Kachel "Ideen" statt "Woche"; Lottes Platz
+  ohne Planungs-Stufe (Vorrat-Texte ohne "einplanen"), keine Tipps übers
+  Planen, Bewertung nur für gewählte Ideen. Einkaufsliste: keine Wochenliste
+  aus dem Plan (`manualOnly`), immer die laufende Woche, offene Artikel
+  früherer Wochen wandern mit (`carryOverManual`). KI: Kochstil im Kontext;
+  von der KI übernommene Gerichte werden als spontan markiert.
+- Ideen für heute (`src/lib/ideas.ts`, ohne KI): Wünsche ganz oben, dann
+  Lieblinge/kennt ihr/👍, Vorrat und Reste, Jahreszeit, nicht dasselbe wie in
+  den letzten 5 Tagen, unter der Woche eher schnell; dazu Familien-Klassiker.
+  Heute-Karte ohne Gericht (alle Kochstile): `IdeasCard` "Was gibt's heute?"
+  mit 3 Ideen (links wischen = nicht jetzt, rechts = nächste, tippen = mehr,
+  "Das gibt's heute"). Braucht die Idee noch etwas: "Soll ich dir das für
+  heute auf die Liste setzen? Dafür brauchst du noch: …" → Einkaufsliste
+  "Für heute" (ganz oben, für alle Kochstile; ersetzt "Heute holen"). Seite
+  `/ideen` mit Filtern (schnell, veggie, mit Vorrat), Wunsch-Feld und – nur
+  bei spontan – leise "Lieber ein paar Tage vorplanen?". Tagesstand unter
+  `wasgibts.ideen`.
+- Wunsch-Ideen (`src/lib/wishes.ts`, `wasgibts.wuensche`): "Mathis wünscht
+  sich Pfannkuchen" im Chat (ohne Wochentag bzw. bei spontan immer lokal) oder
+  auf `/ideen`; "Mathis' Wunsch" ganz oben, bis gewählt oder weggewischt.
+- Planung freischalten (`src/lib/planUnlock.ts`): "Ich will doch mal planen"
+  im Chat (bei spontan) oder auf `/ideen` → "Nur diese Woche oder ab jetzt
+  immer?"; immer → "Mal so, mal so" oder "Ich plane gern".
+- "Mal so, mal so": freie Tage sind normal – kein "x/7 geplant", leerer Tag
+  im Wochenplan "Spontan – Ideen gibt's am Tag selbst"; Lotte bietet statt
+  der ganzen Woche höchstens einmal pro Woche "Soll ich dir die nächsten 2
+  Tage vorschlagen?" an (nicht im Modus "Ganz locker").
+- Sanft erkennen (`src/lib/planDetect.ts`): "Ich plane gern", aber 3 Wochen
+  höchstens 2 Tage selbst geplant (App seit 3+ Wochen genutzt, `since` im
+  Aktivitäts-Speicher) → EINMAL "Ihr kocht eher spontan, oder? Soll ich die
+  Planung ausblenden?"; "spontan", aber 2× "nur diese Woche" in 6 Wochen →
+  EINMAL "… soll ich die Planung wieder einblenden?". Nie automatisch
+  umstellen.
 
