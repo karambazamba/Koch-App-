@@ -36,6 +36,11 @@
   Abstände im 8er-Raster (gap-2/3/4, p-4/p-5), Seitenrand 16px.
 - Unterseiten: `PageHeader` (Zurück-Pfeil + Titel), Inhalt in `PAGE_MAIN`,
   Fuß-Buttons über `StickyActions` (`PRIMARY_BUTTON`/`SECONDARY_BUTTON`).
+- App-Icon: weißer Kochtopf mit drei Dampfwölkchen auf Orange. Einzige Quelle
+  `scripts/generate-icons.mjs` (`npm run icons` erzeugt icon.svg, PNGs,
+  maskable, apple-touch-icon, favicon.ico). In der App `AppIcon`/`AppLogo`
+  (`src/components/AppLogo.tsx`): Startseite Icon 44px + Schriftzug,
+  Unterseiten 32px oben rechts im `PageHeader` als Link "Zur Startseite".
 - Startseite: Logo, Gruß, Karte "Heute" (heutiges Gericht,
   `src/components/home/TodayCard.tsx`), Wochen-Check-Karte, Bereiche als
   `ListRow`-Liste, Haushalts-Zeile.
@@ -86,6 +91,9 @@
   und verteilt Kategorie-Hinweise auf freie Tage. Gespeichert werden nur
   eigene Einträge und Überschreibungen ("cleared") – der Wochen-Check bleibt
   unverändert. Die Kachel "Wochenplan" führt hierher, nicht zum Wochen-Check.
+  Die Kategorie eines Eintrags kommt immer vom Gericht (Rezept bzw. beim
+  Selbst-Eintragen gewählt oder per `guessDishCategory()` erkannt), nie vom
+  Kategorie-Hinweis des Platzes; ohne Kategorie wird keine angezeigt.
 - Einkaufsliste (`/einkaufsliste`, `src/lib/shoppingList.ts`): Artikel aus
   Rezepten im Wochenplan werden immer neu berechnet (`buildShoppingList`,
   Mengen je Einheitenfamilie g/kg, ml/l addiert, Abteilung per Stichwort).
