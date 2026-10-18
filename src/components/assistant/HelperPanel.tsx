@@ -7,7 +7,7 @@ import { ArrowUp, CircleHelp, Mic, MicOff, Square, Volume2, VolumeX, X } from "l
 import { baseLabel, bumpBase, sortedBases, type BaseId } from "@/lib/bases";
 import { parseLeftovers, type ParsedLeftover } from "@/lib/leftovers/parser";
 import { addPantryItems, formatPantryItem } from "@/lib/pantry";
-import { ingredientsFromQuestion, isCookIdeasRequest, mergeStock, realStock, soonToUse, stockItem } from "@/lib/dishIdeas";
+import { ingredientsFromQuestion, isCookIdeasRequest, mergeStock, stockItem, stockNearlyEmpty } from "@/lib/dishIdeas";
 import { useStock } from "@/lib/useStock";
 import { effectivePlanStyle, hasKids, helperName, helperTitle, mealClockFor, saveProfile } from "@/lib/profile";
 import { addWish, parseWish, removeWish, wishLabel } from "@/lib/wishes";
@@ -42,10 +42,10 @@ import { isMarketSituation, marketIdeas, marketProduct, marketTargetDay, type Ma
 import { bakingIdeas, isBakingRequest } from "@/lib/baking";
 import type { Recipe } from "@/lib/cookbook";
 import { isShoppingRequest, parseProductStatement, parseShoppingText } from "@/lib/shoppingParse";
-import { SPONTAN_FILTERS, isQuickRequest, isSnackRequest, parsePauseRequest, pauseLabel, quickIdeas, snackReply, type SpontanFilter, type SpontanIdea } from "@/lib/spontan";
+import { filtersFromText, isIdeaFilterRequest, isQuickRequest, isSnackRequest, parsePauseRequest, pauseLabel, quickIdeas, snackReply, spontanIdeas, type SpontanFilter, type SpontanIdea } from "@/lib/spontan";
 import { takeForDay, takeForToday } from "@/lib/spontanTake";
 import { composeWeek, replaceMealPlans } from "@/lib/mealPlan";
-import { SpontanBoard } from "./SpontanBoard";
+import { AdjustSheet, EarlierIdeas, SpontanAnswer, loadSpontanFilters, saveSpontanFilters, spontanHeading } from "./SpontanBoard";
 import { MarketBoard, type MarketTarget } from "./MarketBoard";
 import { BakingBoard } from "./BakingBoard";
 import { ICON_BUTTON, INPUT_BASE, NOTE, buttonClass, chipClass } from "@/components/ui/styles";
@@ -65,8 +65,14 @@ export type ChatTurnView = ChatTurn & {
   items?: string[];
   /** Spontan kochen: unbekannte Wörter ("Meintest du …?") */
   unsure?: ParsedLeftover[];
-  /** Darunter die Spontan-Ideen (nur beim letzten solchen Eintrag, live) */
+  /** Ideen-Antwort (Spontan kochen): rechnet live aus dem Bestand; nur die letzte ist offen, ältere eingeklappt */
   spontan?: boolean;
+  /** Filter dieser Ideen-Antwort */
+  ideaFilters?: SpontanFilter[];
+  /** Schon gezeigte Ideen, die hier nicht wiederkommen ("Andere Ideen") */
+  exclude?: string[];
+  /** Eben genannte Zutaten ("Was mach ich mit Hack und Paprika?") – zählen mit, landen nicht im Vorrat */
+  extra?: string[];
   /** "Rückgängig" für eine gerade gemachte Änderung */
   undo?: () => void;
   /** Im Supermarkt: Ideen zum Produkt, darunter Liste und "Statt <Tag>" */
@@ -79,19 +85,11 @@ export type ChatTurnView = ChatTurn & {
 
 export type Proposal = { ops: ChangeOp[]; selected: Set<string> };
 /** `spontan`: Spontan kochen ("mit dem, was da ist") mit gewählten Filtern; null = aus */
-/** `extra`: eben im Chat genannte Zutaten ("Was mach ich mit Hack und Paprika?") – zählen für die Ideen, landen nicht im Vorrat */
-export type ChatState = { turns: ChatTurnView[]; proposal: Proposal | null; spontan: SpontanFilter[] | null; extra?: string[] };
+export type ChatState = { turns: ChatTurnView[]; proposal: Proposal | null; spontan: SpontanFilter[] | null };
 
-/** Erster Eintrag im Spontan-Modus */
-export function spontanStartTurn(hasPantry: boolean): ChatTurnView {
-  return {
-    role: "assistant",
-    local: true,
-    spontan: true,
-    text: hasPantry
-      ? "Mit dem, was da ist:"
-      : "Was ist noch da? Erzähl einfach. Bis dahin drei schnelle Sachen, die meistens gehen:",
-  };
+/** Neue Ideen-Antwort (Text und Ideen rechnet das Panel live) */
+export function spontanStartTurn(filters: SpontanFilter[] = [], exclude: string[] = [], extra: string[] = []): ChatTurnView {
+  return { role: "assistant", local: true, spontan: true, text: "", ideaFilters: filters, exclude, extra };
 }
 
 /** Fragt die KI nach der Basis? Dann Basis-Chips anbieten */
@@ -228,43 +226,74 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     if (!known.length && (!unsure.length || !short)) return false;
     setInput("");
     if (known.length) addPantryItems(known.map(({ name, amount, unit }) => ({ name, amount, unit })), toIsoDate(today));
-    setChat((c) => ({
-      ...c,
-      turns: [
-        ...c.turns,
-        { role: "user", text, local: true },
-        {
-          role: "assistant",
-          local: true,
-          spontan: true,
-          text: known.length ? "Notiert ✓ Damit geht:" : "Das kenne ich nicht ganz:",
-          items: known.map(formatPantryItem),
-          unsure,
-        },
-      ],
-    }));
+    setChat((c) => {
+      const live = [...c.turns].reverse().find((t) => t.spontan);
+      return {
+        ...c,
+        turns: [
+          ...c.turns,
+          { role: "user", text, local: true },
+          {
+            role: "assistant",
+            local: true,
+            text: known.length ? "Notiert ✓" : "Das kenne ich nicht ganz:",
+            items: known.map(formatPantryItem),
+            unsure,
+          },
+          // Neue Ideen mit dem, was jetzt da ist (die alten klappen ein)
+          ...(known.length ? [spontanStartTurn(c.spontan ?? [], [], live?.extra ?? [])] : []),
+        ],
+      };
+    });
     return true;
   };
 
-  /** Spontan-Modus starten (Kachel, Knopf, "Was ist noch da?") */
-  const startSpontan = (said?: string, filters: SpontanFilter[] = [], extra: string[] = []) => {
+  /** Spontan-Modus starten (Kachel, Knopf, "Was ist noch da?"); ohne Filter die der Sitzung */
+  const startSpontan = (said?: string, filters?: SpontanFilter[], extra: string[] = []) => {
     setInput("");
-    setChat((c) => ({
-      ...c,
-      spontan: filters,
-      extra,
-      turns: [
-        ...c.turns,
-        ...(said ? [{ role: "user" as const, text: said, local: true }] : []),
-        extra.length
-          ? { role: "assistant" as const, local: true, spontan: true, text: `Mit ${extra.join(", ")} und dem, was sonst da ist:` }
-          : spontanStartTurn(realStock(pantry ?? []).length > 0),
-      ],
-    }));
+    setChat((c) => {
+      const active = filters ?? c.spontan ?? loadSpontanFilters();
+      return {
+        ...c,
+        spontan: active,
+        turns: [...c.turns, ...(said ? [{ role: "user" as const, text: said, local: true }] : []), spontanStartTurn(active, [], extra)],
+      };
+    });
   };
 
-  /** Bestand für die Ideen: Vorrat + Gekauftes + eben Genanntes */
-  const stockWithExtra = () => mergeStock(pantry ?? [], (chat.extra ?? []).map((n) => stockItem(n, "s", today ? toIsoDate(today) : "")));
+  /** Bestand für eine Ideen-Antwort: Vorrat + Gekauftes + eben Genanntes */
+  const stockFor = (turn: ChatTurnView) => mergeStock(pantry ?? [], (turn.extra ?? []).map((n) => stockItem(n, "s", today ? toIsoDate(today) : "")));
+
+  /** Die Ideen einer Antwort – immer frisch aus dem aktuellen Bestand */
+  const ideasFor = (turn: ChatTurnView): SpontanIdea[] =>
+    data ? spontanIdeas(data.recipes, stockFor(turn), turn.ideaFilters ?? [], data.profile.neverAgain, turn.exclude ?? []) : [];
+
+  const headingFor = (turn: ChatTurnView, ideas: SpontanIdea[]) =>
+    spontanHeading(ideas, turn.ideaFilters ?? [], turn.extra ?? [], stockNearlyEmpty(stockFor(turn)));
+
+  /** Was vorgelesen wird: der eine Satz und die Ideen */
+  const speechFor = (turn: ChatTurnView) => {
+    if (!turn.spontan) return turn.text;
+    const ideas = ideasFor(turn);
+    return `${headingFor(turn, ideas)} ${ideas.map((i) => `${i.title}${i.minutes !== null ? `, ${i.minutes} Minuten` : ""}`).join(". ")}`;
+  };
+
+  /** "🔄 Andere Ideen": drei neue, ohne die eben gezeigten */
+  const moreIdeas = (turn: ChatTurnView) => {
+    const shown = ideasFor(turn).map((i) => i.id);
+    setChat((c) => ({ ...c, turns: [...c.turns, spontanStartTurn(turn.ideaFilters ?? [], [...(turn.exclude ?? []), ...shown], turn.extra ?? [])] }));
+  };
+
+  /** "Ideen anpassen" → 3 neue Ideen mit den Filtern (für die Sitzung gemerkt) */
+  const [adjusting2, setAdjusting2] = useState<ChatTurnView | null>(null);
+  const applyFilters = (turn: ChatTurnView, filters: SpontanFilter[]) => {
+    setAdjusting2(null);
+    saveSpontanFilters(filters);
+    const bases = filters.filter((f) => f.startsWith("basis:") && !(turn.ideaFilters ?? []).includes(f));
+    if (data && bases.length) saveProfile({ ...data.profile, bases: bases.reduce((b, f) => bumpBase(b, f.slice(6) as BaseId), data.profile.bases) });
+    // Neue Filter = neue Auswahl (nichts ausschließen, sonst bleibt evtl. nichts übrig)
+    setChat((c) => ({ ...c, spontan: filters, turns: [...c.turns, spontanStartTurn(filters, [], turn.extra ?? [])] }));
+  };
 
   /** "Für heute übernehmen": heutiges Gericht ersetzen, das alte rutscht weiter (mit Rückgängig) */
   const takeIdea = (idea: SpontanIdea) => {
@@ -294,20 +323,6 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
         },
       ],
     }));
-  };
-
-  /** Mit KI: andere Ideen zum Vorrat */
-  const askMoreIdeas = () => {
-    const soon = new Set(soonToUse(pantry ?? [], today ? toIsoDate(today) : "").map((p) => p.name));
-    const items = stockWithExtra().map((p) => `${formatPantryItem(p)}${soon.has(p.name) ? " (bald verbrauchen)" : ""}`);
-    const filters = (chat.spontan ?? [])
-      .map((f) => (f.startsWith("basis:") ? `Basis ${baseLabel(f.slice(6) as BaseId)}` : SPONTAN_FILTERS.find((x) => x.value === f)?.label))
-      .filter(Boolean);
-    setChat((c) => ({ ...c, spontan: null }));
-    void ask(
-      `Spontan kochen mit dem, was da ist: ${items.join(", ") || "(nichts notiert)"}.${filters.length ? ` Wünsche: ${filters.join(", ")}.` : ""} Bitte genau 3 schnelle Ideen ohne Einkauf, schnellste zuerst.`,
-      "Andere Ideen?",
-    );
   };
 
   /** Unbekanntes Wort übernehmen (Vorschlag oder wie gehört) */
@@ -491,6 +506,15 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     if (isAddPersonRequest(t)) {
       setInput("");
       setGuided(startAddPerson(data.profile, t));
+      return;
+    }
+    // "Was Schnelles mit Nudeln" → Ideen mit passenden Filtern (auch im Spontan-Modus)
+    if (isIdeaFilterRequest(t)) {
+      const filters = filtersFromText(t);
+      saveSpontanFilters(filters);
+      // "… mit Nudeln": die genannte Beilage ist wohl da – zählt für die Ideen (nicht im Vorrat)
+      const named = /\bmit\b/i.test(t) ? filters.flatMap((f) => (f.startsWith("basis:") ? [baseLabel(f.slice(6) as BaseId)] : [])) : [];
+      startSpontan(t, filters, named);
       return;
     }
     if (chat.spontan) {
@@ -794,6 +818,10 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   };
 
   // Neue Antworten von Lotte vorlesen (nicht, was beim Öffnen schon dastand)
+  const speechRef = useRef(speechFor);
+  useEffect(() => {
+    speechRef.current = speechFor;
+  });
   const spokenUpTo = useRef(chat.turns.length);
   useEffect(() => {
     const from = spokenUpTo.current;
@@ -801,8 +829,15 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     if (chat.turns.length <= from || !readingOn) return;
     const fresh = chat.turns.map((t, i) => ({ t, i })).slice(from).filter(({ t }) => t.role === "assistant");
     if (!fresh.length) return;
-    speak(fresh.map(({ t }) => t.text).join(" "), { id: `turn-${fresh[fresh.length - 1].i}`, gender: voice });
+    speak(fresh.map(({ t }) => speechRef.current(t)).join(" "), { id: `turn-${fresh[fresh.length - 1].i}`, gender: voice });
   }, [chat.turns, readingOn, voice]);
+
+  // Offene Ideen-Antwort (die letzte, solange Spontan kochen läuft) und eingeklappte frühere
+  const spontanIndexes = chat.turns.flatMap((t, i) => (t.spontan ? [i] : []));
+  const liveSpontan = chat.spontan !== null && spontanIndexes.length ? spontanIndexes[spontanIndexes.length - 1] : -1;
+  const earlier = spontanIndexes.filter((i) => i !== liveSpontan);
+  const firstEarlier = earlier[0] ?? -1;
+  const earlierTitles = [...new Set(earlier.flatMap((i) => ideasFor(chat.turns[i]).map((idea) => idea.title)))];
 
   return (
     <div className="fixed inset-0 z-40" role="dialog" aria-modal aria-label={`${name} – ${helperTitle(data?.profile)}`}>
@@ -898,7 +933,30 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           {chat.turns.map((turn, i) => {
             const last = i === chat.turns.length - 1;
             const showBases = last && !busy && !chat.spontan && asksForBase(turn);
-            const lastSpontan = chat.spontan !== null && turn.spontan && !chat.turns.slice(i + 1).some((t) => t.spontan);
+            // Ideen-Antworten: nur die letzte (im Spontan-Modus) ist offen, ältere eingeklappt
+            if (turn.spontan) {
+              if (i === liveSpontan && data) {
+                const ideas = ideasFor(turn);
+                const stock = stockFor(turn);
+                return (
+                  <div key={i} className="flex w-full flex-col items-start gap-2">
+                    <SpontanAnswer
+                      heading={headingFor(turn, ideas)}
+                      ideas={ideas}
+                      stock={stock}
+                      nearlyEmpty={stockNearlyEmpty(stock)}
+                      speaker={speechSupported() ? <SpeakButton speaking={speakingId === `turn-${i}`} onClick={() => toggleSpeak(speechFor(turn), `turn-${i}`, voice)} /> : null}
+                      onToday={takeIdea}
+                      onAdjust={() => setAdjusting2(turn)}
+                      onMore={() => moreIdeas(turn)}
+                      onNavigate={onClose}
+                    />
+                  </div>
+                );
+              }
+              if (i !== firstEarlier) return null;
+              return <EarlierIdeas key={i} titles={earlierTitles} />;
+            }
             return (
               <div key={i} className={`flex flex-col gap-2 ${turn.role === "user" ? "items-end" : "items-start"}`}>
                 <div className={`flex w-full items-end gap-1 ${turn.role === "user" ? "justify-end" : ""}`}>
@@ -963,26 +1021,6 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                   />
                 )}
                 {turn.baking && data && <BakingBoard recipes={turn.baking} withKids={hasKids(data.profile)} onNavigate={onClose} />}
-                {lastSpontan && data && (
-                  <SpontanBoard
-                    recipes={data.recipes}
-                    pantry={stockWithExtra()}
-                    neverAgain={data.profile.neverAgain}
-                    baseCounts={data.profile.bases}
-                    filters={chat.spontan ?? []}
-                    helperName={name}
-                    ready={ready}
-                    onToggle={(f) => {
-                      // Gewählte Basis zählt für die Beliebtheit
-                      const on = !chat.spontan?.includes(f);
-                      if (on && f.startsWith("basis:")) saveProfile({ ...data.profile, bases: bumpBase(data.profile.bases, f.slice(6) as BaseId) });
-                      setChat((c) => ({ ...c, spontan: c.spontan?.includes(f) ? c.spontan.filter((x) => x !== f) : [...(c.spontan ?? []), f] }));
-                    }}
-                    onTake={takeIdea}
-                    onAskMore={askMoreIdeas}
-                    onNavigate={onClose}
-                  />
-                )}
                 {showBases && data && (
                   <div className="flex flex-wrap gap-2" aria-label="Basis wählen">
                     {sortedBases(data.profile.bases).map((b) => (
@@ -1010,6 +1048,10 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
               </div>
             );
           })}
+
+          {adjusting2 && (
+            <AdjustSheet filters={adjusting2.ideaFilters ?? []} onApply={(f) => applyFilters(adjusting2, f)} onClose={() => setAdjusting2(null)} />
+          )}
 
           {/* Sanfter Gesundheits-Tipp (laut Einstellung, nie als Pop-up) */}
           {data && !chat.spontan && !busy && <TipBubble recipes={data.recipes} />}
@@ -1087,15 +1129,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
               disabled={!canType}
               enterKeyHint="send"
               aria-label="Nachricht an den Küchenhelfer"
-              placeholder={
-                speech.listening
-                  ? speech.interim || "Ich höre zu …"
-                  : chat.spontan
-                    ? "Was ist noch da? z. B. 2 Karotten, Reis"
-                    : adjusting
-                        ? "Was soll anders sein?"
-                        : `Frag ${name} …`
-              }
+              placeholder={`Sag ${name}, was ansteht …`}
               className={`${INPUT_BASE} h-12 flex-1 px-4`}
             />
             <button

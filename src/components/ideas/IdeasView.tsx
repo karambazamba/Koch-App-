@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Clock, Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
-import { CARD, CARD_LIST, INPUT_BASE, PAGE_MAIN, buttonClass, chipClass } from "@/components/ui/styles";
-import { dishEmoji } from "@/lib/dishEmoji";
-import { EMPTY_STOCK_HINT, usesLine } from "@/lib/dishIdeas";
+import { CARD, INPUT_BASE, PAGE_MAIN, chipClass } from "@/components/ui/styles";
+import { EMPTY_STOCK_HINT } from "@/lib/dishIdeas";
 import { openHelper } from "@/lib/assistant/open";
 import { IDEA_FILTERS, type IdeaFilter } from "@/lib/ideas";
 import { personLabel } from "@/lib/profile";
@@ -13,6 +12,8 @@ import { showToast } from "@/lib/toast";
 import { putAside, useTodayIdeas } from "@/lib/useIdeas";
 import { usePlanStyle } from "@/lib/usePlanStyle";
 import { addWish, parseWish, wishLabel } from "@/lib/wishes";
+import { IdeaCards } from "./IdeaCards";
+import { ideaCard } from "./IdeasCard";
 import { IdeaSheet } from "./IdeaSheet";
 import { PlanUnlockSheet } from "./PlanUnlockSheet";
 import { useIdeaChoice } from "./useIdeaChoice";
@@ -75,36 +76,14 @@ export function IdeasView() {
         {ideas.length === 0 ? (
           <p className={`${CARD} p-5 text-center text-muted`}>Damit fällt mir gerade nichts ein – nimm einen Filter raus oder erzähl mir, was im Haus ist.</p>
         ) : (
-          <ul className={CARD_LIST} aria-label="Ideen">
-            {ideas.map((idea) => (
-              <li key={idea.id} className="flex items-center gap-3 px-4 py-3">
-                <button type="button" onClick={() => setOpenId(idea.id)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-2xl" aria-hidden>
-                    {dishEmoji(idea.title, idea.category)}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-bold leading-snug">{idea.title}</span>
-                    <span className="flex flex-wrap items-center gap-x-1.5 text-sm text-muted">
-                      <span className={idea.wishId || idea.uses.length ? "font-semibold text-accent-strong" : ""}>
-                        {idea.uses.length && !idea.wishId ? usesLine(idea.uses, idea.needs, 3) : idea.reason}
-                      </span>
-                      {idea.minutes !== null && (
-                        <span className="inline-flex items-center gap-1">
-                          · <Clock className="h-3.5 w-3.5" strokeWidth={2} aria-hidden /> {idea.minutes} Min.
-                        </span>
-                      )}
-                    </span>
-                  </span>
-                </button>
-                <button type="button" onClick={() => choose(idea, data.profile, data.today, data.recipes)} className={buttonClass("soft", "sm")}>
-                  Heute
-                </button>
-                <button type="button" onClick={() => aside(idea)} aria-label={`${idea.title}: nicht jetzt`} className="-mr-2 flex h-10 w-10 items-center justify-center text-stone-400">
-                  <X className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-                </button>
-              </li>
-            ))}
-          </ul>
+          <IdeaCards
+            ideas={ideas.map(ideaCard)}
+            onToday={(card) => {
+              const idea = ideas.find((i) => i.id === card.id);
+              if (idea) choose(idea, data.profile, data.today, data.recipes);
+            }}
+            onOpen={(card) => setOpenId(card.id)}
+          />
         )}
 
         <section className={`${CARD} flex flex-col gap-3 p-4`} aria-label="Wunsch">

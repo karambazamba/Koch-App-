@@ -129,7 +129,9 @@ Bei ALLEN Änderungen beachten.
      ansehen · Tauschen" (`/wochenplan?tauschen=heute`). Neu (oder Kochstil
      "nach Rezept"): "<n> Schritte · <n> Zutaten" und "Los geht's – Schritt für
      Schritt" (nach der Essenszeit nicht mehr). Kein Gericht für heute:
-     `IdeasCard` "Was gibt's heute?" mit 3 Ideen (alle Kochstile).
+     `IdeasCard` "Was gibt's heute?" mit genau 3 kompakten Ideen-Karten wie
+     im Chat (alle Kochstile; rechts oben "Mehr Ideen" bzw. "Sag mir, was da
+     ist").
   3. Lottes Platz (`useLottePlace` in `src/components/home/LottePlace.tsx`):
      genau EINE Sache oder Stille, Avatar + Sprechblase, max. 2 Chips, immer
      als Angebot. Die erste zutreffende Stufe gewinnt:
@@ -296,22 +298,30 @@ Bei ALLEN Änderungen beachten.
 - Spontan kochen (EIN Modus für alles Ungeplante): `openHelper("spontan",
   ask?, filters?)`, "Was ist noch da?"/"Reste"/"Spontan kochen" im Chat; die
   alte Route `/schnellkueche` leitet zur Startseite mit Spontan-Modus um
-  (`SpontanRedirect`). Im Küchenhelfer (`ChatState.spontan` = gewählte Filter,
-  `SpontanBoard`) sofort 3 Ideen aus Vorrat und Kochbuch (`spontanIdeas()` in
-  `src/lib/spontan.ts`: Kochbuch + eingebaute Klassiker + Fertigprodukte aus
-  dem Vorrat (Tiefkühlpizza, Maultaschen …), ohne "Nie wieder", ohne Einkauf –
-  Gewürze/Öl/Zwiebel u. Ä. zählen als "hat man da" –, schnellste zuerst;
-  leerer Vorrat → Klassiker, die meistens gehen). Filter-Chips (mehrfach):
-  "⚡ unter 20 Min", "♻️ Reste zuerst", "🛒 1 Sache darf fehlen" und Basis-
-  Chips (Nudeln, Reis, Kartoffeln, Brot, Salat – nach Beliebtheit, Wahl zählt
-  mit). Einen Joker gibt es (noch) nicht. Gesagtes zerlegt `parseLeftovers()` (`src/lib/leftovers/parser.ts`,
-  austauschbar) und landet im Vorrat (`wasgibts.vorrat`, gleiche Zutaten
-  zusammengezählt), die Ideen rechnen sich live neu; Unbekanntes als grauer
-  Chip "Meintest du …?"; ein normaler Satz ohne Zutaten beendet den Modus.
-  "Für heute übernehmen" (`takeForToday()` in `src/lib/spontanTake.ts`)
-  ersetzt das heutige Gericht, das alte rutscht auf den nächsten freien Tag
-  (diese/nächste Woche), mit "Rückgängig"; ohne Übernehmen ändert sich nichts.
-  Mit KI zusätzlich "Andere Ideen von <Name>".
+  (`SpontanRedirect`). Leitbild: Einfachheit vor Vollständigkeit. Die
+  Ideen-Antwort (`SpontanAnswer` in `SpontanBoard.tsx`) zeigt in dieser
+  Reihenfolge: EINEN Satz ("Mit dem, was da ist, gehen heute diese drei – die
+  schnellste zuerst:", `spontanHeading`; nie ohne Ideen darunter), eine graue
+  Zeile "Noch da: … ändern" (max. 5, öffnet den Vorrat), genau 3 kompakte
+  Karten (`IdeaCards`: Emoji, Name, "25 Min · alles im Haus" grün bzw. "35
+  Min · noch: Kokosmilch" – nie "fehlt"/"Alles da"; rechts "Heute", Tippen
+  öffnet das Rezept) und die Chips "Anpassen" und "Andere Ideen" (3 neue,
+  ohne die eben gezeigten; `exclude` je Antwort). Die besten 3
+  (`rankedSpontanIdeas`, meiste Vorrats-Zutaten zuerst) werden schnellste
+  zuerst angezeigt. Filter nicht im Chat, sondern im Fenster "Ideen anpassen"
+  (`AdjustSheet`: ZEIT unter 20 Min/egal, VORRANG Reste zuerst/1 Sache darf
+  fehlen, BEILAGE mehrfach) mit "3 neue Ideen zeigen", für die Sitzung
+  gemerkt (`wasgibts.spontan.filter` in sessionStorage); per Sprache "Was
+  Schnelles mit Nudeln" (`filtersFromText`, `isIdeaFilterRequest`). Jede
+  Ideen-Antwort ist ein Eintrag mit eigenen Filtern/`exclude`/`extra` und
+  rechnet live aus dem Bestand; nur die letzte ist offen, ältere stehen
+  eingeklappt als "Frühere Ideen". Gesagtes zerlegt `parseLeftovers()` und
+  landet im Vorrat ("Notiert ✓" + neue Ideen); Unbekanntes als grauer Chip
+  "Meintest du …?"; ein normaler Satz ohne Zutaten beendet den Modus.
+  "Heute" (`takeForToday()` in `src/lib/spontanTake.ts`) ersetzt das heutige
+  Gericht, das alte rutscht auf den nächsten freien Tag, mit "Rückgängig".
+  Eingabefeld immer "Sag <Name>, was ansteht …". Gleiche Karten auf `/ideen`
+  und in "Was gibt's heute?".
 - "Kennt ihr" oder "Neu" (`src/lib/dishStatus.ts`): bekannt = von Hand
   "Kennen wir" (Kochbuch v2 `known`; Schalter im Wochenplan-Eintrag und auf
   der Rezeptseite), 2× gekocht, eigenes Rezept schon gekocht, Wunsch und
@@ -648,8 +658,8 @@ Bei ALLEN Änderungen beachten.
   Lieblinge/kennt ihr/👍, Vorrat und Reste, Jahreszeit, nicht dasselbe wie in
   den letzten 5 Tagen, unter der Woche eher schnell; dazu Familien-Klassiker.
   Heute-Karte ohne Gericht (alle Kochstile): `IdeasCard` "Was gibt's heute?"
-  mit 3 Ideen (links wischen = nicht jetzt, rechts = nächste, tippen = mehr,
-  "Das gibt's heute"). Braucht die Idee noch etwas: "Soll ich dir das für
+  mit 3 kompakten Ideen-Karten ("Heute" übernimmt, Tippen = Rezept bzw.
+  Details mit "Nicht jetzt"). Braucht die Idee noch etwas: "Soll ich dir das für
   heute auf die Liste setzen? Dafür brauchst du noch: …" → Einkaufsliste
   "Für heute" (ganz oben, für alle Kochstile; ersetzt "Heute holen"). Seite
   `/ideen` mit Filtern (schnell, veggie, mit Vorrat), Wunsch-Feld und – nur

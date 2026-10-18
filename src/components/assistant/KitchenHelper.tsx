@@ -6,7 +6,6 @@ import { Undo2 } from "lucide-react";
 import { commitOps } from "@/lib/assistant/client";
 import { onOpenHelper } from "@/lib/assistant/open";
 import { learnLikes, likesFromIngredients, LIKE_WEIGHTS } from "@/lib/likes";
-import { usePantry } from "@/lib/pantry";
 import { useRecipes } from "@/lib/cookbook";
 import { useMealPlans } from "@/lib/mealPlan";
 import { useShoppingLists } from "@/lib/shoppingList";
@@ -19,6 +18,7 @@ import type { AssistantData } from "@/lib/assistant/ops";
 import { helperName, helperTitle } from "@/lib/profile";
 import { HelperAvatar } from "./HelperAvatar";
 import { HelperPanel, spontanStartTurn, type ChatState } from "./HelperPanel";
+import { loadSpontanFilters } from "./SpontanBoard";
 
 const UNDO_SECONDS = 10;
 
@@ -84,20 +84,17 @@ export function KitchenHelper() {
     if (today) recordOpen(toIsoDate(today));
   }, [today]);
 
-  // Von außen öffnen, z. B. "Spontan kochen" → Spontan-Modus
-  const pantry = usePantry();
-  const pantryRef = useRef(pantry);
-  useEffect(() => {
-    pantryRef.current = pantry;
-  });
+  // Von außen öffnen, z. B. "Spontan kochen" → Spontan-Modus (Filter der Sitzung)
   useEffect(
     () =>
       onOpenHelper((mode, ask, filters) => {
         setOpen(true);
         if (mode === "voice" || ask) setStart({ listen: mode === "voice", ask });
         if (mode !== "spontan") return;
-        const hasPantry = (pantryRef.current ?? []).length > 0;
-        setChat((c) => ({ ...c, spontan: (filters as SpontanFilter[] | undefined) ?? c.spontan ?? [], turns: [...c.turns, spontanStartTurn(hasPantry)] }));
+        setChat((c) => {
+          const active = (filters as SpontanFilter[] | undefined) ?? c.spontan ?? loadSpontanFilters();
+          return { ...c, spontan: active, turns: [...c.turns, spontanStartTurn(active)] };
+        });
       }),
     [],
   );
