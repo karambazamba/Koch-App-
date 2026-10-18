@@ -11,7 +11,9 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** Ist das ein "setz … auf die Liste"-Satz? */
 export function isShoppingRequest(text: string): boolean {
-  return /\bauf (die|unsere|meine) (einkaufs)?liste\b|\bzur (einkaufs)?liste\b|\bauf den einkaufszettel\b|^einkaufsliste\s*:/i.test(text);
+  if (/\bauf (die|unsere|meine) (einkaufs)?liste\b|\bzur (einkaufs)?liste\b|\bauf den einkaufszettel\b|^einkaufsliste\s*:/i.test(text)) return true;
+  // "Wir brauchen Milch und Eier" – aber nicht "Wir brauchen eine Idee …?"
+  return /^(?:wir|ich)\s+brauch(?:en|e)\s+(?:noch\s+)?\S/i.test(text.trim()) && !/\?|idee|rezept|vorschlag|hilfe|plan/i.test(text);
 }
 
 /** Laden am Ende eines Teils: "von Rossmann", "bei Aldi", "vom Bäcker", "(dm)" */
@@ -32,6 +34,8 @@ function splitShop(part: string, shops: string[]): { rest: string; shop: string 
 export function parseShoppingText(text: string, shops: string[] = []): ParsedShoppingItem[] {
   const core = text
     .replace(/^\s*(einkaufsliste\s*:|bitte\s+)/i, "")
+    .replace(/^\s*(wir|ich)\s+brauch(en|e)\b/i, "")
+    .replace(/[.!]+\s*$/, "")
     .replace(/\b(setz|setze|pack|packe|schreib|schreibe|tu|tue|füg|füge)\w*\b/gi, "")
     .replace(/\b(noch|bitte|mal|auch|uns)\b/gi, "")
     .replace(/\b(auf|zur|zu der)\s+(die|unsere|meine|der)?\s*(einkaufs)?liste\b.*$/i, "")

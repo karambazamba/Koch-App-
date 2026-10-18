@@ -5,6 +5,8 @@
 import type { RecipeCategory } from "../cookbook";
 import { MEAL_TIME_LABELS, personLabel } from "../profile";
 import { SECTIONS } from "../shoppingList";
+import { appointmentTime } from "../appointments";
+import { formatPantryItem, PANTRY_PLACES } from "../pantry";
 import { formatWeekRange, planForWeek } from "../weekPlan";
 import {
   applyOps,
@@ -183,6 +185,16 @@ function describe(
     case "add_shopping": {
       const section = SECTIONS.find((s) => s.value === op.section)?.label ?? "";
       return { opId: op.id, group: "Einkaufsliste", order: 20_000, label: section, before: null, after: [op.amount, op.name].filter(Boolean).join(" ") };
+    }
+    case "add_pantry": {
+      const place = PANTRY_PLACES.find((p) => p.value === op.place);
+      return { opId: op.id, group: "Vorrat", order: 21_000, label: place?.label ?? "Vorrat", before: null, after: formatPantryItem(op) };
+    }
+    case "add_wish":
+      return { opId: op.id, group: "Wünsche", order: 22_000, label: `Wunsch von ${op.who}`, before: null, after: `${op.dish} 🎉 – ganz oben bei den Ideen` };
+    case "add_appointment": {
+      const day = new Intl.DateTimeFormat("de-DE", { weekday: "long", timeZone: "UTC" }).format(new Date(`${op.date}T00:00:00Z`));
+      return { opId: op.id, group: "Termine", order: 23_000, label: `${day} ${dayDate(op.date)}`, before: null, after: [op.title, appointmentTime(op)].filter(Boolean).join(" ") };
     }
   }
 }

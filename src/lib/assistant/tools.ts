@@ -9,9 +9,10 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { RECIPE_CATEGORIES, type RecipeCategory } from "../cookbook";
 import { guessDishCategory } from "../dishCategory";
 import { recipeIsKnown } from "../dishStatus";
+import { PANTRY_PLACES, placeFor, type PantryPlace } from "../pantry";
 import { personLabel, WEEKDAYS, type Person } from "../profile";
 import { SECTIONS, sectionFor, type Section } from "../shoppingList";
-import { formatWeekRange, planForWeek } from "../weekPlan";
+import { addDays, formatWeekRange, planForWeek } from "../weekPlan";
 import { dietConflicts } from "./diet";
 import {
   applyOps,
@@ -35,6 +36,8 @@ export type ToolContext = {
   /** Neue Rezepte: ref → vorläufige ID in der Arbeitskopie */
   refs: Record<string, string>;
   counter: number;
+  /** Heute auf dem Gerät, "YYYY-MM-DD" (für Termine) */
+  today: string;
 };
 
 export type ToolResult = { content: string; isError?: boolean };
@@ -206,6 +209,64 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
       additionalProperties: false,
     },
   },
+  {
+    name: "vorrat_hinzufuegen",
+    description:
+      "Schlägt vor, Sachen in den Vorrat einzutragen (z. B. 'Ich hab 4 Portionen Chili eingefroren' → Chili, 4, Portionen, tiefkuehler). Ort: kuehlschrank, tiefkuehler oder schrank (Vorratsschrank); ohne Angabe wählt die App den naheliegenden.",
+    input_schema: {
+      type: "object",
+      properties: {
+        sachen: {
+          type: "array",
+          minItems: 1,
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              menge: { type: ["number", "null"] },
+              einheit: { type: "string", description: "z. B. g, Portionen, Becher; leer = Stück" },
+              ort: { type: "string", enum: PANTRY_PLACES.map((p) => p.value) },
+            },
+            required: ["name"],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: ["sachen"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "wunsch_merken",
+    description:
+      "Merkt einen Essenswunsch ohne festen Tag ('Mathis wünscht sich Pfannkuchen'). Er steht dann ganz oben bei den Ideen für heute. Mit festem Tag in einer geplanten Woche stattdessen vorgaben_aendern mit wunsch.",
+    input_schema: {
+      type: "object",
+      properties: {
+        person: { type: "string", description: "Name der Person, die sich das wünscht" },
+        gericht: { type: "string" },
+      },
+      required: ["person", "gericht"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "termin_notieren",
+    description:
+      "Notiert einen Termin, der beim Essen eine Rolle spielt ('Jonne hat Dienstag bis 17:30 Turnen'). Er steht an dem Tag auf der Heute-Karte. tag: heute, morgen oder ein Wochentag (der nächste ab heute).",
+    input_schema: {
+      type: "object",
+      properties: {
+        tag: { type: "string", enum: ["heute", "morgen", ...WEEKDAYS] },
+        uhrzeit: { type: "string", description: "HH:MM, leer wenn unbekannt" },
+        bis: { type: "boolean", description: "true = 'bis 17:30', false = Beginn" },
+        titel: { type: "string", description: "kurz, z. B. 'Turnen'" },
+        person: { type: "string", description: "Name aus dem Haushalt, leer wenn alle" },
+      },
+      required: ["tag", "titel"],
+      additionalProperties: false,
+    },
+  },
 ];
 
 // --- Hilfen -----------------------------------------------------------------------
@@ -243,13 +304,31 @@ function distance(a: string, b: string): number {
   return d[a.length][b.length];
 }
 
-/** Kind über den Namen finden – auch bei leichter Abweichung (Spracheingabe) */
-export function findKid(persons: Person[], name: string): Person[] {
-  const kids = persons.filter((p) => p.role === "kind");
+/** Person über den Namen finden – auch bei leichter Abweichung (Spracheingabe) */
+export function findPersons(persons: Person[], name: string): Person[] {
   const n = name.trim().toLowerCase();
-  const exact = kids.filter((k) => k.name.trim().toLowerCase() === n || k.id === name);
+  const exact = persons.filter((k) => k.name.trim().toLowerCase() === n || k.id === name);
   if (exact.length > 0) return exact;
-  return kids.filter((k) => k.name.trim() && distance(k.name.trim().toLowerCase(), n) <= 2);
+  return persons.filter((k) => k.name.trim() && distance(k.name.trim().toLowerCase(), n) <= 2);
+}
+
+/** Kind über den Namen finden */
+export function findKid(persons: Person[], name: string): Person[] {
+  return findPersons(
+    persons.filter((p) => p.role === "kind"),
+    name,
+  );
+}
+
+/** Nächstes Datum (ab heute) für "heute", "morgen" oder einen Wochentag */
+export function dateForDay(today: string, tag: string): string | null {
+  if (tag === "heute") return today;
+  if (tag === "morgen") return addDays(today, 1);
+  const index = WEEKDAYS.indexOf(tag);
+  if (index < 0) return null;
+  // WEEKDAYS beginnt mit Montag; getUTCDay: 0 = Sonntag
+  const current = (new Date(`${today}T00:00:00Z`).getUTCDay() + 6) % 7;
+  return addDays(today, (index - current + 7) % 7);
 }
 
 const dateLabel = (iso: string) => {
@@ -505,6 +584,55 @@ export function runTool(ctx: ToolContext, name: string, raw: unknown): ToolResul
         names.push(itemName);
       }
       return { content: `Vorgemerkt für die Einkaufsliste: ${names.join(", ")}.` };
+    }
+
+    case "vorrat_hinzufuegen": {
+      const sachen = Array.isArray(input.sachen) ? (input.sachen as Input[]) : [];
+      const names: string[] = [];
+      for (const item of sachen.slice(0, 20)) {
+        const itemName = str(item.name);
+        if (!itemName) continue;
+        const place = PANTRY_PLACES.some((p) => p.value === item.ort) ? (item.ort as PantryPlace) : placeFor(itemName);
+        const amount = typeof item.menge === "number" && item.menge > 0 ? item.menge : null;
+        propose(ctx, { id: nextId(ctx), type: "add_pantry", name: itemName, amount, unit: str(item.einheit), place });
+        names.push(itemName);
+      }
+      if (names.length === 0) return fail("sachen mit name angeben.");
+      return { content: `Vorgemerkt für den Vorrat: ${names.join(", ")}.` };
+    }
+
+    case "wunsch_merken": {
+      const who = str(input.person);
+      const dish = str(input.gericht);
+      if (!who || !dish) return fail("person und gericht angeben.");
+      if (isNeverAgain(dish, data.profile.neverAgain)) return fail(`"${dish}" steht auf der Nie-wieder-Liste – freundlich nachfragen.`);
+      const found = findPersons(data.profile.persons, who);
+      const person = found.length === 1 ? found[0] : null;
+      const label = person ? personLabel(person, data.profile.persons) : who;
+      propose(ctx, { id: nextId(ctx), type: "add_wish", personId: person?.id ?? null, who: label, dish });
+      return { content: `Vorgemerkt: Wunsch von ${label} – ${dish}.` };
+    }
+
+    case "termin_notieren": {
+      const date = dateForDay(ctx.today, str(input.tag));
+      const title = str(input.titel);
+      if (!date || !title) return fail("tag und titel angeben.");
+      const time = /^\d{1,2}:\d{2}$/.test(str(input.uhrzeit)) ? str(input.uhrzeit).padStart(5, "0") : "";
+      const who = str(input.person);
+      const found = who ? findPersons(data.profile.persons, who) : [];
+      const person = found.length === 1 ? found[0] : null;
+      const label = person ? personLabel(person, data.profile.persons) : who;
+      propose(ctx, {
+        id: nextId(ctx),
+        type: "add_appointment",
+        date,
+        time,
+        until: input.bis === true,
+        title: label && !title.toLowerCase().includes(label.toLowerCase()) ? `${label} ${title}` : title,
+        personId: person?.id ?? null,
+        who: "",
+      });
+      return { content: `Vorgemerkt: Termin am ${dateLabel(date)} – ${title}.` };
     }
 
     default:

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import { ArrowUp, CircleHelp, Mic, MicOff, Sparkles, Square, Volume2, VolumeX, X } from "lucide-react";
+import { ArrowUp, CircleHelp, Mic, MicOff, Square, Volume2, VolumeX, X } from "lucide-react";
 import { baseLabel, bumpBase, sortedBases, type BaseId } from "@/lib/bases";
 import { parseLeftovers, type ParsedLeftover } from "@/lib/leftovers/parser";
 import { addPantryItems, formatPantryItem, usePantry } from "@/lib/pantry";
@@ -18,7 +18,9 @@ import { GuidedChat } from "@/components/onboarding/GuidedChat";
 import { HelperAvatar } from "./HelperAvatar";
 import {
   askAssistant,
+  FALLBACK_TEXT,
   loadVoicePreference,
+  saveAccessCode,
   saveVoicePreference,
   speak,
   stopSpeaking,
@@ -42,7 +44,7 @@ import { composeWeek, replaceMealPlans } from "@/lib/mealPlan";
 import { SpontanBoard } from "./SpontanBoard";
 import { MarketBoard, type MarketTarget } from "./MarketBoard";
 import { BakingBoard } from "./BakingBoard";
-import { ICON_BUTTON, INPUT_BASE, NOTE, chipClass } from "@/components/ui/styles";
+import { ICON_BUTTON, INPUT_BASE, NOTE, buttonClass, chipClass } from "@/components/ui/styles";
 import { ProposalCard } from "./ProposalCard";
 import { TipBubble } from "./TipBubble";
 import { tipsShown, useTipStore } from "@/lib/healthTips";
@@ -94,11 +96,10 @@ function asksForBase(turn: ChatTurnView | undefined): boolean {
 
 const BUBBLE = "max-w-[85%] whitespace-pre-line rounded-2xl px-4 py-2.5 text-base leading-snug";
 
-const EXAMPLES = [
-  "Donnerstag und Freitag gibt es meine Rezepte, der Rest vegetarisch",
-  "Tausch Dienstag und Mittwoch",
-  "Setz Milch und Haferflocken auf die Einkaufsliste",
-];
+const EXAMPLES = ["Morgen gibt's Lachs", "Ich hab 4 Portionen Chili eingefroren", "Wir brauchen Milch und Eier"];
+
+/** Ohne KI: Beispiele, die die App selbst versteht */
+const LOCAL_EXAMPLES = ["Was gibt's heute Schnelles?", "Wir brauchen Milch und Eier", "Was ist noch da?"];
 
 /** Spontan: Beispiele ohne Planung */
 const SPONTAN_EXAMPLES = ["Was gibt's heute Schnelles?", "Mathis wünscht sich Pfannkuchen", "Setz Milch und Haferflocken auf die Einkaufsliste"];
@@ -126,11 +127,13 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   const [adjusting, setAdjusting] = useState(false);
   const [voiceOn, setVoiceOn] = useState(loadVoicePreference);
   const [dictationHint, setDictationHint] = useState(false);
+  // Zugangscode "Später" – gilt, bis das Panel wieder geöffnet wird
+  const [codeLater, setCodeLater] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const collected = useRef("");
 
-  const ready = Boolean(status?.configured && data && today);
+  const ready = Boolean(status?.ready && data && today);
   // Eingabe auch ohne KI möglich – z. B. für "neue Person" (ohne KI per Regeln)
   const canType = Boolean(data && today);
   const name = helperName(data?.profile);
@@ -144,20 +147,26 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   // "Ich koche spontan" (diese Woche): keine Planungs-Beispiele, Wünsche und "doch planen" lokal
   const spontanStyle = Boolean(data && today && effectivePlanStyle(data.profile, weekStartFor(today, data.profile.shoppingDay || "Montag")) === "spontan");
 
-  /** Frage an die KI; `display` = was im Chat steht, wenn anders als die Frage */
-  const ask = async (text: string, display?: string) => {
+  /** KI gerade nicht da: erst die eigenen Regeln, sonst der freundliche Satz */
+  const notUnderstood = (said: string, local?: (t: string) => boolean) => {
+    if (local?.(said)) return;
+    setChat((c) => ({
+      ...c,
+      turns: [...c.turns, { role: "user", text: said, local: true }, { role: "assistant", text: FALLBACK_TEXT, error: true }],
+    }));
+    if (voiceOn) speak(FALLBACK_TEXT, voice);
+  };
+
+  /**
+   * Frage an die KI; `display` = was im Chat steht, wenn anders als die Frage.
+   * `local` versucht es ohne KI, falls sie gerade nicht erreichbar ist.
+   */
+  const ask = async (text: string, display?: string, local?: (t: string) => boolean) => {
     const question = text.trim();
     if (!question || busy || !data || !today) return;
     if (!ready) {
-      setChat((c) => ({
-        ...c,
-        turns: [
-          ...c.turns,
-          { role: "user", text: display ?? question },
-          { role: "assistant", text: "Dafür brauche ich die KI – die ist noch nicht eingerichtet.", error: true },
-        ],
-      }));
       setInput("");
+      notUnderstood(display ?? question, local);
       return;
     }
     const history: ChatTurn[] = [
@@ -185,9 +194,11 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
         };
       });
       if (voiceOn) speak(result.reply, voice);
-    } catch (e) {
-      const message = e instanceof Error ? e.message : "Da ist etwas schiefgelaufen.";
-      setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text: message, error: true }] }));
+    } catch {
+      // Offline, kein Guthaben, Limit, falscher Code …: nie Technik-Texte – die Frage
+      // wandert an die eigenen Regeln (ohne KI), sonst der freundliche Satz
+      setChat((c) => ({ ...c, turns: c.turns.slice(0, -1) }));
+      notUnderstood(display ?? question, local);
     } finally {
       setBusy(false);
     }
@@ -308,31 +319,43 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       saveProfile({ ...data.profile, pause: pause.pause });
       return `Alles klar – Pause ${pauseLabel(pause.pause)} ☀️ Genießt die Zeit, ich plane da nichts und halte mich zurück.`;
     }
-    if (isQuickRequest(t) && !ready) {
-      const ideas = quickIdeas(data.recipes, data.profile.neverAgain);
-      return `Drei schnelle Ideen unter 20 Minuten: ${ideas.slice(0, -1).join(", ")} oder ${ideas[ideas.length - 1]}.`;
-    }
     return null;
   };
 
-  /** "… auf die Liste" bzw. "Wir nehmen immer Alsan statt Butter" → erledigen und Antwort */
-  const shoppingReply = (t: string): string | null => {
-    if (!data || !today) return null;
+  /** Drei schnelle Ideen unter 20 Minuten (ohne KI) */
+  const quickReply = (): string | null => {
+    if (!data) return null;
+    const ideas = quickIdeas(data.recipes, data.profile.neverAgain);
+    return `Drei schnelle Ideen unter 20 Minuten: ${ideas.slice(0, -1).join(", ")} oder ${ideas[ideas.length - 1]}.`;
+  };
+
+  /** "Wir nehmen immer Alsan statt Butter" → merken und Antwort */
+  const productReply = (t: string): string | null => {
     const product = parseProductStatement(t);
-    if (product) {
-      setProduct(product.ingredient, product.product);
-      return `Gemerkt ✓ Statt ${product.ingredient} steht ab jetzt ${product.product} auf der Einkaufsliste – die Rezepte bleiben gleich.`;
-    }
+    if (!product) return null;
+    setProduct(product.ingredient, product.product);
+    return `Gemerkt ✓ Statt ${product.ingredient} steht ab jetzt ${product.product} auf der Einkaufsliste – die Rezepte bleiben gleich.`;
+  };
+
+  /** "… auf die Liste", "Wir brauchen Milch und Eier" → erledigen und Antwort (ohne KI) */
+  const shoppingReply = (t: string): { text: string; undo: () => void } | null => {
+    if (!data || !today) return null;
     if (!isShoppingRequest(t)) return null;
     const items = parseShoppingText(t, shoppingSettings?.shops ?? []);
     if (items.length === 0) return null;
     const weekStart = planningWeekStart(today, data.profile.shoppingDay || DEFAULT_SHOPPING_DAY).weekStart;
-    for (const item of items) {
-      addManualItem(weekStart, { name: item.name, amount: item.amount, section: sectionFor(item.name) });
+    const ids = items.map((item) => {
       if (item.shop) setItemShop(shoppingSettings?.products[item.name.toLowerCase()] ?? item.name, item.shop);
-    }
+      return addManualItem(weekStart, { name: item.name, amount: item.amount, section: sectionFor(item.name) });
+    });
     const names = items.map((i) => `${i.amount ? `${i.amount} ` : ""}${i.name}${i.shop ? ` (${i.shop})` : ""}`);
-    return `Steht drauf ✓ ${names.join(", ")}`;
+    return {
+      text: `Steht drauf ✓ ${names.join(", ")}`,
+      undo: () => {
+        removeManualItems(weekStart, ids);
+        setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig gemacht – wieder runter von der Liste.", local: true }] }));
+      },
+    };
   };
 
   /** "Lachs ist im Angebot", "Ich steh grad im Rewe …" → Ideen mit Zeit, kurz */
@@ -478,16 +501,39 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       onClose();
       return;
     }
-    // Pause, Ausflugs-Snacks, schnelle Ideen und Einkaufsliste direkt erledigen (auch ohne KI)
-    const local = spontanReply(t) ?? shoppingReply(t);
-    if (local) {
+    // Pause, Ausflugs-Snacks und "Wir nehmen immer Alsan statt Butter" direkt erledigen
+    const direct = spontanReply(t) ?? productReply(t);
+    if (direct) {
       setInput("");
-      setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text: local, local: true }] }));
+      setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text: direct, local: true }] }));
       return;
     }
-    // "Mathis wünscht sich Pfannkuchen" → Wunsch-Idee (ohne Tag oder ohne Planung immer lokal)
+    if (localFirst(t)) return;
+    // Alles andere versteht die KI (Vorschlag mit "Übernehmen"); ist sie nicht da, die eigenen Regeln
+    if (ready) {
+      void ask(t, undefined, localFallback);
+      return;
+    }
+    setInput("");
+    notUnderstood(t, localFallback);
+  };
+
+  /**
+   * Ohne KI (oder wenn sie gerade nicht erreichbar ist): Einkaufsliste,
+   * Wünsche und schnelle Ideen nach festen Regeln – sofort, mit Rückgängig.
+   */
+  const localFallback = (t: string): boolean => {
+    if (!data || !today) return false;
+    const quick = isQuickRequest(t) ? quickReply() : null;
+    const reply = shoppingReply(t) ?? (quick ? { text: quick, undo: undefined } : null);
+    if (reply) {
+      setInput("");
+      setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text: reply.text, local: true, undo: reply.undo }] }));
+      return true;
+    }
+    // "Mathis wünscht sich Pfannkuchen" → Wunsch-Idee
     const wish = parseWish(t, data.profile.persons);
-    if (wish && (!wish.weekday || spontanStyle || !ready)) {
+    if (wish) {
       setInput("");
       const created = addWish({ personId: wish.personId, who: wish.who, dish: wish.dish }, toIsoDate(today));
       setChat((c) => ({
@@ -506,8 +552,14 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           },
         ],
       }));
-      return;
+      return true;
     }
+    return false;
+  };
+
+  /** Regeln, die vor der KI greifen (Einstellungen, Supermarkt, Backen, "Wir lieben …") */
+  const localFirst = (t: string): boolean => {
+    if (!data || !today) return false;
     // Spontan: "Ich will doch mal planen" → nur diese Woche oder ab jetzt immer?
     if (spontanStyle && isPlanUnlockRequest(t)) {
       setInput("");
@@ -549,7 +601,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           },
         ],
       }));
-      return;
+      return true;
     }
     // Einstellungen per Gespräch ("Jonne isst jetzt vegetarisch", "Mach die Ansicht dunkel")
     const setting = settingsChange(t, data.profile);
@@ -573,14 +625,14 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           },
         ],
       }));
-      return;
+      return true;
     }
     // Im Supermarkt bzw. Backwunsch → kurze Antwort mit Karten (auch ohne KI)
     const special = marketTurn(t) ?? bakingTurn(t);
     if (special) {
       setInput("");
       setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, special] }));
-      return;
+      return true;
     }
     // "Wir lieben Käse" → Lieblingszutaten merken
     const liked = extractLikeStatements(t);
@@ -597,12 +649,12 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       setInput("");
       if (!more || !ready) {
         setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, reply] }));
-        return;
+        return true;
       }
-      void ask(t).then(() => setChat((c) => ({ ...c, turns: [...c.turns, reply] })));
-      return;
+      void ask(t, undefined, localFallback).then(() => setChat((c) => ({ ...c, turns: [...c.turns, reply] })));
+      return true;
     }
-    void ask(t);
+    return false;
   };
 
   // Panel geschlossen → eine noch laufende Aufnahme nicht mehr abschicken
@@ -748,14 +800,6 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
         <div ref={scrollRef} className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4" aria-live="polite">
           {status === undefined || data === undefined ? (
             <div className="h-20 animate-pulse rounded-card bg-surface" />
-          ) : !status.configured && !chat.spontan && chat.turns.length === 0 ? (
-            <p className={NOTE} role="note">
-              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
-              <span>
-                <span className="font-bold">KI noch nicht eingerichtet.</span> Sobald der API-Schlüssel hinterlegt ist, plant der
-                Küchenhelfer mit dir per Sprache – Vorschläge kommen immer erst als Vorschau.
-              </span>
-            </p>
           ) : data === null ? (
             <p className={NOTE} role="note">
               <span>
@@ -771,15 +815,14 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
               Hi, ich bin {name} – was steht an?
             </p>
           )}
-          {ready && chat.turns.length === 0 && (
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-col items-start gap-2">
-                {(spontanStyle ? SPONTAN_EXAMPLES : EXAMPLES).map((example) => (
-                  <button key={example} type="button" onClick={() => (spontanStyle ? submit(example) : void ask(example))} className={`${chipClass(false)} text-left`}>
-                    „{example}“
-                  </button>
-                ))}
-              </div>
+          {status?.askCode && data && !codeLater && <AccessCodeCard onLater={() => setCodeLater(true)} />}
+          {data && today && chat.turns.length === 0 && (
+            <div className="flex flex-col items-start gap-2">
+              {(ready ? (spontanStyle ? SPONTAN_EXAMPLES : EXAMPLES) : LOCAL_EXAMPLES).map((example) => (
+                <button key={example} type="button" onClick={() => submit(example)} className={`${chipClass(false)} text-left`}>
+                  „{example}“
+                </button>
+              ))}
             </div>
           )}
 
@@ -793,9 +836,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                   className={`${BUBBLE} ${
                     turn.role === "user"
                       ? "rounded-br-md bg-accent text-on-accent"
-                      : turn.error
-                        ? "rounded-bl-md border border-red-200 bg-red-50 text-red-700"
-                        : "rounded-bl-md border border-line bg-surface text-ink"
+                      : "rounded-bl-md border border-line bg-surface text-ink"
                   }`}
                 >
                   {turn.text}
@@ -901,7 +942,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
 
           {busy && (
             <p className="self-start rounded-2xl rounded-bl-md border border-line bg-surface px-4 py-2.5 text-muted" role="status">
-              <span className="animate-pulse">Ich plane …</span>
+              <span className="animate-pulse">Moment …</span>
             </p>
           )}
 
@@ -997,5 +1038,48 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
         )}
       </section>
     </div>
+  );
+}
+
+/** Einmal den Zugangscode der Familie eingeben – danach versteht Lotte ganze Sätze */
+function AccessCodeCard({ onLater }: { onLater: () => void }) {
+  const [code, setCode] = useState("");
+  const [state, setState] = useState<"idle" | "busy" | "falsch" | "offline">("idle");
+  const unlock = async () => {
+    setState("busy");
+    const ok = await saveAccessCode(code);
+    setState(ok ? "idle" : ok === null ? "offline" : "falsch");
+  };
+  return (
+    <form
+      className="flex w-full flex-col gap-2 rounded-card border border-line bg-surface p-4 shadow-card"
+      aria-label="Zugangscode"
+      onSubmit={(e) => {
+        e.preventDefault();
+        void unlock();
+      }}
+    >
+      <p className="font-bold">Damit ich ganze Sätze verstehe, brauch ich einmal euren Zugangscode.</p>
+      <p className="text-sm text-muted">Ich merke ihn mir auf diesem Gerät. Ohne Code helfe ich trotzdem – nur etwas einfacher.</p>
+      <input
+        type="password"
+        value={code}
+        onChange={(e) => setCode(e.target.value)}
+        autoComplete="off"
+        aria-label="Zugangscode"
+        placeholder="Zugangscode"
+        className={`${INPUT_BASE} h-12 px-4`}
+      />
+      {state === "falsch" && <p className="text-sm text-muted" role="status">Der Code passt noch nicht – schau nochmal nach.</p>}
+      {state === "offline" && <p className="text-sm text-muted" role="status">Gerade komme ich nicht durch – probier es gleich nochmal.</p>}
+      <div className="flex gap-2">
+        <button type="submit" disabled={!code.trim() || state === "busy"} className={buttonClass("primary", "sm")}>
+          Freischalten
+        </button>
+        <button type="button" onClick={onLater} className={buttonClass("ghost", "sm")}>
+          Später
+        </button>
+      </div>
+    </form>
   );
 }
