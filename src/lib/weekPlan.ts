@@ -68,7 +68,7 @@ export function toIsoDate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-function fromIsoDate(iso: string): Date {
+export function fromIsoDate(iso: string): Date {
   const [y, m, d] = iso.split("-").map(Number);
   return new Date(y, m - 1, d);
 }

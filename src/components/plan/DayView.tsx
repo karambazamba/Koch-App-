@@ -11,6 +11,7 @@ import { dishEmoji } from "@/lib/dishEmoji";
 import type { PlanDay } from "@/lib/mealPlan";
 import { MEAL_TIME_LABELS } from "@/lib/profile";
 import { useProfile } from "@/lib/useProfile";
+import { usePlanStyle } from "@/lib/usePlanStyle";
 
 const SHORT_DATE = (iso: string) => {
   const [, m, d] = iso.split("-");
@@ -91,6 +92,8 @@ export function DayCard({ day, recipes, readOnly, onPlan, onSwap, onMore, onCook
   const wish = entry?.stored.kind === "wish";
   // Kosten-Schätzung nur bei Darstellung "Alles zeigen"
   const showCost = useProfile()?.display === "alles";
+  // "Mal so, mal so": freie Tage sind normal – keine Lücke, sondern spontan
+  const mixed = usePlanStyle()?.style === "mix";
   const cost = recipe && showCost ? estimateCost(recipe, day.persons) : null;
   const emoji = day.paused ? "☀️" : day.away ? "🏕️" : entry ? (wish ? "🎉" : dishEmoji(entry.title, entry.category)) : day.cheat ? "🍕" : "🍽️";
   const overline = `${day.weekday} · ${day.paused ? "Pause" : day.away ? "Ausflug" : day.weekend === "locker" ? "Falls ihr Lust habt" : MEAL_TIME_LABELS[day.mealTime]}`;
@@ -133,7 +136,7 @@ export function DayCard({ day, recipes, readOnly, onPlan, onSwap, onMore, onCook
 
       <div className="flex flex-col gap-3 p-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-accent">{overline}</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-accent-strong">{overline}</p>
           {day.away ? (
             <h2 className="mt-1 text-2xl font-extrabold leading-tight tracking-tight">
               {day.paused ? "Pause – genießt die Zeit" : "Ausflug – heute wird nicht gekocht"}
@@ -142,7 +145,7 @@ export function DayCard({ day, recipes, readOnly, onPlan, onSwap, onMore, onCook
             <h2 className="mt-1 text-2xl font-extrabold leading-tight tracking-tight">{dishTitle(day)}</h2>
           ) : (
             <h2 className="mt-1 text-2xl font-extrabold leading-tight tracking-tight text-muted">
-              {day.weekend === "frei" ? "Wochenende – frei 🏖" : day.cheat ? "Cheat Day – worauf habt ihr Lust? 🍕" : readOnly ? "Nichts eingetragen" : "Noch frei"}
+              {day.weekend === "frei" ? "Wochenende – frei 🏖" : day.cheat ? "Cheat Day – worauf habt ihr Lust? 🍕" : readOnly ? "Nichts eingetragen" : mixed ? "Spontan – Ideen gibt's am Tag selbst" : "Noch frei"}
             </h2>
           )}
         </div>
@@ -152,7 +155,7 @@ export function DayCard({ day, recipes, readOnly, onPlan, onSwap, onMore, onCook
             {entry?.category && <CategoryChip category={entry.category} short />}
             {wish && <Chip>Wunschtag 🎉</Chip>}
             {day.cheat && !wish && entry?.category !== "cheatday" && <Chip>Cheat Day 🍕</Chip>}
-            {!entry && day.slot.hint && !readOnly && <CategoryChip category={day.slot.hint} short>Vorschlag: {day.slot.hint === "vegetarisch" ? "Veggie" : day.slot.hint === "fleisch" ? "Fleisch" : day.slot.hint === "fisch" ? "Fisch" : "Cheat Day"}</CategoryChip>}
+            {!entry && day.slot.hint && !readOnly && !mixed && <CategoryChip category={day.slot.hint} short>Vorschlag: {day.slot.hint === "vegetarisch" ? "Veggie" : day.slot.hint === "fleisch" ? "Fleisch" : day.slot.hint === "fisch" ? "Fisch" : "Cheat Day"}</CategoryChip>}
             {recipe?.prepMinutes ? (
               <Chip>
                 <Clock className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
@@ -234,9 +237,9 @@ export function DayCard({ day, recipes, readOnly, onPlan, onSwap, onMore, onCook
             </div>
           ) : (
             !readOnly && (
-              <button type="button" onClick={onPlan} className={`${buttonClass("primary", "lg")} w-full`}>
+              <button type="button" onClick={onPlan} className={`${buttonClass(mixed ? "secondary" : "primary", "lg")} w-full`}>
                 <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-                Planen
+                {mixed ? "Doch was eintragen" : "Planen"}
               </button>
             )
           ))}

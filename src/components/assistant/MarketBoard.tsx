@@ -6,7 +6,7 @@ import { CategoryDot } from "@/components/ui/Category";
 import { buttonClass, chipClass } from "@/components/ui/styles";
 import type { MarketAnswer, MarketIdea } from "@/lib/market";
 
-export type MarketTarget = { date: string; weekday: string; replaces: string | null };
+export type MarketTarget = { date: string; weekday: string; replaces: string | null; label?: string };
 
 const list = (items: string[]) => (items.length <= 1 ? items.join("") : `${items.slice(0, -1).join(", ")} und ${items[items.length - 1]}`);
 
@@ -62,7 +62,7 @@ export function MarketBoard({
         {target && (
           <button type="button" onClick={() => onPlan(idea, target)} className={chipClass(false)}>
             <Repeat className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-            {target.replaces ? `Statt ${target.weekday} einplanen` : `Für ${target.weekday} einplanen`}
+            {target.label ?? (target.replaces ? `Statt ${target.weekday} einplanen` : `Für ${target.weekday} einplanen`)}
           </button>
         )}
       </div>

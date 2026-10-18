@@ -173,7 +173,7 @@ export function WeekPlanView() {
           ]}
         />
 
-        <SummaryLine week={week} cost={profile?.display === "alles" || budget ? cost : 0} budget={budget} />
+        <SummaryLine week={week} cost={profile?.display === "alles" || budget ? cost : 0} budget={budget} mixed={profile?.planStyle !== "plan"} />
 
         {!readOnly && !week.hasPlanRules && (
           <Link href={`/woche/check?woche=${weekStart}`} className="-mt-2 flex items-center gap-1.5 px-1 text-sm font-semibold text-accent-strong">
@@ -348,12 +348,15 @@ function againEntry(entry: ResolvedEntry): MealEntry {
 }
 
 /** Schmale Zusammenfassung: x/7 geplant · Kategorien · Budget (Kosten nur bei "Alles zeigen" oder mit Budget) */
-function SummaryLine({ week, cost, budget }: { week: PlanWeek; cost: number; budget: number | null }) {
+function SummaryLine({ week, cost, budget, mixed }: { week: PlanWeek; cost: number; budget: number | null; mixed: boolean }) {
   return (
     <p className="-mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-sm text-muted" aria-label="Zusammenfassung">
-      <span className="font-bold text-ink">
-        {week.planned}/{week.total} geplant
-      </span>
+      {/* "Mal so, mal so": freie Tage sind normal – kein Zähler */}
+      {!mixed && (
+        <span className="font-bold text-ink">
+          {week.planned}/{week.total} geplant
+        </span>
+      )}
       {(["vegetarisch", "fleisch", "fisch"] as const).map((c) => (
         <span key={c} className="inline-flex items-center gap-1 whitespace-nowrap">
           <CategoryDot category={c} />

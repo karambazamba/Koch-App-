@@ -11,6 +11,7 @@ export function ConfirmDialog({
   title,
   text,
   confirmLabel,
+  cancelLabel = "Abbrechen",
   danger = false,
   onConfirm,
   onCancel,
@@ -18,6 +19,8 @@ export function ConfirmDialog({
   title: string;
   text?: string;
   confirmLabel: string;
+  /** Beschriftung des zweiten Knopfs (Standard "Abbrechen") */
+  cancelLabel?: string;
   danger?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
@@ -37,7 +40,7 @@ export function ConfirmDialog({
         </div>
         <div className="grid grid-cols-2 gap-3">
           <button type="button" onClick={onCancel} className={buttonClass("secondary", "lg")}>
-            Abbrechen
+            {cancelLabel}
           </button>
           <button type="button" onClick={onConfirm} className={buttonClass(danger ? "danger" : "primary", "lg")} autoFocus>
             {confirmLabel}

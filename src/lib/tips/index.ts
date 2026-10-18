@@ -154,6 +154,8 @@ export type TipContext = {
   kids?: boolean;
   /** Wochenend-Ideen erwünscht? (Profil v15, Standard an) */
   weekendIdeas?: boolean;
+  /** Planung sichtbar? Bei "spontan" keine Tipps übers Planen */
+  planning?: boolean;
 };
 
 /** Darf heute überhaupt ein Tipp kommen? (Einstellung, "ab und zu" = 4 Tage pro Woche) */
@@ -173,6 +175,7 @@ const fresh = (tip: Tip, ctx: TipContext) => (!ctx.state.seen[tip.id] || ctx.sta
 
 /** Passt der Tipp zum Haushalt? (Kinder-Tipps nur mit Kindern, Wochenend-Ideen je Typ) */
 function fits(tip: Tip, ctx: TipContext): boolean {
+  if (ctx.planning === false && /wochenplan|planen|planung|einkaufstag/i.test(`${tip.text} ${tip.detail}`)) return false;
   const kids = ctx.kids ?? true;
   if (tip.audience === "kids") return kids;
   if (tip.audience === "nokids") return !kids;

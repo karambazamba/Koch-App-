@@ -7,6 +7,7 @@ import {
   DEFAULT_HELPER,
   HELPER_NAMES,
   HOUSEHOLD_TYPES,
+  PLAN_STYLES,
   HELPER_NAME_MAX,
   KID_AGE_GROUP_LABELS,
   MEAL_TIME_LABELS,
@@ -20,6 +21,7 @@ import {
   type HelperVoice,
   type HouseholdProfile,
   type HouseholdType,
+  type PlanStyle,
   type KidAgeGroup,
   type MealTime,
   type Person,
@@ -58,6 +60,7 @@ export type StepId =
   | "warmWeekday"
   | "warmWeekend"
   | "weekendStyle"
+  | "planStyle"
   | "shoppingDay"
   | "weekRules"
   | "cheatDay"
@@ -72,6 +75,7 @@ export type Target =
   | { kind: "names" }
   | { kind: "person"; id: string }
   | { kind: "warm" }
+  | { kind: "plan" }
   | { kind: "shopping" }
   | { kind: "rules" };
 
@@ -107,8 +111,8 @@ export type Recognized = { names?: NameHint[]; person?: PersonInfo; diet?: DietI
 
 export type Answer = { text?: string; chip?: string; recognized?: Recognized };
 
-type Block = "type" | "helper" | "household" | "members" | "persons" | "extras" | "warm" | "shopping" | "rules" | "done";
-const BLOCKS: Block[] = ["type", "helper", "household", "members", "persons", "extras", "warm", "shopping", "rules", "done"];
+type Block = "type" | "helper" | "household" | "members" | "persons" | "extras" | "warm" | "plan" | "shopping" | "rules" | "done";
+const BLOCKS: Block[] = ["type", "helper", "household", "members", "persons", "extras", "warm", "plan", "shopping", "rules", "done"];
 const ADD_BLOCKS: Block[] = ["members", "persons", "done"];
 
 const BLOCK_OF: Record<StepId, Block> = {
@@ -127,6 +131,7 @@ const BLOCK_OF: Record<StepId, Block> = {
   warmWeekday: "warm",
   warmWeekend: "warm",
   weekendStyle: "warm",
+  planStyle: "plan",
   shoppingDay: "shopping",
   weekRules: "rules",
   cheatDay: "rules",
@@ -252,6 +257,8 @@ function question(s: OnboardingState, step: StepId): string {
       return "Und am Wochenende – anders?";
     case "weekendStyle":
       return one ? "Wie bist du am Wochenende?" : "Wie seid ihr am Wochenende?";
+    case "planStyle":
+      return one ? "Wie kochst du eher – mit Plan oder spontan?" : "Wie kocht ihr eher – mit Plan oder spontan?";
     case "shoppingDay":
       return one ? "An welchem Tag kaufst du meistens ein? Ab da plane ich immer eine Woche." : "An welchem Tag kauft ihr meistens ein? Ab da plane ich immer eine Woche.";
     case "weekRules":
@@ -315,6 +322,8 @@ export function chipsFor(s: OnboardingState): Chip[] {
       ];
     case "weekendStyle":
       return WEEKEND_STYLES.map((w) => ({ label: `${w.emoji} ${w.label}`, value: w.value, primary: w.value === "locker" }));
+    case "planStyle":
+      return PLAN_STYLES.map((p) => ({ label: p.label, value: p.value }));
     case "shoppingDay":
       return WEEKDAYS.map((d) => ({ label: d, value: d }));
     case "weekRules":
@@ -334,7 +343,9 @@ export function chipsFor(s: OnboardingState): Chip[] {
     case "done":
       return s.mode === "addPerson"
         ? [{ label: "Fertig ✓", value: "fertig", primary: true }]
-        : [
+        : s.draft.planStyle === "spontan"
+          ? [{ label: "Ideen für heute", value: "look", primary: true }]
+          : [
             { label: "Erste Woche planen", value: "plan", primary: true },
             { label: "Erstmal umschauen", value: "look" },
           ];
@@ -391,7 +402,11 @@ function goto(s: OnboardingState, step: StepId, prefix = ""): OnboardingState {
 function blocksFor(s: OnboardingState): Block[] {
   if (s.mode === "addPerson") return ADD_BLOCKS;
   const type = typeOf(s);
-  return BLOCKS.filter((b) => (b === "household" ? type === "familie" || type === "wg" : b === "persons" ? type === "familie" : true));
+  // Spontan: kein Einkaufstag, keine Wochenvorgaben
+  const spontan = s.draft.planStyle === "spontan";
+  return BLOCKS.filter((b) =>
+    b === "household" ? type === "familie" || type === "wg" : b === "persons" ? type === "familie" : b === "shopping" || b === "rules" ? !spontan : true,
+  );
 }
 
 function startBlock(s: OnboardingState, block: Block, prefix = ""): OnboardingState {
@@ -413,6 +428,8 @@ function startBlock(s: OnboardingState, block: Block, prefix = ""): OnboardingSt
       return goto(s, "extras", prefix);
     case "warm":
       return goto(s, "warmWeekday", prefix);
+    case "plan":
+      return goto(s, "planStyle", prefix);
     case "shopping":
       return goto(s, "shoppingDay", prefix);
     case "rules":
@@ -505,6 +522,8 @@ export function revisit(s: OnboardingState, target: Target): OnboardingState {
       );
     case "warm":
       return goto(base, "warmWeekday", "Klar, nochmal:");
+    case "plan":
+      return goto(base, "planStyle", "Klar, nochmal:");
     case "shopping":
       return goto(base, "shoppingDay", "Klar, nochmal:");
     case "rules":
@@ -793,6 +812,28 @@ export function answer(state: OnboardingState, a: Answer): OnboardingState {
             : "Alles klar – Wochenende plane ich wie unter der Woche 📅";
       return finishBlock(say(s, reply, { kind: "warm" }), "warm");
     }
+    case "planStyle": {
+      const t = text.toLowerCase();
+      const style: PlanStyle | null =
+        chip === "plan" || chip === "spontan" || chip === "mix"
+          ? chip
+          : /mal so|beides|gemischt|kommt drauf an|je nachdem|manchmal/.test(t)
+            ? "mix"
+            : /spontan|ohne plan|nicht planen|kein plan|aus dem bauch/.test(t)
+              ? "spontan"
+              : /plan/.test(t)
+                ? "plan"
+                : null;
+      if (!style) return goto(s, "planStyle", "Hm, nicht ganz verstanden.");
+      s = { ...s, draft: { ...s.draft, planStyle: style, planWeek: null } };
+      const reply =
+        style === "plan"
+          ? "Super – dann plane ich gern mit " + (solo(s) ? "dir." : "euch.")
+          : style === "spontan"
+            ? "Perfekt – dann gibt's jeden Tag frische Ideen, ganz ohne Plan. 😊"
+            : "Mal so, mal so – so mögen's die meisten 😊 Freie Tage sind ganz normal.";
+      return finishBlock(say(s, reply, { kind: "plan" }), "plan");
+    }
     case "shoppingDay": {
       const day = chip && WEEKDAYS.includes(chip) ? chip : weekdaysIn(text)[0];
       if (!day) return goto(s, "shoppingDay", "Welcher Wochentag?");
@@ -877,6 +918,8 @@ export function skip(s: OnboardingState): OnboardingState {
       return answer(s, { chip: "same" });
     case "weekendStyle":
       return answer(s, { chip: "locker" });
+    case "planStyle":
+      return answer(s, { chip: "mix" });
     case "shoppingDay":
       return answer(s, { chip: "Montag" });
     case "weekRules":
@@ -916,9 +959,14 @@ function doneText(s: OnboardingState): string {
     ? `Perfekt, ich kenne dich jetzt! 🎉 Kurz zusammengefasst: Ich bin ${p.helper.name} und kümmere mich um dich${persons.length ? `, ${who}` : ""}.`
     : `Perfekt, ich kenne euch jetzt! 🎉 Kurz zusammengefasst: Ich bin ${p.helper.name} und kümmere mich um ${family} – ${who}.`;
   const small = p.householdType === "single" || p.householdType === "paar";
+  const warm = `Warm ${one ? "isst du" : "esst ihr"} meistens ${MEAL_TIME_LABELS[p.warmMeal.weekday]}${p.warmMeal.weekend !== p.warmMeal.weekday ? ` (am Wochenende ${MEAL_TIME_LABELS[p.warmMeal.weekend]})` : ""}`;
+  // Spontan: kein Einkaufstag, keine Wochenvorgaben – jeden Tag Ideen
+  if (p.planStyle === "spontan") {
+    return [intro, `${warm}.`, "Einen Plan brauchen wir nicht – ich hab jeden Tag ein paar Ideen für dich parat."].join(" ");
+  }
   return [
     intro,
-    `Warm ${one ? "isst du" : "esst ihr"} meistens ${MEAL_TIME_LABELS[p.warmMeal.weekday]}${p.warmMeal.weekend !== p.warmMeal.weekday ? ` (am Wochenende ${MEAL_TIME_LABELS[p.warmMeal.weekend]})` : ""}, eingekauft wird ${p.shoppingDay.toLowerCase()}s.`,
+    `${warm}, eingekauft wird ${p.shoppingDay.toLowerCase()}s.`,
     `Pro Woche: ${r.meatDays}× Fleisch, ${r.fishDays}× Fisch, ${r.vegetarianDays}× Veggie${r.cheatDay ? `, Cheat Day ${r.cheatDayWeekday.toLowerCase()}s` : ""}.`,
     ...(small ? ["Ich plane kleine Mengen – und wo's passt, bewusst so, dass es für morgen reicht."] : []),
   ].join(" ");
@@ -951,8 +999,9 @@ export function familyCard(s: OnboardingState): { label: string; value: string; 
     const { weekday, weekend } = p.warmMeal;
     rows.push({ label: "Warm essen", value: weekday === weekend ? MEAL_TIME_LABELS[weekday] : `Mo–Fr ${MEAL_TIME_LABELS[weekday]}, Sa–So ${MEAL_TIME_LABELS[weekend]}`, target: { kind: "warm" } });
   }
-  if (reached("shoppingDay")) rows.push({ label: "Einkauf", value: p.shoppingDay, target: { kind: "shopping" } });
-  if (reached("weekRules")) {
+  if (reached("planStyle")) rows.push({ label: "Kochstil", value: PLAN_STYLES.find((x) => x.value === p.planStyle)?.label ?? "", target: { kind: "plan" } });
+  if (reached("shoppingDay") && p.planStyle !== "spontan") rows.push({ label: "Einkauf", value: p.shoppingDay, target: { kind: "shopping" } });
+  if (reached("weekRules") && p.planStyle !== "spontan") {
     const r = p.weekRules;
     rows.push({ label: "Woche", value: `${r.meatDays}× Fleisch · ${r.fishDays}× Fisch · ${r.vegetarianDays}× Veggie${r.cheatDay ? ` · Cheat Day ${r.cheatDayWeekday}` : ""}`, target: { kind: "rules" } });
   }

@@ -7,9 +7,10 @@
 import { useEffect, useState } from "react";
 import { replaceRecipes } from "../cookbook";
 import { replaceMealPlans } from "../mealPlan";
+import { effectivePlanStyle } from "../profile";
 import { replaceShoppingLists } from "../shoppingList";
 import type { HelperVoice } from "../profile";
-import { addDays, replaceWeekPlans } from "../weekPlan";
+import { addDays, replaceWeekPlans, weekStartFor } from "../weekPlan";
 import { applyOps, selectedOps, type AssistantData, type ChangeOp } from "./ops";
 import { ASSISTANT_ENDPOINT, type AssistantError, type AssistantReply, type AssistantStatus, type ChatTurn } from "./protocol";
 
@@ -83,6 +84,19 @@ export async function askAssistant(
   return body;
 }
 
+function markSpontan(after: AssistantData["mealPlans"], before: AssistantData["mealPlans"]): AssistantData["mealPlans"] {
+  return Object.fromEntries(
+    Object.entries(after).map(([week, entries]) => [
+      week,
+      Object.fromEntries(
+        Object.entries(entries).map(([day, e]) =>
+          (e.kind === "recipe" || e.kind === "text") && JSON.stringify(before[week]?.[day]) !== JSON.stringify(e) ? [day, { ...e, spontan: true }] : [day, e],
+        ),
+      ),
+    ]),
+  );
+}
+
 function save(data: AssistantData, before: AssistantData) {
   if (data.mealPlans !== before.mealPlans) replaceMealPlans(data.mealPlans);
   if (data.weekPlans !== before.weekPlans) replaceWeekPlans(data.weekPlans);
@@ -92,7 +106,10 @@ function save(data: AssistantData, before: AssistantData) {
 
 /** Ausgewählte Änderungen übernehmen; liefert eine Funktion zum Rückgängigmachen */
 export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set<string>, prompt: string): () => void {
-  const { data } = applyOps(current, selectedOps(ops, selected), { prompt });
+  const applied = applyOps(current, selectedOps(ops, selected), { prompt }).data;
+  // Spontan: neue Gerichte gelten als "aus den Ideen gewählt" – sonst wären sie im ausgeblendeten Plan unsichtbar
+  const spontan = effectivePlanStyle(current.profile, weekStartFor(new Date(), current.profile.shoppingDay || "Montag")) === "spontan";
+  const data = spontan ? { ...applied, mealPlans: markSpontan(applied.mealPlans, current.mealPlans) } : applied;
   save(data, current);
   return () => save(current, data);
 }

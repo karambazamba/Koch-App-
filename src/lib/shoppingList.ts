@@ -167,7 +167,7 @@ export type ManualItem = {
   amount: string;
   section: Section;
   done: boolean;
-  /** Für einen bestimmten Tag (Wochentag) – erscheint dann unter "Heute holen" */
+  /** Für einen bestimmten Tag (Wochentag) – erscheint dann unter "Für heute" */
   day?: string;
   /** "Jetzt mitnehmen" (aus dem Supermarkt-Gespräch) – steht oben, bis abgehakt */
   now?: boolean;
@@ -380,6 +380,26 @@ export function addManualItem(weekStart: string, item: Omit<ManualItem, "id" | "
 }
 
 /** Mehrere eigene Artikel auf einmal entfernen (Rückgängig) */
+/**
+ * Spontan gibt es keine Planungswochen: offene eigene Artikel aus früheren
+ * Wochen wandern in die laufende Woche, damit nichts verschwindet.
+ */
+export function carryOverManual(weekStart: string) {
+  const current = store.load();
+  if (!current) return;
+  const older = Object.entries(current.weeks).filter(([key, w]) => key < weekStart && w.manual.some((m) => !m.done));
+  if (!older.length) return;
+  const weeks = { ...current.weeks };
+  const moving: ManualItem[] = [];
+  for (const [key, w] of older) {
+    moving.push(...w.manual.filter((m) => !m.done).map(({ day: _day, ...m }) => (void _day, m)));
+    weeks[key] = { ...w, manual: w.manual.filter((m) => m.done) };
+  }
+  const target = weeks[weekStart] ?? EMPTY_LIST;
+  weeks[weekStart] = { ...target, manual: [...target.manual, ...moving] };
+  store.save({ ...current, weeks });
+}
+
 export function removeManualItems(weekStart: string, ids: string[]) {
   updateList(weekStart, (l) => ({ ...l, manual: l.manual.filter((m) => !ids.includes(m.id)) }));
 }
@@ -635,13 +655,14 @@ export function buildShoppingList(
   list: WeekList = EMPTY_LIST,
   settings: Pick<ShoppingSettings, "products" | "itemShops"> = { products: {}, itemShops: {} },
   /** Kleiner Haushalt (1–2 Personen): Rezeptmengen auf die Personen des Tages umrechnen */
-  options: { small?: boolean } = {},
+  options: { small?: boolean; manualOnly?: boolean } = {},
 ): ShoppingList {
   type Acc = { name: string; family: string; total: number; hasAmount: boolean; dishes: string[]; days: string[]; optional: boolean; scaled: boolean };
   const acc = new Map<string, Acc>();
   const missing: string[] = [];
 
-  for (const day of week.days) {
+  // "Ich koche spontan": keine Wochenliste aus dem Plan – nur eigene Artikel
+  for (const day of options.manualOnly ? [] : week.days) {
     if (day.away) continue;
     const short = day.weekday.slice(0, 2);
     const entry = day.slot.entry;
