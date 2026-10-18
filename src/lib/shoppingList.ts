@@ -13,6 +13,7 @@
 
 import { useExternalStore } from "./useExternalStore";
 import type { Recipe } from "./cookbook";
+import { noteUserAction, todayIso } from "./activity";
 import { createLocalStore } from "./localStore";
 import type { PlanWeek } from "./mealPlan";
 
@@ -330,6 +331,7 @@ function update(change: (s: ShoppingListStore) => ShoppingListStore) {
 
 function updateList(weekStart: string, change: (list: WeekList) => WeekList) {
   update((s) => ({ ...s, weeks: { ...s.weeks, [weekStart]: change(s.weeks[weekStart] ?? EMPTY_LIST) } }));
+  noteUserAction(todayIso());
 }
 
 const toggle = (list: string[], key: string) =>
@@ -584,6 +586,8 @@ export type ListItem = {
   days: string[];
   /** Laden, falls gemerkt */
   shop: string;
+  /** Nur für eine lockere Wochenend-Idee – optional, abwählbar */
+  optional?: boolean;
   /** Nur bei eigenen Artikeln */
   manualId?: string;
   checked: boolean;
@@ -605,7 +609,7 @@ export function buildShoppingList(
   list: WeekList = EMPTY_LIST,
   settings: Pick<ShoppingSettings, "products" | "itemShops"> = { products: {}, itemShops: {} },
 ): ShoppingList {
-  type Acc = { name: string; family: string; total: number; hasAmount: boolean; dishes: string[]; days: string[] };
+  type Acc = { name: string; family: string; total: number; hasAmount: boolean; dishes: string[]; days: string[]; optional: boolean };
   const acc = new Map<string, Acc>();
   const missing: string[] = [];
 
@@ -627,7 +631,9 @@ export function buildShoppingList(
     for (const ing of ingredients) {
       const { family, factor } = unitFamily(ing.unit);
       const key = `${ing.name.trim().toLowerCase()}|${family}`;
-      const item = acc.get(key) ?? { name: ing.name.trim(), family, total: 0, hasAmount: false, dishes: [], days: [] };
+      const item = acc.get(key) ?? { name: ing.name.trim(), family, total: 0, hasAmount: false, dishes: [], days: [], optional: true };
+      // Lockeres Wochenende: nur eine Idee – Zutaten optional
+      if (day.weekend !== "locker") item.optional = false;
       if (ing.amount !== null) {
         item.total += ing.amount * factor * times;
         item.hasAmount = true;
@@ -652,6 +658,7 @@ export function buildShoppingList(
       dishes: a.dishes,
       days: a.days,
       shop: shopOf(name),
+      optional: a.optional,
       checked: list.checked.includes(key),
       hidden: list.have.includes(key),
     };

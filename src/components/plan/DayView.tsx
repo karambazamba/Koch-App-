@@ -89,8 +89,8 @@ export function DayCard({ day, recipes, readOnly, onPlan, onSwap, onMore, onCook
   const recipe = entry?.recipeId ? recipes[entry.recipeId] : undefined;
   const wish = entry?.stored.kind === "wish";
   const cost = recipe ? estimateCost(recipe, day.persons) : null;
-  const emoji = day.away ? "🏕️" : entry ? (wish ? "🎉" : dishEmoji(entry.title, entry.category)) : day.cheat ? "🍕" : "🍽️";
-  const overline = `${day.weekday} · ${day.away ? "Ausflug" : MEAL_TIME_LABELS[day.mealTime]}`;
+  const emoji = day.paused ? "☀️" : day.away ? "🏕️" : entry ? (wish ? "🎉" : dishEmoji(entry.title, entry.category)) : day.cheat ? "🍕" : "🍽️";
+  const overline = `${day.weekday} · ${day.paused ? "Pause" : day.away ? "Ausflug" : day.weekend === "locker" ? "Falls ihr Lust habt" : MEAL_TIME_LABELS[day.mealTime]}`;
 
   return (
     <section
@@ -132,12 +132,14 @@ export function DayCard({ day, recipes, readOnly, onPlan, onSwap, onMore, onCook
         <div>
           <p className="text-xs font-bold uppercase tracking-wider text-accent">{overline}</p>
           {day.away ? (
-            <h2 className="mt-1 text-2xl font-extrabold leading-tight tracking-tight">Ausflug – heute wird nicht gekocht</h2>
+            <h2 className="mt-1 text-2xl font-extrabold leading-tight tracking-tight">
+              {day.paused ? "Pause – genießt die Zeit" : "Ausflug – heute wird nicht gekocht"}
+            </h2>
           ) : entry ? (
             <h2 className="mt-1 text-2xl font-extrabold leading-tight tracking-tight">{dishTitle(day)}</h2>
           ) : (
             <h2 className="mt-1 text-2xl font-extrabold leading-tight tracking-tight text-muted">
-              {day.cheat ? "Cheat Day – noch offen" : readOnly ? "Nichts eingetragen" : "Noch nichts geplant"}
+              {day.weekend === "frei" ? "Wochenende – frei 🏖" : day.cheat ? "Cheat Day – noch offen" : readOnly ? "Nichts eingetragen" : "Noch frei"}
             </h2>
           )}
         </div>
@@ -170,7 +172,7 @@ export function DayCard({ day, recipes, readOnly, onPlan, onSwap, onMore, onCook
           </div>
         )}
 
-        {day.away && (
+        {day.away && !day.paused && (
           <p className="flex items-center gap-2 text-sm text-muted">
             <MapPin className="h-4 w-4 text-accent" strokeWidth={2} aria-hidden />
             Eingetragen im Wochen-Check
@@ -261,7 +263,7 @@ export function UpcomingDays({ days, onSelect }: { days: PlanDay[]; onSelect: (w
               <span className="w-8 shrink-0 text-sm font-bold text-muted">{d.weekday.slice(0, 2)}</span>
               <span className={`h-2 w-2 shrink-0 rounded-full ${dayDot(d)}`} aria-hidden />
               <span className={`min-w-0 flex-1 truncate ${d.slot.entry ? "font-semibold" : "text-muted"}`}>
-                {d.away ? "Ausflug" : d.slot.entry ? dishTitle(d) : d.cheat ? "Cheat Day – offen" : "frei"}
+                {d.paused ? "Pause ☀️" : d.away ? "Ausflug" : d.slot.entry ? dishTitle(d) : d.weekend === "frei" ? "Wochenende frei 🏖" : d.cheat ? "Cheat Day – offen" : "frei"}
               </span>
             </button>
           </li>

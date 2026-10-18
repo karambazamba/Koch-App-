@@ -106,7 +106,8 @@ export function ratingCandidate(
   const week = composeWeek(weekStartFor(now, profile.shoppingDay || "Montag"), profile, weekPlans, mealPlans, recipes);
   const day = week.days.find((d) => d.date === iso);
   const entry = day?.slot.entry;
-  if (!day || day.away || !entry) return null;
+  // Am Wochenende (frei/locker) keine Bewertungsfragen
+  if (!day || day.away || !entry || day.weekend) return null;
   if (now.getHours() * 60 + now.getMinutes() < minutesOf(profile.mealClock[day.mealTime]) + ASK_AFTER_MINUTES) return null;
   if (!isFirstTime(entry, iso, week, mealPlans, recipes)) return null;
   return { date: iso, weekday: day.weekday, title: entry.title, recipeId: entry.recipeId };

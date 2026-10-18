@@ -513,7 +513,7 @@ function StepHousehold({
         />
         <NumberStepper
           label="Kinder"
-          hint="bis ca. 14 Jahre"
+          hint="bis 14 Jahre"
           value={profile.kids}
           min={LIMITS.kids.min}
           max={LIMITS.kids.max}

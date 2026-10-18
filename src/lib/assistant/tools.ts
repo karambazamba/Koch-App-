@@ -278,7 +278,9 @@ export function runTool(ctx: ToolContext, name: string, raw: unknown): ToolResul
           tage: week.days.map((d) => ({
             tag: d.weekday,
             datum: dateLabel(d.date),
-            ausflug: d.away || undefined,
+            ausflug: (d.away && !d.paused) || undefined,
+            pause: d.paused || undefined,
+            wochenende: d.weekend ?? undefined,
             cheat_day: d.cheat || undefined,
             essenszeit: d.mealTime,
             personen: d.persons ?? undefined,

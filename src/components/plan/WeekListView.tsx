@@ -66,7 +66,7 @@ export function WeekListView({
                 </span>
                 <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${dayDot(d)}`} aria-hidden />
                 <span className={`min-w-0 flex-1 truncate ${d.slot.entry ? "font-semibold" : "text-muted"}`}>
-                  {d.away ? "Ausflug" : d.slot.entry ? dishTitle(d) : d.cheat ? "Cheat Day – offen" : "frei"}
+                  {d.paused ? "Pause ☀️" : d.away ? "Ausflug" : d.slot.entry ? dishTitle(d) : d.weekend === "frei" ? "Wochenende frei 🏖" : d.cheat ? "Cheat Day – offen" : "frei"}
                 </span>
                 {readOnly && <ChevronRight className="mr-2 h-5 w-5 shrink-0 text-stone-300" strokeWidth={2.25} aria-hidden />}
               </button>

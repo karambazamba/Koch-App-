@@ -10,9 +10,17 @@ import { openHelper } from "@/lib/assistant/open";
 import type { Recipe } from "@/lib/cookbook";
 import { declineTip, markTipShown, tryTip, undoTip } from "@/lib/healthTips";
 import { isPaused, noteAnswered, noteDismissed, noteShown, useNudges, type NudgeKind } from "@/lib/nudges";
-import { setHave } from "@/lib/shoppingList";
+import { addManualItem, sectionFor, setHave } from "@/lib/shoppingList";
+import { isQuiet, markAsked, useActivity, wasAsked } from "@/lib/activity";
+import { composeWeek, useMealPlans, type StoredEntry } from "@/lib/mealPlan";
+import { usePantry } from "@/lib/pantry";
+import { pausedOn, saveProfile } from "@/lib/profile";
+import { useRatings, type Rating } from "@/lib/ratings";
+import { perishables } from "@/lib/spontan";
+import { useWeekendForecast } from "@/lib/weather";
+import { useRouter } from "next/navigation";
 import { useWeekShoppingList } from "@/lib/useWeekShoppingList";
-import { addDays, planningWeekStart, useWeekPlan } from "@/lib/weekPlan";
+import { addDays, planningWeekStart, toIsoDate, useWeekPlan, weekStartFor } from "@/lib/weekPlan";
 import type { HomeData } from "./useHomeData";
 
 type Chip = { label: string; href?: string; onClick?: () => void };
@@ -21,6 +29,7 @@ type Note = { kind: NudgeKind; text: string; chips: Chip[] };
 function names(list: string[]): string {
   if (list.length === 1) return list[0];
   if (list.length === 2) return `${list[0]} und ${list[1]}`;
+  if (list.length === 3) return `${list[0]}, ${list[1]} und ${list[2]}`;
   return `${list[0]}, ${list[1]} und ${list.length - 2} weitere Sachen`;
 }
 
@@ -38,17 +47,80 @@ export function HelperNote({ data }: { data: HomeData }) {
   const target = planningWeekStart(data.today, data.profile.shoppingDay || "Montag");
   const targetPlan = useWeekPlan(target.weekStart);
   const tip = useHealthTip();
+  const activity = useActivity();
+  const mealPlans = useMealPlans();
+  const rated = useRatings();
+  const pantry = usePantry();
+  const router = useRouter();
+  const isFriday = WEEKDAY.format(data.today) === "Freitag";
+  const forecast = useWeekendForecast(
+    data.profile.weather,
+    isFriday && !pausedOn(data.profile, data.todayIso) ? data.todayIso : null,
+    addDays(data.todayIso, 1),
+    addDays(data.todayIso, 2),
+  );
   const praise = useWeekPraise();
   const [done, setDone] = useState<{ text: string; undo?: () => void } | null>(null);
   const { todayIso } = data;
 
   const note = ((): Note | null => {
-    if (!nudges || !current || !next || targetPlan === undefined) return null;
+    if (!nudges || !current || !next || targetPlan === undefined || !activity || !mealPlans || !rated) return null;
     const allowed = (kind: NudgeKind) => !isPaused(nudges, kind, todayIso);
+    const { profile } = data;
+    const once = (key: string, label: string, onClick?: () => void): Chip => ({
+      label,
+      onClick: () => {
+        markAsked(key);
+        onClick?.();
+      },
+    });
+
+    // Pause: nur kurz vor dem Ende höchstens eine Nachricht
+    if (pausedOn(profile, todayIso)) {
+      const until = profile.pause?.until;
+      const key = `pause-ende:${until}`;
+      if (until && addDays(until, -2) <= todayIso && !wasAsked(activity, key)) {
+        const back = WEEKDAY.format(new Date(`${addDays(until, 1)}T12:00:00`));
+        return {
+          kind: "pause",
+          text: `Ihr seid bald wieder da – soll ich für ${back} schon was vorbereiten?`,
+          chips: [
+            once(key, "Ja, gern", () => (status?.configured ? openHelper(undefined, `Bereite bitte schon was für ${back} vor.`) : router.push("/wochenplan"))),
+            once(key, "Nein danke"),
+          ],
+        };
+      }
+      return null;
+    }
+    // Leiser werden: 3 Tage unbeachtet → Stille, bis wieder jemand selbst etwas tut
+    if (isQuiet(activity, todayIso)) return null;
+    // Freies Wochenende: keine Hinweise – nur auf Nachfrage. Locker: keine
+    // Erinnerungen ans Wochenend-Essen (siehe unten), Planung für nächste Woche ja.
+    if (data.day?.weekend === "frei") return null;
+
+    // Vor der Pause: Verderbliches aufbrauchen?
+    const pause = profile.pause;
+    if (pause && todayIso < pause.from && pause.from <= addDays(todayIso, 3) && pantry) {
+      const fresh = perishables(pantry);
+      const key = `pause-start:${pause.from}`;
+      if (fresh.length > 0 && !wasAsked(activity, key)) {
+        return {
+          kind: "pause",
+          text: `Im Kühlschrank ist noch ${names(fresh)} – soll ich das in die letzten Tage einplanen?`,
+          chips: [
+            once(key, "Ja, gern", () =>
+              status?.configured ? openHelper(undefined, `Plan bitte ${names(fresh)} in die Tage bis zur Pause ein.`) : openHelper("reste"),
+            ),
+            once(key, "Nein danke"),
+          ],
+        };
+      }
+    }
 
     // 1. Für morgen fehlt noch etwas
     const tomorrow = data.tomorrow;
-    const entry = tomorrow && !tomorrow.away ? tomorrow.slot.entry : null;
+    // Für ein lockeres/freies Wochenende keine Erinnerungen
+    const entry = tomorrow && !tomorrow.away && !tomorrow.weekend ? tomorrow.slot.entry : null;
     if (entry && allowed("einkauf-morgen")) {
       const label = `${entry.title} (${tomorrow!.weekday.slice(0, 2)})`;
       const shopping = [current, next].find((s) => s.weekStart <= tomorrow!.date && tomorrow!.date < addWeek(s.weekStart));
@@ -81,6 +153,37 @@ export function HelperNote({ data }: { data: HomeData }) {
             ? { label: "Ja, gern", onClick: () => openHelper(undefined, "Plan mir bitte die nächste Woche.") }
             : { label: "Ja, gern", href: "/woche/check" },
           { label: "Später", onClick: () => noteDismissed("wochenplanung", todayIso) },
+        ],
+      };
+    }
+
+    // Freitags bei gutem Wetter EIN Grill-Vorschlag (nur mit Zustimmung)
+    const grillKey = `grill:${todayIso}`;
+    if (forecast?.good && !wasAsked(activity, grillKey) && allowed("grill")) {
+      return {
+        kind: "grill",
+        text: `Am Wochenende wird's schön ☀️ (bis ${forecast.maxTemp} °C) – Lust auf Grillen? Ich setz gern Würstchen, Grillgemüse und Brot auf die Liste.`,
+        chips: [
+          once(grillKey, "Ja, auf die Liste", () => {
+            for (const name of ["Würstchen", "Grillgemüse", "Grillkäse", "Baguette"]) addManualItem(target.weekStart, { name, amount: "", section: sectionFor(name) });
+            setDone({ text: "Steht drauf ✓ Würstchen, Grillgemüse, Grillkäse und Baguette." });
+          }),
+          once(grillKey, "Nein danke"),
+        ],
+      };
+    }
+
+    // Wochenenden wurden 3× in Folge nicht gekocht → EINMAL "frei" anbieten
+    if (profile.weekendStyle !== "frei" && !wasAsked(activity, "wochenende-frei") && weekendsSkipped(data, mealPlans, rated) >= 3) {
+      return {
+        kind: "wochenende",
+        text: "Am Wochenende kocht ihr oft spontan – soll ich Samstag und Sonntag einfach frei lassen?",
+        chips: [
+          once("wochenende-frei", "Ja, gern", () => {
+            saveProfile({ ...profile, weekendStyle: "frei" });
+            setDone({ text: "Gemacht ✓ Am Wochenende halte ich mich raus." });
+          }),
+          once("wochenende-frei", "Nein, passt so"),
         ],
       };
     }
@@ -163,6 +266,37 @@ export function HelperNote({ data }: { data: HomeData }) {
 }
 
 const addWeek = (weekStart: string) => addDays(weekStart, 7);
+
+const WEEKDAY = new Intl.DateTimeFormat("de-DE", { weekday: "long" });
+
+/**
+ * Wie viele der letzten Wochenenden in Folge hatten geplante Gerichte, von
+ * denen keins gekocht wurde (keine Bewertung, Rezept nicht als gekocht
+ * vermerkt)? Ein Wochenende ohne Plan beendet die Folge.
+ */
+function weekendsSkipped(data: HomeData, mealPlans: Record<string, Record<string, StoredEntry>>, rated: Record<string, Rating>): number {
+  let count = 0;
+  const today = data.today;
+  // Letzter vergangener Samstag
+  const back = (today.getDay() + 1) % 7 || 7;
+  for (let k = 0; k < 4; k++) {
+    const saturday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - back - 7 * k, 12);
+    const dates = [toIsoDate(saturday), addDays(toIsoDate(saturday), 1)];
+    const planned = dates.flatMap((date) => {
+      const week = composeWeek(weekStartFor(new Date(`${date}T12:00:00`), data.profile.shoppingDay || "Montag"), data.profile, data.weekPlans, mealPlans, data.recipes);
+      const day = week.days.find((d) => d.date === date);
+      return day?.slot.entry && !day.away ? [{ date, entry: day.slot.entry }] : [];
+    });
+    if (planned.length === 0) break;
+    const cooked = planned.some(({ date, entry }) => {
+      const recipe = entry.recipeId ? data.recipes[entry.recipeId] : undefined;
+      return rated[date] === "up" || rated[date] === "down" || Boolean(recipe?.lastCookedAt?.startsWith(date));
+    });
+    if (cooked) break;
+    count++;
+  }
+  return count;
+}
 
 function Bubble({ text, children }: { text: string; children?: React.ReactNode }) {
   return (

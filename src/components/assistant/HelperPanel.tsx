@@ -10,6 +10,7 @@ import { leftoverIdeas, type LeftoverIdea } from "@/lib/leftovers/suggest";
 import { addPantryItems, formatPantryItem, usePantry } from "@/lib/pantry";
 import { helperName, helperTitle, saveProfile } from "@/lib/profile";
 import { finalizeProfile, startAddPerson, type OnboardingState } from "@/lib/onboarding/engine";
+import { noteUserAction } from "@/lib/activity";
 import { isAddPersonRequest } from "@/lib/onboarding/recognize";
 import { GuidedChat } from "@/components/onboarding/GuidedChat";
 import { HelperAvatar } from "./HelperAvatar";
@@ -29,6 +30,7 @@ import { useSpeechInput } from "@/lib/useSpeechInput";
 import { DEFAULT_SHOPPING_DAY, planningWeekStart, toIsoDate, useToday, weekStartFor } from "@/lib/weekPlan";
 import { addManualItem, sectionFor, setItemShop, setProduct, useShoppingSettings } from "@/lib/shoppingList";
 import { isShoppingRequest, parseProductStatement, parseShoppingText } from "@/lib/shoppingParse";
+import { isQuickRequest, isSnackRequest, parsePauseRequest, pauseLabel, quickIdeas, snackReply } from "@/lib/spontan";
 import { ICON_BUTTON, INPUT_BASE, NOTE, chipClass } from "@/components/ui/styles";
 import { ProposalCard } from "./ProposalCard";
 import { TipBubble } from "./TipBubble";
@@ -227,6 +229,27 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     }));
   };
 
+  /** Spontan-Hilfe und Pause per Chat → erledigen und Antwort */
+  const spontanReply = (t: string): string | null => {
+    if (!data || !today) return null;
+    if (isSnackRequest(t)) return snackReply(pantry ?? []);
+    const pause = parsePauseRequest(t, today);
+    if (pause?.kind === "end") {
+      if (!data.profile.pause) return "Schön, dass ihr da seid! 😊";
+      saveProfile({ ...data.profile, pause: null });
+      return "Willkommen zurück! 😊 Pause ist beendet – sag einfach, wenn ich was vorbereiten soll.";
+    }
+    if (pause?.kind === "start") {
+      saveProfile({ ...data.profile, pause: pause.pause });
+      return `Alles klar – Pause ${pauseLabel(pause.pause)} ☀️ Genießt die Zeit, ich plane da nichts und halte mich zurück.`;
+    }
+    if (isQuickRequest(t) && !ready) {
+      const ideas = quickIdeas(data.recipes, data.profile.neverAgain);
+      return `Drei schnelle Ideen unter 20 Minuten: ${ideas.slice(0, -1).join(", ")} oder ${ideas[ideas.length - 1]}.`;
+    }
+    return null;
+  };
+
   /** "… auf die Liste" bzw. "Wir nehmen immer Alsan statt Butter" → erledigen und Antwort */
   const shoppingReply = (t: string): string | null => {
     if (!data || !today) return null;
@@ -251,6 +274,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   const submit = (text: string) => {
     const t = text.trim();
     if (!t || busy || !data || !today) return;
+    noteUserAction(toIsoDate(today));
     if (isAddPersonRequest(t)) {
       setInput("");
       setGuided(startAddPerson(data.profile, t));
@@ -267,8 +291,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       }));
       return;
     }
-    // Einkaufsliste und eigene Produkte direkt erledigen (auch ohne KI)
-    const local = shoppingReply(t);
+    // Pause, Ausflugs-Snacks, schnelle Ideen und Einkaufsliste direkt erledigen (auch ohne KI)
+    const local = spontanReply(t) ?? shoppingReply(t);
     if (local) {
       setInput("");
       setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text: local, local: true }] }));
