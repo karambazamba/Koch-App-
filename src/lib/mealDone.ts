@@ -102,8 +102,13 @@ export function cookableEntry(day: PlanDay | undefined) {
  */
 export function mealIsOver(day: PlanDay | undefined, profile: HouseholdProfile, minutesNow: number, cooked: Record<string, CookedDay>): boolean {
   if (!day) return false;
-  if (cooked[day.date]) return true;
-  return minutesNow >= minutesOf(mealClockFor(profile, day.weekday)) + DONE_AFTER_MINUTES;
+  return mealOverOn(day.date, day.weekday, profile, minutesNow, cooked);
+}
+
+/** Wie `mealIsOver`, nur mit Datum und Wochentag (ohne zusammengesetzte Woche) */
+export function mealOverOn(date: string, weekday: string, profile: HouseholdProfile, minutesNow: number, cooked: Record<string, CookedDay>): boolean {
+  if (cooked[date]) return true;
+  return minutesNow >= minutesOf(mealClockFor(profile, weekday)) + DONE_AFTER_MINUTES;
 }
 
 /** Zutaten eines Gerichts: Rezept, sonst ein bekannter Klassiker mit dem Namen */

@@ -35,7 +35,10 @@ import type { AssistantData, ChangeOp } from "@/lib/assistant/ops";
 import type { ChatTurn } from "@/lib/assistant/protocol";
 import { useKeyboardInset } from "@/lib/useMobileKeyboard";
 import { useSpeechInput } from "@/lib/useSpeechInput";
-import { DEFAULT_SHOPPING_DAY, addDays, planningWeekStart, toIsoDate, useToday, weekStartFor } from "@/lib/weekPlan";
+import { DEFAULT_SHOPPING_DAY, addDays, planningWeekStart, toIsoDate, useToday, weekStartFor, weekdayName } from "@/lib/weekPlan";
+import { chatSuggestions, noteChatMessage, useShowSuggestions } from "@/lib/chatSuggestions";
+import { mealOverOn, useCookedDays } from "@/lib/mealDone";
+import { useMinutes } from "@/components/home/useRatingCandidate";
 import { addManualItem, removeManualItems, sectionFor, setItemShop, setProduct, useShoppingSettings } from "@/lib/shoppingList";
 import { useWeekShoppingList } from "@/lib/useWeekShoppingList";
 import { isMarketSituation, marketIdeas, marketProduct, marketTargetDay, type MarketAnswer, type MarketIdea } from "@/lib/market";
@@ -99,14 +102,6 @@ function asksForBase(turn: ChatTurnView | undefined): boolean {
 
 const BUBBLE = "max-w-[85%] whitespace-pre-line rounded-2xl px-4 py-2.5 text-base leading-snug";
 
-const EXAMPLES = ["Morgen gibt's Lachs", "Ich hab 4 Portionen Chili eingefroren", "Wir brauchen Milch und Eier"];
-
-/** Ohne KI: Beispiele, die die App selbst versteht */
-const LOCAL_EXAMPLES = ["Was gibt's heute Schnelles?", "Wir brauchen Milch und Eier", "Was ist noch da?"];
-
-/** Spontan: Beispiele ohne Planung */
-const SPONTAN_EXAMPLES = ["Was gibt's heute Schnelles?", "Mathis wünscht sich Pfannkuchen", "Setz Milch und Haferflocken auf die Einkaufsliste"];
-
 type Props = {
   data: AssistantData | null | undefined;
   chat: ChatState;
@@ -152,6 +147,23 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   const shopping = useWeekShoppingList("planning");
   // "Ich koche spontan" (diese Woche): keine Planungs-Beispiele, Wünsche und "doch planen" lokal
   const spontanStyle = Boolean(data && today && effectivePlanStyle(data.profile, weekStartFor(today, data.profile.shoppingDay || "Montag")) === "spontan");
+  // "Zum Beispiel:" – passend zur Situation, je Chat einmal gewürfelt; weg nach der ersten eigenen Nachricht
+  const [suggestRand] = useState(() => Math.random());
+  const [suggestionsGone, setSuggestionsGone] = useState(false);
+  const showSuggestions = useShowSuggestions();
+  const minutes = useMinutes();
+  const cooked = useCookedDays();
+  const suggestions =
+    data && today && minutes !== undefined && cooked && showSuggestions && !suggestionsGone && chat.turns.length === 0 && !guided
+      ? chatSuggestions({
+          profile: data.profile,
+          mealOver: mealOverOn(toIsoDate(today), weekdayName(today), data.profile, minutes, cooked),
+          pantry: pantry ?? [],
+          shopping: shopping?.list.items.map((i) => i.name) ?? [],
+          ai: ready,
+          rand: suggestRand,
+        })
+      : [];
 
   /** KI gerade nicht da: erst die eigenen Regeln, sonst der freundliche Satz */
   const notUnderstood = (said: string, local?: (t: string) => boolean) => {
@@ -500,6 +512,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   const submit = (text: string, byVoice = false) => {
     const t = text.trim();
     if (!t || busy || !data || !today) return;
+    setSuggestionsGone(true);
+    noteChatMessage();
     setViaVoice(byVoice);
     noteUserAction(toIsoDate(today));
     if (isAddPersonRequest(t)) {
@@ -764,6 +778,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     if (speech.listening) {
       speech.stop();
     } else {
+      // Wer spricht, braucht keine Beispiele mehr
+      setSuggestionsGone(true);
       stopSpeaking();
       setInput("");
       speech.start();
@@ -914,16 +930,6 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
             </p>
           )}
           {status?.askCode && data && !codeLater && <AccessCodeCard onLater={() => setCodeLater(true)} />}
-          {data && today && chat.turns.length === 0 && (
-            <div className="flex flex-col items-start gap-2">
-              {(ready ? (spontanStyle ? SPONTAN_EXAMPLES : EXAMPLES) : LOCAL_EXAMPLES).map((example) => (
-                <button key={example} type="button" onClick={() => submit(example)} className={`${chipClass(false)} text-left`}>
-                  „{example}“
-                </button>
-              ))}
-            </div>
-          )}
-
           {chat.turns.map((turn, i) => {
             const last = i === chat.turns.length - 1;
             const showBases = last && !busy && !chat.spontan && asksForBase(turn);
@@ -1089,6 +1095,24 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
               {speech.error ||
                 "Spracheingabe gibt es in diesem Browser nicht – tipp aufs Mikrofon deiner Tastatur und diktiere einfach."}
             </p>
+          )}
+          {suggestions.length > 0 && (
+            // Klar als Vorschläge erkennbar (keine Sprechblasen): antippen = als eigene Nachricht senden
+            <div className="flex flex-col gap-1.5" aria-label="Vorschläge">
+              <p className="text-xs font-semibold text-muted">Zum Beispiel:</p>
+              <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none]" data-no-swipe>
+                {suggestions.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => submit(s)}
+                    className="min-h-9 shrink-0 whitespace-nowrap rounded-full border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink transition active:scale-95"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
           <form
             className="flex items-center gap-2"
