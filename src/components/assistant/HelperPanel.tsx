@@ -16,17 +16,19 @@ import { noteUserAction } from "@/lib/activity";
 import { isAddPersonRequest } from "@/lib/onboarding/recognize";
 import { GuidedChat } from "@/components/onboarding/GuidedChat";
 import { HelperAvatar } from "./HelperAvatar";
+import { askAssistant, FALLBACK_TEXT, saveAccessCode, useAssistantStatus } from "@/lib/assistant/client";
 import {
-  askAssistant,
-  FALLBACK_TEXT,
-  loadVoicePreference,
-  saveAccessCode,
-  saveVoicePreference,
+  saveSpeechSettings,
+  shouldRead,
   speak,
+  speechSupported,
   stopSpeaking,
-  useAssistantStatus,
-  voiceSupported,
-} from "@/lib/assistant/client";
+  toggleSpeak,
+  unlockSpeech,
+  useSpeakingId,
+  useSpeechSettings,
+} from "@/lib/speech";
+import { readingChange } from "@/lib/speechChat";
 import type { AssistantData, ChangeOp } from "@/lib/assistant/ops";
 import type { ChatTurn } from "@/lib/assistant/protocol";
 import { useKeyboardInset } from "@/lib/useMobileKeyboard";
@@ -125,7 +127,10 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [adjusting, setAdjusting] = useState(false);
-  const [voiceOn, setVoiceOn] = useState(loadVoicePreference);
+  const speechSettings = useSpeechSettings();
+  const speakingId = useSpeakingId();
+  // Zuletzt per Mikrofon gefragt? Dann liest Lotte (Standard "automatisch") vor
+  const [viaVoice, setViaVoice] = useState(Boolean(startListening));
   const [dictationHint, setDictationHint] = useState(false);
   // Zugangscode "Später" – gilt, bis das Panel wieder geöffnet wird
   const [codeLater, setCodeLater] = useState(false);
@@ -154,7 +159,6 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       ...c,
       turns: [...c.turns, { role: "user", text: said, local: true }, { role: "assistant", text: FALLBACK_TEXT, error: true }],
     }));
-    if (voiceOn) speak(FALLBACK_TEXT, voice);
   };
 
   /**
@@ -193,7 +197,6 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           proposal: result.ops.length > 0 ? { ops: result.ops, selected } : null,
         };
       });
-      if (voiceOn) speak(result.reply, voice);
     } catch {
       // Offline, kein Guthaben, Limit, falscher Code …: nie Technik-Texte – die Frage
       // wandert an die eigenen Regeln (ohne KI), sonst der freundliche Satz
@@ -463,10 +466,11 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     };
   };
 
-  /** Eingabe abschicken: neue Person, Reste-Modus oder Frage an die KI */
-  const submit = (text: string) => {
+  /** Eingabe abschicken: neue Person, Reste-Modus oder Frage an die KI (`byVoice` = per Mikrofon) */
+  const submit = (text: string, byVoice = false) => {
     const t = text.trim();
     if (!t || busy || !data || !today) return;
+    setViaVoice(byVoice);
     noteUserAction(toIsoDate(today));
     if (isAddPersonRequest(t)) {
       setInput("");
@@ -560,6 +564,32 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   /** Regeln, die vor der KI greifen (Einstellungen, Supermarkt, Backen, "Wir lieben …") */
   const localFirst = (t: string): boolean => {
     if (!data || !today) return false;
+    // "Lies mir vor", "Nicht mehr vorlesen", "Sprich langsamer" (gilt für dieses Gerät)
+    const reading = readingChange(t, speechSettings);
+    if (reading) {
+      setInput("");
+      const before = speechSettings;
+      unlockSpeech();
+      saveSpeechSettings(reading.changes);
+      if (reading.changes.mode === "aus") stopSpeaking();
+      setChat((c) => ({
+        ...c,
+        turns: [
+          ...c.turns,
+          { role: "user", text: t, local: true },
+          {
+            role: "assistant",
+            local: true,
+            text: reading.reply,
+            undo: () => {
+              saveSpeechSettings(before);
+              setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig gemacht – alles wie vorher.", local: true }] }));
+            },
+          },
+        ],
+      }));
+      return true;
+    }
     // Spontan: "Ich will doch mal planen" → nur diese Woche oder ab jetzt immer?
     if (spontanStyle && isPlanUnlockRequest(t)) {
       setInput("");
@@ -676,11 +706,14 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     onEnd: () => {
       const t = collected.current;
       collected.current = "";
-      if (t && mounted.current) submit(t);
+      if (t && mounted.current) submit(t, true);
     },
   });
 
   const toggleMic = () => {
+    // Erste Berührung schaltet auf dem iPhone auch die Sprachausgabe frei
+    unlockSpeech();
+    stopSpeaking();
     if (speech.supported === false) {
       // Fallback: Diktat über die Tastatur
       setDictationHint(true);
@@ -728,12 +761,26 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [chat.turns.length, busy, chat.proposal]);
 
+  // Antworten vorlesen: an, wenn eingeschaltet – im Standard, wenn per Mikrofon gefragt
+  const readingOn = shouldRead(speechSettings.mode, viaVoice);
   const toggleVoice = () => {
-    const on = !voiceOn;
-    setVoiceOn(on);
-    saveVoicePreference(on);
-    if (!on) stopSpeaking();
+    unlockSpeech();
+    if (readingOn) {
+      saveSpeechSettings({ mode: "aus" });
+      stopSpeaking();
+    } else saveSpeechSettings({ mode: "an" });
   };
+
+  // Neue Antworten von Lotte vorlesen (nicht, was beim Öffnen schon dastand)
+  const spokenUpTo = useRef(chat.turns.length);
+  useEffect(() => {
+    const from = spokenUpTo.current;
+    spokenUpTo.current = chat.turns.length;
+    if (chat.turns.length <= from || !readingOn) return;
+    const fresh = chat.turns.map((t, i) => ({ t, i })).slice(from).filter(({ t }) => t.role === "assistant");
+    if (!fresh.length) return;
+    speak(fresh.map(({ t }) => t.text).join(" "), { id: `turn-${fresh[fresh.length - 1].i}`, gender: voice });
+  }, [chat.turns, readingOn, voice]);
 
   return (
     <div className="fixed inset-0 z-40" role="dialog" aria-modal aria-label={`${name} – ${helperTitle(data?.profile)}`}>
@@ -758,15 +805,15 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
               </h2>
               <p className="text-sm text-muted">{helperTitle(data?.profile)}</p>
             </div>
-            {voiceSupported() && (
+            {speechSupported() && (
               <button
                 type="button"
                 onClick={toggleVoice}
-                aria-pressed={voiceOn}
+                aria-pressed={readingOn}
                 aria-label="Antworten vorlesen"
                 className={ICON_BUTTON}
               >
-                {voiceOn ? (
+                {readingOn ? (
                   <Volume2 className="h-5 w-5 text-accent" strokeWidth={2.25} aria-hidden />
                 ) : (
                   <VolumeX className="h-5 w-5 text-muted" strokeWidth={2.25} aria-hidden />
@@ -832,6 +879,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
             const lastSpontan = chat.spontan !== null && turn.spontan && !chat.turns.slice(i + 1).some((t) => t.spontan);
             return (
               <div key={i} className={`flex flex-col gap-2 ${turn.role === "user" ? "items-end" : "items-start"}`}>
+                <div className={`flex w-full items-end gap-1 ${turn.role === "user" ? "justify-end" : ""}`}>
                 <div
                   className={`${BUBBLE} ${
                     turn.role === "user"
@@ -865,6 +913,10 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                       Im Vorrat ansehen
                     </Link>
                   ) : null}
+                </div>
+                {turn.role === "assistant" && speechSupported() && (
+                  <SpeakButton speaking={speakingId === `turn-${i}`} onClick={() => toggleSpeak(turn.text, `turn-${i}`, voice)} />
+                )}
                 </div>
                 {turn.choices && last && (
                   <div className="flex flex-wrap gap-2">
@@ -1081,5 +1133,20 @@ function AccessCodeCard({ onLater }: { onLater: () => void }) {
         </button>
       </div>
     </form>
+  );
+}
+
+/** Kleiner Lautsprecher an Lottes Nachricht: liest vor, nochmal Tippen stoppt */
+function SpeakButton({ speaking, onClick }: { speaking: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={speaking}
+      aria-label={speaking ? "Vorlesen stoppen" : "Vorlesen"}
+      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition active:scale-95 ${speaking ? "bg-accent-soft text-accent-strong" : "text-muted"}`}
+    >
+      {speaking ? <Square className="h-4 w-4 fill-current" strokeWidth={2} aria-hidden /> : <Volume2 className="h-5 w-5" strokeWidth={2} aria-hidden />}
+    </button>
   );
 }

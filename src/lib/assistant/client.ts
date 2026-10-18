@@ -12,7 +12,6 @@ import { effectivePlanStyle } from "../profile";
 import { addPantryItems, loadPantry, replacePantry } from "../pantry";
 import { replaceShoppingLists } from "../shoppingList";
 import { addWish, loadWishes, restoreWishes } from "../wishes";
-import type { HelperVoice } from "../profile";
 import { replaceWeekPlans, toIsoDate, weekStartFor } from "../weekPlan";
 import { applyOps, selectedOps, type AssistantData, type ChangeOp } from "./ops";
 import {
@@ -27,7 +26,6 @@ import {
 } from "./protocol";
 
 const DEVICE_KEY = "wasgibts.geraet";
-const VOICE_KEY = "wasgibts.kuechenhelfer.vorlesen";
 const CODE_KEY = "wasgibts.zugangscode";
 const COUNT_KEY = "wasgibts.lotte.anfragen";
 
@@ -301,67 +299,4 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
     save(current, data);
     undoSide();
   };
-}
-
-// --- Sprachausgabe ------------------------------------------------------------
-
-export function voiceSupported(): boolean {
-  return typeof window !== "undefined" && "speechSynthesis" in window;
-}
-
-export function loadVoicePreference(): boolean {
-  try {
-    return localStorage.getItem(VOICE_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-export function saveVoicePreference(on: boolean) {
-  try {
-    localStorage.setItem(VOICE_KEY, on ? "1" : "0");
-  } catch {
-    // ohne Speicher gilt die Einstellung nur bis zum Neuladen
-  }
-}
-
-// Bekannte deutsche Systemstimmen (iOS, macOS, Android/Chrome, Windows/Edge).
-// Die Web Speech API kennt kein Geschlecht – daher über den Namen.
-const FEMALE = /anna|petra|helena|katja|marlene|vicki|hedda|amala|seraphina|louisa|tanja|elke|gisela|ingrid|klara|maja|frauke|sabine|female|weiblich|google deutsch/i;
-const MALE = /markus|yannick|viktor|hans|conrad|stefan|killian|florian|martin|ralf|bernd|kasper|klaus|\bmale\b|männlich|maennlich/i;
-
-/** Passende deutsche Stimme für "weiblich"/"männlich", sonst irgendeine deutsche, sonst Standard */
-export function pickVoice(voices: SpeechSynthesisVoice[], voice: HelperVoice): SpeechSynthesisVoice | null {
-  const german = voices.filter((v) => v.lang.toLowerCase().startsWith("de"));
-  const wanted = voice === "maennlich" ? MALE : FEMALE;
-  const other = voice === "maennlich" ? FEMALE : MALE;
-  return (
-    german.find((v) => wanted.test(v.name)) ??
-    german.find((v) => !other.test(v.name)) ??
-    german[0] ??
-    null
-  );
-}
-
-/** Vorlesen – Fehler der Sprachausgabe dürfen den Chat nie stören */
-export function speak(text: string, voice: HelperVoice = "weiblich") {
-  if (!voiceSupported()) return;
-  try {
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "de-DE";
-    const chosen = pickVoice(window.speechSynthesis.getVoices(), voice);
-    try {
-      if (chosen) utterance.voice = chosen;
-    } catch {
-      // Stimme nicht setzbar → Standardstimme
-    }
-    window.speechSynthesis.speak(utterance);
-  } catch {
-    // Sprachausgabe nicht verfügbar – einfach nicht vorlesen
-  }
-}
-
-export function stopSpeaking() {
-  if (voiceSupported()) window.speechSynthesis.cancel();
 }
