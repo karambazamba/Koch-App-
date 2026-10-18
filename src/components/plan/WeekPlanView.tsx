@@ -2,47 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import {
-  ArrowLeftRight,
-  BookOpen,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  ClipboardList,
-  Heart,
-  MapPin,
-  Moon,
-  PenLine,
-  Repeat,
-  Soup,
-  Sparkles,
-  StickyNote,
-  Sun,
-  Trash2,
-  X,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, ClipboardList, FolderOpen, History, Save } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
-import { Sheet } from "@/components/plan/Sheet";
-import { CategoryChip, CategoryDot, categoryLabel } from "@/components/ui/Category";
-import { IconBadge } from "@/components/ui/IconBadge";
-import {
-  CARD,
-  CARD_LIST,
-  ICON_BUTTON,
-  INPUT,
-  INPUT_BASE,
-  PAGE_MAIN,
-  buttonClass,
-  chipClass,
-  tileClass,
-} from "@/components/ui/styles";
-import {
-  RECIPE_CATEGORIES,
-  sortRecipes,
-  useRecipes,
-  type Recipe,
-  type RecipeCategory,
-} from "@/lib/cookbook";
+import { CategoryDot } from "@/components/ui/Category";
+import { Segmented } from "@/components/ui/Segmented";
+import { CARD, ICON_BUTTON, PAGE_MAIN, buttonClass } from "@/components/ui/styles";
+import { useRecipes, type Recipe } from "@/lib/cookbook";
+import { estimateCost } from "@/lib/costs";
 import {
   clearSlot,
   composeWeek,
@@ -51,53 +17,105 @@ import {
   setEntry,
   setNote,
   useMealPlans,
-  type DaySlot,
+  type MealEntry,
   type PlanDay,
   type PlanWeek,
+  type ResolvedEntry,
 } from "@/lib/mealPlan";
-import { guessDishCategory } from "@/lib/dishCategory";
-import { MEAL_TIME_LABELS } from "@/lib/profile";
 import { useProfile } from "@/lib/useProfile";
+import { applyTemplate, saveTemplate, templateDays, useTemplates } from "@/lib/templates";
 import {
   DEFAULT_SHOPPING_DAY,
+  addDays,
   formatWeekRange,
-  nextWeekStartFor,
+  planForWeek,
   toIsoDate,
-  weekStartFor,
   useToday,
   useWeekPlans,
+  weekStartFor,
 } from "@/lib/weekPlan";
+import { DayCard, DayStrip, UpcomingDays } from "./DayView";
+import {
+  CookAgainSheet,
+  EntrySheet,
+  LoadTemplateSheet,
+  MoveSheet,
+  RecipePickerSheet,
+  SaveTemplateSheet,
+  TextEntrySheet,
+} from "./PlanSheets";
+import { WeekListView } from "./WeekListView";
 
 const SKELETON = <div className={`${CARD} m-4 h-64 animate-pulse`} />;
 
+/** So weit lässt sich zurückblättern (Rückblick) */
+const MAX_BACK = 26;
+
 type SheetState =
-  | { type: "entry"; key: string }
-  | { type: "pick"; key: string }
-  | { type: "text"; key: string }
-  | { type: "move"; key: string }
+  | { type: "entry" | "pick" | "text" | "move" | "again"; weekday: string }
+  | { type: "save" | "load" }
   | null;
 
-/** /wochenplan: aktuelle Woche, per Pfeil umschaltbar auf nächste Woche. */
+function weekLabel(offset: number): string {
+  if (offset === 0) return "Diese Woche";
+  if (offset === 1) return "Nächste Woche";
+  if (offset === -1) return "Letzte Woche";
+  return `Vor ${-offset} Wochen`;
+}
+
+/** Geschätzte Kosten der Woche (nur Gerichte mit Rezept) */
+function weekCost(week: PlanWeek, recipes: Record<string, Recipe>): number {
+  return week.days.reduce((sum, d) => {
+    const e = d.slot.entry;
+    const r = e?.recipeId ? recipes[e.recipeId] : undefined;
+    const cost = r && !d.away ? (estimateCost(r, d.persons) ?? 0) : 0;
+    return sum + cost * (e?.double ? 2 : 1);
+  }, 0);
+}
+
+/**
+ * /wochenplan: Tag-Ansicht (Tagesleiste + große Karte + "Danach") oder
+ * Woche-Ansicht (kompakte Liste, Gerichte per Ziehen tauschen). Vor- und
+ * zurückblättern; vergangene Wochen nur lesen ("Nochmal kochen").
+ */
 export function WeekPlanView() {
   const today = useToday();
   const profile = useProfile();
   const weekPlans = useWeekPlans();
   const mealPlans = useMealPlans();
   const recipes = useRecipes();
-  const [showNext, setShowNext] = useState(false);
+  const templates = useTemplates();
+  const [view, setView] = useState<"tag" | "woche">("tag");
+  const [offset, setOffset] = useState(0);
+  const [selected, setSelected] = useState<string | null>(null);
   const [sheet, setSheet] = useState<SheetState>(null);
+  const [toast, setToast] = useState("");
 
-  if (!today || profile === undefined || !weekPlans || !mealPlans || !recipes) return SKELETON;
+  if (!today || profile === undefined || !weekPlans || !mealPlans || !recipes || !templates) return SKELETON;
 
   // Planungswoche ab Einkaufstag (Profil), 7 Tage
   const shoppingDay = profile?.shoppingDay ?? DEFAULT_SHOPPING_DAY;
-  const weekStart = showNext ? nextWeekStartFor(today, shoppingDay) : weekStartFor(today, shoppingDay);
+  const currentStart = weekStartFor(today, shoppingDay);
+  const weekStart = addDays(currentStart, offset * 7);
   const week = composeWeek(weekStart, profile, weekPlans, mealPlans, recipes);
   const todayIso = toIsoDate(today);
-  const dayFor = (key: string) => week.days.find((d) => !d.away && d.slot.key === key);
+  const readOnly = offset < 0;
+  const defaultDay = week.days.find((d) => d.date === todayIso)?.weekday ?? week.days[0].weekday;
+  const selectedDay = week.days.find((d) => d.weekday === selected) ?? week.days.find((d) => d.weekday === defaultDay)!;
+  const index = week.days.indexOf(selectedDay);
   const close = () => setSheet(null);
-  const sheetDay = sheet ? dayFor(sheet.key) : undefined;
-  const sheetSlot = sheetDay?.slot;
+  const sheetDay = sheet && "weekday" in sheet ? week.days.find((d) => d.weekday === sheet.weekday) : undefined;
+  const budget = planForWeek(weekPlans, weekStart)?.budgetEuro ?? null;
+  const cost = weekCost(week, recipes);
+
+  const changeWeek = (next: number) => {
+    setOffset(next);
+    setSelected(null);
+  };
+  const flash = (text: string) => {
+    setToast(text);
+    setTimeout(() => setToast(""), 2500);
+  };
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
@@ -106,109 +124,197 @@ export function WeekPlanView() {
         <div className="flex items-center justify-between gap-2">
           <button
             type="button"
-            onClick={() => setShowNext(false)}
-            disabled={!showNext}
-            aria-label="Diese Woche"
+            onClick={() => changeWeek(offset - 1)}
+            disabled={offset <= -MAX_BACK}
+            aria-label="Woche davor"
             className={ICON_BUTTON}
           >
             <ChevronLeft className="h-5 w-5" strokeWidth={2.25} aria-hidden />
           </button>
           <div className="text-center">
-            <p className="text-lg font-bold">{showNext ? "Nächste Woche" : "Diese Woche"}</p>
-            <p className="whitespace-nowrap text-sm text-muted">{formatWeekRange(weekStart)}</p>
+            <p className="flex items-center justify-center gap-1.5 text-lg font-bold">
+              {readOnly && <History className="h-4 w-4 text-muted" strokeWidth={2.25} aria-hidden />}
+              {weekLabel(offset)}
+            </p>
+            <p className="whitespace-nowrap text-sm text-muted">
+              {formatWeekRange(weekStart)}
+              {readOnly && " · Rückblick"}
+            </p>
           </div>
           <button
             type="button"
-            onClick={() => setShowNext(true)}
-            disabled={showNext}
-            aria-label="Nächste Woche"
+            onClick={() => changeWeek(offset + 1)}
+            disabled={offset >= 1}
+            aria-label="Woche danach"
             className={ICON_BUTTON}
           >
             <ChevronRight className="h-5 w-5" strokeWidth={2.25} aria-hidden />
           </button>
         </div>
 
-        <Summary week={week} />
+        <Segmented
+          label="Ansicht"
+          value={view}
+          onChange={setView}
+          options={[
+            { value: "tag", label: "Tag" },
+            { value: "woche", label: "Woche" },
+          ]}
+        />
 
-        {!week.hasPlanRules && (
-          <Link
-            href={`/woche/check?woche=${weekStart}`}
-            className={`${CARD} flex items-center gap-3 p-4 transition active:scale-[0.99]`}
-          >
-            <IconBadge icon={ClipboardList} />
-            <span className="min-w-0 flex-1">
-              <span className="block font-bold leading-snug">Noch keine Vorgaben für diese Woche</span>
-              <span className="block text-sm text-muted">
-                Wir nutzen eure Standardwoche. Zum Wochen-Check: Ausflüge, feste Gerichte, Wunschtag.
-              </span>
-            </span>
-            <ChevronRight className="h-5 w-5 shrink-0 text-stone-300" strokeWidth={2.25} aria-hidden />
+        <SummaryLine week={week} cost={cost} budget={budget} />
+
+        {!readOnly && !week.hasPlanRules && (
+          <Link href={`/woche/check?woche=${weekStart}`} className="-mt-2 flex items-center gap-1.5 px-1 text-sm font-semibold text-accent-strong">
+            <ClipboardList className="h-4 w-4" strokeWidth={2} aria-hidden />
+            Noch keine Vorgaben – zum Wochen-Check
+            <ChevronRight className="h-4 w-4" strokeWidth={2.25} aria-hidden />
           </Link>
         )}
 
-        {week.days.map((day) => (
-          <DayCard
-            key={day.weekday}
-            day={day}
-            isToday={day.date === todayIso}
-            onOpen={(slot, type) => setSheet({ type, key: slot.key })}
-            onRemoveNote={() => setNote(weekStart, day.weekday, "")}
+        {view === "tag" ? (
+          <>
+            <DayStrip days={week.days} selected={selectedDay.weekday} todayIso={todayIso} onSelect={setSelected} />
+            <DayCard
+              key={selectedDay.date}
+              day={selectedDay}
+              recipes={recipes}
+              readOnly={readOnly}
+              onPlan={() => setSheet({ type: "pick", weekday: selectedDay.weekday })}
+              onSwap={() => setSheet({ type: "pick", weekday: selectedDay.weekday })}
+              onMore={() => setSheet({ type: "entry", weekday: selectedDay.weekday })}
+              onCookAgain={() => setSheet({ type: "again", weekday: selectedDay.weekday })}
+              onRemoveNote={() => setNote(weekStart, selectedDay.weekday, "")}
+              onSwipe={(dir) => {
+                const next = week.days[index + dir];
+                if (next) setSelected(next.weekday);
+              }}
+            />
+            <UpcomingDays days={week.days.slice(index + 1, index + 3)} onSelect={setSelected} />
+          </>
+        ) : (
+          <WeekListView
+            days={week.days}
+            todayIso={todayIso}
+            readOnly={readOnly}
+            onOpen={(weekday) => {
+              setSelected(weekday);
+              setView("tag");
+            }}
+            onMove={(from, to) => moveEntry(weekStart, from.slot, to.slot)}
           />
-        ))}
+        )}
+
+        {!readOnly && (
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setSheet({ type: "save" })}
+              disabled={week.planned === 0}
+              className={buttonClass("secondary", "sm")}
+            >
+              <Save className="h-4 w-4 text-accent" strokeWidth={2} aria-hidden />
+              Vorlage speichern
+            </button>
+            <button type="button" onClick={() => setSheet({ type: "load" })} className={buttonClass("secondary", "sm")}>
+              <FolderOpen className="h-4 w-4 text-accent" strokeWidth={2} aria-hidden />
+              Vorlage laden
+            </button>
+          </div>
+        )}
+        {toast && (
+          <p role="status" className="rounded-xl bg-accent-soft px-4 py-2 text-sm font-semibold text-accent-strong">
+            {toast}
+          </p>
+        )}
       </main>
 
-      {sheet && sheetSlot && sheetDay && sheet.type === "entry" && sheetSlot.entry && (
+      {sheet?.type === "entry" && sheetDay?.slot.entry && (
         <EntrySheet
-          slot={sheetSlot}
+          slot={sheetDay.slot}
           day={sheetDay}
-          onDouble={(double) => setDouble(weekStart, sheetSlot, double)}
+          onDouble={(double) => setDouble(weekStart, sheetDay.slot, double)}
           onClose={close}
-          onSwap={() => setSheet({ type: "pick", key: sheetSlot.key })}
-          onMove={() => setSheet({ type: "move", key: sheetSlot.key })}
+          onSwap={() => setSheet({ type: "pick", weekday: sheetDay.weekday })}
+          onMove={() => setSheet({ type: "move", weekday: sheetDay.weekday })}
           onDelete={() => {
-            clearSlot(weekStart, sheetSlot);
+            clearSlot(weekStart, sheetDay.slot);
             close();
           }}
         />
       )}
-      {sheet && sheetSlot && sheet.type === "pick" && (
+      {sheet?.type === "pick" && sheetDay && (
         <RecipePickerSheet
           recipes={recipes}
-          hint={sheetSlot.hint ?? sheetSlot.entry?.category ?? null}
-          title={slotTitle(sheetSlot)}
+          hint={sheetDay.slot.hint ?? sheetDay.slot.entry?.category ?? null}
+          title={sheetDay.weekday}
           onClose={close}
-          onText={() => setSheet({ type: "text", key: sheetSlot.key })}
+          onText={() => setSheet({ type: "text", weekday: sheetDay.weekday })}
           onPick={(recipe) => {
-            setEntry(weekStart, sheetSlot.key, {
-              kind: "recipe",
-              recipeId: recipe.id,
-              title: recipe.title,
-              category: recipe.category,
-            });
+            setEntry(weekStart, sheetDay.slot.key, { kind: "recipe", recipeId: recipe.id, title: recipe.title, category: recipe.category });
             close();
           }}
         />
       )}
-      {sheet && sheetSlot && sheet.type === "text" && (
+      {sheet?.type === "text" && sheetDay && (
         <TextEntrySheet
-          title={slotTitle(sheetSlot)}
-          hint={sheetSlot.hint}
+          title={sheetDay.weekday}
+          hint={sheetDay.slot.hint}
           recipes={Object.values(recipes)}
           onClose={close}
           onSave={(title, category) => {
-            setEntry(weekStart, sheetSlot.key, { kind: "text", title, category });
+            setEntry(weekStart, sheetDay.slot.key, { kind: "text", title, category });
             close();
           }}
         />
       )}
-      {sheet && sheetSlot && sheet.type === "move" && (
+      {sheet?.type === "move" && sheetDay?.slot.entry && (
         <MoveSheet
-          from={sheetSlot}
+          from={sheetDay.slot}
           week={week}
           onClose={close}
           onMove={(to) => {
-            moveEntry(weekStart, sheetSlot, to);
+            moveEntry(weekStart, sheetDay.slot, to);
             close();
+          }}
+        />
+      )}
+      {sheet?.type === "again" && sheetDay?.slot.entry && (
+        <CookAgainSheet
+          title={sheetDay.slot.entry.title}
+          todayIso={todayIso}
+          weeks={[0, 1].map((o) => ({
+            label: weekLabel(o),
+            week: composeWeek(addDays(currentStart, o * 7), profile, weekPlans, mealPlans, recipes),
+          }))}
+          onClose={close}
+          onPick={(target, day: PlanDay) => {
+            setEntry(target.weekStart, day.slot.key, againEntry(sheetDay.slot.entry!));
+            close();
+            flash(`„${sheetDay.slot.entry!.title}“ steht jetzt am ${day.weekday} im Plan.`);
+          }}
+        />
+      )}
+      {sheet?.type === "save" && (
+        <SaveTemplateSheet
+          count={Object.keys(templateDays(week)).length}
+          onClose={close}
+          onSave={(name) => {
+            const t = saveTemplate(name, week);
+            close();
+            flash(`Vorlage „${t.name}“ gespeichert.`);
+          }}
+        />
+      )}
+      {sheet?.type === "load" && (
+        <LoadTemplateSheet
+          templates={templates}
+          week={week}
+          onClose={close}
+          onApply={(template, weekdays) => {
+            applyTemplate(mealPlans, weekStart, template, weekdays);
+            close();
+            flash(`${weekdays.length} ${weekdays.length === 1 ? "Tag" : "Tage"} aus „${template.name}“ übernommen.`);
           }}
         />
       )}
@@ -216,448 +322,33 @@ export function WeekPlanView() {
   );
 }
 
-/** Der Schlüssel des Hauptgerichts ist der Wochentag */
-function slotTitle(slot: DaySlot): string {
-  return slot.key;
+/** Gericht für "Nochmal kochen": ohne "doppelt", ein Wunsch wird zum normalen Gericht */
+function againEntry(entry: ResolvedEntry): MealEntry {
+  const { stored } = entry;
+  if (stored.kind === "wish") return { kind: "text", title: entry.title, category: entry.category };
+  const { double: _double, ...rest } = stored;
+  void _double;
+  return rest;
 }
 
-function Summary({ week }: { week: PlanWeek }) {
-  const items = (["fleisch", "vegetarisch", "fisch"] as const).map((c) => {
-    const { planned, target } = week.counts[c];
-    const done = planned >= target;
-    return (
-      <span
-        key={c}
-        className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-stone-100 px-3 py-1 text-sm font-semibold text-stone-700"
-      >
-        <CategoryDot category={c} />
-        {planned}/{target} {categoryLabel(c, true)}
-        {done && <Check className="h-4 w-4 text-accent" strokeWidth={2.5} aria-label="erfüllt" />}
+/** Schmale Zusammenfassung: x/7 geplant · Kategorien · Budget */
+function SummaryLine({ week, cost, budget }: { week: PlanWeek; cost: number; budget: number | null }) {
+  return (
+    <p className="-mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-sm text-muted" aria-label="Zusammenfassung">
+      <span className="font-bold text-ink">
+        {week.planned}/{week.total} geplant
       </span>
-    );
-  });
-  return (
-    <section className={`${CARD} flex flex-col gap-2 p-4`} aria-label="Zusammenfassung">
-      <p className="text-lg font-bold">
+      {(["vegetarisch", "fleisch", "fisch"] as const).map((c) => (
+        <span key={c} className="inline-flex items-center gap-1 whitespace-nowrap">
+          <CategoryDot category={c} />
+          {week.counts[c].planned}/{week.counts[c].target}
+        </span>
+      ))}
+      {(cost > 0 || budget) && (
         <span className="whitespace-nowrap">
-          {week.planned}/{week.total} geplant
+          ~{cost} €{budget ? ` von ${budget} €` : ""}
         </span>
-      </p>
-      <div className="flex flex-wrap gap-2">{items}</div>
-    </section>
-  );
-}
-
-function DayCard({
-  day,
-  isToday,
-  onOpen,
-  onRemoveNote,
-}: {
-  day: PlanDay;
-  isToday: boolean;
-  onOpen: (slot: DaySlot, type: "entry" | "pick" | "text") => void;
-  onRemoveNote: () => void;
-}) {
-  const [, m, d] = day.date.split("-");
-  return (
-    <section
-      aria-label={day.weekday}
-      className={`${CARD} flex flex-col gap-3 p-4 ${isToday ? "ring-2 ring-accent" : ""}`}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-base font-bold">
-          {day.weekday}{" "}
-          <span className="font-normal text-muted">
-            {Number(d)}.{Number(m)}.
-          </span>
-          {isToday && (
-            <span className="ml-2 rounded-full bg-accent px-2 py-0.5 text-xs font-bold text-white">heute</span>
-          )}
-        </h3>
-        {day.cheat && !day.away && <CategoryChip category="cheatday">Cheat Day 🍕</CategoryChip>}
-      </div>
-      {day.away ? (
-        <p className="flex items-center gap-2 rounded-xl bg-stone-50 px-4 py-3 font-semibold text-muted">
-          <MapPin className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
-          Ausflug – nichts kochen
-        </p>
-      ) : (
-        <SlotRow day={day} onOpen={onOpen} />
       )}
-      {day.leftovers && !day.away && (
-        <p className="flex items-center gap-2 text-sm text-muted">
-          <Soup className="h-4 w-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
-          <span>
-            Zweite Mahlzeit: <span className="font-semibold text-ink">Reste von {day.leftovers}</span>
-          </span>
-        </p>
-      )}
-      {day.note && (
-        <p className="flex items-start gap-2 rounded-xl bg-stone-50 px-3 py-2 text-sm text-stone-700">
-          <StickyNote className="mt-0.5 h-4 w-4 shrink-0 text-muted" strokeWidth={2} aria-hidden />
-          <span className="min-w-0 flex-1">{day.note}</span>
-          <button
-            type="button"
-            onClick={onRemoveNote}
-            aria-label={`Notiz am ${day.weekday} entfernen`}
-            className="-m-1 flex h-8 w-8 shrink-0 items-center justify-center text-stone-400"
-          >
-            <X className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-          </button>
-        </p>
-      )}
-    </section>
-  );
-}
-
-function SlotRow({
-  day,
-  onOpen,
-}: {
-  day: PlanDay;
-  onOpen: (slot: DaySlot, type: "entry" | "pick" | "text") => void;
-}) {
-  const { slot } = day;
-  const MealIcon = day.mealTime === "mittags" ? Sun : Moon;
-  // Hauptgericht · abends · 4 Pers. – die Zeit bestimmt nur, wer mitisst
-  const label = (
-    <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted">
-      <MealIcon className="h-4 w-4" strokeWidth={2} aria-hidden />
-      {MEAL_TIME_LABELS[day.mealTime]}
-      {day.persons && <span className="font-normal">· {day.persons} Pers.</span>}
-    </span>
-  );
-  const { entry } = slot;
-
-  if (entry) {
-    const wish = entry.stored.kind === "wish";
-    return (
-      <button
-        type="button"
-        onClick={() => onOpen(slot, "entry")}
-        className={`flex items-center gap-3 rounded-xl border p-3 text-left transition active:scale-[0.99] ${
-          wish ? "border-accent/40 bg-accent-soft" : "border-line bg-stone-50/60"
-        }`}
-      >
-        <span className="min-w-0 flex-1">
-          {label}
-          <span className="block font-bold leading-snug">
-            {wish ? `${entry.kidName} wünscht sich: ${entry.title} 🎉` : entry.title}
-          </span>
-          <span className="flex flex-wrap items-center gap-x-1.5 text-sm text-muted">
-            {entry.category && <CategoryDot category={entry.category} />}
-            {entry.category ? categoryLabel(entry.category, true) : wish ? "Wunschtag" : "ohne Kategorie"}
-            {entry.origin === "fest" && " · fest eingeplant"}
-            {entry.double && <span className="font-semibold text-accent-strong">· doppelt – Reste für morgen</span>}
-          </span>
-        </span>
-        <ChevronRight className="h-5 w-5 shrink-0 text-stone-300" strokeWidth={2.25} aria-hidden />
-      </button>
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-dashed border-stone-300 p-3">
-      <div className="flex items-center justify-between gap-2">
-        {label}
-        <span className="flex items-center gap-2 text-sm font-semibold text-muted">
-          Noch offen
-          {slot.hint && <CategoryChip category={slot.hint} short />}
-        </span>
-      </div>
-      <div className="grid grid-cols-3 gap-2">
-        <button
-          type="button"
-          onClick={() => onOpen(slot, "pick")}
-          className={`${tileClass(false, "soft")} leading-tight`}
-        >
-          <BookOpen className="h-5 w-5" strokeWidth={2} aria-hidden />
-          Aus Kochbuch wählen
-        </button>
-        <button
-          type="button"
-          onClick={() => onOpen(slot, "text")}
-          className={`${tileClass(false)} leading-tight`}
-        >
-          <PenLine className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
-          Selbst eintragen
-        </button>
-        <button
-          type="button"
-          disabled
-          title="Kommt bald"
-          className="flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl border border-dashed border-line px-1 py-2 text-center text-sm font-bold leading-tight text-stone-400"
-        >
-          <Sparkles className="h-5 w-5" strokeWidth={2} aria-hidden />
-          Von KI vorschlagen lassen
-          <span className="text-xs font-semibold">kommt bald</span>
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function EntrySheet({
-  slot,
-  day,
-  onDouble,
-  onClose,
-  onSwap,
-  onMove,
-  onDelete,
-}: {
-  slot: DaySlot;
-  day: PlanDay;
-  onDouble: (double: boolean) => void;
-  onClose: () => void;
-  onSwap: () => void;
-  onMove: () => void;
-  onDelete: () => void;
-}) {
-  const entry = slot.entry!;
-  const wish = entry.stored.kind === "wish";
-  return (
-    <Sheet title={`${day.weekday} · Hauptgericht`} onClose={onClose}>
-      <div className={`${CARD} p-4`}>
-        <p className="text-xl font-extrabold tracking-tight">
-          {wish ? `${entry.kidName} wünscht sich: ${entry.title} 🎉` : entry.title}
-        </p>
-        <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
-          {entry.category ? <CategoryChip category={entry.category} /> : wish ? "Wunschtag" : "ohne Kategorie"}
-          {entry.origin === "fest" && <span>fest eingeplant im Wochen-Check</span>}
-        </p>
-        {entry.recipeId && (
-          <Link
-            href={`/kochbuch/rezept?id=${encodeURIComponent(entry.recipeId)}`}
-            className={`${buttonClass("soft")} mt-4 w-full`}
-          >
-            <BookOpen className="h-5 w-5" strokeWidth={2} aria-hidden />
-            Rezept ansehen
-          </Link>
-        )}
-      </div>
-      <label className={`${CARD} flex cursor-pointer items-center gap-3 p-4`}>
-        <span className="min-w-0 flex-1">
-          <span className="block font-bold">Doppelt kochen – Reste für morgen</span>
-          <span className="block text-sm text-muted">Doppelte Mengen auf der Einkaufsliste, morgen gibt es die Reste.</span>
-        </span>
-        <input
-          type="checkbox"
-          role="switch"
-          checked={entry.double}
-          onChange={(e) => onDouble(e.target.checked)}
-          className="h-6 w-6 shrink-0 accent-accent"
-        />
-      </label>
-      <div className="grid grid-cols-3 gap-2">
-        <button type="button" onClick={onSwap} className={tileClass(false)}>
-          <Repeat className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
-          Tauschen
-        </button>
-        <button type="button" onClick={onMove} className={tileClass(false)}>
-          <ArrowLeftRight className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
-          Verschieben
-        </button>
-        <button type="button" onClick={onDelete} className={tileClass(false, "danger")}>
-          <Trash2 className="h-5 w-5" strokeWidth={2} aria-hidden />
-          Löschen
-        </button>
-      </div>
-    </Sheet>
-  );
-}
-
-function RecipePickerSheet({
-  recipes,
-  hint,
-  title,
-  onClose,
-  onPick,
-  onText,
-}: {
-  recipes: Record<string, Recipe>;
-  hint: RecipeCategory | null;
-  title: string;
-  onClose: () => void;
-  onPick: (recipe: Recipe) => void;
-  onText: () => void;
-}) {
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<RecipeCategory | "alle">(hint ?? "alle");
-  const q = query.trim().toLowerCase();
-  const list = sortRecipes(Object.values(recipes), "beliebt").filter(
-    (r) => (filter === "alle" || r.category === filter) && (!q || r.title.toLowerCase().includes(q)),
-  );
-  const empty = Object.keys(recipes).length === 0;
-
-  return (
-    <Sheet title={`Aus Kochbuch: ${title}`} onClose={onClose}>
-      {empty ? (
-        <p className={`${CARD} p-4 text-muted`}>
-          Noch keine Rezepte im Kochbuch.{" "}
-          <Link href="/kochbuch/bearbeiten" className="font-bold text-accent-strong underline">
-            Rezept anlegen
-          </Link>{" "}
-          oder{" "}
-          <button type="button" onClick={onText} className="font-bold text-accent-strong underline">
-            selbst eintragen
-          </button>
-          .
-        </p>
-      ) : (
-        <>
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rezept suchen"
-            aria-label="Rezept suchen"
-            className={INPUT}
-          />
-          <div role="group" aria-label="Kategorie" className="flex flex-wrap gap-2">
-            {[{ value: "alle" as const, label: "Alle" }, ...RECIPE_CATEGORIES.map((c) => ({ value: c.value, label: categoryLabel(c.value, true) }))].map((f) => (
-              <button
-                key={f.value}
-                type="button"
-                aria-pressed={filter === f.value}
-                onClick={() => setFilter(f.value)}
-                className={chipClass(filter === f.value)}
-              >
-                {f.value !== "alle" && <CategoryDot category={f.value} />}
-                {f.label}
-              </button>
-            ))}
-          </div>
-          {list.length === 0 ? (
-            <p className="text-muted">Kein passendes Rezept.</p>
-          ) : (
-            <ul className={CARD_LIST}>
-              {list.map((r) => (
-                <li key={r.id}>
-                  <button
-                    type="button"
-                    onClick={() => onPick(r)}
-                    className="flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left active:bg-stone-50"
-                  >
-                    <CategoryDot category={r.category} />
-                    <span className="min-w-0 flex-1 truncate text-base font-bold">{r.title}</span>
-                    {r.favorite && (
-                      <Heart className="h-4 w-4 shrink-0 fill-accent text-accent" strokeWidth={2} aria-label="Favorit" />
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
-      )}
-    </Sheet>
-  );
-}
-
-function TextEntrySheet({
-  title,
-  hint,
-  recipes,
-  onClose,
-  onSave,
-}: {
-  title: string;
-  hint: RecipeCategory | null;
-  recipes: Recipe[];
-  onClose: () => void;
-  onSave: (title: string, category: RecipeCategory | null) => void;
-}) {
-  const [text, setText] = useState("");
-  // Kategorie kommt vom Gericht (gewählt oder erkannt), nie vom Platz-Hinweis
-  const [picked, setPicked] = useState<RecipeCategory | null | undefined>(undefined);
-  const category = picked === undefined ? guessDishCategory(text, recipes) : picked;
-  return (
-    <Sheet title={`Selbst eintragen: ${title}`} onClose={onClose}>
-      <input
-        type="text"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="z. B. Nudeln mit Tomatensoße"
-        aria-label="Gericht"
-        enterKeyHint="done"
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && text.trim()) onSave(text.trim(), category);
-        }}
-        className={`${INPUT_BASE} h-14 w-full px-4 text-lg`}
-      />
-      {hint && (
-        <p className="text-sm text-muted">
-          Vorschlag für diesen Tag: {categoryLabel(hint)} – Kategorie nur wählen, wenn das Gericht dazu passt.
-        </p>
-      )}
-      <div role="group" aria-label="Kategorie" className="grid grid-cols-2 gap-2">
-        {RECIPE_CATEGORIES.map((c) => (
-          <button
-            key={c.value}
-            type="button"
-            aria-pressed={category === c.value}
-            onClick={() => setPicked(category === c.value ? null : c.value)}
-            className={chipClass(category === c.value)}
-          >
-            <CategoryDot category={c.value} />
-            {c.label}
-          </button>
-        ))}
-      </div>
-      <button
-        type="button"
-        disabled={!text.trim()}
-        onClick={() => onSave(text.trim(), category)}
-        className={`${buttonClass("primary", "lg")} w-full`}
-      >
-        <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-        Eintragen
-      </button>
-    </Sheet>
-  );
-}
-
-function MoveSheet({
-  from,
-  week,
-  onClose,
-  onMove,
-}: {
-  from: DaySlot;
-  week: PlanWeek;
-  onClose: () => void;
-  onMove: (to: DaySlot) => void;
-}) {
-  return (
-    <Sheet title={`„${from.entry!.title}“ verschieben`} onClose={onClose}>
-      <p className="text-sm text-muted">Ist der Platz belegt, werden die Gerichte getauscht.</p>
-      <ul className={CARD_LIST}>
-        {week.days
-          .filter((d) => !d.away && d.slot.key !== from.key)
-          .map((d) => (
-            <li key={d.slot.key}>
-              <button
-                type="button"
-                onClick={() => onMove(d.slot)}
-                className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-2 text-left active:bg-stone-50"
-              >
-                <span className="whitespace-nowrap font-bold">{d.weekday}</span>
-                <span className="flex min-w-0 items-center gap-1 truncate text-sm text-muted">
-                  {d.slot.entry ? (
-                    <>
-                      <ArrowLeftRight className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-                      <span className="truncate">{d.slot.entry.title}</span>
-                    </>
-                  ) : (
-                    "frei"
-                  )}
-                </span>
-              </button>
-            </li>
-          ))}
-      </ul>
-    </Sheet>
+    </p>
   );
 }

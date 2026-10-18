@@ -2,12 +2,14 @@
 //
 // Artikel aus Rezepten werden nicht gespeichert, sondern bei jedem Anzeigen
 // aus dem Wochenplan berechnet (buildShoppingList) – so ist die Liste immer
-// aktuell. "Doppelt kochen" verdoppelt die Mengen eines Gerichts. Dazu kommen
-// die "Immer da"-Basics (Brot, Obst …), die jede Woche automatisch auf der
-// Liste stehen. Gespeichert werden nur eigene Artikel, Basics, Häkchen und
-// "Haben wir schon"; Häkchen hängen an einem festen Schlüssel (Zutat +
-// Einheit), damit sie Änderungen am Plan überstehen. Speicherung lokal über
-// localStore.
+// aktuell. "Doppelt kochen" verdoppelt die Mengen eines Gerichts.
+// Gespeichert werden je Woche nur eigene Artikel, Häkchen, "Haben wir schon"
+// und einmalige Umbenennungen; Häkchen hängen an einem festen Schlüssel
+// (Zutat + Einheit), damit sie Änderungen am Plan überstehen.
+// Dazu, für den ganzen Haushalt: eigene Produkte (Zutat → euer Produkt, die
+// Rezepte bleiben unverändert), Läden je Artikel und die Stammliste – häufig
+// gekaufte Artikel mit gelerntem Kaufrhythmus (früher "Immer da").
+// Speicherung lokal über localStore.
 
 import { useExternalStore } from "./useExternalStore";
 import type { Recipe } from "./cookbook";
@@ -162,100 +164,187 @@ export type WeekList = {
   checked: string[];
   /** Schlüssel von Artikeln, die wir schon haben (für diese Woche ausgeblendet) */
   have: string[];
+  /** Nur diese Woche umbenannt ("Nur diesmal"): Schlüssel → Name */
+  renamed?: Record<string, string>;
+  /** Stammartikel, die diese Woche nicht vorgeschlagen werden ("diesmal nicht") */
+  skippedStaples?: string[];
 };
 
-/** "Immer da": kommt jede Woche automatisch auf die Liste, solange aktiv */
-export type BasicItem = {
+/** Stammartikel: häufig gekauft, mit Kaufrhythmus */
+export type Staple = {
   id: string;
   name: string;
   amount: string;
   section: Section;
+  /** Kauftage "YYYY-MM-DD" (aus abgehakten Artikeln) */
+  purchases: string[];
+  /** Fester Rhythmus in Tagen (z. B. aus "Immer da": 7); null = gelernt */
+  intervalDays: number | null;
   active: boolean;
 };
 
+/** Läden als Vorschläge – eigene kommen dazu */
+export const SHOP_SUGGESTIONS = ["Aldi", "Lidl", "Edeka", "Rewe", "Rossmann", "dm", "Wochenmarkt", "Bäcker"];
+
 type ShoppingListStore = {
-  /** v3: dazu die "Immer da"-Basics (null = noch die Standardliste) */
-  version: 3;
+  /** v4: eigene Produkte, Läden, Stammliste (statt "Immer da") */
+  version: 4;
   weeks: Record<string, WeekList>;
-  basics: BasicItem[] | null;
+  /** Zutat (klein) → euer Produkt */
+  products: Record<string, string>;
+  /** Selbst angelegte Läden */
+  shops: string[];
+  /** Artikel (Anzeigename, klein) → Laden */
+  itemShops: Record<string, string>;
+  staples: Staple[];
 };
 
+/** Früher "Immer da" – wird bei der Migration zu Stammartikeln (wöchentlich) */
 const DEFAULT_BASIC_NAMES = ["Brot", "Aufschnitt", "Käse", "Butter", "Milch", "Joghurt", "Obst"];
 
-/** Standard-Basics, solange die Familie nichts geändert hat */
-export const DEFAULT_BASICS: BasicItem[] = DEFAULT_BASIC_NAMES.map((name) => ({
-  id: `standard-${name.toLowerCase()}`,
-  name,
-  amount: "",
-  section: sectionFor(name),
-  active: true,
-}));
-
 const SECTION_VALUES = SECTIONS.map((s) => s.value);
+
+const newId = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+
+const strings = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
+const stringMap = (v: unknown): Record<string, string> =>
+  v && typeof v === "object"
+    ? Object.fromEntries(Object.entries(v as Record<string, unknown>).filter((e): e is [string, string] => typeof e[1] === "string"))
+    : {};
+
+function migrateManual(raw: unknown): ManualItem[] {
+  return (Array.isArray(raw) ? raw : [])
+    .filter((m): m is ManualItem => Boolean(m) && typeof m.id === "string" && typeof m.name === "string")
+    .map((m) => ({
+      id: m.id,
+      name: m.name,
+      amount: typeof m.amount === "string" ? m.amount : "",
+      section: SECTION_VALUES.includes(m.section) ? m.section : sectionFor(m.name),
+      done: m.done === true,
+    }));
+}
 
 function migrateStore(raw: unknown): ShoppingListStore | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as { version?: number; weeks?: Record<string, unknown> };
+  const empty: ShoppingListStore = { version: 4, weeks: {}, products: {}, shops: [], itemShops: {}, staples: [] };
   // v1 war nur ein Datenmodell ohne Seite – es gibt dort keine echten Daten.
-  if (data.version === 1) return { version: 3, weeks: {}, basics: null };
-  if ((data.version !== 2 && data.version !== 3) || !data.weeks || typeof data.weeks !== "object") return null;
-  const strings = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
+  if (data.version === 1) return { ...empty, staples: basicsToStaples(null) };
+  if (![2, 3, 4].includes(data.version as number) || !data.weeks || typeof data.weeks !== "object") return null;
+
+  // v2/v3: "Immer da"-Basics (null = Standardliste)
+  const rawBasics = (raw as { basics?: unknown }).basics;
+  const basics =
+    data.version === 4
+      ? []
+      : Array.isArray(rawBasics)
+        ? rawBasics.filter((b): b is { id: string; name: string; amount?: string; active?: boolean } => Boolean(b) && typeof b.id === "string" && typeof b.name === "string")
+        : null;
+
   const weeks: Record<string, WeekList> = {};
-  for (const [key, raw] of Object.entries(data.weeks)) {
-    if (!raw || typeof raw !== "object") continue;
-    const w = raw as Partial<WeekList>;
+  for (const [key, value] of Object.entries(data.weeks)) {
+    if (!value || typeof value !== "object") continue;
+    const w = value as Partial<WeekList>;
+    const manual = migrateManual(w.manual);
+    let checked = strings(w.checked);
+    let have = strings(w.have);
+    // Häkchen an Basics ("b:<id>") bleiben als eigene Artikel dieser Woche erhalten
+    if (data.version !== 4) {
+      const basicKeys = [...new Set([...checked, ...have].filter((k) => k.startsWith("b:")))];
+      for (const k of basicKeys) {
+        const id = k.slice(2);
+        const basic = (basics ?? defaultBasics()).find((b) => b.id === id);
+        if (basic && checked.includes(k)) manual.push({ id: newId(), name: basic.name, amount: basic.amount ?? "", section: sectionFor(basic.name), done: true });
+      }
+      checked = checked.filter((k) => !k.startsWith("b:"));
+      have = have.filter((k) => !k.startsWith("b:"));
+    }
     weeks[key] = {
-      manual: (Array.isArray(w.manual) ? w.manual : [])
-        .filter((m): m is ManualItem => Boolean(m) && typeof m.id === "string" && typeof m.name === "string")
-        .map((m) => ({
-          id: m.id,
-          name: m.name,
-          amount: typeof m.amount === "string" ? m.amount : "",
-          section: SECTION_VALUES.includes(m.section) ? m.section : "sonstiges",
-          done: m.done === true,
-        })),
-      checked: strings(w.checked),
-      have: strings(w.have),
+      manual,
+      checked,
+      have,
+      renamed: stringMap(w.renamed),
+      skippedStaples: strings(w.skippedStaples),
     };
   }
-  const rawBasics = (raw as { basics?: unknown }).basics;
-  const basics = Array.isArray(rawBasics)
-    ? rawBasics
-        .filter((b): b is BasicItem => Boolean(b) && typeof b.id === "string" && typeof b.name === "string")
-        .map((b) => ({
-          id: b.id,
-          name: b.name,
-          amount: typeof b.amount === "string" ? b.amount : "",
-          section: SECTION_VALUES.includes(b.section) ? b.section : sectionFor(b.name),
-          active: b.active !== false,
-        }))
-    : null;
-  return { version: 3, weeks, basics };
+
+  if (data.version !== 4) return { ...empty, weeks, staples: basicsToStaples(basics) };
+
+  const v4 = raw as Partial<ShoppingListStore>;
+  return {
+    version: 4,
+    weeks,
+    products: stringMap(v4.products),
+    shops: strings(v4.shops),
+    itemShops: stringMap(v4.itemShops),
+    staples: (Array.isArray(v4.staples) ? v4.staples : [])
+      .filter((st): st is Staple => Boolean(st) && typeof st.id === "string" && typeof st.name === "string")
+      .map((st) => ({
+        id: st.id,
+        name: st.name,
+        amount: typeof st.amount === "string" ? st.amount : "",
+        section: SECTION_VALUES.includes(st.section) ? st.section : sectionFor(st.name),
+        purchases: strings(st.purchases).slice(-12),
+        intervalDays: typeof st.intervalDays === "number" && st.intervalDays > 0 ? st.intervalDays : null,
+        active: st.active !== false,
+      })),
+  };
+}
+
+function defaultBasics() {
+  return DEFAULT_BASIC_NAMES.map((name) => ({ id: `standard-${name.toLowerCase()}`, name, amount: "", active: true }));
+}
+
+/** "Immer da" → Stammartikel mit festem Wochenrhythmus */
+function basicsToStaples(basics: { id: string; name: string; amount?: string; active?: boolean }[] | null): Staple[] {
+  return (basics ?? defaultBasics())
+    .filter((b) => b.name.trim())
+    .map((b) => ({
+      id: b.id,
+      name: b.name.trim(),
+      amount: b.amount ?? "",
+      section: sectionFor(b.name),
+      purchases: [],
+      intervalDays: 7,
+      active: b.active !== false,
+    }));
 }
 
 const store = createLocalStore("wasgibts.einkaufsliste", migrateStore);
 const EMPTY_LIST: WeekList = { manual: [], checked: [], have: [] };
 const EMPTY_WEEKS: Record<string, WeekList> = {};
 
-const emptyStore = (): ShoppingListStore => ({ version: 3, weeks: {}, basics: null });
+const emptyStore = (): ShoppingListStore => ({
+  version: 4,
+  weeks: {},
+  products: {},
+  shops: [],
+  itemShops: {},
+  staples: basicsToStaples(null),
+});
+
+function update(change: (s: ShoppingListStore) => ShoppingListStore) {
+  store.save(change(store.load() ?? emptyStore()));
+}
 
 function updateList(weekStart: string, change: (list: WeekList) => WeekList) {
-  const current = store.load() ?? emptyStore();
-  store.save({
-    ...current,
-    weeks: { ...current.weeks, [weekStart]: change(current.weeks[weekStart] ?? EMPTY_LIST) },
-  });
+  update((s) => ({ ...s, weeks: { ...s.weeks, [weekStart]: change(s.weeks[weekStart] ?? EMPTY_LIST) } }));
 }
 
 const toggle = (list: string[], key: string) =>
   list.includes(key) ? list.filter((k) => k !== key) : [...list, key];
 
-export function toggleChecked(weekStart: string, item: ListItem) {
+const lower = (s: string) => s.trim().toLowerCase();
+
+/** Abhaken; beim Abhaken lernt die Stammliste den Kauf (`today` = "YYYY-MM-DD") */
+export function toggleChecked(weekStart: string, item: ListItem, today?: string) {
   updateList(weekStart, (l) =>
     item.manualId
       ? { ...l, manual: l.manual.map((m) => (m.id === item.manualId ? { ...m, done: !m.done } : m)) }
       : { ...l, checked: toggle(l.checked, item.key) },
   );
+  if (today) recordPurchase(item, !item.checked, today);
 }
 
 export function setHave(weekStart: string, key: string, have: boolean) {
@@ -266,55 +355,186 @@ export function setHave(weekStart: string, key: string, have: boolean) {
 }
 
 export function addManualItem(weekStart: string, item: Omit<ManualItem, "id" | "done">) {
-  const id =
-    typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : Math.random().toString(36).slice(2);
-  updateList(weekStart, (l) => ({ ...l, manual: [...l.manual, { ...item, id, done: false }] }));
+  updateList(weekStart, (l) => ({ ...l, manual: [...l.manual, { ...item, id: newId(), done: false }] }));
 }
 
-/** Alle Listen auf einmal ersetzen (Küchenhelfer: Übernehmen/Rückgängig) */
-export function replaceShoppingLists(weeks: Record<string, WeekList>) {
-  const current = store.load() ?? emptyStore();
-  store.save({ ...current, weeks });
-}
-
-// --- "Immer da" ------------------------------------------------------------------
-
-function updateBasics(change: (basics: BasicItem[]) => BasicItem[]) {
-  const current = store.load() ?? emptyStore();
-  store.save({ ...current, basics: change(current.basics ?? DEFAULT_BASICS) });
-}
-
-export function addBasic(name: string, amount = "") {
-  const id = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2);
-  updateBasics((b) => [...b, { id, name: name.trim(), amount: amount.trim(), section: sectionFor(name), active: true }]);
-}
-
-export function updateBasic(id: string, changes: Partial<Omit<BasicItem, "id">>) {
-  updateBasics((b) =>
-    b.map((item) =>
-      item.id === id
-        ? { ...item, ...changes, section: changes.name !== undefined ? sectionFor(changes.name) : item.section }
-        : item,
-    ),
-  );
-}
-
-export function removeBasic(id: string) {
-  updateBasics((b) => b.filter((item) => item.id !== id));
-}
-
-/** "Immer da"-Basics (`undefined` = noch nicht geladen) */
-export function useShoppingBasics(): BasicItem[] | undefined {
-  const data = useExternalStore(store.subscribe, store.load, () => undefined);
-  if (data === undefined) return undefined;
-  return data?.basics ?? DEFAULT_BASICS;
+export function updateManualItem(weekStart: string, id: string, changes: Partial<Omit<ManualItem, "id">>) {
+  updateList(weekStart, (l) => ({ ...l, manual: l.manual.map((m) => (m.id === id ? { ...m, ...changes } : m)) }));
 }
 
 export function removeManualItem(weekStart: string, id: string) {
   updateList(weekStart, (l) => ({ ...l, manual: l.manual.filter((m) => m.id !== id) }));
 }
+
+/** Alle Listen auf einmal ersetzen (Küchenhelfer: Übernehmen/Rückgängig) */
+export function replaceShoppingLists(weeks: Record<string, WeekList>) {
+  update((s) => ({ ...s, weeks }));
+}
+
+// --- Eigene Produkte ------------------------------------------------------------
+
+/** "Immer so": Zutat → euer Produkt (Rezepte bleiben unverändert) */
+export function setProduct(ingredient: string, product: string) {
+  const key = lower(ingredient);
+  if (!key) return;
+  update((s) => {
+    const products = { ...s.products };
+    if (!product.trim() || lower(product) === key) delete products[key];
+    else products[key] = product.trim();
+    return { ...s, products };
+  });
+}
+
+export function removeProduct(ingredient: string) {
+  setProduct(ingredient, "");
+}
+
+/** Artikel umbenennen: `always` = als eigenes Produkt merken, sonst nur diese Woche */
+export function renameItem(weekStart: string, item: ListItem, name: string, always: boolean) {
+  const clean = name.trim();
+  if (!clean) return;
+  if (item.manualId) {
+    updateManualItem(weekStart, item.manualId, { name: clean });
+    if (always) setProduct(item.originalName, clean);
+    return;
+  }
+  if (always) {
+    setProduct(item.originalName, clean);
+    updateList(weekStart, (l) => {
+      const renamed = { ...(l.renamed ?? {}) };
+      delete renamed[item.key];
+      return { ...l, renamed };
+    });
+  } else {
+    updateList(weekStart, (l) => ({ ...l, renamed: { ...(l.renamed ?? {}), [item.key]: clean } }));
+  }
+}
+
+// --- Läden ----------------------------------------------------------------------
+
+export function addShop(name: string) {
+  const clean = name.trim().slice(0, 30);
+  if (!clean) return;
+  update((s) =>
+    [...SHOP_SUGGESTIONS, ...s.shops].some((x) => lower(x) === lower(clean)) ? s : { ...s, shops: [...s.shops, clean] },
+  );
+}
+
+export function removeShop(name: string) {
+  update((s) => ({
+    ...s,
+    shops: s.shops.filter((x) => x !== name),
+    itemShops: Object.fromEntries(Object.entries(s.itemShops).filter(([, shop]) => shop !== name)),
+  }));
+}
+
+/** Laden für einen Artikel merken (leer = keiner) */
+export function setItemShop(itemName: string, shop: string) {
+  const key = lower(itemName);
+  if (!key) return;
+  update((s) => {
+    const itemShops = { ...s.itemShops };
+    if (shop.trim()) itemShops[key] = shop.trim();
+    else delete itemShops[key];
+    const known = [...SHOP_SUGGESTIONS, ...s.shops].some((x) => lower(x) === lower(shop));
+    return { ...s, itemShops, shops: shop.trim() && !known ? [...s.shops, shop.trim()] : s.shops };
+  });
+}
+
+// --- Stammliste -----------------------------------------------------------------
+
+const DAY = 86_400_000;
+const days = (from: string, to: string) => Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / DAY);
+
+/** Kauf merken bzw. (beim Zurücknehmen) heutigen Kauf wieder entfernen */
+function recordPurchase(item: ListItem, bought: boolean, today: string) {
+  const name = item.name.trim();
+  if (!name) return;
+  update((s) => {
+    const existing = s.staples.find((st) => lower(st.name) === lower(name));
+    if (!bought) {
+      if (!existing) return s;
+      return { ...s, staples: s.staples.map((st) => (st === existing ? { ...st, purchases: st.purchases.filter((d) => d !== today) } : st)) };
+    }
+    if (existing) {
+      if (existing.purchases.includes(today)) return s;
+      return { ...s, staples: s.staples.map((st) => (st === existing ? { ...st, purchases: [...st.purchases, today].slice(-12) } : st)) };
+    }
+    const staple: Staple = { id: newId(), name, amount: item.manualId ? item.amount : "", section: item.section, purchases: [today], intervalDays: null, active: true };
+    return { ...s, staples: [...s.staples, staple] };
+  });
+}
+
+/** Kaufrhythmus in Tagen: fest oder gelernt (Median der Abstände, ab 2 Käufen in verschiedenen Wochen) */
+export function stapleInterval(staple: Staple): number | null {
+  if (staple.intervalDays) return staple.intervalDays;
+  const dates = [...new Set(staple.purchases)].sort();
+  const gaps = dates.slice(1).map((d, i) => days(dates[i], d)).filter((g) => g >= 3);
+  if (gaps.length === 0) return null;
+  gaps.sort((a, b) => a - b);
+  return gaps[Math.floor(gaps.length / 2)];
+}
+
+/** "jede Woche", "alle 2 Wochen" … */
+export function rhythmLabel(interval: number): string {
+  if (interval <= 9) return "jede Woche";
+  const weeks = Math.round(interval / 7);
+  return weeks <= 1 ? "jede Woche" : `alle ${weeks} Wochen`;
+}
+
+/** Zählt als Stammartikel (fester oder gelernter Rhythmus) */
+export function isStaple(staple: Staple): boolean {
+  return staple.active && stapleInterval(staple) !== null;
+}
+
+/**
+ * Für die Woche fällige Stammartikel, die noch nicht auf der Liste stehen:
+ * nie gekauft (fester Rhythmus) oder letzter Kauf + Rhythmus bis zur
+ * Wochenmitte erreicht.
+ */
+export function dueStaples(staples: Staple[], weekStart: string, list: ShoppingList, week: WeekList = EMPTY_LIST): Staple[] {
+  const onList = new Set(list.items.map((i) => lower(i.name)));
+  const skipped = new Set(week.skippedStaples ?? []);
+  return staples.filter((st) => {
+    const interval = stapleInterval(st);
+    if (!st.active || interval === null || onList.has(lower(st.name)) || skipped.has(st.id)) return false;
+    const last = [...st.purchases].sort().pop();
+    if (!last) return true;
+    if (last >= weekStart) return false;
+    return days(last, weekStart) + 3 >= interval;
+  });
+}
+
+/** Vorschlag übernehmen → als Artikel dieser Woche */
+export function takeStaple(weekStart: string, staple: Staple) {
+  addManualItem(weekStart, { name: staple.name, amount: staple.amount, section: staple.section });
+}
+
+/** "Diesmal nicht" */
+export function skipStaple(weekStart: string, staple: Staple) {
+  updateList(weekStart, (l) => ({ ...l, skippedStaples: [...(l.skippedStaples ?? []), staple.id] }));
+}
+
+export function addStaple(name: string, amount = "", intervalDays = 7) {
+  const clean = name.trim();
+  if (!clean) return;
+  update((s) => {
+    const existing = s.staples.find((st) => lower(st.name) === lower(clean));
+    if (existing) return { ...s, staples: s.staples.map((st) => (st === existing ? { ...st, active: true, intervalDays: st.intervalDays ?? intervalDays } : st)) };
+    return { ...s, staples: [...s.staples, { id: newId(), name: clean, amount: amount.trim(), section: sectionFor(clean), purchases: [], intervalDays, active: true }] };
+  });
+}
+
+export function updateStaple(id: string, changes: Partial<Omit<Staple, "id">>) {
+  update((s) => ({ ...s, staples: s.staples.map((st) => (st.id === id ? { ...st, ...changes } : st)) }));
+}
+
+/** Aus der Stammliste nehmen (wird nicht mehr vorgeschlagen) */
+export function removeStaple(id: string) {
+  updateStaple(id, { active: false, intervalDays: null, purchases: [] });
+}
+
+// --- Hooks ----------------------------------------------------------------------
 
 /** Gespeicherte Listen aller Wochen (`undefined` = noch nicht geladen) */
 export function useShoppingLists(): Record<string, WeekList> | undefined {
@@ -323,19 +543,49 @@ export function useShoppingLists(): Record<string, WeekList> | undefined {
   return data?.weeks ?? EMPTY_WEEKS;
 }
 
+export type ShoppingSettings = Pick<ShoppingListStore, "products" | "shops" | "itemShops" | "staples">;
+
+const DEFAULT_SETTINGS: ShoppingSettings = { products: {}, shops: [], itemShops: {}, staples: basicsToStaples(null) };
+let cachedSettings: { source: ShoppingListStore | null; value: ShoppingSettings } | null = null;
+
+function settingsOf(data: ShoppingListStore | null): ShoppingSettings {
+  if (!data) return DEFAULT_SETTINGS;
+  if (cachedSettings?.source === data) return cachedSettings.value;
+  const value = { products: data.products, shops: data.shops, itemShops: data.itemShops, staples: data.staples };
+  cachedSettings = { source: data, value };
+  return value;
+}
+
+/** Produkte, Läden, Stammliste (`undefined` = noch nicht geladen) */
+export function useShoppingSettings(): ShoppingSettings | undefined {
+  const data = useExternalStore(store.subscribe, store.load, () => undefined);
+  if (data === undefined) return undefined;
+  return settingsOf(data);
+}
+
+/** Alle Läden: Vorschläge + eigene */
+export function allShops(settings: Pick<ShoppingSettings, "shops">): string[] {
+  return [...SHOP_SUGGESTIONS, ...settings.shops.filter((x) => !SHOP_SUGGESTIONS.some((s) => lower(s) === lower(x)))];
+}
+
 // --- Liste zusammensetzen -------------------------------------------------------
 
 export type ListItem = {
   key: string;
+  /** Angezeigter Name (euer Produkt bzw. umbenannt) */
   name: string;
+  /** Name aus Rezept bzw. wie eingegeben */
+  originalName: string;
   amount: string;
   section: Section;
   /** Für welche Gerichte, z. B. "Gulasch (Mi)" */
   dishes: string[];
+  /** Wochentage der Gerichte */
+  days: string[];
+  /** Laden, falls gemerkt */
+  shop: string;
   /** Nur bei eigenen Artikeln */
   manualId?: string;
-  /** Aus "Immer da" */
-  basic?: boolean;
   checked: boolean;
   /** "Haben wir schon" – für diese Woche ausgeblendet */
   hidden: boolean;
@@ -353,9 +603,9 @@ export function buildShoppingList(
   week: PlanWeek,
   recipes: Record<string, Recipe>,
   list: WeekList = EMPTY_LIST,
-  basics: BasicItem[] = [],
+  settings: Pick<ShoppingSettings, "products" | "itemShops"> = { products: {}, itemShops: {} },
 ): ShoppingList {
-  type Acc = { name: string; family: string; total: number; hasAmount: boolean; dishes: string[] };
+  type Acc = { name: string; family: string; total: number; hasAmount: boolean; dishes: string[]; days: string[] };
   const acc = new Map<string, Acc>();
   const missing: string[] = [];
 
@@ -377,53 +627,53 @@ export function buildShoppingList(
     for (const ing of ingredients) {
       const { family, factor } = unitFamily(ing.unit);
       const key = `${ing.name.trim().toLowerCase()}|${family}`;
-      const item = acc.get(key) ?? { name: ing.name.trim(), family, total: 0, hasAmount: false, dishes: [] };
+      const item = acc.get(key) ?? { name: ing.name.trim(), family, total: 0, hasAmount: false, dishes: [], days: [] };
       if (ing.amount !== null) {
         item.total += ing.amount * factor * times;
         item.hasAmount = true;
       }
       if (!item.dishes.includes(dish)) item.dishes.push(dish);
+      if (!item.days.includes(day.weekday)) item.days.push(day.weekday);
       acc.set(key, item);
     }
   }
 
-  const generated: ListItem[] = [...acc.entries()].map(([key, a]) => ({
-    key,
-    name: a.name,
-    amount: a.hasAmount ? formatTotal(a.total, a.family) : a.family,
-    section: sectionFor(a.name),
-    dishes: a.dishes,
-    checked: list.checked.includes(key),
-    hidden: list.have.includes(key),
-  }));
-  const manual: ListItem[] = list.manual.map((m) => ({
-    key: `m:${m.id}`,
-    name: m.name,
-    amount: m.amount,
-    section: m.section,
-    dishes: [],
-    manualId: m.id,
-    checked: m.done,
-    hidden: false,
-  }));
+  const display = (key: string, name: string) => list.renamed?.[key] ?? settings.products[lower(name)] ?? name;
+  const shopOf = (name: string) => settings.itemShops[lower(name)] ?? "";
 
-  const basicItems: ListItem[] = basics
-    .filter((b) => b.active && b.name.trim())
-    .map((b) => {
-      const key = `b:${b.id}`;
-      return {
-        key,
-        name: b.name,
-        amount: b.amount,
-        section: b.section,
-        dishes: [],
-        basic: true,
-        checked: list.checked.includes(key),
-        hidden: list.have.includes(key),
-      };
-    });
+  const generated: ListItem[] = [...acc.entries()].map(([key, a]) => {
+    const name = display(key, a.name);
+    return {
+      key,
+      name,
+      originalName: a.name,
+      amount: a.hasAmount ? formatTotal(a.total, a.family) : a.family,
+      section: sectionFor(a.name),
+      dishes: a.dishes,
+      days: a.days,
+      shop: shopOf(name),
+      checked: list.checked.includes(key),
+      hidden: list.have.includes(key),
+    };
+  });
+  const manual: ListItem[] = list.manual.map((m) => {
+    const name = settings.products[lower(m.name)] ?? m.name;
+    return {
+      key: `m:${m.id}`,
+      name,
+      originalName: m.name,
+      amount: m.amount,
+      section: m.section,
+      dishes: [],
+      days: [],
+      shop: shopOf(name),
+      manualId: m.id,
+      checked: m.done,
+      hidden: false,
+    };
+  });
 
-  const items = [...generated, ...basicItems, ...manual].sort(
+  const items = [...generated, ...manual].sort(
     (a, b) =>
       SECTION_VALUES.indexOf(a.section) - SECTION_VALUES.indexOf(b.section) ||
       a.name.localeCompare(b.name, "de"),
@@ -437,14 +687,15 @@ export function buildShoppingList(
   };
 }
 
-/** Offene Artikel als Text zum Teilen (WhatsApp, Nachricht …) */
-export function shoppingListText(list: ShoppingList, title: string): string {
+/** Offene Artikel als Text zum Teilen (WhatsApp, Nachricht …) – optional nur ein Laden */
+export function shoppingListText(list: ShoppingList, title: string, shop?: string): string {
   const lines = [title];
+  const open = list.items.filter((i) => !i.checked && !i.hidden && (shop === undefined || i.shop === shop));
   for (const section of SECTIONS) {
-    const open = list.items.filter((i) => i.section === section.value && !i.checked && !i.hidden);
-    if (open.length === 0) continue;
+    const items = open.filter((i) => i.section === section.value);
+    if (items.length === 0) continue;
     lines.push("", `${section.emoji} ${section.label}`);
-    for (const item of open) lines.push(`- ${item.amount ? `${item.amount} ` : ""}${item.name}`);
+    for (const item of items) lines.push(`- ${item.amount ? `${item.amount} ` : ""}${item.name}`);
   }
   return lines.join("\n");
 }

@@ -6,8 +6,11 @@ export const CATEGORY_DOT: Record<RecipeCategory, string> = {
   fleisch: "bg-rose-500",
   vegetarisch: "bg-emerald-500",
   fisch: "bg-sky-500",
-  cheatday: "bg-amber-400",
+  cheatday: "bg-accent",
 };
+
+/** Punkt für einen leeren Tag */
+export const EMPTY_DOT = "bg-stone-300";
 
 export function CategoryDot({ category }: { category: RecipeCategory }) {
   return <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${CATEGORY_DOT[category]}`} aria-hidden />;

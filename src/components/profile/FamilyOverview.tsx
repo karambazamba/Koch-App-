@@ -16,6 +16,7 @@ import {
   Sparkles,
   Ban,
   Salad,
+  ShoppingBasket,
   Sprout,
   Wheat,
 } from "lucide-react";
@@ -157,6 +158,9 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
                   ? profile.neverAgain.map((e) => e.title).join(", ")
                   : "Noch nichts – bisher hat alles geschmeckt"}
               </span>
+            </Row>
+            <Row href="/profil/produkte" icon={ShoppingBasket} title="Eure Produkte & Läden">
+              <span>Was bei euch auf der Einkaufsliste steht</span>
             </Row>
             <Row href="/profil/gesundheit" icon={Sprout} title="Gesundheits-Tipps">
               <span>{HEALTH_TIP_LEVELS.find((l) => l.value === profile.healthTips)?.label}</span>
