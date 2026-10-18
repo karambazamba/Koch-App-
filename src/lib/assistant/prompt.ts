@@ -3,7 +3,8 @@
 import { HOUSEHOLD_TYPES, KID_AGE_GROUP_LABELS, MEAL_TIME_LABELS, helperName, isSmallHousehold, personLabel, wishDayActive, type HouseholdProfile } from "../profile";
 import { sortedBases } from "../bases";
 import { sortedLikes } from "../likes";
-import { formatPantryItem, PANTRY_PLACES } from "../pantry";
+import { formatPantryAmount, PANTRY_PLACES } from "../pantry";
+import { soonToUse } from "../dishIdeas";
 import { formatWeekRange, planningWeekStart } from "../weekPlan";
 import type { AssistantData } from "./ops";
 
@@ -42,6 +43,7 @@ So arbeitest du:
 - Vorrat ("Ich hab 4 Portionen Chili eingefroren"): vorrat_hinzufuegen mit Ort. Wunsch ohne Tag ("Mathis wünscht sich Pfannkuchen"): wunsch_merken. Termin ("Jonne hat Dienstag bis 17:30 Turnen"): termin_notieren; an so einem Tag darfst du etwas Schnelles anbieten.
 - "Diese Woche bitte nur schnelle Sachen": woche_lesen und kochbuch_durchsuchen, dann Gerichte über 30 Minuten durch schnelle, bekannte ersetzen und freie Tage (nicht bei "Ich koche spontan") mit schnellen füllen.
 - "Was kann ich mit Hack und Paprika machen?": 2–3 Ideen mit Minuten (Vorrat und Kochbuch zuerst), noch nichts eintragen; biete an, eins für heute einzuplanen.
+- Ideen und Vorschläge immer aus dem AKTUELLEN Vorrat im Kontext (dazu, was gerade im Chat genannt wurde): vorrangig vorhandene Zutaten nutzen, besonders "bald verbrauchen" und Reste. Fehlen 1–2 Kleinigkeiten, ist das ok – dann kurz nennen ("dafür noch: Sahne"). Nenne bei jeder Idee kurz, was sie aus dem Vorrat nutzt. Ist der Vorrat leer oder fast leer: Ideen aus Grundzutaten und freundlich anbieten: "Sag mir, was da ist, dann passe ich die Ideen an."
 - "Doppelt kochen" bzw. "Reste für morgen": bei gericht_setzen doppelt_kochen=true oder doppelt_kochen-Werkzeug. Rezeptmengen bleiben für eine Mahlzeit; die Einkaufsliste verdoppelt automatisch.
 - Neue Rezepte für die Personenzahl des Tages (woche_lesen: personen).
 - Basis: Wenn du neue Rezepte vorschlagen sollst, frag kurz nach der Basis ("Was soll die Basis sein – Kartoffeln, Reis, Nudeln …?"), außer sie ist schon genannt oder egal. Nur einmal fragen. Die App zeigt dazu Knöpfe. Beim Spontan kochen nicht fragen.
@@ -157,6 +159,20 @@ function neverAgainText(profile: HouseholdProfile): string {
   return `NIE WIEDER (diese und sehr ähnliche Gerichte nie vorschlagen, Gründe beachten):\n${lines.join("\n")}`;
 }
 
+/** Aktueller Vorrat, kompakt: "Hack 500 g (Kühlschrank), Zucchini (Kühlschrank, seit 4 Tagen – bald verbrauchen), Milch (gekauft)" */
+function pantryText(data: AssistantData, todayIso: string): string {
+  const items = data.pantry ?? [];
+  if (!items.length) return "Vorrat: nichts notiert (Ideen aus Grundzutaten wie Nudeln, Eier, Reis; anbieten, dass die Familie sagt, was da ist)";
+  const soon = new Set(soonToUse(items, todayIso).map((p) => p.name));
+  const days = (iso: string) => Math.round((Date.parse(`${todayIso}T12:00:00Z`) - Date.parse(`${iso}T12:00:00Z`)) / 86_400_000);
+  const parts = items.slice(0, 40).map((p) => {
+    const where = p.id === "gekauft" ? "gekauft" : PANTRY_PLACES.find((x) => x.value === p.place)?.short ?? "";
+    const note = soon.has(p.name) ? `, seit ${days(p.addedAt)} Tagen – bald verbrauchen` : "";
+    return `${[p.name, formatPantryAmount(p.amount), p.unit].filter(Boolean).join(" ")} (${where}${note})`;
+  });
+  return `Vorrat (aktuell): ${parts.join(", ")}`;
+}
+
 /** Kontext für diese Anfrage: Datum, Wochen, Profil, Kochbuch-Überblick */
 export function contextText(
   data: AssistantData,
@@ -178,9 +194,7 @@ export function contextText(
     profileSummary(data.profile),
     `Gesundheits-Tipps: ${TIP_LABEL[data.profile.healthTips]}${data.profile.healthTips === "aus" ? "" : ` – diese Woche schon ${tipsThisWeek} gezeigt`}`,
     "",
-    data.pantry?.length
-      ? `Vorrat: ${data.pantry.slice(0, 40).map((p) => `${formatPantryItem(p)} (${PANTRY_PLACES.find((x) => x.value === p.place)?.short ?? ""})`).join(", ")}`
-      : "Vorrat: nichts notiert",
+    pantryText(data, todayIso),
     `Kochbuch: ${recipes.length} Rezepte${recipes.length ? ` – ${recipes.slice(0, 60).map((r) => `${r.title}${r.thumbsUp > 0 ? ` (👍${r.thumbsUp})` : ""}`).join(", ")}` : ""}`,
   ].join("\n");
 }

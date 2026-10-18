@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { ChevronRight, Clock } from "lucide-react";
 import { CARD, buttonClass } from "@/components/ui/styles";
 import { dishEmoji } from "@/lib/dishEmoji";
+import { EMPTY_STOCK_HINT, usesLine } from "@/lib/dishIdeas";
 import { openHelper } from "@/lib/assistant/open";
 import { nextIdea, putAside, useTodayIdeas } from "@/lib/useIdeas";
 import { showToast } from "@/lib/toast";
@@ -111,7 +112,7 @@ export function IdeasCard() {
           if (moveX <= -SWIPE) dismiss();
           else if (moveX >= SWIPE) {
             gestureDone();
-            nextIdea(data.todayIso, deck.length);
+            nextIdea(data.todayIso, deck.length, data.stockKey);
           } else if (Math.abs(moveX) < 8 && Math.abs(moveY) < 8) setOpen(true);
         }}
         onPointerCancel={() => {
@@ -127,7 +128,8 @@ export function IdeasCard() {
         <span className="min-w-0 flex-1">
           <span className="block text-xl font-extrabold leading-tight tracking-tight">{idea.title}</span>
           <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-sm text-muted">
-            <span className="font-semibold text-accent-strong">{idea.reason}</span>
+            {/* Was aus dem Vorrat genutzt wird (und was ggf. noch fehlt), sonst der Grund */}
+            <span className="font-semibold text-accent-strong">{idea.uses.length && !idea.wishId ? usesLine(idea.uses, idea.needs, 3) : idea.reason}</span>
             {idea.minutes !== null && (
               <span className="inline-flex items-center gap-1">
                 · <Clock className="h-3.5 w-3.5" strokeWidth={2} aria-hidden /> {idea.minutes} Min.
@@ -145,13 +147,18 @@ export function IdeasCard() {
           type="button"
           onClick={() => {
             gestureDone();
-            nextIdea(data.todayIso, deck.length);
+            nextIdea(data.todayIso, deck.length, data.stockKey);
           }}
           className={buttonClass("secondary", "sm")}
         >
           Andere Idee
         </button>
       </div>
+      {data.nearlyEmpty && (
+        <button type="button" onClick={() => openHelper("spontan")} className="-mt-1 self-start text-left text-xs font-semibold text-muted underline">
+          {EMPTY_STOCK_HINT}
+        </button>
+      )}
       {open && <IdeaSheet idea={idea} onChoose={pick} onDismiss={dismiss} onClose={() => setOpen(false)} />}
       {dialog}
     </section>

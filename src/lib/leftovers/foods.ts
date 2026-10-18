@@ -9,7 +9,7 @@ const FOOD_LIST: string[] = [
   "Frühlingszwiebel|Frühlingszwiebeln", "Grünkohl", "Gurke|Gurken", "Ingwer", "Karotte|Karotten",
   "Möhre|Möhren", "Mohrrübe|Mohrrüben", "Kartoffel|Kartoffeln", "Süßkartoffel|Süßkartoffeln",
   "Knoblauch", "Knobi", "Knoblauchzehe|Knoblauchzehen", "Kohlrabi|Kohlrabis", "Kürbis|Kürbisse", "Lauch",
-  "Porree", "Mais", "Maiskolben", "Mangold", "Paprika|Paprikas", "Pastinake|Pastinaken",
+  "Porree", "Mais", "Maiskolben", "Mangold", "Paprika", "Pastinake|Pastinaken",
   "Peperoni|Peperonis", "Pilz|Pilze", "Radieschen", "Rettich", "Rosenkohl", "Rote Bete",
   "Rotkohl", "Rucola", "Salat|Salate", "Gurkensalat", "Kartoffelsalat", "Nudelsalat", "Eisbergsalat", "Feldsalat", "Kopfsalat", "Römersalat",
   "Schalotte|Schalotten", "Sellerie", "Staudensellerie", "Spargel", "Spinat", "Blattspinat",

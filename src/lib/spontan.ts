@@ -5,13 +5,14 @@
 import { germanNumber } from "./leftovers/ruleParser";
 import type { Recipe, RecipeCategory } from "./cookbook";
 import type { PantryItem } from "./pantry";
-import { formatPantryItem, sameIngredient } from "./pantry";
+import { formatPantryItem } from "./pantry";
 import type { NeverAgainEntry, PauseSettings } from "./profile";
 import { isNeverAgain } from "./ratings";
 import { baseFromText, recipeBase, type BaseId } from "./bases";
 import { guessDishCategory } from "./dishCategory";
 import { sectionFor } from "./shoppingList";
 import { WEEKDAYS } from "./profile";
+import { AT_HOME, DISHES, matchStock, realStock } from "./dishIdeas";
 
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const plus = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n, 12);
@@ -147,26 +148,8 @@ export type SpontanIdea = {
   extra: string[];
 };
 
-/** Hat man meistens im Haus – zählt nicht als Einkauf */
-export const AT_HOME = /^(salz|pfeffer|öl|olivenöl|rapsöl|wasser|zucker|mehl|essig|butter|brühe|gemüsebrühe|gewürze?|zwiebeln?|knoblauch|knoblauchzehen?|tomatenmark|senf|ketchup|kräuter|petersilie|schnittlauch|paprikapulver|currypulver|curry|muskat|oregano|basilikum|thymian|zimt|backpulver|honig|sojasoße|sojasauce|lorbeer\w*)$/i;
-
-/** Einfache Klassiker, die oft mit dem gehen, was da ist */
-const CLASSICS: { title: string; minutes: number; needs: string[]; category: RecipeCategory }[] = [
-  { title: "Rührei mit Brot", minutes: 10, needs: ["Eier", "Brot"], category: "vegetarisch" },
-  { title: "Käsebrot mit Rohkost", minutes: 10, needs: ["Brot", "Käse"], category: "vegetarisch" },
-  { title: "Grießbrei", minutes: 10, needs: ["Grieß", "Milch"], category: "vegetarisch" },
-  { title: "Nudeln mit Pesto", minutes: 15, needs: ["Nudeln", "Pesto"], category: "vegetarisch" },
-  { title: "Omelett mit Gemüse", minutes: 15, needs: ["Eier", "Paprika"], category: "vegetarisch" },
-  { title: "Wraps mit Gemüse", minutes: 15, needs: ["Wraps", "Paprika"], category: "vegetarisch" },
-  { title: "Ofen-Baguette", minutes: 15, needs: ["Baguette", "Käse"], category: "vegetarisch" },
-  { title: "Tomatensuppe mit Toast", minutes: 15, needs: ["Tomaten", "Toast"], category: "vegetarisch" },
-  { title: "Nudeln mit Tomatensoße", minutes: 20, needs: ["Nudeln", "Tomaten"], category: "vegetarisch" },
-  { title: "Pfannkuchen", minutes: 20, needs: ["Eier", "Milch"], category: "vegetarisch" },
-  { title: "Gemüsepfanne mit Reis", minutes: 25, needs: ["Reis", "Möhren"], category: "vegetarisch" },
-  { title: "Bratkartoffeln mit Spiegelei", minutes: 25, needs: ["Kartoffeln", "Eier"], category: "vegetarisch" },
-  { title: "Kartoffelsuppe", minutes: 30, needs: ["Kartoffeln", "Möhren"], category: "vegetarisch" },
-  { title: "Milchreis", minutes: 30, needs: ["Reis", "Milch"], category: "vegetarisch" },
-];
+/** Hat man meistens im Haus – zählt nicht als Einkauf (gemeinsam in dishIdeas.ts) */
+export { AT_HOME };
 
 /** Fertigprodukte im Vorrat – sind selbst schon eine Idee (Minuten grob) */
 const READY: { words: RegExp; minutes: number }[] = [
@@ -180,14 +163,13 @@ function readyMinutes(name: string): number | null {
   return READY.find((r) => r.words.test(name))?.minutes ?? null;
 }
 
-/** Ohne Vorrat: schnelle Klassiker, die meistens gehen */
-const USUALLY_THERE = ["Rührei mit Brot", "Nudeln mit Tomatensoße", "Pfannkuchen", "Käsebrot mit Rohkost", "Nudeln mit Pesto"];
 
 /**
- * Drei Ideen mit dem, was da ist: Kochbuch und Klassiker, ohne Einkauf
- * (Filter "einkauf": eine Sache darf fehlen), schnellste zuerst bzw. mit
- * "reste" die mit den meisten Resten. Leerer Vorrat → Klassiker, die meistens
- * gehen.
+ * Drei Ideen mit dem, was da ist (Vorrat, Gekauftes, eben Gesagtes): Kochbuch,
+ * Klassiker und Fertigprodukte. Zuerst die, die am meisten davon nutzen, dann
+ * mit wenig Fehlendem, dann die schnellsten (mit "⚡" schnellste zuerst).
+ * Reicht es ohne Einkauf nicht für drei, dürfen 1–2 Kleinigkeiten fehlen
+ * (werden genannt). Leerer Vorrat → Gerichte mit Grundzutaten.
  */
 export function spontanIdeas(
   recipes: Record<string, Recipe>,
@@ -199,14 +181,16 @@ export function spontanIdeas(
   const allowed = filters.includes("einkauf") ? 1 : 0;
   const bases = filters.filter((f) => f.startsWith("basis:")).map((f) => f.slice(6) as BaseId);
   const byTime = (a: SpontanIdea, b: SpontanIdea) => (a.minutes ?? 999) - (b.minutes ?? 999);
+  const byStock = (a: SpontanIdea, b: SpontanIdea) => b.uses.length - a.uses.length || a.extra.length - b.extra.length || byTime(a, b);
   const baseOf = (i: SpontanIdea) => (i.recipeId && recipes[i.recipeId] ? recipeBase(recipes[i.recipeId]) : baseFromText(i.title));
   const allowedIdea = (i: SpontanIdea) =>
     !isNeverAgain(i.title, neverAgain) &&
     (!fast || (i.minutes !== null && i.minutes <= 20)) &&
     (bases.length === 0 || bases.includes(baseOf(i) as BaseId));
+  const stock = realStock(pantry);
 
-  if (pantry.length === 0) {
-    const pool = bases.length ? CLASSICS : CLASSICS.filter((c) => USUALLY_THERE.includes(c.title));
+  if (stock.length === 0) {
+    const pool = bases.length ? DISHES.filter((d) => !d.season) : DISHES.filter((d) => d.usual);
     return pool
       .map((c) => ({ id: `k:${c.title}`, title: c.title, minutes: c.minutes, category: c.category, uses: [], extra: [] }))
       .filter(allowedIdea)
@@ -215,28 +199,25 @@ export function spontanIdeas(
   }
 
   const check = (names: string[]) => {
-    const needed = names.filter((n) => n.trim() && !AT_HOME.test(n.trim()));
-    const uses = pantry.filter((p) => needed.some((n) => sameIngredient(n, p.name))).map((p) => p.name);
-    const extra = needed.filter((n) => !pantry.some((p) => sameIngredient(n, p.name)));
-    return { uses, extra };
+    const { uses, needs } = matchStock(names, stock);
+    return { uses, extra: needs };
   };
-  const fromBook: SpontanIdea[] = Object.values(recipes).map((r) => ({
-    id: r.id,
-    title: r.title,
-    minutes: r.prepMinutes,
-    category: r.category,
-    recipeId: r.id,
-    ...check(r.ingredients.map((i) => i.name)),
-  }));
-  const classics: SpontanIdea[] = CLASSICS.map((c) => ({ id: `k:${c.title}`, title: c.title, minutes: c.minutes, category: c.category, ...check(c.needs) }));
+  const fromBook: SpontanIdea[] = Object.values(recipes)
+    .filter((r) => r.kind !== "backen")
+    .map((r) => ({ id: r.id, title: r.title, minutes: r.prepMinutes, category: r.category, recipeId: r.id, ...check(r.ingredients.map((i) => i.name)) }));
+  const classics: SpontanIdea[] = DISHES.map((c) => ({ id: `k:${c.title}`, title: c.title, minutes: c.minutes, category: c.category, ...check(c.needs) }));
   // Fertigprodukte aus dem Vorrat (Tiefkühlpizza, Maultaschen …) zählen mit
-  const ready: SpontanIdea[] = pantry
+  const ready: SpontanIdea[] = stock
     .filter((p) => readyMinutes(p.name) !== null)
     .map((p) => ({ id: `f:${p.name}`, title: p.name, minutes: readyMinutes(p.name), category: guessDishCategory(p.name), uses: [p.name], extra: [] }));
-  const ideas = [...fromBook, ...classics, ...ready].filter((i) => i.uses.length > 0 && i.extra.length <= allowed && allowedIdea(i));
-  const sorted = filters.includes("reste")
-    ? ideas.sort((a, b) => b.uses.length - a.uses.length || byTime(a, b))
-    : ideas.sort((a, b) => byTime(a, b) || b.uses.length - a.uses.length);
-  // Gleiche Titel (Kochbuch + Klassiker) nur einmal
-  return sorted.filter((i, n) => sorted.findIndex((o) => o.title.toLowerCase() === i.title.toLowerCase()) === n).slice(0, 3);
+  const all = [...fromBook, ...classics, ...ready].filter((i) => i.uses.length > 0 && allowedIdea(i));
+  const order = fast ? (a: SpontanIdea, b: SpontanIdea) => byTime(a, b) || byStock(a, b) : byStock;
+  const unique = (list: SpontanIdea[]) => list.filter((i, n) => list.findIndex((o) => o.title.toLowerCase() === i.title.toLowerCase()) === n);
+  const strict = unique(all.filter((i) => i.extra.length <= allowed).sort(order));
+  if (strict.length >= 3) return strict.slice(0, 3);
+  // Zu wenig ohne Einkauf: 1–2 Kleinigkeiten dürfen fehlen
+  const more = unique(all.filter((i) => i.extra.length > allowed && i.extra.length <= 2).sort(byStock)).filter(
+    (i) => !strict.some((s) => s.title.toLowerCase() === i.title.toLowerCase()),
+  );
+  return [...strict, ...more].slice(0, 3);
 }

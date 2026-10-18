@@ -61,6 +61,7 @@ Bei ALLEN Änderungen beachten.
 - Eingabefelder mindestens 16px Schrift (kein iOS-Zoom), Safe-Areas beachten.
 - KI nur serverseitig (ANTHROPIC_API_KEY aus Vercel), Änderungen der KI immer als Vorschau mit "Übernehmen".
 - KI nur serverseitig. Die KI schlägt vor, der Nutzer übernimmt. Die App muss immer auch ohne KI funktionieren.
+- Ideen und Vorschläge immer aus dem aktuellen Vorrat erzeugen, nie aus altem Cache.
 - Datenschutz: so wenig Daten wie nötig, besonders bei Kindern; alles löschbar.
 - Zurück = eine Ebene zurück, Pfeil und Geste identisch, Scrollposition bleibt erhalten.
 - Neue Farben/Komponenten immer über die Design-Tokens, damit alle Ansichten funktionieren.
@@ -654,6 +655,22 @@ Bei ALLEN Änderungen beachten.
   `/ideen` mit Filtern (schnell, veggie, mit Vorrat), Wunsch-Feld und – nur
   bei spontan – leise "Lieber ein paar Tage vorplanen?". Tagesstand unter
   `wasgibts.ideen`.
+- Ideen aus dem Bestand (`src/lib/dishIdeas.ts`, `src/lib/useStock.ts`):
+  Bestand = Vorrat + auf der Einkaufsliste Abgehaktes/"Haben wir schon"
+  (diese und Einkaufswoche) + eben im Chat Genanntes (`ChatState.extra`,
+  landet nicht im Vorrat). EINE Gerichte-Liste `DISHES` für "Was gibt's
+  heute?", Spontan kochen und Testmodus. Bewertung: sobald etwas da ist,
+  zählen genutzte Hauptzutaten, Abdeckung und Reste/bald Ablaufendes
+  (Kühlschrank seit 2+ Tagen, `soonToUse`) mehr als Liebling/kennt ihr;
+  Spontan: meiste Vorrats-Zutaten zuerst, reicht es ohne Einkauf nicht, dürfen
+  1–2 Kleinigkeiten fehlen. Jede Idee zeigt "nutzt: … · noch: …" (`usesLine`).
+  Vorrat (fast) leer (< 3 echte Zutaten): Grundzutaten-Gerichte und "Sag mir,
+  was da ist, dann passe ich die Ideen an." Ideen werden bei jeder Änderung
+  neu gerechnet; die gemerkte Position der Ideen-Karte gilt nur für denselben
+  Bestand (`stockKey`). Die KI bekommt den aktuellen Bestand kompakt (Name,
+  Menge, Ort, "gekauft", "bald verbrauchen"). Ohne KI: "Was kann ich heute
+  kochen?" (`isCookIdeasRequest`) und "Was mach ich mit Hack und Paprika?"
+  (`ingredientsFromQuestion`) öffnen die Spontan-Ideen.
 - Wunsch-Ideen (`src/lib/wishes.ts`, `wasgibts.wuensche`): "Mathis wünscht
   sich Pfannkuchen" im Chat (ohne Wochentag bzw. bei spontan immer lokal) oder
   auf `/ideen`; "Mathis' Wunsch" ganz oben, bis gewählt oder weggewischt.
