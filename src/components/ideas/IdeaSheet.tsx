@@ -27,7 +27,12 @@ export function IdeaSheet({ idea, onChoose, onDismiss, onClose }: { idea: Idea; 
         </div>
       </div>
       <p className="px-1 text-base">
-        {idea.needs.length ? `Dafür brauchst du noch: ${list(idea.needs)}.` : idea.uses.length ? `Geht mit ${list(idea.uses)} aus dem Vorrat.` : "Geht meistens mit dem, was im Haus ist."}
+        {[
+          idea.uses.length ? `Nutzt aus dem Vorrat: ${list(idea.uses)}.` : "",
+          idea.needs.length ? `Dafür brauchst du noch: ${list(idea.needs)}.` : idea.uses.length ? "Sonst ist alles da ✓" : "Geht meistens mit dem, was im Haus ist.",
+        ]
+          .filter(Boolean)
+          .join(" ")}
       </p>
       {idea.recipeId && (
         <Link href={`/kochbuch/rezept?id=${encodeURIComponent(idea.recipeId)}`} onClick={onClose} className="px-1 font-semibold text-accent-strong underline">

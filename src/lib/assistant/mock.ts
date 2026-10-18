@@ -8,6 +8,18 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { WEEKDAYS } from "../profile";
 import type { CreateMessage } from "./engine";
 import { dateForDay } from "./tools";
+import { EMPTY_STOCK_HINT, ingredientsFromQuestion, isCookIdeasRequest, stockIdeas, stockItem, usesLine } from "../dishIdeas";
+
+/** Namen aus "Vorrat (aktuell): Hack 500 g (Kühlschrank), Paprika (Kühlschrank)" im Kontext */
+function stockNames(system: string): string[] {
+  const line = system.split("\n").find((l) => l.startsWith("Vorrat (aktuell): "));
+  if (!line) return [];
+  return line
+    .slice("Vorrat (aktuell): ".length)
+    .split(/\),\s*/)
+    .map((part) => part.replace(/\s*\(.*$/, "").replace(/\s+\d.*$/, "").trim())
+    .filter(Boolean);
+}
 
 type ToolUse = { name: string; input: Record<string, unknown>; id?: string };
 type WeekResult = { woche: string; tage: { tag: string; datum: string; ausflug?: boolean; gericht?: string | null; rezept_id?: string; pause?: boolean; wochenende?: string }[] };
@@ -129,7 +141,6 @@ function everyday(t: string) {
       ? { person: appt[1], tag: /^(heute|morgen)$/i.test(appt[2]) ? appt[2].toLowerCase() : cap(appt[2]), bis: appt[3].toLowerCase() === "bis", uhrzeit: `${appt[4].padStart(2, "0")}:${appt[5] ?? "00"}`, titel: cap(appt[6].trim()) }
       : null,
     need: s.match(/^(?:wir|ich)\s+brauch(?:en|e)\s+(?:noch\s+)?(.+)$/i)?.[1] ?? null,
-    ideasWith: s.match(/was kann ich (?:heute\s+)?(?:mit|aus)\s+(.+?)\s+(?:machen|kochen)/i)?.[1] ?? null,
     quick: /nur (noch )?schnelle/i.test(s),
   };
 }
@@ -225,11 +236,18 @@ export function createMockModel(): CreateMessage {
       const prevAssistant = [...msgs].reverse().find((x, i) => i > 0 && x.role === "assistant" && typeof x.content === "string");
       const day = everyday(latest);
       const planningWeek = system.match(/wenn nichts gesagt wird: (\w+)/)?.[1] === "naechste" ? "naechste" : "aktuell";
-      if (day.ideasWith) {
-        const words = day.ideasWith.split(/,|\bund\b/).map((w) => w.trim().toLowerCase()).filter(Boolean);
-        const fromBook = cookbookTitles(system).filter((t) => words.some((w) => t.toLowerCase().includes(w.slice(0, 4))));
-        const ideas = [...fromBook.slice(0, 2), "Hack-Paprika-Pfanne mit Reis (25 Min.)", "Gefüllte Paprika (45 Min.)", "Chili con Carne (40 Min.)"].slice(0, 3);
-        return text(`Mit ${day.ideasWith} geht z. B. ${ideas[0]}, ${ideas[1]} oder ${ideas[2]}. Soll ich eins für heute einplanen? (Testmodus)`);
+      // Ideen aus dem aktuellen Vorrat im Kontext (+ eben Genanntes)
+      const named = ingredientsFromQuestion(latest);
+      if (named || isCookIdeasRequest(latest)) {
+        const todayIso = system.match(/^Heute: .*\((\d{4}-\d{2}-\d{2})\)/m)?.[1] ?? "";
+        const stock = [...stockNames(system), ...(named ?? [])].map((n) => stockItem(n, "s", todayIso));
+        const ideas = stockIdeas(stock);
+        const lines = ideas.map((i) => `${i.title} (${i.minutes} Min.${i.uses.length ? `, ${usesLine(i.uses, i.needs)}` : ""})`);
+        return text(
+          stock.length
+            ? `Mit dem, was da ist: ${lines.join("; ")}. Soll ich eins für heute einplanen? (Testmodus)`
+            : `Aus Grundzutaten geht z. B. ${lines.join("; ")}. ${EMPTY_STOCK_HINT} (Testmodus)`,
+        );
       }
       if (day.pantry) return tools([{ name: "vorrat_hinzufuegen", input: { sachen: [day.pantry] } }]);
       if (day.wish) return tools([{ name: "wunsch_merken", input: day.wish }]);

@@ -5,6 +5,8 @@ import { Clock, Plus, X } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { CARD, CARD_LIST, INPUT_BASE, PAGE_MAIN, buttonClass, chipClass } from "@/components/ui/styles";
 import { dishEmoji } from "@/lib/dishEmoji";
+import { EMPTY_STOCK_HINT, usesLine } from "@/lib/dishIdeas";
+import { openHelper } from "@/lib/assistant/open";
 import { IDEA_FILTERS, type IdeaFilter } from "@/lib/ideas";
 import { personLabel } from "@/lib/profile";
 import { showToast } from "@/lib/toast";
@@ -51,6 +53,11 @@ export function IdeasView() {
       <PageHeader title="Ideen" />
       <main className={PAGE_MAIN}>
         <p className="px-1 text-base text-muted">Was gibt&apos;s heute? Tipp eine Idee an – sie wird euer Heute.</p>
+        {data.nearlyEmpty && (
+          <button type="button" onClick={() => openHelper("spontan")} className="self-start px-1 text-left text-sm font-semibold text-accent-strong underline">
+            {EMPTY_STOCK_HINT}
+          </button>
+        )}
         <div role="group" aria-label="Filtern" className="flex flex-wrap gap-2">
           {IDEA_FILTERS.map((f) => (
             <button
@@ -78,7 +85,9 @@ export function IdeasView() {
                   <span className="min-w-0 flex-1">
                     <span className="block font-bold leading-snug">{idea.title}</span>
                     <span className="flex flex-wrap items-center gap-x-1.5 text-sm text-muted">
-                      <span className={idea.wishId ? "font-semibold text-accent-strong" : ""}>{idea.reason}</span>
+                      <span className={idea.wishId || idea.uses.length ? "font-semibold text-accent-strong" : ""}>
+                        {idea.uses.length && !idea.wishId ? usesLine(idea.uses, idea.needs, 3) : idea.reason}
+                      </span>
                       {idea.minutes !== null && (
                         <span className="inline-flex items-center gap-1">
                           · <Clock className="h-3.5 w-3.5" strokeWidth={2} aria-hidden /> {idea.minutes} Min.

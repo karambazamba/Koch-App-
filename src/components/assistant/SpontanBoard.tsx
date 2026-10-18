@@ -9,8 +9,7 @@ import type { Recipe } from "@/lib/cookbook";
 import { formatPantryItem, type PantryItem } from "@/lib/pantry";
 import type { NeverAgainEntry } from "@/lib/profile";
 import { SPONTAN_FILTERS, spontanIdeas, type SpontanFilter, type SpontanIdea } from "@/lib/spontan";
-
-const list = (items: string[]) => (items.length <= 1 ? items.join("") : `${items.slice(0, -1).join(", ")} und ${items[items.length - 1]}`);
+import { EMPTY_STOCK_HINT, stockNearlyEmpty, usesLine } from "@/lib/dishIdeas";
 
 /**
  * Spontan kochen: drei Ideen aus Vorrat und Kochbuch (schnellste zuerst,
@@ -31,6 +30,7 @@ export function SpontanBoard({
   onNavigate,
 }: {
   recipes: Record<string, Recipe>;
+  /** Aktueller Bestand: Vorrat + Gekauftes + eben Gesagtes */
   pantry: PantryItem[];
   neverAgain: NeverAgainEntry[];
   /** Beliebtheit der Basen (Reihenfolge der Basis-Chips) */
@@ -47,6 +47,7 @@ export function SpontanBoard({
   const ideas = spontanIdeas(recipes, pantry, filters, neverAgain);
   return (
     <div className="flex w-full flex-col gap-2" aria-label="Spontan kochen">
+      {stockNearlyEmpty(pantry) && <p className="text-sm font-semibold text-accent-strong">{EMPTY_STOCK_HINT}</p>}
       {pantry.length > 0 && (
         <p className="text-sm text-muted">
           Noch da: {pantry.slice(0, 6).map(formatPantryItem).join(", ")}
@@ -91,8 +92,7 @@ export function SpontanBoard({
                   <span className="block text-sm text-muted">
                     {[
                       idea.minutes !== null ? `${idea.minutes} Min.` : "",
-                      idea.uses.length ? `mit ${list(idea.uses.slice(0, 3))}` : "geht meistens mit dem, was da ist",
-                      idea.extra.length ? `noch holen: ${idea.extra[0]}` : "",
+                      idea.uses.length ? usesLine(idea.uses, idea.extra, 3) : "geht meistens mit Grundzutaten",
                     ]
                       .filter(Boolean)
                       .join(" · ")}

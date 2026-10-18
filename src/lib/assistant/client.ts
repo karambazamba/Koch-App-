@@ -205,7 +205,8 @@ function trimmed(data: AssistantData, currentWeekStart: string, pantry: Assistan
     mealPlans: pick(data.mealPlans),
     recipes,
     shopping: {},
-    pantry: (pantry ?? []).map(({ name, amount, unit, place, addedAt }) => ({ id: "", name, amount, unit, place, addedAt })),
+    // Kompakt: Name, Menge, Ort, seit wann; Gekauftes ("b:") als "gekauft" markiert
+    pantry: (pantry ?? []).slice(0, 80).map(({ id, name, amount, unit, place, addedAt }) => ({ id: id.startsWith("b:") ? "gekauft" : "", name, amount, unit, place, addedAt })),
   };
 }
 
@@ -224,7 +225,7 @@ export async function askAssistant(
     response = await fetch(ASSISTANT_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...accessHeaders() },
-      body: JSON.stringify({ deviceId: deviceId(), today, messages, pending, data: trimmed(data, currentWeekStart, loadPantry()), tipsThisWeek }),
+      body: JSON.stringify({ deviceId: deviceId(), today, messages, pending, data: trimmed(data, currentWeekStart, data.pantry ?? loadPantry()), tipsThisWeek }),
     });
   } catch {
     throw new LotteUnavailable("offline");

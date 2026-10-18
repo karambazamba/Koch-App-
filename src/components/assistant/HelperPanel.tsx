@@ -6,7 +6,9 @@ import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 
 import { ArrowUp, CircleHelp, Mic, MicOff, Square, Volume2, VolumeX, X } from "lucide-react";
 import { baseLabel, bumpBase, sortedBases, type BaseId } from "@/lib/bases";
 import { parseLeftovers, type ParsedLeftover } from "@/lib/leftovers/parser";
-import { addPantryItems, formatPantryItem, usePantry } from "@/lib/pantry";
+import { addPantryItems, formatPantryItem } from "@/lib/pantry";
+import { ingredientsFromQuestion, isCookIdeasRequest, mergeStock, realStock, soonToUse, stockItem } from "@/lib/dishIdeas";
+import { useStock } from "@/lib/useStock";
 import { effectivePlanStyle, hasKids, helperName, helperTitle, mealClockFor, saveProfile } from "@/lib/profile";
 import { addWish, parseWish, removeWish, wishLabel } from "@/lib/wishes";
 import { settingsChange } from "@/lib/settingsChat";
@@ -77,7 +79,8 @@ export type ChatTurnView = ChatTurn & {
 
 export type Proposal = { ops: ChangeOp[]; selected: Set<string> };
 /** `spontan`: Spontan kochen ("mit dem, was da ist") mit gewählten Filtern; null = aus */
-export type ChatState = { turns: ChatTurnView[]; proposal: Proposal | null; spontan: SpontanFilter[] | null };
+/** `extra`: eben im Chat genannte Zutaten ("Was mach ich mit Hack und Paprika?") – zählen für die Ideen, landen nicht im Vorrat */
+export type ChatState = { turns: ChatTurnView[]; proposal: Proposal | null; spontan: SpontanFilter[] | null; extra?: string[] };
 
 /** Erster Eintrag im Spontan-Modus */
 export function spontanStartTurn(hasPantry: boolean): ChatTurnView {
@@ -86,7 +89,7 @@ export function spontanStartTurn(hasPantry: boolean): ChatTurnView {
     local: true,
     spontan: true,
     text: hasPantry
-      ? "Mit dem, was da ist – schnellste zuerst:"
+      ? "Mit dem, was da ist:"
       : "Was ist noch da? Erzähl einfach. Bis dahin drei schnelle Sachen, die meistens gehen:",
   };
 }
@@ -145,7 +148,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   // Neue Person: geführtes Gespräch wie beim Kennenlernen
   const [guided, setGuided] = useState<OnboardingState | null>(null);
   const voice = data?.profile.helper.voice ?? "weiblich";
-  const pantry = usePantry();
+  // Aktueller Bestand: Vorrat + Gekauftes (abgehakt / "Haben wir schon") – immer live
+  const pantry = useStock();
   const tipStore = useTipStore();
   const shoppingSettings = useShoppingSettings();
   const shopping = useWeekShoppingList("planning");
@@ -184,7 +188,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     try {
       const shoppingDay = data.profile.shoppingDay || DEFAULT_SHOPPING_DAY;
       const weekStart = weekStartFor(today, shoppingDay);
-      const result = await askAssistant(history, chat.proposal?.ops ?? [], data, toIsoDate(today), weekStart, tipsShown(weekStart, tipStore));
+      // Immer der aktuelle Bestand (Vorrat + Gekauftes) – nie ein alter Stand
+      const result = await askAssistant(history, chat.proposal?.ops ?? [], { ...data, pantry: pantry ?? [] }, toIsoDate(today), weekStart, tipsShown(weekStart, tipStore));
       setChat((c) => {
         // Bisher abgewählte Punkte bleiben abgewählt, neue sind ausgewählt
         const previous = new Set(c.proposal?.ops.map((op) => op.id));
@@ -242,14 +247,24 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   };
 
   /** Spontan-Modus starten (Kachel, Knopf, "Was ist noch da?") */
-  const startSpontan = (said?: string, filters: SpontanFilter[] = []) => {
+  const startSpontan = (said?: string, filters: SpontanFilter[] = [], extra: string[] = []) => {
     setInput("");
     setChat((c) => ({
       ...c,
       spontan: filters,
-      turns: [...c.turns, ...(said ? [{ role: "user" as const, text: said, local: true }] : []), spontanStartTurn((pantry?.length ?? 0) > 0)],
+      extra,
+      turns: [
+        ...c.turns,
+        ...(said ? [{ role: "user" as const, text: said, local: true }] : []),
+        extra.length
+          ? { role: "assistant" as const, local: true, spontan: true, text: `Mit ${extra.join(", ")} und dem, was sonst da ist:` }
+          : spontanStartTurn(realStock(pantry ?? []).length > 0),
+      ],
     }));
   };
+
+  /** Bestand für die Ideen: Vorrat + Gekauftes + eben Genanntes */
+  const stockWithExtra = () => mergeStock(pantry ?? [], (chat.extra ?? []).map((n) => stockItem(n, "s", today ? toIsoDate(today) : "")));
 
   /** "Für heute übernehmen": heutiges Gericht ersetzen, das alte rutscht weiter (mit Rückgängig) */
   const takeIdea = (idea: SpontanIdea) => {
@@ -283,7 +298,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
 
   /** Mit KI: andere Ideen zum Vorrat */
   const askMoreIdeas = () => {
-    const items = (pantry ?? []).map(formatPantryItem);
+    const soon = new Set(soonToUse(pantry ?? [], today ? toIsoDate(today) : "").map((p) => p.name));
+    const items = stockWithExtra().map((p) => `${formatPantryItem(p)}${soon.has(p.name) ? " (bald verbrauchen)" : ""}`);
     const filters = (chat.spontan ?? [])
       .map((f) => (f.startsWith("basis:") ? `Basis ${baseLabel(f.slice(6) as BaseId)}` : SPONTAN_FILTERS.find((x) => x.value === f)?.label))
       .filter(Boolean);
@@ -528,6 +544,12 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
    */
   const localFallback = (t: string): boolean => {
     if (!data || !today) return false;
+    // "Was kann ich heute kochen?" / "Was mach ich mit Hack und Paprika?" → Ideen aus dem aktuellen Bestand
+    const named = ingredientsFromQuestion(t);
+    if (named || isCookIdeasRequest(t)) {
+      startSpontan(t, [], named ?? []);
+      return true;
+    }
     const quick = isQuickRequest(t) ? quickReply() : null;
     const reply = shoppingReply(t) ?? (quick ? { text: quick, undo: undefined } : null);
     if (reply) {
@@ -944,7 +966,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                 {lastSpontan && data && (
                   <SpontanBoard
                     recipes={data.recipes}
-                    pantry={pantry ?? []}
+                    pantry={stockWithExtra()}
                     neverAgain={data.profile.neverAgain}
                     baseCounts={data.profile.bases}
                     filters={chat.spontan ?? []}

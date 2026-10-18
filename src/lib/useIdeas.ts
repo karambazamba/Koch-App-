@@ -8,7 +8,8 @@ import { ideasFor, recentDishes, type Idea, type IdeaFilter } from "./ideas";
 import { LIKE_WEIGHTS, learnFromRecipe } from "./likes";
 import { createLocalStore } from "./localStore";
 import { loadMealPlans, replaceMealPlans, mealPlansWithWeek, useMealPlans, type StoredEntry } from "./mealPlan";
-import { usePantry } from "./pantry";
+import { stockKey, stockNearlyEmpty } from "./dishIdeas";
+import { useStock } from "./useStock";
 import type { HouseholdProfile } from "./profile";
 import { addManualItem, removeManualItems, sectionFor } from "./shoppingList";
 import { useExternalStore } from "./useExternalStore";
@@ -17,13 +18,20 @@ import { toIsoDate, useToday, useWeekPlans, weekStartFor, weekdayName } from "./
 import { loadWishes, restoreWishes, useWishes } from "./wishes";
 import type { Recipe } from "./cookbook";
 
-type IdeaDay = { version: 1; date: string; dismissed: string[]; index: number };
+/** `key`: Bestand, zu dem `index` gehört – ändert sich der Bestand, beginnt es wieder vorn */
+type IdeaDay = { version: 1; date: string; dismissed: string[]; index: number; key?: string };
 
 function migrate(raw: unknown): IdeaDay | null {
   if (!raw || typeof raw !== "object") return null;
   const d = raw as Partial<IdeaDay>;
   if (d.version !== 1 || typeof d.date !== "string") return null;
-  return { version: 1, date: d.date, dismissed: Array.isArray(d.dismissed) ? d.dismissed.filter((x) => typeof x === "string") : [], index: Number(d.index) || 0 };
+  return {
+    version: 1,
+    date: d.date,
+    dismissed: Array.isArray(d.dismissed) ? d.dismissed.filter((x) => typeof x === "string") : [],
+    index: Number(d.index) || 0,
+    key: typeof d.key === "string" ? d.key : undefined,
+  };
 }
 
 const store = createLocalStore("wasgibts.ideen", migrate);
@@ -53,20 +61,33 @@ export function putAside(date: string, idea: { id: string; wishId?: string }): (
   return null;
 }
 
-/** Nächste Idee (nach rechts wischen); nach der letzten wieder von vorn */
-export function nextIdea(date: string, count: number) {
+/** Nächste Idee (nach rechts wischen); nach der letzten wieder von vorn. `key` = aktueller Bestand */
+export function nextIdea(date: string, count: number, key?: string) {
   const s = dayState(date);
-  store.save({ ...s, index: count ? (s.index + 1) % count : 0 });
+  const index = s.key === key ? s.index : 0;
+  store.save({ ...s, key, index: count ? (index + 1) % count : 0 });
 }
 
-export type TodayIdeas = { ideas: Idea[]; index: number; profile: HouseholdProfile; recipes: Record<string, Recipe>; today: Date; todayIso: string };
+export type TodayIdeas = {
+  ideas: Idea[];
+  index: number;
+  profile: HouseholdProfile;
+  recipes: Record<string, Recipe>;
+  today: Date;
+  todayIso: string;
+  /** Kennung des Bestands (für nextIdea) */
+  stockKey: string;
+  /** Vorrat leer oder fast leer → Hinweis "Sag mir, was da ist …" */
+  nearlyEmpty: boolean;
+};
 
 /** Ideen für heute (`undefined` = lädt, `null` = kein Profil) */
 export function useTodayIdeas(filters: IdeaFilter[] = []): TodayIdeas | null | undefined {
   const today = useToday();
   const profile = useProfile();
   const recipes = useRecipes();
-  const pantry = usePantry();
+  // Immer der aktuelle Bestand (Vorrat + Gekauftes) – Ideen rechnen sich bei jeder Änderung neu
+  const pantry = useStock();
   const wishes = useWishes();
   const weekPlans = useWeekPlans();
   const mealPlans = useMealPlans();
@@ -74,7 +95,9 @@ export function useTodayIdeas(filters: IdeaFilter[] = []): TodayIdeas | null | u
   if (!today || profile === undefined || !recipes || !pantry || !wishes || !weekPlans || !mealPlans || state === undefined) return undefined;
   if (!profile) return null;
   const todayIso = toIsoDate(today);
-  const day = state && state.date === todayIso ? state : { dismissed: [], index: 0 };
+  const key = stockKey(pantry);
+  // Bestand geändert → die gemerkte Position gilt nicht mehr, es beginnt bei der besten Idee
+  const day = state && state.date === todayIso ? { ...state, index: state.key === key ? state.index : 0 } : { dismissed: [], index: 0 };
   const ideas = ideasFor({
     date: todayIso,
     recipes,
@@ -85,7 +108,7 @@ export function useTodayIdeas(filters: IdeaFilter[] = []): TodayIdeas | null | u
     dismissed: day.dismissed,
     filters,
   });
-  return { ideas, index: ideas.length ? day.index % ideas.length : 0, profile, recipes, today, todayIso };
+  return { ideas, index: ideas.length ? day.index % ideas.length : 0, profile, recipes, today, todayIso, stockKey: key, nearlyEmpty: stockNearlyEmpty(pantry) };
 }
 
 /**
