@@ -1,127 +1,197 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, Sparkles } from "lucide-react";
-import { CategoryDot } from "@/components/ui/Category";
+import { useState, type ReactNode } from "react";
+import { RefreshCw, SlidersHorizontal } from "lucide-react";
+import { Sheet } from "@/components/plan/Sheet";
+import { IdeaCards, type CardIdea } from "@/components/ideas/IdeaCards";
 import { buttonClass, chipClass } from "@/components/ui/styles";
-import { sortedBases, type BaseCounts } from "@/lib/bases";
-import type { Recipe } from "@/lib/cookbook";
+import { EMPTY_STOCK_HINT } from "@/lib/dishIdeas";
 import { formatPantryItem, type PantryItem } from "@/lib/pantry";
-import type { NeverAgainEntry } from "@/lib/profile";
-import { SPONTAN_FILTERS, spontanIdeas, type SpontanFilter, type SpontanIdea } from "@/lib/spontan";
-import { EMPTY_STOCK_HINT, stockNearlyEmpty, usesLine } from "@/lib/dishIdeas";
+import { SPONTAN_FILTERS, type SpontanFilter, type SpontanIdea } from "@/lib/spontan";
+import { sortedBases, type BaseCounts } from "@/lib/bases";
+
+const FILTER_KEY = "wasgibts.spontan.filter";
+
+/** Gewählte Filter gelten für die Sitzung */
+export function loadSpontanFilters(): SpontanFilter[] {
+  try {
+    const raw = JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? "[]");
+    return Array.isArray(raw) ? raw.filter((f): f is SpontanFilter => typeof f === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveSpontanFilters(filters: SpontanFilter[]) {
+  try {
+    sessionStorage.setItem(FILTER_KEY, JSON.stringify(filters));
+  } catch {
+    // ohne Speicher gilt die Auswahl nur für diese Antwort
+  }
+}
+
+/** Spontan-Idee → Karte */
+export const spontanCard = (i: SpontanIdea): CardIdea => ({ id: i.id, title: i.title, category: i.category, minutes: i.minutes, recipeId: i.recipeId, needs: i.extra });
+
+/** Lottes eine Zeile über den Ideen */
+export function spontanHeading(ideas: SpontanIdea[], filters: SpontanFilter[], extra: string[], nearlyEmpty: boolean): string {
+  if (!ideas.length) return "Damit fällt mir gerade nichts ein – sag mir, was noch da ist, oder pass die Ideen an.";
+  const from = extra.length ? `Mit ${extra.join(", ")} und dem, was da ist` : nearlyEmpty ? "Mit Grundzutaten" : "Mit dem, was da ist";
+  const order = filters.includes("reste") ? "Reste zuerst" : ideas.length > 1 ? "die schnellste zuerst" : "";
+  const count = ideas.length === 3 ? "diese drei" : ideas.length === 2 ? "diese zwei" : "das hier";
+  return `${from}, ${ideas.length === 1 ? "geht heute" : "gehen heute"} ${count}${order ? ` – ${order}` : ""}:`;
+}
 
 /**
- * Spontan kochen: drei Ideen aus Vorrat und Kochbuch (schnellste zuerst,
- * ohne Einkauf), Filter-Chips und "Für heute übernehmen". Rechnet live –
- * Filter und neu Erzähltes ändern die Ideen sofort.
+ * "Spontan kochen" im Chat – auf einen Blick: EIN Satz, eine graue Zeile
+ * "Noch da: … ändern", genau 3 kompakte Ideen mit "Heute", darunter
+ * "⚙️ Anpassen" und "🔄 Andere Ideen". Rechnet live aus dem Bestand.
  */
-export function SpontanBoard({
-  recipes,
-  pantry,
-  neverAgain,
-  baseCounts,
-  filters,
-  helperName,
-  ready,
-  onToggle,
-  onTake,
-  onAskMore,
+export function SpontanAnswer({
+  heading,
+  ideas,
+  stock,
+  nearlyEmpty,
+  onToday,
+  onAdjust,
+  onMore,
   onNavigate,
+  speaker,
 }: {
-  recipes: Record<string, Recipe>;
-  /** Aktueller Bestand: Vorrat + Gekauftes + eben Gesagtes */
-  pantry: PantryItem[];
-  neverAgain: NeverAgainEntry[];
-  /** Beliebtheit der Basen (Reihenfolge der Basis-Chips) */
-  baseCounts: BaseCounts;
-  filters: SpontanFilter[];
-  helperName: string;
-  /** KI eingerichtet → "Andere Ideen?" */
-  ready: boolean;
-  onToggle: (filter: SpontanFilter) => void;
-  onTake: (idea: SpontanIdea) => void;
-  onAskMore: () => void;
+  heading: string;
+  /** Lautsprecher neben dem Satz */
+  speaker?: ReactNode;
+  ideas: SpontanIdea[];
+  /** Aktueller Bestand (für "Noch da") */
+  stock: PantryItem[];
+  nearlyEmpty: boolean;
+  onToday: (idea: SpontanIdea) => void;
+  onAdjust: () => void;
+  onMore: () => void;
   onNavigate: () => void;
 }) {
-  const ideas = spontanIdeas(recipes, pantry, filters, neverAgain);
+  const shown = stock.slice(0, 5).map(formatPantryItem);
   return (
     <div className="flex w-full flex-col gap-2" aria-label="Spontan kochen">
-      {stockNearlyEmpty(pantry) && <p className="text-sm font-semibold text-accent-strong">{EMPTY_STOCK_HINT}</p>}
-      {pantry.length > 0 && (
-        <p className="text-sm text-muted">
-          Noch da: {pantry.slice(0, 6).map(formatPantryItem).join(", ")}
-          {pantry.length > 6 ? " …" : ""}{" "}
-          <Link href="/vorrat" onClick={onNavigate} className="font-semibold text-accent-strong underline">
-            ändern
-          </Link>
-        </p>
+      <div className="flex w-full items-end gap-1">
+        <p className="max-w-[85%] rounded-2xl rounded-bl-md border border-line bg-surface px-4 py-2.5 text-base leading-snug text-ink">{heading}</p>
+        {speaker}
+      </div>
+      <p className="px-1 text-sm text-muted">
+        {nearlyEmpty && shown.length === 0 ? (
+          EMPTY_STOCK_HINT
+        ) : (
+          <>
+            Noch da: {shown.join(", ")}
+            {stock.length > 5 ? " …" : ""}
+            {nearlyEmpty ? ` – ${EMPTY_STOCK_HINT}` : ""}
+          </>
+        )}{" "}
+        <Link href="/vorrat" onClick={onNavigate} className="font-semibold text-accent-strong underline">
+          ändern
+        </Link>
+      </p>
+      {ideas.length > 0 && (
+        <IdeaCards
+          ideas={ideas.map(spontanCard)}
+          label="Ideen"
+          onToday={(card) => {
+            const idea = ideas.find((i) => i.id === card.id);
+            if (idea) onToday(idea);
+          }}
+          onNavigate={onNavigate}
+        />
       )}
-      <div className="flex flex-wrap gap-2" aria-label="Filter">
-        {SPONTAN_FILTERS.map((f) => (
-          <button key={f.value} type="button" aria-pressed={filters.includes(f.value)} onClick={() => onToggle(f.value)} className={chipClass(filters.includes(f.value))}>
-            {f.label}
+      <div className="flex flex-wrap gap-2">
+        <button type="button" onClick={onAdjust} className={chipClass(false)}>
+          <SlidersHorizontal className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+          Anpassen
+        </button>
+        {ideas.length > 0 && (
+          <button type="button" onClick={onMore} className={chipClass(false)}>
+            <RefreshCw className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+            Andere Ideen
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Ältere Ideen-Antworten: eingeklappt "Frühere Ideen" */
+export function EarlierIdeas({ titles }: { titles: string[] }) {
+  const [open, setOpen] = useState(false);
+  if (!titles.length) return null;
+  return (
+    <div className="self-start text-sm text-muted">
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="font-semibold underline-offset-2 active:underline">
+        Frühere Ideen {open ? "▾" : "▸"}
+      </button>
+      {open && <p className="mt-1">{titles.join(" · ")}</p>}
+    </div>
+  );
+}
+
+/** "Ideen anpassen": Zeit, Vorrang, Beilage – dann 3 neue Ideen */
+export function AdjustSheet({
+  filters,
+  bases,
+  onApply,
+  onClose,
+}: {
+  filters: SpontanFilter[];
+  /** Beliebtheit der Beilagen (Reihenfolge) */
+  bases: BaseCounts;
+  onApply: (filters: SpontanFilter[]) => void;
+  onClose: () => void;
+}) {
+  const [draft, setDraft] = useState<SpontanFilter[]>(filters);
+  const toggle = (f: SpontanFilter) => setDraft((d) => (d.includes(f) ? d.filter((x) => x !== f) : [...d, f]));
+  const fast = draft.includes("schnell");
+  const label = (f: SpontanFilter) => SPONTAN_FILTERS.find((x) => x.value === f)?.label ?? f;
+  return (
+    <Sheet title="Ideen anpassen" onClose={onClose} above>
+      <Group title="Zeit">
+        <button type="button" role="radio" aria-checked={fast} onClick={() => !fast && toggle("schnell")} className={chipClass(fast)}>
+          {label("schnell")}
+        </button>
+        <button type="button" role="radio" aria-checked={!fast} onClick={() => fast && toggle("schnell")} className={chipClass(!fast)}>
+          egal
+        </button>
+      </Group>
+      <Group title="Vorrang" multi>
+        {(["reste", "einkauf"] as const).map((f) => (
+          <button key={f} type="button" aria-pressed={draft.includes(f)} onClick={() => toggle(f)} className={chipClass(draft.includes(f))}>
+            {label(f)}
           </button>
         ))}
-        {/* Basis nach Beliebtheit (ohne Quinoa – selten spontan da) */}
-        {sortedBases(baseCounts)
-          .filter((b) => b.id !== "quinoa")
-          .map((b) => {
-            const value: SpontanFilter = `basis:${b.id}`;
-            return (
-              <button key={b.id} type="button" aria-pressed={filters.includes(value)} onClick={() => onToggle(value)} className={chipClass(filters.includes(value))}>
-                {b.label}
-              </button>
-            );
-          })}
+      </Group>
+      <Group title="Beilage" multi>
+        {sortedBases(bases).filter((b) => b.id !== "quinoa").map((b) => {
+          const f: SpontanFilter = `basis:${b.id}`;
+          return (
+            <button key={b.id} type="button" aria-pressed={draft.includes(f)} onClick={() => toggle(f)} className={chipClass(draft.includes(f))}>
+              {b.label}
+            </button>
+          );
+        })}
+      </Group>
+      <p className="-mt-2 px-1 text-sm text-muted">Keine Beilage gewählt = egal.</p>
+      <button type="button" onClick={() => onApply(draft)} className={`${buttonClass("primary", "lg")} mb-2 w-full`}>
+        3 neue Ideen zeigen
+      </button>
+    </Sheet>
+  );
+}
+
+function Group({ title, multi = false, children }: { title: string; multi?: boolean; children: React.ReactNode }) {
+  return (
+    <section className="flex flex-col gap-2" aria-label={title}>
+      <h3 className="px-1 text-xs font-bold uppercase tracking-wider text-muted">{title}</h3>
+      <div className="flex flex-wrap gap-2" role={multi ? "group" : "radiogroup"} aria-label={title}>
+        {children}
       </div>
-      {ideas.length === 0 ? (
-        <p className="rounded-2xl rounded-bl-md border border-line bg-surface px-4 py-2.5 text-base leading-snug">
-          {filters.includes("einkauf")
-            ? "Damit fällt mir gerade nichts ein – erzähl mir, was noch da ist."
-            : "Ohne Einkauf fällt mir damit gerade nichts ein – probier „🛒 1 Sache darf fehlen“ oder erzähl mir, was noch da ist."}
-        </p>
-      ) : (
-        <ul className="w-full overflow-hidden rounded-card border border-line bg-surface shadow-card">
-          {ideas.map((idea) => (
-            <li key={idea.id} className="flex flex-col gap-2 border-b border-line px-4 py-3 last:border-b-0">
-              <div className="flex items-start gap-3">
-                {idea.category && <CategoryDot category={idea.category} />}
-                <span className="min-w-0 flex-1">
-                  <span className="block font-bold leading-snug">{idea.title}</span>
-                  <span className="block text-sm text-muted">
-                    {[
-                      idea.minutes !== null ? `${idea.minutes} Min.` : "",
-                      idea.uses.length ? usesLine(idea.uses, idea.extra, 3) : "geht meistens mit Grundzutaten",
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </span>
-                </span>
-                {idea.recipeId && (
-                  <Link
-                    href={`/kochbuch/rezept?id=${encodeURIComponent(idea.recipeId)}`}
-                    onClick={onNavigate}
-                    aria-label={`Rezept ${idea.title} ansehen`}
-                    className="-mr-2 flex h-10 w-10 shrink-0 items-center justify-center text-stone-400"
-                  >
-                    <ChevronRight className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-                  </Link>
-                )}
-              </div>
-              <button type="button" onClick={() => onTake(idea)} className={`${buttonClass("soft", "sm")} self-start`}>
-                Für heute übernehmen
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      {ready && (
-        <button type="button" onClick={onAskMore} className={`${chipClass(false, "muted")} self-start`}>
-          <Sparkles className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-          Andere Ideen von {helperName}
-        </button>
-      )}
-    </div>
+    </section>
   );
 }

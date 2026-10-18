@@ -9,10 +9,13 @@ export function Sheet({
   title,
   onClose,
   children,
+  above = false,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  /** Über dem Küchenhelfer-Panel öffnen */
+  above?: boolean;
 }) {
   // Escape schließt; Seite dahinter nicht mitscrollen
   useEffect(() => {
@@ -27,7 +30,7 @@ export function Sheet({
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-30 flex items-end justify-center" role="dialog" aria-modal aria-label={title}>
+    <div className={`fixed inset-0 flex items-end justify-center ${above ? "z-50" : "z-30"}`} role="dialog" aria-modal aria-label={title}>
       <button
         type="button"
         aria-label="Schließen"

@@ -176,6 +176,20 @@ export function spontanIdeas(
   pantry: PantryItem[],
   filters: SpontanFilter[],
   neverAgain: NeverAgainEntry[],
+  /** Schon gezeigte Ideen ("Andere Ideen" – keine Wiederholung) */
+  exclude: string[] = [],
+): SpontanIdea[] {
+  const top = rankedSpontanIdeas(recipes, pantry, filters, neverAgain).filter((i) => !exclude.includes(i.id)).slice(0, 3);
+  // Die drei besten – angezeigt schnellste zuerst (mit "Reste zuerst" die mit den meisten Resten)
+  return filters.includes("reste") ? top : [...top].sort((a, b) => (a.minutes ?? 999) - (b.minutes ?? 999));
+}
+
+/** Alle passenden Ideen, beste zuerst (Grundlage für spontanIdeas) */
+export function rankedSpontanIdeas(
+  recipes: Record<string, Recipe>,
+  pantry: PantryItem[],
+  filters: SpontanFilter[],
+  neverAgain: NeverAgainEntry[],
 ): SpontanIdea[] {
   const fast = filters.includes("schnell");
   const allowed = filters.includes("einkauf") ? 1 : 0;
@@ -190,12 +204,11 @@ export function spontanIdeas(
   const stock = realStock(pantry);
 
   if (stock.length === 0) {
-    const pool = bases.length ? DISHES.filter((d) => !d.season) : DISHES.filter((d) => d.usual);
+    // Leerer Vorrat: zuerst, was mit Grundzutaten meistens geht, dann der Rest
+    const pool = [...DISHES.filter((d) => d.usual).sort((a, b) => a.minutes - b.minutes), ...DISHES.filter((d) => !d.usual && !d.season)];
     return pool
-      .map((c) => ({ id: `k:${c.title}`, title: c.title, minutes: c.minutes, category: c.category, uses: [], extra: [] }))
-      .filter(allowedIdea)
-      .sort(byTime)
-      .slice(0, 3);
+      .map((c) => ({ id: `k:${c.title}`, title: c.title, minutes: c.minutes, category: c.category, uses: [], extra: c.needs.filter((n) => !AT_HOME.test(n)) }))
+      .filter(allowedIdea);
   }
 
   const check = (names: string[]) => {
@@ -214,10 +227,38 @@ export function spontanIdeas(
   const order = fast ? (a: SpontanIdea, b: SpontanIdea) => byTime(a, b) || byStock(a, b) : byStock;
   const unique = (list: SpontanIdea[]) => list.filter((i, n) => list.findIndex((o) => o.title.toLowerCase() === i.title.toLowerCase()) === n);
   const strict = unique(all.filter((i) => i.extra.length <= allowed).sort(order));
-  if (strict.length >= 3) return strict.slice(0, 3);
-  // Zu wenig ohne Einkauf: 1–2 Kleinigkeiten dürfen fehlen
+  // Danach (auch für "Andere Ideen"): 1–2 Kleinigkeiten dürfen fehlen
   const more = unique(all.filter((i) => i.extra.length > allowed && i.extra.length <= 2).sort(byStock)).filter(
     (i) => !strict.some((s) => s.title.toLowerCase() === i.title.toLowerCase()),
   );
-  return [...strict, ...more].slice(0, 3);
+  if (strict.length + more.length > 0) return [...strict, ...more];
+  // Nie ohne Ideen: passende Gerichte, auch wenn mehr dafür nötig ist (wird genannt)
+  return unique(
+    [...fromBook, ...classics]
+      .filter(allowedIdea)
+      .sort((a, b) => a.extra.length - b.extra.length || byTime(a, b)),
+  );
+}
+
+/**
+ * Filter aus dem Gesagten: "Was Schnelles mit Nudeln" → ⚡ + Nudeln,
+ * "Reste zuerst", "darf was fehlen". Leer, wenn nichts davon vorkommt.
+ */
+export function filtersFromText(text: string): SpontanFilter[] {
+  const t = text.toLowerCase();
+  const filters: SpontanFilter[] = [];
+  if (/\bschnell(es|e|er)?\b|unter 20|fix\b|zack/.test(t)) filters.push("schnell");
+  if (/\breste\b.*\bzuerst\b|\bmit (den )?resten\b|\breste verwerten\b/.test(t)) filters.push("reste");
+  if (/darf (was|etwas|eine sache) fehlen|einkaufen (ist )?ok|kurz einkaufen/.test(t)) filters.push("einkauf");
+  for (const id of ["kartoffeln", "reis", "nudeln", "brot", "salat"] as const) {
+    const words = { kartoffeln: /kartoffel/, reis: /\breis\b/, nudeln: /nudel|pasta|spaghetti/, brot: /\bbrot\b|stulle/, salat: /\bsalat\b/ }[id];
+    if (words.test(t)) filters.push(`basis:${id}`);
+  }
+  return filters;
+}
+
+/** Klingt wie "Ideen, aber bitte so": "Was Schnelles mit Nudeln", "Lieber was mit Reis", "Nur schnelle Sachen" */
+export function isIdeaFilterRequest(text: string): boolean {
+  const t = text.trim();
+  return t.length <= 60 && filtersFromText(t).length > 0 && /^(was|etwas|irgendwas|lieber|nur|bitte|mit|und)\b/i.test(t) && !/einkaufsliste|auf die liste|vorrat|plan|woche|morgen|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag/i.test(t);
 }
