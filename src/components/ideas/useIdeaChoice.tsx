@@ -14,32 +14,33 @@ const list = (items: string[]) => (items.length <= 1 ? items.join("") : `${items
  * Idee auswählen: wird "Heute". Braucht sie noch etwas, fragt Lotte, ob sie's
  * für heute auf die Liste setzen soll. Danach "Rückgängig".
  */
-export function useIdeaChoice(): { choose: (idea: Idea, profile: HouseholdProfile, today: Date, recipes: Record<string, Recipe>) => void; dialog: ReactNode } {
+export function useIdeaChoice(when: "heute" | "morgen" = "heute"): { choose: (idea: Idea, profile: HouseholdProfile, today: Date, recipes: Record<string, Recipe>) => void; dialog: ReactNode } {
   // Erst fragen, dann übernehmen – sonst verschwindet die Ideen-Karte (und mit ihr die Frage)
+  const When = when === "morgen" ? "Morgen" : "Heute";
   const [pending, setPending] = useState<{ idea: Idea; profile: HouseholdProfile; today: Date; recipes: Record<string, Recipe> } | null>(null);
   const choose = (idea: Idea, profile: HouseholdProfile, today: Date, recipes: Record<string, Recipe>) => {
     if (idea.needs.length) {
       setPending({ idea, profile, today, recipes });
       return;
     }
-    showToast({ text: `Heute gibt's ${idea.title} ✓`, undo: chooseIdea(idea, profile, today, recipes) });
+    showToast({ text: `${When} gibt's ${idea.title} ✓`, undo: chooseIdea(idea, profile, today, recipes) });
   };
   const dialog = pending ? (
     <ConfirmDialog
-      title="Soll ich dir das für heute auf die Liste setzen?"
+      title={`Soll ich dir das für ${when} auf die Liste setzen?`}
       text={`Dafür brauchst du noch: ${list(pending.idea.needs)}.`}
       confirmLabel="Auf die Liste"
       cancelLabel="Haben wir"
       onCancel={() => {
         setPending(null);
-        showToast({ text: `Heute gibt's ${pending.idea.title} ✓`, undo: chooseIdea(pending.idea, pending.profile, pending.today, pending.recipes) });
+        showToast({ text: `${When} gibt's ${pending.idea.title} ✓`, undo: chooseIdea(pending.idea, pending.profile, pending.today, pending.recipes) });
       }}
       onConfirm={() => {
         setPending(null);
         const undoList = addForToday(pending.idea.needs, pending.profile, pending.today);
         const undo = chooseIdea(pending.idea, pending.profile, pending.today, pending.recipes);
         showToast({
-          text: `Heute gibt's ${pending.idea.title} ✓ Steht unter „Für heute“ auf der Liste.`,
+          text: `${When} gibt's ${pending.idea.title} ✓ Steht unter „Für heute“ auf der Liste.`,
           undo: () => {
             undoList();
             undo();

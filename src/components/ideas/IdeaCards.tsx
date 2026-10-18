@@ -41,6 +41,7 @@ export function IdeaCards({
   onOpen,
   onNavigate,
   dense = false,
+  action = "Heute",
 }: {
   ideas: CardIdea[];
   label?: string;
@@ -51,6 +52,8 @@ export function IdeaCards({
   onNavigate?: () => void;
   /** Etwas flacher (Startseite) */
   dense?: boolean;
+  /** Knopf rechts ("Heute" bzw. nach dem Essen "Morgen") */
+  action?: "Heute" | "Morgen";
 }) {
   return (
     <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-card" aria-label={label}>
@@ -89,8 +92,8 @@ export function IdeaCards({
             ) : (
               <span className={area}>{body}</span>
             )}
-            <button type="button" onClick={() => onToday(idea)} aria-label={`${idea.title} heute`} className={`${buttonClass("soft", "sm")} shrink-0 ${dense ? "my-1" : ""}`}>
-              Heute
+            <button type="button" onClick={() => onToday(idea)} aria-label={`${idea.title} ${action.toLowerCase()}`} className={`${buttonClass("soft", "sm")} shrink-0 ${dense ? "my-1" : ""}`}>
+              {action}
             </button>
           </li>
         );

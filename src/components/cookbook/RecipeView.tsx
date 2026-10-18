@@ -19,6 +19,9 @@ import { learnFromRecipe, LIKE_WEIGHTS } from "@/lib/likes";
 import { adoptBuiltin, findRecipe, isBuiltin } from "@/lib/baking";
 import { ovenText } from "@/lib/baking/steps";
 import { useProfile } from "@/lib/useProfile";
+import { markCookedIfToday } from "@/lib/mealDone";
+import { useMealPlans } from "@/lib/mealPlan";
+import { useToday, useWeekPlans } from "@/lib/weekPlan";
 import { MachineStepView, MachineToggle, useMachineView } from "./MachineSteps";
 /** Datum (lokale Zeit) aus Zeitstempel oder "YYYY-MM-DD", z. B. "23.10.2026" */
 function formatDate(iso: string): string {
@@ -41,6 +44,9 @@ function RecipeDetails({ id }: { id: string }) {
   const profile = useProfile();
   const [justCooked, setJustCooked] = useState(false);
   const machine = useMachineView(profile);
+  const today = useToday();
+  const weekPlans = useWeekPlans();
+  const mealPlans = useMealPlans();
 
   if (recipes === undefined) return <div className={`${CARD} m-4 h-64 animate-pulse`} />;
   // Auch eingebaute Backrezepte ("b:…") lassen sich ansehen
@@ -67,6 +73,8 @@ function RecipeDetails({ id }: { id: string }) {
 
   const cooked = (rating: "up" | "down" | null) => {
     recordCooked(recipe.id, rating);
+    // Heutiges Gericht → das Essen ist vorbei (Startseite zeigt schon das nächste)
+    if (profile && today && weekPlans && mealPlans) markCookedIfToday({ profile, weekPlans, mealPlans, recipes }, today, recipe.id);
     // Gekocht (und evtl. 👍) → Zutaten zählen als Vorliebe
     if (rating !== "down") learnFromRecipe(recipe, rating === "up" ? LIKE_WEIGHTS.up : LIKE_WEIGHTS.cooked);
     setJustCooked(true);

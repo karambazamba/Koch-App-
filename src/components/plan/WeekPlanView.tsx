@@ -13,7 +13,9 @@ import { estimateCost } from "@/lib/costs";
 import {
   clearSlot,
   composeWeek,
+  loadMealPlans,
   moveEntry,
+  replaceMealPlans,
   setDouble,
   setEntry,
   setNote,
@@ -24,6 +26,8 @@ import {
   type ResolvedEntry,
 } from "@/lib/mealPlan";
 import { useProfile } from "@/lib/useProfile";
+import { moveToTomorrow, unmarkCooked, useCookedDays } from "@/lib/mealDone";
+import { showToast } from "@/lib/toast";
 import { applyTemplate, saveTemplate, templateDays, useTemplates } from "@/lib/templates";
 import {
   DEFAULT_SHOPPING_DAY,
@@ -86,6 +90,7 @@ export function WeekPlanView() {
   const mealPlans = useMealPlans();
   const recipes = useRecipes();
   const templates = useTemplates();
+  const cookedDays = useCookedDays();
   const [view, setView] = useState<"tag" | "woche">("tag");
   const [offset, setOffset] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
@@ -97,7 +102,7 @@ export function WeekPlanView() {
   const { bfcacheId } = useRouter();
   const [swapHandled, setSwapHandled] = useState<string | null>(null);
 
-  if (!today || profile === undefined || !weekPlans || !mealPlans || !recipes || !templates) return SKELETON;
+  if (!today || profile === undefined || !weekPlans || !mealPlans || !recipes || !templates || !cookedDays) return SKELETON;
 
   // Planungswoche ab Einkaufstag (Profil), 7 Tage
   const shoppingDay = profile?.shoppingDay ?? DEFAULT_SHOPPING_DAY;
@@ -122,6 +127,17 @@ export function WeekPlanView() {
   const changeWeek = (next: number) => {
     setOffset(next);
     setSelected(null);
+  };
+  // Heute nach dem Essen (von selbst als gekocht vermerkt): doch nicht gekocht → auf morgen
+  const moveTodayToTomorrow = () => {
+    if (!profile) return;
+    const before = loadMealPlans();
+    const result = moveToTomorrow({ profile, weekPlans, mealPlans: before, recipes }, todayIso);
+    if (!result) return;
+    unmarkCooked(todayIso);
+    replaceMealPlans(result.weeks);
+    // Rückgängig: Plan wie vorher – dann zählt es wieder von selbst als gekocht
+    showToast({ text: result.text, undo: () => replaceMealPlans(before) });
   };
   const flash = (text: string) => {
     setToast(text);
@@ -196,6 +212,7 @@ export function WeekPlanView() {
               onMore={() => setSheet({ type: "entry", weekday: selectedDay.weekday })}
               onCookAgain={() => setSheet({ type: "again", weekday: selectedDay.weekday })}
               onRemoveNote={() => setNote(weekStart, selectedDay.weekday, "")}
+              onMoveTomorrow={!readOnly && selectedDay.date === todayIso && cookedDays[todayIso] && selectedDay.slot.entry ? moveTodayToTomorrow : undefined}
               onSwipe={(dir) => {
                 const next = week.days[index + dir];
                 if (next) setSelected(next.weekday);

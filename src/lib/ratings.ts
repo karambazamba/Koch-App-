@@ -5,7 +5,7 @@
 
 import { useExternalStore } from "./useExternalStore";
 import { bumpBase, baseFromText, recipeBase } from "./bases";
-import { deleteRecipe, rateRecipeUp, restoreRecipe, type Recipe } from "./cookbook";
+import { deleteRecipe, rateRecipeUp, recipeBeforeDay, restoreRecipe, type Recipe } from "./cookbook";
 import { learnFromRecipe, LIKE_WEIGHTS } from "./likes";
 import { createLocalStore } from "./localStore";
 import { dishStatus } from "./dishStatus";
@@ -77,7 +77,9 @@ export function isFirstTime(
   mealPlans: Record<string, Record<string, StoredEntry>>,
   recipes: Record<string, Recipe>,
 ): boolean {
-  const recipe = entry.recipeId ? recipes[entry.recipeId] : undefined;
+  const found = entry.recipeId ? recipes[entry.recipeId] : undefined;
+  // Am Kochtag selbst mitgezählt (nach dem Essen automatisch) zählt nicht als "schon mal"
+  const recipe = found ? recipeBeforeDay(found, date) : undefined;
   if (recipe && (recipe.cookedCount > 0 || recipe.thumbsUp > 0)) return false;
   const title = entry.title.trim().toLowerCase();
   const same = (s: StoredEntry) =>
@@ -117,8 +119,11 @@ export function ratingCandidate(
   // Am Wochenende (frei/locker) keine Bewertungsfragen
   if (!day || day.away || !entry || day.weekend) return null;
   if (!morning && minutesNow < minutesOf(profile.mealClock[day.mealTime]) + ASK_AFTER_MINUTES) return null;
-  // Nur bei Neuem: bekannte Gerichte (Kochbuch-Klassiker, Freitext, Wunsch) nie
-  if (dishStatus(entry, recipes) !== "neu" || !isFirstTime(entry, iso, week, mealPlans, recipes)) return null;
+  // Nur bei Neuem: bekannte Gerichte (Kochbuch-Klassiker, Freitext, Wunsch) nie.
+  // Status wie vor dem Kochtag – nach dem Essen wird automatisch mitgezählt.
+  const own = entry.recipeId ? recipes[entry.recipeId] : undefined;
+  const before = own ? { ...recipes, [own.id]: recipeBeforeDay(own, iso) } : recipes;
+  if (dishStatus(entry, before) !== "neu" || !isFirstTime(entry, iso, week, mealPlans, recipes)) return null;
   return { date: iso, weekday: day.weekday, title: entry.title, recipeId: entry.recipeId };
 }
 
@@ -126,7 +131,8 @@ export function ratingCandidate(
 export function rateUp(candidate: RatingCandidate, profile: HouseholdProfile, recipes: Record<string, Recipe>) {
   markRated(candidate.date, "up");
   const recipe = candidate.recipeId ? recipes[candidate.recipeId] : undefined;
-  if (recipe) rateRecipeUp(recipe.id);
+  // Schon nach dem Essen mitgezählt → nur noch der Daumen
+  if (recipe) rateRecipeUp(recipe.id, { count: !recipe.lastCookedAt?.startsWith(candidate.date) });
   const base = recipe ? recipeBase(recipe) : baseFromText(candidate.title);
   if (base) saveProfile({ ...profile, bases: bumpBase(profile.bases, base) });
   // Zutaten des Gerichts zählen als Vorliebe

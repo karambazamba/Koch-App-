@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRef } from "react";
-import { BookOpen, Clock, Coins, MapPin, MoreHorizontal, Plus, Repeat, RotateCcw, Soup, StickyNote, Users, X } from "lucide-react";
+import { BookOpen, Check, Clock, Coins, MapPin, MoreHorizontal, Plus, Repeat, RotateCcw, Soup, StickyNote, Users, X } from "lucide-react";
 import { CATEGORY_DOT, CategoryChip, EMPTY_DOT } from "@/components/ui/Category";
 import { CARD, buttonClass } from "@/components/ui/styles";
 import type { Recipe } from "@/lib/cookbook";
@@ -80,12 +80,14 @@ type CardProps = {
   onMore: () => void;
   onCookAgain: () => void;
   onRemoveNote: () => void;
+  /** Heute nach dem Essen (zählt als gekocht): doch nicht gekocht → auf morgen */
+  onMoveTomorrow?: () => void;
   /** Seitlich wischen: -1 = vorheriger, 1 = nächster Tag */
   onSwipe: (direction: -1 | 1) => void;
 };
 
 /** Große Karte für den gewählten Tag */
-export function DayCard({ day, recipes, readOnly, onPlan, onSwap, onMore, onCookAgain, onRemoveNote, onSwipe }: CardProps) {
+export function DayCard({ day, recipes, readOnly, onPlan, onSwap, onMore, onCookAgain, onRemoveNote, onMoveTomorrow, onSwipe }: CardProps) {
   const start = useRef<{ x: number; y: number } | null>(null);
   const entry = day.slot.entry;
   const recipe = entry?.recipeId ? recipes[entry.recipeId] : undefined;
@@ -207,6 +209,18 @@ export function DayCard({ day, recipes, readOnly, onPlan, onSwap, onMore, onCook
               </button>
             )}
           </p>
+        )}
+
+        {onMoveTomorrow && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-stone-50 px-3 py-2 text-sm">
+            <span className="flex items-center gap-1.5 font-semibold text-emerald-700">
+              <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+              Gekocht
+            </span>
+            <button type="button" onClick={onMoveTomorrow} className="font-semibold text-accent-strong underline-offset-2 active:underline">
+              Doch nicht? Auf morgen verschieben
+            </button>
+          </div>
         )}
 
         {!day.away &&

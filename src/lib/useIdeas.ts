@@ -82,8 +82,10 @@ export type TodayIdeas = {
 };
 
 /** Ideen für heute (`undefined` = lädt, `null` = kein Profil) */
-export function useTodayIdeas(filters: IdeaFilter[] = []): TodayIdeas | null | undefined {
-  const today = useToday();
+export function useTodayIdeas(filters: IdeaFilter[] = [], opts: { tomorrow?: boolean } = {}): TodayIdeas | null | undefined {
+  const now = useToday();
+  // Nach dem Essen: Ideen für morgen ("Was gibt's morgen?")
+  const today = now && opts.tomorrow ? new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 12) : now;
   const profile = useProfile();
   const recipes = useRecipes();
   // Immer der aktuelle Bestand (Vorrat + Gekauftes) – Ideen rechnen sich bei jeder Änderung neu
