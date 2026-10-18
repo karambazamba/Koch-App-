@@ -33,9 +33,9 @@ export function ProposalCard({ data, proposal, adjusting, onToggle, onApply, onA
   return (
     <section className={`${CARD} flex flex-col gap-3 p-4`} aria-label="Vorschlag">
       <div>
-        <h3 className="text-lg font-bold">Vorschlag</h3>
+        <h3 className="text-lg font-bold">Das würde ich machen:</h3>
         <p className="text-sm text-muted">
-          {adjusting ? "Sag oder schreib unten, was anders sein soll." : "Noch nichts geändert – prüfen, abwählen, übernehmen."}
+          {adjusting ? "Sag oder schreib unten, was anders sein soll." : "Gespeichert wird erst mit „Übernehmen“."}
         </p>
       </div>
 
@@ -62,7 +62,7 @@ export function ProposalCard({ data, proposal, adjusting, onToggle, onApply, onA
         </button>
         <button type="button" onClick={onAdjust} className={buttonClass("secondary")}>
           <Pencil className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-          Anpassen
+          Ändern
         </button>
         <button type="button" onClick={onApply} disabled={count === 0} className={buttonClass("primary")}>
           <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />

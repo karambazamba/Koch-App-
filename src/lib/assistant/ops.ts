@@ -16,6 +16,7 @@ import {
   type PlanWeek,
   type StoredEntry,
 } from "../mealPlan";
+import type { PantryItem, PantryPlace } from "../pantry";
 import type { HouseholdProfile } from "../profile";
 import type { Section, WeekList } from "../shoppingList";
 import { createWeekPlan, planForWeek, type WeekPlan, type WeekWish } from "../weekPlan";
@@ -27,6 +28,8 @@ export type AssistantData = {
   mealPlans: Record<string, Record<string, StoredEntry>>;
   recipes: Record<string, Recipe>;
   shopping: Record<string, WeekList>;
+  /** Vorrat (nur zum Lesen für die KI; neue Sachen über `add_pantry`) */
+  pantry?: PantryItem[];
 };
 
 /** Ein Tag einer Planungswoche – es gibt genau ein Hauptgericht pro Tag */
@@ -61,7 +64,15 @@ export type ChangeOp =
   | { id: string; type: "move_meal"; from: SlotRef; to: SlotRef }
   | { id: string; type: "update_week"; weekStart: string; changes: WeekChanges }
   | { id: string; type: "add_recipe"; recipe: NewRecipe }
-  | { id: string; type: "add_shopping"; weekStart: string; name: string; amount: string; section: Section };
+  | { id: string; type: "add_shopping"; weekStart: string; name: string; amount: string; section: Section }
+  // Vorrat, Wunsch-Ideen und Termine liegen in eigenen Speichern – sie werden
+  // erst beim Übernehmen dort eingetragen (`commitOps`), hier ändern sie nichts.
+  | { id: string; type: "add_pantry"; name: string; amount: number | null; unit: string; place: PantryPlace }
+  | { id: string; type: "add_wish"; personId: string | null; who: string; dish: string }
+  | { id: string; type: "add_appointment"; date: string; time: string; until: boolean; title: string; personId: string | null; who: string };
+
+/** Änderungen, die nicht Plan/Kochbuch/Einkaufsliste betreffen */
+export const SIDE_OP_TYPES = ["add_pantry", "add_wish", "add_appointment"] as const;
 
 export const slotKeyOf = (slot: Pick<SlotRef, "weekday">) => slotKey(slot.weekday);
 
@@ -166,6 +177,10 @@ export function applyOps(
         next = { ...next, shopping: { ...next.shopping, [op.weekStart]: { ...list, manual: [...list.manual, item] } } };
         break;
       }
+      case "add_pantry":
+      case "add_wish":
+      case "add_appointment":
+        break;
     }
   }
   return { data: next, refs };

@@ -7,9 +7,10 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { WEEKDAYS } from "../profile";
 import type { CreateMessage } from "./engine";
+import { dateForDay } from "./tools";
 
 type ToolUse = { name: string; input: Record<string, unknown>; id?: string };
-type WeekResult = { tage: { tag: string; ausflug?: boolean; gericht?: string | null; pause?: boolean; wochenende?: string }[] };
+type WeekResult = { woche: string; tage: { tag: string; datum: string; ausflug?: boolean; gericht?: string | null; rezept_id?: string; pause?: boolean; wochenende?: string }[] };
 type CookbookResult = { rezepte: { rezept_id: string; titel: string; bekannt?: boolean; minuten?: number }[] };
 
 const DAY_RE = new RegExp(`\\b(${WEEKDAYS.join("|")})\\b`, "gi");
@@ -104,6 +105,35 @@ function mentionedRecipes(textValue: string, titles: string[]): string[] {
     .map((m) => m.title);
 }
 
+const DAY_WORDS = `heute|morgen|${WEEKDAYS.join("|")}`;
+
+/** Alltags-Sätze, die ohne Wochenplanung auskommen (Testmodus) */
+function everyday(t: string) {
+  const s = t.trim().replace(/[.!]+$/, "");
+  const dish = s.match(new RegExp(`^(${DAY_WORDS})\\s+gibt(?:'|’)?s\\s+(?:es\\s+)?(.+)$`, "i"));
+  const pantry = s.match(/^ich hab(?:e)?\s+(?:noch\s+)?(\d+(?:[.,]\d+)?)?\s*(portionen|portion|g|kg|stück|becher|packungen)?\s*(.+?)\s+(eingefroren|im tiefkühler|im kühlschrank|im schrank)$/i);
+  const wish = s.match(new RegExp(`^([A-ZÄÖÜ][a-zäöüß]+)\\s+wünscht sich\\s+(?!(?:am\\s+)?(?:${WEEKDAYS.join("|")})\\b)(.+)$`, "i"));
+  const appt = s.match(new RegExp(`^([A-ZÄÖÜ][a-zäöüß]+)\\s+hat\\s+(${DAY_WORDS})\\s+(bis|um|ab)\\s+(\\d{1,2})(?::(\\d{2}))?\\s*(?:uhr\\s+)?(.+)$`, "i"));
+  return {
+    dish: dish ? { tag: dish[1].toLowerCase() === "heute" || dish[1].toLowerCase() === "morgen" ? dish[1].toLowerCase() : cap(dish[1]), gericht: dish[2].trim() } : null,
+    pantry: pantry
+      ? {
+          name: cap(pantry[3].trim()),
+          menge: pantry[1] ? Number(pantry[1].replace(",", ".")) : null,
+          einheit: pantry[2] ? (/^portion/i.test(pantry[2]) ? "Portionen" : pantry[2]) : "",
+          ort: /eingefroren|tiefkühler/i.test(pantry[4]) ? "tiefkuehler" : /kühlschrank/i.test(pantry[4]) ? "kuehlschrank" : "schrank",
+        }
+      : null,
+    wish: wish ? { person: wish[1], gericht: wish[2].trim() } : null,
+    appt: appt
+      ? { person: appt[1], tag: /^(heute|morgen)$/i.test(appt[2]) ? appt[2].toLowerCase() : cap(appt[2]), bis: appt[3].toLowerCase() === "bis", uhrzeit: `${appt[4].padStart(2, "0")}:${appt[5] ?? "00"}`, titel: cap(appt[6].trim()) }
+      : null,
+    need: s.match(/^(?:wir|ich)\s+brauch(?:en|e)\s+(?:noch\s+)?(.+)$/i)?.[1] ?? null,
+    ideasWith: s.match(/was kann ich (?:heute\s+)?(?:mit|aus)\s+(.+?)\s+(?:machen|kochen)/i)?.[1] ?? null,
+    quick: /nur (noch )?schnelle/i.test(s),
+  };
+}
+
 function plan(intent: string, system: string) {
   const clauses = intent.split(/[,.;\n]/);
   const myClause = clauses.find((c) => /meine(n)? rezepte|unsere(n)? rezepte/i.test(c)) ?? "";
@@ -193,6 +223,34 @@ export function createMockModel(): CreateMessage {
       if (leftovers) return text(leftovers);
       const latest = last.content;
       const prevAssistant = [...msgs].reverse().find((x, i) => i > 0 && x.role === "assistant" && typeof x.content === "string");
+      const day = everyday(latest);
+      const planningWeek = system.match(/wenn nichts gesagt wird: (\w+)/)?.[1] === "naechste" ? "naechste" : "aktuell";
+      if (day.ideasWith) {
+        const words = day.ideasWith.split(/,|\bund\b/).map((w) => w.trim().toLowerCase()).filter(Boolean);
+        const fromBook = cookbookTitles(system).filter((t) => words.some((w) => t.toLowerCase().includes(w.slice(0, 4))));
+        const ideas = [...fromBook.slice(0, 2), "Hack-Paprika-Pfanne mit Reis (25 Min.)", "Gefüllte Paprika (45 Min.)", "Chili con Carne (40 Min.)"].slice(0, 3);
+        return text(`Mit ${day.ideasWith} geht z. B. ${ideas[0]}, ${ideas[1]} oder ${ideas[2]}. Soll ich eins für heute einplanen? (Testmodus)`);
+      }
+      if (day.pantry) return tools([{ name: "vorrat_hinzufuegen", input: { sachen: [day.pantry] } }]);
+      if (day.wish) return tools([{ name: "wunsch_merken", input: day.wish }]);
+      if (day.appt) return tools([{ name: "termin_notieren", input: day.appt }]);
+      if (day.need) {
+        const artikel = day.need.split(/,|\bund\b/).map((n) => n.trim()).filter(Boolean).map((name) => ({ name: cap(name) }));
+        return tools([{ name: "einkaufsliste_hinzufuegen", input: { woche: planningWeek, artikel } }]);
+      }
+      if (day.dish) {
+        return tools([
+          { name: "woche_lesen", input: { woche: "aktuell" } },
+          { name: "woche_lesen", input: { woche: "naechste" } },
+          { name: "kochbuch_durchsuchen", input: {} },
+        ]);
+      }
+      if (day.quick) {
+        return tools([
+          { name: "woche_lesen", input: { woche: intent.week } },
+          { name: "kochbuch_durchsuchen", input: {} },
+        ]);
+      }
       if (/entdecker|was neues ausprobieren/i.test(latest)) {
         const likes = system.match(/Das mögt ihr \(Lieblingszutaten, bevorzugt einbauen\): (.+)/)?.[1]?.split(", ") ?? [];
         return text(
@@ -230,6 +288,42 @@ export function createMockModel(): CreateMessage {
       const week = parse<WeekResult>(resultFor("woche_lesen"));
       const book = parse<CookbookResult>(resultFor("kochbuch_durchsuchen"));
       if (!week) return text("Ich konnte die Woche gerade nicht lesen.");
+      const day = everyday(intentText(msgs));
+      if (day.dish) {
+        // Tag über das Datum in einer der beiden gelesenen Wochen finden
+        const todayIso = system.match(/^Heute: .*\((\d{4}-\d{2}-\d{2})\)/m)?.[1] ?? "";
+        const date = dateForDay(todayIso, day.dish.tag);
+        const [, m, d] = (date ?? "").split("-");
+        const label = date ? `${Number(d)}.${Number(m)}.` : "";
+        const weeks = prevUses
+          .filter((u) => u.name === "woche_lesen")
+          .map((u) => parse<WeekResult>(results.find((r) => r.tool_use_id === u.id)?.content))
+          .filter((w): w is WeekResult => Boolean(w));
+        const hit = weeks.flatMap((w) => w.tage.map((t) => ({ w, t }))).find(({ t }) => t.datum === label);
+        if (!hit) return text("Den Tag finde ich gerade nicht im Plan – magst du ihn mir nochmal sagen?");
+        const recipe = book?.rezepte.find((r) => r.titel.toLowerCase().includes(day.dish!.gericht.toLowerCase()));
+        return tools([
+          {
+            name: "gericht_setzen",
+            input: { woche: hit.w.woche, tag: hit.t.tag, ...(recipe ? { rezept_id: recipe.rezept_id } : { gericht: day.dish.gericht }) },
+          },
+        ]);
+      }
+      if (day.quick && book) {
+        // Langsames (über 30 Min.) und Freies durch schnelle, bekannte Gerichte ersetzen
+        const quick = book.rezepte.filter((r) => r.bekannt && (r.minuten ?? 99) <= 30).sort((a, b) => (a.minuten ?? 99) - (b.minuten ?? 99));
+        const slow = new Set(book.rezepte.filter((r) => (r.minuten ?? 0) > 30).map((r) => r.rezept_id));
+        const spontan = /Ich koche spontan – keine Planung/.test(system);
+        let k = 0;
+        const uses: ToolUse[] = [];
+        for (const t of week.tage) {
+          if (t.ausflug || t.pause || t.wochenende === "frei") continue;
+          const replace = t.rezept_id ? slow.has(t.rezept_id) : !t.gericht && !spontan;
+          const recipe = replace ? quick[k++ % Math.max(1, quick.length)] : undefined;
+          if (recipe && recipe.rezept_id !== t.rezept_id) uses.push({ name: "gericht_setzen", input: { woche: week.woche, tag: t.tag, rezept_id: recipe.rezept_id } });
+        }
+        return uses.length ? tools(uses) : text("Diese Woche ist schon alles schnell – passt! (Testmodus)");
+      }
       // Der Tag mit seinem einen Hauptgericht (null bei Ausflug)
       const main = (tag: string) => {
         const d = week.tage.find((x) => x.tag === tag);

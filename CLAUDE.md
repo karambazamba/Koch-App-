@@ -60,6 +60,7 @@ Bei ALLEN Änderungen beachten.
 - Weiter/Zurück-Buttons in Formularen am Inhaltsende, nicht fixiert (Ausnahme: Küchenhelfer-Button/Eingabefeld). Unten genug Abstand, damit nichts verdeckt wird.
 - Eingabefelder mindestens 16px Schrift (kein iOS-Zoom), Safe-Areas beachten.
 - KI nur serverseitig (ANTHROPIC_API_KEY aus Vercel), Änderungen der KI immer als Vorschau mit "Übernehmen".
+- KI nur serverseitig. Die KI schlägt vor, der Nutzer übernimmt. Die App muss immer auch ohne KI funktionieren.
 - Datenschutz: so wenig Daten wie nötig, besonders bei Kindern; alles löschbar.
 - Zurück = eine Ebene zurück, Pfeil und Geste identisch, Scrollposition bleibt erhalten.
 - Neue Farben/Komponenten immer über die Design-Tokens, damit alle Ansichten funktionieren.
@@ -123,7 +124,7 @@ Bei ALLEN Änderungen beachten.
      "Neu ✨", eine ruhige Zeile (Besonderheit wie "Mathis' Wunsch 🎉",
      "Reste von …" · Zeit · Personen), darunter nur falls vorhanden die
      Termine des Tages (`src/lib/appointments.ts`, neutral wie "Jonne Turnen
-     bis 17:30", nie "wird knapp"; vorerst leer). Bekannt: dezent "Rezept
+     bis 17:30", nie "wird knapp"; notiert per Lotte, kompakt unter der Zeile, Bildfeld dann flacher). Bekannt: dezent "Rezept
      ansehen · Tauschen" (`/wochenplan?tauschen=heute`). Neu (oder Kochstil
      "nach Rezept"): "<n> Schritte · <n> Zutaten" und "Los geht's – Schritt für
      Schritt" (nach der Essenszeit nicht mehr). Kein Gericht für heute:
@@ -443,23 +444,41 @@ Bei ALLEN Änderungen beachten.
   und sehr ähnliche Gerichte nie, Gründe beachten); `rezept_erstellen` und
   freie Gerichte lehnen Einträge der Liste ab (`isNeverAgain`). Einsehbar
   und einzeln wiederherstellbar unter `/profil/nie-wieder`.
-- Küchenhelfer (KI, `src/lib/assistant/`, API `/api/kuechenhelfer`): schwebender
+- Küchenhelfer (KI, `src/lib/assistant/`, API `/api/lotte`, alter Pfad
+  `/api/kuechenhelfer` leitet dorthin): schwebender
   Knopf auf allen Seiten außer der Startseite (`KitchenHelper` im Layout, über `StickyActions`,
   bei offener Tastatur ausgeblendet), Panel mit Chat, Mikrofon
-  (`useSpeechInput`, Fallback Tastatur-Diktat) und optionalem Vorlesen.
-  Die App schickt einen Daten-Schnappschuss mit; der Server führt die
-  Claude-Tool-Schleife aus (`engine.ts`, Werkzeuge in `tools.ts` – je Tag ein
-  Hauptgericht, inkl. "doppelt kochen", Modell
-  `KUECHENHELFER_MODEL`, Standard `claude-sonnet-5-5`). Schreib-Werkzeuge ändern
-  nichts, sie liefern `ChangeOp`s (`ops.ts`). Vorschau (`preview.ts`) und
-  Übernehmen rechnen mit denselben reinen Funktionen (`applyOps`); Übernehmen
-  ersetzt die Speicherstände, "Rückgängig" (10 s) stellt sie wieder her.
-  Einzelne Änderungen abwählbar; "Anpassen" schickt den offenen Vorschlag mit
-  (`pending`). Neue KI-Rezepte prüfen Allergien/"mag nicht" strikt (`diet.ts`).
-  Ohne `ANTHROPIC_API_KEY`: Hinweis "KI noch nicht eingerichtet";
-  `KUECHENHELFER_MOCK=1` = Testmodus (`mock.ts`, nutzt dieselben Werkzeuge).
-  Daten-Module importieren React nur über `useExternalStore.ts`, damit der
-  Server ihre reine Logik nutzen kann.
+  (`useSpeechInput`, Fallback Tastatur-Diktat) und optionalem Vorlesen; die
+  Eingabeleiste der Startseite öffnet es.
+  Die App schickt nur das Nötige mit (Profil, diese/nächste Woche, Kochbuch
+  ohne Schritte, Vorrat); der Server führt die Claude-Tool-Schleife aus
+  (`engine.ts`, Werkzeuge in `tools.ts` – je Tag ein Hauptgericht, inkl.
+  "doppelt kochen", Einkaufsliste, `vorrat_hinzufuegen`, `wunsch_merken`,
+  `termin_notieren`; Modell `LOTTE_MODEL`/`KUECHENHELFER_MODEL`, Standard
+  `claude-haiku-5-5`, ohne Nachdenken, Aufwand niedrig, `max_tokens` 3000,
+  höchstens 6 Runden; Systemanweisung mit Prompt-Caching, Token-Zahlen im
+  Server-Log). Schreib-Werkzeuge ändern nichts, sie liefern `ChangeOp`s
+  (`ops.ts`; Vorrat/Wunsch/Termin landen erst beim Übernehmen in ihren
+  Speichern, Termine unter `wasgibts.termine` → Heute-Karte). Vorschau
+  "Das würde ich machen:" (`preview.ts`, `ProposalCard`, "Übernehmen"/"Ändern")
+  und Übernehmen rechnen mit denselben reinen Funktionen (`applyOps`);
+  "Rückgängig" (10 s) stellt alles wieder her. Einzelne Änderungen abwählbar;
+  "Ändern" schickt den offenen Vorschlag mit (`pending`). Neue KI-Rezepte
+  prüfen Allergien/"mag nicht" strikt (`diet.ts`).
+  Schutz: Die KI ist nur an, wenn `ANTHROPIC_API_KEY` UND `APP_ACCESS_CODE`
+  gesetzt sind. Die App fragt den Zugangscode einmal im Panel
+  (`AccessCodeCard`, gemerkt unter `wasgibts.zugangscode`, Header
+  `x-lotte-code`, Vergleich in konstanter Zeit, falsche Versuche begrenzt);
+  Tageslimit 100 Anfragen pro Gerät (Server und App). Reihenfolge im Chat:
+  Navigation, Pause, Produkte, Einstellungen, Supermarkt, Backen, "Wir
+  lieben …" lokal; alles andere an die KI. Ist sie nicht da (offline, aus,
+  Limit, Code, kein Guthaben), greifen die Regeln (Einkaufsliste inkl. "Wir
+  brauchen …", Wünsche, schnelle Ideen), sonst sagt Lotte "Gerade kann ich
+  dich nicht richtig verstehen – tipp es mir kurz anders ein." – nie
+  Technik-Wörter. `KUECHENHELFER_MOCK=1` = Testmodus (`mock.ts`, nutzt
+  dieselben Werkzeuge, versteht die Alltags-Sätze). Daten-Module importieren
+  React nur über `useExternalStore.ts`, damit der Server ihre reine Logik
+  nutzen kann.
 - Küchenhelfer hat Namen und Gesicht (Profil v7 `helper`): Name Lotte, Ida,
   Theo, Bruno oder eigener (max. 20 Zeichen, Standard Lotte), Stimme
   weiblich/männlich (bei Vorschlägen passend zum Namen; `pickVoice()` wählt
@@ -559,7 +578,7 @@ Bei ALLEN Änderungen beachten.
 - Darstellung "Einfach": seltene Einstellungen hinter "Mehr anzeigen", keine
   Kosten-Schätzungen im Wochenplan (außer mit Budget); "Alles zeigen" zeigt
   alles.
-- Lotte-Modus (`/profil/modus`, steuert nur Lottes Platz, Regeln ohne KI):
+- Lotte-Modus (`/profil/lotte`, steuert nur Lottes Platz, Regeln ohne KI):
   "Ganz locker" = nur Stufe 1 (zeitkritisch), keine Bewertung/Lob/Tipps;
   "Normal" = wie beschrieben; "Dranbleiben" = zusätzlich ab 4 Tage vorher
   "Soll ich die nächste Woche schon mal vorbereiten?" und für freie Tage der

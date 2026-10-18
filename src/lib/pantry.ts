@@ -208,6 +208,16 @@ export function removePantryItem(id: string) {
   update((items) => items.filter((p) => p.id !== id));
 }
 
+/** Aktueller Vorrat (außerhalb von React) */
+export function loadPantry(): PantryItem[] {
+  return store.load()?.items ?? EMPTY;
+}
+
+/** Vorrat komplett ersetzen (Rückgängig) */
+export function replacePantry(items: PantryItem[]) {
+  update(() => items);
+}
+
 export function clearPantry() {
   update(() => []);
 }

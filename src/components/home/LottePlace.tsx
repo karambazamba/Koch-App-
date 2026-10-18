@@ -127,7 +127,7 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
           kind: "pause",
           text: `Ihr seid bald wieder da – soll ich für ${back} schon was vorbereiten?`,
           chips: [
-            once(key, "Ja, gern", () => (status?.configured ? openHelper(undefined, `Bereite bitte schon was für ${back} vor.`) : router.push(spontan ? "/ideen" : "/wochenplan"))),
+            once(key, "Ja, gern", () => (status?.ready ? openHelper(undefined, `Bereite bitte schon was für ${back} vor.`) : router.push(spontan ? "/ideen" : "/wochenplan"))),
             once(key, "Nein danke"),
           ],
         };
@@ -218,7 +218,7 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
           once(`tk:${oldFrozen.id}`, "Ja, gern", () =>
             spontan
               ? openHelper("spontan")
-              : status?.configured
+              : status?.ready
                 ? openHelper(undefined, `Plan bitte ${oldFrozen.name} aus dem Tiefkühler diese Woche ein.`)
                 : router.push("/wochenplan"),
           ),
@@ -266,7 +266,7 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
             : `Im Kühlschrank ist noch ${names(fresh)} – soll ich das in die letzten Tage einplanen?`,
           chips: [
             once(key, "Ja, gern", () =>
-              status?.configured && !spontan ? openHelper(undefined, `Plan bitte ${names(fresh)} in die Tage bis zur Pause ein.`) : openHelper("spontan", undefined, ["reste"]),
+              status?.ready && !spontan ? openHelper(undefined, `Plan bitte ${names(fresh)} in die Tage bis zur Pause ein.`) : openHelper("spontan", undefined, ["reste"]),
             ),
             once(key, "Nein danke"),
           ],
@@ -307,7 +307,7 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
         kind: "wochenplanung",
         text: "Nächste Woche ist noch frei – in 2 Minuten geplant?",
         chips: [
-          status?.configured
+          status?.ready
             ? { label: "Ja, gern", onClick: () => openHelper(undefined, "Plan mir bitte die nächste Woche.") }
             : { label: "Ja, gern", href: "/woche/check" },
           { label: "Später", onClick: () => noteDismissed("wochenplanung", todayIso), quiet: true },
@@ -321,7 +321,7 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
         kind: "wochenplanung",
         text: "Soll ich die nächste Woche schon mal vorbereiten? Dauert nur 2 Minuten.",
         chips: [
-          status?.configured
+          status?.ready
             ? { label: "Ja, gern", onClick: () => openHelper(undefined, "Plan mir bitte die nächste Woche.") }
             : { label: "Ja, gern", href: `/woche/check?woche=${nextStart}` },
           { label: "Später", onClick: () => noteDismissed("wochenplanung", todayIso), quiet: true },
@@ -338,7 +338,7 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
         kind: "wochenplanung",
         text: `${when} ist noch frei – soll ich dir was Schnelles vorschlagen?`,
         chips: [
-          once(key, "Ja, gern", () => (status?.configured ? openHelper(undefined, `Schlag mir bitte was Schnelles für ${freeDay.weekday} vor.`) : router.push("/wochenplan"))),
+          once(key, "Ja, gern", () => (status?.ready ? openHelper(undefined, `Schlag mir bitte was Schnelles für ${freeDay.weekday} vor.`) : router.push("/wochenplan"))),
           once(key, "Nein danke"),
         ],
       };
@@ -364,7 +364,7 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
         kind: "wochenplanung",
         text: "Soll ich dir für nächste Woche ein paar Gerichte vorschlagen?",
         chips: [
-          once(weekKey, "Ja, gern", () => (status?.configured ? openHelper(undefined, "Schlag mir bitte Gerichte für die nächste Woche vor – freie Tage dürfen frei bleiben.") : router.push("/woche/check"))),
+          once(weekKey, "Ja, gern", () => (status?.ready ? openHelper(undefined, "Schlag mir bitte Gerichte für die nächste Woche vor – freie Tage dürfen frei bleiben.") : router.push("/woche/check"))),
           once(weekKey, "Nein danke"),
         ],
       };
@@ -378,7 +378,7 @@ export function useLottePlace(data: HomeData | null | undefined, opts: { welcome
         text: "Soll ich dir die nächsten 2 Tage vorschlagen?",
         chips: [
           once(twoDaysKey, "Ja, gern", () =>
-            status?.configured ? openHelper(undefined, "Schlag mir bitte Gerichte für die nächsten 2 Tage vor.") : router.push("/ideen"),
+            status?.ready ? openHelper(undefined, "Schlag mir bitte Gerichte für die nächsten 2 Tage vor.") : router.push("/ideen"),
           ),
           once(twoDaysKey, "Nein danke"),
         ],

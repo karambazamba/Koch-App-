@@ -6,7 +6,7 @@ import { BookOpen, CalendarDays, ChevronRight, Mic, Refrigerator, Settings, Shop
 import { HelperAvatar } from "@/components/assistant/HelperAvatar";
 import { AppLogo } from "@/components/AppLogo";
 import { CARD, buttonClass, chipClass } from "@/components/ui/styles";
-import { personDotClass, useAppointments } from "@/lib/appointments";
+import { appointmentTime, personDotClass, useAppointments } from "@/lib/appointments";
 import { dishStatus, type DishStatus } from "@/lib/dishStatus";
 import { usePantry, usePantryUsed } from "@/lib/pantry";
 import { QuickAddButton } from "@/components/shopping/QuickAdd";
@@ -143,12 +143,17 @@ export function HeroCard({ data, afterMeal }: { data: HomeData; afterMeal: boole
     <section className={`${CARD} flex flex-col overflow-hidden`} aria-label="Heute">
       <Link href={recipeHref ?? (data.planStyle === "spontan" ? "/ideen" : "/wochenplan")} className="flex flex-col active:opacity-90">
         {/* Bildfeld: so groß, wie der Bildschirm hergibt (ohne Scrollen) */}
-        <div className="relative flex h-[clamp(3.5rem,calc(100dvh-38rem),11rem)] items-center justify-center bg-linear-to-br from-accent-soft via-accent-soft to-accent/45">
+        {/* Mit Terminen wird das Bildfeld auf kleinen Bildschirmen noch etwas flacher */}
+        <div
+          className={`relative flex items-center justify-center bg-linear-to-br from-accent-soft via-accent-soft to-accent/45 ${
+            appointments.length ? "h-[clamp(2.5rem,calc(100dvh-39.5rem),11rem)]" : "h-[clamp(3.5rem,calc(100dvh-38rem),11rem)]"
+          }`}
+        >
           <span className="absolute left-4 top-3 rounded-full bg-surface/90 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-accent-strong">
             {/* Lockeres Wochenende: eine Idee ohne Uhrzeit */}
             {day?.weekend === "locker" ? (isSolo(profile) ? "Falls du Lust hast" : "Falls ihr Lust habt") : `Heute · ${clock}`}
           </span>
-          <span className="text-5xl drop-shadow-sm [@media(min-height:740px)]:text-6xl" aria-hidden>
+          <span className={`drop-shadow-sm [@media(min-height:740px)]:text-6xl ${appointments.length ? "text-3xl leading-none" : "text-5xl"}`} aria-hidden>
             {emoji}
           </span>
         </div>
@@ -158,10 +163,24 @@ export function HeroCard({ data, afterMeal }: { data: HomeData; afterMeal: boole
             {status && <StatusLabel status={status} solo={isSolo(profile)} />}
           </div>
           {facts.length > 0 && <p className="mt-0.5 text-sm text-muted">{facts.join(" · ")}</p>}
+          {appointments.length > 0 && (
+            <ul className="mt-0.5 flex flex-col gap-0.5" aria-label="Termine">
+              {appointments.map((a) => (
+                <li key={a.id} className="flex items-center gap-2 text-sm">
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${personDotClass(a.personId, profile.persons)}`} aria-hidden />
+                  <span className="min-w-0 truncate">
+                    {a.title}
+                    {a.time && <span className="text-muted"> {appointmentTime(a)}</span>}
+                    {a.who && <span className="text-muted"> · {a.who}</span>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </Link>
       {recipeFirst && recipe ? (
-        <div className="px-4 pb-4 pt-2.5">
+        <div className={`px-4 pt-2.5 ${appointments.length ? "pb-3" : "pb-4"}`}>
           <Link
             href={recipe.steps.length > 0 ? `/kochbuch/kochen?id=${encodeURIComponent(recipe.id)}` : recipeHref!}
             className={`${buttonClass("primary")} w-full`}
@@ -191,18 +210,6 @@ export function HeroCard({ data, afterMeal }: { data: HomeData; afterMeal: boole
         </p>
       ) : (
         <div className="pb-3" />
-      )}
-      {appointments.length > 0 && (
-        <ul className="border-t border-line px-4 py-2" aria-label="Termine">
-          {appointments.map((a) => (
-            <li key={a.id} className="flex items-center gap-2 py-1 text-sm">
-              <span className="w-11 shrink-0 tabular-nums text-muted">{a.time}</span>
-              <span className={`h-2 w-2 shrink-0 rounded-full ${personDotClass(a.personId, profile.persons)}`} aria-hidden />
-              <span className="min-w-0 flex-1 truncate">{a.title}</span>
-              {a.who && <span className="shrink-0 text-xs text-muted">{a.who}</span>}
-            </li>
-          ))}
-        </ul>
       )}
     </section>
   );
@@ -242,7 +249,7 @@ export function WelcomeBack({ data }: { data: HomeData }) {
     }
     if (profile.pause) saveProfile({ ...profile, pause: null });
     dismissWelcome(todayIso);
-    if (status?.configured) openHelper(undefined, "Wir starten frisch – schlag mir bitte was für die nächsten Tage vor.");
+    if (status?.ready) openHelper(undefined, "Wir starten frisch – schlag mir bitte was für die nächsten Tage vor.");
     else router.push(data.planStyle === "spontan" ? "/ideen" : "/wochenplan");
   };
   return (

@@ -11,12 +11,12 @@ import { runTool, TOOLS, type ToolContext } from "./tools";
 
 export type CreateMessage = (params: Anthropic.Beta.MessageCreateParamsNonStreaming) => Promise<Anthropic.Beta.BetaMessage>;
 
-/** Grenzen pro Anfrage */
-export const ENGINE_LIMITS = { maxTokens: 8000, maxRounds: 8 };
+/** Grenzen pro Anfrage: Antwortlänge (inkl. Werkzeug-Eingaben wie Rezepte) und Runden */
+export const ENGINE_LIMITS = { maxTokens: 3000, maxRounds: 6 };
 
 export class AssistantInputError extends Error {}
 
-const OP_TYPES = new Set(["set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping"]);
+const OP_TYPES = new Set(["set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "add_appointment"]);
 
 /** Anfrage prüfen und auf das Nötige kürzen */
 export function parseRequest(body: unknown): AssistantRequest {
@@ -40,6 +40,9 @@ export function parseRequest(body: unknown): AssistantRequest {
     mealPlans: obj(b.data?.mealPlans, {}),
     recipes: obj(b.data?.recipes, {}),
     shopping: obj(b.data?.shopping, {}),
+    pantry: (Array.isArray(b.data?.pantry) ? b.data.pantry : [])
+      .filter((p) => Boolean(p) && typeof p === "object" && typeof p.name === "string")
+      .slice(0, 80),
   };
   const pending = (Array.isArray(b.pending) ? b.pending : []).filter(
     (op): op is ChangeOp => Boolean(op) && typeof op === "object" && typeof op.id === "string" && OP_TYPES.has(op.type),
@@ -75,9 +78,22 @@ function pendingSummary(ops: ChangeOp[]): string {
         return `Neues Rezept: ${op.recipe.title}`;
       case "add_shopping":
         return `Einkaufsliste: ${op.name}`;
+      case "add_pantry":
+        return `Vorrat: ${op.name}`;
+      case "add_wish":
+        return `Wunsch: ${op.who} – ${op.dish}`;
+      case "add_appointment":
+        return `Termin ${op.date}: ${op.title}`;
     }
   });
   return `\n\nNoch nicht übernommener Vorschlag (in den Daten schon enthalten; auf Wunsch anpassen):\n${lines.join("\n")}`;
+}
+
+/** Nur Zahlen ins Server-Log (kein Inhalt) – zeigt, ob das Caching greift */
+function logUsage(response: Anthropic.Beta.BetaMessage) {
+  const u = response.usage;
+  if (!u || response.model === "mock") return;
+  console.info("Lotte Tokens", { ein: u.input_tokens, aus: u.output_tokens, cache_gelesen: u.cache_read_input_tokens ?? 0, cache_geschrieben: u.cache_creation_input_tokens ?? 0 });
 }
 
 export async function runAssistant(req: AssistantRequest, create: CreateMessage, model: string): Promise<AssistantReply> {
@@ -88,7 +104,7 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
   // Arbeitskopie mit dem bisherigen Vorschlag
   const start = applyOps(req.data, req.pending);
   const numbers = req.pending.flatMap((op) => [op.id, op.type === "add_recipe" ? op.recipe.ref : ""].map((s) => Number(s.match(/(\d+)$/)?.[1] ?? 0)));
-  const ctx: ToolContext = { data: start.data, weeks, ops: [...req.pending], refs: start.refs, counter: Math.max(0, ...numbers) };
+  const ctx: ToolContext = { data: start.data, weeks, ops: [...req.pending], refs: start.refs, counter: Math.max(0, ...numbers), today: req.today };
 
   const messages: Anthropic.Beta.BetaMessageParam[] = req.messages.map((m) => ({ role: m.role, content: m.text }));
   if (messages[0].role !== "user") messages.shift();
@@ -107,11 +123,11 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
       system,
       tools: TOOLS,
       messages,
-      thinking: { type: "adaptive" },
-      output_config: { effort: "medium" },
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
+      // Kurz und günstig: ohne Nachdenk-Schritt, geringer Aufwand
+      thinking: { type: "disabled" },
+      output_config: { effort: "low" },
     });
+    logUsage(response);
 
     if (response.stop_reason === "refusal") {
       reply = "Dabei kann ich leider nicht helfen. Frag mich gern etwas anderes rund ums Kochen und Planen.";
@@ -124,7 +140,7 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
 
     if (response.stop_reason === "pause_turn") continue;
     if (response.stop_reason !== "tool_use") {
-      if (response.stop_reason === "max_tokens") reply = `${reply}\n(Die Antwort war zu lang und wurde gekürzt.)`.trim();
+      if (response.stop_reason === "max_tokens") reply = `${reply} …`.trim();
       break;
     }
     const results: Anthropic.Beta.BetaToolResultBlockParam[] = content.flatMap((block) => {
