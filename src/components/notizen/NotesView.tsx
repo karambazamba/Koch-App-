@@ -13,7 +13,7 @@ import { Segmented } from "@/components/ui/Segmented";
 import { CARD, PAGE_MAIN } from "@/components/ui/styles";
 import { ROUND_PLUS } from "@/components/alltag/TasksView";
 import { notePreview, sortNotes, useNotes, type Note } from "@/lib/notizen";
-import { KladdeTile } from "./Kladde";
+import { SchnellnotizCard } from "./Kladde";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 import { helperName } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";
@@ -75,7 +75,7 @@ export function NotesView() {
         }
       />
       <main className={PAGE_MAIN}>
-        <KladdeTile name={name} />
+        <SchnellnotizCard name={name} />
         {hasWork && (
           <Segmented
             label="Filter"
@@ -129,5 +129,3 @@ export function NotesView() {
     </>
   );
 }
-
-/** Kladde = Schmierzettel: speichert beim Tippen, "Lotte, räum auf" und "Leeren" (mit Rückgängig) */

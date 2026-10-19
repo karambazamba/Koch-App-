@@ -44,8 +44,12 @@ export type AssistantData = {
   features?: string[];
   /** Notizen (Text oder Liste) */
   notes?: Note[];
-  /** Kladde (Schmierzettel, ein freier Text) */
+  /** Schnellnotiz (früher Kladde; Schmierzettel, ein freier Text) */
   kladde?: string;
+  /** Pinnwand: sichtbare Nachrichten (nur zum Lesen; neue über `add_pin`) */
+  pinnwand?: { author: string; text: string; at: string }[];
+  /** Wetter-Ort (für wetter_abfragen) */
+  wetterOrt?: string;
   /** Mail-Stil: Grußformel, Signatur, gemerkte Anrede je Empfänger (nur zum Lesen) */
   mail?: MailStyle;
 };
@@ -110,7 +114,9 @@ export type ChangeOp =
   | { id: string; type: "upsert_note"; note: Note; isNew: boolean; change?: string }
   | { id: string; type: "remove_note"; noteId: string; title: string }
   // Kladde neu setzen (anhängen bzw. übernommene Zeilen herausnehmen)
-  | { id: string; type: "set_kladde"; text: string; change: string };
+  | { id: string; type: "set_kladde"; text: string; change: string }
+  // Pinnwand: neue Nachricht (landet beim Übernehmen im eigenen Speicher)
+  | { id: string; type: "add_pin"; text: string };
 
 /** Änderungen an Terminen/Aufgaben */
 export const ENTRY_OP_TYPES = new Set(["upsert_entry", "remove_entry", "done_entry", "move_entry"]);
@@ -291,6 +297,7 @@ export function applyOps(
         break;
       case "add_pantry":
       case "add_wish":
+      case "add_pin":
         break;
     }
   }

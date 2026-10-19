@@ -10,17 +10,17 @@ export function ToastHost() {
   return (
     <div
       role="status"
-      className="fixed inset-x-0 top-[calc(env(safe-area-inset-top)+0.75rem)] z-[60] mx-auto flex w-[calc(100%-2rem)] max-w-md items-center gap-3 overflow-hidden rounded-2xl bg-ink px-4 py-3 text-background shadow-lg"
+      className={`fixed inset-x-0 top-[calc(env(safe-area-inset-top)+0.75rem)] z-[60] mx-auto flex items-center overflow-hidden bg-ink text-background shadow-lg ${toast.small ? "w-fit max-w-[calc(100%-2rem)] gap-2 rounded-full py-1.5 pl-4 pr-1.5 text-sm" : "w-[calc(100%-2rem)] max-w-md gap-3 rounded-2xl px-4 py-3"}`}
     >
-      <span className="flex-1 font-semibold">{toast.text}</span>
+      <span className={toast.small ? "font-semibold" : "flex-1 font-semibold"}>{toast.text}</span>
       {toast.undo && (
         <button
           type="button"
           onClick={() => {
             toast.undo?.();
-            showToast({ text: toast.undoneText ?? "Rückgängig gemacht – alles wie vorher." });
+            showToast({ text: toast.undoneText ?? "Rückgängig gemacht – alles wie vorher.", seconds: toast.small ? 2 : undefined, small: toast.small });
           }}
-          className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-background/15 px-3 font-bold"
+          className={`inline-flex items-center gap-1.5 bg-background/15 font-bold ${toast.small ? "h-9 rounded-full px-3" : "h-10 rounded-xl px-3"}`}
         >
           <Undo2 className="h-4 w-4" strokeWidth={2.5} aria-hidden />
           Rückgängig
@@ -34,7 +34,7 @@ export function ToastHost() {
       <span
         key={toast.id}
         className="absolute bottom-0 left-0 h-1 w-full origin-left bg-accent"
-        style={{ animation: `shrink ${TOAST_SECONDS}s linear forwards` }}
+        style={{ animation: `shrink ${toast.seconds ?? TOAST_SECONDS}s linear forwards` }}
         aria-hidden
       />
     </div>

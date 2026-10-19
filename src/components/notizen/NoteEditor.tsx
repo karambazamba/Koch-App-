@@ -11,7 +11,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { CARD, INPUT_BASE, PAGE_MAIN, buttonClass, chipClass } from "@/components/ui/styles";
 import { createNote, loadNotes, noteEmoji, removeNote, replaceNotes, upsertNote, useNotes, type Note, type NoteItem } from "@/lib/notizen";
 import { nowIso } from "@/lib/core/now";
-import { showToast } from "@/lib/core/toast";
+import { showDeleted } from "@/lib/core/toast";
+import { pushUndo } from "@/lib/core/undo";
 import { useGoBack } from "@/lib/core/useGoBack";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 
@@ -64,7 +65,7 @@ function Editor({ initial, isNew }: { initial: Note; isNew: boolean }) {
   const remove = () => {
     const before = loadNotes();
     replaceNotes(removeNote(before, note.id));
-    showToast({ text: `Gelöscht ✓ ${note.data.title || fallbackTitle}`, undo: () => replaceNotes(before), undoneText: "Rückgängig gemacht." });
+    showDeleted(pushUndo(`das Löschen von ${note.data.title || fallbackTitle}`, () => replaceNotes(before)));
     goBack("/notizen");
   };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMailStyle } from "@/lib/lotte/mailSettings";
-import { Blocks, BookOpen, CalendarDays, ChefHat, Database, LayoutGrid, LayoutList, Mail, MessageCircle, Mic, Palette, Volume2, Refrigerator, Salad, Sun, Users } from "lucide-react";
+import { Blocks, BookOpen, CloudSun, CalendarDays, ChefHat, Database, LayoutGrid, LayoutList, Mail, MessageCircle, Mic, Palette, Volume2, Refrigerator, Salad, Sun, Users } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { PAGE_MAIN } from "@/components/ui/styles";
 import { APP_VERSION } from "@/lib/core/app";
@@ -20,6 +20,7 @@ import {
 } from "@/lib/einstellungen/profile";
 import { usePlanStyle } from "@/lib/essen/usePlanStyle";
 import { BAUSTEINE, useBausteine, useFeature, useLegacyFeatures } from "@/lib/core/features";
+import { usePlace } from "@/lib/wetter/client";
 import { useHomeTiles } from "@/lib/core/homeLayout";
 import { READ_MODES, useSpeechSettings } from "@/lib/lotte/speech";
 import { Group, Row } from "./settings/SettingsParts";
@@ -46,6 +47,7 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
   const speech = useSpeechSettings();
   const mailStyle = useMailStyle();
   const home = useHomeTiles();
+  const place = usePlace();
   const bausteine = useBausteine();
   const unlockedRecipes = useFeature("rezepte");
   const unlockedPantry = useFeature("vorrat");
@@ -61,8 +63,13 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
         <main className={`${PAGE_MAIN} gap-6`}>
           <Group title="Startseite & Bausteine">
             <Row href="/profil/startseite" icon={LayoutGrid} title="Startseite bearbeiten" value={home ? `${home.filter((t) => t.visible && t.id !== "post").length} Kacheln` : undefined}>
-              Kacheln hinzufügen, entfernen, sortieren
+              Kacheln hinzufügen, entfernen, sortieren, Größe
             </Row>
+            {home?.find((t) => t.id === "wetter")?.visible && (
+              <Row href="/profil/wetter" icon={CloudSun} title="Wetter-Ort" value={place}>
+                Für die Wetter-Kachel
+              </Row>
+            )}
             <Row href="/profil/bausteine" icon={Blocks} title="Bausteine" value={bausteine ? `${BAUSTEINE.filter((b) => bausteine.includes(b.feature)).length} an` : undefined}>
               Was {name} noch kann
             </Row>

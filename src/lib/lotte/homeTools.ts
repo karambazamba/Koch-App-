@@ -3,7 +3,7 @@
 // entfernen und die letzte Änderung zurücknehmen. Wie immer nur als
 // Vorschlag mit "Übernehmen".
 
-import { HOME_TILES, type HomeAction, type HomeTileId } from "../core/homeLayout";
+import { HOME_ACTIONS, HOME_TILES, type HomeAction, type HomeTileId } from "../core/homeLayout";
 import { WEEKDAYS } from "../einstellungen/profile";
 import { buildShoppingList } from "../einkauf/shoppingList";
 import { formatWeekRange } from "../essen/weekPlan";
@@ -17,7 +17,7 @@ type Input = Record<string, unknown>;
 const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
 const fail = (content: string): ToolResult => ({ content, isError: true });
 const WEEK_PROP = { type: "string", enum: ["aktuell", "naechste"], description: "Welche Planungswoche (Standard: die Planungswoche aus dem Kontext)" } as const;
-const ACTIONS: HomeAction[] = ["zeigen", "ausblenden", "kompakt", "ausfuehrlich", "hoch", "runter", "nach_oben", "nach_unten"];
+const ACTIONS: HomeAction[] = HOME_ACTIONS;
 
 const weekStartOf = (ctx: ToolContext, v: unknown) => (v === "naechste" ? ctx.weeks.naechste : ctx.weeks.aktuell);
 
@@ -160,11 +160,11 @@ export const HOME_TOOLS: LotteTool[] = [
     definition: {
       name: "startseite_anpassen",
       description:
-        "Passt die Startseite an: eine Kachel zeigen, ausblenden, kompakt oder ausführlich machen oder verschieben. Z. B. 'Mach die Einkaufsliste wieder klein' → kachel einkauf, aktion kompakt; 'Nimm die Einkaufsliste von der Startseite' → ausblenden. Ausblenden löscht nichts.",
+        "Passt die Startseite an: Kachel zeigen (landet an ihrem Standard-Platz), ausblenden, Größe klein/mittel/gross (S/M/L) oder verschieben (hoch, runter, nach_oben, nach_unten); 'standard' = Reihenfolge und Größen wie am Anfang (kachel egal). Z. B. 'Pinnwand ganz nach oben' → pinnwand, nach_oben; 'Wetter klein machen' → wetter, klein; 'Nimm das Wetter weg' → wetter, ausblenden; 'Startseite wie am Anfang' → standard. Zum Bearbeiten-Modus selbst: app_befehl 'Startseite bearbeiten'. Ausblenden löscht nichts.",
       input_schema: {
         type: "object",
         properties: {
-          kachel: { type: "string", enum: HOME_TILES.map((t) => t.id), description: "termine, aufgaben, essen, einkauf, kladde, notizen (angeheftete), morgen = Vorschau morgen, vorrat" },
+          kachel: { type: "string", enum: HOME_TILES.map((t) => t.id), description: "pinnwand, termine, aufgaben, wetter, essen, einkauf, notizen (Schnellnotiz + Angeheftetes; früher Kladde), vorrat, morgen = Vorschau morgen" },
           aktion: { type: "string", enum: ACTIONS },
         },
         required: ["kachel", "aktion"],

@@ -8,7 +8,7 @@ import { EMPTY_STOCK_HINT } from "@/lib/essen/dishIdeas";
 import { openHelper } from "@/lib/lotte/open";
 import { IDEA_FILTERS, type IdeaFilter } from "@/lib/essen/ideas";
 import { personLabel } from "@/lib/einstellungen/profile";
-import { showToast } from "@/lib/core/toast";
+import { showDeleted, showToast } from "@/lib/core/toast";
 import { putAside, useTodayIdeas } from "@/lib/essen/useIdeas";
 import { usePlanStyle } from "@/lib/essen/usePlanStyle";
 import { addWish, parseWish, wishLabel } from "@/lib/essen/wishes";
@@ -35,7 +35,7 @@ export function IdeasView() {
   const kids = data.profile.persons;
   const aside = (idea: (typeof ideas)[number]) => {
     const undo = putAside(data.todayIso, idea);
-    if (undo) showToast({ text: `${idea.reason} ist weggeräumt.`, undo });
+    if (undo) showDeleted(undo, "Weggeräumt");
     setOpenId(null);
   };
   const saveWish = () => {

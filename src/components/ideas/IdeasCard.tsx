@@ -7,7 +7,7 @@ import { EMPTY_STOCK_HINT } from "@/lib/essen/dishIdeas";
 import { openHelper } from "@/lib/lotte/open";
 import type { Idea } from "@/lib/essen/ideas";
 import { putAside, useTodayIdeas } from "@/lib/essen/useIdeas";
-import { showToast } from "@/lib/core/toast";
+import { showDeleted } from "@/lib/core/toast";
 import { IdeaCards, type CardIdea } from "./IdeaCards";
 import { IdeaSheet } from "./IdeaSheet";
 import { useIdeaChoice } from "./useIdeaChoice";
@@ -59,7 +59,7 @@ export function IdeasCard({ when = "heute" }: { when?: "heute" | "morgen" }) {
   const dismiss = (idea: Idea) => {
     setOpenId(null);
     const undo = putAside(data.todayIso, idea);
-    if (undo) showToast({ text: `${idea.reason} ist weggeräumt.`, undo });
+    if (undo) showDeleted(undo, "Weggeräumt");
   };
   const byId = (card: CardIdea) => deck.find((i) => i.id === card.id);
 

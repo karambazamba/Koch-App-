@@ -5,6 +5,8 @@
 import type { Room } from "../core/entries";
 import { aufgabeToTermin, taskOverview, terminToAufgabe, TASK_GROUPS } from "../aufgaben/model";
 import { addListItems, appendLine, createNote, findNote, noteAnswer, setPinned, withoutLines, type Note } from "../notizen";
+import { PIN_MAX } from "../pinnwand/model";
+import { dayAnswer, hoursToday, isRainy, umbrellaAnswer, weatherKind, round } from "../wetter/forecast";
 import type { LotteTool } from "./registry";
 import { nextId, propose, type ToolContext, type ToolResult } from "./tools";
 
@@ -32,8 +34,8 @@ export const NOTE_TOOLS: LotteTool[] = [
     area: "alltag",
     definition: {
       name: "kladde_schreiben",
-      description: "Etwas in die Kladde (Schmierzettel) schreiben: 'Schreib in die Kladde: Handwerker Müller 0176 …'. Wird als neue Zeile angehängt.",
-      input_schema: { type: "object", properties: { text: { type: "string" }, ersetzen: { type: "boolean", description: "Ganze Kladde ersetzen statt anhängen (nur wenn ausdrücklich gewünscht)" } }, required: ["text"], additionalProperties: false },
+      description: "Etwas in die Schnellnotiz (früher Kladde, Schmierzettel) schreiben: 'Schreib in die Schnellnotiz/Kladde: Handwerker Müller 0176 …', 'Notier mir schnell …'. Wird als neue Zeile angehängt.",
+      input_schema: { type: "object", properties: { text: { type: "string" }, ersetzen: { type: "boolean", description: "Ganze Schnellnotiz ersetzen statt anhängen (nur wenn ausdrücklich gewünscht)" } }, required: ["text"], additionalProperties: false },
     },
     run: (ctx, raw) => {
       const input = (raw ?? {}) as Input;
@@ -42,7 +44,7 @@ export const NOTE_TOOLS: LotteTool[] = [
       const current = ctx.data.kladde ?? "";
       const next = input.ersetzen === true ? text : appendLine(current, text);
       propose(ctx, { id: nextId(ctx), type: "set_kladde", text: next, change: input.ersetzen === true ? `neu: ${shortList([text])}` : `+ ${shortList([text])}` });
-      return { content: "Vorgemerkt: steht dann in der Kladde (Notizen, ganz oben)." };
+      return { content: "Vorgemerkt: steht dann in der Schnellnotiz (Notizen, ganz oben)." };
     },
   },
   {
@@ -50,17 +52,17 @@ export const NOTE_TOOLS: LotteTool[] = [
     definition: {
       name: "kladde_aufraeumen",
       description:
-        "Kladde aufräumen ('Räum meine Kladde auf'): Zuerst die passenden Zeilen mit termin_anlegen / aufgabe_anlegen / notiz_anlegen bzw. liste_eintrag_hinzufuegen übernehmen, dann hier genau diese Zeilen angeben – sie werden aus der Kladde genommen. Unklares bleibt stehen.",
-      input_schema: { type: "object", properties: { zeilen: { type: "array", items: { type: "string" }, description: "Übernommene Zeilen, wörtlich wie in der Kladde" } }, required: ["zeilen"], additionalProperties: false },
+        "Schnellnotiz aufräumen ('Räum meine Schnellnotiz/Kladde auf'): Zuerst die passenden Zeilen mit termin_anlegen / aufgabe_anlegen / notiz_anlegen bzw. liste_eintrag_hinzufuegen übernehmen, dann hier genau diese Zeilen angeben – sie werden aus der Schnellnotiz genommen. Unklares bleibt stehen.",
+      input_schema: { type: "object", properties: { zeilen: { type: "array", items: { type: "string" }, description: "Übernommene Zeilen, wörtlich wie in der Schnellnotiz" } }, required: ["zeilen"], additionalProperties: false },
     },
     run: (ctx, raw) => {
       const lines = list((raw as Input | null)?.zeilen);
       const current = ctx.data.kladde ?? "";
       const present = lines.filter((l) => current.split(/\n/).some((c) => c.trim() === l));
-      if (!present.length) return fail("Keine dieser Zeilen steht in der Kladde – wörtlich angeben.");
+      if (!present.length) return fail("Keine dieser Zeilen steht in der Schnellnotiz – wörtlich angeben.");
       const rest = withoutLines(current, present);
-      propose(ctx, { id: nextId(ctx), type: "set_kladde", text: rest, change: `${present.length} ${present.length === 1 ? "Zeile" : "Zeilen"} übernommen${rest ? " – der Rest bleibt" : ", Kladde ist leer"}` });
-      return { content: `Vorgemerkt: ${present.length} Zeilen aus der Kladde nehmen.` };
+      propose(ctx, { id: nextId(ctx), type: "set_kladde", text: rest, change: `${present.length} ${present.length === 1 ? "Zeile" : "Zeilen"} übernommen${rest ? " – der Rest bleibt" : ", Schnellnotiz ist leer"}` });
+      return { content: `Vorgemerkt: ${present.length} Zeilen aus der Schnellnotiz nehmen.` };
     },
   },
   {
@@ -251,6 +253,45 @@ export const NOTE_TOOLS: LotteTool[] = [
         .filter((x) => x.items.length)
         .map((x) => `${x.label}: ${x.items.slice(0, 10).map((i) => `${i.title}${i.carried ? ` (${i.carried})` : i.dueLabel ? ` (${i.dueLabel})` : i.when ? ` (${i.when})` : ""} [id=${i.entry.id}]`).join(", ")}`);
       return { content: lines.length ? `${lines.join("\n")}\nDie ganze Liste steht unter „Aufgaben“.` : "Gerade liegt keine Aufgabe an." };
+    },
+  },
+  {
+    area: "alltag",
+    definition: {
+      name: "pinnwand_schreiben",
+      description: "Kurze Nachricht an die Familien-Pinnwand (Zettel am Kühlschrank, bis 140 Zeichen, verschwindet nach 3 Tagen): 'Schreib an die Pinnwand: Bin um 20 Uhr da' → text 'Bin um 20 Uhr da'.",
+      input_schema: { type: "object", properties: { text: { type: "string", description: "Die Nachricht, kurz, ohne Anführungszeichen" } }, required: ["text"], additionalProperties: false },
+    },
+    run: (ctx, raw) => {
+      const text = str((raw as Input | null)?.text).slice(0, PIN_MAX);
+      if (!text) return fail("text angeben.");
+      propose(ctx, { id: nextId(ctx), type: "add_pin", text });
+      return { content: "Vorgemerkt: steht dann auf der Pinnwand (Startseite, Kachel Pinnwand)." };
+    },
+  },
+  {
+    area: "alltag",
+    definition: {
+      name: "wetter_abfragen",
+      description: "Wetter am Wetter-Ort für einen Tag (Standard heute): Beschreibung, Tief/Hoch, Regenrisiko, bei heute auch ab wann Regen. Für 'Wie wird das Wetter morgen?', 'Brauch ich heute einen Schirm?', 'Wie ist das Wetter am Samstag?'.",
+      input_schema: { type: "object", properties: { tag: { type: "string", description: "YYYY-MM-DD (aus der Datumsliste), Standard heute" } }, additionalProperties: false },
+    },
+    run: (ctx, raw) => {
+      const fc = ctx.forecast;
+      if (!fc) return { content: "Gerade keine Wetterdaten erreichbar – sag das kurz und freundlich, ohne Technik-Wörter." };
+      const day = /^\d{4}-\d{2}-\d{2}$/.test(str((raw as Input | null)?.tag)) ? str((raw as Input | null)?.tag) : ctx.today;
+      const d = fc.days.find((x) => x.date === day);
+      if (!d) return { content: `Für ${day} gibt es noch keine Vorhersage (nur die nächsten 7 Tage).` };
+      const lines = [`${fc.place}, ${day}: ${weatherKind(d.code).text}, ${round(d.min)} bis ${round(d.max)} °C, Regenrisiko ${d.rain} %.`];
+      if (day === ctx.today) {
+        const rain = hoursToday(fc, day).filter(isRainy).map((h) => h.hour);
+        lines.push(rain.length ? `Regen heute um ${rain.join(", ")} Uhr.` : "Heute trocken.");
+        lines.push(`Kurz: ${umbrellaAnswer(fc, day, 0)}`);
+      } else {
+        const label = dayAnswer(fc, day, "An dem Tag");
+        if (label) lines.push(label);
+      }
+      return { content: lines.join("\n") };
     },
   },
 ];

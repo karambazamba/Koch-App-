@@ -3,6 +3,7 @@
 // Änderung für die Vorschau vor und wenden sie nur auf eine Arbeitskopie an,
 // damit spätere Lese-Aufrufe den Vorschlag schon sehen.
 
+import type { Forecast } from "../wetter/forecast";
 import type { MailDraft } from "./mail";
 import { recipeBase } from "../essen/bases";
 import { isNeverAgain } from "../essen/ratings";
@@ -43,6 +44,8 @@ export type ToolContext = {
   mail?: MailDraft;
   /** Antwort-Knöpfe unter der Nachricht (`antwort_knoepfe`) */
   chips?: string[];
+  /** Wettervorhersage für den Wetter-Ort (vorab geholt, wenn nach dem Wetter gefragt wird) */
+  forecast?: Forecast | null;
 };
 
 export type ToolResult = { content: string; isError?: boolean };

@@ -13,7 +13,8 @@ import { QuickAddButton } from "@/components/shopping/QuickAdd";
 import { clockLabel } from "@/lib/aufgaben/answers";
 import { weekdayLong, weekdayShort } from "@/lib/aufgaben/model";
 import { addDays } from "@/lib/core/now";
-import { showToast } from "@/lib/core/toast";
+import { showDeleted, showToast } from "@/lib/core/toast";
+import { pushUndo } from "@/lib/core/undo";
 import { helperName, mealClockFor } from "@/lib/einstellungen/profile";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 import { matchStock } from "@/lib/essen/dishIdeas";
@@ -147,14 +148,14 @@ function SwapSheet({ data, day, onClose }: { data: HomeData; day: PlanDay; onClo
     onClose();
     if (!result.ok) return showToast({ text: result.text });
     replaceMealPlans(result.weeks);
-    showToast({ text: result.text, undo: () => replaceMealPlans(before), undoneText: "Rückgängig gemacht." });
+    pushUndo(result.text, () => replaceMealPlans(before));
   };
   const clear = () => {
     const before = loadMealPlans();
     const weekStart = weekStartFor(new Date(`${day.date}T12:00:00`), data.profile.shoppingDay || "Montag");
     replaceMealPlans(mealPlansWithWeek(before, weekStart, (e) => entriesWithoutSlot(e, day.slot)));
     onClose();
-    showToast({ text: `Freigemacht ✓ ${label}`, undo: () => replaceMealPlans(before), undoneText: "Rückgängig gemacht." });
+    showDeleted(pushUndo(`das Freimachen von ${label}`, () => replaceMealPlans(before)), "Freigemacht");
   };
   return (
     <Sheet title={current ? `Statt ${current}` : `Was gibt's ${label}?`} onClose={onClose}>
