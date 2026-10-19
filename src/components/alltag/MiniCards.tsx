@@ -151,8 +151,8 @@ export function AufgabenSection({ items, more, href = "/aufgaben" }: { items: Da
           const isLeaving = leaving === item.key;
           return (
             <MiniCard key={item.key} item={item} leaving={isLeaving} entering={Boolean(before && !before.includes(item.key))}>
-              <div className="flex min-h-[78px] items-center gap-1 py-2 pl-2.5 pr-3">
-                <button type="button" role="checkbox" aria-checked={isLeaving} aria-label={`${item.title} erledigt`} onClick={() => start(item)} className="flex h-11 w-9 shrink-0 items-center justify-center">
+              <div className="flex min-h-[78px] items-center gap-0.5 py-2 pl-1.5 pr-3">
+                <button type="button" role="checkbox" aria-checked={isLeaving} aria-label={`${item.title} erledigt`} onClick={() => start(item)} className="flex h-11 w-9 shrink-0 items-center justify-center pl-1">
                   <span
                     className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${isLeaving ? "border-accent bg-accent text-on-accent" : "border-stone-300"}`}
                     style={isLeaving ? { animation: "check-pop 0.4s ease-out" } : undefined}

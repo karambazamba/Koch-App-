@@ -353,7 +353,9 @@ export function taskOverview(entries: CalendarEntry[], today: string): Record<Ta
   const byTime = (x: DayItem, y: DayItem) => Number(x.time === null) - Number(y.time === null) || (x.time ?? "").localeCompare(y.time ?? "") || x.title.localeCompare(y.title, "de");
   // Mit Tag/Frist nach Datum, "diese Woche" ohne Tag danach
   const byDate = (x: DayItem, y: DayItem) => Number(x.when === "diese Woche") - Number(y.when === "diese Woche") || x.date.localeCompare(y.date) || byTime(x, y);
-  groups.heute.sort((x, y) => Number(!x.dueLabel) - Number(!y.dueLabel) || byTime(x, y));
+  // Heute dran: mit Uhrzeit, dann von früher Mitgenommenes (älteste zuerst), dann Frist heute, dann der Rest
+  const age = (i: DayItem) => (i.carried ? 0 : i.dueLabel ? 1 : 2);
+  groups.heute.sort((x, y) => Number(x.time === null) - Number(y.time === null) || age(x) - age(y) || byTime(x, y));
   groups.woche.sort(byDate);
   groups.spaeter.sort(byDate);
   groups.irgendwann.sort((x, y) => x.entry.erstellt.localeCompare(y.entry.erstellt));

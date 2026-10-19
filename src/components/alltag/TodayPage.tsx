@@ -270,9 +270,9 @@ function FoodTile({ data, dish, over, onOpen }: { data: HomeData; dish: string |
 function CompactTile({ label, line, icon, href, onClick, action }: { label: string; line: string; icon: React.ReactNode; href?: string; onClick?: () => void; action?: React.ReactNode }) {
   const body = (
     <>
-      <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-        {icon}
-        {label}
+      <span className="flex min-w-0 items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
+        <span className="shrink-0">{icon}</span>
+        <span className="truncate">{label}</span>
       </span>
       <span className="block truncate text-base font-semibold">{line}</span>
     </>

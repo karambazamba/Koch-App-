@@ -18,6 +18,9 @@ Familie wählt (Standard: Lotte).
   ausgeschalteter Baustein und wird nur bei Bedarf gezeigt.
 - Pro Bildschirm eine große Hauptsache, wenig Text, viel Weißraum. Leere
   Zustände freundlich und einladend, nie als Fehler.
+- Termin = feste Uhrzeit, Aufgabe = zu erledigen, Notiz = nur festhalten.
+  Heute zeigt je max. 2 Termine und 2 Aufgaben als Kärtchen; Notizen nicht
+  auf Heute.
 - Erster Start = kurzes Kennenlernen im Chat (max. 4 Schritte,
   überspringbar). Antworten steuern die Startseite.
 
@@ -239,7 +242,35 @@ Familie wählt (Standard: Lotte).
   dieser Tag + Einzelkopie, `removeItem(onlyDate)`, `setReminder`). Alte
   Termine (`wasgibts.termine`) werden einmalig übernommen
   (`migrateOldTermine`, im KitchenHelper), alte Daten bleiben liegen.
-- Unerledigte einmalige Aufgaben rutschen still auf heute: kein
+- Termine, Aufgaben, Notizen getrennt (v0.16): Aufgabe hat optional Tag,
+  Frist oder Zeitraum (`week` = Montag, "diese Woche"); ohne alles =
+  "Irgendwann" (steht an keinem Tag). `taskOverview()` gruppiert Heute dran ·
+  Diese Woche · Später · Irgendwann · Erledigt (14 Tage); `urgentTasks()`
+  (heute, nächste Frist, diese Woche), `upcomingTermine()` (läuft noch oder
+  kommt noch). Speicher `wasgibts.eintraege` v2: alte "Aufgaben" mit Tag +
+  Uhrzeit (ohne Frist) wurden zu Terminen. Heute (`MiniCards.tsx`):
+  Abschnitte TERMINE und AUFGABEN mit je 2 Kärtchen nebeneinander (1 = volle
+  Breite, 0 = Abschnitt weg), Farbstreifen links (Familie orange, Arbeit
+  blau), Termin: Uhrzeit 15 px fett, Titel 12,5 px, graue Zeile, Kästchen
+  oben rechts; Aufgabe: Kreis links; "+ N weitere" → Tag bzw. `/aufgaben`;
+  Antippen = Menü, Abhaken mit Animation/Vibration, der nächste gleitet
+  herein (`card-in`). Essen und Einkauf (beide kompakt) nebeneinander.
+  Seite `/aufgaben` (`TasksView`, Filter, Gruppen, "✓ N erledigt"
+  eingeklappt, "+" mit "Irgendwann/Diese Woche"). Notizen
+  (`src/lib/notizen/`, Speicher `wasgibts.notizen` v1, typ "notiz"): Titel,
+  Emoji, Text ODER Liste (abhakbar), Raum, angeheftet. Seite `/notizen`
+  (angeheftet oben voll, sonst 2er-Raster, Hinweis "Merk dir …"), Editor
+  `/notizen/bearbeiten?id=|?neu=text|liste` (speichert sofort). Erreichbar
+  über die Woche (unten "Aufgaben · Notizen"), Lotte und optional die Kachel
+  "notizen" (Startseite anpassen, standardmäßig aus). Woche: Aufgaben mit Tag/
+  Frist klein mit Kreis. Lotte: notiz_anlegen, notiz_aendern, notiz_loeschen,
+  liste_eintrag_hinzufuegen (legt Liste an; "… wünscht sich …" → Geschenkideen),
+  notiz_anheften, notizen_anzeigen, aufgaben_anzeigen, aufgabe_anlegen mit
+  `zeitraum` (Ops `upsert_note`/`remove_note`); Kontext: Notiz-Titel und
+  Aufgaben ohne festen Tag. Ohne KI `parseNoteCommand()` ("Merk dir das
+  WLAN-Passwort: …", "Was steht auf der Packliste?", "Häng das WLAN oben an",
+  "Was muss ich heute noch erledigen?", "Zeig mir meine Aufgaben/Notizen").
+- Unerledigte einmalige Aufgaben mit Tag rutschen still auf heute: kein
   "überfällig", nur "von gestern"/"von Montag"/"von letzter Woche".
   Vergangene Termine und Serien-Tage verschwinden leise.
 - Seiten (`HomePager`): Leiste "Woche · Heute · Essen", Wechsel per Tipp
