@@ -11,6 +11,7 @@ import { weekOf } from "./ops";
 import type { LotteTool } from "./registry";
 import { dateForDay, nextId, propose, runTool, type ToolContext, type ToolResult } from "./tools";
 import { findDate } from "../aufgaben/parse";
+import { BAUSTEINE } from "../core/features";
 
 type Input = Record<string, unknown>;
 const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
@@ -39,7 +40,33 @@ function slotFor(ctx: ToolContext, date: string) {
 
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(n < 10 ? 1 : 0).replace(".", ","));
 
+const bausteinTool = (on: boolean): LotteTool => ({
+  area: "alltag",
+  definition: {
+    name: on ? "baustein_an" : "baustein_aus",
+    description: on
+      ? "Schaltet einen Baustein ein (zusätzliche Funktion, z. B. 'Zeig mir den Vorrat' wenn der Vorrat aus ist). Sag danach kurz, wo er steht."
+      : "Schaltet einen Baustein aus ('Ich brauche die Tipps nicht'). Daten bleiben erhalten.",
+    input_schema: {
+      type: "object",
+      properties: { baustein: { type: "string", enum: BAUSTEINE.map((b) => b.feature), description: BAUSTEINE.map((b) => `${b.feature} = ${b.name}`).join(", ") } },
+      required: ["baustein"],
+      additionalProperties: false,
+    },
+  },
+  run: (ctx, raw) => {
+    const feature = str((raw as Input | null)?.baustein);
+    const b = BAUSTEINE.find((x) => x.feature === feature);
+    if (!b) return fail("baustein angeben.");
+    if ((ctx.data.features ?? []).includes(feature) === on) return { content: `${b.name} ist schon ${on ? "an" : "aus"}.` };
+    propose(ctx, { id: nextId(ctx), type: "set_feature", feature, on });
+    return { content: `Vorgemerkt: ${b.name} ${on ? "einschalten" : "ausschalten"}.${on ? ` ${b.where}` : ""}` };
+  },
+});
+
 export const HOME_TOOLS: LotteTool[] = [
+  bausteinTool(true),
+  bausteinTool(false),
   {
     area: "essen",
     definition: {

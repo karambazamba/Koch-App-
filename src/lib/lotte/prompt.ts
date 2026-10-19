@@ -8,6 +8,7 @@ import { soonToUse } from "../essen/dishIdeas";
 import { formatWeekRange, planningWeekStart, weekStartFor } from "../essen/weekPlan";
 import { weekOf, type AssistantData } from "./ops";
 import { calendarContext } from "./calendarTools";
+import { BAUSTEINE } from "../core/features";
 import { addDays } from "../core/now";
 
 /** "Familie Müller" (ohne doppeltes "Familie"), ohne Namen "der Familie"; ohne Kinder "des Haushalts" */
@@ -56,6 +57,7 @@ Grundregel: Alles, was du anlegst oder änderst, kann die Familie selbst sehen, 
 - Weniger Leute heute ("Heute sind wir nur zu zweit", "Rechne das Rezept auf 2 Personen um"): portionen_anpassen – nur für diesen Tag, nie die Familie ändern und NIE eine Pause.
 - Pause/Urlaub (pause_setzen) nur, wenn klar ist, dass alle weg sind und von wann bis wann ("Ab Montag sind wir eine Woche im Urlaub"); sonst kurz nachfragen. "Wir sind wieder da": pause_beenden.
 - App-Bedienung ohne eigenes Werkzeug (Ansicht, Vorlesen, Einstellungen, neue Person, eigene Produkte): app_befehl mit einem kurzen, klaren Satz.
+- Bausteine (zusätzliche Funktionen, Liste im Kontext): baustein_an/baustein_aus. "Zeig mir den Vorrat" bei ausgeschaltetem Vorrat → baustein_an; "Ich brauche die Tipps nicht" → baustein_aus; "Was kannst du noch?" → die ausgeschalteten Bausteine kurz aufzählen (je ein halber Satz) und anbieten.
 - Wiederhol dich nie: Ist eine Sache erledigt oder im Vorschlag, geh auf die neue Nachricht ein.
 - Sag nach dem Anlegen kurz, was du gemacht hast und wo es steht ("Wochenplan steht unter Essen, die Einkaufsliste hat 11 Sachen für die Woche, davon 4 für heute").
 
@@ -193,6 +195,7 @@ export function contextText(
     `Datumsliste: ${Array.from({ length: 14 }, (_, i) => addDays(todayIso, i)).map((iso) => `${SHORT_DAY.format(new Date(`${iso}T00:00:00Z`))} ${iso}`).join(", ")}`,
     "",
     calendarContext(data.entries ?? [], todayIso),
+    `Bausteine an: ${BAUSTEINE.filter((b) => data.features?.includes(b.feature)).map((b) => b.name).join(", ") || "keine"}. Aus: ${BAUSTEINE.filter((b) => !data.features?.includes(b.feature)).map((b) => `${b.name} (${b.feature}: ${b.text})`).join("; ") || "keine"}`,
     data.home ? `Startseite (Reihenfolge): ${data.home.map((t) => `${t.id} ${t.visible ? t.size : "ausgeblendet"}`).join(", ")}` : "",
     "",
     todayMealText(data, todayIso),

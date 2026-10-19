@@ -121,11 +121,15 @@ export function HomePager({ data }: { data: HomeData }) {
 }
 
 /** Lotte-Leiste unten: dunkel, oranger Avatar links, weißer Mikrofon-Knopf rechts */
-export function LotteBar({ name }: { name: string }) {
+export function LotteBar({ name, bottom }: { name: string; bottom?: string }) {
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 bg-linear-to-t from-background via-background/90 to-transparent px-4 pt-6 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+    <div
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-20 bg-linear-to-t from-background via-background/90 to-transparent px-4 pt-6 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+      style={bottom ? { bottom } : undefined}
+      data-lotte-leiste
+    >
       <div className="pointer-events-auto mx-auto flex h-16 max-w-lg items-center gap-2 rounded-full bg-bar pl-2 pr-2 shadow-lg">
-        <button type="button" onClick={() => openHelper()} className="flex h-full min-w-0 flex-1 items-center gap-3 text-left">
+        <button type="button" onClick={() => openHelper()} aria-label={`Sag ${name}, was ansteht … (${name} öffnen)`} className="flex h-full min-w-0 flex-1 items-center gap-3 text-left">
           <LotteAvatar size={46} />
           <span className="truncate text-base text-on-bar/75">Sag {name}, was ansteht …</span>
         </button>

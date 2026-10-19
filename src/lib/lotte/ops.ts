@@ -38,6 +38,8 @@ export type AssistantData = {
   entries?: CalendarEntry[];
   /** Startseite: Kacheln (Reihenfolge, Größe, sichtbar) */
   home?: HomeTile[];
+  /** Eingeschaltete Bausteine (nur zum Lesen; Schalten über `set_feature`) */
+  features?: string[];
 };
 
 /** Ein Tag einer Planungswoche – es gibt genau ein Hauptgericht pro Tag */
@@ -85,6 +87,8 @@ export type ChangeOp =
   | { id: string; type: "set_pause"; pause: { from: string; until: string | null } | null }
   // App-Bedienung (Ansicht, Vorlesen, Einstellungen …): die App führt den Satz beim Übernehmen mit ihren eigenen Regeln aus
   | { id: string; type: "app_command"; text: string }
+  // Baustein an/aus (wird beim Übernehmen in der App geschaltet)
+  | { id: string; type: "set_feature"; feature: string; on: boolean }
   // Vorrat und Wunsch-Ideen liegen in eigenen Speichern – sie werden erst beim
   // Übernehmen dort eingetragen (`commitOps`), hier ändern sie nichts.
   | { id: string; type: "add_pantry"; name: string; amount: number | null; unit: string; place: PantryPlace }
@@ -240,6 +244,9 @@ export function applyOps(
       }
       case "set_pause":
         next = { ...next, profile: { ...next.profile, pause: op.pause } };
+        break;
+      case "set_feature":
+        next = { ...next, features: op.on ? [...new Set([...(next.features ?? []), op.feature])] : (next.features ?? []).filter((f) => f !== op.feature) };
         break;
       case "undo_last":
       case "app_command":

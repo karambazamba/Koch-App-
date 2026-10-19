@@ -7,7 +7,7 @@ function VorratPageContent() {
   return <PantryView />;
 }
 
-// Versteckt, bis "Alte Funktionen anzeigen (Test)" an ist
+// Sichtbar, wenn der passende Baustein an ist (Einstellungen → Bausteine)
 export default function VorratPage() {
   return (
     <FeatureGate feature="vorrat">

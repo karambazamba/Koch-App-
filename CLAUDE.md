@@ -12,10 +12,14 @@ Familie wählt (Standard: Lotte).
 ## 1. Ruhig und leer
 - Drei Seiten: Woche · Heute · Essen (Heute ist die Startseite). Die
   Oberfläche ist ruhig und leer; nichts steht herum, was nicht gebraucht wird.
-- Keine Überladung: Alles Neue startet versteckt (Feature-Flags,
-  `src/lib/core/features.ts`) und wird nur bei Bedarf gezeigt.
+- Es gibt nur noch EIN Design. Zusätzliche Funktionen sind Bausteine, die
+  sich in das neue Design einfügen (`src/lib/core/features.ts`, Einstellungen
+  → "Bausteine – Was <Name> noch kann"). Alles Neue startet als
+  ausgeschalteter Baustein und wird nur bei Bedarf gezeigt.
 - Pro Bildschirm eine große Hauptsache, wenig Text, viel Weißraum. Leere
   Zustände freundlich und einladend, nie als Fehler.
+- Erster Start = kurzes Kennenlernen im Chat (max. 4 Schritte,
+  überspringbar). Antworten steuern die Startseite.
 
 ## 2. Gespräch zuerst
 - Lotte (Sprache/Chat) ist der Hauptweg. Jede Funktion soll auch per Gespräch
@@ -143,20 +147,61 @@ Familie wählt (Standard: Lotte).
   Wetter), `lotte` (KI-Client, Engine, Werkzeuge, Prompt, Sprache ein/aus,
   Chat-Vorschläge), `essen` (Plan, Rezepte, Ideen, Vorrat, Tipps, Backstube …),
   `einkauf` (Einkaufsliste, Plus), `aufgaben` (Termine & Aufgaben),
-  `einstellungen` (Profil, Kennenlernen, Schnellstart-Logik). Oberfläche in
+  `einstellungen` (Profil, Kennenlernen, erster Start `welcome.ts`). Oberfläche in
   `src/components/` nach Bildschirmen.
-- Feature-Flags an EINER Stelle (`src/lib/core/features.ts`): versteckt sind
-  Wochenplan-Oberfläche, Vorrat, Rezepte, Ideen, Tipps, Joker,
-  Wochenend-Ideen, Modi, Kochstil-Seiten, Kacheln, Spontan-Knopf,
-  Bewertungen, Lottes Platz, Kennenlernen-Chat. `useFeature()`/`featureOn()`;
-  versteckte Seiten über `FeatureGate` (leitet zur Startseite). In den
-  Einstellungen ganz unten "Alte Funktionen anzeigen (Test)" (pro Gerät,
-  `wasgibts.funktionen`) blendet alles wieder ein; die Daten bleiben immer
-  vollständig erhalten. Dauerhaft freischalten über `ENABLED` in features.ts.
-- Sichtbar ohne Test-Schalter: Startseite (siehe Leitbild 7), Chat mit Lotte,
-  Einkaufsliste, schlanke Einstellungen (Name & Stimme, Vorlesen, Ansicht,
-  Familie, Daten & App) und der Schnellstart ohne Profil (`QuickStart`: Name
-  + wer noch dazugehört).
+- Bausteine (v0.13, `src/lib/core/features.ts`, Speicher
+  `wasgibts.funktionen` v2 `{ on: Feature[] }`): `BAUSTEINE` = Wochenplan,
+  Vorrat & Tiefkühler, Rezepte, Backen mit Timern, Spontan-Ideen (inkl.
+  `/ideen`), Tipps, Wochenend-Ideen, Kochstil & Vorlieben, Wie oft melde ich
+  mich? – je Icon, Name, Satz, `where` ("Der Wochenplan steht jetzt rechts
+  unter Essen."). `useFeature()`/`featureOn()`/`setFeature()`/
+  `unlockFeature()`; Seiten eines Bausteins über `FeatureGate` (auch mehrere,
+  z. B. `/kochbuch` = Rezepte oder Backen). Einstellungen → "Bausteine"
+  (`/profil/bausteine`, `BausteineView`: An/Aus mit Hinweis und Rückgängig).
+  Eingeschaltet im neuen Design: Wochenplan → "Ganze Woche planen" auf Essen
+  (+ Standardwoche in den Einstellungen), Rezepte/Backen/Vorrat/Spontan →
+  Abschnitte auf Essen (`BausteinSections`), Vorrat zusätzlich als Kachel
+  "vorrat" auf Heute (über "Startseite anpassen" ein-/ausblendbar, ohne
+  Baustein nicht in der Liste), Tipps/Wochenend-Ideen → nur über den einen
+  Satz oben auf Heute an ruhigen Tagen (`dailyTip`, "Mehr dazu"), Kochstil/
+  Modi → Zeilen in den Einstellungen. Lotte: `baustein_an`/`baustein_aus`
+  (Op `set_feature`, Vorschau + Übernehmen; Kontext "Bausteine an/aus"); ohne
+  KI `parseBausteinCommand` ("Zeig mir den Vorrat", "Ich brauche die Tipps
+  nicht", "Was kannst du noch?"). Nutzt Lotte einen ausgeschalteten Baustein,
+  schaltet sie ihn ein und sagt, wo er steht. Der alte Schalter "Alte
+  Funktionen anzeigen (Test)" ist weg: v1 mit `legacy` wird beim Update
+  zurückgesetzt, Genutztes (Plan, Vorrat, Rezepte, Backen, Tipps, Ideen,
+  Vorlieben, Modus) als Bausteine übernommen. Der alte Aufbau nur noch für
+  die Entwicklung über `/?legacy=1` (nirgends verlinkt, sessionStorage
+  `wasgibts.entwicklung`, `/?legacy=0` beendet). Auf allen Seiten dieselbe
+  dunkle Lotte-Leiste (`LotteBar`, statt des runden Knopfs).
+- Immer sichtbar: Startseite (siehe Leitbild 7), Chat mit Lotte,
+  Einkaufsliste, schlanke Einstellungen (Startseite & Bausteine, Name &
+  Stimme, Vorlesen, Ansicht, Familie, Daten & App) und beim ersten Start das
+  Kennenlernen (siehe unten).
+- Kennenlernen beim ersten Start (v0.14, ohne Profil auf `/` und `/profil`,
+  nach "Neu anfangen" wieder): Vollbild-Chat `WelcomeChat`
+  (`src/components/welcome/`) mit Kopf (Avatar, Name, "Überspringen"),
+  Fortschritt in 4 Abschnitten, Blasen (Assistentin weiß links, Antwort orange
+  rechts), Chips (Hauptknopf dunkel, gewählt hellorange mit ✓) und dunkler
+  Leiste "Antworten oder einsprechen …" (Mikrofon gedrückt halten). Ablauf
+  rein in `src/lib/einstellungen/welcome.ts` (`answer`, `chipsFor`,
+  `skipWelcome`, `profileFrom`, `homeTilesFor`): 1. Begrüßung ("Los geht's" /
+  "Anders nennen"), 2. Name (Lotte/Theo/Ida/Bruno/eigener, Stimme passend) und
+  "Wobei soll ich dir helfen?" (mehrfach: Termine, Arbeit, Essen, Einkauf,
+  Familie; Standard Termine+Essen+Einkauf), nur bei Essen "Woche planen /
+  Spontan / Mal so, mal so", 3. "Wie heißt du – und wer gehört noch dazu?"
+  (mit KI Namen + Kind über `recognizeAnswer("names")`, sonst Komma/"und";
+  Bestätigung mit Namens-Chips, Antippen = Kind/erwachsen), 4. Fertig mit 3
+  Beispiel-Sätzen (gehen direkt an die Assistentin). Wirkung
+  (`finishWelcome` in `welcomeStore.ts`): Profil (Personen, Haushaltstyp,
+  Name/Stimme, Planstil), Startseiten-Kacheln (ohne Essen keine Essen-Kachel,
+  ohne Einkauf keine Einkauf-Kachel), Bausteine Wochenplan/Spontan, Raum
+  "Arbeit" nur wenn gewählt (`useWorkRoom`: Filter in der Woche und "Für" im
+  Formular; bestehende Nutzer und vorhandene Arbeit-Einträge zeigen ihn
+  immer). Überspringen = Standardwerte (Lotte, Termine+Essen+Einkauf, "Mal
+  so, mal so", eine Person). Zwischenstand nach jeder Antwort unter
+  `wasgibts.willkommen` (App zu → geht weiter).
 - Einheitliches Datenmodell für Supabase (`src/lib/core/entries.ts`): jeder
   Eintrag mit `id`, `typ` (termin/aufgabe/gericht/einkauf), `raum`
   (familie/arbeit), `besitzer` (bis zu Konten "lokal"), `erstellt`,
@@ -323,7 +368,7 @@ Familie wählt (Standard: Lotte).
   maskable, apple-touch-icon, favicon.ico). In der App `AppIcon`/`AppLogo`
   (`src/components/AppLogo.tsx`): Startseite Icon 44px + Schriftzug,
   Unterseiten 32px oben rechts im `PageHeader` als Link "Zur Startseite".
-- Alte Startseite "Heute" (nur mit "Alte Funktionen anzeigen (Test)",
+- Alte Startseite "Heute" (nur Entwicklung über `/?legacy=1`,
   `src/components/home/HomeView.tsx`) – genau sechs Elemente, passt ohne Scrollen aufs iPhone (auch 375 px), wenig Text, viel
   Weißraum:
   1. Kopf: Logo, darunter klein das Datum, rechts Zahnrad zu `/profil`.
@@ -379,10 +424,11 @@ Familie wählt (Standard: Lotte).
      und Mikrofon im Feld rechts (`openHelper("voice")`). Auf der Startseite
      kein schwebender Knopf.
 
-## Alte Funktionen (Koch-App) – versteckt hinter "Alte Funktionen anzeigen (Test)"
+## Funktionen hinter den Bausteinen (aus der Koch-App)
 
-Alles hier bleibt im Code und in den Daten erhalten und funktioniert mit dem
-Test-Schalter wie bisher. Neue Arbeit baut auf dem Fundament oben auf.
+Alles hier bleibt im Code und in den Daten erhalten; sichtbar wird es über
+den passenden Baustein (im neuen Design) bzw. für die Entwicklung über
+`/?legacy=1`. Neue Arbeit baut auf dem Fundament oben auf.
 
 - Erstes Kennenlernen als Gespräch (`/profil` ohne Profil → `OnboardingChat`,
   Vollbild im Stil des Küchenhelfer-Panels). Ablauf rein in

@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+
+const noSubscribe = () => () => {};
 import { BookOpen, Clock, Heart, Plus, Search } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { CARD, INPUT_BASE, PAGE_MAIN, SECTION_TITLE, chipClass } from "@/components/ui/styles";
@@ -61,8 +64,11 @@ export function CookbookList() {
   const profile = useProfile();
   const mealPlans = useMealPlans();
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<Filter>("alle");
+  const [chosen, setFilter] = useState<Filter | null>(null);
   const [adding, setAdding] = useState(false);
+  // "/kochbuch?filter=backen" (von der Essen-Seite) gilt, bis man selbst einen Filter wählt
+  const fromUrl = useExternalStore(noSubscribe, () => new URLSearchParams(window.location.search).get("filter"), () => null);
+  const filter: Filter = chosen ?? (fromUrl === "backen" ? "backen" : "alle");
 
   const all = recipes ? Object.values(recipes) : [];
   const q = query.trim().toLowerCase();

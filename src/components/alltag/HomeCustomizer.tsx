@@ -10,6 +10,7 @@ import { Sheet } from "@/components/plan/Sheet";
 import { CARD } from "@/components/ui/styles";
 import { HOME_TILES, applyHomeChange, saveHomeTiles, useHomeTiles, type HomeChange, type HomeTile } from "@/lib/core/homeLayout";
 import { showToast } from "@/lib/core/toast";
+import { useFeature } from "@/lib/core/features";
 import { pushUndo } from "@/lib/core/undo";
 
 const ROW_GAP = 8;
@@ -19,7 +20,10 @@ function change(tiles: HomeTile[], c: HomeChange) {
 }
 
 export function HomeCustomizerList() {
-  const tiles = useHomeTiles();
+  const all = useHomeTiles();
+  const pantryOn = useFeature("vorrat");
+  // Kacheln von ausgeschalteten Bausteinen erscheinen hier nicht
+  const tiles = all?.filter((t) => HOME_TILES.find((h) => h.id === t.id)?.feature !== "vorrat" || pantryOn);
   const rows = useRef<(HTMLLIElement | null)[]>([]);
   const [drag, setDrag] = useState<{ index: number; startY: number; dy: number; height: number } | null>(null);
   if (!tiles) return <div className={`${CARD} h-64 animate-pulse`} />;
@@ -35,11 +39,12 @@ export function HomeCustomizerList() {
   const onUp = () => {
     if (!drag) return;
     if (target !== drag.index) {
-      const before = tiles;
+      const before = all ?? tiles;
       const copy = [...tiles];
       const [tile] = copy.splice(drag.index, 1);
       copy.splice(target, 0, tile);
-      saveHomeTiles(copy);
+      // Ausgeblendete Baustein-Kacheln behalten ihren Platz am Ende
+      saveHomeTiles([...copy, ...(all ?? []).filter((t) => !copy.some((c) => c.id === t.id))]);
       showToast({ text: "Reihenfolge geändert ✓", undo: pushUndo("die Reihenfolge der Startseite", () => saveHomeTiles(before)), undoneText: "Rückgängig gemacht." });
     }
     setDrag(null);

@@ -16,6 +16,7 @@ import { addDays } from "@/lib/core/now";
 import { dishOf, useMeals } from "./useMeals";
 import { roomBar } from "./Items";
 import { EntryForm } from "./EntryForm";
+import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 
 type Filter = "alles" | "familie" | "arbeit";
 const STEP = 14;
@@ -26,20 +27,24 @@ export function WeekPage({ today, entries }: { today: string; entries: CalendarE
   const [adding, setAdding] = useState(false);
   const meals = useMeals(today, days);
   const dates = Array.from({ length: days }, (_, i) => addDays(today, i));
+  // Filter nur, wenn es "Arbeit" gibt (im Kennenlernen gewählt oder schon Einträge)
+  const work = useWorkRoom() || entries.some((e) => e.raum === "arbeit");
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
         <div className="flex-1">
-          <Segmented
-            label="Filter"
-            value={filter}
-            onChange={setFilter}
-            options={[
-              { value: "alles", label: "Alles" },
-              { value: "familie", label: "Familie" },
-              { value: "arbeit", label: "Arbeit" },
-            ]}
-          />
+          {work && (
+            <Segmented
+              label="Filter"
+              value={filter}
+              onChange={setFilter}
+              options={[
+                { value: "alles", label: "Alles" },
+                { value: "familie", label: "Familie" },
+                { value: "arbeit", label: "Arbeit" },
+              ]}
+            />
+          )}
         </div>
         <button type="button" onClick={() => setAdding(true)} aria-label="Neuer Termin oder neue Aufgabe" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-sm active:scale-95">
           <Plus className="h-5 w-5" strokeWidth={2.75} aria-hidden />

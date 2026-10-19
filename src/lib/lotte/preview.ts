@@ -9,6 +9,7 @@ import { REMINDERS, repeatLabel, weekdayShort, type CalendarEntry } from "../auf
 import { clockLabel } from "../aufgaben/answers";
 import { describeHomeChange, tileLabel } from "../core/homeLayout";
 import { pauseLabel } from "../essen/spontan";
+import { bausteinOf, type Feature } from "../core/features";
 import { formatPantryItem, PANTRY_PLACES } from "../essen/pantry";
 import { formatWeekRange, planForWeek } from "../essen/weekPlan";
 import {
@@ -213,6 +214,10 @@ function describe(
         before: null,
         after: op.pause ? `${pauseLabel(op.pause)} – an diesen Tagen plane ich nichts` : "Pause beenden – alles wie gewohnt",
       };
+    case "set_feature": {
+      const b = bausteinOf(op.feature as Feature);
+      return { opId: op.id, group: "Bausteine", order: 30_200, label: b?.name ?? op.feature, before: null, after: op.on ? `einschalten – ${b?.where ?? ""}` : "ausschalten (Daten bleiben)" };
+    }
     case "app_command":
       return { opId: op.id, group: "In der App", order: 30_100, label: "ausführen", before: null, after: `„${op.text}“` };
     case "undo_last":

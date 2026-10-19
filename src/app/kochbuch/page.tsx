@@ -7,10 +7,10 @@ function CookbookPageContent() {
   return <CookbookList />;
 }
 
-// Versteckt, bis "Alte Funktionen anzeigen (Test)" an ist
+// Sichtbar, wenn der passende Baustein an ist (Einstellungen → Bausteine)
 export default function CookbookPage() {
   return (
-    <FeatureGate feature="rezepte">
+    <FeatureGate feature={["rezepte", "backen"]}>
       <CookbookPageContent />
     </FeatureGate>
   );

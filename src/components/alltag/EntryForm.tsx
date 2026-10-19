@@ -3,6 +3,7 @@
 // Termin oder Aufgabe anlegen/bearbeiten (Formular von unten). Lotte ist
 // der Hauptweg – das Formular dient zum Nachschauen und Feinjustieren.
 
+import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 import { useState } from "react";
 import { Sheet } from "@/components/plan/Sheet";
 import { Segmented } from "@/components/ui/Segmented";
@@ -38,6 +39,7 @@ export function EntryForm({ entry, date, onClose }: { entry?: CalendarEntry; dat
   const [days, setDays] = useState<number[]>(d?.repeat?.kind === "wochentage" ? d.repeat.days : [weekdayIndex(day)]);
   const [reminder, setReminder] = useState<Reminder>(d?.reminder ?? "aus");
   const [hint, setHint] = useState("");
+  const workRoom = useWorkRoom() || room === "arbeit";
 
   const save = () => {
     if (!title.trim()) return setHint("Wie heißt es? Ein Wort reicht.");
@@ -92,17 +94,19 @@ export function EntryForm({ entry, date, onClose }: { entry?: CalendarEntry; dat
             </label>
           )}
         </div>
-        <div className="flex flex-col gap-2">
-          <span className={LABEL}>Für</span>
-          <div className="flex gap-2" role="radiogroup" aria-label="Für">
-            {(["familie", "arbeit"] as const).map((r) => (
-              <button key={r} type="button" role="radio" aria-checked={room === r} onClick={() => setRoom(r)} className={chipClass(room === r)}>
-                <span className={`h-2.5 w-2.5 rounded-full ${r === "arbeit" ? "bg-work" : "bg-accent"}`} aria-hidden />
-                {r === "familie" ? "Familie" : "Arbeit"}
-              </button>
-            ))}
+        {workRoom && (
+          <div className="flex flex-col gap-2">
+            <span className={LABEL}>Für</span>
+            <div className="flex gap-2" role="radiogroup" aria-label="Für">
+              {(["familie", "arbeit"] as const).map((r) => (
+                <button key={r} type="button" role="radio" aria-checked={room === r} onClick={() => setRoom(r)} className={chipClass(room === r)}>
+                  <span className={`h-2.5 w-2.5 rounded-full ${r === "arbeit" ? "bg-work" : "bg-accent"}`} aria-hidden />
+                  {r === "familie" ? "Familie" : "Arbeit"}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
         <label className="flex flex-col gap-1.5">
           <span className={LABEL}>Etikett (optional)</span>
           <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="z. B. Kita, Arzt, Café" className={INPUT} />

@@ -11,11 +11,12 @@ import { useMinutes, useRatingCandidate } from "./useRatingCandidate";
 import { mealIsOver, useCookedDays } from "@/lib/essen/mealDone";
 import { useLegacyFeatures } from "@/lib/core/features";
 import { HomePager } from "@/components/alltag/HomePager";
+import { WelcomeChat } from "@/components/welcome/WelcomeChat";
 
 /**
  * Startseite. Neustart (Standard): drei Seiten Woche · Heute · Essen
- * (HomePager) mit der Lotte-Leiste unten. Mit "Alte Funktionen anzeigen
- * (Test)" die frühere Startseite:
+ * (HomePager) mit der Lotte-Leiste unten. Nur für die Entwicklung
+ * (/?legacy=1) die frühere Startseite:
  * genau sechs Elemente: Kopf, Heute-Karte, Lottes Platz
  * (höchstens EINE Sache), drei Kacheln, "Spontan kochen" und die
  * Eingabeleiste. Passt ohne Scrollen aufs iPhone. Neue Funktionen bekommen
@@ -35,8 +36,9 @@ export function HomeView() {
   const legacy = useLegacyFeatures();
   const lotte = useLottePlace(legacy ? data : null, { welcome: welcome && Boolean(legacy) });
 
-  // Neustart: drei Seiten Woche · Heute · Essen
+  // Neustart: drei Seiten Woche · Heute · Essen; ohne Profil zuerst das Kennenlernen im Chat
   if (data && legacy === false) return <HomePager data={data} />;
+  if (data === null && legacy === false) return <WelcomeChat />;
 
   return (
     <>

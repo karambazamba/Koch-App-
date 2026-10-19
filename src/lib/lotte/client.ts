@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { replaceEntries } from "../aufgaben/store";
 import { applyHomeChange, loadHomeTiles, saveHomeTiles } from "../core/homeLayout";
-import { unlockFeature } from "../core/features";
+import { BAUSTEINE, bausteinOf, featureOn, setFeature, unlockFeature, type Feature } from "../core/features";
 import { pushUndo, undoLast } from "../core/undo";
 import { buildShoppingList } from "../einkauf/shoppingList";
 import { replaceRecipes } from "../essen/cookbook";
@@ -214,6 +214,7 @@ function trimmed(data: AssistantData, currentWeekStart: string, pantry: Assistan
     // Einkaufslisten dieser und der nächsten Wochen (Lotte kann sie lesen, leeren, Einträge entfernen)
     shopping: pick(data.shopping),
     home: data.home,
+    features: BAUSTEINE.filter((b) => featureOn(b.feature)).map((b) => b.feature),
     // Kompakt: Name, Menge, Ort, seit wann; Gekauftes ("b:") als "gekauft" markiert
     pantry: (pantry ?? []).slice(0, 80).map(({ id, name, amount, unit, place, addedAt }) => ({ id: id.startsWith("b:") ? "gekauft" : "", name, amount, unit, place, addedAt })),
     // Termine/Aufgaben: ohne Vergangenes (erledigte Aufgaben älter als 2 Wochen, einmalige Termine vor gestern)
@@ -401,8 +402,19 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
     if (!tiles.find((t) => t.id === "essen")?.visible) data = { ...data, home: applyHomeChange(tiles, { tile: "essen", action: "zeigen" }) };
     notes.push("Dein Wochenplan steht rechts unter Essen.");
   }
-  if (chosen.some((op) => op.type === "add_pantry") && unlockFeature("vorrat")) notes.push("Den Vorrat findest du jetzt in den Einstellungen unter Vorrat.");
-  if (chosen.some((op) => op.type === "add_recipe") && unlockFeature("rezepte")) notes.push("Eure Rezepte findest du jetzt in den Einstellungen unter Rezepte.");
+  // Nutzt Lotte einen ausgeschalteten Baustein, wird er eingeschaltet – und sie sagt, wo er steht
+  if (chosen.some((op) => op.type === "add_pantry") && unlockFeature("vorrat")) notes.push(bausteinOf("vorrat")!.where);
+  if (chosen.some((op) => op.type === "add_recipe") && unlockFeature("rezepte")) notes.push(bausteinOf("rezepte")!.where);
+  // Bausteine, die Lotte schalten soll
+  const switched: { feature: Feature; on: boolean }[] = [];
+  for (const op of chosen) {
+    if (op.type !== "set_feature" || !bausteinOf(op.feature as Feature)) continue;
+    if (setFeature(op.feature as Feature, op.on)) {
+      switched.push({ feature: op.feature as Feature, on: op.on });
+      const b = bausteinOf(op.feature as Feature)!;
+      notes.push(op.on ? b.where : `${b.name} ist aus – die Daten bleiben.`);
+    }
+  }
   if (chosen.some((op) => op.type === "set_meal" || op.type === "add_shopping")) {
     const note = shoppingNote(data, current);
     if (note) notes.push(note);
@@ -412,6 +424,7 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
   const undo = pushUndo(prompt ? `„${prompt.slice(0, 60)}“` : "die letzte Änderung", () => {
     save(current, data);
     undoSide();
+    for (const s of switched) setFeature(s.feature, !s.on);
   });
   return { undo, notes };
 }

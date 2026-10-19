@@ -27,12 +27,15 @@ import { weekStartFor } from "@/lib/essen/weekPlan";
 import { openHelper } from "@/lib/lotte/open";
 import type { HomeData } from "@/components/home/useHomeData";
 import { dishOf, useMeals } from "./useMeals";
+import { BausteinSections } from "./BausteinSections";
+import { useFeature } from "@/lib/core/features";
 
 export function FoodPage({ data, minutes }: { data: HomeData; minutes: number }) {
   const cooked = useCookedDays();
   const over = Boolean(cooked && mealIsOver(data.day, data.profile, minutes, cooked));
   const meals = useMeals(data.todayIso, 8);
   const [swap, setSwap] = useState<PlanDay | null>(null);
+  const planOn = useFeature("wochenplan");
   const main = over ? data.tomorrow : data.day;
   const list = Array.from({ length: 7 }, (_, i) => addDays(data.todayIso, i + (over ? 1 : 0)));
   return (
@@ -40,7 +43,14 @@ export function FoodPage({ data, minutes }: { data: HomeData; minutes: number })
       <DishHero data={data} day={main} when={over ? "Morgen" : "Heute"} onSwap={() => main && setSwap(main)} />
 
       <section className="flex flex-col gap-2" aria-label="Wochenplan">
-        <h2 className="text-lg font-bold">Wochenplan</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold">Wochenplan</h2>
+          {planOn && (
+            <Link href="/wochenplan" className="flex h-10 items-center gap-0.5 text-sm font-bold text-accent-strong">
+              Ganze Woche planen <ChevronRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+            </Link>
+          )}
+        </div>
         <ul className={`${CARD} flex flex-col divide-y divide-line overflow-hidden`}>
           {list.map((date) => {
             const day = meals?.get(date);
@@ -66,6 +76,7 @@ export function FoodPage({ data, minutes }: { data: HomeData; minutes: number })
         </ul>
       </section>
 
+      <BausteinSections />
       <ShoppingChips />
       {swap && <SwapSheet data={data} day={swap} onClose={() => setSwap(null)} />}
     </div>

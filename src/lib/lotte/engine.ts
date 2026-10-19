@@ -35,7 +35,7 @@ export type EngineEvents = { onText?: (delta: string) => void; onRound?: () => v
 
 export class AssistantInputError extends Error {}
 
-const OP_TYPES = new Set(["set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last", "set_persons", "set_pause", "app_command"]);
+const OP_TYPES = new Set(["set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last", "set_persons", "set_pause", "app_command", "set_feature"]);
 
 /** Anfrage prüfen und auf das Nötige kürzen */
 export function parseRequest(body: unknown): AssistantRequest {
@@ -63,6 +63,7 @@ export function parseRequest(body: unknown): AssistantRequest {
       .filter((p) => Boolean(p) && typeof p === "object" && typeof p.name === "string")
       .slice(0, 80),
     home: sanitizeHome(b.data?.home),
+    features: (Array.isArray(b.data?.features) ? b.data.features : []).filter((f): f is string => typeof f === "string").slice(0, 30),
     entries: (Array.isArray(b.data?.entries) ? b.data.entries : []).map(sanitizeEntry).filter((e): e is CalendarEntry => e !== null).slice(0, 400),
   };
   const pending = (Array.isArray(b.pending) ? b.pending : []).filter(
@@ -121,6 +122,8 @@ function pendingSummary(ops: ChangeOp[]): string {
         return op.pause ? `Pause ${op.pause.from} bis ${op.pause.until ?? "offen"}` : "Pause beenden";
       case "app_command":
         return `In der App: ${op.text}`;
+      case "set_feature":
+        return `Baustein ${op.feature} ${op.on ? "an" : "aus"}`;
       case "upsert_entry":
         return `${op.isNew ? "Neu" : "Ändern"} (${op.entry.typ}): ${op.entry.data.title}`;
       case "remove_entry":
