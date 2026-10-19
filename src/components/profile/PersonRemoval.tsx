@@ -2,9 +2,9 @@
 
 import { useState, type ReactNode } from "react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { personLabel, type Person } from "@/lib/profile";
-import { removePerson } from "@/lib/removePerson";
-import { showToast } from "@/lib/toast";
+import { personLabel, type Person } from "@/lib/einstellungen/profile";
+import { removePerson } from "@/lib/einstellungen/removePerson";
+import { showToast } from "@/lib/core/toast";
 
 export const LAST_PERSON_HINT = "Eine Person bleibt immer – sonst wüsste ich nicht, für wen ich koche 😊";
 

@@ -10,7 +10,7 @@ import { PersonHeading } from "@/components/profile/PersonHeading";
 import { CARD, buttonClass } from "@/components/ui/styles";
 import { PersonLunchFields, PersonPreferencesFields } from "@/components/profile/editors";
 import { LAST_PERSON_HINT, usePersonRemoval } from "@/components/profile/PersonRemoval";
-import { useGoBack } from "@/lib/useGoBack";
+import { useGoBack } from "@/lib/core/useGoBack";
 import {
   createPerson,
   personLabel,
@@ -18,7 +18,7 @@ import {
   fitHouseholdType,
   type Person,
   type PersonRole,
-} from "@/lib/profile";
+} from "@/lib/einstellungen/profile";
 
 /**
  * Bearbeiten einer einzelnen Person: /profil/person?id=…

@@ -1,12 +1,12 @@
 "use client";
 
-import { BookOpen, ChefHat, Database, LayoutList, MessageCircle, Palette, Refrigerator, Salad, Sun, Users } from "lucide-react";
+import { BookOpen, ChefHat, Database, LayoutList, MessageCircle, Mic, Palette, Volume2, Refrigerator, Salad, Sun, Users } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { PAGE_MAIN } from "@/components/ui/styles";
-import { APP_VERSION } from "@/lib/app";
-import { useRecipes } from "@/lib/cookbook";
-import { sortedLikes } from "@/lib/likes";
-import { usePantry } from "@/lib/pantry";
+import { APP_VERSION } from "@/lib/core/app";
+import { useRecipes } from "@/lib/essen/cookbook";
+import { sortedLikes } from "@/lib/essen/likes";
+import { usePantry } from "@/lib/essen/pantry";
 import {
   APP_THEMES,
   DISPLAY_MODES,
@@ -16,8 +16,10 @@ import {
   WEEKEND_STYLES,
   helperName,
   type HouseholdProfile,
-} from "@/lib/profile";
-import { usePlanStyle } from "@/lib/usePlanStyle";
+} from "@/lib/einstellungen/profile";
+import { usePlanStyle } from "@/lib/essen/usePlanStyle";
+import { setLegacyFeatures, useLegacyFeatures } from "@/lib/core/features";
+import { READ_MODES, useSpeechSettings } from "@/lib/lotte/speech";
 import { Group, Row } from "./settings/SettingsParts";
 import { householdTitle } from "./settings/Hubs";
 
@@ -38,6 +40,41 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
   const type = HOUSEHOLD_TYPES.find((t) => t.value === profile.householdType);
   const name = helperName(profile);
   const recipeCount = recipes ? Object.keys(recipes).length : null;
+  const legacy = useLegacyFeatures();
+  const speech = useSpeechSettings();
+
+  // Neustart: schlank – nur Lotte, Ansicht, Familie, Daten & App
+  if (!legacy) {
+    return (
+      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
+        <PageHeader title="Einstellungen" />
+        <main className={`${PAGE_MAIN} gap-6`}>
+          <Group title={name}>
+            <Row href="/profil/kuechenhelfer" icon={Mic} title="Name & Stimme" value={name}>
+              Wie {name} heißt und klingt
+            </Row>
+            <Row href="/profil/vorlesen" icon={Volume2} title="Vorlesen" value={READ_MODES.find((m) => m.value === speech.mode)?.short}>
+              Antworten laut vorlesen
+            </Row>
+          </Group>
+          <Group title="Aussehen">
+            <Row href="/profil/ansicht" icon={Palette} title="Ansicht" value={APP_THEMES.find((t) => t.value === profile.theme)?.label}>
+              Farben der App
+            </Row>
+          </Group>
+          <Group title="Einmal eingerichtet" quiet>
+            <Row href="/profil/familie" icon={Users} title={householdTitle(profile)} tone="neutral">
+              {count(profile.persons.length, "Person", "Personen")} · {type?.label}
+            </Row>
+            <Row href="/profil/daten" icon={Database} title="Daten & App" tone="neutral" value={APP_VERSION}>
+              Sichern, einspielen, neu anfangen
+            </Row>
+          </Group>
+          {legacy !== undefined && <LegacySwitch on={false} />}
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
@@ -90,7 +127,25 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
             Sichern, einspielen, neu anfangen
           </Row>
         </Group>
+        <LegacySwitch on />
       </main>
     </div>
+  );
+}
+
+/** Ganz unten, unauffällig: alles Alte wieder einblenden (Daten bleiben immer erhalten) */
+function LegacySwitch({ on }: { on: boolean }) {
+  return (
+    // Schalter links – rechts unten liegt Lottes Knopf
+    <label className="mt-2 flex items-center gap-3 self-start px-1 text-sm text-muted">
+      <input
+        type="checkbox"
+        role="switch"
+        checked={on}
+        onChange={(e) => setLegacyFeatures(e.target.checked)}
+        className="h-5 w-5 accent-accent"
+      />
+      <span>Alte Funktionen anzeigen (Test)</span>
+    </label>
   );
 }

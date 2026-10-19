@@ -4,21 +4,21 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { ArrowUp, CircleHelp, Mic, MicOff, Square, Volume2, VolumeX, X } from "lucide-react";
-import { baseLabel, bumpBase, sortedBases, type BaseId } from "@/lib/bases";
-import { parseLeftovers, type ParsedLeftover } from "@/lib/leftovers/parser";
-import { addPantryItems, formatPantryItem } from "@/lib/pantry";
-import { ingredientsFromQuestion, isCookIdeasRequest, mergeStock, stockItem, stockNearlyEmpty } from "@/lib/dishIdeas";
-import { useStock } from "@/lib/useStock";
-import { effectivePlanStyle, hasKids, helperName, helperTitle, mealClockFor, saveProfile } from "@/lib/profile";
-import { addWish, parseWish, removeWish, wishLabel } from "@/lib/wishes";
-import { settingsChange } from "@/lib/settingsChat";
-import { isPlanUnlockRequest, unlockPlanning, type UnlockChoice } from "@/lib/planUnlock";
-import { finalizeProfile, startAddPerson, type OnboardingState } from "@/lib/onboarding/engine";
-import { noteUserAction } from "@/lib/activity";
-import { isAddPersonRequest } from "@/lib/onboarding/recognize";
+import { baseLabel, bumpBase, sortedBases, type BaseId } from "@/lib/essen/bases";
+import { parseLeftovers, type ParsedLeftover } from "@/lib/essen/leftovers/parser";
+import { addPantryItems, formatPantryItem } from "@/lib/essen/pantry";
+import { ingredientsFromQuestion, isCookIdeasRequest, mergeStock, stockItem, stockNearlyEmpty } from "@/lib/essen/dishIdeas";
+import { useStock } from "@/lib/essen/useStock";
+import { effectivePlanStyle, hasKids, helperName, mealClockFor, saveProfile } from "@/lib/einstellungen/profile";
+import { addWish, parseWish, removeWish, wishLabel } from "@/lib/essen/wishes";
+import { settingsChange } from "@/lib/lotte/settingsChat";
+import { isPlanUnlockRequest, unlockPlanning, type UnlockChoice } from "@/lib/essen/planUnlock";
+import { finalizeProfile, startAddPerson, type OnboardingState } from "@/lib/einstellungen/onboarding/engine";
+import { noteUserAction } from "@/lib/core/activity";
+import { isAddPersonRequest } from "@/lib/einstellungen/onboarding/recognize";
 import { GuidedChat } from "@/components/onboarding/GuidedChat";
 import { HelperAvatar } from "./HelperAvatar";
-import { askAssistant, FALLBACK_TEXT, saveAccessCode, useAssistantStatus } from "@/lib/assistant/client";
+import { askAssistant, FALLBACK_TEXT, saveAccessCode, useAssistantStatus } from "@/lib/lotte/client";
 import {
   saveSpeechSettings,
   shouldRead,
@@ -29,33 +29,35 @@ import {
   unlockSpeech,
   useSpeakingId,
   useSpeechSettings,
-} from "@/lib/speech";
-import { readingChange } from "@/lib/speechChat";
-import type { AssistantData, ChangeOp } from "@/lib/assistant/ops";
-import type { ChatTurn } from "@/lib/assistant/protocol";
-import { useKeyboardInset } from "@/lib/useMobileKeyboard";
-import { useSpeechInput } from "@/lib/useSpeechInput";
-import { DEFAULT_SHOPPING_DAY, addDays, planningWeekStart, toIsoDate, useToday, weekStartFor, weekdayName } from "@/lib/weekPlan";
-import { chatSuggestions, noteChatMessage, useShowSuggestions } from "@/lib/chatSuggestions";
-import { mealOverOn, useCookedDays } from "@/lib/mealDone";
+} from "@/lib/lotte/speech";
+import { readingChange } from "@/lib/lotte/speechChat";
+import type { AssistantData, ChangeOp } from "@/lib/lotte/ops";
+import type { ChatTurn } from "@/lib/lotte/protocol";
+import { useKeyboardInset } from "@/lib/core/useMobileKeyboard";
+import { useSpeechInput } from "@/lib/lotte/useSpeechInput";
+import { DEFAULT_SHOPPING_DAY, addDays, planningWeekStart, toIsoDate, useToday, weekStartFor, weekdayName } from "@/lib/essen/weekPlan";
+import { chatSuggestions, noteChatMessage, useShowSuggestions } from "@/lib/lotte/chatSuggestions";
+import { mealOverOn, useCookedDays } from "@/lib/essen/mealDone";
 import { useMinutes } from "@/components/home/useRatingCandidate";
-import { addManualItem, removeManualItems, sectionFor, setItemShop, setProduct, useShoppingSettings } from "@/lib/shoppingList";
-import { useWeekShoppingList } from "@/lib/useWeekShoppingList";
-import { isMarketSituation, marketIdeas, marketProduct, marketTargetDay, type MarketAnswer, type MarketIdea } from "@/lib/market";
-import { bakingIdeas, isBakingRequest } from "@/lib/baking";
-import type { Recipe } from "@/lib/cookbook";
-import { isShoppingRequest, parseProductStatement, parseShoppingText } from "@/lib/shoppingParse";
-import { filtersFromText, isIdeaFilterRequest, isQuickRequest, isSnackRequest, parsePauseRequest, pauseLabel, quickIdeas, snackReply, spontanIdeas, type SpontanFilter, type SpontanIdea } from "@/lib/spontan";
-import { takeForDay, takeForToday } from "@/lib/spontanTake";
-import { composeWeek, replaceMealPlans } from "@/lib/mealPlan";
+import { addManualItem, removeManualItems, sectionFor, setItemShop, setProduct, useShoppingSettings } from "@/lib/einkauf/shoppingList";
+import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
+import { isMarketSituation, marketIdeas, marketProduct, marketTargetDay, type MarketAnswer, type MarketIdea } from "@/lib/essen/market";
+import { bakingIdeas, isBakingRequest } from "@/lib/essen/baking";
+import type { Recipe } from "@/lib/essen/cookbook";
+import { isShoppingRequest, parseProductStatement, parseShoppingText } from "@/lib/einkauf/shoppingParse";
+import { filtersFromText, isIdeaFilterRequest, isQuickRequest, isSnackRequest, parsePauseRequest, pauseLabel, quickIdeas, snackReply, spontanIdeas, type SpontanFilter, type SpontanIdea } from "@/lib/essen/spontan";
+import { takeForDay, takeForToday } from "@/lib/essen/spontanTake";
+import { composeWeek, replaceMealPlans } from "@/lib/essen/mealPlan";
 import { AdjustSheet, EarlierIdeas, SpontanAnswer, loadSpontanFilters, saveSpontanFilters, spontanHeading } from "./SpontanBoard";
 import { MarketBoard, type MarketTarget } from "./MarketBoard";
 import { BakingBoard } from "./BakingBoard";
 import { ICON_BUTTON, INPUT_BASE, NOTE, buttonClass, chipClass } from "@/components/ui/styles";
 import { ProposalCard } from "./ProposalCard";
 import { TipBubble } from "./TipBubble";
-import { tipsShown, useTipStore } from "@/lib/healthTips";
-import { extractLikeStatements, learnFromRecipe, learnLikes, LIKE_WEIGHTS } from "@/lib/likes";
+import { tipsShown, useTipStore } from "@/lib/essen/healthTips";
+import { extractLikeStatements, learnFromRecipe, learnLikes, LIKE_WEIGHTS } from "@/lib/essen/likes";
+import { now } from "@/lib/core/now";
+import { useFeature } from "@/lib/core/features";
 
 export type ChatTurnView = ChatTurn & {
   /** Fehlermeldung – wird nicht an die KI geschickt */
@@ -122,6 +124,9 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   const inset = useKeyboardInset();
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  // Antwort, während sie noch kommt (Streaming)
+  const [streaming, setStreaming] = useState<string | null>(null);
+  const tipsOn = useFeature("tipps");
   const [adjusting, setAdjusting] = useState(false);
   const speechSettings = useSpeechSettings();
   const speakingId = useSpeakingId();
@@ -198,7 +203,12 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       const shoppingDay = data.profile.shoppingDay || DEFAULT_SHOPPING_DAY;
       const weekStart = weekStartFor(today, shoppingDay);
       // Immer der aktuelle Bestand (Vorrat + Gekauftes) – nie ein alter Stand
-      const result = await askAssistant(history, chat.proposal?.ops ?? [], { ...data, pantry: pantry ?? [] }, toIsoDate(today), weekStart, tipsShown(weekStart, tipStore));
+      const at = now();
+      const result = await askAssistant(history, chat.proposal?.ops ?? [], { ...data, pantry: pantry ?? [] }, toIsoDate(today), weekStart, tipsShown(weekStart, tipStore), {
+        clock: `${String(at.getHours()).padStart(2, "0")}:${String(at.getMinutes()).padStart(2, "0")}`,
+        shoppingNames: shopping?.list.items.filter((i) => !i.checked && !i.hidden).map((i) => i.name),
+        onText: setStreaming,
+      });
       setChat((c) => {
         // Bisher abgewählte Punkte bleiben abgewählt, neue sind ausgewählt
         const previous = new Set(c.proposal?.ops.map((op) => op.id));
@@ -218,6 +228,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       notUnderstood(display ?? question, local);
     } finally {
       setBusy(false);
+      setStreaming(null);
     }
   };
 
@@ -417,8 +428,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     const weekStart = weekStartFor(today, shoppingDay);
     const week = composeWeek(weekStart, data.profile, data.weekPlans, data.mealPlans, data.recipes);
     const todayDay = week.days.find((d) => d.date === todayIso);
-    const now = new Date();
-    const clock = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    const at = now();
+    const clock = `${String(at.getHours()).padStart(2, "0")}:${String(at.getMinutes()).padStart(2, "0")}`;
     const beforeMeal = Boolean(todayDay) && clock < mealClockFor(data.profile, todayDay!.weekday);
     // Spontan: kein Plan – höchstens "Heute kochen"
     const target = spontanStyle
@@ -850,7 +861,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   const earlierTitles = [...new Set(earlier.flatMap((i) => ideasFor(chat.turns[i]).map((idea) => idea.title)))];
 
   return (
-    <div className="fixed inset-0 z-40" role="dialog" aria-modal aria-label={`${name} – ${helperTitle(data?.profile)}`}>
+    <div className="fixed inset-0 z-40" role="dialog" aria-modal aria-label={name}>
       <button type="button" aria-label="Küchenhelfer schließen" onClick={onClose} className="absolute inset-0 bg-black/25" />
       <section
         className="absolute inset-x-0 mx-auto flex w-full max-w-lg flex-col rounded-t-3xl bg-background shadow-sheet"
@@ -870,7 +881,6 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                   <span className="ml-2 align-middle rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold text-stone-600">Testmodus</span>
                 )}
               </h2>
-              <p className="text-sm text-muted">{helperTitle(data?.profile)}</p>
             </div>
             {speechSupported() && (
               <button
@@ -1054,13 +1064,19 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           )}
 
           {/* Sanfter Gesundheits-Tipp (laut Einstellung, nie als Pop-up) */}
-          {data && !chat.spontan && !busy && <TipBubble recipes={data.recipes} />}
+          {data && tipsOn && !chat.spontan && !busy && <TipBubble recipes={data.recipes} />}
 
-          {busy && (
-            <p className="self-start rounded-2xl rounded-bl-md border border-line bg-surface px-4 py-2.5 text-muted" role="status">
-              <span className="animate-pulse">Moment …</span>
-            </p>
-          )}
+          {busy &&
+            (streaming ? (
+              // Antwort erscheint Wort für Wort
+              <p className={`${BUBBLE} self-start rounded-bl-md border border-line bg-surface text-ink`} aria-live="off">
+                {streaming}
+              </p>
+            ) : (
+              <p className="self-start rounded-2xl rounded-bl-md border border-line bg-surface px-4 py-2.5 text-muted" role="status">
+                <span className="animate-pulse">{name} denkt …</span>
+              </p>
+            ))}
 
           {chat.proposal && data && !busy && (
             <ProposalCard

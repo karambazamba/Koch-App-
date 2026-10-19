@@ -1,6 +1,6 @@
 import { PERSON_ICONS } from "@/components/form/NameField";
 import { IconBadge } from "@/components/ui/IconBadge";
-import { personLabel, personRoleLabel, type Person } from "@/lib/profile";
+import { personLabel, personRoleLabel, type Person } from "@/lib/einstellungen/profile";
 
 /** Überschrift einer Personen-Karte: Name (falls eingetragen) und Rolle. */
 export function PersonHeading({ person, persons }: { person: Person; persons: Person[] }) {

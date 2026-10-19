@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { Clock } from "lucide-react";
 import { buttonClass } from "@/components/ui/styles";
-import { KID_FRIENDLY } from "@/lib/baking";
-import type { Recipe } from "@/lib/cookbook";
-import { dishEmoji } from "@/lib/dishEmoji";
+import { KID_FRIENDLY } from "@/lib/essen/baking";
+import type { Recipe } from "@/lib/essen/cookbook";
+import { dishEmoji } from "@/lib/essen/dishEmoji";
 
 /** Backwunsch: bis zu drei Rezepte mit "Zusammen backen" und "Rezept" */
 export function BakingBoard({ recipes, withKids, onNavigate }: { recipes: Recipe[]; withKids: boolean; onNavigate: () => void }) {

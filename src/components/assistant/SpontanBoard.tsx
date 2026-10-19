@@ -6,10 +6,10 @@ import { RefreshCw, SlidersHorizontal } from "lucide-react";
 import { Sheet } from "@/components/plan/Sheet";
 import { IdeaCards, type CardIdea } from "@/components/ideas/IdeaCards";
 import { buttonClass, chipClass } from "@/components/ui/styles";
-import { EMPTY_STOCK_HINT } from "@/lib/dishIdeas";
-import { formatPantryItem, type PantryItem } from "@/lib/pantry";
-import { SPONTAN_FILTERS, type SpontanFilter, type SpontanIdea } from "@/lib/spontan";
-import { sortedBases, type BaseCounts } from "@/lib/bases";
+import { EMPTY_STOCK_HINT } from "@/lib/essen/dishIdeas";
+import { formatPantryItem, type PantryItem } from "@/lib/essen/pantry";
+import { SPONTAN_FILTERS, type SpontanFilter, type SpontanIdea } from "@/lib/essen/spontan";
+import { sortedBases, type BaseCounts } from "@/lib/essen/bases";
 
 const FILTER_KEY = "wasgibts.spontan.filter";
 

@@ -1,7 +1,17 @@
 import { HealthTipsEditView } from "@/components/profile/AreaEditViews";
+import { FeatureGate } from "@/components/FeatureGate";
 
 export const metadata = { title: "Gesundheits-Tipps" };
 
-export default function Page() {
+function PageContent() {
   return <HealthTipsEditView />;
+}
+
+// Versteckt, bis "Alte Funktionen anzeigen (Test)" an ist
+export default function Page() {
+  return (
+    <FeatureGate feature="tipps">
+      <PageContent />
+    </FeatureGate>
+  );
 }

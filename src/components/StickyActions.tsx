@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { buttonClass } from "@/components/ui/styles";
-import { useMobileKeyboard } from "@/lib/useMobileKeyboard";
+import { useMobileKeyboard } from "@/lib/core/useMobileKeyboard";
 
 /** Zurück/Abbrechen in der Leiste (schmaler) */
 export const SECONDARY_BUTTON = `${buttonClass("secondary", "lg")} flex-1`;

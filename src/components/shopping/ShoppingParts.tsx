@@ -13,7 +13,7 @@ import {
   stapleInterval,
   type ListItem,
   type ShoppingSettings,
-} from "@/lib/shoppingList";
+} from "@/lib/einkauf/shoppingList";
 
 export { SwipeRow, type RowAction } from "@/components/ui/SwipeRow";
 

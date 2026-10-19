@@ -6,22 +6,22 @@ import { BookOpen, CalendarDays, ChevronRight, Mic, Refrigerator, Settings, Shop
 import { HelperAvatar } from "@/components/assistant/HelperAvatar";
 import { AppLogo } from "@/components/AppLogo";
 import { CARD, buttonClass, chipClass } from "@/components/ui/styles";
-import { appointmentTime, personDotClass, useAppointments } from "@/lib/appointments";
-import { dishStatus, type DishStatus } from "@/lib/dishStatus";
-import { usePantry, usePantryUsed } from "@/lib/pantry";
+import { appointmentTime, personDotClass, useAppointments } from "@/lib/core/appointments";
+import { dishStatus, type DishStatus } from "@/lib/essen/dishStatus";
+import { usePantry, usePantryUsed } from "@/lib/essen/pantry";
 import { QuickAddButton } from "@/components/shopping/QuickAdd";
-import { useAssistantStatus } from "@/lib/assistant/client";
-import { openHelper } from "@/lib/assistant/open";
-import { dishEmoji } from "@/lib/dishEmoji";
-import { helperName, isSmallHousehold, isSolo, mealClockFor, saveProfile } from "@/lib/profile";
-import { dismissWelcome } from "@/lib/activity";
-import { entriesWithoutSlot, loadMealPlans, mealPlansWithWeek, replaceMealPlans, useMealPlans } from "@/lib/mealPlan";
-import { useWeekShoppingList } from "@/lib/useWeekShoppingList";
-import { useTodayIdeas } from "@/lib/useIdeas";
-import { weekStartFor } from "@/lib/weekPlan";
+import { useAssistantStatus } from "@/lib/lotte/client";
+import { openHelper } from "@/lib/lotte/open";
+import { dishEmoji } from "@/lib/essen/dishEmoji";
+import { helperName, isSmallHousehold, isSolo, mealClockFor, saveProfile } from "@/lib/einstellungen/profile";
+import { dismissWelcome } from "@/lib/core/activity";
+import { entriesWithoutSlot, loadMealPlans, mealPlansWithWeek, replaceMealPlans, useMealPlans } from "@/lib/essen/mealPlan";
+import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
+import { useTodayIdeas } from "@/lib/essen/useIdeas";
+import { weekStartFor } from "@/lib/essen/weekPlan";
 import { isSpontanEntry, type HomeData } from "./useHomeData";
 import { IdeasCard } from "@/components/ideas/IdeasCard";
-import { showToast } from "@/lib/toast";
+import { showToast } from "@/lib/core/toast";
 import { Lightbulb } from "lucide-react";
 
 const DATE = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long" });
@@ -356,10 +356,11 @@ function BentoCard({ href, label, icon: Icon, value, sub }: { href: string; labe
  * Unten fest: breiter Knopf "Spontan kochen" und darunter die Eingabeleiste
  * "Sag <Name>, was ansteht …" mit Mikrofon im Feld.
  */
-export function HomeBottomBar({ name }: { name: string }) {
+export function HomeBottomBar({ name, spontan = true }: { name: string; spontan?: boolean }) {
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 bg-linear-to-t from-background via-background to-transparent px-4 pt-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <div className="pointer-events-auto mx-auto flex max-w-lg flex-col gap-2">
+        {spontan && (
         <button
           type="button"
           onClick={() => openHelper("spontan")}
@@ -374,6 +375,7 @@ export function HomeBottomBar({ name }: { name: string }) {
           </span>
           <ChevronRight className="mr-1 h-5 w-5 shrink-0 text-accent" strokeWidth={2.25} aria-hidden />
         </button>
+        )}
         <div className="flex h-15 items-center gap-2 rounded-full border border-line bg-surface pl-1.5 pr-1.5 shadow-card">
           <button type="button" onClick={() => openHelper()} className="flex h-full min-w-0 flex-1 items-center gap-2 text-left">
             <HelperAvatar size={44} variant="badge" />

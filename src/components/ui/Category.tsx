@@ -1,5 +1,5 @@
-import type { RecipeCategory } from "@/lib/cookbook";
-import { RECIPE_CATEGORIES } from "@/lib/cookbook";
+import type { RecipeCategory } from "@/lib/essen/cookbook";
+import { RECIPE_CATEGORIES } from "@/lib/essen/cookbook";
 
 /** Kategorien nur als kleine farbige Punkte – keine farbigen Flächen */
 export const CATEGORY_DOT: Record<RecipeCategory, string> = {

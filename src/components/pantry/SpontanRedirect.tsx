@@ -1,10 +1,10 @@
 "use client";
 
-import { expectReplace } from "@/lib/navigation";
+import { expectReplace } from "@/lib/core/navigation";
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { openHelper } from "@/lib/assistant/open";
+import { openHelper } from "@/lib/lotte/open";
 
 /**
  * Frühere Seite "Was ist noch da?" (/schnellkueche): alte Links und

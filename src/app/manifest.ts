@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { APP_NAME, APP_SHORT_NAME } from "@/lib/app";
+import { APP_NAME, APP_SHORT_NAME } from "@/lib/core/app";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {

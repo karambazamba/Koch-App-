@@ -3,19 +3,19 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Undo2 } from "lucide-react";
-import { commitOps } from "@/lib/assistant/client";
-import { onOpenHelper } from "@/lib/assistant/open";
-import { learnLikes, likesFromIngredients, LIKE_WEIGHTS } from "@/lib/likes";
-import { useRecipes } from "@/lib/cookbook";
-import { useMealPlans } from "@/lib/mealPlan";
-import { useShoppingLists } from "@/lib/shoppingList";
-import { useTextFieldFocused } from "@/lib/useMobileKeyboard";
-import { useProfile } from "@/lib/useProfile";
-import { toIsoDate, useToday, useWeekPlans } from "@/lib/weekPlan";
-import { recordOpen } from "@/lib/activity";
-import type { SpontanFilter } from "@/lib/spontan";
-import type { AssistantData } from "@/lib/assistant/ops";
-import { helperName, helperTitle } from "@/lib/profile";
+import { commitOps } from "@/lib/lotte/client";
+import { onOpenHelper } from "@/lib/lotte/open";
+import { learnLikes, likesFromIngredients, LIKE_WEIGHTS } from "@/lib/essen/likes";
+import { useRecipes } from "@/lib/essen/cookbook";
+import { useMealPlans } from "@/lib/essen/mealPlan";
+import { useShoppingLists } from "@/lib/einkauf/shoppingList";
+import { useTextFieldFocused } from "@/lib/core/useMobileKeyboard";
+import { useProfile } from "@/lib/einstellungen/useProfile";
+import { toIsoDate, useToday, useWeekPlans } from "@/lib/essen/weekPlan";
+import { recordOpen } from "@/lib/core/activity";
+import type { SpontanFilter } from "@/lib/essen/spontan";
+import type { AssistantData } from "@/lib/lotte/ops";
+import { helperName } from "@/lib/einstellungen/profile";
 import { HelperAvatar } from "./HelperAvatar";
 import { HelperPanel, spontanStartTurn, type ChatState } from "./HelperPanel";
 import { loadSpontanFilters } from "./SpontanBoard";
@@ -144,7 +144,7 @@ export function KitchenHelper() {
           ref={fabRef}
           type="button"
           onClick={() => setOpen(true)}
-          aria-label={`${helperName(profile)} öffnen – ${helperTitle(profile)}`}
+          aria-label={`${helperName(profile)} öffnen`}
           data-kuechenhelfer-knopf
           style={{ bottom }}
           className="fixed right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-accent shadow-lg ring-4 ring-background transition active:scale-95"

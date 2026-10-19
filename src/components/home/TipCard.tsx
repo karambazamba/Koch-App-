@@ -5,7 +5,7 @@ import { ChevronRight, Lightbulb } from "lucide-react";
 import { HelperAvatar } from "@/components/assistant/HelperAvatar";
 import { Sheet } from "@/components/plan/Sheet";
 import { buttonClass, chipClass } from "@/components/ui/styles";
-import { dismissTipCard, markTipCardShown, nextTipCard, type TipCardData } from "@/lib/tips";
+import { dismissTipCard, markTipCardShown, nextTipCard, type TipCardData } from "@/lib/essen/tips";
 
 /** Ab so viel seitlicher Bewegung zählt es als Wischen */
 const SWIPE = 60;

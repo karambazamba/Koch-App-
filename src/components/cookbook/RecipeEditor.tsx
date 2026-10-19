@@ -1,7 +1,7 @@
 "use client";
 
-import { useGoBack } from "@/lib/useGoBack";
-import { expectReplace } from "@/lib/navigation";
+import { useGoBack } from "@/lib/core/useGoBack";
+import { expectReplace } from "@/lib/core/navigation";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Check, PenLine, Plus, Sparkles, X } from "lucide-react";
@@ -24,7 +24,7 @@ import {
   type RecipeCategory,
   type RecipeKind,
   type RecipeSource,
-} from "@/lib/cookbook";
+} from "@/lib/essen/cookbook";
 
 /** Zutat im Formular: Menge als Text, damit "1," beim Tippen nicht verloren geht */
 type IngredientRow = { id: string; amountText: string; unit: string; name: string };

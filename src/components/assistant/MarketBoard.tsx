@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Clock, Plus, Repeat } from "lucide-react";
 import { CategoryDot } from "@/components/ui/Category";
 import { buttonClass, chipClass } from "@/components/ui/styles";
-import type { MarketAnswer, MarketIdea } from "@/lib/market";
+import type { MarketAnswer, MarketIdea } from "@/lib/essen/market";
 
 export type MarketTarget = { date: string; weekday: string; replaces: string | null; label?: string };
 

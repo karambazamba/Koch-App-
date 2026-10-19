@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Users } from "lucide-react";
 import { IconBadge } from "@/components/ui/IconBadge";
 import { CARD, buttonClass } from "@/components/ui/styles";
-import { useProfile } from "@/lib/useProfile";
+import { useProfile } from "@/lib/einstellungen/useProfile";
 
 /** Nur ohne Profil: Einladung, das Haushaltsprofil anzulegen. */
 export function WelcomeCard() {

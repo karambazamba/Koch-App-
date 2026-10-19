@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { Segmented } from "@/components/ui/Segmented";
-import type { MachineStep } from "@/lib/cookbook";
-import type { HouseholdProfile } from "@/lib/profile";
+import type { MachineStep } from "@/lib/essen/cookbook";
+import type { HouseholdProfile } from "@/lib/einstellungen/profile";
 
 const KEY = "wasgibts.maschinenansicht";
 

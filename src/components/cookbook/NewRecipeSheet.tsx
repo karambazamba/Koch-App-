@@ -7,11 +7,11 @@ import { Camera, Link2, Mic, MicOff, PenLine, Square } from "lucide-react";
 import { HelperAvatar } from "@/components/assistant/HelperAvatar";
 import { Sheet } from "@/components/plan/Sheet";
 import { INPUT_BASE, buttonClass, chipClass, tileClass } from "@/components/ui/styles";
-import { createRecipe, formatAmount, saveRecipe } from "@/lib/cookbook";
-import { helperName } from "@/lib/profile";
-import { parseSpokenRecipe, type SpokenRecipe } from "@/lib/recipeSpeech";
-import { useProfile } from "@/lib/useProfile";
-import { useSpeechInput } from "@/lib/useSpeechInput";
+import { createRecipe, formatAmount, saveRecipe } from "@/lib/essen/cookbook";
+import { helperName } from "@/lib/einstellungen/profile";
+import { parseSpokenRecipe, type SpokenRecipe } from "@/lib/essen/recipeSpeech";
+import { useProfile } from "@/lib/einstellungen/useProfile";
+import { useSpeechInput } from "@/lib/lotte/useSpeechInput";
 
 /**
  * "+" auf "Unsere Rezepte": Lotte erzählen (Sprache → Zutaten und Schritte),

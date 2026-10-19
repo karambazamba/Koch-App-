@@ -3,7 +3,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { Check } from "lucide-react";
 import { chipClass } from "@/components/ui/styles";
-import { personLabel, type Person } from "@/lib/profile";
+import { personLabel, type Person } from "@/lib/einstellungen/profile";
 
 type Props = {
   /** Personen in der Leiste (z. B. nur die ausgewählten) */

@@ -58,11 +58,13 @@ import {
   syncPersons,
   type HouseholdProfile,
   type Person,
-} from "@/lib/profile";
-import { scrollToNextOpenSection } from "@/lib/stepScroll";
-import { useProfile } from "@/lib/useProfile";
+} from "@/lib/einstellungen/profile";
+import { scrollToNextOpenSection } from "@/lib/einstellungen/stepScroll";
+import { useProfile } from "@/lib/einstellungen/useProfile";
 import { OnboardingChat } from "@/components/onboarding/OnboardingChat";
-import { clearOnboarding } from "@/lib/onboarding/progress";
+import { QuickStart } from "@/components/profile/QuickStart";
+import { useLegacyFeatures } from "@/lib/core/features";
+import { clearOnboarding } from "@/lib/einstellungen/onboarding/progress";
 
 const STEPS: { title: string; icon: LucideIcon; perPerson?: boolean }[] = [
   { title: "Wer isst mit?", icon: Users },
@@ -105,6 +107,10 @@ export function ProfilePageContent() {
 /** Ohne Profil: Kennenlernen als Gespräch, auf Wunsch das Formular */
 function FirstSetup() {
   const [form, setForm] = useState<{ draft: HouseholdProfile | null } | null>(null);
+  const legacy = useLegacyFeatures();
+  if (legacy === undefined) return null;
+  // Neustart: Schnellstart statt Kennenlernen-Gespräch
+  if (!legacy) return <QuickStart />;
   if (form) return <ProfileWizard initial={form.draft} />;
   return <OnboardingChat onForm={(draft) => setForm({ draft })} />;
 }

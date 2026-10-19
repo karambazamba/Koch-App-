@@ -1,10 +1,10 @@
 "use client";
 
-import { useRecipes, type Recipe } from "@/lib/cookbook";
-import { composeWeek, useMealPlans, type PlanDay, type PlanWeek } from "@/lib/mealPlan";
-import { effectivePlanStyle, type HouseholdProfile, type PlanStyle } from "@/lib/profile";
-import { useProfile } from "@/lib/useProfile";
-import { addDays, toIsoDate, useToday, useWeekPlans, weekStartFor, type WeekPlan } from "@/lib/weekPlan";
+import { useRecipes, type Recipe } from "@/lib/essen/cookbook";
+import { composeWeek, useMealPlans, type PlanDay, type PlanWeek } from "@/lib/essen/mealPlan";
+import { effectivePlanStyle, type HouseholdProfile, type PlanStyle } from "@/lib/einstellungen/profile";
+import { useProfile } from "@/lib/einstellungen/useProfile";
+import { addDays, toIsoDate, useToday, useWeekPlans, weekStartFor, type WeekPlan } from "@/lib/essen/weekPlan";
 
 export type HomeData = {
   today: Date;

@@ -2,11 +2,11 @@
 
 import { useState, type ReactNode } from "react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import type { Idea } from "@/lib/ideas";
-import type { Recipe } from "@/lib/cookbook";
-import type { HouseholdProfile } from "@/lib/profile";
-import { showToast } from "@/lib/toast";
-import { addForToday, chooseIdea } from "@/lib/useIdeas";
+import type { Idea } from "@/lib/essen/ideas";
+import type { Recipe } from "@/lib/essen/cookbook";
+import type { HouseholdProfile } from "@/lib/einstellungen/profile";
+import { showToast } from "@/lib/core/toast";
+import { addForToday, chooseIdea } from "@/lib/essen/useIdeas";
 
 const list = (items: string[]) => (items.length <= 1 ? items.join("") : `${items.slice(0, -1).join(", ")} und ${items[items.length - 1]}`);
 

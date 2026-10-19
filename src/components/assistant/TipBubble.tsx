@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { Sprout } from "lucide-react";
 import { chipClass } from "@/components/ui/styles";
-import type { Recipe } from "@/lib/cookbook";
-import { declineTip, markTipShown, tryTip, undoTip, type HealthTip } from "@/lib/healthTips";
+import type { Recipe } from "@/lib/essen/cookbook";
+import { declineTip, markTipShown, tryTip, undoTip, type HealthTip } from "@/lib/essen/healthTips";
 import { useHealthTip } from "./useHealthTip";
 
 const BUBBLE = "max-w-[85%] self-start whitespace-pre-line rounded-2xl rounded-bl-md border border-line bg-surface px-4 py-2.5 text-base leading-snug text-ink";

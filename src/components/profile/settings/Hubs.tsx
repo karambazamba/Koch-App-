@@ -2,11 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { expectReplace } from "@/lib/navigation";
+import { expectReplace } from "@/lib/core/navigation";
 import { Ban, CalendarRange, Heart, Home, Palmtree, ShoppingBasket, ShoppingCart, Sparkles, Sprout, ThumbsDown, UtensilsCrossed, Wheat, Salad } from "lucide-react";
 import { usePersonRemoval } from "@/components/profile/PersonRemoval";
-import { sortedBases } from "@/lib/bases";
-import { sortedLikes } from "@/lib/likes";
+import { sortedBases } from "@/lib/essen/bases";
+import { sortedLikes } from "@/lib/essen/likes";
 import {
   DISPLAY_MODES,
   HEALTH_TIP_LEVELS,
@@ -18,14 +18,14 @@ import {
   helperName,
   personLabel,
   weekdayLunchHeadcount,
-} from "@/lib/profile";
-import { usePlanStyle } from "@/lib/usePlanStyle";
-import { useProfile } from "@/lib/useProfile";
+} from "@/lib/einstellungen/profile";
+import { usePlanStyle } from "@/lib/essen/usePlanStyle";
+import { useProfile } from "@/lib/einstellungen/useProfile";
 import { AddRow, ChoiceCards, DataSection, Group, PersonRow, Row, SettingsPage, SwitchRow } from "./SettingsParts";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { clearProfile } from "@/lib/profile";
+import { clearProfile } from "@/lib/einstellungen/profile";
 import { Sun, Volume2 } from "lucide-react";
-import { READ_MODES, useSpeechSettings } from "@/lib/speech";
+import { READ_MODES, useSpeechSettings } from "@/lib/lotte/speech";
 
 /** "Unsere Familie" bzw. "Mein Haushalt" / "Unser Haushalt" */
 export function householdTitle(profile: { householdType: string } | null | undefined): string {

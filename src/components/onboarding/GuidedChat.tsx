@@ -2,7 +2,7 @@
 
 // Geführtes Gespräch (Kennenlernen bzw. neue Person beim Küchenhelfer):
 // Nachrichten, Antwort-Chips, Namensbestätigung und Eingabe per Sprache oder
-// Tippen. Der Ablauf selbst steckt in src/lib/onboarding/engine.ts.
+// Tippen. Der Ablauf selbst steckt in src/lib/einstellungen/onboarding/engine.ts.
 
 import { useEffect, useRef, useState } from "react";
 import { ArrowUp, Check, Mic, MicOff, Pencil, Square, Trash2 } from "lucide-react";
@@ -16,12 +16,12 @@ import {
   revisit,
   skip,
   type OnboardingState,
-} from "@/lib/onboarding/engine";
-import { nameVariants } from "@/lib/onboarding/names";
-import { cleanSpeech } from "@/lib/onboarding/recognize";
-import { recognizeAnswer } from "@/lib/onboarding/recognizer";
-import { personLabel } from "@/lib/profile";
-import { useSpeechInput } from "@/lib/useSpeechInput";
+} from "@/lib/einstellungen/onboarding/engine";
+import { nameVariants } from "@/lib/einstellungen/onboarding/names";
+import { cleanSpeech } from "@/lib/einstellungen/onboarding/recognize";
+import { recognizeAnswer } from "@/lib/einstellungen/onboarding/recognizer";
+import { personLabel } from "@/lib/einstellungen/profile";
+import { useSpeechInput } from "@/lib/lotte/useSpeechInput";
 import { INPUT_BASE, buttonClass, chipClass } from "@/components/ui/styles";
 
 type Props = {

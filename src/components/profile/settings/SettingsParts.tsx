@@ -14,11 +14,11 @@ import { IconBadge } from "@/components/ui/IconBadge";
 import { ListRow } from "@/components/ui/ListRow";
 import { SwipeRow } from "@/components/ui/SwipeRow";
 import { CARD, CARD_LIST, PAGE_MAIN, buttonClass } from "@/components/ui/styles";
-import { APP_VERSION } from "@/lib/app";
-import { backupFileName, createBackup, parseBackup, restoreBackup, type Backup } from "@/lib/backup";
-import { personLabel, personRoleLabel, saveProfile, type HouseholdProfile, type Person } from "@/lib/profile";
-import { showToast } from "@/lib/toast";
-import { useProfile } from "@/lib/useProfile";
+import { APP_VERSION } from "@/lib/core/app";
+import { backupFileName, createBackup, parseBackup, restoreBackup, type Backup } from "@/lib/core/backup";
+import { personLabel, personRoleLabel, saveProfile, type HouseholdProfile, type Person } from "@/lib/einstellungen/profile";
+import { showToast } from "@/lib/core/toast";
+import { useProfile } from "@/lib/einstellungen/useProfile";
 
 const LUNCH_ICONS: Record<"zuhause" | "auswaerts" | "manchmal", LucideIcon> = {
   zuhause: Home,
@@ -317,8 +317,4 @@ export function AddRow({ href, label }: { href: string; label: string }) {
       </Link>
     </li>
   );
-}
-
-export function Nowrap({ children }: { children: ReactNode }) {
-  return <span className="whitespace-nowrap">{children}</span>;
 }

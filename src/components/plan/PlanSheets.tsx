@@ -1,7 +1,7 @@
 "use client";
 
-import { useProfile } from "@/lib/useProfile";
-import { isSmallHousehold } from "@/lib/profile";
+import { useProfile } from "@/lib/einstellungen/useProfile";
+import { isSmallHousehold } from "@/lib/einstellungen/profile";
 
 // Bottom-Sheets des Wochenplans: Eintrag bearbeiten, aus dem Kochbuch wählen,
 // selbst eintragen, verschieben, Vorlagen und "Nochmal kochen".
@@ -12,11 +12,11 @@ import { ArrowLeftRight, BookOpen, Check, Heart, Repeat, Trash2 } from "lucide-r
 import { Sheet } from "@/components/plan/Sheet";
 import { CategoryChip, CategoryDot, categoryLabel } from "@/components/ui/Category";
 import { CARD, CARD_LIST, INPUT, INPUT_BASE, buttonClass, chipClass, tileClass } from "@/components/ui/styles";
-import { RECIPE_CATEGORIES, setRecipeKnown, sortRecipes, type Recipe, type RecipeCategory } from "@/lib/cookbook";
-import { recipeIsKnown } from "@/lib/dishStatus";
-import { guessDishCategory } from "@/lib/dishCategory";
-import type { DaySlot, PlanDay, PlanWeek } from "@/lib/mealPlan";
-import { deleteTemplate, type TemplateDish, type WeekTemplate } from "@/lib/templates";
+import { RECIPE_CATEGORIES, setRecipeKnown, sortRecipes, type Recipe, type RecipeCategory } from "@/lib/essen/cookbook";
+import { recipeIsKnown } from "@/lib/essen/dishStatus";
+import { guessDishCategory } from "@/lib/essen/dishCategory";
+import type { DaySlot, PlanDay, PlanWeek } from "@/lib/essen/mealPlan";
+import { deleteTemplate, type TemplateDish, type WeekTemplate } from "@/lib/essen/templates";
 
 export function EntrySheet({
   slot,
