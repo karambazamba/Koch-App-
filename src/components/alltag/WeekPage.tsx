@@ -15,7 +15,7 @@ import { itemsForDay, weekdayShort, type CalendarEntry } from "@/lib/aufgaben/mo
 import { addDays } from "@/lib/core/now";
 import { dishOf, useMeals } from "./useMeals";
 import { roomBar } from "./Items";
-import { EntryForm } from "./EntryForm";
+import { TerminQuickAdd } from "./TerminQuickAdd";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 
 type Filter = "alles" | "familie" | "arbeit";
@@ -46,7 +46,7 @@ export function WeekPage({ today, entries }: { today: string; entries: CalendarE
             />
           )}
         </div>
-        <button type="button" onClick={() => setAdding(true)} aria-label="Neuer Termin oder neue Aufgabe" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-sm active:scale-95">
+        <button type="button" onClick={() => setAdding(true)} aria-label="Neuer Termin" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-sm active:scale-95">
           <Plus className="h-5 w-5" strokeWidth={2.75} aria-hidden />
         </button>
       </div>
@@ -106,7 +106,7 @@ export function WeekPage({ today, entries }: { today: string; entries: CalendarE
           Notizen
         </Link>
       </nav>
-      {adding && <EntryForm date={today} onClose={() => setAdding(false)} />}
+      {adding && <TerminQuickAdd defaultDate={today} onClose={() => setAdding(false)} />}
     </div>
   );
 }

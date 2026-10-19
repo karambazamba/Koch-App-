@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ArrowUp, CircleHelp, Mic, MicOff, Plus, Square, X } from "lucide-react";
-import { ICON_BUTTON, INPUT_BASE, chipClass } from "@/components/ui/styles";
+import { ICON_BUTTON, INPUT_BASE, chipClass, quickDot } from "@/components/ui/styles";
 import { parseQuickAdd, type QuickAddUnsure } from "@/lib/einkauf/quickAdd";
 import { addManualItem, removeManualItems, sectionFor, setItemShop, type ShoppingSettings } from "@/lib/einkauf/shoppingList";
 import { useKeyboardInset } from "@/lib/core/useMobileKeyboard";
@@ -21,15 +21,15 @@ export function QuickAddButton({
   weekStart,
   settings,
   small = false,
-  dark = false,
+  quick = false,
   className = "",
 }: {
   weekStart: string;
   settings: ShoppingSettings;
   /** Kleinerer Kreis (Bento-Karte), Trefferfläche bleibt 44×44 */
   small?: boolean;
-  /** Dunkler Kreis wie das "+" bei den Aufgaben (Startseite) */
-  dark?: boolean;
+  /** Kleiner hell-oranger Schnell-Knopf (Kacheln auf der Startseite) */
+  quick?: boolean;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -49,9 +49,15 @@ export function QuickAddButton({
         aria-label="Etwas auf die Einkaufsliste setzen"
         className={`flex h-11 w-11 items-center justify-center ${className}`}
       >
-        <span className={`flex items-center justify-center rounded-full ${dark ? "bg-bar text-on-bar" : "bg-accent text-on-accent"} shadow-sm transition active:scale-95 ${small ? "h-7 w-7" : "h-9 w-9"}`}>
-          <Plus className={small ? "h-4 w-4" : "h-5 w-5"} strokeWidth={2.75} aria-hidden />
-        </span>
+        {quick ? (
+          <span className={quickDot()}>
+            <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
+          </span>
+        ) : (
+          <span className={`flex items-center justify-center rounded-full bg-accent text-on-accent shadow-sm transition active:scale-95 ${small ? "h-7 w-7" : "h-9 w-9"}`}>
+            <Plus className={small ? "h-4 w-4" : "h-5 w-5"} strokeWidth={2.75} aria-hidden />
+          </span>
+        )}
       </button>
       {open && (
         <QuickAddSheet

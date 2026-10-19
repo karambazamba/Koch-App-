@@ -16,7 +16,9 @@ import { CARD, buttonClass } from "@/components/ui/styles";
 import { QuickAddButton } from "@/components/shopping/QuickAdd";
 import { clockLabel, itemText } from "@/lib/aufgaben/answers";
 import { itemsForDay, openTaskCount, taskOverview, upcomingTermine, type CalendarEntry } from "@/lib/aufgaben/model";
-import { sortNotes, useKladde, useNotes } from "@/lib/notizen";
+import { sortNotes, useNotes } from "@/lib/notizen";
+import { KladdeTile } from "@/components/notizen/Kladde";
+import { QuickButton } from "@/components/ui/QuickButton";
 import { AufgabenSection, TermineSection } from "./MiniCards";
 import { dueReminder } from "@/lib/aufgaben/reminders";
 import { markReminderSeen, useSeenReminders } from "@/lib/aufgaben/store";
@@ -81,7 +83,7 @@ export function TodayPage({ data, entries, minutes, onOpenFood }: { data: HomeDa
   const termine = upcomingTermine(entries, data.todayIso, minutes);
   const overview = taskOverview(entries, data.todayIso);
   const tasks = [...overview.heute, ...overview.woche];
-  const moreTasks = Math.max(0, openTaskCount(entries, data.todayIso) - Math.min(2, tasks.length));
+  const moreTasks = Math.max(0, openTaskCount(entries, data.todayIso) - Math.min(3, tasks.length));
   // Kacheln in Reihen; Bausteine nur, wenn sie an sind; "bald" nie
   const visible = (tiles ?? DEFAULT_HOME).filter((t) => t.visible && !tileMeta(t.id).soon && (t.id !== "vorrat" || pantryOn));
   const rows = tileRows(visible);
@@ -92,18 +94,17 @@ export function TodayPage({ data, entries, minutes, onOpenFood }: { data: HomeDa
     termineUpcoming: termine,
     tasksToday: overview.heute,
     tasksDoneToday: overview.erledigt.filter((i) => i.date === data.todayIso).length,
-    nextDue: [...overview.heute, ...overview.woche].find((i) => i.dueLabel && i.dueLabel !== "bis heute") ?? null,
-    dish,
+    dueToday: overview.heute.filter((i) => !i.carried && i.entry.typ === "aufgabe" && (i.entry.data.due === data.todayIso || i.entry.data.date === data.todayIso)),
     dinnerOpen: !dish && !over && !data.day?.away && Boolean(dishClock && dishClock >= "15:00"),
     tomorrowTermine: tomorrowAll.filter((i) => i.entry.typ === "termin"),
-    tomorrowTasks: tomorrowAll.filter((i) => i.entry.typ === "aufgabe").length,
+    tomorrowTasks: tomorrowAll.filter((i) => i.entry.typ === "aufgabe"),
     seen: seen ?? [],
   });
 
   const renderTile = (tile: (typeof visible)[number], half: boolean) => {
     switch (tile.id) {
       case "termine":
-        return <TermineSection items={termine} href={`/tag?datum=${data.todayIso}`} />;
+        return <TermineSection items={termine} href={`/tag?datum=${data.todayIso}`} today={data.todayIso} />;
       case "aufgaben":
         return <AufgabenSection items={tasks} more={moreTasks} today={data.todayIso} />;
       case "essen":
@@ -111,7 +112,7 @@ export function TodayPage({ data, entries, minutes, onOpenFood }: { data: HomeDa
       case "einkauf":
         return <ShoppingTile half={half} />;
       case "kladde":
-        return <KladdeTile />;
+        return <KladdeTile name={helperName(data.profile)} />;
       case "notizen":
         return <NotesTile />;
       case "vorrat":
@@ -163,10 +164,10 @@ export function TodayPage({ data, entries, minutes, onOpenFood }: { data: HomeDa
                   ? tipOpen
                     ? null
                     : { label: "Mehr dazu", onClick: () => setTipOpen(true) }
-                  : sentence.action === "essen"
-                    ? { label: "Ja, gern", onClick: () => openHelper(undefined, "Was gibt's heute Abend?") }
-                    : null
+                  : null
           }
+          oneLine={!reminder && !paused && !(tip && !openItems.length && !sentence.action)}
+          onTap={!reminder && !paused && sentence.action === "essen" ? () => openHelper(undefined, "Was gibt's heute Abend?") : undefined}
         />
 
         {tipSeen === false && welcomed && (
@@ -203,15 +204,22 @@ export function TodayPage({ data, entries, minutes, onOpenFood }: { data: HomeDa
   );
 }
 
-/** Lottes EIN Satz (wichtige Teile fett) mit höchstens einem Knopf */
-export function LotteSays({ parts, name, action }: { parts: SentencePart[]; name: string; action: { label: string; onClick: () => void } | null }) {
+/** Lottes EIN Satz (wichtige Teile fett, eine Zeile) mit höchstens einem Knopf; `onTap` = der Satz selbst ist antippbar */
+export function LotteSays({ parts, name, action, oneLine = false, onTap }: { parts: SentencePart[]; name: string; action: { label: string; onClick: () => void } | null; oneLine?: boolean; onTap?: () => void }) {
+  const text = parts.map((p, i) => (p.b ? <strong key={i} className={`font-extrabold ${onTap ? "text-accent-strong underline decoration-2 underline-offset-2" : ""}`}>{p.t}</strong> : <span key={i}>{p.t}</span>));
   return (
-    <section className="flex items-start gap-3" aria-label={`${name} sagt`}>
-      <LotteAvatar size={36} />
-      <div className="flex min-w-0 flex-1 flex-col items-start gap-2 pt-1.5">
-        <p className="text-base font-medium leading-snug" role="status">
-          {parts.map((p, i) => (p.b ? <strong key={i} className="font-extrabold">{p.t}</strong> : <span key={i}>{p.t}</span>))}
-        </p>
+    <section className="flex items-center gap-3" aria-label={`${name} sagt`}>
+      <LotteAvatar size={32} />
+      <div className="flex min-w-0 flex-1 flex-col items-start gap-2">
+        {onTap ? (
+          <button type="button" onClick={onTap} className="-my-2 min-h-11 w-full truncate text-left text-base font-medium leading-snug" role="status">
+            {text}
+          </button>
+        ) : (
+          <p className={`w-full text-base font-medium leading-snug ${oneLine ? "truncate" : ""}`} role="status">
+            {text}
+          </p>
+        )}
         {action && (
           <button type="button" onClick={action.onClick} className={buttonClass("soft", "sm")}>
             {action.label}
@@ -222,7 +230,7 @@ export function LotteSays({ parts, name, action }: { parts: SentencePart[]; name
   );
 }
 
-const HALF = `${CARD} relative flex min-h-[104px] flex-col p-3.5`;
+const HALF = `${CARD} relative flex min-h-[92px] flex-col p-3.5`;
 const HALF_LABEL = "flex min-w-0 items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted";
 
 /** Halbe Kachel Essen: Gericht (bzw. Idee), ⇄ = andere Idee; Antippen → Essen-Seite */
@@ -245,8 +253,8 @@ function FoodTile({ data, dish, over, dishClock, onOpen }: { data: HomeData; dis
   };
   return (
     <section className={HALF} aria-label={over ? "Essen morgen" : `Essen${dish && dishClock ? ` · ${clockLabel(dishClock)}` : ""}`}>
-      <button type="button" onClick={onOpen} className="flex flex-1 flex-col items-start gap-1 pr-7 text-left">
-        <span className={HALF_LABEL}>
+      <button type="button" onClick={onOpen} className="flex flex-1 flex-col items-start gap-1 text-left">
+        <span className={`${HALF_LABEL} pr-6`}>
           <UtensilsCrossed className="h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
           <span className="truncate">{over ? "Morgen" : `Essen${dish && dishClock ? ` · ${clockLabel(dishClock)}` : ""}`}</span>
         </span>
@@ -254,9 +262,9 @@ function FoodTile({ data, dish, over, dishClock, onOpen }: { data: HomeData; dis
         {sub && <span className="text-xs text-muted">{sub}</span>}
       </button>
       {list.length > 0 && (
-        <button type="button" onClick={() => setAlt((a) => (a === null ? 0 : a + 1))} aria-label="Andere Idee" className="absolute right-0.5 top-0.5 flex h-11 w-11 items-center justify-center text-accent">
-          <ArrowLeftRight className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-        </button>
+        <span className="absolute right-3.5 top-3">
+          <QuickButton icon={ArrowLeftRight} label="Andere Idee" onClick={() => setAlt((a) => (a === null ? 0 : a + 1))} />
+        </span>
       )}
       {idea && !over && (
         <button type="button" onClick={take} className={`${buttonClass("soft", "sm")} mt-1 self-start`}>
@@ -264,30 +272,6 @@ function FoodTile({ data, dish, over, dishClock, onOpen }: { data: HomeData; dis
         </button>
       )}
     </section>
-  );
-}
-
-/** Kladde (halb oder voll): gelblich, Uhrzeit der letzten Änderung, erste zwei Zeilen; Antippen → Notizen */
-function KladdeTile() {
-  const kladde = useKladde();
-  const lines = (kladde?.text ?? "").split(/\n/).map((l) => l.trim()).filter(Boolean);
-  const at = kladde?.geaendert ? new Date(kladde.geaendert) : null;
-  return (
-    <Link href="/notizen#kladde" className="flex min-h-[104px] flex-col gap-1 rounded-card border border-kladde-line bg-kladde p-3.5" aria-label="Kladde">
-      <span className={HALF_LABEL}>
-        <PenLine className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-        <span className="truncate">Kladde{at ? ` · ${String(at.getHours()).padStart(2, "0")}:${String(at.getMinutes()).padStart(2, "0")}` : ""}</span>
-      </span>
-      {lines.length ? (
-        lines.slice(0, 2).map((l, i) => (
-          <span key={i} className="truncate text-[14px] leading-snug">
-            {l}
-          </span>
-        ))
-      ) : (
-        <span className="text-[14px] text-muted">Schnell was aufschreiben …</span>
-      )}
-    </Link>
   );
 }
 
@@ -387,23 +371,20 @@ function ShoppingTile({ half }: { half: boolean }) {
     .sort((a, b) => Number(Boolean(b.now)) - Number(Boolean(a.now)) || Number(Boolean(b.manualId)) - Number(Boolean(a.manualId)));
   return (
     <section className={`${HALF} ${half ? "" : "min-h-0"}`} aria-label={open.length ? `Einkauf · ${open.length}` : "Einkauf"}>
-      <Link href="/einkaufsliste" className="flex flex-1 flex-col gap-1 pr-9">
-        <span className={HALF_LABEL}>
+      <Link href="/einkaufsliste" className="flex flex-1 flex-col gap-1">
+        <span className={`${HALF_LABEL} pr-6`}>
           <ShoppingCart className="h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
           <span className="truncate">Einkauf{open.length ? ` · ${open.length}` : ""}</span>
         </span>
         {open.length ? (
-          open.slice(0, half ? 2 : 4).map((i) => (
-            <span key={i.key} className="truncate text-[14px] font-semibold leading-snug">
-              {i.name}
-            </span>
-          ))
+          <span className={`${half ? "line-clamp-2" : "line-clamp-1"} text-[14px] font-semibold leading-snug`}>
+            {open.slice(0, 8).map((i) => i.name).join(", ")}
+          </span>
         ) : (
           <span className="text-[14px] text-muted">Liste ist leer</span>
         )}
-        {open.length > (half ? 2 : 4) && <span className="text-xs text-muted">und {open.length - (half ? 2 : 4)} mehr</span>}
       </Link>
-      <QuickAddButton weekStart={shopping.weekStart} settings={shopping.settings} small dark className="absolute right-1 top-1" />
+      <QuickAddButton weekStart={shopping.weekStart} settings={shopping.settings} quick className="absolute right-0.5 top-0.5" />
     </section>
   );
 }

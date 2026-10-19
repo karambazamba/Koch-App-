@@ -5,7 +5,7 @@
 
 import type { Room } from "../core/entries";
 import { addDays } from "../core/now";
-import { mondayOf, type AufgabeData, type Reminder } from "./model";
+import { mondayOf, type AufgabeData, type Reminder, type Repeat } from "./model";
 import { guessLabel, guessRoom, parseCalendar } from "./parse";
 
 export type When = "heute" | "morgen" | "woche" | "irgendwann" | { date?: string; due?: string };
@@ -64,4 +64,35 @@ export function whenLabel(when: When): string {
   const [, m, d] = iso.split("-");
   const wd = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"][new Date(`${iso}T12:00:00`).getDay()];
   return `${when.due ? "bis " : ""}${wd} ${Number(d)}.${Number(m)}.`;
+}
+
+// --- Schnell-Eintrag Termin ("+" bei Termine) ----------------------------------
+
+/** Häufige Uhrzeiten als Chips: eigene häufige zuerst, aufgefüllt mit 08:00 · 12:00 · 15:00 · 19:30 */
+export const DEFAULT_TIMES = ["08:00", "12:00", "15:00", "19:30"];
+
+export function frequentTimes(starts: string[], count = 4): string[] {
+  const tally = new Map<string, number>();
+  for (const t of starts) if (/^\d{2}:\d{2}$/.test(t)) tally.set(t, (tally.get(t) ?? 0) + 1);
+  const own = [...tally.entries()].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([t]) => t);
+  return [...new Set([...own, ...DEFAULT_TIMES])].slice(0, count);
+}
+
+/** Was der Text über einen Termin sagt: Tag, Uhrzeit, Raum, Etikett – und der Titel ohne diese Angaben */
+export function readTerminText(text: string, today: string): { title: string; date?: string; time?: string; room: Room; label?: string; repeat?: Repeat | null } {
+  const raw = text.trim();
+  const room = guessRoom(raw);
+  const cmd = parseCalendar(raw, today);
+  if (cmd?.kind !== "create") return { title: raw, room, label: guessLabel(raw) };
+  const d = cmd.draft;
+  if (d.typ === "termin") return { title: d.data.title || raw, date: d.data.date, time: d.data.start, room: d.raum, label: d.data.label, repeat: d.data.repeat ?? null };
+  return { title: d.data.title || raw, date: d.data.date ?? d.data.due, time: d.data.time, room: d.raum, label: d.data.label };
+}
+
+/** Kurzer Tag für Chips: "Freitag" bzw. "Fr 24.10." */
+export function dayChipLabel(iso: string, long = false): string {
+  const wd = new Date(`${iso}T12:00:00`).getDay();
+  if (long) return ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][wd];
+  const [, m, d] = iso.split("-");
+  return `${["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"][wd]} ${Number(d)}.${Number(m)}.`;
 }

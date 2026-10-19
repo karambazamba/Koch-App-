@@ -22,7 +22,7 @@ import { TaskQuickAdd } from "./TaskQuickAdd";
 
 type Filter = "alles" | "familie" | "arbeit";
 
-export const ROUND_PLUS = "flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-bar text-on-bar shadow-sm active:scale-95";
+export const ROUND_PLUS = "flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-sm active:scale-95";
 
 function TaskRow({ item, today, onOpen }: { item: DayItem; today: string; onOpen: (item: DayItem) => void }) {
   const [popping, setPopping] = useState(false);
