@@ -56,7 +56,7 @@ export function EntryForm({ entry, date, kind, onClose }: { entry?: CalendarEntr
     const base = entry ? { ...entry, typ, raum: room, data } : createEntry(typ, data, { raum: room });
     const clean = sanitizeEntry({ ...base, geaendert: new Date().toISOString() });
     if (!clean) return setHint("Das hat nicht geklappt – schau bitte nochmal auf Datum und Uhrzeit.");
-    act((list) => upsertEntry(list, clean), entry ? `Gespeichert ✓ ${clean.data.title}` : `Eingetragen ✓ ${clean.data.title}`);
+    act((list) => upsertEntry(list, clean), clean.data.title);
     onClose();
   };
 

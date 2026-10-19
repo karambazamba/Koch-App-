@@ -24,7 +24,9 @@ import { helperName } from "@/lib/einstellungen/profile";
 import { HelperPanel, spontanStartTurn, type ChatState } from "./HelperPanel";
 import { loadSpontanFilters } from "./SpontanBoard";
 
-const UNDO_SECONDS = 10;
+/** Nur nach echtem Löschen: kleine Meldung "Gelöscht · Rückgängig" für 3 Sekunden */
+const UNDO_SECONDS = 3;
+const DELETING = new Set(["remove_entry", "remove_note", "remove_shopping", "clear_shopping", "clear_week"]);
 
 /** Höhe einer sichtbaren Fuß-Leiste (StickyActions), damit der Knopf darüber schwebt */
 function useStickyActionsHeight(): number {
@@ -142,7 +144,9 @@ export function KitchenHelper() {
       );
     learnLikes(likesFromIngredients(chosen), LIKE_WEIGHTS.chosen);
     setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text: ["Übernommen ✓", ...notes].join(" "), local: true }], proposal: null }));
-    setUndo({ run, key: Date.now() });
+    // Hinzufügen/Ändern still; nur echtes Löschen bekommt "Rückgängig"
+    const deleting = chat.proposal.ops.some((op) => selected.has(op.id) && (DELETING.has(op.type) || (op.type === "home" && op.change.action === "ausblenden")));
+    if (deleting) setUndo({ run, key: Date.now() });
     setUndone(false);
   };
 
@@ -184,7 +188,7 @@ export function KitchenHelper() {
         >
           {undo ? (
             <>
-              <span className="flex-1 font-semibold">Übernommen ✓</span>
+              <span className="flex-1 font-semibold">Gelöscht</span>
               <button
                 type="button"
                 onClick={() => {

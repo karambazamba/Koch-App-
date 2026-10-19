@@ -6,6 +6,7 @@
 
 import { parseNoteCommand } from "../notizen/chat";
 import { isKladdeTidyRequest, kladdeCommand, tidyKladde } from "../notizen/kladde";
+import { isPinboardQuery, pinWriteCommand } from "../pinnwand/model";
 import { eventsIn, greetingCommand, localNewMail, localReply, looksLikeMail, parseHistoryDraft, REPLY_CHOICES, reviseDraft, revisionOf, splitInstruction, styleFromContext, summaryOf, type MailDraft } from "./mail";
 import type Anthropic from "@anthropic-ai/sdk";
 import { WEEKDAYS } from "../einstellungen/profile";
@@ -258,6 +259,8 @@ function mockModel(): CreateMessage {
       if (memory) return text(memory);
       const mail = mailUses(last.content, msgs, system);
       if (mail) return mail;
+      const board = pinWeatherUses(last.content, system);
+      if (board) return board;
       const kladde = kladdeUses(last.content, msgs, system);
       if (kladde) return kladde;
       const note = noteUses(last.content);
@@ -487,6 +490,12 @@ function mockModel(): CreateMessage {
       return text(`${summary ? `Kurz gesagt: ${summary} ` : ""}Hier mein Vorschlag – senden machst du selbst.${event} (Testmodus)`);
     }
 
+    // Wetter gelesen → ein, zwei Sätze
+    if (prevUses.some((u) => u.name === "wetter_abfragen")) {
+      const lines = String(resultFor("wetter_abfragen") ?? "").split("\n");
+      return text(`${(lines.find((l) => l.startsWith("Kurz: "))?.slice(6) ?? lines[1] ?? lines[0]).trim()} (${lines[0]}) (Testmodus)`);
+    }
+
     // Notizen/Aufgaben gelesen → Inhalt kurz wiedergeben (ohne ids)
     const read = prevUses.find((u) => u.name === "notizen_anzeigen" || u.name === "aufgaben_anzeigen");
     if (read) return text(`${String(resultFor(read.name) ?? "").replace(/ \[id=[^\]]+\]/g, "")} (Testmodus)`);
@@ -603,6 +612,38 @@ function mailUses(latest: string, msgs: Anthropic.Beta.BetaMessageParam[], syste
   return null;
 }
 
+/** Pinnwand und Wetter im Testmodus */
+function pinWeatherUses(latest: string, system: string): Anthropic.Beta.BetaMessage | null {
+  const write = pinWriteCommand(latest);
+  if (write) return tools([{ name: "pinnwand_schreiben", input: { text: write } }]);
+  if (isPinboardQuery(latest)) {
+    const line = system.match(/^Pinnwand: (.*)$/m)?.[1] ?? "leer";
+    return text(line === "leer" ? "Auf der Pinnwand steht gerade nichts. (Testmodus)" : `Auf der Pinnwand: ${line} (Testmodus)`);
+  }
+  if (/\b(wetter|schirm|regnet|regen)\b/i.test(latest) && /\?|\bwie\b|\bbrauch/i.test(latest)) {
+    const today = system.match(/^Heute: .*\((\d{4}-\d{2}-\d{2})\)/m)?.[1] ?? "";
+    const t = latest.toLowerCase();
+    const days = ["sonntag", "montag", "dienstag", "mittwoch", "donnerstag", "freitag", "samstag"];
+    const add = (n: number) => {
+      const d = new Date(`${today}T12:00:00Z`);
+      d.setUTCDate(d.getUTCDate() + n);
+      return d.toISOString().slice(0, 10);
+    };
+    let tag = today;
+    if (/\bübermorgen\b/.test(t)) tag = add(2);
+    else if (/\bmorgen\b/.test(t)) tag = add(1);
+    else {
+      const wd = days.findIndex((d) => t.includes(d));
+      if (wd >= 0 && today) {
+        const cur = new Date(`${today}T12:00:00Z`).getUTCDay();
+        tag = add((wd - cur + 7) % 7 || 7);
+      }
+    }
+    return tools([{ name: "wetter_abfragen", input: { tag } }]);
+  }
+  return null;
+}
+
 /** Kladde und Umwandeln im Testmodus */
 function kladdeUses(latest: string, msgs: Anthropic.Beta.BetaMessageParam[], system: string): Anthropic.Beta.BetaMessage | null {
   const today = system.match(/^Heute: .*\((\d{4}-\d{2}-\d{2})\)/m)?.[1] ?? "";
@@ -657,7 +698,7 @@ function noteUses(latest: string): Anthropic.Beta.BetaMessage | null {
   }
 }
 
-const CALENDAR_WRITE = new Set(["kladde_schreiben", "kladde_aufraeumen", "termin_in_aufgabe_umwandeln", "aufgabe_in_termin_umwandeln", "notiz_anlegen", "notiz_aendern", "notiz_loeschen", "liste_eintrag_hinzufuegen", "notiz_anheften", "baustein_an", "baustein_aus", "portionen_anpassen", "pause_setzen", "pause_beenden", "startseite_anpassen", "wochenplan_loeschen", "einkaufsliste_leeren", "einkaufsliste_entfernen", "rueckgaengig", "termin_anlegen", "termin_aendern", "termin_loeschen", "aufgabe_anlegen", "aufgabe_aendern", "aufgabe_erledigen", "aufgabe_verschieben"]);
+const CALENDAR_WRITE = new Set(["pinnwand_schreiben", "kladde_schreiben", "kladde_aufraeumen", "termin_in_aufgabe_umwandeln", "aufgabe_in_termin_umwandeln", "notiz_anlegen", "notiz_aendern", "notiz_loeschen", "liste_eintrag_hinzufuegen", "notiz_anheften", "baustein_an", "baustein_aus", "portionen_anpassen", "pause_setzen", "pause_beenden", "startseite_anpassen", "wochenplan_loeschen", "einkaufsliste_leeren", "einkaufsliste_entfernen", "rueckgaengig", "termin_anlegen", "termin_aendern", "termin_loeschen", "aufgabe_anlegen", "aufgabe_aendern", "aufgabe_erledigen", "aufgabe_verschieben"]);
 
 /** Einträge aus der Kontext-Liste "- Mo 2026-10-19: 09:00 Titel [id=…; termin, familie] | …" */
 function contextEntries(system: string): { date: string; time: string | null; title: string; id: string; typ: string; repeat: boolean }[] {

@@ -6,6 +6,8 @@
 
 import { replaceNotes } from "../notizen/store";
 import { loadKladde, saveKladde } from "../notizen/kladde";
+import { addPin, changePins, createPin, loadPins, removePin, visiblePins } from "../pinnwand";
+import { loadPlace } from "../wetter/client";
 import { loadMailStyle } from "./mailSettings";
 import { useEffect, useState } from "react";
 import { replaceEntries } from "../aufgaben/store";
@@ -220,6 +222,10 @@ function trimmed(data: AssistantData, currentWeekStart: string, pantry: Assistan
     features: BAUSTEINE.filter((b) => featureOn(b.feature)).map((b) => b.feature),
     mail: loadMailStyle(),
     kladde: loadKladde().text.slice(0, 4000),
+    pinnwand: visiblePins(loadPins(), now().getTime())
+      .slice(0, 8)
+      .map((m) => ({ author: m.data.author, text: m.data.text, at: m.erstellt })),
+    wetterOrt: loadPlace(),
     // Notizen: kompakt (Listen bis 60 Einträge, Text bis 1500 Zeichen)
     notes: (data.notes ?? []).slice(0, 60).map((n) => ({ ...n, data: { ...n.data, text: n.data.text?.slice(0, 1500), items: n.data.items?.slice(0, 60) } })),
     // Kompakt: Name, Menge, Ort, seit wann; Gekauftes ("b:") als "gekauft" markiert
@@ -352,8 +358,8 @@ function save(data: AssistantData, before: AssistantData) {
   if (data.profile !== before.profile) saveProfile(data.profile);
 }
 
-/** Vorrat und Wunsch-Ideen eintragen; liefert das Rückgängigmachen */
-function commitSideOps(ops: ChangeOp[]): () => void {
+/** Vorrat, Wunsch-Ideen und Pinnwand eintragen; liefert das Rückgängigmachen */
+function commitSideOps(ops: ChangeOp[], author = "Ich"): () => void {
   const today = toIsoDate(now());
   const undo: (() => void)[] = [];
   const pantry = ops.filter((op) => op.type === "add_pantry");
@@ -367,6 +373,13 @@ function commitSideOps(ops: ChangeOp[]): () => void {
     const before = loadWishes();
     for (const w of wishes) addWish({ personId: w.personId, who: w.who, dish: w.dish }, today);
     undo.push(() => restoreWishes(before));
+  }
+  for (const op of ops) {
+    if (op.type !== "add_pin") continue;
+    const pin = createPin(op.text, author);
+    if (!pin) continue;
+    changePins((all) => addPin(all, pin));
+    undo.push(() => changePins((all) => removePin(all, pin.id)));
   }
   return () => undo.forEach((u) => u());
 }
@@ -414,6 +427,13 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
   // Nutzt Lotte einen ausgeschalteten Baustein, wird er eingeschaltet – und sie sagt, wo er steht
   if (chosen.some((op) => op.type === "add_pantry") && unlockFeature("vorrat")) notes.push(bausteinOf("vorrat")!.where);
   if (chosen.some((op) => op.type === "add_recipe") && unlockFeature("rezepte")) notes.push(bausteinOf("rezepte")!.where);
+  if (chosen.some((op) => op.type === "add_pin")) {
+    const tiles = data.home ?? loadHomeTiles();
+    if (!tiles.find((t) => t.id === "pinnwand")?.visible) {
+      data = { ...data, home: applyHomeChange(tiles, { tile: "pinnwand", action: "zeigen" }) };
+      notes.push("Die Pinnwand steht jetzt oben auf der Startseite.");
+    }
+  }
   // Bausteine, die Lotte schalten soll
   const switched: { feature: Feature; on: boolean }[] = [];
   for (const op of chosen) {
@@ -430,7 +450,7 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
     if (note) notes.push(note);
   }
   save(data, current);
-  const undoSide = commitSideOps(chosen);
+  const undoSide = commitSideOps(chosen, current.profile.persons[0]?.name.trim() || "Ich");
   const undo = pushUndo(prompt ? `„${prompt.slice(0, 60)}“` : "die letzte Änderung", () => {
     save(current, data);
     undoSide();

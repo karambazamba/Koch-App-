@@ -17,7 +17,7 @@ import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 import { act, buzz } from "./actions";
 import { ItemMenu } from "./Items";
 import { EntryForm } from "./EntryForm";
-import { TaskLine } from "./MiniCards";
+import { TaskLine, useLeaving } from "./MiniCards";
 import { TaskQuickAdd } from "./TaskQuickAdd";
 
 type Filter = "alles" | "familie" | "arbeit";
@@ -25,17 +25,16 @@ type Filter = "alles" | "familie" | "arbeit";
 export const ROUND_PLUS = "flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-sm active:scale-95";
 
 function TaskRow({ item, today, onOpen }: { item: DayItem; today: string; onOpen: (item: DayItem) => void }) {
-  const [popping, setPopping] = useState(false);
+  // Abhaken: ca. 1 s durchgestrichen (nochmal tippen = doch nicht); Erledigtes unter "✓ erledigt" zurückholen
+  const { leaving, start } = useLeaving((it) => act((list, stamp) => setDone(list, it, true, stamp), it.title));
   const toggle = (it: DayItem) => {
-    buzz();
-    if (it.done) return act((list, stamp) => setDone(list, it, false, stamp));
-    setPopping(true);
-    setTimeout(() => {
-      act((list, stamp) => setDone(list, it, true, stamp), `Erledigt ✓ ${it.title}`);
-      setPopping(false);
-    }, 380);
+    if (it.done) {
+      buzz();
+      return act((list, stamp) => setDone(list, it, false, stamp));
+    }
+    start(it);
   };
-  return <TaskLine item={item} today={today} onOpen={onOpen} onDone={toggle} leaving={popping} />;
+  return <TaskLine item={item} today={today} onOpen={onOpen} onDone={toggle} leaving={leaving === item.key} />;
 }
 
 export function TasksView() {

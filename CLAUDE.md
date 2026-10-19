@@ -18,14 +18,21 @@ Familie wählt (Standard: Lotte).
   ausgeschalteter Baustein und wird nur bei Bedarf gezeigt.
 - Pro Bildschirm eine große Hauptsache, wenig Text, viel Weißraum. Leere
   Zustände freundlich und einladend, nie als Fehler.
-- Termin = feste Uhrzeit, Aufgabe = zu erledigen, Notiz = nur festhalten,
-  Kladde = Schmierzettel. Heute zeigt bis zu 3 Termine (Kärtchen
-  nebeneinander) und bis zu 3 Aufgaben (schlanke Zeilen); Kladde max. 3
-  Zeilen. Kachel antippen = öffnen, kleiner Knopf oben rechts = Neues (20 px,
-  hell-orange, nie schwarz). Lottes Satz: eine Zeile, max. ~8 Wörter, nur was
-  die Kacheln nicht zeigen, ohne Druck-Wörter. Startseite frei anpassbar
-  (Link unten, lange drücken, Einstellungen, Sprache). Gesten: Tippen =
-  Eintrag, lange Drücken = Startseite bearbeiten, Wischen = Seite wechseln.
+- Termin = feste Uhrzeit, Aufgabe = zu erledigen, Notiz = nur festhalten.
+  Heute zeigt bis zu 3 Termine (Kärtchen nebeneinander) und bis zu 3
+  Aufgaben (schlanke Zeilen). Kachel antippen = öffnen, kleiner Knopf oben
+  rechts = Neues (20 px, hell-orange, nie schwarz). Lottes Satz: eine Zeile,
+  max. ~8 Wörter, nur was die Kacheln nicht zeigen, ohne Druck-Wörter.
+  Gesten: Tippen = Eintrag, lange Drücken = Startseite bearbeiten, Wischen =
+  Seite wechseln.
+- Notizen = eine Kachel (Schnellnotiz + Angeheftetes), keine Kladde mehr.
+  Kacheln: Wetter (DWD via Bright Sky/Open-Meteo, serverseitig, gecacht) und
+  Pinnwand (Familien-Nachrichten, später geteilt über Konten, verschwinden
+  nach 3 Tagen). Startseite wird direkt auf der Startseite bearbeitet
+  (wackeln, ziehen, –, S/M/L). Zwei S nebeneinander, einzelne S wird breit.
+  Standard-Reihenfolge: Pinnwand, Termine, Aufgaben, Wetter, Essen+Einkauf
+  (Paar), Notizen, Vorrat, Morgen, Post – neue Kacheln landen dort. Kein
+  Rückgängig beim Hinzufügen, nur beim Löschen (3 s).
 - Erster Start = kurzes Kennenlernen im Chat (max. 4 Schritte,
   überspringbar). Antworten steuern die Startseite.
 
@@ -235,78 +242,85 @@ Familie wählt (Standard: Lotte).
   je Anfrage im Server-Log ("Lotte Tokens", nur Zahlen, nie Inhalte). Kein
   Untertitel mehr im Chat, nur der Name.
 
-## Startseite "Heute" final (v0.18/v0.19)
+## Startseite "Heute" – Kacheln 2.0 (v0.20)
 
-- Kacheln (`src/lib/core/homeLayout.ts`, Speicher `wasgibts.startseite` v2
-  `{tiles, tipSeen}`): termine, aufgaben, essen, einkauf, kladde, notizen,
-  morgen, vorrat, post ("bald"). Feste Breiten (`HOME_TILES.width`):
-  Termine/Aufgaben/Kladde/Notizen/Morgen voll, Essen/Einkauf/Vorrat halb –
-  benachbarte halbe paart `tileRows()` automatisch. Standard: Termine,
-  Aufgaben, Essen + Einkauf, Morgen (ab 16 Uhr); Kladde/Notizen aus. v1 wird
-  migriert (Aufgaben hinter Termine, Hinweis gilt als gesehen).
-- Ein Prinzip: Kachel antippen = öffnen; kleiner runder Knopf oben rechts =
-  schnell Neues (`QuickButton` in `src/components/ui/QuickButton.tsx`,
-  `quickDot()`): Termine "+", Aufgaben "+", Einkauf "+", Essen "⇄", Kladde
-  "✎". Sichtbar 20 px, `bg-quick`/`text-quick-ink` (#FDEBDF/#C4531A; Kladde
-  `bg-kladde-line`/`text-kladde-ink` #F3E7B8/#8A7420; Nacht Orange 20 % mit
-  hell-orangem Zeichen), Tippfläche 44 × 44 px, nie schwarz. Bei Termine/
-  Aufgaben rechts neben "+ N weitere".
-- Heute (`TodayPage`): Gruß immer mit Name (ohne Name "Guten Morgen!").
-  Lottes Satz (`homeSentence()` in `aufgaben/summary.ts`, wichtigster Teil
-  fett, eine Zeile, Titel gekürzt, keine Zählerei, kein Gericht), Vorrang:
-  Termin in ≤ 60 Min. "In 30 Minuten: **Jonne abholen.**" → "Als Nächstes:
-  **Baumarkt um 18:45.**" → "**Kita-Formular** ist heute dran." → 15–18 Uhr
-  ohne Essen "Noch kein Essen geplant – **Ideen?**" (antippbar, öffnet
-  Lotte) → ab 20 Uhr "Morgen: **7:30 Maler.**" → "Alles geschafft für heute
-  🌙" → "Heute ist es ruhig. ☀️". Erinnerungen ("Okay"), Pause und Tipps
-  gehen vor. Regeln auch mit KI (kein KI-Aufruf beim Öffnen).
-- TERMINE (`MiniCards.tsx`): bis zu 3 Kärtchen nebeneinander (1 voll, 2
-  halb, 3 Drittel), Uhrzeit 14 px fett, Titel 11,5 px bis 2 Zeilen,
-  Kästchen oben rechts, Farbstreifen (Familie #F26B21, Arbeit #4C6FD9), keine
-  graue Zeile, Höhe nach Inhalt; abgehakt → nächster rückt nach. Leer:
-  dezent "+ Termin hinzufügen". AUFGABEN: eine Karte mit bis zu 3 Zeilen
-  (`TaskLine`: Kreis, Titel einzeilig, rechts "heute" orange/"bis Mi"/"diese
-  Woche"/"von gestern" (`taskBadge`), Punkt), heute Fällige immer oben. Leer:
-  "+ Aufgabe hinzufügen". ESSEN (Gericht bis 2 Zeilen, ⇄ andere Idee) und
-  EINKAUF ("EINKAUF · 3", "Ingwer, Reis, Joghurt …" bis 2 Zeilen, "+" mit
-  "Oft gekauft") als halbe Kacheln. Ganz unten "✎ Startseite bearbeiten".
-- Schnell-Termin (`TerminQuickAdd`, auch "+" auf der Woche): Textfeld +
-  Mikrofon, WANN Heute/Morgen/übermorgen (Wochentag)/📅 Datum, UHRZEIT
-  (`frequentTimes`: eigene häufige zuerst, sonst 08:00 · 12:00 · 15:00 ·
-  19:30) · 🕐 andere, WO, ERINNERUNG keine/30 Min vorher (Standard)/1 Std/am
-  Vortag, "Termin eintragen". Text "Morgen 19:30 Elternabend" setzt die
-  Chips und bereinigt den Titel (`readTerminText`, Wiederholung wird
-  übernommen); ohne Uhrzeit "Ohne Uhrzeit? Dann lieber als Aufgabe" →
-  "Als Aufgabe speichern".
-- Schnell-Aufgabe (`TaskQuickAdd`, `aufgaben/quick.ts`): Textfeld + Mikrofon,
-  WANN Heute/Morgen/Diese Woche/Irgendwann (Tag im Text wird übernommen und
-  geht vor einer früheren Wahl), WO Familie/Arbeit, "+ Uhrzeit oder
-  Erinnerung"; Enter fügt hinzu und lässt das Fenster offen.
-- Kladde (`src/lib/notizen/kladde.ts`, Speicher `wasgibts.kladde` v1 – ein
-  freier Text; Oberfläche `src/components/notizen/Kladde.tsx`): Kachel
-  (Heute und oben auf `/notizen`) gelblich, Radius 16, "✎ KLADDE · 17:12",
-  ✎-Knopf, die ersten 3 Zeilen (12,5 px, "…"), "+ N weitere Zeilen", nie
-  höher als ca. 100 px; leer eine Zeile "Schnell was aufschreiben …".
-  Antippen → Kladde-Fenster (`KladdeSheet`, `Sheet tall` ca. 85 %, Kopf
-  "✎ Kladde" + "Fertig", Fokus mit Cursor am Ende, speichert beim Tippen
-  "gespeichert · gerade eben", "✨ <Name>, räum auf", "Leeren" mit
-  Rückgängig; "Fertig" oder am Kopf nach unten ziehen schließt – das gilt für
-  alle `Sheet`s). Aufräumen (`tidyKladde`): Uhrzeit = Termin, Tag oder
-  Erledigen-Verb ("… kaufen") = Aufgabe, Listen/Infos = Notiz; Vorschau mit
-  "Übernehmen". Lotte: kladde_schreiben, kladde_aufraeumen (Op
-  `set_kladde`), termin_in_aufgabe_umwandeln, aufgabe_in_termin_umwandeln,
-  startseite_anpassen; ohne KI `kladdeRule` im HelperPanel und kurze Befehle
-  in `homeChat.ts` ("Aufgaben ganz nach oben", "Nimm die Kladde auf die
-  Startseite").
-- Bearbeiten (`HomeCustomizer.tsx`): lange drücken (0,5 s, Vibration)
-  irgendwo auf Heute, Link unten, Einstellungen → ganz oben "Startseite
-  bearbeiten" (`/profil/startseite`) oder per Sprache. Liste leicht
-  wackelnd, "–" mit Rückgängig, Griff zum Ziehen, "Fertig"; Wischen ist im
-  Fenster aus; "+ Kachel hinzufügen" als 2er-Raster (aktiv weiß mit grünem
-  ✓, sonst grau mit "+"). Einmaliger Hinweis nach dem Kennenlernen ("Tipp:
-  Halte die Startseite gedrückt …", "Verstanden", `tipSeen`). Kennenlernen
-  setzt die Start-Kacheln (`homeTilesFor`: Aufgaben immer, Termine/Essen/
-  Einkauf je nach Antwort).
+- Layout (`src/lib/core/homeLayout.ts`, Speicher `wasgibts.startseite` v3
+  `{tiles: {id, visible, size}[], tipSeen}`): pinnwand, termine, aufgaben,
+  wetter, essen, einkauf, notizen, vorrat, morgen, post ("bald") –
+  `HOME_TILES` in Standard-Reihenfolge mit erlaubten Größen (`sizes`) und
+  Standard-Größe (M; Essen/Einkauf/Vorrat S; Morgen nur M; Post/Vorrat S·M).
+  L und M = volle Breite, S = halb; zwei S direkt hintereinander stehen
+  nebeneinander, eine einzelne S wird breit (`tileRows`). Essen + Einkauf =
+  Paar (`keepPair`: immer direkt hintereinander, Essen zuerst; wandern
+  zusammen). "zeigen" setzt eine Kachel an ihren Standard-Platz (direkt nach
+  der nächsten sichtbaren, die laut Standard davor steht; Paar neben den
+  Partner) in Standard-Größe; `standardLayout()` = Reihenfolge und Größen wie
+  am Anfang. Aktionen auch für Lotte: zeigen, ausblenden, klein/mittel/gross
+  (alt kompakt/ausfuehrlich), hoch/runter/nach_oben/nach_unten, standard.
+  Migration v2→v3: Größen gesetzt, Kladde-Kachel wird Notizen an derselben
+  Stelle. Standard sichtbar: Termine, Aufgaben, Essen + Einkauf, Morgen
+  (Vorrat nur mit Baustein); Pinnwand/Wetter/Notizen in der Auswahl mit "NEU".
+- Bearbeiten-Modus DIREKT auf der Startseite (`HomeBoard.tsx`, `TodayPage`
+  `useHomeEditing`): lange drücken, Link "✎ Startseite bearbeiten",
+  Einstellungen (`/profil/startseite` → `requestHomeEdit()` + "/"), Lotte
+  ("Startseite bearbeiten"). Kopf "Startseite bearbeiten" + "Fertig", grau
+  "Gedrückt halten & ziehen · Größe unten rechts · – entfernt". Kacheln
+  wackeln (±0,6°, abwechselnd), Inhalte `inert`; "–" oben links (Gelöscht ·
+  Rückgängig), "S · M · L" unten rechts. Festhalten (0,2 s) und ziehen:
+  schwebende Kopie, gestrichelter Platzhalter, andere rutschen (FLIP),
+  Auto-Scroll am Rand, Vibration; Touch: nicht-passiver `touchmove` blockt
+  das Scrollen nur beim Ziehen. Unten "+ Kachel hinzufügen" (`TilePicker`)
+  und "Standard-Anordnung wiederherstellen" (mit Nachfrage). Wischen aus;
+  "Fertig", Zurück (eigener Verlaufseintrag) oder freie Fläche beendet.
+- Kachel-Inhalte je Größe: Termine S = nächster + "+2 weitere heute", M = 3
+  Kärtchen, L = alle des Tages; Aufgaben S = Anzahl + wichtigste, M = 3, L =
+  6 Zeilen (Abhaken: ca. 1 s durchgestrichen, nochmal tippen = doch nicht);
+  Essen S / M (Zeit, "alles im Haus" bzw. "noch: …", ⇄) / L (+ Ideen für
+  morgen); Einkauf S / M (6 zum Abhaken) / L (10); Notizen (gelblich) S =
+  Schnellnotiz 2 Zeilen, M + angeheftete Chips, L + 3 neueste; Wetter;
+  Pinnwand 1/2/4; Vorrat S/M; Morgen M (`HomeTiles.tsx`, `MiniCards.tsx`).
+- Schnellnotiz (früher Kladde, Speicher weiter `wasgibts.kladde`; `Kladde.tsx`):
+  oben auf `/notizen` direkt beschreibbar (`SchnellnotizCard`), von der
+  Notizen-Kachel über ✎ als Fenster (`KladdeSheet`). Lotte versteht "Schreib
+  in die Kladde/Schnellnotiz …", "Notier mir schnell …", "Räum meine
+  Schnellnotiz auf" (`kladdeCommand`, `isKladdeTidyRequest`).
+- Wetter (`src/lib/wetter/`): `/api/wetter?ort=` (Open-Meteo inkl. DWD-
+  Modelle, Geocoding, 30 Min Server-Cache, Limit pro IP; `?lat&lon` → nur
+  Stadtname über Nominatim), `WETTER_MOCK=1` = Testmodus (fester Regen 15–18
+  Uhr, `szenario` heiss/frost/klar/sturm, `heute`). App: Ort
+  `wasgibts.wetterort` (Standard Eutin, Einstellungen → "Wetter-Ort"
+  `/profil/wetter`, "Meinen Standort verwenden"), letzte Daten
+  `wasgibts.wetterdaten` (offline "Stand 8:10"). Kachel leicht blau (Tokens
+  `bg-weather`/`weather-2`/`weather-line`/`text-weather-ink`): S Symbol +
+  Temperatur + Tipp; M + Beschreibung, Tief/Hoch, 4 Zeitpunkte; L + 5 Tage;
+  Antippen = Stunden heute + 7 Tage. EIN Tipp (`weatherTip`): Regen zur
+  Termin-Zeit "☂️ Ab 15 Uhr Regen – Schirm für …", sonst Regen, Frost
+  morgens, Sturm, ab 25 °C "Sonnencreme einpacken ☀️", Wind – oder keiner.
+  Lotte: `wetter_abfragen` (Vorhersage vorab geholt, wenn die Frage nach
+  Wetter klingt), ohne KI `weatherQuestion` ("Wie wird das Wetter morgen?",
+  "Brauch ich heute einen Schirm?", "… am Samstag?").
+- Pinnwand (`src/lib/pinnwand/`, Speicher `wasgibts.pinnwand` v1, Einträge
+  typ "pinnwand", Raum Familie; Autor = eigener Name, später aus dem Konto):
+  Text bis 140, Reaktionen 👍/❤️, gelesen von, dauerhaft angeheftet; älter
+  als 3 Tage verschwindet (`prunePins`). Kachel weiß: oranger Punkt bei
+  Ungelesenem, "+" (Textfeld + Mikrofon, "Anheften"), Kreis mit Anfangsbuch-
+  stabe (feste Farbe je Person, `personTone`, Tokens `person-3/4`), "Lisa ·
+  7:48"/"Du · gestern"; Antippen = reagieren, dauerhaft anheften, Löschen
+  (nur eigene). Lotte: `pinnwand_schreiben` (Op `add_pin`), Kontext
+  "Pinnwand: …"; ohne KI "Schreib an die Pinnwand: …", "Was steht auf der
+  Pinnwand?". Nutzt Lotte die Pinnwand, kommt die Kachel auf die Startseite.
+- Kein Rückgängig beim Hinzufügen (app-weit): Hinzufügen, Abhaken,
+  Übernehmen, Kachel hinzufügen, Größe, Sortieren = still (Animation,
+  Vibration); das Zurücknehmen bleibt für "Mach das rückgängig" registriert
+  (`pushUndo`). Nur echtes Löschen (Eintrag, Notiz, Pinnwand-Nachricht,
+  Schnellnotiz leeren, Kachel entfernen, Tag freimachen; im Chat
+  Wochenplan/Einkaufsliste leeren) zeigt die kleine Meldung "Gelöscht ·
+  Rückgängig" für 3 s (`showDeleted` in `core/toast.ts`, `act(…, label,
+  { deleted: true })`, Chat-Turn `deleted`).
+- Weiter wie v0.18/v0.19: Lottes Satz (`homeSentence`), Schnell-Knöpfe
+  (`QuickButton`), Schnell-Termin (`TerminQuickAdd`), Schnell-Aufgabe
+  (`TaskQuickAdd`), einmaliger Hinweis nach dem Kennenlernen, Start-Kacheln
+  aus dem Kennenlernen (`homeTilesFor`, in Standard-Reihenfolge).
 
 ## Termine, Aufgaben und die drei Seiten (v0.10)
 

@@ -5,7 +5,7 @@
 
 import { nowIso } from "./now";
 
-export type EntryType = "termin" | "aufgabe" | "notiz" | "gericht" | "einkauf";
+export type EntryType = "termin" | "aufgabe" | "notiz" | "gericht" | "einkauf" | "pinnwand";
 
 /** Familie = gemeinsam, Arbeit = persönlich */
 export type Room = "familie" | "arbeit";

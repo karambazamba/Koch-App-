@@ -5,7 +5,7 @@
 // Erledigten, Menü beim Antippen. Ruhig: keine Zähler, nichts "Offenes".
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Bell, Check, ChevronDown, ChevronRight, Pencil, Repeat2, Trash2, CalendarArrowUp, CheckCircle2, Circle } from "lucide-react";
 import { CARD, chipClass } from "@/components/ui/styles";
 import { Sheet } from "@/components/plan/Sheet";
@@ -30,17 +30,24 @@ function subline(item: DayItem): string[] {
 export const roomBar = (room: DayItem["room"]) => (room === "arbeit" ? "bg-work" : "bg-accent");
 
 export function ItemRow({ item, onOpen }: { item: DayItem; onOpen: (item: DayItem) => void }) {
+  // Abhaken: ca. 1 s durchgestrichen (nochmal tippen = doch nicht), dann wandert der Eintrag nach unten
   const [popping, setPopping] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const checked = item.done || popping;
   const toggle = () => {
     buzz();
+    if (popping) {
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = null;
+      return setPopping(false);
+    }
     if (item.done) return act((list, stamp) => setDone(list, item, false, stamp));
-    // Erst die kleine Animation, dann wandert der Eintrag nach unten
     setPopping(true);
-    setTimeout(() => {
+    timer.current = setTimeout(() => {
+      timer.current = null;
       act((list, stamp) => setDone(list, item, true, stamp));
       setPopping(false);
-    }, 420);
+    }, 1000);
   };
   const sub = subline(item);
   return (
@@ -162,7 +169,7 @@ export function ItemMenu({ item, onClose, onEdit }: { item: DayItem; onClose: ()
             {item.done ? "Doch nicht erledigt" : "Erledigt"}
           </button>
           {!item.done && (
-            <button type="button" className={MENU_ROW} onClick={close(() => act((l, s) => moveItem(l, item, addDays(item.date, 1), s), `Auf morgen verschoben ✓ ${item.title}`))}>
+            <button type="button" className={MENU_ROW} onClick={close(() => act((l, s) => moveItem(l, item, addDays(item.date, 1), s), `${item.title} auf morgen`))}>
               <CalendarArrowUp className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
               Auf morgen
             </button>
@@ -176,7 +183,7 @@ export function ItemMenu({ item, onClose, onEdit }: { item: DayItem; onClose: ()
             <Pencil className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
             Bearbeiten
           </button>
-          <button type="button" className={`${MENU_ROW} text-red-600`} onClick={() => (series ? setStep("loeschen") : close(() => act((l, s) => removeItem(l, item.entry.id, s), `Gelöscht ✓ ${item.title}`))())}>
+          <button type="button" className={`${MENU_ROW} text-red-600`} onClick={() => (series ? setStep("loeschen") : close(() => act((l, s) => removeItem(l, item.entry.id, s), `das Löschen von ${item.title}`, { deleted: true }))())}>
             <Trash2 className="h-5 w-5" strokeWidth={2} aria-hidden />
             Löschen
           </button>
@@ -191,7 +198,7 @@ export function ItemMenu({ item, onClose, onEdit }: { item: DayItem; onClose: ()
               role="radio"
               aria-checked={item.reminder === r.value}
               className={chipClass(item.reminder === r.value)}
-              onClick={close(() => act((l, s) => setReminder(l, item.entry.id, r.value, s), r.value === "aus" ? "Erinnerung aus ✓" : `Erinnerung ✓ ${r.label}`))}
+              onClick={close(() => act((l, s) => setReminder(l, item.entry.id, r.value, s), `die Erinnerung für ${item.title}`))}
             >
               {r.label}
             </button>
@@ -203,10 +210,10 @@ export function ItemMenu({ item, onClose, onEdit }: { item: DayItem; onClose: ()
           <p className="flex items-center gap-2 text-base text-muted">
             <Repeat2 className="h-5 w-5" strokeWidth={2} aria-hidden /> Wiederholt sich {repeatLabel(item.repeat, item.entry.data.date ?? undefined)}.
           </p>
-          <button type="button" className={`${CARD} ${MENU_ROW}`} onClick={close(() => act((l, s) => removeItem(l, item.entry.id, s, item.date), "Gelöscht ✓ nur dieser Tag"))}>
+          <button type="button" className={`${CARD} ${MENU_ROW}`} onClick={close(() => act((l, s) => removeItem(l, item.entry.id, s, item.date), `das Löschen von ${item.title}`, { deleted: true }))}>
             Nur diesen Tag
           </button>
-          <button type="button" className={`${CARD} ${MENU_ROW} text-red-600`} onClick={close(() => act((l, s) => removeItem(l, item.entry.id, s), `Gelöscht ✓ ${item.title} (alle)`))}>
+          <button type="button" className={`${CARD} ${MENU_ROW} text-red-600`} onClick={close(() => act((l, s) => removeItem(l, item.entry.id, s), `das Löschen von ${item.title}`, { deleted: true }))}>
             Alle – die ganze Reihe
           </button>
         </div>

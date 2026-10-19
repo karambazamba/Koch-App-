@@ -23,8 +23,11 @@ import { calendarChat, changeEntries, loadEntries } from "@/lib/aufgaben";
 import { parseHomeCommand } from "@/lib/lotte/homeChat";
 import { parseBausteinCommand } from "@/lib/lotte/bausteinChat";
 import { BAUSTEINE, bausteinOf, featureOn, setFeature } from "@/lib/core/features";
-import { changeHome, describeHomeChange } from "@/lib/core/homeLayout";
-import { pushUndo, undoLast } from "@/lib/core/undo";
+import { changeHome, describeHomeChange, requestHomeEdit, unlockHomeTile } from "@/lib/core/homeLayout";
+import { addPin, changePins, createPin, isPinboardQuery, loadPins, pinWriteCommand, visiblePins } from "@/lib/pinnwand";
+import { dayAnswer, umbrellaAnswer, weatherQuestion } from "@/lib/wetter/forecast";
+import { loadPlace, refreshForecast } from "@/lib/wetter/client";
+import { isRegisteredUndo, pushUndo, undoLast } from "@/lib/core/undo";
 import { commitOps } from "@/lib/lotte/client";
 import { askAssistant, FALLBACK_TEXT, saveAccessCode, useAssistantStatus } from "@/lib/lotte/client";
 import {
@@ -70,7 +73,7 @@ import { createEntry } from "@/lib/core/entries";
 import { TipBubble } from "./TipBubble";
 import { tipsShown, useTipStore } from "@/lib/essen/healthTips";
 import { extractLikeStatements, learnFromRecipe, learnLikes, LIKE_WEIGHTS } from "@/lib/essen/likes";
-import { now } from "@/lib/core/now";
+import { berlinTime, now } from "@/lib/core/now";
 import { useFeature } from "@/lib/core/features";
 
 export type ChatTurnView = ChatTurn & {
@@ -92,8 +95,10 @@ export type ChatTurnView = ChatTurn & {
   exclude?: string[];
   /** Eben genannte Zutaten ("Was mach ich mit Hack und Paprika?") – zählen mit, landen nicht im Vorrat */
   extra?: string[];
-  /** "Rückgängig" für eine gerade gemachte Änderung */
+  /** Zurücknehmen einer gerade gemachten Änderung ("Mach das rückgängig") */
   undo?: () => void;
+  /** Echtes Löschen: dann (und nur dann) steht "Rückgängig" als Knopf darunter */
+  deleted?: boolean;
   /** Im Supermarkt: Ideen zum Produkt, darunter Liste und "Statt <Tag>" */
   market?: MarketAnswer & { target: MarketTarget | null };
   /** Backwunsch: passende Rezepte mit "Zusammen backen" */
@@ -139,6 +144,10 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   const router = useRouter();
   const status = useAssistantStatus(true);
   const today = useToday();
+  // Ohne sichtbaren Knopf (nur Löschen hat einen): jedes Zurücknehmen bleibt für "Mach das rückgängig" gemerkt
+  useEffect(() => {
+    for (const turn of chat.turns.slice(-3)) if (turn.undo && !isRegisteredUndo(turn.undo)) pushUndo(turn.text.slice(0, 60), turn.undo);
+  }, [chat.turns]);
   const inset = useKeyboardInset();
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -694,6 +703,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   const rules = (t: string): boolean => {
     if (!data || !today) return false;
     if (mailRule(t)) return true;
+    if (boardRule(t)) return true;
     if (kladdeRule(t)) return true;
     if (noteRule(t)) return true;
     if (isAddPersonRequest(t)) {
@@ -784,7 +794,46 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   };
 
   /** Bausteine ohne KI: "Zeig mir den Vorrat" (wenn aus), "Ich brauche die Tipps nicht", "Was kannst du noch?" */
-  /** Kladde ohne KI: "Schreib in die Kladde: …", "Räum meine Kladde auf"; dazu "Das ist kein Termin, sondern eine Aufgabe" */
+  /** Pinnwand und Wetter ohne KI: "Schreib an die Pinnwand: …", "Was steht auf der Pinnwand?", "Wie wird das Wetter morgen?", "Brauch ich heute einen Schirm?" */
+  const boardRule = (t: string): boolean => {
+    if (!data || !today) return false;
+    const say = (text: string) => setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text, local: true }] }));
+    const me = data.profile.persons[0]?.name.trim() || "Ich";
+    const write = pinWriteCommand(t);
+    if (write) {
+      setInput("");
+      const pin = createPin(write, me);
+      if (!pin) return false;
+      pushUndo("die Pinnwand-Nachricht", changePins((all) => addPin(all, pin)));
+      const shown = unlockHomeTile("pinnwand");
+      say(`Hängt an der Pinnwand ✓ „${pin.data.text}“${shown ? " – die Pinnwand steht jetzt oben auf der Startseite." : ""}`);
+      return true;
+    }
+    if (isPinboardQuery(t)) {
+      setInput("");
+      const pins = visiblePins(loadPins(), now().getTime());
+      say(pins.length ? `Auf der Pinnwand: ${pins.slice(0, 4).map((m) => `${m.data.author === me ? "Du" : m.data.author}: „${m.data.text}“`).join(" · ")}` : "Auf der Pinnwand steht gerade nichts.");
+      return true;
+    }
+    const question = weatherQuestion(t, toIsoDate(today));
+    if (question) {
+      setInput("");
+      setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }] }));
+      void refreshForecast(loadPlace()).then((fc) => {
+        const minutes = berlinTime().minutes;
+        const text = !fc
+          ? "Gerade komme ich nicht an die Wetterdaten – probier's gleich nochmal."
+          : question.umbrella
+            ? umbrellaAnswer(fc, question.date, minutes)
+            : (dayAnswer(fc, question.date, question.label) ?? "Für den Tag gibt's noch keine Vorhersage – nur die nächsten 7 Tage.");
+        setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text, local: true }] }));
+      });
+      return true;
+    }
+    return false;
+  };
+
+  /** Schnellnotiz (früher Kladde) ohne KI: "Schreib in die Schnellnotiz/Kladde: …", "Notier mir schnell …", "Räum meine Schnellnotiz auf"; dazu "Das ist kein Termin, sondern eine Aufgabe" */
   const kladdeRule = (t: string): boolean => {
     if (!today) return false;
     const say = (text: string, extra: Partial<ChatTurnView> = {}) => setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text, local: true, ...extra }] }));
@@ -792,7 +841,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     if (write) {
       setInput("");
       const undo = changeKladde(appendLine(loadKladde().text, write));
-      const text = "Steht in der Kladde ✓ (Notizen, ganz oben)";
+      const text = "Steht in der Schnellnotiz ✓ (Notizen, ganz oben)";
       say(text, { undo: pushUndo(text, undo) });
       return true;
     }
@@ -801,7 +850,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       const iso = toIsoDate(today);
       const lines = tidyKladde(loadKladde().text, iso).filter((l) => l.kind);
       if (!lines.length) {
-        say("In deiner Kladde finde ich gerade nichts, was ein Termin, eine Aufgabe oder eine Notiz wird – alles bleibt, wie es ist.");
+        say("In deiner Schnellnotiz finde ich gerade nichts, was ein Termin, eine Aufgabe oder eine Notiz wird – alles bleibt, wie es ist.");
         return true;
       }
       const label = (l: (typeof lines)[number]) => (l.kind === "termin" ? "Termin" : l.kind === "aufgabe" ? "Aufgabe" : "Notiz");
@@ -822,16 +871,16 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           }
         }
         saveKladde(withoutLines(beforeKladde, lines.map((l) => l.line)));
-        const text = `Übernommen ✓ ${lines.length} ${lines.length === 1 ? "Zeile" : "Zeilen"} – der Rest bleibt in der Kladde.`;
+        const text = `Übernommen ✓ ${lines.length} ${lines.length === 1 ? "Zeile" : "Zeilen"} – der Rest bleibt in der Schnellnotiz.`;
         setChat((c) => ({
           ...c,
-          turns: [...c.turns, { role: "assistant", text, local: true, undo: pushUndo("das Aufräumen der Kladde", () => (replaceEntries(beforeEntries), replaceNotes(beforeNotes), saveKladde(beforeKladde))) }],
+          turns: [...c.turns, { role: "assistant", text, local: true, undo: pushUndo("das Aufräumen der Schnellnotiz", () => (replaceEntries(beforeEntries), replaceNotes(beforeNotes), saveKladde(beforeKladde))) }],
         }));
       };
-      say(`Daraus würde ich machen: ${lines.map((l) => `${label(l)}: ${l.draft?.data.title ?? (l.note?.kind === "create" ? l.note.title : l.line)}`).join(" · ")}. Der Rest bleibt in der Kladde.`, {
+      say(`Daraus würde ich machen: ${lines.map((l) => `${label(l)}: ${l.draft?.data.title ?? (l.note?.kind === "create" ? l.note.title : l.line)}`).join(" · ")}. Der Rest bleibt in der Schnellnotiz.`, {
         choices: [
           { label: "Übernehmen", onClick: apply },
-          { label: "Nein, lass", onClick: () => setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text: "Okay, die Kladde bleibt, wie sie ist.", local: true }] })) },
+          { label: "Nein, lass", onClick: () => setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text: "Okay, die Schnellnotiz bleibt, wie sie ist.", local: true }] })) },
         ],
       });
       return true;
@@ -990,8 +1039,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     return false;
   };
 
-  /** Antwort von Lotte (lokal) mit optionalem Rückgängig ins Gespräch */
-  const localReply = (t: string, text: string, undo?: () => void) => {
+  /** Antwort von Lotte (lokal) ins Gespräch; `deleted` = echtes Löschen → Knopf "Rückgängig" */
+  const localReply = (t: string, text: string, undo?: () => void, deleted = false) => {
     setInput("");
     setChat((c) => ({
       ...c,
@@ -1002,6 +1051,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           role: "assistant",
           local: true,
           text,
+          deleted,
           ...(undo
             ? {
                 undo: () => {
@@ -1027,13 +1077,14 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     }
     if (cmd.kind === "show") {
       setInput("");
-      router.push(cmd.target === "wochenplan" ? "/?seite=essen" : cmd.target === "einkaufsliste" ? "/einkaufsliste" : "/profil/startseite");
+      if (cmd.target === "startseite") requestHomeEdit();
+      router.push(cmd.target === "wochenplan" ? "/?seite=essen" : cmd.target === "einkaufsliste" ? "/einkaufsliste" : "/");
       onClose();
       return true;
     }
     if (cmd.kind === "home") {
       const undo = pushUndo(describeHomeChange(cmd.change), changeHome(cmd.change));
-      localReply(t, `Erledigt ✓ ${describeHomeChange(cmd.change)}`, undo);
+      localReply(t, `Erledigt ✓ ${describeHomeChange(cmd.change)}`, undo, cmd.change.action === "ausblenden");
       return true;
     }
     const weekStart = planningWeekStart(today, data.profile.shoppingDay || DEFAULT_SHOPPING_DAY).weekStart;
@@ -1045,7 +1096,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           : { id: "lokal-weg", type: "remove_shopping", weekStart, names: cmd.names };
     const { undo } = commitOps(data, [op], new Set([op.id]), t);
     const text = cmd.kind === "clear_week" ? "Erledigt ✓ Der Wochenplan ist wieder leer – die Rezepte bleiben." : cmd.kind === "clear_shopping" ? "Erledigt ✓ Die Einkaufsliste ist leer." : `Erledigt ✓ ${cmd.names.join(", ")} ${cmd.names.length === 1 ? "ist" : "sind"} von der Liste.`;
-    localReply(t, text, undo);
+    localReply(t, text, undo, true);
     return true;
   };
 
@@ -1474,7 +1525,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                     ))}
                   </div>
                 )}
-                {turn.undo && last && (
+                {turn.undo && turn.deleted && last && (
                   <button type="button" onClick={turn.undo} className={chipClass(false, "muted")}>
                     Rückgängig
                   </button>

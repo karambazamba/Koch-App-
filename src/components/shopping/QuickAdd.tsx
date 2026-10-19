@@ -7,15 +7,15 @@ import { parseQuickAdd, type QuickAddUnsure } from "@/lib/einkauf/quickAdd";
 import { addManualItem, removeManualItems, sectionFor, setItemShop, type ShoppingSettings } from "@/lib/einkauf/shoppingList";
 import { useKeyboardInset } from "@/lib/core/useMobileKeyboard";
 import { useSpeechInput } from "@/lib/lotte/useSpeechInput";
+import { pushUndo } from "@/lib/core/undo";
 
-type Toast = { text: string; ids: string[]; key: number };
 
 const sachen = (n: number) => `${n} ${n === 1 ? "Sache" : "Sachen"}`;
 
 /**
  * Rundes "+" (Trefferfläche 44×44): öffnet von unten ein kleines Feld mit
- * Mikrofon. Erkanntes landet direkt auf der Liste ("3 Sachen hinzugefügt ✓"
- * mit Rückgängig), Unsicheres kommt als grauer Chip zum Bestätigen.
+ * Mikrofon. Erkanntes landet direkt auf der Liste (still, ohne Rückgängig-
+ * Leiste), Unsicheres kommt als grauer Chip zum Bestätigen.
  */
 export function QuickAddButton({
   weekStart,
@@ -33,13 +33,6 @@ export function QuickAddButton({
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [toast, setToast] = useState<Toast | null>(null);
-
-  useEffect(() => {
-    if (!toast) return;
-    const timer = setTimeout(() => setToast(null), 6000);
-    return () => clearTimeout(timer);
-  }, [toast]);
 
   return (
     <>
@@ -65,27 +58,10 @@ export function QuickAddButton({
           settings={settings}
           onClose={(added) => {
             setOpen(false);
-            if (added.length) setToast({ text: `${sachen(added.length)} hinzugefügt ✓`, ids: added, key: Date.now() });
+            // Still: kein Rückgängig beim Hinzufügen ("Mach das rückgängig" geht trotzdem)
+            if (added.length) pushUndo(`${sachen(added.length)} auf der Liste`, () => removeManualItems(weekStart, added));
           }}
         />
-      )}
-      {toast && (
-        <div
-          role="status"
-          className="fixed inset-x-0 top-[calc(env(safe-area-inset-top)+0.75rem)] z-50 mx-auto flex w-[calc(100%-2rem)] max-w-md items-center gap-3 rounded-2xl bg-ink px-4 py-3 text-background shadow-lg"
-        >
-          <span className="flex-1 font-semibold">{toast.text}</span>
-          <button
-            type="button"
-            onClick={() => {
-              removeManualItems(weekStart, toast.ids);
-              setToast({ text: "Wieder runtergenommen.", ids: [], key: Date.now() });
-            }}
-            className={toast.ids.length ? "h-10 rounded-xl bg-background/15 px-3 font-bold" : "hidden"}
-          >
-            Rückgängig
-          </button>
-        </div>
       )}
     </>
   );
@@ -204,17 +180,7 @@ function QuickAddSheet({
 
         {added.length > 0 && unsure.length > 0 && (
           <p className="text-sm font-semibold text-accent-strong" role="status">
-            {sachen(added.length)} hinzugefügt ✓{" "}
-            <button
-              type="button"
-              onClick={() => {
-                removeManualItems(weekStart, added);
-                setAdded([]);
-              }}
-              className="font-semibold text-muted underline"
-            >
-              Rückgängig
-            </button>
+            {sachen(added.length)} hinzugefügt ✓
           </p>
         )}
         {unsure.length > 0 && (

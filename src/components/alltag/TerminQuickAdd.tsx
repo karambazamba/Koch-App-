@@ -70,7 +70,7 @@ export function TerminQuickAdd({ onClose, defaultDate }: { onClose: () => void; 
     if (!clock) return setAskTask(true);
     const entry = sanitizeEntry(createEntry("termin", { title: title.slice(0, 120), date: day, start: clock, reminder, repeat: read.repeat ?? null, ...(read.label ? { label: read.label } : {}) }, { raum: where }) as CalendarEntry);
     if (!entry) return;
-    act((list) => upsertEntry(list, entry), `Eingetragen ✓ ${entry.data.title}`);
+    act((list) => upsertEntry(list, entry), entry.data.title);
     onClose();
   };
   const saveAsTask = () => {
@@ -78,7 +78,7 @@ export function TerminQuickAdd({ onClose, defaultDate }: { onClose: () => void; 
     if (!title) return;
     const entry = sanitizeEntry(createEntry("aufgabe", quickTaskData(title, { date: day }, today, { label: read.label }), { raum: where }) as CalendarEntry);
     if (!entry) return;
-    act((list) => upsertEntry(list, entry), `Als Aufgabe gespeichert ✓ ${entry.data.title}`);
+    act((list) => upsertEntry(list, entry), entry.data.title);
     onClose();
   };
 

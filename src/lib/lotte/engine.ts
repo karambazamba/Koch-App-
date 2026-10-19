@@ -3,6 +3,7 @@
 // kommt Stück für Stück über `onText` (Streaming), am Ende die fertige
 // Antwort samt Vorschlag.
 
+import { fetchForecast } from "../wetter/server";
 import { sanitizeNote, type Note } from "../notizen/model";
 import type Anthropic from "@anthropic-ai/sdk";
 import { migrateProfile } from "../einstellungen/profile";
@@ -37,7 +38,7 @@ export type EngineEvents = { onText?: (delta: string) => void; onRound?: () => v
 
 export class AssistantInputError extends Error {}
 
-const OP_TYPES = new Set(["set_kladde", "upsert_note", "remove_note", "set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last", "set_persons", "set_pause", "app_command", "set_feature"]);
+const OP_TYPES = new Set(["add_pin", "set_kladde", "upsert_note", "remove_note", "set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last", "set_persons", "set_pause", "app_command", "set_feature"]);
 
 /** Anfrage prüfen und auf das Nötige kürzen */
 export function parseRequest(body: unknown): AssistantRequest {
@@ -69,6 +70,11 @@ export function parseRequest(body: unknown): AssistantRequest {
     entries: (Array.isArray(b.data?.entries) ? b.data.entries : []).map(sanitizeEntry).filter((e): e is CalendarEntry => e !== null).slice(0, 400),
     mail: sanitizeMailStyle(b.data?.mail),
     kladde: typeof b.data?.kladde === "string" ? b.data.kladde.slice(0, 4000) : "",
+    pinnwand: (Array.isArray(b.data?.pinnwand) ? b.data.pinnwand : [])
+      .filter((p): p is { author: string; text: string; at: string } => Boolean(p) && typeof p === "object" && typeof p.text === "string" && typeof p.author === "string")
+      .slice(0, 10)
+      .map((p) => ({ author: p.author.slice(0, 40), text: p.text.slice(0, 140), at: typeof p.at === "string" ? p.at.slice(0, 30) : "" })),
+    wetterOrt: typeof b.data?.wetterOrt === "string" ? b.data.wetterOrt.slice(0, 60) : "Eutin",
     notes: (Array.isArray(b.data?.notes) ? b.data.notes : []).map(sanitizeNote).filter((n): n is Note => n !== null).slice(0, 80),
   };
   const pending = (Array.isArray(b.pending) ? b.pending : []).filter(
@@ -142,7 +148,9 @@ function pendingSummary(ops: ChangeOp[]): string {
       case "remove_note":
         return `Notiz löschen: ${op.title}`;
       case "set_kladde":
-        return `Kladde: ${op.change}`;
+        return `Schnellnotiz: ${op.change}`;
+      case "add_pin":
+        return `Pinnwand: ${op.text}`;
     }
   });
   return `\n\nNoch nicht übernommener Vorschlag (in den Daten schon enthalten; auf Wunsch anpassen):\n${lines.join("\n")}`;
@@ -158,6 +166,9 @@ function logUsage(model: string, u: Usage) {
   console.info("Lotte Tokens", { modell: model, runden: u.rounds, ein: u.in, aus: u.out, cache_gelesen: u.read, cache_geschrieben: u.write, kosten_usd: dollar === null ? "?" : dollar.toFixed(5) });
 }
 
+/** Klingt nach Wetter? ("Wie wird das Wetter morgen?", "Brauch ich einen Schirm?") */
+const WEATHER_QUESTION = /\b(wetter|schirm|regn\w*|regen|sonnig|sonne|warm|kalt|grad|temperatur|frost|glatt|schnee|wind\w*|gewitter)\b/i;
+
 export async function runAssistant(req: AssistantRequest, create: CreateMessage, model: string, events: EngineEvents = {}): Promise<AssistantReply> {
   const today = new Date(`${req.today}T12:00:00`);
   const shoppingDay = req.data.profile.shoppingDay || "Montag";
@@ -167,6 +178,8 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
   const start = applyOps(req.data, req.pending);
   const numbers = req.pending.flatMap((op) => [op.id, op.type === "add_recipe" ? op.recipe.ref : ""].map((s) => Number(s.match(/(\d+)$/)?.[1] ?? 0)));
   const ctx: ToolContext = { data: start.data, weeks, ops: [...req.pending], refs: start.refs, counter: Math.max(0, ...numbers), today: req.today };
+  // Wetterfragen: Vorhersage vorab holen (Werkzeuge laufen synchron; 30 Min zwischengespeichert)
+  if (WEATHER_QUESTION.test(req.messages[req.messages.length - 1]?.text ?? "")) ctx.forecast = await fetchForecast(req.data.wetterOrt || "Eutin", undefined, req.today).catch(() => null);
 
   const messages: Anthropic.Beta.BetaMessageParam[] = req.messages.map((m) => ({ role: m.role, content: m.text }));
   if (messages[0].role !== "user") messages.shift();

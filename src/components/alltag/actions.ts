@@ -1,19 +1,25 @@
 "use client";
 
-// Kleine Änderungen an Terminen/Aufgaben aus der Oberfläche: sofort
-// erledigen, kurz melden, "Rückgängig" im Toast.
+// Kleine Änderungen an Terminen/Aufgaben aus der Oberfläche: sofort und still
+// (Hinzufügen, Abhaken, Verschieben – nur leichte Vibration). Nur echtes
+// Löschen meldet sich kurz mit "Gelöscht · Rückgängig" (3 Sekunden).
 
 import { changeEntries } from "@/lib/aufgaben/store";
 import type { CalendarEntry } from "@/lib/aufgaben/model";
 import { noteUserAction } from "@/lib/core/activity";
 import { todayIso } from "@/lib/core/now";
-import { showToast } from "@/lib/core/toast";
+import { showDeleted } from "@/lib/core/toast";
+import { pushUndo } from "@/lib/core/undo";
 
-/** Änderung anwenden und mit Rückgängig melden (ohne Text: still) */
-export function act(change: (entries: CalendarEntry[], stamp: string) => CalendarEntry[], text?: string) {
+/**
+ * Änderung anwenden – still. `label` merkt sich das Zurücknehmen für "Mach das
+ * rückgängig"; `deleted` = echtes Löschen → kleine Meldung mit Rückgängig.
+ */
+export function act(change: (entries: CalendarEntry[], stamp: string) => CalendarEntry[], label?: string, opts: { deleted?: boolean } = {}) {
   const undo = changeEntries(change);
   noteUserAction(todayIso());
-  if (text) showToast({ text, undo, undoneText: "Rückgängig gemacht." });
+  const registered = label ? pushUndo(label, undo) : undo;
+  if (opts.deleted) showDeleted(registered);
 }
 
 /** Kurzes Antippen spüren (wo möglich) */

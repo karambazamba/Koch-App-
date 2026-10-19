@@ -45,11 +45,15 @@ export const appendLine = (text: string, line: string) => (text.trim() ? `${text
 
 /** "Schreib in die Kladde: …" → der Text (oder null) */
 export function kladdeCommand(text: string): string | null {
-  const m = text.trim().match(/^(?:bitte\s+)?(?:schreib\w*|notier\w*|trag\w*|pack\w*)\s+(?:das\s+|mir\s+)?(?:in|auf)\s+(?:die|meine|unsere)\s+kladde\s*[:,]?\s*(.+)$/i) ?? text.trim().match(/^kladde\s*:\s*(.+)$/i);
+  const t = text.trim();
+  const m =
+    t.match(/^(?:bitte\s+)?(?:schreib\w*|notier\w*|trag\w*|pack\w*)\s+(?:das\s+|mir\s+)?(?:in|auf)\s+(?:die|meine|unsere)\s+(?:kladde|schnellnotiz)\s*[:,]?\s*(.+)$/i) ??
+    t.match(/^(?:bitte\s+)?notier\w*\s+(?:mir\s+)?(?:mal\s+)?schnell\s*[:,]?\s*(.+)$/i) ??
+    t.match(/^(?:kladde|schnellnotiz)\s*:\s*(.+)$/i);
   return m ? m[1].trim() : null;
 }
 
-export const isKladdeTidyRequest = (text: string) => /\b(räum|sortier|ordne)\w*\b.*\bkladde\b|\bkladde\b.*\b(aufräumen|sortieren|ordnen)\b/i.test(text);
+export const isKladdeTidyRequest = (text: string) => /\b(räum|sortier|ordne)\w*\b.*\b(kladde|schnellnotiz)\b|\b(kladde|schnellnotiz)\b.*\b(aufräumen|sortieren|ordnen)\b/i.test(text);
 
 export type KladdeLine = { line: string; kind: "termin" | "aufgabe" | "notiz" | null; draft?: Draft; note?: ReturnType<typeof parseNoteCommand> };
 

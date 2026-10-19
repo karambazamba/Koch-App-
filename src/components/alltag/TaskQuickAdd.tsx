@@ -53,7 +53,7 @@ export function TaskQuickAdd({ onClose, defaultWhen = "heute" }: { onClose: () =
     const data = quickTaskData(title, when, today, { time: time || read.time, reminder, label: read.label });
     const entry = sanitizeEntry(createEntry("aufgabe", data, { raum: where }) as CalendarEntry);
     if (!entry) return;
-    act((list) => upsertEntry(list, entry), `Hinzugefügt ✓ ${entry.data.title}`);
+    act((list) => upsertEntry(list, entry), entry.data.title);
     setAdded((a) => [...a, entry.data.title]);
     // Bereit für die nächste – WANN/WO bleiben, Text und Extras leer
     setText("");
