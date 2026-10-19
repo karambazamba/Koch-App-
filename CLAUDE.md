@@ -71,7 +71,12 @@ Familie wählt (Standard: Lotte).
   Sprechblase mit drei Härchen auf orangem Verlauf (#F7843E → #EE5F14;
   einzige Quelle `scripts/generate-icons.mjs`, `npm run icons` erzeugt
   icon.svg, favicon 32/48 + favicon.ico, apple-touch-icon 180, PWA 192/512,
-  maskable 512 mit mehr Rand, lotte-192.png für Push). Lottes Gesicht in der
+  maskable 512 mit mehr Rand, lotte-192.png für Push). Alle Icon-Dateien
+  tragen die Version im Namen (`ICON_VERSION` in `src/lib/core/app.ts`, z. B.
+  `apple-touch-icon-v2.png`; Pfade nur über `icon("…")`), damit iPhone/Android
+  ein neues Icon nicht aus dem Cache holen – bei neuem Icon Version erhöhen,
+  `npm run icons`, Liste in `public/sw.js` und `CACHE_VERSION` anpassen.
+  Lottes Gesicht in der
   App: `<LotteAvatar size … />` (`src/components/LotteAvatar.tsx`, dasselbe
   Motiv im orangen Kreis #F26B21, "plain" = nur die Sprechblase im orangen
   Knopf) – in Lotte-Leiste, Chat-Kopf, Knopf und Push (`lottePush()`,

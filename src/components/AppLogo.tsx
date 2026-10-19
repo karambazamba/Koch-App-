@@ -1,11 +1,11 @@
 import Image from "next/image";
-import { APP_NAME } from "@/lib/core/app";
+import { APP_NAME, icon } from "@/lib/core/app";
 
 /** App-Icon (Lotte als Sprechblase auf orangem Verlauf) aus public/icons/icon.svg – Quelle: scripts/generate-icons.mjs */
 export function AppIcon({ size }: { size: number }) {
   return (
     <Image
-      src="/icons/icon.svg"
+      src={icon("icon.svg")}
       alt=""
       width={size}
       height={size}

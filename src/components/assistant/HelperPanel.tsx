@@ -544,7 +544,12 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     noteChatMessage();
     setViaVoice(byVoice);
     noteUserAction(toIsoDate(today));
-    // Selbst geöffneter Spontan-Modus: genannte Zutaten landen im Vorrat; alles andere beendet ihn
+    // Selbst geöffneter Spontan-Modus: "Was Schnelles mit Nudeln" passt die Ideen an,
+    // genannte Zutaten landen im Vorrat; alles andere beendet ihn
+    if (chat.spontan && isIdeaFilterRequest(t)) {
+      rules(t);
+      return;
+    }
     if (chat.spontan) {
       void spontanInput(t).then((handled) => {
         if (handled) return;
