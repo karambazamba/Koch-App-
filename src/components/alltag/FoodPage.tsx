@@ -78,7 +78,8 @@ function DishHero({ data, day, when, onSwap }: { data: HomeData; day: PlanDay | 
   const entry = day && !day.away ? day.slot.entry : null;
   const recipe = entry?.recipeId ? data.recipes[entry.recipeId] : undefined;
   const needs = recipe && stock ? matchStock(recipe.ingredients.map((i) => i.name), stock).needs : null;
-  const facts = [recipe?.prepMinutes ? `${recipe.prepMinutes} Min` : "", needs ? (needs.length ? `noch: ${needs.slice(0, 2).join(", ")}${needs.length > 2 ? " …" : ""}` : "alles im Haus") : ""].filter(Boolean);
+  const todayPersons = entry && entry.stored.kind !== "wish" ? entry.stored.persons : undefined;
+  const facts = [todayPersons ? `für ${todayPersons} Personen` : "", recipe?.prepMinutes ? `${recipe.prepMinutes} Min` : "", needs ? (needs.length ? `noch: ${needs.slice(0, 2).join(", ")}${needs.length > 2 ? " …" : ""}` : "alles im Haus") : ""].filter(Boolean);
   return (
     <section className={`${CARD} overflow-hidden`} aria-label={`Essen ${when.toLowerCase()}`}>
       <div className="flex h-36 items-center justify-center bg-linear-to-br from-accent-soft to-accent/30 text-6xl" aria-hidden>
@@ -95,7 +96,7 @@ function DishHero({ data, day, when, onSwap }: { data: HomeData; day: PlanDay | 
             {facts.length > 0 && <p className={`text-sm font-semibold ${needs && !needs.length ? "text-emerald-700" : "text-muted"}`}>{facts.join(" · ")}</p>}
             <div className="mt-2 flex gap-2">
               {entry.recipeId && (
-                <Link href={`/kochbuch/rezept?id=${entry.recipeId}`} className={buttonClass("primary", "md")}>
+                <Link href={`/kochbuch/rezept?id=${entry.recipeId}${todayPersons ? `&personen=${todayPersons}` : ""}`} className={buttonClass("primary", "md")}>
                   Rezept ansehen
                 </Link>
               )}

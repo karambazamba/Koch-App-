@@ -265,7 +265,7 @@ export type PauseSettings = { from: string; until: string | null };
 export type WeatherSettings = { consent: boolean; postcode: string };
 
 export type HouseholdProfile = {
-  version: 17;
+  version: 18;
   householdName: string;
   adults: number;
   kids: number;
@@ -460,7 +460,7 @@ export function createPerson(role: PersonRole): Person {
 
 export function createEmptyProfile(): HouseholdProfile {
   return {
-    version: 17,
+    version: 18,
     householdName: "",
     adults: 2,
     kids: 1,
@@ -651,7 +651,7 @@ export function normalizeMealTime(value: unknown, fallback: MealTime): MealTime 
 export function migrateProfile(raw: unknown): HouseholdProfile | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as Record<string, unknown>;
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17].includes(data.version as number)) return null;
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].includes(data.version as number)) return null;
 
   const defaults = createEmptyProfile();
 
@@ -729,7 +729,9 @@ export function migrateProfile(raw: unknown): HouseholdProfile | null {
     mealClock: migrateMealClock(data.mealClock),
     // Bis v10: Wochenende "locker", keine Pause, kein Wetter
     weekendStyle: data.weekendStyle === "frei" || data.weekendStyle === "normal" ? data.weekendStyle : "locker",
-    pause: migratePause(data.pause),
+    // Bis v17: eine alte Chat-Regel hat bei "nicht da"/"weg" eine Pause ohne Ende eingetragen,
+    // die still alle Gerichte ab dann ausgeblendet hat – solche offenen Pausen einmalig entfernen
+    pause: (data.version as number) < 18 && migratePause(data.pause)?.until === null ? null : migratePause(data.pause),
     weather: migrateWeather(data.weather),
     // Bis v11: nach Gefühl, ein neues Gericht pro Woche
     cookingStyle: data.cookingStyle === "rezept" ? "rezept" : "gefuehl",

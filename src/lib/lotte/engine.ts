@@ -35,7 +35,7 @@ export type EngineEvents = { onText?: (delta: string) => void; onRound?: () => v
 
 export class AssistantInputError extends Error {}
 
-const OP_TYPES = new Set(["set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last"]);
+const OP_TYPES = new Set(["set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last", "set_persons", "set_pause", "app_command"]);
 
 /** Anfrage prüfen und auf das Nötige kürzen */
 export function parseRequest(body: unknown): AssistantRequest {
@@ -115,6 +115,12 @@ function pendingSummary(ops: ChangeOp[]): string {
         return `Startseite: ${op.change.tile} ${op.change.action}`;
       case "undo_last":
         return "Letzte Änderung zurücknehmen";
+      case "set_persons":
+        return `${op.slot.weekday}: für ${op.persons ?? "alle"} Personen`;
+      case "set_pause":
+        return op.pause ? `Pause ${op.pause.from} bis ${op.pause.until ?? "offen"}` : "Pause beenden";
+      case "app_command":
+        return `In der App: ${op.text}`;
       case "upsert_entry":
         return `${op.isNew ? "Neu" : "Ändern"} (${op.entry.typ}): ${op.entry.data.title}`;
       case "remove_entry":

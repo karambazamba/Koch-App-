@@ -33,6 +33,10 @@ Familie wählt (Standard: Lotte).
 - Nichts auf der Startseite ist eine Sackgasse: jede Kachel öffnet ihre Seite.
 - Nutzt Lotte eine versteckte Funktion, wird sie freigeschaltet und kurz
   gesagt, wo sie steht.
+- KI zuerst: Ist die KI erreichbar, bekommt IMMER sie die Nachricht. Feste
+  Regeln (Stichwort-Erkennung) sind nur die Notlösung ohne KI – oder werden
+  ausgeführt, wenn die KI es per `app_befehl` so vorschlägt. Keine Regel
+  darf einen Zustand hinterlassen, der weitere Nachrichten abfängt.
 
 ## 3. Räume
 - "Familie" ist gemeinsam (alle im Haushalt sehen es), "Arbeit" ist
@@ -254,6 +258,30 @@ Familie wählt (Standard: Lotte).
 - Einkaufsliste: Einträge merken sich Gericht (`ManualItem.dish`) und Tag;
   oben "Für heute", darunter "Für die Woche". Lotte gibt `fuer_tag`/`gericht`
   mit.
+- Chat-Reihenfolge (v0.12, `HelperPanel` `route`/`rules`): mit KI geht jede
+  Nachricht an die KI (auch Startseite, Rückgängig, Einstellungen); die KI
+  nutzt Werkzeuge oder `app_befehl` (Op `app_command`: die App führt den Satz
+  nach "Übernehmen" mit `rules()` aus – Ansicht, Vorlesen, Einstellungen, neue
+  Person, Produkte, Seiten). Ohne KI (oder wenn sie ausfällt) greifen die
+  Regeln. Nur ein selbst geöffneter Spontan-Modus nimmt Zutaten direkt an;
+  ein Satz ohne Zutaten beendet ihn.
+- Schleifenschutz: Antwortet die KI genauso wie zuletzt, vergisst der Chat
+  den bisherigen Verlauf und offenen Vorschlag und schickt die Frage frisch.
+  Oben im Chat "Neues Gespräch" (setzt Verlauf, Vorschlag, Spontan-Modus und
+  geführte Fragen zurück; gespeicherte Daten bleiben).
+- Pause nur bei echter Abwesenheit (`parsePauseRequest`: Urlaub/verreist/
+  Ferien/"wir sind … weg" PLUS Zeitangabe; nie bei "nur zu zweit", "nicht
+  da", bloßem "Pause"). Mit KI: `pause_setzen`/`pause_beenden` (Op
+  `set_pause`, Vorschau + Übernehmen); ohne KI eine Frage mit "Ja,
+  eintragen"/"Nein". "Ab Montag" an einem Montag = nächste Woche. Sichtbar:
+  Heute "Pause … – genießt die Zeit ☀️" mit "Pause beenden", Woche "Pause ☀️".
+  Profil v18 entfernt einmalig offene Pausen ohne Ende (Fehler der alten
+  Regel).
+- Portionen nur für einen Tag (`portionen_anpassen`, Op `set_persons`):
+  `persons` am Gericht des Tages (Wochenplan-Eintrag), `PlanDay.persons`
+  übernimmt es, die Einkaufsliste rechnet die Rezeptmengen um, "Rezept
+  ansehen" zeigt `?personen=` ("Zutaten für 2 Personen (nur heute)"). Familie,
+  Rezept und Plan bleiben unverändert.
 - Ohne KI (und im Testmodus): `parseCalendar()` (`parse.ts`) erkennt Tag,
   Uhrzeit, Frist, Wiederholung, Erinnerung, Raum, Etikett und die Befehle
   verschieben/löschen/erledigt/"Was steht … an?"/"Hab ich … Zeit?";

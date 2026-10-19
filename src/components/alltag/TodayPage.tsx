@@ -20,7 +20,9 @@ import { markReminderSeen, useSeenReminders } from "@/lib/aufgaben/store";
 import { greeting, todaySentence } from "@/lib/aufgaben/summary";
 import { addDays } from "@/lib/core/now";
 import { showToast } from "@/lib/core/toast";
-import { helperName, mealClockFor } from "@/lib/einstellungen/profile";
+import { helperName, mealClockFor, pausedOn, saveProfile } from "@/lib/einstellungen/profile";
+import { pauseLabel } from "@/lib/essen/spontan";
+import { pushUndo } from "@/lib/core/undo";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 import { mealIsOver, useCookedDays } from "@/lib/essen/mealDone";
 import { loadMealPlans, replaceMealPlans, type PlanDay } from "@/lib/essen/mealPlan";
@@ -49,6 +51,13 @@ export function TodayPage({ data, entries, minutes, onOpenFood }: { data: HomeDa
   const tomorrowItems = minutes >= 16 * 60 ? itemsForDay(entries, tomorrowIso, data.todayIso).filter((i) => !i.done) : [];
   const tomorrowDish = minutes >= 16 * 60 ? dishOf(data.tomorrow) : null;
   const openItems = items.filter((i) => !i.done);
+  // Pause (Urlaub) – sichtbar und mit einem Tipp beendet
+  const paused = pausedOn(data.profile, data.todayIso);
+  const endPause = () => {
+    const before = data.profile;
+    saveProfile({ ...before, pause: null });
+    showToast({ text: "Pause beendet ✓", undo: pushUndo("das Beenden der Pause", () => saveProfile(before)), undoneText: "Rückgängig gemacht." });
+  };
   const tiles = useHomeTiles();
   const [customize, setCustomize] = useState(false);
 
@@ -63,12 +72,14 @@ export function TodayPage({ data, entries, minutes, onOpenFood }: { data: HomeDa
       </header>
 
       <LotteSays
-        text={reminder ? reminder.text : todaySentence({ items, dish, dishClock })}
+        text={reminder ? reminder.text : paused && data.profile.pause ? `Pause ${pauseLabel(data.profile.pause)} – genießt die Zeit ☀️` : todaySentence({ items, dish, dishClock })}
         name={helperName(data.profile)}
         action={
           reminder
             ? { label: "Okay", onClick: () => markReminderSeen(reminder.key) }
-            : !dish && !over && minutes < 20 * 60 && !data.day?.away
+            : paused
+              ? { label: "Pause beenden", onClick: endPause }
+              : !dish && !over && minutes < 20 * 60 && !data.day?.away
               ? { label: "Essensidee?", onClick: () => openHelper(undefined, "Was gibt's heute?") }
               : null
         }

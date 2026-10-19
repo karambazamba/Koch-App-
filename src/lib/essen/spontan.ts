@@ -46,8 +46,13 @@ const WD = "(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)";
 export function parsePauseRequest(text: string, today: Date): { kind: "start"; pause: PauseSettings } | { kind: "end" } | null {
   const t = text.toLowerCase();
   if (/(wieder da|wieder zu hause|zurück aus dem urlaub|urlaub ist vorbei|pause beenden|pause vorbei)/.test(t)) return { kind: "end" };
-  // "weg" nur mit "sind/fahren/fliegen" – "Wir müssen heute weg" ist keine Pause
-  if (!/(urlaub|verreist|verreisen|pause|nicht da\b|nicht zu hause|ferien)/.test(t) && !/\b(sind|fahren|fliegen|tage?|wochen?|ab)\b.*\bweg\b/.test(t)) return null;
+  // Nur eine echte Abwesenheit der ganzen Familie mit Zeitangabe: "Urlaub", "verreist",
+  // "Ferien" oder "sind/fahren … weg" plus "ab …"/"bis …"/Dauer. "Heute sind wir nur zu
+  // zweit", "die Kinder sind nicht da" oder ein bloßes "Pause" sind KEINE Pause.
+  if (/\bnur (zu )?(zweit|dritt|viert|\d)|\bweniger\b|portion|personen|rezept/.test(t)) return null;
+  const absent = /(urlaub|verreist|verreisen|ferien|pause machen|eine pause)/.test(t) || /\b(wir|alle)\b.*\b(sind|fahren|fliegen)\b.*\bweg\b/.test(t);
+  const when = /\b(ab|bis|vom|woche|wochen|tage|tagen|wochenende|morgen|übermorgen)\b|\d{1,2}\./.test(t);
+  if (!absent || !when) return null;
 
   // Beginn
   let from = today;
@@ -56,7 +61,8 @@ export function parsePauseRequest(text: string, today: Date): { kind: "start"; p
   if (/ab morgen|morgen/.test(t)) from = plus(today, 1);
   else if (/übermorgen/.test(t)) from = plus(today, 2);
   else if (abDate) from = dateFrom(abDate[1], today) ?? today;
-  else if (abWd) from = nextWeekday(today, abWd[1]);
+  // "Ab Montag" an einem Montag = nächste Woche
+  else if (abWd) from = nextWeekday(today, abWd[1], true);
 
   // Ende
   let until: Date | null = null;

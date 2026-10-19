@@ -9,6 +9,8 @@ import { WEEKDAYS } from "../einstellungen/profile";
 import type { CreateMessage } from "./engine";
 import { dateForDay } from "./tools";
 import { parseCalendar, type Draft } from "../aufgaben/parse";
+import { parseHomeCommand } from "./homeChat";
+import { parsePauseRequest } from "../essen/spontan";
 import { findByTitle, sanitizeEntry, type CalendarEntry } from "../aufgaben/model";
 import { EMPTY_STOCK_HINT, ingredientsFromQuestion, isCookIdeasRequest, stockIdeas, stockItem, usesLine } from "../essen/dishIdeas";
 
@@ -251,6 +253,8 @@ function mockModel(): CreateMessage {
       if (memory) return text(memory);
       const leftovers = leftoverReply(last.content, system);
       if (leftovers) return text(leftovers);
+      const everydayUse = everydayUses(last.content, system);
+      if (everydayUse) return everydayUse;
       const calendar = calendarUses(last.content, system);
       if (calendar) return calendar;
       const latest = last.content;
@@ -454,6 +458,14 @@ function mockModel(): CreateMessage {
       return uses.length ? tools(uses) : text("Ich habe nichts gefunden, was ich ändern könnte – sag mir gern genauer, was du möchtest.");
     }
 
+    // Umgerechnet → die Zutaten nennen
+    const portions = prevUses.find((u) => u.name === "portionen_anpassen");
+    if (portions) {
+      const content = String(resultFor("portionen_anpassen") ?? "");
+      return text(content.startsWith("Vorgemerkt") ? `Klar! ${content.replace(/^Vorgemerkt: /, "")} Tipp unten auf Übernehmen. (Testmodus)` : `${content} (Testmodus)`);
+    }
+    if (prevUses.some((u) => u.name === "app_befehl")) return text("Mach ich – tipp unten auf Übernehmen. (Testmodus)");
+
     // Termine gelesen → kurz antworten
     const shown = prevUses.find((u) => u.name === "woche_anzeigen" || u.name === "tag_anzeigen");
     if (shown) return text(calendarAnswer(String(resultFor(shown.name) ?? ""), shown.input as Record<string, unknown>));
@@ -497,7 +509,38 @@ function memoryReply(latest: string, msgs: Anthropic.Beta.BetaMessageParam[]): s
 
 // --- Termine und Aufgaben (Testmodus: Satz-Erkennung ohne KI) --------------------
 
-const CALENDAR_WRITE = new Set(["termin_anlegen", "termin_aendern", "termin_loeschen", "aufgabe_anlegen", "aufgabe_aendern", "aufgabe_erledigen", "aufgabe_verschieben"]);
+const NUMBER_WORDS: Record<string, number> = { zweit: 2, dritt: 3, viert: 4, fünft: 5, zwei: 2, drei: 3, vier: 4, fünf: 5, sechs: 6 };
+
+/** Alltag im Testmodus: Portionen, Pause, Startseite/Rückgängig, App-Bedienung */
+function everydayUses(latest: string, system: string): Anthropic.Beta.BetaMessage | null {
+  const t = latest.toLowerCase();
+  const today = system.match(/^Heute: .*\((\d{4}-\d{2}-\d{2})\)/m)?.[1] ?? "";
+  // "Heute sind wir nur zu zweit" / "Rechne das Rezept auf 2 Personen um"
+  const people = t.match(/\bnur (?:zu )?(zweit|dritt|viert|fünft)\b/) ?? t.match(/\bauf (\d+|zwei|drei|vier|fünf|sechs) (?:personen|leute|portionen)\b/) ?? t.match(/\bnur (\d+|zwei|drei|vier) (?:personen|leute)\b/);
+  if (people) return tools([{ name: "portionen_anpassen", input: { personen: Number(people[1]) || NUMBER_WORDS[people[1]] || 2 } }]);
+  if (/\b(wieder da|zurück aus dem urlaub|urlaub ist vorbei)\b/.test(t)) return tools([{ name: "pause_beenden", input: {} }]);
+  if (/\b(urlaub|verreist|verreisen|ferien)\b/.test(t) && today) {
+    const pause = parsePauseRequest(latest, new Date(`${today}T12:00:00`));
+    if (pause?.kind === "start" && pause.pause.until) return tools([{ name: "pause_setzen", input: { von: pause.pause.from, bis: pause.pause.until } }]);
+    return text("Schön! Von wann bis wann seid ihr weg? (Testmodus)");
+  }
+  const home = parseHomeCommand(latest);
+  if (home) {
+    if (home.kind === "undo") return tools([{ name: "rueckgaengig", input: {} }]);
+    if (home.kind === "home") return tools([{ name: "startseite_anpassen", input: { kachel: home.change.tile, aktion: home.change.action } }]);
+    if (home.kind === "clear_week") return tools([{ name: "wochenplan_loeschen", input: {} }]);
+    if (home.kind === "clear_shopping") return tools([{ name: "einkaufsliste_leeren", input: {} }]);
+    if (home.kind === "remove_shopping") return tools([{ name: "einkaufsliste_entfernen", input: { artikel: home.names } }]);
+    return tools([{ name: "app_befehl", input: { text: latest } }]);
+  }
+  // App-Bedienung (Ansicht, Vorlesen, Einstellungen, neue Person, Produkte, Seiten)
+  if (/\b(ansicht|dunkel|vorlesen|lies mir|sprich (langsamer|schneller)|melde dich|keine tipps|isst jetzt|mag kein\w*|allergisch|wohnt jetzt|immer .+ statt|zeig mir (alles|unsere rezepte|den vorrat)|koche jetzt spontan)\b/.test(t)) {
+    return tools([{ name: "app_befehl", input: { text: latest } }]);
+  }
+  return null;
+}
+
+const CALENDAR_WRITE = new Set(["portionen_anpassen", "pause_setzen", "pause_beenden", "startseite_anpassen", "wochenplan_loeschen", "einkaufsliste_leeren", "einkaufsliste_entfernen", "rueckgaengig", "termin_anlegen", "termin_aendern", "termin_loeschen", "aufgabe_anlegen", "aufgabe_aendern", "aufgabe_erledigen", "aufgabe_verschieben"]);
 
 /** Einträge aus der Kontext-Liste "- Mo 2026-10-19: 09:00 Titel [id=…; termin, familie] | …" */
 function contextEntries(system: string): { date: string; time: string | null; title: string; id: string; typ: string; repeat: boolean }[] {

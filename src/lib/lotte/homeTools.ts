@@ -9,7 +9,8 @@ import { buildShoppingList } from "../einkauf/shoppingList";
 import { formatWeekRange } from "../essen/weekPlan";
 import { weekOf } from "./ops";
 import type { LotteTool } from "./registry";
-import { nextId, propose, runTool, type ToolContext, type ToolResult } from "./tools";
+import { dateForDay, nextId, propose, runTool, type ToolContext, type ToolResult } from "./tools";
+import { findDate } from "../aufgaben/parse";
 
 type Input = Record<string, unknown>;
 const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
@@ -19,7 +20,114 @@ const ACTIONS: HomeAction[] = ["zeigen", "ausblenden", "kompakt", "ausfuehrlich"
 
 const weekStartOf = (ctx: ToolContext, v: unknown) => (v === "naechste" ? ctx.weeks.naechste : ctx.weeks.aktuell);
 
+/** Datum aus "heute"/"morgen"/Wochentag/YYYY-MM-DD/freiem Text */
+function dateOf(ctx: ToolContext, v: unknown): string | null {
+  const t = str(v);
+  if (!t) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+  return dateForDay(ctx.today, t) ?? findDate(t, ctx.today)?.date ?? null;
+}
+
+/** Tag (Planungswoche + Wochentag) zu einem Datum, falls in dieser oder der nächsten Woche */
+function slotFor(ctx: ToolContext, date: string) {
+  for (const weekStart of [ctx.weeks.aktuell, ctx.weeks.naechste]) {
+    const day = weekOf(ctx.data, weekStart).days.find((d) => d.date === date);
+    if (day) return { weekStart, day };
+  }
+  return null;
+}
+
+const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(n < 10 ? 1 : 0).replace(".", ","));
+
 export const HOME_TOOLS: LotteTool[] = [
+  {
+    area: "essen",
+    definition: {
+      name: "portionen_anpassen",
+      description:
+        "Rechnet das Gericht eines Tages (Standard: heute) auf eine andere Personenzahl um – NUR für diesen Tag: Zutaten und Einkaufsliste passen sich an, Familie, Rezept und Plan bleiben unverändert. Für 'Wir sind heute nur zu zweit' oder 'Rechne das Rezept auf 2 Personen um'. Das ist NIE eine Pause. Liefert die umgerechneten Zutaten. Mit rezept_id nur umrechnen (ohne Tag).",
+      input_schema: {
+        type: "object",
+        properties: {
+          personen: { type: "integer", minimum: 1, maximum: 30 },
+          tag: { type: "string", description: "heute (Standard), morgen, Wochentag oder YYYY-MM-DD" },
+          rezept_id: { type: "string", description: "Nur umrechnen, ohne den Tag zu ändern" },
+        },
+        required: ["personen"],
+        additionalProperties: false,
+      },
+    },
+    run: (ctx, raw) => {
+      const input = (raw ?? {}) as Input;
+      const persons = typeof input.personen === "number" ? Math.max(1, Math.min(30, Math.round(input.personen))) : 0;
+      if (!persons) return fail("personen angeben.");
+      const scaled = (recipeId: string) => {
+        const r = ctx.data.recipes[recipeId];
+        if (!r) return null;
+        const f = persons / (r.servings || persons);
+        return `${r.title} für ${persons} (statt ${r.servings}): ${r.ingredients.map((i) => [i.amount !== null ? fmt(i.amount * f) : "", i.unit, i.name].filter(Boolean).join(" ")).join(", ")}`;
+      };
+      const recipeId = str(input.rezept_id);
+      if (recipeId) return scaled(recipeId) ? { content: scaled(recipeId)! } : fail("Rezept nicht gefunden – kochbuch_durchsuchen nutzen.");
+      const date = dateOf(ctx, input.tag) ?? ctx.today;
+      const found = slotFor(ctx, date);
+      const entry = found?.day.slot.entry;
+      if (!found || !entry || entry.stored.kind === "wish") return fail("An dem Tag steht kein Gericht im Plan – frag kurz nach, welches Rezept gemeint ist (oder rezept_id angeben).");
+      propose(ctx, { id: nextId(ctx), type: "set_persons", slot: { weekStart: found.weekStart, weekday: found.day.weekday }, persons });
+      const list = entry.recipeId ? scaled(entry.recipeId) : null;
+      return { content: `Vorgemerkt: ${entry.title} am ${found.day.weekday} nur für ${persons} Personen.${list ? ` ${list}` : " (freies Gericht ohne Zutatenliste)"}` };
+    },
+  },
+  {
+    area: "alltag",
+    definition: {
+      name: "pause_setzen",
+      description:
+        "Trägt eine echte Abwesenheit ein (Urlaub, verreist, ganze Familie weg): an diesen Tagen wird nichts geplant und nichts eingekauft. NUR wenn klar ist, dass alle weg sind und ab wann – nie für 'heute sind wir weniger' (dafür portionen_anpassen). Ohne klares Ende: nachfragen.",
+      input_schema: {
+        type: "object",
+        properties: { von: { type: "string", description: "YYYY-MM-DD" }, bis: { type: "string", description: "YYYY-MM-DD (letzter Tag)" } },
+        required: ["von", "bis"],
+        additionalProperties: false,
+      },
+    },
+    run: (ctx, raw) => {
+      const input = (raw ?? {}) as Input;
+      const from = dateOf(ctx, input.von);
+      const until = dateOf(ctx, input.bis);
+      if (!from || !until || until < from) return fail("von und bis als Datum angeben (bis nicht vor von).");
+      propose(ctx, { id: nextId(ctx), type: "set_pause", pause: { from, until } });
+      return { content: `Vorgemerkt: Pause vom ${from} bis ${until}.` };
+    },
+  },
+  {
+    area: "alltag",
+    definition: {
+      name: "pause_beenden",
+      description: "Beendet eine eingetragene Pause ('Wir sind wieder da').",
+      input_schema: { type: "object", properties: {}, additionalProperties: false },
+    },
+    run: (ctx) => {
+      if (!ctx.data.profile.pause) return { content: "Es ist gar keine Pause eingetragen." };
+      propose(ctx, { id: nextId(ctx), type: "set_pause", pause: null });
+      return { content: "Vorgemerkt: Pause beenden." };
+    },
+  },
+  {
+    area: "alltag",
+    definition: {
+      name: "app_befehl",
+      description:
+        "Für Bedienung der App, für die es kein eigenes Werkzeug gibt: Ansicht/Farben, Vorlesen, Einstellungen (z. B. 'Jonne isst jetzt vegetarisch', 'Lisa mag keine Pilze', 'Melde dich seltener'), eine neue Person ('Oma wohnt jetzt bei uns'), eigene Produkte ('Wir nehmen immer Alsan statt Butter'), Seiten öffnen. text = der Wunsch als kurzer, klarer Satz. Die App führt ihn nach 'Übernehmen' selbst aus.",
+      input_schema: { type: "object", properties: { text: { type: "string" } }, required: ["text"], additionalProperties: false },
+    },
+    run: (ctx, raw) => {
+      const text = str((raw as Input | null)?.text).slice(0, 200);
+      if (!text) return fail("text angeben.");
+      propose(ctx, { id: nextId(ctx), type: "app_command", text });
+      return { content: `Vorgemerkt: „${text}“ in der App ausführen.` };
+    },
+  },
   {
     area: "alltag",
     definition: {

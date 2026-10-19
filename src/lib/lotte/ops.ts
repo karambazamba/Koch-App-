@@ -79,6 +79,12 @@ export type ChangeOp =
   | { id: string; type: "home"; change: HomeChange }
   // Letzte Änderung zurücknehmen – passiert beim Übernehmen in der App (`commitOps`)
   | { id: string; type: "undo_last" }
+  // Nur für diesen Tag auf X Personen umrechnen (Familie und Rezept bleiben)
+  | { id: string; type: "set_persons"; slot: SlotRef; persons: number | null }
+  // Pause/Urlaub (null = beenden)
+  | { id: string; type: "set_pause"; pause: { from: string; until: string | null } | null }
+  // App-Bedienung (Ansicht, Vorlesen, Einstellungen …): die App führt den Satz beim Übernehmen mit ihren eigenen Regeln aus
+  | { id: string; type: "app_command"; text: string }
   // Vorrat und Wunsch-Ideen liegen in eigenen Speichern – sie werden erst beim
   // Übernehmen dort eingetragen (`commitOps`), hier ändern sie nichts.
   | { id: string; type: "add_pantry"; name: string; amount: number | null; unit: string; place: PantryPlace }
@@ -222,7 +228,21 @@ export function applyOps(
       case "home":
         next = { ...next, home: applyHomeChange(next.home ?? DEFAULT_HOME, op.change) };
         break;
+      case "set_persons": {
+        const slot = findSlot(weekOf(next, op.slot.weekStart), op.slot.weekday);
+        const stored = slot?.entry?.stored;
+        if (!stored || stored.kind === "wish") break;
+        const { persons: _old, ...rest } = stored;
+        void _old;
+        const entry = op.persons ? { ...rest, persons: op.persons } : rest;
+        next = { ...next, mealPlans: mealPlansWithWeek(next.mealPlans, op.slot.weekStart, (e) => ({ ...e, [slotKeyOf(op.slot)]: entry })) };
+        break;
+      }
+      case "set_pause":
+        next = { ...next, profile: { ...next.profile, pause: op.pause } };
+        break;
       case "undo_last":
+      case "app_command":
         break;
       case "upsert_entry":
         next = { ...next, entries: upsertEntry(next.entries ?? [], op.entry) };

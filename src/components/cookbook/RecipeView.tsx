@@ -34,11 +34,13 @@ export function RecipeView() {
   const params = useSearchParams();
   const { bfcacheId } = useRouter();
   const id = params.get("id") ?? "";
+  // "?personen=2": nur für heute umgerechnet ("heute sind wir nur zu zweit")
+  const persons = Number(params.get("personen")) || null;
   // Neu mounten bei jedem Aufruf, sonst bliebe "Gespeichert" vom letzten Mal stehen.
-  return <RecipeDetails key={`${bfcacheId}|${id}`} id={id} />;
+  return <RecipeDetails key={`${bfcacheId}|${id}`} id={id} persons={persons} />;
 }
 
-function RecipeDetails({ id }: { id: string }) {
+function RecipeDetails({ id, persons }: { id: string; persons: number | null }) {
   const router = useRouter();
   const recipes = useRecipes();
   const profile = useProfile();
@@ -68,6 +70,7 @@ function RecipeDetails({ id }: { id: string }) {
   }
 
   const baking = recipe.kind === "backen";
+  const scaleTo = persons && !baking && recipe.servings > 0 && persons !== recipe.servings ? persons : null;
   const machineOn = machine.on && recipe.machineSteps.length > 0;
   const kids = profile ? profile.persons.filter((p) => p.role === "kind") : [];
 
@@ -156,7 +159,7 @@ function RecipeDetails({ id }: { id: string }) {
 
         <section className={`${CARD} p-4`}>
           <h3 className={`${SECTION_TITLE} mb-2`}>
-            Zutaten für {recipe.servings} {baking ? "Stück" : "Personen"}
+            {scaleTo ? `Zutaten für ${scaleTo} Personen (nur heute)` : `Zutaten für ${recipe.servings} ${baking ? "Stück" : "Personen"}`}
           </h3>
           {recipe.ingredients.length === 0 ? (
             <p className="text-sm text-muted">Keine Zutaten eingetragen.</p>
@@ -165,7 +168,7 @@ function RecipeDetails({ id }: { id: string }) {
               {recipe.ingredients.map((i) => (
                 <li key={i.id} className="flex gap-3 py-2 text-base">
                   <span className="w-24 shrink-0 whitespace-nowrap text-right font-semibold text-muted">
-                    {formatAmount(i.amount)} {i.unit}
+                    {formatAmount(i.amount === null || !scaleTo ? i.amount : Math.round((i.amount * scaleTo * 10) / recipe.servings) / 10)} {i.unit}
                   </span>
                   <span>{i.name}</span>
                 </li>

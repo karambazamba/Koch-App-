@@ -8,6 +8,7 @@ import { SECTIONS } from "../einkauf/shoppingList";
 import { REMINDERS, repeatLabel, weekdayShort, type CalendarEntry } from "../aufgaben/model";
 import { clockLabel } from "../aufgaben/answers";
 import { describeHomeChange, tileLabel } from "../core/homeLayout";
+import { pauseLabel } from "../essen/spontan";
 import { formatPantryItem, PANTRY_PLACES } from "../essen/pantry";
 import { formatWeekRange, planForWeek } from "../essen/weekPlan";
 import {
@@ -197,6 +198,23 @@ function describe(
       return { opId: op.id, group: "Wochenplan", order: -1, label: formatWeekRange(op.weekStart), before: "alle Gerichte", after: "Woche wieder frei" };
     case "home":
       return { opId: op.id, group: "Startseite", order: 30_000, label: tileLabel(op.change.tile), before: null, after: describeHomeChange(op.change) };
+    case "set_persons": {
+      const p = place(op.slot.weekStart, op.slot.weekday);
+      const entry = findSlot(p.week, op.slot.weekday)?.entry;
+      if (!entry) return null;
+      return { opId: op.id, group: p.group, order: p.order, label: "nur für diesen Tag", before: p.day?.persons ? `${p.day.persons} Personen` : null, after: `${entry.title} für ${op.persons ?? "alle"} Personen – Zutaten und Einkaufsliste passen sich an` };
+    }
+    case "set_pause":
+      return {
+        opId: op.id,
+        group: "Pause",
+        order: -3,
+        label: op.pause ? "Urlaub / Pause" : "Pause",
+        before: null,
+        after: op.pause ? `${pauseLabel(op.pause)} – an diesen Tagen plane ich nichts` : "Pause beenden – alles wie gewohnt",
+      };
+    case "app_command":
+      return { opId: op.id, group: "In der App", order: 30_100, label: "ausführen", before: null, after: `„${op.text}“` };
     case "undo_last":
       return { opId: op.id, group: "Rückgängig", order: -2, label: "letzte Änderung", before: null, after: "zurücknehmen" };
     case "add_pantry": {
