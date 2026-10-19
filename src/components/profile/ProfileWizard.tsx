@@ -62,7 +62,7 @@ import {
 import { scrollToNextOpenSection } from "@/lib/einstellungen/stepScroll";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { OnboardingChat } from "@/components/onboarding/OnboardingChat";
-import { QuickStart } from "@/components/profile/QuickStart";
+import { WelcomeChat } from "@/components/welcome/WelcomeChat";
 import { useLegacyFeatures } from "@/lib/core/features";
 import { clearOnboarding } from "@/lib/einstellungen/onboarding/progress";
 
@@ -109,8 +109,8 @@ function FirstSetup() {
   const [form, setForm] = useState<{ draft: HouseholdProfile | null } | null>(null);
   const legacy = useLegacyFeatures();
   if (legacy === undefined) return null;
-  // Neustart: Schnellstart statt Kennenlernen-Gespräch
-  if (!legacy) return <QuickStart />;
+  // Erster Start: kurzes Kennenlernen im Chat (alter Assistent nur über /?legacy=1)
+  if (!legacy) return <WelcomeChat />;
   if (form) return <ProfileWizard initial={form.draft} />;
   return <OnboardingChat onForm={(draft) => setForm({ draft })} />;
 }

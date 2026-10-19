@@ -18,6 +18,8 @@ Familie wählt (Standard: Lotte).
   ausgeschalteter Baustein und wird nur bei Bedarf gezeigt.
 - Pro Bildschirm eine große Hauptsache, wenig Text, viel Weißraum. Leere
   Zustände freundlich und einladend, nie als Fehler.
+- Erster Start = kurzes Kennenlernen im Chat (max. 4 Schritte,
+  überspringbar). Antworten steuern die Startseite.
 
 ## 2. Gespräch zuerst
 - Lotte (Sprache/Chat) ist der Hauptweg. Jede Funktion soll auch per Gespräch
@@ -145,7 +147,7 @@ Familie wählt (Standard: Lotte).
   Wetter), `lotte` (KI-Client, Engine, Werkzeuge, Prompt, Sprache ein/aus,
   Chat-Vorschläge), `essen` (Plan, Rezepte, Ideen, Vorrat, Tipps, Backstube …),
   `einkauf` (Einkaufsliste, Plus), `aufgaben` (Termine & Aufgaben),
-  `einstellungen` (Profil, Kennenlernen, Schnellstart-Logik). Oberfläche in
+  `einstellungen` (Profil, Kennenlernen, erster Start `welcome.ts`). Oberfläche in
   `src/components/` nach Bildschirmen.
 - Bausteine (v0.13, `src/lib/core/features.ts`, Speicher
   `wasgibts.funktionen` v2 `{ on: Feature[] }`): `BAUSTEINE` = Wochenplan,
@@ -175,8 +177,31 @@ Familie wählt (Standard: Lotte).
   dunkle Lotte-Leiste (`LotteBar`, statt des runden Knopfs).
 - Immer sichtbar: Startseite (siehe Leitbild 7), Chat mit Lotte,
   Einkaufsliste, schlanke Einstellungen (Startseite & Bausteine, Name &
-  Stimme, Vorlesen, Ansicht, Familie, Daten & App) und der Schnellstart ohne
-  Profil (`QuickStart`: Name + wer noch dazugehört).
+  Stimme, Vorlesen, Ansicht, Familie, Daten & App) und beim ersten Start das
+  Kennenlernen (siehe unten).
+- Kennenlernen beim ersten Start (v0.14, ohne Profil auf `/` und `/profil`,
+  nach "Neu anfangen" wieder): Vollbild-Chat `WelcomeChat`
+  (`src/components/welcome/`) mit Kopf (Avatar, Name, "Überspringen"),
+  Fortschritt in 4 Abschnitten, Blasen (Assistentin weiß links, Antwort orange
+  rechts), Chips (Hauptknopf dunkel, gewählt hellorange mit ✓) und dunkler
+  Leiste "Antworten oder einsprechen …" (Mikrofon gedrückt halten). Ablauf
+  rein in `src/lib/einstellungen/welcome.ts` (`answer`, `chipsFor`,
+  `skipWelcome`, `profileFrom`, `homeTilesFor`): 1. Begrüßung ("Los geht's" /
+  "Anders nennen"), 2. Name (Lotte/Theo/Ida/Bruno/eigener, Stimme passend) und
+  "Wobei soll ich dir helfen?" (mehrfach: Termine, Arbeit, Essen, Einkauf,
+  Familie; Standard Termine+Essen+Einkauf), nur bei Essen "Woche planen /
+  Spontan / Mal so, mal so", 3. "Wie heißt du – und wer gehört noch dazu?"
+  (mit KI Namen + Kind über `recognizeAnswer("names")`, sonst Komma/"und";
+  Bestätigung mit Namens-Chips, Antippen = Kind/erwachsen), 4. Fertig mit 3
+  Beispiel-Sätzen (gehen direkt an die Assistentin). Wirkung
+  (`finishWelcome` in `welcomeStore.ts`): Profil (Personen, Haushaltstyp,
+  Name/Stimme, Planstil), Startseiten-Kacheln (ohne Essen keine Essen-Kachel,
+  ohne Einkauf keine Einkauf-Kachel), Bausteine Wochenplan/Spontan, Raum
+  "Arbeit" nur wenn gewählt (`useWorkRoom`: Filter in der Woche und "Für" im
+  Formular; bestehende Nutzer und vorhandene Arbeit-Einträge zeigen ihn
+  immer). Überspringen = Standardwerte (Lotte, Termine+Essen+Einkauf, "Mal
+  so, mal so", eine Person). Zwischenstand nach jeder Antwort unter
+  `wasgibts.willkommen` (App zu → geht weiter).
 - Einheitliches Datenmodell für Supabase (`src/lib/core/entries.ts`): jeder
   Eintrag mit `id`, `typ` (termin/aufgabe/gericht/einkauf), `raum`
   (familie/arbeit), `besitzer` (bis zu Konten "lokal"), `erstellt`,

@@ -11,6 +11,7 @@ import { useMinutes, useRatingCandidate } from "./useRatingCandidate";
 import { mealIsOver, useCookedDays } from "@/lib/essen/mealDone";
 import { useLegacyFeatures } from "@/lib/core/features";
 import { HomePager } from "@/components/alltag/HomePager";
+import { WelcomeChat } from "@/components/welcome/WelcomeChat";
 
 /**
  * Startseite. Neustart (Standard): drei Seiten Woche · Heute · Essen
@@ -35,8 +36,9 @@ export function HomeView() {
   const legacy = useLegacyFeatures();
   const lotte = useLottePlace(legacy ? data : null, { welcome: welcome && Boolean(legacy) });
 
-  // Neustart: drei Seiten Woche · Heute · Essen
+  // Neustart: drei Seiten Woche · Heute · Essen; ohne Profil zuerst das Kennenlernen im Chat
   if (data && legacy === false) return <HomePager data={data} />;
+  if (data === null && legacy === false) return <WelcomeChat />;
 
   return (
     <>

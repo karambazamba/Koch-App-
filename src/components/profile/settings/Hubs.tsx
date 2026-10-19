@@ -24,6 +24,7 @@ import { useProfile } from "@/lib/einstellungen/useProfile";
 import { AddRow, ChoiceCards, DataSection, Group, PersonRow, Row, SettingsPage, SwitchRow } from "./SettingsParts";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { clearProfile } from "@/lib/einstellungen/profile";
+import { clearWelcome } from "@/lib/einstellungen/welcomeStore";
 import { Sun, Volume2 } from "lucide-react";
 import { READ_MODES, useSpeechSettings } from "@/lib/lotte/speech";
 
@@ -200,6 +201,7 @@ export function DataView() {
               onConfirm={() => {
                 setConfirmReset(false);
                 clearProfile();
+                clearWelcome();
                 expectReplace();
                 router.replace("/profil");
               }}
