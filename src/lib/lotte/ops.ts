@@ -21,6 +21,7 @@ import type { HouseholdProfile } from "../einstellungen/profile";
 import type { Section, WeekList } from "../einkauf/shoppingList";
 import { createWeekPlan, planForWeek, type WeekPlan, type WeekWish } from "../essen/weekPlan";
 import { now } from "../core/now";
+import { moveItem, removeItem, setDone, upsertEntry, type CalendarEntry } from "../aufgaben/model";
 
 /** Alle Daten, auf die sich Änderungen beziehen */
 export type AssistantData = {
@@ -31,6 +32,8 @@ export type AssistantData = {
   shopping: Record<string, WeekList>;
   /** Vorrat (nur zum Lesen für die KI; neue Sachen über `add_pantry`) */
   pantry?: PantryItem[];
+  /** Termine und Aufgaben */
+  entries?: CalendarEntry[];
 };
 
 /** Ein Tag einer Planungswoche – es gibt genau ein Hauptgericht pro Tag */
@@ -66,11 +69,18 @@ export type ChangeOp =
   | { id: string; type: "update_week"; weekStart: string; changes: WeekChanges }
   | { id: string; type: "add_recipe"; recipe: NewRecipe }
   | { id: string; type: "add_shopping"; weekStart: string; name: string; amount: string; section: Section }
-  // Vorrat, Wunsch-Ideen und Termine liegen in eigenen Speichern – sie werden
-  // erst beim Übernehmen dort eingetragen (`commitOps`), hier ändern sie nichts.
+  // Vorrat und Wunsch-Ideen liegen in eigenen Speichern – sie werden erst beim
+  // Übernehmen dort eingetragen (`commitOps`), hier ändern sie nichts.
   | { id: string; type: "add_pantry"; name: string; amount: number | null; unit: string; place: PantryPlace }
   | { id: string; type: "add_wish"; personId: string | null; who: string; dish: string }
-  | { id: string; type: "add_appointment"; date: string; time: string; until: boolean; title: string; personId: string | null; who: string };
+  // Termine und Aufgaben (`entries`): anlegen/ändern, löschen, abhaken, verschieben
+  | { id: string; type: "upsert_entry"; entry: CalendarEntry; isNew: boolean }
+  | { id: string; type: "remove_entry"; entryId: string; title: string; onlyDate?: string }
+  | { id: string; type: "done_entry"; entryId: string; title: string; date: string }
+  | { id: string; type: "move_entry"; entryId: string; title: string; date: string; to: string; time?: string };
+
+/** Änderungen an Terminen/Aufgaben */
+export const ENTRY_OP_TYPES = new Set(["upsert_entry", "remove_entry", "done_entry", "move_entry"]);
 
 export const slotKeyOf = (slot: Pick<SlotRef, "weekday">) => slotKey(slot.weekday);
 
@@ -175,9 +185,24 @@ export function applyOps(
         next = { ...next, shopping: { ...next.shopping, [op.weekStart]: { ...list, manual: [...list.manual, item] } } };
         break;
       }
+      case "upsert_entry":
+        next = { ...next, entries: upsertEntry(next.entries ?? [], op.entry) };
+        break;
+      case "remove_entry":
+        next = { ...next, entries: removeItem(next.entries ?? [], op.entryId, now().toISOString(), op.onlyDate) };
+        break;
+      case "done_entry": {
+        const entry = next.entries?.find((e) => e.id === op.entryId);
+        if (entry) next = { ...next, entries: setDone(next.entries ?? [], { entry, date: op.date }, true, now().toISOString()) };
+        break;
+      }
+      case "move_entry": {
+        const entry = next.entries?.find((e) => e.id === op.entryId);
+        if (entry) next = { ...next, entries: moveItem(next.entries ?? [], { entry, date: op.date }, op.to, now().toISOString(), op.time) };
+        break;
+      }
       case "add_pantry":
       case "add_wish":
-      case "add_appointment":
         break;
     }
   }

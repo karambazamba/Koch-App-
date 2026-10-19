@@ -18,6 +18,7 @@ import { noteUserAction } from "@/lib/core/activity";
 import { isAddPersonRequest } from "@/lib/einstellungen/onboarding/recognize";
 import { GuidedChat } from "@/components/onboarding/GuidedChat";
 import { LotteAvatar } from "@/components/LotteAvatar";
+import { calendarChat, changeEntries, loadEntries } from "@/lib/aufgaben";
 import { askAssistant, FALLBACK_TEXT, saveAccessCode, useAssistantStatus } from "@/lib/lotte/client";
 import {
   saveSpeechSettings,
@@ -414,6 +415,22 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     };
   };
 
+  /** Termine und Aufgaben ohne KI: "Morgen um 9 Steuerberater", "Was steht diese Woche an?" – sofort, mit Rückgängig */
+  const calendarReply = (t: string): { text: string; undo?: () => void } | null => {
+    if (!data || !today) return null;
+    const reply = calendarChat(t, loadEntries(), toIsoDate(today), data.profile.persons);
+    if (!reply) return null;
+    if (!reply.change) return { text: reply.text };
+    const undo = changeEntries(reply.change);
+    return {
+      text: reply.text,
+      undo: () => {
+        undo();
+        setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig gemacht.", local: true }] }));
+      },
+    };
+  };
+
   /** "Lachs ist im Angebot", "Ich steh grad im Rewe …" → Ideen mit Zeit, kurz */
   const marketTurn = (t: string): ChatTurnView | null => {
     if (!data || !today || !isMarketSituation(t)) return null;
@@ -599,7 +616,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       return true;
     }
     const quick = isQuickRequest(t) ? quickReply() : null;
-    const reply = shoppingReply(t) ?? (quick ? { text: quick, undo: undefined } : null);
+    const reply = shoppingReply(t) ?? calendarReply(t) ?? (quick ? { text: quick, undo: undefined } : null);
     if (reply) {
       setInput("");
       setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text: reply.text, local: true, undo: reply.undo }] }));

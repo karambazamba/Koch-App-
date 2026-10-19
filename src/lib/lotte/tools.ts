@@ -250,23 +250,6 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
       additionalProperties: false,
     },
   },
-  {
-    name: "termin_notieren",
-    description:
-      "Notiert einen Termin, der beim Essen eine Rolle spielt ('Jonne hat Dienstag bis 17:30 Turnen'). Er steht an dem Tag auf der Heute-Karte. tag: heute, morgen oder ein Wochentag (der nächste ab heute).",
-    input_schema: {
-      type: "object",
-      properties: {
-        tag: { type: "string", enum: ["heute", "morgen", ...WEEKDAYS] },
-        uhrzeit: { type: "string", description: "HH:MM, leer wenn unbekannt" },
-        bis: { type: "boolean", description: "true = 'bis 17:30', false = Beginn" },
-        titel: { type: "string", description: "kurz, z. B. 'Turnen'" },
-        person: { type: "string", description: "Name aus dem Haushalt, leer wenn alle" },
-      },
-      required: ["tag", "titel"],
-      additionalProperties: false,
-    },
-  },
 ];
 
 // --- Hilfen -----------------------------------------------------------------------
@@ -286,13 +269,13 @@ function category(v: unknown): RecipeCategory | null {
   return CATEGORY_VALUES.includes(v as RecipeCategory) ? (v as RecipeCategory) : null;
 }
 
-function propose(ctx: ToolContext, op: ChangeOp) {
+export function propose(ctx: ToolContext, op: ChangeOp) {
   ctx.ops.push(op);
   const result = applyOps(ctx.data, [op], { refs: ctx.refs });
   ctx.data = result.data;
   ctx.refs = result.refs;
 }
-const nextId = (ctx: ToolContext) => `op-${Date.now().toString(36)}-${++ctx.counter}`;
+export const nextId = (ctx: ToolContext) => `op-${Date.now().toString(36)}-${++ctx.counter}`;
 
 /** Editierdistanz für Namen ("Mathis" ≈ "Mattis") */
 function distance(a: string, b: string): number {
@@ -611,28 +594,6 @@ export function runTool(ctx: ToolContext, name: string, raw: unknown): ToolResul
       const label = person ? personLabel(person, data.profile.persons) : who;
       propose(ctx, { id: nextId(ctx), type: "add_wish", personId: person?.id ?? null, who: label, dish });
       return { content: `Vorgemerkt: Wunsch von ${label} – ${dish}.` };
-    }
-
-    case "termin_notieren": {
-      const date = dateForDay(ctx.today, str(input.tag));
-      const title = str(input.titel);
-      if (!date || !title) return fail("tag und titel angeben.");
-      const time = /^\d{1,2}:\d{2}$/.test(str(input.uhrzeit)) ? str(input.uhrzeit).padStart(5, "0") : "";
-      const who = str(input.person);
-      const found = who ? findPersons(data.profile.persons, who) : [];
-      const person = found.length === 1 ? found[0] : null;
-      const label = person ? personLabel(person, data.profile.persons) : who;
-      propose(ctx, {
-        id: nextId(ctx),
-        type: "add_appointment",
-        date,
-        time,
-        until: input.bis === true,
-        title: label && !title.toLowerCase().includes(label.toLowerCase()) ? `${label} ${title}` : title,
-        personId: person?.id ?? null,
-        who: "",
-      });
-      return { content: `Vorgemerkt: Termin am ${dateLabel(date)} – ${title}.` };
     }
 
     default:

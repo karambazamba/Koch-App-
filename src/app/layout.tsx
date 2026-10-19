@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import { Nunito } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { KitchenHelper } from "@/components/assistant/KitchenHelper";
 import { ThemeSync } from "@/components/ThemeSync";
@@ -11,8 +11,8 @@ import { THEME_BOOT_SCRIPT } from "@/lib/core/theme";
 import { APP_NAME, APP_SHORT_NAME, BRAND_COLOR } from "@/lib/core/app";
 import "./globals.css";
 
-const nunito = Nunito({
-  variable: "--font-nunito",
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
 });
 
@@ -51,7 +51,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="de" data-theme="warm" className={`${nunito.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="de" data-theme="warm" className={`${jakarta.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         {/* Ansicht vor dem ersten Zeichnen setzen (kein Aufblitzen) */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />

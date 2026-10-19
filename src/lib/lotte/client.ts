@@ -5,7 +5,7 @@
 // Funktionen, mit denen auch die Vorschau rechnet.
 
 import { useEffect, useState } from "react";
-import { replaceAppointments, loadAppointments } from "../core/appointments";
+import { replaceEntries } from "../aufgaben/store";
 import { replaceRecipes } from "../essen/cookbook";
 import { replaceMealPlans } from "../essen/mealPlan";
 import { effectivePlanStyle } from "../einstellungen/profile";
@@ -209,6 +209,12 @@ function trimmed(data: AssistantData, currentWeekStart: string, pantry: Assistan
     shopping: {},
     // Kompakt: Name, Menge, Ort, seit wann; Gekauftes ("b:") als "gekauft" markiert
     pantry: (pantry ?? []).slice(0, 80).map(({ id, name, amount, unit, place, addedAt }) => ({ id: id.startsWith("b:") ? "gekauft" : "", name, amount, unit, place, addedAt })),
+    // Termine/Aufgaben: ohne Vergangenes (erledigte Aufgaben älter als 2 Wochen, einmalige Termine vor gestern)
+    entries: (data.entries ?? []).filter((e) => {
+      const old = toIsoDate(new Date(now().getTime() - 14 * 86_400_000));
+      if (e.typ === "termin") return Boolean(e.data.repeat) || e.data.date >= old;
+      return !e.data.doneOn || e.data.doneOn >= old;
+    }),
   };
 }
 
@@ -324,9 +330,10 @@ function save(data: AssistantData, before: AssistantData) {
   if (data.weekPlans !== before.weekPlans) replaceWeekPlans(data.weekPlans);
   if (data.recipes !== before.recipes) replaceRecipes(data.recipes);
   if (data.shopping !== before.shopping) replaceShoppingLists(data.shopping);
+  if (data.entries !== before.entries && data.entries) replaceEntries(data.entries);
 }
 
-/** Vorrat, Wunsch-Ideen und Termine eintragen; liefert das Rückgängigmachen */
+/** Vorrat und Wunsch-Ideen eintragen; liefert das Rückgängigmachen */
 function commitSideOps(ops: ChangeOp[]): () => void {
   const today = toIsoDate(now());
   const undo: (() => void)[] = [];
@@ -341,15 +348,6 @@ function commitSideOps(ops: ChangeOp[]): () => void {
     const before = loadWishes();
     for (const w of wishes) addWish({ personId: w.personId, who: w.who, dish: w.dish }, today);
     undo.push(() => restoreWishes(before));
-  }
-  const appointments = ops.filter((op) => op.type === "add_appointment");
-  if (appointments.length) {
-    const before = loadAppointments();
-    replaceAppointments(
-      [...before, ...appointments.map(({ id, date, time, until, title, personId, who }) => ({ id, date, time, until: until || undefined, title, personId, who }))],
-      today,
-    );
-    undo.push(() => replaceAppointments(before));
   }
   return () => undo.forEach((u) => u());
 }

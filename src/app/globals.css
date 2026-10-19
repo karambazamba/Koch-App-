@@ -19,12 +19,17 @@
   /* Text/Icons auf Akzent-Flächen (Buttons, Sprechblasen des Nutzers) */
   --color-on-accent: var(--app-on-accent);
   --color-foreground: var(--color-ink);
+  /* Lotte-Leiste unten (dunkel), Text darauf, Seiten-Umschalter, Arbeit (blau) */
+  --color-bar: var(--app-bar);
+  --color-on-bar: var(--app-on-bar);
+  --color-segment: var(--app-segment);
+  --color-work: var(--app-work);
 
-  --radius-card: 1.25rem;
+  --radius-card: 1.375rem;
   --shadow-card: var(--app-shadow-card);
   --shadow-sheet: var(--app-shadow-sheet);
 
-  --font-sans: var(--font-nunito);
+  --font-sans: var(--font-jakarta);
 }
 
 /*
@@ -34,7 +39,7 @@
  * genug Kontrast haben.
  */
 :root {
-  --app-background: #f8f4ee;
+  --app-background: #f7f4ef;
   --app-surface: #ffffff;
   --app-line: #ece6de;
   --app-ink: #1f1b16;
@@ -45,6 +50,10 @@
   --app-on-accent: #ffffff;
   --app-shadow-card: 0 1px 2px rgb(31 27 22 / 0.04), 0 2px 8px rgb(31 27 22 / 0.03);
   --app-shadow-sheet: 0 -8px 32px rgb(31 27 22 / 0.12);
+  --app-bar: #1f1b17;
+  --app-on-bar: #ffffff;
+  --app-segment: #ebe6df;
+  --app-work: #3b82f6;
   color-scheme: light;
 }
 
@@ -58,6 +67,8 @@
   --app-accent-strong: #2c6b42;
   --app-accent-soft: #e2efe5;
   --app-on-accent: #ffffff;
+  --app-bar: #18211b;
+  --app-segment: #e2e9e1;
 }
 
 :root[data-theme="nacht"] {
@@ -72,6 +83,10 @@
   --app-on-accent: #1c1206;
   --app-shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
   --app-shadow-sheet: 0 -8px 32px rgb(0 0 0 / 0.5);
+  --app-bar: #2e3238;
+  --app-on-bar: #f2eee9;
+  --app-segment: #2c3036;
+  --app-work: #6aa8ff;
   --color-stone-50: #2a2e34;
   --color-stone-100: #30343b;
   --color-stone-200: #3b4048;
@@ -102,6 +117,10 @@
     --app-on-accent: #1c1206;
     --app-shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
     --app-shadow-sheet: 0 -8px 32px rgb(0 0 0 / 0.5);
+    --app-bar: #2e3238;
+    --app-on-bar: #f2eee9;
+    --app-segment: #2c3036;
+    --app-work: #6aa8ff;
     --color-stone-50: #2a2e34;
     --color-stone-100: #30343b;
     --color-stone-200: #3b4048;
@@ -123,7 +142,7 @@
 body {
   background: var(--color-background);
   color: var(--color-ink);
-  font-family: var(--font-nunito), system-ui, sans-serif;
+  font-family: var(--font-jakarta), system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -156,4 +175,28 @@ body {
 /* Platz für die Home-Leiste bei installierter App auf dem iPhone */
 .safe-bottom {
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* Seitenwechsel (Woche · Heute · Essen) und Abhaken */
+@keyframes page-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+@keyframes page-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+}
+@keyframes check-pop {
+  40% {
+    transform: scale(1.25);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .motion-page {
+    animation: none !important;
+  }
 }

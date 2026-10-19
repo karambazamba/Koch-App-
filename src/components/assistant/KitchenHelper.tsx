@@ -15,6 +15,7 @@ import { toIsoDate, useToday, useWeekPlans } from "@/lib/essen/weekPlan";
 import { recordOpen } from "@/lib/core/activity";
 import type { SpontanFilter } from "@/lib/essen/spontan";
 import type { AssistantData } from "@/lib/lotte/ops";
+import { migrateOldTermine, useEntries } from "@/lib/aufgaben/store";
 import { helperName } from "@/lib/einstellungen/profile";
 import { LotteAvatar } from "@/components/LotteAvatar";
 import { HelperPanel, spontanStartTurn, type ChatState } from "./HelperPanel";
@@ -71,12 +72,16 @@ export function KitchenHelper() {
   const mealPlans = useMealPlans();
   const recipes = useRecipes();
   const shopping = useShoppingLists();
+  const entries = useEntries();
   const data: AssistantData | null | undefined =
-    profile === undefined || !weekPlans || !mealPlans || !recipes || !shopping
+    profile === undefined || !weekPlans || !mealPlans || !recipes || !shopping || !entries
       ? undefined
       : profile === null
         ? null
-        : { profile, weekPlans, mealPlans, recipes, shopping };
+        : { profile, weekPlans, mealPlans, recipes, shopping, entries };
+
+  // Alte Termine (wasgibts.termine) einmalig ins neue Modell übernehmen
+  useEffect(() => migrateOldTermine(), []);
 
   // App geöffnet (für "Willkommen zurück" nach 3+ Tagen)
   const today = useToday();
