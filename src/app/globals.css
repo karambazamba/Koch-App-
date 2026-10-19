@@ -190,6 +190,12 @@ body {
     transform: translateX(-28px);
   }
 }
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+}
 @keyframes check-pop {
   40% {
     transform: scale(1.25);

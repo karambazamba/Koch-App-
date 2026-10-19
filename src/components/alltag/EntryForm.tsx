@@ -9,7 +9,7 @@ import { Sheet } from "@/components/plan/Sheet";
 import { Segmented } from "@/components/ui/Segmented";
 import { INPUT, LABEL, buttonClass, chipClass } from "@/components/ui/styles";
 import { createEntry, type Room } from "@/lib/core/entries";
-import { REMINDERS, sanitizeEntry, upsertEntry, weekdayIndex, type CalendarEntry, type Reminder, type Repeat } from "@/lib/aufgaben/model";
+import { mondayOf, REMINDERS, sanitizeEntry, upsertEntry, weekdayIndex, type CalendarEntry, type Reminder, type Repeat } from "@/lib/aufgaben/model";
 import { todayIso } from "@/lib/core/now";
 import { act } from "./actions";
 
@@ -24,11 +24,13 @@ const REPEATS: { value: RepeatKind; label: string }[] = [
   { value: "wochentage", label: "An Wochentagen" },
 ];
 
-export function EntryForm({ entry, date, onClose }: { entry?: CalendarEntry; date?: string; onClose: () => void }) {
+export function EntryForm({ entry, date, kind, onClose }: { entry?: CalendarEntry; date?: string; kind?: "termin" | "aufgabe"; onClose: () => void }) {
   const d = entry?.data;
-  const [typ, setTyp] = useState<"termin" | "aufgabe">(entry?.typ ?? "termin");
+  const [typ, setTyp] = useState<"termin" | "aufgabe">(entry?.typ ?? kind ?? "termin");
   const [title, setTitle] = useState(d?.title ?? "");
-  const [day, setDay] = useState(d?.date ?? date ?? todayIso());
+  // Neue Aufgabe von der Aufgaben-Seite: ohne Tag ("Irgendwann")
+  const [day, setDay] = useState(d?.date ?? date ?? (kind === "aufgabe" ? "" : todayIso()));
+  const [week, setWeek] = useState(entry?.typ === "aufgabe" ? (entry.data.week ?? "") : "");
   const [time, setTime] = useState(entry?.typ === "termin" ? entry.data.start : entry?.typ === "aufgabe" ? (entry.data.time ?? "") : "");
   const [end, setEnd] = useState(entry?.typ === "termin" ? (entry.data.end ?? "") : "");
   const [due, setDue] = useState(entry?.typ === "aufgabe" ? (entry.data.due ?? "") : "");
@@ -36,7 +38,7 @@ export function EntryForm({ entry, date, onClose }: { entry?: CalendarEntry; dat
   const [room, setRoom] = useState<Room>(entry?.raum ?? "familie");
   const [label, setLabel] = useState(d?.label ?? "");
   const [repeat, setRepeat] = useState<RepeatKind>(d?.repeat?.kind ?? "nie");
-  const [days, setDays] = useState<number[]>(d?.repeat?.kind === "wochentage" ? d.repeat.days : [weekdayIndex(day)]);
+  const [days, setDays] = useState<number[]>(d?.repeat?.kind === "wochentage" ? d.repeat.days : [weekdayIndex(day || todayIso())]);
   const [reminder, setReminder] = useState<Reminder>(d?.reminder ?? "aus");
   const [hint, setHint] = useState("");
   const workRoom = useWorkRoom() || room === "arbeit";
@@ -44,12 +46,13 @@ export function EntryForm({ entry, date, onClose }: { entry?: CalendarEntry; dat
   const save = () => {
     if (!title.trim()) return setHint("Wie heißt es? Ein Wort reicht.");
     if (typ === "termin" && !time) return setHint("Für einen Termin brauche ich eine Uhrzeit – ohne Uhrzeit ist es eine Aufgabe.");
-    const rep: Repeat | null = repeat === "nie" ? null : repeat === "wochentage" ? { kind: "wochentage", days: days.length ? days : [weekdayIndex(day)] } : { kind: repeat };
+    if (typ === "termin" && !day) return setHint("An welchem Tag?");
+    const rep: Repeat | null = repeat === "nie" ? null : repeat === "wochentage" ? { kind: "wochentage", days: days.length ? days : [weekdayIndex(day || todayIso())] } : { kind: repeat };
     const keep = { doneDates: d?.doneDates ?? [], skipDates: d?.skipDates ?? [] };
     const data =
       typ === "termin"
         ? { title, date: day, start: time, end: end || undefined, place: place || undefined, label: label || undefined, repeat: rep, reminder, who: entry?.typ === "termin" ? entry.data.who : undefined, ...keep }
-        : { title, date: day || undefined, due: due || undefined, time: time || undefined, label: label || undefined, repeat: rep, reminder, doneOn: entry?.typ === "aufgabe" ? entry.data.doneOn : null, ...keep };
+        : { title, date: day || undefined, due: due || undefined, week: !day && !due && week ? week : undefined, time: time || undefined, label: label || undefined, repeat: rep, reminder, doneOn: entry?.typ === "aufgabe" ? entry.data.doneOn : null, ...keep };
     const base = entry ? { ...entry, typ, raum: room, data } : createEntry(typ, data, { raum: room });
     const clean = sanitizeEntry({ ...base, geaendert: new Date().toISOString() });
     if (!clean) return setHint("Das hat nicht geklappt – schau bitte nochmal auf Datum und Uhrzeit.");
@@ -94,6 +97,18 @@ export function EntryForm({ entry, date, onClose }: { entry?: CalendarEntry; dat
             </label>
           )}
         </div>
+        {typ === "aufgabe" && !day && !due && (
+          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Wann ungefähr?">
+            {[
+              { value: "", label: "Irgendwann" },
+              { value: mondayOf(todayIso()), label: "Diese Woche" },
+            ].map((o) => (
+              <button key={o.label} type="button" role="radio" aria-checked={week === o.value} onClick={() => setWeek(o.value)} className={chipClass(week === o.value)}>
+                {o.label}
+              </button>
+            ))}
+          </div>
+        )}
         {workRoom && (
           <div className="flex flex-col gap-2">
             <span className={LABEL}>Für</span>

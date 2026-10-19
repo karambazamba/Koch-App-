@@ -6,7 +6,7 @@
 import { createLocalStore } from "./localStore";
 import { useExternalStore } from "./useExternalStore";
 
-export type HomeTileId = "termine" | "essen" | "einkauf" | "morgen" | "vorrat";
+export type HomeTileId = "termine" | "essen" | "einkauf" | "morgen" | "vorrat" | "notizen";
 export type TileSize = "kompakt" | "ausfuehrlich";
 export type HomeTile = { id: HomeTileId; visible: boolean; size: TileSize };
 
@@ -17,6 +17,7 @@ export const HOME_TILES: { id: HomeTileId; label: string; hint: string; feature?
   { id: "einkauf", label: "Einkauf", hint: "Die Einkaufsliste" },
   { id: "morgen", label: "Vorschau morgen", hint: "Ab 16 Uhr" },
   { id: "vorrat", label: "Vorrat", hint: "Kühlschrank, Tiefkühler, Schrank", feature: "vorrat" },
+  { id: "notizen", label: "Notizen", hint: "Angeheftete Notizen und Listen" },
 ];
 
 export const tileLabel = (id: HomeTileId) => HOME_TILES.find((t) => t.id === id)?.label ?? id;
@@ -27,6 +28,8 @@ export const DEFAULT_HOME: HomeTile[] = [
   { id: "einkauf", visible: true, size: "kompakt" },
   { id: "morgen", visible: true, size: "kompakt" },
   { id: "vorrat", visible: true, size: "kompakt" },
+  // Notizen stehen standardmäßig nicht auf "Heute" (über "Startseite anpassen" einblendbar)
+  { id: "notizen", visible: false, size: "kompakt" },
 ];
 
 export type HomeAction = "zeigen" | "ausblenden" | "kompakt" | "ausfuehrlich" | "hoch" | "runter" | "nach_oben" | "nach_unten";

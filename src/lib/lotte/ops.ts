@@ -3,6 +3,7 @@
 // wendet sie erst nach "Übernehmen" an. Alles hier ist rein (ohne Speicher),
 // damit Server (Arbeitskopie) und App (Vorschau, Übernehmen) gleich rechnen.
 
+import { removeNote, upsertNote, type Note } from "../notizen/model";
 import type { MailStyle } from "./mail";
 import { createAiRecipe, type Recipe, type RecipeCategory } from "../essen/cookbook";
 import {
@@ -41,6 +42,8 @@ export type AssistantData = {
   home?: HomeTile[];
   /** Eingeschaltete Bausteine (nur zum Lesen; Schalten über `set_feature`) */
   features?: string[];
+  /** Notizen (Text oder Liste) */
+  notes?: Note[];
   /** Mail-Stil: Grußformel, Signatur, gemerkte Anrede je Empfänger (nur zum Lesen) */
   mail?: MailStyle;
 };
@@ -100,7 +103,10 @@ export type ChangeOp =
   | { id: string; type: "upsert_entry"; entry: CalendarEntry; isNew: boolean }
   | { id: string; type: "remove_entry"; entryId: string; title: string; onlyDate?: string }
   | { id: string; type: "done_entry"; entryId: string; title: string; date: string }
-  | { id: string; type: "move_entry"; entryId: string; title: string; date: string; to: string; time?: string };
+  | { id: string; type: "move_entry"; entryId: string; title: string; date: string; to: string; time?: string }
+  // Notizen (`notes`): anlegen/ändern (auch Listen-Einträge, anheften), löschen
+  | { id: string; type: "upsert_note"; note: Note; isNew: boolean; change?: string }
+  | { id: string; type: "remove_note"; noteId: string; title: string };
 
 /** Änderungen an Terminen/Aufgaben */
 export const ENTRY_OP_TYPES = new Set(["upsert_entry", "remove_entry", "done_entry", "move_entry"]);
@@ -270,6 +276,12 @@ export function applyOps(
         if (entry) next = { ...next, entries: moveItem(next.entries ?? [], { entry, date: op.date }, op.to, now().toISOString(), op.time) };
         break;
       }
+      case "upsert_note":
+        next = { ...next, notes: upsertNote(next.notes ?? [], op.note) };
+        break;
+      case "remove_note":
+        next = { ...next, notes: removeNote(next.notes ?? [], op.noteId) };
+        break;
       case "add_pantry":
       case "add_wish":
         break;

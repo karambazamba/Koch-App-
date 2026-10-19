@@ -3,6 +3,7 @@
 // kommt Stück für Stück über `onText` (Streaming), am Ende die fertige
 // Antwort samt Vorschlag.
 
+import { sanitizeNote, type Note } from "../notizen/model";
 import type Anthropic from "@anthropic-ai/sdk";
 import { migrateProfile } from "../einstellungen/profile";
 import { nextWeekStartFor, weekStartFor } from "../essen/weekPlan";
@@ -36,7 +37,7 @@ export type EngineEvents = { onText?: (delta: string) => void; onRound?: () => v
 
 export class AssistantInputError extends Error {}
 
-const OP_TYPES = new Set(["set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last", "set_persons", "set_pause", "app_command", "set_feature"]);
+const OP_TYPES = new Set(["upsert_note", "remove_note", "set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last", "set_persons", "set_pause", "app_command", "set_feature"]);
 
 /** Anfrage prüfen und auf das Nötige kürzen */
 export function parseRequest(body: unknown): AssistantRequest {
@@ -67,6 +68,7 @@ export function parseRequest(body: unknown): AssistantRequest {
     features: (Array.isArray(b.data?.features) ? b.data.features : []).filter((f): f is string => typeof f === "string").slice(0, 30),
     entries: (Array.isArray(b.data?.entries) ? b.data.entries : []).map(sanitizeEntry).filter((e): e is CalendarEntry => e !== null).slice(0, 400),
     mail: sanitizeMailStyle(b.data?.mail),
+    notes: (Array.isArray(b.data?.notes) ? b.data.notes : []).map(sanitizeNote).filter((n): n is Note => n !== null).slice(0, 80),
   };
   const pending = (Array.isArray(b.pending) ? b.pending : []).filter(
     (op): op is ChangeOp => Boolean(op) && typeof op === "object" && typeof op.id === "string" && OP_TYPES.has(op.type),
@@ -134,6 +136,10 @@ function pendingSummary(ops: ChangeOp[]): string {
         return `Erledigt: ${op.title}`;
       case "move_entry":
         return `Verschieben: ${op.title} → ${op.to}${op.time ? ` ${op.time}` : ""}`;
+      case "upsert_note":
+        return `Notiz ${op.isNew ? "neu" : "ändern"}: ${op.note.data.title}${op.change ? ` (${op.change})` : ""}`;
+      case "remove_note":
+        return `Notiz löschen: ${op.title}`;
     }
   });
   return `\n\nNoch nicht übernommener Vorschlag (in den Daten schon enthalten; auf Wunsch anpassen):\n${lines.join("\n")}`;

@@ -5,7 +5,7 @@
 
 import { nowIso } from "./now";
 
-export type EntryType = "termin" | "aufgabe" | "gericht" | "einkauf";
+export type EntryType = "termin" | "aufgabe" | "notiz" | "gericht" | "einkauf";
 
 /** Familie = gemeinsam, Arbeit = persönlich */
 export type Room = "familie" | "arbeit";
@@ -49,7 +49,7 @@ export function isEntry(raw: unknown): raw is Entry {
   const e = raw as Partial<Entry>;
   return (
     typeof e.id === "string" &&
-    (e.typ === "termin" || e.typ === "aufgabe" || e.typ === "gericht" || e.typ === "einkauf") &&
+    (e.typ === "termin" || e.typ === "aufgabe" || e.typ === "notiz" || e.typ === "gericht" || e.typ === "einkauf") &&
     (e.raum === "familie" || e.raum === "arbeit") &&
     typeof e.besitzer === "string" &&
     typeof e.erstellt === "string" &&

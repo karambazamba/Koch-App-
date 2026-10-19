@@ -7,7 +7,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { CircleCheck, NotebookPen, Plus } from "lucide-react";
 import { Segmented } from "@/components/ui/Segmented";
 import { CARD, buttonClass } from "@/components/ui/styles";
 import { clockLabel } from "@/lib/aufgaben/answers";
@@ -70,11 +70,20 @@ export function WeekPage({ today, entries }: { today: string; entries: CalendarE
                 <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
                   {meals?.get(date)?.paused ? <span className="text-base text-muted">Pause ☀️</span> : items.length === 0 && !dish && <span className="text-base text-muted">frei</span>}
                   {items.slice(0, 4).map((i) => (
-                    <span key={i.key} className="flex items-center gap-2 text-base">
-                      <span className={`h-2 w-2 shrink-0 rounded-full ${roomBar(i.room)}`} aria-hidden />
-                      {i.time && <span className="shrink-0 text-sm font-bold tabular-nums">{clockLabel(i.time)}</span>}
-                      <span className="truncate">{i.title}</span>
-                    </span>
+                    i.entry.typ === "aufgabe" ? (
+                      // Aufgabe (Tag oder Frist an diesem Tag): klein mit Kreis
+                      <span key={i.key} className="flex items-center gap-2 text-sm text-muted">
+                        <span className={`h-2.5 w-2.5 shrink-0 rounded-full border-2 ${i.room === "arbeit" ? "border-work" : "border-accent"}`} aria-hidden />
+                        <span className="truncate">{i.title}</span>
+                        {i.dueLabel && <span className="shrink-0 text-xs">{i.dueLabel}</span>}
+                      </span>
+                    ) : (
+                      <span key={i.key} className="flex items-center gap-2 text-base">
+                        <span className={`h-2 w-2 shrink-0 rounded-full ${roomBar(i.room)}`} aria-hidden />
+                        {i.time && <span className="shrink-0 text-sm font-bold tabular-nums">{clockLabel(i.time)}</span>}
+                        <span className="truncate">{i.title}</span>
+                      </span>
+                    )
                   ))}
                   {items.length > 4 && <span className="text-sm text-muted">+ {items.length - 4} weitere</span>}
                   {dish && <span className="truncate text-sm text-muted">🍽 {dish}</span>}
@@ -87,6 +96,16 @@ export function WeekPage({ today, entries }: { today: string; entries: CalendarE
       <button type="button" onClick={() => setDays((d) => d + STEP)} className={`${buttonClass("secondary")} self-center`}>
         Weitere Wochen
       </button>
+      <nav className="mt-2 grid grid-cols-2 gap-2" aria-label="Mehr">
+        <Link href="/aufgaben" className={`${CARD} flex h-14 items-center gap-2 px-4 text-base font-semibold`}>
+          <CircleCheck className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
+          Aufgaben
+        </Link>
+        <Link href="/notizen" className={`${CARD} flex h-14 items-center gap-2 px-4 text-base font-semibold`}>
+          <NotebookPen className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
+          Notizen
+        </Link>
+      </nav>
       {adding && <EntryForm date={today} onClose={() => setAdding(false)} />}
     </div>
   );

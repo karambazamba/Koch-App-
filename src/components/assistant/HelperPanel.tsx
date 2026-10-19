@@ -64,7 +64,8 @@ import { ProposalCard } from "./ProposalCard";
 import { MailCard } from "./MailCard";
 import { draftForHistory, eventsIn, greetingCommand, localNewMail, localReply as mailReply, looksLikeMail, REPLY_CHOICES, reviseDraft, revisionOf, splitInstruction, summaryOf, withTone, type MailDraft, type MailRevision } from "@/lib/lotte/mail";
 import { loadMailStyle, saveMailStyle } from "@/lib/lotte/mailSettings";
-import { draftSummary, upsertEntry, type CalendarEntry } from "@/lib/aufgaben";
+import { draftSummary, taskOverview, upsertEntry, type CalendarEntry } from "@/lib/aufgaben";
+import { addListItems, changeNotes, createNote, loadNotes, noteAnswer, noteFor, parseNoteCommand, setPinned, upsertNote } from "@/lib/notizen";
 import { createEntry } from "@/lib/core/entries";
 import { TipBubble } from "./TipBubble";
 import { tipsShown, useTipStore } from "@/lib/essen/healthTips";
@@ -693,6 +694,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   const rules = (t: string): boolean => {
     if (!data || !today) return false;
     if (mailRule(t)) return true;
+    if (noteRule(t)) return true;
     if (isAddPersonRequest(t)) {
       setInput("");
       setGuided(startAddPerson(data.profile, t));
@@ -781,6 +783,74 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   };
 
   /** Bausteine ohne KI: "Zeig mir den Vorrat" (wenn aus), "Ich brauche die Tipps nicht", "Was kannst du noch?" */
+  /** Notizen und Aufgaben-Übersicht ohne KI: "Merk dir …", "Was steht auf der Packliste?", "Häng das WLAN oben an", "Was muss ich heute noch erledigen?" */
+  const noteRule = (t: string): boolean => {
+    if (!today) return false;
+    const cmd = parseNoteCommand(t);
+    if (!cmd) return false;
+    setInput("");
+    const say = (text: string, undo?: () => void) =>
+      setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text, local: true, ...(undo ? { undo: pushUndo(text, undo) } : {}) }] }));
+    const notes = loadNotes();
+    switch (cmd.kind) {
+      case "tasks": {
+        const g = taskOverview(loadEntries(), toIsoDate(today));
+        const part = (label: string, list: typeof g.heute) => (list.length ? `${label}: ${list.slice(0, 5).map((i) => `${i.title}${i.carried ? ` (${i.carried})` : i.dueLabel ? ` (${i.dueLabel})` : ""}`).join(", ")}.` : "");
+        const text = [part("Heute dran", g.heute), part("Diese Woche", g.woche)].filter(Boolean).join(" ") || "Heute liegt nichts an – schön ruhig.";
+        say(cmd.open ? `${text} Ich hab dir die Aufgaben aufgemacht.` : text);
+        if (cmd.open) {
+          router.push("/aufgaben");
+          onClose();
+        }
+        return true;
+      }
+      case "show_all":
+        say("Hier sind deine Notizen.");
+        router.push("/notizen");
+        onClose();
+        return true;
+      case "show": {
+        const note = noteFor(notes, cmd.query);
+        say(note ? noteAnswer(note) : notes.length ? `Dazu hab ich keine Notiz. Da sind: ${notes.map((n) => n.data.title).join(", ")}.` : "Dazu hab ich noch nichts notiert – sag einfach „Merk dir …“.");
+        return true;
+      }
+      case "pin": {
+        const note = noteFor(notes, cmd.query.replace(/^(das|die|den|der|meine|unsere)\s+/i, ""));
+        if (!note) {
+          say("Die Notiz finde ich gerade nicht – wie heißt sie?");
+          return true;
+        }
+        const undo = changeNotes((list) => setPinned(list, note.id, cmd.on));
+        say(cmd.on ? `Angeheftet ✓ ${note.data.title} steht jetzt oben bei den Notizen.` : `Gelöst ✓ ${note.data.title}`, undo);
+        return true;
+      }
+      case "add": {
+        const list = noteFor(notes, cmd.list);
+        if (list) {
+          const undo = changeNotes((all) => addListItems(all, list.id, cmd.items));
+          say(`Notiert ✓ ${cmd.items.join(", ")} auf „${list.data.title}“.`, undo);
+        } else {
+          const note = createNote({ title: cmd.list, items: cmd.items });
+          const undo = changeNotes((all) => upsertNote(all, note));
+          say(`Notiert ✓ Neue Liste „${note.data.title}“: ${cmd.items.join(", ")}. Steht unter Notizen.`, undo);
+        }
+        return true;
+      }
+      case "create": {
+        const same = notes.find((n) => n.data.kind === "text" && n.data.title.toLowerCase() === cmd.title.toLowerCase());
+        if (same) {
+          const undo = changeNotes((all) => upsertNote(all, { ...same, data: { ...same.data, text: cmd.text ?? "" } }));
+          say(`Aktualisiert ✓ ${same.data.title}`, undo);
+        } else {
+          const note = createNote({ title: cmd.title, text: cmd.text });
+          const undo = changeNotes((all) => upsertNote(all, note));
+          say(`Gemerkt ✓ ${note.data.emoji} ${note.data.title} – steht unter Notizen.`, undo);
+        }
+        return true;
+      }
+    }
+  };
+
   const bausteinRule = (t: string): boolean => {
     const cmd = parseBausteinCommand(t);
     if (!cmd) return false;

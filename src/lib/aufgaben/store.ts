@@ -9,7 +9,7 @@ import { nowIso } from "../core/now";
 import { sanitizeEntry, type CalendarEntry, type TerminData } from "./model";
 
 type EntryStore = {
-  version: 1;
+  version: 2;
   entries: CalendarEntry[];
   /** Alte Termine (`wasgibts.termine`) schon übernommen? */
   migratedTermine: boolean;
@@ -17,13 +17,25 @@ type EntryStore = {
   seenReminders: string[];
 };
 
+/**
+ * v1 → v2: Termin = feste Uhrzeit. Einmalige, offene "Aufgaben" mit Tag und
+ * Uhrzeit (aber ohne Frist) waren eigentlich Termine und werden zu Terminen.
+ */
+function asTermin(e: CalendarEntry): CalendarEntry {
+  if (e.typ !== "aufgabe") return e;
+  const a = e.data;
+  if (!a.time || !a.date || a.due || a.repeat || a.doneOn) return e;
+  return { ...e, typ: "termin", data: { title: a.title, date: a.date, start: a.time, label: a.label, reminder: a.reminder, repeat: null, doneDates: [], skipDates: a.skipDates ?? [] } };
+}
+
 function migrate(raw: unknown): EntryStore | null {
   if (!raw || typeof raw !== "object") return null;
-  const d = raw as Partial<EntryStore>;
-  if (d.version !== 1) return null;
+  const d = raw as Partial<Omit<EntryStore, "version">> & { version?: number };
+  if (d.version !== 1 && d.version !== 2) return null;
+  const entries = (Array.isArray(d.entries) ? d.entries : []).map(sanitizeEntry).filter((e): e is CalendarEntry => e !== null);
   return {
-    version: 1,
-    entries: (Array.isArray(d.entries) ? d.entries : []).map(sanitizeEntry).filter((e): e is CalendarEntry => e !== null),
+    version: 2,
+    entries: d.version === 1 ? entries.map(asTermin) : entries,
     migratedTermine: d.migratedTermine === true,
     seenReminders: Array.isArray(d.seenReminders) ? d.seenReminders.filter((x): x is string => typeof x === "string").slice(-200) : [],
   };
@@ -34,7 +46,7 @@ const EMPTY: CalendarEntry[] = [];
 const EMPTY_SEEN: string[] = [];
 
 function current(): EntryStore {
-  return store.load() ?? { version: 1, entries: [], migratedTermine: false, seenReminders: [] };
+  return store.load() ?? { version: 2, entries: [], migratedTermine: false, seenReminders: [] };
 }
 
 export function loadEntries(): CalendarEntry[] {

@@ -111,6 +111,14 @@ function findRepeat(text: string): { repeat: Repeat; match: string } | null {
   return null;
 }
 
+/** Zeitraum für Aufgaben: "diese Woche" / "nächste Woche" → Montag der Woche */
+function findPeriod(text: string, today: string): { week: string; match: string } | null {
+  const m = text.toLowerCase().match(/\b(?:(?:in\s+)?(diese[rn]?|nächste[rn]?|kommende[rn]?)\s+woche|die\s+woche\s+(?:über|noch))\b/);
+  if (!m) return null;
+  const monday = addDays(today, -weekdayIndex(today));
+  return { week: m[1] && !/^dies/.test(m[1]) ? addDays(monday, 7) : monday, match: m[0] };
+}
+
 function findDeadline(text: string, today: string): { due: string; match: string } | null {
   const t = text.toLowerCase();
   let m = t.match(/\bbis\s+(?:zum\s+)?ende\s+der\s+woche\b/);
@@ -244,16 +252,19 @@ export function parseCalendar(text: string, today: string, persons: Person[] = [
   if (repeat) strip(repeat.match);
   const deadline = findDeadline(rest, today);
   if (deadline) strip(deadline.match);
+  // "Ich muss diese Woche noch die Reifen machen" → Aufgabe für diese Woche (ohne festen Tag)
+  const period = !deadline ? findPeriod(rest, today) : null;
+  if (period) strip(period.match);
   const date = findDate(rest, today);
   if (date) strip(date.match);
   const time = findTime(rest);
   if (time) strip(time.match);
-  if (!reminder && !repeat && !deadline && !date && !time && !TODO_WORDS.test(t)) return null;
+  if (!reminder && !repeat && !deadline && !period && !date && !time && !TODO_WORDS.test(t)) return null;
   const { title, who } = cleanTitle(rest, persons);
   if (title.length < 2) return null;
   const raum = guessRoom(raw);
   const label = guessLabel(raw);
-  const start = date?.date ?? (repeat?.repeat.kind === "wochentage" ? nextWeekday(today, repeat.repeat.days[0]) : today);
+  const start = date?.date ?? (repeat?.repeat.kind === "wochentage" ? nextWeekday(today, repeat.repeat.days[0]) : period && period.week > today ? period.week : today);
   // Termin = feste Uhrzeit (nicht nur "abends") und keine Frist
   if (time && !time.vague && !deadline) {
     return {
@@ -270,6 +281,7 @@ export function parseCalendar(text: string, today: string, persons: Person[] = [
         title,
         ...(date || repeat ? { date: start } : {}),
         ...(deadline ? { due: deadline.due } : {}),
+        ...(period && !date && !repeat ? { week: period.week } : {}),
         ...(time ? { time: time.time } : {}),
         label,
         repeat: repeat?.repeat ?? null,
