@@ -10,6 +10,7 @@ import { useExternalStore } from "./useExternalStore";
 import { noteProactiveAnswered, noteProactiveShown } from "./activity";
 import { createLocalStore } from "./localStore";
 import { helperMessage, type HouseholdProfile } from "../einstellungen/profile";
+import { LOTTE_PUSH_ICON } from "./app";
 import { addDays } from "../essen/weekPlan";
 
 export type NudgeKind =
@@ -135,6 +136,11 @@ export function pushAllowed(
 /** Text der Bewertungs-Mitteilung: "Lotte: Wie war Shakshuka? 👍 👎" */
 export function ratingPushText(profile: Pick<HouseholdProfile, "helper">, title: string): string {
   return helperMessage(profile, `Wie war ${title}? 👍 👎`);
+}
+
+/** Mitteilung von Lotte (für die spätere Push-Anbindung): Text immer "<Name>: …", Bild = Lottes Gesicht */
+export function lottePush(profile: Pick<HouseholdProfile, "helper">, text: string): { body: string; icon: string; badge: string } {
+  return { body: helperMessage(profile, text), icon: LOTTE_PUSH_ICON, badge: "/icons/favicon-48.png" };
 }
 
 /** Zeitpunkt für "Wie war …?": 1 Stunde nach dem Essen, sonst (Ruhezeit) gar nicht */

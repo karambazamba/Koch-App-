@@ -16,7 +16,7 @@ import { recordOpen } from "@/lib/core/activity";
 import type { SpontanFilter } from "@/lib/essen/spontan";
 import type { AssistantData } from "@/lib/lotte/ops";
 import { helperName } from "@/lib/einstellungen/profile";
-import { HelperAvatar } from "./HelperAvatar";
+import { LotteAvatar } from "@/components/LotteAvatar";
 import { HelperPanel, spontanStartTurn, type ChatState } from "./HelperPanel";
 import { loadSpontanFilters } from "./SpontanBoard";
 
@@ -147,9 +147,10 @@ export function KitchenHelper() {
           aria-label={`${helperName(profile)} öffnen`}
           data-kuechenhelfer-knopf
           style={{ bottom }}
-          className="fixed right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-accent shadow-lg ring-4 ring-background transition active:scale-95"
+          className="fixed right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full shadow-lg ring-4 ring-background transition active:scale-95"
         >
-          <HelperAvatar size={38} />
+          {/* Lotte bleibt in jeder Ansicht orange (eigener Kreis statt Akzentfarbe) */}
+          <LotteAvatar size={56} />
         </button>
       )}
 

@@ -7,7 +7,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ChevronDown, ClipboardList } from "lucide-react";
-import { HelperAvatar } from "@/components/assistant/HelperAvatar";
+import { LotteAvatar } from "@/components/LotteAvatar";
 import { familyCard, finalizeProfile, revisit, startOnboarding, type OnboardingState } from "@/lib/einstellungen/onboarding/engine";
 import { clearOnboarding, loadOnboarding, saveOnboarding } from "@/lib/einstellungen/onboarding/progress";
 import { saveProfile, type HouseholdProfile } from "@/lib/einstellungen/profile";
@@ -43,7 +43,7 @@ export function OnboardingChat({ onForm }: Props) {
       <section className="flex h-dvh w-full max-w-lg flex-col pt-[env(safe-area-inset-top)]" aria-label="Kennenlernen">
         <header className="flex flex-col gap-3 border-b border-line px-4 pb-3 pt-3">
           <div className="flex items-center gap-3">
-            <HelperAvatar size={44} variant="badge" />
+            <LotteAvatar size={44} />
             <div className="min-w-0 flex-1">
               <h1 className="truncate text-2xl font-extrabold leading-tight tracking-tight">
                 {helperChosen ? state.draft.helper.name : "Hallo!"}

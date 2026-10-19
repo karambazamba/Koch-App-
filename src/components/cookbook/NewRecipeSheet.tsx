@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Camera, Link2, Mic, MicOff, PenLine, Square } from "lucide-react";
-import { HelperAvatar } from "@/components/assistant/HelperAvatar";
+import { LotteAvatar } from "@/components/LotteAvatar";
 import { Sheet } from "@/components/plan/Sheet";
 import { INPUT_BASE, buttonClass, chipClass, tileClass } from "@/components/ui/styles";
 import { createRecipe, formatAmount, saveRecipe } from "@/lib/essen/cookbook";
@@ -27,7 +27,7 @@ export function NewRecipeSheet({ onClose }: { onClose: () => void }) {
     <Sheet title="Neues Rezept" onClose={onClose}>
       <div className="flex flex-col gap-2 pb-2">
         <button type="button" onClick={() => setTelling(true)} className={tileClass(false)}>
-          <HelperAvatar size={32} variant="badge" />
+          <LotteAvatar size={32} />
           <span className="flex flex-1 flex-col text-left">
             <span className="text-base font-bold">{name} erzählen</span>
             <span className="text-sm text-muted">Einfach sagen, was reinkommt und wie es geht</span>

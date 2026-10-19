@@ -1,14 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#f97316"/><g transform="translate(0 12)">
-  <g fill="#fff">
-    <rect x="235" y="190" width="42" height="34" rx="12"/>
-    <rect x="112" y="214" width="288" height="36" rx="18"/>
-    <path d="M138 242h236v86a54 54 0 0 1-54 54H192a54 54 0 0 1-54-54z"/>
-    <rect x="86" y="266" width="70" height="30" rx="15"/>
-    <rect x="356" y="266" width="70" height="30" rx="15"/>
-  </g>
-  <g fill="none" stroke="#fff" stroke-width="18" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M196 168c-16-14-16-28 0-40s16-26 0-40"/>
-    <path d="M256 160c-16-14-16-28 0-40s16-26 0-40"/>
-    <path d="M316 168c-16-14-16-28 0-40s16-26 0-40"/>
-  </g>
-</g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><defs><linearGradient id="g" x1="0" y1="0" x2="0.6" y2="1"><stop offset="0" stop-color="#F7843E"/><stop offset="1" stop-color="#EE5F14"/></linearGradient></defs><rect width="1024" height="1024" fill="url(#g)"/><g transform="translate(112,112) scale(10)"><path d="M18 22h44a12 12 0 0 1 12 12v18a12 12 0 0 1-12 12H38l-14 11V64h-6A12 12 0 0 1 6 52V34a12 12 0 0 1 12-12z" fill="#fff"/><path d="M28 21c-4-4 4-7 0-12M40 21c-4-4 4-7 0-12M52 21c-4-4 4-7 0-12" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="29" cy="40" r="4.6" fill="#EE5F14"/><circle cx="51" cy="40" r="4.6" fill="#EE5F14"/><path d="M27 49c7 8 19 8 26 0" stroke="#EE5F14" stroke-width="5.5" fill="none" stroke-linecap="round"/></g></svg>

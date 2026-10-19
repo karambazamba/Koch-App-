@@ -8,7 +8,7 @@ import { ToastHost } from "@/components/ui/ToastHost";
 import { NavigationMemory } from "@/components/NavigationMemory";
 import { AutoCooked } from "@/components/AutoCooked";
 import { THEME_BOOT_SCRIPT } from "@/lib/core/theme";
-import { APP_NAME, APP_SHORT_NAME } from "@/lib/core/app";
+import { APP_NAME, APP_SHORT_NAME, BRAND_COLOR } from "@/lib/core/app";
 import "./globals.css";
 
 const nunito = Nunito({
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     template: `%s · ${APP_NAME}`,
   },
   description:
-    "Wochenplan, Resteküche, Kochbuch und Einkaufsliste – passend zu eurer Familie.",
+    "Lotte hilft eurer Familie im Alltag – Termine, Aufgaben, Essen und Einkauf.",
   applicationName: APP_NAME,
   appleWebApp: {
     capable: true,
@@ -32,13 +32,18 @@ export const metadata: Metadata = {
   },
   icons: {
     // favicon.ico bindet Next aus src/app automatisch ein
-    icon: { url: "/icons/icon.svg", type: "image/svg+xml" },
+    icon: [
+      { url: "/icons/icon.svg", type: "image/svg+xml" },
+      { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/favicon-48.png", sizes: "48x48", type: "image/png" },
+    ],
     apple: { url: "/icons/apple-touch-icon.png", sizes: "180x180" },
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#faf7f2",
+  // Markenfarbe; in der App passt ThemeSync die Statusleiste an die Ansicht an
+  themeColor: BRAND_COLOR,
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",

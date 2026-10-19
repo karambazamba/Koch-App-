@@ -54,8 +54,15 @@ Familie wählt (Standard: Lotte).
 
 ## 7. Design
 - Warmes Off-White, weiße Karten, eine Akzentfarbe (Orange), Linien-Icons
-  (lucide), Emojis nur sparsam. App-Icon: weißer Topf mit drei Dampfwölkchen
-  auf Orange; Lottes Gesicht: der Smiley-Topf.
+  (lucide), Emojis nur sparsam. App-Icon: Lotte als lächelnde weiße
+  Sprechblase mit drei Härchen auf orangem Verlauf (#F7843E → #EE5F14;
+  einzige Quelle `scripts/generate-icons.mjs`, `npm run icons` erzeugt
+  icon.svg, favicon 32/48 + favicon.ico, apple-touch-icon 180, PWA 192/512,
+  maskable 512 mit mehr Rand, lotte-192.png für Push). Lottes Gesicht in der
+  App: `<LotteAvatar size … />` (`src/components/LotteAvatar.tsx`, dasselbe
+  Motiv im orangen Kreis #F26B21, "plain" = nur die Sprechblase im orangen
+  Knopf) – in Lotte-Leiste, Chat-Kopf, Knopf und Push (`lottePush()`,
+  `LOTTE_PUSH_ICON`). Manifest theme_color #EE5F14 (`BRAND_COLOR`).
 - Startseite (Neustart): Kopf (Logo, Datum, Zahnrad), schlichte Heute-Karte
   fürs Essen (`CalmMealCard`), Einkaufsliste als Karte (`ShoppingCard`, beide
   in `src/components/home/CalmHome.tsx`), unten die Leiste "Sag Lotte, was
@@ -178,7 +185,7 @@ Familie wählt (Standard: Lotte).
   Abstände im 8er-Raster (gap-2/3/4, p-4/p-5), Seitenrand 16px.
 - Unterseiten: `PageHeader` (Zurück-Pfeil + Titel), Inhalt in `PAGE_MAIN`,
   Fuß-Buttons über `StickyActions` (`PRIMARY_BUTTON`/`SECONDARY_BUTTON`).
-- App-Icon: weißer Kochtopf mit drei Dampfwölkchen auf Orange. Einzige Quelle
+- App-Icon: Lotte als Sprechblase auf orangem Verlauf (siehe Leitbild 7). Einzige Quelle
   `scripts/generate-icons.mjs` (`npm run icons` erzeugt icon.svg, PNGs,
   maskable, apple-touch-icon, favicon.ico). In der App `AppIcon`/`AppLogo`
   (`src/components/AppLogo.tsx`): Startseite Icon 44px + Schriftzug,
@@ -235,7 +242,7 @@ Familie wählt (Standard: Lotte).
      je genutzt wurde (`usePantryUsed`), sonst "Rezepte" ("<n> Rezepte").
      Nie eine vierte Kachel; Titel nie abgeschnitten.
   5. Breiter Knopf "🥕 Spontan kochen – mit dem, was da ist".
-  6. Unten fest EINE Leiste "Sag <Name>, was ansteht …" mit Smiley-Topf links
+  6. Unten fest EINE Leiste "Sag <Name>, was ansteht …" mit Lottes Gesicht links
      und Mikrofon im Feld rechts (`openHelper("voice")`). Auf der Startseite
      kein schwebender Knopf.
 
@@ -613,7 +620,7 @@ Test-Schalter wie bisher. Neue Arbeit baut auf dem Fundament oben auf.
   weiblich/männlich (bei Vorschlägen passend zum Namen; `pickVoice()` wählt
   eine passende deutsche Systemstimme, sonst Standard). Einstellbar im
   Kennenlernen (erste Frage), im Assistenten (letzter Schritt) und unter `/profil/kuechenhelfer`. Knopf mit
-  Topf-Gesicht (`HelperAvatar`); Anrede `helperTitle()`: "deine
+  Lottes Gesicht (`LotteAvatar`); Anrede `helperTitle()`: "deine
   Küchenhelferin" bei weiblicher, "dein Küchenhelfer" bei männlicher Stimme.
   Panel-Kopf: Avatar, Name, `helperTitle()`; erste Nachricht
   "Hi, ich bin <Name> – was steht an?". Darunter keine Beispiel-Blasen,
@@ -712,7 +719,7 @@ Test-Schalter wie bisher. Neue Arbeit baut auf dem Fundament oben auf.
   Toasts `bg-ink text-background`). `data-theme` am `<html>`, gesetzt vor dem
   ersten Zeichnen (`THEME_BOOT_SCRIPT`) und von `ThemeSync` (auch
   theme-color). Automatisch folgt `prefers-color-scheme`. App-Icon und
-  Lottes Smiley-Topf bleiben immer orange.
+  Lottes Gesicht bleiben immer orange.
 - Darstellung "Einfach": seltene Einstellungen hinter "Mehr anzeigen", keine
   Kosten-Schätzungen im Wochenplan (außer mit Budget); "Alles zeigen" zeigt
   alles.

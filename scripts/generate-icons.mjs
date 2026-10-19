@@ -1,43 +1,36 @@
-// Erzeugt alle App-Icons aus einem Motiv (weißer Kochtopf mit drei
-// Dampfwölkchen auf Orange). Aufruf: `npm run icons`
-// - public/icons/icon.svg            Logo in der App + Favicon (abgerundet)
-// - public/icons/apple-touch-icon.png 180×180, vollflächig ohne Transparenz
-// - public/icons/icon-192.png / icon-512.png  PWA (abgerundet)
-// - public/icons/icon-maskable-512.png       PWA maskable (vollflächig, Motiv in der Schutzzone)
-// - src/app/favicon.ico              16/32/48 px
+// Erzeugt alle App-Icons aus einem Motiv: Lotte als lächelnde Sprechblase mit
+// drei Härchen auf orangem Verlauf. Aufruf: `npm run icons`
+// - public/icons/icon.svg              Quelle (1024×1024), Logo in der App
+// - public/icons/apple-touch-icon.png  180×180, vollflächig ohne Transparenz
+// - public/icons/icon-192.png / icon-512.png   PWA
+// - public/icons/icon-maskable-512.png         PWA maskable (mehr Rand für Android)
+// - public/icons/favicon-32.png / favicon-48.png
+// - public/icons/lotte-192.png         Lotte im orangen Kreis (für Push-Mitteilungen)
+// - src/app/favicon.ico                16/32/48 px
+// Lottes Avatar in der App: src/components/LotteAvatar.tsx (gleiches Motiv).
 import { writeFileSync } from "node:fs";
 import sharp from "sharp";
 
-const ORANGE = "#f97316";
+const GRADIENT = `<defs><linearGradient id="g" x1="0" y1="0" x2="0.6" y2="1"><stop offset="0" stop-color="#F7843E"/><stop offset="1" stop-color="#EE5F14"/></linearGradient></defs>`;
 
-// Motiv auf 512×512, optisch mittig
-const MOTIF = `<g transform="translate(0 12)">
-  <g fill="#fff">
-    <rect x="235" y="190" width="42" height="34" rx="12"/>
-    <rect x="112" y="214" width="288" height="36" rx="18"/>
-    <path d="M138 242h236v86a54 54 0 0 1-54 54H192a54 54 0 0 1-54-54z"/>
-    <rect x="86" y="266" width="70" height="30" rx="15"/>
-    <rect x="356" y="266" width="70" height="30" rx="15"/>
-  </g>
-  <g fill="none" stroke="#fff" stroke-width="18" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M196 168c-16-14-16-28 0-40s16-26 0-40"/>
-    <path d="M256 160c-16-14-16-28 0-40s16-26 0-40"/>
-    <path d="M316 168c-16-14-16-28 0-40s16-26 0-40"/>
-  </g>
-</g>`;
+/** Lotte (Motiv-Koordinaten 0–80): Sprechblase, drei Härchen, Gesicht */
+const MOTIF = `<path d="M18 22h44a12 12 0 0 1 12 12v18a12 12 0 0 1-12 12H38l-14 11V64h-6A12 12 0 0 1 6 52V34a12 12 0 0 1 12-12z" fill="#fff"/><path d="M28 21c-4-4 4-7 0-12M40 21c-4-4 4-7 0-12M52 21c-4-4 4-7 0-12" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="29" cy="40" r="4.6" fill="#EE5F14"/><circle cx="51" cy="40" r="4.6" fill="#EE5F14"/><path d="M27 49c7 8 19 8 26 0" stroke="#EE5F14" stroke-width="5.5" fill="none" stroke-linecap="round"/>`;
 
-/** rounded: Ecken abrunden (sonst vollflächig); scale: Motiv verkleinern (maskable) */
-function svg({ rounded, scale = 1 }) {
-  const bg = rounded
-    ? `<rect width="512" height="512" rx="112" fill="${ORANGE}"/>`
-    : `<rect width="512" height="512" fill="${ORANGE}"/>`;
-  const motif = scale === 1 ? MOTIF : `<g transform="translate(256 256) scale(${scale}) translate(-256 -256)">${MOTIF}</g>`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">${bg}${motif}</svg>\n`;
+/** App-Icon: Verlauf vollflächig; `scale` < 1 = mehr Rand (maskable) */
+function icon(scale = 1) {
+  const s = 10 * scale;
+  const offset = 512 - 40 * s; // Motiv-Mitte (40, 40) auf die Icon-Mitte
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">${GRADIENT}<rect width="1024" height="1024" fill="url(#g)"/><g transform="translate(${offset},${offset}) scale(${s})">${MOTIF}</g></svg>\n`;
 }
 
+/** Lotte im orangen Kreis (wie LotteAvatar) */
+const avatar = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#F26B21"/><g transform="translate(21.2,20.5) scale(0.72)">${MOTIF}</g></svg>\n`;
+
 const png = (source, size, flatten = false) => {
-  let img = sharp(Buffer.from(source), { density: 72 * (size / 512) * 4 }).resize(size, size);
-  if (flatten) img = img.flatten({ background: ORANGE });
+  let img = sharp(Buffer.from(source), { density: Math.max(72, 72 * (size / 1024) * 4) }).resize(size, size);
+  if (flatten) img = img.flatten({ background: "#EE5F14" });
+  // Immer RGBA (die ICO-Datei verlangt es)
+  img = img.ensureAlpha();
   return img.png().toBuffer();
 };
 
@@ -61,18 +54,20 @@ function ico(images) {
   return Buffer.concat([header, ...images.map((i) => i.data)]);
 }
 
-const rounded = svg({ rounded: true });
-const full = svg({ rounded: false });
-// Maskable: Schutzzone = Kreis mit 40 % Radius → Motiv auf 78 %
-const maskable = svg({ rounded: false, scale: 0.78 });
+const full = icon();
+// Maskable: Schutzzone = Kreis mit 40 % Radius → Motiv auf 80 %
+const maskable = icon(0.8);
 
-writeFileSync("public/icons/icon.svg", rounded);
+writeFileSync("public/icons/icon.svg", full);
 writeFileSync("public/icons/apple-touch-icon.png", await png(full, 180, true));
-writeFileSync("public/icons/icon-192.png", await png(rounded, 192));
-writeFileSync("public/icons/icon-512.png", await png(rounded, 512));
+writeFileSync("public/icons/icon-192.png", await png(full, 192, true));
+writeFileSync("public/icons/icon-512.png", await png(full, 512, true));
 writeFileSync("public/icons/icon-maskable-512.png", await png(maskable, 512, true));
+writeFileSync("public/icons/favicon-32.png", await png(full, 32, true));
+writeFileSync("public/icons/favicon-48.png", await png(full, 48, true));
+writeFileSync("public/icons/lotte-192.png", await png(avatar, 192));
 writeFileSync(
   "src/app/favicon.ico",
-  ico(await Promise.all([16, 32, 48].map(async (size) => ({ size, data: await png(rounded, size) })))),
+  ico(await Promise.all([16, 32, 48].map(async (size) => ({ size, data: await png(full, size, true) })))),
 );
 console.log("Icons erzeugt.");

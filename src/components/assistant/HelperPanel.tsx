@@ -17,7 +17,7 @@ import { finalizeProfile, startAddPerson, type OnboardingState } from "@/lib/ein
 import { noteUserAction } from "@/lib/core/activity";
 import { isAddPersonRequest } from "@/lib/einstellungen/onboarding/recognize";
 import { GuidedChat } from "@/components/onboarding/GuidedChat";
-import { HelperAvatar } from "./HelperAvatar";
+import { LotteAvatar } from "@/components/LotteAvatar";
 import { askAssistant, FALLBACK_TEXT, saveAccessCode, useAssistantStatus } from "@/lib/lotte/client";
 import {
   saveSpeechSettings,
@@ -873,7 +873,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
         <header className="flex flex-col gap-2 px-4 pt-2">
           <span className="mx-auto h-1 w-10 rounded-full bg-stone-300" aria-hidden />
           <div className="flex items-center gap-3">
-            <HelperAvatar size={44} variant="badge" />
+            <LotteAvatar size={44} />
             <div className="min-w-0 flex-1">
               <h2 className="truncate text-2xl font-extrabold leading-tight tracking-tight">
                 {name}
