@@ -50,7 +50,12 @@ function useSection() {
 function SectionHead({ title, more, href }: { title: string; more: number; href: string }) {
   return (
     <div className="flex h-7 items-center justify-between px-1">
-      <h2 className="text-xs font-bold uppercase tracking-wider text-muted">{title}</h2>
+      {/* Überschrift öffnet die Seite dazu (Tag bzw. Aufgaben) – keine Sackgasse */}
+      <h2 className="text-xs font-bold uppercase tracking-wider text-muted">
+        <Link href={href} className="-my-2 inline-flex h-11 items-center">
+          {title}
+        </Link>
+      </h2>
       {more > 0 && (
         <Link href={href} className="-my-2 flex h-11 items-center text-[13px] font-bold text-accent-strong">
           + {more} weitere
