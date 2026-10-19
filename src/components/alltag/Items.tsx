@@ -4,8 +4,9 @@
 // Unterzeile, Kästchen), Karte mit "+ N weitere" und eingeklapptem
 // Erledigten, Menü beim Antippen. Ruhig: keine Zähler, nichts "Offenes".
 
+import Link from "next/link";
 import { useState } from "react";
-import { Bell, Check, ChevronDown, Pencil, Repeat2, Trash2, CalendarArrowUp, CheckCircle2, Circle } from "lucide-react";
+import { Bell, Check, ChevronDown, ChevronRight, Pencil, Repeat2, Trash2, CalendarArrowUp, CheckCircle2, Circle } from "lucide-react";
 import { CARD, chipClass } from "@/components/ui/styles";
 import { Sheet } from "@/components/plan/Sheet";
 import { clockLabel } from "@/lib/aufgaben/answers";
@@ -87,7 +88,7 @@ export function ItemRow({ item, onOpen }: { item: DayItem; onOpen: (item: DayIte
  * "+ N weitere"; Erledigtes darunter eingeklappt ("✓ N erledigt"). Ist alles
  * erledigt: "Alles erledigt für heute 🌙". Ohne Einträge: keine Karte.
  */
-export function DayItemsCard({ items, title, limit = 3, allDoneText = "Alles erledigt für heute 🌙" }: { items: DayItem[]; title: string; limit?: number; allDoneText?: string }) {
+export function DayItemsCard({ items, title, limit = 3, allDoneText = "Alles erledigt für heute 🌙", titleHref }: { items: DayItem[]; title: string; limit?: number; allDoneText?: string; titleHref?: string }) {
   const [more, setMore] = useState(false);
   const [showDone, setShowDone] = useState(false);
   const [menu, setMenu] = useState<DayItem | null>(null);
@@ -98,7 +99,16 @@ export function DayItemsCard({ items, title, limit = 3, allDoneText = "Alles erl
   const shown = more ? open : open.slice(0, limit);
   return (
     <section className={`${CARD} px-4 pt-3 pb-2`} aria-label={title}>
-      <h2 className="text-xs font-bold uppercase tracking-wider text-muted">{title}</h2>
+      {titleHref ? (
+        <Link href={titleHref} className="-my-2 flex h-10 items-center justify-between text-xs font-bold uppercase tracking-wider text-muted">
+          <h2>{title}</h2>
+          <span className="flex items-center gap-0.5 normal-case tracking-normal">
+            Tag öffnen <ChevronRight className="h-4 w-4" strokeWidth={2} aria-hidden />
+          </span>
+        </Link>
+      ) : (
+        <h2 className="text-xs font-bold uppercase tracking-wider text-muted">{title}</h2>
+      )}
       {open.length === 0 && <p className="py-3 text-lg font-bold">{allDoneText}</p>}
       {shown.length > 0 && (
         <ul className="flex flex-col divide-y divide-line">

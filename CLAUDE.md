@@ -25,6 +25,15 @@ Familie wählt (Standard: Lotte).
   "Rückgängig"). Rückfragen nur bei echten Entscheidungen. Änderungen der KI
   immer als Vorschau mit "Übernehmen".
 
+## 2a. Volle Kontrolle (Grundregel)
+- Alles, was der Assistent anlegt oder ändert, muss ich selbst sehen,
+  antippen, ändern und entfernen können. Und alles, was ich in der App tun
+  kann, kann auch der Assistent tun – inklusive rückgängig machen. Die
+  Startseite bleibt clean.
+- Nichts auf der Startseite ist eine Sackgasse: jede Kachel öffnet ihre Seite.
+- Nutzt Lotte eine versteckte Funktion, wird sie freigeschaltet und kurz
+  gesagt, wo sie steht.
+
 ## 3. Räume
 - "Familie" ist gemeinsam (alle im Haushalt sehen es), "Arbeit" ist
   persönlich. Ohne Angabe gehört etwas zur Familie.
@@ -71,7 +80,7 @@ Familie wählt (Standard: Lotte).
   (`bg-accent`), Arbeit = Blau (`bg-work`). Alles über Tokens, Warm/Nacht/
   Frisch.
 - Startseite (`HomePager`, `src/components/alltag/`): siehe "Drei Seiten"
-  unten. Neue Funktionen bekommen keinen eigenen Platz, solange sie nicht
+  und "Startseite anpassen" unten. Neue Funktionen bekommen keinen eigenen Platz, solange sie nicht
   gebraucht werden.
 
 ## 8. Technik-Regeln
@@ -216,6 +225,35 @@ Familie wählt (Standard: Lotte).
   Datumsliste der nächsten 14 Tage und alle Einträge der nächsten 7 Tage mit
   ids (`contextLines`). Lotte erkennt Termin vs. Aufgabe, Familie/Arbeit und
   Etikett selbst und fragt nur bei Unklarheit.
+- Startseite anpassen (v0.11, `src/lib/core/homeLayout.ts`, Speicher
+  `wasgibts.startseite` v1): Kacheln termine/essen/einkauf/morgen mit
+  Reihenfolge, Größe (kompakt = Titel + eine Zeile Vorschau, z. B. "Einkauf ·
+  11 Sachen: Petersilie, Gurke …"; ausführlich = mehr) und sichtbar.
+  Standard: Termine ausführlich, alles andere kompakt. Langes Drücken auf
+  eine Kachel oder Einstellungen → "Startseite anpassen" (`/profil/startseite`,
+  `HomeCustomizer`: ziehen, Kompakt/Ausführlich, ausblenden, "+ zeigen").
+  Jede Kachel ist antippbar: Essen → Essen-Seite (Wochenplan), Einkauf →
+  `/einkaufsliste`, Termine → "Tag öffnen" (`/tag`), Morgen → Tag morgen.
+- Lotte kann alles, was man selbst kann (`homeTools.ts`):
+  startseite_anpassen, wochenplan_anzeigen/aendern/loeschen,
+  einkaufsliste_anzeigen/leeren/entfernen, rueckgaengig (Ops `home`,
+  `clear_week`, `clear_shopping`, `remove_shopping`, `undo_last`). Ohne KI
+  sofort mit Rückgängig (`homeChat.ts`, vor der KI): "Mach die Einkaufsliste
+  wieder klein/groß", "Nimm die Einkaufsliste von der Startseite", "Zeig mir
+  den Wochenplan", "Lösch den Wochenplan wieder", "Nimm Milch von der Liste",
+  "Leer die Einkaufsliste", "Mach das rückgängig".
+- Rückgängig überall (`src/lib/core/undo.ts`): jede Änderung von Lotte (KI
+  übernommen oder lokal) legt ihr Zurücknehmen ab – Toast-Knopf ca. 10 s,
+  danach "Mach das rückgängig" (letzte noch gültige, in dieser Sitzung).
+- Sichtbar machen: Übernimmt man einen Wochenplan, wird "wochenplan"
+  freigeschaltet (`unlockFeature`, `wasgibts.funktionen.unlocked`), die
+  Essen-Kachel eingeblendet und Lotte sagt "Dein Wochenplan steht rechts unter
+  Essen." sowie "Einkaufsliste: 11 Sachen für die Woche, davon 4 für heute."
+  Vorrat/Rezepte werden beim ersten Nutzen freigeschaltet und erscheinen in
+  den Einstellungen.
+- Einkaufsliste: Einträge merken sich Gericht (`ManualItem.dish`) und Tag;
+  oben "Für heute", darunter "Für die Woche". Lotte gibt `fuer_tag`/`gericht`
+  mit.
 - Ohne KI (und im Testmodus): `parseCalendar()` (`parse.ts`) erkennt Tag,
   Uhrzeit, Frist, Wiederholung, Erinnerung, Raum, Etikett und die Befehle
   verschieben/löschen/erledigt/"Was steht … an?"/"Hab ich … Zeit?";

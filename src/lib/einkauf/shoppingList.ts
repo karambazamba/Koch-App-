@@ -171,6 +171,8 @@ export type ManualItem = {
   day?: string;
   /** "Jetzt mitnehmen" (aus dem Supermarkt-Gespräch) – steht oben, bis abgehakt */
   now?: boolean;
+  /** Für welches Gericht (z. B. von Lotte angelegt) */
+  dish?: string;
 };
 
 export type WeekList = {
@@ -239,6 +241,7 @@ function migrateManual(raw: unknown): ManualItem[] {
       done: m.done === true,
       ...(typeof m.day === "string" && m.day ? { day: m.day } : {}),
       ...(m.now === true ? { now: true } : {}),
+      ...(typeof m.dish === "string" && m.dish ? { dish: m.dish } : {}),
     }));
 }
 
@@ -724,7 +727,7 @@ export function buildShoppingList(
       originalName: m.name,
       amount: m.amount,
       section: m.section,
-      dishes: [],
+      dishes: m.dish ? [m.dish] : [],
       days: m.day ? [m.day] : [],
       shop: shopOf(name),
       manualId: m.id,

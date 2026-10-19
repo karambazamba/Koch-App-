@@ -29,24 +29,40 @@ export type Feature = keyof typeof FEATURES;
 /** Dauerhaft eingeschaltet (unabhängig vom Test-Schalter) – hier freischalten, was gebraucht wird */
 const ENABLED: Partial<Record<Feature, true>> = {};
 
-type FeatureStore = { version: 1; legacy: boolean };
+/** `unlocked`: einzeln freigeschaltet, weil Lotte die Funktion genutzt hat (z. B. Wochenplan angelegt) */
+type FeatureStore = { version: 1; legacy: boolean; unlocked?: Feature[] };
 
 function migrate(raw: unknown): FeatureStore | null {
   if (!raw || typeof raw !== "object") return null;
   const d = raw as Partial<FeatureStore>;
-  return d.version === 1 ? { version: 1, legacy: d.legacy === true } : null;
+  if (d.version !== 1) return null;
+  const unlocked = (Array.isArray(d.unlocked) ? d.unlocked : []).filter((f): f is Feature => f in FEATURES);
+  return { version: 1, legacy: d.legacy === true, ...(unlocked.length ? { unlocked } : {}) };
 }
 
 const store = createLocalStore("wasgibts.funktionen", migrate);
 
 /** Alles Alte wieder anzeigen (Test) – an/aus */
 export function setLegacyFeatures(on: boolean) {
-  store.save({ version: 1, legacy: on });
+  store.save({ ...(store.load() ?? { version: 1 }), version: 1, legacy: on });
+}
+
+/**
+ * Funktion dauerhaft einblenden, weil Lotte sie genutzt hat ("Alles, was
+ * Lotte anlegt, muss ich sehen können"). Liefert true, wenn sie vorher
+ * versteckt war.
+ */
+export function unlockFeature(feature: Feature): boolean {
+  if (featureOn(feature)) return false;
+  const current = store.load() ?? { version: 1 as const, legacy: false };
+  store.save({ ...current, unlocked: [...(current.unlocked ?? []), feature] });
+  return true;
 }
 
 /** Ist eine Funktion sichtbar? (außerhalb von React) */
 export function featureOn(feature: Feature): boolean {
-  return ENABLED[feature] === true || store.load()?.legacy === true;
+  const data = store.load();
+  return ENABLED[feature] === true || data?.legacy === true || Boolean(data?.unlocked?.includes(feature));
 }
 
 /** "Alte Funktionen anzeigen" an? (`undefined` = lädt) */
@@ -57,7 +73,8 @@ export function useLegacyFeatures(): boolean | undefined {
 
 /** Ist eine Funktion sichtbar? (`undefined` = lädt) */
 export function useFeature(feature: Feature): boolean | undefined {
-  const legacy = useLegacyFeatures();
+  const data = useExternalStore(store.subscribe, store.load, () => undefined);
   if (ENABLED[feature]) return true;
-  return legacy;
+  if (data === undefined) return undefined;
+  return data?.legacy === true || Boolean(data?.unlocked?.includes(feature));
 }

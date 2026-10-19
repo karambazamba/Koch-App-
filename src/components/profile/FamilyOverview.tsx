@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, ChefHat, Database, LayoutList, MessageCircle, Mic, Palette, Volume2, Refrigerator, Salad, Sun, Users } from "lucide-react";
+import { BookOpen, ChefHat, Database, LayoutGrid, LayoutList, MessageCircle, Mic, Palette, Volume2, Refrigerator, Salad, Sun, Users } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { PAGE_MAIN } from "@/components/ui/styles";
 import { APP_VERSION } from "@/lib/core/app";
@@ -18,7 +18,8 @@ import {
   type HouseholdProfile,
 } from "@/lib/einstellungen/profile";
 import { usePlanStyle } from "@/lib/essen/usePlanStyle";
-import { setLegacyFeatures, useLegacyFeatures } from "@/lib/core/features";
+import { setLegacyFeatures, useFeature, useLegacyFeatures } from "@/lib/core/features";
+import { useHomeTiles } from "@/lib/core/homeLayout";
 import { READ_MODES, useSpeechSettings } from "@/lib/lotte/speech";
 import { Group, Row } from "./settings/SettingsParts";
 import { householdTitle } from "./settings/Hubs";
@@ -42,6 +43,9 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
   const recipeCount = recipes ? Object.keys(recipes).length : null;
   const legacy = useLegacyFeatures();
   const speech = useSpeechSettings();
+  const home = useHomeTiles();
+  const unlockedRecipes = useFeature("rezepte");
+  const unlockedPantry = useFeature("vorrat");
 
   // Neustart: schlank – nur Lotte, Ansicht, Familie, Daten & App
   if (!legacy) {
@@ -49,6 +53,21 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
         <PageHeader title="Einstellungen" />
         <main className={`${PAGE_MAIN} gap-6`}>
+          <Group title="Startseite">
+            <Row href="/profil/startseite" icon={LayoutGrid} title="Startseite anpassen" value={home ? `${home.filter((t) => t.visible).length} Kacheln` : undefined}>
+              Reihenfolge, Größe, ein- und ausblenden
+            </Row>
+            {unlockedRecipes && (
+              <Row href="/kochbuch" icon={BookOpen} title="Unsere Rezepte" value={recipeCount === null ? undefined : String(recipeCount)}>
+                Was ihr gern kocht
+              </Row>
+            )}
+            {unlockedPantry && (
+              <Row href="/vorrat" icon={Refrigerator} title="Vorrat" value={pantry ? String(pantry.length) : undefined}>
+                Kühlschrank, Tiefkühler, Vorratsschrank
+              </Row>
+            )}
+          </Group>
           <Group title={name}>
             <Row href="/profil/kuechenhelfer" icon={Mic} title="Name & Stimme" value={name}>
               Wie {name} heißt und klingt

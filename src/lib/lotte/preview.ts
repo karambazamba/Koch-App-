@@ -7,6 +7,7 @@ import { MEAL_TIME_LABELS, personLabel } from "../einstellungen/profile";
 import { SECTIONS } from "../einkauf/shoppingList";
 import { REMINDERS, repeatLabel, weekdayShort, type CalendarEntry } from "../aufgaben/model";
 import { clockLabel } from "../aufgaben/answers";
+import { describeHomeChange, tileLabel } from "../core/homeLayout";
 import { formatPantryItem, PANTRY_PLACES } from "../essen/pantry";
 import { formatWeekRange, planForWeek } from "../essen/weekPlan";
 import {
@@ -185,8 +186,19 @@ function describe(
       return { opId: op.id, group: "Kochbuch", order: 10_000, label: "neues Rezept", before: null, after: op.recipe.title, category: op.recipe.category, newRecipe: op.recipe };
     case "add_shopping": {
       const section = SECTIONS.find((s) => s.value === op.section)?.label ?? "";
-      return { opId: op.id, group: "Einkaufsliste", order: 20_000, label: section, before: null, after: [op.amount, op.name].filter(Boolean).join(" ") };
+      const forWhat = [op.day ? `für ${op.day}` : "", op.dish ? `(${op.dish})` : ""].filter(Boolean).join(" ");
+      return { opId: op.id, group: "Einkaufsliste", order: 20_000, label: section, before: null, after: [op.amount, op.name, forWhat].filter(Boolean).join(" ") };
     }
+    case "remove_shopping":
+      return { opId: op.id, group: "Einkaufsliste", order: 20_100, label: "von der Liste", before: op.names.join(", "), after: "weg" };
+    case "clear_shopping":
+      return { opId: op.id, group: "Einkaufsliste", order: 20_100, label: `Woche ${formatWeekRange(op.weekStart)}`, before: "alles", after: "Liste leer" };
+    case "clear_week":
+      return { opId: op.id, group: "Wochenplan", order: -1, label: formatWeekRange(op.weekStart), before: "alle Gerichte", after: "Woche wieder frei" };
+    case "home":
+      return { opId: op.id, group: "Startseite", order: 30_000, label: tileLabel(op.change.tile), before: null, after: describeHomeChange(op.change) };
+    case "undo_last":
+      return { opId: op.id, group: "Rückgängig", order: -2, label: "letzte Änderung", before: null, after: "zurücknehmen" };
     case "add_pantry": {
       const place = PANTRY_PLACES.find((p) => p.value === op.place);
       return { opId: op.id, group: "Vorrat", order: 21_000, label: place?.label ?? "Vorrat", before: null, after: formatPantryItem(op) };

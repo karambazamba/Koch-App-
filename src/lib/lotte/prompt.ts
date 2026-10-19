@@ -48,6 +48,13 @@ Ohne Druck – immer:
 - Erleichterung statt Leistung: nicht übertrieben loben, nichts vorrechnen, nicht vergleichen.
 - Bei Gesundheitsfragen keine Diagnosen – freundlich auf Arzt oder Ärztin verweisen. Nie Aussagen über Körper, Gewicht oder Kalorien.
 
+Grundregel: Alles, was du anlegst oder änderst, kann die Familie selbst sehen, antippen, ändern und entfernen – und alles, was sie in der App tun kann, kannst du auch (inklusive Rückgängig). Die Startseite bleibt clean.
+- Startseite: startseite_anpassen ("Mach die Einkaufsliste wieder klein" → einkauf kompakt, "Nimm die Einkaufsliste von der Startseite" → ausblenden). Standard ist kompakt.
+- Wochenplan: wochenplan_anzeigen, wochenplan_aendern, wochenplan_loeschen. Er steht in der App unter Essen (rechte Seite).
+- Einkaufsliste: einkaufsliste_anzeigen, einkaufsliste_hinzufuegen (mit fuer_tag und gericht), einkaufsliste_entfernen, einkaufsliste_leeren. Zutaten der geplanten Gerichte kommen automatisch auf die Liste.
+- "Mach das rückgängig": rueckgaengig.
+- Sag nach dem Anlegen kurz, was du gemacht hast und wo es steht ("Wochenplan steht unter Essen, die Einkaufsliste hat 11 Sachen für die Woche, davon 4 für heute").
+
 Termine und Aufgaben (Werkzeuge vorhanden):
 - Du erkennst selbst: Termin = feste Uhrzeit an einem Tag ("Morgen um 9 Steuerberater") → termin_anlegen. Aufgabe = irgendwann, an einem Wunschtag oder bis zu einer Frist ("Bis Mittwoch Kita-Formular", "Jeden Dienstag Müll rausbringen") → aufgabe_anlegen.
 - Raum: Arbeit bei Job-Themen (Meeting, Büro, Kunde, Präsentation, Chef, Kollegen), sonst Familie. Etikett nur, wenn naheliegend (Kita, Schule, Arzt, Café, Sport, Steuern, Geburtstag).
@@ -182,6 +189,7 @@ export function contextText(
     `Datumsliste: ${Array.from({ length: 14 }, (_, i) => addDays(todayIso, i)).map((iso) => `${SHORT_DAY.format(new Date(`${iso}T00:00:00Z`))} ${iso}`).join(", ")}`,
     "",
     calendarContext(data.entries ?? [], todayIso),
+    data.home ? `Startseite (Reihenfolge): ${data.home.map((t) => `${t.id} ${t.visible ? t.size : "ausgeblendet"}`).join(", ")}` : "",
     "",
     todayMealText(data, todayIso),
     `Einkaufstag: ${shoppingDay} (eine Planungswoche beginnt am Einkaufstag)`,

@@ -39,8 +39,8 @@ export function FoodPage({ data, minutes }: { data: HomeData; minutes: number })
     <div className="flex flex-col gap-4">
       <DishHero data={data} day={main} when={over ? "Morgen" : "Heute"} onSwap={() => main && setSwap(main)} />
 
-      <section className="flex flex-col gap-2" aria-label="Diese Woche">
-        <h2 className="text-lg font-bold">Diese Woche</h2>
+      <section className="flex flex-col gap-2" aria-label="Wochenplan">
+        <h2 className="text-lg font-bold">Wochenplan</h2>
         <ul className={`${CARD} flex flex-col divide-y divide-line overflow-hidden`}>
           {list.map((date) => {
             const day = meals?.get(date);

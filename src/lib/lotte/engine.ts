@@ -13,6 +13,7 @@ import type { ToolContext } from "./tools";
 import { runRegisteredTool, toolDefinitions } from "./toolset";
 import { berlinTime } from "../core/now";
 import { sanitizeEntry, type CalendarEntry } from "../aufgaben/model";
+import { sanitizeHome } from "../core/homeLayout";
 
 /** Eine Modell-Anfrage; `onText` bekommt den Antworttext Stück für Stück */
 export type CreateMessage = (params: Anthropic.Beta.MessageCreateParamsNonStreaming, onText?: (delta: string) => void) => Promise<Anthropic.Beta.BetaMessage>;
@@ -34,7 +35,7 @@ export type EngineEvents = { onText?: (delta: string) => void; onRound?: () => v
 
 export class AssistantInputError extends Error {}
 
-const OP_TYPES = new Set(["set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry"]);
+const OP_TYPES = new Set(["set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last"]);
 
 /** Anfrage prüfen und auf das Nötige kürzen */
 export function parseRequest(body: unknown): AssistantRequest {
@@ -61,6 +62,7 @@ export function parseRequest(body: unknown): AssistantRequest {
     pantry: (Array.isArray(b.data?.pantry) ? b.data.pantry : [])
       .filter((p) => Boolean(p) && typeof p === "object" && typeof p.name === "string")
       .slice(0, 80),
+    home: sanitizeHome(b.data?.home),
     entries: (Array.isArray(b.data?.entries) ? b.data.entries : []).map(sanitizeEntry).filter((e): e is CalendarEntry => e !== null).slice(0, 400),
   };
   const pending = (Array.isArray(b.pending) ? b.pending : []).filter(
@@ -103,6 +105,16 @@ function pendingSummary(ops: ChangeOp[]): string {
         return `Vorrat: ${op.name}`;
       case "add_wish":
         return `Wunsch: ${op.who} – ${op.dish}`;
+      case "remove_shopping":
+        return `Von der Einkaufsliste: ${op.names.join(", ")}`;
+      case "clear_shopping":
+        return "Einkaufsliste leeren";
+      case "clear_week":
+        return `Wochenplan ab ${op.weekStart} leeren`;
+      case "home":
+        return `Startseite: ${op.change.tile} ${op.change.action}`;
+      case "undo_last":
+        return "Letzte Änderung zurücknehmen";
       case "upsert_entry":
         return `${op.isNew ? "Neu" : "Ändern"} (${op.entry.typ}): ${op.entry.data.title}`;
       case "remove_entry":

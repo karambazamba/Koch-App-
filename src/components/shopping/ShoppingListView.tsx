@@ -225,7 +225,7 @@ export function ShoppingListView() {
             </ul>
           </section>
         )}
-        {todayItems.length > 0 && grouped.length > 0 && <h2 className="-mb-1 mt-1 px-1 text-xs font-bold uppercase tracking-wider text-muted">Einkaufsliste</h2>}
+        {todayItems.length > 0 && grouped.length > 0 && <h2 className="-mb-1 mt-1 px-1 text-xs font-bold uppercase tracking-wider text-muted">Für die Woche</h2>}
 
         {due.length > 0 && (
           <StapleBar staples={due} onTake={(st) => takeStaple(weekStart, st)} onSkip={(st) => skipStaple(weekStart, st)} onManage={() => setStaplesOpen(true)} />
