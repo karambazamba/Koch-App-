@@ -5,7 +5,9 @@
 import type { RecipeCategory } from "../essen/cookbook";
 import { MEAL_TIME_LABELS, personLabel } from "../einstellungen/profile";
 import { SECTIONS } from "../einkauf/shoppingList";
-import { appointmentTime } from "../core/appointments";
+import { REMINDERS, repeatLabel, weekdayShort, type CalendarEntry } from "../aufgaben/model";
+import { clockLabel } from "../aufgaben/answers";
+import { describeHomeChange, tileLabel } from "../core/homeLayout";
 import { formatPantryItem, PANTRY_PLACES } from "../essen/pantry";
 import { formatWeekRange, planForWeek } from "../essen/weekPlan";
 import {
@@ -184,17 +186,45 @@ function describe(
       return { opId: op.id, group: "Kochbuch", order: 10_000, label: "neues Rezept", before: null, after: op.recipe.title, category: op.recipe.category, newRecipe: op.recipe };
     case "add_shopping": {
       const section = SECTIONS.find((s) => s.value === op.section)?.label ?? "";
-      return { opId: op.id, group: "Einkaufsliste", order: 20_000, label: section, before: null, after: [op.amount, op.name].filter(Boolean).join(" ") };
+      const forWhat = [op.day ? `für ${op.day}` : "", op.dish ? `(${op.dish})` : ""].filter(Boolean).join(" ");
+      return { opId: op.id, group: "Einkaufsliste", order: 20_000, label: section, before: null, after: [op.amount, op.name, forWhat].filter(Boolean).join(" ") };
     }
+    case "remove_shopping":
+      return { opId: op.id, group: "Einkaufsliste", order: 20_100, label: "von der Liste", before: op.names.join(", "), after: "weg" };
+    case "clear_shopping":
+      return { opId: op.id, group: "Einkaufsliste", order: 20_100, label: `Woche ${formatWeekRange(op.weekStart)}`, before: "alles", after: "Liste leer" };
+    case "clear_week":
+      return { opId: op.id, group: "Wochenplan", order: -1, label: formatWeekRange(op.weekStart), before: "alle Gerichte", after: "Woche wieder frei" };
+    case "home":
+      return { opId: op.id, group: "Startseite", order: 30_000, label: tileLabel(op.change.tile), before: null, after: describeHomeChange(op.change) };
+    case "undo_last":
+      return { opId: op.id, group: "Rückgängig", order: -2, label: "letzte Änderung", before: null, after: "zurücknehmen" };
     case "add_pantry": {
       const place = PANTRY_PLACES.find((p) => p.value === op.place);
       return { opId: op.id, group: "Vorrat", order: 21_000, label: place?.label ?? "Vorrat", before: null, after: formatPantryItem(op) };
     }
     case "add_wish":
       return { opId: op.id, group: "Wünsche", order: 22_000, label: `Wunsch von ${op.who}`, before: null, after: `${op.dish} 🎉 – ganz oben bei den Ideen` };
-    case "add_appointment": {
-      const day = new Intl.DateTimeFormat("de-DE", { weekday: "long", timeZone: "UTC" }).format(new Date(`${op.date}T00:00:00Z`));
-      return { opId: op.id, group: "Termine", order: 23_000, label: `${day} ${dayDate(op.date)}`, before: null, after: [op.title, appointmentTime(op)].filter(Boolean).join(" ") };
+    case "upsert_entry": {
+      const e = op.entry;
+      const before = state.entries?.find((x) => x.id === e.id);
+      const whenOf = (e: CalendarEntry) => e.typ === "termin" ? `${weekdayShort(e.data.date)} ${dayDate(e.data.date)} · ${clockLabel(e.data.start)}${e.data.end ? `–${clockLabel(e.data.end)}` : ""}` : e.data.due ? `bis ${weekdayShort(e.data.due)} ${dayDate(e.data.due)}` : e.data.date ? `${weekdayShort(e.data.date)} ${dayDate(e.data.date)}${e.data.time ? ` · ${clockLabel(e.data.time)}` : ""}` : "ohne Tag";
+      const when = whenOf(e);
+      const extra = [repeatLabel(e.data.repeat, e.typ === "termin" ? e.data.date : e.data.date), e.data.reminder !== "aus" ? `Erinnerung ${REMINDERS.find((r) => r.value === e.data.reminder)?.short ?? ""}` : "", e.raum === "arbeit" ? "Arbeit" : ""].filter(Boolean);
+      return {
+        opId: op.id,
+        group: e.typ === "termin" ? "Termine" : "Aufgaben",
+        order: e.typ === "termin" ? 23_000 : 23_500,
+        label: op.isNew || !before ? when : e.data.title,
+        before: !op.isNew && before ? whenOf(before) : null,
+        after: op.isNew || !before ? [e.data.title, ...extra].join(" · ") : [when, ...extra].join(" · "),
+      };
     }
+    case "remove_entry":
+      return { opId: op.id, group: "Termine & Aufgaben", order: 24_000, label: op.onlyDate ? `nur ${weekdayShort(op.onlyDate)} ${dayDate(op.onlyDate)}` : "löschen", before: op.title, after: "gelöscht" };
+    case "done_entry":
+      return { opId: op.id, group: "Termine & Aufgaben", order: 24_000, label: "abhaken", before: null, after: `${op.title} ✓ erledigt` };
+    case "move_entry":
+      return { opId: op.id, group: "Termine & Aufgaben", order: 24_000, label: "verschieben", before: `${op.title} · ${weekdayShort(op.date)} ${dayDate(op.date)}`, after: `${weekdayShort(op.to)} ${dayDate(op.to)}${op.time ? ` · ${clockLabel(op.time)}` : ""}` };
   }
 }

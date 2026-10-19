@@ -10,12 +10,12 @@ import { useHomeData } from "./useHomeData";
 import { useMinutes, useRatingCandidate } from "./useRatingCandidate";
 import { mealIsOver, useCookedDays } from "@/lib/essen/mealDone";
 import { useLegacyFeatures } from "@/lib/core/features";
-import { CalmMealCard, ShoppingCard } from "./CalmHome";
+import { HomePager } from "@/components/alltag/HomePager";
 
 /**
- * Startseite "Heute". Neustart (Standard): Kopf, schlichte Karte fürs Essen,
- * Einkaufsliste als Karte und die Eingabeleiste – ruhig und leer, Lotte legt
- * auf Zuruf an. Mit "Alte Funktionen anzeigen (Test)" die frühere Startseite:
+ * Startseite. Neustart (Standard): drei Seiten Woche · Heute · Essen
+ * (HomePager) mit der Lotte-Leiste unten. Mit "Alte Funktionen anzeigen
+ * (Test)" die frühere Startseite:
  * genau sechs Elemente: Kopf, Heute-Karte, Lottes Platz
  * (höchstens EINE Sache), drei Kacheln, "Spontan kochen" und die
  * Eingabeleiste. Passt ohne Scrollen aufs iPhone. Neue Funktionen bekommen
@@ -35,6 +35,9 @@ export function HomeView() {
   const legacy = useLegacyFeatures();
   const lotte = useLottePlace(legacy ? data : null, { welcome: welcome && Boolean(legacy) });
 
+  // Neustart: drei Seiten Woche · Heute · Essen
+  if (data && legacy === false) return <HomePager data={data} />;
+
   return (
     <>
       <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-2.5 px-4 pb-[calc(max(0.75rem,env(safe-area-inset-bottom))+7.75rem)] pt-[calc(env(safe-area-inset-top)+0.75rem)]">
@@ -53,12 +56,7 @@ export function HomeView() {
                 {lotte}
                 <BentoCards data={data} />
               </>
-            ) : (
-              <>
-                {paused ? <PauseCard data={data} /> : <CalmMealCard data={data} when={over ? "morgen" : "heute"} />}
-                <ShoppingCard />
-              </>
-            )}
+            ) : null}
           </>
         )}
       </main>

@@ -10,7 +10,7 @@ Lotte legt an und räumt wieder weg. Die Assistentin hat einen Namen, den die
 Familie wählt (Standard: Lotte).
 
 ## 1. Ruhig und leer
-- Heute + Woche sind die Hauptansichten (Woche kommt in Phase 2). Die
+- Drei Seiten: Woche · Heute · Essen (Heute ist die Startseite). Die
   Oberfläche ist ruhig und leer; nichts steht herum, was nicht gebraucht wird.
 - Keine Überladung: Alles Neue startet versteckt (Feature-Flags,
   `src/lib/core/features.ts`) und wird nur bei Bedarf gezeigt.
@@ -24,6 +24,15 @@ Familie wählt (Standard: Lotte).
 - Machen statt fragen: Kleine Dinge selbst erledigen und kurz melden (mit
   "Rückgängig"). Rückfragen nur bei echten Entscheidungen. Änderungen der KI
   immer als Vorschau mit "Übernehmen".
+
+## 2a. Volle Kontrolle (Grundregel)
+- Alles, was der Assistent anlegt oder ändert, muss ich selbst sehen,
+  antippen, ändern und entfernen können. Und alles, was ich in der App tun
+  kann, kann auch der Assistent tun – inklusive rückgängig machen. Die
+  Startseite bleibt clean.
+- Nichts auf der Startseite ist eine Sackgasse: jede Kachel öffnet ihre Seite.
+- Nutzt Lotte eine versteckte Funktion, wird sie freigeschaltet und kurz
+  gesagt, wo sie steht.
 
 ## 3. Räume
 - "Familie" ist gemeinsam (alle im Haushalt sehen es), "Arbeit" ist
@@ -63,10 +72,15 @@ Familie wählt (Standard: Lotte).
   Motiv im orangen Kreis #F26B21, "plain" = nur die Sprechblase im orangen
   Knopf) – in Lotte-Leiste, Chat-Kopf, Knopf und Push (`lottePush()`,
   `LOTTE_PUSH_ICON`). Manifest theme_color #EE5F14 (`BRAND_COLOR`).
-- Startseite (Neustart): Kopf (Logo, Datum, Zahnrad), schlichte Heute-Karte
-  fürs Essen (`CalmMealCard`), Einkaufsliste als Karte (`ShoppingCard`, beide
-  in `src/components/home/CalmHome.tsx`), unten die Leiste "Sag Lotte, was
-  ansteht …". Neue Funktionen bekommen keinen eigenen Platz, solange sie nicht
+- Schrift Plus Jakarta Sans, große fette Überschriften, weiße Karten
+  (Radius 22px) auf #F7F4EF. Seiten-Leiste oben als Segment-Schalter
+  (`bg-segment`, aktiv weiß). Lotte-Leiste unten dunkel (`bg-bar` #1F1B17,
+  `text-on-bar`) mit orangem Avatar links und weißem Mikrofon-Knopf rechts –
+  auf allen drei Seiten gleich und immer sichtbar. Familie = Orange
+  (`bg-accent`), Arbeit = Blau (`bg-work`). Alles über Tokens, Warm/Nacht/
+  Frisch.
+- Startseite (`HomePager`, `src/components/alltag/`): siehe "Drei Seiten"
+  und "Startseite anpassen" unten. Neue Funktionen bekommen keinen eigenen Platz, solange sie nicht
   gebraucht werden.
 
 ## 8. Technik-Regeln
@@ -92,7 +106,7 @@ Familie wählt (Standard: Lotte).
 ## Roadmap
 - Phase 1: Konten + Haushalt (Supabase) – Anmeldung, Haushalt mit Mitgliedern,
   gemeinsame Daten; Umzug der Einträge ins einheitliche Modell.
-- Phase 2: Heute/Woche mit Terminen, Aufgaben und Push.
+- Phase 2: Heute/Woche mit Terminen, Aufgaben (v0.10 lokal fertig) und Push.
 - Phase 3: Essen + Einkauf neu.
 - Phase 4: Post (Briefe, Rechnungen erfassen).
 - Phase 5: Foto → Termin/Aufgabe.
@@ -119,7 +133,7 @@ Familie wählt (Standard: Lotte).
   Datenmodell `entries.ts`, Navigation, Toast, Ansicht, Aktivität, Termine,
   Wetter), `lotte` (KI-Client, Engine, Werkzeuge, Prompt, Sprache ein/aus,
   Chat-Vorschläge), `essen` (Plan, Rezepte, Ideen, Vorrat, Tipps, Backstube …),
-  `einkauf` (Einkaufsliste, Plus), `aufgaben` (leer, vorbereitet),
+  `einkauf` (Einkaufsliste, Plus), `aufgaben` (Termine & Aufgaben),
   `einstellungen` (Profil, Kennenlernen, Schnellstart-Logik). Oberfläche in
   `src/components/` nach Bildschirmen.
 - Feature-Flags an EINER Stelle (`src/lib/core/features.ts`): versteckt sind
@@ -158,6 +172,92 @@ Familie wählt (Standard: Lotte).
   liefern nur Vorschläge mit "Übernehmen". Token-Verbrauch und grobe Kosten
   je Anfrage im Server-Log ("Lotte Tokens", nur Zahlen, nie Inhalte). Kein
   Untertitel mehr im Chat, nur der Name.
+
+## Termine, Aufgaben und die drei Seiten (v0.10)
+
+- Datenmodell `src/lib/aufgaben/` (Speicher `wasgibts.eintraege` v1, im
+  einheitlichen Eintrags-Modell): Termin = Titel, Datum, Startzeit, opt.
+  Ende, Ort/Notiz, Raum, Etikett, Wiederholung (täglich/wöchentlich/
+  monatlich/Wochentage), Erinnerung (aus/15/30/60/Vorabend), wer. Aufgabe =
+  Titel, opt. Wunschtag oder Frist, opt. Uhrzeit, Raum, Etikett,
+  Wiederholung, Erinnerung, erledigt (`doneOn` bzw. `doneDates`). Reine
+  Logik in `model.ts` (`itemsForDay`, `setDone`, `moveItem` – bei Serien nur
+  dieser Tag + Einzelkopie, `removeItem(onlyDate)`, `setReminder`). Alte
+  Termine (`wasgibts.termine`) werden einmalig übernommen
+  (`migrateOldTermine`, im KitchenHelper), alte Daten bleiben liegen.
+- Unerledigte einmalige Aufgaben rutschen still auf heute: kein
+  "überfällig", nur "von gestern"/"von Montag"/"von letzter Woche".
+  Vergangene Termine und Serien-Tage verschwinden leise.
+- Seiten (`HomePager`): Leiste "Woche · Heute · Essen", Wechsel per Tipp
+  oder Wischen (nicht in Feldern/`data-no-swipe`), `?seite=woche|essen` per
+  `router.replace`, Scrollhöhe je Seite gemerkt, keine Seiten-Punkte.
+  - Heute (`TodayPage`): "Guten Morgen/Hallo/Guten Abend, <Name>." (bis 11/
+    18 Uhr), Datum, EIN Satz von Lotte (`todaySentence`, z. B. "Ruhiger Tag:
+    2 Termine, eine Aufgabe und abends Gemüsepfanne.") oder eine fällige
+    Erinnerung ("In 30 Minuten: Jonne abholen.", `dueReminder`, "Okay" =
+    gesehen), höchstens ein Knopf. Karte "Heute" (`DayItemsCard`): nach
+    Uhrzeit, ohne Uhrzeit darunter; Zeile = Uhrzeit, farbiger Strich, Titel,
+    Unterzeile (Etikett, von gestern, Frist, Erinnerung, Wiederholung),
+    Kästchen (Animation + Vibration). Max. 3, "+ N weitere"; Erledigtes
+    eingeklappt "✓ N erledigt"; alles erledigt: "Alles erledigt für heute
+    🌙"; ohne Einträge keine Karte. Antippen = Menü (Erledigt · Auf morgen ·
+    Erinnerung ändern · Bearbeiten · Löschen, bei Serien "Nur diesen Tag"/
+    "Alle"), immer mit Rückgängig-Toast. Kacheln Essen (⇄ andere Idee,
+    "Nehmen") und Einkauf ("+" mit Tippen/Einsprechen und "Oft gekauft"-
+    Chips aus der Stammliste). Ab 16 Uhr gestrichelte Vorschau "Morgen".
+    Keine Gesamtzähler auf Karten.
+  - Woche (`WeekPage`): Filter Alles · Familie · Arbeit, Tageskarten ab heute
+    (14 Tage, "Weitere Wochen"), links Wochentag + Datum groß, rechts
+    Einträge mit Punkt und Uhrzeit, darunter 🍽 Essen; heute umrandet, leer
+    "frei". Antippen → `/tag?datum=` (`DayView`, wie Heute für dieses Datum,
+    Zurück → Woche). Plus → Formular (`EntryForm`).
+  - Essen (`FoodPage`): groß das Gericht von heute (nach dem Essen morgen)
+    mit Uhrzeit, Dauer, "alles im Haus" bzw. "noch: …", "Rezept ansehen"
+    (`/kochbuch/rezept` ist dafür immer sichtbar) und "Tauschen"; "Diese
+    Woche" als Liste (Antippen = tauschen mit 3 Ideen, Lotte fragen oder Tag
+    freimachen; leer "noch frei – Lotte fragen" – nie "offen"); Einkauf als
+    Chips. Nutzt die bestehenden Essensdaten (`useMeals`).
+- Lotte (Bereich "alltag", `src/lib/lotte/calendarTools.ts`): termin_anlegen,
+  termin_aendern, termin_loeschen, aufgabe_anlegen, aufgabe_aendern,
+  aufgabe_erledigen, aufgabe_verschieben, tag_anzeigen, woche_anzeigen – als
+  Vorschau mit "Übernehmen" (Ops `upsert_entry`, `remove_entry`,
+  `done_entry`, `move_entry`, gespeichert in `save()`). Kontext je Anfrage:
+  Datumsliste der nächsten 14 Tage und alle Einträge der nächsten 7 Tage mit
+  ids (`contextLines`). Lotte erkennt Termin vs. Aufgabe, Familie/Arbeit und
+  Etikett selbst und fragt nur bei Unklarheit.
+- Startseite anpassen (v0.11, `src/lib/core/homeLayout.ts`, Speicher
+  `wasgibts.startseite` v1): Kacheln termine/essen/einkauf/morgen mit
+  Reihenfolge, Größe (kompakt = Titel + eine Zeile Vorschau, z. B. "Einkauf ·
+  11 Sachen: Petersilie, Gurke …"; ausführlich = mehr) und sichtbar.
+  Standard: Termine ausführlich, alles andere kompakt. Langes Drücken auf
+  eine Kachel oder Einstellungen → "Startseite anpassen" (`/profil/startseite`,
+  `HomeCustomizer`: ziehen, Kompakt/Ausführlich, ausblenden, "+ zeigen").
+  Jede Kachel ist antippbar: Essen → Essen-Seite (Wochenplan), Einkauf →
+  `/einkaufsliste`, Termine → "Tag öffnen" (`/tag`), Morgen → Tag morgen.
+- Lotte kann alles, was man selbst kann (`homeTools.ts`):
+  startseite_anpassen, wochenplan_anzeigen/aendern/loeschen,
+  einkaufsliste_anzeigen/leeren/entfernen, rueckgaengig (Ops `home`,
+  `clear_week`, `clear_shopping`, `remove_shopping`, `undo_last`). Ohne KI
+  sofort mit Rückgängig (`homeChat.ts`, vor der KI): "Mach die Einkaufsliste
+  wieder klein/groß", "Nimm die Einkaufsliste von der Startseite", "Zeig mir
+  den Wochenplan", "Lösch den Wochenplan wieder", "Nimm Milch von der Liste",
+  "Leer die Einkaufsliste", "Mach das rückgängig".
+- Rückgängig überall (`src/lib/core/undo.ts`): jede Änderung von Lotte (KI
+  übernommen oder lokal) legt ihr Zurücknehmen ab – Toast-Knopf ca. 10 s,
+  danach "Mach das rückgängig" (letzte noch gültige, in dieser Sitzung).
+- Sichtbar machen: Übernimmt man einen Wochenplan, wird "wochenplan"
+  freigeschaltet (`unlockFeature`, `wasgibts.funktionen.unlocked`), die
+  Essen-Kachel eingeblendet und Lotte sagt "Dein Wochenplan steht rechts unter
+  Essen." sowie "Einkaufsliste: 11 Sachen für die Woche, davon 4 für heute."
+  Vorrat/Rezepte werden beim ersten Nutzen freigeschaltet und erscheinen in
+  den Einstellungen.
+- Einkaufsliste: Einträge merken sich Gericht (`ManualItem.dish`) und Tag;
+  oben "Für heute", darunter "Für die Woche". Lotte gibt `fuer_tag`/`gericht`
+  mit.
+- Ohne KI (und im Testmodus): `parseCalendar()` (`parse.ts`) erkennt Tag,
+  Uhrzeit, Frist, Wiederholung, Erinnerung, Raum, Etikett und die Befehle
+  verschieben/löschen/erledigt/"Was steht … an?"/"Hab ich … Zeit?";
+  `calendarChat()` antwortet und trägt sofort ein (mit Rückgängig).
 
 ## Design-System
 

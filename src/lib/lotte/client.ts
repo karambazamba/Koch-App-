@@ -5,7 +5,11 @@
 // Funktionen, mit denen auch die Vorschau rechnet.
 
 import { useEffect, useState } from "react";
-import { replaceAppointments, loadAppointments } from "../core/appointments";
+import { replaceEntries } from "../aufgaben/store";
+import { applyHomeChange, loadHomeTiles, saveHomeTiles } from "../core/homeLayout";
+import { unlockFeature } from "../core/features";
+import { pushUndo, undoLast } from "../core/undo";
+import { buildShoppingList } from "../einkauf/shoppingList";
 import { replaceRecipes } from "../essen/cookbook";
 import { replaceMealPlans } from "../essen/mealPlan";
 import { effectivePlanStyle } from "../einstellungen/profile";
@@ -13,7 +17,7 @@ import { addPantryItems, loadPantry, replacePantry } from "../essen/pantry";
 import { replaceShoppingLists } from "../einkauf/shoppingList";
 import { addWish, loadWishes, restoreWishes } from "../essen/wishes";
 import { replaceWeekPlans, toIsoDate, weekStartFor } from "../essen/weekPlan";
-import { applyOps, selectedOps, type AssistantData, type ChangeOp } from "./ops";
+import { applyOps, selectedOps, weekOf, type AssistantData, type ChangeOp } from "./ops";
 import {
   ACCESS_HEADER,
   ASSISTANT_ENDPOINT,
@@ -191,8 +195,9 @@ export function useAssistantStatus(enabled: boolean): LotteStatus | undefined {
 }
 
 /**
- * Nur das Nötige mitschicken: Profil, diese und nächste Woche, Kochbuch ohne
- * Zubereitungsschritte und der Vorrat – keine Einkaufslisten, keine alten Wochen.
+ * Nur das Nötige mitschicken: Profil, diese und nächste Woche (Plan und
+ * Einkaufsliste), Kochbuch ohne Zubereitungsschritte, Vorrat, Startseite und
+ * Termine – keine alten Wochen.
  */
 function trimmed(data: AssistantData, currentWeekStart: string, pantry: AssistantData["pantry"]): AssistantData {
   const pick = <T,>(weeks: Record<string, T>) => Object.fromEntries(Object.entries(weeks).filter(([k]) => k >= currentWeekStart));
@@ -206,9 +211,17 @@ function trimmed(data: AssistantData, currentWeekStart: string, pantry: Assistan
     weekPlans: pick(data.weekPlans),
     mealPlans: pick(data.mealPlans),
     recipes,
-    shopping: {},
+    // Einkaufslisten dieser und der nächsten Wochen (Lotte kann sie lesen, leeren, Einträge entfernen)
+    shopping: pick(data.shopping),
+    home: data.home,
     // Kompakt: Name, Menge, Ort, seit wann; Gekauftes ("b:") als "gekauft" markiert
     pantry: (pantry ?? []).slice(0, 80).map(({ id, name, amount, unit, place, addedAt }) => ({ id: id.startsWith("b:") ? "gekauft" : "", name, amount, unit, place, addedAt })),
+    // Termine/Aufgaben: ohne Vergangenes (erledigte Aufgaben älter als 2 Wochen, einmalige Termine vor gestern)
+    entries: (data.entries ?? []).filter((e) => {
+      const old = toIsoDate(new Date(now().getTime() - 14 * 86_400_000));
+      if (e.typ === "termin") return Boolean(e.data.repeat) || e.data.date >= old;
+      return !e.data.doneOn || e.data.doneOn >= old;
+    }),
   };
 }
 
@@ -324,9 +337,11 @@ function save(data: AssistantData, before: AssistantData) {
   if (data.weekPlans !== before.weekPlans) replaceWeekPlans(data.weekPlans);
   if (data.recipes !== before.recipes) replaceRecipes(data.recipes);
   if (data.shopping !== before.shopping) replaceShoppingLists(data.shopping);
+  if (data.entries !== before.entries && data.entries) replaceEntries(data.entries);
+  if (data.home !== before.home && data.home) saveHomeTiles(data.home);
 }
 
-/** Vorrat, Wunsch-Ideen und Termine eintragen; liefert das Rückgängigmachen */
+/** Vorrat und Wunsch-Ideen eintragen; liefert das Rückgängigmachen */
 function commitSideOps(ops: ChangeOp[]): () => void {
   const today = toIsoDate(now());
   const undo: (() => void)[] = [];
@@ -342,29 +357,60 @@ function commitSideOps(ops: ChangeOp[]): () => void {
     for (const w of wishes) addWish({ personId: w.personId, who: w.who, dish: w.dish }, today);
     undo.push(() => restoreWishes(before));
   }
-  const appointments = ops.filter((op) => op.type === "add_appointment");
-  if (appointments.length) {
-    const before = loadAppointments();
-    replaceAppointments(
-      [...before, ...appointments.map(({ id, date, time, until, title, personId, who }) => ({ id, date, time, until: until || undefined, title, personId, who }))],
-      today,
-    );
-    undo.push(() => replaceAppointments(before));
-  }
   return () => undo.forEach((u) => u());
 }
 
-/** Ausgewählte Änderungen übernehmen; liefert eine Funktion zum Rückgängigmachen */
-export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set<string>, prompt: string): () => void {
+export type CommitResult = {
+  /** Zurücknehmen (wirkt einmal; auch über "Mach das rückgängig") */
+  undo: () => void;
+  /** Kurze Sätze, was passiert ist und wo man es findet */
+  notes: string[];
+};
+
+/** "11 Sachen für die Woche, davon 4 für heute" (aus der Einkaufsliste nach dem Übernehmen) */
+function shoppingNote(data: AssistantData, before: AssistantData): string | null {
+  const today = now();
+  const weekStart = weekStartFor(today, data.profile.shoppingDay || "Montag");
+  const count = (d: AssistantData) => buildShoppingList(weekOf(d, weekStart), d.recipes, d.shopping[weekStart]).items.filter((i) => !i.hidden && !i.checked);
+  const after = count(data);
+  if (after.length === count(before).length) return null;
+  const todayName = new Intl.DateTimeFormat("de-DE", { weekday: "long" }).format(today);
+  const forToday = after.filter((i) => i.days.includes(todayName)).length;
+  const sachen = (n: number) => `${n} ${n === 1 ? "Sache" : "Sachen"}`;
+  return `Einkaufsliste: ${sachen(after.length)} für die Woche${forToday ? `, davon ${forToday} für heute` : ""}.`;
+}
+
+/** Ausgewählte Änderungen übernehmen; liefert Rückgängig und kurze Hinweise */
+export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set<string>, prompt: string): CommitResult {
   const chosen = selectedOps(ops, selected);
+  // "Mach das rückgängig": die letzte Änderung zurücknehmen (sonst nichts)
+  if (chosen.some((op) => op.type === "undo_last")) {
+    const label = undoLast();
+    return { undo: () => {}, notes: [label ? `Zurückgenommen: ${label}` : "Da gibt's gerade nichts zurückzunehmen."] };
+  }
   const applied = applyOps(current, chosen, { prompt }).data;
   // Spontan: neue Gerichte gelten als "aus den Ideen gewählt" – sonst wären sie im ausgeblendeten Plan unsichtbar
   const spontan = effectivePlanStyle(current.profile, weekStartFor(now(), current.profile.shoppingDay || "Montag")) === "spontan";
-  const data = spontan ? { ...applied, mealPlans: markSpontan(applied.mealPlans, current.mealPlans) } : applied;
+  let data = spontan ? { ...applied, mealPlans: markSpontan(applied.mealPlans, current.mealPlans) } : applied;
+  const notes: string[] = [];
+  // Was Lotte anlegt, muss man sehen können: versteckte Bereiche freischalten und sagen, wo es steht
+  if (chosen.some((op) => op.type === "set_meal" || op.type === "update_week")) {
+    unlockFeature("wochenplan");
+    const tiles = data.home ?? loadHomeTiles();
+    if (!tiles.find((t) => t.id === "essen")?.visible) data = { ...data, home: applyHomeChange(tiles, { tile: "essen", action: "zeigen" }) };
+    notes.push("Dein Wochenplan steht rechts unter Essen.");
+  }
+  if (chosen.some((op) => op.type === "add_pantry") && unlockFeature("vorrat")) notes.push("Den Vorrat findest du jetzt in den Einstellungen unter Vorrat.");
+  if (chosen.some((op) => op.type === "add_recipe") && unlockFeature("rezepte")) notes.push("Eure Rezepte findest du jetzt in den Einstellungen unter Rezepte.");
+  if (chosen.some((op) => op.type === "set_meal" || op.type === "add_shopping")) {
+    const note = shoppingNote(data, current);
+    if (note) notes.push(note);
+  }
   save(data, current);
   const undoSide = commitSideOps(chosen);
-  return () => {
+  const undo = pushUndo(prompt ? `„${prompt.slice(0, 60)}“` : "die letzte Änderung", () => {
     save(current, data);
     undoSide();
-  };
+  });
+  return { undo, notes };
 }

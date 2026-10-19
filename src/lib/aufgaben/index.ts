@@ -1,14 +1,10 @@
-// Aufgaben (Phase 2): noch leer, vorbereitet. Aufgaben werden Einträge im
-// einheitlichen Modell (core/entries.ts) mit typ "aufgabe" – Lotte legt sie
-// auf Zuruf an und räumt sie wieder weg.
+// Termine und Aufgaben: Modell (model.ts), Speicher (store.ts), Erinnerungen
+// (reminders.ts) und Satz-Erkennung ohne KI (parse.ts).
 
-import type { Entry } from "../core/entries";
-
-export type TaskData = {
-  title: string;
-  /** Fällig am ("YYYY-MM-DD"), optional – ohne Datum einfach "irgendwann" */
-  due?: string;
-  done?: boolean;
-};
-
-export type Task = Entry<TaskData> & { typ: "aufgabe" };
+export * from "./model";
+export * from "./store";
+export * from "./reminders";
+export * from "./parse";
+export * from "./answers";
+export * from "./chat";
+export * from "./summary";

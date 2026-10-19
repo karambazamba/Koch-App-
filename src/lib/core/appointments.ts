@@ -1,70 +1,33 @@
-// Termine des Tages auf der Heute-Karte (später Premium: Kalender-Anbindung).
-// Quelle vorerst: per Gespräch notierte Termine ("Jonne hat Dienstag bis 17:30
-// Turnen"), gespeichert unter `wasgibts.termine`. Vergangene verschwinden leise.
+// Termine des Tages für die alte Heute-Karte (HeroCard, nur mit "Alte
+// Funktionen anzeigen"). Quelle sind jetzt die Termine im neuen Modell
+// (aufgaben/, `wasgibts.eintraege`); die alten Termine aus `wasgibts.termine`
+// wurden dorthin übernommen.
 
-import { createLocalStore } from "./localStore";
-import { useExternalStore } from "./useExternalStore";
+import { itemsForDay } from "../aufgaben/model";
+import { useEntries } from "../aufgaben/store";
+import { todayIso } from "./now";
 
 export type Appointment = {
   id: string;
   /** "HH:MM" */
   time: string;
-  /** true = "bis 17:30" (z. B. Turnen bis 17:30), sonst Beginn */
+  /** true = "bis 17:30", sonst Beginn */
   until?: boolean;
   title: string;
   /** Person aus dem Profil (für den Farbpunkt) */
   personId: string | null;
-  /** Wer bringt/holt, z. B. "Lisa bringt" */
   who: string;
 };
 
-/** Gespeicherter Termin mit Tag */
-export type StoredAppointment = Appointment & { date: string };
-
-type AppointmentStore = { version: 1; items: StoredAppointment[] };
-
-const DATE = /^\d{4}-\d{2}-\d{2}$/;
-const TIME = /^\d{2}:\d{2}$/;
-
-function migrate(raw: unknown): AppointmentStore | null {
-  if (!raw || typeof raw !== "object") return null;
-  const d = raw as Partial<AppointmentStore>;
-  if (d.version !== 1 || !Array.isArray(d.items)) return null;
-  return {
-    version: 1,
-    items: d.items
-      .filter((a): a is StoredAppointment => Boolean(a) && typeof a.id === "string" && typeof a.title === "string" && DATE.test(String(a.date)))
-      .map((a) => ({
-        id: a.id,
-        date: a.date,
-        time: TIME.test(String(a.time)) ? a.time : "",
-        until: a.until === true || undefined,
-        title: a.title,
-        personId: typeof a.personId === "string" ? a.personId : null,
-        who: typeof a.who === "string" ? a.who : "",
-      })),
-  };
-}
-
-const store = createLocalStore("wasgibts.termine", migrate);
-const EMPTY: StoredAppointment[] = [];
-
-export function loadAppointments(): StoredAppointment[] {
-  return store.load()?.items ?? EMPTY;
-}
-
-/** Alle Termine ersetzen (Übernehmen/Rückgängig); Vergangenes vor `today` fällt weg */
-export function replaceAppointments(items: StoredAppointment[], today?: string) {
-  store.save({ version: 1, items: today ? items.filter((a) => a.date >= today) : items });
-}
-
-const byTime = (a: Appointment, b: Appointment) => (a.time || "99").localeCompare(b.time || "99");
+const EMPTY: Appointment[] = [];
 
 /** Termine an einem Tag ("YYYY-MM-DD"), nach Uhrzeit */
 export function useAppointments(date: string | undefined): Appointment[] {
-  const data = useExternalStore(store.subscribe, store.load, () => null);
-  if (!date || !data) return EMPTY;
-  return data.items.filter((a) => a.date === date).sort(byTime);
+  const entries = useEntries();
+  if (!date || !entries) return EMPTY;
+  return itemsForDay(entries, date, todayIso())
+    .filter((i) => i.entry.typ === "termin" && !i.done)
+    .map((i) => ({ id: i.key, time: i.time ?? "", title: i.title, personId: i.entry.typ === "termin" ? (i.entry.data.who?.[0] ?? null) : null, who: "" }));
 }
 
 /** "bis 17:30" bzw. "17:30" */

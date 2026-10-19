@@ -18,6 +18,11 @@ import { noteUserAction } from "@/lib/core/activity";
 import { isAddPersonRequest } from "@/lib/einstellungen/onboarding/recognize";
 import { GuidedChat } from "@/components/onboarding/GuidedChat";
 import { LotteAvatar } from "@/components/LotteAvatar";
+import { calendarChat, changeEntries, loadEntries } from "@/lib/aufgaben";
+import { parseHomeCommand } from "@/lib/lotte/homeChat";
+import { changeHome, describeHomeChange } from "@/lib/core/homeLayout";
+import { pushUndo, undoLast } from "@/lib/core/undo";
+import { commitOps } from "@/lib/lotte/client";
 import { askAssistant, FALLBACK_TEXT, saveAccessCode, useAssistantStatus } from "@/lib/lotte/client";
 import {
   saveSpeechSettings,
@@ -405,11 +410,28 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       return addManualItem(weekStart, { name: item.name, amount: item.amount, section: sectionFor(item.name) });
     });
     const names = items.map((i) => `${i.amount ? `${i.amount} ` : ""}${i.name}${i.shop ? ` (${i.shop})` : ""}`);
+    const remove = pushUndo(`${names.join(", ")} auf der Liste`, () => removeManualItems(weekStart, ids));
     return {
       text: `Steht drauf ✓ ${names.join(", ")}`,
       undo: () => {
-        removeManualItems(weekStart, ids);
+        remove();
         setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig gemacht – wieder runter von der Liste.", local: true }] }));
+      },
+    };
+  };
+
+  /** Termine und Aufgaben ohne KI: "Morgen um 9 Steuerberater", "Was steht diese Woche an?" – sofort, mit Rückgängig */
+  const calendarReply = (t: string): { text: string; undo?: () => void } | null => {
+    if (!data || !today) return null;
+    const reply = calendarChat(t, loadEntries(), toIsoDate(today), data.profile.persons);
+    if (!reply) return null;
+    if (!reply.change) return { text: reply.text };
+    const undo = pushUndo(reply.text, changeEntries(reply.change));
+    return {
+      text: reply.text,
+      undo: () => {
+        undo();
+        setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig gemacht.", local: true }] }));
       },
     };
   };
@@ -599,7 +621,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       return true;
     }
     const quick = isQuickRequest(t) ? quickReply() : null;
-    const reply = shoppingReply(t) ?? (quick ? { text: quick, undo: undefined } : null);
+    const reply = shoppingReply(t) ?? calendarReply(t) ?? (quick ? { text: quick, undo: undefined } : null);
     if (reply) {
       setInput("");
       setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text: reply.text, local: true, undo: reply.undo }] }));
@@ -631,9 +653,70 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     return false;
   };
 
+  /** Antwort von Lotte (lokal) mit optionalem Rückgängig ins Gespräch */
+  const localReply = (t: string, text: string, undo?: () => void) => {
+    setInput("");
+    setChat((c) => ({
+      ...c,
+      turns: [
+        ...c.turns,
+        { role: "user", text: t, local: true },
+        {
+          role: "assistant",
+          local: true,
+          text,
+          ...(undo
+            ? {
+                undo: () => {
+                  undo();
+                  setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig gemacht – alles wie vorher.", local: true }] }));
+                },
+              }
+            : {}),
+        },
+      ],
+    }));
+  };
+
+  /** "Mach die Einkaufsliste wieder klein", "Lösch den Wochenplan", "Mach das rückgängig" … */
+  const homeCommand = (t: string): boolean => {
+    if (!data || !today) return false;
+    const cmd = parseHomeCommand(t);
+    if (!cmd) return false;
+    if (cmd.kind === "undo") {
+      const label = undoLast();
+      localReply(t, label ? `Zurückgenommen ✓ ${label}` : "Da gibt's gerade nichts zurückzunehmen.");
+      return true;
+    }
+    if (cmd.kind === "show") {
+      setInput("");
+      router.push(cmd.target === "wochenplan" ? "/?seite=essen" : cmd.target === "einkaufsliste" ? "/einkaufsliste" : "/profil/startseite");
+      onClose();
+      return true;
+    }
+    if (cmd.kind === "home") {
+      const undo = pushUndo(describeHomeChange(cmd.change), changeHome(cmd.change));
+      localReply(t, `Erledigt ✓ ${describeHomeChange(cmd.change)}`, undo);
+      return true;
+    }
+    const weekStart = planningWeekStart(today, data.profile.shoppingDay || DEFAULT_SHOPPING_DAY).weekStart;
+    const op: ChangeOp =
+      cmd.kind === "clear_week"
+        ? { id: "lokal-woche", type: "clear_week", weekStart: weekStartFor(today, data.profile.shoppingDay || DEFAULT_SHOPPING_DAY) }
+        : cmd.kind === "clear_shopping"
+          ? { id: "lokal-liste", type: "clear_shopping", weekStart }
+          : { id: "lokal-weg", type: "remove_shopping", weekStart, names: cmd.names };
+    const { undo } = commitOps(data, [op], new Set([op.id]), t);
+    const text = cmd.kind === "clear_week" ? "Erledigt ✓ Der Wochenplan ist wieder leer – die Rezepte bleiben." : cmd.kind === "clear_shopping" ? "Erledigt ✓ Die Einkaufsliste ist leer." : `Erledigt ✓ ${cmd.names.join(", ")} ${cmd.names.length === 1 ? "ist" : "sind"} von der Liste.`;
+    localReply(t, text, undo);
+    return true;
+  };
+
   /** Regeln, die vor der KI greifen (Einstellungen, Supermarkt, Backen, "Wir lieben …") */
   const localFirst = (t: string): boolean => {
     if (!data || !today) return false;
+    // Startseite, Wochenplan, Einkaufsliste, "Mach das rückgängig" – sofort, mit Rückgängig
+    if (homeCommand(t)) return true;
     // "Lies mir vor", "Nicht mehr vorlesen", "Sprich langsamer" (gilt für dieses Gerät)
     const reading = readingChange(t, speechSettings);
     if (reading) {

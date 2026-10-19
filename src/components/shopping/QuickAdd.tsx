@@ -97,6 +97,12 @@ function QuickAddSheet({
   const [unsure, setUnsure] = useState<QuickAddUnsure[]>([]);
   const [hint, setHint] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  // "Oft gekauft": Stammartikel, am häufigsten gekaufte zuerst (angetippte verschwinden)
+  const [picked, setPicked] = useState<string[]>([]);
+  const frequent = settings.staples
+    .filter((st) => st.active && !picked.includes(st.id))
+    .sort((a, b) => b.purchases.length - a.purchases.length)
+    .slice(0, 8);
 
   const add = (name: string, amount: string, shop: string) => {
     const id = addManualItem(weekStart, { name, amount, section: sectionFor(name) });
@@ -224,6 +230,33 @@ function QuickAddSheet({
             <button type="button" onClick={() => onClose(added)} className="self-start text-sm font-semibold text-muted underline">
               Fertig
             </button>
+          </div>
+        )}
+        {frequent.length > 0 && unsure.length === 0 && (
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-semibold text-muted">Oft gekauft</p>
+            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" data-no-swipe>
+              {frequent.map((st) => (
+                <button
+                  key={st.id}
+                  type="button"
+                  onClick={() => {
+                    const id = add(st.name, st.amount, "");
+                    setAdded((a) => [...a, id]);
+                    setPicked((p) => [...p, st.id]);
+                  }}
+                  className={`${chipClass(false)} shrink-0`}
+                >
+                  <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                  {st.name}
+                </button>
+              ))}
+            </div>
+            {picked.length > 0 && (
+              <p className="text-sm font-semibold text-accent-strong" role="status">
+                {sachen(added.length)} hinzugefügt ✓
+              </p>
+            )}
           </div>
         )}
         {hint && (

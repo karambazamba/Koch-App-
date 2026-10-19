@@ -8,6 +8,8 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { WEEKDAYS } from "../einstellungen/profile";
 import type { CreateMessage } from "./engine";
 import { dateForDay } from "./tools";
+import { parseCalendar, type Draft } from "../aufgaben/parse";
+import { findByTitle, sanitizeEntry, type CalendarEntry } from "../aufgaben/model";
 import { EMPTY_STOCK_HINT, ingredientsFromQuestion, isCookIdeasRequest, stockIdeas, stockItem, usesLine } from "../essen/dishIdeas";
 
 /** Namen aus "Vorrat (aktuell): Hack 500 g (Kühlschrank), Paprika (Kühlschrank)" im Kontext */
@@ -125,7 +127,6 @@ function everyday(t: string) {
   const dish = s.match(new RegExp(`^(${DAY_WORDS})\\s+gibt(?:'|’)?s\\s+(?:es\\s+)?(.+)$`, "i"));
   const pantry = s.match(/^ich hab(?:e)?\s+(?:noch\s+)?(\d+(?:[.,]\d+)?)?\s*(portionen|portion|g|kg|stück|becher|packungen)?\s*(.+?)\s+(eingefroren|im tiefkühler|im kühlschrank|im schrank)$/i);
   const wish = s.match(new RegExp(`^([A-ZÄÖÜ][a-zäöüß]+)\\s+wünscht sich\\s+(?!(?:am\\s+)?(?:${WEEKDAYS.join("|")})\\b)(.+)$`, "i"));
-  const appt = s.match(new RegExp(`^([A-ZÄÖÜ][a-zäöüß]+)\\s+hat\\s+(${DAY_WORDS})\\s+(bis|um|ab)\\s+(\\d{1,2})(?::(\\d{2}))?\\s*(?:uhr\\s+)?(.+)$`, "i"));
   return {
     dish: dish ? { tag: dish[1].toLowerCase() === "heute" || dish[1].toLowerCase() === "morgen" ? dish[1].toLowerCase() : cap(dish[1]), gericht: dish[2].trim() } : null,
     pantry: pantry
@@ -137,9 +138,6 @@ function everyday(t: string) {
         }
       : null,
     wish: wish ? { person: wish[1], gericht: wish[2].trim() } : null,
-    appt: appt
-      ? { person: appt[1], tag: /^(heute|morgen)$/i.test(appt[2]) ? appt[2].toLowerCase() : cap(appt[2]), bis: appt[3].toLowerCase() === "bis", uhrzeit: `${appt[4].padStart(2, "0")}:${appt[5] ?? "00"}`, titel: cap(appt[6].trim()) }
-      : null,
     need: s.match(/^(?:wir|ich)\s+brauch(?:en|e)\s+(?:noch\s+)?(.+)$/i)?.[1] ?? null,
     quick: /nur (noch )?schnelle/i.test(s),
   };
@@ -253,6 +251,8 @@ function mockModel(): CreateMessage {
       if (memory) return text(memory);
       const leftovers = leftoverReply(last.content, system);
       if (leftovers) return text(leftovers);
+      const calendar = calendarUses(last.content, system);
+      if (calendar) return calendar;
       const latest = last.content;
       const prevAssistant = [...msgs].reverse().find((x, i) => i > 0 && x.role === "assistant" && typeof x.content === "string");
       const day = everyday(latest);
@@ -272,7 +272,6 @@ function mockModel(): CreateMessage {
       }
       if (day.pantry) return tools([{ name: "vorrat_hinzufuegen", input: { sachen: [day.pantry] } }]);
       if (day.wish) return tools([{ name: "wunsch_merken", input: day.wish }]);
-      if (day.appt) return tools([{ name: "termin_notieren", input: day.appt }]);
       if (day.need) {
         const artikel = day.need.split(/,|\bund\b/).map((n) => n.trim()).filter(Boolean).map((name) => ({ name: cap(name) }));
         return tools([{ name: "einkaufsliste_hinzufuegen", input: { woche: planningWeek, artikel } }]);
@@ -455,6 +454,10 @@ function mockModel(): CreateMessage {
       return uses.length ? tools(uses) : text("Ich habe nichts gefunden, was ich ändern könnte – sag mir gern genauer, was du möchtest.");
     }
 
+    // Termine gelesen → kurz antworten
+    const shown = prevUses.find((u) => u.name === "woche_anzeigen" || u.name === "tag_anzeigen");
+    if (shown) return text(calendarAnswer(String(resultFor(shown.name) ?? ""), shown.input as Record<string, unknown>));
+
     // 3. Neue Rezepte angelegt → eintragen
     const created = prevUses.filter((u) => u.name === "rezept_erstellen");
     if (created.length > 0) {
@@ -468,6 +471,7 @@ function mockModel(): CreateMessage {
 
     // 4. Fertig
     const ok = results.filter((r) => !r.is_error).length;
+    if (ok > 0 && prevUses.some((u) => CALENDAR_WRITE.has(u.name))) return text("Steht bereit – tipp unten auf Übernehmen. (Testmodus)");
     return text(
       ok > 0
         ? "Ich habe dir einen Vorschlag gemacht (Testmodus). Schau ihn dir unten an – du kannst einzelne Punkte abwählen und dann übernehmen."
@@ -489,4 +493,81 @@ function memoryReply(latest: string, msgs: Anthropic.Beta.BetaMessageParam[]): s
   }
   if (/^ich hei(ß|ss)e (\p{L}+)/iu.test(latest)) return `Schön, dich kennenzulernen, ${latest.match(/^ich hei(?:ß|ss)e (\p{L}+)/iu)![1]}!`;
   return null;
+}
+
+// --- Termine und Aufgaben (Testmodus: Satz-Erkennung ohne KI) --------------------
+
+const CALENDAR_WRITE = new Set(["termin_anlegen", "termin_aendern", "termin_loeschen", "aufgabe_anlegen", "aufgabe_aendern", "aufgabe_erledigen", "aufgabe_verschieben"]);
+
+/** Einträge aus der Kontext-Liste "- Mo 2026-10-19: 09:00 Titel [id=…; termin, familie] | …" */
+function contextEntries(system: string): { date: string; time: string | null; title: string; id: string; typ: string; repeat: boolean }[] {
+  return system
+    .split("\n")
+    .filter((l) => /^- \S+ \d{4}-\d{2}-\d{2}: /.test(l))
+    .flatMap((l) => {
+      const date = l.match(/\d{4}-\d{2}-\d{2}/)![0];
+      return [...l.slice(l.indexOf(": ")).matchAll(/(?:\| |: )(?:(\d{2}:\d{2}) )?([^|[]+?) \[id=([^;]+); (termin|aufgabe)([^\]]*)\]/g)].map((m) => ({
+        date,
+        time: m[1] ?? null,
+        title: m[2].trim(),
+        id: m[3],
+        typ: m[4],
+        repeat: m[5].includes("wiederkehrend"),
+      }));
+    });
+}
+
+function draftInput(draft: Draft): { name: string; input: Record<string, unknown> } {
+  const d = draft.data;
+  const wiederholung = d.repeat ? { art: d.repeat.kind, ...(d.repeat.kind === "wochentage" ? { tage: d.repeat.days } : {}) } : undefined;
+  const common = { titel: d.title, raum: draft.raum, erinnerung: d.reminder, ...(d.label ? { etikett: d.label } : {}), ...(wiederholung ? { wiederholung } : {}) };
+  if (draft.typ === "termin") return { name: "termin_anlegen", input: { ...common, datum: draft.data.date, start: draft.data.start, ...(draft.data.who ? { personen: draft.data.who } : {}) } };
+  const a = draft.data;
+  return { name: "aufgabe_anlegen", input: { ...common, ...(a.date ? { tag: a.date } : {}), ...(a.due ? { frist: a.due } : {}), ...(a.time ? { uhrzeit: a.time } : {}) } };
+}
+
+function calendarUses(latest: string, system: string): Anthropic.Beta.BetaMessage | null {
+  const today = system.match(/^Heute: .*\((\d{4}-\d{2}-\d{2})\)/m)?.[1];
+  if (!today) return null;
+  // Personen aus dem Profil ("- Jonne; Kind, 6 J.") – Name als Kennung
+  const persons = [...system.matchAll(/^- ([^;\n]+); (?:Kind|erwachsen)/gm)].map((m) => ({ id: m[1].trim(), name: m[1].trim() }));
+  const cmd = parseCalendar(latest, today, persons);
+  if (!cmd) return null;
+  if (cmd.kind === "create") return tools([draftInput(cmd.draft)]);
+  if (cmd.kind === "show") return tools([cmd.days > 1 ? { name: "woche_anzeigen", input: { ab: cmd.from, tage: cmd.days, label: cmd.label } } : { name: "tag_anzeigen", input: { datum: cmd.from, label: cmd.label } }]);
+  if (cmd.kind === "free") return tools([{ name: "tag_anzeigen", input: { datum: cmd.date, frei: [cmd.from, cmd.to], label: cmd.label } }]);
+  // Ändern: Eintrag über den Titel finden (ungefähr)
+  const known = contextEntries(system);
+  const asEntries = known
+    .map((k) => sanitizeEntry({ id: k.id, typ: k.typ, data: { title: k.title, date: k.date, start: k.time ?? "08:00", reminder: "aus" } }))
+    .filter((e): e is CalendarEntry => e !== null);
+  const hit = findByTitle(asEntries, cmd.query)[0];
+  const found = hit ? known.find((k) => k.id === hit.id)! : null;
+  if (!found) return text("Den Eintrag finde ich gerade nicht – wie heißt er genau? (Testmodus)");
+  if (cmd.kind === "move") {
+    if (found.typ === "termin") return tools([{ name: "termin_aendern", input: { id: found.id, datum: cmd.to, ...(cmd.time ? { start: cmd.time } : {}), ...(found.repeat ? { nur_am: found.date } : {}) } }]);
+    return tools([{ name: "aufgabe_verschieben", input: { id: found.id, auf: cmd.to, ...(found.repeat ? { am: found.date } : {}) } }]);
+  }
+  if (cmd.kind === "delete") return tools([found.typ === "termin" ? { name: "termin_loeschen", input: { id: found.id } } : { name: "aufgabe_aendern", input: { id: found.id, loeschen: true } }]);
+  return tools([{ name: "aufgabe_erledigen", input: { id: found.id, am: found.date } }]);
+}
+
+/** Kurze Antwort aus der gelesenen Liste (Testmodus) */
+function calendarAnswer(content: string, input: Record<string, unknown>): string {
+  const label = typeof input.label === "string" ? input.label : "Da";
+  const cap1 = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+  const days = contextEntries(content.split("\n").map((l) => (l.startsWith("- ") ? l : `- ${l}`)).join("\n"));
+  const open = days.filter((d) => !/erledigt/.test(d.title));
+  if (Array.isArray(input.frei)) {
+    const [from, to] = input.frei as string[];
+    const busy = open.filter((d) => d.typ === "termin" && d.time && d.time >= from && d.time < to);
+    return busy.length ? `${cap1(label)} hast du ${busy.map((b) => `${b.time!.replace(/^0/, "")} ${b.title}`).join(" und ")}. (Testmodus)` : `Ja, ${label} ist frei. (Testmodus)`;
+  }
+  if (!open.length) return `${cap1(label)} steht nichts an – schön ruhig. (Testmodus)`;
+  const byDay = [...new Set(open.map((d) => d.date))].slice(0, 5).map((date) => {
+    const items = open.filter((d) => d.date === date).map((d) => `${d.time ? `${d.time.replace(/^0/, "")} ` : ""}${d.title}`);
+    const wd = new Intl.DateTimeFormat("de-DE", { weekday: "short", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`)).replace(".", "");
+    return input.datum ? items.join(", ") : `${wd}: ${items.join(", ")}`;
+  });
+  return `${cap1(label)}: ${byDay.join(". ")}. (Testmodus)`;
 }

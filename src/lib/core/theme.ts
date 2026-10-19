@@ -6,7 +6,7 @@ import type { AppTheme } from "../einstellungen/profile";
 
 /** Hintergrundfarbe je Ansicht – für die Statusleiste und die Vorschau-Karten */
 export const THEME_COLORS: Record<Exclude<AppTheme, "auto">, { background: string; surface: string; accent: string; ink: string; muted: string; line: string }> = {
-  warm: { background: "#f8f4ee", surface: "#ffffff", accent: "#f26b21", ink: "#1f1b16", muted: "#6f675f", line: "#ece6de" },
+  warm: { background: "#f7f4ef", surface: "#ffffff", accent: "#f26b21", ink: "#1f1b16", muted: "#6f675f", line: "#ece6de" },
   nacht: { background: "#17191c", surface: "#23262b", accent: "#ff8a4c", ink: "#f2eee9", muted: "#aaa49c", line: "#353a41" },
   frisch: { background: "#f3f6f2", surface: "#ffffff", accent: "#3f8f5b", ink: "#18211b", muted: "#5f6b62", line: "#dde6dc" },
 };

@@ -15,6 +15,8 @@ import { toIsoDate, useToday, useWeekPlans } from "@/lib/essen/weekPlan";
 import { recordOpen } from "@/lib/core/activity";
 import type { SpontanFilter } from "@/lib/essen/spontan";
 import type { AssistantData } from "@/lib/lotte/ops";
+import { migrateOldTermine, useEntries } from "@/lib/aufgaben/store";
+import { useHomeTiles } from "@/lib/core/homeLayout";
 import { helperName } from "@/lib/einstellungen/profile";
 import { LotteAvatar } from "@/components/LotteAvatar";
 import { HelperPanel, spontanStartTurn, type ChatState } from "./HelperPanel";
@@ -71,12 +73,17 @@ export function KitchenHelper() {
   const mealPlans = useMealPlans();
   const recipes = useRecipes();
   const shopping = useShoppingLists();
+  const entries = useEntries();
+  const home = useHomeTiles();
   const data: AssistantData | null | undefined =
-    profile === undefined || !weekPlans || !mealPlans || !recipes || !shopping
+    profile === undefined || !weekPlans || !mealPlans || !recipes || !shopping || !entries || !home
       ? undefined
       : profile === null
         ? null
-        : { profile, weekPlans, mealPlans, recipes, shopping };
+        : { profile, weekPlans, mealPlans, recipes, shopping, entries, home };
+
+  // Alte Termine (wasgibts.termine) einmalig ins neue Modell übernehmen
+  useEffect(() => migrateOldTermine(), []);
 
   // App geöffnet (für "Willkommen zurück" nach 3+ Tagen)
   const today = useToday();
@@ -114,7 +121,7 @@ export function KitchenHelper() {
   const apply = (selected: Set<string>) => {
     if (!data || !chat.proposal) return;
     const prompt = [...chat.turns].reverse().find((t) => t.role === "user")?.text ?? "";
-    const run = commitOps(data, chat.proposal.ops, selected, prompt);
+    const { undo: run, notes } = commitOps(data, chat.proposal.ops, selected, prompt);
     // Gewählte Gerichte → deren Zutaten zählen als Vorliebe
     const chosen = chat.proposal.ops
       .filter((op) => selected.has(op.id))
@@ -126,7 +133,7 @@ export function KitchenHelper() {
             : [],
       );
     learnLikes(likesFromIngredients(chosen), LIKE_WEIGHTS.chosen);
-    setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text: "Übernommen ✓", local: true }], proposal: null }));
+    setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text: ["Übernommen ✓", ...notes].join(" "), local: true }], proposal: null }));
     setUndo({ run, key: Date.now() });
     setUndone(false);
   };
