@@ -4,6 +4,8 @@ import { BackButton } from "@/components/BackButton";
 
 type Props = {
   title: string;
+  /** Knopf rechts neben dem Titel (z. B. rundes "+") */
+  action?: React.ReactNode;
   /** Wohin "Zurück" führt, wenn es in der App keinen Verlauf gibt */
   backHref?: string;
 };
@@ -12,7 +14,7 @@ type Props = {
  * Einheitliche Kopfzeile aller Unterseiten: Zurück-Pfeil (eine Ebene zurück,
  * wie die Geste), großer Titel und rechts das App-Icon als Weg zur Startseite.
  */
-export function PageHeader({ title, backHref = "/" }: Props) {
+export function PageHeader({ title, backHref = "/", action }: Props) {
   return (
     <header
       data-sticky-header
@@ -20,6 +22,7 @@ export function PageHeader({ title, backHref = "/" }: Props) {
     >
       <BackButton fallback={backHref} />
       <h1 className="min-w-0 flex-1 truncate text-[26px] font-extrabold leading-tight tracking-tight">{title}</h1>
+      {action}
       {/* 44px Tippfläche um das 32px-Icon */}
       <Link
         href="/"

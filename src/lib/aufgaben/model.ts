@@ -5,8 +5,10 @@
 //
 // Regeln:
 // - Termin = feste Uhrzeit an einem Tag (optional wiederkehrend).
-// - Aufgabe = irgendwann, an einem Wunschtag oder bis zu einer Frist.
-// - Unerledigte (einmalige) Aufgaben rutschen still auf heute – kein
+// - Aufgabe = zu erledigen: an einem Wunschtag, bis zu einer Frist, "diese
+//   Woche" oder ohne alles ("Irgendwann" – steht dann an keinem Tag).
+// - Notizen (nur festhalten) liegen getrennt in `../notizen`.
+// - Unerledigte (einmalige) Aufgaben mit Tag rutschen still auf heute – kein
 //   "überfällig", nur ein kleiner Hinweis "von gestern"/"von letzter Woche".
 // - Verpasste Vorkommen wiederkehrender Einträge und vergangene Termine
 //   verschwinden leise.
@@ -55,6 +57,8 @@ export type AufgabeData = {
   date?: string;
   /** Frist "YYYY-MM-DD" ("bis Mittwoch") */
   due?: string;
+  /** Zeitraum: Montag der Woche ("diese Woche") – ohne Tag und Frist */
+  week?: string;
   /** "HH:MM", optional */
   time?: string;
   label?: string;
@@ -89,6 +93,8 @@ export type DayItem = {
   /** Frist: "bis Mi" */
   dueLabel: string | null;
   repeat: Repeat | null;
+  /** Nur in der Aufgaben-Übersicht: wann ("Do", "diese Woche", "nächste Woche") */
+  when?: string | null;
 };
 
 const WEEKDAYS_SHORT = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
@@ -155,6 +161,12 @@ export function dueLabel(due: string, date: string): string {
 /** Anfangstag einer Aufgabe (Wunschtag, sonst Tag des Anlegens) */
 export const taskStart = (a: AufgabeData, created: string) => a.date ?? created.slice(0, 10);
 
+/** Montag der Woche eines Tages */
+export const mondayOf = (iso: string) => addDays(iso, -weekdayIndex(iso));
+
+/** Tag, an dem eine einmalige Aufgabe steht: Wunschtag, sonst Frist (ohne beides: an keinem Tag) */
+const taskAnchor = (a: AufgabeData) => a.date ?? a.due ?? null;
+
 /**
  * Alle Einträge an einem Tag. `today` bestimmt, wo unerledigte Aufgaben
  * landen: einmalige Aufgaben von früher erscheinen heute (mit "von …"), an
@@ -196,13 +208,16 @@ export function itemsForDay(entries: CalendarEntry[], date: string, today: strin
       // Erledigt: an dem Tag, an dem es abgehakt wurde
       on = a.doneOn === date;
       done = true;
-    } else if (date === today) {
-      on = start <= today;
-      if (on && start < today) carried = carriedLabel(start, today);
-      done = false;
     } else {
-      on = date > today && start === date;
+      // Ohne Tag und Frist ("Irgendwann", "diese Woche") steht eine Aufgabe an keinem Tag –
+      // nur "diese Woche" von letzter Woche rutscht still auf heute
+      const anchor = taskAnchor(a) ?? (a.week && a.week < mondayOf(today) ? a.week : null);
       done = false;
+      if (!anchor) on = false;
+      else if (date === today) {
+        on = anchor <= today;
+        if (on && anchor < today) carried = carriedLabel(anchor, today);
+      } else on = date > today && anchor === date;
     }
     if (!on) continue;
     items.push({
@@ -241,6 +256,127 @@ export function itemsForRange(entries: CalendarEntry[], today: string, days: num
     const date = addDays(today, i);
     return { date, items: itemsForDay(entries, date, today) };
   });
+}
+
+// --- Aufgaben-Übersicht und Startseite ------------------------------------------
+
+export type TaskGroup = "heute" | "woche" | "spaeter" | "irgendwann" | "erledigt";
+
+export const TASK_GROUPS: { id: TaskGroup; label: string }[] = [
+  { id: "heute", label: "Heute dran" },
+  { id: "woche", label: "Diese Woche" },
+  { id: "spaeter", label: "Später" },
+  { id: "irgendwann", label: "Irgendwann" },
+  { id: "erledigt", label: "Erledigt" },
+];
+
+const shortDay = (iso: string) => {
+  const [, m, d] = iso.split("-");
+  return `${WEEKDAYS_SHORT[weekdayIndex(iso)]} ${Number(d)}.${Number(m)}.`;
+};
+
+/** Nächstes Vorkommen einer Serie ab `from` (bis 60 Tage) */
+function nextOccurrence(a: AufgabeData, start: string, from: string): string | null {
+  if (!a.repeat) return null;
+  for (let i = 0; i < 60; i++) {
+    const d = addDays(from, i);
+    if (repeatsOn(a.repeat, start, d) && !a.skipDates?.includes(d) && !a.doneDates?.includes(d)) return d;
+  }
+  return null;
+}
+
+function taskItem(entry: Aufgabe, date: string, extra: Partial<DayItem>): DayItem {
+  const a = entry.data;
+  return {
+    key: `${entry.id}@${date}`,
+    entry,
+    date,
+    time: a.time || null,
+    end: null,
+    title: a.title,
+    label: a.label || null,
+    room: entry.raum,
+    reminder: a.reminder,
+    done: false,
+    carried: null,
+    dueLabel: null,
+    repeat: a.repeat ?? null,
+    when: null,
+    ...extra,
+  };
+}
+
+/**
+ * Alle Aufgaben, gruppiert: Heute dran (heute, Frist heute, von früher
+ * mitgenommen), Diese Woche (Tag/Frist bis Sonntag, Zeitraum "diese Woche"),
+ * Später, Irgendwann (ohne Tag und Frist), Erledigt (letzte 14 Tage).
+ */
+export function taskOverview(entries: CalendarEntry[], today: string): Record<TaskGroup, DayItem[]> {
+  const groups: Record<TaskGroup, DayItem[]> = { heute: [], woche: [], spaeter: [], irgendwann: [], erledigt: [] };
+  const sunday = addDays(mondayOf(today), 6);
+  const thisMonday = mondayOf(today);
+  const recent = addDays(today, -14);
+  for (const entry of entries) {
+    if (entry.typ !== "aufgabe") continue;
+    const a = entry.data;
+    if (a.repeat) {
+      const start = taskStart(a, entry.erstellt);
+      if (a.doneDates?.includes(today) && repeatsOn(a.repeat, start, today)) groups.erledigt.push(taskItem(entry, today, { done: true }));
+      const next = nextOccurrence(a, start, today);
+      if (!next) continue;
+      const item = taskItem(entry, next, { when: next === today ? null : shortDay(next) });
+      groups[next === today ? "heute" : next <= sunday ? "woche" : "spaeter"].push(item);
+      continue;
+    }
+    if (a.doneOn) {
+      if (a.doneOn >= recent) groups.erledigt.push(taskItem(entry, a.doneOn, { done: true }));
+      continue;
+    }
+    const anchor = taskAnchor(a);
+    if (anchor) {
+      if (anchor <= today) {
+        groups.heute.push(taskItem(entry, today, { carried: anchor < today ? carriedLabel(anchor, today) : null, dueLabel: a.due && a.due >= today ? dueLabel(a.due, today) : null }));
+      } else {
+        const item = taskItem(entry, anchor, { dueLabel: a.due ? dueLabel(a.due, today) : null, when: a.due ? null : shortDay(anchor) });
+        groups[anchor <= sunday ? "woche" : "spaeter"].push(item);
+      }
+      continue;
+    }
+    if (a.week) {
+      if (a.week < thisMonday) groups.heute.push(taskItem(entry, today, { carried: carriedLabel(a.week, today) }));
+      else if (a.week === thisMonday) groups.woche.push(taskItem(entry, today, { when: "diese Woche" }));
+      else groups.spaeter.push(taskItem(entry, a.week, { when: a.week === addDays(thisMonday, 7) ? "nächste Woche" : `ab ${shortDay(a.week)}` }));
+      continue;
+    }
+    groups.irgendwann.push(taskItem(entry, today, {}));
+  }
+  const byTime = (x: DayItem, y: DayItem) => Number(x.time === null) - Number(y.time === null) || (x.time ?? "").localeCompare(y.time ?? "") || x.title.localeCompare(y.title, "de");
+  // Mit Tag/Frist nach Datum, "diese Woche" ohne Tag danach
+  const byDate = (x: DayItem, y: DayItem) => Number(x.when === "diese Woche") - Number(y.when === "diese Woche") || x.date.localeCompare(y.date) || byTime(x, y);
+  groups.heute.sort((x, y) => Number(!x.dueLabel) - Number(!y.dueLabel) || byTime(x, y));
+  groups.woche.sort(byDate);
+  groups.spaeter.sort(byDate);
+  groups.irgendwann.sort((x, y) => x.entry.erstellt.localeCompare(y.entry.erstellt));
+  groups.erledigt.sort((x, y) => y.date.localeCompare(x.date));
+  return groups;
+}
+
+/** Die dringendsten Aufgaben für "Heute": heute dran, dann nächste Frist, dann "diese Woche" */
+export function urgentTasks(entries: CalendarEntry[], today: string): DayItem[] {
+  const g = taskOverview(entries, today);
+  return [...g.heute, ...g.woche];
+}
+
+/** Alle noch nicht erledigten Aufgaben (Zahl für "+ N weitere") */
+export function openTaskCount(entries: CalendarEntry[], today: string): number {
+  const g = taskOverview(entries, today);
+  return g.heute.length + g.woche.length + g.spaeter.length + g.irgendwann.length;
+}
+
+/** Termine von heute, die noch anstehen (läuft gerade oder kommt noch; ohne Ende zählt 1 Stunde) */
+export function upcomingTermine(entries: CalendarEntry[], today: string, minutesNow: number): DayItem[] {
+  const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+  return itemsForDay(entries, today, today).filter((i) => i.entry.typ === "termin" && !i.done && (i.end ? toMin(i.end) : toMin(i.time ?? "00:00") + 60) > minutesNow);
 }
 
 // --- Änderungen (rein: neue Liste zurück) -----------------------------------------
@@ -359,6 +495,7 @@ export function sanitizeEntry(raw: unknown): CalendarEntry | null {
       title: d.title.trim().slice(0, 120),
       date: typeof d.date === "string" && DATE.test(d.date) ? d.date : undefined,
       due: typeof d.due === "string" && DATE.test(d.due) ? d.due : undefined,
+      week: typeof d.week === "string" && DATE.test(d.week) ? d.week : undefined,
       time: typeof d.time === "string" && TIME.test(d.time) ? d.time : undefined,
       label,
       repeat,

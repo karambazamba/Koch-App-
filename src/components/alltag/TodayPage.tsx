@@ -6,7 +6,7 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { ArrowLeftRight, CalendarDays, Refrigerator, ShoppingCart, UtensilsCrossed } from "lucide-react";
+import { ArrowLeftRight, NotebookPen, Refrigerator, ShoppingCart, UtensilsCrossed } from "lucide-react";
 import { DEFAULT_HOME, useHomeTiles, type TileSize } from "@/lib/core/homeLayout";
 import { HomeCustomizerSheet } from "./HomeCustomizer";
 import { buzz } from "./actions";
@@ -14,7 +14,9 @@ import { LotteAvatar } from "@/components/LotteAvatar";
 import { CARD, buttonClass } from "@/components/ui/styles";
 import { QuickAddButton } from "@/components/shopping/QuickAdd";
 import { clockLabel, itemText } from "@/lib/aufgaben/answers";
-import { itemsForDay, type CalendarEntry } from "@/lib/aufgaben/model";
+import { itemsForDay, openTaskCount, upcomingTermine, urgentTasks, type CalendarEntry } from "@/lib/aufgaben/model";
+import { sortNotes, useNotes } from "@/lib/notizen";
+import { AufgabenSection, TermineSection } from "./MiniCards";
 import { dueReminder } from "@/lib/aufgaben/reminders";
 import { markReminderSeen, useSeenReminders } from "@/lib/aufgaben/store";
 import { greeting, todaySentence } from "@/lib/aufgaben/summary";
@@ -33,7 +35,6 @@ import { takeForToday } from "@/lib/essen/spontanTake";
 import { useTodayIdeas } from "@/lib/essen/useIdeas";
 import { openHelper } from "@/lib/lotte/open";
 import type { HomeData } from "@/components/home/useHomeData";
-import { DayItemsCard } from "./Items";
 import { dishOf } from "./useMeals";
 
 const DATE = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long" });
@@ -72,6 +73,74 @@ export function TodayPage({ data, entries, minutes, onOpenFood }: { data: HomeDa
   };
   const tiles = useHomeTiles();
   const [customize, setCustomize] = useState(false);
+  // Termine = feste Uhrzeit, Aufgaben = zu erledigen – je höchstens zwei Kärtchen
+  const termine = upcomingTermine(entries, data.todayIso, minutes);
+  const tasks = urgentTasks(entries, data.todayIso);
+  const moreTasks = Math.max(0, openTaskCount(entries, data.todayIso) - Math.min(2, tasks.length));
+  // Essen und Einkauf (beide kompakt, direkt hintereinander) stehen nebeneinander
+  const visible = (tiles ?? DEFAULT_HOME).filter((t) => t.visible);
+  const rows: (typeof visible)[] = [];
+  for (let i = 0; i < visible.length; i++) {
+    const a = visible[i];
+    const b = visible[i + 1];
+    const pair = b && a.size === "kompakt" && b.size === "kompakt" && new Set([a.id, b.id]).size === 2 && [a.id, b.id].every((id) => id === "essen" || id === "einkauf");
+    rows.push(pair ? [a, b] : [a]);
+    if (pair) i++;
+  }
+
+  const renderTile = (tile: (typeof visible)[number]) => (
+    <>
+      {tile.id === "termine" ? (
+        (termine.length > 0 || tasks.length > 0) && (
+          <div className="flex flex-col gap-3">
+            <TermineSection items={termine} href={`/tag?datum=${data.todayIso}`} />
+            <AufgabenSection items={tasks} more={moreTasks} />
+          </div>
+        )
+      ) : tile.id === "notizen" ? (
+        <NotesTile />
+      ) : tile.id === "essen" ? (
+        tile.size === "ausfuehrlich" ? (
+          <FoodTile data={data} dish={dish} over={over} onOpen={onOpenFood} />
+        ) : (
+          <CompactTile
+            onClick={onOpenFood}
+            label={over ? "Essen morgen" : `Essen${dish && dishClock ? ` · ${clockLabel(dishClock)}` : ""}`}
+            icon={<UtensilsCrossed className="h-4 w-4 text-accent" strokeWidth={2} aria-hidden />}
+            line={(over ? dishOf(data.tomorrow) : dish) ?? (data.day?.away ? "Heute kein Kochtag" : "Noch frei – Ideen ansehen")}
+          />
+        )
+      ) : tile.id === "einkauf" ? (
+        <ShoppingTile size={tile.size} />
+      ) : tile.id === "vorrat" ? (
+        pantryOn && <PantryTile size={tile.size} />
+      ) : (tomorrowItems.length > 0 || tomorrowDish) && (
+        tile.size === "ausfuehrlich" ? (
+          <section className="rounded-card border-2 border-dashed border-line px-4 py-3" aria-label="Morgen">
+            <Link href={`/tag?datum=${tomorrowIso}`} className="block">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-muted">Morgen</h2>
+              <ul className="mt-1 flex flex-col gap-1 text-base">
+                {tomorrowItems.slice(0, 3).map((i) => (
+                  <li key={i.key} className="truncate">
+                    {itemText(i)}
+                  </li>
+                ))}
+                {tomorrowItems.length > 3 && <li className="text-sm text-muted">und noch {tomorrowItems.length - 3} mehr</li>}
+                {tomorrowDish && <li className="truncate text-muted">🍽 {tomorrowDish}</li>}
+              </ul>
+            </Link>
+          </section>
+        ) : (
+          <section className="rounded-card border-2 border-dashed border-line" aria-label="Morgen">
+            <Link href={`/tag?datum=${tomorrowIso}`} className="flex items-center gap-2 px-4 py-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-muted">Morgen</span>
+              <span className="min-w-0 flex-1 truncate text-base">{[...tomorrowItems.map(itemText), tomorrowDish ? `🍽 ${tomorrowDish}` : ""].filter(Boolean).join(" · ")}</span>
+            </Link>
+          </section>
+        )
+      )}
+    </>
+  );
 
   return (
     <div className="flex flex-col gap-3">
@@ -109,56 +178,21 @@ export function TodayPage({ data, entries, minutes, onOpenFood }: { data: HomeDa
         }
       />
 
-      {(tiles ?? DEFAULT_HOME).filter((t) => t.visible).map((tile) => (
-        <Pressable key={tile.id} onLongPress={() => setCustomize(true)}>
-          {tile.id === "termine" ? (
-            tile.size === "ausfuehrlich" ? (
-              <DayItemsCard items={items} title="Heute" titleHref={`/tag?datum=${data.todayIso}`} />
-            ) : (
-              <CompactTile href={`/tag?datum=${data.todayIso}`} label="Termine & Aufgaben" icon={<CalendarDays className="h-4 w-4 text-accent" strokeWidth={2} aria-hidden />} line={openItems.length ? openItems.map(itemText).join(", ") : items.length ? "Alles erledigt 🌙" : "Heute nichts eingetragen"} />
-            )
-          ) : tile.id === "essen" ? (
-            tile.size === "ausfuehrlich" ? (
-              <FoodTile data={data} dish={dish} over={over} onOpen={onOpenFood} />
-            ) : (
-              <CompactTile
-                onClick={onOpenFood}
-                label={over ? "Essen morgen" : `Essen${dish && dishClock ? ` · ${clockLabel(dishClock)}` : ""}`}
-                icon={<UtensilsCrossed className="h-4 w-4 text-accent" strokeWidth={2} aria-hidden />}
-                line={(over ? dishOf(data.tomorrow) : dish) ?? (data.day?.away ? "Heute kein Kochtag" : "Noch frei – Ideen ansehen")}
-              />
-            )
-          ) : tile.id === "einkauf" ? (
-            <ShoppingTile size={tile.size} />
-          ) : tile.id === "vorrat" ? (
-            pantryOn && <PantryTile size={tile.size} />
-          ) : (tomorrowItems.length > 0 || tomorrowDish) && (
-            tile.size === "ausfuehrlich" ? (
-              <section className="rounded-card border-2 border-dashed border-line px-4 py-3" aria-label="Morgen">
-                <Link href={`/tag?datum=${tomorrowIso}`} className="block">
-                  <h2 className="text-xs font-bold uppercase tracking-wider text-muted">Morgen</h2>
-                  <ul className="mt-1 flex flex-col gap-1 text-base">
-                    {tomorrowItems.slice(0, 3).map((i) => (
-                      <li key={i.key} className="truncate">
-                        {itemText(i)}
-                      </li>
-                    ))}
-                    {tomorrowItems.length > 3 && <li className="text-sm text-muted">und noch {tomorrowItems.length - 3} mehr</li>}
-                    {tomorrowDish && <li className="truncate text-muted">🍽 {tomorrowDish}</li>}
-                  </ul>
-                </Link>
-              </section>
-            ) : (
-              <section className="rounded-card border-2 border-dashed border-line" aria-label="Morgen">
-                <Link href={`/tag?datum=${tomorrowIso}`} className="flex items-center gap-2 px-4 py-3">
-                  <span className="text-xs font-bold uppercase tracking-wider text-muted">Morgen</span>
-                  <span className="min-w-0 flex-1 truncate text-base">{[...tomorrowItems.map(itemText), tomorrowDish ? `🍽 ${tomorrowDish}` : ""].filter(Boolean).join(" · ")}</span>
-                </Link>
-              </section>
-            )
-          )}
-        </Pressable>
-      ))}
+      {rows.map((row) =>
+        row.length === 2 ? (
+          <div key={row.map((t) => t.id).join("+")} className="grid grid-cols-2 gap-2">
+            {row.map((tile) => (
+              <Pressable key={tile.id} onLongPress={() => setCustomize(true)}>
+                {renderTile(tile)}
+              </Pressable>
+            ))}
+          </div>
+        ) : (
+          <Pressable key={row[0].id} onLongPress={() => setCustomize(true)}>
+            {renderTile(row[0])}
+          </Pressable>
+        ),
+      )}
       {customize && <HomeCustomizerSheet onClose={() => setCustomize(false)} />}
     </div>
   );
@@ -375,5 +409,22 @@ function ShoppingTile({ size }: { size: TileSize }) {
       </Link>
       <QuickAddButton weekStart={shopping.weekStart} settings={shopping.settings} small className="absolute right-1.5 top-1.5" />
     </section>
+  );
+}
+
+/** Kachel Notizen (nur über "Startseite anpassen"): angeheftete Notizen bzw. die neuesten */
+function NotesTile() {
+  const notes = useNotes();
+  if (!notes) return <section className={`${CARD} h-16 animate-pulse`} aria-label="Notizen" />;
+  const sorted = sortNotes(notes);
+  const pinned = sorted.filter((n) => n.data.pinned);
+  const shown = (pinned.length ? pinned : sorted).slice(0, 3);
+  return (
+    <CompactTile
+      href="/notizen"
+      label="Notizen"
+      icon={<NotebookPen className="h-4 w-4 text-accent" strokeWidth={2} aria-hidden />}
+      line={shown.length ? shown.map((n) => `${n.data.emoji ?? ""} ${n.data.title}`.trim()).join(" · ") : "Noch keine Notizen"}
+    />
   );
 }

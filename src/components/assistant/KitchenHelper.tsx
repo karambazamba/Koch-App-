@@ -1,5 +1,6 @@
 "use client";
 
+import { useNotes } from "@/lib/notizen";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Undo2 } from "lucide-react";
@@ -76,12 +77,13 @@ export function KitchenHelper() {
   const shopping = useShoppingLists();
   const entries = useEntries();
   const home = useHomeTiles();
+  const notes = useNotes();
   const data: AssistantData | null | undefined =
-    profile === undefined || !weekPlans || !mealPlans || !recipes || !shopping || !entries || !home
+    profile === undefined || !weekPlans || !mealPlans || !recipes || !shopping || !entries || !home || !notes
       ? undefined
       : profile === null
         ? null
-        : { profile, weekPlans, mealPlans, recipes, shopping, entries, home };
+        : { profile, weekPlans, mealPlans, recipes, shopping, entries, home, notes };
 
   // Alte Termine (wasgibts.termine) einmalig ins neue Modell übernehmen;
   // Entwicklungsansicht nur über /?legacy=1 (nirgends verlinkt)

@@ -4,6 +4,7 @@
 // Versteht nur einfache Sätze – z. B. "Donnerstag und Freitag gibt es meine
 // Rezepte, Mattis wünscht sich Sonntag Milchreis, der Rest vegetarische KI-Rezepte".
 
+import { parseNoteCommand } from "../notizen/chat";
 import { eventsIn, greetingCommand, localNewMail, localReply, looksLikeMail, parseHistoryDraft, REPLY_CHOICES, reviseDraft, revisionOf, splitInstruction, styleFromContext, summaryOf, type MailDraft } from "./mail";
 import type Anthropic from "@anthropic-ai/sdk";
 import { WEEKDAYS } from "../einstellungen/profile";
@@ -256,6 +257,8 @@ function mockModel(): CreateMessage {
       if (memory) return text(memory);
       const mail = mailUses(last.content, msgs, system);
       if (mail) return mail;
+      const note = noteUses(last.content);
+      if (note) return note;
       const leftovers = leftoverReply(last.content, system);
       if (leftovers) return text(leftovers);
       const everydayUse = everydayUses(last.content, system);
@@ -481,6 +484,10 @@ function mockModel(): CreateMessage {
       return text(`${summary ? `Kurz gesagt: ${summary} ` : ""}Hier mein Vorschlag – senden machst du selbst.${event} (Testmodus)`);
     }
 
+    // Notizen/Aufgaben gelesen → Inhalt kurz wiedergeben (ohne ids)
+    const read = prevUses.find((u) => u.name === "notizen_anzeigen" || u.name === "aufgaben_anzeigen");
+    if (read) return text(`${String(resultFor(read.name) ?? "").replace(/ \[id=[^\]]+\]/g, "")} (Testmodus)`);
+
     // Termine gelesen → kurz antworten
     const shown = prevUses.find((u) => u.name === "woche_anzeigen" || u.name === "tag_anzeigen");
     if (shown) return text(calendarAnswer(String(resultFor(shown.name) ?? ""), shown.input as Record<string, unknown>));
@@ -572,7 +579,7 @@ function mailUses(latest: string, msgs: Anthropic.Beta.BetaMessageParam[], syste
   const today = system.match(/^Heute: .*\((\d{4}-\d{2}-\d{2})\)/m)?.[1] ?? "";
   const { style, name } = styleFromContext(system);
   const strings = msgs.slice(0, -1).filter((m) => typeof m.content === "string") as { role: string; content: string }[];
-  const eventsFor = (mail: string) => (today ? eventsIn(mail, today).map(draftInput) : []);
+  const eventsFor = (mail: string) => (today ? eventsIn(mail, today).map((d) => draftInput(d, today)) : []);
   const draftUse = (d: MailDraft) => ({ name: "mail_entwurf", input: { an: d.to, empfaenger: d.recipient ?? "", betreff: d.subject, text: d.body, anrede: d.tone, ...(d.summary ? { kurzfassung: d.summary } : {}) } });
   const { instruction, mail } = splitInstruction(latest);
   if (looksLikeMail(mail)) {
@@ -593,7 +600,29 @@ function mailUses(latest: string, msgs: Anthropic.Beta.BetaMessageParam[], syste
   return null;
 }
 
-const CALENDAR_WRITE = new Set(["baustein_an", "baustein_aus", "portionen_anpassen", "pause_setzen", "pause_beenden", "startseite_anpassen", "wochenplan_loeschen", "einkaufsliste_leeren", "einkaufsliste_entfernen", "rueckgaengig", "termin_anlegen", "termin_aendern", "termin_loeschen", "aufgabe_anlegen", "aufgabe_aendern", "aufgabe_erledigen", "aufgabe_verschieben"]);
+/** Notizen im Testmodus: "Merk dir …", "Was steht auf der Packliste?", "Häng das WLAN oben an", "Was muss ich heute noch erledigen?" */
+function noteUses(latest: string): Anthropic.Beta.BetaMessage | null {
+  const cmd = parseNoteCommand(latest);
+  if (!cmd) return null;
+  switch (cmd.kind) {
+    case "tasks":
+      // "Zeig mir meine Aufgaben" öffnet die Seite, sonst kurz antworten
+      if (cmd.open) return tools([{ name: "app_befehl", input: { text: latest } }]);
+      return tools([{ name: "aufgaben_anzeigen", input: { gruppe: /\bheute\b/i.test(latest) ? "heute" : "alle" } }]);
+    case "show_all":
+      return tools([{ name: "app_befehl", input: { text: latest } }]);
+    case "show":
+      return tools([{ name: "notizen_anzeigen", input: { suche: cmd.query } }]);
+    case "pin":
+      return tools([{ name: "notiz_anheften", input: { id: cmd.query.replace(/^(das|die|den|der|meine|unsere)\s+/i, ""), angeheftet: cmd.on } }]);
+    case "add":
+      return tools([{ name: "liste_eintrag_hinzufuegen", input: { liste: cmd.list, eintraege: cmd.items } }]);
+    case "create":
+      return tools([{ name: "notiz_anlegen", input: { titel: cmd.title, ...(cmd.items ? { liste: cmd.items } : { text: cmd.text ?? "" }) } }]);
+  }
+}
+
+const CALENDAR_WRITE = new Set(["notiz_anlegen", "notiz_aendern", "notiz_loeschen", "liste_eintrag_hinzufuegen", "notiz_anheften", "baustein_an", "baustein_aus", "portionen_anpassen", "pause_setzen", "pause_beenden", "startseite_anpassen", "wochenplan_loeschen", "einkaufsliste_leeren", "einkaufsliste_entfernen", "rueckgaengig", "termin_anlegen", "termin_aendern", "termin_loeschen", "aufgabe_anlegen", "aufgabe_aendern", "aufgabe_erledigen", "aufgabe_verschieben"]);
 
 /** Einträge aus der Kontext-Liste "- Mo 2026-10-19: 09:00 Titel [id=…; termin, familie] | …" */
 function contextEntries(system: string): { date: string; time: string | null; title: string; id: string; typ: string; repeat: boolean }[] {
@@ -613,13 +642,14 @@ function contextEntries(system: string): { date: string; time: string | null; ti
     });
 }
 
-function draftInput(draft: Draft): { name: string; input: Record<string, unknown> } {
+function draftInput(draft: Draft, today?: string): { name: string; input: Record<string, unknown> } {
   const d = draft.data;
   const wiederholung = d.repeat ? { art: d.repeat.kind, ...(d.repeat.kind === "wochentage" ? { tage: d.repeat.days } : {}) } : undefined;
   const common = { titel: d.title, raum: draft.raum, erinnerung: d.reminder, ...(d.label ? { etikett: d.label } : {}), ...(wiederholung ? { wiederholung } : {}) };
   if (draft.typ === "termin") return { name: "termin_anlegen", input: { ...common, datum: draft.data.date, start: draft.data.start, ...(draft.data.who ? { personen: draft.data.who } : {}) } };
   const a = draft.data;
-  return { name: "aufgabe_anlegen", input: { ...common, ...(a.date ? { tag: a.date } : {}), ...(a.due ? { frist: a.due } : {}), ...(a.time ? { uhrzeit: a.time } : {}) } };
+  const zeitraum = a.week && today ? (a.week <= today ? "diese_woche" : "naechste_woche") : undefined;
+  return { name: "aufgabe_anlegen", input: { ...common, ...(a.date ? { tag: a.date } : {}), ...(a.due ? { frist: a.due } : {}), ...(a.time ? { uhrzeit: a.time } : {}), ...(zeitraum ? { zeitraum } : {}) } };
 }
 
 function calendarUses(latest: string, system: string): Anthropic.Beta.BetaMessage | null {
@@ -629,7 +659,7 @@ function calendarUses(latest: string, system: string): Anthropic.Beta.BetaMessag
   const persons = [...system.matchAll(/^- ([^;\n]+); (?:Kind|erwachsen)/gm)].map((m) => ({ id: m[1].trim(), name: m[1].trim() }));
   const cmd = parseCalendar(latest, today, persons);
   if (!cmd) return null;
-  if (cmd.kind === "create") return tools([draftInput(cmd.draft)]);
+  if (cmd.kind === "create") return tools([draftInput(cmd.draft, today)]);
   if (cmd.kind === "show") return tools([cmd.days > 1 ? { name: "woche_anzeigen", input: { ab: cmd.from, tage: cmd.days, label: cmd.label } } : { name: "tag_anzeigen", input: { datum: cmd.from, label: cmd.label } }]);
   if (cmd.kind === "free") return tools([{ name: "tag_anzeigen", input: { datum: cmd.date, frei: [cmd.from, cmd.to], label: cmd.label } }]);
   // Ändern: Eintrag über den Titel finden (ungefähr)

@@ -4,6 +4,7 @@
 // Sprachausgabe. Geändert wird erst beim Übernehmen – über dieselben reinen
 // Funktionen, mit denen auch die Vorschau rechnet.
 
+import { replaceNotes } from "../notizen/store";
 import { loadMailStyle } from "./mailSettings";
 import { useEffect, useState } from "react";
 import { replaceEntries } from "../aufgaben/store";
@@ -217,6 +218,8 @@ function trimmed(data: AssistantData, currentWeekStart: string, pantry: Assistan
     home: data.home,
     features: BAUSTEINE.filter((b) => featureOn(b.feature)).map((b) => b.feature),
     mail: loadMailStyle(),
+    // Notizen: kompakt (Listen bis 60 Einträge, Text bis 1500 Zeichen)
+    notes: (data.notes ?? []).slice(0, 60).map((n) => ({ ...n, data: { ...n.data, text: n.data.text?.slice(0, 1500), items: n.data.items?.slice(0, 60) } })),
     // Kompakt: Name, Menge, Ort, seit wann; Gekauftes ("b:") als "gekauft" markiert
     pantry: (pantry ?? []).slice(0, 80).map(({ id, name, amount, unit, place, addedAt }) => ({ id: id.startsWith("b:") ? "gekauft" : "", name, amount, unit, place, addedAt })),
     // Termine/Aufgaben: ohne Vergangenes (erledigte Aufgaben älter als 2 Wochen, einmalige Termine vor gestern)
@@ -341,6 +344,7 @@ function save(data: AssistantData, before: AssistantData) {
   if (data.recipes !== before.recipes) replaceRecipes(data.recipes);
   if (data.shopping !== before.shopping) replaceShoppingLists(data.shopping);
   if (data.entries !== before.entries && data.entries) replaceEntries(data.entries);
+  if (data.notes !== before.notes && data.notes) replaceNotes(data.notes);
   if (data.home !== before.home && data.home) saveHomeTiles(data.home);
   if (data.profile !== before.profile) saveProfile(data.profile);
 }
@@ -417,6 +421,7 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
       notes.push(op.on ? b.where : `${b.name} ist aus – die Daten bleiben.`);
     }
   }
+  if (chosen.some((op) => op.type === "upsert_note")) notes.push("Notizen findest du in der Woche ganz unten unter „Notizen“.");
   if (chosen.some((op) => op.type === "set_meal" || op.type === "add_shopping")) {
     const note = shoppingNote(data, current);
     if (note) notes.push(note);

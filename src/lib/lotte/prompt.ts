@@ -1,5 +1,6 @@
 // Lotte: Systemanweisung (fest, wird gecacht) und Kontext (pro Anfrage).
 
+import type { Note } from "../notizen/model";
 import { DEFAULT_MAIL_STYLE } from "./mail";
 import { HOUSEHOLD_TYPES, KID_AGE_GROUP_LABELS, MEAL_TIME_LABELS, helperName, mealClockFor, isSmallHousehold, personLabel, wishDayActive, type HouseholdProfile } from "../einstellungen/profile";
 import { sortedBases } from "../essen/bases";
@@ -71,8 +72,11 @@ Grundregel: Alles, was du anlegst oder änderst, kann die Familie selbst sehen, 
 - Wiederhol dich nie: Ist eine Sache erledigt oder im Vorschlag, geh auf die neue Nachricht ein.
 - Sag nach dem Anlegen kurz, was du gemacht hast und wo es steht ("Wochenplan steht unter Essen, die Einkaufsliste hat 11 Sachen für die Woche, davon 4 für heute").
 
-Termine und Aufgaben (Werkzeuge vorhanden):
-- Du erkennst selbst: Termin = feste Uhrzeit an einem Tag ("Morgen um 9 Steuerberater") → termin_anlegen. Aufgabe = irgendwann, an einem Wunschtag oder bis zu einer Frist ("Bis Mittwoch Kita-Formular", "Jeden Dienstag Müll rausbringen") → aufgabe_anlegen.
+Termine, Aufgaben und Notizen (Werkzeuge vorhanden) – drei verschiedene Dinge:
+- Termin = feste Uhrzeit an einem Tag ("Morgen um 9 Steuerberater") → termin_anlegen.
+- Aufgabe = zu erledigen, flexibel ("muss", "sollte", "bis …"): an einem Wunschtag, mit Frist ("Bis Mittwoch Kita-Formular"), für einen Zeitraum ("Ich muss diese Woche noch die Reifen machen" → zeitraum diese_woche) oder ohne alles (= Irgendwann), auch wiederkehrend ("Jeden Dienstag Müll rausbringen") → aufgabe_anlegen.
+- Notiz = nur festhalten ("Merk dir …", "Notier …", "Idee: …") → notiz_anlegen; passt es in eine vorhandene oder naheliegende Liste ("Merk dir: Mathis wünscht sich Torwarthandschuhe" → Liste "Geschenkideen", "… auf die Packliste"), liste_eintrag_hinzufuegen (legt die Liste an, falls nötig). Essenswünsche ("Mathis wünscht sich Pfannkuchen") bleiben wunsch_merken.
+- Notizen lesen ("Was steht auf der Packliste?", "Was ist das WLAN-Passwort?") → notizen_anzeigen und kurz den Inhalt nennen; "Häng das WLAN oben an" → notiz_anheften. "Was muss ich heute noch erledigen?" → aufgaben_anzeigen und kurz zusammenfassen. "Zeig mir meine Aufgaben" / "Zeig mir meine Notizen" → app_befehl mit genau diesem Satz (öffnet die Seite).
 - Raum: Arbeit bei Job-Themen (Meeting, Büro, Kunde, Präsentation, Chef, Kollegen), sonst Familie. Etikett nur, wenn naheliegend (Kita, Schule, Arzt, Café, Sport, Steuern, Geburtstag).
 - "erinner mich 30 Minuten vorher" → erinnerung "30"; "am Abend vorher" → "vorabend". Ohne Angabe keine Erinnerung.
 - Datum immer als YYYY-MM-DD aus der Datumsliste im Kontext. Nur fragen, wenn wirklich unklar (z. B. keine Uhrzeit bei "Termin um …" oder zwei passende Einträge).
@@ -189,6 +193,12 @@ function todayMealText(data: AssistantData, todayIso: string): string {
 }
 
 /** Kontext für diese Anfrage: Datum, Uhrzeit, Essen, Wochen, Profil, Einkaufsliste, Vorrat, Kochbuch */
+/** Notizen: nur Titel und Art (Inhalt über notizen_anzeigen) */
+function notesContext(notes: Note[]): string {
+  if (!notes.length) return "Notizen: noch keine.";
+  return `Notizen (ids nur für Werkzeuge): ${notes.slice(0, 40).map((n) => `${n.data.emoji ?? ""} ${n.data.title} [id=${n.id}; ${n.data.kind === "liste" ? `Liste, ${n.data.items?.length ?? 0} Einträge` : "Text"}${n.data.pinned ? ", angeheftet" : ""}, ${n.raum}]`).join(" | ")}`;
+}
+
 /** Mail-Stil: Gruß, Name, Signatur (nur förmlich), gemerkte Anrede */
 function mailContext(data: AssistantData): string {
   const style = data.mail ?? DEFAULT_MAIL_STYLE;
@@ -213,6 +223,7 @@ export function contextText(
     `Datumsliste: ${Array.from({ length: 14 }, (_, i) => addDays(todayIso, i)).map((iso) => `${SHORT_DAY.format(new Date(`${iso}T00:00:00Z`))} ${iso}`).join(", ")}`,
     "",
     calendarContext(data.entries ?? [], todayIso),
+    notesContext(data.notes ?? []),
     `Bausteine an: ${BAUSTEINE.filter((b) => data.features?.includes(b.feature)).map((b) => b.name).join(", ") || "keine"}. Aus: ${BAUSTEINE.filter((b) => !data.features?.includes(b.feature)).map((b) => `${b.name} (${b.feature}: ${b.text})`).join("; ") || "keine"}`,
     mailContext(data),
     data.home ? `Startseite (Reihenfolge): ${data.home.map((t) => `${t.id} ${t.visible ? t.size : "ausgeblendet"}`).join(", ")}` : "",

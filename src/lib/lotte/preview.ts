@@ -247,6 +247,20 @@ function describe(
       return { opId: op.id, group: "Termine & Aufgaben", order: 24_000, label: op.onlyDate ? `nur ${weekdayShort(op.onlyDate)} ${dayDate(op.onlyDate)}` : "löschen", before: op.title, after: "gelöscht" };
     case "done_entry":
       return { opId: op.id, group: "Termine & Aufgaben", order: 24_000, label: "abhaken", before: null, after: `${op.title} ✓ erledigt` };
+    case "upsert_note": {
+      const n = op.note.data;
+      const content = n.kind === "liste" ? (n.items ?? []).slice(-3).map((i) => i.text).join(", ") : (n.text ?? "").slice(0, 80);
+      return {
+        opId: op.id,
+        group: "Notizen",
+        order: 25_000,
+        label: `${n.emoji ?? ""} ${n.title}`.trim(),
+        before: null,
+        after: op.change ?? (op.isNew ? (n.kind === "liste" ? `neue Liste${content ? `: ${content}` : ""}` : `neu${content ? `: ${content}` : ""}`) : content || "geändert"),
+      };
+    }
+    case "remove_note":
+      return { opId: op.id, group: "Notizen", order: 25_000, label: "löschen", before: op.title, after: "gelöscht" };
     case "move_entry":
       return { opId: op.id, group: "Termine & Aufgaben", order: 24_000, label: "verschieben", before: `${op.title} · ${weekdayShort(op.date)} ${dayDate(op.date)}`, after: `${weekdayShort(op.to)} ${dayDate(op.to)}${op.time ? ` · ${clockLabel(op.time)}` : ""}` };
   }

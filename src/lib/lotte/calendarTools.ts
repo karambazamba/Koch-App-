@@ -6,7 +6,7 @@
 import { createEntry, type Room } from "../core/entries";
 import { addDays } from "../core/now";
 import { contextLines, showAnswer } from "../aufgaben/answers";
-import { itemsForDay, REMINDERS, sanitizeEntry, sanitizeRepeat, weekdayIndex, type AufgabeData, type CalendarEntry, type Reminder, type Repeat, type TerminData } from "../aufgaben/model";
+import { itemsForDay, REMINDERS, taskOverview, sanitizeEntry, sanitizeRepeat, weekdayIndex, type AufgabeData, type CalendarEntry, type Reminder, type Repeat, type TerminData } from "../aufgaben/model";
 import { findDate } from "../aufgaben/parse";
 import type { LotteTool } from "./registry";
 import { findPersons, nextId, propose, type ToolContext, type ToolResult } from "./tools";
@@ -71,7 +71,7 @@ function proposeEntry(ctx: ToolContext, entry: CalendarEntry, isNew: boolean): T
   const clean = sanitizeEntry(entry);
   if (!clean) return fail("Eintrag unvollständig (Titel, Datum und bei Terminen die Startzeit angeben).");
   propose(ctx, { id: nextId(ctx), type: "upsert_entry", entry: clean, isNew });
-  const when = clean.typ === "termin" ? `${shortDate(clean.data.date)} ${clean.data.start}` : clean.data.due ? `bis ${shortDate(clean.data.due)}` : clean.data.date ? shortDate(clean.data.date) : "ohne Tag";
+  const when = clean.typ === "termin" ? `${shortDate(clean.data.date)} ${clean.data.start}` : clean.data.due ? `bis ${shortDate(clean.data.due)}` : clean.data.date ? shortDate(clean.data.date) : clean.data.week ? `Woche ab ${shortDate(clean.data.week)}` : "irgendwann";
   return { content: `Vorgemerkt (${clean.typ}, ${isNew ? "neu" : "geändert"}): ${clean.data.title}, ${when}.` };
 }
 
@@ -102,6 +102,9 @@ function aufgabeInput(ctx: ToolContext, input: Input, base?: AufgabeData): Aufga
   const date = input.tag !== undefined ? dateFrom(ctx, input.tag) ?? undefined : base?.date;
   const due = input.frist !== undefined ? dateFrom(ctx, input.frist) ?? undefined : base?.due;
   const repeatStart = date ?? ctx.today;
+  const monday = addDays(ctx.today, -weekdayIndex(ctx.today));
+  const week =
+    input.zeitraum === "diese_woche" ? monday : input.zeitraum === "naechste_woche" ? addDays(monday, 7) : input.zeitraum === "irgendwann" ? undefined : base?.week;
   const repeat = input.wiederholung !== undefined ? repeatFrom(input.wiederholung, repeatStart) : (base?.repeat ?? null);
   return {
     ...(base ?? { reminder: "aus" as Reminder }),
@@ -109,6 +112,8 @@ function aufgabeInput(ctx: ToolContext, input: Input, base?: AufgabeData): Aufga
     // Wiederkehrend ohne Tag: ab dem nächsten passenden Tag
     date: date ?? (repeat && !base ? firstOccurrence(repeat, ctx.today) : undefined),
     due,
+    // Zeitraum nur ohne Tag und Frist
+    week: date || due ? undefined : week,
     time: input.uhrzeit !== undefined ? timeFrom(input.uhrzeit) : base?.time,
     label: input.etikett !== undefined ? str(input.etikett) || undefined : base?.label,
     repeat,
@@ -137,8 +142,9 @@ const TERMIN_FIELDS = {
 
 const AUFGABE_FIELDS = {
   titel: { type: "string" },
-  tag: { ...DATE_PROP, description: "Wunschtag (optional). Ohne Tag steht die Aufgabe ab heute auf der Liste." },
+  tag: { ...DATE_PROP, description: "Wunschtag (optional). Ohne Tag, Frist und Zeitraum steht die Aufgabe unter 'Irgendwann'." },
   frist: { ...DATE_PROP, description: "Frist ('bis Mittwoch'), optional" },
+  zeitraum: { type: "string", enum: ["diese_woche", "naechste_woche", "irgendwann"], description: "Ohne festen Tag: 'diese Woche', 'nächste Woche' oder irgendwann" },
   uhrzeit: TIME_PROP,
   etikett: LABEL_PROP,
   raum: ROOM_PROP,
@@ -300,5 +306,9 @@ function removeTool(ctx: ToolContext, input: Input, typ: "termin" | "aufgabe"): 
 /** Für den Kontext: Einträge der nächsten 7 Tage (heute zuerst) */
 export function calendarContext(entries: CalendarEntry[], today: string): string {
   const upcoming = itemsForDay(entries, today, today);
-  return `Termine und Aufgaben der nächsten 7 Tage (ids nur für Werkzeuge, nie nennen)${upcoming.length || entries.length ? "" : " – noch nichts eingetragen"}:\n${contextLines(entries, today, 7)}`;
+  // Aufgaben ohne Tag in den nächsten 7 Tagen: diese Woche (Zeitraum), später, irgendwann
+  const g = taskOverview(entries, today);
+  const loose = [...g.woche.filter((i) => i.when === "diese Woche"), ...g.spaeter, ...g.irgendwann].slice(0, 40);
+  const looseLines = loose.map((i) => `${i.title} [id=${i.entry.id}; aufgabe, ${i.room}${i.when ? `, ${i.when}` : ", irgendwann"}${i.label ? `, Etikett ${i.label}` : ""}]`);
+  return `Termine und Aufgaben der nächsten 7 Tage (ids nur für Werkzeuge, nie nennen)${upcoming.length || entries.length ? "" : " – noch nichts eingetragen"}:\n${contextLines(entries, today, 7)}${looseLines.length ? `\nAufgaben ohne festen Tag: ${looseLines.join(" | ")}` : ""}`;
 }
