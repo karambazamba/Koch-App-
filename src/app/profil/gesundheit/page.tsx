@@ -7,7 +7,7 @@ function PageContent() {
   return <HealthTipsEditView />;
 }
 
-// Versteckt, bis "Alte Funktionen anzeigen (Test)" an ist
+// Sichtbar, wenn der passende Baustein an ist (Einstellungen → Bausteine)
 export default function Page() {
   return (
     <FeatureGate feature="tipps">

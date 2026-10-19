@@ -14,8 +14,8 @@ import { HomePager } from "@/components/alltag/HomePager";
 
 /**
  * Startseite. Neustart (Standard): drei Seiten Woche · Heute · Essen
- * (HomePager) mit der Lotte-Leiste unten. Mit "Alte Funktionen anzeigen
- * (Test)" die frühere Startseite:
+ * (HomePager) mit der Lotte-Leiste unten. Nur für die Entwicklung
+ * (/?legacy=1) die frühere Startseite:
  * genau sechs Elemente: Kopf, Heute-Karte, Lottes Platz
  * (höchstens EINE Sache), drei Kacheln, "Spontan kochen" und die
  * Eingabeleiste. Passt ohne Scrollen aufs iPhone. Neue Funktionen bekommen

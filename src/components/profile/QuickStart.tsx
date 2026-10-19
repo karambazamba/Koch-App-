@@ -3,7 +3,7 @@
 // Schnellstart (Neustart): statt Kennenlernen-Gespräch nur das Nötigste –
 // dein Name und wer noch dazugehört. Alles andere erzählt man Lotte später
 // oder stellt es in den Einstellungen ein. Das ausführliche Kennenlernen
-// bleibt hinter "Alte Funktionen anzeigen (Test)".
+// gibt es nur noch in der Entwicklungsansicht (/?legacy=1).
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";

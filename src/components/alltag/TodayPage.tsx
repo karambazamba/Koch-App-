@@ -6,7 +6,7 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { ArrowLeftRight, CalendarDays, ShoppingCart, UtensilsCrossed } from "lucide-react";
+import { ArrowLeftRight, CalendarDays, Refrigerator, ShoppingCart, UtensilsCrossed } from "lucide-react";
 import { DEFAULT_HOME, useHomeTiles, type TileSize } from "@/lib/core/homeLayout";
 import { HomeCustomizerSheet } from "./HomeCustomizer";
 import { buzz } from "./actions";
@@ -20,7 +20,10 @@ import { markReminderSeen, useSeenReminders } from "@/lib/aufgaben/store";
 import { greeting, todaySentence } from "@/lib/aufgaben/summary";
 import { addDays } from "@/lib/core/now";
 import { showToast } from "@/lib/core/toast";
-import { helperName, mealClockFor, pausedOn, saveProfile } from "@/lib/einstellungen/profile";
+import { hasKids, helperName, mealClockFor, pausedOn, saveProfile } from "@/lib/einstellungen/profile";
+import { useFeature } from "@/lib/core/features";
+import { dailyTip } from "@/lib/essen/tips/daily";
+import { PANTRY_PLACES, usePantry } from "@/lib/essen/pantry";
 import { pauseLabel } from "@/lib/essen/spontan";
 import { pushUndo } from "@/lib/core/undo";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
@@ -51,6 +54,15 @@ export function TodayPage({ data, entries, minutes, onOpenFood }: { data: HomeDa
   const tomorrowItems = minutes >= 16 * 60 ? itemsForDay(entries, tomorrowIso, data.todayIso).filter((i) => !i.done) : [];
   const tomorrowDish = minutes >= 16 * 60 ? dishOf(data.tomorrow) : null;
   const openItems = items.filter((i) => !i.done);
+  // Bausteine Tipps / Wochenend-Ideen: nur über diesen einen Satz – und nur an ruhigen Tagen (nichts mehr offen)
+  const tipsOn = useFeature("tipps");
+  const weekendOn = useFeature("wochenendIdeen");
+  const pantryOn = useFeature("vorrat");
+  const [tipOpen, setTipOpen] = useState(false);
+  const tip =
+    (tipsOn || weekendOn) && !openItems.length
+      ? dailyTip(data.todayIso, { dish, tips: Boolean(tipsOn), weekendIdeas: Boolean(weekendOn), kids: hasKids(data.profile), persons: data.profile.persons.length })
+      : null;
   // Pause (Urlaub) – sichtbar und mit einem Tipp beendet
   const paused = pausedOn(data.profile, data.todayIso);
   const endPause = () => {
@@ -72,14 +84,26 @@ export function TodayPage({ data, entries, minutes, onOpenFood }: { data: HomeDa
       </header>
 
       <LotteSays
-        text={reminder ? reminder.text : paused && data.profile.pause ? `Pause ${pauseLabel(data.profile.pause)} – genießt die Zeit ☀️` : todaySentence({ items, dish, dishClock })}
+        text={
+          reminder
+            ? reminder.text
+            : paused && data.profile.pause
+              ? `Pause ${pauseLabel(data.profile.pause)} – genießt die Zeit ☀️`
+              : tip
+                ? `${tipOpen ? `${tip.text} ${tip.detail}` : tip.text}`
+                : todaySentence({ items, dish, dishClock })
+        }
         name={helperName(data.profile)}
         action={
           reminder
             ? { label: "Okay", onClick: () => markReminderSeen(reminder.key) }
             : paused
               ? { label: "Pause beenden", onClick: endPause }
-              : !dish && !over && minutes < 20 * 60 && !data.day?.away
+              : tip && !tipOpen
+                ? { label: "Mehr dazu", onClick: () => setTipOpen(true) }
+                : tip
+                  ? null
+                  : !dish && !over && minutes < 20 * 60 && !data.day?.away
               ? { label: "Essensidee?", onClick: () => openHelper(undefined, "Was gibt's heute?") }
               : null
         }
@@ -106,6 +130,8 @@ export function TodayPage({ data, entries, minutes, onOpenFood }: { data: HomeDa
             )
           ) : tile.id === "einkauf" ? (
             <ShoppingTile size={tile.size} />
+          ) : tile.id === "vorrat" ? (
+            pantryOn && <PantryTile size={tile.size} />
           ) : (tomorrowItems.length > 0 || tomorrowDish) && (
             tile.size === "ausfuehrlich" ? (
               <section className="rounded-card border-2 border-dashed border-line px-4 py-3" aria-label="Morgen">
@@ -272,6 +298,36 @@ function Pressable({ children, onLongPress }: { children: React.ReactNode; onLon
     >
       {children}
     </div>
+  );
+}
+
+/** Kachel Vorrat (Baustein): kompakt eine Zeile, ausführlich je Ort */
+function PantryTile({ size }: { size: TileSize }) {
+  const pantry = usePantry();
+  if (!pantry) return <section className={`${CARD} h-16 animate-pulse`} aria-label="Vorrat" />;
+  const icon = <Refrigerator className="h-4 w-4 text-accent" strokeWidth={2} aria-hidden />;
+  const sachen = `${pantry.length} ${pantry.length === 1 ? "Sache" : "Sachen"}`;
+  if (size === "kompakt") {
+    return <CompactTile href="/vorrat" label={pantry.length ? `Vorrat · ${sachen}` : "Vorrat"} icon={icon} line={pantry.length ? `${pantry.slice(0, 4).map((p) => p.name).join(", ")}${pantry.length > 4 ? " …" : ""}` : "Noch nichts eingetragen"} />;
+  }
+  return (
+    <section className={`${CARD} p-4`} aria-label="Vorrat">
+      <Link href="/vorrat" className="flex flex-col gap-1">
+        <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
+          {icon}
+          Vorrat
+        </span>
+        {PANTRY_PLACES.map((place) => {
+          const here = pantry.filter((p) => p.place === place.value);
+          return (
+            <span key={place.value} className="flex gap-2 text-base">
+              <span className="w-24 shrink-0 font-semibold">{place.short}</span>
+              <span className="min-w-0 flex-1 truncate text-muted">{here.length ? here.map((p) => p.name).join(", ") : "–"}</span>
+            </span>
+          );
+        })}
+      </Link>
+    </section>
   );
 }
 

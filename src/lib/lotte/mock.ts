@@ -10,6 +10,8 @@ import type { CreateMessage } from "./engine";
 import { dateForDay } from "./tools";
 import { parseCalendar, type Draft } from "../aufgaben/parse";
 import { parseHomeCommand } from "./homeChat";
+import { parseBausteinCommand } from "./bausteinChat";
+import { BAUSTEINE } from "../core/features";
 import { parsePauseRequest } from "../essen/spontan";
 import { findByTitle, sanitizeEntry, type CalendarEntry } from "../aufgaben/model";
 import { EMPTY_STOCK_HINT, ingredientsFromQuestion, isCookIdeasRequest, stockIdeas, stockItem, usesLine } from "../essen/dishIdeas";
@@ -524,6 +526,17 @@ function everydayUses(latest: string, system: string): Anthropic.Beta.BetaMessag
     if (pause?.kind === "start" && pause.pause.until) return tools([{ name: "pause_setzen", input: { von: pause.pause.from, bis: pause.pause.until } }]);
     return text("Schön! Von wann bis wann seid ihr weg? (Testmodus)");
   }
+  // Bausteine: "Zeig mir den Vorrat", "Ich brauche die Tipps nicht", "Was kannst du noch?"
+  const baustein = parseBausteinCommand(latest);
+  if (baustein) {
+    const offLine = system.match(/Aus: (.+)$/m)?.[1] ?? "";
+    if (baustein.kind === "list") {
+      const off = BAUSTEINE.filter((b) => offLine.includes(`(${b.feature}:`));
+      return text(off.length ? `Ich kann noch: ${off.map((b) => `${b.name} – ${b.text.replace(/\.$/, "")}`).join("; ")}. Soll ich was davon einschalten? (Testmodus)` : "Gerade ist alles an, was ich kann. (Testmodus)");
+    }
+    const isOff = offLine.includes(`(${baustein.feature}:`);
+    if (isOff === baustein.on) return tools([{ name: baustein.on ? "baustein_an" : "baustein_aus", input: { baustein: baustein.feature } }]);
+  }
   const home = parseHomeCommand(latest);
   if (home) {
     if (home.kind === "undo") return tools([{ name: "rueckgaengig", input: {} }]);
@@ -540,7 +553,7 @@ function everydayUses(latest: string, system: string): Anthropic.Beta.BetaMessag
   return null;
 }
 
-const CALENDAR_WRITE = new Set(["portionen_anpassen", "pause_setzen", "pause_beenden", "startseite_anpassen", "wochenplan_loeschen", "einkaufsliste_leeren", "einkaufsliste_entfernen", "rueckgaengig", "termin_anlegen", "termin_aendern", "termin_loeschen", "aufgabe_anlegen", "aufgabe_aendern", "aufgabe_erledigen", "aufgabe_verschieben"]);
+const CALENDAR_WRITE = new Set(["baustein_an", "baustein_aus", "portionen_anpassen", "pause_setzen", "pause_beenden", "startseite_anpassen", "wochenplan_loeschen", "einkaufsliste_leeren", "einkaufsliste_entfernen", "rueckgaengig", "termin_anlegen", "termin_aendern", "termin_loeschen", "aufgabe_anlegen", "aufgabe_aendern", "aufgabe_erledigen", "aufgabe_verschieben"]);
 
 /** Einträge aus der Kontext-Liste "- Mo 2026-10-19: 09:00 Titel [id=…; termin, familie] | …" */
 function contextEntries(system: string): { date: string; time: string | null; title: string; id: string; typ: string; repeat: boolean }[] {

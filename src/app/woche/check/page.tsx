@@ -17,7 +17,7 @@ function WeekCheckPageContent() {
   );
 }
 
-// Versteckt, bis "Alte Funktionen anzeigen (Test)" an ist
+// Sichtbar, wenn der passende Baustein an ist (Einstellungen → Bausteine)
 export default function WeekCheckPage() {
   return (
     <FeatureGate feature="wochenplan">

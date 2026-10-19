@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, ChefHat, Database, LayoutGrid, LayoutList, MessageCircle, Mic, Palette, Volume2, Refrigerator, Salad, Sun, Users } from "lucide-react";
+import { Blocks, BookOpen, CalendarDays, ChefHat, Database, LayoutGrid, LayoutList, MessageCircle, Mic, Palette, Volume2, Refrigerator, Salad, Sun, Users } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { PAGE_MAIN } from "@/components/ui/styles";
 import { APP_VERSION } from "@/lib/core/app";
@@ -18,7 +18,7 @@ import {
   type HouseholdProfile,
 } from "@/lib/einstellungen/profile";
 import { usePlanStyle } from "@/lib/essen/usePlanStyle";
-import { setLegacyFeatures, useFeature, useLegacyFeatures } from "@/lib/core/features";
+import { BAUSTEINE, useBausteine, useFeature, useLegacyFeatures } from "@/lib/core/features";
 import { useHomeTiles } from "@/lib/core/homeLayout";
 import { READ_MODES, useSpeechSettings } from "@/lib/lotte/speech";
 import { Group, Row } from "./settings/SettingsParts";
@@ -44,19 +44,46 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
   const legacy = useLegacyFeatures();
   const speech = useSpeechSettings();
   const home = useHomeTiles();
+  const bausteine = useBausteine();
   const unlockedRecipes = useFeature("rezepte");
   const unlockedPantry = useFeature("vorrat");
+  const planOn = useFeature("wochenplan");
+  const kochstilOn = useFeature("kochstil");
+  const modiOn = useFeature("modi");
 
-  // Neustart: schlank – nur Lotte, Ansicht, Familie, Daten & App
+  // Schlank – Startseite & Bausteine, Lotte, Ansicht, Familie, Daten & App (alter Aufbau nur über /?legacy=1)
   if (!legacy) {
     return (
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
         <PageHeader title="Einstellungen" />
         <main className={`${PAGE_MAIN} gap-6`}>
-          <Group title="Startseite">
+          <Group title="Startseite & Bausteine">
             <Row href="/profil/startseite" icon={LayoutGrid} title="Startseite anpassen" value={home ? `${home.filter((t) => t.visible).length} Kacheln` : undefined}>
               Reihenfolge, Größe, ein- und ausblenden
             </Row>
+            <Row href="/profil/bausteine" icon={Blocks} title="Bausteine" value={bausteine ? `${BAUSTEINE.filter((b) => bausteine.includes(b.feature)).length} an` : undefined}>
+              Was {name} noch kann
+            </Row>
+            {planOn && (
+              <Row href="/profil/standardwoche" icon={CalendarDays} title="Standardwoche">
+                Vorlage für den Wochenplan
+              </Row>
+            )}
+            {kochstilOn && (
+              <Row href="/profil/kochstil" icon={ChefHat} title="Kochstil" value={PLAN_STYLES.find((p) => p.value === profile.planStyle)?.label}>
+                Plan oder spontan, nach Gefühl oder Rezept
+              </Row>
+            )}
+            {kochstilOn && (
+              <Row href="/profil/essen" icon={Salad} title="Essen & Vorlieben">
+                {likes.length ? `Mögt ihr: ${likes.join(", ")}` : "Das mögt ihr, Nie wieder, Lieblingsgerichte"}
+              </Row>
+            )}
+            {modiOn && (
+              <Row href="/profil/lotte" icon={MessageCircle} title={`Wie oft meldet sich ${name}?`} value={HELPER_MODES.find((m) => m.value === profile.helperMode)?.label}>
+                Von ganz locker bis dranbleiben
+              </Row>
+            )}
             {unlockedRecipes && (
               <Row href="/kochbuch" icon={BookOpen} title="Unsere Rezepte" value={recipeCount === null ? undefined : String(recipeCount)}>
                 Was ihr gern kocht
@@ -89,7 +116,6 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
               Sichern, einspielen, neu anfangen
             </Row>
           </Group>
-          {legacy !== undefined && <LegacySwitch on={false} />}
         </main>
       </div>
     );
@@ -146,25 +172,7 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
             Sichern, einspielen, neu anfangen
           </Row>
         </Group>
-        <LegacySwitch on />
       </main>
     </div>
-  );
-}
-
-/** Ganz unten, unauffällig: alles Alte wieder einblenden (Daten bleiben immer erhalten) */
-function LegacySwitch({ on }: { on: boolean }) {
-  return (
-    // Schalter links – rechts unten liegt Lottes Knopf
-    <label className="mt-2 flex items-center gap-3 self-start px-1 text-sm text-muted">
-      <input
-        type="checkbox"
-        role="switch"
-        checked={on}
-        onChange={(e) => setLegacyFeatures(e.target.checked)}
-        className="h-5 w-5 accent-accent"
-      />
-      <span>Alte Funktionen anzeigen (Test)</span>
-    </label>
   );
 }

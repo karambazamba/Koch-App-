@@ -21,6 +21,8 @@ import { GuidedChat } from "@/components/onboarding/GuidedChat";
 import { LotteAvatar } from "@/components/LotteAvatar";
 import { calendarChat, changeEntries, loadEntries } from "@/lib/aufgaben";
 import { parseHomeCommand } from "@/lib/lotte/homeChat";
+import { parseBausteinCommand } from "@/lib/lotte/bausteinChat";
+import { BAUSTEINE, bausteinOf, featureOn, setFeature } from "@/lib/core/features";
 import { changeHome, describeHomeChange } from "@/lib/core/homeLayout";
 import { pushUndo, undoLast } from "@/lib/core/undo";
 import { commitOps } from "@/lib/lotte/client";
@@ -597,6 +599,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       startSpontan(t);
       return true;
     }
+    // Ausgeschalteter Baustein ("Zeig mir den Vorrat") → einschalten, bevor eine Seite geöffnet wird
+    if (bausteinRule(t)) return true;
     // "Zeig mir unsere Rezepte" / "Was haben wir im Vorrat?" → hinführen
     const page = /\b(zeig|öffne|wo sind|wo finde)\w*\b.*\b(rezepte|kochbuch)\b/i.test(t) ? "/kochbuch" : /\b(zeig|öffne)\w*\b.*\b(vorrat|tiefkühler|kühlschrank)\b/i.test(t) ? "/vorrat" : null;
     if (page) {
@@ -661,6 +665,25 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
         },
       ],
     }));
+    return true;
+  };
+
+  /** Bausteine ohne KI: "Zeig mir den Vorrat" (wenn aus), "Ich brauche die Tipps nicht", "Was kannst du noch?" */
+  const bausteinRule = (t: string): boolean => {
+    const cmd = parseBausteinCommand(t);
+    if (!cmd) return false;
+    if (cmd.kind === "list") {
+      const off = BAUSTEINE.filter((b) => !featureOn(b.feature));
+      setInput("");
+      localTurn(t, off.length ? `Ich kann noch: ${off.map((b) => `${b.name} – ${b.text.replace(/\.$/, "")}`).join("; ")}. Sag einfach, was ich einschalten soll – oder schau unter Einstellungen → Bausteine.` : "Gerade ist alles an, was ich kann.");
+      return true;
+    }
+    const b = bausteinOf(cmd.feature);
+    // Schon so? Dann ist es keine Baustein-Frage (z. B. "Zeig mir den Wochenplan" öffnet ihn)
+    if (!b || featureOn(cmd.feature) === cmd.on) return false;
+    setInput("");
+    setFeature(cmd.feature, cmd.on);
+    localTurn(t, cmd.on ? `Erledigt ✓ ${b.where}` : `Erledigt ✓ ${b.name} ist aus – die Daten bleiben.`, () => setFeature(cmd.feature, !cmd.on));
     return true;
   };
 

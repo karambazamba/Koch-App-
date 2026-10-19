@@ -17,8 +17,9 @@ import type { SpontanFilter } from "@/lib/essen/spontan";
 import type { AssistantData } from "@/lib/lotte/ops";
 import { migrateOldTermine, useEntries } from "@/lib/aufgaben/store";
 import { useHomeTiles } from "@/lib/core/homeLayout";
+import { LotteBar } from "@/components/alltag/HomePager";
+import { readDevFlag } from "@/lib/core/features";
 import { helperName } from "@/lib/einstellungen/profile";
-import { LotteAvatar } from "@/components/LotteAvatar";
 import { HelperPanel, spontanStartTurn, type ChatState } from "./HelperPanel";
 import { loadSpontanFilters } from "./SpontanBoard";
 
@@ -82,8 +83,12 @@ export function KitchenHelper() {
         ? null
         : { profile, weekPlans, mealPlans, recipes, shopping, entries, home };
 
-  // Alte Termine (wasgibts.termine) einmalig ins neue Modell übernehmen
-  useEffect(() => migrateOldTermine(), []);
+  // Alte Termine (wasgibts.termine) einmalig ins neue Modell übernehmen;
+  // Entwicklungsansicht nur über /?legacy=1 (nirgends verlinkt)
+  useEffect(() => {
+    migrateOldTermine();
+    readDevFlag(window.location.search);
+  }, []);
 
   // App geöffnet (für "Willkommen zurück" nach 3+ Tagen)
   const today = useToday();
@@ -146,20 +151,8 @@ export function KitchenHelper() {
 
   return (
     <>
-      {!open && !typing && !hidden && (
-        <button
-          ref={fabRef}
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label={`${helperName(profile)} öffnen`}
-          data-kuechenhelfer-knopf
-          style={{ bottom }}
-          className="fixed right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full shadow-lg ring-4 ring-background transition active:scale-95"
-        >
-          {/* Lotte bleibt in jeder Ansicht orange (eigener Kreis statt Akzentfarbe) */}
-          <LotteAvatar size={56} />
-        </button>
-      )}
+      {/* EIN Design: auf allen Seiten dieselbe dunkle Leiste wie auf der Startseite (dort zeichnet sie HomePager) */}
+      {!open && !typing && !hidden && <LotteBar name={helperName(profile)} bottom={stickyHeight ? `${stickyHeight}px` : undefined} />}
 
       {open && (
         <HelperPanel
