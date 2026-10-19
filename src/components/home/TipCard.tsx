@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronRight, Lightbulb } from "lucide-react";
-import { HelperAvatar } from "@/components/assistant/HelperAvatar";
+import { LotteAvatar } from "@/components/LotteAvatar";
 import { Sheet } from "@/components/plan/Sheet";
 import { buttonClass, chipClass } from "@/components/ui/styles";
 import { dismissTipCard, markTipCardShown, nextTipCard, type TipCardData } from "@/lib/essen/tips";
@@ -64,7 +64,7 @@ export function TipCard({
 
   return (
     <section className="flex items-start gap-2.5" aria-label="Tipp" aria-roledescription="Tipp-Karte">
-      <HelperAvatar size={40} variant="badge" />
+      <LotteAvatar size={40} />
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <div
           role="button"

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { APP_NAME } from "@/lib/core/app";
 
-/** App-Icon (Kochtopf auf Orange) aus public/icons/icon.svg – Quelle: scripts/generate-icons.mjs */
+/** App-Icon (Lotte als Sprechblase auf orangem Verlauf) aus public/icons/icon.svg – Quelle: scripts/generate-icons.mjs */
 export function AppIcon({ size }: { size: number }) {
   return (
     <Image

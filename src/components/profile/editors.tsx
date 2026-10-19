@@ -22,7 +22,7 @@ import {
 import { ChoiceGroup } from "@/components/form/ChoiceGroup";
 import { NumberStepper } from "@/components/form/NumberStepper";
 import { TagInput } from "@/components/form/TagInput";
-import { HelperAvatar } from "@/components/assistant/HelperAvatar";
+import { LotteAvatar } from "@/components/LotteAvatar";
 import { CARD, INPUT, INPUT_BASE, NOTE, WARNING, chipClass, tileClass } from "@/components/ui/styles";
 import {
   COMMON_ALLERGIES,
@@ -520,7 +520,7 @@ export function HelperEditor({
   return (
     <section className={`${CARD} flex flex-col gap-5 p-4`}>
       <div className="flex items-center gap-3">
-        <HelperAvatar size={48} variant="badge" />
+        <LotteAvatar size={48} />
         <div>
           <p className="text-lg font-bold leading-snug">Wie soll euer Küchenhelfer heißen?</p>
           <p className="text-sm text-muted">Mit {helper.name.trim() || "ihm"} plant ihr per Sprache oder Chat.</p>

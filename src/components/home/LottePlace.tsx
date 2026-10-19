@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { ThumbsDown, ThumbsUp, X } from "lucide-react";
-import { HelperAvatar } from "@/components/assistant/HelperAvatar";
+import { LotteAvatar } from "@/components/LotteAvatar";
 import { useHealthTip, useWeekPraise } from "@/components/assistant/useHealthTip";
 import { Sheet } from "@/components/plan/Sheet";
 import { CARD_LIST, chipClass } from "@/components/ui/styles";
@@ -679,7 +679,7 @@ function RatingBubble({ candidate, data }: { candidate: RatingCandidate; data: H
   const yesterday = candidate.date !== todayIso;
   return (
     <section className="flex items-center gap-2.5" aria-label="Bewerten">
-      <HelperAvatar size={40} variant="badge" />
+      <LotteAvatar size={40} />
       <div className="flex min-w-0 flex-1 items-center gap-1 rounded-2xl rounded-tl-md border border-line bg-surface py-1 pl-3.5 pr-1">
         <p className="min-w-0 flex-1 text-[15px] leading-snug text-ink">
           Wie war {yesterday ? "gestern " : ""}
@@ -775,7 +775,7 @@ function Bubble({ text, children, onOpen, onSwipe }: { text: string; children?: 
     : {};
   return (
     <section className="flex items-start gap-2.5" aria-label="Küchenhelfer" {...swipe}>
-      <HelperAvatar size={40} variant="badge" />
+      <LotteAvatar size={40} />
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         {onOpen ? (
           <button type="button" onClick={onOpen} className="rounded-2xl rounded-tl-md border border-line bg-surface px-3.5 py-2.5 text-left text-[15px] leading-snug text-ink">
