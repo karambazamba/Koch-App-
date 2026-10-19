@@ -43,66 +43,53 @@ export type HomeSentenceInput = {
   /** Aufgaben: heute dran (offen) und heute erledigt */
   tasksToday: DayItem[];
   tasksDoneToday: number;
-  /** Nächste Frist (für "… ist bis Mittwoch dran") */
-  nextDue: DayItem | null;
-  dish: string | null;
-  /** Abends warm essen und für heute noch nichts geplant */
+  /** Aufgaben mit Frist (bzw. Tag) genau heute */
+  dueToday?: DayItem[];
+  /** Für heute ist noch kein Essen geplant (und es wäre eins dran) */
   dinnerOpen: boolean;
   tomorrowTermine: DayItem[];
-  tomorrowTasks: number;
+  tomorrowTasks: DayItem[] | number;
   /** Erinnerungen, die schon mit "Okay" gesehen wurden – nicht nochmal ankündigen */
   seen?: string[];
+  /** Alt (nicht mehr genutzt): Gericht und nächste Frist stehen schon in den Kacheln */
+  dish?: string | null;
+  nextDue?: DayItem | null;
 };
 
 const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
-const n = (k: number, one: string, many: string) => (k === 1 ? `1 ${one}` : `${k} ${many}`);
+/** Titel im Satz kurz halten – der Satz bleibt eine Zeile */
+const short = (title: string, max = 26) => (title.length > max ? `${title.slice(0, max - 1).trimEnd()}…` : title);
+const end = (title: string) => (/[.!?…]$/.test(title) ? title : `${title}.`);
 
 /**
- * Lottes EIN Satz oben auf "Heute" – je nach Tageszeit und Lage. Termine und
- * Aufgaben getrennt gezählt, ohne Druck-Wörter ("dran", "bis …").
- * `action` = kleiner Knopf (Essensvorschlag).
+ * Lottes EIN Satz oben auf "Heute": eine Zeile, höchstens ca. 8 Wörter, nur
+ * was die Kacheln nicht schon zeigen – keine Zählerei, kein Gerichtname.
+ * Vorrang: gleich ein Termin → als Nächstes → heute dran → Essen-Ideen
+ * (15–18 Uhr) → ab 20 Uhr morgen → alles geschafft → ruhig.
+ * `action` = kleiner Knopf (Essensideen).
  */
 export function homeSentence(x: HomeSentenceInput): { parts: SentencePart[]; action?: "essen" } {
-  const soon = x.termineUpcoming.find((t) => t.time && !x.seen?.includes(t.key) && toMin(t.time) >= x.minutes && toMin(t.time) - x.minutes <= 60);
+  const upcoming = x.termineUpcoming.filter((t) => t.time && toMin(t.time) >= x.minutes);
+  const soon = upcoming.find((t) => !x.seen?.includes(t.key) && toMin(t.time!) - x.minutes <= 60);
   if (soon?.time) {
     const inMin = toMin(soon.time) - x.minutes;
-    return { parts: [{ t: inMin <= 1 ? "Jetzt: " : `In ${inMin} Minuten: ` }, { t: soon.title, b: true }, { t: "." }] };
+    return { parts: [{ t: inMin <= 1 ? "Jetzt: " : `In ${inMin} Minuten: ` }, { t: end(short(soon.title)), b: true }] };
   }
-  const openTermine = x.termineUpcoming.length;
-  const openTasks = x.tasksToday.length;
-  // Abends: Vorschau auf morgen
-  if (x.minutes >= 18 * 60 + 30 && !openTermine) {
-    const first = x.tomorrowTermine[0];
-    if (!first && !x.tomorrowTasks) return { parts: [{ t: openTasks ? "Für morgen ist noch nichts eingetragen – ein ruhiger Start." : "Alles geschafft für heute 🌙 Morgen ist noch nichts eingetragen." }] };
-    const parts: SentencePart[] = [{ t: "Morgen: " }];
-    if (first?.time) parts.push({ t: `${clockOf(first.time)} ${first.title}`, b: true });
-    if (x.tomorrowTermine.length > 1) parts.push({ t: ` und ${n(x.tomorrowTermine.length - 1, "weiterer Termin", "weitere Termine")}` });
-    if (x.tomorrowTasks) parts.push({ t: `${first ? ", dazu " : ""}` }, { t: n(x.tomorrowTasks, "Aufgabe", "Aufgaben"), b: true });
-    parts.push({ t: "." });
-    return { parts };
+  const next = upcoming[0];
+  if (next?.time) return { parts: [{ t: "Als Nächstes: " }, { t: `${short(next.title, 22)} um ${clockOf(next.time)}.`, b: true }] };
+  const due = (x.dueToday ?? []).find((t) => !t.done);
+  if (due) return { parts: [{ t: short(due.title), b: true }, { t: " ist heute dran." }] };
+  if (x.minutes >= 15 * 60 && x.minutes < 18 * 60 && x.dinnerOpen) return { parts: [{ t: "Noch kein Essen geplant – " }, { t: "Ideen?", b: true }], action: "essen" };
+  if (x.minutes >= 20 * 60) {
+    const first = x.tomorrowTermine.find((t) => t.time);
+    if (first?.time) return { parts: [{ t: "Morgen: " }, { t: `${clockOf(first.time)} ${short(first.title, 22)}.`, b: true }] };
+    const task = Array.isArray(x.tomorrowTasks) ? x.tomorrowTasks[0] : null;
+    if (task) return { parts: [{ t: "Morgen: " }, { t: end(short(task.title)), b: true }] };
   }
-  // Alles geschafft
+  const open = x.termineUpcoming.length + x.tasksToday.length;
   const hadSomething = x.termineToday.length > 0 || x.tasksDoneToday > 0;
-  if (!openTermine && !openTasks && hadSomething) return { parts: [{ t: "Alles geschafft für heute 🌙" }] };
-  // Nachmittags: Abendessen noch frei
-  if (x.minutes >= 14 * 60 && x.minutes < 18 * 60 + 30 && x.dinnerOpen) {
-    return { parts: [{ t: "Für heute Abend ist noch nichts geplant – soll ich dir was vorschlagen?" }], action: "essen" };
-  }
-  // Ruhiger Tag
-  if (openTermine + openTasks <= 1) {
-    if (!openTermine && !openTasks) return { parts: [{ t: "Heute ist es ruhig – nichts eingetragen." }] };
-    return { parts: [{ t: "Heute ist es ruhig – nur " }, { t: openTermine ? "ein Termin" : "eine Aufgabe", b: true }, { t: "." }] };
-  }
-  // Überblick (morgens "Heute", später "Heute noch")
-  const parts: SentencePart[] = [{ t: x.minutes < 11 * 60 ? "Heute " : "Heute noch " }];
-  const counts = [openTermine ? n(openTermine, "Termin", "Termine") : "", openTasks ? n(openTasks, "Aufgabe", "Aufgaben") : ""].filter(Boolean);
-  counts.forEach((c, i) => {
-    if (i) parts.push({ t: " und " });
-    parts.push({ t: c, b: true });
-  });
-  if (x.nextDue?.dueLabel) parts.push({ t: " – " }, { t: x.nextDue.title, b: true }, { t: ` ist ${x.nextDue.dueLabel} dran` });
-  parts.push({ t: "." });
-  return { parts };
+  if (!open && hadSomething) return { parts: [{ t: "Alles geschafft für heute 🌙" }] };
+  return { parts: [{ t: x.minutes >= 20 * 60 ? "Heute ist es ruhig. 🌙" : "Heute ist es ruhig. ☀️" }] };
 }
 
 const clockOf = (t: string) => t.replace(/^0(\d)/, "$1");

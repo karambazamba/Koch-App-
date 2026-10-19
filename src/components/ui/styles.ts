@@ -68,6 +68,10 @@ export function tileClass(selected: boolean, tone: "default" | "danger" | "soft"
 }
 
 /** Feld-Stil ohne Größe (für schmale Felder mit eigener Breite/Höhe) */
+/** Sichtbarer Kreis der kleinen Schnell-Knöpfe (20 px) – Tippfläche liefert der Knopf drumherum */
+export const quickDot = (tone: "quick" | "kladde" = "quick") =>
+  `flex h-5 w-5 items-center justify-center rounded-full ${tone === "kladde" ? "bg-kladde-line text-kladde-ink" : "bg-quick text-quick-ink"}`;
+
 export const INPUT_BASE =
   "min-w-0 rounded-xl border border-line bg-surface text-base text-ink outline-none transition placeholder:text-stone-400 focus:border-accent focus:ring-2 focus:ring-accent/20";
 

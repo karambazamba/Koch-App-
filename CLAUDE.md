@@ -19,11 +19,13 @@ Familie wählt (Standard: Lotte).
 - Pro Bildschirm eine große Hauptsache, wenig Text, viel Weißraum. Leere
   Zustände freundlich und einladend, nie als Fehler.
 - Termin = feste Uhrzeit, Aufgabe = zu erledigen, Notiz = nur festhalten,
-  Kladde = Schmierzettel. Heute zeigt max. 2 Termine (Kärtchen) und 2
-  Aufgaben (Zeilen). Startseite ist frei anpassbar (lange drücken, Link
-  unten, Einstellungen, Sprache). Gesten: Tippen = Eintrag, lange Drücken =
-  Startseite bearbeiten, Wischen = Seite wechseln. Lottes Satz: genau ein
-  Satz, ohne Druck-Wörter.
+  Kladde = Schmierzettel. Heute zeigt bis zu 3 Termine (Kärtchen
+  nebeneinander) und bis zu 3 Aufgaben (schlanke Zeilen); Kladde max. 3
+  Zeilen. Kachel antippen = öffnen, kleiner Knopf oben rechts = Neues (20 px,
+  hell-orange, nie schwarz). Lottes Satz: eine Zeile, max. ~8 Wörter, nur was
+  die Kacheln nicht zeigen, ohne Druck-Wörter. Startseite frei anpassbar
+  (Link unten, lange drücken, Einstellungen, Sprache). Gesten: Tippen =
+  Eintrag, lange Drücken = Startseite bearbeiten, Wischen = Seite wechseln.
 - Erster Start = kurzes Kennenlernen im Chat (max. 4 Schritte,
   überspringbar). Antworten steuern die Startseite.
 
@@ -233,48 +235,78 @@ Familie wählt (Standard: Lotte).
   je Anfrage im Server-Log ("Lotte Tokens", nur Zahlen, nie Inhalte). Kein
   Untertitel mehr im Chat, nur der Name.
 
-## Startseite "Heute" final (v0.18)
+## Startseite "Heute" final (v0.18/v0.19)
 
 - Kacheln (`src/lib/core/homeLayout.ts`, Speicher `wasgibts.startseite` v2
   `{tiles, tipSeen}`): termine, aufgaben, essen, einkauf, kladde, notizen,
   morgen, vorrat, post ("bald"). Feste Breiten (`HOME_TILES.width`):
-  Termine/Aufgaben/Notizen/Morgen voll, Essen/Einkauf/Kladde/Vorrat halb –
+  Termine/Aufgaben/Kladde/Notizen/Morgen voll, Essen/Einkauf/Vorrat halb –
   benachbarte halbe paart `tileRows()` automatisch. Standard: Termine,
   Aufgaben, Essen + Einkauf, Morgen (ab 16 Uhr); Kladde/Notizen aus. v1 wird
   migriert (Aufgaben hinter Termine, Hinweis gilt als gesehen).
-- Heute (`TodayPage`): Gruß immer mit Name (ohne Name "Guten Morgen!"),
-  EIN Satz von Lotte (`homeSentence()` in `aufgaben/summary.ts`, Teile fett):
-  morgens Überblick, bis 60 Min. vor einem Termin "In 30 Minuten: …",
-  nachmittags ohne Abendessen "Für heute Abend ist noch nichts geplant –
-  soll ich dir was vorschlagen?" (Knopf "Ja, gern"), ruhiger Tag, "Alles
-  geschafft für heute 🌙", abends Vorschau auf morgen. Termine als 2
-  Kärtchen (Familie Orange, Arbeit Blau `#4C6FD9`), Aufgaben als eine Karte
-  mit max. 2 Zeilen (`TaskLine`: Kreis, Titel bis 2 Zeilen, grau "heute"/
-  "bis Mi"/"diese Woche"/"von gestern" (`taskBadge`), Punkt), oben "+ N
-  weitere" und dunkles rundes "+"; heute Fällige stehen immer oben. Ohne
-  Aufgaben leise "+ Aufgabe hinzufügen". Kladde gelblich (`bg-kladde`).
-  Ganz unten "✎ Startseite bearbeiten".
-- Bearbeiten (`HomeCustomizer.tsx`): lange drücken (0,5 s, Vibration)
-  irgendwo auf Heute, Link unten, Einstellungen → "Startseite bearbeiten"
-  (`/profil/startseite`) oder per Sprache. Liste leicht wackelnd, "–" mit
-  Rückgängig, Griff zum Ziehen, "Fertig"; "+ Kachel hinzufügen" als 2er-
-  Raster (aktiv weiß mit grünem ✓, sonst grau mit dunklem "+"). Einmaliger
-  Hinweis nach dem Kennenlernen ("Tipp: Halte die Startseite gedrückt …",
-  "Verstanden", `tipSeen`). Kennenlernen setzt die Start-Kacheln
-  (`homeTilesFor`: Aufgaben immer, Termine/Essen/Einkauf je nach Antwort).
+- Ein Prinzip: Kachel antippen = öffnen; kleiner runder Knopf oben rechts =
+  schnell Neues (`QuickButton` in `src/components/ui/QuickButton.tsx`,
+  `quickDot()`): Termine "+", Aufgaben "+", Einkauf "+", Essen "⇄", Kladde
+  "✎". Sichtbar 20 px, `bg-quick`/`text-quick-ink` (#FDEBDF/#C4531A; Kladde
+  `bg-kladde-line`/`text-kladde-ink` #F3E7B8/#8A7420; Nacht Orange 20 % mit
+  hell-orangem Zeichen), Tippfläche 44 × 44 px, nie schwarz. Bei Termine/
+  Aufgaben rechts neben "+ N weitere".
+- Heute (`TodayPage`): Gruß immer mit Name (ohne Name "Guten Morgen!").
+  Lottes Satz (`homeSentence()` in `aufgaben/summary.ts`, wichtigster Teil
+  fett, eine Zeile, Titel gekürzt, keine Zählerei, kein Gericht), Vorrang:
+  Termin in ≤ 60 Min. "In 30 Minuten: **Jonne abholen.**" → "Als Nächstes:
+  **Baumarkt um 18:45.**" → "**Kita-Formular** ist heute dran." → 15–18 Uhr
+  ohne Essen "Noch kein Essen geplant – **Ideen?**" (antippbar, öffnet
+  Lotte) → ab 20 Uhr "Morgen: **7:30 Maler.**" → "Alles geschafft für heute
+  🌙" → "Heute ist es ruhig. ☀️". Erinnerungen ("Okay"), Pause und Tipps
+  gehen vor. Regeln auch mit KI (kein KI-Aufruf beim Öffnen).
+- TERMINE (`MiniCards.tsx`): bis zu 3 Kärtchen nebeneinander (1 voll, 2
+  halb, 3 Drittel), Uhrzeit 14 px fett, Titel 11,5 px bis 2 Zeilen,
+  Kästchen oben rechts, Farbstreifen (Familie #F26B21, Arbeit #4C6FD9), keine
+  graue Zeile, Höhe nach Inhalt; abgehakt → nächster rückt nach. Leer:
+  dezent "+ Termin hinzufügen". AUFGABEN: eine Karte mit bis zu 3 Zeilen
+  (`TaskLine`: Kreis, Titel einzeilig, rechts "heute" orange/"bis Mi"/"diese
+  Woche"/"von gestern" (`taskBadge`), Punkt), heute Fällige immer oben. Leer:
+  "+ Aufgabe hinzufügen". ESSEN (Gericht bis 2 Zeilen, ⇄ andere Idee) und
+  EINKAUF ("EINKAUF · 3", "Ingwer, Reis, Joghurt …" bis 2 Zeilen, "+" mit
+  "Oft gekauft") als halbe Kacheln. Ganz unten "✎ Startseite bearbeiten".
+- Schnell-Termin (`TerminQuickAdd`, auch "+" auf der Woche): Textfeld +
+  Mikrofon, WANN Heute/Morgen/übermorgen (Wochentag)/📅 Datum, UHRZEIT
+  (`frequentTimes`: eigene häufige zuerst, sonst 08:00 · 12:00 · 15:00 ·
+  19:30) · 🕐 andere, WO, ERINNERUNG keine/30 Min vorher (Standard)/1 Std/am
+  Vortag, "Termin eintragen". Text "Morgen 19:30 Elternabend" setzt die
+  Chips und bereinigt den Titel (`readTerminText`, Wiederholung wird
+  übernommen); ohne Uhrzeit "Ohne Uhrzeit? Dann lieber als Aufgabe" →
+  "Als Aufgabe speichern".
 - Schnell-Aufgabe (`TaskQuickAdd`, `aufgaben/quick.ts`): Textfeld + Mikrofon,
-  WANN Heute/Morgen/Diese Woche/Irgendwann (Tag im Text wird übernommen),
-  WO Familie/Arbeit (vorgeschlagen), "+ Uhrzeit oder Erinnerung"; Enter
-  fügt hinzu und lässt das Fenster offen.
+  WANN Heute/Morgen/Diese Woche/Irgendwann (Tag im Text wird übernommen und
+  geht vor einer früheren Wahl), WO Familie/Arbeit, "+ Uhrzeit oder
+  Erinnerung"; Enter fügt hinzu und lässt das Fenster offen.
 - Kladde (`src/lib/notizen/kladde.ts`, Speicher `wasgibts.kladde` v1 – ein
-  freier Text): oben auf `/notizen` (speichert selbst, "gespeichert ·
-  17:12", "✨ <Name>, räum auf", "Leeren" mit Rückgängig). Aufräumen
-  (`tidyKladde`): Uhrzeit = Termin, sonst Aufgabe, Listen/Infos = Notiz;
-  Vorschau mit "Übernehmen". Lotte: kladde_schreiben, kladde_aufraeumen
-  (Op `set_kladde`), termin_in_aufgabe_umwandeln, aufgabe_in_termin_
-  umwandeln, startseite_anpassen; ohne KI `kladdeRule` im HelperPanel und
-  kurze Befehle in `homeChat.ts` ("Aufgaben ganz nach oben", "Nimm die
-  Kladde auf die Startseite").
+  freier Text; Oberfläche `src/components/notizen/Kladde.tsx`): Kachel
+  (Heute und oben auf `/notizen`) gelblich, Radius 16, "✎ KLADDE · 17:12",
+  ✎-Knopf, die ersten 3 Zeilen (12,5 px, "…"), "+ N weitere Zeilen", nie
+  höher als ca. 100 px; leer eine Zeile "Schnell was aufschreiben …".
+  Antippen → Kladde-Fenster (`KladdeSheet`, `Sheet tall` ca. 85 %, Kopf
+  "✎ Kladde" + "Fertig", Fokus mit Cursor am Ende, speichert beim Tippen
+  "gespeichert · gerade eben", "✨ <Name>, räum auf", "Leeren" mit
+  Rückgängig; "Fertig" oder am Kopf nach unten ziehen schließt – das gilt für
+  alle `Sheet`s). Aufräumen (`tidyKladde`): Uhrzeit = Termin, Tag oder
+  Erledigen-Verb ("… kaufen") = Aufgabe, Listen/Infos = Notiz; Vorschau mit
+  "Übernehmen". Lotte: kladde_schreiben, kladde_aufraeumen (Op
+  `set_kladde`), termin_in_aufgabe_umwandeln, aufgabe_in_termin_umwandeln,
+  startseite_anpassen; ohne KI `kladdeRule` im HelperPanel und kurze Befehle
+  in `homeChat.ts` ("Aufgaben ganz nach oben", "Nimm die Kladde auf die
+  Startseite").
+- Bearbeiten (`HomeCustomizer.tsx`): lange drücken (0,5 s, Vibration)
+  irgendwo auf Heute, Link unten, Einstellungen → ganz oben "Startseite
+  bearbeiten" (`/profil/startseite`) oder per Sprache. Liste leicht
+  wackelnd, "–" mit Rückgängig, Griff zum Ziehen, "Fertig"; Wischen ist im
+  Fenster aus; "+ Kachel hinzufügen" als 2er-Raster (aktiv weiß mit grünem
+  ✓, sonst grau mit "+"). Einmaliger Hinweis nach dem Kennenlernen ("Tipp:
+  Halte die Startseite gedrückt …", "Verstanden", `tipSeen`). Kennenlernen
+  setzt die Start-Kacheln (`homeTilesFor`: Aufgaben immer, Termine/Essen/
+  Einkauf je nach Antwort).
 
 ## Termine, Aufgaben und die drei Seiten (v0.10)
 

@@ -19,11 +19,11 @@ export type TileWidth = "voll" | "halb";
  * eingeschaltet); `soon`: gibt es noch nicht ("bald").
  */
 export const HOME_TILES: { id: HomeTileId; label: string; hint: string; width: TileWidth; feature?: "vorrat"; soon?: boolean }[] = [
-  { id: "termine", label: "Termine", hint: "Die nächsten zwei von heute", width: "voll" },
+  { id: "termine", label: "Termine", hint: "Die nächsten drei von heute", width: "voll" },
   { id: "aufgaben", label: "Aufgaben", hint: "Was heute dran ist", width: "voll" },
   { id: "essen", label: "Essen", hint: "Gericht von heute", width: "halb" },
   { id: "einkauf", label: "Einkauf", hint: "Die Einkaufsliste", width: "halb" },
-  { id: "kladde", label: "Kladde", hint: "Schnell was aufschreiben", width: "halb" },
+  { id: "kladde", label: "Kladde", hint: "Schnell was aufschreiben", width: "voll" },
   { id: "notizen", label: "Notizen", hint: "Angeheftete Notizen", width: "voll" },
   { id: "morgen", label: "Morgen", hint: "Vorschau ab 16 Uhr", width: "voll" },
   { id: "vorrat", label: "Vorrat", hint: "Kühlschrank, Tiefkühler, Schrank", width: "halb", feature: "vorrat" },

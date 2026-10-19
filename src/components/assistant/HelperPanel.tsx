@@ -839,7 +839,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     // "Das ist kein Termin, sondern eine Aufgabe" – der zuletzt geänderte Termin
     if (/\bkein(?:en)?\s+termin\b.*\baufgabe\b/i.test(t)) {
       setInput("");
-      const last = [...loadEntries()].filter((e) => e.typ === "termin").sort((a, b) => b.geaendert.localeCompare(a.geaendert))[0];
+      const last = [...loadEntries()].filter((e) => e.typ === "termin").reverse().sort((a, b) => b.geaendert.localeCompare(a.geaendert))[0];
       if (!last || last.typ !== "termin") {
         say("Welchen Termin meinst du genau?");
         return true;
