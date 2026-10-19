@@ -332,6 +332,30 @@ Familie wählt (Standard: Lotte).
   übernimmt es, die Einkaufsliste rechnet die Rezeptmengen um, "Rezept
   ansehen" zeigt `?personen=` ("Zutaten für 2 Personen (nur heute)"). Familie,
   Rezept und Plan bleiben unverändert.
+- Mails schreiben und beantworten (v0.15, ohne Postfach – nie automatisch
+  senden): `src/lib/lotte/mail.ts` (rein: `looksLikeMail`,
+  `splitInstruction`, `summaryOf`, `eventsIn`, `mailtoHref`, `draftText`,
+  `localReply`/`localNewMail`/`reviseDraft` für die Zeit ohne KI und den
+  Testmodus). Werkzeuge `mail_entwurf` und `antwort_knoepfe`
+  (`mailTools.ts`, Bereich "post"; Antwort trägt `mail`/`chips`, auch im
+  Stream-Ereignis "done"). Eingefügte Mail mit Anweisung ("Antworte, dass
+  Donnerstag passt, aber erst ab 9") → "Kurz gesagt: …" + Entwurf; ohne
+  Anweisung → "Wie willst du antworten?" mit Knöpfen (Zusagen/Absagen/
+  Nachfragen). Neue Mail ("Mail an die Kita: Jonne ist morgen krank",
+  "Schreib dem Großhandel, dass …"). Adresse nur, wenn genannt oder in der
+  Mail ("Von:"), sonst leer. Karte `MailCard` im Chat: Betreff, Absätze, "In
+  Mail öffnen" (mailto mit Empfänger, Betreff, Text), "Kopieren" ("Kopiert ✓"),
+  "Ändern" (Kürzer, Etwas förmlicher, Auf Du/Sie, Lockerer – oder per
+  Sprache). Termin/Frist in der Mail → zusätzlich termin_anlegen/
+  aufgabe_anlegen als Vorschlag (ohne KI: Knopf "📅 … eintragen" mit
+  Rückgängig). Stil: Du/Sie je Empfänger (gemerkt bei "Auf Du/Sie"),
+  Geschäftliches förmlicher, Gruß + Name, Signatur nur bei förmlichen Mails;
+  Einstellungen → Mails (`/profil/mails`, `wasgibts.mails` v1 pro Gerät:
+  Grußformel, Signatur, gemerkte Anrede) oder "Unterschreib meine Mails mit
+  …". Eingefügte Mails werden nirgends gespeichert (nur der Chat im Speicher;
+  der Entwurf geht als Text im Verlauf mit, damit "Kürzer" klappt). Das
+  Eingabefeld im Chat ist mehrzeilig (Absätze bleiben, Enter schickt ab),
+  Nachrichten bis 6000 Zeichen.
 - Ohne KI (und im Testmodus): `parseCalendar()` (`parse.ts`) erkennt Tag,
   Uhrzeit, Frist, Wiederholung, Erinnerung, Raum, Etikett und die Befehle
   verschieben/löschen/erledigt/"Was steht … an?"/"Hab ich … Zeit?";

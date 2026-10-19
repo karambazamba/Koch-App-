@@ -4,6 +4,7 @@
 // Versteht nur einfache Sätze – z. B. "Donnerstag und Freitag gibt es meine
 // Rezepte, Mattis wünscht sich Sonntag Milchreis, der Rest vegetarische KI-Rezepte".
 
+import { eventsIn, greetingCommand, localNewMail, localReply, looksLikeMail, parseHistoryDraft, REPLY_CHOICES, reviseDraft, revisionOf, splitInstruction, styleFromContext, summaryOf, type MailDraft } from "./mail";
 import type Anthropic from "@anthropic-ai/sdk";
 import { WEEKDAYS } from "../einstellungen/profile";
 import type { CreateMessage } from "./engine";
@@ -253,6 +254,8 @@ function mockModel(): CreateMessage {
       // Gedächtnis: Lotte kennt die letzten Nachrichten des Gesprächs
       const memory = memoryReply(last.content, msgs);
       if (memory) return text(memory);
+      const mail = mailUses(last.content, msgs, system);
+      if (mail) return mail;
       const leftovers = leftoverReply(last.content, system);
       if (leftovers) return text(leftovers);
       const everydayUse = everydayUses(last.content, system);
@@ -468,6 +471,16 @@ function mockModel(): CreateMessage {
     }
     if (prevUses.some((u) => u.name === "app_befehl")) return text("Mach ich – tipp unten auf Übernehmen. (Testmodus)");
 
+    // Mails: ein Satz zum Entwurf bzw. zur Frage, evtl. "Soll ich das eintragen?"
+    const drafted = prevUses.find((u) => u.name === "mail_entwurf");
+    const asked = prevUses.some((u) => u.name === "antwort_knoepfe");
+    if (drafted || asked) {
+      const summary = drafted ? String((drafted.input as Record<string, unknown>).kurzfassung ?? "") : summaryOf(splitInstruction(intentText(msgs)).mail);
+      const event = prevUses.some((u) => u.name === "termin_anlegen" || u.name === "aufgabe_anlegen") ? " Da steht auch ein Termin drin – soll ich das eintragen? Tipp unten auf Übernehmen." : "";
+      if (asked) return text(`Kurz gesagt: ${summary} Wie willst du antworten?${event} (Testmodus)`);
+      return text(`${summary ? `Kurz gesagt: ${summary} ` : ""}Hier mein Vorschlag – senden machst du selbst.${event} (Testmodus)`);
+    }
+
     // Termine gelesen → kurz antworten
     const shown = prevUses.find((u) => u.name === "woche_anzeigen" || u.name === "tag_anzeigen");
     if (shown) return text(calendarAnswer(String(resultFor(shown.name) ?? ""), shown.input as Record<string, unknown>));
@@ -547,9 +560,36 @@ function everydayUses(latest: string, system: string): Anthropic.Beta.BetaMessag
     return tools([{ name: "app_befehl", input: { text: latest } }]);
   }
   // App-Bedienung (Ansicht, Vorlesen, Einstellungen, neue Person, Produkte, Seiten)
+  if (greetingCommand(latest)) return tools([{ name: "app_befehl", input: { text: latest } }]);
   if (/\b(ansicht|dunkel|vorlesen|lies mir|sprich (langsamer|schneller)|melde dich|keine tipps|isst jetzt|mag kein\w*|allergisch|wohnt jetzt|immer .+ statt|zeig mir (alles|unsere rezepte|den vorrat)|koche jetzt spontan)\b/.test(t)) {
     return tools([{ name: "app_befehl", input: { text: latest } }]);
   }
+  return null;
+}
+
+/** Mails im Testmodus: eingefügte Mail, "Zusagen"/"Absagen"/"Nachfragen", neue Mail, "Kürzer"/"Auf Du" */
+function mailUses(latest: string, msgs: Anthropic.Beta.BetaMessageParam[], system: string): Anthropic.Beta.BetaMessage | null {
+  const today = system.match(/^Heute: .*\((\d{4}-\d{2}-\d{2})\)/m)?.[1] ?? "";
+  const { style, name } = styleFromContext(system);
+  const strings = msgs.slice(0, -1).filter((m) => typeof m.content === "string") as { role: string; content: string }[];
+  const eventsFor = (mail: string) => (today ? eventsIn(mail, today).map(draftInput) : []);
+  const draftUse = (d: MailDraft) => ({ name: "mail_entwurf", input: { an: d.to, empfaenger: d.recipient ?? "", betreff: d.subject, text: d.body, anrede: d.tone, ...(d.summary ? { kurzfassung: d.summary } : {}) } });
+  const { instruction, mail } = splitInstruction(latest);
+  if (looksLikeMail(mail)) {
+    if (instruction) return tools([draftUse(localReply(mail, { instruction }, style, name)), ...eventsFor(mail)]);
+    return tools([{ name: "antwort_knoepfe", input: { optionen: REPLY_CHOICES.map((c) => c.label) } }, ...eventsFor(mail)]);
+  }
+  // Antwort-Knopf auf die zuletzt eingefügte Mail
+  const choice = REPLY_CHOICES.find((c) => c.label.toLowerCase() === latest.trim().toLowerCase());
+  const pasted = [...strings].reverse().find((m) => m.role === "user" && looksLikeMail(splitInstruction(m.content).mail));
+  if (choice && pasted) return tools([draftUse(localReply(splitInstruction(pasted.content).mail, { choice: choice.id }, style, name))]);
+  // Änderung am letzten Entwurf
+  const rev = revisionOf(latest);
+  const lastDraft = [...strings].reverse().find((m) => m.role === "assistant" && m.content.includes("[Mail-Entwurf"));
+  const previous = lastDraft ? parseHistoryDraft(lastDraft.content.slice(lastDraft.content.indexOf("[Mail-Entwurf"))) : null;
+  if (rev && previous) return tools([draftUse(reviseDraft(previous, rev))]);
+  const fresh = localNewMail(latest, style, name);
+  if (fresh) return tools([draftUse(fresh)]);
   return null;
 }
 

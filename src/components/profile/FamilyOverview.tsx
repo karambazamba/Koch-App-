@@ -1,6 +1,7 @@
 "use client";
 
-import { Blocks, BookOpen, CalendarDays, ChefHat, Database, LayoutGrid, LayoutList, MessageCircle, Mic, Palette, Volume2, Refrigerator, Salad, Sun, Users } from "lucide-react";
+import { useMailStyle } from "@/lib/lotte/mailSettings";
+import { Blocks, BookOpen, CalendarDays, ChefHat, Database, LayoutGrid, LayoutList, Mail, MessageCircle, Mic, Palette, Volume2, Refrigerator, Salad, Sun, Users } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { PAGE_MAIN } from "@/components/ui/styles";
 import { APP_VERSION } from "@/lib/core/app";
@@ -43,6 +44,7 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
   const recipeCount = recipes ? Object.keys(recipes).length : null;
   const legacy = useLegacyFeatures();
   const speech = useSpeechSettings();
+  const mailStyle = useMailStyle();
   const home = useHomeTiles();
   const bausteine = useBausteine();
   const unlockedRecipes = useFeature("rezepte");
@@ -101,6 +103,9 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
             </Row>
             <Row href="/profil/vorlesen" icon={Volume2} title="Vorlesen" value={READ_MODES.find((m) => m.value === speech.mode)?.short}>
               Antworten laut vorlesen
+            </Row>
+            <Row href="/profil/mails" icon={Mail} title="Mails" value={mailStyle?.greeting}>
+              Gruß und Signatur für deine Mails
             </Row>
           </Group>
           <Group title="Aussehen">

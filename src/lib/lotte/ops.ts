@@ -3,6 +3,7 @@
 // wendet sie erst nach "Übernehmen" an. Alles hier ist rein (ohne Speicher),
 // damit Server (Arbeitskopie) und App (Vorschau, Übernehmen) gleich rechnen.
 
+import type { MailStyle } from "./mail";
 import { createAiRecipe, type Recipe, type RecipeCategory } from "../essen/cookbook";
 import {
   composeWeek,
@@ -40,6 +41,8 @@ export type AssistantData = {
   home?: HomeTile[];
   /** Eingeschaltete Bausteine (nur zum Lesen; Schalten über `set_feature`) */
   features?: string[];
+  /** Mail-Stil: Grußformel, Signatur, gemerkte Anrede je Empfänger (nur zum Lesen) */
+  mail?: MailStyle;
 };
 
 /** Ein Tag einer Planungswoche – es gibt genau ein Hauptgericht pro Tag */

@@ -189,6 +189,8 @@ export function parseCalendar(text: string, today: string, persons: Person[] = [
   const t = raw.toLowerCase();
   // Essen und Einkauf gehören nicht hierher
   if (/\bgibt['’]?s\b|\bkochen\b|\bessen\b|\beinkaufsliste\b|\bauf die liste\b|\bwir brauchen\b|\burlaub\b/i.test(t)) return null;
+  // "Wir kommen erst um 19 Uhr heim" = schnelle Essensideen, kein Termin
+  if (/\berst um \d{1,2}(:\d{2})?\s*(uhr\s*)?(heim|nach hause|zu hause)\b|\bspät (heim|nach hause|zu hause)\b|\bwas schnelles\b/i.test(t)) return null;
 
   // "Was steht diese Woche an?" / "Was hab ich morgen?"
   if (/\b(was steht|was hab(?:e)? ich|was haben wir|was ist|was liegt|zeig(?:\s+mir)?)\b.*\b(an|vor|los|termine|aufgaben|woche|heute|morgen|tag)\b/.test(t) && !/\bzeit\b|\bfrei\b/.test(t)) {

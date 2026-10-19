@@ -14,6 +14,7 @@ import { runRegisteredTool, toolDefinitions } from "./toolset";
 import { berlinTime } from "../core/now";
 import { sanitizeEntry, type CalendarEntry } from "../aufgaben/model";
 import { sanitizeHome } from "../core/homeLayout";
+import { sanitizeMailStyle } from "./mail";
 
 /** Eine Modell-Anfrage; `onText` bekommt den Antworttext Stück für Stück */
 export type CreateMessage = (params: Anthropic.Beta.MessageCreateParamsNonStreaming, onText?: (delta: string) => void) => Promise<Anthropic.Beta.BetaMessage>;
@@ -65,6 +66,7 @@ export function parseRequest(body: unknown): AssistantRequest {
     home: sanitizeHome(b.data?.home),
     features: (Array.isArray(b.data?.features) ? b.data.features : []).filter((f): f is string => typeof f === "string").slice(0, 30),
     entries: (Array.isArray(b.data?.entries) ? b.data.entries : []).map(sanitizeEntry).filter((e): e is CalendarEntry => e !== null).slice(0, 400),
+    mail: sanitizeMailStyle(b.data?.mail),
   };
   const pending = (Array.isArray(b.pending) ? b.pending : []).filter(
     (op): op is ChangeOp => Boolean(op) && typeof op === "object" && typeof op.id === "string" && OP_TYPES.has(op.type),
@@ -216,5 +218,6 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
   }
 
   logUsage(model, usage);
-  return { reply: reply || "Erledigt – schau dir den Vorschlag unten an.", ops: compactOps(ctx.ops) };
+  const extras = { ...(ctx.mail ? { mail: ctx.mail } : {}), ...(ctx.chips?.length ? { chips: ctx.chips } : {}) };
+  return { reply: reply || (ctx.mail ? "Hier mein Vorschlag:" : "Erledigt – schau dir den Vorschlag unten an."), ops: compactOps(ctx.ops), ...extras };
 }

@@ -61,6 +61,11 @@ import { MarketBoard, type MarketTarget } from "./MarketBoard";
 import { BakingBoard } from "./BakingBoard";
 import { ICON_BUTTON, INPUT_BASE, NOTE, buttonClass, chipClass } from "@/components/ui/styles";
 import { ProposalCard } from "./ProposalCard";
+import { MailCard } from "./MailCard";
+import { draftForHistory, eventsIn, greetingCommand, localNewMail, localReply as mailReply, looksLikeMail, REPLY_CHOICES, reviseDraft, revisionOf, splitInstruction, summaryOf, withTone, type MailDraft, type MailRevision } from "@/lib/lotte/mail";
+import { loadMailStyle, saveMailStyle } from "@/lib/lotte/mailSettings";
+import { draftSummary, upsertEntry, type CalendarEntry } from "@/lib/aufgaben";
+import { createEntry } from "@/lib/core/entries";
 import { TipBubble } from "./TipBubble";
 import { tipsShown, useTipStore } from "@/lib/essen/healthTips";
 import { extractLikeStatements, learnFromRecipe, learnLikes, LIKE_WEIGHTS } from "@/lib/essen/likes";
@@ -94,6 +99,10 @@ export type ChatTurnView = ChatTurn & {
   baking?: Recipe[];
   /** Antwort-Knöpfe unter der Nachricht (nur beim letzten Eintrag) */
   choices?: { label: string; onClick: () => void }[];
+  /** Knöpfe der KI: ein Tipp schickt den Text als eigene Nachricht (nur beim letzten Eintrag) */
+  chips?: string[];
+  /** Mail-Entwurf als Karte ("In Mail öffnen", "Kopieren", "Ändern") */
+  mail?: MailDraft;
 };
 
 export type Proposal = { ops: ChangeOp[]; selected: Set<string> };
@@ -143,7 +152,14 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   const [dictationHint, setDictationHint] = useState(false);
   // Zugangscode "Später" – gilt, bis das Panel wieder geöffnet wird
   const [codeLater, setCodeLater] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  // Eingabefeld wächst mit (eingefügte Mails), höchstens ~6 Zeilen
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 144)}px`;
+  }, [input]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const ready = Boolean(status?.ready && data && today);
@@ -236,10 +252,19 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
         );
         return {
           ...c,
-          turns: [...c.turns, { role: "assistant", text: result.reply }],
+          turns: [
+            ...c.turns,
+            {
+              role: "assistant",
+              text: result.reply,
+              ...(result.mail ? { mail: result.mail, send: `${result.reply}\n\n${draftForHistory(result.mail)}` } : {}),
+              ...(result.chips?.length ? { chips: result.chips } : {}),
+            },
+          ],
           proposal: result.ops.length > 0 ? { ops: result.ops, selected } : null,
         };
       });
+      if (result.mail) rememberTone(result.mail, revisionOf(question));
     } catch {
       // Offline, kein Guthaben, Limit, falscher Code …: nie Technik-Texte – die Frage
       // wandert an die eigenen Regeln (ohne KI), sonst der freundliche Satz
@@ -546,6 +571,12 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     noteChatMessage();
     setViaVoice(byVoice);
     noteUserAction(toIsoDate(today));
+    // Eine eingefügte Mail ist nie eine Zutatenliste
+    if (chat.spontan && looksLikeMail(splitInstruction(t).mail)) {
+      setChat((c) => ({ ...c, spontan: null }));
+      route(t);
+      return;
+    }
     // Selbst geöffneter Spontan-Modus: "Was Schnelles mit Nudeln" passt die Ideen an,
     // genannte Zutaten landen im Vorrat; alles andere beendet ihn
     if (chat.spontan && isIdeaFilterRequest(t)) {
@@ -561,6 +592,86 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       return;
     }
     route(t);
+  };
+
+  // --- Mails (ohne Postfach; ohne KI einfache Entwürfe) ------------------------
+
+  /** "Auf Du"/"Auf Sie" für diesen Empfänger merken */
+  const rememberTone = (draft: MailDraft, rev: MailRevision | null) => {
+    const key = draft.to || draft.recipient || "";
+    if (key && (rev === "du" || rev === "sie")) saveMailStyle(withTone(loadMailStyle(), key, rev));
+  };
+
+  const myName = () => data?.profile.persons[0]?.name?.trim() ?? "";
+
+  const mailTurn = (draft: MailDraft, text: string, extra: Partial<ChatTurnView> = {}): ChatTurnView => ({ role: "assistant", local: true, text, mail: draft, ...extra });
+
+  /** Termin/Frist aus der Mail als Knopf "📅 … eintragen" (mit Rückgängig) */
+  const eventChoices = (mail: string): { label: string; onClick: () => void }[] => {
+    if (!today) return [];
+    return eventsIn(mail, toIsoDate(today)).map((draft) => ({
+      label: `📅 ${draft.data.title} eintragen`,
+      onClick: () => {
+        const entry = createEntry(draft.typ, draft.data, { raum: draft.raum }) as CalendarEntry;
+        const undo = changeEntries((list) => upsertEntry(list, entry));
+        const text = `Eingetragen ✓ ${draftSummary(draft)}`;
+        setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text, local: true, undo: pushUndo(text, undo) }] }));
+      },
+    }));
+  };
+
+  /** Ohne KI: eingefügte Mail, neue Mail ("Mail an die Kita: …") oder Änderung am letzten Entwurf */
+  const mailRule = (t: string): boolean => {
+    const style = loadMailStyle();
+    const greeting = greetingCommand(t);
+    if (greeting) {
+      setInput("");
+      saveMailStyle({ ...style, greeting });
+      const text = `Gemerkt ✓ Deine Mails enden jetzt mit „${greeting}“. Ändern kannst du das auch unter Einstellungen → Mails.`;
+      setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text, local: true, undo: pushUndo(text, () => saveMailStyle(style)) }] }));
+      return true;
+    }
+    const { instruction, mail } = splitInstruction(t);
+    if (looksLikeMail(mail)) {
+      setInput("");
+      const events = eventChoices(mail);
+      const eventLine = events.length ? " Da steht auch ein Termin drin – soll ich ihn eintragen?" : "";
+      const summary = `Kurz gesagt: ${summaryOf(mail)}`;
+      if (instruction) {
+        const draft = mailReply(mail, { instruction }, style, myName());
+        setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, mailTurn(draft, `${summary}${eventLine}`, events.length ? { choices: events } : {})] }));
+        return true;
+      }
+      const answerWith = (choice: (typeof REPLY_CHOICES)[number]) => () => {
+        const draft = mailReply(mail, { choice: choice.id }, loadMailStyle(), myName());
+        setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: choice.label, local: true }, mailTurn(draft, "Hier mein Vorschlag:")] }));
+      };
+      setChat((c) => ({
+        ...c,
+        turns: [
+          ...c.turns,
+          { role: "user", text: t, local: true },
+          { role: "assistant", local: true, text: `${summary} Wie willst du antworten?${eventLine}`, choices: [...REPLY_CHOICES.map((r) => ({ label: r.label, onClick: answerWith(r) })), ...events] },
+        ],
+      }));
+      return true;
+    }
+    const rev = revisionOf(t);
+    const previous = [...chat.turns].reverse().find((x) => x.mail)?.mail;
+    if (rev && previous) {
+      setInput("");
+      const draft = reviseDraft(previous, rev);
+      rememberTone(draft, rev);
+      setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, mailTurn(draft, "So vielleicht?")] }));
+      return true;
+    }
+    const fresh = localNewMail(t, style, myName(), data?.profile.persons.map((p) => p.name) ?? []);
+    if (fresh) {
+      setInput("");
+      setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, mailTurn(fresh, "Hier mein Vorschlag – senden machst du selbst.")] }));
+      return true;
+    }
+    return false;
   };
 
   /**
@@ -581,6 +692,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   /** Feste Regeln (ohne KI, oder wenn die KI ein `app_befehl` schickt). true = erledigt */
   const rules = (t: string): boolean => {
     if (!data || !today) return false;
+    if (mailRule(t)) return true;
     if (isAddPersonRequest(t)) {
       setInput("");
       setGuided(startAddPerson(data.profile, t));
@@ -1025,6 +1137,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   // Offene Ideen-Antwort (die letzte, solange Spontan kochen läuft) und eingeklappte frühere
   const spontanIndexes = chat.turns.flatMap((t, i) => (t.spontan ? [i] : []));
   const liveSpontan = chat.spontan !== null && spontanIndexes.length ? spontanIndexes[spontanIndexes.length - 1] : -1;
+  // Nur der neueste Mail-Entwurf lässt sich ändern
+  const lastMailIndex = chat.turns.map((t) => Boolean(t.mail)).lastIndexOf(true);
   const earlier = spontanIndexes.filter((i) => i !== liveSpontan);
   const firstEarlier = earlier[0] ?? -1;
   const earlierTitles = [...new Set(earlier.flatMap((i) => ideasFor(chat.turns[i]).map((idea) => idea.title)))];
@@ -1065,7 +1179,9 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                 className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full border border-line bg-surface px-2.5 text-[13px] font-bold text-ink active:scale-95"
               >
                 <MessageSquarePlus className="h-4 w-4 text-accent" strokeWidth={2.25} aria-hidden />
-                Neues Gespräch
+                {/* Auf dem Handy nur „Neu“, damit der Name Platz hat */}
+                <span className="sm:hidden">Neu</span>
+                <span className="hidden sm:inline">Neues Gespräch</span>
               </button>
             )}
             {speechSupported() && (
@@ -1159,7 +1275,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                 <div
                   className={`${BUBBLE} ${
                     turn.role === "user"
-                      ? "rounded-br-md bg-accent text-on-accent"
+                      ? `rounded-br-md bg-accent text-on-accent ${turn.text.length > 300 ? "line-clamp-6" : ""}`
                       : "rounded-bl-md border border-line bg-surface text-ink"
                   }`}
                 >
@@ -1194,6 +1310,22 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                   <SpeakButton speaking={speakingId === `turn-${i}`} onClick={() => toggleSpeak(turn.text, `turn-${i}`, voice)} />
                 )}
                 </div>
+                {turn.mail && (
+                  <MailCard
+                    draft={turn.mail}
+                    active={last || i === lastMailIndex}
+                    onRevise={(wish) => submit(wish)}
+                  />
+                )}
+                {turn.chips && last && (
+                  <div className="flex flex-wrap gap-2" aria-label="Antworten">
+                    {turn.chips.map((c) => (
+                      <button key={c} type="button" onClick={() => submit(c)} className={chipClass(false)}>
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {turn.choices && last && (
                   <div className="flex flex-wrap gap-2">
                     {turn.choices.map((c) => (
@@ -1351,16 +1483,23 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                 <Mic className="h-7 w-7" strokeWidth={2} aria-hidden />
               )}
             </button>
-            <input
+            {/* Mehrzeilig, damit eingefügte Mails ihre Absätze behalten; Enter schickt ab */}
+            <textarea
               ref={inputRef}
-              type="text"
+              rows={1}
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  e.currentTarget.form?.requestSubmit();
+                }
+              }}
               disabled={!canType}
               enterKeyHint="send"
               aria-label="Nachricht an den Küchenhelfer"
               placeholder={`Sag ${name}, was ansteht …`}
-              className={`${INPUT_BASE} h-12 flex-1 px-4`}
+              className={`${INPUT_BASE} field-sizing-content max-h-36 min-h-12 flex-1 resize-none px-4 py-3 leading-snug`}
             />
             <button
               type="submit"

@@ -80,7 +80,7 @@ export async function POST(request: Request) {
       const send = (event: StreamEvent) => controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
       try {
         const result = await runAssistant(req, create, model, { onText: (d) => send({ t: "text", d }), onRound: () => send({ t: "round" }) });
-        send({ t: "done", reply: result.reply, ops: result.ops });
+        send({ t: "done", reply: result.reply, ops: result.ops, mail: result.mail, chips: result.chips });
       } catch (e) {
         send({ t: "error", error: errorCode(e) });
       } finally {
