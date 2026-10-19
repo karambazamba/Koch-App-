@@ -4,10 +4,10 @@
 // App erkennt dann selbst (Regeln). Im Mock liefert sie das Regel-Ergebnis.
 
 import Anthropic from "@anthropic-ai/sdk";
-import { aiRecognize, parseRecognizeRequest, ruleRecognize } from "@/lib/onboarding/ai";
-import { aiSetup, checkAccess, clientIp, takeDailySlot } from "@/lib/assistant/guard";
-import type { AssistantErrorCode } from "@/lib/assistant/protocol";
-import { allowRequest } from "@/lib/assistant/rateLimit";
+import { aiRecognize, parseRecognizeRequest, ruleRecognize } from "@/lib/einstellungen/onboarding/ai";
+import { aiSetup, checkAccess, clientIp, takeDailySlot } from "@/lib/lotte/guard";
+import type { AssistantErrorCode } from "@/lib/lotte/protocol";
+import { allowRequest } from "@/lib/lotte/rateLimit";
 
 export const maxDuration = 30;
 

@@ -1,24 +1,15 @@
 "use client";
 
-import { useRecipes } from "@/lib/cookbook";
-import { storedForWeek, useMealPlans } from "@/lib/mealPlan";
-import { effectivePlanStyle } from "@/lib/profile";
-import { ratingCandidate, useRatings, type RatingCandidate } from "@/lib/ratings";
-import { useExternalStore } from "@/lib/useExternalStore";
-import { useProfile } from "@/lib/useProfile";
-import { isPaused, useNudges } from "@/lib/nudges";
-import { toIsoDate, useToday, useWeekPlans, weekStartFor } from "@/lib/weekPlan";
+import { useRecipes } from "@/lib/essen/cookbook";
+import { storedForWeek, useMealPlans } from "@/lib/essen/mealPlan";
+import { effectivePlanStyle } from "@/lib/einstellungen/profile";
+import { ratingCandidate, useRatings, type RatingCandidate } from "@/lib/essen/ratings";
+import { useProfile } from "@/lib/einstellungen/useProfile";
+import { isPaused, useNudges } from "@/lib/core/nudges";
+import { toIsoDate, useToday, useWeekPlans, weekStartFor } from "@/lib/essen/weekPlan";
 
-/** Jede halbe Minute neu nachsehen (z. B. damit das Gericht nach dem Essen von selbst verschwindet) */
-const everyHalfMinute = (onChange: () => void) => {
-  const timer = window.setInterval(onChange, 30_000);
-  return () => window.clearInterval(timer);
-};
-
-/** Minuten seit Mitternacht (im Browser, läuft mit) */
-export function useMinutes(): number | undefined {
-  return useExternalStore(everyHalfMinute, () => new Date().getHours() * 60 + new Date().getMinutes(), () => undefined);
-}
+import { useMinutes } from "@/lib/core/now";
+export { useMinutes };
 
 /** Gekochtes Gericht, nach dem gefragt werden soll ("Wie war …?") */
 export function useRatingCandidate(): RatingCandidate | null | undefined {

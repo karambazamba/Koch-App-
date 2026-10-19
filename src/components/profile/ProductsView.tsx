@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ArrowRight, Plus, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { CARD, CARD_LIST, INPUT_BASE, PAGE_MAIN, SECTION_TITLE, SUBTLE, buttonClass, chipClass } from "@/components/ui/styles";
-import { SHOP_SUGGESTIONS, addShop, removeProduct, removeShop, setProduct, useShoppingSettings } from "@/lib/shoppingList";
+import { SHOP_SUGGESTIONS, addShop, removeProduct, removeShop, setProduct, useShoppingSettings } from "@/lib/einkauf/shoppingList";
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 

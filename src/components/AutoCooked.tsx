@@ -2,16 +2,16 @@
 
 import { useEffect } from "react";
 import { useMinutes } from "@/components/home/useRatingCandidate";
-import { useRecipes } from "@/lib/cookbook";
-import { cookableEntry, markCooked, mealIsOver, useCookedDays } from "@/lib/mealDone";
-import { composeWeek, useMealPlans } from "@/lib/mealPlan";
-import { effectivePlanStyle } from "@/lib/profile";
-import { useProfile } from "@/lib/useProfile";
-import { addDays, toIsoDate, useToday, useWeekPlans, weekStartFor } from "@/lib/weekPlan";
+import { useRecipes } from "@/lib/essen/cookbook";
+import { cookableEntry, markCooked, mealIsOver, useCookedDays } from "@/lib/essen/mealDone";
+import { composeWeek, useMealPlans } from "@/lib/essen/mealPlan";
+import { effectivePlanStyle } from "@/lib/einstellungen/profile";
+import { useProfile } from "@/lib/einstellungen/useProfile";
+import { addDays, toIsoDate, useToday, useWeekPlans, weekStartFor } from "@/lib/essen/weekPlan";
 
 /**
  * Nach dem Essen zählt das Gericht von selbst als gekocht – ohne Nachfrage
- * (siehe lib/mealDone.ts). Auch für gestern, falls die App abends zu war.
+ * (siehe lib/essen/mealDone.ts). Auch für gestern, falls die App abends zu war.
  * Nicht bei Pause/Ausflug, nicht beim lockeren Wochenende (da ist das Essen
  * nur eine Idee) und bei "spontan" nur, was aus den Ideen gewählt wurde.
  */

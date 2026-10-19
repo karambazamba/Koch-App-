@@ -53,21 +53,21 @@ dauerhafte HTTPS-Adresse.
 | --- | --- |
 | `src/app/page.tsx` | Startseite mit den drei Bereichen |
 | `src/app/profil/` | Haushaltsprofil: Assistent beim ersten Anlegen, danach Übersicht „Unsere Familie“ mit Einzel-Bearbeitung |
-| `src/app/schnellkueche` | „Was ist noch da?“: Vorrat per Spracheingabe/Text, Kochbuch-Treffer (`src/lib/pantry.ts`) |
-| `src/app/einkaufsliste` | Einkaufsliste aus dem Wochenplan (`src/lib/shoppingList.ts`) |
+| `src/app/schnellkueche` | „Was ist noch da?“: Vorrat per Spracheingabe/Text, Kochbuch-Treffer (`src/lib/essen/pantry.ts`) |
+| `src/app/einkaufsliste` | Einkaufsliste aus dem Wochenplan (`src/lib/einkauf/shoppingList.ts`) |
 | `src/app/manifest.ts` | Web-App-Manifest |
 | `public/sw.js` | Service Worker (Offline-Cache) |
 | `public/icons/` | App-Icons, erzeugt mit `npm run icons` (`scripts/generate-icons.mjs`) |
 | `src/app/wochenplan/` | Wochenplan: Gerichte pro Tag und Mahlzeit (diese/nächste Woche) |
-| `src/lib/mealPlan.ts` | Datenmodell Wochenplan, `buildWeek()` |
+| `src/lib/essen/mealPlan.ts` | Datenmodell Wochenplan, `buildWeek()` |
 | `src/app/woche/check/` | Wochen-Check: Vorgaben für eine Woche (Standard: ab nächstem Montag, `?woche=`) |
 | `src/app/kochbuch/` | Unser Kochbuch: Übersicht, Rezept, Rezept bearbeiten |
-| `src/lib/cookbook.ts` | Datenmodell Rezepte (auch für spätere KI-Rezepte) |
-| `src/lib/profile.ts` | Datenmodell Haushaltsprofil |
-| `src/lib/weekPlan.ts` | Datenmodell Wochen-Vorgaben (pro Woche, Schlüssel = Montag) |
-| `src/lib/localStore.ts` | Lokale Speicherung (localStorage) – später hier auf Supabase umstellen |
+| `src/lib/essen/cookbook.ts` | Datenmodell Rezepte (auch für spätere KI-Rezepte) |
+| `src/lib/einstellungen/profile.ts` | Datenmodell Haushaltsprofil |
+| `src/lib/essen/weekPlan.ts` | Datenmodell Wochen-Vorgaben (pro Woche, Schlüssel = Montag) |
+| `src/lib/core/localStore.ts` | Lokale Speicherung (localStorage) – später hier auf Supabase umstellen |
 | `src/app/api/kuechenhelfer/` | Küchenhelfer-API (Claude, serverseitig) |
-| `src/lib/assistant/` | Küchenhelfer: Änderungen (`ops.ts`), Werkzeuge, Prompt, Mock, Vorschau |
+| `src/lib/lotte/` | Küchenhelfer: Änderungen (`ops.ts`), Werkzeuge, Prompt, Mock, Vorschau |
 | `src/components/assistant/` | Küchenhelfer-Knopf, Panel, Vorschau |
 
 ## Küchenhelfer (KI) einrichten

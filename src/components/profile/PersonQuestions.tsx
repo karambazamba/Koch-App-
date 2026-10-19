@@ -13,7 +13,7 @@ import {
   usualLunch,
   type KidAgeGroup,
   type Person,
-} from "@/lib/profile";
+} from "@/lib/einstellungen/profile";
 
 const BIG_BUTTON = `${buttonClass("primary", "lg")} w-full`;
 

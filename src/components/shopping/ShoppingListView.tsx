@@ -46,11 +46,12 @@ import {
   type ListItem,
   type Section,
   type Staple,
-} from "@/lib/shoppingList";
+} from "@/lib/einkauf/shoppingList";
 import { QuickAddButton } from "./QuickAdd";
-import { useWeekShoppingList, type WeekChoice } from "@/lib/useWeekShoppingList";
-import { addDays, formatWeekRange, toIsoDate, useToday } from "@/lib/weekPlan";
+import { useWeekShoppingList, type WeekChoice } from "@/lib/einkauf/useWeekShoppingList";
+import { addDays, formatWeekRange, toIsoDate, useToday } from "@/lib/essen/weekPlan";
 import { EditItemSheet, ItemContent, StaplesSheet, SwipeRow, type RowAction } from "./ShoppingParts";
+import { useFeature } from "@/lib/core/features";
 
 const SKELETON = <div className={`${CARD} m-4 h-64 animate-pulse`} />;
 
@@ -75,6 +76,8 @@ export function ShoppingListView() {
   // Start mit der Woche, für die gerade eingekauft wird; dann umschaltbar.
   const [choice, setChoice] = useState<WeekChoice>("planning");
   const data = useWeekShoppingList(choice);
+  // Wochenplan-Oberfläche versteckt (Neustart): kein Verweis dorthin
+  const planUi = useFeature("wochenplan");
   const today = useToday();
   const [mode, setMode] = useState<"abteilung" | "laden">("abteilung");
   const [showHidden, setShowHidden] = useState(false);
@@ -237,7 +240,7 @@ export function ShoppingListView() {
 
         {list.items.length === 0 && list.missing.length === 0 && todayItems.length === 0 && (
           <p className={`${CARD} p-5 text-center text-muted`}>
-            {data.planning ? (
+            {data.planning && planUi ? (
               <>
                 Für Gerichte mit Rezept im Wochenplan schreibe ich die Liste von selbst.{" "}
                 <Link href="/wochenplan" className="font-bold text-accent-strong underline">

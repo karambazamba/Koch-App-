@@ -3,9 +3,9 @@
 import { RotateCcw } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { CARD, PAGE_MAIN, SUBTLE, buttonClass } from "@/components/ui/styles";
-import { helperName } from "@/lib/profile";
-import { restoreNeverAgain } from "@/lib/ratings";
-import { useProfile } from "@/lib/useProfile";
+import { helperName } from "@/lib/einstellungen/profile";
+import { restoreNeverAgain } from "@/lib/essen/ratings";
+import { useProfile } from "@/lib/einstellungen/useProfile";
 
 const DATE = new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "numeric", year: "numeric" });
 

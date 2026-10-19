@@ -6,9 +6,9 @@ import { PageHeader } from "@/components/PageHeader";
 import { Sheet } from "@/components/plan/Sheet";
 import { Segmented } from "@/components/ui/Segmented";
 import { CARD, INPUT_BASE, PAGE_MAIN, SECTION_TITLE, buttonClass, chipClass } from "@/components/ui/styles";
-import { openHelper } from "@/lib/assistant/open";
-import { formatAmount, parseAmount } from "@/lib/cookbook";
-import { parseLeftovers } from "@/lib/leftovers/parser";
+import { openHelper } from "@/lib/lotte/open";
+import { formatAmount, parseAmount } from "@/lib/essen/cookbook";
+import { parseLeftovers } from "@/lib/essen/leftovers/parser";
 import {
   PANTRY_PLACES,
   PANTRY_UNITS,
@@ -19,10 +19,10 @@ import {
   usePantry,
   type PantryItem,
   type PantryPlace,
-} from "@/lib/pantry";
-import { helperName } from "@/lib/profile";
-import { useProfile } from "@/lib/useProfile";
-import { toIsoDate, useToday } from "@/lib/weekPlan";
+} from "@/lib/essen/pantry";
+import { helperName } from "@/lib/einstellungen/profile";
+import { useProfile } from "@/lib/einstellungen/useProfile";
+import { toIsoDate, useToday } from "@/lib/essen/weekPlan";
 
 const SHORT_DATE = new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "numeric" });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useGoBack } from "@/lib/useGoBack";
+import { useGoBack } from "@/lib/core/useGoBack";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Check, MapPin, Repeat, Sparkles, Wallet } from "lucide-react";
@@ -16,8 +16,8 @@ import {
   wishDayActive,
   type HouseholdProfile,
   type WeekRules,
-} from "@/lib/profile";
-import { useProfile } from "@/lib/useProfile";
+} from "@/lib/einstellungen/profile";
+import { useProfile } from "@/lib/einstellungen/useProfile";
 import {
   availableDays,
   createWeekPlan,
@@ -36,7 +36,7 @@ import {
   wishIsActive,
   wishKidForWeek,
   type WeekPlan,
-} from "@/lib/weekPlan";
+} from "@/lib/essen/weekPlan";
 
 const SKELETON = <div className={`${CARD} m-4 h-64 animate-pulse`} />;
 

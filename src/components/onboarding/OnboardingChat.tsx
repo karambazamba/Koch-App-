@@ -8,9 +8,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ChevronDown, ClipboardList } from "lucide-react";
 import { HelperAvatar } from "@/components/assistant/HelperAvatar";
-import { familyCard, finalizeProfile, revisit, startOnboarding, type OnboardingState } from "@/lib/onboarding/engine";
-import { clearOnboarding, loadOnboarding, saveOnboarding } from "@/lib/onboarding/progress";
-import { saveProfile, type HouseholdProfile } from "@/lib/profile";
+import { familyCard, finalizeProfile, revisit, startOnboarding, type OnboardingState } from "@/lib/einstellungen/onboarding/engine";
+import { clearOnboarding, loadOnboarding, saveOnboarding } from "@/lib/einstellungen/onboarding/progress";
+import { saveProfile, type HouseholdProfile } from "@/lib/einstellungen/profile";
 import { CARD } from "@/components/ui/styles";
 import { GuidedChat } from "./GuidedChat";
 

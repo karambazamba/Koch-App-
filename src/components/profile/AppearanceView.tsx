@@ -1,8 +1,8 @@
 "use client";
 
 import { Check } from "lucide-react";
-import { APP_THEMES, type AppTheme } from "@/lib/profile";
-import { THEME_COLORS } from "@/lib/theme";
+import { APP_THEMES, type AppTheme } from "@/lib/einstellungen/profile";
+import { THEME_COLORS } from "@/lib/core/theme";
 import { InstantSettingsPage } from "./InstantSettingsPage";
 
 /** /profil/ansicht: Ansicht als Vorschau-Karten, darunter die Darstellung */

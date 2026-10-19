@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { buttonClass } from "@/components/ui/styles";
-import type { RecipeCategory } from "@/lib/cookbook";
-import { dishEmoji } from "@/lib/dishEmoji";
+import type { RecipeCategory } from "@/lib/essen/cookbook";
+import { dishEmoji } from "@/lib/essen/dishEmoji";
 
 /** Eine Idee, wie sie überall gleich aussieht (Chat, Ideen-Seite, "Was gibt's heute?") */
 export type CardIdea = {

@@ -16,10 +16,11 @@ import {
   HelperEditor,
 } from "@/components/profile/editors";
 import { NumberStepper } from "@/components/form/NumberStepper";
-import { sortedBases } from "@/lib/bases";
+import { sortedBases } from "@/lib/essen/bases";
 import { ChoiceCards } from "@/components/profile/settings/SettingsParts";
-import { LIKE_WEIGHTS, likeLevel, sortedLikes, withLikes, withoutLike } from "@/lib/likes";
-import { COOKING_STYLES, PLAN_STYLES, MIX_SUGGESTS, HEALTH_TIP_LEVELS, HOUSEHOLD_TYPES, hasKids, wishDayActive, NEW_DISHES_OPTIONS, WEEKDAYS, WEEKEND_STYLES, planningWeekLabel, standardWeekDays, type KitchenMachine } from "@/lib/profile";
+import { LIKE_WEIGHTS, likeLevel, sortedLikes, withLikes, withoutLike } from "@/lib/essen/likes";
+import { COOKING_STYLES, PLAN_STYLES, MIX_SUGGESTS, HEALTH_TIP_LEVELS, HOUSEHOLD_TYPES, hasKids, wishDayActive, NEW_DISHES_OPTIONS, WEEKDAYS, WEEKEND_STYLES, planningWeekLabel, standardWeekDays, type KitchenMachine } from "@/lib/einstellungen/profile";
+import { now } from "@/lib/core/now";
 
 export function FavoritesEditView() {
   return (
@@ -497,7 +498,7 @@ export function PauseEditView() {
     <ProfileEditPage title="Pause" intro="Urlaub oder einfach mal frei: Dann plane ich nichts und bin still.">
       {(draft, setDraft) => {
         const on = Boolean(draft.pause);
-        const today = new Date();
+        const today = now();
         const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
         return (
           <>

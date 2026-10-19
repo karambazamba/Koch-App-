@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { useState } from "react";
 import { CARD, buttonClass } from "@/components/ui/styles";
-import { EMPTY_STOCK_HINT } from "@/lib/dishIdeas";
-import { openHelper } from "@/lib/assistant/open";
-import type { Idea } from "@/lib/ideas";
-import { putAside, useTodayIdeas } from "@/lib/useIdeas";
-import { showToast } from "@/lib/toast";
+import { EMPTY_STOCK_HINT } from "@/lib/essen/dishIdeas";
+import { openHelper } from "@/lib/lotte/open";
+import type { Idea } from "@/lib/essen/ideas";
+import { putAside, useTodayIdeas } from "@/lib/essen/useIdeas";
+import { showToast } from "@/lib/core/toast";
 import { IdeaCards, type CardIdea } from "./IdeaCards";
 import { IdeaSheet } from "./IdeaSheet";
 import { useIdeaChoice } from "./useIdeaChoice";

@@ -1,9 +1,9 @@
 "use client";
 
 import { Undo2 } from "lucide-react";
-import { TOAST_SECONDS, hideToast, showToast, useToast } from "@/lib/toast";
+import { TOAST_SECONDS, hideToast, showToast, useToast } from "@/lib/core/toast";
 
-/** Meldung mit "Rückgängig" (oben, über allem; siehe lib/toast.ts) */
+/** Meldung mit "Rückgängig" (oben, über allem; siehe lib/core/toast.ts) */
 export function ToastHost() {
   const toast = useToast();
   if (!toast) return null;

@@ -2,10 +2,11 @@ import { Suspense } from "react";
 import { CARD } from "@/components/ui/styles";
 import { PlanningGate } from "@/components/PlanningGate";
 import { WeekCheck } from "@/components/week/WeekCheck";
+import { FeatureGate } from "@/components/FeatureGate";
 
 export const metadata = { title: "Wochen-Check" };
 
-export default function WeekCheckPage() {
+function WeekCheckPageContent() {
   return (
     // useSearchParams (?woche=…) braucht eine Suspense-Grenze, damit die Seite statisch bleibt.
     <Suspense fallback={<div className={`${CARD} m-4 h-64 animate-pulse`} />}>
@@ -13,5 +14,14 @@ export default function WeekCheckPage() {
         <WeekCheck />
       </PlanningGate>
     </Suspense>
+  );
+}
+
+// Versteckt, bis "Alte Funktionen anzeigen (Test)" an ist
+export default function WeekCheckPage() {
+  return (
+    <FeatureGate feature="wochenplan">
+      <WeekCheckPageContent />
+    </FeatureGate>
   );
 }

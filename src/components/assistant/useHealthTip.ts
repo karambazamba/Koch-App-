@@ -1,10 +1,10 @@
 "use client";
 
-import { useRecipes } from "@/lib/cookbook";
-import { currentTip, tipsForWeeks, useTipStore, weekPraise, type HealthTip } from "@/lib/healthTips";
-import { composeWeek, useMealPlans } from "@/lib/mealPlan";
-import { useProfile } from "@/lib/useProfile";
-import { addDays, nextWeekStartFor, toIsoDate, useToday, useWeekPlans, weekStartFor } from "@/lib/weekPlan";
+import { useRecipes } from "@/lib/essen/cookbook";
+import { currentTip, tipsForWeeks, useTipStore, weekPraise, type HealthTip } from "@/lib/essen/healthTips";
+import { composeWeek, useMealPlans } from "@/lib/essen/mealPlan";
+import { useProfile } from "@/lib/einstellungen/useProfile";
+import { addDays, nextWeekStartFor, toIsoDate, useToday, useWeekPlans, weekStartFor } from "@/lib/essen/weekPlan";
 
 /** Gesundheits-Tipp, der gerade dran ist (laut Einstellung und Wochenlimit) */
 export function useHealthTip(): { tip: HealthTip; weekStart: string } | null {

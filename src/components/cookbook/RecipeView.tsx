@@ -14,14 +14,14 @@ import {
   formatAmount,
   recordCooked,
   useRecipes,
-} from "@/lib/cookbook";
-import { learnFromRecipe, LIKE_WEIGHTS } from "@/lib/likes";
-import { adoptBuiltin, findRecipe, isBuiltin } from "@/lib/baking";
-import { ovenText } from "@/lib/baking/steps";
-import { useProfile } from "@/lib/useProfile";
-import { markCookedIfToday } from "@/lib/mealDone";
-import { useMealPlans } from "@/lib/mealPlan";
-import { useToday, useWeekPlans } from "@/lib/weekPlan";
+} from "@/lib/essen/cookbook";
+import { learnFromRecipe, LIKE_WEIGHTS } from "@/lib/essen/likes";
+import { adoptBuiltin, findRecipe, isBuiltin } from "@/lib/essen/baking";
+import { ovenText } from "@/lib/essen/baking/steps";
+import { useProfile } from "@/lib/einstellungen/useProfile";
+import { markCookedIfToday } from "@/lib/essen/mealDone";
+import { useMealPlans } from "@/lib/essen/mealPlan";
+import { useToday, useWeekPlans } from "@/lib/essen/weekPlan";
 import { MachineStepView, MachineToggle, useMachineView } from "./MachineSteps";
 /** Datum (lokale Zeit) aus Zeitstempel oder "YYYY-MM-DD", z. B. "23.10.2026" */
 function formatDate(iso: string): string {

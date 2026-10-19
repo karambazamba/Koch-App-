@@ -6,12 +6,12 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, RotateCcw, Timer, Volume2, VolumeX, X } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { CARD, FAB_CLEARANCE, PAGE_MAIN, SECTION_TITLE, buttonClass, chipClass } from "@/components/ui/styles";
-import { formatAmount, type Recipe } from "@/lib/cookbook";
-import { useRecipeLookup } from "@/lib/baking";
-import { kidStepLabel, ovenText, stepMinutes } from "@/lib/baking/steps";
-import { personLabel, type HouseholdProfile } from "@/lib/profile";
-import { saveSpeechSettings, speak, speechSupported, stopSpeaking, unlockSpeech, useSpeechSettings } from "@/lib/speech";
-import { useProfile } from "@/lib/useProfile";
+import { formatAmount, type Recipe } from "@/lib/essen/cookbook";
+import { useRecipeLookup } from "@/lib/essen/baking";
+import { kidStepLabel, ovenText, stepMinutes } from "@/lib/essen/baking/steps";
+import { personLabel, type HouseholdProfile } from "@/lib/einstellungen/profile";
+import { saveSpeechSettings, speak, speechSupported, stopSpeaking, unlockSpeech, useSpeechSettings } from "@/lib/lotte/speech";
+import { useProfile } from "@/lib/einstellungen/useProfile";
 import { MachineToggle, MachineStepView, useMachineView } from "./MachineSteps";
 
 /** Schritt für Schritt kochen bzw. "Zusammen backen" */

@@ -4,8 +4,8 @@ import Link from "next/link";
 import { Clock } from "lucide-react";
 import { Sheet } from "@/components/plan/Sheet";
 import { CARD, buttonClass } from "@/components/ui/styles";
-import { dishEmoji } from "@/lib/dishEmoji";
-import type { Idea } from "@/lib/ideas";
+import { dishEmoji } from "@/lib/essen/dishEmoji";
+import type { Idea } from "@/lib/essen/ideas";
 
 const list = (items: string[]) => (items.length <= 1 ? items.join("") : `${items.slice(0, -1).join(", ")} und ${items[items.length - 1]}`);
 

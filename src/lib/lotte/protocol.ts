@@ -1,0 +1,73 @@
+// Lotte: Austausch zwischen App und Server (/api/lotte).
+
+import type { AssistantData, ChangeOp } from "./ops";
+
+export type ChatTurn = { role: "user" | "assistant"; text: string };
+
+export type AssistantRequest = {
+  /** Zufällige Geräte-Kennung für das Rate-Limit */
+  deviceId: string;
+  /** Heutiges Datum auf dem Gerät, "YYYY-MM-DD" */
+  today: string;
+  /** Bisheriger Chat, die letzte Nachricht ist die neue Frage */
+  messages: ChatTurn[];
+  /** Noch nicht übernommener Vorschlag ("Anpassen") – wird weitergeführt */
+  pending: ChangeOp[];
+  data: AssistantData;
+  /** Wie viele Gesundheits-Tipps diese Woche schon gezeigt wurden */
+  tipsThisWeek?: number;
+  /** Uhrzeit auf dem Gerät, "HH:MM" (sonst rechnet der Server mit Berlin) */
+  clock?: string;
+  /** Was gerade auf der Einkaufsliste steht (Namen, ohne Abgehaktes) */
+  shoppingNames?: string[];
+  /** Antwort Stück für Stück (NDJSON, siehe StreamEvent) */
+  stream?: boolean;
+};
+
+/**
+ * Gestreamte Antwort: eine JSON-Zeile pro Ereignis. "text" = nächstes Stück
+ * der Antwort, "round" = neue Runde nach Werkzeugen (bisher Gezeigtes ist nur
+ * Zwischenstand), "done" = fertige Antwort mit Vorschlag, "error" = Abbruch.
+ */
+export type StreamEvent =
+  | { t: "text"; d: string }
+  | { t: "round" }
+  | { t: "done"; reply: string; ops: ChangeOp[] }
+  | { t: "error"; error: AssistantErrorCode };
+
+export type AssistantReply = {
+  reply: string;
+  /** Kompletter Vorschlag (bisheriger + neue Änderungen) */
+  ops: ChangeOp[];
+};
+
+/** Warum es gerade nicht geht – die App zeigt nie Technik-Texte, nur ihre eigene Antwort */
+export type AssistantErrorCode = "zugangscode" | "limit" | "aus" | "fehler";
+
+export type AssistantError = { error: AssistantErrorCode };
+
+export type AssistantStatus = {
+  /** KI eingerichtet (API-Schlüssel und Zugangscode gesetzt) oder Mock-Modus aktiv */
+  configured: boolean;
+  mock: boolean;
+  /** Der Server verlangt einen Zugangscode (APP_ACCESS_CODE) */
+  needsCode: boolean;
+  /** Nur wenn ein Code mitgeschickt wurde: stimmt er? */
+  access?: "ok" | "falsch";
+};
+
+export const ASSISTANT_ENDPOINT = "/api/lotte";
+/** Header mit dem Zugangscode der Familie */
+export const ACCESS_HEADER = "x-lotte-code";
+
+/** Grenzen, damit Anfragen klein und günstig bleiben */
+export const LIMITS = {
+  /** Zeichen pro Nachricht */
+  messageChars: 1500,
+  /** Mitgeschickte Chat-Nachrichten (Gesprächsverlauf) */
+  historyTurns: 10,
+  /** Größe der Anfrage in Bytes */
+  requestBytes: 400_000,
+  /** Anfragen pro Gerät und Tag */
+  dailyPerDevice: 100,
+};

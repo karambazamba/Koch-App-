@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { CARD } from "@/components/ui/styles";
-import { expectReplace } from "@/lib/navigation";
-import { usePlanStyle } from "@/lib/usePlanStyle";
+import { expectReplace } from "@/lib/core/navigation";
+import { usePlanStyle } from "@/lib/essen/usePlanStyle";
 
 /**
  * Planungs-Seiten (Wochenplan, Wochen-Check, Wochenvorlage, Einkaufstag) gibt

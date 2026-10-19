@@ -5,13 +5,13 @@ import { useRef } from "react";
 import { BookOpen, Check, Clock, Coins, MapPin, MoreHorizontal, Plus, Repeat, RotateCcw, Soup, StickyNote, Users, X } from "lucide-react";
 import { CATEGORY_DOT, CategoryChip, EMPTY_DOT } from "@/components/ui/Category";
 import { CARD, buttonClass } from "@/components/ui/styles";
-import type { Recipe } from "@/lib/cookbook";
-import { estimateCost } from "@/lib/costs";
-import { dishEmoji } from "@/lib/dishEmoji";
-import type { PlanDay } from "@/lib/mealPlan";
-import { MEAL_TIME_LABELS } from "@/lib/profile";
-import { useProfile } from "@/lib/useProfile";
-import { usePlanStyle } from "@/lib/usePlanStyle";
+import type { Recipe } from "@/lib/essen/cookbook";
+import { estimateCost } from "@/lib/essen/costs";
+import { dishEmoji } from "@/lib/essen/dishEmoji";
+import type { PlanDay } from "@/lib/essen/mealPlan";
+import { MEAL_TIME_LABELS } from "@/lib/einstellungen/profile";
+import { useProfile } from "@/lib/einstellungen/useProfile";
+import { usePlanStyle } from "@/lib/essen/usePlanStyle";
 
 const SHORT_DATE = (iso: string) => {
   const [, m, d] = iso.split("-");

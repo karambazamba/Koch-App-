@@ -2,7 +2,7 @@
 
 import { ChevronLeft } from "lucide-react";
 import { ICON_BUTTON } from "@/components/ui/styles";
-import { useGoBack } from "@/lib/useGoBack";
+import { useGoBack } from "@/lib/core/useGoBack";
 
 /** Zurück-Pfeil: genau eine Ebene zurück (wie die Geste), sonst `fallback` */
 export function BackButton({ fallback }: { fallback: string }) {

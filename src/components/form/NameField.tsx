@@ -2,7 +2,7 @@
 
 import { Baby, PenLine, User, type LucideIcon } from "lucide-react";
 import { INPUT_BASE } from "@/components/ui/styles";
-import { focusNextInChain } from "@/lib/useMobileKeyboard";
+import { focusNextInChain } from "@/lib/core/useMobileKeyboard";
 
 export const PERSON_ICONS: Record<"erwachsen" | "kind", LucideIcon> = { erwachsen: User, kind: Baby };
 

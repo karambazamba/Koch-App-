@@ -4,9 +4,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Sheet } from "@/components/plan/Sheet";
 import { tileClass } from "@/components/ui/styles";
-import { unlockPlanning, type UnlockChoice } from "@/lib/planUnlock";
-import type { HouseholdProfile } from "@/lib/profile";
-import { showToast } from "@/lib/toast";
+import { unlockPlanning, type UnlockChoice } from "@/lib/essen/planUnlock";
+import type { HouseholdProfile } from "@/lib/einstellungen/profile";
+import { showToast } from "@/lib/core/toast";
 
 /** Planung freischalten: "Nur diese Woche oder ab jetzt immer?" */
 export function PlanUnlockSheet({ profile, today, onClose }: { profile: HouseholdProfile; today: Date; onClose: () => void }) {

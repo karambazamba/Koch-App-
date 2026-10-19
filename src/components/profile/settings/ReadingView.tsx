@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Volume2 } from "lucide-react";
-import { helperName } from "@/lib/profile";
+import { helperName } from "@/lib/einstellungen/profile";
 import {
   READ_MODES,
   SPEECH_RATES,
@@ -14,7 +14,7 @@ import {
   useSpeechSettings,
   useVoices,
   isNaturalVoice,
-} from "@/lib/speech";
+} from "@/lib/lotte/speech";
 import { ChoiceCards, SettingsPage } from "./SettingsParts";
 
 /** /profil/vorlesen: Vorlesen an/aus, Stimme (mit Probehören), Sprechtempo – gilt für dieses Gerät */

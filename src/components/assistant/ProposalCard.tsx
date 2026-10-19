@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { Check, ChevronDown, Pencil, Sparkles, Trash2 } from "lucide-react";
-import type { AssistantData } from "@/lib/assistant/ops";
-import { previewRows, type PreviewRow } from "@/lib/assistant/preview";
-import { formatAmount } from "@/lib/cookbook";
+import type { AssistantData } from "@/lib/lotte/ops";
+import { previewRows, type PreviewRow } from "@/lib/lotte/preview";
+import { formatAmount } from "@/lib/essen/cookbook";
 import { CategoryDot } from "@/components/ui/Category";
 import { CARD, buttonClass } from "@/components/ui/styles";
 import type { Proposal } from "./HelperPanel";

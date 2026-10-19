@@ -45,7 +45,7 @@ import {
   type WeekdayLunch,
   type WeekRules,
   type WishDaySettings,
-} from "@/lib/profile";
+} from "@/lib/einstellungen/profile";
 
 export const FAVORITE_SUGGESTIONS = [
   "Spaghetti Bolognese",

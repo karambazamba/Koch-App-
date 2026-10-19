@@ -5,12 +5,12 @@ import { useState } from "react";
 import { BookOpen, Clock, Heart, Plus, Search } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { CARD, INPUT_BASE, PAGE_MAIN, SECTION_TITLE, chipClass } from "@/components/ui/styles";
-import { BUILTIN_BAKING, KID_FRIENDLY } from "@/lib/baking";
-import { sortRecipes, toggleFavorite, useRecipes, type Recipe } from "@/lib/cookbook";
-import { dishEmoji } from "@/lib/dishEmoji";
-import { useMealPlans, type StoredEntry } from "@/lib/mealPlan";
-import { personLabel, type HouseholdProfile } from "@/lib/profile";
-import { useProfile } from "@/lib/useProfile";
+import { BUILTIN_BAKING, KID_FRIENDLY } from "@/lib/essen/baking";
+import { sortRecipes, toggleFavorite, useRecipes, type Recipe } from "@/lib/essen/cookbook";
+import { dishEmoji } from "@/lib/essen/dishEmoji";
+import { useMealPlans, type StoredEntry } from "@/lib/essen/mealPlan";
+import { personLabel, type HouseholdProfile } from "@/lib/einstellungen/profile";
+import { useProfile } from "@/lib/einstellungen/useProfile";
 import { NewRecipeSheet } from "./NewRecipeSheet";
 
 type Filter = "alle" | "lieblinge" | "schnell" | "backen" | "vegetarisch" | "fleisch" | "fisch" | "cheatday";

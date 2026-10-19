@@ -11,7 +11,7 @@ import {
   sortRecipes,
   useRecipes,
   type Recipe,
-} from "@/lib/cookbook";
+} from "@/lib/essen/cookbook";
 import {
   CATEGORY_COUNT_KEY,
   fixedMealCounts,
@@ -19,7 +19,7 @@ import {
   wishIsActive,
   type FixedMeal,
   type WeekPlan,
-} from "@/lib/weekPlan";
+} from "@/lib/essen/weekPlan";
 
 function newId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();

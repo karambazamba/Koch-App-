@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { useProfile } from "@/lib/useProfile";
-import { applyTheme } from "@/lib/theme";
+import { useProfile } from "@/lib/einstellungen/useProfile";
+import { applyTheme } from "@/lib/core/theme";
 
 /**
  * Hält die Ansicht (data-theme am <html>) und die Farbe der Statusleiste

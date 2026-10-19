@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowUp, CircleHelp, Mic, MicOff, Plus, Square, X } from "lucide-react";
 import { ICON_BUTTON, INPUT_BASE, chipClass } from "@/components/ui/styles";
-import { parseQuickAdd, type QuickAddUnsure } from "@/lib/quickAdd";
-import { addManualItem, removeManualItems, sectionFor, setItemShop, type ShoppingSettings } from "@/lib/shoppingList";
-import { useKeyboardInset } from "@/lib/useMobileKeyboard";
-import { useSpeechInput } from "@/lib/useSpeechInput";
+import { parseQuickAdd, type QuickAddUnsure } from "@/lib/einkauf/quickAdd";
+import { addManualItem, removeManualItems, sectionFor, setItemShop, type ShoppingSettings } from "@/lib/einkauf/shoppingList";
+import { useKeyboardInset } from "@/lib/core/useMobileKeyboard";
+import { useSpeechInput } from "@/lib/lotte/useSpeechInput";
 
 type Toast = { text: string; ids: string[]; key: number };
 

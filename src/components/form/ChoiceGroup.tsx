@@ -66,30 +66,3 @@ export function ChoiceGroup<T extends string>({
 }: BaseProps<T> & { value: T; onChange: (value: T) => void }) {
   return <ChoiceTiles {...props} isSelected={(v) => v === value} onPick={onChange} />;
 }
-
-/**
- * Mehrfachauswahl als Kacheln. Optionen in `exclusive` schließen alle anderen
- * aus. Die letzte gewählte Option lässt sich nicht abwählen (nie leer).
- */
-export function MultiChoiceGroup<T extends string>({
-  values,
-  onChange,
-  exclusive = [],
-  ...props
-}: BaseProps<T> & { values: T[]; onChange: (values: T[]) => void; exclusive?: T[] }) {
-  const pick = (value: T) => {
-    if (values.includes(value)) {
-      if (values.length > 1) onChange(values.filter((v) => v !== value));
-      return;
-    }
-    if (exclusive.includes(value)) {
-      onChange([value]);
-      return;
-    }
-    const kept = values.filter((v) => !exclusive.includes(v));
-    // Reihenfolge wie in den Optionen, damit "mittags & abends" stabil bleibt.
-    onChange(props.options.map((o) => o.value).filter((v) => v === value || kept.includes(v)));
-  };
-
-  return <ChoiceTiles {...props} isSelected={(v) => values.includes(v)} onPick={pick} />;
-}

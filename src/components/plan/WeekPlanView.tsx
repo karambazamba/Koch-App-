@@ -8,8 +8,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { CategoryDot } from "@/components/ui/Category";
 import { Segmented } from "@/components/ui/Segmented";
 import { CARD, ICON_BUTTON, PAGE_MAIN, buttonClass } from "@/components/ui/styles";
-import { useRecipes, type Recipe } from "@/lib/cookbook";
-import { estimateCost } from "@/lib/costs";
+import { useRecipes, type Recipe } from "@/lib/essen/cookbook";
+import { estimateCost } from "@/lib/essen/costs";
 import {
   clearSlot,
   composeWeek,
@@ -24,11 +24,11 @@ import {
   type PlanDay,
   type PlanWeek,
   type ResolvedEntry,
-} from "@/lib/mealPlan";
-import { useProfile } from "@/lib/useProfile";
-import { moveToTomorrow, unmarkCooked, useCookedDays } from "@/lib/mealDone";
-import { showToast } from "@/lib/toast";
-import { applyTemplate, saveTemplate, templateDays, useTemplates } from "@/lib/templates";
+} from "@/lib/essen/mealPlan";
+import { useProfile } from "@/lib/einstellungen/useProfile";
+import { moveToTomorrow, unmarkCooked, useCookedDays } from "@/lib/essen/mealDone";
+import { showToast } from "@/lib/core/toast";
+import { applyTemplate, saveTemplate, templateDays, useTemplates } from "@/lib/essen/templates";
 import {
   DEFAULT_SHOPPING_DAY,
   addDays,
@@ -38,7 +38,7 @@ import {
   useToday,
   useWeekPlans,
   weekStartFor,
-} from "@/lib/weekPlan";
+} from "@/lib/essen/weekPlan";
 import { DayCard, DayStrip, UpcomingDays } from "./DayView";
 import {
   CookAgainSheet,

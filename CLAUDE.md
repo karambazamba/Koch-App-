@@ -3,71 +3,92 @@
 Bei ALLEN Änderungen beachten.
 
 ## Wofür die App da ist
-"Was gibt's?" ist ein Küchenmanager für Familien. Die Familie kann das Organisieren rund ums Essen abgeben – wie an eine Haushaltskraft, mit der man ganz natürlich spricht. Unter der Woche ist die App das Gerüst für den Alltag, am Wochenende die Freundin im Hintergrund. Der Küchenhelfer hat einen Namen, den die Familie wählt (Standard: Lotte).
+"Was gibt's?" ist eine cleane Alltags-App für Felix und seine Familie. Lotte
+ist die Assistentin für Termine, Aufgaben, Essen und Einkauf – man gibt ihr
+Dinge ab wie einer guten Haushaltshilfe, mit der man ganz natürlich spricht.
+Lotte legt an und räumt wieder weg. Die Assistentin hat einen Namen, den die
+Familie wählt (Standard: Lotte).
 
-## 1. Gespräch zuerst
-- Der Küchenhelfer (Sprache/Chat) ist der Hauptweg. Jede Funktion soll auch per Gespräch erreichbar sein.
-- Bildschirme dienen zum Nachschauen und Feinjustieren, nie als Pflicht.
+## 1. Ruhig und leer
+- Heute + Woche sind die Hauptansichten (Woche kommt in Phase 2). Die
+  Oberfläche ist ruhig und leer; nichts steht herum, was nicht gebraucht wird.
+- Keine Überladung: Alles Neue startet versteckt (Feature-Flags,
+  `src/lib/core/features.ts`) und wird nur bei Bedarf gezeigt.
+- Pro Bildschirm eine große Hauptsache, wenig Text, viel Weißraum. Leere
+  Zustände freundlich und einladend, nie als Fehler.
+
+## 2. Gespräch zuerst
+- Lotte (Sprache/Chat) ist der Hauptweg. Jede Funktion soll auch per Gespräch
+  erreichbar sein. Bildschirme dienen zum Nachschauen und Feinjustieren.
 - Lieber eine Frage mit 2–3 Knöpfen als ein Formular.
+- Machen statt fragen: Kleine Dinge selbst erledigen und kurz melden (mit
+  "Rückgängig"). Rückfragen nur bei echten Entscheidungen. Änderungen der KI
+  immer als Vorschau mit "Übernehmen".
 
-## 2. Der Küchenhelfer nervt nie
-- Machen statt fragen: Kleine Dinge selbst erledigen und kurz melden (mit "Rückgängig"). Rückfragen nur bei echten Entscheidungen.
-- Nie "du musst / du solltest / vergiss nicht". Immer als Angebot oder Erledigt-Meldung formulieren.
-- Startseite: höchstens ein Satz vom Helfer, nur wenn wirklich wichtig – sonst Stille.
-- Push: höchstens 1 proaktive Mitteilung pro Tag (plus selbst eingestellte Erinnerungen). Ruhezeit 20:00–7:00.
-- Wird eine Art von Hinweis 3× ignoriert: 2 Wochen Pause dafür. Werden proaktive Nachrichten 3 Tage in Folge nicht beachtet: keine proaktiven Nachrichten mehr, bis der Nutzer selbst etwas tut.
-- Antworten im Chat kurz (2–3 Sätze), außer der Nutzer will Details.
-- Bewertungen nur für neue Gerichte, klein, einmal.
+## 3. Räume
+- "Familie" ist gemeinsam (alle im Haushalt sehen es), "Arbeit" ist
+  persönlich. Ohne Angabe gehört etwas zur Familie.
 
-## 3. Ohne Druck
-- Keine Streaks, keine Zähler verpasster Tage, keine roten Badges, keine Aufgaben-Stapel.
-- Nicht Erledigtes verschwindet leise. Nie "Du hast … nicht gemacht".
-- Nach Abwesenheit warm begrüßen ("Schön, dass du da bist!"), frisch starten statt Rückblick auf Verpasstes.
-- Pause-Modus respektieren: dann absolute Ruhe.
-- Planen ist optional; alles funktioniert auch spontan.
-- Nie "Ich vermisse dich" oder Ähnliches – kein Buhlen um Aufmerksamkeit.
-- Wortwahl: In der ganzen App keine Wörter wie "fehlt", "offen", "überfällig", "noch zu erledigen", "verpasst", "Alles da". Stattdessen vorbereitend formulieren ("Für Montag", "Ich hab schon …", "Bereit für …").
-
-## 4. Kennt die Familie
-- Profil, Küchenstil, Lieblingszutaten, Nie-wieder-Liste, eigene Produkte, Läden und bisherige Entscheidungen immer berücksichtigen.
-- Nie zweimal dasselbe fragen. Aus Auswahl und Ignorieren lernen.
-- Allergien strikt einhalten, "mag nicht" respektieren.
-- Wochenend-Stil der Familie (frei / locker / wie unter der Woche) respektieren.
+## 4. Ohne Druck
+- Keine Streaks, keine Zähler, keine roten Badges, keine Aufgaben-Stapel.
+- Nicht Erledigtes verschwindet leise. Nie "Du hast … nicht gemacht", nie
+  "du musst / du solltest / vergiss nicht", nie "Ich vermisse dich".
+- Wortwahl: keine Wörter wie "fehlt", "offen", "überfällig", "noch zu
+  erledigen", "verpasst", "Alles da". Stattdessen vorbereitend ("Für Montag",
+  "Ich hab schon …", "Bereit für …").
+- Startseite: höchstens ein Satz von Lotte, nur wenn wirklich wichtig.
+  Push (später): höchstens 1 proaktive Mitteilung pro Tag, Ruhezeit
+  20:00–7:00. Pause-Modus = absolute Ruhe.
 
 ## 5. Ton
-- Kurz, warm, natürlich, Deutsch, etwas Humor, keine Fachbegriffe.
-- Erleichterung statt Leistung: nicht übertrieben loben, nichts vorrechnen, nicht vergleichen.
-- Freut sich, wenn jemand da ist; lässt in Ruhe, wenn nicht.
+- Kurz, warm, mitdenkend, natürlich, Deutsch, etwas Humor, kein Formularton,
+  keine Fachbegriffe. Antworten im Chat 2–3 Sätze, außer jemand will Details.
+- Erleichterung statt Leistung: nicht übertrieben loben, nichts vorrechnen.
+- Gesundheit: keine Diagnosen, nie Aussagen über Körper/Gewicht/Kalorien; bei
+  Gesundheitsfragen freundlich auf Arzt/Ärztin verweisen.
 
-## 6. Gesundheit sanft
-- Tipps selten (Standard max. 1 pro Woche, abschaltbar), immer als optionaler Tausch ("Ausprobieren").
-- Lob statt Kritik. Nie Aussagen über Körper, Gewicht oder Kalorien. Nie Tipps zu Cheat Day oder Wunschessen der Kinder.
-- Grundlage: anerkannte Ernährungsempfehlungen (z. B. DGE), keine Trends, keine Heilversprechen.
-- Keine medizinischen oder psychologischen Diagnosen; bei Gesundheitsfragen freundlich auf Arzt/Ärztin verweisen.
+## 6. Kennt die Familie
+- Profil, Allergien (strikt), "mag nicht", eigene Produkte, Läden und
+  bisherige Entscheidungen immer berücksichtigen. Nie zweimal dasselbe fragen.
+- Datenschutz: so wenig Daten wie nötig, besonders bei Kindern; alles löschbar.
 
 ## 7. Design
-- Ruhig und übersichtlich: warmes Off-White, weiße Karten, eine Akzentfarbe (Orange), Linien-Icons (lucide), Emojis nur sparsam für Spaß-Momente.
-- Pro Bildschirm eine große Hauptsache, wenig Text, viel Weißraum.
-- Karten zeigen Live-Inhalte statt reiner Menüpunkte.
-- Leere Zustände immer freundlich und einladend, nie als Fehler.
-- App-Icon: weißer Topf mit drei Dampfwölkchen auf Orange. Gesicht des Küchenhelfers: der Smiley-Topf.
-- Startseite = genau sechs Elemente (Kopf, Heute-Karte, Lottes Platz, drei Kacheln, Spontan kochen, Eingabeleiste). Unter der Heute-Karte steht immer höchstens EINE Sache (Prioritätsliste Lottes Platz). Neue Funktionen bekommen keinen eigenen Startseiten-Platz, sondern nutzen Lottes Platz, die Kacheln oder den Küchenhelfer.
+- Warmes Off-White, weiße Karten, eine Akzentfarbe (Orange), Linien-Icons
+  (lucide), Emojis nur sparsam. App-Icon: weißer Topf mit drei Dampfwölkchen
+  auf Orange; Lottes Gesicht: der Smiley-Topf.
+- Startseite (Neustart): Kopf (Logo, Datum, Zahnrad), schlichte Heute-Karte
+  fürs Essen (`CalmMealCard`), Einkaufsliste als Karte (`ShoppingCard`, beide
+  in `src/components/home/CalmHome.tsx`), unten die Leiste "Sag Lotte, was
+  ansteht …". Neue Funktionen bekommen keinen eigenen Platz, solange sie nicht
+  gebraucht werden.
 
 ## 8. Technik-Regeln
-- Nach jeder Änderung: testen (iPhone-Simulation UND Android-Chrome-Simulation, z. B. Pixel 7), PR erstellen und in main mergen – ohne Rückfrage.
+- Nach jeder Änderung: testen (iPhone-Simulation UND Android-Chrome-Simulation,
+  z. B. Pixel 7), PR erstellen und in main mergen – ohne Rückfrage.
 - Nur Zwischenstände pushen, die bauen (npm run build muss durchlaufen).
-- Bestehende gespeicherte Daten bei Formatänderungen immer migrieren, nie verlieren.
-- Weiter/Zurück-Buttons in Formularen am Inhaltsende, nicht fixiert (Ausnahme: Küchenhelfer-Button/Eingabefeld). Unten genug Abstand, damit nichts verdeckt wird.
+- Bestehende gespeicherte Daten bei Formatänderungen immer migrieren, nie
+  verlieren. Verstecken heißt nie löschen.
+- KI nur serverseitig (ANTHROPIC_API_KEY aus Vercel, nie ins Repo, nie in die
+  App). Die KI schlägt vor, der Nutzer übernimmt. Die App muss immer auch ohne
+  KI funktionieren. Zugangscode (APP_ACCESS_CODE) und Tageslimit gelten für
+  alle KI-Aufrufe.
+- Zurück = eine Ebene zurück, Pfeil und Geste identisch, Scrollposition bleibt.
 - Eingabefelder mindestens 16px Schrift (kein iOS-Zoom), Safe-Areas beachten.
-- KI nur serverseitig (ANTHROPIC_API_KEY aus Vercel), Änderungen der KI immer als Vorschau mit "Übernehmen".
-- KI nur serverseitig. Die KI schlägt vor, der Nutzer übernimmt. Die App muss immer auch ohne KI funktionieren.
-- Ideen und Vorschläge immer aus dem aktuellen Vorrat erzeugen, nie aus altem Cache.
-- Datenschutz: so wenig Daten wie nötig, besonders bei Kindern; alles löschbar.
-- Zurück = eine Ebene zurück, Pfeil und Geste identisch, Scrollposition bleibt erhalten.
-- Neue Farben/Komponenten immer über die Design-Tokens, damit alle Ansichten funktionieren.
-- Einstellungen nach Nutzungshäufigkeit sortieren – Häufiges oben, Einmaliges unten. Aktueller Wert immer rechts sichtbar.
-- Spontan ist gleichwertig zur Planung. Neue Funktionen müssen für alle drei Kochstile funktionieren. Bei ‚Spontan' niemals Planungs-Hinweise oder Lücken-Texte zeigen.
-- Versionsnummer (`package.json` und `APP_VERSION` in `src/lib/app.ts`) und `CACHE_VERSION` in `public/sw.js` bei jeder Auslieferung erhöhen.
+  Weiter/Zurück-Buttons am Inhaltsende, nicht fixiert.
+- Neue Farben/Komponenten immer über die Design-Tokens.
+- Zeit immer über `now()` aus `src/lib/core/now.ts` (Europe/Berlin, in Tests
+  überschreibbar), nie direkt `new Date()`.
+- Einstellungen nach Nutzungshäufigkeit sortieren, aktueller Wert rechts.
+- Versionsnummer (`package.json` und `APP_VERSION` in `src/lib/core/app.ts`)
+  und `CACHE_VERSION` in `public/sw.js` bei jeder Auslieferung erhöhen.
+
+## Roadmap
+- Phase 1: Konten + Haushalt (Supabase) – Anmeldung, Haushalt mit Mitgliedern,
+  gemeinsame Daten; Umzug der Einträge ins einheitliche Modell.
+- Phase 2: Heute/Woche mit Terminen, Aufgaben und Push.
+- Phase 3: Essen + Einkauf neu.
+- Phase 4: Post (Briefe, Rechnungen erfassen).
+- Phase 5: Foto → Termin/Aufgabe.
 
 # Hinweise für Claude
 
@@ -82,7 +103,54 @@ Bei ALLEN Änderungen beachten.
   erstellen und direkt mergen.
 - Sprache der App und der Antworten: Deutsch.
 - Gespeicherte Profile müssen bei Datenmodell-Änderungen weiter funktionieren
-  (Version in `src/lib/profile.ts` erhöhen, `migrateProfile` erweitern).
+  (Version in `src/lib/einstellungen/profile.ts` erhöhen, `migrateProfile` erweitern).
+
+## Fundament (Neustart, v0.9)
+
+- Ordner nach Bereichen in `src/lib/`: `core` (Zeit `now.ts`, Speicher
+  `localStore.ts`/`useExternalStore.ts`, Feature-Flags `features.ts`,
+  Datenmodell `entries.ts`, Navigation, Toast, Ansicht, Aktivität, Termine,
+  Wetter), `lotte` (KI-Client, Engine, Werkzeuge, Prompt, Sprache ein/aus,
+  Chat-Vorschläge), `essen` (Plan, Rezepte, Ideen, Vorrat, Tipps, Backstube …),
+  `einkauf` (Einkaufsliste, Plus), `aufgaben` (leer, vorbereitet),
+  `einstellungen` (Profil, Kennenlernen, Schnellstart-Logik). Oberfläche in
+  `src/components/` nach Bildschirmen.
+- Feature-Flags an EINER Stelle (`src/lib/core/features.ts`): versteckt sind
+  Wochenplan-Oberfläche, Vorrat, Rezepte, Ideen, Tipps, Joker,
+  Wochenend-Ideen, Modi, Kochstil-Seiten, Kacheln, Spontan-Knopf,
+  Bewertungen, Lottes Platz, Kennenlernen-Chat. `useFeature()`/`featureOn()`;
+  versteckte Seiten über `FeatureGate` (leitet zur Startseite). In den
+  Einstellungen ganz unten "Alte Funktionen anzeigen (Test)" (pro Gerät,
+  `wasgibts.funktionen`) blendet alles wieder ein; die Daten bleiben immer
+  vollständig erhalten. Dauerhaft freischalten über `ENABLED` in features.ts.
+- Sichtbar ohne Test-Schalter: Startseite (siehe Leitbild 7), Chat mit Lotte,
+  Einkaufsliste, schlanke Einstellungen (Name & Stimme, Vorlesen, Ansicht,
+  Familie, Daten & App) und der Schnellstart ohne Profil (`QuickStart`: Name
+  + wer noch dazugehört).
+- Einheitliches Datenmodell für Supabase (`src/lib/core/entries.ts`): jeder
+  Eintrag mit `id`, `typ` (termin/aufgabe/gericht/einkauf), `raum`
+  (familie/arbeit), `besitzer` (bis zu Konten "lokal"), `erstellt`,
+  `geaendert`, `data`. Neue Funktionen speichern so; Bestehendes zieht in
+  Phase 1 um (mit Migration).
+- Zeit: `now()` (überschreibbar per `setNowForTests` oder
+  `window.__WASGIBTS_NOW__`), `todayIso()`, `berlinTime()` für den Server,
+  `useToday()`, `useMinutes()`.
+- Lotte (`/api/lotte`, `src/lib/lotte/`): Gespräch mit `claude-sonnet-5-5`
+  (`LOTTE_MODEL` überschreibt; adaptives Nachdenken, Aufwand "low",
+  `max_tokens` 8000, höchstens 6 Runden, serverseitiges Ausweichen bei
+  Ablehnungen `fallbacks: "default"`), Haiku (`claude-haiku-5-5`) nur für
+  kleine Hintergrundaufgaben (Kennenlernen-Erkennung). Streaming: die Route
+  antwortet als NDJSON (`StreamEvent`: text/round/done/error), der Chat zeigt
+  "Lotte denkt …" und dann die Antwort Wort für Wort. Gesprächsverlauf: die
+  letzten 10 Nachrichten. Kontext je Anfrage: Datum, Wochentag, Uhrzeit
+  (Europe/Berlin), Familie, Essen heute/morgen, Einkaufsliste, Vorrat,
+  Kochbuch-Überblick. Systemanweisung: warme, kurze, mitdenkende
+  Alltags-Assistentin für Familie und Arbeit (`prompt.ts`). Werkzeuge als
+  Register (`registry.ts`, Anmeldung in `toolset.ts`; neue Bereiche wie
+  Termine/Aufgaben/Erinnerungen melden sich dort an); Schreib-Werkzeuge
+  liefern nur Vorschläge mit "Übernehmen". Token-Verbrauch und grobe Kosten
+  je Anfrage im Server-Log ("Lotte Tokens", nur Zahlen, nie Inhalte). Kein
+  Untertitel mehr im Chat, nur der Name.
 
 ## Design-System
 
@@ -115,8 +183,8 @@ Bei ALLEN Änderungen beachten.
   maskable, apple-touch-icon, favicon.ico). In der App `AppIcon`/`AppLogo`
   (`src/components/AppLogo.tsx`): Startseite Icon 44px + Schriftzug,
   Unterseiten 32px oben rechts im `PageHeader` als Link "Zur Startseite".
-- Startseite "Heute" (`src/components/home/HomeView.tsx`) – genau sechs
-  Elemente, passt ohne Scrollen aufs iPhone (auch 375 px), wenig Text, viel
+- Alte Startseite "Heute" (nur mit "Alte Funktionen anzeigen (Test)",
+  `src/components/home/HomeView.tsx`) – genau sechs Elemente, passt ohne Scrollen aufs iPhone (auch 375 px), wenig Text, viel
   Weißraum:
   1. Kopf: Logo, darunter klein das Datum, rechts Zahnrad zu `/profil`.
   2. Heute-Karte (`HeroCard`): Bildfeld mit Akzent-Verlauf und Emoji (später
@@ -124,7 +192,7 @@ Bei ALLEN Änderungen beachten.
      v10 `mealClock`), Gerichtname groß mit Status "✓ kennt ihr" (grün) bzw.
      "Neu ✨", eine ruhige Zeile (Besonderheit wie "Mathis' Wunsch 🎉",
      "Reste von …" · Zeit · Personen), darunter nur falls vorhanden die
-     Termine des Tages (`src/lib/appointments.ts`, neutral wie "Jonne Turnen
+     Termine des Tages (`src/lib/core/appointments.ts`, neutral wie "Jonne Turnen
      bis 17:30", nie "wird knapp"; notiert per Lotte, kompakt unter der Zeile, Bildfeld dann flacher). Bekannt: dezent "Rezept
      ansehen · Tauschen" (`/wochenplan?tauschen=heute`). Neu (oder Kochstil
      "nach Rezept"): "<n> Schritte · <n> Zutaten" und "Los geht's – Schritt für
@@ -171,11 +239,14 @@ Bei ALLEN Änderungen beachten.
      und Mikrofon im Feld rechts (`openHelper("voice")`). Auf der Startseite
      kein schwebender Knopf.
 
-## Produktentscheidungen
+## Alte Funktionen (Koch-App) – versteckt hinter "Alte Funktionen anzeigen (Test)"
+
+Alles hier bleibt im Code und in den Daten erhalten und funktioniert mit dem
+Test-Schalter wie bisher. Neue Arbeit baut auf dem Fundament oben auf.
 
 - Erstes Kennenlernen als Gespräch (`/profil` ohne Profil → `OnboardingChat`,
   Vollbild im Stil des Küchenhelfer-Panels). Ablauf rein in
-  `src/lib/onboarding/engine.ts` (Begrüßung, "Für wen kochst du?" (Haushaltstyp,
+  `src/lib/einstellungen/onboarding/engine.ts` (Begrüßung, "Für wen kochst du?" (Haushaltstyp,
   siehe unten), Name/Stimme der Küchenhilfe,
   Familienname, "Wer isst bei euch mit?", Namen bestätigen mit antippbaren
   Chips und Schreibvarianten aus `names.ts`, pro Person "Erzähl mir kurz was
@@ -205,7 +276,7 @@ Bei ALLEN Änderungen beachten.
   passen.
 - Grundregel im Assistenten: Ist ein Schritt länger als der Bildschirm und noch
   nicht bis unten gescrollt, scrollt "Weiter" erst zum nächsten offenen
-  Abschnitt (`src/lib/stepScroll.ts`). Wischen links = Weiter, rechts = Zurück
+  Abschnitt (`src/lib/einstellungen/stepScroll.ts`). Wischen links = Weiter, rechts = Zurück
   (nicht in Eingabefeldern und Elementen mit `data-no-swipe`).
 - Personen-Schritte im Assistenten (Allergien, Mittagessen) beginnen mit einer
   Vorfrage ("Nein, alle essen alles" bzw. "Passt so – alle wie üblich" oder
@@ -216,7 +287,7 @@ Bei ALLEN Änderungen beachten.
 - Planungswoche = 7 Tage ab dem Einkaufstag (Profil `shoppingDay`, Standard
   Montag). Wochen werden unter dem Datum ihres ersten Tags gespeichert; nach
   einem Wechsel des Einkaufstags findet `resolveWeekKey()` die überlappende
-  alte Woche. Datumslogik zentral in `src/lib/weekPlan.ts`
+  alte Woche. Datumslogik zentral in `src/lib/essen/weekPlan.ts`
   (`weekStartFor`, `planningWeekStart`, `weekDayNames`).
 - "Standardwoche" (früher "Wochenregeln") ist die Vorlage im Profil. Der
   Wochen-Check (`/woche/check`, optional `?woche=`) übernimmt sie als Startwert
@@ -241,16 +312,16 @@ Bei ALLEN Änderungen beachten.
   "Unsere Rezepte" im Wochenplan, "Rezept ansehen", den Küchenhelfer ("Zeig
   mir unsere Rezepte") und die Einstellungen (Abschnitt "Küche"). "+" öffnet
   "Neues Rezept" (`NewRecipeSheet`): "<Name> erzählen" (Sprache oder Tippen →
-  `parseSpokenRecipe()` in `src/lib/recipeSpeech.ts`, regelbasiert, später KI:
+  `parseSpokenRecipe()` in `src/lib/essen/recipeSpeech.ts`, regelbasiert, später KI:
   Titel, Zutaten mit Mengen, Schritte, Minuten → Vorschau "Speichern"/"Noch
   ändern"), "Selbst eintippen" (`/kochbuch/bearbeiten`), "Link einfügen" und
   "Foto vom Rezeptzettel" (Label "mit KI", bis dahin deaktiviert).
-- Kochbuch-Daten (`src/lib/cookbook.ts`): Rezepte mit Kategorie
+- Kochbuch-Daten (`src/lib/essen/cookbook.ts`): Rezepte mit Kategorie
   Fleisch/Vegetarisch/Fisch/Cheat Day, Herkunft "eigenes" oder "ki".
   KI-Rezepte später über `saveAiRecipe()` direkt (als Favorit) übernehmen.
   Feste Gerichte im Wochen-Check zählen in ihre Kategorie (Zähler kann nicht
   darunter sinken); ein Cheat-Day-Rezept setzt den Cheat Day auf diesen Tag.
-- Wochenplan (`/wochenplan`, `src/lib/mealPlan.ts`, Oberfläche
+- Wochenplan (`/wochenplan`, `src/lib/essen/mealPlan.ts`, Oberfläche
   `src/components/plan/`): Umschalter "Tag" (Standard) / "Woche"
   (`Segmented`), darunter eine schmale Zusammenfassung (x/7 geplant,
   Kategorien, ~Kosten von Budget). Tag-Ansicht: Tagesleiste (7 Tage ab
@@ -258,14 +329,14 @@ Bei ALLEN Änderungen beachten.
   Fleisch rot, Fisch blau, Cheat Day orange, leer grau), große Karte
   (`DayCard`: Emoji auf Akzent-Verlauf als Platzhalter fürs Rezeptbild
   (`dishEmoji`), "WOCHENTAG · MAHLZEIT", Name, Chips Kategorie/Zeit/Personen/
-  ~Kosten (`estimateCost` in `src/lib/costs.ts`, grobe Richtwerte),
+  ~Kosten (`estimateCost` in `src/lib/essen/costs.ts`, grobe Richtwerte),
   "Tauschen"/"Rezept", "…" für doppelt kochen/verschieben/löschen; leer
   "+ Planen"; Ausflug, Wunschtag, Cheat Day eigen gestaltet), seitlich
   wischen wechselt den Tag, darunter "Danach" (nächste 2 Tage). Woche-Ansicht
   (`WeekListView`): eine Zeile pro Tag, Gerichte am Griff ziehen (Pointer
   Events, auch Touch) = tauschen, Tippen öffnet den Tag. Zurückblättern bis
   26 Wochen = Rückblick (nur lesen, "Nochmal kochen" setzt das Gericht auf
-  einen Tag dieser/nächster Woche). Lieblingswochen (`src/lib/templates.ts`,
+  einen Tag dieser/nächster Woche). Lieblingswochen (`src/lib/essen/templates.ts`,
   `wasgibts.vorlagen`): "Vorlage speichern" (Name, je Wochentag Rezept/
   Freitext) und "Vorlage laden" (Tage abwählbar, belegte Tage: "Überschreiben"
   oder "Nur freie Tage"). `buildWeek()`/`composeWeek()` setzen Plätze,
@@ -274,7 +345,7 @@ Bei ALLEN Änderungen beachten.
   "doppelt" am Eintrag). Gespeichert werden nur eigene Einträge und
   Überschreibungen ("cleared"). Die Kategorie eines Eintrags kommt immer vom
   Gericht, nie vom Kategorie-Hinweis des Platzes.
-- Einkaufsliste (`/einkaufsliste`, `src/lib/shoppingList.ts` Speicher v4,
+- Einkaufsliste (`/einkaufsliste`, `src/lib/einkauf/shoppingList.ts` Speicher v4,
   Oberfläche `src/components/shopping/`): Artikel aus Rezepten im Wochenplan
   werden immer neu berechnet (`buildShoppingList`, Mengen je Einheitenfamilie
   addiert, doppelt kochen ×2, Abteilung per Stichwort). Je Artikel nur
@@ -295,7 +366,7 @@ Bei ALLEN Änderungen beachten.
   Median der Abstände; die frühere "Immer da"-Liste wurde zu Stammartikeln
   mit festem Wochenrhythmus migriert; fällig = Vorschlag, antippen =
   übernehmen, wischen/× = diesmal nicht). Chat/Sprache: "Müsli von Rossmann
-  und Windeln auf die Liste" (`src/lib/shoppingParse.ts`) wird ohne KI
+  und Windeln auf die Liste" (`src/lib/einkauf/shoppingParse.ts`) wird ohne KI
   erkannt (Artikel, Menge, Laden) und in die Planungswoche einsortiert.
   Standard-Woche und Kachel-Zähler: die Woche, für die gerade eingekauft wird
   (`planningWeekStart`).
@@ -324,11 +395,11 @@ Bei ALLEN Änderungen beachten.
   eingeklappt als "Frühere Ideen". Gesagtes zerlegt `parseLeftovers()` und
   landet im Vorrat ("Notiert ✓" + neue Ideen); Unbekanntes als grauer Chip
   "Meintest du …?"; ein normaler Satz ohne Zutaten beendet den Modus.
-  "Heute" (`takeForToday()` in `src/lib/spontanTake.ts`) ersetzt das heutige
+  "Heute" (`takeForToday()` in `src/lib/essen/spontanTake.ts`) ersetzt das heutige
   Gericht, das alte rutscht auf den nächsten freien Tag, mit "Rückgängig".
   Eingabefeld immer "Sag <Name>, was ansteht …". Gleiche Karten auf `/ideen`
   und in "Was gibt's heute?".
-- "Kennt ihr" oder "Neu" (`src/lib/dishStatus.ts`): bekannt = von Hand
+- "Kennt ihr" oder "Neu" (`src/lib/essen/dishStatus.ts`): bekannt = von Hand
   "Kennen wir" (Kochbuch v2 `known`; Schalter im Wochenplan-Eintrag und auf
   der Rezeptseite), 2× gekocht, eigenes Rezept schon gekocht, Wunsch und
   Freitext. Neu = KI-Rezepte und neu angelegte Rezepte, die noch nie gekocht
@@ -339,7 +410,7 @@ Bei ALLEN Änderungen beachten.
   Wochenplanung (KI-Prompt, `kochbuch_durchsuchen` liefert `bekannt` und
   `minuten`; Testmodus `pickWeekDishes()`): überwiegend bekannte, schnelle
   Gerichte, so viele neue wie `newPerWeek`.
-- Tipps (`src/lib/tips/`, Speicher `wasgibts.tippkarten`, Einstellung Profil
+- Tipps (`src/lib/essen/tips/`, Speicher `wasgibts.tippkarten`, Einstellung Profil
   v13 `tips` unter `/profil/tipps`: aus / ab und zu (Standard, an höchstens 4
   Tagen pro Woche) / täglich): nur auf Lottes Platz und nur, wenn nichts
   Wichtigeres ansteht. Eingebaute Sammlung (150 Tipps in `data/`: Profi-Tricks
@@ -352,7 +423,7 @@ Bei ALLEN Änderungen beachten.
   Gesten: Tippen = Details (Erklärung, evtl. Schritte); nach links wischen =
   für heute weg (Kategorie 3× weggewischt → nur noch jeden 4. Tag); nach
   rechts = nächster Tipp; Punkte darunter; beim allerersten Tipp einmal
-  "← weg · tippen = mehr · nächster →". Twist (`src/lib/twists.ts`, bei
+  "← weg · tippen = mehr · nächster →". Twist (`src/lib/essen/twists.ts`, bei
   bekannten Gerichten höchstens 2× pro Planungswoche, nie zwei Tage
   hintereinander, nie beim Wunschessen) ist eine Tipp-Karte mit "Übernehmen"
   (Zutat → "Für heute", mit Rückgängig); der Gesundheits-Tipp eine mit
@@ -370,12 +441,12 @@ Bei ALLEN Änderungen beachten.
   `src/components/shopping/QuickAdd.tsx`, auf der Einkauf-Karte und oben auf
   `/einkaufsliste`): rundes "+" (Trefferfläche 44×44) öffnet ein kleines
   Panel mit Textfeld (Fokus) und Mikrofon. `parseQuickAdd()`
-  (`src/lib/quickAdd.ts`): Artikel, Menge und Laden ("Müsli von Rossmann"),
+  (`src/lib/einkauf/quickAdd.ts`): Artikel, Menge und Laden ("Müsli von Rossmann"),
   erkannt über Lebensmittel-Liste, Abteilungs-Stichwörter, Drogerie-/
   Haushaltsartikel und eigene Produkte/Läden/Stammliste – nie automatisch
   "korrigiert". Danach "<n> Sachen hinzugefügt ✓" mit "Rückgängig", Panel
   schließt; Unbekanntes als grauer Chip zum Bestätigen.
-- Basis (`src/lib/bases.ts`): Kartoffeln, Reis, Nudeln, Quinoa/Couscous, Brot,
+- Basis (`src/lib/essen/bases.ts`): Kartoffeln, Reis, Nudeln, Quinoa/Couscous, Brot,
   Salat oder "Egal". Gefragt bei neuen Rezeptvorschlägen (nicht beim
   Spontan kochen – da gibt's sofort Ideen; KI fragt laut System-Prompt; fragt sie nach der "Basis", zeigt das Panel
   die Chips). Chips nach Beliebtheit (Profil v8 `bases`: Zähler je Basis,
@@ -383,7 +454,7 @@ Bei ALLEN Änderungen beachten.
   Essgewohnheiten "Eure Lieblings-Basen" (`/profil/basen`) bearbeitbar.
 - Küchenstil (Profil-Abschnitt): "So kocht ihr", "Das mögt ihr", Lieblings-Basen,
   Gesundheits-Tipps, Nie wieder.
-- "Das mögt ihr" (`src/lib/likes.ts`, Profil v9 `likes` gewichtet,
+- "Das mögt ihr" (`src/lib/essen/likes.ts`, Profil v9 `likes` gewichtet,
   `likesBlocked`): gelernt aus 👍 (+2), "Gekocht" im Rezept (+1), gewählten
   Vorschlägen (Reste-Idee angetippt, KI-Vorschlag übernommen: +1) und Sätzen
   im Chat ("wir lieben Käse", "Paprika geht immer": +3, `extractLikeStatements`;
@@ -392,7 +463,7 @@ Bei ALLEN Änderungen beachten.
   `/profil/das-moegt-ihr`: Chips mit Stufe (♥–♥♥♥), entfernen (wird dann nicht
   wieder gelernt) und ergänzen. Geht an die KI: bevorzugt einbauen, auch in
   Entdecker-Rezepten ("neu, aber nicht fremd").
-- Gesundheits-Tipps (`src/lib/healthTips.ts`, Profil v9 `healthTips`, Standard
+- Gesundheits-Tipps (`src/lib/essen/healthTips.ts`, Profil v9 `healthTips`, Standard
   "ab und zu"; Einstellung `/profil/gesundheit`): regelbasierte Tausch-Ideen
   (`SWAPS`: halbe Sahne → Joghurt, Vollkornnudeln halb/halb, Naturreis, Hack
   zu einem Drittel → rote Linsen, halbe Menge Wurst/Speck + Paprika, weniger
@@ -405,7 +476,7 @@ Bei ALLEN Änderungen beachten.
   vorletzten Tag der Planungswoche, z. B. "Diese Woche 5 Gemüsetage – stark!
   💪"). Die KI bekommt Einstellung, Zahl der Tipps dieser Woche und die
   Regeln (Systemanweisung).
-- Ohne Druck (`src/lib/activity.ts`, Speicher `wasgibts.aktivitaet`):
+- Ohne Druck (`src/lib/core/activity.ts`, Speicher `wasgibts.aktivitaet`):
   - Willkommen zurück: Nach 3+ Tagen ohne Öffnen begrüßt der Helfer auf der
     Startseite einmalig ("Hey, schön, dass du da bist! 😊 Hattet ihr eine
     gute Zeit? Frisch starten oder noch Pause?"). "Frisch starten" verwirft
@@ -418,7 +489,7 @@ Bei ALLEN Änderungen beachten.
     ändern, Chat, Chip antippen – `noteUserAction`).
 - Pause-Modus (Profil v11 `pause` {from, until|null}; per Chat "Wir sind
   ab Freitag eine Woche im Urlaub" / "Wir sind wieder da" – `parsePauseRequest`
-  in `src/lib/spontan.ts` – oder unter `/profil/pause`): Pausentage zählen wie
+  in `src/lib/essen/spontan.ts` – oder unter `/profil/pause`): Pausentage zählen wie
   Ausflugstage (`PlanDay.paused`, kein Platz, keine Einkäufe), keine
   Hinweise und keine Push. Startseite: "Pause bis <Datum> – genießt die
   Zeit ☀️" mit "Pause beenden". Bis 3 Tage vor Beginn einmal "Im Kühlschrank
@@ -436,15 +507,15 @@ Bei ALLEN Änderungen beachten.
   - 📅 Wie unter der Woche: normale Planung.
   - Wurden 3 Wochenenden in Folge geplante Gerichte nicht gekocht (keine
     Bewertung, nicht als gekocht vermerkt), bietet der Helfer EINMAL "frei" an.
-- Spontan-Hilfe im Chat (immer, auch ohne Plan und ohne KI, `src/lib/spontan.ts`):
+- Spontan-Hilfe im Chat (immer, auch ohne Plan und ohne KI, `src/lib/essen/spontan.ts`):
   Ausflugs-Snacks aus dem Vorrat ("Wir fahren spontan los, was nehmen wir
   mit?"), drei schnelle Ideen unter 20 Minuten ("Wir kommen erst um 19 Uhr
   heim"; ohne KI aus dem Kochbuch, sonst Klassiker). Freitags höchstens EIN
   Grill-Vorschlag, wenn fürs Wochenende gutes Wetter vorhergesagt ist (nur
-  mit Zustimmung, Ort grob per PLZ, Open-Meteo, `src/lib/weather.ts`).
+  mit Zustimmung, Ort grob per PLZ, Open-Meteo, `src/lib/core/weather.ts`).
 - Planen ist optional: Ohne Gericht für heute zeigt die Startseite "Was gibt's
   heute?" mit 3 Ideen (siehe Ideen für heute) – nie als Fehler oder Warnung.
-- Nach dem Essen (`src/lib/mealDone.ts`, Speicher `wasgibts.gekocht` je
+- Nach dem Essen (`src/lib/essen/mealDone.ts`, Speicher `wasgibts.gekocht` je
   Kochtag, `AutoCooked` im Layout): ab Essenszeit + 90 Minuten zählt das
   Gericht ohne Nachfrage als gekocht (auch für gestern, falls die App zu war;
   nicht bei Pause/Ausflug, nicht am lockeren/freien Wochenende, bei "spontan"
@@ -457,7 +528,7 @@ Bei ALLEN Änderungen beachten.
   Wochenplan heute: "✓ Gekocht · Doch nicht? Auf morgen verschieben"
   (`moveToTomorrow`: morgiges Gericht rutscht auf den nächsten freien Tag;
   Zähler und Vorrat zurück, mit Rückgängig).
-- Bewerten nach dem Kochen – klein und nur bei Neuem (`src/lib/ratings.ts`,
+- Bewerten nach dem Kochen – klein und nur bei Neuem (`src/lib/essen/ratings.ts`,
   Speicher `wasgibts.bewertungen` je Kochtag): nur für neue Gerichte
   (Status "Neu", siehe dishStatus) beim ersten Mal (`isFirstTime`: noch nie
   gekocht/bewertet und nicht schon früher im Plan), abends ab 1 Stunde nach
@@ -474,7 +545,7 @@ Bei ALLEN Änderungen beachten.
   und sehr ähnliche Gerichte nie, Gründe beachten); `rezept_erstellen` und
   freie Gerichte lehnen Einträge der Liste ab (`isNeverAgain`). Einsehbar
   und einzeln wiederherstellbar unter `/profil/nie-wieder`.
-- Küchenhelfer (KI, `src/lib/assistant/`, API `/api/lotte`, alter Pfad
+- Küchenhelfer (KI, `src/lib/lotte/`, API `/api/lotte`, alter Pfad
   `/api/kuechenhelfer` leitet dorthin): schwebender
   Knopf auf allen Seiten außer der Startseite (`KitchenHelper` im Layout, über `StickyActions`,
   bei offener Tastatur ausgeblendet), Panel mit Chat, Mikrofon
@@ -486,10 +557,8 @@ Bei ALLEN Änderungen beachten.
   ohne Schritte, Vorrat); der Server führt die Claude-Tool-Schleife aus
   (`engine.ts`, Werkzeuge in `tools.ts` – je Tag ein Hauptgericht, inkl.
   "doppelt kochen", Einkaufsliste, `vorrat_hinzufuegen`, `wunsch_merken`,
-  `termin_notieren`; Modell `LOTTE_MODEL`/`KUECHENHELFER_MODEL`, Standard
-  `claude-haiku-5-5`, ohne Nachdenken, Aufwand niedrig, `max_tokens` 3000,
-  höchstens 6 Runden; Systemanweisung mit Prompt-Caching, Token-Zahlen im
-  Server-Log). Schreib-Werkzeuge ändern nichts, sie liefern `ChangeOp`s
+  `termin_notieren`; Modell und Streaming siehe "Fundament"; Systemanweisung
+  mit Prompt-Caching). Schreib-Werkzeuge ändern nichts, sie liefern `ChangeOp`s
   (`ops.ts`; Vorrat/Wunsch/Termin landen erst beim Übernehmen in ihren
   Speichern, Termine unter `wasgibts.termine` → Heute-Karte). Vorschau
   "Das würde ich machen:" (`preview.ts`, `ProposalCard`, "Übernehmen"/"Ändern")
@@ -497,7 +566,7 @@ Bei ALLEN Änderungen beachten.
   "Rückgängig" (10 s) stellt alles wieder her. Einzelne Änderungen abwählbar;
   "Ändern" schickt den offenen Vorschlag mit (`pending`). Neue KI-Rezepte
   prüfen Allergien/"mag nicht" strikt (`diet.ts`).
-  Schutz (`src/lib/assistant/guard.ts`, gilt für ALLE KI-Aufrufe – Lotte und
+  Schutz (`src/lib/lotte/guard.ts`, gilt für ALLE KI-Aufrufe – Lotte und
   `/api/kennenlernen`; neue KI-Routen immer darüber): Die KI ist nur an, wenn
   `ANTHROPIC_API_KEY` UND `APP_ACCESS_CODE` gesetzt sind. Die App fragt den Zugangscode einmal im Panel
   (`AccessCodeCard`, gemerkt unter `wasgibts.zugangscode`, Header
@@ -514,7 +583,7 @@ Bei ALLEN Änderungen beachten.
   dieselben Werkzeuge, versteht die Alltags-Sätze). Daten-Module importieren
   React nur über `useExternalStore.ts`, damit der Server ihre reine Logik
   nutzen kann.
-- Lotte liest vor (`src/lib/speech.ts`, Web Speech API, ohne Server;
+- Lotte liest vor (`src/lib/lotte/speech.ts`, Web Speech API, ohne Server;
   Einstellungen pro Gerät unter `wasgibts.vorlesen`: Modus automatisch = nur
   wenn per Mikrofon gefragt (Standard) / immer / nie, Stimme (`voiceURI`, leer
   = automatisch passend zu weiblich/männlich, sonst beste deutsche),
@@ -550,7 +619,7 @@ Bei ALLEN Änderungen beachten.
   "Hi, ich bin <Name> – was steht an?". Darunter keine Beispiel-Blasen,
   sondern über dem Eingabefeld klein "Zum Beispiel:" mit höchstens 3 Chips
   mit Rahmen (waagerecht scrollbar, `chatSuggestions()` in
-  `src/lib/chatSuggestions.ts`): vor dem Essen "Was gibt's heute?", danach
+  `src/lib/lotte/chatSuggestions.ts`): vor dem Essen "Was gibt's heute?", danach
   "Was machen wir morgen?" (ohne KI "Was ist noch da?"), Wunsch mit einer
   zufälligen Person aus dem Profil (allein "Ich wünsche mir …"), gelegentlich
   Vorrat ("Was mach ich mit Blumenkohl?") oder Einkauf. Antippen = eigene
@@ -581,7 +650,7 @@ Bei ALLEN Änderungen beachten.
   Wochenmarkt, Kochabend zu zweit, Brunch, Ausflug, Neues ausprobieren.
 - Backen (Kochbuch v3: `kind` "kochen"/"backen", `oven` {mode, temp, minutes},
   `pan`, `kidSteps`, `machineSteps`): Backrezepte immer in g/ml. Eingebaute
-  Backstube `src/lib/baking/` (20 Familienrezepte, IDs `b:<id>`, lesbar und
+  Backstube `src/lib/essen/baking/` (20 Familienrezepte, IDs `b:<id>`, lesbar und
   backbar wie eigene; "In unsere Rezepte" = `adoptBuiltin`). Filter
   "🧁 Backen" in "Unsere Rezepte" zeigt eigene Backrezepte und darunter "Aus
   unserer Backstube". "Zusammen backen" (`CookMode`): Backofen + Form auf der
@@ -592,7 +661,7 @@ Bei ALLEN Änderungen beachten.
   backen?", "Was kann ich mit den Kindern backen?", `isBakingRequest`) →
   bis zu 3 Rezepte mit "Zusammen backen"/"Rezept" (ohne KI). KI-Backrezepte
   später.
-- Im Supermarkt fragen (`src/lib/market.ts`): "im Angebot", "ich steh grad
+- Im Supermarkt fragen (`src/lib/essen/market.ts`): "im Angebot", "ich steh grad
   im …", "hier gibt's …" (`isMarketSituation`, Produkt `marketProduct`) →
   besonders kurze Antwort mit 2–3 Ideen samt Zeit (Kochbuch zuerst, dann
   Vorlagen; `marketIdeas`), "Was du dafür noch brauchst: …" (ohne Vorrat,
@@ -625,7 +694,7 @@ Bei ALLEN Änderungen beachten.
   Veggie-Tage & Woche (nur mit Planung), Das mögt ihr, Mag nicht & Allergien,
   Lieblingsgerichte; bei "Einfach" hinter "Mehr anzeigen": Basen, Nie
   wieder, Gesundheits-Tipps. Joker gibt es (noch) nicht – wird nicht
-  angezeigt. Per Lotte (`src/lib/settingsChat.ts`, ohne KI, mit
+  angezeigt. Per Lotte (`src/lib/lotte/settingsChat.ts`, ohne KI, mit
   Rückgängig): "Jonne isst jetzt vegetarisch/vegan/wieder Fleisch", "Lisa mag
   keine Pilze", "… allergisch gegen …", "Ich koche jetzt spontan", "Mach die
   Ansicht dunkel", "Melde dich seltener/öfter", "Keine Tipps mehr", "Zeig mir
@@ -653,13 +722,13 @@ Bei ALLEN Änderungen beachten.
   "Soll ich die nächste Woche schon mal vorbereiten?" und für freie Tage der
   nächsten zwei Tage "<Tag> ist noch frei – soll ich dir was Schnelles
   vorschlagen?" (je einmal). Die KI bekommt den Modus im Kontext.
-- Personen entfernen (`src/lib/removePerson.ts`, `usePersonRemoval`):
+- Personen entfernen (`src/lib/einstellungen/removePerson.ts`, `usePersonRemoval`):
   Rückfrage "<Name> entfernen?" (`ConfirmDialog`), danach Toast mit
   "Rückgängig" (`showToast`, `ToastHost` im Layout). Aufgeräumt werden
   Personenzahl, Wunschtag-Reihenfolge, Wünsche in Wochen-Vorgaben (→ keiner)
   und im Plan (→ normales Gericht). Die letzte Person bleibt (freundlicher
   Hinweis).
-- Zurück-Navigation (`src/lib/navigation.ts`, `NavigationMemory` im Layout,
+- Zurück-Navigation (`src/lib/core/navigation.ts`, `NavigationMemory` im Layout,
   `BackButton` im `PageHeader`, `useGoBack()`): eigener Verlauf in
   sessionStorage; der Pfeil macht `router.back()`, nur ohne Verlauf geht's zu
   `backHref`. Scrollhöhe je Verlaufs-Eintrag gemerkt (beim Verlassen, beim
@@ -684,7 +753,7 @@ Bei ALLEN Änderungen beachten.
   aus dem Plan (`manualOnly`), immer die laufende Woche, offene Artikel
   früherer Wochen wandern mit (`carryOverManual`). KI: Kochstil im Kontext;
   von der KI übernommene Gerichte werden als spontan markiert.
-- Ideen für heute (`src/lib/ideas.ts`, ohne KI): Wünsche ganz oben, dann
+- Ideen für heute (`src/lib/essen/ideas.ts`, ohne KI): Wünsche ganz oben, dann
   Lieblinge/kennt ihr/👍, Vorrat und Reste, Jahreszeit, nicht dasselbe wie in
   den letzten 5 Tagen, unter der Woche eher schnell; dazu Familien-Klassiker.
   Heute-Karte ohne Gericht (alle Kochstile): `IdeasCard` "Was gibt's heute?"
@@ -695,7 +764,7 @@ Bei ALLEN Änderungen beachten.
   `/ideen` mit Filtern (schnell, veggie, mit Vorrat), Wunsch-Feld und – nur
   bei spontan – leise "Lieber ein paar Tage vorplanen?". Tagesstand unter
   `wasgibts.ideen`.
-- Ideen aus dem Bestand (`src/lib/dishIdeas.ts`, `src/lib/useStock.ts`):
+- Ideen aus dem Bestand (`src/lib/essen/dishIdeas.ts`, `src/lib/essen/useStock.ts`):
   Bestand = Vorrat + auf der Einkaufsliste Abgehaktes/"Haben wir schon"
   (diese und Einkaufswoche) + eben im Chat Genanntes (`ChatState.extra`,
   landet nicht im Vorrat). EINE Gerichte-Liste `DISHES` für "Was gibt's
@@ -711,17 +780,17 @@ Bei ALLEN Änderungen beachten.
   Menge, Ort, "gekauft", "bald verbrauchen"). Ohne KI: "Was kann ich heute
   kochen?" (`isCookIdeasRequest`) und "Was mach ich mit Hack und Paprika?"
   (`ingredientsFromQuestion`) öffnen die Spontan-Ideen.
-- Wunsch-Ideen (`src/lib/wishes.ts`, `wasgibts.wuensche`): "Mathis wünscht
+- Wunsch-Ideen (`src/lib/essen/wishes.ts`, `wasgibts.wuensche`): "Mathis wünscht
   sich Pfannkuchen" im Chat (ohne Wochentag bzw. bei spontan immer lokal) oder
   auf `/ideen`; "Mathis' Wunsch" ganz oben, bis gewählt oder weggewischt.
-- Planung freischalten (`src/lib/planUnlock.ts`): "Ich will doch mal planen"
+- Planung freischalten (`src/lib/essen/planUnlock.ts`): "Ich will doch mal planen"
   im Chat (bei spontan) oder auf `/ideen` → "Nur diese Woche oder ab jetzt
   immer?"; immer → "Mal so, mal so" oder "Ich plane gern".
 - "Mal so, mal so": freie Tage sind normal – kein "x/7 geplant", leerer Tag
   im Wochenplan "Spontan – Ideen gibt's am Tag selbst"; Lotte bietet statt
   der ganzen Woche höchstens einmal pro Woche "Soll ich dir die nächsten 2
   Tage vorschlagen?" an (nicht im Modus "Ganz locker").
-- Sanft erkennen (`src/lib/planDetect.ts`): "Ich plane gern", aber 3 Wochen
+- Sanft erkennen (`src/lib/essen/planDetect.ts`): "Ich plane gern", aber 3 Wochen
   höchstens 2 Tage selbst geplant (App seit 3+ Wochen genutzt, `since` im
   Aktivitäts-Speicher) → EINMAL "Ihr kocht eher spontan, oder? Soll ich die
   Planung ausblenden?"; "spontan", aber 2× "nur diese Woche" in 6 Wochen →

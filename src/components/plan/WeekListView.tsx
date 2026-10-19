@@ -2,8 +2,8 @@
 
 import { useRef, useState } from "react";
 import { ChevronRight, GripVertical } from "lucide-react";
-import type { PlanDay } from "@/lib/mealPlan";
-import { usePlanStyle } from "@/lib/usePlanStyle";
+import type { PlanDay } from "@/lib/essen/mealPlan";
+import { usePlanStyle } from "@/lib/essen/usePlanStyle";
 import { dayDot, dishTitle } from "./DayView";
 
 type Drag = { from: string; startY: number; y: number; over: string | null };
