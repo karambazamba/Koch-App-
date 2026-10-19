@@ -60,8 +60,8 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
         <PageHeader title="Einstellungen" />
         <main className={`${PAGE_MAIN} gap-6`}>
           <Group title="Startseite & Bausteine">
-            <Row href="/profil/startseite" icon={LayoutGrid} title="Startseite anpassen" value={home ? `${home.filter((t) => t.visible).length} Kacheln` : undefined}>
-              Reihenfolge, Größe, ein- und ausblenden
+            <Row href="/profil/startseite" icon={LayoutGrid} title="Startseite bearbeiten" value={home ? `${home.filter((t) => t.visible && t.id !== "post").length} Kacheln` : undefined}>
+              Kacheln hinzufügen, entfernen, sortieren
             </Row>
             <Row href="/profil/bausteine" icon={Blocks} title="Bausteine" value={bausteine ? `${BAUSTEINE.filter((b) => bausteine.includes(b.feature)).length} an` : undefined}>
               Was {name} noch kann

@@ -76,6 +76,9 @@ Termine, Aufgaben und Notizen (Werkzeuge vorhanden) – drei verschiedene Dinge:
 - Termin = feste Uhrzeit an einem Tag ("Morgen um 9 Steuerberater") → termin_anlegen.
 - Aufgabe = zu erledigen, flexibel ("muss", "sollte", "bis …"): an einem Wunschtag, mit Frist ("Bis Mittwoch Kita-Formular"), für einen Zeitraum ("Ich muss diese Woche noch die Reifen machen" → zeitraum diese_woche) oder ohne alles (= Irgendwann), auch wiederkehrend ("Jeden Dienstag Müll rausbringen") → aufgabe_anlegen.
 - Notiz = nur festhalten ("Merk dir …", "Notier …", "Idee: …") → notiz_anlegen; passt es in eine vorhandene oder naheliegende Liste ("Merk dir: Mathis wünscht sich Torwarthandschuhe" → Liste "Geschenkideen", "… auf die Packliste"), liste_eintrag_hinzufuegen (legt die Liste an, falls nötig). Essenswünsche ("Mathis wünscht sich Pfannkuchen") bleiben wunsch_merken.
+- Kladde = Schmierzettel (ein freier Text, Inhalt im Kontext): "Schreib in die Kladde: …" → kladde_schreiben. "Räum meine Kladde auf" → für passende Zeilen termin_anlegen/aufgabe_anlegen/notiz_anlegen (bzw. liste_eintrag_hinzufuegen), danach kladde_aufraeumen mit genau diesen Zeilen; Unklares bleibt stehen.
+- "Das ist kein Termin, sondern eine Aufgabe" (meist der zuletzt besprochene Eintrag) → termin_in_aufgabe_umwandeln; umgekehrt aufgabe_in_termin_umwandeln (mit Uhrzeit).
+- Startseite: "Nimm die Kladde auf die Startseite", "Aufgaben ganz nach oben", "Einkauf weg von der Startseite" → startseite_anpassen (zeigen, ausblenden, nach_oben …).
 - Notizen lesen ("Was steht auf der Packliste?", "Was ist das WLAN-Passwort?") → notizen_anzeigen und kurz den Inhalt nennen; "Häng das WLAN oben an" → notiz_anheften. "Was muss ich heute noch erledigen?" → aufgaben_anzeigen und kurz zusammenfassen. "Zeig mir meine Aufgaben" / "Zeig mir meine Notizen" → app_befehl mit genau diesem Satz (öffnet die Seite).
 - Raum: Arbeit bei Job-Themen (Meeting, Büro, Kunde, Präsentation, Chef, Kollegen), sonst Familie. Etikett nur, wenn naheliegend (Kita, Schule, Arzt, Café, Sport, Steuern, Geburtstag).
 - "erinner mich 30 Minuten vorher" → erinnerung "30"; "am Abend vorher" → "vorabend". Ohne Angabe keine Erinnerung.
@@ -224,6 +227,7 @@ export function contextText(
     "",
     calendarContext(data.entries ?? [], todayIso),
     notesContext(data.notes ?? []),
+    `Kladde (Schmierzettel): ${data.kladde?.trim() ? JSON.stringify(data.kladde.slice(0, 1500)) : "leer"}`,
     `Bausteine an: ${BAUSTEINE.filter((b) => data.features?.includes(b.feature)).map((b) => b.name).join(", ") || "keine"}. Aus: ${BAUSTEINE.filter((b) => !data.features?.includes(b.feature)).map((b) => `${b.name} (${b.feature}: ${b.text})`).join("; ") || "keine"}`,
     mailContext(data),
     data.home ? `Startseite (Reihenfolge): ${data.home.map((t) => `${t.id} ${t.visible ? t.size : "ausgeblendet"}`).join(", ")}` : "",

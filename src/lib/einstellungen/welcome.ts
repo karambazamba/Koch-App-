@@ -361,9 +361,13 @@ export function profileFrom(state: WelcomeState): HouseholdProfile {
   };
 }
 
-/** Kacheln auf "Heute": ohne Essen/Einkauf/Termine keine Kachel dafür (Seiten bleiben erreichbar) */
+/**
+ * Start-Kacheln aus "Wobei soll ich dir helfen?": Termine → Termine-Kachel,
+ * Essen → Essen, Einkauf → Einkauf; Aufgaben sind immer dabei. Arbeit und
+ * Familie steuern nur die Räume. (Seiten bleiben immer erreichbar.)
+ */
 export function homeTilesFor(help: HelpId[]): HomeTile[] {
-  const shown: Record<string, boolean> = { termine: help.includes("termine") || help.includes("arbeit") || help.includes("familie"), essen: help.includes("essen"), einkauf: help.includes("einkauf") };
+  const shown: Record<string, boolean> = { termine: help.includes("termine"), aufgaben: true, essen: help.includes("essen"), einkauf: help.includes("einkauf") };
   return DEFAULT_HOME.map((t) => (t.id in shown ? { ...t, visible: shown[t.id] } : t));
 }
 

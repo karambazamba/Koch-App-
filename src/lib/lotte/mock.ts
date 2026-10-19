@@ -5,6 +5,7 @@
 // Rezepte, Mattis wünscht sich Sonntag Milchreis, der Rest vegetarische KI-Rezepte".
 
 import { parseNoteCommand } from "../notizen/chat";
+import { isKladdeTidyRequest, kladdeCommand, tidyKladde } from "../notizen/kladde";
 import { eventsIn, greetingCommand, localNewMail, localReply, looksLikeMail, parseHistoryDraft, REPLY_CHOICES, reviseDraft, revisionOf, splitInstruction, styleFromContext, summaryOf, type MailDraft } from "./mail";
 import type Anthropic from "@anthropic-ai/sdk";
 import { WEEKDAYS } from "../einstellungen/profile";
@@ -257,6 +258,8 @@ function mockModel(): CreateMessage {
       if (memory) return text(memory);
       const mail = mailUses(last.content, msgs, system);
       if (mail) return mail;
+      const kladde = kladdeUses(last.content, msgs, system);
+      if (kladde) return kladde;
       const note = noteUses(last.content);
       if (note) return note;
       const leftovers = leftoverReply(last.content, system);
@@ -600,6 +603,38 @@ function mailUses(latest: string, msgs: Anthropic.Beta.BetaMessageParam[], syste
   return null;
 }
 
+/** Kladde und Umwandeln im Testmodus */
+function kladdeUses(latest: string, msgs: Anthropic.Beta.BetaMessageParam[], system: string): Anthropic.Beta.BetaMessage | null {
+  const today = system.match(/^Heute: .*\((\d{4}-\d{2}-\d{2})\)/m)?.[1] ?? "";
+  const write = kladdeCommand(latest);
+  if (write) return tools([{ name: "kladde_schreiben", input: { text: write } }]);
+  if (isKladdeTidyRequest(latest)) {
+    const raw = system.match(/^Kladde \(Schmierzettel\): (.*)$/m)?.[1] ?? "leer";
+    const kladdeText = raw === "leer" ? "" : (JSON.parse(raw) as string);
+    const lines = today ? tidyKladde(kladdeText, today).filter((l) => l.kind) : [];
+    if (!lines.length) return text("In deiner Kladde finde ich gerade nichts, was ein Termin, eine Aufgabe oder eine Notiz wird. (Testmodus)");
+    const uses: ToolUse[] = lines.map((l) =>
+      l.draft
+        ? draftInput(l.draft, today)
+        : l.note?.kind === "add"
+          ? { name: "liste_eintrag_hinzufuegen", input: { liste: l.note.list, eintraege: l.note.items } }
+          : { name: "notiz_anlegen", input: { titel: l.note && l.note.kind === "create" ? l.note.title : l.line, text: l.note && l.note.kind === "create" ? (l.note.text ?? "") : l.line } },
+    );
+    return tools([...uses, { name: "kladde_aufraeumen", input: { zeilen: lines.map((l) => l.line) } }]);
+  }
+  const toTask = /\bkein(?:en)?\s+termin\b.*\baufgabe\b/i.test(latest);
+  const toTermin = latest.match(/\bkeine\s+aufgabe\b.*\btermin\b.*?\b(?:um\s+)?(\d{1,2})(?::(\d{2}))?\s*uhr\b/i);
+  if (toTask || toTermin) {
+    const known = contextEntries(system).filter((e) => e.typ === (toTask ? "termin" : "aufgabe"));
+    const prevUser = [...msgs].reverse().find((m, i) => i > 0 && m.role === "user" && typeof m.content === "string")?.content as string | undefined;
+    const hit = known.find((e) => prevUser?.toLowerCase().includes(e.title.toLowerCase().split(" ")[0])) ?? known[0];
+    if (!hit) return text("Welchen Eintrag meinst du genau? (Testmodus)");
+    if (toTask) return tools([{ name: "termin_in_aufgabe_umwandeln", input: { id: hit.id } }]);
+    return tools([{ name: "aufgabe_in_termin_umwandeln", input: { id: hit.id, start: `${toTermin![1].padStart(2, "0")}:${toTermin![2] ?? "00"}` } }]);
+  }
+  return null;
+}
+
 /** Notizen im Testmodus: "Merk dir …", "Was steht auf der Packliste?", "Häng das WLAN oben an", "Was muss ich heute noch erledigen?" */
 function noteUses(latest: string): Anthropic.Beta.BetaMessage | null {
   const cmd = parseNoteCommand(latest);
@@ -622,7 +657,7 @@ function noteUses(latest: string): Anthropic.Beta.BetaMessage | null {
   }
 }
 
-const CALENDAR_WRITE = new Set(["notiz_anlegen", "notiz_aendern", "notiz_loeschen", "liste_eintrag_hinzufuegen", "notiz_anheften", "baustein_an", "baustein_aus", "portionen_anpassen", "pause_setzen", "pause_beenden", "startseite_anpassen", "wochenplan_loeschen", "einkaufsliste_leeren", "einkaufsliste_entfernen", "rueckgaengig", "termin_anlegen", "termin_aendern", "termin_loeschen", "aufgabe_anlegen", "aufgabe_aendern", "aufgabe_erledigen", "aufgabe_verschieben"]);
+const CALENDAR_WRITE = new Set(["kladde_schreiben", "kladde_aufraeumen", "termin_in_aufgabe_umwandeln", "aufgabe_in_termin_umwandeln", "notiz_anlegen", "notiz_aendern", "notiz_loeschen", "liste_eintrag_hinzufuegen", "notiz_anheften", "baustein_an", "baustein_aus", "portionen_anpassen", "pause_setzen", "pause_beenden", "startseite_anpassen", "wochenplan_loeschen", "einkaufsliste_leeren", "einkaufsliste_entfernen", "rueckgaengig", "termin_anlegen", "termin_aendern", "termin_loeschen", "aufgabe_anlegen", "aufgabe_aendern", "aufgabe_erledigen", "aufgabe_verschieben"]);
 
 /** Einträge aus der Kontext-Liste "- Mo 2026-10-19: 09:00 Titel [id=…; termin, familie] | …" */
 function contextEntries(system: string): { date: string; time: string | null; title: string; id: string; typ: string; repeat: boolean }[] {

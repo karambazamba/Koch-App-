@@ -6,26 +6,27 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { ArrowLeftRight, NotebookPen, Refrigerator, ShoppingCart, UtensilsCrossed } from "lucide-react";
-import { DEFAULT_HOME, useHomeTiles, type TileSize } from "@/lib/core/homeLayout";
-import { HomeCustomizerSheet } from "./HomeCustomizer";
+import { ArrowLeftRight, NotebookPen, PenLine, Refrigerator, ShoppingCart, UtensilsCrossed } from "lucide-react";
+import { DEFAULT_HOME, markHomeTipSeen, tileMeta, tileRows, useHomeTiles, useHomeTipSeen } from "@/lib/core/homeLayout";
+import { useWelcomeFinished } from "@/lib/einstellungen/welcomeStore";
+import { HomeEditSheet } from "./HomeCustomizer";
 import { buzz } from "./actions";
 import { LotteAvatar } from "@/components/LotteAvatar";
 import { CARD, buttonClass } from "@/components/ui/styles";
 import { QuickAddButton } from "@/components/shopping/QuickAdd";
 import { clockLabel, itemText } from "@/lib/aufgaben/answers";
-import { itemsForDay, openTaskCount, upcomingTermine, urgentTasks, type CalendarEntry } from "@/lib/aufgaben/model";
-import { sortNotes, useNotes } from "@/lib/notizen";
+import { itemsForDay, openTaskCount, taskOverview, upcomingTermine, type CalendarEntry } from "@/lib/aufgaben/model";
+import { sortNotes, useKladde, useNotes } from "@/lib/notizen";
 import { AufgabenSection, TermineSection } from "./MiniCards";
 import { dueReminder } from "@/lib/aufgaben/reminders";
 import { markReminderSeen, useSeenReminders } from "@/lib/aufgaben/store";
-import { greeting, todaySentence } from "@/lib/aufgaben/summary";
+import { greeting, homeSentence, type SentencePart } from "@/lib/aufgaben/summary";
 import { addDays } from "@/lib/core/now";
 import { showToast } from "@/lib/core/toast";
 import { hasKids, helperName, mealClockFor, pausedOn, saveProfile } from "@/lib/einstellungen/profile";
 import { useFeature } from "@/lib/core/features";
 import { dailyTip } from "@/lib/essen/tips/daily";
-import { PANTRY_PLACES, usePantry } from "@/lib/essen/pantry";
+import { usePantry } from "@/lib/essen/pantry";
 import { pauseLabel } from "@/lib/essen/spontan";
 import { pushUndo } from "@/lib/core/undo";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
@@ -52,7 +53,8 @@ export function TodayPage({ data, entries, minutes, onOpenFood }: { data: HomeDa
   const dishClock = data.day ? mealClockFor(data.profile, data.day.weekday) : null;
   const reminder = dueReminder(entries, data.todayIso, minutes, seen);
   const tomorrowIso = addDays(data.todayIso, 1);
-  const tomorrowItems = minutes >= 16 * 60 ? itemsForDay(entries, tomorrowIso, data.todayIso).filter((i) => !i.done) : [];
+  const tomorrowAll = itemsForDay(entries, tomorrowIso, data.todayIso).filter((i) => !i.done);
+  const tomorrowItems = minutes >= 16 * 60 ? tomorrowAll : [];
   const tomorrowDish = minutes >= 16 * 60 ? dishOf(data.tomorrow) : null;
   const openItems = items.filter((i) => !i.done);
   // Bausteine Tipps / Wochenend-Ideen: nur über diesen einen Satz – und nur an ruhigen Tagen (nichts mehr offen)
@@ -72,140 +74,143 @@ export function TodayPage({ data, entries, minutes, onOpenFood }: { data: HomeDa
     showToast({ text: "Pause beendet ✓", undo: pushUndo("das Beenden der Pause", () => saveProfile(before)), undoneText: "Rückgängig gemacht." });
   };
   const tiles = useHomeTiles();
-  const [customize, setCustomize] = useState(false);
-  // Termine = feste Uhrzeit, Aufgaben = zu erledigen – je höchstens zwei Kärtchen
+  const tipSeen = useHomeTipSeen();
+  const welcomed = useWelcomeFinished();
+  const [editing, setEditing] = useState(false);
+  // Termine = feste Uhrzeit (Kärtchen), Aufgaben = zu erledigen (Zeilen) – je höchstens zwei
   const termine = upcomingTermine(entries, data.todayIso, minutes);
-  const tasks = urgentTasks(entries, data.todayIso);
+  const overview = taskOverview(entries, data.todayIso);
+  const tasks = [...overview.heute, ...overview.woche];
   const moreTasks = Math.max(0, openTaskCount(entries, data.todayIso) - Math.min(2, tasks.length));
-  // Essen und Einkauf (beide kompakt, direkt hintereinander) stehen nebeneinander
-  const visible = (tiles ?? DEFAULT_HOME).filter((t) => t.visible);
-  const rows: (typeof visible)[] = [];
-  for (let i = 0; i < visible.length; i++) {
-    const a = visible[i];
-    const b = visible[i + 1];
-    const pair = b && a.size === "kompakt" && b.size === "kompakt" && new Set([a.id, b.id]).size === 2 && [a.id, b.id].every((id) => id === "essen" || id === "einkauf");
-    rows.push(pair ? [a, b] : [a]);
-    if (pair) i++;
-  }
+  // Kacheln in Reihen; Bausteine nur, wenn sie an sind; "bald" nie
+  const visible = (tiles ?? DEFAULT_HOME).filter((t) => t.visible && !tileMeta(t.id).soon && (t.id !== "vorrat" || pantryOn));
+  const rows = tileRows(visible);
 
-  const renderTile = (tile: (typeof visible)[number]) => (
-    <>
-      {tile.id === "termine" ? (
-        (termine.length > 0 || tasks.length > 0) && (
-          <div className="flex flex-col gap-3">
-            <TermineSection items={termine} href={`/tag?datum=${data.todayIso}`} />
-            <AufgabenSection items={tasks} more={moreTasks} />
-          </div>
-        )
-      ) : tile.id === "notizen" ? (
-        <NotesTile />
-      ) : tile.id === "essen" ? (
-        tile.size === "ausfuehrlich" ? (
-          <FoodTile data={data} dish={dish} over={over} onOpen={onOpenFood} />
-        ) : (
-          <CompactTile
-            onClick={onOpenFood}
-            label={over ? "Essen morgen" : `Essen${dish && dishClock ? ` · ${clockLabel(dishClock)}` : ""}`}
-            icon={<UtensilsCrossed className="h-4 w-4 text-accent" strokeWidth={2} aria-hidden />}
-            line={(over ? dishOf(data.tomorrow) : dish) ?? (data.day?.away ? "Heute kein Kochtag" : "Noch frei – Ideen ansehen")}
-          />
-        )
-      ) : tile.id === "einkauf" ? (
-        <ShoppingTile size={tile.size} />
-      ) : tile.id === "vorrat" ? (
-        pantryOn && <PantryTile size={tile.size} />
-      ) : (tomorrowItems.length > 0 || tomorrowDish) && (
-        tile.size === "ausfuehrlich" ? (
-          <section className="rounded-card border-2 border-dashed border-line px-4 py-3" aria-label="Morgen">
-            <Link href={`/tag?datum=${tomorrowIso}`} className="block">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-muted">Morgen</h2>
-              <ul className="mt-1 flex flex-col gap-1 text-base">
-                {tomorrowItems.slice(0, 3).map((i) => (
-                  <li key={i.key} className="truncate">
-                    {itemText(i)}
-                  </li>
-                ))}
-                {tomorrowItems.length > 3 && <li className="text-sm text-muted">und noch {tomorrowItems.length - 3} mehr</li>}
-                {tomorrowDish && <li className="truncate text-muted">🍽 {tomorrowDish}</li>}
-              </ul>
-            </Link>
-          </section>
-        ) : (
+  const sentence = homeSentence({
+    minutes,
+    termineToday: items.filter((i) => i.entry.typ === "termin"),
+    termineUpcoming: termine,
+    tasksToday: overview.heute,
+    tasksDoneToday: overview.erledigt.filter((i) => i.date === data.todayIso).length,
+    nextDue: [...overview.heute, ...overview.woche].find((i) => i.dueLabel && i.dueLabel !== "bis heute") ?? null,
+    dish,
+    dinnerOpen: !dish && !over && !data.day?.away && Boolean(dishClock && dishClock >= "15:00"),
+    tomorrowTermine: tomorrowAll.filter((i) => i.entry.typ === "termin"),
+    tomorrowTasks: tomorrowAll.filter((i) => i.entry.typ === "aufgabe").length,
+    seen: seen ?? [],
+  });
+
+  const renderTile = (tile: (typeof visible)[number], half: boolean) => {
+    switch (tile.id) {
+      case "termine":
+        return <TermineSection items={termine} href={`/tag?datum=${data.todayIso}`} />;
+      case "aufgaben":
+        return <AufgabenSection items={tasks} more={moreTasks} today={data.todayIso} />;
+      case "essen":
+        return <FoodTile data={data} dish={dish} over={over} dishClock={dishClock} onOpen={onOpenFood} />;
+      case "einkauf":
+        return <ShoppingTile half={half} />;
+      case "kladde":
+        return <KladdeTile />;
+      case "notizen":
+        return <NotesTile />;
+      case "vorrat":
+        return <PantryTile />;
+      case "morgen":
+        return (tomorrowItems.length > 0 || tomorrowDish) ? (
           <section className="rounded-card border-2 border-dashed border-line" aria-label="Morgen">
             <Link href={`/tag?datum=${tomorrowIso}`} className="flex items-center gap-2 px-4 py-3">
               <span className="text-xs font-bold uppercase tracking-wider text-muted">Morgen</span>
               <span className="min-w-0 flex-1 truncate text-base">{[...tomorrowItems.map(itemText), tomorrowDish ? `🍽 ${tomorrowDish}` : ""].filter(Boolean).join(" · ")}</span>
             </Link>
           </section>
-        )
-      )}
-    </>
-  );
+        ) : null;
+      default:
+        return null;
+    }
+  };
 
   return (
-    <div className="flex flex-col gap-3">
-      <header className="flex flex-col gap-0.5 pt-1">
-        <h1 className="text-[28px] font-extrabold leading-tight tracking-tight">
-          {greeting(minutes)}
-          {name ? `, ${name}` : ""}.
-        </h1>
-        <p className="text-sm font-medium text-muted">{DATE.format(data.today)}</p>
-      </header>
+    <>
+    {/* Lange drücken irgendwo auf der Startseite → "Startseite bearbeiten" */}
+    <Pressable onLongPress={() => setEditing(true)}>
+      <div className="flex flex-col gap-3">
+        <header className="flex flex-col gap-0.5 pt-1">
+          <h1 className="text-[28px] font-extrabold leading-tight tracking-tight">
+            {greeting(minutes)}
+            {name ? `, ${name}.` : "!"}
+          </h1>
+          <p className="text-sm font-medium text-muted">{DATE.format(data.today)}</p>
+        </header>
 
-      <LotteSays
-        text={
-          reminder
-            ? reminder.text
-            : paused && data.profile.pause
-              ? `Pause ${pauseLabel(data.profile.pause)} – genießt die Zeit ☀️`
-              : tip
-                ? `${tipOpen ? `${tip.text} ${tip.detail}` : tip.text}`
-                : todaySentence({ items, dish, dishClock })
-        }
-        name={helperName(data.profile)}
-        action={
-          reminder
-            ? { label: "Okay", onClick: () => markReminderSeen(reminder.key) }
-            : paused
-              ? { label: "Pause beenden", onClick: endPause }
-              : tip && !tipOpen
-                ? { label: "Mehr dazu", onClick: () => setTipOpen(true) }
-                : tip
-                  ? null
-                  : !dish && !over && minutes < 20 * 60 && !data.day?.away
-              ? { label: "Essensidee?", onClick: () => openHelper(undefined, "Was gibt's heute?") }
-              : null
-        }
-      />
+        <LotteSays
+          parts={
+            reminder
+              ? [{ t: reminder.text }]
+              : paused && data.profile.pause
+                ? [{ t: `Pause ${pauseLabel(data.profile.pause)} – genießt die Zeit ☀️` }]
+                : tip && !openItems.length && !sentence.action
+                  ? [{ t: tipOpen ? `${tip.text} ${tip.detail}` : tip.text }]
+                  : sentence.parts
+          }
+          name={helperName(data.profile)}
+          action={
+            reminder
+              ? { label: "Okay", onClick: () => markReminderSeen(reminder.key) }
+              : paused
+                ? { label: "Pause beenden", onClick: endPause }
+                : tip && !openItems.length && !sentence.action
+                  ? tipOpen
+                    ? null
+                    : { label: "Mehr dazu", onClick: () => setTipOpen(true) }
+                  : sentence.action === "essen"
+                    ? { label: "Ja, gern", onClick: () => openHelper(undefined, "Was gibt's heute Abend?") }
+                    : null
+          }
+        />
 
-      {rows.map((row) =>
-        row.length === 2 ? (
-          <div key={row.map((t) => t.id).join("+")} className="grid grid-cols-2 gap-2">
-            {row.map((tile) => (
-              <Pressable key={tile.id} onLongPress={() => setCustomize(true)}>
-                {renderTile(tile)}
-              </Pressable>
-            ))}
+        {tipSeen === false && welcomed && (
+          <div className="flex items-start gap-3 rounded-2xl bg-accent-soft px-4 py-3" role="status">
+            <p className="flex-1 text-[15px] leading-snug text-accent-strong">Tipp: Halte die Startseite gedrückt, um Kacheln hinzuzufügen oder zu entfernen.</p>
+            <button type="button" onClick={markHomeTipSeen} className="shrink-0 text-sm font-bold text-accent-strong underline">
+              Verstanden
+            </button>
           </div>
-        ) : (
-          <Pressable key={row[0].id} onLongPress={() => setCustomize(true)}>
-            {renderTile(row[0])}
-          </Pressable>
-        ),
-      )}
-      {customize && <HomeCustomizerSheet onClose={() => setCustomize(false)} />}
-    </div>
+        )}
+
+        {rows.map((row) =>
+          row.length === 2 ? (
+            <div key={row.map((t) => t.id).join("+")} className="grid grid-cols-2 gap-2">
+              {row.map((tile) => (
+                <div key={tile.id} className="min-w-0">
+                  {renderTile(tile, true)}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div key={row[0].id}>{renderTile(row[0], false)}</div>
+          ),
+        )}
+
+        <button type="button" onClick={() => setEditing(true)} className="mt-2 flex h-11 items-center justify-center gap-1.5 self-center text-sm font-semibold text-muted">
+          <PenLine className="h-4 w-4" strokeWidth={2} aria-hidden />
+          Startseite bearbeiten
+        </button>
+      </div>
+    </Pressable>
+    {editing && <HomeEditSheet onClose={() => setEditing(false)} />}
+    </>
   );
 }
 
-/** Lottes EIN Satz mit höchstens einem Knopf */
-export function LotteSays({ text, name, action }: { text: string; name: string; action: { label: string; onClick: () => void } | null }) {
+/** Lottes EIN Satz (wichtige Teile fett) mit höchstens einem Knopf */
+export function LotteSays({ parts, name, action }: { parts: SentencePart[]; name: string; action: { label: string; onClick: () => void } | null }) {
   return (
     <section className="flex items-start gap-3" aria-label={`${name} sagt`}>
       <LotteAvatar size={36} />
       <div className="flex min-w-0 flex-1 flex-col items-start gap-2 pt-1.5">
         <p className="text-base font-medium leading-snug" role="status">
-          {text}
+          {parts.map((p, i) => (p.b ? <strong key={i} className="font-extrabold">{p.t}</strong> : <span key={i}>{p.t}</span>))}
         </p>
         {action && (
           <button type="button" onClick={action.onClick} className={buttonClass("soft", "sm")}>
@@ -217,16 +222,18 @@ export function LotteSays({ text, name, action }: { text: string; name: string; 
   );
 }
 
-const TILE = `${CARD} relative flex flex-col gap-1 p-4`;
+const HALF = `${CARD} relative flex min-h-[104px] flex-col p-3.5`;
+const HALF_LABEL = "flex min-w-0 items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted";
 
-/** Kachel Essen: Gericht von heute (bzw. eine Idee), ⇄ = andere Idee */
-function FoodTile({ data, dish, over, onOpen }: { data: HomeData; dish: string | null; over: boolean; onOpen: () => void }) {
+/** Halbe Kachel Essen: Gericht (bzw. Idee), ⇄ = andere Idee; Antippen → Essen-Seite */
+function FoodTile({ data, dish, over, dishClock, onOpen }: { data: HomeData; dish: string | null; over: boolean; dishClock: string | null; onOpen: () => void }) {
   const ideas = useTodayIdeas([], { tomorrow: over });
   const [alt, setAlt] = useState<number | null>(null);
   const list = ideas?.ideas ?? [];
-  const idea = alt !== null && list.length ? list[alt % list.length] : !dish && list.length ? list[0] : null;
+  const idea = alt !== null && list.length ? list[alt % list.length] : null;
   const day: PlanDay | undefined = over ? data.tomorrow : data.day;
-  const title = idea ? idea.title : dish ?? (day?.away ? (day.paused ? "Pause" : "Kein Kochtag") : "Noch frei");
+  const title = idea ? idea.title : (over ? dishOf(data.tomorrow) : dish) ?? (day?.away ? (day.paused ? "Pause" : "Kein Kochtag") : "Noch frei");
+  const sub = idea ? `Idee · ${idea.minutes ?? "?"} Min` : !dish && !day?.away && list.length ? `${Math.min(3, list.length)} Ideen ansehen` : "";
   const take = () => {
     if (!idea || over) return;
     const before = loadMealPlans();
@@ -237,24 +244,18 @@ function FoodTile({ data, dish, over, onOpen }: { data: HomeData; dish: string |
     showToast({ text: result.text, undo: () => replaceMealPlans(before), undoneText: "Rückgängig gemacht." });
   };
   return (
-    <section className={TILE} aria-label="Essen">
-      <button type="button" onClick={onOpen} className="flex flex-1 flex-col items-start gap-1 pr-8 text-left">
-        <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-          <UtensilsCrossed className="h-4 w-4 text-accent" strokeWidth={2} aria-hidden />
-          {over ? "Morgen" : "Essen"}
+    <section className={HALF} aria-label={over ? "Essen morgen" : `Essen${dish && dishClock ? ` · ${clockLabel(dishClock)}` : ""}`}>
+      <button type="button" onClick={onOpen} className="flex flex-1 flex-col items-start gap-1 pr-7 text-left">
+        <span className={HALF_LABEL}>
+          <UtensilsCrossed className="h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
+          <span className="truncate">{over ? "Morgen" : `Essen${dish && dishClock ? ` · ${clockLabel(dishClock)}` : ""}`}</span>
         </span>
-        <span className="line-clamp-2 text-base font-bold leading-snug">{idea ? `Idee: ${title}` : title}</span>
-        {!idea && dish && day && <span className="text-sm text-muted">{clockLabel(mealClockFor(data.profile, day.weekday))} Uhr</span>}
-        {idea?.minutes && <span className="text-sm text-muted">{idea.minutes} Min</span>}
+        <span className="line-clamp-2 text-[15px] font-bold leading-snug">{title}</span>
+        {sub && <span className="text-xs text-muted">{sub}</span>}
       </button>
       {list.length > 0 && (
-        <button
-          type="button"
-          onClick={() => setAlt((a) => (a === null ? (dish ? 0 : 1) : a + 1))}
-          aria-label="Andere Idee"
-          className="absolute right-1.5 top-1.5 flex h-11 w-11 items-center justify-center text-accent"
-        >
-          <ArrowLeftRight className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+        <button type="button" onClick={() => setAlt((a) => (a === null ? 0 : a + 1))} aria-label="Andere Idee" className="absolute right-0.5 top-0.5 flex h-11 w-11 items-center justify-center text-accent">
+          <ArrowLeftRight className="h-4 w-4" strokeWidth={2.25} aria-hidden />
         </button>
       )}
       {idea && !over && (
@@ -263,6 +264,30 @@ function FoodTile({ data, dish, over, onOpen }: { data: HomeData; dish: string |
         </button>
       )}
     </section>
+  );
+}
+
+/** Kladde (halb oder voll): gelblich, Uhrzeit der letzten Änderung, erste zwei Zeilen; Antippen → Notizen */
+function KladdeTile() {
+  const kladde = useKladde();
+  const lines = (kladde?.text ?? "").split(/\n/).map((l) => l.trim()).filter(Boolean);
+  const at = kladde?.geaendert ? new Date(kladde.geaendert) : null;
+  return (
+    <Link href="/notizen#kladde" className="flex min-h-[104px] flex-col gap-1 rounded-card border border-kladde-line bg-kladde p-3.5" aria-label="Kladde">
+      <span className={HALF_LABEL}>
+        <PenLine className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
+        <span className="truncate">Kladde{at ? ` · ${String(at.getHours()).padStart(2, "0")}:${String(at.getMinutes()).padStart(2, "0")}` : ""}</span>
+      </span>
+      {lines.length ? (
+        lines.slice(0, 2).map((l, i) => (
+          <span key={i} className="truncate text-[14px] leading-snug">
+            {l}
+          </span>
+        ))
+      ) : (
+        <span className="text-[14px] text-muted">Schnell was aufschreiben …</span>
+      )}
+    </Link>
   );
 }
 
@@ -293,7 +318,7 @@ function CompactTile({ label, line, icon, href, onClick, action }: { label: stri
   );
 }
 
-/** Langes Drücken (500 ms) öffnet "Startseite anpassen"; normales Tippen bleibt, wie es ist */
+/** Langes Drücken (500 ms) öffnet "Startseite bearbeiten"; normales Tippen und Wischen bleiben, wie sie sind */
 function Pressable({ children, onLongPress }: { children: React.ReactNode; onLongPress: () => void }) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const start = useRef<{ x: number; y: number } | null>(null);
@@ -307,6 +332,8 @@ function Pressable({ children, onLongPress }: { children: React.ReactNode; onLon
       className="select-none [-webkit-touch-callout:none]"
       onPointerDown={(e) => {
         fired.current = false;
+        // Nicht in Eingabefeldern und Fenstern (Menü, Schnell-Eintrag …)
+        if ((e.target as Element).closest("input, textarea, [role=dialog]")) return;
         start.current = { x: e.clientX, y: e.clientY };
         cancel();
         timer.current = setTimeout(() => {
@@ -335,79 +362,48 @@ function Pressable({ children, onLongPress }: { children: React.ReactNode; onLon
   );
 }
 
-/** Kachel Vorrat (Baustein): kompakt eine Zeile, ausführlich je Ort */
-function PantryTile({ size }: { size: TileSize }) {
+/** Halbe Kachel Vorrat (Baustein) */
+function PantryTile() {
   const pantry = usePantry();
-  if (!pantry) return <section className={`${CARD} h-16 animate-pulse`} aria-label="Vorrat" />;
-  const icon = <Refrigerator className="h-4 w-4 text-accent" strokeWidth={2} aria-hidden />;
-  const sachen = `${pantry.length} ${pantry.length === 1 ? "Sache" : "Sachen"}`;
-  if (size === "kompakt") {
-    return <CompactTile href="/vorrat" label={pantry.length ? `Vorrat · ${sachen}` : "Vorrat"} icon={icon} line={pantry.length ? `${pantry.slice(0, 4).map((p) => p.name).join(", ")}${pantry.length > 4 ? " …" : ""}` : "Noch nichts eingetragen"} />;
-  }
+  if (!pantry) return <section className={`${HALF} animate-pulse`} aria-label="Vorrat" />;
   return (
-    <section className={`${CARD} p-4`} aria-label="Vorrat">
-      <Link href="/vorrat" className="flex flex-col gap-1">
-        <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-          {icon}
-          Vorrat
-        </span>
-        {PANTRY_PLACES.map((place) => {
-          const here = pantry.filter((p) => p.place === place.value);
-          return (
-            <span key={place.value} className="flex gap-2 text-base">
-              <span className="w-24 shrink-0 font-semibold">{place.short}</span>
-              <span className="min-w-0 flex-1 truncate text-muted">{here.length ? here.map((p) => p.name).join(", ") : "–"}</span>
-            </span>
-          );
-        })}
-      </Link>
-    </section>
+    <Link href="/vorrat" className={HALF} aria-label="Vorrat">
+      <span className={HALF_LABEL}>
+        <Refrigerator className="h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
+        <span className="truncate">Vorrat{pantry.length ? ` · ${pantry.length}` : ""}</span>
+      </span>
+      <span className="mt-1 line-clamp-2 text-[14px] leading-snug">{pantry.length ? pantry.slice(0, 4).map((p) => p.name).join(", ") : "Noch nichts eingetragen"}</span>
+    </Link>
   );
 }
 
-/** Kachel Einkauf: kompakt eine Zeile, ausführlich die ersten Sachen; "+" zum Tippen oder Einsprechen */
-function ShoppingTile({ size }: { size: TileSize }) {
+/** Kachel Einkauf (halb): Anzahl, erste Sachen, dunkler "+" (Schnell-Eintrag mit "Oft gekauft") */
+function ShoppingTile({ half }: { half: boolean }) {
   const shopping = useWeekShoppingList("planning");
-  if (!shopping) return <section className={`${CARD} h-16 animate-pulse`} aria-label="Einkauf" />;
+  if (!shopping) return <section className={`${HALF} animate-pulse`} aria-label="Einkauf" />;
   // "Jetzt mitnehmen" und selbst Eingetragenes zuerst, dann Zutaten aus Gerichten
   const open = shopping.list.items
     .filter((i) => !i.checked && !i.hidden)
     .sort((a, b) => Number(Boolean(b.now)) - Number(Boolean(a.now)) || Number(Boolean(b.manualId)) - Number(Boolean(a.manualId)));
-  const plus = <QuickAddButton weekStart={shopping.weekStart} settings={shopping.settings} small />;
-  if (size === "kompakt") {
-    const sachen = `${open.length} ${open.length === 1 ? "Sache" : "Sachen"}`;
-    return (
-      <CompactTile
-        href="/einkaufsliste"
-        label={open.length ? `Einkauf · ${sachen}` : "Einkauf"}
-        icon={<ShoppingCart className="h-4 w-4 text-accent" strokeWidth={2} aria-hidden />}
-        line={open.length ? `${open.slice(0, 3).map((i) => i.name).join(", ")}${open.length > 3 ? " …" : ""}` : "Liste ist leer"}
-        action={plus}
-      />
-    );
-  }
   return (
-    <section className={TILE} aria-label="Einkauf">
-      <Link href="/einkaufsliste" className="flex flex-1 flex-col items-start gap-1 pr-8">
-        <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-          <ShoppingCart className="h-4 w-4 text-accent" strokeWidth={2} aria-hidden />
-          Einkauf
+    <section className={`${HALF} ${half ? "" : "min-h-0"}`} aria-label={open.length ? `Einkauf · ${open.length}` : "Einkauf"}>
+      <Link href="/einkaufsliste" className="flex flex-1 flex-col gap-1 pr-9">
+        <span className={HALF_LABEL}>
+          <ShoppingCart className="h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
+          <span className="truncate">Einkauf{open.length ? ` · ${open.length}` : ""}</span>
         </span>
         {open.length ? (
-          <ul className="flex w-full flex-col text-base">
-            {open.slice(0, 6).map((i) => (
-              <li key={i.key} className="flex justify-between gap-3 py-0.5">
-                <span className="truncate font-semibold">{i.name}</span>
-                {i.amount && <span className="shrink-0 text-sm text-muted">{i.amount}</span>}
-              </li>
-            ))}
-            {open.length > 6 && <li className="text-sm text-muted">und {open.length - 6} mehr</li>}
-          </ul>
+          open.slice(0, half ? 2 : 4).map((i) => (
+            <span key={i.key} className="truncate text-[14px] font-semibold leading-snug">
+              {i.name}
+            </span>
+          ))
         ) : (
-          <span className="text-base font-bold leading-snug text-muted">Liste ist leer</span>
+          <span className="text-[14px] text-muted">Liste ist leer</span>
         )}
+        {open.length > (half ? 2 : 4) && <span className="text-xs text-muted">und {open.length - (half ? 2 : 4)} mehr</span>}
       </Link>
-      <QuickAddButton weekStart={shopping.weekStart} settings={shopping.settings} small className="absolute right-1.5 top-1.5" />
+      <QuickAddButton weekStart={shopping.weekStart} settings={shopping.settings} small dark className="absolute right-1 top-1" />
     </section>
   );
 }

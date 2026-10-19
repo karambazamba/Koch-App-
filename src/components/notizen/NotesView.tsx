@@ -6,13 +6,16 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ListChecks, NotebookPen, Pin, Plus } from "lucide-react";
+import { ListChecks, NotebookPen, PenLine, Pin, Plus } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Sheet } from "@/components/plan/Sheet";
 import { Segmented } from "@/components/ui/Segmented";
 import { CARD, PAGE_MAIN } from "@/components/ui/styles";
 import { ROUND_PLUS } from "@/components/alltag/TasksView";
-import { notePreview, sortNotes, useNotes, type Note } from "@/lib/notizen";
+import { changeKladde, notePreview, saveKladde, sortNotes, useKladde, useNotes, type Note } from "@/lib/notizen";
+import { buttonClass } from "@/components/ui/styles";
+import { openHelper } from "@/lib/lotte/open";
+import { showToast } from "@/lib/core/toast";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 import { helperName } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";
@@ -74,6 +77,7 @@ export function NotesView() {
         }
       />
       <main className={PAGE_MAIN}>
+        <KladdeCard name={name} />
         {hasWork && (
           <Segmented
             label="Filter"
@@ -125,5 +129,50 @@ export function NotesView() {
         </Sheet>
       )}
     </>
+  );
+}
+
+/** Kladde = Schmierzettel: speichert beim Tippen, "Lotte, räum auf" und "Leeren" (mit Rückgängig) */
+function KladdeCard({ name }: { name: string }) {
+  const kladde = useKladde();
+  const at = kladde?.geaendert ? new Date(kladde.geaendert) : null;
+  const clock = at ? `${String(at.getHours()).padStart(2, "0")}:${String(at.getMinutes()).padStart(2, "0")}` : "";
+  return (
+    <section id="kladde" className="flex scroll-mt-24 flex-col gap-2 rounded-card border border-kladde-line bg-kladde p-4" aria-label="Kladde">
+      <div className="flex items-center gap-2">
+        <PenLine className="h-4 w-4 text-muted" strokeWidth={2} aria-hidden />
+        <h2 className="flex-1 text-xs font-bold uppercase tracking-wider text-muted">Kladde</h2>
+        {kladde?.text && clock && (
+          <span className="text-xs text-muted" role="status">
+            gespeichert · {clock}
+          </span>
+        )}
+      </div>
+      <textarea
+        value={kladde?.text ?? ""}
+        onChange={(e) => saveKladde(e.target.value)}
+        placeholder="Schnell was aufschreiben …"
+        aria-label="Kladde"
+        rows={5}
+        className="min-h-28 w-full resize-y bg-transparent text-base leading-relaxed placeholder:text-muted/70 focus:outline-none"
+      />
+      {kladde?.text.trim() && (
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={() => openHelper(undefined, "Räum meine Kladde auf")} className={buttonClass("secondary", "sm")}>
+            ✨ {name}, räum auf
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const undo = changeKladde("");
+              showToast({ text: "Kladde geleert ✓", undo, undoneText: "Rückgängig gemacht." });
+            }}
+            className={buttonClass("ghost", "sm")}
+          >
+            Leeren
+          </button>
+        </div>
+      )}
+    </section>
   );
 }

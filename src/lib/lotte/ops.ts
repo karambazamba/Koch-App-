@@ -44,6 +44,8 @@ export type AssistantData = {
   features?: string[];
   /** Notizen (Text oder Liste) */
   notes?: Note[];
+  /** Kladde (Schmierzettel, ein freier Text) */
+  kladde?: string;
   /** Mail-Stil: Grußformel, Signatur, gemerkte Anrede je Empfänger (nur zum Lesen) */
   mail?: MailStyle;
 };
@@ -106,7 +108,9 @@ export type ChangeOp =
   | { id: string; type: "move_entry"; entryId: string; title: string; date: string; to: string; time?: string }
   // Notizen (`notes`): anlegen/ändern (auch Listen-Einträge, anheften), löschen
   | { id: string; type: "upsert_note"; note: Note; isNew: boolean; change?: string }
-  | { id: string; type: "remove_note"; noteId: string; title: string };
+  | { id: string; type: "remove_note"; noteId: string; title: string }
+  // Kladde neu setzen (anhängen bzw. übernommene Zeilen herausnehmen)
+  | { id: string; type: "set_kladde"; text: string; change: string };
 
 /** Änderungen an Terminen/Aufgaben */
 export const ENTRY_OP_TYPES = new Set(["upsert_entry", "remove_entry", "done_entry", "move_entry"]);
@@ -281,6 +285,9 @@ export function applyOps(
         break;
       case "remove_note":
         next = { ...next, notes: removeNote(next.notes ?? [], op.noteId) };
+        break;
+      case "set_kladde":
+        next = { ...next, kladde: op.text };
         break;
       case "add_pantry":
       case "add_wish":
