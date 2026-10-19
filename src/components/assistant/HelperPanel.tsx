@@ -28,7 +28,9 @@ import { addPin, changePins, createPin, isPinboardQuery, loadPins, pinWriteComma
 import { dayAnswer, umbrellaAnswer, weatherQuestion } from "@/lib/wetter/forecast";
 import { loadPlace, refreshForecast } from "@/lib/wetter/client";
 import { isRegisteredUndo, pushUndo, undoLast } from "@/lib/core/undo";
-import { commitOps } from "@/lib/lotte/client";
+import { commitOps, runInstantOps } from "@/lib/lotte/client";
+import { dayChat } from "@/lib/lotte/dayChat";
+import { cookableEntry } from "@/lib/essen/mealDone";
 import { askAssistant, FALLBACK_TEXT, saveAccessCode, useAssistantStatus } from "@/lib/lotte/client";
 import {
   saveSpeechSettings,
@@ -254,6 +256,9 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
         result = await send([{ role: "user", text: question }], []);
         setChat((c) => ({ ...c, turns: c.turns.map((x) => (x.role === "assistant" && !x.local ? { ...x, local: true } : x)), proposal: null }));
       }
+      // Kleine Dinge (Timer, Stoppuhr, Kochschritt, "Ich koche jetzt") sofort – der Rest als Vorschau
+      const instant = runInstantOps(result.ops);
+      result = { ...result, ops: instant.rest, reply: instant.notes.length ? `${result.reply}\n${instant.notes.join(" ")}` : result.reply };
       setChat((c) => {
         // Bisher abgewählte Punkte bleiben abgewählt, neue sind ausgewählt
         const previous = new Set(c.proposal?.ops.map((op) => op.id));
@@ -704,6 +709,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     if (!data || !today) return false;
     if (mailRule(t)) return true;
     if (boardRule(t)) return true;
+    if (dayRule(t)) return true;
     if (kladdeRule(t)) return true;
     if (noteRule(t)) return true;
     if (isAddPersonRequest(t)) {
@@ -790,6 +796,19 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
         },
       ],
     }));
+    return true;
+  };
+
+  /** Timer, Kochen, Sport, Startseiten-Modus ohne KI (sofort, Zurücknehmen bleibt gemerkt) */
+  const dayRule = (t: string): boolean => {
+    if (!data || !today) return false;
+    const iso = toIsoDate(today);
+    const week = composeWeek(weekStartFor(today, data.profile.shoppingDay || DEFAULT_SHOPPING_DAY), data.profile, data.weekPlans, data.mealPlans, data.recipes);
+    const entry = cookableEntry(week.days.find((d) => d.date === iso));
+    const recipe = entry?.recipeId ? data.recipes[entry.recipeId] : undefined;
+    const reply = dayChat(t, { today: iso, me: data.profile.persons[0]?.id ?? null, others: data.profile.persons.slice(1).map((p) => p.name.trim()), cooking: entry ? { dish: entry.title, recipe: recipe?.id ?? entry.title, steps: recipe?.steps ?? [] } : null });
+    if (!reply) return false;
+    localReply(t, reply.text);
     return true;
   };
 

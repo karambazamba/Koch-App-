@@ -6,7 +6,7 @@
 // der Standard-Reihenfolge, in Standard-Größe). Neue Kacheln mit "NEU", Post
 // als "bald".
 
-import { Box, CalendarClock, CheckCircle2, CloudSun, ListChecks, Mail, NotebookPen, Pin, Plus, Refrigerator, ShoppingCart, Sunrise, UtensilsCrossed, type LucideIcon } from "lucide-react";
+import { Box, CalendarClock, CheckCircle2, CloudSun, Dumbbell, ListChecks, Timer, Mail, NotebookPen, Pin, Plus, Refrigerator, ShoppingCart, Sunrise, UtensilsCrossed, type LucideIcon } from "lucide-react";
 import { Sheet } from "@/components/plan/Sheet";
 import { HOME_TILES, applyHomeChange, saveHomeTiles, tileMeta, useHomeTiles, type HomeTile, type HomeTileId } from "@/lib/core/homeLayout";
 import { showDeleted } from "@/lib/core/toast";
@@ -21,6 +21,8 @@ export const TILE_ICONS: Record<HomeTileId, LucideIcon> = {
   wetter: CloudSun,
   essen: UtensilsCrossed,
   einkauf: ShoppingCart,
+  timer: Timer,
+  sport: Dumbbell,
   notizen: NotebookPen,
   vorrat: Refrigerator,
   morgen: Sunrise,

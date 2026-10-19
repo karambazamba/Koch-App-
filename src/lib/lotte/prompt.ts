@@ -1,5 +1,6 @@
 // Lotte: Systemanweisung (fest, wird gecacht) und Kontext (pro Anfrage).
 
+import { dayContextLines } from "./dayTools";
 import type { Note } from "../notizen/model";
 import { DEFAULT_MAIL_STYLE } from "./mail";
 import { HOUSEHOLD_TYPES, KID_AGE_GROUP_LABELS, MEAL_TIME_LABELS, helperName, mealClockFor, isSmallHousehold, personLabel, wishDayActive, type HouseholdProfile } from "../einstellungen/profile";
@@ -79,6 +80,10 @@ Termine, Aufgaben und Notizen (Werkzeuge vorhanden) – drei verschiedene Dinge:
 - Schnellnotiz (früher "Kladde") = Schmierzettel (ein freier Text, Inhalt im Kontext, steht oben auf der Notizen-Kachel): "Schreib in die Schnellnotiz/Kladde: …", "Notier mir schnell …" → kladde_schreiben. "Räum meine Schnellnotiz/Kladde auf" → für passende Zeilen termin_anlegen/aufgabe_anlegen/notiz_anlegen (bzw. liste_eintrag_hinzufuegen), danach kladde_aufraeumen mit genau diesen Zeilen; Unklares bleibt stehen.
 - Pinnwand = kurze Nachrichten an die Familie (Zettel am Kühlschrank, verschwinden nach 3 Tagen): "Schreib an die Pinnwand: Bin um 20 Uhr da" → pinnwand_schreiben; "Was steht auf der Pinnwand?" → aus dem Kontext kurz vorlesen.
 - Wetter: "Wie wird das Wetter morgen?", "Brauch ich heute einen Schirm?", "Wie ist das Wetter am Samstag?" → wetter_abfragen (tag als YYYY-MM-DD), kurz antworten (ein Satz, ggf. Schirm/Sonnencreme).
+- Timer: "Timer 10 Minuten für die Nudeln", "Noch ein Timer 25 Minuten Brötchen" → timer_stellen; "Wie lange noch?" → timer_status (Restzeit in Worten); "Stopp den Nudel-Timer" → timer_stoppen; "Stoppuhr starten" → stoppuhr. Timer laufen sofort – antworte in einem kurzen Satz.
+- Kochen: "Ich fang an zu kochen" → kochen_starten; "Nächster Schritt" → kochschritt weiter (Schritt kurz vorlesen); "Was kommt jetzt?" → kochschritt zeigen.
+- Sport (persönlich): "War heute 5 km laufen", "45 Minuten Fitnessstudio gestern" → sport_eintragen, danach konkret loben ("Das ist dein 3. Lauf im Oktober"), nie übertreiben, keine Ausrufezeichen-Ketten. "Ich will 4× pro Woche Sport machen" → sport_ziel_setzen. "Plan mir 3 Trainings nächste Woche, am liebsten morgens" → trainings_planen und die Ausnahmen kurz erklären. "Wie oft war ich diese Woche beim Sport?", "Wie viele Kilometer im Oktober?" → sport_statistik. Erfolge zeigen, Versäumnisse nie; Serien nur in Wochen. Apple Health/Watch kann die App nicht lesen – Eintragen nur so.
+- Startseite mitdenkend oder immer gleich: "Lass die Startseite immer gleich" / "Startseite soll mitdenken" → startseite_modus.
 - "Das ist kein Termin, sondern eine Aufgabe" (meist der zuletzt besprochene Eintrag) → termin_in_aufgabe_umwandeln; umgekehrt aufgabe_in_termin_umwandeln (mit Uhrzeit).
 - Startseite: "Pinnwand ganz nach oben", "Wetter klein machen", "Aufgaben groß", "Nimm das Wetter weg", "Einkauf weg von der Startseite", "Startseite wie am Anfang" → startseite_anpassen (zeigen, ausblenden, klein/mittel/gross, nach_oben …, standard). "Startseite bearbeiten" → app_befehl mit genau diesem Satz.
 - Notizen lesen ("Was steht auf der Packliste?", "Was ist das WLAN-Passwort?") → notizen_anzeigen und kurz den Inhalt nennen; "Häng das WLAN oben an" → notiz_anheften. "Was muss ich heute noch erledigen?" → aufgaben_anzeigen und kurz zusammenfassen. "Zeig mir meine Aufgaben" / "Zeig mir meine Notizen" → app_befehl mit genau diesem Satz (öffnet die Seite).
@@ -232,6 +237,7 @@ export function contextText(
     `Kladde (Schmierzettel): ${data.kladde?.trim() ? JSON.stringify(data.kladde.slice(0, 1500)) : "leer"}`,
     `Pinnwand: ${data.pinnwand?.length ? data.pinnwand.map((p) => `${p.author}: ${JSON.stringify(p.text)}`).join(" · ") : "leer"}`,
     `Wetter-Ort: ${data.wetterOrt ?? "Eutin"}`,
+    ...dayContextLines({ data, today: todayIso }),
     `Bausteine an: ${BAUSTEINE.filter((b) => data.features?.includes(b.feature)).map((b) => b.name).join(", ") || "keine"}. Aus: ${BAUSTEINE.filter((b) => !data.features?.includes(b.feature)).map((b) => `${b.name} (${b.feature}: ${b.text})`).join("; ") || "keine"}`,
     mailContext(data),
     data.home ? `Startseite (Reihenfolge): ${data.home.map((t) => `${t.id} ${t.visible ? t.size : "ausgeblendet"}`).join(", ")}` : "",

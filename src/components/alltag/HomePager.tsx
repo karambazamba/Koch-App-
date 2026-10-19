@@ -20,6 +20,8 @@ import type { HomeData } from "@/components/home/useHomeData";
 import { TodayPage } from "./TodayPage";
 import { WeekPage } from "./WeekPage";
 import { FoodPage } from "./FoodPage";
+import { PreviewBanner } from "./PreviewBanner";
+import { clockMinutes, usePreview } from "@/lib/tagesablauf/settings";
 
 export type HomeTab = "woche" | "heute" | "essen";
 const TABS: { value: HomeTab; label: string }[] = [
@@ -39,7 +41,10 @@ export function HomePager({ data }: { data: HomeData }) {
   const pathname = usePathname();
   const tab = tabFrom(params.get("seite"));
   const entries = useEntries();
-  const minutes = useMinutes();
+  const realMinutes = useMinutes();
+  // Zeit-Vorschau ("So tun, als wäre es …") wirkt nur hier auf der Startseite – Daten bleiben
+  const preview = usePreview();
+  const minutes = preview && realMinutes !== undefined ? clockMinutes(preview.clock) : realMinutes;
   const [direction, setDirection] = useState<1 | -1>(1);
   const scrolls = useRef<Partial<Record<HomeTab, number>>>({});
   const touch = useRef<{ x: number; y: number; t: number } | null>(null);
@@ -103,11 +108,12 @@ export function HomePager({ data }: { data: HomeData }) {
             <Settings className="h-5 w-5" strokeWidth={2} aria-hidden />
           </Link>
         </nav>
+        <PreviewBanner />
         <div key={tab} role="tabpanel" aria-label={TABS.find((t) => t.value === tab)?.label} className="motion-page" style={{ animation: `${direction > 0 ? "page-from-right" : "page-from-left"} 0.22s ease-out` }}>
           {!ready ? (
             <div className={`${CARD} h-48 animate-pulse`} />
           ) : tab === "heute" ? (
-            <TodayPage data={data} entries={entries} minutes={minutes} onOpenFood={() => go("essen")} />
+            <TodayPage data={data} entries={entries} minutes={minutes} realMinutes={realMinutes} onOpenFood={() => go("essen")} />
           ) : tab === "woche" ? (
             <WeekPage today={data.todayIso} entries={entries} />
           ) : (

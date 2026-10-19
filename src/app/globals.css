@@ -35,6 +35,19 @@
   --color-weather-line: var(--app-weather-line);
   --color-weather-ink: var(--app-weather-ink);
   --color-person-3: var(--app-person-3);
+  --color-sport: var(--app-sport);
+  --color-sport-soft: var(--app-sport-soft);
+  --color-sport-2: var(--app-sport-2);
+  --color-sport-line: var(--app-sport-line);
+  --color-sport-ink: var(--app-sport-ink);
+  --color-phase-morgen: var(--app-phase-morgen);
+  --color-phase-morgen-ink: var(--app-phase-morgen-ink);
+  --color-phase-kochen: var(--app-phase-kochen);
+  --color-phase-kochen-ink: var(--app-phase-kochen-ink);
+  --color-phase-sport: var(--app-phase-sport);
+  --color-phase-sport-ink: var(--app-phase-sport-ink);
+  --color-phase-feierabend: var(--app-phase-feierabend);
+  --color-phase-feierabend-ink: var(--app-phase-feierabend-ink);
   --color-person-4: var(--app-person-4);
 
   --radius-card: 1.375rem;
@@ -76,6 +89,19 @@
   --app-weather-line: #d9e5f5;
   --app-weather-ink: #3d6bb3;
   --app-person-3: #3f8f5b;
+  --app-sport: #2e9e6b;
+  --app-sport-soft: #e8f6ee;
+  --app-sport-2: #f6fbf8;
+  --app-sport-line: #cfe9db;
+  --app-sport-ink: #23794f;
+  --app-phase-morgen: #fdf3cf;
+  --app-phase-morgen-ink: #8a6a12;
+  --app-phase-kochen: #fdebdf;
+  --app-phase-kochen-ink: #c4531a;
+  --app-phase-sport: #e3f4ea;
+  --app-phase-sport-ink: #23794f;
+  --app-phase-feierabend: #eee9fb;
+  --app-phase-feierabend-ink: #6a52b3;
   --app-person-4: #8a5cd1;
   color-scheme: light;
 }
@@ -122,6 +148,19 @@
   --app-weather-line: #33405a;
   --app-weather-ink: #9dbbec;
   --app-person-3: #5fb37c;
+  --app-sport: #4cc58d;
+  --app-sport-soft: #1d2d25;
+  --app-sport-2: #1f2a24;
+  --app-sport-line: #2f4a3c;
+  --app-sport-ink: #7fdcb0;
+  --app-phase-morgen: rgb(240 200 80 / 0.16);
+  --app-phase-morgen-ink: #f0d27a;
+  --app-phase-kochen: rgb(242 107 33 / 0.2);
+  --app-phase-kochen-ink: #ffb07a;
+  --app-phase-sport: rgb(76 197 141 / 0.18);
+  --app-phase-sport-ink: #7fdcb0;
+  --app-phase-feierabend: rgb(150 120 230 / 0.2);
+  --app-phase-feierabend-ink: #c7b6ff;
   --app-person-4: #a888e6;
   --color-stone-50: #2a2e34;
   --color-stone-100: #30343b;
@@ -167,6 +206,19 @@
   --app-weather-line: #33405a;
   --app-weather-ink: #9dbbec;
   --app-person-3: #5fb37c;
+  --app-sport: #4cc58d;
+  --app-sport-soft: #1d2d25;
+  --app-sport-2: #1f2a24;
+  --app-sport-line: #2f4a3c;
+  --app-sport-ink: #7fdcb0;
+  --app-phase-morgen: rgb(240 200 80 / 0.16);
+  --app-phase-morgen-ink: #f0d27a;
+  --app-phase-kochen: rgb(242 107 33 / 0.2);
+  --app-phase-kochen-ink: #ffb07a;
+  --app-phase-sport: rgb(76 197 141 / 0.18);
+  --app-phase-sport-ink: #7fdcb0;
+  --app-phase-feierabend: rgb(150 120 230 / 0.2);
+  --app-phase-feierabend-ink: #c7b6ff;
   --app-person-4: #a888e6;
     --color-stone-50: #2a2e34;
     --color-stone-100: #30343b;
@@ -273,6 +325,59 @@ body {
   }
   50% {
     transform: rotate(-0.6deg);
+  }
+}
+/* Tagesphasen: sanfter Wechsel der Startseite */
+@keyframes phase-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* Kleine Feier (Wochenziel Sport) */
+@keyframes trophy-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes confetti-fall {
+  from {
+    opacity: 1;
+    transform: translateY(-10px) rotate(0deg);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(70px) rotate(160deg);
+  }
+}
+/* Alles geschafft: Lottes Satz leuchtet kurz auf */
+@keyframes done-glow {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+/* Timer klingelt: Band oben pulsiert leicht */
+@keyframes ring-pulse {
+  50% {
+    transform: scale(1.015);
   }
 }
 @keyframes check-pop {

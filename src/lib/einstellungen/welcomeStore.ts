@@ -3,6 +3,8 @@
 // beim Abschluss bleibt nur, wobei geholfen werden soll (steuert z. B. den
 // Raum "Arbeit"). "Neu anfangen" löscht es mit.
 
+import { loadRoutine, saveRoutine } from "../tagesablauf/settings";
+import { loadSport, saveSport } from "../sport/store";
 import { createLocalStore } from "../core/localStore";
 import { useExternalStore } from "../core/useExternalStore";
 import { saveHomeTiles } from "../core/homeLayout";
@@ -34,6 +36,9 @@ export function finishWelcome(state: WelcomeState) {
   saveHomeTiles(homeTilesFor(state.help));
   if (state.help.includes("essen") && state.planStyle === "plan") setFeature("wochenplan", true);
   if (state.help.includes("essen") && state.planStyle === "spontan") setFeature("spontan", true);
+  // Startseite mitdenkend oder immer gleich; Sport mit Wochenziel
+  saveRoutine({ ...loadRoutine(), mode: state.homeMode === "gleich" ? "gleich" : "mitdenkend" });
+  if (state.help.includes("sport")) saveSport({ ...loadSport(), goal: state.sportGoal ?? 3 });
   store.save({ version: 1, state: null, help: state.help });
 }
 

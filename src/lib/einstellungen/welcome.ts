@@ -21,8 +21,9 @@ import {
   type PlanStyle,
 } from "./profile";
 
-export type WelcomeStep = "hallo" | "name" | "hilfe" | "essen" | "wer" | "fertig";
-export type HelpId = "termine" | "arbeit" | "essen" | "einkauf" | "familie";
+export type WelcomeStep = "hallo" | "name" | "hilfe" | "essen" | "sport" | "startseite" | "wer" | "fertig";
+export type HelpId = "termine" | "arbeit" | "essen" | "einkauf" | "familie" | "sport";
+export type WelcomeHomeMode = "mitdenkend" | "gleich";
 /** members[0] ist man selbst (immer erwachsen) */
 export type Member = { name: string; kid: boolean };
 
@@ -39,6 +40,10 @@ export type WelcomeState = {
   renamed: boolean;
   /** Im Schritt "name": eigener Name wird eingetippt */
   custom: boolean;
+  /** Sport gewählt: Wochenziel (Trainings pro Woche) */
+  sportGoal?: number | null;
+  /** Soll sich die Startseite dem Tag anpassen? */
+  homeMode?: WelcomeHomeMode | null;
 };
 
 export type WelcomeChip = { label: string; value: string; kind: "primary" | "select" | "plain"; selected?: boolean; disabled?: boolean };
@@ -49,6 +54,7 @@ export const HELP_OPTIONS: { id: HelpId; label: string }[] = [
   { id: "essen", label: "🍽 Essen" },
   { id: "einkauf", label: "🛒 Einkauf" },
   { id: "familie", label: "👨‍👩‍👦 Familie" },
+  { id: "sport", label: "🏃 Sport" },
 ];
 
 export const DEFAULT_HELP: HelpId[] = ["termine", "essen", "einkauf"];
@@ -66,14 +72,14 @@ export const assistantNoun = (helper: HelperSettings) => (helper.voice === "maen
 /** Abschnitt 1–4 für den Fortschrittsbalken */
 export function sectionOf(step: WelcomeStep): number {
   if (step === "hallo") return 1;
-  if (step === "name" || step === "hilfe" || step === "essen") return 2;
+  if (step === "name" || step === "hilfe" || step === "essen" || step === "sport" || step === "startseite") return 2;
   if (step === "wer") return 3;
   return 4;
 }
 
 /** Reihenfolge der Schritte – abhängig von den Antworten */
 export function flow(state: Pick<WelcomeState, "renamed" | "help">): WelcomeStep[] {
-  return <WelcomeStep[]>["hallo", ...(state.renamed ? (["name"] as const) : []), "hilfe", ...(state.help.includes("essen") ? (["essen"] as const) : []), "wer", "fertig"];
+  return <WelcomeStep[]>["hallo", ...(state.renamed ? (["name"] as const) : []), "hilfe", ...(state.help.includes("essen") ? (["essen"] as const) : []), ...(state.help.includes("sport") ? (["sport"] as const) : []), "startseite", "wer", "fertig"];
 }
 
 /** Familie gewählt → Formular mit Familie, sonst nur der eigene Name */
@@ -90,6 +96,10 @@ export function questionFor(state: WelcomeState, step: WelcomeStep): string {
       return "Wobei soll ich dir helfen? Gern mehrere.";
     case "essen":
       return "Planst du das Essen gern für die Woche oder lieber spontan?";
+    case "sport":
+      return "Wie oft pro Woche möchtest du Sport machen?";
+    case "startseite":
+      return "Soll sich deine Startseite dem Tag anpassen? Morgens Überblick, beim Kochen das Essen, abends nur Familie.";
     case "wer":
       return asksFamily(state) ? "Wer gehört zu deiner Familie? Sag's mir einfach – oder trag es hier ein." : "Wie heißt du?";
     case "fertig": {
@@ -114,6 +124,10 @@ export function answerLabel(state: WelcomeState, step: WelcomeStep): string {
       return helpLabel(state.help) || "Weiter";
     case "essen":
       return state.planStyle ? PLAN_LABEL[state.planStyle] : "";
+    case "sport":
+      return state.sportGoal ? `${state.sportGoal}× pro Woche` : "";
+    case "startseite":
+      return state.homeMode === "gleich" ? "📌 Immer gleich" : state.homeMode ? "✨ Ja, mitdenken" : "";
     case "wer": {
       const people = namedMembers(state.members);
       if (people.length <= 1) return people[0]?.name ? `Ich bin ${people[0].name}` : "Nur ich";
@@ -198,6 +212,7 @@ function helpFrom(text: string): HelpId[] {
   if (/essen|kochen|rezept|wochenplan/.test(t)) found.push("essen");
   if (/einkauf|liste|einkaufen/.test(t)) found.push("einkauf");
   if (/familie|kinder/.test(t)) found.push("familie");
+  if (/sport|training|laufen|fitness/.test(t)) found.push("sport");
   if (/alles|überall/.test(t)) return HELP_OPTIONS.map((o) => o.id);
   return found;
 }
@@ -234,6 +249,13 @@ export function chipsFor(state: WelcomeState): WelcomeChip[] {
       ];
     case "essen":
       return (Object.keys(PLAN_LABEL) as PlanStyle[]).map((p) => ({ label: PLAN_LABEL[p], value: `plan:${p}`, kind: "select" as const, selected: state.planStyle === p }));
+    case "sport":
+      return [1, 2, 3, 4, 5].map((n) => ({ label: `${n}×`, value: `sport:${n}`, kind: "select" as const, selected: state.sportGoal === n }));
+    case "startseite":
+      return [
+        { label: "✨ Ja, mitdenken", value: "modus:mitdenkend", kind: "select" as const, selected: state.homeMode === "mitdenkend" },
+        { label: "📌 Immer gleich", value: "modus:gleich", kind: "select" as const, selected: state.homeMode === "gleich" },
+      ];
     case "wer":
       return [
         { label: "Fertig", value: "fertig", kind: "primary", disabled: !hasMyName(state) },
@@ -298,6 +320,16 @@ export function answer(state: WelcomeState, input: { chip?: string; text?: strin
       if (!plan) return state;
       return advance({ ...state, planStyle: plan }, "essen");
     }
+    case "sport": {
+      const n = chip.startsWith("sport:") ? Number(chip.slice(6)) : Number(text.match(/\d/)?.[0] ?? ({ einmal: 1, zweimal: 2, dreimal: 3, viermal: 4, fünfmal: 5 } as Record<string, number>)[text.toLowerCase().match(/(ein|zwei|drei|vier|fünf)mal/)?.[0] ?? ""] ?? NaN);
+      if (!Number.isInteger(n) || n < 1 || n > 7) return state;
+      return advance({ ...state, sportGoal: n }, "sport");
+    }
+    case "startseite": {
+      const mode: WelcomeHomeMode | null = chip.startsWith("modus:") ? (chip.slice(6) as WelcomeHomeMode) : /\b(nein|gleich|nicht)\b/i.test(text) ? "gleich" : /\b(ja|gern|mitdenk|klar|okay|ok)\w*/i.test(text) ? "mitdenkend" : null;
+      if (!mode) return state;
+      return advance({ ...state, homeMode: mode }, "startseite");
+    }
     case "wer": {
       const family = asksFamily(state);
       if (chip === "nurich" || /^nur ich\b/i.test(text)) {
@@ -326,6 +358,8 @@ export function skipWelcome(state: WelcomeState): WelcomeState {
     step: "fertig",
     help: touched ? state.help : [...DEFAULT_HELP],
     planStyle: state.planStyle ?? "mix",
+    sportGoal: state.sportGoal ?? (state.help.includes("sport") ? 3 : null),
+    homeMode: state.homeMode ?? "mitdenkend",
     members: namedMembers(state.members.length ? state.members : [{ name: "", kid: false }]),
     custom: false,
   };
@@ -339,6 +373,7 @@ export function examplesFor(state: Pick<WelcomeState, "help">, hour: number): st
   if (state.help.includes("essen")) list.push(hour < 19 ? "Was koche ich heute?" : "Was gibt's morgen?");
   if (state.help.includes("einkauf")) list.push("Milch auf die Liste");
   if (state.help.includes("familie") && list.length < 3) list.push("Jonne hat Dienstag Turnen bis 17:30");
+  if (state.help.includes("sport") && list.length < 3) list.push("War heute 5 km laufen");
   if (list.length < 3) list.push("Was steht diese Woche an?");
   return list.slice(0, 3);
 }
@@ -363,11 +398,12 @@ export function profileFrom(state: WelcomeState): HouseholdProfile {
 
 /**
  * Start-Kacheln aus "Wobei soll ich dir helfen?": Termine → Termine-Kachel,
- * Essen → Essen, Einkauf → Einkauf; Aufgaben sind immer dabei. Arbeit und
+ * Essen → Essen, Einkauf → Einkauf, Sport → Sport (in Standard-Reihenfolge);
+ * Aufgaben sind immer dabei. Arbeit und
  * Familie steuern nur die Räume. (Seiten bleiben immer erreichbar.)
  */
 export function homeTilesFor(help: HelpId[]): HomeTile[] {
-  const shown: Record<string, boolean> = { termine: help.includes("termine"), aufgaben: true, essen: help.includes("essen"), einkauf: help.includes("einkauf") };
+  const shown: Record<string, boolean> = { termine: help.includes("termine"), aufgaben: true, essen: help.includes("essen"), einkauf: help.includes("einkauf"), sport: help.includes("sport") };
   return DEFAULT_HOME.map((t) => (t.id in shown ? { ...t, visible: shown[t.id] } : t));
 }
 

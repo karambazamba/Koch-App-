@@ -72,12 +72,15 @@ export function WeatherTile({
   today,
   minutes,
   termine,
+  tomorrow = false,
 }: {
   size?: TileSize;
   half?: boolean;
   today: string;
   minutes: number;
   termine: TipTermin[];
+  /** Feierabend: das Wetter von morgen (klein) */
+  tomorrow?: boolean;
 }) {
   const { forecast, stale, failed, place } = useForecast();
   const [open, setOpen] = useState(false);
@@ -97,6 +100,28 @@ export function WeatherTile({
         </span>
       </section>
     );
+  if (tomorrow) {
+    const day = forecast.days.find((d) => d.date > today);
+    if (day)
+      return (
+        <>
+          <section className={box} aria-label={`Wetter morgen · ${place}`}>
+            <button type="button" onClick={() => setOpen(true)} className="flex w-full flex-col text-left" aria-label={`Wetter morgen · ${place} – Vorschau öffnen`}>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-weather-ink">Morgen · {place}</span>
+              <span className="mt-1 flex items-center gap-2">
+                <WeatherIcon code={day.code} className="h-7 w-7" />
+                <span className="text-[22px] font-extrabold tabular-nums leading-none">
+                  {round(day.max)}°<span className="text-[15px] font-semibold text-muted"> / {round(day.min)}°</span>
+                </span>
+                <span className="truncate text-[14px] text-muted">{weatherKind(day.code).text}</span>
+              </span>
+              {day.rain >= 50 && <span className="mt-0.5 text-[13px] font-semibold">☂️ Regen wahrscheinlich ({day.rain} %)</span>}
+            </button>
+          </section>
+          {open && <WeatherSheet forecast={forecast} today={today} minutes={minutes} onClose={() => setOpen(false)} />}
+        </>
+      );
+  }
   const tip = weatherTip(forecast, today, minutes, termine);
   const range = todayRange(forecast, today);
   const kind = weatherKind(forecast.current.code);

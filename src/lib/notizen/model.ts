@@ -16,6 +16,8 @@ export type NotizData = {
   text?: string;
   items?: NoteItem[];
   pinned: boolean;
+  /** Freizeit-Liste (z. B. "Filme & Serien"): im Feierabend kommt daraus eine Idee */
+  freizeit?: boolean;
 };
 
 export type Note = Entry<NotizData> & { typ: "notiz" };
@@ -142,6 +144,15 @@ export function sanitizeNote(raw: unknown): Note | null {
           }
         : { text: typeof d.text === "string" ? d.text.slice(0, 4000) : "" }),
       pinned: d.pinned === true,
+      ...(kind === "liste" && d.freizeit === true ? { freizeit: true } : {}),
     },
   };
+}
+
+/** Eine Freizeit-Idee für heute Abend (aus Listen, die als Freizeit markiert sind; stabil über den Tag) */
+export function leisureIdea(notes: Note[], date: string): { note: Note; item: NoteItem } | null {
+  const items = notes.filter((n) => n.data.freizeit && n.data.kind === "liste").flatMap((n) => (n.data.items ?? []).filter((i) => !i.done).map((item) => ({ note: n, item })));
+  if (!items.length) return null;
+  const seed = [...date].reduce((a, c) => a + c.charCodeAt(0), 0);
+  return items[seed % items.length];
 }

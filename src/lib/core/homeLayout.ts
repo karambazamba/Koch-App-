@@ -10,7 +10,7 @@
 import { createLocalStore } from "./localStore";
 import { useExternalStore } from "./useExternalStore";
 
-export type HomeTileId = "pinnwand" | "termine" | "aufgaben" | "wetter" | "essen" | "einkauf" | "notizen" | "vorrat" | "morgen" | "post";
+export type HomeTileId = "pinnwand" | "termine" | "aufgaben" | "wetter" | "essen" | "einkauf" | "timer" | "sport" | "notizen" | "vorrat" | "morgen" | "post";
 export type TileSize = "S" | "M" | "L";
 export type HomeTile = { id: HomeTileId; visible: boolean; size: TileSize };
 
@@ -26,6 +26,8 @@ export const HOME_TILES: { id: HomeTileId; label: string; hint: string; sizes: T
   { id: "wetter", label: "Wetter", hint: "Heute und die nächsten Tage", sizes: ["S", "M", "L"], size: "M", fresh: true },
   { id: "essen", label: "Essen", hint: "Gericht von heute", sizes: ["S", "M", "L"], size: "S" },
   { id: "einkauf", label: "Einkauf", hint: "Die Einkaufsliste", sizes: ["S", "M", "L"], size: "S" },
+  { id: "timer", label: "Timer", hint: "Bis zu 5 Timer und eine Stoppuhr", sizes: ["S", "M"], size: "M", fresh: true },
+  { id: "sport", label: "Sport", hint: "Wochenziel und Trainings", sizes: ["S", "M", "L"], size: "M", fresh: true },
   { id: "notizen", label: "Notizen", hint: "Schnellnotiz + Angeheftetes", sizes: ["S", "M", "L"], size: "M" },
   { id: "vorrat", label: "Vorrat", hint: "Kühlschrank, Tiefkühler, Schrank", sizes: ["S", "M"], size: "S", feature: "vorrat" },
   { id: "morgen", label: "Morgen", hint: "Vorschau ab 16 Uhr", sizes: ["M"], size: "M" },
