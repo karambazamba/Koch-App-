@@ -1,6 +1,7 @@
 // Lotte: Austausch zwischen App und Server (/api/lotte).
 
 import type { AssistantData, ChangeOp } from "./ops";
+import type { MailDraft } from "./mail";
 
 export type ChatTurn = { role: "user" | "assistant"; text: string };
 
@@ -32,13 +33,17 @@ export type AssistantRequest = {
 export type StreamEvent =
   | { t: "text"; d: string }
   | { t: "round" }
-  | { t: "done"; reply: string; ops: ChangeOp[] }
+  | { t: "done"; reply: string; ops: ChangeOp[]; mail?: MailDraft; chips?: string[] }
   | { t: "error"; error: AssistantErrorCode };
 
 export type AssistantReply = {
   reply: string;
   /** Kompletter Vorschlag (bisheriger + neue Änderungen) */
   ops: ChangeOp[];
+  /** Mail-Entwurf als eigene Karte (nie automatisch gesendet) */
+  mail?: MailDraft;
+  /** Antwort-Knöpfe (z. B. "Zusagen", "Absagen", "Nachfragen") */
+  chips?: string[];
 };
 
 /** Warum es gerade nicht geht – die App zeigt nie Technik-Texte, nur ihre eigene Antwort */
@@ -62,8 +67,8 @@ export const ACCESS_HEADER = "x-lotte-code";
 
 /** Grenzen, damit Anfragen klein und günstig bleiben */
 export const LIMITS = {
-  /** Zeichen pro Nachricht */
-  messageChars: 1500,
+  /** Zeichen pro Nachricht (eingefügte Mails dürfen länger sein) */
+  messageChars: 6000,
   /** Mitgeschickte Chat-Nachrichten (Gesprächsverlauf) */
   historyTurns: 10,
   /** Größe der Anfrage in Bytes */

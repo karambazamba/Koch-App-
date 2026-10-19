@@ -3,6 +3,7 @@
 // Änderung für die Vorschau vor und wenden sie nur auf eine Arbeitskopie an,
 // damit spätere Lese-Aufrufe den Vorschlag schon sehen.
 
+import type { MailDraft } from "./mail";
 import { recipeBase } from "../essen/bases";
 import { isNeverAgain } from "../essen/ratings";
 import type Anthropic from "@anthropic-ai/sdk";
@@ -38,6 +39,10 @@ export type ToolContext = {
   counter: number;
   /** Heute auf dem Gerät, "YYYY-MM-DD" (für Termine) */
   today: string;
+  /** Mail-Entwurf für die Karte im Chat (`mail_entwurf`) */
+  mail?: MailDraft;
+  /** Antwort-Knöpfe unter der Nachricht (`antwort_knoepfe`) */
+  chips?: string[];
 };
 
 export type ToolResult = { content: string; isError?: boolean };

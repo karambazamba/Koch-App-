@@ -4,6 +4,7 @@
 // Sprachausgabe. Geändert wird erst beim Übernehmen – über dieselben reinen
 // Funktionen, mit denen auch die Vorschau rechnet.
 
+import { loadMailStyle } from "./mailSettings";
 import { useEffect, useState } from "react";
 import { replaceEntries } from "../aufgaben/store";
 import { applyHomeChange, loadHomeTiles, saveHomeTiles } from "../core/homeLayout";
@@ -215,6 +216,7 @@ function trimmed(data: AssistantData, currentWeekStart: string, pantry: Assistan
     shopping: pick(data.shopping),
     home: data.home,
     features: BAUSTEINE.filter((b) => featureOn(b.feature)).map((b) => b.feature),
+    mail: loadMailStyle(),
     // Kompakt: Name, Menge, Ort, seit wann; Gekauftes ("b:") als "gekauft" markiert
     pantry: (pantry ?? []).slice(0, 80).map(({ id, name, amount, unit, place, addedAt }) => ({ id: id.startsWith("b:") ? "gekauft" : "", name, amount, unit, place, addedAt })),
     // Termine/Aufgaben: ohne Vergangenes (erledigte Aufgaben älter als 2 Wochen, einmalige Termine vor gestern)
@@ -310,7 +312,7 @@ export async function askAssistant(
       } else if (event.t === "round") {
         freshRound = true;
       } else if (event.t === "done") {
-        return { reply: event.reply, ops: event.ops };
+        return { reply: event.reply, ops: event.ops, mail: event.mail, chips: event.chips };
       } else if (event.t === "error") {
         if (event.error === "zugangscode") forgetAccessCode();
         throw new LotteUnavailable(event.error);

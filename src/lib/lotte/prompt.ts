@@ -1,5 +1,6 @@
 // Lotte: Systemanweisung (fest, wird gecacht) und Kontext (pro Anfrage).
 
+import { DEFAULT_MAIL_STYLE } from "./mail";
 import { HOUSEHOLD_TYPES, KID_AGE_GROUP_LABELS, MEAL_TIME_LABELS, helperName, mealClockFor, isSmallHousehold, personLabel, wishDayActive, type HouseholdProfile } from "../einstellungen/profile";
 import { sortedBases } from "../essen/bases";
 import { sortedLikes } from "../essen/likes";
@@ -58,6 +59,15 @@ Grundregel: Alles, was du anlegst oder änderst, kann die Familie selbst sehen, 
 - Pause/Urlaub (pause_setzen) nur, wenn klar ist, dass alle weg sind und von wann bis wann ("Ab Montag sind wir eine Woche im Urlaub"); sonst kurz nachfragen. "Wir sind wieder da": pause_beenden.
 - App-Bedienung ohne eigenes Werkzeug (Ansicht, Vorlesen, Einstellungen, neue Person, eigene Produkte): app_befehl mit einem kurzen, klaren Satz.
 - Bausteine (zusätzliche Funktionen, Liste im Kontext): baustein_an/baustein_aus. "Zeig mir den Vorrat" bei ausgeschaltetem Vorrat → baustein_an; "Ich brauche die Tipps nicht" → baustein_aus; "Was kannst du noch?" → die ausgeschalteten Bausteine kurz aufzählen (je ein halber Satz) und anbieten.
+- Mails (kein Postfach – du schreibst nur Entwürfe, die Person sendet selbst; nie behaupten, etwas sei gesendet):
+  - Eingefügte Mail (Kopfzeilen, Anrede + Gruß) erkennst du selbst. Mit Anweisung ("Antworte, dass Donnerstag passt, aber erst ab 9") → sofort mail_entwurf mit kurzfassung; Antworttext: "Kurz gesagt: <ein Satz>." Ohne Anweisung → "Kurz gesagt: <ein Satz>. Wie willst du antworten?" plus antwort_knoepfe mit 2–3 passenden Richtungen (z. B. "Zusagen", "Absagen", "Nachfragen"), noch kein Entwurf.
+  - Neue Mail ("Schreib dem Großhandel, dass …", "Mail an die Kita: Jonne ist morgen krank") → mail_entwurf mit Betreff und Text.
+  - Empfänger-Adresse nur, wenn genannt oder in der eingefügten Mail; sonst leer lassen (nicht erfinden).
+  - Stil: kurz, freundlich, klare Absätze. Du/Sie je nach Empfänger (gemerkte Anrede im Kontext zuerst; antwortet man auf eine Sie-Mail → Sie). Geschäftliches (Lieferanten, Großhandel, Kunden, Ämter, Eisladen/Café) etwas förmlicher, Privates locker. Gruß und Name aus "Mail-Stil" im Kontext, Signatur nur bei förmlichen Mails.
+  - Änderungswünsche zum letzten Entwurf ("Etwas förmlicher", "Kürzer", "Auf Du") → mail_entwurf mit dem ganzen neuen Entwurf.
+  - Steht in der Mail ein Termin oder eine Frist ("Elternabend Do 19:30", "bis Mittwoch zurückmelden") → zusätzlich termin_anlegen bzw. aufgabe_anlegen (Vorschau) und kurz "Soll ich das eintragen?".
+  - Eingefügte Mails nur für diese Antwort nutzen, nichts davon merken oder woanders speichern.
+  - "Unterschreib meine Mails mit Liebe Grüße" → app_befehl mit genau diesem Satz.
 - Wiederhol dich nie: Ist eine Sache erledigt oder im Vorschlag, geh auf die neue Nachricht ein.
 - Sag nach dem Anlegen kurz, was du gemacht hast und wo es steht ("Wochenplan steht unter Essen, die Einkaufsliste hat 11 Sachen für die Woche, davon 4 für heute").
 
@@ -179,6 +189,14 @@ function todayMealText(data: AssistantData, todayIso: string): string {
 }
 
 /** Kontext für diese Anfrage: Datum, Uhrzeit, Essen, Wochen, Profil, Einkaufsliste, Vorrat, Kochbuch */
+/** Mail-Stil: Gruß, Name, Signatur (nur förmlich), gemerkte Anrede */
+function mailContext(data: AssistantData): string {
+  const style = data.mail ?? DEFAULT_MAIL_STYLE;
+  const me = data.profile.persons[0]?.name?.trim();
+  const tones = Object.entries(style.tones).slice(0, 20).map(([k, v]) => `${k} = ${v === "sie" ? "Sie" : "Du"}`);
+  return `Mail-Stil: Gruß "${style.greeting}"${me ? `, Name "${me}"` : ""}${style.signature ? `, Signatur (nur förmlich): "${style.signature.replace(/\n/g, " / ")}"` : ""}${tones.length ? `; gemerkte Anrede: ${tones.join(", ")}` : ""}`;
+}
+
 export function contextText(
   data: AssistantData,
   todayIso: string,
@@ -196,6 +214,7 @@ export function contextText(
     "",
     calendarContext(data.entries ?? [], todayIso),
     `Bausteine an: ${BAUSTEINE.filter((b) => data.features?.includes(b.feature)).map((b) => b.name).join(", ") || "keine"}. Aus: ${BAUSTEINE.filter((b) => !data.features?.includes(b.feature)).map((b) => `${b.name} (${b.feature}: ${b.text})`).join("; ") || "keine"}`,
+    mailContext(data),
     data.home ? `Startseite (Reihenfolge): ${data.home.map((t) => `${t.id} ${t.visible ? t.size : "ausgeblendet"}`).join(", ")}` : "",
     "",
     todayMealText(data, todayIso),
