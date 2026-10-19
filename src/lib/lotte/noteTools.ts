@@ -3,8 +3,8 @@
 // mit "Übernehmen"; Lese-Werkzeuge antworten aus den mitgeschickten Daten.
 
 import type { Room } from "../core/entries";
-import { taskOverview, TASK_GROUPS } from "../aufgaben/model";
-import { addListItems, createNote, findNote, noteAnswer, setPinned, type Note } from "../notizen";
+import { aufgabeToTermin, taskOverview, terminToAufgabe, TASK_GROUPS } from "../aufgaben/model";
+import { addListItems, appendLine, createNote, findNote, noteAnswer, setPinned, withoutLines, type Note } from "../notizen";
 import type { LotteTool } from "./registry";
 import { nextId, propose, type ToolContext, type ToolResult } from "./tools";
 
@@ -25,7 +25,79 @@ function proposeNote(ctx: ToolContext, note: Note, isNew: boolean, change?: stri
   propose(ctx, { id: nextId(ctx), type: "upsert_note", note, isNew, ...(change ? { change } : {}) });
 }
 
+const shortList = (lines: string[]) => lines.map((l) => (l.length > 40 ? `${l.slice(0, 38)}…` : l)).join(", ");
+
 export const NOTE_TOOLS: LotteTool[] = [
+  {
+    area: "alltag",
+    definition: {
+      name: "kladde_schreiben",
+      description: "Etwas in die Kladde (Schmierzettel) schreiben: 'Schreib in die Kladde: Handwerker Müller 0176 …'. Wird als neue Zeile angehängt.",
+      input_schema: { type: "object", properties: { text: { type: "string" }, ersetzen: { type: "boolean", description: "Ganze Kladde ersetzen statt anhängen (nur wenn ausdrücklich gewünscht)" } }, required: ["text"], additionalProperties: false },
+    },
+    run: (ctx, raw) => {
+      const input = (raw ?? {}) as Input;
+      const text = str(input.text);
+      if (!text) return fail("text angeben.");
+      const current = ctx.data.kladde ?? "";
+      const next = input.ersetzen === true ? text : appendLine(current, text);
+      propose(ctx, { id: nextId(ctx), type: "set_kladde", text: next, change: input.ersetzen === true ? `neu: ${shortList([text])}` : `+ ${shortList([text])}` });
+      return { content: "Vorgemerkt: steht dann in der Kladde (Notizen, ganz oben)." };
+    },
+  },
+  {
+    area: "alltag",
+    definition: {
+      name: "kladde_aufraeumen",
+      description:
+        "Kladde aufräumen ('Räum meine Kladde auf'): Zuerst die passenden Zeilen mit termin_anlegen / aufgabe_anlegen / notiz_anlegen bzw. liste_eintrag_hinzufuegen übernehmen, dann hier genau diese Zeilen angeben – sie werden aus der Kladde genommen. Unklares bleibt stehen.",
+      input_schema: { type: "object", properties: { zeilen: { type: "array", items: { type: "string" }, description: "Übernommene Zeilen, wörtlich wie in der Kladde" } }, required: ["zeilen"], additionalProperties: false },
+    },
+    run: (ctx, raw) => {
+      const lines = list((raw as Input | null)?.zeilen);
+      const current = ctx.data.kladde ?? "";
+      const present = lines.filter((l) => current.split(/\n/).some((c) => c.trim() === l));
+      if (!present.length) return fail("Keine dieser Zeilen steht in der Kladde – wörtlich angeben.");
+      const rest = withoutLines(current, present);
+      propose(ctx, { id: nextId(ctx), type: "set_kladde", text: rest, change: `${present.length} ${present.length === 1 ? "Zeile" : "Zeilen"} übernommen${rest ? " – der Rest bleibt" : ", Kladde ist leer"}` });
+      return { content: `Vorgemerkt: ${present.length} Zeilen aus der Kladde nehmen.` };
+    },
+  },
+  {
+    area: "alltag",
+    definition: {
+      name: "termin_in_aufgabe_umwandeln",
+      description: "'Das ist kein Termin, sondern eine Aufgabe': Termin (id) wird zur Aufgabe – Tag bleibt als Wunschtag (oder frist angeben), ohne Uhrzeit.",
+      input_schema: { type: "object", properties: { id: { type: "string" }, frist: { type: "string", description: "Optional YYYY-MM-DD" } }, required: ["id"], additionalProperties: false },
+    },
+    run: (ctx, raw) => {
+      const input = (raw ?? {}) as Input;
+      const e = (ctx.data.entries ?? []).find((x) => x.id === str(input.id));
+      if (!e || e.typ !== "termin") return fail("Termin nicht gefunden – id aus dem Kontext nehmen.");
+      const due = /^\d{4}-\d{2}-\d{2}$/.test(str(input.frist)) ? str(input.frist) : undefined;
+      propose(ctx, { id: nextId(ctx), type: "upsert_entry", entry: terminToAufgabe(e, `${ctx.today}T12:00:00.000Z`, { due }), isNew: false });
+      return { content: `Vorgemerkt: „${e.data.title}“ wird eine Aufgabe.` };
+    },
+  },
+  {
+    area: "alltag",
+    definition: {
+      name: "aufgabe_in_termin_umwandeln",
+      description: "'Das ist eine Aufgabe, aber eigentlich ein Termin um 15 Uhr': Aufgabe (id) wird zum Termin mit Uhrzeit (und optional Datum).",
+      input_schema: { type: "object", properties: { id: { type: "string" }, start: { type: "string", description: "HH:MM" }, datum: { type: "string", description: "YYYY-MM-DD (sonst Wunschtag/Frist/heute)" } }, required: ["id", "start"], additionalProperties: false },
+    },
+    run: (ctx, raw) => {
+      const input = (raw ?? {}) as Input;
+      const e = (ctx.data.entries ?? []).find((x) => x.id === str(input.id));
+      if (!e || e.typ !== "aufgabe") return fail("Aufgabe nicht gefunden – id aus dem Kontext nehmen.");
+      const m = str(input.start).match(/^(\d{1,2})(?::(\d{2}))?$/);
+      if (!m) return fail("start als HH:MM angeben.");
+      const start = `${m[1].padStart(2, "0")}:${m[2] ?? "00"}`;
+      const date = /^\d{4}-\d{2}-\d{2}$/.test(str(input.datum)) ? str(input.datum) : (e.data.date ?? e.data.due ?? ctx.today);
+      propose(ctx, { id: nextId(ctx), type: "upsert_entry", entry: aufgabeToTermin(e, `${ctx.today}T12:00:00.000Z`, start, date), isNew: false });
+      return { content: `Vorgemerkt: „${e.data.title}“ wird ein Termin um ${start}.` };
+    },
+  },
   {
     area: "alltag",
     definition: {

@@ -5,6 +5,7 @@
 // Funktionen, mit denen auch die Vorschau rechnet.
 
 import { replaceNotes } from "../notizen/store";
+import { loadKladde, saveKladde } from "../notizen/kladde";
 import { loadMailStyle } from "./mailSettings";
 import { useEffect, useState } from "react";
 import { replaceEntries } from "../aufgaben/store";
@@ -218,6 +219,7 @@ function trimmed(data: AssistantData, currentWeekStart: string, pantry: Assistan
     home: data.home,
     features: BAUSTEINE.filter((b) => featureOn(b.feature)).map((b) => b.feature),
     mail: loadMailStyle(),
+    kladde: loadKladde().text.slice(0, 4000),
     // Notizen: kompakt (Listen bis 60 Einträge, Text bis 1500 Zeichen)
     notes: (data.notes ?? []).slice(0, 60).map((n) => ({ ...n, data: { ...n.data, text: n.data.text?.slice(0, 1500), items: n.data.items?.slice(0, 60) } })),
     // Kompakt: Name, Menge, Ort, seit wann; Gekauftes ("b:") als "gekauft" markiert
@@ -345,6 +347,7 @@ function save(data: AssistantData, before: AssistantData) {
   if (data.shopping !== before.shopping) replaceShoppingLists(data.shopping);
   if (data.entries !== before.entries && data.entries) replaceEntries(data.entries);
   if (data.notes !== before.notes && data.notes) replaceNotes(data.notes);
+  if (data.kladde !== before.kladde && data.kladde !== undefined) saveKladde(data.kladde);
   if (data.home !== before.home && data.home) saveHomeTiles(data.home);
   if (data.profile !== before.profile) saveProfile(data.profile);
 }

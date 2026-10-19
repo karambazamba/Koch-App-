@@ -225,7 +225,7 @@ export function WelcomeChat() {
                 </div>
                 <div className="flex items-end gap-2">
                   <LotteAvatar size={28} />
-                  <div className={`${BUBBLE} rounded-bl-lg border border-line bg-surface shadow-card`}>Alles, was du hier eingestellt hast, kannst du jederzeit ändern – sag&apos;s mir oder schau in die Einstellungen.</div>
+                  <div className={`${BUBBLE} rounded-bl-lg border border-line bg-surface shadow-card`}>Alles, was du hier eingestellt hast, kannst du jederzeit ändern – sag&apos;s mir oder schau in die Einstellungen. Deine Startseite kannst du jederzeit anpassen – halt sie einfach gedrückt.</div>
                 </div>
                 <div className="pl-9">
                   <button type="button" onClick={() => void send({ chip: "start" })} className="inline-flex min-h-11 items-center rounded-full border border-bar bg-bar px-4 text-[15px] font-semibold text-on-bar active:scale-95">

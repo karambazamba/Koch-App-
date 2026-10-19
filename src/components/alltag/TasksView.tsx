@@ -6,7 +6,7 @@
 // "Heute dran" ("von gestern" – nie "überfällig").
 
 import { useState } from "react";
-import { Check, ChevronDown, Plus } from "lucide-react";
+import { ChevronDown, Plus } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Segmented } from "@/components/ui/Segmented";
 import { CARD, PAGE_MAIN } from "@/components/ui/styles";
@@ -15,46 +15,27 @@ import { useEntries } from "@/lib/aufgaben/store";
 import { toIsoDate, useToday } from "@/lib/core/now";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 import { act, buzz } from "./actions";
-import { ItemMenu, roomBar } from "./Items";
+import { ItemMenu } from "./Items";
 import { EntryForm } from "./EntryForm";
-import { taskLine } from "./MiniCards";
+import { TaskLine } from "./MiniCards";
+import { TaskQuickAdd } from "./TaskQuickAdd";
 
 type Filter = "alles" | "familie" | "arbeit";
 
-export const ROUND_PLUS = "flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-sm active:scale-95";
+export const ROUND_PLUS = "flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-bar text-on-bar shadow-sm active:scale-95";
 
-function TaskRow({ item, onOpen }: { item: DayItem; onOpen: (item: DayItem) => void }) {
+function TaskRow({ item, today, onOpen }: { item: DayItem; today: string; onOpen: (item: DayItem) => void }) {
   const [popping, setPopping] = useState(false);
-  const checked = item.done || popping;
-  const toggle = () => {
+  const toggle = (it: DayItem) => {
     buzz();
-    if (item.done) return act((list, stamp) => setDone(list, item, false, stamp));
+    if (it.done) return act((list, stamp) => setDone(list, it, false, stamp));
     setPopping(true);
     setTimeout(() => {
-      act((list, stamp) => setDone(list, item, true, stamp), `Erledigt ✓ ${item.title}`);
+      act((list, stamp) => setDone(list, it, true, stamp), `Erledigt ✓ ${it.title}`);
       setPopping(false);
     }, 380);
   };
-  const line = taskLine(item);
-  return (
-    <li className="flex items-center gap-1 py-1.5 pr-3" data-item={item.key}>
-      <button type="button" role="checkbox" aria-checked={checked} aria-label={`${item.title} erledigt`} onClick={toggle} className="flex h-11 w-12 shrink-0 items-center justify-center">
-        <span
-          className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition ${checked ? "border-accent bg-accent text-on-accent" : "border-stone-300"}`}
-          style={popping ? { animation: "check-pop 0.4s ease-out" } : undefined}
-        >
-          {checked && <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />}
-        </span>
-      </button>
-      <button type="button" onClick={() => onOpen(item)} className="flex min-w-0 flex-1 items-center gap-3 text-left" aria-label={`${item.title} – Möglichkeiten`}>
-        <span className="min-w-0 flex-1">
-          <span className={`block truncate text-base font-semibold leading-snug ${checked ? "text-muted line-through" : ""}`}>{item.title}</span>
-          {line && <span className="block truncate text-sm text-muted">{line}</span>}
-        </span>
-        <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${roomBar(item.room)} ${checked ? "opacity-40" : ""}`} aria-hidden />
-      </button>
-    </li>
-  );
+  return <TaskLine item={item} today={today} onOpen={onOpen} onDone={toggle} leaving={popping} />;
 }
 
 export function TasksView() {
@@ -108,7 +89,7 @@ export function TasksView() {
                 <h2 className="px-1 text-xs font-bold uppercase tracking-wider text-muted">{g.label}</h2>
                 <ul className={`${CARD} divide-y divide-line overflow-hidden`}>
                   {g.items.map((item) => (
-                    <TaskRow key={item.key} item={item} onOpen={setMenu} />
+                    <TaskRow key={item.key} item={item} today={today!} onOpen={setMenu} />
                   ))}
                 </ul>
               </section>
@@ -121,7 +102,7 @@ export function TasksView() {
                 {showDone && (
                   <ul className={`${CARD} divide-y divide-line overflow-hidden`}>
                     {done.map((item) => (
-                      <TaskRow key={item.key} item={item} onOpen={setMenu} />
+                      <TaskRow key={item.key} item={item} today={today!} onOpen={setMenu} />
                     ))}
                   </ul>
                 )}
@@ -132,7 +113,7 @@ export function TasksView() {
       </main>
       {menu && <ItemMenu item={menu} onClose={() => setMenu(null)} onEdit={() => (setEditing(menu), setMenu(null))} />}
       {editing && <EntryForm entry={editing.entry} onClose={() => setEditing(null)} />}
-      {adding && <EntryForm kind="aufgabe" onClose={() => setAdding(false)} />}
+      {adding && <TaskQuickAdd defaultWhen="irgendwann" onClose={() => setAdding(false)} />}
     </>
   );
 }

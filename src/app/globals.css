@@ -24,6 +24,9 @@
   --color-on-bar: var(--app-on-bar);
   --color-segment: var(--app-segment);
   --color-work: var(--app-work);
+  /* Kladde (Schmierzettel): gelblich */
+  --color-kladde: var(--app-kladde);
+  --color-kladde-line: var(--app-kladde-line);
 
   --radius-card: 1.375rem;
   --shadow-card: var(--app-shadow-card);
@@ -53,7 +56,9 @@
   --app-bar: #1f1b17;
   --app-on-bar: #ffffff;
   --app-segment: #ebe6df;
-  --app-work: #3b82f6;
+  --app-work: #4c6fd9;
+  --app-kladde: #fffbea;
+  --app-kladde-line: #f3e7b8;
   color-scheme: light;
 }
 
@@ -86,7 +91,9 @@
   --app-bar: #2e3238;
   --app-on-bar: #f2eee9;
   --app-segment: #2c3036;
-  --app-work: #6aa8ff;
+  --app-work: #7f9bf0;
+  --app-kladde: #2f2b1f;
+  --app-kladde-line: #4a4229;
   --color-stone-50: #2a2e34;
   --color-stone-100: #30343b;
   --color-stone-200: #3b4048;
@@ -120,7 +127,9 @@
     --app-bar: #2e3238;
     --app-on-bar: #f2eee9;
     --app-segment: #2c3036;
-    --app-work: #6aa8ff;
+    --app-work: #7f9bf0;
+  --app-kladde: #2f2b1f;
+  --app-kladde-line: #4a4229;
     --color-stone-50: #2a2e34;
     --color-stone-100: #30343b;
     --color-stone-200: #3b4048;
@@ -208,6 +217,15 @@ body {
   40%,
   80% {
     transform: rotate(-10deg);
+  }
+}
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: rotate(-0.35deg);
+  }
+  50% {
+    transform: rotate(0.35deg);
   }
 }
 @keyframes check-pop {

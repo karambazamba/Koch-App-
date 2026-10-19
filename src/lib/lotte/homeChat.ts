@@ -14,8 +14,12 @@ export type HomeCommand =
   | { kind: "remove_shopping"; names: string[] };
 
 function tileIn(t: string): HomeTileId | null {
+  if (/\bkladde\b/.test(t)) return "kladde";
+  if (/\bnotizen?\b/.test(t)) return "notizen";
+  if (/\bvorrat\b/.test(t)) return "vorrat";
+  if (/\baufgaben?\b/.test(t)) return "aufgaben";
   if (/\b(einkauf\w*|liste)\b/.test(t)) return "einkauf";
-  if (/\b(termine?|aufgaben?|kalender)\b/.test(t)) return "termine";
+  if (/\b(termine?|kalender)\b/.test(t)) return "termine";
   if (/\b(vorschau|morgen-?karte)\b/.test(t)) return "morgen";
   if (/\b(essen|gericht|essens-?kachel)\b/.test(t)) return "essen";
   return null;
@@ -35,7 +39,7 @@ export function parseHomeCommand(text: string): HomeCommand | null {
   const t = text.trim().toLowerCase().replace(/[.!?]+$/, "");
   if (!t) return null;
   if (/^(bitte\s+)?((mach|nimm)\s+(das|es|die letzte änderung|alles)\s+(bitte\s+)?(wieder\s+)?(rückgängig|zurück)|rückgängig( machen)?|undo)(\s+bitte)?$/.test(t)) return { kind: "undo" };
-  if (/\bstartseite anpassen\b/.test(t)) return { kind: "show", target: "startseite" };
+  if (/\bstartseite (anpassen|bearbeiten)\b/.test(t)) return { kind: "show", target: "startseite" };
   if (/\b(lösch|leer|entfern|streich)\w*\s+(\w+\s+){0,2}wochenplan\b|\bwochenplan\s+(wieder\s+)?(löschen|leeren|weg)\b/.test(t)) return { kind: "clear_week" };
   if (/\b(lösch|leer)\w*\s+(\w+\s+){0,2}einkaufsliste\b|\beinkaufsliste\s+(wieder\s+)?(löschen|leeren)\b/.test(t)) return { kind: "clear_shopping" };
   // Startseite: Kachel + Aktion ("Mach die Einkaufsliste wieder klein")
@@ -44,6 +48,10 @@ export function parseHomeCommand(text: string): HomeCommand | null {
     const action = actionIn(t);
     if (tile && action && (action !== "zeigen" || /\bstartseite\b|einblenden/.test(t))) return { kind: "home", change: { tile, action } };
   }
+  // "Aufgaben ganz nach oben"
+  const tile = tileIn(t);
+  const action = actionIn(t);
+  if (tile && (action === "nach_oben" || action === "nach_unten") && t.split(/\s+/).length <= 6) return { kind: "home", change: { tile, action } };
   if (/\b(zeig\w*|öffne\w*|wo ist|wo finde ich)\b.*\bwochenplan\b/.test(t)) return { kind: "show", target: "wochenplan" };
   if (/\b(zeig\w*|öffne\w*|wo ist|wo finde ich)\b.*\beinkaufsliste\b/.test(t)) return { kind: "show", target: "einkaufsliste" };
   const remove = t.match(/^(?:bitte\s+)?(?:nimm|streich|lösch)\w*\s+(?:bitte\s+)?(.+?)\s+(?:wieder\s+)?(?:von|aus)\s+der\s+(?:einkaufs)?liste(?:\s+runter)?$/);

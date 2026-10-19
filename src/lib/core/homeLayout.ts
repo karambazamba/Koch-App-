@@ -1,36 +1,68 @@
-// Startseite anpassen (`wasgibts.startseite`): Reihenfolge, Größe
-// (kompakt/ausführlich) und sichtbar/ausgeblendet je Kachel auf "Heute".
-// Rein + Speicher, damit Oberfläche und Lotte (Werkzeug startseite_anpassen)
-// gleich rechnen. Ausblenden löscht nie etwas.
+// Startseite bearbeiten (`wasgibts.startseite` v2): welche Kacheln auf
+// "Heute" stehen und in welcher Reihenfolge. Breiten sind fest (Termine,
+// Aufgaben, Notizen voll; Essen, Einkauf, Kladde, Vorrat halb – zwei halbe
+// nebeneinander werden automatisch gepaart). Rein + Speicher, damit
+// Oberfläche und Lotte (Werkzeug startseite_anpassen) gleich rechnen.
+// Entfernen löscht nie etwas.
 
 import { createLocalStore } from "./localStore";
 import { useExternalStore } from "./useExternalStore";
 
-export type HomeTileId = "termine" | "essen" | "einkauf" | "morgen" | "vorrat" | "notizen";
+export type HomeTileId = "termine" | "aufgaben" | "essen" | "einkauf" | "kladde" | "notizen" | "morgen" | "vorrat" | "post";
 export type TileSize = "kompakt" | "ausfuehrlich";
 export type HomeTile = { id: HomeTileId; visible: boolean; size: TileSize };
 
-/** `feature`: Kachel gehört zu einem Baustein – nur da, wenn er an ist */
-export const HOME_TILES: { id: HomeTileId; label: string; hint: string; feature?: "vorrat" }[] = [
-  { id: "termine", label: "Termine & Aufgaben", hint: "Was heute ansteht" },
-  { id: "essen", label: "Essen", hint: "Gericht von heute" },
-  { id: "einkauf", label: "Einkauf", hint: "Die Einkaufsliste" },
-  { id: "morgen", label: "Vorschau morgen", hint: "Ab 16 Uhr" },
-  { id: "vorrat", label: "Vorrat", hint: "Kühlschrank, Tiefkühler, Schrank", feature: "vorrat" },
-  { id: "notizen", label: "Notizen", hint: "Angeheftete Notizen und Listen" },
+export type TileWidth = "voll" | "halb";
+
+/**
+ * Alle Kacheln. `feature`: gehört zu einem Baustein (wird beim Hinzufügen
+ * eingeschaltet); `soon`: gibt es noch nicht ("bald").
+ */
+export const HOME_TILES: { id: HomeTileId; label: string; hint: string; width: TileWidth; feature?: "vorrat"; soon?: boolean }[] = [
+  { id: "termine", label: "Termine", hint: "Die nächsten zwei von heute", width: "voll" },
+  { id: "aufgaben", label: "Aufgaben", hint: "Was heute dran ist", width: "voll" },
+  { id: "essen", label: "Essen", hint: "Gericht von heute", width: "halb" },
+  { id: "einkauf", label: "Einkauf", hint: "Die Einkaufsliste", width: "halb" },
+  { id: "kladde", label: "Kladde", hint: "Schnell was aufschreiben", width: "halb" },
+  { id: "notizen", label: "Notizen", hint: "Angeheftete Notizen", width: "voll" },
+  { id: "morgen", label: "Morgen", hint: "Vorschau ab 16 Uhr", width: "voll" },
+  { id: "vorrat", label: "Vorrat", hint: "Kühlschrank, Tiefkühler, Schrank", width: "halb", feature: "vorrat" },
+  { id: "post", label: "Post", hint: "Briefe und Rechnungen", width: "voll", soon: true },
 ];
+
+export const tileMeta = (id: HomeTileId) => HOME_TILES.find((t) => t.id === id)!;
 
 export const tileLabel = (id: HomeTileId) => HOME_TILES.find((t) => t.id === id)?.label ?? id;
 
 export const DEFAULT_HOME: HomeTile[] = [
   { id: "termine", visible: true, size: "ausfuehrlich" },
+  { id: "aufgaben", visible: true, size: "ausfuehrlich" },
   { id: "essen", visible: true, size: "kompakt" },
   { id: "einkauf", visible: true, size: "kompakt" },
   { id: "morgen", visible: true, size: "kompakt" },
   { id: "vorrat", visible: true, size: "kompakt" },
-  // Notizen stehen standardmäßig nicht auf "Heute" (über "Startseite anpassen" einblendbar)
+  // Standardmäßig nicht auf "Heute" (über "Startseite bearbeiten" hinzufügen)
+  { id: "kladde", visible: false, size: "kompakt" },
   { id: "notizen", visible: false, size: "kompakt" },
+  { id: "post", visible: false, size: "kompakt" },
 ];
+
+/**
+ * Sichtbare Kacheln in Reihen: halbe Kacheln direkt hintereinander stehen
+ * nebeneinander, eine einzelne halbe nimmt die volle Breite.
+ */
+export function tileRows<T extends { id: HomeTileId }>(tiles: T[]): T[][] {
+  const rows: T[][] = [];
+  for (let i = 0; i < tiles.length; i++) {
+    const a = tiles[i];
+    const b = tiles[i + 1];
+    if (b && tileMeta(a.id).width === "halb" && tileMeta(b.id).width === "halb") {
+      rows.push([a, b]);
+      i++;
+    } else rows.push([a]);
+  }
+  return rows;
+}
 
 export type HomeAction = "zeigen" | "ausblenden" | "kompakt" | "ausfuehrlich" | "hoch" | "runter" | "nach_oben" | "nach_unten";
 export type HomeChange = { tile: HomeTileId; action: HomeAction };
@@ -66,8 +98,15 @@ export function applyHomeChange(tiles: HomeTile[], change: HomeChange): HomeTile
     return copy;
   };
   switch (change.action) {
-    case "zeigen":
-      return set({ visible: true });
+    case "zeigen": {
+      // Kommt unten zu den sichtbaren Kacheln
+      if (list[i].visible) return list;
+      const shown = set({ visible: true });
+      const [tile] = shown.splice(i, 1);
+      const lastVisible = shown.map((t) => t.visible).lastIndexOf(true);
+      shown.splice(lastVisible + 1, 0, tile);
+      return shown;
+    }
     case "ausblenden":
       return set({ visible: false });
     case "kompakt":
@@ -92,7 +131,7 @@ export function describeHomeChange(change: HomeChange): string {
     case "zeigen":
       return `${name} steht wieder auf der Startseite.`;
     case "ausblenden":
-      return `${name} ist von der Startseite weg – unter „Startseite anpassen“ holst du es zurück.`;
+      return `${name} ist von der Startseite weg – unter „Startseite bearbeiten“ holst du es zurück.`;
     case "kompakt":
       return `${name} ist jetzt kompakt.`;
     case "ausfuehrlich":
@@ -102,19 +141,39 @@ export function describeHomeChange(change: HomeChange): string {
   }
 }
 
-type HomeStore = { version: 1; tiles: HomeTile[] };
+type HomeStore = { version: 2; tiles: HomeTile[]; tipSeen: boolean };
 
-const store = createLocalStore("wasgibts.startseite", (raw: unknown): HomeStore | null => {
-  if (!raw || typeof raw !== "object" || (raw as HomeStore).version !== 1) return null;
-  return { version: 1, tiles: sanitizeHome((raw as HomeStore).tiles) };
-});
+/** v1 → v2: die Kachel "Termine & Aufgaben" wird zu "Termine" und "Aufgaben" (direkt dahinter) */
+export function migrateHome(raw: unknown): HomeStore | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as { version?: number; tiles?: unknown; tipSeen?: unknown };
+  if (r.version === 2) return { version: 2, tiles: sanitizeHome(r.tiles), tipSeen: r.tipSeen === true };
+  if (r.version !== 1) return null;
+  const old = Array.isArray(r.tiles) ? (r.tiles as HomeTile[]) : [];
+  const at = old.findIndex((t) => t && t.id === "termine");
+  const withTasks = at >= 0 && !old.some((t) => t?.id === "aufgaben") ? [...old.slice(0, at + 1), { id: "aufgaben" as const, visible: old[at].visible !== false, size: "ausfuehrlich" as const }, ...old.slice(at + 1)] : old;
+  // Bisherige Nutzer kennen die Startseite schon – kein Hinweis mehr
+  return { version: 2, tiles: sanitizeHome(withTasks), tipSeen: true };
+}
+
+const store = createLocalStore("wasgibts.startseite", migrateHome);
 
 export function loadHomeTiles(): HomeTile[] {
   return store.load()?.tiles ?? DEFAULT_HOME;
 }
 
 export function saveHomeTiles(tiles: HomeTile[]) {
-  store.save({ version: 1, tiles: sanitizeHome(tiles) });
+  store.save({ version: 2, tiles: sanitizeHome(tiles), tipSeen: store.load()?.tipSeen ?? false });
+}
+
+/** Einmaliger Hinweis "Halte die Startseite gedrückt …" */
+export function useHomeTipSeen(): boolean | undefined {
+  const data = useExternalStore(store.subscribe, store.load, () => undefined);
+  return data === undefined ? undefined : (data?.tipSeen ?? false);
+}
+
+export function markHomeTipSeen() {
+  store.save({ version: 2, tiles: loadHomeTiles(), tipSeen: true });
 }
 
 /** Änderung speichern; liefert Rückgängig */

@@ -48,3 +48,9 @@ export function useWorkRoom(): boolean {
   const help = data?.help;
   return !help || help.includes("arbeit");
 }
+
+/** Kennenlernen abgeschlossen (für den einmaligen Startseiten-Hinweis) */
+export function useWelcomeFinished(): boolean {
+  const data = useExternalStore(store.subscribe, store.load, () => null);
+  return Boolean(data?.help);
+}

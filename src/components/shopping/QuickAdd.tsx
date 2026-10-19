@@ -21,12 +21,15 @@ export function QuickAddButton({
   weekStart,
   settings,
   small = false,
+  dark = false,
   className = "",
 }: {
   weekStart: string;
   settings: ShoppingSettings;
   /** Kleinerer Kreis (Bento-Karte), Trefferfläche bleibt 44×44 */
   small?: boolean;
+  /** Dunkler Kreis wie das "+" bei den Aufgaben (Startseite) */
+  dark?: boolean;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -46,7 +49,7 @@ export function QuickAddButton({
         aria-label="Etwas auf die Einkaufsliste setzen"
         className={`flex h-11 w-11 items-center justify-center ${className}`}
       >
-        <span className={`flex items-center justify-center rounded-full bg-accent text-on-accent shadow-sm transition active:scale-95 ${small ? "h-7 w-7" : "h-9 w-9"}`}>
+        <span className={`flex items-center justify-center rounded-full ${dark ? "bg-bar text-on-bar" : "bg-accent text-on-accent"} shadow-sm transition active:scale-95 ${small ? "h-7 w-7" : "h-9 w-9"}`}>
           <Plus className={small ? "h-4 w-4" : "h-5 w-5"} strokeWidth={2.75} aria-hidden />
         </span>
       </button>

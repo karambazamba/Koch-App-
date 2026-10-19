@@ -353,14 +353,22 @@ export function taskOverview(entries: CalendarEntry[], today: string): Record<Ta
   const byTime = (x: DayItem, y: DayItem) => Number(x.time === null) - Number(y.time === null) || (x.time ?? "").localeCompare(y.time ?? "") || x.title.localeCompare(y.title, "de");
   // Mit Tag/Frist nach Datum, "diese Woche" ohne Tag danach
   const byDate = (x: DayItem, y: DayItem) => Number(x.when === "diese Woche") - Number(y.when === "diese Woche") || x.date.localeCompare(y.date) || byTime(x, y);
-  // Heute dran: mit Uhrzeit, dann von früher Mitgenommenes (älteste zuerst), dann Frist heute, dann der Rest
-  const age = (i: DayItem) => (i.carried ? 0 : i.dueLabel ? 1 : 2);
-  groups.heute.sort((x, y) => Number(x.time === null) - Number(y.time === null) || age(x) - age(y) || byTime(x, y));
+  // Heute dran: Frist bzw. Tag heute ganz oben, dann von früher Mitgenommenes, dann der Rest (je mit Uhrzeit zuerst)
+  const rank = (i: DayItem) => (!i.carried && i.entry.typ === "aufgabe" && (i.entry.data.due === today || i.entry.data.date === today || i.repeat) ? 0 : i.carried ? 1 : 2);
+  groups.heute.sort((x, y) => rank(x) - rank(y) || byTime(x, y));
   groups.woche.sort(byDate);
   groups.spaeter.sort(byDate);
   groups.irgendwann.sort((x, y) => x.entry.erstellt.localeCompare(y.entry.erstellt));
   groups.erledigt.sort((x, y) => y.date.localeCompare(x.date));
   return groups;
+}
+
+/** Kurz rechts in der Zeile: "heute", "bis Mi", "diese Woche", "von gestern" */
+export function taskBadge(item: DayItem, today: string): string {
+  if (item.carried) return item.carried;
+  if (item.dueLabel) return item.dueLabel === "bis heute" ? "heute" : item.dueLabel;
+  if (item.when) return item.when;
+  return item.date === today ? "heute" : "";
 }
 
 /** Die dringendsten Aufgaben für "Heute": heute dran, dann nächste Frist, dann "diese Woche" */
@@ -518,4 +526,16 @@ export function sanitizeRepeat(raw: unknown): Repeat | null {
     return days.length ? { kind: "wochentage", days } : null;
   }
   return null;
+}
+
+/** "Das ist kein Termin, sondern eine Aufgabe": gleiche id, Tag bleibt (als Wunschtag), Uhrzeit fällt weg */
+export function terminToAufgabe(e: Termin, stamp: string, opts: { due?: string } = {}): Aufgabe {
+  const t = e.data;
+  return { ...e, typ: "aufgabe", geaendert: stamp, data: { title: t.title, ...(opts.due ? { due: opts.due } : { date: t.date }), label: t.label, repeat: t.repeat ?? null, reminder: t.reminder, doneOn: null, doneDates: [], skipDates: t.skipDates ?? [] } };
+}
+
+/** "… sondern ein Termin um 15 Uhr": gleiche id, Tag (Wunschtag/Frist/heute) + Uhrzeit */
+export function aufgabeToTermin(e: Aufgabe, stamp: string, start: string, date?: string): Termin {
+  const a = e.data;
+  return { ...e, typ: "termin", geaendert: stamp, data: { title: a.title, date: date ?? a.date ?? a.due ?? stamp.slice(0, 10), start, label: a.label, repeat: a.repeat ?? null, reminder: a.reminder, doneDates: [], skipDates: a.skipDates ?? [] } };
 }

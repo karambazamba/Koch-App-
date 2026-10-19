@@ -164,7 +164,7 @@ export const HOME_TOOLS: LotteTool[] = [
       input_schema: {
         type: "object",
         properties: {
-          kachel: { type: "string", enum: HOME_TILES.map((t) => t.id), description: "termine = Termine & Aufgaben, essen, einkauf, morgen = Vorschau morgen" },
+          kachel: { type: "string", enum: HOME_TILES.map((t) => t.id), description: "termine, aufgaben, essen, einkauf, kladde, notizen (angeheftete), morgen = Vorschau morgen, vorrat" },
           aktion: { type: "string", enum: ACTIONS },
         },
         required: ["kachel", "aktion"],

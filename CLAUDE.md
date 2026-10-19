@@ -18,9 +18,12 @@ Familie wählt (Standard: Lotte).
   ausgeschalteter Baustein und wird nur bei Bedarf gezeigt.
 - Pro Bildschirm eine große Hauptsache, wenig Text, viel Weißraum. Leere
   Zustände freundlich und einladend, nie als Fehler.
-- Termin = feste Uhrzeit, Aufgabe = zu erledigen, Notiz = nur festhalten.
-  Heute zeigt je max. 2 Termine und 2 Aufgaben als Kärtchen; Notizen nicht
-  auf Heute.
+- Termin = feste Uhrzeit, Aufgabe = zu erledigen, Notiz = nur festhalten,
+  Kladde = Schmierzettel. Heute zeigt max. 2 Termine (Kärtchen) und 2
+  Aufgaben (Zeilen). Startseite ist frei anpassbar (lange drücken, Link
+  unten, Einstellungen, Sprache). Gesten: Tippen = Eintrag, lange Drücken =
+  Startseite bearbeiten, Wischen = Seite wechseln. Lottes Satz: genau ein
+  Satz, ohne Druck-Wörter.
 - Erster Start = kurzes Kennenlernen im Chat (max. 4 Schritte,
   überspringbar). Antworten steuern die Startseite.
 
@@ -229,6 +232,49 @@ Familie wählt (Standard: Lotte).
   liefern nur Vorschläge mit "Übernehmen". Token-Verbrauch und grobe Kosten
   je Anfrage im Server-Log ("Lotte Tokens", nur Zahlen, nie Inhalte). Kein
   Untertitel mehr im Chat, nur der Name.
+
+## Startseite "Heute" final (v0.18)
+
+- Kacheln (`src/lib/core/homeLayout.ts`, Speicher `wasgibts.startseite` v2
+  `{tiles, tipSeen}`): termine, aufgaben, essen, einkauf, kladde, notizen,
+  morgen, vorrat, post ("bald"). Feste Breiten (`HOME_TILES.width`):
+  Termine/Aufgaben/Notizen/Morgen voll, Essen/Einkauf/Kladde/Vorrat halb –
+  benachbarte halbe paart `tileRows()` automatisch. Standard: Termine,
+  Aufgaben, Essen + Einkauf, Morgen (ab 16 Uhr); Kladde/Notizen aus. v1 wird
+  migriert (Aufgaben hinter Termine, Hinweis gilt als gesehen).
+- Heute (`TodayPage`): Gruß immer mit Name (ohne Name "Guten Morgen!"),
+  EIN Satz von Lotte (`homeSentence()` in `aufgaben/summary.ts`, Teile fett):
+  morgens Überblick, bis 60 Min. vor einem Termin "In 30 Minuten: …",
+  nachmittags ohne Abendessen "Für heute Abend ist noch nichts geplant –
+  soll ich dir was vorschlagen?" (Knopf "Ja, gern"), ruhiger Tag, "Alles
+  geschafft für heute 🌙", abends Vorschau auf morgen. Termine als 2
+  Kärtchen (Familie Orange, Arbeit Blau `#4C6FD9`), Aufgaben als eine Karte
+  mit max. 2 Zeilen (`TaskLine`: Kreis, Titel bis 2 Zeilen, grau "heute"/
+  "bis Mi"/"diese Woche"/"von gestern" (`taskBadge`), Punkt), oben "+ N
+  weitere" und dunkles rundes "+"; heute Fällige stehen immer oben. Ohne
+  Aufgaben leise "+ Aufgabe hinzufügen". Kladde gelblich (`bg-kladde`).
+  Ganz unten "✎ Startseite bearbeiten".
+- Bearbeiten (`HomeCustomizer.tsx`): lange drücken (0,5 s, Vibration)
+  irgendwo auf Heute, Link unten, Einstellungen → "Startseite bearbeiten"
+  (`/profil/startseite`) oder per Sprache. Liste leicht wackelnd, "–" mit
+  Rückgängig, Griff zum Ziehen, "Fertig"; "+ Kachel hinzufügen" als 2er-
+  Raster (aktiv weiß mit grünem ✓, sonst grau mit dunklem "+"). Einmaliger
+  Hinweis nach dem Kennenlernen ("Tipp: Halte die Startseite gedrückt …",
+  "Verstanden", `tipSeen`). Kennenlernen setzt die Start-Kacheln
+  (`homeTilesFor`: Aufgaben immer, Termine/Essen/Einkauf je nach Antwort).
+- Schnell-Aufgabe (`TaskQuickAdd`, `aufgaben/quick.ts`): Textfeld + Mikrofon,
+  WANN Heute/Morgen/Diese Woche/Irgendwann (Tag im Text wird übernommen),
+  WO Familie/Arbeit (vorgeschlagen), "+ Uhrzeit oder Erinnerung"; Enter
+  fügt hinzu und lässt das Fenster offen.
+- Kladde (`src/lib/notizen/kladde.ts`, Speicher `wasgibts.kladde` v1 – ein
+  freier Text): oben auf `/notizen` (speichert selbst, "gespeichert ·
+  17:12", "✨ <Name>, räum auf", "Leeren" mit Rückgängig). Aufräumen
+  (`tidyKladde`): Uhrzeit = Termin, sonst Aufgabe, Listen/Infos = Notiz;
+  Vorschau mit "Übernehmen". Lotte: kladde_schreiben, kladde_aufraeumen
+  (Op `set_kladde`), termin_in_aufgabe_umwandeln, aufgabe_in_termin_
+  umwandeln, startseite_anpassen; ohne KI `kladdeRule` im HelperPanel und
+  kurze Befehle in `homeChat.ts` ("Aufgaben ganz nach oben", "Nimm die
+  Kladde auf die Startseite").
 
 ## Termine, Aufgaben und die drei Seiten (v0.10)
 
