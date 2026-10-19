@@ -34,8 +34,9 @@ import {
 /** Was im Plan gespeichert wird. `double` = doppelt kochen, Reste für morgen. */
 export type StoredEntry =
   /** `spontan` = aus den Ideen für heute gewählt (zählt nicht als "geplant") */
-  | { kind: "recipe"; recipeId: string; title: string; category: RecipeCategory; double?: boolean; spontan?: boolean }
-  | { kind: "text"; title: string; category: RecipeCategory | null; double?: boolean; spontan?: boolean }
+  /** `persons` = nur für diesen Tag umgerechnet ("heute sind wir nur zu zweit"), Familie und Rezept bleiben */
+  | { kind: "recipe"; recipeId: string; title: string; category: RecipeCategory; double?: boolean; spontan?: boolean; persons?: number }
+  | { kind: "text"; title: string; category: RecipeCategory | null; double?: boolean; spontan?: boolean; persons?: number }
   | { kind: "wish"; kidId: string; text: string; double?: boolean }
   | { kind: "cleared" }
   /** Notiz am Tag (z. B. das frühere zweite Gericht) – unter `noteKey(tag)` */
@@ -209,7 +210,8 @@ export function buildWeek(
       cheat: Boolean(rules?.cheatDay && rules.cheatDayWeekday === weekday),
       slot: { key, entry, hint: null, hasDerived: Boolean(derived) },
       mealTime: mainMealTime(profile, weekday),
-      persons: profile ? mainMealHeadcount(profile, weekday) : null,
+      // Nur für diesen Tag umgerechnet (z. B. "heute sind wir nur zu zweit")
+      persons: entry && entry.stored.kind !== "wish" && entry.stored.persons ? entry.stored.persons : profile ? mainMealHeadcount(profile, weekday) : null,
       note: note?.kind === "note" ? note.text : "",
       leftovers: null,
     };
@@ -294,6 +296,7 @@ function migrateEntry(raw: unknown, version: number): StoredEntry | null {
     ["fleisch", "vegetarisch", "fisch", "cheatday"].includes(v as string) ? (v as RecipeCategory) : null;
   const double = e.double === true ? { double: true } : {};
   const spontan = e.spontan === true ? { spontan: true } : {};
+  const persons = typeof e.persons === "number" && e.persons >= 1 && e.persons <= 30 ? { persons: Math.round(e.persons) } : {};
   switch (e.kind) {
     case "cleared":
       return { kind: "cleared" };
@@ -301,13 +304,13 @@ function migrateEntry(raw: unknown, version: number): StoredEntry | null {
       return typeof e.text === "string" ? { kind: "note", text: e.text } : null;
     case "recipe":
       return typeof e.recipeId === "string" && typeof e.title === "string"
-        ? { kind: "recipe", recipeId: e.recipeId, title: e.title, category: cat(e.category) ?? "vegetarisch", ...double, ...spontan }
+        ? { kind: "recipe", recipeId: e.recipeId, title: e.title, category: cat(e.category) ?? "vegetarisch", ...double, ...spontan, ...persons }
         : null;
     case "text":
       if (typeof e.title !== "string") return null;
       // Bis v1 wurde der Platz-Hinweis als Kategorie übernommen ("Milchreis" → Fisch):
       // einmalig aus dem Gericht neu bestimmen, ohne Treffer keine Kategorie.
-      return { kind: "text", title: e.title, category: version < 2 ? guessDishCategory(e.title) : cat(e.category), ...double, ...spontan };
+      return { kind: "text", title: e.title, category: version < 2 ? guessDishCategory(e.title) : cat(e.category), ...double, ...spontan, ...persons };
     case "wish":
       return typeof e.kidId === "string"
         ? { kind: "wish", kidId: e.kidId, text: typeof e.text === "string" ? e.text : "", ...double }

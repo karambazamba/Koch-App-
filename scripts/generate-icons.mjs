@@ -1,5 +1,7 @@
 // Erzeugt alle App-Icons aus einem Motiv: Lotte als lächelnde Sprechblase mit
 // drei Härchen auf orangem Verlauf. Aufruf: `npm run icons`
+// Alle Dateien tragen die Version im Namen (ICON_VERSION in src/lib/core/app.ts),
+// z. B. apple-touch-icon-v2.png – so holt kein Gerät das alte Icon aus dem Cache.
 // - public/icons/icon.svg              Quelle (1024×1024), Logo in der App
 // - public/icons/apple-touch-icon.png  180×180, vollflächig ohne Transparenz
 // - public/icons/icon-192.png / icon-512.png   PWA
@@ -8,7 +10,7 @@
 // - public/icons/lotte-192.png         Lotte im orangen Kreis (für Push-Mitteilungen)
 // - src/app/favicon.ico                16/32/48 px
 // Lottes Avatar in der App: src/components/LotteAvatar.tsx (gleiches Motiv).
-import { writeFileSync } from "node:fs";
+import { readFileSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
 import sharp from "sharp";
 
 const GRADIENT = `<defs><linearGradient id="g" x1="0" y1="0" x2="0.6" y2="1"><stop offset="0" stop-color="#F7843E"/><stop offset="1" stop-color="#EE5F14"/></linearGradient></defs>`;
@@ -54,18 +56,24 @@ function ico(images) {
   return Buffer.concat([header, ...images.map((i) => i.data)]);
 }
 
+// Version im Dateinamen (aus src/lib/core/app.ts, ICON_VERSION) – umgeht den Icon-Cache von iPhone/Android
+const VERSION = readFileSync("src/lib/core/app.ts", "utf8").match(/ICON_VERSION = "([^"]+)"/)[1];
+const file = (name) => `public/icons/${name.replace(/(\.\w+)$/, `-${VERSION}$1`)}`;
+// Alte Icon-Dateien (ohne bzw. mit anderer Version) aufräumen
+for (const old of readdirSync("public/icons")) unlinkSync(`public/icons/${old}`);
+
 const full = icon();
 // Maskable: Schutzzone = Kreis mit 40 % Radius → Motiv auf 80 %
 const maskable = icon(0.8);
 
-writeFileSync("public/icons/icon.svg", full);
-writeFileSync("public/icons/apple-touch-icon.png", await png(full, 180, true));
-writeFileSync("public/icons/icon-192.png", await png(full, 192, true));
-writeFileSync("public/icons/icon-512.png", await png(full, 512, true));
-writeFileSync("public/icons/icon-maskable-512.png", await png(maskable, 512, true));
-writeFileSync("public/icons/favicon-32.png", await png(full, 32, true));
-writeFileSync("public/icons/favicon-48.png", await png(full, 48, true));
-writeFileSync("public/icons/lotte-192.png", await png(avatar, 192));
+writeFileSync(file("icon.svg"), full);
+writeFileSync(file("apple-touch-icon.png"), await png(full, 180, true));
+writeFileSync(file("icon-192.png"), await png(full, 192, true));
+writeFileSync(file("icon-512.png"), await png(full, 512, true));
+writeFileSync(file("icon-maskable-512.png"), await png(maskable, 512, true));
+writeFileSync(file("favicon-32.png"), await png(full, 32, true));
+writeFileSync(file("favicon-48.png"), await png(full, 48, true));
+writeFileSync(file("lotte-192.png"), await png(avatar, 192));
 writeFileSync(
   "src/app/favicon.ico",
   ico(await Promise.all([16, 32, 48].map(async (size) => ({ size, data: await png(full, size, true) })))),

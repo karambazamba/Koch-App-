@@ -680,7 +680,10 @@ export function buildShoppingList(
     // Doppelt kochen → doppelte Mengen
     let times = entry.double ? 2 : 1;
     // Kleiner Haushalt: nur so viel wie für die Personen des Tages (Backen bleibt ganz)
-    const scale = options.small && recipe && recipe.kind !== "backen" && day.persons && recipe.servings > day.persons * times;
+    // Für diesen Tag umgerechnet ("heute nur zu zweit"): genau auf diese Personenzahl
+    const override = entry.stored.kind !== "wish" ? entry.stored.persons : undefined;
+    const scale =
+      recipe && recipe.kind !== "backen" && day.persons && recipe.servings > 0 && (override ? override !== recipe.servings : options.small && recipe.servings > day.persons * times);
     if (scale) times = (day.persons! * times) / recipe!.servings;
     const dish = `${entry.title} (${short})${entry.double ? " ×2" : ""}`;
     for (const ing of ingredients) {

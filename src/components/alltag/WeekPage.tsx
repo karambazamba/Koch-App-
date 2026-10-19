@@ -63,7 +63,7 @@ export function WeekPage({ today, entries }: { today: string; entries: CalendarE
                   <span className="text-[26px] font-extrabold leading-tight">{Number(date.slice(8))}</span>
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
-                  {items.length === 0 && !dish && <span className="text-base text-muted">frei</span>}
+                  {meals?.get(date)?.paused ? <span className="text-base text-muted">Pause ☀️</span> : items.length === 0 && !dish && <span className="text-base text-muted">frei</span>}
                   {items.slice(0, 4).map((i) => (
                     <span key={i.key} className="flex items-center gap-2 text-base">
                       <span className={`h-2 w-2 shrink-0 rounded-full ${roomBar(i.room)}`} aria-hidden />

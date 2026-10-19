@@ -12,7 +12,7 @@ import { pushUndo, undoLast } from "../core/undo";
 import { buildShoppingList } from "../einkauf/shoppingList";
 import { replaceRecipes } from "../essen/cookbook";
 import { replaceMealPlans } from "../essen/mealPlan";
-import { effectivePlanStyle } from "../einstellungen/profile";
+import { effectivePlanStyle, saveProfile } from "../einstellungen/profile";
 import { addPantryItems, loadPantry, replacePantry } from "../essen/pantry";
 import { replaceShoppingLists } from "../einkauf/shoppingList";
 import { addWish, loadWishes, restoreWishes } from "../essen/wishes";
@@ -339,6 +339,7 @@ function save(data: AssistantData, before: AssistantData) {
   if (data.shopping !== before.shopping) replaceShoppingLists(data.shopping);
   if (data.entries !== before.entries && data.entries) replaceEntries(data.entries);
   if (data.home !== before.home && data.home) saveHomeTiles(data.home);
+  if (data.profile !== before.profile) saveProfile(data.profile);
 }
 
 /** Vorrat und Wunsch-Ideen eintragen; liefert das Rückgängigmachen */

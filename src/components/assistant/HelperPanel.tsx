@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { MessageSquarePlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { ArrowUp, CircleHelp, Mic, MicOff, Square, Volume2, VolumeX, X } from "lucide-react";
@@ -9,7 +10,7 @@ import { parseLeftovers, type ParsedLeftover } from "@/lib/essen/leftovers/parse
 import { addPantryItems, formatPantryItem } from "@/lib/essen/pantry";
 import { ingredientsFromQuestion, isCookIdeasRequest, mergeStock, stockItem, stockNearlyEmpty } from "@/lib/essen/dishIdeas";
 import { useStock } from "@/lib/essen/useStock";
-import { effectivePlanStyle, hasKids, helperName, mealClockFor, saveProfile } from "@/lib/einstellungen/profile";
+import { effectivePlanStyle, hasKids, helperName, loadProfile, mealClockFor, saveProfile } from "@/lib/einstellungen/profile";
 import { addWish, parseWish, removeWish, wishLabel } from "@/lib/essen/wishes";
 import { settingsChange } from "@/lib/lotte/settingsChat";
 import { isPlanUnlockRequest, unlockPlanning, type UnlockChoice } from "@/lib/essen/planUnlock";
@@ -209,11 +210,22 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       const weekStart = weekStartFor(today, shoppingDay);
       // Immer der aktuelle Bestand (Vorrat + Gekauftes) – nie ein alter Stand
       const at = now();
-      const result = await askAssistant(history, chat.proposal?.ops ?? [], { ...data, pantry: pantry ?? [] }, toIsoDate(today), weekStart, tipsShown(weekStart, tipStore), {
-        clock: `${String(at.getHours()).padStart(2, "0")}:${String(at.getMinutes()).padStart(2, "0")}`,
-        shoppingNames: shopping?.list.items.filter((i) => !i.checked && !i.hidden).map((i) => i.name),
-        onText: setStreaming,
-      });
+      const send = (turns: ChatTurn[], pending: ChangeOp[]) =>
+        askAssistant(turns, pending, { ...data, pantry: pantry ?? [] }, toIsoDate(today), weekStart, tipsShown(weekStart, tipStore), {
+          clock: `${String(at.getHours()).padStart(2, "0")}:${String(at.getMinutes()).padStart(2, "0")}`,
+          shoppingNames: shopping?.list.items.filter((i) => !i.checked && !i.hidden).map((i) => i.name),
+          onText: setStreaming,
+        });
+      let result = await send(history, chat.proposal?.ops ?? []);
+      // Schleifenschutz: dieselbe Antwort wie eben → alten Verlauf und offenen Vorschlag vergessen
+      // und die Nachricht frisch schicken (nur die Frage selbst)
+      const lastReply = [...chat.turns].reverse().find((x) => x.role === "assistant" && !x.local && !x.error)?.text;
+      const loop = (a?: string) => (a ?? "").toLowerCase().replace(/[^a-zäöüß0-9]+/g, " ").trim();
+      if (lastReply && loop(lastReply) === loop(result.reply)) {
+        setStreaming(null);
+        result = await send([{ role: "user", text: question }], []);
+        setChat((c) => ({ ...c, turns: c.turns.map((x) => (x.role === "assistant" && !x.local ? { ...x, local: true } : x)), proposal: null }));
+      }
       setChat((c) => {
         // Bisher abgewählte Punkte bleiben abgewählt, neue sind ausgewählt
         const previous = new Set(c.proposal?.ops.map((op) => op.id));
@@ -364,23 +376,6 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           : t,
       ),
     }));
-  };
-
-  /** Spontan-Hilfe und Pause per Chat → erledigen und Antwort */
-  const spontanReply = (t: string): string | null => {
-    if (!data || !today) return null;
-    if (isSnackRequest(t)) return snackReply(pantry ?? []);
-    const pause = parsePauseRequest(t, today);
-    if (pause?.kind === "end") {
-      if (!data.profile.pause) return "Schön, dass ihr da seid! 😊";
-      saveProfile({ ...data.profile, pause: null });
-      return "Willkommen zurück! 😊 Pause ist beendet – sag einfach, wenn ich was vorbereiten soll.";
-    }
-    if (pause?.kind === "start") {
-      saveProfile({ ...data.profile, pause: pause.pause });
-      return `Alles klar – Pause ${pauseLabel(pause.pause)} ☀️ Genießt die Zeit, ich plane da nichts und halte mich zurück.`;
-    }
-    return null;
   };
 
   /** Drei schnelle Ideen unter 20 Minuten (ohne KI) */
@@ -549,64 +544,132 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     noteChatMessage();
     setViaVoice(byVoice);
     noteUserAction(toIsoDate(today));
-    if (isAddPersonRequest(t)) {
-      setInput("");
-      setGuided(startAddPerson(data.profile, t));
-      return;
-    }
-    // "Was Schnelles mit Nudeln" → Ideen mit passenden Filtern (auch im Spontan-Modus)
-    if (isIdeaFilterRequest(t)) {
-      const filters = filtersFromText(t);
-      saveSpontanFilters(filters);
-      // "… mit Nudeln": die genannte Beilage ist wohl da – zählt für die Ideen (nicht im Vorrat)
-      const named = /\bmit\b/i.test(t) ? filters.flatMap((f) => (f.startsWith("basis:") ? [baseLabel(f.slice(6) as BaseId)] : [])) : [];
-      startSpontan(t, filters, named);
+    // Selbst geöffneter Spontan-Modus: "Was Schnelles mit Nudeln" passt die Ideen an,
+    // genannte Zutaten landen im Vorrat; alles andere beendet ihn
+    if (chat.spontan && isIdeaFilterRequest(t)) {
+      rules(t);
       return;
     }
     if (chat.spontan) {
       void spontanInput(t).then((handled) => {
         if (handled) return;
-        // Keine Zutaten → normale Frage, Spontan-Modus endet
         setChat((c) => ({ ...c, spontan: null }));
-        submitNormal(t);
+        route(t);
       });
       return;
     }
-    // "Was ist noch da?", "Reste", "Spontan kochen" → Spontan-Modus
-    if (/^(was ist noch da|reste( verwerten)?|was kann ich aus (den |meinen |unseren )?resten|spontan (was )?kochen)/i.test(t)) {
-      startSpontan(t);
-      return;
-    }
-    submitNormal(t);
+    route(t);
   };
 
-  /** Alles außer Spontan-Modus und neuer Person */
-  const submitNormal = (t: string) => {
-    if (!data || !today) return;
+  /**
+   * Grundregel: Ist die KI erreichbar, bekommt IMMER sie die Nachricht. Die
+   * festen Regeln (Stichwörter) sind nur die Notlösung ohne KI – und keine
+   * Regel hinterlässt einen Zustand, der weitere Nachrichten abfängt.
+   */
+  const route = (t: string) => {
+    if (ready) {
+      void ask(t, undefined, rules);
+      return;
+    }
+    if (rules(t)) return;
+    setInput("");
+    notUnderstood(t);
+  };
+
+  /** Feste Regeln (ohne KI, oder wenn die KI ein `app_befehl` schickt). true = erledigt */
+  const rules = (t: string): boolean => {
+    if (!data || !today) return false;
+    if (isAddPersonRequest(t)) {
+      setInput("");
+      setGuided(startAddPerson(data.profile, t));
+      return true;
+    }
+    // "Was Schnelles mit Nudeln" → Ideen mit passenden Filtern
+    if (isIdeaFilterRequest(t)) {
+      const filters = filtersFromText(t);
+      saveSpontanFilters(filters);
+      const named = /\bmit\b/i.test(t) ? filters.flatMap((f) => (f.startsWith("basis:") ? [baseLabel(f.slice(6) as BaseId)] : [])) : [];
+      startSpontan(t, filters, named);
+      return true;
+    }
+    // "Was ist noch da?", "Reste", "Spontan kochen" → Spontan-Ideen
+    if (/^(was ist noch da|reste( verwerten)?|was kann ich aus (den |meinen |unseren )?resten|spontan (was )?kochen)/i.test(t)) {
+      startSpontan(t);
+      return true;
+    }
     // "Zeig mir unsere Rezepte" / "Was haben wir im Vorrat?" → hinführen
     const page = /\b(zeig|öffne|wo sind|wo finde)\w*\b.*\b(rezepte|kochbuch)\b/i.test(t) ? "/kochbuch" : /\b(zeig|öffne)\w*\b.*\b(vorrat|tiefkühler|kühlschrank)\b/i.test(t) ? "/vorrat" : null;
     if (page) {
       setInput("");
       router.push(page);
       onClose();
-      return;
+      return true;
     }
-    // Pause, Ausflugs-Snacks und "Wir nehmen immer Alsan statt Butter" direkt erledigen
-    const direct = spontanReply(t) ?? productReply(t);
+    if (pauseRule(t)) return true;
+    // Ausflugs-Snacks und "Wir nehmen immer Alsan statt Butter" direkt erledigen
+    const direct = (isSnackRequest(t) ? snackReply(pantry ?? []) : null) ?? productReply(t);
     if (direct) {
       setInput("");
       setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text: direct, local: true }] }));
-      return;
+      return true;
     }
-    if (localFirst(t)) return;
-    // Alles andere versteht die KI (Vorschlag mit "Übernehmen"); ist sie nicht da, die eigenen Regeln
-    if (ready) {
-      void ask(t, undefined, localFallback);
-      return;
-    }
-    setInput("");
-    notUnderstood(t, localFallback);
+    return localFirst(t) || localFallback(t);
   };
+
+  /** Pause ohne KI: nur eine klare Abwesenheit – und nie still, sondern als Frage mit zwei Knöpfen */
+  const pauseRule = (t: string): boolean => {
+    if (!data || !today) return false;
+    const pause = parsePauseRequest(t, today);
+    if (!pause) return false;
+    setInput("");
+    if (pause.kind === "end") {
+      const before = data.profile;
+      if (before.pause) saveProfile({ ...before, pause: null });
+      localTurn(t, before.pause ? "Willkommen zurück! 😊 Pause ist beendet." : "Schön, dass ihr da seid! 😊", before.pause ? () => saveProfile(before) : undefined);
+      return true;
+    }
+    const finish = (yes: boolean) => {
+      if (!yes) return setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text: "Okay, keine Pause.", local: true }] }));
+      const before = loadProfile() ?? data.profile;
+      saveProfile({ ...before, pause: pause.pause });
+      setChat((c) => ({
+        ...c,
+        turns: [
+          ...c.turns,
+          {
+            role: "assistant",
+            local: true,
+            text: `Eingetragen ✓ Pause ${pauseLabel(pause.pause)} ☀️`,
+            undo: pushUndo(`die Pause ${pauseLabel(pause.pause)}`, () => saveProfile(before)),
+          },
+        ],
+      }));
+    };
+    setChat((c) => ({
+      ...c,
+      turns: [
+        ...c.turns,
+        { role: "user", text: t, local: true },
+        {
+          role: "assistant",
+          local: true,
+          text: `Soll ich eine Pause ${pauseLabel(pause.pause)} eintragen? Dann plane ich da nichts.`,
+          choices: [
+            { label: "Ja, eintragen", onClick: () => finish(true) },
+            { label: "Nein", onClick: () => finish(false) },
+          ],
+        },
+      ],
+    }));
+    return true;
+  };
+
+  /** Lokale Antwort ins Gespräch (mit optionalem Rückgängig) */
+  const localTurn = (t: string, text: string, undo?: () => void) =>
+    setChat((c) => ({
+      ...c,
+      turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text, local: true, ...(undo ? { undo: pushUndo(text, undo) } : {}) }],
+    }));
 
   /**
    * Ohne KI (oder wenn sie gerade nicht erreichbar ist): Einkaufsliste,
@@ -965,6 +1028,23 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                 )}
               </h2>
             </div>
+            {(chat.turns.length > 0 || chat.proposal || guided) && (
+              <button
+                type="button"
+                onClick={() => {
+                  // Verlauf, offener Vorschlag, Spontan-Modus und geführte Fragen weg – gespeicherte Daten bleiben
+                  setChat({ turns: [], proposal: null, spontan: null });
+                  setGuided(null);
+                  setAdjusting(false);
+                  setInput("");
+                }}
+                aria-label="Neues Gespräch"
+                className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full border border-line bg-surface px-2.5 text-[13px] font-bold text-ink active:scale-95"
+              >
+                <MessageSquarePlus className="h-4 w-4 text-accent" strokeWidth={2.25} aria-hidden />
+                Neues Gespräch
+              </button>
+            )}
             {speechSupported() && (
               <button
                 type="button"
@@ -1175,7 +1255,15 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                   return { ...c, proposal: { ...c.proposal, selected } };
                 })
               }
-              onApply={() => chat.proposal && onApply(chat.proposal.selected)}
+              onApply={() => {
+                if (!chat.proposal) return;
+                // App-Bedienung, die die KI vorgeschlagen hat: nach "Übernehmen" mit den eigenen Regeln ausführen
+                const commands = chat.proposal.ops.flatMap((op) => (op.type === "app_command" && chat.proposal!.selected.has(op.id) ? [op.text] : []));
+                onApply(chat.proposal.selected);
+                for (const text of commands) {
+                  if (!rules(text)) setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text: `„${text}“ kann ich in der App so nicht umsetzen – sag's mir gern anders.`, local: true }] }));
+                }
+              }}
               onAdjust={() => {
                 setAdjusting(true);
                 inputRef.current?.focus();

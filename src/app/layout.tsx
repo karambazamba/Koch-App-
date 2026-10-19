@@ -8,7 +8,7 @@ import { ToastHost } from "@/components/ui/ToastHost";
 import { NavigationMemory } from "@/components/NavigationMemory";
 import { AutoCooked } from "@/components/AutoCooked";
 import { THEME_BOOT_SCRIPT } from "@/lib/core/theme";
-import { APP_NAME, APP_SHORT_NAME, BRAND_COLOR } from "@/lib/core/app";
+import { APP_NAME, APP_SHORT_NAME, BRAND_COLOR, icon } from "@/lib/core/app";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -33,11 +33,11 @@ export const metadata: Metadata = {
   icons: {
     // favicon.ico bindet Next aus src/app automatisch ein
     icon: [
-      { url: "/icons/icon.svg", type: "image/svg+xml" },
-      { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/icons/favicon-48.png", sizes: "48x48", type: "image/png" },
+      { url: icon("icon.svg"), type: "image/svg+xml" },
+      { url: icon("favicon-32.png"), sizes: "32x32", type: "image/png" },
+      { url: icon("favicon-48.png"), sizes: "48x48", type: "image/png" },
     ],
-    apple: { url: "/icons/apple-touch-icon.png", sizes: "180x180" },
+    apple: { url: icon("apple-touch-icon.png"), sizes: "180x180" },
   },
 };
 
