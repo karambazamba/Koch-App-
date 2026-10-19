@@ -34,7 +34,7 @@ export const HALF = `${CARD} relative flex min-h-[92px] flex-col p-3.5`;
 export const HALF_LABEL = "flex min-w-0 items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted";
 
 /** ESSEN – S: Gericht + ⇄; M: breit mit Zeit, Zutaten-Status, ⇄; L: + Ideen für morgen */
-export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S" }: { data: HomeData; dish: string | null; over: boolean; dishClock: string | null; onOpen: () => void; size?: TileSize }) {
+export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCook }: { data: HomeData; dish: string | null; over: boolean; dishClock: string | null; onOpen: () => void; size?: TileSize; onCook?: () => void }) {
   const ideas = useTodayIdeas([], { tomorrow: over });
   const tomorrowIdeas = useTodayIdeas([], { tomorrow: true });
   const stock = useStock();
@@ -79,6 +79,12 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S" }: { 
       {idea && !over && (
         <button type="button" onClick={take} className={`${buttonClass("soft", "sm")} mt-1 self-start`}>
           Nehmen
+        </button>
+      )}
+      {/* "Ich koche jetzt" (bei "Mitdenkend"): Rezept-Schritte und Timer kommen nach oben */}
+      {onCook && !idea && (
+        <button type="button" onClick={onCook} className="-mb-2 mt-0.5 flex h-11 items-center self-start text-[13px] font-bold text-accent-strong">
+          🍳 Ich koche jetzt
         </button>
       )}
       {size === "L" && !over && (tomorrowIdeas?.ideas.length ?? 0) > 0 && (

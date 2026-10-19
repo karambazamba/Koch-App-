@@ -22,7 +22,17 @@ import { addPantryItems, loadPantry, replacePantry } from "../essen/pantry";
 import { replaceShoppingLists } from "../einkauf/shoppingList";
 import { addWish, loadWishes, restoreWishes } from "../essen/wishes";
 import { replaceWeekPlans, toIsoDate, weekStartFor } from "../essen/weekPlan";
-import { applyOps, selectedOps, weekOf, type AssistantData, type ChangeOp } from "./ops";
+import { applyOps, INSTANT_OP_TYPES, selectedOps, weekOf, type AssistantData, type ChangeOp } from "./ops";
+import { isExpired, isPaused, leftMs, stopwatchMs } from "../timer/model";
+import { loadTimers } from "../timer/store";
+import { startTimer, stopTimerByName, stopwatch } from "../timer/actions";
+import { loadCooking, startCooking, toggleStep } from "../kochen/session";
+import { cookableEntry } from "../essen/mealDone";
+import { composeWeek } from "../essen/mealPlan";
+import { loadSport } from "../sport/store";
+import { addTraining, setSportGoal } from "../sport/actions";
+import { changeRoutine, loadRoutine } from "../tagesablauf/settings";
+import { nudgePhase } from "../tagesablauf/nudge";
 import {
   ACCESS_HEADER,
   ASSISTANT_ENDPOINT,
@@ -226,6 +236,7 @@ function trimmed(data: AssistantData, currentWeekStart: string, pantry: Assistan
       .slice(0, 8)
       .map((m) => ({ author: m.data.author, text: m.data.text, at: m.erstellt })),
     wetterOrt: loadPlace(),
+    ...dayData(data),
     // Notizen: kompakt (Listen bis 60 Einträge, Text bis 1500 Zeichen)
     notes: (data.notes ?? []).slice(0, 60).map((n) => ({ ...n, data: { ...n.data, text: n.data.text?.slice(0, 1500), items: n.data.items?.slice(0, 60) } })),
     // Kompakt: Name, Menge, Ort, seit wann; Gekauftes ("b:") als "gekauft" markiert
@@ -237,6 +248,61 @@ function trimmed(data: AssistantData, currentWeekStart: string, pantry: Assistan
       return !e.data.doneOn || e.data.doneOn >= old;
     }),
   };
+}
+
+/** Timer, Kochen, Sport, Tagesablauf – kompakt fürs Gespräch */
+function dayData(data: AssistantData): Partial<AssistantData> {
+  const nowMs = now().getTime();
+  const t = loadTimers();
+  const today = toIsoDate(now());
+  const week = composeWeek(weekStartFor(now(), data.profile.shoppingDay || "Montag"), data.profile, data.weekPlans, data.mealPlans, data.recipes);
+  const entry = cookableEntry(week.days.find((d) => d.date === today));
+  const recipe = entry?.recipeId ? data.recipes[entry.recipeId] : undefined;
+  const cooking = loadCooking(today);
+  const routine = loadRoutine();
+  const sport = loadSport();
+  return {
+    timers: t.timers.filter((x) => !x.acked).map((x) => ({ name: x.name, leftSec: Math.round(leftMs(x, nowMs) / 1000), paused: isPaused(x), done: isExpired(x, nowMs) })),
+    stopwatch: t.stopwatch ? { sec: Math.round(stopwatchMs(t.stopwatch, nowMs) / 1000), running: Boolean(t.stopwatch.startedAt) } : null,
+    kochen: entry ? { dish: entry.title, recipe: recipe?.id ?? entry.title, steps: recipe?.steps ?? [], done: cooking.steps[recipe?.id ?? entry.title] ?? [], active: cooking.manualAt !== null } : null,
+    sport: { ...sport, trainings: sport.trainings.filter((x) => x.data.date >= toIsoDate(new Date(nowMs - 62 * 86_400_000))) },
+    tagesablauf: { mode: routine.mode, feierabendAb: routine.feierabendAb, morgenBis: routine.morgenBis },
+    me: data.profile.persons[0]?.id ?? null,
+  };
+}
+
+/**
+ * Kleine Dinge sofort (ohne "Übernehmen"): Timer, Stoppuhr, Kochschritt,
+ * "Ich koche jetzt". Liefert die übrigen Änderungen (für die Vorschau) und
+ * kurze Hinweise (z. B. wo der Timer steht).
+ */
+export function runInstantOps(ops: ChangeOp[]): { rest: ChangeOp[]; notes: string[] } {
+  const notes: string[] = [];
+  const undo: (() => void)[] = [];
+  for (const op of ops) {
+    if (op.type === "add_timer") {
+      const started = startTimer({ name: op.name, minutes: op.minutes }, { quiet: true });
+      if (!started) notes.push("Fünf Timer laufen schon – sobald einer fertig ist, geht der nächste.");
+      else undo.push(started.undo);
+    } else if (op.type === "stop_timer") stopTimerByName(op.name);
+    else if (op.type === "stopwatch") stopwatch(op.action);
+    else if (op.type === "cook_step") {
+      if (!(loadCooking().steps[op.recipe] ?? []).includes(op.index)) undo.push(toggleStep(op.recipe, op.index));
+    } else if (op.type === "start_cooking") {
+      undo.push(startCooking());
+      nudgePhase();
+    }
+  }
+  // Timer gestartet, aber bei "Immer gleich" ohne Timer-Kachel → einblenden und sagen, wo er steht
+  if (ops.some((op) => op.type === "add_timer") && loadRoutine().mode === "gleich") {
+    const tiles = loadHomeTiles();
+    if (!tiles.find((t) => t.id === "timer")?.visible) {
+      saveHomeTiles(applyHomeChange(tiles, { tile: "timer", action: "zeigen" }));
+      notes.push("Der Timer steht jetzt auf der Startseite.");
+    }
+  }
+  if (undo.length) pushUndo("den Timer", () => undo.forEach((u) => u()));
+  return { rest: ops.filter((op) => !INSTANT_OP_TYPES.has(op.type)), notes };
 }
 
 export type AskOptions = {
@@ -445,15 +511,36 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
     }
   }
   if (chosen.some((op) => op.type === "upsert_note")) notes.push("Notizen findest du in der Woche ganz unten unter „Notizen“.");
+  // Sport: Training/Wochenziel in den eigenen Speicher, Sport-Kachel einblenden
+  const sportOps = chosen.filter((op) => op.type === "add_training" || op.type === "set_sport_goal" || (op.type === "upsert_entry" && op.isNew && (op.entry.data.label ?? "").toLowerCase() === "sport"));
+  if (sportOps.length) {
+    const tiles = data.home ?? loadHomeTiles();
+    if (!tiles.find((t) => t.id === "sport")?.visible) {
+      data = { ...data, home: applyHomeChange(tiles, { tile: "sport", action: "zeigen" }) };
+      notes.push("Die Sport-Kachel steht jetzt auf der Startseite.");
+    }
+  }
+  const dayModes = chosen.filter((op) => op.type === "set_day_mode");
   if (chosen.some((op) => op.type === "set_meal" || op.type === "add_shopping")) {
     const note = shoppingNote(data, current);
     if (note) notes.push(note);
   }
   save(data, current);
   const undoSide = commitSideOps(chosen, current.profile.persons[0]?.name.trim() || "Ich");
+  const undoDay: (() => void)[] = [];
+  for (const op of chosen) {
+    if (op.type === "add_training") undoDay.push(addTraining(op.training).undo);
+    else if (op.type === "set_sport_goal") undoDay.push(setSportGoal(op.goal));
+  }
+  const lastMode = dayModes[dayModes.length - 1];
+  if (lastMode && lastMode.type === "set_day_mode") {
+    undoDay.push(changeRoutine({ mode: lastMode.mode }));
+    nudgePhase();
+  }
   const undo = pushUndo(prompt ? `„${prompt.slice(0, 60)}“` : "die letzte Änderung", () => {
     save(current, data);
     undoSide();
+    undoDay.forEach((u) => u());
     for (const s of switched) setFeature(s.feature, !s.on);
   });
   return { undo, notes };

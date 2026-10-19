@@ -12,6 +12,8 @@ import { pauseLabel } from "../essen/spontan";
 import { bausteinOf, type Feature } from "../core/features";
 import { formatPantryItem, PANTRY_PLACES } from "../essen/pantry";
 import { formatWeekRange, planForWeek } from "../essen/weekPlan";
+import { sportById } from "../sport/model";
+import { berlinTime } from "../core/now";
 import {
   applyOps,
   findSlot,
@@ -66,6 +68,8 @@ export function previewRows(data: AssistantData, ops: ChangeOp[], selected: Set<
   }
   return rows.sort((a, b) => a.order - b.order);
 }
+
+const dayToday = () => berlinTime().iso;
 
 function describe(
   state: AssistantData,
@@ -265,6 +269,21 @@ function describe(
       return { opId: op.id, group: "Schnellnotiz", order: 25_500, label: "✎ Schnellnotiz", before: null, after: op.change };
     case "add_pin":
       return { opId: op.id, group: "Pinnwand", order: 25_600, label: "📌 Pinnwand", before: null, after: op.text };
+    case "set_day_mode":
+      return { opId: op.id, group: "Startseite", order: 25_700, label: "Startseite", before: null, after: op.mode === "gleich" ? "📌 Immer gleich" : "✨ Mitdenkend" };
+    case "add_training": {
+      const s = sportById(op.training.sport);
+      const when = op.training.date === dayToday() ? "heute" : `${weekdayShort(op.training.date)} ${dayDate(op.training.date)}`;
+      return { opId: op.id, group: "Sport", order: 25_800, label: `${s.emoji} eintragen`, before: null, after: `${s.label} · ${op.training.minutes} Min${op.training.km ? ` · ${op.training.km} km` : ""} · ${when}` };
+    }
+    case "set_sport_goal":
+      return { opId: op.id, group: "Sport", order: 25_810, label: "Wochenziel", before: state.sport ? `${state.sport.goal}×` : null, after: `${op.goal}× pro Woche` };
+    case "add_timer":
+    case "stop_timer":
+    case "stopwatch":
+    case "cook_step":
+    case "start_cooking":
+      return null;
     case "move_entry":
       return { opId: op.id, group: "Termine & Aufgaben", order: 24_000, label: "verschieben", before: `${op.title} · ${weekdayShort(op.date)} ${dayDate(op.date)}`, after: `${weekdayShort(op.to)} ${dayDate(op.to)}${op.time ? ` · ${clockLabel(op.time)}` : ""}` };
   }

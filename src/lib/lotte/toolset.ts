@@ -8,6 +8,7 @@ import { CALENDAR_TOOLS } from "./calendarTools";
 import { HOME_TOOLS } from "./homeTools";
 import { MAIL_TOOLS } from "./mailTools";
 import { NOTE_TOOLS } from "./noteTools";
+import { DAY_TOOLS } from "./dayTools";
 
 const AREA: Record<string, ToolArea> = {
   einkaufsliste_hinzufuegen: "einkauf",
@@ -17,6 +18,6 @@ for (const definition of TOOLS) {
   registerTool({ area: AREA[definition.name] ?? "essen", definition, run: (ctx, input) => runTool(ctx, definition.name, input) });
 }
 
-for (const tool of [...CALENDAR_TOOLS, ...NOTE_TOOLS, ...HOME_TOOLS, ...MAIL_TOOLS]) registerTool(tool);
+for (const tool of [...CALENDAR_TOOLS, ...NOTE_TOOLS, ...HOME_TOOLS, ...MAIL_TOOLS, ...DAY_TOOLS]) registerTool(tool);
 
 export { toolDefinitions, runRegisteredTool } from "./registry";

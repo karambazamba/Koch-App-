@@ -1,7 +1,7 @@
 "use client";
 
 import { useMailStyle } from "@/lib/lotte/mailSettings";
-import { Blocks, BookOpen, CloudSun, CalendarDays, ChefHat, Database, LayoutGrid, LayoutList, Mail, MessageCircle, Mic, Palette, Volume2, Refrigerator, Salad, Sun, Users } from "lucide-react";
+import { Blocks, BookOpen, Clock, CloudSun, Dumbbell, CalendarDays, ChefHat, Database, LayoutGrid, LayoutList, Mail, MessageCircle, Mic, Palette, Volume2, Refrigerator, Salad, Sun, Users } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { PAGE_MAIN } from "@/components/ui/styles";
 import { APP_VERSION } from "@/lib/core/app";
@@ -22,6 +22,8 @@ import { usePlanStyle } from "@/lib/essen/usePlanStyle";
 import { BAUSTEINE, useBausteine, useFeature, useLegacyFeatures } from "@/lib/core/features";
 import { usePlace } from "@/lib/wetter/client";
 import { useHomeTiles } from "@/lib/core/homeLayout";
+import { HOME_MODES, useRoutine } from "@/lib/tagesablauf/settings";
+import { useSport } from "@/lib/sport";
 import { READ_MODES, useSpeechSettings } from "@/lib/lotte/speech";
 import { Group, Row } from "./settings/SettingsParts";
 import { householdTitle } from "./settings/Hubs";
@@ -54,6 +56,8 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
   const planOn = useFeature("wochenplan");
   const kochstilOn = useFeature("kochstil");
   const modiOn = useFeature("modi");
+  const routine = useRoutine();
+  const sport = useSport();
 
   // Schlank – Startseite & Bausteine, Lotte, Ansicht, Familie, Daten & App (alter Aufbau nur über /?legacy=1)
   if (!legacy) {
@@ -61,6 +65,11 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
         <PageHeader title="Einstellungen" />
         <main className={`${PAGE_MAIN} gap-6`}>
+          <Group title="Tagesablauf">
+            <Row href="/profil/tagesablauf" icon={Clock} title="Startseite & Tageszeiten" value={routine ? HOME_MODES.find((m) => m.value === routine.mode)?.label : undefined}>
+              Mitdenkend oder immer gleich, Feierabend, Arbeitstage
+            </Row>
+          </Group>
           <Group title="Startseite & Bausteine">
             <Row href="/profil/startseite" icon={LayoutGrid} title="Startseite bearbeiten" value={home ? `${home.filter((t) => t.visible && t.id !== "post").length} Kacheln` : undefined}>
               Kacheln hinzufügen, entfernen, sortieren, Größe
@@ -68,6 +77,11 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
             {home?.find((t) => t.id === "wetter")?.visible && (
               <Row href="/profil/wetter" icon={CloudSun} title="Wetter-Ort" value={place}>
                 Für die Wetter-Kachel
+              </Row>
+            )}
+            {home?.find((t) => t.id === "sport")?.visible && (
+              <Row href="/sport" icon={Dumbbell} title="Sport" value={sport ? `${sport.goal}× pro Woche` : undefined}>
+                Wochenziel, Trainings, Packliste
               </Row>
             )}
             <Row href="/profil/bausteine" icon={Blocks} title="Bausteine" value={bausteine ? `${BAUSTEINE.filter((b) => bausteine.includes(b.feature)).length} an` : undefined}>

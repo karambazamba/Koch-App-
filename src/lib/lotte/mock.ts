@@ -4,6 +4,8 @@
 // Versteht nur einfache Sätze – z. B. "Donnerstag und Freitag gibt es meine
 // Rezepte, Mattis wünscht sich Sonntag Milchreis, der Rest vegetarische KI-Rezepte".
 
+import { parseTimerCommand } from "../timer/model";
+import { parseSportCommand } from "../sport/model";
 import { parseNoteCommand } from "../notizen/chat";
 import { isKladdeTidyRequest, kladdeCommand, tidyKladde } from "../notizen/kladde";
 import { isPinboardQuery, pinWriteCommand } from "../pinnwand/model";
@@ -259,6 +261,8 @@ function mockModel(): CreateMessage {
       if (memory) return text(memory);
       const mail = mailUses(last.content, msgs, system);
       if (mail) return mail;
+      const dayUse = dayUses(last.content, system);
+      if (dayUse) return dayUse;
       const board = pinWeatherUses(last.content, system);
       if (board) return board;
       const kladde = kladdeUses(last.content, msgs, system);
@@ -490,6 +494,14 @@ function mockModel(): CreateMessage {
       return text(`${summary ? `Kurz gesagt: ${summary} ` : ""}Hier mein Vorschlag – senden machst du selbst.${event} (Testmodus)`);
     }
 
+    // Timer, Kochen, Sport, Startseiten-Modus → kurz aus dem Werkzeug-Ergebnis
+    const day = prevUses.find((u) => DAY_TOOL_NAMES.has(u.name));
+    if (day) {
+      const content = String(resultFor(day.name) ?? "");
+      if (/^(timer_stellen|timer_stoppen|stoppuhr|kochen_starten|kochschritt|timer_status|sport_statistik)$/.test(day.name)) return text(`${content.replace(/^Läuft gleich \(die App startet ihn sofort\): /, "Läuft: ")} (Testmodus)`);
+      return text(`${content.replace(/^Vorgemerkt[^:]*: /, "Klar: ")} Tipp unten auf Übernehmen. (Testmodus)`);
+    }
+
     // Wetter gelesen → ein, zwei Sätze
     if (prevUses.some((u) => u.name === "wetter_abfragen")) {
       const lines = String(resultFor("wetter_abfragen") ?? "").split("\n");
@@ -613,6 +625,29 @@ function mailUses(latest: string, msgs: Anthropic.Beta.BetaMessageParam[], syste
 }
 
 /** Pinnwand und Wetter im Testmodus */
+const DAY_TOOL_NAMES = new Set(["timer_stellen", "timer_stoppen", "stoppuhr", "timer_status", "kochen_starten", "kochschritt", "sport_eintragen", "sport_ziel_setzen", "trainings_planen", "sport_statistik", "startseite_modus"]);
+
+/** Timer, Kochen, Sport, Startseiten-Modus im Testmodus (dieselben Erkenner wie ohne KI) */
+function dayUses(latest: string, system: string): Anthropic.Beta.BetaMessage | null {
+  const today = system.match(/^Heute: .*\((\d{4}-\d{2}-\d{2})\)/m)?.[1] ?? "";
+  if (/\bstartseite\b/i.test(latest) && /\b(immer\s+gleich|gleich\s+bleiben|nicht\s+(mehr\s+)?mitdenk\w*)\b/i.test(latest)) return tools([{ name: "startseite_modus", input: { modus: "gleich" } }]);
+  if (/\bstartseite\b/i.test(latest) && /\b(mitdenk\w*|denk\w*\s+mit)\b/i.test(latest)) return tools([{ name: "startseite_modus", input: { modus: "mitdenkend" } }]);
+  const timer = parseTimerCommand(latest);
+  if (timer?.kind === "start") return tools([{ name: "timer_stellen", input: { minuten: timer.minutes, name: timer.name } }]);
+  if (timer?.kind === "stop") return tools([{ name: "timer_stoppen", input: { name: timer.name } }]);
+  if (timer?.kind === "stopwatch") return tools([{ name: "stoppuhr", input: { aktion: timer.action === "stop" ? "stopp" : "start" } }]);
+  if (timer?.kind === "status") return tools([{ name: "timer_status", input: {} }]);
+  if (/\b(fang\w*|beginn\w*)\b.*\bkoch\w*|\bich\s+koche\s+jetzt\b/i.test(latest)) return tools([{ name: "kochen_starten", input: {} }]);
+  if (/^(nächster|naechster)\s+schritt\b/i.test(latest.trim())) return tools([{ name: "kochschritt", input: { aktion: "weiter" } }]);
+  if (/^was\s+kommt\s+(jetzt|als\s+nächstes)\b/i.test(latest.trim())) return tools([{ name: "kochschritt", input: { aktion: "zeigen" } }]);
+  const sport = today ? parseSportCommand(latest, today) : null;
+  if (sport?.kind === "add") return tools([{ name: "sport_eintragen", input: { sportart: sport.sport, ...(sport.minutes ? { minuten: sport.minutes } : {}), ...(sport.km ? { km: sport.km } : {}), datum: sport.date } }]);
+  if (sport?.kind === "goal") return tools([{ name: "sport_ziel_setzen", input: { ziel: sport.goal } }]);
+  if (sport?.kind === "stats") return tools([{ name: "sport_statistik", input: { zeitraum: sport.what } }]);
+  if (sport?.kind === "plan") return tools([{ name: "trainings_planen", input: { anzahl: sport.count, tageszeit: sport.part ?? "egal", woche: sport.week } }]);
+  return null;
+}
+
 function pinWeatherUses(latest: string, system: string): Anthropic.Beta.BetaMessage | null {
   const write = pinWriteCommand(latest);
   if (write) return tools([{ name: "pinnwand_schreiben", input: { text: write } }]);

@@ -147,6 +147,11 @@ function Editor({ initial, isNew }: { initial: Note; isNew: boolean }) {
             <Pin className={`h-4 w-4 ${note.data.pinned ? "fill-current" : ""}`} strokeWidth={2} aria-hidden />
             {note.data.pinned ? "Oben angeheftet" : "Oben anheften"}
           </button>
+          {note.data.kind === "liste" && (
+            <button type="button" aria-pressed={Boolean(note.data.freizeit)} onClick={() => update({ freizeit: !note.data.freizeit })} className={chipClass(Boolean(note.data.freizeit))}>
+              🌙 {note.data.freizeit ? "Freizeit-Liste" : "Als Freizeit markieren"}
+            </button>
+          )}
         </div>
 
         {!isNew || note.data.title || note.data.text || note.data.items?.length ? (

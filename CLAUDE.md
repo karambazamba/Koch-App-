@@ -33,6 +33,14 @@ Familie wählt (Standard: Lotte).
   Standard-Reihenfolge: Pinnwand, Termine, Aufgaben, Wetter, Essen+Einkauf
   (Paar), Notizen, Vorrat, Morgen, Post – neue Kacheln landen dort. Kein
   Rückgängig beim Hinzufügen, nur beim Löschen (3 s).
+- Startseite: Nutzer wählt Mitdenkend oder Immer gleich; Ruhe nach Feierabend
+  ist ein eigener Schalter. Tagesphasen Morgen/Tagsüber/Kochen/Sport/Feierabend
+  als erweiterbare Liste; Phasen ändern nie die gespeicherte Sortierung, immer
+  Schild + ‚Alles zeigen‘; Feierabend frühestens nach letztem Arbeitstermin.
+  Timer rechnen mit Endzeit. Sport: Wochenziel, Serien nur in Wochen, Lotte
+  plant Trainings in Kalender-Lücken mit Wetter. Motivation: Erfolge zeigen,
+  Versäumnisse nicht, konkret loben, selten feiern. iPhone-Web-Apps können
+  nicht vibrieren. Push später: Feierabend respektieren.
 - Erster Start = kurzes Kennenlernen im Chat (max. 4 Schritte,
   überspringbar). Antworten steuern die Startseite.
 
@@ -321,6 +329,83 @@ Familie wählt (Standard: Lotte).
   (`QuickButton`), Schnell-Termin (`TerminQuickAdd`), Schnell-Aufgabe
   (`TaskQuickAdd`), einmaliger Hinweis nach dem Kennenlernen, Start-Kacheln
   aus dem Kennenlernen (`homeTilesFor`, in Standard-Reihenfolge).
+
+## Tagesphasen, Timer, Sport (v0.21)
+
+- Tagesablauf (`src/lib/tagesablauf/settings.ts`, Speicher
+  `wasgibts.tagesablauf` v1): `mode` mitdenkend (Standard) / gleich, `ruhe`
+  (Ruhe nach Feierabend, Standard an), `morgenBis` 10:00, `feierabendAb`
+  20:00 + `nachArbeit` (frühestens nach dem letzten Arbeit-Termin),
+  `arbeitstage` (0 = Mo … 6 = So, Standard alle), `kochenAuto` + `kochenMin`
+  (20). Einstellungen → ganz oben "Tagesablauf" (`/profil/tagesablauf`,
+  `DayRoutineView`: zwei große Karten mit Mini-Vorschau, Schalter, Zeiten,
+  Arbeitstage, Kochen-Modus, Zeit-Vorschau "So tun, als wäre es …" =
+  sessionStorage `wasgibts.zeitvorschau`, wirkt nur auf die Startseite,
+  Hinweis "Vorschau: 18:20 · beenden" (`PreviewBanner`)). Kennenlernen: Frage
+  "Soll sich deine Startseite dem Tag anpassen?" (Schritt `startseite`),
+  "Sport" als Auswahl mit Frage nach dem Wochenziel (Schritt `sport`). Lotte:
+  `startseite_modus` (Op `set_day_mode`, Vorschau); ohne KI "Lass die
+  Startseite immer gleich" / "Startseite soll mitdenken". Push-Regeln schon
+  vorbereitet (`tagesablauf/push.ts`, `pushAllowed`).
+- Phasen (`src/lib/tagesablauf/phases.ts`, rein): `PHASES` = Liste mit `id`,
+  `rank` (Kochen 50 > Sport 40 > Feierabend 30 > Morgen 20 > Tagsüber 10),
+  `active(ctx)`, `view(ctx)` (Schild, Erklärung, `top` Vorrang-Kacheln mit
+  Größe/`force`, `collapse`, `hide`, `hideWork`, `familyUpcomingOnly`,
+  `weatherTomorrow`, `wakeLock`). `arrangeHome()` ordnet nur die Anzeige –
+  die gespeicherte Sortierung bleibt. Morgen (5:00–morgenBis): Pinnwand (nur
+  bei Neuem, dann mit Wetter klein nebeneinander) · Wetter · Termine ·
+  Aufgaben. Kochen: Essen mit Uhrzeit 20 Min vorher bis 45 Min danach, ein
+  laufender Timer (bis 15 Min nach dem letzten) oder "Ich koche jetzt"
+  (Essen-Kachel/Lotte, `kochen/session.ts`, `wasgibts.kochen`); Essen L
+  (`CookingTile`: Schritte abhaken, "JETZT", ⏱ je Schritt mit Zeit,
+  "Rezept groß öffnen ›", "Gegessen ✓"), Timer M, Einkauf/Wetter weg,
+  Termine/Aufgaben/Pinnwand als Zeile "Heute noch: …" (aufklappbar), Wake
+  Lock (`core/wakeLock.ts`). Sport: 60 Min vor einem Termin mit Etikett
+  Sport bis zu seinem Ende (nur mit Sport-Kachel). Feierabend: ab
+  feierabendAb bzw. nach dem letzten Arbeit-Termin bis 5 Uhr; Pinnwand,
+  Familien-Termine, die heute noch kommen (nachts keine), Wetter "MORGEN"
+  (S), Notizen, Freizeit-Idee (Liste "Als Freizeit markieren",
+  `leisureIdea`), "1 Aufgabe wandert auf morgen", unten "💼 Arbeit, Termine
+  und Aufgaben machen Pause bis morgen früh. Alles zeigen". Nicht-Arbeitstag:
+  Arbeit ganztags weg. Lottes Satz je Phase (Timer-Stand/Schritt, Training,
+  "Schönen Feierabend – für heute ist alles getan."). Wechsel nur beim
+  Öffnen/Zurückkehren oder nach 30 s ohne Berührung (`useHomePhase`, nie im
+  Bearbeiten-Modus), bewusste Schritte sofort (`nudgePhase`). Schild unter
+  dem Datum (Tokens `phase-*`), antippen = Erklärung + "Normale Ansicht";
+  "Alles zeigen" gilt bis zum nächsten Phasenwechsel
+  (`wasgibts.alleszeigen`). "Immer gleich" = keine Phase, Timer/Sport nur
+  als aktive Kacheln.
+- Timer (`src/lib/timer/`, `wasgibts.timer` v1): bis 5 Timer + Stoppuhr,
+  jeder mit Endzeit (stimmt nach Hintergrund/Neustart), Pause = Restzeit.
+  Kachel (`TimerTile`, NEU) M: Ring, Restzeit groß, "+1", Pause/Weiter, ✕,
+  weitere als Zeilen, Schnellknöpfe 5/10/15 Min · Stoppuhr (lange drücken =
+  eigene Dauer + Name); S: nächster Timer oder "⏱ Timer starten". Bei
+  "Mitdenkend" erscheint ein laufender Timer automatisch oben (bis 1 Min nach
+  Ablauf). Band über allen Seiten (`TimerAlarm` im Layout): "⏰ Nudeln sind
+  fertig – OK" mit Ton (Web Audio, beim Start freigeschaltet, alle 2,5 s bis
+  OK, max. 1 Min); abgelaufen, während die App zu war: "⏰ Nudeln war um 18:30
+  fertig". Einmaliger Hinweis zum Ton; `timerPushPlan` für Push später.
+  Lotte: timer_stellen, timer_stoppen, stoppuhr, timer_status, kochen_starten,
+  kochschritt – sofort ausgeführt (`INSTANT_OP_TYPES`, `runInstantOps`), ohne
+  Übernehmen; ohne KI `dayChat()` (`lotte/dayChat.ts`).
+- Sport (`src/lib/sport/`, `wasgibts.sport` v1, persönlich): Trainings (typ
+  "training": Sportart, Minuten, km, Datum), Wochenziel (Standard 3, Woche ab
+  Montag), Packlisten je Sportart, gefeierte Wochen. Sport-Termine = Termine
+  mit Etikett "Sport" (nur meine/ohne "wer"); abgehakt zählen sie automatisch
+  (`trainingsBetween`, Dauer aus dem Termin, ändern/löschen auf `/sport`).
+  Kachel (`SportTile`, grün, NEU) S/M/L, Seite `/sport` (`SportView`: Ziel,
+  Verlauf, Trainings, Packlisten), Eintragen-Fenster (`SportAddSheet`).
+  Serie nur in Wochen (`weekStreak`). Feier genau einmal pro Woche
+  (`SportCelebration` im Layout, `core/celebrate.ts`), mehr als das Ziel =
+  "Bonusrunde! 🔥", Montag "Neue Woche, neues Glück." bzw. "Letzte Woche
+  geschafft 🔥 – auf ein Neues". Lotte: sport_eintragen, sport_ziel_setzen,
+  trainings_planen (`planTrainings`: freie Lücken, 60 Min Abstand zu Arbeit,
+  Wunsch-Tageszeit, Wetter → trockene Zeit oder drinnen, Erklärung der
+  Ausnahmen, Termine mit Erinnerung 30 Min vorher), sport_statistik – mit
+  Vorschau; ohne KI `dayChat()`. Apple Health/Watch geht nicht (Web-App).
+- Standard-Reihenfolge: Pinnwand · Termine · Aufgaben · Wetter · Essen +
+  Einkauf · Timer · Sport · Notizen · Vorrat · Morgen · Post.
+- Vibration nur über `navigator.vibrate?.` (Android); iPhone still.
 
 ## Termine, Aufgaben und die drei Seiten (v0.10)
 

@@ -7,6 +7,8 @@ import { ThemeSync } from "@/components/ThemeSync";
 import { ToastHost } from "@/components/ui/ToastHost";
 import { NavigationMemory } from "@/components/NavigationMemory";
 import { AutoCooked } from "@/components/AutoCooked";
+import { TimerAlarm } from "@/components/TimerAlarm";
+import { SportCelebration } from "@/components/SportCelebration";
 import { THEME_BOOT_SCRIPT } from "@/lib/core/theme";
 import { APP_NAME, APP_SHORT_NAME, BRAND_COLOR, icon } from "@/lib/core/app";
 import "./globals.css";
@@ -65,6 +67,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </Suspense>
         <KitchenHelper />
         <AutoCooked />
+        <TimerAlarm />
+        <SportCelebration />
         <ServiceWorkerRegistration />
       </body>
     </html>

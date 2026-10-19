@@ -16,6 +16,7 @@ import { runRegisteredTool, toolDefinitions } from "./toolset";
 import { berlinTime } from "../core/now";
 import { sanitizeEntry, type CalendarEntry } from "../aufgaben/model";
 import { sanitizeHome } from "../core/homeLayout";
+import { sanitizeSport } from "../sport/model";
 import { sanitizeMailStyle } from "./mail";
 
 /** Eine Modell-Anfrage; `onText` bekommt den Antworttext Stück für Stück */
@@ -38,7 +39,7 @@ export type EngineEvents = { onText?: (delta: string) => void; onRound?: () => v
 
 export class AssistantInputError extends Error {}
 
-const OP_TYPES = new Set(["add_pin", "set_kladde", "upsert_note", "remove_note", "set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last", "set_persons", "set_pause", "app_command", "set_feature"]);
+const OP_TYPES = new Set(["add_timer", "stop_timer", "stopwatch", "cook_step", "start_cooking", "set_day_mode", "add_training", "set_sport_goal", "add_pin", "set_kladde", "upsert_note", "remove_note", "set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last", "set_persons", "set_pause", "app_command", "set_feature"]);
 
 /** Anfrage prüfen und auf das Nötige kürzen */
 export function parseRequest(body: unknown): AssistantRequest {
@@ -76,6 +77,24 @@ export function parseRequest(body: unknown): AssistantRequest {
       .map((p) => ({ author: p.author.slice(0, 40), text: p.text.slice(0, 140), at: typeof p.at === "string" ? p.at.slice(0, 30) : "" })),
     wetterOrt: typeof b.data?.wetterOrt === "string" ? b.data.wetterOrt.slice(0, 60) : "Eutin",
     notes: (Array.isArray(b.data?.notes) ? b.data.notes : []).map(sanitizeNote).filter((n): n is Note => n !== null).slice(0, 80),
+    timers: (Array.isArray(b.data?.timers) ? b.data.timers : [])
+      .filter((t) => Boolean(t) && typeof t === "object" && typeof t.name === "string")
+      .slice(0, 6)
+      .map((t) => ({ name: t.name.slice(0, 30), leftSec: Math.max(0, Math.round(Number(t.leftSec) || 0)), paused: t.paused === true, done: t.done === true })),
+    stopwatch: b.data?.stopwatch && typeof b.data.stopwatch === "object" ? { sec: Math.max(0, Math.round(Number(b.data.stopwatch.sec) || 0)), running: b.data.stopwatch.running === true } : null,
+    kochen:
+      b.data?.kochen && typeof b.data.kochen === "object" && typeof b.data.kochen.dish === "string"
+        ? {
+            dish: b.data.kochen.dish.slice(0, 80),
+            recipe: String(b.data.kochen.recipe ?? "").slice(0, 80),
+            steps: (Array.isArray(b.data.kochen.steps) ? b.data.kochen.steps : []).filter((x): x is string => typeof x === "string").slice(0, 30).map((x) => x.slice(0, 300)),
+            done: (Array.isArray(b.data.kochen.done) ? b.data.kochen.done : []).filter((x): x is number => Number.isInteger(x)).slice(0, 30),
+            active: b.data.kochen.active === true,
+          }
+        : null,
+    sport: sanitizeSport(b.data?.sport),
+    tagesablauf: b.data?.tagesablauf && typeof b.data.tagesablauf === "object" ? { mode: b.data.tagesablauf.mode === "gleich" ? "gleich" : "mitdenkend", feierabendAb: String(b.data.tagesablauf.feierabendAb ?? "20:00").slice(0, 5), morgenBis: String(b.data.tagesablauf.morgenBis ?? "10:00").slice(0, 5) } : undefined,
+    me: typeof b.data?.me === "string" ? b.data.me.slice(0, 60) : null,
   };
   const pending = (Array.isArray(b.pending) ? b.pending : []).filter(
     (op): op is ChangeOp => Boolean(op) && typeof op === "object" && typeof op.id === "string" && OP_TYPES.has(op.type),
@@ -169,6 +188,9 @@ function logUsage(model: string, u: Usage) {
 /** Klingt nach Wetter? ("Wie wird das Wetter morgen?", "Brauch ich einen Schirm?") */
 const WEATHER_QUESTION = /\b(wetter|schirm|regn\w*|regen|sonnig|sonne|warm|kalt|grad|temperatur|frost|glatt|schnee|wind\w*|gewitter)\b/i;
 
+/** Trainings planen: Wetter für draußen-Sport mitdenken */
+const TRAINING_PLAN = /\bplan\w*\b.*\b(trainings?|sport\w*|läufe|laufen|einheiten)\b/i;
+
 export async function runAssistant(req: AssistantRequest, create: CreateMessage, model: string, events: EngineEvents = {}): Promise<AssistantReply> {
   const today = new Date(`${req.today}T12:00:00`);
   const shoppingDay = req.data.profile.shoppingDay || "Montag";
@@ -179,7 +201,8 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
   const numbers = req.pending.flatMap((op) => [op.id, op.type === "add_recipe" ? op.recipe.ref : ""].map((s) => Number(s.match(/(\d+)$/)?.[1] ?? 0)));
   const ctx: ToolContext = { data: start.data, weeks, ops: [...req.pending], refs: start.refs, counter: Math.max(0, ...numbers), today: req.today };
   // Wetterfragen: Vorhersage vorab holen (Werkzeuge laufen synchron; 30 Min zwischengespeichert)
-  if (WEATHER_QUESTION.test(req.messages[req.messages.length - 1]?.text ?? "")) ctx.forecast = await fetchForecast(req.data.wetterOrt || "Eutin", undefined, req.today).catch(() => null);
+  const lastText = req.messages[req.messages.length - 1]?.text ?? "";
+  if (WEATHER_QUESTION.test(lastText) || TRAINING_PLAN.test(lastText)) ctx.forecast = await fetchForecast(req.data.wetterOrt || "Eutin", undefined, req.today).catch(() => null);
 
   const messages: Anthropic.Beta.BetaMessageParam[] = req.messages.map((m) => ({ role: m.role, content: m.text }));
   if (messages[0].role !== "user") messages.shift();

@@ -26,6 +26,8 @@ import { now } from "../core/now";
 import { applyHomeChange, DEFAULT_HOME, type HomeChange, type HomeTile } from "../core/homeLayout";
 import { buildShoppingList } from "../einkauf/shoppingList";
 import { moveItem, removeItem, setDone, upsertEntry, type CalendarEntry } from "../aufgaben/model";
+import { createTraining, sanitizeSport, type SportState, type TrainingData } from "../sport/model";
+import type { HomeMode } from "../tagesablauf/settings";
 
 /** Alle Daten, auf die sich Änderungen beziehen */
 export type AssistantData = {
@@ -52,6 +54,17 @@ export type AssistantData = {
   wetterOrt?: string;
   /** Mail-Stil: Grußformel, Signatur, gemerkte Anrede je Empfänger (nur zum Lesen) */
   mail?: MailStyle;
+  /** Laufende Timer und Stoppuhr (nur zum Lesen; stellen über `add_timer`) */
+  timers?: { name: string; leftSec: number; paused: boolean; done: boolean }[];
+  stopwatch?: { sec: number; running: boolean } | null;
+  /** Kochen: heutiges Gericht mit Rezept-Schritten, abgehakte Schritte, Kochen-Modus an? */
+  kochen?: { dish: string; recipe: string; steps: string[]; done: number[]; active: boolean } | null;
+  /** Sport: Wochenziel und Trainings (persönlich) */
+  sport?: SportState;
+  /** Tagesablauf: Startseite mitdenkend oder immer gleich */
+  tagesablauf?: { mode: HomeMode; feierabendAb: string; morgenBis: string };
+  /** Personen-ID von mir (für Sport-Termine) */
+  me?: string | null;
 };
 
 /** Ein Tag einer Planungswoche – es gibt genau ein Hauptgericht pro Tag */
@@ -116,7 +129,20 @@ export type ChangeOp =
   // Kladde neu setzen (anhängen bzw. übernommene Zeilen herausnehmen)
   | { id: string; type: "set_kladde"; text: string; change: string }
   // Pinnwand: neue Nachricht (landet beim Übernehmen im eigenen Speicher)
-  | { id: string; type: "add_pin"; text: string };
+  | { id: string; type: "add_pin"; text: string }
+  // Sofort (kleine Dinge, mit Meldung): Timer, Stoppuhr, Kochschritt, Kochen starten
+  | { id: string; type: "add_timer"; name: string; minutes: number }
+  | { id: string; type: "stop_timer"; name: string }
+  | { id: string; type: "stopwatch"; action: "start" | "stop" }
+  | { id: string; type: "cook_step"; recipe: string; index: number }
+  | { id: string; type: "start_cooking" }
+  // Mit Vorschau: Startseite mitdenkend/immer gleich, Sport eintragen, Wochenziel
+  | { id: string; type: "set_day_mode"; mode: HomeMode }
+  | { id: string; type: "add_training"; training: TrainingData }
+  | { id: string; type: "set_sport_goal"; goal: number };
+
+/** Werden sofort ausgeführt (ohne "Übernehmen") – kleine, flüchtige Dinge */
+export const INSTANT_OP_TYPES = new Set(["add_timer", "stop_timer", "stopwatch", "cook_step", "start_cooking"]);
 
 /** Änderungen an Terminen/Aufgaben */
 export const ENTRY_OP_TYPES = new Set(["upsert_entry", "remove_entry", "done_entry", "move_entry"]);
@@ -295,9 +321,25 @@ export function applyOps(
       case "set_kladde":
         next = { ...next, kladde: op.text };
         break;
+      case "set_day_mode":
+        next = { ...next, tagesablauf: { ...(next.tagesablauf ?? { feierabendAb: "20:00", morgenBis: "10:00" }), mode: op.mode } };
+        break;
+      case "add_training": {
+        const sport = sanitizeSport(next.sport);
+        next = { ...next, sport: { ...sport, trainings: [...sport.trainings, { ...createTraining(op.training), id: `${op.id}-training` }] } };
+        break;
+      }
+      case "set_sport_goal":
+        next = { ...next, sport: { ...sanitizeSport(next.sport), goal: op.goal } };
+        break;
       case "add_pantry":
       case "add_wish":
       case "add_pin":
+      case "add_timer":
+      case "stop_timer":
+      case "stopwatch":
+      case "cook_step":
+      case "start_cooking":
         break;
     }
   }

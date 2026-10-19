@@ -1,13 +1,13 @@
 "use client";
 
 // Kleiner runder Knopf oben rechts an einer Kachel = schnell etwas Neues
-// ("+", "⇄", "✎"). Sichtbar 20 px, hell-orange mit kräftigem Zeichen (Kladde
-// gelblich), Tippfläche trotzdem 44 × 44 px. Nie schwarz.
+// ("+", "⇄", "✎"). Sichtbar 20 px, hell-orange mit kräftigem Zeichen (Notizen
+// gelblich, Sport hellgrün), Tippfläche trotzdem 44 × 44 px. Nie schwarz.
 
 import type { LucideIcon } from "lucide-react";
 import { quickDot } from "./styles";
 
-export function QuickButton({ icon: Icon, label, onClick, tone = "quick", className = "" }: { icon: LucideIcon; label: string; onClick: () => void; tone?: "quick" | "kladde"; className?: string }) {
+export function QuickButton({ icon: Icon, label, onClick, tone = "quick", className = "" }: { icon: LucideIcon; label: string; onClick: () => void; tone?: "quick" | "kladde" | "sport"; className?: string }) {
   return (
     <button
       type="button"
