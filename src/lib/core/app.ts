@@ -5,7 +5,7 @@ export const APP_NAME = "Was gibt's?";
 export const APP_SHORT_NAME = "Was gibt's";
 
 /** Versionsnummer (wie in package.json) – in den Einstellungen unter "Daten & App" */
-export const APP_VERSION = "0.16.0";
+export const APP_VERSION = "0.17.0";
 
 /**
  * Version der Icon-Dateien – steht im Dateinamen (z. B. apple-touch-icon-v2.png),

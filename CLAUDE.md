@@ -182,29 +182,29 @@ Familie wählt (Standard: Lotte).
   Einkaufsliste, schlanke Einstellungen (Startseite & Bausteine, Name &
   Stimme, Vorlesen, Ansicht, Familie, Daten & App) und beim ersten Start das
   Kennenlernen (siehe unten).
-- Kennenlernen beim ersten Start (v0.14, ohne Profil auf `/` und `/profil`,
-  nach "Neu anfangen" wieder): Vollbild-Chat `WelcomeChat`
-  (`src/components/welcome/`) mit Kopf (Avatar, Name, "Überspringen"),
-  Fortschritt in 4 Abschnitten, Blasen (Assistentin weiß links, Antwort orange
-  rechts), Chips (Hauptknopf dunkel, gewählt hellorange mit ✓) und dunkler
-  Leiste "Antworten oder einsprechen …" (Mikrofon gedrückt halten). Ablauf
-  rein in `src/lib/einstellungen/welcome.ts` (`answer`, `chipsFor`,
-  `skipWelcome`, `profileFrom`, `homeTilesFor`): 1. Begrüßung ("Los geht's" /
-  "Anders nennen"), 2. Name (Lotte/Theo/Ida/Bruno/eigener, Stimme passend) und
-  "Wobei soll ich dir helfen?" (mehrfach: Termine, Arbeit, Essen, Einkauf,
-  Familie; Standard Termine+Essen+Einkauf), nur bei Essen "Woche planen /
-  Spontan / Mal so, mal so", 3. "Wie heißt du – und wer gehört noch dazu?"
-  (mit KI Namen + Kind über `recognizeAnswer("names")`, sonst Komma/"und";
-  Bestätigung mit Namens-Chips, Antippen = Kind/erwachsen), 4. Fertig mit 3
-  Beispiel-Sätzen (gehen direkt an die Assistentin). Wirkung
-  (`finishWelcome` in `welcomeStore.ts`): Profil (Personen, Haushaltstyp,
-  Name/Stimme, Planstil), Startseiten-Kacheln (ohne Essen keine Essen-Kachel,
-  ohne Einkauf keine Einkauf-Kachel), Bausteine Wochenplan/Spontan, Raum
-  "Arbeit" nur wenn gewählt (`useWorkRoom`: Filter in der Woche und "Für" im
-  Formular; bestehende Nutzer und vorhandene Arbeit-Einträge zeigen ihn
-  immer). Überspringen = Standardwerte (Lotte, Termine+Essen+Einkauf, "Mal
-  so, mal so", eine Person). Zwischenstand nach jeder Antwort unter
-  `wasgibts.willkommen` (App zu → geht weiter).
+- Kennenlernen beim ersten Start (v0.17, ohne Profil auf `/` und `/profil`,
+  nach "Neu anfangen" wieder; `WelcomeChat` in `src/components/welcome/`,
+  Ablauf rein in `src/lib/einstellungen/welcome.ts`, Zwischenstand v2 unter
+  `wasgibts.willkommen`, v0.14-Stand wird übernommen – `migrateWelcome`).
+  1. Begrüßung im Vollbild (kein Chat-Text): großer Avatar mit winkender 👋,
+  "Hi, ich bin <Name>.", "Deine Assistentin/Dein Assistent für den Alltag – ich
+  behalte den Überblick, du lebst.", drei Kacheln, hellorange Hinweis
+  "🎙 Sprich einfach mit mir …", dunkler Knopf "Los geht's", Link "Lieber
+  anders nennen", oben "Überspringen". Ab Schritt 2 Chat: 2. (optional Name)
+  "Wobei soll ich dir helfen?" (Termine, Arbeit, Essen, Einkauf, Familie;
+  Standard Termine+Essen+Einkauf), bei Essen "Woche planen / Spontan / Mal so,
+  mal so", 3. bei Familie "Wer gehört zu deiner Familie? …", sonst "Wie heißt
+  du?" – Formular im Chat (`WhoForm`): DEIN NAME (Pflicht, erwachsen), bei
+  Familie Liste mit Erwachsen | Kind, ✕, "+ Person hinzufügen" (Fokus);
+  Gesagtes/Getipptes füllt es aus (`fillMembers`, mit KI `recognizeAnswer
+  ("names")`); Chips "Fertig" (erst mit Namen) · "Nur ich"; das Formular ist
+  die Bestätigung. 4. "Super, <Name> – alles bereit!" mit 3 Beispiel-Sätzen.
+  Das Gespräch wird aus dem Zustand gebaut (`transcript`): jeder Schritt genau
+  einmal, Antippen einer Antwort öffnet ihn wieder (`editStep`), danach geht
+  es beim nächsten offenen Schritt weiter. Wirkung (`finishWelcome`): Profil
+  (Personen, Haushaltstyp, Name/Stimme, Planstil), Kacheln (ohne Essen/Einkauf
+  keine Kachel), Bausteine Wochenplan/Spontan, Raum "Arbeit" nur wenn gewählt
+  (`useWorkRoom`). Überspringen = Standardwerte.
 - Einheitliches Datenmodell für Supabase (`src/lib/core/entries.ts`): jeder
   Eintrag mit `id`, `typ` (termin/aufgabe/gericht/einkauf), `raum`
   (familie/arbeit), `besitzer` (bis zu Konten "lokal"), `erstellt`,
