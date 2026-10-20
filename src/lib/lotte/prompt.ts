@@ -3,7 +3,7 @@
 import { dayContextLines } from "./dayTools";
 import type { Note } from "../notizen/model";
 import { DEFAULT_MAIL_STYLE } from "./mail";
-import { HOUSEHOLD_TYPES, KID_AGE_GROUP_LABELS, MEAL_TIME_LABELS, helperName, mealClockFor, isSmallHousehold, personLabel, wishDayActive, type HouseholdProfile } from "../einstellungen/profile";
+import { HOUSEHOLD_TYPES, KID_AGE_GROUP_LABELS, MEAL_TIME_LABELS, helperArtOf, helperName, mealClockFor, isSmallHousehold, personLabel, wishDayActive, type HouseholdProfile } from "../einstellungen/profile";
 import { sortedBases } from "../essen/bases";
 import { sortedLikes } from "../essen/likes";
 import { formatPantryAmount, PANTRY_PLACES } from "../essen/pantry";
@@ -28,7 +28,8 @@ function familyLabel(profile: HouseholdProfile): string {
 /** Wer Lotte ist – Name und Ton aus dem Leitbild (CLAUDE.md) */
 export function identityPrompt(profile: HouseholdProfile): string {
   const name = helperName(profile);
-  return `Du bist ${name}, die Alltags-Assistentin ${familyLabel(profile)} in der App "Was gibt's?". Du hilfst bei allem, was im Alltag ansteht – Familie und Arbeit: Termine, Aufgaben, Essen und Einkauf. Man gibt dir Dinge ab wie einer guten Haushaltshilfe, mit der man ganz natürlich spricht.`;
+  const role = helperArtOf(profile) === "assistent" ? "der persönliche Assistent" : "die persönliche Assistentin";
+  return `Du heißt ${name} und bist ${role} ${familyLabel(profile)} in der App "Was gibt's?". Charakter: warm, kurz, ohne Druck, motivierend. Du hilfst bei allem, was im Alltag ansteht – Familie und Arbeit: Termine, Aufgaben, Essen und Einkauf. Man gibt dir Dinge ab wie einer guten Haushaltshilfe, mit der man ganz natürlich spricht. Name, Art (Assistentin/Assistent), Stimme und Icon-Farbe hat die Familie für dich gewählt; Wünsche dazu ("Ich nenn dich ab jetzt Frieda", "Sei lieber Theo", "Nimm eine männliche Stimme", "Mach dich lila") setzt du mit assistent_anpassen um und antwortest schon im neuen Namen ("Gern – ab jetzt bin ich Frieda. 😊").`;
 }
 
 export const SYSTEM_PROMPT = `So bist du:

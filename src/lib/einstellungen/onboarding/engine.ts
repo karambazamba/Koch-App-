@@ -6,6 +6,8 @@
 import {
   DEFAULT_HELPER,
   HELPER_NAMES,
+  STANDARD_HELPERS,
+  helperWith,
   HOUSEHOLD_TYPES,
   PLAN_STYLES,
   HELPER_NAME_MAX,
@@ -672,14 +674,14 @@ export function answer(state: OnboardingState, a: Answer): OnboardingState {
       const name = (chip ?? extractHelperName(text)).slice(0, HELPER_NAME_MAX).trim();
       if (!name) return goto(s, state.step, "Hm, den Namen hab ich nicht verstanden.");
       const preset = HELPER_NAMES.find((h) => h.name.toLowerCase() === name.toLowerCase());
-      s = { ...s, draft: { ...s.draft, helper: { name: preset?.name ?? name, voice: preset?.voice ?? s.draft.helper.voice } } };
+      s = { ...s, draft: { ...s.draft, helper: preset ? STANDARD_HELPERS.find((h) => h.name === preset.name)! : helperWith(s.draft.helper, { name }) } };
       if (!preset) return goto(s, "helperVoice");
       return finishBlock(say(s, `Super, ich bin ab jetzt ${preset.name}!`, { kind: "helper" }), "helper");
     }
     case "helperVoice": {
       const voice: HelperVoice =
         chip === "maennlich" || chip === "weiblich" ? chip : /mann|männ|maenn|tief/i.test(text) ? "maennlich" : "weiblich";
-      s = { ...s, draft: { ...s.draft, helper: { ...s.draft.helper, voice } } };
+      s = { ...s, draft: { ...s.draft, helper: helperWith(s.draft.helper, { art: voice === "maennlich" ? "assistent" : "assistentin" }) } };
       return finishBlock(say(s, `Super, ich bin ab jetzt ${s.draft.helper.name}!`, { kind: "helper" }), "helper");
     }
     case "household": {
@@ -888,7 +890,7 @@ export function skip(s: OnboardingState): OnboardingState {
       return answer(s, { chip: "familie" });
     case "helperName":
     case "helperNameCustom":
-      return answer(s, { chip: "Lotte" });
+      return answer(s, { chip: DEFAULT_HELPER.name });
     case "helperVoice":
       return answer(s, { chip: "weiblich" });
     case "household":

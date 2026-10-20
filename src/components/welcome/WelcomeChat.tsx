@@ -1,31 +1,33 @@
 "use client";
 
 // Erster Start: kurzes Kennenlernen (max. 4 Abschnitte, jederzeit
-// "Überspringen"). Schritt 1 ist eine ruhige Begrüßung im Vollbild, danach
-// geht es im Chat weiter. Jeder Schritt steht genau einmal da (aus dem
+// "Überspringen"). Schritt 1 im Vollbild: "Wer soll dir helfen?" (Mia, Theo
+// oder eigener Name) und die Vorstellung der Begleitung, danach geht es im
+// Chat weiter. Jeder Schritt steht genau einmal da (aus dem
 // Zustand gebaut); Antippen einer Antwort öffnet ihn wieder. "Wer gehört
 // dazu?" ist ein kleines Formular im Chat, das Gesagtes selbst ausfüllt.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowUp, Check, Mic, Plus, Square, X } from "lucide-react";
+import { ArrowUp, CalendarDays, Check, CircleCheck, Mic, Plus, ShoppingCart, Square, UtensilsCrossed, Volume2, X, type LucideIcon } from "lucide-react";
 import { LotteAvatar } from "@/components/LotteAvatar";
-import { HELPER_NAME_MAX } from "@/lib/einstellungen/profile";
+import { BegleitungPicker } from "@/components/begleitung/BegleitungPicker";
+import { avatarHex, helperTitlePersonal } from "@/lib/einstellungen/profile";
+import { toggleSpeak } from "@/lib/lotte/speech";
 import {
   addMember,
   answer,
   asksFamily,
-  assistantNoun,
   chipsFor,
   editStep,
   examplesFor,
   initialWelcome,
   removeMember,
   sectionOf,
+  setHelper,
   setMember,
   skipWelcome,
   transcript,
-  WELCOME_TILES,
   type WelcomeChip,
   type WelcomeState,
 } from "@/lib/einstellungen/welcome";
@@ -38,6 +40,27 @@ import { useSpeechInput } from "@/lib/lotte/useSpeechInput";
 
 const BUBBLE = "max-w-[85%] whitespace-pre-line rounded-3xl px-4 py-3 text-base leading-snug";
 const SKIP = "h-10 rounded-full px-3 text-sm font-bold text-muted active:bg-stone-100";
+
+const TILES: { icon: LucideIcon; label: string }[] = [
+  { icon: CalendarDays, label: "Termine" },
+  { icon: CircleCheck, label: "Aufgaben" },
+  { icon: UtensilsCrossed, label: "Essen" },
+  { icon: ShoppingCart, label: "Einkauf" },
+];
+
+/** Vollbild der ersten beiden Schritte (oben "Überspringen") */
+function FullScreen({ onSkip, children }: { onSkip: () => void; children: ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-40 flex flex-col overflow-y-auto bg-background" role="dialog" aria-label="Kennenlernen">
+      <div className="mx-auto flex w-full max-w-lg justify-end px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
+        <button type="button" onClick={onSkip} className={SKIP}>
+          Überspringen
+        </button>
+      </div>
+      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center gap-4 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-center">{children}</div>
+    </div>
+  );
+}
 
 function chipClass(chip: WelcomeChip) {
   if (chip.kind === "primary") return "bg-bar text-on-bar border-bar";
@@ -110,50 +133,60 @@ export function WelcomeChat() {
     const t = input.trim();
     if (!t) return;
     setInput("");
-    void send({ text: state?.step === "name" && state.custom ? t.slice(0, HELPER_NAME_MAX) : t });
+    void send({ text: t });
   };
 
   if (!state) return <div className="min-h-dvh bg-background" />;
 
-  // --- Schritt 1: Begrüßung im Vollbild --------------------------------------
-  if (state.step === "hallo") {
+  // --- Schritt 1: Wer soll dir helfen? (Vollbild) ---------------------------
+  if (state.step === "begleitung") {
     return (
-      <div className="fixed inset-0 z-40 flex flex-col overflow-y-auto bg-background" role="dialog" aria-label="Kennenlernen">
-        <div className="mx-auto flex w-full max-w-lg justify-end px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
-          <button type="button" onClick={() => update(skipWelcome(state))} className={SKIP}>
-            Überspringen
+      <FullScreen onSkip={() => update(skipWelcome(state))}>
+        <div className="flex flex-col gap-1.5 text-center">
+          <h1 className="text-[30px] font-extrabold leading-tight tracking-tight">Wer soll dir helfen?</h1>
+          <p className="text-base text-muted">Deine persönliche Begleitung im Alltag</p>
+        </div>
+        <BegleitungPicker value={state.helper} onChange={(h) => update(setHelper(state, h))} />
+        <p className="text-sm text-muted">Kannst du jederzeit ändern.</p>
+        <button type="button" onClick={() => void send({ chip: "weiter" })} className="h-14 w-full rounded-full bg-bar text-lg font-bold text-on-bar shadow-lg active:scale-[0.98]">
+          Weiter
+        </button>
+      </FullScreen>
+    );
+  }
+
+  // --- Schritt 1b: Vorstellung (Vollbild) -------------------------------------
+  if (state.step === "hallo") {
+    const h = state.helper;
+    const intro = `Hallo, schön, dass du da bist! 👋 Ich bin ${h.name}, ${helperTitlePersonal(h.art)} bei Was gibt's? Wenn dir ein anderer Name lieber ist – nenn mich einfach, wie du magst. Ich helfe dir bei Terminen, Aufgaben, Essen und Einkauf. Sag mir einfach, was ansteht – ich kümmere mich um den Rest.`;
+    return (
+      <FullScreen onSkip={() => update(skipWelcome(state))}>
+        <LotteAvatar size={88} color={avatarHex(h.farbe)} />
+        <div className="relative w-full rounded-3xl border border-line bg-surface px-5 pb-4 pt-4 text-left text-base leading-snug shadow-card" aria-label="Vorstellung">
+          <span className="absolute -top-2 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 border-l border-t border-line bg-surface" aria-hidden />
+          <p>
+            Hallo, schön, dass du da bist! 👋 Ich bin <strong>{h.name}</strong>, {helperTitlePersonal(h.art)} bei <strong>Was gibt&apos;s?</strong>
+          </p>
+          <p className="mt-1.5 text-muted">Wenn dir ein anderer Name lieber ist – nenn mich einfach, wie du magst.</p>
+          <p className="mt-1.5">Ich helfe dir bei Terminen, Aufgaben, Essen und Einkauf.</p>
+          <p className="mt-1.5 font-bold">Sag mir einfach, was ansteht – ich kümmere mich um den Rest.</p>
+          <button type="button" onClick={() => toggleSpeak(intro, "vorstellung", h.voice)} className="mt-2.5 inline-flex h-10 items-center gap-1.5 rounded-full bg-segment px-3.5 text-sm font-bold active:scale-95">
+            <Volume2 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+            Vorlesen
           </button>
         </div>
-        <div className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center gap-5 px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-center">
-          <div className="relative">
-            <LotteAvatar size={120} />
-            <span className="absolute -right-2 -top-1 origin-bottom-right text-[34px]" style={{ animation: "wave 1.6s ease-in-out 0.3s 2" }} aria-hidden>
-              👋
-            </span>
-          </div>
-          <div className="flex flex-col gap-2">
-            <h1 className="text-[32px] font-extrabold leading-tight tracking-tight">Hi, ich bin {state.helper.name}.</h1>
-            <p className="text-base leading-snug text-muted">{assistantNoun(state.helper)} für den Alltag – ich behalte den Überblick, du lebst.</p>
-          </div>
-          <ul className="grid w-full grid-cols-3 gap-2" aria-label="Was ich kann">
-            {WELCOME_TILES.map((t) => (
-              <li key={t.label} className="flex flex-col items-center gap-1.5 rounded-card border border-line bg-surface px-2 py-3 shadow-card">
-                <span className="text-2xl" aria-hidden>
-                  {t.emoji}
-                </span>
-                <span className="text-[13px] font-semibold leading-tight">{t.label}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="w-full rounded-2xl bg-accent-soft px-4 py-3 text-[15px] font-medium text-accent-strong">🎙 Sprich einfach mit mir – ich verstehe eine Menge.</p>
-          <button type="button" onClick={() => void send({ chip: "los" })} className="mt-2 h-14 w-full rounded-full bg-bar text-lg font-bold text-on-bar shadow-lg active:scale-[0.98]">
-            Los geht&apos;s
-          </button>
-          <button type="button" onClick={() => void send({ chip: "anders" })} className="h-11 text-base font-semibold text-muted underline">
-            Lieber anders nennen
-          </button>
-        </div>
-      </div>
+        <ul className="grid w-full grid-cols-4 gap-2" aria-label="Wobei ich helfe">
+          {TILES.map((t) => (
+            <li key={t.label} className="flex flex-col items-center gap-1 rounded-card border border-line bg-surface px-1 py-2.5 shadow-card">
+              <t.icon className="h-6 w-6 text-accent" strokeWidth={2} aria-hidden />
+              <span className="text-[13px] font-semibold leading-tight">{t.label}</span>
+            </li>
+          ))}
+        </ul>
+        <button type="button" onClick={() => void send({ chip: "los" })} className="h-14 w-full rounded-full bg-bar text-lg font-bold text-on-bar shadow-lg active:scale-[0.98]">
+          Los geht&apos;s
+        </button>
+      </FullScreen>
     );
   }
 
@@ -167,7 +200,7 @@ export function WelcomeChat() {
     <div className="fixed inset-0 z-40 flex flex-col bg-background" role="dialog" aria-label="Kennenlernen">
       <header className="relative z-10 mx-auto flex w-full max-w-lg shrink-0 flex-col gap-3 bg-background px-4 pb-1 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
         <div className="flex items-center gap-3">
-          <LotteAvatar size={44} />
+          <LotteAvatar size={44} color={avatarHex(state.helper.farbe)} />
           <h1 className="min-w-0 flex-1 truncate text-2xl font-extrabold tracking-tight">{state.helper.name}</h1>
           {state.step !== "fertig" && (
             <button type="button" onClick={() => update(skipWelcome(state))} className={SKIP}>
@@ -186,7 +219,7 @@ export function WelcomeChat() {
         {turns.map((turn) => (
           <div key={turn.step} className="flex flex-col gap-3" data-step={turn.step}>
             <div className="flex items-end gap-2">
-              <LotteAvatar size={28} />
+              <LotteAvatar size={28} color={avatarHex(state.helper.farbe)} />
               <div className={`${BUBBLE} rounded-bl-lg border border-line bg-surface shadow-card`}>{turn.question}</div>
             </div>
             {turn.answer !== null && (
@@ -195,7 +228,6 @@ export function WelcomeChat() {
               </button>
             )}
             {turn.current && turn.step === "wer" && <WhoForm state={state} onChange={update} />}
-            {turn.current && turn.step === "name" && state.custom && <p className="pl-9 text-sm text-muted">Tipp den Namen unten ein (bis {HELPER_NAME_MAX} Zeichen).</p>}
             {turn.current && chips.length > 0 && (
               <div className="flex flex-wrap gap-2 pl-9" aria-label="Antworten">
                 {chips.map((chip) => (
@@ -224,7 +256,7 @@ export function WelcomeChat() {
                   ))}
                 </div>
                 <div className="flex items-end gap-2">
-                  <LotteAvatar size={28} />
+                  <LotteAvatar size={28} color={avatarHex(state.helper.farbe)} />
                   <div className={`${BUBBLE} rounded-bl-lg border border-line bg-surface shadow-card`}>Alles, was du hier eingestellt hast, kannst du jederzeit ändern – sag&apos;s mir oder schau in die Einstellungen. Deine Startseite kannst du jederzeit anpassen – halt sie einfach gedrückt.</div>
                 </div>
                 <div className="pl-9">
@@ -252,7 +284,7 @@ export function WelcomeChat() {
             ref={inputRef}
             value={speech.listening ? speech.interim || input : input}
             onChange={(e) => setInput(e.target.value)}
-            maxLength={state.step === "name" && state.custom ? HELPER_NAME_MAX : 300}
+            maxLength={300}
             enterKeyHint="send"
             aria-label="Antwort"
             placeholder={speech.listening ? "Ich höre zu …" : "Antworten oder einsprechen …"}

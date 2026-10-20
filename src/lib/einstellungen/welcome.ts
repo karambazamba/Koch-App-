@@ -1,7 +1,8 @@
 // Erster Start = kurzes Kennenlernen (max. 4 Abschnitte, jederzeit
-// überspringbar): 1. Begrüßung (Vollbild) → 2. wobei helfen (& Essensstil,
-// optional anderer Name) → 3. wer gehört dazu (Formular im Chat) → 4. fertig
-// mit Beispiel-Sätzen. Rein (ohne Speicher/React), damit es testbar ist; der
+// überspringbar): 1. "Wer soll dir helfen?" (Mia, Theo oder eigener Name,
+// Vollbild) und die Vorstellung der Begleitung (Vollbild) → 2. wobei helfen
+// (& Essensstil, Sport, Startseite) → 3. wer gehört dazu (Formular im Chat) →
+// 4. fertig mit Beispiel-Sätzen. Rein (ohne Speicher/React), damit es testbar ist; der
 // Zwischenstand liegt unter `wasgibts.willkommen` (welcomeStore.ts).
 //
 // Jeder Schritt erscheint genau einmal: Das Gespräch wird aus dem Zustand
@@ -11,8 +12,8 @@
 import { DEFAULT_HOME, type HomeTile } from "../core/homeLayout";
 import { extractNames, type NameHint } from "./onboarding/recognize";
 import {
-  HELPER_NAME_MAX,
-  HELPER_NAMES,
+  DEFAULT_HELPER,
+  migrateHelper,
   createEmptyProfile,
   createPerson,
   deriveHouseholdType,
@@ -21,7 +22,7 @@ import {
   type PlanStyle,
 } from "./profile";
 
-export type WelcomeStep = "hallo" | "name" | "hilfe" | "essen" | "sport" | "startseite" | "wer" | "fertig";
+export type WelcomeStep = "begleitung" | "hallo" | "hilfe" | "essen" | "sport" | "startseite" | "wer" | "fertig";
 export type HelpId = "termine" | "arbeit" | "essen" | "einkauf" | "familie" | "sport";
 export type WelcomeHomeMode = "mitdenkend" | "gleich";
 /** members[0] ist man selbst (immer erwachsen) */
@@ -36,9 +37,9 @@ export type WelcomeState = {
   members: Member[];
   /** Schon beantwortete Schritte */
   answered: WelcomeStep[];
-  /** "Lieber anders nennen" gewählt (Schritt "name" gehört dann dazu) */
+  /** Früher: "Lieber anders nennen" (heute im Schritt "begleitung") */
   renamed: boolean;
-  /** Im Schritt "name": eigener Name wird eingetippt */
+  /** Früher: eigener Name wurde eingetippt */
   custom: boolean;
   /** Sport gewählt: Wochenziel (Trainings pro Woche) */
   sportGoal?: number | null;
@@ -59,27 +60,20 @@ export const HELP_OPTIONS: { id: HelpId; label: string }[] = [
 
 export const DEFAULT_HELP: HelpId[] = ["termine", "essen", "einkauf"];
 
-/** Die drei Kacheln der Begrüßung */
-export const WELCOME_TILES = [
-  { emoji: "🗓", label: "Termine & Aufgaben" },
-  { emoji: "🍽", label: "Essen & Wochenplan" },
-  { emoji: "🛒", label: "Einkauf, der mitdenkt" },
-];
-
 /** "Deine Assistentin" bzw. "Dein Assistent" (nach der Stimme) */
-export const assistantNoun = (helper: HelperSettings) => (helper.voice === "maennlich" ? "Dein Assistent" : "Deine Assistentin");
+export const assistantNoun = (helper: HelperSettings) => (helper.art === "assistent" ? "Dein Assistent" : "Deine Assistentin");
 
 /** Abschnitt 1–4 für den Fortschrittsbalken */
 export function sectionOf(step: WelcomeStep): number {
-  if (step === "hallo") return 1;
-  if (step === "name" || step === "hilfe" || step === "essen" || step === "sport" || step === "startseite") return 2;
+  if (step === "begleitung" || step === "hallo") return 1;
+  if (step === "hilfe" || step === "essen" || step === "sport" || step === "startseite") return 2;
   if (step === "wer") return 3;
   return 4;
 }
 
 /** Reihenfolge der Schritte – abhängig von den Antworten */
-export function flow(state: Pick<WelcomeState, "renamed" | "help">): WelcomeStep[] {
-  return <WelcomeStep[]>["hallo", ...(state.renamed ? (["name"] as const) : []), "hilfe", ...(state.help.includes("essen") ? (["essen"] as const) : []), ...(state.help.includes("sport") ? (["sport"] as const) : []), "startseite", "wer", "fertig"];
+export function flow(state: Pick<WelcomeState, "help">): WelcomeStep[] {
+  return <WelcomeStep[]>["begleitung", "hallo", "hilfe", ...(state.help.includes("essen") ? (["essen"] as const) : []), ...(state.help.includes("sport") ? (["sport"] as const) : []), "startseite", "wer", "fertig"];
 }
 
 /** Familie gewählt → Formular mit Familie, sonst nur der eigene Name */
@@ -88,10 +82,10 @@ export const asksFamily = (state: Pick<WelcomeState, "help">) => state.help.incl
 /** Frage eines Schritts */
 export function questionFor(state: WelcomeState, step: WelcomeStep): string {
   switch (step) {
+    case "begleitung":
+      return "Wer soll dir helfen?";
     case "hallo":
-      return `Hi, ich bin ${state.helper.name}.`;
-    case "name":
-      return "Wie soll ich heißen?";
+      return `Hallo, schön, dass du da bist! 👋 Ich bin ${state.helper.name}.`;
     case "hilfe":
       return "Wobei soll ich dir helfen? Gern mehrere.";
     case "essen":
@@ -118,7 +112,7 @@ const namedMembers = (members: Member[]) => members.filter((m, i) => i === 0 || 
 /** Antwort eines Schritts als kurze Blase (antippbar = bearbeiten) */
 export function answerLabel(state: WelcomeState, step: WelcomeStep): string {
   switch (step) {
-    case "name":
+    case "begleitung":
       return state.helper.name;
     case "hilfe":
       return helpLabel(state.help) || "Weiter";
@@ -140,7 +134,7 @@ export function answerLabel(state: WelcomeState, step: WelcomeStep): string {
 
 /** Gespräch zum aktuellen Stand: je Schritt Frage, Antwort (falls beantwortet), aktueller Schritt zuletzt */
 export function transcript(state: WelcomeState): { step: WelcomeStep; question: string; answer: string | null; current: boolean }[] {
-  const steps: WelcomeStep[] = flow(state).filter((s) => s !== "hallo");
+  const steps: WelcomeStep[] = flow(state).filter((s) => s !== "hallo" && s !== "begleitung");
   const at = steps.indexOf(state.step);
   // Beim Bearbeiten eines früheren Schritts stehen spätere erst wieder da, wenn es weitergeht
   const shown = at >= 0 ? steps.slice(0, at + 1) : steps.filter((s) => state.answered.includes(s));
@@ -148,14 +142,7 @@ export function transcript(state: WelcomeState): { step: WelcomeStep; question: 
 }
 
 export function initialWelcome(): WelcomeState {
-  return { version: 2, step: "hallo", helper: { ...HELPER_NAMES[0] }, help: [...DEFAULT_HELP], planStyle: null, members: [{ name: "", kid: false }], answered: [], renamed: false, custom: false };
-}
-
-/** Stimme passend zum Namen (bekannte Namen, sonst grob nach Endung) */
-export function voiceForName(name: string): HelperSettings["voice"] {
-  const known = HELPER_NAMES.find((h) => h.name.toLowerCase() === name.trim().toLowerCase());
-  if (known) return known.voice;
-  return /(a|e|i|y|ie|ine|ina|ette)$/i.test(name.trim()) ? "weiblich" : "maennlich";
+  return { version: 2, step: "begleitung", helper: { ...DEFAULT_HELPER }, help: [...DEFAULT_HELP], planStyle: null, members: [{ name: "", kid: false }], answered: [], renamed: false, custom: false };
 }
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -231,17 +218,10 @@ export const hasMyName = (state: Pick<WelcomeState, "members">) => Boolean(state
 /** Antwort-Chips zum aktuellen Schritt */
 export function chipsFor(state: WelcomeState): WelcomeChip[] {
   switch (state.step) {
+    case "begleitung":
+      return [{ label: "Weiter", value: "weiter", kind: "primary" }];
     case "hallo":
-      return [
-        { label: "Los geht's", value: "los", kind: "primary" },
-        { label: "Lieber anders nennen", value: "anders", kind: "plain" },
-      ];
-    case "name":
-      if (state.custom) return [{ label: "Doch Lotte", value: "name:Lotte", kind: "plain" }];
-      return [
-        ...HELPER_NAMES.map((h) => ({ label: h.name, value: `name:${h.name}`, kind: "select" as const, selected: state.helper.name === h.name })),
-        { label: "Eigener …", value: "eigener", kind: "plain" },
-      ];
+      return [{ label: "Los geht's", value: "los", kind: "primary" }];
     case "hilfe":
       return [
         ...HELP_OPTIONS.map((o) => ({ label: o.label, value: `hilfe:${o.id}`, kind: "select" as const, selected: state.help.includes(o.id) })),
@@ -296,16 +276,10 @@ export function answer(state: WelcomeState, input: { chip?: string; text?: strin
   const chip = input.chip ?? "";
   const text = (input.text ?? "").trim();
   switch (state.step) {
+    case "begleitung":
+      return advance(state, "begleitung");
     case "hallo":
-      if (chip === "anders" || /anders|nennen/i.test(text)) return { ...state, renamed: true, answered: ["hallo"], step: "name" };
       return advance(state, "hallo");
-    case "name": {
-      if (chip === "eigener") return { ...state, custom: true };
-      const picked = chip.startsWith("name:") ? chip.slice(5) : text.replace(/^(nenn mich|ich nenn dich|du heißt|lieber)\s+/i, "").replace(/[.!?]+$/, "").trim();
-      if (!picked) return state;
-      const name = cap(picked.slice(0, HELPER_NAME_MAX));
-      return advance({ ...state, helper: { name, voice: voiceForName(name) } }, "name");
-    }
     case "hilfe": {
       if (chip.startsWith("hilfe:")) {
         const id = chip.slice(6) as HelpId;
@@ -348,6 +322,11 @@ export function answer(state: WelcomeState, input: { chip?: string; text?: strin
     case "fertig":
       return state;
   }
+}
+
+/** Begleitung gewählt (Mia, Theo oder eigener Name mit Art und Farbe) */
+export function setHelper(state: WelcomeState, helper: HelperSettings): WelcomeState {
+  return { ...state, helper: migrateHelper(helper) };
 }
 
 /** Überspringen: Standardwerte (bisher Gewähltes bleibt) */
@@ -411,14 +390,20 @@ export function homeTilesFor(help: HelpId[]): HomeTile[] {
 export function migrateWelcome(raw: unknown): WelcomeState | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Partial<Omit<WelcomeState, "version" | "step">> & { version?: number; step?: string };
-  if (r.version === 2 && Array.isArray(r.answered) && Array.isArray(r.members)) return { ...initialWelcome(), ...r, version: 2 } as WelcomeState;
+  if (r.version === 2 && Array.isArray(r.answered) && Array.isArray(r.members)) {
+    // v0.22: "Wer soll dir helfen?" ist der erste Schritt; der frühere Schritt "name" geht darin auf
+    const state = { ...initialWelcome(), ...r, version: 2, helper: migrateHelper(r.helper) } as WelcomeState;
+    const begun = state.answered.length > 0 || (r.step !== "hallo" && r.step !== "name");
+    const step = (r.step as string) === "name" || !begun ? "begleitung" : state.step;
+    return { ...state, step, answered: [...new Set([...(begun ? (["begleitung"] as WelcomeStep[]) : []), ...state.answered.filter((a) => (a as string) !== "name")])] };
+  }
   if (r.version !== 1) return null;
   const base = initialWelcome();
   const help = Array.isArray(r.help) ? (r.help as HelpId[]) : base.help;
   const renamed = r.step === "name" || r.step === "eigener";
-  const wanted = (r.step === "bestaetigen" ? "wer" : r.step === "eigener" ? "name" : r.step) as WelcomeStep;
-  const steps = flow({ renamed, help });
+  const wanted = (r.step === "bestaetigen" ? "wer" : renamed ? "begleitung" : r.step) as WelcomeStep;
+  const steps = flow({ help });
   const step = steps.includes(wanted) ? wanted : "hilfe";
   const members = Array.isArray(r.members) && r.members.length ? (r.members as Member[]) : base.members;
-  return { ...base, helper: r.helper ?? base.helper, help, planStyle: r.planStyle ?? null, members, renamed, step, answered: steps.slice(0, steps.indexOf(step)) };
+  return { ...base, helper: migrateHelper(r.helper ?? base.helper), help, planStyle: r.planStyle ?? null, members, renamed, step, answered: steps.slice(0, steps.indexOf(step)) };
 }

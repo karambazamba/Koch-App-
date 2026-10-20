@@ -12,7 +12,7 @@ import { BUILTIN_BAKING, KID_FRIENDLY } from "@/lib/essen/baking";
 import { sortRecipes, toggleFavorite, useRecipes, type Recipe } from "@/lib/essen/cookbook";
 import { dishEmoji } from "@/lib/essen/dishEmoji";
 import { useMealPlans, type StoredEntry } from "@/lib/essen/mealPlan";
-import { personLabel, type HouseholdProfile } from "@/lib/einstellungen/profile";
+import { helperName, personLabel, type HouseholdProfile } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { NewRecipeSheet } from "./NewRecipeSheet";
 
@@ -133,7 +133,7 @@ export function CookbookList() {
         ) : all.length === 0 && filter !== "backen" ? (
           <div className={`${CARD} flex flex-col items-center gap-3 p-6 text-center`}>
             <BookOpen className="h-10 w-10 text-accent" strokeWidth={1.75} aria-hidden />
-            <p className="text-base text-muted">Noch keine Rezepte – erzähl Lotte euer erstes Lieblingsrezept!</p>
+            <p className="text-base text-muted">Noch keine Rezepte – erzähl {helperName(profile)} euer erstes Lieblingsrezept!</p>
           </div>
         ) : visible.length === 0 && bakery.length === 0 ? (
           <p className="px-1 text-sm text-muted">Dazu finde ich kein Rezept.</p>

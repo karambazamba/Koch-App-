@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     template: `%s · ${APP_NAME}`,
   },
   description:
-    "Lotte hilft eurer Familie im Alltag – Termine, Aufgaben, Essen und Einkauf.",
+    "Deine Begleitung für den Familienalltag – Termine, Aufgaben, Essen und Einkauf.",
   applicationName: APP_NAME,
   appleWebApp: {
     capable: true,

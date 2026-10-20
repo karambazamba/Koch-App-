@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: APP_NAME,
     short_name: APP_SHORT_NAME,
     description:
-      "Lotte hilft eurer Familie im Alltag – Termine, Aufgaben, Essen und Einkauf.",
+      "Deine Begleitung für den Familienalltag – Termine, Aufgaben, Essen und Einkauf.",
     lang: "de",
     start_url: "/",
     scope: "/",

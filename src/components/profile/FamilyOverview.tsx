@@ -1,7 +1,7 @@
 "use client";
 
 import { useMailStyle } from "@/lib/lotte/mailSettings";
-import { Blocks, BookOpen, Clock, CloudSun, Dumbbell, CalendarDays, ChefHat, Database, LayoutGrid, LayoutList, Mail, MessageCircle, Mic, Palette, Volume2, Refrigerator, Salad, Sun, Users } from "lucide-react";
+import { Blocks, BookOpen, Clock, CloudSun, Dumbbell, CalendarDays, ChefHat, Database, LayoutGrid, LayoutList, Mail, MessageCircle, Refrigerator, Salad, Sun, Users } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { PAGE_MAIN } from "@/components/ui/styles";
 import { APP_VERSION } from "@/lib/core/app";
@@ -9,7 +9,6 @@ import { useRecipes } from "@/lib/essen/cookbook";
 import { sortedLikes } from "@/lib/essen/likes";
 import { usePantry } from "@/lib/essen/pantry";
 import {
-  APP_THEMES,
   DISPLAY_MODES,
   HELPER_MODES,
   HOUSEHOLD_TYPES,
@@ -24,15 +23,16 @@ import { usePlace } from "@/lib/wetter/client";
 import { useHomeTiles } from "@/lib/core/homeLayout";
 import { HOME_MODES, useRoutine } from "@/lib/tagesablauf/settings";
 import { useSport } from "@/lib/sport";
-import { READ_MODES, useSpeechSettings } from "@/lib/lotte/speech";
 import { Group, Row } from "./settings/SettingsParts";
 import { householdTitle } from "./settings/Hubs";
+import { BegleitungGroup, DarstellungGroup } from "./settings/BegleitungSettings";
 
 const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 /**
- * Einstellungen – nach Häufigkeit sortiert: Häufiges oben (Kochen, Küche,
- * Lotte, Aussehen), Einmaliges unten (Familie, Daten & App, grau). Jede Zeile
+ * Einstellungen – ganz oben die Begleitung (Name, Art, Stimme, Farbe,
+ * Vorlesen) und die Darstellung (Automatisch · Hell · Dunkel), dann nach
+ * Häufigkeit sortiert, Einmaliges unten (Familie, Daten & App, grau). Jede Zeile
  * zeigt rechts den aktuellen Wert; die Unterseiten wirken sofort.
  */
 export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
@@ -46,7 +46,6 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
   const name = helperName(profile);
   const recipeCount = recipes ? Object.keys(recipes).length : null;
   const legacy = useLegacyFeatures();
-  const speech = useSpeechSettings();
   const mailStyle = useMailStyle();
   const home = useHomeTiles();
   const place = usePlace();
@@ -65,6 +64,8 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
         <PageHeader title="Einstellungen" />
         <main className={`${PAGE_MAIN} gap-6`}>
+          <BegleitungGroup profile={profile} />
+          <DarstellungGroup profile={profile} />
           <Group title="Tagesablauf">
             <Row href="/profil/tagesablauf" icon={Clock} title="Startseite & Tageszeiten" value={routine ? HOME_MODES.find((m) => m.value === routine.mode)?.label : undefined}>
               Mitdenkend oder immer gleich, Feierabend, Arbeitstage
@@ -118,20 +119,9 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
               </Row>
             )}
           </Group>
-          <Group title={name}>
-            <Row href="/profil/kuechenhelfer" icon={Mic} title="Name & Stimme" value={name}>
-              Wie {name} heißt und klingt
-            </Row>
-            <Row href="/profil/vorlesen" icon={Volume2} title="Vorlesen" value={READ_MODES.find((m) => m.value === speech.mode)?.short}>
-              Antworten laut vorlesen
-            </Row>
+          <Group title="Mails">
             <Row href="/profil/mails" icon={Mail} title="Mails" value={mailStyle?.greeting}>
               Gruß und Signatur für deine Mails
-            </Row>
-          </Group>
-          <Group title="Aussehen">
-            <Row href="/profil/ansicht" icon={Palette} title="Ansicht" value={APP_THEMES.find((t) => t.value === profile.theme)?.label}>
-              Farben der App
             </Row>
           </Group>
           <Group title="Einmal eingerichtet" quiet>
@@ -152,6 +142,8 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
       <PageHeader title="Einstellungen" />
 
       <main className={`${PAGE_MAIN} gap-6`}>
+        <BegleitungGroup profile={profile} />
+        <DarstellungGroup profile={profile} />
         <Group title="Kochen">
           <Row href="/profil/kochstil" icon={ChefHat} title="Kochstil" value={PLAN_STYLES.find((p) => p.value === profile.planStyle)?.label}>
             Mit Plan oder spontan – und wie ihr kocht
@@ -181,10 +173,7 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
           </Row>
         </Group>
 
-        <Group title="Aussehen">
-          <Row href="/profil/ansicht" icon={Palette} title="Ansicht" value={APP_THEMES.find((t) => t.value === profile.theme)?.label}>
-            Farben der App
-          </Row>
+        <Group title="Anzeige">
           <Row href="/profil/darstellung" icon={LayoutList} title="Darstellung" value={DISPLAY_MODES.find((d) => d.value === profile.display)?.label}>
             Wie viel die App zeigt
           </Row>

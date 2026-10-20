@@ -54,7 +54,7 @@ export function DayView() {
                 <span className="min-w-0 flex-1 truncate text-base font-semibold">{dish}</span>
               ) : (
                 <button type="button" onClick={() => openHelper(undefined, `Was könnten wir ${title === "Heute" || title === "Morgen" ? title.toLowerCase() : `am ${title.split(",")[0]}`} essen?`)} className="min-w-0 flex-1 text-left text-base text-muted">
-                  noch frei – <span className="font-semibold text-accent-strong">{profile ? helperName(profile) : "Lotte"} fragen</span>
+                  noch frei – <span className="font-semibold text-accent-strong">{helperName(profile)} fragen</span>
                 </button>
               )}
             </section>

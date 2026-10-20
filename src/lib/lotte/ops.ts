@@ -19,7 +19,7 @@ import {
   type StoredEntry,
 } from "../essen/mealPlan";
 import type { PantryItem, PantryPlace } from "../essen/pantry";
-import type { HouseholdProfile } from "../einstellungen/profile";
+import { helperWith, type HelperSettings, type HouseholdProfile } from "../einstellungen/profile";
 import type { Section, WeekList } from "../einkauf/shoppingList";
 import { createWeekPlan, planForWeek, type WeekPlan, type WeekWish } from "../essen/weekPlan";
 import { now } from "../core/now";
@@ -139,7 +139,9 @@ export type ChangeOp =
   // Mit Vorschau: Startseite mitdenkend/immer gleich, Sport eintragen, Wochenziel
   | { id: string; type: "set_day_mode"; mode: HomeMode }
   | { id: string; type: "add_training"; training: TrainingData }
-  | { id: string; type: "set_sport_goal"; goal: number };
+  | { id: string; type: "set_sport_goal"; goal: number }
+  // Begleitung anpassen (Name, Art/Stimme, Icon-Farbe)
+  | { id: string; type: "set_helper"; helper: Partial<Pick<HelperSettings, "name" | "art" | "farbe">> };
 
 /** Werden sofort ausgeführt (ohne "Übernehmen") – kleine, flüchtige Dinge */
 export const INSTANT_OP_TYPES = new Set(["add_timer", "stop_timer", "stopwatch", "cook_step", "start_cooking"]);
@@ -320,6 +322,9 @@ export function applyOps(
         break;
       case "set_kladde":
         next = { ...next, kladde: op.text };
+        break;
+      case "set_helper":
+        next = { ...next, profile: { ...next.profile, helper: helperWith(next.profile.helper, op.helper) } };
         break;
       case "set_day_mode":
         next = { ...next, tagesablauf: { ...(next.tagesablauf ?? { feierabendAb: "20:00", morgenBis: "10:00" }), mode: op.mode } };

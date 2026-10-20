@@ -19,7 +19,8 @@ import { NumberStepper } from "@/components/form/NumberStepper";
 import { sortedBases } from "@/lib/essen/bases";
 import { ChoiceCards } from "@/components/profile/settings/SettingsParts";
 import { LIKE_WEIGHTS, likeLevel, sortedLikes, withLikes, withoutLike } from "@/lib/essen/likes";
-import { COOKING_STYLES, PLAN_STYLES, MIX_SUGGESTS, HEALTH_TIP_LEVELS, HOUSEHOLD_TYPES, hasKids, wishDayActive, NEW_DISHES_OPTIONS, WEEKDAYS, WEEKEND_STYLES, planningWeekLabel, standardWeekDays, type KitchenMachine } from "@/lib/einstellungen/profile";
+import { saveSpeechSettings } from "@/lib/lotte/speech";
+import { COOKING_STYLES, PLAN_STYLES, MIX_SUGGESTS, helperName, HEALTH_TIP_LEVELS, HOUSEHOLD_TYPES, hasKids, wishDayActive, NEW_DISHES_OPTIONS, WEEKDAYS, WEEKEND_STYLES, planningWeekLabel, standardWeekDays, type KitchenMachine } from "@/lib/einstellungen/profile";
 import { now } from "@/lib/core/now";
 
 export function FavoritesEditView() {
@@ -67,9 +68,16 @@ export function WarmMealEditView() {
 
 export function HelperEditView() {
   return (
-    <ProfileEditPage title="Name & Stimme" intro="Wie ich heiße und wie ich klinge, wenn ich vorlese.">
+    <ProfileEditPage title="Deine Begleitung" intro="Wie ich heiße, wie ich klinge und welche Farbe ich habe.">
       {(draft, setDraft) => (
-        <HelperEditor helper={draft.helper} onChange={(helper) => setDraft((d) => ({ ...d, helper }))} />
+        <HelperEditor
+          helper={draft.helper}
+          onChange={(helper) => {
+            // Andere Art → passende Stimme statt der fest gewählten
+            if (helper.art !== draft.helper.art) saveSpeechSettings({ voice: "" });
+            setDraft((d) => ({ ...d, helper }));
+          }}
+        />
       )}
     </ProfileEditPage>
   );
@@ -361,7 +369,7 @@ export function CookingStyleEditView() {
           {draft.planStyle === "mix" && (
             <>
               <h2 className={`${SECTION_TITLE} mt-2 px-1`}>Darf ich von mir aus was vorschlagen?</h2>
-              <ChoiceCards label="Lotte darf vorschlagen" value={draft.mixSuggest} onChange={(mixSuggest) => setDraft((d) => ({ ...d, mixSuggest }))} options={MIX_SUGGESTS} />
+              <ChoiceCards label={`${helperName(draft)} darf vorschlagen`} value={draft.mixSuggest} onChange={(mixSuggest) => setDraft((d) => ({ ...d, mixSuggest }))} options={MIX_SUGGESTS} />
             </>
           )}
           <h2 className={`${SECTION_TITLE} mt-2 px-1`}>Nach Gefühl oder nach Rezept?</h2>

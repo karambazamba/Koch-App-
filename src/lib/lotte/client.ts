@@ -18,6 +18,8 @@ import { buildShoppingList } from "../einkauf/shoppingList";
 import { replaceRecipes } from "../essen/cookbook";
 import { replaceMealPlans } from "../essen/mealPlan";
 import { effectivePlanStyle, saveProfile } from "../einstellungen/profile";
+import { helperNote, type HelperPatch } from "./helperTools";
+import { loadSpeechSettings, saveSpeechSettings } from "./speech";
 import { addPantryItems, loadPantry, replacePantry } from "../essen/pantry";
 import { replaceShoppingLists } from "../einkauf/shoppingList";
 import { addWish, loadWishes, restoreWishes } from "../essen/wishes";
@@ -521,6 +523,10 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
     }
   }
   const dayModes = chosen.filter((op) => op.type === "set_day_mode");
+  // Begleitung angepasst: kurz sagen, was neu ist und wo es steht; neue Art → passende Stimme
+  const helperChange = chosen.reduce<HelperPatch>((acc, op) => (op.type === "set_helper" ? { ...acc, ...op.helper } : acc), {});
+  const previousVoice = helperChange.art && helperChange.art !== current.profile.helper.art ? loadSpeechSettings().voice : null;
+  if (Object.keys(helperChange).length) notes.push(helperNote(helperChange));
   if (chosen.some((op) => op.type === "set_meal" || op.type === "add_shopping")) {
     const note = shoppingNote(data, current);
     if (note) notes.push(note);
@@ -531,6 +537,10 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
   for (const op of chosen) {
     if (op.type === "add_training") undoDay.push(addTraining(op.training).undo);
     else if (op.type === "set_sport_goal") undoDay.push(setSportGoal(op.goal));
+  }
+  if (previousVoice !== null) {
+    saveSpeechSettings({ voice: "" });
+    undoDay.push(() => saveSpeechSettings({ voice: previousVoice }));
   }
   const lastMode = dayModes[dayModes.length - 1];
   if (lastMode && lastMode.type === "set_day_mode") {
