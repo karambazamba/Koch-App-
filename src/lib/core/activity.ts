@@ -1,3 +1,6 @@
+// Ohne Druck: Wann war die App zuletzt offen, wann hat jemand selbst etwas
+// getan? ("leiser werden": bleiben proaktive Nachrichten unbeachtet, schweigt
+// die Begleitung, bis wieder jemand selbst etwas tut.)
 
 import { createLocalStore } from "./localStore";
 import { now } from "./now";

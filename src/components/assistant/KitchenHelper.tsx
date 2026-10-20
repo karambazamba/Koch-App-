@@ -22,7 +22,8 @@ import { LotteBar } from "@/components/alltag/HomePager";
 import { helperName } from "@/lib/einstellungen/profile";
 import { removeRetiredKeys } from "@/lib/core/storage";
 import { adoptLegacySpeech } from "@/lib/lotte/speech";
-import { HelperPanel, spontanStartTurn, type ChatState } from "./HelperPanel";
+import { HelperPanel } from "./HelperPanel";
+import { spontanStartTurn, type ChatState } from "./chatTypes";
 import { loadSpontanFilters } from "./SpontanBoard";
 
 /** Nur nach echtem Löschen: kleine Meldung "Gelöscht · Rückgängig" für 3 Sekunden */

@@ -4,13 +4,13 @@ import Link from "next/link";
 import { MessageSquarePlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import { ArrowUp, CircleHelp, Mic, MicOff, Square, Volume2, VolumeX, X } from "lucide-react";
-import { baseLabel, bumpBase, sortedBases, type BaseId } from "@/lib/essen/bases";
+import { ArrowUp, Mic, MicOff, Square, Volume2, VolumeX, X } from "lucide-react";
+import { baseLabel, bumpBase, type BaseId } from "@/lib/essen/bases";
 import { parseLeftovers, type ParsedLeftover } from "@/lib/essen/leftovers/parser";
 import { addPantryItems, formatPantryItem } from "@/lib/essen/pantry";
 import { ingredientsFromQuestion, isCookIdeasRequest, mergeStock, stockItem, stockNearlyEmpty } from "@/lib/essen/dishIdeas";
 import { useStock } from "@/lib/essen/useStock";
-import { effectivePlanStyle, hasKids, helperName, loadProfile, mealClockFor, saveProfile } from "@/lib/einstellungen/profile";
+import { effectivePlanStyle, hasKids, helperName, mealClockFor, saveProfile } from "@/lib/einstellungen/profile";
 import { addWish, parseWish, removeWish, wishLabel } from "@/lib/essen/wishes";
 import { settingsChange } from "@/lib/lotte/settingsChat";
 import { iconChangeHint } from "@/lib/core/homescreen";
@@ -21,18 +21,9 @@ import { isAddPersonRequest } from "@/lib/einstellungen/onboarding/recognize";
 import { GuidedChat } from "@/components/onboarding/GuidedChat";
 import { LotteAvatar } from "@/components/LotteAvatar";
 import { calendarChat, changeEntries, loadEntries } from "@/lib/aufgaben";
-import { parseHomeCommand } from "@/lib/lotte/homeChat";
-import { parseBausteinCommand } from "@/lib/lotte/bausteinChat";
-import { BAUSTEINE, bausteinOf, featureOn, setFeature } from "@/lib/core/features";
-import { changeHome, describeHomeChange, requestHomeEdit, unlockHomeTile } from "@/lib/core/homeLayout";
-import { addPin, changePins, createPin, isPinboardQuery, loadPins, pinWriteCommand, visiblePins } from "@/lib/pinnwand";
-import { dayAnswer, umbrellaAnswer, weatherQuestion } from "@/lib/wetter/forecast";
-import { loadPlace, refreshForecast } from "@/lib/wetter/client";
-import { isRegisteredUndo, pushUndo, undoLast } from "@/lib/core/undo";
-import { commitOps, runInstantOps } from "@/lib/lotte/client";
-import { dayChat } from "@/lib/lotte/dayChat";
-import { cookableEntry } from "@/lib/essen/mealDone";
-import { askAssistant, saveAccessCode, unavailableText, useAssistantStatus } from "@/lib/lotte/client";
+import { isRegisteredUndo, pushUndo } from "@/lib/core/undo";
+import { runInstantOps } from "@/lib/lotte/client";
+import { askAssistant, unavailableText, useAssistantStatus } from "@/lib/lotte/client";
 import { setAvatarFlag, triggerAvatar } from "@/lib/core/avatarState";
 import {
   loadSpeechSettings,
@@ -57,80 +48,33 @@ import { mealOverOn, useCookedDays } from "@/lib/essen/mealDone";
 import { useMinutes } from "@/components/home/useRatingCandidate";
 import { addManualItem, removeManualItems, sectionFor, setItemShop, setProduct, useShoppingSettings } from "@/lib/einkauf/shoppingList";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
-import { isMarketSituation, marketIdeas, marketProduct, marketTargetDay, type MarketAnswer, type MarketIdea } from "@/lib/essen/market";
+import { isMarketSituation, marketIdeas, marketProduct, marketTargetDay, type MarketIdea } from "@/lib/essen/market";
 import { bakingIdeas, isBakingRequest } from "@/lib/essen/baking";
-import type { Recipe } from "@/lib/essen/cookbook";
 import { isShoppingRequest, parseProductStatement, parseShoppingText } from "@/lib/einkauf/shoppingParse";
-import { filtersFromText, isIdeaFilterRequest, isQuickRequest, isSnackRequest, parsePauseRequest, pauseLabel, quickIdeas, snackReply, spontanIdeas, type SpontanFilter, type SpontanIdea } from "@/lib/essen/spontan";
+import { filtersFromText, isIdeaFilterRequest, isQuickRequest, isSnackRequest, quickIdeas, snackReply, spontanIdeas, type SpontanFilter, type SpontanIdea } from "@/lib/essen/spontan";
 import { takeForDay, takeForToday } from "@/lib/essen/spontanTake";
 import { composeWeek, replaceMealPlans } from "@/lib/essen/mealPlan";
 import { AdjustSheet, EarlierIdeas, SpontanAnswer, loadSpontanFilters, saveSpontanFilters, spontanHeading } from "./SpontanBoard";
-import { MarketBoard, type MarketTarget } from "./MarketBoard";
-import { BakingBoard } from "./BakingBoard";
-import { ICON_BUTTON, INPUT_BASE, NOTE, buttonClass, chipClass } from "@/components/ui/styles";
+import { type MarketTarget } from "./MarketBoard";
+import { ICON_BUTTON, INPUT_BASE, NOTE } from "@/components/ui/styles";
 import { ProposalCard } from "./ProposalCard";
-import { MailCard } from "./MailCard";
-import { draftForHistory, eventsIn, greetingCommand, localNewMail, localReply as mailReply, looksLikeMail, REPLY_CHOICES, reviseDraft, revisionOf, splitInstruction, summaryOf, withTone, type MailDraft, type MailRevision } from "@/lib/lotte/mail";
-import { loadMailStyle, saveMailStyle } from "@/lib/lotte/mailSettings";
-import { draftSummary, replaceEntries, taskOverview, terminToAufgabe, upsertEntry, type CalendarEntry } from "@/lib/aufgaben";
-import { addListItems, appendLine, changeSchnellnotiz, changeNotes, createNote, isSchnellnotizTidyRequest, schnellnotizCommand, loadSchnellnotiz, loadNotes, noteAnswer, noteFor, parseNoteCommand, replaceNotes, saveSchnellnotiz, setPinned, tidySchnellnotiz, upsertNote, withoutLines } from "@/lib/notizen";
-import { createEntry } from "@/lib/core/entries";
+import { draftForHistory, looksLikeMail, revisionOf, splitInstruction } from "@/lib/lotte/mail";
 import { TipBubble } from "./TipBubble";
 import { tipsShown, useTipStore } from "@/lib/essen/healthTips";
 import { extractLikeStatements, learnFromRecipe, learnLikes, LIKE_WEIGHTS } from "@/lib/essen/likes";
-import { berlinTime, now } from "@/lib/core/now";
+import { now } from "@/lib/core/now";
 import { useFeature } from "@/lib/core/features";
 
-export type ChatTurnView = ChatTurn & {
-  /** Fehlermeldung – wird nicht an die KI geschickt */
-  error?: boolean;
-  /** Nur in der App erzeugt ("Übernommen ✓") – wird nicht an die KI geschickt */
-  local?: boolean;
-  /** An die KI geschickt statt `text` (z. B. Reste + Basis ausführlich) */
-  send?: string;
-  /** Spontan kochen: erkannte bzw. schon notierte Zutaten als Chips */
-  items?: string[];
-  /** Spontan kochen: unbekannte Wörter ("Meintest du …?") */
-  unsure?: ParsedLeftover[];
-  /** Ideen-Antwort (Spontan kochen): rechnet live aus dem Bestand; nur die letzte ist offen, ältere eingeklappt */
-  spontan?: boolean;
-  /** Filter dieser Ideen-Antwort */
-  ideaFilters?: SpontanFilter[];
-  /** Schon gezeigte Ideen, die hier nicht wiederkommen ("Andere Ideen") */
-  exclude?: string[];
-  /** Eben genannte Zutaten ("Was mach ich mit Hack und Paprika?") – zählen mit, landen nicht im Vorrat */
-  extra?: string[];
-  /** Zurücknehmen einer gerade gemachten Änderung ("Mach das rückgängig") */
-  undo?: () => void;
-  /** Echtes Löschen: dann (und nur dann) steht "Rückgängig" als Knopf darunter */
-  deleted?: boolean;
-  /** Im Supermarkt: Ideen zum Produkt, darunter Liste und "Statt <Tag>" */
-  market?: MarketAnswer & { target: MarketTarget | null };
-  /** Backwunsch: passende Rezepte mit "Zusammen backen" */
-  baking?: Recipe[];
-  /** Antwort-Knöpfe unter der Nachricht (nur beim letzten Eintrag) */
-  choices?: { label: string; onClick: () => void }[];
-  /** Knöpfe der KI: ein Tipp schickt den Text als eigene Nachricht (nur beim letzten Eintrag) */
-  chips?: string[];
-  /** Mail-Entwurf als Karte ("In Mail öffnen", "Kopieren", "Ändern") */
-  mail?: MailDraft;
-};
-
-export type Proposal = { ops: ChangeOp[]; selected: Set<string> };
-/** `spontan`: Spontan kochen ("mit dem, was da ist") mit gewählten Filtern; null = aus */
-export type ChatState = { turns: ChatTurnView[]; proposal: Proposal | null; spontan: SpontanFilter[] | null };
-
-/** Neue Ideen-Antwort (Text und Ideen rechnet das Panel live) */
-export function spontanStartTurn(filters: SpontanFilter[] = [], exclude: string[] = [], extra: string[] = []): ChatTurnView {
-  return { role: "assistant", local: true, spontan: true, text: "", ideaFilters: filters, exclude, extra };
-}
+import { spontanStartTurn, type ChatState, type ChatTurnView } from "./chatTypes";
+import { pauseRule as pauseRuleOf, dayRule as dayRuleOf, boardRule as boardRuleOf, schnellnotizRule as schnellnotizRuleOf, noteRule as noteRuleOf, bausteinRule as bausteinRuleOf, homeCommand as homeCommandOf, type RuleContext } from "./localRules";
+import { AccessCodeCard, SpeakButton } from "./ChatBits";
+import { BUBBLE, ChatTurnItem } from "./ChatTurnItem";
+import { mailRule as mailRuleOf, rememberTone } from "./mailRules";
 
 /** Fragt die KI nach der Basis? Dann Basis-Chips anbieten */
 function asksForBase(turn: ChatTurnView | undefined): boolean {
   return Boolean(turn && turn.role === "assistant" && !turn.local && !turn.error && /basis/i.test(turn.text) && turn.text.includes("?"));
 }
-
-const BUBBLE = "max-w-[85%] whitespace-pre-line rounded-2xl px-4 py-2.5 text-base leading-snug";
 
 type Props = {
   data: AssistantData | null | undefined;
@@ -222,6 +166,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   useEffect(() => {
     if (confused) triggerAvatar("verwirrt");
   }, [confused]);
+
+  const ruleCtx: RuleContext = { data, today, setChat, setInput, router, onClose };
 
   /** KI gerade nicht da: erst die eigenen Regeln, sonst der freundliche Satz */
   const notUnderstood = (said: string, local?: (t: string) => boolean) => {
@@ -626,85 +572,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     route(t);
   };
 
-  // --- Mails (ohne Postfach; ohne KI einfache Entwürfe) ------------------------
-
-  /** "Auf Du"/"Auf Sie" für diesen Empfänger merken */
-  const rememberTone = (draft: MailDraft, rev: MailRevision | null) => {
-    const key = draft.to || draft.recipient || "";
-    if (key && (rev === "du" || rev === "sie")) saveMailStyle(withTone(loadMailStyle(), key, rev));
-  };
-
-  const myName = () => data?.profile.persons[0]?.name?.trim() ?? "";
-
-  const mailTurn = (draft: MailDraft, text: string, extra: Partial<ChatTurnView> = {}): ChatTurnView => ({ role: "assistant", local: true, text, mail: draft, ...extra });
-
-  /** Termin/Frist aus der Mail als Knopf "📅 … eintragen" (mit Rückgängig) */
-  const eventChoices = (mail: string): { label: string; onClick: () => void }[] => {
-    if (!today) return [];
-    return eventsIn(mail, toIsoDate(today)).map((draft) => ({
-      label: `📅 ${draft.data.title} eintragen`,
-      onClick: () => {
-        const entry = createEntry(draft.typ, draft.data, { raum: draft.raum }) as CalendarEntry;
-        const undo = changeEntries((list) => upsertEntry(list, entry));
-        const text = `Eingetragen ✓ ${draftSummary(draft)}`;
-        setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text, local: true, undo: pushUndo(text, undo) }] }));
-      },
-    }));
-  };
-
-  /** Ohne KI: eingefügte Mail, neue Mail ("Mail an die Kita: …") oder Änderung am letzten Entwurf */
-  const mailRule = (t: string): boolean => {
-    const style = loadMailStyle();
-    const greeting = greetingCommand(t);
-    if (greeting) {
-      setInput("");
-      saveMailStyle({ ...style, greeting });
-      const text = `Gemerkt ✓ Deine Mails enden jetzt mit „${greeting}“. Ändern kannst du das auch unter Einstellungen → Mails.`;
-      setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text, local: true, undo: pushUndo(text, () => saveMailStyle(style)) }] }));
-      return true;
-    }
-    const { instruction, mail } = splitInstruction(t);
-    if (looksLikeMail(mail)) {
-      setInput("");
-      const events = eventChoices(mail);
-      const eventLine = events.length ? " Da steht auch ein Termin drin – soll ich ihn eintragen?" : "";
-      const summary = `Kurz gesagt: ${summaryOf(mail)}`;
-      if (instruction) {
-        const draft = mailReply(mail, { instruction }, style, myName());
-        setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, mailTurn(draft, `${summary}${eventLine}`, events.length ? { choices: events } : {})] }));
-        return true;
-      }
-      const answerWith = (choice: (typeof REPLY_CHOICES)[number]) => () => {
-        const draft = mailReply(mail, { choice: choice.id }, loadMailStyle(), myName());
-        setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: choice.label, local: true }, mailTurn(draft, "Hier mein Vorschlag:")] }));
-      };
-      setChat((c) => ({
-        ...c,
-        turns: [
-          ...c.turns,
-          { role: "user", text: t, local: true },
-          { role: "assistant", local: true, text: `${summary} Wie willst du antworten?${eventLine}`, choices: [...REPLY_CHOICES.map((r) => ({ label: r.label, onClick: answerWith(r) })), ...events] },
-        ],
-      }));
-      return true;
-    }
-    const rev = revisionOf(t);
-    const previous = [...chat.turns].reverse().find((x) => x.mail)?.mail;
-    if (rev && previous) {
-      setInput("");
-      const draft = reviseDraft(previous, rev);
-      rememberTone(draft, rev);
-      setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, mailTurn(draft, "So vielleicht?")] }));
-      return true;
-    }
-    const fresh = localNewMail(t, style, myName(), data?.profile.persons.map((p) => p.name) ?? []);
-    if (fresh) {
-      setInput("");
-      setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, mailTurn(fresh, "Hier mein Vorschlag – senden machst du selbst.")] }));
-      return true;
-    }
-    return false;
-  };
+  const mailRule = (t: string) => mailRuleOf(ruleCtx, chat.turns, t);
 
   /**
    * Grundregel: Ist die KI erreichbar, bekommt IMMER sie die Nachricht. Die
@@ -768,267 +636,17 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     return localFirst(t) || localFallback(t);
   };
 
-  /** Pause ohne KI: nur eine klare Abwesenheit – und nie still, sondern als Frage mit zwei Knöpfen */
-  const pauseRule = (t: string): boolean => {
-    if (!data || !today) return false;
-    const pause = parsePauseRequest(t, today);
-    if (!pause) return false;
-    setInput("");
-    if (pause.kind === "end") {
-      const before = data.profile;
-      if (before.pause) saveProfile({ ...before, pause: null });
-      localTurn(t, before.pause ? "Willkommen zurück! 😊 Pause ist beendet." : "Schön, dass ihr da seid! 😊", before.pause ? () => saveProfile(before) : undefined);
-      return true;
-    }
-    const finish = (yes: boolean) => {
-      if (!yes) return setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text: "Okay, keine Pause.", local: true }] }));
-      const before = loadProfile() ?? data.profile;
-      saveProfile({ ...before, pause: pause.pause });
-      setChat((c) => ({
-        ...c,
-        turns: [
-          ...c.turns,
-          {
-            role: "assistant",
-            local: true,
-            text: `Eingetragen ✓ Pause ${pauseLabel(pause.pause)} ☀️`,
-            undo: pushUndo(`die Pause ${pauseLabel(pause.pause)}`, () => saveProfile(before)),
-          },
-        ],
-      }));
-    };
-    setChat((c) => ({
-      ...c,
-      turns: [
-        ...c.turns,
-        { role: "user", text: t, local: true },
-        {
-          role: "assistant",
-          local: true,
-          text: `Soll ich eine Pause ${pauseLabel(pause.pause)} eintragen? Dann plane ich da nichts.`,
-          choices: [
-            { label: "Ja, eintragen", onClick: () => finish(true) },
-            { label: "Nein", onClick: () => finish(false) },
-          ],
-        },
-      ],
-    }));
-    return true;
-  };
+  const pauseRule = (t: string) => pauseRuleOf(ruleCtx, t);
 
-  /** Timer, Kochen, Sport, Startseiten-Modus ohne KI (sofort, Zurücknehmen bleibt gemerkt) */
-  const dayRule = (t: string): boolean => {
-    if (!data || !today) return false;
-    const iso = toIsoDate(today);
-    const week = composeWeek(weekStartFor(today, data.profile.shoppingDay || DEFAULT_SHOPPING_DAY), data.profile, data.weekPlans, data.mealPlans, data.recipes);
-    const entry = cookableEntry(week.days.find((d) => d.date === iso));
-    const recipe = entry?.recipeId ? data.recipes[entry.recipeId] : undefined;
-    const reply = dayChat(t, { today: iso, me: data.profile.persons[0]?.id ?? null, others: data.profile.persons.slice(1).map((p) => p.name.trim()), cooking: entry ? { dish: entry.title, recipe: recipe?.id ?? entry.title, steps: recipe?.steps ?? [] } : null });
-    if (!reply) return false;
-    localReply(t, reply.text);
-    return true;
-  };
+  const dayRule = (t: string) => dayRuleOf(ruleCtx, t);
 
-  /** Bausteine ohne KI: "Zeig mir den Vorrat" (wenn aus), "Ich brauche die Tipps nicht", "Was kannst du noch?" */
-  /** Pinnwand und Wetter ohne KI: "Schreib an die Pinnwand: …", "Was steht auf der Pinnwand?", "Wie wird das Wetter morgen?", "Brauch ich heute einen Schirm?" */
-  const boardRule = (t: string): boolean => {
-    if (!data || !today) return false;
-    const say = (text: string) => setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text, local: true }] }));
-    const me = data.profile.persons[0]?.name.trim() || "Ich";
-    const write = pinWriteCommand(t);
-    if (write) {
-      setInput("");
-      const pin = createPin(write, me);
-      if (!pin) return false;
-      pushUndo("die Pinnwand-Nachricht", changePins((all) => addPin(all, pin)));
-      const shown = unlockHomeTile("pinnwand");
-      say(`Hängt an der Pinnwand ✓ „${pin.data.text}“${shown ? " – die Pinnwand steht jetzt oben auf der Startseite." : ""}`);
-      return true;
-    }
-    if (isPinboardQuery(t)) {
-      setInput("");
-      const pins = visiblePins(loadPins(), now().getTime());
-      say(pins.length ? `Auf der Pinnwand: ${pins.slice(0, 4).map((m) => `${m.data.author === me ? "Du" : m.data.author}: „${m.data.text}“`).join(" · ")}` : "Auf der Pinnwand steht gerade nichts.");
-      return true;
-    }
-    const question = weatherQuestion(t, toIsoDate(today));
-    if (question) {
-      setInput("");
-      setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }] }));
-      void refreshForecast(loadPlace()).then((fc) => {
-        const minutes = berlinTime().minutes;
-        const text = !fc
-          ? "Gerade komme ich nicht an die Wetterdaten – probier's gleich nochmal."
-          : question.umbrella
-            ? umbrellaAnswer(fc, question.date, minutes)
-            : (dayAnswer(fc, question.date, question.label) ?? "Für den Tag gibt's noch keine Vorhersage – nur die nächsten 7 Tage.");
-        setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text, local: true }] }));
-      });
-      return true;
-    }
-    return false;
-  };
+  const boardRule = (t: string) => boardRuleOf(ruleCtx, t);
 
-  /** Schnellnotiz (früher Kladde) ohne KI: "Schreib in die Schnellnotiz/Kladde: …", "Notier mir schnell …", "Räum meine Schnellnotiz auf"; dazu "Das ist kein Termin, sondern eine Aufgabe" */
-  const schnellnotizRule = (t: string): boolean => {
-    if (!today) return false;
-    const say = (text: string, extra: Partial<ChatTurnView> = {}) => setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text, local: true, ...extra }] }));
-    const write = schnellnotizCommand(t);
-    if (write) {
-      setInput("");
-      const undo = changeSchnellnotiz(appendLine(loadSchnellnotiz().text, write));
-      const text = "Steht in der Schnellnotiz ✓ (Notizen, ganz oben)";
-      say(text, { undo: pushUndo(text, undo) });
-      return true;
-    }
-    if (isSchnellnotizTidyRequest(t)) {
-      setInput("");
-      const iso = toIsoDate(today);
-      const lines = tidySchnellnotiz(loadSchnellnotiz().text, iso).filter((l) => l.kind);
-      if (!lines.length) {
-        say("In deiner Schnellnotiz finde ich gerade nichts, was ein Termin, eine Aufgabe oder eine Notiz wird – alles bleibt, wie es ist.");
-        return true;
-      }
-      const label = (l: (typeof lines)[number]) => (l.kind === "termin" ? "Termin" : l.kind === "aufgabe" ? "Aufgabe" : "Notiz");
-      const apply = () => {
-        const beforeEntries = loadEntries();
-        const beforeNotes = loadNotes();
-        const beforeSchnellnotiz = loadSchnellnotiz().text;
-        const created = lines.flatMap((l) => (l.draft ? [createEntry(l.draft.typ, l.draft.data, { raum: l.draft.raum }) as CalendarEntry] : []));
-        if (created.length) changeEntries((list) => created.reduce((acc, e) => upsertEntry(acc, e), list));
-        for (const l of lines) {
-          if (l.note?.kind === "add") {
-            const list = noteFor(loadNotes(), l.note.list);
-            const items = l.note.items;
-            changeNotes((all) => (list ? addListItems(all, list.id, items) : upsertNote(all, createNote({ title: l.note!.kind === "add" ? l.note!.list : l.line, items }))));
-          } else if (l.note?.kind === "create") {
-            const n = l.note;
-            changeNotes((all) => upsertNote(all, createNote({ title: n.title, text: n.text })));
-          }
-        }
-        saveSchnellnotiz(withoutLines(beforeSchnellnotiz, lines.map((l) => l.line)));
-        const text = `Übernommen ✓ ${lines.length} ${lines.length === 1 ? "Zeile" : "Zeilen"} – der Rest bleibt in der Schnellnotiz.`;
-        setChat((c) => ({
-          ...c,
-          turns: [...c.turns, { role: "assistant", text, local: true, undo: pushUndo("das Aufräumen der Schnellnotiz", () => (replaceEntries(beforeEntries), replaceNotes(beforeNotes), saveSchnellnotiz(beforeSchnellnotiz))) }],
-        }));
-      };
-      say(`Daraus würde ich machen: ${lines.map((l) => `${label(l)}: ${l.draft?.data.title ?? (l.note?.kind === "create" ? l.note.title : l.line)}`).join(" · ")}. Der Rest bleibt in der Schnellnotiz.`, {
-        choices: [
-          { label: "Übernehmen", onClick: apply },
-          { label: "Nein, lass", onClick: () => setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text: "Okay, die Schnellnotiz bleibt, wie sie ist.", local: true }] })) },
-        ],
-      });
-      return true;
-    }
-    // "Das ist kein Termin, sondern eine Aufgabe" – der zuletzt geänderte Termin
-    if (/\bkein(?:en)?\s+termin\b.*\baufgabe\b/i.test(t)) {
-      setInput("");
-      const last = [...loadEntries()].filter((e) => e.typ === "termin").reverse().sort((a, b) => b.geaendert.localeCompare(a.geaendert))[0];
-      if (!last || last.typ !== "termin") {
-        say("Welchen Termin meinst du genau?");
-        return true;
-      }
-      const undo = changeEntries((list, stamp) => list.map((e) => (e.id === last.id && e.typ === "termin" ? terminToAufgabe(e, stamp) : e)));
-      const text = `Umgewandelt ✓ „${last.data.title}“ ist jetzt eine Aufgabe.`;
-      say(text, { undo: pushUndo(text, undo) });
-      return true;
-    }
-    return false;
-  };
+  const schnellnotizRule = (t: string) => schnellnotizRuleOf(ruleCtx, t);
 
-  /** Notizen und Aufgaben-Übersicht ohne KI: "Merk dir …", "Was steht auf der Packliste?", "Häng das WLAN oben an", "Was muss ich heute noch erledigen?" */
-  const noteRule = (t: string): boolean => {
-    if (!today) return false;
-    const cmd = parseNoteCommand(t);
-    if (!cmd) return false;
-    setInput("");
-    const say = (text: string, undo?: () => void) =>
-      setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text, local: true, ...(undo ? { undo: pushUndo(text, undo) } : {}) }] }));
-    const notes = loadNotes();
-    switch (cmd.kind) {
-      case "tasks": {
-        const g = taskOverview(loadEntries(), toIsoDate(today));
-        const part = (label: string, list: typeof g.heute) => (list.length ? `${label}: ${list.slice(0, 5).map((i) => `${i.title}${i.carried ? ` (${i.carried})` : i.dueLabel ? ` (${i.dueLabel})` : ""}`).join(", ")}.` : "");
-        const text = [part("Heute dran", g.heute), part("Diese Woche", g.woche)].filter(Boolean).join(" ") || "Heute liegt nichts an – schön ruhig.";
-        say(cmd.open ? `${text} Ich hab dir die Aufgaben aufgemacht.` : text);
-        if (cmd.open) {
-          router.push("/aufgaben");
-          onClose();
-        }
-        return true;
-      }
-      case "show_all":
-        say("Hier sind deine Notizen.");
-        router.push("/notizen");
-        onClose();
-        return true;
-      case "show": {
-        const note = noteFor(notes, cmd.query);
-        say(note ? noteAnswer(note) : notes.length ? `Dazu hab ich keine Notiz. Da sind: ${notes.map((n) => n.data.title).join(", ")}.` : "Dazu hab ich noch nichts notiert – sag einfach „Merk dir …“.");
-        return true;
-      }
-      case "pin": {
-        const note = noteFor(notes, cmd.query.replace(/^(das|die|den|der|meine|unsere)\s+/i, ""));
-        if (!note) {
-          say("Die Notiz finde ich gerade nicht – wie heißt sie?");
-          return true;
-        }
-        const undo = changeNotes((list) => setPinned(list, note.id, cmd.on));
-        say(cmd.on ? `Angeheftet ✓ ${note.data.title} steht jetzt oben bei den Notizen.` : `Gelöst ✓ ${note.data.title}`, undo);
-        return true;
-      }
-      case "add": {
-        const list = noteFor(notes, cmd.list);
-        if (list) {
-          const undo = changeNotes((all) => addListItems(all, list.id, cmd.items));
-          say(`Notiert ✓ ${cmd.items.join(", ")} auf „${list.data.title}“.`, undo);
-        } else {
-          const note = createNote({ title: cmd.list, items: cmd.items });
-          const undo = changeNotes((all) => upsertNote(all, note));
-          say(`Notiert ✓ Neue Liste „${note.data.title}“: ${cmd.items.join(", ")}. Steht unter Notizen.`, undo);
-        }
-        return true;
-      }
-      case "create": {
-        const same = notes.find((n) => n.data.kind === "text" && n.data.title.toLowerCase() === cmd.title.toLowerCase());
-        if (same) {
-          const undo = changeNotes((all) => upsertNote(all, { ...same, data: { ...same.data, text: cmd.text ?? "" } }));
-          say(`Aktualisiert ✓ ${same.data.title}`, undo);
-        } else {
-          const note = createNote({ title: cmd.title, text: cmd.text });
-          const undo = changeNotes((all) => upsertNote(all, note));
-          say(`Gemerkt ✓ ${note.data.emoji} ${note.data.title} – steht unter Notizen.`, undo);
-        }
-        return true;
-      }
-    }
-  };
+  const noteRule = (t: string) => noteRuleOf(ruleCtx, t);
 
-  const bausteinRule = (t: string): boolean => {
-    const cmd = parseBausteinCommand(t);
-    if (!cmd) return false;
-    if (cmd.kind === "list") {
-      const off = BAUSTEINE.filter((b) => !featureOn(b.feature));
-      setInput("");
-      localTurn(t, off.length ? `Ich kann noch: ${off.map((b) => `${b.name} – ${b.text.replace(/\.$/, "")}`).join("; ")}. Sag einfach, was ich einschalten soll – oder schau unter Einstellungen → Bausteine.` : "Gerade ist alles an, was ich kann.");
-      return true;
-    }
-    const b = bausteinOf(cmd.feature);
-    // Schon so? Dann ist es keine Baustein-Frage (z. B. "Zeig mir den Wochenplan" öffnet ihn)
-    if (!b || featureOn(cmd.feature) === cmd.on) return false;
-    setInput("");
-    setFeature(cmd.feature, cmd.on);
-    localTurn(t, cmd.on ? `Erledigt ✓ ${b.where}` : `Erledigt ✓ ${b.name} ist aus – die Daten bleiben.`, () => setFeature(cmd.feature, !cmd.on));
-    return true;
-  };
-
-  /** Lokale Antwort ins Gespräch (mit optionalem Rückgängig) */
-  const localTurn = (t: string, text: string, undo?: () => void) =>
-    setChat((c) => ({
-      ...c,
-      turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text, local: true, ...(undo ? { undo: pushUndo(text, undo) } : {}) }],
-    }));
+  const bausteinRule = (t: string) => bausteinRuleOf(ruleCtx, t);
 
   /**
    * Ohne KI (oder wenn sie gerade nicht erreichbar ist): Einkaufsliste,
@@ -1075,66 +693,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     return false;
   };
 
-  /** Antwort von Lotte (lokal) ins Gespräch; `deleted` = echtes Löschen → Knopf "Rückgängig" */
-  const localReply = (t: string, text: string, undo?: () => void, deleted = false) => {
-    setInput("");
-    setChat((c) => ({
-      ...c,
-      turns: [
-        ...c.turns,
-        { role: "user", text: t, local: true },
-        {
-          role: "assistant",
-          local: true,
-          text,
-          deleted,
-          ...(undo
-            ? {
-                undo: () => {
-                  undo();
-                  setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig gemacht – alles wie vorher.", local: true }] }));
-                },
-              }
-            : {}),
-        },
-      ],
-    }));
-  };
-
-  /** "Mach die Einkaufsliste wieder klein", "Lösch den Wochenplan", "Mach das rückgängig" … */
-  const homeCommand = (t: string): boolean => {
-    if (!data || !today) return false;
-    const cmd = parseHomeCommand(t);
-    if (!cmd) return false;
-    if (cmd.kind === "undo") {
-      const label = undoLast();
-      localReply(t, label ? `Zurückgenommen ✓ ${label}` : "Da gibt's gerade nichts zurückzunehmen.");
-      return true;
-    }
-    if (cmd.kind === "show") {
-      setInput("");
-      if (cmd.target === "startseite") requestHomeEdit();
-      router.push(cmd.target === "wochenplan" ? "/?seite=essen" : cmd.target === "einkaufsliste" ? "/einkaufsliste" : "/");
-      onClose();
-      return true;
-    }
-    if (cmd.kind === "home") {
-      const undo = pushUndo(describeHomeChange(cmd.change), changeHome(cmd.change));
-      localReply(t, `Erledigt ✓ ${describeHomeChange(cmd.change)}`, undo, cmd.change.action === "ausblenden");
-      return true;
-    }
-    const weekStart = planningWeekStart(today, data.profile.shoppingDay || DEFAULT_SHOPPING_DAY).weekStart;
-    const op: ChangeOp =
-      cmd.kind === "clear_week"
-        ? { id: "lokal-woche", type: "clear_week", weekStart: weekStartFor(today, data.profile.shoppingDay || DEFAULT_SHOPPING_DAY) }
-        : cmd.kind === "clear_shopping"
-          ? { id: "lokal-liste", type: "clear_shopping", weekStart }
-          : { id: "lokal-weg", type: "remove_shopping", weekStart, names: cmd.names };
-    const { undo } = commitOps(data, [op], new Set([op.id]), t);
-    const text = cmd.kind === "clear_week" ? "Erledigt ✓ Der Wochenplan ist wieder leer – die Rezepte bleiben." : cmd.kind === "clear_shopping" ? "Erledigt ✓ Die Einkaufsliste ist leer." : `Erledigt ✓ ${cmd.names.join(", ")} ${cmd.names.length === 1 ? "ist" : "sind"} von der Liste.`;
-    localReply(t, text, undo, true);
-    return true;
-  };
+  const homeCommand = (t: string) => homeCommandOf(ruleCtx, t);
 
   /** Regeln, die vor der KI greifen (Einstellungen, Supermarkt, Backen, "Wir lieben …") */
   const localFirst = (t: string): boolean => {
@@ -1500,110 +1059,22 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
               return <EarlierIdeas key={i} titles={earlierTitles} />;
             }
             return (
-              <div key={i} className={`flex flex-col gap-2 ${turn.role === "user" ? "items-end" : "items-start"}`}>
-                <div className={`flex w-full items-end gap-1 ${turn.role === "user" ? "justify-end" : ""}`}>
-                <div
-                  className={`${BUBBLE} ${
-                    turn.role === "user"
-                      ? `rounded-br-md bg-accent text-on-accent ${turn.text.length > 300 ? "line-clamp-6" : ""}`
-                      : "rounded-bl-md border border-line bg-surface text-ink"
-                  }`}
-                >
-                  {turn.text}
-                  {(turn.items?.length || turn.unsure?.length) ? (
-                    <span className="mt-2 flex flex-wrap gap-1.5">
-                      {turn.items?.map((item) => (
-                        <span key={item} className={chipClass(true)}>
-                          {item}
-                        </span>
-                      ))}
-                      {turn.unsure?.map((u) => (
-                        <button
-                          key={u.heard}
-                          type="button"
-                          onClick={() => acceptUnsure(i, u)}
-                          className={chipClass(false, "muted")}
-                        >
-                          {u.suggestion ? `Meintest du ${u.suggestion}?` : `${u.name} übernehmen?`}
-                          <CircleHelp className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-                        </button>
-                      ))}
-                    </span>
-                  ) : null}
-                  {turn.items?.length ? (
-                    <Link href="/vorrat" onClick={onClose} className="mt-2 block text-sm font-semibold text-accent-strong underline">
-                      Im Vorrat ansehen
-                    </Link>
-                  ) : null}
-                </div>
-                {turn.role === "assistant" && speechSupported() && (
-                  <SpeakButton speaking={speakingId === `turn-${i}`} onClick={() => toggleSpeak(turn.text, `turn-${i}`, voice)} />
-                )}
-                </div>
-                {turn.mail && (
-                  <MailCard
-                    draft={turn.mail}
-                    active={last || i === lastMailIndex}
-                    onRevise={(wish) => submit(wish)}
-                  />
-                )}
-                {turn.chips && last && (
-                  <div className="flex flex-wrap gap-2" aria-label="Antworten">
-                    {turn.chips.map((c) => (
-                      <button key={c} type="button" onClick={() => submit(c)} className={chipClass(false)}>
-                        {c}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {turn.choices && last && (
-                  <div className="flex flex-wrap gap-2">
-                    {turn.choices.map((c) => (
-                      <button key={c.label} type="button" onClick={c.onClick} className={chipClass(false)}>
-                        {c.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {turn.undo && turn.deleted && last && (
-                  <button type="button" onClick={turn.undo} className={chipClass(false, "muted")}>
-                    Rückgängig
-                  </button>
-                )}
-                {turn.market && (
-                  <MarketBoard
-                    answer={turn.market}
-                    target={turn.market.target}
-                    onAdd={(idea) => addMarketItems(turn.market!.product, idea)}
-                    onPlan={planMarketIdea}
-                  />
-                )}
-                {turn.baking && data && <BakingBoard recipes={turn.baking} withKids={hasKids(data.profile)} onNavigate={onClose} />}
-                {showBases && data && (
-                  <div className="flex flex-wrap gap-2" aria-label="Basis wählen">
-                    {sortedBases(data.profile.bases).map((b) => (
-                      <button
-                        key={b.id}
-                        type="button"
-                        onClick={() => {
-                          saveProfile({ ...data.profile, bases: bumpBase(data.profile.bases, b.id) });
-                          void ask(b.label);
-                        }}
-                        className={chipClass(false)}
-                      >
-                        {b.label}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => void ask("Egal")}
-                      className={chipClass(false, "muted")}
-                    >
-                      Egal
-                    </button>
-                  </div>
-                )}
-              </div>
+              <ChatTurnItem
+                key={i}
+                turn={turn}
+                last={last}
+                data={data}
+                showBases={showBases}
+                mailActive={last || i === lastMailIndex}
+                speaking={speakingId === `turn-${i}`}
+                onSpeak={() => toggleSpeak(turn.text, `turn-${i}`, voice)}
+                onSubmit={submit}
+                onAsk={(text) => void ask(text)}
+                onAcceptUnsure={(u) => acceptUnsure(i, u)}
+                onMarketAdd={addMarketItems}
+                onMarketPlan={planMarketIdea}
+                onClose={onClose}
+              />
             );
           })}
 
@@ -1746,63 +1217,5 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
         )}
       </section>
     </div>
-  );
-}
-
-/** Einmal den Zugangscode der Familie eingeben – danach versteht Lotte ganze Sätze */
-function AccessCodeCard({ onLater }: { onLater: () => void }) {
-  const [code, setCode] = useState("");
-  const [state, setState] = useState<"idle" | "busy" | "falsch" | "offline">("idle");
-  const unlock = async () => {
-    setState("busy");
-    const ok = await saveAccessCode(code);
-    setState(ok ? "idle" : ok === null ? "offline" : "falsch");
-  };
-  return (
-    <form
-      className="flex w-full flex-col gap-2 rounded-card border border-line bg-surface p-4 shadow-card"
-      aria-label="Zugangscode"
-      onSubmit={(e) => {
-        e.preventDefault();
-        void unlock();
-      }}
-    >
-      <p className="font-bold">Damit ich ganze Sätze verstehe, brauch ich einmal euren Zugangscode.</p>
-      <p className="text-sm text-muted">Ich merke ihn mir auf diesem Gerät. Ohne Code helfe ich trotzdem – nur etwas einfacher.</p>
-      <input
-        type="password"
-        value={code}
-        onChange={(e) => setCode(e.target.value)}
-        autoComplete="off"
-        aria-label="Zugangscode"
-        placeholder="Zugangscode"
-        className={`${INPUT_BASE} h-12 px-4`}
-      />
-      {state === "falsch" && <p className="text-sm text-muted" role="status">Der Code passt noch nicht – schau nochmal nach.</p>}
-      {state === "offline" && <p className="text-sm text-muted" role="status">Gerade komme ich nicht durch – probier es gleich nochmal.</p>}
-      <div className="flex gap-2">
-        <button type="submit" disabled={!code.trim() || state === "busy"} className={buttonClass("primary", "sm")}>
-          Freischalten
-        </button>
-        <button type="button" onClick={onLater} className={buttonClass("ghost", "sm")}>
-          Später
-        </button>
-      </div>
-    </form>
-  );
-}
-
-/** Kleiner Lautsprecher an Lottes Nachricht: liest vor, nochmal Tippen stoppt */
-function SpeakButton({ speaking, onClick }: { speaking: boolean; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={speaking}
-      aria-label={speaking ? "Vorlesen stoppen" : "Vorlesen"}
-      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition active:scale-95 ${speaking ? "bg-accent-soft text-accent-strong" : "text-muted"}`}
-    >
-      {speaking ? <Square className="h-4 w-4 fill-current" strokeWidth={2} aria-hidden /> : <Volume2 className="h-5 w-5" strokeWidth={2} aria-hidden />}
-    </button>
   );
 }

@@ -7,7 +7,7 @@ import { previewRows, type PreviewRow } from "@/lib/lotte/preview";
 import { formatAmount } from "@/lib/essen/cookbook";
 import { CategoryDot } from "@/components/ui/Category";
 import { CARD, buttonClass } from "@/components/ui/styles";
-import type { Proposal } from "./HelperPanel";
+import type { Proposal } from "./chatTypes";
 
 type Props = {
   data: AssistantData;
