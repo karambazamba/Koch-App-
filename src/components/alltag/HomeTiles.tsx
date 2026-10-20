@@ -119,9 +119,9 @@ export function ShoppingTile({ half, size = "S" }: { half: boolean; size?: TileS
           <ShoppingCart className="h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
           <span className="truncate">Einkauf{open.length ? ` · ${open.length}` : ""}</span>
         </span>
-        {!open.length && <span className="text-[14px] text-muted">Liste ist leer</span>}
+        {!open.length && <span className="text-[14px] font-semibold text-muted">+ eintragen</span>}
         {open.length > 0 && size === "S" && (
-          <span className={`${half ? "line-clamp-2" : "line-clamp-1"} text-[14px] font-semibold leading-snug`}>{open.slice(0, 8).map((i) => i.name).join(", ")}</span>
+          <span className={`${half ? "line-clamp-2" : "line-clamp-1"} text-[14px] font-semibold leading-snug`}>{open.slice(0, 8).map((i) => i.name).join(" · ")}</span>
         )}
       </Link>
       {open.length > 0 && size !== "S" && (
@@ -235,9 +235,11 @@ export function PantryTile({ size = "S" }: { size?: TileSize }) {
         <Refrigerator className="h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
         <span className="truncate">Vorrat{pantry.length ? ` · ${pantry.length}` : ""}</span>
       </span>
-      <span className={`mt-1 ${size === "S" ? "line-clamp-2" : "line-clamp-3"} text-[14px] leading-snug`}>
-        {pantry.length ? pantry.slice(0, size === "S" ? 4 : 12).map((p) => p.name).join(", ") : "Noch nichts eingetragen"}
-      </span>
+      {pantry.length ? (
+        <span className={`mt-1 ${size === "S" ? "line-clamp-2" : "line-clamp-3"} text-[14px] leading-snug`}>{pantry.slice(0, size === "S" ? 4 : 12).map((p) => p.name).join(" · ")}</span>
+      ) : (
+        <span className="mt-1 text-[14px] font-semibold text-muted">+ eintragen</span>
+      )}
     </Link>
   );
 }

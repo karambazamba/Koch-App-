@@ -35,7 +35,7 @@ import {
 } from "@/lib/sport";
 import { useForecast } from "@/lib/wetter/client";
 import { round } from "@/lib/wetter/forecast";
-import { WeatherIcon } from "@/components/alltag/WeatherTile";
+import { WeatherSymbol } from "@/components/wetter/WeatherSymbol";
 import { buzz } from "@/components/alltag/actions";
 import { SportAddSheet } from "./SportAddSheet";
 
@@ -133,7 +133,7 @@ export function SportTile({ size = "M", entries, today, minutes, me }: { size?: 
               </span>
               {weatherAt && (
                 <span className="ml-auto flex shrink-0 items-center gap-1 text-[13px] font-semibold text-muted">
-                  <WeatherIcon code={weatherAt.code} className="h-4 w-4" />
+                  <WeatherSymbol code={weatherAt.code} className="h-5 w-5" />
                   {round(weatherAt.temp)}°
                 </span>
               )}

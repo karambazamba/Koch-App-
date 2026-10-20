@@ -12,7 +12,8 @@ const cache = new Map<string, { at: number; data: Forecast }>();
 
 export const weatherMock = () => process.env.WETTER_MOCK === "1";
 
-type Scenario = "regen" | "frost" | "heiss" | "klar" | "sturm";
+type Scenario = "regen" | "frost" | "heiss" | "klar" | "sturm" | "schnee" | "gewitter" | "wolkig";
+const SCENARIOS: Scenario[] = ["regen", "frost", "heiss", "klar", "sturm", "schnee", "gewitter", "wolkig"];
 
 /** Testmodus: feste Wetterlage rund um heute */
 function mockForecast(place: string, scenario: Scenario = "regen", day?: string): Forecast {
@@ -22,20 +23,29 @@ function mockForecast(place: string, scenario: Scenario = "regen", day?: string)
     d.setUTCDate(d.getUTCDate() + i);
     return d.toISOString().slice(0, 10);
   });
-  const base = scenario === "heiss" ? 22 : scenario === "frost" ? -3 : 9;
-  const hours = days.slice(0, 2).flatMap((date, di) =>
+  const base = scenario === "heiss" ? 22 : scenario === "frost" || scenario === "schnee" ? -3 : 9;
+  // Wetter je Stunde des Tages 0 (die übrigen Tage ruhiger)
+  const codeFor = (di: number, hour: number) => {
+    if (scenario === "regen") return di === 0 && hour >= 15 && hour <= 18 ? 61 : 3;
+    if (scenario === "schnee") return di === 0 && hour >= 8 ? 73 : 3;
+    if (scenario === "gewitter") return di === 0 && hour >= 14 && hour <= 19 ? 95 : 2;
+    if (scenario === "klar" || scenario === "heiss") return 0;
+    return 3;
+  };
+  const hours = days.flatMap((date, di) =>
     Array.from({ length: 24 }, (_, hour) => {
       const temp = base + (hour >= 6 && hour <= 15 ? (hour - 6) * (scenario === "heiss" ? 1.1 : 0.7) : hour > 15 ? (24 - hour) * 0.5 : 0) + di;
-      const rainy = scenario === "regen" && di === 0 && hour >= 15 && hour <= 18;
-      return { date, hour, temp: Math.round(temp * 10) / 10, code: rainy ? 61 : scenario === "klar" || scenario === "heiss" ? 0 : 3, rain: rainy ? 80 : 10, gust: scenario === "sturm" ? 85 : 20 };
+      const code = di === 0 ? codeFor(0, hour) : [61, 3, 1, 0, 80, 3, 2][di];
+      const rainy = [61, 80, 95].includes(code);
+      return { date, hour, temp: Math.round(temp * 10) / 10, code, rain: rainy ? 80 : 10, gust: scenario === "sturm" ? 85 : 20 };
     }),
   );
   return {
     place,
     fetchedAt: now().toISOString(),
-    current: { temp: hours.find((h) => h.date === today && h.hour === 12)?.temp ?? base, code: scenario === "klar" || scenario === "heiss" ? 0 : 3 },
+    current: { temp: hours.find((h) => h.date === today && h.hour === 12)?.temp ?? base, code: codeFor(0, 12) },
     hours,
-    days: days.map((date, i) => ({ date, code: [61, 3, 1, 0, 80, 3, 2][i], max: base + 6 + (i % 3), min: base - 2 + (i % 2), rain: i === 0 && scenario === "regen" ? 80 : [10, 40, 5, 0, 70, 20, 10][i] })),
+    days: days.map((date, i) => ({ date, code: i === 0 ? (scenario === "regen" ? 61 : scenario === "schnee" ? 73 : scenario === "gewitter" ? 95 : codeFor(0, 12)) : [61, 3, 1, 0, 80, 3, 2][i], max: base + 6 + (i % 3), min: base - 2 + (i % 2), rain: i === 0 && scenario === "regen" ? 80 : [10, 40, 5, 0, 70, 20, 10][i] })),
   };
 }
 
@@ -49,7 +59,7 @@ async function geocode(place: string): Promise<{ name: string; lat: number; lon:
 /** Vorhersage für einen Ort (Name); null = nicht gefunden oder Dienst nicht erreichbar */
 export async function fetchForecast(place: string, scenario?: string, day?: string): Promise<Forecast | null> {
   const key = place.trim().toLowerCase();
-  if (weatherMock()) return mockForecast(place.trim() || "Eutin", (["regen", "frost", "heiss", "klar", "sturm"].includes(scenario ?? "") ? scenario : "regen") as Scenario, day);
+  if (weatherMock()) return mockForecast(place.trim() || "Eutin", (SCENARIOS.includes(scenario as Scenario) ? scenario : "regen") as Scenario, day);
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < TTL) return hit.data;
   const geo = await geocode(place);

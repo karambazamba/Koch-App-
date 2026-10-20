@@ -23,7 +23,7 @@ export const HOME_TILES: { id: HomeTileId; label: string; hint: string; sizes: T
   { id: "pinnwand", label: "Pinnwand", hint: "Kurze Nachrichten an die Familie", sizes: ["S", "M", "L"], size: "M", fresh: true },
   { id: "termine", label: "Termine", hint: "Die nächsten von heute", sizes: ["S", "M", "L"], size: "M" },
   { id: "aufgaben", label: "Aufgaben", hint: "Was heute dran ist", sizes: ["S", "M", "L"], size: "M" },
-  { id: "wetter", label: "Wetter", hint: "Heute und die nächsten Tage", sizes: ["S", "M", "L"], size: "M", fresh: true },
+  { id: "wetter", label: "Wetter", hint: "Heute und die nächsten Tage", sizes: ["S", "M", "L"], size: "S", fresh: true },
   { id: "essen", label: "Essen", hint: "Gericht von heute", sizes: ["S", "M", "L"], size: "S" },
   { id: "einkauf", label: "Einkauf", hint: "Die Einkaufsliste", sizes: ["S", "M", "L"], size: "S" },
   { id: "timer", label: "Timer", hint: "Bis zu 5 Timer und eine Stoppuhr", sizes: ["S", "M"], size: "M", fresh: true },

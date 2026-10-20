@@ -167,7 +167,6 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const workless = (list: typeof overview.heute) => (view.hideWork ? list.filter((i) => i.room !== "arbeit") : list);
   // EINE Reihenfolge: dringend → heute → Frist → diese Woche (Startseite zeigt bis diese Woche)
   const tasks = workless(orderedTasks(entries, data.todayIso).filter((i) => isUrgent(i) || i.group === "heute" || i.group === "woche"));
-  const moreTasks = Math.max(0, openTaskCount(entries, data.todayIso) - Math.min(3, tasks.length));
 
   // Kacheln: gespeicherte Reihenfolge, Phase holt Passendes nach oben (ändert nie die gespeicherte Sortierung)
   const visible = all.filter((t) => t.visible && !tileMeta(t.id).soon && (t.id !== "vorrat" || pantryOn));
@@ -236,9 +235,9 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const renderTile = (tile: HomeTile, half: boolean, edit: boolean) => {
     switch (tile.id) {
       case "termine":
-        return <TermineSection items={termine} all={termineAll} href={`/tag?datum=${data.todayIso}`} today={data.todayIso} size={tile.size} />;
+        return <TermineSection items={termine} all={termineAll} href={`/tag?datum=${data.todayIso}`} today={data.todayIso} size={tile.size} half={half} />;
       case "aufgaben":
-        return <AufgabenSection items={tasks} more={moreTasks} today={data.todayIso} size={tile.size} />;
+        return <AufgabenSection items={tasks} total={openTaskCount(entries, data.todayIso)} today={data.todayIso} size={tile.size} half={half} />;
       case "essen":
         if (cookingNow && dish && !edit) return <CookingTile dish={dish} clock={dishClock} persons={data.day?.persons ?? null} recipe={recipe} today={data.todayIso} onEaten={eaten} />;
         return <FoodTile data={data} dish={dish} over={over} dishClock={dishClock} onOpen={onOpenFood} size={tile.size} onCook={think && dish && !over && !edit ? cookNow : undefined} />;

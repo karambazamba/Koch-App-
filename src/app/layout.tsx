@@ -10,8 +10,8 @@ import { NavigationMemory } from "@/components/NavigationMemory";
 import { AutoCooked } from "@/components/AutoCooked";
 import { TimerAlarm } from "@/components/TimerAlarm";
 import { SportCelebration } from "@/components/SportCelebration";
-import { THEME_BOOT_SCRIPT } from "@/lib/core/theme";
-import { APP_NAME, APP_SHORT_NAME, BRAND_COLOR, icon } from "@/lib/core/app";
+import { THEME_BOOT_SCRIPT, THEME_COLORS } from "@/lib/core/theme";
+import { APP_NAME, APP_SHORT_NAME, icon } from "@/lib/core/app";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -45,8 +45,11 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  // Markenfarbe; in der App passt ThemeSync die Statusleiste an die Ansicht an
-  themeColor: BRAND_COLOR,
+  // Ruhige Statusleiste im Ton des Hintergrunds (hell/dunkel); ThemeSync passt sie an die gewählte Ansicht an
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: THEME_COLORS.warm.background },
+    { media: "(prefers-color-scheme: dark)", color: THEME_COLORS.nacht.background },
+  ],
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -60,6 +63,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col">
+        {/* Hinter der Statusleiste: ruhiger, leicht durchscheinender Hintergrund statt durchlaufender Inhalte */}
+        <div className="status-veil" aria-hidden />
         {children}
         <ThemeSync />
         <IconSync />
