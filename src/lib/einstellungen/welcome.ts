@@ -85,7 +85,7 @@ export function questionFor(state: WelcomeState, step: WelcomeStep): string {
     case "begleitung":
       return "Wer soll dir helfen?";
     case "hallo":
-      return `Hallo, schön, dass du da bist! 👋 Ich bin ${state.helper.name}.`;
+      return `Hallo, schön, dass du da bist! Ich bin ${state.helper.name}.`;
     case "hilfe":
       return "Wobei soll ich dir helfen? Gern mehrere.";
     case "essen":

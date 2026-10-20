@@ -6,6 +6,7 @@
 // öffnen den Bearbeiten-Modus direkt hier: Kopf "Startseite bearbeiten" +
 // "Fertig", Kacheln wackeln, ziehen, "–", S · M · L.
 
+import { greetOncePerDay, setAvatarSleeping } from "@/lib/core/avatarState";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ChevronRight, PenLine } from "lucide-react";
@@ -133,6 +134,16 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     : null;
   const phase = useHomePhase(ctx, { routine, preview, today: data.todayIso, editing: editing.on });
   const view = phase.view;
+  // Avatar: schläft im Feierabend mit "Ruhe nach Feierabend"; begrüßt einmal am Tag beim ersten Öffnen
+  const sleepy = phase.def?.id === "feierabend" && routine.ruhe;
+  useEffect(() => {
+    setAvatarSleeping(sleepy);
+  }, [sleepy]);
+  useEffect(() => () => setAvatarSleeping(false), []);
+  useEffect(() => {
+    if (!sleepy) greetOncePerDay(data.todayIso);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- nur beim Öffnen
+  }, []);
   const cookingNow = phase.def?.id === "kochen";
   useWakeLock(Boolean(view.wakeLock) && !editing.on);
 

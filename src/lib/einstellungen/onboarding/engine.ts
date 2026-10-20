@@ -142,7 +142,7 @@ const BLOCK_OF: Record<StepId, Block> = {
 };
 
 export const GREETING =
-  "Hi! 👋 Ich bin deine neue Küchenhilfe. Ich nehme dir das Planen, Einkaufen und Kochen-Organisieren ab. Dafür lernen wir uns kurz kennen – ca. 2 Minuten. Du kannst einfach reden oder tippen.";
+  "Hi! Ich bin deine neue Küchenhilfe. Ich nehme dir das Planen, Einkaufen und Kochen-Organisieren ab. Dafür lernen wir uns kurz kennen – ca. 2 Minuten. Du kannst einfach reden oder tippen.";
 
 const RULE_PRESETS = [
   { value: "2-1-4", label: "2× Fleisch · 1× Fisch · 4× Veggie" },
@@ -705,7 +705,7 @@ export function answer(state: OnboardingState, a: Answer): OnboardingState {
       if (chip === "ok") {
         if (s.names.length === 0) return goto(s, "members");
         const applied = applyNames(s);
-        const hi = solo(applied) && applied.draft.persons[0]?.name ? `Hallo, ${applied.draft.persons[0].name}! 👋` : "Prima! 👍";
+        const hi = solo(applied) && applied.draft.persons[0]?.name ? `Hallo, ${applied.draft.persons[0].name}!` : "Prima! 👍";
         return finishBlock(say(applied, hi, { kind: "names" }), "members");
       }
       // Weitere Namen dazugesagt

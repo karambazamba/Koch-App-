@@ -8,6 +8,7 @@
 // oder von früher mitkommen. Fehler werden nur bei echten Problemen gemeldet.
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { setAvatarFlag } from "../core/avatarState";
 
 // Minimal-Typen für die Web Speech API (nicht in allen TS-Libs enthalten)
 type SpeechResultList = ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>;
@@ -86,6 +87,13 @@ export function useSpeechInput({ onTranscript, onEnd }: Options) {
   const [interim, setInterim] = useState("");
   const [error, setError] = useState("");
   const recognitionRef = useRef<Recognition | null>(null);
+  // Avatar der Begleitung hört zu, solange dieses Mikrofon an ist
+  const listeningFlag = useRef(false);
+  const flagListening = useCallback((on: boolean) => {
+    if (listeningFlag.current === on) return;
+    listeningFlag.current = on;
+    setAvatarFlag("zuhoeren", on);
+  }, []);
   /** Nummer der aktuellen Sitzung – Ergebnisse älterer Sitzungen werden ignoriert */
   const sessionRef = useRef(0);
   // Immer die aktuellen Rückrufe nutzen, ohne die Erkennung neu zu starten
@@ -96,6 +104,7 @@ export function useSpeechInput({ onTranscript, onEnd }: Options) {
 
   /** Laufende Erkennung beenden, ohne dass noch etwas von ihr ankommt */
   const detach = useCallback(() => {
+    flagListening(false);
     const old = recognitionRef.current;
     recognitionRef.current = null;
     sessionRef.current++;
@@ -109,7 +118,7 @@ export function useSpeechInput({ onTranscript, onEnd }: Options) {
     } catch {
       // schon beendet
     }
-  }, []);
+  }, [flagListening]);
 
   // Beim Verlassen (z. B. Chat schließen): abbrechen, nichts abschicken
   useEffect(() => () => detach(), [detach]);
@@ -167,6 +176,7 @@ export function useSpeechInput({ onTranscript, onEnd }: Options) {
       recognition.onend = null;
       recognitionRef.current = null;
       setListening(false);
+      flagListening(false);
       setInterim("");
       if (text) previousText = text;
       callbacks.current.onEnd?.(text);
@@ -178,11 +188,12 @@ export function useSpeechInput({ onTranscript, onEnd }: Options) {
     try {
       recognition.start();
       setListening(true);
+      flagListening(true);
     } catch {
       recognitionRef.current = null;
       setError("Spracheingabe hat nicht geklappt – tipp es einfach ein.");
     }
-  }, [detach]);
+  }, [detach, flagListening]);
 
   /** Aufnahme beenden – der erkannte Text wird über onEnd abgeschickt */
   const stop = useCallback(() => {

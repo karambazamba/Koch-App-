@@ -408,6 +408,34 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   Assistent} der Familie in der App ‚Was gibt's?‘. Charakter: warm, kurz,
   ohne Druck, motivierend."
 
+## Lebendiger Avatar (v0.24)
+
+- Icon/Avatar: Sprechblase mit mittiger Spitze, ruhiges Gesicht; eine
+  Avatar-Komponente für alle Stellen. Lieblingsfarbe = Begleitung und
+  App-Icon, einheitlich; übrige App-Farben fest. Avatar-Zustände (ruhig,
+  begruessen, zuhoeren, denken, sprechen, freuen, verwirrt, schlafen) setzt
+  die App automatisch – nie vom Nutzer gewählt; im Chat ersetzt ‚denken‘ jede
+  Lade-Anzeige; Fehler zeigt ‚verwirrt‘ statt Fehlermeldung.
+- Vorlage: `docs/vorlagen/avatar-animation.md` (SVG mit Klassen `av-*`, CSS in
+  `globals.css`, `data-zustand` am Wrapper, `--c` = Lieblingsfarbe, `.klein` <
+  44 px bzw. Leiste, `.gross` ≥ 56 px bzw. Chat-Kopf/Vorstellung; nur
+  transform/opacity, `prefers-reduced-motion` = keine Bewegung).
+- Zentraler Zustand `src/lib/core/avatarState.ts` (alle Avatare gleich):
+  Rangfolge zuhören > sprechen > denken > verwirrt > freuen/begrüßen >
+  schlafen > ruhig. Auslöser: `useSpeechInput` (Mikrofon an), Chat
+  (`busy` ohne Text → denken; Fehler-Turn → verwirrt), `speech.ts` (onstart/
+  onboundary: Mund nur während Worte, Pause > 0,6 s = ruhig), `act()` (letzte
+  Aufgabe des Tages erledigt → freuen), `celebrate()` (Sport-Wochenziel →
+  freuen), `TodayPage` (Feierabend mit Ruhe → schlafen; erstes Öffnen am Tag →
+  begrüßen, `wasgibts.avatargruss`), Leiste antippen weckt. Einmalige Zustände
+  starten per neuem Element neu und fallen danach auf ruhig zurück.
+  Fester Zustand nur wo passend (`zustand`: Mia/Theo-Karten ruhig,
+  Vorstellung begrüßen). Kein 👋 mehr.
+- Sätze statt Fehlermeldung: "Hm, das hab ich nicht verstanden." /
+  "Ich bin gerade offline – was du einträgst, speichere ich trotzdem."
+  (`unavailableText`). Lautstärke-Ring per Web Audio bewusst nicht (kollidiert
+  auf dem iPhone mit der Spracherkennung) – normales Pulsieren.
+
 ## App-Icon in der Lieblingsfarbe (v0.23)
 
 - `npm run icons` erzeugt je Farbe aus `AVATAR_COLORS` einen Satz unter

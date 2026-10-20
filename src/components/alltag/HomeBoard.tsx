@@ -164,7 +164,8 @@ export function HomeBoard({
   // Maus/Stift über Pointer-Events; Finger über Touch-Events (auf dem iPhone bricht
   // Safari Pointer-Events ab, sobald es scrollen will – Touch-Events lassen sich halten)
   const onDown = (key: string) => (e: ReactPointerEvent<HTMLElement>) => {
-    if (e.pointerType === "touch" || (e.target as Element).closest("button")) return;
+    // Nur im Bearbeiten-Modus – sonst bekäme die Kachel den Klick statt der Links darin
+    if (!editing || e.pointerType === "touch" || (e.target as Element).closest("button")) return;
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {
