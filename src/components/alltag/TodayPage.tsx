@@ -47,7 +47,6 @@ import { addDays } from "@/lib/core/now";
 import { hasKids, helperName, mealClockFor, pausedOn } from "@/lib/einstellungen/profile";
 import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { useFeature } from "@/lib/core/features";
-import { dailyTip } from "@/lib/essen/tips/daily";
 import { pauseLabel } from "@/lib/essen/spontan";
 import { pushUndo } from "@/lib/core/undo";
 import { mealIsOver, useCookedDays } from "@/lib/essen/mealDone";
@@ -147,13 +146,18 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   }, []);
   const cookingNow = phase.def?.id === "kochen";
   useWakeLock(Boolean(view.wakeLock) && !editing.on);
+  // Tipp-Sammlung (150 Tipps) erst laden, wenn Tipps oder Wochenend-Ideen an sind
+  const [tipModule, setTipModule] = useState<typeof import("@/lib/essen/tips/daily") | null>(null);
+  useEffect(() => {
+    if ((tipsOn || weekendOn) && !tipModule) void import("@/lib/essen/tips/daily").then((m) => setTipModule(m));
+  }, [tipsOn, weekendOn, tipModule]);
 
   // Arbeit ausblenden (Feierabend, freie Tage); im Feierabend nur Familien-Termine, die heute noch kommen
   const items = view.hideWork ? allItems.filter((i) => i.room !== "arbeit") : allItems;
   const openItems = items.filter((i) => !i.done);
   const tip =
-    (tipsOn || weekendOn) && !openItems.length
-      ? dailyTip(data.todayIso, { dish, tips: Boolean(tipsOn), weekendIdeas: Boolean(weekendOn), kids: hasKids(data.profile), persons: data.profile.persons.length })
+    tipModule && (tipsOn || weekendOn) && !openItems.length
+      ? tipModule.dailyTip(data.todayIso, { dish, tips: Boolean(tipsOn), weekendIdeas: Boolean(weekendOn), kids: hasKids(data.profile), persons: data.profile.persons.length })
       : null;
   const upcoming = upcomingTermine(entries, data.todayIso, minutes).filter((i) => !view.hideWork || i.room !== "arbeit");
   const termine = view.familyUpcomingOnly ? upcoming.filter((i) => i.room === "familie") : upcoming;

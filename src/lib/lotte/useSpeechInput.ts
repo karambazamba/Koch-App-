@@ -50,7 +50,7 @@ let previousText = "";
  * Chrome) liefern fertige Abschnitte kumuliert ("Milch", "Milch und Eier") –
  * dann zählt nur der längere.
  */
-function joinFinals(finals: string[]): string {
+export function joinFinals(finals: string[]): string {
   const kept: string[] = [];
   for (const raw of finals) {
     const f = norm(raw);
@@ -67,7 +67,7 @@ function joinFinals(finals: string[]): string {
  * Text einer neuen Aufnahme ohne den eben schon abgeschickten Text davor
  * (manche Browser liefern ihn in der nächsten Sitzung erneut mit: "alt neu").
  */
-function withoutPrevious(text: string, previous: string): string {
+export function withoutPrevious(text: string, previous: string): string {
   const t = norm(text);
   const p = norm(previous);
   if (p && t.length > p.length && t.toLowerCase().startsWith(`${p.toLowerCase()} `)) return t.slice(p.length).trim();

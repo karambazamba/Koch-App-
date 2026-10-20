@@ -82,7 +82,7 @@ export function PinboardTile({ size = "M", me }: { size?: TileSize; me: string }
             })}
           </ul>
         ) : (
-          <button type="button" onClick={() => setWriting(true)} className="mt-1 text-left text-[14px] text-muted">
+          <button type="button" onClick={() => setWriting(true)} className="hit mt-1 text-left text-[14px] text-muted">
             Kurze Nachricht an alle – z. B. „Bin um 20 Uhr da“
           </button>
         )}

@@ -226,7 +226,7 @@ type RawTile = { id?: string; visible?: boolean; size?: string };
  * v3: Größen S/M/L (Essen, Einkauf, Vorrat klein, sonst mittel), die Kachel
  * "Kladde" wird zur Notizen-Kachel an derselben Stelle.
  */
-function migrateHome(raw: unknown): HomeStore | null {
+export function migrateHome(raw: unknown): HomeStore | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as { version?: number; tiles?: unknown; tipSeen?: unknown };
   if (r.version === 3) return { version: 3, tiles: sanitizeHome(r.tiles), tipSeen: r.tipSeen === true };

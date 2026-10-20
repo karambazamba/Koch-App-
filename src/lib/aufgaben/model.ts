@@ -140,7 +140,7 @@ export function repeatLabel(repeat: Repeat | null | undefined, start?: string): 
 const isTermin = (e: CalendarEntry): e is Termin => e.typ === "termin";
 
 /** Von wann eine mitgenommene Aufgabe ist: "von gestern", "von Montag", "von letzter Woche" */
-function carriedLabel(from: string, today: string): string {
+export function carriedLabel(from: string, today: string): string {
   const days = dayDiff(today, from);
   if (days <= 1) return "von gestern";
   if (days < 7 && weekdayIndex(from) < weekdayIndex(today)) return `von ${WEEKDAYS_LONG[weekdayIndex(from)]}`;
@@ -149,7 +149,7 @@ function carriedLabel(from: string, today: string): string {
 }
 
 /** "bis Mi" (diese Woche), sonst "bis 24.10." */
-function dueLabel(due: string, date: string): string {
+export function dueLabel(due: string, date: string): string {
   const days = dayDiff(due, date);
   if (days === 0) return "bis heute";
   if (days === 1) return "bis morgen";

@@ -44,7 +44,7 @@ export const ICON_BUTTON =
 export function chipClass(selected = false, tone: "accent" | "danger" | "muted" = "accent"): string {
   const active = tone === "danger" ? "border-red-300 bg-red-50 text-red-700" : "border-accent bg-accent-soft text-accent-strong";
   const idle = tone === "muted" ? "border-dashed border-stone-300 bg-stone-100 text-stone-500" : "border-line bg-surface text-ink";
-  return `inline-flex min-h-10 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[15px] font-semibold transition active:scale-95 ${
+  return `hit inline-flex min-h-10 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[15px] font-semibold transition active:scale-95 ${
     selected ? active : idle
   }`;
 }

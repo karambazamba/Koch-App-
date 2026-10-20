@@ -246,8 +246,7 @@ export function parseTimerCommand(text: string): TimerCommand | null {
 
 // --- Push (später, Supabase): Timer-Ende als planbare Mitteilung -----------------------
 
-/** Was beim Timer-Ende geschickt würde (für die Push-Planung vorbereitet) */
-/** @public */
+/** Was beim Timer-Ende geschickt würde (für die Push-Planung vorbereitet) @public */
 export function timerPushPlan(t: Timer, helper: string): { at: string; title: string; body: string } | null {
   if (t.pausedLeft !== null) return null;
   return { at: new Date(t.endsAt).toISOString(), title: `${helper}: ${t.emoji} ${t.name}`, body: `${t.name} ist fertig.` };

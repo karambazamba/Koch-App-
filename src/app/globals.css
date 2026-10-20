@@ -462,3 +462,17 @@ body {
 /* Bewegung reduzieren: nur Gesichtsausdruck, keine Bewegung */
 @media (prefers-reduced-motion:reduce){.avatar *{animation:none!important}}
 
+
+/* Tippfläche mindestens 44 × 44 px, ohne das Aussehen zu ändern (unsichtbare Fläche um kleine Knöpfe) */
+@utility hit {
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+}

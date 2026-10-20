@@ -123,7 +123,7 @@ export function ArtChoice({ value, onChange }: { value: HelperArt; onChange: (ar
           role="radio"
           aria-checked={value === art}
           onClick={() => onChange(art)}
-          className={`h-10 flex-1 rounded-xl text-[15px] font-bold transition ${value === art ? "bg-surface text-ink shadow-card" : "text-muted"}`}
+          className={`hit h-10 flex-1 rounded-xl text-[15px] font-bold transition ${value === art ? "bg-surface text-ink shadow-card" : "text-muted"}`}
         >
           {art === "assistentin" ? "Assistentin" : "Assistent"}
         </button>

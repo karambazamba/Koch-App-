@@ -99,8 +99,7 @@ export function useAvatarZustand(): { zustand: AvatarZustand; nonce: number } {
   );
 }
 
-/** Nur für Tests: alles zurücksetzen */
-/** @public */
+/** Nur für Tests: alles zurücksetzen @public */
 export function resetAvatarForTests() {
   counts.zuhoeren = counts.denken = counts.sprechen = 0;
   shot = null;

@@ -156,7 +156,7 @@ export function EntryForm({ entry, date, kind, onClose }: { entry?: CalendarEntr
                   type="button"
                   aria-pressed={days.includes(i)}
                   onClick={() => setDays((list) => (list.includes(i) ? list.filter((x) => x !== i) : [...list, i].sort()))}
-                  className={`h-10 flex-1 rounded-xl border text-sm font-bold ${days.includes(i) ? "border-accent bg-accent-soft text-accent-strong" : "border-line bg-surface"}`}
+                  className={`hit h-10 flex-1 rounded-xl border text-sm font-bold ${days.includes(i) ? "border-accent bg-accent-soft text-accent-strong" : "border-line bg-surface"}`}
                 >
                   {name}
                 </button>

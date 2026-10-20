@@ -22,9 +22,14 @@ import { LotteBar } from "@/components/alltag/HomePager";
 import { helperName } from "@/lib/einstellungen/profile";
 import { removeRetiredKeys } from "@/lib/core/storage";
 import { adoptLegacySpeech } from "@/lib/lotte/speech";
-import { HelperPanel } from "./HelperPanel";
 import { spontanStartTurn, type ChatState } from "./chatTypes";
 import { loadSpontanFilters } from "./SpontanBoard";
+import dynamic from "next/dynamic";
+
+// Das Gespräch (mit Mails, Backstube, Supermarkt …) wird erst gebraucht, wenn
+// man es öffnet – eigener Teil, der nach dem Laden der Seite im Leerlauf vorgeholt wird
+const loadPanel = () => import("./HelperPanel").then((m) => m.HelperPanel);
+const HelperPanel = dynamic(loadPanel, { ssr: false });
 
 /** Nur nach echtem Löschen: kleine Meldung "Gelöscht · Rückgängig" für 3 Sekunden */
 const UNDO_SECONDS = 3;
@@ -89,6 +94,13 @@ export function KitchenHelper() {
       : profile === null
         ? null
         : { profile, weekPlans, mealPlans, recipes, shopping, entries, home, notes, schnellnotiz: schnellnotiz.text };
+
+  // Gespräch im Leerlauf vorholen, damit es beim Antippen sofort da ist
+  useEffect(() => {
+    const preload = () => void loadPanel();
+    if (typeof window.requestIdleCallback === "function") window.requestIdleCallback(preload, { timeout: 4000 });
+    else setTimeout(preload, 1500);
+  }, []);
 
   // Alte Daten einmalig übernehmen, dann nicht mehr genutzte Schlüssel löschen
   useEffect(() => {

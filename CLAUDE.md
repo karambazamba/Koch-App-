@@ -166,14 +166,60 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
 
 ## Arbeitsweise
 
-- Nach jeder fertigen Änderung ohne Rückfrage: testen (`npm run build`,
+- Nach jeder fertigen Änderung ohne Rückfrage: testen (`npm test`, `npm run build`,
   `npx tsc --noEmit`, `npm run lint`, bei UI-Änderungen zusätzlich ein
   Durchklick-Test im mobilen Browser – iPhone und Android-Chrome, z. B.
   Pixel 7), committen, Pull Request nach `main`
   erstellen und direkt mergen.
 - Sprache der App und der Antworten: Deutsch.
 - Gespeicherte Profile müssen bei Datenmodell-Änderungen weiter funktionieren
-  (Version in `src/lib/einstellungen/profile.ts` erhöhen, `migrateProfile` erweitern).
+  (Version in `src/lib/einstellungen/profile.ts` erhöhen, `migrateProfile` in
+  `profileStore.ts` erweitern, Version im Speicher-Verzeichnis anpassen).
+
+## Aufgeräumt (v0.25)
+
+- Kein Alt-Modus mehr. Daten nur über das zentrale Speicher-Verzeichnis (mit
+  Version/Migration); „Daten sichern/wiederherstellen“ muss immer
+  funktionieren. Jeder behobene Fehler bekommt einen Test; `npm test` vor
+  jedem PR. Dateien möglichst unter 600 Zeilen.
+- Speicher-Verzeichnis `src/lib/core/storage.ts` (`STORAGE`: Schlüssel, Zweck,
+  Version, Ort der Migration, local/session, `backup`). `createLocalStore`
+  nimmt nur `StorageKey`; direkte `localStorage`-Schlüssel ebenfalls als
+  `StorageKey` typisieren. Nicht mehr genutzte Schlüssel stehen in
+  `RETIRED_KEYS` und werden beim Start gelöscht (`removeRetiredKeys`,
+  KitchenHelper; alte Termine erst nach der Übernahme, alter Vorlese-Schalter
+  nach `adoptLegacySpeech`).
+- Daten sichern/wiederherstellen (`src/lib/core/backup.ts`, Einstellungen →
+  Daten & App): Datei mit allen `backup`-Schlüsseln (Teilen-Menü bzw.
+  Download); Wiederherstellen zeigt vorher „3 Termine, 5 Aufgaben, …“
+  (`backupSummary`) und fragt nach; Zugangscode, Zähler und Geräte-Kennung
+  bleiben auf dem Gerät. Der Icon-Hinweis (`iconChangeHint`) verweist darauf.
+- Tests: Vitest (`npm test`, `tests/*.test.ts`, Zeit fest über `at()` aus
+  `tests/helpers.ts`, Zeitzone Europe/Berlin). Ungenutzter Code: `npx knip`
+  (Konfiguration `knip.json`; `@public` im Kommentar = bewusst für Tests/Push).
+- Neue Version: Der Service Worker wartet; die App zeigt oben „Neue Version
+  da – Antippen zum Aktualisieren“ (`ServiceWorkerRegistration`, Nachricht
+  `SKIP_WAITING`, beim Öffnen/Zurückkehren `update()`); erst das Antippen lädt
+  neu. Einstellungen ganz unten „Version 0.25 · Stand {Datum}“
+  (`versionLabel()`, Datum beim Bauen über `BUILD_DATE` in `next.config.ts`).
+- Erst bei Bedarf geladen: das Gespräch (`HelperPanel` über `next/dynamic`, im
+  Leerlauf vorgeholt – mit Mails, Backstube, Supermarkt) und die Tipp-Sammlung
+  (nur wenn Tipps/Wochenend-Ideen an sind).
+- Chat aufgeteilt: `chatTypes.ts` (Typen), `localRules.ts` (feste Regeln
+  ohne KI, `RuleContext`), `mailRules.ts`, `ChatTurnItem.tsx`, `ChatBits.tsx`.
+  Profil: `profile.ts` (Modell, Hilfen) + `profileStore.ts` (Migration,
+  Speichern). Testmodus: `mock.ts` + `mockAlltag.ts` + `mockShared.ts`.
+  `onboarding/engine.ts` ist nur noch „neue Person“ im Chat.
+- „Kladde“ heißt im Code überall „Schnellnotiz“ (`schnellnotiz.ts`,
+  `Schnellnotiz.tsx`, Tokens `bg-schnellnotiz` …, Werkzeuge
+  `schnellnotiz_schreiben/_aufraeumen`, Op `set_schnellnotiz`); nur der
+  Speicher-Schlüssel bleibt `wasgibts.kladde`, und Lotte versteht „Kladde“
+  weiter.
+- Tippflächen mindestens 44 × 44 px: kleine Knöpfe bekommen die Klasse `hit`
+  (unsichtbare Fläche, Aussehen bleibt; `chipClass` hat sie schon).
+- Sicherheit: KI-Routen prüfen Zugangscode und Limits (`guard.ts`), Wetter hat
+  ein Limit pro IP (ohne Code, weil es auch ohne KI gehen muss). Vor jedem PR
+  `.next/static` nach `sk-ant` durchsuchen.
 
 ## Fundament (Neustart, v0.9)
 
@@ -207,9 +253,8 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   schaltet sie ihn ein und sagt, wo er steht. Der alte Schalter "Alte
   Funktionen anzeigen (Test)" ist weg: v1 mit `legacy` wird beim Update
   zurückgesetzt, Genutztes (Plan, Vorrat, Rezepte, Backen, Tipps, Ideen,
-  Vorlieben, Modus) als Bausteine übernommen. Der alte Aufbau nur noch für
-  die Entwicklung über `/?legacy=1` (nirgends verlinkt, sessionStorage
-  `wasgibts.entwicklung`, `/?legacy=0` beendet). Auf allen Seiten dieselbe
+  Vorlieben, Modus) als Bausteine übernommen. Den alten Aufbau (`/?legacy=1`) gibt
+  es seit v0.25 nicht mehr. Auf allen Seiten dieselbe
   dunkle Lotte-Leiste (`LotteBar`, statt des runden Knopfs).
 - Immer sichtbar: Startseite (siehe Leitbild 7), Chat mit Lotte,
   Einkaufsliste, schlanke Einstellungen (Startseite & Bausteine, Name &
@@ -702,8 +747,8 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   Akzent `bg-accent`/`text-accent`/`text-accent-strong`/`bg-accent-soft`,
   `rounded-card`, `shadow-card`. Keine `orange-*`-Klassen direkt, keine
   weiteren Farben für Flächen.
-- Bausteine in `src/components/ui`: `CARD`/`CARD_LIST`/`<Card>`,
-  `buttonClass()`/`<Button>` (primary, secondary, soft, ghost, danger; sm/md/lg),
+- Bausteine in `src/components/ui`: `CARD`/`CARD_LIST`,
+  `buttonClass()` (primary, secondary, soft, ghost, danger; sm/md/lg),
   `ICON_BUTTON`, `chipClass()`, `tileClass()`, `INPUT`, `LABEL`,
   `SECTION_TITLE`, `SUBTLE`, `NOTE`, `WARNING`, `PAGE_MAIN` (unten Platz für den
   Küchenhelfer-Knopf, `FAB_CLEARANCE` – jedes `<main>` mit Knopf braucht ihn,
@@ -726,102 +771,14 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   maskable, apple-touch-icon, favicon.ico). In der App `AppIcon`/`AppLogo`
   (`src/components/AppLogo.tsx`): Startseite Icon 44px + Schriftzug,
   Unterseiten 32px oben rechts im `PageHeader` als Link "Zur Startseite".
-- Alte Startseite "Heute" (nur Entwicklung über `/?legacy=1`,
-  `src/components/home/HomeView.tsx`) – genau sechs Elemente, passt ohne Scrollen aufs iPhone (auch 375 px), wenig Text, viel
-  Weißraum:
-  1. Kopf: Logo, darunter klein das Datum, rechts Zahnrad zu `/profil`.
-  2. Heute-Karte (`HeroCard`): Bildfeld mit Akzent-Verlauf und Emoji (später
-     Rezeptbild; Höhe passt sich dem Bildschirm an), "HEUTE · 18:30" (Profil
-     v10 `mealClock`), Gerichtname groß mit Status "✓ kennt ihr" (grün) bzw.
-     "Neu ✨", eine ruhige Zeile (Besonderheit wie "Mathis' Wunsch 🎉",
-     "Reste von …" · Zeit · Personen), darunter nur falls vorhanden die
-     Termine des Tages (`src/lib/core/appointments.ts`, neutral wie "Jonne Turnen
-     bis 17:30", nie "wird knapp"; notiert per Lotte, kompakt unter der Zeile, Bildfeld dann flacher). Bekannt: dezent "Rezept
-     ansehen · Tauschen" (`/wochenplan?tauschen=heute`). Neu (oder Kochstil
-     "nach Rezept"): "<n> Schritte · <n> Zutaten" und "Los geht's – Schritt für
-     Schritt" (nach der Essenszeit nicht mehr). Kein Gericht für heute:
-     `IdeasCard` "Was gibt's heute?" mit genau 3 kompakten Ideen-Karten wie
-     im Chat (alle Kochstile; rechts oben "Mehr Ideen" bzw. "Sag mir, was da
-     ist"). Nach dem Essen (Essenszeit + 90 Min. oder "Gekocht" getippt,
-     `mealIsOver`) zeigt die Karte schon das nächste Essen: "MORGEN · 12:30 ·
-     Gulasch" (`HeroCard when="morgen"`), ohne Gericht "Was gibt's morgen?"
-     mit Ideen (Knopf "Morgen").
-  3. Lottes Platz (`useLottePlace` in `src/components/home/LottePlace.tsx`):
-     genau EINE Sache oder Stille, Avatar + Sprechblase, max. 2 Chips, immer
-     als Angebot. Die erste zutreffende Stufe gewinnt:
-     1. Zeitkritisch heute/morgen: Startzeit langer Gerichte ("… um 17:00
-        anfangen, dann ist um 18:30 alles fertig"), ❄️ Auftauen (Zutat für
-        morgen liegt im Tiefkühler), Einweichen (getrocknete Hülsenfrüchte),
-        Einkauf für morgen ("Für morgen hab ich … schon auf die Liste
-        gesetzt"). Antippen der Blase öffnet die Checkliste "Für morgen".
-     2. Vorrat: nach dem Essen einmal "Ist was übrig geblieben?" bei
-        Gerichten mit Resten (Eintopf, Curry, Bolognese … `leftoverProne`,
-        nicht bei "doppelt") → "Kühlschrank"/"Eingefroren" (in den Vorrat)/
-        "Nein", wegwischen = nein, bis zum nächsten Morgen; ❄️ seit 60+ Tagen im Tiefkühler, Reste verwandeln (Frisches
-        seit 2+ Tagen im Kühlschrank → Spontan mit "Reste zuerst"), vor einer
-        Pause aufbrauchen.
-     3. Planung: "Nächste Woche ist noch frei – in 2 Minuten geplant?",
-        Grill-Idee (freitags), einmal "Wochenende frei?".
-     4. Bewertung eines NEUEN Gerichts (abends ab 1 Stunde nach der
-        Essenszeit bis zum nächsten Morgen 10 Uhr): "Wie war …?" 👍 / 👎 / ✕.
-     5. Tipp: Lob zum Wochenrückblick, sonst die Tipp-Karte (siehe Tipps).
-     6. Nichts.
-     Vorrang davor: Willkommen zurück, Pause (nur die Nachricht kurz vor dem
-     Ende), "leiser werden", freies Wochenende. Jede Art, die 3× ignoriert
-     wird, pausiert 2 Wochen. Es gibt keine eigenen Karten mehr für Hinweis
-     des Tages, Morgen-Check, Wochen-Check oder Bewertung.
-  4. Drei Kacheln (Bento): Woche ("Morgen: Lachs" bzw. "5/7 geplant"; "Mal
-     so, mal so" ohne Zähler; "spontan": Kachel "Ideen" → `/ideen`),
-     Einkauf mit rundem "+" (leer: nur "Einkaufsliste"; sonst "Für Montag"
-     bzw. "Diese Woche"/"Für heute" und klein "<n> Sachen"; Stammartikel nur
-     in der Liste), dritte Kachel "Vorrat" ("<n> Sachen"), sobald der Vorrat
-     je genutzt wurde (`usePantryUsed`), sonst "Rezepte" ("<n> Rezepte").
-     Nie eine vierte Kachel; Titel nie abgeschnitten.
-  5. Breiter Knopf "🥕 Spontan kochen – mit dem, was da ist".
-  6. Unten fest EINE Leiste "Sag <Name>, was ansteht …" mit Lottes Gesicht links
-     und Mikrofon im Feld rechts (`openHelper("voice")`). Auf der Startseite
-     kein schwebender Knopf.
-
 ## Funktionen hinter den Bausteinen (aus der Koch-App)
 
-Alles hier bleibt im Code und in den Daten erhalten; sichtbar wird es über
-den passenden Baustein (im neuen Design) bzw. für die Entwicklung über
-`/?legacy=1`. Neue Arbeit baut auf dem Fundament oben auf.
+Sichtbar über den passenden Baustein (im neuen Design). Seit v0.25 sind
+Alt-Modus, alter Hinweis-Platz (Lottes Platz), Bewertungen nach dem Kochen,
+Twists, "Sanft erkennen", "Willkommen zurück", das alte Kennenlernen und der
+Formular-Assistent entfernt; Beschreibungen dazu unten sind nur noch Historie.
+Neue Arbeit baut auf dem Fundament oben auf.
 
-- Erstes Kennenlernen als Gespräch (`/profil` ohne Profil → `OnboardingChat`,
-  Vollbild im Stil des Küchenhelfer-Panels). Ablauf rein in
-  `src/lib/einstellungen/onboarding/engine.ts` (Begrüßung, "Für wen kochst du?" (Haushaltstyp,
-  siehe unten), Name/Stimme der Küchenhilfe,
-  Familienname, "Wer isst bei euch mit?", Namen bestätigen mit antippbaren
-  Chips und Schreibvarianten aus `names.ts`, pro Person "Erzähl mir kurz was
-  über …" – nachgefragt wird nur Pflicht: Rolle, bei Kindern Gruppe –,
-  Allergien/Abneigungen, warme Mahlzeit, Einkaufstag, Standardwoche,
-  Abschluss mit Zusammenfassung und "Erste Woche planen"/"Erstmal umschauen").
-  Antworten per Sprache, Tippen oder Chips; jede Frage hat "Überspringen"
-  (sinnvolle Standardwerte). Bestätigungen ("Notiert ✓ …") und die
-  aufklappbare Familienkarte sind antippbar → Frage nochmal (`revisit`), danach
-  geht's an der alten Stelle weiter. Zwischenstand unter `wasgibts.kennenlernen`
-  (`progress.ts`) nach jeder Antwort, beim Abschluss gelöscht. Erkennung freier
-  Antworten: Regeln in `recognize.ts` (Füllwörter, Namen, Alter, Gruppe,
-  Mittag, Allergien …); mit `ANTHROPIC_API_KEY` vorher Claude über
-  `/api/kennenlernen` (`ai.ts`, festes JSON-Schema je Art names/person/diet,
-  geprüft, Modell `KENNENLERNEN_MODEL`, Standard `claude-haiku-5-5`) – Client
-  `recognizeAnswer()` in `recognizer.ts` ist austauschbar und fällt bei Fehlern
-  auf die Regeln zurück. Die Oberfläche (`GuidedChat`) nutzt auch der
-  Küchenhelfer: "X wohnt jetzt bei uns" o. ä. (`isAddPersonRequest`) startet
-  dort `startAddPerson()` – Namen bestätigen, kurz vorstellen, "Fertig ✓"
-  speichert (geht auch ohne KI).
-- "Lieber Formular" öffnet den bisherigen Assistenten (8 Schritte) mit dem
-  bisher Erzählten als Startwert. Der Assistent wird nur beim ersten Anlegen verwendet. Danach
-  zeigt `/profil` die Übersicht "Einstellungen" (siehe unten); Personen und Bereiche werden
-  dort einzeln bearbeitet (eigene Seiten unter `/profil/...`).
-- Im Assistenten werden Namen nur in Schritt 2 "Wie heißen alle?" eingegeben;
-  spätere Schritte zeigen sie nur an. Schritt 1 muss ohne Scrollen aufs iPhone
-  passen.
-- Grundregel im Assistenten: Ist ein Schritt länger als der Bildschirm und noch
-  nicht bis unten gescrollt, scrollt "Weiter" erst zum nächsten offenen
-  Abschnitt (`src/lib/einstellungen/stepScroll.ts`). Wischen links = Weiter, rechts = Zurück
-  (nicht in Eingabefeldern und Elementen mit `data-no-swipe`).
 - Personen-Schritte im Assistenten (Allergien, Mittagessen) beginnen mit einer
   Vorfrage ("Nein, alle essen alles" bzw. "Passt so – alle wie üblich" oder
   Personen auswählen). Nur ausgewählte Personen bekommen eine Einzelseite mit
@@ -1072,23 +1029,6 @@ den passenden Baustein (im neuen Design) bzw. für die Entwicklung über
   Wochenplan heute: "✓ Gekocht · Doch nicht? Auf morgen verschieben"
   (`moveToTomorrow`: morgiges Gericht rutscht auf den nächsten freien Tag;
   Zähler und Vorrat zurück, mit Rückgängig).
-- Bewerten nach dem Kochen – klein und nur bei Neuem (`src/lib/essen/ratings.ts`,
-  Speicher `wasgibts.bewertungen` je Kochtag): nur für neue Gerichte
-  (Status "Neu", siehe dishStatus) beim ersten Mal (`isFirstTime`: noch nie
-  gekocht/bewertet und nicht schon früher im Plan), abends ab 1 Stunde nach
-  der Essenszeit bis zum nächsten Morgen (10 Uhr, dann "Wie war gestern …?").
-  Auf Lottes Platz (Stufe 4) "Wie war …?" 👍 / 👎 / ✕ (`RatingBubble`); weg
-  nach Antwort, nach ✕ oder ab 10 Uhr am nächsten Tag. Nach 3 ignorierten Fragen in Folge 2
-  Wochen Pause (`nudges.ts`, Art "bewertung"). Push später: "<Name>: Wie war
-  …? 👍 👎" ca. 1 Stunde nach dem Essen (`ratingPushText`, `ratingPushTime`).
-  👍: Zähler hoch, KI-Rezept wird Favorit, Basis-Statistik. 👎: Grund per
-  Chip ("zu scharf", "zu aufwendig", "Kinder mögen's nicht") oder ohne → Profil `neverAgain` (Titel, Hauptzutaten, Grund,
-  Kopie des Rezepts), Rezept raus aus dem Kochbuch, künftige Plätze mit dem
-  Gericht werden geleert. Die
-  "Nie wieder"-Liste geht immer an die KI (`prompt.ts`, mit Anweisung: diese
-  und sehr ähnliche Gerichte nie, Gründe beachten); `rezept_erstellen` und
-  freie Gerichte lehnen Einträge der Liste ab (`isNeverAgain`). Einsehbar
-  und einzeln wiederherstellbar unter `/profil/nie-wieder`.
 - Küchenhelfer (KI, `src/lib/lotte/`, API `/api/lotte`, alter Pfad
   `/api/kuechenhelfer` leitet dorthin): schwebender
   Knopf auf allen Seiten außer der Startseite (`KitchenHelper` im Layout, über `StickyActions`,
@@ -1334,10 +1274,3 @@ den passenden Baustein (im neuen Design) bzw. für die Entwicklung über
   im Wochenplan "Spontan – Ideen gibt's am Tag selbst"; Lotte bietet statt
   der ganzen Woche höchstens einmal pro Woche "Soll ich dir die nächsten 2
   Tage vorschlagen?" an (nicht im Modus "Ganz locker").
-- Sanft erkennen (`src/lib/essen/planDetect.ts`): "Ich plane gern", aber 3 Wochen
-  höchstens 2 Tage selbst geplant (App seit 3+ Wochen genutzt, `since` im
-  Aktivitäts-Speicher) → EINMAL "Ihr kocht eher spontan, oder? Soll ich die
-  Planung ausblenden?"; "spontan", aber 2× "nur diese Woche" in 6 Wochen →
-  EINMAL "… soll ich die Planung wieder einblenden?". Nie automatisch
-  umstellen.
-
