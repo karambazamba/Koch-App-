@@ -13,6 +13,7 @@ import { useStock } from "@/lib/essen/useStock";
 import { effectivePlanStyle, hasKids, helperName, loadProfile, mealClockFor, saveProfile } from "@/lib/einstellungen/profile";
 import { addWish, parseWish, removeWish, wishLabel } from "@/lib/essen/wishes";
 import { settingsChange } from "@/lib/lotte/settingsChat";
+import { iconChangeHint } from "@/lib/core/homescreen";
 import { isPlanUnlockRequest, unlockPlanning, type UnlockChoice } from "@/lib/essen/planUnlock";
 import { finalizeProfile, startAddPerson, type OnboardingState } from "@/lib/einstellungen/onboarding/engine";
 import { noteUserAction } from "@/lib/core/activity";
@@ -1211,7 +1212,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           {
             role: "assistant",
             local: true,
-            text: setting.reply,
+            text: setting.profile.helper.farbe !== before.helper.farbe && iconChangeHint() ? `${setting.reply} ${iconChangeHint()}` : setting.reply,
             undo: () => {
               saveProfile(before);
               if (voiceBefore !== null) saveSpeechSettings({ voice: voiceBefore });

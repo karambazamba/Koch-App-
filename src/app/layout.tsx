@@ -4,6 +4,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { KitchenHelper } from "@/components/assistant/KitchenHelper";
 import { ThemeSync } from "@/components/ThemeSync";
+import { IconSync } from "@/components/IconSync";
 import { ToastHost } from "@/components/ui/ToastHost";
 import { NavigationMemory } from "@/components/NavigationMemory";
 import { AutoCooked } from "@/components/AutoCooked";
@@ -61,6 +62,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         {children}
         <ThemeSync />
+        <IconSync />
         <ToastHost />
         <Suspense fallback={null}>
           <NavigationMemory />

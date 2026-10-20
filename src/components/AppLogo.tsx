@@ -1,11 +1,15 @@
-import Image from "next/image";
-import { APP_NAME, icon } from "@/lib/core/app";
+"use client";
 
-/** App-Icon (Lotte als Sprechblase auf orangem Verlauf) aus public/icons/icon.svg – Quelle: scripts/generate-icons.mjs */
+import Image from "next/image";
+import { APP_NAME, iconFor } from "@/lib/core/app";
+import { useProfile } from "@/lib/einstellungen/useProfile";
+
+/** App-Icon in der Lieblingsfarbe der Begleitung (public/icons/<farbe>/icon.svg – Quelle: scripts/generate-icons.mjs) */
 export function AppIcon({ size }: { size: number }) {
+  const farbe = useProfile()?.helper.farbe;
   return (
     <Image
-      src={icon("icon.svg")}
+      src={iconFor(farbe, "icon.svg")}
       alt=""
       width={size}
       height={size}

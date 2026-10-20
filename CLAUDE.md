@@ -13,7 +13,7 @@ Die Begleitung heißt nicht fest Lotte: Name, Art (Assistentin/Assistent),
 Stimme und Icon-Farbe sind Nutzereinstellungen; Standard-Auswahl Mia (Orange) /
 Theo (Nachtblau). In allen Aufträgen meint ‚Lotte‘ die gewählte Begleitung.
 Namen nie hart codieren. Nur ein Design (Warm) + Hell/Dunkel/Automatisch;
-App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben).
+App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Seit v0.23 gilt diese Lieblingsfarbe auch für das App-Icon.
 
 ## 1. Ruhig und leer
 - Drei Seiten: Woche · Heute · Essen (Heute ist die Startseite). Die
@@ -109,9 +109,10 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben).
   `apple-touch-icon-v3.png`; Pfade nur über `icon("…")`), damit iPhone/Android
   ein neues Icon nicht aus dem Cache holen – bei neuem Icon Version erhöhen,
   `npm run icons`, Liste in `public/sw.js` und `CACHE_VERSION` anpassen.
-  Icon/Avatar: Sprechblase mit mittiger Spitze, ruhiges Gesicht (senkrechte
-  Augen, dezentes Lächeln), App-Icon orange, Avatar in der gewählten Farbe
-  der Begleitung; eine Avatar-Komponente für alle Stellen
+  Icon/Avatar: Sprechblase mit mittiger Spitze, ruhiges Gesicht; eine
+  Avatar-Komponente für alle Stellen. Lieblingsfarbe = Begleitung und
+  App-Icon, einheitlich; übrige App-Farben fest. (Senkrechte Augen, dezentes
+  Lächeln; ohne gewählte Farbe Orange)
   (`<LotteAvatar size color? />`, `src/components/LotteAvatar.tsx`: Kreis in
   der Icon-Farbe, Motiv auf 72 %; dunkle Farben Nachtblau/Anthrazit/Beere im
   Dunkel-Modus und auf der dunklen Leiste mit feinem hellem Rand) – in
@@ -348,6 +349,9 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben).
 
 ## Begleitung zum Aussuchen + Hell/Dunkel (v0.22)
 
+- Seit v0.23: Lieblingsfarbe = Begleitung UND App-Icon (siehe "App-Icon in der
+  Lieblingsfarbe"); die übrigen App-Farben bleiben fest.
+
 - Datenmodell (Profil v19, `src/lib/einstellungen/profile.ts`): `helper =
   { name, art: assistentin|assistent, voice, farbe }`; `voice` folgt immer der
   Art (`voiceForArt`, `helperWith`). `STANDARD_HELPERS` = Mia (Assistentin,
@@ -396,6 +400,26 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben).
   heißt {Name} und bist {die persönliche Assistentin | der persönliche
   Assistent} der Familie in der App ‚Was gibt's?‘. Charakter: warm, kurz,
   ohne Druck, motivierend."
+
+## App-Icon in der Lieblingsfarbe (v0.23)
+
+- `npm run icons` erzeugt je Farbe aus `AVATAR_COLORS` einen Satz unter
+  `public/icons/<farbe>/` (icon.svg, icon-192, icon-512, icon-maskable-512 mit
+  Zeichen auf 72 %, apple-touch-icon 180, favicon-32; Verlauf von der Farbe
+  18 % heller zur vollen Farbe, Gesicht in der vollen Farbe; Orange = Original).
+  Pfade über `iconFor(farbe, "…")` (`src/lib/core/app.ts`).
+- Manifest dynamisch (`src/app/manifest.ts`): liest das Cookie `farbe`, feste
+  `id: "/"`, gleiche URL – Android/Chrome übernimmt ein neues Icon selbst.
+- `IconSync` (Layout): setzt beim Laden und nach jeder Farbwahl das Cookie und
+  `apple-touch-icon`/Favicon auf die Farbe (das iPhone liest das Icon beim
+  "Zum Home-Bildschirm"). App-Logo (`AppIcon`) ebenfalls in der Farbe.
+- Kennenlernen: nach "Wer soll dir helfen?" (nur im Browser, nicht als
+  Homescreen-App – `isStandalone()`) Hinweis "Jetzt zum Home-Bildschirm
+  hinzufügen" mit Icon-Vorschau und 2 Schritten je Gerät (`addToHomeSteps`).
+- Farbwechsel später (Einstellungen `/profil/farbe` mit Icon-Vorschau, Lotte,
+  Regel ohne KI): auf dem iPhone als Homescreen-App `iconChangeHint()` – "Das
+  Icon auf dem Homescreen bleibt, bis du die App neu hinzufügst." und, solange
+  `CLOUD_SYNC` aus ist, die Warnung zum Datenverlust beim Entfernen.
 
 ## Tagesphasen, Timer, Sport (v0.21)
 

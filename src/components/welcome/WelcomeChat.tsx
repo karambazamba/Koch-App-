@@ -13,6 +13,8 @@ import { ArrowUp, CalendarDays, Check, CircleCheck, Mic, Plus, ShoppingCart, Squ
 import { LotteAvatar } from "@/components/LotteAvatar";
 import { BegleitungPicker } from "@/components/begleitung/BegleitungPicker";
 import { avatarHex, helperTitlePersonal } from "@/lib/einstellungen/profile";
+import { iconFor } from "@/lib/core/app";
+import { addToHomeSteps, isStandalone } from "@/lib/core/homescreen";
 import { toggleSpeak } from "@/lib/lotte/speech";
 import {
   addMember,
@@ -75,6 +77,8 @@ export function WelcomeChat() {
   const [state, setState] = useState<WelcomeState | null>(null);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  // Hinweis "Zum Home-Bildschirm" nach der Wahl der Begleitung (nur im Browser)
+  const [homeHint, setHomeHint] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -138,6 +142,38 @@ export function WelcomeChat() {
 
   if (!state) return <div className="min-h-dvh bg-background" />;
 
+  // --- Nach der Wahl (nur im Browser): App in der Lieblingsfarbe zum Home-Bildschirm
+  if (state.step === "begleitung" && homeHint) {
+    return (
+      <FullScreen onSkip={() => update(skipWelcome(state))}>
+        <div className="flex flex-col gap-1.5 text-center">
+          <h1 className="text-[28px] font-extrabold leading-tight tracking-tight">Jetzt zum Home-Bildschirm hinzufügen</h1>
+          <p className="text-base text-muted">So hast du {state.helper.name} immer mit einem Tipp dabei.</p>
+        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element -- statisches Icon in der gewählten Farbe */}
+        <img src={iconFor(state.helper.farbe, "apple-touch-icon.png")} alt="App-Icon in deiner Farbe" width={96} height={96} className="rounded-[22%] shadow-card" />
+        <ol className="flex w-full flex-col gap-2 text-left" aria-label="Anleitung">
+          {addToHomeSteps().map((step, i) => (
+            <li key={step} className="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 text-base font-semibold shadow-card">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-sm font-extrabold text-accent-strong">{i + 1}</span>
+              {step}
+            </li>
+          ))}
+        </ol>
+        <button
+          type="button"
+          onClick={() => {
+            setHomeHint(false);
+            void send({ chip: "weiter" });
+          }}
+          className="h-14 w-full rounded-full bg-bar text-lg font-bold text-on-bar shadow-lg active:scale-[0.98]"
+        >
+          Weiter
+        </button>
+      </FullScreen>
+    );
+  }
+
   // --- Schritt 1: Wer soll dir helfen? (Vollbild) ---------------------------
   if (state.step === "begleitung") {
     return (
@@ -148,7 +184,7 @@ export function WelcomeChat() {
         </div>
         <BegleitungPicker value={state.helper} onChange={(h) => update(setHelper(state, h))} />
         <p className="text-sm text-muted">Kannst du jederzeit ändern.</p>
-        <button type="button" onClick={() => void send({ chip: "weiter" })} className="h-14 w-full rounded-full bg-bar text-lg font-bold text-on-bar shadow-lg active:scale-[0.98]">
+        <button type="button" onClick={() => (isStandalone() ? void send({ chip: "weiter" }) : setHomeHint(true))} className="h-14 w-full rounded-full bg-bar text-lg font-bold text-on-bar shadow-lg active:scale-[0.98]">
           Weiter
         </button>
       </FullScreen>

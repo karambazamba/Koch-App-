@@ -9,8 +9,11 @@ import { LotteAvatar } from "@/components/LotteAvatar";
 import { ArtChoice, ColorDots } from "@/components/begleitung/BegleitungPicker";
 import { IconBadge } from "@/components/ui/IconBadge";
 import { ListRow } from "@/components/ui/ListRow";
-import { CARD } from "@/components/ui/styles";
-import { APP_THEMES, AVATAR_COLORS, avatarHex, helperTitle, helperWith, saveProfile, type HelperArt, type HouseholdProfile } from "@/lib/einstellungen/profile";
+import { useState } from "react";
+import { CARD, NOTE } from "@/components/ui/styles";
+import { iconFor } from "@/lib/core/app";
+import { iconChangeHint } from "@/lib/core/homescreen";
+import { APP_THEMES, AVATAR_COLORS, avatarHex, helperTitle, helperWith, saveProfile, type AvatarColor, type HelperArt, type HouseholdProfile } from "@/lib/einstellungen/profile";
 import { saveSpeechSettings, useSpeechSettings, useVoices } from "@/lib/lotte/speech";
 import { Group, SettingsPage, SwitchRow } from "./SettingsParts";
 
@@ -48,7 +51,7 @@ export function BegleitungGroup({ profile }: { profile: HouseholdProfile }) {
             href="/profil/farbe"
             icon={Palette}
             title="Farbe"
-            subtitle="Farbe meines Gesichts"
+            subtitle="Mein Gesicht und das App-Icon"
             value={
               <span className="flex items-center gap-1.5">
                 <span className="h-3.5 w-3.5 rounded-full border border-ink/20" style={{ background: avatarHex(h.farbe) }} aria-hidden />
@@ -86,19 +89,40 @@ export function DarstellungGroup({ profile }: { profile: HouseholdProfile }) {
   );
 }
 
-/** /profil/farbe: Icon-Farbe der Begleitung (10 Farben, 2 Reihen à 5) */
+/** Farbe wählen: Gesicht und App-Icon in derselben Farbe; nach einem Wechsel (iPhone-Homescreen-App) der Hinweis zum Icon */
+function FarbeChoice({ profile, onPick }: { profile: HouseholdProfile; onPick: (farbe: AvatarColor) => void }) {
+  const [hint, setHint] = useState<string | null>(null);
+  return (
+    <>
+      <div className={`${CARD} flex flex-col items-center gap-4 p-5`}>
+        <div className="flex items-end gap-4">
+          <LotteAvatar size={96} />
+          {/* eslint-disable-next-line @next/next/no-img-element -- statisches App-Icon in der gewählten Farbe */}
+          <img src={iconFor(profile.helper.farbe, "icon.svg")} alt="App-Icon" width={56} height={56} className="rounded-[22%] shadow-card" />
+        </div>
+        <ColorDots
+          value={profile.helper.farbe}
+          onChange={(farbe) => {
+            onPick(farbe);
+            setHint(iconChangeHint());
+          }}
+        />
+      </div>
+      {hint && (
+        <p className={NOTE} role="status">
+          {hint}
+        </p>
+      )}
+      <p className="px-1 text-sm text-muted">Mein Gesicht und das App-Icon bekommen die Farbe – alle anderen App-Farben bleiben gleich.</p>
+    </>
+  );
+}
+
+/** /profil/farbe: Lieblingsfarbe für Begleitung und App-Icon (10 Farben, 2 Reihen à 5) */
 export function FarbeView() {
   return (
     <SettingsPage title="Farbe" question="Welche Farbe soll ich haben?">
-      {(profile, set) => (
-        <>
-          <div className={`${CARD} flex flex-col items-center gap-4 p-5`}>
-            <LotteAvatar size={96} />
-            <ColorDots value={profile.helper.farbe} onChange={(farbe) => set({ helper: helperWith(profile.helper, { farbe }) })} />
-          </div>
-          <p className="px-1 text-sm text-muted">Die App-Farben bleiben gleich – nur mein Gesicht bekommt die Farbe. Das App-Icon bleibt orange.</p>
-        </>
-      )}
+      {(profile, set) => <FarbeChoice profile={profile} onPick={(farbe) => set({ helper: helperWith(profile.helper, { farbe }) })} />}
     </SettingsPage>
   );
 }
