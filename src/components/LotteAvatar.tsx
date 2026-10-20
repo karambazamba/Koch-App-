@@ -56,9 +56,10 @@ export function LotteAvatar({ size, color, zustand, groesse: fest }: { size: num
             </g>
           </g>
         </g>
-        <g className="av-zzz" fill="var(--c)" fontWeight="800">
-          <text x="64" y="12" fontSize="11">z</text>
-          <text x="72" y="3" fontSize="8">z</text>
+        {/* Zwei kleine "z" – als Linien gezeichnet (kein Text, damit sie nicht im Seitentext/Vorlesen auftauchen) */}
+        <g className="av-zzz" fill="none" stroke="var(--c)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M64.5 4.5h6l-6 7h6" />
+          <path d="M73 -3.5h4.5l-4.5 5h4.5" strokeWidth="1.9" />
         </g>
         <g className="av-dots" fill="var(--c)">
           <circle cx="66" cy="8" r="2.6" />

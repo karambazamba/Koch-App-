@@ -454,8 +454,8 @@ body {
 [data-zustand="schlafen"] .av-closed{opacity:1}
 [data-zustand="schlafen"] .av-mouth{transform:scale(.6)}
 [data-zustand="schlafen"] .av-zzz{opacity:1}
-[data-zustand="schlafen"] .av-zzz text{animation:av-z 2.4s ease-in-out infinite}
-[data-zustand="schlafen"] .av-zzz text:nth-child(2){animation-delay:.6s}
+[data-zustand="schlafen"] .av-zzz path{animation:av-z 2.4s ease-in-out infinite}
+[data-zustand="schlafen"] .av-zzz path:nth-child(2){animation-delay:.6s}
 [data-zustand="schlafen"] .av-body{animation:av-breathe 3.2s ease-in-out infinite}
 @keyframes av-z{0%,100%{opacity:.2;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
 
