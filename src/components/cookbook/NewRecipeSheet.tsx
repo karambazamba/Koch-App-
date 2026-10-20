@@ -95,6 +95,7 @@ function TellRecipe({ name, onClose }: { name: string; onClose: () => void }) {
 
   const save = (edit: boolean) => {
     if (!parsed) return;
+    speech.reset();
     const recipe = saveRecipe(createRecipe({ ...parsed, source: "eigenes" }));
     onClose();
     router.push(edit ? `/kochbuch/bearbeiten?id=${encodeURIComponent(recipe.id)}` : `/kochbuch/rezept?id=${encodeURIComponent(recipe.id)}`);

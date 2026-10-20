@@ -151,6 +151,7 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
 - Einstellungen nach Nutzungshäufigkeit sortieren, aktueller Wert rechts.
 - Versionsnummer (`package.json` und `APP_VERSION` in `src/lib/core/app.ts`)
   und `CACHE_VERSION` in `public/sw.js` bei jeder Auslieferung erhöhen.
+- Kein Alt-Modus mehr. Daten nur über das zentrale Speicher-Verzeichnis (mit Version/Migration); ‚Daten sichern/wiederherstellen‘ muss immer funktionieren. Jeder behobene Fehler bekommt einen Test; npm test vor jedem PR. Spracheingabe nur über useSpeechInput; beim Absenden immer cancel/reset. Aufgaben: dringend → heute → Frist → Woche → irgendwann, innerhalb nach Uhrzeit bzw. Erstellungszeit, nie alphabetisch. Jedes Fenster schließt per ✕, Danebentippen, Runterwischen, Zurück. Phase heißt ‚Morgens‘, der nächste Tag immer mit Wochentag. Größe ändert nur die Menge; S ≤ M ≤ L. Aufgaben 2er-Raster schlank, Termine schlanke Kärtchen. Wetter Standard S, eigenes Symbol-Set, Seite Heute/Morgen/7 Tage. Dateien möglichst unter 600 Zeilen.
 
 ## Roadmap
 - Phase 1: Konten + Haushalt (Supabase) – Anmeldung, Haushalt mit Mitgliedern,
@@ -400,6 +401,49 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   (`QuickButton`), Schnell-Termin (`TerminQuickAdd`), Schnell-Aufgabe
   (`TaskQuickAdd`), einmaliger Hinweis nach dem Kennenlernen, Start-Kacheln
   aus dem Kennenlernen (`homeTilesFor`, in Standard-Reihenfolge).
+
+## Korrekturen Teil B (v0.26)
+
+- Diktat: `useSpeechInput().reset()` beim Absenden (alle Eingaben), danach
+  schreibt nichts mehr zurück; Doppel-Absenden gesperrt.
+- Aufgaben-Reihenfolge zentral (`orderedTasks`, `sortItems`,
+  `byTimeThenAge` in `aufgaben/model.ts`): dringend → heute (inkl. "von
+  gestern") → nächste Frist → diese Woche → irgendwann; innerhalb Uhrzeit,
+  sonst Erstellungszeit (`seit` nach "Auf morgen" = ans Ende), nie alphabetisch.
+- Dringend: `AufgabeData.dringend`, Chip „❗ Dringend“ im Schnell-Eintrag,
+  Menü „Als dringend markieren“/„Nicht mehr dringend“, Sprache „Dringend: …“ /
+  „… ist wichtig“ (`urgentFrom`), Lotte `aufgabe_*` mit `dringend`; kleines
+  oranges „!“ (`UrgentMark`, Tokens `quick`) vor dem Titel; Lottes Satz
+  „**X** ist heute wichtig.“ Keine zusätzlichen Erinnerungen.
+- Fenster: `useBackCloses` (Zurück-Geste schließt; Verlaufseintrag
+  `{sheets}`) in `Sheet`, `ConfirmDialog`, Einkauf-Plus und Chat; ✕,
+  Danebentippen, Runterwischen wie gehabt. Phasen-Schild öffnet ein Fenster
+  (Erklärung, „Normale Ansicht“, „Einstellungen“); danach nur der Chip „✨
+  Wieder mitdenken“ (`phase.resume`). Phase „☀️ Morgens · Überblick für den
+  Tag“, nächster Tag immer mit Wochentag (`tomorrowLabel` → „Morgen · Mi“,
+  Erinnerung „Morgen (Mi) um …“), Einstellung „Morgens bis 10:00“.
+- Startseite: Termine als schlanke Kärtchen (`TerminCard`, 44–48 px; S 1,
+  M bis 3, L bis 6 in 2 Reihen), Aufgaben im 2er-Raster (`TaskField`; S 2 –
+  halb untereinander, breit nebeneinander –, M 2×2, L 2×4, ungerade = leeres
+  Feld). Leere Kacheln „+ eintragen“, Einkauf-Vorschau mit „ · “.
+  Statusleiste: `.status-veil` (Safe-Area, Hintergrund durchscheinend mit
+  Weichzeichner), theme-color hell/dunkel ab dem ersten Zeichnen.
+- Wetter: Standard S; eigenes Symbol-Set `WeatherSymbol`
+  (`src/components/wetter/`, Farben `--wx-*`), Kachel-Verlauf je Lage
+  (`.wx-card[data-wx]`, `weatherGroup`, im Dunkeln gedämpft); S Symbol +
+  Temperatur + ein Satz, M + Morgens/Mittags/Abends, L + 5 Tage in Worten.
+  Seite `/wetter` (`WeatherView`): Heute · Morgen · 7 Tage (wischen, Punkte;
+  ab 18 Uhr „Morgen“, `?tag=`), Kopfkarte, Satz zu Terminen (`daySentence`),
+  drei Tageszeit-Karten mit Tipp-Chips (`dayParts`), 7 Tage mit „☀ draußen“
+  und „Bester Tag für draußen“ (`bestOutdoorDay`). Rein in
+  `src/lib/wetter/view.ts`; Testmodus zusätzlich `schnee`/`gewitter`/`wolkig`.
+- Sport: jeder Tag der Kachel öffnet `SportDaySheet` (leer: „✓ Wie letztes
+  Mal“ + Eintragen; trainiert: Ändern, „+ Noch ein Training“, Löschen;
+  geplant: Erinnerung, Wetter, „✓ Erledigt“, „Verschieben …“, „Absagen“;
+  Zukunft: „Training planen“ mit `freeStarts` → Termin Etikett Sport,
+  Erinnerung 30 Min).
+- Test: `tests/teilb.test.ts`; Durchklick `groessen` (Höhen S ≤ M ≤ L) und
+  `teilB` im Scratchpad.
 
 ## Begleitung zum Aussuchen + Hell/Dunkel (v0.22)
 

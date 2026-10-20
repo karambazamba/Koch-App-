@@ -20,6 +20,8 @@ type HomePhase = {
   /** Die Phase, die eigentlich gilt (auch bei "Alles zeigen") */
   phaseId: PhaseId | null;
   showAll: () => void;
+  /** "✨ Wieder mitdenken": zurück zur Phase */
+  resume: () => void;
   /** "Alles zeigen" ist gerade an */
   showingAll: boolean;
   key: string;
@@ -66,7 +68,7 @@ export function useHomePhase(ctx: PhaseContext | null, opts: { routine: DayRouti
 
   const showAllKey = useShowAll();
   const key = `${opts.today}:${shown}`;
-  if (steady || !ctx) return { def: null, view: STEADY_VIEW, phaseId: null, showAll: () => {}, showingAll: false, key };
+  if (steady || !ctx) return { def: null, view: STEADY_VIEW, phaseId: null, showAll: () => {}, resume: () => {}, showingAll: false, key };
   const def = PHASES.find((p) => p.id === shown) ?? live!.def;
   const showingAll = showAllKey === key && def.id !== "tagsueber";
   const view = def.view(ctx);
@@ -76,6 +78,7 @@ export function useHomePhase(ctx: PhaseContext | null, opts: { routine: DayRouti
     view: showingAll ? { ...STEADY_VIEW, hideWork: PHASES.find((p) => p.id === "tagsueber")!.view(ctx).hideWork } : view,
     phaseId: def.id,
     showAll: () => setShowAll(key),
+    resume: () => setShowAll(null),
     showingAll,
     key,
   };

@@ -100,6 +100,7 @@ function PinWriteSheet({ me, onClose }: { me: string; onClose: () => void }) {
   const save = () => {
     const pin = createPin(text, me);
     if (!pin) return;
+    speech.reset();
     changePins((all) => addPin(all, pin));
     buzz();
     onClose();

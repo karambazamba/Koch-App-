@@ -476,3 +476,49 @@ body {
     transform: translate(-50%, -50%);
   }
 }
+
+/* Statusleiste (Safe-Area oben): ruhiger Hintergrund, durchscheinend mit Weichzeichner – hell und dunkel */
+.status-veil {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: 60;
+  height: env(safe-area-inset-top, 0px);
+  background: color-mix(in srgb, var(--color-background) 82%, transparent);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  pointer-events: none;
+}
+
+/* Wetter: eigenes Symbol-Set und Kachel-Verlauf je Wetterlage (im Dunkeln gedämpft) */
+:root {
+  --wx-sun: #ffc23d;
+  --wx-sun-2: #f59e1b;
+  --wx-cloud: #ffffff;
+  --wx-cloud-2: #c3cfdf;
+  --wx-cloud-dark: #8e97ab;
+  --wx-cloud-dark-2: #6f7890;
+  --wx-rain: #4a86d8;
+  --wx-snow: #8fb3e3;
+  --wx-bolt: #ffc23d;
+  --wx-bolt-2: #e69a12;
+}
+.wx-card {
+  --wx-a: #eef1f6;
+  --wx-b: #f8f9fb;
+  background: linear-gradient(135deg, var(--wx-a), var(--wx-b));
+}
+.wx-card[data-wx="sonnig"] { --wx-a: #fff1cc; --wx-b: #fff9ea; }
+.wx-card[data-wx="regen"] { --wx-a: #e3ecf8; --wx-b: #f3f7fd; }
+.wx-card[data-wx="schnee"] { --wx-a: #f0f4fa; --wx-b: #ffffff; }
+.wx-card[data-wx="gewitter"] { --wx-a: #e6e3f2; --wx-b: #f4f2fa; }
+:root[data-theme="nacht"] { --wx-cloud: #d9dee8; --wx-cloud-2: #9aa6ba; }
+:root[data-theme="nacht"] .wx-card {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--wx-a) 14%, var(--color-surface)), var(--color-surface));
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="auto"] { --wx-cloud: #d9dee8; --wx-cloud-2: #9aa6ba; }
+  :root[data-theme="auto"] .wx-card {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--wx-a) 14%, var(--color-surface)), var(--color-surface));
+  }
+}

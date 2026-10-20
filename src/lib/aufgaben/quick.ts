@@ -6,7 +6,7 @@
 import type { Room } from "../core/entries";
 import { addDays } from "../core/now";
 import { mondayOf, type AufgabeData, type Reminder, type Repeat } from "./model";
-import { guessLabel, guessRoom, parseCalendar } from "./parse";
+import { guessLabel, guessRoom, parseCalendar, urgentFrom } from "./parse";
 
 export type When = "heute" | "morgen" | "woche" | "irgendwann" | { date?: string; due?: string };
 
@@ -18,7 +18,13 @@ export const WHEN_CHOICES: { id: "heute" | "morgen" | "woche" | "irgendwann"; la
 ];
 
 /** Was der Text über Tag/Frist sagt (oder null) – plus der bereinigte Titel */
-export function readQuickText(text: string, today: string): { title: string; when: When | null; time?: string; room: Room; label?: string } {
+
+export function readQuickText(text: string, today: string): { title: string; when: When | null; time?: string; room: Room; label?: string; urgent: boolean } {
+  const urgent = urgentFrom(text);
+  return { ...readPlainQuickText(urgent.text, today), urgent: urgent.urgent };
+}
+
+function readPlainQuickText(text: string, today: string): { title: string; when: When | null; time?: string; room: Room; label?: string } {
   const raw = text.trim();
   const cmd = parseCalendar(raw, today);
   const room = guessRoom(raw);
@@ -48,8 +54,8 @@ export function readQuickText(text: string, today: string): { title: string; whe
 }
 
 /** Aufgabe aus Titel und Auswahl */
-export function quickTaskData(title: string, when: When, today: string, opts: { time?: string; reminder?: Reminder; label?: string } = {}): AufgabeData {
-  const base: AufgabeData = { title: title.trim().slice(0, 120), reminder: opts.reminder ?? "aus", repeat: null, ...(opts.time ? { time: opts.time } : {}), ...(opts.label ? { label: opts.label } : {}) };
+export function quickTaskData(title: string, when: When, today: string, opts: { time?: string; reminder?: Reminder; label?: string; dringend?: boolean } = {}): AufgabeData {
+  const base: AufgabeData = { title: title.trim().slice(0, 120), reminder: opts.reminder ?? "aus", repeat: null, ...(opts.time ? { time: opts.time } : {}), ...(opts.label ? { label: opts.label } : {}), ...(opts.dringend ? { dringend: true } : {}) };
   if (when === "heute") return { ...base, date: today };
   if (when === "morgen") return { ...base, date: addDays(today, 1) };
   if (when === "woche") return { ...base, week: mondayOf(today) };

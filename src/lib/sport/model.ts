@@ -359,6 +359,35 @@ const IDEAL: Record<number, number[]> = { 1: [2], 2: [1, 3], 3: [0, 2, 4], 4: [0
 const DAY_SHORT = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 const PART_WORD: Record<DayPart | "egal", string> = { morgens: "früh", mittags: "mittags", abends: "abends", egal: "" };
 
+/** Belegte Zeiten eines Tages (15 Min Luft, 60 Min zu Arbeit) */
+function busyOn(entries: CalendarEntry[], date: string, today: string) {
+  return itemsForDay(entries, date, today)
+    .filter((i) => i.time)
+    .map((i) => {
+      const s = toMin(i.time!);
+      const e = i.end ? toMin(i.end) : s + 60;
+      const pad = i.room === "arbeit" ? 60 : 15;
+      return { from: s - pad, to: e + pad, title: i.title, work: i.room === "arbeit" };
+    });
+}
+
+const isFree = (entries: CalendarEntry[], date: string, today: string, start: number, minutes: number) => !busyOn(entries, date, today).some((b) => start < b.to && start + minutes > b.from);
+
+/** Freie Startzeiten an einem Tag (Vorschläge für "Training planen"), früh bis abends sortiert */
+export function freeStarts(entries: CalendarEntry[], date: string, today: string, minutes: number, max = 3): string[] {
+  const order = [18 * 60, 7 * 60, 19 * 60, 17 * 60 + 30, 12 * 60 + 15, 8 * 60, 20 * 60];
+  return order.filter((m) => isFree(entries, date, today, m, minutes)).slice(0, max).sort((a, b) => a - b).map(clock);
+}
+
+/** Geplante (noch nicht abgehakte) Sport-Termine eines Tages */
+export const plannedOn = (entries: CalendarEntry[], date: string, today: string, me?: string | null): DayItem[] => sportItems(entries, date, today, me).filter((x) => !x.done);
+
+/** Das letzte Training (für "Wie letztes Mal") */
+export function lastTraining(state: SportState, entries: CalendarEntry[], today: string, me?: string | null): TrainingData | null {
+  const list = trainingsBetween(state, entries, addDays(today, -90), today, today, me);
+  return list.length ? list[list.length - 1].data : null;
+}
+
 /**
  * Trainings in freie Lücken legen: keine Überschneidung mit Terminen (15 Min
  * Luft), 60 Min Abstand zu Arbeit-Terminen, Wunsch-Tageszeit zuerst, Tage
@@ -374,16 +403,8 @@ export function planTrainings(input: PlanInput): { slots: PlanSlot[]; notes: str
   const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i)).filter((d) => d > input.today);
   const part = input.part ?? "egal";
   const notes: string[] = [];
-  const busy = (date: string) =>
-    itemsForDay(input.entries, date, input.today)
-      .filter((i) => i.time && !(i.entry.typ === "aufgabe" && !i.time))
-      .map((i) => {
-        const s = toMin(i.time!);
-        const e = i.end ? toMin(i.end) : s + 60;
-        const pad = i.room === "arbeit" ? 60 : 15;
-        return { from: s - pad, to: e + pad, title: i.title, work: i.room === "arbeit" };
-      });
-  const free = (date: string, start: number) => !busy(date).some((b) => start < b.to && start + minutes > b.from);
+  const busy = (date: string) => busyOn(input.entries, date, input.today);
+  const free = (date: string, start: number) => isFree(input.entries, date, input.today, start, minutes);
   const choose = (date: string): { slot: PlanSlot | null; note?: string } => {
     const wanted = CANDIDATES[part];
     const clash = busy(date).find((b) => wanted.some((c) => c < b.to && c + minutes > b.from));

@@ -2,7 +2,7 @@
 // Aufgaben-Stapel ("Ruhiger Tag: 2 Termine, eine Aufgabe, abends
 // Gemüsepfanne."). Rein, damit es testbar ist.
 
-import type { DayItem } from "./model";
+import { weekdayShort, type DayItem } from "./model";
 
 /** "Guten Morgen" (bis 11 Uhr), "Hallo" (bis 18 Uhr), sonst "Guten Abend" */
 export function greeting(minutesNow: number): string {
@@ -24,6 +24,8 @@ type HomeSentenceInput = {
   tasksDoneToday: number;
   /** Aufgaben mit Frist (bzw. Tag) genau heute */
   dueToday?: DayItem[];
+  /** Dringende Aufgaben (offen) – darf genannt werden, ohne Druck-Wörter */
+  urgent?: DayItem[];
   /** Für heute ist noch kein Essen geplant (und es wäre eins dran) */
   dinnerOpen: boolean;
   tomorrowTermine: DayItem[];
@@ -56,14 +58,17 @@ export function homeSentence(x: HomeSentenceInput): { parts: SentencePart[]; act
   }
   const next = upcoming[0];
   if (next?.time) return { parts: [{ t: "Als Nächstes: " }, { t: `${short(next.title, 22)} um ${clockOf(next.time)}.`, b: true }] };
+  const urgent = (x.urgent ?? []).find((t) => !t.done);
+  if (urgent) return { parts: [{ t: short(urgent.title), b: true }, { t: " ist heute wichtig." }] };
   const due = (x.dueToday ?? []).find((t) => !t.done);
   if (due) return { parts: [{ t: short(due.title), b: true }, { t: " ist heute dran." }] };
   if (x.minutes >= 15 * 60 && x.minutes < 18 * 60 && x.dinnerOpen) return { parts: [{ t: "Noch kein Essen geplant – " }, { t: "Ideen?", b: true }], action: "essen" };
   if (x.minutes >= 20 * 60) {
     const first = x.tomorrowTermine.find((t) => t.time);
-    if (first?.time) return { parts: [{ t: "Morgen: " }, { t: `${clockOf(first.time)} ${short(first.title, 22)}.`, b: true }] };
+    // Der nächste Tag immer mit Wochentag: "Morgen (Mi): …"
+    if (first?.time) return { parts: [{ t: `Morgen (${weekdayShort(first.date)}): ` }, { t: `${clockOf(first.time)} ${short(first.title, 22)}.`, b: true }] };
     const task = Array.isArray(x.tomorrowTasks) ? x.tomorrowTasks[0] : null;
-    if (task) return { parts: [{ t: "Morgen: " }, { t: end(short(task.title)), b: true }] };
+    if (task) return { parts: [{ t: `Morgen (${weekdayShort(task.date)}): ` }, { t: end(short(task.title)), b: true }] };
   }
   const open = x.termineUpcoming.length + x.tasksToday.length;
   const hadSomething = x.termineToday.length > 0 || x.tasksDoneToday > 0;

@@ -1,11 +1,12 @@
 "use client";
 
-// "Heute": TERMINE und AUFGABEN je Größe – S: der nächste Termin bzw. die
-// wichtigste Aufgabe, M: 3 Kärtchen nebeneinander bzw. 3 Zeilen, L: alle
-// Termine des Tages bzw. 6 Zeilen. Rechts "+ N weitere" und der kleine
-// Schnell-Knopf "+". Titel antippen = Menü, Kästchen/Kreis = abhaken: bleibt
-// ca. 1 s durchgestrichen (nochmal tippen = doch nicht), dann rückt der
-// nächste nach – still, ohne Meldung.
+// "Heute": TERMINE und AUFGABEN. Die Größe ändert nur die Menge, nie das
+// Aussehen (S ≤ M ≤ L): Termine als schlanke Kärtchen (S 1, M bis 3
+// nebeneinander, L bis 6 in 2 Reihen), Aufgaben im schlanken 2er-Raster
+// (S 2 Felder – halb untereinander, breit nebeneinander –, M 2×2, L 2×4).
+// "+ N weitere" und der kleine Schnell-Knopf "+" stehen im Kopf. Antippen =
+// Menü (mit vollem Titel), Kästchen/Kreis = abhaken: bleibt ca. 1 s
+// durchgestrichen (nochmal tippen = doch nicht), dann rückt der nächste nach.
 
 import Link from "next/link";
 import { useRef, useState } from "react";
@@ -13,7 +14,8 @@ import { Check, Plus } from "lucide-react";
 import { CARD } from "@/components/ui/styles";
 import { QuickButton } from "@/components/ui/QuickButton";
 import { clockLabel } from "@/lib/aufgaben/answers";
-import { setDone, taskBadge, type DayItem } from "@/lib/aufgaben/model";
+import { isUrgent, setDone, taskBadge, type DayItem } from "@/lib/aufgaben/model";
+import { UrgentMark } from "./UrgentMark";
 import type { TileSize } from "@/lib/core/homeLayout";
 import { TaskQuickAdd } from "./TaskQuickAdd";
 import { TerminQuickAdd } from "./TerminQuickAdd";
@@ -59,16 +61,6 @@ function SectionHead({ title, more, href, action, moreLabel }: { title: string; 
       )}
       {action && <span className="ml-1 flex items-center">{action}</span>}
     </div>
-  );
-}
-
-/** Kärtchen-Hülle: Farbstreifen links, Hereingleiten für Neue */
-function MiniCard({ item, entering, children }: { item: DayItem; entering: boolean; children: React.ReactNode }) {
-  return (
-    <li className={`${CARD} relative min-w-0 overflow-hidden`} style={entering ? { animation: "card-in 0.32s ease-out" } : undefined} data-item={item.key}>
-      <span className={`absolute inset-y-0 left-0 w-1.5 ${roomBar(item.room)}`} aria-hidden />
-      {children}
-    </li>
   );
 }
 
@@ -118,15 +110,40 @@ function CheckBox({ item, checked, onClick, round = false }: { item: DayItem; ch
   );
 }
 
+const entersAnim = (before: string[] | null, key: string) => (before && !before.includes(key) ? { animation: "card-in 0.32s ease-out" } : undefined);
+
+/** Termin-Kärtchen (44–48 px): Uhrzeit fett, Titel einzeilig, Kästchen 14 px oben rechts, Farbstreifen links */
+function TerminCard({ item, leaving, entering, onOpen, onDone }: { item: DayItem; leaving: boolean; entering?: React.CSSProperties; onOpen: () => void; onDone: () => void }) {
+  return (
+    <li className={`${CARD} relative min-w-0 overflow-hidden`} style={entering} data-item={item.key}>
+      <span className={`absolute inset-y-0 left-0 w-1 ${roomBar(item.room)}`} aria-hidden />
+      <button type="button" onClick={onOpen} className="flex min-h-[46px] w-full flex-col justify-center py-1.5 pl-3 pr-6 text-left" aria-label={`${item.time ? clockLabel(item.time) : ""} ${item.title} – Möglichkeiten`}>
+        <span className="text-[13.5px] font-extrabold leading-tight tabular-nums">{item.time ? clockLabel(item.time) : "–"}</span>
+        <span className={`w-full truncate text-[12px] font-semibold leading-snug ${leaving ? "text-muted line-through" : ""}`}>{item.title}</span>
+      </button>
+      <button type="button" role="checkbox" aria-checked={leaving} aria-label={`${item.title} erledigt`} onClick={onDone} className="absolute right-0 top-0 flex h-11 w-11 items-start justify-end p-2">
+        <span className={`flex h-3.5 w-3.5 items-center justify-center rounded border-[1.5px] ${leaving ? "border-accent bg-accent text-on-accent" : "border-stone-300"}`} style={leaving ? { animation: "check-pop 0.4s ease-out" } : undefined}>
+          {leaving && <Check className="h-2.5 w-2.5" strokeWidth={3.5} aria-hidden />}
+        </span>
+      </button>
+    </li>
+  );
+}
+
+/** Wie viele Termine je Größe: S 1, M bis 3, L bis 6 */
+export const TERMIN_COUNT = { S: 1, M: 3, L: 6 } as const;
+/** Wie viele Aufgaben-Felder je Größe: S 2, M 2×2, L 2×4 */
+export const TASK_COUNT = { S: 2, M: 4, L: 8 } as const;
+
 /**
- * TERMINE – S: der nächste + "+2 weitere heute"; M: die nächsten drei
- * nebeneinander; L: alle Termine des Tages als Liste. "+" = neuer Termin.
+ * TERMINE – schlanke Kärtchen: S 1 (breit mit "+N weitere heute"), M bis 3
+ * nebeneinander, L bis 6 in 2 Reihen. "+" = neuer Termin.
  */
-export function TermineSection({ items, all, href, today, size = "M" }: { items: DayItem[]; all?: DayItem[]; href: string; today?: string; size?: TileSize }) {
+export function TermineSection({ items, all, href, today, size = "M", half = false }: { items: DayItem[]; all?: DayItem[]; href: string; today?: string; size?: TileSize; half?: boolean }) {
   const { setMenu, check, before, overlays } = useSection();
   const [adding, setAdding] = useState(false);
-  const list = size === "L" ? (all ?? items) : items;
-  const shown = size === "S" ? list.slice(0, 1) : size === "M" ? list.slice(0, 3) : list;
+  const list = size === "L" ? (all ?? items).filter((i) => !i.done) : items;
+  const shown = list.slice(0, TERMIN_COUNT[size]);
   const { leaving, start } = useLeaving((item) => check(item, shown));
   const sheet = adding && <TerminQuickAdd onClose={() => setAdding(false)} defaultDate={today} />;
   const plus = <QuickButton icon={Plus} label="Neuer Termin" onClick={() => setAdding(true)} />;
@@ -137,74 +154,15 @@ export function TermineSection({ items, all, href, today, size = "M" }: { items:
         {sheet}
       </>
     );
-  if (size === "S") {
-    const item = shown[0];
-    const isLeaving = leaving === item.key;
-    return (
-      <section className={`${CARD} relative flex min-h-[92px] flex-col overflow-hidden p-3.5 pl-4`} aria-label="Termine">
-        <span className={`absolute inset-y-0 left-0 w-1.5 ${roomBar(item.room)}`} aria-hidden />
-        <div className="flex items-center gap-1 pr-6">
-          <Link href={href} className="text-[11px] font-bold uppercase tracking-wider text-muted">
-            Termine
-          </Link>
-        </div>
-        <span className="absolute right-3.5 top-3">{plus}</span>
-        <button type="button" onClick={() => setMenu(item)} className="mt-1 flex flex-col items-start text-left" aria-label={`${item.time ? clockLabel(item.time) : ""} ${item.title} – Möglichkeiten`}>
-          <span className="text-[15px] font-extrabold tabular-nums leading-tight">{item.time ? clockLabel(item.time) : "–"}</span>
-          <span className={`line-clamp-2 text-[13px] font-semibold leading-snug ${isLeaving ? "text-muted line-through" : ""}`}>{item.title}</span>
-        </button>
-        {list.length > 1 && (
-          <Link href={href} className="mt-0.5 text-xs font-bold text-accent-strong">
-            +{list.length - 1} weitere heute
-          </Link>
-        )}
-        {overlays}
-        {sheet}
-      </section>
-    );
-  }
-  if (size === "L") {
-    return (
-      <section className="flex flex-col gap-1.5" aria-label="Termine">
-        <SectionHead title="Termine" more={0} href={href} action={plus} />
-        <ul className={`${CARD} divide-y divide-line overflow-hidden`}>
-          {shown.map((item) => {
-            const checked = item.done || leaving === item.key;
-            return (
-              <li key={item.key} className="flex items-center gap-1 py-0.5 pr-3" data-item={item.key} style={before && !before.includes(item.key) ? { animation: "card-in 0.32s ease-out" } : undefined}>
-                <CheckBox item={item} checked={checked} onClick={() => (item.done ? undefined : start(item))} />
-                <button type="button" onClick={() => setMenu(item)} className="flex min-h-11 min-w-0 flex-1 items-center gap-2 text-left" aria-label={`${item.time ? clockLabel(item.time) : ""} ${item.title} – Möglichkeiten`}>
-                  <span className="w-12 shrink-0 text-[14px] font-extrabold tabular-nums">{item.time ? clockLabel(item.time) : "–"}</span>
-                  <span className={`min-w-0 flex-1 truncate text-[15px] font-semibold ${checked ? "text-muted line-through" : ""}`}>{item.title}</span>
-                  <span className={`h-2 w-2 shrink-0 rounded-full ${roomBar(item.room)}`} aria-hidden />
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-        {overlays}
-        {sheet}
-      </section>
-    );
-  }
+  const rest = list.length - shown.length;
+  const cols = size === "S" ? "grid-cols-1" : shown.length === 1 ? "grid-cols-1" : shown.length === 2 ? "grid-cols-2" : "grid-cols-3";
   return (
     <section className="flex flex-col gap-1.5" aria-label="Termine">
-      <SectionHead title="Termine" more={list.length - shown.length} href={href} action={plus} />
-      <ul className={`grid gap-2 ${shown.length === 3 ? "grid-cols-3" : shown.length === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
-        {shown.map((item) => {
-          const isLeaving = leaving === item.key;
-          return (
-            <MiniCard key={item.key} item={item} entering={Boolean(before && !before.includes(item.key))}>
-              <button type="button" onClick={() => setMenu(item)} className="flex w-full flex-col items-start gap-0.5 py-2.5 pl-3.5 pr-2.5 text-left" aria-label={`${item.time ? clockLabel(item.time) : ""} ${item.title} – Möglichkeiten`}>
-                <span className="pr-6 text-[14px] font-extrabold leading-tight tabular-nums">{item.time ? clockLabel(item.time) : "–"}</span>
-                <span className={`line-clamp-2 w-full hyphens-auto break-words text-[11.5px] font-semibold leading-snug ${isLeaving ? "text-muted line-through" : ""}`}>{item.title}</span>
-              </button>
-              <span className="absolute right-0 top-0 [&>button]:items-start [&>button]:justify-end [&>button]:p-2">
-                <CheckBox item={item} checked={isLeaving} onClick={() => start(item)} />
-              </span>
-            </MiniCard>
-          );
-        })}
+      <SectionHead title="Termine" more={half ? 0 : rest} moreLabel={size === "S" ? "weitere heute" : undefined} href={href} action={plus} />
+      <ul className={`grid gap-2 ${cols}`}>
+        {shown.map((item) => (
+          <TerminCard key={item.key} item={item} leaving={leaving === item.key} entering={entersAnim(before, item.key)} onOpen={() => setMenu(item)} onDone={() => start(item)} />
+        ))}
       </ul>
       {overlays}
       {sheet}
@@ -220,6 +178,7 @@ export function TaskLine({ item, today, onOpen, onDone, leaving, entering }: { i
     <li className="flex items-center gap-1 py-1 pr-3" style={entering ? { animation: "card-in 0.32s ease-out" } : undefined} data-item={item.key}>
       <CheckBox item={item} checked={checked} onClick={() => onDone(item)} round />
       <button type="button" onClick={() => onOpen(item)} className="flex min-h-11 min-w-0 flex-1 items-center gap-2 py-1 text-left" aria-label={`${item.title} – Möglichkeiten`}>
+        {isUrgent(item) && !checked && <UrgentMark />}
         <span className={`min-w-0 flex-1 truncate text-[15px] font-semibold leading-snug ${checked ? "text-muted line-through" : ""}`}>{item.title}</span>
         {badge && <span className={`shrink-0 text-xs ${badge === "heute" ? "font-semibold text-accent-strong" : "text-muted"}`}>{badge}</span>}
         <span className={`h-2 w-2 shrink-0 rounded-full ${roomBar(item.room)}`} aria-hidden />
@@ -228,41 +187,53 @@ export function TaskLine({ item, today, onOpen, onDone, leaving, entering }: { i
   );
 }
 
-/** AUFGABEN – S: Anzahl + die wichtigste; M: 3 Zeilen; L: 6 Zeilen. "+ N weitere", kleiner "+" */
-export function AufgabenSection({ items, more, today, href = "/aufgaben", size = "M" }: { items: DayItem[]; more: number; today: string; href?: string; size?: TileSize }) {
+/** Ein Feld im Aufgaben-Raster (~44 px): Kreis 17 px, evtl. "!", Titel fett einzeilig, darunter Punkt + Frist */
+function TaskField({ item, today, leaving, entering, onOpen, onDone }: { item: DayItem; today: string; leaving: boolean; entering?: React.CSSProperties; onOpen: () => void; onDone: () => void }) {
+  const badge = taskBadge(item, today);
+  return (
+    <li className="relative flex min-w-0 items-center bg-surface" style={entering} data-item={item.key}>
+      <button type="button" role="checkbox" aria-checked={leaving} aria-label={`${item.title} erledigt`} onClick={onDone} className="flex h-11 w-9 shrink-0 items-center justify-end pr-1">
+        <span className={`flex h-[17px] w-[17px] items-center justify-center rounded-full border-2 ${leaving ? "border-accent bg-accent text-on-accent" : "border-stone-300"}`} style={leaving ? { animation: "check-pop 0.4s ease-out" } : undefined}>
+          {leaving && <Check className="h-2.5 w-2.5" strokeWidth={3.5} aria-hidden />}
+        </span>
+      </button>
+      <button type="button" onClick={onOpen} className="flex min-h-11 min-w-0 flex-1 flex-col justify-center py-[7px] pr-[10px] pl-1 text-left" aria-label={`${item.title} – Möglichkeiten`}>
+        <span className="flex w-full min-w-0 items-center gap-1">
+          {isUrgent(item) && !leaving && <UrgentMark />}
+          <span className={`min-w-0 flex-1 truncate text-[13px] font-bold leading-tight ${leaving ? "text-muted line-through" : ""}`}>{item.title}</span>
+        </span>
+        <span className="flex items-center gap-1 text-[11px] leading-tight">
+          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${roomBar(item.room)}`} aria-hidden />
+          {badge && <span className={badge === "heute" ? "font-semibold text-accent-strong" : "text-muted"}>{badge}</span>}
+        </span>
+      </button>
+    </li>
+  );
+}
+
+/** AUFGABEN – schlankes 2er-Raster mit feinen Linien: S 2 Felder, M 2×2, L 2×4; "+ N weitere", kleiner "+" */
+export function AufgabenSection({ items, total, today, href = "/aufgaben", size = "M", half = false }: { items: DayItem[]; total?: number; today: string; href?: string; size?: TileSize; half?: boolean }) {
   const { setMenu, check, before, overlays } = useSection();
   const [adding, setAdding] = useState(false);
-  const count = size === "S" ? 1 : size === "L" ? 6 : 3;
-  const shown = items.slice(0, count);
-  const total = more + Math.min(3, items.length);
+  const shown = items.slice(0, TASK_COUNT[size]);
   const { leaving, start } = useLeaving((item) => check(item, shown));
   const plus = <QuickButton icon={Plus} label="Neue Aufgabe" onClick={() => setAdding(true)} />;
-  const rest = Math.max(0, total - shown.length);
+  const rest = Math.max(0, Math.max(total ?? 0, items.length) - shown.length);
+  const oneCol = size === "S" && half;
+  // Ungerade Zahl im 2er-Raster: letztes Feld bleibt leer
+  const filler = !oneCol && shown.length % 2 === 1;
   return (
     <>
       {items.length > 0 ? (
-        size === "S" ? (
-          <section className={`${CARD} relative flex min-h-[92px] flex-col p-3.5`} aria-label="Aufgaben">
-            <Link href={href} className="pr-6 text-[11px] font-bold uppercase tracking-wider text-muted">
-              {total === 1 ? "1 Aufgabe" : `${total} Aufgaben`}
-            </Link>
-            <span className="absolute right-3.5 top-3">{plus}</span>
-            <ul className="-mx-3 -mb-2 mt-0.5">
-              {shown.map((item) => (
-                <TaskLine key={item.key} item={item} today={today} onOpen={setMenu} onDone={start} leaving={leaving === item.key} entering={Boolean(before && !before.includes(item.key))} />
-              ))}
-            </ul>
-          </section>
-        ) : (
-          <section className="flex flex-col gap-1.5" aria-label="Aufgaben">
-            <SectionHead title="Aufgaben" more={rest} href={href} action={plus} />
-            <ul className={`${CARD} divide-y divide-line overflow-hidden`}>
-              {shown.map((item) => (
-                <TaskLine key={item.key} item={item} today={today} onOpen={setMenu} onDone={start} leaving={leaving === item.key} entering={Boolean(before && !before.includes(item.key))} />
-              ))}
-            </ul>
-          </section>
-        )
+        <section className="flex flex-col gap-1.5" aria-label="Aufgaben">
+          <SectionHead title="Aufgaben" more={half ? 0 : rest} href={href} action={plus} />
+          <ul className={`grid gap-px overflow-hidden rounded-card border border-line bg-line shadow-card ${oneCol ? "grid-cols-1" : "grid-cols-2"}`}>
+            {shown.map((item) => (
+              <TaskField key={item.key} item={item} today={today} leaving={leaving === item.key} entering={entersAnim(before, item.key)} onOpen={() => setMenu(item)} onDone={() => start(item)} />
+            ))}
+            {filler && <li className="bg-surface" aria-hidden />}
+          </ul>
+        </section>
       ) : (
         <AddLine label="Aufgabe hinzufügen" onClick={() => setAdding(true)} />
       )}

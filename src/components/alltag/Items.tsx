@@ -10,7 +10,8 @@ import { Bell, Check, ChevronDown, ChevronRight, Pencil, Repeat2, Trash2, Calend
 import { CARD, chipClass } from "@/components/ui/styles";
 import { Sheet } from "@/components/plan/Sheet";
 import { clockLabel } from "@/lib/aufgaben/answers";
-import { moveItem, REMINDERS, removeItem, repeatLabel, setDone, setReminder, type DayItem } from "@/lib/aufgaben/model";
+import { isUrgent, moveItem, REMINDERS, removeItem, repeatLabel, setDone, setReminder, setUrgent, type DayItem } from "@/lib/aufgaben/model";
+import { UrgentMark } from "./UrgentMark";
 import { addDays } from "@/lib/core/now";
 import { act, buzz } from "./actions";
 import { EntryForm } from "./EntryForm";
@@ -56,7 +57,10 @@ function ItemRow({ item, onOpen }: { item: DayItem; onOpen: (item: DayItem) => v
         <span className={`w-11 shrink-0 text-sm font-bold tabular-nums ${checked ? "text-muted" : "text-ink"}`}>{item.time ? clockLabel(item.time) : ""}</span>
         <span className={`h-9 w-1 shrink-0 rounded-full ${roomBar(item.room)} ${checked ? "opacity-40" : ""}`} aria-hidden />
         <span className="min-w-0 flex-1">
-          <span className={`block truncate text-base font-semibold leading-snug ${checked ? "text-muted line-through" : ""}`}>{item.title}</span>
+          <span className={`flex items-center gap-1.5 truncate text-base font-semibold leading-snug ${checked ? "text-muted line-through" : ""}`}>
+            {isUrgent(item) && !checked && <UrgentMark />}
+            <span className="truncate">{item.title}</span>
+          </span>
           {(sub.length > 0 || item.reminder !== "aus") && (
             <span className="flex items-center gap-1 truncate text-sm text-muted">
               {sub.join(" · ")}
@@ -172,6 +176,12 @@ export function ItemMenu({ item, onClose, onEdit }: { item: DayItem; onClose: ()
             <button type="button" className={MENU_ROW} onClick={close(() => act((l, s) => moveItem(l, item, addDays(item.date, 1), s), `${item.title} auf morgen`))}>
               <CalendarArrowUp className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
               Auf morgen
+            </button>
+          )}
+          {item.entry.typ === "aufgabe" && !item.done && (
+            <button type="button" className={MENU_ROW} onClick={close(() => act((l, s) => setUrgent(l, item.entry.id, !isUrgent(item), s), `${item.title} ${isUrgent(item) ? "nicht mehr dringend" : "dringend"}`))}>
+              <UrgentMark className="mx-[3px]" />
+              {isUrgent(item) ? "Nicht mehr dringend" : "Als dringend markieren"}
             </button>
           )}
           <button type="button" className={MENU_ROW} onClick={() => setStep("erinnerung")}>

@@ -12,12 +12,12 @@ import { SPORTS, sportById, type Training, type TrainingData } from "@/lib/sport
 
 const DURATIONS = [20, 30, 45, 60, 90];
 
-export function SportAddSheet({ today, recent, initial, onClose, onSave }: { today: string; recent: string[]; initial?: Training; onClose: () => void; onSave: (data: TrainingData) => void }) {
+export function SportAddSheet({ today, recent, initial, initialDate, onClose, onSave }: { today: string; recent: string[]; initial?: Training; initialDate?: string; onClose: () => void; onSave: (data: TrainingData) => void }) {
   const start = initial?.data;
   const [sport, setSport] = useState(start?.sport ?? recent[0] ?? "laufen");
   const [other, setOther] = useState(start && !SPORTS.some((s) => s.id === start.sport) ? start.sport : "");
   const [minutes, setMinutes] = useState(String(start?.minutes ?? 45));
-  const [date, setDate] = useState(start?.date ?? today);
+  const [date, setDate] = useState(start?.date ?? initialDate ?? today);
   const [km, setKm] = useState(start?.km ? String(start.km) : "");
   const order = [...new Set([...recent, ...SPORTS.map((s) => s.id)])].filter((id) => SPORTS.some((s) => s.id === id));
   const min = Number(minutes);

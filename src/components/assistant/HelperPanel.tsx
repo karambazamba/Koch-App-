@@ -65,6 +65,7 @@ import { tipsShown, useTipStore } from "@/lib/essen/healthTips";
 import { extractLikeStatements, learnFromRecipe, learnLikes, LIKE_WEIGHTS } from "@/lib/essen/likes";
 import { now } from "@/lib/core/now";
 import { bausteinOf, unlockFeature, useFeature } from "@/lib/core/features";
+import { useBackCloses } from "@/lib/core/useBackCloses";
 
 import { spontanStartTurn, type ChatState, type ChatTurnView } from "./chatTypes";
 import { pauseRule as pauseRuleOf, dayRule as dayRuleOf, boardRule as boardRuleOf, schnellnotizRule as schnellnotizRuleOf, noteRule as noteRuleOf, bausteinRule as bausteinRuleOf, homeCommand as homeCommandOf, type RuleContext } from "./localRules";
@@ -93,6 +94,8 @@ type Props = {
 export function HelperPanel({ data, chat, setChat, onApply, onClose, startListening, initialAsk }: Props) {
   const router = useRouter();
   const status = useAssistantStatus(true);
+  // Zurück (Pfeil/Geste) schließt den Chat – eine Ebene
+  useBackCloses(onClose);
   const today = useToday();
   // Ohne sichtbaren Knopf (nur Löschen hat einen): jedes Zurücknehmen bleibt für "Mach das rückgängig" gemerkt
   useEffect(() => {
@@ -549,6 +552,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   const submit = (text: string, byVoice = false) => {
     const t = text.trim();
     if (!t || busy || !data || !today) return;
+    // Aufnahme verwerfen – ihr Ende darf nichts mehr ins Feld schreiben
+    speech.reset();
     setSuggestionsGone(true);
     noteChatMessage();
     setViaVoice(byVoice);

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { ICON_BUTTON } from "@/components/ui/styles";
+import { useBackCloses } from "@/lib/core/useBackCloses";
 
 /** Fenster, das von unten hereinkommt (z. B. Aktionen zu einem Eintrag). */
 export function Sheet({
@@ -23,6 +24,8 @@ export function Sheet({
   /** Feste Höhe (ca. 85 %) statt nach Inhalt */
   tall?: boolean;
 }) {
+  // Grundregel: ✕, Danebentippen, Runterwischen und Zurück schließen
+  useBackCloses(onClose);
   // Am Kopf nach unten ziehen schließt
   const drag = useRef<number | null>(null);
   const [dy, setDy] = useState(0);

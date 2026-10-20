@@ -13,7 +13,7 @@ import { Check, Plus } from "lucide-react";
 import { QuickButton } from "@/components/ui/QuickButton";
 import { clockLabel } from "@/lib/aufgaben/answers";
 import type { CalendarEntry } from "@/lib/aufgaben/model";
-import { weekdayIndex, weekdayShort } from "@/lib/aufgaben/model";
+import { tomorrowLabel, weekdayIndex, weekdayShort } from "@/lib/aufgaben/model";
 import type { TileSize } from "@/lib/core/homeLayout";
 import { addDays } from "@/lib/core/now";
 import { addTraining } from "@/lib/sport/actions";
@@ -35,9 +35,10 @@ import {
 } from "@/lib/sport";
 import { useForecast } from "@/lib/wetter/client";
 import { round } from "@/lib/wetter/forecast";
-import { WeatherIcon } from "@/components/alltag/WeatherTile";
+import { WeatherSymbol } from "@/components/wetter/WeatherSymbol";
 import { buzz } from "@/components/alltag/actions";
 import { SportAddSheet } from "./SportAddSheet";
+import { SportDaySheet } from "./SportDaySheet";
 
 const BOX = "relative flex flex-col gap-2 rounded-card border border-sport-line bg-linear-to-br from-sport-soft to-sport-2 p-3.5";
 
@@ -45,6 +46,7 @@ export function SportTile({ size = "M", entries, today, minutes, me }: { size?: 
   const sport = useSport();
   const { forecast } = useForecast();
   const [adding, setAdding] = useState(false);
+  const [day, setDay] = useState<string | null>(null);
   if (!sport) return <section className={`${BOX} h-24 animate-pulse`} aria-label="Sport" />;
   const week = weekStatus(sport, entries, today, me);
   const streak = weekStreak(sport, entries, today, me);
@@ -107,16 +109,19 @@ export function SportTile({ size = "M", entries, today, minutes, me }: { size?: 
         {plus}
         <ol className="grid grid-cols-7 gap-1" aria-label="Diese Woche">
           {dots.map((d) => (
-            <li key={d.date} className="flex flex-col items-center gap-0.5" aria-label={`${d.label}: ${d.state}${d.time ? ` ${d.time}` : ""}`}>
-              <span className="text-[10.5px] font-semibold text-muted">{d.label}</span>
-              <span
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold ${
-                  d.state === "trainiert" ? "bg-sport text-white" : d.state === "geplant" ? "border-2 border-sport text-sport-ink" : "border-2 border-dashed border-sport-line"
-                }`}
-              >
-                {d.state === "trainiert" ? <Check className="h-4 w-4" strokeWidth={3} aria-hidden /> : d.state === "geplant" ? clockLabel(d.time ?? "").replace(/:00$/, "") : ""}
-              </span>
-              <span className={`h-1 w-1 rounded-full ${d.today ? "bg-sport" : "bg-transparent"}`} aria-hidden />
+            <li key={d.date}>
+              {/* Jeder Tag antippbar (≥ 44 px): eintragen, ändern, planen */}
+              <button type="button" onClick={() => setDay(d.date)} className="flex min-h-11 w-full flex-col items-center gap-0.5" aria-label={`${d.label}: ${d.state}${d.time ? ` ${d.time}` : ""} – öffnen`}>
+                <span className="text-[10.5px] font-semibold text-muted">{d.label}</span>
+                <span
+                  className={`flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold ${
+                    d.state === "trainiert" ? "bg-sport text-white" : d.state === "geplant" ? "border-2 border-sport text-sport-ink" : "border-2 border-dashed border-sport-line"
+                  }`}
+                >
+                  {d.state === "trainiert" ? <Check className="h-4 w-4" strokeWidth={3} aria-hidden /> : d.state === "geplant" ? clockLabel(d.time ?? "").replace(/:00$/, "") : ""}
+                </span>
+                <span className={`h-1 w-1 rounded-full ${d.today ? "bg-sport" : "bg-transparent"}`} aria-hidden />
+              </button>
             </li>
           ))}
         </ol>
@@ -128,12 +133,12 @@ export function SportTile({ size = "M", entries, today, minutes, me }: { size?: 
             <span className="text-[11px] font-bold uppercase tracking-wider text-muted">Nächstes Training</span>
             <span className="flex items-center gap-2 text-[14px] font-bold">
               <span>
-                {next.date === today ? "Heute" : next.date === addDays(today, 1) ? "Morgen" : weekdayShort(next.date)}
+                {next.date === today ? "Heute" : next.date === addDays(today, 1) ? tomorrowLabel(next.date) : weekdayShort(next.date)}
                 {next.time ? ` ${clockLabel(next.time)}` : ""} · {sportById(nextSport!).emoji} {next.title}
               </span>
               {weatherAt && (
                 <span className="ml-auto flex shrink-0 items-center gap-1 text-[13px] font-semibold text-muted">
-                  <WeatherIcon code={weatherAt.code} className="h-4 w-4" />
+                  <WeatherSymbol code={weatherAt.code} className="h-5 w-5" />
                   {round(weatherAt.temp)}°
                 </span>
               )}
@@ -161,6 +166,7 @@ export function SportTile({ size = "M", entries, today, minutes, me }: { size?: 
         )}
       </section>
       {sheet}
+      {day && <SportDaySheet date={day} today={today} state={sport} entries={entries} me={me} forecast={forecast} onClose={() => setDay(null)} />}
     </>
   );
 }

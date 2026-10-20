@@ -191,6 +191,16 @@ const QUESTION = /\?\s*$/;
 const TODO_WORDS = /\b(erinner|termin|aufgabe|muss|müssen|nicht vergessen|trag)\w*/i;
 
 /** Satz zu Termin/Aufgabe/Befehl – oder null, wenn es nicht danach klingt */
+/** "Dringend: Steuerberater anrufen", "Steuerberater anrufen – ist wichtig" → Titel ohne das Wort, dringend */
+export function urgentFrom(text: string): { text: string; urgent: boolean } {
+  const t = text.trim();
+  const pre = t.match(/^(?:❗\s*)?(?:dringend|wichtig|eilig)\s*[:!–-]\s*(.+)$/i);
+  if (pre) return { text: pre[1].trim(), urgent: true };
+  const post = t.match(/^(.+?)[\s,–-]+(?:ist\s+)?(?:(?:sehr|echt)\s+)?(?:dringend|wichtig|eilig)[.!]*$/i);
+  if (post) return { text: post[1].trim(), urgent: true };
+  return { text: t, urgent: false };
+}
+
 export function parseCalendar(text: string, today: string, persons: Person[] = []): CalendarCommand | null {
   const raw = text.trim();
   if (!raw) return null;
@@ -240,8 +250,9 @@ export function parseCalendar(text: string, today: string, persons: Person[] = [
   if (m) return { kind: "done", query: m[1] };
 
   if (QUESTION.test(raw)) return null;
-  // Anlegen: braucht einen Hinweis auf Zeit, Tag, Frist, Wiederholung oder ein Merk-Wort
-  let rest = raw;
+  // Anlegen: braucht einen Hinweis auf Zeit, Tag, Frist, Wiederholung oder ein Merk-Wort ("Dringend: …" zählt)
+  const urgent = urgentFrom(raw);
+  let rest = urgent.text;
   const strip = (match: string) => {
     const at = rest.toLowerCase().indexOf(match.toLowerCase());
     if (at >= 0) rest = `${rest.slice(0, at)} ${rest.slice(at + match.length)}`;
@@ -259,7 +270,7 @@ export function parseCalendar(text: string, today: string, persons: Person[] = [
   if (date) strip(date.match);
   const time = findTime(rest);
   if (time) strip(time.match);
-  if (!reminder && !repeat && !deadline && !period && !date && !time && !TODO_WORDS.test(t)) return null;
+  if (!reminder && !repeat && !deadline && !period && !date && !time && !urgent.urgent && !TODO_WORDS.test(t)) return null;
   const { title, who } = cleanTitle(rest, persons);
   if (title.length < 2) return null;
   const raum = guessRoom(raw);
@@ -286,6 +297,7 @@ export function parseCalendar(text: string, today: string, persons: Person[] = [
         label,
         repeat: repeat?.repeat ?? null,
         reminder: reminder?.reminder ?? (time && /erinner/i.test(t) ? "15" : "aus"),
+        ...(urgent.urgent ? { dringend: true } : {}),
       },
     },
   };

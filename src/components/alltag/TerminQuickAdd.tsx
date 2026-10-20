@@ -68,6 +68,7 @@ export function TerminQuickAdd({ onClose, defaultDate }: { onClose: () => void; 
     const title = read.title.trim();
     if (!title) return;
     if (!clock) return setAskTask(true);
+    speech.reset();
     const entry = sanitizeEntry(createEntry("termin", { title: title.slice(0, 120), date: day, start: clock, reminder, repeat: read.repeat ?? null, ...(read.label ? { label: read.label } : {}) }, { raum: where }) as CalendarEntry);
     if (!entry) return;
     act((list) => upsertEntry(list, entry), entry.data.title);
@@ -76,6 +77,7 @@ export function TerminQuickAdd({ onClose, defaultDate }: { onClose: () => void; 
   const saveAsTask = () => {
     const title = read.title.trim();
     if (!title) return;
+    speech.reset();
     const entry = sanitizeEntry(createEntry("aufgabe", quickTaskData(title, { date: day }, today, { label: read.label }), { raum: where }) as CalendarEntry);
     if (!entry) return;
     act((list) => upsertEntry(list, entry), entry.data.title);
