@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ArrowUp, CircleHelp, Mic, MicOff, Plus, Square, X } from "lucide-react";
+import { useBackCloses } from "@/lib/core/useBackCloses";
 import { ICON_BUTTON, INPUT_BASE, chipClass, quickDot } from "@/components/ui/styles";
 import { parseQuickAdd, type QuickAddUnsure } from "@/lib/einkauf/quickAdd";
 import { addManualItem, removeManualItems, sectionFor, setItemShop, type ShoppingSettings } from "@/lib/einkauf/shoppingList";
@@ -164,6 +165,9 @@ function QuickAddSheet({
       document.body.style.overflow = overflow;
     };
   }, [onClose, added]);
+
+  // Zurück schließt wie ✕
+  useBackCloses(() => onClose(added));
 
   return (
     <div className="fixed inset-0 z-40" role="dialog" aria-modal aria-label="Auf die Einkaufsliste">

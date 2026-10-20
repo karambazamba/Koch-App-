@@ -45,8 +45,8 @@ export function DayRoutineView() {
             <section className={`${CARD} flex flex-col gap-3 p-4`} aria-label="Tageszeiten">
               <h2 className="text-xs font-bold uppercase tracking-wider text-muted">Tageszeiten</h2>
               <label className="flex items-center gap-3">
-                <span className="flex-1 text-base font-semibold">☀️ Morgen bis</span>
-                <input type="time" value={r.morgenBis} onChange={(e) => e.target.value && changeRoutine({ morgenBis: e.target.value })} className={`${INPUT_BASE} h-11 w-36 px-3`} aria-label="Morgen bis" />
+                <span className="flex-1 text-base font-semibold">☀️ Morgens bis</span>
+                <input type="time" value={r.morgenBis} onChange={(e) => e.target.value && changeRoutine({ morgenBis: e.target.value })} className={`${INPUT_BASE} h-11 w-36 px-3`} aria-label="Morgens bis" />
               </label>
               <label className="flex items-center gap-3">
                 <span className="flex-1 text-base font-semibold">🌙 Feierabend ab</span>

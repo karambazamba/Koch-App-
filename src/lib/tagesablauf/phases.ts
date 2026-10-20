@@ -156,11 +156,11 @@ export const PHASES: PhaseDef[] = [
   },
   {
     id: "morgen",
-    label: "Morgen",
+    label: "Morgens",
     rank: 20,
     active: (ctx) => ctx.minutes >= MORNING_FROM && ctx.minutes < clockMinutes(ctx.routine.morgenBis),
     view: (ctx) => ({
-      badge: { emoji: "☀️", label: "Morgen", detail: "Überblick für den Tag", tone: "morgen" },
+      badge: { emoji: "☀️", label: "Morgens", detail: "Überblick für den Tag", tone: "morgen" },
       explain: "Morgens stehen oben Pinnwand, Wetter, Termine und Aufgaben – der Überblick für den Tag.",
       // Pinnwand nur bei Neuem; Pinnwand + Wetter dann klein nebeneinander
       top: ctx.pinNew ? [{ id: "pinnwand", size: "S" }, { id: "wetter", size: "S" }, { id: "termine" }, { id: "aufgaben" }] : [{ id: "wetter" }, { id: "termine" }, { id: "aufgaben" }],

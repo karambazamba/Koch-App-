@@ -8,6 +8,7 @@
 
 import { greetOncePerDay, setAvatarSleeping } from "@/lib/core/avatarState";
 import Link from "next/link";
+import { Sheet } from "@/components/plan/Sheet";
 import { useEffect, useRef, useState } from "react";
 import { ChevronRight, PenLine } from "lucide-react";
 import { DEFAULT_HOME, markHomeTipSeen, onHomeEditRequest, tileMeta, useHomeTiles, useHomeTipSeen, type HomeTile, type HomeTileId } from "@/lib/core/homeLayout";
@@ -256,7 +257,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
       case "sport":
         return <SportTile size={tile.size} entries={entries} today={data.todayIso} minutes={minutes} me={me} />;
       case "morgen":
-        return <MorgenTile items={tomorrowItems} dish={tomorrowDish} href={`/tag?datum=${tomorrowIso}`} placeholder={edit} />;
+        return <MorgenTile date={tomorrowIso} items={tomorrowItems} dish={tomorrowDish} href={`/tag?datum=${tomorrowIso}`} placeholder={edit} />;
       default:
         return null;
     }
@@ -398,44 +399,47 @@ const BADGE_TONE: Record<PhaseTone, string> = {
   feierabend: "bg-phase-feierabend text-phase-feierabend-ink",
 };
 
-/** Kleines Schild unter dem Datum ("🍳 Kochen · seit 18:10"); antippen = kurze Erklärung + "Normale Ansicht" */
+/** Kleines Schild unter dem Datum ("🍳 Kochen · seit 18:10"); antippen = Fenster mit kurzer Erklärung.
+ *  Nach "Normale Ansicht"/"Alles zeigen" nur noch der leise Chip "✨ Wieder mitdenken". */
 function PhaseBadge({ phase }: { phase: ReturnType<typeof useHomePhase> }) {
   const [open, setOpen] = useState(false);
   const def = phase.def ?? null;
-  const view = phase.view;
-  // Bei "Alles zeigen" bleibt das Schild (ruhiger, mit Weg zurück)
-  const badge = def ? view.badge : null;
-  const label = badge ?? (phase.phaseId ? { emoji: "", label: "Normale Ansicht", detail: "bis zum nächsten Wechsel", tone: "morgen" as PhaseTone } : null);
-  if (!label) return null;
+  const badge = def ? phase.view.badge : null;
+  if (phase.showingAll)
+    return (
+      <button type="button" onClick={phase.resume} className="-my-1 inline-flex h-8 items-center gap-1 self-start rounded-full bg-segment px-3 text-[13px] font-semibold text-muted">
+        <span aria-hidden>✨</span> Wieder mitdenken
+      </button>
+    );
+  if (!def || !badge) return null;
+  const title = `${badge.emoji ? `${badge.emoji} ` : ""}${badge.label}`;
   return (
-    <div className="flex flex-col items-start gap-2">
-      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className={`-my-1 inline-flex h-8 items-center gap-1 rounded-full px-3 text-[13px] font-bold ${badge ? BADGE_TONE[badge.tone] : "bg-segment text-muted"}`} aria-label={`Tagesphase: ${label.label} · ${label.detail}`}>
-        {label.emoji && <span aria-hidden>{label.emoji}</span>}
-        {label.label} · <span className="font-semibold">{label.detail}</span>
+    <>
+      <button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" className={`-my-1 inline-flex h-8 items-center gap-1 self-start rounded-full px-3 text-[13px] font-bold ${BADGE_TONE[badge.tone]}`} aria-label={`Tagesphase: ${badge.label} · ${badge.detail}`}>
+        {badge.emoji && <span aria-hidden>{badge.emoji}</span>}
+        {badge.label} · <span className="font-semibold">{badge.detail}</span>
       </button>
       {open && (
-        <div className="flex w-full flex-col gap-2 rounded-2xl border border-line bg-surface px-4 py-3 text-[15px] leading-snug shadow-card" role="note">
-          <p>{def ? view.explain : "Gerade siehst du alle Kacheln so, wie du sie sortiert hast – bis zum nächsten Tageswechsel."}</p>
-          <div className="flex flex-wrap gap-2">
-            {def ? (
-              <button
-                type="button"
-                onClick={() => {
-                  phase.showAll();
-                  setOpen(false);
-                }}
-                className={buttonClass("soft", "sm")}
-              >
-                Normale Ansicht
-              </button>
-            ) : null}
-            <Link href="/profil/tagesablauf" className={buttonClass("ghost", "sm")}>
-              Tagesablauf einstellen
+        <Sheet title={title} onClose={() => setOpen(false)}>
+          <p className="text-base leading-snug">{phase.view.explain}</p>
+          <div className="flex flex-col gap-2 pb-2">
+            <button
+              type="button"
+              onClick={() => {
+                phase.showAll();
+                setOpen(false);
+              }}
+              className={buttonClass("soft", "md")}
+            >
+              Normale Ansicht
+            </button>
+            <Link href="/profil/tagesablauf" onClick={() => setOpen(false)} className={buttonClass("ghost", "md")}>
+              Einstellungen
             </Link>
           </div>
-        </div>
+        </Sheet>
       )}
-    </div>
+    </>
   );
 }
 
@@ -495,6 +499,8 @@ function useHomeEditing() {
   useEffect(() => {
     if (!on) return;
     const onPop = () => {
+      // Ein Fenster im Bearbeiten-Modus (z. B. das Kachel-Menü) wurde geschlossen – der Modus bleibt
+      if ((window.history.state as { homeEdit?: boolean } | null)?.homeEdit) return;
       pushed.current = false;
       setOn(false);
     };

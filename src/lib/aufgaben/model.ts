@@ -108,6 +108,8 @@ const WEEKDAYS_LONG = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"
 export const weekdayIndex = (iso: string) => (fromIsoDate(iso).getDay() + 6) % 7;
 export const weekdayShort = (iso: string) => WEEKDAYS_SHORT[weekdayIndex(iso)];
 export const weekdayLong = (iso: string) => WEEKDAYS_LONG[weekdayIndex(iso)];
+/** Der nächste Tag immer mit Wochentag: "Morgen · Mi" */
+export const tomorrowLabel = (iso: string) => `Morgen · ${weekdayShort(iso)}`;
 
 const dayDiff = (a: string, b: string) => Math.round((fromIsoDate(a).getTime() - fromIsoDate(b).getTime()) / 86_400_000);
 

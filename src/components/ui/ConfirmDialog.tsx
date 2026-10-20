@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { buttonClass } from "./styles";
+import { useBackCloses } from "@/lib/core/useBackCloses";
 
 /**
  * Kurze Rückfrage als kleines Fenster (statt window.confirm): Frage, evtl.
@@ -25,6 +26,8 @@ export function ConfirmDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  // Zurück = Abbrechen
+  useBackCloses(onCancel);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onCancel();
     document.addEventListener("keydown", onKey);

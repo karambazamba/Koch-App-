@@ -37,7 +37,7 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 export function dayContextLines(ctx: { data: ToolContext["data"]; today: string }): string[] {
   const d = ctx.data;
   const lines: string[] = [];
-  if (d.tagesablauf) lines.push(`Startseite: ${d.tagesablauf.mode === "gleich" ? "immer gleich" : `mitdenkend (Morgen bis ${d.tagesablauf.morgenBis}, Feierabend ab ${d.tagesablauf.feierabendAb})`}`);
+  if (d.tagesablauf) lines.push(`Startseite: ${d.tagesablauf.mode === "gleich" ? "immer gleich" : `mitdenkend (Morgens bis ${d.tagesablauf.morgenBis}, Feierabend ab ${d.tagesablauf.feierabendAb})`}`);
   const timers = d.timers ?? [];
   lines.push(`Timer: ${timers.length ? timers.map((t) => `${t.name} ${t.done ? "fertig" : `${formatLeft(t.leftSec * 1000)} übrig${t.paused ? " (pausiert)" : ""}`}`).join("; ") : "keiner"}${d.stopwatch ? `; Stoppuhr ${formatLeft(d.stopwatch.sec * 1000)}${d.stopwatch.running ? " (läuft)" : ""}` : ""}`);
   if (d.kochen) {
