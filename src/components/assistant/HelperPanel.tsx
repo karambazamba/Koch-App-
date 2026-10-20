@@ -64,7 +64,7 @@ import { TipBubble } from "./TipBubble";
 import { tipsShown, useTipStore } from "@/lib/essen/healthTips";
 import { extractLikeStatements, learnFromRecipe, learnLikes, LIKE_WEIGHTS } from "@/lib/essen/likes";
 import { now } from "@/lib/core/now";
-import { useFeature } from "@/lib/core/features";
+import { bausteinOf, unlockFeature, useFeature } from "@/lib/core/features";
 
 import { spontanStartTurn, type ChatState, type ChatTurnView } from "./chatTypes";
 import { pauseRule as pauseRuleOf, dayRule as dayRuleOf, boardRule as boardRuleOf, schnellnotizRule as schnellnotizRuleOf, noteRule as noteRuleOf, bausteinRule as bausteinRuleOf, homeCommand as homeCommandOf, type RuleContext } from "./localRules";
@@ -271,6 +271,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     if (!known.length && (!unsure.length || !short)) return false;
     setInput("");
     if (known.length) addPantryItems(known.map(({ name, amount, unit }) => ({ name, amount, unit })), toIsoDate(today));
+    // Genutzt = sichtbar machen ("Im Vorrat ansehen" darf keine Sackgasse sein)
+    const shown = known.length > 0 && unlockFeature("vorrat");
     setChat((c) => {
       const live = [...c.turns].reverse().find((t) => t.spontan);
       return {
@@ -281,7 +283,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           {
             role: "assistant",
             local: true,
-            text: known.length ? "Notiert ✓" : "Das kenne ich nicht ganz:",
+            text: known.length ? (shown ? `Notiert ✓ ${bausteinOf("vorrat")?.where ?? ""}`.trim() : "Notiert ✓") : "Das kenne ich nicht ganz:",
             items: known.map(formatPantryItem),
             unsure,
           },
@@ -374,6 +376,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   const acceptUnsure = (turnIndex: number, item: ParsedLeftover) => {
     if (!today) return;
     addPantryItems([{ name: item.suggestion ?? item.name, amount: item.amount, unit: item.unit }], toIsoDate(today));
+    unlockFeature("vorrat");
     setChat((c) => ({
       ...c,
       turns: c.turns.map((t, i) =>
