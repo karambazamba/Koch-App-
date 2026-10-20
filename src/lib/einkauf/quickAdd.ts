@@ -11,7 +11,7 @@ import { parseShoppingText, type ParsedShoppingItem } from "./shoppingParse";
 const MORE_PRODUCTS =
   /(windel|feuchttücher|klopapier|toilettenpapier|küchenrolle|taschentücher|servietten|spülmittel|spültabs|tabs|klarspüler|waschmittel|weichspüler|putzmittel|schwamm|schwämme|müllbeutel|mülltüten|alufolie|frischhaltefolie|backpapier|gefrierbeutel|batterie|zahnpasta|zahnbürste|zahnseide|shampoo|spülung|duschgel|seife|deo|creme|sonnencreme|pflaster|wattepads|rasierer|binden|tampons|babybrei|gläschen|babynahrung|pre-?milch|katzenfutter|hundefutter|katzenstreu|kerzen|blumen|müsli|cornflakes|granola|chips|kekse|schokolade|gummibärchen|knäckebrot|zwieback|aufstrich|nutella|pesto|brühe|tomatenmark|passata|kokosmilch|tortellini|gnocchi|pizza|fischstäbchen|eis\b)/i;
 
-export type QuickAddItem = ParsedShoppingItem & { section: ReturnType<typeof sectionFor> };
+type QuickAddItem = ParsedShoppingItem & { section: ReturnType<typeof sectionFor> };
 export type QuickAddUnsure = ParsedShoppingItem & { suggestion: string | null };
 
 /** Kennt der Haushalt den Artikel schon (eigene Produkte, Läden, Stammliste)? */

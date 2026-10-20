@@ -38,7 +38,7 @@ import {
 } from "../sport";
 import { addTraining, setSportGoal } from "../sport/actions";
 
-export type DayChatContext = {
+type DayChatContext = {
   today: string;
   /** Mein Personen-ID (Sport-Termine) */
   me: string | null;
@@ -48,7 +48,7 @@ export type DayChatContext = {
   cooking: { dish: string; recipe: string; steps: string[] } | null;
 };
 
-export type DayChatReply = { text: string; undo?: () => void };
+type DayChatReply = { text: string; undo?: () => void };
 
 const COOK_START = /\b(ich\s+)?(fang\w*|beginn\w*)\s+(jetzt\s+|gleich\s+)?(an\s+)?(mit\s+dem\s+)?(zu\s+)?koch\w*|\bich\s+koche\s+jetzt\b|\bkochen\s+starten\b/i;
 const NEXT_STEP = /^(nächster|naechster)\s+schritt\b|^weiter\b.*\b(schritt|kochen)?|^(schritt\s+)?(erledigt|fertig)\b.*\bschritt/i;

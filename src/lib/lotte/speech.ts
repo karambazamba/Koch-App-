@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { createLocalStore } from "../core/localStore";
 import type { HelperVoice } from "../einstellungen/profile";
 import { useExternalStore } from "../core/useExternalStore";
+import type { StorageKey } from "@/lib/core/storage";
 
 // --- Einstellungen --------------------------------------------------------------
 
@@ -68,6 +69,15 @@ export function loadSpeechSettings(): SpeechSettings {
   return DEFAULTS;
 }
 
+/** Alten Schalter einmalig übernehmen, damit der alte Schlüssel weg kann */
+export function adoptLegacySpeech() {
+  try {
+    if (!store.load() && localStorage.getItem(LEGACY_KEY) === "1") store.save(LEGACY_ON);
+  } catch {
+    // ohne Speicher nichts zu tun
+  }
+}
+
 export function saveSpeechSettings(changes: Partial<Omit<SpeechSettings, "version">>) {
   store.save({ ...loadSpeechSettings(), ...changes, version: 1 });
 }
@@ -108,7 +118,7 @@ export function isNaturalVoice(v: SpeechSynthesisVoice): boolean {
  * Enhanced/Erweitert), danach die übrigen – Google-/Netzstimmen vor
  * einfachen "compact"-Stimmen. Spaß-/Effektstimmen bekommen −10.
  */
-export function voiceScore(v: SpeechSynthesisVoice): number {
+function voiceScore(v: SpeechSynthesisVoice): number {
   const id = `${v.name} ${v.voiceURI}`;
   if (NOVELTY.test(id)) return -10;
   let score = 0;
@@ -137,7 +147,7 @@ export function pickVoice(voices: SpeechSynthesisVoice[], voice: HelperVoice): S
 }
 
 /** Gibt es eine deutsche Stimme, die erkennbar zu weiblich/männlich passt? */
-export function hasMatchingVoice(voices: SpeechSynthesisVoice[], voice: HelperVoice): boolean {
+function hasMatchingVoice(voices: SpeechSynthesisVoice[], voice: HelperVoice): boolean {
   const wanted = voice === "maennlich" ? MALE : FEMALE;
   return germanVoices(voices).some((v) => wanted.test(v.name));
 }
@@ -145,10 +155,10 @@ export function hasMatchingVoice(voices: SpeechSynthesisVoice[], voice: HelperVo
 /** Wo man auf dem iPhone bessere Stimmen lädt */
 export const VOICE_HINT = "Für eine passende Stimme: iPhone-Einstellungen → Bedienungshilfen → Gesprochene Inhalte → Stimmen → Deutsch.";
 
-const VOICE_HINT_KEY = "wasgibts.stimmenhinweis";
+const VOICE_HINT_KEY: StorageKey = "wasgibts.stimmenhinweis";
 
 /** Einmaliger Hinweis, wenn keine passende Stimme installiert ist (true = jetzt zeigen) */
-export function takeVoiceHint(voices: SpeechSynthesisVoice[], voice: HelperVoice): boolean {
+function takeVoiceHint(voices: SpeechSynthesisVoice[], voice: HelperVoice): boolean {
   if (!voices.length || hasMatchingVoice(voices, voice)) return false;
   try {
     if (localStorage.getItem(VOICE_HINT_KEY)) return false;
@@ -167,7 +177,7 @@ export function previewHelperVoice(name: string, voice: HelperVoice): boolean {
 }
 
 /** Gewählte Stimme oder die passende automatische */
-export function chooseVoice(voices: SpeechSynthesisVoice[], settings: SpeechSettings, gender: HelperVoice): SpeechSynthesisVoice | null {
+function chooseVoice(voices: SpeechSynthesisVoice[], settings: SpeechSettings, gender: HelperVoice): SpeechSynthesisVoice | null {
   return (settings.voice && voices.find((v) => v.voiceURI === settings.voice)) || pickVoice(voices, gender);
 }
 
@@ -221,7 +231,7 @@ const UNITS: [RegExp, string][] = [
  * Vorlesbarer Text: ohne Emojis, Sonderzeichen und Markdown; Einheiten und
  * Abkürzungen ausgeschrieben, Uhrzeiten natürlich ("17:30" → "17 Uhr 30").
  */
-export function cleanForSpeech(text: string): string {
+function cleanForSpeech(text: string): string {
   let t = text
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1") // Links
     .replace(/\p{Extended_Pictographic}|\p{Emoji_Modifier}|[\u{FE0F}\u{200D}\u{20E3}]/gu, "")
@@ -249,7 +259,7 @@ export function cleanForSpeech(text: string): string {
 }
 
 /** In Sätze bis ~200 Zeichen teilen – Chrome bricht lange Äußerungen sonst nach ~15 s ab */
-export function speechChunks(text: string, max = 200): string[] {
+function speechChunks(text: string, max = 200): string[] {
   const sentences = text.match(/[^.!?]+[.!?]*\s*/g) ?? [text];
   const chunks: string[] = [];
   for (const s of sentences) {

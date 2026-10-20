@@ -10,8 +10,9 @@ import { EMPTY_STOCK_HINT } from "@/lib/essen/dishIdeas";
 import { formatPantryItem, type PantryItem } from "@/lib/essen/pantry";
 import { SPONTAN_FILTERS, type SpontanFilter, type SpontanIdea } from "@/lib/essen/spontan";
 import { sortedBases, type BaseCounts } from "@/lib/essen/bases";
+import type { StorageKey } from "@/lib/core/storage";
 
-const FILTER_KEY = "wasgibts.spontan.filter";
+const FILTER_KEY: StorageKey = "wasgibts.spontan.filter";
 
 /** Gewählte Filter gelten für die Sitzung */
 export function loadSpontanFilters(): SpontanFilter[] {
@@ -32,7 +33,7 @@ export function saveSpontanFilters(filters: SpontanFilter[]) {
 }
 
 /** Spontan-Idee → Karte */
-export const spontanCard = (i: SpontanIdea): CardIdea => ({ id: i.id, title: i.title, category: i.category, minutes: i.minutes, recipeId: i.recipeId, needs: i.extra });
+const spontanCard = (i: SpontanIdea): CardIdea => ({ id: i.id, title: i.title, category: i.category, minutes: i.minutes, recipeId: i.recipeId, needs: i.extra });
 
 /** Lottes eine Zeile über den Ideen */
 export function spontanHeading(ideas: SpontanIdea[], filters: SpontanFilter[], extra: string[], nearlyEmpty: boolean): string {

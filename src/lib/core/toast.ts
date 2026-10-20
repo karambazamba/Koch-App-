@@ -7,7 +7,7 @@
 
 import { useExternalStore } from "./useExternalStore";
 
-export type Toast = { id: number; text: string; undo?: () => void; undoneText?: string; seconds?: number; small?: boolean };
+type Toast = { id: number; text: string; undo?: () => void; undoneText?: string; seconds?: number; small?: boolean };
 
 export const TOAST_SECONDS = 6;
 

@@ -7,7 +7,7 @@ import { createLocalStore } from "../core/localStore";
 import { useExternalStore } from "../core/useExternalStore";
 import { now, todayIso } from "../core/now";
 
-export type CookSession = {
+type CookSession = {
   date: string;
   /** Von Hand gestartet (ms) */
   manualAt: number | null;

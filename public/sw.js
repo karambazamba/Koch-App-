@@ -1,6 +1,8 @@
 // Service Worker von "Was gibt's?": macht die App offline nutzbar.
 // Seiten: erst Netz, bei Ausfall aus dem Cache. Statische Dateien: erst Cache.
-// CACHE_VERSION erhöhen, wenn sich die Liste der vorab gecachten Seiten ändert.
+// CACHE_VERSION bei jeder Auslieferung erhöhen. Eine neue Version wartet, bis
+// man den Hinweis "Neue Version da" antippt (Nachricht "SKIP_WAITING") – nie
+// ein Zwangs-Neuladen mitten im Tippen. Beim allerersten Mal sofort aktiv.
 const CACHE_VERSION = "v54";
 // Interner Name (alter Arbeitsname) bleibt, damit alte Caches sauber aufgeräumt werden.
 const CACHE_NAME = `familienkueche-${CACHE_VERSION}`;
@@ -46,6 +48,11 @@ const PRECACHE_URLS = [
   "/profil/mails",
   "/profil/bausteine",
   "/profil/startseite",
+  "/profil/tagesablauf",
+  "/profil/farbe",
+  "/profil/wetter",
+  "/profil/vorlesen",
+  "/sport",
   "/manifest.webmanifest",
   // Icons mit Version im Namen (ICON_VERSION in src/lib/core/app.ts) – neues Icon = neuer Dateiname
   "/icons/icon-v3.svg",
@@ -60,8 +67,14 @@ self.addEventListener("install", (event) => {
     caches
       .open(CACHE_NAME)
       .then((cache) => cache.addAll(PRECACHE_URLS))
-      .then(() => self.skipWaiting()),
+      .then(() => {
+        if (!self.registration.active) return self.skipWaiting();
+      }),
   );
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {

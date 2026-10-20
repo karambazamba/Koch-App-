@@ -14,8 +14,8 @@ import { IconBadge } from "@/components/ui/IconBadge";
 import { ListRow } from "@/components/ui/ListRow";
 import { SwipeRow } from "@/components/ui/SwipeRow";
 import { CARD, CARD_LIST, PAGE_MAIN, buttonClass } from "@/components/ui/styles";
-import { APP_VERSION } from "@/lib/core/app";
-import { backupFileName, createBackup, parseBackup, restoreBackup, type Backup } from "@/lib/core/backup";
+import { versionLabel } from "@/lib/core/app";
+import { backupFileName, backupSummary, createBackup, parseBackup, restoreBackup, type Backup } from "@/lib/core/backup";
 import { personLabel, personRoleLabel, saveProfile, type HouseholdProfile, type Person } from "@/lib/einstellungen/profile";
 import { showToast } from "@/lib/core/toast";
 import { useProfile } from "@/lib/einstellungen/useProfile";
@@ -172,14 +172,14 @@ export function DataSection({ onReset }: { onReset: () => void }) {
         <Row onClick={() => void exportData()} icon={Download} title="Daten sichern">
           <span>Alles als Datei – z. B. für ein neues Handy</span>
         </Row>
-        <Row onClick={() => file.current?.click()} icon={Upload} title="Sicherung einspielen">
+        <Row onClick={() => file.current?.click()} icon={Upload} title="Daten wiederherstellen">
           <span>Eine gesicherte Datei wieder laden</span>
         </Row>
         <li className="flex min-h-14 items-center gap-3 px-4 py-3">
           <IconBadge icon={Info} />
           <span className="flex-1 text-base font-bold">Version</span>
           <span className="text-sm text-muted" data-testid="app-version">
-            {APP_VERSION}
+            {versionLabel().replace(/^Version /, "")}
           </span>
         </li>
       </ul>
@@ -204,7 +204,7 @@ export function DataSection({ onReset }: { onReset: () => void }) {
       {incoming && (
         <ConfirmDialog
           title="Sicherung einspielen?"
-          text={`Stand vom ${incoming.exportedAt ? new Date(incoming.exportedAt).toLocaleDateString("de-DE") : "–"}. Was jetzt auf diesem Handy gespeichert ist, wird ersetzt.`}
+          text={`${backupSummary(incoming)} – Stand vom ${incoming.exportedAt ? new Date(incoming.exportedAt).toLocaleDateString("de-DE") : "–"}. Was jetzt auf diesem Handy gespeichert ist, wird ersetzt.`}
           confirmLabel="Einspielen"
           onCancel={() => setIncoming(null)}
           onConfirm={() => {

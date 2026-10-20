@@ -70,7 +70,7 @@ const clockLabel = (m: number) => minutesClock(m).replace(/^0(\d)/, "$1");
 const hourLabel = (m: number) => (m % 60 ? clockLabel(m) : `${Math.floor(m / 60)} Uhr`);
 
 /** Ist heute ein Arbeitstag? */
-export const isWorkday = (ctx: Pick<PhaseContext, "weekday" | "routine">) => ctx.routine.arbeitstage.includes(ctx.weekday);
+const isWorkday = (ctx: Pick<PhaseContext, "weekday" | "routine">) => ctx.routine.arbeitstage.includes(ctx.weekday);
 
 // --- Kochen ---------------------------------------------------------------------------
 
@@ -80,7 +80,7 @@ const TIMER_AFTER = 15;
 const MANUAL_MAX = 60;
 
 /** Wann das Kochen begann bzw. beginnt (null = kein Kochen) */
-export function cookingStart(ctx: PhaseContext): number | null {
+function cookingStart(ctx: PhaseContext): number | null {
   const starts: number[] = [];
   const { cooking, mealClock, routine, minutes } = ctx;
   if (cooking.timerRunning && cooking.firstTimerAt !== null) starts.push(cooking.firstTimerAt);

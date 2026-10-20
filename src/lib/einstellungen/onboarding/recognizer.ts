@@ -9,7 +9,7 @@ import { accessHeaders, aiUsable, deviceId, forgetAccessCode, takeAiSlot } from 
 import type { Recognized } from "./engine";
 import type { RecognizeKind } from "./ai";
 
-export const RECOGNIZE_ENDPOINT = "/api/kennenlernen";
+const RECOGNIZE_ENDPOINT = "/api/kennenlernen";
 
 /** Nach einem 503 (keine KI eingerichtet) nicht weiter fragen */
 let unavailable = false;

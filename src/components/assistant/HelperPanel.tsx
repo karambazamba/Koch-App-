@@ -73,7 +73,7 @@ import { MailCard } from "./MailCard";
 import { draftForHistory, eventsIn, greetingCommand, localNewMail, localReply as mailReply, looksLikeMail, REPLY_CHOICES, reviseDraft, revisionOf, splitInstruction, summaryOf, withTone, type MailDraft, type MailRevision } from "@/lib/lotte/mail";
 import { loadMailStyle, saveMailStyle } from "@/lib/lotte/mailSettings";
 import { draftSummary, replaceEntries, taskOverview, terminToAufgabe, upsertEntry, type CalendarEntry } from "@/lib/aufgaben";
-import { addListItems, appendLine, changeKladde, changeNotes, createNote, isKladdeTidyRequest, kladdeCommand, loadKladde, loadNotes, noteAnswer, noteFor, parseNoteCommand, replaceNotes, saveKladde, setPinned, tidyKladde, upsertNote, withoutLines } from "@/lib/notizen";
+import { addListItems, appendLine, changeSchnellnotiz, changeNotes, createNote, isSchnellnotizTidyRequest, schnellnotizCommand, loadSchnellnotiz, loadNotes, noteAnswer, noteFor, parseNoteCommand, replaceNotes, saveSchnellnotiz, setPinned, tidySchnellnotiz, upsertNote, withoutLines } from "@/lib/notizen";
 import { createEntry } from "@/lib/core/entries";
 import { TipBubble } from "./TipBubble";
 import { tipsShown, useTipStore } from "@/lib/essen/healthTips";
@@ -727,7 +727,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     if (mailRule(t)) return true;
     if (boardRule(t)) return true;
     if (dayRule(t)) return true;
-    if (kladdeRule(t)) return true;
+    if (schnellnotizRule(t)) return true;
     if (noteRule(t)) return true;
     if (isAddPersonRequest(t)) {
       setInput("");
@@ -870,21 +870,21 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   };
 
   /** Schnellnotiz (früher Kladde) ohne KI: "Schreib in die Schnellnotiz/Kladde: …", "Notier mir schnell …", "Räum meine Schnellnotiz auf"; dazu "Das ist kein Termin, sondern eine Aufgabe" */
-  const kladdeRule = (t: string): boolean => {
+  const schnellnotizRule = (t: string): boolean => {
     if (!today) return false;
     const say = (text: string, extra: Partial<ChatTurnView> = {}) => setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text, local: true, ...extra }] }));
-    const write = kladdeCommand(t);
+    const write = schnellnotizCommand(t);
     if (write) {
       setInput("");
-      const undo = changeKladde(appendLine(loadKladde().text, write));
+      const undo = changeSchnellnotiz(appendLine(loadSchnellnotiz().text, write));
       const text = "Steht in der Schnellnotiz ✓ (Notizen, ganz oben)";
       say(text, { undo: pushUndo(text, undo) });
       return true;
     }
-    if (isKladdeTidyRequest(t)) {
+    if (isSchnellnotizTidyRequest(t)) {
       setInput("");
       const iso = toIsoDate(today);
-      const lines = tidyKladde(loadKladde().text, iso).filter((l) => l.kind);
+      const lines = tidySchnellnotiz(loadSchnellnotiz().text, iso).filter((l) => l.kind);
       if (!lines.length) {
         say("In deiner Schnellnotiz finde ich gerade nichts, was ein Termin, eine Aufgabe oder eine Notiz wird – alles bleibt, wie es ist.");
         return true;
@@ -893,7 +893,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       const apply = () => {
         const beforeEntries = loadEntries();
         const beforeNotes = loadNotes();
-        const beforeKladde = loadKladde().text;
+        const beforeSchnellnotiz = loadSchnellnotiz().text;
         const created = lines.flatMap((l) => (l.draft ? [createEntry(l.draft.typ, l.draft.data, { raum: l.draft.raum }) as CalendarEntry] : []));
         if (created.length) changeEntries((list) => created.reduce((acc, e) => upsertEntry(acc, e), list));
         for (const l of lines) {
@@ -906,11 +906,11 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
             changeNotes((all) => upsertNote(all, createNote({ title: n.title, text: n.text })));
           }
         }
-        saveKladde(withoutLines(beforeKladde, lines.map((l) => l.line)));
+        saveSchnellnotiz(withoutLines(beforeSchnellnotiz, lines.map((l) => l.line)));
         const text = `Übernommen ✓ ${lines.length} ${lines.length === 1 ? "Zeile" : "Zeilen"} – der Rest bleibt in der Schnellnotiz.`;
         setChat((c) => ({
           ...c,
-          turns: [...c.turns, { role: "assistant", text, local: true, undo: pushUndo("das Aufräumen der Schnellnotiz", () => (replaceEntries(beforeEntries), replaceNotes(beforeNotes), saveKladde(beforeKladde))) }],
+          turns: [...c.turns, { role: "assistant", text, local: true, undo: pushUndo("das Aufräumen der Schnellnotiz", () => (replaceEntries(beforeEntries), replaceNotes(beforeNotes), saveSchnellnotiz(beforeSchnellnotiz))) }],
         }));
       };
       say(`Daraus würde ich machen: ${lines.map((l) => `${label(l)}: ${l.draft?.data.title ?? (l.note?.kind === "create" ? l.note.title : l.line)}`).join(" · ")}. Der Rest bleibt in der Schnellnotiz.`, {

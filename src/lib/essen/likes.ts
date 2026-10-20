@@ -22,7 +22,7 @@ const ALIASES: Record<string, string> = { knobi: "Knoblauch", möhre: "Karotte",
  * Zutat → Anzeigename einer Vorliebe ("rote Zwiebeln" → "Zwiebel"), nur für
  * bekannte Lebensmittel; Grundzutaten und Basen (Reis, Nudeln …) → null.
  */
-export function likeName(raw: string): string | null {
+function likeName(raw: string): string | null {
   const text = raw.trim();
   if (!text) return null;
   const last = (text.split(/\s+/).pop() ?? text).replace(/zehen?$/i, "");

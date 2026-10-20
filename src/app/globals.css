@@ -24,10 +24,10 @@
   --color-on-bar: var(--app-on-bar);
   --color-segment: var(--app-segment);
   --color-work: var(--app-work);
-  /* Kladde (Schmierzettel): gelblich */
-  --color-kladde: var(--app-kladde);
-  --color-kladde-line: var(--app-kladde-line);
-  --color-kladde-ink: var(--app-kladde-ink);
+  /* Schnellnotiz (Schmierzettel): gelblich */
+  --color-schnellnotiz: var(--app-schnellnotiz);
+  --color-schnellnotiz-line: var(--app-schnellnotiz-line);
+  --color-schnellnotiz-ink: var(--app-schnellnotiz-ink);
   --color-quick: var(--app-quick);
   --color-quick-ink: var(--app-quick-ink);
   --color-weather: var(--app-weather);
@@ -79,9 +79,9 @@
   --app-on-bar: #ffffff;
   --app-segment: #ebe6df;
   --app-work: #4c6fd9;
-  --app-kladde: #fffbea;
-  --app-kladde-line: #f3e7b8;
-  --app-kladde-ink: #8a7420;
+  --app-schnellnotiz: #fffbea;
+  --app-schnellnotiz-line: #f3e7b8;
+  --app-schnellnotiz-ink: #8a7420;
   --app-quick: #fdebdf;
   --app-quick-ink: #c4531a;
   --app-weather: #eaf1fb;
@@ -122,9 +122,9 @@
   --app-on-bar: #f2eee9;
   --app-segment: #2c3036;
   --app-work: #7f9bf0;
-  --app-kladde: #2f2b1f;
-  --app-kladde-line: #4a4229;
-  --app-kladde-ink: #e6cf7a;
+  --app-schnellnotiz: #2f2b1f;
+  --app-schnellnotiz-line: #4a4229;
+  --app-schnellnotiz-ink: #e6cf7a;
   --app-quick: rgb(242 107 33 / 0.2);
   --app-quick-ink: #ffb07a;
   --app-weather: #1f2733;
@@ -180,9 +180,9 @@
     --app-on-bar: #f2eee9;
     --app-segment: #2c3036;
     --app-work: #7f9bf0;
-  --app-kladde: #2f2b1f;
-  --app-kladde-line: #4a4229;
-  --app-kladde-ink: #e6cf7a;
+  --app-schnellnotiz: #2f2b1f;
+  --app-schnellnotiz-line: #4a4229;
+  --app-schnellnotiz-ink: #e6cf7a;
   --app-quick: rgb(242 107 33 / 0.2);
   --app-quick-ink: #ffb07a;
   --app-weather: #1f2733;

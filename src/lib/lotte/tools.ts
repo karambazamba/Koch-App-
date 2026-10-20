@@ -6,7 +6,7 @@
 import type { Forecast } from "../wetter/forecast";
 import type { MailDraft } from "./mail";
 import { recipeBase } from "../essen/bases";
-import { isNeverAgain } from "../essen/ratings";
+import { isNeverAgain } from "../essen/neverAgain";
 import type Anthropic from "@anthropic-ai/sdk";
 import { RECIPE_CATEGORIES, type RecipeCategory } from "../essen/cookbook";
 import { guessDishCategory } from "../essen/dishCategory";
@@ -307,7 +307,7 @@ export function findPersons(persons: Person[], name: string): Person[] {
 }
 
 /** Kind über den Namen finden */
-export function findKid(persons: Person[], name: string): Person[] {
+function findKid(persons: Person[], name: string): Person[] {
   return findPersons(
     persons.filter((p) => p.role === "kind"),
     name,

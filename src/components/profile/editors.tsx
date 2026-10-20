@@ -3,47 +3,15 @@
 // Formular-Bausteine des Haushaltsprofils. Werden im Assistenten (erstes
 // Anlegen) und in den einzelnen Bearbeiten-Ansichten verwendet.
 
-import {
-  AlertTriangle,
-  Backpack,
-  Baby,
-  Briefcase,
-  CheckCircle2,
-  Home,
-  Moon,
-  RefreshCw,
-  School,
-  Smile,
-  Sun,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+import { AlertTriangle, Backpack, Baby, Briefcase, CheckCircle2, Home, Moon, RefreshCw, School, Smile, Sun, type LucideIcon } from "lucide-react";
 import { ChoiceGroup } from "@/components/form/ChoiceGroup";
 import { NumberStepper } from "@/components/form/NumberStepper";
 import { TagInput } from "@/components/form/TagInput";
 import { BegleitungPicker } from "@/components/begleitung/BegleitungPicker";
 import { CARD, INPUT_BASE, NOTE, WARNING, tileClass } from "@/components/ui/styles";
-import {
-  COMMON_ALLERGIES,
-  KID_AGE_GROUP_LABELS,
-  LIMITS,
-  WEEKDAYS,
-  isWishDayEligible,
-  personLabel,
-  weekdayLunchHeadcount,
-  wishDayOrder,
-  type HelperSettings,
-  type HouseholdProfile,
-  type KidAgeGroup,
-  type Person,
-  type MealTime,
-  type WarmMealSchedule,
-  type WeekdayLunch,
-  type WeekRules,
-  type WishDaySettings,
-} from "@/lib/einstellungen/profile";
+import { COMMON_ALLERGIES, KID_AGE_GROUP_LABELS, LIMITS, WEEKDAYS, isWishDayEligible, personLabel, wishDayOrder, type HelperSettings, type HouseholdProfile, type KidAgeGroup, type Person, type MealTime, type WarmMealSchedule, type WeekdayLunch, type WeekRules, type WishDaySettings } from "@/lib/einstellungen/profile";
 
-export const FAVORITE_SUGGESTIONS = [
+const FAVORITE_SUGGESTIONS = [
   "Spaghetti Bolognese",
   "Pfannkuchen",
   "Pizza",
@@ -76,9 +44,9 @@ const KID_LUNCH_OPTIONS = [
 ] satisfies { value: WeekdayLunch; label: string; icon: LucideIcon }[];
 
 /** Altersgruppen mit Icon (auch im Assistenten) */
-export const AGE_GROUP_ICONS = { kleinkind: Baby, kitakind: Smile, schulkind: Backpack } as const;
+const AGE_GROUP_ICONS = { kleinkind: Baby, kitakind: Smile, schulkind: Backpack } as const;
 
-export { NOTE, WARNING };
+export { NOTE,  };
 
 /** Kurzform fürs Mittagessen unter der Woche, z. B. für die Übersicht. */
 export function lunchSummary(person: Person): string {
@@ -264,22 +232,6 @@ export function WarmMealEditor({
         variant="plain"
       />
     </section>
-  );
-}
-
-export function LunchHeadcountNote({ profile }: { profile: HouseholdProfile }) {
-  const lunch = weekdayLunchHeadcount(profile);
-  return (
-    <p className={NOTE} role="status">
-      <Users className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={2.25} aria-hidden />
-      <span>
-        Mittagessen unter der Woche zu Hause:{" "}
-        <span className="font-bold text-ink">
-          {lunch.min === lunch.max ? lunch.min : `${lunch.min}–${lunch.max}`}{" "}
-          {lunch.min === 1 && lunch.max === 1 ? "Person" : "Personen"}
-        </span>
-      </span>
-    </p>
   );
 }
 

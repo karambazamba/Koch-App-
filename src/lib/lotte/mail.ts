@@ -42,7 +42,7 @@ const CLOSING = /(viele|liebe|beste|herzliche|freundliche|schöne|sonnige)n?\s+g
 const HEADER = /^(von|from|an|to|betreff|subject|gesendet|sent|datum|date|cc):\s*\S/im;
 
 /** Erste E-Mail-Adresse im Text (bei eingefügten Mails bevorzugt aus "Von:") */
-export function emailIn(text: string): string {
+function emailIn(text: string): string {
   const from = text.match(/^(?:von|from):.*$/im)?.[0];
   return (from && from.match(EMAIL)?.[0]) || text.match(EMAIL)?.[0] || "";
 }
@@ -104,7 +104,7 @@ export function closingFor(style: MailStyle, name: string, tone: MailTone): stri
 const toneKey = (s: string) => s.trim().toLowerCase();
 
 /** Gemerkte Anrede für einen Empfänger (Adresse oder Bezeichnung) */
-export function rememberedTone(style: MailStyle, ...keys: (string | undefined)[]): MailTone | null {
+function rememberedTone(style: MailStyle, ...keys: (string | undefined)[]): MailTone | null {
   for (const k of keys) if (k && style.tones[toneKey(k)]) return style.tones[toneKey(k)];
   return null;
 }
@@ -125,12 +125,12 @@ function mailBody(mail: string): string[] {
 }
 
 /** Betreff aus "Betreff:"/"Subject:" */
-export function subjectIn(mail: string): string {
+function subjectIn(mail: string): string {
   return mail.match(/^(?:betreff|subject):\s*(.+)$/im)?.[1].replace(/^(re|aw|wg|fwd?):\s*/i, "").trim() ?? "";
 }
 
 /** Wer schreibt: Name unter dem Gruß oder aus "Von:" */
-export function senderIn(mail: string): string {
+function senderIn(mail: string): string {
   const lines = mailBody(mail);
   const at = lines.findIndex((l) => CLOSING.test(l));
   if (at >= 0) {
@@ -144,7 +144,7 @@ export function senderIn(mail: string): string {
 }
 
 /** Du oder Sie? "Sehr geehrte", "Sie/Ihnen/Ihr" mitten im Satz → Sie */
-export function toneOf(mail: string): MailTone {
+function toneOf(mail: string): MailTone {
   if (/sehr geehrte|guten tag|mit freundlichen grüßen/i.test(mail)) return "sie";
   if (/(?<![.!?\n]\s*)\b(Sie|Ihnen|Ihre[mnrs]?|Ihr)\b/.test(mail)) return "sie";
   return "du";
@@ -204,7 +204,7 @@ function shortTitle(title: string): string {
 
 // --- Entwürfe ohne KI ---------------------------------------------------------
 
-export type ReplyChoice = "zusagen" | "absagen" | "nachfragen";
+type ReplyChoice = "zusagen" | "absagen" | "nachfragen";
 export const REPLY_CHOICES: { id: ReplyChoice; label: string }[] = [
   { id: "zusagen", label: "Zusagen" },
   { id: "absagen", label: "Absagen" },
@@ -224,7 +224,7 @@ const sentence = (s: string) => {
 };
 
 /** "Antworte, dass Donnerstag passt, aber erst ab 9" → "Donnerstag passt, aber erst ab 9." */
-export function instructionContent(instruction: string): string {
+function instructionContent(instruction: string): string {
   const t = instruction
     .trim()
     .replace(/^(bitte\s+)?(antworte|antwort|schreib(e)?|sag(e)?)\s*(ihm|ihr|ihnen|denen|zurück)?\s*(bitte\s*)?[,:]?\s*/i, "")
@@ -256,7 +256,7 @@ const FAMILY = /\b(mama|papa|mutti|vati|oma|opa|omi|opi|tante|onkel|schwester|br
 const BUSINESS = /\b(großhandel|lieferant\w*|firma|bank|amt|behörde|vermieter\w*|hausverwaltung|versicherung|steuerberater\w*|arzt|ärztin|praxis|kita|schule|lehrer\w*|verein|kunde\w*|händler\w*|brauerei|molkerei|bäckerei|getränke\w*|support|kundenservice|team|verwaltung|büro)\b/i;
 
 /** Neue Mail: "Schreib dem Großhandel, dass …" / "Mail an die Kita: Jonne ist morgen krank" */
-export function parseNewMail(text: string): { recipient: string; content: string; link: "dass" | "ob" | ":"; to: string } | null {
+function parseNewMail(text: string): { recipient: string; content: string; link: "dass" | "ob" | ":"; to: string } | null {
   const t = text.trim().replace(/[.!]+$/, "");
   const m =
     t.match(/^(?:bitte\s+)?(?:schreib\w*|schick\w*)\s+(?:(?:eine?\s+)?(?:e-?mail|mail|nachricht)\s+)?(?:an\s+)?(.+?)(?:\s+eine?\s+(?:e-?mail|mail|nachricht))?\s*(?:,\s*|\s+)(dass|ob|:)\s*(.+)$/i) ??
@@ -277,7 +277,7 @@ export function parseNewMail(text: string): { recipient: string; content: string
 }
 
 /** Du oder Sie für einen neuen Empfänger: Familie/Vornamen du, Geschäftliches Sie */
-export function toneForRecipient(recipient: string, style: MailStyle, to = "", knownNames: string[] = []): MailTone {
+function toneForRecipient(recipient: string, style: MailStyle, to = "", knownNames: string[] = []): MailTone {
   const remembered = rememberedTone(style, to, recipient);
   if (remembered) return remembered;
   if (FAMILY.test(recipient) || knownNames.some((n) => n && recipient.toLowerCase() === n.toLowerCase())) return "du";
@@ -406,9 +406,6 @@ export function sanitizeDraft(raw: unknown): MailDraft | null {
     summary: str(r.summary, 300) || undefined,
   };
 }
-
-/** "Schreib dem Großhandel, dass …" / "Mail an die Kita: …" */
-export const isNewMailRequest = (text: string) => parseNewMail(text) !== null;
 
 /** Mail-Stil aus einer Anfrage prüfen (Server) */
 export function sanitizeMailStyle(raw: unknown): MailStyle {

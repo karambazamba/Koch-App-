@@ -8,8 +8,8 @@ export const CARD = "rounded-card border border-line bg-surface shadow-card";
 /** Liste in einer Karte mit Trennlinien */
 export const CARD_LIST = `${CARD} divide-y divide-line overflow-hidden`;
 
-export type ButtonVariant = "primary" | "secondary" | "soft" | "ghost" | "danger";
-export type ButtonSize = "sm" | "md" | "lg";
+type ButtonVariant = "primary" | "secondary" | "soft" | "ghost" | "danger";
+type ButtonSize = "sm" | "md" | "lg";
 
 const BUTTON_BASE =
   "inline-flex shrink-0 items-center justify-center gap-2 rounded-xl font-bold transition active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40";
@@ -69,8 +69,8 @@ export function tileClass(selected: boolean, tone: "default" | "danger" | "soft"
 
 /** Feld-Stil ohne Größe (für schmale Felder mit eigener Breite/Höhe) */
 /** Sichtbarer Kreis der kleinen Schnell-Knöpfe (20 px) – Tippfläche liefert der Knopf drumherum */
-export const quickDot = (tone: "quick" | "kladde" | "sport" = "quick") =>
-  `flex h-5 w-5 items-center justify-center rounded-full ${tone === "kladde" ? "bg-kladde-line text-kladde-ink" : tone === "sport" ? "bg-sport-line text-sport-ink" : "bg-quick text-quick-ink"}`;
+export const quickDot = (tone: "quick" | "schnellnotiz" | "sport" = "quick") =>
+  `flex h-5 w-5 items-center justify-center rounded-full ${tone === "schnellnotiz" ? "bg-schnellnotiz-line text-schnellnotiz-ink" : tone === "sport" ? "bg-sport-line text-sport-ink" : "bg-quick text-quick-ink"}`;
 
 export const INPUT_BASE =
   "min-w-0 rounded-xl border border-line bg-surface text-base text-ink outline-none transition placeholder:text-stone-400 focus:border-accent focus:ring-2 focus:ring-accent/20";

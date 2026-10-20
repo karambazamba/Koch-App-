@@ -108,7 +108,7 @@ export const weekdayLong = (iso: string) => WEEKDAYS_LONG[weekdayIndex(iso)];
 const dayDiff = (a: string, b: string) => Math.round((fromIsoDate(a).getTime() - fromIsoDate(b).getTime()) / 86_400_000);
 
 /** Fällt eine Wiederholung (ab `start`) auf `date`? */
-export function repeatsOn(repeat: Repeat, start: string, date: string): boolean {
+function repeatsOn(repeat: Repeat, start: string, date: string): boolean {
   if (date < start) return false;
   switch (repeat.kind) {
     case "taeglich":
@@ -140,7 +140,7 @@ export function repeatLabel(repeat: Repeat | null | undefined, start?: string): 
 const isTermin = (e: CalendarEntry): e is Termin => e.typ === "termin";
 
 /** Von wann eine mitgenommene Aufgabe ist: "von gestern", "von Montag", "von letzter Woche" */
-export function carriedLabel(from: string, today: string): string {
+function carriedLabel(from: string, today: string): string {
   const days = dayDiff(today, from);
   if (days <= 1) return "von gestern";
   if (days < 7 && weekdayIndex(from) < weekdayIndex(today)) return `von ${WEEKDAYS_LONG[weekdayIndex(from)]}`;
@@ -149,7 +149,7 @@ export function carriedLabel(from: string, today: string): string {
 }
 
 /** "bis Mi" (diese Woche), sonst "bis 24.10." */
-export function dueLabel(due: string, date: string): string {
+function dueLabel(due: string, date: string): string {
   const days = dayDiff(due, date);
   if (days === 0) return "bis heute";
   if (days === 1) return "bis morgen";
@@ -159,7 +159,7 @@ export function dueLabel(due: string, date: string): string {
 }
 
 /** Anfangstag einer Aufgabe (Wunschtag, sonst Tag des Anlegens) */
-export const taskStart = (a: AufgabeData, created: string) => a.date ?? created.slice(0, 10);
+const taskStart = (a: AufgabeData, created: string) => a.date ?? created.slice(0, 10);
 
 /** Montag der Woche eines Tages */
 export const mondayOf = (iso: string) => addDays(iso, -weekdayIndex(iso));
@@ -240,7 +240,7 @@ export function itemsForDay(entries: CalendarEntry[], date: string, today: strin
 }
 
 /** Nach Uhrzeit; ohne Uhrzeit danach; Erledigtes ans Ende */
-export function sortItems(items: DayItem[]): DayItem[] {
+function sortItems(items: DayItem[]): DayItem[] {
   return [...items].sort(
     (a, b) =>
       Number(a.done) - Number(b.done) ||
@@ -250,17 +250,9 @@ export function sortItems(items: DayItem[]): DayItem[] {
   );
 }
 
-/** Einträge der nächsten `days` Tage ab `today` (für Woche und Lotte) */
-export function itemsForRange(entries: CalendarEntry[], today: string, days: number): { date: string; items: DayItem[] }[] {
-  return Array.from({ length: days }, (_, i) => {
-    const date = addDays(today, i);
-    return { date, items: itemsForDay(entries, date, today) };
-  });
-}
-
 // --- Aufgaben-Übersicht und Startseite ------------------------------------------
 
-export type TaskGroup = "heute" | "woche" | "spaeter" | "irgendwann" | "erledigt";
+type TaskGroup = "heute" | "woche" | "spaeter" | "irgendwann" | "erledigt";
 
 export const TASK_GROUPS: { id: TaskGroup; label: string }[] = [
   { id: "heute", label: "Heute dran" },
@@ -369,12 +361,6 @@ export function taskBadge(item: DayItem, today: string): string {
   if (item.dueLabel) return item.dueLabel === "bis heute" ? "heute" : item.dueLabel;
   if (item.when) return item.when;
   return item.date === today ? "heute" : "";
-}
-
-/** Die dringendsten Aufgaben für "Heute": heute dran, dann nächste Frist, dann "diese Woche" */
-export function urgentTasks(entries: CalendarEntry[], today: string): DayItem[] {
-  const g = taskOverview(entries, today);
-  return [...g.heute, ...g.woche];
 }
 
 /** Alle noch nicht erledigten Aufgaben (Zahl für "+ N weitere") */

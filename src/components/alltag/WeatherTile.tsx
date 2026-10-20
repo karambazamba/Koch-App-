@@ -31,7 +31,7 @@ import {
   type WeatherKind,
 } from "@/lib/wetter/forecast";
 import { useForecast } from "@/lib/wetter/client";
-import { kladdeClock } from "@/components/notizen/Kladde";
+import { shortClock } from "@/components/notizen/Schnellnotiz";
 
 const ICONS: Record<WeatherKind, LucideIcon> = {
   klar: Sun,
@@ -126,7 +126,7 @@ export function WeatherTile({
   const range = todayRange(forecast, today);
   const kind = weatherKind(forecast.current.code);
   const slots = nextSlots(forecast, today, minutes);
-  const standLine = stale ? `Stand ${kladdeClock(forecast.fetchedAt)}` : "";
+  const standLine = stale ? `Stand ${shortClock(forecast.fetchedAt)}` : "";
   return (
     <>
       <section className={box} aria-label={label}>

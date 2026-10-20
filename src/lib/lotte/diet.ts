@@ -30,7 +30,7 @@ function mentions(text: string, term: string): boolean {
   return t.includes(w);
 }
 
-export type DietConflict = { person: string; kind: "Allergie" | "mag nicht"; term: string; found: string };
+type DietConflict = { person: string; kind: "Allergie" | "mag nicht"; term: string; found: string };
 
 /** Konflikte eines Rezepts (Titel + Zutaten) mit Allergien und Abneigungen */
 export function dietConflicts(title: string, ingredients: string[], persons: Person[]): DietConflict[] {

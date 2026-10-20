@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { CARD } from "@/components/ui/styles";
-import { useBausteine, useLegacyFeatures, featureOn, type Feature } from "@/lib/core/features";
+import { useBausteine, featureOn, type Feature } from "@/lib/core/features";
 import { expectReplace } from "@/lib/core/navigation";
 
 /**
@@ -12,8 +12,7 @@ import { expectReplace } from "@/lib/core/navigation";
  */
 export function FeatureGate({ feature, children }: { feature: Feature | Feature[]; children: ReactNode }) {
   const list = useBausteine();
-  const dev = useLegacyFeatures();
-  const on = list === undefined || dev === undefined ? undefined : (Array.isArray(feature) ? feature : [feature]).some((f) => featureOn(f));
+  const on = list === undefined ? undefined : (Array.isArray(feature) ? feature : [feature]).some((f) => featureOn(f));
   const router = useRouter();
   useEffect(() => {
     if (on !== false) return;

@@ -7,7 +7,7 @@ import type { Recipe, RecipeCategory } from "./cookbook";
 import type { PantryItem } from "./pantry";
 import { formatPantryItem } from "./pantry";
 import type { NeverAgainEntry, PauseSettings } from "../einstellungen/profile";
-import { isNeverAgain } from "./ratings";
+import { isNeverAgain } from "./neverAgain";
 import { baseFromText, recipeBase, type BaseId } from "./bases";
 import { guessDishCategory } from "./dishCategory";
 import { sectionFor } from "../einkauf/shoppingList";
@@ -84,7 +84,7 @@ export function parsePauseRequest(text: string, today: Date): { kind: "start"; p
 }
 
 const SHORT = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "numeric", month: "numeric" });
-export const shortDate = (isoDate: string) => SHORT.format(new Date(`${isoDate}T12:00:00`));
+const shortDate = (isoDate: string) => SHORT.format(new Date(`${isoDate}T12:00:00`));
 
 /** "Pause von Fr., 23.10. bis Do., 29.10." */
 export function pauseLabel(pause: PauseSettings): string {
@@ -191,7 +191,7 @@ export function spontanIdeas(
 }
 
 /** Alle passenden Ideen, beste zuerst (Grundlage für spontanIdeas) */
-export function rankedSpontanIdeas(
+function rankedSpontanIdeas(
   recipes: Record<string, Recipe>,
   pantry: PantryItem[],
   filters: SpontanFilter[],

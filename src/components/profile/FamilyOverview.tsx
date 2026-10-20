@@ -1,24 +1,21 @@
 "use client";
 
 import { useMailStyle } from "@/lib/lotte/mailSettings";
-import { Blocks, BookOpen, Clock, CloudSun, Dumbbell, CalendarDays, ChefHat, Database, LayoutGrid, LayoutList, Mail, MessageCircle, Refrigerator, Salad, Sun, Users } from "lucide-react";
+import { Blocks, BookOpen, Clock, CloudSun, Dumbbell, CalendarDays, ChefHat, Database, LayoutGrid, Mail, MessageCircle, Refrigerator, Salad, Users } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { PAGE_MAIN } from "@/components/ui/styles";
-import { APP_VERSION } from "@/lib/core/app";
+import { APP_VERSION, versionLabel } from "@/lib/core/app";
 import { useRecipes } from "@/lib/essen/cookbook";
 import { sortedLikes } from "@/lib/essen/likes";
 import { usePantry } from "@/lib/essen/pantry";
 import {
-  DISPLAY_MODES,
   HELPER_MODES,
   HOUSEHOLD_TYPES,
   PLAN_STYLES,
-  WEEKEND_STYLES,
   helperName,
   type HouseholdProfile,
 } from "@/lib/einstellungen/profile";
-import { usePlanStyle } from "@/lib/essen/usePlanStyle";
-import { BAUSTEINE, useBausteine, useFeature, useLegacyFeatures } from "@/lib/core/features";
+import { BAUSTEINE, useBausteine, useFeature } from "@/lib/core/features";
 import { usePlace } from "@/lib/wetter/client";
 import { useHomeTiles } from "@/lib/core/homeLayout";
 import { HOME_MODES, useRoutine } from "@/lib/tagesablauf/settings";
@@ -38,14 +35,10 @@ const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : 
 export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
   const recipes = useRecipes();
   const pantry = usePantry();
-  // "Ich koche spontan": keine Planungs-Einstellungen (Daten bleiben gespeichert)
-  const planning = usePlanStyle()?.planning ?? true;
   const likes = sortedLikes(profile.likes).slice(0, 3).map((l) => l.name);
-  const dislikes = [...new Set(profile.persons.flatMap((p) => p.dislikes))].slice(0, 3);
   const type = HOUSEHOLD_TYPES.find((t) => t.value === profile.householdType);
   const name = helperName(profile);
   const recipeCount = recipes ? Object.keys(recipes).length : null;
-  const legacy = useLegacyFeatures();
   const mailStyle = useMailStyle();
   const home = useHomeTiles();
   const place = usePlace();
@@ -58,127 +51,71 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
   const routine = useRoutine();
   const sport = useSport();
 
-  // Schlank – Startseite & Bausteine, Lotte, Ansicht, Familie, Daten & App (alter Aufbau nur über /?legacy=1)
-  if (!legacy) {
-    return (
-      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
-        <PageHeader title="Einstellungen" />
-        <main className={`${PAGE_MAIN} gap-6`}>
-          <BegleitungGroup profile={profile} />
-          <DarstellungGroup profile={profile} />
-          <Group title="Tagesablauf">
-            <Row href="/profil/tagesablauf" icon={Clock} title="Startseite & Tageszeiten" value={routine ? HOME_MODES.find((m) => m.value === routine.mode)?.label : undefined}>
-              Mitdenkend oder immer gleich, Feierabend, Arbeitstage
-            </Row>
-          </Group>
-          <Group title="Startseite & Bausteine">
-            <Row href="/profil/startseite" icon={LayoutGrid} title="Startseite bearbeiten" value={home ? `${home.filter((t) => t.visible && t.id !== "post").length} Kacheln` : undefined}>
-              Kacheln hinzufügen, entfernen, sortieren, Größe
-            </Row>
-            {home?.find((t) => t.id === "wetter")?.visible && (
-              <Row href="/profil/wetter" icon={CloudSun} title="Wetter-Ort" value={place}>
-                Für die Wetter-Kachel
-              </Row>
-            )}
-            {home?.find((t) => t.id === "sport")?.visible && (
-              <Row href="/sport" icon={Dumbbell} title="Sport" value={sport ? `${sport.goal}× pro Woche` : undefined}>
-                Wochenziel, Trainings, Packliste
-              </Row>
-            )}
-            <Row href="/profil/bausteine" icon={Blocks} title="Bausteine" value={bausteine ? `${BAUSTEINE.filter((b) => bausteine.includes(b.feature)).length} an` : undefined}>
-              Was {name} noch kann
-            </Row>
-            {planOn && (
-              <Row href="/profil/standardwoche" icon={CalendarDays} title="Standardwoche">
-                Vorlage für den Wochenplan
-              </Row>
-            )}
-            {kochstilOn && (
-              <Row href="/profil/kochstil" icon={ChefHat} title="Kochstil" value={PLAN_STYLES.find((p) => p.value === profile.planStyle)?.label}>
-                Plan oder spontan, nach Gefühl oder Rezept
-              </Row>
-            )}
-            {kochstilOn && (
-              <Row href="/profil/essen" icon={Salad} title="Essen & Vorlieben">
-                {likes.length ? `Mögt ihr: ${likes.join(", ")}` : "Das mögt ihr, Nie wieder, Lieblingsgerichte"}
-              </Row>
-            )}
-            {modiOn && (
-              <Row href="/profil/lotte" icon={MessageCircle} title={`Wie oft meldet sich ${name}?`} value={HELPER_MODES.find((m) => m.value === profile.helperMode)?.label}>
-                Von ganz locker bis dranbleiben
-              </Row>
-            )}
-            {unlockedRecipes && (
-              <Row href="/kochbuch" icon={BookOpen} title="Unsere Rezepte" value={recipeCount === null ? undefined : String(recipeCount)}>
-                Was ihr gern kocht
-              </Row>
-            )}
-            {unlockedPantry && (
-              <Row href="/vorrat" icon={Refrigerator} title="Vorrat" value={pantry ? String(pantry.length) : undefined}>
-                Kühlschrank, Tiefkühler, Vorratsschrank
-              </Row>
-            )}
-          </Group>
-          <Group title="Mails">
-            <Row href="/profil/mails" icon={Mail} title="Mails" value={mailStyle?.greeting}>
-              Gruß und Signatur für deine Mails
-            </Row>
-          </Group>
-          <Group title="Einmal eingerichtet" quiet>
-            <Row href="/profil/familie" icon={Users} title={householdTitle(profile)} tone="neutral">
-              {count(profile.persons.length, "Person", "Personen")} · {type?.label}
-            </Row>
-            <Row href="/profil/daten" icon={Database} title="Daten & App" tone="neutral" value={APP_VERSION}>
-              Sichern, einspielen, neu anfangen
-            </Row>
-          </Group>
-        </main>
-      </div>
-    );
-  }
-
+  // Schlank – Begleitung, Darstellung, Tagesablauf, Startseite & Bausteine, Mails, Familie, Daten & App
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
       <PageHeader title="Einstellungen" />
-
       <main className={`${PAGE_MAIN} gap-6`}>
         <BegleitungGroup profile={profile} />
         <DarstellungGroup profile={profile} />
-        <Group title="Kochen">
-          <Row href="/profil/kochstil" icon={ChefHat} title="Kochstil" value={PLAN_STYLES.find((p) => p.value === profile.planStyle)?.label}>
-            Mit Plan oder spontan – und wie ihr kocht
+        <Group title="Tagesablauf">
+          <Row href="/profil/tagesablauf" icon={Clock} title="Startseite & Tageszeiten" value={routine ? HOME_MODES.find((m) => m.value === routine.mode)?.label : undefined}>
+            Mitdenkend oder immer gleich, Feierabend, Arbeitstage
           </Row>
-          <Row href="/profil/essen" icon={Salad} title="Essen & Vorlieben" value={planning ? `${profile.weekRules.vegetarianDays}× Veggie` : undefined}>
-            {likes.length ? `Mögt ihr: ${likes.join(", ")}` : dislikes.length ? `Mag nicht: ${dislikes.join(", ")}` : "Veggie-Tage, mag und mag nicht"}
+        </Group>
+        <Group title="Startseite & Bausteine">
+          <Row href="/profil/startseite" icon={LayoutGrid} title="Startseite bearbeiten" value={home ? `${home.filter((t) => t.visible && t.id !== "post").length} Kacheln` : undefined}>
+            Kacheln hinzufügen, entfernen, sortieren, Größe
           </Row>
-          {planning && (
-            <Row href="/profil/wochenende" icon={Sun} title="Wochenende" value={WEEKEND_STYLES.find((w) => w.value === profile.weekendStyle)?.label}>
-              Wie viel ich am Wochenende plane
+          {home?.find((t) => t.id === "wetter")?.visible && (
+            <Row href="/profil/wetter" icon={CloudSun} title="Wetter-Ort" value={place}>
+              Für die Wetter-Kachel
+            </Row>
+          )}
+          {home?.find((t) => t.id === "sport")?.visible && (
+            <Row href="/sport" icon={Dumbbell} title="Sport" value={sport ? `${sport.goal}× pro Woche` : undefined}>
+              Wochenziel, Trainings, Packliste
+            </Row>
+          )}
+          <Row href="/profil/bausteine" icon={Blocks} title="Bausteine" value={bausteine ? `${BAUSTEINE.filter((b) => bausteine.includes(b.feature)).length} an` : undefined}>
+            Was {name} noch kann
+          </Row>
+          {planOn && (
+            <Row href="/profil/standardwoche" icon={CalendarDays} title="Standardwoche">
+              Vorlage für den Wochenplan
+            </Row>
+          )}
+          {kochstilOn && (
+            <Row href="/profil/kochstil" icon={ChefHat} title="Kochstil" value={PLAN_STYLES.find((p) => p.value === profile.planStyle)?.label}>
+              Plan oder spontan, nach Gefühl oder Rezept
+            </Row>
+          )}
+          {kochstilOn && (
+            <Row href="/profil/essen" icon={Salad} title="Essen & Vorlieben">
+              {likes.length ? `Mögt ihr: ${likes.join(", ")}` : "Das mögt ihr, Nie wieder, Lieblingsgerichte"}
+            </Row>
+          )}
+          {modiOn && (
+            <Row href="/profil/lotte" icon={MessageCircle} title={`Wie oft meldet sich ${name}?`} value={HELPER_MODES.find((m) => m.value === profile.helperMode)?.label}>
+              Von ganz locker bis dranbleiben
+            </Row>
+          )}
+          {unlockedRecipes && (
+            <Row href="/kochbuch" icon={BookOpen} title="Unsere Rezepte" value={recipeCount === null ? undefined : String(recipeCount)}>
+              Was ihr gern kocht
+            </Row>
+          )}
+          {unlockedPantry && (
+            <Row href="/vorrat" icon={Refrigerator} title="Vorrat" value={pantry ? String(pantry.length) : undefined}>
+              Kühlschrank, Tiefkühler, Vorratsschrank
             </Row>
           )}
         </Group>
-
-        <Group title="Unsere Küche">
-          <Row href="/kochbuch" icon={BookOpen} title="Unsere Rezepte" value={recipeCount === null ? undefined : String(recipeCount)}>
-            Alle Rezepte, neue anlegen
-          </Row>
-          <Row href="/vorrat" icon={Refrigerator} title="Vorrat" value={pantry ? String(pantry.length) : undefined}>
-            Kühlschrank, Tiefkühler, Vorratsschrank
+        <Group title="Mails">
+          <Row href="/profil/mails" icon={Mail} title="Mails" value={mailStyle?.greeting}>
+            Gruß und Signatur für deine Mails
           </Row>
         </Group>
-
-        <Group title={name}>
-          <Row href="/profil/lotte" icon={MessageCircle} title={`Wie oft meldet sich ${name}?`} value={HELPER_MODES.find((m) => m.value === profile.helperMode)?.label}>
-            Modus, Tipps, Vorlesen, Name
-          </Row>
-        </Group>
-
-        <Group title="Anzeige">
-          <Row href="/profil/darstellung" icon={LayoutList} title="Darstellung" value={DISPLAY_MODES.find((d) => d.value === profile.display)?.label}>
-            Wie viel die App zeigt
-          </Row>
-        </Group>
-
         <Group title="Einmal eingerichtet" quiet>
           <Row href="/profil/familie" icon={Users} title={householdTitle(profile)} tone="neutral">
             {count(profile.persons.length, "Person", "Personen")} · {type?.label}
@@ -187,6 +124,9 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
             Sichern, einspielen, neu anfangen
           </Row>
         </Group>
+        <p className="text-center text-sm text-muted" data-testid="version-stand">
+          {versionLabel()}
+        </p>
       </main>
     </div>
   );

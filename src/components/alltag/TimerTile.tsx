@@ -260,7 +260,7 @@ function HoldButton({ label, aria, onTap, onHold }: { label: string; aria: strin
 }
 
 /** Eigener Timer: Dauer + Name */
-export function CustomTimerSheet({ minutes, onClose, onStart }: { minutes: number; onClose: () => void; onStart: (minutes: number, name: string) => void }) {
+function CustomTimerSheet({ minutes, onClose, onStart }: { minutes: number; onClose: () => void; onStart: (minutes: number, name: string) => void }) {
   const [min, setMin] = useState(String(minutes));
   const [name, setName] = useState("");
   const value = Number(min.replace(",", "."));

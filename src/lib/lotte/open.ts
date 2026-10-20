@@ -7,7 +7,7 @@
 
 import { unlockSpeech } from "./speech";
 
-export type HelperMode = "spontan" | "voice";
+type HelperMode = "spontan" | "voice";
 
 type Detail = { mode?: HelperMode; ask?: string; filters?: string[] };
 

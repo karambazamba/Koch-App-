@@ -49,7 +49,7 @@ export type WelcomeState = {
 
 export type WelcomeChip = { label: string; value: string; kind: "primary" | "select" | "plain"; selected?: boolean; disabled?: boolean };
 
-export const HELP_OPTIONS: { id: HelpId; label: string }[] = [
+const HELP_OPTIONS: { id: HelpId; label: string }[] = [
   { id: "termine", label: "🗓 Termine" },
   { id: "arbeit", label: "💼 Arbeit" },
   { id: "essen", label: "🍽 Essen" },
@@ -58,10 +58,7 @@ export const HELP_OPTIONS: { id: HelpId; label: string }[] = [
   { id: "sport", label: "🏃 Sport" },
 ];
 
-export const DEFAULT_HELP: HelpId[] = ["termine", "essen", "einkauf"];
-
-/** "Deine Assistentin" bzw. "Dein Assistent" (nach der Stimme) */
-export const assistantNoun = (helper: HelperSettings) => (helper.art === "assistent" ? "Dein Assistent" : "Deine Assistentin");
+const DEFAULT_HELP: HelpId[] = ["termine", "essen", "einkauf"];
 
 /** Abschnitt 1–4 für den Fortschrittsbalken */
 export function sectionOf(step: WelcomeStep): number {
@@ -72,7 +69,7 @@ export function sectionOf(step: WelcomeStep): number {
 }
 
 /** Reihenfolge der Schritte – abhängig von den Antworten */
-export function flow(state: Pick<WelcomeState, "help">): WelcomeStep[] {
+function flow(state: Pick<WelcomeState, "help">): WelcomeStep[] {
   return <WelcomeStep[]>["begleitung", "hallo", "hilfe", ...(state.help.includes("essen") ? (["essen"] as const) : []), ...(state.help.includes("sport") ? (["sport"] as const) : []), "startseite", "wer", "fertig"];
 }
 
@@ -80,7 +77,7 @@ export function flow(state: Pick<WelcomeState, "help">): WelcomeStep[] {
 export const asksFamily = (state: Pick<WelcomeState, "help">) => state.help.includes("familie");
 
 /** Frage eines Schritts */
-export function questionFor(state: WelcomeState, step: WelcomeStep): string {
+function questionFor(state: WelcomeState, step: WelcomeStep): string {
   switch (step) {
     case "begleitung":
       return "Wer soll dir helfen?";
@@ -110,7 +107,7 @@ const PLAN_LABEL: Record<PlanStyle, string> = { plan: "Woche planen", spontan: "
 const namedMembers = (members: Member[]) => members.filter((m, i) => i === 0 || m.name.trim());
 
 /** Antwort eines Schritts als kurze Blase (antippbar = bearbeiten) */
-export function answerLabel(state: WelcomeState, step: WelcomeStep): string {
+function answerLabel(state: WelcomeState, step: WelcomeStep): string {
   switch (step) {
     case "begleitung":
       return state.helper.name;
@@ -152,7 +149,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
  * Jonne und Ole" → Felix + Lisa + Kinder. Mit KI kommen die Namen samt
  * Kind/erwachsen als `hints`.
  */
-export function membersFrom(text: string, hints?: NameHint[]): Member[] {
+function membersFrom(text: string, hints?: NameHint[]): Member[] {
   const found = hints?.length ? hints : extractNames(text);
   const names = found.length
     ? found
@@ -169,7 +166,7 @@ export function membersFrom(text: string, hints?: NameHint[]): Member[] {
  * die übrigen Namen kommen dazu (ohne Doppelte). Ohne "Ich bin …" und ohne
  * eigenen Namen ist der erste Name man selbst.
  */
-export function fillMembers(members: Member[], text: string, hints?: NameHint[], family = true): Member[] {
+function fillMembers(members: Member[], text: string, hints?: NameHint[], family = true): Member[] {
   const found = membersFrom(text, hints);
   if (!found.length) return members;
   const me = members[0] ?? { name: "", kid: false };
@@ -213,7 +210,7 @@ function planFrom(text: string): PlanStyle | null {
 }
 
 /** Eigener Name ausgefüllt? (Voraussetzung für "Fertig" / "Nur ich") */
-export const hasMyName = (state: Pick<WelcomeState, "members">) => Boolean(state.members[0]?.name.trim());
+const hasMyName = (state: Pick<WelcomeState, "members">) => Boolean(state.members[0]?.name.trim());
 
 /** Antwort-Chips zum aktuellen Schritt */
 export function chipsFor(state: WelcomeState): WelcomeChip[] {

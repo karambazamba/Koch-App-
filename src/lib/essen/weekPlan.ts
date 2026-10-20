@@ -7,7 +7,7 @@ import { createLocalStore } from "../core/localStore";
 import { addDays, fromIsoDate, now, toIsoDate } from "../core/now";
 
 // Datumshilfen kommen aus der zentralen Zeit (core/now) – hier weitergereicht
-export { addDays, fromIsoDate, toIsoDate, useToday } from "../core/now";
+export { addDays,  toIsoDate, useToday } from "../core/now";
 import type { RecipeCategory } from "./cookbook";
 import {
   WEEKDAYS,
@@ -18,6 +18,7 @@ import {
   type HouseholdProfile,
   type WeekRules,
 } from "../einstellungen/profile";
+import type { StorageKey } from "@/lib/core/storage";
 
 /** Wunsch eines Kindes – das Hauptgericht eines Tages, zählt nicht bei Fleisch/Veggie/Fisch */
 export type WeekWish = {
@@ -60,7 +61,7 @@ type WeekPlanStore = {
   weeks: Record<string, WeekPlan>;
 };
 
-const STORAGE_KEY = "wasgibts.wochenvorgaben";
+const STORAGE_KEY: StorageKey = "wasgibts.wochenvorgaben";
 
 // --- Datum ------------------------------------------------------------------
 
@@ -323,13 +324,3 @@ export function useWeekPlans(): Record<string, WeekPlan> | undefined {
 }
 
 const EMPTY_WEEKS: Record<string, WeekPlan> = {};
-
-/**
- * Gespeicherte Vorgaben für eine Woche:
- * `undefined` = noch nicht geladen, `null` = keine Vorgaben.
- */
-export function useWeekPlan(weekStart: string | undefined): WeekPlan | null | undefined {
-  const data = useExternalStore(store.subscribe, store.load, () => undefined);
-  if (data === undefined || !weekStart) return undefined;
-  return data ? planForWeek(data.weeks, weekStart) : null;
-}

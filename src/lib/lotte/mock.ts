@@ -8,7 +8,7 @@ import { parseTimerCommand } from "../timer/model";
 import { parseHelperInput } from "./helperTools";
 import { parseSportCommand } from "../sport/model";
 import { parseNoteCommand } from "../notizen/chat";
-import { isKladdeTidyRequest, kladdeCommand, tidyKladde } from "../notizen/kladde";
+import { isSchnellnotizTidyRequest, schnellnotizCommand, tidySchnellnotiz } from "../notizen/schnellnotiz";
 import { isPinboardQuery, pinWriteCommand } from "../pinnwand/model";
 import { eventsIn, greetingCommand, localNewMail, localReply, looksLikeMail, parseHistoryDraft, REPLY_CHOICES, reviseDraft, revisionOf, splitInstruction, styleFromContext, summaryOf, type MailDraft } from "./mail";
 import type Anthropic from "@anthropic-ai/sdk";
@@ -191,7 +191,7 @@ function plan(intent: string, system: string) {
  * null) – verteilt auf die Wochenmitte. Reichen die bekannten nicht, bleiben
  * Tage frei.
  */
-export function pickWeekDishes(
+function pickWeekDishes(
   book: CookbookResult["rezepte"],
   free: string[],
   perWeek: number,
@@ -266,8 +266,8 @@ function mockModel(): CreateMessage {
       if (dayUse) return dayUse;
       const board = pinWeatherUses(last.content, system);
       if (board) return board;
-      const kladde = kladdeUses(last.content, msgs, system);
-      if (kladde) return kladde;
+      const found = schnellnotizUses(last.content, msgs, system);
+      if (found) return found;
       const note = noteUses(last.content);
       if (note) return note;
       const leftovers = leftoverReply(last.content, system);
@@ -683,16 +683,16 @@ function pinWeatherUses(latest: string, system: string): Anthropic.Beta.BetaMess
   return null;
 }
 
-/** Kladde und Umwandeln im Testmodus */
-function kladdeUses(latest: string, msgs: Anthropic.Beta.BetaMessageParam[], system: string): Anthropic.Beta.BetaMessage | null {
+/** Schnellnotiz und Umwandeln im Testmodus */
+function schnellnotizUses(latest: string, msgs: Anthropic.Beta.BetaMessageParam[], system: string): Anthropic.Beta.BetaMessage | null {
   const today = system.match(/^Heute: .*\((\d{4}-\d{2}-\d{2})\)/m)?.[1] ?? "";
-  const write = kladdeCommand(latest);
-  if (write) return tools([{ name: "kladde_schreiben", input: { text: write } }]);
-  if (isKladdeTidyRequest(latest)) {
-    const raw = system.match(/^Kladde \(Schmierzettel\): (.*)$/m)?.[1] ?? "leer";
-    const kladdeText = raw === "leer" ? "" : (JSON.parse(raw) as string);
-    const lines = today ? tidyKladde(kladdeText, today).filter((l) => l.kind) : [];
-    if (!lines.length) return text("In deiner Kladde finde ich gerade nichts, was ein Termin, eine Aufgabe oder eine Notiz wird. (Testmodus)");
+  const write = schnellnotizCommand(latest);
+  if (write) return tools([{ name: "schnellnotiz_schreiben", input: { text: write } }]);
+  if (isSchnellnotizTidyRequest(latest)) {
+    const raw = system.match(/^Schnellnotiz \(Schmierzettel\): (.*)$/m)?.[1] ?? "leer";
+    const schnellnotizText = raw === "leer" ? "" : (JSON.parse(raw) as string);
+    const lines = today ? tidySchnellnotiz(schnellnotizText, today).filter((l) => l.kind) : [];
+    if (!lines.length) return text("In deiner Schnellnotiz finde ich gerade nichts, was ein Termin, eine Aufgabe oder eine Notiz wird. (Testmodus)");
     const uses: ToolUse[] = lines.map((l) =>
       l.draft
         ? draftInput(l.draft, today)
@@ -700,7 +700,7 @@ function kladdeUses(latest: string, msgs: Anthropic.Beta.BetaMessageParam[], sys
           ? { name: "liste_eintrag_hinzufuegen", input: { liste: l.note.list, eintraege: l.note.items } }
           : { name: "notiz_anlegen", input: { titel: l.note && l.note.kind === "create" ? l.note.title : l.line, text: l.note && l.note.kind === "create" ? (l.note.text ?? "") : l.line } },
     );
-    return tools([...uses, { name: "kladde_aufraeumen", input: { zeilen: lines.map((l) => l.line) } }]);
+    return tools([...uses, { name: "schnellnotiz_aufraeumen", input: { zeilen: lines.map((l) => l.line) } }]);
   }
   const toTask = /\bkein(?:en)?\s+termin\b.*\baufgabe\b/i.test(latest);
   const toTermin = latest.match(/\bkeine\s+aufgabe\b.*\btermin\b.*?\b(?:um\s+)?(\d{1,2})(?::(\d{2}))?\s*uhr\b/i);
@@ -737,7 +737,7 @@ function noteUses(latest: string): Anthropic.Beta.BetaMessage | null {
   }
 }
 
-const CALENDAR_WRITE = new Set(["pinnwand_schreiben", "kladde_schreiben", "kladde_aufraeumen", "termin_in_aufgabe_umwandeln", "aufgabe_in_termin_umwandeln", "notiz_anlegen", "notiz_aendern", "notiz_loeschen", "liste_eintrag_hinzufuegen", "notiz_anheften", "baustein_an", "baustein_aus", "portionen_anpassen", "pause_setzen", "pause_beenden", "startseite_anpassen", "wochenplan_loeschen", "einkaufsliste_leeren", "einkaufsliste_entfernen", "rueckgaengig", "termin_anlegen", "termin_aendern", "termin_loeschen", "aufgabe_anlegen", "aufgabe_aendern", "aufgabe_erledigen", "aufgabe_verschieben"]);
+const CALENDAR_WRITE = new Set(["pinnwand_schreiben", "schnellnotiz_schreiben", "schnellnotiz_aufraeumen", "termin_in_aufgabe_umwandeln", "aufgabe_in_termin_umwandeln", "notiz_anlegen", "notiz_aendern", "notiz_loeschen", "liste_eintrag_hinzufuegen", "notiz_anheften", "baustein_an", "baustein_aus", "portionen_anpassen", "pause_setzen", "pause_beenden", "startseite_anpassen", "wochenplan_loeschen", "einkaufsliste_leeren", "einkaufsliste_entfernen", "rueckgaengig", "termin_anlegen", "termin_aendern", "termin_loeschen", "aufgabe_anlegen", "aufgabe_aendern", "aufgabe_erledigen", "aufgabe_verschieben"]);
 
 /** Einträge aus der Kontext-Liste "- Mo 2026-10-19: 09:00 Titel [id=…; termin, familie] | …" */
 function contextEntries(system: string): { date: string; time: string | null; title: string; id: string; typ: string; repeat: boolean }[] {

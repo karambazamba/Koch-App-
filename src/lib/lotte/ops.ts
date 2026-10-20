@@ -47,7 +47,7 @@ export type AssistantData = {
   /** Notizen (Text oder Liste) */
   notes?: Note[];
   /** Schnellnotiz (früher Kladde; Schmierzettel, ein freier Text) */
-  kladde?: string;
+  schnellnotiz?: string;
   /** Pinnwand: sichtbare Nachrichten (nur zum Lesen; neue über `add_pin`) */
   pinnwand?: { author: string; text: string; at: string }[];
   /** Wetter-Ort (für wetter_abfragen) */
@@ -126,8 +126,8 @@ export type ChangeOp =
   // Notizen (`notes`): anlegen/ändern (auch Listen-Einträge, anheften), löschen
   | { id: string; type: "upsert_note"; note: Note; isNew: boolean; change?: string }
   | { id: string; type: "remove_note"; noteId: string; title: string }
-  // Kladde neu setzen (anhängen bzw. übernommene Zeilen herausnehmen)
-  | { id: string; type: "set_kladde"; text: string; change: string }
+  // Schnellnotiz neu setzen (anhängen bzw. übernommene Zeilen herausnehmen)
+  | { id: string; type: "set_schnellnotiz"; text: string; change: string }
   // Pinnwand: neue Nachricht (landet beim Übernehmen im eigenen Speicher)
   | { id: string; type: "add_pin"; text: string }
   // Sofort (kleine Dinge, mit Meldung): Timer, Stoppuhr, Kochschritt, Kochen starten
@@ -146,10 +146,7 @@ export type ChangeOp =
 /** Werden sofort ausgeführt (ohne "Übernehmen") – kleine, flüchtige Dinge */
 export const INSTANT_OP_TYPES = new Set(["add_timer", "stop_timer", "stopwatch", "cook_step", "start_cooking"]);
 
-/** Änderungen an Terminen/Aufgaben */
-export const ENTRY_OP_TYPES = new Set(["upsert_entry", "remove_entry", "done_entry", "move_entry"]);
-
-export const slotKeyOf = (slot: Pick<SlotRef, "weekday">) => slotKey(slot.weekday);
+const slotKeyOf = (slot: Pick<SlotRef, "weekday">) => slotKey(slot.weekday);
 
 /** Woche so, wie der Wochenplan sie zeigt */
 export function weekOf(data: AssistantData, weekStart: string): PlanWeek {
@@ -320,8 +317,8 @@ export function applyOps(
       case "remove_note":
         next = { ...next, notes: removeNote(next.notes ?? [], op.noteId) };
         break;
-      case "set_kladde":
-        next = { ...next, kladde: op.text };
+      case "set_schnellnotiz":
+        next = { ...next, schnellnotiz: op.text };
         break;
       case "set_helper":
         next = { ...next, profile: { ...next.profile, helper: helperWith(next.profile.helper, op.helper) } };

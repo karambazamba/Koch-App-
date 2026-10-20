@@ -21,7 +21,7 @@ export function loadPins(): PinMessage[] {
   return store.load()?.messages ?? EMPTY;
 }
 
-export function replacePins(messages: PinMessage[]) {
+function replacePins(messages: PinMessage[]) {
   store.save({ version: 1, messages: prunePins(messages, now().getTime()) });
 }
 

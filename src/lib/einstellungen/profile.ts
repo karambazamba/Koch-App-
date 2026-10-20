@@ -6,6 +6,7 @@
 import { EMPTY_BASES, migrateBases, type BaseCounts } from "../essen/bases";
 import { createLocalStore } from "../core/localStore";
 import { now } from "../core/now";
+import type { StorageKey } from "@/lib/core/storage";
 
 export type PersonRole = "erwachsen" | "kind";
 
@@ -109,14 +110,11 @@ export const STANDARD_HELPERS: HelperSettings[] = [
   { name: "Theo", art: "assistent", voice: "maennlich", farbe: "nachtblau" },
 ];
 
-/** Früher vorgeschlagene Namen (Einstellungen: schnelle Auswahl) */
-export const HELPER_NAMES: { name: string; voice: HelperVoice }[] = STANDARD_HELPERS.map((h) => ({ name: h.name, voice: h.voice }));
-
 export const HELPER_NAME_MAX = 20;
 
 export const DEFAULT_HELPER: HelperSettings = STANDARD_HELPERS[0];
 
-export const voiceForArt = (art: HelperArt): HelperVoice => (art === "assistent" ? "maennlich" : "weiblich");
+const voiceForArt = (art: HelperArt): HelperVoice => (art === "assistent" ? "maennlich" : "weiblich");
 
 /** Begleitung mit geänderter Art: Stimme wechselt mit */
 export const helperWith = (h: HelperSettings, patch: Partial<Pick<HelperSettings, "name" | "art" | "farbe">>): HelperSettings => {
@@ -249,14 +247,6 @@ export function isSmallHousehold(profile: Pick<HouseholdProfile, "householdType"
   return profile.householdType === "single" || profile.householdType === "paar";
 }
 
-/** "eure Familie" / "dein Haushalt" / "euer Haushalt" */
-export function householdNoun(profile: Pick<HouseholdProfile, "householdType"> | null | undefined): { noun: string; your: string } {
-  const type = profile?.householdType ?? "familie";
-  if (type === "familie") return { noun: "Familie", your: "eure Familie" };
-  if (type === "single") return { noun: "Haushalt", your: "dein Haushalt" };
-  return { noun: "Haushalt", your: "euer Haushalt" };
-}
-
 /** Küchenmaschine mit Kochfunktion (Profil v14) */
 export type KitchenMachine = "keine" | "thermomix";
 
@@ -272,7 +262,7 @@ export const TIP_LEVELS: { value: TipLevel; label: string; hint: string }[] = [
 /** Uhrzeit "HH:MM" je Essenszeit (Profil v10) */
 export type MealClock = Record<MealTime, string>;
 
-export const DEFAULT_MEAL_CLOCK: MealClock = { mittags: "12:30", abends: "18:30" };
+const DEFAULT_MEAL_CLOCK: MealClock = { mittags: "12:30", abends: "18:30" };
 
 /** Wie die Familie am Wochenende ist (Profil v11) */
 export type WeekendStyle = "frei" | "locker" | "normal";
@@ -480,7 +470,7 @@ export const LIMITS = {
 };
 
 // Interner Schlüssel (alter Arbeitsname) – nicht ändern, sonst sind gespeicherte Profile weg.
-const STORAGE_KEY = "familienkueche.haushaltsprofil";
+const STORAGE_KEY: StorageKey = "familienkueche.haushaltsprofil";
 
 function newId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -550,7 +540,7 @@ export function createEmptyProfile(): HouseholdProfile {
   };
 }
 
-export function createWishDay(): WishDaySettings {
+function createWishDay(): WishDaySettings {
   return { enabled: false, weekday: "Freitag", minAge: 4, order: [] };
 }
 
@@ -630,7 +620,7 @@ export function usualLunch(person: Pick<Person, "role" | "ageGroup">): WeekdayLu
 }
 
 /** Wer isst unter der Woche mittags zu Hause – nach der Angabe jeder Person? */
-export function weekdayLunchEaters(profile: HouseholdProfile): {
+function weekdayLunchEaters(profile: HouseholdProfile): {
   atHome: Person[];
   sometimes: Person[];
   away: Person[];
@@ -679,7 +669,7 @@ const V1_KIDS_LUNCH: Record<string, WeekdayLunch> = {
  * Eindeutig mittags/abends bleibt; beides oder "mal so, mal so" → `fallback`
  * (unter der Woche abends, am Wochenende mittags).
  */
-export function normalizeMealTime(value: unknown, fallback: MealTime): MealTime {
+function normalizeMealTime(value: unknown, fallback: MealTime): MealTime {
   const list = Array.isArray(value) ? value : [value];
   const lunch = list.includes("mittags");
   const dinner = list.includes("abends");

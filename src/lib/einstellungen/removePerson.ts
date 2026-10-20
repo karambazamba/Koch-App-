@@ -9,7 +9,7 @@ import { loadProfile, saveProfile, type HouseholdProfile } from "./profile";
 import { loadWeekPlans, replaceWeekPlans, type WeekPlan } from "../essen/weekPlan";
 
 /** Neues Profil ohne die Person (rein, testbar). Die letzte Person bleibt. */
-export function profileWithoutPerson(profile: HouseholdProfile, id: string): HouseholdProfile {
+function profileWithoutPerson(profile: HouseholdProfile, id: string): HouseholdProfile {
   if (profile.persons.length <= 1 || !profile.persons.some((p) => p.id === id)) return profile;
   const persons = profile.persons.filter((p) => p.id !== id);
   return {
@@ -22,12 +22,12 @@ export function profileWithoutPerson(profile: HouseholdProfile, id: string): Hou
 }
 
 /** Wünsche der Person in den Wochen-Vorgaben entfernen */
-export function weekPlansWithoutPerson(weeks: Record<string, WeekPlan>, id: string): Record<string, WeekPlan> {
+function weekPlansWithoutPerson(weeks: Record<string, WeekPlan>, id: string): Record<string, WeekPlan> {
   return Object.fromEntries(Object.entries(weeks).map(([key, w]) => [key, w.wish?.kidId === id ? { ...w, wish: null } : w]));
 }
 
 /** Wunschessen der Person bleibt als normales Gericht im Plan stehen */
-export function mealPlansWithoutPerson(weeks: Record<string, Record<string, StoredEntry>>, id: string): Record<string, Record<string, StoredEntry>> {
+function mealPlansWithoutPerson(weeks: Record<string, Record<string, StoredEntry>>, id: string): Record<string, Record<string, StoredEntry>> {
   return Object.fromEntries(
     Object.entries(weeks).map(([key, entries]) => [
       key,
@@ -43,7 +43,7 @@ export function mealPlansWithoutPerson(weeks: Record<string, Record<string, Stor
   );
 }
 
-export type RemoveResult = { ok: true; undo: () => void } | { ok: false; reason: "last" | "missing" };
+type RemoveResult = { ok: true; undo: () => void } | { ok: false; reason: "last" | "missing" };
 
 export function removePerson(id: string): RemoveResult {
   const profile = loadProfile();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useKladde, useNotes } from "@/lib/notizen";
+import { useSchnellnotiz, useNotes } from "@/lib/notizen";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Undo2 } from "lucide-react";
@@ -19,8 +19,9 @@ import type { AssistantData } from "@/lib/lotte/ops";
 import { migrateOldTermine, useEntries } from "@/lib/aufgaben/store";
 import { useHomeTiles } from "@/lib/core/homeLayout";
 import { LotteBar } from "@/components/alltag/HomePager";
-import { readDevFlag } from "@/lib/core/features";
 import { helperName } from "@/lib/einstellungen/profile";
+import { removeRetiredKeys } from "@/lib/core/storage";
+import { adoptLegacySpeech } from "@/lib/lotte/speech";
 import { HelperPanel, spontanStartTurn, type ChatState } from "./HelperPanel";
 import { loadSpontanFilters } from "./SpontanBoard";
 
@@ -80,19 +81,19 @@ export function KitchenHelper() {
   const entries = useEntries();
   const home = useHomeTiles();
   const notes = useNotes();
-  const kladde = useKladde();
+  const schnellnotiz = useSchnellnotiz();
   const data: AssistantData | null | undefined =
-    profile === undefined || !weekPlans || !mealPlans || !recipes || !shopping || !entries || !home || !notes || !kladde
+    profile === undefined || !weekPlans || !mealPlans || !recipes || !shopping || !entries || !home || !notes || !schnellnotiz
       ? undefined
       : profile === null
         ? null
-        : { profile, weekPlans, mealPlans, recipes, shopping, entries, home, notes, kladde: kladde.text };
+        : { profile, weekPlans, mealPlans, recipes, shopping, entries, home, notes, schnellnotiz: schnellnotiz.text };
 
-  // Alte Termine (wasgibts.termine) einmalig ins neue Modell übernehmen;
-  // Entwicklungsansicht nur über /?legacy=1 (nirgends verlinkt)
+  // Alte Daten einmalig übernehmen, dann nicht mehr genutzte Schlüssel löschen
   useEffect(() => {
     migrateOldTermine();
-    readDevFlag(window.location.search);
+    adoptLegacySpeech();
+    removeRetiredKeys(localStorage, sessionStorage);
   }, []);
 
   // App geöffnet (für "Willkommen zurück" nach 3+ Tagen)

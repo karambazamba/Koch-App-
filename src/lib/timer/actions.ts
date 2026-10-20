@@ -11,8 +11,8 @@ import { addTimer, findTimer, removeTimer, startStopwatch, pauseStopwatch, isExp
 import { changeTimers, loadTimers } from "./store";
 import { unlockTimerSound } from "./sound";
 
-export const TIMER_HINT = "Der Ton kommt, solange die App offen ist. Erinnerungen bei geschlossener App kommen bald per Mitteilung.";
-export const TIMER_FULL = "Fünf Timer laufen schon – sobald einer fertig ist, geht der nächste.";
+const TIMER_HINT = "Der Ton kommt, solange die App offen ist. Erinnerungen bei geschlossener App kommen bald per Mitteilung.";
+const TIMER_FULL = "Fünf Timer laufen schon – sobald einer fertig ist, geht der nächste.";
 
 /** Timer starten; null = schon 5 laufen. `quiet` = kein Hinweis (z. B. im Chat, der selbst antwortet) */
 export function startTimer(input: { name?: string; minutes: number; step?: string }, opts: { quiet?: boolean } = {}): { timer: Timer; undo: () => void } | null {

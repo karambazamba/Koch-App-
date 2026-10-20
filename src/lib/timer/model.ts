@@ -4,9 +4,9 @@
 // Restzeit gemerkt. Abgelaufen = Endzeit vorbei; bis zum "OK" bleibt er im
 // Speicher, auf der Kachel verschwindet er 1 Minute nach Ablauf.
 
-export const MAX_TIMERS = 5;
+const MAX_TIMERS = 5;
 /** So lange steht ein abgelaufener Timer noch auf der Kachel */
-export const SHOW_AFTER_MS = 60_000;
+const SHOW_AFTER_MS = 60_000;
 /** So lange klingelt er höchstens */
 export const RING_MS = 60_000;
 
@@ -55,7 +55,7 @@ const EMOJIS: [RegExp, string][] = [
   [/pause|schlaf|nap/i, "😴"],
 ];
 
-export const timerEmoji = (name: string) => EMOJIS.find(([re]) => re.test(name))?.[1] ?? "⏱";
+const timerEmoji = (name: string) => EMOJIS.find(([re]) => re.test(name))?.[1] ?? "⏱";
 
 export const leftMs = (t: Timer, nowMs: number) => (t.pausedLeft !== null ? t.pausedLeft : Math.max(0, t.endsAt - nowMs));
 export const isPaused = (t: Timer) => t.pausedLeft !== null;
@@ -199,7 +199,7 @@ export const pruneTimers = (s: TimerState, nowMs: number): TimerState => ({ ...s
 
 // --- Sprache: "Timer 10 Minuten für die Nudeln" ------------------------------------------
 
-export type TimerCommand =
+type TimerCommand =
   | { kind: "start"; minutes: number; name: string }
   | { kind: "stop"; name: string }
   | { kind: "status" }
@@ -247,6 +247,7 @@ export function parseTimerCommand(text: string): TimerCommand | null {
 // --- Push (später, Supabase): Timer-Ende als planbare Mitteilung -----------------------
 
 /** Was beim Timer-Ende geschickt würde (für die Push-Planung vorbereitet) */
+/** @public */
 export function timerPushPlan(t: Timer, helper: string): { at: string; title: string; body: string } | null {
   if (t.pausedLeft !== null) return null;
   return { at: new Date(t.endsAt).toISOString(), title: `${helper}: ${t.emoji} ${t.name}`, body: `${t.name} ist fertig.` };

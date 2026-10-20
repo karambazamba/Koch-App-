@@ -3,7 +3,7 @@
 
 import { recognizeFood } from "../../essen/leftovers/foods";
 import { germanNumber } from "../../essen/leftovers/ruleParser";
-import { WEEKDAYS, type KidAgeGroup, type MealTime, type PersonRole, type WeekdayLunch } from "../profile";
+import { WEEKDAYS, type KidAgeGroup, type PersonRole, type WeekdayLunch } from "../profile";
 
 export type PersonInfo = {
   role?: PersonRole;
@@ -28,37 +28,6 @@ const SPEECH_FILLERS = /(?<![a-zäöüß])(ähm|äh+|öhm|öh+|hm+|mhm|also|halt
 /** Typische Füllwörter gesprochener Antworten entfernen */
 export function cleanSpeech(text: string): string {
   return text.replace(SPEECH_FILLERS, "").replace(/\s{2,}/g, " ").trim();
-}
-
-// --- Zahlen, Ja/Nein, Wochentage, Zeiten ---------------------------------------
-
-export function yesNo(text: string): boolean | null {
-  const t = text.toLowerCase();
-  if (/\b(nein|nö|ne|nee|kein|keine|lieber nicht|nicht nötig|brauchen wir nicht)\b/.test(t)) return false;
-  if (/\b(ja|jo|jep|gern|gerne|klar|okay|ok|genau|unbedingt|auf jeden fall|sicher)\b/.test(t)) return true;
-  return null;
-}
-
-const SHORT_DAYS: Record<string, string> = { mo: "Montag", di: "Dienstag", mi: "Mittwoch", do: "Donnerstag", fr: "Freitag", sa: "Samstag", so: "Sonntag" };
-
-/** Alle genannten Wochentage in Reihenfolge ("samstags", "Sa" …) */
-export function weekdaysIn(text: string): string[] {
-  const found: string[] = [];
-  const re = /\b(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)s?\b|\b(mo|di|mi|do|fr|sa|so)\b\.?/gi;
-  for (const m of text.matchAll(re)) {
-    const day = m[1] ? cap(m[1].toLowerCase()) : SHORT_DAYS[m[2].toLowerCase()];
-    if (day && WEEKDAYS.includes(day) && !found.includes(day)) found.push(day);
-  }
-  return found;
-}
-
-/** "unter der Woche abends, am Wochenende mittags" → beides; sonst eine Zeit */
-export function mealTimes(text: string): { weekday?: MealTime; weekend?: MealTime; any?: MealTime } {
-  const t = text.toLowerCase();
-  const timeIn = (s: string): MealTime | undefined => (/mittag/.test(s) ? "mittags" : /abend/.test(s) ? "abends" : undefined);
-  const weekendPart = t.match(/(wochenende|samstag|sonntag|sa\b|so\b)[^,.;]*/)?.[0] ?? "";
-  const weekdayPart = t.match(/(unter der woche|wochentag|werktag|mo\s*[–-]\s*fr|montag bis freitag)[^,.;]*/)?.[0] ?? "";
-  return { weekday: timeIn(weekdayPart), weekend: timeIn(weekendPart), any: timeIn(t) };
 }
 
 // --- Namen ---------------------------------------------------------------------
@@ -151,7 +120,7 @@ function terms(fragment: string): string[] {
 
 const STOP_AT = "(?=[.;!?]|\\bund (?:ist|isst|mag|hat|geht|wird)|\\baber\\b|$)";
 
-export function extractDiet(text: string): { allergies: string[]; dislikes: string[] } {
+function extractDiet(text: string): { allergies: string[]; dislikes: string[] } {
   const allergies: string[] = [];
   const dislikes: string[] = [];
   const add = (list: string[], items: string[]) => items.forEach((i) => !list.some((x) => x.toLowerCase() === i.toLowerCase()) && list.push(i));
@@ -231,43 +200,6 @@ export function extractDietItems(text: string, names: string[]): DietItem[] {
     .filter((w) => !/^(allergien?|ahnung|ausnahmen|sorge|problem\w*|einschränkung\w*|weiteren?|ander\w*|sonst\w*)$/i.test(w))
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1));
   return bare.map((term) => ({ person: null, kind: "mag nicht" as const, term }));
-}
-
-/** "Nenn mich Oma Hilde" → "Oma Hilde" */
-export function extractHelperName(text: string): string {
-  return cap(
-    text
-      .replace(/^(nenn|nenne)\s+(dich|mich)\s+/i, "")
-      .replace(/^(du\s+heißt|du\s+sollst\s+heißen|heiß|heiße|wie wäre es mit|vielleicht|wie wär's mit)\s+/i, "")
-      .replace(/[.!?"„“]/g, "")
-      .trim(),
-  );
-}
-
-/** "Wir sind die Müllers" → "Müller" */
-export function extractHouseholdName(text: string): string {
-  let t = text.replace(/[.!?"„“]/g, "").trim();
-  t = t.replace(/^(wir\s+sind|wir\s+heißen|das\s+sind|hier\s+sind)\s+/i, "").replace(/^(familie)\s+/i, "");
-  const plural = t.match(/^die\s+([A-ZÄÖÜ][a-zäöüß]+)s$/);
-  if (plural) return plural[1];
-  return cap(t.replace(/^(die|der)\s+/i, "").replace(/^familie\s+/i, ""));
-}
-
-/** "3 mal Fleisch, 1 Fisch" → Zahlen; fehlende Zahlen bleiben leer */
-export function extractWeekCounts(text: string): { meat?: number; fish?: number; veggie?: number } {
-  const t = text.toLowerCase();
-  // "einmal", "zweimal" → 1, 2
-  const num = (w: string) => (/^\d$/.test(w) ? Number(w) : germanNumber(w.replace(/mal$/, "") === "ein" ? "eins" : w.replace(/mal$/, "")));
-  const near = (key: string) => {
-    const before = t.match(new RegExp(`(\\d|[a-zäöüß]+)\\s*(?:mal|x|×)?\\s*(?:die woche\\s*)?${key}`));
-    const after = t.match(new RegExp(`${key}\\w*\\s*(\\d|[a-zäöüß]+)\\s*(?:mal|x|×)`));
-    for (const m of [before, after]) {
-      const n = m ? num(m[1]) : null;
-      if (n !== null && n >= 0 && n <= 7) return n;
-    }
-    return undefined;
-  };
-  return { meat: near("fleisch"), fish: near("fisch"), veggie: near("veg") };
 }
 
 // --- Neue Person beim Küchenhelfer ---------------------------------------------

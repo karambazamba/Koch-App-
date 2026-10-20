@@ -23,7 +23,7 @@ import { sanitizeMailStyle } from "./mail";
 export type CreateMessage = (params: Anthropic.Beta.MessageCreateParamsNonStreaming, onText?: (delta: string) => void) => Promise<Anthropic.Beta.BetaMessage>;
 
 /** Grenzen pro Anfrage: Antwortlänge (inkl. Nachdenken und Werkzeug-Eingaben wie Rezepte) und Runden */
-export const ENGINE_LIMITS = { maxTokens: 8000, maxRounds: 6 };
+const ENGINE_LIMITS = { maxTokens: 8000, maxRounds: 6 };
 
 /** Preise je 1 Mio. Tokens in US-Dollar (Eingabe, Ausgabe, Cache schreiben, Cache lesen) – nur fürs Protokoll */
 const PRICES: Record<string, { in: number; out: number; write: number; read: number }> = {
@@ -35,11 +35,11 @@ const PRICES: Record<string, { in: number; out: number; write: number; read: num
 const FALLBACK_MODELS = /^claude-(sonnet-5-5|opus-5-5|opus-5|fable-5-1)$/;
 
 /** Ereignisse während der Antwort (für das Streaming zur App) */
-export type EngineEvents = { onText?: (delta: string) => void; onRound?: () => void };
+type EngineEvents = { onText?: (delta: string) => void; onRound?: () => void };
 
 export class AssistantInputError extends Error {}
 
-const OP_TYPES = new Set(["add_timer", "stop_timer", "stopwatch", "cook_step", "start_cooking", "set_day_mode", "set_helper", "add_training", "set_sport_goal", "add_pin", "set_kladde", "upsert_note", "remove_note", "set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last", "set_persons", "set_pause", "app_command", "set_feature"]);
+const OP_TYPES = new Set(["add_timer", "stop_timer", "stopwatch", "cook_step", "start_cooking", "set_day_mode", "set_helper", "add_training", "set_sport_goal", "add_pin", "set_schnellnotiz", "upsert_note", "remove_note", "set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last", "set_persons", "set_pause", "app_command", "set_feature"]);
 
 /** Anfrage prüfen und auf das Nötige kürzen */
 export function parseRequest(body: unknown): AssistantRequest {
@@ -70,7 +70,7 @@ export function parseRequest(body: unknown): AssistantRequest {
     features: (Array.isArray(b.data?.features) ? b.data.features : []).filter((f): f is string => typeof f === "string").slice(0, 30),
     entries: (Array.isArray(b.data?.entries) ? b.data.entries : []).map(sanitizeEntry).filter((e): e is CalendarEntry => e !== null).slice(0, 400),
     mail: sanitizeMailStyle(b.data?.mail),
-    kladde: typeof b.data?.kladde === "string" ? b.data.kladde.slice(0, 4000) : "",
+    schnellnotiz: typeof b.data?.schnellnotiz === "string" ? b.data.schnellnotiz.slice(0, 4000) : "",
     pinnwand: (Array.isArray(b.data?.pinnwand) ? b.data.pinnwand : [])
       .filter((p): p is { author: string; text: string; at: string } => Boolean(p) && typeof p === "object" && typeof p.text === "string" && typeof p.author === "string")
       .slice(0, 10)
@@ -166,7 +166,7 @@ function pendingSummary(ops: ChangeOp[]): string {
         return `Notiz ${op.isNew ? "neu" : "ändern"}: ${op.note.data.title}${op.change ? ` (${op.change})` : ""}`;
       case "remove_note":
         return `Notiz löschen: ${op.title}`;
-      case "set_kladde":
+      case "set_schnellnotiz":
         return `Schnellnotiz: ${op.change}`;
       case "add_pin":
         return `Pinnwand: ${op.text}`;

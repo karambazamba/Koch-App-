@@ -6,7 +6,7 @@ import { extractDietItems } from "../einstellungen/onboarding/recognize";
 import { helperWith, personLabel, type HouseholdProfile, type Person } from "../einstellungen/profile";
 import { helperReply, parseHelperCommand } from "./helperTools";
 
-export type SettingsChange = { profile: HouseholdProfile; reply: string };
+type SettingsChange = { profile: HouseholdProfile; reply: string };
 
 const MEAT = ["Fleisch", "Fisch"];
 const has = (list: string[], term: string) => list.some((x) => x.toLowerCase() === term.toLowerCase());

@@ -2,8 +2,11 @@
 // Liefert load/save/clear/subscribe in der Form, die useSyncExternalStore
 // erwartet. Beim Laden wird `migrate` aufgerufen, damit ältere gespeicherte
 // Versionen weiter funktionieren. Später durch Supabase ersetzbar.
+// Schlüssel nur aus dem Verzeichnis `storage.ts` (STORAGE).
 
-export type LocalStore<T> = {
+import type { StorageKey } from "./storage";
+
+type LocalStore<T> = {
   load: () => T | null;
   save: (value: T) => void;
   clear: () => void;
@@ -11,7 +14,7 @@ export type LocalStore<T> = {
 };
 
 export function createLocalStore<T>(
-  key: string,
+  key: StorageKey,
   migrate: (raw: unknown) => T | null,
 ): LocalStore<T> {
   const listeners = new Set<() => void>();

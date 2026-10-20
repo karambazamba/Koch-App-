@@ -4,7 +4,9 @@
 // Scrollhöhe. Vorwärts startet eine Seite oben, zurück landet man genau dort,
 // wo man die Seite verlassen hat – egal wie tief verschachtelt.
 
-const KEY = "wasgibts.verlauf";
+import type { StorageKey } from "./storage";
+
+const KEY: StorageKey = "wasgibts.verlauf";
 
 type NavState = { stack: string[]; scroll: Record<string, number> };
 

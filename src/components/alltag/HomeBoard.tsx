@@ -27,7 +27,7 @@ type Drag = { key: string; x: number; y: number; offX: number; offY: number; w: 
 const HOLD_MS = 200;
 
 /** Essen + Einkauf (beide S, direkt hintereinander) = eine Einheit, sonst je Kachel eine */
-export function unitsOf(tiles: HomeTile[]): Unit[] {
+function unitsOf(tiles: HomeTile[]): Unit[] {
   const units: Unit[] = [];
   for (let i = 0; i < tiles.length; i++) {
     const a = tiles[i];

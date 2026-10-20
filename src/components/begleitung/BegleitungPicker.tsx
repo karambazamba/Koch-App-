@@ -15,10 +15,10 @@ import { previewHelperVoice, VOICE_HINT } from "@/lib/lotte/speech";
 
 const isStandard = (h: HelperSettings) => STANDARD_HELPERS.some((s) => s.name === h.name && s.art === h.art);
 
-export const artTitle = (art: HelperArt) => (art === "assistent" ? "dein Assistent" : "deine Assistentin");
+const artTitle = (art: HelperArt) => (art === "assistent" ? "dein Assistent" : "deine Assistentin");
 
 /** "▶ Stimme" – mit einmaligem Hinweis, falls keine passende Stimme installiert ist */
-export function playVoice(h: Pick<HelperSettings, "name" | "voice">) {
+function playVoice(h: Pick<HelperSettings, "name" | "voice">) {
   if (previewHelperVoice(h.name, h.voice)) showToast({ text: VOICE_HINT, seconds: 9 });
 }
 

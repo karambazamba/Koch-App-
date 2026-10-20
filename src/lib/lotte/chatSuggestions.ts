@@ -10,7 +10,7 @@ import { isSolo, type HouseholdProfile } from "../einstellungen/profile";
 import { perishables } from "../essen/spontan";
 
 /** Ab so vielen eigenen Nachrichten keine Vorschläge mehr */
-export const SUGGESTIONS_UNTIL = 10;
+const SUGGESTIONS_UNTIL = 10;
 
 const WISH_DISHES = ["Pfannkuchen", "Lasagne", "Fischstäbchen", "Pizza", "Milchreis", "Spaghetti"];
 

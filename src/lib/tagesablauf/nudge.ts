@@ -3,6 +3,7 @@
 // Öffnen/Zurückkehren oder nach 30 s ohne Berührung (nie unter dem Finger).
 
 import { useExternalStore } from "../core/useExternalStore";
+import type { StorageKey } from "@/lib/core/storage";
 
 let count = 0;
 const listeners = new Set<() => void>();
@@ -25,7 +26,7 @@ export function usePhaseNudge(): number {
 
 // --- "Alles zeigen": normale Ansicht bis zum nächsten Phasenwechsel ----------------------
 
-const SHOW_ALL_KEY = "wasgibts.alleszeigen";
+const SHOW_ALL_KEY: StorageKey = "wasgibts.alleszeigen";
 const showAllListeners = new Set<() => void>();
 
 const readShowAll = (): string | null => {

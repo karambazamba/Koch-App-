@@ -9,6 +9,7 @@ import { useExternalStore } from "../core/useExternalStore";
 import { createLocalStore } from "../core/localStore";
 import type { MachineStep, OvenSettings } from "./baking/types";
 import { now } from "../core/now";
+import type { StorageKey } from "@/lib/core/storage";
 
 export type { MachineStep, OvenSettings, OvenMode } from "./baking/types";
 
@@ -69,7 +70,7 @@ export type Recipe = {
 };
 
 /** Was zum Anlegen nötig ist – Zähler & Zeitstempel kommen automatisch dazu */
-export type RecipeDraft = Pick<Recipe, "title" | "category"> &
+type RecipeDraft = Pick<Recipe, "title" | "category"> &
   Partial<Omit<Recipe, "id" | "createdAt" | "updatedAt">>;
 
 type CookbookStore = {
@@ -78,7 +79,7 @@ type CookbookStore = {
   recipes: Record<string, Recipe>;
 };
 
-const STORAGE_KEY = "wasgibts.kochbuch";
+const STORAGE_KEY: StorageKey = "wasgibts.kochbuch";
 
 export const RECIPE_CATEGORIES: { value: RecipeCategory; label: string; emoji: string }[] = [
   { value: "fleisch", label: "Fleisch", emoji: "🥩" },
@@ -142,11 +143,11 @@ export function formatAmount(amount: number | null): string {
 }
 
 /** Beliebtheit: Daumen hoch minus runter, bei Gleichstand öfter gekocht zuerst */
-export function popularity(recipe: Recipe): number {
+function popularity(recipe: Recipe): number {
   return recipe.thumbsUp - recipe.thumbsDown;
 }
 
-export type RecipeSort = "zuletzt" | "beliebt";
+type RecipeSort = "zuletzt" | "beliebt";
 
 export function sortRecipes(recipes: Recipe[], sort: RecipeSort): Recipe[] {
   return [...recipes].sort((a, b) => {
@@ -229,7 +230,7 @@ function migrateRecipe(id: string, raw: unknown): Recipe | null {
 }
 
 /** Backen oder Kochen am Namen erkennen */
-export function guessRecipeKind(title: string): RecipeKind {
+function guessRecipeKind(title: string): RecipeKind {
   return /kuchen|torte|muffin|cupcake|keks|plätzchen|cookie|brownie|waffel|hefezopf|zopf|schnecke|stollen|brötchen|bananenbrot|brot backen|tarte|crumble|scone|gebäck/i.test(title)
     ? "backen"
     : "kochen";
@@ -271,14 +272,6 @@ export function saveRecipe(recipe: Recipe): Recipe {
   };
   update((recipes) => ({ ...recipes, [saved.id]: saved }));
   return saved;
-}
-
-/**
- * KI-Rezept mit einem Herz ins Kochbuch übernehmen: wird als Favorit mit
- * Herkunft "ki" gespeichert.
- */
-export function saveAiRecipe(draft: RecipeDraft, prompt?: string): Recipe {
-  return saveRecipe(createAiRecipe(draft, prompt));
 }
 
 /** Alle Rezepte auf einmal ersetzen (Küchenhelfer: Übernehmen/Rückgängig) */
@@ -345,25 +338,6 @@ export function countCookedOn(id: string, date: string): string | null {
 /** Automatisches Mitzählen zurücknehmen */
 export function uncountCooked(id: string, lastCookedAt: string | null) {
   patch(id, (r) => ({ cookedCount: Math.max(0, r.cookedCount - 1), lastCookedAt }));
-}
-
-/** Rezept so, wie es vor dem Kochtag `date` war (für "Neu" und die Bewertung) */
-export function recipeBeforeDay(recipe: Recipe, date: string): Recipe {
-  return recipe.lastCookedAt?.startsWith(date) && recipe.cookedCount > 0 ? { ...recipe, cookedCount: recipe.cookedCount - 1 } : recipe;
-}
-
-/**
- * Bewertung nach dem Kochen (👍): mitzählen und Daumen hoch. Ein KI-Rezept
- * wird dabei als Favorit fest ins Kochbuch übernommen.
- */
-export function rateRecipeUp(id: string, opts: { count?: boolean } = {}) {
-  const count = opts.count ?? true;
-  patch(id, (r) => ({
-    cookedCount: r.cookedCount + (count ? 1 : 0),
-    lastCookedAt: count ? now().toISOString() : r.lastCookedAt,
-    thumbsUp: r.thumbsUp + 1,
-    favorite: r.source === "ki" ? true : r.favorite,
-  }));
 }
 
 /** Gespeicherte Kopie eines Rezepts (z. B. aus der "Nie wieder"-Liste) zurück ins Kochbuch */

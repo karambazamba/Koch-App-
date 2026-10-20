@@ -49,23 +49,6 @@ export const DEFAULT_HOME: HomeTile[] = HOME_TILES.map((t) => ({ id: t.id, visib
 const PAIR: [HomeTileId, HomeTileId] = ["essen", "einkauf"];
 const partnerOf = (id: HomeTileId): HomeTileId | null => (id === "essen" ? "einkauf" : id === "einkauf" ? "essen" : null);
 
-/**
- * Sichtbare Kacheln in Reihen: zwei S direkt hintereinander stehen
- * nebeneinander, eine einzelne S nimmt die volle Breite.
- */
-export function tileRows<T extends { id: HomeTileId | string; size: TileSize }>(tiles: T[]): T[][] {
-  const rows: T[][] = [];
-  for (let i = 0; i < tiles.length; i++) {
-    const a = tiles[i];
-    const b = tiles[i + 1];
-    if (b && a.size === "S" && b.size === "S") {
-      rows.push([a, b]);
-      i++;
-    } else rows.push([a]);
-  }
-  return rows;
-}
-
 export type HomeAction =
   | "zeigen"
   | "ausblenden"
@@ -85,7 +68,7 @@ export type HomeChange = { tile: HomeTileId; action: HomeAction };
 export const HOME_ACTIONS: HomeAction[] = ["zeigen", "ausblenden", "klein", "mittel", "gross", "hoch", "runter", "nach_oben", "nach_unten", "standard"];
 
 /** Größe, die eine Kachel haben darf (sonst ihr Standard) */
-export const fitSize = (id: HomeTileId, size: unknown): TileSize => {
+const fitSize = (id: HomeTileId, size: unknown): TileSize => {
   const meta = tileMeta(id);
   return meta.sizes.includes(size as TileSize) ? (size as TileSize) : meta.size;
 };
@@ -243,7 +226,7 @@ type RawTile = { id?: string; visible?: boolean; size?: string };
  * v3: Größen S/M/L (Essen, Einkauf, Vorrat klein, sonst mittel), die Kachel
  * "Kladde" wird zur Notizen-Kachel an derselben Stelle.
  */
-export function migrateHome(raw: unknown): HomeStore | null {
+function migrateHome(raw: unknown): HomeStore | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as { version?: number; tiles?: unknown; tipSeen?: unknown };
   if (r.version === 3) return { version: 3, tiles: sanitizeHome(r.tiles), tipSeen: r.tipSeen === true };
@@ -321,7 +304,7 @@ export function requestHomeEdit() {
 }
 
 /** Anforderung abholen (einmal) */
-export function takeHomeEditRequest(): boolean {
+function takeHomeEditRequest(): boolean {
   const was = editRequested;
   editRequested = false;
   return was;

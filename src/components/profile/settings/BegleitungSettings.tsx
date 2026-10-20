@@ -18,7 +18,7 @@ import { saveSpeechSettings, useSpeechSettings, useVoices } from "@/lib/lotte/sp
 import { Group, SettingsPage, SwitchRow } from "./SettingsParts";
 
 /** Art wechseln: Anrede und Stimme passen sich an (eine fest gewählte Stimme wird auf "passend" zurückgesetzt) */
-export function changeArt(profile: HouseholdProfile, art: HelperArt) {
+function changeArt(profile: HouseholdProfile, art: HelperArt) {
   if (profile.helper.art === art) return;
   saveProfile({ ...profile, helper: helperWith(profile.helper, { art }) });
   saveSpeechSettings({ voice: "" });

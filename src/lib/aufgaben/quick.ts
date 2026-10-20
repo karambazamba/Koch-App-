@@ -69,7 +69,7 @@ export function whenLabel(when: When): string {
 // --- Schnell-Eintrag Termin ("+" bei Termine) ----------------------------------
 
 /** Häufige Uhrzeiten als Chips: eigene häufige zuerst, aufgefüllt mit 08:00 · 12:00 · 15:00 · 19:30 */
-export const DEFAULT_TIMES = ["08:00", "12:00", "15:00", "19:30"];
+const DEFAULT_TIMES = ["08:00", "12:00", "15:00", "19:30"];
 
 export function frequentTimes(starts: string[], count = 4): string[] {
   const tally = new Map<string, number>();

@@ -11,7 +11,7 @@ import { addDays, fromIsoDate } from "../core/now";
 import type { CalendarEntry, DayItem } from "../aufgaben/model";
 import { itemsForDay, mondayOf, weekdayIndex } from "../aufgaben/model";
 
-export type SportKind = { id: string; label: string; emoji: string; outdoor: boolean; noun: [string, string]; pack: string[] };
+type SportKind = { id: string; label: string; emoji: string; outdoor: boolean; noun: [string, string]; pack: string[] };
 
 export const SPORTS: SportKind[] = [
   { id: "laufen", label: "Laufen", emoji: "🏃", outdoor: true, noun: ["Lauf", "Läufe"], pack: ["Laufschuhe", "Kopfhörer", "Trinkflasche"] },
@@ -55,7 +55,7 @@ export type SportState = {
   hidden: string[];
 };
 
-export const DEFAULT_GOAL = 3;
+const DEFAULT_GOAL = 3;
 export const EMPTY_SPORT: SportState = { goal: DEFAULT_GOAL, trainings: [], packs: {}, celebrated: [], hidden: [] };
 
 const SPORT_WORDS: [RegExp, string][] = [
@@ -112,7 +112,7 @@ export const packFor = (state: Pick<SportState, "packs">, sport: string) => stat
 // --- Sport-Termine ------------------------------------------------------------------------
 
 /** Termin mit Etikett "Sport" – und für mich (ohne "wer" oder mit mir) */
-export function isSportTermin(e: CalendarEntry, me?: string | null): boolean {
+function isSportTermin(e: CalendarEntry, me?: string | null): boolean {
   if (e.typ !== "termin" || (e.data.label ?? "").toLowerCase() !== "sport") return false;
   return !e.data.who?.length || !me || e.data.who.includes(me);
 }
@@ -121,10 +121,10 @@ const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
 const clock = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 
 /** Dauer eines Termins in Minuten (ohne Ende: 60) */
-export const terminMinutes = (item: Pick<DayItem, "time" | "end">) => (item.time && item.end && toMin(item.end) > toMin(item.time) ? toMin(item.end) - toMin(item.time) : 60);
+const terminMinutes = (item: Pick<DayItem, "time" | "end">) => (item.time && item.end && toMin(item.end) > toMin(item.time) ? toMin(item.end) - toMin(item.time) : 60);
 
 /** Sport-Termine eines Tages */
-export function sportItems(entries: CalendarEntry[], date: string, today: string, me?: string | null): DayItem[] {
+function sportItems(entries: CalendarEntry[], date: string, today: string, me?: string | null): DayItem[] {
   return itemsForDay(entries, date, today).filter((i) => isSportTermin(i.entry, me));
 }
 
@@ -153,11 +153,7 @@ export function trainingsBetween(state: SportState, entries: CalendarEntry[], fr
   return [...own, ...derived].sort((a, b) => a.data.date.localeCompare(b.data.date) || (a.data.time ?? "").localeCompare(b.data.time ?? ""));
 }
 
-// --- Woche, Serie, Statistik ----------------------------------------------------------------
-
-export const weekOfDate = (iso: string) => mondayOf(iso);
-
-export type WeekStatus = { monday: string; count: number; goal: number; reached: boolean; bonus: boolean };
+type WeekStatus = { monday: string; count: number; goal: number; reached: boolean; bonus: boolean };
 
 export function weekStatus(state: SportState, entries: CalendarEntry[], today: string, me?: string | null, monday = mondayOf(today)): WeekStatus {
   const count = trainingsBetween(state, entries, monday, addDays(monday, 6), today, me).length;
@@ -185,7 +181,7 @@ export function weeksHistory(state: SportState, entries: CalendarEntry[], today:
 }
 
 /** Kalenderwoche (ISO) */
-export function isoWeek(iso: string): number {
+function isoWeek(iso: string): number {
   const d = fromIsoDate(iso);
   const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   const day = t.getUTCDay() || 7;
@@ -240,7 +236,7 @@ export function praiseFor(state: SportState, entries: CalendarEntry[], training:
 }
 
 /** Die 7 Punkte Mo–So der laufenden Woche */
-export type DayDot = { date: string; label: string; state: "trainiert" | "geplant" | "frei"; time: string | null; today: boolean };
+type DayDot = { date: string; label: string; state: "trainiert" | "geplant" | "frei"; time: string | null; today: boolean };
 
 const SHORT = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
@@ -275,7 +271,7 @@ export function todaysTraining(entries: CalendarEntry[], today: string, me?: str
 
 // --- Sätze ohne KI: "War heute 5 km laufen" -------------------------------------------------
 
-export type SportCommand =
+type SportCommand =
   | { kind: "add"; sport: string; minutes: number | null; km: number | null; date: string }
   | { kind: "goal"; goal: number }
   | { kind: "stats"; what: "woche" | "monat"; km: boolean }
@@ -286,7 +282,7 @@ export type DayPart = "morgens" | "mittags" | "abends";
 const NUMS: Record<string, number> = { ein: 1, einmal: 1, eins: 1, eine: 1, einen: 1, zwei: 2, zweimal: 2, drei: 3, dreimal: 3, vier: 4, viermal: 4, fünf: 5, fünfmal: 5, sechs: 6, sechsmal: 6, sieben: 7, siebenmal: 7 };
 const numOf = (s: string) => (/\d/.test(s) ? Number(s.replace(",", ".")) : NUMS[s.toLowerCase()]);
 
-export function partOf(text: string): DayPart | null {
+function partOf(text: string): DayPart | null {
   if (/\b(morgens|früh|vormittags|am morgen|vor der arbeit)\b/i.test(text)) return "morgens";
   if (/\b(mittags|mittagspause|in der mittagspause)\b/i.test(text)) return "mittags";
   if (/\b(abends|nach der arbeit|am abend|feierabend)\b/i.test(text)) return "abends";
@@ -338,8 +334,8 @@ export function guessMinutes(sport: string, km: number | null): number {
 
 // --- Trainings planen: freie Lücken, Abstand zu Arbeit, Wunsch-Tageszeit, Wetter -------------
 
-export type PlanSlot = { date: string; start: string; end: string; sport: string; title: string; note?: string };
-export type PlanInput = {
+type PlanSlot = { date: string; start: string; end: string; sport: string; title: string; note?: string };
+type PlanInput = {
   entries: CalendarEntry[];
   today: string;
   count: number;

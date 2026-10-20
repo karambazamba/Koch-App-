@@ -6,13 +6,14 @@
 // Vorlage der Animationen: docs/vorlagen/avatar-animation.md (CSS in globals.css).
 
 import { useExternalStore } from "./useExternalStore";
+import type { StorageKey } from "./storage";
 
 export type AvatarZustand = "ruhig" | "begruessen" | "zuhoeren" | "denken" | "sprechen" | "freuen" | "verwirrt" | "schlafen";
 type Laufend = "zuhoeren" | "denken" | "sprechen";
 type Einmalig = "begruessen" | "freuen" | "verwirrt";
 
 /** Dauer der einmaligen Zustände (Animation der Vorlage + kurzer Nachklang) */
-export const EINMALIG_MS: Record<Einmalig, number> = { begruessen: 1800, freuen: 1400, verwirrt: 3500 };
+const EINMALIG_MS: Record<Einmalig, number> = { begruessen: 1800, freuen: 1400, verwirrt: 3500 };
 
 const counts: Record<Laufend, number> = { zuhoeren: 0, denken: 0, sprechen: 0 };
 let shot: { zustand: Einmalig; nonce: number; until: number } | null = null;
@@ -23,7 +24,7 @@ let snapshot: { zustand: AvatarZustand; nonce: number } = { zustand: "ruhig", no
 const listeners = new Set<() => void>();
 
 /** Rangfolge: zuhören > sprechen > denken > verwirrt > freuen/begrüßen > schlafen > ruhig */
-export function resolveZustand(s: { counts: Record<Laufend, number>; shot: Einmalig | null; sleeping: boolean }): AvatarZustand {
+function resolveZustand(s: { counts: Record<Laufend, number>; shot: Einmalig | null; sleeping: boolean }): AvatarZustand {
   if (s.counts.zuhoeren > 0) return "zuhoeren";
   if (s.counts.sprechen > 0) return "sprechen";
   if (s.counts.denken > 0) return "denken";
@@ -73,11 +74,13 @@ export function wakeAvatar() {
   emit();
 }
 
+const GREET_KEY: StorageKey = "wasgibts.avatargruss";
+
 /** Einmal am Tag beim ersten Öffnen begrüßen */
 export function greetOncePerDay(today: string) {
   try {
-    if (localStorage.getItem("wasgibts.avatargruss") === today) return false;
-    localStorage.setItem("wasgibts.avatargruss", today);
+    if (localStorage.getItem(GREET_KEY) === today) return false;
+    localStorage.setItem(GREET_KEY, today);
   } catch {
     return false;
   }
@@ -97,6 +100,7 @@ export function useAvatarZustand(): { zustand: AvatarZustand; nonce: number } {
 }
 
 /** Nur für Tests: alles zurücksetzen */
+/** @public */
 export function resetAvatarForTests() {
   counts.zuhoeren = counts.denken = counts.sprechen = 0;
   shot = null;

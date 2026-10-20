@@ -24,7 +24,7 @@ import { FoodPage } from "./FoodPage";
 import { PreviewBanner } from "./PreviewBanner";
 import { clockMinutes, usePreview } from "@/lib/tagesablauf/settings";
 
-export type HomeTab = "woche" | "heute" | "essen";
+type HomeTab = "woche" | "heute" | "essen";
 const TABS: { value: HomeTab; label: string }[] = [
   { value: "woche", label: "Woche" },
   { value: "heute", label: "Heute" },

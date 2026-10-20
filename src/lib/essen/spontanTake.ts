@@ -17,7 +17,7 @@ type Data = {
   recipes: Record<string, Recipe>;
 };
 
-export type TakeResult =
+type TakeResult =
   | { ok: true; weeks: Record<string, Record<string, StoredEntry>>; text: string }
   | { ok: false; text: string };
 

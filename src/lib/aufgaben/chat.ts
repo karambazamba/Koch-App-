@@ -8,7 +8,7 @@ import { clockLabel, freeAnswer, showAnswer } from "./answers";
 import { findByTitle, itemsForDay, moveItem, removeItem, REMINDERS, repeatLabel, setDone, upsertEntry, weekdayShort, type CalendarEntry, type DayItem } from "./model";
 import { parseCalendar, type Draft } from "./parse";
 
-export type CalendarChatReply = {
+type CalendarChatReply = {
   text: string;
   /** Änderung (rein), falls etwas eingetragen/geändert wird */
   change?: (entries: CalendarEntry[], stamp: string) => CalendarEntry[];

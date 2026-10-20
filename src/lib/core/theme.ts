@@ -12,7 +12,7 @@ export const THEME_COLORS: Record<Exclude<AppTheme, "auto">, { background: strin
 };
 
 /** Was gerade wirklich zu sehen ist ("auto" → hell oder dunkel) */
-export function resolvedTheme(theme: AppTheme): Exclude<AppTheme, "auto"> {
+function resolvedTheme(theme: AppTheme): Exclude<AppTheme, "auto"> {
   if (theme !== "auto") return theme;
   return typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches ? "nacht" : "warm";
 }
