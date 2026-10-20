@@ -166,7 +166,7 @@ export function SportDaySheet({ date, today, state, entries, me, forecast, onClo
       </>
     );
   } else {
-    const chosen = time ?? starts[0] ?? null;
+    const chosen = time ?? starts.find((t) => t >= "17:00") ?? starts[0] ?? null;
     body = (
       <>
         <span className={LEGEND}>Training planen</span>
