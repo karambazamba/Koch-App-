@@ -9,8 +9,10 @@
 // Bildschirmrand scrollt die Seite mit. Essen + Einkauf (beide S) wandern
 // zusammen. Pointer-Events (Maus und Touch), Seite scrollt beim Ziehen nicht.
 
-import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
-import { Minus, Plus } from "lucide-react";
+import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode, type TouchEvent as ReactTouchEvent } from "react";
+import { ChevronDown, ChevronUp, ChevronsUp, Minus, Plus } from "lucide-react";
+import { Sheet } from "@/components/plan/Sheet";
+import { CARD_LIST, buttonClass, chipClass } from "@/components/ui/styles";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { applyHomeChange, reorderVisible, saveHomeTiles, standardLayout, tileMeta, type HomeTile, type HomeTileId, type TileSize } from "@/lib/core/homeLayout";
 import { showDeleted } from "@/lib/core/toast";
@@ -78,6 +80,7 @@ export function HomeBoard({
   const pointer = useRef({ x: 0, y: 0 });
   const [picking, setPicking] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [menu, setMenu] = useState<string | null>(null);
 
   // Vorschau-Reihenfolge: gezogene Einheit raus, Platzhalter an die Zielstelle
   const dragged = drag ? units.find((u) => u.key === drag.key) : null;
@@ -112,59 +115,125 @@ export function HomeBoard({
     hold.current = null;
   };
 
-  const onDown = (key: string) => (e: ReactPointerEvent<HTMLElement>) => {
+  /** Festhalten beginnt (Finger oder Maus): nach 0,2 s hebt sich die Kachel */
+  const beginHold = (key: string, el: HTMLElement, x: number, y: number) => {
     if (!editing || dragRef.current) return;
-    if ((e.target as Element).closest("button")) return;
-    const el = e.currentTarget;
-    const { clientX: x, clientY: y } = e;
     cancelHold();
     hold.current = { x, y, key, el, timer: setTimeout(() => (hold.current = null, startDrag(key, el, x, y)), HOLD_MS) };
+  };
+  /** Bewegung: vor dem Anheben = Scrollen (Festhalten abbrechen), danach = Ziehen */
+  const moveTo = (x: number, y: number) => {
+    if (hold.current && Math.hypot(x - hold.current.x, y - hold.current.y) > 8) cancelHold();
+    const d = dragRef.current;
+    if (!d) return;
+    pointer.current = { x, y };
+    setDrag({ ...d, x, y, target: targetFor(d.key, x, y + window.scrollY) });
+  };
+  /** Loslassen: abgelegt und sofort gespeichert – oder (kurz angetippt) das Menü */
+  const release = () => {
+    const tapped = hold.current?.key;
+    cancelHold();
+    const d = dragRef.current;
+    if (!d) {
+      if (tapped) setMenu(tapped);
+      return;
+    }
+    const rest = units.filter((u) => u.key !== d.key);
+    const unit = units.find((u) => u.key === d.key);
+    if (unit) {
+      rest.splice(d.target, 0, unit);
+      saveOrder(rest);
+    }
+    buzz();
+    setDrag(null);
+  };
+  const abort = () => {
+    cancelHold();
+    setDrag(null);
+  };
+  const saveOrder = (next: Unit[]) => {
+    const order = next.flatMap((u) => u.tiles.map((t) => t.id));
+    if (order.join() !== tiles.map((t) => t.id).join()) saveHomeTiles(reorderVisible(all, order));
+  };
+
+  // Maus/Stift über Pointer-Events; Finger über Touch-Events (auf dem iPhone bricht
+  // Safari Pointer-Events ab, sobald es scrollen will – Touch-Events lassen sich halten)
+  const onDown = (key: string) => (e: ReactPointerEvent<HTMLElement>) => {
+    if (e.pointerType === "touch" || (e.target as Element).closest("button")) return;
+    beginHold(key, e.currentTarget, e.clientX, e.clientY);
+  };
+  // Touch-Ereignisse gehen immer an das zuerst berührte Element – auch wenn es beim
+  // Anheben aus der Seite genommen wird (dann erreichen sie das Fenster nicht mehr).
+  // Darum hören wir direkt an diesem Element mit.
+  const touchNode = useRef<{ node: EventTarget; off: () => void } | null>(null);
+  const handlers = useRef<{ move: (e: TouchEvent) => void; end: (e: TouchEvent) => void; cancel: () => void }>({ move: () => {}, end: () => {}, cancel: () => {} });
+  useEffect(() => () => touchNode.current?.off(), []);
+  const onTouchStart = (key: string) => (e: ReactTouchEvent<HTMLElement>) => {
+    if (e.touches.length !== 1 || (e.target as Element).closest("button")) return abort();
+    touchNode.current?.off();
+    const node = e.target;
+    const move = (ev: TouchEvent) => handlers.current.move(ev);
+    const end = (ev: TouchEvent) => {
+      handlers.current.end(ev);
+      touchNode.current?.off();
+    };
+    const cancel = () => {
+      handlers.current.cancel();
+      touchNode.current?.off();
+    };
+    node.addEventListener("touchmove", move as EventListener, { passive: false });
+    node.addEventListener("touchend", end as EventListener, { passive: false });
+    node.addEventListener("touchcancel", cancel);
+    touchNode.current = {
+      node,
+      off: () => {
+        node.removeEventListener("touchmove", move as EventListener);
+        node.removeEventListener("touchend", end as EventListener);
+        node.removeEventListener("touchcancel", cancel);
+        touchNode.current = null;
+      },
+    };
+    beginHold(key, e.currentTarget, e.touches[0].clientX, e.touches[0].clientY);
   };
 
   // Während des Ziehens: Fenster-weit mitgehen, ablegen, Seite nicht scrollen lassen
   useEffect(() => {
     if (!editing) return;
-    const el = board.current;
     const onTouchMove = (e: TouchEvent) => {
+      if (!hold.current && !dragRef.current) return;
+      const t = e.touches[0];
       if (dragRef.current) e.preventDefault();
+      if (t) moveTo(t.clientX, t.clientY);
     };
-    const onMove = (e: PointerEvent) => {
-      if (hold.current && Math.hypot(e.clientX - hold.current.x, e.clientY - hold.current.y) > 8) cancelHold();
-      const d = dragRef.current;
-      if (!d) return;
-      pointer.current = { x: e.clientX, y: e.clientY };
-      const target = targetFor(d.key, e.clientX, e.clientY + window.scrollY);
-      setDrag({ ...d, x: e.clientX, y: e.clientY, target });
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!hold.current && !dragRef.current) return;
+      // Kein nachgeschickter Klick (der sonst das eben geöffnete Menü gleich wieder schließt)
+      e.preventDefault();
+      release();
     };
-    const onUp = () => {
-      cancelHold();
-      const d = dragRef.current;
-      if (!d) return;
-      const rest = units.filter((u) => u.key !== d.key);
-      const unit = units.find((u) => u.key === d.key);
-      if (unit) {
-        rest.splice(d.target, 0, unit);
-        const order = rest.flatMap((u) => u.tiles.map((t) => t.id));
-        if (order.join() !== tiles.map((t) => t.id).join()) saveHomeTiles(reorderVisible(all, order));
-      }
-      buzz();
-      setDrag(null);
-    };
-    const onCancel = () => {
-      cancelHold();
-      setDrag(null);
-    };
-    el?.addEventListener("touchmove", onTouchMove, { passive: false });
+    const onMove = (e: PointerEvent) => e.pointerType !== "touch" && moveTo(e.clientX, e.clientY);
+    const onUp = (e: PointerEvent) => e.pointerType !== "touch" && release();
+    const onCancel = (e: PointerEvent) => e.pointerType !== "touch" && abort();
+    handlers.current = { move: onTouchMove, end: onTouchEnd, cancel: abort };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
     window.addEventListener("pointercancel", onCancel);
     return () => {
-      el?.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onCancel);
     };
   });
+
+  // Absicherung ohne Ziehen: Menü einer Einheit (Ganz nach oben, Nach oben, Nach unten, Größe, Entfernen)
+  const moveUnit = (key: string, to: "top" | "up" | "down") => {
+    const i = units.findIndex((u) => u.key === key);
+    if (i < 0) return;
+    const next = units.filter((u) => u.key !== key);
+    next.splice(to === "top" ? 0 : to === "up" ? Math.max(0, i - 1) : Math.min(units.length - 1, i + 1), 0, units[i]);
+    buzz();
+    saveOrder(next);
+  };
 
   // Am Bildschirmrand automatisch scrollen
   const dragging = Boolean(drag);
@@ -220,20 +289,27 @@ export function HomeBoard({
       return <div key={PLACEHOLDER} className="rounded-card border-2 border-dashed border-accent/50 bg-accent-soft/40" style={{ height: drag?.h ?? 80 }} aria-hidden />;
     const pair = unit.tiles.length === 2;
     return (
+      // Außen: Ziehen (Position, Ereignisse); innen: Wackeln – nie beides auf demselben Element
       <div
         key={unit.key}
         data-unit={floating ? undefined : unit.key}
         onPointerDown={floating ? undefined : onDown(unit.key)}
-        className={`relative ${pair ? `grid grid-cols-2 gap-2 ${editing ? "rounded-[26px] p-1 outline-2 outline-dashed outline-line" : ""}` : ""} ${editing && !floating ? "touch-manipulation select-none" : ""}`}
-        style={editing && !floating && !drag ? { animation: `${index % 2 ? "wiggle-b" : "wiggle"} 1.6s ease-in-out infinite` } : undefined}
+        onTouchStart={floating || !editing ? undefined : onTouchStart(unit.key)}
+        onContextMenu={editing ? (e) => e.preventDefault() : undefined}
+        className={`relative ${editing && !floating ? `select-none [-webkit-touch-callout:none] [-webkit-user-select:none] ${drag ? "touch-none" : "touch-manipulation"}` : ""}`}
         aria-label={editing ? (pair ? "Essen und Einkauf" : tileMeta(unit.tiles[0].id).label) : undefined}
         role={editing ? "group" : undefined}
       >
-        {unit.tiles.map((tile) => (
-          <EditFrame key={tile.id} tile={tile} editing={editing} onRemove={() => remove(tile.id)} onResize={(s) => resize(tile.id, s)}>
-            {render(tile, half || pair, editing)}
-          </EditFrame>
-        ))}
+        <div
+          className={pair ? `grid grid-cols-2 gap-2 ${editing ? "rounded-[26px] p-1 outline-2 outline-dashed outline-line" : ""}` : ""}
+          style={editing && !floating && !drag ? { animation: `${index % 2 ? "wiggle-b" : "wiggle"} 1.6s ease-in-out infinite` } : undefined}
+        >
+          {unit.tiles.map((tile) => (
+            <EditFrame key={tile.id} tile={tile} editing={editing} onRemove={() => remove(tile.id)} onResize={(s) => resize(tile.id, s)}>
+              {render(tile, half || pair, editing)}
+            </EditFrame>
+          ))}
+        </div>
       </div>
     );
   };
@@ -274,6 +350,7 @@ export function HomeBoard({
         </div>
       )}
       {picking && <TilePicker onClose={() => setPicking(false)} />}
+      {menu && units.some((u) => u.key === menu) && <UnitMenu unit={units.find((u) => u.key === menu)!} first={units[0].key === menu} last={units[units.length - 1].key === menu} onMove={(to) => moveUnit(menu, to)} onResize={resize} onRemove={(id) => remove(id)} onClose={() => setMenu(null)} />}
       {confirmReset && (
         <ConfirmDialog
           title="Standard-Anordnung wiederherstellen?"
@@ -322,5 +399,56 @@ function EditFrame({ tile, editing, onRemove, onResize, children }: { tile: Home
         </div>
       )}
     </div>
+  );
+}
+
+/** Kurz angetippt im Bearbeiten-Modus: verschieben ohne Ziehen, Größe, Entfernen (jede Auswahl schließt) */
+function UnitMenu({ unit, first, last, onMove, onResize, onRemove, onClose }: { unit: Unit; first: boolean; last: boolean; onMove: (to: "top" | "up" | "down") => void; onResize: (id: HomeTileId, s: TileSize) => void; onRemove: (id: HomeTileId) => void; onClose: () => void }) {
+  const pick = (fn: () => void) => () => {
+    fn();
+    onClose();
+  };
+  const title = unit.tiles.length === 2 ? "Essen und Einkauf" : tileMeta(unit.tiles[0].id).label;
+  const row = "flex min-h-12 w-full items-center gap-3 px-4 text-left text-base font-semibold disabled:opacity-40";
+  return (
+    <Sheet title={title} onClose={onClose}>
+      <ul className={CARD_LIST}>
+        <li>
+          <button type="button" disabled={first} onClick={pick(() => onMove("top"))} className={row}>
+            <ChevronsUp className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden /> Ganz nach oben
+          </button>
+        </li>
+        <li>
+          <button type="button" disabled={first} onClick={pick(() => onMove("up"))} className={row}>
+            <ChevronUp className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden /> Nach oben
+          </button>
+        </li>
+        <li>
+          <button type="button" disabled={last} onClick={pick(() => onMove("down"))} className={row}>
+            <ChevronDown className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden /> Nach unten
+          </button>
+        </li>
+      </ul>
+      {unit.tiles.map((tile) => {
+        const meta = tileMeta(tile.id);
+        return (
+          <div key={tile.id} className="flex flex-col gap-2">
+            {meta.sizes.length > 1 && (
+              <div className="flex items-center gap-2">
+                <span className="flex-1 text-base font-bold">{unit.tiles.length === 2 ? `Größe ${meta.label}` : "Größe"}</span>
+                {meta.sizes.map((s) => (
+                  <button key={s} type="button" onClick={pick(() => onResize(tile.id, s))} aria-pressed={tile.size === s} className={`${chipClass(tile.size === s)} min-w-11 justify-center`}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button type="button" onClick={pick(() => onRemove(tile.id))} className={buttonClass("danger", "md")}>
+              {meta.label} entfernen
+            </button>
+          </div>
+        );
+      })}
+    </Sheet>
   );
 }

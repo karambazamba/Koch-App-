@@ -5,16 +5,16 @@ export const APP_NAME = "Was gibt's?";
 export const APP_SHORT_NAME = "Was gibt's";
 
 /** Versionsnummer (wie in package.json) – in den Einstellungen unter "Daten & App" */
-export const APP_VERSION = "0.22.0";
+export const APP_VERSION = "0.23.0";
 
 /**
- * Version der Icon-Dateien – steht im Dateinamen (z. B. apple-touch-icon-v2.png),
+ * Version der Icon-Dateien – steht im Dateinamen (z. B. apple-touch-icon-v3.png),
  * damit iPhone/Android ein neues Icon nicht aus dem Cache holen. Bei jedem neuen
  * Icon erhöhen; `npm run icons` liest den Wert von hier.
  */
-export const ICON_VERSION = "v2";
+export const ICON_VERSION = "v3";
 
-/** Pfad einer Icon-Datei mit Version: icon("icon-192.png") → "/icons/icon-192-v2.png" */
+/** Pfad einer Icon-Datei mit Version: icon("icon-192.png") → "/icons/icon-192-v3.png" */
 export const icon = (file: string) => `/icons/${file.replace(/(\.\w+)$/, `-${ICON_VERSION}$1`)}`;
 
 /** Lottes Gesicht für Push-Mitteilungen (orange Kreis, aus scripts/generate-icons.mjs) */

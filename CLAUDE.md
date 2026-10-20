@@ -101,19 +101,22 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben).
 ## 7. Design
 - Warmes Off-White, weiße Karten, eine Akzentfarbe (Orange), Linien-Icons
   (lucide), Emojis nur sparsam. App-Icon: Lotte als lächelnde weiße
-  Sprechblase mit drei Härchen auf orangem Verlauf (#F7843E → #EE5F14;
+  Sprechblase mit mittiger Spitze auf orangem Verlauf (#F7843E → #EE5F14;
   einzige Quelle `scripts/generate-icons.mjs`, `npm run icons` erzeugt
   icon.svg, favicon 32/48 + favicon.ico, apple-touch-icon 180, PWA 192/512,
-  maskable 512 mit mehr Rand, lotte-192.png für Push). Alle Icon-Dateien
+  maskable 512 mit Zeichen auf 72 % statt 88 %, lotte-192.png für Push). Alle Icon-Dateien
   tragen die Version im Namen (`ICON_VERSION` in `src/lib/core/app.ts`, z. B.
-  `apple-touch-icon-v2.png`; Pfade nur über `icon("…")`), damit iPhone/Android
+  `apple-touch-icon-v3.png`; Pfade nur über `icon("…")`), damit iPhone/Android
   ein neues Icon nicht aus dem Cache holen – bei neuem Icon Version erhöhen,
   `npm run icons`, Liste in `public/sw.js` und `CACHE_VERSION` anpassen.
-  Lottes Gesicht in der
-  App: `<LotteAvatar size … />` (`src/components/LotteAvatar.tsx`, dasselbe
-  Motiv im Kreis in der gewählten Icon-Farbe (Standard #F26B21), "plain" = nur die Sprechblase im orangen
-  Knopf) – in Lotte-Leiste, Chat-Kopf, Knopf und Push (`lottePush()`,
-  `LOTTE_PUSH_ICON`). Manifest theme_color #EE5F14 (`BRAND_COLOR`).
+  Icon/Avatar: Sprechblase mit mittiger Spitze, ruhiges Gesicht (senkrechte
+  Augen, dezentes Lächeln), App-Icon orange, Avatar in der gewählten Farbe
+  der Begleitung; eine Avatar-Komponente für alle Stellen
+  (`<LotteAvatar size color? />`, `src/components/LotteAvatar.tsx`: Kreis in
+  der Icon-Farbe, Motiv auf 72 %; dunkle Farben Nachtblau/Anthrazit/Beere im
+  Dunkel-Modus und auf der dunklen Leiste mit feinem hellem Rand) – in
+  Lotte-Leiste, Chat-Kopf und -Blasen, Lottes Satz, Kennenlernen,
+  Einstellungen und Push (`lottePush()`, `LOTTE_PUSH_ICON`). Manifest theme_color #EE5F14 (`BRAND_COLOR`).
 - Schrift Plus Jakarta Sans, große fette Überschriften, weiße Karten
   (Radius 22px) auf #F7F4EF. Seiten-Leiste oben als Segment-Schalter
   (`bg-segment`, aktiv weiß). Lotte-Leiste unten dunkel (`bg-bar` #1F1B17,
@@ -272,6 +275,15 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben).
   Migration v2→v3: Größen gesetzt, Kladde-Kachel wird Notizen an derselben
   Stelle. Standard sichtbar: Termine, Aufgaben, Essen + Einkauf, Morgen
   (Vorrat nur mit Baustein); Pinnwand/Wetter/Notizen in der Auswahl mit "NEU".
+- Verschieben (v0.23): Finger über Touch-Events (Pointer-Events bricht iOS beim
+  Scrollen ab), Listener direkt am berührten Element (es wird beim Anheben aus
+  der Seite genommen), nach dem Anheben `preventDefault` statt Scrollen;
+  Wackeln auf dem inneren Element, Ziehen außen; Callout/Auswahl aus
+  (`[-webkit-touch-callout:none]`, `select-none`, `contextmenu` verhindert).
+  Absicherung: kurz antippen = Menü (Ganz nach oben · Nach oben · Nach unten ·
+  Größe · Entfernen, `UnitMenu`, jede Auswahl schließt). Drag: Wackeln auf
+  inneres Element, Callout aus, Menü-Absicherung. Test mit echten
+  Touch-Ereignissen (CDP `Input.dispatchTouchEvent`).
 - Bearbeiten-Modus DIREKT auf der Startseite (`HomeBoard.tsx`, `TodayPage`
   `useHomeEditing`): lange drücken, Link "✎ Startseite bearbeiten",
   Einstellungen (`/profil/startseite` → `requestHomeEdit()` + "/"), Lotte
@@ -348,9 +360,9 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben).
   bisherigen Stimme); Farbe Theo → Nachtblau, sonst Orange. Texte nur über
   `helperName()`, `helperTitle()` ("deine Assistentin"/"dein Assistent"),
   `helperTitlePersonal()`, `helperMessage()` – nie einen Namen hart codieren.
-- Gesicht: `<LotteAvatar size color? />` nimmt ohne `color` die Profilfarbe;
-  im Dunkel-Modus heller mit hellem Rand (`.begleitung-avatar`/
-  `.begleitung-ring` in `globals.css`). App-Icon bleibt orange.
+- Gesicht: `<LotteAvatar size color? />` nimmt ohne `color` die Profilfarbe
+  (seit v0.23 das ruhige Gesicht, siehe Leitbild 7; `.begleitung-ring` in
+  `globals.css`). App-Icon bleibt orange.
 - Auswahl (`src/components/begleitung/BegleitungPicker.tsx`): zwei Karten
   Mia/Theo (Radio, ✓ und oranger Rand, "▶ Stimme" = `playVoice` → "Hallo,
   ich bin …" mit passender Stimme), "✎ Oder gib mir einen eigenen Namen …"
