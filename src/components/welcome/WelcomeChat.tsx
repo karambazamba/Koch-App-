@@ -15,6 +15,7 @@ import { BegleitungPicker } from "@/components/begleitung/BegleitungPicker";
 import { avatarHex, helperTitlePersonal } from "@/lib/einstellungen/profile";
 import { iconFor } from "@/lib/core/app";
 import { addToHomeSteps, isStandalone } from "@/lib/core/homescreen";
+import { setIconColor } from "@/lib/core/iconColor";
 import { toggleSpeak } from "@/lib/lotte/speech";
 import {
   addMember,
@@ -86,6 +87,12 @@ export function WelcomeChat() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- einmalig den gespeicherten Stand laden (localStorage gibt es erst im Browser)
     setState(loadWelcomeState() ?? initialWelcome());
   }, []);
+
+  // Gewählte Farbe gilt sofort auch fürs App-Icon (vor dem "Zum Home-Bildschirm")
+  const chosenFarbe = state?.helper.farbe;
+  useEffect(() => {
+    if (chosenFarbe) setIconColor(chosenFarbe);
+  }, [chosenFarbe]);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
