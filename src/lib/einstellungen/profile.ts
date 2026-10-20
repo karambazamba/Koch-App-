@@ -67,38 +67,79 @@ export type WishDaySettings = {
   order: string[];
 };
 
-/** Stimme des Küchenhelfers für die Sprachausgabe */
+/** Stimme der Begleitung für die Sprachausgabe (folgt der Art) */
 export type HelperVoice = "weiblich" | "maennlich";
 
-/** Der Küchenhelfer: Name und Stimme (Profil v7) */
+/** Die Begleitung ist eine Assistentin oder ein Assistent (Anrede und Stimme) */
+export type HelperArt = "assistentin" | "assistent";
+
+/** Farbe des Begleitungs-Icons (die einzige frei wählbare Farbe der App) */
+export type AvatarColor = "orange" | "nachtblau" | "himmelblau" | "lila" | "beere" | "rosa" | "koralle" | "senf" | "waldgruen" | "anthrazit";
+
+export const AVATAR_COLORS: { id: AvatarColor; label: string; hex: string }[] = [
+  { id: "orange", label: "Orange", hex: "#F26B21" },
+  { id: "nachtblau", label: "Nachtblau", hex: "#2B4470" },
+  { id: "himmelblau", label: "Himmelblau", hex: "#3B82C4" },
+  { id: "lila", label: "Lila", hex: "#7357C4" },
+  { id: "beere", label: "Beere", hex: "#A33B67" },
+  { id: "rosa", label: "Rosa", hex: "#E06C9F" },
+  { id: "koralle", label: "Koralle", hex: "#E8615A" },
+  { id: "senf", label: "Senf", hex: "#C9962B" },
+  { id: "waldgruen", label: "Waldgrün", hex: "#3F7A5A" },
+  { id: "anthrazit", label: "Anthrazit", hex: "#3E3A37" },
+];
+
+export const avatarHex = (color: AvatarColor | undefined) => AVATAR_COLORS.find((c) => c.id === color)?.hex ?? AVATAR_COLORS[0].hex;
+
+/**
+ * Die Begleitung (Profil v19): Name, Art (Assistentin/Assistent → Anrede und
+ * Stimme), Icon-Farbe. `voice` folgt immer der Art. Der Name ist eine
+ * Nutzereinstellung – nie fest einbauen.
+ */
 export type HelperSettings = {
   name: string;
+  art: HelperArt;
   voice: HelperVoice;
+  farbe: AvatarColor;
 };
 
-/** Vorgeschlagene Namen – die Stimme passt automatisch */
-export const HELPER_NAMES: { name: string; voice: HelperVoice }[] = [
-  { name: "Lotte", voice: "weiblich" },
-  { name: "Ida", voice: "weiblich" },
-  { name: "Theo", voice: "maennlich" },
-  { name: "Bruno", voice: "maennlich" },
+/** Die beiden Standard-Begleitungen im Kennenlernen */
+export const STANDARD_HELPERS: HelperSettings[] = [
+  { name: "Mia", art: "assistentin", voice: "weiblich", farbe: "orange" },
+  { name: "Theo", art: "assistent", voice: "maennlich", farbe: "nachtblau" },
 ];
+
+/** Früher vorgeschlagene Namen (Einstellungen: schnelle Auswahl) */
+export const HELPER_NAMES: { name: string; voice: HelperVoice }[] = STANDARD_HELPERS.map((h) => ({ name: h.name, voice: h.voice }));
 
 export const HELPER_NAME_MAX = 20;
 
-export const DEFAULT_HELPER: HelperSettings = { name: "Lotte", voice: "weiblich" };
+export const DEFAULT_HELPER: HelperSettings = STANDARD_HELPERS[0];
 
-/** Name des Küchenhelfers (leer → Lotte) */
+export const voiceForArt = (art: HelperArt): HelperVoice => (art === "assistent" ? "maennlich" : "weiblich");
+
+/** Begleitung mit geänderter Art: Stimme wechselt mit */
+export const helperWith = (h: HelperSettings, patch: Partial<Pick<HelperSettings, "name" | "art" | "farbe">>): HelperSettings => {
+  const art = patch.art ?? h.art;
+  return { ...h, ...patch, name: (patch.name ?? h.name).trim().slice(0, HELPER_NAME_MAX) || h.name, art, voice: voiceForArt(art) };
+};
+
+/** Name der Begleitung */
 export function helperName(profile: Pick<HouseholdProfile, "helper"> | null | undefined): string {
   return profile?.helper.name.trim() || DEFAULT_HELPER.name;
 }
 
-/** "deine Küchenhelferin" bzw. "dein Küchenhelfer" – passend zur Stimme */
+export const helperArtOf = (profile: Pick<HouseholdProfile, "helper"> | null | undefined): HelperArt => profile?.helper.art ?? DEFAULT_HELPER.art;
+
+/** "deine Assistentin" bzw. "dein Assistent" */
 export function helperTitle(profile: Pick<HouseholdProfile, "helper"> | null | undefined): string {
-  return (profile?.helper ?? DEFAULT_HELPER).voice === "maennlich" ? "dein Küchenhelfer" : "deine Küchenhelferin";
+  return helperArtOf(profile) === "assistent" ? "dein Assistent" : "deine Assistentin";
 }
 
-/** Mitteilung im Namen des Küchenhelfers, z. B. "Lotte: Heute gibt's Gulasch" (auch für Push) */
+/** "deine persönliche Assistentin" bzw. "dein persönlicher Assistent" */
+export const helperTitlePersonal = (art: HelperArt) => (art === "assistent" ? "dein persönlicher Assistent" : "deine persönliche Assistentin");
+
+/** Mitteilung im Namen der Begleitung, z. B. "Mia: Heute gibt's Gulasch" (auch für Push) */
 export function helperMessage(profile: Pick<HouseholdProfile, "helper"> | null | undefined, text: string): string {
   return `${helperName(profile)}: ${text}`;
 }
@@ -265,7 +306,7 @@ export type PauseSettings = { from: string; until: string | null };
 export type WeatherSettings = { consent: boolean; postcode: string };
 
 export type HouseholdProfile = {
-  version: 18;
+  version: 19;
   householdName: string;
   adults: number;
   kids: number;
@@ -341,14 +382,17 @@ export const PLAN_STYLES: { value: PlanStyle; label: string; hint: string }[] = 
   { value: "mix", label: "Mal so, mal so", hint: "Plan, wenn ihr Lust habt – freie Tage sind ganz normal." },
 ];
 
-/** Ansicht der App (Profil v15) – "auto" folgt Hell/Dunkel des Handys */
-export type AppTheme = "warm" | "nacht" | "frisch" | "auto";
+/**
+ * Darstellung (es gibt nur noch das warme Design): "auto" folgt Hell/Dunkel
+ * des Handys, "warm" = Hell, "nacht" = Dunkel. Frühere Ansicht "Frisch" →
+ * Automatisch.
+ */
+export type AppTheme = "auto" | "warm" | "nacht";
 
 export const APP_THEMES: { value: AppTheme; label: string; hint: string }[] = [
-  { value: "warm", label: "Warm", hint: "Hell und gemütlich" },
-  { value: "nacht", label: "Nacht", hint: "Dunkel, schont die Augen" },
-  { value: "frisch", label: "Frisch", hint: "Hell mit Grün" },
-  { value: "auto", label: "Automatisch", hint: "Wie das Handy: hell = Warm, dunkel = Nacht" },
+  { value: "auto", label: "Automatisch", hint: "Wie das Handy – hell oder dunkel" },
+  { value: "warm", label: "Hell", hint: "Warm und hell" },
+  { value: "nacht", label: "Dunkel", hint: "Schont die Augen" },
 ];
 
 /** Wie oft sich Lotte von selbst meldet (Profil v15) */
@@ -460,7 +504,7 @@ export function createPerson(role: PersonRole): Person {
 
 export function createEmptyProfile(): HouseholdProfile {
   return {
-    version: 18,
+    version: 19,
     householdName: "",
     adults: 2,
     kids: 1,
@@ -495,7 +539,7 @@ export function createEmptyProfile(): HouseholdProfile {
     tips: "ab_und_zu",
     householdType: "familie",
     kitchenMachine: "keine",
-    theme: "warm",
+    theme: "auto",
     helperMode: "normal",
     display: "einfach",
     weekendIdeas: true,
@@ -651,7 +695,7 @@ export function normalizeMealTime(value: unknown, fallback: MealTime): MealTime 
 export function migrateProfile(raw: unknown): HouseholdProfile | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as Record<string, unknown>;
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].includes(data.version as number)) return null;
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].includes(data.version as number)) return null;
 
   const defaults = createEmptyProfile();
 
@@ -714,7 +758,7 @@ export function migrateProfile(raw: unknown): HouseholdProfile | null {
     wishDay: migrateWishDay(data.wishDay, defaults.wishDay),
     // Bis v4 lief die Woche immer Mo–So → Einkaufstag Montag.
     shoppingDay: pick(data.shoppingDay, WEEKDAYS, defaults.shoppingDay),
-    // Bis v6 hatte der Küchenhelfer keinen Namen → Lotte.
+    // Begleitung: bis v6 ohne Namen → Lotte; bis v18 ohne Art/Farbe (aus dem Namen geraten)
     helper: migrateHelper(data.helper),
     // Bis v7 keine Basis-Statistik und keine "Nie wieder"-Liste
     bases: migrateBases(data.bases),
@@ -747,7 +791,8 @@ export function migrateProfile(raw: unknown): HouseholdProfile | null {
         ),
     kitchenMachine: data.kitchenMachine === "thermomix" ? "thermomix" : "keine",
     // Bis v14: Warm, Normal, Einfach, Wochenend-Ideen an
-    theme: APP_THEMES.some((t) => t.value === data.theme) ? (data.theme as AppTheme) : "warm",
+    // Bis v14 ohne Ansicht → Hell (wie bisher); "Frisch" gibt es nicht mehr → Automatisch
+    theme: APP_THEMES.some((t) => t.value === data.theme) ? (data.theme as AppTheme) : data.theme === "frisch" ? "auto" : "warm",
     helperMode: HELPER_MODES.some((m) => m.value === data.helperMode) ? (data.helperMode as HelperMode) : "normal",
     display: data.display === "alles" ? "alles" : "einfach",
     weekendIdeas: data.weekendIdeas !== false,
@@ -827,14 +872,20 @@ function migrateNeverAgain(raw: unknown): NeverAgainEntry[] {
     }));
 }
 
-function migrateHelper(raw: unknown): HelperSettings {
-  if (!raw || typeof raw !== "object") return DEFAULT_HELPER;
-  const h = raw as Partial<HelperSettings>;
-  const name = typeof h.name === "string" ? h.name.trim().slice(0, HELPER_NAME_MAX) : "";
-  return {
-    name: name || DEFAULT_HELPER.name,
-    voice: h.voice === "maennlich" ? "maennlich" : "weiblich",
-  };
+/**
+ * Begleitung prüfen. Bis v6 ohne Namen → Lotte (wer Lotte hat, behält Lotte).
+ * Bis v18 ohne Art/Farbe: Art aus dem Namen (Mia/Lotte → Assistentin, Theo →
+ * Assistent, sonst die bisher gewählte Stimme), Farbe Theo Nachtblau, sonst
+ * Orange.
+ */
+export function migrateHelper(raw: unknown): HelperSettings {
+  const h = (raw && typeof raw === "object" ? raw : {}) as Partial<HelperSettings>;
+  const name = (typeof h.name === "string" ? h.name.trim().slice(0, HELPER_NAME_MAX) : "") || "Lotte";
+  const lower = name.toLowerCase();
+  const art: HelperArt =
+    h.art === "assistent" || h.art === "assistentin" ? h.art : lower === "mia" || lower === "lotte" ? "assistentin" : lower === "theo" ? "assistent" : h.voice === "weiblich" ? "assistentin" : "assistent";
+  const farbe: AvatarColor = AVATAR_COLORS.some((c) => c.id === h.farbe) ? (h.farbe as AvatarColor) : lower === "theo" ? "nachtblau" : "orange";
+  return { name, art, voice: voiceForArt(art), farbe };
 }
 
 function migrateWishDay(raw: unknown, fallback: WishDaySettings): WishDaySettings {

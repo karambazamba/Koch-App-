@@ -74,7 +74,7 @@ const STEPS: { title: string; icon: LucideIcon; perPerson?: boolean }[] = [
   { title: "Zusammen warm essen", icon: UtensilsCrossed },
   { title: "Mittagessen unter der Woche", icon: Clock, perPerson: true },
   { title: "Mit Plan oder spontan?", icon: CalendarRange },
-  { title: "Euer Küchenhelfer", icon: Sparkles },
+  { title: "Eure Begleitung", icon: Sparkles },
 ];
 
 const STEP = {

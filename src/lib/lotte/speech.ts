@@ -135,6 +135,36 @@ export function pickVoice(voices: SpeechSynthesisVoice[], voice: HelperVoice): S
   return german.find((v) => wanted.test(v.name)) ?? german.find((v) => !other.test(v.name)) ?? german[0] ?? null;
 }
 
+/** Gibt es eine deutsche Stimme, die erkennbar zu weiblich/männlich passt? */
+export function hasMatchingVoice(voices: SpeechSynthesisVoice[], voice: HelperVoice): boolean {
+  const wanted = voice === "maennlich" ? MALE : FEMALE;
+  return germanVoices(voices).some((v) => wanted.test(v.name));
+}
+
+/** Wo man auf dem iPhone bessere Stimmen lädt */
+export const VOICE_HINT = "Für eine passende Stimme: iPhone-Einstellungen → Bedienungshilfen → Gesprochene Inhalte → Stimmen → Deutsch.";
+
+const VOICE_HINT_KEY = "wasgibts.stimmenhinweis";
+
+/** Einmaliger Hinweis, wenn keine passende Stimme installiert ist (true = jetzt zeigen) */
+export function takeVoiceHint(voices: SpeechSynthesisVoice[], voice: HelperVoice): boolean {
+  if (!voices.length || hasMatchingVoice(voices, voice)) return false;
+  try {
+    if (localStorage.getItem(VOICE_HINT_KEY)) return false;
+    localStorage.setItem(VOICE_HINT_KEY, "1");
+  } catch {
+    return false;
+  }
+  return true;
+}
+
+/** "▶ Stimme": kurzer Satz in der Stimme, die zur Art passt (automatisch gewählt) */
+export function previewHelperVoice(name: string, voice: HelperVoice): boolean {
+  unlockSpeech();
+  speak(`Hallo, ich bin ${name}!`, { id: `probe-${name}`, gender: voice, voice: "" });
+  return takeVoiceHint(currentVoices(), voice);
+}
+
 /** Gewählte Stimme oder die passende automatische */
 export function chooseVoice(voices: SpeechSynthesisVoice[], settings: SpeechSettings, gender: HelperVoice): SpeechSynthesisVoice | null {
   return (settings.voice && voices.find((v) => v.voiceURI === settings.voice)) || pickVoice(voices, gender);

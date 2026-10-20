@@ -58,9 +58,9 @@
 }
 
 /*
- * Ansichten (Profil v15 `theme`, gesetzt als data-theme am <html>):
- * Warm (Standard), Nacht, Frisch, Automatisch (hell = Warm, dunkel = Nacht).
- * Nacht stellt zusätzlich die wenigen Grau-/Rottöne um, damit alle Seiten
+ * Darstellung (nur noch das warme Design; Profil `theme`, gesetzt als
+ * data-theme am <html>): warm = Hell, nacht = Dunkel, auto = wie das Handy.
+ * Dunkel stellt zusätzlich die wenigen Grau-/Rottöne um, damit alle Seiten
  * genug Kontrast haben.
  */
 :root {
@@ -104,22 +104,6 @@
   --app-phase-feierabend-ink: #6a52b3;
   --app-person-4: #8a5cd1;
   color-scheme: light;
-}
-
-:root[data-theme="frisch"] {
-  --app-background: #f3f6f2;
-  --app-surface: #ffffff;
-  --app-line: #dde6dc;
-  --app-ink: #18211b;
-  --app-muted: #5f6b62;
-  --app-accent: #3f8f5b;
-  --app-accent-strong: #2c6b42;
-  --app-accent-soft: #e2efe5;
-  --app-on-accent: #ffffff;
-  --app-quick: #e2efe5;
-  --app-quick-ink: #2c6b42;
-  --app-bar: #18211b;
-  --app-segment: #e2e9e1;
 }
 
 :root[data-theme="nacht"] {
@@ -388,5 +372,24 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .motion-page {
     animation: none !important;
+  }
+}
+
+/* Icon der Begleitung: im Dunkel-Modus etwas heller und mit hellem Rand, damit
+   jede der 10 Farben auf der dunklen Leiste gut sichtbar bleibt */
+:root[data-theme="nacht"] .begleitung-avatar {
+  filter: brightness(1.18) saturate(1.05);
+}
+:root[data-theme="nacht"] .begleitung-ring {
+  stroke: rgb(255 255 255 / 0.7);
+  stroke-width: 4;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="auto"] .begleitung-avatar {
+    filter: brightness(1.18) saturate(1.05);
+  }
+  :root[data-theme="auto"] .begleitung-ring {
+    stroke: rgb(255 255 255 / 0.7);
+    stroke-width: 4;
   }
 }

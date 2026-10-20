@@ -774,7 +774,7 @@ function Bubble({ text, children, onOpen, onSwipe }: { text: string; children?: 
       }
     : {};
   return (
-    <section className="flex items-start gap-2.5" aria-label="Küchenhelfer" {...swipe}>
+    <section className="flex items-start gap-2.5" aria-label="Begleitung" {...swipe}>
       <LotteAvatar size={40} />
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         {onOpen ? (

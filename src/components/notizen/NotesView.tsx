@@ -62,7 +62,7 @@ export function NotesView() {
   const pinned = shown?.filter((n) => n.data.pinned) ?? [];
   const rest = shown?.filter((n) => !n.data.pinned) ?? [];
   const hasWork = work || Boolean(notes?.some((n) => n.raum === "arbeit"));
-  const name = profile ? helperName(profile) : "Lotte";
+  const name = helperName(profile);
   return (
     <>
       <PageHeader

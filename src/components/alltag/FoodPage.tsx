@@ -16,6 +16,7 @@ import { addDays } from "@/lib/core/now";
 import { showDeleted, showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
 import { helperName, mealClockFor } from "@/lib/einstellungen/profile";
+import { useProfile } from "@/lib/einstellungen/useProfile";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 import { matchStock } from "@/lib/essen/dishIdeas";
 import { dishEmoji } from "@/lib/essen/dishEmoji";
@@ -190,6 +191,7 @@ function SwapSheet({ data, day, onClose }: { data: HomeData; day: PlanDay; onClo
 
 /** Einkaufsliste als Chips, Plus zum Ergänzen */
 function ShoppingChips() {
+  const profile = useProfile();
   const shopping = useWeekShoppingList("planning");
   if (!shopping) return null;
   const open = shopping.list.items.filter((i) => !i.checked && !i.hidden);
@@ -214,7 +216,7 @@ function ShoppingChips() {
         </div>
       ) : (
         <Link href="/einkaufsliste" className="text-base text-muted">
-          Die Liste ist leer – sag Lotte einfach, was ihr braucht.
+          Die Liste ist leer – sag {helperName(profile)} einfach, was ihr braucht.
         </Link>
       )}
     </section>

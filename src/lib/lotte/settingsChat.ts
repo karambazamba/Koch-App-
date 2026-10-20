@@ -1,9 +1,10 @@
-// Einstellungen per Gespräch: "Lotte, Jonne isst jetzt vegetarisch", "Mach die
+// Einstellungen per Gespräch: "Mia, Jonne isst jetzt vegetarisch", "Mach die
 // Ansicht dunkel", "Melde dich seltener" … – ohne KI, über Regeln. Gibt das
 // geänderte Profil und eine kurze Antwort zurück (die App bietet Rückgängig).
 
 import { extractDietItems } from "../einstellungen/onboarding/recognize";
-import { personLabel, type HouseholdProfile, type Person } from "../einstellungen/profile";
+import { helperWith, personLabel, type HouseholdProfile, type Person } from "../einstellungen/profile";
+import { helperReply, parseHelperCommand } from "./helperTools";
 
 export type SettingsChange = { profile: HouseholdProfile; reply: string };
 
@@ -18,8 +19,12 @@ function findPerson(text: string, persons: Person[]): Person | undefined {
 }
 
 export function settingsChange(text: string, profile: HouseholdProfile): SettingsChange | null {
-  const t = text.trim().replace(/^[A-ZÄÖÜa-zäöüß]+,\s*/, (m) => (/^(lotte|ida|theo|bruno|hey|hallo)/i.test(m) ? "" : m));
+  const t = text.trim().replace(/^[A-ZÄÖÜa-zäöüß]+,\s*/, (m) => (/^(hey|hallo)\b/i.test(m) || m.replace(/,\s*$/, "").toLowerCase() === profile.helper.name.trim().toLowerCase() ? "" : m));
   const lower = t.toLowerCase();
+
+  // Die Begleitung selbst: Name, Art/Stimme, Icon-Farbe
+  const helper = parseHelperCommand(t, profile.helper);
+  if (helper) return { profile: { ...profile, helper: helperWith(profile.helper, helper) }, reply: helperReply(helper) };
   const person = findPerson(t, profile.persons);
   const withPerson = (change: (p: Person) => Person) => ({ ...profile, persons: profile.persons.map((p) => (p.id === person!.id ? change(p) : p)) });
   const label = person ? personLabel(person, profile.persons) : "";
@@ -62,10 +67,9 @@ export function settingsChange(text: string, profile: HouseholdProfile): Setting
 
   // Ansicht und Darstellung
   if (/\b(ansicht|darstellung|app|farben?|modus)\b/i.test(lower) || /dark ?mode|mach'?s? dunkel/i.test(lower)) {
-    if (/\b(dunkel|nacht|dark)/i.test(lower)) return { profile: { ...profile, theme: "nacht" }, reply: "Gemacht ✓ Ansicht ist jetzt Nacht." };
-    if (/\bfrisch|grün/i.test(lower)) return { profile: { ...profile, theme: "frisch" }, reply: "Gemacht ✓ Ansicht ist jetzt Frisch." };
-    if (/\bautomatisch|wie das handy/i.test(lower)) return { profile: { ...profile, theme: "auto" }, reply: "Gemacht ✓ Die Ansicht folgt jetzt dem Handy." };
-    if (/\b(hell|warm)\b/i.test(lower)) return { profile: { ...profile, theme: "warm" }, reply: "Gemacht ✓ Ansicht ist jetzt Warm." };
+    if (/\b(dunkel|nacht|dark)/i.test(lower)) return { profile: { ...profile, theme: "nacht" }, reply: "Gemacht ✓ Die App ist jetzt dunkel." };
+    if (/\bautomatisch|wie das handy/i.test(lower)) return { profile: { ...profile, theme: "auto" }, reply: "Gemacht ✓ Hell oder dunkel – wie das Handy." };
+    if (/\b(hell|warm)\b/i.test(lower)) return { profile: { ...profile, theme: "warm" }, reply: "Gemacht ✓ Die App ist jetzt hell." };
   }
   if (/\b(zeig|zeige) (mir )?alles\b|\balles zeigen\b/i.test(lower)) return { profile: { ...profile, display: "alles" }, reply: "Gemacht ✓ Ich zeige jetzt alles." };
   if (/\b(einfacher|einfache darstellung|weniger anzeigen)\b/i.test(lower)) return { profile: { ...profile, display: "einfach" }, reply: "Gemacht ✓ Darstellung ist jetzt einfach." };

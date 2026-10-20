@@ -11,7 +11,7 @@ export function AppearanceView() {
     <InstantSettingsPage title="Ansicht" intro="So sieht die App aus – tipp eine Vorschau an, es ändert sich sofort.">
       {(profile, set) => (
         <>
-          <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Ansicht">
+          <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Ansicht">
             {APP_THEMES.map((t) => {
               const selected = profile.theme === t.value;
               return (

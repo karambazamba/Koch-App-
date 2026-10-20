@@ -9,6 +9,12 @@ Dinge ab wie einer guten Haushaltshilfe, mit der man ganz natürlich spricht.
 Lotte legt an und räumt wieder weg. Die Assistentin hat einen Namen, den die
 Familie wählt (Standard: Lotte).
 
+Die Begleitung heißt nicht fest Lotte: Name, Art (Assistentin/Assistent),
+Stimme und Icon-Farbe sind Nutzereinstellungen; Standard-Auswahl Mia (Orange) /
+Theo (Nachtblau). In allen Aufträgen meint ‚Lotte‘ die gewählte Begleitung.
+Namen nie hart codieren. Nur ein Design (Warm) + Hell/Dunkel/Automatisch;
+App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben).
+
 ## 1. Ruhig und leer
 - Drei Seiten: Woche · Heute · Essen (Heute ist die Startseite). Die
   Oberfläche ist ruhig und leer; nichts steht herum, was nicht gebraucht wird.
@@ -105,7 +111,7 @@ Familie wählt (Standard: Lotte).
   `npm run icons`, Liste in `public/sw.js` und `CACHE_VERSION` anpassen.
   Lottes Gesicht in der
   App: `<LotteAvatar size … />` (`src/components/LotteAvatar.tsx`, dasselbe
-  Motiv im orangen Kreis #F26B21, "plain" = nur die Sprechblase im orangen
+  Motiv im Kreis in der gewählten Icon-Farbe (Standard #F26B21), "plain" = nur die Sprechblase im orangen
   Knopf) – in Lotte-Leiste, Chat-Kopf, Knopf und Push (`lottePush()`,
   `LOTTE_PUSH_ICON`). Manifest theme_color #EE5F14 (`BRAND_COLOR`).
 - Schrift Plus Jakarta Sans, große fette Überschriften, weiße Karten
@@ -113,8 +119,8 @@ Familie wählt (Standard: Lotte).
   (`bg-segment`, aktiv weiß). Lotte-Leiste unten dunkel (`bg-bar` #1F1B17,
   `text-on-bar`) mit orangem Avatar links und weißem Mikrofon-Knopf rechts –
   auf allen drei Seiten gleich und immer sichtbar. Familie = Orange
-  (`bg-accent`), Arbeit = Blau (`bg-work`). Alles über Tokens, Warm/Nacht/
-  Frisch.
+  (`bg-accent`), Arbeit = Blau (`bg-work`). Alles über Tokens, Hell/Dunkel/
+  Automatisch (intern `warm`/`nacht`/`auto`).
 - Startseite (`HomePager`, `src/components/alltag/`): siehe "Drei Seiten"
   und "Startseite anpassen" unten. Neue Funktionen bekommen keinen eigenen Platz, solange sie nicht
   gebraucht werden.
@@ -206,11 +212,9 @@ Familie wählt (Standard: Lotte).
   nach "Neu anfangen" wieder; `WelcomeChat` in `src/components/welcome/`,
   Ablauf rein in `src/lib/einstellungen/welcome.ts`, Zwischenstand v2 unter
   `wasgibts.willkommen`, v0.14-Stand wird übernommen – `migrateWelcome`).
-  1. Begrüßung im Vollbild (kein Chat-Text): großer Avatar mit winkender 👋,
-  "Hi, ich bin <Name>.", "Deine Assistentin/Dein Assistent für den Alltag – ich
-  behalte den Überblick, du lebst.", drei Kacheln, hellorange Hinweis
-  "🎙 Sprich einfach mit mir …", dunkler Knopf "Los geht's", Link "Lieber
-  anders nennen", oben "Überspringen". Ab Schritt 2 Chat: 2. (optional Name)
+  1. Im Vollbild (seit v0.22, siehe "Begleitung zum Aussuchen"): "Wer soll
+  dir helfen?" (Mia/Theo/eigener Name) und die Vorstellung der Begleitung,
+  oben "Überspringen". Ab Schritt 2 Chat: 2.
   "Wobei soll ich dir helfen?" (Termine, Arbeit, Essen, Einkauf, Familie;
   Standard Termine+Essen+Einkauf), bei Essen "Woche planen / Spontan / Mal so,
   mal so", 3. bei Familie "Wer gehört zu deiner Familie? …", sonst "Wie heißt
@@ -329,6 +333,57 @@ Familie wählt (Standard: Lotte).
   (`QuickButton`), Schnell-Termin (`TerminQuickAdd`), Schnell-Aufgabe
   (`TaskQuickAdd`), einmaliger Hinweis nach dem Kennenlernen, Start-Kacheln
   aus dem Kennenlernen (`homeTilesFor`, in Standard-Reihenfolge).
+
+## Begleitung zum Aussuchen + Hell/Dunkel (v0.22)
+
+- Datenmodell (Profil v19, `src/lib/einstellungen/profile.ts`): `helper =
+  { name, art: assistentin|assistent, voice, farbe }`; `voice` folgt immer der
+  Art (`voiceForArt`, `helperWith`). `STANDARD_HELPERS` = Mia (Assistentin,
+  Orange) und Theo (Assistent, Nachtblau), `DEFAULT_HELPER` = Mia (neue
+  Nutzer). `AVATAR_COLORS` (10: Orange #F26B21, Nachtblau #2B4470, Himmelblau
+  #3B82C4, Lila #7357C4, Beere #A33B67, Rosa #E06C9F, Koralle #E8615A, Senf
+  #C9962B, Waldgrün #3F7A5A, Anthrazit #3E3A37), `avatarHex()`. Migration
+  (`migrateHelper`): ohne Namen → Lotte (wer Lotte hat, behält Lotte); Art
+  aus dem Namen (Mia/Lotte → Assistentin, Theo → Assistent, sonst aus der
+  bisherigen Stimme); Farbe Theo → Nachtblau, sonst Orange. Texte nur über
+  `helperName()`, `helperTitle()` ("deine Assistentin"/"dein Assistent"),
+  `helperTitlePersonal()`, `helperMessage()` – nie einen Namen hart codieren.
+- Gesicht: `<LotteAvatar size color? />` nimmt ohne `color` die Profilfarbe;
+  im Dunkel-Modus heller mit hellem Rand (`.begleitung-avatar`/
+  `.begleitung-ring` in `globals.css`). App-Icon bleibt orange.
+- Auswahl (`src/components/begleitung/BegleitungPicker.tsx`): zwei Karten
+  Mia/Theo (Radio, ✓ und oranger Rand, "▶ Stimme" = `playVoice` → "Hallo,
+  ich bin …" mit passender Stimme), "✎ Oder gib mir einen eigenen Namen …"
+  (Feld, `ArtChoice` Assistentin/Assistent, `ColorDots` 2×5 mit Ring). Im
+  Kennenlernen und unter `/profil/kuechenhelfer` (`HelperEditor`).
+- Kennenlernen: Schritt `begleitung` (Vollbild "Wer soll dir helfen?",
+  "Deine persönliche Begleitung im Alltag", Mia vorausgewählt, "Kannst du
+  jederzeit ändern.", "Weiter") → `hallo` (Vorstellung: Avatar in der Farbe,
+  Sprechblase "Hallo, schön, dass du da bist! 👋 Ich bin **Name**, deine
+  persönliche Assistentin | dein persönlicher Assistent bei **Was gibt's?** …",
+  "🔊 Vorlesen", 4 Kacheln Termine · Aufgaben · Essen · Einkauf, "Los geht's")
+  → weiter wie bisher. Zwischenstand v2: alter Schritt "name" → `begleitung`.
+- Stimme (`speech.ts`): Assistentin → beste weibliche deutsche Stimme,
+  Assistent → beste männliche, sonst irgendeine deutsche. Fehlt eine passende:
+  einmal der Hinweis `VOICE_HINT` (iPhone-Einstellungen → Bedienungshilfen →
+  Gesprochene Inhalte → Stimmen → Deutsch; `takeVoiceHint`,
+  `wasgibts.stimmenhinweis`). Stimme frei wählbar unter `/profil/vorlesen`;
+  wechselt die Art, wird eine fest gewählte Stimme auf "Passend" gesetzt.
+- Einstellungen ganz oben (`BegleitungSettings.tsx`): DEINE BEGLEITUNG – Name
+  (mit Gesicht) › · Ist: Assistentin | Assistent · Stimme › · Farbe ›
+  (`/profil/farbe`) · Vorlesen an/aus (an = automatisch), Hinweis "Oder
+  einfach sagen: ‚Ich nenn dich ab jetzt Frieda.‘"; DARSTELLUNG – Automatisch
+  · Hell · Dunkel (Standard für neue Profile Automatisch). "Frisch" ist weg
+  (wird Automatisch).
+- Lotte: `assistent_anpassen` (`helperTools.ts`, Op `set_helper`, Vorschau +
+  Übernehmen; Mia/Theo bringen Art und Farbe mit), antwortet im neuen Namen
+  ("Gern – ab jetzt bin ich Frieda. 😊"), danach Hinweis, wo man es ändert.
+  Ohne KI `parseHelperCommand` in `settingsChange` ("Ich nenn dich ab jetzt
+  Frieda", "Sei lieber Theo", "Nimm eine männliche Stimme", "Mach dich
+  lila") – sofort, zurück mit "Mach das rückgängig". Systemanweisung: "Du
+  heißt {Name} und bist {die persönliche Assistentin | der persönliche
+  Assistent} der Familie in der App ‚Was gibt's?‘. Charakter: warm, kurz,
+  ohne Druck, motivierend."
 
 ## Tagesphasen, Timer, Sport (v0.21)
 
@@ -1026,9 +1081,9 @@ den passenden Baustein (im neuen Design) bzw. für die Entwicklung über
   (`/profil/vorlesen`, Probehören je Stimme); per Chat "Lies mir vor", "Nicht
   mehr vorlesen", "Sprich langsamer/schneller" (`speechChat.ts`). Geht es
   nicht (kein Ton, stumm, keine Stimme): nichts tun, keine Meldung.
-- Küchenhelfer hat Namen und Gesicht (Profil v7 `helper`): Name Lotte, Ida,
-  Theo, Bruno oder eigener (max. 20 Zeichen, Standard Lotte), Stimme
-  weiblich/männlich (bei Vorschlägen passend zum Namen; `pickVoice()` wählt
+- Küchenhelfer hat Namen und Gesicht (Profil v7 `helper`, seit v19 mit Art
+  und Farbe – siehe "Begleitung zum Aussuchen"): Name frei (max. 20 Zeichen),
+  Stimme weiblich/männlich (folgt der Art; `pickVoice()` wählt
   eine passende deutsche Systemstimme, sonst Standard). Einstellbar im
   Kennenlernen (erste Frage), im Assistenten (letzter Schritt) und unter `/profil/kuechenhelfer`. Knopf mit
   Lottes Gesicht (`LotteAvatar`); Anrede `helperTitle()`: "deine
@@ -1121,7 +1176,7 @@ den passenden Baustein (im neuen Design) bzw. für die Entwicklung über
   mal so" auf der Kochstil-Seite "Darf ich von mir aus was vorschlagen?";
   "Ganze Woche" = höchstens einmal pro Woche "Soll ich dir für nächste Woche
   ein paar Gerichte vorschlagen?".
-- Profil v15: `theme` (warm/nacht/frisch/auto), `helperMode`
+- Profil v15: `theme` (warm/nacht/auto – "frisch" gibt es seit v19 nicht mehr, wird Automatisch), `helperMode`
   (locker/normal/dranbleiben), `display` (einfach/alles), `weekendIdeas`;
   Migration: Warm, Normal, Einfach, an.
 - Ansichten (`/profil/ansicht`, Vorschau-Karten als Mini-Startseite): Farben
@@ -1129,8 +1184,8 @@ den passenden Baustein (im neuen Design) bzw. für die Entwicklung über
   zusätzlich Grau-/Rottöne um, `text-on-accent` für Text auf Akzentflächen,
   Toasts `bg-ink text-background`). `data-theme` am `<html>`, gesetzt vor dem
   ersten Zeichnen (`THEME_BOOT_SCRIPT`) und von `ThemeSync` (auch
-  theme-color). Automatisch folgt `prefers-color-scheme`. App-Icon und
-  Lottes Gesicht bleiben immer orange.
+  theme-color). Automatisch folgt `prefers-color-scheme`. Das App-Icon
+  bleibt immer orange; Lottes Gesicht hat die gewählte Icon-Farbe.
 - Darstellung "Einfach": seltene Einstellungen hinter "Mehr anzeigen", keine
   Kosten-Schätzungen im Wochenplan (außer mit Budget); "Alles zeigen" zeigt
   alles.

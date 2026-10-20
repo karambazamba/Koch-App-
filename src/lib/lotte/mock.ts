@@ -5,6 +5,7 @@
 // Rezepte, Mattis wünscht sich Sonntag Milchreis, der Rest vegetarische KI-Rezepte".
 
 import { parseTimerCommand } from "../timer/model";
+import { parseHelperInput } from "./helperTools";
 import { parseSportCommand } from "../sport/model";
 import { parseNoteCommand } from "../notizen/chat";
 import { isKladdeTidyRequest, kladdeCommand, tidyKladde } from "../notizen/kladde";
@@ -334,7 +335,7 @@ function mockModel(): CreateMessage {
       const actionable =
         intent.myDays.length || intent.wish || intent.restVeggie || intent.planWeek || intent.clear.length || intent.double.length || intent.swap.length >= 2 || intent.shopping;
       if (!actionable) {
-        const name = system.match(/^Du bist ([^,]+),/)?.[1] ?? "dein Küchenhelfer";
+        const name = system.match(/^Du heißt (.+?) und bist /)?.[1] ?? "deine Begleitung";
         return text(`Ich bin ${name} (Testmodus). Sag zum Beispiel: „Donnerstag und Freitag gibt es meine Rezepte, Mattis wünscht sich Sonntag Milchreis, der Rest vegetarische KI-Rezepte.“`);
       }
       return tools([
@@ -499,6 +500,7 @@ function mockModel(): CreateMessage {
     if (day) {
       const content = String(resultFor(day.name) ?? "");
       if (/^(timer_stellen|timer_stoppen|stoppuhr|kochen_starten|kochschritt|timer_status|sport_statistik)$/.test(day.name)) return text(`${content.replace(/^Läuft gleich \(die App startet ihn sofort\): /, "Läuft: ")} (Testmodus)`);
+      if (day.name === "assistent_anpassen") return text(`${content.replace(/^Vorgemerkt[^:]*: /, "")} Tipp unten auf Übernehmen. (Testmodus)`);
       return text(`${content.replace(/^Vorgemerkt[^:]*: /, "Klar: ")} Tipp unten auf Übernehmen. (Testmodus)`);
     }
 
@@ -625,13 +627,15 @@ function mailUses(latest: string, msgs: Anthropic.Beta.BetaMessageParam[], syste
 }
 
 /** Pinnwand und Wetter im Testmodus */
-const DAY_TOOL_NAMES = new Set(["timer_stellen", "timer_stoppen", "stoppuhr", "timer_status", "kochen_starten", "kochschritt", "sport_eintragen", "sport_ziel_setzen", "trainings_planen", "sport_statistik", "startseite_modus"]);
+const DAY_TOOL_NAMES = new Set(["timer_stellen", "timer_stoppen", "stoppuhr", "timer_status", "kochen_starten", "kochschritt", "sport_eintragen", "sport_ziel_setzen", "trainings_planen", "sport_statistik", "startseite_modus", "assistent_anpassen"]);
 
 /** Timer, Kochen, Sport, Startseiten-Modus im Testmodus (dieselben Erkenner wie ohne KI) */
 function dayUses(latest: string, system: string): Anthropic.Beta.BetaMessage | null {
   const today = system.match(/^Heute: .*\((\d{4}-\d{2}-\d{2})\)/m)?.[1] ?? "";
   if (/\bstartseite\b/i.test(latest) && /\b(immer\s+gleich|gleich\s+bleiben|nicht\s+(mehr\s+)?mitdenk\w*)\b/i.test(latest)) return tools([{ name: "startseite_modus", input: { modus: "gleich" } }]);
   if (/\bstartseite\b/i.test(latest) && /\b(mitdenk\w*|denk\w*\s+mit)\b/i.test(latest)) return tools([{ name: "startseite_modus", input: { modus: "mitdenkend" } }]);
+  const helper = parseHelperInput(latest);
+  if (helper) return tools([{ name: "assistent_anpassen", input: helper }]);
   const timer = parseTimerCommand(latest);
   if (timer?.kind === "start") return tools([{ name: "timer_stellen", input: { minuten: timer.minutes, name: timer.name } }]);
   if (timer?.kind === "stop") return tools([{ name: "timer_stoppen", input: { name: timer.name } }]);

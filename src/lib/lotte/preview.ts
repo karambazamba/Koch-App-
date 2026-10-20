@@ -3,7 +3,7 @@
 // Übernehmen; abgewählte Änderungen zählen für spätere Zeilen nicht mit.
 
 import type { RecipeCategory } from "../essen/cookbook";
-import { MEAL_TIME_LABELS, personLabel } from "../einstellungen/profile";
+import { AVATAR_COLORS, MEAL_TIME_LABELS, personLabel } from "../einstellungen/profile";
 import { SECTIONS } from "../einkauf/shoppingList";
 import { REMINDERS, repeatLabel, weekdayShort, type CalendarEntry } from "../aufgaben/model";
 import { clockLabel } from "../aufgaben/answers";
@@ -269,6 +269,12 @@ function describe(
       return { opId: op.id, group: "Schnellnotiz", order: 25_500, label: "✎ Schnellnotiz", before: null, after: op.change };
     case "add_pin":
       return { opId: op.id, group: "Pinnwand", order: 25_600, label: "📌 Pinnwand", before: null, after: op.text };
+    case "set_helper": {
+      const h = op.helper;
+      const color = h.farbe ? AVATAR_COLORS.find((c) => c.id === h.farbe)?.label : null;
+      const after = [h.name, h.art ? (h.art === "assistent" ? "Assistent · männliche Stimme" : "Assistentin · weibliche Stimme") : null, color].filter(Boolean).join(" · ");
+      return { opId: op.id, group: "Begleitung", order: 25_650, label: "Ich", before: state.profile.helper.name, after };
+    }
     case "set_day_mode":
       return { opId: op.id, group: "Startseite", order: 25_700, label: "Startseite", before: null, after: op.mode === "gleich" ? "📌 Immer gleich" : "✨ Mitdenkend" };
     case "add_training": {

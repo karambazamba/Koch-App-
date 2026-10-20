@@ -33,6 +33,7 @@ import { dayChat } from "@/lib/lotte/dayChat";
 import { cookableEntry } from "@/lib/essen/mealDone";
 import { askAssistant, FALLBACK_TEXT, saveAccessCode, useAssistantStatus } from "@/lib/lotte/client";
 import {
+  loadSpeechSettings,
   saveSpeechSettings,
   shouldRead,
   speak,
@@ -1199,6 +1200,9 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       setInput("");
       const before = data.profile;
       saveProfile(setting.profile);
+      // Andere Art (Assistentin/Assistent) → passende Stimme statt der fest gewählten
+      const voiceBefore = setting.profile.helper.art !== before.helper.art ? loadSpeechSettings().voice : null;
+      if (voiceBefore !== null) saveSpeechSettings({ voice: "" });
       setChat((c) => ({
         ...c,
         turns: [
@@ -1210,6 +1214,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
             text: setting.reply,
             undo: () => {
               saveProfile(before);
+              if (voiceBefore !== null) saveSpeechSettings({ voice: voiceBefore });
               setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig gemacht – alles wie vorher.", local: true }] }));
             },
           },
@@ -1354,7 +1359,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
 
   return (
     <div className="fixed inset-0 z-40" role="dialog" aria-modal aria-label={name}>
-      <button type="button" aria-label="Küchenhelfer schließen" onClick={onClose} className="absolute inset-0 bg-black/25" />
+      <button type="button" aria-label="Chat schließen" onClick={onClose} className="absolute inset-0 bg-black/25" />
       <section
         className="absolute inset-x-0 mx-auto flex w-full max-w-lg flex-col rounded-t-3xl bg-background shadow-sheet"
         style={{
@@ -1442,7 +1447,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                 <Link href="/profil" onClick={onClose} className="font-bold text-accent-strong underline">
                   Haushaltsprofil
                 </Link>{" "}
-                an – dann weiß der Küchenhelfer, für wen er plant.
+                an – dann weiß ich, für wen ich plane.
               </span>
             </p>
           ) : (
@@ -1706,7 +1711,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
               }}
               disabled={!canType}
               enterKeyHint="send"
-              aria-label="Nachricht an den Küchenhelfer"
+              aria-label="Nachricht schreiben"
               placeholder={`Sag ${name}, was ansteht …`}
               className={`${INPUT_BASE} field-sizing-content max-h-36 min-h-12 flex-1 resize-none px-4 py-3 leading-snug`}
             />
