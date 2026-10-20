@@ -9,15 +9,8 @@ import { addDays, fromIsoDate, now, toIsoDate } from "../core/now";
 // Datumshilfen kommen aus der zentralen Zeit (core/now) – hier weitergereicht
 export { addDays,  toIsoDate, useToday } from "../core/now";
 import type { RecipeCategory } from "./cookbook";
-import {
-  WEEKDAYS,
-  loadProfile,
-  mainMealTime,
-  wishDayKids,
-  wishDayOrder,
-  type HouseholdProfile,
-  type WeekRules,
-} from "../einstellungen/profile";
+import { WEEKDAYS, mainMealTime, wishDayKids, wishDayOrder, type HouseholdProfile, type WeekRules } from "../einstellungen/profile";
+import { loadProfile } from "../einstellungen/profileStore";
 import type { StorageKey } from "@/lib/core/storage";
 
 /** Wunsch eines Kindes – das Hauptgericht eines Tages, zählt nicht bei Fleisch/Veggie/Fisch */

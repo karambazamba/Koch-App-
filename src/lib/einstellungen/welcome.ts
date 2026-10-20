@@ -11,16 +11,8 @@
 
 import { DEFAULT_HOME, type HomeTile } from "../core/homeLayout";
 import { extractNames, type NameHint } from "./onboarding/recognize";
-import {
-  DEFAULT_HELPER,
-  migrateHelper,
-  createEmptyProfile,
-  createPerson,
-  deriveHouseholdType,
-  type HelperSettings,
-  type HouseholdProfile,
-  type PlanStyle,
-} from "./profile";
+import { DEFAULT_HELPER, createEmptyProfile, createPerson, deriveHouseholdType, type HelperSettings, type HouseholdProfile, type PlanStyle } from "./profile";
+import { migrateHelper } from "./profileStore";
 
 export type WelcomeStep = "begleitung" | "hallo" | "hilfe" | "essen" | "sport" | "startseite" | "wer" | "fertig";
 export type HelpId = "termine" | "arbeit" | "essen" | "einkauf" | "familie" | "sport";

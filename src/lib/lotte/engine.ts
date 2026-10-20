@@ -6,7 +6,7 @@
 import { fetchForecast } from "../wetter/server";
 import { sanitizeNote, type Note } from "../notizen/model";
 import type Anthropic from "@anthropic-ai/sdk";
-import { migrateProfile } from "../einstellungen/profile";
+import { migrateProfile } from "../einstellungen/profileStore";
 import { nextWeekStartFor, weekStartFor } from "../essen/weekPlan";
 import { applyOps, compactOps, type AssistantData, type ChangeOp } from "./ops";
 import { contextText, identityPrompt, SYSTEM_PROMPT } from "./prompt";

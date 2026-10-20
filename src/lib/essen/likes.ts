@@ -5,7 +5,8 @@
 import { BASES } from "./bases";
 import type { Ingredient, Recipe } from "./cookbook";
 import { findFood, recognizeFood } from "./leftovers/foods";
-import { loadProfile, saveProfile, type HouseholdProfile, type LikedIngredient } from "../einstellungen/profile";
+import { type HouseholdProfile, type LikedIngredient } from "../einstellungen/profile";
+import { loadProfile, saveProfile } from "../einstellungen/profileStore";
 
 /** Wie stark eine Quelle zählt */
 export const LIKE_WEIGHTS = { chat: 3, up: 2, cooked: 1, chosen: 1, manual: 5 } as const;

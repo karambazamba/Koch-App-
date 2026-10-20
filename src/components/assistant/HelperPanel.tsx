@@ -10,7 +10,8 @@ import { parseLeftovers, type ParsedLeftover } from "@/lib/essen/leftovers/parse
 import { addPantryItems, formatPantryItem } from "@/lib/essen/pantry";
 import { ingredientsFromQuestion, isCookIdeasRequest, mergeStock, stockItem, stockNearlyEmpty } from "@/lib/essen/dishIdeas";
 import { useStock } from "@/lib/essen/useStock";
-import { effectivePlanStyle, hasKids, helperName, mealClockFor, saveProfile } from "@/lib/einstellungen/profile";
+import { effectivePlanStyle, hasKids, helperName, mealClockFor } from "@/lib/einstellungen/profile";
+import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { addWish, parseWish, removeWish, wishLabel } from "@/lib/essen/wishes";
 import { settingsChange } from "@/lib/lotte/settingsChat";
 import { iconChangeHint } from "@/lib/core/homescreen";

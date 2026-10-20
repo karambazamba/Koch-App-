@@ -23,7 +23,7 @@ import { usePlanStyle } from "@/lib/essen/usePlanStyle";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { AddRow, ChoiceCards, DataSection, Group, PersonRow, Row, SettingsPage, SwitchRow } from "./SettingsParts";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { clearProfile } from "@/lib/einstellungen/profile";
+import { clearProfile } from "@/lib/einstellungen/profileStore";
 import { clearWelcome } from "@/lib/einstellungen/welcomeStore";
 import { Sun, Volume2 } from "lucide-react";
 import { READ_MODES, useSpeechSettings } from "@/lib/lotte/speech";

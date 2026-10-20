@@ -6,7 +6,8 @@
 import Link from "next/link";
 import { CircleHelp } from "lucide-react";
 import { bumpBase, sortedBases } from "@/lib/essen/bases";
-import { hasKids, saveProfile } from "@/lib/einstellungen/profile";
+import { hasKids } from "@/lib/einstellungen/profile";
+import { saveProfile } from "@/lib/einstellungen/profileStore";
 import type { ParsedLeftover } from "@/lib/essen/leftovers/parser";
 import type { MarketIdea } from "@/lib/essen/market";
 import type { AssistantData } from "@/lib/lotte/ops";

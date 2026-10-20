@@ -3,7 +3,7 @@
 // true = erledigt.
 
 import type { Dispatch, SetStateAction } from "react";
-import { loadProfile, saveProfile } from "@/lib/einstellungen/profile";
+import { loadProfile, saveProfile } from "@/lib/einstellungen/profileStore";
 import { changeEntries, loadEntries } from "@/lib/aufgaben";
 import { parseHomeCommand } from "@/lib/lotte/homeChat";
 import { parseBausteinCommand } from "@/lib/lotte/bausteinChat";
@@ -38,14 +38,14 @@ export type RuleContext = {
 };
 
 /** Lokale Antwort ins Gespräch (mit optionalem Rückgängig) */
-export const localTurnOf = (ctx: RuleContext) => (t: string, text: string, undo?: () => void) =>
+const localTurnOf = (ctx: RuleContext) => (t: string, text: string, undo?: () => void) =>
   ctx.setChat((c) => ({
     ...c,
     turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text, local: true, ...(undo ? { undo: pushUndo(text, undo) } : {}) }],
   }));
 
 /** Antwort von Lotte (lokal) ins Gespräch; `deleted` = echtes Löschen → Knopf "Rückgängig" */
-export const localReplyOf = (ctx: RuleContext) => (t: string, text: string, undo?: () => void, deleted = false) => {
+const localReplyOf = (ctx: RuleContext) => (t: string, text: string, undo?: () => void, deleted = false) => {
   ctx.setInput("");
   ctx.setChat((c) => ({
     ...c,

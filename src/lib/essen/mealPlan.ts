@@ -11,16 +11,8 @@ import type { Recipe, RecipeCategory } from "./cookbook";
 import { guessDishCategory } from "./dishCategory";
 import { noteUserAction, todayIso } from "../core/activity";
 import { createLocalStore } from "../core/localStore";
-import {
-  loadProfile,
-  mainMealHeadcount,
-  mainMealTime,
-  isWeekendDay,
-  pausedOn,
-  personLabel,
-  type HouseholdProfile,
-  type MealTime,
-} from "../einstellungen/profile";
+import { mainMealHeadcount, mainMealTime, isWeekendDay, pausedOn, personLabel, type HouseholdProfile, type MealTime } from "../einstellungen/profile";
+import { loadProfile } from "../einstellungen/profileStore";
 import {
   CATEGORY_COUNT_KEY,
   addDays,

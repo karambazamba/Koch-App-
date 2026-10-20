@@ -13,7 +13,8 @@ import { useState } from "react";
 import { CARD, NOTE } from "@/components/ui/styles";
 import { iconFor } from "@/lib/core/app";
 import { iconChangeHint } from "@/lib/core/homescreen";
-import { APP_THEMES, AVATAR_COLORS, avatarHex, helperTitle, helperWith, saveProfile, type AvatarColor, type HelperArt, type HouseholdProfile } from "@/lib/einstellungen/profile";
+import { APP_THEMES, AVATAR_COLORS, avatarHex, helperTitle, helperWith, type AvatarColor, type HelperArt, type HouseholdProfile } from "@/lib/einstellungen/profile";
+import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { saveSpeechSettings, useSpeechSettings, useVoices } from "@/lib/lotte/speech";
 import { Group, SettingsPage, SwitchRow } from "./SettingsParts";
 

@@ -16,7 +16,8 @@ import { SwipeRow } from "@/components/ui/SwipeRow";
 import { CARD, CARD_LIST, PAGE_MAIN, buttonClass } from "@/components/ui/styles";
 import { versionLabel } from "@/lib/core/app";
 import { backupFileName, backupSummary, createBackup, parseBackup, restoreBackup, type Backup } from "@/lib/core/backup";
-import { personLabel, personRoleLabel, saveProfile, type HouseholdProfile, type Person } from "@/lib/einstellungen/profile";
+import { personLabel, personRoleLabel, type HouseholdProfile, type Person } from "@/lib/einstellungen/profile";
+import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { showToast } from "@/lib/core/toast";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 

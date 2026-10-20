@@ -9,7 +9,7 @@ import { createLocalStore } from "../core/localStore";
 import { useExternalStore } from "../core/useExternalStore";
 import { saveHomeTiles } from "../core/homeLayout";
 import { setFeature } from "../core/features";
-import { saveProfile } from "./profile";
+import { saveProfile } from "./profileStore";
 import { homeTilesFor, migrateWelcome, profileFrom, type HelpId, type WelcomeState } from "./welcome";
 
 type WelcomeStore = { version: 1; state: WelcomeState | null; help: HelpId[] | null };

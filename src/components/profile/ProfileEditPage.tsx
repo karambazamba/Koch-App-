@@ -6,7 +6,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { PRIMARY_BUTTON } from "@/components/StickyActions";
 import { CARD, FAB_CLEARANCE, PAGE_MAIN } from "@/components/ui/styles";
-import { saveProfile, type HouseholdProfile } from "@/lib/einstellungen/profile";
+import { type HouseholdProfile } from "@/lib/einstellungen/profile";
+import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 
 type Props = {

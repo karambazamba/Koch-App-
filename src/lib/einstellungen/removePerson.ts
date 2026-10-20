@@ -5,7 +5,8 @@
 
 import { guessDishCategory } from "../essen/dishCategory";
 import { loadMealPlans, replaceMealPlans, type StoredEntry } from "../essen/mealPlan";
-import { loadProfile, saveProfile, type HouseholdProfile } from "./profile";
+import { type HouseholdProfile } from "./profile";
+import { loadProfile, saveProfile } from "./profileStore";
 import { loadWeekPlans, replaceWeekPlans, type WeekPlan } from "../essen/weekPlan";
 
 /** Neues Profil ohne die Person (rein, testbar). Die letzte Person bleibt. */
