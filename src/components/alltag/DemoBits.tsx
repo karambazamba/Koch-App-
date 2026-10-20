@@ -32,7 +32,7 @@ export function DemoHint() {
 }
 
 /** Antippen eines Beispiels: kurz erklären, Eigenes eintragen oder alle Beispiele leeren */
-export function DemoSheet({ title, addLabel, onAdd, onClose }: { title: string; addLabel: string; onAdd: () => void; onClose: () => void }) {
+function DemoSheet({ title, addLabel, onAdd, onClose }: { title: string; addLabel: string; onAdd: () => void; onClose: () => void }) {
   return (
     <Sheet title={title} onClose={onClose}>
       <div className="flex flex-col gap-3 pb-3">

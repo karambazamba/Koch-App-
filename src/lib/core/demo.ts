@@ -65,8 +65,6 @@ export function useDemo(): DemoState | null {
   return useExternalStore(store.subscribe, store.load, () => null);
 }
 
-export const isDemoId = (id: string) => id.startsWith("beispiel:");
-
 const clock = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 
 const entry = (id: string, typ: "termin" | "aufgabe", data: Record<string, unknown>): CalendarEntry =>
