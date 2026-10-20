@@ -109,6 +109,9 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   `apple-touch-icon-v3.png`; Pfade nur über `icon("…")`), damit iPhone/Android
   ein neues Icon nicht aus dem Cache holen – bei neuem Icon Version erhöhen,
   `npm run icons`, Liste in `public/sw.js` und `CACHE_VERSION` anpassen.
+  Icon-Motiv: Sprechblase mit mittiger Spitze, senkrechte Augen, dezentes
+  Lächeln, keine Härchen. Quelle: MOTIF in scripts/generate-icons.mjs; in der
+  App nur über LotteAvatar.
   Icon/Avatar: Sprechblase mit mittiger Spitze, ruhiges Gesicht; eine
   Avatar-Komponente für alle Stellen. Lieblingsfarbe = Begleitung und
   App-Icon, einheitlich; übrige App-Farben fest. (Senkrechte Augen, dezentes
