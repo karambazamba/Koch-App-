@@ -4,6 +4,7 @@
 // einen Vorschlag (Op `set_helper`) mit "Übernehmen".
 
 import { AVATAR_COLORS, HELPER_NAME_MAX, STANDARD_HELPERS, type AvatarColor, type HelperArt, type HelperSettings } from "../einstellungen/profile";
+import { iconChangeHint } from "../core/homescreen";
 import type { LotteTool } from "./registry";
 import { nextId, propose } from "./tools";
 
@@ -77,7 +78,8 @@ export function helperNote(patch: HelperPatch): string {
   if (patch.art) parts.push(patch.art === "assistent" ? "meine Stimme ist männlich" : "meine Stimme ist weiblich");
   if (patch.farbe) parts.push(`mein Gesicht ist ${AVATAR_COLORS.find((c) => c.id === patch.farbe)?.label.toLowerCase()}`);
   const text = parts.join(", ");
-  return `${text.charAt(0).toUpperCase()}${text.slice(1)} – ändern kannst du das in den Einstellungen unter „Deine Begleitung“.`;
+  const hint = patch.farbe ? iconChangeHint() : null;
+  return `${text.charAt(0).toUpperCase()}${text.slice(1)} – ändern kannst du das in den Einstellungen unter „Deine Begleitung“.${hint ? ` ${hint}` : ""}`;
 }
 
 const COLOR_WORDS: [RegExp, AvatarColor][] = [

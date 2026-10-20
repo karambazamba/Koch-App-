@@ -5,17 +5,34 @@ export const APP_NAME = "Was gibt's?";
 export const APP_SHORT_NAME = "Was gibt's";
 
 /** Versionsnummer (wie in package.json) – in den Einstellungen unter "Daten & App" */
-export const APP_VERSION = "0.22.0";
+export const APP_VERSION = "0.23.0";
 
 /**
- * Version der Icon-Dateien – steht im Dateinamen (z. B. apple-touch-icon-v2.png),
+ * Version der Icon-Dateien – steht im Dateinamen (z. B. apple-touch-icon-v3.png),
  * damit iPhone/Android ein neues Icon nicht aus dem Cache holen. Bei jedem neuen
  * Icon erhöhen; `npm run icons` liest den Wert von hier.
  */
-export const ICON_VERSION = "v2";
+export const ICON_VERSION = "v3";
 
-/** Pfad einer Icon-Datei mit Version: icon("icon-192.png") → "/icons/icon-192-v2.png" */
+/** Pfad einer Icon-Datei mit Version: icon("icon-192.png") → "/icons/icon-192-v3.png" */
 export const icon = (file: string) => `/icons/${file.replace(/(\.\w+)$/, `-${ICON_VERSION}$1`)}`;
+
+/** Lieblingsfarbe der Begleitung (Cookie "farbe") – App-Icon in derselben Farbe */
+export const FARBE_COOKIE = "farbe";
+
+/**
+ * Icon-Datei in der Lieblingsfarbe: iconFor("lila", "icon-192.png") →
+ * "/icons/lila/icon-192-v3.png". Unbekannte Farbe → Orange.
+ */
+export const iconFor = (farbe: string | undefined, file: string) => `/icons/${ICON_FARBEN.includes(farbe ?? "") ? farbe : "orange"}/${file.replace(/(\.\w+)$/, `-${ICON_VERSION}$1`)}`;
+/** Farben mit eigenem Icon-Satz (wie AVATAR_COLORS) */
+export const ICON_FARBEN = ["orange", "nachtblau", "himmelblau", "lila", "beere", "rosa", "koralle", "senf", "waldgruen", "anthrazit"];
+
+/**
+ * Daten liegen nur auf diesem Gerät (noch keine Konten/Cloud-Sicherung). Solange
+ * das so ist, warnt die App vor dem Entfernen der Homescreen-App.
+ */
+export const CLOUD_SYNC = false;
 
 /** Lottes Gesicht für Push-Mitteilungen (orange Kreis, aus scripts/generate-icons.mjs) */
 export const LOTTE_PUSH_ICON = icon("lotte-192.png");

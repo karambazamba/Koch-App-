@@ -1,7 +1,7 @@
 // Service Worker von "Was gibt's?": macht die App offline nutzbar.
 // Seiten: erst Netz, bei Ausfall aus dem Cache. Statische Dateien: erst Cache.
 // CACHE_VERSION erhöhen, wenn sich die Liste der vorab gecachten Seiten ändert.
-const CACHE_VERSION = "v52";
+const CACHE_VERSION = "v53";
 // Interner Name (alter Arbeitsname) bleibt, damit alte Caches sauber aufgeräumt werden.
 const CACHE_NAME = `familienkueche-${CACHE_VERSION}`;
 
@@ -48,11 +48,11 @@ const PRECACHE_URLS = [
   "/profil/startseite",
   "/manifest.webmanifest",
   // Icons mit Version im Namen (ICON_VERSION in src/lib/core/app.ts) – neues Icon = neuer Dateiname
-  "/icons/icon-v2.svg",
-  "/icons/icon-192-v2.png",
-  "/icons/icon-512-v2.png",
-  "/icons/apple-touch-icon-v2.png",
-  "/icons/lotte-192-v2.png",
+  "/icons/icon-v3.svg",
+  "/icons/icon-192-v3.png",
+  "/icons/icon-512-v3.png",
+  "/icons/apple-touch-icon-v3.png",
+  "/icons/lotte-192-v3.png",
 ];
 
 self.addEventListener("install", (event) => {

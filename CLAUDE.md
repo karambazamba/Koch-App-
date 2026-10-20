@@ -13,7 +13,7 @@ Die Begleitung heißt nicht fest Lotte: Name, Art (Assistentin/Assistent),
 Stimme und Icon-Farbe sind Nutzereinstellungen; Standard-Auswahl Mia (Orange) /
 Theo (Nachtblau). In allen Aufträgen meint ‚Lotte‘ die gewählte Begleitung.
 Namen nie hart codieren. Nur ein Design (Warm) + Hell/Dunkel/Automatisch;
-App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben).
+App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Seit v0.23 gilt diese Lieblingsfarbe auch für das App-Icon.
 
 ## 1. Ruhig und leer
 - Drei Seiten: Woche · Heute · Essen (Heute ist die Startseite). Die
@@ -101,19 +101,26 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben).
 ## 7. Design
 - Warmes Off-White, weiße Karten, eine Akzentfarbe (Orange), Linien-Icons
   (lucide), Emojis nur sparsam. App-Icon: Lotte als lächelnde weiße
-  Sprechblase mit drei Härchen auf orangem Verlauf (#F7843E → #EE5F14;
+  Sprechblase mit mittiger Spitze auf orangem Verlauf (#F7843E → #EE5F14;
   einzige Quelle `scripts/generate-icons.mjs`, `npm run icons` erzeugt
   icon.svg, favicon 32/48 + favicon.ico, apple-touch-icon 180, PWA 192/512,
-  maskable 512 mit mehr Rand, lotte-192.png für Push). Alle Icon-Dateien
+  maskable 512 mit Zeichen auf 72 % statt 88 %, lotte-192.png für Push). Alle Icon-Dateien
   tragen die Version im Namen (`ICON_VERSION` in `src/lib/core/app.ts`, z. B.
-  `apple-touch-icon-v2.png`; Pfade nur über `icon("…")`), damit iPhone/Android
+  `apple-touch-icon-v3.png`; Pfade nur über `icon("…")`), damit iPhone/Android
   ein neues Icon nicht aus dem Cache holen – bei neuem Icon Version erhöhen,
   `npm run icons`, Liste in `public/sw.js` und `CACHE_VERSION` anpassen.
-  Lottes Gesicht in der
-  App: `<LotteAvatar size … />` (`src/components/LotteAvatar.tsx`, dasselbe
-  Motiv im Kreis in der gewählten Icon-Farbe (Standard #F26B21), "plain" = nur die Sprechblase im orangen
-  Knopf) – in Lotte-Leiste, Chat-Kopf, Knopf und Push (`lottePush()`,
-  `LOTTE_PUSH_ICON`). Manifest theme_color #EE5F14 (`BRAND_COLOR`).
+  Icon-Motiv: Sprechblase mit mittiger Spitze, senkrechte Augen, dezentes
+  Lächeln, keine Härchen. Quelle: MOTIF in scripts/generate-icons.mjs; in der
+  App nur über LotteAvatar.
+  Icon/Avatar: Sprechblase mit mittiger Spitze, ruhiges Gesicht; eine
+  Avatar-Komponente für alle Stellen. Lieblingsfarbe = Begleitung und
+  App-Icon, einheitlich; übrige App-Farben fest. (Senkrechte Augen, dezentes
+  Lächeln; ohne gewählte Farbe Orange)
+  (`<LotteAvatar size color? />`, `src/components/LotteAvatar.tsx`: Kreis in
+  der Icon-Farbe, Motiv auf 72 %; dunkle Farben Nachtblau/Anthrazit/Beere im
+  Dunkel-Modus und auf der dunklen Leiste mit feinem hellem Rand) – in
+  Lotte-Leiste, Chat-Kopf und -Blasen, Lottes Satz, Kennenlernen,
+  Einstellungen und Push (`lottePush()`, `LOTTE_PUSH_ICON`). Manifest theme_color #EE5F14 (`BRAND_COLOR`).
 - Schrift Plus Jakarta Sans, große fette Überschriften, weiße Karten
   (Radius 22px) auf #F7F4EF. Seiten-Leiste oben als Segment-Schalter
   (`bg-segment`, aktiv weiß). Lotte-Leiste unten dunkel (`bg-bar` #1F1B17,
@@ -272,6 +279,19 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben).
   Migration v2→v3: Größen gesetzt, Kladde-Kachel wird Notizen an derselben
   Stelle. Standard sichtbar: Termine, Aufgaben, Essen + Einkauf, Morgen
   (Vorrat nur mit Baustein); Pinnwand/Wetter/Notizen in der Auswahl mit "NEU".
+- Verschieben (v0.23): Finger über Touch-Events (Pointer-Events bricht iOS beim
+  Scrollen ab); das Original-Element bleibt beim Ziehen im DOM (wandert mit
+  gleichem key als gestrichelter Platzhalter an die Zielstelle, flaches
+  2-Spalten-Raster ohne Zeilen-Wrapper), `touchmove` mit `passive: false` auf
+  `document` ab Beginn des Haltens, nach dem Anheben `preventDefault`; im
+  Bearbeiten-Modus `touch-action: none` auf den Kacheln (gescrollt wird über
+  freie Flächen und Auto-Scroll am Rand); kein Wackeln beim Halten/Ziehen;
+  Wackeln auf dem inneren Element, Ziehen außen; Callout/Auswahl aus
+  (`[-webkit-touch-callout:none]`, `select-none`, `contextmenu` verhindert).
+  Absicherung: kurz antippen = Menü (Ganz nach oben · Nach oben · Nach unten ·
+  Größe · Entfernen, `UnitMenu`, jede Auswahl schließt). Drag: Wackeln auf
+  inneres Element, Callout aus, Menü-Absicherung. Test mit echten
+  Touch-Ereignissen (CDP `Input.dispatchTouchEvent`).
 - Bearbeiten-Modus DIREKT auf der Startseite (`HomeBoard.tsx`, `TodayPage`
   `useHomeEditing`): lange drücken, Link "✎ Startseite bearbeiten",
   Einstellungen (`/profil/startseite` → `requestHomeEdit()` + "/"), Lotte
@@ -336,6 +356,9 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben).
 
 ## Begleitung zum Aussuchen + Hell/Dunkel (v0.22)
 
+- Seit v0.23: Lieblingsfarbe = Begleitung UND App-Icon (siehe "App-Icon in der
+  Lieblingsfarbe"); die übrigen App-Farben bleiben fest.
+
 - Datenmodell (Profil v19, `src/lib/einstellungen/profile.ts`): `helper =
   { name, art: assistentin|assistent, voice, farbe }`; `voice` folgt immer der
   Art (`voiceForArt`, `helperWith`). `STANDARD_HELPERS` = Mia (Assistentin,
@@ -348,9 +371,9 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben).
   bisherigen Stimme); Farbe Theo → Nachtblau, sonst Orange. Texte nur über
   `helperName()`, `helperTitle()` ("deine Assistentin"/"dein Assistent"),
   `helperTitlePersonal()`, `helperMessage()` – nie einen Namen hart codieren.
-- Gesicht: `<LotteAvatar size color? />` nimmt ohne `color` die Profilfarbe;
-  im Dunkel-Modus heller mit hellem Rand (`.begleitung-avatar`/
-  `.begleitung-ring` in `globals.css`). App-Icon bleibt orange.
+- Gesicht: `<LotteAvatar size color? />` nimmt ohne `color` die Profilfarbe
+  (seit v0.23 das ruhige Gesicht, siehe Leitbild 7; `.begleitung-ring` in
+  `globals.css`). App-Icon bleibt orange.
 - Auswahl (`src/components/begleitung/BegleitungPicker.tsx`): zwei Karten
   Mia/Theo (Radio, ✓ und oranger Rand, "▶ Stimme" = `playVoice` → "Hallo,
   ich bin …" mit passender Stimme), "✎ Oder gib mir einen eigenen Namen …"
@@ -384,6 +407,26 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben).
   heißt {Name} und bist {die persönliche Assistentin | der persönliche
   Assistent} der Familie in der App ‚Was gibt's?‘. Charakter: warm, kurz,
   ohne Druck, motivierend."
+
+## App-Icon in der Lieblingsfarbe (v0.23)
+
+- `npm run icons` erzeugt je Farbe aus `AVATAR_COLORS` einen Satz unter
+  `public/icons/<farbe>/` (icon.svg, icon-192, icon-512, icon-maskable-512 mit
+  Zeichen auf 72 %, apple-touch-icon 180, favicon-32; Verlauf von der Farbe
+  18 % heller zur vollen Farbe, Gesicht in der vollen Farbe; Orange = Original).
+  Pfade über `iconFor(farbe, "…")` (`src/lib/core/app.ts`).
+- Manifest dynamisch (`src/app/manifest.ts`): liest das Cookie `farbe`, feste
+  `id: "/"`, gleiche URL – Android/Chrome übernimmt ein neues Icon selbst.
+- `IconSync` (Layout): setzt beim Laden und nach jeder Farbwahl das Cookie und
+  `apple-touch-icon`/Favicon auf die Farbe (das iPhone liest das Icon beim
+  "Zum Home-Bildschirm"). App-Logo (`AppIcon`) ebenfalls in der Farbe.
+- Kennenlernen: nach "Wer soll dir helfen?" (nur im Browser, nicht als
+  Homescreen-App – `isStandalone()`) Hinweis "Jetzt zum Home-Bildschirm
+  hinzufügen" mit Icon-Vorschau und 2 Schritten je Gerät (`addToHomeSteps`).
+- Farbwechsel später (Einstellungen `/profil/farbe` mit Icon-Vorschau, Lotte,
+  Regel ohne KI): auf dem iPhone als Homescreen-App `iconChangeHint()` – "Das
+  Icon auf dem Homescreen bleibt, bis du die App neu hinzufügst." und, solange
+  `CLOUD_SYNC` aus ist, die Warnung zum Datenverlust beim Entfernen.
 
 ## Tagesphasen, Timer, Sport (v0.21)
 

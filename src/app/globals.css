@@ -375,21 +375,19 @@ body {
   }
 }
 
-/* Icon der Begleitung: im Dunkel-Modus etwas heller und mit hellem Rand, damit
-   jede der 10 Farben auf der dunklen Leiste gut sichtbar bleibt */
-:root[data-theme="nacht"] .begleitung-avatar {
-  filter: brightness(1.18) saturate(1.05);
+/* Icon der Begleitung: dunkle Farben (Nachtblau, Anthrazit, Beere) bekommen
+   im Dunkel-Modus und auf der dunklen Leiste einen feinen hellen Rand */
+.begleitung-ring {
+  stroke: none;
 }
-:root[data-theme="nacht"] .begleitung-ring {
-  stroke: rgb(255 255 255 / 0.7);
-  stroke-width: 4;
+:root[data-theme="nacht"] .begleitung-avatar[data-dunkel] .begleitung-ring,
+[data-lotte-leiste] .begleitung-avatar[data-dunkel] .begleitung-ring {
+  stroke: rgb(255 255 255 / 0.75);
+  stroke-width: 1.6;
 }
 @media (prefers-color-scheme: dark) {
-  :root[data-theme="auto"] .begleitung-avatar {
-    filter: brightness(1.18) saturate(1.05);
-  }
-  :root[data-theme="auto"] .begleitung-ring {
-    stroke: rgb(255 255 255 / 0.7);
-    stroke-width: 4;
+  :root[data-theme="auto"] .begleitung-avatar[data-dunkel] .begleitung-ring {
+    stroke: rgb(255 255 255 / 0.75);
+    stroke-width: 1.6;
   }
 }
