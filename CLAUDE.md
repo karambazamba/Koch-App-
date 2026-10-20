@@ -280,8 +280,12 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   Stelle. Standard sichtbar: Termine, Aufgaben, Essen + Einkauf, Morgen
   (Vorrat nur mit Baustein); Pinnwand/Wetter/Notizen in der Auswahl mit "NEU".
 - Verschieben (v0.23): Finger über Touch-Events (Pointer-Events bricht iOS beim
-  Scrollen ab), Listener direkt am berührten Element (es wird beim Anheben aus
-  der Seite genommen), nach dem Anheben `preventDefault` statt Scrollen;
+  Scrollen ab); das Original-Element bleibt beim Ziehen im DOM (wandert mit
+  gleichem key als gestrichelter Platzhalter an die Zielstelle, flaches
+  2-Spalten-Raster ohne Zeilen-Wrapper), `touchmove` mit `passive: false` auf
+  `document` ab Beginn des Haltens, nach dem Anheben `preventDefault`; im
+  Bearbeiten-Modus `touch-action: none` auf den Kacheln (gescrollt wird über
+  freie Flächen und Auto-Scroll am Rand); kein Wackeln beim Halten/Ziehen;
   Wackeln auf dem inneren Element, Ziehen außen; Callout/Auswahl aus
   (`[-webkit-touch-callout:none]`, `select-none`, `contextmenu` verhindert).
   Absicherung: kurz antippen = Menü (Ganz nach oben · Nach oben · Nach unten ·
