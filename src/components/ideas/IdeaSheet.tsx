@@ -56,7 +56,7 @@ export function IdeaSheet({
           Nicht jetzt
         </button>
         <button type="button" onClick={onChoose} className={buttonClass("primary", "lg")}>
-          Das gibt&apos;s {when}
+          Das gibt’s {when}
         </button>
       </div>
     </Sheet>

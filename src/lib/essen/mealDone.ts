@@ -200,7 +200,7 @@ export function moveToTomorrow(data: Data, date: string): { weeks: Record<string
   if (!tDay) return null;
   const old = tDay.slot.entry;
   weeks = mealPlansWithWeek(weeks, tStart, (e) => ({ ...e, [tDay.slot.key]: moved }));
-  if (!old) return { weeks, text: `Alles klar ✓ ${entry.title} gibt's morgen.` };
+  if (!old) return { weeks, text: `Alles klar ✓ ${entry.title} gibt’s morgen.` };
   // Bisheriges Gericht von morgen auf den nächsten freien Tag (ohne Ausflug, kein freies Wochenende)
   const candidates = [0, 7].flatMap((offset) => {
     const start = addDays(tStart, offset);
@@ -209,9 +209,9 @@ export function moveToTomorrow(data: Data, date: string): { weeks: Record<string
   const target = candidates.find(({ d }) => d.date > tomorrowIso && !d.away && !d.paused && !d.slot.entry && d.weekend !== "frei");
   if (target) {
     weeks = mealPlansWithWeek(weeks, target.start, (e) => ({ ...e, [target.d.slot.key]: old.stored }));
-    return { weeks, text: `Alles klar ✓ ${entry.title} gibt's morgen, ${old.title} rutscht auf ${target.d.weekday}.` };
+    return { weeks, text: `Alles klar ✓ ${entry.title} gibt’s morgen, ${old.title} rutscht auf ${target.d.weekday}.` };
   }
-  return { weeks, text: `Alles klar ✓ ${entry.title} gibt's morgen. ${old.title} ist erst mal raus.` };
+  return { weeks, text: `Alles klar ✓ ${entry.title} gibt’s morgen. ${old.title} ist erst mal raus.` };
 }
 
 /**

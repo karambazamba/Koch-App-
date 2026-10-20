@@ -543,7 +543,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     return {
       role: "assistant",
       local: true,
-      text: kidsWanted ? "Oh ja, backen wir zusammen! 🧁 Das klappt gut mit Kindern:" : "Gern! 🧁 Wie wär's damit:",
+      text: kidsWanted ? "Oh ja, backen wir zusammen! 🧁 Das klappt gut mit Kindern:" : "Gern! 🧁 Wie wär’s damit:",
       baking: recipes,
     };
   };
@@ -1127,7 +1127,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                 const commands = chat.proposal.ops.flatMap((op) => (op.type === "app_command" && chat.proposal!.selected.has(op.id) ? [op.text] : []));
                 onApply(chat.proposal.selected);
                 for (const text of commands) {
-                  if (!rules(text)) setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text: `„${text}“ kann ich in der App so nicht umsetzen – sag's mir gern anders.`, local: true }] }));
+                  if (!rules(text)) setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text: `„${text}“ kann ich in der App so nicht umsetzen – sag’s mir gern anders.`, local: true }] }));
                 }
               }}
               onAdjust={() => {

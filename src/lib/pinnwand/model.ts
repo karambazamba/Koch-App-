@@ -112,4 +112,4 @@ export function pinWriteCommand(text: string): string | null {
 }
 
 /** "Was steht auf der Pinnwand?" */
-export const isPinboardQuery = (text: string) => /\b(was steht|was gibt'?s|zeig\w*|lies\w*)\b.*\bpinnwand\b/i.test(text) || /^pinnwand\??$/i.test(text.trim());
+export const isPinboardQuery = (text: string) => /\b(was steht|was gibt['’]?s|zeig\w*|lies\w*)\b.*\bpinnwand\b/i.test(text) || /^pinnwand\??$/i.test(text.trim());

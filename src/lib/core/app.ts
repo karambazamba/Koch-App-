@@ -1,11 +1,11 @@
 /** Name der App – überall verwenden statt den Namen fest zu schreiben. */
-export const APP_NAME = "Was gibt's?";
+export const APP_NAME = "Was gibt’s?";
 
-/** Kurzname für den Homescreen (ohne Fragezeichen, damit er nicht abgeschnitten wirkt) */
-export const APP_SHORT_NAME = "Was gibt's";
+/** Kurzname für den Homescreen */
+export const APP_SHORT_NAME = "Was gibt’s?";
 
 /** Versionsnummer (wie in package.json) – in den Einstellungen unter "Daten & App" */
-export const APP_VERSION = "0.26.0";
+export const APP_VERSION = "0.27.0";
 
 /** Tag der Auslieferung (beim Bauen gesetzt, next.config.ts) */
 const APP_BUILD_DATE = process.env.BUILD_DATE ?? "";

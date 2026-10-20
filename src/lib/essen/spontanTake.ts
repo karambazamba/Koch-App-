@@ -51,7 +51,7 @@ export function takeForDay(data: Data, today: Date, idea: Idea, date: string, op
   let weeks = mealPlansWithWeek(data.mealPlans, weekStart, (e) => ({ ...e, [day.slot.key]: entry }));
   const old = day.slot.entry;
   if (!old || opts.spontan || old.title.toLowerCase() === idea.title.toLowerCase()) {
-    return { ok: true, weeks, text: `Übernommen ✓ ${when} gibt's ${idea.title}.` };
+    return { ok: true, weeks, text: `Übernommen ✓ ${when} gibt’s ${idea.title}.` };
   }
 
   // Bisheriges Gericht auf den nächsten freien Tag (ohne Ausflug, kein freies Wochenende)
@@ -66,7 +66,7 @@ export function takeForDay(data: Data, today: Date, idea: Idea, date: string, op
     const { double: _double, ...moved } = old.stored;
     void _double;
     weeks = mealPlansWithWeek(weeks, target.start, (e) => ({ ...e, [target.d.slot.key]: moved }));
-    return { ok: true, weeks, text: `Übernommen ✓ ${when} gibt's ${idea.title}. ${old.title} hab ich auf ${target.d.weekday} geschoben.` };
+    return { ok: true, weeks, text: `Übernommen ✓ ${when} gibt’s ${idea.title}. ${old.title} hab ich auf ${target.d.weekday} geschoben.` };
   }
-  return { ok: true, weeks, text: `Übernommen ✓ ${when} gibt's ${idea.title}. ${old.title} ist erst mal raus – sag Bescheid, wenn's woanders hin soll.` };
+  return { ok: true, weeks, text: `Übernommen ✓ ${when} gibt’s ${idea.title}. ${old.title} ist erst mal raus – sag Bescheid, wenn’s woanders hin soll.` };
 }

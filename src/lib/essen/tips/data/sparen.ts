@@ -20,7 +20,7 @@ export const SPAR_TIPS: Tip[] = [
   {
     id: "s-huelsenfruechte-tag",
     category: "sparen",
-    text: "Wie wär's mit einem Linsen- oder Bohnentag pro Woche? Chili, Dal oder Linsenbolognese machen satt und kosten wenig.",
+    text: "Wie wär’s mit einem Linsen- oder Bohnentag pro Woche? Chili, Dal oder Linsenbolognese machen satt und kosten wenig.",
     detail:
       "Getrocknete Hülsenfrüchte und Dosenware sind sehr günstig und lange haltbar. Mit kräftigen Gewürzen vermisst kaum jemand das Fleisch.",
     steps: [
@@ -192,9 +192,9 @@ export const SPAR_TIPS: Tip[] = [
   {
     id: "s-getraenke-leitung",
     category: "sparen",
-    text: "Leitungswasser ist in Deutschland gut und fast kostenlos. Mit Zitrone, Gurke oder Minze wird's ein kleines Extra.",
+    text: "Leitungswasser ist in Deutschland gut und fast kostenlos. Mit Zitrone, Gurke oder Minze wird’s ein kleines Extra.",
     detail:
-      "Kästen schleppen entfällt auch noch. Eine schöne Karaffe auf dem Tisch macht's für Kinder spannender.",
+      "Kästen schleppen entfällt auch noch. Eine schöne Karaffe auf dem Tisch macht’s für Kinder spannender.",
   },
   {
     id: "s-pausenbrot",

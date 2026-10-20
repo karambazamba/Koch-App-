@@ -133,7 +133,7 @@ function RecipeDetails({ id, persons }: { id: string; persons: number | null }) 
         {recipe.steps.length > 0 && (
           <Link href={`/kochbuch/kochen?id=${encodeURIComponent(recipe.id)}`} className={`${buttonClass("primary", "lg")} w-full`}>
             <ChefHat className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-            {baking ? "Zusammen backen" : "Los geht's – Schritt für Schritt"}
+            {baking ? "Zusammen backen" : "Los geht’s – Schritt für Schritt"}
           </Link>
         )}
         {builtin ? (

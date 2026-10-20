@@ -484,7 +484,7 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
   // "Mach das rückgängig": die letzte Änderung zurücknehmen (sonst nichts)
   if (chosen.some((op) => op.type === "undo_last")) {
     const label = undoLast();
-    return { undo: () => {}, notes: [label ? `Zurückgenommen: ${label}` : "Da gibt's gerade nichts zurückzunehmen."] };
+    return { undo: () => {}, notes: [label ? `Zurückgenommen: ${label}` : "Da gibt’s gerade nichts zurückzunehmen."] };
   }
   const applied = applyOps(current, chosen, { prompt }).data;
   // Spontan: neue Gerichte gelten als "aus den Ideen gewählt" – sonst wären sie im ausgeblendeten Plan unsichtbar

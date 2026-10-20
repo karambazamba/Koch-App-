@@ -23,7 +23,7 @@ export function useIdeaChoice(when: "heute" | "morgen" = "heute"): { choose: (id
       setPending({ idea, profile, today, recipes });
       return;
     }
-    pushUndo(`${When} gibt's ${idea.title}`, chooseIdea(idea, profile, today, recipes));
+    pushUndo(`${When} gibt’s ${idea.title}`, chooseIdea(idea, profile, today, recipes));
   };
   const dialog = pending ? (
     <ConfirmDialog
@@ -33,13 +33,13 @@ export function useIdeaChoice(when: "heute" | "morgen" = "heute"): { choose: (id
       cancelLabel="Haben wir"
       onCancel={() => {
         setPending(null);
-        pushUndo(`${When} gibt's ${pending.idea.title}`, chooseIdea(pending.idea, pending.profile, pending.today, pending.recipes));
+        pushUndo(`${When} gibt’s ${pending.idea.title}`, chooseIdea(pending.idea, pending.profile, pending.today, pending.recipes));
       }}
       onConfirm={() => {
         setPending(null);
         const undoList = addForToday(pending.idea.needs, pending.profile, pending.today);
         const undo = chooseIdea(pending.idea, pending.profile, pending.today, pending.recipes);
-        pushUndo(`${When} gibt's ${pending.idea.title}`, () => {
+        pushUndo(`${When} gibt’s ${pending.idea.title}`, () => {
           undoList();
           undo();
         });

@@ -53,7 +53,7 @@ export function IdeasView() {
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
       <PageHeader title="Ideen" />
       <main className={PAGE_MAIN}>
-        <p className="px-1 text-base text-muted">Was gibt&apos;s heute? Tipp eine Idee an – sie wird euer Heute.</p>
+        <p className="px-1 text-base text-muted">Was gibt’s heute? Tipp eine Idee an – sie wird euer Heute.</p>
         {data.nearlyEmpty && (
           <button type="button" onClick={() => openHelper("spontan")} className="self-start px-1 text-left text-sm font-semibold text-accent-strong underline">
             {EMPTY_STOCK_HINT}

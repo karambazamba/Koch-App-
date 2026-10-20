@@ -153,7 +153,7 @@ export function DataSection({ onReset }: { onReset: () => void }) {
     try {
       // Auf dem Handy: Teilen-Menü (Dateien, Mail, Cloud …)
       if (navigator.canShare?.({ files: [asFile] })) {
-        await navigator.share({ files: [asFile], title: "Sicherung „Was gibt's?“" });
+        await navigator.share({ files: [asFile], title: "Sicherung „Was gibt’s?“" });
         return;
       }
     } catch (error) {
@@ -195,7 +195,7 @@ export function DataSection({ onReset }: { onReset: () => void }) {
           e.target.value = "";
           if (!chosen) return;
           const backup = parseBackup(await chosen.text());
-          if (!backup) showToast({ text: "Das ist keine Sicherung von „Was gibt's?“." });
+          if (!backup) showToast({ text: "Das ist keine Sicherung von „Was gibt’s?“." });
           else setIncoming(backup);
         }}
       />

@@ -113,7 +113,7 @@ export function dayChat(text: string, ctx: DayChatContext): DayChatReply | null 
     nudgePhase();
     const c = ctx.cooking;
     const cur = c ? currentStep(c.steps.length, loadCooking().steps[c.recipe] ?? []) : null;
-    return { text: c ? `Los geht's mit ${c.dish} 🍳${cur !== null ? ` Jetzt: ${c.steps[cur]}` : ""} Rezept und Timer stehen oben auf der Startseite.` : "Los geht's 🍳 Timer und Rezept stehen oben auf der Startseite.", undo };
+    return { text: c ? `Los geht’s mit ${c.dish} 🍳${cur !== null ? ` Jetzt: ${c.steps[cur]}` : ""} Rezept und Timer stehen oben auf der Startseite.` : "Los geht’s 🍳 Timer und Rezept stehen oben auf der Startseite.", undo };
   }
   if ((NEXT_STEP.test(t) || WHAT_NOW.test(t)) && ctx.cooking?.steps.length) {
     const c = ctx.cooking;
@@ -153,7 +153,7 @@ export function dayChat(text: string, ctx: DayChatContext): DayChatReply | null 
       const streak = weekStreak(state, entries, ctx.today, ctx.me);
       if (sport.what === "monat" || sport.km)
         return { text: `${monthName(ctx.today)}: ${m.count} ${m.count === 1 ? "Einheit" : "Einheiten"}, ${hoursLabel(m.minutes)}${m.km ? `, ${m.km} km` : ""}.${streak >= 2 ? ` ${streak} Wochen in Folge geschafft 🔥` : ""}` };
-      return { text: week.count ? `Diese Woche ${week.count}× – ${week.count >= week.goal ? (week.count > week.goal ? "Bonusrunde! 🔥" : "Wochenziel geschafft 🎉") : `Ziel sind ${week.goal}.`}` : "Diese Woche ist noch frisch – bereit, wenn du's bist." };
+      return { text: week.count ? `Diese Woche ${week.count}× – ${week.count >= week.goal ? (week.count > week.goal ? "Bonusrunde! 🔥" : "Wochenziel geschafft 🎉") : `Ziel sind ${week.goal}.`}` : "Diese Woche ist noch frisch – bereit, wenn du’s bist." };
     }
     // Trainings planen: freie Lücken, Wunsch-Tageszeit, Wetter (falls bekannt)
     const fc = loadForecast();

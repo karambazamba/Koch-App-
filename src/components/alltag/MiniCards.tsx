@@ -22,6 +22,10 @@ import { TerminQuickAdd } from "./TerminQuickAdd";
 import { act, buzz } from "./actions";
 import { ItemMenu, roomBar } from "./Items";
 import { EntryForm } from "./EntryForm";
+import { DEMO_OUTLINE, DemoBadge } from "./DemoBits";
+
+/** Beispiel-Tag: Beispiele statt echter Einträge (Antippen erklärt, Abhaken nur hier) */
+export type DemoProps = { label?: string | null; done?: string[]; onToggle?: (item: DayItem) => void; onOpen: (item: DayItem) => void };
 
 const LEAVE_MS = 1000;
 
@@ -44,7 +48,7 @@ function useSection() {
   return { setMenu, check, before, overlays };
 }
 
-function SectionHead({ title, more, href, action, moreLabel }: { title: string; more: number; href: string; action?: React.ReactNode; moreLabel?: string }) {
+function SectionHead({ title, more, href, action, moreLabel, badge }: { title: string; more: number; href: string; action?: React.ReactNode; moreLabel?: string; badge?: React.ReactNode }) {
   return (
     <div className="flex h-8 items-center gap-2 px-1">
       {/* Überschrift öffnet die Seite dazu (Tag bzw. Aufgaben) – keine Sackgasse */}
@@ -53,6 +57,7 @@ function SectionHead({ title, more, href, action, moreLabel }: { title: string; 
           {title}
         </Link>
       </h2>
+      {badge}
       <span className="flex-1" />
       {more > 0 && (
         <Link href={href} className="-my-2 flex h-11 items-center text-[13px] font-bold text-accent-strong">
@@ -113,9 +118,9 @@ function CheckBox({ item, checked, onClick, round = false }: { item: DayItem; ch
 const entersAnim = (before: string[] | null, key: string) => (before && !before.includes(key) ? { animation: "card-in 0.32s ease-out" } : undefined);
 
 /** Termin-Kärtchen (44–48 px): Uhrzeit fett, Titel einzeilig, Kästchen 14 px oben rechts, Farbstreifen links */
-function TerminCard({ item, leaving, entering, onOpen, onDone }: { item: DayItem; leaving: boolean; entering?: React.CSSProperties; onOpen: () => void; onDone: () => void }) {
+function TerminCard({ item, leaving, entering, onOpen, onDone, demo = false }: { item: DayItem; leaving: boolean; entering?: React.CSSProperties; onOpen: () => void; onDone: () => void; demo?: boolean }) {
   return (
-    <li className={`${CARD} relative min-w-0 overflow-hidden`} style={entering} data-item={item.key}>
+    <li className={`${CARD} relative min-w-0 overflow-hidden ${demo ? DEMO_OUTLINE : ""}`} style={entering} data-item={item.key}>
       <span className={`absolute inset-y-0 left-0 w-1 ${roomBar(item.room)}`} aria-hidden />
       <button type="button" onClick={onOpen} className="flex min-h-[46px] w-full flex-col justify-center py-1.5 pl-3 pr-6 text-left" aria-label={`${item.time ? clockLabel(item.time) : ""} ${item.title} – Möglichkeiten`}>
         <span className="text-[13.5px] font-extrabold leading-tight tabular-nums">{item.time ? clockLabel(item.time) : "–"}</span>
@@ -139,10 +144,10 @@ export const TASK_COUNT = { S: 2, M: 4, L: 8 } as const;
  * TERMINE – schlanke Kärtchen: S 1 (breit mit "+N weitere heute"), M bis 3
  * nebeneinander, L bis 6 in 2 Reihen. "+" = neuer Termin.
  */
-export function TermineSection({ items, all, href, today, size = "M", half = false }: { items: DayItem[]; all?: DayItem[]; href: string; today?: string; size?: TileSize; half?: boolean }) {
+export function TermineSection({ items, all, href, today, size = "M", half = false, demo }: { items: DayItem[]; all?: DayItem[]; href: string; today?: string; size?: TileSize; half?: boolean; demo?: DemoProps }) {
   const { setMenu, check, before, overlays } = useSection();
   const [adding, setAdding] = useState(false);
-  const list = size === "L" ? (all ?? items).filter((i) => !i.done) : items;
+  const list = size === "L" && !demo ? (all ?? items).filter((i) => !i.done) : items;
   const shown = list.slice(0, TERMIN_COUNT[size]);
   const { leaving, start } = useLeaving((item) => check(item, shown));
   const sheet = adding && <TerminQuickAdd onClose={() => setAdding(false)} defaultDate={today} />;
@@ -158,10 +163,10 @@ export function TermineSection({ items, all, href, today, size = "M", half = fal
   const cols = size === "S" ? "grid-cols-1" : shown.length === 1 ? "grid-cols-1" : shown.length === 2 ? "grid-cols-2" : "grid-cols-3";
   return (
     <section className="flex flex-col gap-1.5" aria-label="Termine">
-      <SectionHead title="Termine" more={half ? 0 : rest} moreLabel={size === "S" ? "weitere heute" : undefined} href={href} action={plus} />
+      <SectionHead title={demo?.label ?? "Termine"} more={half ? 0 : rest} moreLabel={size === "S" ? "weitere heute" : undefined} href={href} action={plus} badge={demo && <DemoBadge />} />
       <ul className={`grid gap-2 ${cols}`}>
         {shown.map((item) => (
-          <TerminCard key={item.key} item={item} leaving={leaving === item.key} entering={entersAnim(before, item.key)} onOpen={() => setMenu(item)} onDone={() => start(item)} />
+          <TerminCard key={item.key} item={item} demo={Boolean(demo)} leaving={leaving === item.key || Boolean(demo?.done?.includes(item.entry.id))} entering={entersAnim(before, item.key)} onOpen={() => (demo ? demo.onOpen(item) : setMenu(item))} onDone={() => (demo ? demo.onToggle?.(item) : start(item))} />
         ))}
       </ul>
       {overlays}
@@ -212,7 +217,7 @@ function TaskField({ item, today, leaving, entering, onOpen, onDone }: { item: D
 }
 
 /** AUFGABEN – schlankes 2er-Raster mit feinen Linien: S 2 Felder, M 2×2, L 2×4; "+ N weitere", kleiner "+" */
-export function AufgabenSection({ items, total, today, href = "/aufgaben", size = "M", half = false }: { items: DayItem[]; total?: number; today: string; href?: string; size?: TileSize; half?: boolean }) {
+export function AufgabenSection({ items, total, today, href = "/aufgaben", size = "M", half = false, demo }: { items: DayItem[]; total?: number; today: string; href?: string; size?: TileSize; half?: boolean; demo?: DemoProps }) {
   const { setMenu, check, before, overlays } = useSection();
   const [adding, setAdding] = useState(false);
   const shown = items.slice(0, TASK_COUNT[size]);
@@ -226,10 +231,10 @@ export function AufgabenSection({ items, total, today, href = "/aufgaben", size 
     <>
       {items.length > 0 ? (
         <section className="flex flex-col gap-1.5" aria-label="Aufgaben">
-          <SectionHead title="Aufgaben" more={half ? 0 : rest} href={href} action={plus} />
-          <ul className={`grid gap-px overflow-hidden rounded-card border border-line bg-line shadow-card ${oneCol ? "grid-cols-1" : "grid-cols-2"}`}>
+          <SectionHead title="Aufgaben" more={half ? 0 : rest} href={href} action={plus} badge={demo && <DemoBadge />} />
+          <ul className={`grid gap-px overflow-hidden rounded-card border border-line bg-line shadow-card ${oneCol ? "grid-cols-1" : "grid-cols-2"} ${demo ? DEMO_OUTLINE : ""}`}>
             {shown.map((item) => (
-              <TaskField key={item.key} item={item} today={today} leaving={leaving === item.key} entering={entersAnim(before, item.key)} onOpen={() => setMenu(item)} onDone={() => start(item)} />
+              <TaskField key={item.key} item={item} today={today} leaving={leaving === item.key || Boolean(demo?.done?.includes(item.entry.id))} entering={entersAnim(before, item.key)} onOpen={() => (demo ? demo.onOpen(item) : setMenu(item))} onDone={() => (demo ? demo.onToggle?.(item) : start(item))} />
             ))}
             {filler && <li className="bg-surface" aria-hidden />}
           </ul>

@@ -29,7 +29,7 @@ export function ReadingView() {
         const gender = profile.helper.voice;
         const german = germanVoices(voices);
         const auto = pickVoice(voices, gender);
-        const sample = `Hallo, ich bin ${name}. Heute gibt's Spaghetti – um 18:30 ist alles fertig.`;
+        const sample = `Hallo, ich bin ${name}. Heute gibt’s Spaghetti – um 18:30 ist alles fertig.`;
         const listen = (voiceURI: string) => {
           unlockSpeech();
           speak(sample, { id: "probe", gender, voice: voiceURI });

@@ -6,7 +6,7 @@
 // rechts legt schnell Neues an.
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeftRight, Check, Pin, PenLine, Refrigerator, ShoppingCart, UtensilsCrossed } from "lucide-react";
 import { CARD, buttonClass } from "@/components/ui/styles";
 import { QuickButton } from "@/components/ui/QuickButton";
@@ -25,6 +25,8 @@ import { takeForToday } from "@/lib/essen/spontanTake";
 import { useTodayIdeas } from "@/lib/essen/useIdeas";
 import { useStock } from "@/lib/essen/useStock";
 import { showToast } from "@/lib/core/toast";
+import { DEMO_SHOPPING, clearDemoTile } from "@/lib/core/demo";
+import { DEMO_OUTLINE } from "./DemoBits";
 import { sortNotes, useSchnellnotiz, useNotes } from "@/lib/notizen";
 import type { HomeData } from "@/components/home/useHomeData";
 import { buzz } from "./actions";
@@ -104,13 +106,32 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCo
 }
 
 /** EINKAUF – S: Anzahl + erste Sachen; M: bis zu 6 zum Abhaken; L: bis zu 10. "+" = Schnell-Eintrag */
-export function ShoppingTile({ half, size = "S" }: { half: boolean; size?: TileSize }) {
+export function ShoppingTile({ half, size = "S", demo = false }: { half: boolean; size?: TileSize; demo?: boolean }) {
   const shopping = useWeekShoppingList("planning");
-  if (!shopping) return <section className={`${HALF} animate-pulse`} aria-label="Einkauf" />;
   // "Jetzt mitnehmen" und selbst Eingetragenes zuerst, dann Zutaten aus Gerichten
-  const open = shopping.list.items
+  const open = (shopping?.list.items ?? [])
     .filter((i) => !i.checked && !i.hidden)
     .sort((a, b) => Number(Boolean(b.now)) - Number(Boolean(a.now)) || Number(Boolean(b.manualId)) - Number(Boolean(a.manualId)));
+  // Beispiel-Tag: Eigenes auf der Liste → Beispiel verschwindet für immer
+  const hasOwn = open.length > 0;
+  useEffect(() => {
+    if (demo && hasOwn) clearDemoTile("einkauf");
+  }, [demo, hasOwn]);
+  if (!shopping) return <section className={`${HALF} animate-pulse`} aria-label="Einkauf" />;
+  if (demo && !hasOwn)
+    return (
+      <section className={`${HALF} ${DEMO_OUTLINE}`} aria-label="Einkauf · Beispiel">
+        <Link href="/einkaufsliste" className="flex flex-col gap-1">
+          <span className={`${HALF_LABEL} pr-6`}>
+            <ShoppingCart className="h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
+            <span className="truncate">Einkauf · {DEMO_SHOPPING.length}</span>
+          </span>
+          <span className={`${half ? "line-clamp-2" : "line-clamp-1"} text-[14px] font-semibold leading-snug`}>{DEMO_SHOPPING.join(" · ")}</span>
+          <span className="text-xs font-semibold text-muted">Beispiel</span>
+        </Link>
+        <QuickAddButton weekStart={shopping.weekStart} settings={shopping.settings} quick className="absolute right-0.5 top-0.5" />
+      </section>
+    );
   const max = size === "L" ? 10 : 6;
   return (
     <section className={HALF} aria-label={open.length ? `Einkauf · ${open.length}` : "Einkauf"}>

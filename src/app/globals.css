@@ -30,6 +30,10 @@
   --color-schnellnotiz-ink: var(--app-schnellnotiz-ink);
   --color-quick: var(--app-quick);
   --color-quick-ink: var(--app-quick-ink);
+  --color-demo: var(--app-demo);
+  --color-demo-ink: var(--app-demo-ink);
+  --color-demo-soft: var(--app-demo-soft);
+  --color-demo-line: var(--app-demo-line);
   --color-weather: var(--app-weather);
   --color-weather-2: var(--app-weather-2);
   --color-weather-line: var(--app-weather-line);
@@ -84,6 +88,11 @@
   --app-schnellnotiz-ink: #8a7420;
   --app-quick: #fdebdf;
   --app-quick-ink: #c4531a;
+  /* Beispiel-Tag: gelbliches Schild, gestrichelter Rahmen */
+  --app-demo: #fff3c4;
+  --app-demo-ink: #7a6a2a;
+  --app-demo-soft: #fffbea;
+  --app-demo-line: #e8d9a8;
   --app-weather: #eaf1fb;
   --app-weather-2: #f7faff;
   --app-weather-line: #d9e5f5;
@@ -127,6 +136,10 @@
   --app-schnellnotiz-ink: #e6cf7a;
   --app-quick: rgb(242 107 33 / 0.2);
   --app-quick-ink: #ffb07a;
+  --app-demo: rgb(232 196 90 / 0.18);
+  --app-demo-ink: #e6cf8a;
+  --app-demo-soft: rgb(232 196 90 / 0.08);
+  --app-demo-line: rgb(232 196 90 / 0.35);
   --app-weather: #1f2733;
   --app-weather-2: #232a35;
   --app-weather-line: #33405a;
@@ -185,6 +198,10 @@
   --app-schnellnotiz-ink: #e6cf7a;
   --app-quick: rgb(242 107 33 / 0.2);
   --app-quick-ink: #ffb07a;
+  --app-demo: rgb(232 196 90 / 0.18);
+  --app-demo-ink: #e6cf8a;
+  --app-demo-soft: rgb(232 196 90 / 0.08);
+  --app-demo-line: rgb(232 196 90 / 0.35);
   --app-weather: #1f2733;
   --app-weather-2: #232a35;
   --app-weather-line: #33405a;

@@ -165,10 +165,10 @@ export function boardRule(ctx: RuleContext, t: string): boolean {
     void refreshForecast(loadPlace()).then((fc) => {
       const minutes = berlinTime().minutes;
       const text = !fc
-        ? "Gerade komme ich nicht an die Wetterdaten – probier's gleich nochmal."
+        ? "Gerade komme ich nicht an die Wetterdaten – probier’s gleich nochmal."
         : question.umbrella
           ? umbrellaAnswer(fc, question.date, minutes)
-          : (dayAnswer(fc, question.date, question.label) ?? "Für den Tag gibt's noch keine Vorhersage – nur die nächsten 7 Tage.");
+          : (dayAnswer(fc, question.date, question.label) ?? "Für den Tag gibt’s noch keine Vorhersage – nur die nächsten 7 Tage.");
       setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text, local: true }] }));
     });
     return true;
@@ -343,7 +343,7 @@ export function homeCommand(ctx: RuleContext, t: string): boolean {
   if (!cmd) return false;
   if (cmd.kind === "undo") {
     const label = undoLast();
-    localReply(t, label ? `Zurückgenommen ✓ ${label}` : "Da gibt's gerade nichts zurückzunehmen.");
+    localReply(t, label ? `Zurückgenommen ✓ ${label}` : "Da gibt’s gerade nichts zurückzunehmen.");
     return true;
   }
   if (cmd.kind === "show") {

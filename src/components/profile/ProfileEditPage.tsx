@@ -78,7 +78,7 @@ function EditForm({
         {intro && <p className="px-1 text-base text-muted">{intro}</p>}
         {children(draft, setDraft)}
         <p className="px-1 text-sm text-muted" role="status">
-          {!valid ? "So geht's noch nicht ganz – ich übernehme es, sobald es passt." : "Gilt sofort – nichts wird gelöscht."}
+          {!valid ? "So geht’s noch nicht ganz – ich übernehme es, sobald es passt." : "Gilt sofort – nichts wird gelöscht."}
         </p>
       </main>
     </div>
