@@ -194,6 +194,8 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   Download); Wiederherstellen zeigt vorher „3 Termine, 5 Aufgaben, …“
   (`backupSummary`) und fragt nach; Zugangscode, Zähler und Geräte-Kennung
   bleiben auf dem Gerät. Der Icon-Hinweis (`iconChangeHint`) verweist darauf.
+  „Daten & App“ geht auch ohne Profil; beim Kennenlernen steht oben links
+  „Sicherung einspielen“ (nach dem Neu-Hinzufügen zum Home-Bildschirm).
 - Tests: Vitest (`npm test`, `tests/*.test.ts`, Zeit fest über `at()` aus
   `tests/helpers.ts`, Zeitzone Europe/Berlin). Ungenutzter Code: `npx knip`
   (Konfiguration `knip.json`; `@public` im Kommentar = bewusst für Tests/Push).

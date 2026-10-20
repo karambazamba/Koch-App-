@@ -204,7 +204,7 @@ export function DataSection({ onReset }: { onReset: () => void }) {
       </button>
       {incoming && (
         <ConfirmDialog
-          title="Sicherung einspielen?"
+          title="Daten wiederherstellen?"
           text={`${backupSummary(incoming)} – Stand vom ${incoming.exportedAt ? new Date(incoming.exportedAt).toLocaleDateString("de-DE") : "–"}. Was jetzt auf diesem Handy gespeichert ist, wird ersetzt.`}
           confirmLabel="Einspielen"
           onCancel={() => setIncoming(null)}

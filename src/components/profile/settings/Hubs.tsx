@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { expectReplace } from "@/lib/core/navigation";
+import { PageHeader } from "@/components/PageHeader";
+import { PAGE_MAIN } from "@/components/ui/styles";
 import { Ban, CalendarRange, Heart, Home, Palmtree, ShoppingBasket, ShoppingCart, Sparkles, Sprout, ThumbsDown, UtensilsCrossed, Wheat, Salad } from "lucide-react";
 import { usePersonRemoval } from "@/components/profile/PersonRemoval";
 import { sortedBases } from "@/lib/essen/bases";
@@ -186,29 +188,29 @@ export function FamilyHubView() {
 export function DataView() {
   const [confirmReset, setConfirmReset] = useState(false);
   const router = useRouter();
+  // Auch ohne Profil erreichbar: nach dem Neu-Hinzufügen zum Home-Bildschirm die Sicherung einspielen
   return (
-    <SettingsPage title="Daten & App" note={false}>
-      {() => (
-        <>
-          <DataSection onReset={() => setConfirmReset(true)} />
-          {confirmReset && (
-            <ConfirmDialog
-              title="Alles löschen und neu beginnen?"
-              text="Profil, Pläne und Listen auf diesem Handy sind dann weg. Vorher sichern geht oben."
-              confirmLabel="Löschen"
-              danger
-              onCancel={() => setConfirmReset(false)}
-              onConfirm={() => {
-                setConfirmReset(false);
-                clearProfile();
-                clearWelcome();
-                expectReplace();
-                router.replace("/profil");
-              }}
-            />
-          )}
-        </>
-      )}
-    </SettingsPage>
+    <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
+      <PageHeader title="Daten & App" backHref="/profil" />
+      <main className={`${PAGE_MAIN} gap-4`}>
+        <DataSection onReset={() => setConfirmReset(true)} />
+        {confirmReset && (
+          <ConfirmDialog
+            title="Alles löschen und neu beginnen?"
+            text="Profil, Pläne und Listen auf diesem Handy sind dann weg. Vorher sichern geht oben."
+            confirmLabel="Löschen"
+            danger
+            onCancel={() => setConfirmReset(false)}
+            onConfirm={() => {
+              setConfirmReset(false);
+              clearProfile();
+              clearWelcome();
+              expectReplace();
+              router.replace("/profil");
+            }}
+          />
+        )}
+      </main>
+    </div>
   );
 }
