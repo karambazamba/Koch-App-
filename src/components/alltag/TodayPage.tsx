@@ -178,7 +178,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   // Kacheln: gespeicherte Reihenfolge, Phase holt Passendes nach oben (ändert nie die gespeicherte Sortierung)
   const visible = all.filter((t) => t.visible && !tileMeta(t.id).soon && (t.id !== "vorrat" || pantryOn));
   const skip: HomeTileId[] = [];
-  if (view.familyUpcomingOnly && !termine.length) skip.push("termine");
+  if (view.familyUpcomingOnly && !termine.length && !demoDay.termine) skip.push("termine");
   const top = view.top.filter((t) => t.id !== "essen" || !cookingNow || Boolean(dish));
   const extraTop: TopTile[] = think && timers && timersActive(timers, nowMs) ? [{ id: "timer", force: true }] : [];
   const arranged = editing.on ? { tiles: visible, collapsed: [] as HomeTile[] } : arrangeHome(visible, { ...view, top }, { available: all, skip, extraTop });
@@ -329,7 +329,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
                             : { label: "Mehr dazu", onClick: () => setTipOpen(true) }
                           : null
                   }
-                  oneLine={!reminder && !paused && !phaseParts && !(tip && !openItems.length && !sentence.action)}
+                  oneLine={!reminder && !demoDay.tiles.length && !paused && !phaseParts && !(tip && !openItems.length && !sentence.action)}
                   onTap={!reminder && !paused && !phaseParts && sentence.action === "essen" ? () => openHelper(undefined, "Was gibt’s heute Abend?") : undefined}
                 />
               </div>

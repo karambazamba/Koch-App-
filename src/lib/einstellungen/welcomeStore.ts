@@ -40,7 +40,8 @@ function finishWelcome(state: WelcomeState) {
  */
 export function startFresh() {
   finishWelcome(startState());
-  saveHomeTiles(DEFAULT_HOME.map((t) => (t.id === "pinnwand" || t.id === "wetter" ? { ...t, visible: true, size: "S" } : t)));
+  const small = (id: string) => ({ ...DEFAULT_HOME.find((t) => t.id === id)!, visible: true, size: "S" as const });
+  saveHomeTiles([small("pinnwand"), small("wetter"), ...DEFAULT_HOME.filter((t) => t.id !== "pinnwand" && t.id !== "wetter")]);
   startDemo();
 }
 
