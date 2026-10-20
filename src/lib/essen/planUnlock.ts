@@ -2,7 +2,8 @@
 // diese Woche (danach wieder spontan) oder ab jetzt immer.
 
 import { markAsked } from "../core/activity";
-import { saveProfile, type HouseholdProfile, type PlanStyle } from "../einstellungen/profile";
+import { type HouseholdProfile, type PlanStyle } from "../einstellungen/profile";
+import { saveProfile } from "../einstellungen/profileStore";
 import { weekStartFor } from "./weekPlan";
 
 export type UnlockChoice = { kind: "woche" } | { kind: "immer"; style: Exclude<PlanStyle, "spontan"> };

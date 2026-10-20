@@ -21,7 +21,7 @@ const NON_TEXT_INPUTS = new Set([
   "submit",
 ]);
 
-export function isTextField(el: Element | null): el is HTMLInputElement | HTMLTextAreaElement {
+function isTextField(el: Element | null): el is HTMLInputElement | HTMLTextAreaElement {
   if (el instanceof HTMLTextAreaElement) return true;
   return el instanceof HTMLInputElement && !NON_TEXT_INPUTS.has(el.type);
 }
@@ -37,7 +37,7 @@ function stickyHeaderHeight(): number {
 }
 
 /** Scrollt so wenig wie nötig, damit `el` (samt Label) sichtbar ist. */
-export function scrollIntoVisibleArea(el: HTMLElement) {
+function scrollIntoVisibleArea(el: HTMLElement) {
   const target = el.closest<HTMLElement>("label") ?? el;
   const vv = window.visualViewport;
   const offsetTop = vv?.offsetTop ?? 0;

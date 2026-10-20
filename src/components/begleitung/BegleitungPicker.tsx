@@ -15,10 +15,10 @@ import { previewHelperVoice, VOICE_HINT } from "@/lib/lotte/speech";
 
 const isStandard = (h: HelperSettings) => STANDARD_HELPERS.some((s) => s.name === h.name && s.art === h.art);
 
-export const artTitle = (art: HelperArt) => (art === "assistent" ? "dein Assistent" : "deine Assistentin");
+const artTitle = (art: HelperArt) => (art === "assistent" ? "dein Assistent" : "deine Assistentin");
 
 /** "▶ Stimme" – mit einmaligem Hinweis, falls keine passende Stimme installiert ist */
-export function playVoice(h: Pick<HelperSettings, "name" | "voice">) {
+function playVoice(h: Pick<HelperSettings, "name" | "voice">) {
   if (previewHelperVoice(h.name, h.voice)) showToast({ text: VOICE_HINT, seconds: 9 });
 }
 
@@ -123,7 +123,7 @@ export function ArtChoice({ value, onChange }: { value: HelperArt; onChange: (ar
           role="radio"
           aria-checked={value === art}
           onClick={() => onChange(art)}
-          className={`h-10 flex-1 rounded-xl text-[15px] font-bold transition ${value === art ? "bg-surface text-ink shadow-card" : "text-muted"}`}
+          className={`hit h-10 flex-1 rounded-xl text-[15px] font-bold transition ${value === art ? "bg-surface text-ink shadow-card" : "text-muted"}`}
         >
           {art === "assistentin" ? "Assistentin" : "Assistent"}
         </button>

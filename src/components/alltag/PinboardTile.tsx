@@ -17,7 +17,7 @@ import { showDeleted } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
 import { PIN_MAX, REACTIONS, addPin, changePins, createPin, hasUnread, markPinsRead, personTone, pinMeta, removePin, setPinPinned, toggleReaction, usePins, visiblePins, type PinMessage } from "@/lib/pinnwand";
 import { useSpeechInput } from "@/lib/lotte/useSpeechInput";
-import { kladdeClock } from "@/components/notizen/Kladde";
+import { shortClock } from "@/components/notizen/Schnellnotiz";
 import { buzz } from "./actions";
 
 const TONES = ["bg-accent", "bg-work", "bg-person-3", "bg-person-4"];
@@ -30,7 +30,7 @@ function Avatar({ name }: { name: string }) {
   );
 }
 
-const meta = (m: PinMessage, me: string) => pinMeta(m, me, todayIso(), kladdeClock, (iso) => toIsoDate(new Date(iso)));
+const meta = (m: PinMessage, me: string) => pinMeta(m, me, todayIso(), shortClock, (iso) => toIsoDate(new Date(iso)));
 
 export function PinboardTile({ size = "M", me }: { size?: TileSize; me: string }) {
   const pins = usePins();
@@ -82,7 +82,7 @@ export function PinboardTile({ size = "M", me }: { size?: TileSize; me: string }
             })}
           </ul>
         ) : (
-          <button type="button" onClick={() => setWriting(true)} className="mt-1 text-left text-[14px] text-muted">
+          <button type="button" onClick={() => setWriting(true)} className="hit mt-1 text-left text-[14px] text-muted">
             Kurze Nachricht an alle – z. B. „Bin um 20 Uhr da“
           </button>
         )}

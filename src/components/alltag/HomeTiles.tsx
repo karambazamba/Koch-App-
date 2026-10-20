@@ -11,7 +11,7 @@ import { ArrowLeftRight, Check, Pin, PenLine, Refrigerator, ShoppingCart, Utensi
 import { CARD, buttonClass } from "@/components/ui/styles";
 import { QuickButton } from "@/components/ui/QuickButton";
 import { QuickAddButton } from "@/components/shopping/QuickAdd";
-import { KladdeSheet } from "@/components/notizen/Kladde";
+import { SchnellnotizSheet } from "@/components/notizen/Schnellnotiz";
 import { clockLabel, itemText } from "@/lib/aufgaben/answers";
 import type { DayItem } from "@/lib/aufgaben/model";
 import type { TileSize } from "@/lib/core/homeLayout";
@@ -25,13 +25,13 @@ import { takeForToday } from "@/lib/essen/spontanTake";
 import { useTodayIdeas } from "@/lib/essen/useIdeas";
 import { useStock } from "@/lib/essen/useStock";
 import { showToast } from "@/lib/core/toast";
-import { sortNotes, useKladde, useNotes } from "@/lib/notizen";
+import { sortNotes, useSchnellnotiz, useNotes } from "@/lib/notizen";
 import type { HomeData } from "@/components/home/useHomeData";
 import { buzz } from "./actions";
 import { dishOf } from "./useMeals";
 
-export const HALF = `${CARD} relative flex min-h-[92px] flex-col p-3.5`;
-export const HALF_LABEL = "flex min-w-0 items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted";
+const HALF = `${CARD} relative flex min-h-[92px] flex-col p-3.5`;
+const HALF_LABEL = "flex min-w-0 items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted";
 
 /** ESSEN – S: Gericht + ⇄; M: breit mit Zeit, Zutaten-Status, ⇄; L: + Ideen für morgen */
 export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCook }: { data: HomeData; dish: string | null; over: boolean; dishClock: string | null; onOpen: () => void; size?: TileSize; onCook?: () => void }) {
@@ -164,19 +164,19 @@ export function ShoppingTile({ half, size = "S" }: { half: boolean; size?: TileS
  * diese Notiz, Kachel = Notizen-Seite.
  */
 export function NotesTile({ name, size = "M" }: { name: string; size?: TileSize }) {
-  const kladde = useKladde();
+  const schnellnotiz = useSchnellnotiz();
   const notes = useNotes();
   const [open, setOpen] = useState(false);
-  const lines = (kladde?.text ?? "").split(/\n/).map((l) => l.trim()).filter(Boolean);
+  const lines = (schnellnotiz?.text ?? "").split(/\n/).map((l) => l.trim()).filter(Boolean);
   const sorted = notes ? sortNotes(notes) : [];
   const pinned = sorted.filter((n) => n.data.pinned);
   const newest = [...(notes ?? [])].sort((a, b) => b.geaendert.localeCompare(a.geaendert)).filter((n) => !n.data.pinned).slice(0, 3);
   const shown = lines.slice(0, size === "S" ? 2 : 3);
   return (
     <>
-      <section className="relative flex min-h-[92px] flex-col gap-1 rounded-2xl border border-kladde-line bg-kladde p-3.5" aria-label="Notizen">
+      <section className="relative flex min-h-[92px] flex-col gap-1 rounded-2xl border border-schnellnotiz-line bg-schnellnotiz p-3.5" aria-label="Notizen">
         <Link href="/notizen" className="flex flex-col gap-0.5 pr-8" aria-label="Notizen öffnen">
-          <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase leading-tight tracking-wider text-kladde-ink">
+          <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase leading-tight tracking-wider text-schnellnotiz-ink">
             <PenLine className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
             Notizen
           </span>
@@ -192,13 +192,13 @@ export function NotesTile({ name, size = "M" }: { name: string; size?: TileSize 
           {lines.length > shown.length && <span className="text-[11px] leading-tight text-muted">+ {lines.length - shown.length} weitere Zeilen</span>}
         </Link>
         <span className="absolute right-3.5 top-3">
-          <QuickButton icon={PenLine} tone="kladde" label="Schnellnotiz schreiben" onClick={() => setOpen(true)} />
+          <QuickButton icon={PenLine} tone="schnellnotiz" label="Schnellnotiz schreiben" onClick={() => setOpen(true)} />
         </span>
         {size !== "S" && pinned.length > 0 && (
           <div className="mt-0.5 flex flex-wrap gap-1.5" aria-label="Angeheftet">
             {pinned.slice(0, 6).map((n) => (
-              <Link key={n.id} href={`/notizen/bearbeiten?id=${n.id}`} className="inline-flex max-w-full items-center gap-1 rounded-full border border-kladde-line bg-surface/70 px-2.5 py-1 text-[12.5px] font-semibold">
-                <Pin className="h-3 w-3 shrink-0 text-kladde-ink" strokeWidth={2.25} aria-hidden />
+              <Link key={n.id} href={`/notizen/bearbeiten?id=${n.id}`} className="inline-flex max-w-full items-center gap-1 rounded-full border border-schnellnotiz-line bg-surface/70 px-2.5 py-1 text-[12.5px] font-semibold">
+                <Pin className="h-3 w-3 shrink-0 text-schnellnotiz-ink" strokeWidth={2.25} aria-hidden />
                 <span className="truncate">
                   {n.data.emoji ? `${n.data.emoji} ` : ""}
                   {n.data.title}
@@ -208,7 +208,7 @@ export function NotesTile({ name, size = "M" }: { name: string; size?: TileSize 
           </div>
         )}
         {size === "L" && newest.length > 0 && (
-          <ul className="mt-1 flex flex-col gap-0.5 border-t border-kladde-line pt-1.5" aria-label="Neueste Notizen">
+          <ul className="mt-1 flex flex-col gap-0.5 border-t border-schnellnotiz-line pt-1.5" aria-label="Neueste Notizen">
             {newest.map((n) => (
               <li key={n.id}>
                 <Link href={`/notizen/bearbeiten?id=${n.id}`} className="flex min-h-9 items-center gap-2 text-[13.5px]">
@@ -220,7 +220,7 @@ export function NotesTile({ name, size = "M" }: { name: string; size?: TileSize 
           </ul>
         )}
       </section>
-      {open && <KladdeSheet name={name} onClose={() => setOpen(false)} />}
+      {open && <SchnellnotizSheet name={name} onClose={() => setOpen(false)} />}
     </>
   );
 }

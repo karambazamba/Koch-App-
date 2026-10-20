@@ -18,10 +18,9 @@ export function SpontanRedirect() {
     fired.current = true;
     expectReplace();
     router.replace("/");
-    // Der Küchenhelfer lebt im Layout und bleibt beim Seitenwechsel offen;
-    // kurz warten, bis er beim ersten Laden zuhört (nicht abbrechen – die
-    // Seite selbst ist dann schon weg)
-    setTimeout(() => openHelper("spontan"), 80);
+    // Der Chat lebt im Layout; hört er beim ersten Laden noch nicht zu,
+    // wartet die Bitte, bis er da ist (openHelper)
+    openHelper("spontan");
   }, [router]);
   return null;
 }

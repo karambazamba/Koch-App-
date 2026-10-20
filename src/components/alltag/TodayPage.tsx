@@ -44,9 +44,9 @@ import { dueReminder } from "@/lib/aufgaben/reminders";
 import { markReminderSeen, useSeenReminders } from "@/lib/aufgaben/store";
 import { greeting, homeSentence, type SentencePart } from "@/lib/aufgaben/summary";
 import { addDays } from "@/lib/core/now";
-import { hasKids, helperName, mealClockFor, pausedOn, saveProfile } from "@/lib/einstellungen/profile";
+import { hasKids, helperName, mealClockFor, pausedOn } from "@/lib/einstellungen/profile";
+import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { useFeature } from "@/lib/core/features";
-import { dailyTip } from "@/lib/essen/tips/daily";
 import { pauseLabel } from "@/lib/essen/spontan";
 import { pushUndo } from "@/lib/core/undo";
 import { mealIsOver, useCookedDays } from "@/lib/essen/mealDone";
@@ -146,13 +146,18 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   }, []);
   const cookingNow = phase.def?.id === "kochen";
   useWakeLock(Boolean(view.wakeLock) && !editing.on);
+  // Tipp-Sammlung (150 Tipps) erst laden, wenn Tipps oder Wochenend-Ideen an sind
+  const [tipModule, setTipModule] = useState<typeof import("@/lib/essen/tips/daily") | null>(null);
+  useEffect(() => {
+    if ((tipsOn || weekendOn) && !tipModule) void import("@/lib/essen/tips/daily").then((m) => setTipModule(m));
+  }, [tipsOn, weekendOn, tipModule]);
 
   // Arbeit ausblenden (Feierabend, freie Tage); im Feierabend nur Familien-Termine, die heute noch kommen
   const items = view.hideWork ? allItems.filter((i) => i.room !== "arbeit") : allItems;
   const openItems = items.filter((i) => !i.done);
   const tip =
-    (tipsOn || weekendOn) && !openItems.length
-      ? dailyTip(data.todayIso, { dish, tips: Boolean(tipsOn), weekendIdeas: Boolean(weekendOn), kids: hasKids(data.profile), persons: data.profile.persons.length })
+    tipModule && (tipsOn || weekendOn) && !openItems.length
+      ? tipModule.dailyTip(data.todayIso, { dish, tips: Boolean(tipsOn), weekendIdeas: Boolean(weekendOn), kids: hasKids(data.profile), persons: data.profile.persons.length })
       : null;
   const upcoming = upcomingTermine(entries, data.todayIso, minutes).filter((i) => !view.hideWork || i.room !== "arbeit");
   const termine = view.familyUpcomingOnly ? upcoming.filter((i) => i.room === "familie") : upcoming;
@@ -498,7 +503,7 @@ function useHomeEditing() {
 }
 
 /** Lottes EIN Satz (wichtige Teile fett, eine Zeile) mit höchstens einem Knopf; `onTap` = der Satz selbst ist antippbar */
-export function LotteSays({ parts, name, action, oneLine = false, onTap }: { parts: SentencePart[]; name: string; action: { label: string; onClick: () => void } | null; oneLine?: boolean; onTap?: () => void }) {
+function LotteSays({ parts, name, action, oneLine = false, onTap }: { parts: SentencePart[]; name: string; action: { label: string; onClick: () => void } | null; oneLine?: boolean; onTap?: () => void }) {
   const text = parts.map((p, i) => (p.b ? <strong key={i} className={`font-extrabold ${onTap ? "text-accent-strong underline decoration-2 underline-offset-2" : ""}`}>{p.t}</strong> : <span key={i}>{p.t}</span>));
   return (
     <section className="flex items-center gap-3" aria-label={`${name} sagt`}>

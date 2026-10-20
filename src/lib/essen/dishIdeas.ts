@@ -7,7 +7,7 @@ import { sameIngredient, type PantryItem } from "./pantry";
 
 export type Season = "fruehling" | "sommer" | "herbst" | "winter";
 
-export type DishIdea = {
+type DishIdea = {
   title: string;
   minutes: number;
   category: RecipeCategory;
@@ -111,7 +111,7 @@ export function stockKey(stock: PantryItem[]): string {
     .join("|");
 }
 
-export type StockIdea = { title: string; minutes: number; category: RecipeCategory; uses: string[]; needs: string[] };
+type StockIdea = { title: string; minutes: number; category: RecipeCategory; uses: string[]; needs: string[] };
 
 /**
  * Drei Ideen nur aus der Gerichte-Liste (z. B. Testmodus): die mit den

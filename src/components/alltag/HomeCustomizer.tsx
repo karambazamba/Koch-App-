@@ -14,7 +14,7 @@ import { featureOn, setFeature } from "@/lib/core/features";
 import { pushUndo } from "@/lib/core/undo";
 import { buzz } from "./actions";
 
-export const TILE_ICONS: Record<HomeTileId, LucideIcon> = {
+const TILE_ICONS: Record<HomeTileId, LucideIcon> = {
   pinnwand: Pin,
   termine: CalendarClock,
   aufgaben: ListChecks,
@@ -30,7 +30,7 @@ export const TILE_ICONS: Record<HomeTileId, LucideIcon> = {
 };
 
 /** Kachel hinzufügen (still) bzw. entfernen (mit Rückgängig) */
-export function setTile(all: HomeTile[], id: HomeTileId, show: boolean) {
+function setTile(all: HomeTile[], id: HomeTileId, show: boolean) {
   const meta = tileMeta(id);
   // Baustein-Kachel (Vorrat): beim Hinzufügen den Baustein einschalten
   const switched = show && meta.feature && !featureOn(meta.feature) ? setFeature(meta.feature, true) : false;
@@ -44,7 +44,7 @@ export function setTile(all: HomeTile[], id: HomeTileId, show: boolean) {
 }
 
 /** Sichtbar auf der Startseite (Bausteine nur, wenn sie an sind) */
-export const isActive = (t: HomeTile) => t.visible && !tileMeta(t.id).soon && (!tileMeta(t.id).feature || featureOn(tileMeta(t.id).feature!));
+const isActive = (t: HomeTile) => t.visible && !tileMeta(t.id).soon && (!tileMeta(t.id).feature || featureOn(tileMeta(t.id).feature!));
 
 export function TilePicker({ onClose }: { onClose: () => void }) {
   const all = useHomeTiles();

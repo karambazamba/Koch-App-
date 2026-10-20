@@ -5,7 +5,8 @@
 import { BASES } from "./bases";
 import type { Ingredient, Recipe } from "./cookbook";
 import { findFood, recognizeFood } from "./leftovers/foods";
-import { loadProfile, saveProfile, type HouseholdProfile, type LikedIngredient } from "../einstellungen/profile";
+import { type HouseholdProfile, type LikedIngredient } from "../einstellungen/profile";
+import { loadProfile, saveProfile } from "../einstellungen/profileStore";
 
 /** Wie stark eine Quelle zählt */
 export const LIKE_WEIGHTS = { chat: 3, up: 2, cooked: 1, chosen: 1, manual: 5 } as const;
@@ -22,7 +23,7 @@ const ALIASES: Record<string, string> = { knobi: "Knoblauch", möhre: "Karotte",
  * Zutat → Anzeigename einer Vorliebe ("rote Zwiebeln" → "Zwiebel"), nur für
  * bekannte Lebensmittel; Grundzutaten und Basen (Reis, Nudeln …) → null.
  */
-export function likeName(raw: string): string | null {
+function likeName(raw: string): string | null {
   const text = raw.trim();
   if (!text) return null;
   const last = (text.split(/\s+/).pop() ?? text).replace(/zehen?$/i, "");

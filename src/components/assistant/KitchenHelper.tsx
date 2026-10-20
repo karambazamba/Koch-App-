@@ -1,6 +1,6 @@
 "use client";
 
-import { useKladde, useNotes } from "@/lib/notizen";
+import { useSchnellnotiz, useNotes } from "@/lib/notizen";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Undo2 } from "lucide-react";
@@ -19,10 +19,17 @@ import type { AssistantData } from "@/lib/lotte/ops";
 import { migrateOldTermine, useEntries } from "@/lib/aufgaben/store";
 import { useHomeTiles } from "@/lib/core/homeLayout";
 import { LotteBar } from "@/components/alltag/HomePager";
-import { readDevFlag } from "@/lib/core/features";
 import { helperName } from "@/lib/einstellungen/profile";
-import { HelperPanel, spontanStartTurn, type ChatState } from "./HelperPanel";
+import { removeRetiredKeys } from "@/lib/core/storage";
+import { adoptLegacySpeech } from "@/lib/lotte/speech";
+import { spontanStartTurn, type ChatState } from "./chatTypes";
 import { loadSpontanFilters } from "./SpontanBoard";
+import dynamic from "next/dynamic";
+
+// Das Gespräch (mit Mails, Backstube, Supermarkt …) wird erst gebraucht, wenn
+// man es öffnet – eigener Teil, der nach dem Laden der Seite im Leerlauf vorgeholt wird
+const loadPanel = () => import("./HelperPanel").then((m) => m.HelperPanel);
+const HelperPanel = dynamic(loadPanel, { ssr: false });
 
 /** Nur nach echtem Löschen: kleine Meldung "Gelöscht · Rückgängig" für 3 Sekunden */
 const UNDO_SECONDS = 3;
@@ -80,19 +87,26 @@ export function KitchenHelper() {
   const entries = useEntries();
   const home = useHomeTiles();
   const notes = useNotes();
-  const kladde = useKladde();
+  const schnellnotiz = useSchnellnotiz();
   const data: AssistantData | null | undefined =
-    profile === undefined || !weekPlans || !mealPlans || !recipes || !shopping || !entries || !home || !notes || !kladde
+    profile === undefined || !weekPlans || !mealPlans || !recipes || !shopping || !entries || !home || !notes || !schnellnotiz
       ? undefined
       : profile === null
         ? null
-        : { profile, weekPlans, mealPlans, recipes, shopping, entries, home, notes, kladde: kladde.text };
+        : { profile, weekPlans, mealPlans, recipes, shopping, entries, home, notes, schnellnotiz: schnellnotiz.text };
 
-  // Alte Termine (wasgibts.termine) einmalig ins neue Modell übernehmen;
-  // Entwicklungsansicht nur über /?legacy=1 (nirgends verlinkt)
+  // Gespräch im Leerlauf vorholen, damit es beim Antippen sofort da ist
+  useEffect(() => {
+    const preload = () => void loadPanel();
+    if (typeof window.requestIdleCallback === "function") window.requestIdleCallback(preload, { timeout: 4000 });
+    else setTimeout(preload, 1500);
+  }, []);
+
+  // Alte Daten einmalig übernehmen, dann nicht mehr genutzte Schlüssel löschen
   useEffect(() => {
     migrateOldTermine();
-    readDevFlag(window.location.search);
+    adoptLegacySpeech();
+    removeRetiredKeys(localStorage, sessionStorage);
   }, []);
 
   // App geöffnet (für "Willkommen zurück" nach 3+ Tagen)

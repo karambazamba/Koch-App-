@@ -7,7 +7,7 @@ import { createIngredient, createRecipe, saveRecipe, useRecipes, type Recipe } f
 import { BAKING_RECIPES } from "./data";
 import type { BuiltinBakingRecipe } from "./types";
 
-export const BUILTIN_PREFIX = "b:";
+const BUILTIN_PREFIX = "b:";
 
 const toRecipe = (b: BuiltinBakingRecipe): Recipe => ({
   ...createRecipe({

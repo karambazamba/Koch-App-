@@ -38,7 +38,7 @@ export function ItemContent({
           aria-checked={item.checked}
           aria-label={`${item.name} ${item.checked ? "nicht mehr abhaken" : "abhaken"}`}
           onClick={onToggle}
-          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition active:scale-90 ${
+          className={`hit flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition active:scale-90 ${
             item.checked ? "border-accent bg-accent text-on-accent" : "border-stone-300 bg-surface text-transparent"
           }`}
         >
@@ -54,7 +54,7 @@ export function ItemContent({
             onClick={onInfo}
             aria-label={`Wofür: ${item.name}`}
             aria-expanded={infoOpen}
-            className="-mx-1 flex h-8 w-8 shrink-0 items-center justify-center text-stone-300"
+            className="hit -mx-1 flex h-8 w-8 shrink-0 items-center justify-center text-stone-300"
           >
             <Info className="h-4 w-4" strokeWidth={2} aria-hidden />
           </button>

@@ -267,7 +267,7 @@ export function ShoppingListView() {
                   type="button"
                   onClick={() => allDone && setExpanded((e) => (e.includes(group.id) ? e.filter((x) => x !== group.id) : [...e, group.id]))}
                   aria-expanded={show}
-                  className="flex min-w-0 flex-1 items-center gap-1.5 text-left text-xs font-bold uppercase tracking-wider text-muted"
+                  className="hit flex min-w-0 flex-1 items-center gap-1.5 text-left text-xs font-bold uppercase tracking-wider text-muted"
                 >
                   <Icon className="h-4 w-4 text-accent" strokeWidth={2} aria-hidden />
                   <span className="truncate">{group.label}</span>
@@ -330,7 +330,7 @@ export function ShoppingListView() {
           </div>
         )}
 
-        <button type="button" onClick={() => setStaplesOpen(true)} className="-mt-1 flex items-center gap-1.5 self-start px-1 text-sm font-semibold text-muted">
+        <button type="button" onClick={() => setStaplesOpen(true)} className="hit -mt-1 flex items-center gap-1.5 self-start px-1 text-sm font-semibold text-muted">
           <Repeat className="h-4 w-4" strokeWidth={2} aria-hidden />
           Stammliste ansehen
         </button>

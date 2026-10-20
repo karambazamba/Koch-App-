@@ -9,11 +9,11 @@ import type { Recognized } from "./engine";
 
 export type RecognizeKind = "names" | "person" | "diet";
 
-export type RecognizeRequest = { kind: RecognizeKind; text: string; names: string[]; person?: string };
+type RecognizeRequest = { kind: RecognizeKind; text: string; names: string[]; person?: string };
 
-export type CreateJson = (params: Anthropic.MessageCreateParamsNonStreaming) => Promise<Anthropic.Message>;
+type CreateJson = (params: Anthropic.MessageCreateParamsNonStreaming) => Promise<Anthropic.Message>;
 
-export const RECOGNIZE_LIMITS = { textChars: 600, names: 20 };
+const RECOGNIZE_LIMITS = { textChars: 600, names: 20 };
 
 const str = { type: "string" };
 const nullable = (t: object) => ({ anyOf: [t, { type: "null" }] });
@@ -118,7 +118,7 @@ const terms = (v: unknown) => (Array.isArray(v) ? v.map(cleanTerm).filter(Boolea
 const age = (v: unknown) => (typeof v === "number" && Number.isInteger(v) && v >= 0 && v <= 110 ? v : undefined);
 
 /** KI-Antwort prüfen: nur gültige Werte übernehmen */
-export function validateRecognized(req: RecognizeRequest, raw: unknown): Recognized {
+function validateRecognized(req: RecognizeRequest, raw: unknown): Recognized {
   const o = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   if (req.kind === "names") {
     const names: NameHint[] = [];

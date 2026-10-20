@@ -8,9 +8,9 @@
 import { createEntry, type Entry } from "../core/entries";
 
 export const PIN_MAX = 140;
-export const PIN_DAYS = 3;
+const PIN_DAYS = 3;
 export const REACTIONS = ["👍", "❤️"] as const;
-export type Reaction = (typeof REACTIONS)[number];
+type Reaction = (typeof REACTIONS)[number];
 
 export type PinData = {
   text: string;
@@ -50,7 +50,7 @@ export function sanitizePin(raw: unknown): PinMessage | null {
 }
 
 /** Noch sichtbar: dauerhaft angeheftet oder jünger als 3 Tage */
-export const isFresh = (m: PinMessage, nowMs: number) => m.data.pinned || nowMs - new Date(m.erstellt).getTime() < PIN_DAYS * 86_400_000;
+const isFresh = (m: PinMessage, nowMs: number) => m.data.pinned || nowMs - new Date(m.erstellt).getTime() < PIN_DAYS * 86_400_000;
 
 /** Sichtbare Nachrichten, neueste zuerst */
 export function visiblePins(list: PinMessage[], nowMs: number): PinMessage[] {

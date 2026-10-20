@@ -5,7 +5,7 @@
 import type { Note } from "./model";
 import { findNote } from "./model";
 
-export type NoteCommand =
+type NoteCommand =
   | { kind: "create"; title: string; text?: string; items?: string[] }
   | { kind: "add"; list: string; items: string[] }
   | { kind: "show"; query: string }
@@ -22,7 +22,7 @@ const splitItems = (s: string) =>
     .filter(Boolean);
 
 /** Zu welcher Liste gehört ein Gedanke? ("… wünscht sich …" → Geschenkideen) */
-export function listFor(content: string): { list: string; item: string } | null {
+function listFor(content: string): { list: string; item: string } | null {
   const wish = content.match(/^([A-ZÄÖÜ][\wäöüß]+)\s+wünscht\s+sich\s+(?:zum\s+\w+\s+)?(.+)$/);
   if (wish && !/\b(essen|kochen|pfannkuchen|pizza|nudeln|spaghetti|lasagne|pommes)\b/i.test(wish[2])) return { list: "Geschenkideen", item: `${cap(clean(wish[2]))} (für ${wish[1]})` };
   const gift = content.match(/^(?:geschenk(?:idee)?\s+für\s+([A-ZÄÖÜ][\wäöüß]+)\s*:?\s*)(.+)$/i);

@@ -5,14 +5,24 @@ export const APP_NAME = "Was gibt's?";
 export const APP_SHORT_NAME = "Was gibt's";
 
 /** Versionsnummer (wie in package.json) – in den Einstellungen unter "Daten & App" */
-export const APP_VERSION = "0.24.0";
+export const APP_VERSION = "0.25.0";
+
+/** Tag der Auslieferung (beim Bauen gesetzt, next.config.ts) */
+const APP_BUILD_DATE = process.env.BUILD_DATE ?? "";
+
+/** "Version 0.25 · Stand 20.10.2026" */
+export function versionLabel(): string {
+  const [y, m, d] = APP_BUILD_DATE.split("-");
+  const short = APP_VERSION.replace(/\.0$/, "");
+  return y ? `Version ${short} · Stand ${d}.${m}.${y}` : `Version ${short}`;
+}
 
 /**
  * Version der Icon-Dateien – steht im Dateinamen (z. B. apple-touch-icon-v3.png),
  * damit iPhone/Android ein neues Icon nicht aus dem Cache holen. Bei jedem neuen
  * Icon erhöhen; `npm run icons` liest den Wert von hier.
  */
-export const ICON_VERSION = "v3";
+const ICON_VERSION = "v3";
 
 /** Pfad einer Icon-Datei mit Version: icon("icon-192.png") → "/icons/icon-192-v3.png" */
 export const icon = (file: string) => `/icons/${file.replace(/(\.\w+)$/, `-${ICON_VERSION}$1`)}`;
@@ -26,7 +36,7 @@ export const FARBE_COOKIE = "farbe";
  */
 export const iconFor = (farbe: string | undefined, file: string) => `/icons/${ICON_FARBEN.includes(farbe ?? "") ? farbe : "orange"}/${file.replace(/(\.\w+)$/, `-${ICON_VERSION}$1`)}`;
 /** Farben mit eigenem Icon-Satz (wie AVATAR_COLORS) */
-export const ICON_FARBEN = ["orange", "nachtblau", "himmelblau", "lila", "beere", "rosa", "koralle", "senf", "waldgruen", "anthrazit"];
+const ICON_FARBEN = ["orange", "nachtblau", "himmelblau", "lila", "beere", "rosa", "koralle", "senf", "waldgruen", "anthrazit"];
 
 /**
  * Daten liegen nur auf diesem Gerät (noch keine Konten/Cloud-Sicherung). Solange

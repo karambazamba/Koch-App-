@@ -4,10 +4,11 @@ import { useState } from "react";
 import { Segmented } from "@/components/ui/Segmented";
 import type { MachineStep } from "@/lib/essen/cookbook";
 import type { HouseholdProfile } from "@/lib/einstellungen/profile";
+import type { StorageKey } from "@/lib/core/storage";
 
-const KEY = "wasgibts.maschinenansicht";
+const KEY: StorageKey = "wasgibts.maschinenansicht";
 
-export type MachineView = { available: boolean; on: boolean; setOn: (on: boolean) => void };
+type MachineView = { available: boolean; on: boolean; setOn: (on: boolean) => void };
 
 /**
  * Ansicht "Mit Thermomix" / "Klassisch": nur, wenn im Küchenstil eine

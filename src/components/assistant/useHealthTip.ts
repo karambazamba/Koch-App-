@@ -1,10 +1,10 @@
 "use client";
 
 import { useRecipes } from "@/lib/essen/cookbook";
-import { currentTip, tipsForWeeks, useTipStore, weekPraise, type HealthTip } from "@/lib/essen/healthTips";
+import { currentTip, tipsForWeeks, useTipStore, type HealthTip } from "@/lib/essen/healthTips";
 import { composeWeek, useMealPlans } from "@/lib/essen/mealPlan";
 import { useProfile } from "@/lib/einstellungen/useProfile";
-import { addDays, nextWeekStartFor, toIsoDate, useToday, useWeekPlans, weekStartFor } from "@/lib/essen/weekPlan";
+import { nextWeekStartFor, toIsoDate, useToday, useWeekPlans, weekStartFor } from "@/lib/essen/weekPlan";
 
 /** Gesundheits-Tipp, der gerade dran ist (laut Einstellung und Wochenlimit) */
 export function useHealthTip(): { tip: HealthTip; weekStart: string } | null {
@@ -21,17 +21,4 @@ export function useHealthTip(): { tip: HealthTip; weekStart: string } | null {
   const tips = tipsForWeeks(weeks, toIsoDate(today), recipes, profile.persons);
   const tip = currentTip(profile.healthTips, weekStart, tips, store);
   return tip ? { tip, weekStart } : null;
-}
-
-/** Lob zum Wochenrückblick – an den letzten beiden Tagen der Planungswoche */
-export function useWeekPraise(): string | null {
-  const today = useToday();
-  const profile = useProfile();
-  const weekPlans = useWeekPlans();
-  const mealPlans = useMealPlans();
-  const recipes = useRecipes();
-  if (!today || !profile || !weekPlans || !mealPlans || !recipes || profile.healthTips === "aus") return null;
-  const weekStart = weekStartFor(today, profile.shoppingDay || "Montag");
-  if (toIsoDate(today) < addDays(weekStart, 5)) return null;
-  return weekPraise(composeWeek(weekStart, profile, weekPlans, mealPlans, recipes));
 }

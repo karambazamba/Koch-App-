@@ -3,7 +3,7 @@
 
 import type { Feature } from "../core/features";
 
-export type BausteinCommand = { kind: "set"; feature: Feature; on: boolean } | { kind: "list" };
+type BausteinCommand = { kind: "set"; feature: Feature; on: boolean } | { kind: "list" };
 
 const WORDS: [RegExp, Feature][] = [
   [/\bwochenplan\w*/, "wochenplan"],

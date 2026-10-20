@@ -7,7 +7,7 @@
 import type { LucideIcon } from "lucide-react";
 import { quickDot } from "./styles";
 
-export function QuickButton({ icon: Icon, label, onClick, tone = "quick", className = "" }: { icon: LucideIcon; label: string; onClick: () => void; tone?: "quick" | "kladde" | "sport"; className?: string }) {
+export function QuickButton({ icon: Icon, label, onClick, tone = "quick", className = "" }: { icon: LucideIcon; label: string; onClick: () => void; tone?: "quick" | "schnellnotiz" | "sport"; className?: string }) {
   return (
     <button
       type="button"

@@ -89,10 +89,10 @@ const FOOD_LIST: string[] = [
   "Kräuterbutter", "Fischfilet", "Backfisch",
 ];
 
-export type Food = { singular: string; plural: string };
+type Food = { singular: string; plural: string };
 
 /** Vergleichsschlüssel: klein, ohne Akzente/Umlaute, ß → ss, nur Buchstaben */
-export function foodKey(text: string): string {
+function foodKey(text: string): string {
   return text
     .toLowerCase()
     .replace(/ß/g, "ss")
@@ -136,7 +136,7 @@ function tolerance(length: number): number {
   return length <= 3 ? 0 : length <= 6 ? 1 : 2;
 }
 
-export type FoodMatch = Entry & { exact: boolean };
+type FoodMatch = Entry & { exact: boolean };
 
 /** Exakter Treffer (auch Einzahl/Mehrzahl), sonst `null` */
 export function findFood(text: string): FoodMatch | null {

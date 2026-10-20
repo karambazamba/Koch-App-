@@ -1,4 +1,4 @@
-// Kladde = Schmierzettel: EIN freier Text (`wasgibts.kladde` v1), speichert
+// Schnellnotiz (früher Kladde) = Schmierzettel: EIN freier Text (`wasgibts.kladde` v1), speichert
 // beim Tippen. "Lotte, räum auf" macht aus Zeilen Termine, Aufgaben oder
 // Notizen und nimmt die übernommenen Zeilen heraus.
 
@@ -8,9 +8,9 @@ import { nowIso } from "../core/now";
 import { parseCalendar, type Draft } from "../aufgaben/parse";
 import { parseNoteCommand } from "./chat";
 
-export type Kladde = { text: string; geaendert: string | null };
+type Schnellnotiz = { text: string; geaendert: string | null };
 
-type Stored = Kladde & { version: 1 };
+type Stored = Schnellnotiz & { version: 1 };
 
 const store = createLocalStore("wasgibts.kladde", (raw: unknown): Stored | null => {
   if (!raw || typeof raw !== "object") return null;
@@ -18,24 +18,24 @@ const store = createLocalStore("wasgibts.kladde", (raw: unknown): Stored | null 
   return { version: 1, text: typeof r.text === "string" ? r.text.slice(0, 20000) : "", geaendert: typeof r.geaendert === "string" ? r.geaendert : null };
 });
 
-const EMPTY: Kladde = { text: "", geaendert: null };
+const EMPTY: Schnellnotiz = { text: "", geaendert: null };
 
-export function loadKladde(): Kladde {
+export function loadSchnellnotiz(): Schnellnotiz {
   return store.load() ?? EMPTY;
 }
 
-export function saveKladde(text: string) {
+export function saveSchnellnotiz(text: string) {
   store.save({ version: 1, text: text.slice(0, 20000), geaendert: nowIso() });
 }
 
 /** Text setzen; liefert Rückgängig */
-export function changeKladde(text: string): () => void {
-  const before = loadKladde();
-  saveKladde(text);
+export function changeSchnellnotiz(text: string): () => void {
+  const before = loadSchnellnotiz();
+  saveSchnellnotiz(text);
   return () => store.save({ version: 1, ...before });
 }
 
-export function useKladde(): Kladde | undefined {
+export function useSchnellnotiz(): Schnellnotiz | undefined {
   const data = useExternalStore(store.subscribe, store.load, () => undefined);
   return data === undefined ? undefined : (data ?? EMPTY);
 }
@@ -43,8 +43,8 @@ export function useKladde(): Kladde | undefined {
 /** Text anhängen (neue Zeile) */
 export const appendLine = (text: string, line: string) => (text.trim() ? `${text.replace(/\s+$/, "")}\n${line.trim()}` : line.trim());
 
-/** "Schreib in die Kladde: …" → der Text (oder null) */
-export function kladdeCommand(text: string): string | null {
+/** "Schreib in die Schnellnotiz: …" (auch "Kladde") → der Text (oder null) */
+export function schnellnotizCommand(text: string): string | null {
   const t = text.trim();
   const m =
     t.match(/^(?:bitte\s+)?(?:schreib\w*|notier\w*|trag\w*|pack\w*)\s+(?:das\s+|mir\s+)?(?:in|auf)\s+(?:die|meine|unsere)\s+(?:kladde|schnellnotiz)\s*[:,]?\s*(.+)$/i) ??
@@ -53,17 +53,17 @@ export function kladdeCommand(text: string): string | null {
   return m ? m[1].trim() : null;
 }
 
-export const isKladdeTidyRequest = (text: string) => /\b(räum|sortier|ordne)\w*\b.*\b(kladde|schnellnotiz)\b|\b(kladde|schnellnotiz)\b.*\b(aufräumen|sortieren|ordnen)\b/i.test(text);
+export const isSchnellnotizTidyRequest = (text: string) => /\b(räum|sortier|ordne)\w*\b.*\b(kladde|schnellnotiz)\b|\b(kladde|schnellnotiz)\b.*\b(aufräumen|sortieren|ordnen)\b/i.test(text);
 
-export type KladdeLine = { line: string; kind: "termin" | "aufgabe" | "notiz" | null; draft?: Draft; note?: ReturnType<typeof parseNoteCommand> };
+type SchnellnotizLine = { line: string; kind: "termin" | "aufgabe" | "notiz" | null; draft?: Draft; note?: ReturnType<typeof parseNoteCommand> };
 
 const TODO_VERB = /\b(kaufen|besorgen|holen|abholen|bestellen|anrufen|zurückrufen|schreiben|machen|erledigen|bringen|wegbringen|abgeben|einwerfen|zahlen|bezahlen|überweisen|buchen|reparieren|putzen|aufräumen|kündigen|beantragen|vereinbaren|ausmachen|zurückgeben|fragen|klären)\s*[.!]?$/i;
 
 /**
  * Aufräumen ohne KI: Zeilen mit Uhrzeit/Tag → Termin bzw. Aufgabe,
- * "merk dir …"/"Idee: …" → Notiz; der Rest bleibt in der Kladde.
+ * "merk dir …"/"Idee: …" → Notiz; der Rest bleibt in der Schnellnotiz.
  */
-export function tidyKladde(text: string, today: string): KladdeLine[] {
+export function tidySchnellnotiz(text: string, today: string): SchnellnotizLine[] {
   return text
     .split(/\n/)
     .map((l) => l.trim())
@@ -82,7 +82,7 @@ export function tidyKladde(text: string, today: string): KladdeLine[] {
     });
 }
 
-/** Kladde ohne die übernommenen Zeilen */
+/** Schnellnotiz ohne die übernommenen Zeilen */
 export const withoutLines = (text: string, lines: string[]) =>
   text
     .split(/\n/)

@@ -11,7 +11,7 @@ export function isStandalone(): boolean {
 }
 
 /** iPhone/iPad (auch iPad mit Desktop-Kennung) */
-export function isIOS(): boolean {
+function isIOS(): boolean {
   if (typeof navigator === "undefined") return false;
   return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
@@ -27,5 +27,5 @@ export function addToHomeSteps(): string[] {
  */
 export function iconChangeHint(): string | null {
   if (!isStandalone() || !isIOS()) return null;
-  return `Das Icon auf dem Homescreen bleibt, bis du die App neu hinzufügst.${CLOUD_SYNC ? "" : " Achtung: Beim Entfernen können deine Daten verloren gehen – erst nach der Cloud-Sicherung empfohlen."}`;
+  return `Das Icon auf dem Homescreen bleibt, bis du die App neu hinzufügst.${CLOUD_SYNC ? "" : " Vorher unter Einstellungen → Daten & App „Daten sichern“ – nach dem neuen Hinzufügen dort wieder einspielen."}`;
 }

@@ -20,7 +20,7 @@ export type Draft =
   | { typ: "termin"; raum: Room; data: TerminData }
   | { typ: "aufgabe"; raum: Room; data: AufgabeData };
 
-export type CalendarCommand =
+type CalendarCommand =
   | { kind: "create"; draft: Draft }
   | { kind: "move"; query: string; to: string; time?: string }
   | { kind: "delete"; query: string }
@@ -74,7 +74,7 @@ export function findDate(text: string, today: string): { date: string; match: st
 }
 
 /** Uhrzeit aus dem Text: "um 9", "um 9:30", "14 Uhr", "halb drei", Tageszeit */
-export function findTime(text: string): { time: string; match: string; vague: boolean } | null {
+function findTime(text: string): { time: string; match: string; vague: boolean } | null {
   const t = text.toLowerCase();
   const evening = /\b(abends|abend|nachmittags|nachmittag)\b/.test(t);
   const fix = (h: number) => (h >= 1 && h <= 7 && !/\b(früh|morgens)\b/.test(t)) || (evening && h < 12) ? h + 12 : h;

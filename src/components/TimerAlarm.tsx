@@ -19,7 +19,7 @@ const CLOCK = new Intl.DateTimeFormat("de-DE", { hour: "2-digit", minute: "2-dig
 const PLURAL = /^(nudeln|kartoffeln|eier|brötchen|pommes|spätzle|plätzchen|kekse|muffins|waffeln|pfannkuchen|möhren|erbsen|bohnen|linsen|klöße|knödel)$/i;
 
 /** "Nudeln sind fertig" / "Reis ist fertig" */
-export const doneText = (t: Pick<Timer, "name">) => `${t.name} ${PLURAL.test(t.name.trim()) ? "sind" : "ist"} fertig`;
+const doneText = (t: Pick<Timer, "name">) => `${t.name} ${PLURAL.test(t.name.trim()) ? "sind" : "ist"} fertig`;
 
 let visibleSince: number | null = null;
 const visibleSinceNow = () => (visibleSince ??= now().getTime());

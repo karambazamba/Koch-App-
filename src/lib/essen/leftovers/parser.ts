@@ -18,7 +18,7 @@ export type ParsedLeftover = {
   heard: string;
 };
 
-export type LeftoverParser = (text: string) => Promise<ParsedLeftover[]>;
+type LeftoverParser = (text: string) => Promise<ParsedLeftover[]>;
 
 /** Aktuelle Umsetzung – asynchron, damit die KI später ohne Umbau passt */
 export const parseLeftovers: LeftoverParser = async (text) => ruleParseLeftovers(text);

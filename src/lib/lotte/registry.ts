@@ -37,6 +37,3 @@ export function runRegisteredTool(ctx: ToolContext, name: string, input: unknown
     return { content: "Das hat gerade nicht geklappt – bitte anders versuchen.", isError: true };
   }
 }
-
-/** Welche Bereiche angemeldet sind (für Tests und die Doku) */
-export const registeredAreas = () => [...new Set([...registry.values()].map((t) => t.area))];

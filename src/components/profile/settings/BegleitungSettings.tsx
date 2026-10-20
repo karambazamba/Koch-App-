@@ -13,12 +13,13 @@ import { useState } from "react";
 import { CARD, NOTE } from "@/components/ui/styles";
 import { iconFor } from "@/lib/core/app";
 import { iconChangeHint } from "@/lib/core/homescreen";
-import { APP_THEMES, AVATAR_COLORS, avatarHex, helperTitle, helperWith, saveProfile, type AvatarColor, type HelperArt, type HouseholdProfile } from "@/lib/einstellungen/profile";
+import { APP_THEMES, AVATAR_COLORS, avatarHex, helperTitle, helperWith, type AvatarColor, type HelperArt, type HouseholdProfile } from "@/lib/einstellungen/profile";
+import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { saveSpeechSettings, useSpeechSettings, useVoices } from "@/lib/lotte/speech";
 import { Group, SettingsPage, SwitchRow } from "./SettingsParts";
 
 /** Art wechseln: Anrede und Stimme passen sich an (eine fest gewählte Stimme wird auf "passend" zurückgesetzt) */
-export function changeArt(profile: HouseholdProfile, art: HelperArt) {
+function changeArt(profile: HouseholdProfile, art: HelperArt) {
   if (profile.helper.art === art) return;
   saveProfile({ ...profile, helper: helperWith(profile.helper, { art }) });
   saveSpeechSettings({ voice: "" });

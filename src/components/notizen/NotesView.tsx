@@ -13,7 +13,7 @@ import { Segmented } from "@/components/ui/Segmented";
 import { CARD, PAGE_MAIN } from "@/components/ui/styles";
 import { ROUND_PLUS } from "@/components/alltag/TasksView";
 import { notePreview, sortNotes, useNotes, type Note } from "@/lib/notizen";
-import { SchnellnotizCard } from "./Kladde";
+import { SchnellnotizCard } from "./Schnellnotiz";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 import { helperName } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";

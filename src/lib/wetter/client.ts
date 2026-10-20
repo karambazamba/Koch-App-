@@ -10,8 +10,9 @@ import { createLocalStore } from "../core/localStore";
 import { useExternalStore } from "../core/useExternalStore";
 import { now, todayIso } from "../core/now";
 import { sanitizeForecast, type Forecast } from "./forecast";
+import type { StorageKey } from "@/lib/core/storage";
 
-export const DEFAULT_PLACE = "Eutin";
+const DEFAULT_PLACE = "Eutin";
 const FRESH_MS = 30 * 60 * 1000;
 
 type PlaceStore = { version: 1; city: string };
@@ -41,7 +42,7 @@ export const loadForecast = () => dataStore.load()?.forecast ?? null;
 /** Testmodus: `?szenario=` wird an die Route durchgereicht (nur dort wirksam) */
 const scenario = () => {
   try {
-    return sessionStorage.getItem("wasgibts.wetterszenario") ?? "";
+    return sessionStorage.getItem("wasgibts.wetterszenario" satisfies StorageKey) ?? "";
   } catch {
     return "";
   }

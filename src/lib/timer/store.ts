@@ -15,7 +15,7 @@ const store = createLocalStore("wasgibts.timer", (raw: unknown): Stored | null =
 
 export const loadTimers = (): TimerState => store.load() ?? EMPTY_TIMERS;
 
-export function saveTimers(state: TimerState) {
+function saveTimers(state: TimerState) {
   store.save({ version: 1, ...pruneTimers(state, now().getTime()) });
 }
 

@@ -24,7 +24,7 @@ import { FoodPage } from "./FoodPage";
 import { PreviewBanner } from "./PreviewBanner";
 import { clockMinutes, usePreview } from "@/lib/tagesablauf/settings";
 
-export type HomeTab = "woche" | "heute" | "essen";
+type HomeTab = "woche" | "heute" | "essen";
 const TABS: { value: HomeTab; label: string }[] = [
   { value: "woche", label: "Woche" },
   { value: "heute", label: "Heute" },
@@ -99,7 +99,7 @@ export function HomePager({ data }: { data: HomeData }) {
                 role="tab"
                 aria-selected={tab === t.value}
                 onClick={() => go(t.value)}
-                className={`h-10 flex-1 rounded-xl text-[15px] font-bold transition ${tab === t.value ? "bg-surface text-ink shadow-card" : "text-muted"}`}
+                className={`hit h-10 flex-1 rounded-xl text-[15px] font-bold transition ${tab === t.value ? "bg-surface text-ink shadow-card" : "text-muted"}`}
               >
                 {t.label}
               </button>

@@ -5,7 +5,7 @@
 // Funktionen, mit denen auch die Vorschau rechnet.
 
 import { replaceNotes } from "../notizen/store";
-import { loadKladde, saveKladde } from "../notizen/kladde";
+import { loadSchnellnotiz, saveSchnellnotiz } from "../notizen/schnellnotiz";
 import { addPin, changePins, createPin, loadPins, removePin, visiblePins } from "../pinnwand";
 import { loadPlace } from "../wetter/client";
 import { loadMailStyle } from "./mailSettings";
@@ -17,7 +17,8 @@ import { pushUndo, undoLast } from "../core/undo";
 import { buildShoppingList } from "../einkauf/shoppingList";
 import { replaceRecipes } from "../essen/cookbook";
 import { replaceMealPlans } from "../essen/mealPlan";
-import { effectivePlanStyle, saveProfile } from "../einstellungen/profile";
+import { effectivePlanStyle } from "../einstellungen/profile";
+import { saveProfile } from "../einstellungen/profileStore";
 import { helperNote, type HelperPatch } from "./helperTools";
 import { loadSpeechSettings, saveSpeechSettings } from "./speech";
 import { addPantryItems, loadPantry, replacePantry } from "../essen/pantry";
@@ -47,20 +48,21 @@ import {
   type StreamEvent,
 } from "./protocol";
 import { now } from "../core/now";
+import type { StorageKey } from "@/lib/core/storage";
 
-const DEVICE_KEY = "wasgibts.geraet";
-const CODE_KEY = "wasgibts.zugangscode";
-const COUNT_KEY = "wasgibts.lotte.anfragen";
+const DEVICE_KEY: StorageKey = "wasgibts.geraet";
+const CODE_KEY: StorageKey = "wasgibts.zugangscode";
+const COUNT_KEY: StorageKey = "wasgibts.lotte.anfragen";
 
 /** Was die Begleitung sagt, wenn die KI gerade nicht kann – nie Technik-Wörter (Avatar "verwirrt") */
-export const FALLBACK_TEXT = "Hm, das hab ich nicht verstanden.";
+const FALLBACK_TEXT = "Hm, das hab ich nicht verstanden.";
 /** Ohne Internet – freundlich, mit dem Hinweis, dass Eingetragenes bleibt */
-export const OFFLINE_TEXT = "Ich bin gerade offline – was du einträgst, speichere ich trotzdem.";
+const OFFLINE_TEXT = "Ich bin gerade offline – was du einträgst, speichere ich trotzdem.";
 /** Passender Satz je nach Lage (offline oder nicht verstanden) */
 export const unavailableText = () => (typeof navigator !== "undefined" && navigator.onLine === false ? OFFLINE_TEXT : FALLBACK_TEXT);
 
 /** KI gerade nicht erreichbar (offline, aus, Limit, falscher Code …) */
-export class LotteUnavailable extends Error {
+class LotteUnavailable extends Error {
   constructor(public reason: AssistantErrorCode | "offline") {
     super(reason === "offline" ? OFFLINE_TEXT : FALLBACK_TEXT);
   }
@@ -70,7 +72,7 @@ export class LotteUnavailable extends Error {
 
 const codeListeners = new Set<() => void>();
 
-export function loadAccessCode(): string {
+function loadAccessCode(): string {
   try {
     return localStorage.getItem(CODE_KEY) ?? "";
   } catch {
@@ -184,7 +186,7 @@ export async function aiUsable(): Promise<boolean> {
   return s.configured && (!s.needsCode || s.access === "ok");
 }
 
-export type LotteStatus = AssistantStatus & {
+type LotteStatus = AssistantStatus & {
   /** Die KI kann gefragt werden (eingerichtet und – falls verlangt – Code gemerkt) */
   ready: boolean;
   /** Der Zugangscode wird noch gebraucht */
@@ -237,7 +239,7 @@ function trimmed(data: AssistantData, currentWeekStart: string, pantry: Assistan
     home: data.home,
     features: BAUSTEINE.filter((b) => featureOn(b.feature)).map((b) => b.feature),
     mail: loadMailStyle(),
-    kladde: loadKladde().text.slice(0, 4000),
+    schnellnotiz: loadSchnellnotiz().text.slice(0, 4000),
     pinnwand: visiblePins(loadPins(), now().getTime())
       .slice(0, 8)
       .map((m) => ({ author: m.data.author, text: m.data.text, at: m.erstellt })),
@@ -311,7 +313,7 @@ export function runInstantOps(ops: ChangeOp[]): { rest: ChangeOp[]; notes: strin
   return { rest: ops.filter((op) => !INSTANT_OP_TYPES.has(op.type)), notes };
 }
 
-export type AskOptions = {
+type AskOptions = {
   /** Uhrzeit auf dem Gerät, "HH:MM" */
   clock?: string;
   /** Was gerade auf der Einkaufsliste steht */
@@ -425,7 +427,7 @@ function save(data: AssistantData, before: AssistantData) {
   if (data.shopping !== before.shopping) replaceShoppingLists(data.shopping);
   if (data.entries !== before.entries && data.entries) replaceEntries(data.entries);
   if (data.notes !== before.notes && data.notes) replaceNotes(data.notes);
-  if (data.kladde !== before.kladde && data.kladde !== undefined) saveKladde(data.kladde);
+  if (data.schnellnotiz !== before.schnellnotiz && data.schnellnotiz !== undefined) saveSchnellnotiz(data.schnellnotiz);
   if (data.home !== before.home && data.home) saveHomeTiles(data.home);
   if (data.profile !== before.profile) saveProfile(data.profile);
 }
@@ -456,7 +458,7 @@ function commitSideOps(ops: ChangeOp[], author = "Ich"): () => void {
   return () => undo.forEach((u) => u());
 }
 
-export type CommitResult = {
+type CommitResult = {
   /** Zurücknehmen (wirkt einmal; auch über "Mach das rückgängig") */
   undo: () => void;
   /** Kurze Sätze, was passiert ist und wo man es findet */

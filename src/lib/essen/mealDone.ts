@@ -10,16 +10,16 @@ import { countCookedOn, uncountCooked, type Recipe } from "./cookbook";
 import { AT_HOME, DISHES } from "./dishIdeas";
 import { createLocalStore } from "../core/localStore";
 import { composeWeek, entriesWithoutSlot, mealPlansWithWeek, type PlanDay, type StoredEntry } from "./mealPlan";
-import { addPantryItems, loadPantry, replacePantry, sameIngredient, type PantryItem } from "./pantry";
+import { loadPantry, replacePantry, sameIngredient, type PantryItem } from "./pantry";
 import { mealClockFor, type HouseholdProfile } from "../einstellungen/profile";
 import { addDays, DEFAULT_SHOPPING_DAY, toIsoDate, weekStartFor, type WeekPlan } from "./weekPlan";
 
 /** So lange nach der Essenszeit verschwindet das Gericht von der Startseite */
-export const DONE_AFTER_MINUTES = 90;
+const DONE_AFTER_MINUTES = 90;
 
-export type LeftoverAnswer = "kuehlschrank" | "tiefkuehler" | "nein";
+type LeftoverAnswer = "kuehlschrank" | "tiefkuehler" | "nein";
 
-export type CookedDay = {
+type CookedDay = {
   title: string;
   recipeId?: string;
   /** "auto" = nach der Essenszeit von selbst, "marked" = "Gekocht" getippt */
@@ -72,7 +72,7 @@ export function useCookedDays(): Record<string, CookedDay> | undefined {
   return data?.days ?? EMPTY;
 }
 
-export function loadCookedDays(): Record<string, CookedDay> {
+function loadCookedDays(): Record<string, CookedDay> {
   return store.load()?.days ?? EMPTY;
 }
 
@@ -163,23 +163,6 @@ export function unmarkCooked(date: string) {
   }
   saveDay(date, null);
 }
-
-/** Antwort auf "Ist was übrig geblieben?" – Reste landen im Vorrat */
-export function answerLeftovers(date: string, answer: LeftoverAnswer, today: string): (() => void) | undefined {
-  const day = loadCookedDays()[date];
-  if (!day) return undefined;
-  const before = loadPantry();
-  saveDay(date, { ...day, leftovers: answer });
-  if (answer !== "nein") addPantryItems([{ name: `${day.title} (Reste)`, amount: null, unit: "", place: answer }], today);
-  return () => {
-    replacePantry(before);
-    saveDay(date, { ...day, leftovers: undefined });
-  };
-}
-
-/** Gerichte, von denen gern was übrig bleibt */
-const LEFTOVER_PRONE = /eintopf|suppe|curry|bolognese|chili|gulasch|lasagne|auflauf|ragout|braten|dal\b|risotto|schmor/i;
-export const leftoverProne = (title: string) => LEFTOVER_PRONE.test(title);
 
 /** Verbrauchte Zutaten der letzten 7 Tage (Gekauftes zählt dann nicht mehr als "da") */
 export function usedRecently(cooked: Record<string, CookedDay>, today: string): string[] {

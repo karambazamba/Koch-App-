@@ -85,12 +85,6 @@ export function addListItems(notes: Note[], id: string, texts: string[]): Note[]
   return replace(notes, touch(n, { kind: "liste", text: undefined, items: [...existing, ...fresh.map((text) => ({ id: itemId(), text: text.slice(0, 200) }))] }));
 }
 
-export function toggleListItem(notes: Note[], id: string, itemIdValue: string): Note[] {
-  const n = notes.find((x) => x.id === id);
-  if (!n || n.data.kind !== "liste") return notes;
-  return replace(notes, touch(n, { items: (n.data.items ?? []).map((i) => (i.id === itemIdValue ? { ...i, done: !i.done } : i)) }));
-}
-
 /** Notiz nach Titel finden ("Packliste", "das WLAN") – ungefähr */
 export function findNote(notes: Note[], query: string): Note | null {
   const words = query

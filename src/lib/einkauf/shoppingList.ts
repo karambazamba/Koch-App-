@@ -574,7 +574,7 @@ export function addStaple(name: string, amount = "", intervalDays = 7) {
   });
 }
 
-export function updateStaple(id: string, changes: Partial<Omit<Staple, "id">>) {
+function updateStaple(id: string, changes: Partial<Omit<Staple, "id">>) {
   update((s) => ({ ...s, staples: s.staples.map((st) => (st.id === id ? { ...st, ...changes } : st)) }));
 }
 

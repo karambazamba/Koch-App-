@@ -11,16 +11,8 @@ import type { Recipe, RecipeCategory } from "./cookbook";
 import { guessDishCategory } from "./dishCategory";
 import { noteUserAction, todayIso } from "../core/activity";
 import { createLocalStore } from "../core/localStore";
-import {
-  loadProfile,
-  mainMealHeadcount,
-  mainMealTime,
-  isWeekendDay,
-  pausedOn,
-  personLabel,
-  type HouseholdProfile,
-  type MealTime,
-} from "../einstellungen/profile";
+import { mainMealHeadcount, mainMealTime, isWeekendDay, pausedOn, personLabel, type HouseholdProfile, type MealTime } from "../einstellungen/profile";
+import { loadProfile } from "../einstellungen/profileStore";
 import {
   CATEGORY_COUNT_KEY,
   addDays,
@@ -30,6 +22,7 @@ import {
   wishIsActive,
   type WeekPlan,
 } from "./weekPlan";
+import type { StorageKey } from "@/lib/core/storage";
 
 /** Was im Plan gespeichert wird. `double` = doppelt kochen, Reste für morgen. */
 export type StoredEntry =
@@ -54,7 +47,7 @@ type MealPlanStore = {
   weeks: Record<string, Record<string, StoredEntry>>;
 };
 
-const STORAGE_KEY = "wasgibts.wochenplan";
+const STORAGE_KEY: StorageKey = "wasgibts.wochenplan";
 
 /** Schlüssel des Hauptgerichts eines Tages */
 export function slotKey(weekday: string): string {
@@ -62,7 +55,7 @@ export function slotKey(weekday: string): string {
 }
 
 /** Schlüssel der Notiz eines Tages */
-export function noteKey(weekday: string): string {
+function noteKey(weekday: string): string {
   return `${weekday}:notiz`;
 }
 
@@ -127,7 +120,7 @@ export type PlanWeek = {
  * Reste vom Vortag. `leftoversBefore` = doppelt gekochtes Gericht am Tag vor
  * dem ersten Tag (aus der Vorwoche), siehe `composeWeek`.
  */
-export function buildWeek(
+function buildWeek(
   weekStart: string,
   profile: HouseholdProfile | null,
   weekPlan: WeekPlan | null,
@@ -423,7 +416,7 @@ export function entriesWithDouble(entries: Record<string, StoredEntry>, slot: Da
 }
 
 /** Notiz am Tag setzen; leer = entfernen */
-export function entriesWithNote(entries: Record<string, StoredEntry>, weekday: string, text: string): Record<string, StoredEntry> {
+function entriesWithNote(entries: Record<string, StoredEntry>, weekday: string, text: string): Record<string, StoredEntry> {
   const next = { ...entries };
   if (text.trim()) next[noteKey(weekday)] = { kind: "note", text: text.trim() };
   else delete next[noteKey(weekday)];
@@ -475,7 +468,7 @@ export function useMealPlans(): Record<string, Record<string, StoredEntry>> | un
 const EMPTY_WEEKS: Record<string, Record<string, StoredEntry>> = {};
 
 /** Einträge der Woche – nach Wechsel des Einkaufstags auch aus der überlappenden Woche */
-export function storedForWeek(
+function storedForWeek(
   weeks: Record<string, Record<string, StoredEntry>>,
   weekStart: string,
 ): Record<string, StoredEntry> {

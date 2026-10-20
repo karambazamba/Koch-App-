@@ -5,7 +5,7 @@
 
 import type { HomeAction, HomeChange, HomeTileId } from "../core/homeLayout";
 
-export type HomeCommand =
+type HomeCommand =
   | { kind: "home"; change: HomeChange }
   | { kind: "undo" }
   | { kind: "show"; target: "wochenplan" | "einkaufsliste" | "startseite" }

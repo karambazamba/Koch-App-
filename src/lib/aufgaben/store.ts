@@ -7,6 +7,7 @@ import { createLocalStore } from "../core/localStore";
 import { createEntry } from "../core/entries";
 import { nowIso } from "../core/now";
 import { sanitizeEntry, type CalendarEntry, type TerminData } from "./model";
+import { OLD_TERMINE_KEY } from "../core/storage";
 
 type EntryStore = {
   version: 2;
@@ -89,10 +90,13 @@ export function markReminderSeen(key: string) {
  */
 export function migrateOldTermine() {
   const s = current();
-  if (s.migratedTermine) return;
+  if (s.migratedTermine) {
+    removeOldTermine();
+    return;
+  }
   let old: { id?: string; date?: string; time?: string; until?: boolean; title?: string; personId?: string | null; who?: string }[] = [];
   try {
-    const raw = JSON.parse(window.localStorage.getItem("wasgibts.termine") ?? "null") as { items?: unknown } | null;
+    const raw = JSON.parse(window.localStorage.getItem(OLD_TERMINE_KEY) ?? "null") as { items?: unknown } | null;
     if (raw && Array.isArray(raw.items)) old = raw.items as typeof old;
   } catch {
     old = [];
@@ -111,4 +115,14 @@ export function migrateOldTermine() {
       return createEntry("termin", data, { id: a.id }) as CalendarEntry;
     });
   store.save({ ...s, entries: [...s.entries, ...converted.filter((c) => !s.entries.some((e) => e.id === c.id))], migratedTermine: true });
+  removeOldTermine();
+}
+
+/** Übernommen → alter Schlüssel kann weg */
+function removeOldTermine() {
+  try {
+    window.localStorage.removeItem(OLD_TERMINE_KEY);
+  } catch {
+    // ohne Speicher nichts zu tun
+  }
 }

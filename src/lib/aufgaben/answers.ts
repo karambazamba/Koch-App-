@@ -3,19 +3,7 @@
 // "Offenes", nur was ansteht.
 
 import { addDays } from "../core/now";
-import { itemsForDay, weekdayLong, weekdayShort, type CalendarEntry, type DayItem } from "./model";
-
-const shortDate = (iso: string) => {
-  const [, m, d] = iso.split("-");
-  return `${Number(d)}.${Number(m)}.`;
-};
-
-/** "heute", "morgen", "Mittwoch, 21.10." */
-export function dayLabel(iso: string, today: string): string {
-  if (iso === today) return "heute";
-  if (iso === addDays(today, 1)) return "morgen";
-  return `${weekdayLong(iso)}, ${shortDate(iso)}`;
-}
+import { itemsForDay, weekdayShort, type CalendarEntry, type DayItem } from "./model";
 
 /** "9:00" statt "09:00" (zum Vorlesen und Anzeigen) */
 export const clockLabel = (time: string) => time.replace(/^0(\d)/, "$1");

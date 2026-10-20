@@ -78,7 +78,7 @@ Termine, Aufgaben und Notizen (Werkzeuge vorhanden) – drei verschiedene Dinge:
 - Termin = feste Uhrzeit an einem Tag ("Morgen um 9 Steuerberater") → termin_anlegen.
 - Aufgabe = zu erledigen, flexibel ("muss", "sollte", "bis …"): an einem Wunschtag, mit Frist ("Bis Mittwoch Kita-Formular"), für einen Zeitraum ("Ich muss diese Woche noch die Reifen machen" → zeitraum diese_woche) oder ohne alles (= Irgendwann), auch wiederkehrend ("Jeden Dienstag Müll rausbringen") → aufgabe_anlegen.
 - Notiz = nur festhalten ("Merk dir …", "Notier …", "Idee: …") → notiz_anlegen; passt es in eine vorhandene oder naheliegende Liste ("Merk dir: Mathis wünscht sich Torwarthandschuhe" → Liste "Geschenkideen", "… auf die Packliste"), liste_eintrag_hinzufuegen (legt die Liste an, falls nötig). Essenswünsche ("Mathis wünscht sich Pfannkuchen") bleiben wunsch_merken.
-- Schnellnotiz (früher "Kladde") = Schmierzettel (ein freier Text, Inhalt im Kontext, steht oben auf der Notizen-Kachel): "Schreib in die Schnellnotiz/Kladde: …", "Notier mir schnell …" → kladde_schreiben. "Räum meine Schnellnotiz/Kladde auf" → für passende Zeilen termin_anlegen/aufgabe_anlegen/notiz_anlegen (bzw. liste_eintrag_hinzufuegen), danach kladde_aufraeumen mit genau diesen Zeilen; Unklares bleibt stehen.
+- Schnellnotiz (früher "Kladde") = Schmierzettel (ein freier Text, Inhalt im Kontext, steht oben auf der Notizen-Kachel): "Schreib in die Schnellnotiz/Kladde: …", "Notier mir schnell …" → schnellnotiz_schreiben. "Räum meine Schnellnotiz/Kladde auf" → für passende Zeilen termin_anlegen/aufgabe_anlegen/notiz_anlegen (bzw. liste_eintrag_hinzufuegen), danach schnellnotiz_aufraeumen mit genau diesen Zeilen; Unklares bleibt stehen.
 - Pinnwand = kurze Nachrichten an die Familie (Zettel am Kühlschrank, verschwinden nach 3 Tagen): "Schreib an die Pinnwand: Bin um 20 Uhr da" → pinnwand_schreiben; "Was steht auf der Pinnwand?" → aus dem Kontext kurz vorlesen.
 - Wetter: "Wie wird das Wetter morgen?", "Brauch ich heute einen Schirm?", "Wie ist das Wetter am Samstag?" → wetter_abfragen (tag als YYYY-MM-DD), kurz antworten (ein Satz, ggf. Schirm/Sonnencreme).
 - Timer: "Timer 10 Minuten für die Nudeln", "Noch ein Timer 25 Minuten Brötchen" → timer_stellen; "Wie lange noch?" → timer_status (Restzeit in Worten); "Stopp den Nudel-Timer" → timer_stoppen; "Stoppuhr starten" → stoppuhr. Timer laufen sofort – antworte in einem kurzen Satz.
@@ -235,7 +235,7 @@ export function contextText(
     "",
     calendarContext(data.entries ?? [], todayIso),
     notesContext(data.notes ?? []),
-    `Kladde (Schmierzettel): ${data.kladde?.trim() ? JSON.stringify(data.kladde.slice(0, 1500)) : "leer"}`,
+    `Schnellnotiz (Schmierzettel): ${data.schnellnotiz?.trim() ? JSON.stringify(data.schnellnotiz.slice(0, 1500)) : "leer"}`,
     `Pinnwand: ${data.pinnwand?.length ? data.pinnwand.map((p) => `${p.author}: ${JSON.stringify(p.text)}`).join(" · ") : "leer"}`,
     `Wetter-Ort: ${data.wetterOrt ?? "Eutin"}`,
     ...dayContextLines({ data, today: todayIso }),

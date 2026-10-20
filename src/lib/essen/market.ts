@@ -12,7 +12,7 @@ import { ruleParseLeftovers } from "./leftovers/ruleParser";
 import type { PlanWeek } from "./mealPlan";
 import { sameIngredient, type PantryItem } from "./pantry";
 import type { NeverAgainEntry } from "../einstellungen/profile";
-import { isNeverAgain } from "./ratings";
+import { isNeverAgain } from "./neverAgain";
 import { AT_HOME } from "./spontan";
 
 export type MarketIdea = {

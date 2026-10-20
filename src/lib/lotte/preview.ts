@@ -265,7 +265,7 @@ function describe(
     }
     case "remove_note":
       return { opId: op.id, group: "Notizen", order: 25_000, label: "löschen", before: op.title, after: "gelöscht" };
-    case "set_kladde":
+    case "set_schnellnotiz":
       return { opId: op.id, group: "Schnellnotiz", order: 25_500, label: "✎ Schnellnotiz", before: null, after: op.change };
     case "add_pin":
       return { opId: op.id, group: "Pinnwand", order: 25_600, label: "📌 Pinnwand", before: null, after: op.text };

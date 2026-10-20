@@ -14,7 +14,7 @@ import { pushUndo } from "@/lib/core/undo";
 import { helperName } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 
-export const BAUSTEIN_ICONS: Record<string, LucideIcon> = {
+const BAUSTEIN_ICONS: Record<string, LucideIcon> = {
   calendar: CalendarDays,
   fridge: Refrigerator,
   book: BookOpen,
@@ -27,7 +27,7 @@ export const BAUSTEIN_ICONS: Record<string, LucideIcon> = {
 };
 
 /** Baustein schalten – mit Hinweis, wo er steht, und Rückgängig */
-export function toggleBaustein(b: Baustein, on: boolean) {
+function toggleBaustein(b: Baustein, on: boolean) {
   if (!setFeature(b.feature, on)) return;
   showToast({
     text: on ? b.where : `${b.name} ist aus – die Daten bleiben.`,

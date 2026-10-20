@@ -13,7 +13,7 @@ import type { DayRoutine, TimePreview } from "@/lib/tagesablauf/settings";
 
 const IDLE_MS = 30_000;
 
-export type HomePhase = {
+type HomePhase = {
   /** null = "Immer gleich" oder "Alles zeigen" */
   def: PhaseDef | null;
   view: PhaseView;

@@ -11,31 +11,10 @@ export function greeting(minutesNow: number): string {
   return "Guten Abend";
 }
 
-const count = (n: number, one: string, many: string) => (n === 1 ? one : `${n} ${many}`);
-
-/** "abends Gemüsepfanne" / "mittags Gulasch" */
-function dishPart(dish: string, clock: string | null): string {
-  const hour = clock ? Number(clock.slice(0, 2)) : 18;
-  return `${hour < 15 ? "mittags" : "abends"} ${dish}`;
-}
-
-export function todaySentence({ items, dish, dishClock }: { items: DayItem[]; dish: string | null; dishClock: string | null }): string {
-  const open = items.filter((i) => !i.done);
-  const termine = open.filter((i) => i.entry.typ === "termin").length;
-  const aufgaben = open.length - termine;
-  const parts = [termine ? count(termine, "ein Termin", "Termine") : "", aufgaben ? count(aufgaben, "eine Aufgabe", "Aufgaben") : "", dish ? dishPart(dish, dishClock) : ""].filter(Boolean);
-  if (!open.length) {
-    if (items.length) return dish ? `Alles erledigt – ${dishPart(dish, dishClock)}.` : "Alles erledigt – jetzt ist Zeit für euch.";
-    return dish ? `Ein freier Tag – ${dishPart(dish, dishClock)}.` : "Ein freier Tag – nichts eingetragen.";
-  }
-  const list = parts.length > 1 ? `${parts.slice(0, -1).join(", ")} und ${parts[parts.length - 1]}` : parts[0];
-  return `${open.length <= 3 ? "Ruhiger Tag" : "Einiges los heute"}: ${list}.`;
-}
-
 /** Ein Satz in Stücken – `b` = fett */
 export type SentencePart = { t: string; b?: boolean };
 
-export type HomeSentenceInput = {
+type HomeSentenceInput = {
   minutes: number;
   /** Termine heute (alle, auch erledigte) und die noch anstehenden */
   termineToday: DayItem[];
@@ -93,6 +72,3 @@ export function homeSentence(x: HomeSentenceInput): { parts: SentencePart[]; act
 }
 
 const clockOf = (t: string) => t.replace(/^0(\d)/, "$1");
-
-/** Satz als Text (für Tests und Vorlesen) */
-export const sentenceText = (parts: SentencePart[]) => parts.map((p) => p.t).join("");

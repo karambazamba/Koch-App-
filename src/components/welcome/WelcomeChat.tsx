@@ -7,6 +7,7 @@
 // Zustand gebaut); Antippen einer Antwort öffnet ihn wieder. "Wer gehört
 // dazu?" ist ein kleines Formular im Chat, das Gesagtes selbst ausfüllt.
 
+import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowUp, CalendarDays, Check, CircleCheck, Mic, Plus, ShoppingCart, Square, UtensilsCrossed, Volume2, X, type LucideIcon } from "lucide-react";
@@ -42,7 +43,7 @@ import { openHelper } from "@/lib/lotte/open";
 import { useSpeechInput } from "@/lib/lotte/useSpeechInput";
 
 const BUBBLE = "max-w-[85%] whitespace-pre-line rounded-3xl px-4 py-3 text-base leading-snug";
-const SKIP = "h-10 rounded-full px-3 text-sm font-bold text-muted active:bg-stone-100";
+const SKIP = "hit inline-flex h-10 items-center rounded-full px-3 text-sm font-bold text-muted active:bg-stone-100";
 
 const TILES: { icon: LucideIcon; label: string }[] = [
   { icon: CalendarDays, label: "Termine" },
@@ -55,7 +56,11 @@ const TILES: { icon: LucideIcon; label: string }[] = [
 function FullScreen({ onSkip, children }: { onSkip: () => void; children: ReactNode }) {
   return (
     <div className="fixed inset-0 z-40 flex flex-col overflow-y-auto bg-background" role="dialog" aria-label="Kennenlernen">
-      <div className="mx-auto flex w-full max-w-lg justify-end px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
+      <div className="mx-auto flex w-full max-w-lg justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
+        {/* Nach dem Neu-Hinzufügen zum Home-Bildschirm: gesicherte Daten wieder einspielen */}
+        <Link href="/profil/daten" className={SKIP}>
+          Sicherung einspielen
+        </Link>
         <button type="button" onClick={onSkip} className={SKIP}>
           Überspringen
         </button>

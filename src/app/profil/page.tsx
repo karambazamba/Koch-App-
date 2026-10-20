@@ -1,4 +1,4 @@
-import { ProfilePageContent } from "@/components/profile/ProfileWizard";
+import { ProfilePageContent } from "@/components/profile/ProfilePageContent";
 
 export const metadata = { title: "Einstellungen" };
 

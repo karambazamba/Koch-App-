@@ -42,7 +42,7 @@ function dayState(date: string): IdeaDay {
 }
 
 /** "Nicht jetzt": für heute weg */
-export function dismissIdea(date: string, id: string) {
+function dismissIdea(date: string, id: string) {
   const s = dayState(date);
   store.save({ ...s, dismissed: [...s.dismissed, id] });
 }
@@ -61,7 +61,7 @@ export function putAside(date: string, idea: { id: string; wishId?: string }): (
   return null;
 }
 
-export type TodayIdeas = {
+type TodayIdeas = {
   ideas: Idea[];
   index: number;
   profile: HouseholdProfile;

@@ -4,7 +4,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { CARD, FAB_CLEARANCE, PAGE_MAIN, buttonClass } from "@/components/ui/styles";
-import { saveProfile, type HouseholdProfile } from "@/lib/einstellungen/profile";
+import { type HouseholdProfile } from "@/lib/einstellungen/profile";
+import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 
 /**

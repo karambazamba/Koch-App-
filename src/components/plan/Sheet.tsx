@@ -18,7 +18,7 @@ export function Sheet({
   children: ReactNode;
   /** Über dem Küchenhelfer-Panel öffnen */
   above?: boolean;
-  /** Eigener Kopf statt Titel + ✕ (z. B. "✎ Kladde" mit "Fertig") */
+  /** Eigener Kopf statt Titel + ✕ (z. B. "✎ Schnellnotiz" mit "Fertig") */
   header?: ReactNode;
   /** Feste Höhe (ca. 85 %) statt nach Inhalt */
   tall?: boolean;

@@ -181,12 +181,6 @@ export function replacePantry(items: PantryItem[]) {
   update(() => items);
 }
 
-/** Wurde der Vorrat je genutzt? (dann Kachel "Vorrat" statt "Rezepte"; `undefined` = lädt) */
-export function usePantryUsed(): boolean | undefined {
-  const data = useExternalStore(store.subscribe, store.load, () => undefined);
-  return data === undefined ? undefined : data !== null;
-}
-
 /** Vorrat (`undefined` = noch nicht geladen) */
 export function usePantry(): PantryItem[] | undefined {
   const data = useExternalStore(store.subscribe, store.load, () => undefined);

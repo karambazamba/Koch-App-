@@ -29,7 +29,7 @@ function subline(item: DayItem): string[] {
 /** Farbe des Strichs: Orange = Familie, Blau = Arbeit */
 export const roomBar = (room: DayItem["room"]) => (room === "arbeit" ? "bg-work" : "bg-accent");
 
-export function ItemRow({ item, onOpen }: { item: DayItem; onOpen: (item: DayItem) => void }) {
+function ItemRow({ item, onOpen }: { item: DayItem; onOpen: (item: DayItem) => void }) {
   // Abhaken: ca. 1 s durchgestrichen (nochmal tippen = doch nicht), dann wandert der Eintrag nach unten
   const [popping, setPopping] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);

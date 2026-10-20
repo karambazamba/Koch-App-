@@ -15,7 +15,7 @@ const COLOR_IDS = AVATAR_COLORS.map((c) => c.id);
 export type HelperPatch = Partial<Pick<HelperSettings, "name" | "art" | "farbe">>;
 
 /** Eingabe des Werkzeugs (oder der Regeln ohne KI) → Änderung; Mia/Theo bringen ihre Art und Farbe mit, solange nichts anderes gesagt ist */
-export function helperPatch(input: { name?: string; art?: string; stimme?: string; farbe?: string }, current: HelperSettings): HelperPatch | null {
+function helperPatch(input: { name?: string; art?: string; stimme?: string; farbe?: string }, current: HelperSettings): HelperPatch | null {
   const patch: HelperPatch = {};
   const name = str(input.name).replace(/^["„“']+|["„“'.!]+$/g, "").slice(0, HELPER_NAME_MAX);
   const art: HelperArt | undefined = input.art === "assistentin" || input.art === "assistent" ? input.art : input.stimme === "weiblich" ? "assistentin" : input.stimme === "maennlich" ? "assistent" : undefined;

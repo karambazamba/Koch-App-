@@ -10,13 +10,8 @@ export type EntryType = "termin" | "aufgabe" | "notiz" | "gericht" | "einkauf" |
 /** Familie = gemeinsam, Arbeit = persönlich */
 export type Room = "familie" | "arbeit";
 
-export const ROOMS: { value: Room; label: string }[] = [
-  { value: "familie", label: "Familie" },
-  { value: "arbeit", label: "Arbeit" },
-];
-
 /** Ohne Konto gehört alles diesem Gerät */
-export const LOCAL_OWNER = "lokal";
+const LOCAL_OWNER = "lokal";
 
 export type Entry<T = Record<string, unknown>> = {
   id: string;
@@ -41,20 +36,4 @@ export function createEntry<T>(typ: EntryType, data: T, opts: { raum?: Room; bes
 /** Geänderte Kopie mit neuem "geändert" */
 export function updateEntry<T>(entry: Entry<T>, data: Partial<T>): Entry<T> {
   return { ...entry, data: { ...entry.data, ...data }, geaendert: nowIso() };
-}
-
-/** Gespeicherten Eintrag prüfen (z. B. beim Laden oder später aus der Datenbank) */
-export function isEntry(raw: unknown): raw is Entry {
-  if (!raw || typeof raw !== "object") return false;
-  const e = raw as Partial<Entry>;
-  return (
-    typeof e.id === "string" &&
-    (e.typ === "termin" || e.typ === "aufgabe" || e.typ === "notiz" || e.typ === "gericht" || e.typ === "einkauf" || e.typ === "pinnwand" || e.typ === "training") &&
-    (e.raum === "familie" || e.raum === "arbeit") &&
-    typeof e.besitzer === "string" &&
-    typeof e.erstellt === "string" &&
-    typeof e.geaendert === "string" &&
-    Boolean(e.data) &&
-    typeof e.data === "object"
-  );
 }

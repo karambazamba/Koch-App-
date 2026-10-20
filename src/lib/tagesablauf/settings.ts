@@ -7,6 +7,7 @@
 
 import { createLocalStore } from "../core/localStore";
 import { useExternalStore } from "../core/useExternalStore";
+import type { StorageKey } from "@/lib/core/storage";
 
 export type HomeMode = "mitdenkend" | "gleich";
 
@@ -51,7 +52,7 @@ export const clockMinutes = (clock: string) => Number(clock.slice(0, 2)) * 60 + 
 export const minutesClock = (m: number) => `${String(Math.floor((((m % 1440) + 1440) % 1440) / 60)).padStart(2, "0")}:${String((((m % 1440) + 1440) % 1440) % 60).padStart(2, "0")}`;
 
 /** Gespeicherte Werte prüfen (Unbekanntes → Standard) */
-export function sanitizeRoutine(raw: unknown): DayRoutine {
+function sanitizeRoutine(raw: unknown): DayRoutine {
   const r = (raw && typeof raw === "object" ? raw : {}) as Partial<DayRoutine>;
   const days = Array.isArray(r.arbeitstage) ? [...new Set(r.arbeitstage.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort() : DEFAULT_ROUTINE.arbeitstage;
   const min = Number(r.kochenMin);
@@ -96,12 +97,12 @@ export function useRoutine(): DayRoutine | undefined {
 
 export type TimePreview = { clock: string; weekday: number | null };
 
-const PREVIEW_KEY = "wasgibts.zeitvorschau";
+const PREVIEW_KEY: StorageKey = "wasgibts.zeitvorschau";
 const previewListeners = new Set<() => void>();
 let previewRaw: string | null | undefined;
 let previewValue: TimePreview | null = null;
 
-export function loadPreview(): TimePreview | null {
+function loadPreview(): TimePreview | null {
   let raw: string | null = null;
   try {
     raw = sessionStorage.getItem(PREVIEW_KEY);

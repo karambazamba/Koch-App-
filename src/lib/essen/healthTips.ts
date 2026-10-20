@@ -13,7 +13,7 @@ import type { PlanWeek } from "./mealPlan";
 import type { HealthTipLevel, Person } from "../einstellungen/profile";
 
 /** Höchstens so viele Tipps pro Woche */
-export const TIP_LIMIT: Record<HealthTipLevel, number> = { aus: 0, ab_und_zu: 1, oefter: 3 };
+const TIP_LIMIT: Record<HealthTipLevel, number> = { aus: 0, ab_und_zu: 1, oefter: 3 };
 
 type Swap = {
   id: string;
@@ -32,7 +32,7 @@ const part = (a: number | null, f: number) => (a === null ? null : Math.round(a 
 const id = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2));
 const lower = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 
-export const SWAPS: Swap[] = [
+const SWAPS: Swap[] = [
   {
     id: "sahne-joghurt",
     match: /(?<!saure )sahne|schlagsahne|rahm$/i,
@@ -122,7 +122,7 @@ export type HealthTip = {
 };
 
 /** Passender Tausch für ein Rezept (oder null) */
-export function swapFor(recipe: Recipe, persons: Person[]): { swap: Swap; ingredient: Ingredient } | null {
+function swapFor(recipe: Recipe, persons: Person[]): { swap: Swap; ingredient: Ingredient } | null {
   if (recipe.category === "cheatday") return null;
   for (const swap of SWAPS) {
     if (recipe.note.includes(`[${swap.id}]`)) continue;
@@ -241,15 +241,4 @@ export function declineTip(tip: HealthTip) {
 export function undoTip(tip: HealthTip, previous: Recipe) {
   saveRecipe(previous);
   markHandled(tip.key, "declined");
-}
-
-// --- Wochenrückblick ------------------------------------------------------------
-
-/** Lob zum Wochenrückblick, z. B. "Diese Woche 5 Gemüsetage – stark! 💪" (oder null) */
-export function weekPraise(week: PlanWeek): string | null {
-  const veggie = week.days.filter((d) => !d.away && d.slot.entry?.category === "vegetarisch").length;
-  const fish = week.days.filter((d) => !d.away && d.slot.entry?.category === "fisch").length;
-  if (veggie >= 4) return `Diese Woche ${veggie} Gemüsetage – stark! 💪`;
-  if (veggie >= 3 && fish >= 1) return `Diese Woche ${veggie} Gemüsetage und Fisch – richtig ausgewogen! 💪`;
-  return null;
 }

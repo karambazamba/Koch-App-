@@ -33,7 +33,7 @@ function speechRecognitionClass(): (new () => Recognition) | null {
 const noopSubscribe = () => () => {};
 
 /** Gibt es Spracheingabe? Erst im Browser bekannt (beim Vorrendern `null`). */
-export function useSpeechSupported(): boolean | null {
+function useSpeechSupported(): boolean | null {
   return useSyncExternalStore(noopSubscribe, () => Boolean(speechRecognitionClass()), () => null);
 }
 

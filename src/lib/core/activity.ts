@@ -1,10 +1,7 @@
 // Ohne Druck: Wann war die App zuletzt offen, wann hat jemand selbst etwas
-// getan? Daraus: einmaliges "Willkommen zurück" nach 3+ Tagen und "leiser
-// werden" – bleiben proaktive Nachrichten an 3 Tagen unbeachtet, schweigt der
-// Helfer, bis wieder jemand selbst etwas tut. Dazu einmalige Angebote
-// (z. B. "Wochenende frei?"), die nie wiederholt werden.
+// getan? ("leiser werden": bleiben proaktive Nachrichten unbeachtet, schweigt
+// die Begleitung, bis wieder jemand selbst etwas tut.)
 
-import { useExternalStore } from "./useExternalStore";
 import { createLocalStore } from "./localStore";
 import { now } from "./now";
 
@@ -24,8 +21,7 @@ type ActivityStore = {
   asked: Record<string, true>;
 };
 
-export const AWAY_DAYS = 3;
-export const QUIET_AFTER = 3;
+const AWAY_DAYS = 3;
 
 function migrate(raw: unknown): ActivityStore | null {
   if (!raw || typeof raw !== "object") return null;
@@ -45,13 +41,6 @@ function migrate(raw: unknown): ActivityStore | null {
 const store = createLocalStore("wasgibts.aktivitaet", migrate);
 const EMPTY: ActivityStore = { version: 1, proactive: {}, asked: {} };
 
-export type Activity = ActivityStore;
-
-export function useActivity(): ActivityStore | undefined {
-  const data = useExternalStore(store.subscribe, store.load, () => undefined);
-  return data === undefined ? undefined : (data ?? EMPTY);
-}
-
 function update(change: (a: ActivityStore) => ActivityStore) {
   store.save(change(store.load() ?? EMPTY));
 }
@@ -66,46 +55,11 @@ export function recordOpen(today: string) {
   store.save({ ...a, lastOpen: today, since: a.since ?? today, welcomeDue: away >= AWAY_DAYS ? today : (a.welcomeDue ?? null) });
 }
 
-export function welcomeDue(a: ActivityStore, today: string): boolean {
-  return a.welcomeDue === today;
-}
-
-export function dismissWelcome(today: string) {
-  update((a) => ({ ...a, welcomeDue: null, lastAction: today }));
-}
-
 /** Jemand hat selbst etwas getan → Helfer darf wieder proaktiv sein */
 export function noteUserAction(today: string) {
   const a = store.load() ?? EMPTY;
   if (a.lastAction === today) return;
   store.save({ ...a, lastAction: today });
-}
-
-/** Eine proaktive Nachricht wurde heute gezeigt */
-export function noteProactiveShown(today: string) {
-  const a = store.load() ?? EMPTY;
-  if (today in a.proactive) return;
-  store.save({ ...a, proactive: { ...a.proactive, [today]: false } });
-}
-
-/** … und beachtet */
-export function noteProactiveAnswered(today: string) {
-  update((a) => ({ ...a, proactive: { ...a.proactive, [today]: true }, lastAction: today }));
-}
-
-/**
- * Leiser werden: an 3 Tagen (seit dem letzten eigenen Tun) unbeachtet →
- * keine proaktiven Nachrichten mehr, bis wieder jemand selbst etwas tut.
- */
-export function isQuiet(a: ActivityStore, today: string): boolean {
-  const since = a.lastAction ?? "";
-  const ignored = Object.entries(a.proactive).filter(([d, seen]) => !seen && d < today && d > since);
-  return ignored.length >= QUIET_AFTER;
-}
-
-/** Einmaliges Angebot schon gezeigt? */
-export function wasAsked(a: ActivityStore, key: string): boolean {
-  return Boolean(a.asked[key]);
 }
 
 export function markAsked(key: string) {

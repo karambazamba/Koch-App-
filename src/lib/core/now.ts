@@ -5,11 +5,11 @@
 
 import { useExternalStore } from "./useExternalStore";
 
-export const TIME_ZONE = "Europe/Berlin";
+const TIME_ZONE = "Europe/Berlin";
 
 let override: (() => Date) | null = null;
 
-/** Für Tests: feste Zeit (Date) oder Funktion; `null` = echte Uhr */
+/** Für Tests: feste Zeit (Date) oder Funktion; `null` = echte Uhr @public */
 export function setNowForTests(value: Date | (() => Date) | null) {
   override = value === null ? null : typeof value === "function" ? value : () => new Date(value.getTime());
 }

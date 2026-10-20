@@ -12,7 +12,7 @@ import { composeWeek, type StoredEntry } from "./mealPlan";
 import type { PantryItem } from "./pantry";
 import { DISHES, matchStock, realStock, soonToUse, type Season } from "./dishIdeas";
 import type { HouseholdProfile, NeverAgainEntry } from "../einstellungen/profile";
-import { isNeverAgain } from "./ratings";
+import { isNeverAgain } from "./neverAgain";
 import { addDays, weekStartFor, type WeekPlan } from "./weekPlan";
 import { wishLabel, type WishIdea } from "./wishes";
 
@@ -40,7 +40,7 @@ export type Idea = {
   known: boolean;
 };
 
-export function seasonOf(date: string): Season {
+function seasonOf(date: string): Season {
   const m = Number(date.slice(5, 7));
   return m >= 3 && m <= 5 ? "fruehling" : m >= 6 && m <= 8 ? "sommer" : m >= 9 && m <= 11 ? "herbst" : "winter";
 }
@@ -52,7 +52,7 @@ const SEASON_WORDS: Record<Season, RegExp> = {
   winter: /grünkohl|eintopf|braten|gulasch|suppe|raclette|rotkohl|linsen|winter/i,
 };
 
-export type IdeaContext = {
+type IdeaContext = {
   date: string;
   recipes: Record<string, Recipe>;
   /** Aktueller Bestand: Vorrat + Gekauftes (+ eben Gesagtes) */

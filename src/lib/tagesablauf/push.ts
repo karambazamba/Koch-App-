@@ -6,6 +6,8 @@
 
 import { clockMinutes, type DayRoutine } from "./settings";
 import { eveningStart } from "./phases";
+import { helperMessage, type HouseholdProfile } from "../einstellungen/profile";
+import { LOTTE_PUSH_ICON, icon as iconFile } from "../core/app";
 
 export type PushKind = "timer" | "termin-familie" | "termin-arbeit" | "aufgabe" | "proaktiv";
 
@@ -34,4 +36,9 @@ export function pushAllowed(c: PushCheck): boolean {
   const evening = c.minutes >= eveningStart({ routine: c.routine, workEnd: c.workEnd }) || c.minutes < clockMinutes(c.routine.morgenBis);
   if (c.routine.ruhe && evening && (c.kind === "termin-arbeit" || c.kind === "aufgabe")) return false;
   return true;
+}
+
+/** Mitteilung der Begleitung (für die spätere Push-Anbindung): Text immer "<Name>: …", Bild = ihr Gesicht */
+export function lottePush(profile: Pick<HouseholdProfile, "helper">, text: string): { body: string; icon: string; badge: string } {
+  return { body: helperMessage(profile, text), icon: LOTTE_PUSH_ICON, badge: iconFile("favicon-48.png") };
 }

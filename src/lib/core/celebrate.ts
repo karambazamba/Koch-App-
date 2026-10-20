@@ -4,7 +4,7 @@
 import { triggerAvatar } from "./avatarState";
 import { useExternalStore } from "./useExternalStore";
 
-export type Celebration = { id: number; text: string };
+type Celebration = { id: number; text: string };
 
 let current: Celebration | null = null;
 const listeners = new Set<() => void>();

@@ -4,10 +4,8 @@
 // neue Design ein (Abschnitte auf der Essen-Seite, Kachel auf "Heute",
 // Lottes Satz). Daten bleiben immer erhalten – aus heißt nur ausgeblendet.
 //
-// Der frühere Schalter "Alte Funktionen anzeigen (Test)" ist weg. Nur für die
-// Entwicklung zeigt `/?legacy=1` (nirgends verlinkt, gilt für diese
-// Browser-Sitzung; `/?legacy=0` beendet es) den alten Aufbau samt allen
-// Funktionen.
+// Der frühere Schalter "Alte Funktionen anzeigen (Test)" und der Alt-Modus
+// (/?legacy=1) sind weg.
 
 import { useExternalStore } from "./useExternalStore";
 import { createLocalStore } from "./localStore";
@@ -23,11 +21,6 @@ export const FEATURES = {
   wochenendIdeen: "Wochenend-Ideen",
   kochstil: "Kochstil & Vorlieben (Plan/spontan, Das mögt ihr, Nie wieder …)",
   modi: "Wie oft sich die Assistentin meldet, Pause",
-  joker: "Joker (noch nicht gebaut)",
-  kacheln: "Alte Kacheln (nur Entwicklung)",
-  bewertungen: "Bewertungen nach dem Kochen (nur Entwicklung)",
-  lottesPlatz: "Alter Hinweis-Platz (nur Entwicklung)",
-  kennenlernen: "Kennenlernen-Chat (sonst Schnellstart, nur Entwicklung)",
 } as const;
 
 export type Feature = keyof typeof FEATURES;
@@ -97,47 +90,16 @@ function migrate(raw: unknown): FeatureStore | null {
 const store = createLocalStore("wasgibts.funktionen", migrate);
 const EMPTY: Feature[] = [];
 
-// --- Entwicklung: /?legacy=1 (nur diese Browser-Sitzung) ----------------------------
-
-const DEV_KEY = "wasgibts.entwicklung";
-const devListeners = new Set<() => void>();
-
-function devOn(): boolean {
-  try {
-    return sessionStorage.getItem(DEV_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-/** Liest `?legacy=1` / `?legacy=0` aus der Adresse (einmal beim Start) */
-export function readDevFlag(search: string) {
-  const v = new URLSearchParams(search).get("legacy");
-  if (v === null) return;
-  try {
-    if (v === "1") sessionStorage.setItem(DEV_KEY, "1");
-    else sessionStorage.removeItem(DEV_KEY);
-  } catch {
-    // ohne Speicher keine Entwicklungsansicht
-  }
-  devListeners.forEach((l) => l());
-}
-
-const subscribeDev = (l: () => void) => {
-  devListeners.add(l);
-  return () => devListeners.delete(l);
-};
-
 // --- Abfragen ------------------------------------------------------------------------
 
 const onList = () => store.load()?.on ?? EMPTY;
 
-const isOn = (feature: Feature, on: Feature[], dev: boolean) =>
-  ENABLED[feature] === true || dev || on.includes(feature) || (feature === "ideen" && on.includes("spontan"));
+const isOn = (feature: Feature, on: Feature[]) =>
+  ENABLED[feature] === true || on.includes(feature) || (feature === "ideen" && on.includes("spontan"));
 
 /** Ist eine Funktion an? (außerhalb von React) */
 export function featureOn(feature: Feature): boolean {
-  return isOn(feature, onList(), devOn());
+  return isOn(feature, onList());
 }
 
 /** Baustein an- oder ausschalten; liefert true, wenn sich etwas geändert hat */
@@ -163,16 +125,10 @@ export function useBausteine(): Feature[] | undefined {
   return data === undefined ? undefined : (data?.on ?? EMPTY);
 }
 
-/** Entwicklungsansicht (alter Aufbau, alles an) – nur über /?legacy=1 (`undefined` = lädt) */
-export function useLegacyFeatures(): boolean | undefined {
-  return useExternalStore(subscribeDev, devOn, () => undefined);
-}
-
 /** Ist eine Funktion an? (`undefined` = lädt) */
 export function useFeature(feature: Feature): boolean | undefined {
   const on = useBausteine();
-  const dev = useLegacyFeatures();
   if (ENABLED[feature]) return true;
-  if (on === undefined || dev === undefined) return undefined;
-  return isOn(feature, on, dev);
+  if (on === undefined) return undefined;
+  return isOn(feature, on);
 }

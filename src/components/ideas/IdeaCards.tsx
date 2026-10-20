@@ -22,7 +22,7 @@ export type CardIdea = {
 const list = (items: string[]) => (items.length <= 1 ? items.join("") : `${items.slice(0, -1).join(", ")} und ${items[items.length - 1]}`);
 
 /** "25 Min · alles im Haus" bzw. "35 Min · noch: Kokosmilch" */
-export function ideaMeta(idea: CardIdea): { time: string; stock: string; ready: boolean } {
+function ideaMeta(idea: CardIdea): { time: string; stock: string; ready: boolean } {
   return {
     time: idea.minutes !== null ? `${idea.minutes} Min` : "",
     stock: idea.needs.length ? `noch: ${list(idea.needs.slice(0, 2))}${idea.needs.length > 2 ? " …" : ""}` : "alles im Haus",

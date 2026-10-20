@@ -113,7 +113,7 @@ export function GuidedChat({ state, onChange, onFinish }: Props) {
             <p key={m.id} className={`${BUBBLE} self-end rounded-br-md bg-accent text-on-accent`}>
               {m.text}
             </p>
-          ) : m.target && !(done && state.mode === "addPerson") ? (
+          ) : m.target && !done ? (
             <button
               key={m.id}
               type="button"
@@ -222,7 +222,7 @@ export function GuidedChat({ state, onChange, onFinish }: Props) {
                 </button>
               ),
             )}
-            {!done && state.step !== "household" && (
+            {!done && (
               <button
                 type="button"
                 onClick={() => {

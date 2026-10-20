@@ -31,7 +31,7 @@ function newId(): string {
  * Hauptgericht pro Tag), zählt in seine Kategorie (Zähler wird bei Bedarf
  * erhöht) und setzt bei einem Cheat-Day-Rezept den Cheat Day auf diesen Tag.
  */
-export function addFixedMeal(plan: WeekPlan, meal: FixedMeal): WeekPlan {
+function addFixedMeal(plan: WeekPlan, meal: FixedMeal): WeekPlan {
   const fixedMeals = [...plan.fixedMeals.filter((m) => m.weekday !== meal.weekday), meal].sort(
     // Reihenfolge der Planungswoche (ab Einkaufstag)
     (a, b) => weekDayNames(plan.weekStart).indexOf(a.weekday) - weekDayNames(plan.weekStart).indexOf(b.weekday),

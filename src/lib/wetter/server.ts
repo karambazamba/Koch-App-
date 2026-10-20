@@ -15,7 +15,7 @@ export const weatherMock = () => process.env.WETTER_MOCK === "1";
 type Scenario = "regen" | "frost" | "heiss" | "klar" | "sturm";
 
 /** Testmodus: feste Wetterlage rund um heute */
-export function mockForecast(place: string, scenario: Scenario = "regen", day?: string): Forecast {
+function mockForecast(place: string, scenario: Scenario = "regen", day?: string): Forecast {
   const today = day && /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : berlinTime().iso;
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(`${today}T12:00:00Z`);

@@ -11,7 +11,7 @@ const minutesOf = (clock: string) => {
   return h * 60 + m;
 };
 
-export type DueReminder = { key: string; item: DayItem; text: string };
+type DueReminder = { key: string; item: DayItem; text: string };
 
 /** Fällige Erinnerung jetzt (die nächste zuerst), sonst null */
 export function dueReminder(entries: CalendarEntry[], today: string, minutesNow: number, seen: string[]): DueReminder | null {
