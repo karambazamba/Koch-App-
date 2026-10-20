@@ -4,7 +4,7 @@
 // gesehen. Vorabend = am Tag davor ab 19 Uhr.
 
 import { addDays } from "../core/now";
-import { itemsForDay, type CalendarEntry, type DayItem } from "./model";
+import { itemsForDay, weekdayShort, type CalendarEntry, type DayItem } from "./model";
 
 const minutesOf = (clock: string) => {
   const [h, m] = clock.split(":").map(Number);
@@ -31,7 +31,7 @@ export function dueReminder(entries: CalendarEntry[], today: string, minutesNow:
     const tomorrow = addDays(today, 1);
     for (const item of itemsForDay(entries, tomorrow, today)) {
       if (item.done || item.reminder !== "vorabend" || seen.includes(item.key)) continue;
-      due.push({ key: item.key, item, text: `Morgen${item.time ? ` um ${item.time}` : ""}: ${item.title}.` });
+      due.push({ key: item.key, item, text: `Morgen (${weekdayShort(item.date)})${item.time ? ` um ${item.time}` : ""}: ${item.title}.` });
     }
   }
   return due.sort((a, b) => (a.item.date + (a.item.time ?? "")).localeCompare(b.item.date + (b.item.time ?? "")))[0] ?? null;
