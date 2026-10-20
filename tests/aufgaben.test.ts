@@ -54,3 +54,51 @@ describe("Aufgaben und Termine an einem Tag", () => {
     expect(g.irgendwann.map((i) => i.title)).toContain("Irgendwann");
   });
 });
+
+import { orderedTasks, sortItems } from "@/lib/aufgaben/model";
+import { parseCalendar } from "@/lib/aufgaben/parse";
+import { readQuickText } from "@/lib/aufgaben/quick";
+
+describe("Reihenfolge der Aufgaben (B2)", () => {
+  const made = (title: string, iso: string, data: Partial<AufgabeData> = {}) => ({ ...aufgabe({ title, ...data }), erstellt: iso });
+
+  it("vier Aufgaben für heute stehen genau in der Reihenfolge, in der sie angelegt wurden – nie alphabetisch", () => {
+    at("2026-10-20T08:00");
+    const list = [made("Zahnpasta", "2026-10-20T07:00:00Z", { date: "2026-10-20" }), made("Apfel", "2026-10-20T07:01:00Z", { date: "2026-10-20" }), made("Milch", "2026-10-20T07:02:00Z", { date: "2026-10-20" }), made("Brot", "2026-10-20T07:03:00Z", { date: "2026-10-20" })];
+    expect(orderedTasks(list, "2026-10-20").map((i) => i.title)).toEqual(["Zahnpasta", "Apfel", "Milch", "Brot"]);
+    expect(itemsForDay(list, "2026-10-20", "2026-10-20").map((i) => i.title)).toEqual(["Zahnpasta", "Apfel", "Milch", "Brot"]);
+  });
+
+  it("dringend → heute → Frist (früheste zuerst) → diese Woche → irgendwann", () => {
+    at("2026-10-20T08:00");
+    const list = [
+      made("Irgendwann", "2026-10-01T00:00:00Z"),
+      made("Woche", "2026-10-01T00:00:01Z", { week: "2026-10-19" }),
+      made("Frist Fr", "2026-10-01T00:00:02Z", { due: "2026-10-23" }),
+      made("Frist Mi", "2026-10-01T00:00:03Z", { due: "2026-10-21" }),
+      made("Heute", "2026-10-01T00:00:04Z", { date: "2026-10-20" }),
+      made("Wichtig", "2026-10-01T00:00:05Z", { dringend: true }),
+    ];
+    expect(orderedTasks(list, "2026-10-20").map((i) => i.title)).toEqual(["Wichtig", "Heute", "Frist Mi", "Frist Fr", "Woche", "Irgendwann"]);
+  });
+
+  it("mit Uhrzeit nach Uhrzeit, sonst nach Anlegen; Titel ändern ändert nichts", () => {
+    at("2026-10-20T08:00");
+    const a = made("B spät", "2026-10-20T06:00:00Z", { date: "2026-10-20", time: "18:00" });
+    const b = made("A früh", "2026-10-20T07:00:00Z", { date: "2026-10-20", time: "09:00" });
+    const c = made("Ohne Zeit", "2026-10-20T05:00:00Z", { date: "2026-10-20" });
+    expect(sortItems(itemsForDay([a, b, c], "2026-10-20", "2026-10-20")).map((i) => i.title)).toEqual(["A früh", "B spät", "Ohne Zeit"]);
+    const renamed = { ...c, data: { ...c.data, title: "AAA umbenannt" } } as CalendarEntry;
+    expect(orderedTasks([a, b, renamed], "2026-10-20").map((i) => i.title).pop()).toBe("AAA umbenannt");
+  });
+});
+
+describe("Dringend (B3)", () => {
+  it("„Dringend: …“ und „… ist wichtig“ werden erkannt, das Wort verschwindet aus dem Titel", () => {
+    expect(readQuickText("Dringend: Steuerberater anrufen", "2026-10-20")).toMatchObject({ title: "Steuerberater anrufen", urgent: true });
+    expect(readQuickText("Steuerberater anrufen ist wichtig", "2026-10-20")).toMatchObject({ title: "Steuerberater anrufen", urgent: true });
+    expect(readQuickText("Wichtige Unterlagen holen", "2026-10-20").urgent).toBe(false);
+    const cmd = parseCalendar("Dringend: Kita-Formular abgeben", "2026-10-20");
+    expect(cmd?.kind === "create" && cmd.draft.typ === "aufgabe" && cmd.draft.data.dringend).toBe(true);
+  });
+});

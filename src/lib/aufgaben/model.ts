@@ -69,6 +69,10 @@ export type AufgabeData = {
   /** Erledigt an diesen Tagen (wiederkehrende Aufgabe) */
   doneDates?: string[];
   skipDates?: string[];
+  /** Dringend: steht immer ganz vorne (kleines oranges "!") */
+  dringend?: boolean;
+  /** Platz in der Reihenfolge (Zeitstempel): sonst `erstellt`; "Auf morgen" setzt ihn neu (dort hinten) */
+  seit?: string;
 };
 
 export type Termin = Entry<TerminData> & { typ: "termin" };
@@ -239,15 +243,23 @@ export function itemsForDay(entries: CalendarEntry[], date: string, today: strin
   return sortItems(items);
 }
 
-/** Nach Uhrzeit; ohne Uhrzeit danach; Erledigtes ans Ende */
-function sortItems(items: DayItem[]): DayItem[] {
-  return [...items].sort(
-    (a, b) =>
-      Number(a.done) - Number(b.done) ||
-      Number(a.time === null) - Number(b.time === null) ||
-      (a.time ?? "").localeCompare(b.time ?? "") ||
-      a.title.localeCompare(b.title, "de"),
-  );
+/** Ist der Eintrag eine dringende Aufgabe? */
+export const isUrgent = (i: Pick<DayItem, "entry">) => i.entry.typ === "aufgabe" && i.entry.data.dringend === true;
+
+/** Platz in der Reihenfolge: "Auf morgen" (seit), sonst wann angelegt – nie das Alphabet */
+const sortStamp = (i: Pick<DayItem, "entry">) => (i.entry.typ === "aufgabe" ? (i.entry.data.seit ?? i.entry.erstellt) : i.entry.erstellt);
+
+/**
+ * Innerhalb einer Gruppe (EINE Regel für alle Ansichten): mit Uhrzeit nach
+ * Uhrzeit, sonst nach Anlegen – älteste zuerst, neue landen hinten.
+ */
+export function byTimeThenAge(x: Pick<DayItem, "entry" | "time">, y: Pick<DayItem, "entry" | "time">): number {
+  return Number(x.time === null) - Number(y.time === null) || (x.time ?? "").localeCompare(y.time ?? "") || sortStamp(x).localeCompare(sortStamp(y));
+}
+
+/** Ein Tag: Erledigtes ans Ende, dringende Aufgaben vorne, dann nach Uhrzeit bzw. Anlegen */
+export function sortItems(items: DayItem[]): DayItem[] {
+  return [...items].sort((a, b) => Number(a.done) - Number(b.done) || Number(isUrgent(b)) - Number(isUrgent(a)) || byTimeThenAge(a, b));
 }
 
 // --- Aufgaben-Übersicht und Startseite ------------------------------------------
@@ -342,17 +354,32 @@ export function taskOverview(entries: CalendarEntry[], today: string): Record<Ta
     }
     groups.irgendwann.push(taskItem(entry, today, {}));
   }
-  const byTime = (x: DayItem, y: DayItem) => Number(x.time === null) - Number(y.time === null) || (x.time ?? "").localeCompare(y.time ?? "") || x.title.localeCompare(y.title, "de");
-  // Mit Tag/Frist nach Datum, "diese Woche" ohne Tag danach
-  const byDate = (x: DayItem, y: DayItem) => Number(x.when === "diese Woche") - Number(y.when === "diese Woche") || x.date.localeCompare(y.date) || byTime(x, y);
-  // Heute dran: Frist bzw. Tag heute ganz oben, dann von früher Mitgenommenes, dann der Rest (je mit Uhrzeit zuerst)
-  const rank = (i: DayItem) => (!i.carried && i.entry.typ === "aufgabe" && (i.entry.data.due === today || i.entry.data.date === today || i.repeat) ? 0 : i.carried ? 1 : 2);
-  groups.heute.sort((x, y) => rank(x) - rank(y) || byTime(x, y));
+  // Dringendes immer zuerst; mit Tag/Frist nach Datum ("diese Woche" ohne Tag danach); sonst Uhrzeit bzw. Anlegen
+  const urgentFirst = (x: DayItem, y: DayItem) => Number(isUrgent(y)) - Number(isUrgent(x));
+  const byDate = (x: DayItem, y: DayItem) => urgentFirst(x, y) || Number(x.when === "diese Woche") - Number(y.when === "diese Woche") || x.date.localeCompare(y.date) || byTimeThenAge(x, y);
+  groups.heute.sort((x, y) => urgentFirst(x, y) || byTimeThenAge(x, y));
   groups.woche.sort(byDate);
   groups.spaeter.sort(byDate);
-  groups.irgendwann.sort((x, y) => x.entry.erstellt.localeCompare(y.entry.erstellt));
+  groups.irgendwann.sort((x, y) => urgentFirst(x, y) || byTimeThenAge(x, y));
   groups.erledigt.sort((x, y) => y.date.localeCompare(x.date));
   return groups;
+}
+
+type OrderedTask = DayItem & { group: Exclude<TaskGroup, "erledigt"> };
+
+/**
+ * EINE Reihenfolge für alle Ansichten (Startseite, Aufgaben-Seite, Woche):
+ * 1) dringend · 2) heute dran (auch "von gestern") · 3) nächste Frist
+ * (früheste zuerst) · 4) diese Woche · 5) später · 6) irgendwann – innerhalb
+ * nach Uhrzeit bzw. Anlegen (älteste zuerst), nie nach Alphabet.
+ */
+export function orderedTasks(entries: CalendarEntry[], today: string): OrderedTask[] {
+  const g = taskOverview(entries, today);
+  const tag = (group: OrderedTask["group"]) => (i: DayItem): OrderedTask => ({ ...i, group });
+  const all = [...g.heute.map(tag("heute")), ...g.woche.map(tag("woche")), ...g.spaeter.map(tag("spaeter")), ...g.irgendwann.map(tag("irgendwann"))];
+  const dueOf = (i: OrderedTask) => (i.entry.typ === "aufgabe" ? i.entry.data.due : undefined);
+  const rank = (i: OrderedTask) => (isUrgent(i) ? 0 : i.group === "heute" ? 1 : dueOf(i) ? 2 : i.group === "woche" ? 3 : i.group === "spaeter" ? 4 : 5);
+  return all.sort((x, y) => rank(x) - rank(y) || (rank(x) === 2 ? dueOf(x)!.localeCompare(dueOf(y)!) : 0) || (rank(x) >= 3 ? x.date.localeCompare(y.date) : 0) || byTimeThenAge(x, y));
 }
 
 /** Kurz rechts in der Zeile: "heute", "bis Mi", "diese Woche", "von gestern" */
@@ -381,6 +408,11 @@ const replace = (entries: CalendarEntry[], updated: CalendarEntry) => entries.ma
 const touch = <T extends CalendarEntry>(entry: T, data: Partial<T["data"]>, stamp: string): T => ({ ...entry, data: { ...entry.data, ...data }, geaendert: stamp });
 const addUnique = (list: string[] | undefined, value: string) => [...new Set([...(list ?? []), value])];
 
+/** Aufgabe als dringend markieren (bzw. nicht mehr) */
+export function setUrgent(entries: CalendarEntry[], entryId: string, on: boolean, stamp: string): CalendarEntry[] {
+  return entries.map((e) => (e.id === entryId && e.typ === "aufgabe" ? touch(e, { dringend: on || undefined }, stamp) : e));
+}
+
 /** Abhaken (bzw. wieder öffnen) an einem Tag */
 export function setDone(entries: CalendarEntry[], item: Pick<DayItem, "entry" | "date">, done: boolean, stamp: string): CalendarEntry[] {
   const e = entries.find((x) => x.id === item.entry.id);
@@ -402,13 +434,14 @@ export function moveItem(entries: CalendarEntry[], item: Pick<DayItem, "entry" |
   if (!e) return entries;
   if (!e.data.repeat) {
     if (e.typ === "termin") return replace(entries, touch(e, { date: to, ...(time ? { start: time } : {}) }, stamp));
-    return replace(entries, touch(e, { date: to, ...(time ? { time } : {}) }, stamp));
+    // Auf einen anderen Tag geschoben: dort hinten einsortiert
+    return replace(entries, touch(e, { date: to, seit: stamp, ...(time ? { time } : {}) }, stamp));
   }
   const withSkip = replace(entries, touch(e, { skipDates: addUnique(e.data.skipDates, item.date) } as Partial<typeof e.data>, stamp));
   const copy =
     e.typ === "termin"
       ? createEntry("termin", { ...e.data, date: to, start: time ?? e.data.start, repeat: null, doneDates: [], skipDates: [] }, { raum: e.raum, besitzer: e.besitzer })
-      : createEntry("aufgabe", { ...e.data, date: to, ...(time ? { time } : {}), repeat: null, doneDates: [], skipDates: [], doneOn: null }, { raum: e.raum, besitzer: e.besitzer });
+      : createEntry("aufgabe", { ...e.data, date: to, seit: stamp, ...(time ? { time } : {}), repeat: null, doneDates: [], skipDates: [], doneOn: null }, { raum: e.raum, besitzer: e.besitzer });
   return [...withSkip, copy as CalendarEntry];
 }
 
@@ -499,6 +532,8 @@ export function sanitizeEntry(raw: unknown): CalendarEntry | null {
       doneOn: typeof d.doneOn === "string" && DATE.test(d.doneOn) ? d.doneOn : null,
       doneDates: dates(d.doneDates),
       skipDates: dates(d.skipDates),
+      ...(d.dringend === true ? { dringend: true } : {}),
+      ...(typeof d.seit === "string" && d.seit ? { seit: d.seit } : {}),
     },
   };
 }

@@ -13,7 +13,8 @@ import { Check, Plus } from "lucide-react";
 import { CARD } from "@/components/ui/styles";
 import { QuickButton } from "@/components/ui/QuickButton";
 import { clockLabel } from "@/lib/aufgaben/answers";
-import { setDone, taskBadge, type DayItem } from "@/lib/aufgaben/model";
+import { isUrgent, setDone, taskBadge, type DayItem } from "@/lib/aufgaben/model";
+import { UrgentMark } from "./UrgentMark";
 import type { TileSize } from "@/lib/core/homeLayout";
 import { TaskQuickAdd } from "./TaskQuickAdd";
 import { TerminQuickAdd } from "./TerminQuickAdd";
@@ -220,6 +221,7 @@ export function TaskLine({ item, today, onOpen, onDone, leaving, entering }: { i
     <li className="flex items-center gap-1 py-1 pr-3" style={entering ? { animation: "card-in 0.32s ease-out" } : undefined} data-item={item.key}>
       <CheckBox item={item} checked={checked} onClick={() => onDone(item)} round />
       <button type="button" onClick={() => onOpen(item)} className="flex min-h-11 min-w-0 flex-1 items-center gap-2 py-1 text-left" aria-label={`${item.title} – Möglichkeiten`}>
+        {isUrgent(item) && !checked && <UrgentMark />}
         <span className={`min-w-0 flex-1 truncate text-[15px] font-semibold leading-snug ${checked ? "text-muted line-through" : ""}`}>{item.title}</span>
         {badge && <span className={`shrink-0 text-xs ${badge === "heute" ? "font-semibold text-accent-strong" : "text-muted"}`}>{badge}</span>}
         <span className={`h-2 w-2 shrink-0 rounded-full ${roomBar(item.room)}`} aria-hidden />

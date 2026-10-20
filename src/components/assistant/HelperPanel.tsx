@@ -549,6 +549,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   const submit = (text: string, byVoice = false) => {
     const t = text.trim();
     if (!t || busy || !data || !today) return;
+    // Aufnahme verwerfen – ihr Ende darf nichts mehr ins Feld schreiben
+    speech.reset();
     setSuggestionsGone(true);
     noteChatMessage();
     setViaVoice(byVoice);

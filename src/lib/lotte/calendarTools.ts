@@ -118,6 +118,7 @@ function aufgabeInput(ctx: ToolContext, input: Input, base?: AufgabeData): Aufga
     label: input.etikett !== undefined ? str(input.etikett) || undefined : base?.label,
     repeat,
     reminder: input.erinnerung !== undefined ? reminderFrom(input.erinnerung) : (base?.reminder ?? "aus"),
+    dringend: input.dringend !== undefined ? input.dringend === true || undefined : base?.dringend,
   };
 }
 
@@ -150,6 +151,7 @@ const AUFGABE_FIELDS = {
   raum: ROOM_PROP,
   wiederholung: REPEAT_PROP,
   erinnerung: REMINDER_PROP,
+  dringend: { type: "boolean", description: "Dringend/wichtig ('Dringend: …', '… ist wichtig') – steht dann ganz vorne. Keine zusätzlichen Erinnerungen deswegen." },
 } as const;
 
 export const CALENDAR_TOOLS: LotteTool[] = [
@@ -219,7 +221,7 @@ export const CALENDAR_TOOLS: LotteTool[] = [
     area: "alltag",
     definition: {
       name: "aufgabe_aendern",
-      description: "Ändert eine Aufgabe (nur angegebene Felder: Titel, Tag, Frist, Uhrzeit, Etikett, Raum, Wiederholung, Erinnerung). Zum Löschen loeschen=true.",
+      description: "Ändert eine Aufgabe (nur angegebene Felder: Titel, Tag, Frist, Uhrzeit, Etikett, Raum, Wiederholung, Erinnerung, dringend). Zum Löschen loeschen=true.",
       input_schema: { type: "object", properties: { id: ID_PROP, loeschen: { type: "boolean" }, nur_am: ON_PROP, ...AUFGABE_FIELDS }, required: ["id"], additionalProperties: false },
     },
     run: (ctx, raw) => {

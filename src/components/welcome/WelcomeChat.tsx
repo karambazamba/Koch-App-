@@ -148,6 +148,7 @@ export function WelcomeChat() {
   const submitText = () => {
     const t = input.trim();
     if (!t) return;
+    speech.reset();
     setInput("");
     void send({ text: t });
   };

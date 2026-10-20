@@ -87,6 +87,8 @@ export function useSpeechInput({ onTranscript, onEnd }: Options) {
   const [interim, setInterim] = useState("");
   const [error, setError] = useState("");
   const recognitionRef = useRef<Recognition | null>(null);
+  /** Text der laufenden Aufnahme bisher (für reset) */
+  const textRef = useRef("");
   // Avatar der Begleitung hört zu, solange dieses Mikrofon an ist
   const listeningFlag = useRef(false);
   const flagListening = useCallback((on: boolean) => {
@@ -132,6 +134,7 @@ export function useSpeechInput({ onTranscript, onEnd }: Options) {
     let stoppedByUser = false;
     let heard = false;
     let text = "";
+    textRef.current = "";
     setError("");
     setInterim("");
 
@@ -151,6 +154,7 @@ export function useSpeechInput({ onTranscript, onEnd }: Options) {
         else pending += said;
       }
       text = withoutPrevious(joinFinals(finals.filter((f) => f !== undefined)), previousText);
+      textRef.current = text;
       setInterim(pending);
       callbacks.current.onTranscript(text);
     };
@@ -214,5 +218,19 @@ export function useSpeechInput({ onTranscript, onEnd }: Options) {
     setInterim("");
   }, [detach]);
 
-  return { supported, listening, interim, error, start, stop, cancel };
+  /**
+   * Beim Absenden IMMER zuerst aufrufen: Aufnahme verwerfen (keine Rückrufe
+   * mehr) und den bisher erkannten Text als "schon abgeschickt" merken – so
+   * kann weder onEnd noch die nächste Aufnahme ihn wieder ins Feld schreiben.
+   */
+  const reset = useCallback(() => {
+    if (textRef.current) previousText = textRef.current;
+    textRef.current = "";
+    detach();
+    setListening(false);
+    setInterim("");
+    setError("");
+  }, [detach]);
+
+  return { supported, listening, interim, error, start, stop, cancel, reset };
 }

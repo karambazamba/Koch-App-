@@ -52,6 +52,7 @@ export function GuidedChat({ state, onChange, onFinish }: Props) {
   const send = async (raw: string) => {
     const text = cleanSpeech(raw);
     if (!text || busy) return;
+    speech.reset();
     setInput("");
     const current = latest.current;
     const kind = aiKindFor(current.step);

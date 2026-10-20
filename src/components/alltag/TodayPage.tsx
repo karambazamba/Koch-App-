@@ -38,7 +38,7 @@ import { weekdayIndex } from "@/lib/aufgaben/model";
 import { buzz } from "./actions";
 import { LotteAvatar } from "@/components/LotteAvatar";
 import { buttonClass } from "@/components/ui/styles";
-import { itemsForDay, openTaskCount, taskOverview, upcomingTermine, type CalendarEntry } from "@/lib/aufgaben/model";
+import { isUrgent, itemsForDay, openTaskCount, orderedTasks, taskOverview, upcomingTermine, type CalendarEntry } from "@/lib/aufgaben/model";
 import { AufgabenSection, TermineSection } from "./MiniCards";
 import { dueReminder } from "@/lib/aufgaben/reminders";
 import { markReminderSeen, useSeenReminders } from "@/lib/aufgaben/store";
@@ -164,7 +164,8 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const termineAll = view.familyUpcomingOnly ? termine : items.filter((i) => i.entry.typ === "termin");
   const overview = taskOverview(entries, data.todayIso);
   const workless = (list: typeof overview.heute) => (view.hideWork ? list.filter((i) => i.room !== "arbeit") : list);
-  const tasks = [...workless(overview.heute), ...workless(overview.woche)];
+  // EINE Reihenfolge: dringend → heute → Frist → diese Woche (Startseite zeigt bis diese Woche)
+  const tasks = workless(orderedTasks(entries, data.todayIso).filter((i) => isUrgent(i) || i.group === "heute" || i.group === "woche"));
   const moreTasks = Math.max(0, openTaskCount(entries, data.todayIso) - Math.min(3, tasks.length));
 
   // Kacheln: gespeicherte Reihenfolge, Phase holt Passendes nach oben (ändert nie die gespeicherte Sortierung)
@@ -200,6 +201,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     termineToday: termineAll,
     termineUpcoming: termine,
     tasksToday: workless(overview.heute),
+    urgent: tasks.filter(isUrgent),
     tasksDoneToday: overview.erledigt.filter((i) => i.date === data.todayIso).length,
     dueToday: workless(overview.heute).filter((i) => !i.carried && i.entry.typ === "aufgabe" && (i.entry.data.due === data.todayIso || i.entry.data.date === data.todayIso)),
     dinnerOpen: !dish && !over && !data.day?.away && Boolean(dishClock && dishClock >= "15:00"),

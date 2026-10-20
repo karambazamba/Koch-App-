@@ -5,7 +5,7 @@
 // übernommen), WO (Familie · Arbeit, vorgeschlagen) und klein "+ Uhrzeit oder
 // Erinnerung". Enter fügt hinzu und lässt das Fenster für die nächste offen.
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Mic, Square } from "lucide-react";
 import { Sheet } from "@/components/plan/Sheet";
 import { INPUT_BASE, LABEL, buttonClass, chipClass } from "@/components/ui/styles";
@@ -16,6 +16,7 @@ import { todayIso } from "@/lib/core/now";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 import { useSpeechInput } from "@/lib/lotte/useSpeechInput";
 import { act } from "./actions";
+import { UrgentMark } from "./UrgentMark";
 
 const sameWhen = (a: When, b: When) => (typeof a === "string" || typeof b === "string" ? a === b : a.date === b.date && a.due === b.due);
 
@@ -26,6 +27,8 @@ export function TaskQuickAdd({ onClose, defaultWhen = "heute" }: { onClose: () =
   const [room, setRoom] = useState<Room | null>(null);
   const [more, setMore] = useState(false);
   const [time, setTime] = useState("");
+  // null = wie im Text erkannt ("Dringend: …", "… ist wichtig")
+  const [urgent, setUrgent] = useState<boolean | null>(null);
   const [reminder, setReminder] = useState<Reminder>("aus");
   const [added, setAdded] = useState<string[]>([]);
   const workRoom = useWorkRoom() || room === "arbeit";
@@ -47,10 +50,16 @@ export function TaskQuickAdd({ onClose, defaultWhen = "heute" }: { onClose: () =
     onEnd: (t) => t && change(t),
   });
 
+  // Kein doppeltes Absenden (zweimal schnell Enter/Tippen)
+  const sending = useRef(false);
   const add = () => {
     const title = read.title.trim();
-    if (!title) return;
-    const data = quickTaskData(title, when, today, { time: time || read.time, reminder, label: read.label });
+    if (!title || sending.current) return;
+    sending.current = true;
+    setTimeout(() => (sending.current = false), 400);
+    // Erst die Aufnahme verwerfen – sonst schreibt ihr Ende den alten Text zurück
+    speech.reset();
+    const data = quickTaskData(title, when, today, { time: time || read.time, reminder, label: read.label, dringend: urgent ?? read.urgent });
     const entry = sanitizeEntry(createEntry("aufgabe", data, { raum: where }) as CalendarEntry);
     if (!entry) return;
     act((list) => upsertEntry(list, entry), entry.data.title);
@@ -59,6 +68,7 @@ export function TaskQuickAdd({ onClose, defaultWhen = "heute" }: { onClose: () =
     setText("");
     setTime("");
     setReminder("aus");
+    setUrgent(null);
   };
 
   return (
@@ -106,6 +116,15 @@ export function TaskQuickAdd({ onClose, defaultWhen = "heute" }: { onClose: () =
                 {c.label}
               </button>
             ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <span className={LABEL}>Wichtig?</span>
+          <div className="flex gap-2">
+            <button type="button" aria-pressed={urgent ?? read.urgent} onClick={() => setUrgent(!(urgent ?? read.urgent))} className={chipClass(urgent ?? read.urgent)}>
+              <UrgentMark /> Dringend
+            </button>
           </div>
         </div>
 

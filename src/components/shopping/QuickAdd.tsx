@@ -97,6 +97,8 @@ function QuickAddSheet({
 
   const submit = (text: string) => {
     if (!text.trim()) return;
+    // Aufnahme verwerfen – ihr Ende darf den Text nicht zurückschreiben
+    speech.reset();
     const result = parseQuickAdd(text, settings);
     const ids = result.items.map((i) => add(i.name, i.amount, i.shop));
     setInput("");
