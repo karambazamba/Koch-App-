@@ -32,7 +32,8 @@ import { isRegisteredUndo, pushUndo, undoLast } from "@/lib/core/undo";
 import { commitOps, runInstantOps } from "@/lib/lotte/client";
 import { dayChat } from "@/lib/lotte/dayChat";
 import { cookableEntry } from "@/lib/essen/mealDone";
-import { askAssistant, FALLBACK_TEXT, saveAccessCode, useAssistantStatus } from "@/lib/lotte/client";
+import { askAssistant, saveAccessCode, unavailableText, useAssistantStatus } from "@/lib/lotte/client";
+import { setAvatarFlag, triggerAvatar } from "@/lib/core/avatarState";
 import {
   loadSpeechSettings,
   saveSpeechSettings,
@@ -208,12 +209,26 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
         })
       : [];
 
+  // Avatar der Begleitung: denkt, solange die Antwort lädt (noch kein Text da) …
+  const thinking = busy && !streaming;
+  useEffect(() => {
+    if (!thinking) return;
+    setAvatarFlag("denken", true);
+    return () => setAvatarFlag("denken", false);
+  }, [thinking]);
+  // … und schaut verwirrt statt einer Fehlermeldung
+  const lastTurn = chat.turns[chat.turns.length - 1];
+  const confused = lastTurn?.role === "assistant" && lastTurn.error ? chat.turns.length : 0;
+  useEffect(() => {
+    if (confused) triggerAvatar("verwirrt");
+  }, [confused]);
+
   /** KI gerade nicht da: erst die eigenen Regeln, sonst der freundliche Satz */
   const notUnderstood = (said: string, local?: (t: string) => boolean) => {
     if (local?.(said)) return;
     setChat((c) => ({
       ...c,
-      turns: [...c.turns, { role: "user", text: said, local: true }, { role: "assistant", text: FALLBACK_TEXT, error: true }],
+      turns: [...c.turns, { role: "user", text: said, local: true }, { role: "assistant", text: unavailableText(), error: true }],
     }));
   };
 
@@ -1371,7 +1386,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
         <header className="flex flex-col gap-2 px-4 pt-2">
           <span className="mx-auto h-1 w-10 rounded-full bg-stone-300" aria-hidden />
           <div className="flex items-center gap-3">
-            <LotteAvatar size={44} />
+            <LotteAvatar size={44} groesse="gross" />
             <div className="min-w-0 flex-1">
               <h2 className="truncate text-2xl font-extrabold leading-tight tracking-tight">
                 {name}
@@ -1606,9 +1621,10 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
                 {streaming}
               </p>
             ) : (
-              <p className="self-start rounded-2xl rounded-bl-md border border-line bg-surface px-4 py-2.5 text-muted" role="status">
-                <span className="animate-pulse">{name} denkt …</span>
-              </p>
+              // Statt Lade-Text: nur der denkende Avatar mit Punkten, danach direkt die Antwort
+              <div className="self-start pl-1 pt-2 pr-8" role="status" aria-label={`${name} denkt nach`}>
+                <LotteAvatar size={44} />
+              </div>
             ))}
 
           {chat.proposal && data && !busy && (

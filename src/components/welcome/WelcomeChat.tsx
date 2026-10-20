@@ -201,14 +201,14 @@ export function WelcomeChat() {
   // --- Schritt 1b: Vorstellung (Vollbild) -------------------------------------
   if (state.step === "hallo") {
     const h = state.helper;
-    const intro = `Hallo, schön, dass du da bist! 👋 Ich bin ${h.name}, ${helperTitlePersonal(h.art)} bei Was gibt's? Wenn dir ein anderer Name lieber ist – nenn mich einfach, wie du magst. Ich helfe dir bei Terminen, Aufgaben, Essen und Einkauf. Sag mir einfach, was ansteht – ich kümmere mich um den Rest.`;
+    const intro = `Hallo, schön, dass du da bist! Ich bin ${h.name}, ${helperTitlePersonal(h.art)} bei Was gibt's? Wenn dir ein anderer Name lieber ist – nenn mich einfach, wie du magst. Ich helfe dir bei Terminen, Aufgaben, Essen und Einkauf. Sag mir einfach, was ansteht – ich kümmere mich um den Rest.`;
     return (
       <FullScreen onSkip={() => update(skipWelcome(state))}>
-        <LotteAvatar size={88} color={avatarHex(h.farbe)} />
+        <LotteAvatar size={88} color={avatarHex(h.farbe)} zustand="begruessen" />
         <div className="relative w-full rounded-3xl border border-line bg-surface px-5 pb-4 pt-4 text-left text-base leading-snug shadow-card" aria-label="Vorstellung">
           <span className="absolute -top-2 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 border-l border-t border-line bg-surface" aria-hidden />
           <p>
-            Hallo, schön, dass du da bist! 👋 Ich bin <strong>{h.name}</strong>, {helperTitlePersonal(h.art)} bei <strong>Was gibt&apos;s?</strong>
+            Hallo, schön, dass du da bist! Ich bin <strong>{h.name}</strong>, {helperTitlePersonal(h.art)} bei <strong>Was gibt&apos;s?</strong>
           </p>
           <p className="mt-1.5 text-muted">Wenn dir ein anderer Name lieber ist – nenn mich einfach, wie du magst.</p>
           <p className="mt-1.5">Ich helfe dir bei Terminen, Aufgaben, Essen und Einkauf.</p>
@@ -243,7 +243,7 @@ export function WelcomeChat() {
     <div className="fixed inset-0 z-40 flex flex-col bg-background" role="dialog" aria-label="Kennenlernen">
       <header className="relative z-10 mx-auto flex w-full max-w-lg shrink-0 flex-col gap-3 bg-background px-4 pb-1 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
         <div className="flex items-center gap-3">
-          <LotteAvatar size={44} color={avatarHex(state.helper.farbe)} />
+          <LotteAvatar size={44} color={avatarHex(state.helper.farbe)} groesse="gross" />
           <h1 className="min-w-0 flex-1 truncate text-2xl font-extrabold tracking-tight">{state.helper.name}</h1>
           {state.step !== "fertig" && (
             <button type="button" onClick={() => update(skipWelcome(state))} className={SKIP}>

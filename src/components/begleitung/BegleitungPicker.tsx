@@ -43,7 +43,7 @@ export function BegleitungPicker({ value, onChange }: { value: HelperSettings; o
                 }}
                 className="flex w-full flex-col items-center gap-1.5"
               >
-                <LotteAvatar size={72} color={avatarHex(h.farbe)} />
+                <LotteAvatar size={72} color={avatarHex(h.farbe)} zustand="ruhig" />
                 <span className="text-[22px] font-extrabold leading-tight">{h.name}</span>
                 <span className="text-sm text-muted">{artTitle(h.art)}</span>
               </button>
@@ -76,7 +76,7 @@ export function BegleitungPicker({ value, onChange }: { value: HelperSettings; o
       ) : (
         <section className="flex flex-col gap-3 rounded-card border-2 border-accent bg-surface p-4 shadow-card" aria-label="Eigener Name">
           <div className="flex items-center gap-3">
-            <LotteAvatar size={44} color={avatarHex(value.farbe)} />
+            <LotteAvatar size={44} color={avatarHex(value.farbe)} zustand="ruhig" />
             <input
               type="text"
               value={draft}

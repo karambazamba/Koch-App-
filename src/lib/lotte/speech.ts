@@ -5,6 +5,7 @@
 // verschieden) unter `wasgibts.vorlesen`. Fehler der Sprachausgabe stören nie:
 // geht es nicht (kein Ton, stumm geschaltet, keine Stimme), passiert einfach nichts.
 
+import { setAvatarFlag } from "../core/avatarState";
 import { useEffect, useState } from "react";
 import { createLocalStore } from "../core/localStore";
 import type { HelperVoice } from "../einstellungen/profile";
@@ -300,6 +301,23 @@ export function unlockSpeech() {
 
 let token = 0;
 
+// Avatar spricht nur, während tatsächlich Worte kommen: an bei Beginn eines
+// Satzes und bei jedem Wort (onboundary), in Pausen (> 0,6 s ohne Wort) und
+// am Satzende wieder ruhig.
+let talking = false;
+let talkTimer: ReturnType<typeof setTimeout> | null = null;
+function setTalking(on: boolean) {
+  if (talkTimer) clearTimeout(talkTimer);
+  talkTimer = null;
+  if (on === talking) return;
+  talking = on;
+  setAvatarFlag("sprechen", on);
+}
+function wordSpoken() {
+  setTalking(true);
+  talkTimer = setTimeout(() => setTalking(false), 600);
+}
+
 /**
  * Text vorlesen (vorher bereinigt, in Sätzen). `id` kennzeichnet, was gerade
  * läuft (für den Lautsprecher-Knopf). Läuft schon etwas, wird es ersetzt.
@@ -344,8 +362,14 @@ function say(chunks: string[], options: { id?: string; gender?: HelperVoice; voi
       } catch {
         // Stimme nicht setzbar → Standardstimme
       }
+      u.onstart = () => mine === token && setTalking(true);
+      u.onboundary = (e) => mine === token && e.name !== "sentence" && wordSpoken();
+      u.onend = () => setTalking(false);
       if (i === chunks.length - 1) {
-        const done = () => mine === token && setSpeaking(null);
+        const done = () => {
+          setTalking(false);
+          if (mine === token) setSpeaking(null);
+        };
         u.onend = done;
         u.onerror = done; // z. B. stumm geschaltet oder abgebrochen – einfach nichts tun
       }
@@ -358,6 +382,7 @@ function say(chunks: string[], options: { id?: string; gender?: HelperVoice; voi
 
 export function stopSpeaking() {
   token++;
+  setTalking(false);
   if (speakingId !== null) setSpeaking(null);
   if (!speechSupported()) return;
   try {

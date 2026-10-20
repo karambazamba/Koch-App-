@@ -52,13 +52,17 @@ const DEVICE_KEY = "wasgibts.geraet";
 const CODE_KEY = "wasgibts.zugangscode";
 const COUNT_KEY = "wasgibts.lotte.anfragen";
 
-/** Was Lotte sagt, wenn die KI gerade nicht kann – nie Technik-Wörter */
-export const FALLBACK_TEXT = "Gerade kann ich dich nicht richtig verstehen – tipp es mir kurz anders ein.";
+/** Was die Begleitung sagt, wenn die KI gerade nicht kann – nie Technik-Wörter (Avatar "verwirrt") */
+export const FALLBACK_TEXT = "Hm, das hab ich nicht verstanden.";
+/** Ohne Internet – freundlich, mit dem Hinweis, dass Eingetragenes bleibt */
+export const OFFLINE_TEXT = "Ich bin gerade offline – was du einträgst, speichere ich trotzdem.";
+/** Passender Satz je nach Lage (offline oder nicht verstanden) */
+export const unavailableText = () => (typeof navigator !== "undefined" && navigator.onLine === false ? OFFLINE_TEXT : FALLBACK_TEXT);
 
 /** KI gerade nicht erreichbar (offline, aus, Limit, falscher Code …) */
 export class LotteUnavailable extends Error {
   constructor(public reason: AssistantErrorCode | "offline") {
-    super(FALLBACK_TEXT);
+    super(reason === "offline" ? OFFLINE_TEXT : FALLBACK_TEXT);
   }
 }
 

@@ -5,6 +5,7 @@
 // scrollt normal. Die Seite steht in der Adresse (?seite=woche), ohne neuen
 // Verlaufseintrag. Unten immer dieselbe Lotte-Leiste.
 
+import { wakeAvatar } from "@/lib/core/avatarState";
 import Link from "next/link";
 import { useEffect, useRef, useState, type TouchEvent } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -135,13 +136,13 @@ export function LotteBar({ name, bottom }: { name: string; bottom?: string }) {
       data-lotte-leiste
     >
       <div className="pointer-events-auto mx-auto flex h-16 max-w-lg items-center gap-2 rounded-full bg-bar pl-2 pr-2 shadow-lg">
-        <button type="button" onClick={() => openHelper()} aria-label={`Sag ${name}, was ansteht … (${name} öffnen)`} className="flex h-full min-w-0 flex-1 items-center gap-3 text-left">
-          <LotteAvatar size={46} />
+        <button type="button" onClick={() => (wakeAvatar(), openHelper())} aria-label={`Sag ${name}, was ansteht … (${name} öffnen)`} className="flex h-full min-w-0 flex-1 items-center gap-3 text-left">
+          <LotteAvatar size={46} groesse="klein" />
           <span className="truncate text-base text-on-bar/75">Sag {name}, was ansteht …</span>
         </button>
         <button
           type="button"
-          onClick={() => openHelper("voice")}
+          onClick={() => (wakeAvatar(), openHelper("voice"))}
           aria-label={`${name} etwas sagen`}
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-on-bar text-bar transition active:scale-95"
         >
