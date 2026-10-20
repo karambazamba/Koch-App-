@@ -52,7 +52,7 @@ export const GERICHT_TIPS: Tip[] = [
     match: /pfannkuchen|eierkuchen|crêpe|crepe|palatschinken|pancake/i,
     text: "Der erste Pfannkuchen wird oft nichts – ganz normal. Er ist der Test für die Hitze und der Lohn für den Koch.",
     detail:
-      "Erst mit dem ersten Teig stellt sich die Pfanne richtig ein. Mittlere Hitze und wenig Fett, dann klappt's ab Nummer zwei zuverlässig.",
+      "Erst mit dem ersten Teig stellt sich die Pfanne richtig ein. Mittlere Hitze und wenig Fett, dann klappt’s ab Nummer zwei zuverlässig.",
   },
   {
     id: "g-schnitzel-panade",
@@ -73,7 +73,7 @@ export const GERICHT_TIPS: Tip[] = [
     category: "gericht",
     title: "Tipp zum Schnitzel",
     match: /schnitzel/i,
-    text: "Das Fleisch zwischen zwei Lagen Frischhaltefolie dünn klopfen – ein schwerer Topfboden tut's auch.",
+    text: "Das Fleisch zwischen zwei Lagen Frischhaltefolie dünn klopfen – ein schwerer Topfboden tut’s auch.",
     detail:
       "Dünnes Fleisch gart gleichmäßig und schnell durch, bevor die Panade zu dunkel wird. Die Folie verhindert, dass etwas reißt oder spritzt.",
   },
@@ -105,7 +105,7 @@ export const GERICHT_TIPS: Tip[] = [
     category: "gericht",
     title: "Geheimtipp fürs Chili",
     match: /chili con carne|chili sin carne|\bchili\b/i,
-    text: "Ein Stückchen dunkle Schokolade oder ein Teelöffel Kakao ins Chili – keiner schmeckt's raus, aber alle merken, dass es runder ist.",
+    text: "Ein Stückchen dunkle Schokolade oder ein Teelöffel Kakao ins Chili – keiner schmeckt’s raus, aber alle merken, dass es runder ist.",
     detail:
       "Die leichte Bitternote verbindet Tomate, Bohnen und Gewürze. In Mexiko ist das ein alter Trick für Schmorgerichte.",
   },
@@ -123,7 +123,7 @@ export const GERICHT_TIPS: Tip[] = [
     category: "gericht",
     title: "Profi-Tipp zum Curry",
     match: /curry|dal\b|dhal|korma|tikka/i,
-    text: "Currypulver oder -paste kurz im heißen Öl anrösten, bevor Flüssigkeit dazukommt. Der Duft sagt dir, wann's reicht.",
+    text: "Currypulver oder -paste kurz im heißen Öl anrösten, bevor Flüssigkeit dazukommt. Der Duft sagt dir, wann’s reicht.",
     detail:
       "Viele Gewürzaromen lösen sich erst in heißem Fett. Eine halbe Minute genügt – länger, und es wird bitter.",
   },
@@ -449,7 +449,7 @@ export const GERICHT_TIPS: Tip[] = [
     match: /pommes|wedges|kartoffelspalten|ofenpommes|fritten|country potatoes/i,
     text: "Selbstgeschnittene Pommes 30 Minuten wässern und gut trocken tupfen. Dann werden sie im Ofen richtig knusprig.",
     detail:
-      "Das Wasser zieht Stärke aus der Oberfläche, die sonst klebt und schnell dunkel wird. Trocken mit etwas Öl und mit Abstand auf dem Blech klappt's am besten.",
+      "Das Wasser zieht Stärke aus der Oberfläche, die sonst klebt und schnell dunkel wird. Trocken mit etwas Öl und mit Abstand auf dem Blech klappt’s am besten.",
     steps: [
       "Kartoffeln schneiden, 30 Min. in kaltes Wasser",
       "Gründlich trocken tupfen, mit Öl mischen",
@@ -470,7 +470,7 @@ export const GERICHT_TIPS: Tip[] = [
     category: "gericht",
     title: "Kniff für Grießbrei",
     match: /grießbrei|griessbrei|grießpudding|griesspudding|grießschnitten|\bgrieß\b/i,
-    text: "Den Grieß langsam in die heiße Milch rieseln lassen und dabei mit dem Schneebesen rühren. So gibt's keine Klümpchen.",
+    text: "Den Grieß langsam in die heiße Milch rieseln lassen und dabei mit dem Schneebesen rühren. So gibt’s keine Klümpchen.",
     detail:
       "Kommt der Grieß auf einmal hinein, klumpt er sofort zusammen. Danach den Topf vom Herd nehmen und kurz quellen lassen.",
   },

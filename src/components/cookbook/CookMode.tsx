@@ -184,7 +184,7 @@ function CookSteps({ id }: { id: string }) {
             </Link>
           ) : (
             <button type="button" onClick={() => setStep((s) => s + 1)} className={buttonClass("primary", "lg")}>
-              {step === 0 ? "Los geht's" : step === total ? "Fertig" : "Weiter"}
+              {step === 0 ? "Los geht’s" : step === total ? "Fertig" : "Weiter"}
               <ChevronRight className="h-5 w-5" strokeWidth={2.25} aria-hidden />
             </button>
           )}

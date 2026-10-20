@@ -132,7 +132,6 @@ export function helperTitle(profile: Pick<HouseholdProfile, "helper"> | null | u
 }
 
 /** "deine persönliche Assistentin" bzw. "dein persönlicher Assistent" */
-export const helperTitlePersonal = (art: HelperArt) => (art === "assistent" ? "dein persönlicher Assistent" : "deine persönliche Assistentin");
 
 /** Mitteilung im Namen der Begleitung, z. B. "Mia: Heute gibt's Gulasch" (auch für Push) */
 export function helperMessage(profile: Pick<HouseholdProfile, "helper"> | null | undefined, text: string): string {
@@ -263,7 +262,7 @@ export const WEEKEND_STYLES: { value: WeekendStyle; emoji: string; label: string
 export type CookingStyle = "gefuehl" | "rezept";
 
 export const COOKING_STYLES: { value: CookingStyle; label: string; hint: string }[] = [
-  { value: "gefuehl", label: "Wir kochen meist nach Gefühl", hint: "Bei bekannten Gerichten reicht der Name – das Rezept gibt's auf Antippen" },
+  { value: "gefuehl", label: "Wir kochen meist nach Gefühl", hint: "Bei bekannten Gerichten reicht der Name – das Rezept gibt’s auf Antippen" },
   { value: "rezept", label: "Wir kochen gern nach Rezept", hint: "Das Rezept steht immer im Vordergrund" },
 ];
 
@@ -375,7 +374,7 @@ export const APP_THEMES: { value: AppTheme; label: string; hint: string }[] = [
 export type HelperMode = "locker" | "normal" | "dranbleiben";
 
 export const HELPER_MODES: { value: HelperMode; label: string; hint: string }[] = [
-  { value: "locker", label: "Ganz locker", hint: "Meldet sich selten – nur wenn's wirklich zeitkritisch ist." },
+  { value: "locker", label: "Ganz locker", hint: "Meldet sich selten – nur wenn’s wirklich zeitkritisch ist." },
   { value: "normal", label: "Normal", hint: "Freundliche Erinnerungen, wenn sie helfen." },
   { value: "dranbleiben", label: "Dranbleiben", hint: "Schubst öfter und hilft beim Planen – immer freundlich." },
 ];

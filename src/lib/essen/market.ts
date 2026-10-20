@@ -33,14 +33,14 @@ export type MarketAnswer = {
 
 /** Supermarkt-Situation? ("im Angebot", "ich steh grad im …", "hier gibt's …") */
 export function isMarketSituation(text: string): boolean {
-  return /im angebot|sonderangebot|reduziert|ich steh\w*\s+(grad|gerade|hier|im|beim|bei|vorm?)\b|\bhier gibt'?s\b|\bhier gibt es\b|im supermarkt|beim einkaufen|im laden|an der (fisch|fleisch|käse)theke/i.test(text);
+  return /im angebot|sonderangebot|reduziert|ich steh\w*\s+(grad|gerade|hier|im|beim|bei|vorm?)\b|\bhier gibt['’]?s\b|\bhier gibt es\b|im supermarkt|beim einkaufen|im laden|an der (fisch|fleisch|käse)theke/i.test(text);
 }
 
 /** Das Produkt aus dem Satz (erstes erkanntes Lebensmittel) */
 export function marketProduct(text: string): string | null {
   const cleaned = text
     .replace(/ich steh\w*\s+(grad|gerade|hier)?\s*(im|beim|bei|vorm?)\s+[A-ZÄÖÜ]\w*/g, " ")
-    .replace(/\b(im angebot|sonderangebot|reduziert|hier gibt'?s|hier gibt es|im supermarkt|beim einkaufen|im laden|ist|sind|heute|gerade|grad|super|günstig|billig|was|kann|ich|damit|machen|kochen|draus|daraus)\b/gi, " ");
+    .replace(/\b(im angebot|sonderangebot|reduziert|hier gibt['’]?s|hier gibt es|im supermarkt|beim einkaufen|im laden|ist|sind|heute|gerade|grad|super|günstig|billig|was|kann|ich|damit|machen|kochen|draus|daraus)\b/gi, " ");
   for (const part of cleaned.split(/,|\.|\?|!|\bund\b/)) {
     for (const p of ruleParseLeftovers(part)) {
       if (p.known) return findFood(p.name)?.food.singular ?? p.name;

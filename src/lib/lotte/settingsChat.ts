@@ -76,7 +76,7 @@ export function settingsChange(text: string, profile: HouseholdProfile): Setting
 
   // Wie oft sich Lotte meldet
   if (/\b(meld(e|est)? dich|melden)\b.*\b(seltener|weniger|kaum)\b|\bganz locker\b/i.test(lower)) {
-    return { profile: { ...profile, helperMode: "locker" }, reply: "Alles klar ✓ Ich melde mich nur noch, wenn's wirklich zeitkritisch ist." };
+    return { profile: { ...profile, helperMode: "locker" }, reply: "Alles klar ✓ Ich melde mich nur noch, wenn’s wirklich zeitkritisch ist." };
   }
   if (/\b(meld(e|est)? dich|melden)\b.*\b(öfter|mehr)\b|\bdranbleiben\b|\bschubs mich\b/i.test(lower)) {
     return { profile: { ...profile, helperMode: "dranbleiben" }, reply: "Alles klar ✓ Ich bleib dran – immer freundlich." };

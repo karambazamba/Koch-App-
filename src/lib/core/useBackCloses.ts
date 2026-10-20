@@ -15,6 +15,24 @@ let counter = 0;
 /** Eintrag eines eben anders geschlossenen Fensters, der gleich entfernt wird */
 let pending: { id: number; timer: ReturnType<typeof setTimeout> } | null = null;
 
+/** Wann zuletzt jemand selbst "Zurück" ausgelöst hat (z. B. "Entfernen" → eine Ebene zurück) */
+let lastBackAt = -1;
+/** Wann zuletzt eine Navigation begann (Link angetippt, neue Seite im Verlauf) */
+let lastNavAt = -1;
+if (typeof window !== "undefined") {
+  const back = window.history.back.bind(window.history);
+  window.history.back = () => {
+    lastBackAt = performance.now();
+    back();
+  };
+  const push = window.history.pushState.bind(window.history);
+  window.history.pushState = (...args: Parameters<History["pushState"]>) => {
+    lastNavAt = performance.now();
+    push(...args);
+  };
+  document.addEventListener("click", (e) => (e.target as Element | null)?.closest?.("a[href]") && (lastNavAt = performance.now()), true);
+}
+
 const openIds = (): number[] => {
   const s = window.history.state as { sheets?: unknown } | null;
   return Array.isArray(s?.sheets) ? (s.sheets as number[]) : [];
@@ -57,8 +75,16 @@ export function useBackCloses(onClose: () => void) {
         return ids[ids.length - 1] === id && window.location.href === href;
       };
       if (!isTop()) return;
+      // Die Auswahl geht selbst eine Ebene zurück: erst dieses Fenster, dann die Seite
+      if (performance.now() - lastBackAt < 100) {
+        window.history.back();
+        return;
+      }
+      const closedAt = performance.now();
       const timer = setTimeout(() => {
         if (pending?.id === id) pending = null;
+        // Inzwischen geht es woanders hin → Verlauf so lassen (sonst nähme Zurück die neue Seite weg)
+        if (lastNavAt >= closedAt) return;
         if (isTop()) window.history.back();
       }, REMOVE_AFTER_MS);
       pending = { id, timer };

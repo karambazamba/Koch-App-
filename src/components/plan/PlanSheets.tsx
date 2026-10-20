@@ -106,7 +106,7 @@ export function KnownSwitch({ recipe }: { recipe: Recipe }) {
       <span className="min-w-0 flex-1">
         <span className="block font-bold">Kennen wir</span>
         <span className="block text-sm text-muted">
-          {automatic ? "Schon öfter gekocht – das Rezept gibt's trotzdem auf Antippen." : "Dann reicht auf der Startseite der Name, das Rezept gibt's auf Antippen."}
+          {automatic ? "Schon öfter gekocht – das Rezept gibt’s trotzdem auf Antippen." : "Dann reicht auf der Startseite der Name, das Rezept gibt’s auf Antippen."}
         </span>
       </span>
       <input

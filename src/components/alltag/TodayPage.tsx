@@ -39,8 +39,11 @@ import { weekdayIndex } from "@/lib/aufgaben/model";
 import { buzz } from "./actions";
 import { LotteAvatar } from "@/components/LotteAvatar";
 import { buttonClass } from "@/components/ui/styles";
-import { isUrgent, itemsForDay, openTaskCount, orderedTasks, taskOverview, upcomingTermine, type CalendarEntry } from "@/lib/aufgaben/model";
-import { AufgabenSection, TermineSection } from "./MiniCards";
+import { isUrgent, itemsForDay, openTaskCount, orderedTasks, taskOverview, upcomingTermine, type CalendarEntry, type DayItem } from "@/lib/aufgaben/model";
+import { AufgabenSection, TermineSection, type DemoProps } from "./MiniCards";
+import { useDemoDay } from "./useDemoDay";
+import { DemoHint, DemoItemSheet } from "./DemoBits";
+import { toggleDemoDone } from "@/lib/core/demo";
 import { dueReminder } from "@/lib/aufgaben/reminders";
 import { markReminderSeen, useSeenReminders } from "@/lib/aufgaben/store";
 import { greeting, homeSentence, type SentencePart } from "@/lib/aufgaben/summary";
@@ -163,6 +166,10 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const upcoming = upcomingTermine(entries, data.todayIso, minutes).filter((i) => !view.hideWork || i.room !== "arbeit");
   const termine = view.familyUpcomingOnly ? upcoming.filter((i) => i.room === "familie") : upcoming;
   const termineAll = view.familyUpcomingOnly ? termine : items.filter((i) => i.entry.typ === "termin");
+  // Beispiel-Tag (erster Start): Beispiele statt leerer Kacheln
+  const demoDay = useDemoDay(entries, data.todayIso, minutes, helperName(data.profile));
+  const [demoItem, setDemoItem] = useState<DayItem | null>(null);
+  const demoProps: DemoProps = { label: demoDay.label, done: demoDay.done, onToggle: (i) => (buzz(), toggleDemoDone(i.entry.id)), onOpen: setDemoItem };
   const overview = taskOverview(entries, data.todayIso);
   const workless = (list: typeof overview.heute) => (view.hideWork ? list.filter((i) => i.room !== "arbeit") : list);
   // EINE Reihenfolge: dringend → heute → Frist → diese Woche (Startseite zeigt bis diese Woche)
@@ -171,7 +178,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   // Kacheln: gespeicherte Reihenfolge, Phase holt Passendes nach oben (ändert nie die gespeicherte Sortierung)
   const visible = all.filter((t) => t.visible && !tileMeta(t.id).soon && (t.id !== "vorrat" || pantryOn));
   const skip: HomeTileId[] = [];
-  if (view.familyUpcomingOnly && !termine.length) skip.push("termine");
+  if (view.familyUpcomingOnly && !termine.length && !demoDay.termine) skip.push("termine");
   const top = view.top.filter((t) => t.id !== "essen" || !cookingNow || Boolean(dish));
   const extraTop: TopTile[] = think && timers && timersActive(timers, nowMs) ? [{ id: "timer", force: true }] : [];
   const arranged = editing.on ? { tiles: visible, collapsed: [] as HomeTile[] } : arrangeHome(visible, { ...view, top }, { available: all, skip, extraTop });
@@ -235,14 +242,16 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const renderTile = (tile: HomeTile, half: boolean, edit: boolean) => {
     switch (tile.id) {
       case "termine":
+        if (demoDay.termine && !edit) return <TermineSection items={demoDay.termine} href={`/tag?datum=${data.todayIso}`} today={data.todayIso} size={tile.size} half={half} demo={demoProps} />;
         return <TermineSection items={termine} all={termineAll} href={`/tag?datum=${data.todayIso}`} today={data.todayIso} size={tile.size} half={half} />;
       case "aufgaben":
+        if (demoDay.tasks && !edit) return <AufgabenSection items={demoDay.tasks} today={data.todayIso} size={tile.size} half={half} demo={demoProps} />;
         return <AufgabenSection items={tasks} total={openTaskCount(entries, data.todayIso)} today={data.todayIso} size={tile.size} half={half} />;
       case "essen":
         if (cookingNow && dish && !edit) return <CookingTile dish={dish} clock={dishClock} persons={data.day?.persons ?? null} recipe={recipe} today={data.todayIso} onEaten={eaten} />;
         return <FoodTile data={data} dish={dish} over={over} dishClock={dishClock} onOpen={onOpenFood} size={tile.size} onCook={think && dish && !over && !edit ? cookNow : undefined} />;
       case "einkauf":
-        return <ShoppingTile half={half} size={tile.size} />;
+        return <ShoppingTile half={half} size={tile.size} demo={demoDay.tiles.includes("einkauf") && !edit} />;
       case "notizen":
         return <NotesTile name={helperName(data.profile)} size={tile.size} />;
       case "vorrat":
@@ -250,7 +259,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
       case "wetter":
         return <WeatherTile size={tile.size} half={half} today={data.todayIso} minutes={minutes} termine={termine.flatMap((t) => (t.time ? [{ title: t.title, time: t.time }] : []))} tomorrow={Boolean(view.weatherTomorrow) && !edit} />;
       case "pinnwand":
-        return <PinboardTile size={tile.size} me={name || "Ich"} />;
+        return <PinboardTile size={tile.size} me={name || "Ich"} demo={demoDay.tiles.includes("pinnwand") && !edit} helper={helperName(data.profile)} />;
       case "timer":
         return <TimerTile size={tile.size} />;
       case "sport":
@@ -298,6 +307,8 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
                   parts={
                     reminder
                       ? [{ t: reminder.text }]
+                      : demoDay.tiles.length
+                        ? [{ t: "Das hier ist ein " }, { t: "Beispiel-Tag", b: true }, { t: " – probier alles aus!" }]
                       : paused && data.profile.pause
                         ? [{ t: `Pause ${pauseLabel(data.profile.pause)} – genießt die Zeit ☀️` }]
                         : phaseParts
@@ -318,12 +329,12 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
                             : { label: "Mehr dazu", onClick: () => setTipOpen(true) }
                           : null
                   }
-                  oneLine={!reminder && !paused && !phaseParts && !(tip && !openItems.length && !sentence.action)}
-                  onTap={!reminder && !paused && !phaseParts && sentence.action === "essen" ? () => openHelper(undefined, "Was gibt's heute Abend?") : undefined}
+                  oneLine={!reminder && !demoDay.tiles.length && !paused && !phaseParts && !(tip && !openItems.length && !sentence.action)}
+                  onTap={!reminder && !paused && !phaseParts && sentence.action === "essen" ? () => openHelper(undefined, "Was gibt’s heute Abend?") : undefined}
                 />
               </div>
 
-              {tipSeen === false && welcomed && (
+              {tipSeen === false && welcomed && !demoDay.tiles.length && (
                 <div className="flex items-start gap-3 rounded-2xl bg-accent-soft px-4 py-3" role="status">
                   <p className="flex-1 text-[15px] leading-snug text-accent-strong">Tipp: Halte die Startseite gedrückt, um Kacheln hinzuzufügen oder zu entfernen.</p>
                   <button type="button" onClick={markHomeTipSeen} className="shrink-0 text-sm font-bold text-accent-strong underline">
@@ -375,6 +386,9 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
               </button>
             </p>
           )}
+
+          {!editing.on && demoDay.tiles.length > 0 && <DemoHint />}
+          {demoItem && <DemoItemSheet item={demoItem} today={data.todayIso} onClose={() => setDemoItem(null)} />}
 
           {!editing.on && (
             <button type="button" onClick={editing.open} className="mt-2 flex h-11 items-center justify-center gap-1.5 self-center text-sm font-semibold text-muted">

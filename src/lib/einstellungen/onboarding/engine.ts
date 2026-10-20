@@ -202,7 +202,7 @@ function finishBlock(s: OnboardingState, block: Block): OnboardingState {
     const back = s.returnTo;
     const cleared = { ...s, returnTo: null };
     // Mitten in der Personen-Runde: mit der aktuellen Person weiter
-    return goto(cleared, back, "Weiter geht's:");
+    return goto(cleared, back, "Weiter geht’s:");
   }
   return startBlock(s, BLOCKS[BLOCKS.indexOf(block) + 1] ?? "done");
 }

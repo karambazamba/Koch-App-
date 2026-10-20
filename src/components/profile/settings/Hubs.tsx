@@ -104,7 +104,7 @@ export function FoodHubView() {
                 </Row>
               )}
               <Row href="/profil/das-moegt-ihr" icon={Salad} title="Das mögt ihr" value={profile.likes.length ? String(profile.likes.length) : undefined}>
-                {likes.length ? likes.join(", ") : "Lerne ich beim Kochen – oder sag's mir"}
+                {likes.length ? likes.join(", ") : "Lerne ich beim Kochen – oder sag’s mir"}
               </Row>
               <Row href="/profil/familie" icon={ThumbsDown} title="Mag nicht & Allergien">
                 {dislikers.length

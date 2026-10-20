@@ -147,7 +147,7 @@ export function DayCard({ day, recipes, readOnly, onPlan, onSwap, onMore, onCook
             <h2 className="mt-1 text-2xl font-extrabold leading-tight tracking-tight">{dishTitle(day)}</h2>
           ) : (
             <h2 className="mt-1 text-2xl font-extrabold leading-tight tracking-tight text-muted">
-              {day.weekend === "frei" ? "Wochenende – frei 🏖" : day.cheat ? "Cheat Day – worauf habt ihr Lust? 🍕" : readOnly ? "Nichts eingetragen" : mixed ? "Spontan – Ideen gibt's am Tag selbst" : "Noch frei"}
+              {day.weekend === "frei" ? "Wochenende – frei 🏖" : day.cheat ? "Cheat Day – worauf habt ihr Lust? 🍕" : readOnly ? "Nichts eingetragen" : mixed ? "Spontan – Ideen gibt’s am Tag selbst" : "Noch frei"}
             </h2>
           )}
         </div>

@@ -126,7 +126,7 @@ function DishHero({ data, day, when, onSwap }: { data: HomeData; day: PlanDay | 
                 <button type="button" onClick={onSwap} className={buttonClass("primary", "md")}>
                   Ideen zeigen
                 </button>
-                <button type="button" onClick={() => openHelper(undefined, `Was gibt's ${when.toLowerCase()}?`)} className={buttonClass("secondary", "md")}>
+                <button type="button" onClick={() => openHelper(undefined, `Was gibt’s ${when.toLowerCase()}?`)} className={buttonClass("secondary", "md")}>
                   {helperName(data.profile)} fragen
                 </button>
               </div>
@@ -159,7 +159,7 @@ function SwapSheet({ data, day, onClose }: { data: HomeData; day: PlanDay; onClo
     showDeleted(pushUndo(`das Freimachen von ${label}`, () => replaceMealPlans(before)), "Freigemacht");
   };
   return (
-    <Sheet title={current ? `Statt ${current}` : `Was gibt's ${label}?`} onClose={onClose}>
+    <Sheet title={current ? `Statt ${current}` : `Was gibt’s ${label}?`} onClose={onClose}>
       <div className="flex flex-col gap-2 pb-2">
         {(ideas?.ideas ?? [])
           .filter((i) => i.title !== current)

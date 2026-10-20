@@ -15,7 +15,7 @@ export const FEATURES = {
   vorrat: "Vorrat (/vorrat) und Vorrats-Hinweise",
   rezepte: "Rezepte (/kochbuch), Kochen Schritt für Schritt",
   backen: "Backstube mit Timern (eingebaute Backrezepte, Zusammen backen)",
-  ideen: "Ideen-Seite (\"Was gibt's heute?\") – kommt mit dem Baustein Spontan-Ideen",
+  ideen: "Ideen-Seite (\"Was gibt’s heute?\") – kommt mit dem Baustein Spontan-Ideen",
   spontan: "Spontan kochen – Ideen aus dem, was da ist",
   tipps: "Tipps, Twists, Gesundheits-Tipps",
   wochenendIdeen: "Wochenend-Ideen",

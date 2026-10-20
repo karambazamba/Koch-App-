@@ -16,7 +16,7 @@ export const WOCHENENDE_TIPS: Tip[] = [
     audience: "nokids",
     title: "Idee fürs Wochenende",
     text: "Mal über den Wochenmarkt bummeln und kochen, was gerade frisch ist.",
-    detail: "Was Saison hat, schmeckt am besten und ist oft günstiger. Kurz vor Schluss gibt's an manchen Ständen noch einen Nachlass.",
+    detail: "Was Saison hat, schmeckt am besten und ist oft günstiger. Kurz vor Schluss gibt’s an manchen Ständen noch einen Nachlass.",
   },
   {
     id: "w-kochabend-zu-zweit",
@@ -40,7 +40,7 @@ export const WOCHENENDE_TIPS: Tip[] = [
     audience: "nokids",
     title: "Idee fürs Wochenende",
     text: "Ausflug ins Grüne? Wraps, Nudelsalat oder belegte Brote lassen sich gut vorbereiten.",
-    detail: "Am Abend vorher vorbereiten, kühl verpacken – dann geht's morgens direkt los.",
+    detail: "Am Abend vorher vorbereiten, kühl verpacken – dann geht’s morgens direkt los.",
   },
   {
     id: "w-neues-ausprobieren",
@@ -56,7 +56,7 @@ export const WOCHENENDE_TIPS: Tip[] = [
     audience: "kids",
     title: "Idee fürs Wochenende",
     text: "Pizza zum Selberbelegen: Jeder belegt sein Stück, wie er mag.",
-    detail: "Den Teig gibt's in unserer Backstube. Kinder streuen gern Käse und legen Gesichter aus Gemüse.",
+    detail: "Den Teig gibt’s in unserer Backstube. Kinder streuen gern Käse und legen Gesichter aus Gemüse.",
   },
   {
     id: "w-zusammen-backen",
@@ -64,7 +64,7 @@ export const WOCHENENDE_TIPS: Tip[] = [
     audience: "kids",
     title: "Idee fürs Wochenende",
     text: "Zusammen backen? Muffins oder Waffeln gehen immer – mit kleinen Aufgaben für die Kinder.",
-    detail: "In „Unsere Rezepte“ unter 🧁 Backen gibt's einfache Rezepte. Beim Zusammen-Backen sage ich, wer gerade helfen darf.",
+    detail: "In „Unsere Rezepte“ unter 🧁 Backen gibt’s einfache Rezepte. Beim Zusammen-Backen sage ich, wer gerade helfen darf.",
   },
   {
     id: "w-pfannkuchen-fruehstueck",
@@ -72,7 +72,7 @@ export const WOCHENENDE_TIPS: Tip[] = [
     audience: "kids",
     title: "Idee fürs Wochenende",
     text: "Pfannkuchen-Frühstück: Kinder rühren den Teig, Große wenden.",
-    detail: "Mehl, Milch, Eier und eine Prise Salz – mehr braucht's nicht. Dazu Apfelmus oder Beeren.",
+    detail: "Mehl, Milch, Eier und eine Prise Salz – mehr braucht’s nicht. Dazu Apfelmus oder Beeren.",
   },
   {
     id: "w-picknick-kinder",

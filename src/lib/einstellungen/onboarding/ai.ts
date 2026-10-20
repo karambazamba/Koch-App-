@@ -91,7 +91,7 @@ function prompt(req: RecognizeRequest): string {
     case "person":
       return `Frage: "Erzähl mir kurz was über ${req.person ?? "die Person"}." ${known}\nAntwort: ${req.text}\nGib die Angaben zu dieser einen Person zurück.`;
     case "diet":
-      return `Frage: "Gibt's sonst noch Allergien oder Sachen, die jemand gar nicht mag?" ${known}\nAntwort: ${req.text}\nOrdne jeden Eintrag einer bekannten Person zu (Name genau wie in der Liste); gilt er für alle oder ist unklar, person = null.`;
+      return `Frage: "Gibt’s sonst noch Allergien oder Sachen, die jemand gar nicht mag?" ${known}\nAntwort: ${req.text}\nOrdne jeden Eintrag einer bekannten Person zu (Name genau wie in der Liste); gilt er für alle oder ist unklar, person = null.`;
   }
 }
 

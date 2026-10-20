@@ -94,7 +94,7 @@ export const RESTE_TIPS: Tip[] = [
   {
     id: "r-quiche",
     category: "reste",
-    text: "Gemüsereste, ein Stück Käse und ein paar Eier ergeben eine Quiche. Fertiger Mürbe- oder Blätterteig macht's einfach.",
+    text: "Gemüsereste, ein Stück Käse und ein paar Eier ergeben eine Quiche. Fertiger Mürbe- oder Blätterteig macht’s einfach.",
     detail:
       "Fast jedes Gemüse passt hinein, auch Reste von Kochschinken oder Lauch. Warm oder kalt lecker.",
   },
@@ -136,7 +136,7 @@ export const RESTE_TIPS: Tip[] = [
     category: "reste",
     text: "Bunte-Reste-Pizza: Alles, was im Kühlschrank wartet, darf mit aufs Blech – Gemüse, Wurst, Käse, sogar Kartoffelscheiben.",
     detail:
-      "Ein einfacher Hefeteig oder Fertigteig reicht. Jeder belegt seine Ecke, so wird's ein kleines Familienprojekt.",
+      "Ein einfacher Hefeteig oder Fertigteig reicht. Jeder belegt seine Ecke, so wird’s ein kleines Familienprojekt.",
     steps: [
       "Teig ausrollen, Tomatensoße drauf",
       "Reste klein schneiden und verteilen",

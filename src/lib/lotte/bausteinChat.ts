@@ -18,7 +18,7 @@ const WORDS: [RegExp, Feature][] = [
 
 export function parseBausteinCommand(text: string): BausteinCommand | null {
   const t = text.trim().toLowerCase().replace(/[.!?]+$/, "");
-  if (/\b(was kannst du (sonst )?noch|welche bausteine|was gibt('| e)?s (noch )?für bausteine|was kann (die app|[a-zäöüß-]+) noch)\b/.test(t)) return { kind: "list" };
+  if (/\b(was kannst du (sonst )?noch|welche bausteine|was gibt(['’]| e)?s (noch )?für bausteine|was kann (die app|[a-zäöüß-]+) noch)\b/.test(t)) return { kind: "list" };
   // Wochenend-Ideen vor Tipps/Ideen prüfen
   const feature = (/\bwochenend[- ]?ideen\b/.test(t) ? "wochenendIdeen" : WORDS.find(([re]) => re.test(t))?.[1]) as Feature | undefined;
   if (!feature) return null;

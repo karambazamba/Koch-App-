@@ -83,7 +83,7 @@ function leftoverReply(intentValue: string, system: string): string | null {
   const fromBook = cookbookTitles(system).filter((t) => !banned.includes(t.toLowerCase()));
   const extra = ["Resteomelett (10 Min.)", "Gemüsepfanne (15 Min.)", "Bunte Suppe (20 Min.)"];
   const ideas = [...fromBook.slice(0, 1), ...extra].slice(0, 3);
-  return `Aus ${m[1]} fallen mir drei Sachen ein (Testmodus): ${ideas[0]}, ${ideas[1]} oder ${ideas[2]}. Welche soll's werden?`;
+  return `Aus ${m[1]} fallen mir drei Sachen ein (Testmodus): ${ideas[0]}, ${ideas[1]} oder ${ideas[2]}. Welche soll’s werden?`;
 }
 
 /** Rezepte aus dem Kochbuch in der Reihenfolge, in der sie genannt werden */
@@ -286,15 +286,15 @@ function mockModel(): CreateMessage {
         const likes = system.match(/Das mögt ihr \(Lieblingszutaten, bevorzugt einbauen\): (.+)/)?.[1]?.split(", ") ?? [];
         return text(
           likes.length
-            ? `Neu, aber nicht fremd: Wie wär's mit einer Shakshuka mit ${likes.slice(0, 2).join(" und ")}? (Testmodus)`
-            : "Wie wär's mit einer Shakshuka? (Testmodus)",
+            ? `Neu, aber nicht fremd: Wie wär’s mit einer Shakshuka mit ${likes.slice(0, 2).join(" und ")}? (Testmodus)`
+            : "Wie wär’s mit einer Shakshuka? (Testmodus)",
         );
       }
       if (/(neues rezept|neue rezepte|denk dir|rezeptidee|was neues)/i.test(latest)) {
         return text("Klar, mach ich! Was soll die Basis sein – Kartoffeln, Reis, Nudeln oder was anderes?");
       }
       if (typeof prevAssistant?.content === "string" && /basis/i.test(prevAssistant.content)) {
-        return text(`Mit ${latest} – wie wär's mit einer cremigen Gemüsepfanne dazu? Sag Bescheid, für welchen Tag (Testmodus).`);
+        return text(`Mit ${latest} – wie wär’s mit einer cremigen Gemüsepfanne dazu? Sag Bescheid, für welchen Tag (Testmodus).`);
       }
       if (intent.myDays.length > 0 && intent.named.length < intent.myDays.length) {
         const choice = intent.titles.slice(0, 6).join(", ");

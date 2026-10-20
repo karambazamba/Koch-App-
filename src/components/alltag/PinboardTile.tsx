@@ -19,6 +19,9 @@ import { PIN_MAX, REACTIONS, addPin, changePins, createPin, hasUnread, markPinsR
 import { useSpeechInput } from "@/lib/lotte/useSpeechInput";
 import { shortClock } from "@/components/notizen/Schnellnotiz";
 import { buzz } from "./actions";
+import { DEMO_OUTLINE, DemoBadge } from "./DemoBits";
+import { LotteAvatar } from "@/components/LotteAvatar";
+import { clearDemoTile } from "@/lib/core/demo";
 
 const TONES = ["bg-accent", "bg-work", "bg-person-3", "bg-person-4"];
 
@@ -32,8 +35,14 @@ function Avatar({ name }: { name: string }) {
 
 const meta = (m: PinMessage, me: string) => pinMeta(m, me, todayIso(), shortClock, (iso) => toIsoDate(new Date(iso)));
 
-export function PinboardTile({ size = "M", me }: { size?: TileSize; me: string }) {
+export function PinboardTile({ size = "M", me, demo = false, helper = "" }: { size?: TileSize; me: string; demo?: boolean; helper?: string }) {
   const pins = usePins();
+  // Beispiel-Tag: erste eigene Nachricht → Beispiel verschwindet für immer
+  const hasOwn = Boolean(pins?.length);
+  useEffect(() => {
+    if (demo && hasOwn) clearDemoTile("pinnwand");
+  }, [demo, hasOwn]);
+  const showDemo = demo && !hasOwn;
   const [writing, setWriting] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
   const nowMs = now().getTime();
@@ -43,16 +52,25 @@ export function PinboardTile({ size = "M", me }: { size?: TileSize; me: string }
   const selected = list.find((m) => m.id === open) ?? null;
   return (
     <>
-      <section className={`${CARD} relative flex min-h-[92px] flex-col p-3.5`} aria-label="Pinnwand">
+      <section className={`${CARD} relative flex min-h-[92px] flex-col p-3.5 ${showDemo ? DEMO_OUTLINE : ""}`} aria-label="Pinnwand">
         <span className="flex items-center gap-1.5 pr-8 text-[11px] font-bold uppercase tracking-wider text-muted">
           <Pin className="h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
           Pinnwand
-          {unread && <span className="h-2 w-2 rounded-full bg-accent" aria-label="Neue Nachricht" />}
+          {(unread || showDemo) && <span className="h-2 w-2 rounded-full bg-accent" aria-label="Neue Nachricht" />}
+          {showDemo && <DemoBadge />}
         </span>
         <span className="absolute right-3.5 top-3">
           <QuickButton icon={Plus} label="Neue Nachricht an die Pinnwand" onClick={() => setWriting(true)} />
         </span>
-        {shown.length ? (
+        {showDemo ? (
+          <button type="button" onClick={() => setWriting(true)} className="mt-1.5 flex w-full items-start gap-2.5 text-left" aria-label="Beispiel-Nachricht – eigene schreiben">
+            <LotteAvatar size={28} />
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="line-clamp-3 text-[14px] font-semibold leading-snug">Willkommen! Hier hinterlasst ihr euch kleine Nachrichten 💛</span>
+              <span className="text-xs text-muted">{helper} · gerade eben</span>
+            </span>
+          </button>
+        ) : shown.length ? (
           <ul className="mt-1.5 flex flex-col gap-2">
             {shown.map((m) => {
               const reacted = REACTIONS.filter((r) => (m.data.reactions[r]?.length ?? 0) > 0);

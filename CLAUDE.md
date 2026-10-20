@@ -47,8 +47,9 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   plant Trainings in Kalender-Lücken mit Wetter. Motivation: Erfolge zeigen,
   Versäumnisse nicht, konkret loben, selten feiern. iPhone-Web-Apps können
   nicht vibrieren. Push später: Feierabend respektieren.
-- Erster Start = kurzes Kennenlernen im Chat (max. 4 Schritte,
-  überspringbar). Antworten steuern die Startseite.
+- Erster Start = ein ruhiger Hallo-Bildschirm („Hallo, ich bin Mia.“, „Los
+  geht’s“), danach sofort die Startseite mit Beispiel-Tag – keine Fragen.
+  Typografischer Apostroph überall („Was gibt’s?“).
 
 ## 2. Gespräch zuerst
 - Lotte (Sprache/Chat) ist der Hauptweg. Jede Funktion soll auch per Gespräch
@@ -119,7 +120,7 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   (`<LotteAvatar size color? />`, `src/components/LotteAvatar.tsx`: Kreis in
   der Icon-Farbe, Motiv auf 72 %; dunkle Farben Nachtblau/Anthrazit/Beere im
   Dunkel-Modus und auf der dunklen Leiste mit feinem hellem Rand) – in
-  Lotte-Leiste, Chat-Kopf und -Blasen, Lottes Satz, Kennenlernen,
+  Lotte-Leiste, Chat-Kopf und -Blasen, Lottes Satz, Hallo-Bildschirm,
   Einstellungen und Push (`lottePush()`, `LOTTE_PUSH_ICON`). Manifest theme_color #EE5F14 (`BRAND_COLOR`).
 - Schrift Plus Jakarta Sans, große fette Überschriften, weiße Karten
   (Radius 22px) auf #F7F4EF. Seiten-Leiste oben als Segment-Schalter
@@ -195,8 +196,8 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   Download); Wiederherstellen zeigt vorher „3 Termine, 5 Aufgaben, …“
   (`backupSummary`) und fragt nach; Zugangscode, Zähler und Geräte-Kennung
   bleiben auf dem Gerät. Der Icon-Hinweis (`iconChangeHint`) verweist darauf.
-  „Daten & App“ geht auch ohne Profil; beim Kennenlernen steht oben links
-  „Sicherung einspielen“ (nach dem Neu-Hinzufügen zum Home-Bildschirm).
+  „Daten & App“ geht auch ohne Profil; auf dem Hallo-Bildschirm steht leise
+  „Ich habe eine Sicherung“ (nach dem Neu-Hinzufügen zum Home-Bildschirm).
 - Tests: Vitest (`npm test`, `tests/*.test.ts`, Zeit fest über `at()` aus
   `tests/helpers.ts`, Zeitzone Europe/Berlin). Ungenutzter Code: `npx knip`
   (Konfiguration `knip.json`; `@public` im Kommentar = bewusst für Tests/Push).
@@ -232,7 +233,7 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   Wetter), `lotte` (KI-Client, Engine, Werkzeuge, Prompt, Sprache ein/aus,
   Chat-Vorschläge), `essen` (Plan, Rezepte, Ideen, Vorrat, Tipps, Backstube …),
   `einkauf` (Einkaufsliste, Plus), `aufgaben` (Termine & Aufgaben),
-  `einstellungen` (Profil, Kennenlernen, erster Start `welcome.ts`). Oberfläche in
+  `einstellungen` (Profil, erster Start `welcome.ts`). Oberfläche in
   `src/components/` nach Bildschirmen.
 - Bausteine (v0.13, `src/lib/core/features.ts`, Speicher
   `wasgibts.funktionen` v2 `{ on: Feature[] }`): `BAUSTEINE` = Wochenplan,
@@ -261,29 +262,38 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   dunkle Lotte-Leiste (`LotteBar`, statt des runden Knopfs).
 - Immer sichtbar: Startseite (siehe Leitbild 7), Chat mit Lotte,
   Einkaufsliste, schlanke Einstellungen (Startseite & Bausteine, Name &
-  Stimme, Vorlesen, Ansicht, Familie, Daten & App) und beim ersten Start das
-  Kennenlernen (siehe unten).
-- Kennenlernen beim ersten Start (v0.17, ohne Profil auf `/` und `/profil`,
-  nach "Neu anfangen" wieder; `WelcomeChat` in `src/components/welcome/`,
-  Ablauf rein in `src/lib/einstellungen/welcome.ts`, Zwischenstand v2 unter
-  `wasgibts.willkommen`, v0.14-Stand wird übernommen – `migrateWelcome`).
-  1. Im Vollbild (seit v0.22, siehe "Begleitung zum Aussuchen"): "Wer soll
-  dir helfen?" (Mia/Theo/eigener Name) und die Vorstellung der Begleitung,
-  oben "Überspringen". Ab Schritt 2 Chat: 2.
-  "Wobei soll ich dir helfen?" (Termine, Arbeit, Essen, Einkauf, Familie;
-  Standard Termine+Essen+Einkauf), bei Essen "Woche planen / Spontan / Mal so,
-  mal so", 3. bei Familie "Wer gehört zu deiner Familie? …", sonst "Wie heißt
-  du?" – Formular im Chat (`WhoForm`): DEIN NAME (Pflicht, erwachsen), bei
-  Familie Liste mit Erwachsen | Kind, ✕, "+ Person hinzufügen" (Fokus);
-  Gesagtes/Getipptes füllt es aus (`fillMembers`, mit KI `recognizeAnswer
-  ("names")`); Chips "Fertig" (erst mit Namen) · "Nur ich"; das Formular ist
-  die Bestätigung. 4. "Super, <Name> – alles bereit!" mit 3 Beispiel-Sätzen.
-  Das Gespräch wird aus dem Zustand gebaut (`transcript`): jeder Schritt genau
-  einmal, Antippen einer Antwort öffnet ihn wieder (`editStep`), danach geht
-  es beim nächsten offenen Schritt weiter. Wirkung (`finishWelcome`): Profil
-  (Personen, Haushaltstyp, Name/Stimme, Planstil), Kacheln (ohne Essen/Einkauf
-  keine Kachel), Bausteine Wochenplan/Spontan, Raum "Arbeit" nur wenn gewählt
-  (`useWorkRoom`). Überspringen = Standardwerte.
+  Stimme, Vorlesen, Ansicht, Familie, Daten & App) und beim ersten Start der
+  Hallo-Bildschirm (siehe unten).
+- Erster Start (v0.27, ohne Profil auf `/` und `/profil`, nach "Neu
+  anfangen" wieder): `HelloScreen` (`src/components/welcome/`) – alles mittig,
+  viel Luft: lebendiger Avatar ~150 px (begrüßen → ruhig) im oberen Drittel,
+  „Hallo, ich bin Mia.“ (30/800), „Ich behalte euren Alltag im Blick.“
+  (16/500, grau), Hinweis-Chip mit Mikrofon „Du kannst auch einfach mit mir
+  sprechen“ (`bg-quick`, kein Knopf), unten „Los geht’s“ in Mia-Farbe (volle
+  Breite, Radius 18) und grauer Link „Ich habe eine Sicherung“
+  (`/profil/daten`). Passt ohne Scrollen (SE bis Pro Max), Safe-Area,
+  reduzierte Bewegung = keine Animation. „Los geht’s“ = `startFresh()`
+  (`welcomeStore.ts`): Standardwerte (`startState()` in `welcome.ts`: Mia,
+  Termine/Essen/Einkauf, mal so mal so, Startseite mitdenkend), Kacheln wie
+  im Beispiel-Tag (Pinnwand S + Wetter S, Termine, Aufgaben, Essen + Einkauf)
+  und `startDemo()`. Name, Familie, Begleitung, Farbe stellt man später ein
+  (oder sagt es). Ein Zwischenstand des alten Kennenlernens wird verworfen
+  (`help` bleibt, steuert `useWorkRoom`).
+- Beispiel-Tag (`src/lib/core/demo.ts`, Speicher `wasgibts.beispiel` v1
+  `{since, cleared, done}`, nicht in der Sicherung; Vorlage
+  `docs/vorlagen/demo-startseite.md`): Lottes Satz „Das hier ist ein
+  **Beispiel-Tag** – probier alles aus!“, Termine (Kaffeepause in 1 Std,
+  Kochen 18:30, Lieblingsserie 20:15, Ins Bett 22:30 – nur was noch kommt; ab
+  21 Uhr für morgen mit „Morgen · Mi“), Aufgaben (App kennenlernen ✓,
+  „!“ {Name} etwas fragen, Ersten Termin eintragen, Kachel verschieben,
+  Pinnwand ausprobieren), Pinnwand-Gruß der Begleitung, Einkauf „Milch · Brot
+  · Äpfel“ – je mit Schild „BEISPIEL“ und gestricheltem Rahmen (Tokens
+  `demo*`), unten „✨ Beispiele verschwinden, sobald du Eigenes einträgst.
+  Jetzt leeren“ (`DemoBits.tsx`). Beispiele liegen nie in den echten
+  Speichern (nicht in Kalender/Woche, Push, KI); Antippen erklärt und bietet
+  „Eigenen Termin/Aufgabe eintragen“, Abhaken nur lokal (`toggleDemoDone`).
+  Je Kachel weg beim ersten eigenen Eintrag (`clearDemoTile`, für immer),
+  alle nach 3 Tagen oder mit „Jetzt leeren“ (`useDemoDay`).
 - Einheitliches Datenmodell für Supabase (`src/lib/core/entries.ts`): jeder
   Eintrag mit `id`, `typ` (termin/aufgabe/gericht/einkauf), `raum`
   (familie/arbeit), `besitzer` (bis zu Konten "lokal"), `erstellt`,
@@ -468,15 +478,8 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
 - Auswahl (`src/components/begleitung/BegleitungPicker.tsx`): zwei Karten
   Mia/Theo (Radio, ✓ und oranger Rand, "▶ Stimme" = `playVoice` → "Hallo,
   ich bin …" mit passender Stimme), "✎ Oder gib mir einen eigenen Namen …"
-  (Feld, `ArtChoice` Assistentin/Assistent, `ColorDots` 2×5 mit Ring). Im
-  Kennenlernen und unter `/profil/kuechenhelfer` (`HelperEditor`).
-- Kennenlernen: Schritt `begleitung` (Vollbild "Wer soll dir helfen?",
-  "Deine persönliche Begleitung im Alltag", Mia vorausgewählt, "Kannst du
-  jederzeit ändern.", "Weiter") → `hallo` (Vorstellung: Avatar in der Farbe,
-  Sprechblase "Hallo, schön, dass du da bist! 👋 Ich bin **Name**, deine
-  persönliche Assistentin | dein persönlicher Assistent bei **Was gibt's?** …",
-  "🔊 Vorlesen", 4 Kacheln Termine · Aufgaben · Essen · Einkauf, "Los geht's")
-  → weiter wie bisher. Zwischenstand v2: alter Schritt "name" → `begleitung`.
+  (Feld, `ArtChoice` Assistentin/Assistent, `ColorDots` 2×5 mit Ring). Unter
+  `/profil/kuechenhelfer` (`HelperEditor`).
 - Stimme (`speech.ts`): Assistentin → beste weibliche deutsche Stimme,
   Assistent → beste männliche, sonst irgendeine deutsche. Fehlt eine passende:
   einmal der Hinweis `VOICE_HINT` (iPhone-Einstellungen → Bedienungshilfen →
@@ -539,9 +542,6 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
 - `IconSync` (Layout): setzt beim Laden und nach jeder Farbwahl das Cookie und
   `apple-touch-icon`/Favicon auf die Farbe (das iPhone liest das Icon beim
   "Zum Home-Bildschirm"). App-Logo (`AppIcon`) ebenfalls in der Farbe.
-- Kennenlernen: nach "Wer soll dir helfen?" (nur im Browser, nicht als
-  Homescreen-App – `isStandalone()`) Hinweis "Jetzt zum Home-Bildschirm
-  hinzufügen" mit Icon-Vorschau und 2 Schritten je Gerät (`addToHomeSteps`).
 - Farbwechsel später (Einstellungen `/profil/farbe` mit Icon-Vorschau, Lotte,
   Regel ohne KI): auf dem iPhone als Homescreen-App `iconChangeHint()` – "Das
   Icon auf dem Homescreen bleibt, bis du die App neu hinzufügst." und, solange

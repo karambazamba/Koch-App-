@@ -15,7 +15,7 @@ export function unlockPlanning(profile: HouseholdProfile, today: Date, choice: U
     saveProfile({ ...profile, planWeek: weekStart });
     // Fürs sanfte Erkennen: wie oft "nur diese Woche" geplant wurde
     markAsked(`planwoche:${weekStart}`);
-    return { text: "Alles klar – der Wochenplan ist diese Woche da. Ab nächster Woche geht's wieder spontan weiter.", undo: () => saveProfile(before) };
+    return { text: "Alles klar – der Wochenplan ist diese Woche da. Ab nächster Woche geht’s wieder spontan weiter.", undo: () => saveProfile(before) };
   }
   saveProfile({ ...profile, planStyle: choice.style, planWeek: null });
   return {

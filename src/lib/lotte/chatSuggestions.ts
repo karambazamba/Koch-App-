@@ -33,7 +33,7 @@ const pick = <T,>(items: T[], rand: number, salt = 0): T => items[Math.floor(((r
 export function chatSuggestions({ profile, mealOver, pantry, shopping, ai, rand }: Situation): string[] {
   const out: string[] = [];
   // 1. Uhrzeit: vor dem Essen "heute", danach "morgen" (ohne KI: was die App selbst kann)
-  out.push(!mealOver ? "Was gibt's heute?" : ai ? "Was machen wir morgen?" : "Was ist noch da?");
+  out.push(!mealOver ? "Was gibt’s heute?" : ai ? "Was machen wir morgen?" : "Was ist noch da?");
 
   // 2. Gelegentlich (etwa jedes zweite Mal) Vorrat oder Einkaufsliste
   const fresh = perishables(pantry.filter((p) => p.place === "kuehlschrank"));
