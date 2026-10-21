@@ -1,8 +1,8 @@
 "use client";
 
-// Seite "Notizen" (/notizen): nur festhalten – Text oder Liste. Angeheftete
-// oben in voller Breite, darunter Kärtchen im 2er-Raster (Emoji + Titel,
-// 2–4 Zeilen Vorschau, graue Zeile). Antippen öffnet die Notiz.
+// Seite "Notizen" (/notizen): oben „Schnell was notieren …“ (Zeile an die
+// Schnellnotiz), Filter Alle | Familie | Arbeit, „Angeheftet“ (mit Pin) in
+// voller Breite, darunter Kärtchen im 2er-Raster. Antippen öffnet die Notiz.
 
 import Link from "next/link";
 import { useState } from "react";
@@ -10,10 +10,10 @@ import { ListChecks, NotebookPen, Pin } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Sheet } from "@/components/ui/Sheet";
 import { Segmented } from "@/components/ui/Segmented";
-import { CARD, PAGE_MAIN } from "@/components/ui/styles";
+import { CARD, PAGE_MAIN, SECTION_TITLE } from "@/components/ui/styles";
 import { PagePlus } from "@/components/ui/QuickButton";
 import { notePreview, sortNotes, useNotes, type Note } from "@/lib/notizen";
-import { SchnellnotizCard } from "./Schnellnotiz";
+import { QuickNoteCard } from "./Schnellnotiz";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 import { helperName } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";
@@ -26,7 +26,7 @@ function NoteCard({ note, wide }: { note: Note; wide?: boolean }) {
   const lines = notePreview(note, wide ? 3 : 4);
   const isList = note.data.kind === "liste";
   const count = note.data.items?.length ?? 0;
-  const meta = [note.raum === "arbeit" ? "Arbeit" : "Familie", isList ? `Liste · ${count}` : SHORT.format(new Date(note.geaendert))].join(" · ");
+  const meta = [note.raum === "arbeit" ? "Arbeit" : "Familie", isList ? (count ? "Liste" : "Leere Liste") : SHORT.format(new Date(note.geaendert))].join(" · ");
   return (
     <li className="min-w-0">
       <Link href={`/notizen/bearbeiten?id=${note.id}`} className={`${CARD} flex h-full flex-col gap-1.5 p-3.5`} aria-label={note.data.title}>
@@ -35,7 +35,6 @@ function NoteCard({ note, wide }: { note: Note; wide?: boolean }) {
             {note.data.emoji}
           </span>
           <span className="min-w-0 flex-1 truncate text-[15px] font-bold">{note.data.title}</span>
-          {note.data.pinned && <Pin className="h-4 w-4 shrink-0 fill-current text-accent" strokeWidth={2} aria-label="angeheftet" />}
         </span>
         {lines.length > 0 && (
           <span className={`flex flex-col text-[13px] leading-snug text-ink/80 ${wide ? "" : "min-h-[3.4em]"}`}>
@@ -73,7 +72,7 @@ export function NotesView() {
         }
       />
       <main className={PAGE_MAIN}>
-        <SchnellnotizCard name={name} />
+        <QuickNoteCard />
         {hasWork && (
           <Segmented
             label="Filter"
@@ -93,18 +92,27 @@ export function NotesView() {
         ) : (
           <>
             {pinned.length > 0 && (
-              <ul className="flex flex-col gap-2" aria-label="Angeheftet">
-                {pinned.map((n) => (
-                  <NoteCard key={n.id} note={n} wide />
-                ))}
-              </ul>
+              <section className="flex flex-col gap-2" aria-label="Angeheftet">
+                <h2 className={`flex items-center gap-1.5 px-1 ${SECTION_TITLE}`}>
+                  <Pin className="h-4 w-4 text-accent" strokeWidth={2.25} aria-hidden />
+                  Angeheftet
+                </h2>
+                <ul className="flex flex-col gap-2">
+                  {pinned.map((n) => (
+                    <NoteCard key={n.id} note={n} wide />
+                  ))}
+                </ul>
+              </section>
             )}
             {rest.length > 0 && (
-              <ul className="grid grid-cols-2 gap-2" aria-label="Notizen">
-                {rest.map((n) => (
-                  <NoteCard key={n.id} note={n} />
-                ))}
-              </ul>
+              <section className="flex flex-col gap-2" aria-label="Notizen">
+                {pinned.length > 0 && <h2 className={`px-1 ${SECTION_TITLE}`}>Alle Notizen</h2>}
+                <ul className="grid grid-cols-2 gap-2">
+                  {rest.map((n) => (
+                    <NoteCard key={n.id} note={n} />
+                  ))}
+                </ul>
+              </section>
             )}
           </>
         )}

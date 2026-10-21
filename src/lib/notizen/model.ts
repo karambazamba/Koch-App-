@@ -18,6 +18,8 @@ export type NotizData = {
   pinned: boolean;
   /** Freizeit-Liste (z. B. "Filme & Serien"): im Feierabend kommt daraus eine Idee */
   freizeit?: boolean;
+  /** Die Schnellnotiz (früher eigener gelber Zettel `wasgibts.kladde`): angeheftete Text-Notiz */
+  schnell?: boolean;
 };
 
 export type Note = Entry<NotizData> & { typ: "notiz" };
@@ -136,9 +138,10 @@ export function sanitizeNote(raw: unknown): Note | null {
               .slice(0, 200)
               .map((i) => ({ id: typeof i.id === "string" ? i.id : itemId(), text: i.text.trim().slice(0, 200), ...(i.done ? { done: true } : {}) })),
           }
-        : { text: typeof d.text === "string" ? d.text.slice(0, 4000) : "" }),
+        : { text: typeof d.text === "string" ? d.text.slice(0, d.schnell ? 20000 : 4000) : "" }),
       pinned: d.pinned === true,
       ...(kind === "liste" && d.freizeit === true ? { freizeit: true } : {}),
+      ...(kind === "text" && d.schnell === true ? { schnell: true } : {}),
     },
   };
 }

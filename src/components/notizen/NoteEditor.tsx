@@ -15,6 +15,9 @@ import { showDeleted } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
 import { useGoBack } from "@/lib/core/useGoBack";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
+import { helperName } from "@/lib/einstellungen/profile";
+import { useProfile } from "@/lib/einstellungen/useProfile";
+import { SchnellnotizActions } from "./Schnellnotiz";
 
 export function NoteEditor() {
   const params = useSearchParams();
@@ -44,6 +47,7 @@ function Editor({ initial, isNew }: { initial: Note; isNew: boolean }) {
   const work = useWorkRoom() || note.raum === "arbeit";
   const goBack = useGoBack();
   const isList = note.data.kind === "liste";
+  const profile = useProfile();
   const fallbackTitle = isList ? "Neue Liste" : "Notiz";
 
   /** Lokal ändern und speichern (sobald es Inhalt gibt) */
@@ -133,6 +137,12 @@ function Editor({ initial, isNew }: { initial: Note; isNew: boolean }) {
             rows={8}
             className={`${INPUT_BASE} w-full resize-none p-4 leading-relaxed`}
           />
+        )}
+
+        {note.data.schnell && (
+          <div className="flex flex-wrap gap-2">
+            <SchnellnotizActions name={helperName(profile)} text={note.data.text ?? ""} />
+          </div>
         )}
 
         <div className="flex flex-wrap gap-2">

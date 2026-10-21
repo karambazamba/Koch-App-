@@ -6,26 +6,22 @@
 // (feste Farbe je Person), Text, klein "Lisa · 7:48". Antippen → 👍 ❤️,
 // dauerhaft anheften, Löschen (nur eigene, mit Rückgängig).
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Mic, Pin, Plus, Square, Trash2 } from "lucide-react";
-import { Sheet } from "@/components/ui/Sheet";
-import { CARD, INPUT_BASE, buttonClass, chipClass } from "@/components/ui/styles";
+import { PinSheet, PinWriteSheet, pinMetaLine } from "@/components/pinnwand/PinSheets";
+import { Pin, Plus } from "lucide-react";
+import { CARD } from "@/components/ui/styles";
 import { QuickButton } from "@/components/ui/QuickButton";
 import type { TileSize } from "@/lib/core/homeLayout";
-import { now, todayIso, toIsoDate } from "@/lib/core/now";
-import { showDeleted } from "@/lib/core/toast";
-import { pushUndo } from "@/lib/core/undo";
-import { PIN_MAX, REACTIONS, addPin, changePins, createPin, hasUnread, markPinsRead, pinMeta, removePin, setPinPinned, toggleReaction, usePins, visiblePins, type PinMessage } from "@/lib/pinnwand";
-import { useSpeechInput } from "@/lib/lotte/useSpeechInput";
-import { shortClock } from "@/components/notizen/Schnellnotiz";
-import { buzz } from "./actions";
+import { now } from "@/lib/core/now";
+import { REACTIONS, changePins, hasUnread, markPinsRead, usePins, visiblePins } from "@/lib/pinnwand";
 import { DEMO_OUTLINE, DemoBadge } from "./DemoBits";
 import { LotteAvatar } from "@/components/LotteAvatar";
 import { clearDemoTile } from "@/lib/core/demo";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
 
 
-const meta = (m: PinMessage, me: string) => pinMeta(m, me, todayIso(), shortClock, (iso) => toIsoDate(new Date(iso)));
+const meta = pinMetaLine;
 
 export function PinboardTile({ size = "M", me, demo = false, helper = "" }: { size?: TileSize; me: string; demo?: boolean; helper?: string }) {
   const pins = usePins();
@@ -45,11 +41,11 @@ export function PinboardTile({ size = "M", me, demo = false, helper = "" }: { si
   return (
     <>
       <section className={`${CARD} relative flex min-h-[92px] flex-col p-3.5 ${showDemo ? DEMO_OUTLINE : ""}`} aria-label="Pinnwand">
-        <span className="flex items-center gap-1.5 pr-8 text-[10px] font-extrabold uppercase tracking-wider text-muted">
+        <Link href="/pinnwand" className="flex items-center gap-1.5 pr-8 text-[10px] font-extrabold uppercase tracking-wider text-muted" aria-label="Pinnwand öffnen">
           <Pin className="h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
           Pinnwand
           {(unread || showDemo) && <span className="h-2 w-2 rounded-full bg-accent" aria-label="Neue Nachricht" />}
-        </span>
+        </Link>
         <span className="absolute right-3.5 top-3">
           <QuickButton icon={Plus} label="Neue Nachricht an die Pinnwand" onClick={() => setWriting(true)} />
         </span>
@@ -57,7 +53,7 @@ export function PinboardTile({ size = "M", me, demo = false, helper = "" }: { si
           <button type="button" onClick={() => setWriting(true)} className="mt-1.5 flex w-full items-start gap-2.5 text-left" aria-label="Beispiel-Nachricht – eigene schreiben">
             <LotteAvatar size={28} />
             <span className="flex min-w-0 flex-1 flex-col">
-              <span className="line-clamp-3 text-[14px] font-semibold leading-snug">Willkommen! Hier hinterlasst ihr euch kleine Nachrichten 💛</span>
+              <span className="line-clamp-3 text-[14px] font-semibold leading-snug">Willkommen! Hier hinterlasst ihr euch kleine Nachrichten.</span>
               <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
                 {helper} · gerade eben <DemoBadge />
               </span>
@@ -83,7 +79,7 @@ export function PinboardTile({ size = "M", me, demo = false, helper = "" }: { si
                       <span className="line-clamp-2 text-[14.5px] font-semibold leading-snug">{m.data.text}</span>
                       <span className="text-xs text-muted">
                         {meta(m, me)}
-                        {m.data.pinned ? " · 📌" : ""}
+                        {m.data.pinned ? " · angeheftet" : ""}
                       </span>
                     </span>
                     {reacted.length > 0 && <span className="shrink-0 text-sm">{reacted.join("")}</span>}
@@ -101,126 +97,5 @@ export function PinboardTile({ size = "M", me, demo = false, helper = "" }: { si
       {writing && <PinWriteSheet me={me} onClose={() => setWriting(false)} />}
       {selected && <PinSheet message={selected} me={me} onClose={() => setOpen(null)} />}
     </>
-  );
-}
-
-/** Neue Nachricht: Textfeld (max. 140) mit Mikrofon, "Anheften" */
-function PinWriteSheet({ me, onClose }: { me: string; onClose: () => void }) {
-  const [text, setText] = useState("");
-  const speech = useSpeechInput({ onTranscript: (t) => setText(t.slice(0, PIN_MAX)), onEnd: (t) => t && setText(t.slice(0, PIN_MAX)) });
-  const save = () => {
-    const pin = createPin(text, me);
-    if (!pin) return;
-    speech.reset();
-    changePins((all) => addPin(all, pin));
-    buzz();
-    onClose();
-  };
-  return (
-    <Sheet title="An die Pinnwand" onClose={onClose}>
-      <form
-        className="flex flex-col gap-3 pb-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          save();
-        }}
-      >
-        <div className="flex items-start gap-2">
-          <textarea
-            value={speech.listening ? speech.interim || text : text}
-            onChange={(e) => setText(e.target.value.slice(0, PIN_MAX))}
-            placeholder="z. B. Bin um 20 Uhr da"
-            aria-label="Nachricht"
-            rows={3}
-            autoFocus
-            maxLength={PIN_MAX}
-            className={`${INPUT_BASE} min-w-0 flex-1 resize-none px-4 py-3`}
-          />
-          {speech.supported !== false && (
-            <button
-              type="button"
-              onClick={() => (speech.listening ? speech.stop() : speech.start())}
-              aria-label={speech.listening ? "Zuhören beenden" : "Einsprechen"}
-              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent active:scale-95 ${speech.listening ? "animate-pulse" : ""}`}
-            >
-              {speech.listening ? <Square className="h-5 w-5 fill-current" strokeWidth={2} aria-hidden /> : <Mic className="h-5 w-5" strokeWidth={2.25} aria-hidden />}
-            </button>
-          )}
-        </div>
-        <span className="-mt-1 self-end text-xs text-muted">
-          {text.length}/{PIN_MAX}
-        </span>
-        <button type="submit" disabled={!text.trim()} className={buttonClass("primary")}>
-          Anheften
-        </button>
-      </form>
-    </Sheet>
-  );
-}
-
-/** Nachricht: reagieren, dauerhaft anheften, löschen (nur eigene) */
-function PinSheet({ message, me, onClose }: { message: PinMessage; me: string; onClose: () => void }) {
-  const stamp = () => now().toISOString();
-  useEffect(() => {
-    changePins((all) => markPinsRead(all, me));
-  }, [me]);
-  const mine = message.data.author === me;
-  return (
-    <Sheet title="Pinnwand" onClose={onClose}>
-      <div className="flex flex-col gap-4 pb-3">
-        <div className="flex items-start gap-3">
-          <PersonAvatar name={message.data.author} />
-          <div className="flex min-w-0 flex-col">
-            <p className="text-lg font-semibold leading-snug">{message.data.text}</p>
-            <span className="text-sm text-muted">{meta(message, me)}</span>
-          </div>
-        </div>
-        <div className="flex gap-2" role="group" aria-label="Reagieren">
-          {REACTIONS.map((r) => {
-            const on = message.data.reactions[r]?.includes(me) ?? false;
-            const count = message.data.reactions[r]?.length ?? 0;
-            return (
-              <button
-                key={r}
-                type="button"
-                aria-pressed={on}
-                aria-label={`Mit ${r} reagieren`}
-                onClick={() => {
-                  buzz();
-                  changePins((all) => toggleReaction(all, message.id, r, me, stamp()));
-                }}
-                className={`${chipClass(on)} text-lg`}
-              >
-                {r}
-                {count > 0 && <span className="text-sm">{count}</span>}
-              </button>
-            );
-          })}
-        </div>
-        <button
-          type="button"
-          onClick={() => changePins((all) => setPinPinned(all, message.id, !message.data.pinned, stamp()))}
-          className={buttonClass("secondary", "sm")}
-        >
-          <Pin className="h-4 w-4" strokeWidth={2} aria-hidden />
-          {message.data.pinned ? "Nicht mehr dauerhaft – nach 3 Tagen weg" : "Dauerhaft anheften"}
-        </button>
-        {mine && (
-          <button
-            type="button"
-            onClick={() => {
-              const undo = changePins((all) => removePin(all, message.id));
-              showDeleted(pushUndo("das Löschen der Pinnwand-Nachricht", undo));
-              onClose();
-            }}
-            className={`${buttonClass("ghost", "sm")} text-danger`}
-          >
-            <Trash2 className="h-4 w-4" strokeWidth={2} aria-hidden />
-            Löschen
-          </button>
-        )}
-        {!message.data.pinned && <p className="text-xs text-muted">Nachrichten verschwinden nach 3 Tagen von selbst.</p>}
-      </div>
-    </Sheet>
   );
 }

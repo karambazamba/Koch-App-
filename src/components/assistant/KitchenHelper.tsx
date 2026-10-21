@@ -22,6 +22,7 @@ import { LotteBar } from "@/components/alltag/HomePager";
 import { helperName } from "@/lib/einstellungen/profile";
 import { removeRetiredKeys } from "@/lib/core/storage";
 import { adoptLegacySpeech } from "@/lib/lotte/speech";
+import { adoptSchnellnotiz } from "@/lib/notizen/schnellnotiz";
 import { spontanStartTurn, type ChatState } from "./chatTypes";
 import { loadSpontanFilters } from "./SpontanBoard";
 import dynamic from "next/dynamic";
@@ -79,6 +80,7 @@ export function KitchenHelper() {
   useEffect(() => {
     migrateOldTermine();
     adoptLegacySpeech();
+    adoptSchnellnotiz();
     removeRetiredKeys(localStorage, sessionStorage);
   }, []);
 
