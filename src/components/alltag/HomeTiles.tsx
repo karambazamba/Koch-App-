@@ -83,7 +83,7 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCo
           Nehmen
         </button>
       )}
-      {/* "Ich koche jetzt" (bei "Mitdenkend"): Rezept-Schritte und Timer kommen nach oben */}
+      {/* "Ich koche jetzt": die Essen-Kachel zeigt die Schritte, der Bildschirm bleibt an */}
       {onCook && !idea && (
         <button type="button" onClick={onCook} className="-mb-2 mt-0.5 flex h-11 items-center self-start text-[13px] font-bold text-accent-strong">
           🍳 Ich koche jetzt

@@ -34,7 +34,8 @@ import { cookableEntry } from "../essen/mealDone";
 import { composeWeek } from "../essen/mealPlan";
 import { loadSport } from "../sport/store";
 import { addTraining, setSportGoal } from "../sport/actions";
-import { changeRoutine, loadRoutine } from "../tagesablauf/settings";
+import { loadRoutine } from "../tagesablauf/settings";
+import { loadJetzt, setJetztOn } from "../jetzt/store";
 import { nudgePhase } from "../tagesablauf/nudge";
 import {
   ACCESS_HEADER,
@@ -274,7 +275,7 @@ function dayData(data: AssistantData): Partial<AssistantData> {
     stopwatch: t.stopwatch ? { sec: Math.round(stopwatchMs(t.stopwatch, nowMs) / 1000), running: Boolean(t.stopwatch.startedAt) } : null,
     kochen: entry ? { dish: entry.title, recipe: recipe?.id ?? entry.title, steps: recipe?.steps ?? [], done: cooking.steps[recipe?.id ?? entry.title] ?? [], active: cooking.manualAt !== null } : null,
     sport: { ...sport, trainings: sport.trainings.filter((x) => x.data.date >= toIsoDate(new Date(nowMs - 62 * 86_400_000))) },
-    tagesablauf: { mode: routine.mode, feierabendAb: routine.feierabendAb, morgenBis: routine.morgenBis },
+    tagesablauf: { jetzt: loadJetzt().on, feierabendAb: routine.feierabendAb, morgenBis: routine.morgenBis },
     me: data.profile.persons[0]?.id ?? null,
   };
 }
@@ -301,8 +302,8 @@ export function runInstantOps(ops: ChangeOp[]): { rest: ChangeOp[]; notes: strin
       nudgePhase();
     }
   }
-  // Timer gestartet, aber bei "Immer gleich" ohne Timer-Kachel → einblenden und sagen, wo er steht
-  if (ops.some((op) => op.type === "add_timer") && loadRoutine().mode === "gleich") {
+  // Timer gestartet, aber ohne Timer-Kachel → einblenden (an ihrem Standard-Platz) und sagen, wo er steht
+  if (ops.some((op) => op.type === "add_timer")) {
     const tiles = loadHomeTiles();
     if (!tiles.find((t) => t.id === "timer")?.visible) {
       saveHomeTiles(applyHomeChange(tiles, { tile: "timer", action: "zeigen" }));
@@ -528,7 +529,7 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
       notes.push("Die Sport-Kachel steht jetzt auf der Startseite.");
     }
   }
-  const dayModes = chosen.filter((op) => op.type === "set_day_mode");
+  const jetztOps = chosen.filter((op) => op.type === "set_jetzt");
   // Begleitung angepasst: kurz sagen, was neu ist und wo es steht; neue Art → passende Stimme
   const helperChange = chosen.reduce<HelperPatch>((acc, op) => (op.type === "set_helper" ? { ...acc, ...op.helper } : acc), {});
   const previousVoice = helperChange.art && helperChange.art !== current.profile.helper.art ? loadSpeechSettings().voice : null;
@@ -548,11 +549,8 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
     saveSpeechSettings({ voice: "" });
     undoDay.push(() => saveSpeechSettings({ voice: previousVoice }));
   }
-  const lastMode = dayModes[dayModes.length - 1];
-  if (lastMode && lastMode.type === "set_day_mode") {
-    undoDay.push(changeRoutine({ mode: lastMode.mode }));
-    nudgePhase();
-  }
+  const lastJetzt = jetztOps[jetztOps.length - 1];
+  if (lastJetzt && lastJetzt.type === "set_jetzt") undoDay.push(setJetztOn(lastJetzt.on));
   const undo = pushUndo(prompt ? `„${prompt.slice(0, 60)}“` : "die letzte Änderung", () => {
     save(current, data);
     undoSide();

@@ -1,21 +1,19 @@
-// Tagesphasen (nur bei "Mitdenkend"): Die gespeicherte Kachel-Sortierung
-// bleibt die Grundlage. Eine Phase schiebt Passendes nach oben, klappt
-// Unpassendes zu einer Zeile zusammen oder blendet es aus – sie löscht nie
-// etwas und ändert die gespeicherte Sortierung nicht.
+// Tagesphasen: Sie ändern nie die Kachel-Anordnung (die bleibt, wie sie
+// gespeichert ist) – nur Inhalte: beim Kochen zeigt die Essen-Kachel die
+// Schritte (Bildschirm bleibt an), im Feierabend mit "Ruhe nach Feierabend"
+// machen Arbeit und Aufgaben Pause und Termine zeigen nur Familie, an freien
+// Tagen ist Arbeit weg. Die Jetzt-Karte nimmt die Phase für Farbe und Themen.
 //
 // Phasen sind eine erweiterbare Liste (Name, Start-/Endbedingung als
-// `active`, Vorrang-Kacheln, zusammenklappen, ausblenden, Schild, Lotte-Satz)
-// – weitere (z. B. Wochenende) kommen ohne Umbau dazu. Vorrang bei
+// `active`, Inhalte als `view`) – weitere kommen ohne Umbau dazu. Vorrang bei
 // Überschneidung über `rank`: Kochen > Sport > Feierabend > Morgen >
 // Tagsüber. Rein (ohne Speicher), damit Startseite, Lotte und Tests gleich
 // rechnen.
 
-import type { HomeTile, HomeTileId, TileSize } from "../core/homeLayout";
-import { clockMinutes, minutesClock, type DayRoutine } from "./settings";
+import { clockMinutes, type DayRoutine } from "./settings";
 
 export type PhaseId = "morgen" | "tagsueber" | "kochen" | "sport" | "feierabend";
 
-export type PhaseTone = "morgen" | "kochen" | "sport" | "feierabend";
 
 export type PhaseContext = {
   /** Minuten seit Mitternacht (Europe/Berlin, ggf. Vorschau) */
@@ -31,29 +29,19 @@ export type PhaseContext = {
   sport: { on: boolean; training: { start: number; end: number; title: string } | null };
   /** Ende des letzten Arbeit-Termins heute (Minuten) */
   workEnd: number | null;
-  /** Neues auf der Pinnwand */
-  pinNew: boolean;
 };
 
-/** Eine Kachel, die eine Phase nach oben holt (optional in anderer Größe; `force` = auch wenn sie sonst nicht auf der Startseite ist) */
-export type TopTile = { id: HomeTileId; size?: TileSize; force?: boolean };
-
 export type PhaseView = {
-  /** Schild unter dem Datum (Tagsüber: keins) */
-  badge: { emoji: string; label: string; detail: string; tone: PhaseTone } | null;
-  /** Kurze Erklärung beim Antippen des Schilds */
-  explain: string;
-  top: TopTile[];
-  /** Zu einer Zeile zusammengeklappt ("Heute noch: …") */
-  collapse: HomeTileId[];
-  hide: HomeTileId[];
-  /** Raum Arbeit ausblenden (Feierabend, Nicht-Arbeitstag) */
+  /** Raum Arbeit ausblenden (Feierabend mit Ruhe, Nicht-Arbeitstag) */
   hideWork: boolean;
   /** Termine: nur Familie und nur, was heute noch kommt */
   familyUpcomingOnly?: boolean;
+  /** Aufgaben machen Pause (Feierabend mit Ruhe) */
+  tasksRest?: boolean;
   /** Wetter zeigt morgen */
   weatherTomorrow?: boolean;
-  /** Bildschirm anlassen (Kochen) */
+  /** Essen-Kachel zeigt die Kochschritte, Bildschirm bleibt an */
+  cooking?: boolean;
   wakeLock?: boolean;
 };
 
@@ -65,9 +53,6 @@ export type PhaseDef = {
   active: (ctx: PhaseContext) => boolean;
   view: (ctx: PhaseContext) => PhaseView;
 };
-
-const clockLabel = (m: number) => minutesClock(m).replace(/^0(\d)/, "$1");
-const hourLabel = (m: number) => (m % 60 ? clockLabel(m) : `${Math.floor(m / 60)} Uhr`);
 
 /** Ist heute ein Arbeitstag? */
 const isWorkday = (ctx: Pick<PhaseContext, "weekday" | "routine">) => ctx.routine.arbeitstage.includes(ctx.weekday);
@@ -113,68 +98,36 @@ export const PHASES: PhaseDef[] = [
     label: "Kochen",
     rank: 50,
     active: (ctx) => cookingStart(ctx) !== null,
-    view: (ctx) => ({
-      badge: { emoji: "🍳", label: "Kochen", detail: `seit ${clockLabel(cookingStart(ctx) ?? ctx.minutes)}`, tone: "kochen" },
-      explain: "Beim Kochen steht das Essen mit den Schritten oben, darunter die Timer. Einkauf und Wetter machen kurz Pause, der Rest wartet in einer Zeile.",
-      top: [{ id: "essen", size: "L" }, { id: "timer", size: "M", force: true }],
-      collapse: ["termine", "aufgaben", "pinnwand"],
-      hide: ["einkauf", "wetter"],
-      hideWork: !isWorkday(ctx),
-      wakeLock: true,
-    }),
+    view: (ctx) => ({ hideWork: !isWorkday(ctx), cooking: true, wakeLock: true }),
   },
   {
     id: "sport",
     label: "Sport",
     rank: 40,
     active: (ctx) => Boolean(ctx.sport.on && ctx.sport.training && ctx.minutes >= ctx.sport.training.start - 60 && ctx.minutes < ctx.sport.training.end),
-    view: (ctx) => ({
-      badge: { emoji: "🏃", label: "Sport", detail: `heute ${clockLabel(ctx.sport.training?.start ?? ctx.minutes)}`, tone: "sport" },
-      explain: "Eine Stunde vor dem Training steht Sport oben – mit Packliste und Wetter.",
-      top: [{ id: "sport", size: "M" }],
-      collapse: [],
-      hide: [],
-      hideWork: !isWorkday(ctx),
-    }),
+    view: (ctx) => ({ hideWork: !isWorkday(ctx) }),
   },
   {
     id: "feierabend",
     label: "Feierabend",
     rank: 30,
     active: (ctx) => ctx.minutes < MORNING_FROM || ctx.minutes >= eveningStart(ctx),
-    view: (ctx) => ({
-      badge: { emoji: "🌙", label: "Feierabend", detail: `ab ${hourLabel(ctx.minutes < MORNING_FROM ? clockMinutes(ctx.routine.feierabendAb) : eveningStart(ctx))}`, tone: "feierabend" },
-      explain: "Im Feierabend zeige ich nur Familie und Freizeit. Arbeit, Termine und Aufgaben machen Pause bis morgen früh.",
-      top: [{ id: "pinnwand" }, { id: "termine" }, { id: "wetter", size: "S" }, { id: "notizen" }],
-      collapse: [],
-      // Nachts (bis 5 Uhr) auch keine Termine des neuen Tages
-      hide: ["aufgaben", "einkauf", "morgen", "essen", "vorrat", "post", "sport", "timer", ...(ctx.minutes < MORNING_FROM ? (["termine"] as HomeTileId[]) : [])],
-      hideWork: true,
-      familyUpcomingOnly: true,
-      weatherTomorrow: true,
-    }),
+    // Mit "Ruhe nach Feierabend": Arbeit und Aufgaben machen Pause, Termine nur Familie; Wetter zeigt morgen
+    view: (ctx) => ({ hideWork: ctx.routine.ruhe || !isWorkday(ctx), familyUpcomingOnly: ctx.routine.ruhe, tasksRest: ctx.routine.ruhe, weatherTomorrow: true }),
   },
   {
     id: "morgen",
     label: "Morgens",
     rank: 20,
     active: (ctx) => ctx.minutes >= MORNING_FROM && ctx.minutes < clockMinutes(ctx.routine.morgenBis),
-    view: (ctx) => ({
-      badge: { emoji: "☀️", label: "Morgens", detail: "Überblick für den Tag", tone: "morgen" },
-      explain: "Morgens stehen oben Pinnwand, Wetter, Termine und Aufgaben – der Überblick für den Tag.",
-      // Pinnwand nur bei Neuem; Pinnwand + Wetter dann klein nebeneinander
-      top: ctx.pinNew ? [{ id: "pinnwand", size: "S" }, { id: "wetter", size: "S" }, { id: "termine" }, { id: "aufgaben" }] : [{ id: "wetter" }, { id: "termine" }, { id: "aufgaben" }],
-      collapse: [],
-      hide: [],
-      hideWork: !isWorkday(ctx),
-    }),
+    view: (ctx) => ({ hideWork: !isWorkday(ctx) }),
   },
   {
     id: "tagsueber",
     label: "Tagsüber",
     rank: 10,
     active: () => true,
-    view: (ctx) => ({ badge: null, explain: "", top: [], collapse: [], hide: [], hideWork: !isWorkday(ctx) }),
+    view: (ctx) => ({ hideWork: !isWorkday(ctx) }),
   },
 ];
 
@@ -182,44 +135,4 @@ export const PHASES: PhaseDef[] = [
 export function currentPhase(ctx: PhaseContext, phases: PhaseDef[] = PHASES): { def: PhaseDef; view: PhaseView } {
   const def = [...phases].sort((a, b) => b.rank - a.rank).find((p) => p.active(ctx)) ?? phases[phases.length - 1];
   return { def, view: def.view(ctx) };
-}
-
-/** "Immer gleich": keine Phase, nur Arbeit an freien Tagen bleibt sichtbar wie gespeichert */
-export const STEADY_VIEW: PhaseView = { badge: null, explain: "", top: [], collapse: [], hide: [], hideWork: false };
-
-/**
- * Kacheln für die Anzeige: Vorrang-Kacheln nach oben (in Phasen-Reihenfolge,
- * ggf. andere Größe), Rest in der gespeicherten Reihenfolge; Ausgeblendetes
- * fällt weg, Zusammengeklapptes kommt in `collapsed`. `available` = Kacheln,
- * die eine Phase erzwingen darf (`force`), auch wenn sie nicht sichtbar sind.
- * `extraTop` (z. B. ein laufender Timer) steht direkt nach den Vorrang-Kacheln
- * bzw. ganz oben, wenn die Phase nichts nach oben holt.
- */
-export function arrangeHome(visible: HomeTile[], view: PhaseView, opts: { available?: HomeTile[]; skip?: HomeTileId[]; extraTop?: TopTile[] } = {}): { tiles: HomeTile[]; collapsed: HomeTile[] } {
-  const skip = new Set(opts.skip ?? []);
-  const byId = new Map(visible.map((t) => [t.id, t]));
-  const top: HomeTile[] = [];
-  const used = new Set<HomeTileId>();
-  const hidden = new Set(view.hide);
-  const take = (want: TopTile, extra = false) => {
-    if (used.has(want.id) || skip.has(want.id) || (!extra && hidden.has(want.id))) return;
-    const tile = byId.get(want.id) ?? (want.force ? opts.available?.find((t) => t.id === want.id) : undefined);
-    if (!tile) return;
-    used.add(want.id);
-    top.push({ ...tile, visible: true, size: want.size ?? tile.size });
-  };
-  view.top.forEach((t) => take(t));
-  // Ein laufender Timer steht immer da, auch wenn die Phase Timer sonst ausblendet
-  (opts.extraTop ?? []).forEach((t) => take(t, true));
-  const hide = new Set(view.hide);
-  const collapse = new Set(view.collapse);
-  const rest: HomeTile[] = [];
-  const collapsed: HomeTile[] = [];
-  for (const t of visible) {
-    if (used.has(t.id) || skip.has(t.id)) continue;
-    if (hide.has(t.id)) continue;
-    if (collapse.has(t.id)) collapsed.push(t);
-    else rest.push(t);
-  }
-  return { tiles: [...top, ...rest], collapsed };
 }

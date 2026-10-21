@@ -275,8 +275,8 @@ function describe(
       const after = [h.name, h.art ? (h.art === "assistent" ? "Assistent · männliche Stimme" : "Assistentin · weibliche Stimme") : null, color].filter(Boolean).join(" · ");
       return { opId: op.id, group: "Begleitung", order: 25_650, label: "Ich", before: state.profile.helper.name, after };
     }
-    case "set_day_mode":
-      return { opId: op.id, group: "Startseite", order: 25_700, label: "Startseite", before: null, after: op.mode === "gleich" ? "📌 Immer gleich" : "✨ Mitdenkend" };
+    case "set_jetzt":
+      return { opId: op.id, group: "Startseite", order: 25_700, label: "Jetzt-Karte", before: null, after: op.on ? "✨ an" : "aus" };
     case "add_training": {
       const s = sportById(op.training.sport);
       const when = op.training.date === dayToday() ? "heute" : `${weekdayShort(op.training.date)} ${dayDate(op.training.date)}`;

@@ -65,9 +65,6 @@ export const isRunning = (t: Timer, nowMs: number) => t.pausedLeft === null && t
 /** Auf der Kachel: laufend, pausiert oder höchstens 1 Minute abgelaufen */
 export const shownOnTile = (t: Timer, nowMs: number) => !isExpired(t, nowMs) || nowMs - t.endsAt < SHOW_AFTER_MS;
 
-/** Läuft (oder klingelt) gerade etwas? Dann gehört die Kachel nach oben */
-export const timersActive = (s: TimerState, nowMs: number) => s.timers.some((t) => shownOnTile(t, nowMs)) || Boolean(s.stopwatch);
-
 /** Reihenfolge: Abgelaufenes zuerst, dann was als Nächstes fertig wird, Pausiertes zuletzt */
 export function sortTimers(list: Timer[], nowMs: number): Timer[] {
   const key = (t: Timer) => (isExpired(t, nowMs) ? -1 : isPaused(t) ? 1e15 + t.pausedLeft! : t.endsAt - nowMs);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
 
 /**
@@ -10,9 +10,13 @@ import { RefreshCw } from "lucide-react";
  * Neue Version: Beim Öffnen/Zurückkehren schaut die App nach einem Update.
  * Liegt eins bereit, erscheint unaufdringlich "Neue Version da – Antippen zum
  * Aktualisieren"; erst das Antippen lädt neu (nie mitten im Tippen).
+ * Beim allerersten Öffnen übernimmt der Service Worker die Seite ebenfalls
+ * ("controllerchange") – das lädt NICHT neu (sonst startet der
+ * Hallo-Bildschirm zweimal, v0.29).
  */
 export function ServiceWorkerRegistration() {
   const [waiting, setWaiting] = useState<ServiceWorker | null>(null);
+  const asked = useRef(false);
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") return;
@@ -42,7 +46,8 @@ export function ServiceWorkerRegistration() {
     document.addEventListener("visibilitychange", check);
     let reloading = false;
     const onControllerChange = () => {
-      if (reloading) return;
+      // Nur nach einem Update, das man selbst angetippt hat
+      if (reloading || !asked.current) return;
       reloading = true;
       window.location.reload();
     };
@@ -58,7 +63,10 @@ export function ServiceWorkerRegistration() {
     <div className="pointer-events-none fixed inset-x-0 top-0 z-[55] flex justify-center px-3 pt-[calc(env(safe-area-inset-top)+0.5rem)]">
       <button
         type="button"
-        onClick={() => waiting.postMessage("SKIP_WAITING")}
+        onClick={() => {
+          asked.current = true;
+          waiting.postMessage("SKIP_WAITING");
+        }}
         className="pointer-events-auto flex min-h-11 items-center gap-2 rounded-full border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink shadow-card"
       >
         <RefreshCw size={16} strokeWidth={2} className="text-accent" aria-hidden />

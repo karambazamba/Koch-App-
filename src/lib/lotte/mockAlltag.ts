@@ -16,6 +16,7 @@ import { BAUSTEINE } from "../core/features";
 import { parsePauseRequest } from "../essen/spontan";
 import { findByTitle, sanitizeEntry, type CalendarEntry } from "../aufgaben/model";
 import { text, tools, type ToolUse } from "./mockShared";
+import { jetztCommand } from "../jetzt/command";
 
 // --- Termine und Aufgaben (Testmodus: Satz-Erkennung ohne KI) --------------------
 
@@ -89,13 +90,13 @@ export function mailUses(latest: string, msgs: Anthropic.Beta.BetaMessageParam[]
 }
 
 /** Pinnwand und Wetter im Testmodus */
-export const DAY_TOOL_NAMES = new Set(["timer_stellen", "timer_stoppen", "stoppuhr", "timer_status", "kochen_starten", "kochschritt", "sport_eintragen", "sport_ziel_setzen", "trainings_planen", "sport_statistik", "startseite_modus", "assistent_anpassen"]);
+export const DAY_TOOL_NAMES = new Set(["timer_stellen", "timer_stoppen", "stoppuhr", "timer_status", "kochen_starten", "kochschritt", "sport_eintragen", "sport_ziel_setzen", "trainings_planen", "sport_statistik", "jetzt_karte", "assistent_anpassen"]);
 
-/** Timer, Kochen, Sport, Startseiten-Modus im Testmodus (dieselben Erkenner wie ohne KI) */
+/** Timer, Kochen, Sport, Jetzt-Karte im Testmodus (dieselben Erkenner wie ohne KI) */
 export function dayUses(latest: string, system: string): Anthropic.Beta.BetaMessage | null {
   const today = system.match(/^Heute: .*\((\d{4}-\d{2}-\d{2})\)/m)?.[1] ?? "";
-  if (/\bstartseite\b/i.test(latest) && /\b(immer\s+gleich|gleich\s+bleiben|nicht\s+(mehr\s+)?mitdenk\w*)\b/i.test(latest)) return tools([{ name: "startseite_modus", input: { modus: "gleich" } }]);
-  if (/\bstartseite\b/i.test(latest) && /\b(mitdenk\w*|denk\w*\s+mit)\b/i.test(latest)) return tools([{ name: "startseite_modus", input: { modus: "mitdenkend" } }]);
+  const jetzt = jetztCommand(latest);
+  if (jetzt !== null) return tools([{ name: "jetzt_karte", input: { an: jetzt } }]);
   const helper = parseHelperInput(latest);
   if (helper) return tools([{ name: "assistent_anpassen", input: helper }]);
   const timer = parseTimerCommand(latest);

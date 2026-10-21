@@ -299,6 +299,7 @@ export function HomeBoard({
       <div
         key={unit.key}
         data-unit={floating ? undefined : unit.key}
+        data-tile={floating ? undefined : unit.tiles.map((t) => t.id).join(" ")}
         onPointerDown={floating ? undefined : onDown(unit.key)}
         onTouchStart={floating || !editing ? undefined : onTouchStart(unit.key)}
         onContextMenu={editing ? (e) => e.preventDefault() : undefined}

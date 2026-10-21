@@ -21,7 +21,7 @@ export type DemoDay = {
   ask: boolean;
 };
 
-export function useDemoDay(entries: CalendarEntry[], today: string, minutes: number, helper: string): DemoDay {
+export function useDemoDay(entries: CalendarEntry[], today: string, minutes: number, helper: string, ownDish = false): DemoDay {
   const demo = useDemo();
   const tiles = demoTiles(demo, today);
   const ownTermine = entries.some((e) => e.typ === "termin");
@@ -30,13 +30,14 @@ export function useDemoDay(entries: CalendarEntry[], today: string, minutes: num
     if (!tiles.length) return;
     if (ownTermine && tiles.includes("termine")) clearDemoTile("termine");
     if (ownTasks && tiles.includes("aufgaben")) clearDemoTile("aufgaben");
-  }, [tiles, ownTermine, ownTasks]);
+    if (ownDish && tiles.includes("essen")) clearDemoTile("essen");
+  }, [tiles, ownTermine, ownTasks, ownDish]);
   const showTermine = tiles.includes("termine") && !ownTermine;
   const showTasks = tiles.includes("aufgaben") && !ownTasks;
   const demoData = showTermine || showTasks ? demoEntries(today, minutes, helper) : null;
   const gone = new Set(demo?.gone ?? []);
   return {
-    tiles: tiles.filter((t) => (t === "termine" ? showTermine : t === "aufgaben" ? showTasks : true)),
+    tiles: tiles.filter((t) => (t === "termine" ? showTermine : t === "aufgaben" ? showTasks : t === "essen" ? !ownDish : true)),
     termine: showTermine && demoData ? itemsForDay(demoData.entries, demoData.date, today).filter((i) => i.entry.typ === "termin" && !gone.has(i.entry.id)) : null,
     tasks: showTasks && demoData ? orderedTasks(demoData.entries, demoData.date).filter((i) => !gone.has(i.entry.id)) : null,
     done: demo?.done ?? [],

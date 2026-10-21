@@ -138,7 +138,7 @@ function TerminCard({ item, leaving, fading = false, entering, onOpen, onDone, d
 }
 
 /** Wie viele Termine je Größe (höchstens 2 nebeneinander): S 1, M bis 4 (2×2), L bis 6 (2×3) */
-export const TERMIN_COUNT = { S: 1, M: 4, L: 6 } as const;
+const TERMIN_COUNT = { S: 1, M: 4, L: 6 } as const;
 /** Wie viele Aufgaben-Felder je Größe: S 2, M 2×2, L 2×4 */
 export const TASK_COUNT = { S: 2, M: 4, L: 8 } as const;
 

@@ -1,40 +1,28 @@
 "use client";
 
-// Welche Tagesphase die Startseite gerade zeigt. Die Phase wechselt nur beim
-// Öffnen/Zurückkehren in die App oder nach 30 s ohne Berührung (nie während
-// Tippen/Scrollen, nie im Bearbeiten-Modus) – bewusste Schritte ("Ich koche
-// jetzt", Timer, "Gegessen ✓"), Vorschau und Umschalten wirken sofort.
-// "Immer gleich" = keine Phase.
+// Welche Tagesphase gerade gilt (für Inhalte der Kacheln, nie für die
+// Anordnung). Sie wechselt nur beim Öffnen/Zurückkehren in die App oder nach
+// 30 s ohne Berührung (nie während Tippen/Scrollen, nie im Bearbeiten-Modus) –
+// bewusste Schritte ("Ich koche jetzt", Timer, "Gegessen ✓") und die
+// Zeit-Vorschau wirken sofort.
 
 import { useEffect, useRef, useState } from "react";
-import { PHASES, STEADY_VIEW, currentPhase, type PhaseContext, type PhaseDef, type PhaseId, type PhaseView } from "@/lib/tagesablauf/phases";
-import { setShowAll, usePhaseNudge, useShowAll } from "@/lib/tagesablauf/nudge";
-import type { DayRoutine, TimePreview } from "@/lib/tagesablauf/settings";
+import { PHASES, currentPhase, type PhaseContext, type PhaseDef, type PhaseId, type PhaseView } from "@/lib/tagesablauf/phases";
+import { usePhaseNudge } from "@/lib/tagesablauf/nudge";
+import type { TimePreview } from "@/lib/tagesablauf/settings";
 
 const IDLE_MS = 30_000;
+const NONE: PhaseView = { hideWork: false };
 
-type HomePhase = {
-  /** null = "Immer gleich" oder "Alles zeigen" */
-  def: PhaseDef | null;
-  view: PhaseView;
-  /** Die Phase, die eigentlich gilt (auch bei "Alles zeigen") */
-  phaseId: PhaseId | null;
-  showAll: () => void;
-  /** "✨ Wieder mitdenken": zurück zur Phase */
-  resume: () => void;
-  /** "Alles zeigen" ist gerade an */
-  showingAll: boolean;
-  key: string;
-};
+type HomePhase = { def: PhaseDef | null; view: PhaseView };
 
-export function useHomePhase(ctx: PhaseContext | null, opts: { routine: DayRoutine; preview: TimePreview | null; today: string; editing: boolean }): HomePhase {
-  const steady = opts.routine.mode === "gleich";
+export function useHomePhase(ctx: PhaseContext | null, opts: { preview: TimePreview | null; today: string; editing: boolean }): HomePhase {
   const live = ctx ? currentPhase(ctx) : null;
   const liveId: PhaseId = live?.def.id ?? "tagsueber";
   const [shown, setShown] = useState<PhaseId>(liveId);
-  // Sofort wechseln bei: Vorschau, Modus, bewusstem Schritt
+  // Sofort wechseln bei: Vorschau, bewusstem Schritt, neuem Tag
   const nudge = usePhaseNudge();
-  const sig = `${opts.routine.mode}|${opts.preview ? `${opts.preview.clock}/${opts.preview.weekday}` : ""}|${nudge}|${opts.today}`;
+  const sig = `${opts.preview ? `${opts.preview.clock}/${opts.preview.weekday}` : ""}|${nudge}|${opts.today}`;
   const [lastSig, setLastSig] = useState(sig);
   if (sig !== lastSig) {
     setLastSig(sig);
@@ -66,20 +54,7 @@ export function useHomePhase(ctx: PhaseContext | null, opts: { routine: DayRouti
     };
   }, []);
 
-  const showAllKey = useShowAll();
-  const key = `${opts.today}:${shown}`;
-  if (steady || !ctx) return { def: null, view: STEADY_VIEW, phaseId: null, showAll: () => {}, resume: () => {}, showingAll: false, key };
+  if (!ctx) return { def: null, view: NONE };
   const def = PHASES.find((p) => p.id === shown) ?? live!.def;
-  const showingAll = showAllKey === key && def.id !== "tagsueber";
-  const view = def.view(ctx);
-  return {
-    def: showingAll ? null : def,
-    // "Alles zeigen": normale Ansicht, nur Arbeit an freien Tagen bleibt weg
-    view: showingAll ? { ...STEADY_VIEW, hideWork: PHASES.find((p) => p.id === "tagsueber")!.view(ctx).hideWork } : view,
-    phaseId: def.id,
-    showAll: () => setShowAll(key),
-    resume: () => setShowAll(null),
-    showingAll,
-    key,
-  };
+  return { def, view: def.view(ctx) };
 }

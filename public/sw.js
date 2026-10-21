@@ -3,7 +3,7 @@
 // CACHE_VERSION bei jeder Auslieferung erhöhen. Eine neue Version wartet, bis
 // man den Hinweis "Neue Version da" antippt (Nachricht "SKIP_WAITING") – nie
 // ein Zwangs-Neuladen mitten im Tippen. Beim allerersten Mal sofort aktiv.
-const CACHE_VERSION = "v58";
+const CACHE_VERSION = "v59";
 // Interner Name (alter Arbeitsname) bleibt, damit alte Caches sauber aufgeräumt werden.
 const CACHE_NAME = `familienkueche-${CACHE_VERSION}`;
 
@@ -61,6 +61,8 @@ const PRECACHE_URLS = [
   "/icons/icon-512-v3.png",
   "/icons/apple-touch-icon-v3.png",
   "/icons/lotte-192-v3.png",
+  // Beispielgericht des Beispiel-Tags (offline da)
+  "/demo/gericht.webp",
 ];
 
 self.addEventListener("install", (event) => {

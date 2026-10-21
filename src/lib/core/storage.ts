@@ -26,7 +26,7 @@ export const STORAGE = [
   { key: "wasgibts.pinnwand", what: "Pinnwand", version: 1, migration: "pinnwand/store.ts", area: "local", backup: true },
   { key: "wasgibts.startseite", what: "Startseite: Kacheln, Reihenfolge, Größen", version: 3, migration: "core/homeLayout.ts migrateHome", area: "local", backup: true },
   { key: "wasgibts.funktionen", what: "Eingeschaltete Bausteine", version: 2, migration: "core/features.ts migrate", area: "local", backup: true },
-  { key: "wasgibts.tagesablauf", what: "Tagesablauf: Mitdenkend/Immer gleich, Feierabend", version: 1, migration: "tagesablauf/settings.ts", area: "local", backup: true },
+  { key: "wasgibts.tagesablauf", what: "Tagesablauf: Morgens, Feierabend, Ruhe, Arbeitstage, Kochen", version: 1, migration: "tagesablauf/settings.ts", area: "local", backup: true },
   { key: "wasgibts.sport", what: "Sport: Trainings, Wochenziel, Packlisten", version: 1, migration: "sport/store.ts", area: "local", backup: true },
   { key: "wasgibts.timer", what: "Laufende Timer", version: 1, migration: "timer/store.ts", area: "local", backup: false },
   { key: "wasgibts.kochen", what: "Gerade wird gekocht (Schritte)", version: 1, migration: "kochen/session.ts", area: "local", backup: false },
@@ -44,6 +44,7 @@ export const STORAGE = [
   { key: "wasgibts.vorlesen", what: "Vorlesen: Modus, Stimme, Tempo (pro Gerät)", version: 1, migration: "lotte/speech.ts migrate", area: "local", backup: true },
   { key: "wasgibts.wetterort", what: "Wetter-Ort", version: 1, migration: "wetter/client.ts", area: "local", backup: true },
   { key: "wasgibts.wetterdaten", what: "Letzte Wetterdaten (offline)", version: 1, area: "local", backup: false },
+  { key: "wasgibts.jetzt", what: "Jetzt-Karte: an/aus, heute ausgeblendete Themen, Interesse je Thema", version: 1, migration: "jetzt/store.ts", area: "local", backup: true },
   { key: "wasgibts.dunkeltipp", what: "Einmaliger Hinweis auf Dunkel/Automatisch (ab dem 3. Tag)", version: 1, migration: "core/darkTip.ts", area: "local", backup: false },
   { key: "wasgibts.beispiel", what: "Beispiel-Tag beim ersten Start (seit wann, geleerte Kacheln, Abgehaktes)", version: 1, migration: "core/demo.ts", area: "local", backup: false },
   { key: "wasgibts.willkommen", what: "Ergebnis des ersten Starts (wobei helfen)", version: 1, migration: "einstellungen/welcomeStore.ts (Zwischenstand bis v0.26 wird verworfen)", area: "local", backup: false },
@@ -57,7 +58,6 @@ export const STORAGE = [
   { key: "wasgibts.geraet", what: "Zufällige Geräte-Kennung (Tageslimit)", area: "local", backup: false },
   { key: "wasgibts.verlauf", what: "Zurück-Verlauf und Scrollhöhen", area: "session", backup: false },
   { key: "wasgibts.spontan.filter", what: "Spontan-Filter dieser Sitzung", area: "session", backup: false },
-  { key: "wasgibts.alleszeigen", what: "\"Alles zeigen\" bis zum nächsten Phasenwechsel", area: "session", backup: false },
   { key: "wasgibts.zeitvorschau", what: "Zeit-Vorschau der Startseite", area: "session", backup: false },
   { key: "wasgibts.wetterszenario", what: "Wetter-Testmodus", area: "session", backup: false },
 ] as const satisfies readonly StorageDef[];
@@ -79,7 +79,7 @@ const RETIRED_KEYS = [
   "wasgibts.kuechenhelfer.vorlesen",
 ] as const;
 
-const RETIRED_SESSION_KEYS = ["wasgibts.entwicklung"] as const;
+const RETIRED_SESSION_KEYS = ["wasgibts.entwicklung", "wasgibts.alleszeigen"] as const;
 
 /** Alte Termine (v0.9) – gelöscht, sobald sie im neuen Modell stehen */
 export const OLD_TERMINE_KEY = "wasgibts.termine";

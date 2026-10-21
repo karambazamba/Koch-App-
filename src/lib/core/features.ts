@@ -2,7 +2,7 @@
 // Bausteine, die man in den Einstellungen ("Bausteine – Was <Name> noch kann")
 // oder per Gespräch an- und ausschaltet; eingeschaltet fügen sie sich in das
 // neue Design ein (Abschnitte auf der Essen-Seite, Kachel auf "Heute",
-// Lottes Satz). Daten bleiben immer erhalten – aus heißt nur ausgeblendet.
+// Jetzt-Karte). Daten bleiben immer erhalten – aus heißt nur ausgeblendet.
 //
 // Der frühere Schalter "Alte Funktionen anzeigen (Test)" und der Alt-Modus
 // (/?legacy=1) sind weg.

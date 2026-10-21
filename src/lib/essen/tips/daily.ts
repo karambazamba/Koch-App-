@@ -1,4 +1,4 @@
-// Ein Tipp für Theos/Lottes Satz oben auf "Heute" (Bausteine Tipps und
+// Ein Tipp als leises Thema der Jetzt-Karte oben auf "Heute" (Bausteine Tipps und
 // Wochenend-Ideen): pro Tag stabil, ohne Speicher. Fr–So zuerst eine
 // Wochenend-Idee (falls an), sonst ein Tipp zum heutigen Gericht, sonst ein
 // allgemeiner – reihum nach Datum.

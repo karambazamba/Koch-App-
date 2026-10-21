@@ -27,8 +27,9 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
 - Termin = feste Uhrzeit, Aufgabe = zu erledigen, Notiz = nur festhalten.
   Heute zeigt bis zu 3 Termine (Kärtchen nebeneinander) und bis zu 3
   Aufgaben (schlanke Zeilen). Kachel antippen = öffnen, kleiner Knopf oben
-  rechts = Neues (20 px, hell-orange, nie schwarz). Lottes Satz: eine Zeile,
-  max. ~8 Wörter, nur was die Kacheln nicht zeigen, ohne Druck-Wörter.
+  rechts = Neues (20 px, hell-orange, nie schwarz). Mia spricht nur über die
+  Jetzt-Karte (ersetzt Lottes Satz): feste Höhe, 2 Zeilen, Punktesystem, nur
+  was die Kacheln nicht zeigen (außer mit Tipp), ohne Druck-Wörter.
   Gesten: Tippen = Eintrag, lange Drücken = Startseite bearbeiten, Wischen =
   Seite wechseln.
 - Notizen = eine Kachel (Schnellnotiz + Angeheftetes), keine Kladde mehr.
@@ -36,13 +37,17 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   Pinnwand (Familien-Nachrichten, später geteilt über Konten, verschwinden
   nach 3 Tagen). Startseite wird direkt auf der Startseite bearbeitet
   (wackeln, ziehen, –, S/M/L). Zwei S nebeneinander, einzelne S wird breit.
-  Standard-Reihenfolge: Pinnwand, Termine, Aufgaben, Wetter, Essen+Einkauf
-  (Paar), Notizen, Vorrat, Morgen, Post – neue Kacheln landen dort. Kein
-  Rückgängig beim Hinzufügen, nur beim Löschen (3 s).
-- Startseite: Nutzer wählt Mitdenkend oder Immer gleich; Ruhe nach Feierabend
-  ist ein eigener Schalter. Tagesphasen Morgen/Tagsüber/Kochen/Sport/Feierabend
-  als erweiterbare Liste; Phasen ändern nie die gespeicherte Sortierung, immer
-  Schild + ‚Alles zeigen‘; Feierabend frühestens nach letztem Arbeitstermin.
+  Standard-Reihenfolge: Pinnwand + Wetter (S nebeneinander), Termine,
+  Aufgaben, Essen+Einkauf (Paar), Notizen, Vorrat, Morgen (nicht im
+  Standard), Post – neue Kacheln landen dort. Kachel-Anordnung ändert sich
+  nie automatisch. Kein Rückgängig beim Hinzufügen, nur beim Löschen (3 s).
+- Startseite: EINE Anordnung (gespeichert, Normalansicht = Bearbeiten-Modus,
+  auch im Beispiel-Tag); den Modus Mitdenkend/Immer gleich gibt es nicht
+  mehr. Mitgedacht wird nur in der Jetzt-Karte oben. Ruhe nach Feierabend ist
+  ein eigener Schalter. Tagesphasen Morgen/Tagsüber/Kochen/Sport/Feierabend
+  als erweiterbare Liste ändern nur Inhalte (Kochschritte in der
+  Essen-Kachel, Ruhe), nie die Anordnung; Feierabend frühestens nach letztem
+  Arbeitstermin.
   Timer rechnen mit Endzeit. Sport: Wochenziel, Serien nur in Wochen, Lotte
   plant Trainings in Kalender-Lücken mit Wetter. Motivation: Erfolge zeigen,
   Versäumnisse nicht, konkret loben, selten feiern. iPhone-Web-Apps können
@@ -83,7 +88,8 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
 - Wortwahl: keine Wörter wie "fehlt", "offen", "überfällig", "noch zu
   erledigen", "verpasst", "Alles da". Stattdessen vorbereitend ("Für Montag",
   "Ich hab schon …", "Bereit für …").
-- Startseite: höchstens ein Satz von Lotte, nur wenn wirklich wichtig.
+- Startseite: höchstens EIN Thema in der Jetzt-Karte (bis 3 zum Wischen),
+  nachts nur „Morgen …“, im Feierabend/Wochenende nur Sanftes.
   Push (später): höchstens 1 proaktive Mitteilung pro Tag, Ruhezeit
   20:00–7:00. Pause-Modus = absolute Ruhe.
 
@@ -276,15 +282,15 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   (`/profil/daten`). Passt ohne Scrollen (SE bis Pro Max), Safe-Area,
   reduzierte Bewegung = keine Animation. „Los geht’s“ = `startFresh()`
   (`welcomeStore.ts`): Standardwerte (`startState()` in `welcome.ts`: Mia,
-  Termine/Essen/Einkauf, mal so mal so, Startseite mitdenkend), Kacheln wie
-  im Beispiel-Tag (Pinnwand S + Wetter S, Termine, Aufgaben, Essen + Einkauf)
+  Termine/Essen/Einkauf, mal so mal so), die Standard-Startseite
+  (`DEFAULT_HOME`: Pinnwand S + Wetter S, Termine, Aufgaben, Essen + Einkauf)
   und `startDemo()`. Name, Familie, Begleitung, Farbe stellt man später ein
   (oder sagt es). Ein Zwischenstand des alten Kennenlernens wird verworfen
   (`help` bleibt, steuert `useWorkRoom`).
 - Beispiel-Tag (`src/lib/core/demo.ts`, Speicher `wasgibts.beispiel` v1
-  `{since, cleared, done}`, nicht in der Sicherung; Vorlage
-  `docs/vorlagen/demo-startseite.md`): Lottes Satz „Das hier ist ein
-  **Beispiel-Tag** – probier alles aus!“, Termine (Kaffeepause in 1 Std,
+  `{since, cleared, done, gone, asked}`, nicht in der Sicherung; Vorlage
+  `docs/vorlagen/demo-startseite.md`): Jetzt-Karte mit Beispiel-Themen („Das
+  ist ein Beispiel-Tag“, seit v0.29), Beispielgericht in der Essen-Kachel, Termine (Kaffeepause in 1 Std,
   Kochen 18:30, Lieblingsserie 20:15, Ins Bett 22:30 – nur was noch kommt; ab
   21 Uhr für morgen mit „Morgen · Mi“), Aufgaben (App kennenlernen ✓,
   „!“ {Name} etwas fragen, Ersten Termin eintragen, Kachel verschieben,
@@ -413,6 +419,91 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   (`QuickButton`), Schnell-Termin (`TerminQuickAdd`), Schnell-Aufgabe
   (`TaskQuickAdd`), einmaliger Hinweis nach dem Kennenlernen, Start-Kacheln
   aus dem Kennenlernen (`homeTilesFor`, in Standard-Reihenfolge).
+
+## Feste Anordnung + Jetzt-Karte + Beispielgericht (v0.29)
+
+- Kachel-Anordnung ändert sich nie automatisch: `TodayPage` zeigt genau die
+  gespeicherte Reihenfolge/Größe (`HomeBoard`), im Bearbeiten-Modus dieselbe.
+  `arrangeHome`, Phasen-Schild, „Alles zeigen“, Zusammenklappen und der Modus
+  Mitdenkend/Immer gleich (`routine.mode`, `HOME_MODES`, Lotte
+  `startseite_modus`) sind entfernt; Phasen (`phases.ts`) liefern nur Inhalte
+  (`hideWork`, `familyUpcomingOnly`/`tasksRest` bei Ruhe nach Feierabend,
+  `weatherTomorrow`, `cooking` = Kochschritte in der Essen-Kachel, Wake Lock).
+  Standard neuer Nutzer (`DEFAULT_HOME`): Pinnwand S + Wetter S, Termine,
+  Aufgaben, Essen + Einkauf; Morgen nicht im Standard. Bestehende Nutzer
+  behalten ihre Anordnung. Ein gestarteter Timer blendet die Timer-Kachel an
+  ihrem Standard-Platz ein (immer, nicht mehr nur bei „Immer gleich“).
+- Jetzt-Karte (`JetztCard.tsx`, ersetzt Lottes Satz): oben unter
+  Begrüßung/Datum, volle Breite, feste Höhe 78 px (2 Zeilen, nie größer),
+  links Mias Gesicht (beim Wechsel kurz „sprechen“), Zeile 1 fett, Zeile 2
+  Detail/Tipp, rechts „›“ (nur mit Ziel), ✕ = für heute ausblenden (Meldung
+  mit Rückgängig), oben rechts klein „Passt sich deinem Tag an“. Farbe je
+  Tageszeit (`jetztTone`: morgens bis 11 gelb, bis 18 orange, sonst blau;
+  Tokens `jetzt-morgen/tag/abend` + `-ink`, hell und dunkel). Wischen nach
+  links = nächstes Thema (max. 3, Punkte), Antippen öffnet den Bereich (Tag,
+  Aufgaben, Wetter, Sport, Essen-Seite, Spontan-Ideen, Pinnwand-/Timer-Kachel
+  per Scroll). Reihenfolge der Themen bleibt stehen, bis die App wieder
+  geöffnet wird, 15 Min vergehen, ein Thema wegfällt oder sehr Dringendes
+  (≥ 90 Punkte) dazukommt – Wechsel sanft (`jetzt-in`), Höhe gleich.
+- Punktesystem (`src/lib/jetzt/topics.ts`, rein, ohne KI): Dringlichkeit
+  (Zeit bis zum Termin, heute dran, Wetter zur Termin-Zeit), Handlung (Tipp
+  schlägt Info) und Interesse (`wasgibts.jetzt` v1 `{on, day, hidden,
+  weights}`: Antippen +1, Weiterwischen −0,5, ✕ −1,5, ±6, wirkt mit 5 % je
+  Punkt). Themen: Erinnerung, Timer, Kochschritt, Pause, Termin ≤ 60 Min
+  („In 40 Min: Zahnarzt · 16:15 · Ort“), Pinnwand ungelesen, Wetter-Tipp,
+  morgens „8° · 8:15 Kaffeepause“, ab 15 Uhr Essen mit Startzeit (Essenszeit
+  − Kochdauer, „alles im Haus“ bzw. „noch: …“) oder „Noch nichts zum Essen – 3
+  Ideen“, „Heute wichtig/fällig: …“, Geburtstag heute/morgen
+  (`birthdayName`), Sport-Wochenziel, ab 19 Uhr „Morgen · Do: …“, „Alles
+  geschafft 🎉“, Freizeit-Idee, Tipp (Bausteine), Beispiel-Tag, sonst „Heute
+  ist es ruhig“. Regeln: nichts wiederholen, was die erste Kachel-Reihe zeigt
+  (außer mit Tipp, ×0,5), Feierabend mit Ruhe/Wochenende nur Sanftes, nachts
+  (22–6) nur Morgen/Erinnerung/Timer, Arbeit-Termine nur lokal. Optionaler
+  Haiku-Satz ist (noch) nicht eingebaut – die Vorlagen reichen.
+- Bearbeiten-Modus: oben gestrichelter fester Platz „Jetzt-Karte · passt sich
+  automatisch an – fester Platz oben, nicht verschiebbar“ (`JetztPlaceholder`).
+  Einstellungen → „Startseite & Tageszeiten“ (`/profil/tagesablauf`):
+  „Jetzt-Karte anzeigen“ (Standard an) und „Ausgeblendete Themen und
+  Gelerntes · Zurücksetzen“. Lotte: `jetzt_karte` (Op `set_jetzt`, Vorschau);
+  ohne KI `jetztCommand` („Blende die Jetzt-Karte aus“, „Zeig die Jetzt-Karte
+  wieder“, alte Sätze „Lass die Startseite immer gleich“/„… soll mitdenken“).
+- Beispiel-Tag füllt nur Inhalte in dieselben Kacheln (auch im
+  Bearbeiten-Modus als Vorschau); Jetzt-Karte zeigt Beispiel-Themen je
+  Uhrzeit. Neue Beispiel-Kachel „essen“: Beispielgericht „Pasta mit Tomaten &
+  Burrata“ (`src/lib/essen/demoDish.ts`, IDs `d:…`, über `findRecipe` lesbar
+  und kochbar, nie im Kochbuch/Plan/Sicherung) als `DemoFoodTile` – Bild
+  vollflächig (`DishPicture`, ohne Foto warmer Verlauf + Symbol, Platzhalter-
+  farbe beim Laden), weicher dunkler Verlauf (`.dish-shade`), weiß „ESSEN ·
+  18:30“, Name, „alles im Haus · 25 Min“, Schild BEISPIEL, höher als sonst.
+  Antippen = Beispiel-Rezept (`RecipeView`: Bild oben `DemoHero`, „Kochen
+  starten“, unten „Mehr Ideen“ mit drei Karten `DemoMoreIdeas`); Essen-Reiter
+  zeigt es als „Heute“ (`DemoDishHero`). Verschwindet mit eigenem Gericht
+  (`clearDemoTile("essen")`), „Jetzt leeren“ oder nach 3 Tagen. Bild
+  `public/demo/gericht.webp` = eigene Illustration
+  (`scripts/generate-demo-dish.mjs`, Nachweis `docs/credits.md`), im Service
+  Worker vorgeladen.
+- Hallo-Bildschirm lebendig (`HelloScreen`, Ablauf nach Mockup „Mia
+  Begrüßung“): 0,0 s Mia ploppt auf, 0,7 s winkt, 0,95 s „Hallo, ich bin
+  Mia.“ tippt sich ein (Mia „sprechen“), 2,1 s Untertitel, 2,5 s
+  Mikrofon-Hinweis mit Puls-Ring, 2,9 s Knöpfe gleiten herein; danach
+  blinzeln (4 s), Augen folgen dem Finger (`.av-look`, max. ~3 px); Mia
+  antippen = hüpfen („freuen“), drei Herzchen/Funken, Sprechblase („Hihi!“,
+  „Bereit, wenn du es bist!“, „Kitzelig!“, „Los geht’s?“). „Los geht’s“: Mia
+  fliegt 0,7 s in die Jetzt-Karte (`core/hello.ts` `setHelloFlight`/
+  `takeHelloFlight`), dort tippt sich der erste Satz ein, Kacheln erscheinen
+  je 70 ms versetzt (`.tiles-arrive`). Kein Flackern: Animation erst nach
+  dem Laden (Schrift da, max. 600 ms), vorher unsichtbar; `helloElapsed`
+  setzt nach einem Neuaufbau fort statt neu; `HomeView`/`ProfilePageContent`
+  bleiben beim Hallo, bis es ein Profil gibt (kein Wechsel über „lädt
+  noch“); `LotteAvatar stabil` = Zustand wechselt am selben Element (kein
+  Neuaufbau). Bewegung reduzieren = alles sofort, ohne Animation.
+- Ursache des Flackerns beim ersten Start: Der Service Worker übernimmt beim
+  allerersten Öffnen die Seite („controllerchange“), und die App lud deshalb
+  nach ~0,7 s komplett neu. Neu geladen wird jetzt nur nach einem selbst
+  angetippten „Neue Version da“ (`ServiceWorkerRegistration`). Test:
+  Durchklick `hallo2` (10× frisch, keine zweite Navigation, Mia genau einmal).
+- Test: `tests/jetzt.test.ts`; Durchklick `jetzt` im Scratchpad (7:10 /
+  16:40 / 20:30 / 23:00, Tauschen bleibt, Wischen, ✕, SE bis Pro Max).
 
 ## Korrekturen Teil 0 (v0.28)
 
@@ -574,6 +665,11 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   `CLOUD_SYNC` aus ist, die Warnung zum Datenverlust beim Entfernen.
 
 ## Tagesphasen, Timer, Sport (v0.21)
+
+- Seit v0.29: Phasen ändern nur Inhalte, nie die Anordnung; Modus
+  Mitdenkend/Immer gleich, Schild, „Alles zeigen“, Vorrang-Kacheln und
+  Zusammenklappen sind entfernt (siehe „Feste Anordnung + Jetzt-Karte“). Die
+  Beschreibung unten ist insoweit Historie.
 
 - Tagesablauf (`src/lib/tagesablauf/settings.ts`, Speicher
   `wasgibts.tagesablauf` v1): `mode` mitdenkend (Standard) / gleich, `ruhe`
