@@ -5,83 +5,22 @@ import { useState } from "react";
 import { expectReplace } from "@/lib/core/navigation";
 import { PageHeader } from "@/components/PageHeader";
 import { PAGE_MAIN } from "@/components/ui/styles";
-import { Ban, CalendarRange, Heart, Home, Palmtree, ShoppingBasket, ShoppingCart, Sparkles, Sprout, ThumbsDown, UtensilsCrossed, Wheat, Salad } from "lucide-react";
+import { Ban, CalendarRange, Heart, Home, ShoppingBasket, ShoppingCart, Sprout, ThumbsDown, UtensilsCrossed, Wheat, Salad } from "lucide-react";
 import { usePersonRemoval } from "@/components/profile/PersonRemoval";
 import { sortedBases } from "@/lib/essen/bases";
 import { sortedLikes } from "@/lib/essen/likes";
-import {
-  DISPLAY_MODES,
-  HEALTH_TIP_LEVELS,
-  HELPER_MODES,
-  HOUSEHOLD_TYPES,
-  LIMITS,
-  MEAL_TIME_LABELS,
-  TIP_LEVELS,
-  helperName,
-  personLabel,
-  weekdayLunchHeadcount,
-} from "@/lib/einstellungen/profile";
+import { HEALTH_TIP_LEVELS, HOUSEHOLD_TYPES, LIMITS, MEAL_TIME_LABELS, personLabel, weekdayLunchHeadcount } from "@/lib/einstellungen/profile";
 import { usePlanStyle } from "@/lib/essen/usePlanStyle";
 import { useProfile } from "@/lib/einstellungen/useProfile";
-import { AddRow, ChoiceCards, DataSection, Group, PersonRow, Row, SettingsPage, SwitchRow } from "./SettingsParts";
+import { AddRow, DataSection, Group, PersonRow, Row, SettingsPage } from "./SettingsParts";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { clearProfile } from "@/lib/einstellungen/profileStore";
 import { clearWelcome } from "@/lib/einstellungen/welcomeStore";
-import { Sun, Volume2 } from "lucide-react";
-import { READ_MODES, useSpeechSettings } from "@/lib/lotte/speech";
 
 /** "Unsere Familie" bzw. "Mein Haushalt" / "Unser Haushalt" */
 export function householdTitle(profile: { householdType: string } | null | undefined): string {
   if (!profile || profile.householdType === "familie") return "Unsere Familie";
   return profile.householdType === "single" ? "Mein Haushalt" : "Unser Haushalt";
-}
-
-/** /profil/lotte: Wie oft meldet sich Lotte? Modus, Tipps, Wochenend-Ideen, Name, Pause */
-export function LotteHubView() {
-  const title = helperName(useProfile());
-  const reading = useSpeechSettings();
-  return (
-    <SettingsPage title={title}>
-      {(profile, set) => {
-        const name = helperName(profile);
-        return (
-          <>
-            <p className="px-1 text-lg font-bold">Wie oft meldet sich {name}?</p>
-            <ChoiceCards label="Modus" value={profile.helperMode} onChange={(helperMode) => set({ helperMode })} options={HELPER_MODES} />
-            <p className="mt-2 px-1 text-lg font-bold">Küchen-Tipps auf der Startseite?</p>
-            <ChoiceCards label="Tipps" value={profile.tips} onChange={(tips) => set({ tips })} options={TIP_LEVELS} />
-            <Group title="Mehr">
-              <Row href="/profil/vorlesen" icon={Volume2} title="Vorlesen" value={READ_MODES.find((m) => m.value === reading.mode)?.short}>
-                Stimme und Tempo
-              </Row>
-              <SwitchRow
-                icon={Sun}
-                title="Wochenend-Ideen"
-                hint="Freitags bis sonntags ab und zu eine Idee fürs Wochenende."
-                checked={profile.weekendIdeas}
-                onChange={(weekendIdeas) => set({ weekendIdeas })}
-              />
-              <Row href="/profil/kuechenhelfer" icon={Sparkles} title="Name & Stimme" value={name}>
-                {profile.helper.voice === "maennlich" ? "Männliche Stimme" : "Weibliche Stimme"}
-              </Row>
-              <Row href="/profil/pause" icon={Palmtree} title="Pause" value={profile.pause ? "An" : "Aus"}>
-                Im Urlaub halte ich mich raus
-              </Row>
-            </Group>
-          </>
-        );
-      }}
-    </SettingsPage>
-  );
-}
-
-/** /profil/darstellung: Einfach oder alles zeigen */
-export function DisplayView() {
-  return (
-    <SettingsPage title="Darstellung" question="Wie viel soll die App zeigen?">
-      {(profile, set) => <ChoiceCards label="Darstellung" value={profile.display} onChange={(display) => set({ display })} options={DISPLAY_MODES} />}
-    </SettingsPage>
-  );
 }
 
 /** /profil/essen: Veggie-Tage, mag / mag nicht und was sonst zum Essen gehört */

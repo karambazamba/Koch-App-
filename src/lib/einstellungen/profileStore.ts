@@ -5,7 +5,7 @@ import { migrateBases } from "../essen/bases";
 import { createLocalStore } from "../core/localStore";
 import { now } from "../core/now";
 import type { StorageKey } from "@/lib/core/storage";
-import { AVATAR_COLORS, HELPER_NAME_MAX, HOUSEHOLD_TYPES, deriveHouseholdType, PLAN_STYLES, APP_THEMES, HELPER_MODES, WEEKDAYS, LIMITS, newId, createEmptyProfile, wishDayOrder, syncPersons, type PersonRole, type KidAgeGroup, type WeekdayLunch, type Person, type MealTime, type WarmMealSchedule, type WeekRules, type WishDaySettings, type HelperArt, type AvatarColor, type HelperSettings, type NeverAgainEntry, type LikedIngredient, type HouseholdType, type MealClock, type PauseSettings, type WeatherSettings, type HouseholdProfile, type PlanStyle, type AppTheme, type HelperMode, DEFAULT_MEAL_CLOCK, voiceForArt } from "./profile";
+import { AVATAR_COLORS, DEFAULT_HELPER, HELPER_NAME_MAX, HOUSEHOLD_TYPES, deriveHouseholdType, PLAN_STYLES, APP_THEMES, HELPER_MODES, WEEKDAYS, LIMITS, newId, createEmptyProfile, wishDayOrder, syncPersons, type PersonRole, type KidAgeGroup, type WeekdayLunch, type Person, type MealTime, type WarmMealSchedule, type WeekRules, type WishDaySettings, type HelperArt, type AvatarColor, type HelperSettings, type NeverAgainEntry, type LikedIngredient, type HouseholdType, type MealClock, type PauseSettings, type WeatherSettings, type HouseholdProfile, type PlanStyle, type AppTheme, type HelperMode, DEFAULT_MEAL_CLOCK, voiceForArt } from "./profile";
 
 /** Stehen schon Gerichte im Wochenplan? (nur für die Migration auf v16, liest den Speicher direkt) */
 function hasPlannedMeals(): boolean {
@@ -120,7 +120,8 @@ export function migrateProfile(raw: unknown): HouseholdProfile | null {
     // Bis v4 lief die Woche immer Mo–So → Einkaufstag Montag.
     shoppingDay: pick(data.shoppingDay, WEEKDAYS, defaults.shoppingDay),
     // Begleitung: bis v6 ohne Namen → Lotte; bis v18 ohne Art/Farbe (aus dem Namen geraten)
-    helper: migrateHelper(data.helper),
+    // bis v6 gab es keine Begleitung mit Namen – damals hieß sie Lotte
+    helper: migrateHelper(data.helper, (data.version as number) < 7 ? "Lotte" : DEFAULT_HELPER.name),
     // Bis v7 keine Basis-Statistik und keine "Nie wieder"-Liste
     bases: migrateBases(data.bases),
     neverAgain: migrateNeverAgain(data.neverAgain),
@@ -227,14 +228,15 @@ function migrateNeverAgain(raw: unknown): NeverAgainEntry[] {
 }
 
 /**
- * Begleitung prüfen. Bis v6 ohne Namen → Lotte (wer Lotte hat, behält Lotte).
+ * Begleitung prüfen. Ohne Namen → `fallback` (Standard Mia; bis v6 Lotte –
+ * wer Lotte hat, behält Lotte).
  * Bis v18 ohne Art/Farbe: Art aus dem Namen (Mia/Lotte → Assistentin, Theo →
  * Assistent, sonst die bisher gewählte Stimme), Farbe Theo Nachtblau, sonst
  * Orange.
  */
-export function migrateHelper(raw: unknown): HelperSettings {
+export function migrateHelper(raw: unknown, fallback = DEFAULT_HELPER.name): HelperSettings {
   const h = (raw && typeof raw === "object" ? raw : {}) as Partial<HelperSettings>;
-  const name = (typeof h.name === "string" ? h.name.trim().slice(0, HELPER_NAME_MAX) : "") || "Lotte";
+  const name = (typeof h.name === "string" ? h.name.trim().slice(0, HELPER_NAME_MAX) : "") || fallback;
   const lower = name.toLowerCase();
   const art: HelperArt =
     h.art === "assistent" || h.art === "assistentin" ? h.art : lower === "mia" || lower === "lotte" ? "assistentin" : lower === "theo" ? "assistent" : h.voice === "weiblich" ? "assistentin" : "assistent";

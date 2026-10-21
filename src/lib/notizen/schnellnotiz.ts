@@ -26,7 +26,7 @@ const EMPTY: Schnellnotiz = { text: "", geaendert: null };
 const TITLE = "Schnellnotiz";
 
 /** Die Schnellnotiz-Notiz (angeheftet, `schnell`) */
-export const findSchnellnotiz = (notes: Note[]): Note | undefined => notes.find((n) => n.data.schnell);
+const findSchnellnotiz = (notes: Note[]): Note | undefined => notes.find((n) => n.data.schnell);
 
 const fromNote = (note: Note | undefined): Schnellnotiz | null => (note ? { text: note.data.text ?? "", geaendert: note.geaendert } : null);
 

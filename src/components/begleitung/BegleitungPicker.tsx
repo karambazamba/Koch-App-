@@ -113,7 +113,7 @@ export function BegleitungPicker({ value, onChange }: { value: HelperSettings; o
 }
 
 /** Assistentin / Assistent (Anrede und Stimme) */
-export function ArtChoice({ value, onChange }: { value: HelperArt; onChange: (art: HelperArt) => void }) {
+function ArtChoice({ value, onChange }: { value: HelperArt; onChange: (art: HelperArt) => void }) {
   return (
     <div className="flex gap-1 rounded-card bg-segment p-1" role="radiogroup" aria-label="Assistentin oder Assistent">
       {(["assistentin", "assistent"] as HelperArt[]).map((art) => (

@@ -13,7 +13,7 @@ type Detail = { mode?: HelperMode; ask?: string; filters?: string[] };
 
 const EVENT = "kuechenhelfer:oeffnen";
 
-/** Hört noch niemand zu (z. B. beim ersten Laden über /schnellkueche), wartet die Bitte hier */
+/** Hört noch niemand zu (z. B. direkt nach dem Laden), wartet die Bitte hier */
 let listeners = 0;
 let pending: Detail | null = null;
 

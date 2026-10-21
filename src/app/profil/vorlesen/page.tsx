@@ -1,7 +1,6 @@
-import { ReadingView } from "@/components/profile/settings/ReadingView";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Vorlesen" };
-
+// Gebündelt auf der Seite der Begleitung (Name, Art, Farbe, Stimme, Vorlesen, wie oft, Pause)
 export default function Page() {
-  return <ReadingView />;
+  redirect("/profil/kuechenhelfer");
 }

@@ -60,8 +60,11 @@ describe("Profil-Migration", () => {
     expect(p?.warmMeal.weekday).toBe("abends");
   });
 
-  it("Begleitung: ohne Namen Lotte, Theo wird Assistent in Nachtblau", () => {
-    expect(migrateHelper({}).name).toBe("Lotte");
+  it("Begleitung: ohne Namen Mia (alte Profile bis v6 Lotte), Theo wird Assistent in Nachtblau", () => {
+    expect(migrateHelper({}).name).toBe("Mia");
+    expect(migrateHelper({}, "Lotte").name).toBe("Lotte");
+    expect(migrateProfile({ version: 6, adults: 1, kids: 0, persons: [{ id: "a", role: "erwachsen", name: "Lisa" }] })?.helper.name).toBe("Lotte");
+    expect(migrateProfile({ version: 19, adults: 1, kids: 0, persons: [{ id: "a", role: "erwachsen", name: "Lisa" }], helper: { name: "" } })?.helper.name).toBe("Mia");
     expect(migrateHelper({ name: "Theo" })).toMatchObject({ art: "assistent", farbe: "nachtblau", voice: "maennlich" });
   });
 

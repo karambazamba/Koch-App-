@@ -16,6 +16,7 @@ import { DEFAULT_ROUTINE, WEEKDAY_SHORT, changeRoutine, setPreview, usePreview, 
 import { resetJetztTopics, setJetztOn, useJetzt } from "@/lib/jetzt/store";
 import { showToast } from "@/lib/core/toast";
 import { SwitchRow } from "./SettingsParts";
+import { useAssistantStatus } from "@/lib/lotte/client";
 
 const KOCHEN_MIN = [10, 15, 20, 30, 45];
 
@@ -26,6 +27,8 @@ export function DayRoutineView() {
   const [weekday, setWeekday] = useState<number | null>(preview?.weekday ?? null);
   const r = routine ?? DEFAULT_ROUTINE;
   const jetzt = useJetzt();
+  // „So tun, als wäre es …“ nur im Testmodus (oder solange eine Vorschau läuft)
+  const testMode = Boolean(useAssistantStatus(true)?.mock) || Boolean(preview);
   const anyHidden = jetzt.hidden.length > 0 || Object.keys(jetzt.weights).length > 0;
   const toggleDay = (d: number) => changeRoutine({ arbeitstage: r.arbeitstage.includes(d) ? r.arbeitstage.filter((x) => x !== d) : [...r.arbeitstage, d] });
   return (
@@ -99,6 +102,7 @@ export function DayRoutineView() {
           )}
         </ul>
 
+        {testMode && (
         <section className={`${CARD} flex flex-col gap-3 p-4`} aria-label="Zeit-Vorschau">
           <h2 className="text-[15px] font-extrabold text-muted">Zum Ausprobieren</h2>
           <p className="text-base font-semibold">So tun, als wäre es …</p>
@@ -127,6 +131,7 @@ export function DayRoutineView() {
           </div>
           <p className="text-sm text-muted">Ändert keine Daten – gilt nur, bis du die Vorschau beendest.</p>
         </section>
+        )}
         <p className="px-1 text-sm text-muted" role="status">
           Gilt sofort – nichts wird gelöscht.
         </p>

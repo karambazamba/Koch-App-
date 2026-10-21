@@ -7,7 +7,7 @@ Bei ALLEN Änderungen beachten.
 ist die Assistentin für Termine, Aufgaben, Essen und Einkauf – man gibt ihr
 Dinge ab wie einer guten Haushaltshilfe, mit der man ganz natürlich spricht.
 Lotte legt an und räumt wieder weg. Die Assistentin hat einen Namen, den die
-Familie wählt (Standard: Lotte).
+Familie wählt (Standard für neue Profile: Mia).
 
 Die Begleitung heißt nicht fest Lotte: Name, Art (Assistentin/Assistent),
 Stimme und Icon-Farbe sind Nutzereinstellungen; Standard-Auswahl Mia (Orange) /
@@ -20,7 +20,7 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   Oberfläche ist ruhig und leer; nichts steht herum, was nicht gebraucht wird.
 - Es gibt nur noch EIN Design. Zusätzliche Funktionen sind Bausteine, die
   sich in das neue Design einfügen (`src/lib/core/features.ts`, Einstellungen
-  → "Bausteine – Was <Name> noch kann"). Alles Neue startet als
+  → "Mehr Funktionen – Was <Name> noch kann"). Alles Neue startet als
   ausgeschalteter Baustein und wird nur bei Bedarf gezeigt.
 - Pro Bildschirm eine große Hauptsache, wenig Text, viel Weißraum. Leere
   Zustände freundlich und einladend, nie als Fehler.
@@ -32,7 +32,8 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   was die Kacheln nicht zeigen (außer mit Tipp), ohne Druck-Wörter.
   Gesten: Tippen = Eintrag, lange Drücken = Startseite bearbeiten, Wischen =
   Seite wechseln.
-- Notizen = eine Kachel (Schnellnotiz + Angeheftetes), keine Kladde mehr.
+- Notizen = eine Kachel (Angeheftetes + neueste), die Schnellnotiz ist eine
+  angeheftete Notiz „Schnellnotiz“, keine Kladde mehr.
   Kacheln: Wetter (DWD via Bright Sky/Open-Meteo, serverseitig, gecacht) und
   Pinnwand (Familien-Nachrichten, später geteilt über Konten, verschwinden
   nach 3 Tagen). Startseite wird direkt auf der Startseite bearbeitet
@@ -224,10 +225,10 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   Speichern). Testmodus: `mock.ts` + `mockAlltag.ts` + `mockShared.ts`.
   `onboarding/engine.ts` ist nur noch „neue Person“ im Chat.
 - „Kladde“ heißt im Code überall „Schnellnotiz“ (`schnellnotiz.ts`,
-  `Schnellnotiz.tsx`, Tokens `bg-schnellnotiz` …, Werkzeuge
-  `schnellnotiz_schreiben/_aufraeumen`, Op `set_schnellnotiz`); nur der
-  Speicher-Schlüssel bleibt `wasgibts.kladde`, und Lotte versteht „Kladde“
-  weiter.
+  `Schnellnotiz.tsx`, Werkzeuge `schnellnotiz_schreiben/_aufraeumen`, Op
+  `set_schnellnotiz`); seit v0.32 ist sie die angeheftete Notiz
+  „Schnellnotiz“ (`schnell: true`), `wasgibts.kladde` wird nur noch einmal
+  übernommen. Lotte versteht „Kladde“ weiter.
 - Tippflächen mindestens 44 × 44 px: kleine Knöpfe bekommen die Klasse `hit`
   (unsichtbare Fläche, Aussehen bleibt; `chipClass` hat sie schon).
 - Sicherheit: KI-Routen prüfen Zugangscode und Limits (`guard.ts`), Wetter hat
@@ -270,8 +271,7 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   es seit v0.25 nicht mehr. Auf allen Seiten dieselbe
   helle Mia-Leiste (`LotteBar`, statt des runden Knopfs).
 - Immer sichtbar: Startseite (siehe Leitbild 7), Chat mit Lotte,
-  Einkaufsliste, schlanke Einstellungen (Startseite & Bausteine, Name &
-  Stimme, Vorlesen, Ansicht, Familie, Daten & App) und beim ersten Start der
+  Einkaufsliste, schlanke Einstellungen (siehe v0.32) und beim ersten Start der
   Hallo-Bildschirm (siehe unten).
 - Erster Start (v0.27, ohne Profil auf `/` und `/profil`, nach "Neu
   anfangen" wieder): `HelloScreen` (`src/components/welcome/`) – alles mittig,
@@ -378,8 +378,8 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   morgen); Einkauf S / M (6 zum Abhaken) / L (10); Notizen (gelblich) S =
   Schnellnotiz 2 Zeilen, M + angeheftete Chips, L + 3 neueste; Wetter;
   Pinnwand 1/2/4; Vorrat S/M; Morgen M (`HomeTiles.tsx`, `MiniCards.tsx`).
-- Schnellnotiz (früher Kladde, Speicher weiter `wasgibts.kladde`; `Kladde.tsx`):
-  oben auf `/notizen` direkt beschreibbar (`SchnellnotizCard`), von der
+- Schnellnotiz (früher Kladde; seit v0.32 angeheftete Notiz, siehe dort):
+  oben auf `/notizen` „Schnell was notieren …“ (`QuickNoteCard`), von der
   Notizen-Kachel über ✎ als Fenster (`KladdeSheet`). Lotte versteht "Schreib
   in die Kladde/Schnellnotiz …", "Notier mir schnell …", "Räum meine
   Schnellnotiz auf" (`kladdeCommand`, `isKladdeTidyRequest`).
@@ -420,6 +420,50 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   (`QuickButton`), Schnell-Termin (`TerminQuickAdd`), Schnell-Aufgabe
   (`TaskQuickAdd`), einmaliger Hinweis nach dem Kennenlernen, Start-Kacheln
   aus dem Kennenlernen (`homeTilesFor`, in Standard-Reihenfolge).
+
+## Notizen, Einstellungen, Altlasten (v0.32, „Apple-mäßig“ Etappe 7–9)
+
+- Notizen (`NotesView`): oben weiße Karte „Schnell was notieren …“
+  (`QuickNoteCard`, Enter hängt eine Zeile an die Schnellnotiz, „Notiert“),
+  Filter Alle · Familie · Arbeit, Abschnitt „Angeheftet“ mit Pin-Symbol,
+  darunter „Alle Notizen“ im 2er-Raster, keine Zähler. Die gelbe
+  Schnellnotiz ist weg: `adoptSchnellnotiz()` (beim Start im KitchenHelper)
+  schreibt den Text aus `wasgibts.kladde` in eine angeheftete Notiz
+  „Schnellnotiz“ (📝, `NotizData.schnell`, bis 20000 Zeichen; gibt es sie
+  schon, wird angehängt) und leert den alten Speicher.
+  `load/save/changeSchnellnotiz` arbeiten auf dieser Notiz (Lotte-Werkzeuge
+  unverändert); im Notiz-Editor zusätzlich „<Name>, räum auf“ und „Leeren“.
+  Die Notizen-Kachel zeigt sie nicht doppelt. Tokens `schnellnotiz*` entfernt.
+  Test: `tests/notizen.test.ts`.
+- Pinnwand-Seite `/pinnwand` (`PinboardView`, Fenster in `PinSheets.tsx`):
+  Feld „Nachricht an alle …“ mit Mikrofon/Senden rechts, weiße Karten,
+  angeheftete zuerst mit hellorangem Rand; das Kachel-Label führt dorthin.
+- Einstellungen (`FamilyOverview`): oben zwei große Karten – Familie
+  (Personen-Kreise, „3 Personen · Familie mit Kindern“ → `/profil/familie`)
+  und Begleitung (Avatar, Name, Anrede → `/profil/kuechenhelfer`); Gruppe
+  „Startseite“ (Startseite bearbeiten · Tagesablauf · Wetter-Ort · Sport ·
+  Mehr Funktionen), Gruppe „Essen“ (Kochstil · Essen & Vorlieben · Feste Tage
+  · Rezepte · Vorrat, je nach Baustein), dann Darstellung (Automatisch · Hell
+  · Dunkel) und eine Gruppe ohne Überschrift (Mails · Daten & App). Zeilen
+  heißen wie ihre Seiten, keine Zähler.
+- Seite der Begleitung (`MiaView`, `/profil/kuechenhelfer`, Titel = Name):
+  Name & Art (`BegleitungPicker`), Farbe (`FarbeChoice` mit Icon-Hinweis),
+  Vorlesen/Stimme/Tempo (`VoiceSettings`), „Wie oft melde ich mich?“ Selten ·
+  Normal · Gern (`helperMode` locker/normal/dranbleiben), Tipps (mit
+  Baustein), Wochenend-Ideen, Pause. `/profil/lotte`, `/profil/vorlesen` und
+  `/profil/farbe` leiten dorthin. „Bausteine“ heißt überall „Mehr
+  Funktionen“ (`/profil/bausteine`). Tagesablauf-Seite heißt „Tagesablauf“;
+  „So tun, als wäre es …“ nur im Testmodus (oder während einer Vorschau).
+  Der Baustein „Wie oft melde ich mich?“ (`modi`) ist aus der Liste
+  genommen – die Auswahl steht fest auf der Seite der Begleitung (ein
+  gespeichertes `modi` stört nicht).
+- Altlasten: `/schnellkueche` und `/ideen` → Essen-Seite, `/profil/ansicht`
+  und `/profil/darstellung` → Einstellungen, `/profil/wochenende` →
+  Kochstil; `/api/kuechenhelfer`, `SpontanRedirect`, `AppearanceView`,
+  `useRatingCandidate`, `InstantSettingsPage`, Wochenend-/Darstellungs-Auswahl
+  entfernt; `HomeCustomizer` heißt `TilePicker`. Ohne Namen heißt die
+  Begleitung jetzt Mia (`migrateHelper(raw, fallback)`); nur Profile bis v6
+  behalten Lotte.
 
 ## Eintragen, Kalender, Essen, Rezepte (v0.31, „Apple-mäßig“ Etappe 3–6)
 
@@ -713,7 +757,8 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   Gesprochene Inhalte → Stimmen → Deutsch; `takeVoiceHint`,
   `wasgibts.stimmenhinweis`). Stimme frei wählbar unter `/profil/vorlesen`;
   wechselt die Art, wird eine fest gewählte Stimme auf "Passend" gesetzt.
-- Einstellungen ganz oben (`BegleitungSettings.tsx`): DEINE BEGLEITUNG – Name
+- (Historie – seit v0.32 alles auf der Seite der Begleitung, `MiaView`.)
+  Einstellungen ganz oben (`BegleitungSettings.tsx`): DEINE BEGLEITUNG – Name
   (mit Gesicht) › · Ist: Assistentin | Assistent · Stimme › · Farbe ›
   (`/profil/farbe`) · Vorlesen an/aus (an = automatisch), Hinweis "Oder
   einfach sagen: ‚Ich nenn dich ab jetzt Frieda.‘"; DARSTELLUNG – Automatisch
@@ -899,7 +944,8 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
 - Unerledigte einmalige Aufgaben mit Tag rutschen still auf heute: kein
   "überfällig", nur "von gestern"/"von Montag"/"von letzter Woche".
   Vergangene Termine und Serien-Tage verschwinden leise.
-- Seiten (`HomePager`): Leiste "Woche · Heute · Essen", Wechsel per Tipp
+- Seiten (`HomePager`): Leiste "Woche · Heute · Essen" (seit v0.31 „Kalender ·
+  Heute · Essen“), Wechsel per Tipp
   oder Wischen (nicht in Feldern/`data-no-swipe`), `?seite=woche|essen` per
   `router.replace`, Scrollhöhe je Seite gemerkt, keine Seiten-Punkte.
   - Heute (`TodayPage`): "Guten Morgen/Hallo/Guten Abend, <Name>." (bis 11/

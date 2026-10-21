@@ -4,23 +4,12 @@ import { useState } from "react";
 import { Info, Plus, X } from "lucide-react";
 import { CARD, INPUT, INPUT_BASE, SECTION_TITLE, SUBTLE, buttonClass, chipClass, tileClass } from "@/components/ui/styles";
 import { ProfileEditPage } from "@/components/profile/ProfileEditPage";
-import {
-  FavoritesEditor,
-  NOTE,
-  STANDARD_WEEK_HINT,
-  WarmMealEditor,
-  WeekRulesEditor,
-  WishDayEditor,
-  tooManyDays,
-  withWishDay,
-  HelperEditor,
-} from "@/components/profile/editors";
+import { FavoritesEditor, NOTE, STANDARD_WEEK_HINT, WarmMealEditor, WeekRulesEditor, WishDayEditor, tooManyDays, withWishDay } from "@/components/profile/editors";
 import { NumberStepper } from "@/components/form/NumberStepper";
 import { sortedBases } from "@/lib/essen/bases";
 import { ChoiceCards } from "@/components/profile/settings/SettingsParts";
 import { LIKE_WEIGHTS, likeLevel, sortedLikes, withLikes, withoutLike } from "@/lib/essen/likes";
-import { saveSpeechSettings } from "@/lib/lotte/speech";
-import { COOKING_STYLES, PLAN_STYLES, MIX_SUGGESTS, helperName, HEALTH_TIP_LEVELS, HOUSEHOLD_TYPES, hasKids, wishDayActive, NEW_DISHES_OPTIONS, WEEKDAYS, WEEKEND_STYLES, planningWeekLabel, standardWeekDays, type KitchenMachine } from "@/lib/einstellungen/profile";
+import { COOKING_STYLES, PLAN_STYLES, MIX_SUGGESTS, helperName, HEALTH_TIP_LEVELS, HOUSEHOLD_TYPES, hasKids, wishDayActive, NEW_DISHES_OPTIONS, WEEKDAYS, planningWeekLabel, standardWeekDays, type KitchenMachine } from "@/lib/einstellungen/profile";
 import { now } from "@/lib/core/now";
 
 export function FavoritesEditView() {
@@ -61,23 +50,6 @@ export function WarmMealEditView() {
             ))}
           </div>
         </>
-      )}
-    </ProfileEditPage>
-  );
-}
-
-export function HelperEditView() {
-  return (
-    <ProfileEditPage title="Deine Begleitung" intro="Wie ich heiße, wie ich klinge und welche Farbe ich habe.">
-      {(draft, setDraft) => (
-        <HelperEditor
-          helper={draft.helper}
-          onChange={(helper) => {
-            // Andere Art → passende Stimme statt der fest gewählten
-            if (helper.art !== draft.helper.art) saveSpeechSettings({ voice: "" });
-            setDraft((d) => ({ ...d, helper }));
-          }}
-        />
       )}
     </ProfileEditPage>
   );
@@ -438,67 +410,6 @@ const KITCHEN_MACHINES: { value: KitchenMachine; label: string; hint: string }[]
   { value: "keine", label: "Klassisch", hint: "Herd, Ofen, Pfanne" },
   { value: "thermomix", label: "Küchenmaschine mit Kochfunktion", hint: "z. B. Thermomix – Schritte mit Zeit, Temperatur und Stufe" },
 ];
-
-/** "Wie seid ihr am Wochenende?" + Grill-Idee bei gutem Wetter */
-export function WeekendEditView() {
-  return (
-    <ProfileEditPage title="Wochenend-Stil" intro="Wie viel ich am Wochenende plane – von gar nicht bis wie unter der Woche.">
-      {(draft, setDraft) => (
-        <>
-          <p className="text-lg font-bold">Wie seid ihr am Wochenende?</p>
-          <div className="flex flex-col gap-2" role="radiogroup" aria-label="Wochenend-Stil">
-            {WEEKEND_STYLES.map((w) => (
-              <button
-                key={w.value}
-                type="button"
-                role="radio"
-                aria-checked={draft.weekendStyle === w.value}
-                onClick={() => setDraft((d) => ({ ...d, weekendStyle: w.value }))}
-                className={tileClass(draft.weekendStyle === w.value)}
-              >
-                <span className="flex flex-col self-stretch px-2 text-left">
-                  <span className="text-base font-bold">
-                    {w.emoji} {w.label}
-                  </span>
-                  <span className="text-sm text-muted">{w.hint}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-          <div className={`${CARD} flex flex-col gap-3 p-4`}>
-            <label className="flex items-center gap-3">
-              <span className="min-w-0 flex-1">
-                <span className="block font-bold">Grill-Idee bei gutem Wetter</span>
-                <span className="block text-sm text-muted">
-                  Freitags schaue ich in die Wettervorhersage (Open-Meteo, nur grob per Postleitzahl) und schlage höchstens einmal Grillen vor.
-                </span>
-              </span>
-              <input
-                type="checkbox"
-                role="switch"
-                checked={draft.weather.consent}
-                onChange={(e) => setDraft((d) => ({ ...d, weather: { ...d.weather, consent: e.target.checked } }))}
-                className="h-6 w-6 shrink-0 accent-accent"
-                aria-label="Grill-Idee bei gutem Wetter"
-              />
-            </label>
-            {draft.weather.consent && (
-              <input
-                inputMode="numeric"
-                maxLength={5}
-                value={draft.weather.postcode}
-                onChange={(e) => setDraft((d) => ({ ...d, weather: { ...d.weather, postcode: e.target.value.replace(/\D/g, "").slice(0, 5) } }))}
-                placeholder="Postleitzahl, z. B. 10115"
-                aria-label="Postleitzahl"
-                className={INPUT}
-              />
-            )}
-          </div>
-        </>
-      )}
-    </ProfileEditPage>
-  );
-}
 
 /** Pause-Modus: an/aus, ab wann, optional bis wann */
 export function PauseEditView() {
