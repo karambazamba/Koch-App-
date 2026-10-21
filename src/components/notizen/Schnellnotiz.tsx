@@ -8,7 +8,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { PenLine } from "lucide-react";
-import { Sheet } from "@/components/plan/Sheet";
+import { Sheet } from "@/components/ui/Sheet";
 import { buttonClass } from "@/components/ui/styles";
 import { changeSchnellnotiz, saveSchnellnotiz, useSchnellnotiz } from "@/lib/notizen";
 import { now } from "@/lib/core/now";
@@ -37,7 +37,7 @@ function Actions({ name, text, onTidy }: { name: string; text: string; onTidy?: 
         }}
         className={buttonClass("secondary", "sm")}
       >
-        ✨ {name}, räum auf
+        {name}, räum auf
       </button>
       <button type="button" onClick={() => showDeleted(pushUndo("das Leeren der Schnellnotiz", changeSchnellnotiz("")), "Geleert")} className={buttonClass("ghost", "sm")}>
         Leeren
@@ -53,10 +53,10 @@ export function SchnellnotizCard({ name }: { name: string }) {
   const text = schnellnotiz?.text ?? "";
   const saved = text ? savedLabel(schnellnotiz?.geaendert, typed) : "";
   return (
-    <section id="schnellnotiz" className="flex scroll-mt-24 flex-col gap-2 rounded-2xl border border-schnellnotiz-line bg-schnellnotiz p-4" aria-label="Schnellnotiz">
+    <section id="schnellnotiz" className="flex scroll-mt-24 flex-col gap-2 rounded-card border border-schnellnotiz-line bg-schnellnotiz p-4" aria-label="Schnellnotiz">
       <div className="flex items-center gap-2">
         <PenLine className="h-4 w-4 text-schnellnotiz-ink" strokeWidth={2} aria-hidden />
-        <h2 className="flex-1 text-xs font-bold uppercase tracking-wider text-schnellnotiz-ink">Schnellnotiz</h2>
+        <h2 className="flex-1 text-[15px] font-extrabold text-schnellnotiz-ink">Schnellnotiz</h2>
         {saved && (
           <span className="text-xs text-muted" role="status">
             gespeichert · {saved}
@@ -121,7 +121,7 @@ export function SchnellnotizSheet({ name, onClose }: { name: string; onClose: ()
           }}
           placeholder="Schnell was aufschreiben …"
           aria-label="Schnellnotiz"
-          className="min-h-40 w-full flex-1 resize-none rounded-2xl border border-schnellnotiz-line bg-schnellnotiz p-4 text-base leading-relaxed placeholder:text-muted/70 focus:outline-none"
+          className="min-h-40 w-full flex-1 resize-none rounded-card border border-schnellnotiz-line bg-schnellnotiz p-4 text-base leading-relaxed placeholder:text-muted/70 focus:outline-none"
         />
         <div className="flex flex-wrap items-center gap-2">
           <Actions name={name} text={text} onTidy={onClose} />

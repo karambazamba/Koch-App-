@@ -50,7 +50,7 @@ export function AccessCodeCard({ onLater }: { onLater: () => void }) {
   );
 }
 
-/** Kleiner Lautsprecher an Lottes Nachricht: liest vor, nochmal Tippen stoppt */
+/** Klein unter Lottes Antwort: "Vorlesen" (nochmal Tippen stoppt) */
 export function SpeakButton({ speaking, onClick }: { speaking: boolean; onClick: () => void }) {
   return (
     <button
@@ -58,9 +58,10 @@ export function SpeakButton({ speaking, onClick }: { speaking: boolean; onClick:
       onClick={onClick}
       aria-pressed={speaking}
       aria-label={speaking ? "Vorlesen stoppen" : "Vorlesen"}
-      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition active:scale-95 ${speaking ? "bg-accent-soft text-accent-strong" : "text-muted"}`}
+      className={`hit inline-flex h-7 items-center gap-1 px-1 text-[13px] font-semibold transition active:opacity-60 ${speaking ? "text-accent-strong" : "text-muted"}`}
     >
-      {speaking ? <Square className="h-4 w-4 fill-current" strokeWidth={2} aria-hidden /> : <Volume2 className="h-5 w-5" strokeWidth={2} aria-hidden />}
+      {speaking ? <Square className="h-3 w-3 fill-current" strokeWidth={2} aria-hidden /> : <Volume2 className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />}
+      {speaking ? "Stopp" : "Vorlesen"}
     </button>
   );
 }

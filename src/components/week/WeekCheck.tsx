@@ -221,7 +221,7 @@ function WeekCheckForm({
               </p>
             </div>
             {!wishIsActive(plan) && (
-              <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+              <p className="rounded-field bg-danger-soft px-3 py-2 text-sm font-semibold text-danger">
                 Am {plan.wish.weekday} seid ihr unterwegs – der Wunsch wird diese Woche
                 nicht eingeplant.
               </p>

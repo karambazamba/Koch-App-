@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowUp, CircleHelp, Mic, MicOff, Plus, Square, X } from "lucide-react";
-import { useBackCloses } from "@/lib/core/useBackCloses";
-import { ICON_BUTTON, INPUT_BASE, chipClass, quickDot } from "@/components/ui/styles";
+import { ArrowUp, CircleHelp, Mic, MicOff, Plus, Square } from "lucide-react";
+import { Sheet } from "@/components/ui/Sheet";
+import { INPUT_BASE, chipClass, PAGE_PLUS, TILE_PLUS_DOT } from "@/components/ui/styles";
 import { parseQuickAdd, type QuickAddUnsure } from "@/lib/einkauf/quickAdd";
 import { addManualItem, removeManualItems, sectionFor, setItemShop, type ShoppingSettings } from "@/lib/einkauf/shoppingList";
 import { useKeyboardInset } from "@/lib/core/useMobileKeyboard";
@@ -44,12 +44,12 @@ export function QuickAddButton({
         className={`flex h-11 w-11 items-center justify-center ${className}`}
       >
         {quick ? (
-          <span className={quickDot()}>
-            <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
+          <span className={TILE_PLUS_DOT}>
+            <Plus className="h-3.5 w-3.5" strokeWidth={2.75} aria-hidden />
           </span>
         ) : (
-          <span className={`flex items-center justify-center rounded-full bg-accent text-on-accent shadow-sm transition active:scale-95 ${small ? "h-7 w-7" : "h-9 w-9"}`}>
-            <Plus className={small ? "h-4 w-4" : "h-5 w-5"} strokeWidth={2.75} aria-hidden />
+          <span className={small ? TILE_PLUS_DOT : PAGE_PLUS}>
+            <Plus className={small ? "h-3.5 w-3.5" : "h-5 w-5"} strokeWidth={2.75} aria-hidden />
           </span>
         )}
       </button>
@@ -68,18 +68,59 @@ export function QuickAddButton({
   );
 }
 
-function QuickAddSheet({
+function QuickAddSheet({ weekStart, settings, onClose }: { weekStart: string; settings: ShoppingSettings; onClose: (addedIds: string[]) => void }) {
+  const inset = useKeyboardInset();
+  const added = useRef<string[]>([]);
+  return (
+    <Sheet title="Auf die Liste" onClose={() => onClose(added.current)} inset={inset}>
+      <QuickAddBody weekStart={weekStart} settings={settings} onAdded={onClose} onChange={(ids) => (added.current = ids)} autoFocus />
+    </Sheet>
+  );
+}
+
+/** Leere Einkaufsliste: großes Feld „Was fehlt?“ mit Mikrofon und „Oft gekauft“ direkt auf der Seite */
+export function ShoppingAddField({ weekStart, settings }: { weekStart: string; settings: ShoppingSettings }) {
+  return (
+    <section className="flex flex-col gap-3" aria-label="Was fehlt?">
+      <QuickAddBody
+        weekStart={weekStart}
+        settings={settings}
+        big
+        onAdded={(added) => added.length && pushUndo(`${sachen(added.length)} auf der Liste`, () => removeManualItems(weekStart, added))}
+      />
+    </section>
+  );
+}
+
+function QuickAddBody({
   weekStart,
   settings,
-  onClose,
+  onAdded,
+  onChange,
+  autoFocus = false,
+  big = false,
 }: {
   weekStart: string;
   settings: ShoppingSettings;
-  onClose: (addedIds: string[]) => void;
+  /** Alles erkannt bzw. „Fertig“ */
+  onAdded: (addedIds: string[]) => void;
+  onChange?: (addedIds: string[]) => void;
+  autoFocus?: boolean;
+  big?: boolean;
 }) {
-  const inset = useKeyboardInset();
   const [input, setInput] = useState("");
-  const [added, setAdded] = useState<string[]>([]);
+  const [added, setAddedState] = useState<string[]>([]);
+  const setAdded = (next: string[] | ((a: string[]) => string[])) =>
+    setAddedState((a) => {
+      const v = typeof next === "function" ? next(a) : next;
+      onChange?.(v);
+      return v;
+    });
+  const finish = (ids: string[]) => {
+    onAdded(ids);
+    setAdded([]);
+    setPicked([]);
+  };
   const [unsure, setUnsure] = useState<QuickAddUnsure[]>([]);
   const [hint, setHint] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -110,7 +151,7 @@ function QuickAddSheet({
     const all = [...added, ...ids];
     setAdded(all);
     // Alles erkannt → kurz bestätigen (draußen) und schließen
-    if (result.unsure.length === 0 && unsure.length === 0) return onClose(all);
+    if (result.unsure.length === 0 && unsure.length === 0) return finish(all);
     setUnsure((u) => [...u, ...result.unsure]);
     setHint("");
   };
@@ -121,7 +162,7 @@ function QuickAddSheet({
     const rest = unsure.filter((u) => u !== item);
     setAdded(all);
     setUnsure(rest);
-    if (rest.length === 0) onClose(all);
+    if (rest.length === 0) finish(all);
   };
 
   // Sheet zu → laufende Aufnahme nicht mehr abschicken
@@ -154,36 +195,8 @@ function QuickAddSheet({
     }
   };
 
-  // Escape schließt; Seite dahinter nicht mitscrollen
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose(added);
-    document.addEventListener("keydown", onKey);
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = overflow;
-    };
-  }, [onClose, added]);
-
-  // Zurück schließt wie ✕
-  useBackCloses(() => onClose(added));
-
   return (
-    <div className="fixed inset-0 z-40" role="dialog" aria-modal aria-label="Auf die Einkaufsliste">
-      <button type="button" aria-label="Schließen" onClick={() => onClose(added)} className="absolute inset-0 bg-black/25" />
-      <div
-        className="safe-bottom absolute inset-x-0 mx-auto flex w-full max-w-lg flex-col gap-3 rounded-t-3xl bg-background px-4 pt-2 shadow-sheet"
-        style={{ bottom: inset }}
-      >
-        <span className="mx-auto h-1 w-10 rounded-full bg-stone-300" aria-hidden />
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xl font-extrabold tracking-tight">Auf die Liste</h2>
-          <button type="button" onClick={() => onClose(added)} aria-label="Schließen" className={ICON_BUTTON}>
-            <X className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-          </button>
-        </div>
-
+    <>
         {added.length > 0 && unsure.length > 0 && (
           <p className="text-sm font-semibold text-accent-strong" role="status">
             {sachen(added.length)} hinzugefügt ✓
@@ -208,7 +221,7 @@ function QuickAddSheet({
                     </button>
                   ))}
             </div>
-            <button type="button" onClick={() => onClose(added)} className="self-start text-sm font-semibold text-muted underline">
+            <button type="button" onClick={() => finish(added)} className="self-start text-sm font-semibold text-muted underline">
               Fertig
             </button>
           </div>
@@ -255,16 +268,16 @@ function QuickAddSheet({
         >
           <input
             ref={inputRef}
-            autoFocus
+            autoFocus={autoFocus}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             enterKeyHint="done"
             aria-label="Was soll auf die Liste?"
-            placeholder={speech.listening ? speech.interim || "Ich höre zu …" : "z. B. Milch, Windeln, Müsli von Rossmann"}
-            className={`${INPUT_BASE} h-12 min-w-0 flex-1 px-4`}
+            placeholder={speech.listening ? speech.interim || "Ich höre zu …" : big ? "Was fehlt?" : "z. B. Milch, Windeln, Müsli von Rossmann"}
+            className={`${INPUT_BASE} ${big ? "h-14 text-lg" : "h-12"} min-w-0 flex-1 px-4`}
           />
           {input.trim() ? (
-            <button type="submit" aria-label="Hinzufügen" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-on-accent shadow-sm active:scale-95">
+            <button type="submit" aria-label="Hinzufügen" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-field bg-accent text-on-accent shadow-sm active:scale-95">
               <ArrowUp className="h-5 w-5" strokeWidth={2.5} aria-hidden />
             </button>
           ) : (
@@ -287,7 +300,6 @@ function QuickAddSheet({
             </button>
           )}
         </form>
-      </div>
-    </div>
+    </>
   );
 }

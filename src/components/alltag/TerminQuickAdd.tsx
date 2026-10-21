@@ -9,7 +9,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { CalendarDays, Clock, Mic, Square } from "lucide-react";
-import { Sheet } from "@/components/plan/Sheet";
+import { Sheet } from "@/components/ui/Sheet";
 import { INPUT_BASE, LABEL, buttonClass, chipClass } from "@/components/ui/styles";
 import { createEntry, type Room } from "@/lib/core/entries";
 import { sanitizeEntry, upsertEntry, type CalendarEntry, type Reminder } from "@/lib/aufgaben/model";
@@ -180,7 +180,7 @@ export function TerminQuickAdd({ onClose, defaultDate }: { onClose: () => void; 
         </div>
 
         {askTask ? (
-          <div className="flex flex-col gap-2 rounded-2xl bg-accent-soft p-3" role="status">
+          <div className="flex flex-col gap-2 rounded-card bg-accent-soft p-3" role="status">
             <p className="text-[15px] text-accent-strong">Ohne Uhrzeit? Dann lieber als Aufgabe.</p>
             <button type="button" onClick={saveAsTask} className={buttonClass("primary", "sm")}>
               Als Aufgabe speichern

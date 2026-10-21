@@ -4,7 +4,8 @@
 // andere: Abschnitts-Titel, weiße Karten, ein Link zur ausführlichen Seite.
 
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { CakeSlice, Carrot, ChevronRight } from "lucide-react";
+import { IconBadge } from "@/components/ui/IconBadge";
 import { CARD } from "@/components/ui/styles";
 import { useFeature } from "@/lib/core/features";
 import { useRecipes } from "@/lib/essen/cookbook";
@@ -29,9 +30,7 @@ export function BausteinSections() {
       {spontanOn && (
         <section className={SECTION} aria-label="Spontan kochen">
           <button type="button" onClick={() => openHelper("spontan")} className={`${CARD} flex items-center gap-3 p-4 text-left active:scale-[0.99]`}>
-            <span className="text-2xl" aria-hidden>
-              🥕
-            </span>
+            <IconBadge icon={Carrot} />
             <span className="min-w-0 flex-1">
               <span className="block text-base font-bold">Spontan kochen</span>
               <span className="block text-sm text-muted">Ideen aus dem, was da ist</span>
@@ -70,9 +69,7 @@ export function BausteinSections() {
       {bakingOn && (
         <section className={SECTION} aria-label="Backen">
           <Link href="/kochbuch?filter=backen" className={`${CARD} flex items-center gap-3 p-4`}>
-            <span className="text-2xl" aria-hidden>
-              🧁
-            </span>
+            <IconBadge icon={CakeSlice} />
             <span className="min-w-0 flex-1">
               <span className="block text-base font-bold">Zusammen backen</span>
               <span className="block text-sm text-muted">Backrezepte mit Timer und Kinder-Schritten</span>

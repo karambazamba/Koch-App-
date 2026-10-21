@@ -1,0 +1,36 @@
+// Kurzer Name einer Seite für den Zurück-Text im Seitenkopf ("‹ Rezepte").
+// Unbekannte Seiten heißen schlicht "Zurück".
+
+const PAGES: Record<string, string> = {
+  "/aufgaben": "Aufgaben",
+  "/einkaufsliste": "Einkauf",
+  "/kochbuch": "Rezepte",
+  "/kochbuch/rezept": "Rezept",
+  "/kochbuch/kochen": "Kochen",
+  "/notizen": "Notizen",
+  "/sport": "Sport",
+  "/tag": "Tag",
+  "/vorrat": "Vorrat",
+  "/wetter": "Wetter",
+  "/wochenplan": "Wochenplan",
+  "/woche/check": "Wochenplan",
+  "/profil": "Einstellungen",
+  "/profil/familie": "Familie",
+  "/profil/essen": "Essen & Vorlieben",
+  "/profil/kochstil": "Kochstil",
+  "/profil/lotte": "Begleitung",
+  "/profil/kuechenhelfer": "Begleitung",
+  "/profil/bausteine": "Mehr Funktionen",
+  "/profil/tagesablauf": "Tagesablauf",
+  "/profil/daten": "Daten & App",
+  "/profil/produkte": "Produkte & Läden",
+};
+
+const TABS: Record<string, string> = { woche: "Woche", essen: "Essen" };
+
+export function pageLabel(url: string | null): string {
+  if (!url) return "Zurück";
+  const [path, query = ""] = url.split("?");
+  if (path === "/") return TABS[new URLSearchParams(query).get("seite") ?? ""] ?? "Heute";
+  return PAGES[path] ?? "Zurück";
+}

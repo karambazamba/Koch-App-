@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Sheet } from "@/components/plan/Sheet";
+import { Sheet } from "@/components/ui/Sheet";
 import { tileClass } from "@/components/ui/styles";
 import { unlockPlanning, type UnlockChoice } from "@/lib/essen/planUnlock";
 import type { HouseholdProfile } from "@/lib/einstellungen/profile";

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowUp, Check, Trash2 } from "lucide-react";
+import { ArrowUp, Carrot, Check, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
-import { Sheet } from "@/components/plan/Sheet";
+import { Sheet } from "@/components/ui/Sheet";
 import { Segmented } from "@/components/ui/Segmented";
 import { CARD, INPUT_BASE, PAGE_MAIN, SECTION_TITLE, buttonClass, chipClass } from "@/components/ui/styles";
 import { openHelper } from "@/lib/lotte/open";
@@ -69,7 +69,7 @@ export function PantryView() {
           label="Ort"
           value={place}
           onChange={setPlace}
-          options={PANTRY_PLACES.map((p) => ({ value: p.value, label: `${p.short} (${pantry.filter((i) => i.place === p.value).length})` }))}
+          options={PANTRY_PLACES.map((p) => ({ value: p.value, label: p.short }))}
         />
         <section className={`${CARD} flex flex-col gap-3 p-4`} aria-label={label.label}>
           <h2 className={SECTION_TITLE}>
@@ -111,7 +111,7 @@ export function PantryView() {
               enterKeyHint="done"
               className={`${INPUT_BASE} h-12 min-w-0 flex-1 px-4`}
             />
-            <button type="submit" disabled={!input.trim()} aria-label="Eintragen" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-on-accent shadow-sm active:scale-95 disabled:opacity-40">
+            <button type="submit" disabled={!input.trim()} aria-label="Eintragen" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-field bg-accent text-on-accent shadow-sm active:scale-95 disabled:opacity-40">
               <ArrowUp className="h-5 w-5" strokeWidth={2.5} aria-hidden />
             </button>
           </form>
@@ -119,7 +119,7 @@ export function PantryView() {
         </section>
 
         <button type="button" onClick={() => openHelper("spontan")} className={`${buttonClass("primary", "lg")} w-full`}>
-          <span aria-hidden>🥕</span>
+          <Carrot className="h-5 w-5" strokeWidth={2.25} aria-hidden />
           Spontan kochen mit {name}
         </button>
       </main>

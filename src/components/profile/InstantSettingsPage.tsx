@@ -45,7 +45,7 @@ export function InstantSettingsPage({
         <p className="px-1 text-base text-muted">{intro}</p>
         {children(profile, set)}
         <p className="px-1 text-sm text-muted" role="status">
-          Wirkt sofort ✓
+          Wirkt sofort
         </p>
       </main>
     </div>

@@ -72,7 +72,8 @@ export type JetztInput = {
   /** Kein Gericht, aber eins wäre dran (Ideen anbieten) */
   dinnerFree: boolean;
   birthdays: { title: string; date: string; when: "heute" | "morgen" }[];
-  sport: { left: number; today: string | null } | null;
+  /** Heute geplantes Training (ohne Zähler) */
+  sport: { today: string } | null;
   /** Laden mit den meisten offenen Sachen (mindestens 2) */
   shop: { shop: string; names: string[] } | null;
   timer: { name: string; left: string } | null;
@@ -207,7 +208,7 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
     add({ id: `geburtstag:${b.date}:${b.title}`, kind: "geburtstag", title: name ? `${when} hat ${name} Geburtstag 🎂` : `${when}: ${short(b.title)} 🎂`, detail: b.when === "heute" ? "Vielleicht kurz anrufen?" : "Noch Zeit für eine Kleinigkeit", score: b.when === "heute" ? 82 : 58, target: { href: `/tag?datum=${b.date}` }, gentle: true, night: true });
   }
 
-  if (x.sport && x.sport.left > 0 && !night) add({ id: `sport:${x.today}`, kind: "sport", title: `Noch ${x.sport.left} ${x.sport.left === 1 ? "Training" : "Trainings"} bis zum Wochenziel 🔥`, detail: x.sport.today ?? "Lust auf eine Runde?", score: x.sport.today ? 44 : 30, target: { href: "/sport" }, tile: "sport", gentle: true });
+  if (x.sport && !night) add({ id: `sport:${x.today}`, kind: "sport", title: x.sport.today, detail: "Packliste und Wetter ansehen", score: 44, target: { href: "/sport" }, tile: "sport", gentle: true });
 
   // Nachmittags: auf dem Heimweg beim Laden vorbei?
   if (x.shop && x.shop.names.length >= 2 && x.minutes >= 15 * 60 && x.minutes < 19 * 60 + 30)

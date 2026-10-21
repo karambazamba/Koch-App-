@@ -5,9 +5,9 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Plus } from "lucide-react";
+import { PagePlus } from "@/components/ui/QuickButton";
 import { PageHeader } from "@/components/PageHeader";
-import { CARD, PAGE_MAIN, buttonClass } from "@/components/ui/styles";
+import { CARD, PAGE_MAIN } from "@/components/ui/styles";
 import { itemsForDay } from "@/lib/aufgaben/model";
 import { useEntries } from "@/lib/aufgaben/store";
 import { addDays, useToday, toIsoDate } from "@/lib/core/now";
@@ -35,7 +35,7 @@ export function DayView() {
   const dish = date ? dishOf(meals?.get(date)) : null;
   return (
     <>
-      <PageHeader title={title} backHref="/?seite=woche" />
+      <PageHeader title={title} backHref="/?seite=woche" action={date ? <PagePlus label="Neu für diesen Tag" onClick={() => setAdding(true)} /> : undefined} />
       <main className={PAGE_MAIN}>
         {!entries || !date ? (
           <div className={`${CARD} h-40 animate-pulse`} />
@@ -58,10 +58,6 @@ export function DayView() {
                 </button>
               )}
             </section>
-            <button type="button" onClick={() => setAdding(true)} className={`${buttonClass("secondary")} self-start`}>
-              <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-              Neu für diesen Tag
-            </button>
           </>
         )}
       </main>

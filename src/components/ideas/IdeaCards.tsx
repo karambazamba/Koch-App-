@@ -62,7 +62,7 @@ export function IdeaCards({
         const body = (
           <>
             <span
-              className={`flex shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-accent-soft to-accent/30 ${dense ? "h-9 w-9 text-xl" : "h-12 w-12 text-[1.75rem]"}`}
+              className={`flex shrink-0 items-center justify-center rounded-field bg-linear-to-br from-accent-soft to-accent/30 ${dense ? "h-9 w-9 text-xl" : "h-12 w-12 text-[1.75rem]"}`}
               aria-hidden
             >
               {dishEmoji(idea.title, idea.category)}
@@ -72,10 +72,10 @@ export function IdeaCards({
               <span className={`flex min-w-0 items-center gap-1 text-sm text-muted ${dense ? "leading-tight" : ""}`}>
                 {idea.note && <span className="truncate font-semibold text-accent-strong">{idea.note} ·</span>}
                 {meta.time && <span className="shrink-0">{meta.time} ·</span>}
-                <span className={`truncate ${meta.ready ? "font-semibold text-emerald-700" : ""}`}>{meta.stock}</span>
+                <span className={`truncate ${meta.ready ? "font-semibold text-good-ink" : ""}`}>{meta.stock}</span>
               </span>
             </span>
-            {(idea.recipeId || onOpen) && <ChevronRight className="h-4 w-4 shrink-0 text-stone-400" strokeWidth={2.25} aria-hidden />}
+            {(idea.recipeId || onOpen) && <ChevronRight className="h-4 w-4 shrink-0 text-faint" strokeWidth={2.25} aria-hidden />}
           </>
         );
         const area = `flex min-w-0 flex-1 items-center gap-3 text-left ${dense ? "py-1" : "py-2.5"}`;

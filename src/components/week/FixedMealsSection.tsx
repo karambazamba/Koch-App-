@@ -98,7 +98,7 @@ export function FixedMealsSection({
       </div>
 
       {plan.fixedMeals.length > 0 && (
-        <ul className="divide-y divide-line rounded-xl border border-line">
+        <ul className="divide-y divide-line rounded-field border border-line">
           {plan.fixedMeals.map((m) => (
             <li key={m.id} className="flex items-center gap-3 py-2 pl-4">
               <CategoryDot category={m.category} />
@@ -116,7 +116,7 @@ export function FixedMealsSection({
                 type="button"
                 onClick={() => remove(m.id)}
                 aria-label={`${m.title} am ${m.weekday} entfernen`}
-                className="flex h-12 w-12 shrink-0 items-center justify-center text-stone-400 active:scale-90"
+                className="flex h-12 w-12 shrink-0 items-center justify-center text-faint active:scale-90"
               >
                 <X className="h-5 w-5" strokeWidth={2.25} aria-hidden />
               </button>
@@ -126,7 +126,7 @@ export function FixedMealsSection({
       )}
 
       {recipes !== undefined && list.length === 0 ? (
-        <p className="rounded-xl bg-stone-50 px-4 py-3 text-muted">
+        <p className="rounded-field bg-background px-4 py-3 text-muted">
           Noch keine Rezepte im Kochbuch.{" "}
           <Link href="/kochbuch/bearbeiten" className="font-bold text-accent-strong underline">
             Rezept anlegen
@@ -142,7 +142,7 @@ export function FixedMealsSection({
           Festes Gericht
         </button>
       ) : (
-        <div className="flex flex-col gap-4 rounded-xl border border-line bg-stone-50/60 p-3">
+        <div className="flex flex-col gap-4 rounded-field border border-line bg-background p-3">
           <fieldset>
             <legend className="mb-2 text-base font-bold">Tag</legend>
             <div className="grid grid-cols-4 gap-2">
@@ -188,7 +188,7 @@ export function FixedMealsSection({
             </select>
           </label>
           {wishSlot && (
-            <p className="text-sm font-semibold text-red-700">
+            <p className="text-sm font-semibold text-danger">
               Hier ist schon der Wunschtag – bitte anderen Tag oder andere Mahlzeit wählen.
             </p>
           )}

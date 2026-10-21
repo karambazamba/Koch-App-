@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   Beef,
@@ -47,11 +46,10 @@ import {
   type Section,
   type Staple,
 } from "@/lib/einkauf/shoppingList";
-import { QuickAddButton } from "./QuickAdd";
+import { QuickAddButton, ShoppingAddField } from "./QuickAdd";
 import { useWeekShoppingList, type WeekChoice } from "@/lib/einkauf/useWeekShoppingList";
 import { addDays, formatWeekRange, toIsoDate, useToday } from "@/lib/essen/weekPlan";
 import { EditItemSheet, ItemContent, StaplesSheet, SwipeRow, type RowAction } from "./ShoppingParts";
-import { useFeature } from "@/lib/core/features";
 
 const SKELETON = <div className={`${CARD} m-4 h-64 animate-pulse`} />;
 
@@ -77,7 +75,6 @@ export function ShoppingListView() {
   const [choice, setChoice] = useState<WeekChoice>("planning");
   const data = useWeekShoppingList(choice);
   // Wochenplan-Oberfläche versteckt (Neustart): kein Verweis dorthin
-  const planUi = useFeature("wochenplan");
   const today = useToday();
   const [mode, setMode] = useState<"abteilung" | "laden">("abteilung");
   const [showHidden, setShowHidden] = useState(false);
@@ -99,7 +96,6 @@ export function ShoppingListView() {
   const todayIso = toIsoDate(today);
   const range = formatWeekRange(weekStart);
   const visible = list.items.filter((i) => !i.hidden);
-  const done = visible.filter((i) => i.checked).length;
   const hidden = list.items.filter((i) => i.hidden);
   const due = dueStaples(settings.staples, weekStart, list, weekList);
 
@@ -150,7 +146,7 @@ export function ShoppingListView() {
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
-      <PageHeader title="Einkaufsliste" />
+      <PageHeader title="Einkaufsliste" action={<QuickAddButton weekStart={data.weekStart} settings={data.settings} className="-mr-1.5" />} />
       <main className={PAGE_MAIN}>
         {data.planning && (
         <div className="flex items-center justify-between gap-2">
@@ -177,26 +173,11 @@ export function ShoppingListView() {
           ]}
         />
 
-        {/* Fortschritt */}
-        <section className="flex items-center gap-3" aria-label="Fortschritt">
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold" role="status">
-              {visible.length > 0 && done === visible.length ? "Alles erledigt ✓" : `${done} / ${visible.length} erledigt`}
-            </p>
-            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-stone-200" aria-hidden>
-              <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${visible.length ? (done / visible.length) * 100 : 0}%` }} />
-            </div>
-          </div>
-          <button type="button" onClick={() => share()} disabled={done === visible.length} aria-label="Liste teilen" className={ICON_BUTTON}>
-            <Share2 className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-          </button>
-          <QuickAddButton weekStart={weekStart} settings={settings} className="-mr-1.5" />
-        </section>
-        {shareNote && <p className="rounded-xl bg-accent-soft px-4 py-2 text-sm font-semibold text-accent-strong">{shareNote}</p>}
+        {shareNote && <p className="rounded-field bg-accent-soft px-4 py-2 text-sm font-semibold text-accent-strong">{shareNote}</p>}
 
         {nowItems.length > 0 && (
           <section aria-label="Jetzt mitnehmen" className="flex flex-col gap-1.5">
-            <h2 className="flex items-center gap-1.5 px-1 text-xs font-bold uppercase tracking-wider text-accent-strong">
+            <h2 className="flex items-center gap-1.5 px-1 text-[15px] font-extrabold text-accent-strong">
               <ShoppingBag className="h-4 w-4" strokeWidth={2} aria-hidden />
               Jetzt mitnehmen
             </h2>
@@ -212,7 +193,7 @@ export function ShoppingListView() {
 
         {todayItems.length > 0 && (
           <section aria-label="Für heute" className="flex flex-col gap-1.5">
-            <h2 className="flex items-center gap-1.5 px-1 text-xs font-bold uppercase tracking-wider text-accent-strong">
+            <h2 className="flex items-center gap-1.5 px-1 text-[15px] font-extrabold text-accent-strong">
               <CalendarCheck className="h-4 w-4" strokeWidth={2} aria-hidden />
               Für heute
             </h2>
@@ -225,7 +206,7 @@ export function ShoppingListView() {
             </ul>
           </section>
         )}
-        {todayItems.length > 0 && grouped.length > 0 && <h2 className="-mb-1 mt-1 px-1 text-xs font-bold uppercase tracking-wider text-muted">Für die Woche</h2>}
+        {todayItems.length > 0 && grouped.length > 0 && <h2 className="-mb-1 mt-1 px-1 text-[15px] font-extrabold text-muted">Für die Woche</h2>}
 
         {due.length > 0 && (
           <StapleBar staples={due} onTake={(st) => takeStaple(weekStart, st)} onSkip={(st) => skipStaple(weekStart, st)} onManage={() => setStaplesOpen(true)} />
@@ -238,20 +219,7 @@ export function ShoppingListView() {
           </p>
         )}
 
-        {list.items.length === 0 && list.missing.length === 0 && todayItems.length === 0 && (
-          <p className={`${CARD} p-5 text-center text-muted`}>
-            {data.planning && planUi ? (
-              <>
-                Für Gerichte mit Rezept im Wochenplan schreibe ich die Liste von selbst.{" "}
-                <Link href="/wochenplan" className="font-bold text-accent-strong underline">
-                  Zum Wochenplan
-                </Link>
-              </>
-            ) : (
-              "Hier ist gerade nichts drauf – sag mir einfach, was auf die Liste soll, oder tipp aufs Plus."
-            )}
-          </p>
-        )}
+        {list.items.length === 0 && list.missing.length === 0 && todayItems.length === 0 && <ShoppingAddField weekStart={weekStart} settings={settings} />}
 
         {groups.map((group) => {
           if (group.items.length === 0) return null;
@@ -267,7 +235,7 @@ export function ShoppingListView() {
                   type="button"
                   onClick={() => allDone && setExpanded((e) => (e.includes(group.id) ? e.filter((x) => x !== group.id) : [...e, group.id]))}
                   aria-expanded={show}
-                  className="hit flex min-w-0 flex-1 items-center gap-1.5 text-left text-xs font-bold uppercase tracking-wider text-muted"
+                  className="hit flex min-w-0 flex-1 items-center gap-1.5 text-left text-[15px] font-extrabold text-muted"
                 >
                   <Icon className="h-4 w-4 text-accent" strokeWidth={2} aria-hidden />
                   <span className="truncate">{group.label}</span>
@@ -313,7 +281,7 @@ export function ShoppingListView() {
         {hidden.length > 0 && (
           <div className="flex flex-col gap-2">
             <button type="button" onClick={() => setShowHidden((v) => !v)} className="self-start px-1 text-sm font-semibold text-muted underline">
-              {hidden.length} Artikel haben wir schon – {showHidden ? "ausblenden" : "anzeigen"}
+              Haben wir schon – {showHidden ? "ausblenden" : "anzeigen"}
             </button>
             {showHidden && (
               <ul className={CARD_LIST}>
@@ -330,6 +298,12 @@ export function ShoppingListView() {
           </div>
         )}
 
+        {visible.some((i) => !i.checked) && (
+          <button type="button" onClick={() => share()} className="hit -mt-1 flex items-center gap-1.5 self-start px-1 text-sm font-semibold text-muted">
+            <Share2 className="h-4 w-4" strokeWidth={2} aria-hidden />
+            Liste teilen
+          </button>
+        )}
         <button type="button" onClick={() => setStaplesOpen(true)} className="hit -mt-1 flex items-center gap-1.5 self-start px-1 text-sm font-semibold text-muted">
           <Repeat className="h-4 w-4" strokeWidth={2} aria-hidden />
           Stammliste ansehen
@@ -373,7 +347,7 @@ function StapleBar({
   return (
     <section className={`${CARD} flex flex-col gap-2 p-3`} aria-label="Stammartikel">
       <div className="flex items-center justify-between px-1">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-muted">Stammartikel</h2>
+        <h2 className="text-[15px] font-extrabold text-muted">Stammartikel</h2>
         <button type="button" onClick={onManage} className="text-xs font-semibold text-muted underline">
           Stammliste
         </button>
@@ -403,7 +377,7 @@ function StapleChip({ staple, onTake, onSkip }: { staple: Staple; onTake: () => 
         <Plus className="h-4 w-4 text-accent" strokeWidth={2.5} aria-hidden />
         {staple.name}
       </button>
-      <button type="button" onClick={onSkip} aria-label={`${staple.name} diesmal nicht`} className="flex h-6 w-6 items-center justify-center text-stone-400">
+      <button type="button" onClick={onSkip} aria-label={`${staple.name} diesmal nicht`} className="flex h-6 w-6 items-center justify-center text-faint">
         <X className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
       </button>
     </span>

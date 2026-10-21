@@ -144,7 +144,7 @@ export function HelloScreen() {
             </button>
             {tap && (
               <>
-                <span key={`b${tap.n}`} className="hello-bubble absolute -top-4 left-1/2 whitespace-nowrap rounded-2xl bg-surface px-3 py-1.5 text-sm font-bold shadow-card" role="status">
+                <span key={`b${tap.n}`} className="hello-bubble absolute -top-4 left-1/2 whitespace-nowrap rounded-card bg-surface px-3 py-1.5 text-sm font-bold shadow-card" role="status">
                   {tap.text}
                 </span>
                 {[0, 1, 2].map((i) => (
@@ -160,14 +160,14 @@ export function HelloScreen() {
             {typing && <span className="hello-caret" aria-hidden />}
           </h1>
           <p className={`-mt-2 text-base font-medium text-muted ${show(T.sub)}`}>Ich behalte euren Alltag im Blick.</p>
-          <p className={`relative inline-flex items-center gap-2 rounded-full bg-quick px-4 py-2 text-sm font-semibold text-quick-ink ${show(T.mic)}`} role="note">
+          <p className={`relative inline-flex items-center gap-2 rounded-full bg-accent-soft px-4 py-2 text-sm font-semibold text-accent-strong ${show(T.mic)}`} role="note">
             {!still && at >= T.mic && <span className="hello-pulse absolute inset-0 rounded-full" aria-hidden />}
             <Mic className="relative h-4 w-4" strokeWidth={2.25} aria-hidden />
             <span className="relative">Du kannst auch einfach mit mir sprechen</span>
           </p>
         </div>
         <div className={`flex w-full flex-col items-center gap-2 ${show(T.buttons)}`}>
-          <button type="button" onClick={start} className="h-14 w-full rounded-[18px] text-[17px] font-bold text-white active:scale-[0.98]" style={{ backgroundColor: color }}>
+          <button type="button" onClick={start} className="h-14 w-full rounded-field text-[17px] font-bold text-on-color active:scale-[0.98]" style={{ backgroundColor: color }}>
             Los geht’s
           </button>
           <Link href="/profil/daten" className="hit inline-flex h-11 items-center text-sm font-semibold text-muted">

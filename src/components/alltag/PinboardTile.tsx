@@ -8,30 +8,22 @@
 
 import { useEffect, useState } from "react";
 import { Mic, Pin, Plus, Square, Trash2 } from "lucide-react";
-import { Sheet } from "@/components/plan/Sheet";
+import { Sheet } from "@/components/ui/Sheet";
 import { CARD, INPUT_BASE, buttonClass, chipClass } from "@/components/ui/styles";
 import { QuickButton } from "@/components/ui/QuickButton";
 import type { TileSize } from "@/lib/core/homeLayout";
 import { now, todayIso, toIsoDate } from "@/lib/core/now";
 import { showDeleted } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
-import { PIN_MAX, REACTIONS, addPin, changePins, createPin, hasUnread, markPinsRead, personTone, pinMeta, removePin, setPinPinned, toggleReaction, usePins, visiblePins, type PinMessage } from "@/lib/pinnwand";
+import { PIN_MAX, REACTIONS, addPin, changePins, createPin, hasUnread, markPinsRead, pinMeta, removePin, setPinPinned, toggleReaction, usePins, visiblePins, type PinMessage } from "@/lib/pinnwand";
 import { useSpeechInput } from "@/lib/lotte/useSpeechInput";
 import { shortClock } from "@/components/notizen/Schnellnotiz";
 import { buzz } from "./actions";
 import { DEMO_OUTLINE, DemoBadge } from "./DemoBits";
 import { LotteAvatar } from "@/components/LotteAvatar";
 import { clearDemoTile } from "@/lib/core/demo";
+import { PersonAvatar } from "@/components/ui/PersonAvatar";
 
-const TONES = ["bg-accent", "bg-work", "bg-person-3", "bg-person-4"];
-
-function Avatar({ name }: { name: string }) {
-  return (
-    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-extrabold text-white ${TONES[personTone(name)]}`} aria-hidden>
-      {name.trim().charAt(0).toUpperCase() || "?"}
-    </span>
-  );
-}
 
 const meta = (m: PinMessage, me: string) => pinMeta(m, me, todayIso(), shortClock, (iso) => toIsoDate(new Date(iso)));
 
@@ -53,7 +45,7 @@ export function PinboardTile({ size = "M", me, demo = false, helper = "" }: { si
   return (
     <>
       <section className={`${CARD} relative flex min-h-[92px] flex-col p-3.5 ${showDemo ? DEMO_OUTLINE : ""}`} aria-label="Pinnwand">
-        <span className="flex items-center gap-1.5 pr-8 text-[11px] font-bold uppercase tracking-wider text-muted">
+        <span className="flex items-center gap-1.5 pr-8 text-[10px] font-extrabold uppercase tracking-wider text-muted">
           <Pin className="h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
           Pinnwand
           {(unread || showDemo) && <span className="h-2 w-2 rounded-full bg-accent" aria-label="Neue Nachricht" />}
@@ -86,7 +78,7 @@ export function PinboardTile({ size = "M", me, demo = false, helper = "" }: { si
                     className="flex w-full items-start gap-2.5 text-left"
                     aria-label={`${m.data.text} – ${meta(m, me)}`}
                   >
-                    <Avatar name={m.data.author} />
+                    <PersonAvatar name={m.data.author} />
                     <span className="flex min-w-0 flex-1 flex-col">
                       <span className="line-clamp-2 text-[14.5px] font-semibold leading-snug">{m.data.text}</span>
                       <span className="text-xs text-muted">
@@ -177,7 +169,7 @@ function PinSheet({ message, me, onClose }: { message: PinMessage; me: string; o
     <Sheet title="Pinnwand" onClose={onClose}>
       <div className="flex flex-col gap-4 pb-3">
         <div className="flex items-start gap-3">
-          <Avatar name={message.data.author} />
+          <PersonAvatar name={message.data.author} />
           <div className="flex min-w-0 flex-col">
             <p className="text-lg font-semibold leading-snug">{message.data.text}</p>
             <span className="text-sm text-muted">{meta(message, me)}</span>
@@ -221,7 +213,7 @@ function PinSheet({ message, me, onClose }: { message: PinMessage; me: string; o
               showDeleted(pushUndo("das Löschen der Pinnwand-Nachricht", undo));
               onClose();
             }}
-            className={`${buttonClass("ghost", "sm")} text-red-600`}
+            className={`${buttonClass("ghost", "sm")} text-danger`}
           >
             <Trash2 className="h-4 w-4" strokeWidth={2} aria-hidden />
             Löschen

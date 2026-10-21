@@ -35,7 +35,7 @@ export function ConfirmDialog({
   }, [onCancel]);
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center" role="alertdialog" aria-modal aria-label={title}>
-      <button type="button" aria-label="Rückfrage schließen" tabIndex={-1} onClick={onCancel} className="absolute inset-0 bg-black/40" />
+      <button type="button" aria-label="Rückfrage schließen" tabIndex={-1} onClick={onCancel} className="absolute inset-0 bg-scrim" />
       <div className="relative mb-[env(safe-area-inset-bottom)] flex w-full max-w-sm flex-col gap-4 rounded-card border border-line bg-surface p-5 shadow-sheet">
         <div className="flex flex-col gap-1">
           <p className="text-lg font-bold">{title}</p>

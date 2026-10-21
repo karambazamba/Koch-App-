@@ -6,10 +6,12 @@
 // "Heute dran" ("von gestern" – nie "überfällig").
 
 import { useState } from "react";
-import { ChevronDown, Plus } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { PagePlus } from "@/components/ui/QuickButton";
 import { PageHeader } from "@/components/PageHeader";
 import { Segmented } from "@/components/ui/Segmented";
-import { CARD, PAGE_MAIN } from "@/components/ui/styles";
+import { CARD, PAGE_MAIN, buttonClass } from "@/components/ui/styles";
+import { LotteAvatar } from "@/components/LotteAvatar";
 import { setDone, taskOverview, TASK_GROUPS, type DayItem } from "@/lib/aufgaben/model";
 import { useEntries } from "@/lib/aufgaben/store";
 import { toIsoDate, useToday } from "@/lib/core/now";
@@ -22,7 +24,6 @@ import { TaskQuickAdd } from "./TaskQuickAdd";
 
 type Filter = "alles" | "familie" | "arbeit";
 
-export const ROUND_PLUS = "flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-sm active:scale-95";
 
 function TaskRow({ item, today, onOpen }: { item: DayItem; today: string; onOpen: (item: DayItem) => void }) {
   // Abhaken: ca. 1 s durchgestrichen (nochmal tippen = doch nicht); Erledigtes unter "✓ erledigt" zurückholen
@@ -58,9 +59,7 @@ export function TasksView() {
         title="Aufgaben"
         backHref="/"
         action={
-          <button type="button" onClick={() => setAdding(true)} aria-label="Neue Aufgabe" className={ROUND_PLUS}>
-            <Plus className="h-5 w-5" strokeWidth={2.75} aria-hidden />
-          </button>
+          <PagePlus label="Neue Aufgabe" onClick={() => setAdding(true)} />
         }
       />
       <main className={PAGE_MAIN}>
@@ -78,14 +77,21 @@ export function TasksView() {
         )}
         {!groups ? (
           <div className={`${CARD} h-40 animate-pulse`} />
-        ) : open.length === 0 && done.length === 0 ? (
-          <p className="px-1 py-6 text-center text-base text-muted">Gerade liegt nichts an. Sag einfach: „Ich muss noch …“</p>
         ) : (
           <>
-            {open.length === 0 && <p className="px-1 py-2 text-lg font-bold">Alles erledigt 🌙</p>}
+            {open.length === 0 && (
+              <section className="flex flex-col items-center gap-3 px-4 py-8 text-center" aria-label="Alles erledigt">
+                <LotteAvatar size={88} />
+                <h2 className="text-[22px] font-extrabold">Alles erledigt.</h2>
+                <p className="max-w-xs text-base text-muted">Wenn dir etwas einfällt, sag einfach „Ich muss noch …“ – ich merk’s mir.</p>
+                <button type="button" onClick={() => setAdding(true)} className={`${buttonClass("primary", "md")} mt-1`}>
+                  Neue Aufgabe
+                </button>
+              </section>
+            )}
             {open.map((g) => (
               <section key={g.id} className="flex flex-col gap-1.5" aria-label={g.label}>
-                <h2 className="px-1 text-xs font-bold uppercase tracking-wider text-muted">{g.label}</h2>
+                <h2 className="px-1 text-[15px] font-extrabold text-muted">{g.label}</h2>
                 <ul className={`${CARD} divide-y divide-line overflow-hidden`}>
                   {g.items.map((item) => (
                     <TaskRow key={item.key} item={item} today={today!} onOpen={setMenu} />
@@ -95,8 +101,8 @@ export function TasksView() {
             ))}
             {done.length > 0 && (
               <section className="flex flex-col gap-1.5" aria-label="Erledigt">
-                <button type="button" onClick={() => setShowDone((v) => !v)} aria-expanded={showDone} className="flex h-10 items-center gap-1 px-1 text-xs font-bold uppercase tracking-wider text-muted">
-                  ✓ {done.length} erledigt <ChevronDown className={`h-4 w-4 transition ${showDone ? "rotate-180" : ""}`} strokeWidth={2.5} aria-hidden />
+                <button type="button" onClick={() => setShowDone((v) => !v)} aria-expanded={showDone} className="flex h-10 items-center gap-1 px-1 text-[15px] font-extrabold text-muted">
+                  {showDone ? "Erledigte ausblenden" : "Erledigte anzeigen"} <ChevronDown className={`h-4 w-4 transition ${showDone ? "rotate-180" : ""}`} strokeWidth={2.5} aria-hidden />
                 </button>
                 {showDone && (
                   <ul className={`${CARD} divide-y divide-line overflow-hidden`}>

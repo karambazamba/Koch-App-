@@ -99,7 +99,7 @@ function Editor({ initial, isNew }: { initial: Note; isNew: boolean }) {
                   onClick={() => setItems((note.data.items ?? []).map((i) => (i.id === item.id ? { ...i, done: !i.done } : i)))}
                   className="flex h-12 w-12 shrink-0 items-center justify-center"
                 >
-                  <span className={`flex h-6 w-6 items-center justify-center rounded-md border-2 transition ${item.done ? "border-accent bg-accent text-on-accent" : "border-stone-300"}`}>
+                  <span className={`flex h-6 w-6 items-center justify-center rounded-md border-2 transition ${item.done ? "border-accent bg-accent text-on-accent" : "border-line-strong"}`}>
                     {item.done && <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />}
                   </span>
                 </button>
@@ -149,13 +149,13 @@ function Editor({ initial, isNew }: { initial: Note; isNew: boolean }) {
           </button>
           {note.data.kind === "liste" && (
             <button type="button" aria-pressed={Boolean(note.data.freizeit)} onClick={() => update({ freizeit: !note.data.freizeit })} className={chipClass(Boolean(note.data.freizeit))}>
-              🌙 {note.data.freizeit ? "Freizeit-Liste" : "Als Freizeit markieren"}
+              {note.data.freizeit ? "Freizeit-Liste" : "Als Freizeit markieren"}
             </button>
           )}
         </div>
 
         {!isNew || note.data.title || note.data.text || note.data.items?.length ? (
-          <button type="button" onClick={remove} className={`${buttonClass("ghost", "sm")} self-start text-red-600`}>
+          <button type="button" onClick={remove} className={`${buttonClass("ghost", "sm")} self-start text-danger`}>
             <Trash2 className="h-4 w-4" strokeWidth={2} aria-hidden />
             Löschen
           </button>

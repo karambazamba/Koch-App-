@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { MessageSquarePlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import { ArrowUp, Mic, MicOff, Square, Volume2, VolumeX, X } from "lucide-react";
+import { ArrowUp, Mic, MicOff, Square, SquarePen } from "lucide-react";
 import { baseLabel, bumpBase, type BaseId } from "@/lib/essen/bases";
 import { parseLeftovers, type ParsedLeftover } from "@/lib/essen/leftovers/parser";
 import { addPantryItems, formatPantryItem } from "@/lib/essen/pantry";
@@ -57,7 +56,7 @@ import { takeForDay, takeForToday } from "@/lib/essen/spontanTake";
 import { composeWeek, replaceMealPlans } from "@/lib/essen/mealPlan";
 import { AdjustSheet, EarlierIdeas, SpontanAnswer, loadSpontanFilters, saveSpontanFilters, spontanHeading } from "./SpontanBoard";
 import { type MarketTarget } from "./MarketBoard";
-import { ICON_BUTTON, INPUT_BASE, NOTE } from "@/components/ui/styles";
+import { INPUT_BASE, NOTE } from "@/components/ui/styles";
 import { ProposalCard } from "./ProposalCard";
 import { draftForHistory, looksLikeMail, revisionOf, splitInstruction } from "@/lib/lotte/mail";
 import { TipBubble } from "./TipBubble";
@@ -65,7 +64,7 @@ import { tipsShown, useTipStore } from "@/lib/essen/healthTips";
 import { extractLikeStatements, learnFromRecipe, learnLikes, LIKE_WEIGHTS } from "@/lib/essen/likes";
 import { now } from "@/lib/core/now";
 import { bausteinOf, unlockFeature, useFeature } from "@/lib/core/features";
-import { useBackCloses } from "@/lib/core/useBackCloses";
+import { Sheet } from "@/components/ui/Sheet";
 
 import { spontanStartTurn, type ChatState, type ChatTurnView } from "./chatTypes";
 import { pauseRule as pauseRuleOf, dayRule as dayRuleOf, boardRule as boardRuleOf, schnellnotizRule as schnellnotizRuleOf, noteRule as noteRuleOf, bausteinRule as bausteinRuleOf, homeCommand as homeCommandOf, type RuleContext } from "./localRules";
@@ -95,7 +94,6 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   const router = useRouter();
   const status = useAssistantStatus(true);
   // Zurück (Pfeil/Geste) schließt den Chat – eine Ebene
-  useBackCloses(onClose);
   const today = useToday();
   // Ohne sichtbaren Knopf (nur Löschen hat einen): jedes Zurücknehmen bleibt für "Mach das rückgängig" gemerkt
   useEffect(() => {
@@ -889,18 +887,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     else if (startListening) latest.current.toggleMic();
   }, [data, today, initialAsk, startListening]);
 
-  // Escape schließt, Seite dahinter scrollt nicht mit
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    document.addEventListener("keydown", onKey);
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = overflow;
-      stopSpeaking();
-    };
-  }, [onClose]);
+  // Schließen beendet das Vorlesen (Escape, Danebentippen, Zurück übernimmt das Fenster)
+  useEffect(() => () => stopSpeaking(), []);
 
   // Neue Nachrichten sichtbar machen
   useEffect(() => {
@@ -909,13 +897,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
 
   // Antworten vorlesen: an, wenn eingeschaltet – im Standard, wenn per Mikrofon gefragt
   const readingOn = shouldRead(speechSettings.mode, viaVoice);
-  const toggleVoice = () => {
-    unlockSpeech();
-    if (readingOn) {
-      saveSpeechSettings({ mode: "aus" });
-      stopSpeaking();
-    } else saveSpeechSettings({ mode: "an" });
-  };
+
 
   // Neue Antworten von Lotte vorlesen (nicht, was beim Öffnen schon dastand)
   const speechRef = useRef(speechFor);
@@ -941,68 +923,36 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   const firstEarlier = earlier[0] ?? -1;
   const earlierTitles = [...new Set(earlier.flatMap((i) => ideasFor(chat.turns[i]).map((idea) => idea.title)))];
 
+  const newChat = () => {
+    // Verlauf, offener Vorschlag, Spontan-Modus und geführte Fragen weg – gespeicherte Daten bleiben
+    setChat({ turns: [], proposal: null, spontan: null });
+    setGuided(null);
+    setAdjusting(false);
+    setInput("");
+  };
   return (
-    <div className="fixed inset-0 z-40" role="dialog" aria-modal aria-label={name}>
-      <button type="button" aria-label="Chat schließen" onClick={onClose} className="absolute inset-0 bg-black/25" />
-      <section
-        className="absolute inset-x-0 mx-auto flex w-full max-w-lg flex-col rounded-t-3xl bg-background shadow-sheet"
-        style={{
-          bottom: inset,
-          height: `min(88dvh, calc(100dvh - ${inset}px - env(safe-area-inset-top) - 0.5rem))`,
-        }}
-      >
-        <header className="flex flex-col gap-2 px-4 pt-2">
-          <span className="mx-auto h-1 w-10 rounded-full bg-stone-300" aria-hidden />
-          <div className="flex items-center gap-3">
-            <LotteAvatar size={44} groesse="gross" />
-            <div className="min-w-0 flex-1">
-              <h2 className="truncate text-2xl font-extrabold leading-tight tracking-tight">
-                {name}
-                {status?.mock && (
-                  <span className="ml-2 align-middle rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold text-stone-600">Testmodus</span>
-                )}
-              </h2>
-            </div>
-            {(chat.turns.length > 0 || chat.proposal || guided) && (
-              <button
-                type="button"
-                onClick={() => {
-                  // Verlauf, offener Vorschlag, Spontan-Modus und geführte Fragen weg – gespeicherte Daten bleiben
-                  setChat({ turns: [], proposal: null, spontan: null });
-                  setGuided(null);
-                  setAdjusting(false);
-                  setInput("");
-                }}
-                aria-label="Neues Gespräch"
-                className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full border border-line bg-surface px-2.5 text-[13px] font-bold text-ink active:scale-95"
-              >
-                <MessageSquarePlus className="h-4 w-4 text-accent" strokeWidth={2.25} aria-hidden />
-                {/* Auf dem Handy nur „Neu“, damit der Name Platz hat */}
-                <span className="sm:hidden">Neu</span>
-                <span className="hidden sm:inline">Neues Gespräch</span>
-              </button>
-            )}
-            {speechSupported() && (
-              <button
-                type="button"
-                onClick={toggleVoice}
-                aria-pressed={readingOn}
-                aria-label="Antworten vorlesen"
-                className={ICON_BUTTON}
-              >
-                {readingOn ? (
-                  <Volume2 className="h-5 w-5 text-accent" strokeWidth={2.25} aria-hidden />
-                ) : (
-                  <VolumeX className="h-5 w-5 text-muted" strokeWidth={2.25} aria-hidden />
-                )}
-              </button>
-            )}
-            <button type="button" onClick={onClose} aria-label="Schließen" className={ICON_BUTTON}>
-              <X className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-            </button>
-          </div>
-        </header>
-
+    <Sheet
+      title={name}
+      onClose={onClose}
+      fill
+      layer="chat"
+      inset={inset}
+      height={`min(88dvh, calc(100dvh - ${inset}px - env(safe-area-inset-top) - 0.5rem))`}
+      header={
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+          <button type="button" onClick={newChat} aria-label="Neues Gespräch" className="hit flex h-10 w-10 items-center justify-center justify-self-start text-accent-strong active:opacity-60">
+            <SquarePen className="h-6 w-6" strokeWidth={2} aria-hidden />
+          </button>
+          <span className="flex min-w-0 items-center gap-2">
+            <LotteAvatar size={32} />
+            <h2 className="truncate text-[17px] font-extrabold">{name}</h2>
+          </span>
+          <button type="button" onClick={onClose} className="hit h-10 justify-self-end px-1 text-[17px] font-bold text-accent-strong active:opacity-60">
+            Fertig
+          </button>
+        </div>
+      }
+    >
         {guided ? (
           <GuidedChat
             state={guided}
@@ -1035,7 +985,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
               </span>
             </p>
           ) : (
-            <p className="max-w-[85%] self-start rounded-2xl rounded-bl-md border border-line bg-surface px-4 py-2.5 text-base leading-snug text-ink">
+            <p className="max-w-[85%] self-start rounded-card rounded-bl-md border border-line bg-surface px-4 py-2.5 text-base leading-snug text-ink">
               Hi, ich bin {name} – was steht an?
             </p>
           )}
@@ -1176,24 +1126,6 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
               submit(input);
             }}
           >
-            <button
-              type="button"
-              onClick={toggleMic}
-              disabled={!canType || busy}
-              aria-pressed={speech.listening}
-              aria-label={speech.listening ? "Zuhören beenden" : "Frage einsprechen"}
-              className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-md transition active:scale-95 disabled:opacity-40 ${
-                speech.listening ? "animate-pulse ring-4 ring-accent/25" : ""
-              }`}
-            >
-              {speech.listening ? (
-                <Square className="h-6 w-6 fill-current" strokeWidth={2} aria-hidden />
-              ) : speech.supported === false ? (
-                <MicOff className="h-6 w-6" strokeWidth={2} aria-hidden />
-              ) : (
-                <Mic className="h-7 w-7" strokeWidth={2} aria-hidden />
-              )}
-            </button>
             {/* Mehrzeilig, damit eingefügte Mails ihre Absätze behalten; Enter schickt ab */}
             <textarea
               ref={inputRef}
@@ -1212,19 +1144,40 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
               placeholder={`Sag ${name}, was ansteht …`}
               className={`${INPUT_BASE} field-sizing-content max-h-36 min-h-12 flex-1 resize-none px-4 py-3 leading-snug`}
             />
+            {/* Mikrofon immer rechts; beim Tippen wird es zum Senden-Knopf */}
+            {input.trim() ? (
             <button
               type="submit"
               disabled={!canType || busy || !input.trim()}
               aria-label="Senden"
-              className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-on-accent shadow-sm transition active:scale-95 disabled:opacity-40"
+              className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-sm transition active:scale-95 disabled:opacity-40"
             >
               <ArrowUp className="h-5 w-5" strokeWidth={2.5} aria-hidden />
             </button>
+            ) : (
+            <button
+              type="button"
+              onClick={toggleMic}
+              disabled={!canType || busy}
+              aria-pressed={speech.listening}
+              aria-label={speech.listening ? "Zuhören beenden" : "Frage einsprechen"}
+              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-md transition active:scale-95 disabled:opacity-40 ${
+                speech.listening ? "animate-pulse ring-4 ring-accent/25" : ""
+              }`}
+            >
+              {speech.listening ? (
+                <Square className="h-5 w-5 fill-current" strokeWidth={2} aria-hidden />
+              ) : speech.supported === false ? (
+                <MicOff className="h-6 w-6" strokeWidth={2} aria-hidden />
+              ) : (
+                <Mic className="h-6 w-6" strokeWidth={2} aria-hidden />
+              )}
+            </button>
+            )}
           </form>
         </footer>
           </>
         )}
-      </section>
-    </div>
+    </Sheet>
   );
 }

@@ -11,7 +11,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
-import { Sheet } from "@/components/plan/Sheet";
+import { Sheet } from "@/components/ui/Sheet";
 import { CARD, PAGE_MAIN, chipClass } from "@/components/ui/styles";
 import { itemsForDay, tomorrowLabel, weekdayLong, weekdayShort } from "@/lib/aufgaben/model";
 import { useEntries } from "@/lib/aufgaben/store";
@@ -99,7 +99,7 @@ function DayTab({ forecast, date, today, minutes, termine }: { forecast: Forecas
   return (
     <>
       <section className="wx-card flex flex-col gap-2 rounded-card border border-line p-5 shadow-card" data-wx={weatherGroup(code)} aria-label={isToday ? "Heute" : tomorrowLabel(date)}>
-        <span className="text-xs font-bold uppercase tracking-wider text-muted">{isToday ? "Heute" : tomorrowLabel(date)}</span>
+        <span className="text-[15px] font-extrabold text-muted">{isToday ? "Heute" : tomorrowLabel(date)}</span>
         <span className="flex items-center gap-4">
           <WeatherSymbol code={code} className="h-16 w-16" />
           <span className="flex flex-col">
@@ -126,7 +126,7 @@ function PartCard({ part }: { part: DayPart }) {
     <section className={`${CARD} flex items-center gap-3 p-4`} aria-label={part.label}>
       <WeatherSymbol code={part.code} className="h-10 w-10" />
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="text-xs font-bold uppercase tracking-wider text-muted">{part.label}</span>
+        <span className="text-[15px] font-extrabold text-muted">{part.label}</span>
         <span className="text-[17px] font-bold">
           {part.temp}° <span className="text-[15px] font-medium text-muted">{weatherKind(part.code).text}</span>
         </span>
@@ -155,7 +155,7 @@ function WeekTab({ forecast, today }: { forecast: Forecast; today: string }) {
         <section className="wx-card flex items-center gap-3 rounded-card border border-line p-4 shadow-card" data-wx={weatherGroup(best.code)} aria-label="Bester Tag für draußen">
           <WeatherSymbol code={best.code} className="h-11 w-11" />
           <span className="flex flex-col">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted">Bester Tag für draußen</span>
+            <span className="text-[15px] font-extrabold text-muted">Bester Tag für draußen</span>
             <span className="text-[17px] font-bold">{name(best.date)}</span>
             <span className="text-[14px] text-muted">{dayWords(best)}</span>
           </span>

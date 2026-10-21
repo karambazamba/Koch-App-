@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Camera, Link2, Mic, MicOff, PenLine, Square } from "lucide-react";
 import { LotteAvatar } from "@/components/LotteAvatar";
-import { Sheet } from "@/components/plan/Sheet";
+import { Sheet } from "@/components/ui/Sheet";
 import { INPUT_BASE, buttonClass, chipClass, tileClass } from "@/components/ui/styles";
 import { createRecipe, formatAmount, saveRecipe } from "@/lib/essen/cookbook";
 import { helperName } from "@/lib/einstellungen/profile";
@@ -48,7 +48,7 @@ export function NewRecipeSheet({ onClose }: { onClose: () => void }) {
             <Icon className="h-6 w-6 shrink-0 text-muted" strokeWidth={2} aria-hidden />
             <span className="flex flex-1 flex-col text-left">
               <span className="text-base font-bold">
-                {label} <span className="ml-1 rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold text-muted">mit KI</span>
+                {label} <span className="ml-1 rounded-full bg-fill px-2 py-0.5 text-xs font-semibold text-muted">mit KI</span>
               </span>
               <span className="text-sm text-muted">{hint} – kommt bald</span>
             </span>

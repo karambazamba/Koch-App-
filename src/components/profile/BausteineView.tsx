@@ -52,7 +52,7 @@ export function BausteineView() {
             return (
               <li key={b.feature}>
                 <label className="flex cursor-pointer items-center gap-3 px-4 py-3.5">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent" aria-hidden>
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-field bg-accent-soft text-accent" aria-hidden>
                     <Icon className="h-5 w-5" strokeWidth={2} />
                   </span>
                   <span className="min-w-0 flex-1">
@@ -70,7 +70,7 @@ export function BausteineView() {
                   />
                   <span
                     aria-hidden
-                    className={`relative h-7 w-12 shrink-0 rounded-full transition ${active ? "bg-accent" : "bg-stone-300"} after:absolute after:top-0.5 after:h-6 after:w-6 after:rounded-full after:bg-surface after:shadow after:transition ${active ? "after:left-[1.375rem]" : "after:left-0.5"} peer-focus-visible:ring-2 peer-focus-visible:ring-accent`}
+                    className={`relative h-7 w-12 shrink-0 rounded-full transition ${active ? "bg-accent" : "bg-line-strong"} after:absolute after:top-0.5 after:h-6 after:w-6 after:rounded-full after:bg-surface after:shadow after:transition ${active ? "after:left-[1.375rem]" : "after:left-0.5"} peer-focus-visible:ring-2 peer-focus-visible:ring-accent`}
                   />
                 </label>
               </li>

@@ -5,7 +5,10 @@ import { X } from "lucide-react";
 import { ICON_BUTTON } from "@/components/ui/styles";
 import { useBackCloses } from "@/lib/core/useBackCloses";
 
-/** Fenster, das von unten hereinkommt (z. B. Aktionen zu einem Eintrag). */
+/**
+ * Das eine Fenster der App: kommt von unten herein (Eintrag-Aktionen, Chat,
+ * Einkauf-Plus …). Titel sagen, was passiert ("Neuer Termin", "Auf die Liste").
+ */
 export function Sheet({
   title,
   onClose,
@@ -13,6 +16,10 @@ export function Sheet({
   above = false,
   header,
   tall = false,
+  inset = 0,
+  fill = false,
+  height,
+  layer = above ? "above" : "base",
 }: {
   title: string;
   onClose: () => void;
@@ -23,6 +30,14 @@ export function Sheet({
   header?: ReactNode;
   /** Feste Höhe (ca. 85 %) statt nach Inhalt */
   tall?: boolean;
+  /** Abstand nach unten (offene Tastatur) */
+  inset?: number;
+  /** Inhalt füllt das Fenster selbst (eigenes Scrollen und Fuß, z. B. Chat) */
+  fill?: boolean;
+  /** Feste Höhe als CSS-Wert */
+  height?: string;
+  /** Ebene: normal, Chat, über dem Chat */
+  layer?: "base" | "chat" | "above";
 }) {
   // Grundregel: ✕, Danebentippen, Runterwischen und Zurück schließen
   useBackCloses(onClose);
@@ -42,19 +57,19 @@ export function Sheet({
   }, [onClose]);
 
   return (
-    <div className={`fixed inset-0 flex items-end justify-center ${above ? "z-50" : "z-30"}`} role="dialog" aria-modal aria-label={title}>
+    <div className={`fixed inset-0 flex items-end justify-center ${layer === "above" ? "z-50" : layer === "chat" ? "z-40" : "z-30"}`} role="dialog" aria-modal aria-label={title}>
       <button
         type="button"
         aria-label="Schließen"
         onClick={onClose}
-        className="absolute inset-0 bg-black/25"
+        className="absolute inset-0 bg-scrim"
       />
       <div
-        className={`safe-bottom relative flex w-full max-w-lg flex-col gap-4 overflow-y-auto rounded-t-3xl bg-background px-4 pt-2 shadow-sheet ${tall ? "h-[85vh]" : "max-h-[85vh]"}`}
-        style={dy ? { transform: `translateY(${dy}px)` } : undefined}
+        className={`relative flex w-full max-w-lg flex-col rounded-t-card bg-background shadow-sheet ${fill ? "overflow-hidden" : "safe-bottom gap-4 overflow-y-auto px-4 pt-2"} ${height ? "" : tall ? "h-[85vh]" : "max-h-[85vh]"}`}
+        style={{ transform: dy ? `translateY(${dy}px)` : undefined, marginBottom: inset || undefined, height }}
       >
         <div
-          className="flex touch-none flex-col gap-2"
+          className={`flex touch-none flex-col gap-2 ${fill ? "px-4 pt-2" : ""}`}
           data-no-swipe
           onPointerDown={(e) => {
             if ((e.target as Element).closest("button, input, textarea")) return;
@@ -71,7 +86,7 @@ export function Sheet({
             setDy(0);
           }}
         >
-          <span className="mx-auto h-1 w-10 rounded-full bg-stone-300" aria-hidden />
+          <span className="mx-auto h-1 w-10 rounded-full bg-line-strong" aria-hidden />
           {header ?? (
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-xl font-extrabold tracking-tight">{title}</h2>

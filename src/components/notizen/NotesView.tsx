@@ -6,12 +6,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ListChecks, NotebookPen, Pin, Plus } from "lucide-react";
+import { ListChecks, NotebookPen, Pin } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
-import { Sheet } from "@/components/plan/Sheet";
+import { Sheet } from "@/components/ui/Sheet";
 import { Segmented } from "@/components/ui/Segmented";
 import { CARD, PAGE_MAIN } from "@/components/ui/styles";
-import { ROUND_PLUS } from "@/components/alltag/TasksView";
+import { PagePlus } from "@/components/ui/QuickButton";
 import { notePreview, sortNotes, useNotes, type Note } from "@/lib/notizen";
 import { SchnellnotizCard } from "./Schnellnotiz";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
@@ -69,9 +69,7 @@ export function NotesView() {
         title="Notizen"
         backHref="/?seite=woche"
         action={
-          <button type="button" onClick={() => setChoose(true)} aria-label="Neue Notiz" className={ROUND_PLUS}>
-            <Plus className="h-5 w-5" strokeWidth={2.75} aria-hidden />
-          </button>
+          <PagePlus label="Neue Notiz" onClick={() => setChoose(true)} />
         }
       />
       <main className={PAGE_MAIN}>
@@ -115,11 +113,11 @@ export function NotesView() {
       {choose && (
         <Sheet title="Neu" onClose={() => setChoose(false)}>
           <div className={`${CARD} mb-2 flex flex-col divide-y divide-line overflow-hidden`}>
-            <Link href="/notizen/bearbeiten?neu=text" className="flex h-14 items-center gap-3 px-4 text-base font-semibold active:bg-stone-100">
+            <Link href="/notizen/bearbeiten?neu=text" className="flex h-14 items-center gap-3 px-4 text-base font-semibold active:bg-fill">
               <NotebookPen className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
               Notiz
             </Link>
-            <Link href="/notizen/bearbeiten?neu=liste" className="flex h-14 items-center gap-3 px-4 text-base font-semibold active:bg-stone-100">
+            <Link href="/notizen/bearbeiten?neu=liste" className="flex h-14 items-center gap-3 px-4 text-base font-semibold active:bg-fill">
               <ListChecks className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
               Liste
             </Link>

@@ -171,15 +171,6 @@ export function weekStreak(state: SportState, entries: CalendarEntry[], today: s
   return streak;
 }
 
-/** Letzte 4 Kalenderwochen (älteste zuerst) */
-export function weeksHistory(state: SportState, entries: CalendarEntry[], today: string, me?: string | null, weeks = 4): { monday: string; count: number; current: boolean; kw: number }[] {
-  const monday = mondayOf(today);
-  return Array.from({ length: weeks }, (_, i) => {
-    const m = addDays(monday, -7 * (weeks - 1 - i));
-    return { monday: m, count: weekStatus(state, entries, today, me, m).count, current: m === monday, kw: isoWeek(m) };
-  });
-}
-
 /** Kalenderwoche (ISO) */
 function isoWeek(iso: string): number {
   const d = fromIsoDate(iso);
@@ -212,17 +203,18 @@ export function hoursLabel(minutes: number): string {
 
 /** Ein Satz unter den Punkten – Erfolge zeigen, Versäumnisse nicht */
 export function statusLine(week: WeekStatus, weekday: number, lastWeekReached: boolean): string {
+  // Ohne Zahlen und Serien: ein freundlicher Satz (Leitbild 4)
   const { count, goal } = week;
-  if (count > goal) return `Bonusrunde! 🔥 ${count} von ${goal} diese Woche`;
-  if (count === goal) return `${goal} von ${goal} – Wochenziel geschafft 🎉`;
-  if (count === 0) return weekday === 0 ? (lastWeekReached ? "Letzte Woche geschafft 🔥 – auf ein Neues" : "Neue Woche, neues Glück.") : "Die Woche ist bereit für dich.";
-  if (goal - count === 1) return `${count} von ${goal} – noch einmal, dann ist die Woche geschafft 💪`;
-  return `${count} von ${goal} – schön dabei`;
+  if (count > goal) return "Mehr als geplant – richtig schöne Woche.";
+  if (count === goal) return "Wochenziel geschafft – schön.";
+  if (count === 0) return weekday === 0 ? (lastWeekReached ? "Letzte Woche lief richtig gut – auf ein Neues." : "Neue Woche, neues Glück.") : "Die Woche ist bereit für dich.";
+  if (goal - count === 1) return "Ein Training noch, dann ist die Woche rund.";
+  return "Schön dabei diese Woche.";
 }
 
-/** Feier-Text, wenn das Wochenziel erreicht ist */
-export function celebrationText(name: string, goal: number, streak: number): string {
-  return `Stark${name ? `, ${name}` : ""}! ${goal} von ${goal} – Wochenziel geschafft.${streak >= 2 ? ` Das sind ${streak} Wochen in Folge 🔥` : ""}`;
+/** Feier-Text, wenn das Wochenziel erreicht ist (selten, ohne Zähler) */
+export function celebrationText(name: string): string {
+  return `Stark${name ? `, ${name}` : ""}! Dein Wochenziel ist geschafft.`;
 }
 
 /** Konkret loben: "Das ist dein 10. Lauf im Oktober." */
@@ -236,7 +228,7 @@ export function praiseFor(state: SportState, entries: CalendarEntry[], training:
 }
 
 /** Die 7 Punkte Mo–So der laufenden Woche */
-type DayDot = { date: string; label: string; state: "trainiert" | "geplant" | "frei"; time: string | null; today: boolean };
+export type DayDot = { date: string; label: string; state: "trainiert" | "geplant" | "frei"; time: string | null; today: boolean };
 
 const SHORT = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 

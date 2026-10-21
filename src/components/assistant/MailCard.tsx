@@ -40,7 +40,7 @@ export function MailCard({ draft, onRevise, active }: { draft: MailDraft; onRevi
   return (
     <section className="flex w-full max-w-[92%] flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-card" aria-label="Mail-Entwurf">
       <div className="flex flex-col gap-0.5">
-        <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted">
+        <p className="flex items-center gap-1.5 text-sm font-bold text-muted">
           <Mail className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
           Entwurf{draft.to ? ` an ${draft.to}` : draft.recipient ? ` an ${draft.recipient}` : ""}
         </p>

@@ -5,8 +5,9 @@ import { useState } from "react";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 
 const noSubscribe = () => () => {};
-import { BookOpen, Clock, Heart, Plus, Search } from "lucide-react";
+import { BookOpen, Clock, Heart, Search } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { PagePlus } from "@/components/ui/QuickButton";
 import { CARD, INPUT_BASE, PAGE_MAIN, SECTION_TITLE, chipClass } from "@/components/ui/styles";
 import { BUILTIN_BAKING, KID_FRIENDLY } from "@/lib/essen/baking";
 import { sortRecipes, toggleFavorite, useRecipes, type Recipe } from "@/lib/essen/cookbook";
@@ -20,13 +21,13 @@ type Filter = "alle" | "lieblinge" | "schnell" | "backen" | "vegetarisch" | "fle
 
 const FILTERS: { value: Filter; label: string }[] = [
   { value: "alle", label: "Alle" },
-  { value: "lieblinge", label: "❤️ Lieblinge" },
-  { value: "schnell", label: "⚡ Schnell" },
-  { value: "backen", label: "🧁 Backen" },
-  { value: "vegetarisch", label: "🥦 Veggie" },
-  { value: "fleisch", label: "🥩 Fleisch" },
-  { value: "fisch", label: "🐟 Fisch" },
-  { value: "cheatday", label: "🍕 Cheat Day" },
+  { value: "lieblinge", label: "Lieblinge" },
+  { value: "schnell", label: "Schnell" },
+  { value: "backen", label: "Backen" },
+  { value: "vegetarisch", label: "Veggie" },
+  { value: "fleisch", label: "Fleisch" },
+  { value: "fisch", label: "Fisch" },
+  { value: "cheatday", label: "Cheat Day" },
 ];
 
 /** Bis so viele Minuten gilt ein Rezept als schnell */
@@ -86,7 +87,7 @@ export function CookbookList() {
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
-      <PageHeader title="Unsere Rezepte" />
+      <PageHeader title="Rezepte" action={<PagePlus label="Neues Rezept" onClick={() => setAdding(true)} />} />
       <main className={PAGE_MAIN}>
         <div className="flex items-center gap-3">
           <div className="relative flex min-w-0 flex-1 items-center">
@@ -104,14 +105,6 @@ export function CookbookList() {
               className={`${INPUT_BASE} h-12 w-full pl-12 pr-4`}
             />
           </div>
-          <button
-            type="button"
-            onClick={() => setAdding(true)}
-            aria-label="Neues Rezept"
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-lg transition active:scale-95"
-          >
-            <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-          </button>
         </div>
 
         <div role="group" aria-label="Filtern" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
@@ -174,7 +167,7 @@ function RecipeTile({ recipe, kid, builtin = false, kidFriendly = false }: { rec
       : recipe.cookedCount > 0
         ? `${recipe.cookedCount}× ${recipe.kind === "backen" ? "gebacken" : "gekocht"}`
         : recipe.source === "ki"
-          ? "Neu ✨"
+          ? "Neu"
           : "";
   return (
     <li className={`${CARD} relative overflow-hidden`}>
@@ -212,7 +205,7 @@ export function FavoriteButton({ recipe, small = false }: { recipe: Recipe; smal
       aria-label={recipe.favorite ? `${recipe.title}: Favorit entfernen` : `${recipe.title}: als Favorit markieren`}
       onClick={() => toggleFavorite(recipe.id)}
       className={`flex shrink-0 items-center justify-center transition active:scale-90 ${small ? "h-11 w-11" : "h-14 w-14"} ${
-        recipe.favorite ? "text-accent" : small ? "text-stone-400" : "text-stone-300"
+        recipe.favorite ? "text-accent" : small ? "text-faint" : "text-faint"
       }`}
     >
       <Heart className={`${small ? "h-5 w-5" : "h-6 w-6"} ${recipe.favorite ? "fill-current" : ""}`} strokeWidth={2} aria-hidden />

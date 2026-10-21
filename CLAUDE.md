@@ -27,7 +27,7 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
 - Termin = feste Uhrzeit, Aufgabe = zu erledigen, Notiz = nur festhalten.
   Heute zeigt bis zu 3 Termine (Kärtchen nebeneinander) und bis zu 3
   Aufgaben (schlanke Zeilen). Kachel antippen = öffnen, kleiner Knopf oben
-  rechts = Neues (20 px, hell-orange, nie schwarz). Mia spricht nur über die
+  rechts = Neues (26 px, hell-orange, nie schwarz). Mia spricht nur über die
   Jetzt-Karte (ersetzt Lottes Satz): feste Höhe, 2 Zeilen, Punktesystem, nur
   was die Kacheln nicht zeigen (außer mit Tipp), ohne Druck-Wörter.
   Gesten: Tippen = Eintrag, lange Drücken = Startseite bearbeiten, Wischen =
@@ -267,7 +267,7 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   zurückgesetzt, Genutztes (Plan, Vorrat, Rezepte, Backen, Tipps, Ideen,
   Vorlieben, Modus) als Bausteine übernommen. Den alten Aufbau (`/?legacy=1`) gibt
   es seit v0.25 nicht mehr. Auf allen Seiten dieselbe
-  dunkle Lotte-Leiste (`LotteBar`, statt des runden Knopfs).
+  helle Mia-Leiste (`LotteBar`, statt des runden Knopfs).
 - Immer sichtbar: Startseite (siehe Leitbild 7), Chat mit Lotte,
   Einkaufsliste, schlanke Einstellungen (Startseite & Bausteine, Name &
   Stimme, Vorlesen, Ansicht, Familie, Daten & App) und beim ersten Start der
@@ -419,6 +419,54 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   (`QuickButton`), Schnell-Termin (`TerminQuickAdd`), Schnell-Aufgabe
   (`TaskQuickAdd`), einmaliger Hinweis nach dem Kennenlernen, Start-Kacheln
   aus dem Kennenlernen (`homeTilesFor`, in Standard-Reihenfolge).
+
+## Stilblatt + Ohne Druck (v0.30, „Apple-mäßig“ Etappe 1+2)
+
+- Farben nur über Tokens (`globals.css`, je Token Hell- und Dunkel-Wert):
+  ein Orange je Ton – `accent` (Knöpfe), `accent-strong` #C4531A (Text/Links,
+  „Rückgängig“), `accent-soft` #FDEBDF (helle Flächen, Kachel-Plus; früher
+  auch `quick`); Grün `good`/`good-soft`/`good-ink` #2E9E6B, Blau `work`
+  #4C6FD9; Rot nur `danger`/`danger-soft`/`danger-line` (Warnung, Löschen);
+  Grau `fill`/`fill-strong`/`faint`/`line-strong`; Abdunkeln `scrim`; Text
+  auf Fotos/Wunschfarbe `on-color`. Kategorien `cat-veggie/fleisch/fisch/cheat`
+  (Fleisch braun, nicht rot), Läden `shop-1..8`. Keine festen Tailwind-Farben
+  (stone/red/emerald …, black/white) – `tests/stilblatt.test.ts` prüft das.
+  `--app-bar`/`bg-bar` gibt es nicht mehr.
+- Drei Radien: `rounded-card` 20 px, `rounded-field` 14 px (Feld/Knopf),
+  `rounded-full` (Chip). Kein rounded-xl/2xl.
+- Schrift: Seitentitel 30/800 (`PageHeader`), Abschnitt `SECTION_TITLE`
+  15/800 in normaler Schreibweise, Kachel-Label `TILE_LABEL` 10/800 in
+  Großbuchstaben – nur innerhalb von Kacheln.
+- Nur zwei Plus-Arten: Seiten-Plus `PagePlus` (34 px orange, rechts im
+  Seitenkopf) und Kachel-Plus `QuickButton`/`TILE_PLUS_DOT` (26 px hellorange).
+- Seitenkopf: oben „‹ <vorherige Seite>“ (`BackButton`, Name aus
+  `pageLabel()` und `previousUrl()` in `navigation.ts`), rechts höchstens ein
+  Knopf (Plus oder „…“), darunter der große Titel. Kein App-Icon-Link mehr.
+- Ein Fenster für alles: `src/components/ui/Sheet.tsx` (`fill`, `height`,
+  `inset`, `layer` base/chat/above) – auch Chat und Einkauf-Plus.
+- Nichts Schwarzes: Timer fertig = weiße Karte mit orangem Ring, „+1 Min.“
+  und „Stopp“; Meldungen (`ToastHost`, „Gelöscht“ im Chat) = weiße Karte mit
+  grünem Haken und „Rückgängig“ in Dunkelorange.
+- Chat-Kopf: Stift links = neues Gespräch, Mia + Name mittig, „Fertig“
+  rechts; klein „Vorlesen“ unter jeder Antwort; Mikrofon immer rechts (beim
+  Tippen wird es zum Senden-Knopf); kein „Testmodus“-Schild.
+- Keine Emojis in Knöpfen/Chips (Linien-Icons oder Text); Emojis nur als
+  Inhalt (Gerichte, Notizen).
+- Ohne Zähler: Sport ohne „2/3“, Balken und 🔥 (Woche Mo–So als Kreise
+  `SportWeekRow`, grün = trainiert, heute oranger Ring, ein Satz
+  `statusLine` ohne Zahlen; Seite: Woche, „Zuletzt“ mit `PersonAvatar`,
+  Packlisten, Wochenziel); Jetzt-Karte zeigt Sport nur als heute geplantes
+  Training. Kein „Einkauf · 7“/„Vorrat · 12“, keine Zahlen an Vorrat-Reitern,
+  kein „5/7 geplant“, keine Kategorie-Zähler und Kosten im Wochenplan, kein
+  Fortschrittsbalken in der Einkaufsliste, „Erledigte anzeigen“ statt „✓ 3
+  erledigt“.
+- Kacheln alle weiß (auch Wetter, Notizen, Sport): Notizen mit Stift, Vorrat
+  „Bald aufbrauchen“ mit 2 Sachen, Einkauf 3 Sachen + „und N weitere“.
+  Höchstens ein Hinweis unter der Jetzt-Karte. Bearbeiten-Modus: heller
+  „–“-Knopf, Auswahl ohne „Post – bald“.
+- Leere Seiten freundlich: Aufgaben mit großer Mia, „Alles erledigt.“ und
+  „Neue Aufgabe“; Einkaufsliste mit großem Feld „Was fehlt?“ + Mikrofon und
+  „Oft gekauft“ (`ShoppingAddField`), „Liste teilen“ am Ende.
 
 ## Feste Anordnung + Jetzt-Karte + Beispielgericht (v0.29)
 
@@ -672,7 +720,7 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   `id: "/"`, gleiche URL – Android/Chrome übernimmt ein neues Icon selbst.
 - `IconSync` (Layout): setzt beim Laden und nach jeder Farbwahl das Cookie und
   `apple-touch-icon`/Favicon auf die Farbe (das iPhone liest das Icon beim
-  "Zum Home-Bildschirm"). App-Logo (`AppIcon`) ebenfalls in der Farbe.
+  "Zum Home-Bildschirm"). Die Icon-Vorschau in den Einstellungen ebenfalls in der Farbe.
 - Farbwechsel später (Einstellungen `/profil/farbe` mit Icon-Vorschau, Lotte,
   Regel ohne KI): auf dem iPhone als Homescreen-App `iconChangeHint()` – "Das
   Icon auf dem Homescreen bleibt, bis du die App neu hinzufügst." und, solange
@@ -950,9 +998,9 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   Fuß-Buttons über `StickyActions` (`PRIMARY_BUTTON`/`SECONDARY_BUTTON`).
 - App-Icon: Lotte als Sprechblase auf orangem Verlauf (siehe Leitbild 7). Einzige Quelle
   `scripts/generate-icons.mjs` (`npm run icons` erzeugt icon.svg, PNGs,
-  maskable, apple-touch-icon, favicon.ico). In der App `AppIcon`/`AppLogo`
-  (`src/components/AppLogo.tsx`): Startseite Icon 44px + Schriftzug,
-  Unterseiten 32px oben rechts im `PageHeader` als Link "Zur Startseite".
+  maskable, apple-touch-icon, favicon.ico). In der App erscheint das Icon nur
+  noch als Vorschau in den Einstellungen; der Seitenkopf hat seit v0.30 keinen
+  Icon-Link mehr („‹ vorherige Seite“).
 ## Funktionen hinter den Bausteinen (aus der Koch-App)
 
 Sichtbar über den passenden Baustein (im neuen Design). Seit v0.25 sind

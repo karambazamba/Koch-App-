@@ -11,7 +11,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode, type TouchEvent as ReactTouchEvent } from "react";
 import { ChevronDown, ChevronUp, ChevronsUp, Minus, Plus } from "lucide-react";
-import { Sheet } from "@/components/plan/Sheet";
+import { Sheet } from "@/components/ui/Sheet";
 import { CARD_LIST, buttonClass, chipClass } from "@/components/ui/styles";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { applyHomeChange, reorderVisible, saveHomeTiles, standardLayout, tileMeta, type HomeTile, type HomeTileId, type TileSize } from "@/lib/core/homeLayout";
@@ -331,7 +331,7 @@ export function HomeBoard({
       {rowsOf(preview).flatMap((row, r) => row.map((u, i) => renderUnit(u, r * 2 + i, row.length === 2, false, row.length !== 2)))}
       {editing && (
         <div className="col-span-2 flex flex-col gap-3">
-          <button type="button" onClick={() => setPicking(true)} className="flex h-14 items-center justify-center gap-2 rounded-card border-2 border-dashed border-line text-base font-bold text-muted active:bg-stone-100">
+          <button type="button" onClick={() => setPicking(true)} className="flex h-14 items-center justify-center gap-2 rounded-card border-2 border-dashed border-line text-base font-bold text-muted active:bg-fill">
             <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
             Kachel hinzufügen
           </button>
@@ -377,7 +377,7 @@ function EditFrame({ tile, editing, onRemove, onResize, children }: { tile: Home
         {children ?? <div className="flex h-16 items-center rounded-card border border-line bg-surface px-4 text-sm font-bold text-muted">{meta.label}</div>}
       </div>
       <button type="button" onClick={onRemove} aria-label={`${meta.label} entfernen`} className="absolute -left-3 -top-3 z-10 flex h-11 w-11 items-center justify-center">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-stone-400 text-white shadow">
+        <span className="flex h-6 w-6 items-center justify-center rounded-full border border-line bg-surface text-muted shadow-card">
           <Minus className="h-4 w-4" strokeWidth={3} aria-hidden />
         </span>
       </button>

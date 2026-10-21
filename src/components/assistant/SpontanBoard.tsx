@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { RefreshCw, SlidersHorizontal } from "lucide-react";
-import { Sheet } from "@/components/plan/Sheet";
+import { Sheet } from "@/components/ui/Sheet";
 import { IdeaCards, type CardIdea } from "@/components/ideas/IdeaCards";
 import { buttonClass, chipClass } from "@/components/ui/styles";
 import { EMPTY_STOCK_HINT } from "@/lib/essen/dishIdeas";
@@ -75,8 +75,8 @@ export function SpontanAnswer({
   const shown = stock.slice(0, 5).map(formatPantryItem);
   return (
     <div className="flex w-full flex-col gap-2" aria-label="Spontan kochen">
-      <div className="flex w-full items-end gap-1">
-        <p className="max-w-[85%] rounded-2xl rounded-bl-md border border-line bg-surface px-4 py-2.5 text-base leading-snug text-ink">{heading}</p>
+      <div className="flex w-full flex-col items-start gap-0.5">
+        <p className="max-w-[85%] rounded-card rounded-bl-md border border-line bg-surface px-4 py-2.5 text-base leading-snug text-ink">{heading}</p>
         {speaker}
       </div>
       <p className="px-1 text-sm text-muted">
@@ -189,7 +189,7 @@ export function AdjustSheet({
 function Group({ title, multi = false, children }: { title: string; multi?: boolean; children: React.ReactNode }) {
   return (
     <section className="flex flex-col gap-2" aria-label={title}>
-      <h3 className="px-1 text-xs font-bold uppercase tracking-wider text-muted">{title}</h3>
+      <h3 className="px-1 text-[15px] font-extrabold text-muted">{title}</h3>
       <div className="flex flex-wrap gap-2" role={multi ? "group" : "radiogroup"} aria-label={title}>
         {children}
       </div>

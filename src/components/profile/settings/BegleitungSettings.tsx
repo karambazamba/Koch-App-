@@ -71,7 +71,7 @@ export function BegleitungGroup({ profile }: { profile: HouseholdProfile }) {
 export function DarstellungGroup({ profile }: { profile: HouseholdProfile }) {
   return (
     <section className="flex flex-col gap-2" aria-label="Darstellung">
-      <h2 className="px-1 text-xs font-bold uppercase tracking-wider text-ink">Darstellung</h2>
+      <h2 className="px-1 text-[15px] font-extrabold text-ink">Darstellung</h2>
       <div className={`${CARD} flex gap-1 p-1.5`} role="radiogroup" aria-label="Hell oder dunkel">
         {APP_THEMES.map((t) => (
           <button
@@ -80,7 +80,7 @@ export function DarstellungGroup({ profile }: { profile: HouseholdProfile }) {
             role="radio"
             aria-checked={profile.theme === t.value}
             onClick={() => saveProfile({ ...profile, theme: t.value, themeSet: true })}
-            className={`h-11 flex-1 rounded-xl text-[15px] font-bold transition ${profile.theme === t.value ? "bg-accent text-on-accent" : "text-muted"}`}
+            className={`h-11 flex-1 rounded-field text-[15px] font-bold transition ${profile.theme === t.value ? "bg-accent text-on-accent" : "text-muted"}`}
           >
             {t.label}
           </button>

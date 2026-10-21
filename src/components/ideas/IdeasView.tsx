@@ -112,7 +112,7 @@ export function IdeasView() {
               enterKeyHint="done"
               className={`${INPUT_BASE} h-12 min-w-0 flex-1 px-4`}
             />
-            <button type="submit" disabled={!wishText.trim()} aria-label="Wunsch merken" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-on-accent shadow-sm active:scale-95 disabled:opacity-40">
+            <button type="submit" disabled={!wishText.trim()} aria-label="Wunsch merken" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-field bg-accent text-on-accent shadow-sm active:scale-95 disabled:opacity-40">
               <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
             </button>
           </form>

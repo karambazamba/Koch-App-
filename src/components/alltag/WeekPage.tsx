@@ -7,7 +7,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { CircleCheck, NotebookPen, Plus } from "lucide-react";
+import { CircleCheck, NotebookPen } from "lucide-react";
+import { PagePlus } from "@/components/ui/QuickButton";
 import { Segmented } from "@/components/ui/Segmented";
 import { CARD, buttonClass } from "@/components/ui/styles";
 import { clockLabel } from "@/lib/aufgaben/answers";
@@ -46,9 +47,7 @@ export function WeekPage({ today, entries }: { today: string; entries: CalendarE
             />
           )}
         </div>
-        <button type="button" onClick={() => setAdding(true)} aria-label="Neuer Termin" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-sm active:scale-95">
-          <Plus className="h-5 w-5" strokeWidth={2.75} aria-hidden />
-        </button>
+        <PagePlus label="Neuer Termin" onClick={() => setAdding(true)} />
       </div>
       <ol className="flex flex-col gap-2.5" aria-label="Die nächsten Tage">
         {dates.map((date) => {
@@ -64,7 +63,7 @@ export function WeekPage({ today, entries }: { today: string; entries: CalendarE
                 aria-current={isToday ? "date" : undefined}
               >
                 <span className="flex w-11 shrink-0 flex-col items-center">
-                  <span className={`text-xs font-bold uppercase tracking-wider ${isToday ? "text-accent-strong" : "text-muted"}`}>{weekdayShort(date)}</span>
+                  <span className={`text-[15px] font-extrabold ${isToday ? "text-accent-strong" : "text-muted"}`}>{weekdayShort(date)}</span>
                   <span className="text-[26px] font-extrabold leading-tight">{Number(date.slice(8))}</span>
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">

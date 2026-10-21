@@ -3,7 +3,7 @@
 import { useSchnellnotiz, useNotes } from "@/lib/notizen";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Undo2 } from "lucide-react";
+import { Check } from "lucide-react";
 import { commitOps } from "@/lib/lotte/client";
 import { onOpenHelper } from "@/lib/lotte/open";
 import { learnLikes, likesFromIngredients, LIKE_WEIGHTS } from "@/lib/essen/likes";
@@ -172,7 +172,7 @@ export function KitchenHelper() {
 
   return (
     <>
-      {/* EIN Design: auf allen Seiten dieselbe dunkle Leiste wie auf der Startseite (dort zeichnet sie HomePager) */}
+      {/* EIN Design: auf allen Seiten dieselbe helle Mia-Leiste wie auf der Startseite (dort zeichnet sie HomePager) */}
       {!open && !typing && !hidden && <LotteBar name={helperName(profile)} bottom={stickyHeight ? `${stickyHeight}px` : undefined} />}
 
       {open && (
@@ -197,9 +197,12 @@ export function KitchenHelper() {
       {(undo || undone) && (
         <div
           role="status"
-          className="fixed inset-x-0 z-50 mx-auto flex w-[calc(100%-2rem)] max-w-md items-center gap-3 overflow-hidden rounded-2xl bg-ink px-4 py-3 text-background shadow-lg"
+          className="fixed inset-x-0 z-50 mx-auto flex w-[calc(100%-2rem)] max-w-md items-center gap-3 overflow-hidden rounded-card border border-line bg-surface px-4 py-3 text-ink shadow-sheet"
           style={{ bottom: `calc(${bottom} + 4.5rem)` }}
         >
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-good-soft text-good-ink" aria-hidden>
+            <Check className="h-4 w-4" strokeWidth={3} />
+          </span>
           {undo ? (
             <>
               <span className="flex-1 font-semibold">Gelöscht</span>
@@ -210,9 +213,8 @@ export function KitchenHelper() {
                   setUndo(null);
                   setUndone(true);
                 }}
-                className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-background/15 px-3 font-bold"
+                className="hit inline-flex h-10 items-center px-2 font-extrabold text-accent-strong"
               >
-                <Undo2 className="h-4 w-4" strokeWidth={2.5} aria-hidden />
                 Rückgängig
               </button>
               {/* Restzeit */}

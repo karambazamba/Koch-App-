@@ -5,7 +5,7 @@
 // optional km · "Eintragen". Auch zum Ändern eines Trainings.
 
 import { useState } from "react";
-import { Sheet } from "@/components/plan/Sheet";
+import { Sheet } from "@/components/ui/Sheet";
 import { INPUT, buttonClass, chipClass } from "@/components/ui/styles";
 import { addDays } from "@/lib/core/now";
 import { SPORTS, sportById, type Training, type TrainingData } from "@/lib/sport";
@@ -36,7 +36,7 @@ export function SportAddSheet({ today, recent, initial, initialDate, onClose, on
         }}
       >
         <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-xs font-bold uppercase tracking-wider text-muted">Was?</legend>
+          <legend className="mb-1 text-[15px] font-extrabold text-muted">Was?</legend>
           <div className="flex flex-wrap gap-1.5">
             {order.map((id) => {
               const s = sportById(id);
@@ -53,7 +53,7 @@ export function SportAddSheet({ today, recent, initial, initialDate, onClose, on
           {sport === "andere" && <input value={other} onChange={(e) => setOther(e.target.value)} placeholder="z. B. Tennis" maxLength={30} className={INPUT} aria-label="Andere Sportart" autoFocus />}
         </fieldset>
         <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-xs font-bold uppercase tracking-wider text-muted">Wie lange?</legend>
+          <legend className="mb-1 text-[15px] font-extrabold text-muted">Wie lange?</legend>
           <div className="flex flex-wrap items-center gap-1.5">
             {DURATIONS.map((d) => (
               <button key={d} type="button" onClick={() => setMinutes(String(d))} className={chipClass(minutes === String(d))} aria-pressed={minutes === String(d)}>
@@ -64,7 +64,7 @@ export function SportAddSheet({ today, recent, initial, initialDate, onClose, on
           </div>
         </fieldset>
         <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-xs font-bold uppercase tracking-wider text-muted">Wann?</legend>
+          <legend className="mb-1 text-[15px] font-extrabold text-muted">Wann?</legend>
           <div className="flex flex-wrap items-center gap-1.5">
             <button type="button" onClick={() => setDate(today)} className={chipClass(date === today)} aria-pressed={date === today}>
               Heute
@@ -76,7 +76,7 @@ export function SportAddSheet({ today, recent, initial, initialDate, onClose, on
           </div>
         </fieldset>
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-bold uppercase tracking-wider text-muted">Kilometer (optional)</span>
+          <span className="text-[15px] font-extrabold text-muted">Kilometer (optional)</span>
           <input inputMode="decimal" value={km} onChange={(e) => setKm(e.target.value)} placeholder="z. B. 5" className={`${INPUT} w-32`} aria-label="Kilometer" />
         </label>
         <button type="submit" disabled={!ok} className={buttonClass("primary", "lg")}>

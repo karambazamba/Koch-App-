@@ -42,7 +42,7 @@ export function DayRoutineView() {
               disabled={!anyHidden}
               onClick={() => {
                 resetJetztTopics();
-                showToast({ text: "Zurückgesetzt ✓", small: true });
+                showToast({ text: "Zurückgesetzt", small: true });
               }}
               className={buttonClass("soft", "sm")}
             >
@@ -56,7 +56,7 @@ export function DayRoutineView() {
         </ul>
 
         <section className={`${CARD} flex flex-col gap-3 p-4`} aria-label="Tageszeiten">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-muted">Tageszeiten</h2>
+          <h2 className="text-[15px] font-extrabold text-muted">Tageszeiten</h2>
           <label className="flex items-center gap-3">
             <span className="flex-1 text-base font-semibold">☀️ Morgens bis</span>
             <input type="time" value={r.morgenBis} onChange={(e) => e.target.value && changeRoutine({ morgenBis: e.target.value })} className={`${INPUT_BASE} h-11 w-36 px-3`} aria-label="Morgens bis" />
@@ -72,7 +72,7 @@ export function DayRoutineView() {
         </section>
 
         <section className={`${CARD} flex flex-col gap-2 p-4`} aria-label="Arbeitstage">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-muted">Arbeitstage</h2>
+          <h2 className="text-[15px] font-extrabold text-muted">Arbeitstage</h2>
           <div className="flex flex-wrap gap-1.5">
             {WEEKDAY_SHORT.map((d, i) => (
               <button key={d} type="button" role="checkbox" aria-checked={r.arbeitstage.includes(i)} aria-label={`Arbeitstag ${d}`} onClick={() => toggleDay(i)} className={`${chipClass(r.arbeitstage.includes(i))} min-w-11 justify-center`}>
@@ -100,7 +100,7 @@ export function DayRoutineView() {
         </ul>
 
         <section className={`${CARD} flex flex-col gap-3 p-4`} aria-label="Zeit-Vorschau">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-muted">Zum Ausprobieren</h2>
+          <h2 className="text-[15px] font-extrabold text-muted">Zum Ausprobieren</h2>
           <p className="text-base font-semibold">So tun, als wäre es …</p>
           <div className="flex flex-wrap items-center gap-2">
             <input type="time" value={clock} onChange={(e) => setClock(e.target.value)} className={`${INPUT_BASE} h-11 w-36 px-3`} aria-label="Vorschau-Uhrzeit" />

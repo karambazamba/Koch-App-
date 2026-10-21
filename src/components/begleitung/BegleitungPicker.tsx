@@ -68,7 +68,7 @@ export function BegleitungPicker({ value, onChange }: { value: HelperSettings; o
             setCustom(true);
             if (draft.trim()) onChange(helperWith(value, { name: draft }));
           }}
-          className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-dashed border-line text-[15px] font-semibold text-muted active:bg-stone-100"
+          className="flex h-12 items-center justify-center gap-2 rounded-card border border-dashed border-line text-[15px] font-semibold text-muted active:bg-fill"
         >
           <PenLine className="h-4 w-4" strokeWidth={2} aria-hidden />
           Oder gib mir einen eigenen Namen …
@@ -115,7 +115,7 @@ export function BegleitungPicker({ value, onChange }: { value: HelperSettings; o
 /** Assistentin / Assistent (Anrede und Stimme) */
 export function ArtChoice({ value, onChange }: { value: HelperArt; onChange: (art: HelperArt) => void }) {
   return (
-    <div className="flex gap-1 rounded-2xl bg-segment p-1" role="radiogroup" aria-label="Assistentin oder Assistent">
+    <div className="flex gap-1 rounded-card bg-segment p-1" role="radiogroup" aria-label="Assistentin oder Assistent">
       {(["assistentin", "assistent"] as HelperArt[]).map((art) => (
         <button
           key={art}
@@ -123,7 +123,7 @@ export function ArtChoice({ value, onChange }: { value: HelperArt; onChange: (ar
           role="radio"
           aria-checked={value === art}
           onClick={() => onChange(art)}
-          className={`hit h-10 flex-1 rounded-xl text-[15px] font-bold transition ${value === art ? "bg-surface text-ink shadow-card" : "text-muted"}`}
+          className={`hit h-10 flex-1 rounded-field text-[15px] font-bold transition ${value === art ? "bg-surface text-ink shadow-card" : "text-muted"}`}
         >
           {art === "assistentin" ? "Assistentin" : "Assistent"}
         </button>

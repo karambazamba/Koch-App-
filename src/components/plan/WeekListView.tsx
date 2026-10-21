@@ -61,7 +61,7 @@ export function WeekListView({
               <button
                 type="button"
                 onClick={() => onOpen(d.weekday)}
-                className="flex min-w-0 flex-1 items-center gap-3 py-2 pl-4 text-left active:bg-stone-50"
+                className="flex min-w-0 flex-1 items-center gap-3 py-2 pl-4 text-left active:bg-background"
               >
                 <span className={`w-8 shrink-0 text-sm font-bold ${d.date === todayIso ? "text-accent-strong" : "text-muted"}`}>
                   {d.weekday.slice(0, 2)}
@@ -70,7 +70,7 @@ export function WeekListView({
                 <span className={`min-w-0 flex-1 truncate ${d.slot.entry ? "font-semibold" : "text-muted"}`}>
                   {d.paused ? "Pause ☀️" : d.away ? "Ausflug" : d.slot.entry ? dishTitle(d) : d.weekend === "frei" ? "Wochenende frei 🏖" : d.cheat ? "Cheat Day 🍕" : mixed ? "spontan" : "frei"}
                 </span>
-                {readOnly && <ChevronRight className="mr-2 h-5 w-5 shrink-0 text-stone-300" strokeWidth={2.25} aria-hidden />}
+                {readOnly && <ChevronRight className="mr-2 h-5 w-5 shrink-0 text-faint" strokeWidth={2.25} aria-hidden />}
               </button>
               {canDrag && (
                 <span
@@ -78,7 +78,7 @@ export function WeekListView({
                   tabIndex={-1}
                   aria-label={`${d.slot.entry!.title} ziehen`}
                   data-drag-handle
-                  className="flex h-14 w-12 shrink-0 cursor-grab items-center justify-center text-stone-400 active:cursor-grabbing"
+                  className="flex h-14 w-12 shrink-0 cursor-grab items-center justify-center text-faint active:cursor-grabbing"
                   style={{ touchAction: "none" }}
                   onPointerDown={(e) => {
                     e.preventDefault();

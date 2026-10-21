@@ -31,7 +31,7 @@ type IngredientRow = { id: string; amountText: string; unit: string; name: strin
 
 /** Feldstil ohne feste Breite/Höhe, für schmale Felder und Textbereiche */
 const ADD_ROW = `${buttonClass("soft")} w-full`;
-const REMOVE = "flex h-12 w-10 shrink-0 items-center justify-center text-stone-400 transition active:scale-90";
+const REMOVE = "flex h-12 w-10 shrink-0 items-center justify-center text-faint transition active:scale-90";
 
 /** /kochbuch/bearbeiten (neu) bzw. /kochbuch/bearbeiten?id=… (ändern) */
 export function RecipeEditor() {
@@ -114,8 +114,8 @@ function EditorForm({ existing }: { existing?: Recipe }) {
           value={recipe.kind}
           onChange={(kind) => update({ kind, oven: kind === "backen" ? (recipe.oven ?? { mode: "ober-unter", temp: 180, minutes: 40 }) : recipe.oven })}
           options={[
-            { value: "kochen", label: "🍲 Kochen" },
-            { value: "backen", label: "🧁 Backen" },
+            { value: "kochen", label: "Kochen" },
+            { value: "backen", label: "Backen" },
           ]}
           columns={2}
         />

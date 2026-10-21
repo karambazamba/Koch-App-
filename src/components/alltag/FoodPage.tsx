@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { CARD, buttonClass, chipClass } from "@/components/ui/styles";
-import { Sheet } from "@/components/plan/Sheet";
+import { Sheet } from "@/components/ui/Sheet";
 import { QuickAddButton } from "@/components/shopping/QuickAdd";
 import { clockLabel } from "@/lib/aufgaben/answers";
 import { weekdayLong, weekdayShort } from "@/lib/aufgaben/model";
@@ -64,8 +64,8 @@ export function FoodPage({ data, minutes }: { data: HomeData; minutes: number })
             const dish = dishOf(day);
             return (
               <li key={date}>
-                <button type="button" onClick={() => day && setSwap(day)} className="flex h-14 w-full items-center gap-3 px-4 text-left active:bg-stone-100">
-                  <span className="w-8 shrink-0 text-sm font-bold uppercase text-muted">{weekdayShort(date)}</span>
+                <button type="button" onClick={() => day && setSwap(day)} className="flex h-14 w-full items-center gap-3 px-4 text-left active:bg-fill">
+                  <span className="w-8 shrink-0 text-sm font-bold text-muted">{weekdayShort(date)}</span>
                   {dish ? (
                     <span className="min-w-0 flex-1 truncate text-base font-semibold">{dish}</span>
                   ) : day?.away ? (
@@ -104,14 +104,14 @@ function DishHero({ data, day, when, onSwap }: { data: HomeData; day: PlanDay | 
         {entry ? dishEmoji(entry.title, entry.category) : "🍽"}
       </div>
       <div className="flex flex-col gap-1.5 p-4">
-        <p className="text-xs font-bold uppercase tracking-wider text-accent-strong">
+        <p className="text-[15px] font-extrabold text-accent-strong">
           {when}
           {entry && day ? ` · ${clockLabel(mealClockFor(data.profile, day.weekday))}` : ""}
         </p>
         {entry ? (
           <>
             <h2 className="text-2xl font-extrabold leading-tight tracking-tight">{entry.title}</h2>
-            {facts.length > 0 && <p className={`text-sm font-semibold ${needs && !needs.length ? "text-emerald-700" : "text-muted"}`}>{facts.join(" · ")}</p>}
+            {facts.length > 0 && <p className={`text-sm font-semibold ${needs && !needs.length ? "text-good-ink" : "text-muted"}`}>{facts.join(" · ")}</p>}
             <div className="mt-2 flex gap-2">
               {entry.recipeId && (
                 <Link href={`/kochbuch/rezept?id=${entry.recipeId}${todayPersons ? `&personen=${todayPersons}` : ""}`} className={buttonClass("primary", "md")}>

@@ -15,6 +15,7 @@ let lastHistoryCall: "push" | "replace" | null = null;
 let popPending = false;
 let installed = false;
 
+const listeners = new Set<() => void>();
 const currentUrl = () => `${window.location.pathname}${window.location.search}`;
 const entryKey = (index: number, url: string) => `${index}:${url}`;
 const topKey = () => (state.stack.length ? entryKey(state.stack.length - 1, state.stack[state.stack.length - 1]) : "");
@@ -115,6 +116,7 @@ export function onRouteChange(url: string) {
     restoreScroll(state.scroll[topKey()] ?? 0);
   }
   lastHistoryCall = null;
+  for (const fn of listeners) fn();
   // Einträge tiefer als der Verlauf aufräumen
   for (const key of Object.keys(state.scroll)) if (Number(key.split(":")[0]) >= state.stack.length) delete state.scroll[key];
   persist();
@@ -160,6 +162,22 @@ export function expectReplace() {
 /** Gibt es in der App eine Ebene, zu der man zurückkann? */
 export function canGoBack(): boolean {
   return state.stack.length > 1;
+}
+
+/** Bei jedem Seitenwechsel benachrichtigen (für den Zurück-Text) */
+export function subscribeNavigation(fn: () => void): () => void {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+
+/** Die Seite, zu der "Zurück" führt – auch während der Verlauf noch nachzieht */
+export function previousUrl(): string | null {
+  const { stack } = state;
+  const here = currentUrl();
+  const n = stack.length;
+  if (stack[n - 1] === here) return stack[n - 2] ?? null;
+  if (stack[n - 2] === here) return stack[n - 3] ?? null;
+  return stack[n - 1] ?? null;
 }
 
 // So früh wie möglich einhängen – vor dem Router, damit Zurück-Gesten sicher
