@@ -1,20 +1,23 @@
 "use client";
 
 // Startseite mit drei Seiten: Kalender · Heute · Essen (Heute in der Mitte).
-// Wechsel per Tipp auf die Leiste oben oder seitlichem Wischen; hoch/runter
-// scrollt normal. Die Seite steht in der Adresse, ohne neuen
-// Verlaufseintrag (?seite=kalender, alt ?seite=woche). Unten immer dieselbe Mia-Leiste.
+// Wechsel per Tipp auf die Leiste oben oder seitlichem Wischen – die Seiten
+// liegen nebeneinander und folgen dem Finger (`usePagerSwipe`), der Schalter
+// oben gleitet mit. Hoch/runter scrollt normal, Scrollhöhe je Seite bleibt.
+// Verlauf: von Heute zu Kalender/Essen EIN Eintrag, zwischen Kalender und
+// Essen nur ersetzen – Zurück (Pfeil, Safari-Geste, Android) führt immer zu
+// Heute. (?seite=kalender, alt ?seite=woche.) Unten immer dieselbe Mia-Leiste.
 
 import { wakeAvatar } from "@/lib/core/avatarState";
 import Link from "next/link";
-import { useEffect, useRef, useState, type TouchEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Mic, Settings } from "lucide-react";
 import { LotteAvatar } from "@/components/LotteAvatar";
 import { CARD } from "@/components/ui/styles";
 import { useEntries } from "@/lib/aufgaben/store";
 import { useMinutes } from "@/lib/core/now";
-import { expectReplace } from "@/lib/core/navigation";
+import { expectReplace, expectTabSwitch, previousUrl } from "@/lib/core/navigation";
 import { helperName } from "@/lib/einstellungen/profile";
 import { openHelper } from "@/lib/lotte/open";
 import type { HomeData } from "@/components/home/useHomeData";
@@ -22,6 +25,7 @@ import { TodayPage } from "./TodayPage";
 import { CalendarPage } from "@/components/kalender/CalendarPage";
 import { FoodPage } from "./FoodPage";
 import { PreviewBanner } from "./PreviewBanner";
+import { PAGER_MS, slideTo, usePagerSwipe } from "./usePagerSwipe";
 import { clockMinutes, usePreview } from "@/lib/tagesablauf/settings";
 
 type HomeTab = "kalender" | "heute" | "essen";
@@ -30,69 +34,147 @@ const TABS: { value: HomeTab; label: string }[] = [
   { value: "heute", label: "Heute" },
   { value: "essen", label: "Essen" },
 ];
+const indexOf = (t: HomeTab) => TABS.findIndex((x) => x.value === t);
 
 // "woche" = alter Name des Kalenders (Links und Lesezeichen bleiben gültig)
 const tabFrom = (v: string | null): HomeTab => (v === "kalender" || v === "woche" ? "kalender" : v === "essen" ? "essen" : "heute");
 
-/** Wischen nur auf freier Fläche bzw. nicht in Eingabefeldern und markierten Bereichen */
-const ignoreSwipe = (target: EventTarget | null) => target instanceof Element && Boolean(target.closest("input, textarea, select, [data-no-swipe], [role=dialog]"));
+/** Nachbarseite so legen, als wäre sie auf ihrer gemerkten Höhe gescrollt */
+const placeAt = (el: HTMLElement, top: number) => {
+  el.style.top = `${top}px`;
+};
 
 export function HomePager({ data }: { data: HomeData }) {
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const tab = tabFrom(params.get("seite"));
+  const urlTab = tabFrom(params.get("seite"));
+  const [tab, setTab] = useState<HomeTab>(urlTab);
+  const tabRef = useRef(tab);
   const entries = useEntries();
   const realMinutes = useMinutes();
   // Zeit-Vorschau ("So tun, als wäre es …") wirkt nur hier auf der Startseite – Daten bleiben
   const preview = usePreview();
   const minutes = preview && realMinutes !== undefined ? clockMinutes(preview.clock) : realMinutes;
-  const [direction, setDirection] = useState<1 | -1>(1);
   const scrolls = useRef<Partial<Record<HomeTab, number>>>({});
-  const touch = useRef<{ x: number; y: number; t: number } | null>(null);
-  const pendingScroll = useRef<number | null>(null);
-
-  const go = (next: HomeTab) => {
-    if (next === tab) return;
-    scrolls.current[tab] = window.scrollY;
-    setDirection(TABS.findIndex((t) => t.value === next) > TABS.findIndex((t) => t.value === tab) ? 1 : -1);
-    pendingScroll.current = scrolls.current[next] ?? 0;
-    expectReplace();
-    router.replace(next === "heute" ? pathname : `${pathname}?seite=${next}`, { scroll: false });
-  };
-
-  // Nach dem Wechsel: Scrollhöhe der Seite wiederherstellen (sonst oben)
+  const mainRef = useRef<HTMLElement>(null);
+  const panelRefs = useRef<Partial<Record<HomeTab, HTMLDivElement | null>>>({});
+  const thumbRef = useRef<HTMLSpanElement>(null);
+  // Nachbarseiten erst kurz nach dem Start (oder beim ersten Anfassen) rendern – danach bleiben sie
+  const [warm, setWarm] = useState(false);
   useEffect(() => {
-    if (pendingScroll.current === null) return;
-    window.scrollTo(0, pendingScroll.current);
-    pendingScroll.current = null;
+    const id = window.setTimeout(() => setWarm(true), 600);
+    return () => window.clearTimeout(id);
+  }, []);
+
+  // Adresse geändert (Zurück-Geste, Link) → Seite folgt
+  useEffect(() => {
+    if (urlTab === tabRef.current) return;
+    scrolls.current[tabRef.current] = window.scrollY;
+    tabRef.current = urlTab;
+    setTab(urlTab);
+  }, [urlTab]);
+
+  // Scrollhöhe je Seite merken
+  useEffect(() => {
+    const onScroll = () => {
+      scrolls.current[tabRef.current] = window.scrollY;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Nach dem Wechsel: alles auf Ruhelage, Scrollhöhe der Seite zurück (vor dem Zeichnen)
+  useLayoutEffect(() => {
+    for (const el of Object.values(panelRefs.current)) {
+      if (!el) continue;
+      el.style.transition = "none";
+      el.style.transform = "";
+      el.style.visibility = "";
+      el.style.top = "";
+    }
+    if (thumbRef.current) {
+      thumbRef.current.style.transition = "none";
+      thumbRef.current.style.transform = `translateX(${indexOf(tab) * 100}%)`;
+    }
+    window.scrollTo(0, scrolls.current[tab] ?? 0);
   }, [tab]);
 
-  const onTouchStart = (e: TouchEvent) => {
-    touch.current = ignoreSwipe(e.target) || e.touches.length > 1 ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY, t: e.timeStamp };
+  /** Verlauf: Heute → Kalender/Essen = ein Eintrag; dazwischen ersetzen; zu Heute = zurück */
+  const navigate = (from: HomeTab, next: HomeTab) => {
+    const url = next === "heute" ? pathname : `${pathname}?seite=${next}`;
+    expectTabSwitch();
+    if (next === "heute" && from !== "heute" && previousUrl() === pathname) return router.back();
+    if (from === "heute") return router.push(url, { scroll: false });
+    expectReplace();
+    router.replace(url, { scroll: false });
   };
-  const onTouchEnd = (e: TouchEvent) => {
-    const start = touch.current;
-    touch.current = null;
-    if (!start) return;
-    const dx = e.changedTouches[0].clientX - start.x;
-    const dy = e.changedTouches[0].clientY - start.y;
-    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5 || e.timeStamp - start.t > 800) return;
-    const index = TABS.findIndex((t) => t.value === tab);
-    const next = TABS[index + (dx < 0 ? 1 : -1)];
-    if (next) go(next.value);
+
+  const commit = (next: HomeTab) => {
+    const from = tabRef.current;
+    if (next === from) return;
+    scrolls.current[from] = window.scrollY;
+    tabRef.current = next;
+    setTab(next);
+    navigate(from, next);
+  };
+
+  const neighbor = (step: -1 | 1) => TABS[indexOf(tabRef.current) + step]?.value ?? null;
+  const handles = {
+    panels: () => {
+      const p = neighbor(-1);
+      const n = neighbor(1);
+      return { current: panelRefs.current[tabRef.current] ?? null, prev: p ? (panelRefs.current[p] ?? null) : null, next: n ? (panelRefs.current[n] ?? null) : null };
+    },
+    prepare: () => {
+      const current = panelRefs.current[tabRef.current];
+      if (!current) return;
+      const top = current.getBoundingClientRect().top;
+      for (const step of [-1, 1] as const) {
+        const t = neighbor(step);
+        const el = t ? panelRefs.current[t] : null;
+        if (t && el) placeAt(el, top + window.scrollY - (scrolls.current[t] ?? 0));
+      }
+    },
+    progress: (share: number, animate: boolean) => {
+      const thumb = thumbRef.current;
+      if (!thumb) return;
+      thumb.style.transition = animate ? `transform ${PAGER_MS}ms cubic-bezier(0.22, 0.61, 0.36, 1)` : "none";
+      thumb.style.transform = `translateX(${(indexOf(tabRef.current) + Math.max(-1, Math.min(1, share))) * 100}%)`;
+    },
+    commit: (step: -1 | 1) => {
+      const t = neighbor(step);
+      if (t) commit(t);
+    },
+    warm: () => setWarm(true),
+  };
+  usePagerSwipe(mainRef, handles, true);
+
+  const go = (next: HomeTab) => {
+    const step = indexOf(next) - indexOf(tabRef.current);
+    if (!step) return;
+    if (Math.abs(step) === 1 && warm) slideTo(handles, step as -1 | 1);
+    else commit(next);
   };
 
   const ready = entries !== undefined && minutes !== undefined;
+  const content = (t: HomeTab) => {
+    if (!ready) return t === tab ? <div className={`${CARD} h-48 animate-pulse`} /> : null;
+    if (t === "heute") return <TodayPage data={data} entries={entries} minutes={minutes} realMinutes={realMinutes} onOpenFood={() => go("essen")} />;
+    if (t === "kalender") return <CalendarPage today={data.todayIso} entries={entries} name={helperName(data.profile)} />;
+    return <FoodPage data={data} minutes={minutes} />;
+  };
   return (
     <>
       <main
+        ref={mainRef}
         className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-3 overflow-x-hidden px-4 pb-[calc(max(0.75rem,env(safe-area-inset-bottom))+6.5rem)] pt-[calc(env(safe-area-inset-top)+0.75rem)]"
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
       >
-        <nav className="flex items-center gap-2" aria-label="Seiten">
-          <div role="tablist" aria-label="Kalender, Heute, Essen" className="flex flex-1 rounded-card bg-segment p-1">
+        <nav className="relative z-10 flex items-center gap-2 bg-background" aria-label="Seiten">
+          <div role="tablist" aria-label="Kalender, Heute, Essen" className="relative flex flex-1 rounded-card bg-segment p-1">
+            <span className="pointer-events-none absolute inset-y-1 left-1 w-[calc((100%-0.5rem)/3)]" aria-hidden>
+              <span ref={thumbRef} className="block h-full w-full rounded-field bg-surface shadow-card" style={{ transform: `translateX(${indexOf(tab) * 100}%)` }} />
+            </span>
             {TABS.map((t) => (
               <button
                 key={t.value}
@@ -100,7 +182,7 @@ export function HomePager({ data }: { data: HomeData }) {
                 role="tab"
                 aria-selected={tab === t.value}
                 onClick={() => go(t.value)}
-                className={`hit h-10 flex-1 rounded-field text-[15px] font-bold transition ${tab === t.value ? "bg-surface text-ink shadow-card" : "text-muted"}`}
+                className={`hit relative h-10 flex-1 rounded-field text-[15px] font-bold transition-colors ${tab === t.value ? "text-ink" : "text-muted"}`}
               >
                 {t.label}
               </button>
@@ -111,17 +193,26 @@ export function HomePager({ data }: { data: HomeData }) {
           </Link>
         </nav>
         <PreviewBanner />
-        <div key={tab} role="tabpanel" aria-label={TABS.find((t) => t.value === tab)?.label} className="motion-page" style={{ animation: `${direction > 0 ? "page-from-right" : "page-from-left"} 0.22s ease-out` }}>
-          {!ready ? (
-            <div className={`${CARD} h-48 animate-pulse`} />
-          ) : tab === "heute" ? (
-            <TodayPage data={data} entries={entries} minutes={minutes} realMinutes={realMinutes} onOpenFood={() => go("essen")} />
-          ) : tab === "kalender" ? (
-            <CalendarPage today={data.todayIso} entries={entries} name={helperName(data.profile)} />
-          ) : (
-            <FoodPage data={data} minutes={minutes} />
-          )}
-        </div>
+        {TABS.map((t) => {
+          const active = t.value === tab;
+          if (!active && !warm) return null;
+          return (
+            <div
+              key={t.value}
+              ref={(el) => {
+                panelRefs.current[t.value] = el;
+              }}
+              role={active ? "tabpanel" : undefined}
+              aria-label={active ? t.label : undefined}
+              aria-hidden={active ? undefined : true}
+              inert={!active}
+              data-seite={t.value}
+              className={active ? "pager-page relative" : "pager-page pointer-events-none invisible fixed inset-x-0 top-0"}
+            >
+              <div className={active ? undefined : "mx-auto max-w-lg px-4"}>{content(t.value)}</div>
+            </div>
+          );
+        })}
       </main>
       <LotteBar name={helperName(data.profile)} />
     </>
