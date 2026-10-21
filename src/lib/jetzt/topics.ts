@@ -197,9 +197,9 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
     add({ id: `ideen:${x.today}`, kind: "ideen", title: "Noch nichts zum Essen – 3 Ideen", detail: "Mit dem, was da ist", score: 56, target: { action: "ideen" }, tile: "essen", tip: true, gentle: true });
   }
 
-  for (const t of x.urgent.slice(0, 1)) add({ id: `dringend:${t.key}`, kind: "dringend", title: `Heute wichtig: ${short(t.title)}`, detail: "Antippen zum Abhaken", score: 64, target: { href: "/aufgaben" }, tile: "aufgaben", gentle: false });
+  for (const t of x.urgent.slice(0, 1)) add({ id: `dringend:${t.key}`, kind: "dringend", title: `Heute wichtig: ${short(t.title)}`, detail: "Aufgaben ansehen", score: 64, target: { href: "/aufgaben" }, tile: "aufgaben", gentle: false });
   for (const t of x.dueToday.filter((d) => !x.urgent.some((u) => u.key === d.key)).slice(0, 1))
-    add({ id: `frist:${t.key}`, kind: "dringend", title: `Heute fällig: ${short(t.title)}`, detail: "Antippen zum Abhaken", score: 60, target: { href: "/aufgaben" }, tile: "aufgaben", gentle: false });
+    add({ id: `frist:${t.key}`, kind: "dringend", title: `Heute dran: ${short(t.title)}`, detail: "Aufgaben ansehen", score: 60, target: { href: "/aufgaben" }, tile: "aufgaben", gentle: false });
 
   for (const b of x.birthdays.slice(0, 1)) {
     const name = birthdayName(b.title);
