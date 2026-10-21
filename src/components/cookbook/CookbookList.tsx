@@ -11,7 +11,9 @@ import { PagePlus } from "@/components/ui/QuickButton";
 import { CARD, INPUT_BASE, PAGE_MAIN, SECTION_TITLE, chipClass } from "@/components/ui/styles";
 import { BUILTIN_BAKING, KID_FRIENDLY } from "@/lib/essen/baking";
 import { sortRecipes, toggleFavorite, useRecipes, type Recipe } from "@/lib/essen/cookbook";
-import { dishEmoji } from "@/lib/essen/dishEmoji";
+import { dishTone } from "@/lib/essen/dishLook";
+import { demoLook } from "@/lib/essen/demoDish";
+import { DishPicture } from "@/components/alltag/DishPicture";
 import { useMealPlans, type StoredEntry } from "@/lib/essen/mealPlan";
 import { helperName, personLabel, type HouseholdProfile } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";
@@ -59,7 +61,7 @@ function kidFavorites(profile: HouseholdProfile | null | undefined, mealPlans: R
 
 const possessive = (name: string) => (/[sxzß]$/i.test(name) ? `${name}'` : `${name}s`);
 
-/** "Unsere Rezepte": großes "+", Suche, Filter-Chips, Raster-Karten */
+/** Rezepte: Bilder-Raster, Suche, Text-Filter-Chips, Plus im Kopf */
 export function CookbookList() {
   const recipes = useRecipes();
   const profile = useProfile();
@@ -160,21 +162,18 @@ export function CookbookList() {
 function RecipeTile({ recipe, kid, builtin = false, kidFriendly = false }: { recipe: Recipe; kid?: string; builtin?: boolean; kidFriendly?: boolean }) {
   const extra = builtin
     ? kidFriendly
-      ? "mit Kindern 🧒"
+      ? "mit Kindern"
       : ""
     : kid
       ? `${possessive(kid)} Liebling`
-      : recipe.cookedCount > 0
-        ? `${recipe.cookedCount}× ${recipe.kind === "backen" ? "gebacken" : "gekocht"}`
-        : recipe.source === "ki"
-          ? "Neu"
-          : "";
+      : recipe.source === "ki" && recipe.cookedCount === 0
+        ? "Neu"
+        : "";
+  const look = demoLook(recipe.id);
   return (
     <li className={`${CARD} relative overflow-hidden`}>
       <Link href={`/kochbuch/rezept?id=${encodeURIComponent(recipe.id)}`} className="flex h-full flex-col active:opacity-90">
-        <span className="flex h-20 items-center justify-center bg-linear-to-br from-accent-soft via-accent-soft to-accent/35 text-4xl" aria-hidden>
-          {dishEmoji(recipe.title, recipe.category)}
-        </span>
+        <DishPicture photo={look?.photo} tone={look?.tone ?? dishTone(recipe.title, recipe.category)} alt="" className="aspect-[4/3] w-full" />
         <span className="flex flex-1 flex-col gap-0.5 p-3">
           <span className="line-clamp-2 text-[15px] font-bold leading-snug">{recipe.title}</span>
           <span className="mt-auto flex flex-wrap items-center gap-x-1.5 text-xs text-muted">
@@ -189,7 +188,7 @@ function RecipeTile({ recipe, kid, builtin = false, kidFriendly = false }: { rec
         </span>
       </Link>
       {!builtin && (
-        <span className="absolute right-1 top-1">
+        <span className="absolute right-1.5 top-1.5">
           <FavoriteButton recipe={recipe} small />
         </span>
       )}
@@ -204,11 +203,9 @@ export function FavoriteButton({ recipe, small = false }: { recipe: Recipe; smal
       aria-pressed={recipe.favorite}
       aria-label={recipe.favorite ? `${recipe.title}: Favorit entfernen` : `${recipe.title}: als Favorit markieren`}
       onClick={() => toggleFavorite(recipe.id)}
-      className={`flex shrink-0 items-center justify-center transition active:scale-90 ${small ? "h-11 w-11" : "h-14 w-14"} ${
-        recipe.favorite ? "text-accent" : small ? "text-faint" : "text-faint"
-      }`}
+      className={`hit flex shrink-0 items-center justify-center rounded-full bg-surface/90 shadow-card transition active:scale-90 ${small ? "h-8 w-8" : "h-[34px] w-[34px]"} ${recipe.favorite ? "text-accent" : "text-muted"}`}
     >
-      <Heart className={`${small ? "h-5 w-5" : "h-6 w-6"} ${recipe.favorite ? "fill-current" : ""}`} strokeWidth={2} aria-hidden />
+      <Heart className={`${small ? "h-4 w-4" : "h-5 w-5"} ${recipe.favorite ? "fill-current" : ""}`} strokeWidth={2.25} aria-hidden />
     </button>
   );
 }

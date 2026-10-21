@@ -67,7 +67,7 @@ export function NotesView() {
     <>
       <PageHeader
         title="Notizen"
-        backHref="/?seite=woche"
+        backHref="/?seite=kalender"
         action={
           <PagePlus label="Neue Notiz" onClick={() => setChoose(true)} />
         }

@@ -103,8 +103,7 @@ export const WARNING =
 /**
  * Unterer Abstand: Home-Leiste (Safe-Area) plus Platz für den Küchenhelfer-Knopf
  * (56px + Rand + Luft), damit am Seitenende nichts unter dem Knopf liegt.
- * Auf allen Seiten ans <main> – auch über einer StickyActions-Leiste, denn der
- * Knopf schwebt dann direkt über der Leiste.
+ * Auf allen Seiten ans <main>.
  */
 export const FAB_CLEARANCE = "pb-[calc(max(1rem,env(safe-area-inset-bottom))+6.5rem)]";
 

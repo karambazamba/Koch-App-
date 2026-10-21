@@ -1,11 +1,11 @@
 "use client";
 
-// "+" bei Termine (Heute und Woche): Fenster von unten "Neuer Termin" mit
-// Textfeld (und Mikrofon), WANN (Heute · Morgen · nächster Wochentag ·
-// 📅 Datum), UHRZEIT (häufige zuerst · 🕐 andere), WO (Familie · Arbeit) und
-// ERINNERUNG (Standard 30 Min vorher). Steht Tag/Uhrzeit im Text ("Morgen
-// 19:30 Elternabend"), werden die Chips gesetzt und der Titel bereinigt.
-// Ohne Uhrzeit: "Dann lieber als Aufgabe".
+// "+" bei Termine: Fenster "Neuer Termin" mit Textfeld (Mikrofon rechts),
+// WANN (Heute · Morgen · nächster Wochentag · Datum), UHRZEIT (häufige zuerst ·
+// andere), FÜR WEN (Avatare der Familie), Familie | Arbeit und "Mehr Optionen"
+// (Ort, Erinnerung – Standard 30 Min vorher). Steht Tag/Uhrzeit im Text
+// ("Morgen 19:30 Elternabend"), werden die Chips gesetzt und der Titel
+// bereinigt. Ohne Uhrzeit: "Dann lieber als Aufgabe".
 
 import { useMemo, useRef, useState } from "react";
 import { CalendarDays, Clock, Mic, Square } from "lucide-react";
@@ -13,12 +13,14 @@ import { Sheet } from "@/components/ui/Sheet";
 import { INPUT_BASE, LABEL, buttonClass, chipClass } from "@/components/ui/styles";
 import { createEntry, type Room } from "@/lib/core/entries";
 import { sanitizeEntry, upsertEntry, type CalendarEntry, type Reminder } from "@/lib/aufgaben/model";
-import { dayChipLabel, frequentTimes, quickTaskData, readTerminText } from "@/lib/aufgaben/quick";
+import { dayChipLabel, frequentTimes, quickTaskData, readTerminText, terminDay } from "@/lib/aufgaben/quick";
 import { useEntries } from "@/lib/aufgaben/store";
 import { addDays, todayIso } from "@/lib/core/now";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 import { useSpeechInput } from "@/lib/lotte/useSpeechInput";
 import { act } from "./actions";
+import { PersonAvatar } from "@/components/ui/PersonAvatar";
+import { useProfile } from "@/lib/einstellungen/useProfile";
 
 const REMINDER_CHIPS: { value: Reminder; label: string }[] = [
   { value: "aus", label: "keine" },
@@ -36,12 +38,17 @@ export function TerminQuickAdd({ onClose, defaultDate }: { onClose: () => void; 
   const [room, setRoom] = useState<Room | null>(null);
   const [reminder, setReminder] = useState<Reminder>("30");
   const [askTask, setAskTask] = useState(false);
+  const [who, setWho] = useState<string[]>([]);
+  const [place, setPlace] = useState("");
+  const [more, setMore] = useState(false);
+  const profile = useProfile();
+  const persons = (profile?.persons ?? []).filter((p) => p.name.trim());
   const dateInput = useRef<HTMLInputElement>(null);
   const timeInput = useRef<HTMLInputElement>(null);
   const workRoom = useWorkRoom() || room === "arbeit";
   const read = readTerminText(text, today);
   // Selbst gewählt geht vor; sonst was im Text steht; sonst der Standard
-  const day = date ?? read.date ?? defaultDate ?? today;
+  const day = terminDay(text, read.date, date, defaultDate, today);
   const clock = time ?? read.time ?? null;
   const where: Room = room ?? read.room;
   const times = useMemo(() => frequentTimes((entries ?? []).flatMap((e) => (e.typ === "termin" ? [e.data.start] : []))), [entries]);
@@ -69,7 +76,7 @@ export function TerminQuickAdd({ onClose, defaultDate }: { onClose: () => void; 
     if (!title) return;
     if (!clock) return setAskTask(true);
     speech.reset();
-    const entry = sanitizeEntry(createEntry("termin", { title: title.slice(0, 120), date: day, start: clock, reminder, repeat: read.repeat ?? null, ...(read.label ? { label: read.label } : {}) }, { raum: where }) as CalendarEntry);
+    const entry = sanitizeEntry(createEntry("termin", { title: title.slice(0, 120), date: day, start: clock, reminder, repeat: read.repeat ?? null, ...(read.label ? { label: read.label } : {}), ...(who.length ? { who } : {}), ...(place.trim() ? { place: place.trim().slice(0, 120) } : {}) }, { raum: where }) as CalendarEntry);
     if (!entry) return;
     act((list) => upsertEntry(list, entry), entry.data.title);
     onClose();
@@ -154,10 +161,29 @@ export function TerminQuickAdd({ onClose, defaultDate }: { onClose: () => void; 
           </div>
         </div>
 
+        {persons.length > 1 && (
+          <div className="flex flex-col gap-2">
+            <span className={LABEL}>Für wen</span>
+            <div className="flex flex-wrap gap-3" role="group" aria-label="Für wen">
+              {persons.map((p) => {
+                const on = who.includes(p.id);
+                return (
+                  <button key={p.id} type="button" aria-pressed={on} onClick={() => setWho((w) => (on ? w.filter((x) => x !== p.id) : [...w, p.id]))} className="flex w-14 flex-col items-center gap-1">
+                    <span className={`rounded-full p-0.5 ${on ? "ring-2 ring-accent" : "opacity-60"}`}>
+                      <PersonAvatar name={p.name} size={40} />
+                    </span>
+                    <span className={`w-full truncate text-center text-[12px] ${on ? "font-bold text-ink" : "text-muted"}`}>{p.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {workRoom && (
           <div className="flex flex-col gap-2">
-            <span className={LABEL}>Wo</span>
-            <div className="flex gap-2" role="radiogroup" aria-label="Wo">
+            <span className={LABEL}>Familie oder Arbeit</span>
+            <div className="flex gap-2" role="radiogroup" aria-label="Familie oder Arbeit">
               {(["familie", "arbeit"] as const).map((r) => (
                 <button key={r} type="button" role="radio" aria-checked={where === r} onClick={() => setRoom(r)} className={chipClass(where === r)}>
                   <span className={`h-2.5 w-2.5 rounded-full ${r === "arbeit" ? "bg-work" : "bg-accent"}`} aria-hidden />
@@ -168,7 +194,13 @@ export function TerminQuickAdd({ onClose, defaultDate }: { onClose: () => void; 
           </div>
         )}
 
-        <div className="flex flex-col gap-2">
+        {more ? (
+          <>
+            <label className="flex flex-col gap-2">
+              <span className={LABEL}>Ort</span>
+              <input value={place} onChange={(e) => setPlace(e.target.value)} placeholder="z. B. Praxis am Markt" className={`${INPUT_BASE} h-12 px-4`} />
+            </label>
+            <div className="flex flex-col gap-2">
           <span className={LABEL}>Erinnerung</span>
           <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Erinnerung">
             {REMINDER_CHIPS.map((r) => (
@@ -179,6 +211,13 @@ export function TerminQuickAdd({ onClose, defaultDate }: { onClose: () => void; 
           </div>
         </div>
 
+          </>
+        ) : (
+          <button type="button" onClick={() => setMore(true)} className="hit -my-1 self-start text-[15px] font-semibold text-accent-strong">
+            Mehr Optionen
+          </button>
+        )}
+
         {askTask ? (
           <div className="flex flex-col gap-2 rounded-card bg-accent-soft p-3" role="status">
             <p className="text-[15px] text-accent-strong">Ohne Uhrzeit? Dann lieber als Aufgabe.</p>
@@ -188,7 +227,7 @@ export function TerminQuickAdd({ onClose, defaultDate }: { onClose: () => void; 
           </div>
         ) : (
           <button type="submit" disabled={!read.title.trim()} className={buttonClass("primary")}>
-            Termin eintragen
+            Eintragen
           </button>
         )}
       </form>

@@ -10,10 +10,24 @@ import { useGoBack } from "@/lib/core/useGoBack";
  * Zurück: "‹ <vorherige Seite>" – genau eine Ebene zurück (wie die Geste),
  * ohne Verlauf in der App zu `fallback`.
  */
-export function BackButton({ fallback }: { fallback: string }) {
+export function BackButton({ fallback, round = false }: { fallback: string; /** Runder weißer Knopf auf einem Bild (Rezept) */ round?: boolean }) {
   const goBack = useGoBack();
   const prev = useSyncExternalStore(subscribeNavigation, previousUrl, () => null);
   const label = pageLabel(prev ?? fallback);
+  if (round)
+    return (
+      <a
+        href={fallback}
+        onClick={(e) => {
+          e.preventDefault();
+          goBack(fallback);
+        }}
+        aria-label={`Zurück: ${label}`}
+        className="hit flex h-[34px] w-[34px] items-center justify-center rounded-full bg-surface/90 text-ink shadow-card active:scale-95"
+      >
+        <ChevronLeft className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+      </a>
+    );
   return (
     <a
       href={fallback}

@@ -5,7 +5,8 @@ import { Clock } from "lucide-react";
 import { buttonClass } from "@/components/ui/styles";
 import { KID_FRIENDLY } from "@/lib/essen/baking";
 import type { Recipe } from "@/lib/essen/cookbook";
-import { dishEmoji } from "@/lib/essen/dishEmoji";
+import { dishTone } from "@/lib/essen/dishLook";
+import { DishPicture } from "@/components/alltag/DishPicture";
 
 /** Backwunsch: bis zu drei Rezepte mit "Zusammen backen" und "Rezept" */
 export function BakingBoard({ recipes, withKids, onNavigate }: { recipes: Recipe[]; withKids: boolean; onNavigate: () => void }) {
@@ -14,9 +15,7 @@ export function BakingBoard({ recipes, withKids, onNavigate }: { recipes: Recipe
       {recipes.map((r) => (
         <li key={r.id} className="flex flex-col gap-2 border-b border-line px-4 py-3 last:border-b-0">
           <div className="flex items-center gap-3">
-            <span className="text-2xl" aria-hidden>
-              {dishEmoji(r.title, r.category)}
-            </span>
+            <DishPicture tone={dishTone(r.title, r.category)} alt="" small className="h-11 w-11 shrink-0 rounded-full" />
             <span className="min-w-0 flex-1">
               <span className="block font-bold leading-snug">{r.title}</span>
               <span className="flex flex-wrap items-center gap-x-1.5 text-sm text-muted">

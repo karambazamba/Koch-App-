@@ -185,7 +185,7 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
       add({
         id: `essen:${x.today}`,
         kind: "essen",
-        title: `${short(x.dish.name, 26)} – ${x.dish.ready ? "alles im Haus" : `noch: ${x.dish.missing.slice(0, 2).join(", ")}`}`,
+        title: `${short(x.dish.name, 26)} – ${x.dish.ready ? "alles im Haus" : `auf die Liste: ${x.dish.missing.slice(0, 2).join(", ")}`}`,
         detail: start !== null ? (near <= 0 ? `Jetzt anfangen · Essen ${clock(x.dish.clock!)}` : `Start ${fromMin(start)} · Essen ${clock(x.dish.clock!)}`) : "Rezept ansehen",
         score: near <= 30 ? 80 : 52,
         target: { action: "essen" },

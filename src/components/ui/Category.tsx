@@ -2,15 +2,13 @@ import type { RecipeCategory } from "@/lib/essen/cookbook";
 import { RECIPE_CATEGORIES } from "@/lib/essen/cookbook";
 
 /** Kategorien nur als kleine farbige Punkte – keine farbigen Flächen */
-export const CATEGORY_DOT: Record<RecipeCategory, string> = {
+const CATEGORY_DOT: Record<RecipeCategory, string> = {
   fleisch: "bg-cat-fleisch",
   vegetarisch: "bg-cat-veggie",
   fisch: "bg-cat-fisch",
   cheatday: "bg-accent",
 };
 
-/** Punkt für einen leeren Tag */
-export const EMPTY_DOT = "bg-line-strong";
 
 export function CategoryDot({ category }: { category: RecipeCategory }) {
   return <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${CATEGORY_DOT[category]}`} aria-hidden />;

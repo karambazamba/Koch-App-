@@ -18,12 +18,6 @@ import { wishLabel, type WishIdea } from "./wishes";
 
 export type IdeaFilter = "schnell" | "veggie" | "vorrat";
 
-export const IDEA_FILTERS: { value: IdeaFilter; label: string }[] = [
-  { value: "schnell", label: "⚡ Schnell" },
-  { value: "veggie", label: "🥦 Veggie" },
-  { value: "vorrat", label: "🥫 Mit Vorrat" },
-];
-
 export type Idea = {
   id: string;
   title: string;

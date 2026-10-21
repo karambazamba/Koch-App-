@@ -130,9 +130,9 @@ export function stockIdeas(stock: PantryItem[], count = 3): StockIdea[] {
 
 const list = (items: string[]) => (items.length <= 1 ? items.join("") : `${items.slice(0, -1).join(", ")} und ${items[items.length - 1]}`);
 
-/** "nutzt: Hack, Paprika, Reis · noch: Sahne" */
+/** "nutzt: Hack, Paprika, Reis · auf die Liste: Sahne" */
 export function usesLine(uses: string[], needs: string[], max = 3): string {
-  return [uses.length ? `nutzt: ${uses.slice(0, max).join(", ")}` : "", needs.length && needs.length <= 2 ? `noch: ${list(needs)}` : ""].filter(Boolean).join(" · ");
+  return [uses.length ? `nutzt: ${uses.slice(0, max).join(", ")}` : "", needs.length && needs.length <= 2 ? `auf die Liste: ${list(needs)}` : ""].filter(Boolean).join(" · ");
 }
 
 // --- Fragen im Chat (ohne KI) -------------------------------------------------------

@@ -1,47 +1,46 @@
 "use client";
 
-// Seite "Essen": groß das Gericht von heute (nach dem Essen: morgen), darunter
-// "Diese Woche" als Liste (Antippen = tauschen) und die Einkaufsliste als
-// Chips. Nutzt die bestehenden Essensdaten (Wochenplan, Rezepte, Vorrat).
+// Seite "Essen" (der einzige Ort für den Plan): groß das Gericht von heute
+// (nach dem Essen: morgen) mit Teller-Bild, darunter die Woche Mo–So als
+// Reihe mit Bildern (frei = gestrichelt mit Plus, feste Tage hellorange,
+// Antippen = das eine Tausch-Fenster), "Plan öffnen" und Einkauf als Chips.
 
 import Link from "next/link";
 import { useState } from "react";
-import { ChevronRight } from "lucide-react";
-import { CARD, buttonClass, chipClass } from "@/components/ui/styles";
-import { Sheet } from "@/components/ui/Sheet";
+import { ChevronRight, Plus } from "lucide-react";
+import { CARD, SECTION_TITLE, buttonClass, chipClass } from "@/components/ui/styles";
 import { QuickAddButton } from "@/components/shopping/QuickAdd";
+import { SwapSheet } from "@/components/essen/SwapSheet";
 import { clockLabel } from "@/lib/aufgaben/answers";
-import { weekdayLong, weekdayShort } from "@/lib/aufgaben/model";
+import { weekdayShort } from "@/lib/aufgaben/model";
 import { addDays } from "@/lib/core/now";
-import { showDeleted, showToast } from "@/lib/core/toast";
-import { pushUndo } from "@/lib/core/undo";
 import { helperName, mealClockFor } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 import { matchStock } from "@/lib/essen/dishIdeas";
-import { dishEmoji } from "@/lib/essen/dishEmoji";
+import { dishTone } from "@/lib/essen/dishLook";
 import { mealIsOver, useCookedDays } from "@/lib/essen/mealDone";
-import { entriesWithoutSlot, loadMealPlans, mealPlansWithWeek, replaceMealPlans, type PlanDay } from "@/lib/essen/mealPlan";
-import { takeForDay } from "@/lib/essen/spontanTake";
-import { useTodayIdeas } from "@/lib/essen/useIdeas";
+import type { PlanDay } from "@/lib/essen/mealPlan";
 import { useStock } from "@/lib/essen/useStock";
-import { weekStartFor } from "@/lib/essen/weekPlan";
 import { openHelper } from "@/lib/lotte/open";
 import type { HomeData } from "@/components/home/useHomeData";
+import { mondayOf } from "@/components/kalender/CalendarPage";
 import { dishOf, useMeals } from "./useMeals";
 import { BausteinSections } from "./BausteinSections";
 import { useFeature } from "@/lib/core/features";
 import { demoTiles, useDemo } from "@/lib/core/demo";
+import { DishPicture } from "./DishPicture";
 import { DemoDishHero } from "./DemoFoodTile";
 
 export function FoodPage({ data, minutes }: { data: HomeData; minutes: number }) {
   const cooked = useCookedDays();
   const over = Boolean(cooked && mealIsOver(data.day, data.profile, minutes, cooked));
-  const meals = useMeals(data.todayIso, 8);
+  const monday = mondayOf(data.todayIso);
+  const meals = useMeals(monday, 7);
   const [swap, setSwap] = useState<PlanDay | null>(null);
   const planOn = useFeature("wochenplan");
   const main = over ? data.tomorrow : data.day;
-  const list = Array.from({ length: 7 }, (_, i) => addDays(data.todayIso, i + (over ? 1 : 0)));
+  const week = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
   // Beispiel-Tag: ohne eigenes Gericht steht das Beispielgericht als "Heute" da
   const demo = useDemo();
   const demoDish = !over && !dishOf(data.day) && demoTiles(demo, data.todayIso).includes("essen");
@@ -49,38 +48,46 @@ export function FoodPage({ data, minutes }: { data: HomeData; minutes: number })
     <div className="flex flex-col gap-4">
       {demoDish ? <DemoDishHero /> : <DishHero data={data} day={main} when={over ? "Morgen" : "Heute"} onSwap={() => main && setSwap(main)} />}
 
-      <section className="flex flex-col gap-2" aria-label="Wochenplan">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold">Wochenplan</h2>
+      <section className="flex flex-col gap-2" aria-label="Diese Woche">
+        <div className="flex items-center justify-between px-1">
+          <h2 className={SECTION_TITLE}>Diese Woche</h2>
           {planOn && (
-            <Link href="/wochenplan" className="flex h-10 items-center gap-0.5 text-sm font-bold text-accent-strong">
-              Ganze Woche planen <ChevronRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+            <Link href="/wochenplan" className="flex h-10 items-center gap-0.5 text-[15px] font-bold text-accent-strong">
+              Plan öffnen <ChevronRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
             </Link>
           )}
         </div>
-        <ul className={`${CARD} flex flex-col divide-y divide-line overflow-hidden`}>
-          {list.map((date) => {
+        <ol className={`${CARD} grid grid-cols-7 gap-1 p-2`}>
+          {week.map((date) => {
             const day = meals?.get(date);
             const dish = dishOf(day);
+            const fixed = day?.slot.entry?.origin === "fest";
+            const past = date < data.todayIso;
+            const isToday = date === data.todayIso;
             return (
               <li key={date}>
-                <button type="button" onClick={() => day && setSwap(day)} className="flex h-14 w-full items-center gap-3 px-4 text-left active:bg-fill">
-                  <span className="w-8 shrink-0 text-sm font-bold text-muted">{weekdayShort(date)}</span>
+                <button
+                  type="button"
+                  onClick={() => day && !past && setSwap(day)}
+                  disabled={past || !day}
+                  aria-label={`${weekdayShort(date)}: ${dish ?? (day?.away ? (day.paused ? "Pause" : "kein Kochtag") : "noch frei")}`}
+                  className={`flex w-full flex-col items-center gap-1 rounded-field py-1.5 ${fixed ? "bg-accent-soft" : ""} ${past ? "opacity-45" : ""}`}
+                >
+                  <span className={`text-[12px] font-bold ${isToday ? "text-accent-strong" : "text-muted"}`}>{weekdayShort(date)}</span>
                   {dish ? (
-                    <span className="min-w-0 flex-1 truncate text-base font-semibold">{dish}</span>
+                    <DishPicture tone={dishTone(dish, day?.slot.entry?.category)} alt="" small className="h-10 w-10 rounded-full" />
                   ) : day?.away ? (
-                    <span className="min-w-0 flex-1 truncate text-base text-muted">{day.paused ? "Pause" : "kein Kochtag"}</span>
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-fill text-[11px] text-muted">{day.paused ? "Pause" : "–"}</span>
                   ) : (
-                    <span className="min-w-0 flex-1 truncate text-base text-muted">
-                      noch frei – <span className="font-semibold text-accent-strong">{helperName(data.profile)} fragen</span>
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-dashed border-line-strong text-faint">
+                      <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
                     </span>
                   )}
-                  <ChevronRight className="h-5 w-5 shrink-0 text-muted" strokeWidth={2} aria-hidden />
                 </button>
               </li>
             );
           })}
-        </ul>
+        </ol>
       </section>
 
       <BausteinSections />
@@ -90,19 +97,17 @@ export function FoodPage({ data, minutes }: { data: HomeData; minutes: number })
   );
 }
 
-/** Großes Gericht mit Uhrzeit, Dauer, "alles im Haus" bzw. "noch: …" */
+/** Großes Gericht mit Uhrzeit, Dauer, „Alles im Haus“ (grüner Punkt) bzw. „auf die Liste: …“ */
 function DishHero({ data, day, when, onSwap }: { data: HomeData; day: PlanDay | undefined; when: string; onSwap: () => void }) {
   const stock = useStock();
   const entry = day && !day.away ? day.slot.entry : null;
   const recipe = entry?.recipeId ? data.recipes[entry.recipeId] : undefined;
   const needs = recipe && stock ? matchStock(recipe.ingredients.map((i) => i.name), stock).needs : null;
   const todayPersons = entry && entry.stored.kind !== "wish" ? entry.stored.persons : undefined;
-  const facts = [todayPersons ? `für ${todayPersons} Personen` : "", recipe?.prepMinutes ? `${recipe.prepMinutes} Min` : "", needs ? (needs.length ? `noch: ${needs.slice(0, 2).join(", ")}${needs.length > 2 ? " …" : ""}` : "alles im Haus") : ""].filter(Boolean);
+  const facts = [todayPersons ? `für ${todayPersons} Personen` : "", recipe?.prepMinutes ? `${recipe.prepMinutes} Min` : ""].filter(Boolean);
   return (
     <section className={`${CARD} overflow-hidden`} aria-label={`Essen ${when.toLowerCase()}`}>
-      <div className="flex h-36 items-center justify-center bg-linear-to-br from-accent-soft to-accent/30 text-6xl" aria-hidden>
-        {entry ? dishEmoji(entry.title, entry.category) : "🍽"}
-      </div>
+      <DishPicture tone={entry ? dishTone(entry.title, entry.category) : undefined} alt="" className="h-40 w-full" />
       <div className="flex flex-col gap-1.5 p-4">
         <p className="text-[15px] font-extrabold text-accent-strong">
           {when}
@@ -111,7 +116,18 @@ function DishHero({ data, day, when, onSwap }: { data: HomeData; day: PlanDay | 
         {entry ? (
           <>
             <h2 className="text-2xl font-extrabold leading-tight tracking-tight">{entry.title}</h2>
-            {facts.length > 0 && <p className={`text-sm font-semibold ${needs && !needs.length ? "text-good-ink" : "text-muted"}`}>{facts.join(" · ")}</p>}
+            {(facts.length > 0 || needs) && (
+              <p className="flex flex-wrap items-center gap-x-2 text-sm font-semibold text-muted">
+                {facts.join(" · ")}
+                {needs && !needs.length && (
+                  <span className="inline-flex items-center gap-1.5 text-good-ink">
+                    <span className="h-2 w-2 rounded-full bg-good" aria-hidden />
+                    Alles im Haus
+                  </span>
+                )}
+                {needs && needs.length > 0 && <span>auf die Liste: {needs.slice(0, 2).join(", ")}{needs.length > 2 ? " …" : ""}</span>}
+              </p>
+            )}
             <div className="mt-2 flex gap-2">
               {entry.recipeId && (
                 <Link href={`/kochbuch/rezept?id=${entry.recipeId}${todayPersons ? `&personen=${todayPersons}` : ""}`} className={buttonClass("primary", "md")}>
@@ -143,57 +159,6 @@ function DishHero({ data, day, when, onSwap }: { data: HomeData; day: PlanDay | 
   );
 }
 
-/** Gericht eines Tages tauschen: 3 Ideen, Lotte fragen oder freimachen */
-function SwapSheet({ data, day, onClose }: { data: HomeData; day: PlanDay; onClose: () => void }) {
-  const ideas = useTodayIdeas();
-  const current = dishOf(day);
-  const label = day.date === data.todayIso ? "heute" : `am ${weekdayLong(day.date)}`;
-  const choose = (idea: { title: string; recipeId?: string; category: PlanDay["slot"]["hint"] }) => {
-    const before = loadMealPlans();
-    const result = takeForDay({ profile: data.profile, weekPlans: data.weekPlans, mealPlans: before, recipes: data.recipes }, data.today, idea, day.date, { spontan: data.planStyle === "spontan" });
-    onClose();
-    if (!result.ok) return showToast({ text: result.text });
-    replaceMealPlans(result.weeks);
-    pushUndo(result.text, () => replaceMealPlans(before));
-  };
-  const clear = () => {
-    const before = loadMealPlans();
-    const weekStart = weekStartFor(new Date(`${day.date}T12:00:00`), data.profile.shoppingDay || "Montag");
-    replaceMealPlans(mealPlansWithWeek(before, weekStart, (e) => entriesWithoutSlot(e, day.slot)));
-    onClose();
-    showDeleted(pushUndo(`das Freimachen von ${label}`, () => replaceMealPlans(before)), "Freigemacht");
-  };
-  return (
-    <Sheet title={current ? `Statt ${current}` : `Was gibt’s ${label}?`} onClose={onClose}>
-      <div className="flex flex-col gap-2 pb-2">
-        {(ideas?.ideas ?? [])
-          .filter((i) => i.title !== current)
-          .slice(0, 3)
-          .map((idea) => (
-            <button key={idea.id} type="button" onClick={() => choose(idea)} className={`${CARD} flex items-center gap-3 p-3 text-left active:scale-[0.99]`}>
-              <span className="text-2xl" aria-hidden>
-                {dishEmoji(idea.title, idea.category)}
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-base font-bold">{idea.title}</span>
-                <span className="block truncate text-sm text-muted">{[idea.minutes ? `${idea.minutes} Min` : "", idea.reason].filter(Boolean).join(" · ")}</span>
-              </span>
-              <span className={buttonClass("soft", "sm")}>Nehmen</span>
-            </button>
-          ))}
-        <button type="button" onClick={() => (onClose(), openHelper(undefined, `Was könnten wir ${label} essen?`))} className={buttonClass("secondary")}>
-          {helperName(data.profile)} fragen
-        </button>
-        {current && (
-          <button type="button" onClick={clear} className={buttonClass("ghost")}>
-            Tag freimachen
-          </button>
-        )}
-      </div>
-    </Sheet>
-  );
-}
-
 /** Einkaufsliste als Chips, Plus zum Ergänzen */
 function ShoppingChips() {
   const profile = useProfile();
@@ -203,8 +168,8 @@ function ShoppingChips() {
   return (
     <section className="flex flex-col gap-2" aria-label="Einkauf">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold">Einkauf</h2>
-        <QuickAddButton weekStart={shopping.weekStart} settings={shopping.settings} />
+        <h2 className={SECTION_TITLE}>Einkauf</h2>
+        <QuickAddButton weekStart={shopping.weekStart} settings={shopping.settings} small />
       </div>
       {open.length ? (
         <div className="flex flex-wrap gap-2">
@@ -215,7 +180,7 @@ function ShoppingChips() {
           ))}
           {open.length > 14 && (
             <Link href="/einkaufsliste" className={chipClass(false, "muted")}>
-              + {open.length - 14}
+              Alle ansehen
             </Link>
           )}
         </div>

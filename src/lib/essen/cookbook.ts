@@ -314,16 +314,6 @@ export function toggleFavorite(id: string) {
   patch(id, (r) => ({ favorite: !r.favorite }));
 }
 
-/** Nach dem Kochen: mitzählen, Zeitpunkt merken und optional bewerten. */
-export function recordCooked(id: string, rating: "up" | "down" | null) {
-  patch(id, (r) => ({
-    cookedCount: r.cookedCount + 1,
-    lastCookedAt: now().toISOString(),
-    thumbsUp: r.thumbsUp + (rating === "up" ? 1 : 0),
-    thumbsDown: r.thumbsDown + (rating === "down" ? 1 : 0),
-  }));
-}
-
 /**
  * Nach dem Essen automatisch mitzählen (Kochtag `date`). Gibt das vorherige
  * "zuletzt gekocht" zurück, damit "Doch nicht gekocht" es zurücksetzen kann.

@@ -1,9 +1,9 @@
 "use client";
 
-// Startseite mit drei Seiten: Woche · Heute · Essen (Heute in der Mitte).
+// Startseite mit drei Seiten: Kalender · Heute · Essen (Heute in der Mitte).
 // Wechsel per Tipp auf die Leiste oben oder seitlichem Wischen; hoch/runter
-// scrollt normal. Die Seite steht in der Adresse (?seite=woche), ohne neuen
-// Verlaufseintrag. Unten immer dieselbe Lotte-Leiste.
+// scrollt normal. Die Seite steht in der Adresse, ohne neuen
+// Verlaufseintrag (?seite=kalender, alt ?seite=woche). Unten immer dieselbe Mia-Leiste.
 
 import { wakeAvatar } from "@/lib/core/avatarState";
 import Link from "next/link";
@@ -19,19 +19,20 @@ import { helperName } from "@/lib/einstellungen/profile";
 import { openHelper } from "@/lib/lotte/open";
 import type { HomeData } from "@/components/home/useHomeData";
 import { TodayPage } from "./TodayPage";
-import { WeekPage } from "./WeekPage";
+import { CalendarPage } from "@/components/kalender/CalendarPage";
 import { FoodPage } from "./FoodPage";
 import { PreviewBanner } from "./PreviewBanner";
 import { clockMinutes, usePreview } from "@/lib/tagesablauf/settings";
 
-type HomeTab = "woche" | "heute" | "essen";
+type HomeTab = "kalender" | "heute" | "essen";
 const TABS: { value: HomeTab; label: string }[] = [
-  { value: "woche", label: "Woche" },
+  { value: "kalender", label: "Kalender" },
   { value: "heute", label: "Heute" },
   { value: "essen", label: "Essen" },
 ];
 
-const tabFrom = (v: string | null): HomeTab => (v === "woche" || v === "essen" ? v : "heute");
+// "woche" = alter Name des Kalenders (Links und Lesezeichen bleiben gültig)
+const tabFrom = (v: string | null): HomeTab => (v === "kalender" || v === "woche" ? "kalender" : v === "essen" ? "essen" : "heute");
 
 /** Wischen nur auf freier Fläche bzw. nicht in Eingabefeldern und markierten Bereichen */
 const ignoreSwipe = (target: EventTarget | null) => target instanceof Element && Boolean(target.closest("input, textarea, select, [data-no-swipe], [role=dialog]"));
@@ -91,7 +92,7 @@ export function HomePager({ data }: { data: HomeData }) {
         onTouchEnd={onTouchEnd}
       >
         <nav className="flex items-center gap-2" aria-label="Seiten">
-          <div role="tablist" aria-label="Woche, Heute, Essen" className="flex flex-1 rounded-card bg-segment p-1">
+          <div role="tablist" aria-label="Kalender, Heute, Essen" className="flex flex-1 rounded-card bg-segment p-1">
             {TABS.map((t) => (
               <button
                 key={t.value}
@@ -115,8 +116,8 @@ export function HomePager({ data }: { data: HomeData }) {
             <div className={`${CARD} h-48 animate-pulse`} />
           ) : tab === "heute" ? (
             <TodayPage data={data} entries={entries} minutes={minutes} realMinutes={realMinutes} onOpenFood={() => go("essen")} />
-          ) : tab === "woche" ? (
-            <WeekPage today={data.todayIso} entries={entries} />
+          ) : tab === "kalender" ? (
+            <CalendarPage today={data.todayIso} entries={entries} name={helperName(data.profile)} />
           ) : (
             <FoodPage data={data} minutes={minutes} />
           )}

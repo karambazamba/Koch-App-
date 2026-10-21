@@ -1,21 +1,19 @@
 "use client";
 
-// Ideen für heute (Startseite und /ideen): Zustand des Tages (weggewischt,
-// welche gerade dran ist), Auswahl → "Heute", Einkauf "Für heute".
+// Ideen für heute (Essen-Kachel, Tausch-Fenster): Zustand des Tages
+// (weggewischt, welche gerade dran ist).
 
 import { useRecipes } from "./cookbook";
 import { ideasFor, recentDishes, type Idea, type IdeaFilter } from "./ideas";
-import { LIKE_WEIGHTS, learnFromRecipe } from "./likes";
 import { createLocalStore } from "../core/localStore";
-import { loadMealPlans, replaceMealPlans, mealPlansWithWeek, useMealPlans, type StoredEntry } from "./mealPlan";
+import { useMealPlans } from "./mealPlan";
 import { stockKey, stockNearlyEmpty } from "./dishIdeas";
 import { useStock } from "./useStock";
 import type { HouseholdProfile } from "../einstellungen/profile";
-import { addManualItem, removeManualItems, sectionFor } from "../einkauf/shoppingList";
 import { useExternalStore } from "../core/useExternalStore";
 import { useProfile } from "../einstellungen/useProfile";
-import { toIsoDate, useToday, useWeekPlans, weekStartFor, weekdayName } from "./weekPlan";
-import { loadWishes, restoreWishes, useWishes } from "./wishes";
+import { toIsoDate, useToday, useWeekPlans } from "./weekPlan";
+import { useWishes } from "./wishes";
 import type { Recipe } from "./cookbook";
 
 /** `key`: Bestand, zu dem `index` gehört – ändert sich der Bestand, beginnt es wieder vorn */
@@ -35,31 +33,6 @@ function migrate(raw: unknown): IdeaDay | null {
 }
 
 const store = createLocalStore("wasgibts.ideen", migrate);
-
-function dayState(date: string): IdeaDay {
-  const s = store.load();
-  return s && s.date === date ? s : { version: 1, date, dismissed: [], index: 0 };
-}
-
-/** "Nicht jetzt": für heute weg */
-function dismissIdea(date: string, id: string) {
-  const s = dayState(date);
-  store.save({ ...s, dismissed: [...s.dismissed, id] });
-}
-
-/**
- * "Nicht jetzt": normale Idee nur für heute weg, ein Wunsch ist damit
- * erledigt (mit Rückgängig).
- */
-export function putAside(date: string, idea: { id: string; wishId?: string }): (() => void) | null {
-  if (idea.wishId) {
-    const before = loadWishes();
-    restoreWishes(before.filter((w) => w.id !== idea.wishId));
-    return () => restoreWishes(before);
-  }
-  dismissIdea(date, idea.id);
-  return null;
-}
 
 type TodayIdeas = {
   ideas: Idea[];
@@ -106,29 +79,3 @@ export function useTodayIdeas(filters: IdeaFilter[] = [], opts: { tomorrow?: boo
   return { ideas, index: ideas.length ? day.index % ideas.length : 0, profile, recipes, today, todayIso, stockKey: key, nearlyEmpty: stockNearlyEmpty(pantry) };
 }
 
-/**
- * Idee wird "Heute": Eintrag im Plan (als spontan gewählt markiert), ein
- * Wunsch ist damit erfüllt. Gibt Rückgängig zurück.
- */
-export function chooseIdea(idea: Idea, profile: HouseholdProfile, today: Date, recipes: Record<string, Recipe>): () => void {
-  const weekStart = weekStartFor(today, profile.shoppingDay || "Montag");
-  const before = loadMealPlans();
-  const wishesBefore = loadWishes();
-  const entry: StoredEntry = idea.recipeId
-    ? { kind: "recipe", recipeId: idea.recipeId, title: idea.title, category: idea.category ?? "vegetarisch", spontan: true }
-    : { kind: "text", title: idea.title, category: idea.category, spontan: true };
-  replaceMealPlans(mealPlansWithWeek(before, weekStart, (e) => ({ ...e, [weekdayName(today)]: entry })));
-  if (idea.wishId) restoreWishes(wishesBefore.filter((w) => w.id !== idea.wishId));
-  if (idea.recipeId) learnFromRecipe(recipes[idea.recipeId], LIKE_WEIGHTS.chosen);
-  return () => {
-    replaceMealPlans(before);
-    restoreWishes(wishesBefore);
-  };
-}
-
-/** "Für heute" auf die Liste (in die laufende Woche, mit Tag) – gibt Rückgängig zurück */
-export function addForToday(names: string[], profile: HouseholdProfile, today: Date): () => void {
-  const weekStart = weekStartFor(today, profile.shoppingDay || "Montag");
-  const ids = names.map((name) => addManualItem(weekStart, { name, amount: "", section: sectionFor(name), day: weekdayName(today) }));
-  return () => removeManualItems(weekStart, ids);
-}

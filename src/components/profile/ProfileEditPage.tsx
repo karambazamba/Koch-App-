@@ -4,8 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { PRIMARY_BUTTON } from "@/components/StickyActions";
-import { CARD, FAB_CLEARANCE, PAGE_MAIN } from "@/components/ui/styles";
+import { CARD, FAB_CLEARANCE, PAGE_MAIN, buttonClass } from "@/components/ui/styles";
 import { type HouseholdProfile } from "@/lib/einstellungen/profile";
 import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { useProfile } from "@/lib/einstellungen/useProfile";
@@ -43,7 +42,7 @@ export function ProfileEditPage(props: Props) {
         <PageHeader title={props.title} backHref="/profil" />
         <main className={`flex flex-col items-center gap-4 px-6 pt-10 text-center ${FAB_CLEARANCE}`}>
           <p className="text-base text-muted">Es gibt noch kein Haushaltsprofil.</p>
-          <Link href="/profil" className={`${PRIMARY_BUTTON} w-full`}>
+          <Link href="/profil" className={`${buttonClass("primary", "lg")} w-full`}>
             Profil anlegen
           </Link>
         </main>

@@ -1,17 +1,6 @@
-import { IdeasView } from "@/components/ideas/IdeasView";
-import { FeatureGate } from "@/components/FeatureGate";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Ideen" };
-
-function PageContent() {
-  return <IdeasView />;
-}
-
-// Sichtbar, wenn der passende Baustein an ist (Einstellungen → Bausteine)
+// Früher eigene Ideen-Seite – „Was koche ich?“ ist jetzt das eine Tausch-Fenster auf der Essen-Seite
 export default function Page() {
-  return (
-    <FeatureGate feature="ideen">
-      <PageContent />
-    </FeatureGate>
-  );
+  redirect("/?seite=essen");
 }

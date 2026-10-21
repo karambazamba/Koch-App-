@@ -56,3 +56,46 @@ describe("Seitenkopf: „‹ vorherige Seite“", () => {
     expect(pageLabel(null)).toBe("Zurück");
   });
 });
+
+describe("v0.31: Kalender, Essen, Rezepte", () => {
+  it("Kalender-Punkte: Familie orange, Arbeit blau, Sport grün – Erledigtes zählt nicht", async () => {
+    const { dayDots, dayHeading, mondayOf, relativeDay } = await import("@/components/kalender/CalendarPage");
+    const item = (room: "familie" | "arbeit", label: string | null = null, done = false) => ({ room, label, done }) as never;
+    expect(dayDots([item("familie"), item("arbeit"), item("familie", "Sport")])).toEqual(["familie", "arbeit", "sport"]);
+    expect(dayDots([item("familie", null, true)])).toEqual([]);
+    expect(mondayOf("2026-10-21")).toBe("2026-10-19");
+    expect(relativeDay("2026-10-22", "2026-10-21")).toBe("morgen");
+    expect(dayHeading("2026-10-22", "2026-10-21")).toBe("22. Oktober · morgen");
+    expect(dayHeading("2026-10-30", "2026-10-21")).toBe("30. Oktober");
+  });
+
+  it("Kalender ist der alte Wochen-Reiter: alter Link bleibt gültig", () => {
+    expect(pageLabel("/?seite=woche")).toBe("Kalender");
+    expect(pageLabel("/?seite=kalender")).toBe("Kalender");
+  });
+
+  it("Teller-Farbe: gleiches Gericht, gleiche Farbe", async () => {
+    const { dishTone } = await import("@/lib/essen/dishLook");
+    expect(dishTone("Gulasch", "fleisch")).toBe(dishTone("gulasch", "fleisch"));
+    expect(dishTone("Shakshuka", "vegetarisch")).toMatch(/^#[0-9A-F]{6}$/i);
+  });
+
+  it("„auf die Liste“ statt „noch:“ – auch in der Jetzt-Karte", () => {
+    const base = { minutes: 16 * 60, today: "2026-10-21", calm: false, upcoming: [], tomorrow: { label: "Morgen · Do", date: "2026-10-22", items: [] }, urgent: [], dueToday: [], allDone: false, pin: null, weatherTip: null, weatherNow: null, dinnerFree: false, birthdays: [], sport: null, shop: null, timer: null, cookingStep: null, reminder: null, pause: null, leisure: null, tip: null, demo: false, firstTiles: [], weights: {}, hidden: [] } as unknown as JetztInput;
+    const t = jetztTopics({ ...base, dish: { name: "Pasta", clock: "18:30", minutes: 25, ready: false, missing: ["Basilikum"] } })[0];
+    expect(t.title).toBe("Pasta – auf die Liste: Basilikum");
+  });
+});
+
+describe("Fehler: Neuer Termin aus dem Kalender nahm „heute“ statt des gewählten Tags", () => {
+  it("vorgegebener Tag gilt, solange im Text kein Tag steht", async () => {
+    const { readTerminText, terminDay } = await import("@/lib/aufgaben/quick");
+    const today = "2026-10-21";
+    const read = (t: string) => readTerminText(t, today).date;
+    expect(terminDay("Zahnarzt 16:00", read("Zahnarzt 16:00"), null, "2026-10-23", today)).toBe("2026-10-23");
+    expect(terminDay("Heute 16:00 Zahnarzt", read("Heute 16:00 Zahnarzt"), null, "2026-10-23", today)).toBe(today);
+    expect(terminDay("Morgen 16:00 Zahnarzt", read("Morgen 16:00 Zahnarzt"), null, "2026-10-23", today)).toBe("2026-10-22");
+    expect(terminDay("Zahnarzt 16:00", read("Zahnarzt 16:00"), "2026-10-25", "2026-10-23", today)).toBe("2026-10-25");
+    expect(terminDay("Zahnarzt 16:00", read("Zahnarzt 16:00"), null, undefined, today)).toBe(today);
+  });
+});

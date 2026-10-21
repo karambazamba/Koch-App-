@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Check, PenLine, Plus, Sparkles, X } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
-import { PRIMARY_BUTTON, SECONDARY_BUTTON, StickyActions } from "@/components/StickyActions";
 import { ChoiceGroup } from "@/components/form/ChoiceGroup";
 import { NumberStepper } from "@/components/form/NumberStepper";
 import { CARD, INPUT, INPUT_BASE, PAGE_MAIN, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
@@ -327,17 +326,17 @@ function EditorForm({ existing }: { existing?: Recipe }) {
           ]}
           columns={2}
         />
+        {/* Am Inhaltsende, nicht fixiert */}
+        <div className="mt-2 flex gap-3">
+          <button type="button" onClick={() => goBack(backHref)} className={`${buttonClass("secondary", "lg")} flex-1`}>
+            Abbrechen
+          </button>
+          <button type="button" onClick={save} disabled={!recipe.title.trim()} className={`${buttonClass("primary", "lg")} flex-[2]`}>
+            <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+            Sichern
+          </button>
+        </div>
       </main>
-
-      <StickyActions>
-        <button type="button" onClick={() => goBack(backHref)} className={SECONDARY_BUTTON}>
-          Abbrechen
-        </button>
-        <button type="button" onClick={save} disabled={!recipe.title.trim()} className={PRIMARY_BUTTON}>
-          <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-          Speichern
-        </button>
-      </StickyActions>
     </div>
   );
 }

@@ -171,15 +171,6 @@ export function weekStreak(state: SportState, entries: CalendarEntry[], today: s
   return streak;
 }
 
-/** Kalenderwoche (ISO) */
-function isoWeek(iso: string): number {
-  const d = fromIsoDate(iso);
-  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  const day = t.getUTCDay() || 7;
-  t.setUTCDate(t.getUTCDate() + 4 - day);
-  const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
-  return Math.ceil(((t.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7);
-}
 
 const MONTHS = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
 export const monthName = (iso: string) => MONTHS[Number(iso.slice(5, 7)) - 1];

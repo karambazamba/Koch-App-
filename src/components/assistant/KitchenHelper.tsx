@@ -35,32 +35,6 @@ const HelperPanel = dynamic(loadPanel, { ssr: false });
 const UNDO_SECONDS = 3;
 const DELETING = new Set(["remove_entry", "remove_note", "remove_shopping", "clear_shopping", "clear_week"]);
 
-/** Höhe einer sichtbaren Fuß-Leiste (StickyActions), damit der Knopf darüber schwebt */
-function useStickyActionsHeight(): number {
-  const [height, setHeight] = useState(0);
-  useEffect(() => {
-    let frame = 0;
-    const measure = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        // Versteckte Seiten (Activity) haben kein offsetParent
-        const bar = [...document.querySelectorAll<HTMLElement>("[data-sticky-actions]")].find((el) => el.offsetParent !== null);
-        setHeight(bar ? bar.offsetHeight : 0);
-      });
-    };
-    measure();
-    const observer = new MutationObserver(measure);
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["style", "class", "hidden"] });
-    window.addEventListener("resize", measure);
-    return () => {
-      cancelAnimationFrame(frame);
-      observer.disconnect();
-      window.removeEventListener("resize", measure);
-    };
-  }, []);
-  return height;
-}
-
 const EMPTY_CHAT: ChatState = { turns: [], proposal: null, spontan: null };
 
 /**
@@ -73,7 +47,6 @@ export function KitchenHelper() {
   const [undo, setUndo] = useState<{ run: () => void; key: number } | null>(null);
   const [undone, setUndone] = useState(false);
   const typing = useTextFieldFocused();
-  const stickyHeight = useStickyActionsHeight();
   const fabRef = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
   // Von der Startseite: Mikrofon direkt starten bzw. gleich fragen
@@ -168,12 +141,12 @@ export function KitchenHelper() {
   // auf der Startseite (dort gibt es die Eingabeleiste)
   const hidden = (profile === null && pathname === "/profil") || pathname === "/";
 
-  const bottom = `calc(max(1rem, env(safe-area-inset-bottom)) + ${stickyHeight}px)`;
+  const bottom = "max(1rem, env(safe-area-inset-bottom))";
 
   return (
     <>
       {/* EIN Design: auf allen Seiten dieselbe helle Mia-Leiste wie auf der Startseite (dort zeichnet sie HomePager) */}
-      {!open && !typing && !hidden && <LotteBar name={helperName(profile)} bottom={stickyHeight ? `${stickyHeight}px` : undefined} />}
+      {!open && !typing && !hidden && <LotteBar name={helperName(profile)} />}
 
       {open && (
         <HelperPanel
