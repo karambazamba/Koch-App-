@@ -52,7 +52,7 @@ export function BausteinSections() {
             <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" data-no-swipe>
               {list.map((r) => (
                 <Link key={r.id} href={`/kochbuch/rezept?id=${r.id}`} className={`${CARD} flex w-32 shrink-0 flex-col overflow-hidden`}>
-                  <DishPicture tone={dishTone(r.title, r.category)} alt="" small className="aspect-[4/3] w-full" />
+                  <DishPicture title={r.title} ingredients={r.ingredients.map((i) => i.name)} category={r.category} tone={dishTone(r.title, r.category)} alt="" small className="aspect-[4/3] w-full" />
                   <span className="flex flex-col gap-1 p-3">
                     <span className="line-clamp-2 text-sm font-bold leading-snug">{r.title}</span>
                     {r.prepMinutes && <span className="text-xs text-muted">{r.prepMinutes} Min</span>}

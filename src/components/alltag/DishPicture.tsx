@@ -1,16 +1,43 @@
-// Bild eines Gerichts: Foto (object-fit: cover, warme Hintergrundfarbe als
-// Platzhalter beim Laden) – ohne Foto eine Teller-Zeichnung in der Farbe des
-// Gerichts (`dishTone`), nie ein kaputtes Bild und kein Emoji.
+"use client";
 
-import type { CSSProperties } from "react";
+// Bild eines Gerichts, überall gleich: eigenes Foto → eingebautes Bild
+// (/gerichte/…) → live gezeichnet (dishArt + renderDishSvg). Die einfache
+// Teller-Zeichnung nur noch als Notlösung. Kleine Bilder (`small`) zeigen
+// einen Ausschnitt auf den Teller, damit man das Essen erkennt. Warme
+// Hintergrundfarbe (`tone`) als Platzhalter beim Laden, nie ein kaputtes Bild.
 
-export function DishPicture({ photo, tone, alt, className = "", small = false }: { photo?: string; tone?: string; alt: string; className?: string; small?: boolean }) {
+import { useState, type CSSProperties } from "react";
+import type { RecipeCategory } from "@/lib/essen/cookbook";
+import { dishImage } from "@/lib/essen/dishImages";
+
+type Props = {
+  title?: string;
+  ingredients?: string[];
+  category?: RecipeCategory | null;
+  photo?: string;
+  tone?: string;
+  alt: string;
+  className?: string;
+  small?: boolean;
+};
+
+export function DishPicture({ title, ingredients, category, photo, tone, alt, className = "", small = false }: Props) {
+  const [broken, setBroken] = useState<string | null>(null);
   const style = { "--dish": tone ?? "var(--app-accent)" } as CSSProperties;
+  const wanted = photo ?? (title ? dishImage(title, ingredients, category) : null);
+  const src = wanted && wanted !== broken ? wanted : null;
   return (
     <span className={`dish-picture block overflow-hidden ${/\babsolute\b/.test(className) ? "" : "relative"} ${className}`} style={style}>
-      {photo ? (
-        // eslint-disable-next-line @next/next/no-img-element -- kleines, lokales Bild; im Service Worker gecacht
-        <img src={photo} alt={alt} className="absolute inset-0 h-full w-full object-cover" loading="eager" decoding="async" />
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element -- kleines, lokales Bild bzw. data-URL; im Service Worker gecacht
+        <img
+          src={src}
+          alt={alt}
+          className={`absolute inset-0 h-full w-full object-cover ${small && !photo ? "scale-[1.3] object-[52%_50%]" : ""}`}
+          loading="eager"
+          decoding="async"
+          onError={() => setBroken(src)}
+        />
       ) : (
         <span className="absolute inset-0 flex items-center justify-center" role={alt ? "img" : undefined} aria-label={alt || undefined}>
           <Plate small={small} />
@@ -20,7 +47,7 @@ export function DishPicture({ photo, tone, alt, className = "", small = false }:
   );
 }
 
-/** Teller von oben: heller Rand, Essen in der Farbe des Gerichts mit ein paar Stückchen */
+/** Notlösung: Teller von oben, Essen in der Farbe des Gerichts */
 function Plate({ small }: { small: boolean }) {
   return (
     <svg viewBox="0 0 100 100" className={small ? "h-[78%] w-[78%]" : "h-[86%] max-h-40 w-auto"} aria-hidden>

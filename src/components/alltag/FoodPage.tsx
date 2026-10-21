@@ -75,7 +75,7 @@ export function FoodPage({ data, minutes }: { data: HomeData; minutes: number })
                 >
                   <span className={`text-[12px] font-bold ${isToday ? "text-accent-strong" : "text-muted"}`}>{weekdayShort(date)}</span>
                   {dish ? (
-                    <DishPicture tone={dishTone(dish, day?.slot.entry?.category)} alt="" small className="h-10 w-10 rounded-full" />
+                    <DishPicture title={dish} category={day?.slot.entry?.category} tone={dishTone(dish, day?.slot.entry?.category)} alt="" small className="h-10 w-10 rounded-full" />
                   ) : day?.away ? (
                     <span className="flex h-10 w-10 items-center justify-center rounded-full bg-fill text-[11px] text-muted">{day.paused ? "Pause" : "–"}</span>
                   ) : (
@@ -107,7 +107,7 @@ function DishHero({ data, day, when, onSwap }: { data: HomeData; day: PlanDay | 
   const facts = [todayPersons ? `für ${todayPersons} Personen` : "", recipe?.prepMinutes ? `${recipe.prepMinutes} Min` : ""].filter(Boolean);
   return (
     <section className={`${CARD} overflow-hidden`} aria-label={`Essen ${when.toLowerCase()}`}>
-      <DishPicture tone={entry ? dishTone(entry.title, entry.category) : undefined} alt="" className="h-40 w-full" />
+      <DishPicture title={entry?.title} category={entry?.category} tone={entry ? dishTone(entry.title, entry.category) : undefined} alt="" className="h-40 w-full" />
       <div className="flex flex-col gap-1.5 p-4">
         <p className="text-[15px] font-extrabold text-accent-strong">
           {when}

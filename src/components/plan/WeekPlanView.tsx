@@ -197,7 +197,7 @@ export function WeekPlanView() {
                       <span className="text-[17px] font-extrabold">{Number(day.date.slice(8))}</span>
                     </span>
                     {entry ? (
-                      <DishPicture tone={dishTone(entry.title, entry.category)} alt="" small className={`h-11 w-11 shrink-0 rounded-full ${past && !readOnly ? "opacity-60" : ""}`} />
+                      <DishPicture title={entry.title} category={entry.category} tone={dishTone(entry.title, entry.category)} alt="" small className={`h-11 w-11 shrink-0 rounded-full ${past && !readOnly ? "opacity-60" : ""}`} />
                     ) : (
                       <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-line-strong text-faint" aria-hidden>
                         {!day.away && <Plus className="h-4 w-4" strokeWidth={2.5} />}
