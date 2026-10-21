@@ -193,7 +193,8 @@ export function HomePager({ data }: { data: HomeData }) {
           </Link>
         </nav>
         <PreviewBanner />
-        {TABS.map((t) => {
+        {/* Die sichtbare Seite steht im DOM zuerst (gleiche keys – nichts wird neu aufgebaut) */}
+        {[...TABS].sort((a, b) => Number(b.value === tab) - Number(a.value === tab)).map((t) => {
           const active = t.value === tab;
           if (!active && !warm) return null;
           return (
