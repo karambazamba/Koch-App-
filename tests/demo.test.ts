@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { askRemoveAll, demoEntries, demoTiles, type DemoTile } from "@/lib/core/demo";
 import { STORAGE } from "@/lib/core/storage";
 import { APP_NAME, APP_SHORT_NAME } from "@/lib/core/app";
+import { withoutEmoji } from "@/lib/core/text";
 import { profileFrom, startState } from "@/lib/einstellungen/welcome";
 
 const TODAY = "2026-10-21";
@@ -24,7 +25,7 @@ describe("Beispiel-Tag (erster Start)", () => {
 
   it("Name der Begleitung nie fest: „Theo etwas fragen“", () => {
     const titles = demoEntries(TODAY, 600, "Theo").entries.map((e) => (e.data as { title: string }).title);
-    expect(titles).toContain("Theo etwas fragen 🎙");
+    expect(titles).toContain("Theo etwas fragen");
   });
 
   it("verschwindet nach 3 Tagen, je Kachel beim ersten Eigenen und mit „Jetzt leeren“", () => {
@@ -54,5 +55,14 @@ describe("Beispiel-Tag (erster Start)", () => {
     expect(p.persons).toHaveLength(1);
     expect(APP_NAME).toBe("Was gibt’s?");
     expect(APP_SHORT_NAME).toBe("Was gibt’s?");
+  });
+});
+
+describe("Beispiel-Tag ohne Emojis in Kacheln", () => {
+  it("withoutEmoji nimmt Emojis aus Titeln", () => {
+    expect(withoutEmoji("Kaffeepause ☕")).toBe("Kaffeepause");
+    expect(withoutEmoji("🍳 Kochen · seit 18:10")).toBe("Kochen · seit 18:10");
+    expect(withoutEmoji("Ab 15 Uhr Regen ☂️ – Schirm")).toBe("Ab 15 Uhr Regen – Schirm");
+    expect(withoutEmoji("Alles geschafft 🎉")).toBe("Alles geschafft");
   });
 });

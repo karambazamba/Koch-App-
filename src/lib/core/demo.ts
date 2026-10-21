@@ -114,18 +114,18 @@ export function demoEntries(today: string, minutes: number, helper: string): { d
   const from = tomorrow ? 0 : minutes;
   const coffee = tomorrow ? 10 * 60 : Math.ceil((minutes + 60) / 15) * 15;
   const termine = [
-    { id: "t1", title: "Kaffeepause ☕", at: coffee },
-    { id: "t2", title: "Kochen 🍳", at: 18 * 60 + 30 },
-    { id: "t3", title: "Lieblingsserie 📺", at: 20 * 60 + 15 },
-    { id: "t4", title: "Ins Bett 😴", at: 22 * 60 + 30 },
+    { id: "t1", title: "Kaffeepause", at: coffee },
+    { id: "t2", title: "Kochen", at: 18 * 60 + 30 },
+    { id: "t3", title: "Lieblingsserie", at: 20 * 60 + 15 },
+    { id: "t4", title: "Ins Bett", at: 22 * 60 + 30 },
   ]
     .filter((t) => t.at > from && t.at < 24 * 60 && (t.id === "t1" || t.at - coffee >= 30))
     .sort((a, b) => a.at - b.at)
     .map((t) => entry(t.id, "termin", { title: t.title, date, start: clock(t.at) }));
   const monday = addDays(date, -weekdayIndex(date));
   const aufgaben = [
-    entry("a1", "aufgabe", { title: "App kennenlernen 👀", date }),
-    entry("a2", "aufgabe", { title: `${helper} etwas fragen 🎙`, date, dringend: true }),
+    entry("a1", "aufgabe", { title: "App kennenlernen", date }),
+    entry("a2", "aufgabe", { title: `${helper} etwas fragen`, date, dringend: true }),
     entry("a3", "aufgabe", { title: "Ersten Termin eintragen", date }),
     entry("a4", "aufgabe", { title: "Kachel verschieben", week: monday }),
     entry("a5", "aufgabe", { title: "Pinnwand ausprobieren", week: monday }),

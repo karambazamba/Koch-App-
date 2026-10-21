@@ -1,28 +1,24 @@
 "use client";
 
 // Jetzt-Karte: oben auf "Heute", volle Breite, feste Höhe (zwei Zeilen, wird
-// nie größer). Links Mias Gesicht (beim Wechsel kurz "sprechen"), Zeile 1 fett
-// = das Wichtigste, Zeile 2 = Detail oder Tipp, rechts "›". Farbe je
-// Tageszeit. Antippen öffnet den passenden Bereich, nach links wischen = das
-// nächste Thema (höchstens drei, Punkte), ✕ = Thema für heute ausblenden.
+// nie größer), Pfirsich-Verlauf. Links Mia (32 px, beim Wechsel kurz
+// "sprechen"), Zeile 1 fett ohne Emoji = das Wichtigste, Zeile 2 in
+// Dunkelorange = Detail. Rechts Punkte und ✕, kein "›" – die ganze Karte ist
+// antippbar und öffnet den passenden Bereich. Nach links wischen = nächstes
+// Thema (höchstens drei), ✕ = Thema für heute ausblenden.
 // Die Reihenfolge der Themen bleibt stehen, bis die App wieder geöffnet wird,
 // 15 Minuten vergehen oder etwas sehr Dringendes dazukommt – nichts springt.
 // Später Geladenes (Wetter, Tipps) kommt hinten dazu, solange Platz ist.
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ChevronRight, X } from "lucide-react";
+import { X } from "lucide-react";
 import { LotteAvatar } from "@/components/LotteAvatar";
-import type { JetztTone, JetztTopic } from "@/lib/jetzt/topics";
+import type { JetztTopic } from "@/lib/jetzt/topics";
+import { withoutEmoji } from "@/lib/core/text";
 
 const REFRESH_MS = 15 * 60_000;
 const URGENT = 90;
 const MAX_TOPICS = 3;
-
-const TONE: Record<JetztTone, string> = {
-  morgen: "bg-jetzt-morgen text-jetzt-morgen-ink",
-  tag: "bg-jetzt-tag text-jetzt-tag-ink",
-  abend: "bg-jetzt-abend text-jetzt-abend-ink",
-};
 
 /** Reihenfolge einfrieren: neu nur beim Zurückkehren, alle 15 Min, bei Wegfall oder sehr Dringendem */
 function useStableOrder(topics: JetztTopic[]): string[] {
@@ -60,7 +56,6 @@ function useStableOrder(topics: JetztTopic[]): string[] {
 
 export function JetztCard({
   topics,
-  tone,
   name,
   onOpen,
   onHide,
@@ -68,7 +63,6 @@ export function JetztCard({
   arrive = null,
 }: {
   topics: JetztTopic[];
-  tone: JetztTone;
   name: string;
   onOpen: (t: JetztTopic) => void;
   onHide: (t: JetztTopic) => void;
@@ -118,7 +112,7 @@ export function JetztCard({
     return () => window.clearTimeout(done);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- nur beim ersten Zeichnen
   }, []);
-  const fullTitle = topic?.title ?? "";
+  const fullTitle = withoutEmoji(topic?.title ?? "");
   useEffect(() => {
     if (typed < 0) return;
     const t = window.setTimeout(() => setTyped((n) => (n + 1 > fullTitle.length ? -1 : n + 1)), typed === 0 ? 720 : 28);
@@ -136,7 +130,7 @@ export function JetztCard({
       aria-roledescription="Jetzt-Karte"
       data-no-swipe
       data-jetzt={topic.kind}
-      className={`relative h-[78px] shrink-0 overflow-hidden rounded-card transition-colors duration-500 ${TONE[tone]}`}
+      className="relative h-[78px] shrink-0 overflow-hidden rounded-card bg-linear-to-br from-jetzt-from to-jetzt-to"
       onTouchStart={(e) => {
         start.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
         swiped.current = false;
@@ -153,7 +147,7 @@ export function JetztCard({
         }
       }}
     >
-      <span className="pointer-events-none absolute right-3 top-1.5 text-[10px] font-semibold opacity-70">Passt sich deinem Tag an</span>
+      <span className="pointer-events-none absolute right-3 top-1.5 text-[10.5px] font-medium italic text-jetzt-hint">Passt sich deinem Tag an</span>
       <button
         type="button"
         onClick={() => {
@@ -163,24 +157,23 @@ export function JetztCard({
           }
           onOpen(topic);
         }}
-        className="flex h-full w-full items-center gap-3 pl-3 pr-16 text-left"
+        className="flex h-full w-full items-center gap-3 pl-3.5 pr-20 text-left"
       >
         <span ref={face} className="shrink-0">
-          <LotteAvatar size={38} zustand={speaking || typed >= 0 ? "sprechen" : undefined} stabil />
+          <LotteAvatar size={32} zustand={speaking || typed >= 0 ? "sprechen" : undefined} stabil />
         </span>
         <span key={topic.id} className="flex min-w-0 flex-1 flex-col pt-2" style={{ animation: "jetzt-in 0.35s ease-out" }} role="status">
-          <span className="truncate text-[15.5px] font-extrabold leading-snug text-ink">{typed >= 0 ? topic.title.slice(0, typed) || "\u00a0" : topic.title}</span>
-          <span className="truncate text-[13px] font-semibold leading-snug">{topic.detail}</span>
+          <span className="truncate text-[15.5px] font-extrabold leading-snug text-ink">{typed >= 0 ? fullTitle.slice(0, typed) || "\u00a0" : fullTitle}</span>
+          <span className="truncate text-[13px] font-semibold leading-snug text-accent-strong">{withoutEmoji(topic.detail)}</span>
         </span>
       </button>
-      {topic.target && <ChevronRight className="pointer-events-none absolute right-2.5 top-1/2 mt-1 h-5 w-5 -translate-y-1/2" strokeWidth={2.5} aria-hidden />}
       {topic.kind !== "ruhig" && (
-        <button type="button" onClick={() => onHide(topic)} aria-label="Für heute ausblenden" className="hit absolute right-9 top-1/2 mt-1 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full opacity-60 active:opacity-100">
+        <button type="button" onClick={() => onHide(topic)} aria-label="Für heute ausblenden" className="hit absolute right-2.5 top-1/2 mt-1.5 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-jetzt-hint active:opacity-60">
           <X className="h-4 w-4" strokeWidth={2.5} aria-hidden />
         </button>
       )}
       {shown.length > 1 && (
-        <span className="absolute inset-x-0 bottom-1 flex justify-center gap-1" role="tablist" aria-label="Themen">
+        <span className="absolute right-10 top-1/2 mt-1.5 flex -translate-y-1/2 gap-1 text-jetzt-hint" role="tablist" aria-label="Themen">
           {shown.map((t, n) => (
             <button
               key={t.id}

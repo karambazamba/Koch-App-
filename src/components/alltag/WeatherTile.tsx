@@ -1,6 +1,6 @@
 "use client";
 
-// WETTER (Standard S, Hintergrund-Verlauf je Wetterlage, eigenes Symbol-Set):
+// WETTER (Standard S, Pastell-Gelb, eigenes Symbol-Set, keine Emojis):
 // S = Symbol + Temperatur + EIN Satz; M = + Morgens/Mittags/Abends; L = + die
 // nächsten 5 Tage in Worten. Offline: letzte Werte mit "Stand 8:10". Antippen
 // → Wetter-Seite (Heute · Morgen · 7 Tage).
@@ -13,9 +13,11 @@ import { useForecast } from "@/lib/wetter/client";
 import { tomorrowLabel, weekdayShort } from "@/lib/aufgaben/model";
 import { shortClock } from "@/components/notizen/Schnellnotiz";
 import { WeatherSymbol } from "@/components/wetter/WeatherSymbol";
+import { TILE, TILE_LABEL } from "@/components/ui/styles";
+import { withoutEmoji } from "@/lib/core/text";
 
-const BOX = "relative bg-surface flex w-full flex-col rounded-card border border-line p-3.5 text-left shadow-card";
-const LABEL = "flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-muted";
+const BOX = `${TILE} flex w-full flex-col p-3.5 text-left`;
+const LABEL = `flex items-center gap-1.5 ${TILE_LABEL}`;
 
 export function WeatherTile({
   size = "S",
@@ -57,7 +59,7 @@ export function WeatherTile({
             {round(next.max)}°<span className="text-[15px] font-semibold text-muted"> / {round(next.min)}°</span>
           </span>
         </span>
-        <span className="mt-1 line-clamp-2 text-[13px] font-semibold leading-snug">{next.rain >= 50 ? `☂️ ${weatherKind(next.code).text} – Schirm einpacken` : weatherKind(next.code).text}</span>
+        <span className="mt-1 line-clamp-2 text-[13px] font-semibold leading-snug">{next.rain >= 50 ? `${weatherKind(next.code).text} – Schirm einpacken` : weatherKind(next.code).text}</span>
       </Link>
     );
   }
@@ -77,11 +79,11 @@ export function WeatherTile({
         <span className="text-[26px] font-extrabold tabular-nums leading-none">{round(forecast.current.temp)}°</span>
         {!half && <span className="min-w-0 truncate text-[14px] text-muted">{kind.text}{range ? ` · ${range.min}° / ${range.max}°` : ""}</span>}
       </span>
-      <span className={`mt-1 ${half ? "line-clamp-2" : "truncate"} text-[13px] font-semibold leading-snug`}>{sentence}</span>
+      <span className={`mt-1 ${half ? "line-clamp-2" : "truncate"} text-[13px] font-semibold leading-snug`}>{withoutEmoji(sentence)}</span>
       {parts.length > 0 && (
         <span className="mt-2 grid grid-cols-3 gap-2" aria-label="Morgens, mittags, abends">
           {parts.map((p) => (
-            <span key={p.id} className="flex items-center gap-1.5 rounded-field bg-surface/60 px-2 py-1.5">
+            <span key={p.id} className="flex items-center gap-1.5 rounded-field bg-tile-inner px-2 py-1.5">
               <WeatherSymbol code={p.code} className="h-6 w-6" />
               <span className="flex min-w-0 flex-col leading-tight">
                 <span className="text-[10px] font-extrabold uppercase tracking-wide text-muted">{p.label}</span>

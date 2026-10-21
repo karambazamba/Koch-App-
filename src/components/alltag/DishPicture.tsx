@@ -5,7 +5,7 @@
 import type { CSSProperties } from "react";
 
 export function DishPicture({ photo, tone, alt, className = "", small = false }: { photo?: string; tone?: string; alt: string; className?: string; small?: boolean }) {
-  const style = { "--dish": tone ?? "var(--color-accent)" } as CSSProperties;
+  const style = { "--dish": tone ?? "var(--app-accent)" } as CSSProperties;
   return (
     <span className={`dish-picture block overflow-hidden ${/\babsolute\b/.test(className) ? "" : "relative"} ${className}`} style={style}>
       {photo ? (

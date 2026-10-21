@@ -9,7 +9,7 @@
 
 import Link from "next/link";
 import { Check, Timer as TimerIcon, UtensilsCrossed } from "lucide-react";
-import { CARD, buttonClass } from "@/components/ui/styles";
+import { TILE, TILE_LABEL, buttonClass } from "@/components/ui/styles";
 import { clockLabel } from "@/lib/aufgaben/answers";
 import type { Recipe } from "@/lib/essen/cookbook";
 import { matchStock } from "@/lib/essen/dishIdeas";
@@ -28,9 +28,9 @@ export function CookingTile({ dish, clock, persons, recipe, today, onEaten }: { 
   const needs = recipe && stock ? matchStock(recipe.ingredients.map((i) => i.name), stock).needs : null;
   const head = ["Essen", clock ? clockLabel(clock) : "", persons ? `${persons} ${persons === 1 ? "Person" : "Personen"}` : ""].filter(Boolean).join(" · ");
   return (
-    <section className={`${CARD} relative flex flex-col gap-2 p-4`} aria-label={`Kochen: ${dish}`}>
-      <span className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-muted">
-        <UtensilsCrossed className="h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
+    <section className={`${TILE} flex flex-col gap-2 p-4`} aria-label={`Kochen: ${dish}`}>
+      <span className={`flex items-center gap-1.5 ${TILE_LABEL}`}>
+        <UtensilsCrossed className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
         {head}
       </span>
       <h2 className="text-[24px] font-extrabold leading-tight tracking-tight">{dish}</h2>
@@ -58,7 +58,7 @@ export function CookingTile({ dish, clock, persons, recipe, today, onEaten }: { 
                   </span>
                 </button>
                 <span className={`min-w-0 flex-1 pt-0.5 text-[15px] leading-snug ${isDone ? "text-muted line-through" : now ? "font-bold" : ""}`}>
-                  {now && <span className="mr-1.5 rounded-full bg-accent-soft px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-accent-strong no-underline">Jetzt</span>}
+                  {now && <span className="mr-1.5 rounded-full bg-tile-inner px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-tile-accent no-underline">Jetzt</span>}
                   {step}
                 </span>
                 {min && !isDone && (
@@ -68,7 +68,7 @@ export function CookingTile({ dish, clock, persons, recipe, today, onEaten }: { 
                       if (startTimer({ minutes: min, name: stepTimerName(step), step })) buzz();
                     }}
                     aria-label={`Timer ${min} Minuten: ${stepTimerName(step)}`}
-                    className="-my-1 flex h-9 shrink-0 items-center gap-1 rounded-full bg-accent-soft px-2.5 text-[12px] font-bold text-accent-strong active:scale-95"
+                    className="-my-1 flex h-9 shrink-0 items-center gap-1 rounded-full bg-tile-inner px-2.5 text-[12px] font-bold text-tile-accent active:scale-95"
                   >
                     <TimerIcon className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
                     {min}
@@ -83,7 +83,7 @@ export function CookingTile({ dish, clock, persons, recipe, today, onEaten }: { 
       )}
       <div className="flex flex-wrap items-center gap-2 pt-1">
         {recipe && (
-          <Link href={`/kochbuch/kochen?id=${encodeURIComponent(recipe.id)}`} className="text-sm font-bold text-accent-strong">
+          <Link href={`/kochbuch/kochen?id=${encodeURIComponent(recipe.id)}`} className="text-sm font-bold text-tile-accent">
             Rezept groß öffnen ›
           </Link>
         )}

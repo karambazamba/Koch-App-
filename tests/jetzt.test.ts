@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { birthdayName, jetztTone, jetztTopics, type JetztInput } from "@/lib/jetzt/topics";
+import { birthdayName, jetztTopics, type JetztInput } from "@/lib/jetzt/topics";
 import { jetztCommand } from "@/lib/jetzt/command";
 import { DEFAULT_HOME } from "@/lib/core/homeLayout";
 
@@ -132,14 +132,6 @@ describe("Jetzt-Karte: Punktesystem", () => {
   });
 });
 
-describe("Jetzt-Karte: Farbe je Tageszeit", () => {
-  it("morgens gelb, tagsüber orange, abends blau", () => {
-    expect(jetztTone(7 * 60 + 10)).toBe("morgen");
-    expect(jetztTone(16 * 60 + 40)).toBe("tag");
-    expect(jetztTone(20 * 60 + 30)).toBe("abend");
-    expect(jetztTone(23 * 60)).toBe("abend");
-  });
-});
 
 describe("Jetzt-Karte per Sprache (ohne KI)", () => {
   it("an/aus – auch die alten Sätze zur Startseite", () => {

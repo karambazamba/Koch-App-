@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { QuickButton } from "@/components/ui/QuickButton";
-import { CARD, TILE_LABEL } from "@/components/ui/styles";
+import { TILE, TILE_LABEL } from "@/components/ui/styles";
 import { clockLabel } from "@/lib/aufgaben/answers";
 import type { CalendarEntry } from "@/lib/aufgaben/model";
 import { tomorrowLabel, weekdayIndex, weekdayShort } from "@/lib/aufgaben/model";
@@ -25,7 +25,7 @@ import { SportAddSheet } from "./SportAddSheet";
 import { SportDaySheet } from "./SportDaySheet";
 import { SportWeekRow } from "./SportWeekRow";
 
-const BOX = `${CARD} relative flex flex-col gap-2 p-3.5`;
+const BOX = `${TILE} flex flex-col gap-2 p-3.5`;
 
 export function SportTile({ size = "M", entries, today, minutes, me }: { size?: TileSize; entries: CalendarEntry[]; today: string; minutes: number; me: string | null }) {
   const sport = useSport();
@@ -59,7 +59,7 @@ export function SportTile({ size = "M", entries, today, minutes, me }: { size?: 
         )}
         {next && (
           <Link href={`/tag?datum=${next.date}`} className="flex flex-col gap-0.5 rounded-field bg-fill px-3 py-2">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted">Nächstes Training</span>
+            <span className={TILE_LABEL}>Nächstes Training</span>
             <span className="flex items-center gap-2 text-[14px] font-bold">
               <span>
                 {next.date === today ? "Heute" : next.date === addDays(today, 1) ? tomorrowLabel(next.date) : weekdayShort(next.date)}

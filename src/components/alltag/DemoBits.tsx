@@ -1,46 +1,47 @@
 "use client";
 
-// Beispiel-Tag: kleines "BEISPIEL"-Schild, das Fenster beim Antippen eines
-// Beispiels und der Hinweis unten "Beispiele verschwinden, sobald du
-// Eigenes einträgst. Jetzt leeren".
+// Beispiel-Tag: die Zeile oben („So sieht ein Tag aus · Eigenen starten“)
+// und das Fenster beim Antippen eines Beispiels.
 
 import { useState } from "react";
 import { Sheet } from "@/components/ui/Sheet";
 import type { DayItem } from "@/lib/aufgaben/model";
 import { TaskQuickAdd } from "./TaskQuickAdd";
 import { TerminQuickAdd } from "./TerminQuickAdd";
-import { buttonClass } from "@/components/ui/styles";
+import { CARD, buttonClass } from "@/components/ui/styles";
 import { clearDemo, markDemoAsked } from "@/lib/core/demo";
 
 export function DemoBadge() {
   return <span className="rounded-md bg-demo px-1.5 py-0.5 text-[9.5px] font-extrabold tracking-wider text-demo-ink">BEISPIEL</span>;
 }
 
-/** Gestrichelter Rahmen um Beispiel-Inhalte */
-export const DEMO_OUTLINE = "outline-[1.5px] outline-dashed outline-demo-line -outline-offset-[1.5px]";
-
-export function DemoHint({ ask = false }: { ask?: boolean }) {
-  // Nach dem ersten eigenen Termin bzw. der ersten eigenen Aufgabe einmal dezent fragen
-  if (ask)
-    return (
-      <div className="flex items-center gap-2 rounded-card border-[1.5px] border-demo-line bg-demo-soft px-3.5 py-2.5 text-[13px] font-semibold text-demo-ink" role="note">
-        <span aria-hidden>✨</span>
-        <span className="flex-1">Alle Beispiele entfernen?</span>
-        <button type="button" onClick={() => (markDemoAsked(), clearDemo())} className="hit shrink-0 font-extrabold text-accent-strong">
-          Ja
-        </button>
-        <button type="button" onClick={markDemoAsked} className="hit ml-2 shrink-0 font-bold text-demo-ink">
-          Behalten
-        </button>
-      </div>
-    );
+/**
+ * Beispiel-Tag: EINE weiße Zeile oben über den Kacheln – „[BEISPIEL] So sieht
+ * ein Tag aus · Eigenen starten“. Keine gestrichelten Rahmen, keine Schilder
+ * an den Kacheln. Nach dem ersten Eigenen einmal „Alle Beispiele entfernen?“.
+ */
+export function DemoRow({ ask = false }: { ask?: boolean }) {
   return (
-    <div className="flex items-center gap-2 rounded-card border-[1.5px] border-demo-line bg-demo-soft px-3.5 py-2.5 text-[13px] font-semibold text-demo-ink" role="note">
-      <span aria-hidden>✨</span>
-      <span className="flex-1">Trägst du in einer Kachel Eigenes ein, verschwinden dort die Beispiele.</span>
-      <button type="button" onClick={clearDemo} className="hit shrink-0 font-extrabold text-accent-strong">
-        Jetzt leeren
-      </button>
+    <div className={`${CARD} flex min-h-11 items-center gap-2.5 px-3.5 py-2 text-[13.5px] font-semibold`} role="note" aria-label="Beispiel-Tag">
+      <DemoBadge />
+      {ask ? (
+        <>
+          <span className="min-w-0 flex-1">Alle Beispiele entfernen?</span>
+          <button type="button" onClick={() => (markDemoAsked(), clearDemo())} className="hit shrink-0 font-extrabold text-accent-strong">
+            Ja
+          </button>
+          <button type="button" onClick={markDemoAsked} className="hit ml-2 shrink-0 font-bold text-muted">
+            Behalten
+          </button>
+        </>
+      ) : (
+        <>
+          <span className="min-w-0 flex-1 truncate">So sieht ein Tag aus</span>
+          <button type="button" onClick={clearDemo} className="hit shrink-0 font-extrabold text-accent-strong">
+            Eigenen starten
+          </button>
+        </>
+      )}
     </div>
   );
 }
