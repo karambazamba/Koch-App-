@@ -10,7 +10,7 @@
 import { createLocalStore } from "./localStore";
 import { useExternalStore } from "./useExternalStore";
 
-export type HomeTileId = "pinnwand" | "termine" | "aufgaben" | "wetter" | "essen" | "einkauf" | "timer" | "sport" | "notizen" | "vorrat" | "morgen" | "post";
+export type HomeTileId = "pinnwand" | "termine" | "aufgaben" | "wetter" | "essen" | "einkauf" | "timer" | "sport" | "notizen" | "vorrat" | "morgen" | "post" | "spendentopf";
 export type TileSize = "S" | "M" | "L";
 export type HomeTile = { id: HomeTileId; visible: boolean; size: TileSize };
 
@@ -26,6 +26,7 @@ export const HOME_TILES: { id: HomeTileId; label: string; hint: string; sizes: T
   { id: "aufgaben", label: "Aufgaben", hint: "Was heute dran ist", sizes: ["S", "M", "L"], size: "M" },
   { id: "essen", label: "Essen", hint: "Gericht von heute", sizes: ["S", "M", "L"], size: "S" },
   { id: "einkauf", label: "Einkauf", hint: "Die Einkaufsliste", sizes: ["S", "M", "L"], size: "S" },
+  { id: "spendentopf", label: "Spendentopf", hint: "Jeder Euro geht in eure Region", sizes: ["M"], size: "M", fresh: true },
   { id: "timer", label: "Timer", hint: "Bis zu 5 Timer und eine Stoppuhr", sizes: ["S", "M"], size: "M", fresh: true },
   { id: "sport", label: "Sport", hint: "Wochenziel und Trainings", sizes: ["S", "M", "L"], size: "M", fresh: true },
   { id: "notizen", label: "Notizen", hint: "Schnellnotiz + Angeheftetes", sizes: ["S", "M", "L"], size: "M" },
@@ -41,7 +42,7 @@ export const tileMeta = (id: HomeTileId) => HOME_TILES.find((t) => t.id === id)!
 
 export const tileLabel = (id: HomeTileId) => HOME_TILES.find((t) => t.id === id)?.label ?? id;
 
-const ON_BY_DEFAULT: HomeTileId[] = ["pinnwand", "wetter", "termine", "aufgaben", "essen", "einkauf", "vorrat"];
+const ON_BY_DEFAULT: HomeTileId[] = ["pinnwand", "wetter", "termine", "aufgaben", "essen", "einkauf", "spendentopf", "vorrat"];
 
 /**
  * Standard: Pinnwand + Wetter (klein nebeneinander), Termine, Aufgaben, Essen +
@@ -221,7 +222,7 @@ export function describeHomeChange(change: HomeChange): string {
   }
 }
 
-type HomeStore = { version: 3; tiles: HomeTile[]; tipSeen: boolean };
+type HomeStore = { version: 4; tiles: HomeTile[]; tipSeen: boolean };
 
 type RawTile = { id?: string; visible?: boolean; size?: string };
 
@@ -233,7 +234,8 @@ type RawTile = { id?: string; visible?: boolean; size?: string };
 export function migrateHome(raw: unknown): HomeStore | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as { version?: number; tiles?: unknown; tipSeen?: unknown };
-  if (r.version === 3) return { version: 3, tiles: sanitizeHome(r.tiles), tipSeen: r.tipSeen === true };
+  if (r.version === 4) return { version: 4, tiles: sanitizeHome(r.tiles), tipSeen: r.tipSeen === true };
+  if (r.version === 3) return { version: 4, tiles: withPotTile(sanitizeHome(r.tiles)), tipSeen: r.tipSeen === true };
   if (r.version !== 1 && r.version !== 2) return null;
   let old = (Array.isArray(r.tiles) ? r.tiles : []).filter((t): t is RawTile => Boolean(t) && typeof t === "object");
   if (r.version === 1) {
@@ -252,7 +254,21 @@ export function migrateHome(raw: unknown): HomeStore | null {
   }
   const tiles = old.map((t) => ({ id: t.id as HomeTileId, visible: t.visible !== false, size: IDS.includes(t.id as HomeTileId) ? tileMeta(t.id as HomeTileId).size : "M" }));
   // Bisherige Nutzer (v1) kennen die Startseite schon – kein Hinweis mehr
-  return { version: 3, tiles: sanitizeHome(tiles), tipSeen: r.version === 1 ? true : r.tipSeen === true };
+  return { version: 4, tiles: withPotTile(sanitizeHome(tiles)), tipSeen: r.version === 1 ? true : r.tipSeen === true };
+}
+
+/**
+ * v3 → v4: die Spendentopf-Kachel ist standardmäßig an – bei bisherigen
+ * Nutzern einmal ans Ende der sichtbaren Kacheln (die übrige Anordnung bleibt
+ * genau, wie sie ist; entfernen geht wie bei jeder Kachel).
+ */
+function withPotTile(tiles: HomeTile[]): HomeTile[] {
+  const pot = tiles.find((t) => t.id === "spendentopf");
+  if (!pot || pot.visible) return tiles;
+  const rest = tiles.filter((t) => t.id !== "spendentopf");
+  const lastVisible = rest.map((t) => t.visible).lastIndexOf(true);
+  rest.splice(lastVisible + 1, 0, { ...pot, visible: true });
+  return rest;
 }
 
 const store = createLocalStore("wasgibts.startseite", migrateHome);
@@ -262,7 +278,7 @@ export function loadHomeTiles(): HomeTile[] {
 }
 
 export function saveHomeTiles(tiles: HomeTile[]) {
-  store.save({ version: 3, tiles: sanitizeHome(tiles), tipSeen: store.load()?.tipSeen ?? false });
+  store.save({ version: 4, tiles: sanitizeHome(tiles), tipSeen: store.load()?.tipSeen ?? false });
 }
 
 /** Einmaliger Hinweis "Halte die Startseite gedrückt …" */
@@ -272,7 +288,7 @@ export function useHomeTipSeen(): boolean | undefined {
 }
 
 export function markHomeTipSeen() {
-  store.save({ version: 3, tiles: loadHomeTiles(), tipSeen: true });
+  store.save({ version: 4, tiles: loadHomeTiles(), tipSeen: true });
 }
 
 /** Änderung speichern; liefert Rückgängig */

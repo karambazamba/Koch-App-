@@ -48,6 +48,8 @@ import { useDemoDay } from "./useDemoDay";
 import { DemoItemSheet, DemoRow } from "./DemoBits";
 import { EditHeader } from "./EditHeader";
 import { DarkTip } from "./DarkTip";
+import { PotHintCard, usePotHint } from "@/components/spendentopf/PotHintCard";
+import { SpendentopfTile } from "@/components/spendentopf/SpendentopfTile";
 import { hideDemoItem, toggleDemoDone } from "@/lib/core/demo";
 import { showDone, showToast } from "@/lib/core/toast";
 import { dueReminder } from "@/lib/aufgaben/reminders";
@@ -216,6 +218,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
 
   // --- Jetzt-Karte ----------------------------------------------------------------------
   const demoDish = demoDay.tiles.includes("essen");
+  const potHint = usePotHint(demoDay.tiles.length > 0);
   const runningTimer = timers ? sortTimers(timers.timers.filter((x) => isRunning(x, nowMs)), nowMs)[0] : undefined;
   const steps = recipe?.steps ?? [];
   const step = cookingNow && cooking ? currentStep(steps.length, cooking.steps[recipe?.id ?? dish ?? ""] ?? []) : null;
@@ -298,6 +301,8 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
         return <TimerTile size={tile.size} />;
       case "sport":
         return <SportTile size={tile.size} entries={entries} today={data.todayIso} minutes={minutes} me={me} />;
+      case "spendentopf":
+        return <SpendentopfTile />;
       case "morgen":
         return <MorgenTile date={tomorrowIso} items={tomorrowItems} dish={tomorrowDish} href={`/tag?datum=${tomorrowIso}`} placeholder={edit} />;
       default:
@@ -326,7 +331,9 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
 
           {!editing.on && (
             <>
-              <DarkTip profile={data.profile} today={data.todayIso} quiet={demoDay.tiles.length > 0 || tipSeen === false} />
+              {/* Höchstens ein Hinweis: Spendentopf (Abstimmung bzw. Beitrags-Frage) vor dem Dunkel-Tipp */}
+              {potHint && <PotHintCard hint={potHint} />}
+              <DarkTip profile={data.profile} today={data.todayIso} quiet={demoDay.tiles.length > 0 || tipSeen === false || Boolean(potHint)} />
               {tipSeen === false && welcomed && !demoDay.tiles.length && (
                 <div className="flex items-start gap-3 rounded-card bg-accent-soft px-4 py-3" role="status">
                   <p className="flex-1 text-[15px] leading-snug text-accent-strong">Tipp: Halte die Startseite gedrückt, um Kacheln hinzuzufügen oder zu entfernen.</p>
