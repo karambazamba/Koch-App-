@@ -15,7 +15,7 @@ const termin = (title: string, date: string, start: string, extra: Record<string
 
 function forecast(rainFrom?: number): Forecast {
   const hours: ForecastHour[] = [TODAY, "2026-10-22"].flatMap((date) =>
-    Array.from({ length: 24 }, (_, hour) => ({ date, hour, temp: 10, code: rainFrom !== undefined && date === TODAY && hour >= rainFrom ? 61 : 3, rain: rainFrom !== undefined && date === TODAY && hour >= rainFrom ? 80 : 5, gust: 10 })),
+    Array.from({ length: 24 }, (_, hour) => ({ date, hour, temp: 10, code: rainFrom !== undefined && date === TODAY && hour >= rainFrom ? 61 : 3, rain: rainFrom !== undefined && date === TODAY && hour >= rainFrom ? 80 : 5, gust: 10, mm: rainFrom !== undefined && date === TODAY && hour >= rainFrom ? 1.2 : 0, sun: 0, cloud: 80 })),
   );
   return {
     place: "Eutin",
@@ -23,10 +23,10 @@ function forecast(rainFrom?: number): Forecast {
     current: { temp: 10, code: 3 },
     hours,
     days: [
-      { date: TODAY, code: 61, max: 13, min: 6, rain: 80 },
-      { date: "2026-10-22", code: 3, max: 14, min: 7, rain: 20 },
-      { date: "2026-10-23", code: 0, max: 19, min: 8, rain: 0 },
-      { date: "2026-10-24", code: 80, max: 12, min: 6, rain: 70 },
+      { date: TODAY, code: 61, text: "Regnerisch", max: 13, min: 6, rain: 80, mm: 9, sun: 0, wet: 7 },
+      { date: "2026-10-22", code: 3, text: "Wolkig", max: 14, min: 7, rain: 20, mm: 0, sun: 1, wet: 0 },
+      { date: "2026-10-23", code: 0, text: "Sonnig", max: 19, min: 8, rain: 0, mm: 0, sun: 8, wet: 0 },
+      { date: "2026-10-24", code: 80, text: "Schauer möglich", max: 12, min: 6, rain: 70, mm: 1, sun: 2, wet: 2 },
     ],
   };
 }

@@ -1,11 +1,13 @@
 // Wetter abrufen (nur auf dem Server): Ort → Koordinaten (Open-Meteo
-// Geocoding), Vorhersage von Open-Meteo (nutzt u. a. die DWD-Modelle,
-// kostenlos, ohne Schlüssel). 30 Minuten zwischengespeichert. Standort →
-// Stadtname über OpenStreetMap (Nominatim). `WETTER_MOCK=1` = Testmodus mit
-// festen Werten (ohne Netz).
+// Geocoding), Vorhersage vom Deutschen Wetterdienst (MOSMIX über Bright Sky,
+// kostenlos, ohne Schlüssel) mit der Messung der nächsten Station; antwortet
+// Bright Sky nicht, Open-Meteo mit dem DWD-Modell ICON – gleiches Format.
+// 30 Minuten zwischengespeichert. Standort → Stadtname über OpenStreetMap
+// (Nominatim). `WETTER_MOCK=1` = Testmodus mit festen Werten (ohne Netz).
 
 import { berlinTime, now } from "../core/now";
-import type { Forecast } from "./forecast";
+import { buildDays, type Forecast } from "./forecast";
+import { fromBrightSky, fromOpenMeteo } from "./sources";
 
 const TTL = 30 * 60 * 1000;
 const cache = new Map<string, { at: number; data: Forecast }>();
@@ -35,17 +37,21 @@ function mockForecast(place: string, scenario: Scenario = "regen", day?: string)
   const hours = days.flatMap((date, di) =>
     Array.from({ length: 24 }, (_, hour) => {
       const temp = base + (hour >= 6 && hour <= 15 ? (hour - 6) * (scenario === "heiss" ? 1.1 : 0.7) : hour > 15 ? (24 - hour) * 0.5 : 0) + di;
-      const code = di === 0 ? codeFor(0, hour) : [61, 3, 1, 0, 80, 3, 2][di];
-      const rainy = [61, 80, 95].includes(code);
-      return { date, hour, temp: Math.round(temp * 10) / 10, code, rain: rainy ? 80 : 10, gust: scenario === "sturm" ? 85 : 20 };
+      // Folgetage: Mo Regen (viele Stunden), Di wolkig, Mi Sonne und Wolken, Do sonnig, Fr ein Schauer, …
+      const later = [3, 61, 3, 2, 0, hour === 14 ? 80 : 2, 3, 2][di] ?? 3;
+      const code = di === 0 ? codeFor(0, hour) : di === 1 && (hour < 9 || hour > 14) ? 3 : later;
+      const rainy = [61, 73, 80, 95].includes(code);
+      const sunny = code === 0 ? 50 : code === 1 || code === 2 ? (hour >= 10 && hour <= 13 ? 40 : 10) : 0;
+      return { date, hour, temp: Math.round(temp * 10) / 10, code, rain: rainy ? 80 : 10, gust: scenario === "sturm" ? 85 : 20, mm: rainy ? 1.2 : 0, sun: hour >= 7 && hour <= 18 ? sunny : 0, cloud: code === 0 ? 10 : code <= 2 ? 50 : 90 };
     }),
   );
   return {
     place,
     fetchedAt: now().toISOString(),
-    current: { temp: hours.find((h) => h.date === today && h.hour === 12)?.temp ?? base, code: codeFor(0, 12) },
+    source: "mock",
+    current: { temp: hours.find((h) => h.date === today && h.hour === 12)?.temp ?? base, code: codeFor(0, 12), measured: false, raining: false },
     hours,
-    days: days.map((date, i) => ({ date, code: i === 0 ? (scenario === "regen" ? 61 : scenario === "schnee" ? 73 : scenario === "gewitter" ? 95 : codeFor(0, 12)) : [61, 3, 1, 0, 80, 3, 2][i], max: base + 6 + (i % 3), min: base - 2 + (i % 2), rain: i === 0 && scenario === "regen" ? 80 : [10, 40, 5, 0, 70, 20, 10][i] })),
+    days: buildDays(hours),
   };
 }
 
@@ -64,42 +70,45 @@ export async function fetchForecast(place: string, scenario?: string, day?: stri
   if (hit && Date.now() - hit.at < TTL) return hit.data;
   const geo = await geocode(place);
   if (!geo) return null;
+  const data = (await fromDwd(geo).catch(() => null)) ?? (await fromIcon(geo).catch(() => null));
+  if (!data) return null;
+  cache.set(key, { at: Date.now(), data });
+  return data;
+}
+
+const plusDays = (iso: string, n: number) => {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+};
+
+/** DWD MOSMIX über Bright Sky: 7 Tage Stunden + Messung der nächsten Station */
+async function fromDwd(geo: { name: string; lat: number; lon: number }): Promise<Forecast | null> {
+  const today = berlinTime().iso;
+  const at = `lat=${geo.lat}&lon=${geo.lon}&tz=Europe%2FBerlin`;
+  const [weather, current] = await Promise.all([
+    fetch(`https://api.brightsky.dev/weather?${at}&date=${today}&last_date=${plusDays(today, 7)}`, { cache: "no-store", signal: AbortSignal.timeout(8000) }),
+    fetch(`https://api.brightsky.dev/current_weather?${at}`, { cache: "no-store", signal: AbortSignal.timeout(8000) }).catch(() => null),
+  ]);
+  if (!weather.ok) return null;
+  const currentJson = current?.ok ? await current.json().catch(() => null) : null;
+  return fromBrightSky(await weather.json(), currentJson, geo.name, now().toISOString());
+}
+
+/** Ausweichen: Open-Meteo mit dem DWD-Modell ICON (gleiche Felder) */
+async function fromIcon(geo: { name: string; lat: number; lon: number }): Promise<Forecast | null> {
   const params = new URLSearchParams({
     latitude: String(geo.lat),
     longitude: String(geo.lon),
+    models: "icon_seamless",
     current: "temperature_2m,weather_code",
-    hourly: "temperature_2m,weather_code,precipitation_probability,wind_gusts_10m",
-    daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max",
+    hourly: "temperature_2m,weather_code,precipitation,precipitation_probability,sunshine_duration,cloud_cover,wind_gusts_10m",
     timezone: "Europe/Berlin",
     forecast_days: "7",
   });
-  const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`, { cache: "no-store" });
+  const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`, { cache: "no-store", signal: AbortSignal.timeout(8000) });
   if (!res.ok) return null;
-  const j = await res.json();
-  const h = j.hourly ?? {};
-  const d = j.daily ?? {};
-  const data: Forecast = {
-    place: geo.name,
-    fetchedAt: new Date().toISOString(),
-    current: { temp: Number(j.current?.temperature_2m ?? 0), code: Number(j.current?.weather_code ?? 3) },
-    hours: (h.time ?? []).map((t: string, i: number) => ({
-      date: t.slice(0, 10),
-      hour: Number(t.slice(11, 13)),
-      temp: Number(h.temperature_2m?.[i] ?? 0),
-      code: Number(h.weather_code?.[i] ?? 3),
-      rain: Number(h.precipitation_probability?.[i] ?? 0),
-      gust: Number(h.wind_gusts_10m?.[i] ?? 0),
-    })),
-    days: (d.time ?? []).map((t: string, i: number) => ({
-      date: t,
-      code: Number(d.weather_code?.[i] ?? 3),
-      max: Number(d.temperature_2m_max?.[i] ?? 0),
-      min: Number(d.temperature_2m_min?.[i] ?? 0),
-      rain: Number(d.precipitation_probability_max?.[i] ?? 0),
-    })),
-  };
-  cache.set(key, { at: Date.now(), data });
-  return data;
+  return fromOpenMeteo(await res.json(), geo.name, now().toISOString());
 }
 
 /** Standort → Stadtname (nur die Stadt wird gespeichert) */

@@ -14,3 +14,16 @@
 - Ein echtes Foto (eigenes oder lizenzfrei, z. B. Unsplash/Pexels/CC0) kann
   ein Bild jederzeit ersetzen – dann hier Quelle und Lizenz eintragen und
   `CACHE_VERSION` in `public/sw.js` erhöhen.
+
+## Wetterdaten
+
+- Hauptquelle: **Deutscher Wetterdienst (DWD)**, Vorhersage MOSMIX und
+  Stationsmessungen, abgerufen über **Bright Sky** (api.brightsky.dev, frei,
+  ohne Schlüssel). In der App: „Daten: Deutscher Wetterdienst (über Bright
+  Sky)“. DWD-Daten: Datenlizenz Deutschland – Namensnennung 2.0.
+- Ausweichquelle: **Open-Meteo** (open-meteo.com, CC BY 4.0) mit dem
+  DWD-Modell ICON (`models=icon_seamless`). In der App: „Daten: Open-Meteo
+  (DWD ICON)“.
+- Ortssuche: Open-Meteo Geocoding; „Meinen Standort verwenden“: OpenStreetMap
+  Nominatim (© OpenStreetMap-Mitwirkende, ODbL) – nur der Stadtname wird
+  gespeichert.

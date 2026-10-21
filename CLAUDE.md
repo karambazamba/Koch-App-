@@ -406,20 +406,38 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   Notizen-Kachel über ✎ als Fenster (`KladdeSheet`). Lotte versteht "Schreib
   in die Kladde/Schnellnotiz …", "Notier mir schnell …", "Räum meine
   Schnellnotiz auf" (`kladdeCommand`, `isKladdeTidyRequest`).
-- Wetter (`src/lib/wetter/`): `/api/wetter?ort=` (Open-Meteo inkl. DWD-
-  Modelle, Geocoding, 30 Min Server-Cache, Limit pro IP; `?lat&lon` → nur
-  Stadtname über Nominatim), `WETTER_MOCK=1` = Testmodus (fester Regen 15–18
-  Uhr, `szenario` heiss/frost/klar/sturm, `heute`). App: Ort
+- Wetter (`src/lib/wetter/`): `/api/wetter?ort=` (seit v0.40: DWD MOSMIX über
+  Bright Sky `/weather` + `/current_weather`, Fallback Open-Meteo
+  `models=icon_seamless`, beides in dasselbe Format über `sources.ts`
+  (`fromBrightSky`, `fromOpenMeteo`); Geocoding, 30 Min Server-Cache, Limit pro
+  IP; `?lat&lon` → nur Stadtname über Nominatim), `WETTER_MOCK=1` = Testmodus
+  (fester Regen 15–18 Uhr, `szenario` heiss/frost/klar/sturm, `heute`). Stunde
+  mit `mm`, `rain` (Regenrisiko %), `sun` (Sonnenminuten), `cloud`; Tage baut
+  immer `buildDays` aus den Stunden (nie der schlimmste Tages-Code).
+  EHRLICHE REGEL (`dayLook`, Stunden 7–21 Uhr): Regenstunde = ≥ 0,2 mm UND
+  ≥ 50 %; „Regnerisch“ ab 4 Regenstunden oder 3 mm, „Schauer möglich“ bei 1–3,
+  sonst „Sonnig“ (≥ 6 Std. Sonne) · „Sonne und Wolken“ (2–6) · „Wolkig“ ·
+  „Bedeckt“; Gewitter/Schnee nur ab echter Stunde, „Stürmisch“ ab Böen 75.
+  Morgens/Mittags/Abends nach derselben Regel (anteilig). 7 Tage: „Sa ·
+  Symbol · Sonne und Wolken, 9 bis 12° · ☂ 70 %“, darunter „☀ 1 Std.“
+  (`dayExtras`: Regenrisiko ab 30 %, Sonne nur > 0); Symbol „Schauer“ = Sonne
+  + Wolke + Tropfen. „Gerade Regen“ nur, wenn die nächste Station (≤ 25 km,
+  ≤ 90 Min alt) Regen misst (`current.raining`), sonst Vorhersage. Quellenzeile
+  „Daten: Deutscher Wetterdienst (über Bright Sky)“ bzw. „Open-Meteo (DWD
+  ICON)“, Nachweis `docs/credits.md`. Test `tests/wetter.test.ts`. App: Ort
   `wasgibts.wetterort` (Standard Eutin, Einstellungen → "Wetter-Ort"
   `/profil/wetter`, "Meinen Standort verwenden"), letzte Daten
-  `wasgibts.wetterdaten` (offline "Stand 8:10"). Kachel leicht blau (Tokens
+  `wasgibts.wetterdaten` (offline "Stand 8:10"; ältere Daten ohne neue Felder
+  werden beim Lesen neu beschrieben). Kachel leicht blau (Tokens
   `bg-weather`/`weather-2`/`weather-line`/`text-weather-ink`): S Symbol +
   Temperatur + Tipp; M + Beschreibung, Tief/Hoch, 4 Zeitpunkte; L + 5 Tage;
-  Antippen = Stunden heute + 7 Tage. EIN Tipp (`weatherTip`): Regen zur
-  Termin-Zeit "☂️ Ab 15 Uhr Regen – Schirm für …", sonst Regen, Frost
-  morgens, Sturm, ab 25 °C "Sonnencreme einpacken ☀️", Wind – oder keiner.
+  Antippen = Stunden heute + 7 Tage. EIN Tipp (`weatherTip`): echte
+  Regenstunde zur Termin-Zeit "☂️ Ab 15 Uhr Regen – Schirm für …", sonst
+  Regen, Frost morgens, Sturm, ab 25 °C "Sonnencreme einpacken ☀️", Wind –
+  oder keiner.
   Lotte: `wetter_abfragen` (Vorhersage vorab geholt, wenn die Frage nach
-  Wetter klingt), ohne KI `weatherQuestion` ("Wie wird das Wetter morgen?",
+  Wetter klingt; bekommt Text, Regenstunden, mm, Sonnenstunden), ohne KI
+  `weatherQuestion` ("Wie wird das Wetter morgen?",
   "Brauch ich heute einen Schirm?", "… am Samstag?").
 - Pinnwand (`src/lib/pinnwand/`, Speicher `wasgibts.pinnwand` v1, Einträge
   typ "pinnwand", Raum Familie; Autor = eigener Name, später aus dem Konto):

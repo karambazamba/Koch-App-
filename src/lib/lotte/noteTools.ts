@@ -6,7 +6,7 @@ import type { Room } from "../core/entries";
 import { aufgabeToTermin, taskOverview, terminToAufgabe, TASK_GROUPS } from "../aufgaben/model";
 import { addListItems, appendLine, createNote, findNote, noteAnswer, setPinned, withoutLines, type Note } from "../notizen";
 import { PIN_MAX } from "../pinnwand/model";
-import { dayAnswer, hoursToday, isRainy, umbrellaAnswer, weatherKind, round } from "../wetter/forecast";
+import { dayAnswer, hoursToday, isRainy, umbrellaAnswer, round } from "../wetter/forecast";
 import type { LotteTool } from "./registry";
 import { nextId, propose, type ToolContext, type ToolResult } from "./tools";
 
@@ -282,7 +282,7 @@ export const NOTE_TOOLS: LotteTool[] = [
       const day = /^\d{4}-\d{2}-\d{2}$/.test(str((raw as Input | null)?.tag)) ? str((raw as Input | null)?.tag) : ctx.today;
       const d = fc.days.find((x) => x.date === day);
       if (!d) return { content: `Für ${day} gibt es noch keine Vorhersage (nur die nächsten 7 Tage).` };
-      const lines = [`${fc.place}, ${day}: ${weatherKind(d.code).text}, ${round(d.min)} bis ${round(d.max)} °C, Regenrisiko ${d.rain} %.`];
+      const lines = [`${fc.place}, ${day}: ${d.text}, ${round(d.min)} bis ${round(d.max)} °C, Regenrisiko ${d.rain} %, Regenstunden ${d.wet}, ${d.mm} mm, Sonne etwa ${Math.round(d.sun)} Std.`];
       if (day === ctx.today) {
         const rain = hoursToday(fc, day).filter(isRainy).map((h) => h.hour);
         lines.push(rain.length ? `Regen heute um ${rain.join(", ")} Uhr.` : "Heute trocken.");
