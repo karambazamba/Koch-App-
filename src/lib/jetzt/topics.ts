@@ -30,7 +30,7 @@ export type JetztKind =
   | "ruhig";
 
 /** Wohin Antippen führt: eine Seite oder etwas, das die Startseite selbst öffnet */
-type JetztTarget = { href: string } | { action: "essen" | "ideen" | "timer" | "pinnwand" };
+type JetztTarget = { href: string } | { action: "essen" | "ideen" | "timer" | "pinnwand" | "pause" };
 
 export type JetztTopic = {
   id: string;
@@ -129,7 +129,7 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
   if (x.reminder) add({ id: `erinnerung:${x.reminder.key}`, kind: "erinnerung", title: x.reminder.text, detail: "Erinnerung · ✕ = gesehen", score: 100, target: { href: dayHref }, gentle: true });
   if (x.timer) add({ id: `timer:${x.today}`, kind: "timer", title: `${x.timer.name}: ${x.timer.left}`, detail: "Timer läuft", score: 96, target: { action: "timer" }, tile: "timer", tip: true, gentle: true });
   if (x.cookingStep) add({ id: `kochen:${x.today}`, kind: "kochen", title: `Jetzt: ${short(x.cookingStep, 40)}`, detail: "Schritt für Schritt kochen", score: 92, target: { action: "essen" }, tip: true, gentle: true });
-  if (x.pause) add({ id: `pause:${x.today}`, kind: "pause", title: `Pause ${x.pause}`, detail: "Genießt die Zeit ☀️", score: 94, target: null, gentle: true });
+  if (x.pause) add({ id: `pause:${x.today}`, kind: "pause", title: `Pause ${x.pause} – genießt die Zeit ☀️`, detail: "Antippen: Pause beenden", score: 94, target: { action: "pause" }, gentle: true });
 
   // Termine: gleich (≤ 60 Min) mit Ort/Wetter, sonst der nächste
   const soon = x.upcoming.find((t) => toMin(t.time) - x.minutes <= 60 && toMin(t.time) >= x.minutes - 5);

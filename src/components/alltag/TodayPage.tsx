@@ -54,6 +54,7 @@ import { markReminderSeen, useSeenReminders } from "@/lib/aufgaben/store";
 import { greeting } from "@/lib/aufgaben/summary";
 import { addDays } from "@/lib/core/now";
 import { hasKids, helperName, mealClockFor, pausedOn } from "@/lib/einstellungen/profile";
+import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { useFeature } from "@/lib/core/features";
 import { pauseLabel } from "@/lib/essen/spontan";
 import { pushUndo } from "@/lib/core/undo";
@@ -92,6 +93,13 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const weekendOn = useFeature("wochenendIdeen");
   const pantryOn = useFeature("vorrat");
   const paused = pausedOn(data.profile, data.todayIso);
+  // Pause (Urlaub) beenden – über die Jetzt-Karte, mit Rückgängig
+  const endPause = () => {
+    const before = data.profile;
+    saveProfile({ ...before, pause: null });
+    showToast({ text: "Pause beendet", undo: pushUndo("das Beenden der Pause", () => saveProfile(before)), undoneText: "Pause läuft wieder", seconds: 4, small: true });
+    buzz();
+  };
   const tiles = useHomeTiles();
   const tipSeen = useHomeTipSeen();
   const welcomed = useWelcomeFinished();
@@ -254,6 +262,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     if ("href" in t.target) return router.push(t.target.href);
     if (t.target.action === "essen") return onOpenFood();
     if (t.target.action === "ideen") return openHelper("spontan");
+    if (t.target.action === "pause") return endPause();
     document.querySelector(`[data-tile~="${t.target.action === "timer" ? "timer" : "pinnwand"}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
   const hideTopic = (t: JetztTopic) => {
