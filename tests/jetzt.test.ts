@@ -21,6 +21,7 @@ const base = (minutes: number, extra: Partial<JetztInput> = {}): JetztInput => (
   dinnerFree: false,
   birthdays: [],
   sport: null,
+  shop: null,
   timer: null,
   cookingStep: null,
   reminder: null,
@@ -154,5 +155,22 @@ describe("Eine feste Kachel-Anordnung", () => {
   it("Standard: Pinnwand + Wetter klein nebeneinander, Termine, Aufgaben, Essen + Einkauf – ohne Morgen", () => {
     const shown = DEFAULT_HOME.filter((t) => t.visible && t.id !== "vorrat");
     expect(shown.map((t) => `${t.id}:${t.size}`)).toEqual(["pinnwand:S", "wetter:S", "termine:M", "aufgaben:M", "essen:S", "einkauf:S"]);
+  });
+});
+
+describe("Einkauf nach Läden", () => {
+  it("Jetzt-Karte nachmittags: „Auf dem Heimweg? 3 Sachen bei REWE“", () => {
+    const t = jetztTopics(base(17 * 60, { shop: { shop: "REWE", names: ["Milch", "Brot", "Butter"] } }));
+    expect(t[0].title).toBe("Auf dem Heimweg? 3 Sachen bei REWE");
+    expect(t[0].detail).toBe("Milch, Brot, Butter");
+    expect(jetztTopics(base(10 * 60, { shop: { shop: "REWE", names: ["Milch", "Brot"] } })).some((x) => x.kind === "einkauf")).toBe(false);
+  });
+
+  it("Läden gruppieren: meiste zuerst, „Egal wo“ zuletzt, feste Farbe", async () => {
+    const { shopGroups, shopTone } = await import("@/lib/einkauf/shopGroups");
+    const g = shopGroups([{ name: "Milch", shop: "REWE" }, { name: "Zahnpasta", shop: "dm" }, { name: "Brot", shop: "REWE" }, { name: "Salz", shop: "" }]);
+    expect(g.map((x) => `${x.shop ?? "Egal wo"}:${x.names.join(",")}`)).toEqual(["REWE:Milch,Brot", "dm:Zahnpasta", "Egal wo:Salz"]);
+    expect(shopTone("REWE")).toBe(shopTone("rewe"));
+    expect(shopTone("REWE")).toBeGreaterThanOrEqual(1);
   });
 });

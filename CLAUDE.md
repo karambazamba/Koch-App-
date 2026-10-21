@@ -502,6 +502,16 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   nach ~0,7 s komplett neu. Neu geladen wird jetzt nur nach einem selbst
   angetippten „Neue Version da“ (`ServiceWorkerRegistration`). Test:
   Durchklick `hallo2` (10× frisch, keine zweite Navigation, Mia genau einmal).
+- Einkauf nach Läden (Startseite, Teil 5 des Auftrags): Einkauf-Kachel (S)
+  zeigt bis zu 3 Läden als Zeilen – Farbpunkt, Name fett, Artikel grau
+  („REWE Milch, Brot, Butter“, `ShopRows`, `shopGroups` in
+  `einkauf/shopGroups.ts`: meiste zuerst, ohne Laden „Egal wo“ zuletzt);
+  ohne Läden wie bisher. Farbe je Laden fest aus 8 Tokens (`--color-shop-N`,
+  `shopTone`), bis Läden eigene Farben bekommen. Beispiel-Tag: „REWE: Milch,
+  Brot, Butter · Biomarkt: Äpfel, Eier · dm: Zahnpasta“ (`DEMO_SHOPS`).
+  Jetzt-Karte 15:00–19:30: „Auf dem Heimweg? 3 Sachen bei REWE“ (ab 2
+  Sachen). Läden anlegen, Lernen, „Nach Laden“ und Einkaufsmodus folgen mit
+  den neuen Ansichten der Einkaufsliste.
 - Test: `tests/jetzt.test.ts`; Durchklick `jetzt` im Scratchpad (7:10 /
   16:40 / 20:30 / 23:00, Tauschen bleibt, Wischen, ✕, SE bis Pro Max).
 

@@ -15,6 +15,9 @@ import { shortClock } from "@/components/notizen/Schnellnotiz";
 import { hiddenToday, useJetzt } from "@/lib/jetzt/store";
 import { jetztTone, jetztTopics, type JetztInput, type JetztTermin } from "@/lib/jetzt/topics";
 import type { HomeTileId } from "@/lib/core/homeLayout";
+import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
+import { shopGroups } from "@/lib/einkauf/shopGroups";
+import { DEMO_SHOPS } from "@/lib/core/demo";
 
 export type JetztSource = {
   today: string;
@@ -40,6 +43,8 @@ export type JetztSource = {
   leisure: JetztInput["leisure"];
   tip: string | null;
   demo: boolean;
+  /** Beispiel-Einkauf statt der echten Liste */
+  demoShop: boolean;
   firstTiles: HomeTileId[];
 };
 
@@ -55,6 +60,9 @@ const termin = (i: DayItem): JetztTermin => ({
 export function useJetztTopics(src: JetztSource) {
   const state = useJetzt();
   const { forecast } = useForecast();
+  const shopping = useWeekShoppingList("planning");
+  const openItems = (shopping?.list.items ?? []).filter((i) => !i.checked && !i.hidden);
+  const topShop = src.demoShop ? DEMO_SHOPS[0] : shopGroups(openItems, 1).find((g) => g.shop) ?? null;
   const tomorrowIso = addDays(src.today, 1);
   const timed = src.upcoming.filter((i) => i.time);
   const tips = timed.map((t) => ({ title: t.title, time: t.time! }));
@@ -89,6 +97,7 @@ export function useJetztTopics(src: JetztSource) {
     dinnerFree: src.dinnerFree,
     birthdays: [...birthday(src.todayAll.filter((i) => i.date === src.today), "heute"), ...birthday(src.tomorrow, "morgen")],
     sport: src.sport,
+    shop: topShop?.shop ? { shop: topShop.shop, names: topShop.names } : null,
     timer: src.timer,
     cookingStep: src.cookingStep,
     reminder: src.reminder,

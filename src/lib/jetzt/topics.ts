@@ -21,6 +21,7 @@ export type JetztKind =
   | "dringend"
   | "geburtstag"
   | "sport"
+  | "einkauf"
   | "morgen"
   | "geschafft"
   | "freizeit"
@@ -72,6 +73,8 @@ export type JetztInput = {
   dinnerFree: boolean;
   birthdays: { title: string; date: string; when: "heute" | "morgen" }[];
   sport: { left: number; today: string | null } | null;
+  /** Laden mit den meisten offenen Sachen (mindestens 2) */
+  shop: { shop: string; names: string[] } | null;
   timer: { name: string; left: string } | null;
   cookingStep: string | null;
   reminder: { key: string; text: string } | null;
@@ -205,6 +208,10 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
   }
 
   if (x.sport && x.sport.left > 0 && !night) add({ id: `sport:${x.today}`, kind: "sport", title: `Noch ${x.sport.left} ${x.sport.left === 1 ? "Training" : "Trainings"} bis zum Wochenziel 🔥`, detail: x.sport.today ?? "Lust auf eine Runde?", score: x.sport.today ? 44 : 30, target: { href: "/sport" }, tile: "sport", gentle: true });
+
+  // Nachmittags: auf dem Heimweg beim Laden vorbei?
+  if (x.shop && x.shop.names.length >= 2 && x.minutes >= 15 * 60 && x.minutes < 19 * 60 + 30)
+    add({ id: `einkauf:${x.today}:${x.shop.shop}`, kind: "einkauf", title: `Auf dem Heimweg? ${x.shop.names.length} Sachen bei ${x.shop.shop}`, detail: short(x.shop.names.join(", "), 40), score: 40, target: { href: "/einkaufsliste" }, tile: "einkauf", tip: true, gentle: true });
 
   if (x.minutes >= 19 * 60 || x.minutes < 6 * 60) {
     const items = x.tomorrow.items.slice(0, 2).map((i) => (i.time ? `${clock(i.time)} ${short(i.title, 18)}` : short(i.title, 22)));

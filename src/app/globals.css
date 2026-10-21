@@ -52,6 +52,14 @@
   --color-phase-sport-ink: var(--app-phase-sport-ink);
   --color-phase-feierabend: var(--app-phase-feierabend);
   --color-phase-feierabend-ink: var(--app-phase-feierabend-ink);
+  --color-shop-1: #e0533d;
+  --color-shop-2: #e8a33a;
+  --color-shop-3: #3f8f5b;
+  --color-shop-4: #3b7fc4;
+  --color-shop-5: #8a5cd1;
+  --color-shop-6: #d6588f;
+  --color-shop-7: #2e9e9b;
+  --color-shop-8: #8c7a5b;
   --color-jetzt-morgen: var(--app-jetzt-morgen);
   --color-jetzt-morgen-ink: var(--app-jetzt-morgen-ink);
   --color-jetzt-tag: var(--app-jetzt-tag);

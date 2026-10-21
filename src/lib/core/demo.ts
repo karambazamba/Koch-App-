@@ -133,4 +133,9 @@ export function demoEntries(today: string, minutes: number, helper: string): { d
   return { date, tomorrow, entries: [...termine, ...aufgaben] };
 }
 
-export const DEMO_SHOPPING = ["Milch", "Brot", "Äpfel"];
+/** Beispiel-Einkauf nach Läden */
+export const DEMO_SHOPS: { shop: string; names: string[] }[] = [
+  { shop: "REWE", names: ["Milch", "Brot", "Butter"] },
+  { shop: "Biomarkt", names: ["Äpfel", "Eier"] },
+  { shop: "dm", names: ["Zahnpasta"] },
+];

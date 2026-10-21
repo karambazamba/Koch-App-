@@ -244,6 +244,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     leisure: leisure ? { text: leisure.item.text, href: `/notizen/bearbeiten?id=${leisure.note.id}` } : null,
     tip: tip?.text ?? null,
     demo: demoDay.tiles.length > 0,
+    demoShop: demoDay.tiles.includes("einkauf"),
     firstTiles,
   });
   const openTopic = (t: JetztTopic) => {
