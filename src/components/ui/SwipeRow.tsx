@@ -51,7 +51,7 @@ export function SwipeRow({
                 a.onClick();
               }}
               className={`flex flex-1 flex-col items-center justify-center gap-0.5 text-xs font-bold ${
-                a.tone === "danger" ? "bg-red-50 text-red-600" : "bg-stone-100 text-stone-700"
+                a.tone === "danger" ? "bg-danger-soft text-danger" : "bg-fill text-muted"
               }`}
             >
               <Icon className="h-5 w-5" strokeWidth={2} aria-hidden />

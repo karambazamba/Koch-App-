@@ -54,7 +54,7 @@ function SectionHead({ title, more, href, action, moreLabel, badge }: { title: s
   return (
     <div className="flex h-8 items-center gap-2 px-1">
       {/* Überschrift öffnet die Seite dazu (Tag bzw. Aufgaben) – keine Sackgasse */}
-      <h2 className="text-xs font-bold uppercase tracking-wider text-muted">
+      <h2 className="text-[15px] font-extrabold text-muted">
         <Link href={href} className="-my-2 inline-flex h-11 items-center">
           {title}
         </Link>
@@ -108,7 +108,7 @@ function CheckBox({ item, checked, onClick, round = false }: { item: DayItem; ch
   return (
     <button type="button" role="checkbox" aria-checked={checked} aria-label={`${item.title} erledigt`} onClick={onClick} className="flex h-11 w-11 shrink-0 items-center justify-center">
       <span
-        className={`flex items-center justify-center border-2 transition ${round ? "h-[22px] w-[22px] rounded-full" : "h-[18px] w-[18px] rounded-md"} ${checked ? "border-accent bg-accent text-on-accent" : "border-stone-300"}`}
+        className={`flex items-center justify-center border-2 transition ${round ? "h-[22px] w-[22px] rounded-full" : "h-[18px] w-[18px] rounded-md"} ${checked ? "border-accent bg-accent text-on-accent" : "border-line-strong"}`}
         style={checked ? { animation: "check-pop 0.4s ease-out" } : undefined}
       >
         {checked && <Check className="h-3 w-3" strokeWidth={3} aria-hidden />}
@@ -129,7 +129,7 @@ function TerminCard({ item, leaving, fading = false, entering, onOpen, onDone, d
         <span className={`line-clamp-2 w-full break-words text-[12.5px] font-semibold leading-snug ${leaving ? "text-muted line-through" : ""}`}>{item.title}</span>
       </button>
       <button type="button" role="checkbox" aria-checked={leaving} aria-label={`${item.title} erledigt`} onClick={onDone} className="absolute right-0 top-0 flex h-11 w-11 items-start justify-end p-2">
-        <span className={`flex h-3.5 w-3.5 items-center justify-center rounded border-[1.5px] ${leaving ? "border-accent bg-accent text-on-accent" : "border-stone-300"}`} style={leaving ? { animation: "check-pop 0.4s ease-out" } : undefined}>
+        <span className={`flex h-3.5 w-3.5 items-center justify-center rounded border-[1.5px] ${leaving ? "border-accent bg-accent text-on-accent" : "border-line-strong"}`} style={leaving ? { animation: "check-pop 0.4s ease-out" } : undefined}>
           {leaving && <Check className="h-2.5 w-2.5" strokeWidth={3.5} aria-hidden />}
         </span>
       </button>
@@ -200,7 +200,7 @@ function TaskField({ item, today, leaving, fading = false, entering, onOpen, onD
   return (
     <li className="relative flex min-w-0 items-center bg-surface" style={fading ? FADE : entering} data-item={item.key}>
       <button type="button" role="checkbox" aria-checked={leaving} aria-label={`${item.title} erledigt`} onClick={onDone} className="flex h-11 w-9 shrink-0 items-center justify-end pr-1">
-        <span className={`flex h-[17px] w-[17px] items-center justify-center rounded-full border-2 ${leaving ? "border-accent bg-accent text-on-accent" : "border-stone-300"}`} style={leaving ? { animation: "check-pop 0.4s ease-out" } : undefined}>
+        <span className={`flex h-[17px] w-[17px] items-center justify-center rounded-full border-2 ${leaving ? "border-accent bg-accent text-on-accent" : "border-line-strong"}`} style={leaving ? { animation: "check-pop 0.4s ease-out" } : undefined}>
           {leaving && <Check className="h-2.5 w-2.5" strokeWidth={3.5} aria-hidden />}
         </span>
       </button>

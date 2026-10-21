@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Clock } from "lucide-react";
-import { Sheet } from "@/components/plan/Sheet";
+import { Sheet } from "@/components/ui/Sheet";
 import { CARD, buttonClass } from "@/components/ui/styles";
 import { dishEmoji } from "@/lib/essen/dishEmoji";
 import type { Idea } from "@/lib/essen/ideas";
@@ -26,7 +26,7 @@ export function IdeaSheet({
   return (
     <Sheet title={idea.title} onClose={onClose}>
       <div className={`${CARD} flex items-center gap-4 p-4`}>
-        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-accent-soft text-4xl" aria-hidden>
+        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-card bg-accent-soft text-4xl" aria-hidden>
           {dishEmoji(idea.title, idea.category)}
         </span>
         <div className="min-w-0 flex-1">

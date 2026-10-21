@@ -19,7 +19,7 @@ import { MailCard } from "./MailCard";
 import { MarketBoard, type MarketTarget } from "./MarketBoard";
 import { BakingBoard } from "./BakingBoard";
 
-export const BUBBLE = "max-w-[85%] whitespace-pre-line rounded-2xl px-4 py-2.5 text-base leading-snug";
+export const BUBBLE = "max-w-[85%] whitespace-pre-line rounded-card px-4 py-2.5 text-base leading-snug";
 
 type Props = {
   turn: ChatTurnView;
@@ -41,7 +41,7 @@ type Props = {
 export function ChatTurnItem({ turn, last, data, showBases, mailActive, speaking, onSpeak, onSubmit, onAsk, onAcceptUnsure, onMarketAdd, onMarketPlan, onClose }: Props) {
   return (
       <div className={`flex flex-col gap-2 ${turn.role === "user" ? "items-end" : "items-start"}`}>
-        <div className={`flex w-full items-end gap-1 ${turn.role === "user" ? "justify-end" : ""}`}>
+        <div className={`flex w-full ${turn.role === "user" ? "items-end justify-end gap-1" : "flex-col items-start gap-0.5"}`}>
         <div
           className={`${BUBBLE} ${
             turn.role === "user"

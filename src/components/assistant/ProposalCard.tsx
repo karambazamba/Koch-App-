@@ -57,7 +57,7 @@ export function ProposalCard({ data, proposal, adjusting, onToggle, onApply, onA
       )}
 
       <div className="grid grid-cols-[auto_1fr_1.4fr] gap-2">
-        <button type="button" onClick={onDiscard} aria-label="Verwerfen" className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-line bg-surface text-red-600 transition active:scale-95">
+        <button type="button" onClick={onDiscard} aria-label="Verwerfen" className="inline-flex h-12 w-12 items-center justify-center rounded-field border border-line bg-surface text-danger transition active:scale-95">
           <Trash2 className="h-5 w-5" strokeWidth={2.25} aria-hidden />
         </button>
         <button type="button" onClick={onAdjust} className={buttonClass("secondary")}>
@@ -77,11 +77,11 @@ function Row({ row, checked, onToggle }: { row: PreviewRow; checked: boolean; on
   const [details, setDetails] = useState(false);
   const recipe = row.newRecipe;
   return (
-    <li className={`rounded-xl border px-3 py-2 transition ${checked ? "border-line bg-surface" : "border-dashed border-line bg-stone-50 opacity-60"}`}>
+    <li className={`rounded-field border px-3 py-2 transition ${checked ? "border-line bg-surface" : "border-dashed border-line bg-background opacity-60"}`}>
       <label className="flex cursor-pointer items-start gap-3">
         <input type="checkbox" checked={checked} onChange={onToggle} className="mt-1 h-5 w-5 shrink-0 accent-accent" />
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="text-xs font-semibold uppercase tracking-wide text-muted">{row.label}</span>
+          <span className="text-sm font-semibold text-muted">{row.label}</span>
           {row.lines ? (
             row.lines.map((line) => (
               <span key={line} className="text-[15px] font-semibold leading-snug">
@@ -92,7 +92,7 @@ function Row({ row, checked, onToggle }: { row: PreviewRow; checked: boolean; on
             <span className="text-[15px] leading-snug">
               {row.before !== null && (
                 <>
-                  <span className="text-muted line-through decoration-stone-300">{row.before}</span>
+                  <span className="text-muted line-through decoration-line-strong">{row.before}</span>
                   <span className="text-muted"> → </span>
                 </>
               )}

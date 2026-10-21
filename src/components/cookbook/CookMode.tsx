@@ -93,7 +93,7 @@ function CookSteps({ id }: { id: string }) {
           <h2 className="text-2xl font-extrabold leading-tight tracking-tight">{recipe.title}</h2>
           <div className="mt-3 flex gap-1" aria-hidden>
             {Array.from({ length: total + 1 }, (_, i) => (
-              <span key={i} className={`h-1.5 flex-1 rounded-full ${i <= step ? "bg-accent" : "bg-stone-200"}`} />
+              <span key={i} className={`h-1.5 flex-1 rounded-full ${i <= step ? "bg-accent" : "bg-fill-strong"}`} />
             ))}
           </div>
         </div>
@@ -118,7 +118,7 @@ function CookSteps({ id }: { id: string }) {
         {step === 0 ? (
           <section className={`${CARD} flex flex-col gap-3 p-4`} aria-label="Zutaten">
             {(recipe.oven || recipe.pan) && (
-              <p className="rounded-xl bg-accent-soft px-3 py-2 text-sm font-semibold text-accent-strong">
+              <p className="rounded-field bg-accent-soft px-3 py-2 text-sm font-semibold text-accent-strong">
                 {[recipe.oven ? ovenText(recipe.oven) : "", recipe.pan].filter(Boolean).join(" · ")}
               </p>
             )}
@@ -147,10 +147,10 @@ function CookSteps({ id }: { id: string }) {
           </section>
         ) : (
           <section className={`${CARD} flex flex-col gap-3 p-5`} aria-label={`Schritt ${step}`} aria-live="polite">
-            <p className="text-sm font-bold uppercase tracking-wider text-accent">
+            <p className="text-sm font-bold text-accent">
               Schritt {step} von {total}
             </p>
-            {kid && <p className="rounded-xl bg-accent-soft px-3 py-2 text-base font-bold text-accent-strong">🧒 {kid} darf jetzt:</p>}
+            {kid && <p className="rounded-field bg-accent-soft px-3 py-2 text-base font-bold text-accent-strong">🧒 {kid} darf jetzt:</p>}
             <p className="text-xl leading-relaxed">{current}</p>
             {useMachine && <MachineStepView step={recipe.machineSteps[step - 1]} />}
             {minutes !== null && (!timer || timer.label !== current) && (
@@ -234,13 +234,13 @@ function TimerBar({ timer, onClear }: { timer: RunningTimer; onClear: () => void
   const mm = Math.floor(left / 60_000);
   const ss = Math.floor((left % 60_000) / 1000);
   return (
-    <div role="timer" aria-live={finished ? "assertive" : "off"} className={`sticky top-2 z-10 flex items-center gap-3 rounded-2xl px-4 py-3 shadow-card ${finished ? "bg-accent text-on-accent" : "border border-line bg-surface"}`}>
+    <div role="timer" aria-live={finished ? "assertive" : "off"} className={`sticky top-2 z-10 flex items-center gap-3 rounded-card px-4 py-3 shadow-card ${finished ? "bg-accent text-on-accent" : "border border-line bg-surface"}`}>
       <Timer className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
       <span className="min-w-0 flex-1">
         <span className="block text-lg font-extrabold tabular-nums">{finished ? "Zeit ist um! ⏰" : `${mm}:${String(ss).padStart(2, "0")}`}</span>
         <span className={`block truncate text-xs ${finished ? "text-on-accent/90" : "text-muted"}`}>{timer.label}</span>
       </span>
-      <button type="button" onClick={onClear} aria-label={finished ? "Timer schließen" : "Timer abbrechen"} className="flex h-10 w-10 items-center justify-center rounded-full active:bg-black/10">
+      <button type="button" onClick={onClear} aria-label={finished ? "Timer schließen" : "Timer abbrechen"} className="flex h-10 w-10 items-center justify-center rounded-full active:bg-scrim">
         <X className="h-5 w-5" strokeWidth={2.25} aria-hidden />
       </button>
     </div>

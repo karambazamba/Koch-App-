@@ -1,35 +1,44 @@
 @import "tailwindcss";
 
 /*
- * Design-System "Was gibt's?" – Regeln siehe CLAUDE.md.
- * Nur diese Tokens verwenden: bg-background, bg-surface, border-line,
- * text-ink, text-muted, bg-accent / text-accent / bg-accent-soft,
- * rounded-card, shadow-card. Bausteine in src/components/ui.
+ * Stilblatt "Was gibt’s?" – Regeln siehe CLAUDE.md (Leitbild 7).
+ * Ein Orange je Ton: accent (Knöpfe), accent-strong (Text/Links auf hell),
+ * accent-soft (helle Flächen, Kachel-Plus). Grün = good, Blau = work,
+ * Rot nur danger (Warnung/Löschen). Grauflächen fill/fill-strong, leiser
+ * Text faint. Keine festen Tailwind-Farben (stone/red/emerald …, black/white).
  */
 @theme inline {
   /* Werte kommen aus der gewählten Ansicht (siehe unten) – nie feste Farben verwenden */
   --color-background: var(--app-background);
   --color-surface: var(--app-surface);
   --color-line: var(--app-line);
+  --color-line-strong: var(--app-line-strong);
+  --color-fill: var(--app-fill);
+  --color-fill-strong: var(--app-fill-strong);
   --color-ink: var(--app-ink);
   --color-muted: var(--app-muted);
+  --color-faint: var(--app-faint);
   --color-accent: var(--app-accent);
   --color-accent-strong: var(--app-accent-strong);
   --color-accent-soft: var(--app-accent-soft);
-  /* Text/Icons auf Akzent-Flächen (Buttons, Sprechblasen des Nutzers) */
   --color-on-accent: var(--app-on-accent);
-  --color-foreground: var(--color-ink);
-  /* Lotte-Leiste unten (dunkel), Text darauf, Seiten-Umschalter, Arbeit (blau) */
-  --color-bar: var(--app-bar);
-  --color-on-bar: var(--app-on-bar);
-  --color-segment: var(--app-segment);
+  --color-good: var(--app-good);
+  --color-good-soft: var(--app-good-soft);
+  --color-good-ink: var(--app-good-ink);
   --color-work: var(--app-work);
-  /* Schnellnotiz (Schmierzettel): gelblich */
+  --color-work-soft: var(--app-work-soft);
+  --color-danger: var(--app-danger);
+  --color-danger-soft: var(--app-danger-soft);
+  --color-danger-line: var(--app-danger-line);
+  --color-scrim: var(--app-scrim);
+  --color-segment: var(--app-segment);
+  --color-cat-veggie: var(--app-cat-veggie);
+  --color-cat-fleisch: var(--app-cat-fleisch);
+  --color-cat-fisch: var(--app-cat-fisch);
+  --color-cat-cheat: var(--app-cat-cheat);
   --color-schnellnotiz: var(--app-schnellnotiz);
   --color-schnellnotiz-line: var(--app-schnellnotiz-line);
   --color-schnellnotiz-ink: var(--app-schnellnotiz-ink);
-  --color-quick: var(--app-quick);
-  --color-quick-ink: var(--app-quick-ink);
   --color-demo: var(--app-demo);
   --color-demo-ink: var(--app-demo-ink);
   --color-demo-soft: var(--app-demo-soft);
@@ -39,6 +48,7 @@
   --color-weather-line: var(--app-weather-line);
   --color-weather-ink: var(--app-weather-ink);
   --color-person-3: var(--app-person-3);
+  --color-person-4: var(--app-person-4);
   --color-sport: var(--app-sport);
   --color-sport-soft: var(--app-sport-soft);
   --color-sport-2: var(--app-sport-2);
@@ -52,23 +62,27 @@
   --color-phase-sport-ink: var(--app-phase-sport-ink);
   --color-phase-feierabend: var(--app-phase-feierabend);
   --color-phase-feierabend-ink: var(--app-phase-feierabend-ink);
-  --color-shop-1: #e0533d;
-  --color-shop-2: #e8a33a;
-  --color-shop-3: #3f8f5b;
-  --color-shop-4: #3b7fc4;
-  --color-shop-5: #8a5cd1;
-  --color-shop-6: #d6588f;
-  --color-shop-7: #2e9e9b;
-  --color-shop-8: #8c7a5b;
   --color-jetzt-morgen: var(--app-jetzt-morgen);
   --color-jetzt-morgen-ink: var(--app-jetzt-morgen-ink);
   --color-jetzt-tag: var(--app-jetzt-tag);
   --color-jetzt-tag-ink: var(--app-jetzt-tag-ink);
   --color-jetzt-abend: var(--app-jetzt-abend);
   --color-jetzt-abend-ink: var(--app-jetzt-abend-ink);
-  --color-person-4: var(--app-person-4);
+  --color-shop-1: var(--app-shop-1);
+  --color-shop-2: var(--app-shop-2);
+  --color-shop-3: var(--app-shop-3);
+  --color-shop-4: var(--app-shop-4);
+  --color-shop-5: var(--app-shop-5);
+  --color-shop-6: var(--app-shop-6);
+  --color-shop-7: var(--app-shop-7);
+  --color-shop-8: var(--app-shop-8);
+  /* Text auf Fotos und frei gewählten Farben (Begleitung): immer weiß */
+  --color-on-color: #ffffff;
+  --color-foreground: var(--color-ink);
 
-  --radius-card: 1.375rem;
+  /* Drei Radien: Karte 20, Feld/Knopf 14, Chip rund (rounded-full) */
+  --radius-card: 1.25rem;
+  --radius-field: 0.875rem;
   --shadow-card: var(--app-shadow-card);
   --shadow-sheet: var(--app-shadow-sheet);
   --shadow-bar: var(--app-shadow-bar);
@@ -77,35 +91,40 @@
 }
 
 /*
- * Darstellung (nur noch das warme Design; Profil `theme`, gesetzt als
- * data-theme am <html>): warm = Hell, nacht = Dunkel, auto = wie das Handy.
- * Dunkel stellt zusätzlich die wenigen Grau-/Rottöne um, damit alle Seiten
- * genug Kontrast haben.
+ * Darstellung: warm = Hell, nacht = Dunkel, auto = wie das Handy
+ * (data-theme am <html>). Jeder Token hat einen hellen und einen dunklen Wert.
  */
 :root {
   --app-background: #f7f4ef;
   --app-surface: #ffffff;
   --app-line: #ece6de;
+  --app-line-strong: #d8d0c6;
+  --app-fill: #f1ede7;
+  --app-fill-strong: #e2dcd3;
   --app-ink: #1f1b16;
   --app-muted: #6f675f;
+  --app-faint: #a1988e;
   --app-accent: #f26b21;
-  --app-accent-strong: #c2410c;
-  --app-accent-soft: #fdeee3;
+  --app-accent-strong: #c4531a;
+  --app-accent-soft: #fdebdf;
   --app-on-accent: #ffffff;
-  --app-shadow-card: 0 1px 2px rgb(31 27 22 / 0.04), 0 2px 8px rgb(31 27 22 / 0.03);
-  --app-shadow-sheet: 0 -8px 32px rgb(31 27 22 / 0.12);
-  /* Helle, schwebende Mia-Leiste */
-  --app-shadow-bar: 0 8px 24px rgb(60 40 20 / 0.14);
-  --app-bar: #1f1b17;
-  --app-on-bar: #ffffff;
-  --app-segment: #ebe6df;
+  --app-good: #2e9e6b;
+  --app-good-soft: #e8f6ee;
+  --app-good-ink: #23794f;
   --app-work: #4c6fd9;
+  --app-work-soft: #e8edfb;
+  --app-danger: #c8372d;
+  --app-danger-soft: #fdecea;
+  --app-danger-line: #f2c3bd;
+  --app-scrim: rgb(31 27 22 / 0.4);
+  --app-segment: #ebe6df;
+  --app-cat-veggie: #2e9e6b;
+  --app-cat-fleisch: #b9733f;
+  --app-cat-fisch: #4c6fd9;
+  --app-cat-cheat: #f26b21;
   --app-schnellnotiz: #fffbea;
   --app-schnellnotiz-line: #f3e7b8;
   --app-schnellnotiz-ink: #8a7420;
-  --app-quick: #fdebdf;
-  --app-quick-ink: #c4531a;
-  /* Beispiel-Tag: gelbliches Schild, gestrichelter Rahmen */
   --app-demo: #fff3c4;
   --app-demo-ink: #7a6a2a;
   --app-demo-soft: #fffbea;
@@ -115,6 +134,7 @@
   --app-weather-line: #d9e5f5;
   --app-weather-ink: #3d6bb3;
   --app-person-3: #3f8f5b;
+  --app-person-4: #8a5cd1;
   --app-sport: #2e9e6b;
   --app-sport-soft: #e8f6ee;
   --app-sport-2: #f6fbf8;
@@ -134,7 +154,17 @@
   --app-jetzt-tag-ink: #9c4314;
   --app-jetzt-abend: #e1e9f8;
   --app-jetzt-abend-ink: #2c4a85;
-  --app-person-4: #8a5cd1;
+  --app-shop-1: #e0533d;
+  --app-shop-2: #e8a33a;
+  --app-shop-3: #3f8f5b;
+  --app-shop-4: #3b7fc4;
+  --app-shop-5: #8a5cd1;
+  --app-shop-6: #d6588f;
+  --app-shop-7: #2e9e9b;
+  --app-shop-8: #8c7a5b;
+  --app-shadow-card: 0 1px 2px rgb(31 27 22 / 0.04), 0 2px 8px rgb(31 27 22 / 0.03);
+  --app-shadow-sheet: 0 -8px 32px rgb(31 27 22 / 0.12);
+  --app-shadow-bar: 0 8px 24px rgb(60 40 20 / 0.14);
   color-scheme: light;
 }
 
@@ -142,24 +172,33 @@
   --app-background: #17191c;
   --app-surface: #23262b;
   --app-line: #353a41;
+  --app-line-strong: #4b515a;
+  --app-fill: #2c3036;
+  --app-fill-strong: #3b4048;
   --app-ink: #f2eee9;
   --app-muted: #aaa49c;
+  --app-faint: #8d929a;
   --app-accent: #ff8a4c;
   --app-accent-strong: #ffa774;
   --app-accent-soft: #3b2a20;
   --app-on-accent: #1c1206;
-  --app-shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
-  --app-shadow-sheet: 0 -8px 32px rgb(0 0 0 / 0.5);
-  --app-shadow-bar: 0 8px 24px rgb(0 0 0 / 0.45);
-  --app-bar: #2e3238;
-  --app-on-bar: #f2eee9;
-  --app-segment: #2c3036;
+  --app-good: #4cc58d;
+  --app-good-soft: #1d2d25;
+  --app-good-ink: #7fdcb0;
   --app-work: #7f9bf0;
+  --app-work-soft: #232b40;
+  --app-danger: #ff8f86;
+  --app-danger-soft: #3a2022;
+  --app-danger-line: #6e2f33;
+  --app-scrim: rgb(0 0 0 / 0.6);
+  --app-segment: #2c3036;
+  --app-cat-veggie: #4cc58d;
+  --app-cat-fleisch: #e0a070;
+  --app-cat-fisch: #7f9bf0;
+  --app-cat-cheat: #ff8a4c;
   --app-schnellnotiz: #2f2b1f;
   --app-schnellnotiz-line: #4a4229;
   --app-schnellnotiz-ink: #e6cf7a;
-  --app-quick: rgb(242 107 33 / 0.2);
-  --app-quick-ink: #ffb07a;
   --app-demo: rgb(232 196 90 / 0.18);
   --app-demo-ink: #e6cf8a;
   --app-demo-soft: rgb(232 196 90 / 0.08);
@@ -169,6 +208,7 @@
   --app-weather-line: #33405a;
   --app-weather-ink: #9dbbec;
   --app-person-3: #5fb37c;
+  --app-person-4: #a888e6;
   --app-sport: #4cc58d;
   --app-sport-soft: #1d2d25;
   --app-sport-2: #1f2a24;
@@ -188,21 +228,17 @@
   --app-jetzt-tag-ink: #ffbe94;
   --app-jetzt-abend: #222c40;
   --app-jetzt-abend-ink: #b7cbf2;
-  --app-person-4: #a888e6;
-  --color-stone-50: #2a2e34;
-  --color-stone-100: #30343b;
-  --color-stone-200: #3b4048;
-  --color-stone-300: #4b515a;
-  --color-stone-400: #8d929a;
-  --color-stone-500: #a3a8af;
-  --color-stone-600: #bcc0c6;
-  --color-stone-700: #d3d6da;
-  --color-red-50: #3a2022;
-  --color-red-200: #6e2f33;
-  --color-red-300: #8c3d42;
-  --color-red-600: #ff8f86;
-  --color-red-700: #ffb3ac;
-  --color-emerald-700: #74d6a0;
+  --app-shop-1: #f07a66;
+  --app-shop-2: #f2bd66;
+  --app-shop-3: #62b57f;
+  --app-shop-4: #6aa3e0;
+  --app-shop-5: #a888e6;
+  --app-shop-6: #e982ad;
+  --app-shop-7: #5cc4c1;
+  --app-shop-8: #b3a283;
+  --app-shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
+  --app-shadow-sheet: 0 -8px 32px rgb(0 0 0 / 0.5);
+  --app-shadow-bar: 0 8px 24px rgb(0 0 0 / 0.45);
   color-scheme: dark;
 }
 
@@ -211,67 +247,73 @@
     --app-background: #17191c;
     --app-surface: #23262b;
     --app-line: #353a41;
+    --app-line-strong: #4b515a;
+    --app-fill: #2c3036;
+    --app-fill-strong: #3b4048;
     --app-ink: #f2eee9;
     --app-muted: #aaa49c;
+    --app-faint: #8d929a;
     --app-accent: #ff8a4c;
     --app-accent-strong: #ffa774;
     --app-accent-soft: #3b2a20;
     --app-on-accent: #1c1206;
+    --app-good: #4cc58d;
+    --app-good-soft: #1d2d25;
+    --app-good-ink: #7fdcb0;
+    --app-work: #7f9bf0;
+    --app-work-soft: #232b40;
+    --app-danger: #ff8f86;
+    --app-danger-soft: #3a2022;
+    --app-danger-line: #6e2f33;
+    --app-scrim: rgb(0 0 0 / 0.6);
+    --app-segment: #2c3036;
+    --app-cat-veggie: #4cc58d;
+    --app-cat-fleisch: #e0a070;
+    --app-cat-fisch: #7f9bf0;
+    --app-cat-cheat: #ff8a4c;
+    --app-schnellnotiz: #2f2b1f;
+    --app-schnellnotiz-line: #4a4229;
+    --app-schnellnotiz-ink: #e6cf7a;
+    --app-demo: rgb(232 196 90 / 0.18);
+    --app-demo-ink: #e6cf8a;
+    --app-demo-soft: rgb(232 196 90 / 0.08);
+    --app-demo-line: rgb(232 196 90 / 0.35);
+    --app-weather: #1f2733;
+    --app-weather-2: #232a35;
+    --app-weather-line: #33405a;
+    --app-weather-ink: #9dbbec;
+    --app-person-3: #5fb37c;
+    --app-person-4: #a888e6;
+    --app-sport: #4cc58d;
+    --app-sport-soft: #1d2d25;
+    --app-sport-2: #1f2a24;
+    --app-sport-line: #2f4a3c;
+    --app-sport-ink: #7fdcb0;
+    --app-phase-morgen: rgb(240 200 80 / 0.16);
+    --app-phase-morgen-ink: #f0d27a;
+    --app-phase-kochen: rgb(242 107 33 / 0.2);
+    --app-phase-kochen-ink: #ffb07a;
+    --app-phase-sport: rgb(76 197 141 / 0.18);
+    --app-phase-sport-ink: #7fdcb0;
+    --app-phase-feierabend: rgb(150 120 230 / 0.2);
+    --app-phase-feierabend-ink: #c7b6ff;
+    --app-jetzt-morgen: #3a3120;
+    --app-jetzt-morgen-ink: #f3d98a;
+    --app-jetzt-tag: #3d2a1f;
+    --app-jetzt-tag-ink: #ffbe94;
+    --app-jetzt-abend: #222c40;
+    --app-jetzt-abend-ink: #b7cbf2;
+    --app-shop-1: #f07a66;
+    --app-shop-2: #f2bd66;
+    --app-shop-3: #62b57f;
+    --app-shop-4: #6aa3e0;
+    --app-shop-5: #a888e6;
+    --app-shop-6: #e982ad;
+    --app-shop-7: #5cc4c1;
+    --app-shop-8: #b3a283;
     --app-shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
     --app-shadow-sheet: 0 -8px 32px rgb(0 0 0 / 0.5);
-  --app-shadow-bar: 0 8px 24px rgb(0 0 0 / 0.45);
-    --app-bar: #2e3238;
-    --app-on-bar: #f2eee9;
-    --app-segment: #2c3036;
-    --app-work: #7f9bf0;
-  --app-schnellnotiz: #2f2b1f;
-  --app-schnellnotiz-line: #4a4229;
-  --app-schnellnotiz-ink: #e6cf7a;
-  --app-quick: rgb(242 107 33 / 0.2);
-  --app-quick-ink: #ffb07a;
-  --app-demo: rgb(232 196 90 / 0.18);
-  --app-demo-ink: #e6cf8a;
-  --app-demo-soft: rgb(232 196 90 / 0.08);
-  --app-demo-line: rgb(232 196 90 / 0.35);
-  --app-weather: #1f2733;
-  --app-weather-2: #232a35;
-  --app-weather-line: #33405a;
-  --app-weather-ink: #9dbbec;
-  --app-person-3: #5fb37c;
-  --app-sport: #4cc58d;
-  --app-sport-soft: #1d2d25;
-  --app-sport-2: #1f2a24;
-  --app-sport-line: #2f4a3c;
-  --app-sport-ink: #7fdcb0;
-  --app-phase-morgen: rgb(240 200 80 / 0.16);
-  --app-phase-morgen-ink: #f0d27a;
-  --app-phase-kochen: rgb(242 107 33 / 0.2);
-  --app-phase-kochen-ink: #ffb07a;
-  --app-phase-sport: rgb(76 197 141 / 0.18);
-  --app-phase-sport-ink: #7fdcb0;
-  --app-phase-feierabend: rgb(150 120 230 / 0.2);
-  --app-phase-feierabend-ink: #c7b6ff;
-  --app-jetzt-morgen: #3a3120;
-  --app-jetzt-morgen-ink: #f3d98a;
-  --app-jetzt-tag: #3d2a1f;
-  --app-jetzt-tag-ink: #ffbe94;
-  --app-jetzt-abend: #222c40;
-  --app-jetzt-abend-ink: #b7cbf2;
-  --app-person-4: #a888e6;
-    --color-stone-50: #2a2e34;
-    --color-stone-100: #30343b;
-    --color-stone-200: #3b4048;
-    --color-stone-300: #4b515a;
-    --color-stone-400: #8d929a;
-    --color-stone-500: #a3a8af;
-    --color-stone-600: #bcc0c6;
-    --color-stone-700: #d3d6da;
-    --color-red-50: #3a2022;
-    --color-red-200: #6e2f33;
-    --color-red-300: #8c3d42;
-    --color-red-600: #ff8f86;
-    --color-red-700: #ffb3ac;
-    --color-emerald-700: #74d6a0;
+    --app-shadow-bar: 0 8px 24px rgb(0 0 0 / 0.45);
     color-scheme: dark;
   }
 }
@@ -617,8 +659,8 @@ body {
 @keyframes hello-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 .hello-caret { display: inline-block; width: 3px; height: 0.9em; margin-left: 2px; vertical-align: -0.1em; background: currentColor; animation: hello-caret 0.7s steps(1) infinite; }
 @keyframes hello-caret { 50% { opacity: 0; } }
-.hello-pulse { box-shadow: 0 0 0 0 var(--color-quick); animation: hello-pulse 1.8s ease-out infinite; }
-@keyframes hello-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-quick-ink) 35%, transparent); } 100% { box-shadow: 0 0 0 12px transparent; } }
+.hello-pulse { box-shadow: 0 0 0 0 var(--color-accent-soft); animation: hello-pulse 1.8s ease-out infinite; }
+@keyframes hello-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent-strong) 35%, transparent); } 100% { box-shadow: 0 0 0 12px transparent; } }
 .hello-bubble { transform: translate(-50%, -100%); animation: hello-bubble 0.35s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
 @keyframes hello-bubble { from { opacity: 0; transform: translate(-50%, -80%) scale(0.7); } to { opacity: 1; transform: translate(-50%, -100%) scale(1); } }
 .hello-heart { animation: hello-heart 1.1s ease-out both; }

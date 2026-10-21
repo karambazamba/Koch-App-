@@ -12,7 +12,7 @@ type ButtonVariant = "primary" | "secondary" | "soft" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
 
 const BUTTON_BASE =
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-xl font-bold transition active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40";
+  "inline-flex shrink-0 items-center justify-center gap-2 rounded-field font-bold transition active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40";
 
 const BUTTON_SIZES: Record<ButtonSize, string> = {
   sm: "h-10 px-3 text-sm",
@@ -25,7 +25,7 @@ const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   secondary: "border border-line bg-surface text-ink",
   soft: "bg-accent-soft text-accent-strong",
   ghost: "text-muted",
-  danger: "border border-line bg-surface text-red-600",
+  danger: "border border-line bg-surface text-danger",
 };
 
 /** Button-Klassen, auch für Links im Button-Stil */
@@ -42,8 +42,8 @@ export const ICON_BUTTON =
  * "muted" = unsicherer Eintrag (grau, gestrichelt), z. B. "Meintest du …?".
  */
 export function chipClass(selected = false, tone: "accent" | "danger" | "muted" = "accent"): string {
-  const active = tone === "danger" ? "border-red-300 bg-red-50 text-red-700" : "border-accent bg-accent-soft text-accent-strong";
-  const idle = tone === "muted" ? "border-dashed border-stone-300 bg-stone-100 text-stone-500" : "border-line bg-surface text-ink";
+  const active = tone === "danger" ? "border-danger-line bg-danger-soft text-danger" : "border-accent bg-accent-soft text-accent-strong";
+  const idle = tone === "muted" ? "border-dashed border-line-strong bg-fill text-muted" : "border-line bg-surface text-ink";
   return `hit inline-flex min-h-10 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[15px] font-semibold transition active:scale-95 ${
     selected ? active : idle
   }`;
@@ -58,22 +58,25 @@ export function chipClass(selected = false, tone: "accent" | "danger" | "muted" 
 export function tileClass(selected: boolean, tone: "default" | "danger" | "soft" = "default"): string {
   const idle =
     tone === "danger"
-      ? "border-line bg-surface text-red-600"
+      ? "border-line bg-surface text-danger"
       : tone === "soft"
         ? "border-transparent bg-accent-soft text-accent-strong"
         : "border-line bg-surface text-ink";
-  return `flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl border px-2 py-3 text-[15px] font-semibold transition active:scale-[0.98] ${
+  return `flex min-h-14 flex-col items-center justify-center gap-1 rounded-field border px-2 py-3 text-[15px] font-semibold transition active:scale-[0.98] ${
     selected ? "border-accent bg-accent-soft text-accent-strong" : idle
   }`;
 }
 
-/** Feld-Stil ohne Größe (für schmale Felder mit eigener Breite/Höhe) */
-/** Sichtbarer Kreis der kleinen Schnell-Knöpfe (20 px) – Tippfläche liefert der Knopf drumherum */
-export const quickDot = (tone: "quick" | "schnellnotiz" | "sport" = "quick") =>
-  `flex h-5 w-5 items-center justify-center rounded-full ${tone === "schnellnotiz" ? "bg-schnellnotiz-line text-schnellnotiz-ink" : tone === "sport" ? "bg-sport-line text-sport-ink" : "bg-quick text-quick-ink"}`;
+/**
+ * Nur zwei Plus-Arten: Seiten-Plus (34 px, orange, oben rechts im Kopf) und
+ * Kachel-Plus (26 px, hellorange). Die Tippfläche ist immer 44 × 44 px.
+ */
+export const PAGE_PLUS = "hit flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-accent text-on-accent active:scale-95";
+export const TILE_PLUS_DOT = "flex h-[26px] w-[26px] items-center justify-center rounded-full bg-accent-soft text-accent-strong";
 
+/** Feld-Stil ohne Größe (für schmale Felder mit eigener Breite/Höhe) */
 export const INPUT_BASE =
-  "min-w-0 rounded-xl border border-line bg-surface text-base text-ink outline-none transition placeholder:text-stone-400 focus:border-accent focus:ring-2 focus:ring-accent/20";
+  "min-w-0 rounded-field border border-line bg-surface text-base text-ink outline-none transition placeholder:text-faint focus:border-accent focus:ring-2 focus:ring-accent/20";
 
 /** Text-Eingabefeld in voller Breite */
 export const INPUT = `${INPUT_BASE} h-12 w-full px-4`;
@@ -82,17 +85,20 @@ export const INPUT = `${INPUT_BASE} h-12 w-full px-4`;
 export const LABEL = "text-sm font-semibold text-muted";
 
 /** Abschnitts-Überschrift in einer Seite oder Karte */
-export const SECTION_TITLE = "text-lg font-bold text-ink";
+export const SECTION_TITLE = "text-[15px] font-extrabold text-ink";
+
+/** Kachel-Label: 10/800 in Großbuchstaben – nur innerhalb von Kacheln */
+export const TILE_LABEL = "text-[10px] font-extrabold uppercase tracking-wider text-muted";
 
 /** Grauer Untertitel / Hinweis */
 export const SUBTLE = "text-sm text-muted";
 
 /** Neutraler Hinweis-Kasten (Icon + Text) */
-export const NOTE = "flex items-start gap-2 rounded-xl bg-stone-100 px-4 py-3 text-sm text-stone-700";
+export const NOTE = "flex items-start gap-2 rounded-field bg-fill px-4 py-3 text-sm text-muted";
 
 /** Warnung (z. B. zu viele Tage) – Rot nur für Warnungen und Löschen */
 export const WARNING =
-  "flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700";
+  "flex items-start gap-2 rounded-field border border-danger-line bg-danger-soft px-4 py-3 text-sm font-semibold text-danger";
 
 /**
  * Unterer Abstand: Home-Leiste (Safe-Area) plus Platz für den Küchenhelfer-Knopf

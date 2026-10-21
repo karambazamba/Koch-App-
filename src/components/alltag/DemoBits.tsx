@@ -5,7 +5,7 @@
 // Eigenes einträgst. Jetzt leeren".
 
 import { useState } from "react";
-import { Sheet } from "@/components/plan/Sheet";
+import { Sheet } from "@/components/ui/Sheet";
 import type { DayItem } from "@/lib/aufgaben/model";
 import { TaskQuickAdd } from "./TaskQuickAdd";
 import { TerminQuickAdd } from "./TerminQuickAdd";
@@ -23,10 +23,10 @@ export function DemoHint({ ask = false }: { ask?: boolean }) {
   // Nach dem ersten eigenen Termin bzw. der ersten eigenen Aufgabe einmal dezent fragen
   if (ask)
     return (
-      <div className="flex items-center gap-2 rounded-2xl border-[1.5px] border-demo-line bg-demo-soft px-3.5 py-2.5 text-[13px] font-semibold text-demo-ink" role="note">
+      <div className="flex items-center gap-2 rounded-card border-[1.5px] border-demo-line bg-demo-soft px-3.5 py-2.5 text-[13px] font-semibold text-demo-ink" role="note">
         <span aria-hidden>✨</span>
         <span className="flex-1">Alle Beispiele entfernen?</span>
-        <button type="button" onClick={() => (markDemoAsked(), clearDemo())} className="hit shrink-0 font-extrabold text-quick-ink">
+        <button type="button" onClick={() => (markDemoAsked(), clearDemo())} className="hit shrink-0 font-extrabold text-accent-strong">
           Ja
         </button>
         <button type="button" onClick={markDemoAsked} className="hit ml-2 shrink-0 font-bold text-demo-ink">
@@ -35,10 +35,10 @@ export function DemoHint({ ask = false }: { ask?: boolean }) {
       </div>
     );
   return (
-    <div className="flex items-center gap-2 rounded-2xl border-[1.5px] border-demo-line bg-demo-soft px-3.5 py-2.5 text-[13px] font-semibold text-demo-ink" role="note">
+    <div className="flex items-center gap-2 rounded-card border-[1.5px] border-demo-line bg-demo-soft px-3.5 py-2.5 text-[13px] font-semibold text-demo-ink" role="note">
       <span aria-hidden>✨</span>
       <span className="flex-1">Trägst du in einer Kachel Eigenes ein, verschwinden dort die Beispiele.</span>
-      <button type="button" onClick={clearDemo} className="hit shrink-0 font-extrabold text-quick-ink">
+      <button type="button" onClick={clearDemo} className="hit shrink-0 font-extrabold text-accent-strong">
         Jetzt leeren
       </button>
     </div>

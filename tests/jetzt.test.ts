@@ -84,7 +84,7 @@ describe("Jetzt-Karte: Punktesystem", () => {
   it("höchstens drei Themen, nie leer", () => {
     expect(jetztTopics(base(12 * 60))).toHaveLength(1);
     expect(jetztTopics(base(12 * 60))[0].kind).toBe("ruhig");
-    const many = jetztTopics(base(15 * 60 + 30, { upcoming: [termin("Zahnarzt", "16:00")], pin: { id: "p", author: "Lisa", text: "Hi", when: "7:48" }, urgent: [{ key: "u", title: "Formular" }], dinnerFree: true, sport: { left: 1, today: null } }));
+    const many = jetztTopics(base(15 * 60 + 30, { upcoming: [termin("Zahnarzt", "16:00")], pin: { id: "p", author: "Lisa", text: "Hi", when: "7:48" }, urgent: [{ key: "u", title: "Formular" }], dinnerFree: true, sport: { today: "Heute 18:00 Laufen" } }));
     expect(many).toHaveLength(3);
   });
 

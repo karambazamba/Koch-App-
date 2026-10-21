@@ -5,11 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { BookOpen, ChevronLeft, ChevronRight, ClipboardList, FolderOpen, History, Save } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
-import { CategoryDot } from "@/components/ui/Category";
 import { Segmented } from "@/components/ui/Segmented";
 import { CARD, ICON_BUTTON, PAGE_MAIN, buttonClass } from "@/components/ui/styles";
-import { useRecipes, type Recipe } from "@/lib/essen/cookbook";
-import { estimateCost } from "@/lib/essen/costs";
+import { useRecipes } from "@/lib/essen/cookbook";
 import {
   clearSlot,
   composeWeek,
@@ -22,7 +20,6 @@ import {
   useMealPlans,
   type MealEntry,
   type PlanDay,
-  type PlanWeek,
   type ResolvedEntry,
 } from "@/lib/essen/mealPlan";
 import { useProfile } from "@/lib/einstellungen/useProfile";
@@ -33,7 +30,6 @@ import {
   DEFAULT_SHOPPING_DAY,
   addDays,
   formatWeekRange,
-  planForWeek,
   toIsoDate,
   useToday,
   useWeekPlans,
@@ -66,16 +62,6 @@ function weekLabel(offset: number): string {
   if (offset === 1) return "Nächste Woche";
   if (offset === -1) return "Letzte Woche";
   return `Vor ${-offset} Wochen`;
-}
-
-/** Geschätzte Kosten der Woche (nur Gerichte mit Rezept) */
-function weekCost(week: PlanWeek, recipes: Record<string, Recipe>): number {
-  return week.days.reduce((sum, d) => {
-    const e = d.slot.entry;
-    const r = e?.recipeId ? recipes[e.recipeId] : undefined;
-    const cost = r && !d.away ? (estimateCost(r, d.persons) ?? 0) : 0;
-    return sum + cost * (e?.double ? 2 : 1);
-  }, 0);
 }
 
 /**
@@ -121,8 +107,6 @@ export function WeekPlanView() {
     setSwapHandled(bfcacheId);
   };
   const sheetDay = sheet && "weekday" in sheet ? week.days.find((d) => d.weekday === sheet.weekday) : undefined;
-  const budget = planForWeek(weekPlans, weekStart)?.budgetEuro ?? null;
-  const cost = weekCost(week, recipes);
 
   const changeWeek = (next: number) => {
     setOffset(next);
@@ -189,8 +173,6 @@ export function WeekPlanView() {
           ]}
         />
 
-        <SummaryLine week={week} cost={profile?.display === "alles" || budget ? cost : 0} budget={budget} mixed={profile?.planStyle !== "plan"} />
-
         {!readOnly && !week.hasPlanRules && (
           <Link href={`/woche/check?woche=${weekStart}`} className="-mt-2 flex items-center gap-1.5 px-1 text-sm font-semibold text-accent-strong">
             <ClipboardList className="h-4 w-4" strokeWidth={2} aria-hidden />
@@ -255,7 +237,7 @@ export function WeekPlanView() {
           Unsere Rezepte
         </Link>
         {toast && (
-          <p role="status" className="rounded-xl bg-accent-soft px-4 py-2 text-sm font-semibold text-accent-strong">
+          <p role="status" className="rounded-field bg-accent-soft px-4 py-2 text-sm font-semibold text-accent-strong">
             {toast}
           </p>
         )}
@@ -364,27 +346,3 @@ function againEntry(entry: ResolvedEntry): MealEntry {
   return rest;
 }
 
-/** Schmale Zusammenfassung: x/7 geplant · Kategorien · Budget (Kosten nur bei "Alles zeigen" oder mit Budget) */
-function SummaryLine({ week, cost, budget, mixed }: { week: PlanWeek; cost: number; budget: number | null; mixed: boolean }) {
-  return (
-    <p className="-mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-sm text-muted" aria-label="Zusammenfassung">
-      {/* "Mal so, mal so": freie Tage sind normal – kein Zähler */}
-      {!mixed && (
-        <span className="font-bold text-ink">
-          {week.planned}/{week.total} geplant
-        </span>
-      )}
-      {(["vegetarisch", "fleisch", "fisch"] as const).map((c) => (
-        <span key={c} className="inline-flex items-center gap-1 whitespace-nowrap">
-          <CategoryDot category={c} />
-          {week.counts[c].planned}/{week.counts[c].target}
-        </span>
-      ))}
-      {(cost > 0 || budget) && (
-        <span className="whitespace-nowrap">
-          ~{cost} €{budget ? ` von ${budget} €` : ""}
-        </span>
-      )}
-    </p>
-  );
-}

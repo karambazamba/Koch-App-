@@ -33,10 +33,10 @@ export function ListRow({ href, onClick, title, subtitle, icon, leading, trailin
       </span>
       {trailing}
       {value !== undefined && value !== "" && <span className="max-w-[40%] shrink-0 truncate text-right text-sm font-bold text-accent-strong">{value}</span>}
-      <ChevronRight className="h-5 w-5 shrink-0 text-stone-300" strokeWidth={2.25} aria-hidden />
+      <ChevronRight className="h-5 w-5 shrink-0 text-faint" strokeWidth={2.25} aria-hidden />
     </>
   );
-  const rowClass = `flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left transition active:bg-stone-50 ${className}`;
+  const rowClass = `flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left transition active:bg-background ${className}`;
   if (!href) {
     return (
       <button type="button" onClick={onClick} className={rowClass} {...rest}>

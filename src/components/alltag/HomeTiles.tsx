@@ -7,8 +7,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowLeftRight, Check, Pin, PenLine, Refrigerator, ShoppingCart, UtensilsCrossed } from "lucide-react";
-import { CARD, buttonClass } from "@/components/ui/styles";
+import { ArrowLeftRight, Check, Pin, PenLine, Refrigerator, ShoppingCart, StickyNote, UtensilsCrossed } from "lucide-react";
+import { CARD, TILE_LABEL, buttonClass } from "@/components/ui/styles";
 import { QuickButton } from "@/components/ui/QuickButton";
 import { QuickAddButton } from "@/components/shopping/QuickAdd";
 import { SchnellnotizSheet } from "@/components/notizen/Schnellnotiz";
@@ -18,7 +18,7 @@ import type { TileSize } from "@/lib/core/homeLayout";
 import { addDays, todayIso } from "@/lib/core/now";
 import { toggleChecked } from "@/lib/einkauf/shoppingList";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
-import { matchStock } from "@/lib/essen/dishIdeas";
+import { matchStock, soonToUse } from "@/lib/essen/dishIdeas";
 import { loadMealPlans, replaceMealPlans, type PlanDay } from "@/lib/essen/mealPlan";
 import { usePantry } from "@/lib/essen/pantry";
 import { takeForToday } from "@/lib/essen/spontanTake";
@@ -34,7 +34,7 @@ import { buzz } from "./actions";
 import { dishOf } from "./useMeals";
 
 const HALF = `${CARD} relative flex min-h-[92px] flex-col p-3.5`;
-const HALF_LABEL = "flex min-w-0 items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted";
+const HALF_LABEL = `flex min-w-0 items-center gap-1.5 ${TILE_LABEL}`;
 
 /** ESSEN – S: Gericht + ⇄; M: breit mit Zeit, Zutaten-Status, ⇄; L: + Ideen für morgen */
 export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCook }: { data: HomeData; dish: string | null; over: boolean; dishClock: string | null; onOpen: () => void; size?: TileSize; onCook?: () => void }) {
@@ -87,12 +87,12 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCo
       {/* "Ich koche jetzt": die Essen-Kachel zeigt die Schritte, der Bildschirm bleibt an */}
       {onCook && !idea && (
         <button type="button" onClick={onCook} className="-mb-2 mt-0.5 flex h-11 items-center self-start text-[13px] font-bold text-accent-strong">
-          🍳 Ich koche jetzt
+          Ich koche jetzt
         </button>
       )}
       {size === "L" && !over && (tomorrowIdeas?.ideas.length ?? 0) > 0 && (
         <div className="mt-2 flex flex-col gap-1 border-t border-line pt-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-muted">Ideen für morgen</span>
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted">Ideen für morgen</span>
           <div className="flex flex-wrap gap-1.5">
             {tomorrowIdeas!.ideas.slice(0, 3).map((i) => (
               <button key={i.title} type="button" onClick={onOpen} className="rounded-full bg-accent-soft px-3 py-1 text-[13px] font-semibold text-accent-strong">
@@ -126,8 +126,8 @@ function ShopRows({ groups }: { groups: ShopGroup[] }) {
   );
 }
 
-/** EINKAUF – S: Anzahl + bis zu 3 Läden (bzw. erste Sachen); M: bis zu 6 zum Abhaken; L: bis zu 10. "+" = Schnell-Eintrag */
-export function ShoppingTile({ half, size = "S", demo = false }: { half: boolean; size?: TileSize; demo?: boolean }) {
+/** EINKAUF – S: bis zu 3 Läden (bzw. 3 Sachen + „und N weitere“); M: bis zu 6 zum Abhaken; L: bis zu 10. "+" = Schnell-Eintrag */
+export function ShoppingTile({ size = "S", demo = false }: { half: boolean; size?: TileSize; demo?: boolean }) {
   const shopping = useWeekShoppingList("planning");
   // "Jetzt mitnehmen" und selbst Eingetragenes zuerst, dann Zutaten aus Gerichten
   const open = (shopping?.list.items ?? [])
@@ -145,7 +145,7 @@ export function ShoppingTile({ half, size = "S", demo = false }: { half: boolean
         <Link href="/einkaufsliste" className="flex flex-col gap-1">
           <span className={`${HALF_LABEL} pr-6`}>
             <ShoppingCart className="h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
-            <span className="truncate">Einkauf · {DEMO_SHOPS.reduce((n, g) => n + g.names.length, 0)}</span>
+            <span className="truncate">Einkauf</span>
           </span>
           <ShopRows groups={DEMO_SHOPS} />
           <span className="mt-0.5 text-xs font-semibold text-muted">Beispiel</span>
@@ -155,15 +155,22 @@ export function ShoppingTile({ half, size = "S", demo = false }: { half: boolean
     );
   const max = size === "L" ? 10 : 6;
   return (
-    <section className={HALF} aria-label={open.length ? `Einkauf · ${open.length}` : "Einkauf"}>
+    <section className={HALF} aria-label="Einkauf">
       <Link href="/einkaufsliste" className="flex flex-col gap-1">
         <span className={`${HALF_LABEL} pr-6`}>
           <ShoppingCart className="h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
-          <span className="truncate">Einkauf{open.length ? ` · ${open.length}` : ""}</span>
+          <span className="truncate">Einkauf</span>
         </span>
         {!open.length && <span className="text-[14px] font-semibold text-muted">+ eintragen</span>}
         {open.length > 0 && size === "S" && (open.some((i) => i.shop) ? <ShopRows groups={shopGroups(open)} /> : (
-          <span className={`${half ? "line-clamp-2" : "line-clamp-1"} text-[14px] font-semibold leading-snug`}>{open.slice(0, 8).map((i) => i.name).join(" · ")}</span>
+          <ul className="mt-0.5 flex flex-col text-[14px] font-semibold leading-snug">
+            {open.slice(0, 3).map((i) => (
+              <li key={i.key} className="truncate">
+                {i.name}
+              </li>
+            ))}
+            {open.length > 3 && <li className="text-[12.5px] font-semibold text-muted">und {open.length - 3} weitere</li>}
+          </ul>
         ))}
       </Link>
       {open.length > 0 && size !== "S" && (
@@ -179,9 +186,9 @@ export function ShoppingTile({ half, size = "S", demo = false }: { half: boolean
                   buzz();
                   toggleChecked(shopping.weekStart, item, todayIso());
                 }}
-                className="flex min-h-10 w-full items-center gap-2 rounded-lg px-2 text-left active:bg-stone-100"
+                className="flex min-h-10 w-full items-center gap-2 rounded-field px-2 text-left active:bg-fill"
               >
-                <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md border-2 border-stone-300">
+                <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md border-2 border-line-strong">
                   <Check className="h-3 w-3 text-transparent" strokeWidth={3} aria-hidden />
                 </span>
                 <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">{item.name}</span>
@@ -192,7 +199,7 @@ export function ShoppingTile({ half, size = "S", demo = false }: { half: boolean
       )}
       {open.length > max && size !== "S" && (
         <Link href="/einkaufsliste" className="mt-1 text-xs font-bold text-accent-strong">
-          + {open.length - max} weitere
+          und {open.length - max} weitere
         </Link>
       )}
       <QuickAddButton weekStart={shopping.weekStart} settings={shopping.settings} quick className="absolute right-0.5 top-0.5" />
@@ -201,7 +208,7 @@ export function ShoppingTile({ half, size = "S", demo = false }: { half: boolean
 }
 
 /**
- * NOTIZEN (gelblich) – S: die ersten 2 Zeilen der Schnellnotiz; M: + angeheftete
+ * NOTIZEN (weiß, Stift oben rechts) – S: die ersten 2 Zeilen der Schnellnotiz; M: + angeheftete
  * als Chips; L: + die 3 neuesten Notizen. ✎ = Schnellnotiz-Fenster, Chip =
  * diese Notiz, Kachel = Notizen-Seite.
  */
@@ -216,10 +223,10 @@ export function NotesTile({ name, size = "M" }: { name: string; size?: TileSize 
   const shown = lines.slice(0, size === "S" ? 2 : 3);
   return (
     <>
-      <section className="relative flex min-h-[92px] flex-col gap-1 rounded-2xl border border-schnellnotiz-line bg-schnellnotiz p-3.5" aria-label="Notizen">
+      <section className={`${CARD} relative flex min-h-[92px] flex-col gap-1 p-3.5`} aria-label="Notizen">
         <Link href="/notizen" className="flex flex-col gap-0.5 pr-8" aria-label="Notizen öffnen">
-          <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase leading-tight tracking-wider text-schnellnotiz-ink">
-            <PenLine className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
+          <span className={HALF_LABEL}>
+            <StickyNote className="h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
             Notizen
           </span>
           {shown.length ? (
@@ -231,16 +238,15 @@ export function NotesTile({ name, size = "M" }: { name: string; size?: TileSize 
           ) : (
             <span className="text-[13px] text-muted">Schnell was aufschreiben …</span>
           )}
-          {lines.length > shown.length && <span className="text-[11px] leading-tight text-muted">+ {lines.length - shown.length} weitere Zeilen</span>}
         </Link>
         <span className="absolute right-3.5 top-3">
-          <QuickButton icon={PenLine} tone="schnellnotiz" label="Schnellnotiz schreiben" onClick={() => setOpen(true)} />
+          <QuickButton icon={PenLine} label="Schnellnotiz schreiben" onClick={() => setOpen(true)} />
         </span>
         {size !== "S" && pinned.length > 0 && (
           <div className="mt-0.5 flex flex-wrap gap-1.5" aria-label="Angeheftet">
             {pinned.slice(0, 6).map((n) => (
-              <Link key={n.id} href={`/notizen/bearbeiten?id=${n.id}`} className="inline-flex max-w-full items-center gap-1 rounded-full border border-schnellnotiz-line bg-surface/70 px-2.5 py-1 text-[12.5px] font-semibold">
-                <Pin className="h-3 w-3 shrink-0 text-schnellnotiz-ink" strokeWidth={2.25} aria-hidden />
+              <Link key={n.id} href={`/notizen/bearbeiten?id=${n.id}`} className="inline-flex max-w-full items-center gap-1 rounded-full bg-fill px-2.5 py-1 text-[12.5px] font-semibold">
+                <Pin className="h-3 w-3 shrink-0 text-accent" strokeWidth={2.25} aria-hidden />
                 <span className="truncate">
                   {n.data.emoji ? `${n.data.emoji} ` : ""}
                   {n.data.title}
@@ -250,11 +256,11 @@ export function NotesTile({ name, size = "M" }: { name: string; size?: TileSize 
           </div>
         )}
         {size === "L" && newest.length > 0 && (
-          <ul className="mt-1 flex flex-col gap-0.5 border-t border-schnellnotiz-line pt-1.5" aria-label="Neueste Notizen">
+          <ul className="mt-1 flex flex-col gap-0.5 border-t border-line pt-1.5" aria-label="Neueste Notizen">
             {newest.map((n) => (
               <li key={n.id}>
                 <Link href={`/notizen/bearbeiten?id=${n.id}`} className="flex min-h-9 items-center gap-2 text-[13.5px]">
-                  <span aria-hidden>{n.data.emoji ?? "📝"}</span>
+                  {n.data.emoji ? <span aria-hidden>{n.data.emoji}</span> : <StickyNote className="h-4 w-4 shrink-0 text-muted" strokeWidth={2} aria-hidden />}
                   <span className="min-w-0 flex-1 truncate font-semibold">{n.data.title}</span>
                 </Link>
               </li>
@@ -267,18 +273,27 @@ export function NotesTile({ name, size = "M" }: { name: string; size?: TileSize 
   );
 }
 
-/** VORRAT (Baustein) – S: Anzahl + erste Sachen; M: mehr */
+/** VORRAT (Baustein) – „Bald aufbrauchen“ mit 2 Sachen (seit ein paar Tagen im Kühlschrank), sonst die neuesten */
 export function PantryTile({ size = "S" }: { size?: TileSize }) {
   const pantry = usePantry();
   if (!pantry) return <section className={`${HALF} animate-pulse`} aria-label="Vorrat" />;
+  const soon = soonToUse(pantry, todayIso());
+  const shown = (soon.length ? soon : pantry).slice(0, size === "S" ? 2 : 4);
   return (
     <Link href="/vorrat" className={HALF} aria-label="Vorrat">
       <span className={HALF_LABEL}>
         <Refrigerator className="h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
-        <span className="truncate">Vorrat{pantry.length ? ` · ${pantry.length}` : ""}</span>
+        <span className="truncate">Vorrat</span>
       </span>
-      {pantry.length ? (
-        <span className={`mt-1 ${size === "S" ? "line-clamp-2" : "line-clamp-3"} text-[14px] leading-snug`}>{pantry.slice(0, size === "S" ? 4 : 12).map((p) => p.name).join(" · ")}</span>
+      {shown.length ? (
+        <>
+          <span className="mt-1 text-[13px] font-semibold text-muted">{soon.length ? "Bald aufbrauchen" : "Zuletzt dazu"}</span>
+          {shown.map((p) => (
+            <span key={p.id} className="truncate text-[14.5px] font-bold leading-snug">
+              {p.name}
+            </span>
+          ))}
+        </>
       ) : (
         <span className="mt-1 text-[14px] font-semibold text-muted">+ eintragen</span>
       )}
@@ -292,8 +307,8 @@ export function MorgenTile({ date, items, dish, href, placeholder }: { date: str
   return (
     <section className="rounded-card border-2 border-dashed border-line" aria-label="Morgen">
       <Link href={href} className="flex items-center gap-2 px-4 py-3">
-        <span className="shrink-0 text-xs font-bold uppercase tracking-wider text-muted">{tomorrowLabel(date)}</span>
-        <span className="min-w-0 flex-1 truncate text-base">{items.length || dish ? [...items.map(itemText), dish ? `🍽 ${dish}` : ""].filter(Boolean).join(" · ") : <span className="text-muted">Vorschau ab 16 Uhr</span>}</span>
+        <span className="shrink-0 text-[10px] font-extrabold uppercase tracking-wider text-muted">{tomorrowLabel(date)}</span>
+        <span className="min-w-0 flex-1 truncate text-base">{items.length || dish ? [...items.map(itemText), dish ? `Essen: ${dish}` : ""].filter(Boolean).join(" · ") : <span className="text-muted">Vorschau ab 16 Uhr</span>}</span>
       </Link>
     </section>
   );

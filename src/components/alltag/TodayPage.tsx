@@ -39,7 +39,7 @@ import { cookableEntry, markCooked, unmarkCooked } from "@/lib/essen/mealDone";
 import { usePins } from "@/lib/pinnwand";
 import { leisureIdea } from "@/lib/notizen/model";
 import { useNotes } from "@/lib/notizen";
-import { todaysTraining, useSport, weekStatus } from "@/lib/sport";
+import { todaysTraining } from "@/lib/sport";
 import { weekdayIndex } from "@/lib/aufgaben/model";
 import { buzz } from "./actions";
 import { isUrgent, itemsForDay, openTaskCount, orderedTasks, taskOverview, upcomingTermine, type CalendarEntry, type DayItem } from "@/lib/aufgaben/model";
@@ -115,7 +115,6 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const timers = useTimers();
   const cooking = useCooking(data.todayIso);
   const pins = usePins();
-  const sport = useSport();
   const notes = useNotes();
   const timerLive = Boolean(timers && timers.timers.some((t) => !isExpired(t, now().getTime())));
   const nowMs = useNowMs(timerLive, 15_000);
@@ -220,7 +219,6 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const step = cookingNow && cooking ? currentStep(steps.length, cooking.steps[recipe?.id ?? dish ?? ""] ?? []) : null;
   const needs = recipe && stock ? matchStock(recipe.ingredients.map((i) => i.name), stock).needs : null;
   const dueToday = workless(overview.heute).filter((i) => !i.carried && i.entry.typ === "aufgabe" && (i.entry.data.due === data.todayIso || i.entry.data.date === data.todayIso));
-  const week = sport && sportTile?.visible ? weekStatus(sport, entries, data.todayIso, me) : null;
   const training = ctx?.sport.training;
   const leisure = evening && notes ? leisureIdea(notes, data.todayIso) : null;
   const hadSomething = termineAll.length > 0 || overview.erledigt.some((i) => i.date === data.todayIso);
@@ -244,7 +242,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
         : null,
     dinnerFree: !dish && !over && !data.day?.away && Boolean(dishClock && dishClock >= "15:00"),
     todayAll: allItems,
-    sport: week && !week.reached ? { left: week.goal - week.count, today: training ? `Heute ${Math.floor(training.start / 60)}:${String(training.start % 60).padStart(2, "0")} ${training.title}` : null } : null,
+    sport: sportTile?.visible && training ? { today: `Heute ${Math.floor(training.start / 60)}:${String(training.start % 60).padStart(2, "0")} ${training.title}` } : null,
     timer: runningTimer ? { name: runningTimer.name, left: leftWords(runningTimer.endsAt - nowMs) } : null,
     cookingStep: step !== null && steps[step] ? steps[step] : null,
     reminder: reminder ? { key: reminder.key, text: reminder.text } : null,
@@ -336,7 +334,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
             <>
               <DarkTip profile={data.profile} today={data.todayIso} quiet={demoDay.tiles.length > 0 || tipSeen === false} />
               {tipSeen === false && welcomed && !demoDay.tiles.length && (
-                <div className="flex items-start gap-3 rounded-2xl bg-accent-soft px-4 py-3" role="status">
+                <div className="flex items-start gap-3 rounded-card bg-accent-soft px-4 py-3" role="status">
                   <p className="flex-1 text-[15px] leading-snug text-accent-strong">Tipp: Halte die Startseite gedrückt, um Kacheln hinzuzufügen oder zu entfernen.</p>
                   <button type="button" onClick={markHomeTipSeen} className="shrink-0 text-sm font-bold text-accent-strong underline">
                     Verstanden

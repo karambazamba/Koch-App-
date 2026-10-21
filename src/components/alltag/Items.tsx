@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { Bell, Check, ChevronDown, ChevronRight, Pencil, Repeat2, Trash2, CalendarArrowUp, CheckCircle2, Circle } from "lucide-react";
 import { CARD, chipClass } from "@/components/ui/styles";
-import { Sheet } from "@/components/plan/Sheet";
+import { Sheet } from "@/components/ui/Sheet";
 import { clockLabel } from "@/lib/aufgaben/answers";
 import { isUrgent, moveItem, REMINDERS, removeItem, repeatLabel, setDone, setReminder, setUrgent, type DayItem } from "@/lib/aufgaben/model";
 import { UrgentMark } from "./UrgentMark";
@@ -84,7 +84,7 @@ function ItemRow({ item, onOpen }: { item: DayItem; onOpen: (item: DayItem) => v
         className="-mr-1.5 flex h-11 w-11 shrink-0 items-center justify-center"
       >
         <span
-          className={`flex h-7 w-7 items-center justify-center rounded-full border-2 transition ${checked ? "border-accent bg-accent text-on-accent" : "border-stone-300"}`}
+          className={`flex h-7 w-7 items-center justify-center rounded-full border-2 transition ${checked ? "border-accent bg-accent text-on-accent" : "border-line-strong"}`}
           style={popping ? { animation: "check-pop 0.4s ease-out" } : undefined}
         >
           {checked && <Check className="h-4 w-4" strokeWidth={3} aria-hidden />}
@@ -111,14 +111,14 @@ export function DayItemsCard({ items, title, limit = 3, allDoneText = "Alles erl
   return (
     <section className={`${CARD} px-4 pt-3 pb-2`} aria-label={title}>
       {titleHref ? (
-        <Link href={titleHref} className="-my-2 flex h-10 items-center justify-between text-xs font-bold uppercase tracking-wider text-muted">
+        <Link href={titleHref} className="-my-2 flex h-10 items-center justify-between text-[15px] font-extrabold text-muted">
           <h2>{title}</h2>
           <span className="flex items-center gap-0.5 normal-case tracking-normal">
             Tag öffnen <ChevronRight className="h-4 w-4" strokeWidth={2} aria-hidden />
           </span>
         </Link>
       ) : (
-        <h2 className="text-xs font-bold uppercase tracking-wider text-muted">{title}</h2>
+        <h2 className="text-[15px] font-extrabold text-muted">{title}</h2>
       )}
       {open.length === 0 && <p className="py-3 text-lg font-bold">{allDoneText}</p>}
       {shown.length > 0 && (
@@ -136,7 +136,7 @@ export function DayItemsCard({ items, title, limit = 3, allDoneText = "Alles erl
       {done.length > 0 && (
         <div className="border-t border-line">
           <button type="button" onClick={() => setShowDone((v) => !v)} aria-expanded={showDone} className="flex h-10 items-center gap-1 text-sm font-semibold text-muted">
-            ✓ {done.length} erledigt <ChevronDown className={`h-4 w-4 transition ${showDone ? "rotate-180" : ""}`} strokeWidth={2.5} aria-hidden />
+            {showDone ? "Erledigte ausblenden" : "Erledigte anzeigen"} <ChevronDown className={`h-4 w-4 transition ${showDone ? "rotate-180" : ""}`} strokeWidth={2.5} aria-hidden />
           </button>
           {showDone && (
             <ul className="flex flex-col divide-y divide-line">
@@ -154,7 +154,7 @@ export function DayItemsCard({ items, title, limit = 3, allDoneText = "Alles erl
 }
 
 
-const MENU_ROW = "flex h-14 w-full items-center gap-3 px-4 text-left text-base font-semibold active:bg-stone-100";
+const MENU_ROW = "flex h-14 w-full items-center gap-3 px-4 text-left text-base font-semibold active:bg-fill";
 
 /** Antippen eines Eintrags: Erledigt · Auf morgen · Erinnerung ändern · Bearbeiten · Löschen */
 export function ItemMenu({ item, onClose, onEdit }: { item: DayItem; onClose: () => void; onEdit: () => void }) {
@@ -193,7 +193,7 @@ export function ItemMenu({ item, onClose, onEdit }: { item: DayItem; onClose: ()
             <Pencil className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
             Bearbeiten
           </button>
-          <button type="button" className={`${MENU_ROW} text-red-600`} onClick={() => (series ? setStep("loeschen") : close(() => act((l, s) => removeItem(l, item.entry.id, s), `das Löschen von ${item.title}`, { deleted: true }))())}>
+          <button type="button" className={`${MENU_ROW} text-danger`} onClick={() => (series ? setStep("loeschen") : close(() => act((l, s) => removeItem(l, item.entry.id, s), `das Löschen von ${item.title}`, { deleted: true }))())}>
             <Trash2 className="h-5 w-5" strokeWidth={2} aria-hidden />
             Löschen
           </button>
@@ -223,7 +223,7 @@ export function ItemMenu({ item, onClose, onEdit }: { item: DayItem; onClose: ()
           <button type="button" className={`${CARD} ${MENU_ROW}`} onClick={close(() => act((l, s) => removeItem(l, item.entry.id, s, item.date), `das Löschen von ${item.title}`, { deleted: true }))}>
             Nur diesen Tag
           </button>
-          <button type="button" className={`${CARD} ${MENU_ROW} text-red-600`} onClick={close(() => act((l, s) => removeItem(l, item.entry.id, s), `das Löschen von ${item.title}`, { deleted: true }))}>
+          <button type="button" className={`${CARD} ${MENU_ROW} text-danger`} onClick={close(() => act((l, s) => removeItem(l, item.entry.id, s), `das Löschen von ${item.title}`, { deleted: true }))}>
             Alle – die ganze Reihe
           </button>
         </div>

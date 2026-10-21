@@ -25,7 +25,7 @@ export function NumberStepper({
   variant = "card",
 }: Props) {
   const buttonClass =
-    "flex h-12 w-12 items-center justify-center rounded-xl bg-accent-soft text-accent-strong transition active:scale-95 disabled:opacity-30";
+    "flex h-12 w-12 items-center justify-center rounded-field bg-accent-soft text-accent-strong transition active:scale-95 disabled:opacity-30";
 
   return (
     <div

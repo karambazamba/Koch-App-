@@ -42,11 +42,11 @@ export function MailSettingsView() {
               />
             </label>
             <div className={`${CARD} flex flex-col gap-1 p-4`}>
-              <p className="text-xs font-bold uppercase tracking-wide text-muted">So endet eine Mail</p>
+              <p className="text-sm font-bold text-muted">So endet eine Mail</p>
               <p className="whitespace-pre-line text-[15px]">{closingFor(style, me, "du")}</p>
               {style.signature.trim() && (
                 <>
-                  <p className="mt-2 text-xs font-bold uppercase tracking-wide text-muted">Förmlich</p>
+                  <p className="mt-2 text-sm font-bold text-muted">Förmlich</p>
                   <p className="whitespace-pre-line text-[15px]">{closingFor(style, me, "sie")}</p>
                 </>
               )}
@@ -63,7 +63,7 @@ export function MailSettingsView() {
                         type="button"
                         aria-label={`${who} vergessen`}
                         onClick={() => saveMailStyle({ ...style, tones: Object.fromEntries(tones.filter(([k]) => k !== who)) })}
-                        className="flex h-11 w-11 items-center justify-center rounded-full text-muted active:bg-stone-100"
+                        className="flex h-11 w-11 items-center justify-center rounded-full text-muted active:bg-fill"
                       >
                         <X className="h-5 w-5" strokeWidth={2} aria-hidden />
                       </button>

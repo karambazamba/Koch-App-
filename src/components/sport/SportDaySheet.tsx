@@ -1,18 +1,18 @@
 "use client";
 
 // Ein Tag auf der Sport-Kachel (Titel = Datum), vier Arten:
-// - leer (vergangen/heute): groß "✓ Wie letztes Mal: Laufen · 45 Min", sonst
+// - leer (vergangen/heute): groß "Wie letztes Mal: Laufen · 45 Min", sonst
 //   Sportart + Dauer wählen, "Eintragen"
 // - trainiert: die Trainings mit "Ändern", "+ Noch ein Training an diesem
 //   Tag", "Löschen" (Gelöscht · Rückgängig)
-// - geplant: Uhrzeit, Erinnerung, Wetter, "✓ Erledigt", "Verschieben …",
+// - geplant: Uhrzeit, Erinnerung, Wetter, "Erledigt", "Verschieben …",
 //   "Absagen"
 // - leer in der Zukunft: "Training planen" (Sportart, Zeit aus freien Lücken,
 //   Dauer) → Termin mit Etikett Sport und Erinnerung 30 Min vorher
 // Punkte, "2 von 3" und die Feier folgen sofort (gleiche Speicher).
 
 import { useState } from "react";
-import { Sheet } from "@/components/plan/Sheet";
+import { Sheet } from "@/components/ui/Sheet";
 import { EntryForm } from "@/components/alltag/EntryForm";
 import { act, buzz } from "@/components/alltag/actions";
 import { CARD, buttonClass, chipClass } from "@/components/ui/styles";
@@ -61,7 +61,7 @@ function DurationChips({ value, onChange }: { value: number; onChange: (m: numbe
   );
 }
 
-const LEGEND = "text-xs font-bold uppercase tracking-wider text-muted";
+const LEGEND = "text-[15px] font-extrabold text-muted";
 
 export function SportDaySheet({ date, today, state, entries, me, forecast, onClose }: { date: string; today: string; state: SportState; entries: CalendarEntry[]; me: string | null; forecast: Forecast | null; onClose: () => void }) {
   const trainings = trainingsBetween(state, entries, date, date, today, me);
@@ -135,7 +135,7 @@ export function SportDaySheet({ date, today, state, entries, me, forecast, onClo
             )}
           </section>
           <button type="button" onClick={() => (act((l, s) => setDone(l, p, true, s), p.title), done())} className={buttonClass("primary", "lg")}>
-            ✓ Erledigt
+            Erledigt
           </button>
           <div className="grid grid-cols-2 gap-2">
             <button type="button" onClick={() => setMove(p)} className={buttonClass("secondary", "md")}>
@@ -152,8 +152,8 @@ export function SportDaySheet({ date, today, state, entries, me, forecast, onClo
     body = (
       <>
         {last && (
-          <button type="button" onClick={() => save({ sport: last.sport, minutes: last.minutes })} className="flex min-h-14 items-center justify-center rounded-2xl bg-sport px-4 text-[17px] font-bold text-white">
-            ✓ Wie letztes Mal: {sportById(last.sport).label} · {last.minutes} Min
+          <button type="button" onClick={() => save({ sport: last.sport, minutes: last.minutes })} className="flex min-h-14 items-center justify-center rounded-card bg-sport px-4 text-[17px] font-bold text-on-accent">
+            Wie letztes Mal: {sportById(last.sport).label} · {last.minutes} Min
           </button>
         )}
         <span className={LEGEND}>{last ? "Oder was anderes" : "Was?"}</span>

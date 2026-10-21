@@ -31,7 +31,7 @@ const LUNCH_ICONS: Record<"zuhause" | "auswaerts" | "manchmal", LucideIcon> = {
 export function Group({ title, quiet = false, children }: { title: string; quiet?: boolean; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-2" aria-label={title}>
-      <h2 className={`px-1 text-xs font-bold uppercase tracking-wider ${quiet ? "text-muted" : "text-ink"}`}>{title}</h2>
+      <h2 className={`px-1 text-[15px] font-extrabold ${quiet ? "text-muted" : "text-ink"}`}>{title}</h2>
       <ul className={CARD_LIST}>{children}</ul>
     </section>
   );
@@ -83,7 +83,7 @@ export function ChoiceCards<T extends string>({
           role="radio"
           aria-checked={value === o.value}
           onClick={() => onChange(o.value)}
-          className={`flex min-h-14 flex-col justify-center rounded-xl border px-4 py-3 text-left transition active:scale-[0.98] ${
+          className={`flex min-h-14 flex-col justify-center rounded-field border px-4 py-3 text-left transition active:scale-[0.98] ${
             value === o.value ? "border-accent bg-accent-soft" : "border-line bg-surface"
           }`}
         >
@@ -276,16 +276,16 @@ function PersonDetails({ person, persons }: { person: Person; persons: Person[] 
       {named && <span className="block">{personRoleLabel(person, persons)}</span>}
       <span className="mt-1 flex flex-wrap gap-1">
         {person.allergies.map((item) => (
-          <Chip key={`a-${item}`} className="bg-red-50 text-red-700">
+          <Chip key={`a-${item}`} className="bg-danger-soft text-danger">
             {item}
           </Chip>
         ))}
         {person.dislikes.map((item) => (
-          <Chip key={`d-${item}`} className="bg-stone-100 text-stone-700">
+          <Chip key={`d-${item}`} className="bg-fill text-muted">
             {item}
           </Chip>
         ))}
-        <Chip className="bg-stone-100 text-stone-700">
+        <Chip className="bg-fill text-muted">
           <LunchIcon className="h-3 w-3" strokeWidth={2.5} aria-hidden /> mittags {lunchSummary(person)}
         </Chip>
       </span>
@@ -306,10 +306,10 @@ export function AddRow({ href, label }: { href: string; label: string }) {
     <li>
       <Link
         href={href}
-        className="flex min-h-14 items-center gap-3 px-4 py-2 font-bold text-accent-strong transition active:bg-stone-50"
+        className="flex min-h-14 items-center gap-3 px-4 py-2 font-bold text-accent-strong transition active:bg-background"
       >
         <span
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-dashed border-accent/50 text-accent"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-field border border-dashed border-accent/50 text-accent"
           aria-hidden
         >
           <Plus className="h-5 w-5" strokeWidth={2.25} />

@@ -63,7 +63,7 @@ export function MachineStepView({ step }: { step: MachineStep | undefined }) {
   return (
     <p className="flex flex-wrap gap-1.5" aria-label="Einstellung">
       {parts.map((p) => (
-        <span key={p} className="rounded-full bg-stone-100 px-2.5 py-1 text-sm font-bold text-ink">
+        <span key={p} className="rounded-full bg-fill px-2.5 py-1 text-sm font-bold text-ink">
           {p}
         </span>
       ))}

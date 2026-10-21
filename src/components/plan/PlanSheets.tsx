@@ -9,7 +9,7 @@ import { isSmallHousehold } from "@/lib/einstellungen/profile";
 import Link from "next/link";
 import { useState } from "react";
 import { ArrowLeftRight, BookOpen, Check, Heart, Repeat, Trash2 } from "lucide-react";
-import { Sheet } from "@/components/plan/Sheet";
+import { Sheet } from "@/components/ui/Sheet";
 import { CategoryChip, CategoryDot, categoryLabel } from "@/components/ui/Category";
 import { CARD, CARD_LIST, INPUT, INPUT_BASE, buttonClass, chipClass, tileClass } from "@/components/ui/styles";
 import { RECIPE_CATEGORIES, setRecipeKnown, sortRecipes, type Recipe, type RecipeCategory } from "@/lib/essen/cookbook";
@@ -192,7 +192,7 @@ export function RecipePickerSheet({
                   <button
                     type="button"
                     onClick={() => onPick(r)}
-                    className="flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left active:bg-stone-50"
+                    className="flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left active:bg-background"
                   >
                     <CategoryDot category={r.category} />
                     <span className="min-w-0 flex-1 truncate text-base font-bold">{r.title}</span>
@@ -295,7 +295,7 @@ export function MoveSheet({
               <button
                 type="button"
                 onClick={() => onMove(d.slot)}
-                className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-2 text-left active:bg-stone-50"
+                className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-2 text-left active:bg-background"
               >
                 <span className="whitespace-nowrap font-bold">{d.weekday}</span>
                 <span className="flex min-w-0 items-center gap-1 truncate text-sm text-muted">
@@ -387,7 +387,7 @@ export function LoadTemplateSheet({
                     // Alle Tage der Vorlage, die es in dieser Woche gibt (ohne Ausflug)
                     setSelected(week.days.filter((d) => !d.away && t.days[d.weekday]).map((d) => d.weekday));
                   }}
-                  className="flex min-h-14 flex-1 flex-col px-4 py-2 text-left active:bg-stone-50"
+                  className="flex min-h-14 flex-1 flex-col px-4 py-2 text-left active:bg-background"
                 >
                   <span className="font-bold">{t.name}</span>
                   <span className="text-sm text-muted">{Object.keys(t.days).length} Gerichte</span>
@@ -396,7 +396,7 @@ export function LoadTemplateSheet({
                   type="button"
                   onClick={() => deleteTemplate(t.id)}
                   aria-label={`Vorlage ${t.name} löschen`}
-                  className="flex h-12 w-12 items-center justify-center text-stone-400"
+                  className="flex h-12 w-12 items-center justify-center text-faint"
                 >
                   <Trash2 className="h-5 w-5" strokeWidth={2} aria-hidden />
                 </button>
@@ -512,14 +512,14 @@ export function CookAgainSheet({
         if (days.length === 0) return null;
         return (
           <section key={week.weekStart} className="flex flex-col gap-2">
-            <h3 className="px-1 text-xs font-bold uppercase tracking-wider text-muted">{label}</h3>
+            <h3 className="px-1 text-[15px] font-extrabold text-muted">{label}</h3>
             <ul className={CARD_LIST}>
               {days.map((d) => (
                 <li key={d.date}>
                   <button
                     type="button"
                     onClick={() => (d.slot.entry ? setConfirm({ week, day: d }) : onPick(week, d))}
-                    className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-2 text-left active:bg-stone-50"
+                    className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-2 text-left active:bg-background"
                   >
                     <span className="whitespace-nowrap font-bold">{d.weekday}</span>
                     <span className="truncate text-sm text-muted">{d.slot.entry ? d.slot.entry.title : "frei"}</span>

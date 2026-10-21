@@ -48,7 +48,7 @@ export function AppearanceView() {
 function ThemePreview({ theme }: { theme: AppTheme }) {
   if (theme === "auto") {
     return (
-      <span className="relative block overflow-hidden rounded-xl" aria-hidden>
+      <span className="relative block overflow-hidden rounded-field" aria-hidden>
         <MiniHome colors={THEME_COLORS.warm} />
         <span className="absolute inset-0" style={{ clipPath: "polygon(100% 0, 100% 100%, 0 100%)" }}>
           <MiniHome colors={THEME_COLORS.nacht} />
@@ -57,7 +57,7 @@ function ThemePreview({ theme }: { theme: AppTheme }) {
     );
   }
   return (
-    <span className="block overflow-hidden rounded-xl" aria-hidden>
+    <span className="block overflow-hidden rounded-field" aria-hidden>
       <MiniHome colors={THEME_COLORS[theme]} />
     </span>
   );

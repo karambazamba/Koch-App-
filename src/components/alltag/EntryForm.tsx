@@ -5,7 +5,7 @@
 
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 import { useState } from "react";
-import { Sheet } from "@/components/plan/Sheet";
+import { Sheet } from "@/components/ui/Sheet";
 import { Segmented } from "@/components/ui/Segmented";
 import { INPUT, LABEL, buttonClass, chipClass } from "@/components/ui/styles";
 import { createEntry, type Room } from "@/lib/core/entries";
@@ -156,7 +156,7 @@ export function EntryForm({ entry, date, kind, onClose }: { entry?: CalendarEntr
                   type="button"
                   aria-pressed={days.includes(i)}
                   onClick={() => setDays((list) => (list.includes(i) ? list.filter((x) => x !== i) : [...list, i].sort()))}
-                  className={`hit h-10 flex-1 rounded-xl border text-sm font-bold ${days.includes(i) ? "border-accent bg-accent-soft text-accent-strong" : "border-line bg-surface"}`}
+                  className={`hit h-10 flex-1 rounded-field border text-sm font-bold ${days.includes(i) ? "border-accent bg-accent-soft text-accent-strong" : "border-line bg-surface"}`}
                 >
                   {name}
                 </button>

@@ -91,7 +91,7 @@ export function HomePager({ data }: { data: HomeData }) {
         onTouchEnd={onTouchEnd}
       >
         <nav className="flex items-center gap-2" aria-label="Seiten">
-          <div role="tablist" aria-label="Woche, Heute, Essen" className="flex flex-1 rounded-2xl bg-segment p-1">
+          <div role="tablist" aria-label="Woche, Heute, Essen" className="flex flex-1 rounded-card bg-segment p-1">
             {TABS.map((t) => (
               <button
                 key={t.value}
@@ -99,13 +99,13 @@ export function HomePager({ data }: { data: HomeData }) {
                 role="tab"
                 aria-selected={tab === t.value}
                 onClick={() => go(t.value)}
-                className={`hit h-10 flex-1 rounded-xl text-[15px] font-bold transition ${tab === t.value ? "bg-surface text-ink shadow-card" : "text-muted"}`}
+                className={`hit h-10 flex-1 rounded-field text-[15px] font-bold transition ${tab === t.value ? "bg-surface text-ink shadow-card" : "text-muted"}`}
               >
                 {t.label}
               </button>
             ))}
           </div>
-          <Link href="/profil" aria-label="Einstellungen" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted active:bg-stone-100">
+          <Link href="/profil" aria-label="Einstellungen" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted active:bg-fill">
             <Settings className="h-5 w-5" strokeWidth={2} aria-hidden />
           </Link>
         </nav>

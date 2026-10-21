@@ -7,7 +7,8 @@
 // als "bald".
 
 import { Box, CalendarClock, CheckCircle2, CloudSun, Dumbbell, ListChecks, Timer, Mail, NotebookPen, Pin, Plus, Refrigerator, ShoppingCart, Sunrise, UtensilsCrossed, type LucideIcon } from "lucide-react";
-import { Sheet } from "@/components/plan/Sheet";
+import { Sheet } from "@/components/ui/Sheet";
+import { TILE_PLUS_DOT } from "@/components/ui/styles";
 import { HOME_TILES, applyHomeChange, saveHomeTiles, tileMeta, useHomeTiles, type HomeTile, type HomeTileId } from "@/lib/core/homeLayout";
 import { showDeleted } from "@/lib/core/toast";
 import { featureOn, setFeature } from "@/lib/core/features";
@@ -52,7 +53,7 @@ export function TilePicker({ onClose }: { onClose: () => void }) {
   return (
     <Sheet title="Kachel hinzufügen" onClose={onClose} above>
       <ul className="grid grid-cols-2 gap-2 pb-3" aria-label="Kacheln">
-        {HOME_TILES.map((meta) => {
+        {HOME_TILES.filter((meta) => !meta.soon).map((meta) => {
           const tile = all.find((t) => t.id === meta.id);
           const active = Boolean(tile && isActive(tile));
           const Icon = TILE_ICONS[meta.id] ?? Box;
@@ -60,24 +61,23 @@ export function TilePicker({ onClose }: { onClose: () => void }) {
             <li key={meta.id}>
               <button
                 type="button"
-                disabled={meta.soon}
                 aria-pressed={active}
-                aria-label={`${meta.label}${meta.soon ? " (bald)" : active ? " – entfernen" : " – hinzufügen"}`}
+                aria-label={`${meta.label}${active ? " – entfernen" : " – hinzufügen"}`}
                 onClick={() => setTile(all, meta.id, !active)}
-                className={`relative flex h-full w-full flex-col items-start gap-1 rounded-2xl border p-3 text-left transition active:scale-[0.98] disabled:opacity-60 ${active ? "border-line bg-surface shadow-card" : "border-transparent bg-segment"}`}
+                className={`relative flex h-full w-full flex-col items-start gap-1 rounded-card border p-3 text-left transition active:scale-[0.98] ${active ? "border-line bg-surface shadow-card" : "border-transparent bg-segment"}`}
               >
                 <Icon className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
                 <span className="flex items-center gap-1.5 text-[15px] font-bold">
                   {meta.label}
                   {meta.fresh && !active && <span className="rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-on-accent">Neu</span>}
                 </span>
-                <span className="text-xs leading-snug text-muted">{meta.soon ? "bald" : meta.hint}</span>
+                <span className="text-xs leading-snug text-muted">{meta.hint}</span>
                 <span className="absolute right-2 top-2">
                   {active ? (
-                    <CheckCircle2 className="h-5 w-5 text-emerald-600" strokeWidth={2.25} aria-hidden />
-                  ) : meta.soon ? null : (
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent text-on-accent">
-                      <Plus className="h-4 w-4" strokeWidth={2.75} aria-hidden />
+                    <CheckCircle2 className="h-5 w-5 text-good" strokeWidth={2.25} aria-hidden />
+                  ) : (
+                    <span className={TILE_PLUS_DOT}>
+                      <Plus className="h-3.5 w-3.5" strokeWidth={2.75} aria-hidden />
                     </span>
                   )}
                 </span>

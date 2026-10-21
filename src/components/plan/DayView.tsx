@@ -2,15 +2,13 @@
 
 import Link from "next/link";
 import { useRef } from "react";
-import { BookOpen, Check, Clock, Coins, MapPin, MoreHorizontal, Plus, Repeat, RotateCcw, Soup, StickyNote, Users, X } from "lucide-react";
+import { BookOpen, Check, Clock, MapPin, MoreHorizontal, Plus, Repeat, RotateCcw, Soup, StickyNote, Users, X } from "lucide-react";
 import { CATEGORY_DOT, CategoryChip, EMPTY_DOT } from "@/components/ui/Category";
 import { CARD, buttonClass } from "@/components/ui/styles";
 import type { Recipe } from "@/lib/essen/cookbook";
-import { estimateCost } from "@/lib/essen/costs";
 import { dishEmoji } from "@/lib/essen/dishEmoji";
 import type { PlanDay } from "@/lib/essen/mealPlan";
 import { MEAL_TIME_LABELS } from "@/lib/einstellungen/profile";
-import { useProfile } from "@/lib/einstellungen/useProfile";
 import { usePlanStyle } from "@/lib/essen/usePlanStyle";
 
 const SHORT_DATE = (iso: string) => {
@@ -20,7 +18,7 @@ const SHORT_DATE = (iso: string) => {
 
 /** Farbe des Kategorie-Punkts eines Tages (leer = grau) */
 export function dayDot(day: PlanDay): string {
-  if (day.away) return "bg-transparent border border-stone-300";
+  if (day.away) return "bg-transparent border border-line-strong";
   const category = day.slot.entry?.category ?? (day.cheat && !day.slot.entry ? "cheatday" : null);
   return category ? CATEGORY_DOT[category] : EMPTY_DOT;
 }
@@ -57,11 +55,11 @@ export function DayStrip({
             aria-selected={active}
             aria-label={`${d.weekday} ${SHORT_DATE(d.date)}${today ? " (heute)" : ""}`}
             onClick={() => onSelect(d.weekday)}
-            className={`flex flex-col items-center gap-1 rounded-xl py-2 transition ${
+            className={`flex flex-col items-center gap-1 rounded-field py-2 transition ${
               active ? "bg-accent text-on-accent shadow-card" : today ? "text-accent-strong" : "text-ink"
             }`}
           >
-            <span className={`text-xs font-bold uppercase ${active ? "text-on-accent/90" : today ? "" : "text-muted"}`}>{d.weekday.slice(0, 2)}</span>
+            <span className={`text-xs font-bold ${active ? "text-on-accent/90" : today ? "" : "text-muted"}`}>{d.weekday.slice(0, 2)}</span>
             <span className="text-base font-extrabold leading-none">{SHORT_DATE(d.date).split(".")[0]}</span>
             <span className={`h-1.5 w-1.5 rounded-full ${active && !d.slot.entry && !d.cheat ? "bg-on-accent/60" : dayDot(d)}`} aria-hidden />
           </button>
@@ -92,11 +90,8 @@ export function DayCard({ day, recipes, readOnly, onPlan, onSwap, onMore, onCook
   const entry = day.slot.entry;
   const recipe = entry?.recipeId ? recipes[entry.recipeId] : undefined;
   const wish = entry?.stored.kind === "wish";
-  // Kosten-Schätzung nur bei Darstellung "Alles zeigen"
-  const showCost = useProfile()?.display === "alles";
   // "Mal so, mal so": freie Tage sind normal – keine Lücke, sondern spontan
   const mixed = usePlanStyle()?.style === "mix";
-  const cost = recipe && showCost ? estimateCost(recipe, day.persons) : null;
   const emoji = day.paused ? "☀️" : day.away ? "🏕️" : entry ? (wish ? "🎉" : dishEmoji(entry.title, entry.category)) : day.cheat ? "🍕" : "🍽️";
   const overline = `${day.weekday} · ${day.paused ? "Pause" : day.away ? "Ausflug" : day.weekend === "locker" ? "Falls ihr Lust habt" : MEAL_TIME_LABELS[day.mealTime]}`;
 
@@ -138,7 +133,7 @@ export function DayCard({ day, recipes, readOnly, onPlan, onSwap, onMore, onCook
 
       <div className="flex flex-col gap-3 p-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-accent-strong">{overline}</p>
+          <p className="text-sm font-bold text-accent-strong">{overline}</p>
           {day.away ? (
             <h2 className="mt-1 text-2xl font-extrabold leading-tight tracking-tight">
               {day.paused ? "Pause – genießt die Zeit" : "Ausflug – heute wird nicht gekocht"}
@@ -170,11 +165,6 @@ export function DayCard({ day, recipes, readOnly, onPlan, onSwap, onMore, onCook
                 {day.persons} Pers.
               </Chip>
             ) : null}
-            {cost !== null && (
-              <Chip>
-                <Coins className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />~{entry?.double ? cost * 2 : cost} €
-              </Chip>
-            )}
             {entry?.double && <Chip>doppelt – Reste für morgen</Chip>}
             {entry?.origin === "fest" && <Chip>fest eingeplant</Chip>}
           </div>
@@ -195,7 +185,7 @@ export function DayCard({ day, recipes, readOnly, onPlan, onSwap, onMore, onCook
           </p>
         )}
         {day.note && (
-          <p className="flex items-start gap-2 rounded-xl bg-stone-50 px-3 py-2 text-sm text-stone-700">
+          <p className="flex items-start gap-2 rounded-field bg-background px-3 py-2 text-sm text-muted">
             <StickyNote className="mt-0.5 h-4 w-4 shrink-0 text-muted" strokeWidth={2} aria-hidden />
             <span className="min-w-0 flex-1">{day.note}</span>
             {!readOnly && (
@@ -203,7 +193,7 @@ export function DayCard({ day, recipes, readOnly, onPlan, onSwap, onMore, onCook
                 type="button"
                 onClick={onRemoveNote}
                 aria-label={`Notiz am ${day.weekday} entfernen`}
-                className="-m-1 flex h-8 w-8 shrink-0 items-center justify-center text-stone-400"
+                className="-m-1 flex h-8 w-8 shrink-0 items-center justify-center text-faint"
               >
                 <X className="h-4 w-4" strokeWidth={2.25} aria-hidden />
               </button>
@@ -212,8 +202,8 @@ export function DayCard({ day, recipes, readOnly, onPlan, onSwap, onMore, onCook
         )}
 
         {onMoveTomorrow && (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-stone-50 px-3 py-2 text-sm">
-            <span className="flex items-center gap-1.5 font-semibold text-emerald-700">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-field bg-background px-3 py-2 text-sm">
+            <span className="flex items-center gap-1.5 font-semibold text-good-ink">
               <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden />
               Gekocht
             </span>
@@ -264,7 +254,7 @@ export function DayCard({ day, recipes, readOnly, onPlan, onSwap, onMore, onCook
 
 function Chip({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-semibold text-stone-700">
+    <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-fill px-2.5 py-0.5 text-xs font-semibold text-muted">
       {children}
     </span>
   );
@@ -275,11 +265,11 @@ export function UpcomingDays({ days, onSelect }: { days: PlanDay[]; onSelect: (w
   if (days.length === 0) return null;
   return (
     <section aria-label="Danach" className="flex flex-col gap-2">
-      <h3 className="px-1 text-xs font-bold uppercase tracking-wider text-muted">Danach</h3>
+      <h3 className="px-1 text-[15px] font-extrabold text-muted">Danach</h3>
       <ul className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
         {days.map((d) => (
           <li key={d.date} className="border-b border-line last:border-b-0">
-            <button type="button" onClick={() => onSelect(d.weekday)} className="flex min-h-12 w-full items-center gap-3 px-4 py-2 text-left active:bg-stone-50">
+            <button type="button" onClick={() => onSelect(d.weekday)} className="flex min-h-12 w-full items-center gap-3 px-4 py-2 text-left active:bg-background">
               <span className="w-8 shrink-0 text-sm font-bold text-muted">{d.weekday.slice(0, 2)}</span>
               <span className={`h-2 w-2 shrink-0 rounded-full ${dayDot(d)}`} aria-hidden />
               <span className={`min-w-0 flex-1 truncate ${d.slot.entry ? "font-semibold" : "text-muted"}`}>

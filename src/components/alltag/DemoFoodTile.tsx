@@ -23,8 +23,8 @@ export function DemoFoodTile({ half }: { half: boolean }) {
       <span className="absolute left-2.5 top-2.5">
         <DemoBadge />
       </span>
-      <span className="absolute inset-x-0 bottom-0 flex flex-col gap-0.5 p-3 text-white">
-        <span className="text-[11px] font-bold uppercase tracking-wider opacity-90">Essen · {DEMO_DISH.clock}</span>
+      <span className="absolute inset-x-0 bottom-0 flex flex-col gap-0.5 p-3 text-on-color">
+        <span className="text-[10px] font-extrabold uppercase tracking-wider opacity-90">Essen · {DEMO_DISH.clock}</span>
         <span className={`line-clamp-2 font-extrabold leading-tight ${half ? "text-[16px]" : "text-[20px]"}`}>{r.title}</span>
         <span className="text-xs font-semibold opacity-90">alles im Haus · {r.prepMinutes} Min</span>
       </span>
@@ -45,7 +45,7 @@ export function DemoDishHero() {
         </span>
       </Link>
       <div className="flex flex-col gap-1 p-4">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-muted">Heute · {DEMO_DISH.clock}</span>
+        <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted">Heute · {DEMO_DISH.clock}</span>
         <h2 className="text-[22px] font-extrabold leading-tight">{r.title}</h2>
         <p className="text-sm text-muted">alles im Haus · {r.prepMinutes} Min</p>
         <div className="mt-2 grid grid-cols-2 gap-2">

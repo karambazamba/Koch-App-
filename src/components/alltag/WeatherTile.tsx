@@ -14,8 +14,8 @@ import { tomorrowLabel, weekdayShort } from "@/lib/aufgaben/model";
 import { shortClock } from "@/components/notizen/Schnellnotiz";
 import { WeatherSymbol } from "@/components/wetter/WeatherSymbol";
 
-const BOX = "wx-card relative flex w-full flex-col rounded-card border border-line p-3.5 text-left shadow-card";
-const LABEL = "flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted";
+const BOX = "relative bg-surface flex w-full flex-col rounded-card border border-line p-3.5 text-left shadow-card";
+const LABEL = "flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-muted";
 
 export function WeatherTile({
   size = "S",
@@ -81,10 +81,10 @@ export function WeatherTile({
       {parts.length > 0 && (
         <span className="mt-2 grid grid-cols-3 gap-2" aria-label="Morgens, mittags, abends">
           {parts.map((p) => (
-            <span key={p.id} className="flex items-center gap-1.5 rounded-xl bg-surface/60 px-2 py-1.5">
+            <span key={p.id} className="flex items-center gap-1.5 rounded-field bg-surface/60 px-2 py-1.5">
               <WeatherSymbol code={p.code} className="h-6 w-6" />
               <span className="flex min-w-0 flex-col leading-tight">
-                <span className="text-[10.5px] font-bold uppercase tracking-wide text-muted">{p.label}</span>
+                <span className="text-[10px] font-extrabold uppercase tracking-wide text-muted">{p.label}</span>
                 <span className="text-[13px] font-bold tabular-nums">{p.temp}°</span>
               </span>
             </span>

@@ -14,7 +14,7 @@ export function DarkTip({ profile, today, quiet = false }: { profile: HouseholdP
   useEffect(() => noteDarkTipStart(today), [today]);
   if (quiet || !showDarkTip(state, today, profile.themeSet)) return null;
   return (
-    <div className="flex items-center gap-2 rounded-2xl bg-surface px-3.5 py-2.5 text-[14px] shadow-card" role="note">
+    <div className="flex items-center gap-2 rounded-card bg-surface px-3.5 py-2.5 text-[14px] shadow-card" role="note">
       <span aria-hidden>🌙</span>
       <span className="flex-1 font-semibold">Abends lieber dunkel?</span>
       <button

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Check, Info, Plus, Trash2 } from "lucide-react";
-import { Sheet } from "@/components/plan/Sheet";
+import { Sheet } from "@/components/ui/Sheet";
 import { CARD_LIST, INPUT, INPUT_BASE, LABEL, buttonClass, chipClass } from "@/components/ui/styles";
 import {
   addStaple,
@@ -39,12 +39,12 @@ export function ItemContent({
           aria-label={`${item.name} ${item.checked ? "nicht mehr abhaken" : "abhaken"}`}
           onClick={onToggle}
           className={`hit flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition active:scale-90 ${
-            item.checked ? "border-accent bg-accent text-on-accent" : "border-stone-300 bg-surface text-transparent"
+            item.checked ? "border-accent bg-accent text-on-accent" : "border-line-strong bg-surface text-transparent"
           }`}
         >
           <Check className="h-4 w-4" strokeWidth={3} aria-hidden />
         </button>
-        <span className={`min-w-0 flex-1 truncate text-base font-semibold ${item.checked ? "text-stone-400 line-through" : "text-ink"}`}>
+        <span className={`min-w-0 flex-1 truncate text-base font-semibold ${item.checked ? "text-faint line-through" : "text-ink"}`}>
           {item.name}
           {item.optional && <span className="ml-1.5 text-xs font-normal text-muted">optional</span>}
         </span>
@@ -54,12 +54,12 @@ export function ItemContent({
             onClick={onInfo}
             aria-label={`Wofür: ${item.name}`}
             aria-expanded={infoOpen}
-            className="hit -mx-1 flex h-8 w-8 shrink-0 items-center justify-center text-stone-300"
+            className="hit -mx-1 flex h-8 w-8 shrink-0 items-center justify-center text-faint"
           >
             <Info className="h-4 w-4" strokeWidth={2} aria-hidden />
           </button>
         )}
-        <span className={`shrink-0 text-right text-sm tabular-nums ${item.checked ? "text-stone-400 line-through" : "text-muted"}`}>
+        <span className={`shrink-0 text-right text-sm tabular-nums ${item.checked ? "text-faint line-through" : "text-muted"}`}>
           {item.amount}
         </span>
       </div>
@@ -193,7 +193,7 @@ export function StaplesSheet({ settings, onClose }: { settings: ShoppingSettings
                 type="button"
                 onClick={() => removeStaple(st.id)}
                 aria-label={`${st.name} aus der Stammliste nehmen`}
-                className="flex h-10 w-10 items-center justify-center text-stone-400"
+                className="flex h-10 w-10 items-center justify-center text-faint"
               >
                 <Trash2 className="h-5 w-5" strokeWidth={2} aria-hidden />
               </button>

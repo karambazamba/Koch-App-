@@ -32,13 +32,13 @@ export function ProductsView() {
             {products.map(([from, to]) => (
               <li key={from} className="flex min-h-12 items-center gap-2 px-4 py-2">
                 <span className="text-muted">{cap(from)}</span>
-                <ArrowRight className="h-4 w-4 shrink-0 text-stone-400" strokeWidth={2} aria-hidden />
+                <ArrowRight className="h-4 w-4 shrink-0 text-faint" strokeWidth={2} aria-hidden />
                 <span className="min-w-0 flex-1 truncate font-semibold">{to}</span>
                 <button
                   type="button"
                   onClick={() => removeProduct(from)}
                   aria-label={`${to} statt ${cap(from)} entfernen`}
-                  className="flex h-10 w-10 items-center justify-center text-stone-400"
+                  className="flex h-10 w-10 items-center justify-center text-faint"
                 >
                   <Trash2 className="h-5 w-5" strokeWidth={2} aria-hidden />
                 </button>
@@ -57,7 +57,7 @@ export function ProductsView() {
         >
           <div className="flex items-center gap-2">
             <input value={ingredient} onChange={(e) => setIngredient(e.target.value)} placeholder="Zutat, z. B. Butter" aria-label="Zutat" className={`${INPUT_BASE} h-12 min-w-0 flex-1 px-3`} />
-            <ArrowRight className="h-4 w-4 shrink-0 text-stone-400" strokeWidth={2} aria-hidden />
+            <ArrowRight className="h-4 w-4 shrink-0 text-faint" strokeWidth={2} aria-hidden />
             <input value={product} onChange={(e) => setProductName(e.target.value)} placeholder="Euer Produkt" aria-label="Euer Produkt" className={`${INPUT_BASE} h-12 min-w-0 flex-1 px-3`} />
           </div>
           <button type="submit" disabled={!ingredient.trim() || !product.trim()} className={buttonClass("primary")}>

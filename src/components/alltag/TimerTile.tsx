@@ -9,7 +9,7 @@
 
 import { useRef, useState } from "react";
 import { Pause, Play, Plus, RotateCcw, Timer as TimerIcon, X } from "lucide-react";
-import { Sheet } from "@/components/plan/Sheet";
+import { Sheet } from "@/components/ui/Sheet";
 import { QuickButton } from "@/components/ui/QuickButton";
 import { CARD, INPUT, buttonClass, chipClass } from "@/components/ui/styles";
 import type { TileSize } from "@/lib/core/homeLayout";
@@ -57,7 +57,7 @@ export function TimerTile({ size = "M" }: { size?: TileSize }) {
       <>
         <section className={`${CARD} relative flex min-h-[92px] flex-col p-3.5`} aria-label="Timer">
           <button type="button" onClick={() => (main || sw ? setOpen(true) : setCustom(10))} className="flex flex-1 flex-col items-start gap-1 text-left">
-            <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted">
+            <span className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-muted">
               <TimerIcon className="h-3.5 w-3.5 text-accent" strokeWidth={2} aria-hidden />
               Timer{running > 1 ? ` · ${running} laufen` : ""}
             </span>
@@ -94,7 +94,7 @@ export function TimerTile({ size = "M" }: { size?: TileSize }) {
   return (
     <>
       <section className={`${CARD} relative flex flex-col gap-2 p-3.5`} aria-label="Timer">
-        <div className="flex items-center gap-1.5 pr-8 text-[11px] font-bold uppercase tracking-wider text-muted">
+        <div className="flex items-center gap-1.5 pr-8 text-[10px] font-extrabold uppercase tracking-wider text-muted">
           <TimerIcon className="h-3.5 w-3.5 text-accent" strokeWidth={2} aria-hidden />
           <span>Timer</span>
           {running > 1 && <span className="font-semibold normal-case tracking-normal">· {running} laufen</span>}
@@ -159,7 +159,7 @@ function MainTimer({ timer, nowMs }: { timer: Timer; nowMs: number }) {
         </span>
       </div>
       <div className="flex shrink-0 items-center gap-1">
-        <button type="button" onClick={() => act((s, n) => plusMinute(s, timer.id, n))} aria-label={`${timer.name}: eine Minute mehr`} className="h-11 min-w-11 rounded-full bg-quick px-2 text-sm font-bold text-quick-ink active:scale-95">
+        <button type="button" onClick={() => act((s, n) => plusMinute(s, timer.id, n))} aria-label={`${timer.name}: eine Minute mehr`} className="h-11 min-w-11 rounded-full bg-accent-soft px-2 text-sm font-bold text-accent-strong active:scale-95">
           +1
         </button>
         {!done && (
@@ -172,7 +172,7 @@ function MainTimer({ timer, nowMs }: { timer: Timer; nowMs: number }) {
             {isPaused(timer) ? <Play className="h-4 w-4" strokeWidth={2.5} aria-hidden /> : <Pause className="h-4 w-4" strokeWidth={2.5} aria-hidden />}
           </button>
         )}
-        <button type="button" onClick={() => act((s, n) => removeTimer(s, timer.id, n))} aria-label={`${timer.name} beenden`} className="flex h-11 w-11 items-center justify-center rounded-full text-muted active:bg-stone-100">
+        <button type="button" onClick={() => act((s, n) => removeTimer(s, timer.id, n))} aria-label={`${timer.name} beenden`} className="flex h-11 w-11 items-center justify-center rounded-full text-muted active:bg-fill">
           <X className="h-4 w-4" strokeWidth={2.5} aria-hidden />
         </button>
       </div>
@@ -190,11 +190,11 @@ function TimerRow({ timer, nowMs }: { timer: Timer; nowMs: number }) {
         {done ? "fertig ✓" : formatLeft(leftMs(timer, nowMs))}
       </span>
       {!done && (
-        <button type="button" onClick={() => act((s, n) => (isPaused(timer) ? resumeTimer(s, timer.id, n) : pauseTimer(s, timer.id, n)))} aria-label={isPaused(timer) ? `${timer.name} weiter` : `${timer.name} pausieren`} className="flex h-10 w-10 items-center justify-center rounded-full active:bg-stone-100">
+        <button type="button" onClick={() => act((s, n) => (isPaused(timer) ? resumeTimer(s, timer.id, n) : pauseTimer(s, timer.id, n)))} aria-label={isPaused(timer) ? `${timer.name} weiter` : `${timer.name} pausieren`} className="flex h-10 w-10 items-center justify-center rounded-full active:bg-fill">
           {isPaused(timer) ? <Play className="h-4 w-4" strokeWidth={2.5} aria-hidden /> : <Pause className="h-4 w-4" strokeWidth={2.5} aria-hidden />}
         </button>
       )}
-      <button type="button" onClick={() => act((s, n) => removeTimer(s, timer.id, n))} aria-label={`${timer.name} beenden`} className="flex h-10 w-10 items-center justify-center rounded-full text-muted active:bg-stone-100">
+      <button type="button" onClick={() => act((s, n) => removeTimer(s, timer.id, n))} aria-label={`${timer.name} beenden`} className="flex h-10 w-10 items-center justify-center rounded-full text-muted active:bg-fill">
         <X className="h-4 w-4" strokeWidth={2.5} aria-hidden />
       </button>
     </div>
@@ -209,10 +209,10 @@ function StopwatchRow({ ms, running }: { ms: number; running: boolean }) {
       <span className="text-[15px] font-bold tabular-nums" role="timer" aria-label={`Stoppuhr: ${formatLeft(ms)}`}>
         {formatLeft(ms)}
       </span>
-      <button type="button" onClick={() => (stopwatch(running ? "stop" : "start"), buzz())} aria-label={running ? "Stoppuhr anhalten" : "Stoppuhr weiter"} className="flex h-10 w-10 items-center justify-center rounded-full active:bg-stone-100">
+      <button type="button" onClick={() => (stopwatch(running ? "stop" : "start"), buzz())} aria-label={running ? "Stoppuhr anhalten" : "Stoppuhr weiter"} className="flex h-10 w-10 items-center justify-center rounded-full active:bg-fill">
         {running ? <Pause className="h-4 w-4" strokeWidth={2.5} aria-hidden /> : <Play className="h-4 w-4" strokeWidth={2.5} aria-hidden />}
       </button>
-      <button type="button" onClick={() => act((s) => resetStopwatch(s))} aria-label="Stoppuhr zurücksetzen" className="flex h-10 w-10 items-center justify-center rounded-full text-muted active:bg-stone-100">
+      <button type="button" onClick={() => act((s) => resetStopwatch(s))} aria-label="Stoppuhr zurücksetzen" className="flex h-10 w-10 items-center justify-center rounded-full text-muted active:bg-fill">
         <RotateCcw className="h-4 w-4" strokeWidth={2.5} aria-hidden />
       </button>
     </div>

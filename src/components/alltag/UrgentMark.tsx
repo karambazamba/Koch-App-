@@ -2,7 +2,7 @@
 export function UrgentMark({ className = "" }: { className?: string }) {
   return (
     <span
-      className={`inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-quick text-[10px] font-extrabold leading-none text-quick-ink ${className}`}
+      className={`inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[10px] font-extrabold leading-none text-accent-strong ${className}`}
       aria-label="dringend"
       role="img"
     >

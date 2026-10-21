@@ -7,7 +7,7 @@ import type { Recipe } from "@/lib/essen/cookbook";
 import { declineTip, markTipShown, tryTip, undoTip, type HealthTip } from "@/lib/essen/healthTips";
 import { useHealthTip } from "./useHealthTip";
 
-const BUBBLE = "max-w-[85%] self-start whitespace-pre-line rounded-2xl rounded-bl-md border border-line bg-surface px-4 py-2.5 text-base leading-snug text-ink";
+const BUBBLE = "max-w-[85%] self-start whitespace-pre-line rounded-card rounded-bl-md border border-line bg-surface px-4 py-2.5 text-base leading-snug text-ink";
 
 /**
  * Sanfter Gesundheits-Tipp im Chat: konkreter Tausch für ein geplantes

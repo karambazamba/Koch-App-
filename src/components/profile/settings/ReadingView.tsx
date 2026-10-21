@@ -56,7 +56,7 @@ export function ReadingView() {
               {options.map((o) => {
                 const chosen = settings.voice === o.uri || (o.uri === "" && !german.some((v) => v.voiceURI === settings.voice));
                 return (
-                  <li key={o.uri || "auto"} className={`flex min-h-14 items-center gap-2 rounded-xl border pl-4 pr-2 ${chosen ? "border-accent bg-accent-soft" : "border-line bg-surface"}`}>
+                  <li key={o.uri || "auto"} className={`flex min-h-14 items-center gap-2 rounded-field border pl-4 pr-2 ${chosen ? "border-accent bg-accent-soft" : "border-line bg-surface"}`}>
                     <button
                       type="button"
                       role="radio"

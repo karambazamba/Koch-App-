@@ -236,7 +236,7 @@ function RecipeDetails({ id, persons }: { id: string; persons: number | null }) 
           <h3 className={SECTION_TITLE}>Heute gekocht? Wie war&apos;s?</h3>
           {justCooked ? (
             <p
-              className="flex items-center gap-2 rounded-xl bg-accent-soft px-4 py-3 font-semibold text-accent-strong"
+              className="flex items-center gap-2 rounded-field bg-accent-soft px-4 py-3 font-semibold text-accent-strong"
               role="status"
             >
               <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />

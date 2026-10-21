@@ -1,16 +1,18 @@
 "use client";
 
-// Band oben über allen Seiten, wenn ein Timer fertig ist: "⏰ Nudeln sind
-// fertig – OK". Bei offener App klingt ein freundlicher Ton (wiederholt bis
+// Weiße Karte mit orangem Ring oben über allen Seiten, wenn ein Timer fertig
+// ist: "Nudeln sind fertig" mit "+1 Min." und "Stopp". Bei offener App klingt ein freundlicher Ton (wiederholt bis
 // zum Antippen, höchstens 1 Minute; Android vibriert, iPhone kann das als
 // Web-App nicht). Lief der Timer ab, während die App zu war: beim Öffnen
 // still "⏰ Nudeln war um 18:30 fertig".
 
 import { useEffect } from "react";
+import { AlarmClock } from "lucide-react";
+import { buttonClass } from "@/components/ui/styles";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 import { now } from "@/lib/core/now";
 import { useNowMs } from "@/lib/core/useNowMs";
-import { ackTimers, isExpired, RING_MS, type Timer } from "@/lib/timer/model";
+import { ackTimers, isExpired, plusMinute, RING_MS, type Timer } from "@/lib/timer/model";
 import { changeTimers, useTimers } from "@/lib/timer/store";
 import { chime } from "@/lib/timer/sound";
 
@@ -63,25 +65,32 @@ export function TimerAlarm() {
   const first = expired[0];
   const missed = first.endsAt < since;
   const text = missed ? `${first.name} war um ${CLOCK.format(new Date(first.endsAt))} fertig` : doneText(first);
+  const plus = () => changeTimers((s) => expired.reduce((acc, t) => plusMinute(acc, t.id, now().getTime()), s));
   return (
     <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] flex justify-center px-3 pt-[calc(env(safe-area-inset-top)+0.5rem)]">
       <div
         role="alert"
         aria-label="Timer fertig"
-        className="pointer-events-auto flex w-full max-w-lg items-center gap-3 rounded-2xl bg-bar px-4 py-3 text-on-bar shadow-lg"
+        className="pointer-events-auto flex w-full max-w-lg flex-col gap-3 rounded-card border-2 border-accent bg-surface px-4 py-3 text-ink shadow-sheet"
         style={ringing.length ? { animation: "ring-pulse 1.2s ease-in-out infinite" } : undefined}
       >
-        <span className="text-xl" aria-hidden>
-          ⏰
+        <span className="flex items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent-strong" aria-hidden>
+            <AlarmClock className="h-5 w-5" strokeWidth={2.25} />
+          </span>
+          <span className="min-w-0 flex-1 text-base font-bold leading-snug">
+            {text}
+            {expired.length > 1 ? ` (+${expired.length - 1})` : ""}
+          </span>
         </span>
-        <span className="min-w-0 flex-1 text-base font-bold leading-snug">
-          {first.emoji !== "⏱" ? `${first.emoji} ` : ""}
-          {text}
-          {expired.length > 1 ? ` (+${expired.length - 1})` : ""}
+        <span className="flex gap-2">
+          <button type="button" onClick={plus} className={`${buttonClass("soft", "sm")} flex-1`}>
+            +1 Min.
+          </button>
+          <button type="button" onClick={ok} className={`${buttonClass("primary", "sm")} flex-1`}>
+            Stopp
+          </button>
         </span>
-        <button type="button" onClick={ok} className="h-11 shrink-0 rounded-full bg-on-bar px-5 text-sm font-extrabold text-bar active:scale-95">
-          OK
-        </button>
       </div>
     </div>
   );
