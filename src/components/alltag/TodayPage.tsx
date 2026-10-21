@@ -64,7 +64,7 @@ import { pushUndo } from "@/lib/core/undo";
 import { mealIsOver, useCookedDays } from "@/lib/essen/mealDone";
 import { matchStock } from "@/lib/essen/dishIdeas";
 import { useStock } from "@/lib/essen/useStock";
-import { DEMO_DISH } from "@/lib/essen/demoDish";
+import { demoDishAt } from "@/lib/essen/demoDish";
 import { openHelper } from "@/lib/lotte/open";
 import { hideJetztTopic, noteJetztSkip, noteJetztTap } from "@/lib/jetzt/store";
 import type { JetztTopic } from "@/lib/jetzt/topics";
@@ -223,6 +223,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
 
   // --- Jetzt-Karte ----------------------------------------------------------------------
   const demoDish = demoDay.tiles.includes("essen");
+  const demoMeal = demoDishAt(minutes);
   const potHint = usePotHint(demoDay.tiles.length > 0);
   const runningTimer = timers ? sortTimers(timers.timers.filter((x) => isRunning(x, nowMs)), nowMs)[0] : undefined;
   const steps = recipe?.steps ?? [];
@@ -238,7 +239,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     minutes,
     me: name || "Ich",
     calm: (evening && routine.ruhe) || weekday >= 5,
-    // Beispiel-Tag ab 21 Uhr: die Beispiele gelten für morgen
+    // Beispiel-Tag mit weniger als 2 Terminen heute: die Beispiele gelten für morgen
     upcoming: demoDay.termine && !demoDay.label ? demoDay.termine : demoDay.termine ? [] : termine,
     tomorrow: demoDay.termine && demoDay.label ? demoDay.termine : tomorrowAll.filter((i) => !view.hideWork || i.room !== "arbeit"),
     urgent: view.tasksRest ? [] : tasksAll.filter(isUrgent).filter((i) => !i.done),
@@ -246,8 +247,11 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     allDone: !demoDay.tiles.length && hadSomething && !termine.length && !tasksAll.filter((i) => !i.done).length,
     pins: demoDay.tiles.includes("pinnwand") ? [] : pins,
     nowMs,
+    // Beispielgericht nur, solange es heute noch dran ist (danach steht es für morgen da)
     dish: demoDish
-      ? { name: DEMO_DISH.recipe.title, clock: DEMO_DISH.clock, minutes: DEMO_DISH.recipe.prepMinutes, ready: true, missing: [], demo: true }
+      ? demoMeal.tomorrow
+        ? null
+        : { name: demoMeal.recipe.title, clock: demoMeal.clock, minutes: demoMeal.recipe.prepMinutes, ready: true, missing: [], demo: true }
       : dish && !data.day?.away
         ? { name: dish, clock: dishClock, minutes: recipe?.prepMinutes ?? null, ready: Boolean(needs && !needs.length), missing: needs ?? [] }
         : null,
@@ -294,7 +298,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
         if (demoDay.tasks) return <AufgabenSection items={demoDay.tasks} today={data.todayIso} size={tile.size} half={half} demo={demoProps} />;
         return <AufgabenSection items={tasks} total={view.tasksRest ? 0 : openTaskCount(entries, data.todayIso)} today={data.todayIso} size={tile.size} half={half} />;
       case "essen":
-        if (demoDish) return <DemoFoodTile half={half} />;
+        if (demoDish) return <DemoFoodTile half={half} today={data.todayIso} minutes={minutes} />;
         if (cookingNow && dish && !edit) return <CookingTile dish={dish} clock={dishClock} persons={data.day?.persons ?? null} recipe={recipe} today={data.todayIso} onEaten={eaten} />;
         return <FoodTile data={data} dish={dish} over={over} dishClock={dishClock} onOpen={onOpenFood} size={tile.size} onCook={dish && !over && !edit ? cookNow : undefined} />;
       case "einkauf":

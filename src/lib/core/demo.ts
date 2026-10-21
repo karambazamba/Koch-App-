@@ -2,7 +2,8 @@
 // (Termine, Aufgaben, Pinnwand, Einkauf, Essen mit Beispielgericht), damit nichts leer aussieht. Die
 // Beispiele liegen NICHT in den echten Speichern – nur die Startseite zeigt
 // sie, nie Sicherung, Kalender, Push oder KI. Uhrzeiten werden beim Öffnen
-// berechnet (alle in der Zukunft; ab 21 Uhr Beispiele für morgen). Eine
+// aus einem festen Tagesplan (`DEMO_DAY`, nur was noch kommt; kommen
+// heute weniger als 2, Beispiele für morgen). Eine
 // Kachel verliert ihre Beispiele beim ersten eigenen Eintrag, alle nach 3
 // Tagen oder mit "Jetzt leeren".
 
@@ -103,25 +104,29 @@ const clock = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")
 const entry = (id: string, typ: "termin" | "aufgabe", data: Record<string, unknown>): CalendarEntry =>
   ({ id: `beispiel:${id}`, typ, raum: "familie", besitzer: "lokal", erstellt: `2000-01-01T00:0${id.slice(-1)}:00.000Z`, geaendert: "2000-01-01T00:00:00.000Z", data: { reminder: "aus", repeat: null, ...data } }) as CalendarEntry;
 
+/** Fester Beispiel-Tagesplan einer Familie (Minuten ab Mitternacht) */
+const DEMO_DAY: { id: string; title: string; at: number }[] = [
+  { id: "t1", title: "Frühstück", at: 7 * 60 + 30 },
+  { id: "t2", title: "Kita bringen", at: 8 * 60 },
+  { id: "t3", title: "Kaffeepause", at: 10 * 60 + 30 },
+  { id: "t4", title: "Mittagessen", at: 12 * 60 + 30 },
+  { id: "t5", title: "Kinder abholen", at: 15 * 60 },
+  { id: "t6", title: "Einkaufen", at: 17 * 60 },
+  { id: "t7", title: "Kochen", at: 18 * 60 + 30 },
+  { id: "t8", title: "Lieblingsserie", at: 20 * 60 + 15 },
+  { id: "t9", title: "Ins Bett", at: 22 * 60 + 30 },
+];
+
 /**
- * Beispiel-Termine und -Aufgaben für heute (ab 21 Uhr für morgen): Kaffeepause
- * in einer Stunde, Kochen 18:30, Lieblingsserie 20:15, Ins Bett 22:30 – nur
- * was noch kommt, sortiert.
+ * Beispiel-Termine und -Aufgaben: aus dem festen Tagesplan nur, was heute noch
+ * kommt (sortiert; die Kachel zeigt davon so viele, wie ihre Größe erlaubt).
+ * Kommen heute weniger als 2, gilt der Beispiel-Tag für morgen ab dem Morgen
+ * ("Morgen · Do") – die Aufgaben wechseln mit.
  */
 export function demoEntries(today: string, minutes: number, helper: string): { date: string; tomorrow: boolean; entries: CalendarEntry[] } {
-  const tomorrow = minutes >= 21 * 60;
+  const tomorrow = DEMO_DAY.filter((t) => t.at > minutes).length < 2;
   const date = tomorrow ? addDays(today, 1) : today;
-  const from = tomorrow ? 0 : minutes;
-  const coffee = tomorrow ? 10 * 60 : Math.ceil((minutes + 60) / 15) * 15;
-  const termine = [
-    { id: "t1", title: "Kaffeepause", at: coffee },
-    { id: "t2", title: "Kochen", at: 18 * 60 + 30 },
-    { id: "t3", title: "Lieblingsserie", at: 20 * 60 + 15 },
-    { id: "t4", title: "Ins Bett", at: 22 * 60 + 30 },
-  ]
-    .filter((t) => t.at > from && t.at < 24 * 60 && (t.id === "t1" || t.at - coffee >= 30))
-    .sort((a, b) => a.at - b.at)
-    .map((t) => entry(t.id, "termin", { title: t.title, date, start: clock(t.at) }));
+  const termine = DEMO_DAY.filter((t) => tomorrow || t.at > minutes).map((t) => entry(t.id, "termin", { title: t.title, date, start: clock(t.at) }));
   const monday = addDays(date, -weekdayIndex(date));
   const aufgaben = [
     entry("a1", "aufgabe", { title: "App kennenlernen", date }),

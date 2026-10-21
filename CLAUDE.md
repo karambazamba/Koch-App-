@@ -293,9 +293,15 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
 - Beispiel-Tag (`src/lib/core/demo.ts`, Speicher `wasgibts.beispiel` v1
   `{since, cleared, done, gone, asked}`, nicht in der Sicherung; Vorlage
   `docs/vorlagen/demo-startseite.md`): Jetzt-Karte mit Beispiel-Themen („Das
-  ist ein Beispiel-Tag“, seit v0.29), Beispielgericht in der Essen-Kachel, Termine (Kaffeepause in 1 Std,
-  Kochen 18:30, Lieblingsserie 20:15, Ins Bett 22:30 – nur was noch kommt; ab
-  21 Uhr für morgen mit „Morgen · Mi“), Aufgaben (App kennenlernen ✓,
+  ist ein Beispiel-Tag“, seit v0.29), Beispielgericht in der Essen-Kachel, Termine aus dem festen
+  Tagesplan `DEMO_DAY` (seit v0.38: 07:30 Frühstück · 08:00 Kita bringen · 10:30
+  Kaffeepause · 12:30 Mittagessen · 15:00 Kinder abholen · 17:00 Einkaufen ·
+  18:30 Kochen · 20:15 Lieblingsserie · 22:30 Ins Bett – nur was noch kommt,
+  keine „in 1 Std“-Rechnung; kommen heute weniger als 2, Beispiel-Tag für
+  morgen ab dem Morgen mit „Morgen · Mi“, Aufgaben ebenso; Jetzt-Karte nimmt
+  dieselben Zeiten; Essen bis 18:30 + 90 Min Pasta, danach „Morgen · Do ·
+  18:30“ Ofengemüse mit Feta, `demoDishAt`; Test je halbe Stunde in
+  `tests/demo.test.ts`), Aufgaben (App kennenlernen ✓,
   „!“ {Name} etwas fragen, Ersten Termin eintragen, Kachel verschieben,
   Pinnwand ausprobieren), Pinnwand-Gruß der Begleitung, Einkauf „Milch · Brot
   · Äpfel“ – je mit Schild „BEISPIEL“ und gestricheltem Rahmen (Tokens

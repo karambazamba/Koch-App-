@@ -1,20 +1,67 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { askRemoveAll, demoEntries, demoTiles, type DemoTile } from "@/lib/core/demo";
+import { demoDishAt } from "@/lib/essen/demoDish";
+import { berlinTime, setNowForTests } from "@/lib/core/now";
+import { at } from "./helpers";
 import { STORAGE } from "@/lib/core/storage";
 import { APP_NAME, APP_SHORT_NAME } from "@/lib/core/app";
 import { withoutEmoji } from "@/lib/core/text";
 import { profileFrom, startState } from "@/lib/einstellungen/welcome";
 
 const TODAY = "2026-10-21";
-const startsOf = (minutes: number) => demoEntries(TODAY, minutes, "Mia").entries.filter((e) => e.typ === "termin").map((e) => (e.data as { start: string }).start);
 
 describe("Beispiel-Tag (erster Start)", () => {
-  it("Uhrzeiten beim Öffnen berechnet: alle in der Zukunft, sortiert", () => {
-    const at10 = startsOf(10 * 60);
-    expect(at10[0]).toBe("11:00");
-    expect(at10).toEqual([...at10].sort());
-    const at19 = startsOf(19 * 60 + 10);
-    expect(at19.every((t) => t > "19:10")).toBe(true);
+  afterEach(() => setNowForTests(null));
+
+  /** Beispiel-Termine zur Uhrzeit (über at()), als [Datum, Start, Titel] */
+  const demoAt = (clock: string) => {
+    at(`${TODAY}T${clock}`);
+    const t = berlinTime();
+    const d = demoEntries(TODAY, t.minutes, "Mia");
+    const termine = d.entries.filter((e) => e.typ === "termin").map((e) => e.data as { date: string; start: string; title: string });
+    return { ...d, minutes: t.minutes, termine };
+  };
+
+  const halfHours = Array.from({ length: 48 }, (_, i) => `${String(Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}`);
+
+  it.each(halfHours)("um %s: Termine in der Zukunft, sortiert, mindestens 2, keine Kaffeepause nach 17 Uhr, Essen nicht vorbei", (clock) => {
+    const d = demoAt(clock);
+    const stamps = d.termine.map((t) => `${t.date} ${t.start}`);
+    expect(stamps.every((s) => s > `${TODAY} ${clock}`)).toBe(true);
+    expect(stamps).toEqual([...stamps].sort());
+    expect(d.termine.length).toBeGreaterThanOrEqual(2);
+    expect(d.termine.some((t) => t.title === "Kaffeepause" && t.date === TODAY && t.start > "17:00")).toBe(false);
+    expect(d.entries.filter((e) => e.typ === "aufgabe").every((e) => !(e.data as { date?: string }).date || (e.data as { date: string }).date === d.date)).toBe(true);
+    const dish = demoDishAt(d.minutes);
+    const dishStamp = `${dish.tomorrow ? "2026-10-22" : TODAY} ${dish.clock}`;
+    expect(dishStamp > `${TODAY} ${clock}` || !dish.tomorrow).toBe(true);
+    if (!dish.tomorrow) expect(d.minutes).toBeLessThan(18 * 60 + 30 + 90);
+  });
+
+  it("19:55 → Lieblingsserie 20:15, Ins Bett 22:30 (Fehler: Kaffeepause 21:00)", () => {
+    const d = demoAt("19:55");
+    expect(d.tomorrow).toBe(false);
+    expect(d.termine.map((t) => [t.start, t.title])).toEqual([
+      ["20:15", "Lieblingsserie"],
+      ["22:30", "Ins Bett"],
+    ]);
+  });
+
+  it("weniger als 2 heute → morgen ab dem Morgen; früh der ganze Tag", () => {
+    const late = demoAt("21:00");
+    expect(late.tomorrow).toBe(true);
+    expect(late.date).toBe("2026-10-22");
+    expect(late.termine[0]).toMatchObject({ start: "07:30", title: "Frühstück" });
+    expect(demoAt("06:00").termine.slice(0, 3).map((t) => t.title)).toEqual(["Frühstück", "Kita bringen", "Kaffeepause"]);
+  });
+
+  it("Essen: bis 18:30 + 90 Min Pasta heute, danach Ofengemüse für morgen", () => {
+    expect(demoDishAt(19 * 60 + 59)).toMatchObject({ tomorrow: false, clock: "18:30" });
+    expect(demoDishAt(19 * 60 + 59).recipe.title).toBe("Pasta mit Tomaten & Burrata");
+    const later = demoDishAt(20 * 60);
+    expect(later.tomorrow).toBe(true);
+    expect(later.recipe.title).toBe("Ofengemüse mit Feta");
+    expect(later.photo).toBe("/gerichte/ofengemuese-mit-feta.webp");
   });
 
   it("ab 21 Uhr Beispiele für morgen", () => {
