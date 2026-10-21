@@ -15,7 +15,7 @@ export type DemoDay = {
   tasks: DayItem[] | null;
   /** Abgehakte Beispiel-Aufgaben */
   done: string[];
-  /** Ab 21 Uhr: Beispiele für morgen ("Morgen · Mi") */
+  /** Weniger als 2 Beispiel-Termine heute: Beispiele für morgen ("Morgen · Mi") */
   label: string | null;
   /** Dezent fragen: "Alle Beispiele entfernen?" */
   ask: boolean;

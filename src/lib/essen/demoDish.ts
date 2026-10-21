@@ -1,5 +1,5 @@
-// Beispielgericht für den Beispiel-Tag: Pasta mit Tomaten & Burrata (mit Bild)
-// und drei weitere Beispiel-Ideen. Lesbar und kochbar wie eingebaute Rezepte
+// Beispielgericht für den Beispiel-Tag: Pasta mit Tomaten & Burrata (mit Bild,
+// nach dem Essen Ofengemüse mit Feta für morgen) und drei weitere Beispiel-Ideen. Lesbar und kochbar wie eingebaute Rezepte
 // (ID "d:<id>", siehe `findRecipe`), liegen aber nie im Kochbuch, Wochenplan
 // oder in der Sicherung – sie verschwinden mit dem Beispiel-Tag.
 
@@ -41,6 +41,7 @@ const DEFS: DemoDef[] = [
     emoji: "🥕",
     minutes: 35,
     category: "vegetarisch",
+    photo: "/gerichte/ofengemuese-mit-feta.webp",
     tone: "#E0A040",
     ingredients: [[600, "g", "Kartoffeln"], [2, "", "Paprika"], [1, "", "Zucchini"], [200, "g", "Feta"], [3, "EL", "Olivenöl"], [null, "", "Rosmarin, Salz"]],
     steps: ["Ofen auf 220 °C vorheizen.", "Gemüse in Stücke schneiden, mit Öl und Gewürzen mischen.", "30 Minuten backen, Feta drüberbröseln, 5 Minuten weiter."],
@@ -94,7 +95,20 @@ export function demoLook(id: string): { photo?: string; emoji: string; tone: str
 }
 
 /** Das Beispielgericht des Beispiel-Tags (18:30) */
-export const DEMO_DISH = { recipe: DEMO_RECIPES[0], clock: "18:30", photo: DEFS[0].photo! };
+const DEMO_DISH = { recipe: DEMO_RECIPES[0], clock: "18:30", photo: DEFS[0].photo! };
+
+const DEMO_MEAL = 18 * 60 + 30;
+/** Wie AutoCooked: ab Essenszeit + 90 Minuten ist das Essen vorbei */
+const DEMO_MEAL_OVER = DEMO_MEAL + 90;
+
+/**
+ * Beispielgericht passend zur Uhrzeit: bis 18:30 + 90 Min die Pasta für heute,
+ * danach das Ofengemüse für morgen – nie eine Uhrzeit, die schon vorbei ist.
+ */
+export function demoDishAt(minutes: number): { recipe: Recipe; clock: string; photo: string; tomorrow: boolean } {
+  if (minutes < DEMO_MEAL_OVER) return { ...DEMO_DISH, tomorrow: false };
+  return { recipe: DEMO_RECIPES[1], clock: DEMO_DISH.clock, photo: DEFS[1].photo!, tomorrow: true };
+}
 
 /** Drei weitere Beispiel-Ideen ("Mehr Ideen") */
 export const DEMO_MORE = DEMO_RECIPES.slice(1);

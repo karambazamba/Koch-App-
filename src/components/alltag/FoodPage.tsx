@@ -41,12 +41,13 @@ export function FoodPage({ data, minutes }: { data: HomeData; minutes: number })
   const planOn = useFeature("wochenplan");
   const main = over ? data.tomorrow : data.day;
   const week = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
-  // Beispiel-Tag: ohne eigenes Gericht steht das Beispielgericht als "Heute" da
+  // Beispiel-Tag: ohne eigenes Gericht steht das Beispielgericht da ("Heute",
+  // nach dem Essen das zweite für "Morgen" – auch wenn der Tag schon vorbei ist)
   const demo = useDemo();
-  const demoDish = !over && !dishOf(data.day) && demoTiles(demo, data.todayIso).includes("essen");
+  const demoDish = !dishOf(main) && demoTiles(demo, data.todayIso).includes("essen");
   return (
     <div className="flex flex-col gap-4">
-      {demoDish ? <DemoDishHero /> : <DishHero data={data} day={main} when={over ? "Morgen" : "Heute"} onSwap={() => main && setSwap(main)} />}
+      {demoDish ? <DemoDishHero today={data.todayIso} minutes={minutes} /> : <DishHero data={data} day={main} when={over ? "Morgen" : "Heute"} onSwap={() => main && setSwap(main)} />}
 
       <section className="flex flex-col gap-2" aria-label="Diese Woche">
         <div className="flex items-center justify-between px-1">

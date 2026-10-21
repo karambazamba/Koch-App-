@@ -6,8 +6,17 @@ neutrale Beispiele, nichts Persönliches. „Mia“ = Name der Begleitung.
 Avatar = bestehende Avatar-Komponente, Wetter-Symbol = bestehendes Symbol-Set;
 vorhandene Tokens/Bausteine verwenden, die Werte unten sind Zielwerte.
 
-Regeln: Beispiel-Uhrzeiten werden beim Öffnen berechnet (alle in der Zukunft,
-sortiert; ab 21 Uhr Beispiele für morgen mit „MORGEN · {Wochentag}“). Beispiele
+Regeln (seit v0.38): Beispiel-Termine kommen aus einem festen Tagesplan einer
+Familie (`DEMO_DAY`): 07:30 Frühstück · 08:00 Kita bringen · 10:30 Kaffeepause ·
+12:30 Mittagessen · 15:00 Kinder abholen · 17:00 Einkaufen · 18:30 Kochen ·
+20:15 Lieblingsserie · 22:30 Ins Bett. Gezeigt wird nur, was noch kommt
+(sortiert, so viele wie die Kachel-Größe zeigt). Kommen heute weniger als 2,
+gilt der Beispiel-Tag für morgen ab dem Morgen mit „MORGEN · {Wochentag}“ (auch
+die Aufgaben). Beispiele: 19:55 → Lieblingsserie 20:15, Ins Bett 22:30 · 21:00 →
+morgen ab 07:30 · 06:00 → Frühstück, Kita bringen, Kaffeepause … Essen: bis
+18:30 + 90 Min „ESSEN · 18:30“ Pasta mit Tomaten & Burrata, danach „MORGEN · Do ·
+18:30“ Ofengemüse mit Feta (mit Bild) – nie eine Uhrzeit, die schon vorbei ist.
+Die Jetzt-Karte nimmt dieselben Zeiten. Beispiele
 verschwinden je Kachel beim ersten eigenen Eintrag, alle nach 3 Tagen oder mit
 „Jetzt leeren“; nie in Sicherung, Kalender, Push oder KI.
 
@@ -32,13 +41,13 @@ verschwinden je Kachel beim ersten eigenen Eintrag, alle nach 3 Tagen oder mit
     </div>
   </div>
 
-  <!-- Termine: 3 Kärtchen + „+1 weitere“ -->
+  <!-- Termine (Beispiel um 16:40): 3 Kärtchen + „+1 weitere“ -->
   <div class="abschnitt">Termine <span class="bsp">BEISPIEL</span> <span class="rechts">+1 weitere <span class="plus">+</span></span></div>
   <div class="kaertchen-reihe">
-    <div class="kaertchen familie"><b>{jetzt+1h}</b><span>Kaffeepause ☕</span><i class="box"></i></div>
-    <div class="kaertchen familie"><b>18:30</b><span>Kochen 🍳</span><i class="box"></i></div>
-    <div class="kaertchen familie"><b>22:30</b><span>Ins Bett 😴</span><i class="box"></i></div>
-  </div>   <!-- +1 weitere = „20:15 Lieblingsserie 📺“ -->
+    <div class="kaertchen familie"><b>17:00</b><span>Einkaufen</span><i class="box"></i></div>
+    <div class="kaertchen familie"><b>18:30</b><span>Kochen</span><i class="box"></i></div>
+    <div class="kaertchen familie"><b>20:15</b><span>Lieblingsserie</span><i class="box"></i></div>
+  </div>   <!-- +1 weitere = „22:30 Ins Bett“ -->
 
   <!-- Aufgaben: Raster 2 × 2 + „+1 weitere“ -->
   <div class="abschnitt">Aufgaben <span class="bsp">BEISPIEL</span> <span class="rechts">+1 weitere <span class="plus">+</span></span></div>
