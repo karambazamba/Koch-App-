@@ -47,6 +47,9 @@ export function ItemContent({
         <span className={`min-w-0 flex-1 truncate text-base font-semibold ${item.checked ? "text-faint line-through" : "text-ink"}`}>
           {item.name}
           {item.optional && <span className="ml-1.5 text-xs font-normal text-muted">optional</span>}
+          {item.dishes.length > 0 && !item.checked && (
+            <span className="ml-1.5 inline-block max-w-[9rem] truncate rounded-full bg-fill px-2 py-0.5 align-middle text-[11px] font-semibold text-muted">{item.dishes[0].replace(/\s*\([^)]*\)\s*$/, "")}</span>
+          )}
         </span>
         {item.dishes.length > 0 && (
           <button

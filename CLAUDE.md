@@ -492,6 +492,23 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   Essen „Ideen für morgen“). Die alte Vorrat-Karte mit Zählern ist weg (leer:
   ein Einstieg „Trag ein, was da ist“).
 
+## Vorrat und Einkaufsliste aufgeräumt (v0.44)
+
+- Vorrat (`PantryView`): oben nur wenn passend „Vom Einkauf einräumen: Milch,
+  Brot … [Einräumen]“ (abgehakte Einkäufe der Woche, die noch nicht im
+  Vorrat stehen → naheliegender Ort; `essen/einraeumen.ts` `toPutAway`,
+  Merker `wasgibts.eingeraeumt` v1, mit Rückgängig) und „Bald aufbrauchen“
+  (hellorange, bis 4 Sachen mit −/+, „Rezept dazu“ → Essen-Reiter). Je Ort
+  eine Liste statt Chips (`PantryRow`: Ort-Symbol, Name, „seit 3 Tagen“ bzw.
+  im Tiefkühler „seit 12.10.“, Menge −/+ in Stück bzw. 100 g/ml; − bis null =
+  aufgebraucht mit „… aufgebraucht · Rückgängig“); antippen = ändern.
+- Einkaufsliste: großes Feld „Was fehlt?“ mit Mikrofon immer oben (mehrere
+  mit Komma, „Oft gekauft“ als eine Reihe); fällige Stammartikel als EINE
+  waagerechte Reihe „Bald wieder fällig“ (keine Box); Zeilen aus Rezepten mit
+  kleinem Etikett (z. B. „Pasta“); Abgehaktes bleibt ~2 s durchgestrichen
+  stehen und rutscht dann nach unten unter „Erledigte anzeigen“ (keine
+  Zähler).
+
 ## Einkauf nach Läden (v0.41)
 
 - Läden wie bisher: Vorschläge (`SHOP_SUGGESTIONS`) + eigene (`/profil/produkte`,

@@ -84,6 +84,7 @@ export function ShoppingListView() {
   const [showHidden, setShowHidden] = useState(false);
   const [shareNote, setShareNote] = useState("");
   const [expanded, setExpanded] = useState<string[]>([]);
+  const [leaving, setLeaving] = useState<string[]>([]);
   const [info, setInfo] = useState<string | null>(null);
   const [editing, setEditing] = useState<ListItem | null>(null);
   const [staplesOpen, setStaplesOpen] = useState(false);
@@ -113,7 +114,14 @@ export function ShoppingListView() {
   const todayWeek = inWeek ? weekStart : (current?.weekStart ?? weekStart);
   const grouped = visible.filter((i) => !(i.now && !i.checked) && !(inWeek && todayItems.includes(i)));
 
-  const toggle = (item: ListItem) => toggleChecked(weekStart, item, todayIso);
+  const toggle = (item: ListItem) => {
+    if (!item.checked) {
+      setLeaving((l) => [...l, item.key]);
+      window.setTimeout(() => setLeaving((l) => l.filter((k) => k !== item.key)), 2000);
+    }
+    toggleChecked(weekStart, item, todayIso);
+  };
+  const doneItems = grouped.filter((i) => i.checked && !leaving.includes(i.key));
 
   const share = async (shop?: string) => {
     const text = shoppingListText(list, `🛒 Einkaufsliste ${range}${shop ? ` – ${shop}` : ""}`, shop);
@@ -166,6 +174,9 @@ export function ShoppingListView() {
           </button>
         </div>
         )}
+
+        {/* Großes Feld „Was fehlt?“ immer oben (mit Mikrofon, mehrere mit Komma, „Oft gekauft“) */}
+        <ShoppingAddField weekStart={weekStart} settings={settings} />
 
         <Segmented
           label="Sortierung"
@@ -239,44 +250,31 @@ export function ShoppingListView() {
           </p>
         )}
 
-        {list.items.length === 0 && list.missing.length === 0 && todayItems.length === 0 && <ShoppingAddField weekStart={weekStart} settings={settings} />}
 
         {groups.map((group) => {
-          if (group.items.length === 0) return null;
+          // Abgehaktes steht gesammelt unten unter „Erledigte anzeigen“
           const open = group.items.filter((i) => !i.checked);
-          const checked = group.items.filter((i) => i.checked);
-          const allDone = open.length === 0;
-          const show = !allDone || expanded.includes(group.id);
+          if (open.length === 0 && !group.items.some((i) => leaving.includes(i.key))) return null;
+          // eben Abgehaktes bleibt kurz durchgestrichen stehen, dann rutscht es nach unten
+          const checked = group.items.filter((i) => i.checked && leaving.includes(i.key));
           const Icon = group.icon;
           return (
             <section key={group.id} aria-label={group.label} className="flex flex-col gap-1.5">
               <div className="flex items-center gap-2 px-1">
-                <button
-                  type="button"
-                  onClick={() => allDone && setExpanded((e) => (e.includes(group.id) ? e.filter((x) => x !== group.id) : [...e, group.id]))}
-                  aria-expanded={show}
-                  className="hit flex min-w-0 flex-1 items-center gap-1.5 text-left text-[15px] font-extrabold text-muted"
-                >
+                <h2 className="flex min-w-0 flex-1 items-center gap-1.5 text-[15px] font-extrabold text-muted">
                   {group.shop ? (
                     <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: `var(--app-shop-${shopTone(group.shop)})` }} aria-hidden />
                   ) : (
                     <Icon className="h-4 w-4 text-accent" strokeWidth={2} aria-hidden />
                   )}
                   <span className="truncate">{group.label}</span>
-                  {allDone && (
-                    <span className="inline-flex items-center gap-1 normal-case tracking-normal text-accent-strong">
-                      <Check className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-                      erledigt
-                      <ChevronDown className={`h-3.5 w-3.5 transition ${show ? "rotate-180" : ""}`} strokeWidth={2.25} aria-hidden />
-                    </span>
-                  )}
-                </button>
-                {group.shop && open.length > 0 && (
+                </h2>
+                {group.shop && (
                   <Link href={shopModeHref(group.shop)} className="hit flex h-8 items-center rounded-full bg-accent-soft px-3 text-[13px] font-bold text-accent-strong">
                     Einkaufen
                   </Link>
                 )}
-                {group.shop && open.length > 0 && (
+                {group.shop && (
                   <button
                     type="button"
                     onClick={() => share(group.shop)}
@@ -287,7 +285,7 @@ export function ShoppingListView() {
                   </button>
                 )}
               </div>
-              {show && (
+              {(
                 <ul className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
                   {[...open, ...checked].map((item) => (
                     <SwipeRow key={item.key} label={item.name} actions={actionsFor(item)} onLongPress={() => setInfo(info === item.key ? null : item.key)}>
@@ -306,6 +304,25 @@ export function ShoppingListView() {
         })}
 
         {visible.length > 0 && <p className="-mt-2 px-1 text-xs text-muted">Nach links wischen: „Haben wir schon“ oder bearbeiten.</p>}
+
+        {doneItems.length > 0 && (
+          <section aria-label="Erledigt" className="flex flex-col gap-1.5">
+            <button type="button" onClick={() => setExpanded((e) => (e.includes("erledigt") ? e.filter((x) => x !== "erledigt") : [...e, "erledigt"]))} aria-expanded={expanded.includes("erledigt")} className="hit flex items-center gap-1.5 self-start px-1 text-sm font-semibold text-muted">
+              <Check className="h-4 w-4 text-good" strokeWidth={2.5} aria-hidden />
+              {expanded.includes("erledigt") ? "Erledigte ausblenden" : "Erledigte anzeigen"}
+              <ChevronDown className={`h-4 w-4 transition ${expanded.includes("erledigt") ? "rotate-180" : ""}`} strokeWidth={2.25} aria-hidden />
+            </button>
+            {expanded.includes("erledigt") && (
+              <ul className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
+                {doneItems.map((item) => (
+                  <SwipeRow key={item.key} label={item.name} actions={actionsFor(item)} onLongPress={() => setInfo(info === item.key ? null : item.key)}>
+                    <ItemContent item={item} onToggle={() => toggle(item)} onInfo={() => setInfo(info === item.key ? null : item.key)} infoOpen={info === item.key} />
+                  </SwipeRow>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
 
         {hidden.length > 0 && (
           <div className="flex flex-col gap-2">
@@ -374,14 +391,15 @@ function StapleBar({
   onManage: () => void;
 }) {
   return (
-    <section className={`${CARD} flex flex-col gap-2 p-3`} aria-label="Stammartikel">
+    <section className="flex flex-col gap-1.5" aria-label="Stammartikel">
       <div className="flex items-center justify-between px-1">
-        <h2 className="text-[15px] font-extrabold text-muted">Stammartikel</h2>
+        <h2 className="text-[15px] font-extrabold text-muted">Bald wieder fällig</h2>
         <button type="button" onClick={onManage} className="text-xs font-semibold text-muted underline">
           Stammliste
         </button>
       </div>
-      <div className="flex flex-wrap gap-2">
+      {/* eine waagerechte Reihe (wischen), keine Box */}
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" data-no-swipe>
         {staples.map((st) => (
           <StapleChip key={st.id} staple={st} onTake={() => onTake(st)} onSkip={() => onSkip(st)} />
         ))}
@@ -394,7 +412,7 @@ function StapleChip({ staple, onTake, onSkip }: { staple: Staple; onTake: () => 
   const [start, setStart] = useState<number | null>(null);
   return (
     <span
-      className={`${chipClass(false)} gap-1 pr-1`}
+      className={`${chipClass(false)} shrink-0 gap-1 pr-1`}
       style={{ touchAction: "pan-y" }}
       onPointerDown={(e) => setStart(e.clientX)}
       onPointerUp={(e) => {
