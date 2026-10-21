@@ -169,7 +169,7 @@ function ShoppingChips() {
     <section className="flex flex-col gap-2" aria-label="Einkauf">
       <div className="flex items-center justify-between">
         <h2 className={SECTION_TITLE}>Einkauf</h2>
-        <QuickAddButton weekStart={shopping.weekStart} settings={shopping.settings} />
+        <QuickAddButton weekStart={shopping.weekStart} settings={shopping.settings} small />
       </div>
       {open.length ? (
         <div className="flex flex-wrap gap-2">

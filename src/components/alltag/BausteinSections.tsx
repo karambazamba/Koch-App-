@@ -6,10 +6,11 @@
 import Link from "next/link";
 import { CakeSlice, Carrot, ChevronRight } from "lucide-react";
 import { IconBadge } from "@/components/ui/IconBadge";
-import { CARD } from "@/components/ui/styles";
+import { CARD, SECTION_TITLE } from "@/components/ui/styles";
+import { DishPicture } from "./DishPicture";
 import { useFeature } from "@/lib/core/features";
 import { useRecipes } from "@/lib/essen/cookbook";
-import { dishEmoji } from "@/lib/essen/dishEmoji";
+import { dishTone } from "@/lib/essen/dishLook";
 import { PANTRY_PLACES, usePantry } from "@/lib/essen/pantry";
 import { openHelper } from "@/lib/lotte/open";
 
@@ -42,7 +43,7 @@ export function BausteinSections() {
       {recipesOn && (
         <section className={SECTION} aria-label="Unsere Rezepte">
           <div className={HEAD}>
-            <h2 className="text-lg font-bold">Unsere Rezepte</h2>
+            <h2 className={SECTION_TITLE}>Unsere Rezepte</h2>
             <Link href="/kochbuch" className={MORE}>
               Alle <ChevronRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
             </Link>
@@ -50,12 +51,12 @@ export function BausteinSections() {
           {list.length ? (
             <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" data-no-swipe>
               {list.map((r) => (
-                <Link key={r.id} href={`/kochbuch/rezept?id=${r.id}`} className={`${CARD} flex w-32 shrink-0 flex-col gap-1 p-3`}>
-                  <span className="text-2xl" aria-hidden>
-                    {dishEmoji(r.title, r.category)}
+                <Link key={r.id} href={`/kochbuch/rezept?id=${r.id}`} className={`${CARD} flex w-32 shrink-0 flex-col overflow-hidden`}>
+                  <DishPicture tone={dishTone(r.title, r.category)} alt="" small className="aspect-[4/3] w-full" />
+                  <span className="flex flex-col gap-1 p-3">
+                    <span className="line-clamp-2 text-sm font-bold leading-snug">{r.title}</span>
+                    {r.prepMinutes && <span className="text-xs text-muted">{r.prepMinutes} Min</span>}
                   </span>
-                  <span className="line-clamp-2 text-sm font-bold leading-snug">{r.title}</span>
-                  {r.prepMinutes && <span className="text-xs text-muted">{r.prepMinutes} Min</span>}
                 </Link>
               ))}
             </div>
@@ -81,7 +82,7 @@ export function BausteinSections() {
       {pantryOn && (
         <section className={SECTION} aria-label="Vorrat">
           <div className={HEAD}>
-            <h2 className="text-lg font-bold">Vorrat</h2>
+            <h2 className={SECTION_TITLE}>Vorrat</h2>
             <Link href="/vorrat" className={MORE}>
               Öffnen <ChevronRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
             </Link>

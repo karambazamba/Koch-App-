@@ -86,3 +86,16 @@ describe("v0.31: Kalender, Essen, Rezepte", () => {
     expect(t.title).toBe("Pasta – auf die Liste: Basilikum");
   });
 });
+
+describe("Fehler: Neuer Termin aus dem Kalender nahm „heute“ statt des gewählten Tags", () => {
+  it("vorgegebener Tag gilt, solange im Text kein Tag steht", async () => {
+    const { readTerminText, terminDay } = await import("@/lib/aufgaben/quick");
+    const today = "2026-10-21";
+    const read = (t: string) => readTerminText(t, today).date;
+    expect(terminDay("Zahnarzt 16:00", read("Zahnarzt 16:00"), null, "2026-10-23", today)).toBe("2026-10-23");
+    expect(terminDay("Heute 16:00 Zahnarzt", read("Heute 16:00 Zahnarzt"), null, "2026-10-23", today)).toBe(today);
+    expect(terminDay("Morgen 16:00 Zahnarzt", read("Morgen 16:00 Zahnarzt"), null, "2026-10-23", today)).toBe("2026-10-22");
+    expect(terminDay("Zahnarzt 16:00", read("Zahnarzt 16:00"), "2026-10-25", "2026-10-23", today)).toBe("2026-10-25");
+    expect(terminDay("Zahnarzt 16:00", read("Zahnarzt 16:00"), null, undefined, today)).toBe(today);
+  });
+});

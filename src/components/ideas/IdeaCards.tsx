@@ -4,7 +4,8 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { buttonClass } from "@/components/ui/styles";
 import type { RecipeCategory } from "@/lib/essen/cookbook";
-import { dishEmoji } from "@/lib/essen/dishEmoji";
+import { dishTone } from "@/lib/essen/dishLook";
+import { DishPicture } from "@/components/alltag/DishPicture";
 
 /** Eine Idee, wie sie überall gleich aussieht (Chat, Ideen-Seite, "Was gibt's heute?") */
 export type CardIdea = {
@@ -61,12 +62,7 @@ export function IdeaCards({
         const meta = ideaMeta(idea);
         const body = (
           <>
-            <span
-              className={`flex shrink-0 items-center justify-center rounded-field bg-linear-to-br from-accent-soft to-accent/30 ${dense ? "h-9 w-9 text-xl" : "h-12 w-12 text-[1.75rem]"}`}
-              aria-hidden
-            >
-              {dishEmoji(idea.title, idea.category)}
-            </span>
+            <DishPicture tone={dishTone(idea.title, idea.category)} alt="" small className={`shrink-0 rounded-full ${dense ? "h-9 w-9" : "h-12 w-12"}`} />
             <span className="min-w-0 flex-1">
               <span className={`block truncate font-bold ${dense ? "leading-tight" : "leading-snug"}`}>{idea.title}</span>
               <span className={`flex min-w-0 items-center gap-1 text-sm text-muted ${dense ? "leading-tight" : ""}`}>

@@ -95,6 +95,16 @@ export function readTerminText(text: string, today: string): { title: string; da
   return { title: d.data.title || raw, date: d.data.date ?? d.data.due, time: d.data.time, room: d.raum, label: d.data.label };
 }
 
+/**
+ * Tag für einen neuen Termin: selbst gewählt › im Text genannt › vorgegebener
+ * Tag (z. B. im Kalender gewählt) › heute. Die Erkennung setzt ohne Tagesangabe
+ * "heute" ein – das zählt nur, wenn "heute" wirklich im Text steht.
+ */
+export function terminDay(text: string, readDate: string | undefined, picked: string | null, defaultDate: string | undefined, today: string): string {
+  const fromText = readDate && (readDate !== today || /\bheute\b/i.test(text)) ? readDate : undefined;
+  return picked ?? fromText ?? defaultDate ?? today;
+}
+
 /** Kurzer Tag für Chips: "Freitag" bzw. "Fr 24.10." */
 export function dayChipLabel(iso: string, long = false): string {
   const wd = new Date(`${iso}T12:00:00`).getDay();

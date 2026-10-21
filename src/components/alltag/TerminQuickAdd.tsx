@@ -13,7 +13,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { INPUT_BASE, LABEL, buttonClass, chipClass } from "@/components/ui/styles";
 import { createEntry, type Room } from "@/lib/core/entries";
 import { sanitizeEntry, upsertEntry, type CalendarEntry, type Reminder } from "@/lib/aufgaben/model";
-import { dayChipLabel, frequentTimes, quickTaskData, readTerminText } from "@/lib/aufgaben/quick";
+import { dayChipLabel, frequentTimes, quickTaskData, readTerminText, terminDay } from "@/lib/aufgaben/quick";
 import { useEntries } from "@/lib/aufgaben/store";
 import { addDays, todayIso } from "@/lib/core/now";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
@@ -48,7 +48,7 @@ export function TerminQuickAdd({ onClose, defaultDate }: { onClose: () => void; 
   const workRoom = useWorkRoom() || room === "arbeit";
   const read = readTerminText(text, today);
   // Selbst gewählt geht vor; sonst was im Text steht; sonst der Standard
-  const day = date ?? read.date ?? defaultDate ?? today;
+  const day = terminDay(text, read.date, date, defaultDate, today);
   const clock = time ?? read.time ?? null;
   const where: Room = room ?? read.room;
   const times = useMemo(() => frequentTimes((entries ?? []).flatMap((e) => (e.typ === "termin" ? [e.data.start] : []))), [entries]);
