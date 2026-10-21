@@ -46,6 +46,7 @@ import { isUrgent, itemsForDay, openTaskCount, orderedTasks, taskOverview, upcom
 import { AufgabenSection, TermineSection, type DemoProps } from "./MiniCards";
 import { useDemoDay } from "./useDemoDay";
 import { DemoItemSheet, DemoRow } from "./DemoBits";
+import { EditHeader } from "./EditHeader";
 import { DarkTip } from "./DarkTip";
 import { hideDemoItem, toggleDemoDone } from "@/lib/core/demo";
 import { showDone, showToast } from "@/lib/core/toast";
@@ -104,6 +105,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const tipSeen = useHomeTipSeen();
   const welcomed = useWelcomeFinished();
   const editing = useHomeEditing();
+  const [picking, setPicking] = useState(false);
   const all = tiles ?? DEFAULT_HOME;
   const stock = useStock();
   // Direkt vom Hallo-Bildschirm: Mia fliegt in die Jetzt-Karte, Kacheln erscheinen nacheinander
@@ -309,15 +311,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
       <Pressable onLongPress={() => !editing.on && editing.open()} disabled={editing.on}>
         <div className="flex flex-col gap-3" data-no-swipe={editing.on ? true : undefined}>
           {editing.on ? (
-            <header className="sticky top-0 z-20 -mx-4 flex flex-col gap-0.5 bg-background/95 px-4 pb-2 pt-1 backdrop-blur" aria-label="Startseite bearbeiten">
-              <div className="flex items-center gap-3">
-                <h1 className="flex-1 text-[24px] font-extrabold leading-tight tracking-tight">Startseite bearbeiten</h1>
-                <button type="button" onClick={editing.close} className="h-10 rounded-full bg-accent px-5 text-sm font-bold text-on-accent active:scale-95">
-                  Fertig
-                </button>
-              </div>
-              <p className="text-sm text-muted">Gedrückt halten &amp; ziehen · Größe unten rechts · – entfernt</p>
-            </header>
+            <EditHeader onAdd={() => setPicking(true)} onDone={editing.close} />
           ) : (
             <header className="flex flex-col gap-1 pt-1">
               <h1 className="text-[28px] font-extrabold leading-tight tracking-tight">
@@ -347,7 +341,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
           {!editing.on && demoDay.tiles.length > 0 && <DemoRow ask={demoDay.ask} />}
 
           <div className={arrive ? "tiles-arrive" : undefined}>
-            <HomeBoard tiles={visible} all={all} editing={editing.on} render={renderTile} onExit={editing.close} />
+            <HomeBoard tiles={visible} all={all} editing={editing.on} render={renderTile} picking={picking} onPicking={setPicking} />
           </div>
 
           {demoItem && <DemoItemSheet item={demoItem} today={data.todayIso} onClose={() => setDemoItem(null)} />}
@@ -358,7 +352,8 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
               Startseite bearbeiten
             </button>
           )}
-          {editing.on && <div className="min-h-24 flex-1" onClick={editing.close} aria-hidden />}
+          {/* Freie Fläche unten: Danebentippen beendet (zentral in useHomeEditing) */}
+          {editing.on && <div className="min-h-24 flex-1" aria-hidden />}
         </div>
       </Pressable>
     </>
@@ -367,8 +362,12 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
 
 /**
  * Bearbeiten-Modus: öffnen (lange drücken, Link, Einstellungen/Lotte über
- * `requestHomeEdit`), schließen ("Fertig", Zurück, freie Fläche). Zurück
+ * `requestHomeEdit`), schließen ("Fertig", Zurück, Danebentippen). Zurück
  * (Pfeil/Geste) schließt nur den Modus – dafür ein eigener Verlaufseintrag.
+ * Danebentippen zentral: ein echter Klick (kein Wisch – nach dem Scrollen
+ * schickt der Browser keinen) auf jede freie Fläche beendet; Kacheln (Menü),
+ * Knöpfe, Links, Felder, Fenster und die Mia-Leiste nicht. Der Seiten-Schalter
+ * wechselt wie gewohnt und beendet dabei den Modus.
  */
 function useHomeEditing() {
   const [on, setOn] = useState(false);
@@ -376,6 +375,7 @@ function useHomeEditing() {
   const open = () => {
     if (pushed.current) return;
     buzz();
+    openedAt.current = performance.now();
     setOn(true);
     window.scrollTo({ top: 0 });
     try {
@@ -385,6 +385,7 @@ function useHomeEditing() {
       pushed.current = false;
     }
   };
+  const openedAt = useRef(0);
   const close = () => {
     setOn(false);
     if (pushed.current) {
@@ -407,6 +408,29 @@ function useHomeEditing() {
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
+  }, [on]);
+  const closeRef = useRef(close);
+  useEffect(() => {
+    closeRef.current = close;
+  });
+  useEffect(() => {
+    if (!on) return;
+    const onClick = (e: MouseEvent) => {
+      // Der Klick, der den Modus geöffnet hat (langes Drücken, Link), zählt nicht
+      if (performance.now() - openedAt.current < 600) return;
+      const t = e.target instanceof Element ? e.target : null;
+      if (!t || !t.isConnected) return;
+      if (t.closest('[role="tab"]')) {
+        // Seite wechselt (router.replace) – den Modus still beenden, ohne Zurück
+        pushed.current = false;
+        setOn(false);
+        return;
+      }
+      if (t.closest('[role="dialog"], [role="alertdialog"], [data-unit], [data-lotte-leiste], [data-keep-edit], button, a, input, textarea, select, label')) return;
+      closeRef.current();
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
   }, [on]);
   return { on, open, close };
 }

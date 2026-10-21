@@ -36,6 +36,18 @@ describe("Stilblatt: Farben und Radien nur über Tokens", () => {
     }
   });
 
+  it("Bearbeiten-Modus: Kacheln scrollen nativ (pan-y), nie touch-none (Fehler v0.33: Seite ließ sich kaum scrollen)", () => {
+    const board = SOURCES.find(({ p }) => p.endsWith("alltag/HomeBoard.tsx"))!.s;
+    expect(board).toMatch(/touch-pan-y/);
+    expect(board).not.toMatch(/\btouch-none\b/);
+    expect(board).toMatch(/const HOLD_MS = 3[5-9]\d;/);
+  });
+
+  it("einmalige Hinweise nutzen keinen stillgelegten Speicher-Schlüssel", () => {
+    const hints = SOURCES.find(({ p }) => p.endsWith("core/hints.ts"))!.s;
+    expect(hints).toMatch(/"wasgibts.einmalhinweise"/);
+  });
+
   it("keine dunkle Leiste mehr (bg-bar)", () => {
     expect(SOURCES.filter(({ s }) => /\bbg-bar\b|text-on-bar/.test(s)).map(({ p }) => p)).toEqual([]);
   });

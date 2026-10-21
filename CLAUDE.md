@@ -348,24 +348,37 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   Migration v2→v3: Größen gesetzt, Kladde-Kachel wird Notizen an derselben
   Stelle. Standard sichtbar: Termine, Aufgaben, Essen + Einkauf, Morgen
   (Vorrat nur mit Baustein); Pinnwand/Wetter/Notizen in der Auswahl mit "NEU".
-- Verschieben (v0.23): Finger über Touch-Events (Pointer-Events bricht iOS beim
-  Scrollen ab); das Original-Element bleibt beim Ziehen im DOM (wandert mit
-  gleichem key als gestrichelter Platzhalter an die Zielstelle, flaches
-  2-Spalten-Raster ohne Zeilen-Wrapper), `touchmove` mit `passive: false` auf
-  `document` ab Beginn des Haltens, nach dem Anheben `preventDefault`; im
-  Bearbeiten-Modus `touch-action: none` auf den Kacheln (gescrollt wird über
-  freie Flächen und Auto-Scroll am Rand); kein Wackeln beim Halten/Ziehen;
-  Wackeln auf dem inneren Element, Ziehen außen; Callout/Auswahl aus
-  (`[-webkit-touch-callout:none]`, `select-none`, `contextmenu` verhindert).
-  Absicherung: kurz antippen = Menü (Ganz nach oben · Nach oben · Nach unten ·
-  Größe · Entfernen, `UnitMenu`, jede Auswahl schließt). Drag: Wackeln auf
-  inneres Element, Callout aus, Menü-Absicherung. Test mit echten
-  Touch-Ereignissen (CDP `Input.dispatchTouchEvent`).
+- Verschieben (v0.23, flüssig seit v0.34): Finger über Touch-Events (Pointer-
+  Events bricht iOS beim Scrollen ab); im Bearbeiten-Modus `touch-action:
+  pan-y` auf den Kacheln – Wischen scrollt überall natives mit Schwung, wie
+  auf dem iPhone-Homescreen. Angehoben wird erst nach ruhigem Festhalten
+  (`HOLD_MS` 350, Toleranz 8 px); bewegt sich der Finger vorher, ist es
+  Scrollen (kein Anheben, kein Menü). Ein nicht-passiver `touchmove` auf
+  `document` macht erst NACH dem Anheben `preventDefault` (dann steht die
+  Seite, die Kachel folgt dem Finger). Tippen in eine noch rollende Seite
+  (`FLING_MS` 120 nach dem letzten Scrollen) hält nur an. Das Original-
+  Element bleibt beim Ziehen im DOM (gleicher key, gestrichelter
+  Platzhalter, flaches 2-Spalten-Raster), schwebende Kopie, FLIP, Auto-
+  Scroll am Rand, kein Wackeln beim Halten/Ziehen, Callout/Auswahl aus.
+  Kurz antippen = Menü (Ganz nach oben · Nach oben · Nach unten · Größe ·
+  Entfernen, `UnitMenu`). Test mit echten Touch-Ereignissen (CDP
+  `Input.dispatchTouchEvent`, Durchklick `dragtouch` und `flussig`).
 - Bearbeiten-Modus DIREKT auf der Startseite (`HomeBoard.tsx`, `TodayPage`
   `useHomeEditing`): lange drücken, Link "✎ Startseite bearbeiten",
   Einstellungen (`/profil/startseite` → `requestHomeEdit()` + "/"), Lotte
-  ("Startseite bearbeiten"). Kopf "Startseite bearbeiten" + "Fertig", grau
-  "Gedrückt halten & ziehen · Größe unten rechts · – entfernt". Kacheln
+  ("Startseite bearbeiten"). Kopf sticky (`EditHeader`): links „+ Kachel“
+  (Pille accent-soft, öffnet `TilePicker`), rechts „Fertig“ (orange),
+  darunter Titel „Startseite bearbeiten“ und grau „Festhalten & ziehen ·
+  Danebentippen = fertig“. Beim allerersten Bearbeiten einmal Mias
+  Sprechblase unter „+ Kachel“ („Hier holst du neue Kacheln dazu – z. B.
+  Timer oder Sport.“, weg bei jedem Tipp oder nach 6 s; Merker
+  `wasgibts.einmalhinweise` v1, `core/hints.ts`). Beim Schließen der
+  Auswahl scrollt die Seite zur zuletzt hinzugefügten Kachel, sie leuchtet
+  kurz auf (`.tile-glow`) – mehrere nacheinander hinzufügen geht weiter. Danebentippen beendet (zentral in
+  `useHomeEditing`: ein Klick auf jede freie Fläche – Kopf, Hinweis,
+  Jetzt-Platzhalter, Lücken, Ränder, unten; nicht auf Kacheln, Knöpfe,
+  Links, Felder, Fenster, Mia-Leiste; der Seiten-Schalter wechselt und
+  beendet). Kacheln
   wackeln (±0,6°, abwechselnd), Inhalte `inert`; "–" oben links (Gelöscht ·
   Rückgängig), "S · M · L" unten rechts. Festhalten (0,2 s) und ziehen:
   schwebende Kopie, gestrichelter Platzhalter, andere rutschen (FLIP),

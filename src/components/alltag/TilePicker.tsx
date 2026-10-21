@@ -3,10 +3,12 @@
 // "+ Kachel hinzufügen" im Bearbeiten-Modus: alle Kacheln im 2er-Raster –
 // aktive weiß mit grünem ✓ (Tippen = entfernen, mit "Gelöscht · Rückgängig"),
 // inaktive grau mit "+" (Tippen = hinzufügen, still, landet an ihrem Platz in
-// der Standard-Reihenfolge, in Standard-Größe). Neue Kacheln mit "NEU", Post
-// als "bald".
+// der Standard-Reihenfolge, in Standard-Größe). Beim Schließen scrollt die
+// Seite zur zuletzt hinzugefügten Kachel, sie leuchtet kurz auf. Neue Kacheln
+// mit "NEU", Post als "bald".
 
 import { Box, CalendarClock, CheckCircle2, CloudSun, Dumbbell, ListChecks, Timer, Mail, NotebookPen, Pin, Plus, Refrigerator, ShoppingCart, Sunrise, UtensilsCrossed, type LucideIcon } from "lucide-react";
+import { useRef } from "react";
 import { Sheet } from "@/components/ui/Sheet";
 import { TILE_PLUS_DOT } from "@/components/ui/styles";
 import { HOME_TILES, applyHomeChange, saveHomeTiles, tileMeta, useHomeTiles, type HomeTile, type HomeTileId } from "@/lib/core/homeLayout";
@@ -47,11 +49,17 @@ function setTile(all: HomeTile[], id: HomeTileId, show: boolean) {
 /** Sichtbar auf der Startseite (Bausteine nur, wenn sie an sind) */
 const isActive = (t: HomeTile) => t.visible && !tileMeta(t.id).soon && (!tileMeta(t.id).feature || featureOn(tileMeta(t.id).feature!));
 
-export function TilePicker({ onClose }: { onClose: () => void }) {
+/** `onClosed(id)`: beim Schließen die zuletzt hinzugefügte Kachel (die Seite scrollt hin, sie leuchtet auf) */
+export function TilePicker({ onClose, onClosed }: { onClose: () => void; onClosed?: (lastAdded: HomeTileId) => void }) {
   const all = useHomeTiles();
+  const added = useRef<HomeTileId | null>(null);
   if (!all) return null;
+  const close = () => {
+    onClose();
+    if (added.current) onClosed?.(added.current);
+  };
   return (
-    <Sheet title="Kachel hinzufügen" onClose={onClose} above>
+    <Sheet title="Kachel hinzufügen" onClose={close} above>
       <ul className="grid grid-cols-2 gap-2 pb-3" aria-label="Kacheln">
         {HOME_TILES.filter((meta) => !meta.soon).map((meta) => {
           const tile = all.find((t) => t.id === meta.id);
@@ -63,7 +71,7 @@ export function TilePicker({ onClose }: { onClose: () => void }) {
                 type="button"
                 aria-pressed={active}
                 aria-label={`${meta.label}${active ? " – entfernen" : " – hinzufügen"}`}
-                onClick={() => setTile(all, meta.id, !active)}
+                onClick={() => (setTile(all, meta.id, !active), (added.current = active ? (added.current === meta.id ? null : added.current) : meta.id))}
                 className={`relative flex h-full w-full flex-col items-start gap-1 rounded-card border p-3 text-left transition active:scale-[0.98] ${active ? "border-line bg-surface shadow-card" : "border-transparent bg-segment"}`}
               >
                 <Icon className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
