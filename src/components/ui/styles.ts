@@ -72,7 +72,7 @@ export function tileClass(selected: boolean, tone: "default" | "danger" | "soft"
  * Kachel-Plus (26 px, hellorange). Die Tippfläche ist immer 44 × 44 px.
  */
 export const PAGE_PLUS = "hit flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-accent text-on-accent active:scale-95";
-export const TILE_PLUS_DOT = "flex h-[26px] w-[26px] items-center justify-center rounded-full bg-accent-soft text-accent-strong";
+export const TILE_PLUS_DOT = "flex h-[26px] w-[26px] items-center justify-center rounded-full bg-tile-inner text-tile-accent";
 
 /** Feld-Stil ohne Größe (für schmale Felder mit eigener Breite/Höhe) */
 export const INPUT_BASE =
@@ -87,8 +87,16 @@ export const LABEL = "text-sm font-semibold text-muted";
 /** Abschnitts-Überschrift in einer Seite oder Karte */
 export const SECTION_TITLE = "text-[15px] font-extrabold text-ink";
 
-/** Kachel-Label: 10/800 in Großbuchstaben – nur innerhalb von Kacheln */
-export const TILE_LABEL = "text-[10px] font-extrabold uppercase tracking-wider text-muted";
+/** Kachel-Label: 10/800 in Großbuchstaben – nur innerhalb von Kacheln (Farbe = Kachel-Akzent) */
+export const TILE_LABEL = "text-[10px] font-extrabold uppercase tracking-wider text-tile-label";
+
+/**
+ * Pastell-Kachel (`data-tone="<id>"` dazu): Fläche je Kachel, Label/Icon/Plus
+ * im Kachel-Akzent, Text bleibt dunkel. Innere Karten auf `TILE_INNER`
+ * (weiß halbtransparent). Orange nur für Knöpfe und Mia.
+ */
+export const TILE = "relative rounded-card bg-tile";
+export const TILE_INNER = "rounded-field bg-tile-inner";
 
 /** Grauer Untertitel / Hinweis */
 export const SUBTLE = "text-sm text-muted";

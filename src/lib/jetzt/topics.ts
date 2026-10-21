@@ -43,10 +43,6 @@ export type JetztTopic = {
   target: JetztTarget | null;
 };
 
-/** Farbe der Karte je Tageszeit: morgens warm-gelb, tagsüber orange, abends blau */
-export type JetztTone = "morgen" | "tag" | "abend";
-
-export const jetztTone = (minutes: number): JetztTone => (minutes >= 5 * 60 && minutes < 11 * 60 ? "morgen" : minutes >= 11 * 60 && minutes < 18 * 60 ? "tag" : "abend");
 
 export type JetztTermin = { key: string; title: string; time: string; place?: string; work?: boolean; date: string };
 

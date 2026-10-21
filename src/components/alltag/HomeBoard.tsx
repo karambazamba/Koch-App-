@@ -370,9 +370,15 @@ export function HomeBoard({
 /** Im Bearbeiten-Modus: "–" oben links, S · M · L unten rechts, Inhalt nicht antippbar */
 function EditFrame({ tile, editing, onRemove, onResize, children }: { tile: HomeTile; editing: boolean; onRemove: () => void; onResize: (s: TileSize) => void; children: ReactNode }) {
   const meta = tileMeta(tile.id);
-  if (!editing) return <>{children}</>;
+  // data-tone: Pastell-Farben der Kachel (Fläche, Akzent, innere Karten)
+  if (!editing)
+    return (
+      <div data-tone={tile.id} className="contents">
+        {children}
+      </div>
+    );
   return (
-    <div className="relative min-w-0">
+    <div data-tone={tile.id} className="relative min-w-0">
       <div inert className="pointer-events-none min-h-14 select-none pl-3 pb-2">
         {children ?? <div className="flex h-16 items-center rounded-card border border-line bg-surface px-4 text-sm font-bold text-muted">{meta.label}</div>}
       </div>

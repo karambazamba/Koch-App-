@@ -13,7 +13,7 @@ import { tomorrowLabel, type DayItem } from "@/lib/aufgaben/model";
 import { pinMeta, visiblePins, type PinMessage } from "@/lib/pinnwand";
 import { shortClock } from "@/components/notizen/Schnellnotiz";
 import { hiddenToday, useJetzt } from "@/lib/jetzt/store";
-import { jetztTone, jetztTopics, type JetztInput, type JetztTermin } from "@/lib/jetzt/topics";
+import { jetztTopics, type JetztInput, type JetztTermin } from "@/lib/jetzt/topics";
 import type { HomeTileId } from "@/lib/core/homeLayout";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 import { shopGroups } from "@/lib/einkauf/shopGroups";
@@ -109,5 +109,5 @@ export function useJetztTopics(src: JetztSource) {
     weights: state.weights,
     hidden: hiddenToday(state, src.today),
   };
-  return { on: state.on, topics: jetztTopics(input), tone: jetztTone(src.minutes) };
+  return { on: state.on, topics: jetztTopics(input) };
 }

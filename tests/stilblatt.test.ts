@@ -23,6 +23,19 @@ describe("Stilblatt: Farben und Radien nur über Tokens", () => {
     expect(SOURCES.filter(({ s }) => /\brounded-(?:xl|2xl|3xl)\b/.test(s)).map(({ p }) => p)).toEqual([]);
   });
 
+  it("im Code nie var(--color-…) – die gibt es zur Laufzeit nicht (@theme inline), nur var(--app-…)", () => {
+    // Fehler v0.32: Laden-Punkte in der Einkauf-Kachel blieben unsichtbar
+    expect(SOURCES.filter(({ s }) => /var\(--color-/.test(s)).map(({ p }) => p)).toEqual([]);
+  });
+
+  it("Pastell-Kacheln: Startseiten-Kacheln nutzen TILE statt weißer Karten", () => {
+    for (const f of ["alltag/HomeTiles.tsx", "alltag/MiniCards.tsx", "alltag/PinboardTile.tsx", "alltag/WeatherTile.tsx", "alltag/TimerTile.tsx", "sport/SportTile.tsx"]) {
+      const src = SOURCES.find(({ p }) => p.endsWith(f))!.s;
+      expect(src, f).toMatch(/\bTILE\b/);
+      expect(src, f).not.toMatch(/\$\{CARD\}/);
+    }
+  });
+
   it("keine dunkle Leiste mehr (bg-bar)", () => {
     expect(SOURCES.filter(({ s }) => /\bbg-bar\b|text-on-bar/.test(s)).map(({ p }) => p)).toEqual([]);
   });

@@ -2,7 +2,8 @@
 
 // ESSEN im Beispiel-Tag: das Beispielgericht mit Bild vollflächig, unten ein
 // weicher dunkler Verlauf mit weißer Schrift ("ESSEN · 18:30", Name, "alles im
-// Haus · 25 Min") und dem Schild BEISPIEL. Antippen = Beispiel-Rezept.
+// Haus · 25 Min"). Antippen = Beispiel-Rezept. (Das Schild BEISPIEL steht
+// nur einmal oben in der Beispiel-Zeile.)
 
 import Link from "next/link";
 import { DEMO_DISH } from "@/lib/essen/demoDish";
@@ -20,9 +21,6 @@ export function DemoFoodTile({ half }: { half: boolean }) {
     >
       <DishPicture photo={DEMO_DISH.photo} alt="" className="absolute inset-0" />
       <span className="dish-shade absolute inset-0" aria-hidden />
-      <span className="absolute left-2.5 top-2.5">
-        <DemoBadge />
-      </span>
       <span className="absolute inset-x-0 bottom-0 flex flex-col gap-0.5 p-3 text-on-color">
         <span className="text-[10px] font-extrabold uppercase tracking-wider opacity-90">Essen · {DEMO_DISH.clock}</span>
         <span className={`line-clamp-2 font-extrabold leading-tight ${half ? "text-[16px]" : "text-[20px]"}`}>{r.title}</span>

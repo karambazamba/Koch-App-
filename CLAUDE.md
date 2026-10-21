@@ -108,7 +108,9 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
 - Datenschutz: so wenig Daten wie nötig, besonders bei Kindern; alles löschbar.
 
 ## 7. Design
-- Warmes Off-White, weiße Karten, eine Akzentfarbe (Orange), Linien-Icons
+- Warmes Off-White, Pastell-Kacheln auf der Startseite (feste Palette, siehe
+  v0.33), weiße Karten auf Unterseiten, eine Akzentfarbe (Orange) nur für
+  Knöpfe und Mia, Linien-Icons
   (lucide), Emojis nur sparsam. App-Icon: Lotte als lächelnde weiße
   Sprechblase mit mittiger Spitze auf orangem Verlauf (#F7843E → #EE5F14;
   einzige Quelle `scripts/generate-icons.mjs`, `npm run icons` erzeugt
@@ -421,6 +423,48 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   (`TaskQuickAdd`), einmaliger Hinweis nach dem Kennenlernen, Start-Kacheln
   aus dem Kennenlernen (`homeTilesFor`, in Standard-Reihenfolge).
 
+## Pastell-Kacheln + aufgeräumter Beispiel-Tag (v0.33, Tafel 12+13)
+
+- FESTE REGEL – Palette je Kachel (hell Fläche / Akzent · dunkel Fläche /
+  Akzent): Pinnwand #FBEEF1/#B24A66 · #2B1F24/#E59AB0; Wetter #FFF5D6/#9A7410
+  · #2A2515/#E8C66A; Termine #EDF2FC/#3F5FBF · #1B2130/#9BB2F0; Aufgaben
+  #E9F5EE/#2B8A5E · #18261F/#86D0AC; Essen #FDEEE4/#C4531A · #2B1F18/#F2A57A;
+  Einkauf #EEF4E6/#5E7F2E · #1F2618/#B2CF85; Tipps #F3EEFB/#6B45B5 ·
+  #231E2E/#BBA2EE; Sport #E6F4EC/#2E8B5F · #16251D/#7FCFA6; Vorrat
+  #E8F4F4/#2F7D80 · #152526/#82CBCD; Timer #F5F0E8/#7A6A55 · #25211B/#CDBDA4;
+  Notizen #FFF8E5/#9A7410 · #2A2515/#E8C66A. Kachel-Label und Icon im Akzent,
+  Text bleibt dunkel; innere Karten auf rgba(255,255,255,.72) (dunkel .06);
+  Kachel-Plus weiß halbtransparent mit Plus im Kachel-Akzent. Orange nur für
+  Knöpfe und Mia, Pastell nie für Knöpfe. Neue Kacheln bekommen eine eigene
+  Pastell-Farbe nach diesem Muster.
+- Technik: Tokens `--app-tile-<id>` / `--app-tile-<id>-ac` (hell, nacht,
+  auto) in `globals.css`; `HomeBoard` (`EditFrame`) setzt `data-tone="<id>"`
+  um jede Kachel, daraus `bg-tile`, `text-tile-accent`, `bg-tile-inner`,
+  `text-tile-label`. Außerhalb einer Kachel fallen sie auf Weiß, Hellorange
+  und Grau zurück (Plus/Label wie bisher). Bausteine in `ui/styles.ts`:
+  `TILE`, `TILE_INNER`, `TILE_LABEL`, `TILE_PLUS_DOT`. `PersonAvatar soft` =
+  weiß halbtransparent mit Buchstabe im Akzent (Pinnwand). Im Code nie
+  `var(--color-…)` (gibt es zur Laufzeit nicht), nur `var(--app-…)`.
+- Termine/Aufgaben: Kopf, „+N weitere“ und Plus IN der Kachel; Termine ohne
+  Kästchen (Erledigt über das Menü – auch dort jetzt „Erledigt ·
+  Rückgängig“ wie beim Abhaken); Dringend = kleines rotes „!“
+  (`UrgentMark`). Keine Emojis in Kacheln, Termin-Titeln und Laden-Zeilen
+  (`withoutEmoji` in `core/text.ts`, Läden nur mit Farbpunkt).
+- Jetzt-Karte: Pfirsich-Verlauf (`jetzt-from/to`), Mia 32 px links, oben
+  rechts kursiv „Passt sich deinem Tag an“ (10,5 px, `jetzt-hint`), Titel
+  ohne Emoji, Zeile 2 in Dunkelorange, rechts Punkte und ✕, kein „›“ – die
+  ganze Karte ist antippbar. Die Tageszeit-Farben (`jetztTone`) sind weg.
+- Beispiel-Tag: keine gestrichelten Rahmen, keine BEISPIEL-Schilder an den
+  Kacheln; stattdessen EINE weiße Zeile oben über den Kacheln (`DemoRow`):
+  [BEISPIEL] „So sieht ein Tag aus“ … „Eigenen starten“ (leert die
+  Beispiele); nach dem ersten Eigenen dort „Alle Beispiele entfernen? Ja ·
+  Behalten“. Beispiel-Titel ohne Emojis. Essen-Foto-Kachel und Wetter-Kachel
+  bleiben in ihrer Form (Wetter jetzt pastellgelb).
+- Test: `tests/stilblatt.test.ts` (kein `var(--color-…)`, Kacheln mit
+  `TILE`), `tests/demo.test.ts` (`withoutEmoji`); Durchklick `pastell` im
+  Scratchpad (Farben hell/dunkel, keine Strichel, ein Schild, „Eigenen
+  starten“).
+
 ## Notizen, Einstellungen, Altlasten (v0.32, „Apple-mäßig“ Etappe 7–9)
 
 - Notizen (`NotesView`): oben weiße Karte „Schnell was notieren …“
@@ -552,8 +596,9 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   kein „5/7 geplant“, keine Kategorie-Zähler und Kosten im Wochenplan, kein
   Fortschrittsbalken in der Einkaufsliste, „Erledigte anzeigen“ statt „✓ 3
   erledigt“.
-- Kacheln alle weiß (auch Wetter, Notizen, Sport): Notizen mit Stift, Vorrat
-  „Bald aufbrauchen“ mit 2 Sachen, Einkauf 3 Sachen + „und N weitere“.
+- (Seit v0.33 Pastell-Kacheln statt „alle weiß“, siehe dort.) Notizen mit
+  Stift, Vorrat „Bald aufbrauchen“ mit 2 Sachen, Einkauf 3 Sachen + „und N
+  weitere“.
   Höchstens ein Hinweis unter der Jetzt-Karte. Bearbeiten-Modus: heller
   „–“-Knopf, Auswahl ohne „Post – bald“.
 - Leere Seiten freundlich: Aufgaben mit großer Mia, „Alles erledigt.“ und

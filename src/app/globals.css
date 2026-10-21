@@ -8,6 +8,13 @@
  * Text faint. Keine festen Tailwind-Farben (stone/red/emerald …, black/white).
  */
 @theme inline {
+  --color-tile: var(--tile-bg);
+  --color-tile-accent: var(--tile-ac);
+  --color-tile-inner: var(--tile-inner);
+  --color-tile-label: var(--tile-label);
+  --color-jetzt-from: var(--app-jetzt-from);
+  --color-jetzt-to: var(--app-jetzt-to);
+  --color-jetzt-hint: var(--app-jetzt-hint);
   /* Werte kommen aus der gewählten Ansicht (siehe unten) – nie feste Farben verwenden */
   --color-background: var(--app-background);
   --color-surface: var(--app-surface);
@@ -59,12 +66,6 @@
   --color-phase-sport-ink: var(--app-phase-sport-ink);
   --color-phase-feierabend: var(--app-phase-feierabend);
   --color-phase-feierabend-ink: var(--app-phase-feierabend-ink);
-  --color-jetzt-morgen: var(--app-jetzt-morgen);
-  --color-jetzt-morgen-ink: var(--app-jetzt-morgen-ink);
-  --color-jetzt-tag: var(--app-jetzt-tag);
-  --color-jetzt-tag-ink: var(--app-jetzt-tag-ink);
-  --color-jetzt-abend: var(--app-jetzt-abend);
-  --color-jetzt-abend-ink: var(--app-jetzt-abend-ink);
   --color-shop-1: var(--app-shop-1);
   --color-shop-2: var(--app-shop-2);
   --color-shop-3: var(--app-shop-3);
@@ -142,12 +143,6 @@
   --app-phase-sport-ink: #23794f;
   --app-phase-feierabend: #eee9fb;
   --app-phase-feierabend-ink: #6a52b3;
-  --app-jetzt-morgen: #fdf1c8;
-  --app-jetzt-morgen-ink: #6f540c;
-  --app-jetzt-tag: #fde3cf;
-  --app-jetzt-tag-ink: #9c4314;
-  --app-jetzt-abend: #e1e9f8;
-  --app-jetzt-abend-ink: #2c4a85;
   --app-shop-1: #e0533d;
   --app-shop-2: #e8a33a;
   --app-shop-3: #3f8f5b;
@@ -159,6 +154,33 @@
   --app-shadow-card: 0 1px 2px rgb(31 27 22 / 0.04), 0 2px 8px rgb(31 27 22 / 0.03);
   --app-shadow-sheet: 0 -8px 32px rgb(31 27 22 / 0.12);
   --app-shadow-bar: 0 8px 24px rgb(60 40 20 / 0.14);
+  /* Pastell-Kacheln: Fläche + Akzent (Label, Icon, Plus) */
+  --app-tile-pinnwand: #fbeef1;
+  --app-tile-pinnwand-ac: #b24a66;
+  --app-tile-wetter: #fff5d6;
+  --app-tile-wetter-ac: #9a7410;
+  --app-tile-termine: #edf2fc;
+  --app-tile-termine-ac: #3f5fbf;
+  --app-tile-aufgaben: #e9f5ee;
+  --app-tile-aufgaben-ac: #2b8a5e;
+  --app-tile-essen: #fdeee4;
+  --app-tile-essen-ac: #c4531a;
+  --app-tile-einkauf: #eef4e6;
+  --app-tile-einkauf-ac: #5e7f2e;
+  --app-tile-tipps: #f3eefb;
+  --app-tile-tipps-ac: #6b45b5;
+  --app-tile-sport: #e6f4ec;
+  --app-tile-sport-ac: #2e8b5f;
+  --app-tile-vorrat: #e8f4f4;
+  --app-tile-vorrat-ac: #2f7d80;
+  --app-tile-timer: #f5f0e8;
+  --app-tile-timer-ac: #7a6a55;
+  --app-tile-notizen: #fff8e5;
+  --app-tile-notizen-ac: #9a7410;
+  --app-tile-inner: rgb(255 255 255 / 0.72);
+  --app-jetzt-from: #fff3e8;
+  --app-jetzt-to: #fde2cd;
+  --app-jetzt-hint: #c98e6e;
   color-scheme: light;
 }
 
@@ -213,12 +235,6 @@
   --app-phase-sport-ink: #7fdcb0;
   --app-phase-feierabend: rgb(150 120 230 / 0.2);
   --app-phase-feierabend-ink: #c7b6ff;
-  --app-jetzt-morgen: #3a3120;
-  --app-jetzt-morgen-ink: #f3d98a;
-  --app-jetzt-tag: #3d2a1f;
-  --app-jetzt-tag-ink: #ffbe94;
-  --app-jetzt-abend: #222c40;
-  --app-jetzt-abend-ink: #b7cbf2;
   --app-shop-1: #f07a66;
   --app-shop-2: #f2bd66;
   --app-shop-3: #62b57f;
@@ -230,6 +246,33 @@
   --app-shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
   --app-shadow-sheet: 0 -8px 32px rgb(0 0 0 / 0.5);
   --app-shadow-bar: 0 8px 24px rgb(0 0 0 / 0.45);
+  /* Pastell-Kacheln: Fläche + Akzent (Label, Icon, Plus) */
+  --app-tile-pinnwand: #2b1f24;
+  --app-tile-pinnwand-ac: #e59ab0;
+  --app-tile-wetter: #2a2515;
+  --app-tile-wetter-ac: #e8c66a;
+  --app-tile-termine: #1b2130;
+  --app-tile-termine-ac: #9bb2f0;
+  --app-tile-aufgaben: #18261f;
+  --app-tile-aufgaben-ac: #86d0ac;
+  --app-tile-essen: #2b1f18;
+  --app-tile-essen-ac: #f2a57a;
+  --app-tile-einkauf: #1f2618;
+  --app-tile-einkauf-ac: #b2cf85;
+  --app-tile-tipps: #231e2e;
+  --app-tile-tipps-ac: #bba2ee;
+  --app-tile-sport: #16251d;
+  --app-tile-sport-ac: #7fcfa6;
+  --app-tile-vorrat: #152526;
+  --app-tile-vorrat-ac: #82cbcd;
+  --app-tile-timer: #25211b;
+  --app-tile-timer-ac: #cdbda4;
+  --app-tile-notizen: #2a2515;
+  --app-tile-notizen-ac: #e8c66a;
+  --app-tile-inner: rgb(255 255 255 / 0.06);
+  --app-jetzt-from: #3b2a1f;
+  --app-jetzt-to: #2b211b;
+  --app-jetzt-hint: #c9a088;
   color-scheme: dark;
 }
 
@@ -285,12 +328,6 @@
     --app-phase-sport-ink: #7fdcb0;
     --app-phase-feierabend: rgb(150 120 230 / 0.2);
     --app-phase-feierabend-ink: #c7b6ff;
-    --app-jetzt-morgen: #3a3120;
-    --app-jetzt-morgen-ink: #f3d98a;
-    --app-jetzt-tag: #3d2a1f;
-    --app-jetzt-tag-ink: #ffbe94;
-    --app-jetzt-abend: #222c40;
-    --app-jetzt-abend-ink: #b7cbf2;
     --app-shop-1: #f07a66;
     --app-shop-2: #f2bd66;
     --app-shop-3: #62b57f;
@@ -302,6 +339,33 @@
     --app-shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
     --app-shadow-sheet: 0 -8px 32px rgb(0 0 0 / 0.5);
     --app-shadow-bar: 0 8px 24px rgb(0 0 0 / 0.45);
+    /* Pastell-Kacheln: Fläche + Akzent (Label, Icon, Plus) */
+    --app-tile-pinnwand: #2b1f24;
+    --app-tile-pinnwand-ac: #e59ab0;
+    --app-tile-wetter: #2a2515;
+    --app-tile-wetter-ac: #e8c66a;
+    --app-tile-termine: #1b2130;
+    --app-tile-termine-ac: #9bb2f0;
+    --app-tile-aufgaben: #18261f;
+    --app-tile-aufgaben-ac: #86d0ac;
+    --app-tile-essen: #2b1f18;
+    --app-tile-essen-ac: #f2a57a;
+    --app-tile-einkauf: #1f2618;
+    --app-tile-einkauf-ac: #b2cf85;
+    --app-tile-tipps: #231e2e;
+    --app-tile-tipps-ac: #bba2ee;
+    --app-tile-sport: #16251d;
+    --app-tile-sport-ac: #7fcfa6;
+    --app-tile-vorrat: #152526;
+    --app-tile-vorrat-ac: #82cbcd;
+    --app-tile-timer: #25211b;
+    --app-tile-timer-ac: #cdbda4;
+    --app-tile-notizen: #2a2515;
+    --app-tile-notizen-ac: #e8c66a;
+    --app-tile-inner: rgb(255 255 255 / 0.06);
+    --app-jetzt-from: #3b2a1f;
+    --app-jetzt-to: #2b211b;
+    --app-jetzt-hint: #c9a088;
     color-scheme: dark;
   }
 }
@@ -630,6 +694,32 @@ body {
 }
 
 /* Jetzt-Karte: neues Thema blendet sanft ein (Höhe bleibt) */
+
+/* Pastell-Kacheln: jede Kachel trägt data-tone="<id>"; Fläche, Akzent und
+   innere Karten kommen von dort. Außerhalb einer Kachel: hellorange Plus,
+   graues Label (wie bisher). */
+:root {
+  --tile-bg: var(--app-surface);
+  --tile-ac: var(--app-accent-strong);
+  --tile-inner: var(--app-accent-soft);
+  --tile-label: var(--app-muted);
+}
+[data-tone] {
+  --tile-inner: var(--app-tile-inner);
+  --tile-label: var(--tile-ac);
+}
+[data-tone="pinnwand"] { --tile-bg: var(--app-tile-pinnwand); --tile-ac: var(--app-tile-pinnwand-ac); }
+[data-tone="wetter"] { --tile-bg: var(--app-tile-wetter); --tile-ac: var(--app-tile-wetter-ac); }
+[data-tone="termine"] { --tile-bg: var(--app-tile-termine); --tile-ac: var(--app-tile-termine-ac); }
+[data-tone="aufgaben"] { --tile-bg: var(--app-tile-aufgaben); --tile-ac: var(--app-tile-aufgaben-ac); }
+[data-tone="essen"] { --tile-bg: var(--app-tile-essen); --tile-ac: var(--app-tile-essen-ac); }
+[data-tone="einkauf"] { --tile-bg: var(--app-tile-einkauf); --tile-ac: var(--app-tile-einkauf-ac); }
+[data-tone="tipps"] { --tile-bg: var(--app-tile-tipps); --tile-ac: var(--app-tile-tipps-ac); }
+[data-tone="sport"] { --tile-bg: var(--app-tile-sport); --tile-ac: var(--app-tile-sport-ac); }
+[data-tone="vorrat"] { --tile-bg: var(--app-tile-vorrat); --tile-ac: var(--app-tile-vorrat-ac); }
+[data-tone="timer"] { --tile-bg: var(--app-tile-timer); --tile-ac: var(--app-tile-timer-ac); }
+[data-tone="notizen"] { --tile-bg: var(--app-tile-notizen); --tile-ac: var(--app-tile-notizen-ac); }
+
 @keyframes jetzt-in {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: none; }

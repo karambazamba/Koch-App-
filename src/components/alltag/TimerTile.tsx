@@ -1,17 +1,17 @@
 "use client";
 
-// TIMER – M: Kopf "⏱ TIMER" (+ "2 laufen"), der wichtigste Timer mit
+// TIMER – M: Kopf "TIMER" (+ "2 laufen"), der wichtigste Timer mit
 // Fortschrittsring, Emoji, Restzeit groß, Name "Nudeln · 10 Min", Knöpfe
 // +1 · Pause/Weiter · ✕; weitere Timer als schmale Zeilen, die Stoppuhr; unten
-// Schnellknöpfe 5 · 10 · 15 Min · ⏱ Stoppuhr (lange drücken = eigene Dauer +
-// Name). S: nächster Timer klein, sonst "⏱ Timer starten". Alles rechnet mit
+// Schnellknöpfe 5 · 10 · 15 Min · Stoppuhr (lange drücken = eigene Dauer +
+// Name). S: nächster Timer klein, sonst "Timer starten". Alles rechnet mit
 // der Endzeit (stimmt nach Hintergrund, Sperre, Neustart sofort).
 
 import { useRef, useState } from "react";
 import { Pause, Play, Plus, RotateCcw, Timer as TimerIcon, X } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { QuickButton } from "@/components/ui/QuickButton";
-import { CARD, INPUT, buttonClass, chipClass } from "@/components/ui/styles";
+import { INPUT, TILE, TILE_LABEL, buttonClass, chipClass } from "@/components/ui/styles";
 import type { TileSize } from "@/lib/core/homeLayout";
 import { useNowMs } from "@/lib/core/useNowMs";
 import {
@@ -42,7 +42,7 @@ export function TimerTile({ size = "M" }: { size?: TileSize }) {
   const [open, setOpen] = useState(false);
   const active = Boolean(state && (state.timers.length || state.stopwatch?.startedAt));
   const nowMs = useNowMs(active);
-  if (!state) return <section className={`${CARD} h-24 animate-pulse`} aria-label="Timer" />;
+  if (!state) return <section className={`${TILE} h-24 animate-pulse`} aria-label="Timer" />;
   const timers = sortTimers(state.timers.filter((t) => shownOnTile(t, nowMs)), nowMs);
   const running = timers.filter((t) => !isExpired(t, nowMs) && !isPaused(t)).length;
   const sw = state.stopwatch;
@@ -55,10 +55,10 @@ export function TimerTile({ size = "M" }: { size?: TileSize }) {
   if (size === "S") {
     return (
       <>
-        <section className={`${CARD} relative flex min-h-[92px] flex-col p-3.5`} aria-label="Timer">
+        <section className={`${TILE} flex min-h-[92px] flex-col p-3.5`} aria-label="Timer">
           <button type="button" onClick={() => (main || sw ? setOpen(true) : setCustom(10))} className="flex flex-1 flex-col items-start gap-1 text-left">
-            <span className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-muted">
-              <TimerIcon className="h-3.5 w-3.5 text-accent" strokeWidth={2} aria-hidden />
+            <span className={`flex items-center gap-1.5 ${TILE_LABEL}`}>
+              <TimerIcon className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
               Timer{running > 1 ? ` · ${running} laufen` : ""}
             </span>
             {main ? (
@@ -70,9 +70,9 @@ export function TimerTile({ size = "M" }: { size?: TileSize }) {
                 <span className="truncate text-[13px] text-muted">{main.name}</span>
               </span>
             ) : sw ? (
-              <span className="text-[20px] font-extrabold tabular-nums">⏱ {formatLeft(stopwatchMs(sw, nowMs))}</span>
+              <span className="text-[20px] font-extrabold tabular-nums">{formatLeft(stopwatchMs(sw, nowMs))}</span>
             ) : (
-              <span className="text-[15px] font-bold">⏱ Timer starten</span>
+              <span className="text-[15px] font-bold">Timer starten</span>
             )}
           </button>
           <span className="absolute right-3.5 top-3">
@@ -93,9 +93,9 @@ export function TimerTile({ size = "M" }: { size?: TileSize }) {
 
   return (
     <>
-      <section className={`${CARD} relative flex flex-col gap-2 p-3.5`} aria-label="Timer">
-        <div className="flex items-center gap-1.5 pr-8 text-[10px] font-extrabold uppercase tracking-wider text-muted">
-          <TimerIcon className="h-3.5 w-3.5 text-accent" strokeWidth={2} aria-hidden />
+      <section className={`${TILE} flex flex-col gap-2 p-3.5`} aria-label="Timer">
+        <div className={`flex items-center gap-1.5 pr-8 ${TILE_LABEL}`}>
+          <TimerIcon className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
           <span>Timer</span>
           {running > 1 && <span className="font-semibold normal-case tracking-normal">· {running} laufen</span>}
         </div>
@@ -112,7 +112,7 @@ export function TimerTile({ size = "M" }: { size?: TileSize }) {
           {QUICK.map((m) => (
             <HoldButton key={m} label={`${m} Min`} aria={`Timer ${m} Minuten`} onTap={() => start(m)} onHold={() => setCustom(m)} />
           ))}
-          <HoldButton label="⏱ Stoppuhr" aria="Stoppuhr starten" onTap={() => (stopwatch("start"), buzz())} onHold={() => setCustom(10)} />
+          <HoldButton label="Stoppuhr" aria="Stoppuhr starten" onTap={() => (stopwatch("start"), buzz())} onHold={() => setCustom(10)} />
         </div>
       </section>
       {sheet}
@@ -159,7 +159,7 @@ function MainTimer({ timer, nowMs }: { timer: Timer; nowMs: number }) {
         </span>
       </div>
       <div className="flex shrink-0 items-center gap-1">
-        <button type="button" onClick={() => act((s, n) => plusMinute(s, timer.id, n))} aria-label={`${timer.name}: eine Minute mehr`} className="h-11 min-w-11 rounded-full bg-accent-soft px-2 text-sm font-bold text-accent-strong active:scale-95">
+        <button type="button" onClick={() => act((s, n) => plusMinute(s, timer.id, n))} aria-label={`${timer.name}: eine Minute mehr`} className="h-11 min-w-11 rounded-full bg-tile-inner px-2 text-sm font-bold text-tile-accent active:scale-95">
           +1
         </button>
         {!done && (
@@ -204,7 +204,7 @@ function TimerRow({ timer, nowMs }: { timer: Timer; nowMs: number }) {
 function StopwatchRow({ ms, running }: { ms: number; running: boolean }) {
   return (
     <div className="flex min-h-11 items-center gap-2 border-t border-line pt-1.5">
-      <span aria-hidden>⏱</span>
+      <TimerIcon className="h-4 w-4 shrink-0 text-tile-accent" strokeWidth={2} aria-hidden />
       <span className="flex-1 text-[14px] font-semibold">Stoppuhr</span>
       <span className="text-[15px] font-bold tabular-nums" role="timer" aria-label={`Stoppuhr: ${formatLeft(ms)}`}>
         {formatLeft(ms)}

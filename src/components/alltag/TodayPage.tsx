@@ -45,7 +45,7 @@ import { buzz } from "./actions";
 import { isUrgent, itemsForDay, openTaskCount, orderedTasks, taskOverview, upcomingTermine, type CalendarEntry, type DayItem } from "@/lib/aufgaben/model";
 import { AufgabenSection, TermineSection, type DemoProps } from "./MiniCards";
 import { useDemoDay } from "./useDemoDay";
-import { DemoHint, DemoItemSheet } from "./DemoBits";
+import { DemoItemSheet, DemoRow } from "./DemoBits";
 import { DarkTip } from "./DarkTip";
 import { hideDemoItem, toggleDemoDone } from "@/lib/core/demo";
 import { showDone, showToast } from "@/lib/core/toast";
@@ -328,7 +328,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
             </header>
           )}
 
-          {jetzt.on && (editing.on ? <JetztPlaceholder /> : <JetztCard topics={jetzt.topics} tone={jetzt.tone} name={helperName(data.profile)} onOpen={openTopic} onHide={hideTopic} onSkip={(t) => noteJetztSkip(t.kind)} arrive={arrive} />)}
+          {jetzt.on && (editing.on ? <JetztPlaceholder /> : <JetztCard topics={jetzt.topics} name={helperName(data.profile)} onOpen={openTopic} onHide={hideTopic} onSkip={(t) => noteJetztSkip(t.kind)} arrive={arrive} />)}
 
           {!editing.on && (
             <>
@@ -344,11 +344,12 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
             </>
           )}
 
+          {!editing.on && demoDay.tiles.length > 0 && <DemoRow ask={demoDay.ask} />}
+
           <div className={arrive ? "tiles-arrive" : undefined}>
             <HomeBoard tiles={visible} all={all} editing={editing.on} render={renderTile} onExit={editing.close} />
           </div>
 
-          {!editing.on && demoDay.tiles.length > 0 && <DemoHint ask={demoDay.ask} />}
           {demoItem && <DemoItemSheet item={demoItem} today={data.todayIso} onClose={() => setDemoItem(null)} />}
 
           {!editing.on && (

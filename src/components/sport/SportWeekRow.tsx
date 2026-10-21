@@ -15,11 +15,11 @@ export function SportWeekRow({ dots, onDay, big = false }: { dots: DayDot[]; onD
       {dots.map((d) => (
         <li key={d.date}>
           <button type="button" onClick={() => onDay(d.date)} className="flex min-h-11 w-full flex-col items-center gap-1" aria-label={`${d.label}: ${d.state}${d.time ? ` ${d.time}` : ""}${d.today ? " (heute)" : ""} – öffnen`}>
-            <span className={`text-[11px] font-semibold ${d.today ? "text-accent-strong" : "text-muted"}`}>{d.label}</span>
+            <span className={`text-[11px] font-semibold ${d.today ? "text-tile-accent" : "text-muted"}`}>{d.label}</span>
             <span
               className={`flex ${circle} items-center justify-center rounded-full text-[10px] font-bold ${
                 d.state === "trainiert" ? "bg-good text-on-accent" : d.state === "geplant" ? "border-2 border-good text-good-ink" : "border-2 border-line"
-              } ${d.today ? "ring-2 ring-accent ring-offset-2 ring-offset-surface" : ""}`}
+              } ${d.today ? "ring-2 ring-tile-accent ring-offset-2 ring-offset-tile" : ""}`}
             >
               {d.state === "trainiert" ? <Check className="h-4 w-4" strokeWidth={3} aria-hidden /> : d.state === "geplant" ? clockLabel(d.time ?? "").replace(/:00$/, "") : ""}
             </span>
