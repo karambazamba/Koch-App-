@@ -8,6 +8,7 @@
  * Text faint. Keine festen Tailwind-Farben (stone/red/emerald …, black/white).
  */
 @theme inline {
+  --color-karamba: var(--app-karamba);
   --color-tile: var(--tile-bg);
   --color-tile-accent: var(--tile-ac);
   --color-tile-inner: var(--tile-inner);
@@ -177,6 +178,9 @@
   --app-tile-timer-ac: #7a6a55;
   --app-tile-notizen: #fff8e5;
   --app-tile-notizen-ac: #9a7410;
+  --app-tile-spendentopf: #fbf0d9;
+  --app-tile-spendentopf-ac: #a8730c;
+  --app-karamba: #d6336c;
   --app-tile-inner: rgb(255 255 255 / 0.72);
   --app-jetzt-from: #fff3e8;
   --app-jetzt-to: #fde2cd;
@@ -269,6 +273,9 @@
   --app-tile-timer-ac: #cdbda4;
   --app-tile-notizen: #2a2515;
   --app-tile-notizen-ac: #e8c66a;
+  --app-tile-spendentopf: #2a2312;
+  --app-tile-spendentopf-ac: #e0b45a;
+  --app-karamba: #f06595;
   --app-tile-inner: rgb(255 255 255 / 0.06);
   --app-jetzt-from: #3b2a1f;
   --app-jetzt-to: #2b211b;
@@ -362,6 +369,9 @@
     --app-tile-timer-ac: #cdbda4;
     --app-tile-notizen: #2a2515;
     --app-tile-notizen-ac: #e8c66a;
+    --app-tile-spendentopf: #2a2312;
+    --app-tile-spendentopf-ac: #e0b45a;
+    --app-karamba: #f06595;
     --app-tile-inner: rgb(255 255 255 / 0.06);
     --app-jetzt-from: #3b2a1f;
     --app-jetzt-to: #2b211b;
@@ -719,6 +729,7 @@ body {
 [data-tone="vorrat"] { --tile-bg: var(--app-tile-vorrat); --tile-ac: var(--app-tile-vorrat-ac); }
 [data-tone="timer"] { --tile-bg: var(--app-tile-timer); --tile-ac: var(--app-tile-timer-ac); }
 [data-tone="notizen"] { --tile-bg: var(--app-tile-notizen); --tile-ac: var(--app-tile-notizen-ac); }
+[data-tone="spendentopf"] { --tile-bg: var(--app-tile-spendentopf); --tile-ac: var(--app-tile-spendentopf-ac); }
 
 /* Neu hinzugefügte Kachel leuchtet kurz sanft auf (Bearbeiten-Modus) */
 @keyframes tile-glow {
@@ -728,6 +739,11 @@ body {
 }
 .tile-glow { border-radius: 20px; animation: tile-glow 1.6s ease-out; }
 @media (prefers-reduced-motion: reduce) { .tile-glow { animation: none; } }
+
+/* Spendentopf: eine Münze fällt in den Topf */
+@keyframes pot-coin { 0% { transform: translateY(-14px); opacity: 0; } 30% { opacity: 1; } 80% { transform: translateY(22px); opacity: 1; } 100% { transform: translateY(24px); opacity: 0; } }
+.pot-coin { animation: pot-coin 1.1s ease-in forwards; }
+@media (prefers-reduced-motion: reduce) { .pot-coin { animation: none; opacity: 0; } }
 
 @keyframes jetzt-in {
   from { opacity: 0; transform: translateY(4px); }

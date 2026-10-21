@@ -39,8 +39,8 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   nach 3 Tagen). Startseite wird direkt auf der Startseite bearbeitet
   (wackeln, ziehen, –, S/M/L). Zwei S nebeneinander, einzelne S wird breit.
   Standard-Reihenfolge: Pinnwand + Wetter (S nebeneinander), Termine,
-  Aufgaben, Essen+Einkauf (Paar), Notizen, Vorrat, Morgen (nicht im
-  Standard), Post – neue Kacheln landen dort. Kachel-Anordnung ändert sich
+  Aufgaben, Essen+Einkauf (Paar), Spendentopf, Notizen, Vorrat, Morgen
+  (nicht im Standard), Post – neue Kacheln landen dort. Kachel-Anordnung ändert sich
   nie automatisch. Kein Rückgängig beim Hinzufügen, nur beim Löschen (3 s).
 - Startseite: EINE Anordnung (gespeichert, Normalansicht = Bearbeiten-Modus,
   auch im Beispiel-Tag); den Modus Mitdenkend/Immer gleich gibt es nicht
@@ -435,6 +435,51 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   (`QuickButton`), Schnell-Termin (`TerminQuickAdd`), Schnell-Aufgabe
   (`TaskQuickAdd`), einmaliger Hinweis nach dem Kennenlernen, Start-Kacheln
   aus dem Kennenlernen (`homeTilesFor`, in Standard-Reihenfolge).
+
+## Spendentopf (v0.35, Tafel 14 – ersetzt die „Beitrags-Frage“)
+
+- FESTE REGELN: Es gibt KEINE Zahlung in der App – Beiträge sind nur
+  „zugesagt“ (`pledge.status: "zugesagt"`), bis Beiträge möglich sind. Texte
+  nur aus `POT_TEXTS` (`src/lib/spendentopf/model.ts`): „100 % für Projekte in
+  deiner Region“, „Jeder Euro geht in deine Region“, „Die App ist kostenlos.
+  KARAMBA zahlt Server & KI. Keine Werbung, kein Abo, keine Daten verkauft.“
+  (Seite und Einstellungen → „Über die App“). Nie „an KARAMBA“ – das Geld
+  geht in die Region, verwaltet von einer Stiftung vor Ort (Spendenquittung
+  kommt von der Stiftung). Die App bleibt ohne Beitrag komplett kostenlos.
+- Region: aus dem Wohnort – manuell gewählte Region, sonst PLZ aus dem Profil
+  (`weather.postcode`), sonst Wetter-Ort (`useFamilyRegion`,
+  `regionForPlace`: längster PLZ-Anfang, sonst Ort/Name); jederzeit änderbar
+  über den Chip ▾ („Region wählen“, Suche „Ort oder Postleitzahl“, Status
+  aktiv/bald/sucht Paten). Daten (`regions.ts`, Form wie später Supabase):
+  `regions` (id, name, plz, orte, status, pate_name/-text, stiftung_name),
+  `pot_projects`, `pot_votes` (eine Stimme je Familie und Jahr),
+  `pot_contributions` (nur zugesagt), `region_interest`. Lokal in
+  `wasgibts.spendentopf` v1 (`{region, support, interest, votes, pledge,
+  ask, voteCardHidden}`, in der Sicherung).
+- Ablauf je Jahr (`SCHEDULE`, `potPhase`): Vorschlagen 1.–14.11., Abstimmen
+  15.–30.11. („noch X Tage“ nur dann), Übergabe 12.12. Abstimmen nur in der
+  Abstimm-Zeit; eigene Wahl orange umrandet „✓ Gewählt“.
+- Seite `/spendentopf` (`SpendentopfView`): Region-Chip, goldene Karte „2026
+  BISHER“ + Betrag (Münze fällt bei neuer Zusage), Pate in Pink (`karamba`,
+  #D6336C), Stiftung, „Wohin geht der Topf?“ (Balken, Stimmen), Zeitplan,
+  Beitrag 2 € · 4 € · 7 € (`PledgeChoice`). Region ohne Topf (`NoPot`):
+  gestrichelter Kreis mit blassem Topf, „Bescheid geben, wenn es einen gibt“
+  (Schalter), „<Nachbarregion> unterstützen“, „Pate werden“ (mailto
+  `PATE_MAIL`), unten „Die App bleibt für dich trotzdem komplett kostenlos.“
+- Kachel „spendentopf“ (gold #FBF0D9/#A8730C, dunkel #2A2312/#E0B45A, nur M,
+  Standard an, entfernbar): in der Abstimm-Zeit „Abstimmen“, sonst „Euer
+  Beitrag“ bzw. „Was ist dir die App wert?“. Startseite v4: bestehende
+  Nutzer bekommen die Kachel einmal ans Ende angehängt (übrige Anordnung
+  bleibt). Höchstens EIN Hinweis unter der Jetzt-Karte (`PotHintCard`, vor
+  dem Dunkel-Tipp): in der Abstimm-Zeit „<Betrag> im Topf – stimmt jetzt ab!“
+  (✕ blendet aus), sonst nach 28 Tagen die Beitrags-Frage („Was ist dir die
+  App wert?“, 2/4/7 € · Später = in 4 Wochen wieder, höchstens 3×; nicht im
+  Beispiel-Tag). Nach der Wahl Dank: „Danke! Wir melden uns, sobald Beiträge
+  möglich sind.“
+- Beispiel: Ostholstein (Pate KARAMBA, 2.344 €, Bolzplatz · Lese-Ecke ·
+  Jugendfeuerwehr) trägt das Schild „Beispiel“. Einstellungen: Zeile
+  „Spendentopf“ (Wert = Region). Lotte kennt den Topf noch nicht.
+- Test: `tests/spendentopf.test.ts`; Durchklick `spendentopf` im Scratchpad.
 
 ## Pastell-Kacheln + aufgeräumter Beispiel-Tag (v0.33, Tafel 12+13)
 

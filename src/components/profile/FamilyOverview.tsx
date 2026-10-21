@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMailStyle } from "@/lib/lotte/mailSettings";
-import { Blocks, BookOpen, CalendarDays, ChefHat, ChevronRight, Clock, CloudSun, Database, Dumbbell, LayoutGrid, Mail, Refrigerator, Salad } from "lucide-react";
+import { Blocks, HandCoins, BookOpen, CalendarDays, ChefHat, ChevronRight, Clock, CloudSun, Database, Dumbbell, LayoutGrid, Mail, Refrigerator, Salad } from "lucide-react";
 import { LotteAvatar } from "@/components/LotteAvatar";
 import { PageHeader } from "@/components/PageHeader";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
@@ -18,6 +18,8 @@ import { useSport } from "@/lib/sport";
 import { Group, Row } from "./settings/SettingsParts";
 import { householdTitle } from "./settings/Hubs";
 import { DarstellungGroup } from "./settings/BegleitungSettings";
+import { useFamilyRegion } from "@/lib/spendentopf/store";
+import { POT_TEXTS } from "@/lib/spendentopf/model";
 
 const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
@@ -53,6 +55,7 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
   const kochstilOn = useFeature("kochstil");
   const jetzt = useJetzt();
   const sport = useSport();
+  const potRegion = useFamilyRegion().region;
   const essen = planOn || kochstilOn || unlockedRecipes || unlockedPantry;
 
   return (
@@ -132,6 +135,9 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
 
         <DarstellungGroup profile={profile} />
         <Group title="">
+          <Row href="/spendentopf" icon={HandCoins} title="Spendentopf" value={potRegion?.name}>
+            {POT_TEXTS.everyEuro}
+          </Row>
           <Row href="/profil/mails" icon={Mail} title="Mails" value={mailStyle?.greeting}>
             Gruß und Signatur für deine Mails
           </Row>
@@ -139,6 +145,10 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
             Sichern, einspielen, neu anfangen
           </Row>
         </Group>
+        <section className="flex flex-col gap-1 px-1" aria-label="Über die App">
+          <h2 className="text-[15px] font-extrabold text-ink">Über die App</h2>
+          <p className="text-sm text-muted">{POT_TEXTS.free}</p>
+        </section>
         <p className="text-center text-sm text-muted" data-testid="version-stand">
           {versionLabel()}
         </p>

@@ -25,6 +25,7 @@ const PAGES: Record<string, string> = {
   "/profil/daten": "Daten & App",
   "/profil/produkte": "Produkte & Läden",
   "/pinnwand": "Pinnwand",
+  "/spendentopf": "Spendentopf",
 };
 
 const TABS: Record<string, string> = { kalender: "Kalender", woche: "Kalender", essen: "Essen" };

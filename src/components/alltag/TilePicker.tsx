@@ -7,7 +7,7 @@
 // Seite zur zuletzt hinzugefügten Kachel, sie leuchtet kurz auf. Neue Kacheln
 // mit "NEU", Post als "bald".
 
-import { Box, CalendarClock, CheckCircle2, CloudSun, Dumbbell, ListChecks, Timer, Mail, NotebookPen, Pin, Plus, Refrigerator, ShoppingCart, Sunrise, UtensilsCrossed, type LucideIcon } from "lucide-react";
+import { Box, HandCoins, CalendarClock, CheckCircle2, CloudSun, Dumbbell, ListChecks, Timer, Mail, NotebookPen, Pin, Plus, Refrigerator, ShoppingCart, Sunrise, UtensilsCrossed, type LucideIcon } from "lucide-react";
 import { useRef } from "react";
 import { Sheet } from "@/components/ui/Sheet";
 import { TILE_PLUS_DOT } from "@/components/ui/styles";
@@ -30,6 +30,7 @@ const TILE_ICONS: Record<HomeTileId, LucideIcon> = {
   vorrat: Refrigerator,
   morgen: Sunrise,
   post: Mail,
+  spendentopf: HandCoins,
 };
 
 /** Kachel hinzufügen (still) bzw. entfernen (mit Rückgängig) */
