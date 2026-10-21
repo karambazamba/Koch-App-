@@ -192,7 +192,7 @@ function describe(
       return { opId: op.id, group: "Kochbuch", order: 10_000, label: "neues Rezept", before: null, after: op.recipe.title, category: op.recipe.category, newRecipe: op.recipe };
     case "add_shopping": {
       const section = SECTIONS.find((s) => s.value === op.section)?.label ?? "";
-      const forWhat = [op.day ? `für ${op.day}` : "", op.dish ? `(${op.dish})` : ""].filter(Boolean).join(" ");
+      const forWhat = [op.day ? `für ${op.day}` : "", op.dish ? `(${op.dish})` : "", op.shop ? `bei ${op.shop}` : ""].filter(Boolean).join(" ");
       return { opId: op.id, group: "Einkaufsliste", order: 20_000, label: section, before: null, after: [op.amount, op.name, forWhat].filter(Boolean).join(" ") };
     }
     case "remove_shopping":

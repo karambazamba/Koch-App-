@@ -4,6 +4,7 @@
 const PAGES: Record<string, string> = {
   "/aufgaben": "Aufgaben",
   "/einkaufsliste": "Einkauf",
+  "/einkaufsliste/laden": "Einkaufen",
   "/kochbuch": "Rezepte",
   "/kochbuch/rezept": "Rezept",
   "/kochbuch/kochen": "Kochen",

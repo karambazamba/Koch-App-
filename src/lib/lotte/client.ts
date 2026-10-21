@@ -23,7 +23,7 @@ import { saveProfile } from "../einstellungen/profileStore";
 import { helperNote, type HelperPatch } from "./helperTools";
 import { loadSpeechSettings, saveSpeechSettings } from "./speech";
 import { addPantryItems, loadPantry, replacePantry } from "../essen/pantry";
-import { replaceShoppingLists } from "../einkauf/shoppingList";
+import { loadShoppingSettings, replaceShoppingLists, setItemShop } from "../einkauf/shoppingList";
 import { addWish, loadWishes, restoreWishes } from "../essen/wishes";
 import { replaceWeekPlans, toIsoDate, weekStartFor } from "../essen/weekPlan";
 import { applyOps, INSTANT_OP_TYPES, selectedOps, weekOf, type AssistantData, type ChangeOp } from "./ops";
@@ -545,6 +545,12 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
   const undoSide = commitSideOps(chosen, current.profile.persons[0]?.name.trim() || "Ich");
   const undoDay: (() => void)[] = [];
   for (const op of chosen) {
+    if (op.type === "add_shopping" && op.shop) {
+      // Laden für den Artikel merken (Einkauf nach Läden)
+      const before = loadShoppingSettings().itemShops[op.name.trim().toLowerCase()] ?? "";
+      setItemShop(op.name, op.shop);
+      undoDay.push(() => setItemShop(op.name, before));
+    }
     if (op.type === "add_training") undoDay.push(addTraining(op.training).undo);
     else if (op.type === "set_sport_goal") undoDay.push(setSportGoal(op.goal));
   }

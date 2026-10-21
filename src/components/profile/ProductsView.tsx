@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ArrowRight, Plus, Trash2 } from "lucide-react";
+import { shopTone } from "@/lib/einkauf/shopGroups";
 import { PageHeader } from "@/components/PageHeader";
 import { CARD, CARD_LIST, INPUT_BASE, PAGE_MAIN, SECTION_TITLE, SUBTLE, buttonClass, chipClass } from "@/components/ui/styles";
 import { SHOP_SUGGESTIONS, addShop, removeProduct, removeShop, setProduct, useShoppingSettings } from "@/lib/einkauf/shoppingList";
@@ -67,14 +68,17 @@ export function ProductsView() {
         </form>
 
         <h2 className={SECTION_TITLE}>Eure Läden</h2>
+        <p className="-mt-2 text-sm text-muted">In der Einkaufsliste „Einkaufen bei …“ antippen – dann zeige ich nur, was es dort gibt, und merke mir, was du sonst noch mitnimmst.</p>
         <div className="flex flex-wrap gap-2">
           {SHOP_SUGGESTIONS.map((s) => (
-            <span key={s} className={chipClass(false, "muted")}>
+            <span key={s} className={`${chipClass(false, "muted")} gap-1.5`}>
+              <ShopDot shop={s} />
               {s}
             </span>
           ))}
           {settings.shops.map((s) => (
-            <span key={s} className={`${chipClass(true)} pr-1`}>
+            <span key={s} className={`${chipClass(true)} gap-1.5 pr-1`}>
+              <ShopDot shop={s} />
               {s}
               <button type="button" onClick={() => removeShop(s)} aria-label={`Laden ${s} entfernen`} className="flex h-6 w-6 items-center justify-center">
                 <Trash2 className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
@@ -100,3 +104,6 @@ export function ProductsView() {
     </div>
   );
 }
+
+/** Fester Farbpunkt je Laden (keine Logos) */
+const ShopDot = ({ shop }: { shop: string }) => <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: `var(--app-shop-${shopTone(shop)})` }} aria-hidden />;

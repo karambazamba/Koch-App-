@@ -11,6 +11,8 @@ import { BAUSTEINE, bausteinOf, featureOn, setFeature } from "@/lib/core/feature
 import { changeHome, describeHomeChange, requestHomeEdit, unlockHomeTile } from "@/lib/core/homeLayout";
 import { addPin, changePins, createPin, isPinboardQuery, loadPins, pinWriteCommand, visiblePins } from "@/lib/pinnwand";
 import { dayAnswer, umbrellaAnswer, weatherQuestion } from "@/lib/wetter/forecast";
+import { allShops, loadShoppingSettings } from "@/lib/einkauf/shoppingList";
+import { shopModeHref, shopModeRequest } from "@/lib/einkauf/shopMode";
 import { tipQuestion } from "@/lib/tipps/question";
 import { answerTips } from "@/lib/tipps/model";
 import { knownTipsMode, loadTipsWindow, unlockTips } from "@/lib/tipps/client";
@@ -350,6 +352,16 @@ export function bausteinRule(ctx: RuleContext, t: string): boolean {
   setInput("");
   setFeature(cmd.feature, cmd.on);
   localTurn(t, cmd.on ? `Erledigt ✓ ${b.where}` : `Erledigt ✓ ${b.name} ist aus – die Daten bleiben.`, () => setFeature(cmd.feature, !cmd.on));
+  return true;
+}
+
+/** „Ich bin bei REWE“, „Ich geh zu Lidl einkaufen“ → Einkaufsmodus für diesen Laden */
+export function shopModeRule(ctx: RuleContext, t: string): boolean {
+  const shop = shopModeRequest(t, allShops(loadShoppingSettings()));
+  if (!shop) return false;
+  localReplyOf(ctx)(t, `Viel Spaß bei ${shop}! Ich zeig dir nur, was es dort gibt – und merke mir, was du sonst noch mitnimmst.`);
+  ctx.router.push(shopModeHref(shop));
+  ctx.onClose();
   return true;
 }
 
