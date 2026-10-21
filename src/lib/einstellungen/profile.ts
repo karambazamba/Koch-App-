@@ -281,7 +281,7 @@ export type PauseSettings = { from: string; until: string | null };
 export type WeatherSettings = { consent: boolean; postcode: string };
 
 export type HouseholdProfile = {
-  version: 19;
+  version: 20;
   householdName: string;
   adults: number;
   kids: number;
@@ -322,8 +322,10 @@ export type HouseholdProfile = {
   householdType: HouseholdType;
   /** Thermomix bzw. Küchenmaschine mit Kochfunktion (Profil v14) */
   kitchenMachine: KitchenMachine;
-  /** Ansicht (Profil v15, Standard "warm") */
+  /** Ansicht (Profil v15, Standard "warm" = Hell) */
   theme: AppTheme;
+  /** Ansicht selbst gewählt (Profil v20) – sonst bleibt es bei Hell */
+  themeSet: boolean;
   /** Wie oft sich Lotte meldet (Profil v15, Standard "normal") */
   helperMode: HelperMode;
   /** Darstellung (Profil v15, Standard "einfach") */
@@ -478,7 +480,7 @@ export function createPerson(role: PersonRole): Person {
 
 export function createEmptyProfile(): HouseholdProfile {
   return {
-    version: 19,
+    version: 20,
     householdName: "",
     adults: 2,
     kids: 1,
@@ -513,7 +515,8 @@ export function createEmptyProfile(): HouseholdProfile {
     tips: "ab_und_zu",
     householdType: "familie",
     kitchenMachine: "keine",
-    theme: "auto",
+    theme: "warm",
+    themeSet: false,
     helperMode: "normal",
     display: "einfach",
     weekendIdeas: true,

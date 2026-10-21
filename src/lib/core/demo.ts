@@ -15,7 +15,17 @@ export type DemoTile = "termine" | "aufgaben" | "pinnwand" | "einkauf";
 const TILES: DemoTile[] = ["termine", "aufgaben", "pinnwand", "einkauf"];
 const DAYS = 3;
 
-export type DemoState = { version: 1; since: string; cleared: DemoTile[]; done: string[] };
+export type DemoState = {
+  version: 1;
+  since: string;
+  cleared: DemoTile[];
+  /** Abgehakt angezeigt (App kennenlernen ✓) */
+  done: string[];
+  /** Abgehakt und weich verschwunden */
+  gone: string[];
+  /** Schon gefragt: "Alle Beispiele entfernen?" */
+  asked: boolean;
+};
 
 const store = createLocalStore("wasgibts.beispiel", (raw: unknown): DemoState | null => {
   if (!raw || typeof raw !== "object" || (raw as DemoState).version !== 1) return null;
@@ -26,12 +36,14 @@ const store = createLocalStore("wasgibts.beispiel", (raw: unknown): DemoState | 
     since: d.since,
     cleared: Array.isArray(d.cleared) ? d.cleared.filter((t): t is DemoTile => TILES.includes(t)) : [],
     done: Array.isArray(d.done) ? d.done.filter((x) => typeof x === "string") : [],
+    gone: Array.isArray(d.gone) ? d.gone.filter((x) => typeof x === "string") : [],
+    asked: d.asked === true,
   };
 });
 
 /** Beim allerersten Start (nach "Los geht's") */
 export function startDemo() {
-  store.save({ version: 1, since: todayIso(), cleared: [], done: ["beispiel:a1"] });
+  store.save({ version: 1, since: todayIso(), cleared: [], done: ["beispiel:a1"], gone: [], asked: false });
 }
 
 /** Welche Kacheln gerade Beispiele zeigen (leer = keine) */
@@ -58,6 +70,27 @@ export function toggleDemoDone(key: string) {
   if (!s) return;
   store.save({ ...s, done: s.done.includes(key) ? s.done.filter((k) => k !== key) : [...s.done, key] });
 }
+
+/** Beispiel abgehakt: verschwindet (wie echte Einträge); gibt das Zurücknehmen zurück */
+export function hideDemoItem(key: string): () => void {
+  const s = store.load();
+  if (!s) return () => {};
+  store.save({ ...s, gone: [...new Set([...s.gone, key])] });
+  return () => {
+    const now = store.load();
+    if (now) store.save({ ...now, gone: now.gone.filter((k) => k !== key) });
+  };
+}
+
+/** Nach dem ersten eigenen Termin/der ersten eigenen Aufgabe: gefragt (ja oder nein) */
+export function markDemoAsked() {
+  const s = store.load();
+  if (s && !s.asked) store.save({ ...s, asked: true });
+}
+
+/** Frage "Alle Beispiele entfernen?" zeigen: Termine oder Aufgaben haben Eigenes, andere Beispiele sind noch da */
+export const askRemoveAll = (state: DemoState | null, tiles: DemoTile[]) =>
+  Boolean(state && !state.asked && (state.cleared.includes("termine") || state.cleared.includes("aufgaben")) && tiles.length > 0);
 
 export const clearDemoStore = () => store.clear();
 

@@ -28,4 +28,4 @@ export function applyTheme(theme: AppTheme) {
  * Läuft vor dem ersten Zeichnen (Inline-Skript im <head>), damit die Seite
  * nicht kurz in der falschen Ansicht aufblitzt. Liest das Profil direkt.
  */
-export const THEME_BOOT_SCRIPT = `(function(){try{var p=JSON.parse(localStorage.getItem("familienkueche.haushaltsprofil")||"null");var t=p&&p.theme;if(t==="frisch")t="auto";if(t==="nacht"||t==="auto"||t==="warm")document.documentElement.dataset.theme=t;else if(p)document.documentElement.dataset.theme=p.version>=19?"auto":"warm";}catch(e){}})();`;
+export const THEME_BOOT_SCRIPT = `(function(){try{var p=JSON.parse(localStorage.getItem("familienkueche.haushaltsprofil")||"null");var t=p&&p.theme;if(t==="frisch")t="auto";if(t==="nacht"||t==="auto"||t==="warm")document.documentElement.dataset.theme=t;else if(p)document.documentElement.dataset.theme="warm";}catch(e){}})();`;

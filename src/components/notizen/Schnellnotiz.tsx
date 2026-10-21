@@ -105,7 +105,7 @@ export function SchnellnotizSheet({ name, onClose }: { name: string; onClose: ()
         <div className="flex items-center gap-2">
           <PenLine className="h-5 w-5 text-schnellnotiz-ink" strokeWidth={2.25} aria-hidden />
           <h2 className="flex-1 text-xl font-extrabold tracking-tight">Schnellnotiz</h2>
-          <button type="button" onClick={onClose} className="h-10 rounded-full bg-bar px-5 text-sm font-bold text-on-bar active:scale-95">
+          <button type="button" onClick={onClose} className="h-10 rounded-full bg-accent px-5 text-sm font-bold text-on-accent active:scale-95">
             Fertig
           </button>
         </div>

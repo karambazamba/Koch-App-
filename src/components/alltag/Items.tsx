@@ -13,7 +13,7 @@ import { clockLabel } from "@/lib/aufgaben/answers";
 import { isUrgent, moveItem, REMINDERS, removeItem, repeatLabel, setDone, setReminder, setUrgent, type DayItem } from "@/lib/aufgaben/model";
 import { UrgentMark } from "./UrgentMark";
 import { addDays } from "@/lib/core/now";
-import { act, buzz } from "./actions";
+import { LEAVE_MS, act, buzz } from "./actions";
 import { EntryForm } from "./EntryForm";
 
 /** Unterzeile: Etikett · Erinnerung · Frist · "von gestern" · Wiederholung */
@@ -46,9 +46,9 @@ function ItemRow({ item, onOpen }: { item: DayItem; onOpen: (item: DayItem) => v
     setPopping(true);
     timer.current = setTimeout(() => {
       timer.current = null;
-      act((list, stamp) => setDone(list, item, true, stamp));
+      act((list, stamp) => setDone(list, item, true, stamp), item.title, { done: true });
       setPopping(false);
-    }, 1000);
+    }, LEAVE_MS);
   };
   const sub = subline(item);
   return (

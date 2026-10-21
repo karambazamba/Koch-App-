@@ -76,7 +76,7 @@ export function TilePicker({ onClose }: { onClose: () => void }) {
                   {active ? (
                     <CheckCircle2 className="h-5 w-5 text-emerald-600" strokeWidth={2.25} aria-hidden />
                   ) : meta.soon ? null : (
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-bar text-on-bar">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent text-on-accent">
                       <Plus className="h-4 w-4" strokeWidth={2.75} aria-hidden />
                     </span>
                   )}

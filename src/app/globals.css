@@ -57,6 +57,7 @@
   --radius-card: 1.375rem;
   --shadow-card: var(--app-shadow-card);
   --shadow-sheet: var(--app-shadow-sheet);
+  --shadow-bar: var(--app-shadow-bar);
 
   --font-sans: var(--font-jakarta);
 }
@@ -79,6 +80,8 @@
   --app-on-accent: #ffffff;
   --app-shadow-card: 0 1px 2px rgb(31 27 22 / 0.04), 0 2px 8px rgb(31 27 22 / 0.03);
   --app-shadow-sheet: 0 -8px 32px rgb(31 27 22 / 0.12);
+  /* Helle, schwebende Mia-Leiste */
+  --app-shadow-bar: 0 8px 24px rgb(60 40 20 / 0.14);
   --app-bar: #1f1b17;
   --app-on-bar: #ffffff;
   --app-segment: #ebe6df;
@@ -127,6 +130,7 @@
   --app-on-accent: #1c1206;
   --app-shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
   --app-shadow-sheet: 0 -8px 32px rgb(0 0 0 / 0.5);
+  --app-shadow-bar: 0 8px 24px rgb(0 0 0 / 0.45);
   --app-bar: #2e3238;
   --app-on-bar: #f2eee9;
   --app-segment: #2c3036;
@@ -189,6 +193,7 @@
     --app-on-accent: #1c1206;
     --app-shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
     --app-shadow-sheet: 0 -8px 32px rgb(0 0 0 / 0.5);
+  --app-shadow-bar: 0 8px 24px rgb(0 0 0 / 0.45);
     --app-bar: #2e3238;
     --app-on-bar: #f2eee9;
     --app-segment: #2c3036;
@@ -288,6 +293,13 @@ body {
   from {
     opacity: 0;
     transform: translateX(-28px);
+  }
+}
+/* Abgehakt: weich aus der Kachel */
+@keyframes card-out {
+  to {
+    opacity: 0;
+    transform: scale(0.96);
   }
 }
 @keyframes card-in {
@@ -494,16 +506,14 @@ body {
   }
 }
 
-/* Statusleiste (Safe-Area oben): ruhiger Hintergrund, durchscheinend mit Weichzeichner – hell und dunkel */
+/* Statusleiste (Safe-Area oben): deckender Hintergrund in Seitenfarbe – beim Scrollen läuft nichts unter die Uhrzeit (hell und dunkel) */
 .status-veil {
   position: fixed;
   inset-inline: 0;
   top: 0;
   z-index: 60;
   height: env(safe-area-inset-top, 0px);
-  background: color-mix(in srgb, var(--color-background) 82%, transparent);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
+  background: var(--color-background);
   pointer-events: none;
 }
 
