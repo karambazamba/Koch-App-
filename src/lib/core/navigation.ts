@@ -13,6 +13,8 @@ type NavState = { stack: string[]; scroll: Record<string, number> };
 let state: NavState = { stack: [], scroll: {} };
 let lastHistoryCall: "push" | "replace" | null = null;
 let popPending = false;
+/** Reiter-Wechsel auf der Startseite: Scrollhöhe regelt der Pager selbst */
+let keepScroll = false;
 let installed = false;
 
 const listeners = new Set<() => void>();
@@ -110,12 +112,13 @@ export function onRouteChange(url: string) {
     stack.push(url);
     // Neue Ebene: alte Scrollhöhe dieser Tiefe vergessen, oben starten
     delete state.scroll[topKey()];
-    window.scrollTo(0, 0);
+    if (!keepScroll) window.scrollTo(0, 0);
   } else {
     // Neu geladen: an der gemerkten Stelle weiter
     restoreScroll(state.scroll[topKey()] ?? 0);
   }
   lastHistoryCall = null;
+  keepScroll = false;
   for (const fn of listeners) fn();
   // Einträge tiefer als der Verlauf aufräumen
   for (const key of Object.keys(state.scroll)) if (Number(key.split(":")[0]) >= state.stack.length) delete state.scroll[key];
@@ -157,6 +160,11 @@ function restoreScroll(y: number) {
 /** Die nächste Navigation ersetzt den aktuellen Eintrag (router.replace) */
 export function expectReplace() {
   lastHistoryCall = "replace";
+}
+
+/** Die nächste Navigation ist ein Reiter-Wechsel (Kalender · Heute · Essen): nicht nach oben springen */
+export function expectTabSwitch() {
+  keepScroll = true;
 }
 
 /** Gibt es in der App eine Ebene, zu der man zurückkann? */

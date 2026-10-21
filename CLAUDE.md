@@ -156,6 +156,8 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   KI funktionieren. Zugangscode (APP_ACCESS_CODE) und Tageslimit gelten für
   alle KI-Aufrufe.
 - Zurück = eine Ebene zurück, Pfeil und Geste identisch, Scrollposition bleibt.
+  Kalender und Essen zählen als eine Ebene unter Heute: Zurück führt von dort
+  immer zu Heute (nie zu einer alten Unterseite).
 - Eingabefelder mindestens 16px Schrift (kein iOS-Zoom), Safe-Areas beachten.
   Weiter/Zurück-Buttons am Inhaltsende, nicht fixiert.
 - Neue Farben/Komponenten immer über die Design-Tokens.
@@ -1137,8 +1139,19 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   Vergangene Termine und Serien-Tage verschwinden leise.
 - Seiten (`HomePager`): Leiste "Woche · Heute · Essen" (seit v0.31 „Kalender ·
   Heute · Essen“), Wechsel per Tipp
-  oder Wischen (nicht in Feldern/`data-no-swipe`), `?seite=woche|essen` per
-  `router.replace`, Scrollhöhe je Seite gemerkt, keine Seiten-Punkte.
+  oder Wischen (nicht in Feldern/`data-no-swipe`/Fenstern), Scrollhöhe je Seite
+  gemerkt, keine Seiten-Punkte. Seit v0.39 wie eine iPhone-App
+  (`usePagerSwipe`): die drei Seiten liegen nebeneinander (Nachbarn kurz nach
+  dem Start vorgerendert, `fixed` auf ihrer gemerkten Scrollhöhe), Richtung
+  einmal pro Geste (> 10 px, mehr waagerecht als senkrecht), die Seite folgt
+  1:1 dem Finger (nur transform, nicht-passiver `touchmove` erst ab
+  Waagerechte, kein React-Rendern beim Wischen), Wechsel ab 25 % Breite oder
+  > 0,35 px/ms (`swipeDecision`), sonst zurückfedern, 280 ms weiche Kurve,
+  Gummiband am Rand, Segment-Schalter gleitet mit, „Bewegung reduzieren“ =
+  kurzes Überblenden. Verlauf: Heute → Kalender/Essen = EIN Eintrag
+  (`router.push`), Kalender ↔ Essen ersetzen, zu Heute = `router.back()`
+  (`expectTabSwitch` in `navigation.ts`: kein Sprung nach oben). Test:
+  Durchklick `wischen` (CDP-Touch).
   - Heute (`TodayPage`): "Guten Morgen/Hallo/Guten Abend, <Name>." (bis 11/
     18 Uhr), Datum, EIN Satz von Lotte (`todaySentence`, z. B. "Ruhiger Tag:
     2 Termine, eine Aufgabe und abends Gemüsepfanne.") oder eine fällige

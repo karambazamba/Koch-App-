@@ -428,16 +428,10 @@ body {
 }
 
 /* Seitenwechsel (Woche · Heute · Essen) und Abhaken */
-@keyframes page-from-right {
+/* Seiten der Startseite: bei „Bewegung reduzieren“ nur kurz überblenden */
+@keyframes pager-fade {
   from {
     opacity: 0;
-    transform: translateX(28px);
-  }
-}
-@keyframes page-from-left {
-  from {
-    opacity: 0;
-    transform: translateX(-28px);
   }
 }
 /* Abgehakt: weich aus der Kachel */
@@ -544,8 +538,8 @@ body {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .motion-page {
-    animation: none !important;
+  .pager-page[role="tabpanel"] {
+    animation: pager-fade 0.15s ease-out;
   }
 }
 
