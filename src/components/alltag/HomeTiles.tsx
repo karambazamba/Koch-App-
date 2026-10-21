@@ -218,8 +218,8 @@ export function NotesTile({ name, size = "M" }: { name: string; size?: TileSize 
   const [open, setOpen] = useState(false);
   const lines = (schnellnotiz?.text ?? "").split(/\n/).map((l) => l.trim()).filter(Boolean);
   const sorted = notes ? sortNotes(notes) : [];
-  const pinned = sorted.filter((n) => n.data.pinned);
-  const newest = [...(notes ?? [])].sort((a, b) => b.geaendert.localeCompare(a.geaendert)).filter((n) => !n.data.pinned).slice(0, 3);
+  const pinned = sorted.filter((n) => n.data.pinned && !n.data.schnell);
+  const newest = [...(notes ?? [])].sort((a, b) => b.geaendert.localeCompare(a.geaendert)).filter((n) => !n.data.pinned && !n.data.schnell).slice(0, 3);
   const shown = lines.slice(0, size === "S" ? 2 : 3);
   return (
     <>

@@ -1,17 +1,6 @@
-import { WeekendEditView } from "@/components/profile/AreaEditViews";
-import { FeatureGate } from "@/components/FeatureGate";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Wochenende" };
-
-function PageContent() {
-  return <WeekendEditView />;
-}
-
-// Sichtbar, wenn der passende Baustein an ist (Einstellungen → Bausteine)
+// Früher Wochenend-Stil – gehört jetzt zum Kochstil
 export default function Page() {
-  return (
-    <FeatureGate feature="kochstil">
-      <PageContent />
-    </FeatureGate>
-  );
+  redirect("/profil/kochstil");
 }

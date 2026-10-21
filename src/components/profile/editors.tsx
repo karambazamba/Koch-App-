@@ -7,9 +7,8 @@ import { AlertTriangle, Backpack, Baby, Briefcase, CheckCircle2, Home, Moon, Ref
 import { ChoiceGroup } from "@/components/form/ChoiceGroup";
 import { NumberStepper } from "@/components/form/NumberStepper";
 import { TagInput } from "@/components/form/TagInput";
-import { BegleitungPicker } from "@/components/begleitung/BegleitungPicker";
 import { CARD, INPUT_BASE, NOTE, WARNING, tileClass } from "@/components/ui/styles";
-import { COMMON_ALLERGIES, KID_AGE_GROUP_LABELS, LIMITS, WEEKDAYS, isWishDayEligible, personLabel, wishDayOrder, type HelperSettings, type HouseholdProfile, type KidAgeGroup, type Person, type MealTime, type WarmMealSchedule, type WeekdayLunch, type WeekRules, type WishDaySettings } from "@/lib/einstellungen/profile";
+import { COMMON_ALLERGIES, KID_AGE_GROUP_LABELS, LIMITS, WEEKDAYS, isWishDayEligible, personLabel, wishDayOrder, type HouseholdProfile, type KidAgeGroup, type Person, type MealTime, type WarmMealSchedule, type WeekdayLunch, type WeekRules, type WishDaySettings } from "@/lib/einstellungen/profile";
 
 const FAVORITE_SUGGESTIONS = [
   "Spaghetti Bolognese",
@@ -441,28 +440,6 @@ export function WishDayEditor({
           </p>
         </>
       )}
-    </section>
-  );
-}
-
-/**
- * "Wer soll dir helfen?" – Mia, Theo oder ein eigener Name mit Art
- * (Assistentin/Assistent, bestimmt Anrede und Stimme) und Icon-Farbe.
- */
-export function HelperEditor({
-  helper,
-  onChange,
-}: {
-  helper: HelperSettings;
-  onChange: (helper: HelperSettings) => void;
-}) {
-  return (
-    <section className={`${CARD} flex flex-col gap-4 p-4`}>
-      <div>
-        <p className="text-lg font-bold leading-snug">Wer soll dir helfen?</p>
-        <p className="text-sm text-muted">Mit {helper.name} planst du per Sprache oder Chat.</p>
-      </div>
-      <BegleitungPicker value={helper} onChange={onChange} />
     </section>
   );
 }

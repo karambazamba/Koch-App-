@@ -1,17 +1,6 @@
-import { LotteHubView } from "@/components/profile/settings/Hubs";
-import { FeatureGate } from "@/components/FeatureGate";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Lotte" };
-
-function PageContent() {
-  return <LotteHubView />;
-}
-
-// Sichtbar, wenn der passende Baustein an ist (Einstellungen → Bausteine)
+// Gebündelt auf der Seite der Begleitung (Name, Art, Farbe, Stimme, Vorlesen, wie oft, Pause)
 export default function Page() {
-  return (
-    <FeatureGate feature="modi">
-      <PageContent />
-    </FeatureGate>
-  );
+  redirect("/profil/kuechenhelfer");
 }

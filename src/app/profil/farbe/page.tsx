@@ -1,7 +1,6 @@
-import { FarbeView } from "@/components/profile/settings/BegleitungSettings";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Farbe" };
-
+// Gebündelt auf der Seite der Begleitung (Name, Art, Farbe, Stimme, Vorlesen, wie oft, Pause)
 export default function Page() {
-  return <FarbeView />;
+  redirect("/profil/kuechenhelfer");
 }

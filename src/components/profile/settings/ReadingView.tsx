@@ -1,7 +1,8 @@
 "use client";
 
 import { Check, Volume2 } from "lucide-react";
-import { helperName } from "@/lib/einstellungen/profile";
+import { helperName, type HouseholdProfile } from "@/lib/einstellungen/profile";
+import { SECTION_TITLE } from "@/components/ui/styles";
 import {
   READ_MODES,
   SPEECH_RATES,
@@ -15,16 +16,16 @@ import {
   useVoices,
   isNaturalVoice,
 } from "@/lib/lotte/speech";
-import { ChoiceCards, SettingsPage } from "./SettingsParts";
+import { ChoiceCards } from "./SettingsParts";
 
-/** /profil/vorlesen: Vorlesen an/aus, Stimme (mit Probehören), Sprechtempo – gilt für dieses Gerät */
-export function ReadingView() {
+/** Auf der Mia-Seite: Vorlesen an/aus, Stimme (mit Probehören), Sprechtempo – gilt für dieses Gerät */
+export function VoiceSettings({ profile }: { profile: HouseholdProfile }) {
   const settings = useSpeechSettings();
   const voices = useVoices();
   const supported = speechSupported();
   return (
-    <SettingsPage title="Vorlesen" question="Soll ich meine Antworten vorlesen?" note={false}>
-      {(profile) => {
+    <>
+      {(() => {
         const name = helperName(profile);
         const gender = profile.helper.voice;
         const german = germanVoices(voices);
@@ -49,9 +50,10 @@ export function ReadingView() {
         ];
         return (
           <>
+            <h2 className={`mt-2 px-1 ${SECTION_TITLE}`}>Vorlesen</h2>
             <ChoiceCards label="Vorlesen" value={settings.mode} onChange={(mode) => saveSpeechSettings({ mode })} options={READ_MODES} />
 
-            <p className="mt-2 px-1 text-lg font-bold">Welche Stimme?</p>
+            <h2 className={`mt-2 px-1 ${SECTION_TITLE}`}>Stimme</h2>
             <ul className="flex flex-col gap-2" role="radiogroup" aria-label="Stimme">
               {options.map((o) => {
                 const chosen = settings.voice === o.uri || (o.uri === "" && !german.some((v) => v.voiceURI === settings.voice));
@@ -90,15 +92,15 @@ export function ReadingView() {
               Natürlichere Stimmen kannst du im iPhone unter Einstellungen → Bedienungshilfen → Gesprochene Inhalte → Stimmen → Deutsch laden.
             </p>
 
-            <p className="mt-2 px-1 text-lg font-bold">Wie schnell?</p>
+            <h2 className={`mt-2 px-1 ${SECTION_TITLE}`}>Wie schnell?</h2>
             <ChoiceCards label="Sprechtempo" value={settings.rate} onChange={(rate) => saveSpeechSettings({ rate })} options={SPEECH_RATES} />
             <p className="px-1 text-sm text-muted" role="status">
-              Gilt sofort – nur auf diesem Gerät.
+              Stimme und Tempo gelten nur auf diesem Gerät.
             </p>
           </>
         );
-      }}
-    </SettingsPage>
+      })()}
+    </>
   );
 }
 

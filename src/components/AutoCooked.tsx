@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useMinutes } from "@/components/home/useRatingCandidate";
+import { useMinutes } from "@/lib/core/now";
 import { useRecipes } from "@/lib/essen/cookbook";
 import { cookableEntry, markCooked, mealIsOver, useCookedDays } from "@/lib/essen/mealDone";
 import { composeWeek, useMealPlans } from "@/lib/essen/mealPlan";

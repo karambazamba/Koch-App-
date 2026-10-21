@@ -1,16 +1,16 @@
 "use client";
 
-// Schnellnotiz (früher "Kladde") = Schmierzettel, ein freier Text, speichert
-// selbst. Oben auf der Notizen-Seite direkt beschreibbar (`SchnellnotizCard`),
-// von der Startseite über ✎ an der Notizen-Kachel als Fenster
-// (`SchnellnotizSheet`: ca. 85 % hoch, Tastatur sofort offen, Cursor am Ende).
-// Beide mit "✨ <Name>, räum auf" und "Leeren" (Gelöscht · Rückgängig).
+// Schnellnotiz (früher "Kladde") = angeheftete Notiz „Schnellnotiz“. Oben
+// auf der Notizen-Seite „Schnell was notieren …“ (`QuickNoteCard`, hängt eine
+// Zeile an), von der Startseite über den Stift an der Notizen-Kachel als
+// weißes Fenster (`SchnellnotizSheet`: ca. 85 % hoch, Cursor am Ende). Dort
+// und im Notiz-Editor: "<Name>, räum auf" und "Leeren" (Gelöscht · Rückgängig).
 
 import { useEffect, useRef, useState } from "react";
 import { PenLine } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
-import { buttonClass } from "@/components/ui/styles";
-import { changeSchnellnotiz, saveSchnellnotiz, useSchnellnotiz } from "@/lib/notizen";
+import { CARD, buttonClass } from "@/components/ui/styles";
+import { appendLine, changeSchnellnotiz, loadSchnellnotiz, saveSchnellnotiz, useSchnellnotiz } from "@/lib/notizen";
 import { now } from "@/lib/core/now";
 import { showDeleted } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
@@ -25,7 +25,7 @@ export const shortClock = (iso: string | null | undefined) => (iso ? CLOCK.forma
 const savedLabel = (iso: string | null | undefined, typed: boolean) => (iso ? (typed || now().getTime() - new Date(iso).getTime() < 60_000 ? "gerade eben" : shortClock(iso)) : "");
 
 /** ✨ aufräumen + Leeren (mit Rückgängig) */
-function Actions({ name, text, onTidy }: { name: string; text: string; onTidy?: () => void }) {
+export function SchnellnotizActions({ name, text, onTidy }: { name: string; text: string; onTidy?: () => void }) {
   if (!text.trim()) return null;
   return (
     <>
@@ -46,38 +46,36 @@ function Actions({ name, text, onTidy }: { name: string; text: string; onTidy?: 
   );
 }
 
-/** Oben auf der Notizen-Seite: direkt beschreibbar */
-export function SchnellnotizCard({ name }: { name: string }) {
-  const schnellnotiz = useSchnellnotiz();
-  const [typed, setTyped] = useState(false);
-  const text = schnellnotiz?.text ?? "";
-  const saved = text ? savedLabel(schnellnotiz?.geaendert, typed) : "";
+/** Oben auf der Notizen-Seite: „Schnell was notieren …“ – Enter hängt die Zeile an die Schnellnotiz */
+export function QuickNoteCard() {
+  const [line, setLine] = useState("");
+  const [done, setDone] = useState(false);
   return (
-    <section id="schnellnotiz" className="flex scroll-mt-24 flex-col gap-2 rounded-card border border-schnellnotiz-line bg-schnellnotiz p-4" aria-label="Schnellnotiz">
-      <div className="flex items-center gap-2">
-        <PenLine className="h-4 w-4 text-schnellnotiz-ink" strokeWidth={2} aria-hidden />
-        <h2 className="flex-1 text-[15px] font-extrabold text-schnellnotiz-ink">Schnellnotiz</h2>
-        {saved && (
-          <span className="text-xs text-muted" role="status">
-            gespeichert · {saved}
-          </span>
-        )}
-      </div>
-      <textarea
-        value={text}
-        onChange={(e) => {
-          setTyped(true);
-          saveSchnellnotiz(e.target.value);
-        }}
-        placeholder="Schnell was aufschreiben …"
-        aria-label="Schnellnotiz"
-        rows={4}
-        className="min-h-24 w-full resize-y bg-transparent text-base leading-relaxed placeholder:text-muted/70 focus:outline-none"
+    <form
+      className={`${CARD} flex items-center gap-2 px-4 py-1.5`}
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!line.trim()) return;
+        saveSchnellnotiz(appendLine(loadSchnellnotiz().text, line));
+        setLine("");
+        setDone(true);
+      }}
+    >
+      <PenLine className="h-5 w-5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
+      <input
+        value={line}
+        onChange={(e) => (setLine(e.target.value), setDone(false))}
+        placeholder="Schnell was notieren …"
+        aria-label="Schnell was notieren"
+        enterKeyHint="done"
+        className="h-11 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-faint"
       />
-      <div className="flex flex-wrap gap-2">
-        <Actions name={name} text={text} />
-      </div>
-    </section>
+      {done && !line && (
+        <span className="shrink-0 text-sm font-semibold text-good-ink" role="status">
+          Notiert
+        </span>
+      )}
+    </form>
   );
 }
 
@@ -103,7 +101,7 @@ export function SchnellnotizSheet({ name, onClose }: { name: string; onClose: ()
       tall
       header={
         <div className="flex items-center gap-2">
-          <PenLine className="h-5 w-5 text-schnellnotiz-ink" strokeWidth={2.25} aria-hidden />
+          <PenLine className="h-5 w-5 text-accent" strokeWidth={2.25} aria-hidden />
           <h2 className="flex-1 text-xl font-extrabold tracking-tight">Schnellnotiz</h2>
           <button type="button" onClick={onClose} className="h-10 rounded-full bg-accent px-5 text-sm font-bold text-on-accent active:scale-95">
             Fertig
@@ -121,10 +119,10 @@ export function SchnellnotizSheet({ name, onClose }: { name: string; onClose: ()
           }}
           placeholder="Schnell was aufschreiben …"
           aria-label="Schnellnotiz"
-          className="min-h-40 w-full flex-1 resize-none rounded-card border border-schnellnotiz-line bg-schnellnotiz p-4 text-base leading-relaxed placeholder:text-muted/70 focus:outline-none"
+          className="min-h-40 w-full flex-1 resize-none rounded-card border border-line bg-surface p-4 text-base leading-relaxed placeholder:text-faint focus:outline-none"
         />
         <div className="flex flex-wrap items-center gap-2">
-          <Actions name={name} text={text} onTidy={onClose} />
+          <SchnellnotizActions name={name} text={text} onTidy={onClose} />
           <span className="flex-1" />
           {text && saved && (
             <span className="text-xs text-muted" role="status">

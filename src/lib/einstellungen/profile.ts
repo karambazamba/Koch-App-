@@ -250,13 +250,7 @@ export type MealClock = Record<MealTime, string>;
 export const DEFAULT_MEAL_CLOCK: MealClock = { mittags: "12:30", abends: "18:30" };
 
 /** Wie die Familie am Wochenende ist (Profil v11) */
-export type WeekendStyle = "frei" | "locker" | "normal";
-
-export const WEEKEND_STYLES: { value: WeekendStyle; emoji: string; label: string; hint: string }[] = [
-  { value: "frei", emoji: "🏖", label: "Frei", hint: "Sa/So nichts planen, keine Hinweise – nur auf Nachfrage" },
-  { value: "locker", emoji: "🌿", label: "Locker", hint: "Höchstens eine Idee pro Tag, ohne Uhrzeit und ohne Erinnerungen" },
-  { value: "normal", emoji: "📅", label: "Wie unter der Woche", hint: "Ganz normal planen" },
-];
+type WeekendStyle = "frei" | "locker" | "normal";
 
 /** Wie die Familie kocht (Profil v12): nach Gefühl oder lieber nach Rezept */
 export type CookingStyle = "gefuehl" | "rezept";
@@ -382,12 +376,7 @@ export const HELPER_MODES: { value: HelperMode; label: string; hint: string }[] 
 ];
 
 /** Einfach = nur das Wichtigste, Alles zeigen = auch Details (Profil v15) */
-export type DisplayMode = "einfach" | "alles";
-
-export const DISPLAY_MODES: { value: DisplayMode; label: string; hint: string }[] = [
-  { value: "einfach", label: "Einfach", hint: "Nur das Wichtigste – seltene Einstellungen und Kosten-Schätzungen bleiben weg." },
-  { value: "alles", label: "Alles zeigen", hint: "Alle Einstellungen und Details auf einen Blick." },
-];
+type DisplayMode = "einfach" | "alles";
 
 export const COMMON_ALLERGIES = [
   "Gluten",

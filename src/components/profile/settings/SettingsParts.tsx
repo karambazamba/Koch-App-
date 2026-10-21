@@ -30,8 +30,8 @@ const LUNCH_ICONS: Record<"zuhause" | "auswaerts" | "manchmal", LucideIcon> = {
 /** Gruppe: Überschrift klein in Großbuchstaben, darunter eine weiße Karte mit Zeilen */
 export function Group({ title, quiet = false, children }: { title: string; quiet?: boolean; children: ReactNode }) {
   return (
-    <section className="flex flex-col gap-2" aria-label={title}>
-      <h2 className={`px-1 text-[15px] font-extrabold ${quiet ? "text-muted" : "text-ink"}`}>{title}</h2>
+    <section className="flex flex-col gap-2" aria-label={title || undefined}>
+      {title && <h2 className={`px-1 text-[15px] font-extrabold ${quiet ? "text-muted" : "text-ink"}`}>{title}</h2>}
       <ul className={CARD_LIST}>{children}</ul>
     </section>
   );

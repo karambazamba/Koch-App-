@@ -45,7 +45,7 @@ import { useSpeechInput } from "@/lib/lotte/useSpeechInput";
 import { DEFAULT_SHOPPING_DAY, addDays, planningWeekStart, toIsoDate, useToday, weekStartFor, weekdayName } from "@/lib/essen/weekPlan";
 import { chatSuggestions, noteChatMessage, useShowSuggestions } from "@/lib/lotte/chatSuggestions";
 import { mealOverOn, useCookedDays } from "@/lib/essen/mealDone";
-import { useMinutes } from "@/components/home/useRatingCandidate";
+import { useMinutes } from "@/lib/core/now";
 import { addManualItem, removeManualItems, sectionFor, setItemShop, setProduct, useShoppingSettings } from "@/lib/einkauf/shoppingList";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 import { isMarketSituation, marketIdeas, marketProduct, marketTargetDay, type MarketIdea } from "@/lib/essen/market";

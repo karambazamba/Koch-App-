@@ -220,7 +220,7 @@ function describe(
       };
     case "set_feature": {
       const b = bausteinOf(op.feature as Feature);
-      return { opId: op.id, group: "Bausteine", order: 30_200, label: b?.name ?? op.feature, before: null, after: op.on ? `einschalten – ${b?.where ?? ""}` : "ausschalten (Daten bleiben)" };
+      return { opId: op.id, group: "Mehr Funktionen", order: 30_200, label: b?.name ?? op.feature, before: null, after: op.on ? `einschalten – ${b?.where ?? ""}` : "ausschalten (Daten bleiben)" };
     }
     case "app_command":
       return { opId: op.id, group: "In der App", order: 30_100, label: "ausführen", before: null, after: `„${op.text}“` };

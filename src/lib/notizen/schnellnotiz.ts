@@ -1,43 +1,70 @@
-// Schnellnotiz (früher Kladde) = Schmierzettel: EIN freier Text (`wasgibts.kladde` v1), speichert
-// beim Tippen. "Lotte, räum auf" macht aus Zeilen Termine, Aufgaben oder
-// Notizen und nimmt die übernommenen Zeilen heraus.
+// Schnellnotiz (früher Kladde) = Schmierzettel: seit v0.32 eine angeheftete
+// Text-Notiz „Schnellnotiz“ (`schnell: true`) im Notizen-Speicher; der alte
+// gelbe Zettel (`wasgibts.kladde`) wird beim Start einmal übernommen.
+// "<Name>, räum auf" macht aus Zeilen Termine, Aufgaben oder Notizen und
+// nimmt die übernommenen Zeilen heraus.
 
 import { createLocalStore } from "../core/localStore";
-import { useExternalStore } from "../core/useExternalStore";
 import { nowIso } from "../core/now";
 import { parseCalendar, type Draft } from "../aufgaben/parse";
 import { parseNoteCommand } from "./chat";
+import { createNote, type Note } from "./model";
+import { changeNotes, loadNotes, replaceNotes, useNotes } from "./store";
 
 type Schnellnotiz = { text: string; geaendert: string | null };
 
 type Stored = Schnellnotiz & { version: 1 };
 
-const store = createLocalStore("wasgibts.kladde", (raw: unknown): Stored | null => {
+// Alter Speicher (gelber Zettel bis v0.31) – wird einmal in die Notiz übernommen
+const legacy = createLocalStore("wasgibts.kladde", (raw: unknown): Stored | null => {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Partial<Stored>;
   return { version: 1, text: typeof r.text === "string" ? r.text.slice(0, 20000) : "", geaendert: typeof r.geaendert === "string" ? r.geaendert : null };
 });
 
 const EMPTY: Schnellnotiz = { text: "", geaendert: null };
+const TITLE = "Schnellnotiz";
+
+/** Die Schnellnotiz-Notiz (angeheftet, `schnell`) */
+const findSchnellnotiz = (notes: Note[]): Note | undefined => notes.find((n) => n.data.schnell);
+
+const fromNote = (note: Note | undefined): Schnellnotiz | null => (note ? { text: note.data.text ?? "", geaendert: note.geaendert } : null);
+
+/** Text in die Schnellnotiz-Notiz schreiben (legt sie bei Bedarf angeheftet an) */
+function withText(notes: Note[], text: string): Note[] {
+  const current = findSchnellnotiz(notes);
+  const at = nowIso();
+  if (current) return notes.map((n) => (n.id === current.id ? { ...n, geaendert: at, data: { ...n.data, text: text.slice(0, 20000) } } : n));
+  const note = createNote({ title: TITLE, text: "", pinned: true, emoji: "📝" });
+  return [...notes, { ...note, data: { ...note.data, text: text.slice(0, 20000), schnell: true } }];
+}
+
+/** Einmalig (beim Start): Text vom alten gelben Zettel in die angeheftete Notiz „Schnellnotiz“ */
+export function adoptSchnellnotiz() {
+  const old = legacy.load();
+  if (!old?.text.trim()) return;
+  const notes = loadNotes();
+  const current = findSchnellnotiz(notes);
+  replaceNotes(withText(notes, current?.data.text?.trim() ? `${current.data.text.trimEnd()}\n${old.text}` : old.text));
+  legacy.save({ version: 1, text: "", geaendert: old.geaendert });
+}
 
 export function loadSchnellnotiz(): Schnellnotiz {
-  return store.load() ?? EMPTY;
+  return fromNote(findSchnellnotiz(loadNotes())) ?? legacy.load() ?? EMPTY;
 }
 
 export function saveSchnellnotiz(text: string) {
-  store.save({ version: 1, text: text.slice(0, 20000), geaendert: nowIso() });
+  replaceNotes(withText(loadNotes(), text));
 }
 
 /** Text setzen; liefert Rückgängig */
 export function changeSchnellnotiz(text: string): () => void {
-  const before = loadSchnellnotiz();
-  saveSchnellnotiz(text);
-  return () => store.save({ version: 1, ...before });
+  return changeNotes((notes) => withText(notes, text));
 }
 
 export function useSchnellnotiz(): Schnellnotiz | undefined {
-  const data = useExternalStore(store.subscribe, store.load, () => undefined);
-  return data === undefined ? undefined : (data ?? EMPTY);
+  const notes = useNotes();
+  return notes === undefined ? undefined : (fromNote(findSchnellnotiz(notes)) ?? EMPTY);
 }
 
 /** Text anhängen (neue Zeile) */

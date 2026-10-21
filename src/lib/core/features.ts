@@ -37,7 +37,6 @@ export const BAUSTEINE: Baustein[] = [
   { feature: "tipps", name: "Tipps", text: "Ab und zu ein kleiner Küchen-Tipp – oben auf Heute.", where: "Tipps kommen ab jetzt ab und zu oben auf Heute.", icon: "bulb" },
   { feature: "wochenendIdeen", name: "Wochenend-Ideen", text: "Freitags bis sonntags eine Idee fürs Wochenende – oben auf Heute.", where: "Wochenend-Ideen kommen ab jetzt freitags bis sonntags oben auf Heute.", icon: "sun" },
   { feature: "kochstil", name: "Kochstil & Vorlieben", text: "Plan oder spontan, Das mögt ihr, Nie wieder, Lieblingsgerichte.", where: "Kochstil & Vorlieben stehen jetzt in den Einstellungen.", icon: "chef" },
-  { feature: "modi", name: "Wie oft melde ich mich?", text: "Ganz locker bis Dranbleiben – und Pausen planen.", where: "Das steht jetzt in den Einstellungen.", icon: "message" },
 ];
 
 export const bausteinOf = (feature: Feature) => BAUSTEINE.find((b) => b.feature === feature);

@@ -36,9 +36,6 @@
   --color-cat-fleisch: var(--app-cat-fleisch);
   --color-cat-fisch: var(--app-cat-fisch);
   --color-cat-cheat: var(--app-cat-cheat);
-  --color-schnellnotiz: var(--app-schnellnotiz);
-  --color-schnellnotiz-line: var(--app-schnellnotiz-line);
-  --color-schnellnotiz-ink: var(--app-schnellnotiz-ink);
   --color-demo: var(--app-demo);
   --color-demo-ink: var(--app-demo-ink);
   --color-demo-soft: var(--app-demo-soft);
@@ -122,9 +119,6 @@
   --app-cat-fleisch: #b9733f;
   --app-cat-fisch: #4c6fd9;
   --app-cat-cheat: #f26b21;
-  --app-schnellnotiz: #fffbea;
-  --app-schnellnotiz-line: #f3e7b8;
-  --app-schnellnotiz-ink: #8a7420;
   --app-demo: #fff3c4;
   --app-demo-ink: #7a6a2a;
   --app-demo-soft: #fffbea;
@@ -196,9 +190,6 @@
   --app-cat-fleisch: #e0a070;
   --app-cat-fisch: #7f9bf0;
   --app-cat-cheat: #ff8a4c;
-  --app-schnellnotiz: #2f2b1f;
-  --app-schnellnotiz-line: #4a4229;
-  --app-schnellnotiz-ink: #e6cf7a;
   --app-demo: rgb(232 196 90 / 0.18);
   --app-demo-ink: #e6cf8a;
   --app-demo-soft: rgb(232 196 90 / 0.08);
@@ -271,9 +262,6 @@
     --app-cat-fleisch: #e0a070;
     --app-cat-fisch: #7f9bf0;
     --app-cat-cheat: #ff8a4c;
-    --app-schnellnotiz: #2f2b1f;
-    --app-schnellnotiz-line: #4a4229;
-    --app-schnellnotiz-ink: #e6cf7a;
     --app-demo: rgb(232 196 90 / 0.18);
     --app-demo-ink: #e6cf8a;
     --app-demo-soft: rgb(232 196 90 / 0.08);

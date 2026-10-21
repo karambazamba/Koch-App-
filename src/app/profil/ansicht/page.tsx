@@ -1,7 +1,6 @@
-import { AppearanceView } from "@/components/profile/AppearanceView";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Ansicht" };
-
+// Früher eigene Seite – Hell/Dunkel/Automatisch steht direkt in den Einstellungen
 export default function Page() {
-  return <AppearanceView />;
+  redirect("/profil");
 }

@@ -1,18 +1,6 @@
-import { SpontanRedirect } from "@/components/pantry/SpontanRedirect";
-import { FeatureGate } from "@/components/FeatureGate";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Spontan kochen" };
-
-// Früher "Was ist noch da?" – geht jetzt im Spontan-Modus auf
-function SchnellkuechePageContent() {
-  return <SpontanRedirect />;
-}
-
-// Sichtbar, wenn der passende Baustein an ist (Einstellungen → Bausteine)
-export default function SchnellkuechePage() {
-  return (
-    <FeatureGate feature="spontan">
-      <SchnellkuechePageContent />
-    </FeatureGate>
-  );
+// Früher "Was ist noch da?" – Ideen gibt es jetzt auf der Essen-Seite
+export default function Page() {
+  redirect("/?seite=essen");
 }

@@ -1,6 +1,6 @@
 "use client";
 
-// Einstellungen → "Bausteine – Was <Name> noch kann": jede zusätzliche Funktion
+// Einstellungen → "Mehr Funktionen – Was <Name> noch kann": jede zusätzliche Funktion
 // mit Icon, Name, einem Satz und An/Aus. Eingeschaltet fügt sie sich ins
 // Design ein (Essen-Seite, Kachel auf Heute, Satz oben auf Heute); aus heißt
 // nur ausgeblendet – Daten bleiben.
@@ -42,10 +42,10 @@ export function BausteineView() {
   const name = helperName(profile);
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
-      <PageHeader title="Bausteine" backHref="/profil" />
+      <PageHeader title="Mehr Funktionen" backHref="/profil" />
       <main className={PAGE_MAIN}>
-        <p className="text-base text-muted">Was {name} noch kann. Eingeschaltet fügt sich alles in Woche · Heute · Essen ein; ausschalten blendet nur aus – nichts wird gelöscht.</p>
-        <ul className={`${CARD} flex flex-col divide-y divide-line overflow-hidden`} aria-label="Bausteine">
+        <p className="text-base text-muted">Was {name} noch kann. Eingeschaltet fügt sich alles in Kalender · Heute · Essen ein; ausschalten blendet nur aus – nichts wird gelöscht.</p>
+        <ul className={`${CARD} flex flex-col divide-y divide-line overflow-hidden`} aria-label="Mehr Funktionen">
           {BAUSTEINE.map((b) => {
             const Icon = BAUSTEIN_ICONS[b.icon] ?? Lightbulb;
             const active = Boolean(on?.includes(b.feature));

@@ -17,7 +17,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { applyHomeChange, reorderVisible, saveHomeTiles, standardLayout, tileMeta, type HomeTile, type HomeTileId, type TileSize } from "@/lib/core/homeLayout";
 import { showDeleted } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
-import { TilePicker } from "./HomeCustomizer";
+import { TilePicker } from "./TilePicker";
 import { buzz } from "./actions";
 
 type Unit = { key: string; tiles: HomeTile[] };
