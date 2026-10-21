@@ -15,7 +15,7 @@ export function BakingBoard({ recipes, withKids, onNavigate }: { recipes: Recipe
       {recipes.map((r) => (
         <li key={r.id} className="flex flex-col gap-2 border-b border-line px-4 py-3 last:border-b-0">
           <div className="flex items-center gap-3">
-            <DishPicture tone={dishTone(r.title, r.category)} alt="" small className="h-11 w-11 shrink-0 rounded-full" />
+            <DishPicture title={r.title} ingredients={r.ingredients.map((i) => i.name)} category={r.category} tone={dishTone(r.title, r.category)} alt="" small className="h-11 w-11 shrink-0 rounded-full" />
             <span className="min-w-0 flex-1">
               <span className="block font-bold leading-snug">{r.title}</span>
               <span className="flex flex-wrap items-center gap-x-1.5 text-sm text-muted">

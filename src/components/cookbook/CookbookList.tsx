@@ -173,7 +173,7 @@ function RecipeTile({ recipe, kid, builtin = false, kidFriendly = false }: { rec
   return (
     <li className={`${CARD} relative overflow-hidden`}>
       <Link href={`/kochbuch/rezept?id=${encodeURIComponent(recipe.id)}`} className="flex h-full flex-col active:opacity-90">
-        <DishPicture photo={look?.photo} tone={look?.tone ?? dishTone(recipe.title, recipe.category)} alt="" className="aspect-[4/3] w-full" />
+        <DishPicture photo={look?.photo} title={recipe.title} ingredients={recipe.ingredients.map((i) => i.name)} category={recipe.category} tone={look?.tone ?? dishTone(recipe.title, recipe.category)} alt="" className="aspect-[4/3] w-full" />
         <span className="flex flex-1 flex-col gap-0.5 p-3">
           <span className="line-clamp-2 text-[15px] font-bold leading-snug">{recipe.title}</span>
           <span className="mt-auto flex flex-wrap items-center gap-x-1.5 text-xs text-muted">

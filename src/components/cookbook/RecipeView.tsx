@@ -112,7 +112,7 @@ function RecipeDetails({ id, persons }: { id: string; persons: number | null }) 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
       <div className="relative">
-        <DishPicture photo={look?.photo} tone={look?.tone ?? dishTone(recipe.title, recipe.category)} alt={recipe.title} className="aspect-[4/3] w-full" />
+        <DishPicture photo={look?.photo} title={recipe.title} ingredients={recipe.ingredients.map((i) => i.name)} category={recipe.category} tone={look?.tone ?? dishTone(recipe.title, recipe.category)} alt={recipe.title} className="aspect-[4/3] w-full" />
         <div className="absolute inset-x-0 top-0 flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
           <BackButton fallback="/kochbuch" round />
           <span className="flex gap-2">

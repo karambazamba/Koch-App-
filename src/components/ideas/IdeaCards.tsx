@@ -62,7 +62,7 @@ export function IdeaCards({
         const meta = ideaMeta(idea);
         const body = (
           <>
-            <DishPicture tone={dishTone(idea.title, idea.category)} alt="" small className={`shrink-0 rounded-full ${dense ? "h-9 w-9" : "h-12 w-12"}`} />
+            <DishPicture title={idea.title} category={idea.category} tone={dishTone(idea.title, idea.category)} alt="" small className={`shrink-0 rounded-full ${dense ? "h-9 w-9" : "h-12 w-12"}`} />
             <span className="min-w-0 flex-1">
               <span className={`block truncate font-bold ${dense ? "leading-tight" : "leading-snug"}`}>{idea.title}</span>
               <span className={`flex min-w-0 items-center gap-1 text-sm text-muted ${dense ? "leading-tight" : ""}`}>

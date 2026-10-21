@@ -50,7 +50,7 @@ export function SwapSheet({ data, day, onClose }: { data: SwapContext; day: Plan
           .slice(0, 3)
           .map((idea) => (
             <button key={idea.id} type="button" onClick={() => choose(idea)} className={`${CARD} flex items-center gap-3 p-3 text-left active:scale-[0.99]`}>
-              <DishPicture tone={dishTone(idea.title, idea.category)} alt="" small className="h-12 w-12 shrink-0 rounded-full" />
+              <DishPicture title={idea.title} category={idea.category} tone={dishTone(idea.title, idea.category)} alt="" small className="h-12 w-12 shrink-0 rounded-full" />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-base font-bold">{idea.title}</span>
                 <span className="block truncate text-sm text-muted">{[idea.minutes ? `${idea.minutes} Min` : "", idea.reason].filter(Boolean).join(" · ")}</span>

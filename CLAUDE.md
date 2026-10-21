@@ -436,6 +436,39 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   (`TaskQuickAdd`), einmaliger Hinweis nach dem Kennenlernen, Start-Kacheln
   aus dem Kennenlernen (`homeTilesFor`, in Standard-Reihenfolge).
 
+## Ein Bild für jedes Gericht (v0.36)
+
+- Jedes Gericht hat eine eigene Illustration im Stil der Burrata-Pasta –
+  eigene Zeichnungen im Code, keine fremden Fotos, keine KI
+  (`docs/credits.md`). Erkennen: `dishArt(title, ingredients?, category?)`
+  (`src/lib/essen/dishArt.ts`, rein) → `{form, toppings, bg, seed, variant,
+  side, guessed}`; Formen per Stichwort erst im Titel, dann in den Zutaten
+  (Nudeln lang/kurz, Auflauf, Reis, Bowl/Curry/Chili, Suppe, Pfanne, Blech,
+  Wraps, Brot, Pfannkuchen/Puffer/Omelett, Kartoffeln, Fisch/Fleisch +
+  Beilage, Salat, Pizza/Flammkuchen, Süßes, Kuchen, Muffins, Kekse, Waffeln,
+  Schnecken), Toppings aus Titel + Zutaten (höchstens 5, nie leer), fester
+  Zufall aus dem Namen; Unbekanntes = allgemeine Form der Kategorie
+  (`guessed`, z. B. Pfanne mit Gemüse).
+- Zeichnen: `renderDishSvg(art)` (`dishSvg.ts`: Bühne mit Verlauf,
+  Serviette, Gabel, Gefäß – Teller, Schale, Pfanne, Auflaufform, Blech,
+  Brett; Essen in `dishBases.ts`/`dishBakes.ts`, Stückchen und Toppings in
+  `dishBits.ts`). Neue Formen/Toppings dort ergänzen.
+- Eingebaute Bilder: `npm run gerichte-bilder` (`scripts/generate-dish-images.mjs`,
+  lädt die TS-Module über jiti) → `public/gerichte/<slug>.webp` (900 × 600,
+  < 80 KB) für alle DISHES, Beispiel-Gerichte und die Backstube, dazu
+  `public/demo/gericht.webp` (aus denselben Bausteinen) und die Liste
+  `src/lib/essen/dishImageList.ts` (erzeugt, nicht von Hand ändern);
+  `--bogen <png>` = Kontaktbogen. Neues eingebautes Gericht → Skript
+  laufen lassen. Der Service Worker merkt sich `/gerichte/…` beim ersten
+  Anzeigen (nur gericht.webp wird vorgeladen).
+- App: `DishPicture title ingredients? category? photo? tone small` – eigenes
+  Foto → eingebautes Bild (`builtinDishImage`) → live gezeichnet (data-URL,
+  im Speicher gemerkt, `dishImage` in `dishImages.ts`) → einfacher Teller nur
+  als Notlösung (Zeichnen/Laden scheitert). `small` = Ausschnitt auf den
+  Teller (`scale 1.3`). Gilt für Essen-Seite, Wochenreihe, Wochenplan,
+  „Was koche ich?“, Ideen-Karten, Rezepte, Rezeptseite, Backstube.
+- Test: `tests/dishArt.test.ts`; Durchklick `bilder` im Scratchpad.
+
 ## Spendentopf (v0.35, Tafel 14 – ersetzt die „Beitrags-Frage“)
 
 - FESTE REGELN: Es gibt KEINE Zahlung in der App – Beiträge sind nur
@@ -591,8 +624,8 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
 - Essen-Reiter = einziger Ort für den Plan: Heute-Karte mit Teller-Bild,
   Woche Mo–So als Reihe mit Bildern (frei gestrichelt mit Plus, feste Tage
   hellorange), „Plan öffnen“ (mit Baustein Wochenplan). Gerichte ohne Foto:
-  Teller-Zeichnung in der Gerichtsfarbe (`DishPicture`, `dishTone` in
-  `essen/dishLook.ts`), keine Emojis. EIN Fenster „Was koche ich?“
+  eigene Illustration (seit v0.36, siehe „Ein Bild für jedes Gericht“;
+  `dishTone` nur noch als Platzhalter-Farbe), keine Emojis. EIN Fenster „Was koche ich?“
   (`essen/SwapSheet.tsx`, `SwapContext`) für Essen-Seite, Wochenreihe und
   Wochenplan („Ideen“). /ideen leitet auf die Essen-Seite, /schnellkueche in
   den Spontan-Modus.
@@ -723,7 +756,7 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   zeigt es als „Heute“ (`DemoDishHero`). Verschwindet mit eigenem Gericht
   (`clearDemoTile("essen")`), „Jetzt leeren“ oder nach 3 Tagen. Bild
   `public/demo/gericht.webp` = eigene Illustration
-  (`scripts/generate-demo-dish.mjs`, Nachweis `docs/credits.md`), im Service
+  (seit v0.36 aus `npm run gerichte-bilder`, Nachweis `docs/credits.md`), im Service
   Worker vorgeladen.
 - Hallo-Bildschirm lebendig (`HelloScreen`, Ablauf nach Mockup „Mia
   Begrüßung“): 0,0 s Mia ploppt auf, 0,7 s winkt, 0,95 s „Hallo, ich bin

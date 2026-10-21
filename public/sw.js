@@ -3,7 +3,7 @@
 // CACHE_VERSION bei jeder Auslieferung erhöhen. Eine neue Version wartet, bis
 // man den Hinweis "Neue Version da" antippt (Nachricht "SKIP_WAITING") – nie
 // ein Zwangs-Neuladen mitten im Tippen. Beim allerersten Mal sofort aktiv.
-const CACHE_VERSION = "v65";
+const CACHE_VERSION = "v66";
 // Interner Name (alter Arbeitsname) bleibt, damit alte Caches sauber aufgeräumt werden.
 const CACHE_NAME = `familienkueche-${CACHE_VERSION}`;
 
@@ -134,8 +134,9 @@ self.addEventListener("fetch", (event) => {
   // API (Küchenhelfer) nie aus dem Cache beantworten
   if (url.pathname.startsWith("/api/")) return;
 
-  // Gehashte Build-Dateien ändern sich nie → Cache zuerst.
-  if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/")) {
+  // Gehashte Build-Dateien ändern sich nie → Cache zuerst. Gericht-Bilder
+  // (/gerichte/…) werden nicht vorgeladen, sondern beim ersten Anzeigen gemerkt.
+  if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/") || url.pathname.startsWith("/gerichte/")) {
     event.respondWith(cacheFirst(request));
     return;
   }
