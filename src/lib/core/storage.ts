@@ -45,6 +45,7 @@ export const STORAGE = [
   { key: "wasgibts.wetterort", what: "Wetter-Ort", version: 1, migration: "wetter/client.ts", area: "local", backup: true },
   { key: "wasgibts.wetterdaten", what: "Letzte Wetterdaten (offline)", version: 1, area: "local", backup: false },
   { key: "wasgibts.jetzt", what: "Jetzt-Karte: an/aus, heute ausgeblendete Themen, Interesse je Thema", version: 1, migration: "jetzt/store.ts", area: "local", backup: true },
+  { key: "wasgibts.einmalhinweise", what: "Einmalige Hinweise (z. B. „+ Kachel“ beim ersten Bearbeiten)", version: 1, migration: "core/hints.ts", area: "local", backup: false },
   { key: "wasgibts.dunkeltipp", what: "Einmaliger Hinweis auf Dunkel/Automatisch (ab dem 3. Tag)", version: 1, migration: "core/darkTip.ts", area: "local", backup: false },
   { key: "wasgibts.beispiel", what: "Beispiel-Tag beim ersten Start (seit wann, geleerte Kacheln, Abgehaktes)", version: 1, migration: "core/demo.ts", area: "local", backup: false },
   { key: "wasgibts.willkommen", what: "Ergebnis des ersten Starts (wobei helfen)", version: 1, migration: "einstellungen/welcomeStore.ts (Zwischenstand bis v0.26 wird verworfen)", area: "local", backup: false },

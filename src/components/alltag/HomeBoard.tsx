@@ -4,10 +4,12 @@
 // S breit) und im Bearbeiten-Modus DIREKT auf der Startseite: alle Kacheln
 // wackeln dezent, Inhalte sind nicht antippbar, "–" oben links entfernt (mit
 // "Gelöscht · Rückgängig"), "S · M · L" unten rechts ändert die Größe.
-// Festhalten (ca. 0,2 s) und ziehen: die Kachel hebt sich, die anderen
-// rutschen zur Seite, ein gestrichelter Platzhalter zeigt den Platz; am
-// Bildschirmrand scrollt die Seite mit. Essen + Einkauf (beide S) wandern
-// zusammen. Pointer-Events (Maus und Touch), Seite scrollt beim Ziehen nicht.
+// Wischen scrollt überall – auch auf den Kacheln (touch-action: pan-y, wie
+// der iPhone-Homescreen). Erst ruhiges Festhalten (ca. 0,35 s, < 8 px) hebt
+// die Kachel an; dann steht die Seite still, die anderen rutschen zur Seite,
+// ein gestrichelter Platzhalter zeigt den Platz, am Rand scrollt die Seite
+// mit. Kurz antippen = Menü. Tippen in eine noch rollende Seite hält nur an.
+// Essen + Einkauf (beide S) wandern zusammen.
 
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode, type TouchEvent as ReactTouchEvent } from "react";
 import { ChevronDown, ChevronUp, ChevronsUp, Minus, Plus } from "lucide-react";
@@ -24,7 +26,9 @@ type Unit = { key: string; tiles: HomeTile[] };
 type Box = { key: string; top: number; bottom: number; left: number; right: number; half: boolean };
 type Drag = { key: string; x: number; y: number; offX: number; offY: number; w: number; h: number; target: number };
 
-const HOLD_MS = 200;
+const HOLD_MS = 350;
+/** So lange nach dem letzten Scrollen gilt ein Antippen als „Schwung anhalten“ (kein Anheben, kein Menü) */
+const FLING_MS = 120;
 
 /** Essen + Einkauf (beide S, direkt hintereinander) = eine Einheit, sonst je Kachel eine */
 function unitsOf(tiles: HomeTile[]): Unit[] {
@@ -58,13 +62,16 @@ export function HomeBoard({
   all,
   editing,
   render,
-  onExit,
+  picking,
+  onPicking,
 }: {
   tiles: HomeTile[];
   all: HomeTile[];
   editing: boolean;
   render: (tile: HomeTile, half: boolean, editing: boolean) => ReactNode;
-  onExit: () => void;
+  /** „Kachel hinzufügen“ offen (auch vom „+ Kachel“ im Kopf) */
+  picking: boolean;
+  onPicking: (open: boolean) => void;
 }) {
   const units = unitsOf(tiles);
   const board = useRef<HTMLDivElement>(null);
@@ -79,7 +86,6 @@ export function HomeBoard({
   // Während des Haltens (bis zum Anheben) wackelt nichts
   const [holding, setHolding] = useState(false);
   const pointer = useRef({ x: 0, y: 0 });
-  const [picking, setPicking] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [menu, setMenu] = useState<string | null>(null);
 
@@ -119,7 +125,7 @@ export function HomeBoard({
     setHolding(false);
   };
 
-  /** Festhalten beginnt (Finger oder Maus): nach 0,2 s hebt sich die Kachel */
+  /** Festhalten beginnt (Finger oder Maus): nach 0,35 s ruhigem Halten hebt sich die Kachel */
   const beginHold = (key: string, el: HTMLElement, x: number, y: number) => {
     if (!editing || dragRef.current) return;
     cancelHold();
@@ -180,6 +186,8 @@ export function HomeBoard({
   useEffect(() => () => touchOff.current?.(), []);
   const onTouchStart = (key: string) => (e: ReactTouchEvent<HTMLElement>) => {
     if (e.touches.length !== 1 || (e.target as Element).closest("button")) return abort();
+    // Seite rollt noch (Schwung): das Antippen hält sie nur an – nichts anheben, kein Menü
+    if (performance.now() - lastScroll.current < FLING_MS) return abort();
     touchOff.current?.();
     const move = (ev: TouchEvent) => handlers.current.move(ev);
     const end = (ev: TouchEvent) => {
@@ -202,7 +210,17 @@ export function HomeBoard({
     beginHold(key, e.currentTarget, e.touches[0].clientX, e.touches[0].clientY);
   };
 
-  // Während des Ziehens: Fenster-weit mitgehen, ablegen, Seite nicht scrollen lassen
+  // Wann zuletzt gescrollt wurde (für „Tippen in rollende Seite“)
+  const lastScroll = useRef(0);
+  useEffect(() => {
+    if (!editing) return;
+    const onScroll = () => (lastScroll.current = performance.now());
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [editing]);
+
+  // Während des Ziehens: Fenster-weit mitgehen, ablegen. preventDefault erst NACH
+  // dem Anheben – vorher scrollt die Seite ganz normal mit Schwung.
   useEffect(() => {
     if (!editing) return;
     const onTouchMove = (e: TouchEvent) => {
@@ -303,7 +321,7 @@ export function HomeBoard({
         onPointerDown={floating ? undefined : onDown(unit.key)}
         onTouchStart={floating || !editing ? undefined : onTouchStart(unit.key)}
         onContextMenu={editing ? (e) => e.preventDefault() : undefined}
-        className={`relative min-w-0 ${floating ? "" : wide ? "col-span-2" : "col-span-1"} ${editing && !floating ? "touch-none select-none [-webkit-touch-callout:none] [-webkit-user-select:none]" : ""}`}
+        className={`relative min-w-0 ${floating ? "" : wide ? "col-span-2" : "col-span-1"} ${editing && !floating ? "touch-pan-y select-none [-webkit-touch-callout:none] [-webkit-user-select:none]" : ""}`}
         style={ghost ? { height: drag.h } : undefined}
         aria-label={editing ? (pair ? "Essen und Einkauf" : tileMeta(unit.tiles[0].id).label) : undefined}
         role={editing ? "group" : undefined}
@@ -327,11 +345,11 @@ export function HomeBoard({
     // Flaches Raster (2 Spalten): jede Einheit liegt direkt im Board – so behält sie
     // beim Umsortieren ihr Element (React verschiebt es nur). Zwei S nebeneinander je
     // eine Spalte, alles andere (auch eine einzelne S) über die volle Breite.
-    <div ref={board} className="grid grid-cols-2 gap-x-2 gap-y-3" data-no-swipe={editing ? true : undefined} onClick={(e) => editing && e.target === e.currentTarget && onExit()}>
+    <div ref={board} className="grid grid-cols-2 gap-x-2 gap-y-3" data-no-swipe={editing ? true : undefined}>
       {rowsOf(preview).flatMap((row, r) => row.map((u, i) => renderUnit(u, r * 2 + i, row.length === 2, false, row.length !== 2)))}
       {editing && (
         <div className="col-span-2 flex flex-col gap-3">
-          <button type="button" onClick={() => setPicking(true)} className="flex h-14 items-center justify-center gap-2 rounded-card border-2 border-dashed border-line text-base font-bold text-muted active:bg-fill">
+          <button type="button" onClick={() => onPicking(true)} className="flex h-14 items-center justify-center gap-2 rounded-card border-2 border-dashed border-line text-base font-bold text-muted active:bg-fill">
             <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
             Kachel hinzufügen
           </button>
@@ -349,7 +367,7 @@ export function HomeBoard({
           {renderUnit(dragged, 0, dragged.tiles.length === 1 && drag.w < window.innerWidth * 0.6, true)}
         </div>
       )}
-      {picking && <TilePicker onClose={() => setPicking(false)} />}
+      {picking && <TilePicker onClose={() => onPicking(false)} onClosed={glowTile} />}
       {menu && units.some((u) => u.key === menu) && <UnitMenu unit={units.find((u) => u.key === menu)!} first={units[0].key === menu} last={units[units.length - 1].key === menu} onMove={(to) => moveUnit(menu, to)} onResize={resize} onRemove={(id) => remove(id)} onClose={() => setMenu(null)} />}
       {confirmReset && (
         <ConfirmDialog
@@ -365,6 +383,21 @@ export function HomeBoard({
       )}
     </div>
   );
+}
+
+/** Nach dem Hinzufügen: zur neuen Kachel scrollen und sie kurz sanft aufleuchten lassen */
+function glowTile(id: HomeTileId) {
+  let tries = 0;
+  const find = () => {
+    const el = document.querySelector<HTMLElement>(`[data-unit][data-tile~="${id}"]`);
+    if (!el) return void (++tries < 20 && requestAnimationFrame(find));
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.remove("tile-glow");
+    void el.offsetWidth;
+    el.classList.add("tile-glow");
+    window.setTimeout(() => el.classList.remove("tile-glow"), 1800);
+  };
+  requestAnimationFrame(find);
 }
 
 /** Im Bearbeiten-Modus: "–" oben links, S · M · L unten rechts, Inhalt nicht antippbar */

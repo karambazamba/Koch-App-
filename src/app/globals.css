@@ -720,6 +720,15 @@ body {
 [data-tone="timer"] { --tile-bg: var(--app-tile-timer); --tile-ac: var(--app-tile-timer-ac); }
 [data-tone="notizen"] { --tile-bg: var(--app-tile-notizen); --tile-ac: var(--app-tile-notizen-ac); }
 
+/* Neu hinzugefügte Kachel leuchtet kurz sanft auf (Bearbeiten-Modus) */
+@keyframes tile-glow {
+  0% { box-shadow: 0 0 0 0 var(--app-accent-soft); }
+  30% { box-shadow: 0 0 0 7px var(--app-accent-soft); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.tile-glow { border-radius: 20px; animation: tile-glow 1.6s ease-out; }
+@media (prefers-reduced-motion: reduce) { .tile-glow { animation: none; } }
+
 @keyframes jetzt-in {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: none; }
