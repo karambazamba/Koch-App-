@@ -3,11 +3,10 @@
 import { useGoBack } from "@/lib/core/useGoBack";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { Check, MapPin, Repeat, Sparkles, Wallet } from "lucide-react";
+import { Repeat, Sparkles, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
-import { PRIMARY_BUTTON, SECONDARY_BUTTON, StickyActions } from "@/components/StickyActions";
 import { WeekRulesEditor, tooManyDays } from "@/components/profile/editors";
-import { CARD, INPUT_BASE, PAGE_MAIN, buttonClass, tileClass } from "@/components/ui/styles";
+import { CARD, INPUT_BASE, PAGE_MAIN, buttonClass, chipClass } from "@/components/ui/styles";
 import { FixedMealsSection } from "@/components/week/FixedMealsSection";
 import {
   createEmptyProfile,
@@ -41,7 +40,11 @@ import {
 const SKELETON = <div className={`${CARD} m-4 h-64 animate-pulse`} />;
 
 /**
- * Wochen-Check: Vorgaben für eine Planungswoche (ab Einkaufstag, 7 Tage).
+ * „Kurz vor der Woche“ (früher Wochen-Check): drei kurze Fragen mit Chips
+ * (unterwegs? · wie oft Fleisch? · etwas Besonderes?), Fortschritt als
+ * Striche, „Weiter“/„Überspringen“ am Inhaltsende; Feinheiten (feste
+ * Gerichte, Mengen, Budget, Wünsche) hinter „Alles im Detail“.
+ * Vorgaben für eine Planungswoche (ab Einkaufstag, 7 Tage).
  * Ohne ?woche= die Woche, die gerade zu planen ist (ab 2 Tage vor dem
  * Einkaufstag die nächste). Vorausgefüllt aus gespeicherten Vorgaben dieser
  * Woche, sonst aus der Standardwoche.
@@ -112,7 +115,8 @@ function WeekCheckForm({
 }) {
   const goBack = useGoBack();
   const [plan, setPlan] = useState(initial);
-  const hasProfile = Boolean(profile);
+  const [step, setStep] = useState(0);
+  const [details, setDetails] = useState(false);
   const available = availableDays(plan);
   const wishKid = plan.wish ? profile?.persons.find((p) => p.id === plan.wish!.kidId) : undefined;
   const canSwapKid = profile ? wishDayKids(profile).length > 1 : false;
@@ -159,59 +163,74 @@ function WeekCheckForm({
     goBack(backHref);
   };
 
+  const steps = ["unterwegs", "fleisch", "besonders"] as const;
+  const last = step === steps.length - 1;
+  const next = () => (last ? save() : setStep((n) => n + 1));
+  const extra = (text: string) => update({ wishes: plan.wishes.includes(text) ? plan.wishes.replace(text, "").replace(/(^[,\s]+|[,\s]+$)/g, "").replace(/,\s*,/g, ",") : [plan.wishes.trim(), text].filter(Boolean).join(", ") });
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
-      <PageHeader title="Wochen-Check" backHref={backHref} />
+      <PageHeader title="Kurz vor der Woche" subtitle={`Woche vom ${formatWeekRange(plan.weekStart)}`} backHref={backHref} />
       <main className={PAGE_MAIN}>
-        <div>
-          <h2 className="text-xl font-extrabold tracking-tight">
-            {isCurrentWeek ? "Wie sieht eure Woche aus?" : "Wie sieht eure nächste Woche aus?"}
-          </h2>
-          <p className="mt-1 text-sm text-muted">
-            Woche vom <span className="whitespace-nowrap">{formatWeekRange(plan.weekStart)}</span>
-            {" – "}
-            {hasProfile
-              ? "vorausgefüllt aus eurer Standardwoche."
-              : "noch ohne Haushaltsprofil, mit Standardwerten."}
-          </p>
+        <div className="flex gap-1.5" aria-label={`Frage ${step + 1} von ${steps.length}`} role="progressbar" aria-valuemin={1} aria-valuemax={steps.length} aria-valuenow={step + 1}>
+          {steps.map((st, i) => (
+            <span key={st} className={`h-1 flex-1 rounded-full ${i <= step ? "bg-accent" : "bg-fill-strong"}`} />
+          ))}
         </div>
 
-        <fieldset className={`${CARD} p-4`}>
-          <legend className="sr-only">Ausflug / auswärts</legend>
-          <div className="mb-3" aria-hidden>
-            <p className="flex items-center gap-2 text-base font-bold">
-              <MapPin className="h-5 w-5 text-accent" strokeWidth={2} />
-              Ausflug / auswärts
-            </p>
-            <p className="text-sm text-muted">An diesen Tagen planen wir kein Gericht.</p>
-          </div>
-          <div className="grid grid-cols-4 gap-2">
-            {weekDayNames(plan.weekStart).map((day) => {
-              const away = plan.awayDays.includes(day);
-              return (
-                <button
-                  key={day}
-                  type="button"
-                  aria-pressed={away}
-                  aria-label={`${day}: Ausflug / auswärts`}
-                  onClick={() => toggleAway(day)}
-                  className={tileClass(away)}
-                >
-                  {day.slice(0, 2)}
-                  <span className={`text-xs font-semibold ${away ? "" : "text-muted"}`}>
-                    {away ? "unterwegs" : "zu Hause"}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </fieldset>
+        {steps[step] === "unterwegs" && (
+          <section className="flex flex-col gap-3" aria-label="Unterwegs">
+            <h2 className="text-[22px] font-extrabold leading-tight">{isCurrentWeek ? "Seid ihr diese Woche mal unterwegs?" : "Seid ihr nächste Woche mal unterwegs?"}</h2>
+            <p className="text-base text-muted">An diesen Tagen plane ich kein Gericht.</p>
+            <div className="flex flex-wrap gap-2">
+              {weekDayNames(plan.weekStart).map((day) => {
+                const away = plan.awayDays.includes(day);
+                return (
+                  <button key={day} type="button" aria-pressed={away} aria-label={`${day}: unterwegs`} onClick={() => toggleAway(day)} className={chipClass(away)}>
+                    {day.slice(0, 2)}
+                  </button>
+                );
+              })}
+            </div>
+            {plan.awayDays.length === 0 && <p className="text-sm font-semibold text-good-ink">Alle Tage zu Hause.</p>}
+          </section>
+        )}
 
+        {steps[step] === "fleisch" && (
+          <section className="flex flex-col gap-3" aria-label="Fleisch">
+            <h2 className="text-[22px] font-extrabold leading-tight">Wie oft darf es Fleisch sein?</h2>
+            <p className="text-base text-muted">Die anderen Tage plane ich vegetarisch{plan.fishDays ? " oder mit Fisch" : ""}.</p>
+            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Fleisch-Tage">
+              {[0, 1, 2, 3, 4].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  role="radio"
+                  aria-checked={plan.meatDays === n}
+                  onClick={() => update({ meatDays: n, vegetarianDays: Math.max(0, Math.min(plan.vegetarianDays, available - n - plan.fishDays)) })}
+                  className={chipClass(plan.meatDays === n)}
+                >
+                  {n === 0 ? "Gar nicht" : `${n}×`}
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {steps[step] === "besonders" && (
+          <section className="flex flex-col gap-3" aria-label="Besonderes">
+            <h2 className="text-[22px] font-extrabold leading-tight">Etwas Besonderes?</h2>
+            <div className="flex flex-wrap gap-2">
+              {["Einmal Suppe", "Reste verwerten", "Was Neues", "Schnelle Woche"].map((w) => (
+                <button key={w} type="button" aria-pressed={plan.wishes.includes(w)} onClick={() => extra(w)} className={chipClass(plan.wishes.includes(w))}>
+                  {w}
+                </button>
+              ))}
+            </div>
         {plan.wish && wishKid && profile && (
           <section className={`${CARD} flex flex-col gap-3 p-4`}>
             <div>
               <h3 className="text-lg font-bold">
-                Diese Woche wünscht sich {personLabel(wishKid, profile.persons)} was 🎉
+                Diese Woche wünscht sich {personLabel(wishKid, profile.persons)} was
               </h3>
               <p className="text-sm text-muted">
                 <span className="whitespace-nowrap">
@@ -265,6 +284,11 @@ function WeekCheckForm({
           </section>
         )}
 
+            <button type="button" onClick={() => setDetails((v) => !v)} aria-expanded={details} className="hit self-start text-[15px] font-semibold text-accent-strong">
+              {details ? "Weniger anzeigen" : "Alles im Detail"}
+            </button>
+            {details && (
+              <>
         <FixedMealsSection plan={plan} setPlan={setPlan} />
 
         <WeekRulesEditor
@@ -317,17 +341,26 @@ function WeekCheckForm({
             className={`${INPUT_BASE} w-full px-4 py-3`}
           />
         </label>
-      </main>
+              </>
+            )}
+          </section>
+        )}
 
-      <StickyActions>
-        <button type="button" onClick={() => goBack(backHref)} className={SECONDARY_BUTTON}>
-          Abbrechen
-        </button>
-        <button type="button" onClick={save} disabled={invalid} className={PRIMARY_BUTTON}>
-          <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-          Speichern
-        </button>
-      </StickyActions>
+        <div className="mt-2 flex flex-col gap-2">
+          <button type="button" onClick={next} disabled={invalid} className={buttonClass("primary", "lg")}>
+            {last ? "Fertig" : "Weiter"}
+          </button>
+          {!last ? (
+            <button type="button" onClick={() => setStep((n) => n + 1)} className={buttonClass("ghost")}>
+              Überspringen
+            </button>
+          ) : (
+            <button type="button" onClick={() => goBack(backHref)} className={buttonClass("ghost")}>
+              Abbrechen
+            </button>
+          )}
+        </div>
+      </main>
     </div>
   );
 }

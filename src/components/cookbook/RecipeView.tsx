@@ -1,44 +1,47 @@
 "use client";
 
+// Rezept: Bild in voller Breite mit runden weißen Knöpfen (Zurück, Herz, „…“),
+// der Name einmal groß, Infozeile mit Icons, Personen-Zähler (rechnet die
+// Zutaten um), „Jetzt kochen“ und „Für einen Tag einplanen“. Bearbeiten,
+// Teilen und Löschen stehen im „…“. Keine Bewertung, keine Zähler.
+
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { Check, ChefHat, Clock, PenLine, Plus, Sparkles, ThumbsDown, ThumbsUp, Trash2, Users } from "lucide-react";
+import { CalendarPlus, ChefHat, Clock, Minus, PenLine, Plus, Share2, Sparkles, Trash2, Users } from "lucide-react";
+import { BackButton } from "@/components/BackButton";
 import { PageHeader } from "@/components/PageHeader";
 import { CategoryChip } from "@/components/ui/Category";
-import { CARD, FAB_CLEARANCE, PAGE_MAIN, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
+import { MoreMenu, type MoreItem } from "@/components/ui/MoreMenu";
+import { Sheet } from "@/components/ui/Sheet";
+import { CARD, CARD_LIST, FAB_CLEARANCE, PAGE_MAIN, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
+import { DishPicture } from "@/components/alltag/DishPicture";
 import { FavoriteButton } from "@/components/cookbook/CookbookList";
 import { KnownSwitch } from "@/components/plan/PlanSheets";
-import {
-  deleteRecipe,
-  formatAmount,
-  recordCooked,
-  useRecipes,
-} from "@/lib/essen/cookbook";
-import { learnFromRecipe, LIKE_WEIGHTS } from "@/lib/essen/likes";
+import { deleteRecipe, formatAmount, useRecipes, type Recipe } from "@/lib/essen/cookbook";
 import { adoptBuiltin, findRecipe, isBuiltin } from "@/lib/essen/baking";
 import { ovenText } from "@/lib/essen/baking/steps";
 import { useProfile } from "@/lib/einstellungen/useProfile";
-import { markCookedIfToday } from "@/lib/essen/mealDone";
-import { useMealPlans } from "@/lib/essen/mealPlan";
-import { useToday, useWeekPlans } from "@/lib/essen/weekPlan";
+import { effectivePlanStyle } from "@/lib/einstellungen/profile";
+import { loadMealPlans, replaceMealPlans, useMealPlans } from "@/lib/essen/mealPlan";
+import { takeForDay } from "@/lib/essen/spontanTake";
+import { addDays, toIsoDate, useToday, useWeekPlans } from "@/lib/essen/weekPlan";
+import { dishTone } from "@/lib/essen/dishLook";
+import { demoLook, isDemoRecipe } from "@/lib/essen/demoDish";
+import { showToast } from "@/lib/core/toast";
+import { pushUndo } from "@/lib/core/undo";
+import { weekdayLong } from "@/lib/aufgaben/model";
 import { MachineStepView, MachineToggle, useMachineView } from "./MachineSteps";
-import { isDemoRecipe } from "@/lib/essen/demoDish";
-import { DemoHero, DemoMoreIdeas } from "./DemoRecipeBits";
-/** Datum (lokale Zeit) aus Zeitstempel oder "YYYY-MM-DD", z. B. "23.10.2026" */
-function formatDate(iso: string): string {
-  const date = iso.length === 10 ? new Date(`${iso}T12:00:00`) : new Date(iso);
-  return date.toLocaleDateString("de-DE", { day: "numeric", month: "numeric", year: "numeric" });
-}
+import { DemoMoreIdeas } from "./DemoRecipeBits";
 
-/** Rezept ansehen, nach dem Kochen bewerten, bearbeiten oder löschen. */
+const ROUND = "flex h-[34px] w-[34px] items-center justify-center rounded-full bg-surface/90 shadow-card";
+
 export function RecipeView() {
   const params = useSearchParams();
   const { bfcacheId } = useRouter();
   const id = params.get("id") ?? "";
   // "?personen=2": nur für heute umgerechnet ("heute sind wir nur zu zweit")
   const persons = Number(params.get("personen")) || null;
-  // Neu mounten bei jedem Aufruf, sonst bliebe "Gespeichert" vom letzten Mal stehen.
   return <RecipeDetails key={`${bfcacheId}|${id}`} id={id} persons={persons} />;
 }
 
@@ -46,16 +49,16 @@ function RecipeDetails({ id, persons }: { id: string; persons: number | null }) 
   const router = useRouter();
   const recipes = useRecipes();
   const profile = useProfile();
-  const [justCooked, setJustCooked] = useState(false);
   const machine = useMachineView(profile);
   const today = useToday();
   const weekPlans = useWeekPlans();
   const mealPlans = useMealPlans();
+  const [people, setPeople] = useState<number | null>(persons);
+  const [planning, setPlanning] = useState(false);
 
   if (recipes === undefined) return <div className={`${CARD} m-4 h-64 animate-pulse`} />;
-  // Auch eingebaute Backrezepte ("b:…") lassen sich ansehen
+  // Auch eingebaute Backrezepte ("b:…") und Beispiel-Rezepte ("d:…") lassen sich ansehen
   const recipe = findRecipe(recipes, id);
-  // Beispiel-Rezepte ("d:…", Beispiel-Tag) verhalten sich wie eingebaute
   const demo = isDemoRecipe(id);
   const builtin = isBuiltin(id) || demo;
 
@@ -74,98 +77,112 @@ function RecipeDetails({ id, persons }: { id: string; persons: number | null }) 
   }
 
   const baking = recipe.kind === "backen";
-  const scaleTo = persons && !baking && recipe.servings > 0 && persons !== recipe.servings ? persons : null;
+  const servings = people ?? recipe.servings;
+  const scaleTo = !baking && recipe.servings > 0 && servings !== recipe.servings ? servings : null;
   const machineOn = machine.on && recipe.machineSteps.length > 0;
   const kids = profile ? profile.persons.filter((p) => p.role === "kind") : [];
+  const look = demoLook(recipe.id);
 
-  const cooked = (rating: "up" | "down" | null) => {
-    recordCooked(recipe.id, rating);
-    // Heutiges Gericht → das Essen ist vorbei (Startseite zeigt schon das nächste)
-    if (profile && today && weekPlans && mealPlans) markCookedIfToday({ profile, weekPlans, mealPlans, recipes }, today, recipe.id);
-    // Gekocht (und evtl. 👍) → Zutaten zählen als Vorliebe
-    if (rating !== "down") learnFromRecipe(recipe, rating === "up" ? LIKE_WEIGHTS.up : LIKE_WEIGHTS.cooked);
-    setJustCooked(true);
+  const share = async () => {
+    const text = [recipe.title, "", ...recipe.ingredients.map((i) => `• ${[formatAmount(i.amount), i.unit, i.name].filter(Boolean).join(" ")}`), "", ...recipe.steps.map((s, n) => `${n + 1}. ${s}`)].join("\n");
+    try {
+      if (navigator.share) return void (await navigator.share({ title: recipe.title, text }));
+      await navigator.clipboard.writeText(text);
+      showToast({ text: "Rezept kopiert", small: true });
+    } catch {
+      // Abbrechen im Teilen-Menü ist kein Fehler
+    }
   };
   const remove = () => {
-    if (!window.confirm(`„${recipe.title}“ wirklich aus dem Kochbuch löschen?`)) return;
+    if (!window.confirm(`„${recipe.title}“ wirklich aus euren Rezepten löschen?`)) return;
     router.push("/kochbuch");
     deleteRecipe(recipe.id);
   };
+  const menu: MoreItem[] = builtin
+    ? [
+        { label: "In unsere Rezepte", icon: Plus, onClick: () => router.push(`/kochbuch/rezept?id=${encodeURIComponent(adoptBuiltin(recipe))}`) },
+        { label: "Teilen", icon: Share2, onClick: () => void share() },
+      ]
+    : [
+        { label: "Bearbeiten", icon: PenLine, onClick: () => router.push(`/kochbuch/bearbeiten?id=${encodeURIComponent(recipe.id)}`) },
+        { label: "Teilen", icon: Share2, onClick: () => void share() },
+        { label: "Löschen", icon: Trash2, onClick: remove, danger: true },
+      ];
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
-      <PageHeader title="Rezept" backHref="/kochbuch" />
-      <main className={PAGE_MAIN}>
-        {demo && <DemoHero id={recipe.id} title={recipe.title} />}
-        <div className="flex items-start gap-2">
-          <div className="min-w-0 flex-1">
-            <h2 className="text-2xl font-extrabold leading-tight tracking-tight">{recipe.title}</h2>
-            <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
-              {baking ? <span className="whitespace-nowrap font-semibold">🧁 Backen</span> : <CategoryChip category={recipe.category} />}
-              <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                <Users className="h-4 w-4" strokeWidth={2} aria-hidden />
-                {recipe.servings} {baking ? "Stück" : "Personen"}
-              </span>
-              {recipe.prepMinutes !== null && (
-                <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                  <Clock className="h-4 w-4" strokeWidth={2} aria-hidden />
-                  {recipe.prepMinutes} Min.
-                </span>
-              )}
-              <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                {builtin ? (
-                  <>
-                    <Sparkles className="h-4 w-4" strokeWidth={2} aria-hidden />
-                    {demo ? "Beispiel-Rezept" : "Aus unserer Backstube"}
-                  </>
-                ) : recipe.source === "ki" ? (
-                  <>
-                    <Sparkles className="h-4 w-4" strokeWidth={2} aria-hidden />
-                    von der KI
-                  </>
-                ) : (
-                  <>
-                    <PenLine className="h-4 w-4" strokeWidth={2} aria-hidden />
-                    Eigenes
-                  </>
-                )}
-              </span>
-            </p>
-          </div>
-          {!builtin && <FavoriteButton recipe={recipe} />}
+      <div className="relative">
+        <DishPicture photo={look?.photo} tone={look?.tone ?? dishTone(recipe.title, recipe.category)} alt={recipe.title} className="aspect-[4/3] w-full" />
+        <div className="absolute inset-x-0 top-0 flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
+          <BackButton fallback="/kochbuch" round />
+          <span className="flex gap-2">
+            {!builtin && <FavoriteButton recipe={recipe} />}
+            <MoreMenu title={recipe.title} items={menu} light />
+          </span>
         </div>
+      </div>
+      <main className={`${PAGE_MAIN} pt-4`}>
+        <h1 className="text-[30px] font-extrabold leading-tight tracking-tight">{recipe.title}</h1>
+        <p className="-mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
+          {baking ? <span className="whitespace-nowrap font-semibold">Backen</span> : <CategoryChip category={recipe.category} />}
+          {recipe.prepMinutes !== null && (
+            <span className="inline-flex items-center gap-1 whitespace-nowrap">
+              <Clock className="h-4 w-4" strokeWidth={2} aria-hidden />
+              {recipe.prepMinutes} Min.
+            </span>
+          )}
+          {(builtin || recipe.source === "ki") && (
+            <span className="inline-flex items-center gap-1 whitespace-nowrap">
+              <Sparkles className="h-4 w-4" strokeWidth={2} aria-hidden />
+              {demo ? "Beispiel-Rezept" : builtin ? "Aus unserer Backstube" : "Vorschlag"}
+            </span>
+          )}
+        </p>
 
-        {recipe.steps.length > 0 && (
-          <Link href={`/kochbuch/kochen?id=${encodeURIComponent(recipe.id)}`} className={`${buttonClass("primary", "lg")} w-full`}>
-            <ChefHat className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-            {baking ? "Zusammen backen" : demo ? "Kochen starten" : "Los geht’s – Schritt für Schritt"}
-          </Link>
-        )}
-        {builtin ? (
-          <button
-            type="button"
-            onClick={() => router.push(`/kochbuch/rezept?id=${encodeURIComponent(adoptBuiltin(recipe))}`)}
-            className={`${buttonClass("soft", "lg")} w-full`}
-          >
-            <Plus className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-            In unsere Rezepte
-          </button>
-        ) : (
-          <KnownSwitch recipe={recipe} />
-        )}
+        <div className="flex flex-col gap-2">
+          {recipe.steps.length > 0 && (
+            <Link href={`/kochbuch/kochen?id=${encodeURIComponent(recipe.id)}`} className={`${buttonClass("primary", "lg")} w-full`}>
+              <ChefHat className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+              {baking ? "Zusammen backen" : "Jetzt kochen"}
+            </Link>
+          )}
+          {!demo && profile && (
+            <button type="button" onClick={() => setPlanning(true)} className={`${buttonClass("secondary", "lg")} w-full`}>
+              <CalendarPlus className="h-5 w-5 text-accent" strokeWidth={2.25} aria-hidden />
+              Für einen Tag einplanen
+            </button>
+          )}
+        </div>
+        {!builtin && <KnownSwitch recipe={recipe} />}
 
         {(recipe.oven || recipe.pan) && (
           <p className={`${CARD} flex flex-wrap gap-x-3 gap-y-1 p-4 text-base`} aria-label="Backofen">
-            {recipe.oven && <span className="font-bold">🔥 {ovenText(recipe.oven)}</span>}
+            {recipe.oven && <span className="font-bold">{ovenText(recipe.oven)}</span>}
             {recipe.pan && <span className="text-muted">{recipe.pan}</span>}
           </p>
         )}
         {recipe.machineSteps.length > 0 && <MachineToggle view={machine} />}
 
         <section className={`${CARD} p-4`}>
-          <h3 className={`${SECTION_TITLE} mb-2`}>
-            {scaleTo ? `Zutaten für ${scaleTo} Personen (nur heute)` : `Zutaten für ${recipe.servings} ${baking ? "Stück" : "Personen"}`}
-          </h3>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <h3 className={SECTION_TITLE}>Zutaten</h3>
+            {baking ? (
+              <span className="text-sm text-muted">für {recipe.servings} Stück</span>
+            ) : (
+              <span className="flex items-center gap-1" role="group" aria-label="Personen">
+                <button type="button" onClick={() => setPeople(Math.max(1, servings - 1))} disabled={servings <= 1} aria-label="Eine Person weniger" className={`hit ${ROUND} bg-fill`}>
+                  <Minus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                </button>
+                <span className="flex min-w-24 items-center justify-center gap-1 text-[15px] font-bold" aria-live="polite">
+                  <Users className="h-4 w-4 text-muted" strokeWidth={2} aria-hidden />
+                  {servings} {servings === 1 ? "Person" : "Personen"}
+                </span>
+                <button type="button" onClick={() => setPeople(Math.min(20, servings + 1))} aria-label="Eine Person mehr" className={`hit ${ROUND} bg-fill`}>
+                  <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                </button>
+              </span>
+            )}
+          </div>
           {recipe.ingredients.length === 0 ? (
             <p className="text-sm text-muted">Keine Zutaten eingetragen.</p>
           ) : (
@@ -188,9 +205,7 @@ function RecipeDetails({ id, persons }: { id: string; persons: number | null }) 
             <ol className="flex flex-col gap-3">
               {recipe.machineSteps.map((step, index) => (
                 <li key={index} className="flex gap-3 text-base">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-sm font-bold text-accent-strong">
-                    {index + 1}
-                  </span>
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-sm font-bold text-accent-strong">{index + 1}</span>
                   <span className="flex flex-col gap-1.5 pt-0.5">
                     {step.text}
                     <MachineStepView step={step} />
@@ -206,11 +221,9 @@ function RecipeDetails({ id, persons }: { id: string; persons: number | null }) 
               <ol className="flex flex-col gap-3">
                 {recipe.steps.map((step, index) => (
                   <li key={index} className="flex gap-3 text-base">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-sm font-bold text-accent-strong">
-                      {index + 1}
-                    </span>
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-sm font-bold text-accent-strong">{index + 1}</span>
                     <span className="pt-0.5">
-                      {kids.length > 0 && recipe.kidSteps.includes(index) && <span className="mr-1 font-semibold text-accent-strong">🧒</span>}
+                      {kids.length > 0 && recipe.kidSteps.includes(index) && <span className="mr-1 font-semibold text-accent-strong">Kinder:</span>}
                       {step}
                     </span>
                   </li>
@@ -228,76 +241,44 @@ function RecipeDetails({ id, persons }: { id: string; persons: number | null }) 
         )}
 
         {demo && <DemoMoreIdeas current={recipe.id} />}
-
-        {/* Eingebaute Rezepte: erst "In unsere Rezepte", dann bewerten/bearbeiten */}
-        {!builtin && (
-          <>
-        <section className={`${CARD} flex flex-col gap-3 p-4`}>
-          <h3 className={SECTION_TITLE}>Heute gekocht? Wie war&apos;s?</h3>
-          {justCooked ? (
-            <p
-              className="flex items-center gap-2 rounded-field bg-accent-soft px-4 py-3 font-semibold text-accent-strong"
-              role="status"
-            >
-              <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-              Gespeichert – danke!
-            </p>
-          ) : (
-            <>
-              <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => cooked("up")} className={buttonClass("soft", "lg")}>
-                  <ThumbsUp className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-                  Lecker
-                </button>
-                <button type="button" onClick={() => cooked("down")} className={buttonClass("secondary", "lg")}>
-                  <ThumbsDown className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-                  Eher nicht
-                </button>
-              </div>
-              <button
-                type="button"
-                onClick={() => cooked(null)}
-                className="self-center text-sm font-semibold text-muted underline"
-              >
-                Nur als gekocht markieren
-              </button>
-            </>
-          )}
-          <p className="flex flex-wrap items-center gap-x-1 text-sm text-muted">
-            {recipe.cookedCount > 0 ? (
-              <>
-                <span className="whitespace-nowrap">{recipe.cookedCount}× gekocht</span>
-                {recipe.lastCookedAt && (
-                  <>
-                    {" · "}
-                    <span className="whitespace-nowrap">zuletzt am {formatDate(recipe.lastCookedAt)}</span>
-                  </>
-                )}
-                {" · "}
-                <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                  <ThumbsUp className="h-3.5 w-3.5" strokeWidth={2} aria-label="gut" /> {recipe.thumbsUp}
-                  <ThumbsDown className="ml-1 h-3.5 w-3.5" strokeWidth={2} aria-label="nicht so" /> {recipe.thumbsDown}
-                </span>
-              </>
-            ) : (
-              "Noch nie gekocht."
-            )}
-          </p>
-        </section>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Link href={`/kochbuch/bearbeiten?id=${encodeURIComponent(recipe.id)}`} className={buttonClass("soft", "lg")}>
-            <PenLine className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-            Bearbeiten
-          </Link>
-          <button type="button" onClick={remove} className={buttonClass("danger", "lg")}>
-            <Trash2 className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-            Löschen
-          </button>
-        </div>
-          </>
-        )}
       </main>
+      {planning && profile && today && weekPlans && mealPlans && (
+        <PlanDaySheet
+          recipe={recipe}
+          onClose={() => setPlanning(false)}
+          onPick={(date) => {
+            const before = loadMealPlans();
+            const result = takeForDay({ profile, weekPlans, mealPlans: before, recipes }, today, { title: recipe.title, recipeId: recipe.id, category: recipe.category }, date, {
+              spontan: effectivePlanStyle(profile) === "spontan",
+            });
+            setPlanning(false);
+            if (!result.ok) return showToast({ text: result.text });
+            replaceMealPlans(result.weeks);
+            pushUndo(result.text, () => replaceMealPlans(before));
+            showToast({ text: result.text, small: true });
+          }}
+          today={toIsoDate(today)}
+        />
+      )}
     </div>
+  );
+}
+
+/** Für einen Tag einplanen: die nächsten 7 Tage */
+function PlanDaySheet({ recipe, today, onPick, onClose }: { recipe: Recipe; today: string; onPick: (date: string) => void; onClose: () => void }) {
+  const days = Array.from({ length: 7 }, (_, i) => addDays(today, i));
+  return (
+    <Sheet title={`${recipe.title} einplanen`} onClose={onClose}>
+      <div className={`${CARD_LIST} mb-3`}>
+        {days.map((d, i) => (
+          <button key={d} type="button" onClick={() => onPick(d)} className="flex h-14 w-full items-center justify-between px-4 text-left text-base font-semibold active:bg-fill">
+            {i === 0 ? "Heute" : i === 1 ? "Morgen" : weekdayLong(d)}
+            <span className="text-sm font-normal text-muted">
+              {Number(d.slice(8))}.{Number(d.slice(5, 7))}.
+            </span>
+          </button>
+        ))}
+      </div>
+    </Sheet>
   );
 }

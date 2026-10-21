@@ -12,7 +12,7 @@ import { createLocalStore } from "../core/localStore";
 import { composeWeek, entriesWithoutSlot, mealPlansWithWeek, type PlanDay, type StoredEntry } from "./mealPlan";
 import { loadPantry, replacePantry, sameIngredient, type PantryItem } from "./pantry";
 import { mealClockFor, type HouseholdProfile } from "../einstellungen/profile";
-import { addDays, DEFAULT_SHOPPING_DAY, toIsoDate, weekStartFor, type WeekPlan } from "./weekPlan";
+import { addDays, DEFAULT_SHOPPING_DAY, weekStartFor, type WeekPlan } from "./weekPlan";
 
 /** So lange nach der Essenszeit verschwindet das Gericht von der Startseite */
 const DONE_AFTER_MINUTES = 90;
@@ -214,13 +214,3 @@ export function moveToTomorrow(data: Data, date: string): { weeks: Record<string
   return { weeks, text: `Alles klar ✓ ${entry.title} gibt’s morgen. ${old.title} ist erst mal raus.` };
 }
 
-/**
- * "Gekocht" auf der Rezeptseite: Ist es das heutige Gericht, gilt das Essen
- * damit als vorbei (die Rezeptseite hat schon mitgezählt).
- */
-export function markCookedIfToday(data: Data, today: Date, recipeId: string) {
-  const date = toIsoDate(today);
-  const weekStart = weekStartFor(today, data.profile.shoppingDay || DEFAULT_SHOPPING_DAY);
-  const entry = cookableEntry(composeWeek(weekStart, data.profile, data.weekPlans, data.mealPlans, data.recipes).days.find((d) => d.date === date));
-  if (entry?.recipeId === recipeId) markCooked(date, entry, data.recipes, { how: "marked", alreadyCounted: true });
-}

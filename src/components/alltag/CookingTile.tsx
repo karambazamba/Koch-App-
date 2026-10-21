@@ -79,7 +79,7 @@ export function CookingTile({ dish, clock, persons, recipe, today, onEaten }: { 
           })}
         </ol>
       ) : (
-        <p className="text-[14px] text-muted">{needs ? (needs.length ? `noch: ${needs.slice(0, 4).join(", ")}` : "alles im Haus") : "Guten Appetit beim Kochen!"}</p>
+        <p className="text-[14px] text-muted">{needs ? (needs.length ? `auf die Liste: ${needs.slice(0, 4).join(", ")}` : "alles im Haus") : "Guten Appetit beim Kochen!"}</p>
       )}
       <div className="flex flex-wrap items-center gap-2 pt-1">
         {recipe && (

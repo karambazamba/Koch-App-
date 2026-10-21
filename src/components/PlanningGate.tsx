@@ -11,7 +11,7 @@ import { usePlanStyle } from "@/lib/essen/usePlanStyle";
  * es bei "Ich koche spontan" nicht – sie leiten weiter. Die Daten bleiben
  * gespeichert und sind beim Zurückwechseln wieder da.
  */
-export function PlanningGate({ children, fallback = "/ideen" }: { children: ReactNode; fallback?: string }) {
+export function PlanningGate({ children, fallback = "/?seite=essen" }: { children: ReactNode; fallback?: string }) {
   const plan = usePlanStyle();
   const router = useRouter();
   const hidden = plan !== undefined && !plan.planning;

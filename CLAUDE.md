@@ -16,7 +16,7 @@ Namen nie hart codieren. Nur ein Design (Warm) + Hell/Dunkel/Automatisch;
 App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Seit v0.23 gilt diese Lieblingsfarbe auch für das App-Icon.
 
 ## 1. Ruhig und leer
-- Drei Seiten: Woche · Heute · Essen (Heute ist die Startseite). Die
+- Drei Seiten: Kalender · Heute · Essen (Heute ist die Startseite). Die
   Oberfläche ist ruhig und leer; nichts steht herum, was nicht gebraucht wird.
 - Es gibt nur noch EIN Design. Zusätzliche Funktionen sind Bausteine, die
   sich in das neue Design einfügen (`src/lib/core/features.ts`, Einstellungen
@@ -87,7 +87,8 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   "du musst / du solltest / vergiss nicht", nie "Ich vermisse dich".
 - Wortwahl: keine Wörter wie "fehlt", "offen", "überfällig", "noch zu
   erledigen", "verpasst", "Alles da". Stattdessen vorbereitend ("Für Montag",
-  "Ich hab schon …", "Bereit für …").
+  "Ich hab schon …", "Bereit für …"). Zutaten: „Alles im Haus“ (grüner
+  Punkt) bzw. „auf die Liste: …“ – nie „fehlt“, nie „noch: …“.
 - Startseite: höchstens EIN Thema in der Jetzt-Karte (bis 3 zum Wischen),
   nachts nur „Morgen …“, im Feierabend/Wochenende nur Sanftes.
   Push (später): höchstens 1 proaktive Mitteilung pro Tag, Ruhezeit
@@ -419,6 +420,53 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   (`QuickButton`), Schnell-Termin (`TerminQuickAdd`), Schnell-Aufgabe
   (`TaskQuickAdd`), einmaliger Hinweis nach dem Kennenlernen, Start-Kacheln
   aus dem Kennenlernen (`homeTilesFor`, in Standard-Reihenfolge).
+
+## Eintragen, Kalender, Essen, Rezepte (v0.31, „Apple-mäßig“ Etappe 3–6)
+
+- Eintragen: ein Fenster „Was möchtest du eintragen?“ (`kalender/AddSheet.tsx`:
+  Termin · Aufgabe · Notiz · Einkauf + „Oder einfach <Name> sagen“), vom Plus
+  im Kalender und auf der Tag-Seite („Neu für diesen Tag“). „Neuer Termin“
+  (`TerminQuickAdd`): Wann · Uhrzeit · Für wen (Avatare, `who`) · Familie |
+  Arbeit · „Mehr Optionen“ (Ort, Erinnerung) · „Eintragen“ am Inhaltsende.
+  Bearbeiten (`EntryForm`) als gruppierte Liste wie auf dem iPhone:
+  „Abbrechen | Titel | Sichern“, Zeilen Tag/Beginn/Ende, Für, Wer ist dabei,
+  Etikett, Wiederholen/Erinnerung (Auswahl rechts), unten rot „Löschen“; kein
+  „(optional)“. Avatare überall `PersonAvatar` (`ui/PersonAvatar.tsx`).
+- Kalender (Reiter statt „Woche“, `?seite=kalender`, alt `?seite=woche`):
+  `kalender/CalendarPage.tsx` Monat | Woche | Liste, Plus = Eintragen,
+  Filter Alle | Familie | Arbeit (nur mit Arbeit). Monat: Raster Mo–So,
+  Punkte (`dayDots`: orange Familie, blau Arbeit, grün Sport), heute
+  oranger Kreis, gewählter Tag hellorange, darunter `DayAgenda` (Termine ·
+  Aufgaben „Alle ›“ · Essen als eine Zeile). Woche: 7 Tageskarten mit ‹ ›.
+  Liste: nächste 14 Tage + „Weitere Wochen“. Die Karten Aufgaben/Notizen
+  unten sind weg. Später: Tipps als eigene lila Ebene (nie als Termin).
+- /tag: Titel = Wochentag, darunter „22. Oktober · morgen“ (`dayHeading`,
+  `PageHeader subtitle`), `DayAgenda`, Plus = dasselbe Eintragen-Fenster.
+- Essen-Reiter = einziger Ort für den Plan: Heute-Karte mit Teller-Bild,
+  Woche Mo–So als Reihe mit Bildern (frei gestrichelt mit Plus, feste Tage
+  hellorange), „Plan öffnen“ (mit Baustein Wochenplan). Gerichte ohne Foto:
+  Teller-Zeichnung in der Gerichtsfarbe (`DishPicture`, `dishTone` in
+  `essen/dishLook.ts`), keine Emojis. EIN Fenster „Was koche ich?“
+  (`essen/SwapSheet.tsx`, `SwapContext`) für Essen-Seite, Wochenreihe und
+  Wochenplan („Ideen“). /ideen leitet auf die Essen-Seite, /schnellkueche in
+  den Spontan-Modus.
+- /wochenplan: Zeitraum ‹ ›, 7 Zeilen (Bild, Gericht, „fester Tag“, Notiz;
+  frei „Noch frei“ + „Ideen“), „<Name>, füll die freien Tage“; im „…“
+  (`ui/MoreMenu.tsx`): Vorlage speichern/laden, Frühere Wochen (Rückblick),
+  Feste Tage & Vorlieben, Plan teilen, Unsere Rezepte. Kein Tag/Woche-
+  Umschalter, keine Zähler, Kosten oder Kategorie-Punkte.
+- „Kurz vor der Woche“ (früher Wochen-Check, `/woche/check`): drei Fragen mit
+  Chips (unterwegs? · wie oft Fleisch? · etwas Besonderes?), Fortschritt als
+  Striche, „Weiter“/„Überspringen“ am Inhaltsende, Feinheiten hinter „Alles
+  im Detail“. `StickyActions` gibt es nicht mehr – Knöpfe stehen am
+  Inhaltsende (auch im Rezept-Editor).
+- Rezepte: Bilder-Raster (Foto bzw. Teller), Suche, Text-Filter-Chips, Herz
+  als runder weißer Knopf, ohne „6× gekocht“. Rezeptseite: Bild in voller
+  Breite mit runden weißen Knöpfen (Zurück `BackButton round`, Herz, „…“ mit
+  Bearbeiten/Teilen/Löschen bzw. „In unsere Rezepte“), Name einmal 30/800,
+  Infozeile mit Icons, Personen-Zähler (rechnet Zutaten um), „Jetzt kochen“
+  und „Für einen Tag einplanen“ (nächste 7 Tage, `takeForDay`); kein
+  Bewertungs-Block. „Neues Rezept“ ohne ausgegraute KI-Kacheln.
 
 ## Stilblatt + Ohne Druck (v0.30, „Apple-mäßig“ Etappe 1+2)
 
@@ -982,7 +1030,7 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   `ICON_BUTTON`, `chipClass()`, `tileClass()`, `INPUT`, `LABEL`,
   `SECTION_TITLE`, `SUBTLE`, `NOTE`, `WARNING`, `PAGE_MAIN` (unten Platz für den
   Küchenhelfer-Knopf, `FAB_CLEARANCE` – jedes `<main>` mit Knopf braucht ihn,
-  auch über `StickyActions`, damit am Seitenende nichts unter dem Knopf liegt), `INPUT_BASE`, `<ListRow>` (Icon links, Titel +
+  damit am Seitenende nichts unter dem Knopf liegt), `INPUT_BASE`, `<ListRow>` (Icon links, Titel +
   Untertitel, Pfeil rechts), `<IconBadge>`, `<CategoryChip>`/`<CategoryDot>`.
   Neue Seiten nur daraus bauen; fehlt etwas, dort ergänzen.
 - Nur EINE Akzentfarbe (Orange) für Buttons, aktive Zustände und Logo. Karten
@@ -995,7 +1043,7 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   `text-lg font-bold`, Text `text-base`, Untertitel `text-sm text-muted`.
   Abstände im 8er-Raster (gap-2/3/4, p-4/p-5), Seitenrand 16px.
 - Unterseiten: `PageHeader` (Zurück-Pfeil + Titel), Inhalt in `PAGE_MAIN`,
-  Fuß-Buttons über `StickyActions` (`PRIMARY_BUTTON`/`SECONDARY_BUTTON`).
+  Knöpfe am Inhaltsende (keine fixierte Fußleiste).
 - App-Icon: Lotte als Sprechblase auf orangem Verlauf (siehe Leitbild 7). Einzige Quelle
   `scripts/generate-icons.mjs` (`npm run icons` erzeugt icon.svg, PNGs,
   maskable, apple-touch-icon, favicon.ico). In der App erscheint das Icon nur
@@ -1261,7 +1309,7 @@ Neue Arbeit baut auf dem Fundament oben auf.
   Zähler und Vorrat zurück, mit Rückgängig).
 - Küchenhelfer (KI, `src/lib/lotte/`, API `/api/lotte`, alter Pfad
   `/api/kuechenhelfer` leitet dorthin): schwebender
-  Knopf auf allen Seiten außer der Startseite (`KitchenHelper` im Layout, über `StickyActions`,
+  Knopf auf allen Seiten außer der Startseite (`KitchenHelper` im Layout,
   bei offener Tastatur ausgeblendet), Panel mit Chat, Mikrofon
   (`useSpeechInput`, Fallback Tastatur-Diktat; jede Aufnahme ist eine frische
   Sitzung, der Hook liefert den ganzen Text dieser Aufnahme – nie anhängen;

@@ -18,7 +18,7 @@ export function DemoFoodTile({ half }: { half: boolean }) {
       aria-label={`Essen · ${DEMO_DISH.clock} · ${r.title} · Beispiel`}
       className={`relative block h-full overflow-hidden rounded-card shadow-card ${half ? "min-h-[168px]" : "min-h-[180px]"}`}
     >
-      <DishPicture photo={DEMO_DISH.photo} emoji="🍝" alt="" className="absolute inset-0" />
+      <DishPicture photo={DEMO_DISH.photo} alt="" className="absolute inset-0" />
       <span className="dish-shade absolute inset-0" aria-hidden />
       <span className="absolute left-2.5 top-2.5">
         <DemoBadge />
@@ -39,7 +39,7 @@ export function DemoDishHero() {
   return (
     <section className="overflow-hidden rounded-card border border-line bg-surface shadow-card" aria-label={`Heute · ${r.title} · Beispiel`}>
       <Link href={href("/kochbuch/rezept")} className="relative block">
-        <DishPicture photo={DEMO_DISH.photo} emoji="🍝" alt={r.title} className="aspect-[16/10] w-full" />
+        <DishPicture photo={DEMO_DISH.photo} alt={r.title} className="aspect-[16/10] w-full" />
         <span className="absolute left-3 top-3">
           <DemoBadge />
         </span>

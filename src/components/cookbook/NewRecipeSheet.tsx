@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Camera, Link2, Mic, MicOff, PenLine, Square } from "lucide-react";
+import { Mic, MicOff, PenLine, Square } from "lucide-react";
 import { LotteAvatar } from "@/components/LotteAvatar";
 import { Sheet } from "@/components/ui/Sheet";
 import { INPUT_BASE, buttonClass, chipClass, tileClass } from "@/components/ui/styles";
@@ -14,8 +14,8 @@ import { useProfile } from "@/lib/einstellungen/useProfile";
 import { useSpeechInput } from "@/lib/lotte/useSpeechInput";
 
 /**
- * "+" auf "Unsere Rezepte": Lotte erzählen (Sprache → Zutaten und Schritte),
- * selbst eintippen, Link oder Foto (mit KI – kommt bald).
+ * "+" auf "Rezepte": <Name> erzählen (Sprache → Zutaten und Schritte) oder
+ * selbst eintippen. Was es noch nicht gibt, wird nicht ausgegraut gezeigt.
  */
 export function NewRecipeSheet({ onClose }: { onClose: () => void }) {
   const profile = useProfile();
@@ -40,20 +40,6 @@ export function NewRecipeSheet({ onClose }: { onClose: () => void }) {
             <span className="text-sm text-muted">Zutaten und Schritte im Formular</span>
           </span>
         </Link>
-        {[
-          { icon: Link2, label: "Link einfügen", hint: "Rezept von einer Webseite übernehmen" },
-          { icon: Camera, label: "Foto vom Rezeptzettel", hint: "Omas Zettel abfotografieren" },
-        ].map(({ icon: Icon, label, hint }) => (
-          <button key={label} type="button" disabled aria-disabled className={`${tileClass(false)} opacity-55`}>
-            <Icon className="h-6 w-6 shrink-0 text-muted" strokeWidth={2} aria-hidden />
-            <span className="flex flex-1 flex-col text-left">
-              <span className="text-base font-bold">
-                {label} <span className="ml-1 rounded-full bg-fill px-2 py-0.5 text-xs font-semibold text-muted">mit KI</span>
-              </span>
-              <span className="text-sm text-muted">{hint} – kommt bald</span>
-            </span>
-          </button>
-        ))}
       </div>
     </Sheet>
   );

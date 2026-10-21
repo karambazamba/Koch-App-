@@ -52,7 +52,7 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCo
   const facts =
     size === "S"
       ? []
-      : [recipe?.prepMinutes ? `${recipe.prepMinutes} Min` : "", needs ? (needs.length ? `noch: ${needs.slice(0, 2).join(", ")}${needs.length > 2 ? " …" : ""}` : "alles im Haus") : ""].filter(Boolean);
+      : [recipe?.prepMinutes ? `${recipe.prepMinutes} Min` : "", needs ? (needs.length ? `auf die Liste: ${needs.slice(0, 2).join(", ")}${needs.length > 2 ? " …" : ""}` : "alles im Haus") : ""].filter(Boolean);
   const sub = idea ? `Idee · ${idea.minutes ?? "?"} Min` : !dish && !day?.away && list.length ? `${Math.min(3, list.length)} Ideen ansehen` : facts.join(" · ");
   const take = () => {
     if (!idea || over) return;
