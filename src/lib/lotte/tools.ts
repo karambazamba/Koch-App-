@@ -199,7 +199,7 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
   {
     name: "einkaufsliste_hinzufuegen",
     description:
-      "Schlägt Artikel für die Einkaufsliste einer Woche vor. Zutaten für Gerichte im Wochenplan kommen automatisch auf die Liste – hier nur Zusätzliches. fuer_tag (heute, morgen oder Wochentag) und gericht merken, wofür der Artikel ist; Artikel für heute stehen oben unter \"Für heute\".",
+      "Schlägt Artikel für die Einkaufsliste einer Woche vor. Zutaten für Gerichte im Wochenplan kommen automatisch auf die Liste – hier nur Zusätzliches. fuer_tag (heute, morgen oder Wochentag) und gericht merken, wofür der Artikel ist; Artikel für heute stehen oben unter \"Für heute\". laden: wo es das gibt (wird für den Artikel gemerkt; 'Müsli von Rossmann'). Im Laden selbst (\"Ich bin bei REWE\") öffnet app_befehl mit genau diesem Satz den Einkaufsmodus.",
     input_schema: {
       type: "object",
       properties: {
@@ -215,6 +215,7 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
               abteilung: { type: "string", enum: SECTIONS.map((s) => s.value) },
               fuer_tag: { type: "string", enum: ["heute", "morgen", ...WEEKDAYS], description: "Für welchen Tag (optional)" },
               gericht: { type: "string", description: "Für welches Gericht (optional)" },
+              laden: { type: "string", description: "In welchem Laden es das gibt, z. B. 'Rossmann' (optional; wird für den Artikel gemerkt)" },
             },
             required: ["name"],
             additionalProperties: false,
@@ -581,7 +582,7 @@ export function runTool(ctx: ToolContext, name: string, raw: unknown): ToolResul
         const section = SECTIONS.some((s) => s.value === a.abteilung) ? (a.abteilung as Section) : sectionFor(itemName);
         const forDay = str(a.fuer_tag) ? dateForDay(ctx.today, str(a.fuer_tag)) : null;
         const day = forDay ? WEEKDAYS[(new Date(`${forDay}T00:00:00Z`).getUTCDay() + 6) % 7] : undefined;
-        propose(ctx, { id: nextId(ctx), type: "add_shopping", weekStart, name: itemName, amount: str(a.menge), section, ...(day ? { day } : {}), ...(str(a.gericht) ? { dish: str(a.gericht) } : {}) });
+        propose(ctx, { id: nextId(ctx), type: "add_shopping", weekStart, name: itemName, amount: str(a.menge), section, ...(day ? { day } : {}), ...(str(a.gericht) ? { dish: str(a.gericht) } : {}), ...(str(a.laden) ? { shop: str(a.laden).slice(0, 30) } : {}) });
         names.push(itemName);
       }
       return { content: `Vorgemerkt für die Einkaufsliste: ${names.join(", ")}.` };

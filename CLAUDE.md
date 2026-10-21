@@ -462,6 +462,31 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   (`TaskQuickAdd`), einmaliger Hinweis nach dem Kennenlernen, Start-Kacheln
   aus dem Kennenlernen (`homeTilesFor`, in Standard-Reihenfolge).
 
+## Einkauf nach Läden (v0.41)
+
+- Läden wie bisher: Vorschläge (`SHOP_SUGGESTIONS`) + eigene (`/profil/produkte`,
+  jetzt mit festem Farbpunkt je Laden, `shopTone`, keine Logos), Laden je
+  Artikel in `itemShops` (Bearbeiten-Fenster, „Müsli von Rossmann“, Mia).
+- Einkaufsliste merkt sich die Ansicht „Nach Abteilung | Nach Laden“ pro Gerät
+  (`wasgibts.einkaufsansicht` v1, `einkauf/shopMode.ts`). Oben „Einkaufen bei
+  [REWE] [Lidl] …“ (Läden mit offenen Sachen, meiste zuerst), in der
+  Laden-Ansicht Farbpunkt + „Einkaufen“ am Gruppenkopf.
+- Einkaufsmodus `/einkaufsliste/laden?name=REWE` (`ShopMode.tsx`, Titel „Bei
+  REWE“): „Gibt’s hier“ · „Egal wo“ (ohne Laden) · „Andere Läden“
+  (eingeklappt, Namen statt Zahlen) · „Im Korb“; Bildschirm bleibt an;
+  „Fertig“ = eine Ebene zurück; leer: „Alles für REWE im Korb.“ LERNEN: Wird
+  hier etwas ohne Laden abgehakt, merkt sich die Liste den Laden dafür
+  (`setItemShop`, leise, „Gemerkt für REWE: …“, zurück mit „Mach das
+  rückgängig“). Rein: `shopModeLists`.
+- Jetzt-Karte „Auf dem Heimweg? 3 Sachen bei REWE“ öffnet den Einkaufsmodus
+  (im Beispiel-Tag die Einkaufsliste). Mia: ohne KI „Ich bin bei REWE“, „Ich
+  geh zu Lidl einkaufen“, „Einkaufsmodus Aldi“ (`shopModeRequest`, nur
+  bekannte Läden, kurze Sätze – die Supermarkt-Frage „… im Angebot“ bleibt
+  eigen); mit KI `app_befehl` mit diesem Satz; `einkaufsliste_hinzufuegen`
+  nimmt `laden` mit (wird gemerkt, Vorschau „bei Rossmann“); die KI sieht
+  offene Artikel mit Laden („Milch (Rewe)“).
+- Test: `tests/einkaufLaeden.test.ts`; Durchklick `laeden` im Scratchpad.
+
 ## Tipps aus der Region (v0.37, Tafel 9 – Schritt 1)
 
 - FESTE REGELN: Tipps sind KEINE Termine – eine eigene lila Ebene, bis jemand
@@ -865,8 +890,7 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   Wochenmarkt · 🏪 Sonstiges) + Name + Farbpunkt (REWE rot, EDEKA gelb, Lidl
   blau).
   Jetzt-Karte 15:00–19:30: „Auf dem Heimweg? 3 Sachen bei REWE“ (ab 2
-  Sachen). Läden anlegen, Lernen, „Nach Laden“ und Einkaufsmodus folgen mit
-  den neuen Ansichten der Einkaufsliste.
+  Sachen). Einkaufsmodus und Lernen seit v0.41 (siehe „Einkauf nach Läden“).
 - Test: `tests/jetzt.test.ts`; Durchklick `jetzt` im Scratchpad (7:10 /
   16:40 / 20:30 / 23:00, Tauschen bleibt, Wischen, ✕, SE bis Pro Max).
 

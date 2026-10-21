@@ -211,7 +211,7 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
 
   // Nachmittags: auf dem Heimweg beim Laden vorbei?
   if (x.shop && x.shop.names.length >= 2 && x.minutes >= 15 * 60 && x.minutes < 19 * 60 + 30)
-    add({ id: `einkauf:${x.today}:${x.shop.shop}`, kind: "einkauf", title: `Auf dem Heimweg? ${x.shop.names.length} Sachen bei ${x.shop.shop}`, detail: short(x.shop.names.join(", "), 40), score: 40, target: { href: "/einkaufsliste" }, tile: "einkauf", tip: true, gentle: true });
+    add({ id: `einkauf:${x.today}:${x.shop.shop}`, kind: "einkauf", title: `Auf dem Heimweg? ${x.shop.names.length} Sachen bei ${x.shop.shop}`, detail: short(x.shop.names.join(", "), 40), score: 40, target: { href: x.demo ? "/einkaufsliste" : `/einkaufsliste/laden?name=${encodeURIComponent(x.shop.shop)}` }, tile: "einkauf", tip: true, gentle: true });
 
   if (x.minutes >= 19 * 60 || x.minutes < 6 * 60) {
     const items = x.tomorrow.items.slice(0, 2).map((i) => (i.time ? `${clock(i.time)} ${short(i.title, 18)}` : short(i.title, 22)));

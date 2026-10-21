@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   Beef,
   CalendarCheck,
@@ -50,6 +51,8 @@ import { QuickAddButton, ShoppingAddField } from "./QuickAdd";
 import { useWeekShoppingList, type WeekChoice } from "@/lib/einkauf/useWeekShoppingList";
 import { addDays, formatWeekRange, toIsoDate, useToday } from "@/lib/essen/weekPlan";
 import { EditItemSheet, ItemContent, StaplesSheet, SwipeRow, type RowAction } from "./ShoppingParts";
+import { setShoppingView, shopModeHref, useShoppingView } from "@/lib/einkauf/shopMode";
+import { shopGroups, shopTone } from "@/lib/einkauf/shopGroups";
 
 const SKELETON = <div className={`${CARD} m-4 h-64 animate-pulse`} />;
 
@@ -76,7 +79,8 @@ export function ShoppingListView() {
   const data = useWeekShoppingList(choice);
   // Wochenplan-Oberfläche versteckt (Neustart): kein Verweis dorthin
   const today = useToday();
-  const [mode, setMode] = useState<"abteilung" | "laden">("abteilung");
+  // Ansicht gemerkt (pro Gerät): nach Abteilung oder nach Laden
+  const mode = useShoppingView();
   const [showHidden, setShowHidden] = useState(false);
   const [shareNote, setShareNote] = useState("");
   const [expanded, setExpanded] = useState<string[]>([]);
@@ -166,12 +170,28 @@ export function ShoppingListView() {
         <Segmented
           label="Sortierung"
           value={mode}
-          onChange={setMode}
+          onChange={setShoppingView}
           options={[
             { value: "abteilung", label: "Nach Abteilung" },
             { value: "laden", label: "Nach Laden" },
           ]}
         />
+
+        {(() => {
+          // Im Laden? → Einkaufsmodus (Läden mit offenen Sachen, meiste zuerst)
+          const shops = shopGroups(visible.filter((i) => !i.checked), 4).filter((g) => g.shop);
+          return shops.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-2 px-1" aria-label="Einkaufen bei">
+              <span className="text-sm font-semibold text-muted">Einkaufen bei</span>
+              {shops.map((g) => (
+                <Link key={g.shop} href={shopModeHref(g.shop!)} className={`${chipClass(false)} gap-1.5`}>
+                  <span className="h-2 w-2 rounded-full" style={{ background: `var(--app-shop-${shopTone(g.shop!)})` }} aria-hidden />
+                  {g.shop}
+                </Link>
+              ))}
+            </div>
+          ) : null;
+        })()}
 
         {shareNote && <p className="rounded-field bg-accent-soft px-4 py-2 text-sm font-semibold text-accent-strong">{shareNote}</p>}
 
@@ -237,7 +257,11 @@ export function ShoppingListView() {
                   aria-expanded={show}
                   className="hit flex min-w-0 flex-1 items-center gap-1.5 text-left text-[15px] font-extrabold text-muted"
                 >
-                  <Icon className="h-4 w-4 text-accent" strokeWidth={2} aria-hidden />
+                  {group.shop ? (
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: `var(--app-shop-${shopTone(group.shop)})` }} aria-hidden />
+                  ) : (
+                    <Icon className="h-4 w-4 text-accent" strokeWidth={2} aria-hidden />
+                  )}
                   <span className="truncate">{group.label}</span>
                   {allDone && (
                     <span className="inline-flex items-center gap-1 normal-case tracking-normal text-accent-strong">
@@ -247,6 +271,11 @@ export function ShoppingListView() {
                     </span>
                   )}
                 </button>
+                {group.shop && open.length > 0 && (
+                  <Link href={shopModeHref(group.shop)} className="hit flex h-8 items-center rounded-full bg-accent-soft px-3 text-[13px] font-bold text-accent-strong">
+                    Einkaufen
+                  </Link>
+                )}
                 {group.shop && open.length > 0 && (
                   <button
                     type="button"

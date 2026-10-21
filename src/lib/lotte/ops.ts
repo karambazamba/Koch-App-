@@ -101,7 +101,7 @@ export type ChangeOp =
   | { id: string; type: "move_meal"; from: SlotRef; to: SlotRef }
   | { id: string; type: "update_week"; weekStart: string; changes: WeekChanges }
   | { id: string; type: "add_recipe"; recipe: NewRecipe }
-  | { id: string; type: "add_shopping"; weekStart: string; name: string; amount: string; section: Section; day?: string; dish?: string }
+  | { id: string; type: "add_shopping"; weekStart: string; name: string; amount: string; section: Section; day?: string; dish?: string; shop?: string }
   | { id: string; type: "remove_shopping"; weekStart: string; names: string[] }
   | { id: string; type: "clear_shopping"; weekStart: string }
   | { id: string; type: "clear_week"; weekStart: string }

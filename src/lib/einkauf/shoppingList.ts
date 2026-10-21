@@ -612,6 +612,9 @@ export function useShoppingSettings(): ShoppingSettings | undefined {
   return settingsOf(data);
 }
 
+/** Produkte, Läden, Stammliste ohne Hook (Regeln im Gespräch) */
+export const loadShoppingSettings = (): ShoppingSettings => settingsOf(store.load());
+
 /** Alle Läden: Vorschläge + eigene */
 export function allShops(settings: Pick<ShoppingSettings, "shops">): string[] {
   return [...SHOP_SUGGESTIONS, ...settings.shops.filter((x) => !SHOP_SUGGESTIONS.some((s) => lower(s) === lower(x)))];
