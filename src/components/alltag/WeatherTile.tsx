@@ -59,13 +59,15 @@ export function WeatherTile({
             {round(next.max)}°<span className="text-[15px] font-semibold text-muted"> / {round(next.min)}°</span>
           </span>
         </span>
-        <span className="mt-1 line-clamp-2 text-[13px] font-semibold leading-snug">{next.rain >= 50 ? `${weatherKind(next.code).text} – Schirm einpacken` : weatherKind(next.code).text}</span>
+        <span className="mt-1 line-clamp-2 text-[13px] font-semibold leading-snug">{next.wet > 0 ? `${next.text} – Schirm einpacken` : next.text}</span>
       </Link>
     );
   }
   const tip = weatherTip(forecast, today, minutes, termine);
   const range = todayRange(forecast, today);
-  const kind = weatherKind(forecast.current.code);
+  // „Gerade Regen“ nur, wenn die Station gerade Regen misst; sonst die ehrliche Beschreibung des Tages
+  const todayDay = forecast.days.find((d) => d.date === today);
+  const kind = { text: forecast.current.raining ? "Gerade Regen" : (todayDay?.text ?? weatherKind(forecast.current.code).text) };
   const sentence = tip ?? `${kind.text}${range ? `, bis ${range.max}°` : ""}`;
   const parts = size === "S" ? [] : dayParts(forecast, today);
   return (

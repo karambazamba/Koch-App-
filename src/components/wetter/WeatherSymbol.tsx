@@ -1,5 +1,5 @@
 // Eigenes, weiches Wetter-Symbol-Set (statt Linien-Icons): Sonne, Wolke,
-// Tropfen, Flocken, Blitz, Nebel – Farben über Tokens (`--wx-*` in globals.css).
+// Tropfen (auch Sonne + Wolke + Tropfen für Schauer), Flocken, Blitz, Nebel – Farben über Tokens (`--wx-*` in globals.css).
 
 import { weatherKind, type WeatherKind } from "@/lib/wetter/forecast";
 
@@ -64,8 +64,17 @@ function Motif({ kind }: { kind: WeatherKind }) {
           <Drop x={29} y={37} s={0.8} />
         </>
       );
-    case "regen":
     case "schauer":
+      // Sonne + Wolke + Tropfen: „Schauer möglich“ – zwischendurch auch Sonne
+      return (
+        <>
+          <Sun cx={17} cy={14} r={7} />
+          <Cloud y={-3} />
+          <Drop x={20} y={37} s={0.9} />
+          <Drop x={30} y={39} s={0.9} />
+        </>
+      );
+    case "regen":
       return (
         <>
           <Cloud y={-5} />

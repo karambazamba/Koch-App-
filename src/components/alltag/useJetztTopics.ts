@@ -84,7 +84,7 @@ export function useJetztTopics(src: JetztSource) {
     : undefined;
   const birthday = (list: DayItem[], when: "heute" | "morgen") => list.filter((i) => /geburtstag/i.test(i.title) || /geburtstag/i.test(i.label ?? "")).map((i) => ({ title: i.title, date: i.date, when }));
   const todayDay = forecast?.days.find((d) => d.date === src.today);
-  const rainy = todayDay ? todayDay.rain >= 60 || ["regen", "schauer", "niesel", "gewitter", "schnee"].includes(weatherKind(todayDay.code).kind) : null;
+  const rainy = todayDay ? todayDay.wet > 0 : null;
   const region = src.regionTips ? jetztTip(src.regionTips, { today: src.today, minutes: src.minutes, rainy, kids: src.kids, hiddenWeekend: src.regionHidden }) : null;
   const input: JetztInput = {
     minutes: src.minutes,
@@ -102,7 +102,7 @@ export function useJetztTopics(src: JetztSource) {
     allDone: src.allDone,
     pin: unread ? { id: unread.id, author: unread.data.author, text: unread.data.text, when: pinMeta(unread, src.me, src.today, shortClock, (iso) => toIsoDate(new Date(iso))).split(" · ")[1] ?? "" } : null,
     weatherTip: forecast ? weatherTip(forecast, src.today, src.minutes, tips) : null,
-    weatherNow: nowHour ? { temp: round(nowHour.temp), text: weatherKind(nowHour.code).text, range: range ? `${round(range.min)} bis ${round(range.max)}°` : undefined } : null,
+    weatherNow: nowHour ? { temp: round(nowHour.temp), text: forecast?.current.raining ? "Regen" : (todayDay?.text ?? weatherKind(nowHour.code).text), range: range ? `${round(range.min)} bis ${round(range.max)}°` : undefined } : null,
     dish: src.dish,
     dinnerFree: src.dinnerFree,
     birthdays: [...birthday(src.todayAll.filter((i) => i.date === src.today), "heute"), ...birthday(src.tomorrow, "morgen")],

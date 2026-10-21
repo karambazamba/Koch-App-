@@ -3,7 +3,7 @@
 // EIN Satz zum Tag (mit Bezug auf Termine), 7 Tage in Worten und der beste Tag
 // für draußen. Keine Balken, keine Stunden-Tabellen.
 
-import { isRainy, round, weatherKind, type Forecast, type ForecastDay, type ForecastHour, type TipTermin } from "./forecast";
+import { dayLook, isRainy, round, weatherKind, type Forecast, type ForecastDay, type TipTermin } from "./forecast";
 
 /** Farbgruppe der Kachel (Verlauf): sonnig · bewoelkt · regen · schnee · gewitter */
 export type WeatherGroup = "sonnig" | "bewoelkt" | "regen" | "schnee" | "gewitter";
@@ -18,7 +18,7 @@ export function weatherGroup(code: number): WeatherGroup {
 }
 
 export type PartId = "morgens" | "mittags" | "abends";
-export type DayPart = { id: PartId; label: string; code: number; temp: number; rain: number; gust: number; tips: string[] };
+export type DayPart = { id: PartId; label: string; code: number; text: string; temp: number; rain: number; gust: number; tips: string[] };
 
 const PARTS: { id: PartId; label: string; from: number; to: number }[] = [
   { id: "morgens", label: "Morgens", from: 6, to: 11 },
@@ -26,18 +26,12 @@ const PARTS: { id: PartId; label: string; from: number; to: number }[] = [
   { id: "abends", label: "Abends", from: 17, to: 23 },
 ];
 
-/** Bedeutsamstes Wetter einer Stundenreihe: Gewitter > Schnee > Regen > sonst die Mitte */
-function leadCode(hs: ForecastHour[]): number {
-  const by = (g: WeatherGroup) => hs.find((h) => weatherGroup(h.code) === g);
-  return (by("gewitter") ?? by("schnee") ?? hs.find(isRainy) ?? hs[Math.floor(hs.length / 2)]).code;
-}
-
-/** Kleine Tipps je Tageszeit (höchstens 2) */
-function partTips(code: number, temp: number, rain: number, gust: number): string[] {
+/** Kleine Tipps je Tageszeit (höchstens 2) – Schirm nur bei echter Regenstunde */
+function partTips(code: number, temp: number, wet: number, gust: number): string[] {
   const tips: string[] = [];
   const g = weatherGroup(code);
   if (g === "gewitter") tips.push("⚡ Lieber drinnen");
-  else if (g === "regen" || rain >= 50) tips.push("☂️ Schirm");
+  else if (wet > 0) tips.push("☂️ Schirm");
   if (temp <= 0) tips.push("❄️ Glatt");
   else if (temp <= 5) tips.push("🧣 Warm anziehen");
   else if (temp >= 25) tips.push("🧴 Sonnencreme");
@@ -45,25 +39,30 @@ function partTips(code: number, temp: number, rain: number, gust: number): strin
   return tips.slice(0, 2);
 }
 
-/** Morgens · Mittags · Abends für einen Tag (nur Tageszeiten mit Stunden) */
+/** Morgens · Mittags · Abends für einen Tag (nur Tageszeiten mit Stunden), nach derselben Regel wie der Tag */
 export function dayParts(fc: Forecast, date: string): DayPart[] {
   const hs = fc.hours.filter((h) => h.date === date);
   return PARTS.flatMap((p) => {
     const part = hs.filter((h) => h.hour >= p.from && h.hour < p.to);
     if (!part.length) return [];
-    const code = leadCode(part);
+    const look = dayLook(part, false);
     const temp = round(part.reduce((s, h) => s + h.temp, 0) / part.length);
     const rain = Math.max(...part.map((h) => h.rain));
     const gust = Math.max(...part.map((h) => h.gust));
-    return [{ id: p.id, label: p.label, code, temp, rain, gust, tips: partTips(code, temp, rain, gust) }];
+    return [{ id: p.id, label: p.label, code: look.code, text: look.text, temp, rain, gust, tips: partTips(look.code, temp, look.wet, gust) }];
   });
 }
 
 const short = (t: string) => (t.length > 24 ? `${t.slice(0, 23)}…` : t);
 
-/** Kurz in Worten: "Sonnig, 9 bis 15°" */
+/** Kurz in Worten: "Sonne und Wolken, 9 bis 15°" */
 export function dayWords(d: ForecastDay): string {
-  return `${weatherKind(d.code).text}, ${round(d.min)} bis ${round(d.max)}°`;
+  return `${d.text || weatherKind(d.code).text}, ${round(d.min)} bis ${round(d.max)}°`;
+}
+
+/** Kleine Zusätze zur 7-Tage-Zeile: Regenrisiko ab 30 %, Sonnenstunden nur über 0 */
+export function dayExtras(d: ForecastDay): { rain: string | null; sun: string | null } {
+  return { rain: d.rain >= 30 ? `☂ ${d.rain} %` : null, sun: d.sun >= 0.5 ? `☀ ${Math.round(d.sun)} Std.` : null };
 }
 
 /**
@@ -84,7 +83,7 @@ export function daySentence(fc: Forecast, date: string, termine: TipTermin[] = [
   const first = timed.find((t) => at(t));
   if (first && hs.length) return `Für ${short(first.title)} bleibt es trocken.`;
   const rain = hs.find(isRainy);
-  if (rain && day) return `Ab ${rain.hour} Uhr Regen, ${round(day.min)} bis ${round(day.max)}°.`;
+  if (rain && day) return `Ab ${rain.hour} Uhr ${hs.filter(isRainy).length <= 3 ? "Schauer möglich" : "Regen"}, ${round(day.min)} bis ${round(day.max)}°.`;
   return day ? `${dayWords(day)}.` : null;
 }
 

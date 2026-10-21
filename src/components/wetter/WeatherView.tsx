@@ -17,7 +17,7 @@ import { itemsForDay, tomorrowLabel, weekdayLong, weekdayShort } from "@/lib/auf
 import { useEntries } from "@/lib/aufgaben/store";
 import { addDays, toIsoDate, useMinutes, useToday } from "@/lib/core/now";
 import { round, weatherKind, type Forecast, type ForecastDay, type TipTermin } from "@/lib/wetter/forecast";
-import { bestOutdoorDay, dayParts, daySentence, dayWords, weatherGroup, weatherStartTab, type DayPart } from "@/lib/wetter/view";
+import { bestOutdoorDay, dayExtras, dayParts, daySentence, dayWords, weatherGroup, weatherStartTab, type DayPart } from "@/lib/wetter/view";
 import { useForecast } from "@/lib/wetter/client";
 import { WeatherSymbol } from "./WeatherSymbol";
 
@@ -79,7 +79,7 @@ export function WeatherView() {
           ))}
         </div>
         <p className="px-1 text-center text-xs text-muted">
-          Daten: Open-Meteo (u. a. Deutscher Wetterdienst) ·{" "}
+          {sourceLine(forecast?.source)} ·{" "}
           <Link href="/profil/wetter" className="font-semibold underline">
             Ort ändern
           </Link>
@@ -90,6 +90,10 @@ export function WeatherView() {
 }
 
 /** Heute bzw. Morgen: Kopfkarte, ein Satz, Morgens/Mittags/Abends */
+/** Quellenzeile: DWD über Bright Sky bzw. Open-Meteo (DWD ICON) */
+const sourceLine = (source: Forecast["source"]) =>
+  source === "icon" ? "Daten: Open-Meteo (DWD ICON)" : source === "mock" ? "Daten: Testmodus" : "Daten: Deutscher Wetterdienst (über Bright Sky)";
+
 function DayTab({ forecast, date, today, minutes, termine }: { forecast: Forecast; date: string; today: string; minutes: number; termine: TipTermin[] }) {
   const d = forecast.days.find((x) => x.date === date);
   const isToday = date === today;
@@ -105,7 +109,7 @@ function DayTab({ forecast, date, today, minutes, termine }: { forecast: Forecas
           <span className="flex flex-col">
             <span className="text-[40px] font-extrabold tabular-nums leading-none">{round(isToday ? forecast.current.temp : (d?.max ?? 0))}°</span>
             <span className="text-[15px] text-muted">
-              {weatherKind(code).text}
+              {isToday ? (forecast.current.raining ? "Gerade Regen" : d?.text ?? weatherKind(code).text) : (d?.text ?? weatherKind(code).text)}
               {d ? ` · ${round(d.min)}° / ${round(d.max)}°` : ""}
             </span>
           </span>
@@ -128,7 +132,7 @@ function PartCard({ part }: { part: DayPart }) {
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="text-[15px] font-extrabold text-muted">{part.label}</span>
         <span className="text-[17px] font-bold">
-          {part.temp}° <span className="text-[15px] font-medium text-muted">{weatherKind(part.code).text}</span>
+          {part.temp}° <span className="text-[15px] font-medium text-muted">{part.text}</span>
         </span>
       </span>
       {part.tips.length > 0 && (
@@ -167,7 +171,11 @@ function WeekTab({ forecast, today }: { forecast: Forecast; today: string }) {
             <button type="button" onClick={() => setOpen(d)} className="flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left" aria-label={`${name(d.date)}: ${dayWords(d)} – Einzelheiten`}>
               <span className="w-10 text-[15px] font-bold">{d.date === today ? "Heute" : weekdayShort(d.date)}</span>
               <WeatherSymbol code={d.code} className="h-8 w-8" />
-              <span className="min-w-0 flex-1 truncate text-[15px]">{dayWords(d)}</span>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-[15px]">{dayWords(d)}</span>
+                {dayExtras(d).sun && <span className="text-xs text-muted">{dayExtras(d).sun}</span>}
+              </span>
+              {dayExtras(d).rain && <span className="shrink-0 text-[13px] font-semibold text-weather-ink">{dayExtras(d).rain}</span>}
               {best?.date === d.date && <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-xs font-bold text-accent-strong">☀ draußen</span>}
             </button>
           </li>
@@ -179,6 +187,7 @@ function WeekTab({ forecast, today }: { forecast: Forecast; today: string }) {
             <p className="text-base">
               {dayWords(open)}
               {open.rain >= 30 ? ` · Regenrisiko ${open.rain} %` : ""}
+              {open.sun >= 0.5 ? ` · etwa ${Math.round(open.sun)} Std. Sonne` : ""}
             </p>
             {dayParts(forecast, open.date).map((p) => (
               <PartCard key={p.id} part={p} />
