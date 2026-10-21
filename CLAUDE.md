@@ -474,6 +474,24 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   (`TaskQuickAdd`), einmaliger Hinweis nach dem Kennenlernen, Start-Kacheln
   aus dem Kennenlernen (`homeTilesFor`, in Standard-Reihenfolge).
 
+## Essen „Kochen mit dem, was da ist“ (v0.43)
+
+- Essen-Reiter (`FoodPage`): oben das Gericht von heute (nach dem Essen
+  morgen) wie die Foto-Kachel – Bild vollflächig mit weichem Verlauf, „HEUTE ·
+  18:30“, Name, Chips „alles im Haus“ (grün) bzw. „auf die Liste: …“,
+  Personen/Minuten, „Kochen ›“ (Kochmodus), oben links „⇄ Tauschen“ (das eine
+  Tausch-Fenster); Antippen = Rezept. Ohne Gericht: „Noch frei“ mit „Ideen
+  zeigen“ / „<Name> fragen“.
+- Darunter „Diese Woche“ (heute mit orangem Ring), dann „Das ist da“
+  (`CookFromStock.tsx` `StockChips`, nur mit Baustein Vorrat und wenn etwas da
+  ist: Chips, „bald aufbrauchen“ zuerst mit Sanduhr in Hellorange, dann
+  „+ N“ → `/vorrat`) und „Daraus kannst du kochen“ (`CookIdeas`, drei Ideen
+  aus `useTodayIdeas` mit Bild, Zeit · Grund, „alles im Haus“ → „Heute“
+  (`takeForToday`), sonst „auf die Liste: …“ → „+ Einkauf“ legt das Fehlende
+  für heute auf die Liste (Gericht gemerkt) und zeigt „✓ Liste“; nach dem
+  Essen „Ideen für morgen“). Die alte Vorrat-Karte mit Zählern ist weg (leer:
+  ein Einstieg „Trag ein, was da ist“).
+
 ## Einkauf nach Läden (v0.41)
 
 - Läden wie bisher: Vorschläge (`SHOP_SUGGESTIONS`) + eigene (`/profil/produkte`,

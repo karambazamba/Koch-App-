@@ -79,24 +79,18 @@ export function BausteinSections() {
           </Link>
         </section>
       )}
-      {pantryOn && (
+      {/* Vorrat mit Inhalt steht oben als „Das ist da“; leer: ein freundlicher Einstieg (ohne Zähler) */}
+      {pantryOn && pantry && pantry.length === 0 && (
         <section className={SECTION} aria-label="Vorrat">
-          <div className={HEAD}>
-            <h2 className={SECTION_TITLE}>Vorrat</h2>
-            <Link href="/vorrat" className={MORE}>
-              Öffnen <ChevronRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-            </Link>
-          </div>
-          <Link href="/vorrat" className={`${CARD} grid grid-cols-3 divide-x divide-line`}>
-            {PANTRY_PLACES.map((p) => (
-              <span key={p.value} className="flex flex-col items-center gap-0.5 px-2 py-3">
-                <span className="text-xl" aria-hidden>
-                  {p.emoji}
-                </span>
-                <span className="text-sm font-bold">{p.short}</span>
-                <span className="text-xs text-muted">{pantry ? `${pantry.filter((i) => i.place === p.value).length} Sachen` : "…"}</span>
-              </span>
-            ))}
+          <Link href="/vorrat" className={`${CARD} flex items-center gap-3 p-4 active:scale-[0.99]`}>
+            <span className="text-2xl" aria-hidden>
+              {PANTRY_PLACES[0].emoji}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-base font-bold">Vorrat</span>
+              <span className="block text-sm text-muted">Trag ein, was da ist – dann passen die Ideen.</span>
+            </span>
+            <ChevronRight className="h-5 w-5 shrink-0 text-muted" strokeWidth={2} aria-hidden />
           </Link>
         </section>
       )}
