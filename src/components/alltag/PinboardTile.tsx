@@ -57,7 +57,6 @@ export function PinboardTile({ size = "M", me, demo = false, helper = "" }: { si
           <Pin className="h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} aria-hidden />
           Pinnwand
           {(unread || showDemo) && <span className="h-2 w-2 rounded-full bg-accent" aria-label="Neue Nachricht" />}
-          {showDemo && <DemoBadge />}
         </span>
         <span className="absolute right-3.5 top-3">
           <QuickButton icon={Plus} label="Neue Nachricht an die Pinnwand" onClick={() => setWriting(true)} />
@@ -67,7 +66,9 @@ export function PinboardTile({ size = "M", me, demo = false, helper = "" }: { si
             <LotteAvatar size={28} />
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="line-clamp-3 text-[14px] font-semibold leading-snug">Willkommen! Hier hinterlasst ihr euch kleine Nachrichten 💛</span>
-              <span className="text-xs text-muted">{helper} · gerade eben</span>
+              <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                {helper} · gerade eben <DemoBadge />
+              </span>
             </span>
           </button>
         ) : shown.length ? (

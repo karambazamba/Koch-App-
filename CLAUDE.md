@@ -124,9 +124,11 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   Einstellungen und Push (`lottePush()`, `LOTTE_PUSH_ICON`). Manifest theme_color #EE5F14 (`BRAND_COLOR`).
 - Schrift Plus Jakarta Sans, große fette Überschriften, weiße Karten
   (Radius 22px) auf #F7F4EF. Seiten-Leiste oben als Segment-Schalter
-  (`bg-segment`, aktiv weiß). Lotte-Leiste unten dunkel (`bg-bar` #1F1B17,
-  `text-on-bar`) mit orangem Avatar links und weißem Mikrofon-Knopf rechts –
-  auf allen drei Seiten gleich und immer sichtbar. Familie = Orange
+  (`bg-segment`, aktiv weiß). Lotte-Leiste unten hell und schwebend (weiß,
+  Radius 28, Schatten `shadow-bar`) mit Avatar links und orangem
+  Mikrofon-Knopf rechts – auf allen drei Seiten gleich und immer sichtbar.
+  Knöpfe nie schwarz (Hauptknöpfe in Orange bzw. Mia-Farbe). Standard für
+  neue Nutzer = Hell; Dunkel/Automatisch nur nach eigener Wahl. Familie = Orange
   (`bg-accent`), Arbeit = Blau (`bg-work`). Alles über Tokens, Hell/Dunkel/
   Automatisch (intern `warm`/`nacht`/`auto`).
 - Startseite (`HomePager`, `src/components/alltag/`): siehe "Drei Seiten"
@@ -399,7 +401,7 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   (nur eigene). Lotte: `pinnwand_schreiben` (Op `add_pin`), Kontext
   "Pinnwand: …"; ohne KI "Schreib an die Pinnwand: …", "Was steht auf der
   Pinnwand?". Nutzt Lotte die Pinnwand, kommt die Kachel auf die Startseite.
-- Kein Rückgängig beim Hinzufügen (app-weit): Hinzufügen, Abhaken,
+- Kein Rückgängig beim Hinzufügen (app-weit): Hinzufügen,
   Übernehmen, Kachel hinzufügen, Größe, Sortieren = still (Animation,
   Vibration); das Zurücknehmen bleibt für "Mach das rückgängig" registriert
   (`pushUndo`). Nur echtes Löschen (Eintrag, Notiz, Pinnwand-Nachricht,
@@ -411,6 +413,30 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   (`QuickButton`), Schnell-Termin (`TerminQuickAdd`), Schnell-Aufgabe
   (`TaskQuickAdd`), einmaliger Hinweis nach dem Kennenlernen, Start-Kacheln
   aus dem Kennenlernen (`homeTilesFor`, in Standard-Reihenfolge).
+
+## Korrekturen Teil 0 (v0.28)
+
+- Abhaken überall gleich (Startseite, Tag, Aufgaben-Seite, Beispiel-Tag):
+  durchgestrichen, nach ~2 s (`LEAVE_MS` in `alltag/actions.ts`) weich weg
+  (`card-out`), dann „Erledigt · Rückgängig“ für 4 s (`showDone`, `act(…,
+  { done: true })`). Beispiele werden dabei nur ausgeblendet
+  (`hideDemoItem`, `gone`), nie gespeichert.
+- Start in Hell: neue Profile `theme: "warm"`, Profil v20 `themeSet`
+  (selbst gewählt). Migration: ohne eigene Wahl → Hell, Dunkel bleibt. Ab dem
+  3. Tag einmal leise „🌙 Abends lieber dunkel? Automatisch · Nein danke“
+  (`DarkTip`, `core/darkTip.ts`, Speicher `wasgibts.dunkeltipp`).
+- Statusleiste: `.status-veil` deckend in Seitenfarbe (Safe-Area oben).
+- Beispiel-Tag: je Kachel weg beim ersten Eigenen (Termine, Aufgaben,
+  Pinnwand, Einkauf); nach dem ersten eigenen Termin/der ersten eigenen
+  Aufgabe einmal „Alle Beispiele entfernen? Ja · Behalten“ (`askRemoveAll`,
+  `asked`). Hinweis: „Trägst du in einer Kachel Eigenes ein, verschwinden
+  dort die Beispiele.“
+- Termine höchstens 2 Spalten: S 1, M bis 4 (2×2), L bis 6 (2×3), Titel bis 2
+  Zeilen, mehr → „+N weitere“.
+- Helle, schwebende Mia-Leiste (`LotteBar`), „Fertig“- und Größen-Knöpfe in
+  Orange statt Schwarz.
+- Test: `tests/daten.test.ts` (Ansicht v20), `tests/demo.test.ts` (Frage);
+  Durchklick `teil0` im Scratchpad.
 
 ## Korrekturen Teil B (v0.26)
 
@@ -432,8 +458,8 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   Wieder mitdenken“ (`phase.resume`). Phase „☀️ Morgens · Überblick für den
   Tag“, nächster Tag immer mit Wochentag (`tomorrowLabel` → „Morgen · Mi“,
   Erinnerung „Morgen (Mi) um …“), Einstellung „Morgens bis 10:00“.
-- Startseite: Termine als schlanke Kärtchen (`TerminCard`, 44–48 px; S 1,
-  M bis 3, L bis 6 in 2 Reihen), Aufgaben im 2er-Raster (`TaskField`; S 2 –
+- Startseite: Termine als schlanke Kärtchen (`TerminCard`; seit v0.28 höchstens
+  2 Spalten), Aufgaben im 2er-Raster (`TaskField`; S 2 –
   halb untereinander, breit nebeneinander –, M 2×2, L 2×4, ungerade = leeres
   Feld). Leere Kacheln „+ eintragen“, Einkauf-Vorschau mit „ · “.
   Statusleiste: `.status-veil` (Safe-Area, Hintergrund durchscheinend mit
