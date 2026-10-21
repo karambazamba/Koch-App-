@@ -127,7 +127,7 @@ export function HomePager({ data }: { data: HomeData }) {
   );
 }
 
-/** Lotte-Leiste unten: dunkel, oranger Avatar links, weißer Mikrofon-Knopf rechts */
+/** Lotte-Leiste unten: hell und schwebend, Avatar links, oranges Mikrofon rechts */
 export function LotteBar({ name, bottom }: { name: string; bottom?: string }) {
   return (
     <div
@@ -135,18 +135,18 @@ export function LotteBar({ name, bottom }: { name: string; bottom?: string }) {
       style={bottom ? { bottom } : undefined}
       data-lotte-leiste
     >
-      <div className="pointer-events-auto mx-auto flex h-16 max-w-lg items-center gap-2 rounded-full bg-bar pl-2 pr-2 shadow-lg">
-        <button type="button" onClick={() => (wakeAvatar(), openHelper())} aria-label={`Sag ${name}, was ansteht … (${name} öffnen)`} className="flex h-full min-w-0 flex-1 items-center gap-3 text-left">
-          <LotteAvatar size={46} groesse="klein" />
-          <span className="truncate text-base text-on-bar/75">Sag {name}, was ansteht …</span>
+      <div className="pointer-events-auto mx-auto flex h-14 max-w-lg items-center gap-2.5 rounded-[28px] border border-line bg-surface pl-2 pr-1.5 shadow-bar">
+        <button type="button" onClick={() => (wakeAvatar(), openHelper())} aria-label={`Sag ${name}, was ansteht … (${name} öffnen)`} className="flex h-full min-w-0 flex-1 items-center gap-2.5 text-left">
+          <LotteAvatar size={40} groesse="klein" />
+          <span className="truncate text-[15px] text-muted">Sag {name}, was ansteht …</span>
         </button>
         <button
           type="button"
           onClick={() => (wakeAvatar(), openHelper("voice"))}
           aria-label={`${name} etwas sagen`}
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-on-bar text-bar transition active:scale-95"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent transition active:scale-95"
         >
-          <Mic className="h-6 w-6" strokeWidth={2.25} aria-hidden />
+          <Mic className="h-5 w-5" strokeWidth={2.25} aria-hidden />
         </button>
       </div>
     </div>

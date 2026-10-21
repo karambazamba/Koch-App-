@@ -1,9 +1,9 @@
 "use client";
 
-// Kurze Meldung oben mit "Rückgängig" – nur bei echtem Löschen ("Gelöscht ·
-// Rückgängig", 3 Sekunden, dezent: `showDeleted`). Hinzufügen, Abhaken,
-// Übernehmen, Sortieren melden sich still (Animation, Vibration). Überlebt
-// einen Seitenwechsel.
+// Kurze Meldung oben mit "Rückgängig" – bei echtem Löschen ("Gelöscht ·
+// Rückgängig", 3 Sekunden: `showDeleted`) und beim Abhaken ("Erledigt ·
+// Rückgängig", 4 Sekunden: `showDone`). Hinzufügen, Übernehmen, Sortieren
+// melden sich still (Animation, Vibration). Überlebt einen Seitenwechsel.
 
 import { useExternalStore } from "./useExternalStore";
 
@@ -26,6 +26,11 @@ export function showToast(toast: Omit<Toast, "id">) {
 /** Nach echtem Löschen: kleine Meldung "Gelöscht · Rückgängig" für 3 Sekunden */
 export function showDeleted(undo: () => void, text = "Gelöscht") {
   showToast({ text, undo, undoneText: "Wiederhergestellt", seconds: 3, small: true });
+}
+
+/** Nach dem Abhaken (Eintrag ist weich verschwunden): "Erledigt · Rückgängig" für 4 Sekunden */
+export function showDone(undo: () => void) {
+  showToast({ text: "Erledigt", undo, undoneText: "Wieder da", seconds: 4, small: true });
 }
 
 export function hideToast() {

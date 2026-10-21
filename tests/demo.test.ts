@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { demoEntries, demoTiles } from "@/lib/core/demo";
+import { askRemoveAll, demoEntries, demoTiles, type DemoTile } from "@/lib/core/demo";
 import { STORAGE } from "@/lib/core/storage";
 import { APP_NAME, APP_SHORT_NAME } from "@/lib/core/app";
 import { profileFrom, startState } from "@/lib/einstellungen/welcome";
@@ -28,11 +28,20 @@ describe("Beispiel-Tag (erster Start)", () => {
   });
 
   it("verschwindet nach 3 Tagen, je Kachel beim ersten Eigenen und mit „Jetzt leeren“", () => {
-    const state = { version: 1 as const, since: TODAY, cleared: [], done: [] };
+    const state = { version: 1 as const, since: TODAY, cleared: [] as DemoTile[], done: [], gone: [], asked: false };
     expect(demoTiles(state, TODAY)).toEqual(["termine", "aufgaben", "pinnwand", "einkauf"]);
     expect(demoTiles(state, "2026-10-24")).toEqual([]);
     expect(demoTiles({ ...state, cleared: ["termine"] }, TODAY)).not.toContain("termine");
     expect(demoTiles(null, TODAY)).toEqual([]);
+  });
+
+  it("nach dem ersten eigenen Termin einmal fragen: „Alle Beispiele entfernen?“", () => {
+    const base = { version: 1 as const, since: TODAY, cleared: [] as DemoTile[], done: [], gone: [], asked: false };
+    expect(askRemoveAll(base, ["termine", "pinnwand"])).toBe(false);
+    const own = { ...base, cleared: ["termine"] as DemoTile[] };
+    expect(askRemoveAll(own, ["aufgaben", "pinnwand"])).toBe(true);
+    expect(askRemoveAll({ ...own, asked: true }, ["aufgaben"])).toBe(false);
+    expect(askRemoveAll({ ...base, cleared: ["pinnwand"] as DemoTile[] }, ["termine"])).toBe(false);
   });
 
   it("nie in der Sicherung", () => {

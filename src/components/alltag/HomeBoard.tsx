@@ -390,7 +390,7 @@ function EditFrame({ tile, editing, onRemove, onResize, children }: { tile: Home
               aria-checked={tile.size === s}
               aria-label={`${meta.label} ${s === "S" ? "klein" : s === "M" ? "mittel" : "groß"}`}
               onClick={() => onResize(s)}
-              className={`flex h-8 w-9 items-center justify-center ${tile.size === s ? "bg-bar text-on-bar" : "text-muted"}`}
+              className={`flex h-8 w-9 items-center justify-center ${tile.size === s ? "bg-accent text-on-accent" : "text-muted"}`}
             >
               {s}
             </button>

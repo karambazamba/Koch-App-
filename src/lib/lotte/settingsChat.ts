@@ -67,9 +67,9 @@ export function settingsChange(text: string, profile: HouseholdProfile): Setting
 
   // Ansicht und Darstellung
   if (/\b(ansicht|darstellung|app|farben?|modus)\b/i.test(lower) || /dark ?mode|mach'?s? dunkel/i.test(lower)) {
-    if (/\b(dunkel|nacht|dark)/i.test(lower)) return { profile: { ...profile, theme: "nacht" }, reply: "Gemacht ✓ Die App ist jetzt dunkel." };
-    if (/\bautomatisch|wie das handy/i.test(lower)) return { profile: { ...profile, theme: "auto" }, reply: "Gemacht ✓ Hell oder dunkel – wie das Handy." };
-    if (/\b(hell|warm)\b/i.test(lower)) return { profile: { ...profile, theme: "warm" }, reply: "Gemacht ✓ Die App ist jetzt hell." };
+    if (/\b(dunkel|nacht|dark)/i.test(lower)) return { profile: { ...profile, theme: "nacht", themeSet: true }, reply: "Gemacht ✓ Die App ist jetzt dunkel." };
+    if (/\bautomatisch|wie das handy/i.test(lower)) return { profile: { ...profile, theme: "auto", themeSet: true }, reply: "Gemacht ✓ Hell oder dunkel – wie das Handy." };
+    if (/\b(hell|warm)\b/i.test(lower)) return { profile: { ...profile, theme: "warm", themeSet: true }, reply: "Gemacht ✓ Die App ist jetzt hell." };
   }
   if (/\b(zeig|zeige) (mir )?alles\b|\balles zeigen\b/i.test(lower)) return { profile: { ...profile, display: "alles" }, reply: "Gemacht ✓ Ich zeige jetzt alles." };
   if (/\b(einfacher|einfache darstellung|weniger anzeigen)\b/i.test(lower)) return { profile: { ...profile, display: "einfach" }, reply: "Gemacht ✓ Darstellung ist jetzt einfach." };

@@ -21,7 +21,7 @@ export function AppearanceView() {
                   role="radio"
                   aria-checked={selected}
                   aria-label={t.label}
-                  onClick={() => set({ theme: t.value })}
+                  onClick={() => set({ theme: t.value, themeSet: true })}
                   className={`flex flex-col gap-2 rounded-card border-2 p-2 text-left transition active:scale-[0.98] ${
                     selected ? "border-accent bg-accent-soft" : "border-line bg-surface"
                   }`}

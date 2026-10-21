@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { backupSummary, createBackup, parseBackup, restoreBackup } from "@/lib/core/backup";
 import { STORAGE, removeRetiredKeys } from "@/lib/core/storage";
 import { migrateHelper, migrateProfile } from "@/lib/einstellungen/profileStore";
+import { createEmptyProfile } from "@/lib/einstellungen/profile";
 import { memoryStorage } from "./helpers";
 
 describe("Verzeichnis der gespeicherten Daten", () => {
@@ -53,7 +54,7 @@ describe("Daten sichern und wiederherstellen", () => {
 describe("Profil-Migration", () => {
   it("altes Profil (v1) wird zur aktuellen Version, Familie bleibt", () => {
     const p = migrateProfile({ version: 1, adults: 1, kids: 1, persons: [{ id: "a", role: "erwachsen", name: "Lisa" }, { id: "k", role: "kind", name: "Ella" }], warmMeal: "abends" });
-    expect(p?.version).toBe(19);
+    expect(p?.version).toBe(20);
     expect(p?.persons.map((x) => x.name)).toEqual(["Lisa", "Ella"]);
     expect(p?.householdType).toBe("familie");
     expect(p?.warmMeal.weekday).toBe("abends");
@@ -62,6 +63,14 @@ describe("Profil-Migration", () => {
   it("Begleitung: ohne Namen Lotte, Theo wird Assistent in Nachtblau", () => {
     expect(migrateHelper({}).name).toBe("Lotte");
     expect(migrateHelper({ name: "Theo" })).toMatchObject({ art: "assistent", farbe: "nachtblau", voice: "maennlich" });
+  });
+
+  it("Ansicht (v20): ohne eigene Wahl Hell, Dunkel bleibt, neue Profile Hell", () => {
+    const base = { adults: 1, kids: 0, persons: [{ id: "a", role: "erwachsen", name: "Lisa" }] };
+    expect(migrateProfile({ ...base, version: 19, theme: "auto" })).toMatchObject({ theme: "warm", themeSet: false });
+    expect(migrateProfile({ ...base, version: 19, theme: "nacht" })).toMatchObject({ theme: "nacht", themeSet: true });
+    expect(migrateProfile({ ...base, version: 20, theme: "auto", themeSet: true })).toMatchObject({ theme: "auto", themeSet: true });
+    expect(createEmptyProfile().theme).toBe("warm");
   });
 
   it("unbekannte Daten ergeben kein Profil", () => {

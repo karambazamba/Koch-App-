@@ -43,7 +43,9 @@ import { isUrgent, itemsForDay, openTaskCount, orderedTasks, taskOverview, upcom
 import { AufgabenSection, TermineSection, type DemoProps } from "./MiniCards";
 import { useDemoDay } from "./useDemoDay";
 import { DemoHint, DemoItemSheet } from "./DemoBits";
-import { toggleDemoDone } from "@/lib/core/demo";
+import { DarkTip } from "./DarkTip";
+import { hideDemoItem, toggleDemoDone } from "@/lib/core/demo";
+import { showDone } from "@/lib/core/toast";
 import { dueReminder } from "@/lib/aufgaben/reminders";
 import { markReminderSeen, useSeenReminders } from "@/lib/aufgaben/store";
 import { greeting, homeSentence, type SentencePart } from "@/lib/aufgaben/summary";
@@ -169,7 +171,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   // Beispiel-Tag (erster Start): Beispiele statt leerer Kacheln
   const demoDay = useDemoDay(entries, data.todayIso, minutes, helperName(data.profile));
   const [demoItem, setDemoItem] = useState<DayItem | null>(null);
-  const demoProps: DemoProps = { label: demoDay.label, done: demoDay.done, onToggle: (i) => (buzz(), toggleDemoDone(i.entry.id)), onOpen: setDemoItem };
+  const demoProps: DemoProps = { label: demoDay.label, done: demoDay.done, onToggle: (i) => (buzz(), toggleDemoDone(i.entry.id)), onGone: (i) => showDone(hideDemoItem(i.entry.id)), onOpen: setDemoItem };
   const overview = taskOverview(entries, data.todayIso);
   const workless = (list: typeof overview.heute) => (view.hideWork ? list.filter((i) => i.room !== "arbeit") : list);
   // EINE Reihenfolge: dringend → heute → Frist → diese Woche (Startseite zeigt bis diese Woche)
@@ -283,7 +285,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
             <header className="sticky top-0 z-20 -mx-4 flex flex-col gap-0.5 bg-background/95 px-4 pb-2 pt-1 backdrop-blur" aria-label="Startseite bearbeiten">
               <div className="flex items-center gap-3">
                 <h1 className="flex-1 text-[24px] font-extrabold leading-tight tracking-tight">Startseite bearbeiten</h1>
-                <button type="button" onClick={editing.close} className="h-10 rounded-full bg-bar px-5 text-sm font-bold text-on-bar active:scale-95">
+                <button type="button" onClick={editing.close} className="h-10 rounded-full bg-accent px-5 text-sm font-bold text-on-accent active:scale-95">
                   Fertig
                 </button>
               </div>
@@ -334,6 +336,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
                 />
               </div>
 
+              <DarkTip profile={data.profile} today={data.todayIso} quiet={demoDay.tiles.length > 0 || tipSeen === false} />
               {tipSeen === false && welcomed && !demoDay.tiles.length && (
                 <div className="flex items-start gap-3 rounded-2xl bg-accent-soft px-4 py-3" role="status">
                   <p className="flex-1 text-[15px] leading-snug text-accent-strong">Tipp: Halte die Startseite gedrückt, um Kacheln hinzuzufügen oder zu entfernen.</p>
@@ -387,7 +390,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
             </p>
           )}
 
-          {!editing.on && demoDay.tiles.length > 0 && <DemoHint />}
+          {!editing.on && demoDay.tiles.length > 0 && <DemoHint ask={demoDay.ask} />}
           {demoItem && <DemoItemSheet item={demoItem} today={data.todayIso} onClose={() => setDemoItem(null)} />}
 
           {!editing.on && (

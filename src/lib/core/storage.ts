@@ -19,7 +19,7 @@ type StorageDef = {
 };
 
 export const STORAGE = [
-  { key: "familienkueche.haushaltsprofil", what: "Profil: Familie, Begleitung, Vorlieben, Einstellungen", version: 19, migration: "einstellungen/profileStore.ts migrateProfile", area: "local", backup: true },
+  { key: "familienkueche.haushaltsprofil", what: "Profil: Familie, Begleitung, Vorlieben, Einstellungen", version: 20, migration: "einstellungen/profileStore.ts migrateProfile", area: "local", backup: true },
   { key: "wasgibts.eintraege", what: "Termine und Aufgaben", version: 2, migration: "aufgaben/store.ts migrate", area: "local", backup: true },
   { key: "wasgibts.notizen", what: "Notizen", version: 1, migration: "notizen/store.ts", area: "local", backup: true },
   { key: "wasgibts.kladde", what: "Schnellnotiz (Schlüssel heißt noch Kladde)", version: 1, migration: "notizen/schnellnotiz.ts", area: "local", backup: true },
@@ -44,6 +44,7 @@ export const STORAGE = [
   { key: "wasgibts.vorlesen", what: "Vorlesen: Modus, Stimme, Tempo (pro Gerät)", version: 1, migration: "lotte/speech.ts migrate", area: "local", backup: true },
   { key: "wasgibts.wetterort", what: "Wetter-Ort", version: 1, migration: "wetter/client.ts", area: "local", backup: true },
   { key: "wasgibts.wetterdaten", what: "Letzte Wetterdaten (offline)", version: 1, area: "local", backup: false },
+  { key: "wasgibts.dunkeltipp", what: "Einmaliger Hinweis auf Dunkel/Automatisch (ab dem 3. Tag)", version: 1, migration: "core/darkTip.ts", area: "local", backup: false },
   { key: "wasgibts.beispiel", what: "Beispiel-Tag beim ersten Start (seit wann, geleerte Kacheln, Abgehaktes)", version: 1, migration: "core/demo.ts", area: "local", backup: false },
   { key: "wasgibts.willkommen", what: "Ergebnis des ersten Starts (wobei helfen)", version: 1, migration: "einstellungen/welcomeStore.ts (Zwischenstand bis v0.26 wird verworfen)", area: "local", backup: false },
   { key: "wasgibts.aktivitaet", what: "Zuletzt geöffnet, eigenes Tun", version: 1, migration: "core/activity.ts", area: "local", backup: false },

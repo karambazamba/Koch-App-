@@ -26,7 +26,7 @@ export const ROUND_PLUS = "flex h-11 w-11 shrink-0 items-center justify-center r
 
 function TaskRow({ item, today, onOpen }: { item: DayItem; today: string; onOpen: (item: DayItem) => void }) {
   // Abhaken: ca. 1 s durchgestrichen (nochmal tippen = doch nicht); Erledigtes unter "✓ erledigt" zurückholen
-  const { leaving, start } = useLeaving((it) => act((list, stamp) => setDone(list, it, true, stamp), it.title));
+  const { leaving, start } = useLeaving((it) => act((list, stamp) => setDone(list, it, true, stamp), it.title, { done: true }));
   const toggle = (it: DayItem) => {
     if (it.done) {
       buzz();
