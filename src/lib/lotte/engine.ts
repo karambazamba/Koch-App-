@@ -25,7 +25,7 @@ import { berlinTime } from "../core/now";
 import { sanitizeEntry, type CalendarEntry } from "../aufgaben/model";
 import { sanitizeHome } from "../core/homeLayout";
 import { sanitizeSport } from "../sport/model";
-import { sanitizeMailStyle } from "./mail";
+import { looksLikeMail, sanitizeMailStyle } from "./mail";
 
 /** Eine Modell-Anfrage; `onText` bekommt den Antworttext Stück für Stück */
 export type CreateMessage = (params: Anthropic.Beta.MessageCreateParamsNonStreaming, onText?: (delta: string) => void) => Promise<Anthropic.Beta.BetaMessage>;
@@ -185,13 +185,35 @@ function pendingSummary(ops: ChangeOp[]): string {
 
 type Usage = { in: number; out: number; write: number; read: number; rounds: number };
 
-/** Nur Zahlen ins Server-Log (nie Inhalte): Tokens und grobe Kosten der ganzen Anfrage */
-function logUsage(model: string, u: Usage) {
-  if (model === "mock") return;
+/** Kosten in Millionstel US-Dollar (fürs Guthaben später; null = Preis unbekannt) */
+function costMicro(model: string, u: Usage): number | null {
   const price = PRICES[model];
-  const dollar = price ? (u.in * price.in + u.out * price.out + u.write * price.write + u.read * price.read) / 1_000_000 : null;
-  console.info("Lotte Tokens", { modell: model, runden: u.rounds, ein: u.in, aus: u.out, cache_gelesen: u.read, cache_geschrieben: u.write, kosten_usd: dollar === null ? "?" : dollar.toFixed(5) });
+  return price ? Math.round(u.in * price.in + u.out * price.out + u.write * price.write + u.read * price.read) : null;
 }
+
+/** Nur Zahlen ins Server-Log (nie Inhalte): Tokens und grobe Kosten der ganzen Anfrage */
+function logUsage(model: string, u: Usage, upgraded: boolean) {
+  if (model === "mock") return;
+  const micro = costMicro(model, u);
+  console.info("Lotte Tokens", { modell: model, hochgeschaltet: upgraded, runden: u.rounds, ein: u.in, aus: u.out, cache_gelesen: u.read, cache_geschrieben: u.write, kosten_usd: micro === null ? "?" : (micro / 1_000_000).toFixed(5) });
+}
+
+/** Klein (Haiku) für Alltägliches, groß (Sonnet) für Planen, Rezepte, Mails – oder ein fest eingestelltes Modell */
+export type ModelChoice = string | { small: string; large: string };
+
+/** Braucht diese Anfrage gleich das große Modell? (rein, ohne KI) */
+export function needsLargeModel(req: Pick<AssistantRequest, "messages" | "pending">): boolean {
+  if (req.pending.length > 0) return true; // ein offener Vorschlag wird verfeinert
+  const last = req.messages[req.messages.length - 1]?.text ?? "";
+  if (last.length > 280 || looksLikeMail(last)) return true;
+  return LARGE_TOPICS.test(last);
+}
+
+/** Planen, Rezepte, Mails, mehrere Dinge auf einmal → gleich das große Modell */
+const LARGE_TOPICS = /\b(woche\w*|wochenplan|planen?|plan\b|rezept\w*|mail\w*|e-mail|antworte|schreib (eine|dem|der|den|an)|vorschl\w*|ideen für|kochen wir|was koche|essensplan|trainings?\s*plan|trainings planen|räum\w* .*auf|aufräumen)\b/i;
+
+/** Ruft das kleine Modell eines dieser Werkzeuge auf, übernimmt das große */
+const LARGE_TOOLS = new Set(["rezept_erstellen", "mail_entwurf", "wochenplan_aendern", "vorgaben_aendern", "trainings_planen", "schnellnotiz_aufraeumen", "kochbuch_durchsuchen", "antwort_knoepfe"]);
 
 /** Klingt nach Wetter? ("Wie wird das Wetter morgen?", "Brauch ich einen Schirm?") */
 const WEATHER_QUESTION = /\b(wetter|schirm|regn\w*|regen|sonnig|sonne|warm|kalt|grad|temperatur|frost|glatt|schnee|wind\w*|gewitter)\b/i;
@@ -199,23 +221,16 @@ const WEATHER_QUESTION = /\b(wetter|schirm|regn\w*|regen|sonnig|sonne|warm|kalt|
 /** Trainings planen: Wetter für draußen-Sport mitdenken */
 const TRAINING_PLAN = /\bplan\w*\b.*\b(trainings?|sport\w*|läufe|laufen|einheiten)\b/i;
 
-export async function runAssistant(req: AssistantRequest, create: CreateMessage, model: string, events: EngineEvents = {}): Promise<AssistantReply> {
+export async function runAssistant(req: AssistantRequest, create: CreateMessage, choice: ModelChoice, events: EngineEvents = {}): Promise<AssistantReply> {
   const today = new Date(`${req.today}T12:00:00`);
   const shoppingDay = req.data.profile.shoppingDay || "Montag";
   const weeks = { aktuell: weekStartFor(today, shoppingDay), naechste: nextWeekStartFor(today, shoppingDay) };
 
-  // Arbeitskopie mit dem bisherigen Vorschlag
-  const start = applyOps(req.data, req.pending);
-  const numbers = req.pending.flatMap((op) => [op.id, op.type === "add_recipe" ? op.recipe.ref : ""].map((s) => Number(s.match(/(\d+)$/)?.[1] ?? 0)));
-  const ctx: ToolContext = { data: start.data, weeks, ops: [...req.pending], refs: start.refs, counter: Math.max(0, ...numbers), today: req.today };
   // Wetterfragen: Vorhersage vorab holen (Werkzeuge laufen synchron; 30 Min zwischengespeichert)
   const lastText = req.messages[req.messages.length - 1]?.text ?? "";
-  if (WEATHER_QUESTION.test(lastText) || TRAINING_PLAN.test(lastText)) ctx.forecast = await fetchForecast(req.data.wetterOrt || "Eutin", undefined, req.today).catch(() => null);
+  const forecast = WEATHER_QUESTION.test(lastText) || TRAINING_PLAN.test(lastText) ? await fetchForecast(req.data.wetterOrt || "Eutin", undefined, req.today).catch(() => null) : undefined;
   // Fragen nach Tipps aus der Region: Tipps im Umkreis vorab holen (nur mit laufender Quelle)
-  if (tipsMode() !== "off" && tipQuestion(lastText, req.today)) ctx.regionTips = await tipsNear({ ort: req.data.tippOrt || req.data.wetterOrt || "Eutin", km: req.data.tippKm ?? 20, von: req.today, bis: plusDays(req.today, 20), today: req.today }).then((r) => (r.ort ? r.tips : null)).catch(() => null);
-
-  const messages: Anthropic.Beta.BetaMessageParam[] = req.messages.map((m) => ({ role: m.role, content: m.text }));
-  if (messages[0].role !== "user") messages.shift();
+  const regionTips = tipsMode() !== "off" && tipQuestion(lastText, req.today) ? await tipsNear({ ort: req.data.tippOrt || req.data.wetterOrt || "Eutin", km: req.data.tippKm ?? 20, von: req.today, bis: plusDays(req.today, 20), today: req.today }).then((r) => (r.ort ? r.tips : null)).catch(() => null) : undefined;
 
   const system: Anthropic.Beta.BetaTextBlockParam[] = [
     // Name/Ton und Arbeitsweise ändern sich selten → gecacht; Kontext pro Anfrage
@@ -223,56 +238,92 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
     { type: "text", text: contextText(req.data, req.today, weeks, req.tipsThisWeek, { clock: req.clock, shopping: req.shoppingNames }) + pendingSummary(req.pending) },
   ];
 
-  const usage: Usage = { in: 0, out: 0, write: 0, read: 0, rounds: 0 };
-  let reply = "";
-  for (let round = 0; round < ENGINE_LIMITS.maxRounds; round++) {
-    if (round > 0) events.onRound?.();
-    const params: Anthropic.Beta.MessageCreateParamsNonStreaming = {
-      model,
-      max_tokens: ENGINE_LIMITS.maxTokens,
-      system,
-      tools: toolDefinitions(),
-      messages,
-      // Schnell und günstig fürs Gespräch: Nachdenken nur bei Bedarf (adaptiv), geringer Aufwand
-      output_config: { effort: "low" },
-      // Lehnt das Modell ab, springt serverseitig ein Ersatzmodell ein (nur Claude API)
-      ...(FALLBACK_MODELS.test(model) ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const } : {}),
-    };
-    const response = await create(params, events.onText);
-    const u = response.usage;
-    if (u) {
-      usage.in += u.input_tokens;
-      usage.out += u.output_tokens;
-      usage.write += u.cache_creation_input_tokens ?? 0;
-      usage.read += u.cache_read_input_tokens ?? 0;
-    }
-    usage.rounds++;
+  /** Ein Durchlauf mit einem Modell; `small` = darf hochschalten statt große Aufgaben selbst zu machen */
+  const attempt = async (model: string, small: boolean) => {
+    // Arbeitskopie mit dem bisherigen Vorschlag (bei jedem Durchlauf frisch)
+    const start = applyOps(req.data, req.pending);
+    const numbers = req.pending.flatMap((op) => [op.id, op.type === "add_recipe" ? op.recipe.ref : ""].map((s) => Number(s.match(/(\d+)$/)?.[1] ?? 0)));
+    const ctx: ToolContext = { data: start.data, weeks, ops: [...req.pending], refs: start.refs, counter: Math.max(0, ...numbers), today: req.today, ...(forecast !== undefined ? { forecast } : {}), ...(regionTips !== undefined ? { regionTips } : {}) };
+    const messages: Anthropic.Beta.BetaMessageParam[] = req.messages.map((m) => ({ role: m.role, content: m.text }));
+    if (messages[0].role !== "user") messages.shift();
+    const usage: Usage = { in: 0, out: 0, write: 0, read: 0, rounds: 0 };
+    let reply = "";
+    for (let round = 0; round < ENGINE_LIMITS.maxRounds; round++) {
+      if (round > 0) events.onRound?.();
+      const params: Anthropic.Beta.MessageCreateParamsNonStreaming = {
+        model,
+        max_tokens: ENGINE_LIMITS.maxTokens,
+        system,
+        tools: toolDefinitions(),
+        messages,
+        // Schnell und günstig fürs Gespräch: Nachdenken nur bei Bedarf (adaptiv), geringer Aufwand (nicht bei Haiku)
+        ...(/haiku/.test(model) ? {} : { output_config: { effort: "low" as const } }),
+        // Lehnt das Modell ab, springt serverseitig ein Ersatzmodell ein (nur Claude API)
+        ...(FALLBACK_MODELS.test(model) ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const } : {}),
+      };
+      const response = await create(params, events.onText);
+      const u = response.usage;
+      if (u) {
+        usage.in += u.input_tokens;
+        usage.out += u.output_tokens;
+        usage.write += u.cache_creation_input_tokens ?? 0;
+        usage.read += u.cache_read_input_tokens ?? 0;
+      }
+      usage.rounds++;
 
-    if (response.stop_reason === "refusal") {
-      reply = "Dabei kann ich leider nicht helfen. Frag mich gern etwas anderes.";
-      break;
-    }
-    const content = cleanContent(response.content);
-    const text = content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("\n").trim();
-    if (text) reply = text;
-    messages.push({ role: "assistant", content });
+      if (response.stop_reason === "refusal") {
+        if (small) return { escalate: true as const, usage };
+        reply = "Dabei kann ich leider nicht helfen. Frag mich gern etwas anderes.";
+        break;
+      }
+      const content = cleanContent(response.content);
+      // Zu groß für das kleine Modell (Planen, Rezepte, Mails …) oder abgeschnitten → das große übernimmt
+      if (small && (response.stop_reason === "max_tokens" || content.some((b) => b.type === "tool_use" && LARGE_TOOLS.has(b.name)))) return { escalate: true as const, usage };
+      const text = content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("\n").trim();
+      if (text) reply = text;
+      messages.push({ role: "assistant", content });
 
-    if (response.stop_reason === "pause_turn") continue;
-    // Abgeschnitten (auch mitten in einer Werkzeug-Eingabe): nichts davon ausführen
-    if (response.stop_reason !== "tool_use") {
-      if (response.stop_reason === "max_tokens") reply = `${reply} …`.trim();
-      break;
+      if (response.stop_reason === "pause_turn") continue;
+      // Abgeschnitten (auch mitten in einer Werkzeug-Eingabe): nichts davon ausführen
+      if (response.stop_reason !== "tool_use") {
+        if (response.stop_reason === "max_tokens") reply = `${reply} …`.trim();
+        break;
+      }
+      const results: Anthropic.Beta.BetaToolResultBlockParam[] = content.flatMap((block) => {
+        if (block.type !== "tool_use") return [];
+        const result = runRegisteredTool(ctx, block.name, block.input);
+        return [{ type: "tool_result" as const, tool_use_id: block.id, content: result.content, is_error: result.isError }];
+      });
+      messages.push({ role: "user", content: results });
+      if (round === ENGINE_LIMITS.maxRounds - 1) reply ||= "Das war mehr, als ich auf einmal schaffe – hier ist, was ich bisher vorgeschlagen habe.";
     }
-    const results: Anthropic.Beta.BetaToolResultBlockParam[] = content.flatMap((block) => {
-      if (block.type !== "tool_use") return [];
-      const result = runRegisteredTool(ctx, block.name, block.input);
-      return [{ type: "tool_result" as const, tool_use_id: block.id, content: result.content, is_error: result.isError }];
-    });
-    messages.push({ role: "user", content: results });
-    if (round === ENGINE_LIMITS.maxRounds - 1) reply ||= "Das war mehr, als ich auf einmal schaffe – hier ist, was ich bisher vorgeschlagen habe.";
+    return { escalate: false as const, usage, reply, ctx };
+  };
+
+  // Modell wählen: fest eingestellt, sonst klein – oder gleich groß, wenn die Anfrage danach klingt
+  const fixed = typeof choice === "string";
+  const firstModel = fixed ? choice : needsLargeModel(req) ? choice.large : choice.small;
+  const canUpgrade = !fixed && firstModel === choice.small && choice.small !== choice.large;
+  let run = await attempt(firstModel, canUpgrade);
+  let model = firstModel;
+  let spent: { model: string; usage: Usage }[] = [{ model, usage: run.usage }];
+  if (run.escalate && !fixed) {
+    // Bisher Gezeigtes war nur ein Anlauf – die App ersetzt es durch die neue Antwort
+    events.onRound?.();
+    model = choice.large;
+    run = await attempt(model, false);
+    spent = [...spent, { model, usage: run.usage }];
   }
-
-  logUsage(model, usage);
+  for (const s of spent) logUsage(s.model, s.usage, spent.length > 1);
+  if (run.escalate) throw new Error("Hochschalten ohne großes Modell");
+  const { ctx, reply } = run;
+  const costs = spent.map((s) => costMicro(s.model, s.usage));
+  const micro = costs.every((c): c is number => c !== null) ? costs.reduce((a, b) => a + b, 0) : null;
   const extras = { ...(ctx.mail ? { mail: ctx.mail } : {}), ...(ctx.chips?.length ? { chips: ctx.chips } : {}), ...(ctx.tipCards?.length ? { tips: ctx.tipCards } : {}) };
-  return { reply: reply || (ctx.mail ? "Hier mein Vorschlag:" : "Erledigt – schau dir den Vorschlag unten an."), ops: compactOps(ctx.ops), ...extras };
+  return {
+    reply: reply || (ctx.mail ? "Hier mein Vorschlag:" : "Erledigt – schau dir den Vorschlag unten an."),
+    ops: compactOps(ctx.ops),
+    ...extras,
+    ...(model !== "mock" ? { usage: { size: /haiku/.test(model) ? ("klein" as const) : ("gross" as const), upgraded: spent.length > 1, micro } } : {}),
+  };
 }

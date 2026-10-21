@@ -24,6 +24,7 @@ import { helperNote, type HelperPatch } from "./helperTools";
 import { loadSpeechSettings, saveSpeechSettings } from "./speech";
 import { addPantryItems, loadPantry, replacePantry } from "../essen/pantry";
 import { loadShoppingSettings, replaceShoppingLists, setItemShop } from "../einkauf/shoppingList";
+import { recordUsage } from "./usage";
 import { addWish, loadWishes, restoreWishes } from "../essen/wishes";
 import { replaceWeekPlans, toIsoDate, weekStartFor } from "../essen/weekPlan";
 import { applyOps, INSTANT_OP_TYPES, selectedOps, weekOf, type AssistantData, type ChangeOp } from "./ops";
@@ -360,7 +361,10 @@ export async function askAssistant(
   }
   if (!response.ok || !response.body || !(response.headers.get("content-type") ?? "").includes("ndjson")) {
     const body = (await response.json().catch(() => null)) as AssistantReply | AssistantError | null;
-    if (response.ok && body && !("error" in body)) return body;
+    if (response.ok && body && !("error" in body)) {
+      recordUsage(today, body.usage);
+      return body;
+    }
     const reason = body && "error" in body ? body.error : "fehler";
     if (reason === "zugangscode") forgetAccessCode();
     throw new LotteUnavailable(reason);
@@ -401,6 +405,7 @@ export async function askAssistant(
       } else if (event.t === "round") {
         freshRound = true;
       } else if (event.t === "done") {
+        recordUsage(today, event.usage);
         return { reply: event.reply, ops: event.ops, mail: event.mail, chips: event.chips, tips: event.tips };
       } else if (event.t === "error") {
         if (event.error === "zugangscode") forgetAccessCode();
