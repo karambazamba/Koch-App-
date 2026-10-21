@@ -174,3 +174,11 @@ describe("Einkauf nach Läden", () => {
     expect(shopTone("REWE")).toBeGreaterThanOrEqual(1);
   });
 });
+
+describe("Läden ohne Logos", () => {
+  it("Symbol nach Ladentyp und feste Farben für bekannte Läden", async () => {
+    const { shopType, SHOP_TYPE_ICON, shopTone } = await import("@/lib/einkauf/shopGroups");
+    expect(["REWE", "EDEKA", "Lidl", "Biomarkt", "dm", "Bäcker", "Wochenmarkt", "Hofcafé"].map((n) => SHOP_TYPE_ICON[shopType(n)]).join("")).toBe("🛒🛒🛒🌿🧴🥖🥕🏪");
+    expect([shopTone("REWE"), shopTone("EDEKA"), shopTone("Lidl")]).toEqual([1, 2, 4]);
+  });
+});

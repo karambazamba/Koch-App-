@@ -7,6 +7,7 @@
 // nächste Thema (höchstens drei, Punkte), ✕ = Thema für heute ausblenden.
 // Die Reihenfolge der Themen bleibt stehen, bis die App wieder geöffnet wird,
 // 15 Minuten vergehen oder etwas sehr Dringendes dazukommt – nichts springt.
+// Später Geladenes (Wetter, Tipps) kommt hinten dazu, solange Platz ist.
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ChevronRight, X } from "lucide-react";
@@ -15,6 +16,7 @@ import type { JetztTone, JetztTopic } from "@/lib/jetzt/topics";
 
 const REFRESH_MS = 15 * 60_000;
 const URGENT = 90;
+const MAX_TOPICS = 3;
 
 const TONE: Record<JetztTone, string> = {
   morgen: "bg-jetzt-morgen text-jetzt-morgen-ink",
@@ -45,6 +47,13 @@ function useStableOrder(topics: JetztTopic[]): string[] {
   if ((missing || urgentNew) && ids.join("|") !== order.join("|")) {
     setOrder(ids);
     return ids;
+  }
+  // Später Geladenes (Wetter, Tipps) hinten anhängen, solange Platz ist – das Gezeigte bleibt stehen
+  const added = ids.filter((id) => !order.includes(id));
+  if (order.length < MAX_TOPICS && added.length) {
+    const next = [...order, ...added].slice(0, MAX_TOPICS);
+    setOrder(next);
+    return next;
   }
   return order;
 }

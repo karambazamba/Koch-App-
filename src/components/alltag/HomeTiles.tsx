@@ -26,7 +26,7 @@ import { useTodayIdeas } from "@/lib/essen/useIdeas";
 import { useStock } from "@/lib/essen/useStock";
 import { showToast } from "@/lib/core/toast";
 import { DEMO_SHOPS, clearDemoTile } from "@/lib/core/demo";
-import { shopGroups, shopTone, type ShopGroup } from "@/lib/einkauf/shopGroups";
+import { SHOP_TYPE_ICON, shopGroups, shopTone, shopType, type ShopGroup } from "@/lib/einkauf/shopGroups";
 import { DEMO_OUTLINE } from "./DemoBits";
 import { sortNotes, useSchnellnotiz, useNotes } from "@/lib/notizen";
 import type { HomeData } from "@/components/home/useHomeData";
@@ -106,13 +106,18 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCo
   );
 }
 
-/** Bis zu 3 Läden als Zeilen: Farbpunkt, Name fett, Artikel grau („REWE Milch, Brot, Butter“) */
+/** Bis zu 3 Läden als Zeilen: Farbpunkt, Symbol nach Ladentyp (keine Logos), Name fett, Artikel grau („🛒 REWE Milch, Brot, Butter“) */
 function ShopRows({ groups }: { groups: ShopGroup[] }) {
   return (
     <ul className="mt-0.5 flex flex-col gap-1" aria-label="Nach Laden">
       {groups.map((g) => (
         <li key={g.shop ?? "egal"} className="flex min-w-0 items-center gap-1.5 text-[13.5px] leading-snug">
           <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: g.shop ? `var(--color-shop-${shopTone(g.shop)})` : "var(--color-line)" }} aria-hidden />
+          {g.shop && (
+            <span className="shrink-0 text-[12px]" aria-hidden>
+              {SHOP_TYPE_ICON[shopType(g.shop)]}
+            </span>
+          )}
           <span className="shrink-0 font-bold">{g.shop ?? "Egal wo"}</span>
           <span className="min-w-0 truncate text-muted">{g.names.join(", ")}</span>
         </li>

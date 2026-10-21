@@ -136,6 +136,6 @@ export function demoEntries(today: string, minutes: number, helper: string): { d
 /** Beispiel-Einkauf nach Läden */
 export const DEMO_SHOPS: { shop: string; names: string[] }[] = [
   { shop: "REWE", names: ["Milch", "Brot", "Butter"] },
-  { shop: "Biomarkt", names: ["Äpfel", "Eier"] },
-  { shop: "dm", names: ["Zahnpasta"] },
+  { shop: "EDEKA", names: ["Äpfel", "Eier"] },
+  { shop: "Lidl", names: ["Zahnpasta", "Küchenrolle"] },
 ];

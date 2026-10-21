@@ -508,7 +508,11 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   `einkauf/shopGroups.ts`: meiste zuerst, ohne Laden „Egal wo“ zuletzt);
   ohne Läden wie bisher. Farbe je Laden fest aus 8 Tokens (`--color-shop-N`,
   `shopTone`), bis Läden eigene Farben bekommen. Beispiel-Tag: „REWE: Milch,
-  Brot, Butter · Biomarkt: Äpfel, Eier · dm: Zahnpasta“ (`DEMO_SHOPS`).
+  Brot, Butter · EDEKA: Äpfel, Eier · Lidl: Zahnpasta, Küchenrolle“
+  (`DEMO_SHOPS`). Keine Firmenlogos: Symbol nach Ladentyp (`shopType`,
+  `SHOP_TYPE_ICON`: 🛒 Supermarkt · 🌿 Biomarkt · 🧴 Drogerie · 🥖 Bäcker · 🥕
+  Wochenmarkt · 🏪 Sonstiges) + Name + Farbpunkt (REWE rot, EDEKA gelb, Lidl
+  blau).
   Jetzt-Karte 15:00–19:30: „Auf dem Heimweg? 3 Sachen bei REWE“ (ab 2
   Sachen). Läden anlegen, Lernen, „Nach Laden“ und Einkaufsmodus folgen mit
   den neuen Ansichten der Einkaufsliste.
