@@ -7,7 +7,7 @@
 // Seite zur zuletzt hinzugefügten Kachel, sie leuchtet kurz auf. Neue Kacheln
 // mit "NEU", Post als "bald".
 
-import { Box, HandCoins, CalendarClock, CheckCircle2, CloudSun, Dumbbell, ListChecks, Timer, Mail, NotebookPen, Pin, Plus, Refrigerator, ShoppingCart, Sunrise, UtensilsCrossed, type LucideIcon } from "lucide-react";
+import { Box, HandCoins, MapPin, CalendarClock, CheckCircle2, CloudSun, Dumbbell, ListChecks, Timer, Mail, NotebookPen, Pin, Plus, Refrigerator, ShoppingCart, Sunrise, UtensilsCrossed, type LucideIcon } from "lucide-react";
 import { useRef } from "react";
 import { Sheet } from "@/components/ui/Sheet";
 import { TILE_PLUS_DOT } from "@/components/ui/styles";
@@ -16,6 +16,7 @@ import { showDeleted } from "@/lib/core/toast";
 import { featureOn, setFeature } from "@/lib/core/features";
 import { pushUndo } from "@/lib/core/undo";
 import { buzz } from "./actions";
+import { useTipsMode } from "@/lib/tipps/client";
 
 const TILE_ICONS: Record<HomeTileId, LucideIcon> = {
   pinnwand: Pin,
@@ -31,6 +32,7 @@ const TILE_ICONS: Record<HomeTileId, LucideIcon> = {
   morgen: Sunrise,
   post: Mail,
   spendentopf: HandCoins,
+  tipps: MapPin,
 };
 
 /** Kachel hinzufügen (still) bzw. entfernen (mit Rückgängig) */
@@ -54,6 +56,7 @@ const isActive = (t: HomeTile) => t.visible && !tileMeta(t.id).soon && (!tileMet
 export function TilePicker({ onClose, onClosed }: { onClose: () => void; onClosed?: (lastAdded: HomeTileId) => void }) {
   const all = useHomeTiles();
   const added = useRef<HomeTileId | null>(null);
+  const tipsMode = useTipsMode();
   if (!all) return null;
   const close = () => {
     onClose();
@@ -62,7 +65,7 @@ export function TilePicker({ onClose, onClosed }: { onClose: () => void; onClose
   return (
     <Sheet title="Kachel hinzufügen" onClose={close} above>
       <ul className="grid grid-cols-2 gap-2 pb-3" aria-label="Kacheln">
-        {HOME_TILES.filter((meta) => !meta.soon).map((meta) => {
+        {HOME_TILES.filter((meta) => !meta.soon && (meta.id !== "tipps" || (tipsMode && tipsMode !== "off"))).map((meta) => {
           const tile = all.find((t) => t.id === meta.id);
           const active = Boolean(tile && isActive(tile));
           const Icon = TILE_ICONS[meta.id] ?? Box;

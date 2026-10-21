@@ -17,6 +17,8 @@ import { parsePauseRequest } from "../essen/spontan";
 import { findByTitle, sanitizeEntry, type CalendarEntry } from "../aufgaben/model";
 import { text, tools, type ToolUse } from "./mockShared";
 import { jetztCommand } from "../jetzt/command";
+import { tipsMode } from "../tipps/server";
+import { tipQuestion } from "../tipps/question";
 
 // --- Termine und Aufgaben (Testmodus: Satz-Erkennung ohne KI) --------------------
 
@@ -122,6 +124,9 @@ export function pinWeatherUses(latest: string, system: string): Anthropic.Beta.B
     const line = system.match(/^Pinnwand: (.*)$/m)?.[1] ?? "leer";
     return text(line === "leer" ? "Auf der Pinnwand steht gerade nichts. (Testmodus)" : `Auf der Pinnwand: ${line} (Testmodus)`);
   }
+  const today0 = system.match(/^Heute: .*\((\d{4}-\d{2}-\d{2})\)/m)?.[1] ?? "";
+  const tipAsk = today0 && tipsMode() !== "off" ? tipQuestion(latest, today0) : null;
+  if (tipAsk) return tools([{ name: "tipps_suchen", input: { von: tipAsk.von, bis: tipAsk.bis, filter: tipAsk.filters, ...(tipAsk.ort ? { ort: tipAsk.ort } : {}) } }]);
   if (/\b(wetter|schirm|regnet|regen)\b/i.test(latest) && /\?|\bwie\b|\bbrauch/i.test(latest)) {
     const today = system.match(/^Heute: .*\((\d{4}-\d{2}-\d{2})\)/m)?.[1] ?? "";
     const t = latest.toLowerCase();

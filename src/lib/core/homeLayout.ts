@@ -10,7 +10,7 @@
 import { createLocalStore } from "./localStore";
 import { useExternalStore } from "./useExternalStore";
 
-export type HomeTileId = "pinnwand" | "termine" | "aufgaben" | "wetter" | "essen" | "einkauf" | "timer" | "sport" | "notizen" | "vorrat" | "morgen" | "post" | "spendentopf";
+export type HomeTileId = "pinnwand" | "termine" | "aufgaben" | "wetter" | "essen" | "einkauf" | "timer" | "sport" | "notizen" | "vorrat" | "morgen" | "post" | "spendentopf" | "tipps";
 export type TileSize = "S" | "M" | "L";
 export type HomeTile = { id: HomeTileId; visible: boolean; size: TileSize };
 
@@ -19,7 +19,7 @@ export type HomeTile = { id: HomeTileId; visible: boolean; size: TileSize };
  * Standard; `feature`: gehört zu einem Baustein (wird beim Hinzufügen
  * eingeschaltet); `soon`: gibt es noch nicht ("bald"); `fresh`: "NEU".
  */
-export const HOME_TILES: { id: HomeTileId; label: string; hint: string; sizes: TileSize[]; size: TileSize; feature?: "vorrat"; soon?: boolean; fresh?: boolean }[] = [
+export const HOME_TILES: { id: HomeTileId; label: string; hint: string; sizes: TileSize[]; size: TileSize; feature?: "vorrat" | "regiontipps"; soon?: boolean; fresh?: boolean }[] = [
   { id: "pinnwand", label: "Pinnwand", hint: "Kurze Nachrichten an die Familie", sizes: ["S", "M", "L"], size: "S", fresh: true },
   { id: "wetter", label: "Wetter", hint: "Heute und die nächsten Tage", sizes: ["S", "M", "L"], size: "S", fresh: true },
   { id: "termine", label: "Termine", hint: "Die nächsten von heute", sizes: ["S", "M", "L"], size: "M" },
@@ -27,6 +27,7 @@ export const HOME_TILES: { id: HomeTileId; label: string; hint: string; sizes: T
   { id: "essen", label: "Essen", hint: "Gericht von heute", sizes: ["S", "M", "L"], size: "S" },
   { id: "einkauf", label: "Einkauf", hint: "Die Einkaufsliste", sizes: ["S", "M", "L"], size: "S" },
   { id: "spendentopf", label: "Spendentopf", hint: "Jeder Euro geht in eure Region", sizes: ["M"], size: "M", fresh: true },
+  { id: "tipps", label: "Tipps fürs Wochenende", hint: "Was in eurer Nähe los ist", sizes: ["M", "L"], size: "M", feature: "regiontipps", fresh: true },
   { id: "timer", label: "Timer", hint: "Bis zu 5 Timer und eine Stoppuhr", sizes: ["S", "M"], size: "M", fresh: true },
   { id: "sport", label: "Sport", hint: "Wochenziel und Trainings", sizes: ["S", "M", "L"], size: "M", fresh: true },
   { id: "notizen", label: "Notizen", hint: "Schnellnotiz + Angeheftetes", sizes: ["S", "M", "L"], size: "M" },

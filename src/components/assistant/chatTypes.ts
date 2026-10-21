@@ -8,6 +8,7 @@ import type { Recipe } from "@/lib/essen/cookbook";
 import { type SpontanFilter } from "@/lib/essen/spontan";
 import { type MarketTarget } from "./MarketBoard";
 import { type MailDraft } from "@/lib/lotte/mail";
+import type { TipView } from "@/lib/tipps/model";
 
 export type ChatTurnView = ChatTurn & {
   /** Fehlermeldung – wird nicht an die KI geschickt */
@@ -42,6 +43,8 @@ export type ChatTurnView = ChatTurn & {
   chips?: string[];
   /** Mail-Entwurf als Karte ("In Mail öffnen", "Kopieren", "Ändern") */
   mail?: MailDraft;
+  /** Tipps aus der Region als Karten (bis zu 3) */
+  tips?: TipView[];
 };
 
 export type Proposal = { ops: ChangeOp[]; selected: Set<string> };

@@ -13,6 +13,8 @@ export type LotteTool = {
   area: ToolArea;
   definition: Anthropic.Beta.BetaTool;
   run: (ctx: ToolContext, input: unknown) => ToolResult;
+  /** Nur anbieten, wenn das gilt (z. B. Tipps nur mit laufender Quelle) */
+  enabled?: () => boolean;
 };
 
 const registry = new Map<string, LotteTool>();
@@ -24,7 +26,7 @@ export function registerTool(tool: LotteTool) {
 
 /** Alle Definitionen in fester Reihenfolge (wichtig fürs Prompt-Caching) */
 export function toolDefinitions(): Anthropic.Beta.BetaTool[] {
-  return [...registry.values()].map((t) => t.definition);
+  return [...registry.values()].filter((t) => !t.enabled || t.enabled()).map((t) => t.definition);
 }
 
 /** Werkzeug ausführen; Unbekanntes und Fehler werden freundlich gemeldet, nie geworfen */

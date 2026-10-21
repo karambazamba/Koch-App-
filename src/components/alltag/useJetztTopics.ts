@@ -18,6 +18,9 @@ import type { HomeTileId } from "@/lib/core/homeLayout";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 import { shopGroups } from "@/lib/einkauf/shopGroups";
 import { DEMO_SHOPS } from "@/lib/core/demo";
+import { jetztTip, type TipView } from "@/lib/tipps/model";
+import { tipWhen } from "@/components/tipps/TipBits";
+import { tipTags } from "@/lib/tipps/categories";
 
 export type JetztSource = {
   today: string;
@@ -43,6 +46,10 @@ export type JetztSource = {
   leisure: JetztInput["leisure"];
   tip: string | null;
   demo: boolean;
+  /** Tipps aus der Region (nur wenn an), mit Kindern im Haushalt, am Wochenende schon weggewischt */
+  regionTips: TipView[] | null;
+  kids: boolean;
+  regionHidden: string | null;
   /** Beispiel-Einkauf statt der echten Liste */
   demoShop: boolean;
   firstTiles: HomeTileId[];
@@ -76,6 +83,9 @@ export function useJetztTopics(src: JetztSource) {
         .sort((a, b) => b.erstellt.localeCompare(a.erstellt))[0]
     : undefined;
   const birthday = (list: DayItem[], when: "heute" | "morgen") => list.filter((i) => /geburtstag/i.test(i.title) || /geburtstag/i.test(i.label ?? "")).map((i) => ({ title: i.title, date: i.date, when }));
+  const todayDay = forecast?.days.find((d) => d.date === src.today);
+  const rainy = todayDay ? todayDay.rain >= 60 || ["regen", "schauer", "niesel", "gewitter", "schnee"].includes(weatherKind(todayDay.code).kind) : null;
+  const region = src.regionTips ? jetztTip(src.regionTips, { today: src.today, minutes: src.minutes, rainy, kids: src.kids, hiddenWeekend: src.regionHidden }) : null;
   const input: JetztInput = {
     minutes: src.minutes,
     today: src.today,
@@ -104,6 +114,7 @@ export function useJetztTopics(src: JetztSource) {
     pause: src.pause,
     leisure: src.leisure,
     tip: src.tip,
+    region: region ? { id: region.id, title: region.titel, detail: [tipWhen(region), region.ort_name, tipTags(region, 1)[0]].filter(Boolean).join(" · ") } : null,
     demo: src.demo,
     firstTiles: src.firstTiles,
     weights: state.weights,

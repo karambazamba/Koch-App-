@@ -4,6 +4,14 @@
 // Antwort samt Vorschlag.
 
 import { fetchForecast } from "../wetter/server";
+import { tipsMode, tipsNear } from "../tipps/server";
+import { tipQuestion } from "../tipps/question";
+
+const plusDays = (iso: string, n: number) => {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+};
 import { sanitizeNote, type Note } from "../notizen/model";
 import type Anthropic from "@anthropic-ai/sdk";
 import { migrateProfile } from "../einstellungen/profileStore";
@@ -203,6 +211,8 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
   // Wetterfragen: Vorhersage vorab holen (Werkzeuge laufen synchron; 30 Min zwischengespeichert)
   const lastText = req.messages[req.messages.length - 1]?.text ?? "";
   if (WEATHER_QUESTION.test(lastText) || TRAINING_PLAN.test(lastText)) ctx.forecast = await fetchForecast(req.data.wetterOrt || "Eutin", undefined, req.today).catch(() => null);
+  // Fragen nach Tipps aus der Region: Tipps im Umkreis vorab holen (nur mit laufender Quelle)
+  if (tipsMode() !== "off" && tipQuestion(lastText, req.today)) ctx.regionTips = await tipsNear({ ort: req.data.tippOrt || req.data.wetterOrt || "Eutin", km: req.data.tippKm ?? 20, von: req.today, bis: plusDays(req.today, 20), today: req.today }).then((r) => (r.ort ? r.tips : null)).catch(() => null);
 
   const messages: Anthropic.Beta.BetaMessageParam[] = req.messages.map((m) => ({ role: m.role, content: m.text }));
   if (messages[0].role !== "user") messages.shift();
@@ -263,6 +273,6 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
   }
 
   logUsage(model, usage);
-  const extras = { ...(ctx.mail ? { mail: ctx.mail } : {}), ...(ctx.chips?.length ? { chips: ctx.chips } : {}) };
+  const extras = { ...(ctx.mail ? { mail: ctx.mail } : {}), ...(ctx.chips?.length ? { chips: ctx.chips } : {}), ...(ctx.tipCards?.length ? { tips: ctx.tipCards } : {}) };
   return { reply: reply || (ctx.mail ? "Hier mein Vorschlag:" : "Erledigt – schau dir den Vorschlag unten an."), ops: compactOps(ctx.ops), ...extras };
 }

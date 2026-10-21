@@ -18,6 +18,7 @@ import { SpeakButton } from "./ChatBits";
 import { MailCard } from "./MailCard";
 import { MarketBoard, type MarketTarget } from "./MarketBoard";
 import { BakingBoard } from "./BakingBoard";
+import { TipCards } from "@/components/tipps/TipCards";
 
 export const BUBBLE = "max-w-[85%] whitespace-pre-line rounded-card px-4 py-2.5 text-base leading-snug";
 
@@ -87,6 +88,7 @@ export function ChatTurnItem({ turn, last, data, showBases, mailActive, speaking
             onRevise={onSubmit}
           />
         )}
+        {turn.tips?.length ? <TipCards tips={turn.tips} /> : null}
         {turn.chips && last && (
           <div className="flex flex-wrap gap-2" aria-label="Antworten">
             {turn.chips.map((c) => (

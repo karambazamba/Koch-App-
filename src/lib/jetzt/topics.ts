@@ -26,6 +26,7 @@ export type JetztKind =
   | "geschafft"
   | "freizeit"
   | "tipp"
+  | "region"
   | "beispiel"
   | "ruhig";
 
@@ -78,6 +79,8 @@ export type JetztInput = {
   pause: string | null;
   leisure: { text: string; href: string } | null;
   tip: string | null;
+  /** Tipp aus der Region fürs Wochenende (Fr 12 Uhr bis So Mittag, höchstens einmal) */
+  region: { id: string; title: string; detail: string } | null;
   /** Beispiel-Tag: ein Thema, das ihn kurz erklärt */
   demo: boolean;
   /** Kacheln ganz oben – was sie zeigen, wiederholt die Karte nicht (außer mit Tipp) */
@@ -218,6 +221,7 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
 
   if (x.allDone && !night) add({ id: `geschafft:${x.today}`, kind: "geschafft", title: "Alles geschafft für heute 🎉", detail: x.minutes >= 17 * 60 ? "Schönen Feierabend" : "Gönn dir was Schönes", score: 26, target: null, gentle: true });
   if (x.leisure && x.calm) add({ id: `freizeit:${x.today}`, kind: "freizeit", title: `Freizeit-Idee: ${short(x.leisure.text)}`, detail: "Aus deiner Freizeit-Liste", score: 27, target: { href: x.leisure.href }, gentle: true });
+  if (x.region && !night) add({ id: `region:${x.region.id}`, kind: "region", title: short(`Tipp: ${x.region.title}`, 44), detail: x.region.detail, score: 38, target: { href: `/tipps?tipp=${encodeURIComponent(x.region.id)}` }, tile: "tipps", gentle: true });
   if (x.tip) add({ id: `tipp:${x.today}`, kind: "tipp", title: short(x.tip, 44), detail: "Kleiner Tipp", score: 18, target: null, gentle: true });
   if (x.demo) add({ id: "beispiel", kind: "beispiel", title: "Das ist ein Beispiel-Tag", detail: "Probier alles aus – tippen, abhaken, verschieben", score: 24, target: null, gentle: true, night: true });
 

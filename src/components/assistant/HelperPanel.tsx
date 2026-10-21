@@ -64,6 +64,7 @@ import { tipsShown, useTipStore } from "@/lib/essen/healthTips";
 import { extractLikeStatements, learnFromRecipe, learnLikes, LIKE_WEIGHTS } from "@/lib/essen/likes";
 import { now } from "@/lib/core/now";
 import { bausteinOf, unlockFeature, useFeature } from "@/lib/core/features";
+import { unlockTips } from "@/lib/tipps/client";
 import { Sheet } from "@/components/ui/Sheet";
 
 import { spontanStartTurn, type ChatState, type ChatTurnView } from "./chatTypes";
@@ -224,6 +225,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       // Kleine Dinge (Timer, Stoppuhr, Kochschritt, "Ich koche jetzt") sofort – der Rest als Vorschau
       const instant = runInstantOps(result.ops);
       result = { ...result, ops: instant.rest, reply: instant.notes.length ? `${result.reply}\n${instant.notes.join(" ")}` : result.reply };
+      const tipsWhere = result.tips?.length ? unlockTips() : null;
       setChat((c) => {
         // Bisher abgewählte Punkte bleiben abgewählt, neue sind ausgewählt
         const previous = new Set(c.proposal?.ops.map((op) => op.id));
@@ -236,9 +238,10 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
             ...c.turns,
             {
               role: "assistant",
-              text: result.reply,
+              text: tipsWhere ? `${result.reply}\n${tipsWhere}` : result.reply,
               ...(result.mail ? { mail: result.mail, send: `${result.reply}\n\n${draftForHistory(result.mail)}` } : {}),
               ...(result.chips?.length ? { chips: result.chips } : {}),
+              ...(result.tips?.length ? { tips: result.tips } : {}),
             },
           ],
           proposal: result.ops.length > 0 ? { ops: result.ops, selected } : null,

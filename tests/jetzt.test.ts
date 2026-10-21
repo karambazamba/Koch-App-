@@ -28,6 +28,7 @@ const base = (minutes: number, extra: Partial<JetztInput> = {}): JetztInput => (
   pause: null,
   leisure: null,
   tip: null,
+  region: null,
   demo: false,
   firstTiles: [],
   weights: {},

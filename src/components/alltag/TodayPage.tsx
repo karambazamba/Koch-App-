@@ -70,6 +70,9 @@ import { hideJetztTopic, noteJetztSkip, noteJetztTap } from "@/lib/jetzt/store";
 import type { JetztTopic } from "@/lib/jetzt/topics";
 import type { HomeData } from "@/components/home/useHomeData";
 import { dishOf } from "./useMeals";
+import { TipsTile } from "@/components/tipps/TipsTile";
+import { hideJetztTipWeekend, useTipSettings, useTipsOn, useTipsWindow } from "@/lib/tipps/client";
+import { weekendKey } from "@/lib/tipps/model";
 
 const DATE = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long" });
 
@@ -95,6 +98,8 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const tipsOn = useFeature("tipps");
   const weekendOn = useFeature("wochenendIdeen");
   const pantryOn = useFeature("vorrat");
+  const regionOn = useTipsOn();
+  const tipSettings = useTipSettings();
   const paused = pausedOn(data.profile, data.todayIso);
   // Pause (Urlaub) beenden – über die Jetzt-Karte, mit Rückgängig
   const endPause = () => {
@@ -193,7 +198,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const tasks = view.tasksRest ? [] : tasksAll;
 
   // Kacheln: genau die gespeicherte Reihenfolge und Größe – im Bearbeiten-Modus dieselbe
-  const visible = all.filter((t) => t.visible && !tileMeta(t.id).soon && (t.id !== "vorrat" || pantryOn));
+  const visible = all.filter((t) => t.visible && !tileMeta(t.id).soon && (t.id !== "vorrat" || pantryOn) && (t.id !== "tipps" || regionOn));
   // Erste Reihe (zwei S nebeneinander zählen zusammen) – was dort steht, wiederholt die Jetzt-Karte nicht
   const firstTiles: HomeTileId[] = visible.length ? (visible[0].size === "S" && visible[1]?.size === "S" ? [visible[0].id, visible[1].id] : [visible[0].id]) : [];
 
@@ -227,6 +232,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const training = ctx?.sport.training;
   const leisure = evening && notes ? leisureIdea(notes, data.todayIso) : null;
   const hadSomething = termineAll.length > 0 || overview.erledigt.some((i) => i.date === data.todayIso);
+  const regionTips = useTipsWindow(data.todayIso, regionOn && !demoDay.tiles.length);
   const jetzt = useJetztTopics({
     today: data.todayIso,
     minutes,
@@ -254,6 +260,9 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     pause: paused && data.profile.pause ? pauseLabel(data.profile.pause) : null,
     leisure: leisure ? { text: leisure.item.text, href: `/notizen/bearbeiten?id=${leisure.note.id}` } : null,
     tip: tip?.text ?? null,
+    regionTips: regionTips?.tips ?? null,
+    kids: hasKids(data.profile),
+    regionHidden: tipSettings.jetztAus,
     demo: demoDay.tiles.length > 0,
     demoShop: demoDay.tiles.includes("einkauf"),
     firstTiles,
@@ -269,6 +278,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     document.querySelector(`[data-tile~="${t.target.action === "timer" ? "timer" : "pinnwand"}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
   const hideTopic = (t: JetztTopic) => {
+    if (t.kind === "region") hideJetztTipWeekend(weekendKey(data.todayIso));
     if (t.kind === "erinnerung" && reminder) markReminderSeen(reminder.key);
     const undo = hideJetztTopic(t.id, t.kind, data.todayIso);
     buzz();
@@ -303,6 +313,8 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
         return <SportTile size={tile.size} entries={entries} today={data.todayIso} minutes={minutes} me={me} />;
       case "spendentopf":
         return <SpendentopfTile />;
+      case "tipps":
+        return <TipsTile size={tile.size} today={data.todayIso} />;
       case "morgen":
         return <MorgenTile date={tomorrowIso} items={tomorrowItems} dish={tomorrowDish} href={`/tag?datum=${tomorrowIso}`} placeholder={edit} />;
       default:

@@ -2,6 +2,7 @@
 
 import type { AssistantData, ChangeOp } from "./ops";
 import type { MailDraft } from "./mail";
+import type { TipView } from "../tipps/model";
 
 export type ChatTurn = { role: "user" | "assistant"; text: string };
 
@@ -33,7 +34,7 @@ export type AssistantRequest = {
 export type StreamEvent =
   | { t: "text"; d: string }
   | { t: "round" }
-  | { t: "done"; reply: string; ops: ChangeOp[]; mail?: MailDraft; chips?: string[] }
+  | { t: "done"; reply: string; ops: ChangeOp[]; mail?: MailDraft; chips?: string[]; tips?: TipView[] }
   | { t: "error"; error: AssistantErrorCode };
 
 export type AssistantReply = {
@@ -42,6 +43,8 @@ export type AssistantReply = {
   ops: ChangeOp[];
   /** Mail-Entwurf als eigene Karte (nie automatisch gesendet) */
   mail?: MailDraft;
+  /** Tipps aus der Region als Karten unter der Antwort */
+  tips?: TipView[];
   /** Antwort-Knöpfe (z. B. "Zusagen", "Absagen", "Nachfragen") */
   chips?: string[];
 };

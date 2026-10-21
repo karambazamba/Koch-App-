@@ -11,6 +11,7 @@ import { itemsForDay, type CalendarEntry } from "@/lib/aufgaben/model";
 import type { PlanDay } from "@/lib/essen/mealPlan";
 import { openHelper } from "@/lib/lotte/open";
 import { dishOf } from "@/components/alltag/useMeals";
+import { TipsDayList, useCalendarTips } from "@/components/tipps/CalendarTips";
 
 export type RoomFilter = "alles" | "familie" | "arbeit";
 
@@ -20,10 +21,12 @@ export function DayAgenda({ date, today, entries, meal, name, filter = "alles", 
   const aufgaben = items.filter((i) => i.entry.typ === "aufgabe");
   const dish = filter === "arbeit" ? null : dishOf(meal);
   const paused = meal?.paused;
+  const tips = useCalendarTips(today).byDay.get(date) ?? [];
   return (
     <div className="flex flex-col gap-3">
       {!items.length && <p className="px-1 text-base text-muted">{paused ? "Pause – genießt die Zeit." : "Ein freier Tag."}</p>}
       <DayItemsCard items={termine} title="Termine" limit={50} allDoneText="Alles erledigt" />
+      {filter !== "arbeit" && <TipsDayList tips={tips} />}
       <DayItemsCard items={aufgaben} title="Aufgaben" limit={50} allDoneText="Alles erledigt" titleHref="/aufgaben" linkLabel="Alle" />
       {filter !== "arbeit" && !paused && (
         <section className={`${CARD} flex min-h-14 items-center gap-3 px-4 py-2`} aria-label="Essen">
