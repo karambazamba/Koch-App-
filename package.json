@@ -1,6 +1,6 @@
 {
   "name": "koch-app",
-  "version": "0.28.0",
+  "version": "0.29.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,6 +10,7 @@
     "start:lan": "next start -H 0.0.0.0",
     "lint": "eslint",
     "icons": "node scripts/generate-icons.mjs",
+    "demo-bild": "node scripts/generate-demo-dish.mjs",
     "test": "TZ=Europe/Berlin vitest run"
   },
   "dependencies": {

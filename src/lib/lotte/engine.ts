@@ -39,7 +39,7 @@ type EngineEvents = { onText?: (delta: string) => void; onRound?: () => void };
 
 export class AssistantInputError extends Error {}
 
-const OP_TYPES = new Set(["add_timer", "stop_timer", "stopwatch", "cook_step", "start_cooking", "set_day_mode", "set_helper", "add_training", "set_sport_goal", "add_pin", "set_schnellnotiz", "upsert_note", "remove_note", "set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last", "set_persons", "set_pause", "app_command", "set_feature"]);
+const OP_TYPES = new Set(["add_timer", "stop_timer", "stopwatch", "cook_step", "start_cooking", "set_jetzt", "set_helper", "add_training", "set_sport_goal", "add_pin", "set_schnellnotiz", "upsert_note", "remove_note", "set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last", "set_persons", "set_pause", "app_command", "set_feature"]);
 
 /** Anfrage prüfen und auf das Nötige kürzen */
 export function parseRequest(body: unknown): AssistantRequest {
@@ -93,7 +93,7 @@ export function parseRequest(body: unknown): AssistantRequest {
           }
         : null,
     sport: sanitizeSport(b.data?.sport),
-    tagesablauf: b.data?.tagesablauf && typeof b.data.tagesablauf === "object" ? { mode: b.data.tagesablauf.mode === "gleich" ? "gleich" : "mitdenkend", feierabendAb: String(b.data.tagesablauf.feierabendAb ?? "20:00").slice(0, 5), morgenBis: String(b.data.tagesablauf.morgenBis ?? "10:00").slice(0, 5) } : undefined,
+    tagesablauf: b.data?.tagesablauf && typeof b.data.tagesablauf === "object" ? { jetzt: b.data.tagesablauf.jetzt !== false, feierabendAb: String(b.data.tagesablauf.feierabendAb ?? "20:00").slice(0, 5), morgenBis: String(b.data.tagesablauf.morgenBis ?? "10:00").slice(0, 5) } : undefined,
     me: typeof b.data?.me === "string" ? b.data.me.slice(0, 60) : null,
   };
   const pending = (Array.isArray(b.pending) ? b.pending : []).filter(

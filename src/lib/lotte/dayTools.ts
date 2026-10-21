@@ -37,7 +37,7 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 export function dayContextLines(ctx: { data: ToolContext["data"]; today: string }): string[] {
   const d = ctx.data;
   const lines: string[] = [];
-  if (d.tagesablauf) lines.push(`Startseite: ${d.tagesablauf.mode === "gleich" ? "immer gleich" : `mitdenkend (Morgens bis ${d.tagesablauf.morgenBis}, Feierabend ab ${d.tagesablauf.feierabendAb})`}`);
+  if (d.tagesablauf) lines.push(`Startseite: Kacheln bleiben, wie sortiert; Jetzt-Karte ${d.tagesablauf.jetzt ? "an" : "aus"} (Morgens bis ${d.tagesablauf.morgenBis}, Feierabend ab ${d.tagesablauf.feierabendAb})`);
   const timers = d.timers ?? [];
   lines.push(`Timer: ${timers.length ? timers.map((t) => `${t.name} ${t.done ? "fertig" : `${formatLeft(t.leftSec * 1000)} übrig${t.paused ? " (pausiert)" : ""}`}`).join("; ") : "keiner"}${d.stopwatch ? `; Stoppuhr ${formatLeft(d.stopwatch.sec * 1000)}${d.stopwatch.running ? " (läuft)" : ""}` : ""}`);
   if (d.kochen) {
@@ -272,20 +272,21 @@ function sportTools(): LotteTool[] {
   ];
 }
 
-function modeTool(): LotteTool {
+function jetztTool(): LotteTool {
   return {
     area: "alltag",
     definition: {
-      name: "startseite_modus",
-      description: "Startseite mitdenkend (passt sich dem Tag an: Morgen, Kochen, Feierabend) oder immer gleich ('Lass die Startseite immer gleich', 'Startseite soll mitdenken').",
-      input_schema: { type: "object", properties: { modus: { type: "string", enum: ["mitdenkend", "gleich"] } }, required: ["modus"], additionalProperties: false },
+      name: "jetzt_karte",
+      description:
+        "Jetzt-Karte oben auf der Startseite an- oder ausschalten ('Blende die Jetzt-Karte aus', 'Zeig die Jetzt-Karte wieder'). Die Kacheln selbst bleiben immer so, wie sortiert – auch 'Lass die Startseite immer gleich' meint höchstens: Jetzt-Karte aus.",
+      input_schema: { type: "object", properties: { an: { type: "boolean" } }, required: ["an"], additionalProperties: false },
     },
     run: (ctx, raw) => {
-      const mode = str((raw as Input | null)?.modus) === "gleich" ? "gleich" : "mitdenkend";
-      propose(ctx, { id: nextId(ctx), type: "set_day_mode", mode });
-      return { content: mode === "gleich" ? "Vorgemerkt: Startseite bleibt immer gleich (Einstellungen → Tagesablauf)." : "Vorgemerkt: Startseite denkt mit (Einstellungen → Tagesablauf)." };
+      const on = (raw as Input | null)?.an !== false;
+      propose(ctx, { id: nextId(ctx), type: "set_jetzt", on });
+      return { content: on ? "Vorgemerkt: Jetzt-Karte an (Einstellungen → Startseite & Tageszeiten)." : "Vorgemerkt: Jetzt-Karte aus – die Kacheln bleiben, wie sie sind (Einstellungen → Startseite & Tageszeiten)." };
     },
   };
 }
 
-export const DAY_TOOLS: LotteTool[] = [...timerTools(), ...cookTools(), ...sportTools(), modeTool()];
+export const DAY_TOOLS: LotteTool[] = [...timerTools(), ...cookTools(), ...sportTools(), jetztTool()];

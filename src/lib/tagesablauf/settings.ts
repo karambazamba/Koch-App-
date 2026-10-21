@@ -1,18 +1,16 @@
-// Tagesablauf (`wasgibts.tagesablauf` v1): Soll sich die Startseite dem Tag
-// anpassen ("mitdenkend", Standard) oder immer gleich bleiben? Dazu die
-// Zeiten der Phasen, Arbeitstage, Kochen-Modus und – unabhängig davon – "Ruhe
-// nach Feierabend" (keine Push zu Arbeit und Aufgaben im Feierabend). Dazu
-// die Zeit-Vorschau "So tun, als wäre es …" (nur diese Sitzung, ändert keine
-// Daten – sie wirkt nur auf die Startseite).
+// Tagesablauf (`wasgibts.tagesablauf` v1): Zeiten der Phasen, Arbeitstage,
+// Kochen-Modus und "Ruhe nach Feierabend" (Arbeit und Aufgaben machen Pause,
+// keine Push dazu). Den früheren Modus "Mitdenkend/Immer gleich" gibt es seit
+// v0.29 nicht mehr – die Kachel-Anordnung ändert sich nie von selbst; ein
+// gespeichertes `mode` wird still übergangen. Dazu die Zeit-Vorschau "So tun,
+// als wäre es …" (nur diese Sitzung, ändert keine Daten – sie wirkt nur auf
+// die Startseite).
 
 import { createLocalStore } from "../core/localStore";
 import { useExternalStore } from "../core/useExternalStore";
 import type { StorageKey } from "@/lib/core/storage";
 
-export type HomeMode = "mitdenkend" | "gleich";
-
 export type DayRoutine = {
-  mode: HomeMode;
   /** Ruhe nach Feierabend: im Feierabend keine Push zu Arbeit und Aufgaben */
   ruhe: boolean;
   /** Morgen-Phase bis "HH:MM" */
@@ -30,7 +28,6 @@ export type DayRoutine = {
 };
 
 export const DEFAULT_ROUTINE: DayRoutine = {
-  mode: "mitdenkend",
   ruhe: true,
   morgenBis: "10:00",
   feierabendAb: "20:00",
@@ -40,16 +37,10 @@ export const DEFAULT_ROUTINE: DayRoutine = {
   kochenMin: 20,
 };
 
-export const HOME_MODES: { value: HomeMode; emoji: string; label: string; text: string }[] = [
-  { value: "mitdenkend", emoji: "✨", label: "Mitdenkend", text: "passt sich dem Tag an: Morgen, Kochen, Feierabend" },
-  { value: "gleich", emoji: "📌", label: "Immer gleich", text: "alles bleibt so, wie du es sortiert hast" },
-];
-
 export const WEEKDAY_SHORT = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
 const CLOCK = /^([01]\d|2[0-3]):[0-5]\d$/;
 export const clockMinutes = (clock: string) => Number(clock.slice(0, 2)) * 60 + Number(clock.slice(3, 5));
-export const minutesClock = (m: number) => `${String(Math.floor((((m % 1440) + 1440) % 1440) / 60)).padStart(2, "0")}:${String((((m % 1440) + 1440) % 1440) % 60).padStart(2, "0")}`;
 
 /** Gespeicherte Werte prüfen (Unbekanntes → Standard) */
 function sanitizeRoutine(raw: unknown): DayRoutine {
@@ -57,7 +48,6 @@ function sanitizeRoutine(raw: unknown): DayRoutine {
   const days = Array.isArray(r.arbeitstage) ? [...new Set(r.arbeitstage.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort() : DEFAULT_ROUTINE.arbeitstage;
   const min = Number(r.kochenMin);
   return {
-    mode: r.mode === "gleich" ? "gleich" : "mitdenkend",
     ruhe: r.ruhe !== false,
     morgenBis: typeof r.morgenBis === "string" && CLOCK.test(r.morgenBis) ? r.morgenBis : DEFAULT_ROUTINE.morgenBis,
     feierabendAb: typeof r.feierabendAb === "string" && CLOCK.test(r.feierabendAb) ? r.feierabendAb : DEFAULT_ROUTINE.feierabendAb,
@@ -77,7 +67,7 @@ const store = createLocalStore("wasgibts.tagesablauf", (raw: unknown): RoutineSt
 
 export const loadRoutine = (): DayRoutine => store.load()?.routine ?? DEFAULT_ROUTINE;
 
-export function saveRoutine(routine: DayRoutine) {
+function saveRoutine(routine: DayRoutine) {
   store.save({ version: 1, routine: sanitizeRoutine(routine) });
 }
 

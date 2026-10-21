@@ -18,7 +18,7 @@ import {
 import { BAUSTEINE, useBausteine, useFeature } from "@/lib/core/features";
 import { usePlace } from "@/lib/wetter/client";
 import { useHomeTiles } from "@/lib/core/homeLayout";
-import { HOME_MODES, useRoutine } from "@/lib/tagesablauf/settings";
+import { useJetzt } from "@/lib/jetzt/store";
 import { useSport } from "@/lib/sport";
 import { Group, Row } from "./settings/SettingsParts";
 import { householdTitle } from "./settings/Hubs";
@@ -48,7 +48,7 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
   const planOn = useFeature("wochenplan");
   const kochstilOn = useFeature("kochstil");
   const modiOn = useFeature("modi");
-  const routine = useRoutine();
+  const jetzt = useJetzt();
   const sport = useSport();
 
   // Schlank – Begleitung, Darstellung, Tagesablauf, Startseite & Bausteine, Mails, Familie, Daten & App
@@ -59,8 +59,8 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
         <BegleitungGroup profile={profile} />
         <DarstellungGroup profile={profile} />
         <Group title="Tagesablauf">
-          <Row href="/profil/tagesablauf" icon={Clock} title="Startseite & Tageszeiten" value={routine ? HOME_MODES.find((m) => m.value === routine.mode)?.label : undefined}>
-            Mitdenkend oder immer gleich, Feierabend, Arbeitstage
+          <Row href="/profil/tagesablauf" icon={Clock} title="Startseite & Tageszeiten" value={jetzt.on ? "Jetzt-Karte an" : "Jetzt-Karte aus"}>
+            Jetzt-Karte, Feierabend, Arbeitstage
           </Row>
         </Group>
         <Group title="Startseite & Bausteine">

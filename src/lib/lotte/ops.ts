@@ -27,7 +27,6 @@ import { applyHomeChange, DEFAULT_HOME, type HomeChange, type HomeTile } from ".
 import { buildShoppingList } from "../einkauf/shoppingList";
 import { moveItem, removeItem, setDone, upsertEntry, type CalendarEntry } from "../aufgaben/model";
 import { createTraining, sanitizeSport, type SportState, type TrainingData } from "../sport/model";
-import type { HomeMode } from "../tagesablauf/settings";
 
 /** Alle Daten, auf die sich Änderungen beziehen */
 export type AssistantData = {
@@ -61,8 +60,8 @@ export type AssistantData = {
   kochen?: { dish: string; recipe: string; steps: string[]; done: number[]; active: boolean } | null;
   /** Sport: Wochenziel und Trainings (persönlich) */
   sport?: SportState;
-  /** Tagesablauf: Startseite mitdenkend oder immer gleich */
-  tagesablauf?: { mode: HomeMode; feierabendAb: string; morgenBis: string };
+  /** Tagesablauf: Jetzt-Karte an/aus, Zeiten der Phasen */
+  tagesablauf?: { jetzt: boolean; feierabendAb: string; morgenBis: string };
   /** Personen-ID von mir (für Sport-Termine) */
   me?: string | null;
 };
@@ -136,8 +135,8 @@ export type ChangeOp =
   | { id: string; type: "stopwatch"; action: "start" | "stop" }
   | { id: string; type: "cook_step"; recipe: string; index: number }
   | { id: string; type: "start_cooking" }
-  // Mit Vorschau: Startseite mitdenkend/immer gleich, Sport eintragen, Wochenziel
-  | { id: string; type: "set_day_mode"; mode: HomeMode }
+  // Mit Vorschau: Jetzt-Karte an/aus, Sport eintragen, Wochenziel
+  | { id: string; type: "set_jetzt"; on: boolean }
   | { id: string; type: "add_training"; training: TrainingData }
   | { id: string; type: "set_sport_goal"; goal: number }
   // Begleitung anpassen (Name, Art/Stimme, Icon-Farbe)
@@ -323,8 +322,8 @@ export function applyOps(
       case "set_helper":
         next = { ...next, profile: { ...next.profile, helper: helperWith(next.profile.helper, op.helper) } };
         break;
-      case "set_day_mode":
-        next = { ...next, tagesablauf: { ...(next.tagesablauf ?? { feierabendAb: "20:00", morgenBis: "10:00" }), mode: op.mode } };
+      case "set_jetzt":
+        next = { ...next, tagesablauf: { ...(next.tagesablauf ?? { feierabendAb: "20:00", morgenBis: "10:00" }), jetzt: op.on } };
         break;
       case "add_training": {
         const sport = sanitizeSport(next.sport);

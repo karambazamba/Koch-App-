@@ -17,12 +17,11 @@ export type WelcomeState = {
   /** members[0] ist man selbst (immer erwachsen) */
   members: Member[];
   sportGoal?: number | null;
-  homeMode?: "mitdenkend" | "gleich" | null;
 };
 
 /** Standardwerte beim ersten Start: Termine, Essen, Einkauf; mal so, mal so; Startseite denkt mit */
 export function startState(): WelcomeState {
-  return { helper: { ...DEFAULT_HELPER }, help: ["termine", "essen", "einkauf"], planStyle: "mix", members: [{ name: "", kid: false }], sportGoal: null, homeMode: "mitdenkend" };
+  return { helper: { ...DEFAULT_HELPER }, help: ["termine", "essen", "einkauf"], planStyle: "mix", members: [{ name: "", kid: false }], sportGoal: null };
 }
 
 const namedMembers = (members: Member[]) => members.filter((m, i) => i === 0 || m.name.trim());

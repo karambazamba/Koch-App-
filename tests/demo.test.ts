@@ -29,7 +29,7 @@ describe("Beispiel-Tag (erster Start)", () => {
 
   it("verschwindet nach 3 Tagen, je Kachel beim ersten Eigenen und mit „Jetzt leeren“", () => {
     const state = { version: 1 as const, since: TODAY, cleared: [] as DemoTile[], done: [], gone: [], asked: false };
-    expect(demoTiles(state, TODAY)).toEqual(["termine", "aufgaben", "pinnwand", "einkauf"]);
+    expect(demoTiles(state, TODAY)).toEqual(["termine", "aufgaben", "pinnwand", "einkauf", "essen"]);
     expect(demoTiles(state, "2026-10-24")).toEqual([]);
     expect(demoTiles({ ...state, cleared: ["termine"] }, TODAY)).not.toContain("termine");
     expect(demoTiles(null, TODAY)).toEqual([]);

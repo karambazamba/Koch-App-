@@ -3,7 +3,6 @@
 // des früheren Kennenlernens (bis v0.26) wird nicht mehr gebraucht und
 // verworfen – "help" bleibt erhalten. "Neu anfangen" löscht es mit.
 
-import { loadRoutine, saveRoutine } from "../tagesablauf/settings";
 import { loadSport, saveSport } from "../sport/store";
 import { createLocalStore } from "../core/localStore";
 import { useExternalStore } from "../core/useExternalStore";
@@ -27,21 +26,19 @@ function finishWelcome(state: WelcomeState) {
   saveHomeTiles(homeTilesFor(state.help));
   if (state.help.includes("essen") && state.planStyle === "plan") setFeature("wochenplan", true);
   if (state.help.includes("essen") && state.planStyle === "spontan") setFeature("spontan", true);
-  // Startseite mitdenkend oder immer gleich; Sport mit Wochenziel
-  saveRoutine({ ...loadRoutine(), mode: state.homeMode === "gleich" ? "gleich" : "mitdenkend" });
+  // Sport mit Wochenziel
   if (state.help.includes("sport")) saveSport({ ...loadSport(), goal: state.sportGoal ?? 3 });
   store.save({ version: 1, state: null, help: state.help });
 }
 
 /**
  * Erster Start ("Los geht's" auf dem Hallo-Bildschirm): ohne weitere Fragen
- * Standardwerte, Startseite wie im Beispiel-Tag (Pinnwand + Wetter klein
- * nebeneinander, Termine, Aufgaben, Essen + Einkauf) und die Beispiele.
+ * Standardwerte, die Standard-Startseite (Pinnwand + Wetter klein
+ * nebeneinander, Termine, Aufgaben, Essen + Einkauf) und die Beispiele darin.
  */
 export function startFresh() {
   finishWelcome(startState());
-  const small = (id: string) => ({ ...DEFAULT_HOME.find((t) => t.id === id)!, visible: true, size: "S" as const });
-  saveHomeTiles([small("pinnwand"), small("wetter"), ...DEFAULT_HOME.filter((t) => t.id !== "pinnwand" && t.id !== "wetter")]);
+  saveHomeTiles(DEFAULT_HOME);
   startDemo();
 }
 

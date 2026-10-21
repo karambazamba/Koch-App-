@@ -6,6 +6,7 @@
 import { createIngredient, createRecipe, saveRecipe, useRecipes, type Recipe } from "../cookbook";
 import { BAKING_RECIPES } from "./data";
 import type { BuiltinBakingRecipe } from "./types";
+import { demoRecipe } from "../demoDish";
 
 const BUILTIN_PREFIX = "b:";
 
@@ -37,9 +38,9 @@ export const KID_FRIENDLY = new Set(BAKING_RECIPES.filter((b) => b.kidFriendly).
 
 export const isBuiltin = (id: string) => id.startsWith(BUILTIN_PREFIX);
 
-/** Rezept aus dem Kochbuch oder der eingebauten Sammlung */
+/** Rezept aus dem Kochbuch, der eingebauten Sammlung oder dem Beispiel-Tag ("d:…") */
 export function findRecipe(recipes: Record<string, Recipe>, id: string): Recipe | undefined {
-  return recipes[id] ?? BY_ID[id];
+  return recipes[id] ?? BY_ID[id] ?? demoRecipe(id);
 }
 
 /** Kochbuch inkl. eingebauter Backrezepte zum Nachschlagen (`undefined` = lädt) */

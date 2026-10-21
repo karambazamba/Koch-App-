@@ -23,6 +23,8 @@ import { markCookedIfToday } from "@/lib/essen/mealDone";
 import { useMealPlans } from "@/lib/essen/mealPlan";
 import { useToday, useWeekPlans } from "@/lib/essen/weekPlan";
 import { MachineStepView, MachineToggle, useMachineView } from "./MachineSteps";
+import { isDemoRecipe } from "@/lib/essen/demoDish";
+import { DemoHero, DemoMoreIdeas } from "./DemoRecipeBits";
 /** Datum (lokale Zeit) aus Zeitstempel oder "YYYY-MM-DD", z. B. "23.10.2026" */
 function formatDate(iso: string): string {
   const date = iso.length === 10 ? new Date(`${iso}T12:00:00`) : new Date(iso);
@@ -53,7 +55,9 @@ function RecipeDetails({ id, persons }: { id: string; persons: number | null }) 
   if (recipes === undefined) return <div className={`${CARD} m-4 h-64 animate-pulse`} />;
   // Auch eingebaute Backrezepte ("b:…") lassen sich ansehen
   const recipe = findRecipe(recipes, id);
-  const builtin = isBuiltin(id);
+  // Beispiel-Rezepte ("d:…", Beispiel-Tag) verhalten sich wie eingebaute
+  const demo = isDemoRecipe(id);
+  const builtin = isBuiltin(id) || demo;
 
   if (!recipe) {
     return (
@@ -92,6 +96,7 @@ function RecipeDetails({ id, persons }: { id: string; persons: number | null }) 
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
       <PageHeader title="Rezept" backHref="/kochbuch" />
       <main className={PAGE_MAIN}>
+        {demo && <DemoHero id={recipe.id} title={recipe.title} />}
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">
             <h2 className="text-2xl font-extrabold leading-tight tracking-tight">{recipe.title}</h2>
@@ -111,7 +116,7 @@ function RecipeDetails({ id, persons }: { id: string; persons: number | null }) 
                 {builtin ? (
                   <>
                     <Sparkles className="h-4 w-4" strokeWidth={2} aria-hidden />
-                    Aus unserer Backstube
+                    {demo ? "Beispiel-Rezept" : "Aus unserer Backstube"}
                   </>
                 ) : recipe.source === "ki" ? (
                   <>
@@ -133,7 +138,7 @@ function RecipeDetails({ id, persons }: { id: string; persons: number | null }) 
         {recipe.steps.length > 0 && (
           <Link href={`/kochbuch/kochen?id=${encodeURIComponent(recipe.id)}`} className={`${buttonClass("primary", "lg")} w-full`}>
             <ChefHat className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-            {baking ? "Zusammen backen" : "Los geht’s – Schritt für Schritt"}
+            {baking ? "Zusammen backen" : demo ? "Kochen starten" : "Los geht’s – Schritt für Schritt"}
           </Link>
         )}
         {builtin ? (
@@ -221,6 +226,8 @@ function RecipeDetails({ id, persons }: { id: string; persons: number | null }) 
             <p className="whitespace-pre-line text-base text-muted">{recipe.note}</p>
           </section>
         )}
+
+        {demo && <DemoMoreIdeas current={recipe.id} />}
 
         {/* Eingebaute Rezepte: erst "In unsere Rezepte", dann bewerten/bearbeiten */}
         {!builtin && (

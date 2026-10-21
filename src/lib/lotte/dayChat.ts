@@ -6,8 +6,8 @@
 // Nudel-Timer", "Stoppuhr starten", "Ich fang an zu kochen", "Nächster
 // Schritt", "Was kommt jetzt?", "War heute 5 km laufen", "Ich will 4× pro
 // Woche Sport machen", "Wie oft war ich diese Woche beim Sport?", "Plan mir 3
-// Trainings nächste Woche, am liebsten morgens", "Lass die Startseite immer
-// gleich", "Startseite soll mitdenken".
+// Trainings nächste Woche, am liebsten morgens", "Blende die Jetzt-Karte
+// aus" (auch "Lass die Startseite immer gleich").
 
 import { changeEntries, loadEntries } from "../aufgaben/store";
 import { createEntry } from "../core/entries";
@@ -17,7 +17,8 @@ import { pushUndo } from "../core/undo";
 import { upsertEntry, type CalendarEntry } from "../aufgaben/model";
 import { currentStep, loadCooking, nextStep, startCooking } from "../kochen/session";
 import { nudgePhase } from "../tagesablauf/nudge";
-import { changeRoutine, loadRoutine } from "../tagesablauf/settings";
+import { jetztCommand } from "../jetzt/command";
+import { setJetztOn } from "../jetzt/store";
 import { durationLabel, isExpired, leftMs, leftWords, parseTimerCommand, sortTimers } from "../timer/model";
 import { loadTimers } from "../timer/store";
 import { startTimer, stopTimerByName, stopwatch } from "../timer/actions";
@@ -66,16 +67,16 @@ export function dayChat(text: string, ctx: DayChatContext): DayChatReply | null 
   const t = text.trim();
   const nowMs = now().getTime();
 
-  // --- Startseite mitdenkend / immer gleich ---
-  if (/\bstartseite\b/i.test(t) && /\b(immer\s+gleich|gleich\s+bleiben|bleibt\s+gleich|nicht\s+(mehr\s+)?mitdenk\w*|nicht\s+(mehr\s+)?anpass\w*)\b/i.test(t)) {
-    const undo = pushUndo("„Startseite immer gleich“", changeRoutine({ mode: "gleich" }));
-    nudgePhase();
-    return { text: "Erledigt ✓ Die Startseite bleibt jetzt immer so, wie du sie sortiert hast. Umstellen: Einstellungen → Tagesablauf.", undo };
-  }
-  if (/\bstartseite\b/i.test(t) && /\b(mitdenk\w*|denk\w*\s+mit|passt\s+sich|anpass\w*|tageszeit)\b/i.test(t) && !/\bnicht\b/i.test(t)) {
-    const undo = pushUndo("„Startseite mitdenkend“", changeRoutine({ mode: "mitdenkend" }));
-    nudgePhase();
-    return { text: "Erledigt ✓ Die Startseite denkt jetzt mit: morgens Überblick, beim Kochen das Essen, im Feierabend nur Familie und Freizeit.", undo };
+  // --- Jetzt-Karte an/aus (auch "Startseite immer gleich" / "… soll mitdenken") ---
+  const jetzt = jetztCommand(t);
+  if (jetzt !== null) {
+    const undo = pushUndo(jetzt ? "„Jetzt-Karte an“" : "„Jetzt-Karte aus“", setJetztOn(jetzt));
+    return {
+      text: jetzt
+        ? "Erledigt ✓ Die Jetzt-Karte steht wieder oben – mit dem Wichtigsten für den Moment."
+        : "Erledigt ✓ Die Jetzt-Karte ist aus. Die Kacheln bleiben ohnehin immer so, wie du sie sortiert hast. Wieder an: Einstellungen → Startseite & Tageszeiten.",
+      undo,
+    };
   }
 
   // --- Timer ---
@@ -84,13 +85,12 @@ export function dayChat(text: string, ctx: DayChatContext): DayChatReply | null 
     if (timer.kind === "start") {
       const started = startTimer({ minutes: timer.minutes, name: timer.name });
       if (!started) return { text: "Fünf Timer laufen schon – sobald einer fertig ist, geht der nächste." };
+      // Ohne Timer-Kachel: einblenden (an ihrem Standard-Platz) und sagen, wo er steht
       let where = "";
-      if (loadRoutine().mode === "gleich") {
-        const tiles = loadHomeTiles();
-        if (!tiles.find((x) => x.id === "timer")?.visible) {
-          saveHomeTiles(applyHomeChange(tiles, { tile: "timer", action: "zeigen" }));
-          where = " Der Timer steht jetzt auf der Startseite.";
-        }
+      const tiles = loadHomeTiles();
+      if (!tiles.find((x) => x.id === "timer")?.visible) {
+        saveHomeTiles(applyHomeChange(tiles, { tile: "timer", action: "zeigen" }));
+        where = " Der Timer steht jetzt auf der Startseite.";
       }
       return { text: `Läuft ⏱ ${started.timer.name} – ${durationLabel(started.timer.durationMs)}.${where}`, undo: pushUndo("den Timer", started.undo) };
     }
@@ -113,7 +113,7 @@ export function dayChat(text: string, ctx: DayChatContext): DayChatReply | null 
     nudgePhase();
     const c = ctx.cooking;
     const cur = c ? currentStep(c.steps.length, loadCooking().steps[c.recipe] ?? []) : null;
-    return { text: c ? `Los geht’s mit ${c.dish} 🍳${cur !== null ? ` Jetzt: ${c.steps[cur]}` : ""} Rezept und Timer stehen oben auf der Startseite.` : "Los geht’s 🍳 Timer und Rezept stehen oben auf der Startseite.", undo };
+    return { text: c ? `Los geht’s mit ${c.dish} 🍳${cur !== null ? ` Jetzt: ${c.steps[cur]}` : ""} Die Schritte stehen in der Essen-Kachel.` : "Los geht’s 🍳 Die Schritte stehen in der Essen-Kachel.", undo };
   }
   if ((NEXT_STEP.test(t) || WHAT_NOW.test(t)) && ctx.cooking?.steps.length) {
     const c = ctx.cooking;

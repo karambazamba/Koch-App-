@@ -31,6 +31,8 @@ import type { HomeData } from "@/components/home/useHomeData";
 import { dishOf, useMeals } from "./useMeals";
 import { BausteinSections } from "./BausteinSections";
 import { useFeature } from "@/lib/core/features";
+import { demoTiles, useDemo } from "@/lib/core/demo";
+import { DemoDishHero } from "./DemoFoodTile";
 
 export function FoodPage({ data, minutes }: { data: HomeData; minutes: number }) {
   const cooked = useCookedDays();
@@ -40,9 +42,12 @@ export function FoodPage({ data, minutes }: { data: HomeData; minutes: number })
   const planOn = useFeature("wochenplan");
   const main = over ? data.tomorrow : data.day;
   const list = Array.from({ length: 7 }, (_, i) => addDays(data.todayIso, i + (over ? 1 : 0)));
+  // Beispiel-Tag: ohne eigenes Gericht steht das Beispielgericht als "Heute" da
+  const demo = useDemo();
+  const demoDish = !over && !dishOf(data.day) && demoTiles(demo, data.todayIso).includes("essen");
   return (
     <div className="flex flex-col gap-4">
-      <DishHero data={data} day={main} when={over ? "Morgen" : "Heute"} onSwap={() => main && setSwap(main)} />
+      {demoDish ? <DemoDishHero /> : <DishHero data={data} day={main} when={over ? "Morgen" : "Heute"} onSwap={() => main && setSwap(main)} />}
 
       <section className="flex flex-col gap-2" aria-label="Wochenplan">
         <div className="flex items-center justify-between">

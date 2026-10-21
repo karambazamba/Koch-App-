@@ -1,5 +1,5 @@
 // Erinnerungen, solange es noch keine Push gibt: Eine fällige Erinnerung
-// erscheint als Lottes Satz oben auf "Heute" ("In 30 Minuten: Jonne
+// erscheint als Thema der Jetzt-Karte oben auf "Heute" ("In 30 Minuten: Jonne
 // abholen."). Ab dem Erinnerungszeitpunkt bis zum Beginn, einmal "Okay" =
 // gesehen. Vorabend = am Tag davor ab 19 Uhr.
 

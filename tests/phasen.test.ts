@@ -10,7 +10,6 @@ const ctx = (minutes: number, extra: Partial<PhaseContext> = {}): PhaseContext =
   cooking: { manualAt: null, timerRunning: false, firstTimerAt: null, lastTimerEnd: null },
   sport: { on: false, training: null },
   workEnd: null,
-  pinNew: false,
   ...extra,
 });
 

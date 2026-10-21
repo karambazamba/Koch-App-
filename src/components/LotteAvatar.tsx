@@ -19,13 +19,13 @@ const DARK_COLORS = new Set(["#2B4470", "#3E3A37", "#A33B67"]);
  * "begruessen"). `.klein` (< 44 px) und `.gross` (≥ 56 px) steuern Blinzeln
  * und Denk-Punkte.
  */
-export function LotteAvatar({ size, color, zustand, groesse: fest }: { size: number; color?: string; zustand?: AvatarZustand; groesse?: "klein" | "gross" }) {
+export function LotteAvatar({ size, color, zustand, groesse: fest, stabil = false }: { size: number; color?: string; zustand?: AvatarZustand; groesse?: "klein" | "gross"; /** Zustand wechselt am selben Element (kein Neuaufbau) – für Abläufe wie den Hallo-Bildschirm */ stabil?: boolean }) {
   const profile = useProfile();
   const shared = useAvatarZustand();
   const c = color ?? avatarHex(profile?.helper.farbe);
   const z = zustand ?? shared.zustand;
   // Einmalige Zustände starten bei jedem Auslösen neu (neues Element)
-  const key = zustand ? z : z === "begruessen" || z === "freuen" || z === "verwirrt" ? `${z}-${shared.nonce}` : z;
+  const key = stabil ? "stabil" : zustand ? z : z === "begruessen" || z === "freuen" || z === "verwirrt" ? `${z}-${shared.nonce}` : z;
   // Leiste zählt als klein (ganz still), Chat-Kopf und Vorstellung als groß (blinzeln)
   const groesse = fest ?? (size < 44 ? "klein" : size >= 56 ? "gross" : "");
   return (
@@ -39,17 +39,20 @@ export function LotteAvatar({ size, color, zustand, groesse: fest }: { size: num
             <rect x="8" y="10" width="64" height="52" rx="20" fill="#fff" />
             <path d="M33 60 L40 72 L47 60 Z" fill="#fff" stroke="#fff" strokeWidth="3" strokeLinejoin="round" />
             <g transform="translate(40 36) scale(1.05) translate(-40 -36)">
-              <g className="av-eyes">
-                <rect x="27.5" y="29" width="5" height="10" rx="2.5" fill="var(--c)" />
-                <rect x="47.5" y="29" width="5" height="10" rx="2.5" fill="var(--c)" />
-              </g>
-              <g className="av-happy" fill="none" stroke="var(--c)" strokeWidth="3.6" strokeLinecap="round">
-                <path d="M26.5 35c2-3.5 5-3.5 7 0" />
-                <path d="M46.5 35c2-3.5 5-3.5 7 0" />
-              </g>
-              <g className="av-closed" fill="none" stroke="var(--c)" strokeWidth="3.6" strokeLinecap="round">
-                <path d="M26.5 35c2 2.5 5 2.5 7 0" />
-                <path d="M46.5 35c2 2.5 5 2.5 7 0" />
+              {/* av-look: Blickrichtung (Augen folgen dem Finger, Hallo-Bildschirm) */}
+              <g className="av-look">
+                <g className="av-eyes">
+                  <rect x="27.5" y="29" width="5" height="10" rx="2.5" fill="var(--c)" />
+                  <rect x="47.5" y="29" width="5" height="10" rx="2.5" fill="var(--c)" />
+                </g>
+                <g className="av-happy" fill="none" stroke="var(--c)" strokeWidth="3.6" strokeLinecap="round">
+                  <path d="M26.5 35c2-3.5 5-3.5 7 0" />
+                  <path d="M46.5 35c2-3.5 5-3.5 7 0" />
+                </g>
+                <g className="av-closed" fill="none" stroke="var(--c)" strokeWidth="3.6" strokeLinecap="round">
+                  <path d="M26.5 35c2 2.5 5 2.5 7 0" />
+                  <path d="M46.5 35c2 2.5 5 2.5 7 0" />
+                </g>
               </g>
               <path className="av-flat" d="M33 47h14" stroke="var(--c)" strokeWidth="4.2" strokeLinecap="round" />
               <path className="av-mouth" d="M31 45.5c5 4 13 4 18 0" stroke="var(--c)" strokeWidth="4.2" fill="none" strokeLinecap="round" />

@@ -20,10 +20,10 @@ export type HomeTile = { id: HomeTileId; visible: boolean; size: TileSize };
  * eingeschaltet); `soon`: gibt es noch nicht ("bald"); `fresh`: "NEU".
  */
 export const HOME_TILES: { id: HomeTileId; label: string; hint: string; sizes: TileSize[]; size: TileSize; feature?: "vorrat"; soon?: boolean; fresh?: boolean }[] = [
-  { id: "pinnwand", label: "Pinnwand", hint: "Kurze Nachrichten an die Familie", sizes: ["S", "M", "L"], size: "M", fresh: true },
+  { id: "pinnwand", label: "Pinnwand", hint: "Kurze Nachrichten an die Familie", sizes: ["S", "M", "L"], size: "S", fresh: true },
+  { id: "wetter", label: "Wetter", hint: "Heute und die nächsten Tage", sizes: ["S", "M", "L"], size: "S", fresh: true },
   { id: "termine", label: "Termine", hint: "Die nächsten von heute", sizes: ["S", "M", "L"], size: "M" },
   { id: "aufgaben", label: "Aufgaben", hint: "Was heute dran ist", sizes: ["S", "M", "L"], size: "M" },
-  { id: "wetter", label: "Wetter", hint: "Heute und die nächsten Tage", sizes: ["S", "M", "L"], size: "S", fresh: true },
   { id: "essen", label: "Essen", hint: "Gericht von heute", sizes: ["S", "M", "L"], size: "S" },
   { id: "einkauf", label: "Einkauf", hint: "Die Einkaufsliste", sizes: ["S", "M", "L"], size: "S" },
   { id: "timer", label: "Timer", hint: "Bis zu 5 Timer und eine Stoppuhr", sizes: ["S", "M"], size: "M", fresh: true },
@@ -41,9 +41,13 @@ export const tileMeta = (id: HomeTileId) => HOME_TILES.find((t) => t.id === id)!
 
 export const tileLabel = (id: HomeTileId) => HOME_TILES.find((t) => t.id === id)?.label ?? id;
 
-const ON_BY_DEFAULT: HomeTileId[] = ["termine", "aufgaben", "essen", "einkauf", "vorrat", "morgen"];
+const ON_BY_DEFAULT: HomeTileId[] = ["pinnwand", "wetter", "termine", "aufgaben", "essen", "einkauf", "vorrat"];
 
-/** Standard: Termine, Aufgaben, Essen + Einkauf (Vorrat nur mit Baustein), Morgen – alles in Standard-Reihenfolge */
+/**
+ * Standard: Pinnwand + Wetter (klein nebeneinander), Termine, Aufgaben, Essen +
+ * Einkauf (Vorrat nur mit Baustein). Die Reihenfolge ist die gespeicherte –
+ * sie ändert sich nie von selbst.
+ */
 export const DEFAULT_HOME: HomeTile[] = HOME_TILES.map((t) => ({ id: t.id, visible: ON_BY_DEFAULT.includes(t.id), size: t.size }));
 
 const PAIR: [HomeTileId, HomeTileId] = ["essen", "einkauf"];

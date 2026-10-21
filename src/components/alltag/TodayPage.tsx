@@ -1,16 +1,17 @@
 "use client";
 
-// Seite "Heute": Begrüßung, EIN Satz von Lotte (oder eine fällige
-// Erinnerung), dann die Kacheln in der eigenen Reihenfolge und Größe
-// (`HomeBoard`). Lange drücken, der Link unten, die Einstellungen oder Lotte
-// öffnen den Bearbeiten-Modus direkt hier: Kopf "Startseite bearbeiten" +
-// "Fertig", Kacheln wackeln, ziehen, "–", S · M · L.
+// Seite "Heute": Begrüßung, die Jetzt-Karte (Mias EIN Thema für den Moment –
+// feste Höhe, Farbe je Tageszeit) und darunter die Kacheln in der EINEN
+// gespeicherten Reihenfolge und Größe (`HomeBoard`). Die Anordnung ändert
+// sich nie von selbst; Tagesphasen ändern nur Inhalte (Kochschritte in der
+// Essen-Kachel, Ruhe nach Feierabend). Lange drücken, der Link unten, die
+// Einstellungen oder Lotte öffnen den Bearbeiten-Modus direkt hier: Kopf
+// "Startseite bearbeiten" + "Fertig", Kacheln wackeln, ziehen, "–", S · M · L.
 
 import { greetOncePerDay, setAvatarSleeping } from "@/lib/core/avatarState";
-import Link from "next/link";
-import { Sheet } from "@/components/plan/Sheet";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ChevronRight, PenLine } from "lucide-react";
+import { PenLine } from "lucide-react";
 import { DEFAULT_HOME, markHomeTipSeen, onHomeEditRequest, tileMeta, useHomeTiles, useHomeTipSeen, type HomeTile, type HomeTileId } from "@/lib/core/homeLayout";
 import { useWelcomeFinished } from "@/lib/einstellungen/welcomeStore";
 import { HomeBoard } from "./HomeBoard";
@@ -19,36 +20,38 @@ import { WeatherTile } from "./WeatherTile";
 import { PinboardTile } from "./PinboardTile";
 import { TimerTile } from "./TimerTile";
 import { CookingTile } from "./CookingTile";
+import { DemoFoodTile } from "./DemoFoodTile";
+import { JetztCard, JetztPlaceholder } from "./JetztCard";
+import { useJetztTopics } from "./useJetztTopics";
+import { takeHelloFlight } from "@/lib/core/hello";
 import { SportTile } from "@/components/sport/SportTile";
 import { useHomePhase } from "./useHomePhase";
-import { arrangeHome, type PhaseContext, type PhaseTone, type TopTile } from "@/lib/tagesablauf/phases";
+import type { PhaseContext } from "@/lib/tagesablauf/phases";
 import { clockMinutes, DEFAULT_ROUTINE, usePreview, useRoutine } from "@/lib/tagesablauf/settings";
 import { nudgePhase } from "@/lib/tagesablauf/nudge";
 import { now, toIsoDate } from "@/lib/core/now";
 import { useWakeLock } from "@/lib/core/wakeLock";
 import { useNowMs } from "@/lib/core/useNowMs";
-import { isExpired, isRunning, leftWords, sortTimers, timersActive } from "@/lib/timer/model";
+import { isExpired, isRunning, leftWords, sortTimers } from "@/lib/timer/model";
 import { useTimers } from "@/lib/timer/store";
 import { currentStep, startCooking, stopCooking, useCooking } from "@/lib/kochen/session";
 import { cookableEntry, markCooked, unmarkCooked } from "@/lib/essen/mealDone";
-import { hasUnread, usePins } from "@/lib/pinnwand";
+import { usePins } from "@/lib/pinnwand";
 import { leisureIdea } from "@/lib/notizen/model";
 import { useNotes } from "@/lib/notizen";
 import { todaysTraining, useSport, weekStatus } from "@/lib/sport";
 import { weekdayIndex } from "@/lib/aufgaben/model";
 import { buzz } from "./actions";
-import { LotteAvatar } from "@/components/LotteAvatar";
-import { buttonClass } from "@/components/ui/styles";
 import { isUrgent, itemsForDay, openTaskCount, orderedTasks, taskOverview, upcomingTermine, type CalendarEntry, type DayItem } from "@/lib/aufgaben/model";
 import { AufgabenSection, TermineSection, type DemoProps } from "./MiniCards";
 import { useDemoDay } from "./useDemoDay";
 import { DemoHint, DemoItemSheet } from "./DemoBits";
 import { DarkTip } from "./DarkTip";
 import { hideDemoItem, toggleDemoDone } from "@/lib/core/demo";
-import { showDone } from "@/lib/core/toast";
+import { showDone, showToast } from "@/lib/core/toast";
 import { dueReminder } from "@/lib/aufgaben/reminders";
 import { markReminderSeen, useSeenReminders } from "@/lib/aufgaben/store";
-import { greeting, homeSentence, type SentencePart } from "@/lib/aufgaben/summary";
+import { greeting } from "@/lib/aufgaben/summary";
 import { addDays } from "@/lib/core/now";
 import { hasKids, helperName, mealClockFor, pausedOn } from "@/lib/einstellungen/profile";
 import { saveProfile } from "@/lib/einstellungen/profileStore";
@@ -56,7 +59,12 @@ import { useFeature } from "@/lib/core/features";
 import { pauseLabel } from "@/lib/essen/spontan";
 import { pushUndo } from "@/lib/core/undo";
 import { mealIsOver, useCookedDays } from "@/lib/essen/mealDone";
+import { matchStock } from "@/lib/essen/dishIdeas";
+import { useStock } from "@/lib/essen/useStock";
+import { DEMO_DISH } from "@/lib/essen/demoDish";
 import { openHelper } from "@/lib/lotte/open";
+import { hideJetztTopic, noteJetztSkip, noteJetztTap } from "@/lib/jetzt/store";
+import type { JetztTopic } from "@/lib/jetzt/topics";
 import type { HomeData } from "@/components/home/useHomeData";
 import { dishOf } from "./useMeals";
 
@@ -66,6 +74,7 @@ const DATE = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric",
 const firstName = (data: HomeData) => data.profile.persons[0]?.name.trim() ?? "";
 
 export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: { data: HomeData; entries: CalendarEntry[]; minutes: number; realMinutes?: number; onOpenFood: () => void }) {
+  const router = useRouter();
   const seen = useSeenReminders();
   const cooked = useCookedDays();
   const allItems = itemsForDay(entries, data.todayIso, data.todayIso);
@@ -79,17 +88,16 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const tomorrowAll = itemsForDay(entries, tomorrowIso, data.todayIso).filter((i) => !i.done);
   const tomorrowItems = minutes >= 16 * 60 ? tomorrowAll : [];
   const tomorrowDish = minutes >= 16 * 60 ? dishOf(data.tomorrow) : null;
-  // Bausteine Tipps / Wochenend-Ideen: nur über diesen einen Satz – und nur an ruhigen Tagen (nichts mehr offen)
+  // Bausteine Tipps / Wochenend-Ideen: als leises Thema der Jetzt-Karte an ruhigen Tagen
   const tipsOn = useFeature("tipps");
   const weekendOn = useFeature("wochenendIdeen");
   const pantryOn = useFeature("vorrat");
-  const [tipOpen, setTipOpen] = useState(false);
-  // Pause (Urlaub) – sichtbar und mit einem Tipp beendet
   const paused = pausedOn(data.profile, data.todayIso);
+  // Pause (Urlaub) beenden – über die Jetzt-Karte, mit Rückgängig
   const endPause = () => {
     const before = data.profile;
     saveProfile({ ...before, pause: null });
-    pushUndo("das Beenden der Pause", () => saveProfile(before));
+    showToast({ text: "Pause beendet", undo: pushUndo("das Beenden der Pause", () => saveProfile(before)), undoneText: "Pause läuft wieder", seconds: 4, small: true });
     buzz();
   };
   const tiles = useHomeTiles();
@@ -97,8 +105,11 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const welcomed = useWelcomeFinished();
   const editing = useHomeEditing();
   const all = tiles ?? DEFAULT_HOME;
+  const stock = useStock();
+  // Direkt vom Hallo-Bildschirm: Mia fliegt in die Jetzt-Karte, Kacheln erscheinen nacheinander
+  const [arrive] = useState(takeHelloFlight);
 
-  // --- Tagesphase -------------------------------------------------------------------
+  // --- Tagesphase (nur Inhalte, nie die Anordnung) ------------------------------------
   const routine = useRoutine() ?? DEFAULT_ROUTINE;
   const preview = usePreview();
   const timers = useTimers();
@@ -106,7 +117,6 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const pins = usePins();
   const sport = useSport();
   const notes = useNotes();
-  const think = routine.mode === "mitdenkend";
   const timerLive = Boolean(timers && timers.timers.some((t) => !isExpired(t, now().getTime())));
   const nowMs = useNowMs(timerLive, 15_000);
   // Uhrzeiten aus echten Zeitstempeln (Timer, "Ich koche jetzt") – in der Vorschau mitverschoben
@@ -121,10 +131,11 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const sportTile = all.find((t) => t.id === "sport");
   const workToday = allItems.filter((i) => i.entry.typ === "termin" && i.room === "arbeit" && i.time);
   const workEnd = workToday.length ? Math.max(...workToday.map((i) => (i.end ? clockMinutes(i.end) : clockMinutes(i.time!) + 60))) : null;
-  const ctx: PhaseContext | null = timers && cooking && pins
+  const weekday = preview?.weekday ?? weekdayIndex(data.todayIso);
+  const ctx: PhaseContext | null = timers && cooking
     ? {
         minutes,
-        weekday: preview?.weekday ?? weekdayIndex(data.todayIso),
+        weekday,
         routine,
         mealClock: dish && !over && dishClock && !data.day?.away ? dishClock : null,
         cooking: {
@@ -135,13 +146,13 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
         },
         sport: { on: Boolean(sportTile?.visible), training: todaysTraining(entries, data.todayIso, me) },
         workEnd,
-        pinNew: hasUnread(pins, name || "Ich", nowMs),
       }
     : null;
-  const phase = useHomePhase(ctx, { routine, preview, today: data.todayIso, editing: editing.on });
+  const phase = useHomePhase(ctx, { preview, today: data.todayIso, editing: editing.on });
   const view = phase.view;
+  const evening = phase.def?.id === "feierabend";
   // Avatar: schläft im Feierabend mit "Ruhe nach Feierabend"; begrüßt einmal am Tag beim ersten Öffnen
-  const sleepy = phase.def?.id === "feierabend" && routine.ruhe;
+  const sleepy = evening && routine.ruhe;
   useEffect(() => {
     setAvatarSleeping(sleepy);
   }, [sleepy]);
@@ -150,7 +161,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     if (!sleepy) greetOncePerDay(data.todayIso);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- nur beim Öffnen
   }, []);
-  const cookingNow = phase.def?.id === "kochen";
+  const cookingNow = Boolean(view.cooking);
   useWakeLock(Boolean(view.wakeLock) && !editing.on);
   // Tipp-Sammlung (150 Tipps) erst laden, wenn Tipps oder Wochenend-Ideen an sind
   const [tipModule, setTipModule] = useState<typeof import("@/lib/essen/tips/daily") | null>(null);
@@ -158,7 +169,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     if ((tipsOn || weekendOn) && !tipModule) void import("@/lib/essen/tips/daily").then((m) => setTipModule(m));
   }, [tipsOn, weekendOn, tipModule]);
 
-  // Arbeit ausblenden (Feierabend, freie Tage); im Feierabend nur Familien-Termine, die heute noch kommen
+  // Arbeit ausblenden (Ruhe nach Feierabend, freie Tage); im Feierabend nur Familien-Termine, die heute noch kommen
   const items = view.hideWork ? allItems.filter((i) => i.room !== "arbeit") : allItems;
   const openItems = items.filter((i) => !i.done);
   const tip =
@@ -168,23 +179,20 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const upcoming = upcomingTermine(entries, data.todayIso, minutes).filter((i) => !view.hideWork || i.room !== "arbeit");
   const termine = view.familyUpcomingOnly ? upcoming.filter((i) => i.room === "familie") : upcoming;
   const termineAll = view.familyUpcomingOnly ? termine : items.filter((i) => i.entry.typ === "termin");
-  // Beispiel-Tag (erster Start): Beispiele statt leerer Kacheln
-  const demoDay = useDemoDay(entries, data.todayIso, minutes, helperName(data.profile));
+  // Beispiel-Tag (erster Start): Beispiele in denselben Kacheln, auch im Bearbeiten-Modus als Vorschau
+  const demoDay = useDemoDay(entries, data.todayIso, minutes, helperName(data.profile), Boolean(dish));
   const [demoItem, setDemoItem] = useState<DayItem | null>(null);
   const demoProps: DemoProps = { label: demoDay.label, done: demoDay.done, onToggle: (i) => (buzz(), toggleDemoDone(i.entry.id)), onGone: (i) => showDone(hideDemoItem(i.entry.id)), onOpen: setDemoItem };
   const overview = taskOverview(entries, data.todayIso);
   const workless = (list: typeof overview.heute) => (view.hideWork ? list.filter((i) => i.room !== "arbeit") : list);
   // EINE Reihenfolge: dringend → heute → Frist → diese Woche (Startseite zeigt bis diese Woche)
-  const tasks = workless(orderedTasks(entries, data.todayIso).filter((i) => isUrgent(i) || i.group === "heute" || i.group === "woche"));
+  const tasksAll = workless(orderedTasks(entries, data.todayIso).filter((i) => isUrgent(i) || i.group === "heute" || i.group === "woche"));
+  const tasks = view.tasksRest ? [] : tasksAll;
 
-  // Kacheln: gespeicherte Reihenfolge, Phase holt Passendes nach oben (ändert nie die gespeicherte Sortierung)
+  // Kacheln: genau die gespeicherte Reihenfolge und Größe – im Bearbeiten-Modus dieselbe
   const visible = all.filter((t) => t.visible && !tileMeta(t.id).soon && (t.id !== "vorrat" || pantryOn));
-  const skip: HomeTileId[] = [];
-  if (view.familyUpcomingOnly && !termine.length && !demoDay.termine) skip.push("termine");
-  const top = view.top.filter((t) => t.id !== "essen" || !cookingNow || Boolean(dish));
-  const extraTop: TopTile[] = think && timers && timersActive(timers, nowMs) ? [{ id: "timer", force: true }] : [];
-  const arranged = editing.on ? { tiles: visible, collapsed: [] as HomeTile[] } : arrangeHome(visible, { ...view, top }, { available: all, skip, extraTop });
-  const unread = pins ? pins.filter((m) => m.data.author !== (name || "Ich") && !m.data.readBy.includes(name || "Ich")).length : 0;
+  // Erste Reihe (zwei S nebeneinander zählen zusammen) – was dort steht, wiederholt die Jetzt-Karte nicht
+  const firstTiles: HomeTileId[] = visible.length ? (visible[0].size === "S" && visible[1]?.size === "S" ? [visible[0].id, visible[1].id] : [visible[0].id]) : [];
 
   const entry = cookableEntry(data.day);
   const recipe = entry?.recipeId ? data.recipes[entry.recipeId] : undefined;
@@ -205,55 +213,79 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     nudgePhase();
   };
 
-  const sentence = homeSentence({
+  // --- Jetzt-Karte ----------------------------------------------------------------------
+  const demoDish = demoDay.tiles.includes("essen");
+  const runningTimer = timers ? sortTimers(timers.timers.filter((x) => isRunning(x, nowMs)), nowMs)[0] : undefined;
+  const steps = recipe?.steps ?? [];
+  const step = cookingNow && cooking ? currentStep(steps.length, cooking.steps[recipe?.id ?? dish ?? ""] ?? []) : null;
+  const needs = recipe && stock ? matchStock(recipe.ingredients.map((i) => i.name), stock).needs : null;
+  const dueToday = workless(overview.heute).filter((i) => !i.carried && i.entry.typ === "aufgabe" && (i.entry.data.due === data.todayIso || i.entry.data.date === data.todayIso));
+  const week = sport && sportTile?.visible ? weekStatus(sport, entries, data.todayIso, me) : null;
+  const training = ctx?.sport.training;
+  const leisure = evening && notes ? leisureIdea(notes, data.todayIso) : null;
+  const hadSomething = termineAll.length > 0 || overview.erledigt.some((i) => i.date === data.todayIso);
+  const jetzt = useJetztTopics({
+    today: data.todayIso,
     minutes,
-    termineToday: termineAll,
-    termineUpcoming: termine,
-    tasksToday: workless(overview.heute),
-    urgent: tasks.filter(isUrgent),
-    tasksDoneToday: overview.erledigt.filter((i) => i.date === data.todayIso).length,
-    dueToday: workless(overview.heute).filter((i) => !i.carried && i.entry.typ === "aufgabe" && (i.entry.data.due === data.todayIso || i.entry.data.date === data.todayIso)),
-    dinnerOpen: !dish && !over && !data.day?.away && Boolean(dishClock && dishClock >= "15:00"),
-    tomorrowTermine: tomorrowAll.filter((i) => i.entry.typ === "termin"),
-    tomorrowTasks: tomorrowAll.filter((i) => i.entry.typ === "aufgabe"),
-    seen: seen ?? [],
+    me: name || "Ich",
+    calm: (evening && routine.ruhe) || weekday >= 5,
+    // Beispiel-Tag ab 21 Uhr: die Beispiele gelten für morgen
+    upcoming: demoDay.termine && !demoDay.label ? demoDay.termine : demoDay.termine ? [] : termine,
+    tomorrow: demoDay.termine && demoDay.label ? demoDay.termine : tomorrowAll.filter((i) => !view.hideWork || i.room !== "arbeit"),
+    urgent: view.tasksRest ? [] : tasksAll.filter(isUrgent).filter((i) => !i.done),
+    dueToday: view.tasksRest ? [] : dueToday.filter((i) => !i.done),
+    allDone: !demoDay.tiles.length && hadSomething && !termine.length && !tasksAll.filter((i) => !i.done).length,
+    pins: demoDay.tiles.includes("pinnwand") ? [] : pins,
+    nowMs,
+    dish: demoDish
+      ? { name: DEMO_DISH.recipe.title, clock: DEMO_DISH.clock, minutes: DEMO_DISH.recipe.prepMinutes, ready: true, missing: [], demo: true }
+      : dish && !data.day?.away
+        ? { name: dish, clock: dishClock, minutes: recipe?.prepMinutes ?? null, ready: Boolean(needs && !needs.length), missing: needs ?? [] }
+        : null,
+    dinnerFree: !dish && !over && !data.day?.away && Boolean(dishClock && dishClock >= "15:00"),
+    todayAll: allItems,
+    sport: week && !week.reached ? { left: week.goal - week.count, today: training ? `Heute ${Math.floor(training.start / 60)}:${String(training.start % 60).padStart(2, "0")} ${training.title}` : null } : null,
+    timer: runningTimer ? { name: runningTimer.name, left: leftWords(runningTimer.endsAt - nowMs) } : null,
+    cookingStep: step !== null && steps[step] ? steps[step] : null,
+    reminder: reminder ? { key: reminder.key, text: reminder.text } : null,
+    pause: paused && data.profile.pause ? pauseLabel(data.profile.pause) : null,
+    leisure: leisure ? { text: leisure.item.text, href: `/notizen/bearbeiten?id=${leisure.note.id}` } : null,
+    tip: tip?.text ?? null,
+    demo: demoDay.tiles.length > 0,
+    demoShop: demoDay.tiles.includes("einkauf"),
+    firstTiles,
   });
-  // Lottes Satz je Phase: Timer-Stand oder aktueller Schritt, Training, Feierabend
-  const phaseParts = ((): SentencePart[] | null => {
-    if (!phase.def || !timers) return null;
-    if (phase.def.id === "kochen") {
-      const t = sortTimers(timers.timers.filter((x) => isRunning(x, nowMs)), nowMs)[0];
-      if (t) return [{ t: `${t.name}: ` }, { t: `${leftWords(t.endsAt - nowMs)}.`, b: true }];
-      const steps = recipe?.steps ?? [];
-      const cur = currentStep(steps.length, cooking?.steps[recipe?.id ?? dish ?? ""] ?? []);
-      if (cur !== null && steps[cur]) return [{ t: "Jetzt: " }, { t: steps[cur].length > 34 ? `${steps[cur].slice(0, 33).trimEnd()}…` : steps[cur], b: true }];
-      return null;
-    }
-    if (phase.def.id === "sport" && ctx?.sport.training && sport) {
-      const t = ctx.sport.training;
-      const week = weekStatus(sport, entries, data.todayIso, me);
-      const at = t.start % 60 ? clockLabelOf(t.start) : `${Math.floor(t.start / 60)} Uhr`;
-      if (week.count + 1 === week.goal) return [{ t: `Heute ${at} Sport – dann ist dein Wochenziel geschafft.` }];
-      return [{ t: "Heute " }, { t: `${at} ${t.title}.`, b: true }];
-    }
-    if (phase.def.id === "feierabend") return [{ t: "Schönen Feierabend – für heute ist alles getan." }];
-    return null;
-  })();
-  const allDone = !reminder && !paused && !phaseParts && sentence.parts.length === 1 && sentence.parts[0].t.startsWith("Alles geschafft");
+  const openTopic = (t: JetztTopic) => {
+    noteJetztTap(t.kind);
+    if (t.kind === "erinnerung" && reminder) markReminderSeen(reminder.key);
+    if (!t.target) return;
+    if ("href" in t.target) return router.push(t.target.href);
+    if (t.target.action === "essen") return onOpenFood();
+    if (t.target.action === "ideen") return openHelper("spontan");
+    if (t.target.action === "pause") return endPause();
+    document.querySelector(`[data-tile~="${t.target.action === "timer" ? "timer" : "pinnwand"}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+  const hideTopic = (t: JetztTopic) => {
+    if (t.kind === "erinnerung" && reminder) markReminderSeen(reminder.key);
+    const undo = hideJetztTopic(t.id, t.kind, data.todayIso);
+    buzz();
+    showToast({ text: "Für heute ausgeblendet", undo, undoneText: "Wieder da", seconds: 3, small: true });
+  };
 
   const renderTile = (tile: HomeTile, half: boolean, edit: boolean) => {
     switch (tile.id) {
       case "termine":
-        if (demoDay.termine && !edit) return <TermineSection items={demoDay.termine} href={`/tag?datum=${data.todayIso}`} today={data.todayIso} size={tile.size} half={half} demo={demoProps} />;
+        if (demoDay.termine) return <TermineSection items={demoDay.termine} href={`/tag?datum=${data.todayIso}`} today={data.todayIso} size={tile.size} half={half} demo={demoProps} />;
         return <TermineSection items={termine} all={termineAll} href={`/tag?datum=${data.todayIso}`} today={data.todayIso} size={tile.size} half={half} />;
       case "aufgaben":
-        if (demoDay.tasks && !edit) return <AufgabenSection items={demoDay.tasks} today={data.todayIso} size={tile.size} half={half} demo={demoProps} />;
-        return <AufgabenSection items={tasks} total={openTaskCount(entries, data.todayIso)} today={data.todayIso} size={tile.size} half={half} />;
+        if (demoDay.tasks) return <AufgabenSection items={demoDay.tasks} today={data.todayIso} size={tile.size} half={half} demo={demoProps} />;
+        return <AufgabenSection items={tasks} total={view.tasksRest ? 0 : openTaskCount(entries, data.todayIso)} today={data.todayIso} size={tile.size} half={half} />;
       case "essen":
+        if (demoDish) return <DemoFoodTile half={half} />;
         if (cookingNow && dish && !edit) return <CookingTile dish={dish} clock={dishClock} persons={data.day?.persons ?? null} recipe={recipe} today={data.todayIso} onEaten={eaten} />;
-        return <FoodTile data={data} dish={dish} over={over} dishClock={dishClock} onOpen={onOpenFood} size={tile.size} onCook={think && dish && !over && !edit ? cookNow : undefined} />;
+        return <FoodTile data={data} dish={dish} over={over} dishClock={dishClock} onOpen={onOpenFood} size={tile.size} onCook={dish && !over && !edit ? cookNow : undefined} />;
       case "einkauf":
-        return <ShoppingTile half={half} size={tile.size} demo={demoDay.tiles.includes("einkauf") && !edit} />;
+        return <ShoppingTile half={half} size={tile.size} demo={demoDay.tiles.includes("einkauf")} />;
       case "notizen":
         return <NotesTile name={helperName(data.profile)} size={tile.size} />;
       case "vorrat":
@@ -261,7 +293,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
       case "wetter":
         return <WeatherTile size={tile.size} half={half} today={data.todayIso} minutes={minutes} termine={termine.flatMap((t) => (t.time ? [{ title: t.title, time: t.time }] : []))} tomorrow={Boolean(view.weatherTomorrow) && !edit} />;
       case "pinnwand":
-        return <PinboardTile size={tile.size} me={name || "Ich"} demo={demoDay.tiles.includes("pinnwand") && !edit} helper={helperName(data.profile)} />;
+        return <PinboardTile size={tile.size} me={name || "Ich"} demo={demoDay.tiles.includes("pinnwand")} helper={helperName(data.profile)} />;
       case "timer":
         return <TimerTile size={tile.size} />;
       case "sport":
@@ -272,9 +304,6 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
         return null;
     }
   };
-
-  const leisure = phase.def?.id === "feierabend" && notes ? leisureIdea(notes, data.todayIso) : null;
-  const wandering = phase.def?.id === "feierabend" ? workless(overview.heute).filter((i) => i.entry.typ === "aufgabe").length : 0;
 
   return (
     <>
@@ -292,50 +321,19 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
               <p className="text-sm text-muted">Gedrückt halten &amp; ziehen · Größe unten rechts · – entfernt</p>
             </header>
           ) : (
+            <header className="flex flex-col gap-1 pt-1">
+              <h1 className="text-[28px] font-extrabold leading-tight tracking-tight">
+                {greeting(minutes)}
+                {name ? `, ${name}.` : "!"}
+              </h1>
+              <p className="text-sm font-medium text-muted">{DATE.format(data.today)}</p>
+            </header>
+          )}
+
+          {jetzt.on && (editing.on ? <JetztPlaceholder /> : <JetztCard topics={jetzt.topics} tone={jetzt.tone} name={helperName(data.profile)} onOpen={openTopic} onHide={hideTopic} onSkip={(t) => noteJetztSkip(t.kind)} arrive={arrive} />)}
+
+          {!editing.on && (
             <>
-              <header className="flex flex-col gap-1 pt-1">
-                <h1 className="text-[28px] font-extrabold leading-tight tracking-tight">
-                  {greeting(minutes)}
-                  {name ? `, ${name}.` : "!"}
-                </h1>
-                <p className="text-sm font-medium text-muted">{DATE.format(data.today)}</p>
-                {think && phase.phaseId && phase.phaseId !== "tagsueber" && ctx && (
-                  <PhaseBadge phase={phase} />
-                )}
-              </header>
-
-              <div key={allDone ? "geschafft" : "satz"} style={allDone ? { animation: "done-glow 0.9s ease-out" } : undefined}>
-                <LotteSays
-                  parts={
-                    reminder
-                      ? [{ t: reminder.text }]
-                      : demoDay.tiles.length
-                        ? [{ t: "Das hier ist ein " }, { t: "Beispiel-Tag", b: true }, { t: " – probier alles aus!" }]
-                      : paused && data.profile.pause
-                        ? [{ t: `Pause ${pauseLabel(data.profile.pause)} – genießt die Zeit ☀️` }]
-                        : phaseParts
-                          ? phaseParts
-                          : tip && !openItems.length && !sentence.action
-                            ? [{ t: tipOpen ? `${tip.text} ${tip.detail}` : tip.text }]
-                            : sentence.parts
-                  }
-                  name={helperName(data.profile)}
-                  action={
-                    reminder
-                      ? { label: "Okay", onClick: () => markReminderSeen(reminder.key) }
-                      : paused
-                        ? { label: "Pause beenden", onClick: endPause }
-                        : !phaseParts && tip && !openItems.length && !sentence.action
-                          ? tipOpen
-                            ? null
-                            : { label: "Mehr dazu", onClick: () => setTipOpen(true) }
-                          : null
-                  }
-                  oneLine={!reminder && !demoDay.tiles.length && !paused && !phaseParts && !(tip && !openItems.length && !sentence.action)}
-                  onTap={!reminder && !paused && !phaseParts && sentence.action === "essen" ? () => openHelper(undefined, "Was gibt’s heute Abend?") : undefined}
-                />
-              </div>
-
               <DarkTip profile={data.profile} today={data.todayIso} quiet={demoDay.tiles.length > 0 || tipSeen === false} />
               {tipSeen === false && welcomed && !demoDay.tiles.length && (
                 <div className="flex items-start gap-3 rounded-2xl bg-accent-soft px-4 py-3" role="status">
@@ -348,47 +346,9 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
             </>
           )}
 
-          <div key={editing.on ? "bearbeiten" : phase.key + (phase.showingAll ? ":alle" : "")} className="flex flex-col gap-3" style={editing.on ? undefined : { animation: "phase-in 0.35s ease-out" }}>
-            <HomeBoard tiles={arranged.tiles} all={all} editing={editing.on} render={renderTile} onExit={editing.close} />
-            {arranged.collapsed.length > 0 && (
-              <CollapsedLine
-                tiles={arranged.collapsed}
-                termine={termine.length}
-                tasks={workless(overview.heute).length}
-                unread={unread}
-                render={(t) => renderTile(t, false, false)}
-              />
-            )}
-            {phase.def?.id === "feierabend" && !editing.on && (
-              <>
-                {leisure && (
-                  <Link href={`/notizen/bearbeiten?id=${leisure.note.id}`} className="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 shadow-card">
-                    <span className="text-xl" aria-hidden>
-                      {leisure.note.data.emoji ?? "🌙"}
-                    </span>
-                    <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-muted">Freizeit-Idee · {leisure.note.data.title}</span>
-                      <span className="truncate text-base font-bold">{leisure.item.text}</span>
-                    </span>
-                  </Link>
-                )}
-                {wandering > 0 && (
-                  <p className="px-1 text-sm text-muted">
-                    {wandering === 1 ? "1 Aufgabe wandert auf morgen" : `${wandering} Aufgaben wandern auf morgen`}
-                  </p>
-                )}
-              </>
-            )}
+          <div className={arrive ? "tiles-arrive" : undefined}>
+            <HomeBoard tiles={visible} all={all} editing={editing.on} render={renderTile} onExit={editing.close} />
           </div>
-
-          {!editing.on && phase.def && phase.def.id !== "tagsueber" && (
-            <p className="mt-1 px-1 text-center text-sm text-muted">
-              {phase.def.id === "feierabend" ? "💼 Arbeit, Termine und Aufgaben machen Pause bis morgen früh. " : ""}
-              <button type="button" onClick={phase.showAll} className="-my-3 inline-flex h-11 items-center font-bold text-accent-strong underline">
-                Alles zeigen
-              </button>
-            </p>
-          )}
 
           {!editing.on && demoDay.tiles.length > 0 && <DemoHint ask={demoDay.ask} />}
           {demoItem && <DemoItemSheet item={demoItem} today={data.todayIso} onClose={() => setDemoItem(null)} />}
@@ -403,80 +363,6 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
         </div>
       </Pressable>
     </>
-  );
-}
-
-const clockLabelOf = (m: number) => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`;
-
-const BADGE_TONE: Record<PhaseTone, string> = {
-  morgen: "bg-phase-morgen text-phase-morgen-ink",
-  kochen: "bg-phase-kochen text-phase-kochen-ink",
-  sport: "bg-phase-sport text-phase-sport-ink",
-  feierabend: "bg-phase-feierabend text-phase-feierabend-ink",
-};
-
-/** Kleines Schild unter dem Datum ("🍳 Kochen · seit 18:10"); antippen = Fenster mit kurzer Erklärung.
- *  Nach "Normale Ansicht"/"Alles zeigen" nur noch der leise Chip "✨ Wieder mitdenken". */
-function PhaseBadge({ phase }: { phase: ReturnType<typeof useHomePhase> }) {
-  const [open, setOpen] = useState(false);
-  const def = phase.def ?? null;
-  const badge = def ? phase.view.badge : null;
-  if (phase.showingAll)
-    return (
-      <button type="button" onClick={phase.resume} className="-my-1 inline-flex h-8 items-center gap-1 self-start rounded-full bg-segment px-3 text-[13px] font-semibold text-muted">
-        <span aria-hidden>✨</span> Wieder mitdenken
-      </button>
-    );
-  if (!def || !badge) return null;
-  const title = `${badge.emoji ? `${badge.emoji} ` : ""}${badge.label}`;
-  return (
-    <>
-      <button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" className={`-my-1 inline-flex h-8 items-center gap-1 self-start rounded-full px-3 text-[13px] font-bold ${BADGE_TONE[badge.tone]}`} aria-label={`Tagesphase: ${badge.label} · ${badge.detail}`}>
-        {badge.emoji && <span aria-hidden>{badge.emoji}</span>}
-        {badge.label} · <span className="font-semibold">{badge.detail}</span>
-      </button>
-      {open && (
-        <Sheet title={title} onClose={() => setOpen(false)}>
-          <p className="text-base leading-snug">{phase.view.explain}</p>
-          <div className="flex flex-col gap-2 pb-2">
-            <button
-              type="button"
-              onClick={() => {
-                phase.showAll();
-                setOpen(false);
-              }}
-              className={buttonClass("soft", "md")}
-            >
-              Normale Ansicht
-            </button>
-            <Link href="/profil/tagesablauf" onClick={() => setOpen(false)} className={buttonClass("ghost", "md")}>
-              Einstellungen
-            </Link>
-          </div>
-        </Sheet>
-      )}
-    </>
-  );
-}
-
-/** Zusammengeklapptes in einer Zeile: "Heute noch: 1 Aufgabe · Pinnwand 1 neu ›" – antippen klappt auf */
-function CollapsedLine({ tiles, termine, tasks, unread, render }: { tiles: HomeTile[]; termine: number; tasks: number; unread: number; render: (t: HomeTile) => React.ReactNode }) {
-  const [open, setOpen] = useState(false);
-  const has = (id: HomeTileId) => tiles.some((t) => t.id === id);
-  const parts = [
-    has("termine") && termine ? `${termine} ${termine === 1 ? "Termin" : "Termine"}` : "",
-    has("aufgaben") && tasks ? `${tasks} ${tasks === 1 ? "Aufgabe" : "Aufgaben"}` : "",
-    has("pinnwand") ? (unread ? `Pinnwand ${unread} neu` : "Pinnwand") : "",
-  ].filter(Boolean);
-  const text = parts.length ? `Heute noch: ${parts.join(" · ")}` : tiles.map((t) => tileMeta(t.id).label).join(", ");
-  return (
-    <div className="flex flex-col gap-3">
-      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex min-h-12 items-center gap-2 rounded-card border border-line bg-surface px-4 text-left text-[15px] font-semibold shadow-card">
-        <span className="min-w-0 flex-1 truncate">{text}</span>
-        <ChevronRight className={`h-4 w-4 shrink-0 text-muted transition ${open ? "rotate-90" : ""}`} strokeWidth={2.5} aria-hidden />
-      </button>
-      {open && tiles.map((t) => <div key={t.id}>{render(t)}</div>)}
-    </div>
   );
 }
 
@@ -524,32 +410,6 @@ function useHomeEditing() {
     return () => window.removeEventListener("popstate", onPop);
   }, [on]);
   return { on, open, close };
-}
-
-/** Lottes EIN Satz (wichtige Teile fett, eine Zeile) mit höchstens einem Knopf; `onTap` = der Satz selbst ist antippbar */
-function LotteSays({ parts, name, action, oneLine = false, onTap }: { parts: SentencePart[]; name: string; action: { label: string; onClick: () => void } | null; oneLine?: boolean; onTap?: () => void }) {
-  const text = parts.map((p, i) => (p.b ? <strong key={i} className={`font-extrabold ${onTap ? "text-accent-strong underline decoration-2 underline-offset-2" : ""}`}>{p.t}</strong> : <span key={i}>{p.t}</span>));
-  return (
-    <section className="flex items-center gap-3" aria-label={`${name} sagt`}>
-      <LotteAvatar size={32} />
-      <div className="flex min-w-0 flex-1 flex-col items-start gap-2">
-        {onTap ? (
-          <button type="button" onClick={onTap} className="-my-2 min-h-11 w-full truncate text-left text-base font-medium leading-snug" role="status">
-            {text}
-          </button>
-        ) : (
-          <p className={`w-full text-base font-medium leading-snug ${oneLine ? "truncate" : ""}`} role="status">
-            {text}
-          </p>
-        )}
-        {action && (
-          <button type="button" onClick={action.onClick} className={buttonClass("soft", "sm")}>
-            {action.label}
-          </button>
-        )}
-      </div>
-    </section>
-  );
 }
 
 /** Langes Drücken (500 ms) öffnet "Startseite bearbeiten"; normales Tippen und Wischen bleiben, wie sie sind */

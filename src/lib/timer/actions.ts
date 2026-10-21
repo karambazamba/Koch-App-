@@ -2,7 +2,7 @@
 
 // Timer aus der Oberfläche oder von Lotte starten/stoppen – mit allem, was
 // dazugehört: Ton freischalten (iPhone), einmaliger Hinweis, Phase sofort auf
-// "Kochen", Timer-Kachel einblenden (bei "Mitdenkend" erscheint sie oben).
+// "Kochen"; ohne Timer-Kachel wird sie an ihrem Standard-Platz eingeblendet.
 
 import { showToast } from "../core/toast";
 import { now } from "../core/now";

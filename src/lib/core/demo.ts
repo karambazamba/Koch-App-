@@ -1,5 +1,5 @@
 // Beispiel-Tag beim ersten Start: neutrale Beispiele auf der Startseite
-// (Termine, Aufgaben, Pinnwand, Einkauf), damit nichts leer aussieht. Die
+// (Termine, Aufgaben, Pinnwand, Einkauf, Essen mit Beispielgericht), damit nichts leer aussieht. Die
 // Beispiele liegen NICHT in den echten Speichern – nur die Startseite zeigt
 // sie, nie Sicherung, Kalender, Push oder KI. Uhrzeiten werden beim Öffnen
 // berechnet (alle in der Zukunft; ab 21 Uhr Beispiele für morgen). Eine
@@ -11,8 +11,8 @@ import { useExternalStore } from "./useExternalStore";
 import { addDays, todayIso } from "./now";
 import { weekdayIndex, type CalendarEntry } from "../aufgaben/model";
 
-export type DemoTile = "termine" | "aufgaben" | "pinnwand" | "einkauf";
-const TILES: DemoTile[] = ["termine", "aufgaben", "pinnwand", "einkauf"];
+export type DemoTile = "termine" | "aufgaben" | "pinnwand" | "einkauf" | "essen";
+const TILES: DemoTile[] = ["termine", "aufgaben", "pinnwand", "einkauf", "essen"];
 const DAYS = 3;
 
 export type DemoState = {
@@ -133,4 +133,9 @@ export function demoEntries(today: string, minutes: number, helper: string): { d
   return { date, tomorrow, entries: [...termine, ...aufgaben] };
 }
 
-export const DEMO_SHOPPING = ["Milch", "Brot", "Äpfel"];
+/** Beispiel-Einkauf nach Läden */
+export const DEMO_SHOPS: { shop: string; names: string[] }[] = [
+  { shop: "REWE", names: ["Milch", "Brot", "Butter"] },
+  { shop: "EDEKA", names: ["Äpfel", "Eier"] },
+  { shop: "Lidl", names: ["Zahnpasta", "Küchenrolle"] },
+];
