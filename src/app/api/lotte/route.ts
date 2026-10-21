@@ -7,7 +7,7 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { connection } from "next/server";
-import { AssistantInputError, parseRequest, runAssistant, type CreateMessage } from "@/lib/lotte/engine";
+import { AssistantInputError, parseRequest, runAssistant, type CreateMessage, type ModelChoice } from "@/lib/lotte/engine";
 import { aiSetup, checkAccess, clientIp, takeDailySlot } from "@/lib/lotte/guard";
 import { createMockModel } from "@/lib/lotte/mock";
 import { ACCESS_HEADER, LIMITS, type AssistantErrorCode, type AssistantStatus, type StreamEvent } from "@/lib/lotte/protocol";
@@ -15,8 +15,13 @@ import { allowRequest } from "@/lib/lotte/rateLimit";
 
 export const maxDuration = 60;
 
-/** Fürs Gespräch das aktuelle Sonnet (klug und schnell), per Umgebungsvariable änderbar */
-const MODEL = process.env.LOTTE_MODEL || process.env.KUECHENHELFER_MODEL || "claude-sonnet-5-5";
+/**
+ * Modell fürs Gespräch: Haiku für Alltägliches, Sonnet für Planen, Rezepte,
+ * Mails – Haiku schaltet selbst hoch, wenn eine Aufgabe zu groß wird.
+ * LOTTE_MODEL legt ein festes Modell fest; LOTTE_SMALL_MODEL/LOTTE_LARGE_MODEL ändern die beiden.
+ */
+const FIXED = process.env.LOTTE_MODEL || process.env.KUECHENHELFER_MODEL;
+const CHOICE: ModelChoice = FIXED || { small: process.env.LOTTE_SMALL_MODEL || "claude-haiku-5-5", large: process.env.LOTTE_LARGE_MODEL || "claude-sonnet-5-5" };
 
 const fail = (code: AssistantErrorCode, status: number) => Response.json({ error: code }, { status });
 
@@ -62,7 +67,7 @@ export async function POST(request: Request) {
       return stream.finalMessage();
     };
   }
-  const model = mock ? "mock" : MODEL;
+  const model: ModelChoice = mock ? "mock" : CHOICE;
 
   if (!req.stream) {
     try {
@@ -80,7 +85,7 @@ export async function POST(request: Request) {
       const send = (event: StreamEvent) => controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
       try {
         const result = await runAssistant(req, create, model, { onText: (d) => send({ t: "text", d }), onRound: () => send({ t: "round" }) });
-        send({ t: "done", reply: result.reply, ops: result.ops, mail: result.mail, chips: result.chips, tips: result.tips });
+        send({ t: "done", reply: result.reply, ops: result.ops, mail: result.mail, chips: result.chips, tips: result.tips, usage: result.usage });
       } catch (e) {
         send({ t: "error", error: errorCode(e) });
       } finally {

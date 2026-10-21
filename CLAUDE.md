@@ -321,8 +321,20 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
 - Zeit: `now()` (überschreibbar per `setNowForTests` oder
   `window.__WASGIBTS_NOW__`), `todayIso()`, `berlinTime()` für den Server,
   `useToday()`, `useMinutes()`.
-- Lotte (`/api/lotte`, `src/lib/lotte/`): Gespräch mit `claude-sonnet-5-5`
-  (`LOTTE_MODEL` überschreibt; adaptives Nachdenken, Aufwand "low",
+- Lotte (`/api/lotte`, `src/lib/lotte/`): seit v0.42 automatische Modellwahl –
+  `claude-haiku-5-5` für Alltägliches, `claude-sonnet-5-5` gleich bei Planen,
+  Rezepten, Mails, langen Texten oder offenem Vorschlag (`needsLargeModel`);
+  will Haiku ein großes Werkzeug (`LARGE_TOOLS`: rezept_erstellen,
+  mail_entwurf, wochenplan_aendern, vorgaben_aendern, trainings_planen,
+  schnellnotiz_aufraeumen, kochbuch_durchsuchen, antwort_knoepfe), lehnt ab
+  oder läuft über, übernimmt Sonnet (Stream-Ereignis "round" setzt den Text
+  zurück). `LOTTE_MODEL` = festes Modell, `LOTTE_SMALL_MODEL`/
+  `LOTTE_LARGE_MODEL` ändern die beiden. Verbrauch je Antwort (`usage`:
+  klein/groß, hochgeschaltet, Kosten in Millionstel US-Dollar) speichert die
+  App still je Tag (`wasgibts.verbrauch` v1, `lotte/usage.ts`, 62 Tage, nicht
+  angezeigt, nicht in der Sicherung) – Vorbereitung fürs Guthaben. (Bis v0.41:
+  Gespräch mit `claude-sonnet-5-5`;
+  adaptives Nachdenken, Aufwand "low" außer bei Haiku,
   `max_tokens` 8000, höchstens 6 Runden, serverseitiges Ausweichen bei
   Ablehnungen `fallbacks: "default"`), Haiku (`claude-haiku-5-5`) nur für
   kleine Hintergrundaufgaben (Kennenlernen-Erkennung). Streaming: die Route

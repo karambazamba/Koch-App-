@@ -34,11 +34,15 @@ export type AssistantRequest = {
 export type StreamEvent =
   | { t: "text"; d: string }
   | { t: "round" }
-  | { t: "done"; reply: string; ops: ChangeOp[]; mail?: MailDraft; chips?: string[]; tips?: TipView[] }
+  | { t: "done"; reply: string; ops: ChangeOp[]; mail?: MailDraft; chips?: string[]; tips?: TipView[]; usage?: AssistantUsage }
   | { t: "error"; error: AssistantErrorCode };
+
+/** Verbrauch einer Anfrage (fürs Guthaben später): Modellgröße, hochgeschaltet, Kosten in Millionstel US-Dollar */
+export type AssistantUsage = { size: "klein" | "gross"; upgraded: boolean; micro: number | null };
 
 export type AssistantReply = {
   reply: string;
+  usage?: AssistantUsage;
   /** Kompletter Vorschlag (bisheriger + neue Änderungen) */
   ops: ChangeOp[];
   /** Mail-Entwurf als eigene Karte (nie automatisch gesendet) */
