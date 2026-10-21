@@ -474,6 +474,12 @@ function mockModel(): CreateMessage {
       return text(`${content.replace(/^Vorgemerkt[^:]*: /, "Klar: ")} Tipp unten auf Übernehmen. (Testmodus)`);
     }
 
+    // Tipps gelesen → kurz, ehrlich, mit Frage
+    if (prevUses.some((u) => u.name === "tipps_suchen")) {
+      const found = String(resultFor("tipps_suchen") ?? "");
+      return text(found.startsWith("Treffer") ? "Da wäre was in eurer Nähe – schau dir die Karten an. Soll ich einen davon eintragen? (Testmodus)" : "Dafür habe ich in eurer Nähe gerade nichts gefunden. (Testmodus)");
+    }
+
     // Wetter gelesen → ein, zwei Sätze
     if (prevUses.some((u) => u.name === "wetter_abfragen")) {
       const lines = String(resultFor("wetter_abfragen") ?? "").split("\n");

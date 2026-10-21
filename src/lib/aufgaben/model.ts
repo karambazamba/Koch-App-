@@ -45,6 +45,9 @@ export type TerminData = {
   reminder: Reminder;
   /** Wer (Personen-IDs aus dem Profil), optional */
   who?: string[];
+  /** Kurze Notiz (z. B. „aus Tipps“) und Link zur Quelle */
+  note?: string;
+  link?: string;
   /** Erledigt an diesen Tagen (abgehakt) */
   doneDates?: string[];
   /** Einzelne Tage einer Serie, die entfallen (verschoben oder gelöscht) */
@@ -514,6 +517,8 @@ export function sanitizeEntry(raw: unknown): CalendarEntry | null {
         repeat,
         reminder,
         who: Array.isArray(d.who) ? d.who.filter((x): x is string => typeof x === "string") : undefined,
+        note: typeof d.note === "string" && d.note.trim() ? d.note.trim().slice(0, 200) : undefined,
+        link: typeof d.link === "string" && /^https?:\/\//.test(d.link) ? d.link.slice(0, 300) : undefined,
         doneDates: dates(d.doneDates),
         skipDates: dates(d.skipDates),
       },

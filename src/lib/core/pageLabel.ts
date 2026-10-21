@@ -26,6 +26,8 @@ const PAGES: Record<string, string> = {
   "/profil/produkte": "Produkte & Läden",
   "/pinnwand": "Pinnwand",
   "/spendentopf": "Spendentopf",
+  "/tipps": "Tipps",
+  "/profil/regiontipps": "Tipps aus der Region",
 };
 
 const TABS: Record<string, string> = { kalender: "Kalender", woche: "Kalender", essen: "Essen" };

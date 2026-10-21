@@ -4,6 +4,7 @@
 // damit spätere Lese-Aufrufe den Vorschlag schon sehen.
 
 import type { Forecast } from "../wetter/forecast";
+import type { TipView } from "../tipps/model";
 import type { MailDraft } from "./mail";
 import { recipeBase } from "../essen/bases";
 import { isNeverAgain } from "../essen/neverAgain";
@@ -46,6 +47,10 @@ export type ToolContext = {
   chips?: string[];
   /** Wettervorhersage für den Wetter-Ort (vorab geholt, wenn nach dem Wetter gefragt wird) */
   forecast?: Forecast | null;
+  /** Tipps aus der Region im Umkreis (vorab geholt, wenn danach gefragt wird; null = keine Quelle) */
+  regionTips?: TipView[] | null;
+  /** Bis zu 3 Tipps als Karten unter der Antwort (`tipps_suchen`) */
+  tipCards?: TipView[];
 };
 
 export type ToolResult = { content: string; isError?: boolean };

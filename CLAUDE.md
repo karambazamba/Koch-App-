@@ -436,6 +436,55 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   (`TaskQuickAdd`), einmaliger Hinweis nach dem Kennenlernen, Start-Kacheln
   aus dem Kennenlernen (`homeTilesFor`, in Standard-Reihenfolge).
 
+## Tipps aus der Region (v0.37, Tafel 9 – Schritt 1)
+
+- FESTE REGELN: Tipps sind KEINE Termine – eine eigene lila Ebene, bis jemand
+  „In unseren Kalender“/„Übernehmen“ tippt (dann ein normaler Familientermin
+  mit Ort, `link` zur Quelle und `note` „aus Tipps“). Kein GPS: Ort = Wetter-Ort
+  oder eigener Ort aus den Einstellungen, Entfernung aus Koordinaten. Keine
+  Werbung: KARAMBA-Aktionen sichtbar „von KARAMBA“ (Pink), nie bevorzugt
+  (nur bei gleicher Uhrzeit zuerst), höchstens eine pro Woche in der Kachel
+  (Veranstalter-Liste `tipps/karamba.ts`). Beispieldaten nur im Demo-Modus und
+  überall als „Beispiel“ erkennbar. Farben: Lila = Tipps (`tipp` #8A63D2,
+  `tipp-soft` #F1ECF9), Pink = KARAMBA (`karamba`). Keine Zähler.
+- Schalter `TIPS_SOURCE` (Vercel): `off` (Standard – nirgends etwas von Tipps,
+  auch nicht in Mehr Funktionen, Kachel-Auswahl, Kalender, Jetzt-Karte, Mia) |
+  `demo` (`DemoTipSource`, ~16 Veranstaltungen um Eutin/Malente/Plön/Bad
+  Segeberg/Scharbeutz + eine KARAMBA-Aktion) | `tldb` (`TldbTipSource`, Gerüst;
+  Zugang über `TIPS_API_URL`/`TIPS_API_KEY`, nie im Code/Client). Schnittstelle
+  `TipSource.fetchRange(von, bis, gebiet)` (`src/lib/tipps/sources/`).
+  Datenmodell `Tip` (`tipps/model.ts`) = Spalten der späteren Supabase-Tabelle
+  `tips`. Nur CC0/CC BY/CC BY-SA (`openLicense`), Lizenz + Urheber im Detail,
+  Bilder nur mit offener Bild-Lizenz, sonst Linien-Icon der Kategorie.
+  Kategorien → Filter (Für Kinder, Bei Regen, Draußen, Kostenlos, Musik,
+  Märkte, Sport) in `tipps/categories.ts` (`CATEGORY_MAP`).
+- Server (`tipps/server.ts`): `/api/tipps?ort&km&von&bis&heute` (Cache 6 Std,
+  höchstens 21 Tage), `?nurquelle=1` = nur der Schalter; täglicher Abruf
+  `/api/tipps/aktualisieren` (Vercel Cron 4 Uhr, `CRON_SECRET`), schreibt
+  später in Supabase. App: ein Abruf heute + 20 Tage (`useTipsWindow`) für
+  Kachel, /tipps, Kalender und Jetzt-Karte; Speicher `wasgibts.regiontipps` v1
+  (`ort`, `km` 5/10/20/40, `kalender`, `gemerkt`, `uebernommen`, `jetztAus`).
+- Sichtbar nur mit Quelle UND Baustein „Tipps aus der Region“ (`regiontipps`,
+  `TIPS_BAUSTEIN`, nicht in `BAUSTEINE`; einschalten bringt die Kachel). Kachel
+  `tipps` („Tipps diese Woche“ Mo–Do, sonst „Tipps fürs Wochenende“, M/L, zwei
+  bzw. vier Karten, „Alle“); Seite `/tipps` (Ort-Chip „Eutin + 20 km · Ändern“,
+  Heute | Wochenende | Diese Woche, Filter-Chips, nach Tag gruppiert, leer:
+  „Gerade nichts in eurer Nähe. Größeren Umkreis wählen?“, unten die Quelle,
+  `?tipp=<id>` öffnet das Detail; Karten-Icon vorerst ausgeblendet); Detail
+  `TipSheet` (Wer kommt mit?, In unseren Kalender, Pinnwand „Wollen wir Sa 15
+  Uhr zu …?“, Merken, Quelle/Lizenz/Urheber); Einstellungen → Startseite →
+  „Tipps aus der Region“ (`/profil/regiontipps`); Kalender: Chip „Tipps an/aus“
+  neben dem Monat, lila Ring-Punkt, in der Tagesliste gestrichelter lila
+  Streifen + „Übernehmen“ (höchstens 3, dann „+ weitere Tipps“).
+- Jetzt-Karte: Thema `region` Fr ab 12 bis So 12 Uhr (`jetztTip`: Regen →
+  drinnen, Sonne → draußen, mit Kindern „Für Kinder“ zuerst), ✕ = an diesem
+  Wochenende nicht mehr (`jetztAus`). Mia: `tipps_suchen` (nur mit Quelle,
+  `LotteTool.enabled`; Tipps vorab geholt, wenn `tipQuestion` passt), Antwort
+  nur aus den Treffern, bis zu 3 Karten (`tips` an der Antwort, `TipCards`) und
+  „Soll ich einen davon eintragen?“; ohne KI dieselbe Erkennung als Regel. Nutzt
+  Mia die Tipps, schaltet sie den Baustein frei und sagt, wo sie stehen.
+- Test: `tests/regiontipps.test.ts`; Durchklick `regiontipps` im Scratchpad.
+
 ## Ein Bild für jedes Gericht (v0.36)
 
 - Jedes Gericht hat eine eigene Illustration im Stil der Burrata-Pasta –

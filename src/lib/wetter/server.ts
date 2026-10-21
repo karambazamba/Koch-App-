@@ -49,7 +49,7 @@ function mockForecast(place: string, scenario: Scenario = "regen", day?: string)
   };
 }
 
-async function geocode(place: string): Promise<{ name: string; lat: number; lon: number } | null> {
+export async function geocode(place: string): Promise<{ name: string; lat: number; lon: number } | null> {
   const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(place)}&count=1&language=de&countryCode=DE`, { cache: "no-store" });
   if (!res.ok) return null;
   const hit = (await res.json())?.results?.[0];

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMailStyle } from "@/lib/lotte/mailSettings";
-import { Blocks, HandCoins, BookOpen, CalendarDays, ChefHat, ChevronRight, Clock, CloudSun, Database, Dumbbell, LayoutGrid, Mail, Refrigerator, Salad } from "lucide-react";
+import { Blocks, HandCoins, MapPin, BookOpen, CalendarDays, ChefHat, ChevronRight, Clock, CloudSun, Database, Dumbbell, LayoutGrid, Mail, Refrigerator, Salad } from "lucide-react";
 import { LotteAvatar } from "@/components/LotteAvatar";
 import { PageHeader } from "@/components/PageHeader";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
@@ -20,6 +20,7 @@ import { householdTitle } from "./settings/Hubs";
 import { DarstellungGroup } from "./settings/BegleitungSettings";
 import { useFamilyRegion } from "@/lib/spendentopf/store";
 import { POT_TEXTS } from "@/lib/spendentopf/model";
+import { useTipPlace, useTipSettings, useTipsOn } from "@/lib/tipps/client";
 
 const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
@@ -56,6 +57,9 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
   const jetzt = useJetzt();
   const sport = useSport();
   const potRegion = useFamilyRegion().region;
+  const tipsOn = useTipsOn();
+  const tipPlace = useTipPlace();
+  const tipSettings = useTipSettings();
   const essen = planOn || kochstilOn || unlockedRecipes || unlockedPantry;
 
   return (
@@ -96,6 +100,11 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
           {home?.find((t) => t.id === "sport")?.visible && (
             <Row href="/sport" icon={Dumbbell} title="Sport" value={sport ? `${sport.goal}× pro Woche` : undefined}>
               Wochenziel, Trainings, Packliste
+            </Row>
+          )}
+          {tipsOn && (
+            <Row href="/profil/regiontipps" icon={MapPin} title="Tipps aus der Region" value={`${tipPlace} + ${tipSettings.km} km`}>
+              Ort, Umkreis, im Kalender zeigen
             </Row>
           )}
           <Row href="/profil/bausteine" icon={Blocks} title="Mehr Funktionen">

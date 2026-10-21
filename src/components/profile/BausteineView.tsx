@@ -5,10 +5,12 @@
 // Design ein (Essen-Seite, Kachel auf Heute, Satz oben auf Heute); aus heißt
 // nur ausgeblendet – Daten bleiben.
 
-import { BookOpen, CalendarDays, Cake, Carrot, ChefHat, Lightbulb, MessageCircle, Refrigerator, Sun, type LucideIcon } from "lucide-react";
+import { BookOpen, CalendarDays, Cake, Carrot, ChefHat, Lightbulb, MapPin, MessageCircle, Refrigerator, Sun, type LucideIcon } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { CARD, PAGE_MAIN } from "@/components/ui/styles";
-import { BAUSTEINE, setFeature, useBausteine, type Baustein } from "@/lib/core/features";
+import { BAUSTEINE, TIPS_BAUSTEIN, setFeature, useBausteine, type Baustein } from "@/lib/core/features";
+import { unlockHomeTile } from "@/lib/core/homeLayout";
+import { useTipsMode } from "@/lib/tipps/client";
 import { showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
 import { helperName } from "@/lib/einstellungen/profile";
@@ -24,11 +26,14 @@ const BAUSTEIN_ICONS: Record<string, LucideIcon> = {
   sun: Sun,
   chef: ChefHat,
   message: MessageCircle,
+  map: MapPin,
 };
 
 /** Baustein schalten – mit Hinweis, wo er steht, und Rückgängig */
 function toggleBaustein(b: Baustein, on: boolean) {
   if (!setFeature(b.feature, on)) return;
+  // Tipps aus der Region: eingeschaltet kommt die Kachel auf die Startseite
+  if (on && b.feature === "regiontipps") unlockHomeTile("tipps");
   showToast({
     text: on ? b.where : `${b.name} ist aus – die Daten bleiben.`,
     undo: pushUndo(`${b.name} ${on ? "an" : "aus"}`, () => setFeature(b.feature, !on)),
@@ -40,13 +45,15 @@ export function BausteineView() {
   const on = useBausteine();
   const profile = useProfile();
   const name = helperName(profile);
+  const tipsMode = useTipsMode();
+  const list = tipsMode && tipsMode !== "off" ? [...BAUSTEINE, TIPS_BAUSTEIN] : BAUSTEINE;
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
       <PageHeader title="Mehr Funktionen" backHref="/profil" />
       <main className={PAGE_MAIN}>
         <p className="text-base text-muted">Was {name} noch kann. Eingeschaltet fügt sich alles in Kalender · Heute · Essen ein; ausschalten blendet nur aus – nichts wird gelöscht.</p>
         <ul className={`${CARD} flex flex-col divide-y divide-line overflow-hidden`} aria-label="Mehr Funktionen">
-          {BAUSTEINE.map((b) => {
+          {list.map((b) => {
             const Icon = BAUSTEIN_ICONS[b.icon] ?? Lightbulb;
             const active = Boolean(on?.includes(b.feature));
             return (

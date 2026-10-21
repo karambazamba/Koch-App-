@@ -9,6 +9,8 @@
  */
 @theme inline {
   --color-karamba: var(--app-karamba);
+  --color-tipp: var(--app-tipp);
+  --color-tipp-soft: var(--app-tipp-soft);
   --color-tile: var(--tile-bg);
   --color-tile-accent: var(--tile-ac);
   --color-tile-inner: var(--tile-inner);
@@ -181,6 +183,9 @@
   --app-tile-spendentopf: #fbf0d9;
   --app-tile-spendentopf-ac: #a8730c;
   --app-karamba: #d6336c;
+  /* Tipps aus der Region: Lila (nie für Termine) */
+  --app-tipp: #8a63d2;
+  --app-tipp-soft: #f1ecf9;
   --app-tile-inner: rgb(255 255 255 / 0.72);
   --app-jetzt-from: #fff3e8;
   --app-jetzt-to: #fde2cd;
@@ -276,6 +281,8 @@
   --app-tile-spendentopf: #2a2312;
   --app-tile-spendentopf-ac: #e0b45a;
   --app-karamba: #f06595;
+  --app-tipp: #b497f0;
+  --app-tipp-soft: #2a2238;
   --app-tile-inner: rgb(255 255 255 / 0.06);
   --app-jetzt-from: #3b2a1f;
   --app-jetzt-to: #2b211b;
@@ -372,6 +379,8 @@
     --app-tile-spendentopf: #2a2312;
     --app-tile-spendentopf-ac: #e0b45a;
     --app-karamba: #f06595;
+    --app-tipp: #b497f0;
+    --app-tipp-soft: #2a2238;
     --app-tile-inner: rgb(255 255 255 / 0.06);
     --app-jetzt-from: #3b2a1f;
     --app-jetzt-to: #2b211b;

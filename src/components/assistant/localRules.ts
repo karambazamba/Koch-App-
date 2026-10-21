@@ -11,6 +11,9 @@ import { BAUSTEINE, bausteinOf, featureOn, setFeature } from "@/lib/core/feature
 import { changeHome, describeHomeChange, requestHomeEdit, unlockHomeTile } from "@/lib/core/homeLayout";
 import { addPin, changePins, createPin, isPinboardQuery, loadPins, pinWriteCommand, visiblePins } from "@/lib/pinnwand";
 import { dayAnswer, umbrellaAnswer, weatherQuestion } from "@/lib/wetter/forecast";
+import { tipQuestion } from "@/lib/tipps/question";
+import { answerTips } from "@/lib/tipps/model";
+import { knownTipsMode, loadTipsWindow, unlockTips } from "@/lib/tipps/client";
 import { loadPlace, refreshForecast } from "@/lib/wetter/client";
 import { pushUndo, undoLast } from "@/lib/core/undo";
 import { commitOps } from "@/lib/lotte/client";
@@ -156,6 +159,22 @@ export function boardRule(ctx: RuleContext, t: string): boolean {
     setInput("");
     const pins = visiblePins(loadPins(), now().getTime());
     say(pins.length ? `Auf der Pinnwand: ${pins.slice(0, 4).map((m) => `${m.data.author === me ? "Du" : m.data.author}: „${m.data.text}“`).join(" · ")}` : "Auf der Pinnwand steht gerade nichts.");
+    return true;
+  }
+  const tipAsk = knownTipsMode() && knownTipsMode() !== "off" ? tipQuestion(t, toIsoDate(today)) : null;
+  if (tipAsk) {
+    setInput("");
+    setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }] }));
+    void loadTipsWindow(toIsoDate(today)).then((res) => {
+      const hits = answerTips(res.tips, tipAsk);
+      const where = hits.length ? unlockTips() : null;
+      const text = res.failed
+        ? "Gerade komme ich nicht an die Tipps – probier’s gleich nochmal."
+        : hits.length
+          ? `${tipAsk.label.replace(/^./, (x) => x.toUpperCase())} in eurer Nähe: ${hits.length === 1 ? "ein Tipp" : "ein paar Tipps"}. Soll ich einen davon eintragen?${where ? `\n${where}` : ""}`
+          : `Für ${tipAsk.label} habe ich in eurer Nähe nichts gefunden. Unter Einstellungen → Tipps aus der Region kannst du den Umkreis vergrößern.`;
+      setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text, local: true, ...(hits.length ? { tips: hits } : {}) }] }));
+    });
     return true;
   }
   const question = weatherQuestion(t, toIsoDate(today));

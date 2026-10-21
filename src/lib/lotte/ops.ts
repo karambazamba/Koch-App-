@@ -51,6 +51,9 @@ export type AssistantData = {
   pinnwand?: { author: string; text: string; at: string }[];
   /** Wetter-Ort (für wetter_abfragen) */
   wetterOrt?: string;
+  /** Tipps aus der Region: Ort und Umkreis (für tipps_suchen) */
+  tippOrt?: string;
+  tippKm?: number;
   /** Mail-Stil: Grußformel, Signatur, gemerkte Anrede je Empfänger (nur zum Lesen) */
   mail?: MailStyle;
   /** Laufende Timer und Stoppuhr (nur zum Lesen; stellen über `add_timer`) */

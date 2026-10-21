@@ -8,6 +8,7 @@ import { replaceNotes } from "../notizen/store";
 import { loadSchnellnotiz, saveSchnellnotiz } from "../notizen/schnellnotiz";
 import { addPin, changePins, createPin, loadPins, removePin, visiblePins } from "../pinnwand";
 import { loadPlace } from "../wetter/client";
+import { tipContext } from "../tipps/client";
 import { loadMailStyle } from "./mailSettings";
 import { useEffect, useState } from "react";
 import { replaceEntries } from "../aufgaben/store";
@@ -245,6 +246,8 @@ function trimmed(data: AssistantData, currentWeekStart: string, pantry: Assistan
       .slice(0, 8)
       .map((m) => ({ author: m.data.author, text: m.data.text, at: m.erstellt })),
     wetterOrt: loadPlace(),
+    tippOrt: tipContext().ort,
+    tippKm: tipContext().km,
     ...dayData(data),
     // Notizen: kompakt (Listen bis 60 Einträge, Text bis 1500 Zeichen)
     notes: (data.notes ?? []).slice(0, 60).map((n) => ({ ...n, data: { ...n.data, text: n.data.text?.slice(0, 1500), items: n.data.items?.slice(0, 60) } })),
@@ -398,7 +401,7 @@ export async function askAssistant(
       } else if (event.t === "round") {
         freshRound = true;
       } else if (event.t === "done") {
-        return { reply: event.reply, ops: event.ops, mail: event.mail, chips: event.chips };
+        return { reply: event.reply, ops: event.ops, mail: event.mail, chips: event.chips, tips: event.tips };
       } else if (event.t === "error") {
         if (event.error === "zugangscode") forgetAccessCode();
         throw new LotteUnavailable(event.error);

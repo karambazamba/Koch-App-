@@ -21,6 +21,7 @@ import { dishOf, useMeals } from "@/components/alltag/useMeals";
 import { roomBar } from "@/components/alltag/Items";
 import { AddSheet } from "./AddSheet";
 import { DayAgenda, type RoomFilter } from "./DayAgenda";
+import { TipDot, TipsChip, useCalendarTips } from "@/components/tipps/CalendarTips";
 
 type View = "monat" | "woche" | "liste";
 const STEP = 14;
@@ -111,12 +112,14 @@ function MonthView({ today, entries, pick, selected, onSelect, filter, name }: V
   const rows = days[35].slice(0, 7) === month ? 6 : 5;
   const meals = useMeals(selected, 1);
   const rel = relativeDay(selected, today);
+  const tipLayer = useCalendarTips(today);
   return (
     <>
       <section className={`${CARD} flex flex-col gap-2 p-3`} aria-label="Monat">
         <div className="flex items-center justify-between">
           <h2 className="pl-1 text-[18px] font-extrabold capitalize">{MONTH.format(utc(first))}</h2>
-          <span className="flex gap-1">
+          <span className="flex items-center gap-1">
+            {tipLayer.available && filter !== "arbeit" && <TipsChip shown={tipLayer.shown} />}
             <button type="button" onClick={() => setOffset((o) => o - 1)} aria-label="Voriger Monat" className={`${ICON_BUTTON} h-9 w-9 border-0`}>
               <ChevronLeft className="h-5 w-5" strokeWidth={2.25} aria-hidden />
             </button>
@@ -158,6 +161,7 @@ function MonthView({ today, entries, pick, selected, onSelect, filter, name }: V
                   {dots.map((d) => (
                     <span key={d} className={`h-1.5 w-1.5 rounded-full ${DOT[d]}`} />
                   ))}
+                  {inMonth && filter !== "arbeit" && tipLayer.byDay.has(date) && <TipDot />}
                 </span>
               </button>
             );

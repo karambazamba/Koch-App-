@@ -21,6 +21,7 @@ export const FEATURES = {
   wochenendIdeen: "Wochenend-Ideen",
   kochstil: "Kochstil & Vorlieben (Plan/spontan, Das mögt ihr, Nie wieder …)",
   modi: "Wie oft sich die Assistentin meldet, Pause",
+  regiontipps: "Tipps aus der Region (Veranstaltungen in der Nähe) – nur sichtbar, wenn eine Quelle läuft",
 } as const;
 
 export type Feature = keyof typeof FEATURES;
@@ -38,6 +39,19 @@ export const BAUSTEINE: Baustein[] = [
   { feature: "wochenendIdeen", name: "Wochenend-Ideen", text: "Freitags bis sonntags eine Idee fürs Wochenende – oben auf Heute.", where: "Wochenend-Ideen kommen ab jetzt freitags bis sonntags oben auf Heute.", icon: "sun" },
   { feature: "kochstil", name: "Kochstil & Vorlieben", text: "Plan oder spontan, Das mögt ihr, Nie wieder, Lieblingsgerichte.", where: "Kochstil & Vorlieben stehen jetzt in den Einstellungen.", icon: "chef" },
 ];
+
+/**
+ * Tipps aus der Region: eigener Baustein, nur in „Mehr Funktionen“ zu sehen,
+ * wenn auf dem Server eine Quelle läuft (TIPS_SOURCE ≠ off) – deshalb nicht in
+ * BAUSTEINE (die Lotte immer kennt).
+ */
+export const TIPS_BAUSTEIN: Baustein = {
+  feature: "regiontipps",
+  name: "Tipps aus der Region",
+  text: "Veranstaltungen in eurer Nähe – aus dem Tourismus-Kalender Schleswig-Holstein.",
+  where: "Die Tipps stehen jetzt als Kachel auf Heute und im Kalender.",
+  icon: "map",
+};
 
 export const bausteinOf = (feature: Feature) => BAUSTEINE.find((b) => b.feature === feature);
 
