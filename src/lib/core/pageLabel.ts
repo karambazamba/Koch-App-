@@ -26,7 +26,7 @@ const PAGES: Record<string, string> = {
   "/profil/produkte": "Produkte & Läden",
 };
 
-const TABS: Record<string, string> = { woche: "Woche", essen: "Essen" };
+const TABS: Record<string, string> = { kalender: "Kalender", woche: "Kalender", essen: "Essen" };
 
 export function pageLabel(url: string | null): string {
   if (!url) return "Zurück";

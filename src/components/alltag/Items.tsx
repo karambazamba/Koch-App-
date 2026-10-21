@@ -99,7 +99,7 @@ function ItemRow({ item, onOpen }: { item: DayItem; onOpen: (item: DayItem) => v
  * "+ N weitere"; Erledigtes darunter eingeklappt ("✓ N erledigt"). Ist alles
  * erledigt: "Alles erledigt für heute 🌙". Ohne Einträge: keine Karte.
  */
-export function DayItemsCard({ items, title, limit = 3, allDoneText = "Alles erledigt für heute 🌙", titleHref }: { items: DayItem[]; title: string; limit?: number; allDoneText?: string; titleHref?: string }) {
+export function DayItemsCard({ items, title, limit = 3, allDoneText = "Alles erledigt für heute 🌙", titleHref, linkLabel = "Tag öffnen" }: { items: DayItem[]; title: string; limit?: number; allDoneText?: string; titleHref?: string; linkLabel?: string }) {
   const [more, setMore] = useState(false);
   const [showDone, setShowDone] = useState(false);
   const [menu, setMenu] = useState<DayItem | null>(null);
@@ -114,7 +114,7 @@ export function DayItemsCard({ items, title, limit = 3, allDoneText = "Alles erl
         <Link href={titleHref} className="-my-2 flex h-10 items-center justify-between text-[15px] font-extrabold text-muted">
           <h2>{title}</h2>
           <span className="flex items-center gap-0.5 normal-case tracking-normal">
-            Tag öffnen <ChevronRight className="h-4 w-4" strokeWidth={2} aria-hidden />
+            {linkLabel} <ChevronRight className="h-4 w-4" strokeWidth={2} aria-hidden />
           </span>
         </Link>
       ) : (

@@ -9,6 +9,7 @@ import { addManualItem, removeManualItems, sectionFor, setItemShop, type Shoppin
 import { useKeyboardInset } from "@/lib/core/useMobileKeyboard";
 import { useSpeechInput } from "@/lib/lotte/useSpeechInput";
 import { pushUndo } from "@/lib/core/undo";
+import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 
 
 const sachen = (n: number) => `${n} ${n === 1 ? "Sache" : "Sachen"}`;
@@ -65,6 +66,22 @@ export function QuickAddButton({
         />
       )}
     </>
+  );
+}
+
+/** Einkauf-Fenster ohne eigenen Knopf (z. B. aus „Was möchtest du eintragen?“) */
+export function ShoppingQuickAdd({ onClose }: { onClose: () => void }) {
+  const shopping = useWeekShoppingList("planning");
+  if (!shopping) return null;
+  return (
+    <QuickAddSheet
+      weekStart={shopping.weekStart}
+      settings={shopping.settings}
+      onClose={(added) => {
+        onClose();
+        if (added.length) pushUndo(`${sachen(added.length)} auf der Liste`, () => removeManualItems(shopping.weekStart, added));
+      }}
+    />
   );
 }
 

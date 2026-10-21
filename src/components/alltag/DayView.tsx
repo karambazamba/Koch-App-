@@ -1,24 +1,24 @@
 "use client";
 
-// Ein Tag aus der Woche (/tag?datum=YYYY-MM-DD): wie "Heute", nur für
-// dieses Datum – alle Einträge, das Essen und "Neu für diesen Tag".
+// Ein Tag (/tag?datum=YYYY-MM-DD): Titel = Wochentag, darunter „22. Oktober ·
+// morgen“, dann Termine · Aufgaben · Essen (eine Zeile). Plus = dasselbe
+// „Was möchtest du eintragen?“ wie im Kalender, für diesen Tag.
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { PagePlus } from "@/components/ui/QuickButton";
 import { PageHeader } from "@/components/PageHeader";
 import { CARD, PAGE_MAIN } from "@/components/ui/styles";
-import { itemsForDay } from "@/lib/aufgaben/model";
 import { useEntries } from "@/lib/aufgaben/store";
-import { addDays, useToday, toIsoDate } from "@/lib/core/now";
-import { openHelper } from "@/lib/lotte/open";
+import { useToday, toIsoDate } from "@/lib/core/now";
 import { helperName } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";
-import { DayItemsCard } from "./Items";
-import { EntryForm } from "./EntryForm";
-import { dishOf, useMeals } from "./useMeals";
+import { AddSheet } from "@/components/kalender/AddSheet";
+import { DayAgenda } from "@/components/kalender/DayAgenda";
+import { dayHeading, relativeDay } from "@/components/kalender/CalendarPage";
+import { useMeals } from "./useMeals";
 
-const LONG = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "numeric", timeZone: "UTC" });
+const WEEKDAY = new Intl.DateTimeFormat("de-DE", { weekday: "long", timeZone: "UTC" });
 
 export function DayView() {
   const params = useSearchParams();
@@ -30,38 +30,19 @@ export function DayView() {
   const raw = params.get("datum") ?? "";
   const date = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : today;
   const meals = useMeals(date, 1);
-  const title = !date || !today ? "Tag" : date === today ? "Heute" : date === addDays(today, 1) ? "Morgen" : LONG.format(new Date(`${date}T00:00:00Z`));
-  const items = date && today && entries ? itemsForDay(entries, date, today) : [];
-  const dish = date ? dishOf(meals?.get(date)) : null;
+  const title = date ? WEEKDAY.format(new Date(`${date}T12:00:00Z`)) : "Tag";
+  const name = profile ? helperName(profile) : "Mia";
   return (
     <>
-      <PageHeader title={title} backHref="/?seite=woche" action={date ? <PagePlus label="Neu für diesen Tag" onClick={() => setAdding(true)} /> : undefined} />
+      <PageHeader title={title} subtitle={date && today ? dayHeading(date, today) : undefined} backHref="/?seite=kalender" action={date ? <PagePlus label="Neu für diesen Tag" onClick={() => setAdding(true)} /> : undefined} />
       <main className={PAGE_MAIN}>
-        {!entries || !date ? (
+        {!entries || !date || !today ? (
           <div className={`${CARD} h-40 animate-pulse`} />
         ) : (
-          <>
-            {items.length ? (
-              <DayItemsCard items={items} title="Termine & Aufgaben" limit={50} allDoneText="Alles erledigt 🌙" />
-            ) : (
-              <p className="px-1 text-base text-muted">Noch nichts eingetragen – ein freier Tag.</p>
-            )}
-            <section className={`${CARD} flex items-center gap-3 p-4`} aria-label="Essen">
-              <span className="text-2xl" aria-hidden>
-                🍽
-              </span>
-              {dish ? (
-                <span className="min-w-0 flex-1 truncate text-base font-semibold">{dish}</span>
-              ) : (
-                <button type="button" onClick={() => openHelper(undefined, `Was könnten wir ${title === "Heute" || title === "Morgen" ? title.toLowerCase() : `am ${title.split(",")[0]}`} essen?`)} className="min-w-0 flex-1 text-left text-base text-muted">
-                  noch frei – <span className="font-semibold text-accent-strong">{helperName(profile)} fragen</span>
-                </button>
-              )}
-            </section>
-          </>
+          <DayAgenda date={date} today={today} entries={entries} meal={meals?.get(date)} name={name} askLabel={relativeDay(date, today) ?? `am ${title}`} />
         )}
       </main>
-      {adding && date && <EntryForm date={date} onClose={() => setAdding(false)} />}
+      {adding && date && <AddSheet date={date} name={name} onClose={() => setAdding(false)} />}
     </>
   );
 }
