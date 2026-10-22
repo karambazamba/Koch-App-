@@ -57,8 +57,20 @@ Etappen: **3a Anmeldung und Haushalt** · **3b Synchronisieren** (beide fertig) 
 - Oberfläche: `src/components/konten/` – `/konto` (`KontoView`),
   `LoginSteps`, `HouseholdChoice`, `HouseholdCard` (+ `InviteSheet`),
   `FamilyConnectCard` (Einstellungen oben), `AccountDataSection` (Daten & App).
-  Hallo-Bildschirm: „Anmelden“ unter „Daten wiederherstellen“
-  (`/konto?von=hallo`). Familie → „Jemanden einladen“ (`/konto?einladen=1`).
+  Hallo-Bildschirm (mit Konten): „Familie schon dabei? Anmelden“ und darunter
+  klein „Daten wiederherstellen“ (ohne Konten wie bisher). Familie →
+  „Jemanden einladen“ (`/konto?einladen=1`).
+- Anmelden von der Begrüßung (Tafel 20): `WelcomeLogin` auf `/anmelden` und
+  `/beitreten?code=…` (`JoinLink`) – ruhige Seiten im Stil des
+  Hallo-Bildschirms, Zurück jederzeit: E-Mail → Code (ein Feld,
+  `inputmode=numeric`, `autocomplete="one-time-code"`, prüft bei 6 Ziffern
+  selbst, „Neuen Code senden in 0:60“, falscher Code: freundlicher Satz, Feld
+  leer) → „Angemeldet ✓ – Wie wollt ihr starten?“ → anlegen/beitreten →
+  Startseite, die Begleitung fliegt in die Jetzt-Karte. „Was schon auf diesem
+  Handy ist, nehmen wir mit.“ = Übernahme ohne weitere Frage
+  (`startSyncTakingOver`). Der Einladungs-Text enthält den Link
+  `…/beitreten?code=4K7-P2Q`; wer ihn ohne Konto öffnet, landet bei
+  „Anmelden“, der Code ist danach schon eingetragen.
 - Datenbank: `supabase/migrations/20261022120000_konten_haushalt.sql` –
   `households`, `members` (ein Haushalt je Konto), `invites` (Code-Hash, 7
   Tage, einmal), `invite_attempts` (höchstens 10 Fehlversuche je Stunde),
@@ -136,6 +148,9 @@ Etappen: **3a Anmeldung und Haushalt** · **3b Synchronisieren** (beide fertig) 
   nichts, neueste gewinnt, Löschen nur Markierung, Verlassen nimmt Arbeit mit.
 - Durchklick `abgleich` – A nimmt seine Daten mit (Vorschau), B tritt bei und
   sieht Termin und Pinnwand, B schreibt → A sieht es, B offline → online.
+- Durchklick `begruessung` – Begrüßung → Anmelden → Code (falsch, Zurück,
+  richtig) → Haushalt anlegen → Startseite; B öffnet den Einladungs-Link,
+  Code ist eingetragen; ohne Konten-Variablen kein „Anmelden“.
 - Durchklick `konten` – zwei bzw. drei Browser: anmelden (Code über die
   Test-Schnittstelle), Haushalt, Einladen, Beitreten, Kind ohne Einladen,
   Abmelden (Daten bleiben), Konto löschen.

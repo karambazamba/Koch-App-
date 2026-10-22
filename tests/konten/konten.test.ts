@@ -12,6 +12,7 @@ describe("Codes und Texte", () => {
     expect(normalizeInviteCode("4K7-PIQ")).toBeNull();
     expect(formatInviteCode("4K7P2Q")).toBe("4K7-P2Q");
     expect(inviteShareText("4K7P2Q")).toBe("Komm in unseren Haushalt bei Was gibt’s? Code: 4K7-P2Q");
+    expect(inviteShareText("4K7P2Q", "https://koch-app-two.vercel.app/")).toBe("Komm in unseren Haushalt bei Was gibt’s? Code: 4K7-P2Q\nhttps://koch-app-two.vercel.app/beitreten?code=4K7-P2Q");
   });
 
   it("E-Mail und Anmelde-Code", () => {

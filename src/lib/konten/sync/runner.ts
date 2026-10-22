@@ -133,9 +133,27 @@ function startLoop(run: Run) {
   schedule(0);
 }
 
+let starting: { householdId: string; done: Promise<void> } | null = null;
+
 /** Abgleich für diesen Haushalt starten (nochmal aufrufen schadet nicht) */
-export async function startSync(householdId: string): Promise<void> {
-  if (current?.householdId === householdId) return;
+export function startSync(householdId: string): Promise<void> {
+  if (starting?.householdId === householdId) return starting.done;
+  const done = begin(householdId);
+  starting = { householdId, done };
+  return done;
+}
+
+/**
+ * Wie startSync, aber ohne Frage mitnehmen – für den Ablauf „Anmelden“ von
+ * der Begrüßung, der vorher sagt: „Was schon auf diesem Handy ist, nehmen wir mit.“
+ */
+export async function startSyncTakingOver(householdId: string): Promise<Result> {
+  await startSync(householdId);
+  if (current?.householdId !== householdId) return fail("Gerade keine Verbindung – gleich nochmal?");
+  return load(householdId).takeover === "fertig" ? ok(true) : confirmTakeover();
+}
+
+async function begin(householdId: string): Promise<void> {
   stopSync();
   const backend = await getBackend();
   if (!backend) return;
@@ -153,10 +171,20 @@ export async function startSync(householdId: string): Promise<void> {
   await confirmTakeover();
 }
 
-/** „Mitnehmen“: Haushalt laden, Eigenes dazulegen, ab jetzt abgleichen */
-export async function confirmTakeover(): Promise<Result> {
+let confirming: Promise<Result> | null = null;
+
+/** „Mitnehmen“: Haushalt laden, Eigenes dazulegen, ab jetzt abgleichen (doppelt tippen schadet nicht) */
+export function confirmTakeover(): Promise<Result> {
+  confirming ??= takeOverOnce().finally(() => {
+    confirming = null;
+  });
+  return confirming;
+}
+
+async function takeOverOnce(): Promise<Result> {
   const run = current;
   if (!run) return fail("Gerade keine Verbindung – gleich nochmal?");
+  if (load(run.householdId).takeover === "fertig") return ok(true);
   const remote = await pullAll(run.backend, 0);
   if (!remote) {
     offline(true);
@@ -172,6 +200,7 @@ export async function confirmTakeover(): Promise<Result> {
 export function stopSync() {
   current?.stop();
   current = null;
+  starting = null;
   resetSyncStatus();
 }
 

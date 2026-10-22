@@ -152,3 +152,75 @@ export const abgleich = async (page, check, device) => {
     await pageB.context().close();
   }
 };
+
+// Tafel 20: Anmelden direkt von der Begrüßung; Beitreten per Link; ohne
+// Konten-Variablen bleibt die Begrüßung wie bisher.
+async function codeFromHello(page, email) {
+  await page.getByLabel("Deine E-Mail-Adresse").fill(email);
+  await page.getByRole("button", { name: "Code senden" }).click();
+  await page.getByLabel("6-stelliger Code").waitFor();
+  await page.getByLabel("6-stelliger Code").fill(await adminCode(page, email));
+}
+
+export const begruessung = async (page, check, device) => {
+  const tag = device.replace(/\W/g, "").toLowerCase() + Date.now();
+  await page.goto(BASE);
+  await page.getByRole("button", { name: "Los geht’s" }).waitFor();
+  const hint = page.getByRole("link", { name: /Familie schon dabei\? Anmelden/ });
+  await hint.waitFor();
+  check(await page.getByRole("link", { name: "Daten wiederherstellen", exact: true }).isVisible(), "darunter klein „Daten wiederherstellen“");
+  await hint.click();
+  await page.getByRole("heading", { name: "Schön, dass ihr dabei seid." }).waitFor();
+  check(await page.getByText("Kein Passwort nötig.").isVisible(), "„Kein Passwort nötig.“");
+  const email = `felix-hallo-${tag}@example.com`;
+  await page.getByLabel("Deine E-Mail-Adresse").fill(email);
+  await page.getByRole("button", { name: "Code senden" }).click();
+  await page.getByRole("heading", { name: "Code eingeben" }).waitFor();
+  const field = page.getByLabel("6-stelliger Code");
+  check((await field.getAttribute("autocomplete")) === "one-time-code" && (await field.getAttribute("inputmode")) === "numeric", "Feld schlägt den Code aus der Mail vor");
+  check(await page.getByRole("button", { name: /Neuen Code senden in 0:\d\d/ }).isDisabled(), "„Neuen Code senden in 0:60“");
+  await field.fill("000001");
+  check(await page.getByText(/stimmt nicht oder ist abgelaufen/).waitFor({ timeout: 5000 }).then(() => true, () => false), "falscher Code → freundlicher Satz");
+  check((await field.inputValue()) === "", "Feld geleert");
+  await page.getByRole("button", { name: "Zurück" }).click();
+  check(await page.getByRole("heading", { name: "Schön, dass ihr dabei seid." }).isVisible(), "Zurück geht einen Schritt zurück");
+  await codeFromHello(page, email);
+  await page.getByText("Wie wollt ihr starten?").waitFor();
+  check(await page.getByText("Was schon auf diesem Handy ist, nehmen wir mit.").isVisible(), "„… nehmen wir mit.“");
+  await page.getByRole("button", { name: /Neuen Haushalt anlegen/ }).click();
+  await page.getByLabel("Name des Haushalts").fill("Familie Hallo");
+  await page.getByRole("button", { name: "Haushalt anlegen" }).click();
+  await page.getByRole("tab", { name: "Heute", selected: true }).waitFor();
+  check(new URL(page.url()).pathname === "/", "danach direkt die Startseite");
+  check(Boolean(await page.evaluate(() => localStorage.getItem("familienkueche.haushaltsprofil"))), "Profil angelegt (wie „Los geht’s“)");
+  check((await page.evaluate(() => JSON.parse(localStorage.getItem("wasgibts.haushalt") ?? "null")?.household?.name)) === "Familie Hallo", "Haushalt verbunden");
+
+  // Einladen, B öffnet den Link
+  await page.goto(BASE + "/konto");
+  const code = await invite(page);
+  const pageB = await newPage(page.context().browser(), device);
+  try {
+    await pageB.goto(`${BASE}/beitreten?code=${code}`);
+    await pageB.getByRole("heading", { name: "Schön, dass ihr dabei seid." }).waitFor();
+    await codeFromHello(pageB, `lisa-hallo-${tag}@example.com`);
+    await pageB.getByRole("heading", { name: "Mit Code beitreten" }).waitFor();
+    check((await pageB.getByLabel("Einladungs-Code").inputValue()) === code, `Code aus dem Link eingetragen (${code})`);
+    await pageB.getByRole("button", { name: "Beitreten" }).click();
+    await pageB.getByRole("tab", { name: "Heute", selected: true }).waitFor();
+    check((await pageB.evaluate(() => JSON.parse(localStorage.getItem("wasgibts.haushalt") ?? "null")?.household?.name)) === "Familie Hallo", "B ist per Link im Haushalt");
+  } finally {
+    await pageB.context().close();
+  }
+
+  // Ohne Konten-Variablen: Begrüßung wie bisher
+  const pageC = await newPage(page.context().browser(), device);
+  try {
+    await pageC.route("**/api/konto/config", (r) => r.fulfill({ json: { mode: "aus" } }));
+    await pageC.goto(BASE);
+    await pageC.getByRole("button", { name: "Los geht’s" }).waitFor();
+    await pageC.getByText(/Schon mal genutzt\?/).waitFor();
+    check(!(await pageC.getByText(/Familie schon dabei/).isVisible()), "ohne Konten kein „Anmelden“");
+  } finally {
+    await pageC.context().close();
+  }
+};
