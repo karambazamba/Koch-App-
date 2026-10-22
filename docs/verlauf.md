@@ -1945,3 +1945,11 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Jetzt-Karte montags und sonntags ab 17 Uhr, ✕ = diese Woche nicht mehr.
   `sentence.ts` versteht jetzt auch „Kino um acht“ und „nächste Woche
   Dienstag“.
+
+## Kochtipp – spontan mit Mia (v0.60.0)
+
+- Kochmütze in der Essen-Kachel für spontane Tage: Mia fragt kurz nach
+  Vorrat, Resten oder Einkauf, versteht freie Antworten und schlägt EIN
+  Gericht als Karte vor („Anderes“ / „Machen wir“ → heutiges Essen, der Plan
+  bleibt). Die Mütze erscheint ab dem 3. Nutzungstag, früher auf Nachfrage
+  oder mit „Alles zeigen“.

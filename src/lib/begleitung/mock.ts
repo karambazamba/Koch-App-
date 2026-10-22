@@ -14,6 +14,7 @@ import { EMPTY_STOCK_HINT, ingredientsFromQuestion, isCookIdeasRequest, stockIde
 import { text, tools, type ToolUse } from "@/lib/begleitung/mockShared";
 import { CALENDAR_WRITE, DAY_TOOL_NAMES, calendarAnswer, calendarUses, dayUses, everydayUses, mailUses, noteUses, pinWeatherUses, schnellnotizUses } from "@/lib/begleitung/mockAlltag";
 import { parseWeekTalk } from "@/lib/kalender/wochencheck";
+import { isKochtippRequest } from "@/lib/essen/kochtipp/start";
 import { todayIso } from "@/lib/core/now";
 
 /** Namen aus "Vorrat (aktuell): Hack 500 g (Kühlschrank), Paprika (Kühlschrank)" im Kontext */
@@ -229,6 +230,8 @@ function mockModel(): CreateMessage {
 
     // Wochencheck: alles in einem Rutsch über woche_eintragen (gleiche Erkennung wie ohne KI)
     if (typeof last.content === "string" && last.content.startsWith("[Wochencheck]")) return weekCheckUses(last.content, system);
+    // „Kochtipp“, „Was soll ich kochen?“ → eigener Kochtipp in der App
+    if (typeof last.content === "string" && isKochtippRequest(last.content)) return tools([{ name: "app_befehl", input: { text: "Kochtipp" } }]);
     if (resultFor("woche_eintragen") !== undefined) return text("Ich hab alles sortiert – schau kurz drüber und tipp „Alles übernehmen“.");
 
     // 1. Neue Frage: unklar → nachfragen, sonst Woche und Kochbuch lesen

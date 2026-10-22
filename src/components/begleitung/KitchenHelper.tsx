@@ -20,9 +20,12 @@ import { useCalendarEntries } from "@/lib/kalender/useCalendarEntries";
 import { aboRefreshDue } from "@/lib/kalender/abo/store";
 import { useHomeTiles } from "@/lib/core/homeLayout";
 import { BegleitungBar } from "@/components/begleitung/BegleitungBar";
-import { helperName } from "@/lib/einstellungen/profile";
+import { helperName, type HelperVoice } from "@/lib/einstellungen/profile";
 import { removeRetiredKeys } from "@/lib/core/storage";
-import { adoptLegacySpeech } from "@/lib/begleitung/speech";
+import { adoptLegacySpeech, loadSpeechSettings, toggleSpeak } from "@/lib/begleitung/speech";
+import { micState } from "@/lib/core/mic";
+import { loadKochtipp, unlockKochtipp } from "@/lib/essen/kochtipp/store";
+import { kochtippStart, sourceChips } from "@/lib/essen/kochtipp/start";
 import { adoptSchnellnotiz } from "@/lib/notizen/schnellnotiz";
 import { spontanStartTurn, type ChatState } from "@/components/begleitung/chatTypes";
 import { loadSpontanFilters } from "@/lib/essen/spontanFilters";
@@ -56,8 +59,12 @@ export function KitchenHelper() {
   // Von der Startseite: Mikrofon direkt starten bzw. gleich fragen
   const [start, setStart] = useState<{ listen?: boolean; ask?: string } | null>(null);
   const [weekCheck, setWeekCheck] = useState(false);
+  const voiceRef = useRef<HelperVoice>("weiblich");
 
   const profile = useProfile();
+  useEffect(() => {
+    voiceRef.current = profile?.helper.voice ?? "weiblich";
+  });
   const weekPlans = useWeekPlans();
   const mealPlans = useMealPlans();
   const recipes = useRecipes();
@@ -117,6 +124,27 @@ export function KitchenHelper() {
         }
         setOpen(true);
         if (mode === "voice" || ask) setStart({ listen: mode === "voice", ask });
+        // Kochtipp (Kochmütze oder Nachfrage): frischer Anfang mit drei Schnellantworten,
+        // danach hört das Mikro zu (nur wenn erlaubt, sonst ist das Textfeld dran)
+        if (mode === "kochtipp") {
+          unlockKochtipp();
+          const last = loadKochtipp().last;
+          const [hello, question] = kochtippStart(last);
+          // Vorlesen an: Mia spricht die Frage (dann hört das Mikro nicht gleichzeitig zu)
+          const reading = loadSpeechSettings().mode === "an";
+          setChat((c) => {
+            const id = `turn-${c.turns.length + 1}`;
+            if (reading) setTimeout(() => toggleSpeak(question, id, voiceRef.current), 300);
+            return {
+              ...c,
+              spontan: null,
+              kochtipp: { wish: { source: null, have: [], without: [], category: null, quick: false, persons: null }, exclude: [] },
+              turns: [...c.turns, { role: "assistant", local: true, text: hello }, { role: "assistant", local: true, text: question, chips: sourceChips(last) }],
+            };
+          });
+          if (micState().granted && !reading) setStart({ listen: true });
+          return;
+        }
         if (mode !== "spontan") return;
         setChat((c) => {
           const active = (filters as SpontanFilter[] | undefined) ?? c.spontan ?? loadSpontanFilters();

@@ -8,6 +8,9 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { isIdeaFilterRequest } from "@/lib/essen/spontan";
+import { isKochtippRequest } from "@/lib/essen/kochtipp/start";
+import { unlockKochtipp } from "@/lib/essen/kochtipp/store";
+import { useKochtippChat } from "@/components/essen/kochtipp/useKochtippChat";
 import { useStock } from "@/lib/essen/useStock";
 import { effectivePlanStyle, helperName } from "@/lib/einstellungen/profile";
 import { saveProfile } from "@/lib/einstellungen/profileStore";
@@ -132,6 +135,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   // --- Spontan kochen ("mit dem, was da ist") und Supermarkt ------------------
   const spontan = useSpontanChat({ data, today, pantry, spontanStyle, setChat, setInput });
   const market = useMarketChat({ data, today, spontanStyle, setChat });
+  const kochtipp = useKochtippChat({ data, today, pantry, setChat, setInput, onClose });
 
   const { rules } = useChatRules({ ruleCtx, chat, setGuided, startSpontan: spontan.startSpontan, pantry, shopping, shoppingSettings, speechSettings, spontanStyle, ready, ask });
 
@@ -145,6 +149,14 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     noteChatMessage();
     setViaVoice(byVoice);
     noteUserAction(toIsoDate(today));
+    // „Kochtipp“, „Was soll ich kochen?“ schaltet die Kochmütze frei (auch mit KI)
+    if (isKochtippRequest(t)) unlockKochtipp();
+    // Selbst geöffneter Kochtipp: Antworten („Ich hab noch …“, „was mit Fisch“) → Karte;
+    // alles andere beendet ihn und geht den normalen Weg
+    if (chat.kochtipp) {
+      if (kochtipp.kochtippInput(t, chat.kochtipp)) return;
+      setChat((c) => ({ ...c, kochtipp: null }));
+    }
     // Eine eingefügte Mail ist nie eine Zutatenliste
     if (chat.spontan && looksLikeMail(splitInstruction(t).mail)) {
       setChat((c) => ({ ...c, spontan: null }));
@@ -319,6 +331,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           setAdjusting={setAdjusting}
           spontan={spontan}
           market={market}
+          kochtipp={kochtipp}
           rules={rules}
           onSubmit={submit}
           onAsk={(text) => void ask(text)}

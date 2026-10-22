@@ -15,6 +15,8 @@ import type { AssistantData } from "@/lib/begleitung/ops";
 import { speechSupported, toggleSpeak } from "@/lib/begleitung/speech";
 import { AccessCodeCard, SpeakButton } from "@/components/begleitung/ChatBits";
 import { BUBBLE, ChatTurnItem } from "@/components/begleitung/ChatTurnItem";
+import { KochtippCard } from "@/components/essen/kochtipp/KochtippCard";
+import type { KochtippChat } from "@/components/essen/kochtipp/useKochtippChat";
 import type { ChatState, ChatTurnView } from "@/components/begleitung/chatTypes";
 import { ProposalCard } from "@/components/begleitung/ProposalCard";
 import { AdjustSheet, EarlierIdeas, SpontanAnswer } from "@/components/begleitung/SpontanBoard";
@@ -46,6 +48,7 @@ type Props = {
   adjusting: boolean;
   setAdjusting: (on: boolean) => void;
   spontan: SpontanChat;
+  kochtipp: KochtippChat;
   market: ReturnType<typeof useMarketChat>;
   rules: (t: string) => boolean;
   onSubmit: (text: string) => void;
@@ -54,7 +57,7 @@ type Props = {
   onClose: () => void;
 };
 
-export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, codeLater, onCodeLater, chat, setChat, busy, streaming, speakingId, tipsOn, adjusting, setAdjusting, spontan, market, rules, onSubmit, onAsk, onApply, onClose }: Props) {
+export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, codeLater, onCodeLater, chat, setChat, busy, streaming, speakingId, tipsOn, adjusting, setAdjusting, spontan, kochtipp, market, rules, onSubmit, onAsk, onApply, onClose }: Props) {
   const { ideasFor, stockFor, headingFor, speechFor, takeIdea, moreIdeas, adjusting2, setAdjusting2, applyFilters, acceptUnsure } = spontan;
   // Offene Ideen-Antwort (die letzte, solange Spontan kochen läuft) und eingeklappte frühere
   const spontanIndexes = chat.turns.flatMap((t, i) => (t.spontan ? [i] : []));
@@ -111,6 +114,22 @@ export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, co
               }
               if (i !== firstEarlier) return null;
               return <EarlierIdeas key={i} titles={earlierTitles} />;
+            }
+            if (turn.cook) {
+              const cook = turn.cook;
+              const live = last && chat.kochtipp != null;
+              return (
+                <KochtippCard
+                  key={i}
+                  card={cook.card}
+                  persons={cook.persons}
+                  live={live}
+                  onPersons={(n) => kochtipp.setPersons(i, n)}
+                  onAnother={() => chat.kochtipp && kochtipp.another(chat.kochtipp)}
+                  onTake={() => kochtipp.take(cook.card, cook.persons)}
+                  onNavigate={onClose}
+                />
+              );
             }
             return (
               <ChatTurnItem

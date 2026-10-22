@@ -2,7 +2,7 @@
 // Bearbeiten, Wischen, Eintragen, Kalender, Essen, Rezept, Einkauf, Vorrat,
 // Pinnwand, Wetter, Spendentopf, Tipps, Einstellungen, Chat im Testmodus,
 // Konten mit zwei Browsern, Vorführen: Fertig-Leiste, Memo antippen,
-// Offline, neue Version, Stammartikel, Sport-Kachel, Mikrofon aus, Termin in einem Satz, Stimme, Wochencheck).
+// Offline, neue Version, Stammartikel, Sport-Kachel, Mikrofon aus, Termin in einem Satz, Stimme, Wochencheck, Kochtipp).
 // Startet selbst einen Testserver (vorher `npm run build`) oder nutzt
 // E2E_BASE. Nur einzelne Abläufe: `npm run durchklick -- wetter pinnwand`.
 import { checker, launch, newPage, startServer } from "./lib.mjs";
@@ -16,8 +16,9 @@ import * as mikrofon from "./ablaeufe/mikrofon.mjs";
 import * as termin from "./ablaeufe/termin.mjs";
 import * as stimme from "./ablaeufe/stimme.mjs";
 import * as wochencheck from "./ablaeufe/wochencheck.mjs";
+import * as kochtipp from "./ablaeufe/kochtipp.mjs";
 
-const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck };
+const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp };
 const pick = process.argv.slice(2);
 const flows = Object.entries(ALL).filter(([name, run]) => typeof run === "function" && (!pick.length || pick.includes(name)));
 const stop = await startServer();
