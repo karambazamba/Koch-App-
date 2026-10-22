@@ -668,6 +668,8 @@ body {
   --wx-snow: #8fb3e3;
   --wx-bolt: #ffc23d;
   --wx-bolt-2: #e69a12;
+  --wx-moon: #f6e7a8;
+  --wx-moon-2: #d9bf5a;
 }
 .wx-card {
   --wx-a: #eef1f6;
@@ -688,6 +690,63 @@ body {
     background: linear-gradient(135deg, color-mix(in srgb, var(--wx-a) 14%, var(--color-surface)), var(--color-surface));
   }
 }
+
+/* Wetter-Seite (v0.47): Himmel-Karte je Lage, Wochen-Band (Pastell-Säulen,
+   Regenbalken), bester Tag, Wochensatz. Tokens --app-wx-* hell; dunkel gedämpft. */
+:root {
+  --app-wx-sonne-a: #3f8fdc; --app-wx-sonne-b: #f2b544;
+  --app-wx-wolken-a: #6f819b; --app-wx-wolken-b: #9eacc0;
+  --app-wx-regen-a: #42597a; --app-wx-regen-b: #6c8099;
+  --app-wx-gewitter-a: #3d3852; --app-wx-gewitter-b: #6a6382;
+  --app-wx-schnee-a: #7f9fc6; --app-wx-schnee-b: #b9cde4;
+  --app-wx-nacht-a: #16203d; --app-wx-nacht-b: #344470;
+  --app-wx-glass: rgb(255 255 255 / 0.18);
+  --app-wx-col-sonne: #fff3d1; --app-wx-col-wolken: #eceff3; --app-wx-col-regen: #e3eefb;
+  --app-wx-best-a: #fff1c7; --app-wx-best-b: #ffe08a; --app-wx-best-ring: #f2b544;
+  --app-wx-bar-a: #8fbaf0; --app-wx-bar-b: #3f7fd6; --app-wx-bar-track: rgb(63 127 214 / 0.12);
+}
+:root[data-theme="nacht"] {
+  --app-wx-sonne-a: #2c5f93; --app-wx-sonne-b: #a87d2f;
+  --app-wx-wolken-a: #3f4b5e; --app-wx-wolken-b: #5b6779;
+  --app-wx-regen-a: #2b3a51; --app-wx-regen-b: #45556c;
+  --app-wx-gewitter-a: #262236; --app-wx-gewitter-b: #433d56;
+  --app-wx-schnee-a: #4d6687; --app-wx-schnee-b: #6f86a3;
+  --app-wx-nacht-a: #0e1529; --app-wx-nacht-b: #232f50;
+  --app-wx-glass: rgb(255 255 255 / 0.12);
+  --app-wx-col-sonne: #2c2717; --app-wx-col-wolken: #23262c; --app-wx-col-regen: #1c2635;
+  --app-wx-best-a: #2e2816; --app-wx-best-b: #3d3317; --app-wx-best-ring: #c9962b;
+  --app-wx-bar-a: #5d86bd; --app-wx-bar-b: #3a6aad; --app-wx-bar-track: rgb(157 187 236 / 0.12);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="auto"] {
+    --app-wx-sonne-a: #2c5f93; --app-wx-sonne-b: #a87d2f;
+    --app-wx-wolken-a: #3f4b5e; --app-wx-wolken-b: #5b6779;
+    --app-wx-regen-a: #2b3a51; --app-wx-regen-b: #45556c;
+    --app-wx-gewitter-a: #262236; --app-wx-gewitter-b: #433d56;
+    --app-wx-schnee-a: #4d6687; --app-wx-schnee-b: #6f86a3;
+    --app-wx-nacht-a: #0e1529; --app-wx-nacht-b: #232f50;
+    --app-wx-glass: rgb(255 255 255 / 0.12);
+    --app-wx-col-sonne: #2c2717; --app-wx-col-wolken: #23262c; --app-wx-col-regen: #1c2635;
+    --app-wx-best-a: #2e2816; --app-wx-best-b: #3d3317; --app-wx-best-ring: #c9962b;
+    --app-wx-bar-a: #5d86bd; --app-wx-bar-b: #3a6aad; --app-wx-bar-track: rgb(157 187 236 / 0.12);
+  }
+}
+.wx-sky { background: linear-gradient(160deg, var(--sky-a), var(--sky-b)); color: var(--color-on-color); }
+.wx-sky[data-sky="sonne"] { --sky-a: var(--app-wx-sonne-a); --sky-b: var(--app-wx-sonne-b); }
+.wx-sky[data-sky="wolken"] { --sky-a: var(--app-wx-wolken-a); --sky-b: var(--app-wx-wolken-b); }
+.wx-sky[data-sky="regen"] { --sky-a: var(--app-wx-regen-a); --sky-b: var(--app-wx-regen-b); }
+.wx-sky[data-sky="gewitter"] { --sky-a: var(--app-wx-gewitter-a); --sky-b: var(--app-wx-gewitter-b); }
+.wx-sky[data-sky="schnee"] { --sky-a: var(--app-wx-schnee-a); --sky-b: var(--app-wx-schnee-b); }
+.wx-sky[data-sky="nacht"] { --sky-a: var(--app-wx-nacht-a); --sky-b: var(--app-wx-nacht-b); }
+.wx-sky .wx-text { text-shadow: 0 1px 2px rgb(0 0 0 / 0.18); }
+.wx-glass { background: var(--app-wx-glass); }
+.wx-col[data-tone="sonne"], .wx-note[data-tone="sonne"] { background: var(--app-wx-col-sonne); }
+.wx-col[data-tone="wolken"], .wx-note[data-tone="wolken"] { background: var(--app-wx-col-wolken); }
+.wx-col[data-tone="regen"], .wx-note[data-tone="regen"] { background: var(--app-wx-col-regen); }
+.wx-col[data-best="true"] { box-shadow: inset 0 0 0 2px var(--app-wx-best-ring); }
+.wx-best { background: linear-gradient(135deg, var(--app-wx-best-a), var(--app-wx-best-b)); }
+.wx-bar-track { background: var(--app-wx-bar-track); }
+.wx-bar { background: linear-gradient(180deg, var(--app-wx-bar-a), var(--app-wx-bar-b)); }
 
 /* Gericht-Bild (DishPicture): ohne Foto ein warmer Verlauf in der Farbe des Gerichts; beim Laden derselbe Ton */
 .dish-picture {

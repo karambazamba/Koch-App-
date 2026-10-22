@@ -99,3 +99,95 @@ export function bestOutdoorDay(fc: Forecast, fromDate: string): ForecastDay | nu
 
 /** Ab 18 Uhr öffnet die Wetter-Seite auf "Morgen" */
 export const weatherStartTab = (minutes: number): "heute" | "morgen" => (minutes >= 18 * 60 ? "morgen" : "heute");
+
+// --- Wetter-Seite v0.47: Himmel-Karte, Wochen-Band, ein Satz zur Woche -------
+
+/** Himmel der großen Karte: Verlauf je Lage, nachts immer Nachtblau */
+export type Sky = "sonne" | "wolken" | "regen" | "gewitter" | "schnee" | "nacht";
+
+export function skyFor(code: number, night = false): Sky {
+  if (night) return "nacht";
+  const k = weatherKind(code).kind;
+  if (k === "klar" || k === "heiter") return "sonne";
+  if (k === "gewitter") return "gewitter";
+  if (k === "schnee") return "schnee";
+  if (k === "regen" || k === "niesel" || k === "schauer") return "regen";
+  return "wolken";
+}
+
+/** Sonnenauf- und -untergang (Minuten, Ortszeit Berlin) – Näherung für Norddeutschland, reicht für „nachts“ */
+export function sunTimes(date: string, lat = 54.1, lon = 10.6): { rise: number; set: number } {
+  const d = new Date(`${date}T12:00:00Z`);
+  const start = Date.UTC(d.getUTCFullYear(), 0, 0);
+  const n = Math.floor((d.getTime() - start) / 86_400_000);
+  const decl = (-23.44 * Math.cos(((2 * Math.PI) / 365) * (n + 10)) * Math.PI) / 180;
+  const phi = (lat * Math.PI) / 180;
+  const cosH = (Math.sin((-0.833 * Math.PI) / 180) - Math.sin(phi) * Math.sin(decl)) / (Math.cos(phi) * Math.cos(decl));
+  const h = (Math.acos(Math.max(-1, Math.min(1, cosH))) * 180) / Math.PI;
+  // Sommerzeit: letzter Sonntag im März bis letzter Sonntag im Oktober
+  const lastSunday = (month: number) => {
+    const last = new Date(Date.UTC(d.getUTCFullYear(), month + 1, 0));
+    return Date.UTC(last.getUTCFullYear(), month, last.getUTCDate() - last.getUTCDay());
+  };
+  const offset = d.getTime() >= lastSunday(2) && d.getTime() < lastSunday(9) ? 120 : 60;
+  const noon = 720 - 4 * lon + offset;
+  return { rise: Math.round(noon - 4 * h), set: Math.round(noon + 4 * h) };
+}
+
+export const isNight = (date: string, minutes: number) => {
+  const { rise, set } = sunTimes(date);
+  return minutes < rise || minutes >= set;
+};
+
+/** Zeile unter dem Zustand: "Heute 9 bis 12° · ☂ 39 % · ☀ 3 Std." (Regen ab 30 %, Sonne nur > 0) */
+export function skyLine(d: ForecastDay, prefix = ""): string {
+  const extras = dayExtras(d);
+  return [`${prefix ? `${prefix} ` : ""}${round(d.min)} bis ${round(d.max)}°`, extras.rain, extras.sun].filter(Boolean).join(" · ");
+}
+
+/** Farbe einer Säule im Wochen-Band: Sonne · Wolken · Regen */
+export type ColumnTone = "sonne" | "wolken" | "regen";
+
+export function columnTone(d: ForecastDay): ColumnTone {
+  const g = weatherGroup(d.code);
+  if (g === "regen" || g === "gewitter") return "regen";
+  return g === "sonnig" ? "sonne" : "wolken";
+}
+
+const WEEKDAY = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+const weekdayOf = (iso: string) => WEEKDAY[new Date(`${iso}T12:00:00Z`).getUTCDay()];
+const isWet = (d: ForecastDay) => d.wet >= 2 || d.mm >= 3 || weatherGroup(d.code) === "gewitter";
+
+/**
+ * EIN Satz zur Woche bzw. zum Wochenende (rein, ohne KI) und die Farbe der
+ * Karte. Ruhig, ohne Druck-Wörter, nie Panik: „Wochenende eher nass. Am
+ * Sonntag gibt’s zwischendurch 2 Std. Sonne.“ · „Ab Dienstag wird’s
+ * freundlicher.“ · „Die ganze Woche trocken – gut für draußen.“
+ */
+export function weekSentence(fc: Forecast, today: string): { text: string; tone: ColumnTone } | null {
+  const days = fc.days.filter((d) => d.date >= today).slice(0, 7);
+  if (days.length < 3) return null;
+  const wet = days.map(isWet);
+  const name = (d: ForecastDay) => (d.date === days[1]?.date ? "morgen" : weekdayOf(d.date));
+  const sunny = (d: ForecastDay) => Math.round(d.sun);
+  if (!wet.some(Boolean)) return { text: days.some((d) => d.wet > 0) ? "Fast die ganze Woche trocken – gut für draußen." : "Die ganze Woche trocken – gut für draußen.", tone: "sonne" };
+  // Wochenende (Sa/So, nicht heute) – wenn es vorkommt und beide Tage nass sind
+  const weekend = days.slice(1).filter((d) => ["Samstag", "Sonntag"].includes(weekdayOf(d.date)));
+  if (weekend.length === 2 && weekend.every(isWet)) {
+    const bright = [...weekend].sort((a, b) => b.sun - a.sun)[0];
+    return { text: `Wochenende eher nass.${sunny(bright) >= 1 ? ` Am ${weekdayOf(bright.date)} gibt’s zwischendurch ${sunny(bright)} Std. Sonne.` : " Gut für drinnen."}`, tone: "regen" };
+  }
+  // Besserung: erst nass, dann mindestens zwei trockene Tage am Stück bis zum Ende
+  const firstDry = wet.findIndex((w) => !w);
+  if (wet[0] && firstDry > 0 && wet.slice(firstDry).every((w) => !w) && days.length - firstDry >= 2) {
+    const d = days[firstDry];
+    return { text: d.date === days[1].date ? "Ab morgen wird’s freundlicher." : `Ab ${weekdayOf(d.date)} wird’s freundlicher.`, tone: "wolken" };
+  }
+  if (weekend.length === 2 && !weekend.some(isWet)) return { text: "Zum Wochenende wird’s trocken – gut für draußen.", tone: "sonne" };
+  // Erst trocken, dann nasser
+  const firstWet = wet.findIndex(Boolean);
+  if (firstWet >= 2 && wet.slice(firstWet).every(Boolean)) return { text: `Bis ${weekdayOf(days[firstWet - 1].date)} trocken, danach wird’s nasser.`, tone: "wolken" };
+  if (wet.every(Boolean)) return { text: "Eine nasse Woche – gemütlich drinnen und mit Schirm raus.", tone: "regen" };
+  const best = bestOutdoorDay(fc, today);
+  return { text: best ? `Wechselhaft – am besten für draußen: ${best.date === today ? "heute" : name(best)}.` : "Eine wechselhafte Woche.", tone: wet.filter(Boolean).length > days.length / 2 ? "regen" : "wolken" };
+}

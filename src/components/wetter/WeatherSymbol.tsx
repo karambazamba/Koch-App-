@@ -1,5 +1,7 @@
-// Eigenes, weiches Wetter-Symbol-Set (statt Linien-Icons): Sonne, Wolke,
-// Tropfen (auch Sonne + Wolke + Tropfen für Schauer), Flocken, Blitz, Nebel – Farben über Tokens (`--wx-*` in globals.css).
+// Eigenes, buntes Wetter-Symbol-Set (statt Linien-Icons): Sonne gelb, Wolke
+// hell mit feinem Rand, Tropfen blau (auch Sonne + Wolke + Tropfen für
+// Schauer), Flocken, Blitz, Nebel; nachts statt Sonne ein Mond. Eine
+// Komponente für Wetter-Seite, Kachel und Sport – Farben über Tokens (`--wx-*`).
 
 import { weatherKind, type WeatherKind } from "@/lib/wetter/forecast";
 
@@ -11,6 +13,10 @@ const Sun = ({ cx = 24, cy = 24, r = 10 }: { cx?: number; cy?: number; r?: numbe
     })}
     <circle cx={cx} cy={cy} r={r} fill="var(--wx-sun)" stroke="var(--wx-sun-2)" strokeWidth="2" />
   </g>
+);
+
+const Moon = ({ cx = 24, cy = 24, r = 10 }: { cx?: number; cy?: number; r?: number }) => (
+  <path d={`M${cx + r * 0.35} ${cy - r}a${r} ${r} 0 1 0 ${r * 0.65} ${r * 1.55}a${r * 0.8} ${r * 0.8} 0 0 1-${r * 0.65}-${r * 1.55}z`} fill="var(--wx-moon)" stroke="var(--wx-moon-2)" strokeWidth="1.5" strokeLinejoin="round" />
 );
 
 const Cloud = ({ dark = false, y = 0 }: { dark?: boolean; y?: number }) => (
@@ -35,14 +41,15 @@ const Flake = ({ x, y }: { x: number; y: number }) => (
   </g>
 );
 
-function Motif({ kind }: { kind: WeatherKind }) {
+function Motif({ kind, night }: { kind: WeatherKind; night: boolean }) {
+  const Light = night ? Moon : Sun;
   switch (kind) {
     case "klar":
-      return <Sun />;
+      return <Light />;
     case "heiter":
       return (
         <>
-          <Sun cx={19} cy={18} r={8} />
+          <Light cx={19} cy={18} r={8} />
           <Cloud y={4} />
         </>
       );
@@ -68,7 +75,7 @@ function Motif({ kind }: { kind: WeatherKind }) {
       // Sonne + Wolke + Tropfen: „Schauer möglich“ – zwischendurch auch Sonne
       return (
         <>
-          <Sun cx={17} cy={14} r={7} />
+          <Light cx={17} cy={14} r={7} />
           <Cloud y={-3} />
           <Drop x={20} y={37} s={0.9} />
           <Drop x={30} y={39} s={0.9} />
@@ -104,11 +111,11 @@ function Motif({ kind }: { kind: WeatherKind }) {
   }
 }
 
-/** Wetter-Symbol zum WMO-Code (Größe über className, z. B. "h-8 w-8") */
-export function WeatherSymbol({ code, className = "h-6 w-6" }: { code: number; className?: string }) {
+/** Wetter-Symbol zum WMO-Code (Größe über className, z. B. "h-8 w-8"); `night` = Mond statt Sonne */
+export function WeatherSymbol({ code, className = "h-6 w-6", night = false }: { code: number; className?: string; night?: boolean }) {
   return (
     <svg viewBox="0 0 48 48" className={`shrink-0 ${className}`} aria-hidden>
-      <Motif kind={weatherKind(code).kind} />
+      <Motif kind={weatherKind(code).kind} night={night} />
     </svg>
   );
 }

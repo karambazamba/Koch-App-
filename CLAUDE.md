@@ -166,7 +166,7 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
 - Einstellungen nach Nutzungshäufigkeit sortieren, aktueller Wert rechts.
 - Versionsnummer (`package.json` und `APP_VERSION` in `src/lib/core/app.ts`)
   und `CACHE_VERSION` in `public/sw.js` bei jeder Auslieferung erhöhen.
-- Kein Alt-Modus mehr. Daten nur über das zentrale Speicher-Verzeichnis (mit Version/Migration); ‚Daten sichern/wiederherstellen‘ muss immer funktionieren. Jeder behobene Fehler bekommt einen Test; npm test vor jedem PR. Spracheingabe nur über useSpeechInput; beim Absenden immer cancel/reset. Aufgaben: dringend → heute → Frist → Woche → irgendwann, innerhalb nach Uhrzeit bzw. Erstellungszeit, nie alphabetisch. Jedes Fenster schließt per ✕, Danebentippen, Runterwischen, Zurück. Phase heißt ‚Morgens‘, der nächste Tag immer mit Wochentag. Größe ändert nur die Menge; S ≤ M ≤ L. Aufgaben 2er-Raster schlank, Termine schlanke Kärtchen. Wetter Standard S, eigenes Symbol-Set, Seite Heute/Morgen/7 Tage. Dateien möglichst unter 600 Zeilen.
+- Kein Alt-Modus mehr. Daten nur über das zentrale Speicher-Verzeichnis (mit Version/Migration); ‚Daten sichern/wiederherstellen‘ muss immer funktionieren. Jeder behobene Fehler bekommt einen Test; npm test vor jedem PR. Spracheingabe nur über useSpeechInput; beim Absenden immer cancel/reset. Aufgaben: dringend → heute → Frist → Woche → irgendwann, innerhalb nach Uhrzeit bzw. Erstellungszeit, nie alphabetisch. Jedes Fenster schließt per ✕, Danebentippen, Runterwischen, Zurück. Phase heißt ‚Morgens‘, der nächste Tag immer mit Wochentag. Größe ändert nur die Menge; S ≤ M ≤ L. Aufgaben 2er-Raster schlank, Termine schlanke Kärtchen. Wetter Standard S, eigenes Symbol-Set, Seite Heute/Morgen/7 Tage (Himmel-Karte, Wochen-Band). Dateien möglichst unter 600 Zeilen.
 
 ## Roadmap
 - Phase 1: Konten + Haushalt (Supabase) – Anmeldung, Haushalt mit Mitgliedern,
@@ -473,6 +473,36 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   (`QuickButton`), Schnell-Termin (`TerminQuickAdd`), Schnell-Aufgabe
   (`TaskQuickAdd`), einmaliger Hinweis nach dem Kennenlernen, Start-Kacheln
   aus dem Kennenlernen (`homeTilesFor`, in Standard-Reihenfolge).
+
+## Wetter-Seite hübscher (v0.47, Tafel 16)
+
+- Daten und Texte wie v0.40. Heute (Variante B „Himmel oben“): große Karte
+  (`SkyCard`, Radius 24, weißer Text) mit Verlauf je Lage (`skyFor`: sonne ·
+  wolken · regen · gewitter · schnee; nachts zwischen Sonnenunter- und
+  -aufgang immer „nacht“ – `sunTimes`/`isNight`, Näherung für Norddeutschland),
+  klein „JETZT · 6:50“, Temperatur 54/800 (Messung der Station, sonst
+  Vorhersage der aktuellen Stunde), Zustand, „Heute 9 bis 12° · ☂ 39 % · ☀ 3
+  Std.“ (`skyLine`: Regen ab 30 %, Sonne nur > 0), großes Symbol oben rechts
+  angeschnitten (nachts Mond), unten drei halbtransparente Felder Morgens/
+  Mittags/Abends (`.wx-glass`). Darunter Satz zu den Terminen und die drei
+  Tageszeit-Karten. Morgen: dieselbe Karte ohne Jetzt, „MORGEN · FR“, groß
+  der Höchstwert, darunter „7 bis 11°“.
+- 7 Tage (Variante D „Wochen-Band“): „Bester Tag für draußen“ (`BestDayCard`,
+  gelber Verlauf, nur wenn `bestOutdoorDay` einen findet), 7 Säulen
+  nebeneinander (`WeekBand`: Tag, Symbol, Hoch/Tief, Regenbalken = Regenrisiko
+  mit %, ☀ Sonnenstunden; Pastell je Lage `columnTone` sonne/wolken/regen,
+  bester Tag mit gelbem Ring; antippen = Tages-Fenster), Legende, EIN Satz zur
+  Woche/zum Wochenende (`weekSentence` in `view.ts`, rein, ohne KI, ruhig: nasses
+  Wochenende mit Sonnenfenster, „Ab Dienstag wird’s freundlicher.“, „Die ganze
+  Woche trocken – gut für draußen.“, …) als Karte in der Farbe der Lage.
+- Farben nur über `--app-wx-*` (hell, nacht, auto; dunkel gedämpft), Klassen
+  `.wx-sky[data-sky]`, `.wx-col[data-tone]`, `.wx-best`, `.wx-note`, `.wx-bar`.
+  Symbole: EIN Satz `WeatherSymbol` (bunt, `night` = Mond) für Seite, Kachel,
+  Sport. Kleine Bildschirme (Höhe ≤ 620 px): kompaktere Abstände, damit 7 Tage
+  auf das iPhone SE passt.
+- Test: `tests/wetter.test.ts` (Wochensatz, Himmel je Lage inkl. Nacht);
+  Durchklick `wetter47` (SE / 15 Pro / Pixel 7, hell/dunkel, Szenarien regen,
+  klar, schnee, gewitter, Nacht).
 
 ## Memos in der Pinnwand (v0.45, Tafel 11)
 

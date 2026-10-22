@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildDays, dayAnswer, dayLook, sanitizeForecast, weatherTip, type Forecast, type ForecastHour } from "@/lib/wetter/forecast";
-import { dayExtras, dayParts, dayWords } from "@/lib/wetter/view";
+import { buildDays, dayAnswer, dayLook, sanitizeForecast, weatherTip, type Forecast, type ForecastDay, type ForecastHour } from "@/lib/wetter/forecast";
+import { columnTone, dayExtras, dayParts, dayWords, isNight, skyFor, skyLine, sunTimes, weekSentence } from "@/lib/wetter/view";
 import { fromBrightSky, fromOpenMeteo } from "@/lib/wetter/sources";
 
 const DAY = "2026-10-24";
@@ -149,5 +149,71 @@ describe("Quellen: Bright Sky (DWD) und Open-Meteo (ICON) im gleichen Format", (
     const f = sanitizeForecast(old)!;
     expect(f.days[0].text).toBeTruthy();
     expect(f.days[0].wet).toBe(0);
+  });
+});
+
+describe("Wetter-Seite v0.47: Himmel und Wochensatz", () => {
+  // Woche ab Mittwoch 21.10.2026 (Sa = 24., So = 25.)
+  const WED = "2026-10-21";
+  const fd = (date: string, o: Partial<ForecastDay> = {}): ForecastDay => ({ date, code: 2, text: "Sonne und Wolken", max: 12, min: 6, rain: 10, mm: 0, sun: 3, wet: 0, ...o });
+  const wet = (date: string, sun = 0): ForecastDay => fd(date, { code: 61, text: "Regnerisch", rain: 85, mm: 6, wet: 5, sun });
+  const dates = ["2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25", "2026-10-26", "2026-10-27"];
+  const fc = (days: ForecastDay[]): Forecast => ({ place: "Eutin", fetchedAt: "", current: { temp: 9, code: 2 }, hours: [], days });
+
+  it("nasses Wochenende – mit dem Sonnenfenster", () => {
+    const days = dates.map((d) => (d === "2026-10-24" ? wet(d) : d === "2026-10-25" ? wet(d, 2) : fd(d)));
+    expect(weekSentence(fc(days), WED)).toEqual({ text: "Wochenende eher nass. Am Sonntag gibt’s zwischendurch 2 Std. Sonne.", tone: "regen" });
+  });
+
+  it("trockene Woche", () => {
+    expect(weekSentence(fc(dates.map((d) => fd(d))), WED)).toEqual({ text: "Die ganze Woche trocken – gut für draußen.", tone: "sonne" });
+  });
+
+  it("Besserung ab einem Tag (und ab morgen)", () => {
+    const ab = (n: number) => fc(dates.map((d, i) => (i < n ? wet(d) : fd(d))));
+    expect(weekSentence(ab(3), WED)?.text).toBe("Ab Samstag wird’s freundlicher.");
+    expect(weekSentence(ab(1), WED)?.text).toBe("Ab morgen wird’s freundlicher.");
+  });
+
+  it("ohne Druck-Wörter, nie Panik", () => {
+    const variants = [dates.map((d) => wet(d)), dates.map((d, i) => (i % 2 ? wet(d) : fd(d))), dates.map((d, i) => (i > 3 ? wet(d) : fd(d)))];
+    for (const v of variants) {
+      const s = weekSentence(fc(v), WED)!.text;
+      expect(s).not.toMatch(/fehlt|offen|überfällig|verpasst|musst|solltest|vergiss|Warnung|Achtung|Unwetter/i);
+      expect(s.split(/[.!?](\s|$)/).filter((x) => x && x.trim()).length).toBeLessThanOrEqual(2);
+    }
+  });
+
+  it("Himmel-Verlauf je Lage, nachts Nachtblau", () => {
+    expect(skyFor(0)).toBe("sonne");
+    expect(skyFor(2)).toBe("sonne");
+    expect(skyFor(3)).toBe("wolken");
+    expect(skyFor(45)).toBe("wolken");
+    expect(skyFor(61)).toBe("regen");
+    expect(skyFor(80)).toBe("regen");
+    expect(skyFor(95)).toBe("gewitter");
+    expect(skyFor(73)).toBe("schnee");
+    expect(skyFor(0, true)).toBe("nacht");
+    expect(skyFor(61, true)).toBe("nacht");
+  });
+
+  it("Nacht nach Sonnenauf- und -untergang (Eutin, Oktober ≈ 8:00 / 18:00)", () => {
+    const { rise, set } = sunTimes(WED);
+    expect(rise).toBeGreaterThan(7 * 60 + 30);
+    expect(rise).toBeLessThan(8 * 60 + 30);
+    expect(set).toBeGreaterThan(17 * 60 + 45);
+    expect(set).toBeLessThan(18 * 60 + 45);
+    expect(isNight(WED, 6 * 60 + 50)).toBe(true);
+    expect(isNight(WED, 12 * 60)).toBe(false);
+    expect(isNight("2026-06-21", 21 * 60 + 30)).toBe(false);
+    expect(isNight(WED, 21 * 60)).toBe(true);
+  });
+
+  it("Zeile unter dem Zustand und Säulen-Farbe", () => {
+    expect(skyLine(fd(WED, { min: 9, max: 12, rain: 39, sun: 3 }), "Heute")).toBe("Heute 9 bis 12° · ☂ 39 % · ☀ 3 Std.");
+    expect(skyLine(fd(WED, { rain: 20, sun: 0 }))).toBe("6 bis 12°");
+    expect(columnTone(fd(WED, { code: 0 }))).toBe("sonne");
+    expect(columnTone(fd(WED, { code: 3 }))).toBe("wolken");
+    expect(columnTone(wet(WED))).toBe("regen");
   });
 });
