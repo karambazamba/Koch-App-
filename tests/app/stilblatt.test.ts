@@ -11,7 +11,7 @@ function files(dir: string): string[] {
     return statSync(p).isDirectory() ? files(p) : /\.(tsx|ts)$/.test(f) ? [p] : [];
   });
 }
-const SOURCES = files(join(__dirname, "../src")).map((p) => ({ p, s: readFileSync(p, "utf8") }));
+const SOURCES = files(join(__dirname, "../../src")).map((p) => ({ p, s: readFileSync(p, "utf8") }));
 
 describe("Stilblatt: Farben und Radien nur über Tokens", () => {
   it("keine festen Tailwind-Farben (stone/red/emerald …, schwarz/weiß)", () => {

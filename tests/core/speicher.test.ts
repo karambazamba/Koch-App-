@@ -3,7 +3,7 @@ import { backupSummary, createBackup, parseBackup, restoreBackup } from "@/lib/c
 import { STORAGE, removeRetiredKeys } from "@/lib/core/storage";
 import { migrateHelper, migrateProfile } from "@/lib/einstellungen/profileStore";
 import { createEmptyProfile } from "@/lib/einstellungen/profile";
-import { memoryStorage } from "./helpers";
+import { memoryStorage } from "../helpers";
 
 describe("Verzeichnis der gespeicherten Daten", () => {
   it("jeder Schlüssel steht genau einmal drin", () => {

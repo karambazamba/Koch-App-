@@ -3,7 +3,7 @@ import { addMemo, createMemo, formatDauer, householdNames, memoAlive, memoPlayRe
 import { migratePinStore } from "@/lib/pinnwand/store";
 import { backupSummary, createBackup, parseBackup, restoreBackup } from "@/lib/core/backup";
 import { now } from "@/lib/core/now";
-import { at, memoryStorage } from "./helpers";
+import { at, memoryStorage } from "../helpers";
 
 const H = 3_600_000;
 const memoAt = (iso: string, author = "Lisa", dauer = 12.4) => {

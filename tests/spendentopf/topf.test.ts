@@ -84,8 +84,8 @@ describe("Spendentopf: feste Texte", () => {
   it("immer „100 % für Projekte in deiner Region“, nie „an KARAMBA“", () => {
     expect(POT_TEXTS.share).toBe("100 % für Projekte in deiner Region");
     expect(POT_TEXTS.free).toBe("Die App ist kostenlos. KARAMBA zahlt Server & KI. Keine Werbung, kein Abo, keine Daten verkauft.");
-    const dir = join(__dirname, "../src/components/spendentopf");
-    const all = readdirSync(dir).map((f) => readFileSync(join(dir, f), "utf8")).join("\n") + readFileSync(join(__dirname, "../src/lib/spendentopf/model.ts"), "utf8");
+    const dir = join(__dirname, "../../src/components/spendentopf");
+    const all = readdirSync(dir).map((f) => readFileSync(join(dir, f), "utf8")).join("\n") + readFileSync(join(__dirname, "../../src/lib/spendentopf/model.ts"), "utf8");
     // nur Texte (in Anführungszeichen), keine Kommentare
     expect(all).not.toMatch(/["'`][^"'`\n]*\ban KARAMBA/i);
   });

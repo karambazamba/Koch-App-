@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { memoryStorage } from "./helpers";
+import { memoryStorage } from "../helpers";
 
 beforeEach(() => {
   (globalThis as { window?: unknown }).window = { localStorage: memoryStorage(), addEventListener() {}, removeEventListener() {} };

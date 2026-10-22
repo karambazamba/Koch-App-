@@ -4,9 +4,9 @@
 import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 import { backupSummary, parseBackup, restoreBackup } from "@/lib/core/backup";
-import { memoryStorage } from "./helpers";
+import { memoryStorage } from "../helpers";
 
-const file = readFileSync(new URL("./fixtures/sicherung-v0.47.json", import.meta.url), "utf8");
+const file = readFileSync(new URL("../fixtures/sicherung-v0.47.json", import.meta.url), "utf8");
 const storage = memoryStorage();
 
 beforeAll(() => {

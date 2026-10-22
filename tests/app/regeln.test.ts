@@ -3,7 +3,7 @@
 // Sheet/ConfirmDialog, typografischer Apostroph, „Ohne Druck“-Wortliste und
 // kein fest eingebauter Name der Begleitung in sichtbaren Texten.
 import { describe, expect, it } from "vitest";
-import { SOURCES, stripComments, texts } from "./textQuellen";
+import { SOURCES, stripComments, texts } from "../textQuellen";
 
 const hits = (test: (code: string, file: string) => string[]) => SOURCES.flatMap(({ file, code }) => test(code, file).map((h) => `${file}: ${h}`));
 

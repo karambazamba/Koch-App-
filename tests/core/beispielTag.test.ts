@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { askRemoveAll, demoEntries, demoTiles, type DemoTile } from "@/lib/core/demo";
 import { demoDishAt } from "@/lib/essen/demoDish";
 import { berlinTime, setNowForTests } from "@/lib/core/now";
-import { at } from "./helpers";
+import { at } from "../helpers";
 import { STORAGE } from "@/lib/core/storage";
 import { APP_NAME, APP_SHORT_NAME } from "@/lib/core/app";
 import { withoutEmoji } from "@/lib/core/text";

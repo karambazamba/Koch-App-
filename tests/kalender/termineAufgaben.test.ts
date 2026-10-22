@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { createEntry } from "@/lib/core/entries";
-import { carriedLabel, dueLabel, itemsForDay, taskOverview, type AufgabeData, type CalendarEntry, type TerminData } from "@/lib/kalender/model";
-import { at } from "./helpers";
-
-const aufgabe = (data: Partial<AufgabeData> & { title: string }) => createEntry("aufgabe", { reminder: "aus", ...data }) as CalendarEntry;
-const termin = (data: Partial<TerminData> & { title: string; date: string; start: string }) => createEntry("termin", { reminder: "aus", ...data }) as CalendarEntry;
+import { carriedLabel, dueLabel, itemsForDay, taskOverview, tomorrowLabel, type AufgabeData, type CalendarEntry } from "@/lib/kalender/model";
+import { PHASES } from "@/lib/heute/phases";
+import { aufgabe, at, termin } from "../helpers";
 
 describe("Fristen und Wochentage", () => {
   it("benennt Fristen kurz: heute, morgen, Wochentag, Datum", () => {
@@ -100,5 +97,13 @@ describe("Dringend (B3)", () => {
     expect(readQuickText("Wichtige Unterlagen holen", "2026-10-20").urgent).toBe(false);
     const cmd = parseCalendar("Dringend: Kita-Formular abgeben", "2026-10-20");
     expect(cmd?.kind === "create" && cmd.draft.typ === "aufgabe" && cmd.draft.data.dringend).toBe(true);
+  });
+});
+
+describe("Der nächste Tag immer mit Wochentag (B4)", () => {
+  it("„Morgen · Do“ und die Phase heißt „Morgens“", () => {
+    expect(tomorrowLabel("2026-10-22")).toBe("Morgen · Do");
+    const morning = PHASES.find((p) => p.id === "morgen")!;
+    expect(morning.label).toBe("Morgens");
   });
 });

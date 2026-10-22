@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { EMPTY_SPORT, createTraining, weekStatus, weekStreak, type SportState } from "@/lib/sport/model";
-import { at } from "./helpers";
+import { at } from "../helpers";
 
 const withTrainings = (dates: string[], goal = 2): SportState => ({
   ...EMPTY_SPORT,

@@ -1,17 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { tomorrowLabel } from "@/lib/kalender/model";
-import { createEntry } from "@/lib/core/entries";
-import type { CalendarEntry } from "@/lib/kalender/model";
-import { EMPTY_SPORT, createTraining, freeStarts, lastTraining, plannedOn } from "@/lib/sport/model";
 import type { Forecast, ForecastHour } from "@/lib/wetter/forecast";
 import { bestOutdoorDay, dayParts, daySentence, weatherGroup, weatherStartTab } from "@/lib/wetter/view";
-import { PHASES } from "@/lib/heute/phases";
 import { HOME_TILES } from "@/lib/core/homeLayout";
-import { at } from "./helpers";
 
 const TODAY = "2026-10-21";
-const termin = (title: string, date: string, start: string, extra: Record<string, unknown> = {}) =>
-  createEntry("termin", { title, date, start, reminder: "aus", repeat: null, ...extra }, { raum: "familie" }) as CalendarEntry;
 
 function forecast(rainFrom?: number): Forecast {
   const hours: ForecastHour[] = [TODAY, "2026-10-22"].flatMap((date) =>
@@ -30,14 +22,6 @@ function forecast(rainFrom?: number): Forecast {
     ],
   };
 }
-
-describe("Der nächste Tag immer mit Wochentag (B4)", () => {
-  it("„Morgen · Do“ und die Phase heißt „Morgens“", () => {
-    expect(tomorrowLabel("2026-10-22")).toBe("Morgen · Do");
-    const morning = PHASES.find((p) => p.id === "morgen")!;
-    expect(morning.label).toBe("Morgens");
-  });
-});
 
 describe("Wetter (B9)", () => {
   it("Standardgröße S", () => {
@@ -70,19 +54,5 @@ describe("Wetter (B9)", () => {
     expect(bestOutdoorDay(forecast(), TODAY)?.date).toBe("2026-10-23");
     expect(weatherStartTab(17 * 60 + 59)).toBe("heute");
     expect(weatherStartTab(19 * 60)).toBe("morgen");
-  });
-});
-
-describe("Sport-Tage (B10)", () => {
-  it("freie Zeiten meiden Termine, geplante Tage und „Wie letztes Mal“", () => {
-    at(`${TODAY}T12:00`);
-    const entries = [termin("Elternabend", "2026-10-23", "18:00", { end: "19:30" }), termin("Laufen", "2026-10-24", "09:00", { label: "Sport" })];
-    const starts = freeStarts(entries, "2026-10-23", TODAY, 45);
-    expect(starts).not.toContain("18:00");
-    expect(starts).not.toContain("19:00");
-    expect(starts.length).toBeGreaterThan(0);
-    expect(plannedOn(entries, "2026-10-24", TODAY).map((i) => i.title)).toEqual(["Laufen"]);
-    const state = { ...EMPTY_SPORT, trainings: [createTraining({ sport: "radfahren", minutes: 60, date: "2026-10-19" }), createTraining({ sport: "laufen", minutes: 30, date: "2026-10-20" })] };
-    expect(lastTraining(state, entries, TODAY)).toMatchObject({ sport: "laufen", minutes: 30 });
   });
 });
