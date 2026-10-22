@@ -4,7 +4,7 @@ import { createMockModel } from "@/lib/begleitung/mock";
 import { BAUSTEINE } from "@/lib/core/features";
 
 type Msg = Anthropic.Beta.BetaMessageParam;
-export type Use = { name: string; input: Record<string, unknown>; id: string };
+type Use = { name: string; input: Record<string, unknown>; id: string };
 
 /** Kontext wie aus prompt.ts – Do 22.10.2026, Familie mit Jonne */
 export function context(extra: string[] = [], opts: { on?: string[]; vorrat?: string; kochbuch?: string; pinnwand?: string; schnellnotiz?: string } = {}): string {
@@ -32,7 +32,7 @@ export function context(extra: string[] = [], opts: { on?: string[]; vorrat?: st
 const model = createMockModel();
 
 /** Eine Runde des Schein-Modells: Text und Werkzeug-Aufrufe */
-export async function run(system: string, messages: Msg[]) {
+async function run(system: string, messages: Msg[]) {
   const m = await model({ model: "mock", max_tokens: 100, system: [{ type: "text", text: system }], messages } as Anthropic.Beta.MessageCreateParamsNonStreaming);
   const text = m.content.filter((b) => b.type === "text").map((b) => (b as Anthropic.Beta.BetaTextBlock).text).join("");
   const uses = m.content.filter((b) => b.type === "tool_use").map((b) => b as Anthropic.Beta.BetaToolUseBlock).map((b) => ({ name: b.name, input: b.input as Record<string, unknown>, id: b.id }));

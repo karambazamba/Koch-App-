@@ -112,7 +112,7 @@ function canonicalAllergy(term: string): string {
 function terms(fragment: string): string[] {
   return fragment
     .split(/,|\bund\b|\boder\b|\bsowie\b|\/|\bauch\b/i)
-    .map((s) => s.replace(/\b(kein|keine|keinen|keiner|keinem|so|gar|wirklich|überhaupt|nicht|gern|gerne|sehr|leider|mehr|richtig)\b/gi, "").trim())
+    .map((s) => s.replace(/(?<![a-zäöüß])(kein|keine|keinen|keiner|keinem|so|gar|wirklich|überhaupt|nicht|gern|gerne|sehr|leider|mehr|richtig)(?![a-zäöüß])/gi, "").trim())
     .map((s) => s.replace(/^(die|der|das|den)\s+/i, "").trim())
     .filter((s) => s.length > 1 && s.split(/\s+/).length <= 3)
     .map(cap);

@@ -1,7 +1,7 @@
 // Kleine Browser-Helfer: Hallo-Bildschirm, Homescreen-Hinweis, App-Icon in der
 // Lieblingsfarbe, Hell/Dunkel und das Aufleuchten einer neuen Kachel.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fakeBrowser, noBrowser } from "./fakeBrowser";
+import { fakeWindow, noBrowser } from "../helpers";
 
 type Link = { rel: string; type?: string; href: string; getAttribute: (k: string) => string; setAttribute: (k: string, v: string) => void };
 
@@ -62,7 +62,7 @@ describe("Hallo-Bildschirm", () => {
   it("Mias Platz wird genau einmal abgeholt – mit Bewegung reduzieren gar nicht", async () => {
     const hello = await import("@/lib/core/hello");
     expect(hello.reducedMotion()).toBe(false); // ohne Browser
-    const win = fakeBrowser() as unknown as { matchMedia?: unknown };
+    const win = fakeWindow() as unknown as { matchMedia?: unknown };
     win.matchMedia = media({ reduce: false });
     hello.setHelloFlight({ x: 1, y: 2, size: 150 });
     expect(hello.takeHelloFlight()).toEqual({ x: 1, y: 2, size: 150 });
@@ -78,7 +78,7 @@ describe("Hinweis zum Homescreen-Icon", () => {
   it("nur als Homescreen-App auf dem iPhone – mit Sicherungs-Hinweis", async () => {
     const { iconChangeHint } = await import("@/lib/core/homescreen");
     expect(iconChangeHint()).toBeNull(); // ohne Browser
-    const win = fakeBrowser() as unknown as { matchMedia?: unknown };
+    const win = fakeWindow() as unknown as { matchMedia?: unknown };
     win.matchMedia = media({ standalone: true });
     vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0)", platform: "iPhone", maxTouchPoints: 5 });
     expect(iconChangeHint()).toContain("bleibt, bis du die App neu hinzufügst");
@@ -132,7 +132,7 @@ describe("Hell, Dunkel, Automatisch", () => {
   it("setzt data-theme und die Farbe der Statusleiste", async () => {
     const metas = [{ content: "", setAttribute(_k: string, v: string) { this.content = v; } }];
     const doc = fakeDocument([], metas);
-    const win = fakeBrowser() as unknown as { matchMedia?: unknown };
+    const win = fakeWindow() as unknown as { matchMedia?: unknown };
     win.matchMedia = media({ dark: true });
     const { applyTheme, THEME_COLORS } = await import("@/lib/core/theme");
     applyTheme("warm");
@@ -172,7 +172,7 @@ describe("Neue Kachel leuchtet kurz auf", () => {
     const doc = fakeDocument([]);
     let tries = 0;
     doc.querySelector.mockImplementation(() => (++tries < 3 ? null : el));
-    fakeBrowser();
+    fakeWindow();
     const { glowTile } = await import("@/lib/core/homeUnits");
     glowTile("sport");
     for (let i = 0; i < 5 && frames.length; i++) {

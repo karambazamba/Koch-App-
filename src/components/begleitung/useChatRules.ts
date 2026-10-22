@@ -139,7 +139,7 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
     // Ausgeschalteter Baustein ("Zeig mir den Vorrat") → einschalten, bevor eine Seite geöffnet wird
     if (bausteinRule(ruleCtx, t)) return true;
     // "Zeig mir unsere Rezepte" / "Was haben wir im Vorrat?" → hinführen
-    const page = /\b(zeig|öffne|wo sind|wo finde)\w*\b.*\b(rezepte|kochbuch)\b/i.test(t) ? "/kochbuch" : /\b(zeig|öffne)\w*\b.*\b(vorrat|tiefkühler|kühlschrank)\b/i.test(t) ? "/vorrat" : null;
+    const page = /(?<![a-zäöüß])(zeig|öffne|wo sind|wo finde)\w*\b.*\b(rezepte|kochbuch)\b/i.test(t) ? "/kochbuch" : /(?<![a-zäöüß])(zeig|öffne)\w*\b.*\b(vorrat|tiefkühler|kühlschrank)\b/i.test(t) ? "/vorrat" : null;
     if (page) {
       setInput("");
       router.push(page);

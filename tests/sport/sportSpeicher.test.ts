@@ -1,7 +1,7 @@
 // Sport-Speicher und Aktionen (eintragen, ändern, löschen, Ziel, Packliste) –
 // jede mit Zurücknehmen für „Mach das rückgängig“.
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { atFresh, fakeBrowser, noBrowser, type FakeWindow } from "../core/fakeBrowser";
+import { atFresh, fakeWindow, noBrowser, type FakeWindow } from "../helpers";
 
 vi.mock("@/lib/core/useExternalStore", () => ({
   useExternalStore: <T,>(subscribe: (fn: () => void) => () => void, get: () => T) => {
@@ -13,7 +13,7 @@ vi.mock("@/lib/core/useExternalStore", () => ({
 let win: FakeWindow;
 
 async function load(local: Record<string, string> = {}) {
-  win = fakeBrowser(local);
+  win = fakeWindow(local);
   vi.resetModules();
   await atFresh("2026-10-21T18:00");
   const store = await import("@/lib/sport/store");

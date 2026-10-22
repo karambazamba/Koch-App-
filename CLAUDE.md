@@ -233,8 +233,14 @@ im Code neutral (`BegleitungAvatar`, `BegleitungBar`, `BegleitungTool`, …);
   `npm run bilder` (96 Bildschirmfotos, `-- --basis` = Ausgangslage) und
   `npm run bilder:vergleich` (Abweichung > 0,1 %), `npm run messen` (JS je
   Seite). Bilder liegen in `.bilder/` (nicht im Repo).
-- Tests: Vitest (`npm test`, `tests/*.test.ts`, Zeit fest über `at()` aus
-  `tests/helpers.ts`, Zeitzone Europe/Berlin). Ungenutzter Code: `npx knip`
+- Tests: Vitest (`npm test`, je Bereich ein Ordner `tests/<bereich>/` wie in
+  `src/lib`, plus `tests/app/` für Code- und Textregeln). Gemeinsame Hilfen in
+  `tests/helpers.ts`: `at()`/`atFresh()` (feste Zeit, Europe/Berlin),
+  `memoryStorage()`, `fakeWindow()`/`noBrowser()` (Browser-Ersatz mit Speicher,
+  Verlauf, Scrollhöhe), `termin()`/`aufgabe()`. `npm run test:abdeckung` =
+  Abdeckung von `src/lib` (ohne `use*.ts` und reine Browser-Schnittstellen),
+  Untergrenze 80 % Zeilen. In Regex nie `\b` direkt an ä/ö/ü/ß (dort keine
+  Wortgrenze) – stattdessen `(?<![a-zäöüß])` bzw. `(?![a-zäöüß])`. Ungenutzter Code: `npx knip`
   (Konfiguration `knip.json`; `@public` im Kommentar = bewusst für Tests/Push).
 - Neue Version: Der Service Worker wartet; die App zeigt oben „Neue Version
   da – Antippen zum Aktualisieren“ (`ServiceWorkerRegistration`, Nachricht

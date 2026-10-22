@@ -3,8 +3,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { formatPantryAmount, formatPantryItem, ingredientStem, placeFor, sameIngredient, type PantryItem } from "@/lib/vorrat/pantry";
 import { toPutAway } from "@/lib/vorrat/einraeumen";
-import { at } from "../helpers";
-import { fakeWindow } from "../kalender/hilfen";
+import { at, fakeWindow } from "../helpers";
 
 let w: ReturnType<typeof fakeWindow>;
 

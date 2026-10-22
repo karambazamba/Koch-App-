@@ -32,6 +32,7 @@ export const SECTION_VALUES = SECTIONS.map((s) => s.value);
  */
 const KEYWORDS: [string, Section][] = [
   // Sonderfälle zuerst
+  ["zitronensaft", "vorrat"], ["saft", "getraenke"],
   ["paprikapulver", "vorrat"], ["currypulver", "vorrat"], ["tomatenmark", "vorrat"],
   ["passierte", "vorrat"], ["dosentomaten", "vorrat"], ["gehackte tomaten", "vorrat"],
   ["kokosmilch", "vorrat"], ["fischstäbchen", "tiefkuehl"], ["pommes", "tiefkuehl"],

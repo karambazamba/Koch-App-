@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { at } from "../helpers";
-import { termin } from "../core/fakeBrowser";
+import { at, termin } from "../helpers";
 import { freeStarts, planTrainings, plannedOn } from "@/lib/sport/model";
 
 const TODAY = "2026-10-21"; // Mittwoch; nächste Woche ab Mo 26.10.

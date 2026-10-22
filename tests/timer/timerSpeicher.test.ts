@@ -1,6 +1,6 @@
 // Timer-Speicher, Starten/Stoppen aus Oberfläche und Lotte, Ton (Web Audio)
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { atFresh, fakeBrowser, noBrowser, type FakeWindow } from "../core/fakeBrowser";
+import { atFresh, fakeWindow, noBrowser, type FakeWindow } from "../helpers";
 
 vi.mock("@/lib/core/useExternalStore", () => ({
   useExternalStore: <T,>(subscribe: (fn: () => void) => () => void, get: () => T) => {
@@ -47,7 +47,7 @@ function fakeAudio(state: "running" | "suspended" = "suspended") {
 }
 
 async function load(local: Record<string, string> = {}, audio?: unknown) {
-  win = fakeBrowser(local);
+  win = fakeWindow(local);
   if (audio) (win as unknown as { AudioContext: unknown }).AudioContext = audio;
   vi.resetModules();
   await atFresh("2026-10-21T18:00");

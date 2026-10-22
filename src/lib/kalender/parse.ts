@@ -150,7 +150,7 @@ const ARBEIT = /\b(meeting|büro|kunden?|präsentation|call|projekt\w*|chef\w*|k
 const LABELS: [RegExp, string][] = [
   [/\bkita\b/i, "Kita"],
   [/\bschul\w*/i, "Schule"],
-  [/\b(zahn)?ärzt\w*|\b(kinder|zahn|haus)?arzt\w*/i, "Arzt"],
+  [/(?<![a-zäöüß])(zahn)?ärzt\w*|\b(kinder|zahn|haus)?arzt\w*/i, "Arzt"],
   [/\bcafé|\bcafe\b|\bkaffee\b/i, "Café"],
   [/\beis(laden|diele|café)?\b/i, "Eisladen"],
   [/\b(turnen|schwimm\w*|fußball|training|sport)\b/i, "Sport"],

@@ -15,6 +15,8 @@ export default defineConfig({
       include: ["src/lib/**/*.ts"],
       exclude: ["src/lib/**/use[A-Z]*.ts", "src/lib/begleitung/speech.ts", "src/lib/pinnwand/memoAudio.ts", "src/lib/pinnwand/memoPlayer.ts", "src/lib/core/wakeLock.ts"],
       reporter: ["text-summary", "json-summary"],
+      // Untergrenze (Aufräumen, Etappe 6): darunter schlägt test:abdeckung fehl
+      thresholds: { lines: 80, statements: 80, functions: 80, branches: 75 },
     },
   },
 });

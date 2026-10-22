@@ -2,8 +2,7 @@
 // (staples.ts). Woche ab Mo 2026-10-19.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ListItem, ShoppingList, ShoppingListStore, Staple } from "@/lib/einkauf/listModel";
-import { at } from "../helpers";
-import { fakeWindow } from "../kalender/hilfen";
+import { at, fakeWindow } from "../helpers";
 
 const W = "2026-10-19";
 const staple = (over: Partial<Staple>): Staple => ({ id: over.name ?? "s", name: "Milch", amount: "", section: "kuehlregal", purchases: [], intervalDays: null, active: true, ...over });

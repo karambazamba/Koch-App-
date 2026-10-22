@@ -29,8 +29,7 @@ import {
   type Termin,
 } from "@/lib/kalender/model";
 import { addDays } from "@/lib/core/now";
-import { at } from "../helpers";
-import { aufgabe, termin } from "./hilfen";
+import { at, aufgabe, termin } from "../helpers";
 
 const STAMP = "2026-10-20T10:00:00.000Z";
 const titles = (list: { title: string }[]) => list.map((i) => i.title);

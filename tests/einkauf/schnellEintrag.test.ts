@@ -6,7 +6,7 @@ import { isShoppingRequest, parseProductStatement, parseShoppingText } from "@/l
 import { knownShop, shopModeHref, shopModeLists, shopModeRequest } from "@/lib/einkauf/shopMode";
 import { shopGroups, shopTone, shopType, SHOP_TYPE_ICON } from "@/lib/einkauf/shopGroups";
 import type { ListItem } from "@/lib/einkauf/listModel";
-import { fakeWindow } from "../kalender/hilfen";
+import { fakeWindow } from "../helpers";
 
 const SETTINGS = { products: { butter: "Alsan" }, itemShops: { "lieblingskram": "dm" }, staples: [{ id: "s", name: "Hausmarke", amount: "", section: "sonstiges" as const, purchases: [], intervalDays: 7, active: true }], shops: ["Hofladen"] };
 

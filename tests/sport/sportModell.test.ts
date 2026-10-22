@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { at } from "../helpers";
-import { termin } from "../core/fakeBrowser";
+import { at, termin } from "../helpers";
 import {
   EMPTY_SPORT,
   celebrationText,

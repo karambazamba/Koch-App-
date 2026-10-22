@@ -6,8 +6,7 @@ import { createEmptyProfile, createPerson, type HouseholdProfile } from "@/lib/e
 import { loadProfile, saveProfile } from "@/lib/einstellungen/profileStore";
 import { loadWeekPlans, replaceWeekPlans, type WeekPlan } from "@/lib/essen/weekPlan";
 import { loadMealPlans, replaceMealPlans } from "@/lib/essen/mealPlan";
-import { at } from "../helpers";
-import { fakeWindow } from "./fenster";
+import { at, fakeWindow } from "../helpers";
 
 function familie(): HouseholdProfile {
   const lisa = { ...createPerson("erwachsen"), id: "a1", name: "Lisa", allergies: ["Nüsse"] };

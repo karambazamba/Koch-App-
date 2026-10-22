@@ -14,7 +14,7 @@ import {
   type HomeTileId,
 } from "@/lib/core/homeLayout";
 import { rowsOf, unitsOf } from "@/lib/core/homeUnits";
-import { fakeBrowser, noBrowser } from "./fakeBrowser";
+import { fakeWindow, noBrowser } from "../helpers";
 
 const visible = (tiles: HomeTile[]) => tiles.filter((t) => t.visible).map((t) => t.id);
 const sizeOf = (tiles: HomeTile[], id: HomeTileId) => tiles.find((t) => t.id === id)!.size;
@@ -212,7 +212,7 @@ describe("Startseite: Migration", () => {
 
 describe("Startseite: Speicher", () => {
   it("ohne Daten = Standard; Änderung speichern und zurücknehmen", async () => {
-    const win = fakeBrowser();
+    const win = fakeWindow();
     vi.resetModules();
     const home = await import("@/lib/core/homeLayout");
     expect(home.loadHomeTiles()).toEqual(home.DEFAULT_HOME);
@@ -224,7 +224,7 @@ describe("Startseite: Speicher", () => {
   });
 
   it("Lotte nutzt eine Kachel → sie kommt dazu (einmal)", async () => {
-    fakeBrowser();
+    fakeWindow();
     vi.resetModules();
     const home = await import("@/lib/core/homeLayout");
     expect(home.unlockHomeTile("sport")).toBe(true);
@@ -233,7 +233,7 @@ describe("Startseite: Speicher", () => {
   });
 
   it("Hinweis gesehen bleibt bei späteren Änderungen", async () => {
-    const win = fakeBrowser();
+    const win = fakeWindow();
     vi.resetModules();
     const home = await import("@/lib/core/homeLayout");
     home.markHomeTipSeen();

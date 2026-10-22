@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fakeBrowser, noBrowser } from "./fakeBrowser";
+import { fakeWindow, noBrowser } from "../helpers";
 
 beforeEach(() => {
   vi.resetModules();
@@ -121,7 +121,7 @@ describe("Avatar und Feier", () => {
 
   it("begrüßt einmal am Tag", async () => {
     vi.useFakeTimers();
-    const win = fakeBrowser();
+    const win = fakeWindow();
     const a = await import("@/lib/core/avatarState");
     expect(a.greetOncePerDay("2026-10-22")).toBe(true);
     expect(win.localStorage.getItem("wasgibts.avatargruss")).toBe("2026-10-22");

@@ -4,8 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { homeTilesFor, profileFrom, startState } from "@/lib/einstellungen/welcome";
 import { DEFAULT_HELPER } from "@/lib/einstellungen/profile";
 import { DEFAULT_HOME } from "@/lib/core/homeLayout";
-import { at } from "../helpers";
-import { fakeWindow } from "./fenster";
+import { at, fakeWindow } from "../helpers";
 
 describe("Standardwerte beim ersten Start", () => {
   it("Mia, Termine/Essen/Einkauf, mal so mal so, eine Person", () => {

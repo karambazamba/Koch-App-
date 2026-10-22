@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Testabdeckung, Bilder und Arbeitsordner von Helfern
+    "coverage/**",
+    ".bilder/**",
+    ".claude/**",
   ]),
 ]);
 

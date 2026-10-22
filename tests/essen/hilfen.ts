@@ -1,20 +1,11 @@
 // Gemeinsame Hilfen für die Essen-Tests: Speicher im Speicher, Rezepte, Profil, Vorrat.
-import { memoryStorage } from "../helpers";
+import { fakeWindow as sharedWindow } from "../helpers";
 import type { Recipe } from "@/lib/essen/cookbook";
 import type { PantryItem, PantryPlace } from "@/lib/vorrat/pantry";
 import { createEmptyProfile, type HouseholdProfile, type Person } from "@/lib/einstellungen/profile";
 
-/** window mit localStorage/sessionStorage (für Speicher-Module) – liefert den localStorage */
-export function fakeWindow(initial: Record<string, string> = {}): Storage {
-  const local = memoryStorage(initial);
-  (globalThis as { window?: unknown }).window = {
-    localStorage: local,
-    sessionStorage: memoryStorage(),
-    addEventListener() {},
-    removeEventListener() {},
-  };
-  return local;
-}
+/** Browser-Ersatz aus den gemeinsamen Hilfen – liefert nur den localStorage */
+export const fakeWindow = (initial: Record<string, string> = {}): Storage => sharedWindow(initial).localStorage;
 
 let counter = 0;
 

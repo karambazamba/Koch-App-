@@ -2,7 +2,7 @@
 // wird durch eine Funktion ersetzt, die einmal an- und abmeldet und den
 // aktuellen Stand liefert – so prüfen wir, was die Oberfläche sehen würde.
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { atFresh, fakeBrowser, noBrowser } from "./fakeBrowser";
+import { atFresh, fakeWindow, noBrowser } from "../helpers";
 
 vi.mock("@/lib/core/useExternalStore", () => ({
   useExternalStore: <T,>(subscribe: (fn: () => void) => () => void, get: () => T) => {
@@ -78,7 +78,7 @@ describe("Meldungen und Feier, wie die Oberfläche sie sieht", () => {
 
 describe("Gespeicherte Merker, wie die Oberfläche sie sieht", () => {
   it("Hinweis, Dunkel-Tipp, Beispiel-Tag", async () => {
-    fakeBrowser();
+    fakeWindow();
     const hints = await import("@/lib/core/hints");
     const dark = await import("@/lib/core/darkTip");
     const demo = await import("@/lib/core/demo");
@@ -94,7 +94,7 @@ describe("Gespeicherte Merker, wie die Oberfläche sie sieht", () => {
   });
 
   it("Bausteine und Startseite", async () => {
-    fakeBrowser();
+    fakeWindow();
     const f = await import("@/lib/core/features");
     const home = await import("@/lib/core/homeLayout");
     expect(f.useBausteine()).toEqual([]);
@@ -110,7 +110,7 @@ describe("Gespeicherte Merker, wie die Oberfläche sie sieht", () => {
   });
 
   it("heutiges Datum und Minuten", async () => {
-    fakeBrowser();
+    fakeWindow();
     await atFresh("2026-10-21T18:30");
     const t = await import("@/lib/core/now");
     expect(t.toIsoDate(t.useToday()!)).toBe("2026-10-21");

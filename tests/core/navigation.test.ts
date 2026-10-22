@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fakeBrowser, noBrowser, type FakeWindow } from "./fakeBrowser";
+import { fakeWindow, noBrowser, type FakeWindow } from "../helpers";
 
 type Nav = typeof import("@/lib/core/navigation");
 
@@ -16,7 +16,7 @@ function runFrames(max = 200) {
 }
 
 async function load(session: Record<string, string> = {}): Promise<Nav> {
-  win = fakeBrowser({}, session);
+  win = fakeWindow({}, session);
   vi.resetModules();
   return import("@/lib/core/navigation");
 }

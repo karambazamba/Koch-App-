@@ -1,7 +1,7 @@
 // Speicher von Tagesablauf, Zeit-Vorschau und Jetzt-Karte – die React-Abfragen
 // ohne React (useExternalStore liefert direkt den aktuellen Stand).
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fakeBrowser, noBrowser, type FakeWindow } from "../core/fakeBrowser";
+import { fakeWindow, noBrowser, type FakeWindow } from "../helpers";
 
 vi.mock("@/lib/core/useExternalStore", () => ({
   useExternalStore: <T,>(subscribe: (fn: () => void) => () => void, get: () => T) => {
@@ -12,7 +12,7 @@ vi.mock("@/lib/core/useExternalStore", () => ({
 
 let win: FakeWindow;
 async function load<T>(path: () => Promise<T>, local: Record<string, string> = {}, session: Record<string, string> = {}): Promise<T> {
-  win = fakeBrowser(local, session);
+  win = fakeWindow(local, session);
   vi.resetModules();
   return path();
 }

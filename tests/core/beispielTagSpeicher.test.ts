@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { atFresh, fakeBrowser, noBrowser, type FakeWindow } from "./fakeBrowser";
+import { atFresh, fakeWindow, noBrowser, type FakeWindow } from "../helpers";
 
 const KEY = "wasgibts.beispiel";
 let win: FakeWindow;
 const state = () => JSON.parse(win.localStorage.getItem(KEY) ?? "null");
 
 async function load(local: Record<string, string> = {}) {
-  win = fakeBrowser(local);
+  win = fakeWindow(local);
   vi.resetModules();
   await atFresh("2026-10-20T09:00");
   return import("@/lib/core/demo");

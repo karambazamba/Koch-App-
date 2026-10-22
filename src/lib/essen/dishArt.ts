@@ -147,7 +147,7 @@ const TOPPING_RULES: [Topping, RegExp][] = [
   ["burrata", /burrata/],
   ["mozzarella", /mozzarella/],
   ["feta", /feta|schafskase|hirtenkase/],
-  ["lachs", /lachs/],
+  ["lachs", /(?<!see)lachs/],
   ["thunfisch", /thunfisch/],
   ["fischstaebchen", /fischstabchen/],
   ["hack", /hack|bolognese|frikadell|bulette|chili con/],
@@ -283,7 +283,7 @@ function variantFor(form: DishForm, t: string, all: string): string | undefined 
     case "pizza":
       return /flammkuchen/.test(t) ? "flammkuchen" : "pizza";
     case "fisch":
-      return /stabchen/.test(all) ? "staebchen" : /lachs/.test(all) ? "lachs" : "filet";
+      return /stabchen/.test(all) ? "staebchen" : /(?<!see)lachs/.test(all) ? "lachs" : "filet";
     case "fleisch":
       return /hahnchen|huhn|pute/.test(t) ? "haehnchen" : /schnitzel|cordon/.test(t) ? "schnitzel" : /wurst/.test(t) ? "wurst" : "frikadellen";
     case "bowl":

@@ -3,8 +3,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ListItem, ShoppingListStore } from "@/lib/einkauf/listModel";
 import { basicsToStaples, migrateStore } from "@/lib/einkauf/listMigration";
-import { at } from "../helpers";
-import { fakeWindow } from "../kalender/hilfen";
+import { at, fakeWindow } from "../helpers";
 
 const W = "2026-10-19";
 const KEY = "wasgibts.einkaufsliste";

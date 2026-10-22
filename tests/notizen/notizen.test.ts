@@ -4,8 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { noteAnswer, noteFor, parseNoteCommand } from "@/lib/notizen/chat";
 import { addListItems, createNote, findNote, leisureIdea, noteEmoji, notePreview, removeNote, sanitizeNote, setPinned, sortNotes, upsertNote, type Note } from "@/lib/notizen/model";
 import { appendLine, isSchnellnotizTidyRequest, schnellnotizCommand, tidySchnellnotiz, withoutLines } from "@/lib/notizen/schnellnotiz";
-import { at } from "../helpers";
-import { fakeWindow } from "../kalender/hilfen";
+import { at, fakeWindow } from "../helpers";
 
 beforeEach(() => at("2026-10-20T08:00"));
 

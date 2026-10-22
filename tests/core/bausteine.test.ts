@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fakeBrowser, noBrowser } from "./fakeBrowser";
+import { fakeWindow, noBrowser } from "../helpers";
 
 const KEY = "wasgibts.funktionen";
 
 async function load(local: Record<string, string> = {}) {
-  const win = fakeBrowser(local);
+  const win = fakeWindow(local);
   vi.resetModules();
   const mod = await import("@/lib/core/features");
   return { win, ...mod };
@@ -86,7 +86,7 @@ describe("Bausteine: Migration", () => {
       "wasgibts.wuensche": JSON.stringify({ list: [] }),
       "familienkueche.haushaltsprofil": JSON.stringify({ likes: { Käse: 3 }, helperMode: "locker" }),
     };
-    const win = fakeBrowser(local);
+    const win = fakeWindow(local);
     vi.stubGlobal("localStorage", win.localStorage);
     vi.resetModules();
     const { featureOn } = await import("@/lib/core/features");
@@ -101,7 +101,7 @@ describe("Bausteine: Migration", () => {
       "wasgibts.kochbuch": JSON.stringify({ recipes: {} }),
       "familienkueche.haushaltsprofil": JSON.stringify({ neverAgain: [], helperMode: "normal" }),
     };
-    const win = fakeBrowser(local);
+    const win = fakeWindow(local);
     vi.stubGlobal("localStorage", win.localStorage);
     vi.resetModules();
     const { featureOn } = await import("@/lib/core/features");
@@ -109,7 +109,7 @@ describe("Bausteine: Migration", () => {
   });
 
   it("v1 mit Test-Schalter: 'Nie wieder' zählt als Kochstil", async () => {
-    const win = fakeBrowser({
+    const win = fakeWindow({
       [KEY]: JSON.stringify({ version: 1, legacy: true }),
       "familienkueche.haushaltsprofil": JSON.stringify({ neverAgain: ["Leber"] }),
       "wasgibts.ideen": JSON.stringify({ day: "x" }),
@@ -124,7 +124,7 @@ describe("Bausteine: Migration", () => {
 
 describe("Einmalige Hinweise und Dunkel-Tipp", () => {
   it("Hinweis einmal gezeigt = gemerkt (ohne Doppel)", async () => {
-    const win = fakeBrowser();
+    const win = fakeWindow();
     vi.resetModules();
     const { markHintSeen } = await import("@/lib/core/hints");
     markHintSeen("kachel-hinzufuegen");
@@ -133,19 +133,19 @@ describe("Einmalige Hinweise und Dunkel-Tipp", () => {
   });
 
   it("Hinweise: kaputte Liste wird zu leer", async () => {
-    const win = fakeBrowser({ "wasgibts.einmalhinweise": JSON.stringify({ version: 1, seen: "x" }) });
+    const win = fakeWindow({ "wasgibts.einmalhinweise": JSON.stringify({ version: 1, seen: "x" }) });
     vi.resetModules();
     const { markHintSeen } = await import("@/lib/core/hints");
     markHintSeen("kachel-hinzufuegen");
     expect(JSON.parse(win.localStorage.getItem("wasgibts.einmalhinweise")!).seen).toEqual(["kachel-hinzufuegen"]);
-    fakeBrowser({ "wasgibts.einmalhinweise": JSON.stringify({ version: 2 }) });
+    fakeWindow({ "wasgibts.einmalhinweise": JSON.stringify({ version: 2 }) });
     vi.resetModules();
     const again = await import("@/lib/core/hints");
     expect(() => again.markHintSeen("kachel-hinzufuegen")).not.toThrow();
   });
 
   it("Dunkel-Tipp erst ab dem 3. Tag, nie nach eigener Wahl, Antwort = nie wieder", async () => {
-    const win = fakeBrowser();
+    const win = fakeWindow();
     vi.resetModules();
     const { noteDarkTipStart, finishDarkTip, showDarkTip } = await import("@/lib/core/darkTip");
     finishDarkTip(); // noch nichts gemerkt → nichts zu tun
@@ -164,12 +164,12 @@ describe("Einmalige Hinweise und Dunkel-Tipp", () => {
   });
 
   it("Dunkel-Tipp: fremde Daten zählen nicht", async () => {
-    const win = fakeBrowser({ "wasgibts.dunkeltipp": JSON.stringify({ version: 1, since: 5 }) });
+    const win = fakeWindow({ "wasgibts.dunkeltipp": JSON.stringify({ version: 1, since: 5 }) });
     vi.resetModules();
     const { noteDarkTipStart } = await import("@/lib/core/darkTip");
     noteDarkTipStart("2026-10-22");
     expect(JSON.parse(win.localStorage.getItem("wasgibts.dunkeltipp")!).since).toBe("2026-10-22");
-    fakeBrowser({ "wasgibts.dunkeltipp": JSON.stringify({ version: 2 }) });
+    fakeWindow({ "wasgibts.dunkeltipp": JSON.stringify({ version: 2 }) });
     vi.resetModules();
     const again = await import("@/lib/core/darkTip");
     again.noteDarkTipStart("2026-10-23");

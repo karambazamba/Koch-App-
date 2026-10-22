@@ -469,7 +469,7 @@ export const GERICHT_TIPS: Tip[] = [
     id: "g-griessbrei-einrieseln",
     category: "gericht",
     title: "Kniff für Grießbrei",
-    match: /grießbrei|griessbrei|grießpudding|griesspudding|grießschnitten|\bgrieß\b/i,
+    match: /grießbrei|griessbrei|grießpudding|griesspudding|grießschnitten|\bgrieß(?![a-zäöüß])/i,
     text: "Den Grieß langsam in die heiße Milch rieseln lassen und dabei mit dem Schneebesen rühren. So gibt’s keine Klümpchen.",
     detail:
       "Kommt der Grieß auf einmal hinein, klumpt er sofort zusammen. Danach den Topf vom Herd nehmen und kurz quellen lassen.",

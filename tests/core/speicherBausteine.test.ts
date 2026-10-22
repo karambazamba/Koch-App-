@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { at } from "../helpers";
-import { atFresh, fakeBrowser, noBrowser } from "./fakeBrowser";
+import { at, atFresh, fakeWindow, noBrowser } from "../helpers";
 import { createLocalStore, readRaw, writeRaw } from "@/lib/core/localStore";
 import { addDays, berlinTime, fromIsoDate, now, nowIso, setNowForTests, toIsoDate, todayIso } from "@/lib/core/now";
 import { createEntry, updateEntry } from "@/lib/core/entries";
@@ -23,7 +22,7 @@ describe("Lokaler Speicher", () => {
   };
 
   it("lädt, migriert einmal und schreibt den neuen Stand zurück", () => {
-    const win = fakeBrowser({ "wasgibts.sport": JSON.stringify({ version: 1, n: 4 }) });
+    const win = fakeWindow({ "wasgibts.sport": JSON.stringify({ version: 1, n: 4 }) });
     const store = createLocalStore("wasgibts.sport", migrate);
     const first = store.load();
     expect(first).toEqual({ version: 2, n: 40 });
@@ -33,7 +32,7 @@ describe("Lokaler Speicher", () => {
   });
 
   it("speichern benachrichtigt, löschen auch; Abmelden beendet das", () => {
-    const win = fakeBrowser();
+    const win = fakeWindow();
     const store = createLocalStore("wasgibts.sport", migrate);
     const fn = vi.fn();
     const off = store.subscribe(fn);
@@ -53,7 +52,7 @@ describe("Lokaler Speicher", () => {
   });
 
   it("kaputte Daten oder gesperrter Speicher → null, ohne Fehler", () => {
-    const win = fakeBrowser({ "wasgibts.sport": "{kaputt" });
+    const win = fakeWindow({ "wasgibts.sport": "{kaputt" });
     const store = createLocalStore("wasgibts.sport", migrate);
     expect(store.load()).toBeNull();
     win.localStorage.getItem = () => {
@@ -64,7 +63,7 @@ describe("Lokaler Speicher", () => {
   });
 
   it("einfache Werte lesen/schreiben, lokal und in der Sitzung; Fehler still", () => {
-    const win = fakeBrowser();
+    const win = fakeWindow();
     writeRaw("wasgibts.avatargruss", "2026-10-22");
     writeRaw("wasgibts.zeitvorschau", "x", "session");
     expect(readRaw("wasgibts.avatargruss")).toBe("2026-10-22");
@@ -98,7 +97,7 @@ describe("Zeit", () => {
     setNowForTests(() => new Date("2026-05-01T08:00:00Z"));
     expect(now().toISOString()).toBe("2026-05-01T08:00:00.000Z");
     setNowForTests(null);
-    const win = fakeBrowser() as unknown as { __WASGIBTS_NOW__?: string };
+    const win = fakeWindow() as unknown as { __WASGIBTS_NOW__?: string };
     win.__WASGIBTS_NOW__ = "2026-10-21T18:00:00";
     expect(toIsoDate(now())).toBe("2026-10-21");
     win.__WASGIBTS_NOW__ = "";
@@ -147,10 +146,10 @@ describe("Einträge und App-Angaben", () => {
 });
 
 describe("Aktivität (Ohne Druck)", () => {
-  const read = (win: ReturnType<typeof fakeBrowser>) => JSON.parse(win.localStorage.getItem("wasgibts.aktivitaet")!);
+  const read = (win: ReturnType<typeof fakeWindow>) => JSON.parse(win.localStorage.getItem("wasgibts.aktivitaet")!);
 
   it("nach 3+ Tagen weg: einmal Willkommen zurück fällig", async () => {
-    const win = fakeBrowser();
+    const win = fakeWindow();
     vi.resetModules();
     const a = await import("@/lib/core/activity");
     a.recordOpen("2026-10-01");
@@ -163,7 +162,7 @@ describe("Aktivität (Ohne Druck)", () => {
   });
 
   it("eigenes Tun und einmalige Angebote merken", async () => {
-    const win = fakeBrowser({ "wasgibts.aktivitaet": JSON.stringify({ version: 1, proactive: "x", asked: null }) });
+    const win = fakeWindow({ "wasgibts.aktivitaet": JSON.stringify({ version: 1, proactive: "x", asked: null }) });
     vi.resetModules();
     const a = await import("@/lib/core/activity");
     a.noteUserAction("2026-10-22");
@@ -175,12 +174,12 @@ describe("Aktivität (Ohne Druck)", () => {
   });
 
   it("fremde Version wird ignoriert", async () => {
-    const win = fakeBrowser({ "wasgibts.aktivitaet": JSON.stringify({ version: 2, lastOpen: "2026-01-01" }) });
+    const win = fakeWindow({ "wasgibts.aktivitaet": JSON.stringify({ version: 2, lastOpen: "2026-01-01" }) });
     vi.resetModules();
     const a = await import("@/lib/core/activity");
     a.markAsked("x");
     expect(read(win)).toEqual({ version: 1, proactive: {}, asked: { x: true } });
-    fakeBrowser({ "wasgibts.aktivitaet": "7" });
+    fakeWindow({ "wasgibts.aktivitaet": "7" });
     a.recordOpen("2026-10-22");
   });
 });

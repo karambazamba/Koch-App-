@@ -3,8 +3,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { clearProfile, loadProfile, migrateHelper, migrateProfile, saveProfile, subscribeProfile } from "@/lib/einstellungen/profileStore";
 import { DEFAULT_HELPER, createEmptyProfile } from "@/lib/einstellungen/profile";
-import { at } from "../helpers";
-import { fakeWindow } from "./fenster";
+import { at, fakeWindow } from "../helpers";
 
 const KEY = "familienkueche.haushaltsprofil";
 

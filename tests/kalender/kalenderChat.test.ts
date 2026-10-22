@@ -6,8 +6,7 @@ import { calendarChat, draftSummary } from "@/lib/kalender/chat";
 import { itemsForDay, type Aufgabe, type CalendarEntry, type Termin } from "@/lib/kalender/model";
 import { dueReminder } from "@/lib/kalender/reminders";
 import { greeting } from "@/lib/kalender/summary";
-import { at } from "../helpers";
-import { aufgabe, fakeWindow, termin } from "./hilfen";
+import { at, aufgabe, fakeWindow, termin } from "../helpers";
 
 const TODAY = "2026-10-20";
 const STAMP = "2026-10-20T10:00:00.000Z";
