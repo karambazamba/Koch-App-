@@ -1917,3 +1917,11 @@ Fehler in `docs/aufraeumen-nachher.md`.
   grauer, durchgestrichener Mikro-Knopf an allen Mikro-Stellen. Bugfix: kein
   hängender Stopp-Knopf mehr nach einem Mikro-Fehler. Neue Tokens
   `--app-warn-soft`/`--app-warn-ink`.
+
+## Termin eintragen – ein Satz genügt (Tafel 26, v0.57.0)
+
+- Das Uhrzeit-Feld wurde von der iPhone-Tastatur verdeckt, und man sah nicht,
+  was erkannt wurde. Jetzt: ein Satz („Mittwoch 12.30 Zahnarzt“), zwei Pillen
+  für Tag und Uhrzeit zum Korrigieren, Zeit-Rad, ohne Uhrzeit ganztägig mit
+  Vorschlägen, Hinweis bei schon vergangener Zeit, Leiste mit „Eintragen“
+  klebt über der Tastatur. Neuer gemeinsamer Parser `kalender/sentence.ts`.

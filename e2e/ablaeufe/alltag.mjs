@@ -15,8 +15,8 @@ export const eintragen = async (page, check) => {
   check(await page.getByText("Was möchtest du eintragen?").isVisible(), "Eintragen-Fenster");
   await page.getByRole("button", { name: /^Termin/ }).first().click();
   await page.waitForTimeout(400);
-  await page.getByRole("textbox").first().fill("Friseur");
-  await page.locator('input[type="time"]').first().fill("14:00");
+  await page.getByRole("textbox").first().fill("Friseur 14:00");
+  await page.waitForTimeout(400);
   await page.getByRole("dialog").getByRole("button", { name: "Eintragen" }).last().click();
   await page.waitForTimeout(600);
   const entries = (await store(page, "wasgibts.eintraege")).entries;

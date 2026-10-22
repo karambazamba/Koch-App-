@@ -108,10 +108,28 @@ die Aufgaben-Seite und das Eintragen-Fenster.
 ### Eintragen
 - Ein Fenster „Was möchtest du eintragen?“ (`AddSheet`): Termin · Aufgabe ·
   Notiz · Einkauf, dazu „einfach der Begleitung sagen“ (Mikrofon).
-- „Neuer Termin“ (`TerminQuickAdd`): Textfeld mit Mikrofon; Tag und Uhrzeit
-  aus dem Text setzen die Chips („Morgen 19:30 Elternabend“). Wann ·
-  Uhrzeit (häufige zuerst) · Für wen (Avatare) · Familie | Arbeit ·
-  „Mehr Optionen“ (Ort, Erinnerung). Ohne Uhrzeit: „Dann lieber als Aufgabe“.
+- „Neuer Termin“ (`TerminQuickAdd`, Tafel 26) – ein Satz genügt: Text oder
+  Sprache ist der Hauptweg („Mittwoch 12.30 Zahnarzt“). Gemeinsamer Parser
+  `src/lib/kalender/sentence.ts` (`readSentence`): Zeiten „12:30“, „12.30“,
+  „12 Uhr 30“, „12 Uhr“, „um 4“ (→ 16:00), „halb eins“ (→ 12:30), „viertel
+  nach/vor“, „mittags“, „abends“; Tage „28.10.“, „28.10“, „28.10.2026“, „28.
+  Oktober“, heute/morgen/übermorgen, Wochentage, „nächsten Mittwoch“, „in 3
+  Tagen“, „nächste Woche“ (Montag); vergangenes Datum ohne Jahr = nächstes
+  Jahr. Erkennung 250 ms nach dem Tippen, nach dem Diktat sofort (nie
+  automatisch speichern). Erkannte Wörter orange hinterlegt (Ebene hinter dem
+  Feld) und beim Speichern aus dem Titel entfernt.
+- Zwei Pillen [Tag ▾] [Uhrzeit ▾] zeigen das Erkannte (mit Wert orange
+  getönt, kurzes Ploppen, „✓ Erkannt aus deinem Text“) und dienen nur zum
+  Korrigieren: Tag → Heute, Morgen, Wochentage, „Datum wählen“; Uhrzeit →
+  Zeit-Rad (`ui/TimeWheel`, 5-Minuten-Schritte) oder „ganztägig“. Von Hand
+  gewählt schlägt Automatik, „×“ = wieder automatisch.
+- Ohne Uhrzeit: Termin ganztägig, darunter „Heute noch frei“ (ab der nächsten
+  halben Stunde, ohne belegte Zeiten) bzw. „Vorschläge“ (08:00 · 12:00 ·
+  15:00 · 19:30) + „Andere“. Zeit heute schon vorbei → gelber Hinweis
+  „12:00 ist heute schon vorbei.“ mit „Morgen 12:00“ / „Trotzdem heute“.
+- Unten klebt die Leiste über der Tastatur (`useKeyboardInset`, `Sheet`
+  passt seine Höhe an): links „Familie · Erinnerung 30 Min“ (= mehr Optionen:
+  Für wen, Familie | Arbeit, Ort, Erinnerung), rechts „Eintragen“.
 - Aufgabe (`TaskQuickAdd`): Heute · Morgen · Diese Woche · Irgendwann,
   Familie | Arbeit, „+ Uhrzeit oder Erinnerung“; Enter lässt das Fenster offen.
 - Bearbeiten (`EntryForm`): „Abbrechen | Titel | Sichern“, gruppierte Zeilen,
@@ -200,3 +218,8 @@ die Aufgaben-Seite und das Eintragen-Fenster.
 - `tests/core/sortierung.test.ts` („Termine und Aufgaben“),
   `tests/begleitung/werkzeugeKalender.test.ts`.
 - Durchklick `e2e/ablaeufe/alltag.mjs`: `eintragen`, `kalender`.
+- `tests/kalender/einSatz.test.ts`: alle Formen von `readSentence`,
+  Titelbereinigung, Vorschläge, „schon vorbei“. Durchklick `terminSatz`
+  (`e2e/ablaeufe/termin.mjs`): „Mittwoch 12.30 …“, „28.10. …“ ganztägig,
+  „Hallo“, schon vorbei, Hand schlägt Automatik, SE mit Tastatur (380 px)
+  ohne Scrollen. Bilder: `termin-satz`, `termin-frei`, `termin-vorbei`.

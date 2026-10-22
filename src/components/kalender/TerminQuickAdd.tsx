@@ -1,21 +1,27 @@
 "use client";
 
-// "+" bei Termine: Fenster "Neuer Termin" mit Textfeld (Mikrofon rechts),
-// WANN (Heute · Morgen · nächster Wochentag · Datum), UHRZEIT (häufige zuerst ·
-// andere), FÜR WEN (Avatare der Familie), Familie | Arbeit und "Mehr Optionen"
-// (Ort, Erinnerung – Standard 30 Min vorher). Steht Tag/Uhrzeit im Text
-// ("Morgen 19:30 Elternabend"), werden die Chips gesetzt und der Titel
-// bereinigt. Ohne Uhrzeit: "Dann lieber als Aufgabe".
+// "+" bei Termine – ein Satz genügt (Tafel 26): Text oder Sprache ist der
+// Hauptweg („Mittwoch 12.30 Zahnarzt“). Darunter zwei Pillen [Tag] [Uhrzeit]
+// zeigen, was erkannt wurde, und dienen nur zum Korrigieren (Tag: Heute,
+// Morgen, Wochentage, Datum; Uhrzeit: Zeit-Rad oder ganztägig). Ohne Uhrzeit
+// Vorschläge („Heute noch frei“). Erkannte Wörter sind im Feld orange
+// hinterlegt und verschwinden beim Speichern aus dem Titel. Von Hand geändert
+// schlägt Automatik („×“ = wieder automatisch). Zeit schon vorbei → Hinweis.
+// Unten klebt die Leiste („Familie · Erinnerung 30 Min“ = mehr Optionen,
+// „Eintragen“) über der Tastatur.
 
-import { useMemo, useRef, useState } from "react";
-import { CalendarDays, Clock, Mic, MicOff, Square } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { CalendarDays, Check, ChevronDown, Clock, Mic, MicOff, Square, X } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
+import { TimeWheel } from "@/components/ui/TimeWheel";
 import { INPUT_BASE, LABEL, buttonClass, chipClass } from "@/components/ui/styles";
 import { createEntry, type Room } from "@/lib/core/entries";
-import { sanitizeEntry, upsertEntry, type CalendarEntry, type Reminder } from "@/lib/kalender/model";
-import { dayChipLabel, frequentTimes, quickTaskData, readTerminText, terminDay } from "@/lib/kalender/quick";
+import { REMINDERS, itemsForDay, sanitizeEntry, upsertEntry, type CalendarEntry, type Reminder } from "@/lib/kalender/model";
+import { dayChipLabel, readTerminText } from "@/lib/kalender/quick";
+import { isPast, readSentence, timeLabel, timeSuggestions, type Sentence } from "@/lib/kalender/sentence";
 import { useEntries } from "@/lib/kalender/store";
-import { addDays, todayIso } from "@/lib/core/now";
+import { addDays, now, todayIso } from "@/lib/core/now";
+import { useKeyboardInset } from "@/lib/core/useMobileKeyboard";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 import { useSpeechInput } from "@/lib/begleitung/useSpeechInput";
 import { act } from "@/components/heute/actions";
@@ -31,72 +37,119 @@ const REMINDER_CHIPS: { value: Reminder; label: string }[] = [
   { value: "vorabend", label: "am Vortag" },
 ];
 
+/** Pille: leer/automatisch weiß, mit Wert orange getönt; kurzes Ploppen bei neuem Wert */
+const pill = (filled: boolean, pop: boolean) =>
+  `hit relative inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3.5 text-[15px] font-semibold transition-transform duration-200 ${pop ? "scale-[1.04]" : ""} ${filled ? "border-accent/40 bg-accent-soft text-accent-strong" : "border-line bg-surface text-ink"}`;
+
+/** Text mit hinterlegten Stellen (liegt genau hinter dem Eingabefeld) */
+function Highlight({ text, spans, shift }: { text: string; spans: Sentence["spans"]; shift: number }) {
+  const parts: React.ReactNode[] = [];
+  let at = 0;
+  spans.forEach((s, i) => {
+    if (s.start > at) parts.push(text.slice(at, s.start));
+    parts.push(
+      <mark key={i} className="bg-accent-soft text-transparent">
+        {text.slice(s.start, s.end)}
+      </mark>,
+    );
+    at = s.end;
+  });
+  parts.push(text.slice(at));
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden px-4 text-base leading-[3rem] whitespace-pre text-transparent" aria-hidden>
+      <div style={{ transform: `translateX(${-shift}px)` }}>{parts}</div>
+    </div>
+  );
+}
+
 export function TerminQuickAdd({ onClose, defaultDate }: { onClose: () => void; defaultDate?: string }) {
   const today = todayIso();
   const entries = useEntries();
   const [text, setText] = useState("");
-  const [date, setDate] = useState<string | null>(null);
-  const [time, setTime] = useState<string | null>(null);
+  const [read, setRead] = useState<Sentence>({ title: "", spans: [] });
+  const [manualDate, setManualDate] = useState<string | null>(null);
+  /** von Hand: Uhrzeit oder "" = ganztägig; null = automatisch */
+  const [manualTime, setManualTime] = useState<string | null>(null);
+  const [picker, setPicker] = useState<"tag" | "zeit" | null>(null);
+  const [wheel, setWheel] = useState("12:00");
+  const [pastOk, setPastOk] = useState(false);
   const [room, setRoom] = useState<Room | null>(null);
   const [reminder, setReminder] = useState<Reminder>("30");
-  const [askTask, setAskTask] = useState(false);
   const [who, setWho] = useState<string[]>([]);
   const [place, setPlace] = useState("");
   const [more, setMore] = useState(false);
+  const [pop, setPop] = useState(false);
+  const [shift, setShift] = useState(0);
   const profile = useProfile();
   const persons = sortBy((profile?.persons ?? []).filter((p) => p.name.trim()), ...PERSONS);
-  const dateInput = useRef<HTMLInputElement>(null);
-  const timeInput = useRef<HTMLInputElement>(null);
   const workRoom = useWorkRoom() || room === "arbeit";
-  const read = readTerminText(text, today);
-  // Selbst gewählt geht vor; sonst was im Text steht; sonst der Standard
-  const day = terminDay(text, read.date, date, defaultDate, today);
-  const clock = time ?? read.time ?? null;
-  const where: Room = room ?? read.room;
-  const times = useMemo(() => frequentTimes((entries ?? []).flatMap((e) => (e.typ === "termin" ? [e.data.start] : []))), [entries]);
-  const later = addDays(today, 2);
-  const dayChips = [
-    { iso: today, label: "Heute" },
-    { iso: addDays(today, 1), label: "Morgen" },
-    { iso: later, label: dayChipLabel(later, true) },
-  ];
-  const otherDay = !dayChips.some((c) => c.iso === day);
-  const otherTime = Boolean(clock && !times.includes(clock));
+  const inset = useKeyboardInset();
+  const dateInput = useRef<HTMLInputElement>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastRead = useRef<Sentence>({ title: "", spans: [] });
 
-  // Neuer Text mit eigenem Tag/Uhrzeit geht vor einer früheren Wahl
-  const change = (value: string) => {
-    const next = readTerminText(value, today);
-    if (next.date && next.date !== read.date) setDate(null);
-    if (next.time && next.time !== read.time) setTime(null);
-    setAskTask(false);
-    setText(value);
+  const extra = readTerminText(text, today);
+  const day = manualDate ?? read.date ?? defaultDate ?? today;
+  const clock = manualTime !== null ? manualTime || null : (read.time ?? null);
+  const where: Room = room ?? extra.room;
+  const title = (extra.repeat ? extra.title : read.title).trim();
+  const at = now();
+  const nowMin = at.getHours() * 60 + at.getMinutes();
+  const recognized = Boolean((read.date && manualDate === null) || (read.time && manualTime === null));
+  const past = isPast(day, clock, today, nowMin) && !pastOk;
+  const busy = (entries ? itemsForDay(entries, day, today) : []).flatMap((i) => (i.time ? [Number(i.time.slice(0, 2)) * 60 + Number(i.time.slice(3, 5))] : []));
+  const suggestions = timeSuggestions(day, today, nowMin, 6)
+    .filter((t) => !busy.some((b) => Math.abs(b - (Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5)))) < 45))
+    .slice(0, 4);
+
+  // Erkennung: beim Tippen kurz verzögert, nach dem Sprechen sofort
+  const reread = (value: string, instant = false) => {
+    if (timer.current) clearTimeout(timer.current);
+    const run = () => {
+      const next = readSentence(value, today);
+      const prev = lastRead.current;
+      lastRead.current = next;
+      setRead(next);
+      if (next.date !== prev.date || next.time !== prev.time) {
+        setPop(true);
+        setTimeout(() => setPop(false), 220);
+      }
+    };
+    if (instant) run();
+    else timer.current = setTimeout(run, 250);
   };
-  const speech = useSpeechInput({ onTranscript: change, onEnd: (t) => t && change(t) });
+  useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
+  const change = (value: string, instant = false) => {
+    setText(value);
+    setPastOk(false);
+    reread(value, instant);
+  };
+  // Nach dem Diktat NICHT speichern – „Eintragen“ bleibt der letzte Tipp
+  const speech = useSpeechInput({ onTranscript: (t) => change(t, true), onEnd: (t) => t && change(t, true) });
 
   const save = () => {
-    const title = read.title.trim();
-    if (!title) return;
-    if (!clock) return setAskTask(true);
+    if (!title || past) return;
     speech.reset();
-    const entry = sanitizeEntry(createEntry("termin", { title: title.slice(0, 120), date: day, start: clock, reminder, repeat: read.repeat ?? null, ...(read.label ? { label: read.label } : {}), ...(who.length ? { who } : {}), ...(place.trim() ? { place: place.trim().slice(0, 120) } : {}) }, { raum: where }) as CalendarEntry);
-    if (!entry) return;
-    act((list) => upsertEntry(list, entry), entry.data.title);
-    onClose();
-  };
-  const saveAsTask = () => {
-    const title = read.title.trim();
-    if (!title) return;
-    speech.reset();
-    const entry = sanitizeEntry(createEntry("aufgabe", quickTaskData(title, { date: day }, today, { label: read.label }), { raum: where }) as CalendarEntry);
+    const entry = sanitizeEntry(
+      createEntry(
+        "termin",
+        { title: title.slice(0, 120), date: day, start: clock ?? "", reminder: clock ? reminder : "aus", repeat: extra.repeat ?? null, ...(extra.label ? { label: extra.label } : {}), ...(who.length ? { who } : {}), ...(place.trim() ? { place: place.trim().slice(0, 120) } : {}) },
+        { raum: where },
+      ) as CalendarEntry,
+    );
     if (!entry) return;
     act((list) => upsertEntry(list, entry), entry.data.title);
     onClose();
   };
 
+  const dayLabel = day === today ? "Heute" : day === addDays(today, 1) ? "Morgen" : dayChipLabel(day);
+  const reminderShort = (REMINDERS.find((r) => r.value === reminder)?.short ?? "").replace(/ vorher$/, "");
+  const days = Array.from({ length: 7 }, (_, i) => addDays(today, i));
+
   return (
-    <Sheet title="Neuer Termin" onClose={onClose}>
+    <Sheet title="Neuer Termin" onClose={onClose} inset={inset}>
       <form
-        className="flex flex-col gap-4 pb-2"
+        className="flex flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault();
           save();
@@ -104,15 +157,19 @@ export function TerminQuickAdd({ onClose, defaultDate }: { onClose: () => void; 
       >
         <MicStrip />
         <div className="flex items-center gap-2">
-          <input
-            value={speech.listening ? speech.interim || text : text}
-            onChange={(e) => change(e.target.value)}
-            placeholder="z. B. Morgen 19:30 Elternabend"
-            aria-label="Termin"
-            autoFocus
-            enterKeyHint="done"
-            className={`${INPUT_BASE} h-12 min-w-0 flex-1 px-4`}
-          />
+          <div className="relative min-w-0 flex-1">
+            {!speech.listening && <Highlight text={text} spans={read.spans} shift={shift} />}
+            <input
+              value={speech.listening ? speech.interim || text : text}
+              onChange={(e) => change(e.target.value)}
+              onScroll={(e) => setShift(e.currentTarget.scrollLeft)}
+              placeholder="z. B. Mittwoch 12.30 Zahnarzt"
+              aria-label="Termin"
+              autoFocus
+              enterKeyHint="done"
+              className={`${INPUT_BASE} relative h-12 w-full bg-transparent px-4`}
+            />
+          </div>
           {speech.supported !== false && (
             <button
               type="button"
@@ -125,115 +182,168 @@ export function TerminQuickAdd({ onClose, defaultDate }: { onClose: () => void; 
             </button>
           )}
         </div>
-        {read.title && read.title !== text.trim() && (
-          <p className="-mt-2 px-1 text-sm text-muted">
-            Titel: {read.title}
-            {read.repeat ? " · wiederkehrend" : ""}
+
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="relative inline-flex">
+            <button type="button" onClick={() => setPicker("tag")} className={pill(day !== today || manualDate !== null || Boolean(read.date), pop && manualDate === null && Boolean(read.date))} aria-label={`Tag: ${dayLabel} – ändern`}>
+              <CalendarDays className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+              {dayLabel}
+              {manualDate === null && <ChevronDown className="h-4 w-4" strokeWidth={2.25} aria-hidden />}
+            </button>
+            {manualDate !== null && (
+              <button type="button" onClick={() => setManualDate(null)} aria-label="Tag wieder automatisch" className="hit -ml-7 flex h-11 w-7 items-center justify-center text-accent-strong">
+                <X className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+              </button>
+            )}
+          </span>
+          <span className="relative inline-flex">
+            <button
+              type="button"
+              onClick={() => (setWheel(clock ?? suggestions[0] ?? "12:00"), setPicker("zeit"))}
+              className={pill(Boolean(clock), pop && manualTime === null && Boolean(read.time))}
+              aria-label={`Uhrzeit: ${clock ? timeLabel(clock) : "ganztägig"} – ändern`}
+            >
+              <Clock className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+              {clock ? timeLabel(clock) : text.trim() ? "ganztägig" : "Uhrzeit"}
+              {manualTime === null && <ChevronDown className="h-4 w-4" strokeWidth={2.25} aria-hidden />}
+            </button>
+            {manualTime !== null && (
+              <button type="button" onClick={() => setManualTime(null)} aria-label="Uhrzeit wieder automatisch" className="hit -ml-7 flex h-11 w-7 items-center justify-center text-accent-strong">
+                <X className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+              </button>
+            )}
+          </span>
+        </div>
+        {recognized && (
+          <p className="-mt-1 flex items-center gap-1 px-1 text-[13px] font-semibold text-good-ink" role="status">
+            <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden /> Erkannt aus deinem Text
           </p>
         )}
 
-        <div className="flex flex-col gap-2">
-          <span className={LABEL}>Wann</span>
-          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Wann">
-            {dayChips.map((c) => (
-              <button key={c.iso} type="button" role="radio" aria-checked={day === c.iso} onClick={() => setDate(c.iso)} className={chipClass(day === c.iso)}>
-                {c.label}
+        {past && (
+          <div className="flex flex-col gap-2 rounded-field bg-warn-soft p-3" role="status">
+            <p className="text-[15px] font-semibold text-warn-ink">{timeLabel(clock!)} ist heute schon vorbei.</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => setManualDate(addDays(today, 1))} className={buttonClass("secondary", "sm")}>
+                Morgen {timeLabel(clock!)}
               </button>
-            ))}
-            <button type="button" role="radio" aria-checked={otherDay} onClick={() => dateInput.current?.showPicker?.() ?? dateInput.current?.focus()} className={`relative ${chipClass(otherDay)}`}>
-              <CalendarDays className="h-4 w-4" strokeWidth={2} aria-hidden />
-              {otherDay ? dayChipLabel(day) : "Datum"}
-              <input ref={dateInput} type="date" min={today} value={day} onChange={(e) => e.target.value && setDate(e.target.value)} aria-label="Datum wählen" className="absolute inset-0 opacity-0" tabIndex={-1} />
-            </button>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <span className={LABEL}>Uhrzeit</span>
-          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Uhrzeit">
-            {times.map((t) => (
-              <button key={t} type="button" role="radio" aria-checked={clock === t} onClick={() => (setTime(t), setAskTask(false))} className={chipClass(clock === t)}>
-                {t}
+              <button type="button" onClick={() => setPastOk(true)} className={buttonClass("ghost", "sm")}>
+                Trotzdem heute
               </button>
-            ))}
-            <button type="button" role="radio" aria-checked={otherTime} onClick={() => timeInput.current?.showPicker?.() ?? timeInput.current?.focus()} className={`relative ${chipClass(otherTime)}`}>
-              <Clock className="h-4 w-4" strokeWidth={2} aria-hidden />
-              {otherTime ? clock : "andere"}
-              <input ref={timeInput} type="time" value={clock ?? ""} onChange={(e) => e.target.value && (setTime(e.target.value), setAskTask(false))} aria-label="Uhrzeit wählen" className="absolute inset-0 opacity-0" tabIndex={-1} />
-            </button>
-          </div>
-        </div>
-
-        {persons.length > 1 && (
-          <div className="flex flex-col gap-2">
-            <span className={LABEL}>Für wen</span>
-            <div className="flex flex-wrap gap-3" role="group" aria-label="Für wen">
-              {persons.map((p) => {
-                const on = who.includes(p.id);
-                return (
-                  <button key={p.id} type="button" aria-pressed={on} onClick={() => setWho((w) => (on ? w.filter((x) => x !== p.id) : [...w, p.id]))} className="flex w-14 flex-col items-center gap-1">
-                    <span className={`rounded-full p-0.5 ${on ? "ring-2 ring-accent" : "opacity-60"}`}>
-                      <PersonAvatar name={p.name} size={40} />
-                    </span>
-                    <span className={`w-full truncate text-center text-[12px] ${on ? "font-bold text-ink" : "text-muted"}`}>{p.name}</span>
-                  </button>
-                );
-              })}
             </div>
           </div>
         )}
 
-        {workRoom && (
-          <div className="flex flex-col gap-2">
-            <span className={LABEL}>Familie oder Arbeit</span>
-            <div className="flex gap-2" role="radiogroup" aria-label="Familie oder Arbeit">
-              {(["familie", "arbeit"] as const).map((r) => (
-                <button key={r} type="button" role="radio" aria-checked={where === r} onClick={() => setRoom(r)} className={chipClass(where === r)}>
-                  <span className={`h-2.5 w-2.5 rounded-full ${r === "arbeit" ? "bg-work" : "bg-accent"}`} aria-hidden />
-                  {r === "familie" ? "Familie" : "Arbeit"}
+        {!clock && (
+          <div className="flex flex-col gap-1.5">
+            <span className={LABEL}>{day === today ? "Heute noch frei" : "Vorschläge"}</span>
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Zeit-Vorschläge">
+              {suggestions.map((t) => (
+                <button key={t} type="button" onClick={() => setManualTime(t)} className={chipClass(false)}>
+                  {timeLabel(t)}
                 </button>
               ))}
+              <button type="button" onClick={() => (setWheel(suggestions[0] ?? "12:00"), setPicker("zeit"))} className={chipClass(false)}>
+                Andere
+              </button>
             </div>
           </div>
         )}
 
-        {more ? (
-          <>
+        {more && (
+          <div className="flex flex-col gap-3 rounded-card bg-surface p-3">
+            {persons.length > 1 && (
+              <div className="flex flex-col gap-2">
+                <span className={LABEL}>Für wen</span>
+                <div className="flex flex-wrap gap-3" role="group" aria-label="Für wen">
+                  {persons.map((p) => {
+                    const on = who.includes(p.id);
+                    return (
+                      <button key={p.id} type="button" aria-pressed={on} onClick={() => setWho((w) => (on ? w.filter((x) => x !== p.id) : [...w, p.id]))} className="flex w-14 flex-col items-center gap-1">
+                        <span className={`rounded-full p-0.5 ${on ? "ring-2 ring-accent" : "opacity-60"}`}>
+                          <PersonAvatar name={p.name} size={40} />
+                        </span>
+                        <span className={`w-full truncate text-center text-[12px] ${on ? "font-bold text-ink" : "text-muted"}`}>{p.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {workRoom && (
+              <div className="flex flex-col gap-2">
+                <span className={LABEL}>Familie oder Arbeit</span>
+                <div className="flex gap-2" role="radiogroup" aria-label="Familie oder Arbeit">
+                  {(["familie", "arbeit"] as const).map((r) => (
+                    <button key={r} type="button" role="radio" aria-checked={where === r} onClick={() => setRoom(r)} className={chipClass(where === r)}>
+                      <span className={`h-2.5 w-2.5 rounded-full ${r === "arbeit" ? "bg-work" : "bg-accent"}`} aria-hidden />
+                      {r === "familie" ? "Familie" : "Arbeit"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <label className="flex flex-col gap-2">
               <span className={LABEL}>Ort</span>
               <input value={place} onChange={(e) => setPlace(e.target.value)} placeholder="z. B. Praxis am Markt" className={`${INPUT_BASE} h-12 px-4`} />
             </label>
             <div className="flex flex-col gap-2">
-          <span className={LABEL}>Erinnerung</span>
-          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Erinnerung">
-            {REMINDER_CHIPS.map((r) => (
-              <button key={r.value} type="button" role="radio" aria-checked={reminder === r.value} onClick={() => setReminder(r.value)} className={chipClass(reminder === r.value)}>
-                {r.label}
-              </button>
-            ))}
+              <span className={LABEL}>Erinnerung</span>
+              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Erinnerung">
+                {REMINDER_CHIPS.map((r) => (
+                  <button key={r.value} type="button" role="radio" aria-checked={reminder === r.value} onClick={() => setReminder(r.value)} className={chipClass(reminder === r.value)}>
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-
-          </>
-        ) : (
-          <button type="button" onClick={() => setMore(true)} className="hit -my-1 self-start text-[15px] font-semibold text-accent-strong">
-            Mehr Optionen
-          </button>
         )}
 
-        {askTask ? (
-          <div className="flex flex-col gap-2 rounded-card bg-accent-soft p-3" role="status">
-            <p className="text-[15px] text-accent-strong">Ohne Uhrzeit? Dann lieber als Aufgabe.</p>
-            <button type="button" onClick={saveAsTask} className={buttonClass("primary", "sm")}>
-              Als Aufgabe speichern
-            </button>
-          </div>
-        ) : (
-          <button type="submit" disabled={!read.title.trim()} className={buttonClass("primary")}>
+        {/* Leiste klebt unten im Fenster – das Fenster sitzt über der Tastatur */}
+        <div className="safe-bottom sticky bottom-0 -mx-4 flex items-center gap-3 border-t border-line bg-background px-4 pt-2.5">
+          <button type="button" onClick={() => setMore((m) => !m)} className="hit flex min-h-11 min-w-0 flex-1 items-center text-left text-[14px] text-muted" aria-expanded={more} aria-label="Mehr Optionen">
+            <span className="truncate">
+              {where === "arbeit" ? "Arbeit" : "Familie"} · {clock ? `Erinnerung ${reminderShort}` : "ganztägig"}
+            </span>
+          </button>
+          <button type="submit" disabled={!title || past} className={`${buttonClass("primary")} shrink-0 px-6`}>
             Eintragen
           </button>
-        )}
+        </div>
       </form>
+
+      {picker === "tag" && (
+        <Sheet title="Welcher Tag?" onClose={() => setPicker(null)} layer="above">
+          <div className="flex flex-wrap gap-2 pb-3" role="group" aria-label="Tag wählen">
+            {days.map((d) => (
+              <button key={d} type="button" onClick={() => (setManualDate(d), setPastOk(false), setPicker(null))} className={chipClass(d === day)}>
+                {d === today ? "Heute" : d === addDays(today, 1) ? "Morgen" : dayChipLabel(d, true)}
+              </button>
+            ))}
+            <button type="button" onClick={() => dateInput.current?.showPicker?.() ?? dateInput.current?.focus()} className={`relative ${chipClass(false)}`}>
+              <CalendarDays className="h-4 w-4" strokeWidth={2} aria-hidden />
+              Datum wählen
+              <input ref={dateInput} type="date" min={today} value={day} onChange={(e) => e.target.value && (setManualDate(e.target.value), setPicker(null))} aria-label="Datum wählen" className="absolute inset-0 opacity-0" tabIndex={-1} />
+            </button>
+          </div>
+        </Sheet>
+      )}
+      {picker === "zeit" && (
+        <Sheet title="Uhrzeit" onClose={() => setPicker(null)} layer="above">
+          <div className="flex flex-col gap-3 pb-3">
+            <TimeWheel value={wheel} onChange={setWheel} />
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => (setManualTime(""), setPicker(null))} className={buttonClass("secondary", "md")}>
+                ganztägig
+              </button>
+              <button type="button" onClick={() => (setManualTime(wheel), setPastOk(false), setPicker(null))} className={buttonClass("primary", "md")}>
+                Übernehmen
+              </button>
+            </div>
+          </div>
+        </Sheet>
+      )}
     </Sheet>
   );
 }
