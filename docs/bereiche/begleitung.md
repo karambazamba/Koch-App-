@@ -204,14 +204,16 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 - `HelloScreen` (Tafel 19, seit v0.49): drei Pastell-Kacheln als Deko
   (`HelloTiles`, Termine/Essen/Einkauf, gedreht, aria-hidden), die Begleitung
   (92 px, überlappt die Einkauf-Kachel), „Hallo, ich bin <Name>.“
-  (`helperName`), „Euer Alltag an einem Ort.“, Sprech-Knopf „Einfach mit mir
-  sprechen“ (Name „Mit <Name> sprechen“), „Los geht’s“ (`startFresh`) und
-  „Schon mal genutzt? Daten wiederherstellen“ (`/profil/daten`). Ablauf: 0 s
-  Begleitung, 0,3 s Kacheln (je 120 ms), 0,95 s Überschrift tippt, 1,8 s
-  Zeile, 2,0 s Sprech-Knopf mit Puls, 2,2 s Knopf und Link. Beim Start fliegt
+  (`helperName`), „Euer Alltag an einem Ort.“, „Los geht’s“ (`startFresh`),
+  „Schon mal genutzt? Daten wiederherstellen“ (`/profil/daten`) und ganz unten
+  die Leiste der Begleitung wie auf jeder Seite (Mikro „Mit <Name> sprechen“;
+  der frühere Sprech-Chip in der Mitte hakte und ist weg). Kein
+  Anmelden-Link, bis „Anmelden wie man es kennt“ (Tafel 22) fertig ist.
+  Ablauf: 0 s Begleitung, 0,3 s Kacheln (je 120 ms), 0,95 s Überschrift
+  tippt, 1,8 s Zeile, 2,2 s Knopf, Link und Leiste. Beim Start fliegt
   die Begleitung in die Jetzt-Karte, die Kacheln blenden als Kopie aus
   (`fadeOutGhost`). Bewegung reduzieren = alles sofort, kein Puls.
-- Sprech-Knopf: im selben Tipp `primeMicrophone` (Freigabe über
+- Mikro unten: im selben Tipp `primeMicrophone` (Freigabe über
   `getUserMedia`, in `useSpeechInput.ts`), dann `startFresh` und
   `openHelper("voice")` – die Leiste hört zu. Abgelehnt/kein Mikrofon: Leiste
   zum Tippen und ein freundlicher Satz (Toast), nie ein Fehler.

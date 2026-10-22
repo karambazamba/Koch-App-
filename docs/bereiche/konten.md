@@ -57,10 +57,11 @@ Etappen: **3a Anmeldung und Haushalt** · **3b Synchronisieren** (beide fertig) 
 - Oberfläche: `src/components/konten/` – `/konto` (`KontoView`),
   `LoginSteps`, `HouseholdChoice`, `HouseholdCard` (+ `InviteSheet`),
   `FamilyConnectCard` (Einstellungen oben), `AccountDataSection` (Daten & App).
-  Hallo-Bildschirm (mit Konten): „Familie schon dabei? Anmelden“ und darunter
-  klein „Daten wiederherstellen“ (ohne Konten wie bisher). Familie →
+  Hallo-Bildschirm: vorerst KEIN Anmelden-Link (Präsentations-Check – erst mit
+  Tafel 22); „Familie verbinden“ nur in den Einstellungen. Familie →
   „Jemanden einladen“ (`/konto?einladen=1`).
-- Anmelden von der Begrüßung (Tafel 20): `WelcomeLogin` auf `/anmelden` und
+- Anmelden-Seiten (Tafel 20, nicht mehr von der Begrüßung verlinkt; wird mit
+  Tafel 22 ersetzt): `WelcomeLogin` auf `/anmelden` und
   `/beitreten?code=…` (`JoinLink`) – ruhige Seiten im Stil des
   Hallo-Bildschirms, Zurück jederzeit: E-Mail → Code (ein Feld,
   `inputmode=numeric`, `autocomplete="one-time-code"`, prüft bei 6 Ziffern
