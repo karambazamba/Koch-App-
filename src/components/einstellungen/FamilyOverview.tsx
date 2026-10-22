@@ -17,7 +17,7 @@ import { useHomeTiles } from "@/lib/core/homeLayout";
 import { useJetzt } from "@/lib/heute/jetztStore";
 import { useSport } from "@/lib/sport";
 import { Group, Row } from "@/components/einstellungen/settings/SettingsParts";
-import { householdTitle } from "@/components/einstellungen/settings/Hubs";
+import { householdTitle } from "@/lib/einstellungen/profileHousehold";
 import { DarstellungGroup } from "@/components/einstellungen/settings/BegleitungSettings";
 import { useFamilyRegion } from "@/lib/spendentopf/store";
 import { POT_TEXTS } from "@/lib/spendentopf/model";

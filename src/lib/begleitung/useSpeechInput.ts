@@ -74,6 +74,26 @@ export function withoutPrevious(text: string, previous: string): string {
   return t;
 }
 
+/**
+ * Mikrofon im selben Tipp freigeben lassen (iPhone und Android fragen nur bei
+ * einer Berührung) – z. B. beim Sprech-Knopf des Hallo-Bildschirms, bevor die
+ * Leiste mit `useSpeechInput` zuhört. Muss direkt im Tipp aufgerufen werden.
+ * "ok" = darf zuhören, "blocked" = abgelehnt/kein Mikrofon, "none" = kein Sprechen im Browser.
+ */
+export async function primeMicrophone(): Promise<"ok" | "blocked" | "none"> {
+  if (!speechRecognitionClass()) return "none";
+  const media = typeof navigator === "undefined" ? undefined : navigator.mediaDevices;
+  // Ohne Abfrage-Möglichkeit fragt die Erkennung selbst
+  if (!media?.getUserMedia) return "ok";
+  try {
+    const stream = await media.getUserMedia({ audio: true });
+    stream.getTracks().forEach((t) => t.stop());
+    return "ok";
+  } catch {
+    return "blocked";
+  }
+}
+
 type Options = {
   /** Text der aktuellen Aufnahme bisher (fertig erkannte Teile) – ersetzt, nie anhängen */
   onTranscript: (text: string) => void;

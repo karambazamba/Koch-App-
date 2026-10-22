@@ -17,6 +17,7 @@ import { iconChangeHint } from "@/lib/core/homescreen";
 import { isPlanUnlockRequest, unlockPlanning, type UnlockChoice } from "@/lib/essen/planUnlock";
 import { startAddPerson, type OnboardingState } from "@/lib/einstellungen/onboarding/engine";
 import { isAddPersonRequest } from "@/lib/einstellungen/onboarding/recognize";
+import { householdIntroReply, parseHouseholdIntro } from "@/lib/einstellungen/householdIntro";
 import { calendarChat, changeEntries, loadEntries } from "@/lib/kalender";
 import { pushUndo } from "@/lib/core/undo";
 import { loadSpeechSettings, saveSpeechSettings, stopSpeaking, unlockSpeech, type SpeechSettings } from "@/lib/begleitung/speech";
@@ -118,6 +119,14 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
     if (dayRule(ruleCtx, t)) return true;
     if (schnellnotizRule(ruleCtx, t)) return true;
     if (noteRule(ruleCtx, t)) return true;
+    // „Ich bin Felix, wir sind Lisa und drei Kinder“ → Vorschlag mit „Übernehmen“
+    const intro = parseHouseholdIntro(t);
+    if (intro) {
+      setInput("");
+      const op = { id: "haushalt-1", type: "set_household", intro } as const;
+      setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text: householdIntroReply(intro), local: true }], proposal: { ops: [op], selected: new Set([op.id]) } }));
+      return true;
+    }
     if (isAddPersonRequest(t)) {
       setInput("");
       setGuided(startAddPerson(data.profile, t));

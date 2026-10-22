@@ -10,6 +10,7 @@ import { usePersonRemoval } from "@/components/einstellungen/PersonRemoval";
 import { sortedBases } from "@/lib/essen/bases";
 import { sortedLikes } from "@/lib/essen/likes";
 import { HEALTH_TIP_LEVELS, HOUSEHOLD_TYPES, LIMITS, MEAL_TIME_LABELS, personLabel, weekdayLunchHeadcount } from "@/lib/einstellungen/profile";
+import { householdTitle } from "@/lib/einstellungen/profileHousehold";
 import { usePlanStyle } from "@/lib/essen/usePlanStyle";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { AddRow, DataSection, Group, PersonRow, Row, SettingsPage } from "@/components/einstellungen/settings/SettingsParts";
@@ -17,12 +18,6 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { clearProfile } from "@/lib/einstellungen/profileStore";
 import { PERSONS, sortBy } from "@/lib/core/sort";
 import { clearWelcome } from "@/lib/einstellungen/welcomeStore";
-
-/** "Unsere Familie" bzw. "Mein Haushalt" / "Unser Haushalt" */
-export function householdTitle(profile: { householdType: string } | null | undefined): string {
-  if (!profile || profile.householdType === "familie") return "Unsere Familie";
-  return profile.householdType === "single" ? "Mein Haushalt" : "Unser Haushalt";
-}
 
 /** /profil/essen: Veggie-Tage, mag / mag nicht und was sonst zum Essen gehört */
 export function FoodHubView() {

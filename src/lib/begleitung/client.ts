@@ -20,6 +20,7 @@ import { buildShoppingList } from "@/lib/einkauf/shoppingList";
 import { replaceRecipes } from "@/lib/essen/cookbook";
 import { replaceMealPlans } from "@/lib/essen/mealPlan";
 import { effectivePlanStyle } from "@/lib/einstellungen/profile";
+import { householdTitle } from "@/lib/einstellungen/profileHousehold";
 import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { helperNote, type HelperPatch } from "@/lib/begleitung/helperTools";
 import { loadSpeechSettings, saveSpeechSettings } from "@/lib/begleitung/speech";
@@ -546,6 +547,7 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
   const helperChange = chosen.reduce<HelperPatch>((acc, op) => (op.type === "set_helper" ? { ...acc, ...op.helper } : acc), {});
   const previousVoice = helperChange.art && helperChange.art !== current.profile.helper.art ? loadSpeechSettings().voice : null;
   if (Object.keys(helperChange).length) notes.push(helperNote(helperChange));
+  if (chosen.some((op) => op.type === "set_household")) notes.push(`Steht jetzt in den Einstellungen unter „${householdTitle(data.profile)}“ – dort kannst du alles ergänzen.`);
   if (chosen.some((op) => op.type === "set_meal" || op.type === "add_shopping")) {
     const note = shoppingNote(data, current);
     if (note) notes.push(note);

@@ -201,9 +201,26 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 
 ### Erster Start und neue Person
 
-- `HelloScreen`: „Hallo, ich bin {Standardname}.“ (aus `DEFAULT_HELPER`),
-  Untertitel, Mikrofon-Hinweis, „Los geht’s“ (`startFresh`) und „Ich habe
-  eine Sicherung“ (`/profil/daten`). Bewegung reduzieren = ohne Animation.
+- `HelloScreen` (Tafel 19, seit v0.49): drei Pastell-Kacheln als Deko
+  (`HelloTiles`, Termine/Essen/Einkauf, gedreht, aria-hidden), die Begleitung
+  (92 px, überlappt die Einkauf-Kachel), „Hallo, ich bin <Name>.“
+  (`helperName`), „Euer Alltag an einem Ort.“, Sprech-Knopf „Einfach mit mir
+  sprechen“ (Name „Mit <Name> sprechen“), „Los geht’s“ (`startFresh`) und
+  „Schon mal genutzt? Daten wiederherstellen“ (`/profil/daten`). Ablauf: 0 s
+  Begleitung, 0,3 s Kacheln (je 120 ms), 0,95 s Überschrift tippt, 1,8 s
+  Zeile, 2,0 s Sprech-Knopf mit Puls, 2,2 s Knopf und Link. Beim Start fliegt
+  die Begleitung in die Jetzt-Karte, die Kacheln blenden als Kopie aus
+  (`fadeOutGhost`). Bewegung reduzieren = alles sofort, kein Puls.
+- Sprech-Knopf: im selben Tipp `primeMicrophone` (Freigabe über
+  `getUserMedia`, in `useSpeechInput.ts`), dann `startFresh` und
+  `openHelper("voice")` – die Leiste hört zu. Abgelehnt/kein Mikrofon: Leiste
+  zum Tippen und ein freundlicher Satz (Toast), nie ein Fehler.
+- Erster Satz wie jede Nachricht (KI zuerst): „Ich bin Felix, wir sind Lisa
+  und drei Kinder“ → Op `set_household` (Werkzeug `haushalt_vorstellen`, ohne
+  KI `parseHouseholdIntro` in `einstellungen/householdIntro.ts`) mit Vorschau
+  „Felix · Lisa · 3 Kinder · Familie“ und „Übernehmen“: Name, Personen,
+  Haushaltstyp; eingetragene Personen bleiben, leere Platzhalter werden
+  ersetzt.
 - „X wohnt jetzt bei uns“ (`isAddPersonRequest`) startet `GuidedChat` mit
   `startAddPerson`: Namen bestätigen, Rolle, bei Kindern Gruppe. Freie
   Antworten erkennt `recognizer.ts` – mit KI über `/api/kennenlernen`

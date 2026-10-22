@@ -116,3 +116,9 @@ export function weekdayLunchHeadcount(profile: HouseholdProfile): {
   const { atHome, sometimes } = weekdayLunchEaters(profile);
   return { min: atHome.length, max: atHome.length + sometimes.length };
 }
+
+/** "Unsere Familie" bzw. "Mein Haushalt" / "Unser Haushalt" (Titel der Einstellungen) */
+export function householdTitle(profile: { householdType: string } | null | undefined): string {
+  if (!profile || profile.householdType === "familie") return "Unsere Familie";
+  return profile.householdType === "single" ? "Mein Haushalt" : "Unser Haushalt";
+}
