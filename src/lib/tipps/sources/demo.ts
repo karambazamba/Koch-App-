@@ -3,8 +3,8 @@
 // Wochen, plus eine Aktion „von KARAMBA“. Nur für den Demo-/Testbetrieb – in
 // der App überall als „Beispiel“ erkennbar, nie als echte Veranstaltung.
 
-import type { Tip } from "../model";
-import type { TipArea, TipSource } from "./types";
+import type { Tip } from "@/lib/tipps/model";
+import type { TipArea, TipSource } from "@/lib/tipps/sources/types";
 
 const PLACES = {
   eutin: { ort: "Eutin", lat: 54.1376, lng: 10.6181 },

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ChevronRight, type LucideIcon } from "lucide-react";
-import { IconBadge } from "./IconBadge";
+import { IconBadge } from "@/components/ui/IconBadge";
 
 type Props = {
   /** Ziel – oder statt Link ein Knopf mit `onClick` */

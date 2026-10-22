@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { CARD } from "@/components/ui/styles";
-import { RecipeEditor } from "@/components/cookbook/RecipeEditor";
-import { FeatureGate } from "@/components/FeatureGate";
+import { RecipeEditor } from "@/components/essen/rezepte/RecipeEditor";
+import { FeatureGate } from "@/components/core/FeatureGate";
 
 export const metadata = { title: "Rezept bearbeiten" };
 

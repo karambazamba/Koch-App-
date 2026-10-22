@@ -3,7 +3,7 @@
 // oder gut bewertet wurde, steht im Profil (`bases`) – danach werden die
 // Chips sortiert.
 
-import type { Recipe } from "./cookbook";
+import type { Recipe } from "@/lib/essen/cookbook";
 
 export type BaseId = "kartoffeln" | "reis" | "nudeln" | "quinoa" | "brot" | "salat";
 

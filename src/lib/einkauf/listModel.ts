@@ -1,7 +1,7 @@
 // Einkaufsliste: Datenmodell (gespeicherter Teil je Woche, Stammartikel,
 // zusammengesetzte Liste) und kleine gemeinsame Helfer.
 
-import type { Section } from "./sections";
+import type { Section } from "@/lib/einkauf/sections";
 
 export type ManualItem = {
   id: string;

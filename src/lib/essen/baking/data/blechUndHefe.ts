@@ -1,6 +1,6 @@
 // Backstube – Käse- und Blechkuchen, Hefeteig: Zopf, Pizza, Brötchen und Schnecken.
 
-import type { BuiltinBakingRecipe } from "../types";
+import type { BuiltinBakingRecipe } from "@/lib/essen/baking/types";
 
 export const BLECH_UND_HEFE: BuiltinBakingRecipe[] = [
   {

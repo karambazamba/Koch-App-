@@ -1,10 +1,10 @@
 // Speicher der Timer (`wasgibts.timer` v1, pro Gerät). Timer stehen mit ihrer
 // Endzeit drin – nach Hintergrund, Sperre oder Neustart stimmt alles sofort.
 
-import { createLocalStore } from "../core/localStore";
-import { useExternalStore } from "../core/useExternalStore";
-import { now } from "../core/now";
-import { EMPTY_TIMERS, pruneTimers, sanitizeTimers, type TimerState } from "./model";
+import { createLocalStore } from "@/lib/core/localStore";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+import { now } from "@/lib/core/now";
+import { EMPTY_TIMERS, pruneTimers, sanitizeTimers, type TimerState } from "@/lib/timer/model";
 
 type Stored = { version: 1 } & TimerState;
 

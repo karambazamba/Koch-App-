@@ -1,8 +1,8 @@
 // Kleine Feier – nur bei echten Meilensteinen (Wochenziel Sport): eine
 // Pokal-Karte für 2 Sekunden, Antippen schließt. Nicht bei jedem Abhaken.
 
-import { triggerAvatar } from "./avatarState";
-import { useExternalStore } from "./useExternalStore";
+import { triggerAvatar } from "@/lib/core/avatarState";
+import { useExternalStore } from "@/lib/core/useExternalStore";
 
 type Celebration = { id: number; text: string };
 

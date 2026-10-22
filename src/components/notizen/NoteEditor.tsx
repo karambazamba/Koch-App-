@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Check, Pin, Trash2, X } from "lucide-react";
-import { PageHeader } from "@/components/PageHeader";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD, INPUT_BASE, PAGE_MAIN, buttonClass, chipClass } from "@/components/ui/styles";
 import { createNote, loadNotes, noteEmoji, removeNote, replaceNotes, upsertNote, useNotes, type Note, type NoteItem } from "@/lib/notizen";
 import { nowIso } from "@/lib/core/now";
@@ -17,7 +17,7 @@ import { useGoBack } from "@/lib/core/useGoBack";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 import { helperName } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";
-import { SchnellnotizActions } from "./Schnellnotiz";
+import { SchnellnotizActions } from "@/components/notizen/Schnellnotiz";
 
 export function NoteEditor() {
   const params = useSearchParams();

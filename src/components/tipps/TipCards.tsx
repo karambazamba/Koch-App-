@@ -6,8 +6,8 @@
 import { useState } from "react";
 import { CARD } from "@/components/ui/styles";
 import type { TipView } from "@/lib/tipps/model";
-import { TipRow } from "./TipBits";
-import { TipSheet } from "./TipSheet";
+import { TipRow } from "@/components/tipps/TipBits";
+import { TipSheet } from "@/components/tipps/TipSheet";
 
 export function TipCards({ tips }: { tips: TipView[] }) {
   const [open, setOpen] = useState<TipView | null>(null);

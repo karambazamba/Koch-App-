@@ -1,4 +1,4 @@
-import { BausteineView } from "@/components/profile/BausteineView";
+import { BausteineView } from "@/components/einstellungen/BausteineView";
 
 export const metadata = { title: "Mehr Funktionen" };
 

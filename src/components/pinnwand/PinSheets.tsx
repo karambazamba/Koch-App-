@@ -13,9 +13,9 @@ import { now, todayIso, toIsoDate } from "@/lib/core/now";
 import { showDeleted } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
 import { PIN_MAX, REACTIONS, addPin, changePins, createPin, markPinsRead, pinMeta, removePin, setPinPinned, toggleReaction, type PinMessage } from "@/lib/pinnwand";
-import { useSpeechInput } from "@/lib/lotte/useSpeechInput";
+import { useSpeechInput } from "@/lib/begleitung/useSpeechInput";
 import { shortClock } from "@/components/notizen/Schnellnotiz";
-import { buzz } from "@/components/alltag/actions";
+import { buzz } from "@/components/heute/actions";
 
 export const pinMetaLine = (m: { erstellt: string; data: { author: string } }, me: string) => pinMeta(m, me, todayIso(), shortClock, (iso) => toIsoDate(new Date(iso)));
 

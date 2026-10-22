@@ -4,16 +4,16 @@
 // Tag es passen würde. Antworten besonders kurz. Später auch per Foto vom
 // Produkt/Angebotsschild (`source: "foto"`).
 
-import type { Recipe, RecipeCategory } from "./cookbook";
-import { recipeIsKnown } from "./dishStatus";
-import { guessDishCategory } from "./dishCategory";
-import { findFood, recognizeFood } from "./leftovers/foods";
-import { ruleParseLeftovers } from "./leftovers/ruleParser";
-import type { PlanWeek } from "./mealPlan";
-import { sameIngredient, type PantryItem } from "./pantry";
-import type { NeverAgainEntry } from "../einstellungen/profile";
-import { isNeverAgain } from "./neverAgain";
-import { AT_HOME } from "./spontan";
+import type { Recipe, RecipeCategory } from "@/lib/essen/cookbook";
+import { recipeIsKnown } from "@/lib/essen/dishStatus";
+import { guessDishCategory } from "@/lib/essen/dishCategory";
+import { findFood, recognizeFood } from "@/lib/essen/leftovers/foods";
+import { ruleParseLeftovers } from "@/lib/essen/leftovers/ruleParser";
+import type { PlanWeek } from "@/lib/essen/mealPlan";
+import { sameIngredient, type PantryItem } from "@/lib/vorrat/pantry";
+import type { NeverAgainEntry } from "@/lib/einstellungen/profile";
+import { isNeverAgain } from "@/lib/essen/neverAgain";
+import { AT_HOME } from "@/lib/essen/spontan";
 
 export type MarketIdea = {
   title: string;

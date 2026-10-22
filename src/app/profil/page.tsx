@@ -1,4 +1,4 @@
-import { ProfilePageContent } from "@/components/profile/ProfilePageContent";
+import { ProfilePageContent } from "@/components/einstellungen/ProfilePageContent";
 
 export const metadata = { title: "Einstellungen" };
 

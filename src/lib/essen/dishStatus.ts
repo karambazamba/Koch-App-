@@ -2,7 +2,7 @@
 // dann reicht der Name. Bei neuen steht das Rezept im Vordergrund
 // ("Los geht's – Schritt für Schritt").
 
-import type { Recipe } from "./cookbook";
+import type { Recipe } from "@/lib/essen/cookbook";
 
 /**
  * Bekannt: von Hand markiert, schon 2× gekocht, oder ein eigenes

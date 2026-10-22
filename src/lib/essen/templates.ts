@@ -3,11 +3,11 @@
 // (Rezept oder Freitext) – Wunsch, Ausflug und Cheat Day kommen aus dem
 // Wochen-Check der jeweiligen Woche.
 
-import { useExternalStore } from "../core/useExternalStore";
-import { createLocalStore } from "../core/localStore";
-import type { RecipeCategory } from "./cookbook";
-import { mealPlansWithWeek, replaceMealPlans, slotKey, type PlanWeek, type StoredEntry } from "./mealPlan";
-import { now } from "../core/now";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+import { createLocalStore } from "@/lib/core/localStore";
+import type { RecipeCategory } from "@/lib/essen/cookbook";
+import { mealPlansWithWeek, replaceMealPlans, slotKey, type PlanWeek, type StoredEntry } from "@/lib/essen/mealPlan";
+import { now } from "@/lib/core/now";
 
 export type TemplateDish =
   | { kind: "recipe"; recipeId: string; title: string; category: RecipeCategory }

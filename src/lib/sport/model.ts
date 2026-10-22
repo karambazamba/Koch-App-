@@ -6,10 +6,10 @@
 // Apple Health / Watch kann eine Web-App nicht lesen – Eintragen nur von Hand
 // oder per Lotte.
 
-import { createEntry, type Entry } from "../core/entries";
-import { addDays, fromIsoDate } from "../core/now";
-import type { CalendarEntry, DayItem } from "../aufgaben/model";
-import { itemsForDay, mondayOf, weekdayIndex } from "../aufgaben/model";
+import { createEntry, type Entry } from "@/lib/core/entries";
+import { addDays, fromIsoDate } from "@/lib/core/now";
+import type { CalendarEntry, DayItem } from "@/lib/kalender/model";
+import { itemsForDay, mondayOf, weekdayIndex } from "@/lib/kalender/model";
 
 type SportKind = { id: string; label: string; emoji: string; outdoor: boolean; noun: [string, string]; pack: string[] };
 

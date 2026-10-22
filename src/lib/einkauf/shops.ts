@@ -1,8 +1,8 @@
 // Einkaufsliste: Läden – Vorschläge, selbst angelegte Läden und der gemerkte
 // Laden je Artikel.
 
-import { lower, type ShoppingSettings } from "./listModel";
-import { update } from "./listStore";
+import { lower, type ShoppingSettings } from "@/lib/einkauf/listModel";
+import { update } from "@/lib/einkauf/listStore";
 
 /** Läden als Vorschläge – eigene kommen dazu */
 export const SHOP_SUGGESTIONS = ["Aldi", "Lidl", "Edeka", "Rewe", "Rossmann", "dm", "Wochenmarkt", "Bäcker"];

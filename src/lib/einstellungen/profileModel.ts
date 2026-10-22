@@ -2,9 +2,9 @@
 // und Grenzen sowie die Startwerte (createEmptyProfile). Begleitung, Haushalt
 // und Essen haben eigene Dateien; Speichern und Migration in profileStore.ts.
 
-import { EMPTY_BASES, type BaseCounts } from "../essen/bases";
-import { DEFAULT_HELPER, type HelperMode, type HelperSettings } from "./profileHelper";
-import type { HouseholdType } from "./profileHousehold";
+import { EMPTY_BASES, type BaseCounts } from "@/lib/essen/bases";
+import { DEFAULT_HELPER, type HelperMode, type HelperSettings } from "@/lib/einstellungen/profileHelper";
+import type { HouseholdType } from "@/lib/einstellungen/profileHousehold";
 import type {
   CookingStyle,
   HealthTipLevel,
@@ -18,7 +18,7 @@ import type {
   TipLevel,
   WeatherSettings,
   WeekendStyle,
-} from "./profileFood";
+} from "@/lib/einstellungen/profileFood";
 
 export type PersonRole = "erwachsen" | "kind";
 

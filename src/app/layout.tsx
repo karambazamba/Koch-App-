@@ -1,18 +1,18 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { Plus_Jakarta_Sans } from "next/font/google";
-import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
-import { KitchenHelper } from "@/components/assistant/KitchenHelper";
-import { ThemeSync } from "@/components/ThemeSync";
-import { IconSync } from "@/components/IconSync";
+import { ServiceWorkerRegistration } from "@/components/core/ServiceWorkerRegistration";
+import { KitchenHelper } from "@/components/begleitung/KitchenHelper";
+import { ThemeSync } from "@/components/core/ThemeSync";
+import { IconSync } from "@/components/core/IconSync";
 import { ToastHost } from "@/components/ui/ToastHost";
-import { NavigationMemory } from "@/components/NavigationMemory";
-import { AutoCooked } from "@/components/AutoCooked";
-import { TimerAlarm } from "@/components/TimerAlarm";
-import { SportCelebration } from "@/components/SportCelebration";
+import { NavigationMemory } from "@/components/core/NavigationMemory";
+import { AutoCooked } from "@/components/essen/AutoCooked";
+import { TimerAlarm } from "@/components/timer/TimerAlarm";
+import { SportCelebration } from "@/components/sport/SportCelebration";
 import { THEME_BOOT_SCRIPT, THEME_COLORS } from "@/lib/core/theme";
 import { APP_NAME, APP_SHORT_NAME, icon } from "@/lib/core/app";
-import "./globals.css";
+import "@/app/globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",

@@ -6,8 +6,8 @@
 
 import { Sheet } from "@/components/ui/Sheet";
 import { CARD, buttonClass } from "@/components/ui/styles";
-import { DishPicture } from "@/components/alltag/DishPicture";
-import { weekdayLong } from "@/lib/aufgaben/model";
+import { DishPicture } from "@/components/essen/DishPicture";
+import { weekdayLong } from "@/lib/kalender/model";
 import { showDeleted, showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
 import { helperName } from "@/lib/einstellungen/profile";
@@ -16,9 +16,9 @@ import { entriesWithoutSlot, loadMealPlans, mealPlansWithWeek, replaceMealPlans,
 import { takeForDay } from "@/lib/essen/spontanTake";
 import { useTodayIdeas } from "@/lib/essen/useIdeas";
 import { weekStartFor } from "@/lib/essen/weekPlan";
-import { openHelper } from "@/lib/lotte/open";
-import type { HomeData } from "@/components/home/useHomeData";
-import { dishOf } from "@/components/alltag/useMeals";
+import { openHelper } from "@/lib/begleitung/open";
+import type { HomeData } from "@/components/heute/useHomeData";
+import { dishOf } from "@/components/essen/useMeals";
 
 /** Was das Fenster braucht – die Startseite gibt HomeData, der Wochenplan baut es selbst */
 export type SwapContext = Pick<HomeData, "today" | "todayIso" | "profile" | "recipes" | "weekPlans" | "planStyle">;

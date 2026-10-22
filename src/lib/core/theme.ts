@@ -3,7 +3,7 @@
 // Farben selbst stehen als CSS-Variablen in globals.css; hier nur das
 // Umschalten und die Farbe der Statusleiste (theme-color).
 
-import type { AppTheme } from "../einstellungen/profile";
+import type { AppTheme } from "@/lib/einstellungen/profile";
 
 /** Hintergrundfarbe je Ansicht – für die Statusleiste und die Vorschau-Karten */
 export const THEME_COLORS: Record<Exclude<AppTheme, "auto">, { background: string; surface: string; accent: string; ink: string; muted: string; line: string }> = {

@@ -5,8 +5,8 @@
 // begruessen (einmalig), schlafen (Feierabend mit Ruhe), sonst ruhig.
 // Vorlage der Animationen: docs/vorlagen/avatar-animation.md (CSS in globals.css).
 
-import { useExternalStore } from "./useExternalStore";
-import type { StorageKey } from "./storage";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+import type { StorageKey } from "@/lib/core/storage";
 
 export type AvatarZustand = "ruhig" | "begruessen" | "zuhoeren" | "denken" | "sprechen" | "freuen" | "verwirrt" | "schlafen";
 type Laufend = "zuhoeren" | "denken" | "sprechen";

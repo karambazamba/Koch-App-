@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { birthdayName, jetztTopics, type JetztInput } from "@/lib/jetzt/topics";
-import { jetztCommand } from "@/lib/jetzt/command";
+import { birthdayName, jetztTopics, type JetztInput } from "@/lib/heute/jetztTopics";
+import { jetztCommand } from "@/lib/heute/jetztCommand";
 import { DEFAULT_HOME } from "@/lib/core/homeLayout";
 
 const TODAY = "2026-10-21";

@@ -1,4 +1,4 @@
-import { WarmMealEditView } from "@/components/profile/AreaEditViews";
+import { WarmMealEditView } from "@/components/einstellungen/AreaEditViews";
 
 export const metadata = { title: "Zusammen warm essen" };
 

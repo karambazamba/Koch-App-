@@ -1,4 +1,4 @@
-import { FamilyHubView } from "@/components/profile/settings/Hubs";
+import { FamilyHubView } from "@/components/einstellungen/settings/Hubs";
 
 export const metadata = { title: "Unsere Familie" };
 

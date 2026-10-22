@@ -2,8 +2,8 @@
 // Spontan kochen, Testmodus) und der Abgleich mit dem, was da ist. Rein, damit
 // Server (Testmodus) und App gleich rechnen.
 
-import type { RecipeCategory } from "./cookbook";
-import { sameIngredient, type PantryItem } from "./pantry";
+import type { RecipeCategory } from "@/lib/essen/cookbook";
+import { sameIngredient, type PantryItem } from "@/lib/vorrat/pantry";
 
 export type Season = "fruehling" | "sommer" | "herbst" | "winter";
 

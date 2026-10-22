@@ -11,8 +11,8 @@ import { TILE, TILE_INNER, TILE_LABEL } from "@/components/ui/styles";
 import { tipTags } from "@/lib/tipps/categories";
 import { tileTips, tileTitle, type TipView } from "@/lib/tipps/model";
 import { useTipsWindow } from "@/lib/tipps/client";
-import { KarambaLine, TipIcon, tipWhen } from "./TipBits";
-import { TipSheet } from "./TipSheet";
+import { KarambaLine, TipIcon, tipWhen } from "@/components/tipps/TipBits";
+import { TipSheet } from "@/components/tipps/TipSheet";
 
 export function TipsTile({ size, today }: { size: TileSize; today: string }) {
   const data = useTipsWindow(today);

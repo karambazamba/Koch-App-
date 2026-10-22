@@ -1,8 +1,8 @@
 "use client";
 
-import { effectivePlanStyle, type PlanStyle } from "../einstellungen/profile";
-import { useProfile } from "../einstellungen/useProfile";
-import { useToday, weekStartFor } from "./weekPlan";
+import { effectivePlanStyle, type PlanStyle } from "@/lib/einstellungen/profile";
+import { useProfile } from "@/lib/einstellungen/useProfile";
+import { useToday, weekStartFor } from "@/lib/essen/weekPlan";
 
 /**
  * Welcher Planstil gilt heute (Spontan mit "nur diese Woche planen" → "mix")

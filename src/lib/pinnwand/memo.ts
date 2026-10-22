@@ -6,8 +6,8 @@
 // nach 3 Tagen; anheften geht bei Memos nicht. Rein, damit Oberfläche, Mia
 // und Tests gleich rechnen.
 
-import { createEntry, type Entry } from "../core/entries";
-import { REACTIONS, type Reaction } from "./model";
+import { createEntry, type Entry } from "@/lib/core/entries";
+import { REACTIONS, type Reaction } from "@/lib/pinnwand/model";
 
 /** Höchstens 60 s, danach wird automatisch gesendet */
 export const MEMO_MAX_S = 60;

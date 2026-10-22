@@ -17,9 +17,9 @@
 // (Ändern, eigene Produkte), shops.ts (Läden), staples.ts (Stammliste) und
 // buildList.ts (Berechnung aus dem Wochenplan).
 
-export { SECTIONS, sectionFor, type Section } from "./sections";
-export type { ListItem, ShoppingList, ShoppingSettings, Staple, WeekList } from "./listModel";
-export { loadShoppingSettings, useShoppingLists, useShoppingSettings } from "./listStore";
+export { SECTIONS, sectionFor, type Section } from "@/lib/einkauf/sections";
+export type { ListItem, ShoppingList, ShoppingSettings, Staple, WeekList } from "@/lib/einkauf/listModel";
+export { loadShoppingSettings, useShoppingLists, useShoppingSettings } from "@/lib/einkauf/listStore";
 export {
   addManualItem,
   carryOverManual,
@@ -34,7 +34,7 @@ export {
   takeStaple,
   toggleChecked,
   updateManualItem,
-} from "./listEdits";
-export { SHOP_SUGGESTIONS, addShop, allShops, removeShop, setItemShop } from "./shops";
-export { addStaple, dueStaples, isStaple, removeStaple, rhythmLabel, stapleInterval } from "./staples";
-export { buildShoppingList, shoppingListText } from "./buildList";
+} from "@/lib/einkauf/listEdits";
+export { SHOP_SUGGESTIONS, addShop, allShops, removeShop, setItemShop } from "@/lib/einkauf/shops";
+export { addStaple, dueStaples, isStaple, removeStaple, rhythmLabel, stapleInterval } from "@/lib/einkauf/staples";
+export { buildShoppingList, shoppingListText } from "@/lib/einkauf/buildList";

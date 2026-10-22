@@ -4,7 +4,7 @@
 // profileHousehold.ts (Haushalt, Personen) und profileFood.ts (Essen).
 // Speichern und Migration in profileStore.ts.
 
-export * from "./profileModel";
-export * from "./profileHelper";
-export * from "./profileHousehold";
-export * from "./profileFood";
+export * from "@/lib/einstellungen/profileModel";
+export * from "@/lib/einstellungen/profileHelper";
+export * from "@/lib/einstellungen/profileHousehold";
+export * from "@/lib/einstellungen/profileFood";

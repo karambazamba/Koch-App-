@@ -1,5 +1,5 @@
-import { FavoritesEditView } from "@/components/profile/AreaEditViews";
-import { FeatureGate } from "@/components/FeatureGate";
+import { FavoritesEditView } from "@/components/einstellungen/AreaEditViews";
+import { FeatureGate } from "@/components/core/FeatureGate";
 
 export const metadata = { title: "Lieblingsgerichte" };
 

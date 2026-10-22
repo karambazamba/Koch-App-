@@ -12,7 +12,7 @@ import { CARD, buttonClass } from "@/components/ui/styles";
 import { todayIso } from "@/lib/core/now";
 import { POT_TEXTS, activePot, askDue, askLater, euro, potPhase, potTotal } from "@/lib/spendentopf/model";
 import { changePot, notePotStart, useFamilyRegion, usePotState } from "@/lib/spendentopf/store";
-import { PledgeChoice, justPledged } from "./PledgeChoice";
+import { PledgeChoice, justPledged } from "@/components/spendentopf/PledgeChoice";
 
 export type PotHint = { kind: "vote"; text: string } | { kind: "ask" } | null;
 

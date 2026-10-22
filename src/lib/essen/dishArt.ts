@@ -5,7 +5,7 @@
 // passende allgemeine Form der Kategorie (`guessed`). Gezeichnet wird mit
 // `renderDishSvg` (dishSvg.ts).
 
-import type { RecipeCategory } from "./cookbook";
+import type { RecipeCategory } from "@/lib/essen/cookbook";
 
 type DishForm =
   | "nudeln-lang"

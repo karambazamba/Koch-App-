@@ -4,7 +4,7 @@
 // Open-Meteo mit dem DWD-Modell ICON (models=icon_seamless). Beide liefern
 // dasselbe Forecast-Format; Tage werden immer selbst aus den Stunden gebaut.
 
-import { buildDays, type Forecast, type ForecastHour } from "./forecast";
+import { buildDays, type Forecast, type ForecastHour } from "@/lib/wetter/forecast";
 
 type Raw = Record<string, unknown>;
 const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);

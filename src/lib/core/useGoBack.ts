@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { canGoBack, expectReplace } from "./navigation";
+import { canGoBack, expectReplace } from "@/lib/core/navigation";
 
 /**
  * Eine Ebene zurück – wie Wischen nach rechts. Ohne Verlauf in der App (z. B.

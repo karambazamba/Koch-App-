@@ -3,9 +3,9 @@
 // App neu zum Home-Bildschirm hinzufügt). Welche Schlüssel dazugehören,
 // steht im Verzeichnis `storage.ts` (`backup: true`).
 
-import { APP_VERSION } from "./app";
-import { now } from "./now";
-import { BACKUP_KEYS, OLD_TERMINE_KEY, STORAGE } from "./storage";
+import { APP_VERSION } from "@/lib/core/app";
+import { now } from "@/lib/core/now";
+import { BACKUP_KEYS, OLD_TERMINE_KEY, STORAGE } from "@/lib/core/storage";
 
 export type Backup = { app: "was-gibts"; version: string; exportedAt: string; data: Record<string, string> };
 

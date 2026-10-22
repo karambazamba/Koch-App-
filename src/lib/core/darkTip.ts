@@ -2,9 +2,9 @@
 // auch Dunkel bzw. Automatisch gibt – nur, wenn die Ansicht nie selbst gewählt
 // wurde. Antwort (oder Wahl in den Einstellungen) = nie wieder.
 
-import { createLocalStore } from "./localStore";
-import { useExternalStore } from "./useExternalStore";
-import { addDays } from "./now";
+import { createLocalStore } from "@/lib/core/localStore";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+import { addDays } from "@/lib/core/now";
 
 type DarkTipState = { version: 1; since: string; done: boolean };
 

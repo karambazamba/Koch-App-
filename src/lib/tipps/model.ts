@@ -3,8 +3,8 @@
 // Kalender“ oder „Übernehmen“ tippt. Rein (ohne React), damit Server, Lotte
 // und Tests gleich rechnen. Form wie die spätere Supabase-Tabelle `tips`.
 
-import { KARAMBA_VERANSTALTER } from "./karamba";
-import { filtersOf, type TipFilter } from "./categories";
+import { KARAMBA_VERANSTALTER } from "@/lib/tipps/karamba";
+import { filtersOf, type TipFilter } from "@/lib/tipps/categories";
 
 export type Tip = {
   id: string;

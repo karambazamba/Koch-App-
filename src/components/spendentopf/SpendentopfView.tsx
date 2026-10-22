@@ -8,18 +8,18 @@
 
 import { useState } from "react";
 import { Bell, BookOpen, Check, ChevronDown, Flame, Heart, HeartHandshake, Mail, TreePine, Trophy, type LucideIcon } from "lucide-react";
-import { PageHeader } from "@/components/PageHeader";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD, CARD_LIST, PAGE_MAIN, SECTION_TITLE, TILE } from "@/components/ui/styles";
-import { SwitchRow, Row } from "@/components/profile/settings/SettingsParts";
+import { SwitchRow, Row } from "@/components/einstellungen/settings/SettingsParts";
 import { todayIso } from "@/lib/core/now";
 import { useToday } from "@/lib/essen/weekPlan";
 import { POT_TEXTS, activePot, euro, fallbackRegion, potPhase, potTotal, projectVotes, projectsFor, voteDaysLeft } from "@/lib/spendentopf/model";
 import { PATE_MAIL, type PotProject } from "@/lib/spendentopf/regions";
 import { changePot, useFamilyRegion, usePotState } from "@/lib/spendentopf/store";
-import { buzz } from "@/components/alltag/actions";
-import { PotGraphic } from "./PotGraphic";
-import { RegionSheet } from "./RegionSheet";
-import { PledgeChoice } from "./PledgeChoice";
+import { buzz } from "@/components/heute/actions";
+import { PotGraphic } from "@/components/spendentopf/PotGraphic";
+import { RegionSheet } from "@/components/spendentopf/RegionSheet";
+import { PledgeChoice } from "@/components/spendentopf/PledgeChoice";
 
 const ICONS: Record<PotProject["icon"], LucideIcon> = { ball: Trophy, book: BookOpen, flame: Flame, heart: Heart, tree: TreePine };
 

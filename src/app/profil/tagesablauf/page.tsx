@@ -1,4 +1,4 @@
-import { DayRoutineView } from "@/components/profile/settings/DayRoutineView";
+import { DayRoutineView } from "@/components/einstellungen/settings/DayRoutineView";
 
 export const metadata = { title: "Tagesablauf" };
 

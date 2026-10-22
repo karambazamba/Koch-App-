@@ -7,11 +7,11 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { connection } from "next/server";
-import { AssistantInputError, parseRequest, runAssistant, type CreateMessage, type ModelChoice } from "@/lib/lotte/engine";
-import { aiSetup, checkAccess, clientIp, takeDailySlot } from "@/lib/lotte/guard";
-import { createMockModel } from "@/lib/lotte/mock";
-import { ACCESS_HEADER, LIMITS, type AssistantErrorCode, type AssistantStatus, type StreamEvent } from "@/lib/lotte/protocol";
-import { allowRequest } from "@/lib/lotte/rateLimit";
+import { AssistantInputError, parseRequest, runAssistant, type CreateMessage, type ModelChoice } from "@/lib/begleitung/engine";
+import { aiSetup, checkAccess, clientIp, takeDailySlot } from "@/lib/begleitung/guard";
+import { createMockModel } from "@/lib/begleitung/mock";
+import { ACCESS_HEADER, LIMITS, type AssistantErrorCode, type AssistantStatus, type StreamEvent } from "@/lib/begleitung/protocol";
+import { allowRequest } from "@/lib/begleitung/rateLimit";
 
 export const maxDuration = 60;
 

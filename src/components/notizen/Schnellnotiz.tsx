@@ -14,7 +14,7 @@ import { appendLine, changeSchnellnotiz, loadSchnellnotiz, saveSchnellnotiz, use
 import { now } from "@/lib/core/now";
 import { showDeleted } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
-import { openHelper } from "@/lib/lotte/open";
+import { openHelper } from "@/lib/begleitung/open";
 
 const CLOCK = new Intl.DateTimeFormat("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" });
 

@@ -7,13 +7,13 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ListChecks, NotebookPen, Pin } from "lucide-react";
-import { PageHeader } from "@/components/PageHeader";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { Sheet } from "@/components/ui/Sheet";
 import { Segmented } from "@/components/ui/Segmented";
 import { CARD, PAGE_MAIN, SECTION_TITLE } from "@/components/ui/styles";
 import { PagePlus } from "@/components/ui/QuickButton";
 import { notePreview, sortNotes, useNotes, type Note } from "@/lib/notizen";
-import { QuickNoteCard } from "./Schnellnotiz";
+import { QuickNoteCard } from "@/components/notizen/Schnellnotiz";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 import { helperName } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";

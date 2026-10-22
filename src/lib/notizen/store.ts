@@ -1,9 +1,9 @@
 // Speicher für Notizen (`wasgibts.notizen` v1, lokal – später Supabase,
 // gleiche Tabelle "eintraege" mit typ "notiz").
 
-import { createLocalStore } from "../core/localStore";
-import { useExternalStore } from "../core/useExternalStore";
-import { sanitizeNote, type Note } from "./model";
+import { createLocalStore } from "@/lib/core/localStore";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+import { sanitizeNote, type Note } from "@/lib/notizen/model";
 
 type NoteStore = { version: 1; notes: Note[] };
 

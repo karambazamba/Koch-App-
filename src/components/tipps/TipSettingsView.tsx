@@ -6,10 +6,10 @@
 
 import { useState } from "react";
 import { CalendarDays } from "lucide-react";
-import { PageHeader } from "@/components/PageHeader";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { Segmented } from "@/components/ui/Segmented";
 import { CARD, INPUT, LABEL, PAGE_MAIN } from "@/components/ui/styles";
-import { SwitchRow } from "@/components/profile/settings/SettingsParts";
+import { SwitchRow } from "@/components/einstellungen/settings/SettingsParts";
 import { usePlace } from "@/lib/wetter/client";
 import { TIP_RADII, type TipRadius } from "@/lib/tipps/model";
 import { changeTipSettings, forgetTips, useTipSettings } from "@/lib/tipps/client";

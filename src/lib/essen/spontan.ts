@@ -2,17 +2,17 @@
 // Urlaub"), Ausflugs-Snacks aus dem Vorrat und drei schnelle Ideen unter
 // 20 Minuten – funktioniert alles ohne Wochenplan und ohne KI.
 
-import { germanNumber } from "./leftovers/ruleParser";
-import type { Recipe, RecipeCategory } from "./cookbook";
-import type { PantryItem } from "./pantry";
-import { formatPantryItem } from "./pantry";
-import type { NeverAgainEntry, PauseSettings } from "../einstellungen/profile";
-import { isNeverAgain } from "./neverAgain";
-import { baseFromText, recipeBase, type BaseId } from "./bases";
-import { guessDishCategory } from "./dishCategory";
-import { sectionFor } from "../einkauf/shoppingList";
-import { WEEKDAYS } from "../einstellungen/profile";
-import { AT_HOME, DISHES, matchStock, realStock } from "./dishIdeas";
+import { germanNumber } from "@/lib/essen/leftovers/ruleParser";
+import type { Recipe, RecipeCategory } from "@/lib/essen/cookbook";
+import type { PantryItem } from "@/lib/vorrat/pantry";
+import { formatPantryItem } from "@/lib/vorrat/pantry";
+import type { NeverAgainEntry, PauseSettings } from "@/lib/einstellungen/profile";
+import { isNeverAgain } from "@/lib/essen/neverAgain";
+import { baseFromText, recipeBase, type BaseId } from "@/lib/essen/bases";
+import { guessDishCategory } from "@/lib/essen/dishCategory";
+import { sectionFor } from "@/lib/einkauf/shoppingList";
+import { WEEKDAYS } from "@/lib/einstellungen/profile";
+import { AT_HOME, DISHES, matchStock, realStock } from "@/lib/essen/dishIdeas";
 
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const plus = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n, 12);

@@ -2,8 +2,8 @@
 // Wunschtag, Pause und Wochenende. Die Auswahl-Listen für die
 // Einstellungen stehen jeweils neben ihrem Typ.
 
-import { hasKids, weekdayLunchHeadcount } from "./profileHousehold";
-import { WEEKDAYS, type HouseholdProfile, type MealTime, type Person } from "./profileModel";
+import { hasKids, weekdayLunchHeadcount } from "@/lib/einstellungen/profileHousehold";
+import { WEEKDAYS, type HouseholdProfile, type MealTime, type Person } from "@/lib/einstellungen/profileModel";
 
 /** Gericht, das nie wieder vorgeschlagen werden soll (👎 nach dem Kochen) */
 export type NeverAgainEntry = {

@@ -1,8 +1,8 @@
 // Regelbasiertes Zerlegen von gesprochenem/getipptem Text in Zutaten.
 // Wird später durch die KI ersetzt – siehe ./parser.ts.
 
-import { findFood, foodName, recognizeFood } from "./foods";
-import type { ParsedLeftover } from "./parser";
+import { findFood, foodName, recognizeFood } from "@/lib/essen/leftovers/foods";
+import type { ParsedLeftover } from "@/lib/essen/leftovers/parser";
 
 // --- Füllwörter ---------------------------------------------------------------
 

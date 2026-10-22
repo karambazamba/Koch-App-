@@ -1,4 +1,4 @@
-import type { Tip } from "../types";
+import type { Tip } from "@/lib/essen/tips/types";
 
 export const PROFI_TIPS: Tip[] = [
   {

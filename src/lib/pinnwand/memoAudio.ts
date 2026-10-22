@@ -5,9 +5,9 @@
 // „Daten sichern“. Verwaiste Töne (Memo abgelaufen oder gelöscht) räumt
 // `sweepMemoAudio` beim Start weg.
 
-import { now } from "../core/now";
-import { pruneMemos, type MemoMessage } from "./memo";
-import { changeMemos, loadMemos } from "./store";
+import { now } from "@/lib/core/now";
+import { pruneMemos, type MemoMessage } from "@/lib/pinnwand/memo";
+import { changeMemos, loadMemos } from "@/lib/pinnwand/store";
 
 export interface MemoAudioStore {
   save(id: string, blob: Blob): Promise<void>;

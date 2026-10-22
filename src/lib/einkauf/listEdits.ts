@@ -1,9 +1,9 @@
 // Einkaufsliste: Ändern der Wochenlisten (abhaken, eigene Artikel, "Haben wir
 // schon", Stammartikel übernehmen) und eigene Produkte ("Immer so").
 
-import { lower, newId, EMPTY_LIST, type ListItem, type ManualItem, type Staple, type WeekList } from "./listModel";
-import { store, update, updateList } from "./listStore";
-import { recordPurchase } from "./staples";
+import { lower, newId, EMPTY_LIST, type ListItem, type ManualItem, type Staple, type WeekList } from "@/lib/einkauf/listModel";
+import { store, update, updateList } from "@/lib/einkauf/listStore";
+import { recordPurchase } from "@/lib/einkauf/staples";
 
 const toggle = (list: string[], key: string) =>
   list.includes(key) ? list.filter((k) => k !== key) : [...list, key];

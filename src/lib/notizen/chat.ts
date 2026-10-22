@@ -2,8 +2,8 @@
 // Lottes Werkzeuge: "Merk dir …" erkennen, die passende Liste finden
 // ("Mathis wünscht sich …" → Geschenkideen), Antworten formulieren.
 
-import type { Note } from "./model";
-import { findNote } from "./model";
+import type { Note } from "@/lib/notizen/model";
+import { findNote } from "@/lib/notizen/model";
 
 type NoteCommand =
   | { kind: "create"; title: string; text?: string; items?: string[] }

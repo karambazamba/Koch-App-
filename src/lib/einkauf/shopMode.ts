@@ -4,9 +4,9 @@
 // Laden etwas ohne Laden abgehakt, merkt sich die Liste den Laden dafür.
 // Reine Logik + kleiner Speicher; Oberfläche in components/shopping/ShopMode.
 
-import { createLocalStore } from "../core/localStore";
-import { useExternalStore } from "../core/useExternalStore";
-import type { ListItem } from "./shoppingList";
+import { createLocalStore } from "@/lib/core/localStore";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+import type { ListItem } from "@/lib/einkauf/shoppingList";
 
 export type ShoppingView = "abteilung" | "laden";
 type ViewState = { version: 1; view: ShoppingView };

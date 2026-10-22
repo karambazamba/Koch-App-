@@ -1,7 +1,7 @@
 // Farbe eines Gerichts für die Teller-Zeichnung (ohne Foto): nach Kategorie,
 // innerhalb leicht unterschiedlich je Name – gleiches Gericht, gleiche Farbe.
 
-import type { RecipeCategory } from "./cookbook";
+import type { RecipeCategory } from "@/lib/essen/cookbook";
 
 const TONES: Record<RecipeCategory | "frei", string[]> = {
   vegetarisch: ["#7FA35A", "#9BB26A", "#C9A64B", "#E0A040"],

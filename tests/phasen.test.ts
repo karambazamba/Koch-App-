@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { currentPhase, type PhaseContext } from "@/lib/tagesablauf/phases";
-import { DEFAULT_ROUTINE } from "@/lib/tagesablauf/settings";
+import { currentPhase, type PhaseContext } from "@/lib/heute/phases";
+import { DEFAULT_ROUTINE } from "@/lib/heute/tagesablauf";
 
 const ctx = (minutes: number, extra: Partial<PhaseContext> = {}): PhaseContext => ({
   minutes,

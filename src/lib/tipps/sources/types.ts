@@ -2,7 +2,7 @@
 // `Tip`; ob die Daten aus Beispielen oder der Landesdatenbank kommen, entscheidet
 // der Schalter TIPS_SOURCE (off | demo | tldb) auf dem Server.
 
-import type { Tip } from "../model";
+import type { Tip } from "@/lib/tipps/model";
 
 /** Gebiet: vorerst ganz Schleswig-Holstein */
 export type TipArea = { name: string; bbox: [south: number, west: number, north: number, east: number] };

@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { celebrationText, statusLine } from "@/lib/sport/model";
 import { pageLabel } from "@/lib/core/pageLabel";
-import { jetztTopics, type JetztInput } from "@/lib/jetzt/topics";
+import { jetztTopics, type JetztInput } from "@/lib/heute/jetztTopics";
 
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((f) => {
@@ -29,7 +29,7 @@ describe("Stilblatt: Farben und Radien nur über Tokens", () => {
   });
 
   it("Pastell-Kacheln: Startseiten-Kacheln nutzen TILE statt weißer Karten", () => {
-    for (const f of ["alltag/HomeTiles.tsx", "alltag/MiniCards.tsx", "alltag/PinboardTile.tsx", "alltag/WeatherTile.tsx", "alltag/TimerTile.tsx", "sport/SportTile.tsx"]) {
+    for (const f of ["heute/HomeTiles.tsx", "heute/MiniCards.tsx", "pinnwand/PinboardTile.tsx", "wetter/WeatherTile.tsx", "timer/TimerTile.tsx", "sport/SportTile.tsx"]) {
       const src = SOURCES.find(({ p }) => p.endsWith(f))!.s;
       expect(src, f).toMatch(/\bTILE\b/);
       expect(src, f).not.toMatch(/\$\{CARD\}/);
@@ -37,7 +37,7 @@ describe("Stilblatt: Farben und Radien nur über Tokens", () => {
   });
 
   it("Bearbeiten-Modus: Kacheln scrollen nativ (pan-y), nie touch-none (Fehler v0.33: Seite ließ sich kaum scrollen)", () => {
-    const board = SOURCES.find(({ p }) => p.endsWith("alltag/HomeBoard.tsx"))!.s;
+    const board = SOURCES.find(({ p }) => p.endsWith("heute/HomeBoard.tsx"))!.s;
     expect(board).toMatch(/touch-pan-y/);
     expect(board).not.toMatch(/\btouch-none\b/);
     expect(board).toMatch(/const HOLD_MS = 3[5-9]\d;/);
@@ -114,7 +114,7 @@ describe("v0.31: Kalender, Essen, Rezepte", () => {
 
 describe("Fehler: Neuer Termin aus dem Kalender nahm „heute“ statt des gewählten Tags", () => {
   it("vorgegebener Tag gilt, solange im Text kein Tag steht", async () => {
-    const { readTerminText, terminDay } = await import("@/lib/aufgaben/quick");
+    const { readTerminText, terminDay } = await import("@/lib/kalender/quick");
     const today = "2026-10-21";
     const read = (t: string) => readTerminText(t, today).date;
     expect(terminDay("Zahnarzt 16:00", read("Zahnarzt 16:00"), null, "2026-10-23", today)).toBe("2026-10-23");

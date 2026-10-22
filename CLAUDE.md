@@ -176,6 +176,21 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
 - Phase 4: Post (Briefe, Rechnungen erfassen).
 - Phase 5: Foto → Termin/Aufgabe.
 
+# Ordner seit dem Aufräumen (Etappe 3)
+
+Gleiche Bereichsnamen in `src/components/<bereich>` und `src/lib/<bereich>`:
+heute, kalender, essen (+ `essen/plan`, `essen/rezepte`), einkauf, vorrat,
+pinnwand, notizen, wetter, sport, timer, tipps, spendentopf, begleitung,
+einstellungen, ui, core. Umgezogen: `alltag`/`home` → `heute` (Kacheln in
+ihren Bereich), `assistant`/`onboarding`/`welcome` → `begleitung`, `cookbook`
+→ `essen/rezepte`, `plan`/`week` → `essen/plan`, `form` → `ui`, `pantry` →
+`vorrat`, `shopping` → `einkauf`, `profile` → `einstellungen`; in `lib`:
+`aufgaben` → `kalender`, `lotte` → `begleitung`, `jetzt`/`tagesablauf` →
+`heute`, `kochen` → `essen`, Vorrat-Speicher → `vorrat`. Die Begleitung heißt
+im Code neutral (`BegleitungAvatar`, `BegleitungBar`, `BegleitungTool`, …);
+`/api/lotte`, Speicher-Schlüssel, Op- und Werkzeugnamen bleiben. Importe nur
+über `@/…`. Ältere Pfadangaben weiter unten meinen die neuen Orte.
+
 # Hinweise für Claude
 
 @AGENTS.md

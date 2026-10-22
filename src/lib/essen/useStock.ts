@@ -5,11 +5,11 @@
 // der Einkaufswoche – ohne das, was nach dem Essen schon verkocht ist. Immer
 // live aus den Speichern, nie zwischengespeichert.
 
-import { mergeStock, stockItem } from "./dishIdeas";
-import { usedRecently, useCookedDays } from "./mealDone";
-import { sameIngredient, usePantry, type PantryItem } from "./pantry";
-import { useWeekShoppingList } from "../einkauf/useWeekShoppingList";
-import { toIsoDate, useToday } from "./weekPlan";
+import { mergeStock, stockItem } from "@/lib/essen/dishIdeas";
+import { usedRecently, useCookedDays } from "@/lib/essen/mealDone";
+import { sameIngredient, usePantry, type PantryItem } from "@/lib/vorrat/pantry";
+import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
+import { toIsoDate, useToday } from "@/lib/essen/weekPlan";
 
 /** Bestand für Ideen (`undefined` = lädt) */
 export function useStock(): PantryItem[] | undefined {

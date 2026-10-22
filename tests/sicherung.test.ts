@@ -29,9 +29,9 @@ describe("Sicherung von v0.47", () => {
   it("lässt sich einspielen – alle Speicher lesen ihre Daten", async () => {
     restoreBackup(parseBackup(file)!, storage);
     const { loadProfile } = await import("@/lib/einstellungen/profileStore");
-    const { loadEntries } = await import("@/lib/aufgaben/store");
+    const { loadEntries } = await import("@/lib/kalender/store");
     const { loadNotes } = await import("@/lib/notizen/store");
-    const { loadPantry } = await import("@/lib/essen/pantry");
+    const { loadPantry } = await import("@/lib/vorrat/pantry");
     const { loadPins, loadMemos } = await import("@/lib/pinnwand/store");
     const { loadHomeTiles } = await import("@/lib/core/homeLayout");
     const { loadShoppingSettings } = await import("@/lib/einkauf/shoppingList");

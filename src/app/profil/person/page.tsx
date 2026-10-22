@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { CARD } from "@/components/ui/styles";
-import { PersonEditView } from "@/components/profile/PersonEditView";
+import { PersonEditView } from "@/components/einstellungen/PersonEditView";
 
 export const metadata = { title: "Person bearbeiten" };
 

@@ -1,10 +1,10 @@
 "use client";
 
-import { useRecipes } from "../essen/cookbook";
-import { composeWeek, useMealPlans } from "../essen/mealPlan";
-import { buildShoppingList, useShoppingLists, useShoppingSettings, type ShoppingList, type ShoppingSettings, type WeekList } from "./shoppingList";
-import { isSmallHousehold, planningVisible } from "../einstellungen/profile";
-import { useProfile } from "../einstellungen/useProfile";
+import { useRecipes } from "@/lib/essen/cookbook";
+import { composeWeek, useMealPlans } from "@/lib/essen/mealPlan";
+import { buildShoppingList, useShoppingLists, useShoppingSettings, type ShoppingList, type ShoppingSettings, type WeekList } from "@/lib/einkauf/shoppingList";
+import { isSmallHousehold, planningVisible } from "@/lib/einstellungen/profile";
+import { useProfile } from "@/lib/einstellungen/useProfile";
 import {
   DEFAULT_SHOPPING_DAY,
   nextWeekStartFor,
@@ -12,7 +12,7 @@ import {
   useToday,
   useWeekPlans,
   weekStartFor,
-} from "../essen/weekPlan";
+} from "@/lib/essen/weekPlan";
 
 export type WeekChoice = "planning" | "current" | "next";
 

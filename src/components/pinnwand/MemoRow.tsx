@@ -15,9 +15,9 @@ import { showDeleted } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
 import { REACTIONS, changeMemos, dauerWords, formatDauer, memoUnheard, removeMemo, setMemoHeard, toggleMemoReaction, type MemoMessage } from "@/lib/pinnwand";
 import { forgetMemo, memoPlayerIdle, memoPlayerState, playMemo, prepareMemo, stopMemo, subscribeMemoPlayer } from "@/lib/pinnwand/memoPlayer";
-import { buzz } from "@/components/alltag/actions";
-import { MemoWave } from "./MemoParts";
-import { pinMetaLine } from "./PinSheets";
+import { buzz } from "@/components/heute/actions";
+import { MemoWave } from "@/components/pinnwand/MemoParts";
+import { pinMetaLine } from "@/components/pinnwand/PinSheets";
 
 function usePlayer() {
   return useSyncExternalStore(subscribeMemoPlayer, memoPlayerState, memoPlayerIdle);

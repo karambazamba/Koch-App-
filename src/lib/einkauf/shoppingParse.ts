@@ -2,8 +2,8 @@
 // Windeln auf die Liste" → Artikel mit Menge und Laden. Und Produkt-Wünsche:
 // "Wir nehmen immer Alsan statt Butter" → Butter → Alsan.
 
-import { ruleParseLeftovers } from "../essen/leftovers/ruleParser";
-import { SHOP_SUGGESTIONS } from "./shoppingList";
+import { ruleParseLeftovers } from "@/lib/essen/leftovers/ruleParser";
+import { SHOP_SUGGESTIONS } from "@/lib/einkauf/shoppingList";
 
 export type ParsedShoppingItem = { name: string; amount: string; shop: string };
 

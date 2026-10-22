@@ -1,10 +1,10 @@
 // "Ich will doch mal planen": Spontane schalten die Planung frei – nur für
 // diese Woche (danach wieder spontan) oder ab jetzt immer.
 
-import { markAsked } from "../core/activity";
-import { type HouseholdProfile, type PlanStyle } from "../einstellungen/profile";
-import { saveProfile } from "../einstellungen/profileStore";
-import { weekStartFor } from "./weekPlan";
+import { markAsked } from "@/lib/core/activity";
+import { type HouseholdProfile, type PlanStyle } from "@/lib/einstellungen/profile";
+import { saveProfile } from "@/lib/einstellungen/profileStore";
+import { weekStartFor } from "@/lib/essen/weekPlan";
 
 export type UnlockChoice = { kind: "woche" } | { kind: "immer"; style: Exclude<PlanStyle, "spontan"> };
 

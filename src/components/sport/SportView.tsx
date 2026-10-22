@@ -6,11 +6,11 @@
 
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
-import { PageHeader } from "@/components/PageHeader";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { Sheet } from "@/components/ui/Sheet";
 import { CARD, CARD_LIST, INPUT, PAGE_MAIN, SECTION_TITLE, buttonClass, chipClass } from "@/components/ui/styles";
-import { useEntries } from "@/lib/aufgaben/store";
-import { weekdayIndex, weekdayShort } from "@/lib/aufgaben/model";
+import { useEntries } from "@/lib/kalender/store";
+import { weekdayIndex, weekdayShort } from "@/lib/kalender/model";
 import { addDays, useToday, toIsoDate } from "@/lib/core/now";
 import { showDeleted } from "@/lib/core/toast";
 import { useProfile } from "@/lib/einstellungen/useProfile";
@@ -20,10 +20,10 @@ import { packFor, sportById, statusLine, trainingsBetween, useSport, weekDots, w
 import { useForecast } from "@/lib/wetter/client";
 import { PagePlus } from "@/components/ui/QuickButton";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
-import { SportDaySheet } from "./SportDaySheet";
-import { SportWeekRow } from "./SportWeekRow";
-import { buzz } from "@/components/alltag/actions";
-import { SportAddSheet } from "./SportAddSheet";
+import { SportDaySheet } from "@/components/sport/SportDaySheet";
+import { SportWeekRow } from "@/components/sport/SportWeekRow";
+import { buzz } from "@/components/heute/actions";
+import { SportAddSheet } from "@/components/sport/SportAddSheet";
 
 export function SportView() {
   const sport = useSport();

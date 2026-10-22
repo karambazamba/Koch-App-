@@ -1,5 +1,5 @@
-import { CookbookList } from "@/components/cookbook/CookbookList";
-import { FeatureGate } from "@/components/FeatureGate";
+import { CookbookList } from "@/components/essen/rezepte/CookbookList";
+import { FeatureGate } from "@/components/core/FeatureGate";
 
 export const metadata = { title: "Unsere Rezepte" };
 

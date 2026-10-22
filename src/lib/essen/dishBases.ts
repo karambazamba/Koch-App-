@@ -2,8 +2,8 @@
 // Fläche, die das Gefäß vorgibt (Teller, Schale, Pfanne, Form, Blech, Brett;
 // siehe dishSvg.ts). Toppings kommen über `scatter` aus dishBits.ts.
 
-import type { DishArt, Topping } from "./dishArt";
-import { between, blob, breadSlice, center, drop, ellipse, f, lemonSlice, mozzaSlice, pick, rect, scatter, size, spot, tomatoSlice, type Region, type Rng } from "./dishBits";
+import type { DishArt, Topping } from "@/lib/essen/dishArt";
+import { between, blob, breadSlice, center, drop, ellipse, f, lemonSlice, mozzaSlice, pick, rect, scatter, size, spot, tomatoSlice, type Region, type Rng } from "@/lib/essen/dishBits";
 
 const has = (art: DishArt, t: Topping) => art.toppings.includes(t);
 

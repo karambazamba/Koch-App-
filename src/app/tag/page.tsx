@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { CARD } from "@/components/ui/styles";
-import { DayView } from "@/components/alltag/DayView";
+import { DayView } from "@/components/kalender/DayView";
 
 export const metadata = { title: "Tag" };
 

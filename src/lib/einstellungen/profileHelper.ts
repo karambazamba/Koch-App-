@@ -3,7 +3,7 @@
 // Hilfen (helperName, helperTitle, helperMessage) – nie einen Namen fest
 // einbauen.
 
-import type { HouseholdProfile } from "./profileModel";
+import type { HouseholdProfile } from "@/lib/einstellungen/profileModel";
 
 /** Stimme der Begleitung für die Sprachausgabe (folgt der Art) */
 export type HelperVoice = "weiblich" | "maennlich";

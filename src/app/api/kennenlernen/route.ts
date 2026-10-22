@@ -5,9 +5,9 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { aiRecognize, parseRecognizeRequest, ruleRecognize } from "@/lib/einstellungen/onboarding/ai";
-import { aiSetup, checkAccess, clientIp, takeDailySlot } from "@/lib/lotte/guard";
-import type { AssistantErrorCode } from "@/lib/lotte/protocol";
-import { allowRequest } from "@/lib/lotte/rateLimit";
+import { aiSetup, checkAccess, clientIp, takeDailySlot } from "@/lib/begleitung/guard";
+import type { AssistantErrorCode } from "@/lib/begleitung/protocol";
+import { allowRequest } from "@/lib/begleitung/rateLimit";
 
 export const maxDuration = 30;
 

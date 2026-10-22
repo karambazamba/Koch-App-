@@ -5,9 +5,9 @@
 // 30 Minuten zwischengespeichert. Standort → Stadtname über OpenStreetMap
 // (Nominatim). `WETTER_MOCK=1` = Testmodus mit festen Werten (ohne Netz).
 
-import { berlinTime, now } from "../core/now";
-import { buildDays, type Forecast } from "./forecast";
-import { fromBrightSky, fromOpenMeteo } from "./sources";
+import { berlinTime, now } from "@/lib/core/now";
+import { buildDays, type Forecast } from "@/lib/wetter/forecast";
+import { fromBrightSky, fromOpenMeteo } from "@/lib/wetter/sources";
 
 const TTL = 30 * 60 * 1000;
 const cache = new Map<string, { at: number; data: Forecast }>();

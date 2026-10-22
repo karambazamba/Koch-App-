@@ -1,4 +1,4 @@
-import { MailSettingsView } from "@/components/profile/settings/MailSettingsView";
+import { MailSettingsView } from "@/components/einstellungen/settings/MailSettingsView";
 
 export const metadata = { title: "Mails" };
 

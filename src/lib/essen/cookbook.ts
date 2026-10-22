@@ -5,13 +5,13 @@
 // saveAiRecipe() direkt (als Favorit, Herkunft "ki") ins Kochbuch übernommen
 // werden – dieselbe Struktur wie eigene Rezepte, plus optionale `ai`-Angaben.
 
-import { useExternalStore } from "../core/useExternalStore";
-import { createLocalStore } from "../core/localStore";
-import type { MachineStep, OvenSettings } from "./baking/types";
-import { now } from "../core/now";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+import { createLocalStore } from "@/lib/core/localStore";
+import type { MachineStep, OvenSettings } from "@/lib/essen/baking/types";
+import { now } from "@/lib/core/now";
 import type { StorageKey } from "@/lib/core/storage";
 
-export type { MachineStep, OvenMode } from "./baking/types";
+export type { MachineStep, OvenMode } from "@/lib/essen/baking/types";
 
 export type RecipeCategory = "fleisch" | "vegetarisch" | "fisch" | "cheatday";
 /** Kochen oder Backen (Kochbuch v3) – Backen: Mengen in g/ml, Backofen, Form */

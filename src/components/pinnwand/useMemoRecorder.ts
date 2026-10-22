@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { MEMO_MAX_S, MEMO_MIN_MS, WAVE_BARS, addMemo, changeMemos, createMemo, pickMemoMime, resample, type MemoMessage } from "@/lib/pinnwand";
 import { memoAudio } from "@/lib/pinnwand/memoAudio";
-import { buzz } from "@/components/alltag/actions";
+import { buzz } from "@/components/heute/actions";
 
 export type RecorderPhase = "idle" | "asking" | "recording";
 

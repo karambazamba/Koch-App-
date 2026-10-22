@@ -4,8 +4,8 @@
 // ./recognize.ts (Regeln) bzw. ./ai.ts (KI). Das erste Kennenlernen ist
 // `einstellungen/welcome.ts`.
 
-import { DEFAULT_HELPER, KID_AGE_GROUP_LABELS, createPerson, fitHouseholdType, personLabel, syncPersons, usualLunch, type HouseholdProfile, type KidAgeGroup, type Person, type PersonRole } from "../profile";
-import { extractNames, extractPersonInfo, type DietItem, type NameHint, type PersonInfo } from "./recognize";
+import { DEFAULT_HELPER, KID_AGE_GROUP_LABELS, createPerson, fitHouseholdType, personLabel, syncPersons, usualLunch, type HouseholdProfile, type KidAgeGroup, type Person, type PersonRole } from "@/lib/einstellungen/profile";
+import { extractNames, extractPersonInfo, type DietItem, type NameHint, type PersonInfo } from "@/lib/einstellungen/onboarding/recognize";
 
 export type StepId = "members" | "confirmNames" | "personIntro" | "personRole" | "personGroup" | "done";
 

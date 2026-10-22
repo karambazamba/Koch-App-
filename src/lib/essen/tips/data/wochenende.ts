@@ -1,4 +1,4 @@
-import type { Tip } from "../types";
+import type { Tip } from "@/lib/essen/tips/types";
 
 /** Wochenend-Ideen (Fr–So): ohne Kinder andere als mit Kindern */
 export const WOCHENENDE_TIPS: Tip[] = [

@@ -6,10 +6,10 @@
 // höchstens alle 30 Minuten.
 
 import { useEffect, useState } from "react";
-import { createLocalStore } from "../core/localStore";
-import { useExternalStore } from "../core/useExternalStore";
-import { now, todayIso } from "../core/now";
-import { sanitizeForecast, type Forecast } from "./forecast";
+import { createLocalStore } from "@/lib/core/localStore";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+import { now, todayIso } from "@/lib/core/now";
+import { sanitizeForecast, type Forecast } from "@/lib/wetter/forecast";
 import type { StorageKey } from "@/lib/core/storage";
 
 const DEFAULT_PLACE = "Eutin";

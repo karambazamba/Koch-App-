@@ -2,9 +2,9 @@
 // ("Lotte, Mathis wünscht sich Pfannkuchen"). Wünsche stehen ganz oben bei
 // den Ideen, bis sie gekocht oder weggewischt sind.
 
-import { createLocalStore } from "../core/localStore";
-import { useExternalStore } from "../core/useExternalStore";
-import type { Person } from "../einstellungen/profile";
+import { createLocalStore } from "@/lib/core/localStore";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+import type { Person } from "@/lib/einstellungen/profile";
 
 export type WishIdea = {
   id: string;

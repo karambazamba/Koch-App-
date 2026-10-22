@@ -4,11 +4,11 @@
 // IndexedDB); v1 bekommt eine leere Liste. Alte Nachrichten (älter als 3 Tage,
 // nicht angeheftet) und abgelaufene Memos räumt das Speichern weg.
 
-import { createLocalStore } from "../core/localStore";
-import { useExternalStore } from "../core/useExternalStore";
-import { now } from "../core/now";
-import { prunePins, sanitizePin, type PinMessage } from "./model";
-import { pruneMemos, sanitizeMemo, type MemoMessage } from "./memo";
+import { createLocalStore } from "@/lib/core/localStore";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+import { now } from "@/lib/core/now";
+import { prunePins, sanitizePin, type PinMessage } from "@/lib/pinnwand/model";
+import { pruneMemos, sanitizeMemo, type MemoMessage } from "@/lib/pinnwand/memo";
 
 type PinStore = { version: 2; messages: PinMessage[]; memos: MemoMessage[] };
 

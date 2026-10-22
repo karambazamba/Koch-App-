@@ -6,13 +6,13 @@
 // überschreibt sie nur hier ("cleared" bzw. eigener Eintrag) – die Vorgaben
 // im Wochen-Check bleiben unverändert.
 
-import { useExternalStore } from "../core/useExternalStore";
-import type { Recipe, RecipeCategory } from "./cookbook";
-import { guessDishCategory } from "./dishCategory";
-import { noteUserAction, todayIso } from "../core/activity";
-import { createLocalStore } from "../core/localStore";
-import { mainMealHeadcount, mainMealTime, isWeekendDay, pausedOn, personLabel, type HouseholdProfile, type MealTime } from "../einstellungen/profile";
-import { loadProfile } from "../einstellungen/profileStore";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+import type { Recipe, RecipeCategory } from "@/lib/essen/cookbook";
+import { guessDishCategory } from "@/lib/essen/dishCategory";
+import { noteUserAction, todayIso } from "@/lib/core/activity";
+import { createLocalStore } from "@/lib/core/localStore";
+import { mainMealHeadcount, mainMealTime, isWeekendDay, pausedOn, personLabel, type HouseholdProfile, type MealTime } from "@/lib/einstellungen/profile";
+import { loadProfile } from "@/lib/einstellungen/profileStore";
 import {
   CATEGORY_COUNT_KEY,
   addDays,
@@ -21,7 +21,7 @@ import {
   weekDayNames,
   wishIsActive,
   type WeekPlan,
-} from "./weekPlan";
+} from "@/lib/essen/weekPlan";
 import type { StorageKey } from "@/lib/core/storage";
 
 /** Was im Plan gespeichert wird. `double` = doppelt kochen, Reste für morgen. */

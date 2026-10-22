@@ -1,5 +1,5 @@
-import { BasesEditView } from "@/components/profile/AreaEditViews";
-import { FeatureGate } from "@/components/FeatureGate";
+import { BasesEditView } from "@/components/einstellungen/AreaEditViews";
+import { FeatureGate } from "@/components/core/FeatureGate";
 
 export const metadata = { title: "Lieblings-Basen" };
 

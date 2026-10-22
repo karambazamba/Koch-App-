@@ -4,7 +4,7 @@
 // Scrollhöhe. Vorwärts startet eine Seite oben, zurück landet man genau dort,
 // wo man die Seite verlassen hat – egal wie tief verschachtelt.
 
-import type { StorageKey } from "./storage";
+import type { StorageKey } from "@/lib/core/storage";
 
 const KEY: StorageKey = "wasgibts.verlauf";
 

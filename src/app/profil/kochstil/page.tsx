@@ -1,5 +1,5 @@
-import { CookingStyleEditView } from "@/components/profile/AreaEditViews";
-import { FeatureGate } from "@/components/FeatureGate";
+import { CookingStyleEditView } from "@/components/einstellungen/AreaEditViews";
+import { FeatureGate } from "@/components/core/FeatureGate";
 
 export const metadata = { title: "So kocht ihr" };
 

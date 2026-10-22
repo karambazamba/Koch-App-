@@ -1,11 +1,11 @@
 // Einkaufsliste: der eine Speicher ("wasgibts.einkaufsliste") mit Ändern,
 // Hooks und den Haushalts-Einstellungen (Produkte, Läden, Stammliste).
 
-import { useExternalStore } from "../core/useExternalStore";
-import { noteUserAction, todayIso } from "../core/activity";
-import { createLocalStore } from "../core/localStore";
-import { basicsToStaples, migrateStore } from "./listMigration";
-import { EMPTY_LIST, type ShoppingListStore, type ShoppingSettings, type WeekList } from "./listModel";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+import { noteUserAction, todayIso } from "@/lib/core/activity";
+import { createLocalStore } from "@/lib/core/localStore";
+import { basicsToStaples, migrateStore } from "@/lib/einkauf/listMigration";
+import { EMPTY_LIST, type ShoppingListStore, type ShoppingSettings, type WeekList } from "@/lib/einkauf/listModel";
 
 export const store = createLocalStore("wasgibts.einkaufsliste", migrateStore);
 const EMPTY_WEEKS: Record<string, WeekList> = {};

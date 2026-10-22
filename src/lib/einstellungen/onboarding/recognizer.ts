@@ -5,9 +5,9 @@
 // sonst (oder bei Fehlern) `undefined` – dann erkennt das Gespräch selbst per
 // Regeln (./recognize.ts).
 
-import { accessHeaders, aiUsable, deviceId, forgetAccessCode, takeAiSlot } from "../../lotte/client";
-import type { Recognized } from "./engine";
-import type { RecognizeKind } from "./ai";
+import { accessHeaders, aiUsable, deviceId, forgetAccessCode, takeAiSlot } from "@/lib/begleitung/client";
+import type { Recognized } from "@/lib/einstellungen/onboarding/engine";
+import type { RecognizeKind } from "@/lib/einstellungen/onboarding/ai";
 
 const RECOGNIZE_ENDPOINT = "/api/kennenlernen";
 

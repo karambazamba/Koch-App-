@@ -13,11 +13,11 @@
 
 import { useState } from "react";
 import { Sheet } from "@/components/ui/Sheet";
-import { EntryForm } from "@/components/alltag/EntryForm";
-import { act, buzz } from "@/components/alltag/actions";
+import { EntryForm } from "@/components/kalender/EntryForm";
+import { act, buzz } from "@/components/heute/actions";
 import { CARD, buttonClass, chipClass } from "@/components/ui/styles";
-import { clockLabel } from "@/lib/aufgaben/answers";
-import { removeItem, sanitizeEntry, setDone, upsertEntry, weekdayLong, type CalendarEntry, type DayItem } from "@/lib/aufgaben/model";
+import { clockLabel } from "@/lib/kalender/answers";
+import { removeItem, sanitizeEntry, setDone, upsertEntry, weekdayLong, type CalendarEntry, type DayItem } from "@/lib/kalender/model";
 import { createEntry } from "@/lib/core/entries";
 import { showDeleted } from "@/lib/core/toast";
 import { round } from "@/lib/wetter/forecast";
@@ -25,7 +25,7 @@ import type { Forecast } from "@/lib/wetter/forecast";
 import { WeatherSymbol } from "@/components/wetter/WeatherSymbol";
 import { addTraining, removeTraining, updateTraining } from "@/lib/sport/actions";
 import { SPORTS, freeStarts, lastTraining, plannedOn, sportById, trainingsBetween, type SportState, type Training } from "@/lib/sport";
-import { SportAddSheet } from "./SportAddSheet";
+import { SportAddSheet } from "@/components/sport/SportAddSheet";
 
 const DURATIONS = [30, 45, 60, 90];
 const DATE = new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "long", timeZone: "UTC" });

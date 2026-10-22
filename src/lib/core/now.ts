@@ -3,7 +3,7 @@
 // auf dem Server, der in UTC läuft). In Tests überschreibbar:
 // `setNowForTests(...)` oder im Browser `window.__WASGIBTS_NOW__ = "2026-10-21T18:00:00"`.
 
-import { useExternalStore } from "./useExternalStore";
+import { useExternalStore } from "@/lib/core/useExternalStore";
 
 const TIME_ZONE = "Europe/Berlin";
 

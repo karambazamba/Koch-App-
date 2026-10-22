@@ -549,7 +549,7 @@ body {
   stroke: none;
 }
 :root[data-theme="nacht"] .begleitung-avatar[data-dunkel] .begleitung-ring,
-[data-lotte-leiste] .begleitung-avatar[data-dunkel] .begleitung-ring {
+[data-begleitung-leiste] .begleitung-avatar[data-dunkel] .begleitung-ring {
   stroke: rgb(255 255 255 / 0.75);
   stroke-width: 1.6;
 }
