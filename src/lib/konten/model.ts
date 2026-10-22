@@ -29,8 +29,12 @@ export function normalizeInviteCode(raw: string): string | null {
 /** „4K7P2Q“ → „4K7-P2Q“ */
 export const formatInviteCode = (code: string) => (code.length === 6 ? `${code.slice(0, 3)}-${code.slice(3)}` : code);
 
-/** Text für das Teilen-Menü */
-export const inviteShareText = (code: string) => `Komm in unseren Haushalt bei Was gibt’s? Code: ${formatInviteCode(code)}`;
+/** Link zum Beitreten (öffnet direkt „Anmelden“, der Code ist schon eingetragen) */
+const inviteLink = (origin: string, code: string) => `${origin.replace(/\/$/, "")}/beitreten?code=${formatInviteCode(code)}`;
+
+/** Text für das Teilen-Menü (mit Link, wenn bekannt) */
+export const inviteShareText = (code: string, origin?: string) =>
+  `Komm in unseren Haushalt bei Was gibt’s? Code: ${formatInviteCode(code)}${origin ? `\n${inviteLink(origin, code)}` : ""}`;
 
 export const isEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
 

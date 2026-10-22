@@ -1867,3 +1867,11 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Warteschlange) – die Bereiche selbst blieben unverändert. Übernahme mit
   Vorschau „… werden mitgenommen.“, Hinweis „Offline – wird gleich
   abgeglichen“ erst nach über einer Minute. Durchklick mit zwei Browsern.
+
+## Anmelden direkt von der Begrüßung (v0.54.0)
+
+- Tafel 20: „Familie schon dabei? Anmelden“ auf dem Hallo-Bildschirm (nur
+  mit Konten), eigene ruhige Seiten für E-Mail, Code und Start (anlegen oder
+  beitreten), danach direkt die Startseite mit dem Flug der Begleitung.
+  Einladungs-Link `/beitreten?code=…` mit eingetragenem Code. „Los geht’s“
+  bleibt der Weg ohne Konto.

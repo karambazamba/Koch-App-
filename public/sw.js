@@ -3,7 +3,7 @@
 // CACHE_VERSION bei jeder Auslieferung erhöhen. Eine neue Version wartet, bis
 // man den Hinweis "Neue Version da" antippt (Nachricht "SKIP_WAITING") – nie
 // ein Zwangs-Neuladen mitten im Tippen. Beim allerersten Mal sofort aktiv.
-const CACHE_VERSION = "v94";
+const CACHE_VERSION = "v95";
 // Interner Name (alter Arbeitsname) bleibt, damit alte Caches sauber aufgeräumt werden.
 const CACHE_NAME = `familienkueche-${CACHE_VERSION}`;
 
@@ -15,6 +15,8 @@ const PRECACHE_URLS = [
   "/einkaufsliste/laden",
   "/kochbuch",
   "/konto",
+  "/anmelden",
+  "/beitreten",
   "/kochbuch/bearbeiten",
   "/kochbuch/kochen",
   "/kochbuch/rezept",

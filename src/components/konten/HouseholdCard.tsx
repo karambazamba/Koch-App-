@@ -28,7 +28,7 @@ export function InviteSheet({ onClose }: { onClose: () => void }) {
   };
   const share = async () => {
     if (!code) return;
-    const text = inviteShareText(code.replace("-", ""));
+    const text = inviteShareText(code.replace("-", ""), window.location.origin);
     try {
       if (navigator.share) return await navigator.share({ text });
     } catch (e) {

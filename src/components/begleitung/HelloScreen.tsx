@@ -3,7 +3,9 @@
 // Erster Start (nur ganz am Anfang oder nach "Neu anfangen"): der
 // Hallo-Bildschirm nach Tafel 19 – drei kleine Pastell-Kacheln, die
 // Begleitung, „Hallo, ich bin <Name>.“, „Euer Alltag an einem Ort.“, der
-// Sprech-Knopf, „Los geht’s“ und „Daten wiederherstellen“. Ablauf:
+// Sprech-Knopf, „Los geht’s“ und „Daten wiederherstellen“ – mit Konten statt
+// dessen „Familie schon dabei? Anmelden“ (→ /anmelden, Tafel 20) und darunter
+// klein „Daten wiederherstellen“. Ablauf:
 //   0,0 s Begleitung ploppt auf, 0,3 s Kacheln fliegen herein (je 120 ms)
 //   0,95 s Überschrift tippt sich ein (sie spricht dabei), 1,8 s Zeile
 //   2,0 s Sprech-Knopf (Puls-Ring), 2,2 s „Los geht’s“ und Link
@@ -210,12 +212,18 @@ export function HelloScreen() {
           <button type="button" onClick={start} className="h-14 w-full rounded-field text-[17px] font-bold text-on-color active:scale-[0.98]" style={{ backgroundColor: color }}>
             Los geht’s
           </button>
-          <Link href="/profil/daten" className="hit inline-flex h-11 items-center gap-1 whitespace-nowrap text-[clamp(12px,3.6vw,14px)] font-semibold text-muted">
-            Schon mal genutzt? <span className="text-accent-strong">Daten wiederherstellen</span>
-          </Link>
-          {(cloud === "supabase" || cloud === "test") && (
-            <Link href="/konto?von=hallo" className="hit -mt-2 inline-flex h-9 items-center text-[clamp(12px,3.6vw,14px)] font-semibold text-accent-strong">
-              Anmelden
+          {cloud === "supabase" || cloud === "test" ? (
+            <>
+              <Link href="/anmelden" className="hit inline-flex h-11 items-center gap-1 whitespace-nowrap text-[clamp(12px,3.6vw,14px)] font-semibold text-muted">
+                Familie schon dabei? <span className="text-accent-strong">Anmelden</span>
+              </Link>
+              <Link href="/profil/daten" className="hit -mt-2 inline-flex h-9 items-center text-[clamp(11px,3.3vw,13px)] font-medium text-muted">
+                Daten wiederherstellen
+              </Link>
+            </>
+          ) : (
+            <Link href="/profil/daten" className="hit inline-flex h-11 items-center gap-1 whitespace-nowrap text-[clamp(12px,3.6vw,14px)] font-semibold text-muted">
+              Schon mal genutzt? <span className="text-accent-strong">Daten wiederherstellen</span>
             </Link>
           )}
         </div>

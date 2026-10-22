@@ -154,7 +154,7 @@ export function KitchenHelper() {
 
   // Kein schwebender Knopf beim ersten Kennenlernen (Vollbild-Gespräch) und
   // auf der Startseite (dort gibt es die Eingabeleiste)
-  const hidden = (profile === null && pathname === "/profil") || pathname === "/";
+  const hidden = (profile === null && pathname === "/profil") || pathname === "/" || pathname === "/anmelden" || pathname === "/beitreten";
 
   const bottom = "max(1rem, env(safe-area-inset-bottom))";
 
