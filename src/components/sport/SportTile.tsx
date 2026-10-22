@@ -22,8 +22,11 @@ import { round } from "@/lib/wetter/forecast";
 import { WeatherSymbol } from "@/components/wetter/WeatherSymbol";
 import { buzz } from "@/components/heute/actions";
 import { SportAddSheet } from "@/components/sport/SportAddSheet";
-import { SportDaySheet } from "@/components/sport/SportDaySheet";
 import { SportWeekRow } from "@/components/sport/SportWeekRow";
+import dynamic from "next/dynamic";
+
+// Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
+const SportDaySheet = dynamic(() => import("@/components/sport/SportDaySheet").then((m) => m.SportDaySheet), { ssr: false });
 
 const BOX = `${TILE} flex flex-col gap-2 p-3.5`;
 

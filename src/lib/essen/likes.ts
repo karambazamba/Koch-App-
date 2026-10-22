@@ -5,7 +5,7 @@
 import { BASES } from "@/lib/essen/bases";
 import type { Ingredient, Recipe } from "@/lib/essen/cookbook";
 import { findFood, recognizeFood } from "@/lib/essen/leftovers/foods";
-import { type HouseholdProfile, type LikedIngredient } from "@/lib/einstellungen/profile";
+import type { HouseholdProfile, LikedIngredient } from "@/lib/einstellungen/profile";
 import { compareText } from "@/lib/core/sort";
 import { loadProfile, saveProfile } from "@/lib/einstellungen/profileStore";
 

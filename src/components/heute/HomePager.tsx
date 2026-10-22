@@ -8,18 +8,16 @@
 // Essen nur ersetzen – Zurück (Pfeil, Safari-Geste, Android) führt immer zu
 // Heute. (?seite=kalender, alt ?seite=woche.) Unten immer dieselbe Mia-Leiste.
 
-import { wakeAvatar } from "@/lib/core/avatarState";
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Mic, Settings } from "lucide-react";
-import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
+import { Settings } from "lucide-react";
+import { BegleitungBar } from "@/components/begleitung/BegleitungBar";
 import { CARD } from "@/components/ui/styles";
 import { useEntries } from "@/lib/kalender/store";
 import { useMinutes } from "@/lib/core/now";
 import { expectReplace, expectTabSwitch, previousUrl } from "@/lib/core/navigation";
 import { helperName } from "@/lib/einstellungen/profile";
-import { openHelper } from "@/lib/begleitung/open";
 import type { HomeData } from "@/components/heute/useHomeData";
 import { TodayPage } from "@/components/heute/TodayPage";
 import { CalendarPage } from "@/components/kalender/CalendarPage";
@@ -220,28 +218,3 @@ export function HomePager({ data }: { data: HomeData }) {
   );
 }
 
-/** Lotte-Leiste unten: hell und schwebend, Avatar links, oranges Mikrofon rechts */
-export function BegleitungBar({ name, bottom }: { name: string; bottom?: string }) {
-  return (
-    <div
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-20 bg-linear-to-t from-background via-background/90 to-transparent px-4 pt-6 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
-      style={bottom ? { bottom } : undefined}
-      data-begleitung-leiste
-    >
-      <div className="pointer-events-auto mx-auto flex h-14 max-w-lg items-center gap-2.5 rounded-bar border border-line bg-surface pl-2 pr-1.5 shadow-bar">
-        <button type="button" onClick={() => (wakeAvatar(), openHelper())} aria-label={`Sag ${name}, was ansteht … (${name} öffnen)`} className="flex h-full min-w-0 flex-1 items-center gap-2.5 text-left">
-          <BegleitungAvatar size={40} groesse="klein" />
-          <span className="truncate text-[15px] text-muted">Sag {name}, was ansteht …</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => (wakeAvatar(), openHelper("voice"))}
-          aria-label={`${name} etwas sagen`}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent transition active:scale-95"
-        >
-          <Mic className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-        </button>
-      </div>
-    </div>
-  );
-}

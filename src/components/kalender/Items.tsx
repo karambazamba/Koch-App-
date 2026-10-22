@@ -14,7 +14,10 @@ import { isUrgent, moveItem, REMINDERS, removeItem, repeatLabel, setDone, setRem
 import { UrgentMark } from "@/components/kalender/UrgentMark";
 import { addDays } from "@/lib/core/now";
 import { LEAVE_MS, act, buzz } from "@/components/heute/actions";
-import { EntryForm } from "@/components/kalender/EntryForm";
+import dynamic from "next/dynamic";
+
+// Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
+const EntryForm = dynamic(() => import("@/components/kalender/EntryForm").then((m) => m.EntryForm), { ssr: false });
 
 /** Unterzeile: Etikett · Erinnerung · Frist · "von gestern" · Wiederholung */
 function subline(item: DayItem): string[] {

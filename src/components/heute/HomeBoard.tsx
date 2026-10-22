@@ -18,10 +18,13 @@ import { applyHomeChange, reorderVisible, saveHomeTiles, standardLayout, tileMet
 import { showDeleted } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
 import { glowTile, rowsOf, unitsOf, type Unit } from "@/lib/core/homeUnits";
-import { TilePicker } from "@/components/heute/TilePicker";
 import { EditFrame } from "@/components/heute/EditFrame";
 import { UnitMenu } from "@/components/heute/UnitMenu";
 import { buzz } from "@/components/heute/actions";
+import dynamic from "next/dynamic";
+
+// Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
+const TilePicker = dynamic(() => import("@/components/heute/TilePicker").then((m) => m.TilePicker), { ssr: false });
 
 type Box = { key: string; top: number; bottom: number; left: number; right: number; half: boolean };
 type Drag = { key: string; x: number; y: number; offX: number; offY: number; w: number; h: number; target: number };

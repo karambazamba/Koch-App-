@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { type HouseholdProfile } from "@/lib/einstellungen/profile";
+import type { HouseholdProfile } from "@/lib/einstellungen/profile";
 import { loadProfile, subscribeProfile } from "@/lib/einstellungen/profileStore";
 
 /**

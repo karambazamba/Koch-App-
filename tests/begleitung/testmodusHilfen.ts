@@ -4,7 +4,6 @@ import { createMockModel } from "@/lib/begleitung/mock";
 import { BAUSTEINE } from "@/lib/core/features";
 
 type Msg = Anthropic.Beta.BetaMessageParam;
-type Use = { name: string; input: Record<string, unknown>; id: string };
 
 /** Kontext wie aus prompt.ts – Do 22.10.2026, Familie mit Jonne */
 export function context(extra: string[] = [], opts: { on?: string[]; vorrat?: string; kochbuch?: string; pinnwand?: string; schnellnotiz?: string } = {}): string {

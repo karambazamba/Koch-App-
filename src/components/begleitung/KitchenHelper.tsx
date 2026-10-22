@@ -4,7 +4,6 @@ import { useSchnellnotiz, useNotes } from "@/lib/notizen";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Check } from "lucide-react";
-import { commitOps } from "@/lib/begleitung/client";
 import { onOpenHelper } from "@/lib/begleitung/open";
 import { learnLikes, likesFromIngredients, LIKE_WEIGHTS } from "@/lib/essen/likes";
 import { useRecipes } from "@/lib/essen/cookbook";
@@ -18,14 +17,13 @@ import type { SpontanFilter } from "@/lib/essen/spontan";
 import type { AssistantData } from "@/lib/begleitung/ops";
 import { migrateOldTermine, useEntries } from "@/lib/kalender/store";
 import { useHomeTiles } from "@/lib/core/homeLayout";
-import { BegleitungBar } from "@/components/heute/HomePager";
+import { BegleitungBar } from "@/components/begleitung/BegleitungBar";
 import { helperName } from "@/lib/einstellungen/profile";
 import { removeRetiredKeys } from "@/lib/core/storage";
 import { adoptLegacySpeech } from "@/lib/begleitung/speech";
 import { adoptSchnellnotiz } from "@/lib/notizen/schnellnotiz";
-import { tidyMemos } from "@/lib/pinnwand/memoAudio";
 import { spontanStartTurn, type ChatState } from "@/components/begleitung/chatTypes";
-import { loadSpontanFilters } from "@/components/begleitung/SpontanBoard";
+import { loadSpontanFilters } from "@/lib/essen/spontanFilters";
 import dynamic from "next/dynamic";
 
 // Das Gespräch (mit Mails, Backstube, Supermarkt …) wird erst gebraucht, wenn
@@ -83,7 +81,8 @@ export function KitchenHelper() {
     adoptLegacySpeech();
     adoptSchnellnotiz();
     removeRetiredKeys(localStorage, sessionStorage);
-    void tidyMemos();
+    // Sprachnachrichten aufräumen (IndexedDB) – erst bei Bedarf geladen
+    void import("@/lib/pinnwand/memoAudio").then((m) => m.tidyMemos());
   }, []);
 
   // App geöffnet (für "Willkommen zurück" nach 3+ Tagen)
@@ -119,9 +118,11 @@ export function KitchenHelper() {
     return () => clearTimeout(timer);
   }, [undone]);
 
-  const apply = (selected: Set<string>) => {
+  const apply = async (selected: Set<string>) => {
     if (!data || !chat.proposal) return;
     const prompt = [...chat.turns].reverse().find((t) => t.role === "user")?.text ?? "";
+    // Erst hier geladen (das Gespräch hat es schon geholt) – hält das Layout klein
+    const { commitOps } = await import("@/lib/begleitung/client");
     const { undo: run, notes } = commitOps(data, chat.proposal.ops, selected, prompt);
     // Gewählte Gerichte → deren Zutaten zählen als Vorliebe
     const chosen = chat.proposal.ops

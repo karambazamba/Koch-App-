@@ -28,7 +28,7 @@ import type { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 import { isShoppingRequest, parseProductStatement, parseShoppingText } from "@/lib/einkauf/shoppingParse";
 import { filtersFromText, isIdeaFilterRequest, isQuickRequest, isSnackRequest, snackReply } from "@/lib/essen/spontan";
 import { extractLikeStatements, learnLikes, LIKE_WEIGHTS } from "@/lib/essen/likes";
-import { saveSpontanFilters } from "@/components/begleitung/SpontanBoard";
+import { saveSpontanFilters } from "@/lib/essen/spontanFilters";
 import type { ChatState, ChatTurnView } from "@/components/begleitung/chatTypes";
 import { pauseRule, dayRule, boardRule, schnellnotizRule, noteRule, bausteinRule, homeCommand, shopModeRule, memoPlayRule, type RuleContext } from "@/components/begleitung/localRules";
 import { mailRule } from "@/components/begleitung/mailRules";

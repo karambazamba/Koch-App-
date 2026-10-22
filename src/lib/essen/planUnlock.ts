@@ -2,7 +2,7 @@
 // diese Woche (danach wieder spontan) oder ab jetzt immer.
 
 import { markAsked } from "@/lib/core/activity";
-import { type HouseholdProfile, type PlanStyle } from "@/lib/einstellungen/profile";
+import type { HouseholdProfile, PlanStyle } from "@/lib/einstellungen/profile";
 import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { weekStartFor } from "@/lib/essen/weekPlan";
 

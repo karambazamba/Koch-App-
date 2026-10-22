@@ -17,7 +17,8 @@ import { learnFromRecipe, LIKE_WEIGHTS } from "@/lib/essen/likes";
 import { bausteinOf, unlockFeature } from "@/lib/core/features";
 import { toIsoDate } from "@/lib/essen/weekPlan";
 import type { AssistantData } from "@/lib/begleitung/ops";
-import { loadSpontanFilters, saveSpontanFilters, spontanHeading } from "@/components/begleitung/SpontanBoard";
+import { spontanHeading } from "@/components/begleitung/SpontanBoard";
+import { loadSpontanFilters, saveSpontanFilters } from "@/lib/essen/spontanFilters";
 import { spontanStartTurn, type ChatState, type ChatTurnView } from "@/components/begleitung/chatTypes";
 
 type Options = {

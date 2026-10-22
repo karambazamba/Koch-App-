@@ -1,6 +1,5 @@
 "use client";
 
-import { readRaw, writeRaw } from "@/lib/core/localStore";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { RefreshCw, SlidersHorizontal } from "lucide-react";
@@ -11,27 +10,6 @@ import { EMPTY_STOCK_HINT } from "@/lib/essen/dishIdeas";
 import { formatPantryItem, type PantryItem } from "@/lib/vorrat/pantry";
 import { SPONTAN_FILTERS, type SpontanFilter, type SpontanIdea } from "@/lib/essen/spontan";
 import { sortedBases, type BaseCounts } from "@/lib/essen/bases";
-import type { StorageKey } from "@/lib/core/storage";
-
-const FILTER_KEY: StorageKey = "wasgibts.spontan.filter";
-
-/** Gewählte Filter gelten für die Sitzung */
-export function loadSpontanFilters(): SpontanFilter[] {
-  try {
-    const raw = JSON.parse(readRaw(FILTER_KEY, "session") ?? "[]");
-    return Array.isArray(raw) ? raw.filter((f): f is SpontanFilter => typeof f === "string") : [];
-  } catch {
-    return [];
-  }
-}
-
-export function saveSpontanFilters(filters: SpontanFilter[]) {
-  try {
-    writeRaw(FILTER_KEY, JSON.stringify(filters), "session");
-  } catch {
-    // ohne Speicher gilt die Auswahl nur für diese Antwort
-  }
-}
 
 /** Spontan-Idee → Karte */
 const spontanCard = (i: SpontanIdea): CardIdea => ({ id: i.id, title: i.title, category: i.category, minutes: i.minutes, recipeId: i.recipeId, needs: i.extra });

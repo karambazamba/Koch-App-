@@ -92,19 +92,7 @@ export type DishArt = {
 /** Kleinbuchstaben, ohne Akzente – für die Stichwörter */
 const norm = (s: string) => s.toLowerCase().replace(/ß/g, "ss").normalize("NFD").replace(/[̀-ͯ]/g, "");
 
-/** Dateiname eines Gerichts: "Pasta mit Tomaten & Burrata" → "pasta-mit-tomaten-burrata" */
-export function dishSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/ä/g, "ae")
-    .replace(/ö/g, "oe")
-    .replace(/ü/g, "ue")
-    .replace(/ß/g, "ss")
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
+export { dishSlug } from "@/lib/essen/dishSlug";
 
 /** Fester Zufall aus dem Namen (FNV-1a) */
 function dishSeed(title: string): number {
