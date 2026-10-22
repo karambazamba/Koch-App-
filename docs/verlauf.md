@@ -1953,3 +1953,10 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Gericht als Karte vor („Anderes“ / „Machen wir“ → heutiges Essen, der Plan
   bleibt). Die Mütze erscheint ab dem 3. Nutzungstag, früher auf Nachfrage
   oder mit „Alles zeigen“.
+
+## Mehr Ideen – bunte Mischung zum Durchschieben (v0.61.0)
+
+- Unter jedem Rezept eine endlose, wischbare Reihe mit 8 Ideen – jeden Tag
+  eine andere Mischung (schnell, Lieblinge, besonders, wenn Zeit ist),
+  passend zur Familie. Neuer Rezeptvorrat „Aus unserer Küche“ mit 34
+  Gerichten und eigenen Zeichnungen.

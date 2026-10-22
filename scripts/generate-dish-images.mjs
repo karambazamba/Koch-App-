@@ -1,5 +1,5 @@
-// Eingebaute Gericht-Bilder: je Gericht aus DISHES, den Beispiel-Gerichten und
-// der Backstube eine eigene Illustration (dishArt + renderDishSvg, dieselben
+// Eingebaute Gericht-Bilder: je Gericht aus DISHES, den Beispiel-Gerichten,
+// der Küche und der Backstube eine eigene Illustration (dishArt + renderDishSvg, dieselben
 // Bausteine wie das Live-Bild in der App) als public/gerichte/<slug>.webp
 // (900 × 600, Ziel < 80 KB). Dazu public/demo/gericht.webp (1200 × 800) und
 // die Liste src/lib/essen/dishImageList.ts. Aufruf: npm run gerichte-bilder
@@ -19,12 +19,14 @@ const { renderDishSvg } = await load("src/lib/essen/dishSvg.ts");
 const { DISHES } = await load("src/lib/essen/dishIdeas.ts");
 const { DEMO_RECIPES } = await load("src/lib/essen/demoDish.ts");
 const { BUILTIN_BAKING } = await load("src/lib/essen/baking/index.ts");
+const { BUILTIN_COOK } = await load("src/lib/essen/kochen/index.ts");
 
 const names = (r) => r.ingredients.map((i) => i.name);
 const list = [
   ...DEMO_RECIPES.map((r) => ({ title: r.title, ingredients: names(r), category: r.category })),
   ...DISHES.map((d) => ({ title: d.title, ingredients: d.needs, category: d.category })),
   ...BUILTIN_BAKING.map((r) => ({ title: r.title, ingredients: names(r), category: r.category })),
+  ...BUILTIN_COOK.map((r) => ({ title: r.title, ingredients: names(r), category: r.category })),
 ];
 
 const seen = new Map();

@@ -32,7 +32,7 @@ import { showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
 import { weekdayLong } from "@/lib/kalender/model";
 import { MachineStepView, MachineToggle, useMachineView } from "@/components/essen/rezepte/MachineSteps";
-import { DemoMoreIdeas } from "@/components/essen/rezepte/DemoRecipeBits";
+import { MoreIdeas } from "@/components/essen/rezepte/MoreIdeas";
 
 const ROUND = "flex h-[34px] w-[34px] items-center justify-center rounded-full bg-surface/90 shadow-card";
 
@@ -134,7 +134,7 @@ function RecipeDetails({ id, persons }: { id: string; persons: number | null }) 
           {(builtin || recipe.source === "ki") && (
             <span className="inline-flex items-center gap-1 whitespace-nowrap">
               <Sparkles className="h-4 w-4" strokeWidth={2} aria-hidden />
-              {demo ? "Beispiel-Rezept" : builtin ? "Aus unserer Backstube" : "Vorschlag"}
+              {demo ? "Beispiel-Rezept" : builtin ? (baking ? "Aus unserer Backstube" : "Aus unserer Küche") : "Vorschlag"}
             </span>
           )}
         </p>
@@ -240,7 +240,7 @@ function RecipeDetails({ id, persons }: { id: string; persons: number | null }) 
           </section>
         )}
 
-        {demo && <DemoMoreIdeas current={recipe.id} />}
+        {!baking && <MoreIdeas current={recipe.id} demo={demo} />}
       </main>
       {planning && profile && today && weekPlans && mealPlans && (
         <PlanDaySheet

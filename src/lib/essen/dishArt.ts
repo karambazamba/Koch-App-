@@ -107,7 +107,7 @@ function dishSeed(title: string): number {
 // Reihenfolge zählt: die erste passende Regel gewinnt (erst im Titel, dann in den Zutaten)
 const FORM_RULES: [DishForm, RegExp][] = [
   ["suppe", /suppe|eintopf|bruhe|minestrone/],
-  ["auflauf", /auflauf|gratin|lasagne|crumble|gefullte|moussaka|uberbacken/],
+  ["auflauf", /auflauf|gratin|lasagne|crumble|gefullte|moussaka|uberbacken|quiche/],
   ["wrap", /wrap|tortilla|burrito|fajita|taco|quesadilla/],
   ["pizza", /pizza|flammkuchen/],
   ["muffins", /muffin|cupcake/],
@@ -119,7 +119,7 @@ const FORM_RULES: [DishForm, RegExp][] = [
   ["suess", /milchreis|griessbrei|griesbrei|pudding|porridge|haferbrei|kaiserschmarrn/],
   ["salat", /salat|caprese|tomate\w*-mozzarella/],
   ["bowl", /curry|chili|bowl|gulasch|dal\b|ragout|stew/],
-  ["pfanne", /pfanne|geschnetzelt|wok|gebraten/],
+  ["pfanne", /pfanne|geschnetzelt|wok|gebraten|shakshuka/],
   ["nudeln-lang", /spaghetti|tagliatelle|linguine|bandnudel|bolognese|carbonara/],
   ["nudeln-kurz", /nudel|pasta|penne|fusilli|maccheroni|makkaroni|gnocchi|tortellini|ravioli|spatzle|farfalle/],
   ["pfannkuchen", /pfannkuchen|crepe|puffer|reibekuchen|rosti|omelett|pancake/],

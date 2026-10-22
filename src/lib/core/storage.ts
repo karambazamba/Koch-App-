@@ -58,6 +58,7 @@ export const STORAGE = [
   { key: "wasgibts.kalenderabos", what: "Kalender-Links (Abos): Name, geheimer Link, Farbe, Familie/Arbeit, an/aus – nur auf dem Gerät, in der Sicherung nur auf Wunsch", version: 1, migration: "kalender/abo/store.ts", area: "local", backup: false },
   { key: "wasgibts.kalenderabo-termine", what: "Zwischenspeicher der Abo-Termine (nur lesen, wird neu abgerufen)", version: 1, migration: "kalender/abo/store.ts", area: "local", backup: false },
   { key: "wasgibts.einmalhinweise", what: "Einmalige Hinweise (z. B. „+ Kachel“ beim ersten Bearbeiten)", version: 1, migration: "core/hints.ts", area: "local", backup: false },
+  { key: "wasgibts.ideenmix", what: "Mehr Ideen: still gelerntes Interesse (Antippen, gezeigt) für die Tages-Mischung", version: 1, migration: "essen/mehrIdeen/store.ts", area: "local", backup: true },
   { key: "wasgibts.kochtipp", what: "Kochtipp: Nutzungstage, Mütze freigeschaltet, letzte Wahl, zuletzt gezeigte Gerichte", version: 1, migration: "essen/kochtipp/store.ts", area: "local", backup: true },
   { key: "wasgibts.dunkeltipp", what: "Einmaliger Hinweis auf Dunkel/Automatisch (ab dem 3. Tag)", version: 1, migration: "core/darkTip.ts", area: "local", backup: false },
   { key: "wasgibts.beispiel", what: "Beispiel-Tag beim ersten Start (seit wann, geleerte Kacheln, Abgehaktes)", version: 1, migration: "core/demo.ts", area: "local", backup: false },
