@@ -10,9 +10,9 @@
 
 import { greetOncePerDay, setAvatarSleeping } from "@/lib/core/avatarState";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { PenLine } from "lucide-react";
-import { DEFAULT_HOME, markHomeTipSeen, onHomeEditRequest, tileMeta, useHomeTiles, useHomeTipSeen, type HomeTile, type HomeTileId } from "@/lib/core/homeLayout";
+import { DEFAULT_HOME, markHomeTipSeen, tileMeta, useHomeTiles, useHomeTipSeen, type HomeTile, type HomeTileId } from "@/lib/core/homeLayout";
 import { useWelcomeFinished } from "@/lib/einstellungen/welcomeStore";
 import { HomeBoard } from "./HomeBoard";
 import { FoodTile, MorgenTile, NotesTile, PantryTile, ShoppingTile } from "./HomeTiles";
@@ -47,6 +47,8 @@ import { AufgabenSection, TermineSection, type DemoProps } from "./MiniCards";
 import { useDemoDay } from "./useDemoDay";
 import { DemoItemSheet, DemoRow } from "./DemoBits";
 import { EditHeader } from "./EditHeader";
+import { useHomeEditing } from "./useHomeEditing";
+import { Pressable } from "./Pressable";
 import { DarkTip } from "./DarkTip";
 import { PotHintCard, usePotHint } from "@/components/spendentopf/PotHintCard";
 import { SpendentopfTile } from "@/components/spendentopf/SpendentopfTile";
@@ -382,123 +384,5 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
         </div>
       </Pressable>
     </>
-  );
-}
-
-/**
- * Bearbeiten-Modus: öffnen (lange drücken, Link, Einstellungen/Lotte über
- * `requestHomeEdit`), schließen ("Fertig", Zurück, Danebentippen). Zurück
- * (Pfeil/Geste) schließt nur den Modus – dafür ein eigener Verlaufseintrag.
- * Danebentippen zentral: ein echter Klick (kein Wisch – nach dem Scrollen
- * schickt der Browser keinen) auf jede freie Fläche beendet; Kacheln (Menü),
- * Knöpfe, Links, Felder, Fenster und die Mia-Leiste nicht. Der Seiten-Schalter
- * wechselt wie gewohnt und beendet dabei den Modus.
- */
-function useHomeEditing() {
-  const [on, setOn] = useState(false);
-  const pushed = useRef(false);
-  const open = () => {
-    if (pushed.current) return;
-    buzz();
-    openedAt.current = performance.now();
-    setOn(true);
-    window.scrollTo({ top: 0 });
-    try {
-      window.history.pushState({ ...(window.history.state ?? {}), homeEdit: true }, "");
-      pushed.current = true;
-    } catch {
-      pushed.current = false;
-    }
-  };
-  const openedAt = useRef(0);
-  const close = () => {
-    setOn(false);
-    if (pushed.current) {
-      pushed.current = false;
-      window.history.back();
-    }
-  };
-  const openRef = useRef(open);
-  useEffect(() => {
-    openRef.current = open;
-  });
-  useEffect(() => onHomeEditRequest(() => openRef.current()), []);
-  useEffect(() => {
-    if (!on) return;
-    const onPop = () => {
-      // Ein Fenster im Bearbeiten-Modus (z. B. das Kachel-Menü) wurde geschlossen – der Modus bleibt
-      if ((window.history.state as { homeEdit?: boolean } | null)?.homeEdit) return;
-      pushed.current = false;
-      setOn(false);
-    };
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
-  }, [on]);
-  const closeRef = useRef(close);
-  useEffect(() => {
-    closeRef.current = close;
-  });
-  useEffect(() => {
-    if (!on) return;
-    const onClick = (e: MouseEvent) => {
-      // Der Klick, der den Modus geöffnet hat (langes Drücken, Link), zählt nicht
-      if (performance.now() - openedAt.current < 600) return;
-      const t = e.target instanceof Element ? e.target : null;
-      if (!t || !t.isConnected) return;
-      if (t.closest('[role="tab"]')) {
-        // Seite wechselt (router.replace) – den Modus still beenden, ohne Zurück
-        pushed.current = false;
-        setOn(false);
-        return;
-      }
-      if (t.closest('[role="dialog"], [role="alertdialog"], [data-unit], [data-lotte-leiste], [data-keep-edit], button, a, input, textarea, select, label')) return;
-      closeRef.current();
-    };
-    document.addEventListener("click", onClick);
-    return () => document.removeEventListener("click", onClick);
-  }, [on]);
-  return { on, open, close };
-}
-
-/** Langes Drücken (500 ms) öffnet "Startseite bearbeiten"; normales Tippen und Wischen bleiben, wie sie sind */
-function Pressable({ children, onLongPress, disabled = false }: { children: React.ReactNode; onLongPress: () => void; disabled?: boolean }) {
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const start = useRef<{ x: number; y: number } | null>(null);
-  const fired = useRef(false);
-  const cancel = () => {
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = null;
-  };
-  return (
-    <div
-      className="select-none [-webkit-touch-callout:none]"
-      onPointerDown={(e) => {
-        fired.current = false;
-        // Nicht im Bearbeiten-Modus, nicht in Eingabefeldern und Fenstern (Menü, Schnell-Eintrag …)
-        if (disabled || (e.target as Element).closest("input, textarea, [role=dialog], [data-no-longpress]")) return;
-        start.current = { x: e.clientX, y: e.clientY };
-        cancel();
-        timer.current = setTimeout(() => {
-          fired.current = true;
-          onLongPress();
-        }, 500);
-      }}
-      onPointerMove={(e) => {
-        if (start.current && Math.hypot(e.clientX - start.current.x, e.clientY - start.current.y) > 10) cancel();
-      }}
-      onPointerUp={cancel}
-      onPointerCancel={cancel}
-      onContextMenu={(e) => e.preventDefault()}
-      onClickCapture={(e) => {
-        // Nach langem Drücken kein zusätzliches Antippen auslösen
-        if (fired.current) {
-          e.preventDefault();
-          e.stopPropagation();
-          fired.current = false;
-        }
-      }}
-    >
-      {children}
-    </div>
   );
 }
