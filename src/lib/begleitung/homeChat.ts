@@ -55,8 +55,8 @@ export function parseHomeCommand(text: string): HomeCommand | null {
   const tile = tileIn(t);
   const action = actionIn(t);
   if (tile && action && ["nach_oben", "nach_unten", "klein", "mittel", "gross"].includes(action) && t.split(/\s+/).length <= 6) return { kind: "home", change: { tile, action } };
-  if (/\b(zeig\w*|öffne\w*|wo ist|wo finde ich)\b.*\bwochenplan\b/.test(t)) return { kind: "show", target: "wochenplan" };
-  if (/\b(zeig\w*|öffne\w*|wo ist|wo finde ich)\b.*\beinkaufsliste\b/.test(t)) return { kind: "show", target: "einkaufsliste" };
+  if (/(?<![a-zäöüß])(zeig\w*|öffne\w*|wo ist|wo finde ich)\b.*\bwochenplan\b/.test(t)) return { kind: "show", target: "wochenplan" };
+  if (/(?<![a-zäöüß])(zeig\w*|öffne\w*|wo ist|wo finde ich)\b.*\beinkaufsliste\b/.test(t)) return { kind: "show", target: "einkaufsliste" };
   const remove = t.match(/^(?:bitte\s+)?(?:nimm|streich|lösch)\w*\s+(?:bitte\s+)?(.+?)\s+(?:wieder\s+)?(?:von|aus)\s+der\s+(?:einkaufs)?liste(?:\s+runter)?$/);
   if (remove) {
     const names = remove[1].split(/,|\bund\b/).map((n) => n.replace(/^(die|den|das|der)\s+/, "").trim()).filter(Boolean);

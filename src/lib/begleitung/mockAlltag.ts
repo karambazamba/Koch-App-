@@ -137,7 +137,7 @@ export function pinWeatherUses(latest: string, system: string): Anthropic.Beta.B
       return d.toISOString().slice(0, 10);
     };
     let tag = today;
-    if (/\bübermorgen\b/.test(t)) tag = add(2);
+    if (/(?<![a-zäöüß])übermorgen\b/.test(t)) tag = add(2);
     else if (/\bmorgen\b/.test(t)) tag = add(1);
     else {
       const wd = days.findIndex((d) => t.includes(d));
