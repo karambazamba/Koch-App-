@@ -229,7 +229,7 @@ export function DataSection({ onReset }: { onReset: () => void }) {
             resetHints();
             showToast({ text: "Die Einmal-Hinweise kommen beim nächsten Mal wieder." });
           }}
-          className="self-center px-4 py-2 text-sm font-semibold text-muted underline"
+          className="hit self-center px-4 py-2 text-sm font-semibold text-muted underline"
         >
           Einmal-Hinweise zurücksetzen
         </button>

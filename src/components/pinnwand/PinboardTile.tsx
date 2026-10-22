@@ -36,28 +36,34 @@ export function PinboardTile({ size = "M", me, demo = false, helper = "" }: { si
   const showDemo = demo && !hasOwn;
   const [writing, setWriting] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
-  const [armed, setArmed] = useState(false);
   const recorder = useMemoRecorder({ me });
   const canRecord = useCanRecordMemo();
   const list = board.items ?? [];
   const shown = list.slice(0, size === "S" ? 1 : size === "L" ? 4 : 2);
   const unread = board.unread;
   const selected = list.find((m) => m.id === open) ?? null;
+  const actions = (
+    <span className="flex shrink-0 items-center gap-3">
+      {canRecord && <MemoMic recorder={recorder} />}
+      <QuickButton icon={Plus} label="Neue Nachricht an die Pinnwand" onClick={() => setWriting(true)} />
+    </span>
+  );
   return (
     <>
       <section className={`${TILE} flex min-h-[92px] flex-col p-3.5`} aria-label="Pinnwand">
-        <Link href="/pinnwand" className={`flex items-center gap-1.5 pr-20 ${TILE_LABEL}`} aria-label="Pinnwand öffnen">
-          <Pin className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-          Pinnwand
-          {(unread || showDemo) && <span className="h-2 w-2 rounded-full bg-tile-accent" aria-label="Neue Nachricht" />}
-        </Link>
-        <span className="absolute right-3.5 top-3 flex items-center gap-3.5">
-          {canRecord && <MemoMic recorder={recorder} onCancelArmed={setArmed} />}
-          <QuickButton icon={Plus} label="Neue Nachricht an die Pinnwand" onClick={() => setWriting(true)} />
-        </span>
+        {/* Kopf: Titel links, Mikro und Plus rechts – in der kleinen Kachel passen sie nicht
+            daneben, dort stehen sie unten (nie über dem Titel) */}
+        <div className="-mt-0.5 flex items-center gap-2">
+          <Link href="/pinnwand" className={`hit flex min-w-0 flex-1 items-center gap-1.5 ${TILE_LABEL}`} aria-label="Pinnwand öffnen">
+            <Pin className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
+            <span className="truncate">Pinnwand</span>
+            {(unread || showDemo) && <span className="h-2 w-2 shrink-0 rounded-full bg-tile-accent" aria-label="Neue Nachricht" />}
+          </Link>
+          {size !== "S" && actions}
+        </div>
         {recorder.phase !== "idle" ? (
           <div className="mt-2">
-            <RecordingRow recorder={recorder} armed={armed} />
+            <RecordingRow recorder={recorder} compact={size === "S"} />
           </div>
         ) : showDemo ? (
           <button type="button" onClick={() => setWriting(true)} className="mt-1.5 flex w-full items-start gap-2.5 text-left" aria-label="Beispiel-Nachricht – eigene schreiben">
@@ -89,7 +95,7 @@ export function PinboardTile({ size = "M", me, demo = false, helper = "" }: { si
                       setOpen(m.id);
                       changePins((all) => markPinsRead(all, me));
                     }}
-                    className="flex w-full items-start gap-2.5 text-left"
+                    className="hit flex w-full items-start gap-2.5 text-left"
                     aria-label={`${m.data.text} – ${meta(m, me)}`}
                   >
                     <PersonAvatar name={m.data.author} soft />
@@ -112,6 +118,7 @@ export function PinboardTile({ size = "M", me, demo = false, helper = "" }: { si
           </button>
         )}
         <MemoNote text={recorder.note} />
+        {size === "S" && <div className="mt-auto flex justify-end pt-1.5">{actions}</div>}
       </section>
       {writing && <PinWriteSheet me={me} onClose={() => setWriting(false)} />}
       {selected?.kind === "pin" && <PinSheet message={selected.pin} me={me} onClose={() => setOpen(null)} />}

@@ -173,7 +173,7 @@ function MonthView({ today, entries, pick, selected, onSelect, filter, name }: V
         </div>
       </section>
       <section className="flex flex-col gap-2" aria-label="Gewählter Tag">
-        <Link href={`/tag?datum=${selected}`} className="flex items-baseline justify-between px-1">
+        <Link href={`/tag?datum=${selected}`} className="flex min-h-11 items-center justify-between px-1">
           <h2 className="text-[17px] font-extrabold">{LONG.format(utc(selected))}</h2>
           <span className="text-sm font-semibold text-muted">{rel ?? ""}</span>
         </Link>

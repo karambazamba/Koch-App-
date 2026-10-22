@@ -1,6 +1,6 @@
 {
   "name": "koch-app",
-  "version": "0.54.1",
+  "version": "0.55.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -17,7 +17,9 @@
     "durchklick": "node e2e/durchklick.mjs",
     "bilder": "node e2e/bilder.mjs",
     "bilder:vergleich": "node e2e/vergleich.mjs",
-    "messen": "node e2e/messen.mjs"
+    "messen": "node e2e/messen.mjs",
+    "pruefen": "node e2e/pruefen.mjs",
+    "knoepfe": "node e2e/knoepfe.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",

@@ -36,7 +36,7 @@ export function DayAgenda({ date, today, entries, meal, name, filter = "alles", 
               {dish}
             </Link>
           ) : (
-            <button type="button" onClick={() => openHelper(undefined, `Was könnten wir ${askLabel} essen?`)} className="min-w-0 flex-1 text-left text-base text-muted">
+            <button type="button" onClick={() => openHelper(undefined, `Was könnten wir ${askLabel} essen?`)} className="min-h-11 min-w-0 flex-1 text-left text-base text-muted">
               Noch frei – <span className="font-semibold text-accent-strong">{name} fragen</span>
             </button>
           )}

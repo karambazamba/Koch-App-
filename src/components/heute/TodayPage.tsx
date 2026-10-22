@@ -42,6 +42,7 @@ import { useNotes } from "@/lib/notizen";
 import { todaysTraining } from "@/lib/sport";
 import { weekdayIndex } from "@/lib/kalender/model";
 import { buzz } from "@/components/heute/actions";
+import { EditDoneBar } from "@/components/heute/EditDoneBar";
 import { isUrgent, itemsForDay, openTaskCount, orderedTasks, taskOverview, upcomingTermine, type CalendarEntry, type DayItem } from "@/lib/kalender/model";
 import { AufgabenSection, TermineSection, type DemoProps } from "@/components/heute/MiniCards";
 import { useDemoDay } from "@/components/heute/useDemoDay";
@@ -357,7 +358,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
               {tipSeen === false && welcomed && !demoDay.tiles.length && (
                 <div className="flex items-start gap-3 rounded-card bg-accent-soft px-4 py-3" role="status">
                   <p className="flex-1 text-[15px] leading-snug text-accent-strong">Tipp: Halte die Startseite gedrückt, um Kacheln hinzuzufügen oder zu entfernen.</p>
-                  <button type="button" onClick={markHomeTipSeen} className="shrink-0 text-sm font-bold text-accent-strong underline">
+                  <button type="button" onClick={markHomeTipSeen} className="hit shrink-0 text-sm font-bold text-accent-strong underline">
                     Verstanden
                   </button>
                 </div>
@@ -368,7 +369,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
           {!editing.on && demoDay.tiles.length > 0 && <DemoRow ask={demoDay.ask} />}
 
           <div className={arrive ? "tiles-arrive" : undefined}>
-            <HomeBoard tiles={visible} all={all} editing={editing.on} render={renderTile} picking={picking} onPicking={setPicking} />
+            <HomeBoard tiles={visible} all={all} editing={editing.on} render={renderTile} picking={picking} onPicking={setPicking} onDone={editing.close} />
           </div>
 
           {demoItem && <DemoItemSheet item={demoItem} today={data.todayIso} onClose={() => setDemoItem(null)} />}
@@ -383,6 +384,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
           {editing.on && <div className="min-h-24 flex-1" aria-hidden />}
         </div>
       </Pressable>
+      {editing.on && !picking && <EditDoneBar onDone={editing.close} />}
     </>
   );
 }

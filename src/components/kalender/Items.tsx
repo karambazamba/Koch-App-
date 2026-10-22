@@ -69,7 +69,7 @@ function ItemRow({ item, onOpen }: { item: DayItem; onOpen: (item: DayItem) => v
   const readOnly = isAboEntry(item.entry);
   return (
     <li className="flex items-center gap-3 py-2.5" data-item={item.key}>
-      <button type="button" onClick={() => onOpen(item)} className="flex min-w-0 flex-1 items-center gap-3 text-left" aria-label={`${item.title} – Möglichkeiten`}>
+      <button type="button" onClick={() => onOpen(item)} className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left" aria-label={`${item.title} – Möglichkeiten`}>
         <span className={`w-11 shrink-0 text-sm font-bold tabular-nums ${checked ? "text-muted" : "text-ink"}`}>{item.time ? clockLabel(item.time) : ""}</span>
         <span className={`h-9 w-1 shrink-0 rounded-full ${bar.className} ${checked ? "opacity-40" : ""}`} style={bar.style} aria-hidden />
         <span className="min-w-0 flex-1">

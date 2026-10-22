@@ -2,19 +2,25 @@
 
 // Aufnahme einer Sprachnachricht: MediaRecorder (iPhone audio/mp4 AAC, sonst
 // audio/webm Opus, ~32 kbit/s mono), Pegel für die Tonwelle über einen
-// Analyser. Mikrofon-Freigabe erst beim ersten Halten; abgelehnt = ein
-// freundlicher Satz, wo man es erlaubt. Unter 1 s = nichts, nach 60 s wird
-// automatisch gesendet. Der Ton geht in IndexedDB, der Eintrag in die
-// Pinnwand.
+// Analyser. Ablauf (recorderState.ts): Antippen startet und die Aufnahme läuft
+// frei, bis „Senden“ oder „Verwerfen“; Halten bleibt als Abkürzung (loslassen
+// = senden, nach oben schieben = frei weiter). Mit 60 s oder beim Verlassen
+// der App hält sie an und wartet. Während der Aufnahme: Bildschirm bleibt an,
+// die Seite scrollt und wischt nicht, Zurück fragt „Verwerfen?“. Mikrofon-
+// Freigabe beim ersten Mal; abgelehnt = ein freundlicher Satz. Der Ton geht in
+// IndexedDB, der Eintrag in die Pinnwand.
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { MEMO_MAX_S, MEMO_MIN_MS, WAVE_BARS, addMemo, changeMemos, createMemo, pickMemoMime, resample, type MemoMessage } from "@/lib/pinnwand";
+import { useCallback, useEffect, useReducer, useRef, useState, useSyncExternalStore } from "react";
+import { MEMO_MIN_MS, WAVE_BARS, addMemo, changeMemos, createMemo, pickMemoMime, resample, type MemoMessage } from "@/lib/pinnwand";
+import { MEMO_IDLE, discardNeedsUndo, memoReducer, timeAnnouncement, type MemoMode } from "@/lib/pinnwand/recorderState";
 import { memoAudio } from "@/lib/pinnwand/memoAudio";
+import { showToast } from "@/lib/core/toast";
+import { useWakeLock } from "@/lib/core/wakeLock";
 import { buzz } from "@/components/heute/actions";
 
-export type RecorderPhase = "idle" | "asking" | "recording";
+type RecorderPhase = "idle" | "asking" | "recording" | "stopped";
 
-type Session = {
+type Live = {
   stream: MediaStream;
   recorder: MediaRecorder;
   chunks: Blob[];
@@ -24,6 +30,9 @@ type Session = {
   levels: number[];
   timer: ReturnType<typeof setInterval>;
 };
+
+/** Fertig aufgenommen, wartet auf Senden/Verwerfen */
+type Take = { blob: Blob; mime: string; ms: number; levels: number[] };
 
 const isIos = () => typeof navigator !== "undefined" && /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
@@ -43,54 +52,75 @@ export function useCanRecordMemo(): boolean {
   return useSyncExternalStore(noSubscribe, memoRecordingSupported, () => false);
 }
 
+const PHASE: Record<string, RecorderPhase> = { bereit: "idle", fragt: "asking", nimmt_auf: "recording", gestoppt: "stopped" };
+
+/** Während der Aufnahme: Seite steht (kein Scrollen, kein Seitenwechsel per Wischen) */
+function holdPage(on: boolean) {
+  const html = document.documentElement;
+  if (on) {
+    html.setAttribute("data-no-swipe", "");
+    html.style.overflow = "hidden";
+  } else {
+    html.removeAttribute("data-no-swipe");
+    html.style.overflow = "";
+  }
+}
+
 export function useMemoRecorder({ me, onSent }: { me: string; onSent?: (memo: MemoMessage) => void }) {
-  const [phase, setPhase] = useState<RecorderPhase>("idle");
-  const [elapsed, setElapsed] = useState(0);
+  const [state, dispatch] = useReducer(memoReducer, MEMO_IDLE);
   const [levels, setLevels] = useState<number[]>([]);
   const [note, setNote] = useState<string | null>(null);
-  const [tapMode, setTapMode] = useState(false);
-  const session = useRef<Session | null>(null);
-  /** Losgelassen, bevor das Mikrofon bereit war */
-  const released = useRef(false);
+  /** Zurück während der Aufnahme: „Verwerfen?“ */
+  const [askDiscard, setAskDiscard] = useState(false);
+  const live = useRef<Live | null>(null);
+  const take = useRef<Take | null>(null);
+  /** Nach dem Anhalten gleich senden (Loslassen beim Halten, „Senden“ während der Aufnahme) */
+  const sendAfterStop = useRef(false);
   const meRef = useRef(me);
   const sentRef = useRef(onSent);
   useEffect(() => {
     meRef.current = me;
     sentRef.current = onSent;
   });
+  const phase = PHASE[state.phase];
+  const busy = phase !== "idle";
 
-  const cleanup = (s: Session) => {
+  const cleanup = (s: Live) => {
     clearInterval(s.timer);
     s.stream.getTracks().forEach((t) => t.stop());
     void s.ctx?.close().catch(() => undefined);
   };
 
-  const finish = useCallback((send: boolean) => {
-    released.current = true;
-    const s = session.current;
-    session.current = null;
-    setPhase("idle");
-    setTapMode(false);
+  const save = useCallback((t: Take) => {
+    if (t.ms < MEMO_MIN_MS || !t.blob.size) return setNote("Das war sehr kurz – einfach nochmal antippen und sprechen.");
+    const memo = createMemo({ author: meRef.current, dauer: t.ms / 1000, mime: t.blob.type || t.mime, wave: resample(t.levels, WAVE_BARS * 2) });
+    void memoAudio
+      .save(memo.id, t.blob)
+      .then(() => {
+        changeMemos((all) => addMemo(all, memo));
+        buzz();
+        showToast({ text: "Gesendet", small: true, seconds: 1.5 });
+        sentRef.current?.(memo);
+      })
+      .catch(() => setNote("Die Sprachnachricht ließ sich gerade nicht speichern."));
+  }, []);
+
+  /** Aufnahme anhalten – die Aufnahme bleibt (take) bis Senden/Verwerfen */
+  const stopLive = useCallback(() => {
+    const s = live.current;
+    live.current = null;
     setLevels([]);
-    setElapsed(0);
     if (!s) return;
     const ms = performance.now() - s.startedAt;
     s.recorder.onstop = () => {
       cleanup(s);
-      const blob = new Blob(s.chunks, { type: s.recorder.mimeType || s.mime });
-      if (!send || ms < MEMO_MIN_MS || !blob.size) {
-        if (send && ms < MEMO_MIN_MS) setNote("Zum Aufnehmen das Mikro gedrückt halten.");
-        return;
+      take.current = { blob: new Blob(s.chunks, { type: s.recorder.mimeType || s.mime }), mime: s.mime, ms, levels: s.levels };
+      if (sendAfterStop.current) {
+        sendAfterStop.current = false;
+        const t = take.current;
+        take.current = null;
+        save(t);
       }
-      const memo = createMemo({ author: meRef.current, dauer: ms / 1000, mime: blob.type || s.mime, wave: resample(s.levels, WAVE_BARS * 2) });
-      void memoAudio
-        .save(memo.id, blob)
-        .then(() => {
-          changeMemos((all) => addMemo(all, memo));
-          buzz();
-          sentRef.current?.(memo);
-        })
-        .catch(() => setNote("Die Sprachnachricht ließ sich gerade nicht speichern."));
     };
     try {
       if (s.recorder.state !== "inactive") s.recorder.stop();
@@ -98,31 +128,56 @@ export function useMemoRecorder({ me, onSent }: { me: string; onSent?: (memo: Me
     } catch {
       cleanup(s);
     }
-  }, []);
+  }, [save]);
+
+  const send = useCallback(() => {
+    setAskDiscard(false);
+    dispatch({ type: "send" });
+    if (live.current) {
+      sendAfterStop.current = true;
+      stopLive();
+    } else if (take.current) {
+      const t = take.current;
+      take.current = null;
+      save(t);
+    }
+  }, [save, stopLive]);
+
+  const discard = useCallback(() => {
+    setAskDiscard(false);
+    const ms = live.current ? performance.now() - live.current.startedAt : (take.current?.ms ?? 0);
+    dispatch({ type: "discard" });
+    sendAfterStop.current = false;
+    stopLive();
+    if (!discardNeedsUndo(ms)) {
+      take.current = null;
+      return;
+    }
+    // Länger aufgenommen: „Verworfen · Rückgängig“ – zurück holt die fertige Aufnahme
+    showToast({
+      text: "Verworfen",
+      small: true,
+      seconds: 3,
+      undo: () => take.current && dispatch({ type: "undo", ms: take.current.ms }),
+      undoneText: "Wieder da",
+    });
+  }, [stopLive]);
 
   const start = useCallback(
-    async (opts: { tap?: boolean } = {}) => {
-      if (session.current || phase !== "idle") return;
-      released.current = false;
+    async (mode: MemoMode) => {
+      if (live.current || state.phase !== "bereit") return;
+      take.current = null;
       setNote(null);
-      setTapMode(Boolean(opts.tap));
-      setPhase("asking");
+      dispatch({ type: "start", mode });
+      buzz();
       let stream: MediaStream;
       try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } });
       } catch (e) {
-        setPhase("idle");
-        setTapMode(false);
+        dispatch({ type: "denied" });
         const name = e instanceof DOMException ? e.name : "";
         // Kein Mikrofon da – sonst ist es (fast immer) nicht erlaubt
         setNote(name === "NotFoundError" || name === "OverconstrainedError" ? "Ich finde gerade kein Mikrofon." : DENIED_TEXT());
-        return;
-      }
-      // Beim ersten Mal fragt das Handy erst nach der Freigabe – wer da schon losgelassen hat, hält jetzt einfach nochmal
-      if (released.current && !opts.tap) {
-        stream.getTracks().forEach((t) => t.stop());
-        setPhase("idle");
-        setNote("Jetzt geht’s – Mikro gedrückt halten und sprechen.");
         return;
       }
       const mime = pickMemoMime((m) => MediaRecorder.isTypeSupported(m)) ?? "";
@@ -131,7 +186,7 @@ export function useMemoRecorder({ me, onSent }: { me: string; onSent?: (memo: Me
         recorder = new MediaRecorder(stream, { ...(mime ? { mimeType: mime } : {}), audioBitsPerSecond: 32_000 });
       } catch {
         stream.getTracks().forEach((t) => t.stop());
-        setPhase("idle");
+        dispatch({ type: "denied" });
         setNote("Sprachnachrichten gehen auf diesem Gerät leider nicht.");
         return;
       }
@@ -154,28 +209,85 @@ export function useMemoRecorder({ me, onSent }: { me: string; onSent?: (memo: Me
       } catch {
         ctx = null;
       }
-      const s: Session = { stream, recorder, chunks, mime, ctx, startedAt: performance.now(), levels: [], timer: 0 as unknown as ReturnType<typeof setInterval> };
+      const s: Live = { stream, recorder, chunks, mime, ctx, startedAt: performance.now(), levels: [], timer: 0 as unknown as ReturnType<typeof setInterval> };
       s.timer = setInterval(() => {
         const ms = performance.now() - s.startedAt;
-        const level = read ? read() : 0.2 + 0.3 * Math.abs(Math.sin(ms / 180));
-        s.levels.push(level);
+        s.levels.push(read ? read() : 0.2 + 0.3 * Math.abs(Math.sin(ms / 180)));
         setLevels(s.levels.slice(-WAVE_BARS));
-        setElapsed(ms);
-        if (ms >= MEMO_MAX_S * 1000) finish(true);
+        dispatch({ type: "tick", ms });
       }, 100);
-      session.current = s;
+      live.current = s;
       recorder.start(250);
-      buzz();
-      setPhase("recording");
+      dispatch({ type: "ready" });
     },
-    [phase, finish],
+    [state.phase],
   );
 
-  // Seite verlassen = verwerfen
+  // Halten: loslassen = senden (ab 0,3 s), kurz = frei weiter, hochgeschoben = frei weiter
+  const release = useCallback(
+    (pressMs: number, slideUp: boolean) => {
+      const next = memoReducer(state, { type: "release", pressMs, slideUp });
+      if (next.outcome === "gesendet") send();
+      else dispatch({ type: "release", pressMs, slideUp });
+    },
+    [state, send],
+  );
+
+  // 60 s erreicht → Aufnahme anhalten (wartet auf Senden/Verwerfen)
+  useEffect(() => {
+    if (state.phase === "gestoppt" && live.current) stopLive();
+  }, [state.phase, stopLive]);
+
+  // App/Seite verlassen → anhalten; beim Zurückkommen steht die Frage da
+  useEffect(() => {
+    if (state.phase !== "nimmt_auf") return;
+    const onHide = () => {
+      if (document.visibilityState === "hidden") dispatch({ type: "hidden" });
+    };
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("pagehide", onHide);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("pagehide", onHide);
+    };
+  }, [state.phase]);
+
+  // Bildschirm an, Seite steht still
+  useWakeLock(state.phase === "nimmt_auf");
+  useEffect(() => {
+    holdPage(busy);
+    return () => holdPage(false);
+  }, [busy]);
+
+  // Zurück (Pfeil, Geste, Android) während der Aufnahme: nicht still verlieren, sondern fragen
+  useEffect(() => {
+    if (!busy) return;
+    try {
+      window.history.pushState({ ...(window.history.state ?? {}), memo: true }, "");
+    } catch {
+      return;
+    }
+    const onPop = () => {
+      if ((window.history.state as { memo?: boolean } | null)?.memo) return;
+      if (live.current) dispatch({ type: "hidden" });
+      setAskDiscard(true);
+      window.history.pushState({ ...(window.history.state ?? {}), memo: true }, "");
+    };
+    window.addEventListener("popstate", onPop);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      if ((window.history.state as { memo?: boolean } | null)?.memo) window.history.back();
+    };
+  }, [busy]);
+
+  // VoiceOver: Zeit alle 10 s (der Text ändert sich nur alle 10 s → wird dann angesagt)
+  const announce = timeAnnouncement(Math.floor(state.ms / 10_000) * 10_000) ?? "";
+
+  // Seite verlassen (Komponente weg) = verwerfen
   useEffect(
     () => () => {
-      const s = session.current;
-      session.current = null;
+      const s = live.current;
+      live.current = null;
       if (s) {
         s.recorder.onstop = () => cleanup(s);
         try {
@@ -194,7 +306,21 @@ export function useMemoRecorder({ me, onSent }: { me: string; onSent?: (memo: Me
     return () => clearTimeout(t);
   }, [note]);
 
-  return { phase, elapsed, levels, note, tapMode, start, finish, clearNote: () => setNote(null) };
+  return {
+    phase,
+    mode: state.mode,
+    elapsed: state.ms,
+    levels,
+    note,
+    announce,
+    askDiscard,
+    keep: () => setAskDiscard(false),
+    start,
+    release,
+    send,
+    discard,
+    clearNote: () => setNote(null),
+  };
 }
 
 export type MemoRecorder = ReturnType<typeof useMemoRecorder>;
