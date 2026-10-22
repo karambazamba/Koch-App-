@@ -84,7 +84,7 @@ export const isSchnellnotizTidyRequest = (text: string) => /\b(räum|sortier|ord
 
 type SchnellnotizLine = { line: string; kind: "termin" | "aufgabe" | "notiz" | null; draft?: Draft; note?: ReturnType<typeof parseNoteCommand> };
 
-const TODO_VERB = /\b(kaufen|besorgen|holen|abholen|bestellen|anrufen|zurückrufen|schreiben|machen|erledigen|bringen|wegbringen|abgeben|einwerfen|zahlen|bezahlen|überweisen|buchen|reparieren|putzen|aufräumen|kündigen|beantragen|vereinbaren|ausmachen|zurückgeben|fragen|klären)\s*[.!]?$/i;
+const TODO_VERB = /(?<![a-zäöüß])(kaufen|besorgen|holen|abholen|bestellen|anrufen|zurückrufen|schreiben|machen|erledigen|bringen|wegbringen|abgeben|einwerfen|zahlen|bezahlen|überweisen|buchen|reparieren|putzen|aufräumen|kündigen|beantragen|vereinbaren|ausmachen|zurückgeben|fragen|klären)\s*[.!]?$/i;
 
 /**
  * Aufräumen ohne KI: Zeilen mit Uhrzeit/Tag → Termin bzw. Aufgabe,

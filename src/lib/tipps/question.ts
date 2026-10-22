@@ -14,7 +14,8 @@ const ASK = [
   /\bwas\s+(können|könnten|kann|wollen|sollen)\s+wir\b.*\b(machen|unternehmen|tun|anstellen)\b/i,
   /\b(veranstaltung\w*|events?|ausflugs?tipps?|tipps?\s+(fürs|für das|am|aus der region)|unternehmungen)\b/i,
   /\b[Gg]ibt['’]?s\b.*\bwas\b.*\bin\s+[A-ZÄÖÜ]/,
-  /\bwas\s+ist\s+(heute|morgen|am wochenende)\s+in\s+[A-ZÄÖÜ]/,
+  // ohne i-Flag (der Ort beginnt groß) – deshalb „Was“ am Satzanfang ausdrücklich
+  /\b[Ww]as\s+ist\s+(heute|morgen|am [Ww]ochenende)\s+in\s+[A-ZÄÖÜ]/,
 ];
 const NOT = /\b(essen|kochen|koch|gericht|mittag|abendbrot|abendessen|einkauf|wetter|schirm|termin\w*|aufgabe\w*)\b/i;
 

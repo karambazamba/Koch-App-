@@ -38,7 +38,7 @@ export const DEFAULT_MAIL_STYLE: MailStyle = { greeting: "Viele Grüße", signat
 
 const EMAIL = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/;
 const GREETING_LINE = /^(hallo|hi|hey|liebe[rs]?|sehr geehrte[rs]?|guten (tag|morgen|abend)|moin|servus|grüß gott|dear)\b/i;
-const CLOSING = /(viele|liebe|beste|herzliche|freundliche|schöne|sonnige)n?\s+grüße|mit freundlichen grüßen|\bmfg\b|\blg\b|\bvg\b|^gruß\b|^grüße\b|best regards|^cheers\b/im;
+const CLOSING = /(viele|liebe|beste|herzliche|freundliche|schöne|sonnige)n?\s+grüße|mit freundlichen grüßen|\bmfg\b|\blg\b|\bvg\b|^gruß(?![a-zäöüß])|^grüße\b|best regards|^cheers\b/im;
 const HEADER = /^(von|from|an|to|betreff|subject|gesendet|sent|datum|date|cc):\s*\S/im;
 
 /** Erste E-Mail-Adresse im Text (bei eingefügten Mails bevorzugt aus "Von:") */
@@ -244,7 +244,7 @@ export function localReply(mail: string, how: { instruction?: string; choice?: R
     : how.choice === "absagen"
       ? "Leider passt es bei mir dieses Mal nicht."
       : how.choice === "nachfragen"
-        ? `Ich hätte noch eine kurze Frage dazu: Können ${tone === "sie" ? "Sie" : "du"} mir noch etwas mehr dazu sagen?`
+        ? `Ich hätte noch eine kurze Frage dazu: ${tone === "sie" ? "Können Sie" : "Kannst du"} mir noch etwas mehr dazu sagen?`
         : "Das passt mir gut, ich bin dabei.";
   const outro = how.choice === "absagen" ? `Danke ${tone === "sie" ? "Ihnen" : "dir"} trotzdem!` : "";
   const body = [salutation(tone, sender), `${cap(thanks)} ${core}`.trim(), outro, closingFor(style, myName, tone)].filter(Boolean).join("\n\n");
@@ -253,7 +253,7 @@ export function localReply(mail: string, how: { instruction?: string; choice?: R
 }
 
 const FAMILY = /\b(mama|papa|mutti|vati|oma|opa|omi|opi|tante|onkel|schwester|bruder|schatz|freund|freundin|cousin|cousine|nachbar(in)?)\b/i;
-const BUSINESS = /\b(großhandel|lieferant\w*|firma|bank|amt|behörde|vermieter\w*|hausverwaltung|versicherung|steuerberater\w*|arzt|ärztin|praxis|kita|schule|lehrer\w*|verein|kunde\w*|händler\w*|brauerei|molkerei|bäckerei|getränke\w*|support|kundenservice|team|verwaltung|büro)\b/i;
+const BUSINESS = /(?<![a-zäöüß])(großhandel|lieferant\w*|firma|bank|amt|behörde|vermieter\w*|hausverwaltung|versicherung|steuerberater\w*|arzt|ärztin|praxis|kita|schule|lehrer\w*|verein|kunde\w*|händler\w*|brauerei|molkerei|bäckerei|getränke\w*|support|kundenservice|team|verwaltung|büro)\b/i;
 
 /** Neue Mail: "Schreib dem Großhandel, dass …" / "Mail an die Kita: Jonne ist morgen krank" */
 function parseNewMail(text: string): { recipient: string; content: string; link: "dass" | "ob" | ":"; to: string } | null {
@@ -368,7 +368,7 @@ export function reviseDraft(draft: MailDraft, rev: MailRevision): MailDraft {
     const kept = middle
       .map((p) => p.replace(/^(vielen dank|danke)[^.!]*[.!]\s*/i, "").trim())
       .filter((p) => p && !/^(vielen dank und|einen schönen tag|danke (dir|ihnen) trotzdem)/i.test(p))
-      .map((p) => (p.match(/[^.!?]+[.!?]/g) ?? [p]).slice(0, 2).join(" ").trim());
+      .map((p) => (p.match(/[^.!?]+[.!?]/g) ?? [p]).slice(0, 2).map((x) => x.trim()).join(" "));
     return { ...draft, body: [first, ...kept, closing].filter(Boolean).join("\n\n") };
   }
   const toSie = rev === "sie" || (rev === "foermlicher" && draft.tone === "du");

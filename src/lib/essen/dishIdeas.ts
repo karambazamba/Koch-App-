@@ -162,7 +162,7 @@ export function ingredientsFromQuestion(text: string): string[] | null {
       }
       return t;
     })
-    .filter((s) => s && s.length > 1 && !/^(dem|was|da ist|übrig|reste[n]?)$/i.test(s))
+    .filter((s) => s && s.length > 1 && !/^(dem|was|(was )?(noch )?da ist|übrig|reste[n]?)$/i.test(s))
     .map((s) => s.charAt(0).toUpperCase() + s.slice(1));
   return items.length ? items : null;
 }

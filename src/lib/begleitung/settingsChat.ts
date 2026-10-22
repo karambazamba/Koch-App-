@@ -78,7 +78,7 @@ export function settingsChange(text: string, profile: HouseholdProfile): Setting
   if (/\b(meld(e|est)? dich|melden)\b.*\b(seltener|weniger|kaum)\b|\bganz locker\b/i.test(lower)) {
     return { profile: { ...profile, helperMode: "locker" }, reply: "Alles klar ✓ Ich melde mich nur noch, wenn’s wirklich zeitkritisch ist." };
   }
-  if (/\b(meld(e|est)? dich|melden)\b.*\b(öfter|mehr)\b|\bdranbleiben\b|\bschubs mich\b/i.test(lower)) {
+  if (/\b(meld(e|est)? dich|melden)\b.*(?<![a-zäöüß])(öfter|mehr)\b|\bdranbleiben\b|\bschubs mich\b/i.test(lower)) {
     return { profile: { ...profile, helperMode: "dranbleiben" }, reply: "Alles klar ✓ Ich bleib dran – immer freundlich." };
   }
   if (/\bkeine (küchen-?)?tipps( mehr)?\b|\btipps aus\b/i.test(lower)) return { profile: { ...profile, tips: "aus" }, reply: "Okay ✓ Keine Tipps mehr auf der Startseite." };

@@ -58,8 +58,9 @@ export function parsePauseRequest(text: string, today: Date): { kind: "start"; p
   let from = today;
   const abWd = t.match(new RegExp(`ab\\s+(?:nächste[nm]?\\s+)?${WD}`));
   const abDate = t.match(/ab\s+(?:dem\s+)?(\d{1,2}\.\d{1,2}\.(?:\d{2,4})?)/);
-  if (/ab morgen|morgen/.test(t)) from = plus(today, 1);
-  else if (/übermorgen/.test(t)) from = plus(today, 2);
+  // "übermorgen" zuerst – es enthält "morgen"
+  if (/übermorgen/.test(t)) from = plus(today, 2);
+  else if (/morgen/.test(t)) from = plus(today, 1);
   else if (abDate) from = dateFrom(abDate[1], today) ?? today;
   // "Ab Montag" an einem Montag = nächste Woche
   else if (abWd) from = nextWeekday(today, abWd[1], true);

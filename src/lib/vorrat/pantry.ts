@@ -19,7 +19,7 @@ export const PANTRY_PLACES: { value: PantryPlace; label: string; short: string; 
 
 /** Naheliegender Ort für eine Zutat (Tiefkühlware, Haltbares, sonst Kühlschrank) */
 export function placeFor(name: string): PantryPlace {
-  if (/^(tk|tiefkühl)|gefroren|eiscreme|^eis$|fischstäbchen|tiefkühlpizza/i.test(name.trim())) return "tiefkuehler";
+  if (/^(tk|tiefkühl)|(^|[\s-])tk([\s-]|$)|tiefgekühlt|gefroren|eiscreme|^eis$|fischstäbchen|tiefkühlpizza/i.test(name.trim())) return "tiefkuehler";
   const section = sectionFor(name);
   if (section === "tiefkuehl") return "tiefkuehler";
   if (section === "vorrat" || section === "getraenke") return "schrank";

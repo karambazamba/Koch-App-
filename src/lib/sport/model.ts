@@ -59,13 +59,14 @@ const DEFAULT_GOAL = 3;
 export const EMPTY_SPORT: SportState = { goal: DEFAULT_GOAL, trainings: [], packs: {}, celebrated: [], hidden: [] };
 
 const SPORT_WORDS: [RegExp, string][] = [
-  [/\b(lauf\w*|jogg\w*|renn\w*)\b/i, "laufen"],
+  // auch das Partizip („gelaufen“, „gejoggt“, „geradelt“, „geschwommen“, „gewandert“)
+  [/\b(lauf\w*|gelaufen|jogg\w*|gejoggt|renn\w*|gerannt)\b/i, "laufen"],
   [/\b(fitness\w*|gym|studio|kraft\w*|hantel\w*|gewicht\w*)\b/i, "fitness"],
-  [/\b(rad\w*|fahrrad\w*|bike|biken|radeln|radfahren)\b/i, "rad"],
-  [/\b(schwimm\w*|bahnen)\b/i, "schwimmen"],
+  [/\b(rad\w*|geradelt|fahrrad\w*|bike|biken|radeln|radfahren)\b/i, "rad"],
+  [/\b(schwimm\w*|geschwommen|bahnen)\b/i, "schwimmen"],
   [/\byoga\b/i, "yoga"],
   [/\b(fußball|fussball|kicken|kick)\b/i, "fussball"],
-  [/\b(spazier\w*|wander\w*|gassi)\b/i, "spazieren"],
+  [/\b(spazier\w*|wander\w*|gewandert|gassi)\b/i, "spazieren"],
 ];
 
 /** Sportart aus einem Satz/Titel ("War 5 km laufen" → laufen) */

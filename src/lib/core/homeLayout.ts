@@ -155,6 +155,8 @@ function moveBlock(list: HomeTile[], id: HomeTileId, to: "hoch" | "runter" | "ob
     const before = visibleRest.filter((i) => i < start);
     const after = visibleRest.filter((i) => i >= start);
     at = to === "hoch" ? (before.length ? before[before.length - 1] : start) : after.length ? after[0] + 1 : start;
+    // Nie zwischen Essen und Einkauf: am ganzen Paar vorbei
+    if (rest[at - 1]?.id === PAIR[0] && rest[at]?.id === PAIR[1] && rest[at - 1].visible && rest[at].visible) at += to === "hoch" ? -1 : 1;
   }
   rest.splice(Math.max(0, Math.min(rest.length, at)), 0, ...block);
   return rest;

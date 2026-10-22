@@ -244,11 +244,13 @@ function mockModel(): CreateMessage {
       if (leftovers) return text(leftovers);
       const everydayUse = everydayUses(last.content, system);
       if (everydayUse) return everydayUse;
-      const calendar = calendarUses(last.content, system);
-      if (calendar) return calendar;
       const latest = last.content;
-      const prevAssistant = [...msgs].reverse().find((x, i) => i > 0 && x.role === "assistant" && typeof x.content === "string");
       const day = everyday(latest);
+      // Essens-Sätze ("Donnerstag gibt es meine Rezepte", "Mattis wünscht sich Sonntag …") nicht als Termin/Aufgabe lesen
+      const mealIntent = intent.myDays.length || intent.wish || intent.restVeggie || intent.planWeek || intent.double.length || intent.shopping || day.dish || day.quick;
+      const calendar = mealIntent ? null : calendarUses(last.content, system);
+      if (calendar) return calendar;
+      const prevAssistant = [...msgs].reverse().find((x, i) => i > 0 && x.role === "assistant" && typeof x.content === "string");
       const planningWeek = system.match(/wenn nichts gesagt wird: (\w+)/)?.[1] === "naechste" ? "naechste" : "aktuell";
       // Ideen aus dem aktuellen Vorrat im Kontext (+ eben Genanntes)
       const named = ingredientsFromQuestion(latest);
