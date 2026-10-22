@@ -71,14 +71,21 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   oder die Begleitung (`requestHomeEdit`). Schließen: „Fertig“, Zurück
   (eigener Verlaufseintrag) oder Danebentippen auf freie Fläche.
 - Kopf (sticky): „+ Kachel“, „Fertig“, Titel und Hinweis. Beim ersten Mal
-  der Tipp „Neue Kacheln holen“ (`heute/AddTileTip.tsx`, Portal an `body`):
-  Abdunklung (`bg-tip-scrim`), „+ Kachel“ hervorgehoben genau über dem echten
-  Knopf, weiße Karte darunter (16 px Rand, `rounded-pair`) mit Spitze zur
-  gemessenen Knopf-Mitte. „Verstanden“, Abdunklung, Zurück oder Escape
-  schließen; „+ Kachel“ schließt und öffnet sofort die Auswahl. Ein-/Ausblenden
-  200 ms, Fokus zuerst auf „Verstanden“. Gesehen-Status in
-  `wasgibts.einmalhinweise` (`core/hints.ts`); zurücksetzen über Daten & App →
-  „Tipps wieder zeigen“.
+  der Tipp „Neue Kacheln holen“ (`heute/AddTileTip.tsx`, Vorlage Variante D):
+  Abdunklung (`bg-tip-scrim`, Portal an `body`, z-50), der Kopf darüber
+  (z-[55], durchlässig) mit dem ECHTEN „+ Kachel“ hervorgehoben (`bg-accent`,
+  4 px Ring `--app-tip-ring`, oranger Schein), „Fertig“ gedämpft, Titel
+  ausgeblendet; die Karte (`bg-surface`, 16 px Rand, `rounded-pair`, z-[60])
+  mit Spitze zur gemessenen Knopf-Mitte (ResizeObserver, Größe, Drehen,
+  Safe-Area). „Verstanden“, Abdunklung, Zurück und Escape schließen, der
+  Bearbeiten-Modus bleibt; „+ Kachel“ schließt sofort und öffnet die Auswahl
+  (übernimmt den Verlaufseintrag – deshalb lädt `HomeBoard` die Auswahl beim
+  Bearbeiten vor und zeigt sie ohne Suspense). Solange offen: Seite scrollt
+  nicht, Fokus bleibt zwischen „Verstanden“ (zuerst) und „+ Kachel“, danach
+  zurück auf „+ Kachel“. Ein-/Ausblenden 200 ms, bei „Bewegung reduzieren“
+  sofort. Merker „kachel-tipp“ in `wasgibts.einmalhinweise` (`core/hints.ts`,
+  getrennt von der alten Sprechblase „kachel-hinzufuegen“), gespeichert beim
+  Schließen; Daten & App → „Einmal-Hinweise zurücksetzen“ (nur Testmodus).
 - Kacheln wackeln, Inhalte sind gesperrt; „–“ entfernt mit „Gelöscht ·
   Rückgängig“, „S · M · L“ ändert die Größe. Kurz antippen = Menü (Ganz nach
   oben · Nach oben · Nach unten · Größe · Entfernen).

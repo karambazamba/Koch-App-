@@ -15,19 +15,26 @@ afterEach(() => {
   noBrowser();
 });
 
-describe("Einmal-Tipps", () => {
-  it("merkt sich „gesehen“ nur einmal", async () => {
-    const { win, markHintSeen } = await load();
-    markHintSeen("kachel-hinzufuegen");
-    markHintSeen("kachel-hinzufuegen");
-    expect(JSON.parse(win.localStorage.getItem(KEY)!)).toEqual({ version: 1, seen: ["kachel-hinzufuegen"] });
+describe("Einmal-Hinweise", () => {
+  it("zeigt den Tipp einmal und merkt sich „gesehen“", async () => {
+    const { win, hintSeen, markHintSeen } = await load();
+    expect(hintSeen("kachel-tipp")).toBe(false);
+    markHintSeen("kachel-tipp");
+    markHintSeen("kachel-tipp");
+    expect(hintSeen("kachel-tipp")).toBe(true);
+    expect(JSON.parse(win.localStorage.getItem(KEY)!)).toEqual({ version: 1, seen: ["kachel-tipp"] });
   });
 
-  it("„Tipps wieder zeigen“ setzt alles zurück", async () => {
-    const { win, markHintSeen, resetHints } = await load({ [KEY]: JSON.stringify({ version: 1, seen: ["kachel-hinzufuegen"] }) });
+  it("wer die alte Sprechblase gesehen hat, bekommt den neuen Tipp trotzdem", async () => {
+    const { hintSeen } = await load({ [KEY]: JSON.stringify({ version: 1, seen: ["kachel-hinzufuegen"] }) });
+    expect(hintSeen("kachel-hinzufuegen")).toBe(true);
+    expect(hintSeen("kachel-tipp")).toBe(false);
+  });
+
+  it("„Einmal-Hinweise zurücksetzen“ setzt alle zurück", async () => {
+    const { win, hintSeen, resetHints } = await load({ [KEY]: JSON.stringify({ version: 1, seen: ["kachel-hinzufuegen", "kachel-tipp"] }) });
     resetHints();
+    expect(hintSeen("kachel-tipp")).toBe(false);
     expect(JSON.parse(win.localStorage.getItem(KEY)!)).toEqual({ version: 1, seen: [] });
-    markHintSeen("kachel-hinzufuegen");
-    expect(JSON.parse(win.localStorage.getItem(KEY)!).seen).toEqual(["kachel-hinzufuegen"]);
   });
 });
