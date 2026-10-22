@@ -1901,3 +1901,10 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Mitternacht (23:30 + 45 Min ergab „23:15“). Ohne KI zählen jetzt auch
   „laufen/joggen/yoga/fitness“ als Sport-Termin. Schmale Felder
   (`INPUT_INLINE`).
+
+## Jetzt-Karte: zuerst einkaufen, dann kochen (v0.55.2)
+
+- Nachmittags stand das Essen („Start 18:05“) vor „Auf dem Heimweg?“. Jetzt
+  gilt: Was zuerst zu tun ist, steht zuerst – Einkauf vor Essen, solange der
+  Kochstart mehr als 30 Min weg ist; fehlende Zutaten fürs Essen stehen im
+  Einkauf-Hinweis.

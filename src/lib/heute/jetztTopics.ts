@@ -176,17 +176,22 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
   }
 
   // Essen: ab 15 Uhr das Gericht mit Startzeit (Essenszeit − Kochdauer) oder Ideen
+  /** Score des Essens (für „zuerst einkaufen, dann kochen“) und ob sein Kochstart noch > 30 Min weg ist */
+  let dishScore: number | null = null;
+  let dishLater = false;
   if (x.minutes >= 15 * 60 && x.dish && !night) {
     const meal = x.dish.clock ? toMin(x.dish.clock) : null;
     const start = meal !== null ? meal - (x.dish.minutes ?? 30) : null;
     if (meal === null || x.minutes < meal + 30) {
       const near = start !== null ? start - x.minutes : 999;
+      dishScore = near <= 30 ? 80 : 52;
+      dishLater = start !== null && near > 30;
       add({
         id: `essen:${x.today}`,
         kind: "essen",
         title: `${short(x.dish.name, 26)} – ${x.dish.ready ? "alles im Haus" : `auf die Liste: ${x.dish.missing.slice(0, 2).join(", ")}`}`,
         detail: start !== null ? (near <= 0 ? `Jetzt anfangen · Essen ${clock(x.dish.clock!)}` : `Start ${fromMin(start)} · Essen ${clock(x.dish.clock!)}`) : "Rezept ansehen",
-        score: near <= 30 ? 80 : 52,
+        score: dishScore,
         target: { action: "essen" },
         tile: "essen",
         tip: start !== null,
@@ -209,9 +214,12 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
 
   if (x.sport && !night) add({ id: `sport:${x.today}`, kind: "sport", title: x.sport.today, detail: "Packliste und Wetter ansehen", score: 44, target: { href: "/sport" }, tile: "sport", gentle: true });
 
-  // Nachmittags: auf dem Heimweg beim Laden vorbei?
-  if (x.shop && x.shop.names.length >= 2 && x.minutes >= 15 * 60 && x.minutes < 19 * 60 + 30)
-    add({ id: `einkauf:${x.today}:${x.shop.shop}`, kind: "einkauf", title: `Auf dem Heimweg? ${x.shop.names.length} Sachen bei ${x.shop.shop}`, detail: short(x.shop.names.join(", "), 40), score: 40, target: { href: x.demo ? "/einkaufsliste" : `/einkaufsliste/laden?name=${encodeURIComponent(x.shop.shop)}` }, tile: "einkauf", tip: true, gentle: true });
+  // Nachmittags: auf dem Heimweg beim Laden vorbei? Was zuerst zu tun ist, steht zuerst: Ist der
+  // Kochstart noch > 30 Min weg, kommt der Einkauf vor das Essen – mit dessen Zutaten fürs Essen.
+  const forDish = dishLater && x.dish && !x.dish.ready ? x.dish.missing.filter((m) => !x.shop?.names.some((n) => n.toLowerCase() === m.toLowerCase())) : [];
+  const shopCount = (x.shop?.names.length ?? 0) + forDish.length;
+  if (x.shop && shopCount >= 2 && x.minutes >= 15 * 60 && x.minutes < 19 * 60 + 30)
+    add({ id: `einkauf:${x.today}:${x.shop.shop}`, kind: "einkauf", title: `Auf dem Heimweg? ${shopCount} Sachen bei ${x.shop.shop}`, detail: short(`${x.shop.names.join(", ")}${forDish.length ? ` + ${forDish.join(", ")} fürs Essen` : ""}`, 52), score: dishLater && dishScore !== null ? dishScore + 4 : 40, target: { href: x.demo ? "/einkaufsliste" : `/einkaufsliste/laden?name=${encodeURIComponent(x.shop.shop)}` }, tile: "einkauf", tip: true, gentle: true });
 
   if (x.minutes >= 19 * 60 || x.minutes < 6 * 60) {
     const items = x.tomorrow.items.slice(0, 2).map((i) => (i.time ? `${clock(i.time)} ${short(i.title, 18)}` : short(i.title, 22)));

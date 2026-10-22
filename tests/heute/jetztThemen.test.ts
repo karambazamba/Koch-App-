@@ -156,6 +156,30 @@ describe("Jetzt-Karte: Essen und Einkauf", () => {
   });
 });
 
+describe("Jetzt-Karte: zuerst einkaufen, dann kochen", () => {
+  const shop = { shop: "REWE", names: ["Milch", "Brot", "Butter"] };
+  const dish = { name: "Pasta mit Tomaten", clock: "18:35", minutes: 30, ready: true, missing: [] as string[] };
+  const order = (x: JetztInput) => kinds(x).filter((k) => k === "einkauf" || k === "essen");
+
+  it("17:30, Start 18:05, 3 Sachen → einkauf vor essen", () => {
+    expect(order(input({ minutes: H(17, 30), shop, dish }))).toEqual(["einkauf", "essen"]);
+  });
+
+  it("17:40, Start 18:05 (≤ 30 Min) → essen zuerst", () => {
+    expect(order(input({ minutes: H(17, 40), shop, dish }))).toEqual(["essen", "einkauf"]);
+  });
+
+  it("fehlende Zutat fürs Gericht kommt in den Einkauf-Hinweis", () => {
+    const t = jetztTopics(input({ minutes: H(17), shop, dish: { ...dish, ready: false, missing: ["Paprika", "Milch"] } })).find((x) => x.kind === "einkauf")!;
+    expect(t).toMatchObject({ title: "Auf dem Heimweg? 4 Sachen bei REWE", detail: "Milch, Brot, Butter + Paprika fürs Essen" });
+  });
+
+  it("ohne Gericht unverändert (Score 40)", () => {
+    const t = jetztTopics(input({ minutes: H(17, 30), shop })).find((x) => x.kind === "einkauf")!;
+    expect(t).toMatchObject({ score: 40, detail: "Milch, Brot, Butter" });
+  });
+});
+
 describe("Jetzt-Karte: Aufgaben, Geburtstage, Sport, Abend", () => {
   it("wichtig vor fällig, je nur eine; nicht im Feierabend", () => {
     const x = input({ urgent: [{ key: "a", title: "Steuer" }], dueToday: [{ key: "a", title: "Steuer" }, { key: "b", title: "Kita-Formular" }] });
