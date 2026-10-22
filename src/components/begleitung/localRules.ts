@@ -348,7 +348,7 @@ export function bausteinRule(ctx: RuleContext, t: string): boolean {
   if (cmd.kind === "list") {
     const off = BAUSTEINE.filter((b) => !featureOn(b.feature));
     setInput("");
-    localTurn(t, off.length ? `Ich kann noch: ${off.map((b) => `${b.name} – ${b.text.replace(/\.$/, "")}`).join("; ")}. Sag einfach, was ich einschalten soll – oder schau unter Einstellungen → Bausteine.` : "Gerade ist alles an, was ich kann.");
+    localTurn(t, off.length ? `Außerdem kann ich: ${off.map((b) => `${b.name} – ${b.text.replace(/\.$/, "")}`).join("; ")}. Sag einfach, was ich einschalten soll – oder schau unter Einstellungen → Bausteine.` : "Gerade ist alles an, was ich kann.");
     return true;
   }
   const b = bausteinOf(cmd.feature);

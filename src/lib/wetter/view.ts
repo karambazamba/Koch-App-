@@ -3,6 +3,7 @@
 // EIN Satz zum Tag (mit Bezug auf Termine), 7 Tage in Worten und der beste Tag
 // für draußen. Keine Balken, keine Stunden-Tabellen.
 
+import { WEEKDAYS_SO } from "@/lib/core/days";
 import { dayLook, isRainy, round, weatherKind, type Forecast, type ForecastDay, type TipTermin } from "@/lib/wetter/forecast";
 
 /** Farbgruppe der Kachel (Verlauf): sonnig · bewoelkt · regen · schnee · gewitter */
@@ -154,7 +155,7 @@ export function columnTone(d: ForecastDay): ColumnTone {
   return g === "sonnig" ? "sonne" : "wolken";
 }
 
-const WEEKDAY = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+const WEEKDAY = WEEKDAYS_SO;
 const weekdayOf = (iso: string) => WEEKDAY[new Date(`${iso}T12:00:00Z`).getUTCDay()];
 const isWet = (d: ForecastDay) => d.wet >= 2 || d.mm >= 3 || weatherGroup(d.code) === "gewitter";
 

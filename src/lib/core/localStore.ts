@@ -4,7 +4,7 @@
 // Versionen weiter funktionieren. Später durch Supabase ersetzbar.
 // Schlüssel nur aus dem Verzeichnis `storage.ts` (STORAGE).
 
-import type { StorageKey } from "@/lib/core/storage";
+import type { RetiredKey, StorageKey } from "@/lib/core/storage";
 
 type LocalStore<T> = {
   load: () => T | null;
@@ -77,4 +77,30 @@ export function createLocalStore<T>(
       };
     },
   };
+}
+
+type Area = "local" | "session";
+const webStorage = (area: Area) => (area === "session" ? window.sessionStorage : window.localStorage);
+
+/**
+ * Einfacher Wert direkt lesen (für kleine Merker ohne Format/Migration, z. B.
+ * „heute schon begrüßt“) – nur Schlüssel aus dem Verzeichnis. Ohne Speicher
+ * (privater Modus, Server) still null.
+ */
+export function readRaw(key: StorageKey | RetiredKey, area: Area = "local"): string | null {
+  try {
+    return webStorage(area).getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+/** Einfachen Wert schreiben; null = löschen. Fehler (voll, gesperrt) still übergehen */
+export function writeRaw(key: StorageKey | RetiredKey, value: string | null, area: Area = "local"): void {
+  try {
+    if (value === null) webStorage(area).removeItem(key);
+    else webStorage(area).setItem(key, value);
+  } catch {
+    // ohne Speicher nichts zu tun
+  }
 }

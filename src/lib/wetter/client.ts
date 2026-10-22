@@ -6,7 +6,7 @@
 // höchstens alle 30 Minuten.
 
 import { useEffect, useState } from "react";
-import { createLocalStore } from "@/lib/core/localStore";
+import { createLocalStore, readRaw } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 import { now, todayIso } from "@/lib/core/now";
 import { sanitizeForecast, type Forecast } from "@/lib/wetter/forecast";
@@ -42,7 +42,7 @@ export const loadForecast = () => dataStore.load()?.forecast ?? null;
 /** Testmodus: `?szenario=` wird an die Route durchgereicht (nur dort wirksam) */
 const scenario = () => {
   try {
-    return sessionStorage.getItem("wasgibts.wetterszenario" satisfies StorageKey) ?? "";
+    return readRaw("wasgibts.wetterszenario" satisfies StorageKey, "session") ?? "";
   } catch {
     return "";
   }

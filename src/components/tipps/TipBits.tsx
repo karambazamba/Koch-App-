@@ -3,6 +3,7 @@
 // Kleine Bausteine für Tipps aus der Region: Icon (Linien, lila), „von
 // KARAMBA“ (Pink), Etiketten, Zeitangaben und die Zeile für Listen.
 
+import { WEEKDAYS_SHORT_MO } from "@/lib/core/days";
 import { Baby, Bike, Heart, Leaf, Music, ShoppingBasket, Ticket, type LucideIcon } from "lucide-react";
 import { tipIcon, tipTags, type TipIcon as IconKind } from "@/lib/tipps/categories";
 import { tipDate, tipTime, weekday, type TipView } from "@/lib/tipps/model";
@@ -22,7 +23,7 @@ export const KarambaLine = () => <span className="block text-[11px] font-extrabo
 
 export const SampleMark = () => <span className="rounded-full bg-fill px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-muted">Beispiel</span>;
 
-const DAY_SHORT = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+const DAY_SHORT = WEEKDAYS_SHORT_MO;
 const LONG = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
 
 /** „Samstag, 24. Oktober“ */

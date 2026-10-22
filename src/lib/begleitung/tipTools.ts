@@ -3,6 +3,7 @@
 // Eintragen geht über termin_anlegen (Vorschlag + Übernehmen). Nur angeboten,
 // wenn auf dem Server eine Quelle läuft (TIPS_SOURCE ≠ off).
 
+import { WEEKDAYS_SHORT_MO } from "@/lib/core/days";
 import type { BegleitungTool } from "@/lib/begleitung/registry";
 import { tipsMode } from "@/lib/tipps/server";
 import { answerTips } from "@/lib/tipps/model";
@@ -10,7 +11,7 @@ import type { TipFilter } from "@/lib/tipps/categories";
 
 const FILTERS: TipFilter[] = ["kinder", "regen", "draussen", "kostenlos", "musik", "maerkte", "sport"];
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
-const DAY = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+const DAY = WEEKDAYS_SHORT_MO;
 const weekday = (iso: string) => (new Date(`${iso}T12:00:00Z`).getUTCDay() + 6) % 7;
 
 export const TIP_TOOLS: BegleitungTool[] = [

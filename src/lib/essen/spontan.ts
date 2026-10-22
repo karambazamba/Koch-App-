@@ -138,7 +138,7 @@ export type SpontanFilter = "schnell" | "reste" | "einkauf" | `basis:${BaseId}`;
 export const SPONTAN_FILTERS: { value: SpontanFilter; label: string }[] = [
   { value: "schnell", label: "⚡ unter 20 Min" },
   { value: "reste", label: "♻️ Reste zuerst" },
-  { value: "einkauf", label: "🛒 1 Sache darf fehlen" },
+  { value: "einkauf", label: "🛒 1 Sache darf auf die Liste" },
 ];
 
 export type SpontanIdea = {

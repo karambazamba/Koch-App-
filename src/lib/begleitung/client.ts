@@ -4,6 +4,7 @@
 // Sprachausgabe. Geändert wird erst beim Übernehmen – über dieselben reinen
 // Funktionen, mit denen auch die Vorschau rechnet.
 
+import { readRaw, writeRaw } from "@/lib/core/localStore";
 import { replaceNotes } from "@/lib/notizen/store";
 import { loadSchnellnotiz, saveSchnellnotiz } from "@/lib/notizen/schnellnotiz";
 import { addPin, changePins, createPin, formatDauer, loadMemos, loadPins, removePin, visibleMemos, visiblePins } from "@/lib/pinnwand";
@@ -77,7 +78,7 @@ const codeListeners = new Set<() => void>();
 
 function loadAccessCode(): string {
   try {
-    return localStorage.getItem(CODE_KEY) ?? "";
+    return readRaw(CODE_KEY) ?? "";
   } catch {
     return "";
   }
@@ -85,8 +86,8 @@ function loadAccessCode(): string {
 
 function storeAccessCode(code: string) {
   try {
-    if (code) localStorage.setItem(CODE_KEY, code);
-    else localStorage.removeItem(CODE_KEY);
+    if (code) writeRaw(CODE_KEY, code);
+    else writeRaw(CODE_KEY, null);
   } catch {
     // ohne Speicher gilt der Code nur bis zum Neuladen
   }
@@ -118,7 +119,7 @@ export function forgetAccessCode() {
 function todayCount(): { day: string; n: number } {
   const day = toIsoDate(now());
   try {
-    const saved = JSON.parse(localStorage.getItem(COUNT_KEY) ?? "null") as { day: string; n: number } | null;
+    const saved = JSON.parse(readRaw(COUNT_KEY) ?? "null") as { day: string; n: number } | null;
     return saved?.day === day ? saved : { day, n: 0 };
   } catch {
     return { day, n: 0 };
@@ -133,7 +134,7 @@ export function takeAiSlot(): boolean {
   const c = todayCount();
   if (c.n >= LIMITS.dailyPerDevice) return false;
   try {
-    localStorage.setItem(COUNT_KEY, JSON.stringify({ day: c.day, n: c.n + 1 }));
+    writeRaw(COUNT_KEY, JSON.stringify({ day: c.day, n: c.n + 1 }));
   } catch {
     // ohne Speicher zählt nur der Server
   }
@@ -148,10 +149,10 @@ export function accessHeaders(): Record<string, string> {
 
 export function deviceId(): string {
   try {
-    let id = localStorage.getItem(DEVICE_KEY);
+    let id = readRaw(DEVICE_KEY);
     if (!id) {
       id = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `geraet-${Math.random().toString(36).slice(2, 14)}`;
-      localStorage.setItem(DEVICE_KEY, id);
+      writeRaw(DEVICE_KEY, id);
     }
     return id;
   } catch {
@@ -171,7 +172,7 @@ function fetchStatus(): Promise<AssistantStatus> {
       // Gemerkter Code stimmt nicht mehr (z. B. geändert) → neu fragen
       if (s.access === "falsch") {
         try {
-          localStorage.removeItem(CODE_KEY);
+          writeRaw(CODE_KEY, null);
         } catch {}
       }
       return s;

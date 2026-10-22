@@ -7,7 +7,7 @@
 
 import { setAvatarFlag } from "@/lib/core/avatarState";
 import { useEffect, useState } from "react";
-import { createLocalStore } from "@/lib/core/localStore";
+import { createLocalStore, readRaw, writeRaw } from "@/lib/core/localStore";
 import type { HelperVoice } from "@/lib/einstellungen/profile";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 import type { StorageKey } from "@/lib/core/storage";
@@ -62,7 +62,7 @@ export function loadSpeechSettings(): SpeechSettings {
   if (saved) return saved;
   // Alter Schalter "an" bleibt an; sonst Standard (automatisch)
   try {
-    if (localStorage.getItem(LEGACY_KEY) === "1") return LEGACY_ON;
+    if (readRaw(LEGACY_KEY) === "1") return LEGACY_ON;
   } catch {
     // ohne Speicher: Standard
   }
@@ -72,7 +72,7 @@ export function loadSpeechSettings(): SpeechSettings {
 /** Alten Schalter einmalig übernehmen, damit der alte Schlüssel weg kann */
 export function adoptLegacySpeech() {
   try {
-    if (!store.load() && localStorage.getItem(LEGACY_KEY) === "1") store.save(LEGACY_ON);
+    if (!store.load() && readRaw(LEGACY_KEY) === "1") store.save(LEGACY_ON);
   } catch {
     // ohne Speicher nichts zu tun
   }
@@ -161,8 +161,8 @@ const VOICE_HINT_KEY: StorageKey = "wasgibts.stimmenhinweis";
 function takeVoiceHint(voices: SpeechSynthesisVoice[], voice: HelperVoice): boolean {
   if (!voices.length || hasMatchingVoice(voices, voice)) return false;
   try {
-    if (localStorage.getItem(VOICE_HINT_KEY)) return false;
-    localStorage.setItem(VOICE_HINT_KEY, "1");
+    if (readRaw(VOICE_HINT_KEY)) return false;
+    writeRaw(VOICE_HINT_KEY, "1");
   } catch {
     return false;
   }

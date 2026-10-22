@@ -43,7 +43,7 @@ export function FarbeChoice({ profile, onPick }: { profile: HouseholdProfile; on
         <div className="flex items-end gap-4">
           <BegleitungAvatar size={96} />
           {/* eslint-disable-next-line @next/next/no-img-element -- statisches App-Icon in der gewählten Farbe */}
-          <img src={iconFor(profile.helper.farbe, "icon.svg")} alt="App-Icon" width={56} height={56} className="rounded-[22%] shadow-card" />
+          <img src={iconFor(profile.helper.farbe, "icon.svg")} alt="App-Icon" width={56} height={56} className="rounded-icon shadow-card" />
         </div>
         <ColorDots
           value={profile.helper.farbe}

@@ -1,5 +1,6 @@
 "use client";
 
+import { plural } from "@/lib/core/text";
 import Link from "next/link";
 import { useMailStyle } from "@/lib/begleitung/mailSettings";
 import { Blocks, HandCoins, MapPin, BookOpen, CalendarDays, ChefHat, ChevronRight, Clock, CloudSun, Database, Dumbbell, LayoutGrid, Mail, Refrigerator, Salad } from "lucide-react";
@@ -22,7 +23,7 @@ import { useFamilyRegion } from "@/lib/spendentopf/store";
 import { POT_TEXTS } from "@/lib/spendentopf/model";
 import { useTipPlace, useTipSettings, useTipsOn } from "@/lib/tipps/client";
 
-const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+const count = plural;
 
 /** Große Karte oben (Familie, Begleitung): Bild links, Name + Untertitel, › */
 function HeadCard({ href, label, picture, title, subtitle }: { href: string; label: string; picture: React.ReactNode; title: string; subtitle: string }) {

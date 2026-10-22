@@ -3,6 +3,7 @@
 // Kalender“ oder „Übernehmen“ tippt. Rein (ohne React), damit Server, Lotte
 // und Tests gleich rechnen. Form wie die spätere Supabase-Tabelle `tips`.
 
+import { WEEKDAYS_SHORT_MO } from "@/lib/core/days";
 import { KARAMBA_VERANSTALTER } from "@/lib/tipps/karamba";
 import { filtersOf, type TipFilter } from "@/lib/tipps/categories";
 
@@ -171,7 +172,7 @@ export function jetztTip(tips: TipView[], o: { today: string; minutes: number; r
 
 /** „Wollen wir Sa 15 Uhr zum Kinderkino?“ */
 export function pinboardText(t: Pick<Tip, "titel" | "beginn" | "ganztags">): string {
-  const day = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"][weekday(tipDate(t))];
+  const day = WEEKDAYS_SHORT_MO[weekday(tipDate(t))];
   const time = tipTime(t);
   const at = time ? ` ${time.replace(/:00$/, "")} Uhr` : "";
   return `Wollen wir ${day}${at} zu „${t.titel}“?`.slice(0, 140);

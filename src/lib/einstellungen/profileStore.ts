@@ -2,7 +2,7 @@
 // Datenmodell, Standardwerte und Hilfen stehen in ./profile.ts.
 
 import { migrateBases } from "@/lib/essen/bases";
-import { createLocalStore } from "@/lib/core/localStore";
+import { createLocalStore, readRaw } from "@/lib/core/localStore";
 import { now } from "@/lib/core/now";
 import type { StorageKey } from "@/lib/core/storage";
 import { AVATAR_COLORS, DEFAULT_HELPER, HELPER_NAME_MAX, HOUSEHOLD_TYPES, deriveHouseholdType, PLAN_STYLES, APP_THEMES, HELPER_MODES, WEEKDAYS, LIMITS, newId, createEmptyProfile, wishDayOrder, syncPersons, type PersonRole, type KidAgeGroup, type WeekdayLunch, type Person, type MealTime, type WarmMealSchedule, type WeekRules, type WishDaySettings, type HelperArt, type AvatarColor, type HelperSettings, type NeverAgainEntry, type LikedIngredient, type HouseholdType, type MealClock, type PauseSettings, type WeatherSettings, type HouseholdProfile, type PlanStyle, type AppTheme, type HelperMode, DEFAULT_MEAL_CLOCK, voiceForArt } from "@/lib/einstellungen/profile";
@@ -11,7 +11,7 @@ import { AVATAR_COLORS, DEFAULT_HELPER, HELPER_NAME_MAX, HOUSEHOLD_TYPES, derive
 function hasPlannedMeals(): boolean {
   try {
     if (typeof localStorage === "undefined") return false;
-    const raw = JSON.parse(localStorage.getItem("wasgibts.wochenplan") ?? "null") as { weeks?: Record<string, Record<string, { kind?: string }>> } | null;
+    const raw = JSON.parse(readRaw("wasgibts.wochenplan") ?? "null") as { weeks?: Record<string, Record<string, { kind?: string }>> } | null;
     return Object.values(raw?.weeks ?? {}).some((w) => Object.values(w ?? {}).some((e) => e && (e.kind === "recipe" || e.kind === "text" || e.kind === "wish")));
   } catch {
     return false;

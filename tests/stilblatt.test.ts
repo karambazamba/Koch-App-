@@ -23,6 +23,17 @@ describe("Stilblatt: Farben und Radien nur über Tokens", () => {
     expect(SOURCES.filter(({ s }) => /\brounded-(?:xl|2xl|3xl)\b/.test(s)).map(({ p }) => p)).toEqual([]);
   });
 
+  it("keine frei erfundenen Radien oder Farben in Klassen (rounded-[…], bg-[#…]) – Sonderfälle haben Token-Namen", () => {
+    const bad = SOURCES.flatMap(({ p, s }) => [...s.matchAll(/\brounded-\[[^\]]+\]|\b(?:bg|text|border|ring|fill|stroke|from|via|to|outline|shadow)-\[#[0-9a-fA-F]+\]/g)].map((m) => `${p}: ${m[0]}`));
+    expect(bad).toEqual([]);
+  });
+
+  it("feste Hex-Farben nur in Zeichnungen (Avatar, Teller, Spendentopf) – sonst Tokens", () => {
+    const drawings = /(BegleitungAvatar|DishPicture|PotGraphic)\.tsx$/;
+    const bad = SOURCES.filter(({ p }) => /components\/.*\.tsx$/.test(p) && !drawings.test(p)).flatMap(({ p, s }) => [...s.replace(/\/\/.*$/gm, "").matchAll(/#[0-9a-fA-F]{6}\b/g)].map((m) => `${p}: ${m[0]}`));
+    expect(bad).toEqual([]);
+  });
+
   it("im Code nie var(--color-…) – die gibt es zur Laufzeit nicht (@theme inline), nur var(--app-…)", () => {
     // Fehler v0.32: Laden-Punkte in der Einkauf-Kachel blieben unsichtbar
     expect(SOURCES.filter(({ s }) => /var\(--color-/.test(s)).map(({ p }) => p)).toEqual([]);

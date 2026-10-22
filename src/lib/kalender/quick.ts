@@ -3,6 +3,7 @@
 // schon ein Tag ("morgen", "Freitag", "bis 24.10."), wird er übernommen.
 // Rein, damit Oberfläche und Tests gleich rechnen.
 
+import { WEEKDAYS_SHORT_SO, WEEKDAYS_SO } from "@/lib/core/days";
 import type { Room } from "@/lib/core/entries";
 import { addDays } from "@/lib/core/now";
 import { mondayOf, type AufgabeData, type Reminder, type Repeat } from "@/lib/kalender/model";
@@ -68,7 +69,7 @@ export function whenLabel(when: When): string {
   if (typeof when === "string") return WHEN_CHOICES.find((c) => c.id === when)?.label ?? when;
   const iso = when.due ?? when.date ?? "";
   const [, m, d] = iso.split("-");
-  const wd = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"][new Date(`${iso}T12:00:00`).getDay()];
+  const wd = WEEKDAYS_SHORT_SO[new Date(`${iso}T12:00:00`).getDay()];
   return `${when.due ? "bis " : ""}${wd} ${Number(d)}.${Number(m)}.`;
 }
 
@@ -108,7 +109,7 @@ export function terminDay(text: string, readDate: string | undefined, picked: st
 /** Kurzer Tag für Chips: "Freitag" bzw. "Fr 24.10." */
 export function dayChipLabel(iso: string, long = false): string {
   const wd = new Date(`${iso}T12:00:00`).getDay();
-  if (long) return ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][wd];
+  if (long) return WEEKDAYS_SO[wd];
   const [, m, d] = iso.split("-");
-  return `${["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"][wd]} ${Number(d)}.${Number(m)}.`;
+  return `${WEEKDAYS_SHORT_SO[wd]} ${Number(d)}.${Number(m)}.`;
 }
