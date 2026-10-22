@@ -120,7 +120,7 @@ export const bearbeiten = async (page, check) => {
   await page.waitForTimeout(900);
   const tile = page.getByRole("region", { name: "Pinnwand" });
   const box = await tile.boundingBox();
-  await page.mouse.move(box.x + 40, box.y + box.height - 12);
+  await page.mouse.move(box.x + 8, box.y + box.height / 2);
   await page.mouse.down();
   await page.waitForTimeout(800);
   await page.mouse.up();
@@ -129,15 +129,15 @@ export const bearbeiten = async (page, check) => {
   check(await page.getByRole("button", { name: /Kachel/ }).first().isVisible(), "„+ Kachel“ im Kopf");
   await page.getByRole("button", { name: "Verstanden" }).click();
   await page.waitForTimeout(400);
-  await page.getByRole("button", { name: "Fertig" }).click();
+  await page.getByRole("button", { name: "Fertig" }).first().click();
   await page.waitForTimeout(400);
-  check(!(await page.getByRole("button", { name: "Fertig" }).isVisible()), "„Fertig“ beendet");
+  check(!(await page.getByRole("button", { name: "Fertig" }).first().isVisible()), "„Fertig“ beendet");
 };
 
 /** Bearbeiten-Modus öffnen (lange auf die Pinnwand drücken) */
 const openEdit = async (page) => {
   const box = await page.getByRole("region", { name: "Pinnwand" }).boundingBox();
-  await page.mouse.move(box.x + 40, box.y + box.height - 12);
+  await page.mouse.move(box.x + 8, box.y + box.height / 2);
   await page.mouse.down();
   await page.waitForTimeout(800);
   await page.mouse.up();
@@ -150,7 +150,7 @@ const resetTip = (page) => page.evaluate((k) => localStorage.setItem(k, JSON.str
 const tipSeen = (page) => page.evaluate((k) => Boolean(JSON.parse(localStorage.getItem(k) ?? "{}").seen?.includes("kachel-tipp")), TIP_KEY);
 const tipCard = (page) => page.getByRole("dialog", { name: "Neue Kacheln holen" });
 const addButton = (page) => page.locator("header").getByRole("button", { name: /Kachel/ });
-const editOpen = (page) => page.getByRole("button", { name: "Fertig" }).isVisible();
+const editOpen = (page) => page.getByRole("button", { name: "Fertig" }).first().isVisible();
 const focused = (page) => page.evaluate(() => document.activeElement?.textContent?.trim());
 
 /** Spitze trifft die Mitte des echten Knopfs, Karte 16 px vom Rand */
@@ -196,11 +196,11 @@ export const kachelTipp = async (page, check, device) => {
   check(await tipSeen(page), "… und merkt „kachel-tipp“");
   check((await focused(page)) === "Kachel", "Fokus zurück auf „+ Kachel“");
   check(await editOpen(page), "Bearbeiten bleibt offen");
-  await page.getByRole("button", { name: "Fertig" }).click();
+  await page.getByRole("button", { name: "Fertig" }).first().click();
   await page.waitForTimeout(400);
   await openEdit(page);
   check(!(await card.isVisible()), "zweites Öffnen ohne Tipp");
-  await page.getByRole("button", { name: "Fertig" }).click();
+  await page.getByRole("button", { name: "Fertig" }).first().click();
   await page.waitForTimeout(400);
 
   // Abdunklung
@@ -210,7 +210,7 @@ export const kachelTipp = async (page, check, device) => {
   await page.waitForTimeout(400);
   check(!(await card.isVisible()), "Tipp auf die Abdunklung schließt");
   check(await editOpen(page), "… und Bearbeiten bleibt offen");
-  await page.getByRole("button", { name: "Fertig" }).click();
+  await page.getByRole("button", { name: "Fertig" }).first().click();
   await page.waitForTimeout(400);
 
   // Zurück-Geste
@@ -219,7 +219,7 @@ export const kachelTipp = async (page, check, device) => {
   await page.waitForTimeout(500);
   check(!(await card.isVisible()), "Zurück schließt den Tipp");
   check(await editOpen(page), "… und Bearbeiten bleibt offen");
-  await page.getByRole("button", { name: "Fertig" }).click();
+  await page.getByRole("button", { name: "Fertig" }).first().click();
   await page.waitForTimeout(400);
 
   // Escape
@@ -227,7 +227,7 @@ export const kachelTipp = async (page, check, device) => {
   await page.keyboard.press("Escape");
   await page.waitForTimeout(400);
   check(!(await card.isVisible()) && (await editOpen(page)), "Escape schließt, Bearbeiten bleibt");
-  await page.getByRole("button", { name: "Fertig" }).click();
+  await page.getByRole("button", { name: "Fertig" }).first().click();
   await page.waitForTimeout(400);
 
   // Direkt auf den hervorgehobenen echten „+ Kachel“

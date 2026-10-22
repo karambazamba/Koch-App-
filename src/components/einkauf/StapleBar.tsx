@@ -27,7 +27,7 @@ export function StapleBar({
     <section className="flex flex-col gap-1.5" aria-label="Stammartikel">
       <div className="flex items-center justify-between px-1">
         <h2 className="text-[15px] font-extrabold text-muted">Bald wieder fällig</h2>
-        <button type="button" onClick={onManage} className="text-xs font-semibold text-muted underline">
+        <button type="button" onClick={onManage} className="hit text-xs font-semibold text-muted underline">
           Stammliste
         </button>
       </div>
@@ -45,7 +45,8 @@ function StapleChip({ staple, onTake, onSkip }: { staple: Staple; onTake: () => 
   const [start, setStart] = useState<number | null>(null);
   return (
     <span
-      className={`${chipClass(false)} shrink-0 gap-1 pr-1`}
+      // Knöpfe über der vergrößerten Tippfläche des Chips (`hit`), sonst fängt der Chip den Tipp ab
+      className={`${chipClass(false)} shrink-0 gap-1 pr-1 [&>button]:relative`}
       style={{ touchAction: "pan-y" }}
       onPointerDown={(e) => setStart(e.clientX)}
       onPointerUp={(e) => {
@@ -57,7 +58,7 @@ function StapleChip({ staple, onTake, onSkip }: { staple: Staple; onTake: () => 
         <Plus className="h-4 w-4 text-accent" strokeWidth={2.5} aria-hidden />
         {staple.name}
       </button>
-      <button type="button" onClick={onSkip} aria-label={`${staple.name} diesmal nicht`} className="flex h-6 w-6 items-center justify-center text-faint">
+      <button type="button" onClick={onSkip} aria-label={`${staple.name} diesmal nicht`} className="flex h-8 w-8 items-center justify-center text-faint">
         <X className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
       </button>
     </span>

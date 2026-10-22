@@ -78,7 +78,7 @@ export function ProductsView() {
             </span>
           ))}
           {settings.shops.map((s) => (
-            <span key={s} className={`${chipClass(true)} gap-1.5 pr-1`}>
+            <span key={s} className={`${chipClass(true)} gap-1.5 pr-1 [&>button]:relative`}>
               <ShopDot shop={s} />
               {s}
               <button type="button" onClick={() => removeShop(s)} aria-label={`Laden ${s} entfernen`} className="flex h-6 w-6 items-center justify-center">

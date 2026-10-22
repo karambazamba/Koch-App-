@@ -1875,3 +1875,15 @@ Fehler in `docs/aufraeumen-nachher.md`.
   beitreten), danach direkt die Startseite mit dem Flug der Begleitung.
   Einladungs-Link `/beitreten?code=…` mit eingetragenem Code. „Los geht’s“
   bleibt der Weg ohne Konto.
+
+## Großer Check vor der Präsentation (v0.54.1 – v0.55.0)
+
+- Begrüßung: Sprech-Chip raus, unten die Leiste mit Mikro; kein Anmelden-Link
+  bis Tafel 22. Prüfskripte `npm run pruefen` (684 Seitenaufrufe je Lauf) und
+  `npm run knoepfe`. Gefunden und behoben: Stammartikel-Chips in der
+  Einkaufsliste nicht antippbar (vergrößerte Tippfläche lag darüber), Mikro
+  und Plus über dem Titel der kleinen Pinnwand-Kachel, zu kleine Tippflächen
+  (Kalender-Zeilen, „Noch frei“, Hinweis-Links), Vibrations-Warnung ohne
+  Tipp. Neu: Bearbeiten beenden ganz leicht (Tafel 24, Fertig-Leiste unten,
+  kurzer Tipp = fertig, Kachel-Menü weg), Pinnwand-Memo antippen statt halten.
+  Durchklick zusätzlich: Offline-Start, „Neue Version da“, Stammartikel.

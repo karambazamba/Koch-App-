@@ -68,8 +68,8 @@ export function DayRoutineView() {
             <span className="flex-1 text-base font-semibold">🌙 Feierabend ab</span>
             <input type="time" value={r.feierabendAb} onChange={(e) => e.target.value && changeRoutine({ feierabendAb: e.target.value })} className={`${INPUT_BASE} h-11 w-36 px-3`} aria-label="Feierabend ab" />
           </label>
-          <label className="flex items-start gap-3 text-sm text-muted">
-            <input type="checkbox" checked={r.nachArbeit} onChange={(e) => changeRoutine({ nachArbeit: e.target.checked })} className="mt-0.5 h-5 w-5 shrink-0 accent-accent" />
+          <label className="flex min-h-11 items-center gap-3 text-sm text-muted">
+            <input type="checkbox" checked={r.nachArbeit} onChange={(e) => changeRoutine({ nachArbeit: e.target.checked })} className="h-5 w-5 shrink-0 accent-accent" />
             <span>frühestens nach deinem letzten Arbeitstermin (Abenddienste)</span>
           </label>
         </section>

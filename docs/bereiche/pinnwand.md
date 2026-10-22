@@ -69,13 +69,25 @@ außer dauerhaft angeheftete Nachrichten.
 ### Sprachnachrichten (Memos)
 - Kein KI-Anteil, keine Abschrift. Das Mikro ist rosé (nie Orange – Orange ist
   das Mikro der Begleitung) und trägt `data-no-swipe` / `data-no-longpress`.
-- Aufnehmen (`useMemoRecorder`): gedrückt halten = Aufnahme, Loslassen =
-  senden, mehr als 70 px zur Seite = verwerfen (`CANCEL_PX`), unter 1 s =
-  nichts („Zum Aufnehmen das Mikro gedrückt halten.“), nach 60 s automatisch
-  senden. Format nach `pickMemoMime` (iPhone audio/mp4 AAC, sonst webm/Opus).
-- Mikrofon-Freigabe erst beim ersten Halten („Jetzt geht’s – Mikro gedrückt
-  halten und sprechen.“); abgelehnt = ein freundlicher Satz, wo man es erlaubt.
-  Ohne Finger (Tastatur/VoiceOver): Antippen startet, dann „Senden“ oder ✕.
+- Aufnehmen (`useMemoRecorder`, Ablauf rein in `lib/pinnwand/recorderState.ts`):
+  EINMAL antippen = Aufnahme startet sofort und läuft frei (wie WhatsApp).
+  Aufnahme-Leiste (`RecordingRow`, gleiche Stelle): links Mülleimer
+  „Verwerfen“, Mitte roter Punkt + Zeit + Tonwelle, rechts großer
+  Senden-Knopf (48 px). „Gesendet“ als kurze Meldung; Verwerfen unter 3 s
+  still, sonst „Verworfen · Rückgängig“ (holt die fertige Aufnahme zurück).
+  Höchstens 60 s: ab 50 s Zeit in Akzent, bei 60 s hält sie an und wartet
+  (nie automatisch senden). Halten bleibt als Abkürzung: loslassen = senden
+  (ab 0,3 s), beim Halten 60 px nach oben schieben = frei sprechen (Schloss).
+  Unter 1 s = nichts. Format nach `pickMemoMime` (iPhone audio/mp4 AAC, sonst
+  webm/Opus).
+- Während der Aufnahme: Bildschirm bleibt an (Wake Lock), Seite scrollt nicht
+  und wechselt nicht per Wischen (`data-no-swipe` am Dokument). App/Seite
+  verlassen hält an – beim Zurückkommen „Memo fertig aufgenommen – Senden oder
+  Verwerfen?“. Zurück (Pfeil/Geste/Android) fragt „Sprachnachricht
+  verwerfen?“ (Verwerfen/Behalten), nie still verlieren.
+- Mikrofon-Freigabe beim ersten Antippen; abgelehnt = ein freundlicher Satz,
+  wo man es erlaubt. Knöpfe heißen „Aufnahme starten“, „Senden“, „Verwerfen“;
+  VoiceOver sagt die Zeit alle 10 s an.
 - Abspielen: nur eins gleichzeitig, der Ton liegt vorab als Adresse bereit
   (sonst spielt das iPhone nicht). Abspielen = gehört.
 - Fenster (`MemoSheet`): 👍/❤️; beim eigenen Memo „Gehört von“ (Häkchen je

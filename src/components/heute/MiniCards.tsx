@@ -192,7 +192,7 @@ function TaskField({ item, today, leaving, fading = false, entering, onOpen, onD
   const badge = taskBadge(item, today);
   return (
     <li className={`${TILE_INNER} relative flex min-w-0 items-center`} style={fading ? FADE : entering} data-item={item.key}>
-      <button type="button" role="checkbox" aria-checked={leaving} aria-label={`${item.title} erledigt`} onClick={onDone} className="flex h-11 w-9 shrink-0 items-center justify-end pr-1">
+      <button type="button" role="checkbox" aria-checked={leaving} aria-label={`${item.title} erledigt`} onClick={onDone} className="hit flex h-11 w-9 shrink-0 items-center justify-end pr-1">
         <span className={`flex h-[17px] w-[17px] items-center justify-center rounded-full border-2 ${leaving ? "border-tile-accent bg-tile-accent text-on-color" : "border-line-strong"}`} style={leaving ? { animation: "check-pop 0.4s ease-out" } : undefined}>
           {leaving && <Check className="h-2.5 w-2.5" strokeWidth={3.5} aria-hidden />}
         </span>

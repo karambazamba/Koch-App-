@@ -33,9 +33,10 @@ export function act(change: (entries: CalendarEntry[], stamp: string) => Calenda
   else if (opts.done) showDone(registered);
 }
 
-/** Kurzes Antippen spüren (wo möglich) */
+/** Kurzes Antippen spüren (wo möglich; nie ohne Tipp – sonst warnt der Browser) */
 export function buzz() {
   try {
+    if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return;
     navigator.vibrate?.(12);
   } catch {
     // ohne Vibration

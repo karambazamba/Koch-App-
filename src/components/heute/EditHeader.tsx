@@ -78,7 +78,7 @@ export function EditHeader({ onAdd, onDone }: { onAdd: () => void; onDone: () =>
       {/* Titel verschwindet unter der Karte (halb verdeckt wirkte er abgeschnitten) */}
       <div inert={open} className={`flex flex-col gap-1 transition-opacity duration-200 motion-reduce:transition-none ${lit ? "opacity-0" : ""}`}>
         <h1 className="text-[24px] font-extrabold leading-tight tracking-tight">Startseite bearbeiten</h1>
-        <p className="text-sm text-muted">Festhalten &amp; ziehen · Danebentippen = fertig</p>
+        <p className="text-sm text-muted">Festhalten &amp; ziehen · Irgendwo tippen = fertig</p>
       </div>
       {open && <AddTileTip anchor={addButton} shown={shown} onDismiss={() => dismiss()} />}
     </header>

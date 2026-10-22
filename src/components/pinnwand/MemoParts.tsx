@@ -1,17 +1,18 @@
 "use client";
 
 // Bausteine der Sprachnachrichten: Tonwelle, Mikro-Knopf (Kachel-Akzent, nicht
-// Orange – Orange ist Mias Mikro) und die Aufnahme-Zeile (roter Punkt, Zeit,
-// Welle). Gedrückt halten = Aufnahme, Loslassen = senden, zur Seite wischen =
-// verwerfen; per Tastatur/VoiceOver: Antippen startet, „Senden“ beendet.
+// Orange – Orange ist Mias Mikro) und die Aufnahme-Leiste (Verwerfen, roter
+// Punkt, Zeit, Welle, Senden). Antippen startet, die Aufnahme läuft frei (wie
+// bei WhatsApp); Halten bleibt als Abkürzung (loslassen = senden, nach oben
+// schieben = frei sprechen). Per Tastatur/VoiceOver: Antippen startet, „Senden“
+// beendet.
 
 import { useRef, useState } from "react";
-import { Mic, Send, X } from "lucide-react";
+import { Lock, Mic, SendHorizontal, Trash2 } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { formatDauer } from "@/lib/pinnwand";
+import { LOCK_PX, timeWarns } from "@/lib/pinnwand/recorderState";
 import type { MemoRecorder } from "@/components/pinnwand/useMemoRecorder";
-
-/** Ab dieser Strecke zur Seite gilt Loslassen als Verwerfen */
-const CANCEL_PX = 70;
 
 /** Tonwelle: Balken, gespielt = Akzent, Rest blass */
 export function MemoWave({ wave, progress = 0, className = "" }: { wave: number[]; progress?: number; className?: string }) {
@@ -28,87 +29,125 @@ export function MemoWave({ wave, progress = 0, className = "" }: { wave: number[
   );
 }
 
-/** Mikro für Sprachnachrichten: gedrückt halten (Finger/Maus), Tastatur = Antippen-Start */
-export function MemoMic({ recorder, size = 26, onCancelArmed }: { recorder: MemoRecorder; size?: number; onCancelArmed?: (armed: boolean) => void }) {
-  const startX = useRef<number | null>(null);
-  const [armed, setArmed] = useState(false);
+/** Mikro für Sprachnachrichten: antippen = Aufnahme startet (läuft frei); halten = loslassen sendet, hochschieben = frei sprechen */
+export function MemoMic({ recorder, size = 26 }: { recorder: MemoRecorder; size?: number }) {
+  const press = useRef<{ at: number; y: number; up: boolean } | null>(null);
+  /** Der Klick, den der Browser nach dem Loslassen schickt, gehört noch zum Start */
+  const swallowClick = useRef(false);
+  const [locking, setLocking] = useState(false);
   const active = recorder.phase !== "idle";
-  const arm = (v: boolean) => {
-    setArmed(v);
-    onCancelArmed?.(v);
-  };
+  const freeMode = active && recorder.mode === "tippen";
   return (
     <button
       type="button"
       data-no-swipe
       data-no-longpress
-      aria-label={recorder.tapMode ? "Sprachnachricht senden" : active ? "Aufnahme läuft – loslassen zum Senden" : "Sprachnachricht an alle – gedrückt halten"}
+      aria-label={freeMode ? "Senden" : active ? "Aufnahme läuft – loslassen zum Senden" : "Aufnahme starten"}
       aria-pressed={active}
       onPointerDown={(e) => {
-        if (e.button !== 0 || recorder.tapMode) return;
+        if (e.button !== 0 || freeMode) return;
         e.preventDefault();
         e.currentTarget.setPointerCapture?.(e.pointerId);
-        startX.current = e.clientX;
-        arm(false);
-        void recorder.start();
+        press.current = { at: performance.now(), y: e.clientY, up: false };
+        void recorder.start("halten");
       }}
       onPointerMove={(e) => {
-        if (startX.current === null) return;
-        const far = Math.abs(e.clientX - startX.current) > CANCEL_PX;
-        if (far !== armed) arm(far);
+        const p = press.current;
+        if (!p) return;
+        const up = p.y - e.clientY > LOCK_PX;
+        if (up !== p.up) {
+          p.up = up;
+          setLocking(up);
+        }
       }}
       onPointerUp={() => {
-        if (startX.current === null) return;
-        startX.current = null;
-        recorder.finish(!armed);
-        arm(false);
+        const p = press.current;
+        press.current = null;
+        setLocking(false);
+        if (!p) return;
+        swallowClick.current = true;
+        recorder.release(performance.now() - p.at, p.up);
       }}
       onPointerCancel={() => {
-        if (startX.current === null) return;
-        startX.current = null;
-        recorder.finish(false);
-        arm(false);
+        // Der Browser hat übernommen (z. B. Scrollen) – nichts verlieren: frei weiter
+        const p = press.current;
+        press.current = null;
+        setLocking(false);
+        if (p) recorder.release(0, true);
       }}
       onClick={(e) => {
         e.stopPropagation();
-        // Tastatur oder Bedienungshilfe (kein Finger davor): Tippen startet, nochmal Tippen sendet
+        if (swallowClick.current) {
+          swallowClick.current = false;
+          return;
+        }
+        // Während freier Aufnahme: Mikro nochmal = senden
+        if (freeMode && e.detail !== 0) return recorder.send();
+        // Tastatur oder Bedienungshilfe (kein Finger davor): antippen startet, nochmal sendet
         if (e.detail !== 0) return;
-        if (recorder.phase === "idle") void recorder.start({ tap: true });
-        else recorder.finish(true);
+        if (recorder.phase === "idle") void recorder.start("tippen");
+        else recorder.send();
       }}
       onContextMenu={(e) => e.preventDefault()}
-      className={`hit relative flex shrink-0 touch-none select-none items-center justify-center rounded-full transition-transform duration-150 [-webkit-touch-callout:none] ${active ? "scale-[1.3] bg-tile-accent text-on-accent" : "bg-tile-inner text-tile-accent active:scale-95"}`}
+      className={`hit relative flex shrink-0 touch-none select-none items-center justify-center rounded-full transition-transform duration-150 [-webkit-touch-callout:none] ${active ? "bg-tile-accent text-on-accent" : "bg-tile-inner text-tile-accent active:scale-95"} ${active && !freeMode ? "scale-[1.3]" : ""}`}
       style={{ width: size, height: size }}
     >
-      <Mic className="h-[55%] w-[55%]" strokeWidth={2.5} aria-hidden />
+      {locking ? <Lock className="h-[50%] w-[50%]" strokeWidth={2.5} aria-hidden /> : <Mic className="h-[55%] w-[55%]" strokeWidth={2.5} aria-hidden />}
     </button>
   );
 }
 
-/** Zeile während der Aufnahme: roter Punkt, Zeit, Welle – und der Hinweis zum Verwerfen */
-export function RecordingRow({ recorder, armed }: { recorder: MemoRecorder; armed: boolean }) {
+/**
+ * Aufnahme-Leiste: links Verwerfen, Mitte roter Punkt + Zeit + Welle, rechts
+ * großer Senden-Knopf. `compact` (kleine Kachel): Zeit und Welle oben,
+ * Verwerfen und Senden darunter.
+ */
+export function RecordingRow({ recorder, compact = false }: { recorder: MemoRecorder; compact?: boolean }) {
   const waiting = recorder.phase === "asking";
+  const stopped = recorder.phase === "stopped";
+  const holding = recorder.mode === "halten";
   const bars = [...Array.from({ length: Math.max(0, 28 - recorder.levels.length) }, () => 0), ...recorder.levels];
+  const discard = (
+    <button type="button" onClick={recorder.discard} aria-label="Verwerfen" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted active:scale-95">
+      <Trash2 className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+    </button>
+  );
+  const send = (
+    <button type="button" onClick={recorder.send} aria-label="Senden" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-tile-accent text-on-accent active:scale-95">
+      <SendHorizontal className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+    </button>
+  );
+  const time = (
+    <>
+      <span className={`h-2.5 w-2.5 shrink-0 rounded-full bg-danger ${waiting || stopped ? "opacity-40" : "animate-pulse"}`} aria-hidden />
+      <span className={`shrink-0 text-[14px] font-bold tabular-nums ${timeWarns(recorder.elapsed) ? "text-accent-strong" : ""}`}>{formatDauer(recorder.elapsed / 1000)}</span>
+      <MemoWave wave={compact ? bars.slice(-12) : bars} progress={1} className="min-w-0 flex-1 overflow-hidden" />
+    </>
+  );
   return (
-    <div className="flex flex-col gap-1.5" role="status" aria-live="polite">
-      <div className="flex items-center gap-2.5 rounded-full bg-tile-inner px-3 py-2">
-        <span className={`h-2.5 w-2.5 shrink-0 rounded-full bg-danger ${waiting ? "opacity-40" : "animate-pulse"}`} aria-hidden />
-        <span className="w-9 shrink-0 text-[14px] font-bold tabular-nums">{formatDauer(recorder.elapsed / 1000)}</span>
-        <MemoWave wave={bars} progress={1} className="min-w-0 flex-1 overflow-hidden" />
-        {recorder.tapMode && (
-          <>
-            <button type="button" onClick={() => recorder.finish(false)} aria-label="Verwerfen" className="hit flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted">
-              <X className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-            </button>
-            <button type="button" onClick={() => recorder.finish(true)} aria-label="Senden" className="hit flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-tile-accent text-on-accent">
-              <Send className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-            </button>
-          </>
-        )}
-      </div>
-      <span className={`px-1 text-xs ${armed ? "font-bold text-danger" : "text-muted"}`}>
-        {waiting ? "Mikrofon wird vorbereitet …" : recorder.tapMode ? "Aufnahme läuft – Senden oder ✕" : armed ? "Loslassen = verwerfen" : "Loslassen = senden · zur Seite wischen = verwerfen"}
+    <div className="flex flex-col gap-1.5" data-no-swipe>
+      {compact ? (
+        <>
+          <div className="flex h-9 min-w-0 items-center gap-2 rounded-full bg-tile-inner px-2.5">{time}</div>
+          <div className="flex items-center justify-between">
+            {discard}
+            {send}
+          </div>
+        </>
+      ) : (
+        <div className="flex h-12 items-center gap-2">
+          {discard}
+          <div className="flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-full bg-tile-inner px-3">{time}</div>
+          {send}
+        </div>
+      )}
+      <span className="px-1 text-xs text-muted" role="status">
+        {waiting ? "Mikrofon wird vorbereitet …" : stopped ? "Memo fertig aufgenommen – Senden oder Verwerfen?" : holding ? "Loslassen = senden · nach oben schieben = frei sprechen" : "Aufnahme läuft – sprich einfach"}
       </span>
+      <span className="sr-only" aria-live="polite">
+        {recorder.announce}
+      </span>
+      {recorder.askDiscard && <ConfirmDialog title="Sprachnachricht verwerfen?" text="Die Aufnahme ist dann weg." confirmLabel="Verwerfen" cancelLabel="Behalten" danger onConfirm={recorder.discard} onCancel={recorder.keep} />}
     </div>
   );
 }

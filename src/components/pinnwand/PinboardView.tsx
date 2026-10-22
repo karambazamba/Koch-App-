@@ -34,7 +34,6 @@ export function PinboardView() {
   const me = profile?.persons[0]?.name.trim() || "Ich";
   const board = useBoard(me);
   const recorder = useMemoRecorder({ me });
-  const [armed, setArmed] = useState(false);
   const canRecord = useCanRecordMemo();
   const [text, setText] = useState("");
   const [open, setOpen] = useState<string | null>(null);
@@ -109,18 +108,18 @@ export function PinboardView() {
             )}
           </form>
           {canRecord && (
-            <MemoMic recorder={recorder} size={44} onCancelArmed={setArmed} />
+            <MemoMic recorder={recorder} size={44} />
           )}
         </div>
         {recorder.phase !== "idle" ? (
           <div className={`${CARD} p-3`}>
-            <RecordingRow recorder={recorder} armed={armed} />
+            <RecordingRow recorder={recorder} />
           </div>
         ) : (
           canRecord &&
           !recorder.note && (
             <p className="-mt-1 px-1 text-[13px] text-muted">
-              Rosa Mikro gedrückt halten = Sprachnachricht an alle
+              Rosa Mikro antippen = Sprachnachricht an alle
             </p>
           )
         )}

@@ -8,8 +8,11 @@
 // der iPhone-Homescreen). Erst ruhiges Festhalten (ca. 0,35 s, < 8 px) hebt
 // die Kachel an; dann steht die Seite still, die anderen rutschen zur Seite,
 // ein gestrichelter Platzhalter zeigt den Platz, am Rand scrollt die Seite
-// mit. Kurz antippen = Menü. Tippen in eine noch rollende Seite hält nur an.
-// Essen + Einkauf (beide S) wandern zusammen.
+// mit. Kurz antippen (< 0,35 s, < 8 px) = fertig (Tafel 24) – auch auf einer
+// Kachel; „–“, S/M/L und „+ Kachel“ nicht. Tippen in eine noch rollende Seite
+// hält nur an. Verschieben ohne Ziehen: Pfeiltasten bzw. die Screenreader-
+// Knöpfe „Nach oben/unten“ an jeder Kachel (und Mia: „Schieb das Wetter nach
+// oben“). Essen + Einkauf (beide S) wandern zusammen.
 
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode, type TouchEvent as ReactTouchEvent } from "react";
 import { Plus } from "lucide-react";
@@ -19,7 +22,6 @@ import { showDeleted } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
 import { glowTile, rowsOf, unitsOf, type Unit } from "@/lib/core/homeUnits";
 import { EditFrame } from "@/components/heute/EditFrame";
-import { UnitMenu } from "@/components/heute/UnitMenu";
 import { buzz } from "@/components/heute/actions";
 import type { TilePicker } from "@/components/heute/TilePicker";
 
@@ -30,7 +32,7 @@ type Box = { key: string; top: number; bottom: number; left: number; right: numb
 type Drag = { key: string; x: number; y: number; offX: number; offY: number; w: number; h: number; target: number };
 
 const HOLD_MS = 350;
-/** So lange nach dem letzten Scrollen gilt ein Antippen als „Schwung anhalten“ (kein Anheben, kein Menü) */
+/** So lange nach dem letzten Scrollen gilt ein Antippen als „Schwung anhalten“ (kein Anheben, nicht fertig) */
 const FLING_MS = 120;
 
 export function HomeBoard({
@@ -40,6 +42,7 @@ export function HomeBoard({
   render,
   picking,
   onPicking,
+  onDone,
 }: {
   tiles: HomeTile[];
   all: HomeTile[];
@@ -48,6 +51,8 @@ export function HomeBoard({
   /** „Kachel hinzufügen“ offen (auch vom „+ Kachel“ im Kopf) */
   picking: boolean;
   onPicking: (open: boolean) => void;
+  /** Kurz angetippt: Bearbeiten beenden */
+  onDone: () => void;
 }) {
   const units = unitsOf(tiles);
   const board = useRef<HTMLDivElement>(null);
@@ -63,7 +68,6 @@ export function HomeBoard({
   const [holding, setHolding] = useState(false);
   const pointer = useRef({ x: 0, y: 0 });
   const [confirmReset, setConfirmReset] = useState(false);
-  const [menu, setMenu] = useState<string | null>(null);
   // Auswahl erst beim Bearbeiten laden, dann ohne Suspense sofort zeigen:
   // öffnet „+ Kachel“ sie gleich nach dem Tipp, übernimmt sie dessen
   // Verlaufseintrag nur innerhalb von 300 ms (`useBackCloses`) – `next/dynamic`
@@ -129,13 +133,13 @@ export function HomeBoard({
     pointer.current = { x, y };
     setDrag({ ...d, x, y, target: targetFor(d.key, x, y + window.scrollY) });
   };
-  /** Loslassen: abgelegt und sofort gespeichert – oder (kurz angetippt) das Menü */
+  /** Loslassen: abgelegt und sofort gespeichert – oder (kurz angetippt) fertig */
   const release = () => {
     const tapped = hold.current?.key;
     cancelHold();
     const d = dragRef.current;
     if (!d) {
-      if (tapped) setMenu(tapped);
+      if (tapped) onDone();
       return;
     }
     const rest = units.filter((u) => u.key !== d.key);
@@ -220,7 +224,7 @@ export function HomeBoard({
     };
     const onTouchEnd = (e: TouchEvent) => {
       if (!hold.current && !dragRef.current) return;
-      // Kein nachgeschickter Klick (der sonst das eben geöffnete Menü gleich wieder schließt)
+      // Kein nachgeschickter Klick (der sonst durch die Seite fällt)
       e.preventDefault();
       release();
     };
@@ -238,12 +242,12 @@ export function HomeBoard({
     };
   });
 
-  // Absicherung ohne Ziehen: Menü einer Einheit (Ganz nach oben, Nach oben, Nach unten, Größe, Entfernen)
-  const moveUnit = (key: string, to: "top" | "up" | "down") => {
+  // Ohne Ziehen (Tastatur, Screenreader): eine Einheit nach oben/unten
+  const moveUnit = (key: string, to: "up" | "down") => {
     const i = units.findIndex((u) => u.key === key);
     if (i < 0) return;
     const next = units.filter((u) => u.key !== key);
-    next.splice(to === "top" ? 0 : to === "up" ? Math.max(0, i - 1) : Math.min(units.length - 1, i + 1), 0, units[i]);
+    next.splice(to === "up" ? Math.max(0, i - 1) : Math.min(units.length - 1, i + 1), 0, units[i]);
     buzz();
     saveOrder(next);
   };
@@ -313,11 +317,33 @@ export function HomeBoard({
         className={`relative min-w-0 ${floating ? "" : wide ? "col-span-2" : "col-span-1"} ${editing && !floating ? "touch-pan-y select-none [-webkit-touch-callout:none] [-webkit-user-select:none]" : ""}`}
         style={ghost ? { height: drag.h } : undefined}
         aria-label={editing ? (pair ? "Essen und Einkauf" : tileMeta(unit.tiles[0].id).label) : undefined}
+        aria-roledescription={editing && !floating ? "Kachel – Pfeiltasten verschieben" : undefined}
         role={editing ? "group" : undefined}
+        tabIndex={editing && !floating ? 0 : undefined}
+        onKeyDown={
+          editing && !floating
+            ? (e) => {
+                if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+                e.preventDefault();
+                moveUnit(unit.key, e.key === "ArrowUp" ? "up" : "down");
+              }
+            : undefined
+        }
       >
+        {editing && !floating && (
+          <span className="sr-only">
+            <button type="button" onClick={() => moveUnit(unit.key, "up")}>
+              Nach oben
+            </button>
+            <button type="button" onClick={() => moveUnit(unit.key, "down")}>
+              Nach unten
+            </button>
+          </span>
+        )}
         {ghost && <div className="absolute inset-0 rounded-card border-2 border-dashed border-accent/50 bg-accent-soft/40" data-platzhalter aria-hidden />}
         <div
-          className={`${pair ? `grid grid-cols-2 gap-2 ${editing ? "rounded-pair p-1 outline-2 outline-dashed outline-line" : ""}` : ""} ${ghost ? "invisible h-0 overflow-hidden" : ""}`}
+          // Zwei kleine Kacheln nebeneinander sind gleich hoch (die Zeile streckt beide)
+          className={`${pair ? `grid grid-cols-2 gap-2 ${editing ? "rounded-pair p-1 outline-2 outline-dashed outline-line" : ""}` : half && !editing ? "h-full [&>div>*]:h-full" : ""} ${ghost ? "invisible h-0 overflow-hidden" : ""}`}
           style={editing && !floating && !drag && !holding ? { animation: `${index % 2 ? "wiggle-b" : "wiggle"} 1.6s ease-in-out infinite` } : undefined}
         >
           {unit.tiles.map((tile) => (
@@ -342,7 +368,7 @@ export function HomeBoard({
             <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
             Kachel hinzufügen
           </button>
-          <button type="button" onClick={() => setConfirmReset(true)} className="self-center py-2 text-sm font-semibold text-muted underline">
+          <button type="button" onClick={() => setConfirmReset(true)} className="hit self-center py-2 text-sm font-semibold text-muted underline">
             Standard-Anordnung wiederherstellen
           </button>
         </div>
@@ -357,7 +383,6 @@ export function HomeBoard({
         </div>
       )}
       {picking && Picker && <Picker onClose={() => onPicking(false)} onClosed={glowTile} />}
-      {menu && units.some((u) => u.key === menu) && <UnitMenu unit={units.find((u) => u.key === menu)!} first={units[0].key === menu} last={units[units.length - 1].key === menu} onMove={(to) => moveUnit(menu, to)} onResize={resize} onRemove={(id) => remove(id)} onClose={() => setMenu(null)} />}
       {confirmReset && (
         <ConfirmDialog
           title="Standard-Anordnung wiederherstellen?"

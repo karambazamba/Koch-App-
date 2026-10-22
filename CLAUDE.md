@@ -255,6 +255,11 @@ Vor jedem PR alles grün:
   `npm run bilder:vergleich` (Abweichung > 0,1 %); gewollte Änderungen
   ansehen, dann `npm run bilder -- --basis`. Bilder liegen in `.bilder/`.
 - `npm run messen` – JavaScript je Seite.
+- Vor dem Vorführen bzw. bei großen Änderungen: `npm run pruefen` (jede Seite
+  auf SE/15 Pro/Pixel 7, hell/dunkel, Browser/App, Startseite zu 5 Uhrzeiten:
+  seitlich verrutscht, unter der Leiste, Tippflächen, Knopf über Text, Knopf
+  fängt keinen Tipp, 16 px, Konsole, 404, Texte; `-- --schnell` = ein Gerät)
+  und `npm run knoepfe` (jeden Knopf antippen: passiert etwas?).
 - Testmodus ohne KI: `KUECHENHELFER_MOCK=1`, `WETTER_MOCK=1`,
   `TIPS_SOURCE=demo`, `KONTEN_TEST=1` (Test-Backend für Konten).
 

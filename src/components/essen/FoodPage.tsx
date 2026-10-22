@@ -198,7 +198,7 @@ function ShoppingChips() {
           )}
         </div>
       ) : (
-        <Link href="/einkaufsliste" className="text-base text-muted">
+        <Link href="/einkaufsliste" className="hit text-base text-muted">
           Die Liste ist leer – sag {helperName(profile)} einfach, was ihr braucht.
         </Link>
       )}

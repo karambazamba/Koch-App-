@@ -9,7 +9,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Seiten-Pager: `src/components/heute/HomePager.tsx` (Kalender · Heute · Essen),
   Wischen in `usePagerSwipe.ts` (`swipeDecision`); Einstieg `HomeView.tsx`.
 - Seite Heute: `TodayPage.tsx`; Kacheln `HomeBoard.tsx`, `EditFrame.tsx`,
-  `EditHeader.tsx`, `UnitMenu.tsx`, `TilePicker.tsx`, `useHomeEditing.ts`, `Pressable.tsx`.
+  `EditHeader.tsx`, `EditDoneBar.tsx`, `TilePicker.tsx`, `useHomeEditing.ts`, `Pressable.tsx`.
 - Kachel-Inhalte: `MiniCards.tsx` (Termine, Aufgaben), `HomeTiles.tsx` (Essen,
   Einkauf, Notizen, Vorrat, Ausblick morgen); andere Kacheln in ihren Bereichen
   (`wetter/WeatherTile`, `pinnwand/PinboardTile`, `timer/TimerTile`, …).
@@ -68,8 +68,12 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 
 ### Bearbeiten-Modus (direkt auf der Startseite)
 - Öffnen: lange drücken, Link „Startseite bearbeiten“ unten, Einstellungen
-  oder die Begleitung (`requestHomeEdit`). Schließen: „Fertig“, Zurück
-  (eigener Verlaufseintrag) oder Danebentippen auf freie Fläche.
+  oder die Begleitung (`requestHomeEdit`). Schließen (Tafel 24): „Fertig“
+  oben oder in der Fertig-Leiste unten (`EditDoneBar`, ersetzt dort die
+  Leiste der Begleitung: „Festhalten & ziehen / Irgendwo tippen = fertig“,
+  Knopf 48 px), Zurück (eigener Verlaufseintrag), Danebentippen auf freie
+  Fläche ODER ein kurzer Tipp auf eine Kachel (< 0,35 s, < 8 px, nicht nach
+  Schwung). Beim Beenden kurz „✓ Gespeichert“.
 - Kopf (sticky): „+ Kachel“, „Fertig“, Titel und Hinweis. Beim ersten Mal
   der Tipp „Neue Kacheln holen“ (`heute/AddTileTip.tsx`, Vorlage Variante D):
   Abdunklung (`bg-tip-scrim`, Portal an `body`, z-50), der Kopf darüber
@@ -87,8 +91,10 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   getrennt von der alten Sprechblase „kachel-hinzufuegen“), gespeichert beim
   Schließen; Daten & App → „Einmal-Hinweise zurücksetzen“ (nur Testmodus).
 - Kacheln wackeln, Inhalte sind gesperrt; „–“ entfernt mit „Gelöscht ·
-  Rückgängig“, „S · M · L“ ändert die Größe. Kurz antippen = Menü (Ganz nach
-  oben · Nach oben · Nach unten · Größe · Entfernen).
+  Rückgängig“, „S · M · L“ ändert die Größe (beides beendet NICHT). Das
+  frühere Kachel-Menü ist weg; Verschieben ohne Ziehen per Pfeiltasten auf der
+  Kachel bzw. die Screenreader-Knöpfe „Nach oben/unten“ und über die
+  Begleitung („Schieb das Wetter nach oben“).
 - Ziehen per Touch-Events: Wischen scrollt (`touch-action: pan-y`), erst
   ruhiges Festhalten (`HOLD_MS` 350, Toleranz 8 px) hebt an. Antippen kurz nach
   dem Scrollen (`FLING_MS` 120) hält nur den Schwung an. Schwebende Kopie,
