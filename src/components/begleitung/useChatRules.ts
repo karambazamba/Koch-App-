@@ -2,8 +2,8 @@
 
 // Feste Regeln des Chats in fester Reihenfolge (ohne KI – oder wenn die KI
 // per `app_befehl` darum bittet): Mail, Pinnwand, Tag, Notizen, neue Person,
-// Spontan-Ideen, Bausteine, Seiten, Pause, Snacks/Produkte, dann die Regeln
-// vor der KI (Startseite, Vorlesen, Planen, Einstellungen, Supermarkt,
+// Spontan-Ideen, Bausteine, Seiten, Pause, Snacks/Produkte, dann die früheren
+// „Regeln vor der KI“ (Startseite, Vorlesen, Planen, Einstellungen, Supermarkt,
 // Backen, "Wir lieben …") und zuletzt Einkauf, Termine, Wünsche.
 
 import type { Dispatch, SetStateAction } from "react";

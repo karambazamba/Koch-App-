@@ -1,4 +1,4 @@
-// Startseite (`wasgibts.startseite` v3): welche Kacheln auf "Heute" stehen,
+// Startseite (`wasgibts.startseite` v4): welche Kacheln auf "Heute" stehen,
 // in welcher Reihenfolge und wie groß (S/M/L). L und M = volle Breite; S =
 // halbe Breite – zwei S direkt hintereinander stehen nebeneinander, eine
 // einzelne S wird breit. Essen und Einkauf sind ein Paar (stehen immer

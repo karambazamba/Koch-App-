@@ -1,6 +1,6 @@
 "use client";
 
-// SPORT – weiße Kachel ohne Zähler: S = die Woche Mo–So als Kreise; M/L +
+// SPORT – Pastell-Kachel ohne Zähler: S = die Woche Mo–So als Kreise; M/L +
 // ein freundlicher Satz und "Nächstes Training" (Zeit, Packliste, Wetter zur
 // Trainingszeit). Jeder Tag öffnet sein Fenster, "+" = eintragen, die
 // Kachel öffnet die Sport-Seite.

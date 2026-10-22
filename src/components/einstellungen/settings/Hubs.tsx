@@ -43,7 +43,7 @@ export function FoodHubView() {
                   {r.meatDays}× Fleisch · {r.fishDays}× Fisch{r.cheatDay ? " · Cheat Day" : ""}
                 </Row>
               )}
-              <Row href="/profil/das-moegt-ihr" icon={Salad} title="Das mögt ihr" value={profile.likes.length ? String(profile.likes.length) : undefined}>
+              <Row href="/profil/das-moegt-ihr" icon={Salad} title="Das mögt ihr">
                 {likes.length ? likes.join(", ") : "Lerne ich beim Kochen – oder sag’s mir"}
               </Row>
               <Row href="/profil/familie" icon={ThumbsDown} title="Mag nicht & Allergien">
@@ -51,7 +51,7 @@ export function FoodHubView() {
                   ? dislikers.map((p) => `${personLabel(p, profile.persons)}: ${[...p.allergies, ...p.dislikes].slice(0, 2).join(", ")}`).join(" · ")
                   : "Steht bei jeder Person"}
               </Row>
-              <Row href="/profil/lieblingsgerichte" icon={Heart} title="Lieblingsgerichte" value={profile.favoriteDishes.length ? String(profile.favoriteDishes.length) : undefined}>
+              <Row href="/profil/lieblingsgerichte" icon={Heart} title="Lieblingsgerichte">
                 {profile.favoriteDishes.length ? profile.favoriteDishes.slice(0, 3).join(", ") : "Noch keine eingetragen"}
               </Row>
               {showAll && (
@@ -59,7 +59,7 @@ export function FoodHubView() {
                   <Row href="/profil/basen" icon={Wheat} title="Lieblings-Basen">
                     {sortedBases(profile.bases).filter((b) => profile.bases[b.id] > 0).slice(0, 3).map((b) => b.label).join(", ") || "Lerne ich beim Kochen"}
                   </Row>
-                  <Row href="/profil/nie-wieder" icon={Ban} title="Nie wieder" value={profile.neverAgain.length ? String(profile.neverAgain.length) : undefined}>
+                  <Row href="/profil/nie-wieder" icon={Ban} title="Nie wieder">
                     {profile.neverAgain.length ? profile.neverAgain.map((e) => e.title).slice(0, 3).join(", ") : "Bisher hat alles geschmeckt"}
                   </Row>
                   <Row href="/profil/gesundheit" icon={Sprout} title="Gesundheits-Tipps" value={HEALTH_TIP_LEVELS.find((l) => l.value === profile.healthTips)?.label}>
@@ -136,8 +136,8 @@ export function DataView() {
         <DataSection onReset={() => setConfirmReset(true)} />
         {confirmReset && (
           <ConfirmDialog
-            title="Alles löschen und neu beginnen?"
-            text="Profil, Pläne und Listen auf diesem Handy sind dann weg. Vorher sichern geht oben."
+            title="Neu beginnen?"
+            text="Profil und Familie auf diesem Handy werden zurückgesetzt, danach startest du mit dem Hallo-Bildschirm. Termine, Pläne und Listen bleiben. Vorher sichern geht oben."
             confirmLabel="Löschen"
             danger
             onCancel={() => setConfirmReset(false)}

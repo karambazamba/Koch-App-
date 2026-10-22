@@ -154,8 +154,10 @@ anfangen).
   (`createBackup`, `backupFileName`). „Daten wiederherstellen“: Vorschau
   (`backupSummary`) und Rückfrage, dann `restoreBackup` und Neuladen.
   Details in `core.md`.
-- „Alles löschen und neu beginnen“: Rückfrage, dann `clearProfile` +
+- „Neu beginnen (Profil zurücksetzen)“: Rückfrage, dann `clearProfile` +
   `clearWelcome` (auch Beispiel-Tag) und zurück zu `/profil` (Hallo).
+  Termine, Pläne, Listen und Notizen bleiben – so sagt es auch die Rückfrage
+  (bis Etappe 8 versprach der Text, Pläne und Listen seien danach weg).
 
 ### Erster Start
 

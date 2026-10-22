@@ -86,13 +86,8 @@ export function dayChat(text: string, ctx: DayChatContext): DayChatReply | null 
     if (timer.kind === "start") {
       const started = startTimer({ minutes: timer.minutes, name: timer.name });
       if (!started) return { text: "Fünf Timer laufen schon – sobald einer fertig ist, geht der nächste." };
-      // Ohne Timer-Kachel: einblenden (an ihrem Standard-Platz) und sagen, wo er steht
-      let where = "";
-      const tiles = loadHomeTiles();
-      if (!tiles.find((x) => x.id === "timer")?.visible) {
-        saveHomeTiles(applyHomeChange(tiles, { tile: "timer", action: "zeigen" }));
-        where = " Der Timer steht jetzt auf der Startseite.";
-      }
+      // Ohne Timer-Kachel blendet startTimer sie ein – dann sagen, wo er steht
+      const where = started.tileShown ? " Der Timer steht jetzt auf der Startseite." : "";
       return { text: `Läuft ⏱ ${started.timer.name} – ${durationLabel(started.timer.durationMs)}.${where}`, undo: pushUndo("den Timer", started.undo) };
     }
     if (timer.kind === "stop") {

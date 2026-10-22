@@ -51,8 +51,8 @@ Regeln:
 - Auf der Kachel steht ein abgelaufener Timer noch 1 Minute (`shownOnTile`).
 
 Kachel `timer` (Größen S/M, Standard M, standardmäßig aus):
-- M: Kopf „Timer“ (ab 2 laufenden „· 2 laufen“), der wichtigste Timer mit
-  Ring, Emoji, Restzeit groß, Name, Knöpfe +1 · Pause/Weiter · ✕; weitere als
+- M: Kopf „Timer“ (ohne Zähler), der wichtigste Timer mit
+  Ring (Timer-Symbol), Restzeit groß, Name, Knöpfe +1 · Pause/Weiter · ✕; weitere als
   Zeilen; die Stoppuhr (anhalten/weiter, zurücksetzen); „Bereit, wenn du ihn
   brauchst.“; Schnellknöpfe 5 · 10 · 15 Min · Stoppuhr. Lange drücken
   (0,5 s) = eigene Dauer + Name („Neuer Timer“).
@@ -60,6 +60,12 @@ Kachel `timer` (Größen S/M, Standard M, standardmäßig aus):
   öffnet ein Fenster mit der M-Kachel (oder den eigenen Timer). Eine eigene
   Seite gibt es nicht.
 - Kachel-Plus = „Neuer Timer“ (Standard 10 Min).
+- Emojis der Timer (`emoji`) bleiben in den Daten (für Mitteilungen später),
+  die Kachel zeigt sie nicht (keine Emojis in Kacheln).
+- Ist die Timer-Kachel ausgeblendet, blendet `startTimer` sie an ihrem
+  Standard-Platz ein – egal ob aus der Oberfläche (z. B. Schritt-Timer der
+  Koch-Kachel) oder von der Begleitung (`tileShown`; sie sagt dann, wo er
+  steht). Seit dem Aufräumen (Etappe 8), vorher nur über die Begleitung.
 
 Erster Start eines Timers:
 - `unlockTimerSound` schaltet den Ton frei (iPhone braucht ein Antippen).

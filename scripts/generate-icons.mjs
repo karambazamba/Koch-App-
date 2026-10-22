@@ -14,7 +14,7 @@
 // ein Satz unter public/icons/<farbe>/: icon.svg, icon-192, icon-512, icon-maskable-512,
 // apple-touch-icon, favicon-32 – Verlauf von der Farbe (18 % heller) zur vollen Farbe,
 // Augen und Lächeln in der vollen Farbe. Orange = genau das Original oben.
-// Avatar in der App: src/components/LotteAvatar.tsx (gleiches Motiv, Farbe der Begleitung).
+// Avatar in der App: src/components/begleitung/BegleitungAvatar.tsx (gleiches Motiv, Farbe der Begleitung).
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import sharp from "sharp";
 
@@ -39,7 +39,7 @@ const lighten = (hex, amount) =>
 const COLORS = [...readFileSync("src/lib/einstellungen/profile.ts", "utf8").matchAll(/\{ id: "(\w+)", label: "[^"]+", hex: "(#[0-9A-Fa-f]{6})" \}/g)].map((m) => ({ id: m[1], hex: m[2] }));
 if (COLORS.length !== 10) throw new Error(`AVATAR_COLORS nicht gefunden (${COLORS.length})`);
 
-/** Avatar im orangen Kreis (wie LotteAvatar) */
+/** Avatar im orangen Kreis (wie BegleitungAvatar) */
 const avatar = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="1024" height="1024"><circle cx="40" cy="40" r="40" fill="#F26B21"/><g transform="translate(11.2 12.5) scale(.72)">${MOTIF("#F26B21")}</g></svg>\n`;
 
 const png = (source, size, flatten = false, background = ORANGE.to) => {

@@ -5,7 +5,7 @@
 // darunter der gewählte Tag (Termine · Aufgaben · Essen). Woche: die sieben
 // Tage der Woche als Karten (‹ ›). Liste: die nächsten Tage am Stück.
 // Plus = "Was möchtest du eintragen?" für den gewählten Tag.
-// Später (Tipps aus der Region): eigene lila Ebene über `dayDots`, nie als Termin.
+// Tipps aus der Region: eigene lila Ebene über `dayDots` (Chip „Tipps“), nie als Termin.
 
 import { WEEKDAYS_SHORT_MO } from "@/lib/core/days";
 import Link from "next/link";

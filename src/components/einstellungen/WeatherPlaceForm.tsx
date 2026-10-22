@@ -55,7 +55,7 @@ export function WeatherPlaceForm() {
           {status}
         </p>
       )}
-      <p className="text-sm text-muted">Gespeichert wird nur die Stadt. Daten: Open-Meteo (u. a. Deutscher Wetterdienst).</p>
+      <p className="text-sm text-muted">Gespeichert wird nur die Stadt. Daten: Deutscher Wetterdienst (über Bright Sky, notfalls Open-Meteo).</p>
     </form>
   );
 }

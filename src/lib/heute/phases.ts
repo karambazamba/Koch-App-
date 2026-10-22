@@ -2,7 +2,7 @@
 // gespeichert ist) – nur Inhalte: beim Kochen zeigt die Essen-Kachel die
 // Schritte (Bildschirm bleibt an), im Feierabend mit "Ruhe nach Feierabend"
 // machen Arbeit und Aufgaben Pause und Termine zeigen nur Familie, an freien
-// Tagen ist Arbeit weg. Die Jetzt-Karte nimmt die Phase für Farbe und Themen.
+// Tagen ist Arbeit weg. Die Jetzt-Karte nimmt die Phase für ihre Themen.
 //
 // Phasen sind eine erweiterbare Liste (Name, Start-/Endbedingung als
 // `active`, Inhalte als `view`) – weitere kommen ohne Umbau dazu. Vorrang bei

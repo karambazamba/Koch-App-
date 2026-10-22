@@ -39,7 +39,7 @@ const EMPTY_CHAT: ChatState = { turns: [], proposal: null, spontan: null };
 
 /**
  * Küchenhelfer: schwebender Knopf unten rechts auf allen Seiten, Panel mit
- * Chat und Vorschlags-Vorschau, nach dem Übernehmen 10 Sekunden "Rückgängig".
+ * Chat und Vorschlags-Vorschau, nach dem Übernehmen "Rückgängig" nur bei echtem Löschen (3 Sekunden).
  */
 export function KitchenHelper() {
   const [open, setOpen] = useState(false);
@@ -106,7 +106,7 @@ export function KitchenHelper() {
     [],
   );
 
-  // "Rückgängig" verschwindet nach 10 Sekunden
+  // "Rückgängig" verschwindet nach UNDO_SECONDS
   useEffect(() => {
     if (!undo) return;
     const timer = setTimeout(() => setUndo(null), UNDO_SECONDS * 1000);
