@@ -58,7 +58,8 @@ for (const device of DEVICES) {
       await page.goto(BASE + path);
       await page.waitForTimeout(900);
       await settle(page);
-      await page.screenshot({ path: `${dir}/${name}-${tag}.png`, fullPage: true });
+      // Versionszeile maskieren – sie ändert sich mit jeder Auslieferung
+      await page.screenshot({ path: `${dir}/${name}-${tag}.png`, fullPage: true, mask: [page.getByText(/^Version \d/)] });
       n++;
     }
     await page.context().close();

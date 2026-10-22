@@ -43,3 +43,14 @@ export const wischen = async (page, check) => {
   await page.waitForTimeout(700);
   check(await page.getByRole("tab", { name: "Kalender", selected: true }).isVisible(), "zweimal nach rechts → Kalender");
 };
+
+// /profil/wochenende → /profil/kochstil; ohne Baustein „Kochstil“ führt die weiter zur Startseite
+export const umleitungen = async (page, check) => {
+  await hello(page);
+  for (const [from, to] of [["/ideen", "/?seite=essen"], ["/schnellkueche", "/?seite=essen"], ["/profil/lotte", "/profil/kuechenhelfer"], ["/profil/farbe", "/profil/kuechenhelfer"], ["/profil/vorlesen", "/profil/kuechenhelfer"], ["/profil/ansicht", "/profil"], ["/profil/darstellung", "/profil"], ["/profil/wochenende", "/"]]) {
+    await page.goto(BASE + from);
+    await page.waitForTimeout(300);
+    const url = new URL(page.url());
+    check(url.pathname + url.search === to, `${from} → ${to} (${url.pathname + url.search})`);
+  }
+};

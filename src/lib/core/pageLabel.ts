@@ -19,7 +19,6 @@ const PAGES: Record<string, string> = {
   "/profil/familie": "Familie",
   "/profil/essen": "Essen & Vorlieben",
   "/profil/kochstil": "Kochstil",
-  "/profil/lotte": "Begleitung",
   "/profil/kuechenhelfer": "Begleitung",
   "/profil/bausteine": "Mehr Funktionen",
   "/profil/tagesablauf": "Tagesablauf",

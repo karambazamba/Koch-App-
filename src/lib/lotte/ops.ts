@@ -70,7 +70,7 @@ export type AssistantData = {
 };
 
 /** Ein Tag einer Planungswoche – es gibt genau ein Hauptgericht pro Tag */
-export type SlotRef = { weekStart: string; weekday: string };
+type SlotRef = { weekStart: string; weekday: string };
 
 /** Neues (KI-)Rezept – vollständig, wie es ins Kochbuch kommt */
 export type NewRecipe = {
@@ -85,7 +85,7 @@ export type NewRecipe = {
   note: string;
 };
 
-export type Dish =
+type Dish =
   | { kind: "recipe"; recipeId: string; title: string; category: RecipeCategory }
   | { kind: "new_recipe"; ref: string; title: string; category: RecipeCategory }
   | { kind: "text"; title: string; category: RecipeCategory | null };

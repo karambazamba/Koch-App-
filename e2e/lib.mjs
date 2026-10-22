@@ -14,19 +14,29 @@ export const DEVICES = ["iPhone SE", "iPhone 15 Pro", "Pixel 7"];
 /** Testserver mit Testmodus für KI, Wetter und Tipps (braucht `npm run build`) – oder E2E_BASE nutzen */
 export async function startServer() {
   if (process.env.E2E_BASE) return () => {};
+  if (await fetch(BASE).then(() => true, () => false)) throw new Error(`Port ${PORT} ist schon belegt – alten Testserver beenden (fuser -k ${PORT}/tcp) oder E2E_BASE setzen`);
   const child = spawn("npx", ["next", "start", "-p", String(PORT)], {
     env: { ...process.env, KUECHENHELFER_MOCK: "1", WETTER_MOCK: "1", TIPS_SOURCE: "demo", PORT: String(PORT) },
     stdio: "ignore",
+    detached: true,
   });
+  // npx startet next als Kindprozess – die ganze Gruppe beenden, sonst läuft ein alter Server weiter
+  const kill = () => {
+    try {
+      process.kill(-child.pid, "SIGTERM");
+    } catch {
+      // schon beendet
+    }
+  };
   for (let i = 0; i < 60; i++) {
     try {
-      if ((await fetch(BASE)).ok) return () => child.kill();
+      if ((await fetch(BASE)).ok) return kill;
     } catch {
       // startet noch
     }
     await new Promise((r) => setTimeout(r, 500));
   }
-  child.kill();
+  kill();
   throw new Error(`Testserver auf ${BASE} startet nicht – vorher npm run build?`);
 }
 

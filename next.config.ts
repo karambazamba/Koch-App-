@@ -1,5 +1,16 @@
 import type { NextConfig } from "next";
 
+const OLD_PAGES: [string, string][] = [
+  ["/ideen", "/?seite=essen"],
+  ["/schnellkueche", "/?seite=essen"],
+  ["/profil/ansicht", "/profil"],
+  ["/profil/darstellung", "/profil"],
+  ["/profil/lotte", "/profil/kuechenhelfer"],
+  ["/profil/vorlesen", "/profil/kuechenhelfer"],
+  ["/profil/farbe", "/profil/kuechenhelfer"],
+  ["/profil/wochenende", "/profil/kochstil"],
+];
+
 const nextConfig: NextConfig = {
   // Stand der Auslieferung – in den Einstellungen "Version 0.25 · Stand 20.10.2026"
   env: { BUILD_DATE: new Date().toISOString().slice(0, 10) },
@@ -12,6 +23,10 @@ const nextConfig: NextConfig = {
         as: "*.css",
       },
     },
+  },
+  // Alte Adressen (frühere Seiten) – gleiche Ziele wie vorher, Lesezeichen und Links bleiben gültig
+  async redirects() {
+    return OLD_PAGES.map(([source, destination]) => ({ source, destination, permanent: false }));
   },
   async headers() {
     return [

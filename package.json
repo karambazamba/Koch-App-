@@ -1,6 +1,6 @@
 {
   "name": "koch-app",
-  "version": "0.47.0",
+  "version": "0.47.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -11,7 +11,6 @@
     "lint": "eslint",
     "icons": "node scripts/generate-icons.mjs",
     "gerichte-bilder": "node scripts/generate-dish-images.mjs",
-    "demo-bild": "node scripts/generate-dish-images.mjs",
     "test": "TZ=Europe/Berlin vitest run",
     "durchklick": "node e2e/durchklick.mjs",
     "bilder": "node e2e/bilder.mjs",

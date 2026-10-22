@@ -12,12 +12,12 @@ export type StepId = "members" | "confirmNames" | "personIntro" | "personRole" |
 /** Was ein antippbarer Eintrag korrigiert */
 type Target = { kind: "names" } | { kind: "person"; id: string };
 
-export type ChatMessage = { id: string; from: "helper" | "user"; text: string; target?: Target };
+type ChatMessage = { id: string; from: "helper" | "user"; text: string; target?: Target };
 
 type Chip = { label: string; value: string; primary?: boolean };
 
 /** Name beim Bestätigen; `id` = schon angelegte Person */
-export type NameEntry = NameHint & { id?: string };
+type NameEntry = NameHint & { id?: string };
 
 type Known = { role?: boolean; group?: boolean; lunch?: boolean };
 

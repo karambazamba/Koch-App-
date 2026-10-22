@@ -1,6 +1,5 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "entry": ["src/lib/tagesablauf/push.ts"],
-  "ignore": ["public/sw.js"],
-  "ignoreDependencies": ["@tailwindcss/turbopack"]
+  "ignore": ["public/sw.js"]
 }
