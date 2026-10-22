@@ -2,7 +2,8 @@
 
 // Ein Fenster für alles Neue: "Was möchtest du eintragen?" – Termin, Aufgabe,
 // Notiz, Einkauf oder einfach Mia sagen (Mikrofon). Danach geht es im
-// passenden Schnell-Eintrag weiter.
+// passenden Schnell-Eintrag weiter. Mit Baustein „Kalender übernehmen“ unten
+// leise „Aus Apple/Google übernehmen“.
 
 import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
@@ -14,6 +15,7 @@ import { TaskQuickAdd } from "@/components/kalender/TaskQuickAdd";
 import { ShoppingQuickAdd } from "@/components/einkauf/QuickAdd";
 import { openHelper } from "@/lib/begleitung/open";
 import { wakeAvatar } from "@/lib/core/avatarState";
+import { useFeature } from "@/lib/core/features";
 
 type Kind = "termin" | "aufgabe" | "einkauf";
 
@@ -27,6 +29,7 @@ const CHOICES: { kind: Kind | "notiz"; label: string; icon: ComponentType<{ clas
 export function AddSheet({ date, name, onClose }: { date?: string; name: string; onClose: () => void }) {
   const router = useRouter();
   const [kind, setKind] = useState<Kind | null>(null);
+  const importOn = useFeature("kalender");
   if (kind === "termin") return <TerminQuickAdd defaultDate={date} onClose={onClose} />;
   if (kind === "aufgabe") return <TaskQuickAdd defaultWhen={date ? { date } : "heute"} onClose={onClose} />;
   if (kind === "einkauf") return <ShoppingQuickAdd onClose={onClose} />;
@@ -59,6 +62,18 @@ export function AddSheet({ date, name, onClose }: { date?: string; name: string;
         <Mic className="h-5 w-5" strokeWidth={2.25} aria-hidden />
         Oder einfach {name} sagen
       </button>
+      {importOn && (
+        <button
+          type="button"
+          onClick={() => {
+            onClose();
+            router.push("/profil/kalender");
+          }}
+          className="hit -mt-1 mb-2 self-center text-sm font-semibold text-muted underline"
+        >
+          Aus Apple/Google übernehmen
+        </button>
+      )}
     </Sheet>
   );
 }

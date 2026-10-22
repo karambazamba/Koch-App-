@@ -1833,3 +1833,12 @@ Fehler in `docs/aufraeumen-nachher.md`.
   `haushalt_vorstellen`. Durchklick `hallo2` (10× frisch, passt ohne Scrollen
   auf SE/15 Pro/Pro Max/Pixel 7, Sprech-Knopf mit Schein-Mikrofon, abgelehnt,
   Link).
+
+## Kalender übernehmen – Datei (v0.50.0)
+
+- Baustein „Kalender übernehmen“: .ics aus Google/Apple einlesen (eigener
+  Parser, Zeitzonen, Serien, Ausnahmen, Erinnerungen), Vorschau, Familie/Arbeit
+  je Kalender, Übernehmen mit Rückgängig, keine Doppelten. Termin-Modell um
+  ganztägig, Serienende, mehrtägig und „alle N Wochen“ erweitert. Die
+  Begleitung erklärt den Weg und öffnet die Seite. Teil 2 (Kalender-Link/Abo)
+  folgt.

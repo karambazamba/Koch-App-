@@ -5,7 +5,7 @@
 // Design ein (Essen-Seite, Kachel auf Heute, Satz oben auf Heute); aus heißt
 // nur ausgeblendet – Daten bleiben.
 
-import { BookOpen, CalendarDays, Cake, Carrot, ChefHat, Lightbulb, MapPin, MessageCircle, Refrigerator, Sun, type LucideIcon } from "lucide-react";
+import { BookOpen, CalendarDays, CalendarPlus, Cake, Carrot, ChefHat, Lightbulb, MapPin, MessageCircle, Refrigerator, Sun, type LucideIcon } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD, PAGE_MAIN } from "@/components/ui/styles";
 import { BAUSTEINE, TIPS_BAUSTEIN, setFeature, useBausteine, type Baustein } from "@/lib/core/features";
@@ -18,6 +18,7 @@ import { useProfile } from "@/lib/einstellungen/useProfile";
 
 const BAUSTEIN_ICONS: Record<string, LucideIcon> = {
   calendar: CalendarDays,
+  calendarPlus: CalendarPlus,
   fridge: Refrigerator,
   book: BookOpen,
   cake: Cake,

@@ -31,7 +31,7 @@ import { filtersFromText, isIdeaFilterRequest, isQuickRequest, isSnackRequest, s
 import { extractLikeStatements, learnLikes, LIKE_WEIGHTS } from "@/lib/essen/likes";
 import { saveSpontanFilters } from "@/lib/essen/spontanFilters";
 import type { ChatState, ChatTurnView } from "@/components/begleitung/chatTypes";
-import { pauseRule, dayRule, boardRule, schnellnotizRule, noteRule, bausteinRule, homeCommand, shopModeRule, memoPlayRule, type RuleContext } from "@/components/begleitung/localRules";
+import { pauseRule, dayRule, boardRule, schnellnotizRule, noteRule, bausteinRule, calendarImportRule, homeCommand, shopModeRule, memoPlayRule, type RuleContext } from "@/components/begleitung/localRules";
 import { mailRule } from "@/components/begleitung/mailRules";
 import type { SpontanChat } from "@/components/begleitung/useSpontanChat";
 
@@ -145,6 +145,8 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
       startSpontan(t);
       return true;
     }
+    // „Übernimm meinen Google-Kalender“ → Weg erklären und „Kalender übernehmen“ öffnen
+    if (calendarImportRule(ruleCtx, t)) return true;
     // Ausgeschalteter Baustein ("Zeig mir den Vorrat") → einschalten, bevor eine Seite geöffnet wird
     if (bausteinRule(ruleCtx, t)) return true;
     // "Zeig mir unsere Rezepte" / "Was haben wir im Vorrat?" → hinführen
