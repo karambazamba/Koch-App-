@@ -8,10 +8,10 @@ import { CARD, INPUT_BASE, LABEL, buttonClass, tileClass } from "@/components/ui
 import {
   RECIPE_CATEGORIES,
   categoryInfo,
-  sortRecipes,
   useRecipes,
   type Recipe,
 } from "@/lib/essen/cookbook";
+import { RECIPES, sortBy } from "@/lib/core/sort";
 import {
   CATEGORY_COUNT_KEY,
   fixedMealCounts,
@@ -60,7 +60,7 @@ export function FixedMealsSection({
   const [weekday, setWeekday] = useState("");
   const [recipeId, setRecipeId] = useState("");
 
-  const list = recipes ? sortRecipes(Object.values(recipes), "beliebt") : [];
+  const list = recipes ? sortBy(Object.values(recipes), ...RECIPES) : [];
   const wishSlot =
     plan.wish && wishIsActive(plan) && weekday === plan.wish.weekday;
   const canAdd = Boolean(weekday && recipeId && recipes?.[recipeId] && !wishSlot);

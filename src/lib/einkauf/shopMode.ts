@@ -6,6 +6,7 @@
 
 import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
+import { compareText } from "@/lib/core/sort";
 import type { ListItem } from "@/lib/einkauf/shoppingList";
 
 export type ShoppingView = "abteilung" | "laden";
@@ -51,7 +52,7 @@ export function shopModeLists(items: ListItem[], shop: string): ShopModeLists {
   return {
     here: open.filter(isHere),
     anywhere: open.filter((i) => !i.shop),
-    elsewhere: [...other.entries()].map(([s, names]) => ({ shop: s, names })).sort((a, b) => b.names.length - a.names.length || a.shop.localeCompare(b.shop, "de")),
+    elsewhere: [...other.entries()].map(([s, names]) => ({ shop: s, names })).sort((a, b) => b.names.length - a.names.length || compareText(a.shop, b.shop)),
     done: visible.filter((i) => i.checked && (isHere(i) || !i.shop)),
   };
 }

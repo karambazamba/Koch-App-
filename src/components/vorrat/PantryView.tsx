@@ -28,6 +28,7 @@ import { placeFor, replacePantry, loadPantry } from "@/lib/vorrat/pantry";
 import { markMoved, toPutAway, useMovedKeys } from "@/lib/vorrat/einraeumen";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 import { showDeleted } from "@/lib/core/toast";
+import { PANTRY, sortBy, via } from "@/lib/core/sort";
 import { pushUndo } from "@/lib/core/undo";
 
 const SHORT_DATE = new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "numeric" });
@@ -53,10 +54,14 @@ export function PantryView() {
     return <div className={`${CARD} m-4 h-64 animate-pulse`} />;
   }
   const name = helperName(profile);
-  const items = pantry.filter((p) => p.place === place);
   const label = PANTRY_PLACES.find((p) => p.value === place)!;
   const todayIso = toIsoDate(today);
   const soon = soonToUse(pantry, todayIso);
+  // Regel `PANTRY`: Bald aufbrauchen → Ort → Name
+  const items = sortBy(
+    pantry.filter((p) => p.place === place),
+    ...via((p: PantryItem) => ({ name: p.name, place: p.place, soon: soon.includes(p) }), PANTRY),
+  );
   const putAway = shopping ? toPutAway(shopping.list.items, pantry, moved) : [];
 
   const putAwayAll = () => {

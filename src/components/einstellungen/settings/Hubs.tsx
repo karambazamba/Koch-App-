@@ -15,6 +15,7 @@ import { useProfile } from "@/lib/einstellungen/useProfile";
 import { AddRow, DataSection, Group, PersonRow, Row, SettingsPage } from "@/components/einstellungen/settings/SettingsParts";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { clearProfile } from "@/lib/einstellungen/profileStore";
+import { PERSONS, sortBy } from "@/lib/core/sort";
 import { clearWelcome } from "@/lib/einstellungen/welcomeStore";
 
 /** "Unsere Familie" bzw. "Mein Haushalt" / "Unser Haushalt" */
@@ -92,7 +93,7 @@ export function FamilyHubView() {
         return (
           <>
             <Group title="Personen">
-              {profile.persons.map((person) => (
+              {sortBy(profile.persons, ...PERSONS).map((person) => (
                 <PersonRow key={person.id} person={person} persons={profile.persons} onRemove={() => removal.ask(person, profile.persons)} />
               ))}
               {profile.adults < LIMITS.adults.max && <AddRow href="/profil/person?neu=erwachsen" label="Erwachsene:r hinzufügen" />}

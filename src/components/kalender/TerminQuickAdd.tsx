@@ -20,6 +20,7 @@ import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 import { useSpeechInput } from "@/lib/begleitung/useSpeechInput";
 import { act } from "@/components/heute/actions";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
+import { PERSONS, sortBy } from "@/lib/core/sort";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 
 const REMINDER_CHIPS: { value: Reminder; label: string }[] = [
@@ -42,7 +43,7 @@ export function TerminQuickAdd({ onClose, defaultDate }: { onClose: () => void; 
   const [place, setPlace] = useState("");
   const [more, setMore] = useState(false);
   const profile = useProfile();
-  const persons = (profile?.persons ?? []).filter((p) => p.name.trim());
+  const persons = sortBy((profile?.persons ?? []).filter((p) => p.name.trim()), ...PERSONS);
   const dateInput = useRef<HTMLInputElement>(null);
   const timeInput = useRef<HTMLInputElement>(null);
   const workRoom = useWorkRoom() || room === "arbeit";

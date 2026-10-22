@@ -7,6 +7,7 @@ import { WEEKDAYS_SHORT_SO, WEEKDAYS_SO } from "@/lib/core/days";
 import type { Room } from "@/lib/core/entries";
 import { addDays } from "@/lib/core/now";
 import { mondayOf, type AufgabeData, type Reminder, type Repeat } from "@/lib/kalender/model";
+import { compareText } from "@/lib/core/sort";
 import { guessLabel, guessRoom, parseCalendar, urgentFrom } from "@/lib/kalender/parse";
 
 export type When = "heute" | "morgen" | "woche" | "irgendwann" | { date?: string; due?: string };
@@ -81,7 +82,7 @@ const DEFAULT_TIMES = ["08:00", "12:00", "15:00", "19:30"];
 export function frequentTimes(starts: string[], count = 4): string[] {
   const tally = new Map<string, number>();
   for (const t of starts) if (/^\d{2}:\d{2}$/.test(t)) tally.set(t, (tally.get(t) ?? 0) + 1);
-  const own = [...tally.entries()].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([t]) => t);
+  const own = [...tally.entries()].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1] || compareText(a[0], b[0])).map(([t]) => t);
   return [...new Set([...own, ...DEFAULT_TIMES])].slice(0, count);
 }
 

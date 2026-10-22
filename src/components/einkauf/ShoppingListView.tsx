@@ -53,6 +53,7 @@ import { addDays, formatWeekRange, toIsoDate, useToday } from "@/lib/essen/weekP
 import { EditItemSheet, ItemContent, StaplesSheet, SwipeRow, type RowAction } from "@/components/einkauf/ShoppingParts";
 import { setShoppingView, shopModeHref, useShoppingView } from "@/lib/einkauf/shopMode";
 import { shopGroups, shopTone } from "@/lib/einkauf/shopGroups";
+import { SHOP_GROUPS, sortBy } from "@/lib/core/sort";
 import { StapleBar } from "@/components/einkauf/StapleBar";
 
 const SKELETON = <div className={`${CARD} m-4 h-64 animate-pulse`} />;
@@ -144,8 +145,11 @@ export function ShoppingListView() {
     mode === "abteilung"
       ? SECTIONS.map((s) => ({ id: s.value, label: s.label, icon: SECTION_ICONS[s.value], items: grouped.filter((i) => i.section === s.value) }))
       : [
-          ...[...new Set(grouped.map((i) => i.shop).filter(Boolean))]
-            .sort((a, b) => a.localeCompare(b, "de"))
+          ...sortBy(
+            [...new Set(grouped.map((i) => i.shop).filter(Boolean))].map((shop) => ({ shop, count: grouped.filter((i) => i.shop === shop && !i.checked).length })),
+            ...SHOP_GROUPS,
+          )
+            .map(({ shop }) => shop)
             .map((shop) => ({ id: `laden:${shop}`, label: shop, icon: Store, shop, items: grouped.filter((i) => i.shop === shop) })),
           { id: "laden:", label: "Ohne Laden", icon: ShoppingBag, items: grouped.filter((i) => !i.shop) },
         ];

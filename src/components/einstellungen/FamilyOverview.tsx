@@ -21,6 +21,7 @@ import { householdTitle } from "@/components/einstellungen/settings/Hubs";
 import { DarstellungGroup } from "@/components/einstellungen/settings/BegleitungSettings";
 import { useFamilyRegion } from "@/lib/spendentopf/store";
 import { POT_TEXTS } from "@/lib/spendentopf/model";
+import { PERSONS, sortBy } from "@/lib/core/sort";
 import { useTipPlace, useTipSettings, useTipsOn } from "@/lib/tipps/client";
 
 const count = plural;
@@ -75,7 +76,7 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
             subtitle={`${count(profile.persons.length, "Person", "Personen")} · ${type?.label ?? ""}`}
             picture={
               <span className="flex -space-x-2" aria-hidden>
-                {profile.persons.slice(0, 3).map((p, i) => (
+                {sortBy(profile.persons, ...PERSONS).slice(0, 3).map((p, i) => (
                   <span key={p.id ?? i} className="rounded-full ring-2 ring-surface">
                     <PersonAvatar name={personLabel(p, profile.persons)} size={36} />
                   </span>

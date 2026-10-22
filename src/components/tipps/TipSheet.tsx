@@ -14,12 +14,13 @@ import { personLabel } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { needsAttribution, type TipView } from "@/lib/tipps/model";
 import { isTaken, pinTip, takeTip, toggleRemember, useTipSettings } from "@/lib/tipps/client";
+import { PERSONS, sortBy } from "@/lib/core/sort";
 import { KarambaLine, SampleMark, TipIcon, TipTags, dayTitle, tipMeta } from "@/components/tipps/TipBits";
 
 export function TipSheet({ tip, onClose }: { tip: TipView; onClose: () => void }) {
   const profile = useProfile();
   const settings = useTipSettings();
-  const persons = profile?.persons ?? [];
+  const persons = sortBy(profile?.persons ?? [], ...PERSONS);
   const [who, setWho] = useState<string[]>(() => persons.map((p) => p.id));
   const [taken, setTaken] = useState(() => isTaken(tip.id));
   const [pinned, setPinned] = useState(false);

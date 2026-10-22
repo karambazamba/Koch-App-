@@ -14,6 +14,7 @@ import { DISHES, matchStock, realStock, soonToUse, type Season } from "@/lib/ess
 import type { HouseholdProfile, NeverAgainEntry } from "@/lib/einstellungen/profile";
 import { isNeverAgain } from "@/lib/essen/neverAgain";
 import { addDays, weekStartFor, type WeekPlan } from "@/lib/essen/weekPlan";
+import { IDEAS, sortBy, via } from "@/lib/core/sort";
 import { wishLabel, type WishIdea } from "@/lib/essen/wishes";
 
 export type IdeaFilter = "schnell" | "veggie" | "vorrat";
@@ -158,8 +159,9 @@ export function ideasFor(ctx: IdeaContext): Idea[] {
           : "geht fast immer";
     scored.push({ id: `k:${c.title}`, title: c.title, category: c.category, minutes: c.minutes, reason, needs, uses, known: true, score });
   }
-  scored.sort((a, b) => b.score + dayHash(date, b.id) - (a.score + dayHash(date, a.id)));
-  const all: Idea[] = [...wishes, ...scored.map(({ score: _s, ...i }) => (void _s, i))];
+  // Regel `IDEAS`: Punkte (mit festem Tages-Zufall) → bei Gleichstand die schnellere
+  const ranked = sortBy(scored, ...via((s: (typeof scored)[number]) => ({ score: s.score + dayHash(date, s.id), minutes: s.minutes }), IDEAS));
+  const all: Idea[] = [...wishes, ...ranked.map(({ score: _s, ...i }) => (void _s, i))];
   return all.filter(
     (i) =>
       !ctx.dismissed.includes(i.id) &&

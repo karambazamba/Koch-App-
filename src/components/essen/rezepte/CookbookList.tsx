@@ -10,7 +10,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { PagePlus } from "@/components/ui/QuickButton";
 import { CARD, INPUT_BASE, PAGE_MAIN, SECTION_TITLE, chipClass } from "@/components/ui/styles";
 import { BUILTIN_BAKING, KID_FRIENDLY } from "@/lib/essen/baking";
-import { sortRecipes, toggleFavorite, useRecipes, type Recipe } from "@/lib/essen/cookbook";
+import { toggleFavorite, useRecipes, type Recipe } from "@/lib/essen/cookbook";
+import { ascNum, byName, RECIPES, searchRank, sortBy } from "@/lib/core/sort";
 import { dishTone } from "@/lib/essen/dishLook";
 import { demoLook } from "@/lib/essen/demoDish";
 import { DishPicture } from "@/components/essen/DishPicture";
@@ -74,17 +75,24 @@ export function CookbookList() {
   const filter: Filter = chosen ?? (fromUrl === "backen" ? "backen" : "alle");
 
   const all = recipes ? Object.values(recipes) : [];
-  const q = query.trim().toLowerCase();
-  const visible = sortRecipes(
-    all.filter((r) => matches(r, filter) && (!q || r.title.toLowerCase().includes(q) || r.ingredients.some((i) => i.name.toLowerCase().includes(q)))),
-    "zuletzt",
+  const q = query.trim();
+  // Mit Suche: wie gut es passt (Titel vor Zutaten), sonst Regel `RECIPES`; Backstube nach Name
+  const rank = (r: Recipe) => searchRank(q, r.title, r.ingredients.map((i) => i.name));
+  const visible = sortBy(
+    all.filter((r) => matches(r, filter) && rank(r) >= 0),
+    ascNum(rank),
+    ...RECIPES,
   );
   const favorites = kidFavorites(profile, mealPlans);
   // Backen: dazu die eingebaute Sammlung (ohne schon übernommene)
   const own = new Set(all.map((r) => r.title.trim().toLowerCase()));
   const bakery =
     filter === "backen"
-      ? BUILTIN_BAKING.filter((r) => !own.has(r.title.trim().toLowerCase()) && (!q || r.title.toLowerCase().includes(q) || r.ingredients.some((i) => i.name.toLowerCase().includes(q))))
+      ? sortBy(
+          BUILTIN_BAKING.filter((r) => !own.has(r.title.trim().toLowerCase()) && rank(r) >= 0),
+          ascNum(rank),
+          byName((r) => r.title),
+        )
       : [];
 
   return (
