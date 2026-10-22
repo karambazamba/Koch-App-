@@ -1887,3 +1887,12 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Tipp. Neu: Bearbeiten beenden ganz leicht (Tafel 24, Fertig-Leiste unten,
   kurzer Tipp = fertig, Kachel-Menü weg), Pinnwand-Memo antippen statt halten.
   Durchklick zusätzlich: Offline-Start, „Neue Version da“, Stammartikel.
+
+## Sport-Kachel aufgeräumt (v0.55.1)
+
+- Geplante Tage zeigten nur die Stunde im Kreis („18“) – jetzt Sport-Icon im
+  Kreis und die volle Uhrzeit darunter. Sportarten mit Linien-Icons statt
+  Emojis (Kachel, Tag-Fenster, Eintragen). „Nächstes Training“ auf heller
+  Fläche mit Icon. Training planen: eigene Uhrzeit und eigene Dauer neben den
+  Vorschlägen; Ende geht nie mehr über Mitternacht (23:30 + 45 Min ergab
+  „23:15“). Schmale Felder (`INPUT_INLINE`) statt voller Breite.

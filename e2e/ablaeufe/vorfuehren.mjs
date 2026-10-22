@@ -333,3 +333,30 @@ export const stammartikel = async (page, check) => {
   await page.waitForTimeout(600);
   check(!(await page.getByRole("button", { name: "Käse übernehmen" }).isVisible()), "„×“ beim Käse: diesmal nicht");
 };
+
+/** Sport-Kachel: Tag antippen, eigene Uhrzeit, planen – Kachel zeigt Icon und „Sa 20:15“ (vorher nur „18“) */
+export const sportKachel = async (page, check) => {
+  await hello(page);
+  await seedFamily(page, {
+    "wasgibts.startseite": { version: 4, tipSeen: true, tiles: [{ id: "sport", visible: true, size: "M" }] },
+  });
+  await page.reload();
+  await page.waitForTimeout(1000);
+  const tile = page.getByRole("region", { name: "Sport" });
+  await tile.getByRole("button", { name: /^Sa: frei/ }).tap();
+  const sheet = page.getByRole("dialog", { name: "Samstag, 24. Oktober" });
+  await sheet.waitFor();
+  const chips = await sheet.getByRole("group", { name: "Sportart" }).innerText();
+  check(!/\p{Extended_Pictographic}/u.test(chips), "Sportarten ohne Emojis");
+  await sheet.getByRole("button", { name: "Rad", exact: true }).tap();
+  await sheet.getByRole("textbox", { name: "Eigene Uhrzeit" }).or(sheet.getByLabel("Eigene Uhrzeit")).first().fill("20:15");
+  await sheet.getByRole("button", { name: "60 Min" }).tap();
+  await sheet.getByRole("button", { name: "Planen" }).tap();
+  await page.waitForTimeout(600);
+  const planned = await page.evaluate(() => JSON.parse(localStorage.getItem("wasgibts.eintraege")).entries.find((e) => e.data.title === "Rad"));
+  check(planned?.data.start === "20:15" && planned?.data.end === "21:15" && planned?.data.date === "2026-10-24", `eigene Uhrzeit geplant (${planned?.data.start}–${planned?.data.end})`);
+  const sa = tile.getByRole("button", { name: /^Sa:/ });
+  check((await sa.getAttribute("aria-label")).startsWith("Sa: geplant 20:15"), "Samstag: geplant 20:15");
+  check((await sa.innerText()).includes("20:15"), "Uhrzeit vollständig unter dem Kreis (nicht nur „20“)");
+  check(await sa.locator("svg").count() > 0, "geplanter Tag zeigt ein Sport-Icon");
+};

@@ -50,7 +50,7 @@ export function SportView() {
       <PageHeader title="Sport" backHref="/" action={<PagePlus label="Training eintragen" onClick={() => setAdding(true)} />} />
       <main className={PAGE_MAIN}>
         <section className={`${CARD} flex flex-col gap-3 p-4`} aria-label="Diese Woche">
-          <SportWeekRow dots={weekDots(sport, entries, today, me)} onDay={setOpenDay} big />
+          <SportWeekRow dots={weekDots(sport, entries, today, me)} onDay={setOpenDay} big times />
           <p className="text-base font-semibold" role="status">
             {statusLine(week, weekdayIndex(today), lastWeek.reached)}
           </p>

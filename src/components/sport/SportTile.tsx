@@ -1,8 +1,8 @@
 "use client";
 
 // SPORT – Pastell-Kachel ohne Zähler: S = die Woche Mo–So als Kreise; M/L +
-// ein freundlicher Satz und "Nächstes Training" (Zeit, Packliste, Wetter zur
-// Trainingszeit). Jeder Tag öffnet sein Fenster, "+" = eintragen, die
+// ein freundlicher Satz und "Nächstes Training" (Icon, Tag + Uhrzeit, Titel,
+// Wetter zur Trainingszeit; L zusätzlich die Packliste). Jeder Tag öffnet sein Fenster, "+" = eintragen, die
 // Kachel öffnet die Sport-Seite.
 
 import Link from "next/link";
@@ -23,6 +23,7 @@ import { WeatherSymbol } from "@/components/wetter/WeatherSymbol";
 import { buzz } from "@/components/heute/actions";
 import { SportAddSheet } from "@/components/sport/SportAddSheet";
 import { SportWeekRow } from "@/components/sport/SportWeekRow";
+import { SportIcon } from "@/components/sport/SportIcon";
 import dynamic from "next/dynamic";
 
 // Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
@@ -54,28 +55,31 @@ export function SportTile({ size = "M", entries, today, minutes, me }: { size?: 
         <span className="absolute right-3.5 top-3">
           <QuickButton icon={Plus} label="Training eintragen" onClick={() => setAdding(true)} />
         </span>
-        <SportWeekRow dots={dots} onDay={setDay} />
+        <SportWeekRow dots={dots} onDay={setDay} times={size !== "S"} />
         {size !== "S" && (
           <p className="text-[14px] font-semibold leading-snug" role="status">
             {line}
           </p>
         )}
         {next && (
-          <Link href={`/tag?datum=${next.date}`} className="flex flex-col gap-0.5 rounded-field bg-fill px-3 py-2">
-            <span className={TILE_LABEL}>Nächstes Training</span>
-            <span className="flex items-center gap-2 text-[14px] font-bold">
-              <span>
-                {next.date === today ? "Heute" : next.date === addDays(today, 1) ? tomorrowLabel(next.date) : weekdayShort(next.date)}
-                {next.time ? ` ${clockLabel(next.time)}` : ""} · {next.title}
-              </span>
-              {weatherAt && (
-                <span className="ml-auto flex shrink-0 items-center gap-1 text-[13px] font-semibold text-muted">
-                  <WeatherSymbol code={weatherAt.code} className="h-5 w-5" />
-                  {round(weatherAt.temp)}°
-                </span>
-              )}
+          <Link href={`/tag?datum=${next.date}`} className="flex items-center gap-3 rounded-field bg-tile-inner px-3 py-2.5">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-good-soft text-good-ink">
+              <SportIcon sport={nextSport!} className="h-5 w-5" />
             </span>
-            <span className="truncate text-[12.5px] text-muted">Mitnehmen: {packFor(sport, nextSport!).join(", ")}</span>
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="text-[12.5px] font-semibold text-muted">
+                Nächstes Training · {next.date === today ? "Heute" : next.date === addDays(today, 1) ? tomorrowLabel(next.date) : weekdayShort(next.date)}
+                {next.time ? ` ${clockLabel(next.time)}` : ""}
+              </span>
+              <span className="truncate text-[15px] font-bold">{next.title}</span>
+              {size === "L" && <span className="truncate text-[12.5px] text-muted">Mitnehmen: {packFor(sport, nextSport!).join(", ")}</span>}
+            </span>
+            {weatherAt && (
+              <span className="flex shrink-0 items-center gap-1 text-[13px] font-semibold text-muted">
+                <WeatherSymbol code={weatherAt.code} className="h-5 w-5" />
+                {round(weatherAt.temp)}°
+              </span>
+            )}
           </Link>
         )}
       </section>

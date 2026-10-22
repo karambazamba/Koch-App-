@@ -4,6 +4,7 @@ import {
   EMPTY_SPORT,
   celebrationText,
   createTraining,
+  endOf,
   guessMinutes,
   guessSport,
   hoursLabel,
@@ -143,6 +144,19 @@ describe("Woche, Monat, Sätze ohne Druck", () => {
     expect(dots.map((d) => d.state)).toEqual(["frei", "trainiert", "frei", "frei", "geplant", "frei", "frei"]);
     expect(dots[4]).toMatchObject({ label: "Fr", time: "18:00", today: false });
     expect(dots[2].today).toBe(true);
+  });
+
+  it("Punkte kennen die Sportart (Kachel zeigt ein Icon statt nur „18“)", () => {
+    const entries = [sportTermin("2026-10-22", "18:00"), termin({ title: "Kurs", date: "2026-10-24", start: "10:00", label: "Sport" })];
+    const dots = weekDots(withRuns([run("2026-10-20", { sport: "yoga" })]), entries, TODAY);
+    expect(dots.map((d) => d.sport)).toEqual([null, "yoga", null, "laufen", null, "fitness", null]);
+  });
+
+  it("Ende eines geplanten Trainings bleibt am selben Tag", () => {
+    expect(endOf("18:00", 45)).toBe("18:45");
+    expect(endOf("07:30", 90)).toBe("09:00");
+    // vorher: 23:30 + 45 Min ergab „23:15“ (vor dem Start)
+    expect(endOf("23:30", 45)).toBe("23:59");
   });
 });
 

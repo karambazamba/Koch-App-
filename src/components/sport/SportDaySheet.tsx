@@ -7,15 +7,16 @@
 //   Tag", "Löschen" (Gelöscht · Rückgängig)
 // - geplant: Uhrzeit, Erinnerung, Wetter, "Erledigt", "Verschieben …",
 //   "Absagen"
-// - leer in der Zukunft: "Training planen" (Sportart, Zeit aus freien Lücken,
-//   Dauer) → Termin mit Etikett Sport und Erinnerung 30 Min vorher
+// - leer in der Zukunft: "Training planen" (Sportart, Vorschläge aus freien
+//   Lücken oder eigene Uhrzeit, Dauer auch frei) → Termin mit Etikett Sport
+//   und Erinnerung 30 Min vorher
 // Punkte, Wochensatz und die Feier folgen sofort (gleiche Speicher).
 
 import { useState } from "react";
 import { Sheet } from "@/components/ui/Sheet";
 import { EntryForm } from "@/components/kalender/EntryForm";
 import { act, buzz } from "@/components/heute/actions";
-import { CARD, buttonClass, chipClass } from "@/components/ui/styles";
+import { CARD, INPUT_INLINE, buttonClass, chipClass } from "@/components/ui/styles";
 import { clockLabel } from "@/lib/kalender/answers";
 import { removeItem, sanitizeEntry, setDone, upsertEntry, weekdayLong, type CalendarEntry, type DayItem } from "@/lib/kalender/model";
 import { createEntry } from "@/lib/core/entries";
@@ -24,17 +25,14 @@ import { round } from "@/lib/wetter/forecast";
 import type { Forecast } from "@/lib/wetter/forecast";
 import { WeatherSymbol } from "@/components/wetter/WeatherSymbol";
 import { addTraining, removeTraining, updateTraining } from "@/lib/sport/actions";
-import { SPORTS, freeStarts, lastTraining, plannedOn, sportById, trainingsBetween, type SportState, type Training } from "@/lib/sport";
+import { SPORTS, endOf, freeStarts, lastTraining, plannedOn, sportById, trainingsBetween, type SportState, type Training } from "@/lib/sport";
 import { SportAddSheet } from "@/components/sport/SportAddSheet";
+import { SportIcon } from "@/components/sport/SportIcon";
 
 const DURATIONS = [30, 45, 60, 90];
 const DATE = new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "long", timeZone: "UTC" });
 const dayTitle = (iso: string) => `${weekdayLong(iso)}, ${DATE.format(new Date(`${iso}T12:00:00Z`))}`;
 const REMINDER_TEXT: Record<string, string> = { aus: "Keine Erinnerung", "15": "Erinnerung 15 Min vorher", "30": "Erinnerung 30 Min vorher", "60": "Erinnerung 1 Std vorher", vorabend: "Erinnerung am Vorabend" };
-const plusMinutes = (t: string, m: number) => {
-  const all = Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5)) + m;
-  return `${String(Math.min(23, Math.floor(all / 60))).padStart(2, "0")}:${String(all % 60).padStart(2, "0")}`;
-};
 
 function SportChips({ value, onChange, recent }: { value: string; onChange: (id: string) => void; recent: string[] }) {
   const order = [...new Set([...recent, ...SPORTS.map((s) => s.id)])].filter((id) => SPORTS.some((s) => s.id === id)).slice(0, 6);
@@ -42,21 +40,24 @@ function SportChips({ value, onChange, recent }: { value: string; onChange: (id:
     <div className="flex flex-wrap gap-1.5" role="group" aria-label="Sportart">
       {order.map((id) => (
         <button key={id} type="button" onClick={() => onChange(id)} className={chipClass(value === id)} aria-pressed={value === id}>
-          {sportById(id).emoji} {sportById(id).label}
+          <SportIcon sport={id} />
+          {sportById(id).label}
         </button>
       ))}
     </div>
   );
 }
 
+/** Dauer: Vorschläge + eigene Minuten */
 function DurationChips({ value, onChange }: { value: number; onChange: (m: number) => void }) {
   return (
-    <div className="flex flex-wrap gap-1.5" role="group" aria-label="Dauer">
+    <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Dauer">
       {DURATIONS.map((d) => (
         <button key={d} type="button" onClick={() => onChange(d)} className={chipClass(value === d)} aria-pressed={value === d}>
           {d} Min
         </button>
       ))}
+      <input inputMode="numeric" value={value || ""} onChange={(e) => onChange(Math.min(600, Number(e.target.value.replace(/\D/g, "")) || 0))} placeholder="Min" className={`${INPUT_INLINE} w-24`} aria-label="Eigene Dauer in Minuten" />
     </div>
   );
 }
@@ -90,8 +91,9 @@ export function SportDaySheet({ date, today, state, entries, me, forecast, onClo
         <ul className={`${CARD} divide-y divide-line overflow-hidden`}>
           {trainings.map((t) => (
             <li key={t.id} className="flex items-center gap-2 px-4 py-2.5">
+              <SportIcon sport={t.data.sport} className="h-5 w-5 shrink-0 text-good-ink" />
               <span className="min-w-0 flex-1 text-base font-semibold">
-                {sportById(t.data.sport).emoji} {sportById(t.data.sport).label} · {t.data.minutes} Min{t.data.km ? ` · ${t.data.km} km` : ""}
+                {sportById(t.data.sport).label} · {t.data.minutes} Min{t.data.km ? ` · ${t.data.km} km` : ""}
               </span>
               <button type="button" onClick={() => setEdit(t)} className={buttonClass("ghost", "sm")}>
                 Ändern
@@ -172,26 +174,24 @@ export function SportDaySheet({ date, today, state, entries, me, forecast, onClo
         <span className={LEGEND}>Training planen</span>
         <SportChips value={sport} onChange={setSport} recent={recent} />
         <span className={LEGEND}>Wann?</span>
-        {starts.length ? (
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Uhrzeit">
-            {starts.map((t) => (
-              <button key={t} type="button" onClick={() => setTime(t)} className={chipClass(chosen === t)} aria-pressed={chosen === t}>
-                {clockLabel(t)}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-muted">An dem Tag ist es schon recht voll – vielleicht ein anderer?</p>
-        )}
+        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Uhrzeit">
+          {starts.map((t) => (
+            <button key={t} type="button" onClick={() => setTime(t)} className={chipClass(chosen === t)} aria-pressed={chosen === t}>
+              {clockLabel(t)}
+            </button>
+          ))}
+          <input type="time" step={300} value={chosen ?? ""} onChange={(e) => setTime(e.target.value || null)} className={`${INPUT_INLINE} w-36`} aria-label="Eigene Uhrzeit" />
+        </div>
+        {!starts.length && <p className="text-sm text-muted">Der Tag ist schon gut gefüllt – such dir einfach eine Uhrzeit aus.</p>}
         <span className={LEGEND}>Wie lange?</span>
         <DurationChips value={minutes} onChange={setMinutes} />
         <button
           type="button"
-          disabled={!chosen}
+          disabled={!chosen || minutes < 5}
           onClick={() => {
-            if (!chosen) return;
+            if (!chosen || minutes < 5) return;
             const kind = sportById(sport);
-            const entry = sanitizeEntry(createEntry("termin", { title: kind.label, date, start: chosen, end: plusMinutes(chosen, minutes), reminder: "30", repeat: null, label: "Sport", ...(me ? { who: [me] } : {}) }, { raum: "familie" }) as CalendarEntry);
+            const entry = sanitizeEntry(createEntry("termin", { title: kind.label, date, start: chosen, end: endOf(chosen, minutes), reminder: "30", repeat: null, label: "Sport", ...(me ? { who: [me] } : {}) }, { raum: "familie" }) as CalendarEntry);
             if (entry) act((l) => upsertEntry(l, entry), `${kind.label} geplant`);
             done();
           }}
