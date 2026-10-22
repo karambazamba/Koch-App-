@@ -17,6 +17,7 @@ import { AddSheet } from "@/components/kalender/AddSheet";
 import { DayAgenda } from "@/components/kalender/DayAgenda";
 import { dayHeading, relativeDay } from "@/components/kalender/CalendarPage";
 import { useMeals } from "@/components/essen/useMeals";
+import { askMiaFirst } from "@/lib/begleitung/open";
 
 const WEEKDAY = new Intl.DateTimeFormat("de-DE", { weekday: "long", timeZone: "UTC" });
 
@@ -34,7 +35,7 @@ export function DayView() {
   const name = helperName(profile);
   return (
     <>
-      <PageHeader title={title} subtitle={date && today ? dayHeading(date, today) : undefined} backHref="/?seite=kalender" action={date ? <PagePlus label="Neu für diesen Tag" onClick={() => setAdding(true)} /> : undefined} />
+      <PageHeader title={title} subtitle={date && today ? dayHeading(date, today) : undefined} backHref="/?seite=kalender" action={date ? <PagePlus label="Neu für diesen Tag" onClick={() => askMiaFirst("eintrag", () => setAdding(true))} /> : undefined} />
       <main className={PAGE_MAIN}>
         {!entries || !date || !today ? (
           <div className={`${CARD} h-40 animate-pulse`} />

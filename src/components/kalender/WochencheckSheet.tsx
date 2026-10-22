@@ -11,6 +11,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Mic, Square } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
+import { MiaLayer, MiaStage } from "@/components/begleitung/MiaStage";
+import { helperName } from "@/lib/einstellungen/profile";
 import { buttonClass } from "@/components/ui/styles";
 import { MIC_BLOCKED, MicStrip } from "@/components/ui/MicPermission";
 import { WeekItemCard, WeekLegend, WeekRow } from "@/components/kalender/WeekPreview";
@@ -156,22 +158,11 @@ export function WochencheckSheet({ data, onClose }: { data: AssistantData; onClo
     );
   }
 
+  // Zuhören in derselben Mia-Ansicht wie sonst (Tafel 53): Mia in der Mitte, darunter der Text
   return (
-    <Sheet
-      title="Wochencheck"
-      onClose={onClose}
-      tall
-      header={
-        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
-          <button type="button" onClick={onClose} className="hit min-h-11 justify-self-start text-[15px] font-semibold text-accent-strong">
-            Abbrechen
-          </button>
-          <h2 className="text-lg font-extrabold">Wochencheck</h2>
-          <span aria-hidden />
-        </div>
-      }
-    >
-      <div className="flex min-h-0 flex-1 flex-col gap-3 pb-3">
+    <MiaLayer name="Wochencheck" onClose={onClose} closeText="Abbrechen">
+      <MiaStage name={helperName(data.profile)} status={speech.listening ? "hoert" : stage === "sortieren" ? "denkt" : "bereit"} text={speech.listening ? "Ich höre zu – Pausen sind okay" : "Wochencheck – sag einfach alles, ich sortiere."} live={false} compact names={[]} done={false} />
+      <div className="safe-bottom flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 pt-3">
         <MicStrip />
         <div className="min-h-40 flex-1 overflow-y-auto rounded-card bg-surface p-4">
           {speech.listening ? (
@@ -214,6 +205,6 @@ export function WochencheckSheet({ data, onClose }: { data: AssistantData; onClo
           </div>
         )}
       </div>
-    </Sheet>
+    </MiaLayer>
   );
 }

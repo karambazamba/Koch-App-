@@ -4,7 +4,7 @@
 // npm run bilder:vergleich – vergleicht aktuell mit basis (Abweichung > 0,1 %
 // wird gemeldet, Unterschiedsbild in .bilder/unterschied).
 import { mkdirSync } from "node:fs";
-import { BASE, DEVICES, FAKE_MIC, FAKE_VOICES, hello, launch, newPage, seedFamily, setDark, startServer } from "./lib.mjs";
+import { BASE, DEVICES, FAKE_MIC, FAKE_VOICES, hello, launch, lieberFormular, miaTippen, newPage, seedFamily, setDark, startServer, tippenFeld } from "./lib.mjs";
 import { RECIPE_DATA } from "./ablaeufe/essen.mjs";
 
 /** Warten, bis Netz ruhig und alle Bilder (auch live gezeichnete Gerichte) fertig sind */
@@ -33,11 +33,16 @@ const PAGES = [
 ];
 
 /** Szenen: Fenster, die erst nach einer Handlung da sind (Mikrofon aus mit Schein-Fehler) */
-const micTap = (page) => page.getByRole("button", { name: /etwas sagen$/ }).click();
+const micTap = async (page) => {
+  await page.getByRole("button", { name: /^Sag .*was ansteht/ }).first().click();
+  await page.getByRole("dialog").last().waitFor({ timeout: 5000 });
+  await page.getByRole("button", { name: /^(Frage einsprechen|Mikro aus – so machst du es an)$/ }).last().click();
+};
 const openTermin = async (page, text) => {
   await page.goto(BASE + "/?seite=kalender");
   await page.waitForTimeout(900);
   await page.locator("[role=tabpanel]:not([inert])").getByRole("button", { name: "Neu eintragen" }).click();
+  await lieberFormular(page);
   await page.getByRole("button", { name: /^Termin/ }).first().click();
   await page.getByRole("textbox", { name: "Termin" }).fill(text);
   await page.waitForTimeout(500);
@@ -46,16 +51,14 @@ const voiceOffer = async (page) => {
   await page.evaluate(() => localStorage.setItem("wasgibts.vorlesen", JSON.stringify({ version: 1, mode: "an", voice: "", rate: "normal" })));
   await page.reload();
   await page.waitForTimeout(800);
-  await page.getByRole("button", { name: /^Sag .*was ansteht/ }).click();
-  const box = page.getByRole("textbox", { name: "Nachricht schreiben" });
+  const box = await miaTippen(page);
   await box.fill("Was gibt’s heute?");
   await box.press("Enter");
   await page.getByRole("button", { name: "Passt so" }).waitFor({ timeout: 10000 });
 };
 const WOCHE = "Dienstag haben wir Elternabend, halb acht. Donnerstag muss ich das Paket zur Post bringen. Freitag 10 Uhr Meeting mit dem Lieferanten. Samstag hat Mathis ein Spiel.";
 const weekCheck = async (page, done) => {
-  await page.getByRole("button", { name: /^Sag .*was ansteht/ }).click();
-  const box = page.getByRole("textbox", { name: "Nachricht schreiben" });
+  const box = await miaTippen(page);
   await box.fill("Wochencheck");
   await box.press("Enter");
   const sheet = page.getByRole("dialog", { name: "Wochencheck" });
@@ -72,7 +75,7 @@ const cookTip = async (page, card) => {
   await page.getByRole("region", { name: /^Essen/ }).evaluate((el) => el.scrollIntoView({ block: "center" }));
   if (!card) return;
   await page.getByRole("button", { name: /^Kochtipp – spontan mit/ }).click();
-  const box = page.getByRole("textbox", { name: "Nachricht schreiben" });
+  const box = await tippenFeld(page);
   await box.fill("Ich hab noch Hähnchen, Reis und Paprika");
   await box.press("Enter");
   await page.getByRole("article", { name: /^Vorschlag:/ }).waitFor({ timeout: 5000 });

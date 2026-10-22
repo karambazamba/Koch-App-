@@ -4,7 +4,7 @@ import { useSchnellnotiz, useNotes } from "@/lib/notizen";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Check } from "lucide-react";
-import { onOpenHelper } from "@/lib/begleitung/open";
+import { onOpenHelper, type EntryKind } from "@/lib/begleitung/open";
 import { learnLikes, likesFromIngredients, LIKE_WEIGHTS } from "@/lib/essen/likes";
 import { useRecipes } from "@/lib/essen/cookbook";
 import { useMealPlans } from "@/lib/essen/mealPlan";
@@ -19,7 +19,7 @@ import { migrateOldTermine } from "@/lib/kalender/store";
 import { useCalendarEntries } from "@/lib/kalender/useCalendarEntries";
 import { aboRefreshDue } from "@/lib/kalender/abo/store";
 import { useHomeTiles } from "@/lib/core/homeLayout";
-import { BegleitungBar } from "@/components/begleitung/BegleitungBar";
+import { MiaButton } from "@/components/begleitung/MiaButton";
 import { helperName, type HelperVoice } from "@/lib/einstellungen/profile";
 import { removeRetiredKeys } from "@/lib/core/storage";
 import { adoptLegacySpeech, loadSpeechSettings, toggleSpeak } from "@/lib/begleitung/speech";
@@ -41,6 +41,16 @@ const WochencheckSheet = dynamic(() => import("@/components/kalender/Wochencheck
 /** Nur nach echtem Löschen: kleine Meldung "Gelöscht · Rückgängig" für 3 Sekunden */
 const UNDO_SECONDS = 3;
 const DELETING = new Set(["remove_entry", "remove_note", "remove_shopping", "clear_shopping", "clear_week"]);
+
+/** „＋“ hat Mia geholt: passende Frage je Ort */
+const ENTRY_PROMPT: Record<EntryKind, string> = {
+  termin: "Welcher Termin? Sag einfach, wann und was.",
+  aufgabe: "Was soll erledigt werden?",
+  einkauf: "Was kommt auf die Liste?",
+  notiz: "Was soll ich mir merken?",
+  pinnwand: "Was soll an die Pinnwand?",
+  eintrag: "Was soll ich eintragen?",
+};
 
 const EMPTY_CHAT: ChatState = { turns: [], proposal: null, spontan: null };
 
@@ -123,7 +133,18 @@ export function KitchenHelper() {
           return;
         }
         setOpen(true);
+        // Neues Gespräch ab hier (Früheres steht im „Verlauf“)
+        setChat((c) => ({ ...c, since: c.turns.length }));
+        // Mia holen: sie hört gleich zu, wenn das Mikro erlaubt ist (sonst ist das Tippen-Feld dran)
         if (mode === "voice" || ask) setStart({ listen: mode === "voice", ask });
+        else if (!mode && micState().granted) setStart({ listen: true });
+        // „＋“: erst Mia – „Was soll ich eintragen?“, das Formular nur auf Wunsch
+        if (mode === "eintragen") {
+          const kind = (filters?.[0] ?? "eintrag") as EntryKind;
+          setChat((c) => ({ ...c, spontan: null, kochtipp: null, formular: kind, turns: [...c.turns, { role: "assistant", local: true, text: ENTRY_PROMPT[kind] }] }));
+          if (micState().granted) setStart({ listen: true });
+          return;
+        }
         // Kochtipp (Kochmütze oder Nachfrage): frischer Anfang mit drei Schnellantworten,
         // danach hört das Mikro zu (nur wenn erlaubt, sonst ist das Textfeld dran)
         if (mode === "kochtipp") {
@@ -198,8 +219,8 @@ export function KitchenHelper() {
 
   return (
     <>
-      {/* EIN Design: auf allen Seiten dieselbe helle Mia-Leiste wie auf der Startseite (dort zeichnet sie HomePager) */}
-      {!open && !typing && !hidden && <BegleitungBar name={helperName(profile)} />}
+      {/* Auf allen Seiten derselbe runde Mia-Knopf wie auf der Startseite (dort zeichnet ihn HomePager) */}
+      {!open && !typing && !hidden && <MiaButton name={helperName(profile)} />}
 
       {open && (
         <HelperPanel

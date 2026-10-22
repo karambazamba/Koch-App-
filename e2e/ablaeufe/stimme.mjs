@@ -1,11 +1,10 @@
 // Stimme – weg vom Blech-Klang (Tafel 28): Schein-Stimmen (speechSynthesis).
 // Nur Standardstimme → nach dem ersten Vorlesen das Angebot; neue Stimme
 // gefunden → grüne Karte; „Passt so“ → nie wieder.
-import { FAKE_VOICES, hello, seedFamily } from "../lib.mjs";
+import { FAKE_VOICES, hello, miaTippen, seedFamily } from "../lib.mjs";
 
 async function chatOnce(page, text) {
-  await page.getByRole("button", { name: /^Sag .*was ansteht/ }).click();
-  const box = page.getByRole("textbox", { name: "Nachricht schreiben" });
+  const box = await miaTippen(page);
   await box.fill(text);
   await box.press("Enter");
   await page.waitForTimeout(3500);

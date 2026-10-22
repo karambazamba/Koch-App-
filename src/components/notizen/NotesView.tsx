@@ -17,6 +17,7 @@ import { QuickNoteCard } from "@/components/notizen/Schnellnotiz";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 import { helperName } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";
+import { askMiaFirst } from "@/lib/begleitung/open";
 
 type Filter = "alles" | "familie" | "arbeit";
 
@@ -68,7 +69,7 @@ export function NotesView() {
         title="Notizen"
         backHref="/?seite=kalender"
         action={
-          <PagePlus label="Neue Notiz" onClick={() => setChoose(true)} />
+          <PagePlus label="Neue Notiz" onClick={() => askMiaFirst("notiz", () => setChoose(true))} />
         }
       />
       <main className={PAGE_MAIN}>

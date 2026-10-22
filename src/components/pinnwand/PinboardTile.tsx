@@ -22,6 +22,7 @@ import { useCanRecordMemo, useMemoRecorder } from "@/components/pinnwand/useMemo
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { clearDemoTile } from "@/lib/core/demo";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
+import { askMiaFirst } from "@/lib/begleitung/open";
 
 
 const meta = pinMetaLine;
@@ -45,7 +46,7 @@ export function PinboardTile({ size = "M", me, demo = false, helper = "" }: { si
   const actions = (
     <span className="flex shrink-0 items-center gap-3">
       {canRecord && <MemoMic recorder={recorder} />}
-      <QuickButton icon={Plus} label="Neue Nachricht an die Pinnwand" onClick={() => setWriting(true)} />
+      <QuickButton icon={Plus} label="Neue Nachricht an die Pinnwand" onClick={() => askMiaFirst("pinnwand", () => setWriting(true))} />
     </span>
   );
   return (

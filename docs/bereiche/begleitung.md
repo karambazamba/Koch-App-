@@ -7,7 +7,7 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 ## Wo im Code
 
 - Chat-Oberfläche `src/components/begleitung/`:
-  - `KitchenHelper.tsx` – im Layout: Leiste (`BegleitungBar`), öffnet das
+  - `KitchenHelper.tsx` – im Layout: Mia-Knopf (`MiaButton`), öffnet das
     Gespräch, „Übernehmen“ (`apply` → `commitOps`), Meldung „Gelöscht ·
     Rückgängig“. Räumt beim Start auf (`removeRetiredKeys`,
     `adoptLegacySpeech`, `adoptSchnellnotiz`, `migrateOldTermine`).
@@ -239,8 +239,35 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   freuen/begrüßen > schlafen > ruhig. Mikrofon → zuhören, KI lädt → denken,
   Fehler-Antwort → verwirrt, Vorlesen → sprechen, einmal am Tag begrüßen
   (`greetOncePerDay`), Feierabend mit Ruhe → schlafen (Leiste antippen weckt).
-- Leiste unten (`BegleitungBar`): hell, schwebend, Avatar links, oranges
-  Mikrofon rechts; auf der Startseite zeichnet sie der Pager.
+- Mia-Knopf unten rechts (`MiaButton`, seit v0.62, statt der Schreib-Leiste):
+  72 px, atmet leicht (1,00–1,025 über 4 s) mit weichem Schein; Tippen holt
+  Mia in die Mitte, lange drücken = sofort sprechen, Loslassen = absenden;
+  einmal der Hinweis „Tippen & sprechen“ (`mia-knopf`). Auf der Startseite
+  zeichnet ihn der Pager.
+
+### Mia zuerst – erzählen statt ausfüllen (Tafel 53, seit v0.62)
+
+- Mia in der Mitte (`MiaStage.tsx`: `MiaLayer` + `MiaStage`): Vollbild über
+  verschwommenem Hintergrund, oben ✕ und „Verlauf“. Mia fliegt beim Öffnen
+  vom Knopf in die Mitte (eine Bewegung, 1 s), Status-Zeile (ICH HÖRE ZU … /
+  ICH DENKE … / ERLEDIGT), groß der Live-Text (Tage, Uhrzeiten, Namen
+  orange) bzw. Mias Antwort als Untertitel (nur bis 140 Zeichen, längere
+  bleiben eine Blase). Jedes Öffnen beginnt ein neues Gespräch
+  (`ChatState.since`). Darunter nur die letzte Runde
+  (Karten wie Vorschlag, Kochtipp, Mail), „Verlauf“ zeigt alles (mit „Neues
+  Gespräch“). Ab der zweiten Runde ist Mia kleiner.
+- Unten Tippen + großes Sprechen (`MiaControls`); das Tippen-Feld kommt auf
+  Wunsch, ohne Mikro, beim „Ändern“ und im geführten Gespräch. Mikro erlaubt
+  → Mia hört beim Öffnen gleich zu.
+- „Passt“ (Knopf) oder „ja/passt/mach“ übernimmt; Mia freut sich, nach ~1 s
+  schließt die Ansicht, Meldung „Übernommen“. Rückfrage per Sprache → nach
+  dem Vorlesen hört Mia wieder zu (höchstens 8 s).
+- „＋“ (Termine, Aufgaben, Kalender, Tag, Notizen, Pinnwand, Einkauf) holt
+  erst Mia (`askMiaFirst`, Modus „eintragen“, passende Frage), „Lieber
+  Formular“ öffnet das gewohnte Fenster. Kochmütze und Wochencheck nutzen
+  dieselbe Ansicht.
+- Bewegung (globals.css „Mia zuerst“): 0,8–1,2 s, `cubic-bezier(.16,1,.3,1)`,
+  nur transform/opacity; reduzierte Bewegung = nur Überblenden.
 
 ### Erster Start und neue Person
 

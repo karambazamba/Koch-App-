@@ -4,6 +4,13 @@
 // Pixel 7 = Android-Schritte.
 import { FAKE_MIC, hello, seedFamily } from "../lib.mjs";
 
+/** Mia holen und aufs Mikro tippen (Sprechen bzw. grauer Knopf, wenn aus) */
+async function micTap(page) {
+  await page.getByRole("button", { name: /^Sag .*was ansteht/ }).first().click();
+  await page.getByRole("dialog").last().waitFor({ timeout: 5000 });
+  await page.getByRole("button", { name: /^(Frage einsprechen|Mikro aus – so machst du es an)$/ }).last().click();
+}
+
 const mia = (page) => page.getByRole("dialog").filter({ has: page.getByRole("textbox", { name: "Nachricht schreiben" }) });
 
 export const mikrofon = async (page, check, device) => {
@@ -15,7 +22,7 @@ export const mikrofon = async (page, check, device) => {
   await page.waitForTimeout(900);
 
   // 1. Erster Tipp aufs Mikro: erst fragen
-  await page.getByRole("button", { name: /etwas sagen$/ }).click();
+  await micTap(page);
   const ask = page.getByRole("dialog", { name: "Darf ich zuhören?" });
   check(await ask.waitFor({ timeout: 5000 }).then(() => true, () => false), "erster Tipp → „Darf ich zuhören?“");
   check(await ask.getByText(android ? "dein Handy" : "dein iPhone", { exact: false }).isVisible(), android ? "Android: „dein Handy“" : "iPhone: „dein iPhone“");
@@ -56,7 +63,7 @@ export const mikrofon = async (page, check, device) => {
   await page.addInitScript(() => (window.__micError = "service-not-allowed"));
   await page.reload();
   await page.waitForTimeout(900);
-  await page.getByRole("button", { name: /etwas sagen$/ }).click();
+  await micTap(page);
   const second = page.getByRole("dialog", { name: "Ich kann dich gerade nicht hören" });
   check(await second.waitFor({ timeout: 5000 }).then(() => true, () => false), "zweites Mal ohne Vorab-Frage direkt Hilfe");
   check(await second.getByText(android ? "Das Mikrofon ist aus" : "Die Diktierfunktion ist aus", { exact: false }).isVisible(), android ? "Android: Mikrofon-Schritte" : "iPhone: Diktierfunktion-Schritte");

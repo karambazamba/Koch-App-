@@ -1,5 +1,5 @@
 // Eintragen, Kalender, Pinnwand, Wetter, Chat ohne KI (Testmodus)
-import { BASE, hello, seedFamily, store } from "../lib.mjs";
+import { BASE, hello, lieberFormular, miaTippen, seedFamily, store } from "../lib.mjs";
 
 const family = async (page, path = "/") => {
   await hello(page);
@@ -11,6 +11,7 @@ const family = async (page, path = "/") => {
 export const eintragen = async (page, check) => {
   await family(page, "/?seite=kalender");
   await page.locator("[role=tabpanel]:not([inert])").getByRole("button", { name: "Neu eintragen" }).click();
+  await lieberFormular(page);
   await page.waitForTimeout(500);
   check(await page.getByText("Was möchtest du eintragen?").isVisible(), "Eintragen-Fenster");
   await page.getByRole("button", { name: /^Termin/ }).first().click();
@@ -51,9 +52,7 @@ export const wetter = async (page, check) => {
 
 export const chat = async (page, check) => {
   await family(page, "/");
-  await page.getByRole("button", { name: /was ansteht/ }).first().click();
-  await page.waitForTimeout(800);
-  const box = page.getByRole("textbox").last();
+  const box = await miaTippen(page);
   await box.fill("Was steht auf der Pinnwand?");
   await box.press("Enter");
   await page.waitForTimeout(2500);
@@ -93,6 +92,7 @@ export const kalenderImport = async (page, check) => {
   await page.goto(BASE + "/?seite=kalender");
   await page.waitForTimeout(900);
   await page.locator("[role=tabpanel]:not([inert])").getByRole("button", { name: "Neu eintragen" }).click();
+  await lieberFormular(page);
   await page.waitForTimeout(400);
   await page.getByRole("button", { name: "Aus Apple/Google übernehmen" }).click();
   await page.waitForURL(/\/profil\/kalender/, { timeout: 5000 }).catch(() => {});

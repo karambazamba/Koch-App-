@@ -33,18 +33,28 @@ import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 import { looksLikeMail, splitInstruction } from "@/lib/begleitung/mail";
 import { useTipStore } from "@/lib/essen/healthTips";
 import { useFeature } from "@/lib/core/features";
-import { Sheet } from "@/components/ui/Sheet";
+import { onReleaseHelperVoice, takeFormular } from "@/lib/begleitung/open";
+import { showToast } from "@/lib/core/toast";
 
 import type { ChatState } from "@/components/begleitung/chatTypes";
 import type { RuleContext } from "@/components/begleitung/localRules";
 import { ChatHistory } from "@/components/begleitung/ChatHistory";
 import { ChatInputBar } from "@/components/begleitung/ChatInputBar";
-import { HelperHeader } from "@/components/begleitung/HelperHeader";
+import { MiaLayer, MiaStage, type StageStatus } from "@/components/begleitung/MiaStage";
+import { MiaControls } from "@/components/begleitung/MiaControls";
+import { SuggestionChips } from "@/components/begleitung/SuggestionChips";
 import { useAskAssistant } from "@/components/begleitung/useAskAssistant";
 import { useChatRules } from "@/components/begleitung/useChatRules";
 import { useMarketChat } from "@/components/begleitung/useMarketChat";
 import { useSpontanChat } from "@/components/begleitung/useSpontanChat";
 import { VoiceOffer } from "@/components/begleitung/VoiceOffer";
+
+/** Zustimmung per Sprache („ja“, „passt“, „mach“) */
+const YES = /^(ja|jo|jap|jawohl|passt|passt so|mach( das| es)?|übernehmen|übernimm|okay|ok|gerne?|genau)[.!]*$/i;
+/** Nach einer Rückfrage hört Mia wieder zu – höchstens so lange */
+const ASK_BACK_MS = 8000;
+/** Längere Antworten sind kein Untertitel, sondern eine Blase */
+const SUBTITLE_MAX = 140;
 
 type Props = {
   data: AssistantData | null | undefined;
@@ -139,6 +149,28 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
 
   const { rules } = useChatRules({ ruleCtx, chat, setGuided, startSpontan: spontan.startSpontan, pantry, shopping, shoppingSettings, speechSettings, spontanStyle, ready, ask });
 
+  // Mia-Ansicht: Tippen-Feld, Verlauf, „Erledigt“
+  // Nur das aktuelle Gespräch zählt (ab `since`, Früheres steht im „Verlauf“)
+  const since = Math.min(chat.since ?? 0, chat.turns.length);
+  const lastUser = chat.turns.map((t) => t.role).lastIndexOf("user");
+  const userTurns = chat.turns.filter((t, i) => i >= since && t.role === "user").length;
+  const lastIndex = chat.turns.length - 1;
+  const newest = chat.turns[lastIndex];
+  const [typing, setTyping] = useState(false);
+  const [history, setHistory] = useState(false);
+  const [done, setDone] = useState(false);
+  /** „Passt“ (Knopf oder „ja“): übernehmen, Mia freut sich, nach ~1 s zu, kurze Meldung */
+  const applyAndClose = (selected: Set<string>) => {
+    onApply(selected);
+    setDone(true);
+    triggerAvatar("freuen");
+    stopSpeaking();
+    window.setTimeout(() => {
+      onClose();
+      showToast({ text: "Übernommen", small: true });
+    }, 1100);
+  };
+
   /** Eingabe abschicken: neue Person, Reste-Modus oder Frage an die KI (`byVoice` = per Mikrofon) */
   const submit = (text: string, byVoice = false) => {
     const t = text.trim();
@@ -149,6 +181,13 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     noteChatMessage();
     setViaVoice(byVoice);
     noteUserAction(toIsoDate(today));
+    // Offener Vorschlag + „ja“, „passt“, „mach“ = übernehmen
+    if (chat.proposal && chat.proposal.selected.size > 0 && YES.test(t)) {
+      setInput("");
+      applyAndClose(chat.proposal.selected);
+      return;
+    }
+    if (chat.formular) setChat((c) => ({ ...c, formular: undefined }));
     // „Kochtipp“, „Was soll ich kochen?“ schaltet die Kochmütze frei (auch mit KI)
     if (isKochtippRequest(t)) unlockKochtipp();
     // Selbst geöffneter Kochtipp: Antworten („Ich hab noch …“, „was mit Fisch“) → Karte;
@@ -236,9 +275,11 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   };
 
   // Von der Startseite geöffnet: einmalig Mikrofon starten bzw. Frage stellen
-  const latest = useRef({ submit, toggleMic });
+  const stopListening = () => speech.listening && speech.stop();
+  const cancelIfSilent = () => speech.listening && !input.trim() && !speech.interim && speech.cancel();
+  const latest = useRef({ submit, toggleMic, stopListening, cancelIfSilent });
   useEffect(() => {
-    latest.current = { submit, toggleMic };
+    latest.current = { submit, toggleMic, stopListening, cancelIfSilent };
   });
   const started = useRef(false);
   useEffect(() => {
@@ -247,6 +288,20 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     if (initialAsk) latest.current.submit(initialAsk);
     else if (startListening) latest.current.toggleMic();
   }, [data, today, initialAsk, startListening]);
+
+  // Mia-Knopf lange gedrückt: Loslassen schickt das Gesagte ab
+  useEffect(() => onReleaseHelperVoice(() => latest.current.stopListening()), []);
+
+  // Rückfrage per Sprache: nach dem Vorlesen hört Mia wieder zu (höchstens 8 s, dann leise aus)
+  const askedBack = newest?.role === "assistant" && !newest.local && newest.text.trim().endsWith("?") && viaVoice ? lastIndex : -1;
+  const listenedFor = useRef(-1);
+  useEffect(() => {
+    if (askedBack < 0 || listenedFor.current === askedBack || speakingId !== null || busy || speech.blocked) return;
+    listenedFor.current = askedBack;
+    latest.current.toggleMic();
+    const t = window.setTimeout(() => latest.current.cancelIfSilent(), ASK_BACK_MS);
+    return () => window.clearTimeout(t);
+  }, [askedBack, speakingId, busy, speech.blocked]);
 
   // Schließen beendet das Vorlesen (Escape, Danebentippen, Zurück übernimmt das Fenster)
   useEffect(() => () => stopSpeaking(), []);
@@ -284,16 +339,31 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     setAdjusting(false);
     setInput("");
   };
+  // --- Mia in der Mitte: Status, Untertitel, Verlauf, Tippen ------------------
+  // Mias neueste Antwort steht groß als Untertitel (nicht nochmal als Blase) –
+  // lange Antworten bleiben eine normale Blase, damit nichts verdeckt wird
+  const short = (t: string) => t.length <= SUBTITLE_MAX;
+  const subtitleIndex = !history && newest?.role === "assistant" && newest.text && short(newest.text) && !newest.error && !newest.spontan && !newest.mail ? lastIndex : -1;
+  const streamOnStage = busy && streaming != null && short(streaming);
+  const greeting = data === null ? "" : chat.turns.length <= since ? `Hi, ich bin ${name} – was steht an?` : "";
+  const heard = speech.listening ? `${input}${speech.interim ? ` ${speech.interim}` : ""}`.trim() : "";
+  // Beim Zuhören das Gesagte – solange noch nichts kam, bleibt Mias Frage stehen
+  const stageText = heard
+    ? heard
+    : busy
+      ? streamOnStage
+        ? streaming!
+        : ""
+      : subtitleIndex >= 0
+        ? newest!.text
+        : greeting;
+  const stageStatus: StageStatus = speech.listening ? "hoert" : busy ? "denkt" : done ? "erledigt" : "bereit";
+  // Tippen-Feld: auf Wunsch, ohne Mikro, beim Ändern eines Vorschlags und im geführten Gespräch
+  const showField = typing || speech.blocked || speech.supported === false || dictationHint || adjusting || Boolean(guided) || suggestions.length > 0 && chat.turns.length === 0 && typing;
+  const names = data?.profile.persons.map((p) => p.name).filter(Boolean) ?? [];
+
   return (
-    <Sheet
-      title={name}
-      onClose={onClose}
-      fill
-      layer="chat"
-      inset={inset}
-      height={`min(88dvh, calc(100dvh - ${inset}px - env(safe-area-inset-top) - 0.5rem))`}
-      header={<HelperHeader name={name} onNewChat={newChat} onClose={onClose} />}
-    >
+    <MiaLayer name={name} onClose={onClose} onHistory={() => setHistory((h) => !h)} history={history} inset={inset}>
         {guided ? (
           <GuidedChat
             state={guided}
@@ -312,6 +382,25 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           />
         ) : (
           <>
+        <MiaStage name={name} status={stageStatus} text={stageText} live={Boolean(heard)} compact={userTurns >= 2 || history || Boolean(chat.proposal)} names={names} done={done} />
+        {chat.formular && !userTurns && (
+          <button
+            type="button"
+            onClick={() => {
+              const form = takeFormular();
+              onClose();
+              form?.();
+            }}
+            className="hit mx-auto -mt-1 min-h-11 text-[15px] font-semibold text-muted underline"
+          >
+            Lieber Formular
+          </button>
+        )}
+        {history && chat.turns.length > 0 && (
+          <button type="button" onClick={newChat} className="hit mx-auto min-h-11 text-[15px] font-semibold text-accent-strong">
+            Neues Gespräch
+          </button>
+        )}
         <ChatHistory
           scrollRef={scrollRef}
           inputRef={inputRef}
@@ -328,35 +417,52 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           speakingId={speakingId}
           tipsOn={tipsOn}
           adjusting={adjusting}
-          setAdjusting={setAdjusting}
+          setAdjusting={(on) => {
+            setAdjusting(on);
+            if (on) setTyping(true);
+          }}
           spontan={spontan}
           market={market}
           kochtipp={kochtipp}
           rules={rules}
           onSubmit={submit}
           onAsk={(text) => void ask(text)}
-          onApply={onApply}
+          onApply={applyAndClose}
           onClose={onClose}
+          from={history ? 0 : Math.max(since, lastUser)}
+          subtitleIndex={subtitleIndex}
+          streamOnStage={streamOnStage}
         />
 
         <div className="flex flex-col gap-2 px-4 empty:hidden">
           <VoiceOffer readCount={readCount} speaking={speakingId !== null} gender={voice} name={name} />
         </div>
-        <ChatInputBar
-          inputRef={inputRef}
-          input={input}
-          setInput={setInput}
-          name={name}
-          canType={canType}
-          busy={busy}
-          speech={speech}
-          dictationHint={dictationHint}
-          suggestions={suggestions}
-          onSubmit={submit}
-          onToggleMic={toggleMic}
-        />
+        {showField ? (
+          <ChatInputBar
+            inputRef={inputRef}
+            input={input}
+            setInput={setInput}
+            name={name}
+            canType={canType}
+            busy={busy}
+            speech={speech}
+            dictationHint={dictationHint}
+            suggestions={suggestions}
+            onSubmit={submit}
+            onToggleMic={toggleMic}
+          />
+        ) : (
+          <>
+            {suggestions.length > 0 && (
+              <div className="px-4">
+                <SuggestionChips suggestions={suggestions} onPick={submit} />
+              </div>
+            )}
+            <MiaControls speech={speech} typing={typing} disabled={!canType || busy} onType={() => setTyping(true)} onMic={toggleMic} />
           </>
         )}
-    </Sheet>
+          </>
+        )}
+    </MiaLayer>
   );
 }

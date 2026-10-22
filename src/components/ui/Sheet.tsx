@@ -101,3 +101,54 @@ export function Sheet({
     </div>
   );
 }
+
+/**
+ * Dasselbe Fenster als Vollbild-Bühne (Mia in der Mitte, Tafel 53): weich
+ * verschwommener Hintergrund, Kopf mit `left`/`right` (z. B. ✕ und „Verlauf“),
+ * schließt wie jedes Fenster per ✕, Runterwischen, Zurück und Escape.
+ */
+export function StageSheet({ title, onClose, left, right, inset = 0, children }: { title: string; onClose: () => void; left: ReactNode; right: ReactNode; inset?: number; children: ReactNode }) {
+  useBackCloses(onClose);
+  const drag = useRef<number | null>(null);
+  const [dy, setDy] = useState(0);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", onKey);
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = overflow;
+    };
+  }, [onClose]);
+  return (
+    <div className="fixed inset-0 z-40" role="dialog" aria-modal aria-label={title}>
+      <div className="mia-buehne-hintergrund absolute inset-0 bg-background/80" aria-hidden />
+      <div className="relative mx-auto flex h-full max-w-lg flex-col pt-[env(safe-area-inset-top)]" style={{ transform: dy ? `translateY(${dy}px)` : undefined, paddingBottom: inset || undefined }}>
+        <div
+          className="flex touch-none items-center justify-between px-3 pt-2"
+          data-no-swipe
+          onPointerDown={(e) => {
+            if ((e.target as Element).closest("button")) return;
+            drag.current = e.clientY;
+          }}
+          onPointerMove={(e) => drag.current !== null && setDy(Math.max(0, e.clientY - drag.current))}
+          onPointerUp={() => {
+            if (drag.current !== null && dy > 80) onClose();
+            drag.current = null;
+            setDy(0);
+          }}
+          onPointerCancel={() => {
+            drag.current = null;
+            setDy(0);
+          }}
+        >
+          {left}
+          <span className="h-1 w-10 rounded-full bg-line-strong" aria-hidden />
+          {right}
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}

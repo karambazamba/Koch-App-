@@ -45,6 +45,11 @@ für die Begleitung UND das App-Icon.
 ## 2. Gespräch zuerst
 - Die Begleitung (Sprache/Chat) ist der Hauptweg; jede Funktion ist auch per
   Gespräch erreichbar. Bildschirme dienen zum Nachschauen und Feinjustieren.
+- Erzählen statt ausfüllen: Jede Eingabe beginnt mit Mia (sprechen, notfalls
+  tippen). Formulare nur zum Ändern. Kein neues Eingabe-Formular ohne Mia-Weg
+  davor („＋“ holt Mia, „Lieber Formular“ bleibt). Mia ist ein runder Knopf
+  unten rechts; Tippen holt sie in die Mitte, sie hört sofort zu. Keine
+  Schreib-Leiste.
 - Lieber eine Frage mit 2–3 Knöpfen als ein Formular.
 - Machen statt fragen: Kleines selbst erledigen und kurz melden. Rückfragen nur
   bei echten Entscheidungen. Änderungen der KI immer als Vorschau mit
@@ -109,8 +114,10 @@ für die Begleitung UND das App-Icon.
   `rounded-bar`/`-sky`/`-pair`/`-icon`.
 - Seitenkopf: „‹ <vorherige Seite>“, rechts höchstens ein Knopf (Seiten-Plus
   34 px orange oder „…“), darunter der große Titel. Kachel-Plus 26 px
-  hellorange. Leiste der Begleitung unten hell und schwebend (Avatar links,
-  oranges Mikrofon rechts), auf allen Seiten gleich.
+  hellorange. Mia-Knopf unten rechts (72 px, atmet leicht), auf allen Seiten
+  gleich; Mia in der Mitte über verschwommenem Hintergrund (`MiaStage`).
+- Bewegung sehr weich: 0,8–1,2 s, `cubic-bezier(.16,1,.3,1)`, nur
+  transform/opacity, `prefers-reduced-motion` = nur Überblenden.
 - Knöpfe nie schwarz. Standard für neue Nutzer = Hell; Dunkel/Automatisch nur
   nach eigener Wahl (intern `warm`/`nacht`/`auto`).
 - Ein Fenster für alles (`ui/Sheet.tsx`); jedes Fenster schließt per ✕,

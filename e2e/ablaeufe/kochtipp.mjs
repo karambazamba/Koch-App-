@@ -2,7 +2,7 @@
 // einmal, Mütze → Chat mit Frage + drei Schnellantworten, „Ich hab noch
 // Hähnchen, Reis und Paprika“ → Karte, „Anderes“ → andere Karte, „Machen wir“
 // → Kachel zeigt das Gericht, der Plan der anderen Tage bleibt. Zeit: Mi 21.10. 10:30.
-import { hello, seedFamily, store } from "../lib.mjs";
+import { hello, seedFamily, store, tippenFeld } from "../lib.mjs";
 
 const center = (page) => page.getByRole("region", { name: /^Essen/ }).evaluate((el) => el.scrollIntoView({ block: "center" }));
 const hat = (page) => page.getByRole("button", { name: /^Kochtipp – spontan mit/ });
@@ -41,7 +41,7 @@ export const kochtipp = async (page, check) => {
   await page.waitForTimeout(800);
   check(await page.getByText("Lust auf was ganz anderes?", { exact: false }).isVisible(), "Mia: „Lust auf was ganz anderes?“");
   for (const c of ["Schau in den Vorrat", "Reste verwerten", "Neu einkaufen"]) check(await page.getByRole("button", { name: c }).isVisible(), `Schnellantwort „${c}“`);
-  const box = page.getByRole("textbox", { name: "Nachricht schreiben" });
+  const box = await tippenFeld(page);
   await box.fill("Ich hab noch Hähnchen, Reis und Paprika");
   await box.press("Enter");
   const card = page.getByRole("article", { name: /^Vorschlag:/ });

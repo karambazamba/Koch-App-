@@ -2,7 +2,7 @@
 // eigenes Fenster → erzählen (hier getippt) → „Fertig“ → „Deine Woche“ →
 // Frage beantworten, Raum ändern, einen Punkt weglassen → „Alles übernehmen“
 // → Kalender; ein Rückgängig nimmt alles zurück. Zeit: Mi 21.10. 10:30.
-import { hello, seedFamily, store } from "../lib.mjs";
+import { hello, miaTippen, seedFamily, store } from "../lib.mjs";
 
 const TAFEL = "Also, ähm, diese Woche … Dienstag haben wir Elternabend, halb acht glaub ich. Mittwoch muss ich das Paket zur Post bringen. Donnerstag 10 Uhr Meeting mit dem Lieferanten. Samstag hat Mathis noch ein Spiel, äh, keine Ahnung wann.";
 const entries = async (page) => (await store(page, "wasgibts.eintraege")).entries;
@@ -15,8 +15,7 @@ export const wochencheck = async (page, check) => {
   const before = (await entries(page)).length;
 
   // Einstieg über Mia
-  await page.getByRole("button", { name: /^Sag .*was ansteht/ }).click();
-  const box = page.getByRole("textbox", { name: "Nachricht schreiben" });
+  const box = await miaTippen(page);
   await box.fill("Wochencheck");
   await box.press("Enter");
   const sheet = page.getByRole("dialog", { name: "Wochencheck" });
