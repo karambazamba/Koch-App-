@@ -19,7 +19,7 @@ export type WelcomeState = {
   sportGoal?: number | null;
 };
 
-/** Standardwerte beim ersten Start: Termine, Essen, Einkauf; mal so, mal so; Startseite denkt mit */
+/** Standardwerte beim ersten Start: Termine, Essen, Einkauf; mal so, mal so */
 export function startState(): WelcomeState {
   return { helper: { ...DEFAULT_HELPER }, help: ["termine", "essen", "einkauf"], planStyle: "mix", members: [{ name: "", kid: false }], sportGoal: null };
 }

@@ -9,7 +9,7 @@
 //   "Absagen"
 // - leer in der Zukunft: "Training planen" (Sportart, Zeit aus freien Lücken,
 //   Dauer) → Termin mit Etikett Sport und Erinnerung 30 Min vorher
-// Punkte, "2 von 3" und die Feier folgen sofort (gleiche Speicher).
+// Punkte, Wochensatz und die Feier folgen sofort (gleiche Speicher).
 
 import { useState } from "react";
 import { Sheet } from "@/components/ui/Sheet";

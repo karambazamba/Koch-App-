@@ -3,7 +3,7 @@
 // wird. Bis dahin: IndexedDB `wasgibts-memos` (v1, Tabelle "audio", Schlüssel
 // = Memo-ID) auf diesem Gerät, für alle Personen des Haushalts. Nicht in
 // „Daten sichern“. Verwaiste Töne (Memo abgelaufen oder gelöscht) räumt
-// `sweepMemoAudio` beim Start weg.
+// `tidyMemos` (über `sweepMemoAudio`) beim Start weg.
 
 import { now } from "@/lib/core/now";
 import { pruneMemos, type MemoMessage } from "@/lib/pinnwand/memo";

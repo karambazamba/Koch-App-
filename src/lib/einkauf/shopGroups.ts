@@ -28,7 +28,7 @@ const TONES = 8;
 /** Bekannte Läden: passender Farbton (rot, gelb, blau …) – sonst aus dem Namen */
 const KNOWN_TONES: Record<string, number> = { rewe: 1, edeka: 2, lidl: 4, aldi: 4, penny: 1, netto: 2, kaufland: 1, biomarkt: 3, dm: 5, rossmann: 6, "bäcker": 8, wochenmarkt: 3 };
 
-/** Feste Farbe je Laden (1–8, Token `--color-shop-N`) */
+/** Feste Farbe je Laden (1–8, Token `--app-shop-N`) */
 export function shopTone(name: string): number {
   const known = KNOWN_TONES[name.trim().toLowerCase()];
   if (known) return known;

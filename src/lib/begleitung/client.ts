@@ -297,11 +297,15 @@ function dayData(data: AssistantData): Partial<AssistantData> {
 export function runInstantOps(ops: ChangeOp[]): { rest: ChangeOp[]; notes: string[] } {
   const notes: string[] = [];
   const undo: (() => void)[] = [];
+  let tileShown = false;
   for (const op of ops) {
     if (op.type === "add_timer") {
       const started = startTimer({ name: op.name, minutes: op.minutes }, { quiet: true });
       if (!started) notes.push("Fünf Timer laufen schon – sobald einer fertig ist, geht der nächste.");
-      else undo.push(started.undo);
+      else {
+        undo.push(started.undo);
+        tileShown ||= started.tileShown;
+      }
     } else if (op.type === "stop_timer") stopTimerByName(op.name);
     else if (op.type === "stopwatch") stopwatch(op.action);
     else if (op.type === "cook_step") {
@@ -311,14 +315,8 @@ export function runInstantOps(ops: ChangeOp[]): { rest: ChangeOp[]; notes: strin
       nudgePhase();
     }
   }
-  // Timer gestartet, aber ohne Timer-Kachel → einblenden (an ihrem Standard-Platz) und sagen, wo er steht
-  if (ops.some((op) => op.type === "add_timer")) {
-    const tiles = loadHomeTiles();
-    if (!tiles.find((t) => t.id === "timer")?.visible) {
-      saveHomeTiles(applyHomeChange(tiles, { tile: "timer", action: "zeigen" }));
-      notes.push("Der Timer steht jetzt auf der Startseite.");
-    }
-  }
+  // Timer-Kachel war ausgeblendet → startTimer hat sie eingeblendet; sagen, wo er steht
+  if (tileShown) notes.push("Der Timer steht jetzt auf der Startseite.");
   // Rückwärts: jedes Zurücknehmen stellt den Stand vor seinem Schritt wieder her
   if (undo.length) pushUndo("den Timer", () => [...undo].reverse().forEach((u) => u()));
   return { rest: ops.filter((op) => !INSTANT_OP_TYPES.has(op.type)), notes };

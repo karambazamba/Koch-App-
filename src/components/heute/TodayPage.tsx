@@ -1,7 +1,7 @@
 "use client";
 
 // Seite "Heute": Begrüßung, die Jetzt-Karte (Mias EIN Thema für den Moment –
-// feste Höhe, Farbe je Tageszeit) und darunter die Kacheln in der EINEN
+// feste Höhe, Pfirsich-Verlauf) und darunter die Kacheln in der EINEN
 // gespeicherten Reihenfolge und Größe (`HomeBoard`). Die Anordnung ändert
 // sich nie von selbst; Tagesphasen ändern nur Inhalte (Kochschritte in der
 // Essen-Kachel, Ruhe nach Feierabend). Lange drücken, der Link unten, die

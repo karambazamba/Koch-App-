@@ -5,7 +5,7 @@
 // inaktive grau mit "+" (Tippen = hinzufügen, still, landet an ihrem Platz in
 // der Standard-Reihenfolge, in Standard-Größe). Beim Schließen scrollt die
 // Seite zur zuletzt hinzugefügten Kachel, sie leuchtet kurz auf. Neue Kacheln
-// mit "NEU", Post als "bald".
+// mit "NEU" stehen oben; Post („bald“) erscheint noch nicht.
 
 import { Box, HandCoins, MapPin, CalendarClock, CheckCircle2, CloudSun, Dumbbell, ListChecks, Timer, Mail, NotebookPen, Pin, Plus, Refrigerator, ShoppingCart, Sunrise, UtensilsCrossed, type LucideIcon } from "lucide-react";
 import { useRef } from "react";

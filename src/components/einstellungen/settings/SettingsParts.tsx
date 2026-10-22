@@ -200,7 +200,7 @@ export function DataSection({ onReset }: { onReset: () => void }) {
         }}
       />
       <button type="button" onClick={onReset} className="self-center px-4 py-3 text-sm font-semibold text-muted underline">
-        Alles löschen und neu beginnen
+        Neu beginnen (Profil zurücksetzen)
       </button>
       {incoming && (
         <ConfirmDialog

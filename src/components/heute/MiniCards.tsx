@@ -5,7 +5,7 @@
 // Menge, nie das Aussehen (S ≤ M ≤ L): Termine als schlanke Kärtchen ohne
 // Kästchen (S 1, M bis 4, L bis 6, höchstens 2 nebeneinander), Aufgaben im
 // 2er-Raster (S 2 – halb untereinander –, M 2×2, L 2×4). Antippen = Menü,
-// Kreis = abhaken: ca. 1 s durchgestrichen (nochmal tippen = doch nicht).
+// Kreis = abhaken: ca. 2 s durchgestrichen (nochmal tippen = doch nicht).
 
 import Link from "next/link";
 import { useRef, useState } from "react";
@@ -73,7 +73,7 @@ function TileHead({ title, more, href, action, moreLabel }: { title: string; mor
   );
 }
 
-/** Abhaken mit kurzer Bedenkzeit: ca. 1 s durchgestrichen, nochmal tippen = doch nicht */
+/** Abhaken mit kurzer Bedenkzeit: ca. 2 s durchgestrichen, nochmal tippen = doch nicht */
 export function useLeaving(onDone: (item: DayItem) => void) {
   const [leaving, setLeaving] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);

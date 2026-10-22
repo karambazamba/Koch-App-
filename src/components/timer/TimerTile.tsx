@@ -1,7 +1,7 @@
 "use client";
 
-// TIMER – M: Kopf "TIMER" (+ "2 laufen"), der wichtigste Timer mit
-// Fortschrittsring, Emoji, Restzeit groß, Name "Nudeln · 10 Min", Knöpfe
+// TIMER – M: Kopf "TIMER", der wichtigste Timer mit
+// Fortschrittsring, Restzeit groß, Name "Nudeln · 10 Min", Knöpfe
 // +1 · Pause/Weiter · ✕; weitere Timer als schmale Zeilen, die Stoppuhr; unten
 // Schnellknöpfe 5 · 10 · 15 Min · Stoppuhr (lange drücken = eigene Dauer +
 // Name). S: nächster Timer klein, sonst "Timer starten". Alles rechnet mit
@@ -44,7 +44,6 @@ export function TimerTile({ size = "M" }: { size?: TileSize }) {
   const nowMs = useNowMs(active);
   if (!state) return <section className={`${TILE} h-24 animate-pulse`} aria-label="Timer" />;
   const timers = sortTimers(state.timers.filter((t) => shownOnTile(t, nowMs)), nowMs);
-  const running = timers.filter((t) => !isExpired(t, nowMs) && !isPaused(t)).length;
   const sw = state.stopwatch;
   const main = timers[0];
   const start = (minutes: number, name?: string) => {
@@ -59,11 +58,10 @@ export function TimerTile({ size = "M" }: { size?: TileSize }) {
           <button type="button" onClick={() => (main || sw ? setOpen(true) : setCustom(10))} className="flex flex-1 flex-col items-start gap-1 text-left">
             <span className={`flex items-center gap-1.5 ${TILE_LABEL}`}>
               <TimerIcon className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-              Timer{running > 1 ? ` · ${running} laufen` : ""}
+              Timer
             </span>
             {main ? (
               <span className="flex items-baseline gap-1.5">
-                <span aria-hidden>{main.emoji}</span>
                 <span className="text-[22px] font-extrabold tabular-nums leading-none" role="timer" aria-label={`${main.name}: ${isExpired(main, nowMs) ? "fertig" : formatLeft(leftMs(main, nowMs))}`}>
                   {isExpired(main, nowMs) ? "fertig" : formatLeft(leftMs(main, nowMs))}
                 </span>
@@ -97,7 +95,6 @@ export function TimerTile({ size = "M" }: { size?: TileSize }) {
         <div className={`flex items-center gap-1.5 pr-8 ${TILE_LABEL}`}>
           <TimerIcon className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
           <span>Timer</span>
-          {running > 1 && <span className="font-semibold normal-case tracking-normal">· {running} laufen</span>}
         </div>
         <span className="absolute right-3.5 top-3">
           <QuickButton icon={Plus} label="Neuer Timer" onClick={() => setCustom(10)} />
@@ -147,7 +144,9 @@ function MainTimer({ timer, nowMs }: { timer: Timer; nowMs: number }) {
   const left = leftMs(timer, nowMs);
   return (
     <div className="flex items-center gap-3">
-      <Ring part={done ? 1 : 1 - left / timer.durationMs}>{timer.emoji}</Ring>
+      <Ring part={done ? 1 : 1 - left / timer.durationMs}>
+        <TimerIcon className="h-5 w-5 text-tile-accent" strokeWidth={2} aria-hidden />
+      </Ring>
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="text-[30px] font-extrabold tabular-nums leading-none" role="timer" aria-label={`${timer.name}: ${done ? "fertig" : formatLeft(left)}`}>
           {done ? "fertig ✓" : formatLeft(left)}
@@ -184,7 +183,6 @@ function TimerRow({ timer, nowMs }: { timer: Timer; nowMs: number }) {
   const done = isExpired(timer, nowMs);
   return (
     <div className="flex min-h-11 items-center gap-2 border-t border-line pt-1.5">
-      <span aria-hidden>{timer.emoji}</span>
       <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">{timer.name}</span>
       <span className="text-[15px] font-bold tabular-nums" role="timer" aria-label={`${timer.name}: ${done ? "fertig" : formatLeft(leftMs(timer, nowMs))}`}>
         {done ? "fertig ✓" : formatLeft(leftMs(timer, nowMs))}

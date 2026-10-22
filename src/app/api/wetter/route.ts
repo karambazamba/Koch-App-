@@ -1,5 +1,5 @@
-// Wetter für die Kachel und für Lotte: GET ?ort=Eutin → Vorhersage (Open-Meteo,
-// 30 Min zwischengespeichert), GET ?lat=…&lon=… → { ort } (nur der Stadtname).
+// Wetter für die Kachel und für die Begleitung: GET ?ort=Eutin → Vorhersage
+// (DWD über Bright Sky, sonst Open-Meteo; 30 Min zwischengespeichert), GET ?lat=…&lon=… → { ort } (nur der Stadtname).
 // Ohne Schlüssel; gegen Dauerfeuer ein einfaches Limit pro IP.
 
 import { clientIp } from "@/lib/begleitung/guard";
