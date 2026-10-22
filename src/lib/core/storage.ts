@@ -37,7 +37,7 @@ export const STORAGE = [
   { key: "wasgibts.vorlagen", what: "Lieblingswochen (Vorlagen)", version: 1, migration: "essen/templates.ts", area: "local", backup: true },
   { key: "wasgibts.kochbuch", what: "Rezepte", version: 3, migration: "essen/cookbook.ts", area: "local", backup: true },
   { key: "wasgibts.vorrat", what: "Vorrat: Kühlschrank, Tiefkühler, Schrank", version: 2, migration: "essen/pantry.ts migrateStore", area: "local", backup: true },
-  { key: "wasgibts.einkaufsliste", what: "Einkaufsliste, Produkte, Läden, Stammliste", version: 4, migration: "einkauf/shoppingList.ts migrateStore", area: "local", backup: true },
+  { key: "wasgibts.einkaufsliste", what: "Einkaufsliste, Produkte, Läden, Stammliste", version: 4, migration: "einkauf/listMigration.ts migrateStore", area: "local", backup: true },
   { key: "wasgibts.einkaufsansicht", what: "Einkaufsliste: nach Abteilung oder nach Laden (pro Gerät)", version: 1, migration: "einkauf/shopMode.ts", area: "local", backup: false },
   { key: "wasgibts.eingeraeumt", what: "Vom Einkauf schon in den Vorrat eingeräumt (je Woche, nur Kennungen)", version: 1, migration: "essen/einraeumen.ts", area: "local", backup: false },
   { key: "wasgibts.verbrauch", what: "KI-Verbrauch je Tag (nur Zahlen: Anfragen, Modellgröße, Kosten) – Vorbereitung Guthaben", version: 1, migration: "lotte/usage.ts", area: "local", backup: false },

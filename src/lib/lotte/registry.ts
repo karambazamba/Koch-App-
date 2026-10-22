@@ -7,7 +7,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import type { ToolContext, ToolResult } from "./tools";
 
-export type ToolArea = "essen" | "einkauf" | "alltag" | "post";
+type ToolArea = "essen" | "einkauf" | "alltag" | "post";
 
 export type LotteTool = {
   area: ToolArea;

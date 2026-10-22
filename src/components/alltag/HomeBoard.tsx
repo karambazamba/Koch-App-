@@ -12,50 +12,23 @@
 // Essen + Einkauf (beide S) wandern zusammen.
 
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode, type TouchEvent as ReactTouchEvent } from "react";
-import { ChevronDown, ChevronUp, ChevronsUp, Minus, Plus } from "lucide-react";
-import { Sheet } from "@/components/ui/Sheet";
-import { CARD_LIST, buttonClass, chipClass } from "@/components/ui/styles";
+import { Plus } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { applyHomeChange, reorderVisible, saveHomeTiles, standardLayout, tileMeta, type HomeTile, type HomeTileId, type TileSize } from "@/lib/core/homeLayout";
 import { showDeleted } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
+import { glowTile, rowsOf, unitsOf, type Unit } from "@/lib/core/homeUnits";
 import { TilePicker } from "./TilePicker";
+import { EditFrame } from "./EditFrame";
+import { UnitMenu } from "./UnitMenu";
 import { buzz } from "./actions";
 
-type Unit = { key: string; tiles: HomeTile[] };
 type Box = { key: string; top: number; bottom: number; left: number; right: number; half: boolean };
 type Drag = { key: string; x: number; y: number; offX: number; offY: number; w: number; h: number; target: number };
 
 const HOLD_MS = 350;
 /** So lange nach dem letzten Scrollen gilt ein Antippen als „Schwung anhalten“ (kein Anheben, kein Menü) */
 const FLING_MS = 120;
-
-/** Essen + Einkauf (beide S, direkt hintereinander) = eine Einheit, sonst je Kachel eine */
-function unitsOf(tiles: HomeTile[]): Unit[] {
-  const units: Unit[] = [];
-  for (let i = 0; i < tiles.length; i++) {
-    const a = tiles[i];
-    const b = tiles[i + 1];
-    if (a.id === "essen" && b?.id === "einkauf" && a.size === "S" && b.size === "S") {
-      units.push({ key: "essen+einkauf", tiles: [a, b] });
-      i++;
-    } else units.push({ key: a.id, tiles: [a] });
-  }
-  return units;
-}
-
-/** Reihen aus Einheiten: ein Paar ist eine Reihe; zwei einzelne S nebeneinander */
-function rowsOf(units: Unit[]): Unit[][] {
-  const rows: Unit[][] = [];
-  const single = (u?: Unit) => u && u.tiles.length === 1 && u.tiles[0].size === "S";
-  for (let i = 0; i < units.length; i++) {
-    if (single(units[i]) && single(units[i + 1])) {
-      rows.push([units[i], units[i + 1]]);
-      i++;
-    } else rows.push([units[i]]);
-  }
-  return rows;
-}
 
 export function HomeBoard({
   tiles,
@@ -382,112 +355,5 @@ export function HomeBoard({
         />
       )}
     </div>
-  );
-}
-
-/** Nach dem Hinzufügen: zur neuen Kachel scrollen und sie kurz sanft aufleuchten lassen */
-function glowTile(id: HomeTileId) {
-  let tries = 0;
-  const find = () => {
-    const el = document.querySelector<HTMLElement>(`[data-unit][data-tile~="${id}"]`);
-    if (!el) return void (++tries < 20 && requestAnimationFrame(find));
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-    el.classList.remove("tile-glow");
-    void el.offsetWidth;
-    el.classList.add("tile-glow");
-    window.setTimeout(() => el.classList.remove("tile-glow"), 1800);
-  };
-  requestAnimationFrame(find);
-}
-
-/** Im Bearbeiten-Modus: "–" oben links, S · M · L unten rechts, Inhalt nicht antippbar */
-function EditFrame({ tile, editing, onRemove, onResize, children }: { tile: HomeTile; editing: boolean; onRemove: () => void; onResize: (s: TileSize) => void; children: ReactNode }) {
-  const meta = tileMeta(tile.id);
-  // data-tone: Pastell-Farben der Kachel (Fläche, Akzent, innere Karten)
-  if (!editing)
-    return (
-      <div data-tone={tile.id} className="contents">
-        {children}
-      </div>
-    );
-  return (
-    <div data-tone={tile.id} className="relative min-w-0">
-      <div inert className="pointer-events-none min-h-14 select-none pl-3 pb-2">
-        {children ?? <div className="flex h-16 items-center rounded-card border border-line bg-surface px-4 text-sm font-bold text-muted">{meta.label}</div>}
-      </div>
-      <button type="button" onClick={onRemove} aria-label={`${meta.label} entfernen`} className="absolute -left-3 -top-3 z-10 flex h-11 w-11 items-center justify-center">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full border border-line bg-surface text-muted shadow-card">
-          <Minus className="h-4 w-4" strokeWidth={3} aria-hidden />
-        </span>
-      </button>
-      {meta.sizes.length > 1 && (
-        <div className="absolute -bottom-2 right-1.5 z-10 flex overflow-hidden rounded-full border border-line bg-surface text-xs font-bold shadow" role="radiogroup" aria-label={`Größe ${meta.label}`}>
-          {meta.sizes.map((s) => (
-            <button
-              key={s}
-              type="button"
-              role="radio"
-              aria-checked={tile.size === s}
-              aria-label={`${meta.label} ${s === "S" ? "klein" : s === "M" ? "mittel" : "groß"}`}
-              onClick={() => onResize(s)}
-              className={`flex h-8 w-9 items-center justify-center ${tile.size === s ? "bg-accent text-on-accent" : "text-muted"}`}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** Kurz angetippt im Bearbeiten-Modus: verschieben ohne Ziehen, Größe, Entfernen (jede Auswahl schließt) */
-function UnitMenu({ unit, first, last, onMove, onResize, onRemove, onClose }: { unit: Unit; first: boolean; last: boolean; onMove: (to: "top" | "up" | "down") => void; onResize: (id: HomeTileId, s: TileSize) => void; onRemove: (id: HomeTileId) => void; onClose: () => void }) {
-  const pick = (fn: () => void) => () => {
-    fn();
-    onClose();
-  };
-  const title = unit.tiles.length === 2 ? "Essen und Einkauf" : tileMeta(unit.tiles[0].id).label;
-  const row = "flex min-h-12 w-full items-center gap-3 px-4 text-left text-base font-semibold disabled:opacity-40";
-  return (
-    <Sheet title={title} onClose={onClose}>
-      <ul className={CARD_LIST}>
-        <li>
-          <button type="button" disabled={first} onClick={pick(() => onMove("top"))} className={row}>
-            <ChevronsUp className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden /> Ganz nach oben
-          </button>
-        </li>
-        <li>
-          <button type="button" disabled={first} onClick={pick(() => onMove("up"))} className={row}>
-            <ChevronUp className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden /> Nach oben
-          </button>
-        </li>
-        <li>
-          <button type="button" disabled={last} onClick={pick(() => onMove("down"))} className={row}>
-            <ChevronDown className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden /> Nach unten
-          </button>
-        </li>
-      </ul>
-      {unit.tiles.map((tile) => {
-        const meta = tileMeta(tile.id);
-        return (
-          <div key={tile.id} className="flex flex-col gap-2">
-            {meta.sizes.length > 1 && (
-              <div className="flex items-center gap-2">
-                <span className="flex-1 text-base font-bold">{unit.tiles.length === 2 ? `Größe ${meta.label}` : "Größe"}</span>
-                {meta.sizes.map((s) => (
-                  <button key={s} type="button" onClick={pick(() => onResize(tile.id, s))} aria-pressed={tile.size === s} className={`${chipClass(tile.size === s)} min-w-11 justify-center`}>
-                    {s}
-                  </button>
-                ))}
-              </div>
-            )}
-            <button type="button" onClick={pick(() => onRemove(tile.id))} className={buttonClass("danger", "md")}>
-              {meta.label} entfernen
-            </button>
-          </div>
-        );
-      })}
-    </Sheet>
   );
 }
