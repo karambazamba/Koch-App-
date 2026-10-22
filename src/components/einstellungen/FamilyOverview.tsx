@@ -12,6 +12,7 @@ import { APP_VERSION, versionLabel } from "@/lib/core/app";
 import { sortedLikes } from "@/lib/essen/likes";
 import { HOUSEHOLD_TYPES, PLAN_STYLES, helperName, helperTitle, personLabel, type HouseholdProfile } from "@/lib/einstellungen/profile";
 import { useFeature } from "@/lib/core/features";
+import { FamilyConnectCard } from "@/components/konten/FamilyConnectCard";
 import { usePlace } from "@/lib/wetter/client";
 import { useHomeTiles } from "@/lib/core/homeLayout";
 import { useJetzt } from "@/lib/heute/jetztStore";
@@ -70,6 +71,7 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
       <PageHeader title="Einstellungen" />
       <main className={`${PAGE_MAIN} gap-6`}>
         <div className="flex flex-col gap-3">
+          <FamilyConnectCard />
           <HeadCard
             href="/profil/familie"
             label={householdTitle(profile)}

@@ -1,7 +1,7 @@
 // Homescreen-App erkennen (iPhone/Android) und der Hinweis zum App-Icon in der
 // Lieblingsfarbe: beim Farbwechsel auf dem iPhone, dass das Icon bleibt.
 
-import { CLOUD_SYNC } from "@/lib/core/app";
+import { cloudSync } from "@/lib/konten/cache";
 
 /** Als Homescreen-App geöffnet (nicht im Browser) */
 function isStandalone(): boolean {
@@ -21,5 +21,5 @@ function isIOS(): boolean {
  */
 export function iconChangeHint(): string | null {
   if (!isStandalone() || !isIOS()) return null;
-  return `Das Icon auf dem Homescreen bleibt, bis du die App neu hinzufügst.${CLOUD_SYNC ? "" : " Vorher unter Einstellungen → Daten & App „Daten sichern“ – nach dem neuen Hinzufügen dort wieder einspielen."}`;
+  return `Das Icon auf dem Homescreen bleibt, bis du die App neu hinzufügst.${cloudSync() ? "" : " Vorher unter Einstellungen → Daten & App „Daten sichern“ – nach dem neuen Hinzufügen dort wieder einspielen."}`;
 }

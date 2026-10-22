@@ -16,7 +16,7 @@ export async function startServer() {
   if (process.env.E2E_BASE) return () => {};
   if (await fetch(BASE).then(() => true, () => false)) throw new Error(`Port ${PORT} ist schon belegt – alten Testserver beenden (fuser -k ${PORT}/tcp) oder E2E_BASE setzen`);
   const child = spawn("npx", ["next", "start", "-p", String(PORT)], {
-    env: { ...process.env, KUECHENHELFER_MOCK: "1", WETTER_MOCK: "1", TIPS_SOURCE: "demo", PORT: String(PORT) },
+    env: { ...process.env, KUECHENHELFER_MOCK: "1", WETTER_MOCK: "1", TIPS_SOURCE: "demo", KONTEN_TEST: "1", PORT: String(PORT) },
     stdio: "ignore",
     detached: true,
   });

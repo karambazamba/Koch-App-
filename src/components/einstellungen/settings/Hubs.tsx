@@ -5,12 +5,14 @@ import { useState } from "react";
 import { expectReplace } from "@/lib/core/navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PAGE_MAIN } from "@/components/ui/styles";
-import { Ban, CalendarRange, Heart, Home, ShoppingBasket, ShoppingCart, Sprout, ThumbsDown, UtensilsCrossed, Wheat, Salad } from "lucide-react";
+import { Ban, CalendarRange, Heart, Home, ShoppingBasket, ShoppingCart, Sprout, ThumbsDown, UtensilsCrossed, Wheat, Salad, UserPlus } from "lucide-react";
 import { usePersonRemoval } from "@/components/einstellungen/PersonRemoval";
 import { sortedBases } from "@/lib/essen/bases";
 import { sortedLikes } from "@/lib/essen/likes";
 import { HEALTH_TIP_LEVELS, HOUSEHOLD_TYPES, LIMITS, MEAL_TIME_LABELS, personLabel, weekdayLunchHeadcount } from "@/lib/einstellungen/profile";
 import { householdTitle } from "@/lib/einstellungen/profileHousehold";
+import { useCachedAccount } from "@/lib/konten/cache";
+import { AccountDataSection } from "@/components/konten/AccountDataSection";
 import { usePlanStyle } from "@/lib/essen/usePlanStyle";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { AddRow, DataSection, Group, PersonRow, Row, SettingsPage } from "@/components/einstellungen/settings/SettingsParts";
@@ -79,6 +81,7 @@ export function FoodHubView() {
 export function FamilyHubView() {
   const planning = usePlanStyle()?.planning ?? true;
   const removal = usePersonRemoval();
+  const account = useCachedAccount();
   const profile = useProfile();
   return (
     <SettingsPage title={householdTitle(profile)} question="Wer isst mit?">
@@ -93,6 +96,11 @@ export function FamilyHubView() {
               ))}
               {profile.adults < LIMITS.adults.max && <AddRow href="/profil/person?neu=erwachsen" label="Erwachsene:r hinzufügen" />}
               {profile.kids < LIMITS.kids.max && <AddRow href="/profil/person?neu=kind" label="Kind hinzufügen" />}
+              {account.household?.me.role === "erwachsener" && (
+                <Row href="/konto?einladen=1" icon={UserPlus} title="Jemanden einladen">
+                  Code fürs Handy der anderen – dann seht ihr alles gemeinsam
+                </Row>
+              )}
             </Group>
             {profile.persons.length > 1 && <p className="-mt-2 px-1 text-sm text-muted">Nach links wischen zum Entfernen.</p>}
             <Group title="Haushalt">
@@ -129,6 +137,7 @@ export function DataView() {
       <PageHeader title="Daten & App" backHref="/profil" />
       <main className={`${PAGE_MAIN} gap-4`}>
         <DataSection onReset={() => setConfirmReset(true)} />
+        <AccountDataSection />
         {confirmReset && (
           <ConfirmDialog
             title="Neu beginnen?"

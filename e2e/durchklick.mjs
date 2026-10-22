@@ -1,6 +1,7 @@
 // npm run durchklick – alle Abläufe auf iPhone 15 Pro und Pixel 7 (Hallo,
 // Bearbeiten, Wischen, Eintragen, Kalender, Essen, Rezept, Einkauf, Vorrat,
-// Pinnwand, Wetter, Spendentopf, Tipps, Einstellungen, Chat im Testmodus).
+// Pinnwand, Wetter, Spendentopf, Tipps, Einstellungen, Chat im Testmodus,
+// Konten mit zwei Browsern).
 // Startet selbst einen Testserver (vorher `npm run build`) oder nutzt
 // E2E_BASE. Nur einzelne Abläufe: `npm run durchklick -- wetter pinnwand`.
 import { checker, launch, newPage, startServer } from "./lib.mjs";
@@ -8,8 +9,9 @@ import * as start from "./ablaeufe/start.mjs";
 import * as alltag from "./ablaeufe/alltag.mjs";
 import * as essen from "./ablaeufe/essen.mjs";
 import * as mehr from "./ablaeufe/mehr.mjs";
+import * as konten from "./ablaeufe/konten.mjs";
 
-const ALL = { ...start, ...alltag, ...essen, ...mehr };
+const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten };
 const pick = process.argv.slice(2);
 const flows = Object.entries(ALL).filter(([name, run]) => typeof run === "function" && (!pick.length || pick.includes(name)));
 const stop = await startServer();

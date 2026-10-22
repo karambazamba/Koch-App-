@@ -64,6 +64,8 @@ für die Begleitung UND das App-Icon.
 ## 3. Räume
 - „Familie“ ist gemeinsam, „Arbeit“ ist persönlich. Ohne Angabe gehört etwas
   zur Familie. Familie = Orange (`bg-accent`), Arbeit = Blau (`bg-work`).
+- Mit Konto teilt der Haushalt „Familie“; „Arbeit“ sieht nur der Besitzer.
+  Ohne Konto bleibt alles auf dem Gerät – die App geht immer auch ohne.
 
 ## 4. Ohne Druck
 - Keine Streaks, keine Zähler, keine roten Badges, keine Aufgaben-Stapel.
@@ -92,6 +94,8 @@ für die Begleitung UND das App-Icon.
 - Profil, Allergien (strikt), „mag nicht“, eigene Produkte, Läden und frühere
   Entscheidungen immer berücksichtigen. Nie zweimal dasselbe fragen.
 - Datenschutz: so wenig Daten wie nötig, besonders bei Kindern; alles löschbar.
+  Konten: nur E-Mail, Anzeigename, Rolle; „Meine Daten exportieren“ und
+  „Konto löschen“ in Daten & App.
 
 ## 7. Design
 - Warmes Off-White, Pastell-Kacheln auf der Startseite (feste Palette je
@@ -166,6 +170,12 @@ für die Begleitung UND das App-Icon.
   aus den Stunden 7–21 Uhr. → `docs/bereiche/wetter.md`
 - **Beispiel-Tag:** Beispiele liegen nie in den echten Speichern, nicht in
   Sicherung, Push oder KI. → `docs/bereiche/heute.md`
+- **Konten (Supabase):** Anmelden nur per E-Mail-Code (`signInWithOtp` +
+  `verifyOtp`), nie per Link. Geheimer Schlüssel nur auf dem Server, nie im
+  Client/Repo/Log. Jede Tabelle mit RLS (nur eigener Haushalt, „Arbeit“ nur
+  Besitzer). Migrationen nur in `supabase/migrations/`, laufen beim Merge;
+  nie SQL von Hand. Lokale Daten bleiben, bis die Übernahme bestätigt ist.
+  → `docs/bereiche/konten.md`
 - **Bilder der Gerichte:** eigene Zeichnungen im Code, keine fremden Fotos,
   keine KI (`docs/credits.md`); neues eingebautes Gericht → `npm run
   gerichte-bilder`. → `docs/bereiche/essen.md`
@@ -213,6 +223,7 @@ Gleiche Bereichsnamen in `src/lib/<bereich>` (Logik, rein wo möglich),
 | `spendentopf` | Spendentopf |
 | `begleitung` | Chat, KI-Route, Werkzeuge, Sprache, Avatar, Hallo-Bildschirm |
 | `einstellungen` | Profil, Einstellungen, Mehr Funktionen |
+| `konten` | Konto, Haushalt, Einladen (Supabase), Datenbank-Tests (`tests/datenbank`) |
 | `core` | Speicher, Sicherung, Zeit, Navigation, Toast/Rückgängig, Sortieren, Bausteine |
 | `ui` | Bausteine der Oberfläche (`styles.ts`, `Sheet`, `PageHeader` …) |
 
@@ -232,7 +243,10 @@ Vor jedem PR alles grün:
   Browser-Schnittstellen), Untergrenze 80 % Zeilen.
 - `npx tsc --noEmit`, `npm run lint`, `npx knip` (ungenutzter Code muss 0
   sein; `@public` im Kommentar = bewusst für Tests/Push).
-- `npm run build`, danach `.next/static` nach `sk-ant` durchsuchen.
+- `npm run build`, danach `.next/static` nach `sk-ant` und Supabase-
+  Geheimnissen (`service_role`, `SUPABASE_SECRET`) durchsuchen.
+- `npm run test:datenbank` – Migrationen und RLS gegen echtes Postgres
+  (bei Änderungen in `supabase/`).
 - `npm run durchklick` – Playwright mit echten Touch-Gesten, iPhone 15 Pro und
   Pixel 7 (Abläufe in `e2e/ablaeufe/`, eigener Testserver mit Testmodus).
 - Bei Oberflächen-Änderungen: `npm run bilder` (96 Bildschirmfotos) und
@@ -240,7 +254,7 @@ Vor jedem PR alles grün:
   ansehen, dann `npm run bilder -- --basis`. Bilder liegen in `.bilder/`.
 - `npm run messen` – JavaScript je Seite.
 - Testmodus ohne KI: `KUECHENHELFER_MOCK=1`, `WETTER_MOCK=1`,
-  `TIPS_SOURCE=demo`.
+  `TIPS_SOURCE=demo`, `KONTEN_TEST=1` (Test-Backend für Konten).
 
 ## Mehr dazu
 - `docs/bereiche/<bereich>.md` – aktueller Stand je Bereich (Code, Speicher,
