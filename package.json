@@ -12,7 +12,11 @@
     "icons": "node scripts/generate-icons.mjs",
     "gerichte-bilder": "node scripts/generate-dish-images.mjs",
     "demo-bild": "node scripts/generate-dish-images.mjs",
-    "test": "TZ=Europe/Berlin vitest run"
+    "test": "TZ=Europe/Berlin vitest run",
+    "durchklick": "node e2e/durchklick.mjs",
+    "bilder": "node e2e/bilder.mjs",
+    "bilder:vergleich": "node e2e/vergleich.mjs",
+    "messen": "node e2e/messen.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
@@ -28,6 +32,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
+    "playwright": "1.56.1",
     "sharp": "^0.35.5",
     "tailwindcss": "^4",
     "typescript": "^5",
