@@ -1,0 +1,190 @@
+"use client";
+
+// Verlauf des Chats: Begrüßung, Zugangscode, Nachrichten (Ideen-Antworten
+// offen bzw. eingeklappt), Gesundheits-Tipp, "denkt …"/Antwort Wort für
+// Wort und der offene Vorschlag mit "Übernehmen".
+
+import Link from "next/link";
+import type { Dispatch, RefObject, SetStateAction } from "react";
+import { LotteAvatar } from "@/components/LotteAvatar";
+import { NOTE } from "@/components/ui/styles";
+import { stockNearlyEmpty } from "@/lib/essen/dishIdeas";
+import type { useAssistantStatus } from "@/lib/lotte/client";
+import type { HelperVoice } from "@/lib/einstellungen/profile";
+import type { AssistantData } from "@/lib/lotte/ops";
+import { speechSupported, toggleSpeak } from "@/lib/lotte/speech";
+import { AccessCodeCard, SpeakButton } from "./ChatBits";
+import { BUBBLE, ChatTurnItem } from "./ChatTurnItem";
+import type { ChatState, ChatTurnView } from "./chatTypes";
+import { ProposalCard } from "./ProposalCard";
+import { AdjustSheet, EarlierIdeas, SpontanAnswer } from "./SpontanBoard";
+import { TipBubble } from "./TipBubble";
+import type { useMarketChat } from "./useMarketChat";
+import type { SpontanChat } from "./useSpontanChat";
+
+/** Fragt die KI nach der Basis? Dann Basis-Chips anbieten */
+function asksForBase(turn: ChatTurnView | undefined): boolean {
+  return Boolean(turn && turn.role === "assistant" && !turn.local && !turn.error && /basis/i.test(turn.text) && turn.text.includes("?"));
+}
+
+type Props = {
+  scrollRef: RefObject<HTMLDivElement | null>;
+  inputRef: RefObject<HTMLTextAreaElement | null>;
+  status: ReturnType<typeof useAssistantStatus>;
+  data: AssistantData | null | undefined;
+  name: string;
+  voice: HelperVoice;
+  /** Zugangscode "Später" */
+  codeLater: boolean;
+  onCodeLater: () => void;
+  chat: ChatState;
+  setChat: Dispatch<SetStateAction<ChatState>>;
+  busy: boolean;
+  streaming: string | null;
+  speakingId: string | null;
+  tipsOn: boolean | undefined;
+  adjusting: boolean;
+  setAdjusting: (on: boolean) => void;
+  spontan: SpontanChat;
+  market: ReturnType<typeof useMarketChat>;
+  rules: (t: string) => boolean;
+  onSubmit: (text: string) => void;
+  onAsk: (text: string) => void;
+  onApply: (selected: Set<string>) => void;
+  onClose: () => void;
+};
+
+export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, codeLater, onCodeLater, chat, setChat, busy, streaming, speakingId, tipsOn, adjusting, setAdjusting, spontan, market, rules, onSubmit, onAsk, onApply, onClose }: Props) {
+  const { ideasFor, stockFor, headingFor, speechFor, takeIdea, moreIdeas, adjusting2, setAdjusting2, applyFilters, acceptUnsure } = spontan;
+  // Offene Ideen-Antwort (die letzte, solange Spontan kochen läuft) und eingeklappte frühere
+  const spontanIndexes = chat.turns.flatMap((t, i) => (t.spontan ? [i] : []));
+  const liveSpontan = chat.spontan !== null && spontanIndexes.length ? spontanIndexes[spontanIndexes.length - 1] : -1;
+  // Nur der neueste Mail-Entwurf lässt sich ändern
+  const lastMailIndex = chat.turns.map((t) => Boolean(t.mail)).lastIndexOf(true);
+  const earlier = spontanIndexes.filter((i) => i !== liveSpontan);
+  const firstEarlier = earlier[0] ?? -1;
+  const earlierTitles = [...new Set(earlier.flatMap((i) => ideasFor(chat.turns[i]).map((idea) => idea.title)))];
+
+  return (
+        <div ref={scrollRef} className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4" aria-live="polite">
+          {status === undefined || data === undefined ? (
+            <div className="h-20 animate-pulse rounded-card bg-surface" />
+          ) : data === null ? (
+            <p className={NOTE} role="note">
+              <span>
+                Leg zuerst euer{" "}
+                <Link href="/profil" onClick={onClose} className="font-bold text-accent-strong underline">
+                  Haushaltsprofil
+                </Link>{" "}
+                an – dann weiß ich, für wen ich plane.
+              </span>
+            </p>
+          ) : (
+            <p className="max-w-[85%] self-start rounded-card rounded-bl-md border border-line bg-surface px-4 py-2.5 text-base leading-snug text-ink">
+              Hi, ich bin {name} – was steht an?
+            </p>
+          )}
+          {status?.askCode && data && !codeLater && <AccessCodeCard onLater={onCodeLater} />}
+          {chat.turns.map((turn, i) => {
+            const last = i === chat.turns.length - 1;
+            const showBases = last && !busy && !chat.spontan && asksForBase(turn);
+            // Ideen-Antworten: nur die letzte (im Spontan-Modus) ist offen, ältere eingeklappt
+            if (turn.spontan) {
+              if (i === liveSpontan && data) {
+                const ideas = ideasFor(turn);
+                const stock = stockFor(turn);
+                return (
+                  <div key={i} className="flex w-full flex-col items-start gap-2">
+                    <SpontanAnswer
+                      heading={headingFor(turn, ideas)}
+                      ideas={ideas}
+                      stock={stock}
+                      nearlyEmpty={stockNearlyEmpty(stock)}
+                      speaker={speechSupported() ? <SpeakButton speaking={speakingId === `turn-${i}`} onClick={() => toggleSpeak(speechFor(turn), `turn-${i}`, voice)} /> : null}
+                      onToday={takeIdea}
+                      onAdjust={() => setAdjusting2(turn)}
+                      onMore={() => moreIdeas(turn)}
+                      onNavigate={onClose}
+                    />
+                  </div>
+                );
+              }
+              if (i !== firstEarlier) return null;
+              return <EarlierIdeas key={i} titles={earlierTitles} />;
+            }
+            return (
+              <ChatTurnItem
+                key={i}
+                turn={turn}
+                last={last}
+                data={data}
+                showBases={showBases}
+                mailActive={last || i === lastMailIndex}
+                speaking={speakingId === `turn-${i}`}
+                onSpeak={() => toggleSpeak(turn.text, `turn-${i}`, voice)}
+                onSubmit={onSubmit}
+                onAsk={onAsk}
+                onAcceptUnsure={(u) => acceptUnsure(i, u)}
+                onMarketAdd={market.addMarketItems}
+                onMarketPlan={market.planMarketIdea}
+                onClose={onClose}
+              />
+            );
+          })}
+
+          {adjusting2 && data && (
+            <AdjustSheet filters={adjusting2.ideaFilters ?? []} bases={data.profile.bases} onApply={(f) => applyFilters(adjusting2, f)} onClose={() => setAdjusting2(null)} />
+          )}
+
+          {/* Sanfter Gesundheits-Tipp (laut Einstellung, nie als Pop-up) */}
+          {data && tipsOn && !chat.spontan && !busy && <TipBubble recipes={data.recipes} />}
+
+          {busy &&
+            (streaming ? (
+              // Antwort erscheint Wort für Wort
+              <p className={`${BUBBLE} self-start rounded-bl-md border border-line bg-surface text-ink`} aria-live="off">
+                {streaming}
+              </p>
+            ) : (
+              // Statt Lade-Text: nur der denkende Avatar mit Punkten, danach direkt die Antwort
+              <div className="self-start pl-1 pt-2 pr-8" role="status" aria-label={`${name} denkt nach`}>
+                <LotteAvatar size={44} />
+              </div>
+            ))}
+
+          {chat.proposal && data && !busy && (
+            <ProposalCard
+              data={data}
+              proposal={chat.proposal}
+              adjusting={adjusting}
+              onToggle={(id) =>
+                setChat((c) => {
+                  if (!c.proposal) return c;
+                  const selected = new Set(c.proposal.selected);
+                  if (selected.has(id)) selected.delete(id);
+                  else selected.add(id);
+                  return { ...c, proposal: { ...c.proposal, selected } };
+                })
+              }
+              onApply={() => {
+                if (!chat.proposal) return;
+                // App-Bedienung, die die KI vorgeschlagen hat: nach "Übernehmen" mit den eigenen Regeln ausführen
+                const commands = chat.proposal.ops.flatMap((op) => (op.type === "app_command" && chat.proposal!.selected.has(op.id) ? [op.text] : []));
+                onApply(chat.proposal.selected);
+                for (const text of commands) {
+                  if (!rules(text)) setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text: `„${text}“ kann ich in der App so nicht umsetzen – sag’s mir gern anders.`, local: true }] }));
+                }
+              }}
+              onAdjust={() => {
+                setAdjusting(true);
+                inputRef.current?.focus();
+              }}
+              onDiscard={() => {
+                setAdjusting(false);
+                setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text: "Okay, verworfen.", local: true }], proposal: null }));
+              }}
+            />
+          )}
+        </div>
+  );
+}
