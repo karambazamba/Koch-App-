@@ -1,7 +1,7 @@
 
-import { restoreRecipe } from "./cookbook";
-import { type HouseholdProfile, type NeverAgainEntry } from "../einstellungen/profile";
-import { saveProfile } from "../einstellungen/profileStore";
+import { restoreRecipe } from "@/lib/essen/cookbook";
+import { type HouseholdProfile, type NeverAgainEntry } from "@/lib/einstellungen/profile";
+import { saveProfile } from "@/lib/einstellungen/profileStore";
 
 
 /** Titel vergleichbar machen */

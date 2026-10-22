@@ -8,7 +8,7 @@
 
 import { useState } from "react";
 import { ArrowUp, Mic, Square } from "lucide-react";
-import { PageHeader } from "@/components/PageHeader";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD, PAGE_MAIN } from "@/components/ui/styles";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { useProfile } from "@/lib/einstellungen/useProfile";
@@ -21,13 +21,13 @@ import {
   createPin,
   markPinsRead,
 } from "@/lib/pinnwand";
-import { useSpeechInput } from "@/lib/lotte/useSpeechInput";
-import { buzz } from "@/components/alltag/actions";
-import { PinSheet, pinMetaLine } from "./PinSheets";
-import { useBoard } from "./useBoard";
-import { MemoItem, MemoSheet } from "./MemoRow";
-import { MemoMic, MemoNote, RecordingRow } from "./MemoParts";
-import { useCanRecordMemo, useMemoRecorder } from "./useMemoRecorder";
+import { useSpeechInput } from "@/lib/begleitung/useSpeechInput";
+import { buzz } from "@/components/heute/actions";
+import { PinSheet, pinMetaLine } from "@/components/pinnwand/PinSheets";
+import { useBoard } from "@/components/pinnwand/useBoard";
+import { MemoItem, MemoSheet } from "@/components/pinnwand/MemoRow";
+import { MemoMic, MemoNote, RecordingRow } from "@/components/pinnwand/MemoParts";
+import { useCanRecordMemo, useMemoRecorder } from "@/components/pinnwand/useMemoRecorder";
 
 export function PinboardView() {
   const profile = useProfile();

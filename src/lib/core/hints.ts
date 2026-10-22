@@ -1,8 +1,8 @@
 // Einmalige kleine Hinweise (z. B. Mias Sprechblase unter „+ Kachel“ beim
 // allerersten Bearbeiten): einmal gezeigt = nie wieder.
 
-import { createLocalStore } from "./localStore";
-import { useExternalStore } from "./useExternalStore";
+import { createLocalStore } from "@/lib/core/localStore";
+import { useExternalStore } from "@/lib/core/useExternalStore";
 
 export type HintId = "kachel-hinzufuegen";
 

@@ -4,10 +4,10 @@
 // Dieselben Bausteine erzeugen die eingebauten Bilder (npm run gerichte-bilder)
 // und die live gezeichneten Bilder in der App.
 
-import type { DishArt } from "./dishArt";
-import { bake, buns, cake, cookies, muffins, waffles } from "./dishBakes";
-import { bread, fish, meat, pancakes, pastaLong, pastaShort, pizza, potatoPlate, rice, salad, soup, stew, stirFry, sweetBowl, trayVeg, wraps } from "./dishBases";
-import { breadSlice, CX, CY, ellipse, f, H, pepper, pick, R, rect, rngFrom, scatter, W, type Region, type Rng } from "./dishBits";
+import type { DishArt } from "@/lib/essen/dishArt";
+import { bake, buns, cake, cookies, muffins, waffles } from "@/lib/essen/dishBakes";
+import { bread, fish, meat, pancakes, pastaLong, pastaShort, pizza, potatoPlate, rice, salad, soup, stew, stirFry, sweetBowl, trayVeg, wraps } from "@/lib/essen/dishBases";
+import { breadSlice, CX, CY, ellipse, f, H, pepper, pick, R, rect, rngFrom, scatter, W, type Region, type Rng } from "@/lib/essen/dishBits";
 
 const DEFS = `<radialGradient id="plate" cx="0.45" cy="0.4" r="0.7"><stop offset="0" stop-color="#FFFFFF"/><stop offset="0.8" stop-color="#F4EFE8"/><stop offset="1" stop-color="#E4DCD0"/></radialGradient>
 <radialGradient id="tom" cx="0.4" cy="0.35" r="0.7"><stop offset="0" stop-color="#FF6B4A"/><stop offset="0.7" stop-color="#E0331F"/><stop offset="1" stop-color="#B21E12"/></radialGradient>

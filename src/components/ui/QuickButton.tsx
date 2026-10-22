@@ -4,7 +4,7 @@
 // 26 px hellorange mit dunkelorangem Zeichen, Tippfläche 44 × 44 px. Nie schwarz.
 
 import { Plus, type LucideIcon } from "lucide-react";
-import { PAGE_PLUS, TILE_PLUS_DOT } from "./styles";
+import { PAGE_PLUS, TILE_PLUS_DOT } from "@/components/ui/styles";
 
 export function QuickButton({ icon: Icon, label, onClick, className = "" }: { icon: LucideIcon; label: string; onClick: () => void; className?: string }) {
   return (

@@ -5,10 +5,10 @@
 // setzen. Die Feier beim Wochenziel macht `SportCelebration` (beobachtet die
 // Zahl der Trainings) – egal, woher das Training kommt.
 
-import { pushUndo } from "../core/undo";
-import { updateEntry } from "../core/entries";
-import { createTraining, type Training, type TrainingData } from "./model";
-import { changeSport } from "./store";
+import { pushUndo } from "@/lib/core/undo";
+import { updateEntry } from "@/lib/core/entries";
+import { createTraining, type Training, type TrainingData } from "@/lib/sport/model";
+import { changeSport } from "@/lib/sport/store";
 
 export function addTraining(data: TrainingData, label = "das Eintragen des Trainings"): { training: Training; undo: () => void } {
   const training = createTraining(data);

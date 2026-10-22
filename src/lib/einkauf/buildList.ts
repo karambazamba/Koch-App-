@@ -3,11 +3,11 @@
 // Mengen, kleiner Haushalt = auf die Personen des Tages umgerechnet) und mit
 // den eigenen Artikeln der Woche nach Abteilung sortiert.
 
-import type { Recipe } from "../essen/cookbook";
-import type { PlanWeek } from "../essen/mealPlan";
-import { formatTotal, roundSmall, unitFamily } from "./amounts";
-import { SECTIONS, SECTION_VALUES, sectionFor } from "./sections";
-import { EMPTY_LIST, lower, type ListItem, type ShoppingList, type ShoppingSettings, type WeekList } from "./listModel";
+import type { Recipe } from "@/lib/essen/cookbook";
+import type { PlanWeek } from "@/lib/essen/mealPlan";
+import { formatTotal, roundSmall, unitFamily } from "@/lib/einkauf/amounts";
+import { SECTIONS, SECTION_VALUES, sectionFor } from "@/lib/einkauf/sections";
+import { EMPTY_LIST, lower, type ListItem, type ShoppingList, type ShoppingSettings, type WeekList } from "@/lib/einkauf/listModel";
 
 export function buildShoppingList(
   week: PlanWeek,

@@ -3,9 +3,9 @@
 // kommt als grauer Chip zum Bestätigen zurück (nie automatisch "korrigiert" –
 // "Windeln" sind keine "Mandeln").
 
-import { findFood, recognizeFood } from "../essen/leftovers/foods";
-import { sectionFor, type ShoppingSettings } from "./shoppingList";
-import { parseShoppingText, type ParsedShoppingItem } from "./shoppingParse";
+import { findFood, recognizeFood } from "@/lib/essen/leftovers/foods";
+import { sectionFor, type ShoppingSettings } from "@/lib/einkauf/shoppingList";
+import { parseShoppingText, type ParsedShoppingItem } from "@/lib/einkauf/shoppingParse";
 
 /** Drogerie, Haushalt, Baby – und Lebensmittel, die nicht in der Lebensmittel-Liste stehen */
 const MORE_PRODUCTS =

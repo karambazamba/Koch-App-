@@ -12,17 +12,17 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { PageHeader } from "@/components/PageHeader";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { Sheet } from "@/components/ui/Sheet";
 import { CARD, PAGE_MAIN, chipClass } from "@/components/ui/styles";
-import { itemsForDay, tomorrowLabel, weekdayLong, weekdayShort } from "@/lib/aufgaben/model";
-import { useEntries } from "@/lib/aufgaben/store";
+import { itemsForDay, tomorrowLabel, weekdayLong, weekdayShort } from "@/lib/kalender/model";
+import { useEntries } from "@/lib/kalender/store";
 import { addDays, toIsoDate, useMinutes, useToday } from "@/lib/core/now";
 import { round, weatherKind, type Forecast, type ForecastDay, type TipTermin } from "@/lib/wetter/forecast";
 import { bestOutdoorDay, dayParts, daySentence, dayWords, isNight, skyFor, skyLine, weatherStartTab, weekSentence, type DayPart } from "@/lib/wetter/view";
 import { useForecast } from "@/lib/wetter/client";
-import { WeatherSymbol } from "./WeatherSymbol";
-import { BestDayCard, SkyCard, WeekBand, WeekNote } from "./WeatherParts";
+import { WeatherSymbol } from "@/components/wetter/WeatherSymbol";
+import { BestDayCard, SkyCard, WeekBand, WeekNote } from "@/components/wetter/WeatherParts";
 
 type Tab = "heute" | "morgen" | "woche";
 const TABS: { id: Tab; label: string }[] = [

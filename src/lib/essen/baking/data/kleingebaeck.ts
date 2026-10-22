@@ -1,6 +1,6 @@
 // Backstube – Kleingebäck: Muffins, Bananenbrot, Waffeln, Kekse und Brownies.
 
-import type { BuiltinBakingRecipe } from "../types";
+import type { BuiltinBakingRecipe } from "@/lib/essen/baking/types";
 
 export const KLEINGEBAECK: BuiltinBakingRecipe[] = [
   {

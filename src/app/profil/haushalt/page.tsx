@@ -1,4 +1,4 @@
-import { HouseholdNameEditView } from "@/components/profile/AreaEditViews";
+import { HouseholdNameEditView } from "@/components/einstellungen/AreaEditViews";
 
 export const metadata = { title: "Haushalt" };
 

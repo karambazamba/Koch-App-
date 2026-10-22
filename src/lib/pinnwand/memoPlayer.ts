@@ -4,8 +4,8 @@
 // Warten auf die Datenbank nicht ab. Zustand (welches, wie weit) für die
 // Tonwelle über `subscribeMemoPlayer`/`memoPlayerState`.
 
-import { memoAudio } from "./memoAudio";
-import type { MemoMessage } from "./memo";
+import { memoAudio } from "@/lib/pinnwand/memoAudio";
+import type { MemoMessage } from "@/lib/pinnwand/memo";
 
 export type MemoPlayerState = { id: string | null; progress: number };
 

@@ -7,8 +7,8 @@
 // Lotte (Werkzeug startseite_anpassen) gleich rechnen. Entfernen löscht nie
 // etwas.
 
-import { createLocalStore } from "./localStore";
-import { useExternalStore } from "./useExternalStore";
+import { createLocalStore } from "@/lib/core/localStore";
+import { useExternalStore } from "@/lib/core/useExternalStore";
 
 export type HomeTileId = "pinnwand" | "termine" | "aufgaben" | "wetter" | "essen" | "einkauf" | "timer" | "sport" | "notizen" | "vorrat" | "morgen" | "post" | "spendentopf" | "tipps";
 export type TileSize = "S" | "M" | "L";

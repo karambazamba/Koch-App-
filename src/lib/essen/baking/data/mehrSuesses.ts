@@ -1,6 +1,6 @@
 // Backstube – Noch mehr Süßes: Cookies, Möhrenkuchen und Apfel-Crumble.
 
-import type { BuiltinBakingRecipe } from "../types";
+import type { BuiltinBakingRecipe } from "@/lib/essen/baking/types";
 
 export const MEHR_SUESSES: BuiltinBakingRecipe[] = [
   {

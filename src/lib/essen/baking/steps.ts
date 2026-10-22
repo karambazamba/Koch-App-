@@ -1,7 +1,7 @@
 // Hilfen für "Zusammen backen": Zeiten in Schritten erkennen (Timer),
 // Backofen-Angaben als Text, Kinder-Schritte reihum.
 
-import type { OvenSettings } from "./types";
+import type { OvenSettings } from "@/lib/essen/baking/types";
 
 /** Minuten aus einem Schritt ("30 Minuten ruhen lassen", "1 Stunde gehen lassen") – sonst null */
 export function stepMinutes(text: string): number | null {

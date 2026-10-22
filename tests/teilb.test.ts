@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { tomorrowLabel } from "@/lib/aufgaben/model";
+import { tomorrowLabel } from "@/lib/kalender/model";
 import { createEntry } from "@/lib/core/entries";
-import type { CalendarEntry } from "@/lib/aufgaben/model";
+import type { CalendarEntry } from "@/lib/kalender/model";
 import { EMPTY_SPORT, createTraining, freeStarts, lastTraining, plannedOn } from "@/lib/sport/model";
 import type { Forecast, ForecastHour } from "@/lib/wetter/forecast";
 import { bestOutdoorDay, dayParts, daySentence, weatherGroup, weatherStartTab } from "@/lib/wetter/view";
-import { PHASES } from "@/lib/tagesablauf/phases";
+import { PHASES } from "@/lib/heute/phases";
 import { HOME_TILES } from "@/lib/core/homeLayout";
 import { at } from "./helpers";
 

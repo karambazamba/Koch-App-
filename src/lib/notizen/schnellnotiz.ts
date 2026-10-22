@@ -4,12 +4,12 @@
 // "<Name>, räum auf" macht aus Zeilen Termine, Aufgaben oder Notizen und
 // nimmt die übernommenen Zeilen heraus.
 
-import { createLocalStore } from "../core/localStore";
-import { nowIso } from "../core/now";
-import { parseCalendar, type Draft } from "../aufgaben/parse";
-import { parseNoteCommand } from "./chat";
-import { createNote, type Note } from "./model";
-import { changeNotes, loadNotes, replaceNotes, useNotes } from "./store";
+import { createLocalStore } from "@/lib/core/localStore";
+import { nowIso } from "@/lib/core/now";
+import { parseCalendar, type Draft } from "@/lib/kalender/parse";
+import { parseNoteCommand } from "@/lib/notizen/chat";
+import { createNote, type Note } from "@/lib/notizen/model";
+import { changeNotes, loadNotes, replaceNotes, useNotes } from "@/lib/notizen/store";
 
 type Schnellnotiz = { text: string; geaendert: string | null };
 

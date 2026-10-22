@@ -1,9 +1,9 @@
 // Kennenlernen: Regel-Erkennung freier Antworten (ohne KI). Die KI-Variante
 // liefert dieselben Strukturen (siehe ./ai.ts) – austauschbar.
 
-import { recognizeFood } from "../../essen/leftovers/foods";
-import { germanNumber } from "../../essen/leftovers/ruleParser";
-import { WEEKDAYS, type KidAgeGroup, type PersonRole, type WeekdayLunch } from "../profile";
+import { recognizeFood } from "@/lib/essen/leftovers/foods";
+import { germanNumber } from "@/lib/essen/leftovers/ruleParser";
+import { WEEKDAYS, type KidAgeGroup, type PersonRole, type WeekdayLunch } from "@/lib/einstellungen/profile";
 
 export type PersonInfo = {
   role?: PersonRole;

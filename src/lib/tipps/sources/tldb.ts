@@ -12,8 +12,8 @@
 //   Bild-URL mit eigener Lizenz, Änderungsdatum
 // Zuordnung der Kategorien: ../categories.ts (CATEGORY_MAP).
 
-import type { Tip } from "../model";
-import type { TipArea, TipSource } from "./types";
+import type { Tip } from "@/lib/tipps/model";
+import type { TipArea, TipSource } from "@/lib/tipps/sources/types";
 
 export class TldbTipSource implements TipSource {
   readonly id = "tldb" as const;

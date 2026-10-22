@@ -2,7 +2,7 @@
 // nie aus dem Kategorie-Hinweis des Platzes. Lieber keine Kategorie als eine
 // falsche ("Milchreis" ist kein Fisch).
 
-import type { Recipe, RecipeCategory } from "./cookbook";
+import type { Recipe, RecipeCategory } from "@/lib/essen/cookbook";
 
 const FISH = /fisch|lachs|thunfisch|forelle|kabeljau|seelachs|hering|makrele|sardine|sardelle|garnele|shrimp|krabbe|muschel|tintenfisch|calamari|scholle|zander|dorade|pangasius|matjes|rotbarsch|scampi|meeresfrücht/i;
 // Kurze Wörter nur am Wortanfang ("Flammkuchen" ≠ Lamm, "al dente" ≠ Ente)

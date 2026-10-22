@@ -3,18 +3,18 @@
 // Ideen für heute (Essen-Kachel, Tausch-Fenster): Zustand des Tages
 // (weggewischt, welche gerade dran ist).
 
-import { useRecipes } from "./cookbook";
-import { ideasFor, recentDishes, type Idea, type IdeaFilter } from "./ideas";
-import { createLocalStore } from "../core/localStore";
-import { useMealPlans } from "./mealPlan";
-import { stockKey, stockNearlyEmpty } from "./dishIdeas";
-import { useStock } from "./useStock";
-import type { HouseholdProfile } from "../einstellungen/profile";
-import { useExternalStore } from "../core/useExternalStore";
-import { useProfile } from "../einstellungen/useProfile";
-import { toIsoDate, useToday, useWeekPlans } from "./weekPlan";
-import { useWishes } from "./wishes";
-import type { Recipe } from "./cookbook";
+import { useRecipes } from "@/lib/essen/cookbook";
+import { ideasFor, recentDishes, type Idea, type IdeaFilter } from "@/lib/essen/ideas";
+import { createLocalStore } from "@/lib/core/localStore";
+import { useMealPlans } from "@/lib/essen/mealPlan";
+import { stockKey, stockNearlyEmpty } from "@/lib/essen/dishIdeas";
+import { useStock } from "@/lib/essen/useStock";
+import type { HouseholdProfile } from "@/lib/einstellungen/profile";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+import { useProfile } from "@/lib/einstellungen/useProfile";
+import { toIsoDate, useToday, useWeekPlans } from "@/lib/essen/weekPlan";
+import { useWishes } from "@/lib/essen/wishes";
+import type { Recipe } from "@/lib/essen/cookbook";
 
 /** `key`: Bestand, zu dem `index` gehört – ändert sich der Bestand, beginnt es wieder vorn */
 type IdeaDay = { version: 1; date: string; dismissed: string[]; index: number; key?: string };

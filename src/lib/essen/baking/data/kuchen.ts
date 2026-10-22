@@ -1,6 +1,6 @@
 // Backstube – Rührkuchen: Apfel-, Marmor- und Zitronenkuchen.
 
-import type { BuiltinBakingRecipe } from "../types";
+import type { BuiltinBakingRecipe } from "@/lib/essen/baking/types";
 
 export const KUCHEN: BuiltinBakingRecipe[] = [
   {

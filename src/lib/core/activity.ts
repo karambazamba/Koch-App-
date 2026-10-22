@@ -2,8 +2,8 @@
 // getan? ("leiser werden": bleiben proaktive Nachrichten unbeachtet, schweigt
 // die Begleitung, bis wieder jemand selbst etwas tut.)
 
-import { createLocalStore } from "./localStore";
-import { now } from "./now";
+import { createLocalStore } from "@/lib/core/localStore";
+import { now } from "@/lib/core/now";
 
 type ActivityStore = {
   version: 1;

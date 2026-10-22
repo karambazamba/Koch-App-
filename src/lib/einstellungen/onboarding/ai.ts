@@ -4,8 +4,8 @@
 // Gespräch danach kurz nach. Ohne KI liefert ./recognize.ts dieselben Typen.
 
 import type Anthropic from "@anthropic-ai/sdk";
-import { extractDietItems, extractNames, extractPersonInfo, type DietItem, type NameHint, type PersonInfo } from "./recognize";
-import type { Recognized } from "./engine";
+import { extractDietItems, extractNames, extractPersonInfo, type DietItem, type NameHint, type PersonInfo } from "@/lib/einstellungen/onboarding/recognize";
+import type { Recognized } from "@/lib/einstellungen/onboarding/engine";
 
 export type RecognizeKind = "names" | "person" | "diet";
 

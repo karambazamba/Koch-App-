@@ -1,5 +1,5 @@
-import { NeverAgainView } from "@/components/profile/NeverAgainView";
-import { FeatureGate } from "@/components/FeatureGate";
+import { NeverAgainView } from "@/components/einstellungen/NeverAgainView";
+import { FeatureGate } from "@/components/core/FeatureGate";
 
 export const metadata = { title: "Nie wieder" };
 

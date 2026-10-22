@@ -1,4 +1,4 @@
-import { OpenHomeEditor } from "@/components/alltag/OpenHomeEditor";
+import { OpenHomeEditor } from "@/components/heute/OpenHomeEditor";
 
 export const metadata = { title: "Startseite bearbeiten" };
 

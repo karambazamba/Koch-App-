@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { swipeDecision } from "@/components/alltag/usePagerSwipe";
+import { swipeDecision } from "@/components/heute/usePagerSwipe";
 
 const W = 400;
 

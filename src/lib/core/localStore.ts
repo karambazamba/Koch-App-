@@ -4,7 +4,7 @@
 // Versionen weiter funktionieren. Später durch Supabase ersetzbar.
 // Schlüssel nur aus dem Verzeichnis `storage.ts` (STORAGE).
 
-import type { StorageKey } from "./storage";
+import type { StorageKey } from "@/lib/core/storage";
 
 type LocalStore<T> = {
   load: () => T | null;

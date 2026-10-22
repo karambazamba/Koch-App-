@@ -1,9 +1,9 @@
 // Speicher Sport (`wasgibts.sport` v1, persönlich – später im Konto, nicht
 // automatisch mit der Familie geteilt).
 
-import { createLocalStore } from "../core/localStore";
-import { useExternalStore } from "../core/useExternalStore";
-import { EMPTY_SPORT, sanitizeSport, type SportState } from "./model";
+import { createLocalStore } from "@/lib/core/localStore";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+import { EMPTY_SPORT, sanitizeSport, type SportState } from "@/lib/sport/model";
 
 type Stored = { version: 1 } & SportState;
 

@@ -1,6 +1,6 @@
-import { PageHeader } from "@/components/PageHeader";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { PAGE_MAIN } from "@/components/ui/styles";
-import { WeatherPlaceForm } from "@/components/profile/WeatherPlaceForm";
+import { WeatherPlaceForm } from "@/components/einstellungen/WeatherPlaceForm";
 
 export const metadata = { title: "Wetter-Ort" };
 

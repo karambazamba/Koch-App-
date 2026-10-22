@@ -1,4 +1,4 @@
-import type { Tip } from "../types";
+import type { Tip } from "@/lib/essen/tips/types";
 
 // Spartipps: Geld sparen beim Kochen und Einkaufen – als Angebot, nie als Pflicht.
 

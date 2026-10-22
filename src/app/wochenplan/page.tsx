@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import { CARD } from "@/components/ui/styles";
-import { PlanningGate } from "@/components/PlanningGate";
-import { WeekPlanView } from "@/components/plan/WeekPlanView";
-import { FeatureGate } from "@/components/FeatureGate";
+import { PlanningGate } from "@/components/core/PlanningGate";
+import { WeekPlanView } from "@/components/essen/plan/WeekPlanView";
+import { FeatureGate } from "@/components/core/FeatureGate";
 
 export const metadata = { title: "Wochenplan" };
 

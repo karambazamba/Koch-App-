@@ -2,11 +2,11 @@
 // Gerichten, gewählten Vorschlägen und Sätzen im Chat ("wir lieben Käse");
 // selbst ergänzbar und entfernbar. Die KI baut sie bevorzugt ein.
 
-import { BASES } from "./bases";
-import type { Ingredient, Recipe } from "./cookbook";
-import { findFood, recognizeFood } from "./leftovers/foods";
-import { type HouseholdProfile, type LikedIngredient } from "../einstellungen/profile";
-import { loadProfile, saveProfile } from "../einstellungen/profileStore";
+import { BASES } from "@/lib/essen/bases";
+import type { Ingredient, Recipe } from "@/lib/essen/cookbook";
+import { findFood, recognizeFood } from "@/lib/essen/leftovers/foods";
+import { type HouseholdProfile, type LikedIngredient } from "@/lib/einstellungen/profile";
+import { loadProfile, saveProfile } from "@/lib/einstellungen/profileStore";
 
 /** Wie stark eine Quelle zählt */
 export const LIKE_WEIGHTS = { chat: 3, up: 2, cooked: 1, chosen: 1, manual: 5 } as const;

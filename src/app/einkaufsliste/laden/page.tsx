@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { ShopMode } from "@/components/shopping/ShopMode";
+import { ShopMode } from "@/components/einkauf/ShopMode";
 
 export const metadata = { title: "Einkaufen" };
 

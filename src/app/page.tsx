@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { HomeView } from "@/components/home/HomeView";
+import { HomeView } from "@/components/heute/HomeView";
 
 export default function Home() {
   return (

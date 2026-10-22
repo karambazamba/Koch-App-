@@ -1,3 +1,3 @@
-export * from "./model";
-export * from "./store";
-export * from "./memo";
+export * from "@/lib/pinnwand/model";
+export * from "@/lib/pinnwand/store";
+export * from "@/lib/pinnwand/memo";

@@ -1,11 +1,11 @@
 // Profil speichern und ältere Versionen migrieren (`familienkueche.haushaltsprofil`).
 // Datenmodell, Standardwerte und Hilfen stehen in ./profile.ts.
 
-import { migrateBases } from "../essen/bases";
-import { createLocalStore } from "../core/localStore";
-import { now } from "../core/now";
+import { migrateBases } from "@/lib/essen/bases";
+import { createLocalStore } from "@/lib/core/localStore";
+import { now } from "@/lib/core/now";
 import type { StorageKey } from "@/lib/core/storage";
-import { AVATAR_COLORS, DEFAULT_HELPER, HELPER_NAME_MAX, HOUSEHOLD_TYPES, deriveHouseholdType, PLAN_STYLES, APP_THEMES, HELPER_MODES, WEEKDAYS, LIMITS, newId, createEmptyProfile, wishDayOrder, syncPersons, type PersonRole, type KidAgeGroup, type WeekdayLunch, type Person, type MealTime, type WarmMealSchedule, type WeekRules, type WishDaySettings, type HelperArt, type AvatarColor, type HelperSettings, type NeverAgainEntry, type LikedIngredient, type HouseholdType, type MealClock, type PauseSettings, type WeatherSettings, type HouseholdProfile, type PlanStyle, type AppTheme, type HelperMode, DEFAULT_MEAL_CLOCK, voiceForArt } from "./profile";
+import { AVATAR_COLORS, DEFAULT_HELPER, HELPER_NAME_MAX, HOUSEHOLD_TYPES, deriveHouseholdType, PLAN_STYLES, APP_THEMES, HELPER_MODES, WEEKDAYS, LIMITS, newId, createEmptyProfile, wishDayOrder, syncPersons, type PersonRole, type KidAgeGroup, type WeekdayLunch, type Person, type MealTime, type WarmMealSchedule, type WeekRules, type WishDaySettings, type HelperArt, type AvatarColor, type HelperSettings, type NeverAgainEntry, type LikedIngredient, type HouseholdType, type MealClock, type PauseSettings, type WeatherSettings, type HouseholdProfile, type PlanStyle, type AppTheme, type HelperMode, DEFAULT_MEAL_CLOCK, voiceForArt } from "@/lib/einstellungen/profile";
 
 /** Stehen schon Gerichte im Wochenplan? (nur für die Migration auf v16, liest den Speicher direkt) */
 function hasPlannedMeals(): boolean {

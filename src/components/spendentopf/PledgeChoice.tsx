@@ -8,8 +8,8 @@ import { useState } from "react";
 import { todayIso } from "@/lib/core/now";
 import { POT_TEXTS, euro } from "@/lib/spendentopf/model";
 import { changePot, usePotState } from "@/lib/spendentopf/store";
-import { buzz } from "@/components/alltag/actions";
-import { PotGraphic } from "./PotGraphic";
+import { buzz } from "@/components/heute/actions";
+import { PotGraphic } from "@/components/spendentopf/PotGraphic";
 
 const PLEDGES = [2, 4, 7];
 

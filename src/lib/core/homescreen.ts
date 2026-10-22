@@ -1,7 +1,7 @@
 // Homescreen-App erkennen (iPhone/Android) und der Hinweis zum App-Icon in der
 // Lieblingsfarbe: beim Farbwechsel auf dem iPhone, dass das Icon bleibt.
 
-import { CLOUD_SYNC } from "./app";
+import { CLOUD_SYNC } from "@/lib/core/app";
 
 /** Als Homescreen-App geöffnet (nicht im Browser) */
 function isStandalone(): boolean {

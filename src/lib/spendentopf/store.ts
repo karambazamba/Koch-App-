@@ -4,12 +4,12 @@
 // (pot_votes), Beitrag nur „zugesagt“ (pot_contributions – KEINE Zahlung),
 // Beitrags-Frage und wann die Abstimm-Karte weggetippt wurde.
 
-import { createLocalStore } from "../core/localStore";
-import { useExternalStore } from "../core/useExternalStore";
-import { usePlace } from "../wetter/client";
-import { useProfile } from "../einstellungen/useProfile";
-import { regionById, regionForPlace, type AskState } from "./model";
-import type { Region } from "./regions";
+import { createLocalStore } from "@/lib/core/localStore";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+import { usePlace } from "@/lib/wetter/client";
+import { useProfile } from "@/lib/einstellungen/useProfile";
+import { regionById, regionForPlace, type AskState } from "@/lib/spendentopf/model";
+import type { Region } from "@/lib/spendentopf/regions";
 
 type Pledge = { betrag: number; monat: string; status: "zugesagt" };
 

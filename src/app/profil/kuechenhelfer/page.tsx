@@ -1,4 +1,4 @@
-import { MiaView } from "@/components/profile/settings/MiaView";
+import { MiaView } from "@/components/einstellungen/settings/MiaView";
 
 export const metadata = { title: "Begleitung" };
 

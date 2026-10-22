@@ -1,4 +1,4 @@
-import { TasksView } from "@/components/alltag/TasksView";
+import { TasksView } from "@/components/kalender/TasksView";
 
 export const metadata = { title: "Aufgaben" };
 

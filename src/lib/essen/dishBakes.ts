@@ -2,8 +2,8 @@
 // Kekse, Waffeln, Schnecken und der Inhalt einer Auflaufform (Nudelauflauf,
 // Lasagne, gefüllte Paprika, Crumble).
 
-import type { DishArt } from "./dishArt";
-import { between, blob, center, drop, f, pick, scatter, size, spot, rect, ellipse, type Region, type Rng } from "./dishBits";
+import type { DishArt } from "@/lib/essen/dishArt";
+import { between, blob, center, drop, f, pick, scatter, size, spot, rect, ellipse, type Region, type Rng } from "@/lib/essen/dishBits";
 
 const CAKE: Record<string, { top: string; edge: string }> = {
   apfel: { top: "#E5B866", edge: "#B9783A" },

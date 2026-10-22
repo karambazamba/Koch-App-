@@ -5,7 +5,7 @@
 // Name. Nach 3 Tagen verschwinden Nachrichten leise – außer dauerhaft
 // angeheftete. Rein, damit Oberfläche, Lotte und Tests gleich rechnen.
 
-import { createEntry, type Entry } from "../core/entries";
+import { createEntry, type Entry } from "@/lib/core/entries";
 
 export const PIN_MAX = 140;
 const PIN_DAYS = 3;

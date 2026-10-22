@@ -4,8 +4,8 @@
 // Kennenlernen fragte (wobei helfen, Familie, Essensstil, Sport), stellt man
 // später in den Einstellungen ein oder sagt es der Begleitung.
 
-import { DEFAULT_HOME, type HomeTile } from "../core/homeLayout";
-import { DEFAULT_HELPER, createEmptyProfile, createPerson, deriveHouseholdType, type HelperSettings, type HouseholdProfile, type PlanStyle } from "./profile";
+import { DEFAULT_HOME, type HomeTile } from "@/lib/core/homeLayout";
+import { DEFAULT_HELPER, createEmptyProfile, createPerson, deriveHouseholdType, type HelperSettings, type HouseholdProfile, type PlanStyle } from "@/lib/einstellungen/profile";
 
 export type HelpId = "termine" | "arbeit" | "essen" | "einkauf" | "familie" | "sport";
 type Member = { name: string; kid: boolean };

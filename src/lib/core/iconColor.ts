@@ -4,7 +4,7 @@
 // sofort wieder her. Genutzt von IconSync (Profil) und dem Kennenlernen (noch
 // ohne Profil).
 
-import { FARBE_COOKIE, iconFor } from "./app";
+import { FARBE_COOKIE, iconFor } from "@/lib/core/app";
 
 let current: string | null = null;
 let observer: MutationObserver | null = null;

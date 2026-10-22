@@ -1,7 +1,7 @@
 // Tipps zu einzelnen Gerichten (Kategorie "gericht").
 // `match` prüft den Gerichtnamen, damit der passende Tipp beim passenden Essen auftaucht.
 
-import type { Tip } from "../types";
+import type { Tip } from "@/lib/essen/tips/types";
 
 export const GERICHT_TIPS: Tip[] = [
   {

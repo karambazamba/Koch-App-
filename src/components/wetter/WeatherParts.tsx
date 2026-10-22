@@ -7,7 +7,7 @@
 
 import { round, type ForecastDay } from "@/lib/wetter/forecast";
 import { dayExtras, dayWords, columnTone, type DayPart, type Sky } from "@/lib/wetter/view";
-import { WeatherSymbol } from "./WeatherSymbol";
+import { WeatherSymbol } from "@/components/wetter/WeatherSymbol";
 
 /** Große Karte oben: Himmel je Lage */
 export function SkyCard({ sky, label, temp, state, line, sub, code, night, parts }: { sky: Sky; label: string; temp: number; state: string; line: string; sub?: string; code: number; night: boolean; parts: DayPart[] }) {

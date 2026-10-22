@@ -3,8 +3,8 @@
 // Kindern machen?“, „Gibt’s heute was in Malente?“. Nie „Was gibt’s heute?“
 // (das ist Essen).
 
-import type { TipFilter } from "./categories";
-import { rangeFor, weekday } from "./model";
+import type { TipFilter } from "@/lib/tipps/categories";
+import { rangeFor, weekday } from "@/lib/tipps/model";
 
 export type TipQuestion = { von: string; bis: string; filters: TipFilter[]; ort: string | null; label: string };
 

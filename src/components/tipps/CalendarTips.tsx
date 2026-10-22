@@ -9,11 +9,11 @@ import Link from "next/link";
 import { useState } from "react";
 import { Check, MapPin } from "lucide-react";
 import { CARD } from "@/components/ui/styles";
-import { useEntries } from "@/lib/aufgaben/store";
+import { useEntries } from "@/lib/kalender/store";
 import { tipDate, type TipView } from "@/lib/tipps/model";
 import { changeTipSettings, takeTip, takenIds, useTipSettings, useTipsOn, useTipsWindow } from "@/lib/tipps/client";
-import { TipRow } from "./TipBits";
-import { TipSheet } from "./TipSheet";
+import { TipRow } from "@/components/tipps/TipBits";
+import { TipSheet } from "@/components/tipps/TipSheet";
 
 /** Tipps je Tag für den Kalender (leer, wenn aus) */
 export function useCalendarTips(today: string): { available: boolean; shown: boolean; byDay: Map<string, TipView[]> } {

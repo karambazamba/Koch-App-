@@ -1,5 +1,5 @@
-import { PantryView } from "@/components/pantry/PantryView";
-import { FeatureGate } from "@/components/FeatureGate";
+import { PantryView } from "@/components/vorrat/PantryView";
+import { FeatureGate } from "@/components/core/FeatureGate";
 
 export const metadata = { title: "Vorrat" };
 

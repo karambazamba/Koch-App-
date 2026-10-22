@@ -3,7 +3,7 @@
 // (ID "d:<id>", siehe `findRecipe`), liegen aber nie im Kochbuch, Wochenplan
 // oder in der Sicherung – sie verschwinden mit dem Beispiel-Tag.
 
-import { createIngredient, createRecipe, type Recipe } from "./cookbook";
+import { createIngredient, createRecipe, type Recipe } from "@/lib/essen/cookbook";
 
 const DEMO_PREFIX = "d:";
 

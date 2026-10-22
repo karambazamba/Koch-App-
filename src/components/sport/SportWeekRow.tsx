@@ -5,7 +5,7 @@
 // Fenster (eintragen, ändern, planen).
 
 import { Check } from "lucide-react";
-import { clockLabel } from "@/lib/aufgaben/answers";
+import { clockLabel } from "@/lib/kalender/answers";
 import type { DayDot } from "@/lib/sport";
 
 export function SportWeekRow({ dots, onDay, big = false }: { dots: DayDot[]; onDay: (date: string) => void; big?: boolean }) {

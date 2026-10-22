@@ -5,8 +5,8 @@
 
 import { useState } from "react";
 import { MoreHorizontal, type LucideIcon } from "lucide-react";
-import { Sheet } from "./Sheet";
-import { CARD_LIST } from "./styles";
+import { Sheet } from "@/components/ui/Sheet";
+import { CARD_LIST } from "@/components/ui/styles";
 
 export type MoreItem = { label: string; icon: LucideIcon; onClick: () => void; danger?: boolean; disabled?: boolean };
 

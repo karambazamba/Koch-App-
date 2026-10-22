@@ -3,14 +3,14 @@
 // des früheren Kennenlernens (bis v0.26) wird nicht mehr gebraucht und
 // verworfen – "help" bleibt erhalten. "Neu anfangen" löscht es mit.
 
-import { loadSport, saveSport } from "../sport/store";
-import { createLocalStore } from "../core/localStore";
-import { useExternalStore } from "../core/useExternalStore";
-import { DEFAULT_HOME, saveHomeTiles } from "../core/homeLayout";
-import { setFeature } from "../core/features";
-import { clearDemoStore, startDemo } from "../core/demo";
-import { saveProfile } from "./profileStore";
-import { homeTilesFor, profileFrom, startState, type HelpId, type WelcomeState } from "./welcome";
+import { loadSport, saveSport } from "@/lib/sport/store";
+import { createLocalStore } from "@/lib/core/localStore";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+import { DEFAULT_HOME, saveHomeTiles } from "@/lib/core/homeLayout";
+import { setFeature } from "@/lib/core/features";
+import { clearDemoStore, startDemo } from "@/lib/core/demo";
+import { saveProfile } from "@/lib/einstellungen/profileStore";
+import { homeTilesFor, profileFrom, startState, type HelpId, type WelcomeState } from "@/lib/einstellungen/welcome";
 
 type WelcomeStore = { version: 1; state: null; help: HelpId[] | null };
 

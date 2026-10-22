@@ -1,4 +1,4 @@
-import { PauseEditView } from "@/components/profile/AreaEditViews";
+import { PauseEditView } from "@/components/einstellungen/AreaEditViews";
 
 export const metadata = { title: "Pause" };
 

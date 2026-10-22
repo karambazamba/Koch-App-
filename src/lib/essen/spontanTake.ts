@@ -3,12 +3,12 @@
 // nächste Woche) – nichts geht verloren, und "Rückgängig" stellt alles
 // wieder her. Rein, damit es testbar ist.
 
-import { guessDishCategory } from "./dishCategory";
-import { composeWeek, mealPlansWithWeek, type StoredEntry } from "./mealPlan";
-import type { HouseholdProfile } from "../einstellungen/profile";
-import type { Recipe } from "./cookbook";
-import type { SpontanIdea } from "./spontan";
-import { DEFAULT_SHOPPING_DAY, addDays, toIsoDate, weekStartFor, type WeekPlan } from "./weekPlan";
+import { guessDishCategory } from "@/lib/essen/dishCategory";
+import { composeWeek, mealPlansWithWeek, type StoredEntry } from "@/lib/essen/mealPlan";
+import type { HouseholdProfile } from "@/lib/einstellungen/profile";
+import type { Recipe } from "@/lib/essen/cookbook";
+import type { SpontanIdea } from "@/lib/essen/spontan";
+import { DEFAULT_SHOPPING_DAY, addDays, toIsoDate, weekStartFor, type WeekPlan } from "@/lib/essen/weekPlan";
 
 type Data = {
   profile: HouseholdProfile;

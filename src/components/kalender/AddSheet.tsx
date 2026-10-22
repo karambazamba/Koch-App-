@@ -9,10 +9,10 @@ import { useState, type ComponentType } from "react";
 import { CalendarClock, CircleCheck, Mic, ShoppingCart, StickyNote } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { CARD } from "@/components/ui/styles";
-import { TerminQuickAdd } from "@/components/alltag/TerminQuickAdd";
-import { TaskQuickAdd } from "@/components/alltag/TaskQuickAdd";
-import { ShoppingQuickAdd } from "@/components/shopping/QuickAdd";
-import { openHelper } from "@/lib/lotte/open";
+import { TerminQuickAdd } from "@/components/kalender/TerminQuickAdd";
+import { TaskQuickAdd } from "@/components/kalender/TaskQuickAdd";
+import { ShoppingQuickAdd } from "@/components/einkauf/QuickAdd";
+import { openHelper } from "@/lib/begleitung/open";
 import { wakeAvatar } from "@/lib/core/avatarState";
 
 type Kind = "termin" | "aufgabe" | "einkauf";

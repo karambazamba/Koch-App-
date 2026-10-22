@@ -5,12 +5,12 @@
 // Vercel Cron) füllt den Speicher früh morgens für die nächsten 21 Tage –
 // mit Supabase landen die Daten später in der Tabelle `tips`.
 
-import { berlinTime } from "../core/now";
-import { geocode, weatherMock } from "../wetter/server";
-import { nearTips, type Tip, type TipView } from "./model";
-import { DemoTipSource } from "./sources/demo";
-import { TldbTipSource } from "./sources/tldb";
-import { SCHLESWIG_HOLSTEIN, type TipSource } from "./sources/types";
+import { berlinTime } from "@/lib/core/now";
+import { geocode, weatherMock } from "@/lib/wetter/server";
+import { nearTips, type Tip, type TipView } from "@/lib/tipps/model";
+import { DemoTipSource } from "@/lib/tipps/sources/demo";
+import { TldbTipSource } from "@/lib/tipps/sources/tldb";
+import { SCHLESWIG_HOLSTEIN, type TipSource } from "@/lib/tipps/sources/types";
 
 export type TipsMode = "off" | "demo" | "tldb";
 

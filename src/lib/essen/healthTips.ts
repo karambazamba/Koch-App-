@@ -5,12 +5,12 @@
 // verarbeitetes Fleisch) – keine Trends, keine Aussagen über Körper,
 // Gewicht oder Kalorien. Nie für Cheat Day oder Wunschessen.
 
-import { useExternalStore } from "../core/useExternalStore";
-import { dietConflicts } from "../lotte/diet";
-import { saveRecipe, type Ingredient, type Recipe } from "./cookbook";
-import { createLocalStore } from "../core/localStore";
-import type { PlanWeek } from "./mealPlan";
-import type { HealthTipLevel, Person } from "../einstellungen/profile";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+import { dietConflicts } from "@/lib/begleitung/diet";
+import { saveRecipe, type Ingredient, type Recipe } from "@/lib/essen/cookbook";
+import { createLocalStore } from "@/lib/core/localStore";
+import type { PlanWeek } from "@/lib/essen/mealPlan";
+import type { HealthTipLevel, Person } from "@/lib/einstellungen/profile";
 
 /** Höchstens so viele Tipps pro Woche */
 const TIP_LIMIT: Record<HealthTipLevel, number> = { aus: 0, ab_und_zu: 1, oefter: 3 };

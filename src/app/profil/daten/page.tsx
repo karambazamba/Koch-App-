@@ -1,4 +1,4 @@
-import { DataView } from "@/components/profile/settings/Hubs";
+import { DataView } from "@/components/einstellungen/settings/Hubs";
 
 export const metadata = { title: "Daten & App" };
 

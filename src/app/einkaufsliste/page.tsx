@@ -1,4 +1,4 @@
-import { ShoppingListView } from "@/components/shopping/ShoppingListView";
+import { ShoppingListView } from "@/components/einkauf/ShoppingListView";
 
 export const metadata = { title: "Einkaufsliste" };
 

@@ -1,6 +1,6 @@
-import { PlanningGate } from "@/components/PlanningGate";
-import { StandardWeekEditView } from "@/components/profile/AreaEditViews";
-import { FeatureGate } from "@/components/FeatureGate";
+import { PlanningGate } from "@/components/core/PlanningGate";
+import { StandardWeekEditView } from "@/components/einstellungen/AreaEditViews";
+import { FeatureGate } from "@/components/core/FeatureGate";
 
 export const metadata = { title: "Standardwoche" };
 

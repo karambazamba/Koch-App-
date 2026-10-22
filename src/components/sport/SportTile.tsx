@@ -10,9 +10,9 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { QuickButton } from "@/components/ui/QuickButton";
 import { TILE, TILE_LABEL } from "@/components/ui/styles";
-import { clockLabel } from "@/lib/aufgaben/answers";
-import type { CalendarEntry } from "@/lib/aufgaben/model";
-import { tomorrowLabel, weekdayIndex, weekdayShort } from "@/lib/aufgaben/model";
+import { clockLabel } from "@/lib/kalender/answers";
+import type { CalendarEntry } from "@/lib/kalender/model";
+import { tomorrowLabel, weekdayIndex, weekdayShort } from "@/lib/kalender/model";
 import type { TileSize } from "@/lib/core/homeLayout";
 import { addDays } from "@/lib/core/now";
 import { addTraining } from "@/lib/sport/actions";
@@ -20,10 +20,10 @@ import { guessSport, nextTraining, packFor, statusLine, trainingsBetween, useSpo
 import { useForecast } from "@/lib/wetter/client";
 import { round } from "@/lib/wetter/forecast";
 import { WeatherSymbol } from "@/components/wetter/WeatherSymbol";
-import { buzz } from "@/components/alltag/actions";
-import { SportAddSheet } from "./SportAddSheet";
-import { SportDaySheet } from "./SportDaySheet";
-import { SportWeekRow } from "./SportWeekRow";
+import { buzz } from "@/components/heute/actions";
+import { SportAddSheet } from "@/components/sport/SportAddSheet";
+import { SportDaySheet } from "@/components/sport/SportDaySheet";
+import { SportWeekRow } from "@/components/sport/SportWeekRow";
 
 const BOX = `${TILE} flex flex-col gap-2 p-3.5`;
 

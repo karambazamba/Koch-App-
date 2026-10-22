@@ -3,10 +3,10 @@
 // backbar wie Kochbuch-Rezepte (ID "b:<id>"), landen aber erst mit
 // "In unsere Rezepte" im Kochbuch der Familie. Später per KI erweiterbar.
 
-import { createIngredient, createRecipe, saveRecipe, useRecipes, type Recipe } from "../cookbook";
-import { BAKING_RECIPES } from "./data";
-import type { BuiltinBakingRecipe } from "./types";
-import { demoRecipe } from "../demoDish";
+import { createIngredient, createRecipe, saveRecipe, useRecipes, type Recipe } from "@/lib/essen/cookbook";
+import { BAKING_RECIPES } from "@/lib/essen/baking/data";
+import type { BuiltinBakingRecipe } from "@/lib/essen/baking/types";
+import { demoRecipe } from "@/lib/essen/demoDish";
 
 const BUILTIN_PREFIX = "b:";
 

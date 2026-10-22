@@ -5,7 +5,7 @@
 // Rückgängig", 4 Sekunden: `showDone`). Hinzufügen, Übernehmen, Sortieren
 // melden sich still (Animation, Vibration). Überlebt einen Seitenwechsel.
 
-import { useExternalStore } from "./useExternalStore";
+import { useExternalStore } from "@/lib/core/useExternalStore";
 
 type Toast = { id: number; text: string; undo?: () => void; undoneText?: string; seconds?: number; small?: boolean };
 

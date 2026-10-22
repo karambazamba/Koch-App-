@@ -7,10 +7,10 @@
 // Kachel verliert ihre Beispiele beim ersten eigenen Eintrag, alle nach 3
 // Tagen oder mit "Jetzt leeren".
 
-import { createLocalStore } from "./localStore";
-import { useExternalStore } from "./useExternalStore";
-import { addDays, todayIso } from "./now";
-import { weekdayIndex, type CalendarEntry } from "../aufgaben/model";
+import { createLocalStore } from "@/lib/core/localStore";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+import { addDays, todayIso } from "@/lib/core/now";
+import { weekdayIndex, type CalendarEntry } from "@/lib/kalender/model";
 
 export type DemoTile = "termine" | "aufgaben" | "pinnwand" | "einkauf" | "essen";
 const TILES: DemoTile[] = ["termine", "aufgaben", "pinnwand", "einkauf", "essen"];

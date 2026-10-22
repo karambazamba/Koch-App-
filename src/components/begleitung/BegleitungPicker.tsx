@@ -7,11 +7,11 @@
 
 import { useState } from "react";
 import { Check, PenLine, Play } from "lucide-react";
-import { LotteAvatar } from "@/components/LotteAvatar";
+import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { INPUT } from "@/components/ui/styles";
 import { showToast } from "@/lib/core/toast";
 import { AVATAR_COLORS, HELPER_NAME_MAX, STANDARD_HELPERS, avatarHex, helperWith, type AvatarColor, type HelperArt, type HelperSettings } from "@/lib/einstellungen/profile";
-import { previewHelperVoice, VOICE_HINT } from "@/lib/lotte/speech";
+import { previewHelperVoice, VOICE_HINT } from "@/lib/begleitung/speech";
 
 const isStandard = (h: HelperSettings) => STANDARD_HELPERS.some((s) => s.name === h.name && s.art === h.art);
 
@@ -43,7 +43,7 @@ export function BegleitungPicker({ value, onChange }: { value: HelperSettings; o
                 }}
                 className="flex w-full flex-col items-center gap-1.5"
               >
-                <LotteAvatar size={72} color={avatarHex(h.farbe)} zustand="ruhig" />
+                <BegleitungAvatar size={72} color={avatarHex(h.farbe)} zustand="ruhig" />
                 <span className="text-[22px] font-extrabold leading-tight">{h.name}</span>
                 <span className="text-sm text-muted">{artTitle(h.art)}</span>
               </button>
@@ -76,7 +76,7 @@ export function BegleitungPicker({ value, onChange }: { value: HelperSettings; o
       ) : (
         <section className="flex flex-col gap-3 rounded-card border-2 border-accent bg-surface p-4 shadow-card" aria-label="Eigener Name">
           <div className="flex items-center gap-3">
-            <LotteAvatar size={44} color={avatarHex(value.farbe)} zustand="ruhig" />
+            <BegleitungAvatar size={44} color={avatarHex(value.farbe)} zustand="ruhig" />
             <input
               type="text"
               value={draft}

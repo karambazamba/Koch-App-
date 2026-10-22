@@ -8,7 +8,7 @@
 import { useRef, useState } from "react";
 import { Mic, Send, X } from "lucide-react";
 import { formatDauer } from "@/lib/pinnwand";
-import type { MemoRecorder } from "./useMemoRecorder";
+import type { MemoRecorder } from "@/components/pinnwand/useMemoRecorder";
 
 /** Ab dieser Strecke zur Seite gilt Loslassen als Verwerfen */
 const CANCEL_PX = 70;

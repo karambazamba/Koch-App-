@@ -10,15 +10,15 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Bookmark } from "lucide-react";
-import { PageHeader } from "@/components/PageHeader";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { Segmented } from "@/components/ui/Segmented";
 import { CARD, PAGE_MAIN, SECTION_TITLE, buttonClass, chipClass } from "@/components/ui/styles";
 import { toIsoDate, todayIso, useToday } from "@/lib/core/now";
 import { TIP_CHIPS, type TipFilter } from "@/lib/tipps/categories";
 import { groupByDay, inRange, matchesFilters, rangeFor, rememberedTips, type TipRange, type TipView } from "@/lib/tipps/model";
 import { changeTipSettings, forgetTips, useTipPlace, useTipSettings, useTipsMode, useTipsWindow } from "@/lib/tipps/client";
-import { TipRow, dayTitle } from "./TipBits";
-import { TipSheet } from "./TipSheet";
+import { TipRow, dayTitle } from "@/components/tipps/TipBits";
+import { TipSheet } from "@/components/tipps/TipSheet";
 
 const RANGES: { value: TipRange; label: string }[] = [
   { value: "heute", label: "Heute" },

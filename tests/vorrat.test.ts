@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { toPutAway } from "@/lib/essen/einraeumen";
-import type { PantryItem } from "@/lib/essen/pantry";
+import { toPutAway } from "@/lib/vorrat/einraeumen";
+import type { PantryItem } from "@/lib/vorrat/pantry";
 
 const p = (name: string): PantryItem => ({ id: name, name, amount: null, unit: "", addedAt: "2026-10-20", place: "kuehlschrank" });
 const i = (key: string, checked: boolean, hidden = false) => ({ key, name: key, checked, hidden });

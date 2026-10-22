@@ -2,10 +2,10 @@
 // (/gerichte/<slug>.webp, npm run gerichte-bilder), sonst live gezeichnet aus
 // dishArt + renderDishSvg als data-URL – im Speicher gemerkt, ohne Server.
 
-import type { RecipeCategory } from "./cookbook";
-import { dishArt, dishSlug } from "./dishArt";
-import { DISH_IMAGES } from "./dishImageList";
-import { renderDishSvg } from "./dishSvg";
+import type { RecipeCategory } from "@/lib/essen/cookbook";
+import { dishArt, dishSlug } from "@/lib/essen/dishArt";
+import { DISH_IMAGES } from "@/lib/essen/dishImageList";
+import { renderDishSvg } from "@/lib/essen/dishSvg";
 
 const live = new Map<string, string>();
 const LIVE_MAX = 150;

@@ -3,8 +3,8 @@
 // Wochenend-Idee (falls an), sonst ein Tipp zum heutigen Gericht, sonst ein
 // allgemeiner – reihum nach Datum.
 
-import { ALL_TIPS } from "./index";
-import type { Tip } from "./types";
+import { ALL_TIPS } from "@/lib/essen/tips";
+import type { Tip } from "@/lib/essen/tips/types";
 
 const dayNumber = (iso: string) => Math.floor(Date.parse(`${iso}T12:00:00Z`) / 86_400_000);
 

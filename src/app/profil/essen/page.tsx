@@ -1,5 +1,5 @@
-import { FoodHubView } from "@/components/profile/settings/Hubs";
-import { FeatureGate } from "@/components/FeatureGate";
+import { FoodHubView } from "@/components/einstellungen/settings/Hubs";
+import { FeatureGate } from "@/components/core/FeatureGate";
 
 export const metadata = { title: "Essen & Vorlieben" };
 

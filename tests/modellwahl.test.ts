@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { needsLargeModel, parseRequest, runAssistant, type CreateMessage } from "@/lib/lotte/engine";
-import { addUsage } from "@/lib/lotte/usage";
+import { needsLargeModel, parseRequest, runAssistant, type CreateMessage } from "@/lib/begleitung/engine";
+import { addUsage } from "@/lib/begleitung/usage";
 import { profileFrom, startState } from "@/lib/einstellungen/welcome";
 
 const req = (text: string, pending: unknown[] = []) =>

@@ -3,7 +3,7 @@
 // EIN Satz zum Tag (mit Bezug auf Termine), 7 Tage in Worten und der beste Tag
 // für draußen. Keine Balken, keine Stunden-Tabellen.
 
-import { dayLook, isRainy, round, weatherKind, type Forecast, type ForecastDay, type TipTermin } from "./forecast";
+import { dayLook, isRainy, round, weatherKind, type Forecast, type ForecastDay, type TipTermin } from "@/lib/wetter/forecast";
 
 /** Farbgruppe der Kachel (Verlauf): sonnig · bewoelkt · regen · schnee · gewitter */
 export type WeatherGroup = "sonnig" | "bewoelkt" | "regen" | "schnee" | "gewitter";

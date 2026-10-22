@@ -1,2 +1,2 @@
-export * from "./model";
-export * from "./store";
+export * from "@/lib/sport/model";
+export * from "@/lib/sport/store";

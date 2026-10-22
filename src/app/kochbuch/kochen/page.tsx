@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { CARD } from "@/components/ui/styles";
-import { CookMode } from "@/components/cookbook/CookMode";
+import { CookMode } from "@/components/essen/rezepte/CookMode";
 
 export const metadata = { title: "Schritt für Schritt" };
 

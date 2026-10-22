@@ -6,11 +6,11 @@
 import Link from "next/link";
 import { UtensilsCrossed } from "lucide-react";
 import { CARD } from "@/components/ui/styles";
-import { DayItemsCard } from "@/components/alltag/Items";
-import { itemsForDay, type CalendarEntry } from "@/lib/aufgaben/model";
+import { DayItemsCard } from "@/components/kalender/Items";
+import { itemsForDay, type CalendarEntry } from "@/lib/kalender/model";
 import type { PlanDay } from "@/lib/essen/mealPlan";
-import { openHelper } from "@/lib/lotte/open";
-import { dishOf } from "@/components/alltag/useMeals";
+import { openHelper } from "@/lib/begleitung/open";
+import { dishOf } from "@/components/essen/useMeals";
 import { TipsDayList, useCalendarTips } from "@/components/tipps/CalendarTips";
 
 export type RoomFilter = "alles" | "familie" | "arbeit";

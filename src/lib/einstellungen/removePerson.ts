@@ -3,11 +3,11 @@
 // Allergien und "mag nicht" hängen an der Person und gehen mit ihr.
 // Gibt eine Funktion zum Rückgängigmachen zurück.
 
-import { guessDishCategory } from "../essen/dishCategory";
-import { loadMealPlans, replaceMealPlans, type StoredEntry } from "../essen/mealPlan";
-import { type HouseholdProfile } from "./profile";
-import { loadProfile, saveProfile } from "./profileStore";
-import { loadWeekPlans, replaceWeekPlans, type WeekPlan } from "../essen/weekPlan";
+import { guessDishCategory } from "@/lib/essen/dishCategory";
+import { loadMealPlans, replaceMealPlans, type StoredEntry } from "@/lib/essen/mealPlan";
+import { type HouseholdProfile } from "@/lib/einstellungen/profile";
+import { loadProfile, saveProfile } from "@/lib/einstellungen/profileStore";
+import { loadWeekPlans, replaceWeekPlans, type WeekPlan } from "@/lib/essen/weekPlan";
 
 /** Neues Profil ohne die Person (rein, testbar). Die letzte Person bleibt. */
 function profileWithoutPerson(profile: HouseholdProfile, id: string): HouseholdProfile {

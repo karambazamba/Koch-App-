@@ -1,4 +1,4 @@
-import type { Tip } from "../types";
+import type { Tip } from "@/lib/essen/tips/types";
 
 // Reste-Ideen: Aus dem, was noch da ist, wird ein neues Essen.
 

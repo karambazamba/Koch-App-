@@ -10,7 +10,7 @@ import { TILE, TILE_LABEL, buttonClass } from "@/components/ui/styles";
 import { todayIso } from "@/lib/core/now";
 import { POT_TEXTS, activePot, euro, potPhase, potTotal, voteDaysLeft } from "@/lib/spendentopf/model";
 import { useFamilyRegion, usePotState } from "@/lib/spendentopf/store";
-import { PotGraphic } from "./PotGraphic";
+import { PotGraphic } from "@/components/spendentopf/PotGraphic";
 
 export function SpendentopfTile() {
   const state = usePotState();

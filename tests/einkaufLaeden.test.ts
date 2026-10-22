@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { knownShop, shopModeLists, shopModeRequest } from "@/lib/einkauf/shopMode";
 import type { ListItem } from "@/lib/einkauf/shoppingList";
-import { jetztTopics, type JetztInput } from "@/lib/jetzt/topics";
+import { jetztTopics, type JetztInput } from "@/lib/heute/jetztTopics";
 
 const SHOPS = ["Aldi", "Lidl", "Edeka", "Rewe", "Rossmann", "dm", "Wochenmarkt", "Bäcker", "Hofladen"];
 const item = (name: string, shop = "", checked = false): ListItem => ({ key: name, name, originalName: name, amount: "", section: "sonstiges", dishes: [], days: [], shop, checked, hidden: false });

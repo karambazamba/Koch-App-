@@ -1,4 +1,4 @@
-import { ProductsView } from "@/components/profile/ProductsView";
+import { ProductsView } from "@/components/einstellungen/ProductsView";
 
 export const metadata = { title: "Eure Produkte" };
 

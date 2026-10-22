@@ -6,7 +6,7 @@ import { demoTips, DemoTipSource } from "@/lib/tipps/sources/demo";
 import { SCHLESWIG_HOLSTEIN } from "@/lib/tipps/sources/types";
 import { TldbTipSource } from "@/lib/tipps/sources/tldb";
 import { tipsMode, tipsNear } from "@/lib/tipps/server";
-import { sanitizeEntry, terminExtras } from "@/lib/aufgaben/model";
+import { sanitizeEntry, terminExtras } from "@/lib/kalender/model";
 
 const EUTIN = { lat: 54.1376, lng: 10.6181 };
 const WED = "2026-10-21"; // Mittwoch

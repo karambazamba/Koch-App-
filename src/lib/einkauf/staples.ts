@@ -1,9 +1,9 @@
 // Einkaufsliste: Stammliste – häufig gekaufte Artikel mit festem oder aus
 // den Käufen gelerntem Kaufrhythmus (früher "Immer da").
 
-import { sectionFor } from "./sections";
-import { EMPTY_LIST, lower, newId, type ListItem, type ShoppingList, type Staple, type WeekList } from "./listModel";
-import { update } from "./listStore";
+import { sectionFor } from "@/lib/einkauf/sections";
+import { EMPTY_LIST, lower, newId, type ListItem, type ShoppingList, type Staple, type WeekList } from "@/lib/einkauf/listModel";
+import { update } from "@/lib/einkauf/listStore";
 
 const DAY = 86_400_000;
 const days = (from: string, to: string) => Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / DAY);

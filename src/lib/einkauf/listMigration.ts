@@ -1,8 +1,8 @@
 // Einkaufsliste: Migration des gespeicherten Stands (v1–v3 → v4). Die frühere
 // "Immer da"-Liste wird dabei zu Stammartikeln mit festem Wochenrhythmus.
 
-import { SECTION_VALUES, sectionFor } from "./sections";
-import { newId, type ManualItem, type ShoppingListStore, type Staple, type WeekList } from "./listModel";
+import { SECTION_VALUES, sectionFor } from "@/lib/einkauf/sections";
+import { newId, type ManualItem, type ShoppingListStore, type Staple, type WeekList } from "@/lib/einkauf/listModel";
 
 /** Früher "Immer da" – wird bei der Migration zu Stammartikeln (wöchentlich) */
 const DEFAULT_BASIC_NAMES = ["Brot", "Aufschnitt", "Käse", "Butter", "Milch", "Joghurt", "Obst"];

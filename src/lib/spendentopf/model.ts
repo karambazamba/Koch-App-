@@ -1,8 +1,8 @@
 // Spendentopf – reine Logik (ohne React, auch auf dem Server nutzbar): Region
 // aus Wohnort/PLZ, Zeitplan, Stimmen, Betrag und wann die Beitrags-Frage kommt.
 
-import { addDays } from "../core/now";
-import { FALLBACK_REGION, POT_PROJECTS, REGIONS, SCHEDULE, type PotProject, type Region } from "./regions";
+import { addDays } from "@/lib/core/now";
+import { FALLBACK_REGION, POT_PROJECTS, REGIONS, SCHEDULE, type PotProject, type Region } from "@/lib/spendentopf/regions";
 
 export const regionById = (id: string | null | undefined): Region | null => REGIONS.find((r) => r.id === id) ?? null;
 

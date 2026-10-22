@@ -4,12 +4,12 @@
 // dazugehört: Ton freischalten (iPhone), einmaliger Hinweis, Phase sofort auf
 // "Kochen"; ohne Timer-Kachel wird sie an ihrem Standard-Platz eingeblendet.
 
-import { showToast } from "../core/toast";
-import { now } from "../core/now";
-import { nudgePhase } from "../tagesablauf/nudge";
-import { addTimer, findTimer, removeTimer, startStopwatch, pauseStopwatch, isExpired, type Timer } from "./model";
-import { changeTimers, loadTimers } from "./store";
-import { unlockTimerSound } from "./sound";
+import { showToast } from "@/lib/core/toast";
+import { now } from "@/lib/core/now";
+import { nudgePhase } from "@/lib/heute/nudge";
+import { addTimer, findTimer, removeTimer, startStopwatch, pauseStopwatch, isExpired, type Timer } from "@/lib/timer/model";
+import { changeTimers, loadTimers } from "@/lib/timer/store";
+import { unlockTimerSound } from "@/lib/timer/sound";
 
 const TIMER_HINT = "Der Ton kommt, solange die App offen ist. Erinnerungen bei geschlossener App kommen bald per Mitteilung.";
 const TIMER_FULL = "Fünf Timer laufen schon – sobald einer fertig ist, geht der nächste.";

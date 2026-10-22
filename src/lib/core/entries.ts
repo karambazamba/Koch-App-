@@ -3,7 +3,7 @@
 // jeder Eintrag hat id, typ, raum, besitzer, erstellt, geändert und die
 // eigentlichen Daten. Bis es Konten gibt, ist der Besitzer "lokal".
 
-import { nowIso } from "./now";
+import { nowIso } from "@/lib/core/now";
 
 export type EntryType = "termin" | "aufgabe" | "notiz" | "gericht" | "einkauf" | "pinnwand" | "memo" | "training";
 

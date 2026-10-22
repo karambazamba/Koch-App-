@@ -7,8 +7,8 @@
 // Der frühere Schalter "Alte Funktionen anzeigen (Test)" und der Alt-Modus
 // (/?legacy=1) sind weg.
 
-import { useExternalStore } from "./useExternalStore";
-import { createLocalStore } from "./localStore";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+import { createLocalStore } from "@/lib/core/localStore";
 
 const FEATURES = {
   wochenplan: "Wochenplan-Oberfläche (/wochenplan, Wochen-Check, Vorlagen)",

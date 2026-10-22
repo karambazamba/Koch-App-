@@ -2,8 +2,8 @@
 // ort, tips }. Bei TIPS_SOURCE=off nur { source: "off" } – dann zeigt die App
 // nirgends etwas von Tipps. Keine Ortung: der Ort kommt aus den Einstellungen.
 
-import { clientIp } from "@/lib/lotte/guard";
-import { allowRequest } from "@/lib/lotte/rateLimit";
+import { clientIp } from "@/lib/begleitung/guard";
+import { allowRequest } from "@/lib/begleitung/rateLimit";
 import { tipsMode, tipsNear } from "@/lib/tipps/server";
 
 export const maxDuration = 15;

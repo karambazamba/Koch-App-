@@ -3,8 +3,8 @@
 // Eintrags-Modell (typ "notiz"). Rein, damit App, Vorschau und Server
 // (Lotte) gleich rechnen.
 
-import { createEntry, type Entry, type Room } from "../core/entries";
-import { nowIso } from "../core/now";
+import { createEntry, type Entry, type Room } from "@/lib/core/entries";
+import { nowIso } from "@/lib/core/now";
 
 export type NoteItem = { id: string; text: string; done?: boolean };
 

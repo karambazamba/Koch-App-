@@ -2,7 +2,7 @@
 // Heute regelbasiert (./ruleParser.ts); später ersetzt die KI das Zerlegen –
 // dann nur `parseLeftovers` hier umstellen, die Seite bleibt gleich.
 
-import { ruleParseLeftovers } from "./ruleParser";
+import { ruleParseLeftovers } from "@/lib/essen/leftovers/ruleParser";
 
 export type ParsedLeftover = {
   /** Anzeigename, z. B. "Brokkoli" (Schreibweise korrigiert) */

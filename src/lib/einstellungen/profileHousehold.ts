@@ -2,7 +2,7 @@
 // (Rollen, Anzeigenamen, Anzahl angleichen), Kinder und wer unter der Woche
 // mittags zu Hause isst.
 
-import { createPerson, type HouseholdProfile, type Person, type PersonRole, type WeekdayLunch } from "./profileModel";
+import { createPerson, type HouseholdProfile, type Person, type PersonRole, type WeekdayLunch } from "@/lib/einstellungen/profileModel";
 
 /** Für wen gekocht wird (Profil v14) – Sprache, Portionen, Kinder-Funktionen */
 export type HouseholdType = "single" | "paar" | "familie" | "wg";

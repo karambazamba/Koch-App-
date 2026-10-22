@@ -5,8 +5,8 @@
 // oder Sperre stimmt die Anzeige sofort. Beim Vorrendern 0.
 
 import { useCallback } from "react";
-import { now } from "./now";
-import { useExternalStore } from "./useExternalStore";
+import { now } from "@/lib/core/now";
+import { useExternalStore } from "@/lib/core/useExternalStore";
 
 const snapshot = () => Math.floor(now().getTime() / 1000) * 1000;
 

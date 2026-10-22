@@ -1,5 +1,5 @@
-import { PlanningGate } from "@/components/PlanningGate";
-import { ShoppingDayEditView } from "@/components/profile/AreaEditViews";
+import { PlanningGate } from "@/components/core/PlanningGate";
+import { ShoppingDayEditView } from "@/components/einstellungen/AreaEditViews";
 
 export const metadata = { title: "Einkaufstag" };
 

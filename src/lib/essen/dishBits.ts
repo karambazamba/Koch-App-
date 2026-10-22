@@ -2,7 +2,7 @@
 // Flächen zum Verteilen und je Topping ein Stückchen – Tomate, Feta, Erbsen,
 // Kräuter … Alles reiner SVG-Text, im Stil von public/demo/gericht.webp.
 
-import type { Topping } from "./dishArt";
+import type { Topping } from "@/lib/essen/dishArt";
 
 export type Rng = () => number;
 

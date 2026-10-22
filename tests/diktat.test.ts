@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { joinFinals, withoutPrevious } from "@/lib/lotte/useSpeechInput";
+import { joinFinals, withoutPrevious } from "@/lib/begleitung/useSpeechInput";
 
 describe("Diktat zusammensetzen", () => {
   it("nimmt bei kumulierten Abschnitten (Android) nur den längeren", () => {

@@ -5,16 +5,16 @@
 // und unter der Woche eher Schnelles. Rein, damit es testbar ist – gerechnet
 // wird immer frisch aus dem übergebenen Bestand, nichts wird zwischengespeichert.
 
-import type { Recipe, RecipeCategory } from "./cookbook";
-import { guessDishCategory } from "./dishCategory";
-import { recipeIsKnown } from "./dishStatus";
-import { composeWeek, type StoredEntry } from "./mealPlan";
-import type { PantryItem } from "./pantry";
-import { DISHES, matchStock, realStock, soonToUse, type Season } from "./dishIdeas";
-import type { HouseholdProfile, NeverAgainEntry } from "../einstellungen/profile";
-import { isNeverAgain } from "./neverAgain";
-import { addDays, weekStartFor, type WeekPlan } from "./weekPlan";
-import { wishLabel, type WishIdea } from "./wishes";
+import type { Recipe, RecipeCategory } from "@/lib/essen/cookbook";
+import { guessDishCategory } from "@/lib/essen/dishCategory";
+import { recipeIsKnown } from "@/lib/essen/dishStatus";
+import { composeWeek, type StoredEntry } from "@/lib/essen/mealPlan";
+import type { PantryItem } from "@/lib/vorrat/pantry";
+import { DISHES, matchStock, realStock, soonToUse, type Season } from "@/lib/essen/dishIdeas";
+import type { HouseholdProfile, NeverAgainEntry } from "@/lib/einstellungen/profile";
+import { isNeverAgain } from "@/lib/essen/neverAgain";
+import { addDays, weekStartFor, type WeekPlan } from "@/lib/essen/weekPlan";
+import { wishLabel, type WishIdea } from "@/lib/essen/wishes";
 
 export type IdeaFilter = "schnell" | "veggie" | "vorrat";
 

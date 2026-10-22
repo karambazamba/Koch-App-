@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createEntry } from "@/lib/core/entries";
-import { carriedLabel, dueLabel, itemsForDay, taskOverview, type AufgabeData, type CalendarEntry, type TerminData } from "@/lib/aufgaben/model";
+import { carriedLabel, dueLabel, itemsForDay, taskOverview, type AufgabeData, type CalendarEntry, type TerminData } from "@/lib/kalender/model";
 import { at } from "./helpers";
 
 const aufgabe = (data: Partial<AufgabeData> & { title: string }) => createEntry("aufgabe", { reminder: "aus", ...data }) as CalendarEntry;
@@ -55,9 +55,9 @@ describe("Aufgaben und Termine an einem Tag", () => {
   });
 });
 
-import { orderedTasks, sortItems } from "@/lib/aufgaben/model";
-import { parseCalendar } from "@/lib/aufgaben/parse";
-import { readQuickText } from "@/lib/aufgaben/quick";
+import { orderedTasks, sortItems } from "@/lib/kalender/model";
+import { parseCalendar } from "@/lib/kalender/parse";
+import { readQuickText } from "@/lib/kalender/quick";
 
 describe("Reihenfolge der Aufgaben (B2)", () => {
   const made = (title: string, iso: string, data: Partial<AufgabeData> = {}) => ({ ...aufgabe({ title, ...data }), erstellt: iso });

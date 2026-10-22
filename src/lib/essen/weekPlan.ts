@@ -2,15 +2,15 @@
 // Standardwoche des Profils, pro Woche anpassbar. Gespeichert lokal wie das
 // Profil – versioniert, mit Migration, später auf Supabase umstellbar.
 
-import { useExternalStore } from "../core/useExternalStore";
-import { createLocalStore } from "../core/localStore";
-import { addDays, fromIsoDate, now, toIsoDate } from "../core/now";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+import { createLocalStore } from "@/lib/core/localStore";
+import { addDays, fromIsoDate, now, toIsoDate } from "@/lib/core/now";
 
 // Datumshilfen kommen aus der zentralen Zeit (core/now) – hier weitergereicht
-export { addDays,  toIsoDate, useToday } from "../core/now";
-import type { RecipeCategory } from "./cookbook";
-import { WEEKDAYS, mainMealTime, wishDayKids, wishDayOrder, type HouseholdProfile, type WeekRules } from "../einstellungen/profile";
-import { loadProfile } from "../einstellungen/profileStore";
+export { addDays,  toIsoDate, useToday } from "@/lib/core/now";
+import type { RecipeCategory } from "@/lib/essen/cookbook";
+import { WEEKDAYS, mainMealTime, wishDayKids, wishDayOrder, type HouseholdProfile, type WeekRules } from "@/lib/einstellungen/profile";
+import { loadProfile } from "@/lib/einstellungen/profileStore";
 import type { StorageKey } from "@/lib/core/storage";
 
 /** Wunsch eines Kindes – das Hauptgericht eines Tages, zählt nicht bei Fleisch/Veggie/Fisch */

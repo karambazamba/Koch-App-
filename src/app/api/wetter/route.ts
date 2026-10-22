@@ -2,8 +2,8 @@
 // 30 Min zwischengespeichert), GET ?lat=…&lon=… → { ort } (nur der Stadtname).
 // Ohne Schlüssel; gegen Dauerfeuer ein einfaches Limit pro IP.
 
-import { clientIp } from "@/lib/lotte/guard";
-import { allowRequest } from "@/lib/lotte/rateLimit";
+import { clientIp } from "@/lib/begleitung/guard";
+import { allowRequest } from "@/lib/begleitung/rateLimit";
 import { fetchForecast, placeFromCoords, weatherMock } from "@/lib/wetter/server";
 
 export const maxDuration = 15;

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { CARD } from "@/components/ui/styles";
-import { RecipeView } from "@/components/cookbook/RecipeView";
+import { RecipeView } from "@/components/essen/rezepte/RecipeView";
 
 export const metadata = { title: "Rezept" };
 

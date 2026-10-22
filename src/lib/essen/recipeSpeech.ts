@@ -3,9 +3,9 @@
 // "Pfannkuchen. Zutaten: 200 Gramm Mehl, drei Eier und 300 ml Milch. Zuerst
 // alles verrühren, dann 15 Minuten ruhen lassen. Danach in der Pfanne backen."
 
-import { createIngredient, type Ingredient, type RecipeCategory } from "./cookbook";
-import { guessDishCategory } from "./dishCategory";
-import { ruleParseLeftovers } from "./leftovers/ruleParser";
+import { createIngredient, type Ingredient, type RecipeCategory } from "@/lib/essen/cookbook";
+import { guessDishCategory } from "@/lib/essen/dishCategory";
+import { ruleParseLeftovers } from "@/lib/essen/leftovers/ruleParser";
 
 export type SpokenRecipe = {
   title: string;

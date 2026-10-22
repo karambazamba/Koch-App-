@@ -5,14 +5,14 @@
 // nächste Essen. "Auf morgen verschieben" im Wochenplan nimmt alles zurück.
 // Speicher `wasgibts.gekocht` je Kochtag.
 
-import { useExternalStore } from "../core/useExternalStore";
-import { countCookedOn, uncountCooked, type Recipe } from "./cookbook";
-import { AT_HOME, DISHES } from "./dishIdeas";
-import { createLocalStore } from "../core/localStore";
-import { composeWeek, entriesWithoutSlot, mealPlansWithWeek, type PlanDay, type StoredEntry } from "./mealPlan";
-import { loadPantry, replacePantry, sameIngredient, type PantryItem } from "./pantry";
-import { mealClockFor, type HouseholdProfile } from "../einstellungen/profile";
-import { addDays, DEFAULT_SHOPPING_DAY, weekStartFor, type WeekPlan } from "./weekPlan";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+import { countCookedOn, uncountCooked, type Recipe } from "@/lib/essen/cookbook";
+import { AT_HOME, DISHES } from "@/lib/essen/dishIdeas";
+import { createLocalStore } from "@/lib/core/localStore";
+import { composeWeek, entriesWithoutSlot, mealPlansWithWeek, type PlanDay, type StoredEntry } from "@/lib/essen/mealPlan";
+import { loadPantry, replacePantry, sameIngredient, type PantryItem } from "@/lib/vorrat/pantry";
+import { mealClockFor, type HouseholdProfile } from "@/lib/einstellungen/profile";
+import { addDays, DEFAULT_SHOPPING_DAY, weekStartFor, type WeekPlan } from "@/lib/essen/weekPlan";
 
 /** So lange nach der Essenszeit verschwindet das Gericht von der Startseite */
 const DONE_AFTER_MINUTES = 90;

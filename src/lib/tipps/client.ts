@@ -5,18 +5,18 @@
 // Baustein „Tipps aus der Region“ an ist (`useTipsOn`).
 
 import { useEffect, useState } from "react";
-import { createLocalStore } from "../core/localStore";
-import { useExternalStore } from "../core/useExternalStore";
-import { TIPS_BAUSTEIN, featureOn, unlockFeature, useFeature } from "../core/features";
-import { unlockHomeTile } from "../core/homeLayout";
-import { createEntry } from "../core/entries";
-import { pushUndo } from "../core/undo";
-import { changeEntries, loadEntries } from "../aufgaben/store";
-import type { CalendarEntry } from "../aufgaben/model";
-import { changePins } from "../pinnwand/store";
-import { addPin, createPin } from "../pinnwand/model";
-import { loadPlace, usePlace } from "../wetter/client";
-import { pinboardText, TIP_RADII, tipDate, tipTime, type TipRadius, type TipView } from "./model";
+import { createLocalStore } from "@/lib/core/localStore";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+import { TIPS_BAUSTEIN, featureOn, unlockFeature, useFeature } from "@/lib/core/features";
+import { unlockHomeTile } from "@/lib/core/homeLayout";
+import { createEntry } from "@/lib/core/entries";
+import { pushUndo } from "@/lib/core/undo";
+import { changeEntries, loadEntries } from "@/lib/kalender/store";
+import type { CalendarEntry } from "@/lib/kalender/model";
+import { changePins } from "@/lib/pinnwand/store";
+import { addPin, createPin } from "@/lib/pinnwand/model";
+import { loadPlace, usePlace } from "@/lib/wetter/client";
+import { pinboardText, TIP_RADII, tipDate, tipTime, type TipRadius, type TipView } from "@/lib/tipps/model";
 
 export type TipsMode = "off" | "demo" | "tldb";
 

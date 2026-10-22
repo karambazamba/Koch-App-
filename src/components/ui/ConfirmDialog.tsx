@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { buttonClass } from "./styles";
+import { buttonClass } from "@/components/ui/styles";
 import { useBackCloses } from "@/lib/core/useBackCloses";
 
 /**
