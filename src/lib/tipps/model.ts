@@ -113,6 +113,11 @@ export function weekendKey(today: string): string {
   return addDays(today, wd === 6 ? -1 : 5 - wd);
 }
 
+/** „Gemerkt“: gemerkte Tipps ab heute, nach Zeit (Vergangenes fällt still weg) */
+export function rememberedTips<T extends Pick<Tip, "id" | "beginn" | "titel"> & { karamba?: boolean }>(tips: T[], gemerkt: string[], today: string): T[] {
+  return sortTips(tips.filter((t) => gemerkt.includes(t.id) && tipDate(t) >= today));
+}
+
 export const inRange = (t: Pick<Tip, "beginn">, von: string, bis: string) => tipDate(t) >= von && tipDate(t) <= bis;
 
 /** Nach Tag gruppiert (Abschnitte „Samstag, 24. Oktober“) */

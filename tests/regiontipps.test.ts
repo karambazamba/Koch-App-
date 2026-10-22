@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { answerTips, distanceKm, isKaramba, jetztTip, nearTips, openLicense, pinboardText, rangeFor, sortTips, tileTips, tileTitle, weekendKey, type TipView } from "@/lib/tipps/model";
+import { answerTips, distanceKm, isKaramba, jetztTip, nearTips, openLicense, pinboardText, rangeFor, rememberedTips, sortTips, tileTips, tileTitle, weekendKey, type TipView } from "@/lib/tipps/model";
 import { filtersOf, tipTags } from "@/lib/tipps/categories";
 import { tipQuestion } from "@/lib/tipps/question";
 import { demoTips, DemoTipSource } from "@/lib/tipps/sources/demo";
 import { SCHLESWIG_HOLSTEIN } from "@/lib/tipps/sources/types";
 import { TldbTipSource } from "@/lib/tipps/sources/tldb";
 import { tipsMode, tipsNear } from "@/lib/tipps/server";
-import { sanitizeEntry } from "@/lib/aufgaben/model";
+import { sanitizeEntry, terminExtras } from "@/lib/aufgaben/model";
 
 const EUTIN = { lat: 54.1376, lng: 10.6181 };
 const WED = "2026-10-21"; // Mittwoch
@@ -136,5 +136,22 @@ describe("Übernommener Tipp = normaler Termin", () => {
     const e = sanitizeEntry({ id: "x", typ: "termin", raum: "familie", data: { title: "Kinderkino", date: "2026-10-24", start: "15:00", reminder: "60", note: "aus Tipps", link: "https://example.org/kino", who: ["p1"] } });
     expect(e?.data).toMatchObject({ note: "aus Tipps", link: "https://example.org/kino", who: ["p1"] });
     expect(sanitizeEntry({ id: "y", typ: "termin", data: { title: "X", date: "2026-10-24", start: "15:00", link: "javascript:alert(1)" } })?.data).not.toHaveProperty("link", "javascript:alert(1)");
+  });
+});
+
+describe("Tipps Schritt 2: Gemerkt und Link im Termin", () => {
+  it("Gemerkt zeigt nur gemerkte Tipps ab heute, nach Zeit", () => {
+    const tips = view();
+    const [a, b] = sortTips(tips).slice(-2);
+    const past = { ...a, id: "alt", beginn: "2026-10-01T10:00:00" };
+    const out = rememberedTips([...tips, past], [b.id, a.id, "alt", "weg"], WED);
+    expect(out.map((t) => t.id)).toEqual([a.id, b.id]);
+    expect(rememberedTips(tips, [], WED)).toEqual([]);
+  });
+
+  it("Bearbeiten im Formular behält Link und „aus Tipps“ (Fehler bis v0.45)", () => {
+    expect(terminExtras({ note: "aus Tipps", link: "https://example.org/kino" })).toEqual({ note: "aus Tipps", link: "https://example.org/kino" });
+    expect(terminExtras(undefined)).toEqual({});
+    expect(terminExtras({ note: "", link: undefined })).toEqual({});
   });
 });

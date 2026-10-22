@@ -2,18 +2,20 @@
 
 // Seite /tipps: großer Titel „Tipps“, Ort + Umkreis („Eutin + 20 km · Ändern“),
 // Heute | Wochenende | Diese Woche, Filter-Chips und darunter nach Tag
-// gruppiert. Unten klein die Datenquelle. ?tipp=<id> öffnet einen Tipp direkt
+// gruppiert; gemerkte Tipps (ab heute) stehen oben unter „Gemerkt“. Unten
+// klein die Datenquelle. ?tipp=<id> öffnet einen Tipp direkt
 // (z. B. aus der Jetzt-Karte). Keine Zähler, keine roten Markierungen.
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { Bookmark } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Segmented } from "@/components/ui/Segmented";
 import { CARD, PAGE_MAIN, SECTION_TITLE, buttonClass, chipClass } from "@/components/ui/styles";
 import { toIsoDate, todayIso, useToday } from "@/lib/core/now";
 import { TIP_CHIPS, type TipFilter } from "@/lib/tipps/categories";
-import { groupByDay, inRange, matchesFilters, rangeFor, type TipRange, type TipView } from "@/lib/tipps/model";
+import { groupByDay, inRange, matchesFilters, rangeFor, rememberedTips, type TipRange, type TipView } from "@/lib/tipps/model";
 import { changeTipSettings, forgetTips, useTipPlace, useTipSettings, useTipsMode, useTipsWindow } from "@/lib/tipps/client";
 import { TipRow, dayTitle } from "./TipBits";
 import { TipSheet } from "./TipSheet";
@@ -38,6 +40,7 @@ export function TipsView() {
   const { von, bis } = rangeFor(range, today);
   const shown = (data?.tips ?? []).filter((t) => inRange(t, von, bis) && matchesFilters(t, filters));
   const open = data?.tips.find((t) => t.id === openId) ?? null;
+  const remembered = rememberedTips(data?.tips ?? [], settings.gemerkt, today);
   const toggle = (f: TipFilter) => setFilters((list) => (list.includes(f) ? list.filter((x) => x !== f) : [...list, f]));
   const wider = () => {
     const next = settings.km < 40 ? (settings.km === 5 ? 10 : settings.km === 10 ? 20 : 40) : 40;
@@ -67,6 +70,21 @@ export function TipsView() {
             Ändern
           </Link>
         </div>
+        {remembered.length > 0 && (
+          <section className="flex flex-col gap-2" aria-label="Gemerkt">
+            <h2 className={`${SECTION_TITLE} flex items-center gap-1.5 px-1`}>
+              <Bookmark className="h-4 w-4 text-tipp" strokeWidth={2.25} aria-hidden />
+              Gemerkt
+            </h2>
+            <ul className={`${CARD} flex flex-col divide-y divide-line overflow-hidden`}>
+              {remembered.map((t) => (
+                <li key={t.id}>
+                  <TipRow tip={t} onOpen={() => setOpenId(t.id)} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         <Segmented value={range} options={RANGES} onChange={setRange} label="Zeitraum" />
         <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none]" data-no-swipe role="group" aria-label="Filter">
           {TIP_CHIPS.map((c) => (

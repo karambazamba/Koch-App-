@@ -13,7 +13,8 @@ import { Segmented } from "@/components/ui/Segmented";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { CARD_LIST, chipClass } from "@/components/ui/styles";
 import { createEntry, type Room } from "@/lib/core/entries";
-import { mondayOf, REMINDERS, removeItem, sanitizeEntry, upsertEntry, weekdayIndex, type CalendarEntry, type Reminder, type Repeat } from "@/lib/aufgaben/model";
+import { ExternalLink } from "lucide-react";
+import { mondayOf, REMINDERS, removeItem, sanitizeEntry, terminExtras, upsertEntry, weekdayIndex, type CalendarEntry, type Reminder, type Repeat } from "@/lib/aufgaben/model";
 import { todayIso } from "@/lib/core/now";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { act } from "./actions";
@@ -37,6 +38,28 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
       <span className="shrink-0 text-base">{label}</span>
       {children}
     </label>
+  );
+}
+
+/** Link zur Quelle (z. B. Termin aus Tipps): „Mehr dazu · eutin.de“ */
+function SourceLink({ href, note }: { href: string; note?: string }) {
+  let host = "";
+  try {
+    host = new URL(href).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="flex min-h-12 items-center gap-3 px-4 py-1.5">
+      <span className="shrink-0 text-base">Mehr dazu</span>
+      <span className="ml-auto flex min-w-0 items-center gap-1.5 text-base text-accent-strong">
+        <span className="truncate">
+          {host}
+          {note ? <span className="text-muted"> · {note}</span> : null}
+        </span>
+        <ExternalLink className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+      </span>
+    </a>
   );
 }
 
@@ -70,7 +93,7 @@ export function EntryForm({ entry, date, kind, onClose }: { entry?: CalendarEntr
     const keep = { doneDates: d?.doneDates ?? [], skipDates: d?.skipDates ?? [] };
     const data =
       typ === "termin"
-        ? { title, date: day, start: time, end: end || undefined, place: place || undefined, label: label || undefined, repeat: rep, reminder, who: who.length ? who : undefined, ...keep }
+        ? { title, date: day, start: time, end: end || undefined, place: place || undefined, label: label || undefined, repeat: rep, reminder, who: who.length ? who : undefined, ...terminExtras(entry?.typ === "termin" ? entry.data : undefined), ...keep }
         : { title, date: day || undefined, due: due || undefined, week: !day && !due && week ? week : undefined, time: time || undefined, label: label || undefined, repeat: rep, reminder, doneOn: entry?.typ === "aufgabe" ? entry.data.doneOn : null, ...keep };
     const base = entry ? { ...entry, typ, raum: room, data } : createEntry(typ, data, { raum: room });
     const clean = sanitizeEntry({ ...base, geaendert: new Date().toISOString() });
@@ -111,6 +134,7 @@ export function EntryForm({ entry, date, kind, onClose }: { entry?: CalendarEntr
         <div className={CARD_LIST}>
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={typ === "termin" ? "Titel, z. B. Steuerberater" : "Titel, z. B. Kita-Formular"} aria-label="Titel" className="h-12 w-full bg-transparent px-4 text-base font-semibold outline-none placeholder:font-normal placeholder:text-faint" autoFocus={!entry} />
           {typ === "termin" && <input value={place} onChange={(e) => setPlace(e.target.value)} placeholder="Ort" aria-label="Ort" className="h-12 w-full bg-transparent px-4 text-base outline-none placeholder:text-faint" />}
+          {entry?.typ === "termin" && entry.data.link && <SourceLink href={entry.data.link} note={entry.data.note} />}
         </div>
 
         <div className={CARD_LIST}>

@@ -54,6 +54,11 @@ export type TerminData = {
   skipDates?: string[];
 };
 
+/** Was das Formular nicht zeigt, aber beim Sichern bleiben muss (z. B. Link und „aus Tipps“) */
+export function terminExtras(data: Pick<TerminData, "note" | "link"> | undefined): Pick<TerminData, "note" | "link"> {
+  return { ...(data?.note ? { note: data.note } : {}), ...(data?.link ? { link: data.link } : {}) };
+}
+
 export type AufgabeData = {
   title: string;
   /** Wunschtag "YYYY-MM-DD"; ohne = ab dem Tag, an dem sie angelegt wurde */
