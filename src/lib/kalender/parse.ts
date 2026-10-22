@@ -42,7 +42,8 @@ const pad = (n: number) => String(n).padStart(2, "0");
 /** Tag aus dem Text (erster Treffer) */
 export function findDate(text: string, today: string): { date: string; match: string } | null {
   const t = text.toLowerCase();
-  let m = t.match(/\bübermorgen\b/);
+  // Kein \b vor "ü": in JS-Regex ist "ü" kein Wortzeichen, \bübermorgen träfe nie
+  let m = t.match(/(?<![a-zäöüß])übermorgen\b/);
   if (m) return { date: addDays(today, 2), match: m[0] };
   m = t.match(/\bmorgen(?:\s+(?:früh|vormittag|nachmittag|mittag|abend))?\b/);
   if (m && !/\bguten morgen\b/.test(t)) return { date: addDays(today, 1), match: "morgen" };
