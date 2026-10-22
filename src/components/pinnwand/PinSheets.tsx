@@ -17,7 +17,7 @@ import { useSpeechInput } from "@/lib/lotte/useSpeechInput";
 import { shortClock } from "@/components/notizen/Schnellnotiz";
 import { buzz } from "@/components/alltag/actions";
 
-export const pinMetaLine = (m: PinMessage, me: string) => pinMeta(m, me, todayIso(), shortClock, (iso) => toIsoDate(new Date(iso)));
+export const pinMetaLine = (m: { erstellt: string; data: { author: string } }, me: string) => pinMeta(m, me, todayIso(), shortClock, (iso) => toIsoDate(new Date(iso)));
 
 /** Neue Nachricht: Textfeld (max. 140) mit Mikrofon, "Anheften" */
 export function PinWriteSheet({ me, onClose }: { me: string; onClose: () => void }) {

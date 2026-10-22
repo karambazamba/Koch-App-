@@ -36,7 +36,7 @@ import { isExpired, isRunning, leftWords, sortTimers } from "@/lib/timer/model";
 import { useTimers } from "@/lib/timer/store";
 import { currentStep, startCooking, stopCooking, useCooking } from "@/lib/kochen/session";
 import { cookableEntry, markCooked, unmarkCooked } from "@/lib/essen/mealDone";
-import { usePins } from "@/lib/pinnwand";
+import { useMemos, usePins } from "@/lib/pinnwand";
 import { leisureIdea } from "@/lib/notizen/model";
 import { useNotes } from "@/lib/notizen";
 import { todaysTraining } from "@/lib/sport";
@@ -124,6 +124,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const timers = useTimers();
   const cooking = useCooking(data.todayIso);
   const pins = usePins();
+  const memos = useMemos();
   const notes = useNotes();
   const timerLive = Boolean(timers && timers.timers.some((t) => !isExpired(t, now().getTime())));
   const nowMs = useNowMs(timerLive, 15_000);
@@ -246,6 +247,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     dueToday: view.tasksRest ? [] : dueToday.filter((i) => !i.done),
     allDone: !demoDay.tiles.length && hadSomething && !termine.length && !tasksAll.filter((i) => !i.done).length,
     pins: demoDay.tiles.includes("pinnwand") ? [] : pins,
+    memos: demoDay.tiles.includes("pinnwand") ? [] : memos,
     nowMs,
     // Beispielgericht nur, solange es heute noch dran ist (danach steht es für morgen da)
     dish: demoDish
@@ -473,7 +475,7 @@ function Pressable({ children, onLongPress, disabled = false }: { children: Reac
       onPointerDown={(e) => {
         fired.current = false;
         // Nicht im Bearbeiten-Modus, nicht in Eingabefeldern und Fenstern (Menü, Schnell-Eintrag …)
-        if (disabled || (e.target as Element).closest("input, textarea, [role=dialog]")) return;
+        if (disabled || (e.target as Element).closest("input, textarea, [role=dialog], [data-no-longpress]")) return;
         start.current = { x: e.clientX, y: e.clientY };
         cancel();
         timer.current = setTimeout(() => {

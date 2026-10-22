@@ -6,7 +6,7 @@
 
 import { replaceNotes } from "../notizen/store";
 import { loadSchnellnotiz, saveSchnellnotiz } from "../notizen/schnellnotiz";
-import { addPin, changePins, createPin, loadPins, removePin, visiblePins } from "../pinnwand";
+import { addPin, changePins, createPin, formatDauer, loadMemos, loadPins, removePin, visibleMemos, visiblePins } from "../pinnwand";
 import { loadPlace } from "../wetter/client";
 import { tipContext } from "../tipps/client";
 import { loadMailStyle } from "./mailSettings";
@@ -243,9 +243,13 @@ function trimmed(data: AssistantData, currentWeekStart: string, pantry: Assistan
     features: BAUSTEINE.filter((b) => featureOn(b.feature)).map((b) => b.feature),
     mail: loadMailStyle(),
     schnellnotiz: loadSchnellnotiz().text.slice(0, 4000),
-    pinnwand: visiblePins(loadPins(), now().getTime())
-      .slice(0, 8)
-      .map((m) => ({ author: m.data.author, text: m.data.text, at: m.erstellt })),
+    // Sprachnachrichten nur als „[Sprachnachricht 0:12]“ – den Inhalt kennt Mia nicht
+    pinnwand: [
+      ...visiblePins(loadPins(), now().getTime()).map((m) => ({ author: m.data.author, text: m.data.text, at: m.erstellt })),
+      ...visibleMemos(loadMemos(), now().getTime()).map((m) => ({ author: m.data.author, text: `[Sprachnachricht ${formatDauer(m.data.dauer)}]`, at: m.erstellt })),
+    ]
+      .sort((a, b) => b.at.localeCompare(a.at))
+      .slice(0, 8),
     wetterOrt: loadPlace(),
     tippOrt: tipContext().ort,
     tippKm: tipContext().km,

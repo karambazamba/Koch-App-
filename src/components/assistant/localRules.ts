@@ -9,7 +9,8 @@ import { parseHomeCommand } from "@/lib/lotte/homeChat";
 import { parseBausteinCommand } from "@/lib/lotte/bausteinChat";
 import { BAUSTEINE, bausteinOf, featureOn, setFeature } from "@/lib/core/features";
 import { changeHome, describeHomeChange, requestHomeEdit, unlockHomeTile } from "@/lib/core/homeLayout";
-import { addPin, changePins, createPin, isPinboardQuery, loadPins, pinWriteCommand, visiblePins } from "@/lib/pinnwand";
+import { addPin, changeMemos, changePins, createPin, formatDauer, householdNames, isPinboardQuery, loadMemos, loadPins, memoPlayRequest, memoToPlay, pinWriteCommand, setMemoHeard, visibleMemos, visiblePins } from "@/lib/pinnwand";
+import { playMemo } from "@/lib/pinnwand/memoPlayer";
 import { dayAnswer, umbrellaAnswer, weatherQuestion } from "@/lib/wetter/forecast";
 import { allShops, loadShoppingSettings } from "@/lib/einkauf/shoppingList";
 import { shopModeHref, shopModeRequest } from "@/lib/einkauf/shopMode";
@@ -159,8 +160,12 @@ export function boardRule(ctx: RuleContext, t: string): boolean {
   }
   if (isPinboardQuery(t)) {
     setInput("");
-    const pins = visiblePins(loadPins(), now().getTime());
-    say(pins.length ? `Auf der Pinnwand: ${pins.slice(0, 4).map((m) => `${m.data.author === me ? "Du" : m.data.author}: „${m.data.text}“`).join(" · ")}` : "Auf der Pinnwand steht gerade nichts.");
+    const nowMs = now().getTime();
+    const items = [
+      ...visiblePins(loadPins(), nowMs).map((m) => ({ at: m.erstellt, who: m.data.author, line: `„${m.data.text}“` })),
+      ...visibleMemos(loadMemos(), nowMs).map((m) => ({ at: m.erstellt, who: m.data.author, line: `Sprachnachricht (${formatDauer(m.data.dauer)})` })),
+    ].sort((a, b) => b.at.localeCompare(a.at));
+    say(items.length ? `Auf der Pinnwand: ${items.slice(0, 4).map((m) => `${m.who === me ? "Du" : m.who}: ${m.line}`).join(" · ")}` : "Auf der Pinnwand steht gerade nichts.");
     return true;
   }
   const tipAsk = knownTipsMode() && knownTipsMode() !== "off" ? tipQuestion(t, toIsoDate(today)) : null;
@@ -362,6 +367,24 @@ export function shopModeRule(ctx: RuleContext, t: string): boolean {
   localReplyOf(ctx)(t, `Viel Spaß bei ${shop}! Ich zeig dir nur, was es dort gibt – und merke mir, was du sonst noch mitnimmst.`);
   ctx.router.push(shopModeHref(shop));
   ctx.onClose();
+  return true;
+}
+
+/** „Spiel das Memo von Lisa ab“ → spielt ab (ohne den Inhalt zu kennen) */
+export function memoPlayRule(ctx: RuleContext, t: string): boolean {
+  const ask = memoPlayRequest(t);
+  if (!ask || !ctx.data) return false;
+  const me = ctx.data.profile.persons[0]?.name.trim() || "Ich";
+  const memo = memoToPlay(loadMemos(), ask.name, me, now().getTime());
+  const reply = localReplyOf(ctx);
+  if (!memo) {
+    reply(t, ask.name ? `Von ${ask.name} ist gerade keine Sprachnachricht auf der Pinnwand.` : "Gerade ist keine Sprachnachricht auf der Pinnwand.");
+    return true;
+  }
+  const household = householdNames(ctx.data.profile.persons, me);
+  playMemo(memo, () => changeMemos((all) => setMemoHeard(all, memo.id, me, true, household, now().toISOString())));
+  const which = memo.data.author === me ? "deine Sprachnachricht" : `die Sprachnachricht von ${memo.data.author}`;
+  reply(t, `Ich spiel dir ${which} ab (${formatDauer(memo.data.dauer)}). Zum Anhalten tippst du auf der Pinnwand auf ⏸.`);
   return true;
 }
 

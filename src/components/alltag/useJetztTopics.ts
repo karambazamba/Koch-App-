@@ -10,7 +10,7 @@ import { round, todayRange, weatherKind, weatherTip } from "@/lib/wetter/forecas
 import { dayWords } from "@/lib/wetter/view";
 import { addDays, toIsoDate } from "@/lib/core/now";
 import { tomorrowLabel, type DayItem } from "@/lib/aufgaben/model";
-import { pinMeta, visiblePins, type PinMessage } from "@/lib/pinnwand";
+import { formatDauer, memoUnheard, pinMeta, visibleMemos, visiblePins, type MemoMessage, type PinMessage } from "@/lib/pinnwand";
 import { shortClock } from "@/components/notizen/Schnellnotiz";
 import { hiddenToday, useJetzt } from "@/lib/jetzt/store";
 import { jetztTopics, type JetztInput, type JetztTermin } from "@/lib/jetzt/topics";
@@ -33,6 +33,7 @@ export type JetztSource = {
   dueToday: DayItem[];
   allDone: boolean;
   pins: PinMessage[] | undefined;
+  memos?: MemoMessage[] | undefined;
   nowMs: number;
   dish: JetztInput["dish"];
   dinnerFree: boolean;
@@ -77,11 +78,11 @@ export function useJetztTopics(src: JetztSource) {
   const nowHour = forecast?.hours.find((h) => h.date === src.today && h.hour === hour);
   const range = forecast ? todayRange(forecast, src.today) : null;
   const tomorrowDay = forecast?.days.find((d) => d.date === tomorrowIso);
-  const unread = src.pins
-    ? visiblePins(src.pins, src.nowMs)
-        .filter((m) => m.data.author !== src.me && !m.data.readBy.includes(src.me))
-        .sort((a, b) => b.erstellt.localeCompare(a.erstellt))[0]
-    : undefined;
+  // Neueste ungelesene Nachricht bzw. ungehörte Sprachnachricht (nur „Sprachnachricht · 0:12“, nie ein Inhalt)
+  const unread = [
+    ...(src.pins ? visiblePins(src.pins, src.nowMs).filter((m) => m.data.author !== src.me && !m.data.readBy.includes(src.me)) : []).map((m) => ({ id: m.id, erstellt: m.erstellt, data: { author: m.data.author, text: m.data.text } })),
+    ...(src.memos ? visibleMemos(src.memos, src.nowMs).filter((m) => memoUnheard(m, src.me)) : []).map((m) => ({ id: m.id, erstellt: m.erstellt, data: { author: m.data.author, text: `Sprachnachricht · ${formatDauer(m.data.dauer)}` } })),
+  ].sort((a, b) => b.erstellt.localeCompare(a.erstellt))[0];
   const birthday = (list: DayItem[], when: "heute" | "morgen") => list.filter((i) => /geburtstag/i.test(i.title) || /geburtstag/i.test(i.label ?? "")).map((i) => ({ title: i.title, date: i.date, when }));
   const todayDay = forecast?.days.find((d) => d.date === src.today);
   const rainy = todayDay ? todayDay.wet > 0 : null;
