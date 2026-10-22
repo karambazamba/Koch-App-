@@ -1799,3 +1799,13 @@ Neue Arbeit baut auf dem Fundament oben auf.
   im Wochenplan "Spontan – Ideen gibt's am Tag selbst"; Lotte bietet statt
   der ganzen Woche höchstens einmal pro Woche "Soll ich dir die nächsten 2
   Tage vorschlagen?" an (nicht im Modus "Ganz locker").
+
+## Großes Aufräumen (v0.47.1 – v0.48.0)
+
+Etappen 0–9 ohne neue Funktionen: Sicherheitsnetz (Durchklick, 96
+Vergleichsbilder), Ungenutztes entfernt (knip 0, alte Seiten als
+Weiterleitungen), große Dateien geteilt, Ordner nach Bereichen, einheitliche
+Regeln als Tests, feste Sortierung (`core/sort.ts`), Tests je Bereich
+(Abdeckung 98,5 %), schneller (Layout ohne Startseite, Fenster und Zeichnen
+bei Bedarf), CLAUDE.md kompakt mit `docs/bereiche/`. Zahlen und gefundene
+Fehler in `docs/aufraeumen-nachher.md`.
