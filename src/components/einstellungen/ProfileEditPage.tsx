@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD, FAB_CLEARANCE, PAGE_MAIN, buttonClass } from "@/components/ui/styles";
-import { type HouseholdProfile } from "@/lib/einstellungen/profile";
+import type { HouseholdProfile } from "@/lib/einstellungen/profile";
 import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { dishArt, dishSlug } from "@/lib/essen/dishArt";
 import { renderDishSvg } from "@/lib/essen/dishSvg";
-import { builtinDishImage, dishImage } from "@/lib/essen/dishImages";
+import { builtinDishImage, cachedDishImage, drawDishImage } from "@/lib/essen/dishImages";
 import { DISH_IMAGES } from "@/lib/essen/dishImageList";
 import { DISHES } from "@/lib/essen/dishIdeas";
 import { DEMO_RECIPES } from "@/lib/essen/demoDish";
@@ -60,11 +60,13 @@ describe("Ein Bild für jedes Gericht", () => {
     for (const d of ALL) expect(renderDishSvg(dishArt(d.title, d.ingredients, d.category))).not.toMatch(/NaN|undefined/);
   });
 
-  it("eingebautes Bild zuerst, sonst live gezeichnet", () => {
+  it("eingebautes Bild zuerst, sonst live gezeichnet", async () => {
     expect(builtinDishImage("Spaghetti Bolognese")).toBe("/gerichte/spaghetti-bolognese.webp");
-    expect(dishImage("Spaghetti Bolognese")).toBe("/gerichte/spaghetti-bolognese.webp");
-    expect(dishImage("Tante Ernas Gulasch")).toMatch(/^data:image\/svg\+xml/);
-    expect(dishImage("  ")).toBeNull();
+    expect(cachedDishImage("Spaghetti Bolognese")).toBe("/gerichte/spaghetti-bolognese.webp");
+    expect(cachedDishImage("Tante Ernas Gulasch")).toBeUndefined();
+    expect(await drawDishImage("Tante Ernas Gulasch")).toMatch(/^data:image\/svg\+xml/);
+    expect(cachedDishImage("Tante Ernas Gulasch")).toMatch(/^data:image\/svg\+xml/);
+    expect(cachedDishImage("  ")).toBeNull();
     expect(dishSlug("Pasta mit Tomaten & Burrata")).toBe("pasta-mit-tomaten-burrata");
     expect(dishSlug("Grießbrei")).toBe("griessbrei");
   });

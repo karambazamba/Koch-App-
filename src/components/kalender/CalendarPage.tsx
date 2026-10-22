@@ -20,9 +20,12 @@ import { addDays } from "@/lib/core/now";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 import { dishOf, useMeals } from "@/components/essen/useMeals";
 import { roomBar } from "@/components/kalender/Items";
-import { AddSheet } from "@/components/kalender/AddSheet";
 import { DayAgenda, type RoomFilter } from "@/components/kalender/DayAgenda";
 import { TipDot, TipsChip, useCalendarTips } from "@/components/tipps/CalendarTips";
+import dynamic from "next/dynamic";
+
+// Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
+const AddSheet = dynamic(() => import("@/components/kalender/AddSheet").then((m) => m.AddSheet), { ssr: false });
 
 type View = "monat" | "woche" | "liste";
 const STEP = 14;

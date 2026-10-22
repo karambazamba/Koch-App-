@@ -16,12 +16,15 @@ import { clockLabel } from "@/lib/kalender/answers";
 import { isUrgent, setDone, taskBadge, type DayItem } from "@/lib/kalender/model";
 import { UrgentMark } from "@/components/kalender/UrgentMark";
 import type { TileSize } from "@/lib/core/homeLayout";
-import { TaskQuickAdd } from "@/components/kalender/TaskQuickAdd";
-import { TerminQuickAdd } from "@/components/kalender/TerminQuickAdd";
 import { LEAVE_MS, act, buzz } from "@/components/heute/actions";
 import { ItemMenu, roomBar } from "@/components/kalender/Items";
-import { EntryForm } from "@/components/kalender/EntryForm";
 import { withoutEmoji } from "@/lib/core/text";
+import dynamic from "next/dynamic";
+
+// Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
+const TaskQuickAdd = dynamic(() => import("@/components/kalender/TaskQuickAdd").then((m) => m.TaskQuickAdd), { ssr: false });
+const TerminQuickAdd = dynamic(() => import("@/components/kalender/TerminQuickAdd").then((m) => m.TerminQuickAdd), { ssr: false });
+const EntryForm = dynamic(() => import("@/components/kalender/EntryForm").then((m) => m.EntryForm), { ssr: false });
 
 /** Beispiel-Tag: Beispiele statt echter Einträge (Antippen erklärt, Abhaken nur hier) */
 export type DemoProps = { label?: string | null; done?: string[]; onToggle?: (item: DayItem) => void; onGone?: (item: DayItem) => void; onOpen: (item: DayItem) => void };

@@ -1,6 +1,6 @@
 
 import { restoreRecipe } from "@/lib/essen/cookbook";
-import { type HouseholdProfile, type NeverAgainEntry } from "@/lib/einstellungen/profile";
+import type { HouseholdProfile, NeverAgainEntry } from "@/lib/einstellungen/profile";
 import { saveProfile } from "@/lib/einstellungen/profileStore";
 
 

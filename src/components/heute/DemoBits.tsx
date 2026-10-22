@@ -6,10 +6,13 @@
 import { useState } from "react";
 import { Sheet } from "@/components/ui/Sheet";
 import type { DayItem } from "@/lib/kalender/model";
-import { TaskQuickAdd } from "@/components/kalender/TaskQuickAdd";
-import { TerminQuickAdd } from "@/components/kalender/TerminQuickAdd";
 import { CARD, buttonClass } from "@/components/ui/styles";
 import { clearDemo, markDemoAsked } from "@/lib/core/demo";
+import dynamic from "next/dynamic";
+
+// Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
+const TerminQuickAdd = dynamic(() => import("@/components/kalender/TerminQuickAdd").then((m) => m.TerminQuickAdd), { ssr: false });
+const TaskQuickAdd = dynamic(() => import("@/components/kalender/TaskQuickAdd").then((m) => m.TaskQuickAdd), { ssr: false });
 
 export function DemoBadge() {
   return <span className="rounded-md bg-demo px-1.5 py-0.5 text-[9.5px] font-extrabold tracking-wider text-demo-ink">BEISPIEL</span>;

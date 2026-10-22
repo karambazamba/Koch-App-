@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { dishArt } from "@/lib/essen/dishArt";
 import { renderDishSvg } from "@/lib/essen/dishSvg";
-import { builtinDishImage, dishImage } from "@/lib/essen/dishImages";
+import { builtinDishImage, cachedDishImage, drawDishImage } from "@/lib/essen/dishImages";
 import { dishTone } from "@/lib/essen/dishLook";
 import { dailyTip } from "@/lib/essen/tips/daily";
 import { ALL_TIPS } from "@/lib/essen/tips";
@@ -109,14 +109,14 @@ describe("Bild-Rezept je Gericht", () => {
 });
 
 describe("Bild-Reihenfolge und Teller-Farbe", () => {
-  it("eingebautes Bild zuerst, sonst live gezeichnet (gemerkt), leer → nichts", () => {
+  it("eingebautes Bild zuerst, sonst live gezeichnet (gemerkt), leer → nichts", async () => {
     expect(builtinDishImage("Rührei mit Brot")).toBe("/gerichte/ruehrei-mit-brot.webp");
     expect(builtinDishImage("Omas Geheimrezept")).toBeNull();
-    const live = dishImage("Omas Geheimrezept", ["Kürbis"], "vegetarisch")!;
+    const live = (await drawDishImage("Omas Geheimrezept", ["Kürbis"], "vegetarisch"))!;
     expect(live).toMatch(/^data:image\/svg\+xml/);
-    expect(dishImage("Omas Geheimrezept", ["Kürbis"], "vegetarisch")).toBe(live);
-    expect(dishImage("Rührei mit Brot")).toBe("/gerichte/ruehrei-mit-brot.webp");
-    expect(dishImage("  ")).toBeNull();
+    expect(cachedDishImage("Omas Geheimrezept", ["Kürbis"], "vegetarisch")).toBe(live);
+    expect(cachedDishImage("Rührei mit Brot")).toBe("/gerichte/ruehrei-mit-brot.webp");
+    expect(cachedDishImage("  ")).toBeNull();
   });
 
   it("gleiches Gericht, gleiche Farbe – je Kategorie aus der eigenen Palette", () => {

@@ -3,11 +3,11 @@
 import type { ParsedLeftover } from "@/lib/essen/leftovers/parser";
 import type { ChangeOp } from "@/lib/begleitung/ops";
 import type { ChatTurn } from "@/lib/begleitung/protocol";
-import { type MarketAnswer } from "@/lib/essen/market";
+import type { MarketAnswer } from "@/lib/essen/market";
 import type { Recipe } from "@/lib/essen/cookbook";
-import { type SpontanFilter } from "@/lib/essen/spontan";
-import { type MarketTarget } from "@/components/begleitung/MarketBoard";
-import { type MailDraft } from "@/lib/begleitung/mail";
+import type { SpontanFilter } from "@/lib/essen/spontan";
+import type { MarketTarget } from "@/components/begleitung/MarketBoard";
+import type { MailDraft } from "@/lib/begleitung/mail";
 import type { TipView } from "@/lib/tipps/model";
 
 export type ChatTurnView = ChatTurn & {

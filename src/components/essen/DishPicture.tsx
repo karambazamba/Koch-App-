@@ -6,9 +6,9 @@
 // einen Ausschnitt auf den Teller, damit man das Essen erkennt. Warme
 // Hintergrundfarbe (`tone`) als Platzhalter beim Laden, nie ein kaputtes Bild.
 
-import { useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import type { RecipeCategory } from "@/lib/essen/cookbook";
-import { dishImage } from "@/lib/essen/dishImages";
+import { cachedDishImage, drawDishImage } from "@/lib/essen/dishImages";
 
 type Props = {
   title?: string;
@@ -23,8 +23,21 @@ type Props = {
 
 export function DishPicture({ title, ingredients, category, photo, tone, alt, className = "", small = false }: Props) {
   const [broken, setBroken] = useState<string | null>(null);
+  const [, setDrawn] = useState(0);
   const style = { "--dish": tone ?? "var(--app-accent)" } as CSSProperties;
-  const wanted = photo ?? (title ? dishImage(title, ingredients, category) : null);
+  const cached = photo ? photo : title ? cachedDishImage(title, ingredients, category) : null;
+  const drawing = cached === undefined;
+  const ingredientKey = ingredients?.join(",") ?? "";
+  // Kein eingebautes Bild: einmal zeichnen (das Zeichnen wird erst dann geladen)
+  useEffect(() => {
+    if (!drawing || !title) return;
+    let alive = true;
+    void drawDishImage(title, ingredientKey ? ingredientKey.split(",") : [], category).then(() => alive && setDrawn((n) => n + 1));
+    return () => {
+      alive = false;
+    };
+  }, [drawing, title, ingredientKey, category]);
+  const wanted = cached ?? null;
   const src = wanted && wanted !== broken ? wanted : null;
   return (
     <span className={`dish-picture block overflow-hidden ${/\babsolute\b/.test(className) ? "" : "relative"} ${className}`} style={style}>
@@ -40,7 +53,7 @@ export function DishPicture({ title, ingredients, category, photo, tone, alt, cl
         />
       ) : (
         <span className="absolute inset-0 flex items-center justify-center" role={alt ? "img" : undefined} aria-label={alt || undefined}>
-          <Plate small={small} />
+          {!drawing && <Plate small={small} />}
         </span>
       )}
     </span>
