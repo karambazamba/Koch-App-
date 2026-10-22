@@ -20,6 +20,7 @@ import { personLabel, personRoleLabel, type HouseholdProfile, type Person } from
 import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { showToast } from "@/lib/core/toast";
 import { resetHints } from "@/lib/core/hints";
+import { useAssistantStatus } from "@/lib/begleitung/client";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 
 const LUNCH_ICONS: Record<"zuhause" | "auswaerts" | "manchmal", LucideIcon> = {
@@ -146,6 +147,8 @@ export function SettingsPage({
 export function DataSection({ onReset }: { onReset: () => void }) {
   const file = useRef<HTMLInputElement>(null);
   const [incoming, setIncoming] = useState<Backup | null>(null);
+  // „Einmal-Hinweise zurücksetzen“ nur im Testmodus (Entwickler-Einstellungen gibt es nicht)
+  const testMode = Boolean(useAssistantStatus(true)?.mock);
   const exportData = async () => {
     const backup = createBackup();
     const name = backupFileName();
@@ -204,16 +207,18 @@ export function DataSection({ onReset }: { onReset: () => void }) {
         Neu beginnen (Profil zurücksetzen)
       </button>
       {/* Zum Testen: Einmal-Tipps (z. B. „Neue Kacheln holen“) kommen beim nächsten Mal wieder */}
-      <button
-        type="button"
-        onClick={() => {
-          resetHints();
-          showToast({ text: "Die Tipps kommen beim nächsten Mal wieder." });
-        }}
-        className="self-center px-4 py-2 text-sm font-semibold text-muted underline"
-      >
-        Tipps wieder zeigen
-      </button>
+      {testMode && (
+        <button
+          type="button"
+          onClick={() => {
+            resetHints();
+            showToast({ text: "Die Einmal-Hinweise kommen beim nächsten Mal wieder." });
+          }}
+          className="self-center px-4 py-2 text-sm font-semibold text-muted underline"
+        >
+          Einmal-Hinweise zurücksetzen
+        </button>
+      )}
       {incoming && (
         <ConfirmDialog
           title="Daten wiederherstellen?"

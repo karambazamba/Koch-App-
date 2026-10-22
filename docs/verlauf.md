@@ -1817,3 +1817,9 @@ Fehler in `docs/aufraeumen-nachher.md`.
   hervorgehoben, Karte mit Spitze zur echten Knopf-Mitte, „Verstanden“.
   Tipp auf „+ Kachel“ öffnet sofort die Auswahl. Zurücksetzen über Daten &
   App → „Tipps wieder zeigen“. Durchklick-Ablauf `kachelTipp`.
+- v0.48.2: an die gültige Fassung angeglichen – echter Knopf statt Kopie über
+  der Abdunklung, Farben nur über Tokens (`accent`, `accent-strong`,
+  `tip-scrim`, `tip-ring`), neuer Merker „kachel-tipp“ (erscheint auch bei
+  allen, die die alte Sprechblase gesehen haben), Zurück/Escape, Scroll-Sperre,
+  Fokus bleibt im Tipp, Zurücksetzen nur im Testmodus („Einmal-Hinweise
+  zurücksetzen“). Durchklick zusätzlich iPhone SE und dunkel.

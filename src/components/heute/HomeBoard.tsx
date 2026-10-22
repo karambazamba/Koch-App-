@@ -21,10 +21,10 @@ import { glowTile, rowsOf, unitsOf, type Unit } from "@/lib/core/homeUnits";
 import { EditFrame } from "@/components/heute/EditFrame";
 import { UnitMenu } from "@/components/heute/UnitMenu";
 import { buzz } from "@/components/heute/actions";
-import dynamic from "next/dynamic";
+import type { TilePicker } from "@/components/heute/TilePicker";
 
 // Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
-const TilePicker = dynamic(() => import("@/components/heute/TilePicker").then((m) => m.TilePicker), { ssr: false });
+type PickerComponent = typeof TilePicker;
 
 type Box = { key: string; top: number; bottom: number; left: number; right: number; half: boolean };
 type Drag = { key: string; x: number; y: number; offX: number; offY: number; w: number; h: number; target: number };
@@ -64,6 +64,19 @@ export function HomeBoard({
   const pointer = useRef({ x: 0, y: 0 });
   const [confirmReset, setConfirmReset] = useState(false);
   const [menu, setMenu] = useState<string | null>(null);
+  // Auswahl erst beim Bearbeiten laden, dann ohne Suspense sofort zeigen:
+  // öffnet „+ Kachel“ sie gleich nach dem Tipp, übernimmt sie dessen
+  // Verlaufseintrag nur innerhalb von 300 ms (`useBackCloses`) – `next/dynamic`
+  // zeigte sie erst nach ~300 ms
+  const [Picker, setPicker] = useState<PickerComponent | null>(null);
+  useEffect(() => {
+    if (Picker || !(editing || picking)) return;
+    let on = true;
+    import("@/components/heute/TilePicker").then((m) => on && setPicker(() => m.TilePicker));
+    return () => {
+      on = false;
+    };
+  }, [Picker, editing, picking]);
 
   // Vorschau-Reihenfolge: die gezogene Einheit SELBST wandert (gleicher key) an die
   // Zielstelle und dient dort als Platzhalter. Ihr Element bleibt so während des
@@ -343,7 +356,7 @@ export function HomeBoard({
           {renderUnit(dragged, 0, dragged.tiles.length === 1 && drag.w < window.innerWidth * 0.6, true)}
         </div>
       )}
-      {picking && <TilePicker onClose={() => onPicking(false)} onClosed={glowTile} />}
+      {picking && Picker && <Picker onClose={() => onPicking(false)} onClosed={glowTile} />}
       {menu && units.some((u) => u.key === menu) && <UnitMenu unit={units.find((u) => u.key === menu)!} first={units[0].key === menu} last={units[units.length - 1].key === menu} onMove={(to) => moveUnit(menu, to)} onResize={resize} onRemove={(id) => remove(id)} onClose={() => setMenu(null)} />}
       {confirmReset && (
         <ConfirmDialog

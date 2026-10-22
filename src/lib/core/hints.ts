@@ -4,7 +4,8 @@
 import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 
-export type HintId = "kachel-hinzufuegen";
+// „kachel-hinzufuegen“ = alte Sprechblase (bis v0.48.0), bleibt nur als gespeicherter Wert
+export type HintId = "kachel-hinzufuegen" | "kachel-tipp";
 
 type HintState = { version: 1; seen: HintId[] };
 
@@ -14,10 +15,17 @@ const store = createLocalStore("wasgibts.einmalhinweise", (raw: unknown): HintSt
   return { version: 1, seen: Array.isArray(seen) ? seen.filter((s): s is HintId => typeof s === "string") : [] };
 });
 
+const seenIn = (state: HintState | null, id: HintId) => Boolean(state?.seen.includes(id));
+
+/** Schon gezeigt? (ohne React) @public für Tests */
+export function hintSeen(id: HintId): boolean {
+  return seenIn(store.load(), id);
+}
+
 /** Schon gezeigt? (`undefined` = lädt noch) */
 export function useHintSeen(id: HintId): boolean | undefined {
   const state = useExternalStore(store.subscribe, store.load, () => undefined);
-  return state === undefined ? undefined : Boolean(state?.seen.includes(id));
+  return state === undefined ? undefined : seenIn(state, id);
 }
 
 export function markHintSeen(id: HintId) {
@@ -26,7 +34,7 @@ export function markHintSeen(id: HintId) {
   store.save({ version: 1, seen: [...(s?.seen ?? []), id] });
 }
 
-/** Alle Einmal-Tipps wieder zeigen (Daten & App → „Tipps wieder zeigen“, zum Testen) */
+/** Alle Einmal-Hinweise wieder zeigen (Daten & App, nur im Testmodus) */
 export function resetHints() {
   store.save({ version: 1, seen: [] });
 }

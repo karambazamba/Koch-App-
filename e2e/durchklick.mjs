@@ -21,7 +21,7 @@ for (const device of ["iPhone 15 Pro", "Pixel 7"]) {
     const { check, failed: f } = checker(`${device} · ${name}`);
     const page = await newPage(browser, device);
     try {
-      await run(page, check);
+      await run(page, check, device);
       check(!page.errors.length, `keine Fehler ${page.errors.join(" | ")}`);
     } catch (e) {
       check(false, `abgebrochen: ${String(e.message).split("\n")[0]}`);
