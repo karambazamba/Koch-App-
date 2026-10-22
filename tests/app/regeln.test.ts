@@ -20,8 +20,9 @@ describe("Regeln für den Code", () => {
     expect(hits((code, file) => (file === "lib/core/now.ts" ? [] : [...stripComments(code).matchAll(/new Date\(\)/g)].map((m) => m[0])))).toEqual([]);
   });
 
+  // AddTileTip: Einmal-Tipp über dem echten Knopf (kein Fenster, sondern Hinweis-Karte)
   it("Fenster nur über Sheet oder ConfirmDialog", () => {
-    const allowed = new Set(["components/ui/Sheet.tsx", "components/ui/ConfirmDialog.tsx"]);
+    const allowed = new Set(["components/ui/Sheet.tsx", "components/ui/ConfirmDialog.tsx", "components/heute/AddTileTip.tsx"]);
     expect(hits((code, file) => (allowed.has(file) ? [] : [...stripComments(code).matchAll(/(?<!\[)role=["{]["']?(dialog|alertdialog)/g)].map((m) => m[0])))).toEqual([]);
   });
 });

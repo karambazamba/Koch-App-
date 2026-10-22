@@ -19,6 +19,7 @@ import { backupFileName, backupSummary, createBackup, parseBackup, restoreBackup
 import { personLabel, personRoleLabel, type HouseholdProfile, type Person } from "@/lib/einstellungen/profile";
 import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { showToast } from "@/lib/core/toast";
+import { resetHints } from "@/lib/core/hints";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 
 const LUNCH_ICONS: Record<"zuhause" | "auswaerts" | "manchmal", LucideIcon> = {
@@ -201,6 +202,17 @@ export function DataSection({ onReset }: { onReset: () => void }) {
       />
       <button type="button" onClick={onReset} className="self-center px-4 py-3 text-sm font-semibold text-muted underline">
         Neu beginnen (Profil zurücksetzen)
+      </button>
+      {/* Zum Testen: Einmal-Tipps (z. B. „Neue Kacheln holen“) kommen beim nächsten Mal wieder */}
+      <button
+        type="button"
+        onClick={() => {
+          resetHints();
+          showToast({ text: "Die Tipps kommen beim nächsten Mal wieder." });
+        }}
+        className="self-center px-4 py-2 text-sm font-semibold text-muted underline"
+      >
+        Tipps wieder zeigen
       </button>
       {incoming && (
         <ConfirmDialog

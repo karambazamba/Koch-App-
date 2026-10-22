@@ -1809,3 +1809,11 @@ Regeln als Tests, feste Sortierung (`core/sort.ts`), Tests je Bereich
 (Abdeckung 98,5 %), schneller (Layout ohne Startseite, Fenster und Zeichnen
 bei Bedarf), CLAUDE.md kompakt mit `docs/bereiche/`. Zahlen und gefundene
 Fehler in `docs/aufraeumen-nachher.md`.
+
+## Tipp „Neue Kacheln holen“ (v0.48.1)
+
+- Statt der Sprechblase unter „+ Kachel“ ein Tipp-Overlay beim allerersten
+  Bearbeiten der Startseite (`heute/AddTileTip.tsx`): Abdunklung, „+ Kachel“
+  hervorgehoben, Karte mit Spitze zur echten Knopf-Mitte, „Verstanden“.
+  Tipp auf „+ Kachel“ öffnet sofort die Auswahl. Zurücksetzen über Daten &
+  App → „Tipps wieder zeigen“. Durchklick-Ablauf `kachelTipp`.
