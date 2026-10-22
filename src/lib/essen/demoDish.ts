@@ -109,6 +109,3 @@ export function demoDishAt(minutes: number): { recipe: Recipe; clock: string; ph
   if (minutes < DEMO_MEAL_OVER) return { ...DEMO_DISH, tomorrow: false };
   return { recipe: DEMO_RECIPES[1], clock: DEMO_DISH.clock, photo: DEFS[1].photo!, tomorrow: true };
 }
-
-/** Drei weitere Beispiel-Ideen ("Mehr Ideen") */
-export const DEMO_MORE = DEMO_RECIPES.slice(1);

@@ -218,6 +218,33 @@ was dafür auf die Liste müsste, „Auf die Liste“ (→ „Jetzt mitnehmen“
 morgen (`demoDishAt`); lesbar und kochbar über `findRecipe`, dazu „Mehr
 Ideen“. Verschwindet mit dem ersten eigenen Gericht oder dem Beispiel-Tag.
 
+### Mehr Ideen – bunte Mischung zum Durchschieben (seit v0.61)
+
+- Unter jedem Kochrezept (auch Beispiel-Tag) eine wischbare Reihe mit bis zu
+  8 Ideen (`components/essen/rezepte/MoreIdeas.tsx`, ersetzt
+  `DemoMoreIdeas`): 2,5 Karten sichtbar, Einrasten pro Karte, endlos (Liste
+  dreifach, springt nach dem Einrasten unbemerkt in die Mitte), keine
+  Pfeile/Punkte; für Screenreader nur die mittlere Liste; `data-no-swipe`.
+  Karten: Bild, Titel, Minuten, Etikett „Besonders“ / „Wenn Zeit ist“.
+- Mischung (`lib/essen/mehrIdeen/mix.ts`): feste Grenzen zuerst (Allergien,
+  „mag nicht“, „mag nicht: Fleisch/Fisch/vegetarisch“ = ganze Art, nichts
+  aus den letzten 7 Tagen, nicht das aktuelle Rezept; weniger als 8, wenn es
+  nicht mehr gibt). Mo–Do 3 einfach / 2 Lieblinge / 2 besonders / 1 wenn
+  Zeit ist (hinten), Fr–So 2/2/2/2 (Aufwendige vorn). „Besonders“ an Platz
+  3 (und 6). Je Gruppe zuerst „alles im Haus“. Zu kleine Gruppe → Plätze an
+  einfach → Lieblinge → besonders; ohne Lieblinge an „einfach“. Tages-Zufall
+  je Haushalt; höchstens 2 von gestern (die Tage werden ab 1. Januar
+  nacheinander gemischt, damit das genau stimmt).
+- Lieblinge: eigene Rezepte mit Favorit, Daumen hoch oder gekocht, oder
+  zweimal angetippt. Still mitlernen (`mehrIdeen/store.ts`,
+  `wasgibts.ideenmix`): Antippen zählt (Gericht, Art, Aufwand, Kategorie),
+  gezeigt und nie angetippt = seltener.
+- Rezeptvorrat „Aus unserer Küche“ (`lib/essen/kochen`, ID `k:<id>`): 34
+  Familiengerichte für 4 mit `aufwand` (einfach/normal/aufwendig) und `art`
+  (klassisch/besonders), eigene Zeichnungen (`npm run gerichte-bilder`).
+  Lesbar und kochbar wie Kochbuch-Rezepte, „In unsere Rezepte“ übernimmt.
+  Eigene Rezepte: Aufwand aus Zeit, Zutaten und Ofen geschätzt.
+
 ### Kochtipp – spontan mit Mia (seit v0.60)
 
 - Kochmütze oben rechts in der Essen-Kachel (`components/essen/kochtipp/

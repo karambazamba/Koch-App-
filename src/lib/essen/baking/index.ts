@@ -7,6 +7,7 @@ import { createIngredient, createRecipe, saveRecipe, useRecipes, type Recipe } f
 import { BAKING_RECIPES } from "@/lib/essen/baking/data";
 import type { BuiltinBakingRecipe } from "@/lib/essen/baking/types";
 import { demoRecipe } from "@/lib/essen/demoDish";
+import { cookRecipe, isBuiltinCook } from "@/lib/essen/kochen";
 
 const BUILTIN_PREFIX = "b:";
 
@@ -36,11 +37,12 @@ const BY_ID: Record<string, Recipe> = Object.fromEntries(BUILTIN_BAKING.map((r) 
 /** Besonders gut mit Kindern */
 export const KID_FRIENDLY = new Set(BAKING_RECIPES.filter((b) => b.kidFriendly).map((b) => `${BUILTIN_PREFIX}${b.id}`));
 
-export const isBuiltin = (id: string) => id.startsWith(BUILTIN_PREFIX);
+/** Eingebaut: Backstube ("b:…") oder Küche ("k:…") */
+export const isBuiltin = (id: string) => id.startsWith(BUILTIN_PREFIX) || isBuiltinCook(id);
 
-/** Rezept aus dem Kochbuch, der eingebauten Sammlung oder dem Beispiel-Tag ("d:…") */
+/** Rezept aus dem Kochbuch, den eingebauten Sammlungen oder dem Beispiel-Tag ("d:…") */
 export function findRecipe(recipes: Record<string, Recipe>, id: string): Recipe | undefined {
-  return recipes[id] ?? BY_ID[id] ?? demoRecipe(id);
+  return recipes[id] ?? BY_ID[id] ?? cookRecipe(id) ?? demoRecipe(id);
 }
 
 /** Kochbuch inkl. eingebauter Backrezepte zum Nachschlagen (`undefined` = lädt) */

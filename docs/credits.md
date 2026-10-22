@@ -6,7 +6,7 @@
   fremden Fotos, keine KI, keine Lizenzpflicht. Quelle: `dishArt` (erkennt
   Form und Toppings) und `renderDishSvg` (zeichnet) in `src/lib/essen/`.
 - `public/gerichte/<slug>.webp` – eingebaute Gerichte (Gerichte-Liste,
-  Beispiel-Gerichte, Backstube), erzeugt mit `npm run gerichte-bilder`
+  Beispiel-Gerichte, Küche „Mehr Ideen“, Backstube), erzeugt mit `npm run gerichte-bilder`
   (`scripts/generate-dish-images.mjs`).
 - `public/demo/gericht.webp` – „Pasta mit Tomaten & Burrata“ für den
   Beispiel-Tag, aus denselben Bausteinen (ebenfalls `npm run gerichte-bilder`).
