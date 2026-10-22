@@ -27,7 +27,7 @@ const FAKE_SPEECH = () => {
   };
 };
 
-/** Begrüßung neu (Tafel 19): 10× frisch, passt ohne Scrollen, Sprech-Knopf, Link */
+/** Begrüßung neu (Tafel 19): 10× frisch, passt ohne Scrollen, Mikro unten in der Leiste, Link */
 export const hallo2 = async (page, check, device) => {
   // 10× frisch: keine zweite Navigation (nur Dokument-Anfragen zählen), Begleitung genau einmal
   let navs = 0;
@@ -50,10 +50,13 @@ export const hallo2 = async (page, check, device) => {
   check((await page.locator("[data-tone]").count()) === 3, "drei Kacheln (Termine, Essen, Einkauf)");
   check(await page.getByText("Euer Alltag an einem Ort.").isVisible(), "Zeile „Euer Alltag an einem Ort.“");
   check(!(await page.getByText("Ich behalte euren Alltag im Blick.").count()) && !(await page.getByText("Ich habe eine Sicherung").count()), "alte Texte sind weg");
+  check(!(await page.getByText("Einfach mit mir sprechen").count()), "Sprech-Chip ist weg");
   const talk = page.getByRole("button", { name: "Mit Mia sprechen" });
-  check(await talk.isVisible(), "Sprech-Knopf „Mit Mia sprechen“");
+  check(await talk.isVisible(), "Mikro unten „Mit Mia sprechen“");
   const box = await talk.boundingBox();
-  check(box.height >= 44 && box.height < 60, `Sprech-Knopf eine Zeile, mind. 44 px (${Math.round(box.height)} px)`);
+  const losBox = await page.getByRole("button", { name: "Los geht’s" }).boundingBox();
+  check(box.height >= 44 && box.width >= 44 && box.y > losBox.y, `Mikro unten unter „Los geht’s“, mind. 44 px (${Math.round(box.height)} px)`);
+  check(!(await page.getByText(/Anmelden/).count()), "kein Anmelden-Link auf der Begrüßung");
 
   // Link → Daten & App
   await page.getByRole("link", { name: /Daten wiederherstellen/ }).click();
@@ -77,24 +80,24 @@ export const hallo2 = async (page, check, device) => {
       const fit = await p.evaluate(() => {
         const main = document.querySelector("main[aria-label=Willkommen]");
         const link = [...document.querySelectorAll("a")].find((a) => a.textContent.includes("Daten wiederherstellen"));
-        const chip = document.querySelector("button[aria-label^='Mit ']");
-        return main.scrollHeight <= main.clientHeight + 1 && link.getBoundingClientRect().bottom <= innerHeight && chip.scrollWidth <= chip.clientWidth + 1;
+        const mic = document.querySelector("button[aria-label^='Mit ']");
+        return main.scrollHeight <= main.clientHeight + 1 && link.getBoundingClientRect().bottom <= innerHeight && mic.getBoundingClientRect().bottom <= innerHeight;
       });
-      check(fit, `${name} ${dark ? "dunkel" : "hell"}: passt ohne Scrollen, Sprech-Knopf in einer Zeile`);
+      check(fit, `${name} ${dark ? "dunkel" : "hell"}: passt ohne Scrollen, Mikro unten sichtbar`);
       await p.context().close();
     }
   }
 
-  // Sprech-Knopf mit (Schein-)Mikrofon → Startseite + Leiste hört zu
+  // Mikro mit (Schein-)Mikrofon → Startseite + Leiste hört zu
   const micBrowser = await launch(["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"]);
   const withMic = await newPage(micBrowser, device, { permissions: ["microphone"] });
   await withMic.addInitScript(FAKE_SPEECH);
   await withMic.goto(BASE);
   await withMic.getByRole("button", { name: "Mit Mia sprechen" }).click();
   await withMic.waitForTimeout(1500);
-  check(await withMic.getByRole("tab", { name: "Heute", selected: true }).isVisible(), "Sprech-Knopf → Startseite");
+  check(await withMic.getByRole("tab", { name: "Heute", selected: true }).isVisible(), "Mikro → Startseite");
   check(await withMic.getByRole("button", { name: "Zuhören beenden" }).isVisible(), "… und die Leiste hört zu");
-  check(!withMic.errors.length, `Sprech-Knopf: keine Fehler ${withMic.errors.join(" | ")}`);
+  check(!withMic.errors.length, `Mikro: keine Fehler ${withMic.errors.join(" | ")}`);
   await micBrowser.close();
 
   // Mikrofon abgelehnt → Startseite, Leiste zum Tippen, freundlicher Satz

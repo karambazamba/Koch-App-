@@ -166,10 +166,10 @@ export const begruessung = async (page, check, device) => {
   const tag = device.replace(/\W/g, "").toLowerCase() + Date.now();
   await page.goto(BASE);
   await page.getByRole("button", { name: "Los geht’s" }).waitFor();
-  const hint = page.getByRole("link", { name: /Familie schon dabei\? Anmelden/ });
-  await hint.waitFor();
-  check(await page.getByRole("link", { name: "Daten wiederherstellen", exact: true }).isVisible(), "darunter klein „Daten wiederherstellen“");
-  await hint.click();
+  await page.getByText(/Schon mal genutzt\?/).waitFor();
+  // Bis „Anmelden wie man es kennt“ (Tafel 22) fertig ist: kein Anmelden-Link auf der Begrüßung
+  check(!(await page.getByText(/Anmelden/).count()), "Begrüßung ohne Anmelden-Link");
+  await page.goto(BASE + "/anmelden");
   await page.getByRole("heading", { name: "Schön, dass ihr dabei seid." }).waitFor();
   check(await page.getByText("Kein Passwort nötig.").isVisible(), "„Kein Passwort nötig.“");
   const email = `felix-hallo-${tag}@example.com`;
@@ -218,8 +218,8 @@ export const begruessung = async (page, check, device) => {
     await pageC.route("**/api/konto/config", (r) => r.fulfill({ json: { mode: "aus" } }));
     await pageC.goto(BASE);
     await pageC.getByRole("button", { name: "Los geht’s" }).waitFor();
-    await pageC.getByText(/Schon mal genutzt\?/).waitFor();
-    check(!(await pageC.getByText(/Familie schon dabei/).isVisible()), "ohne Konten kein „Anmelden“");
+    await pageC.goto(BASE + "/anmelden");
+    check(await pageC.getByText(/Hier geht’s erstmal ohne Konto/).waitFor({ timeout: 5000 }).then(() => true, () => false), "ohne Konten: freundlicher Satz statt Anmelden");
   } finally {
     await pageC.context().close();
   }

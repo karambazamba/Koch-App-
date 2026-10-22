@@ -3,12 +3,12 @@
 // Erster Start (nur ganz am Anfang oder nach "Neu anfangen"): der
 // Hallo-Bildschirm nach Tafel 19 – drei kleine Pastell-Kacheln, die
 // Begleitung, „Hallo, ich bin <Name>.“, „Euer Alltag an einem Ort.“, der
-// Sprech-Knopf, „Los geht’s“ und „Daten wiederherstellen“ – mit Konten statt
-// dessen „Familie schon dabei? Anmelden“ (→ /anmelden, Tafel 20) und darunter
-// klein „Daten wiederherstellen“. Ablauf:
+// „Los geht’s“, „Daten wiederherstellen“ und unten die Leiste der Begleitung
+// mit dem Mikro (wie auf jeder Seite; der frühere Sprech-Chip hakte). Kein
+// Anmelden-Link, bis „Anmelden wie man es kennt“ (Tafel 22) fertig ist. Ablauf:
 //   0,0 s Begleitung ploppt auf, 0,3 s Kacheln fliegen herein (je 120 ms)
 //   0,95 s Überschrift tippt sich ein (sie spricht dabei), 1,8 s Zeile
-//   2,0 s Sprech-Knopf (Puls-Ring), 2,2 s „Los geht’s“ und Link
+//   2,2 s „Los geht’s“, Link und Leiste mit Mikro
 // Danach blinzelt sie, die Augen folgen dem Finger (max. ~3 px); antippen:
 // hüpfen, Smiley-Augen, Herzchen, kleiner Satz. „Los geht’s“ und der
 // Sprech-Knopf starten frisch (`startFresh`), die Begleitung fliegt in die
@@ -28,14 +28,13 @@ import { HelloTiles, fadeOutGhost } from "@/components/begleitung/HelloTiles";
 import { DEFAULT_HELPER, avatarHex, helperName } from "@/lib/einstellungen/profile";
 import { openHelper } from "@/lib/begleitung/open";
 import { primeMicrophone } from "@/lib/begleitung/useSpeechInput";
-import { useCloudMode } from "@/lib/konten/backend";
 import { showToast } from "@/lib/core/toast";
 import { startFresh } from "@/lib/einstellungen/welcomeStore";
 import { expectReplace } from "@/lib/core/navigation";
 import { helloElapsed, markHelloShown, reducedMotion, setHelloElapsed, setHelloFlight } from "@/lib/core/hello";
 import type { AvatarZustand } from "@/lib/core/avatarState";
 
-const T = { tiles: 300, tile: 120, title: 950, sub: 1800, mic: 2000, buttons: 2200 };
+const T = { tiles: 300, tile: 120, title: 950, sub: 1800, buttons: 2200 };
 const MIC_HINT: Record<"blocked" | "none", string> = {
   blocked: "Das Mikrofon ist noch aus – du kannst es in den Einstellungen deines Handys erlauben. Bis dahin einfach tippen.",
   none: "Sprechen klappt in diesem Browser leider nicht – tipp es einfach ein.",
@@ -69,8 +68,6 @@ export function HelloScreen() {
   const path = usePathname();
   const color = avatarHex(DEFAULT_HELPER.farbe);
   const name = helperName(null);
-  // Konten eingerichtet? Dann leise „Anmelden“ (lädt Supabase nicht)
-  const cloud = useCloudMode();
   const title = `Hallo, ich bin ${name}.`;
   const ready = usePageReady();
   useEffect(markHelloShown, []);
@@ -196,36 +193,24 @@ export function HelloScreen() {
             {typing && <span className="hello-caret" aria-hidden />}
           </h1>
           <p className={`mt-1 text-[15.5px] font-medium text-muted ${show(T.sub)}`}>Euer Alltag an einem Ort.</p>
-          <button
-            type="button"
-            onClick={talk}
-            aria-label={`Mit ${name} sprechen`}
-            className={`mt-6 inline-flex min-h-11 max-w-full items-center gap-2.5 whitespace-nowrap rounded-full border border-accent-strong/20 bg-accent-soft py-1.5 pl-1.5 pr-4 text-[clamp(13px,4vw,15px)] font-bold text-accent-strong active:scale-[0.98] [@media(max-height:620px)]:mt-4 ${show(T.mic)}`}
-          >
-            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface ${!still && at >= T.mic ? "hello-pulse" : ""}`} aria-hidden>
-              <Mic className="h-4 w-4" strokeWidth={2.25} />
-            </span>
-            Einfach mit mir sprechen
-          </button>
         </div>
         <div className={`flex w-full flex-col items-center gap-1 ${show(T.buttons)}`}>
           <button type="button" onClick={start} className="h-14 w-full rounded-field text-[17px] font-bold text-on-color active:scale-[0.98]" style={{ backgroundColor: color }}>
             Los geht’s
           </button>
-          {cloud === "supabase" || cloud === "test" ? (
-            <>
-              <Link href="/anmelden" className="hit inline-flex h-11 items-center gap-1 whitespace-nowrap text-[clamp(12px,3.6vw,14px)] font-semibold text-muted">
-                Familie schon dabei? <span className="text-accent-strong">Anmelden</span>
-              </Link>
-              <Link href="/profil/daten" className="hit -mt-2 inline-flex h-9 items-center text-[clamp(11px,3.3vw,13px)] font-medium text-muted">
-                Daten wiederherstellen
-              </Link>
-            </>
-          ) : (
-            <Link href="/profil/daten" className="hit inline-flex h-11 items-center gap-1 whitespace-nowrap text-[clamp(12px,3.6vw,14px)] font-semibold text-muted">
-              Schon mal genutzt? <span className="text-accent-strong">Daten wiederherstellen</span>
-            </Link>
-          )}
+          <Link href="/profil/daten" className="hit inline-flex h-11 items-center gap-1 whitespace-nowrap text-[clamp(12px,3.6vw,14px)] font-semibold text-muted">
+            Schon mal genutzt? <span className="text-accent-strong">Daten wiederherstellen</span>
+          </Link>
+          {/* Wie auf jeder Seite: die Leiste der Begleitung mit dem Mikro unten */}
+          <div className="mt-1 flex h-14 w-full items-center gap-2.5 rounded-bar border border-line bg-surface pl-2 pr-1.5 shadow-bar">
+            <button type="button" onClick={() => (start(), openHelper())} aria-label={`Sag ${name}, was ansteht …`} className="flex h-full min-w-0 flex-1 items-center gap-2.5 text-left">
+              <BegleitungAvatar size={40} color={color} groesse="klein" />
+              <span className="truncate text-[15px] text-muted">Sag {name}, was ansteht …</span>
+            </button>
+            <button type="button" onClick={talk} aria-label={`Mit ${name} sprechen`} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent transition active:scale-95">
+              <Mic className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+            </button>
+          </div>
         </div>
       </div>
     </main>
