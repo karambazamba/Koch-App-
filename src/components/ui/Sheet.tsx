@@ -66,7 +66,7 @@ export function Sheet({
       />
       <div
         className={`relative flex w-full max-w-lg flex-col rounded-t-card bg-background shadow-sheet ${fill ? "overflow-hidden" : "safe-bottom gap-4 overflow-y-auto px-4 pt-2"} ${height ? "" : tall ? "h-[85vh]" : "max-h-[85vh]"}`}
-        style={{ transform: dy ? `translateY(${dy}px)` : undefined, marginBottom: inset || undefined, height }}
+        style={{ transform: dy ? `translateY(${dy}px)` : undefined, marginBottom: inset || undefined, height, maxHeight: inset ? `calc(100% - ${inset + 8}px)` : undefined }}
       >
         <div
           className={`flex touch-none flex-col gap-2 ${fill ? "px-4 pt-2" : ""}`}

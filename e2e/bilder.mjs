@@ -34,7 +34,18 @@ const PAGES = [
 
 /** Szenen: Fenster, die erst nach einer Handlung da sind (Mikrofon aus mit Schein-Fehler) */
 const micTap = (page) => page.getByRole("button", { name: /etwas sagen$/ }).click();
+const openTermin = async (page, text) => {
+  await page.goto(BASE + "/?seite=kalender");
+  await page.waitForTimeout(900);
+  await page.locator("[role=tabpanel]:not([inert])").getByRole("button", { name: "Neu eintragen" }).click();
+  await page.getByRole("button", { name: /^Termin/ }).first().click();
+  await page.getByRole("textbox", { name: "Termin" }).fill(text);
+  await page.waitForTimeout(500);
+};
 const SCENES = [
+  ["termin-satz", (page) => openTermin(page, "Mittwoch 12.30 Physio")],
+  ["termin-frei", (page) => openTermin(page, "Elternabend")],
+  ["termin-vorbei", (page) => openTermin(page, "Bäcker 9 Uhr")],
   ["mikro-fragen", (page) => micTap(page)],
   ["mikro-hilfe", async (page) => (await micTap(page), await page.getByRole("button", { name: "Okay, frag mich" }).click())],
   [
