@@ -18,7 +18,8 @@ import { isPlanUnlockRequest, unlockPlanning, type UnlockChoice } from "@/lib/es
 import { startAddPerson, type OnboardingState } from "@/lib/einstellungen/onboarding/engine";
 import { isAddPersonRequest } from "@/lib/einstellungen/onboarding/recognize";
 import { householdIntroReply, parseHouseholdIntro } from "@/lib/einstellungen/householdIntro";
-import { calendarChat, changeEntries, loadEntries } from "@/lib/kalender";
+import { calendarChat, changeEntries } from "@/lib/kalender";
+import { loadCalendarEntries } from "@/lib/kalender/useCalendarEntries";
 import { pushUndo } from "@/lib/core/undo";
 import { loadSpeechSettings, saveSpeechSettings, stopSpeaking, unlockSpeech, type SpeechSettings } from "@/lib/begleitung/speech";
 import { readingChange } from "@/lib/begleitung/speechChat";
@@ -86,7 +87,7 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
   /** Termine und Aufgaben ohne KI: "Morgen um 9 Steuerberater", "Was steht diese Woche an?" – sofort, mit Rückgängig */
   const calendarReply = (t: string): { text: string; undo?: () => void } | null => {
     if (!data || !today) return null;
-    const reply = calendarChat(t, loadEntries(), toIsoDate(today), data.profile.persons);
+    const reply = calendarChat(t, loadCalendarEntries(), toIsoDate(today), data.profile.persons);
     if (!reply) return null;
     if (!reply.change) return { text: reply.text };
     const undo = pushUndo(reply.text, changeEntries(reply.change));

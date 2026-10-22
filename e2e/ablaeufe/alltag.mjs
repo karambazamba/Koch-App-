@@ -118,3 +118,52 @@ export const kalenderImport = async (page, check) => {
   }
   check((await store(page, "wasgibts.eintraege")).entries.length === before + 2, "doppelt eingelesen → nicht doppelt");
 };
+
+/** Kalender-Link (Abo) im Testmodus: https://kalender.test/… liefert der Testserver selbst */
+export const kalenderAbo = async (page, check) => {
+  await hello(page);
+  await seedFamily(page, { "wasgibts.funktionen": { version: 2, on: ["vorrat", "rezepte", "wochenplan", "regiontipps", "kalender"] } });
+  await page.goto(BASE + "/profil/kalender");
+  await page.waitForTimeout(800);
+  await page.getByRole("button", { name: "Kalender verbinden" }).click();
+  await page.getByPlaceholder("https://… oder webcal://…").fill("webcal://kalender.test/verein.ics");
+  await page.getByRole("button", { name: "Verbinden", exact: true }).click();
+  await page.getByText("Verbunden – 2 Termine").waitFor({ timeout: 6000 }).catch(() => {});
+  check(await page.getByText("Verbunden – 2 Termine").isVisible(), "Abo hinzugefügt: „Verbunden – 2 Termine“");
+  check((await page.getByRole("textbox", { name: "Name des Kalenders" }).inputValue()) === "Fußballverein", "Name aus dem Kalender übernommen");
+  const own = (await store(page, "wasgibts.eintraege")).entries.length;
+  check(!(await store(page, "wasgibts.eintraege")).entries.some((e) => e.besitzer?.startsWith("abo:")), "Abo-Termine nicht in den eigenen Terminen");
+
+  // Im Kalender: Do 22.10. Training, Sa 24.10. Turnier
+  const day = async (label) => {
+    await page.goto(BASE + "/?seite=kalender");
+    await page.waitForTimeout(900);
+    const panel = page.locator("[role=tabpanel]:not([inert])");
+    await panel.locator(`button[aria-label^="${label}"]`).click();
+    await page.waitForTimeout(400);
+    return panel;
+  };
+  let panel = await day("Donnerstag, 22. Oktober");
+  check(await panel.getByText("Training", { exact: true }).isVisible(), "Abo-Termin erscheint im Kalender");
+  await panel.getByRole("button", { name: /Training – Möglichkeiten/ }).first().click();
+  await page.waitForTimeout(500);
+  check(await page.getByText(/nur lesen/).isVisible(), "Antippen: nur lesen, aus „Fußballverein“");
+  await page.getByRole("button", { name: "In unseren Kalender kopieren" }).click();
+  await page.waitForTimeout(500);
+  const copied = (await store(page, "wasgibts.eintraege")).entries;
+  check(copied.length === own + 1 && copied.some((e) => e.data.title === "Training" && e.besitzer === "lokal"), "„In unseren Kalender kopieren“ macht einen eigenen Termin");
+
+  // Änderung im Original kommt an (Link mit v=2, Abruf fällig)
+  await page.evaluate(() => {
+    const s = JSON.parse(localStorage.getItem("wasgibts.kalenderabos"));
+    s.abos[0].url = "https://kalender.test/verein.ics?v=2";
+    s.abos[0].fetchedAt = "2026-10-21T07:00:00.000Z";
+    localStorage.setItem("wasgibts.kalenderabos", JSON.stringify(s));
+  });
+  await page.reload();
+  await page.waitForTimeout(1500);
+  panel = await day("Donnerstag, 22. Oktober");
+  check(await panel.getByText("Training (verlegt)").isVisible(), "Änderung im Feed kommt an (verlegt)");
+  panel = await day("Samstag, 24. Oktober");
+  check(!(await panel.getByText("Turnier").count()), "im Original gelöschter Termin verschwindet");
+};

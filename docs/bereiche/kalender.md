@@ -144,6 +144,32 @@ die Aufgaben-Seite und das Eintragen-Fenster.
   am ersten, Ende nur am letzten Tag), `woechentlich.every` (alle N Wochen).
   Das Formular behält diese Feinheiten beim Sichern (`terminExtras`).
 
+### Kalender-Link (Abo, nur lesen, seit v0.51)
+
+- Auf `/profil/kalender` unten „Dauerhaft verbinden – per Link“
+  (`kalender/import/AboSection.tsx`): Anleitung Google („Geheime Adresse im
+  iCal-Format“) und Apple („Öffentlicher Kalender“, webcal://), Link, Name,
+  Familie/Arbeit → „Verbinden“. Je Kalender: Farbe (antippen = nächste), Name,
+  Raum, an/aus, Entfernen (Rückgängig), „Jetzt aktualisieren“.
+- Abruf über `POST /api/kalender-abo` (`lib/kalender/abo/fetchFeed.ts`): nur
+  https/webcal, Standard-Port, keine Zugangsdaten, keine privaten/lokalen
+  Adressen (auch per DNS und Weiterleitung, höchstens 3), 5 MB, 10 s, Limit pro
+  IP; der Link wird nie protokolliert. Testmodus: `https://kalender.test/…`
+  liefert der Server selbst (`mockFeed`, `?v=2` = Änderung).
+- Speicher: `wasgibts.kalenderabos` (Links, nur Gerät; in der Sicherung nur mit
+  „Kalender-Links mitsichern“) und `wasgibts.kalenderabo-termine`
+  (Zwischenspeicher). Abruf beim Öffnen/Zurückkommen, höchstens alle 30 Min
+  (`aboRefreshDue` billig, `abo/sync.ts` mit Parser erst bei Bedarf).
+- Abo-Termine: besitzer `abo:<id>`, feste ids; `useCalendarEntries` /
+  `loadCalendarEntries` mischen sie für Heute, Kalender, Jetzt-Karte,
+  Wetter-Tipp, Tipps im Kalender und die Begleitung (Kontext „aus verbundenem
+  Kalender, nur lesen“). Strich/Punkt in der Farbe des Kalenders, kein
+  Abhaken; Antippen → `AboItemSheet` mit „In unseren Kalender kopieren“.
+  `replaceEntries` lässt Abo-Termine nie in die eigenen; Mias Werkzeuge
+  ändern sie nicht (freundlicher Hinweis).
+- Später (mit Konten): in beide Richtungen mit Google (OAuth/Calendar API)
+  und Apple (CalDAV), Export der eigenen Termine als Abo-Link.
+
 ## Begleitung (Mia)
 
 - Werkzeuge in `src/lib/begleitung/calendarTools.ts` (Bereich „alltag“):
@@ -166,6 +192,7 @@ die Aufgaben-Seite und das Eintragen-Fenster.
 
 ## Tests
 
+- `tests/kalender/kalenderAbo.test.ts`: Server-Schutz (private IPs, DNS, Weiterleitungen, zu groß, Zeitüberschreitung, kein Kalender), Abo-Termine, Kopie, Fälligkeit, Schreibschutz, Sicherung nur auf Wunsch; Durchklick `kalenderAbo` (verbinden, im Kalender, kopieren, Änderung kommt an).
 - `tests/kalender/kalenderImport.test.ts`: Dateien im Google- und Apple-Stil (Serie mit Ausnahme, verschobener Einzeltermin, ganztägig, mehrtägig, Sommerzeit, andere Zeitzone, Erinnerungen, Umlaute/Emojis, doppelt einlesen); Durchklick `kalenderImport`.
 
 - `tests/kalender/`: `termineAufgaben.test.ts`, `wiederholungen.test.ts`,

@@ -12,4 +12,4 @@ export function isCalendarImportRequest(text: string): boolean {
 
 /** Antwort: kurz beide Wege (die App kann den Handy-Kalender nicht direkt lesen) */
 export const CALENDAR_IMPORT_REPLY =
-  "Gern! Den Handy-Kalender kann ich nicht direkt lesen – aber du kannst eine Kalender-Datei aus Google oder Apple exportieren und hier einlesen. Ich hab dir „Kalender übernehmen“ geöffnet.";
+  "Gern! Den Handy-Kalender kann ich nicht direkt lesen – dafür gibt’s zwei Wege: einmal eine Kalender-Datei aus Google oder Apple einlesen, oder dauerhaft per Kalender-Link verbinden, dann bleibt alles aktuell. Ich hab dir „Kalender übernehmen“ geöffnet.";

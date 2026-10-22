@@ -4,6 +4,7 @@
 
 import { addDays } from "@/lib/core/now";
 import { itemsForDay, weekdayShort, type CalendarEntry, type DayItem } from "@/lib/kalender/model";
+import { isAboEntry } from "@/lib/kalender/abo/model";
 
 /** "9:00" statt "09:00" (zum Vorlesen und Anzeigen) */
 export const clockLabel = (time: string) => time.replace(/^0(\d)/, "$1");
@@ -68,6 +69,7 @@ export function contextLines(entries: CalendarEntry[], today: string, days = 7, 
         i.carried ? i.carried : "",
         i.dueLabel ?? "",
         i.done ? "erledigt" : "",
+        isAboEntry(i.entry) ? "aus verbundenem Kalender, nur lesen" : "",
       ].filter(Boolean);
       return `${i.time ? `${i.time} ` : ""}${i.title} [id=${i.entry.id}; ${meta.join(", ")}]`;
     });

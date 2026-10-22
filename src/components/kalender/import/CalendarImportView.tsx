@@ -5,6 +5,7 @@
 // Serien · ab heute 46“), Zeitraum und Familie/Arbeit je Kalender →
 // „Übernehmen“ → Meldung „46 Termine übernommen · Rückgängig“ (alle auf
 // einmal). Das Lesen steckt in `lib/kalender/import` (erst hier geladen).
+// Darunter dauerhaft verbinden per Kalender-Link (`AboSection`).
 
 import { useRef, useState } from "react";
 import { FileUp } from "lucide-react";
@@ -18,6 +19,7 @@ import { plural } from "@/lib/core/text";
 import { changeEntries } from "@/lib/kalender/store";
 import { parseIcs, type IcsCalendar } from "@/lib/kalender/import/ics";
 import { mergeImport, planImport, summarize, type ImportRange } from "@/lib/kalender/import/plan";
+import { AboSection } from "@/components/kalender/import/AboSection";
 
 const SOURCE: Record<IcsCalendar["source"], string> = { google: "Google", apple: "Apple", ics: "Kalender" };
 /** Kalender, die nach Arbeit klingen, starten in „Arbeit“ */
@@ -143,6 +145,8 @@ export function CalendarImportView() {
               ))}
             </ul>
           )}
+
+          <AboSection />
         </>
       )}
     </SettingsPage>

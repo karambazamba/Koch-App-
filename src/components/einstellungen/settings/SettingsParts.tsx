@@ -20,6 +20,7 @@ import { personLabel, personRoleLabel, type HouseholdProfile, type Person } from
 import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { showToast } from "@/lib/core/toast";
 import { resetHints } from "@/lib/core/hints";
+import { useAbos } from "@/lib/kalender/abo/store";
 import { useAssistantStatus } from "@/lib/begleitung/client";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 
@@ -149,8 +150,11 @@ export function DataSection({ onReset }: { onReset: () => void }) {
   const [incoming, setIncoming] = useState<Backup | null>(null);
   // „Einmal-Hinweise zurücksetzen“ nur im Testmodus (Entwickler-Einstellungen gibt es nicht)
   const testMode = Boolean(useAssistantStatus(true)?.mock);
+  // Geheime Kalender-Links nur auf ausdrücklichen Wunsch mitsichern
+  const abos = useAbos();
+  const [withLinks, setWithLinks] = useState(false);
   const exportData = async () => {
-    const backup = createBackup();
+    const backup = createBackup(localStorage, withLinks && abos?.length ? ["wasgibts.kalenderabos"] : []);
     const name = backupFileName();
     const blob = new Blob([JSON.stringify(backup, null, 1)], { type: "application/json" });
     const asFile = new File([blob], name, { type: "application/json" });
@@ -177,6 +181,17 @@ export function DataSection({ onReset }: { onReset: () => void }) {
         <Row onClick={() => void exportData()} icon={Download} title="Daten sichern">
           <span>Alles als Datei – z. B. für ein neues Handy</span>
         </Row>
+        {Boolean(abos?.length) && (
+          <li>
+            <label className="flex min-h-14 cursor-pointer items-center gap-3 px-4 py-3">
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="text-base font-bold leading-snug">Kalender-Links mitsichern</span>
+                <span className="text-sm leading-snug text-muted">Die Links sind geheim – nur mitnehmen, wenn die Datei sicher bleibt.</span>
+              </span>
+              <input type="checkbox" checked={withLinks} onChange={(e) => setWithLinks(e.target.checked)} className="h-6 w-6 shrink-0 accent-accent" />
+            </label>
+          </li>
+        )}
         <Row onClick={() => file.current?.click()} icon={Upload} title="Daten wiederherstellen">
           <span>Eine gesicherte Datei wieder laden</span>
         </Row>

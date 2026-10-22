@@ -5,7 +5,7 @@
 // Erledigten, Menü beim Antippen. Ruhig: keine Zähler, nichts "Offenes".
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import { Bell, Check, ChevronDown, ChevronRight, Pencil, Repeat2, Trash2, CalendarArrowUp, CheckCircle2, Circle } from "lucide-react";
 import { CARD, chipClass } from "@/components/ui/styles";
 import { Sheet } from "@/components/ui/Sheet";
@@ -15,6 +15,11 @@ import { UrgentMark } from "@/components/kalender/UrgentMark";
 import { addDays } from "@/lib/core/now";
 import { LEAVE_MS, act, buzz } from "@/components/heute/actions";
 import dynamic from "next/dynamic";
+import { aboOf } from "@/lib/kalender/abo/store";
+import { isAboEntry } from "@/lib/kalender/abo/model";
+import { avatarHex } from "@/lib/einstellungen/profileHelper";
+
+const AboItemSheet = dynamic(() => import("@/components/kalender/AboItemSheet").then((m) => m.AboItemSheet), { ssr: false });
 
 // Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
 const EntryForm = dynamic(() => import("@/components/kalender/EntryForm").then((m) => m.EntryForm), { ssr: false });
@@ -31,7 +36,13 @@ function subline(item: DayItem): string[] {
 }
 
 /** Farbe des Strichs: Orange = Familie, Blau = Arbeit */
-export const roomBar = (room: DayItem["room"]) => (room === "arbeit" ? "bg-work" : "bg-accent");
+const roomBar = (room: DayItem["room"]) => (room === "arbeit" ? "bg-work" : "bg-accent");
+
+/** Strich bzw. Punkt: Raum-Farbe, bei Terminen aus verbundenen Kalendern deren Farbe */
+export function roomBarProps(item: Pick<DayItem, "room" | "entry">): { className: string; style?: CSSProperties } {
+  const abo = aboOf(item.entry);
+  return abo ? { className: "", style: { backgroundColor: avatarHex(abo.color) } } : { className: roomBar(item.room) };
+}
 
 function ItemRow({ item, onOpen }: { item: DayItem; onOpen: (item: DayItem) => void }) {
   // Abhaken: ca. 1 s durchgestrichen (nochmal tippen = doch nicht), dann wandert der Eintrag nach unten
@@ -54,11 +65,13 @@ function ItemRow({ item, onOpen }: { item: DayItem; onOpen: (item: DayItem) => v
     }, LEAVE_MS);
   };
   const sub = subline(item);
+  const bar = roomBarProps(item);
+  const readOnly = isAboEntry(item.entry);
   return (
     <li className="flex items-center gap-3 py-2.5" data-item={item.key}>
       <button type="button" onClick={() => onOpen(item)} className="flex min-w-0 flex-1 items-center gap-3 text-left" aria-label={`${item.title} – Möglichkeiten`}>
         <span className={`w-11 shrink-0 text-sm font-bold tabular-nums ${checked ? "text-muted" : "text-ink"}`}>{item.time ? clockLabel(item.time) : ""}</span>
-        <span className={`h-9 w-1 shrink-0 rounded-full ${roomBar(item.room)} ${checked ? "opacity-40" : ""}`} aria-hidden />
+        <span className={`h-9 w-1 shrink-0 rounded-full ${bar.className} ${checked ? "opacity-40" : ""}`} style={bar.style} aria-hidden />
         <span className="min-w-0 flex-1">
           <span className={`flex items-center gap-1.5 truncate text-base font-semibold leading-snug ${checked ? "text-muted line-through" : ""}`}>
             {isUrgent(item) && !checked && <UrgentMark />}
@@ -78,6 +91,9 @@ function ItemRow({ item, onOpen }: { item: DayItem; onOpen: (item: DayItem) => v
           )}
         </span>
       </button>
+      {readOnly ? (
+        <span className="-mr-1.5 h-11 w-11 shrink-0" aria-hidden />
+      ) : (
       <button
         type="button"
         role="checkbox"
@@ -93,6 +109,7 @@ function ItemRow({ item, onOpen }: { item: DayItem; onOpen: (item: DayItem) => v
           {checked && <Check className="h-4 w-4" strokeWidth={3} aria-hidden />}
         </span>
       </button>
+      )}
     </li>
   );
 }
@@ -167,6 +184,8 @@ export function ItemMenu({ item, onClose, onEdit }: { item: DayItem; onClose: ()
     fn();
     onClose();
   };
+  // Aus einem verbundenen Kalender: nur lesen, kopieren
+  if (isAboEntry(item.entry)) return <AboItemSheet item={item} onClose={onClose} />;
   return (
     <Sheet title={item.title} onClose={onClose}>
       {step === "menu" && (

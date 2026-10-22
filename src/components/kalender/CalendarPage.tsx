@@ -19,7 +19,7 @@ import { itemsForDay, weekdayShort, type CalendarEntry, type DayItem } from "@/l
 import { addDays } from "@/lib/core/now";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 import { dishOf, useMeals } from "@/components/essen/useMeals";
-import { roomBar } from "@/components/kalender/Items";
+import { roomBarProps } from "@/components/kalender/Items";
 import { DayAgenda, type RoomFilter } from "@/components/kalender/DayAgenda";
 import { TipDot, TipsChip, useCalendarTips } from "@/components/tipps/CalendarTips";
 import dynamic from "next/dynamic";
@@ -208,7 +208,7 @@ function DayCard({ date, today, items, dish, paused }: { date: string; today: st
             </span>
           ) : (
             <span key={i.key} className="flex items-center gap-2 text-base">
-              <span className={`h-2 w-2 shrink-0 rounded-full ${roomBar(i.room)}`} aria-hidden />
+              <span className={`h-2 w-2 shrink-0 rounded-full ${roomBarProps(i).className}`} style={roomBarProps(i).style} aria-hidden />
               {i.time && <span className="shrink-0 text-sm font-bold tabular-nums">{clockLabel(i.time)}</span>}
               <span className="truncate">{i.title}</span>
             </span>

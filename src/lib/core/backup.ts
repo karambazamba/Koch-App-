@@ -6,7 +6,7 @@
 import { plural } from "@/lib/core/text";
 import { APP_VERSION } from "@/lib/core/app";
 import { now } from "@/lib/core/now";
-import { BACKUP_KEYS, OLD_TERMINE_KEY, STORAGE } from "@/lib/core/storage";
+import { BACKUP_KEYS, OLD_TERMINE_KEY, STORAGE, type StorageKey } from "@/lib/core/storage";
 
 export type Backup = { app: "was-gibts"; version: string; exportedAt: string; data: Record<string, string> };
 
@@ -28,9 +28,10 @@ function withoutMemos(value: string): string {
   }
 }
 
-export function createBackup(storage: Pick<Storage, "getItem"> = localStorage): Backup {
+/** `extra`: Schlüssel, die nur auf ausdrücklichen Wunsch mitkommen (z. B. geheime Kalender-Links) */
+export function createBackup(storage: Pick<Storage, "getItem"> = localStorage, extra: StorageKey[] = []): Backup {
   const data: Record<string, string> = {};
-  for (const key of BACKUP_KEYS) {
+  for (const key of [...BACKUP_KEYS, ...extra]) {
     const value = storage.getItem(key);
     if (value !== null) data[key] = key === PINNWAND ? withoutMemos(value) : value;
   }
