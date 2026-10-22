@@ -10,7 +10,7 @@ import { createEntry, type Entry } from "../core/entries";
 export const PIN_MAX = 140;
 const PIN_DAYS = 3;
 export const REACTIONS = ["👍", "❤️"] as const;
-type Reaction = (typeof REACTIONS)[number];
+export type Reaction = (typeof REACTIONS)[number];
 
 export type PinData = {
   text: string;
@@ -85,7 +85,7 @@ export const markPinsRead = (list: PinMessage[], me: string) => (list.some((m) =
 export const hasUnread = (list: PinMessage[], me: string, nowMs: number) => visiblePins(list, nowMs).some((m) => m.data.author !== me && !m.data.readBy.includes(me));
 
 /** "Du · 7:48" bzw. "Lisa · gestern" */
-export function pinMeta(m: PinMessage, me: string, today: string, clock: (iso: string) => string, dayOf: (iso: string) => string): string {
+export function pinMeta(m: { erstellt: string; data: { author: string } }, me: string, today: string, clock: (iso: string) => string, dayOf: (iso: string) => string): string {
   const who = m.data.author === me ? "Du" : m.data.author;
   const day = dayOf(m.erstellt);
   const [y, mo, d] = today.split("-").map(Number);

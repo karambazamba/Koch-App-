@@ -474,6 +474,52 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   (`TaskQuickAdd`), einmaliger Hinweis nach dem Kennenlernen, Start-Kacheln
   aus dem Kennenlernen (`homeTilesFor`, in Standard-Reihenfolge).
 
+## Memos in der Pinnwand (v0.45, Tafel 11)
+
+- Kurze Sprachnachrichten an die Familie direkt in der Pinnwand – keine eigene
+  Kachel, kein Mia, keine KI, keine Abschrift. Mikro in der Kachel-Akzentfarbe
+  (rosé, `MemoMic`, nie Orange – Orange ist Mias Mikro) in der Kachel neben dem
+  Plus und auf `/pinnwand` neben dem Feld (Seite trägt `data-tone="pinnwand"`).
+- Aufnehmen (`pinnwand/useMemoRecorder.ts`): gedrückt halten = Aufnahme (Mikro
+  ×1,3, Zeile mit rotem Punkt, Zeit, Tonwelle – `RecordingRow`), Loslassen =
+  senden, > 70 px zur Seite = verwerfen, < 1 s = nichts (Hinweis „gedrückt
+  halten“), 60 s = automatisch senden. MediaRecorder `pickMemoMime` (iPhone
+  audio/mp4 AAC, sonst webm/Opus), 32 kbit/s mono, Pegel per Analyser; Welle
+  28 Balken, normalisiert. Freigabe erst beim ersten Halten (wer schon
+  losgelassen hat: „Jetzt geht’s – nochmal halten“); abgelehnt = freundlicher
+  Satz, wo man es erlaubt. Tastatur/VoiceOver (Klick ohne Finger): Tippen
+  startet, „Senden“/✕ in der Zeile. Mikro hat `data-no-swipe` und
+  `data-no-longpress` (kein Seitenwechsel, kein Bearbeiten-Modus).
+- Anzeigen (`MemoRow.tsx`): zwischen den Text-Nachrichten nach Zeit gemischt
+  (`useBoard`): Avatar (Punkt = noch nicht gehört), Abspiel-Knopf (Name + Dauer
+  für Screenreader), Welle füllt sich, Dauer „0:12“. Nur eins spielt
+  (`memoPlayer.ts`, Ton vorab als Adresse bereitgelegt – das iPhone spielt
+  sonst nach dem Datenbank-Warten nicht ab). Abspielen = gehört. Fenster
+  (`MemoSheet`): 👍/❤️; eigenes Memo „Gehört von“ (Häkchen je Person,
+  antippbar – auf einem geteilten Handy kann man sagen, wer es gehört hat) und
+  „Memo löschen“ (Gelöscht · Rückgängig). Kein Anheften.
+- Verschwinden (`pinnwand/memo.ts`, rein): 24 Std., nachdem alle im Haushalt
+  (`householdNames` = Personen im Profil) es gehört haben (`alleGehoertAm`),
+  spätestens nach 3 Tagen (`memoAlive`, `pruneMemos` beim Speichern). Beim
+  Start `tidyMemos` (KitchenHelper): Abgelaufenes austragen, verwaisten Ton
+  löschen (nicht jünger als 10 Min).
+- Speicher: `wasgibts.pinnwand` v2 `{messages, memos}` (Einträge typ "memo":
+  author, dauer, mime, wave, gehoertVon, alleGehoertAm, reactions,
+  storagePath – null bis zu den Konten), v1 → leere `memos`
+  (`migratePinStore`). Ton in IndexedDB `wasgibts-memos` hinter
+  `MemoAudioStore` (`memoAudio.ts`; später Supabase Storage). Nicht in „Daten
+  sichern“: `createBackup` nimmt die Memos heraus und merkt nur die Zahl
+  („2 Sprachnachrichten (nicht gesichert)“ in `backupSummary`);
+  Wiederherstellen behält die Memos dieses Geräts.
+- Mia schreibt weiter nur Text. „Spiel das Memo von Lisa ab“ (`memoPlayRequest`,
+  `memoToPlay`: neuestes Ungehörtes zuerst) spielt ab, ohne den Inhalt zu
+  kennen – als Regel vor der KI (direkt im Antippen, sonst spielt das iPhone
+  nicht); im KI-Kontext nur „[Sprachnachricht 0:12]“. „Was steht auf der
+  Pinnwand?“ nennt Sprachnachrichten mit Dauer. Jetzt-Karte: ungehörtes Memo
+  als „Felix: Sprachnachricht · 0:12“.
+- Test: `tests/pinnwand.test.ts`; Durchklick `memos45` im Scratchpad (Chromium
+  mit simuliertem Mikrofon, iPhone 15 + Pixel 7, Ablehnung).
+
 ## Essen „Kochen mit dem, was da ist“ (v0.43)
 
 - Essen-Reiter (`FoodPage`): oben das Gericht von heute (nach dem Essen

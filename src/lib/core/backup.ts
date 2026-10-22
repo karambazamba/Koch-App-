@@ -14,11 +14,24 @@ const KNOWN = new Set<string>([...STORAGE.filter((s) => s.area === "local").map(
 /** Bleibt beim Einspielen auf dem Gerät (Zugangscode, Zähler, Geräte-Kennung …) */
 const DEVICE_ONLY = new Set<string>(STORAGE.filter((s) => s.area === "local" && !s.backup).map((s) => s.key));
 
+const PINNWAND = "wasgibts.pinnwand";
+
+/** Sprachnachrichten bleiben auf dem Gerät: aus der Pinnwand nehmen, nur die Zahl merken */
+function withoutMemos(value: string): string {
+  try {
+    const raw = JSON.parse(value) as { memos?: unknown[] } | null;
+    if (!raw || !Array.isArray(raw.memos)) return value;
+    return JSON.stringify({ ...raw, memos: [], memosNichtGesichert: raw.memos.length });
+  } catch {
+    return value;
+  }
+}
+
 export function createBackup(storage: Pick<Storage, "getItem"> = localStorage): Backup {
   const data: Record<string, string> = {};
   for (const key of BACKUP_KEYS) {
     const value = storage.getItem(key);
-    if (value !== null) data[key] = value;
+    if (value !== null) data[key] = key === PINNWAND ? withoutMemos(value) : value;
   }
   return { app: "was-gibts", version: APP_VERSION, exportedAt: now().toISOString(), data };
 }
@@ -65,13 +78,33 @@ export function backupSummary(backup: Backup): string {
   if (pantry) parts.push(count(pantry, "Sache im Vorrat", "Sachen im Vorrat"));
   const trainings = (read(backup, "wasgibts.sport") as { trainings?: unknown[] } | null)?.trainings?.length ?? 0;
   if (trainings) parts.push(count(trainings, "Training", "Trainings"));
+  const memos = (read(backup, PINNWAND) as { memosNichtGesichert?: unknown } | null)?.memosNichtGesichert;
+  if (typeof memos === "number" && memos > 0) parts.push(`${count(memos, "Sprachnachricht", "Sprachnachrichten")} (nicht gesichert)`);
   const persons = (read(backup, "familienkueche.haushaltsprofil") as { persons?: unknown[] } | null)?.persons?.length ?? 0;
   if (persons) parts.push(count(persons, "Person", "Personen"));
   return parts.length ? parts.join(", ") : "Einstellungen";
 }
 
-/** Sicherung einspielen: ersetzt die gesicherten Daten (alte Formate migrieren beim Laden); Geräte-Daten bleiben */
-export function restoreBackup(backup: Backup, storage: Pick<Storage, "setItem" | "removeItem"> = localStorage) {
+/** Sicherung einspielen: ersetzt die gesicherten Daten (alte Formate migrieren beim Laden); Geräte-Daten bleiben – auch die Sprachnachrichten dieses Geräts */
+export function restoreBackup(backup: Backup, storage: Pick<Storage, "getItem" | "setItem" | "removeItem"> = localStorage) {
+  const memos = deviceMemos(storage.getItem(PINNWAND));
   for (const key of KNOWN) if (!DEVICE_ONLY.has(key)) storage.removeItem(key);
   for (const [key, value] of Object.entries(backup.data)) storage.setItem(key, value);
+  if (!memos.length) return;
+  try {
+    const raw = JSON.parse(storage.getItem(PINNWAND) ?? "null") as { version?: number; messages?: unknown[] } | null;
+    const messages = Array.isArray(raw?.messages) ? raw.messages : [];
+    storage.setItem(PINNWAND, JSON.stringify({ version: 2, messages, memos }));
+  } catch {
+    storage.setItem(PINNWAND, JSON.stringify({ version: 2, messages: [], memos }));
+  }
+}
+
+function deviceMemos(value: string | null): unknown[] {
+  try {
+    const memos = (JSON.parse(value ?? "null") as { memos?: unknown } | null)?.memos;
+    return Array.isArray(memos) ? memos : [];
+  } catch {
+    return [];
+  }
 }

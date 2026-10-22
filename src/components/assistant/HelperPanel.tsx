@@ -68,7 +68,7 @@ import { unlockTips } from "@/lib/tipps/client";
 import { Sheet } from "@/components/ui/Sheet";
 
 import { spontanStartTurn, type ChatState, type ChatTurnView } from "./chatTypes";
-import { pauseRule as pauseRuleOf, dayRule as dayRuleOf, boardRule as boardRuleOf, schnellnotizRule as schnellnotizRuleOf, noteRule as noteRuleOf, bausteinRule as bausteinRuleOf, homeCommand as homeCommandOf, shopModeRule as shopModeRuleOf, type RuleContext } from "./localRules";
+import { pauseRule as pauseRuleOf, dayRule as dayRuleOf, boardRule as boardRuleOf, schnellnotizRule as schnellnotizRuleOf, noteRule as noteRuleOf, bausteinRule as bausteinRuleOf, homeCommand as homeCommandOf, shopModeRule as shopModeRuleOf, memoPlayRule as memoPlayRuleOf, type RuleContext } from "./localRules";
 import { AccessCodeCard, SpeakButton } from "./ChatBits";
 import { BUBBLE, ChatTurnItem } from "./ChatTurnItem";
 import { mailRule as mailRuleOf, rememberTone } from "./mailRules";
@@ -712,6 +712,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     if (homeCommand(t)) return true;
     // "Ich bin bei REWE" → Einkaufsmodus
     if (shopModeRuleOf(ruleCtx, t)) return true;
+    // "Spiel das Memo von Lisa ab" – direkt im Antippen (sonst spielt das iPhone nicht ab)
+    if (memoPlayRuleOf(ruleCtx, t)) return true;
     // "Lies mir vor", "Nicht mehr vorlesen", "Sprich langsamer" (gilt für dieses Gerät)
     const reading = readingChange(t, speechSettings);
     if (reading) {

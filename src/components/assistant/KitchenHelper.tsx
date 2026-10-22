@@ -23,6 +23,7 @@ import { helperName } from "@/lib/einstellungen/profile";
 import { removeRetiredKeys } from "@/lib/core/storage";
 import { adoptLegacySpeech } from "@/lib/lotte/speech";
 import { adoptSchnellnotiz } from "@/lib/notizen/schnellnotiz";
+import { tidyMemos } from "@/lib/pinnwand/memoAudio";
 import { spontanStartTurn, type ChatState } from "./chatTypes";
 import { loadSpontanFilters } from "./SpontanBoard";
 import dynamic from "next/dynamic";
@@ -82,6 +83,7 @@ export function KitchenHelper() {
     adoptLegacySpeech();
     adoptSchnellnotiz();
     removeRetiredKeys(localStorage, sessionStorage);
+    void tidyMemos();
   }, []);
 
   // App geöffnet (für "Willkommen zurück" nach 3+ Tagen)
