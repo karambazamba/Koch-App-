@@ -51,6 +51,7 @@ import { EditHeader } from "@/components/heute/EditHeader";
 import { useHomeEditing } from "@/components/heute/useHomeEditing";
 import { Pressable } from "@/components/heute/Pressable";
 import { DarkTip } from "@/components/heute/DarkTip";
+import { hatVisible, noteKochtippDay, useKochtipp } from "@/lib/essen/kochtipp/store";
 import { PotHintCard, usePotHint } from "@/components/spendentopf/PotHintCard";
 import { SpendentopfTile } from "@/components/spendentopf/SpendentopfTile";
 import { hideDemoItem, toggleDemoDone } from "@/lib/core/demo";
@@ -175,6 +176,10 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- nur beim Öffnen
   }, []);
   const cookingNow = Boolean(view.cooking);
+  // Kochmütze (Kochtipp): ab dem 3. Nutzungstag, früher auf Nachfrage oder mit „Alles zeigen“
+  const kochtipp = useKochtipp();
+  useEffect(() => noteKochtippDay(data.todayIso), [data.todayIso]);
+  const hat = Boolean(kochtipp && hatVisible(kochtipp, data.profile.display === "alles"));
   useWakeLock(Boolean(view.wakeLock) && !editing.on);
   // Tipp-Sammlung (150 Tipps) erst laden, wenn Tipps oder Wochenend-Ideen an sind
   const [tipModule, setTipModule] = useState<typeof import("@/lib/essen/tips/daily") | null>(null);
@@ -316,7 +321,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
       case "essen":
         if (demoDish) return <DemoFoodTile half={half} today={data.todayIso} minutes={minutes} />;
         if (cookingNow && dish && !edit) return <CookingTile dish={dish} clock={dishClock} persons={data.day?.persons ?? null} recipe={recipe} today={data.todayIso} onEaten={eaten} />;
-        return <FoodTile data={data} dish={dish} over={over} dishClock={dishClock} onOpen={onOpenFood} size={tile.size} onCook={dish && !over && !edit ? cookNow : undefined} />;
+        return <FoodTile data={data} dish={dish} over={over} dishClock={dishClock} onOpen={onOpenFood} size={tile.size} onCook={dish && !over && !edit ? cookNow : undefined} hat={hat && !edit ? { quiet: cookingNow } : null} />;
       case "einkauf":
         return <ShoppingTile half={half} size={tile.size} demo={demoDay.tiles.includes("einkauf")} />;
       case "notizen":

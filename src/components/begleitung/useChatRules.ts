@@ -36,6 +36,7 @@ import { pauseRule, dayRule, boardRule, schnellnotizRule, noteRule, bausteinRule
 import { mailRule } from "@/components/begleitung/mailRules";
 import { openHelper } from "@/lib/begleitung/open";
 import { isWeekCheckRequest } from "@/lib/kalender/wochencheck";
+import { isKochtippRequest } from "@/lib/essen/kochtipp/start";
 import type { SpontanChat } from "@/components/begleitung/useSpontanChat";
 
 type Options = {
@@ -122,6 +123,12 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
       setInput("");
       onClose();
       openHelper("wochencheck");
+      return true;
+    }
+    // „Kochtipp“, „Was soll ich kochen?“ → Kochtipp mit drei Schnellantworten
+    if (isKochtippRequest(t)) {
+      setInput("");
+      openHelper("kochtipp");
       return true;
     }
     if (mailRule(ruleCtx, chat.turns, t)) return true;

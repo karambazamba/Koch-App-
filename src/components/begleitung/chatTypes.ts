@@ -9,6 +9,7 @@ import type { SpontanFilter } from "@/lib/essen/spontan";
 import type { MarketTarget } from "@/components/begleitung/MarketBoard";
 import type { MailDraft } from "@/lib/begleitung/mail";
 import type { TipView } from "@/lib/tipps/model";
+import type { CookCard, CookWish } from "@/lib/essen/kochtipp/pick";
 
 export type ChatTurnView = ChatTurn & {
   /** Fehlermeldung – wird nicht an die KI geschickt */
@@ -45,11 +46,14 @@ export type ChatTurnView = ChatTurn & {
   mail?: MailDraft;
   /** Tipps aus der Region als Karten (bis zu 3) */
   tips?: TipView[];
+  /** Kochtipp: EIN Gericht als Karte (Personen änderbar) */
+  cook?: { card: CookCard; persons: number };
 };
 
 export type Proposal = { ops: ChangeOp[]; selected: Set<string> };
 /** `spontan`: Spontan kochen ("mit dem, was da ist") mit gewählten Filtern; null = aus */
-export type ChatState = { turns: ChatTurnView[]; proposal: Proposal | null; spontan: SpontanFilter[] | null };
+/** `kochtipp`: selbst geöffneter Kochtipp (Kochmütze) – bisherige Wünsche und schon Gezeigtes */
+export type ChatState = { turns: ChatTurnView[]; proposal: Proposal | null; spontan: SpontanFilter[] | null; kochtipp?: { wish: CookWish; exclude: string[] } | null };
 
 /** Neue Ideen-Antwort (Text und Ideen rechnet das Panel live) */
 export function spontanStartTurn(filters: SpontanFilter[] = [], exclude: string[] = [], extra: string[] = []): ChatTurnView {

@@ -8,7 +8,7 @@
 
 import { unlockSpeech } from "@/lib/begleitung/speech";
 
-type HelperMode = "spontan" | "voice" | "wochencheck";
+type HelperMode = "spontan" | "voice" | "wochencheck" | "kochtipp";
 
 type Detail = { mode?: HelperMode; ask?: string; filters?: string[] };
 

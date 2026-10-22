@@ -218,6 +218,41 @@ was dafür auf die Liste müsste, „Auf die Liste“ (→ „Jetzt mitnehmen“
 morgen (`demoDishAt`); lesbar und kochbar über `findRecipe`, dazu „Mehr
 Ideen“. Verschwindet mit dem ersten eigenen Gericht oder dem Beispiel-Tag.
 
+### Kochtipp – spontan mit Mia (seit v0.60)
+
+- Kochmütze oben rechts in der Essen-Kachel (`components/essen/kochtipp/
+  KochtippHat.tsx`, 40 px orange, Tippfläche 44 px). Tipp → Kochtipp-Chat, der
+  Rest der Kachel bleibt wie bisher. In der kleinen Kachel (S) entfällt mit
+  Mütze das ⇄ „Andere Idee“.
+- Freischalten (`lib/essen/kochtipp/store.ts`, `wasgibts.kochtipp`): ab dem
+  3. Nutzungstag (3 verschiedene Kalendertage je Gerät), früher auf Nachfrage
+  („Kochtipp“, „Was soll ich kochen?“ – auch mit KI, `unlockKochtipp`) oder
+  mit „Alles zeigen“. Wer schon länger als 2 Tage dabei ist (Beispiel-Tag
+  `since`), sieht die Mütze sofort. Beim ersten Erscheinen ploppt sie einmal
+  auf, dazu EINMAL die dunkle Blase „(Neu:) Spontan? Tipp auf die Mütze …“
+  (Hinweis `kochtipp-muetze`, weg bei Tipp oder nach 6 s, nicht zur
+  Kochzeit).
+- Chat (`useKochtippChat`, eigener Modus wie Spontan kochen): „Lust auf was
+  ganz anderes? 😋“ / „Sag mir, was noch da ist – oder kaufen wir neu ein?“
+  (mit der letzten Wahl: „Wie letztes Mal aus dem Vorrat?“), Schnellantworten
+  Schau in den Vorrat · Reste verwerten · Neu einkaufen. Mikro erlaubt → hört
+  gleich zu; Vorlesen an → Mia spricht die Frage (dann kein gleichzeitiges
+  Zuhören).
+- Antworten verstehen (`parseCookWish`): genannte Zutaten (zählen als da),
+  „was mit Fisch“, „vegetarisch“, „was Schnelles“, „für 4“, „lieber ohne
+  Reis“. Unverständliches beendet den Modus.
+- EIN Gericht (`pickCookDish`, eigene Rezepte + Gerichte-Liste): Vorrat =
+  höchstens eine Zutat auf die Liste, Reste = Bald-Verbrauchtes zuerst, Neu
+  einkaufen = egal. Allergien und „mag nicht“ strikt, keine der letzten 10
+  gezeigten und keine Gerichte der letzten 3 Tage. Nichts → „Dafür habe ich
+  gerade nichts. Sollen wir was einkaufen?“.
+- Karte (`KochtippCard`): Bild, Abzeichen (alles im Haus / fast alles im
+  Haus / Resteessen / Einkauf nötig), „für N ▾ · Min · nimmt deine …“,
+  „auf die Liste: …“, „Anderes“ / „Machen wir“. Machen wir → fehlt etwas,
+  erst „… auf die Einkaufsliste?“ (Ja / Hab ich, Mengen auf die Personen
+  umgerechnet), dann heutiges Essen (nur heute, `takeForToday` spontan),
+  Chat zu, „Heute gibt’s …“, Rückgängig über Mia.
+
 ## Begleitung (Mia)
 
 - Werkzeuge (Vorschau + „Übernehmen“): `woche_lesen`, `gericht_setzen`,
