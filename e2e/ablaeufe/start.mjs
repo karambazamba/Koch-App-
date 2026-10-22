@@ -100,15 +100,18 @@ export const hallo2 = async (page, check, device) => {
   check(!withMic.errors.length, `Mikro: keine Fehler ${withMic.errors.join(" | ")}`);
   await micBrowser.close();
 
-  // Mikrofon abgelehnt → Startseite, Leiste zum Tippen, freundlicher Satz
-  const denied = await newPage(browser, device);
+  // Mikrofon abgelehnt → Startseite, Leiste zum Tippen, Hilfe-Fenster (Tafel 27)
+  const denied = await newPage(browser, device, { permissions: [] });
   await denied.addInitScript(FAKE_SPEECH);
+  await denied.addInitScript(() => {
+    navigator.mediaDevices.getUserMedia = () => Promise.reject(new DOMException("nein", "NotAllowedError"));
+  });
   await denied.goto(BASE);
   await denied.getByRole("button", { name: "Mit Mia sprechen" }).click();
   await denied.waitForTimeout(1500);
   check(await denied.getByRole("tab", { name: "Heute", selected: true }).isVisible(), "abgelehnt → Startseite");
   check(await denied.getByRole("textbox").last().isVisible(), "… Leiste offen zum Tippen");
-  check(await denied.getByText(/Mikrofon ist noch aus/).isVisible(), "… mit freundlichem Satz");
+  check(await denied.getByRole("dialog", { name: "Ich kann dich gerade nicht hören" }).isVisible(), "… mit Hilfe zum Anmachen");
   check(!(await denied.evaluate(() => window.__zuhoeren ?? 0)), "… und hört nicht zu");
   await denied.context().close();
 };

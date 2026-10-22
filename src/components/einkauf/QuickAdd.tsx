@@ -10,6 +10,7 @@ import { useKeyboardInset } from "@/lib/core/useMobileKeyboard";
 import { useSpeechInput } from "@/lib/begleitung/useSpeechInput";
 import { pushUndo } from "@/lib/core/undo";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
+import { MIC_BLOCKED, MicStrip } from "@/components/ui/MicPermission";
 
 
 const sachen = (n: number) => `${n} ${n === 1 ? "Sache" : "Sachen"}`;
@@ -276,6 +277,7 @@ function QuickAddBody({
           </p>
         )}
 
+        <MicStrip />
         <form
           className="flex items-center gap-2"
           onSubmit={(e) => {
@@ -302,12 +304,14 @@ function QuickAddBody({
               type="button"
               onClick={toggleMic}
               aria-pressed={speech.listening}
-              aria-label={speech.listening ? "Zuhören beenden" : "Einsprechen"}
-              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-md active:scale-95 ${
+              aria-label={speech.blocked ? "Mikro aus – so machst du es an" : speech.listening ? "Zuhören beenden" : "Einsprechen"}
+              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${speech.blocked ? MIC_BLOCKED : "bg-accent text-on-accent shadow-md"} active:scale-95 ${
                 speech.listening ? "animate-pulse ring-4 ring-accent/25" : ""
               }`}
             >
-              {speech.listening ? (
+              {speech.blocked ? (
+                <MicOff className="h-6 w-6" strokeWidth={2} aria-hidden />
+              ) : speech.listening ? (
                 <Square className="h-5 w-5 fill-current" strokeWidth={2} aria-hidden />
               ) : speech.supported === false ? (
                 <MicOff className="h-6 w-6" strokeWidth={2} aria-hidden />

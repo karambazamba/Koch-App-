@@ -8,8 +8,9 @@
 // beendet.
 
 import { useRef, useState } from "react";
-import { Lock, Mic, SendHorizontal, Trash2 } from "lucide-react";
+import { Lock, Mic, MicOff, SendHorizontal, Trash2 } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { MIC_BLOCKED, useMicBlocked } from "@/components/ui/MicPermission";
 import { formatDauer } from "@/lib/pinnwand";
 import { LOCK_PX, timeWarns } from "@/lib/pinnwand/recorderState";
 import type { MemoRecorder } from "@/components/pinnwand/useMemoRecorder";
@@ -37,12 +38,13 @@ export function MemoMic({ recorder, size = 26 }: { recorder: MemoRecorder; size?
   const [locking, setLocking] = useState(false);
   const active = recorder.phase !== "idle";
   const freeMode = active && recorder.mode === "tippen";
+  const blocked = useMicBlocked();
   return (
     <button
       type="button"
       data-no-swipe
       data-no-longpress
-      aria-label={freeMode ? "Senden" : active ? "Aufnahme läuft – loslassen zum Senden" : "Aufnahme starten"}
+      aria-label={blocked ? "Mikro aus – so machst du es an" : freeMode ? "Senden" : active ? "Aufnahme läuft – loslassen zum Senden" : "Aufnahme starten"}
       aria-pressed={active}
       onPointerDown={(e) => {
         if (e.button !== 0 || freeMode) return;
@@ -89,10 +91,10 @@ export function MemoMic({ recorder, size = 26 }: { recorder: MemoRecorder; size?
         else recorder.send();
       }}
       onContextMenu={(e) => e.preventDefault()}
-      className={`hit relative flex shrink-0 touch-none select-none items-center justify-center rounded-full transition-transform duration-150 [-webkit-touch-callout:none] ${active ? "bg-tile-accent text-on-accent" : "bg-tile-inner text-tile-accent active:scale-95"} ${active && !freeMode ? "scale-[1.3]" : ""}`}
+      className={`hit relative flex shrink-0 touch-none select-none items-center justify-center rounded-full transition-transform duration-150 [-webkit-touch-callout:none] ${blocked ? MIC_BLOCKED : active ? "bg-tile-accent text-on-accent" : "bg-tile-inner text-tile-accent active:scale-95"} ${active && !freeMode ? "scale-[1.3]" : ""}`}
       style={{ width: size, height: size }}
     >
-      {locking ? <Lock className="h-[50%] w-[50%]" strokeWidth={2.5} aria-hidden /> : <Mic className="h-[55%] w-[55%]" strokeWidth={2.5} aria-hidden />}
+      {blocked ? <MicOff className="h-[50%] w-[50%]" strokeWidth={2.5} aria-hidden /> : locking ? <Lock className="h-[50%] w-[50%]" strokeWidth={2.5} aria-hidden /> : <Mic className="h-[55%] w-[55%]" strokeWidth={2.5} aria-hidden />}
     </button>
   );
 }

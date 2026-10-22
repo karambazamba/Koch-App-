@@ -28,6 +28,7 @@ import { HelloTiles, fadeOutGhost } from "@/components/begleitung/HelloTiles";
 import { DEFAULT_HELPER, avatarHex, helperName } from "@/lib/einstellungen/profile";
 import { openHelper } from "@/lib/begleitung/open";
 import { primeMicrophone } from "@/lib/begleitung/useSpeechInput";
+import { micState } from "@/lib/core/mic";
 import { showToast } from "@/lib/core/toast";
 import { startFresh } from "@/lib/einstellungen/welcomeStore";
 import { expectReplace } from "@/lib/core/navigation";
@@ -35,10 +36,7 @@ import { helloElapsed, markHelloShown, reducedMotion, setHelloElapsed, setHelloF
 import type { AvatarZustand } from "@/lib/core/avatarState";
 
 const T = { tiles: 300, tile: 120, title: 950, sub: 1800, buttons: 2200 };
-const MIC_HINT: Record<"blocked" | "none", string> = {
-  blocked: "Das Mikrofon ist noch aus – du kannst es in den Einstellungen deines Handys erlauben. Bis dahin einfach tippen.",
-  none: "Sprechen klappt in diesem Browser leider nicht – tipp es einfach ein.",
-};
+const MIC_NONE = "Sprechen klappt in diesem Browser leider nicht – tipp es einfach ein.";
 const CHAR_MS = 45;
 const STEP = 30;
 const TAPS = ["Hihi!", "Bereit, wenn du es bist!", "Kitzelig!", "Los geht’s?"];
@@ -148,7 +146,9 @@ export function HelloScreen() {
     void mic.then((result) => {
       if (result === "ok") return openHelper("voice");
       openHelper();
-      showToast({ text: MIC_HINT[result] });
+      // Gesperrt: das Hilfe-Fenster ist schon offen (core/mic); sonst ein freundlicher Satz
+      if (result === "none") showToast({ text: MIC_NONE });
+      else if (!micState().block) showToast({ text: "Ich finde gerade kein Mikrofon – tipp es einfach ein." });
     });
   };
   return (

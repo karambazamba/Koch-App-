@@ -5,10 +5,13 @@
 // Jede Aufnahme ist eine frische Sitzung: Die alte Erkennung wird sauber
 // beendet, ihre Ergebnisse zählen nicht mehr. Der Hook liefert immer den
 // GANZEN Text der aktuellen Aufnahme (nie angehängt) – so kann nichts doppelt
-// oder von früher mitkommen. Fehler werden nur bei echten Problemen gemeldet.
+// oder von früher mitkommen. Fehler werden nur bei echten Problemen gemeldet;
+// ein gesperrtes Mikro meldet `core/mic` (Hilfe-Fenster, grauer Knopf).
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { setAvatarFlag } from "@/lib/core/avatarState";
+import { hintSeen, markHintSeen } from "@/lib/core/hints";
+import { classifyMicError, guardMic, micPlatform, micState, micSubscribe, reportMicBlocked, setMicPermission } from "@/lib/core/mic";
 
 // Minimal-Typen für die Web Speech API (nicht in allen TS-Libs enthalten)
 type SpeechResultList = ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>;
@@ -88,8 +91,13 @@ export async function primeMicrophone(): Promise<"ok" | "blocked" | "none"> {
   try {
     const stream = await media.getUserMedia({ audio: true });
     stream.getTracks().forEach((t) => t.stop());
+    // Gefragt und erlaubt: keine Vorab-Frage mehr nötig
+    markHintSeen("mikro-gefragt");
+    setMicPermission("granted");
     return "ok";
-  } catch {
+  } catch (e) {
+    const block = classifyMicError((e as Error)?.name ?? "", micPlatform(navigator.userAgent));
+    if (block) reportMicBlocked(block);
     return "blocked";
   }
 }
@@ -103,6 +111,8 @@ type Options = {
 
 export function useSpeechInput({ onTranscript, onEnd }: Options) {
   const supported = useSpeechSupported();
+  /** Mikro gesperrt (geräteweit) – Knopf grau, Tipp öffnet die Hilfe */
+  const blocked = useSyncExternalStore(micSubscribe, () => micState().block !== null, () => false);
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState("");
   const [error, setError] = useState("");
@@ -145,7 +155,7 @@ export function useSpeechInput({ onTranscript, onEnd }: Options) {
   // Beim Verlassen (z. B. Chat schließen): abbrechen, nichts abschicken
   useEffect(() => () => detach(), [detach]);
 
-  const start = useCallback(() => {
+  const begin = useCallback(() => {
     const Recognition = speechRecognitionClass();
     if (!Recognition) return;
     detach();
@@ -180,13 +190,19 @@ export function useSpeechInput({ onTranscript, onEnd }: Options) {
     };
     recognition.onerror = (e) => {
       if (session !== sessionRef.current) return;
-      const blocked = e.error === "not-allowed" || e.error === "service-not-allowed";
+      const block = classifyMicError(e.error, micPlatform(navigator.userAgent));
+      if (block) {
+        // Sofort zurück: kein hängender Stopp-Knopf, Hilfe statt Kleingedrucktem
+        detach();
+        setListening(false);
+        setInterim("");
+        reportMicBlocked(block);
+        return;
+      }
       // Kein Fehler, wenn selbst beendet ("aborted") oder schon etwas erkannt wurde
-      if (!blocked && (e.error === "aborted" || stoppedByUser || heard)) return;
+      if (e.error === "aborted" || stoppedByUser || heard) return;
       setError(
-        blocked
-          ? "Das Mikrofon ist nicht erlaubt – bitte in den Einstellungen freigeben oder einfach tippen."
-          : e.error === "no-speech"
+        e.error === "no-speech"
             ? "Ich habe nichts gehört – nochmal versuchen?"
             : "Spracheingabe hat nicht geklappt – tipp es einfach ein.",
       );
@@ -218,6 +234,9 @@ export function useSpeechInput({ onTranscript, onEnd }: Options) {
       setError("Spracheingabe hat nicht geklappt – tipp es einfach ein.");
     }
   }, [detach, flagListening]);
+
+  /** Zuhören starten – gesperrt: Hilfe; allererstes Mal: erst „Darf ich zuhören?“ (im Tipp aufrufen) */
+  const start = useCallback(() => guardMic(begin, hintSeen("mikro-gefragt")), [begin]);
 
   /** Aufnahme beenden – der erkannte Text wird über onEnd abgeschickt */
   const stop = useCallback(() => {
@@ -252,5 +271,5 @@ export function useSpeechInput({ onTranscript, onEnd }: Options) {
     setError("");
   }, [detach]);
 
-  return { supported, listening, interim, error, start, stop, cancel, reset };
+  return { supported, blocked, listening, interim, error, start, stop, cancel, reset };
 }

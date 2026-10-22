@@ -6,7 +6,7 @@
 // Erinnerung". Enter fügt hinzu und lässt das Fenster für die nächste offen.
 
 import { useRef, useState } from "react";
-import { Mic, Square } from "lucide-react";
+import { Mic, MicOff, Square } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { INPUT_BASE, LABEL, buttonClass, chipClass } from "@/components/ui/styles";
 import { createEntry, type Room } from "@/lib/core/entries";
@@ -17,6 +17,7 @@ import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 import { useSpeechInput } from "@/lib/begleitung/useSpeechInput";
 import { act } from "@/components/heute/actions";
 import { UrgentMark } from "@/components/kalender/UrgentMark";
+import { MIC_BLOCKED, MicStrip } from "@/components/ui/MicPermission";
 
 const sameWhen = (a: When, b: When) => (typeof a === "string" || typeof b === "string" ? a === b : a.date === b.date && a.due === b.due);
 
@@ -80,6 +81,7 @@ export function TaskQuickAdd({ onClose, defaultWhen = "heute" }: { onClose: () =
           add();
         }}
       >
+        <MicStrip />
         <div className="flex items-center gap-2">
           <input
             value={speech.listening ? speech.interim || text : text}
@@ -94,11 +96,11 @@ export function TaskQuickAdd({ onClose, defaultWhen = "heute" }: { onClose: () =
             <button
               type="button"
               onClick={() => (speech.listening ? speech.stop() : speech.start())}
-              aria-label={speech.listening ? "Zuhören beenden" : "Einsprechen"}
+              aria-label={speech.blocked ? "Mikro aus – so machst du es an" : speech.listening ? "Zuhören beenden" : "Einsprechen"}
               aria-pressed={speech.listening}
-              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent active:scale-95 ${speech.listening ? "animate-pulse" : ""}`}
+              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${speech.blocked ? MIC_BLOCKED : "bg-accent text-on-accent"} active:scale-95 ${speech.listening ? "animate-pulse" : ""}`}
             >
-              {speech.listening ? <Square className="h-5 w-5 fill-current" strokeWidth={2} aria-hidden /> : <Mic className="h-5 w-5" strokeWidth={2.25} aria-hidden />}
+              {speech.blocked ? <MicOff className="h-5 w-5" strokeWidth={2.25} aria-hidden /> : speech.listening ? <Square className="h-5 w-5 fill-current" strokeWidth={2} aria-hidden /> : <Mic className="h-5 w-5" strokeWidth={2.25} aria-hidden />}
             </button>
           )}
         </div>

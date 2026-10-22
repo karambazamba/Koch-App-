@@ -12,6 +12,7 @@ import { helperName } from "@/lib/einstellungen/profile";
 import { parseSpokenRecipe, type SpokenRecipe } from "@/lib/essen/recipeSpeech";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { useSpeechInput } from "@/lib/begleitung/useSpeechInput";
+import { MIC_BLOCKED, MicStrip } from "@/components/ui/MicPermission";
 
 /**
  * "+" auf "Rezepte": <Name> erzählen (Sprache → Zutaten und Schritte) oder
@@ -144,6 +145,7 @@ function TellRecipe({ name, onClose }: { name: string; onClose: () => void }) {
           className={`${INPUT_BASE} w-full px-4 py-3`}
         />
         {hint && <p className="text-sm text-muted">{hint}</p>}
+        <MicStrip />
         <div className="flex gap-2">
           <button
             type="button"
@@ -156,13 +158,13 @@ function TellRecipe({ name, onClose }: { name: string; onClose: () => void }) {
             }}
             disabled={speech.supported === false}
             aria-pressed={speech.listening}
-            aria-label={speech.listening ? "Zuhören beenden" : "Rezept einsprechen"}
-            className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-md active:scale-95 disabled:opacity-40 ${speech.listening ? "animate-pulse ring-4 ring-accent/25" : ""}`}
+            aria-label={speech.blocked ? "Mikro aus – so machst du es an" : speech.listening ? "Zuhören beenden" : "Rezept einsprechen"}
+            className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${speech.blocked ? MIC_BLOCKED : "bg-accent text-on-accent shadow-md"} active:scale-95 disabled:opacity-40 ${speech.listening ? "animate-pulse ring-4 ring-accent/25" : ""}`}
           >
-            {speech.listening ? (
-              <Square className="h-5 w-5 fill-current" strokeWidth={2} aria-hidden />
-            ) : speech.supported === false ? (
+            {speech.blocked || speech.supported === false ? (
               <MicOff className="h-6 w-6" strokeWidth={2} aria-hidden />
+            ) : speech.listening ? (
+              <Square className="h-5 w-5 fill-current" strokeWidth={2} aria-hidden />
             ) : (
               <Mic className="h-7 w-7" strokeWidth={2} aria-hidden />
             )}

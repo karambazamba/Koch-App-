@@ -4,13 +4,16 @@
 // KitchenHelper). Eigene Datei, damit das Layout nicht die ganze Startseite
 // mitlädt.
 
-import { Mic } from "lucide-react";
+import { Mic, MicOff } from "lucide-react";
+import { openMicHelp } from "@/lib/core/mic";
+import { MIC_BLOCKED, useMicBlocked } from "@/components/ui/MicPermission";
 import { wakeAvatar } from "@/lib/core/avatarState";
 import { openHelper } from "@/lib/begleitung/open";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 
 /** Lotte-Leiste unten: hell und schwebend, Avatar links, oranges Mikrofon rechts */
 export function BegleitungBar({ name, bottom }: { name: string; bottom?: string }) {
+  const blocked = useMicBlocked();
   return (
     <div
       className="pointer-events-none fixed inset-x-0 bottom-0 z-20 bg-linear-to-t from-background via-background/90 to-transparent px-4 pt-6 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
@@ -24,11 +27,12 @@ export function BegleitungBar({ name, bottom }: { name: string; bottom?: string 
         </button>
         <button
           type="button"
-          onClick={() => (wakeAvatar(), openHelper("voice"))}
-          aria-label={`${name} etwas sagen`}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent transition active:scale-95"
+          // Mikro aus: zum Tippen öffnen und gleich zeigen, wie man es anmacht
+          onClick={() => (wakeAvatar(), blocked ? (openHelper(), openMicHelp()) : openHelper("voice"))}
+          aria-label={blocked ? "Mikro aus – so machst du es an" : `${name} etwas sagen`}
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition active:scale-95 ${blocked ? MIC_BLOCKED : "bg-accent text-on-accent"}`}
         >
-          <Mic className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+          {blocked ? <MicOff className="h-5 w-5" strokeWidth={2.25} aria-hidden /> : <Mic className="h-5 w-5" strokeWidth={2.25} aria-hidden />}
         </button>
       </div>
     </div>

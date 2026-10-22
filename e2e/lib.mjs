@@ -49,7 +49,8 @@ const SEEDED_RANDOM = () => {
 };
 
 /** Neue Seite auf einem Gerät: feste Zeit, Zeitzone Berlin, Bewegung reduziert, hell/dunkel */
-export async function newPage(browser, device, { dark = false, time = TIME, permissions = [] } = {}) {
+/** Mikrofon erlaubt wie bei jemandem, der „Erlauben“ getippt hat (Sperre stellt `FAKE_MIC` nach) */
+export async function newPage(browser, device, { dark = false, time = TIME, permissions = ["microphone"] } = {}) {
   const ctx = await browser.newContext({ ...devices[device], timezoneId: "Europe/Berlin", locale: "de-DE", colorScheme: dark ? "dark" : "light", reducedMotion: "reduce", permissions });
   const page = await ctx.newPage();
   page.errors = [];
@@ -157,3 +158,25 @@ export function checker(prefix) {
   };
   return { check, failed };
 }
+
+/** Schein-Mikrofon: jeder Versuch scheitert mit `window.__micError` */
+export const FAKE_MIC = () => {
+  window.__micError = window.__micError || "not-allowed";
+  class FakeRecognition {
+    start() {
+      setTimeout(() => {
+        this.onerror?.({ error: window.__micError });
+        this.onend?.();
+      }, 50);
+    }
+    stop() {}
+    abort() {}
+  }
+  window.webkitSpeechRecognition = FakeRecognition;
+  window.SpeechRecognition = FakeRecognition;
+  const deny = () => Promise.reject(new DOMException("nein", "NotAllowedError"));
+  if (navigator.mediaDevices) navigator.mediaDevices.getUserMedia = deny;
+  const query = navigator.permissions?.query?.bind(navigator.permissions);
+  if (navigator.permissions)
+    navigator.permissions.query = (d) => (d?.name === "microphone" ? Promise.resolve({ state: "prompt", onchange: null }) : query(d));
+};

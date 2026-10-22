@@ -1908,3 +1908,12 @@ Fehler in `docs/aufraeumen-nachher.md`.
   gilt: Was zuerst zu tun ist, steht zuerst – Einkauf vor Essen, solange der
   Kochstart mehr als 30 Min weg ist; fehlende Zutaten fürs Essen stehen im
   Einkauf-Hinweis.
+
+## Mikrofon aus – so findet es jeder (Tafel 27, v0.56.0)
+
+- Statt Kleingedrucktem: einmalige Vorab-Frage „Darf ich zuhören?“, großes
+  Hilfe-Fenster mit vier Schritten je Gerät (iPhone/iPad, Android/Chrome,
+  Diktieren aus) und „Zeig’s mir“ Bild für Bild; danach gelber Streifen und
+  grauer, durchgestrichener Mikro-Knopf an allen Mikro-Stellen. Bugfix: kein
+  hängender Stopp-Knopf mehr nach einem Mikro-Fehler. Neue Tokens
+  `--app-warn-soft`/`--app-warn-ink`.

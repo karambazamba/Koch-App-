@@ -4,7 +4,7 @@
 // npm run bilder:vergleich – vergleicht aktuell mit basis (Abweichung > 0,1 %
 // wird gemeldet, Unterschiedsbild in .bilder/unterschied).
 import { mkdirSync } from "node:fs";
-import { BASE, DEVICES, hello, launch, newPage, seedFamily, setDark, startServer } from "./lib.mjs";
+import { BASE, DEVICES, FAKE_MIC, hello, launch, newPage, seedFamily, setDark, startServer } from "./lib.mjs";
 import { RECIPE_DATA } from "./ablaeufe/essen.mjs";
 
 /** Warten, bis Netz ruhig und alle Bilder (auch live gezeichnete Gerichte) fertig sind */
@@ -30,6 +30,22 @@ const PAGES = [
   ["tipps", "/tipps"],
   ["einstellungen", "/profil"],
   ["begleitung", "/profil/kuechenhelfer"],
+];
+
+/** Szenen: Fenster, die erst nach einer Handlung da sind (Mikrofon aus mit Schein-Fehler) */
+const micTap = (page) => page.getByRole("button", { name: /etwas sagen$/ }).click();
+const SCENES = [
+  ["mikro-fragen", (page) => micTap(page)],
+  ["mikro-hilfe", async (page) => (await micTap(page), await page.getByRole("button", { name: "Okay, frag mich" }).click())],
+  [
+    "mikro-zeigen",
+    async (page) => {
+      await micTap(page);
+      await page.getByRole("button", { name: "Okay, frag mich" }).click();
+      await page.getByRole("button", { name: "Zeig’s mir" }).click();
+      await page.getByRole("button", { name: "Weiter" }).click();
+    },
+  ],
 ];
 
 const dir = process.argv.includes("--basis") ? ".bilder/basis" : ".bilder/aktuell";
@@ -63,6 +79,21 @@ for (const device of DEVICES) {
       n++;
     }
     await page.context().close();
+    // Fenster, die nur nach einer Handlung erscheinen (Szenen)
+    for (const [name, run] of SCENES) {
+      const sp = await newPage(browser, device, { dark });
+      await sp.addInitScript(FAKE_MIC);
+      await hello(sp);
+      await seedFamily(sp, RECIPE_DATA);
+      if (dark) await setDark(sp);
+      await sp.reload();
+      await sp.waitForTimeout(900);
+      await run(sp);
+      await sp.waitForTimeout(700);
+      await sp.screenshot({ path: `${dir}/${name}-${tag}.png` });
+      n++;
+      await sp.context().close();
+    }
   }
 }
 await browser.close();

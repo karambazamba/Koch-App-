@@ -8,6 +8,7 @@ import { ArrowUp, Mic, MicOff, Square } from "lucide-react";
 import { INPUT_BASE } from "@/components/ui/styles";
 import type { useSpeechInput } from "@/lib/begleitung/useSpeechInput";
 import { SuggestionChips } from "@/components/begleitung/SuggestionChips";
+import { MIC_BLOCKED, MicStrip } from "@/components/ui/MicPermission";
 
 type Props = {
   inputRef: RefObject<HTMLTextAreaElement | null>;
@@ -34,6 +35,7 @@ export function ChatInputBar({ inputRef, input, setInput, name, canType, busy, s
 
   return (
         <footer className="safe-bottom flex flex-col gap-2 border-t border-line px-4 pt-3">
+          <MicStrip />
           {(speech.error || dictationHint) && (
             <p className="text-sm text-muted" role="note">
               {speech.error ||
@@ -84,12 +86,14 @@ export function ChatInputBar({ inputRef, input, setInput, name, canType, busy, s
               onClick={onToggleMic}
               disabled={!canType || busy}
               aria-pressed={speech.listening}
-              aria-label={speech.listening ? "Zuhören beenden" : "Frage einsprechen"}
-              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-md transition active:scale-95 disabled:opacity-40 ${
+              aria-label={speech.blocked ? "Mikro aus – so machst du es an" : speech.listening ? "Zuhören beenden" : "Frage einsprechen"}
+              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${speech.blocked ? MIC_BLOCKED : "bg-accent text-on-accent shadow-md"} transition active:scale-95 disabled:opacity-40 ${
                 speech.listening ? "animate-pulse ring-4 ring-accent/25" : ""
               }`}
             >
-              {speech.listening ? (
+              {speech.blocked ? (
+                <MicOff className="h-6 w-6" strokeWidth={2} aria-hidden />
+              ) : speech.listening ? (
                 <Square className="h-5 w-5 fill-current" strokeWidth={2} aria-hidden />
               ) : speech.supported === false ? (
                 <MicOff className="h-6 w-6" strokeWidth={2} aria-hidden />
