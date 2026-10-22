@@ -319,7 +319,8 @@ export function runInstantOps(ops: ChangeOp[]): { rest: ChangeOp[]; notes: strin
       notes.push("Der Timer steht jetzt auf der Startseite.");
     }
   }
-  if (undo.length) pushUndo("den Timer", () => undo.forEach((u) => u()));
+  // Rückwärts: jedes Zurücknehmen stellt den Stand vor seinem Schritt wieder her
+  if (undo.length) pushUndo("den Timer", () => [...undo].reverse().forEach((u) => u()));
   return { rest: ops.filter((op) => !INSTANT_OP_TYPES.has(op.type)), notes };
 }
 
@@ -573,7 +574,8 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
   const undo = pushUndo(prompt ? `„${prompt.slice(0, 60)}“` : "die letzte Änderung", () => {
     save(current, data);
     undoSide();
-    undoDay.forEach((u) => u());
+    // Rückwärts: Sport/Jetzt/Läden stellen jeweils den Stand vor ihrem Schritt wieder her
+    [...undoDay].reverse().forEach((u) => u());
     for (const s of switched) setFeature(s.feature, !s.on);
   });
   return { undo, notes };
