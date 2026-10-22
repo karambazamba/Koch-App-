@@ -202,11 +202,11 @@ type TimerCommand =
   | { kind: "status" }
   | { kind: "stopwatch"; action: "start" | "stop" };
 
-const NUMBER_WORDS: Record<string, number> = { eine: 1, einen: 1, ein: 1, zwei: 2, drei: 3, vier: 4, fünf: 5, sechs: 6, sieben: 7, acht: 8, neun: 9, zehn: 10, elf: 11, zwölf: 12, fünfzehn: 15, zwanzig: 20, dreißig: 30, vierzig: 40, fünfundvierzig: 45, sechzig: 60, halbe: 0.5 };
+const NUMBER_WORDS: Record<string, number> = { eine: 1, einen: 1, einer: 1, ein: 1, zwei: 2, drei: 3, vier: 4, fünf: 5, sechs: 6, sieben: 7, acht: 8, neun: 9, zehn: 10, elf: 11, zwölf: 12, fünfzehn: 15, zwanzig: 20, dreißig: 30, vierzig: 40, fünfundvierzig: 45, sechzig: 60, halbe: 0.5 };
 
 function minutesIn(text: string): number | null {
   const t = text.toLowerCase();
-  if (/\b(eine\s+)?halbe\s+stunde\b/.test(t)) return 30;
+  if (/\b(eine[rn]?\s+)?halben?\s+stunde\b/.test(t)) return 30;
   if (/\bdreiviertel\s*stunde\b/.test(t)) return 45;
   if (/\bviertelstunde\b/.test(t)) return 15;
   const m = t.match(/(\d+(?:[.,]\d+)?|[a-zäöüß]+)\s*(minuten|minute|min\b|stunden|stunde|std\b|sekunden|sek\b)/);
