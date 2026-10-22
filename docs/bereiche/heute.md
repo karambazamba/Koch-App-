@@ -119,6 +119,11 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Essen – 3 Ideen“, „Heute wichtig/dran“, Geburtstag, Sport, „Auf dem
   Heimweg?“ (15:00–19:30), ab 19 Uhr „Morgen · Mi: …“, „Alles geschafft“,
   Freizeit-Idee, Regional-Tipp, Tipp, Beispiel-Tag.
+- Zuerst einkaufen, dann kochen: Ist der Kochstart des heutigen Gerichts noch
+  mehr als 30 Min weg, steht „Auf dem Heimweg?“ knapp über dem Essen (Essen +
+  4); fehlende Zutaten des Gerichts kommen dazu („4 Sachen bei REWE“ ·
+  „Milch, Brot, Butter + Paprika fürs Essen“). Ab ≤ 30 Min gewinnt das Essen
+  (80). Ohne Gericht mit Startzeit bleibt der Einkauf bei 40.
 - Regeln: Was die erste Kachel-Reihe zeigt, zählt nur halb (außer mit Tipp).
   `calm` (Feierabend mit Ruhe oder Wochenende) = nur sanfte Themen. Nachts
   (22–6 Uhr) nur Erinnerung, Timer, Kochen, Pause, Morgen, Geburtstag,
