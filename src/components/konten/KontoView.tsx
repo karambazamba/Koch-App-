@@ -17,6 +17,7 @@ import { useAccount } from "@/lib/konten/account";
 import { LoginSteps } from "@/components/konten/LoginSteps";
 import { HouseholdChoice } from "@/components/konten/HouseholdChoice";
 import { HouseholdCard, InviteSheet } from "@/components/konten/HouseholdCard";
+import { TakeoverCard } from "@/components/konten/TakeoverCard";
 
 export function KontoView() {
   const account = useAccount();
@@ -54,6 +55,7 @@ export function KontoView() {
         )}
         {account.user && account.household && (
           <>
+            <TakeoverCard />
             <HouseholdCard household={account.household} email={account.user.email} onSignedOut={() => router.replace(fromHello ? "/" : "/profil")} />
             {fromHello && (
               <button type="button" onClick={finished} className="hit h-11 self-center text-base font-semibold text-accent-strong">

@@ -2,11 +2,11 @@
 -- Felix (A) legt an, Lisa (B) tritt bei, Mathis (K) kommt als Kind, Fremd (C)
 -- gehört nicht dazu.
 
-create function pruefe(ok boolean, was text) returns void language plpgsql as $$
+create or replace function pruefe(ok boolean, was text) returns void language plpgsql as $$
 begin
   if ok is not true then raise exception 'FEHLGESCHLAGEN: %', was; end if;
 end $$;
-create function erwarte_fehler(stmt text, muster text, was text) returns void language plpgsql as $$
+create or replace function erwarte_fehler(stmt text, muster text, was text) returns void language plpgsql as $$
 begin
   begin
     execute stmt;

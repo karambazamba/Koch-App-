@@ -101,3 +101,54 @@ export const konten = async (page, check, device) => {
   check(true, "Konto gelöscht");
   check(Boolean(await page.evaluate(() => localStorage.getItem("familienkueche.haushaltsprofil"))), "Daten auf dem Handy bleiben nach Konto löschen");
 };
+
+// Abgleich (3b): A nimmt seine Daten mit, B tritt bei und sieht sie; B
+// schreibt an die Pinnwand → A sieht es; B offline → schreibt → wieder online
+// → kommt bei A an.
+const pinTexts = (page) => page.evaluate(() => (JSON.parse(localStorage.getItem("wasgibts.pinnwand") ?? "null")?.messages ?? []).map((m) => m.data.text));
+const waitFor = async (page, fn, arg, ms = 20000) => page.waitForFunction(fn, arg, { timeout: ms, polling: 500 }).then(() => true, () => false);
+
+export const abgleich = async (page, check, device) => {
+  const tag = device.replace(/\W/g, "").toLowerCase() + Date.now();
+  await hello(page);
+  await seedFamily(page);
+  await login(page, `felix-sync-${tag}@example.com`);
+  await page.getByRole("button", { name: /Neuen Haushalt anlegen/ }).click();
+  await page.getByRole("button", { name: "Haushalt anlegen" }).click();
+  const preview = page.getByTestId("uebernahme-vorschau");
+  await preview.waitFor();
+  const text = (await preview.textContent()) ?? "";
+  check(/3 Termine, 2 Aufgaben, 1 Notiz, 1 Nachricht und 4 Sachen im Vorrat werden mitgenommen\./.test(text), `Vorschau: ${text}`);
+  await page.getByRole("button", { name: "Mitnehmen" }).click();
+  await preview.waitFor({ state: "detached" });
+  const code = await invite(page);
+
+  const pageB = await newPage(page.context().browser(), device);
+  try {
+    await hello(pageB);
+    await login(pageB, `lisa-sync-${tag}@example.com`);
+    await join(pageB, code);
+    await pageB.getByRole("list", { name: "Wer dazugehört" }).waitFor();
+    check(!(await pageB.getByTestId("uebernahme-vorschau").isVisible()), "B ohne eigene Daten: keine Frage");
+    const termin = await waitFor(pageB, () => (localStorage.getItem("wasgibts.eintraege") ?? "").includes("Zahnarzt"));
+    check(termin, "Termin von A ist bei B");
+    await pageB.goto(BASE + "/pinnwand");
+    check(await pageB.getByText("Bin um 20 Uhr da").waitFor({ timeout: 10000 }).then(() => true, () => false), "Pinnwand von A bei B");
+    await pageB.getByRole("textbox", { name: "Nachricht an alle" }).fill("Pizza ist im Ofen");
+    await pageB.getByRole("button", { name: "Anheften" }).click();
+    await page.goto(BASE + "/pinnwand");
+    check(await waitFor(page, () => document.body.innerText.includes("Pizza ist im Ofen")), "Nachricht von B kommt bei A an");
+
+    // offline → online
+    await pageB.context().setOffline(true);
+    await pageB.getByRole("textbox", { name: "Nachricht an alle" }).fill("Bin im Funkloch");
+    await pageB.getByRole("button", { name: "Anheften" }).click();
+    await pageB.waitForTimeout(3000);
+    check(!(await pinTexts(page)).includes("Bin im Funkloch"), "offline: noch nicht bei A");
+    check((await pinTexts(pageB)).includes("Bin im Funkloch"), "offline: bei B auf dem Handy");
+    await pageB.context().setOffline(false);
+    check(await waitFor(page, () => document.body.innerText.includes("Bin im Funkloch"), undefined, 30000), "wieder online: kommt bei A an");
+  } finally {
+    await pageB.context().close();
+  }
+};

@@ -82,6 +82,30 @@ describe("Test-Backend (gleiche Regeln wie die Datenbank)", () => {
     expect(testKonten({ action: "join_household", token: lisa, code: kid }).error).toBe("code_unbekannt");
   });
 
+  it("Einträge: Familie für alle, Arbeit nur für den Besitzer, neueste Änderung gewinnt", () => {
+    const felix = login("felix@example.com");
+    const lisa = login("lisa@example.com");
+    const fremd = login("fremd@example.com");
+    testKonten({ action: "create_household", token: felix, name: "Müller" });
+    const code = testKonten({ action: "create_invite", token: felix }).code as string;
+    testKonten({ action: "join_household", token: lisa, code });
+    const doc = (id: string, raum: string, geaendert: string, title: string) => ({ id, typ: "termin", raum, erstellt: geaendert, geaendert, geloescht: false, data: { title } });
+    testKonten({ action: "push_entries", token: felix, docs: [doc("t1", "familie", "2026-10-21T08:00:00Z", "Kita"), doc("w1", "arbeit", "2026-10-21T08:00:00Z", "Kunde")] });
+    const pulled = (token: string, since = 0) => testKonten({ action: "pull_entries", token, since }).docs as { id: string; data: { title: string }; rev: number; besitzer: string }[];
+    expect(pulled(felix).map((d) => d.id)).toEqual(["t1", "w1"]);
+    expect(pulled(lisa).map((d) => d.id)).toEqual(["t1"]);
+    expect(testKonten({ action: "pull_entries", token: fremd }).docs).toEqual([]);
+    expect(testKonten({ action: "push_entries", token: lisa, docs: [doc("w1", "arbeit", "2026-10-22T08:00:00Z", "x")] }).skipped).toEqual(["w1"]);
+    testKonten({ action: "push_entries", token: lisa, docs: [doc("t1", "familie", "2026-10-21T07:00:00Z", "alt")] });
+    expect(pulled(felix).find((d) => d.id === "t1")?.data.title).toBe("Kita");
+    testKonten({ action: "push_entries", token: lisa, docs: [doc("t1", "familie", "2026-10-21T09:00:00Z", "Kita 9")] });
+    const after = pulled(felix, pulled(felix)[0].rev);
+    expect(after.map((d) => `${d.id}:${d.data.title}`)).toContain("t1:Kita 9");
+    testKonten({ action: "leave_household", token: felix });
+    expect(pulled(lisa).map((d) => d.id)).toEqual(["t1"]);
+    expect(testKonten({ action: "push_entries", token: fremd, docs: [] }).error).toBe("kein_haushalt");
+  });
+
   it("abgelaufener Einladungs-Code", () => {
     const felix = login("felix@example.com");
     const lisa = login("lisa@example.com");

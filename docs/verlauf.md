@@ -1858,3 +1858,12 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Spalten-Rechten, Migration in `supabase/migrations/`, Datenbank-Test gegen
   echtes Postgres, Test-Backend für den Durchklick mit zwei Browsern. Ohne
   Variablen bleibt alles wie bisher. Teilen der Einträge folgt mit 3b.
+
+## Konten 3b – Synchronisieren (v0.53.0)
+
+- Tabelle `entries` mit RLS, `sync_entries` (neueste Änderung gewinnt,
+  Löschen nur als Markierung), Realtime. Abgleich als Schicht über den
+  bestehenden Speichern (Übersetzer je Speicher, Fingerabdrücke,
+  Warteschlange) – die Bereiche selbst blieben unverändert. Übernahme mit
+  Vorschau „… werden mitgenommen.“, Hinweis „Offline – wird gleich
+  abgeglichen“ erst nach über einer Minute. Durchklick mit zwei Browsern.

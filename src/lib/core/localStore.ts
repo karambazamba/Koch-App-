@@ -13,6 +13,22 @@ type LocalStore<T> = {
   subscribe: (listener: () => void) => () => void;
 };
 
+// Für den Abgleich (konten/sync): wer will wissen, dass gespeichert wurde, und
+// wie sagt man einem Speicher, dass sein Inhalt von außen ersetzt wurde?
+const saveListeners = new Set<(key: StorageKey) => void>();
+const notifiers = new Map<string, Set<() => void>>();
+
+/** Bei jedem Speichern über createLocalStore Bescheid bekommen; liefert „aufhören“ */
+export function onLocalSave(listener: (key: StorageKey) => void): () => void {
+  saveListeners.add(listener);
+  return () => void saveListeners.delete(listener);
+}
+
+/** Inhalt wurde von außen geschrieben (writeRaw) – Anzeigen neu laden lassen */
+export function notifyStore(key: StorageKey) {
+  notifiers.get(key)?.forEach((n) => n());
+}
+
 export function createLocalStore<T>(
   key: StorageKey,
   migrate: (raw: unknown) => T | null,
@@ -22,6 +38,8 @@ export function createLocalStore<T>(
   let cachedValue: T | null = null;
 
   const notify = () => listeners.forEach((listener) => listener());
+  if (!notifiers.has(key)) notifiers.set(key, new Set());
+  notifiers.get(key)!.add(notify);
 
   const readStorage = (): string | null => {
     try {
@@ -60,10 +78,12 @@ export function createLocalStore<T>(
     save(value) {
       window.localStorage.setItem(key, JSON.stringify(value));
       notify();
+      saveListeners.forEach((l) => l(key));
     },
     clear() {
       window.localStorage.removeItem(key);
       notify();
+      saveListeners.forEach((l) => l(key));
     },
     subscribe(listener) {
       listeners.add(listener);
