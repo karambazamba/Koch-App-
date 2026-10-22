@@ -84,8 +84,8 @@ Einkaufsmodus für den Laden. Immer sichtbar (kein Baustein).
   „Für die Woche“ · „Bald wieder fällig“ (Stammartikel).
 - **Zeile** (`ItemContent`): runder Haken, Name, kleines Etikett des
   Gerichts (z. B. „Pasta“), Info-Knopf „Für …“, Menge rechts. Nach links
-  wischen (`SwipeRow`): „Haben wir“ (Rezept-Artikel) bzw. „Löschen“ (eigene)
-  und „Bearbeiten“. Langes Drücken = Info.
+  wischen (`SwipeRow`): „Haben wir“ (Rezept-Artikel) bzw. „Löschen“ (eigene,
+  mit „Gelöscht · Rückgängig“) und „Bearbeiten“. Langes Drücken = Info.
 - **Abhaken**: bleibt ~2 s durchgestrichen stehen und rutscht dann unter
   „Erledigte anzeigen“ (eingeklappt, ohne Zähler). „Haben wir schon –
   anzeigen“ mit „Doch kaufen“. Abhaken lernt den Kauf für die Stammliste.
@@ -110,7 +110,7 @@ Einkaufsmodus für den Laden. Immer sichtbar (kein Baustein).
   Rhythmus) oder letzter Kauf + Rhythmus bis zur Wochenmitte erreicht und
   nicht schon auf der Liste. „Bald wieder fällig“: antippen = übernehmen,
   × = diesmal nicht. „Stammliste ansehen“: Rhythmus („jede Woche“, „alle 2
-  Wochen“, „· gelernt“), entfernen, „Jede Woche“ hinzufügen.
+  Wochen“, „· gelernt“), entfernen (mit Rückgängig), „Jede Woche“ hinzufügen.
 - **Schnell-Eintrag** (`parseQuickAdd`): „Milch, Windeln und Müsli von
   Rossmann“ → Artikel mit Menge und Laden. Sicher erkannt (Lebensmittel,
   Abteilungs-Stichwort, Drogerie/Haushalt, eigene Produkte/Läden/Stammliste)

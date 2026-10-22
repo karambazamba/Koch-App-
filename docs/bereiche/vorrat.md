@@ -54,7 +54,7 @@ Baustein **Vorrat & Tiefkühler** (`vorrat` in `src/lib/core/features.ts`).
   Schritt 100 bei g/ml, sonst 1. − bis null = aufgebraucht: Eintrag weg,
   Meldung „<Name> aufgebraucht“ mit Rückgängig (`showDeleted`).
 - Antippen öffnet „Im Vorrat ändern“: Menge, Einheit (`PANTRY_UNITS`), Name,
-  Ort (Chips) – „Speichern“ oder „Löschen“ (Löschen hier ohne Rückgängig).
+  Ort (Chips) – „Speichern“ oder „Löschen“ (Löschen mit „Gelöscht · Rückgängig“, seit Etappe 8).
 - Sortierung (`PANTRY`): Bald aufbrauchen → Ort → Name (deutsch).
 - **Bald aufbrauchen** (`soonToUse`): im Kühlschrank seit 2 oder mehr Tagen
   (nicht Gekauftes `b:…` oder eben Gesagtes `s:…`). Oben auf der Seite eine

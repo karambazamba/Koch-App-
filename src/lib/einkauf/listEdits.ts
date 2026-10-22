@@ -61,8 +61,19 @@ export function updateManualItem(weekStart: string, id: string, changes: Partial
   updateList(weekStart, (l) => ({ ...l, manual: l.manual.map((m) => (m.id === id ? { ...m, ...changes } : m)) }));
 }
 
-export function removeManualItem(weekStart: string, id: string) {
-  updateList(weekStart, (l) => ({ ...l, manual: l.manual.filter((m) => m.id !== id) }));
+/** Eigenen Artikel löschen; liefert das Zurücknehmen (gleiche Stelle, gleiche Kennung) */
+export function removeManualItem(weekStart: string, id: string): () => void {
+  let removed: { item: ManualItem; index: number } | null = null;
+  updateList(weekStart, (l) => {
+    const index = l.manual.findIndex((m) => m.id === id);
+    if (index >= 0) removed = { item: l.manual[index], index };
+    return { ...l, manual: l.manual.filter((m) => m.id !== id) };
+  });
+  return () => {
+    const back = removed as { item: ManualItem; index: number } | null;
+    if (!back) return;
+    updateList(weekStart, (l) => (l.manual.some((m) => m.id === id) ? l : { ...l, manual: [...l.manual.slice(0, back.index), back.item, ...l.manual.slice(back.index)] }));
+  };
 }
 
 /** Alle Listen auf einmal ersetzen (Küchenhelfer: Übernehmen/Rückgängig) */

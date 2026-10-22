@@ -34,7 +34,7 @@ import { pushUndo } from "@/lib/core/undo";
 const SHORT_DATE = new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "numeric" });
 
 /**
- * /vorrat: was zu Hause ist – Reiter Kühlschrank, Schrank, Tiefkühler. Oben
+ * /vorrat: was zu Hause ist – Reiter Kühlschrank, Tiefkühler, Schrank. Oben
  * (nur wenn passend) „Vom Einkauf einräumen“ und „Bald aufbrauchen“ mit
  * Menge −/+ und „Rezept dazu“; darunter je Ort eine Liste mit Menge −/+.
  * Antippen = ändern, verschieben oder löschen; „Spontan kochen“ macht Ideen.
@@ -265,7 +265,9 @@ function EditSheet({ item, onClose }: { item: PantryItem; onClose: () => void })
         <button
           type="button"
           onClick={() => {
+            const before = loadPantry();
             removePantryItem(item.id);
+            showDeleted(() => replacePantry(before), `${item.name} gelöscht`);
             onClose();
           }}
           className={buttonClass("danger", "lg")}

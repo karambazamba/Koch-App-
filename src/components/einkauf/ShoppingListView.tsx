@@ -55,6 +55,7 @@ import { setShoppingView, shopModeHref, useShoppingView } from "@/lib/einkauf/sh
 import { shopGroups, shopTone } from "@/lib/einkauf/shopGroups";
 import { SHOP_GROUPS, sortBy } from "@/lib/core/sort";
 import { StapleBar } from "@/components/einkauf/StapleBar";
+import { showDeleted } from "@/lib/core/toast";
 
 const SKELETON = <div className={`${CARD} m-4 h-64 animate-pulse`} />;
 
@@ -156,7 +157,7 @@ export function ShoppingListView() {
 
   const actionsFor = (item: ListItem): RowAction[] => [
     item.manualId
-      ? { label: "Löschen", icon: Trash2, tone: "danger", onClick: () => removeManualItem(weekStart, item.manualId!) }
+      ? { label: "Löschen", icon: Trash2, tone: "danger", onClick: () => showDeleted(removeManualItem(weekStart, item.manualId!), `${item.name} gelöscht`) }
       : { label: "Haben wir", icon: EyeOff, onClick: () => setHave(weekStart, item.key, true) },
     { label: "Bearbeiten", icon: Pencil, onClick: () => setEditing(item) },
   ];

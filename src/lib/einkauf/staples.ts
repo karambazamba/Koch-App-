@@ -3,7 +3,7 @@
 
 import { sectionFor } from "@/lib/einkauf/sections";
 import { EMPTY_LIST, lower, newId, type ListItem, type ShoppingList, type Staple, type WeekList } from "@/lib/einkauf/listModel";
-import { update } from "@/lib/einkauf/listStore";
+import { loadShoppingSettings, update } from "@/lib/einkauf/listStore";
 
 const DAY = 86_400_000;
 const days = (from: string, to: string) => Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / DAY);
@@ -81,7 +81,11 @@ function updateStaple(id: string, changes: Partial<Omit<Staple, "id">>) {
   update((s) => ({ ...s, staples: s.staples.map((st) => (st.id === id ? { ...st, ...changes } : st)) }));
 }
 
-/** Aus der Stammliste nehmen (wird nicht mehr vorgeschlagen) */
-export function removeStaple(id: string) {
+/** Aus der Stammliste nehmen (wird nicht mehr vorgeschlagen); liefert das Zurücknehmen */
+export function removeStaple(id: string): () => void {
+  const before = loadShoppingSettings().staples.find((st) => st.id === id);
   updateStaple(id, { active: false, intervalDays: null, purchases: [] });
+  return () => {
+    if (before) updateStaple(id, { active: before.active, intervalDays: before.intervalDays, purchases: before.purchases });
+  };
 }

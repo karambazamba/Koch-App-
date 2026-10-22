@@ -15,6 +15,7 @@ import {
   type ListItem,
   type ShoppingSettings,
 } from "@/lib/einkauf/shoppingList";
+import { showDeleted } from "@/lib/core/toast";
 
 export { SwipeRow, type RowAction } from "@/components/ui/SwipeRow";
 
@@ -195,7 +196,7 @@ export function StaplesSheet({ settings, onClose }: { settings: ShoppingSettings
               </span>
               <button
                 type="button"
-                onClick={() => removeStaple(st.id)}
+                onClick={() => showDeleted(removeStaple(st.id), `${st.name} nicht mehr in der Stammliste`)}
                 aria-label={`${st.name} aus der Stammliste nehmen`}
                 className="flex h-10 w-10 items-center justify-center text-faint"
               >
