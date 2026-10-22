@@ -28,7 +28,7 @@ import {
   type WeekChanges,
 } from "./ops";
 
-export type WeekChoice = "aktuell" | "naechste";
+type WeekChoice = "aktuell" | "naechste";
 
 export type ToolContext = {
   /** Arbeitskopie inkl. aller bisher vorgeschlagenen Änderungen */

@@ -11,7 +11,7 @@ import type { MachineStep, OvenSettings } from "./baking/types";
 import { now } from "../core/now";
 import type { StorageKey } from "@/lib/core/storage";
 
-export type { MachineStep, OvenSettings, OvenMode } from "./baking/types";
+export type { MachineStep, OvenMode } from "./baking/types";
 
 export type RecipeCategory = "fleisch" | "vegetarisch" | "fisch" | "cheatday";
 /** Kochen oder Backen (Kochbuch v3) – Backen: Mengen in g/ml, Backofen, Form */

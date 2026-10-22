@@ -89,14 +89,6 @@ export const round = (n: number) => Math.round(n);
 /** Stunden von heute ab jetzt */
 export const hoursToday = (fc: Forecast, today: string) => fc.hours.filter((h) => h.date === today);
 
-/** 4 Zeitpunkte für die Kachel: die nächsten vollen Dreierstunden (z. B. 12 · 15 · 18 · 21) */
-export function nextSlots(fc: Forecast, today: string, nowMinutes: number, count = 4): ForecastHour[] {
-  const from = Math.floor(nowMinutes / 60) + 1;
-  const all = fc.hours.filter((h) => h.date > today || (h.date === today && h.hour >= from));
-  const slots = all.filter((h) => h.hour % 3 === 0);
-  return slots.slice(0, count);
-}
-
 /** Tief/Hoch von heute */
 export function todayRange(fc: Forecast, today: string): { min: number; max: number } | null {
   const day = fc.days.find((d) => d.date === today);

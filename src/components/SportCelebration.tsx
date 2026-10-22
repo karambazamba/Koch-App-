@@ -34,7 +34,7 @@ export function SportCelebration() {
       changeSport((s) => ({ ...s, celebrated: [...s.celebrated, status.monday] }));
       celebrate(celebrationText(profile?.persons[0]?.name.trim() ?? ""));
     }
-  }, [status?.monday, status?.count, status?.goal]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [status?.monday, status?.count, status?.goal]); // eslint-disable-line react-hooks/exhaustive-deps -- nur bei neuem Training/Ziel prüfen; Profil und Speicher ändern sich auch beim Feiern selbst
 
   useEffect(() => {
     if (!shown) return;

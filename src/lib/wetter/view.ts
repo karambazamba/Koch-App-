@@ -17,7 +17,7 @@ export function weatherGroup(code: number): WeatherGroup {
   return "bewoelkt";
 }
 
-export type PartId = "morgens" | "mittags" | "abends";
+type PartId = "morgens" | "mittags" | "abends";
 export type DayPart = { id: PartId; label: string; code: number; text: string; temp: number; rain: number; gust: number; tips: string[] };
 
 const PARTS: { id: PartId; label: string; from: number; to: number }[] = [

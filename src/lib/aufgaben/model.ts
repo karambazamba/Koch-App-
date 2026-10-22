@@ -263,7 +263,7 @@ const sortStamp = (i: Pick<DayItem, "entry">) => (i.entry.typ === "aufgabe" ? (i
  * Innerhalb einer Gruppe (EINE Regel für alle Ansichten): mit Uhrzeit nach
  * Uhrzeit, sonst nach Anlegen – älteste zuerst, neue landen hinten.
  */
-export function byTimeThenAge(x: Pick<DayItem, "entry" | "time">, y: Pick<DayItem, "entry" | "time">): number {
+function byTimeThenAge(x: Pick<DayItem, "entry" | "time">, y: Pick<DayItem, "entry" | "time">): number {
   return Number(x.time === null) - Number(y.time === null) || (x.time ?? "").localeCompare(y.time ?? "") || sortStamp(x).localeCompare(sortStamp(y));
 }
 

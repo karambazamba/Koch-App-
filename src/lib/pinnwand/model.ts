@@ -12,7 +12,7 @@ const PIN_DAYS = 3;
 export const REACTIONS = ["👍", "❤️"] as const;
 export type Reaction = (typeof REACTIONS)[number];
 
-export type PinData = {
+type PinData = {
   text: string;
   author: string;
   reactions: Partial<Record<Reaction, string[]>>;

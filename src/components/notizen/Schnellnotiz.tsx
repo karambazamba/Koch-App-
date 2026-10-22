@@ -91,7 +91,7 @@ export function SchnellnotizSheet({ name, onClose }: { name: string; onClose: ()
     el.focus();
     const end = el.value.length;
     el.setSelectionRange(end, end);
-  }, [schnellnotiz === undefined]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [schnellnotiz === undefined]); // eslint-disable-line react-hooks/exhaustive-deps -- Fokus ans Ende nur einmal, sobald die Schnellnotiz geladen ist (nicht bei jedem Tippen)
   const text = schnellnotiz?.text ?? "";
   const saved = savedLabel(schnellnotiz?.geaendert, typed);
   return (

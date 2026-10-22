@@ -10,7 +10,7 @@
 import { useExternalStore } from "./useExternalStore";
 import { createLocalStore } from "./localStore";
 
-export const FEATURES = {
+const FEATURES = {
   wochenplan: "Wochenplan-Oberfläche (/wochenplan, Wochen-Check, Vorlagen)",
   vorrat: "Vorrat (/vorrat) und Vorrats-Hinweise",
   rezepte: "Rezepte (/kochbuch), Kochen Schritt für Schritt",
