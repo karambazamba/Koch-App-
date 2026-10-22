@@ -4,7 +4,7 @@
 // npm run bilder:vergleich – vergleicht aktuell mit basis (Abweichung > 0,1 %
 // wird gemeldet, Unterschiedsbild in .bilder/unterschied).
 import { mkdirSync } from "node:fs";
-import { BASE, DEVICES, FAKE_MIC, hello, launch, newPage, seedFamily, setDark, startServer } from "./lib.mjs";
+import { BASE, DEVICES, FAKE_MIC, FAKE_VOICES, hello, launch, newPage, seedFamily, setDark, startServer } from "./lib.mjs";
 import { RECIPE_DATA } from "./ablaeufe/essen.mjs";
 
 /** Warten, bis Netz ruhig und alle Bilder (auch live gezeichnete Gerichte) fertig sind */
@@ -42,7 +42,19 @@ const openTermin = async (page, text) => {
   await page.getByRole("textbox", { name: "Termin" }).fill(text);
   await page.waitForTimeout(500);
 };
+const voiceOffer = async (page) => {
+  await page.evaluate(() => localStorage.setItem("wasgibts.vorlesen", JSON.stringify({ version: 1, mode: "an", voice: "", rate: "normal" })));
+  await page.reload();
+  await page.waitForTimeout(800);
+  await page.getByRole("button", { name: /^Sag .*was ansteht/ }).click();
+  const box = page.getByRole("textbox", { name: "Nachricht schreiben" });
+  await box.fill("Was gibt’s heute?");
+  await box.press("Enter");
+  await page.getByRole("button", { name: "Passt so" }).waitFor({ timeout: 10000 });
+};
 const SCENES = [
+  ["stimme-angebot", voiceOffer],
+  ["stimme-anleitung", async (page) => (await voiceOffer(page), await page.getByRole("button", { name: "Schönere Stimme holen" }).click())],
   ["termin-satz", (page) => openTermin(page, "Mittwoch 12.30 Physio")],
   ["termin-frei", (page) => openTermin(page, "Elternabend")],
   ["termin-vorbei", (page) => openTermin(page, "Bäcker 9 Uhr")],
@@ -94,6 +106,7 @@ for (const device of DEVICES) {
     for (const [name, run] of SCENES) {
       const sp = await newPage(browser, device, { dark });
       await sp.addInitScript(FAKE_MIC);
+      await sp.addInitScript(FAKE_VOICES);
       await hello(sp);
       await seedFamily(sp, RECIPE_DATA);
       if (dark) await setDark(sp);

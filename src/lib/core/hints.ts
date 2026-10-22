@@ -5,7 +5,7 @@ import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 
 // „kachel-hinzufuegen“ = alte Sprechblase (bis v0.48.0), bleibt nur als gespeicherter Wert
-export type HintId = "kachel-hinzufuegen" | "kachel-tipp" | "mikro-gefragt";
+export type HintId = "kachel-hinzufuegen" | "kachel-tipp" | "mikro-gefragt" | "stimme-angeboten";
 
 type HintState = { version: 1; seen: HintId[] };
 

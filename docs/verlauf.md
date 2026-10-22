@@ -1925,3 +1925,12 @@ Fehler in `docs/aufraeumen-nachher.md`.
   für Tag und Uhrzeit zum Korrigieren, Zeit-Rad, ohne Uhrzeit ganztägig mit
   Vorschlägen, Hinweis bei schon vergangener Zeit, Leiste mit „Eintragen“
   klebt über der Tastatur. Neuer gemeinsamer Parser `kalender/sentence.ts`.
+
+## Stimme – weg vom Blech-Klang (Tafel 28, v0.58.0)
+
+- Mia nimmt immer die beste deutsche Stimme des Geräts. Fehlt eine gute,
+  bietet sie nach dem ersten Vorlesen EINMAL an, eine zu laden – mit
+  Schritt-Karten je Gerät und iOS-Version („Lesen & Sprechen“ ab iOS 26,
+  „Gesprochene Inhalte“ bis 18) und „Zeig’s mir“; neue Stimme wird erkannt
+  („✓ Neue Stimme gefunden“). „liest vor …“ im Chat, Tipp stoppt. Schritt-
+  Karten jetzt gemeinsam mit dem Mikrofon (`ui/StepGuide`).

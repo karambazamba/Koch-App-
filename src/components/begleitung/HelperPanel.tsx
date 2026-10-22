@@ -41,6 +41,7 @@ import { useAskAssistant } from "@/components/begleitung/useAskAssistant";
 import { useChatRules } from "@/components/begleitung/useChatRules";
 import { useMarketChat } from "@/components/begleitung/useMarketChat";
 import { useSpontanChat } from "@/components/begleitung/useSpontanChat";
+import { VoiceOffer } from "@/components/begleitung/VoiceOffer";
 
 type Props = {
   data: AssistantData | null | undefined;
@@ -252,6 +253,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     speechRef.current = spontan.speechFor;
   });
   const spokenUpTo = useRef(chat.turns.length);
+  const [readCount, setReadCount] = useState(0);
   useEffect(() => {
     const from = spokenUpTo.current;
     spokenUpTo.current = chat.turns.length;
@@ -259,6 +261,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     const fresh = chat.turns.map((t, i) => ({ t, i })).slice(from).filter(({ t }) => t.role === "assistant");
     if (!fresh.length) return;
     speak(fresh.map(({ t }) => speechRef.current(t)).join(" "), { id: `turn-${fresh[fresh.length - 1].i}`, gender: voice });
+    // Nach dem ersten Vorlesen: schönere Stimme anbieten (nur, wenn nötig – VoiceOffer)
+    setReadCount((n) => n + 1);
   }, [chat.turns, readingOn, voice]);
 
   const newChat = () => {
@@ -322,6 +326,9 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           onClose={onClose}
         />
 
+        <div className="flex flex-col gap-2 px-4 empty:hidden">
+          <VoiceOffer readCount={readCount} speaking={speakingId !== null} gender={voice} name={name} />
+        </div>
         <ChatInputBar
           inputRef={inputRef}
           input={input}

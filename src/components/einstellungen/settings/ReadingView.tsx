@@ -1,8 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { Check, Volume2 } from "lucide-react";
+import { VoiceGuideSheet } from "@/components/begleitung/VoiceOffer";
+import { goodVoice, voiceLabel } from "@/lib/begleitung/voiceGuide";
+import { showToast } from "@/lib/core/toast";
 import { helperName, type HouseholdProfile } from "@/lib/einstellungen/profile";
-import { SECTION_TITLE } from "@/components/ui/styles";
+import { SECTION_TITLE, buttonClass } from "@/components/ui/styles";
 import {
   READ_MODES,
   SPEECH_RATES,
@@ -23,8 +27,10 @@ export function VoiceSettings({ profile }: { profile: HouseholdProfile }) {
   const settings = useSpeechSettings();
   const voices = useVoices();
   const supported = speechSupported();
+  const [guide, setGuide] = useState(false);
   return (
     <>
+      {guide && <VoiceGuideSheet onClose={() => setGuide(false)} onChecked={(found) => (setGuide(false), showToast({ text: found ? `Neue Stimme gefunden – ab jetzt „${voiceLabel(found)}“.` : "Hm, ich finde sie noch nicht. Lädt sie vielleicht noch?" }))} />}
       {(() => {
         const name = helperName(profile);
         const gender = profile.helper.voice;
@@ -53,7 +59,7 @@ export function VoiceSettings({ profile }: { profile: HouseholdProfile }) {
             <h2 className={`mt-2 px-1 ${SECTION_TITLE}`}>Vorlesen</h2>
             <ChoiceCards label="Vorlesen" value={settings.mode} onChange={(mode) => saveSpeechSettings({ mode })} options={READ_MODES} />
 
-            <h2 className={`mt-2 px-1 ${SECTION_TITLE}`}>Stimme</h2>
+            <h2 className={`mt-2 px-1 ${SECTION_TITLE}`}>{name}s Stimme</h2>
             <ul className="flex flex-col gap-2" role="radiogroup" aria-label="Stimme">
               {options.map((o) => {
                 const chosen = settings.voice === o.uri || (o.uri === "" && !german.some((v) => v.voiceURI === settings.voice));
@@ -88,9 +94,11 @@ export function VoiceSettings({ profile }: { profile: HouseholdProfile }) {
             {german.length === 0 && voices.length > 0 && (
               <p className="px-1 text-sm text-muted">Auf diesem Gerät finde ich keine deutsche Stimme – ich nehme die Standardstimme.</p>
             )}
-            <p className="px-1 text-sm text-muted">
-              Natürlichere Stimmen kannst du im iPhone unter Einstellungen → Bedienungshilfen → Gesprochene Inhalte → Stimmen → Deutsch laden.
-            </p>
+            {!goodVoice(voices) && voices.length > 0 && (
+              <button type="button" onClick={() => setGuide(true)} className={`${buttonClass("secondary", "md")} self-start`}>
+                Schönere Stimme holen
+              </button>
+            )}
 
             <h2 className={`mt-2 px-1 ${SECTION_TITLE}`}>Wie schnell?</h2>
             <ChoiceCards label="Sprechtempo" value={settings.rate} onChange={(rate) => saveSpeechSettings({ rate })} options={SPEECH_RATES} />

@@ -194,6 +194,26 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
     neu gefragt; erlaubt → Streifen weg, kurz „✓ Mikro ist an“.
   - Bugfix: Bei jedem Mikro-Fehler wird die Aufnahme sofort zurückgesetzt
     (kein hängender Stopp-Knopf, keine laufenden Tracks).
+  - Schritt-Karten und „Zeig’s mir“ sind ein gemeinsamer Baustein
+    (`ui/StepGuide.tsx`: `StepList`, `StepGuide`) – auch für die Stimme.
+- Stimme – weg vom Blech-Klang (Tafel 28): `speech.ts` nimmt immer die beste
+  deutsche Stimme (Premium > Erweitert/Enhanced > Google-Netzstimme > Rest,
+  Spaß-/Eloquence-Stimmen nie), Tempo „Normal“ = 1,0. `voiceGuide.ts`:
+  `goodVoice` (gibt es eine gute?), `voiceSteps` (iOS bis 18 „Gesprochene
+  Inhalte“, ab 26 bzw. unbekannt „Lesen & Sprechen“; Android
+  Text-in-Sprache-Ausgabe → Google → Sprachdaten), `voiceOfferText`.
+  - Im Chat (`VoiceOffer.tsx` über der Eingabe): beim Vorlesen „liest vor …“
+    mit Lautsprecher (Tipp stoppt). Nach dem ersten Vorlesen EINMAL (nur
+    ohne gute Stimme, Einmal-Hinweis `stimme-angeboten`): Karte „Klinge ich
+    blechern? 🤖 Dein iPhone/Handy hat …“ mit „Schönere Stimme holen“ /
+    „Passt so“.
+  - Anleitung (`VoiceGuideSheet`): vier Schritte, „Zeig’s mir“, „Fertig
+    geladen“, „Später“. Danach (und beim Zurückkommen in die App) neu
+    nachschauen: grün „✓ Neue Stimme gefunden – ab jetzt spreche ich mit
+    „Anna (Premium)“.“ + Probehören, sonst „Hm, ich finde sie noch nicht …“.
+  - Einstellungen → Vorlesen: Überschrift „Mias Stimme“, Auswahl aller
+    deutschen Stimmen mit Probehören; ohne gute Stimme „Schönere Stimme
+    holen“. Nie unerwartet vorlesen: `auto` nur, wenn per Mikro gefragt.
 - Vorlesen (`speech.ts`): `shouldRead` – `auto` nur, wenn per Mikrofon
   gefragt. Tempo 0,8 / 0,95 / 1,2. `pickVoice` wählt eine deutsche Stimme
   passend zur Art, natürlichere zuerst (`isNaturalVoice`); fehlt eine
@@ -276,6 +296,11 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Startseite, Tag), `testmodus.test.ts`, `testmodusRunden.test.ts`,
   `regelnOhneKi.test.ts`, `tagesChat.test.ts`, `mails.test.ts`,
   `diktat.test.ts`.
+- `tests/begleitung/stimme.test.ts` – Rangfolge (nur Standard, Erweitert,
+  Premium, Google, Spaß-Stimmen), Menünamen je iOS-Version, Texte.
+  Durchklick `stimme` (Schein-Stimmen `FAKE_VOICES` in `e2e/lib.mjs`):
+  Angebot nur bei Standardstimme, neue Stimme → grüne Karte, „Passt so“ →
+  nie wieder. Bilder: `stimme-angebot`, `stimme-anleitung`.
 - `tests/core/mikrofon.test.ts` – Gerät, Fehlerarten, Schritte je Gerät und
   iOS-Version, Vorab-Frage, Sperre/Freigabe.
 - Durchklick `mikrofon` (`e2e/ablaeufe/mikrofon.mjs`, Schein-Fehler über
