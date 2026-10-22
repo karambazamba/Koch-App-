@@ -8,6 +8,7 @@ import { createEntry } from "@/lib/core/entries";
 import { nowIso } from "@/lib/core/now";
 import { sanitizeEntry, type CalendarEntry, type TerminData } from "@/lib/kalender/model";
 import { OLD_TERMINE_KEY } from "@/lib/core/storage";
+import { isAboEntry } from "@/lib/kalender/abo/model";
 
 type EntryStore = {
   version: 2;
@@ -54,9 +55,9 @@ export function loadEntries(): CalendarEntry[] {
   return store.load()?.entries ?? EMPTY;
 }
 
-/** Alle Einträge ersetzen (Übernehmen/Rückgängig) */
+/** Alle Einträge ersetzen (Übernehmen/Rückgängig) – Termine der Kalender-Links (nur lesen) kommen nie hinein */
 export function replaceEntries(entries: CalendarEntry[]) {
-  store.save({ ...current(), entries });
+  store.save({ ...current(), entries: entries.some(isAboEntry) ? entries.filter((e) => !isAboEntry(e)) : entries });
 }
 
 /** Änderung anwenden; liefert "Rückgängig" */

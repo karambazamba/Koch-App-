@@ -8,6 +8,7 @@ import { addDays } from "@/lib/core/now";
 import { contextLines, showAnswer } from "@/lib/kalender/answers";
 import { itemsForDay, REMINDERS, taskOverview, sanitizeEntry, sanitizeRepeat, weekdayIndex, type AufgabeData, type CalendarEntry, type Reminder, type Repeat, type TerminData } from "@/lib/kalender/model";
 import { findDate } from "@/lib/kalender/parse";
+import { isAboEntry } from "@/lib/kalender/abo/model";
 import type { BegleitungTool } from "@/lib/begleitung/registry";
 import { findPersons, nextId, propose, type ToolContext, type ToolResult } from "@/lib/begleitung/tools";
 
@@ -51,6 +52,8 @@ function repeatFrom(v: unknown, start: string): Repeat | null {
 
 const entriesOf = (ctx: ToolContext) => ctx.data.entries ?? [];
 const findEntry = (ctx: ToolContext, id: unknown) => entriesOf(ctx).find((e) => e.id === str(id));
+/** Termine aus verbundenen Kalendern sind nur zum Lesen */
+const READ_ONLY = "Dieser Termin kommt aus einem verbundenen Kalender und ist nur zum Lesen – ändern geht im Original. Antippen → „In unseren Kalender kopieren“ macht einen eigenen daraus.";
 
 const shortDate = (iso: string) => {
   const [, m, d] = iso.split("-");
@@ -181,6 +184,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
     run: (ctx, raw) => {
       const input = (raw ?? {}) as Input;
       const entry = findEntry(ctx, input.id);
+      if (entry && isAboEntry(entry)) return fail(READ_ONLY);
       if (!entry || entry.typ !== "termin") return fail("Termin mit dieser id nicht gefunden – id aus der Liste im Kontext nehmen.");
       const only = dateFrom(ctx, input.nur_am);
       if (only && entry.data.repeat) {
@@ -228,6 +232,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
       const input = (raw ?? {}) as Input;
       if (input.loeschen === true) return removeTool(ctx, input, "aufgabe");
       const entry = findEntry(ctx, input.id);
+      if (entry && isAboEntry(entry)) return fail(READ_ONLY);
       if (!entry || entry.typ !== "aufgabe") return fail("Aufgabe mit dieser id nicht gefunden.");
       const data = aufgabeInput(ctx, input, entry.data);
       if (typeof data === "string") return fail(data);
@@ -244,6 +249,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
     run: (ctx, raw) => {
       const input = (raw ?? {}) as Input;
       const entry = findEntry(ctx, input.id);
+      if (entry && isAboEntry(entry)) return fail(READ_ONLY);
       if (!entry) return fail("Eintrag mit dieser id nicht gefunden.");
       const date = dateFrom(ctx, input.am) ?? ctx.today;
       propose(ctx, { id: nextId(ctx), type: "done_entry", entryId: entry.id, title: entry.data.title, date });
@@ -260,6 +266,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
     run: (ctx, raw) => {
       const input = (raw ?? {}) as Input;
       const entry = findEntry(ctx, input.id);
+      if (entry && isAboEntry(entry)) return fail(READ_ONLY);
       if (!entry) return fail("Eintrag mit dieser id nicht gefunden.");
       const to = dateFrom(ctx, input.auf);
       if (!to) return fail("auf: Datum nicht erkannt.");
@@ -299,6 +306,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
 
 function removeTool(ctx: ToolContext, input: Input, typ: "termin" | "aufgabe"): ToolResult {
   const entry = findEntry(ctx, input.id);
+  if (entry && isAboEntry(entry)) return fail(READ_ONLY);
   if (!entry || entry.typ !== typ) return fail(`${typ === "termin" ? "Termin" : "Aufgabe"} mit dieser id nicht gefunden.`);
   const only = entry.data.repeat ? (dateFrom(ctx, input.nur_am) ?? undefined) : undefined;
   propose(ctx, { id: nextId(ctx), type: "remove_entry", entryId: entry.id, title: entry.data.title, onlyDate: only });

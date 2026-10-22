@@ -17,7 +17,7 @@ import { isUrgent, setDone, taskBadge, type DayItem } from "@/lib/kalender/model
 import { UrgentMark } from "@/components/kalender/UrgentMark";
 import type { TileSize } from "@/lib/core/homeLayout";
 import { LEAVE_MS, act, buzz } from "@/components/heute/actions";
-import { ItemMenu, roomBar } from "@/components/kalender/Items";
+import { ItemMenu, roomBarProps } from "@/components/kalender/Items";
 import { withoutEmoji } from "@/lib/core/text";
 import dynamic from "next/dynamic";
 
@@ -125,7 +125,7 @@ const entersAnim = (before: string[] | null, key: string) => (before && !before.
 function TerminCard({ item, entering, onOpen }: { item: DayItem; entering?: React.CSSProperties; onOpen: () => void }) {
   return (
     <li className={`${TILE_INNER} relative min-w-0 overflow-hidden`} style={entering} data-item={item.key}>
-      <span className={`absolute inset-y-0 left-0 w-1 ${roomBar(item.room)}`} aria-hidden />
+      <span className={`absolute inset-y-0 left-0 w-1 ${roomBarProps(item).className}`} style={roomBarProps(item).style} aria-hidden />
       <button type="button" onClick={onOpen} className="flex min-h-[46px] w-full flex-col justify-center py-1.5 pl-3 pr-3 text-left" aria-label={`${item.time ? clockLabel(item.time) : ""} ${item.title} – Möglichkeiten`}>
         <span className="text-[13.5px] font-extrabold leading-tight tabular-nums">{item.time ? clockLabel(item.time) : "–"}</span>
         <span className="line-clamp-2 w-full break-words text-[12.5px] font-semibold leading-snug">{withoutEmoji(item.title)}</span>
@@ -181,7 +181,7 @@ export function TaskLine({ item, today, onOpen, onDone, leaving, entering }: { i
         {isUrgent(item) && !checked && <UrgentMark />}
         <span className={`min-w-0 flex-1 truncate text-[15px] font-semibold leading-snug ${checked ? "text-muted line-through" : ""}`}>{item.title}</span>
         {badge && <span className={`shrink-0 text-xs ${badge === "heute" ? "font-semibold text-accent-strong" : "text-muted"}`}>{badge}</span>}
-        <span className={`h-2 w-2 shrink-0 rounded-full ${roomBar(item.room)}`} aria-hidden />
+        <span className={`h-2 w-2 shrink-0 rounded-full ${roomBarProps(item).className}`} style={roomBarProps(item).style} aria-hidden />
       </button>
     </li>
   );
@@ -203,7 +203,7 @@ function TaskField({ item, today, leaving, fading = false, entering, onOpen, onD
           <span className={`min-w-0 flex-1 truncate text-[13px] font-bold leading-tight ${leaving ? "text-muted line-through" : ""}`}>{withoutEmoji(item.title)}</span>
         </span>
         <span className="flex items-center gap-1 text-[11px] leading-tight">
-          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${roomBar(item.room)}`} aria-hidden />
+          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${roomBarProps(item).className}`} style={roomBarProps(item).style} aria-hidden />
           {badge && <span className={badge === "heute" ? "font-semibold text-tile-accent" : "text-muted"}>{badge}</span>}
         </span>
       </button>

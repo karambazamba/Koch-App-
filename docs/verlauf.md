@@ -1842,3 +1842,10 @@ Fehler in `docs/aufraeumen-nachher.md`.
   ganztägig, Serienende, mehrtägig und „alle N Wochen“ erweitert. Die
   Begleitung erklärt den Weg und öffnet die Seite. Teil 2 (Kalender-Link/Abo)
   folgt.
+
+## Kalender übernehmen – Kalender-Link (v0.51.0)
+
+- Dauerhaft verbinden per geheimem iCal-/webcal-Link (Google/Apple), nur lesen:
+  Server-Abruf mit SSRF-Schutz, Abo-Termine als eigene Ebene in Farbe des
+  Kalenders, „In unseren Kalender kopieren“, Aktualisieren beim Öffnen und
+  höchstens alle 30 Minuten, Links nicht in der Sicherung (außer auf Wunsch).

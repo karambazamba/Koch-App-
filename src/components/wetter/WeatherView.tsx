@@ -16,7 +16,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Sheet } from "@/components/ui/Sheet";
 import { CARD, PAGE_MAIN, chipClass } from "@/components/ui/styles";
 import { itemsForDay, tomorrowLabel, weekdayLong, weekdayShort } from "@/lib/kalender/model";
-import { useEntries } from "@/lib/kalender/store";
+import { useCalendarEntries } from "@/lib/kalender/useCalendarEntries";
 import { addDays, toIsoDate, useMinutes, useToday } from "@/lib/core/now";
 import { round, weatherKind, type Forecast, type ForecastDay, type TipTermin } from "@/lib/wetter/forecast";
 import { bestOutdoorDay, dayParts, daySentence, dayWords, isNight, skyFor, skyLine, weatherStartTab, weekSentence, type DayPart } from "@/lib/wetter/view";
@@ -34,7 +34,7 @@ const TABS: { id: Tab; label: string }[] = [
 export function WeatherView() {
   const params = useSearchParams();
   const { forecast, failed, place } = useForecast();
-  const entries = useEntries();
+  const entries = useCalendarEntries();
   const day = useToday();
   const minutes = useMinutes();
   const asked = params.get("tag");

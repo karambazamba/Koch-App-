@@ -15,7 +15,9 @@ import { toIsoDate, useToday, useWeekPlans } from "@/lib/essen/weekPlan";
 import { recordOpen } from "@/lib/core/activity";
 import type { SpontanFilter } from "@/lib/essen/spontan";
 import type { AssistantData } from "@/lib/begleitung/ops";
-import { migrateOldTermine, useEntries } from "@/lib/kalender/store";
+import { migrateOldTermine } from "@/lib/kalender/store";
+import { useCalendarEntries } from "@/lib/kalender/useCalendarEntries";
+import { aboRefreshDue } from "@/lib/kalender/abo/store";
 import { useHomeTiles } from "@/lib/core/homeLayout";
 import { BegleitungBar } from "@/components/begleitung/BegleitungBar";
 import { helperName } from "@/lib/einstellungen/profile";
@@ -57,7 +59,7 @@ export function KitchenHelper() {
   const mealPlans = useMealPlans();
   const recipes = useRecipes();
   const shopping = useShoppingLists();
-  const entries = useEntries();
+  const entries = useCalendarEntries();
   const home = useHomeTiles();
   const notes = useNotes();
   const schnellnotiz = useSchnellnotiz();
@@ -83,6 +85,14 @@ export function KitchenHelper() {
     removeRetiredKeys(localStorage, sessionStorage);
     // Sprachnachrichten aufräumen (IndexedDB) – erst bei Bedarf geladen
     void import("@/lib/pinnwand/memoAudio").then((m) => m.tidyMemos());
+  }, []);
+
+  // Kalender-Links: beim Öffnen und beim Zurückkommen abrufen, wenn fällig (höchstens alle 30 Min)
+  useEffect(() => {
+    const run = () => document.visibilityState === "visible" && aboRefreshDue() && void import("@/lib/kalender/abo/sync").then((m) => m.refreshAbos());
+    run();
+    document.addEventListener("visibilitychange", run);
+    return () => document.removeEventListener("visibilitychange", run);
   }, []);
 
   // App geöffnet (für "Willkommen zurück" nach 3+ Tagen)

@@ -14,7 +14,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Settings } from "lucide-react";
 import { BegleitungBar } from "@/components/begleitung/BegleitungBar";
 import { CARD } from "@/components/ui/styles";
-import { useEntries } from "@/lib/kalender/store";
+import { useCalendarEntries } from "@/lib/kalender/useCalendarEntries";
 import { useMinutes } from "@/lib/core/now";
 import { expectReplace, expectTabSwitch, previousUrl } from "@/lib/core/navigation";
 import { helperName } from "@/lib/einstellungen/profile";
@@ -49,7 +49,7 @@ export function HomePager({ data }: { data: HomeData }) {
   const urlTab = tabFrom(params.get("seite"));
   const [tab, setTab] = useState<HomeTab>(urlTab);
   const tabRef = useRef(tab);
-  const entries = useEntries();
+  const entries = useCalendarEntries();
   const realMinutes = useMinutes();
   // Zeit-Vorschau ("So tun, als wäre es …") wirkt nur hier auf der Startseite – Daten bleiben
   const preview = usePreview();

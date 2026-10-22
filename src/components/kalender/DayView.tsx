@@ -9,7 +9,7 @@ import { useSearchParams } from "next/navigation";
 import { PagePlus } from "@/components/ui/QuickButton";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD, PAGE_MAIN } from "@/components/ui/styles";
-import { useEntries } from "@/lib/kalender/store";
+import { useCalendarEntries } from "@/lib/kalender/useCalendarEntries";
 import { useToday, toIsoDate } from "@/lib/core/now";
 import { helperName } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";
@@ -23,7 +23,7 @@ const WEEKDAY = new Intl.DateTimeFormat("de-DE", { weekday: "long", timeZone: "U
 export function DayView() {
   const params = useSearchParams();
   const now = useToday();
-  const entries = useEntries();
+  const entries = useCalendarEntries();
   const profile = useProfile();
   const [adding, setAdding] = useState(false);
   const today = now ? toIsoDate(now) : undefined;

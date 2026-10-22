@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Check, MapPin } from "lucide-react";
 import { CARD } from "@/components/ui/styles";
-import { useEntries } from "@/lib/kalender/store";
+import { useCalendarEntries } from "@/lib/kalender/useCalendarEntries";
 import { tipDate, type TipView } from "@/lib/tipps/model";
 import { changeTipSettings, takeTip, takenIds, useTipSettings, useTipsOn, useTipsWindow } from "@/lib/tipps/client";
 import { TipRow } from "@/components/tipps/TipBits";
@@ -19,7 +19,7 @@ import { TipSheet } from "@/components/tipps/TipSheet";
 export function useCalendarTips(today: string): { available: boolean; shown: boolean; byDay: Map<string, TipView[]> } {
   const on = useTipsOn();
   const settings = useTipSettings();
-  const entries = useEntries();
+  const entries = useCalendarEntries();
   const data = useTipsWindow(today, on);
   const byDay = new Map<string, TipView[]>();
   if (on && settings.kalender && data) {
