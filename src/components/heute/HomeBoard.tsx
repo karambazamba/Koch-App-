@@ -301,7 +301,7 @@ export function HomeBoard({
       >
         {ghost && <div className="absolute inset-0 rounded-card border-2 border-dashed border-accent/50 bg-accent-soft/40" data-platzhalter aria-hidden />}
         <div
-          className={`${pair ? `grid grid-cols-2 gap-2 ${editing ? "rounded-[26px] p-1 outline-2 outline-dashed outline-line" : ""}` : ""} ${ghost ? "invisible h-0 overflow-hidden" : ""}`}
+          className={`${pair ? `grid grid-cols-2 gap-2 ${editing ? "rounded-pair p-1 outline-2 outline-dashed outline-line" : ""}` : ""} ${ghost ? "invisible h-0 overflow-hidden" : ""}`}
           style={editing && !floating && !drag && !holding ? { animation: `${index % 2 ? "wiggle-b" : "wiggle"} 1.6s ease-in-out infinite` } : undefined}
         >
           {unit.tiles.map((tile) => (

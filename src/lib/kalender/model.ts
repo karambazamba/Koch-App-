@@ -13,6 +13,7 @@
 // - Verpasste Vorkommen wiederkehrender Einträge und vergangene Termine
 //   verschwinden leise.
 
+import { WEEKDAYS_MO, WEEKDAYS_SHORT_MO } from "@/lib/core/days";
 import { createEntry, type Entry, type Room } from "@/lib/core/entries";
 import { addDays, fromIsoDate } from "@/lib/core/now";
 
@@ -109,8 +110,8 @@ export type DayItem = {
   when?: string | null;
 };
 
-const WEEKDAYS_SHORT = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
-const WEEKDAYS_LONG = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
+const WEEKDAYS_SHORT = WEEKDAYS_SHORT_MO;
+const WEEKDAYS_LONG = WEEKDAYS_MO;
 
 /** Wochentag 0 = Mo … 6 = So */
 export const weekdayIndex = (iso: string) => (fromIsoDate(iso).getDay() + 6) % 7;

@@ -6,7 +6,8 @@
 // als wäre es …" (nur diese Sitzung, ändert keine Daten – sie wirkt nur auf
 // die Startseite).
 
-import { createLocalStore } from "@/lib/core/localStore";
+import { WEEKDAYS_SHORT_MO } from "@/lib/core/days";
+import { createLocalStore, readRaw, writeRaw } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 import type { StorageKey } from "@/lib/core/storage";
 
@@ -37,7 +38,7 @@ export const DEFAULT_ROUTINE: DayRoutine = {
   kochenMin: 20,
 };
 
-export const WEEKDAY_SHORT = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+export const WEEKDAY_SHORT = WEEKDAYS_SHORT_MO;
 
 const CLOCK = /^([01]\d|2[0-3]):[0-5]\d$/;
 export const clockMinutes = (clock: string) => Number(clock.slice(0, 2)) * 60 + Number(clock.slice(3, 5));
@@ -95,7 +96,7 @@ let previewValue: TimePreview | null = null;
 function loadPreview(): TimePreview | null {
   let raw: string | null = null;
   try {
-    raw = sessionStorage.getItem(PREVIEW_KEY);
+    raw = readRaw(PREVIEW_KEY, "session");
   } catch {
     raw = null;
   }
@@ -113,8 +114,8 @@ function loadPreview(): TimePreview | null {
 
 export function setPreview(preview: TimePreview | null) {
   try {
-    if (preview) sessionStorage.setItem(PREVIEW_KEY, JSON.stringify(preview));
-    else sessionStorage.removeItem(PREVIEW_KEY);
+    if (preview) writeRaw(PREVIEW_KEY, JSON.stringify(preview), "session");
+    else writeRaw(PREVIEW_KEY, null, "session");
   } catch {
     // ohne Speicher keine Vorschau
   }

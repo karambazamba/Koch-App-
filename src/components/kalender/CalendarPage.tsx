@@ -7,6 +7,7 @@
 // Plus = "Was möchtest du eintragen?" für den gewählten Tag.
 // Später (Tipps aus der Region): eigene lila Ebene über `dayDots`, nie als Termin.
 
+import { WEEKDAYS_SHORT_MO } from "@/lib/core/days";
 import Link from "next/link";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -27,7 +28,7 @@ type View = "monat" | "woche" | "liste";
 const STEP = 14;
 const MONTH = new Intl.DateTimeFormat("de-DE", { month: "long", year: "numeric", timeZone: "UTC" });
 const LONG = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
-const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+const WEEKDAYS = WEEKDAYS_SHORT_MO;
 
 const utc = (iso: string) => new Date(`${iso}T12:00:00Z`);
 /** Montag der Woche eines Datums */

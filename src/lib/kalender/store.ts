@@ -3,7 +3,7 @@
 // einmalig übernommen (die alten Daten bleiben unangetastet liegen).
 
 import { useExternalStore } from "@/lib/core/useExternalStore";
-import { createLocalStore } from "@/lib/core/localStore";
+import { createLocalStore, readRaw, writeRaw } from "@/lib/core/localStore";
 import { createEntry } from "@/lib/core/entries";
 import { nowIso } from "@/lib/core/now";
 import { sanitizeEntry, type CalendarEntry, type TerminData } from "@/lib/kalender/model";
@@ -96,7 +96,7 @@ export function migrateOldTermine() {
   }
   let old: { id?: string; date?: string; time?: string; until?: boolean; title?: string; personId?: string | null; who?: string }[] = [];
   try {
-    const raw = JSON.parse(window.localStorage.getItem(OLD_TERMINE_KEY) ?? "null") as { items?: unknown } | null;
+    const raw = JSON.parse(readRaw(OLD_TERMINE_KEY) ?? "null") as { items?: unknown } | null;
     if (raw && Array.isArray(raw.items)) old = raw.items as typeof old;
   } catch {
     old = [];
@@ -121,7 +121,7 @@ export function migrateOldTermine() {
 /** Übernommen → alter Schlüssel kann weg */
 function removeOldTermine() {
   try {
-    window.localStorage.removeItem(OLD_TERMINE_KEY);
+    writeRaw(OLD_TERMINE_KEY, null);
   } catch {
     // ohne Speicher nichts zu tun
   }

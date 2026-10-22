@@ -31,7 +31,7 @@ export function DayView() {
   const date = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : today;
   const meals = useMeals(date, 1);
   const title = date ? WEEKDAY.format(new Date(`${date}T12:00:00Z`)) : "Tag";
-  const name = profile ? helperName(profile) : "Mia";
+  const name = helperName(profile);
   return (
     <>
       <PageHeader title={title} subtitle={date && today ? dayHeading(date, today) : undefined} backHref="/?seite=kalender" action={date ? <PagePlus label="Neu für diesen Tag" onClick={() => setAdding(true)} /> : undefined} />

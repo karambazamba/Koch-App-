@@ -7,8 +7,9 @@
 // Der frühere Schalter "Alte Funktionen anzeigen (Test)" und der Alt-Modus
 // (/?legacy=1) sind weg.
 
+import type { RetiredKey, StorageKey } from "@/lib/core/storage";
 import { useExternalStore } from "@/lib/core/useExternalStore";
-import { createLocalStore } from "@/lib/core/localStore";
+import { createLocalStore, readRaw } from "@/lib/core/localStore";
 
 const FEATURES = {
   wochenplan: "Wochenplan-Oberfläche (/wochenplan, Wochen-Check, Vorlagen)",
@@ -65,9 +66,9 @@ const isFeature = (f: unknown): f is Feature => typeof f === "string" && f in FE
 
 /** Was wurde schon genutzt? (für die Übernahme beim Abschalten des alten Test-Schalters) */
 function usedFeatures(): Feature[] {
-  const read = (key: string): unknown => {
+  const read = (key: StorageKey | RetiredKey): unknown => {
     try {
-      return JSON.parse(localStorage.getItem(key) ?? "null");
+      return JSON.parse(readRaw(key) ?? "null");
     } catch {
       return null;
     }

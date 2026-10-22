@@ -1,5 +1,6 @@
 "use client";
 
+import { readRaw, writeRaw } from "@/lib/core/localStore";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { RefreshCw, SlidersHorizontal } from "lucide-react";
@@ -17,7 +18,7 @@ const FILTER_KEY: StorageKey = "wasgibts.spontan.filter";
 /** Gewählte Filter gelten für die Sitzung */
 export function loadSpontanFilters(): SpontanFilter[] {
   try {
-    const raw = JSON.parse(sessionStorage.getItem(FILTER_KEY) ?? "[]");
+    const raw = JSON.parse(readRaw(FILTER_KEY, "session") ?? "[]");
     return Array.isArray(raw) ? raw.filter((f): f is SpontanFilter => typeof f === "string") : [];
   } catch {
     return [];
@@ -26,7 +27,7 @@ export function loadSpontanFilters(): SpontanFilter[] {
 
 export function saveSpontanFilters(filters: SpontanFilter[]) {
   try {
-    sessionStorage.setItem(FILTER_KEY, JSON.stringify(filters));
+    writeRaw(FILTER_KEY, JSON.stringify(filters), "session");
   } catch {
     // ohne Speicher gilt die Auswahl nur für diese Antwort
   }

@@ -228,7 +228,7 @@ export function BegleitungBar({ name, bottom }: { name: string; bottom?: string 
       style={bottom ? { bottom } : undefined}
       data-begleitung-leiste
     >
-      <div className="pointer-events-auto mx-auto flex h-14 max-w-lg items-center gap-2.5 rounded-[28px] border border-line bg-surface pl-2 pr-1.5 shadow-bar">
+      <div className="pointer-events-auto mx-auto flex h-14 max-w-lg items-center gap-2.5 rounded-bar border border-line bg-surface pl-2 pr-1.5 shadow-bar">
         <button type="button" onClick={() => (wakeAvatar(), openHelper())} aria-label={`Sag ${name}, was ansteht … (${name} öffnen)`} className="flex h-full min-w-0 flex-1 items-center gap-2.5 text-left">
           <BegleitungAvatar size={40} groesse="klein" />
           <span className="truncate text-[15px] text-muted">Sag {name}, was ansteht …</span>

@@ -599,7 +599,7 @@ im Code neutral (`BegleitungAvatar`, `BegleitungBar`, `BegleitungTool`, …);
   eine Liste statt Chips (`PantryRow`: Ort-Symbol, Name, „seit 3 Tagen“ bzw.
   im Tiefkühler „seit 12.10.“, Menge −/+ in Stück bzw. 100 g/ml; − bis null =
   aufgebraucht mit „… aufgebraucht · Rückgängig“); antippen = ändern.
-- Einkaufsliste: großes Feld „Was fehlt?“ mit Mikrofon immer oben (mehrere
+- Einkaufsliste: großes Feld „Was brauchst du?“ mit Mikrofon immer oben (mehrere
   mit Komma, „Oft gekauft“ als eine Reihe); fällige Stammartikel als EINE
   waagerechte Reihe „Bald wieder fällig“ (keine Box); Zeilen aus Rezepten mit
   kleinem Etikett (z. B. „Pasta“); Abgehaktes bleibt ~2 s durchgestrichen
@@ -943,7 +943,7 @@ im Code neutral (`BegleitungAvatar`, `BegleitungBar`, `BegleitungTool`, …);
   Höchstens ein Hinweis unter der Jetzt-Karte. Bearbeiten-Modus: heller
   „–“-Knopf, Auswahl ohne „Post – bald“.
 - Leere Seiten freundlich: Aufgaben mit großer Mia, „Alles erledigt.“ und
-  „Neue Aufgabe“; Einkaufsliste mit großem Feld „Was fehlt?“ + Mikrofon und
+  „Neue Aufgabe“; Einkaufsliste mit großem Feld „Was brauchst du?“ + Mikrofon und
   „Oft gekauft“ (`ShoppingAddField`), „Liste teilen“ am Ende.
 
 ## Feste Anordnung + Jetzt-Karte + Beispielgericht (v0.29)

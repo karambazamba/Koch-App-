@@ -5,6 +5,7 @@
 // begruessen (einmalig), schlafen (Feierabend mit Ruhe), sonst ruhig.
 // Vorlage der Animationen: docs/vorlagen/avatar-animation.md (CSS in globals.css).
 
+import { readRaw, writeRaw } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 import type { StorageKey } from "@/lib/core/storage";
 
@@ -79,8 +80,8 @@ const GREET_KEY: StorageKey = "wasgibts.avatargruss";
 /** Einmal am Tag beim ersten Öffnen begrüßen */
 export function greetOncePerDay(today: string) {
   try {
-    if (localStorage.getItem(GREET_KEY) === today) return false;
-    localStorage.setItem(GREET_KEY, today);
+    if (readRaw(GREET_KEY) === today) return false;
+    writeRaw(GREET_KEY, today);
   } catch {
     return false;
   }

@@ -6,6 +6,7 @@
 // unten rot "Löschen". Mia ist der Hauptweg – das Formular dient zum
 // Nachschauen und Feinjustieren.
 
+import { WEEKDAYS_SHORT_MO } from "@/lib/core/days";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 import { useState, type ReactNode } from "react";
 import { Sheet } from "@/components/ui/Sheet";
@@ -15,12 +16,12 @@ import { CARD_LIST, chipClass } from "@/components/ui/styles";
 import { createEntry, type Room } from "@/lib/core/entries";
 import { ExternalLink } from "lucide-react";
 import { mondayOf, REMINDERS, removeItem, sanitizeEntry, terminExtras, upsertEntry, weekdayIndex, type CalendarEntry, type Reminder, type Repeat } from "@/lib/kalender/model";
-import { todayIso } from "@/lib/core/now";
+import { nowIso, todayIso } from "@/lib/core/now";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { act } from "@/components/heute/actions";
 
 const LABEL_SUGGESTIONS = ["Kita", "Schule", "Arzt", "Sport", "Café", "Geburtstag"];
-const DAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+const DAYS = WEEKDAYS_SHORT_MO;
 type RepeatKind = "nie" | Repeat["kind"];
 const REPEATS: { value: RepeatKind; label: string }[] = [
   { value: "nie", label: "Nie" },
@@ -96,7 +97,7 @@ export function EntryForm({ entry, date, kind, onClose }: { entry?: CalendarEntr
         ? { title, date: day, start: time, end: end || undefined, place: place || undefined, label: label || undefined, repeat: rep, reminder, who: who.length ? who : undefined, ...terminExtras(entry?.typ === "termin" ? entry.data : undefined), ...keep }
         : { title, date: day || undefined, due: due || undefined, week: !day && !due && week ? week : undefined, time: time || undefined, label: label || undefined, repeat: rep, reminder, doneOn: entry?.typ === "aufgabe" ? entry.data.doneOn : null, ...keep };
     const base = entry ? { ...entry, typ, raum: room, data } : createEntry(typ, data, { raum: room });
-    const clean = sanitizeEntry({ ...base, geaendert: new Date().toISOString() });
+    const clean = sanitizeEntry({ ...base, geaendert: nowIso() });
     if (!clean) return setHint("Das hat nicht geklappt – schau bitte nochmal auf Datum und Uhrzeit.");
     act((list) => upsertEntry(list, clean), clean.data.title);
     onClose();

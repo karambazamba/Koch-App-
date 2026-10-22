@@ -1,5 +1,6 @@
 "use client";
 
+import { readRaw, writeRaw } from "@/lib/core/localStore";
 import { useState } from "react";
 import { Segmented } from "@/components/ui/Segmented";
 import type { MachineStep } from "@/lib/essen/cookbook";
@@ -18,7 +19,7 @@ export function useMachineView(profile: HouseholdProfile | null | undefined): Ma
   const available = profile?.kitchenMachine === "thermomix";
   const [choice, setChoice] = useState<boolean | null>(() => {
     try {
-      const v = localStorage.getItem(KEY);
+      const v = readRaw(KEY);
       return v === null ? null : v === "1";
     } catch {
       return null;
@@ -31,7 +32,7 @@ export function useMachineView(profile: HouseholdProfile | null | undefined): Ma
     setOn: (value) => {
       setChoice(value);
       try {
-        localStorage.setItem(KEY, value ? "1" : "0");
+        writeRaw(KEY, value ? "1" : "0");
       } catch {
         // ohne Speicher eben nur für jetzt
       }

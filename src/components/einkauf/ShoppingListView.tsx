@@ -1,6 +1,6 @@
 "use client";
 
-// Seite /einkaufsliste: Woche wählen, „Was fehlt?“, Abteilungen oder Läden,
+// Seite /einkaufsliste: Woche wählen, „Was brauchst du?“, Abteilungen oder Läden,
 // „Für heute“, fällige Stammartikel (StapleBar.tsx), Erledigtes und Teilen.
 
 import { useEffect, useState } from "react";
@@ -176,7 +176,7 @@ export function ShoppingListView() {
         </div>
         )}
 
-        {/* Großes Feld „Was fehlt?“ immer oben (mit Mikrofon, mehrere mit Komma, „Oft gekauft“) */}
+        {/* Großes Feld „Was brauchst du?“ immer oben (mit Mikrofon, mehrere mit Komma, „Oft gekauft“) */}
         <ShoppingAddField weekStart={weekStart} settings={settings} />
 
         <Segmented

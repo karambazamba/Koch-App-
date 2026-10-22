@@ -9,6 +9,7 @@
 // Trainings nächste Woche, am liebsten morgens", "Blende die Jetzt-Karte
 // aus" (auch "Lass die Startseite immer gleich").
 
+import { WEEKDAYS_SHORT_MO } from "@/lib/core/days";
 import { changeEntries, loadEntries } from "@/lib/kalender/store";
 import { createEntry } from "@/lib/core/entries";
 import { now } from "@/lib/core/now";
@@ -173,7 +174,7 @@ export function dayChat(text: string, ctx: DayChatContext): DayChatReply | null 
     const created: CalendarEntry[] = plan.slots.map((s) => createEntry("termin", { title: s.title, date: s.date, start: s.start, end: s.end, label: "Sport", reminder: "30" as const, ...(ctx.me ? { who: [ctx.me] } : {}) }) as CalendarEntry);
     const undo = pushUndo("die geplanten Trainings", changeEntries((list) => created.reduce((acc, e) => upsertEntry(acc, e), list)));
     const shown = showSportTile();
-    const day = (iso: string) => ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"][(new Date(`${iso}T12:00:00`).getDay() + 6) % 7];
+    const day = (iso: string) => WEEKDAYS_SHORT_MO[(new Date(`${iso}T12:00:00`).getDay() + 6) % 7];
     return {
       text: `Eingeplant ✓ ${plan.slots.map((s) => `${day(s.date)} ${s.start} ${s.title}`).join(", ")} – mit Erinnerung 30 Min vorher.${plan.notes.length ? ` ${plan.notes.join(". ")}.` : ""}${shown ? " Die Sport-Kachel steht jetzt auf der Startseite." : ""}`,
       undo,

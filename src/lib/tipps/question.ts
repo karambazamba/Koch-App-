@@ -3,6 +3,7 @@
 // Kindern machen?“, „Gibt’s heute was in Malente?“. Nie „Was gibt’s heute?“
 // (das ist Essen).
 
+import { WEEKDAYS_MO } from "@/lib/core/days";
 import type { TipFilter } from "@/lib/tipps/categories";
 import { rangeFor, weekday } from "@/lib/tipps/model";
 
@@ -50,7 +51,7 @@ export function tipQuestion(text: string, today: string): TipQuestion | null {
     const day = DAYS.find(([re]) => re.test(t));
     if (day) {
       const date = addDays(today, (day[1] - weekday(today) + 7) % 7);
-      [von, bis, label] = [date, date, `am ${["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"][day[1]]}`];
+      [von, bis, label] = [date, date, `am ${WEEKDAYS_MO[day[1]]}`];
     }
   }
   return { von, bis, filters, ort: ort && !/^(der|die|das|dem|den)$/i.test(ort) ? ort : null, label };

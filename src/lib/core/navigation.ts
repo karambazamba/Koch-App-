@@ -4,6 +4,7 @@
 // Scrollhöhe. Vorwärts startet eine Seite oben, zurück landet man genau dort,
 // wo man die Seite verlassen hat – egal wie tief verschachtelt.
 
+import { readRaw, writeRaw } from "@/lib/core/localStore";
 import type { StorageKey } from "@/lib/core/storage";
 
 const KEY: StorageKey = "wasgibts.verlauf";
@@ -24,7 +25,7 @@ const topKey = () => (state.stack.length ? entryKey(state.stack.length - 1, stat
 
 function persist() {
   try {
-    sessionStorage.setItem(KEY, JSON.stringify(state));
+    writeRaw(KEY, JSON.stringify(state), "session");
   } catch {
     // privater Modus o. Ä. – dann eben nur im Speicher
   }
@@ -32,7 +33,7 @@ function persist() {
 
 function load(): NavState | null {
   try {
-    const raw = JSON.parse(sessionStorage.getItem(KEY) ?? "null");
+    const raw = JSON.parse(readRaw(KEY, "session") ?? "null");
     if (raw && Array.isArray(raw.stack) && raw.scroll && typeof raw.scroll === "object") return raw;
   } catch {
     // kaputter Eintrag → neu anfangen

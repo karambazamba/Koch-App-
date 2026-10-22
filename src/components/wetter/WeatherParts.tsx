@@ -12,7 +12,7 @@ import { WeatherSymbol } from "@/components/wetter/WeatherSymbol";
 /** Große Karte oben: Himmel je Lage */
 export function SkyCard({ sky, label, temp, state, line, sub, code, night, parts }: { sky: Sky; label: string; temp: number; state: string; line: string; sub?: string; code: number; night: boolean; parts: DayPart[] }) {
   return (
-    <section className="wx-sky relative flex flex-col overflow-hidden rounded-[24px] p-5 shadow-card" data-sky={sky} aria-label={`${label}: ${temp}°, ${state}`}>
+    <section className="wx-sky relative flex flex-col overflow-hidden rounded-sky p-5 shadow-card" data-sky={sky} aria-label={`${label}: ${temp}°, ${state}`}>
       <WeatherSymbol code={code} night={night} className="pointer-events-none absolute -right-5 -top-5 h-36 w-36 opacity-95" />
       <div className="wx-text relative flex flex-col">
         <span className="text-[12px] font-extrabold uppercase tracking-wide opacity-90">{label}</span>

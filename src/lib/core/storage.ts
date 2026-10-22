@@ -92,6 +92,9 @@ const RETIRED_SESSION_KEYS = ["wasgibts.entwicklung", "wasgibts.alleszeigen"] as
 /** Alte Termine (v0.9) – gelöscht, sobald sie im neuen Modell stehen */
 export const OLD_TERMINE_KEY = "wasgibts.termine";
 
+/** Alte Schlüssel, die beim Übernehmen noch einmal gelesen werden */
+export type RetiredKey = (typeof RETIRED_KEYS)[number] | typeof OLD_TERMINE_KEY;
+
 /** Nicht mehr genutzte Schlüssel löschen (Fehler beim Speicher still übergehen) */
 export function removeRetiredKeys(storage: Pick<Storage, "removeItem">, session?: Pick<Storage, "removeItem">) {
   try {

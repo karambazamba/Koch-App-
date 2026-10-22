@@ -84,6 +84,11 @@
   /* Drei Radien: Karte 20, Feld/Knopf 14, Chip rund (rounded-full) */
   --radius-card: 1.25rem;
   --radius-field: 0.875rem;
+  /* Sonderfälle mit eigenem Namen (statt rounded-[…]): Begleitungs-Leiste, Himmel-Karte, Essen+Einkauf-Paar im Bearbeiten-Modus, App-Icon */
+  --radius-bar: 28px;
+  --radius-sky: 24px;
+  --radius-pair: 26px;
+  --radius-icon: 22%;
   --shadow-card: var(--app-shadow-card);
   --shadow-sheet: var(--app-shadow-sheet);
   --shadow-bar: var(--app-shadow-bar);

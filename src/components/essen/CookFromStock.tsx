@@ -7,6 +7,7 @@
 // Liste und zeigt „✓ Liste“). Ersetzt das alte Nebeneinander aus Vorrat-
 // Kacheln und Chat-Vorschlägen.
 
+import { WEEKDAYS_SO } from "@/lib/core/days";
 import Link from "next/link";
 import { useState } from "react";
 import { Check, ChevronRight, Hourglass, Plus } from "lucide-react";
@@ -29,7 +30,7 @@ import type { HomeData } from "@/components/heute/useHomeData";
 const HEAD = "flex items-center justify-between px-1";
 const MORE = "flex h-10 items-center gap-0.5 text-[15px] font-bold text-accent-strong";
 const CHIPS_SHOWN = 8;
-const WEEKDAYS = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+const WEEKDAYS = WEEKDAYS_SO;
 
 /** „Das ist da“: Vorrat als Chips (nur mit Baustein Vorrat und wenn etwas da ist) */
 export function StockChips({ today }: { today: string }) {

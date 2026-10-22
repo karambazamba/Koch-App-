@@ -95,10 +95,10 @@ function QuickAddSheet({ weekStart, settings, onClose }: { weekStart: string; se
   );
 }
 
-/** Leere Einkaufsliste: großes Feld „Was fehlt?“ mit Mikrofon und „Oft gekauft“ direkt auf der Seite */
+/** Leere Einkaufsliste: großes Feld „Was brauchst du?“ mit Mikrofon und „Oft gekauft“ direkt auf der Seite */
 export function ShoppingAddField({ weekStart, settings }: { weekStart: string; settings: ShoppingSettings }) {
   return (
-    <section className="flex flex-col gap-3" aria-label="Was fehlt?">
+    <section className="flex flex-col gap-3" aria-label="Was brauchst du?">
       <QuickAddBody
         weekStart={weekStart}
         settings={settings}
@@ -290,7 +290,7 @@ function QuickAddBody({
             onChange={(e) => setInput(e.target.value)}
             enterKeyHint="done"
             aria-label="Was soll auf die Liste?"
-            placeholder={speech.listening ? speech.interim || "Ich höre zu …" : big ? "Was fehlt?" : "z. B. Milch, Windeln, Müsli von Rossmann"}
+            placeholder={speech.listening ? speech.interim || "Ich höre zu …" : big ? "Was brauchst du?" : "z. B. Milch, Windeln, Müsli von Rossmann"}
             className={`${INPUT_BASE} ${big ? "h-14 text-lg" : "h-12"} min-w-0 flex-1 px-4`}
           />
           {input.trim() ? (

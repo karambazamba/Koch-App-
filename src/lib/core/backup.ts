@@ -3,6 +3,7 @@
 // App neu zum Home-Bildschirm hinzufügt). Welche Schlüssel dazugehören,
 // steht im Verzeichnis `storage.ts` (`backup: true`).
 
+import { plural } from "@/lib/core/text";
 import { APP_VERSION } from "@/lib/core/app";
 import { now } from "@/lib/core/now";
 import { BACKUP_KEYS, OLD_TERMINE_KEY, STORAGE } from "@/lib/core/storage";
@@ -52,7 +53,7 @@ export function parseBackup(text: string): Backup | null {
   }
 }
 
-const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+const count = plural;
 
 function read(backup: Backup, key: string): unknown {
   try {

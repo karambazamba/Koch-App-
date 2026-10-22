@@ -52,7 +52,7 @@ export function MarketBoard({
         ))}
       </ul>
       <p className="text-sm text-muted">
-        {idea.needs.length ? `Was du dafür noch brauchst: ${list(idea.needs)}` : "Dafür ist sonst alles da ✓"}
+        {idea.needs.length ? `Was du dafür noch brauchst: ${list(idea.needs)}` : "Alles andere ist im Haus ✓"}
       </p>
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={() => onAdd(idea)} className={buttonClass("primary", "sm")}>

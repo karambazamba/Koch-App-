@@ -236,7 +236,7 @@ export function WeekPlanView() {
 
         {!readOnly && free && (
           <button type="button" onClick={() => openHelper(undefined, "Füll bitte die freien Tage dieser Woche mit Gerichten.")} className={`${buttonClass("soft")} w-full`}>
-            {profile ? helperName(profile) : "Mia"}, füll die freien Tage
+            {helperName(profile)}, füll die freien Tage
           </button>
         )}
         {toast && (

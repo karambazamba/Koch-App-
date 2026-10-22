@@ -8,3 +8,6 @@ export function withoutEmoji(text: string): string {
     .replace(/\s{2,}/g, " ")
     .trim();
 }
+
+/** „1 Person“ / „3 Personen“ */
+export const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;

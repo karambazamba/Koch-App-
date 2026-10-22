@@ -43,7 +43,7 @@ export function everydayUses(latest: string, system: string): Anthropic.Beta.Bet
     const offLine = system.match(/Aus: (.+)$/m)?.[1] ?? "";
     if (baustein.kind === "list") {
       const off = BAUSTEINE.filter((b) => offLine.includes(`(${b.feature}:`));
-      return text(off.length ? `Ich kann noch: ${off.map((b) => `${b.name} – ${b.text.replace(/\.$/, "")}`).join("; ")}. Soll ich was davon einschalten? (Testmodus)` : "Gerade ist alles an, was ich kann. (Testmodus)");
+      return text(off.length ? `Außerdem kann ich: ${off.map((b) => `${b.name} – ${b.text.replace(/\.$/, "")}`).join("; ")}. Soll ich was davon einschalten? (Testmodus)` : "Gerade ist alles an, was ich kann. (Testmodus)");
     }
     const isOff = offLine.includes(`(${baustein.feature}:`);
     if (isOff === baustein.on) return tools([{ name: baustein.on ? "baustein_an" : "baustein_aus", input: { baustein: baustein.feature } }]);
