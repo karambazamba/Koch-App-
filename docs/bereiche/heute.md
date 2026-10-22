@@ -11,7 +11,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Seite Heute: `TodayPage.tsx`; Kacheln `HomeBoard.tsx`, `EditFrame.tsx`,
   `EditHeader.tsx`, `UnitMenu.tsx`, `TilePicker.tsx`, `useHomeEditing.ts`, `Pressable.tsx`.
 - Kachel-Inhalte: `MiniCards.tsx` (Termine, Aufgaben), `HomeTiles.tsx` (Essen,
-  Einkauf, Notizen, Vorrat, Morgen); andere Kacheln in ihren Bereichen
+  Einkauf, Notizen, Vorrat, Ausblick morgen); andere Kacheln in ihren Bereichen
   (`wetter/WeatherTile`, `pinnwand/PinboardTile`, `timer/TimerTile`, …).
 - Layout (rein + Speicher): `src/lib/core/homeLayout.ts`; Einheiten/Reihen:
   `src/lib/core/homeUnits.ts` (`unitsOf`, `rowsOf`, `glowTile`).
@@ -48,7 +48,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 ### Kacheln
 - `HOME_TILES` in Standard-Reihenfolge: Pinnwand (S), Wetter (S), Termine (M),
   Aufgaben (M), Essen (S), Einkauf (S), Spendentopf (nur M), Tipps (M/L,
-  Baustein), Timer (S/M), Sport, Notizen, Vorrat (S/M, Baustein), Morgen (nur M),
+  Baustein), Timer (S/M), Sport, Notizen, Vorrat (S/M, Baustein), Ausblick morgen (nur M, Kalender-Icon),
   Post („bald“, nie sichtbar).
 - `DEFAULT_HOME` zeigt Pinnwand, Wetter, Termine, Aufgaben, Essen, Einkauf,
   Spendentopf und Vorrat; Vorrat erscheint nur mit Baustein, Tipps nur mit
@@ -64,7 +64,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Spalten), Aufgaben S 2 / M 4 / L 8 (`TERMIN_COUNT`, `TASK_COUNT`).
   Aufgaben auf der Startseite: dringend, heute dran und diese Woche.
 - Jede Kachel öffnet ihre Seite. Abhaken: 2 s durchgestrichen (`LEAVE_MS`),
-  dann „Erledigt · Rückgängig“. Die Morgen-Kachel füllt sich erst ab 16 Uhr.
+  dann „Erledigt · Rückgängig“. Die Kachel „Ausblick morgen“ (bis v0.51.0 „Morgen“, missverständlich wie „der Morgen“) füllt sich erst ab 16 Uhr; Titel in der Kachel „Ausblick morgen · Do“, Platzhalter im Bearbeiten-Modus „ab 16 Uhr“, in der Auswahl „Was morgen ansteht, ab 16 Uhr“.
 
 ### Bearbeiten-Modus (direkt auf der Startseite)
 - Öffnen: lange drücken, Link „Startseite bearbeiten“ unten, Einstellungen
