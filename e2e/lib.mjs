@@ -1,0 +1,149 @@
+// Gemeinsame Hilfen für Durchklick (`npm run durchklick`) und Bildvergleich
+// (`npm run bilder`): Testserver starten (fertiger Build, Testmodi an),
+// Geräte, feste Zeit, fester Zufall, Beispiel-Familie und echte Touch-Gesten
+// über das Chrome-Protokoll (CDP). Zeit: Mittwoch, 21.10.2026, 10:30 (Berlin).
+
+import { spawn } from "node:child_process";
+import { chromium, devices } from "playwright";
+
+const PORT = Number(process.env.E2E_PORT || 3210);
+export const BASE = process.env.E2E_BASE || `http://localhost:${PORT}`;
+const TIME = "2026-10-21T10:30:00+02:00";
+export const DEVICES = ["iPhone SE", "iPhone 15 Pro", "Pixel 7"];
+
+/** Testserver mit Testmodus für KI, Wetter und Tipps (braucht `npm run build`) – oder E2E_BASE nutzen */
+export async function startServer() {
+  if (process.env.E2E_BASE) return () => {};
+  const child = spawn("npx", ["next", "start", "-p", String(PORT)], {
+    env: { ...process.env, KUECHENHELFER_MOCK: "1", WETTER_MOCK: "1", TIPS_SOURCE: "demo", PORT: String(PORT) },
+    stdio: "ignore",
+  });
+  for (let i = 0; i < 60; i++) {
+    try {
+      if ((await fetch(BASE)).ok) return () => child.kill();
+    } catch {
+      // startet noch
+    }
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  child.kill();
+  throw new Error(`Testserver auf ${BASE} startet nicht – vorher npm run build?`);
+}
+
+export const launch = (args = []) => chromium.launch({ args });
+
+/** Fester Zufall (für Vorschläge, Reihenfolgen), damit Bilder gleich bleiben */
+const SEEDED_RANDOM = () => {
+  let s = 42;
+  Math.random = () => ((s = (s * 1664525 + 1013904223) % 4294967296) / 4294967296);
+};
+
+/** Neue Seite auf einem Gerät: feste Zeit, Zeitzone Berlin, Bewegung reduziert, hell/dunkel */
+export async function newPage(browser, device, { dark = false, time = TIME, permissions = [] } = {}) {
+  const ctx = await browser.newContext({ ...devices[device], timezoneId: "Europe/Berlin", locale: "de-DE", colorScheme: dark ? "dark" : "light", reducedMotion: "reduce", permissions });
+  const page = await ctx.newPage();
+  page.errors = [];
+  page.on("pageerror", (e) => page.errors.push(e.message));
+  page.on("console", (m) => m.type() === "error" && !/Failed to load resource|favicon/.test(m.text()) && page.errors.push(m.text()));
+  await page.clock.setFixedTime(new Date(time));
+  await page.addInitScript(SEEDED_RANDOM);
+  return page;
+}
+
+/** Erster Start wie im echten Leben: Hallo → „Los geht’s“ → Startseite mit Beispiel-Tag */
+export async function hello(page) {
+  await page.goto(BASE);
+  await page.getByRole("button", { name: "Los geht’s" }).click();
+  await page.getByRole("tab", { name: "Heute", selected: true }).waitFor();
+  // Startwerte werden kurz nach dem Hallo gespeichert – erst danach eigene Daten einspielen
+  await page.waitForFunction(() => Boolean(localStorage.getItem("familienkueche.haushaltsprofil") && localStorage.getItem("wasgibts.beispiel")));
+  await page.waitForTimeout(600);
+}
+
+const stamp = "2026-10-20T08:00:00.000Z";
+const entry = (id, typ, data, raum = "familie") => ({ id, typ, raum, besitzer: "lokal", erstellt: stamp, geaendert: stamp, data });
+
+/** Beispiel-Familie mit eigenen Einträgen (statt Beispiel-Tag) */
+const FAMILY = {
+  persons: [
+    { id: "a1", role: "erwachsen", name: "Lisa", allergies: [], dislikes: [], weekdayLunch: "zuhause" },
+    { id: "a2", role: "erwachsen", name: "Felix", allergies: [], dislikes: [], weekdayLunch: "auswaerts" },
+    { id: "k1", role: "kind", name: "Mathis", allergies: [], dislikes: [], ageGroup: "schulkind", age: 8, weekdayLunch: "auswaerts" },
+  ],
+  data: {
+    "wasgibts.eintraege": {
+      version: 2,
+      migratedTermine: true,
+      seenReminders: [],
+      entries: [
+        entry("t1", "termin", { title: "Zahnarzt", date: "2026-10-21", start: "16:15", place: "Praxis Dr. Berg", reminder: "30", doneDates: [], skipDates: [] }),
+        entry("t2", "termin", { title: "Elternabend", date: "2026-10-21", start: "19:30", reminder: "aus", doneDates: [], skipDates: [] }),
+        entry("t3", "termin", { title: "Fußball Mathis", date: "2026-10-23", start: "17:00", label: "Sport", reminder: "aus", doneDates: [], skipDates: [] }),
+        entry("a1", "aufgabe", { title: "Kita-Formular abgeben", date: "2026-10-21", reminder: "aus", doneOn: null, dringend: true }),
+        entry("a2", "aufgabe", { title: "Geschenk für Oma", reminder: "aus", doneOn: null }),
+      ],
+    },
+    "wasgibts.vorrat": {
+      version: 2,
+      items: [
+        { id: "p1", name: "Joghurt", amount: null, unit: "", addedAt: "2026-10-17", place: "kuehlschrank" },
+        { id: "p2", name: "Paprika", amount: 2, unit: "Stück", addedAt: "2026-10-18", place: "kuehlschrank" },
+        { id: "p3", name: "Reis", amount: 500, unit: "g", addedAt: "2026-10-10", place: "schrank" },
+        { id: "p4", name: "Erbsen", amount: null, unit: "", addedAt: "2026-10-01", place: "tiefkuehler" },
+      ],
+    },
+    "wasgibts.notizen": { version: 1, notes: [entry("n1", "notiz", { title: "WLAN", kind: "text", text: "Passwort: Sonnenblume42", pinned: true })] },
+    "wasgibts.pinnwand": { version: 2, messages: [entry("pin1", "pinnwand", { text: "Bin um 20 Uhr da", author: "Felix", reactions: {}, readBy: ["Felix"], pinned: false })], memos: [] },
+    "wasgibts.funktionen": { version: 2, on: ["vorrat", "rezepte", "wochenplan", "regiontipps"] },
+    "wasgibts.beispiel": { version: 1, since: "2026-10-21", cleared: ["termine", "aufgaben", "pinnwand", "einkauf", "essen"], done: [], gone: [], asked: true },
+  },
+};
+
+/** Familie und eigene Daten einspielen (nach `hello`), dann neu laden */
+export async function seedFamily(page, extra = {}) {
+  await page.evaluate(({ family, extra }) => {
+    const p = JSON.parse(localStorage.getItem("familienkueche.haushaltsprofil"));
+    p.persons = family.persons;
+    p.adults = 2;
+    p.kids = 1;
+    p.householdType = "familie";
+    p.householdName = "Müller";
+    localStorage.setItem("familienkueche.haushaltsprofil", JSON.stringify(p));
+    for (const [k, v] of Object.entries({ ...family.data, ...extra })) localStorage.setItem(k, JSON.stringify(v));
+  }, { family: FAMILY, extra });
+}
+
+/** Dunkel als eigene Wahl (Profil), passend zu colorScheme "dark" */
+export async function setDark(page) {
+  await page.evaluate(() => {
+    const p = JSON.parse(localStorage.getItem("familienkueche.haushaltsprofil"));
+    p.theme = "nacht";
+    p.themeSet = true;
+    localStorage.setItem("familienkueche.haushaltsprofil", JSON.stringify(p));
+  });
+}
+
+export const store = (page, key) => page.evaluate((k) => JSON.parse(localStorage.getItem(k) ?? "null"), key);
+
+/** Echte Touch-Wischgeste (iOS bricht Pointer-Events beim Scrollen ab – deshalb Touch über CDP) */
+export async function swipe(page, { x, y, dx, dy = 0, ms = 260, steps = 10 }) {
+  const cdp = await page.context().newCDPSession(page);
+  const point = (px, py) => [{ x: Math.round(px), y: Math.round(py), id: 1 }];
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: point(x, y) });
+  for (let i = 1; i <= steps; i++) {
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: point(x + (dx * i) / steps, y + (dy * i) / steps) });
+    await new Promise((r) => setTimeout(r, ms / steps));
+  }
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await cdp.detach();
+}
+
+/** Prüfungen sammeln statt beim ersten Fehler abzubrechen */
+export function checker(prefix) {
+  const failed = [];
+  const check = (ok, msg) => {
+    if (!ok) failed.push(`${prefix}: ${msg}`);
+    console.log(`${ok ? "✓" : "✗"} ${prefix} · ${msg}`);
+  };
+  return { check, failed };
+}

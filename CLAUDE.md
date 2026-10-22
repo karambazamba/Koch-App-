@@ -212,6 +212,12 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   bleiben auf dem Gerät. Der Icon-Hinweis (`iconChangeHint`) verweist darauf.
   „Daten & App“ geht auch ohne Profil; auf dem Hallo-Bildschirm steht leise
   „Ich habe eine Sicherung“ (nach dem Neu-Hinzufügen zum Home-Bildschirm).
+- Durchklick und Bildvergleich im Projekt (seit dem Aufräumen, Etappe 0):
+  `npm run durchklick` (Ordner `e2e/`, Playwright, echte Touch-Gesten über
+  CDP; startet selbst einen Testserver nach `npm run build`, oder `E2E_BASE`),
+  `npm run bilder` (96 Bildschirmfotos, `-- --basis` = Ausgangslage) und
+  `npm run bilder:vergleich` (Abweichung > 0,1 %), `npm run messen` (JS je
+  Seite). Bilder liegen in `.bilder/` (nicht im Repo).
 - Tests: Vitest (`npm test`, `tests/*.test.ts`, Zeit fest über `at()` aus
   `tests/helpers.ts`, Zeitzone Europe/Berlin). Ungenutzter Code: `npx knip`
   (Konfiguration `knip.json`; `@public` im Kommentar = bewusst für Tests/Push).
