@@ -118,6 +118,32 @@ die Aufgaben-Seite und das Eintragen-Fenster.
   unten rot „Löschen“. Link und Notiz aus Tipps bleiben (`terminExtras`).
 - Ohne Angabe gehört alles zur Familie.
 
+### Kalender übernehmen (Baustein „kalender“, seit v0.50)
+
+- Seite `/profil/kalender` (`kalender/import/CalendarImportView.tsx`), Zeile in
+  den Einstellungen und leise „Aus Apple/Google übernehmen“ im
+  Eintragen-Fenster – nur mit Baustein (aus). Die Begleitung schaltet ihn frei.
+- Einmal per Datei (.ics, auch mehrere): `lib/kalender/import/ics.ts` (eigener
+  Parser: entfaltete Zeilen, TZID/UTC/floating → Europe/Berlin inkl.
+  Sommerzeit, Windows-Zonen, ganztägig/mehrtägig, DURATION, EXDATE,
+  RECURRENCE-ID, STATUS:CANCELLED, VALARM), `rrule.ts` (RRULE → unsere Serie:
+  täglich, wöchentlich/alle N Wochen, Wochentage, monatlich – mit Ende aus
+  UNTIL/COUNT; sonst einzelne Tage), `plan.ts` (Vorschau-Zahlen, Termine,
+  Zusammenführen).
+- Vorschau „112 Termine gefunden · 8 Serien · ab heute 46“, Zeitraum ab heute
+  (Standard) / alles, Familie oder Arbeit je Kalender (Namen wie „Arbeit“
+  starten in Arbeit). „Übernehmen“ → „46 Termine übernommen · Rückgängig“
+  (alle auf einmal). Besondere Serien („jeden 2. Dienstag im Monat“,
+  jährlich) werden für 12 Monate einzeln angelegt und im Bericht genannt.
+- Erinnerungen: ≤ 15/30/60 Min → Stufe, am Vortag 16–22 Uhr → Vorabend, sonst aus.
+- Herkunft `source: { kind: google|apple|ics, uid }` im Termin: erneutes
+  Einlesen aktualisiert (id, erstellt, Abgehaktes bleiben) statt doppelt; im
+  Termin klein „aus Google“/„aus Apple“.
+- Modell dafür erweitert (ohne Versionswechsel, alles optional): ganztägige
+  Termine (`start: ""`), `until` (Serienende), `endDate` (mehrtägig, Uhrzeit nur
+  am ersten, Ende nur am letzten Tag), `woechentlich.every` (alle N Wochen).
+  Das Formular behält diese Feinheiten beim Sichern (`terminExtras`).
+
 ## Begleitung (Mia)
 
 - Werkzeuge in `src/lib/begleitung/calendarTools.ts` (Bereich „alltag“):
@@ -139,6 +165,8 @@ die Aufgaben-Seite und das Eintragen-Fenster.
   Sätze über Essen, Einkauf oder Urlaub lässt `parseCalendar` liegen.
 
 ## Tests
+
+- `tests/kalender/kalenderImport.test.ts`: Dateien im Google- und Apple-Stil (Serie mit Ausnahme, verschobener Einzeltermin, ganztägig, mehrtägig, Sommerzeit, andere Zeitzone, Erinnerungen, Umlaute/Emojis, doppelt einlesen); Durchklick `kalenderImport`.
 
 - `tests/kalender/`: `termineAufgaben.test.ts`, `wiederholungen.test.ts`,
   `spracheKalender.test.ts`, `kalenderChat.test.ts`.

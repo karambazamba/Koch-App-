@@ -3,7 +3,7 @@
 import { plural } from "@/lib/core/text";
 import Link from "next/link";
 import { useMailStyle } from "@/lib/begleitung/mailSettings";
-import { Blocks, HandCoins, MapPin, BookOpen, CalendarDays, ChefHat, ChevronRight, Clock, CloudSun, Database, Dumbbell, LayoutGrid, Mail, Refrigerator, Salad } from "lucide-react";
+import { Blocks, HandCoins, MapPin, BookOpen, CalendarDays, CalendarPlus, ChefHat, ChevronRight, Clock, CloudSun, Database, Dumbbell, LayoutGrid, Mail, Refrigerator, Salad } from "lucide-react";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
@@ -56,6 +56,7 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
   const unlockedPantry = useFeature("vorrat");
   const planOn = useFeature("wochenplan");
   const kochstilOn = useFeature("kochstil");
+  const kalenderOn = useFeature("kalender");
   const jetzt = useJetzt();
   const sport = useSport();
   const potRegion = useFamilyRegion().region;
@@ -107,6 +108,11 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
           {tipsOn && (
             <Row href="/profil/regiontipps" icon={MapPin} title="Tipps aus der Region" value={`${tipPlace} + ${tipSettings.km} km`}>
               Ort, Umkreis, im Kalender zeigen
+            </Row>
+          )}
+          {kalenderOn && (
+            <Row href="/profil/kalender" icon={CalendarPlus} title="Kalender übernehmen">
+              Termine aus Apple oder Google holen
             </Row>
           )}
           <Row href="/profil/bausteine" icon={Blocks} title="Mehr Funktionen">

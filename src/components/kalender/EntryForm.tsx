@@ -15,7 +15,7 @@ import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { CARD_LIST, chipClass } from "@/components/ui/styles";
 import { createEntry, type Room } from "@/lib/core/entries";
 import { ExternalLink } from "lucide-react";
-import { mondayOf, REMINDERS, removeItem, sanitizeEntry, terminExtras, upsertEntry, weekdayIndex, type CalendarEntry, type Reminder, type Repeat } from "@/lib/kalender/model";
+import { mondayOf, REMINDERS, removeItem, sanitizeEntry, sourceLabel, terminExtras, upsertEntry, weekdayIndex, type CalendarEntry, type Reminder, type Repeat } from "@/lib/kalender/model";
 import { nowIso, todayIso } from "@/lib/core/now";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { PERSONS, sortBy } from "@/lib/core/sort";
@@ -89,9 +89,11 @@ export function EntryForm({ entry, date, kind, onClose }: { entry?: CalendarEntr
 
   const save = () => {
     if (!title.trim()) return setHint("Wie heißt es? Ein Wort reicht.");
-    if (typ === "termin" && !time) return setHint("Für einen Termin brauche ich eine Uhrzeit – ohne Uhrzeit ist es eine Aufgabe.");
+    // Ganztägig (z. B. aus Google übernommen) bleibt ohne Uhrzeit speicherbar
+    if (typ === "termin" && !time && !(entry?.typ === "termin" && entry.data.start === "")) return setHint("Für einen Termin brauche ich eine Uhrzeit – ohne Uhrzeit ist es eine Aufgabe.");
     if (typ === "termin" && !day) return setHint("An welchem Tag?");
-    const rep: Repeat | null = repeat === "nie" ? null : repeat === "wochentage" ? { kind: "wochentage", days: days.length ? days : [weekdayIndex(day || todayIso())] } : { kind: repeat };
+    // Gleiche Art wie vorher → Feinheiten (z. B. „alle 2 Wochen“ aus Google) bleiben
+    const rep: Repeat | null = repeat === "nie" ? null : repeat === "wochentage" ? { kind: "wochentage", days: days.length ? days : [weekdayIndex(day || todayIso())] } : d?.repeat?.kind === repeat ? d.repeat : { kind: repeat };
     const keep = { doneDates: d?.doneDates ?? [], skipDates: d?.skipDates ?? [] };
     const data =
       typ === "termin"
@@ -137,6 +139,7 @@ export function EntryForm({ entry, date, kind, onClose }: { entry?: CalendarEntr
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={typ === "termin" ? "Titel, z. B. Steuerberater" : "Titel, z. B. Kita-Formular"} aria-label="Titel" className="h-12 w-full bg-transparent px-4 text-base font-semibold outline-none placeholder:font-normal placeholder:text-faint" autoFocus={!entry} />
           {typ === "termin" && <input value={place} onChange={(e) => setPlace(e.target.value)} placeholder="Ort" aria-label="Ort" className="h-12 w-full bg-transparent px-4 text-base outline-none placeholder:text-faint" />}
           {entry?.typ === "termin" && entry.data.link && <SourceLink href={entry.data.link} note={entry.data.note} />}
+          {entry?.typ === "termin" && entry.data.source && <p className="px-4 py-3 text-sm text-muted">{sourceLabel(entry.data.source)}</p>}
         </div>
 
         <div className={CARD_LIST}>

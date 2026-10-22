@@ -18,8 +18,11 @@ import { createEntry, type Entry, type Room } from "@/lib/core/entries";
 import { addDays, fromIsoDate } from "@/lib/core/now";
 import { first, sortBy, timeThenCreated } from "@/lib/core/sort";
 
-/** Wiederholung: täglich, wöchentlich (wie der erste Tag), monatlich (gleicher Tag im Monat) oder bestimmte Wochentage (0 = Mo … 6 = So) */
-export type Repeat = { kind: "taeglich" } | { kind: "woechentlich" } | { kind: "monatlich" } | { kind: "wochentage"; days: number[] };
+/** Wiederholung: täglich, wöchentlich (wie der erste Tag, `every` = alle N Wochen), monatlich (gleicher Tag im Monat) oder bestimmte Wochentage (0 = Mo … 6 = So) */
+export type Repeat = { kind: "taeglich" } | { kind: "woechentlich"; every?: number } | { kind: "monatlich" } | { kind: "wochentage"; days: number[] };
+
+/** Woher ein übernommener Termin kommt (Kalender-Datei): Quelle und UID – erneutes Einlesen aktualisiert statt doppelt */
+export type TerminSource = { kind: "google" | "apple" | "ics"; uid: string };
 
 /** Erinnerung: aus, 15/30/60 Minuten vorher oder am Vorabend (19 Uhr) */
 export type Reminder = "aus" | "15" | "30" | "60" | "vorabend";
@@ -54,11 +57,31 @@ export type TerminData = {
   doneDates?: string[];
   /** Einzelne Tage einer Serie, die entfallen (verschoben oder gelöscht) */
   skipDates?: string[];
+  /** Letzter Tag einer Serie (ohne = endlos) */
+  until?: string;
+  /** Mehrtägig: letzter Tag (z. B. Urlaub) */
+  endDate?: string;
+  /** Aus Google/Apple übernommen */
+  source?: TerminSource;
 };
 
-/** Was das Formular nicht zeigt, aber beim Sichern bleiben muss (z. B. Link und „aus Tipps“) */
-export function terminExtras(data: Pick<TerminData, "note" | "link"> | undefined): Pick<TerminData, "note" | "link"> {
-  return { ...(data?.note ? { note: data.note } : {}), ...(data?.link ? { link: data.link } : {}) };
+type TerminExtras = Pick<TerminData, "note" | "link" | "until" | "endDate" | "source">;
+
+/** Was das Formular nicht zeigt, aber beim Sichern bleiben muss (z. B. Link, „aus Tipps“, Serienende, Herkunft) */
+export function terminExtras(data: TerminExtras | undefined): TerminExtras {
+  return {
+    ...(data?.note ? { note: data.note } : {}),
+    ...(data?.link ? { link: data.link } : {}),
+    ...(data?.until ? { until: data.until } : {}),
+    ...(data?.endDate ? { endDate: data.endDate } : {}),
+    ...(data?.source ? { source: data.source } : {}),
+  };
+}
+
+/** „aus Google“ / „aus Apple“ / „aus dem Kalender“ (kleiner Hinweis im Termin) */
+export function sourceLabel(source: TerminSource | undefined): string | null {
+  if (!source) return null;
+  return source.kind === "google" ? "aus Google" : source.kind === "apple" ? "aus Apple" : "aus dem Kalender";
 }
 
 export type AufgabeData = {
@@ -130,7 +153,7 @@ function repeatsOn(repeat: Repeat, start: string, date: string): boolean {
     case "taeglich":
       return true;
     case "woechentlich":
-      return dayDiff(date, start) % 7 === 0;
+      return dayDiff(date, start) % (7 * (repeat.every ?? 1)) === 0;
     case "monatlich":
       return fromIsoDate(date).getDate() === fromIsoDate(start).getDate();
     case "wochentage":
@@ -145,6 +168,7 @@ export function repeatLabel(repeat: Repeat | null | undefined, start?: string): 
     case "taeglich":
       return "täglich";
     case "woechentlich":
+      if ((repeat.every ?? 1) > 1) return start ? `alle ${repeat.every} Wochen ${WEEKDAYS_LONG[weekdayIndex(start)]}s` : `alle ${repeat.every} Wochen`;
       return start ? `jeden ${WEEKDAYS_LONG[weekdayIndex(start)]}` : "wöchentlich";
     case "monatlich":
       return "monatlich";
@@ -193,14 +217,17 @@ export function itemsForDay(entries: CalendarEntry[], date: string, today: strin
   for (const entry of entries) {
     if (isTermin(entry)) {
       const t = entry.data;
-      const on = t.repeat ? repeatsOn(t.repeat, t.date, date) && !t.skipDates?.includes(date) : t.date === date;
+      const on = t.repeat ? repeatsOn(t.repeat, t.date, date) && !t.skipDates?.includes(date) && (!t.until || date <= t.until) : t.endDate ? t.date <= date && date <= t.endDate : t.date === date;
       if (!on) continue;
+      // Mehrtägig: Uhrzeit nur am ersten Tag, Ende nur am letzten
+      const first = !t.endDate || t.repeat || date === t.date;
+      const last = !t.endDate || t.repeat || date === t.endDate;
       items.push({
         key: `${entry.id}@${date}`,
         entry,
         date,
-        time: t.start || null,
-        end: t.end || null,
+        time: first ? t.start || null : null,
+        end: last ? t.end || null : null,
         title: t.title,
         label: t.label || null,
         room: entry.raum,
@@ -509,7 +536,9 @@ export function sanitizeEntry(raw: unknown): CalendarEntry | null {
   };
   const label = typeof d.label === "string" && d.label.trim() ? d.label.trim().slice(0, 40) : undefined;
   if (e.typ === "termin") {
-    if (typeof d.date !== "string" || !DATE.test(d.date) || typeof d.start !== "string" || !TIME.test(d.start)) return null;
+    // Ohne Uhrzeit (start "") = ganztägig
+    if (typeof d.date !== "string" || !DATE.test(d.date) || typeof d.start !== "string" || (d.start !== "" && !TIME.test(d.start))) return null;
+    const src = d.source as Partial<TerminSource> | undefined;
     return {
       ...base,
       typ: "termin",
@@ -527,6 +556,9 @@ export function sanitizeEntry(raw: unknown): CalendarEntry | null {
         link: typeof d.link === "string" && /^https?:\/\//.test(d.link) ? d.link.slice(0, 300) : undefined,
         doneDates: dates(d.doneDates),
         skipDates: dates(d.skipDates),
+        ...(repeat && typeof d.until === "string" && DATE.test(d.until) && d.until >= d.date ? { until: d.until } : {}),
+        ...(!repeat && typeof d.endDate === "string" && DATE.test(d.endDate) && d.endDate > d.date ? { endDate: d.endDate } : {}),
+        ...(src && (src.kind === "google" || src.kind === "apple" || src.kind === "ics") && typeof src.uid === "string" && src.uid ? { source: { kind: src.kind, uid: src.uid.slice(0, 300) } } : {}),
       },
     };
   }
@@ -554,6 +586,8 @@ export function sanitizeEntry(raw: unknown): CalendarEntry | null {
 export function sanitizeRepeat(raw: unknown): Repeat | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Partial<Repeat> & { days?: unknown };
+  const every = (r as { every?: unknown }).every;
+  if (r.kind === "woechentlich" && Number.isInteger(every) && (every as number) > 1 && (every as number) <= 12) return { kind: "woechentlich", every: every as number };
   if (r.kind === "taeglich" || r.kind === "woechentlich" || r.kind === "monatlich") return { kind: r.kind };
   if (r.kind === "wochentage" && Array.isArray(r.days)) {
     const days = [...new Set(r.days.filter((x): x is number => Number.isInteger(x) && x >= 0 && x <= 6))].sort();

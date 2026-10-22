@@ -4,6 +4,7 @@
 import { parseTimerCommand } from "@/lib/timer/model";
 import { parseHelperInput } from "@/lib/begleitung/helperTools";
 import { parseHouseholdIntro } from "@/lib/einstellungen/householdIntro";
+import { isCalendarImportRequest } from "@/lib/kalender/import/chat";
 import { parseSportCommand } from "@/lib/sport/model";
 import { parseNoteCommand } from "@/lib/notizen/chat";
 import { isSchnellnotizTidyRequest, schnellnotizCommand, tidySchnellnotiz } from "@/lib/notizen/schnellnotiz";
@@ -59,7 +60,7 @@ export function everydayUses(latest: string, system: string): Anthropic.Beta.Bet
     return tools([{ name: "app_befehl", input: { text: latest } }]);
   }
   // App-Bedienung (Ansicht, Vorlesen, Einstellungen, neue Person, Produkte, Seiten)
-  if (greetingCommand(latest)) return tools([{ name: "app_befehl", input: { text: latest } }]);
+  if (greetingCommand(latest) || isCalendarImportRequest(latest)) return tools([{ name: "app_befehl", input: { text: latest } }]);
   if (/\b(ansicht|dunkel|vorlesen|lies mir|sprich (langsamer|schneller)|melde dich|keine tipps|isst jetzt|mag kein\w*|allergisch|wohnt jetzt|immer .+ statt|zeig mir (alles|unsere rezepte|den vorrat)|koche jetzt spontan)\b/.test(t)) {
     return tools([{ name: "app_befehl", input: { text: latest } }]);
   }

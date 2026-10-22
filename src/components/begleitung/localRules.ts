@@ -8,6 +8,7 @@ import { changeEntries, loadEntries } from "@/lib/kalender";
 import { parseHomeCommand } from "@/lib/begleitung/homeChat";
 import { parseBausteinCommand } from "@/lib/begleitung/bausteinChat";
 import { BAUSTEINE, bausteinOf, featureOn, setFeature } from "@/lib/core/features";
+import { CALENDAR_IMPORT_REPLY, isCalendarImportRequest } from "@/lib/kalender/import/chat";
 import { changeHome, describeHomeChange, requestHomeEdit, unlockHomeTile } from "@/lib/core/homeLayout";
 import { addPin, changeMemos, changePins, createPin, formatDauer, householdNames, isPinboardQuery, loadMemos, loadPins, memoPlayRequest, memoToPlay, pinWriteCommand, setMemoHeard, visibleMemos, visiblePins } from "@/lib/pinnwand";
 import { playMemo } from "@/lib/pinnwand/memoPlayer";
@@ -422,5 +423,15 @@ export function homeCommand(ctx: RuleContext, t: string): boolean {
   const { undo } = commitOps(data, [op], new Set([op.id]), t);
   const text = cmd.kind === "clear_week" ? "Erledigt ✓ Der Wochenplan ist wieder leer – die Rezepte bleiben." : cmd.kind === "clear_shopping" ? "Erledigt ✓ Die Einkaufsliste ist leer." : `Erledigt ✓ ${cmd.names.join(", ")} ${cmd.names.length === 1 ? "ist" : "sind"} von der Liste.`;
   localReply(t, text, undo, true);
+  return true;
+}
+
+/** „Übernimm meinen Google-Kalender“ → kurz erklären, Baustein freischalten, „Kalender übernehmen“ öffnen */
+export function calendarImportRule(ctx: RuleContext, t: string): boolean {
+  if (!isCalendarImportRequest(t)) return false;
+  const unlocked = setFeature("kalender", true);
+  localReplyOf(ctx)(t, unlocked ? `${CALENDAR_IMPORT_REPLY} Du findest es auch in den Einstellungen.` : CALENDAR_IMPORT_REPLY);
+  ctx.router.push("/profil/kalender");
+  ctx.onClose();
   return true;
 }
