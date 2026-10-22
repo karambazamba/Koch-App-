@@ -8,7 +8,7 @@
 // bereinigt. Ohne Uhrzeit: "Dann lieber als Aufgabe".
 
 import { useMemo, useRef, useState } from "react";
-import { CalendarDays, Clock, Mic, Square } from "lucide-react";
+import { CalendarDays, Clock, Mic, MicOff, Square } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { INPUT_BASE, LABEL, buttonClass, chipClass } from "@/components/ui/styles";
 import { createEntry, type Room } from "@/lib/core/entries";
@@ -22,6 +22,7 @@ import { act } from "@/components/heute/actions";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { PERSONS, sortBy } from "@/lib/core/sort";
 import { useProfile } from "@/lib/einstellungen/useProfile";
+import { MIC_BLOCKED, MicStrip } from "@/components/ui/MicPermission";
 
 const REMINDER_CHIPS: { value: Reminder; label: string }[] = [
   { value: "aus", label: "keine" },
@@ -101,6 +102,7 @@ export function TerminQuickAdd({ onClose, defaultDate }: { onClose: () => void; 
           save();
         }}
       >
+        <MicStrip />
         <div className="flex items-center gap-2">
           <input
             value={speech.listening ? speech.interim || text : text}
@@ -115,11 +117,11 @@ export function TerminQuickAdd({ onClose, defaultDate }: { onClose: () => void; 
             <button
               type="button"
               onClick={() => (speech.listening ? speech.stop() : speech.start())}
-              aria-label={speech.listening ? "Zuhören beenden" : "Einsprechen"}
+              aria-label={speech.blocked ? "Mikro aus – so machst du es an" : speech.listening ? "Zuhören beenden" : "Einsprechen"}
               aria-pressed={speech.listening}
-              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent active:scale-95 ${speech.listening ? "animate-pulse" : ""}`}
+              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${speech.blocked ? MIC_BLOCKED : "bg-accent text-on-accent"} active:scale-95 ${speech.listening ? "animate-pulse" : ""}`}
             >
-              {speech.listening ? <Square className="h-5 w-5 fill-current" strokeWidth={2} aria-hidden /> : <Mic className="h-5 w-5" strokeWidth={2.25} aria-hidden />}
+              {speech.blocked ? <MicOff className="h-5 w-5" strokeWidth={2.25} aria-hidden /> : speech.listening ? <Square className="h-5 w-5 fill-current" strokeWidth={2} aria-hidden /> : <Mic className="h-5 w-5" strokeWidth={2.25} aria-hidden />}
             </button>
           )}
         </div>

@@ -17,6 +17,8 @@ import { memoAudio } from "@/lib/pinnwand/memoAudio";
 import { showToast } from "@/lib/core/toast";
 import { useWakeLock } from "@/lib/core/wakeLock";
 import { buzz } from "@/components/heute/actions";
+import { hintSeen, markHintSeen } from "@/lib/core/hints";
+import { classifyMicError, guardMic, micPlatform, micState, reportMicBlocked, setMicPermission } from "@/lib/core/mic";
 
 type RecorderPhase = "idle" | "asking" | "recording" | "stopped";
 
@@ -163,7 +165,7 @@ export function useMemoRecorder({ me, onSent }: { me: string; onSent?: (memo: Me
     });
   }, [stopLive]);
 
-  const start = useCallback(
+  const begin = useCallback(
     async (mode: MemoMode) => {
       if (live.current || state.phase !== "bereit") return;
       take.current = null;
@@ -176,10 +178,14 @@ export function useMemoRecorder({ me, onSent }: { me: string; onSent?: (memo: Me
       } catch (e) {
         dispatch({ type: "denied" });
         const name = e instanceof DOMException ? e.name : "";
-        // Kein Mikrofon da – sonst ist es (fast immer) nicht erlaubt
-        setNote(name === "NotFoundError" || name === "OverconstrainedError" ? "Ich finde gerade kein Mikrofon." : DENIED_TEXT());
+        const block = classifyMicError(name, micPlatform(navigator.userAgent));
+        // Gesperrt: großes Hilfe-Fenster (core/mic) statt Kleingedrucktem
+        if (block) reportMicBlocked(block);
+        else setNote(name === "NotFoundError" || name === "OverconstrainedError" ? "Ich finde gerade kein Mikrofon." : DENIED_TEXT());
         return;
       }
+      markHintSeen("mikro-gefragt");
+      setMicPermission("granted");
       const mime = pickMemoMime((m) => MediaRecorder.isTypeSupported(m)) ?? "";
       let recorder: MediaRecorder;
       try {
@@ -221,6 +227,17 @@ export function useMemoRecorder({ me, onSent }: { me: string; onSent?: (memo: Me
       dispatch({ type: "ready" });
     },
     [state.phase],
+  );
+
+  /** Gesperrt → Hilfe; allererstes Mal → erst „Darf ich zuhören?“; sonst sofort */
+  const start = useCallback(
+    async (mode: MemoMode) => {
+      const asked = hintSeen("mikro-gefragt");
+      const m = micState();
+      if (m.block || (!asked && !m.granted)) return guardMic(() => void begin(mode), asked);
+      await begin(mode);
+    },
+    [begin],
   );
 
   // Halten: loslassen = senden (ab 0,3 s), kurz = frei weiter, hochgeschoben = frei weiter

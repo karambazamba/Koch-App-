@@ -5,7 +5,7 @@
 // löschen). Von der Kachel und der Seite /pinnwand genutzt.
 
 import { useEffect, useState } from "react";
-import { Mic, Pin, Square, Trash2 } from "lucide-react";
+import { Mic, MicOff, Pin, Square, Trash2 } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { INPUT_BASE, buttonClass, chipClass } from "@/components/ui/styles";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
@@ -16,6 +16,7 @@ import { PIN_MAX, REACTIONS, addPin, changePins, createPin, markPinsRead, pinMet
 import { useSpeechInput } from "@/lib/begleitung/useSpeechInput";
 import { shortClock } from "@/components/notizen/Schnellnotiz";
 import { buzz } from "@/components/heute/actions";
+import { MIC_BLOCKED, MicStrip } from "@/components/ui/MicPermission";
 
 export const pinMetaLine = (m: { erstellt: string; data: { author: string } }, me: string) => pinMeta(m, me, todayIso(), shortClock, (iso) => toIsoDate(new Date(iso)));
 
@@ -40,6 +41,7 @@ export function PinWriteSheet({ me, onClose }: { me: string; onClose: () => void
           save();
         }}
       >
+        <MicStrip />
         <div className="flex items-start gap-2">
           <textarea
             value={speech.listening ? speech.interim || text : text}
@@ -55,10 +57,10 @@ export function PinWriteSheet({ me, onClose }: { me: string; onClose: () => void
             <button
               type="button"
               onClick={() => (speech.listening ? speech.stop() : speech.start())}
-              aria-label={speech.listening ? "Zuhören beenden" : "Einsprechen"}
-              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent active:scale-95 ${speech.listening ? "animate-pulse" : ""}`}
+              aria-label={speech.blocked ? "Mikro aus – so machst du es an" : speech.listening ? "Zuhören beenden" : "Einsprechen"}
+              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${speech.blocked ? MIC_BLOCKED : "bg-accent text-on-accent"} active:scale-95 ${speech.listening ? "animate-pulse" : ""}`}
             >
-              {speech.listening ? <Square className="h-5 w-5 fill-current" strokeWidth={2} aria-hidden /> : <Mic className="h-5 w-5" strokeWidth={2.25} aria-hidden />}
+              {speech.blocked ? <MicOff className="h-5 w-5" strokeWidth={2.25} aria-hidden /> : speech.listening ? <Square className="h-5 w-5 fill-current" strokeWidth={2} aria-hidden /> : <Mic className="h-5 w-5" strokeWidth={2.25} aria-hidden />}
             </button>
           )}
         </div>

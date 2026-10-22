@@ -23,6 +23,7 @@ import { recognizeAnswer } from "@/lib/einstellungen/onboarding/recognizer";
 import { personLabel } from "@/lib/einstellungen/profile";
 import { useSpeechInput } from "@/lib/begleitung/useSpeechInput";
 import { INPUT_BASE, buttonClass, chipClass } from "@/components/ui/styles";
+import { MIC_BLOCKED, MicStrip } from "@/components/ui/MicPermission";
 
 type Props = {
   state: OnboardingState;
@@ -241,6 +242,7 @@ export function GuidedChat({ state, onChange, onFinish }: Props) {
 
         {!done && (
           <>
+            <MicStrip />
             {(speech.error || dictationHint) && (
               <p className="text-sm text-muted" role="note">
                 {speech.error || "Spracheingabe gibt es in diesem Browser nicht – tipp aufs Mikrofon deiner Tastatur und diktiere einfach."}
@@ -258,12 +260,14 @@ export function GuidedChat({ state, onChange, onFinish }: Props) {
                 onClick={toggleMic}
                 disabled={busy}
                 aria-pressed={speech.listening}
-                aria-label={speech.listening ? "Zuhören beenden" : "Antwort einsprechen"}
-                className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-md transition active:scale-95 disabled:opacity-40 ${
+                aria-label={speech.blocked ? "Mikro aus – so machst du es an" : speech.listening ? "Zuhören beenden" : "Antwort einsprechen"}
+                className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${speech.blocked ? MIC_BLOCKED : "bg-accent text-on-accent shadow-md"} transition active:scale-95 disabled:opacity-40 ${
                   speech.listening ? "animate-pulse ring-4 ring-accent/25" : ""
                 }`}
               >
-                {speech.listening ? (
+                {speech.blocked ? (
+                  <MicOff className="h-6 w-6" strokeWidth={2} aria-hidden />
+                ) : speech.listening ? (
                   <Square className="h-6 w-6 fill-current" strokeWidth={2} aria-hidden />
                 ) : speech.supported === false ? (
                   <MicOff className="h-6 w-6" strokeWidth={2} aria-hidden />

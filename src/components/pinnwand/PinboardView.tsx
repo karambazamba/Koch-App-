@@ -7,7 +7,7 @@
 // eigene löschen; beim eigenen Memo „Gehört von“.
 
 import { useState } from "react";
-import { ArrowUp, Mic, Square } from "lucide-react";
+import { ArrowUp, Mic, MicOff, Square } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD, PAGE_MAIN } from "@/components/ui/styles";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
@@ -28,6 +28,7 @@ import { useBoard } from "@/components/pinnwand/useBoard";
 import { MemoItem, MemoSheet } from "@/components/pinnwand/MemoRow";
 import { MemoMic, MemoNote, RecordingRow } from "@/components/pinnwand/MemoParts";
 import { useCanRecordMemo, useMemoRecorder } from "@/components/pinnwand/useMemoRecorder";
+import { MIC_BLOCKED, MicStrip } from "@/components/ui/MicPermission";
 
 export function PinboardView() {
   const profile = useProfile();
@@ -57,6 +58,7 @@ export function PinboardView() {
     <>
       <PageHeader title="Pinnwand" backHref="/" />
       <main className={PAGE_MAIN} data-tone="pinnwand">
+        <MicStrip />
         <div className="flex items-center gap-2.5">
           <form
             className={`${CARD} flex min-w-0 flex-1 items-center gap-2 py-1.5 pl-4 pr-1.5`}
@@ -90,11 +92,13 @@ export function PinboardView() {
                     speech.listening ? speech.stop() : speech.start()
                   }
                   aria-label={
-                    speech.listening ? "Zuhören beenden" : "Einsprechen"
+                    speech.blocked ? "Mikro aus – so machst du es an" : speech.listening ? "Zuhören beenden" : "Einsprechen"
                   }
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent active:scale-95 ${speech.listening ? "animate-pulse" : ""}`}
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${speech.blocked ? MIC_BLOCKED : "bg-accent text-on-accent"} active:scale-95 ${speech.listening ? "animate-pulse" : ""}`}
                 >
-                  {speech.listening ? (
+                  {speech.blocked ? (
+                    <MicOff className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+                  ) : speech.listening ? (
                     <Square
                       className="h-4 w-4 fill-current"
                       strokeWidth={2}

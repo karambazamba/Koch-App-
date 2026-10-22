@@ -171,6 +171,29 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Aufnahme eine frische Sitzung, geliefert wird immer der ganze Text dieser
   Aufnahme; `cancel`/`reset` verwerfen. `HelperPanel.submit` ruft immer
   `speech.reset()`; nach dem Ende wird genau das Gesprochene abgeschickt.
+- Mikrofon-Freigabe (Tafel 27) für ALLE Mikro-Stellen über `src/lib/core/mic.ts`
+  (Zustand geräteweit, nur im Speicher) und `src/components/ui/MicPermission.tsx`
+  (`MicSheetHost` im Layout, `MicStrip`, `useMicBlocked`, `MIC_BLOCKED`) +
+  `MicSheets.tsx` (bei Bedarf geladen):
+  - Allererster Tipp (Freigabe unbekannt, Einmal-Hinweis `mikro-gefragt` nicht
+    gesehen): „Darf ich zuhören?“ mit nachgebautem System-Dialog; erst „Okay,
+    frag mich“ startet Erkennung bzw. `getUserMedia`. „Lieber tippen“ = Fokus
+    ins Feld neben dem Mikro. iPhone: „dein iPhone“/„Erlauben“, sonst „dein
+    Handy“/„Zulassen“.
+  - Gesperrt (`NotAllowedError`, „not-allowed“, Freigabe „denied“) bzw.
+    Diktieren aus („service-not-allowed“ auf dem iPhone): Hilfe-Fenster „Ich
+    kann dich gerade nicht hören“ mit vier Schritten (`micSteps`: iOS ab 18
+    „Apps → Safari → Mikrofon“, bis 17 „Safari → Mikrofon“; Android/Chrome
+    Symbol neben der Adresse → Berechtigungen → Mikrofon → Zulassen; Diktieren
+    Einstellungen → Allgemein → Tastatur → Diktierfunktion), „Zeig’s mir“
+    (wischbar, nachgebaute Bildschirme, markierte Zeile + Fingerkreis),
+    „Nochmal versuchen“ (fragt erneut; noch aus → „Hm, noch aus.“).
+  - Danach: gelber Streifen „Mikro aus – tippen geht immer. Anmachen ›“,
+    Mikro-Knopf grau + durchgestrichen (nie der Stopp-Knopf), Tipp darauf =
+    Hilfe. Zurück in der App (`visibilitychange`) wird `navigator.permissions`
+    neu gefragt; erlaubt → Streifen weg, kurz „✓ Mikro ist an“.
+  - Bugfix: Bei jedem Mikro-Fehler wird die Aufnahme sofort zurückgesetzt
+    (kein hängender Stopp-Knopf, keine laufenden Tracks).
 - Vorlesen (`speech.ts`): `shouldRead` – `auto` nur, wenn per Mikrofon
   gefragt. Tempo 0,8 / 0,95 / 1,2. `pickVoice` wählt eine deutsche Stimme
   passend zur Art, natürlichere zuerst (`isNaturalVoice`); fehlt eine
@@ -215,8 +238,9 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   (`fadeOutGhost`). Bewegung reduzieren = alles sofort, kein Puls.
 - Mikro unten: im selben Tipp `primeMicrophone` (Freigabe über
   `getUserMedia`, in `useSpeechInput.ts`), dann `startFresh` und
-  `openHelper("voice")` – die Leiste hört zu. Abgelehnt/kein Mikrofon: Leiste
-  zum Tippen und ein freundlicher Satz (Toast), nie ein Fehler.
+  `openHelper("voice")` – die Leiste hört zu. Abgelehnt: Leiste zum Tippen und
+  das Hilfe-Fenster (`core/mic`); kein Sprechen im Browser: freundlicher Satz
+  (Toast), nie ein Fehler.
 - Erster Satz wie jede Nachricht (KI zuerst): „Ich bin Felix, wir sind Lisa
   und drei Kinder“ → Op `set_household` (Werkzeug `haushalt_vorstellen`, ohne
   KI `parseHouseholdIntro` in `einstellungen/householdIntro.ts`) mit Vorschau
@@ -252,6 +276,13 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Startseite, Tag), `testmodus.test.ts`, `testmodusRunden.test.ts`,
   `regelnOhneKi.test.ts`, `tagesChat.test.ts`, `mails.test.ts`,
   `diktat.test.ts`.
+- `tests/core/mikrofon.test.ts` – Gerät, Fehlerarten, Schritte je Gerät und
+  iOS-Version, Vorab-Frage, Sperre/Freigabe.
+- Durchklick `mikrofon` (`e2e/ablaeufe/mikrofon.mjs`, Schein-Fehler über
+  `FAKE_MIC` in `e2e/lib.mjs`): Vorab-Frage, Hilfe, „Zeig’s mir“ 4 Schritte,
+  Streifen + grauer Knopf, Diktieren aus; iPhone- bzw. Android-Texte. Bilder:
+  Szenen `mikro-fragen`, `mikro-hilfe`, `mikro-zeigen`. Testgeräte haben das
+  Mikrofon sonst erlaubt (`newPage`).
 - `tests/einstellungen/neuePerson.test.ts`, `erkennung.test.ts`,
   `kiErkennungApp.test.ts`.
 - `tests/app/regeln.test.ts`: kein fest eingebauter Name der Begleitung in

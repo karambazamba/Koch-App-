@@ -35,6 +35,8 @@
   --color-good: var(--app-good);
   --color-good-soft: var(--app-good-soft);
   --color-good-ink: var(--app-good-ink);
+  --color-warn-soft: var(--app-warn-soft);
+  --color-warn-ink: var(--app-warn-ink);
   --color-work: var(--app-work);
   --color-work-soft: var(--app-work-soft);
   --color-danger: var(--app-danger);
@@ -120,6 +122,8 @@
   --app-good: #2e9e6b;
   --app-good-soft: #e8f6ee;
   --app-good-ink: #23794f;
+  --app-warn-soft: #fff3c4;
+  --app-warn-ink: #6f5300;
   --app-work: #4c6fd9;
   --app-work-soft: #e8edfb;
   --app-danger: #c8372d;
@@ -222,6 +226,8 @@
   --app-good: #4cc58d;
   --app-good-soft: #1d2d25;
   --app-good-ink: #7fdcb0;
+  --app-warn-soft: #3a3217;
+  --app-warn-ink: #f0d27a;
   --app-work: #7f9bf0;
   --app-work-soft: #232b40;
   --app-danger: #ff8f86;
@@ -323,6 +329,8 @@
     --app-good: #4cc58d;
     --app-good-soft: #1d2d25;
     --app-good-ink: #7fdcb0;
+    --app-warn-soft: #3a3217;
+    --app-warn-ink: #f0d27a;
     --app-work: #7f9bf0;
     --app-work-soft: #232b40;
     --app-danger: #ff8f86;
