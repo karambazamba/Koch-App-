@@ -10,6 +10,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { readRaw, writeRaw } from "@/lib/core/localStore";
 import { fail, friendlyError, ok, type CloudUser, type HouseholdInfo, type Member, type Role } from "@/lib/konten/model";
 import type { CloudBackend } from "@/lib/konten/backend";
+import type { CloudDoc } from "@/lib/konten/sync/docs";
 
 /** Sitzung nur unter unserem Schlüssel speichern */
 const storage = {
@@ -19,6 +20,12 @@ const storage = {
 };
 
 type MemberRow = { user_id: string; display_name: string; role: Role; person_id: string | null; household_id: string };
+
+type EntryRow = Omit<CloudDoc, "rev"> & { rev: number | string };
+
+/** Zeiten einheitlich als ISO (die Datenbank schreibt „+00:00“) */
+const iso = (t: string) => new Date(t).toISOString();
+const fromRow = (r: EntryRow): CloudDoc => ({ ...r, erstellt: iso(r.erstellt), geaendert: iso(r.geaendert), rev: Number(r.rev) });
 
 const member = (r: MemberRow): Member => ({ userId: r.user_id, displayName: r.display_name, role: r.role, personId: r.person_id });
 
@@ -90,7 +97,33 @@ export function supabaseBackend(url: string, key: string): CloudBackend {
       const me = await user();
       if (!me) return fail(friendlyError("nicht_angemeldet"));
       const [members, households, profiles] = await Promise.all([sb.from("members").select("*"), sb.from("households").select("*"), sb.from("profiles").select("*").eq("user_id", me.userId)]);
-      return ok({ konto: me, mitglieder: members.data ?? [], haushalt: households.data ?? [], profil: profiles.data ?? [] });
+      const entries = await sb.from("entries").select("id, typ, raum, erstellt, geaendert, geloescht, data").eq("besitzer", me.userId);
+      return ok({ konto: me, mitglieder: members.data ?? [], haushalt: households.data ?? [], profil: profiles.data ?? [], eintraege: entries.data ?? [] });
+    },
+    pushEntries: async (docs) => {
+      const skipped: string[] = [];
+      for (let i = 0; i < docs.length; i += 200) {
+        const part = docs.slice(i, i + 200).map(({ id, typ, raum, erstellt, geaendert, geloescht, data }) => ({ id, typ, raum, erstellt, geaendert, geloescht, data }));
+        const { data, error } = await sb.rpc("sync_entries", { p_docs: part });
+        if (error) return fail(friendlyError(error.message));
+        const r = data as { skipped?: string[]; error?: string };
+        if (r.error) return fail(friendlyError(r.error));
+        skipped.push(...(r.skipped ?? []));
+      }
+      return ok({ skipped });
+    },
+    pullEntries: async (since) => {
+      const { data, error } = await sb.from("entries").select("id, typ, raum, besitzer, erstellt, geaendert, geloescht, data, rev").gt("rev", since).order("rev").limit(500);
+      if (error) return fail(friendlyError(error.message));
+      const rows = (data ?? []) as EntryRow[];
+      return ok({ docs: rows.map(fromRow), more: rows.length === 500 });
+    },
+    watchEntries: (householdId, onChange) => {
+      const channel = sb
+        .channel(`entries-${householdId}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "entries", filter: `household_id=eq.${householdId}` }, () => onChange())
+        .subscribe();
+      return () => void sb.removeChannel(channel);
     },
   };
 }

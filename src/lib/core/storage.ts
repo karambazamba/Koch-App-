@@ -54,6 +54,7 @@ export const STORAGE = [
   { key: "wasgibts.spendentopf", what: "Spendentopf: Region, Bescheid geben, Stimme je Jahr, zugesagter Beitrag (keine Zahlung), Beitrags-Frage", version: 1, migration: "spendentopf/store.ts migratePot", area: "local", backup: true },
   { key: "wasgibts.konto", what: "Anmeldung (Sitzung) – nur auf dem Gerät, nie in der Sicherung", area: "local", backup: false },
   { key: "wasgibts.haushalt", what: "Zuletzt bekannter Haushalt (Name, Mitglieder, eigene Rolle) für offline", version: 1, migration: "konten/account.ts", area: "local", backup: false },
+  { key: "wasgibts.abgleich", what: "Abgleich mit dem Haushalt: zuletzt abgeglichener Stand je Eintrag (nur Fingerabdrücke), Warteschlange, Übernahme erledigt", version: 1, migration: "konten/sync/engine.ts migrateSyncState", area: "local", backup: false },
   { key: "wasgibts.kalenderabos", what: "Kalender-Links (Abos): Name, geheimer Link, Farbe, Familie/Arbeit, an/aus – nur auf dem Gerät, in der Sicherung nur auf Wunsch", version: 1, migration: "kalender/abo/store.ts", area: "local", backup: false },
   { key: "wasgibts.kalenderabo-termine", what: "Zwischenspeicher der Abo-Termine (nur lesen, wird neu abgerufen)", version: 1, migration: "kalender/abo/store.ts", area: "local", backup: false },
   { key: "wasgibts.einmalhinweise", what: "Einmalige Hinweise (z. B. „+ Kachel“ beim ersten Bearbeiten)", version: 1, migration: "core/hints.ts", area: "local", backup: false },

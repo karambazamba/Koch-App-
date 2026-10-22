@@ -175,6 +175,8 @@ für die Begleitung UND das App-Icon.
   Client/Repo/Log. Jede Tabelle mit RLS (nur eigener Haushalt, „Arbeit“ nur
   Besitzer). Migrationen nur in `supabase/migrations/`, laufen beim Merge;
   nie SQL von Hand. Lokale Daten bleiben, bis die Übernahme bestätigt ist.
+  Abgleich: neueste Änderung je Eintrag gewinnt, Löschen nur als Markierung;
+  neue geteilte Daten = Übersetzer in `src/lib/konten/sync/docs.ts`.
   → `docs/bereiche/konten.md`
 - **Bilder der Gerichte:** eigene Zeichnungen im Code, keine fremden Fotos,
   keine KI (`docs/credits.md`); neues eingebautes Gericht → `npm run

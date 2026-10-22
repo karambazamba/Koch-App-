@@ -9,10 +9,12 @@ import { ChevronRight, Users } from "lucide-react";
 import { CARD } from "@/components/ui/styles";
 import { useCloudMode } from "@/lib/konten/backend";
 import { useCachedAccount } from "@/lib/konten/cache";
+import { useSyncStatus } from "@/lib/konten/sync/status";
 
 export function FamilyConnectCard() {
   const mode = useCloudMode();
   const { household } = useCachedAccount();
+  const takeover = useSyncStatus().phase === "uebernahme";
   if (mode !== "supabase" && mode !== "test") return null;
   return (
     <Link href="/konto" className={`${CARD} flex items-center gap-3 px-4 py-3.5 active:scale-[0.99]`} aria-label={household ? `Verbunden – ${household.name}` : "Familie verbinden"}>
@@ -21,7 +23,7 @@ export function FamilyConnectCard() {
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-[17px] font-extrabold">{household ? household.name || "Unser Haushalt" : "Familie verbinden"}</span>
-        <span className="truncate text-sm text-muted">{household ? "Verbunden" : "Alle sehen dasselbe"}</span>
+        <span className="truncate text-sm text-muted">{!household ? "Alle sehen dasselbe" : takeover ? "Eigene Daten mitnehmen?" : "Verbunden"}</span>
       </span>
       <ChevronRight className="h-5 w-5 shrink-0 text-faint" strokeWidth={2} aria-hidden />
     </Link>

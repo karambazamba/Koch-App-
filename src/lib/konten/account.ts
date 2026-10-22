@@ -98,12 +98,16 @@ function clearLocalData() {
   for (const s of STORAGE) if (s.area === "local" || s.area === "session") writeRaw(s.key, null, s.area);
 }
 
+/** Abgleich beenden und seinen Stand vergessen (die Daten auf dem Gerät bleiben) */
+const forgetSync = async () => (await import("@/lib/konten/sync/runner")).forgetSync();
+
 /** Abmelden; `keepLocal` = Daten auf dem Handy behalten */
 export async function signOut(keepLocal: boolean): Promise<void> {
   const b = await getBackend();
   await b?.signOut();
   set({ user: null, household: null });
   writeRaw("wasgibts.haushalt", null);
+  await forgetSync();
   if (!keepLocal) clearLocalData();
 }
 
@@ -114,6 +118,7 @@ export async function deleteAccount(): Promise<Result> {
   if (r.ok) {
     set({ user: null, household: null });
     writeRaw("wasgibts.haushalt", null);
+    await forgetSync();
   }
   return r;
 }

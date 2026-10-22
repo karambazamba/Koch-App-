@@ -4,7 +4,7 @@ Kurz: Mit einem Konto (Supabase) teilt sich eine Familie einen Haushalt.
 Anmelden immer per E-Mail-Code (6 Ziffern), nie per Link. Ohne Konto – und
 ohne Supabase-Variablen – läuft die App wie bisher komplett auf dem Gerät.
 
-Etappen: **3a Anmeldung und Haushalt (fertig)** · 3b Synchronisieren ·
+Etappen: **3a Anmeldung und Haushalt** · **3b Synchronisieren** (beide fertig) ·
 3c Sprachmemos teilen · 3d Sichtbar machen (wer hat was eingetragen).
 
 ## FESTE REGELN
@@ -18,6 +18,13 @@ Etappen: **3a Anmeldung und Haushalt (fertig)** · 3b Synchronisieren ·
   Bauen `.next/static` durchsuchen. Nie loggen.
 - Jede Tabelle mit Row Level Security; Zugriff nur für Mitglieder des eigenen
   Haushalts. „Arbeit“ nur für den Besitzer (ab 3b, Tabelle `entries`).
+- Abgleich (3b): neueste Änderung je Eintrag gewinnt; Löschen nur als
+  Markierung (`geloescht`), nie hart. Geteilt werden Termine, Aufgaben,
+  Notizen, Pinnwand (ohne Sprachnachrichten bis 3c), Einkaufsliste,
+  Wochenplan und Vorrat – Einstellungen, Startseite und Beispiel-Tag nie.
+- Übernahme: Beim ersten Mal mit einem Haushalt bleibt alles nur auf dem
+  Gerät, bis „Mitnehmen“ getippt ist (Vorschau „3 Termine, 2 Aufgaben …
+  werden mitgenommen.“). Ohne eigene Daten geht es ohne Frage los.
 - Kinder dürfen nicht einladen und den Haushalt nicht ändern; niemand kann
   sich selbst eine andere Rolle geben (Spalten-Rechte).
 - Migrationen nur in `supabase/migrations/` – sie laufen beim Merge nach
@@ -59,6 +66,26 @@ Etappen: **3a Anmeldung und Haushalt (fertig)** · 3b Synchronisieren ·
   `join_household` (Fehler als jsonb, damit Fehlversuche gezählt bleiben),
   `leave_household`; leerer Haushalt wird gelöscht.
 
+- Abgleich: `src/lib/konten/sync/` – `docs.ts` (Übersetzer je Speicher in
+  einzelne Einträge und zurück, verlustfrei; Fingerabdruck; Vorschau-Text),
+  `engine.ts` (rein: Änderungen erkennen, Warteschlange, Einspielen nach
+  „neueste gewinnt“, Übernahme mit Zusammenführen der Listen-Einstellungen),
+  `runner.ts` (Browser: nach dem Speichern 0,7 s warten, hochladen, holen;
+  Realtime bzw. im Test alle 2 s; Wiederholen nach 15 s, sonst jede Minute),
+  `status.ts` (klein, für die Oberfläche). Stand in `wasgibts.abgleich`
+  (nur Fingerabdrücke, Warteschlange, Übernahme erledigt).
+  Oberfläche: `SyncRunner` (im Layout, lädt den Abgleich nur mit Haushalt;
+  Hinweis „Offline – wird gleich abgeglichen“ erst nach > 1 Min. und nur, wenn
+  etwas wartet), `TakeoverCard` (auf /konto).
+- `localStore.ts`: `onLocalSave` (Bescheid bei jedem Speichern) und
+  `notifyStore` (Anzeigen neu laden, wenn der Abgleich geschrieben hat).
+- Datenbank 3b: `supabase/migrations/20261023120000_eintraege_abgleich.sql` –
+  `entries` (household_id, id, typ, raum, besitzer, erstellt, geaendert,
+  geloescht, data jsonb, rev), RLS (Familie für alle im Haushalt, Arbeit nur
+  Besitzer, kein hartes Löschen, Besitzer/rev nicht änderbar),
+  `sync_entries` (je Eintrag „neueste gewinnt“, Abgelehntes hält den Rest
+  nicht auf), Realtime-Veröffentlichung; wer geht, nimmt seine „Arbeit“ mit.
+
 ## Verhalten
 
 - Anmelden: E-Mail → „Code schicken“ → Ziffernfeld
@@ -69,8 +96,16 @@ Etappen: **3a Anmeldung und Haushalt (fertig)** · 3b Synchronisieren ·
   „Mit Code beitreten“ (z. B. 4K7-P2Q, Groß/Klein und Bindestrich egal).
 - Einladen (nur Erwachsene): Erwachsene/Kind → Code (7 Tage, einmal) →
   Teilen: „Komm in unseren Haushalt bei Was gibt’s? Code: 4K7-P2Q“.
-- Bis 3b werden noch keine Einträge geteilt – die Daten bleiben auf dem
-  Gerät; die Übernahme mit Vorschau kommt mit dem Synchronisieren.
+- Abgleich: Änderungen gehen kurz nach dem Speichern raus; was andere ändern,
+  kommt per Realtime sofort. Offline geht alles weiter, die Warteschlange
+  bleibt auf dem Gerät und geht beim nächsten Netz mit.
+- Abmelden/Konto löschen vergisst den Stand des Abgleichs (die Daten bleiben);
+  beim nächsten Anmelden fragt die Übernahme wieder – gleiche Einträge werden
+  dabei nicht doppelt angelegt (gleiche Kennung).
+- Bekannte Grenzen: Wird ein Familien-Eintrag zu „Arbeit“, behalten die
+  anderen ihre letzte Familien-Fassung. Gleichzeitiges Abhaken von
+  Rezept-Zutaten derselben Woche: die spätere Änderung gewinnt (eigene
+  Zeilen der Liste sind einzeln und kommen sich nicht in die Quere).
 
 ## Einrichtung (Vercel/Supabase)
 
@@ -95,6 +130,12 @@ Etappen: **3a Anmeldung und Haushalt (fertig)** · 3b Synchronisieren ·
   befördern, Codes benutzt/abgelaufen/unbekannt, Fehlversuche, anonym
   nichts, Konto löschen).
 - `tests/konten/konten.test.ts` – Codes, Texte, Test-Backend, Variablen.
+- `tests/konten/abgleich.test.ts` – Übersetzer verlustfrei, Konflikt,
+  Löschen, offline → online, keine doppelte Übernahme, Zusammenführen.
+- `tests/datenbank/eintraege.test.sql` – Arbeit nur Besitzer, Fremde sehen
+  nichts, neueste gewinnt, Löschen nur Markierung, Verlassen nimmt Arbeit mit.
+- Durchklick `abgleich` – A nimmt seine Daten mit (Vorschau), B tritt bei und
+  sieht Termin und Pinnwand, B schreibt → A sieht es, B offline → online.
 - Durchklick `konten` – zwei bzw. drei Browser: anmelden (Code über die
   Test-Schnittstelle), Haushalt, Einladen, Beitreten, Kind ohne Einladen,
   Abmelden (Daten bleiben), Konto löschen.

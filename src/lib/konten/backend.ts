@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import { readRaw, writeRaw } from "@/lib/core/localStore";
 import { fail, friendlyError, ok, type CloudUser, type HouseholdInfo, type Result, type Role } from "@/lib/konten/model";
+import type { CloudDoc } from "@/lib/konten/sync/docs";
 
 export type CloudMode = "aus" | "supabase" | "test";
 
@@ -26,6 +27,12 @@ export interface CloudBackend {
   leaveHousehold(): Promise<Result>;
   deleteAccount(): Promise<Result>;
   exportData(): Promise<Result<Record<string, unknown>>>;
+  /** Einträge hochladen (neueste Änderung gewinnt); `skipped` = abgelehnt */
+  pushEntries(docs: CloudDoc[]): Promise<Result<{ skipped: string[] }>>;
+  /** Einträge seit `since` (rev) holen – nur, was man sehen darf */
+  pullEntries(since: number): Promise<Result<{ docs: CloudDoc[]; more: boolean }>>;
+  /** Bescheid sagen, wenn sich im Haushalt etwas ändert (Realtime); liefert „aufhören“ */
+  watchEntries(householdId: string, onChange: () => void): () => void;
 }
 
 type Config = { mode: "aus" } | { mode: "test" } | { mode: "supabase"; url: string; key: string };
@@ -145,6 +152,19 @@ function testBackend(): CloudBackend {
     exportData: async () => {
       const r = await call("export");
       return err(r) ? fail(err(r) as string) : ok(r);
+    },
+    pushEntries: async (docs) => {
+      const r = await call("push_entries", { docs });
+      return err(r) ? fail(err(r) as string) : ok({ skipped: (r.skipped as string[]) ?? [] });
+    },
+    pullEntries: async (since) => {
+      const r = await call("pull_entries", { since });
+      return err(r) ? fail(err(r) as string) : ok({ docs: (r.docs as CloudDoc[]) ?? [], more: r.more === true });
+    },
+    // Im Test ohne Realtime: alle 2 Sekunden nachsehen lassen
+    watchEntries: (_householdId, onChange) => {
+      const t = window.setInterval(onChange, 2000);
+      return () => window.clearInterval(t);
     },
   };
 }
