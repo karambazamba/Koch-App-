@@ -9,7 +9,8 @@ import { buildShoppingList } from "../einkauf/shoppingList";
 import { formatWeekRange } from "../essen/weekPlan";
 import { weekOf } from "./ops";
 import type { LotteTool } from "./registry";
-import { dateForDay, nextId, propose, runTool, type ToolContext, type ToolResult } from "./tools";
+import { dateForDay, nextId, propose, type ToolContext, type ToolResult } from "./tools";
+import { PLAN_TOOLS } from "./planTools";
 import { findDate } from "../aufgaben/parse";
 import { BAUSTEINE } from "../core/features";
 
@@ -187,7 +188,7 @@ export const HOME_TOOLS: LotteTool[] = [
       description: "Liest den Wochenplan (Gericht je Tag). Die Familie sieht ihn in der App unter Essen (rechte Seite) – das kurz sagen.",
       input_schema: { type: "object", properties: { woche: WEEK_PROP }, additionalProperties: false },
     },
-    run: (ctx, raw) => runTool(ctx, "woche_lesen", { woche: (raw as Input | null)?.woche === "naechste" ? "naechste" : "aktuell" }),
+    run: (ctx, raw) => PLAN_TOOLS.woche_lesen.run(ctx, { woche: (raw as Input | null)?.woche === "naechste" ? "naechste" : "aktuell" }),
   },
   {
     area: "essen",
@@ -204,8 +205,8 @@ export const HOME_TOOLS: LotteTool[] = [
     run: (ctx, raw) => {
       const input = (raw ?? {}) as Input;
       const woche = input.woche === "naechste" ? "naechste" : "aktuell";
-      if (input.leeren === true) return runTool(ctx, "platz_leeren", { woche, tag: input.tag });
-      return runTool(ctx, "gericht_setzen", { woche, tag: input.tag, ...(input.rezept_id ? { rezept_id: input.rezept_id } : { gericht: input.gericht }) });
+      if (input.leeren === true) return PLAN_TOOLS.platz_leeren.run(ctx, { woche, tag: input.tag });
+      return PLAN_TOOLS.gericht_setzen.run(ctx, { woche, tag: input.tag, ...(input.rezept_id ? { rezept_id: input.rezept_id } : { gericht: input.gericht }) });
     },
   },
   {
