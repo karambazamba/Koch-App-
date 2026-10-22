@@ -5,29 +5,28 @@
 //   Sportart + Dauer wählen, "Eintragen"
 // - trainiert: die Trainings mit "Ändern", "+ Noch ein Training an diesem
 //   Tag", "Löschen" (Gelöscht · Rückgängig)
-// - geplant: Uhrzeit, Erinnerung, Wetter, "Erledigt", "Verschieben …",
-//   "Absagen"
-// - leer in der Zukunft: "Training planen" (Sportart, Vorschläge aus freien
-//   Lücken oder eigene Uhrzeit, Dauer auch frei) → Termin mit Etikett Sport
-//   und Erinnerung 30 Min vorher
+// - geplant: Uhrzeit, Erinnerung, Wetter, "Erledigt", "Ändern" (gleiches
+//   Formular wie Planen, bei Serien „Nur diesmal/Jede Woche“), "Absagen"
+//   (Gelöscht · Rückgängig)
+// - leer in der Zukunft: "Training planen" (`SportPlanForm`) → Termin mit
+//   Etikett Sport und Erinnerung 30 Min vorher
 // Punkte, Wochensatz und die Feier folgen sofort (gleiche Speicher).
 
 import { useState } from "react";
 import { Sheet } from "@/components/ui/Sheet";
-import { EntryForm } from "@/components/kalender/EntryForm";
 import { act, buzz } from "@/components/heute/actions";
 import { CARD, INPUT_INLINE, buttonClass, chipClass } from "@/components/ui/styles";
 import { clockLabel } from "@/lib/kalender/answers";
-import { removeItem, sanitizeEntry, setDone, upsertEntry, weekdayLong, type CalendarEntry, type DayItem } from "@/lib/kalender/model";
-import { createEntry } from "@/lib/core/entries";
+import { removeItem, setDone, weekdayLong, type CalendarEntry, type DayItem } from "@/lib/kalender/model";
 import { showDeleted } from "@/lib/core/toast";
 import { round } from "@/lib/wetter/forecast";
 import type { Forecast } from "@/lib/wetter/forecast";
 import { WeatherSymbol } from "@/components/wetter/WeatherSymbol";
 import { addTraining, removeTraining, updateTraining } from "@/lib/sport/actions";
-import { SPORTS, endOf, freeStarts, lastTraining, plannedOn, sportById, trainingsBetween, type SportState, type Training } from "@/lib/sport";
+import { SPORTS, lastTraining, plannedOn, sportById, trainingsBetween, type SportState, type Training } from "@/lib/sport";
 import { SportAddSheet } from "@/components/sport/SportAddSheet";
 import { SportIcon } from "@/components/sport/SportIcon";
+import { SportPlanForm } from "@/components/sport/SportPlanForm";
 
 const DURATIONS = [30, 45, 60, 90];
 const DATE = new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "long", timeZone: "UTC" });
@@ -71,10 +70,8 @@ export function SportDaySheet({ date, today, state, entries, me, forecast, onClo
   const recent = [...new Set(trainingsBetween(state, entries, today.slice(0, 4) + "-01-01", today, today, me).reverse().map((t) => t.data.sport))];
   const [sport, setSport] = useState(last?.sport ?? recent[0] ?? "laufen");
   const [minutes, setMinutes] = useState(last?.minutes && DURATIONS.includes(last.minutes) ? last.minutes : 45);
-  const starts = freeStarts(entries, date, today, minutes);
-  const [time, setTime] = useState<string | null>(null);
   const [edit, setEdit] = useState<Training | "neu" | null>(null);
-  const [move, setMove] = useState<DayItem | null>(null);
+  const [change, setChange] = useState<DayItem | null>(null);
   const done = () => {
     buzz();
     onClose();
@@ -140,8 +137,8 @@ export function SportDaySheet({ date, today, state, entries, me, forecast, onClo
             Erledigt
           </button>
           <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => setMove(p)} className={buttonClass("secondary", "md")}>
-              Verschieben …
+            <button type="button" onClick={() => setChange(p)} className={buttonClass("secondary", "md")}>
+              Ändern
             </button>
             <button type="button" onClick={() => (act((l, s) => removeItem(l, p.entry.id, s, p.entry.data.repeat ? date : undefined), `${p.title} abgesagt`, { deleted: true }), onClose())} className={buttonClass("ghost", "md")}>
               Absagen
@@ -168,40 +165,7 @@ export function SportDaySheet({ date, today, state, entries, me, forecast, onClo
       </>
     );
   } else {
-    const chosen = time ?? starts.find((t) => t >= "17:00") ?? starts[0] ?? null;
-    body = (
-      <>
-        <span className={LEGEND}>Training planen</span>
-        <SportChips value={sport} onChange={setSport} recent={recent} />
-        <span className={LEGEND}>Wann?</span>
-        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Uhrzeit">
-          {starts.map((t) => (
-            <button key={t} type="button" onClick={() => setTime(t)} className={chipClass(chosen === t)} aria-pressed={chosen === t}>
-              {clockLabel(t)}
-            </button>
-          ))}
-          <input type="time" step={300} value={chosen ?? ""} onChange={(e) => setTime(e.target.value || null)} className={`${INPUT_INLINE} w-36`} aria-label="Eigene Uhrzeit" />
-        </div>
-        {!starts.length && <p className="text-sm text-muted">Der Tag ist schon gut gefüllt – such dir einfach eine Uhrzeit aus.</p>}
-        <span className={LEGEND}>Wie lange?</span>
-        <DurationChips value={minutes} onChange={setMinutes} />
-        <button
-          type="button"
-          disabled={!chosen || minutes < 5}
-          onClick={() => {
-            if (!chosen || minutes < 5) return;
-            const kind = sportById(sport);
-            const entry = sanitizeEntry(createEntry("termin", { title: kind.label, date, start: chosen, end: endOf(chosen, minutes), reminder: "30", repeat: null, label: "Sport", ...(me ? { who: [me] } : {}) }, { raum: "familie" }) as CalendarEntry);
-            if (entry) act((l) => upsertEntry(l, entry), `${kind.label} geplant`);
-            done();
-          }}
-          className={buttonClass("primary", "lg")}
-        >
-          Planen
-        </button>
-        <p className="-mt-1 text-center text-sm text-muted">Ich erinnere dich 30 Min vorher.</p>
-      </>
-    );
+    body = <SportPlanForm date={date} today={today} entries={entries} state={state} me={me} recent={recent} fallbackMinutes={minutes} onDone={done} />;
   }
 
   return (
@@ -224,7 +188,13 @@ export function SportDaySheet({ date, today, state, entries, me, forecast, onClo
           }}
         />
       )}
-      {move && <EntryForm entry={move.entry} onClose={() => (setMove(null), onClose())} />}
+      {change && (
+        <Sheet title={`${dayTitle(date)} · ändern`} onClose={() => setChange(null)} layer="above">
+          <div className="flex flex-col gap-3 pb-3">
+            <SportPlanForm date={date} today={today} entries={entries} state={state} me={me} recent={recent} editing={change} fallbackMinutes={minutes} onDone={done} />
+          </div>
+        </Sheet>
+      )}
     </>
   );
 }

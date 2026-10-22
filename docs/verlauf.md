@@ -1888,11 +1888,16 @@ Fehler in `docs/aufraeumen-nachher.md`.
   kurzer Tipp = fertig, Kachel-Menü weg), Pinnwand-Memo antippen statt halten.
   Durchklick zusätzlich: Offline-Start, „Neue Version da“, Stammartikel.
 
-## Sport-Kachel aufgeräumt (v0.55.1)
+## Sport – klarer und schöner (Tafel 25, v0.55.1)
 
-- Geplante Tage zeigten nur die Stunde im Kreis („18“) – jetzt Sport-Icon im
-  Kreis und die volle Uhrzeit darunter. Sportarten mit Linien-Icons statt
-  Emojis (Kachel, Tag-Fenster, Eintragen). „Nächstes Training“ auf heller
-  Fläche mit Icon. Training planen: eigene Uhrzeit und eigene Dauer neben den
-  Vorschlägen; Ende geht nie mehr über Mitternacht (23:30 + 45 Min ergab
-  „23:15“). Schmale Felder (`INPUT_INLINE`) statt voller Breite.
+- Geplante Tage zeigten nur die Stunde im Kreis („18“) – jetzt gestrichelter
+  Ring mit Sport-Icon und die volle Uhrzeit darunter; heute frei = oranger
+  Ring mit „+“. Kachel S/M/L: „Als Nächstes“ („Sa 18:00 · Laufen · 45 Min“),
+  Woche, letzte Trainings. Linien-Icons statt Emojis überall.
+- Training planen: eigene Uhrzeit (Zeit-Rad) und Dauer neben den
+  Vorschlägen, „Andere“ Sportart (gemerkt), Überschneidungs-Hinweis,
+  zuletzt genutzte Zeit, „Jede Woche“, Knopf „Planen · Sa 18:30“; dasselbe
+  Formular zum Ändern (nur diesmal/jede Woche). Ende geht nie über
+  Mitternacht (23:30 + 45 Min ergab „23:15“). Ohne KI zählen jetzt auch
+  „laufen/joggen/yoga/fitness“ als Sport-Termin. Schmale Felder
+  (`INPUT_INLINE`).

@@ -35,7 +35,7 @@ describe("Sport-Speicher", () => {
 
   it("speichert geprüft mit Version; fremde Version = leer", async () => {
     const { store } = await load();
-    store.saveSport({ goal: 12, trainings: [], packs: {}, celebrated: [], hidden: [] });
+    store.saveSport({ goal: 12, trainings: [], packs: {}, celebrated: [], hidden: [], custom: [] });
     expect(JSON.parse(win.localStorage.getItem("wasgibts.sport")!)).toMatchObject({ version: 1, goal: 3 });
     const other = await load({ "wasgibts.sport": JSON.stringify({ version: 2, goal: 5 }) });
     expect(other.store.loadSport().goal).toBe(3);

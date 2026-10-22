@@ -149,7 +149,7 @@ describe("Woche, Monat, Sätze ohne Druck", () => {
   it("Punkte kennen die Sportart (Kachel zeigt ein Icon statt nur „18“)", () => {
     const entries = [sportTermin("2026-10-22", "18:00"), termin({ title: "Kurs", date: "2026-10-24", start: "10:00", label: "Sport" })];
     const dots = weekDots(withRuns([run("2026-10-20", { sport: "yoga" })]), entries, TODAY);
-    expect(dots.map((d) => d.sport)).toEqual([null, "yoga", null, "laufen", null, "fitness", null]);
+    expect(dots.map((d) => d.sport)).toEqual([null, "yoga", null, "laufen", null, "Kurs", null]);
   });
 
   it("Ende eines geplanten Trainings bleibt am selben Tag", () => {
