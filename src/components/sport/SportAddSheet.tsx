@@ -1,14 +1,15 @@
 "use client";
 
 // Training eintragen (Fenster von unten): WAS? (zuletzt genutzte zuerst, +
-// andere) · WIE LANGE? (20/30/45/60/90, eigene) · WANN? (Heute/Gestern/📅) ·
+// andere) · WIE LANGE? (20/30/45/60/90, eigene) · WANN? (Heute/Gestern/Datum) ·
 // optional km · "Eintragen". Auch zum Ändern eines Trainings.
 
 import { useState } from "react";
 import { Sheet } from "@/components/ui/Sheet";
-import { INPUT, buttonClass, chipClass } from "@/components/ui/styles";
+import { INPUT, INPUT_INLINE, buttonClass, chipClass } from "@/components/ui/styles";
 import { addDays } from "@/lib/core/now";
 import { SPORTS, sportById, type Training, type TrainingData } from "@/lib/sport";
+import { SportIcon } from "@/components/sport/SportIcon";
 
 const DURATIONS = [20, 30, 45, 60, 90];
 
@@ -42,7 +43,8 @@ export function SportAddSheet({ today, recent, initial, initialDate, onClose, on
               const s = sportById(id);
               return (
                 <button key={id} type="button" onClick={() => setSport(id)} className={chipClass(sport === id)} aria-pressed={sport === id}>
-                  {s.emoji} {s.label}
+                  <SportIcon sport={id} />
+                  {s.label}
                 </button>
               );
             })}
@@ -60,7 +62,7 @@ export function SportAddSheet({ today, recent, initial, initialDate, onClose, on
                 {d} Min
               </button>
             ))}
-            <input inputMode="numeric" value={minutes} onChange={(e) => setMinutes(e.target.value.replace(/\D/g, ""))} className={`${INPUT} w-24`} aria-label="Minuten" />
+            <input inputMode="numeric" value={minutes} onChange={(e) => setMinutes(e.target.value.replace(/\D/g, ""))} className={`${INPUT_INLINE} w-24`} aria-label="Minuten" />
           </div>
         </fieldset>
         <fieldset className="flex flex-col gap-2">
@@ -72,12 +74,12 @@ export function SportAddSheet({ today, recent, initial, initialDate, onClose, on
             <button type="button" onClick={() => setDate(yesterday)} className={chipClass(date === yesterday)} aria-pressed={date === yesterday}>
               Gestern
             </button>
-            <input type="date" value={date} max={today} onChange={(e) => e.target.value && setDate(e.target.value)} className={`${INPUT} w-44`} aria-label="Datum" />
+            <input type="date" value={date} max={today} onChange={(e) => e.target.value && setDate(e.target.value)} className={`${INPUT_INLINE} w-44`} aria-label="Datum" />
           </div>
         </fieldset>
         <label className="flex flex-col gap-1">
           <span className="text-[15px] font-extrabold text-muted">Kilometer (optional)</span>
-          <input inputMode="decimal" value={km} onChange={(e) => setKm(e.target.value)} placeholder="z. B. 5" className={`${INPUT} w-32`} aria-label="Kilometer" />
+          <input inputMode="decimal" value={km} onChange={(e) => setKm(e.target.value)} placeholder="z. B. 5" className={`${INPUT_INLINE} w-32`} aria-label="Kilometer" />
         </label>
         <button type="submit" disabled={!ok} className={buttonClass("primary", "lg")}>
           {initial ? "Speichern" : "Eintragen"}

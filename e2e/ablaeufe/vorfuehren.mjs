@@ -333,3 +333,55 @@ export const stammartikel = async (page, check) => {
   await page.waitForTimeout(600);
   check(!(await page.getByRole("button", { name: "Käse übernehmen" }).isVisible()), "„×“ beim Käse: diesmal nicht");
 };
+
+/** Sport-Kachel (Tafel 25): Do antippen → eigene Zeit 18:30 → Kachel zeigt „18:30“ und „Als Nächstes“; ändern; absagen + Rückgängig */
+export const sportKachel = async (page, check) => {
+  await hello(page);
+  await seedFamily(page, {
+    "wasgibts.startseite": { version: 4, tipSeen: true, tiles: [{ id: "sport", visible: true, size: "M" }] },
+  });
+  await page.reload();
+  await page.waitForTimeout(1000);
+  const tile = page.getByRole("region", { name: "Sport" });
+  const sport = () => page.evaluate(() => JSON.parse(localStorage.getItem("wasgibts.eintraege")).entries.filter((e) => e.data.label === "Sport" && e.data.title !== "Fußball Mathis"));
+  await tile.getByRole("button", { name: /^Do: frei/ }).tap();
+  const sheet = page.getByRole("dialog", { name: "Donnerstag, 22. Oktober" });
+  await sheet.waitFor();
+  check(!/\p{Extended_Pictographic}/u.test(await sheet.getByRole("group", { name: "Sportart" }).innerText()), "Sportarten ohne Emojis");
+  await sheet.getByRole("button", { name: "Laufen", exact: true }).tap();
+  await sheet.getByRole("group", { name: "Uhrzeit" }).getByRole("button", { name: "Andere" }).tap();
+  await sheet.getByLabel("Eigene Uhrzeit").fill("18:30");
+  check(await sheet.getByText("Frei – nichts im Kalender").isVisible(), "„Frei – nichts im Kalender“");
+  await sheet.getByRole("button", { name: "45 Min" }).tap();
+  const plan = sheet.getByRole("button", { name: /^Planen · Do 18:30$/ });
+  check(await plan.isVisible(), "Knopf zeigt „Planen · Do 18:30“");
+  await plan.tap();
+  await page.waitForTimeout(600);
+  const [planned] = await sport();
+  check(planned?.data.start === "18:30" && planned?.data.end === "19:15" && planned?.data.date === "2026-10-22", `geplant ${planned?.data.start}–${planned?.data.end}`);
+  const thu = tile.getByRole("button", { name: /^Do:/ });
+  check((await thu.innerText()).includes("18:30"), "„18:30“ unter dem Kreis (nicht nur „18“)");
+  check((await thu.locator("svg").count()) > 0, "geplanter Tag zeigt ein Sport-Icon");
+  check(await tile.getByText("Morgen · Do 18:30 · Laufen · 45 Min").isVisible(), "„Als Nächstes“ zeigt das Training");
+
+  // Ändern: 19:00, 60 Min
+  await tile.getByRole("button", { name: /^Als Nächstes/ }).tap();
+  await page.getByRole("button", { name: "Ändern" }).tap();
+  const edit = page.getByRole("dialog", { name: /ändern$/ });
+  await edit.getByRole("group", { name: "Uhrzeit" }).getByRole("button", { name: "Andere" }).tap();
+  await edit.getByLabel("Eigene Uhrzeit").fill("19:00");
+  await edit.getByRole("button", { name: "60 Min" }).tap();
+  await edit.getByRole("button", { name: /^Speichern · Do 19:00$/ }).tap();
+  await page.waitForTimeout(600);
+  const [changed] = await sport();
+  check(changed?.data.start === "19:00" && changed?.data.end === "20:00", `geändert ${changed?.data.start}–${changed?.data.end}`);
+
+  // Absagen + Rückgängig
+  await tile.getByRole("button", { name: /^Als Nächstes/ }).tap();
+  await page.getByRole("button", { name: "Absagen" }).tap();
+  await page.waitForTimeout(500);
+  check((await sport()).length === 0, "abgesagt");
+  await page.getByRole("button", { name: "Rückgängig" }).tap();
+  await page.waitForTimeout(500);
+  check((await sport()).length === 1, "Rückgängig holt es zurück");
+};

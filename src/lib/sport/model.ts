@@ -53,10 +53,12 @@ export type SportState = {
   celebrated: string[];
   /** Abgehakte Sport-Termine, die bewusst nicht zählen sollen ("Löschen") */
   hidden: string[];
+  /** Eigene Sportarten („Andere“ → Tennis), erscheinen künftig als Chip */
+  custom: string[];
 };
 
 const DEFAULT_GOAL = 3;
-export const EMPTY_SPORT: SportState = { goal: DEFAULT_GOAL, trainings: [], packs: {}, celebrated: [], hidden: [] };
+export const EMPTY_SPORT: SportState = { goal: DEFAULT_GOAL, trainings: [], packs: {}, celebrated: [], hidden: [], custom: [] };
 
 const SPORT_WORDS: [RegExp, string][] = [
   // auch das Partizip („gelaufen“, „gejoggt“, „geradelt“, „geschwommen“, „gewandert“)
@@ -105,6 +107,8 @@ export function sanitizeSport(raw: unknown): SportState {
     packs,
     celebrated: Array.isArray(r.celebrated) ? r.celebrated.filter((x) => typeof x === "string").slice(-60) : [],
     hidden: Array.isArray(r.hidden) ? r.hidden.filter((x) => typeof x === "string").slice(-200) : [],
+    // fehlt in älteren Speicherständen → leer
+    custom: Array.isArray(r.custom) ? [...new Set(r.custom.filter((x): x is string => typeof x === "string").map((x) => x.trim().slice(0, 30)).filter(Boolean))].slice(-12) : [],
   };
 }
 
@@ -220,7 +224,7 @@ export function praiseFor(state: SportState, entries: CalendarEntry[], training:
 }
 
 /** Die 7 Punkte Mo–So der laufenden Woche */
-export type DayDot = { date: string; label: string; state: "trainiert" | "geplant" | "frei"; time: string | null; today: boolean };
+export type DayDot = { date: string; label: string; state: "trainiert" | "geplant" | "frei"; time: string | null; today: boolean; sport: string | null };
 
 const SHORT = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
@@ -229,9 +233,10 @@ export function weekDots(state: SportState, entries: CalendarEntry[], today: str
   const done = trainingsBetween(state, entries, monday, addDays(monday, 6), today, me);
   return SHORT.map((label, i) => {
     const date = addDays(monday, i);
-    const trained = done.some((t) => t.data.date === date);
+    const trained = done.find((t) => t.data.date === date);
     const planned = !trained ? sportItems(entries, date, today, me).find((x) => !x.done && date >= today) : undefined;
-    return { date, label, state: trained ? "trainiert" : planned ? "geplant" : "frei", time: planned?.time ?? null, today: date === today };
+    const sport = trained ? trained.data.sport : planned ? (guessSport(planned.title) ?? planned.title) : null;
+    return { date, label, state: trained ? "trainiert" : planned ? "geplant" : "frei", time: planned?.time ?? null, today: date === today, sport };
   });
 }
 
@@ -358,10 +363,14 @@ function busyOn(entries: CalendarEntry[], date: string, today: string) {
 const isFree = (entries: CalendarEntry[], date: string, today: string, start: number, minutes: number) => !busyOn(entries, date, today).some((b) => start < b.to && start + minutes > b.from);
 
 /** Freie Startzeiten an einem Tag (Vorschläge für "Training planen"), früh bis abends sortiert */
-export function freeStarts(entries: CalendarEntry[], date: string, today: string, minutes: number, max = 3): string[] {
+export function freeStarts(entries: CalendarEntry[], date: string, today: string, minutes: number, max = 3, after = -1): string[] {
   const order = [18 * 60, 7 * 60, 19 * 60, 17 * 60 + 30, 12 * 60 + 15, 8 * 60, 20 * 60];
-  return order.filter((m) => isFree(entries, date, today, m, minutes)).slice(0, max).sort((a, b) => a - b).map(clock);
+  // heute nur, was noch kommt (`after` = Minuten jetzt)
+  return order.filter((m) => m > after && isFree(entries, date, today, m, minutes)).slice(0, max).sort((a, b) => a - b).map(clock);
 }
+
+/** Ende eines Trainings ("18:00" + 45 → "18:45"), höchstens bis 23:59 (nie über Mitternacht) */
+export const endOf = (start: string, minutes: number) => clock(Math.min(toMin(start) + minutes, 23 * 60 + 59));
 
 /** Geplante (noch nicht abgehakte) Sport-Termine eines Tages */
 export const plannedOn = (entries: CalendarEntry[], date: string, today: string, me?: string | null): DayItem[] => sportItems(entries, date, today, me).filter((x) => !x.done);

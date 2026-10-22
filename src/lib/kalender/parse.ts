@@ -153,7 +153,7 @@ const LABELS: [RegExp, string][] = [
   [/(?<![a-zäöüß])(zahn)?ärzt\w*|\b(kinder|zahn|haus)?arzt\w*/i, "Arzt"],
   [/\bcafé|\bcafe\b|\bkaffee\b/i, "Café"],
   [/\beis(laden|diele|café)?\b/i, "Eisladen"],
-  [/\b(turnen|schwimm\w*|fußball|training|sport)\b/i, "Sport"],
+  [/\b(turnen|schwimm\w*|fußball|training|sport|laufen|joggen|jogging|yoga|fitness\w*|gym|radtour)\b/i, "Sport"],
   [/\bsteuer\w*/i, "Steuern"],
   [/\bgeburtstag\w*/i, "Geburtstag"],
 ];

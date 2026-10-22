@@ -2,7 +2,7 @@
 // Bearbeiten, Wischen, Eintragen, Kalender, Essen, Rezept, Einkauf, Vorrat,
 // Pinnwand, Wetter, Spendentopf, Tipps, Einstellungen, Chat im Testmodus,
 // Konten mit zwei Browsern, Vorführen: Fertig-Leiste, Memo antippen,
-// Offline, neue Version, Stammartikel).
+// Offline, neue Version, Stammartikel, Sport-Kachel).
 // Startet selbst einen Testserver (vorher `npm run build`) oder nutzt
 // E2E_BASE. Nur einzelne Abläufe: `npm run durchklick -- wetter pinnwand`.
 import { checker, launch, newPage, startServer } from "./lib.mjs";

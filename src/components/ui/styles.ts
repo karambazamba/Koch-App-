@@ -81,6 +81,9 @@ export const INPUT_BASE =
 /** Text-Eingabefeld in voller Breite */
 export const INPUT = `${INPUT_BASE} h-12 w-full px-4`;
 
+/** Schmales Feld neben Chips (eigene Minuten, Uhrzeit …) – Breite selbst setzen */
+export const INPUT_INLINE = `${INPUT_BASE} h-11 px-3`;
+
 /** Feld-Beschriftung über einem Eingabefeld */
 export const LABEL = "text-sm font-semibold text-muted";
 

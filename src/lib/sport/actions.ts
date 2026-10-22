@@ -46,3 +46,10 @@ export function setSportGoal(goal: number): () => void {
 export function setPack(sport: string, items: string[]): () => void {
   return pushUndo("das Ändern der Packliste", changeSport((s) => ({ ...s, packs: { ...s.packs, [sport]: items.map((i) => i.trim()).filter(Boolean).slice(0, 12) } })));
 }
+
+/** Eigene Sportart merken (erscheint künftig als Chip) */
+export function rememberSport(name: string) {
+  const n = name.trim().slice(0, 30);
+  if (!n) return;
+  changeSport((s) => ({ ...s, custom: [...s.custom.filter((c) => c.toLowerCase() !== n.toLowerCase()), n].slice(-12) }));
+}

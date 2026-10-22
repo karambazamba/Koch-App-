@@ -31,7 +31,9 @@ Mia) plant Trainings in freie Kalender-Lücken.
 
 - `SportState`: `goal` (1–7, Standard 3), `trainings`, `packs` (eigene
   Packlisten je Sportart, bis 12 Sachen), `celebrated` (Montage gefeierter
-  Wochen), `hidden` (abgehakte Sport-Termine, die nicht zählen sollen).
+  Wochen), `hidden` (abgehakte Sport-Termine, die nicht zählen sollen),
+  `custom` (eigene Sportarten aus „Andere“, bis 12; fehlt in alten
+  Speicherständen und Sicherungen → leer, Version bleibt v1).
 - Training = Eintrag `typ: "training"` im einheitlichen Modell mit `sport`,
   `minutes` (1–600), optional `km`, `date`, `time`, `note`, `terminKey`.
 - Sportarten: laufen, fitness, rad, schwimmen, yoga, fussball, spazieren –
@@ -51,28 +53,48 @@ Trainings und Woche:
   in Antworten der Begleitung.
 
 Ohne Zähler in der Oberfläche:
-- Kreise Mo–So (`SportWeekRow`): grün gefüllt = trainiert, grüner Rand =
-  geplant, heute oranger Ring.
+- Kreise Mo–So (`SportWeekRow`, 34 px, Tafel 25): grün gefüllt mit Haken =
+  trainiert, gestrichelter grüner Ring mit Sport-Icon = geplant
+  (`DayDot.sport`; eigene Sportart = ihr Name), heute frei = oranger Ring mit
+  „+“, sonst weiß halbtransparent. Uhrzeit vollständig unter dem Kreis
+  („18:00“, 10 px grün) – nie nur die Stunde im Kreis (früher „18“).
+- Sportarten zeigen Linien-Icons (`SportIcon`: Footprints, Dumbbell, Bike,
+  WavesLadder, Flower2, Volleyball, Trees; sonst Activity), nie Emojis in
+  Chips oder Knöpfen. `emoji` bleibt im Modell nur für Chat-Texte.
 - EIN Satz (`statusLine`, ohne Zahlen): „Wochenziel geschafft – schön.“,
   „Mehr als geplant – richtig schöne Woche.“, „Ein Training noch, dann ist die
   Woche rund.“, montags „Neue Woche, neues Glück.“ bzw. „Letzte Woche lief
   richtig gut – auf ein Neues.“, sonst „Die Woche ist bereit für dich.“
 
 Kachel `sport` (Größen S/M/L, Standard M, Pastell-Grün, standardmäßig aus):
-- S: nur die Kreise. M und L (gleicher Inhalt): dazu der Satz und „Nächstes
-  Training“ (Tag, Uhrzeit, Titel, Wetter zur Trainingszeit, „Mitnehmen: …“).
-- „+“ = `SportAddSheet` (Was? · Wie lange? 20/30/45/60/90 oder eigene · Wann?
-  · optional km). Kachel-Label → `/sport`. Jeder Kreis → `SportDaySheet`.
+- S: nur „Als Nächstes“ (Icon, „Fr 17:00“, Titel). M: Woche + „Als
+  Nächstes“ (`nextLine`: „Sa 18:00 · Laufen · 45 Min“, Wetter zur
+  Trainingszeit; antippen = Tag-Fenster des Trainings). L zusätzlich die
+  letzten 3 Trainings. Ohne geplantes Training: „Diese Woche noch nichts
+  geplant – einfach Plus tippen.“ Der Wochensatz steht nur noch auf `/sport`.
+- „+“ = „Training planen“ (`SportPlanForm` mit Tag-Chips für 7 Tage, Start
+  = erster freier Tag) und darunter „Schon trainiert? Eintragen“ →
+  `SportAddSheet`. Kachel-Label → `/sport`. Jeder Kreis → `SportDaySheet`.
 
 Tag-Fenster (`SportDaySheet`), vier Arten:
 - leer, heute/vergangen: „Wie letztes Mal: Laufen · 45 Min“ oder Sportart +
   Dauer wählen.
 - trainiert: „Ändern“, „Löschen“ (Gelöscht · Rückgängig), „+ Noch ein
   Training an diesem Tag“.
-- geplant: Uhrzeit, Erinnerung, Wetter, „Erledigt“, „Verschieben …“,
-  „Absagen“.
-- Zukunft: „Training planen“ mit Zeiten aus `freeStarts` → Termin mit Etikett
-  Sport und Erinnerung 30 Min vorher.
+- geplant: Uhrzeit, Erinnerung, Wetter, „Erledigt“, „Ändern“ (gleiches
+  Formular; bei Serien „Nur diesmal“ = Ausnahme + Einzeltermin bzw. „Jede
+  Woche“ = Serie ändert sich, `changePlanned`), „Absagen“ (Gelöscht ·
+  Rückgängig; bei Serien nur dieser Tag).
+- Zukunft: „Training planen“ (`SportPlanForm`, Logik `src/lib/sport/plan.ts`):
+  Sportart-Chips mit Icons + „Andere“ (Textfeld, gemerkt in `custom`, danach
+  eigener Chip); Wann? = bis zu 3 freie Vorschläge (`freeStarts`, heute nur
+  spätere) + „Andere“ (natives Zeit-Rad, 5-Minuten-Schritte); darunter live
+  „Frei – nichts im Kalender“ oder „Überschneidet sich mit Zahnarzt 18:00“
+  (`clashWith`, trotzdem erlaubt). Vorauswahl: zuletzt genutzte Zeit dieser
+  Sportart (`lastTimeFor`), sonst erster Vorschlag. Wie lange? 30/45/60/90 +
+  „Andere“. „Jede Woche“ = wöchentliche Serie. Knopf „Planen · Sa 18:30“ →
+  Termin mit Etikett Sport (`plannedEntry`), Ende über `endOf` (nie über
+  Mitternacht), Erinnerung 30 Min vorher.
 
 Seite `/sport` (`SportView`): Woche mit Satz, „Zuletzt“ (60 Tage, antippen =
 ändern/löschen, mit `PersonAvatar`), „Packlisten“, „Wie oft pro Woche?“
@@ -117,4 +139,9 @@ Training (sanft).
 - `tests/sport/tage.test.ts` – Tag-Fenster.
 - `tests/sport/trainingsPlanen.test.ts` – `planTrainings`, `freeStarts`.
 - `tests/sport/wochen.test.ts` – Wochen zählen.
-- Kein eigener Ablauf in `e2e/ablaeufe/`.
+- `tests/sport/sportPlanen.test.ts` – eigene Zeit, „Jede Woche“, Kreis-
+  Zustände, Überschneidung, zuletzt genutzte Zeit, „Als Nächstes“, Ändern
+  (einzeln/Serie), eigene Sportarten, „Samstag 18:30 laufen gehen“.
+- Durchklick `sportKachel` (`e2e/ablaeufe/vorfuehren.mjs`): Do antippen →
+  eigene Zeit 18:30 → „Planen · Do 18:30“ → Kachel zeigt „18:30“ und „Als
+  Nächstes“; ändern auf 19:00/60 Min; absagen + Rückgängig.
