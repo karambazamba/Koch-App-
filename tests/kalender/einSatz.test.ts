@@ -19,6 +19,8 @@ describe("Ein Satz genügt: Uhrzeit", () => {
     ["Essen mittags", "12:00"],
     ["Kino abends", "19:00"],
     ["Joggen morgens um 7", "07:00"],
+    ["Kino um acht", "20:00"],
+    ["Kino acht Uhr", "20:00"],
   ])("%s → %s", (text, time) => {
     expect(r(text).time).toBe(time);
   });
@@ -38,6 +40,7 @@ describe("Ein Satz genügt: Tag", () => {
     ["Freitag Zahnarzt", "2026-10-23"],
     ["in 3 Tagen Zahnarzt", "2026-10-24"],
     ["nächste Woche Zahnarzt", "2026-10-26"],
+    ["nächste Woche Dienstag Zahnarzt", "2026-10-27"],
     ["3.2. Zahnarzt", "2027-02-03"],
   ])("%s → %s", (text, date) => {
     expect(r(text).date).toBe(date);

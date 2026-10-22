@@ -51,6 +51,8 @@ export type JetztSource = {
   regionTips: TipView[] | null;
   kids: boolean;
   regionHidden: string | null;
+  /** Woche für „Kurzer Wochencheck?“ (schon ohne Ruhe/Pause/Beispiel) – sonst null */
+  weekCheck: string | null;
   /** Beispiel-Einkauf statt der echten Liste */
   demoShop: boolean;
   firstTiles: HomeTileId[];
@@ -116,6 +118,7 @@ export function useJetztTopics(src: JetztSource) {
     leisure: src.leisure,
     tip: src.tip,
     region: region ? { id: region.id, title: region.titel, detail: [tipWhen(region), region.ort_name, tipTags(region, 1)[0]].filter(Boolean).join(" · ") } : null,
+    weekCheck: src.weekCheck && state.weekOff !== src.weekCheck ? src.weekCheck : null,
     demo: src.demo,
     firstTiles: src.firstTiles,
     weights: state.weights,

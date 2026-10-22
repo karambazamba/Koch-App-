@@ -69,7 +69,8 @@ import { matchStock } from "@/lib/essen/dishIdeas";
 import { useStock } from "@/lib/essen/useStock";
 import { demoDishAt } from "@/lib/essen/demoDish";
 import { openHelper } from "@/lib/begleitung/open";
-import { hideJetztTopic, noteJetztSkip, noteJetztTap } from "@/lib/heute/jetztStore";
+import { hideJetztTopic, noteJetztSkip, noteJetztTap, weekCheckDone } from "@/lib/heute/jetztStore";
+import { weekCheckKey } from "@/lib/kalender/wochencheck";
 import type { JetztTopic } from "@/lib/heute/jetztTopics";
 import type { HomeData } from "@/components/heute/useHomeData";
 import { dishOf } from "@/components/essen/useMeals";
@@ -274,6 +275,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     regionHidden: tipSettings.jetztAus,
     demo: demoDay.tiles.length > 0,
     demoShop: demoDay.tiles.includes("einkauf"),
+    weekCheck: demoDay.tiles.length || paused || (evening && routine.ruhe) ? null : weekCheckKey(data.todayIso, minutes),
     firstTiles,
   });
   const openTopic = (t: JetztTopic) => {
@@ -284,11 +286,20 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     if (t.target.action === "essen") return onOpenFood();
     if (t.target.action === "ideen") return openHelper("spontan");
     if (t.target.action === "pause") return endPause();
+    if (t.target.action === "wochencheck") {
+      weekCheckDone(t.id.slice("wochencheck:".length));
+      return openHelper("wochencheck");
+    }
     document.querySelector(`[data-tile~="${t.target.action === "timer" ? "timer" : "pinnwand"}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
   const hideTopic = (t: JetztTopic) => {
     if (t.kind === "region") hideJetztTipWeekend(weekendKey(data.todayIso));
     if (t.kind === "erinnerung" && reminder) markReminderSeen(reminder.key);
+    if (t.kind === "wochencheck") {
+      const undo = weekCheckDone(t.id.slice("wochencheck:".length));
+      buzz();
+      return showToast({ text: "Diese Woche nicht mehr", undo, undoneText: "Wieder da", seconds: 3, small: true });
+    }
     const undo = hideJetztTopic(t.id, t.kind, data.todayIso);
     buzz();
     showToast({ text: "Für heute ausgeblendet", undo, undoneText: "Wieder da", seconds: 3, small: true });

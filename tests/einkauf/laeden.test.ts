@@ -62,6 +62,6 @@ function emptyInput(): JetztInput {
   return {
     minutes: 600, today: "2026-10-21", calm: false, upcoming: [], tomorrow: { label: "Morgen · Do", date: "2026-10-22", items: [], weather: null },
     urgent: [], dueToday: [], allDone: false, pin: null, weatherTip: null, weatherNow: null, dish: null, dinnerFree: false, birthdays: [], sport: null,
-    shop: null, timer: null, cookingStep: null, reminder: null, pause: null, leisure: null, tip: null, region: null, demo: false, firstTiles: [], weights: {}, hidden: [],
+    shop: null, timer: null, cookingStep: null, reminder: null, pause: null, leisure: null, tip: null, region: null, weekCheck: null, demo: false, firstTiles: [], weights: {}, hidden: [],
   } as JetztInput;
 }

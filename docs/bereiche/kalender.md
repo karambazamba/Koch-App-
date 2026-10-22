@@ -208,6 +208,37 @@ die Aufgaben-Seite und das Eintragen-Fenster.
   erledigt“, „Was steht diese Woche an?“, „Hab ich morgen Nachmittag Zeit?“.
   Sätze über Essen, Einkauf oder Urlaub lässt `parseCalendar` liegen.
 
+### Wochencheck – einfach drauflos reden (Tafel 36, seit v0.59)
+
+- Einstiege: „Wochencheck“, „Lass uns die Woche durchgehen“, „Ich lese dir den
+  Kalender vor“ (KI schickt `app_befehl`, ohne KI die Regel in
+  `useChatRules`; beides öffnet sofort, `runInstantOps`) und die Jetzt-Karte
+  „Kurzer Wochencheck? Sag einfach alles, ich sortiere.“ – montags und
+  sonntags ab 17 Uhr (`weekCheckKey`), nicht nachts, nicht in Feierabend-Ruhe,
+  Pause oder Beispiel-Tag. Antippen oder ✕ = diese Woche nicht mehr
+  (`weekCheckDone`, Feld `weekOff` in `wasgibts.jetzt`, optional).
+- Fenster `components/kalender/WochencheckSheet.tsx`: oben „Abbrechen“ +
+  Titel, langes Zuhören (`useSpeechInput({ long: true })`, Neustart nach
+  Pausen, Schluss mit „Fertig“, „fertig“/„das war’s“ oder nach 5 Minuten),
+  Text mit orange markierten Kernwörtern und grauen Füllwörtern, tippen
+  geht immer, „Ich hab schon“ (grobe lokale Erkennung), Mikro gesperrt →
+  Hilfe (Tafel 27).
+- „Fertig“: mit KI eine Nachricht „[Wochencheck] …“ (großes Modell,
+  maxTokens 16000, zählt als eine Nachricht) → Werkzeug `woche_eintragen`
+  (alle Punkte in einem Rutsch); ohne KI `parseWeekTalk`
+  (`src/lib/kalender/wochencheck.ts`: Füllwörter, Korrekturen „nee,
+  Mittwoch“, Nachträge, Wochentage ab heute, „nächste Woche Dienstag“,
+  „halb acht“ abends, Raum Familie/Arbeit/Privat, Personen „Mathis: Spiel“,
+  Dauer Termin 60 / Elternabend 120 Minuten, Aufgaben ohne Tag = diese Woche,
+  „bis Freitag“ = Frist, ohne Uhrzeit Frage mit Knöpfen, schon Eingetragenes
+  grau „schon drin“). Ohne KI keine Sport-Vorschläge.
+- „Deine Woche“ (`WeekPreview.tsx`): Legende, eine Zeile je Punkt, Fragen als
+  Chips („weiß noch nicht“ = ganztägig), Zeile antippen = Karte (Tag,
+  Uhrzeit, Dauer, Familie | Arbeit | Privat, Weglassen), Haken zum
+  Abwählen, „Nochmal“ / „Alles übernehmen“ → „N Sachen eingetragen ✓“, ein
+  Rückgängig für alles, danach der Kalender. Privat = nur für mich (Raum
+  Arbeit) mit Etikett „Privat“.
+
 ## Tests
 
 - `tests/kalender/kalenderAbo.test.ts`: Server-Schutz (private IPs, DNS, Weiterleitungen, zu groß, Zeitüberschreitung, kein Kalender), Abo-Termine, Kopie, Fälligkeit, Schreibschutz, Sicherung nur auf Wunsch; Durchklick `kalenderAbo` (verbinden, im Kalender, kopieren, Änderung kommt an).

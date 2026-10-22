@@ -287,6 +287,12 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   umbenennen/umfärben (`assistent_anpassen`, ohne KI `parseHelperCommand`).
 - Texte immer über `helperName()`/`helperTitle()`/`helperMessage()`, nie mit
   festem Namen.
+- Wochencheck (Tafel 36): Werkzeug `woche_eintragen` (calendarTools) legt alle
+  Punkte eines frei gesprochenen Wochenüberblicks als Vorschläge an (Op
+  `upsert_entry` mit `hint` für Vorschläge wie Sport in freien Lücken).
+  Nachrichten mit „[Wochencheck]“ bekommen das große Modell und 16000 Tokens
+  (`isWeekCheck`). Testmodus: `weekCheckUses` übersetzt mit `parseWeekTalk`.
+  Fenster und Regeln: siehe `docs/bereiche/kalender.md`.
 
 ## Tests
 

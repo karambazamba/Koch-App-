@@ -58,6 +58,8 @@ function findDay(t: string, today: string): Hit | null {
     find(t, new RegExp(`${B}übermorgen${E}`), () => addDays(today, 2)) ??
     find(t, new RegExp(`${B}morgen${E}`), (m) => (/guten\s+$/.test(t.slice(0, m.index)) ? null : addDays(today, 1))) ??
     find(t, new RegExp(`${B}heute${E}`), () => today) ??
+    // „nächste Woche Dienstag“ = Dienstag der Woche danach
+    find(t, new RegExp(`${B}nächste\\s+woche\\s+(?:am\\s+)?${WD}${E}`), (m) => addDays(nextWeekday(today, 0, true), WEEKDAYS.indexOf(m[1]))) ??
     find(t, new RegExp(`${B}in\\s+(\\d{1,2}|${Object.keys(NUM_WORDS).join("|")})\\s+tag(?:en)?${E}`), (m) => addDays(today, Number(m[1]) || NUM_WORDS[m[1]])) ??
     find(t, new RegExp(`${B}(?:am\\s+)?(\\d{1,2})\\.(\\d{1,2})\\.(\\d{4}|\\d{2})?(?![\\d])`), (m) => dayMonth(Number(m[1]), Number(m[2]), m[3] ? (m[3].length === 2 ? 2000 + Number(m[3]) : Number(m[3])) : null, today)) ??
     // „28.10“ ohne Punkt am Ende – nur, wenn es keine Uhrzeit sein kann (12.30 bleibt 12:30)
@@ -71,7 +73,8 @@ function findDay(t: string, today: string): Hit | null {
 
 function findClock(t: string): Hit | null {
   const early = new RegExp(`${B}(früh|morgens|vormittags?)${E}`).test(t);
-  const evening = new RegExp(`${B}(abends?|nachmittags?)${E}`).test(t);
+  // abends gemeint: ausdrücklich oder aus dem Zusammenhang (Elternabend, Kino, Konzert …)
+  const evening = new RegExp(`${B}(abends?|nachmittags?)${E}`).test(t) || /abend|kino|konzert|theater|party|restaurant/.test(t);
   const fix = (h: number) => (evening && h < 12 ? h + 12 : plausible(h, early));
   const ok = (h: number, m: number) => h >= 0 && h < 24 && m >= 0 && m < 60;
   return (
@@ -89,8 +92,8 @@ function findClock(t: string): Hit | null {
     find(t, new RegExp(`${B}(?:um\\s+)?(\\d{1,2})\\s*uhr\\s+(\\d{1,2})${E}`), (m) => (ok(Number(m[1]), Number(m[2])) ? `${pad(fix(Number(m[1])))}:${pad(Number(m[2]))}` : null)) ??
     // 12:30 / 12.30 (kein Datum wie 28.10.)
     find(t, new RegExp(`${B}(?:um\\s+)?(\\d{1,2})[:.](\\d{2})(?![.\\d])(?:\\s*uhr${E})?`), (m) => (ok(Number(m[1]), Number(m[2])) ? `${pad(fix(Number(m[1])))}:${m[2]}` : null)) ??
-    find(t, new RegExp(`${B}(?:um\\s+)?(\\d{1,2})\\s*uhr${E}`), (m) => (ok(Number(m[1]), 0) ? `${pad(fix(Number(m[1])))}:00` : null)) ??
-    find(t, new RegExp(`${B}um\\s+(\\d{1,2})${E}(?![.:]\\d)`), (m) => (ok(Number(m[1]), 0) ? `${pad(fix(Number(m[1])))}:00` : null)) ??
+    find(t, new RegExp(`${B}(?:um\\s+)?${HW}\\s*uhr${E}`), (m) => (ok(hourOf(m[1]), 0) ? `${pad(fix(hourOf(m[1])))}:00` : null)) ??
+    find(t, new RegExp(`${B}um\\s+${HW}${E}(?![.:]\\d)`), (m) => (ok(hourOf(m[1]), 0) ? `${pad(fix(hourOf(m[1])))}:00` : null)) ??
     find(t, new RegExp(`${B}(mittags?|abends?)${E}`), (m) => (m[1].startsWith("mittag") ? "12:00" : "19:00"))
   );
 }

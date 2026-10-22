@@ -122,7 +122,8 @@ export type ChangeOp =
   | { id: string; type: "add_pantry"; name: string; amount: number | null; unit: string; place: PantryPlace }
   | { id: string; type: "add_wish"; personId: string | null; who: string; dish: string }
   // Termine und Aufgaben (`entries`): anlegen/ändern, löschen, abhaken, verschieben
-  | { id: string; type: "upsert_entry"; entry: CalendarEntry; isNew: boolean }
+  // `hint`: Vorschlag von Mia mit kurzer Begründung (Wochencheck: „Vorschlag · trocken“)
+  | { id: string; type: "upsert_entry"; entry: CalendarEntry; isNew: boolean; hint?: string }
   | { id: string; type: "remove_entry"; entryId: string; title: string; onlyDate?: string }
   | { id: string; type: "done_entry"; entryId: string; title: string; date: string }
   | { id: string; type: "move_entry"; entryId: string; title: string; date: string; to: string; time?: string }

@@ -1934,3 +1934,14 @@ Fehler in `docs/aufraeumen-nachher.md`.
   „Gesprochene Inhalte“ bis 18) und „Zeig’s mir“; neue Stimme wird erkannt
   („✓ Neue Stimme gefunden“). „liest vor …“ im Chat, Tipp stoppt. Schritt-
   Karten jetzt gemeinsam mit dem Mikrofon (`ui/StepGuide`).
+
+## Wochencheck – einfach drauflos reden (Tafel 36, v0.59.0)
+
+- Einfach erzählen, was diese Woche ansteht – Mia sortiert. Eigenes Fenster
+  mit langem Zuhören (Pausen sind okay), markierten Kernwörtern und „Ich hab
+  schon“; danach „Deine Woche“ mit Fragen als Knöpfen, Ändern per Antippen
+  und „Alles übernehmen“ mit einem Rückgängig. KI-Werkzeug
+  `woche_eintragen`, ohne KI eigene Erkennung (`kalender/wochencheck.ts`).
+  Jetzt-Karte montags und sonntags ab 17 Uhr, ✕ = diese Woche nicht mehr.
+  `sentence.ts` versteht jetzt auch „Kino um acht“ und „nächste Woche
+  Dienstag“.

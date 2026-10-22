@@ -209,6 +209,9 @@ export function needsLargeModel(req: Pick<AssistantRequest, "messages" | "pendin
   return LARGE_TOPICS.test(last);
 }
 
+/** Wochencheck (App schickt „[Wochencheck] …“): großes Modell, mehr Ausgabe */
+export const isWeekCheck = (req: Pick<AssistantRequest, "messages">) => (req.messages[req.messages.length - 1]?.text ?? "").startsWith("[Wochencheck]");
+
 /** Planen, Rezepte, Mails, mehrere Dinge auf einmal → gleich das große Modell */
 const LARGE_TOPICS = /\b(woche\w*|wochenplan|planen?|plan\b|rezept\w*|mail\w*|e-mail|antworte|schreib (eine|dem|der|den|an)|vorschl\w*|ideen für|kochen wir|was koche|essensplan|trainings?\s*plan|trainings planen|räum\w* .*auf|aufräumen)\b/i;
 
@@ -252,7 +255,8 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
       if (round > 0) events.onRound?.();
       const params: Anthropic.Beta.MessageCreateParamsNonStreaming = {
         model,
-        max_tokens: ENGINE_LIMITS.maxTokens,
+        // Wochencheck: viele Punkte in einem Rutsch – mehr Platz (zählt trotzdem als eine Nachricht)
+        max_tokens: isWeekCheck(req) ? 16_000 : ENGINE_LIMITS.maxTokens,
         system,
         tools: toolDefinitions(),
         messages,

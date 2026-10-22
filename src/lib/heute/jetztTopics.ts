@@ -18,6 +18,7 @@ export type JetztKind =
   | "start"
   | "essen"
   | "ideen"
+  | "wochencheck"
   | "dringend"
   | "geburtstag"
   | "sport"
@@ -31,7 +32,7 @@ export type JetztKind =
   | "ruhig";
 
 /** Wohin Antippen führt: eine Seite oder etwas, das die Startseite selbst öffnet */
-type JetztTarget = { href: string } | { action: "essen" | "ideen" | "timer" | "pinnwand" | "pause" };
+type JetztTarget = { href: string } | { action: "essen" | "ideen" | "timer" | "pinnwand" | "pause" | "wochencheck" };
 
 export type JetztTopic = {
   id: string;
@@ -81,6 +82,8 @@ export type JetztInput = {
   tip: string | null;
   /** Tipp aus der Region fürs Wochenende (Fr 12 Uhr bis So Mittag, höchstens einmal) */
   region: { id: string; title: string; detail: string } | null;
+  /** „Kurzer Wochencheck?“ für diese Woche (Montag bzw. Sonntag ab 17 Uhr, nicht in Ruhe/Pause) – sonst null */
+  weekCheck: string | null;
   /** Beispiel-Tag: ein Thema, das ihn kurz erklärt */
   demo: boolean;
   /** Kacheln ganz oben – was sie zeigen, wiederholt die Karte nicht (außer mit Tipp) */
@@ -231,6 +234,7 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
   if (x.leisure && x.calm) add({ id: `freizeit:${x.today}`, kind: "freizeit", title: `Freizeit-Idee: ${short(x.leisure.text)}`, detail: "Aus deiner Freizeit-Liste", score: 27, target: { href: x.leisure.href }, gentle: true });
   if (x.region && !night) add({ id: `region:${x.region.id}`, kind: "region", title: short(`Tipp: ${x.region.title}`, 44), detail: x.region.detail, score: 38, target: { href: `/tipps?tipp=${encodeURIComponent(x.region.id)}` }, tile: "tipps", gentle: true });
   if (x.tip) add({ id: `tipp:${x.today}`, kind: "tipp", title: short(x.tip, 44), detail: "Kleiner Tipp", score: 18, target: null, gentle: true });
+  if (x.weekCheck && !night) add({ id: `wochencheck:${x.weekCheck}`, kind: "wochencheck", title: "Kurzer Wochencheck?", detail: "Sag einfach alles, ich sortiere.", score: 50, target: { action: "wochencheck" }, gentle: true });
   if (x.demo) add({ id: "beispiel", kind: "beispiel", title: "Das ist ein Beispiel-Tag", detail: "Probier alles aus – tippen, abhaken, verschieben", score: 24, target: null, gentle: true, night: true });
 
   const ranked = c

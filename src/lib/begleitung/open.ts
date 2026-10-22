@@ -3,11 +3,12 @@
 // Küchenhelfer-Panel von überall öffnen (z. B. Eingabeleiste der Startseite).
 // Der Küchenhelfer im Layout hört auf dieses Ereignis.
 // "spontan" = Spontan kochen (mit dem, was da ist; früher "reste"),
-// "voice" = Mikrofon startet direkt; `ask` = gleich fragen.
+// "voice" = Mikrofon startet direkt; "wochencheck" = Wochencheck (eigenes
+// Fenster, Tafel 36); `ask` = gleich fragen.
 
 import { unlockSpeech } from "@/lib/begleitung/speech";
 
-type HelperMode = "spontan" | "voice";
+type HelperMode = "spontan" | "voice" | "wochencheck";
 
 type Detail = { mode?: HelperMode; ask?: string; filters?: string[] };
 

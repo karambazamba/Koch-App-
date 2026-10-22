@@ -107,9 +107,20 @@ type Options = {
   onTranscript: (text: string) => void;
   /** Aufnahme vorbei (selbst beendet oder Stille) – mit dem ganzen Text dieser Aufnahme */
   onEnd?: (text: string) => void;
+  /**
+   * Langes Zuhören (Wochencheck): Pausen sind okay – beendet der Browser nach
+   * Stille, hört es von selbst weiter und hängt an; Schluss mit „Fertig“
+   * (Knopf oder gesagt: „fertig“, „das war’s“) oder nach 5 Minuten.
+   */
+  long?: boolean;
 };
 
-export function useSpeechInput({ onTranscript, onEnd }: Options) {
+const LONG_MS = 5 * 60_000;
+const STOP_WORDS = /[\s,.]*(?:fertig|das\s+war[’']?s)[\s.!]*$/i;
+/** Langes Zuhören: „… fertig“ am Ende = Schluss (das Wort selbst gehört nicht zum Text) */
+export const stripStopWord = (text: string) => (STOP_WORDS.test(text) ? { text: text.replace(STOP_WORDS, "").trim(), stop: true } : { text, stop: false });
+
+export function useSpeechInput({ onTranscript, onEnd, long = false }: Options) {
   const supported = useSpeechSupported();
   /** Mikro gesperrt (geräteweit) – Knopf grau, Tipp öffnet die Hilfe */
   const blocked = useSyncExternalStore(micSubscribe, () => micState().block !== null, () => false);
@@ -155,7 +166,9 @@ export function useSpeechInput({ onTranscript, onEnd }: Options) {
   // Beim Verlassen (z. B. Chat schließen): abbrechen, nichts abschicken
   useEffect(() => () => detach(), [detach]);
 
-  const begin = useCallback(() => {
+  /** Neu starten beim langen Zuhören (Verweis, weil `begin` sich selbst aufruft) */
+  const restart = useRef<(base: string, startedAt: number) => void>(() => {});
+  const begin = useCallback((base = "", startedAt = Date.now()) => {
     const Recognition = speechRecognitionClass();
     if (!Recognition) return;
     detach();
@@ -183,7 +196,21 @@ export function useSpeechInput({ onTranscript, onEnd }: Options) {
         if (result.isFinal) finals[i] = said;
         else pending += said;
       }
-      text = withoutPrevious(joinFinals(finals.filter((f) => f !== undefined)), previousText);
+      const own = joinFinals(finals.filter((f) => f !== undefined));
+      // Weiter zuhören (lang): an den bisherigen Text anhängen
+      text = base ? `${base} ${own}`.trim() : withoutPrevious(own, previousText);
+      if (long) {
+        const said = stripStopWord(text);
+        text = said.text;
+        if (said.stop) {
+          stoppedByUser = true;
+          try {
+            recognition.stop();
+          } catch {
+            // schon beendet
+          }
+        }
+      }
       textRef.current = text;
       setInterim(pending);
       callbacks.current.onTranscript(text);
@@ -209,6 +236,11 @@ export function useSpeechInput({ onTranscript, onEnd }: Options) {
     };
     recognition.onend = () => {
       if (session !== sessionRef.current) return;
+      // Lang: Stille beendet nicht – weiter zuhören und anhängen (höchstens 5 Minuten)
+      if (long && !stoppedByUser && Date.now() - startedAt < LONG_MS) {
+        restart.current(text, startedAt);
+        return;
+      }
       // Was diese Erkennung danach noch meldet, zählt nicht mehr
       sessionRef.current++;
       recognition.onresult = null;
@@ -233,10 +265,14 @@ export function useSpeechInput({ onTranscript, onEnd }: Options) {
       recognitionRef.current = null;
       setError("Spracheingabe hat nicht geklappt – tipp es einfach ein.");
     }
-  }, [detach, flagListening]);
+  }, [detach, flagListening, long]);
+
+  useEffect(() => {
+    restart.current = begin;
+  }, [begin]);
 
   /** Zuhören starten – gesperrt: Hilfe; allererstes Mal: erst „Darf ich zuhören?“ (im Tipp aufrufen) */
-  const start = useCallback(() => guardMic(begin, hintSeen("mikro-gefragt")), [begin]);
+  const start = useCallback(() => guardMic(() => begin(), hintSeen("mikro-gefragt")), [begin]);
 
   /** Aufnahme beenden – der erkannte Text wird über onEnd abgeschickt */
   const stop = useCallback(() => {

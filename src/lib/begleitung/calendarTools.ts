@@ -302,6 +302,72 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
       return { content: contextLines(entriesOf(ctx), ctx.today, days, from) };
     },
   },
+  {
+    area: "alltag",
+    definition: {
+      name: "woche_eintragen",
+      description:
+        "Wochencheck: trägt ALLE Punkte aus einem frei gesprochenen Wochenüberblick auf einmal ein (statt vieler Einzelaufrufe). Füllwörter ignorieren, Korrekturen übernehmen ('Dienstag … nee, Mittwoch' → Mittwoch), Nachträge als eigene Punkte. Unklare Uhrzeit nie raten: ohne start (ganztägig) eintragen – die App fragt mit Knöpfen nach. Sport-Wunsch ('dreimal Sport'): Genanntes eintragen, den Rest als Vorschlag in freie Lücken (vorschlag: kurze Begründung wie 'trocken').",
+      input_schema: {
+        type: "object",
+        properties: {
+          punkte: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                art: { type: "string", enum: ["termin", "aufgabe", "sport"] },
+                titel: { type: "string", description: "Kurz, ohne Füllwörter; mit Person vorne: 'Mathis: Spiel'" },
+                datum: DATE_PROP,
+                start: { ...TIME_PROP, description: "Uhrzeit HH:MM – weglassen, wenn unklar" },
+                dauer_min: { type: "integer", minimum: 5, maximum: 600, description: "Standard: Termin 60, Elternabend 120, Sport 60" },
+                raum: { type: "string", enum: ["familie", "arbeit", "privat"], description: "familie (Standard), arbeit (Job, Meeting, Kunde), privat (nur für mich, Arzt, Steuerberater)" },
+                personen: { type: "array", items: { type: "string" }, description: "Namen aus dem Haushalt" },
+                ort: { type: "string" },
+                frist: { ...DATE_PROP, description: "Nur Aufgaben: 'bis Freitag'" },
+                vorschlag: { type: "string", description: "Nur Vorschläge von dir (z. B. Sport in freier Lücke): kurze Begründung" },
+              },
+              required: ["art", "titel"],
+              additionalProperties: false,
+            },
+          },
+        },
+        required: ["punkte"],
+        additionalProperties: false,
+      },
+    },
+    run: (ctx, raw) => {
+      const punkte = Array.isArray((raw as Input)?.punkte) ? ((raw as Input).punkte as Input[]) : [];
+      const done: string[] = [];
+      for (const p of punkte.slice(0, 40)) {
+        const title = str(p.titel).slice(0, 120);
+        if (!title) continue;
+        const privat = p.raum === "privat";
+        const raum: Room = p.raum === "arbeit" || privat ? "arbeit" : "familie";
+        const who = whoFrom(ctx, p.personen);
+        const hint = str(p.vorschlag) || undefined;
+        let entry: CalendarEntry;
+        if (p.art === "aufgabe") {
+          const due = dateFrom(ctx, p.frist) ?? undefined;
+          const date = due ? undefined : (dateFrom(ctx, p.datum) ?? undefined);
+          const monday = addDays(ctx.today, -weekdayIndex(ctx.today));
+          entry = createEntry("aufgabe", { title, reminder: "aus" as Reminder, repeat: null, ...(due ? { due } : date ? { date } : { week: monday }), ...(privat ? { label: "Privat" } : {}) }, { raum }) as CalendarEntry;
+        } else {
+          const date = dateFrom(ctx, p.datum) ?? ctx.today;
+          const start = timeFrom(p.start) ?? "";
+          const minutes = typeof p.dauer_min === "number" ? Math.max(5, Math.min(600, Math.round(p.dauer_min))) : /elternabend/i.test(title) ? 120 : 60;
+          const end = start ? `${String(Math.min(23, Math.floor((Number(start.slice(0, 2)) * 60 + Number(start.slice(3)) + minutes) / 60))).padStart(2, "0")}:${String((Number(start.slice(3)) + minutes) % 60).padStart(2, "0")}` : undefined;
+          const label = p.art === "sport" ? "Sport" : privat ? "Privat" : undefined;
+          entry = createEntry("termin", { title, date, start, ...(end && end > start ? { end } : {}), reminder: start ? ("30" as Reminder) : ("aus" as Reminder), repeat: null, ...(label ? { label } : {}), ...(who ? { who } : {}), ...(str(p.ort) ? { place: str(p.ort) } : {}) }, { raum }) as CalendarEntry;
+        }
+        const clean = sanitizeEntry(entry);
+        if (!clean) continue;
+        propose(ctx, { id: nextId(ctx), type: "upsert_entry", entry: clean, isNew: true, ...(hint ? { hint } : {}) });
+        done.push(title);
+      }
+      return done.length ? { content: `Vorgemerkt (${done.length}): ${done.join(" · ")}. Die App zeigt alles als „Deine Woche“ zum Übernehmen.` } : fail("Keine Punkte erkannt – titel angeben.");
+    },
+  },
 ];
 
 function removeTool(ctx: ToolContext, input: Input, typ: "termin" | "aufgabe"): ToolResult {

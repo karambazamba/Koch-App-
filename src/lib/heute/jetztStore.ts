@@ -1,12 +1,13 @@
 // Jetzt-Karte (`wasgibts.jetzt` v1): an/aus (Standard an), die heute mit ✕
 // ausgeblendeten Themen und das Interesse je Thema-Art – lokal und langsam
 // gelernt: Antippen +1, Weiterwischen −0,5, Ausblenden −1,5 (begrenzt auf ±6).
+// `weekOff`: Woche (Montag), in der „Kurzer Wochencheck?“ nicht mehr kommt.
 
 import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 import type { JetztKind } from "@/lib/heute/jetztTopics";
 
-export type JetztState = { version: 1; on: boolean; day: string; hidden: string[]; weights: Partial<Record<JetztKind, number>> };
+export type JetztState = { version: 1; on: boolean; day: string; hidden: string[]; weights: Partial<Record<JetztKind, number>>; weekOff?: string };
 
 const EMPTY: JetztState = { version: 1, on: true, day: "", hidden: [], weights: {} };
 const LIMIT = 6;
@@ -23,6 +24,7 @@ const store = createLocalStore("wasgibts.jetzt", (raw: unknown): JetztState | nu
     day: typeof d.day === "string" ? d.day : "",
     hidden: Array.isArray(d.hidden) ? d.hidden.filter((x) => typeof x === "string") : [],
     weights,
+    ...(typeof d.weekOff === "string" ? { weekOff: d.weekOff } : {}),
   };
 });
 
@@ -66,4 +68,11 @@ export function hideJetztTopic(id: string, kind: JetztKind, today: string): () =
 /** "Ausgeblendete Themen zurücksetzen": nichts mehr ausgeblendet, Interesse von vorn */
 export function resetJetztTopics() {
   store.save({ ...loadJetzt(), day: "", hidden: [], weights: {} });
+}
+
+/** Wochencheck angetippt oder ✕: diese Woche nicht mehr anbieten; gibt das Zurücknehmen zurück */
+export function weekCheckDone(week: string): () => void {
+  const before = loadJetzt();
+  store.save({ ...before, weekOff: week });
+  return () => store.save({ ...loadJetzt(), weekOff: before.weekOff });
 }
