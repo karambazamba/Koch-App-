@@ -34,8 +34,8 @@ export const READ_MODES: { value: ReadMode; label: string; hint: string; short: 
 
 export const SPEECH_RATES: { value: SpeechRate; label: string; rate: number }[] = [
   { value: "langsam", label: "Langsam", rate: 0.8 },
-  // Etwas langsamer als der Standard des Geräts – klingt ruhiger
-  { value: "normal", label: "Normal", rate: 0.95 },
+  // Natürlich wie das Gerät (Tafel 28: Tempo 1,0)
+  { value: "normal", label: "Normal", rate: 1 },
   { value: "schnell", label: "Schnell", rate: 1.2 },
 ];
 
@@ -153,7 +153,7 @@ function hasMatchingVoice(voices: SpeechSynthesisVoice[], voice: HelperVoice): b
 }
 
 /** Wo man auf dem iPhone bessere Stimmen lädt */
-export const VOICE_HINT = "Für eine passende Stimme: iPhone-Einstellungen → Bedienungshilfen → Gesprochene Inhalte → Stimmen → Deutsch.";
+export const VOICE_HINT = "Für eine passende Stimme: iPhone-Einstellungen → Bedienungshilfen → Lesen & Sprechen → Stimmen → Deutsch.";
 
 const VOICE_HINT_KEY: StorageKey = "wasgibts.stimmenhinweis";
 
@@ -361,7 +361,7 @@ function say(chunks: string[], options: { id?: string; gender?: HelperVoice; voi
   // `voice` (Probehören): genau diese Stimme, "" = automatisch
   const chosen = options.voice === undefined ? settings : { ...settings, voice: options.voice };
   const voice = chooseVoice(currentVoices(), chosen, options.gender ?? "weiblich");
-  const rate = SPEECH_RATES.find((r) => r.value === settings.rate)?.rate ?? 0.95;
+  const rate = SPEECH_RATES.find((r) => r.value === settings.rate)?.rate ?? 1;
   try {
     chunks.forEach((chunk, i) => {
       const u = new SpeechSynthesisUtterance(chunk);

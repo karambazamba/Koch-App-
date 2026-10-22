@@ -25,5 +25,5 @@ export const einstellungen = async (page, check) => {
   check(await page.getByText(/3 Personen/).first().isVisible(), "Familie: 3 Personen");
   await page.goto(BASE + "/profil/kuechenhelfer");
   await page.waitForTimeout(800);
-  check(await page.getByRole("heading", { name: "Mia" }).isVisible(), "Seite der Begleitung heißt wie sie");
+  check(await page.getByRole("heading", { name: "Mia", exact: true }).isVisible(), "Seite der Begleitung heißt wie sie");
 };

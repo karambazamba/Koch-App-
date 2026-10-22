@@ -180,3 +180,28 @@ export const FAKE_MIC = () => {
   if (navigator.permissions)
     navigator.permissions.query = (d) => (d?.name === "microphone" ? Promise.resolve({ state: "prompt", onchange: null }) : query(d));
 };
+
+/** Schein-Sprachausgabe: Stimmen aus `window.__voices`, Sprechen endet sofort */
+export const FAKE_VOICES = () => {
+  const mk = (name) => ({ name, voiceURI: `com.apple.voice.${name}`, lang: "de-DE", localService: true, default: false });
+  window.__voices = window.__voices || [mk("Anna"), mk("Markus")];
+  window.__mk = mk;
+  const synth = {
+    speaking: false,
+    pending: false,
+    paused: false,
+    getVoices: () => window.__voices,
+    speak: (u) => setTimeout(() => (u.onstart?.(), setTimeout(() => u.onend?.(), 300)), 10),
+    cancel: () => {},
+    pause: () => {},
+    resume: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  };
+  Object.defineProperty(window, "speechSynthesis", { value: synth, configurable: true });
+  window.SpeechSynthesisUtterance = class {
+    constructor(text) {
+      this.text = text;
+    }
+  };
+};
