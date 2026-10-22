@@ -1,5 +1,5 @@
-// Einmalige kleine Hinweise (z. B. Mias Sprechblase unter „+ Kachel“ beim
-// allerersten Bearbeiten): einmal gezeigt = nie wieder.
+// Einmal-Tipps (z. B. der Tipp „Neue Kacheln holen“ beim allerersten
+// Bearbeiten der Startseite): einmal gezeigt = nie wieder.
 
 import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
@@ -24,4 +24,9 @@ export function markHintSeen(id: HintId) {
   const s = store.load();
   if (s?.seen.includes(id)) return;
   store.save({ version: 1, seen: [...(s?.seen ?? []), id] });
+}
+
+/** Alle Einmal-Tipps wieder zeigen (Daten & App → „Tipps wieder zeigen“, zum Testen) */
+export function resetHints() {
+  store.save({ version: 1, seen: [] });
 }

@@ -158,6 +158,9 @@ anfangen).
   `clearWelcome` (auch Beispiel-Tag) und zurück zu `/profil` (Hallo).
   Termine, Pläne, Listen und Notizen bleiben – so sagt es auch die Rückfrage
   (bis Etappe 8 versprach der Text, Pläne und Listen seien danach weg).
+- „Tipps wieder zeigen“ (leise, unter „Neu beginnen“): `resetHints` – alle
+  Einmal-Tipps (z. B. „Neue Kacheln holen“) kommen beim nächsten Mal wieder.
+  Zum Testen, löscht nichts sonst.
 
 ### Erster Start
 

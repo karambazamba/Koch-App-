@@ -41,6 +41,8 @@
   --color-danger-soft: var(--app-danger-soft);
   --color-danger-line: var(--app-danger-line);
   --color-scrim: var(--app-scrim);
+  --color-tip-scrim: var(--app-tip-scrim);
+  --color-tip-ink: var(--app-tip-ink);
   --color-segment: var(--app-segment);
   --color-cat-veggie: var(--app-cat-veggie);
   --color-cat-fleisch: var(--app-cat-fleisch);
@@ -123,6 +125,9 @@
   --app-danger-soft: #fdecea;
   --app-danger-line: #f2c3bd;
   --app-scrim: rgb(31 27 22 / 0.4);
+  /* Einmal-Tipp (Abdunklung, betontes Wort) */
+  --app-tip-scrim: rgb(24 18 14 / 0.7);
+  --app-tip-ink: #c2410c;
   --app-segment: #ebe6df;
   --app-cat-veggie: #2e9e6b;
   --app-cat-fleisch: #b9733f;
@@ -221,6 +226,8 @@
   --app-danger-soft: #3a2022;
   --app-danger-line: #6e2f33;
   --app-scrim: rgb(0 0 0 / 0.6);
+  --app-tip-scrim: rgb(0 0 0 / 0.72);
+  --app-tip-ink: #ffa774;
   --app-segment: #2c3036;
   --app-cat-veggie: #4cc58d;
   --app-cat-fleisch: #e0a070;
@@ -319,6 +326,8 @@
     --app-danger-soft: #3a2022;
     --app-danger-line: #6e2f33;
     --app-scrim: rgb(0 0 0 / 0.6);
+    --app-tip-scrim: rgb(0 0 0 / 0.72);
+    --app-tip-ink: #ffa774;
     --app-segment: #2c3036;
     --app-cat-veggie: #4cc58d;
     --app-cat-fleisch: #e0a070;

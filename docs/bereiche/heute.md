@@ -71,7 +71,14 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   oder die Begleitung (`requestHomeEdit`). Schließen: „Fertig“, Zurück
   (eigener Verlaufseintrag) oder Danebentippen auf freie Fläche.
 - Kopf (sticky): „+ Kachel“, „Fertig“, Titel und Hinweis. Beim ersten Mal
-  eine Sprechblase der Begleitung (weg nach Tipp oder 6 s).
+  der Tipp „Neue Kacheln holen“ (`heute/AddTileTip.tsx`, Portal an `body`):
+  Abdunklung (`bg-tip-scrim`), „+ Kachel“ hervorgehoben genau über dem echten
+  Knopf, weiße Karte darunter (16 px Rand, `rounded-pair`) mit Spitze zur
+  gemessenen Knopf-Mitte. „Verstanden“, Abdunklung, Zurück oder Escape
+  schließen; „+ Kachel“ schließt und öffnet sofort die Auswahl. Ein-/Ausblenden
+  200 ms, Fokus zuerst auf „Verstanden“. Gesehen-Status in
+  `wasgibts.einmalhinweise` (`core/hints.ts`); zurücksetzen über Daten & App →
+  „Tipps wieder zeigen“.
 - Kacheln wackeln, Inhalte sind gesperrt; „–“ entfernt mit „Gelöscht ·
   Rückgängig“, „S · M · L“ ändert die Größe. Kurz antippen = Menü (Ganz nach
   oben · Nach oben · Nach unten · Größe · Entfernen).
