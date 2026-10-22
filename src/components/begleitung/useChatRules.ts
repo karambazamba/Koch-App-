@@ -34,6 +34,8 @@ import { saveSpontanFilters } from "@/lib/essen/spontanFilters";
 import type { ChatState, ChatTurnView } from "@/components/begleitung/chatTypes";
 import { pauseRule, dayRule, boardRule, schnellnotizRule, noteRule, bausteinRule, calendarImportRule, homeCommand, shopModeRule, memoPlayRule, type RuleContext } from "@/components/begleitung/localRules";
 import { mailRule } from "@/components/begleitung/mailRules";
+import { openHelper } from "@/lib/begleitung/open";
+import { isWeekCheckRequest } from "@/lib/kalender/wochencheck";
 import type { SpontanChat } from "@/components/begleitung/useSpontanChat";
 
 type Options = {
@@ -115,6 +117,13 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
   /** Feste Regeln (ohne KI, oder wenn die KI ein `app_befehl` schickt). true = erledigt */
   const rules = (t: string): boolean => {
     if (!data || !today) return false;
+    // „Wochencheck“, „Lass uns die Woche durchgehen“ → eigenes Fenster (Tafel 36)
+    if (isWeekCheckRequest(t)) {
+      setInput("");
+      onClose();
+      openHelper("wochencheck");
+      return true;
+    }
     if (mailRule(ruleCtx, chat.turns, t)) return true;
     if (boardRule(ruleCtx, t)) return true;
     if (dayRule(ruleCtx, t)) return true;

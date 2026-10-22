@@ -52,9 +52,24 @@ const voiceOffer = async (page) => {
   await box.press("Enter");
   await page.getByRole("button", { name: "Passt so" }).waitFor({ timeout: 10000 });
 };
+const WOCHE = "Dienstag haben wir Elternabend, halb acht. Donnerstag muss ich das Paket zur Post bringen. Freitag 10 Uhr Meeting mit dem Lieferanten. Samstag hat Mathis ein Spiel.";
+const weekCheck = async (page, done) => {
+  await page.getByRole("button", { name: /^Sag .*was ansteht/ }).click();
+  const box = page.getByRole("textbox", { name: "Nachricht schreiben" });
+  await box.fill("Wochencheck");
+  await box.press("Enter");
+  const sheet = page.getByRole("dialog", { name: "Wochencheck" });
+  await sheet.waitFor({ timeout: 10000 });
+  await sheet.getByRole("textbox", { name: "Was steht an?" }).fill(WOCHE);
+  if (!done) return page.waitForTimeout(400);
+  await sheet.getByRole("button", { name: "Fertig" }).click();
+  await page.getByRole("dialog", { name: "Deine Woche" }).waitFor({ timeout: 10000 });
+};
 const SCENES = [
   ["stimme-angebot", voiceOffer],
   ["stimme-anleitung", async (page) => (await voiceOffer(page), await page.getByRole("button", { name: "Schönere Stimme holen" }).click())],
+  ["wochencheck-erzaehlen", (page) => weekCheck(page, false)],
+  ["wochencheck-woche", (page) => weekCheck(page, true)],
   ["termin-satz", (page) => openTermin(page, "Mittwoch 12.30 Physio")],
   ["termin-frei", (page) => openTermin(page, "Elternabend")],
   ["termin-vorbei", (page) => openTermin(page, "Bäcker 9 Uhr")],

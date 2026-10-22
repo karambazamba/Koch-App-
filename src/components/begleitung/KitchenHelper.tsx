@@ -32,6 +32,8 @@ import dynamic from "next/dynamic";
 // man es öffnet – eigener Teil, der nach dem Laden der Seite im Leerlauf vorgeholt wird
 const loadPanel = () => import("@/components/begleitung/HelperPanel").then((m) => m.HelperPanel);
 const HelperPanel = dynamic(loadPanel, { ssr: false });
+// Wochencheck erst beim Öffnen laden
+const WochencheckSheet = dynamic(() => import("@/components/kalender/WochencheckSheet").then((m) => m.WochencheckSheet), { ssr: false });
 
 /** Nur nach echtem Löschen: kleine Meldung "Gelöscht · Rückgängig" für 3 Sekunden */
 const UNDO_SECONDS = 3;
@@ -53,6 +55,7 @@ export function KitchenHelper() {
   const pathname = usePathname();
   // Von der Startseite: Mikrofon direkt starten bzw. gleich fragen
   const [start, setStart] = useState<{ listen?: boolean; ask?: string } | null>(null);
+  const [weekCheck, setWeekCheck] = useState(false);
 
   const profile = useProfile();
   const weekPlans = useWeekPlans();
@@ -105,6 +108,13 @@ export function KitchenHelper() {
   useEffect(
     () =>
       onOpenHelper((mode, ask, filters) => {
+        // Wochencheck: eigenes Fenster statt Chat – erst wenn der Chat samt
+        // Verlaufseintrag weg ist (sonst schlösse dessen Zurück das neue Fenster)
+        if (mode === "wochencheck") {
+          setOpen(false);
+          setTimeout(() => setWeekCheck(true), 400);
+          return;
+        }
         setOpen(true);
         if (mode === "voice" || ask) setStart({ listen: mode === "voice", ask });
         if (mode !== "spontan") return;
@@ -181,6 +191,8 @@ export function KitchenHelper() {
           }}
         />
       )}
+
+      {weekCheck && data && <WochencheckSheet data={data} onClose={() => setWeekCheck(false)} />}
 
       {(undo || undone) && (
         <div

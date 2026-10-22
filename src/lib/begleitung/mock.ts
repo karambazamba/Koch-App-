@@ -13,6 +13,8 @@ import { dateForDay } from "@/lib/begleitung/tools";
 import { EMPTY_STOCK_HINT, ingredientsFromQuestion, isCookIdeasRequest, stockIdeas, stockItem, usesLine } from "@/lib/essen/dishIdeas";
 import { text, tools, type ToolUse } from "@/lib/begleitung/mockShared";
 import { CALENDAR_WRITE, DAY_TOOL_NAMES, calendarAnswer, calendarUses, dayUses, everydayUses, mailUses, noteUses, pinWeatherUses, schnellnotizUses } from "@/lib/begleitung/mockAlltag";
+import { parseWeekTalk } from "@/lib/kalender/wochencheck";
+import { todayIso } from "@/lib/core/now";
 
 /** Namen aus "Vorrat (aktuell): Hack 500 g (Kühlschrank), Paprika (Kühlschrank)" im Kontext */
 function stockNames(system: string): string[] {
@@ -224,6 +226,10 @@ function mockModel(): CreateMessage {
       const use = prevUses.find((u) => u.name === name);
       return use ? results.find((r) => r.tool_use_id === use.id)?.content : undefined;
     };
+
+    // Wochencheck: alles in einem Rutsch über woche_eintragen (gleiche Erkennung wie ohne KI)
+    if (typeof last.content === "string" && last.content.startsWith("[Wochencheck]")) return weekCheckUses(last.content, system);
+    if (resultFor("woche_eintragen") !== undefined) return text("Ich hab alles sortiert – schau kurz drüber und tipp „Alles übernehmen“.");
 
     // 1. Neue Frage: unklar → nachfragen, sonst Woche und Kochbuch lesen
     if (typeof last.content === "string") {
@@ -532,4 +538,23 @@ function memoryReply(latest: string, msgs: Anthropic.Beta.BetaMessageParam[]): s
   }
   if (/^ich hei(ß|ss)e (\p{L}+)/iu.test(latest)) return `Schön, dich kennenzulernen, ${latest.match(/^ich hei(?:ß|ss)e (\p{L}+)/iu)![1]}!`;
   return null;
+}
+
+/** Testmodus: Wochencheck mit dem eingebauten Parser in Werkzeug-Punkte übersetzen */
+function weekCheckUses(content: string, system: string): Anthropic.Beta.BetaMessage {
+  const today = system.match(/^Heute: .*\((\d{4}-\d{2}-\d{2})\)/m)?.[1] ?? todayIso();
+  // Haushalt aus dem Kontext ("- Felix; erwachsen") – Name dient als Kennung
+  const persons = [...system.matchAll(/^- ([A-ZÄÖÜ][\wäöüß-]*);/gm)].map((m) => ({ id: m[1], name: m[1] }));
+  const { items } = parseWeekTalk(content.replace(/^\[Wochencheck\]\s*/, ""), today, persons);
+  const punkte = items.map((i) => ({
+    art: i.art,
+    titel: i.title,
+    ...(i.date ? { datum: i.date } : {}),
+    ...(i.due ? { frist: i.due } : {}),
+    ...(i.time ? { start: i.time } : {}),
+    ...(i.minutes ? { dauer_min: i.minutes } : {}),
+    raum: i.raum,
+    ...(i.who.length ? { personen: i.who } : {}),
+  }));
+  return tools([{ name: "woche_eintragen", input: { punkte } }]);
 }

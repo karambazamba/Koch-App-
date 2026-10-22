@@ -49,7 +49,7 @@ export const STORAGE = [
   { key: "wasgibts.vorlesen", what: "Vorlesen: Modus, Stimme, Tempo (pro Gerät)", version: 1, migration: "begleitung/speech.ts migrate", area: "local", backup: true },
   { key: "wasgibts.wetterort", what: "Wetter-Ort", version: 1, migration: "wetter/client.ts", area: "local", backup: true },
   { key: "wasgibts.wetterdaten", what: "Letzte Wetterdaten (offline)", version: 1, area: "local", backup: false },
-  { key: "wasgibts.jetzt", what: "Jetzt-Karte: an/aus, heute ausgeblendete Themen, Interesse je Thema", version: 1, migration: "heute/jetztStore.ts", area: "local", backup: true },
+  { key: "wasgibts.jetzt", what: "Jetzt-Karte: an/aus, heute ausgeblendete Themen, Interesse je Thema, Woche ohne Wochencheck (weekOff, optional)", version: 1, migration: "heute/jetztStore.ts", area: "local", backup: true },
   { key: "wasgibts.regiontipps", what: "Tipps aus der Region: Ort, Umkreis, im Kalender zeigen, gemerkte und übernommene Tipps, Jetzt-Karte am Wochenende aus", version: 1, migration: "tipps/client.ts migrateTipSettings", area: "local", backup: true },
   { key: "wasgibts.spendentopf", what: "Spendentopf: Region, Bescheid geben, Stimme je Jahr, zugesagter Beitrag (keine Zahlung), Beitrags-Frage", version: 1, migration: "spendentopf/store.ts migratePot", area: "local", backup: true },
   { key: "wasgibts.konto", what: "Anmeldung (Sitzung) – nur auf dem Gerät, nie in der Sicherung", area: "local", backup: false },
