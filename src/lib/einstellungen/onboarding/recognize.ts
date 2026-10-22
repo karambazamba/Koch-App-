@@ -92,7 +92,7 @@ export function extractNames(text: string): NameHint[] {
 const ALLERGY_CANON: [RegExp, string][] = [
   [/^gluten|^weizen/, "Gluten"],
   [/^laktose|^milchzucker|^milch/, "Laktose"],
-  [/^erdnu/, "Erdnüsse"],
+  [/^erdn(u|ü)/, "Erdnüsse"],
   [/n(u|ü)(ss|ß)|^mandel|^cashew|^pistazie/, "Nüsse"],
   [/^ei(er)?$|^hühnerei/, "Ei"],
   [/^meeresfr|^garnele|^krabbe|^muschel|^shrimp/, "Meeresfrüchte"],
@@ -128,7 +128,7 @@ function extractDiet(text: string): { allergies: string[]; dislikes: string[] } 
   // Allergien
   for (const m of t.matchAll(new RegExp(`allergi\\w*\\s+(?:gegen|auf)\\s+(.+?)${STOP_AT}`, "gi"))) add(allergies, terms(m[1]).map(canonicalAllergy));
   for (const m of t.matchAll(new RegExp(`(?:verträgt|verträgst|vertragen)\\s+(?:kein\\w*\\s+)?(.+?)(?:\\s+nicht)?${STOP_AT}`, "gi"))) add(allergies, terms(m[1]).map(canonicalAllergy));
-  for (const m of t.matchAll(/(\w+?)[-\s]?(?:allergie|unverträglichkeit|intoleranz)\b/gi)) {
+  for (const m of t.matchAll(/([a-zäöüß]+?)[-\s]?(?:allergie|unverträglichkeit|intoleranz)\b/gi)) {
     if (!/^(eine|keine|die|ne|hat)$/i.test(m[1])) add(allergies, [canonicalAllergy(m[1])]);
   }
   for (const m of t.matchAll(/\b(laktose|gluten)\s*(?:frei|intolerant|unverträglich)/gi)) add(allergies, [canonicalAllergy(m[1])]);
