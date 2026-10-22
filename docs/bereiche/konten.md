@@ -79,8 +79,13 @@ Etappen: **3a Anmeldung und Haushalt (fertig)** · 3b Synchronisieren ·
   `NEXT_PUBLIC_SUPABASE_ANON_KEY` / `…_PUBLISHABLE_KEY` (bzw. ohne
   `NEXT_PUBLIC_`); geheim `SUPABASE_SERVICE_ROLE_KEY` oder
   `SUPABASE_SECRET_KEY`.
-- Offen bei Felix: Resend-Domain „Verified“ (sonst kommen Mails nur
-  eingeschränkt an), `CRON_SECRET` (für 3c).
+- Mails: Resend-SMTP, Absender mia@karamba-eis.de (Domain karamba-eis.de
+  verifiziert), Betreff „Dein Code für Was gibt’s?“, Code 6-stellig, 900 s
+  gültig, höchstens 30 Mails pro Stunde.
+- Echter Mail-Test (von Hand, nicht im Durchklick – der nutzt das
+  Test-Backend): in der App auf /konto eine echte Adresse eingeben, prüfen,
+  dass Betreff und 6-stelliger Code ankommen, Code eingeben.
+- Offen bei Felix: `CRON_SECRET` (für 3c).
 
 ## Tests
 
