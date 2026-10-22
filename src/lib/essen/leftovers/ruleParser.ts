@@ -224,8 +224,9 @@ function itemsOf(chunk: Chunk): ParsedLeftover[] {
  */
 export function ruleParseLeftovers(text: string): ParsedLeftover[] {
   return text
-    // Komma zwischen Ziffern ist ein Dezimalkomma ("1,5 Liter"), kein Trenner
-    .split(/(?<!\d),|,(?!\d)|;|\n|\.(?!\d)|!|\?|\bund\b|\bsowie\b|\bplus\b/i)
+    // Komma zwischen Ziffern ist ein Dezimalkomma ("1,5 Liter"), kein Trenner;
+    // Punkt nach einer Einheit ("2 Pck. Hefe") trennt auch nicht
+    .split(/(?<!\d),|,(?!\d)|;|\n|(?<!\b(?:pck|stk|gr|el|tl))\.(?!\d)|!|\?|\bund\b|\bsowie\b|\bplus\b/i)
     .map((part) => removeFillers(part.split(/\s+/).map((w) => w.replace(/^[„“"'(]+|[„“"')]+$/g, "")).filter(Boolean)))
     .filter((words) => words.length > 0)
     .flatMap(chunksOf)
