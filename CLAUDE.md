@@ -627,6 +627,12 @@ App-Farben fest, nur die Icon-Farbe der Begleitung ist wählbar (10 Farben). Sei
   nur aus den Treffern, bis zu 3 Karten (`tips` an der Antwort, `TipCards`) und
   „Soll ich einen davon eintragen?“; ohne KI dieselbe Erkennung als Regel. Nutzt
   Mia die Tipps, schaltet sie den Baustein frei und sagt, wo sie stehen.
+- Schritt 2 (v0.46): auf `/tipps` oben „Gemerkt“ (Lesezeichen, nur gemerkte
+  ab heute, nach Zeit – `rememberedTips`; Vergangenes fällt still weg, keine
+  Zähler). Termine aus Tipps zeigen im Formular die Zeile „Mehr dazu ·
+  <Seite> · aus Tipps“ (öffnet die Quelle in neuem Fenster); Bearbeiten
+  behält Link und Notiz (`terminExtras` – bis v0.45 gingen sie beim Sichern
+  verloren).
 - Test: `tests/regiontipps.test.ts`; Durchklick `regiontipps` im Scratchpad.
 
 ## Ein Bild für jedes Gericht (v0.36)
