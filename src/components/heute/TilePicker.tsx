@@ -16,6 +16,7 @@ import { showDeleted } from "@/lib/core/toast";
 import { featureOn, setFeature } from "@/lib/core/features";
 import { pushUndo } from "@/lib/core/undo";
 import { buzz } from "@/components/heute/actions";
+import { sortBy, TILE_PICKER } from "@/lib/core/sort";
 import { useTipsMode } from "@/lib/tipps/client";
 
 const TILE_ICONS: Record<HomeTileId, LucideIcon> = {
@@ -65,7 +66,7 @@ export function TilePicker({ onClose, onClosed }: { onClose: () => void; onClose
   return (
     <Sheet title="Kachel hinzufügen" onClose={close} above>
       <ul className="grid grid-cols-2 gap-2 pb-3" aria-label="Kacheln">
-        {HOME_TILES.filter((meta) => !meta.soon && (meta.id !== "tipps" || (tipsMode && tipsMode !== "off"))).map((meta) => {
+        {sortBy(HOME_TILES.filter((meta) => !meta.soon && (meta.id !== "tipps" || (tipsMode && tipsMode !== "off"))), ...TILE_PICKER).map((meta) => {
           const tile = all.find((t) => t.id === meta.id);
           const active = Boolean(tile && isActive(tile));
           const Icon = TILE_ICONS[meta.id] ?? Box;

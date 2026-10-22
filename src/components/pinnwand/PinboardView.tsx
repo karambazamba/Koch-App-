@@ -42,12 +42,9 @@ export function PinboardView() {
     onTranscript: (t) => setText(t.slice(0, PIN_MAX)),
     onEnd: (t) => t && setText(t.slice(0, PIN_MAX)),
   });
+  // Reihenfolge (angeheftet → neueste) kommt aus useBoard (Regel `PINS`)
   const list = board.items;
-  const pinnedFirst = (i: (typeof list & object)[number]) =>
-    i.kind === "pin" && i.pin.data.pinned;
-  const sorted = list
-    ? [...list.filter(pinnedFirst), ...list.filter((i) => !pinnedFirst(i))]
-    : undefined;
+  const sorted = list;
   const selected = list?.find((m) => m.id === open) ?? null;
   const send = () => {
     const pin = createPin(text, me);

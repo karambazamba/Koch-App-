@@ -142,32 +142,6 @@ export function formatAmount(amount: number | null): string {
   return amount === null ? "" : String(amount).replace(".", ",");
 }
 
-/** Beliebtheit: Daumen hoch minus runter, bei Gleichstand öfter gekocht zuerst */
-function popularity(recipe: Recipe): number {
-  return recipe.thumbsUp - recipe.thumbsDown;
-}
-
-type RecipeSort = "zuletzt" | "beliebt";
-
-export function sortRecipes(recipes: Recipe[], sort: RecipeSort): Recipe[] {
-  return [...recipes].sort((a, b) => {
-    if (sort === "beliebt") {
-      return (
-        popularity(b) - popularity(a) ||
-        b.cookedCount - a.cookedCount ||
-        a.title.localeCompare(b.title, "de")
-      );
-    }
-    // Zuletzt gekocht zuerst; nie gekochte danach, neueste zuerst
-    if (a.lastCookedAt !== b.lastCookedAt) {
-      if (!a.lastCookedAt) return 1;
-      if (!b.lastCookedAt) return -1;
-      return b.lastCookedAt.localeCompare(a.lastCookedAt);
-    }
-    return b.createdAt.localeCompare(a.createdAt);
-  });
-}
-
 // --- Speicherung ------------------------------------------------------------
 
 const CATEGORY_VALUES = RECIPE_CATEGORIES.map((c) => c.value);

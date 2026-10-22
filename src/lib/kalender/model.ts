@@ -16,6 +16,7 @@
 import { WEEKDAYS_MO, WEEKDAYS_SHORT_MO } from "@/lib/core/days";
 import { createEntry, type Entry, type Room } from "@/lib/core/entries";
 import { addDays, fromIsoDate } from "@/lib/core/now";
+import { first, sortBy, timeThenCreated } from "@/lib/core/sort";
 
 /** Wiederholung: täglich, wöchentlich (wie der erste Tag), monatlich (gleicher Tag im Monat) oder bestimmte Wochentage (0 = Mo … 6 = So) */
 export type Repeat = { kind: "taeglich" } | { kind: "woechentlich" } | { kind: "monatlich" } | { kind: "wochentage"; days: number[] };
@@ -260,17 +261,16 @@ export const isUrgent = (i: Pick<DayItem, "entry">) => i.entry.typ === "aufgabe"
 /** Platz in der Reihenfolge: "Auf morgen" (seit), sonst wann angelegt – nie das Alphabet */
 const sortStamp = (i: Pick<DayItem, "entry">) => (i.entry.typ === "aufgabe" ? (i.entry.data.seit ?? i.entry.erstellt) : i.entry.erstellt);
 
-/**
- * Innerhalb einer Gruppe (EINE Regel für alle Ansichten): mit Uhrzeit nach
- * Uhrzeit, sonst nach Anlegen – älteste zuerst, neue landen hinten.
- */
-function byTimeThenAge(x: Pick<DayItem, "entry" | "time">, y: Pick<DayItem, "entry" | "time">): number {
-  return Number(x.time === null) - Number(y.time === null) || (x.time ?? "").localeCompare(y.time ?? "") || sortStamp(x).localeCompare(sortStamp(y));
-}
+/** Innerhalb einer Gruppe: Regel `timeThenCreated` aus core/sort (Uhrzeit, sonst Anlegen) */
+const byTimeThenAge = (x: Pick<DayItem, "entry" | "time">, y: Pick<DayItem, "entry" | "time">): number =>
+  timeThenCreated({ time: x.time, stamp: sortStamp(x) }, { time: y.time, stamp: sortStamp(y) });
 
-/** Ein Tag: Erledigtes ans Ende, dringende Aufgaben vorne, dann nach Uhrzeit bzw. Anlegen */
+/** Ganztägiger Termin (ohne Uhrzeit) – steht am Tag vor allem mit Uhrzeit */
+const allDay = (i: Pick<DayItem, "entry" | "time">) => i.entry.typ === "termin" && i.time === null;
+
+/** Ein Tag: Erledigtes ans Ende, dringende Aufgaben vorne, ganztägige Termine, dann nach Uhrzeit bzw. Anlegen */
 export function sortItems(items: DayItem[]): DayItem[] {
-  return [...items].sort((a, b) => Number(a.done) - Number(b.done) || Number(isUrgent(b)) - Number(isUrgent(a)) || byTimeThenAge(a, b));
+  return sortBy(items, first((i) => !i.done), first(isUrgent), first(allDay), byTimeThenAge);
 }
 
 // --- Aufgaben-Übersicht und Startseite ------------------------------------------

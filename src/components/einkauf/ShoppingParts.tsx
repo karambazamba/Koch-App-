@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Check, Info, Plus, Trash2 } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { CARD_LIST, INPUT, INPUT_BASE, LABEL, buttonClass, chipClass } from "@/components/ui/styles";
+import { compareText } from "@/lib/core/sort";
 import {
   addStaple,
   allShops,
@@ -173,7 +174,7 @@ export function EditItemSheet({
 /** Stammliste: gelernte und feste Stammartikel mit Rhythmus */
 export function StaplesSheet({ settings, onClose }: { settings: ShoppingSettings; onClose: () => void }) {
   const [name, setName] = useState("");
-  const staples = settings.staples.filter(isStaple).sort((a, b) => a.name.localeCompare(b.name, "de"));
+  const staples = settings.staples.filter(isStaple).sort((a, b) => compareText(a.name, b.name));
   return (
     <Sheet title="Stammliste" onClose={onClose}>
       <p className="text-sm text-muted">

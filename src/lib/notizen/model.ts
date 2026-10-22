@@ -5,6 +5,7 @@
 
 import { createEntry, type Entry, type Room } from "@/lib/core/entries";
 import { nowIso } from "@/lib/core/now";
+import { NOTES, sortBy, via } from "@/lib/core/sort";
 
 export type NoteItem = { id: string; text: string; done?: boolean };
 
@@ -103,7 +104,7 @@ export function findNote(notes: Note[], query: string): Note | null {
 
 /** Sortierung: angeheftet zuerst, dann zuletzt geändert */
 export function sortNotes(notes: Note[]): Note[] {
-  return [...notes].sort((a, b) => Number(b.data.pinned) - Number(a.data.pinned) || b.geaendert.localeCompare(a.geaendert));
+  return sortBy(notes, ...via((n: Note) => ({ pinned: n.data.pinned, geaendert: n.geaendert }), NOTES));
 }
 
 /** Vorschau: 2–4 Zeilen Text bzw. die ersten Listen-Einträge */

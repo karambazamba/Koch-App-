@@ -11,15 +11,15 @@ export type Section =
   | "getraenke"
   | "sonstiges";
 
-/** Reihenfolge wie im Supermarkt */
+/** Reihenfolge wie der Laufweg im Supermarkt (Regel `SECTION_WALK` in core/sort) */
 export const SECTIONS: { value: Section; label: string; emoji: string }[] = [
   { value: "obst-gemuese", label: "Obst & Gemüse", emoji: "🥕" },
-  { value: "fleisch-fisch", label: "Fleisch & Fisch", emoji: "🥩" },
-  { value: "kuehlregal", label: "Kühlregal", emoji: "🧀" },
   { value: "brot", label: "Brot & Backwaren", emoji: "🥖" },
+  { value: "kuehlregal", label: "Kühlregal", emoji: "🧀" },
+  { value: "fleisch-fisch", label: "Fleisch & Fisch", emoji: "🥩" },
   { value: "vorrat", label: "Vorrat/Trockenware", emoji: "🥫" },
-  { value: "tiefkuehl", label: "Tiefkühl", emoji: "🧊" },
   { value: "getraenke", label: "Getränke", emoji: "🧃" },
+  { value: "tiefkuehl", label: "Tiefkühl", emoji: "🧊" },
   { value: "sonstiges", label: "Sonstiges", emoji: "🛍️" },
 ];
 

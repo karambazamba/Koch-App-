@@ -18,6 +18,7 @@ import { ExternalLink } from "lucide-react";
 import { mondayOf, REMINDERS, removeItem, sanitizeEntry, terminExtras, upsertEntry, weekdayIndex, type CalendarEntry, type Reminder, type Repeat } from "@/lib/kalender/model";
 import { nowIso, todayIso } from "@/lib/core/now";
 import { useProfile } from "@/lib/einstellungen/useProfile";
+import { PERSONS, sortBy } from "@/lib/core/sort";
 import { act } from "@/components/heute/actions";
 
 const LABEL_SUGGESTIONS = ["Kita", "Schule", "Arzt", "Sport", "Café", "Geburtstag"];
@@ -67,7 +68,7 @@ function SourceLink({ href, note }: { href: string; note?: string }) {
 export function EntryForm({ entry, date, kind, onClose }: { entry?: CalendarEntry; date?: string; kind?: "termin" | "aufgabe"; onClose: () => void }) {
   const d = entry?.data;
   const profile = useProfile();
-  const persons = (profile?.persons ?? []).filter((p) => p.name.trim());
+  const persons = sortBy((profile?.persons ?? []).filter((p) => p.name.trim()), ...PERSONS);
   const [typ, setTyp] = useState<"termin" | "aufgabe">(entry?.typ ?? kind ?? "termin");
   const [title, setTitle] = useState(d?.title ?? "");
   // Neue Aufgabe von der Aufgaben-Seite: ohne Tag ("Irgendwann")

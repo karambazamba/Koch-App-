@@ -6,7 +6,8 @@
 import type { Recipe } from "@/lib/essen/cookbook";
 import type { PlanWeek } from "@/lib/essen/mealPlan";
 import { formatTotal, roundSmall, unitFamily } from "@/lib/einkauf/amounts";
-import { SECTIONS, SECTION_VALUES, sectionFor } from "@/lib/einkauf/sections";
+import { SECTIONS, sectionFor } from "@/lib/einkauf/sections";
+import { SHOPPING, sortBy } from "@/lib/core/sort";
 import { EMPTY_LIST, lower, type ListItem, type ShoppingList, type ShoppingSettings, type WeekList } from "@/lib/einkauf/listModel";
 
 export function buildShoppingList(
@@ -97,11 +98,7 @@ export function buildShoppingList(
     };
   });
 
-  const items = [...generated, ...manual].sort(
-    (a, b) =>
-      SECTION_VALUES.indexOf(a.section) - SECTION_VALUES.indexOf(b.section) ||
-      a.name.localeCompare(b.name, "de"),
-  );
+  const items = sortBy([...generated, ...manual], ...SHOPPING);
   const visible = items.filter((i) => !i.hidden);
   return {
     items,

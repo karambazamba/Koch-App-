@@ -4,6 +4,7 @@
 // und Tests gleich rechnen. Form wie die spätere Supabase-Tabelle `tips`.
 
 import { WEEKDAYS_SHORT_MO } from "@/lib/core/days";
+import { sortBy, TIPS } from "@/lib/core/sort";
 import { KARAMBA_VERANSTALTER } from "@/lib/tipps/karamba";
 import { filtersOf, type TipFilter } from "@/lib/tipps/categories";
 
@@ -74,9 +75,9 @@ export function nearTips(tips: Tip[], home: { lat: number; lng: number }, km: nu
   );
 }
 
-/** Nach Beginn; KARAMBA wird nicht bevorzugt – nur bei gleicher Zeit zuerst */
-export function sortTips<T extends Pick<Tip, "beginn" | "titel"> & { karamba?: boolean }>(tips: T[]): T[] {
-  return [...tips].sort((a, b) => a.beginn.localeCompare(b.beginn) || Number(Boolean(b.karamba)) - Number(Boolean(a.karamba)) || a.titel.localeCompare(b.titel));
+/** Regel `TIPS`: Beginn (Tag, Uhrzeit) → KARAMBA nur bei gleicher Zeit → Entfernung → Titel */
+export function sortTips<T extends Pick<Tip, "beginn" | "titel"> & { km?: number; karamba?: boolean }>(tips: T[]): T[] {
+  return sortBy(tips, ...TIPS);
 }
 
 export const tipDate = (t: Pick<Tip, "beginn">) => t.beginn.slice(0, 10);

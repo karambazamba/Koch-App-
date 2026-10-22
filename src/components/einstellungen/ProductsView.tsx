@@ -5,6 +5,7 @@ import { ArrowRight, Plus, Trash2 } from "lucide-react";
 import { shopTone } from "@/lib/einkauf/shopGroups";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD, CARD_LIST, INPUT_BASE, PAGE_MAIN, SECTION_TITLE, SUBTLE, buttonClass, chipClass } from "@/components/ui/styles";
+import { compareText } from "@/lib/core/sort";
 import { SHOP_SUGGESTIONS, addShop, removeProduct, removeShop, setProduct, useShoppingSettings } from "@/lib/einkauf/shoppingList";
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -16,7 +17,7 @@ export function ProductsView() {
   const [product, setProductName] = useState("");
   const [shop, setShop] = useState("");
   if (!settings) return <div className={`${CARD} m-4 h-64 animate-pulse`} />;
-  const products = Object.entries(settings.products).sort(([a], [b]) => a.localeCompare(b, "de"));
+  const products = Object.entries(settings.products).sort(([a], [b]) => compareText(a, b));
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">

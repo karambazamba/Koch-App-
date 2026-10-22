@@ -4,7 +4,11 @@
 // feste Farbe (Punkt) aus einer ruhigen Palette, bis man sie selbst wählt
 // (kommt mit „Läden“).
 
+import { SHOP_GROUPS, sortBy, via } from "@/lib/core/sort";
+
 export type ShopGroup = { shop: string | null; names: string[] };
+
+const byCount = via((g: ShopGroup) => ({ shop: g.shop, count: g.names.length }), SHOP_GROUPS);
 
 /** Läden mit ihren offenen Artikeln (höchstens `max` Gruppen) */
 export function shopGroups(items: { name: string; shop: string }[], max = 3): ShopGroup[] {
@@ -15,9 +19,9 @@ export function shopGroups(items: { name: string; shop: string }[], max = 3): Sh
     if (!shop) loose.push(i.name);
     else map.set(shop, [...(map.get(shop) ?? []), i.name]);
   }
-  const groups: ShopGroup[] = [...map.entries()].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], "de")).map(([shop, names]) => ({ shop, names }));
+  const groups: ShopGroup[] = [...map.entries()].map(([shop, names]) => ({ shop, names }));
   if (loose.length) groups.push({ shop: null, names: loose });
-  return groups.slice(0, max);
+  return sortBy(groups, ...byCount).slice(0, max);
 }
 
 const TONES = 8;

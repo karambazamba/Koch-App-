@@ -13,9 +13,10 @@ import { ArrowLeftRight, BookOpen, Check, Heart, Repeat, Trash2 } from "lucide-r
 import { Sheet } from "@/components/ui/Sheet";
 import { CategoryChip, CategoryDot, categoryLabel } from "@/components/ui/Category";
 import { CARD, CARD_LIST, INPUT, INPUT_BASE, buttonClass, chipClass, tileClass } from "@/components/ui/styles";
-import { RECIPE_CATEGORIES, setRecipeKnown, sortRecipes, type Recipe, type RecipeCategory } from "@/lib/essen/cookbook";
+import { RECIPE_CATEGORIES, setRecipeKnown, type Recipe, type RecipeCategory } from "@/lib/essen/cookbook";
 import { recipeIsKnown } from "@/lib/essen/dishStatus";
 import { guessDishCategory } from "@/lib/essen/dishCategory";
+import { RECIPES, sortBy } from "@/lib/core/sort";
 import type { DaySlot, PlanDay, PlanWeek } from "@/lib/essen/mealPlan";
 
 export { CookAgainSheet, LoadTemplateSheet, SaveTemplateSheet } from "@/components/essen/plan/TemplateSheets";
@@ -142,7 +143,7 @@ export function RecipePickerSheet({
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<RecipeCategory | "alle">(hint ?? "alle");
   const q = query.trim().toLowerCase();
-  const list = sortRecipes(Object.values(recipes), "beliebt").filter(
+  const list = sortBy(Object.values(recipes), ...RECIPES).filter(
     (r) => (filter === "alle" || r.category === filter) && (!q || r.title.toLowerCase().includes(q)),
   );
   const empty = Object.keys(recipes).length === 0;
