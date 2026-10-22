@@ -1849,3 +1849,12 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Server-Abruf mit SSRF-Schutz, Abo-Termine als eigene Ebene in Farbe des
   Kalenders, „In unseren Kalender kopieren“, Aktualisieren beim Öffnen und
   höchstens alle 30 Minuten, Links nicht in der Sicherung (außer auf Wunsch).
+
+## Konten 3a – Anmeldung und Haushalt (v0.52.0)
+
+- Supabase-Konten: Anmelden per E-Mail-Code, Haushalt anlegen oder mit Code
+  beitreten, Einladen (Erwachsene/Kind, 7 Tage, Teilen-Text), Abmelden mit
+  Frage, Konto löschen und Daten exportieren. Tabellen mit RLS und
+  Spalten-Rechten, Migration in `supabase/migrations/`, Datenbank-Test gegen
+  echtes Postgres, Test-Backend für den Durchklick mit zwei Browsern. Ohne
+  Variablen bleibt alles wie bisher. Teilen der Einträge folgt mit 3b.

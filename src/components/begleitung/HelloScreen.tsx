@@ -26,6 +26,7 @@ import { HelloTiles, fadeOutGhost } from "@/components/begleitung/HelloTiles";
 import { DEFAULT_HELPER, avatarHex, helperName } from "@/lib/einstellungen/profile";
 import { openHelper } from "@/lib/begleitung/open";
 import { primeMicrophone } from "@/lib/begleitung/useSpeechInput";
+import { useCloudMode } from "@/lib/konten/backend";
 import { showToast } from "@/lib/core/toast";
 import { startFresh } from "@/lib/einstellungen/welcomeStore";
 import { expectReplace } from "@/lib/core/navigation";
@@ -66,6 +67,8 @@ export function HelloScreen() {
   const path = usePathname();
   const color = avatarHex(DEFAULT_HELPER.farbe);
   const name = helperName(null);
+  // Konten eingerichtet? Dann leise „Anmelden“ (lädt Supabase nicht)
+  const cloud = useCloudMode();
   const title = `Hallo, ich bin ${name}.`;
   const ready = usePageReady();
   useEffect(markHelloShown, []);
@@ -210,6 +213,11 @@ export function HelloScreen() {
           <Link href="/profil/daten" className="hit inline-flex h-11 items-center gap-1 whitespace-nowrap text-[clamp(12px,3.6vw,14px)] font-semibold text-muted">
             Schon mal genutzt? <span className="text-accent-strong">Daten wiederherstellen</span>
           </Link>
+          {(cloud === "supabase" || cloud === "test") && (
+            <Link href="/konto?von=hallo" className="hit -mt-2 inline-flex h-9 items-center text-[clamp(12px,3.6vw,14px)] font-semibold text-accent-strong">
+              Anmelden
+            </Link>
+          )}
         </div>
       </div>
     </main>

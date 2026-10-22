@@ -1,0 +1,5 @@
+# Supabase-Projekt „was-gibts“ (Frankfurt). Migrationen in supabase/migrations
+# werden beim Merge auf main über die GitHub-Integration eingespielt.
+# Kein Branching (Free-Plan). Einstellungen (Auth, SMTP, Vorlagen) liegen im
+# Supabase-Dashboard, nicht hier.
+project_id = "was-gibts"

@@ -25,6 +25,12 @@ describe("Regeln für den Code", () => {
     const allowed = new Set(["components/ui/Sheet.tsx", "components/ui/ConfirmDialog.tsx", "components/heute/AddTileTip.tsx"]);
     expect(hits((code, file) => (allowed.has(file) ? [] : [...stripComments(code).matchAll(/(?<!\[)role=["{]["']?(dialog|alertdialog)/g)].map((m) => m[0])))).toEqual([]);
   });
+
+  it("geheimer Supabase-Schlüssel nur auf dem Server (serverEnv.ts, API-Routen)", () => {
+    const server = (file: string) => file === "lib/konten/serverEnv.ts" || file.startsWith("app/api/");
+    expect(hits((code, file) => (server(file) ? [] : [...stripComments(code).matchAll(/SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET_KEY|supabaseSecret/g)].map((m) => m[0])))).toEqual([]);
+    expect(hits((code, file) => (file.startsWith("app/api/") && /supabaseSecret/.test(code) && /^["']use client["']/.test(code) ? ["use client"] : []))).toEqual([]);
+  });
 });
 
 describe("Regeln für sichtbare Texte", () => {

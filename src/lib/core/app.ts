@@ -5,7 +5,7 @@ export const APP_NAME = "Was gibt’s?";
 export const APP_SHORT_NAME = "Was gibt’s?";
 
 /** Versionsnummer (wie in package.json) – in den Einstellungen unter "Daten & App" */
-export const APP_VERSION = "0.51.1";
+export const APP_VERSION = "0.52.0";
 
 /** Tag der Auslieferung (beim Bauen gesetzt, next.config.ts) */
 const APP_BUILD_DATE = process.env.BUILD_DATE ?? "";
@@ -37,12 +37,6 @@ export const FARBE_COOKIE = "farbe";
 export const iconFor = (farbe: string | undefined, file: string) => `/icons/${ICON_FARBEN.includes(farbe ?? "") ? farbe : "orange"}/${file.replace(/(\.\w+)$/, `-${ICON_VERSION}$1`)}`;
 /** Farben mit eigenem Icon-Satz (wie AVATAR_COLORS) */
 const ICON_FARBEN = ["orange", "nachtblau", "himmelblau", "lila", "beere", "rosa", "koralle", "senf", "waldgruen", "anthrazit"];
-
-/**
- * Daten liegen nur auf diesem Gerät (noch keine Konten/Cloud-Sicherung). Solange
- * das so ist, warnt die App vor dem Entfernen der Homescreen-App.
- */
-export const CLOUD_SYNC = false;
 
 /** Lottes Gesicht für Push-Mitteilungen (orange Kreis, aus scripts/generate-icons.mjs) */
 export const BEGLEITUNG_PUSH_ICON = icon("lotte-192.png");
