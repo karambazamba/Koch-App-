@@ -472,6 +472,7 @@ function mockModel(): CreateMessage {
     if (day) {
       const content = String(resultFor(day.name) ?? "");
       if (/^(timer_stellen|timer_stoppen|stoppuhr|kochen_starten|kochschritt|timer_status|sport_statistik)$/.test(day.name)) return text(`${content.replace(/^Läuft gleich \(die App startet ihn sofort\): /, "Läuft: ")} (Testmodus)`);
+      if (day.name === "haushalt_vorstellen") return text(`Schön, euch kennenzulernen! ${content.replace(/^Vorgemerkt[^:]*: /, "").replace(/\. Antworte.*$/, "")} – tipp unten auf Übernehmen. (Testmodus)`);
       if (day.name === "assistent_anpassen") return text(`${content.replace(/^Vorgemerkt[^:]*: /, "")} Tipp unten auf Übernehmen. (Testmodus)`);
       return text(`${content.replace(/^Vorgemerkt[^:]*: /, "Klar: ")} Tipp unten auf Übernehmen. (Testmodus)`);
     }

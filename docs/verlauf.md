@@ -1823,3 +1823,13 @@ Fehler in `docs/aufraeumen-nachher.md`.
   allen, die die alte Sprechblase gesehen haben), Zurück/Escape, Scroll-Sperre,
   Fokus bleibt im Tipp, Zurücksetzen nur im Testmodus („Einmal-Hinweise
   zurücksetzen“). Durchklick zusätzlich iPhone SE und dunkel.
+
+## Begrüßung neu (v0.49.0)
+
+- Hallo-Bildschirm nach Tafel 19: Pastell-Kacheln, Begleitung, „Euer Alltag
+  an einem Ort.“, Sprech-Knopf mit direktem Einsprechen, „Daten
+  wiederherstellen“ statt „Ich habe eine Sicherung“. Neuer Op
+  `set_household` („Ich bin Felix, wir sind Lisa und drei Kinder“), Werkzeug
+  `haushalt_vorstellen`. Durchklick `hallo2` (10× frisch, passt ohne Scrollen
+  auf SE/15 Pro/Pro Max/Pixel 7, Sprech-Knopf mit Schein-Mikrofon, abgelehnt,
+  Link).

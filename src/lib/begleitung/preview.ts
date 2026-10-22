@@ -13,6 +13,7 @@ import { bausteinOf, type Feature } from "@/lib/core/features";
 import { formatPantryItem, PANTRY_PLACES } from "@/lib/vorrat/pantry";
 import { formatWeekRange, planForWeek } from "@/lib/essen/weekPlan";
 import { sportById } from "@/lib/sport/model";
+import { householdIntroSummary } from "@/lib/einstellungen/householdIntro";
 import { berlinTime } from "@/lib/core/now";
 import {
   applyOps,
@@ -275,6 +276,8 @@ function describe(
       const after = [h.name, h.art ? (h.art === "assistent" ? "Assistent · männliche Stimme" : "Assistentin · weibliche Stimme") : null, color].filter(Boolean).join(" · ");
       return { opId: op.id, group: "Begleitung", order: 25_650, label: "Ich", before: state.profile.helper.name, after };
     }
+    case "set_household":
+      return { opId: op.id, group: "Familie", order: 25_660, label: "Wer dazugehört", before: null, after: householdIntroSummary(op.intro, state.profile) };
     case "set_jetzt":
       return { opId: op.id, group: "Startseite", order: 25_700, label: "Jetzt-Karte", before: null, after: op.on ? "✨ an" : "aus" };
     case "add_training": {
