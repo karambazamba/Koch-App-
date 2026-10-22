@@ -186,7 +186,8 @@ export function weatherQuestion(text: string, today: string): { date: string; la
     d.setUTCDate(d.getUTCDate() + n);
     return d.toISOString().slice(0, 10);
   };
-  if (/\bübermorgen\b/.test(t)) return { date: add(2), label: "Übermorgen", umbrella };
+  // Kein \b vor „ü“: in JS-Regex ist „ü“ kein Wortzeichen, \bübermorgen griff nie
+  if (/übermorgen\b/.test(t)) return { date: add(2), label: "Übermorgen", umbrella };
   if (/\bmorgen\b/.test(t)) return { date: add(1), label: "Morgen", umbrella };
   const wd = WEEKDAYS.findIndex((d) => t.includes(d));
   if (wd >= 0) {
