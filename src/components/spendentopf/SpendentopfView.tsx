@@ -14,7 +14,7 @@ import { SwitchRow, Row } from "@/components/einstellungen/settings/SettingsPart
 import { todayIso } from "@/lib/core/now";
 import { useToday } from "@/lib/essen/weekPlan";
 import { POT_TEXTS, activePot, euro, fallbackRegion, potPhase, potTotal, projectVotes, projectsFor, voteDaysLeft } from "@/lib/spendentopf/model";
-import { PATE_MAIL, type PotProject } from "@/lib/spendentopf/regions";
+import { PATE_MAIL, isKarambaPate, type PotProject } from "@/lib/spendentopf/regions";
 import { changePot, useFamilyRegion, usePotState } from "@/lib/spendentopf/store";
 import { buzz } from "@/components/heute/actions";
 import { PotGraphic } from "@/components/spendentopf/PotGraphic";
@@ -56,7 +56,7 @@ export function SpendentopfView() {
                 <HeartHandshake className="mt-0.5 h-5 w-5 shrink-0 text-karamba" strokeWidth={2} aria-hidden />
                 <span className="flex flex-col">
                   <span className="text-base font-bold">
-                    Pate: <span className={pot.pate_name === "KARAMBA" ? "text-karamba" : ""}>{pot.pate_name}</span>
+                    Pate: <span className={isKarambaPate(pot.pate_name) ? "text-karamba" : ""}>{pot.pate_name}</span>
                   </span>
                   <span className="text-sm text-muted">{pot.pate_text}</span>
                 </span>

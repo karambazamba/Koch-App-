@@ -20,7 +20,7 @@ im Repo liegt nur diese Vorlage. Keine Schlüssel hier eintragen.
     <p style="margin:0 0 12px;font-size:40px;font-weight:800;letter-spacing:8px;color:#EE5F14">{{ .Token }}</p>
     <p style="margin:0;font-size:15px;color:#6b625a">Gilt 15 Minuten. Einfach in der App eintippen.</p>
   </div>
-  <p style="max-width:420px;margin:16px auto 0;text-align:center;font-size:12px;color:#8a8178">Mia · möglich gemacht von KARAMBA, Eutin</p>
+  <p style="max-width:420px;margin:16px auto 0;text-align:center;font-size:12px;color:#8a8178">Mia · Gemacht in Eutin · von KARAMBA Eis</p>
 </div>
 ```
 

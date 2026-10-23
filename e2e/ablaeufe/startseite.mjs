@@ -110,3 +110,41 @@ export const jetztKarte = async (page, check) => {
   await page.waitForTimeout(1200);
   check(!/Versichertenkarte/.test(await card.innerText()), "erledigt bleibt heute weg");
 };
+
+/**
+ * Hallo-Bildschirm: nach 2 s springt Mia einmal vor Freude und sagt „Ich bin
+ * bereit!“ (Sprechblase ganz im Bild – auch auf dem iPhone SE); Antippen →
+ * „Hihi, kitzelig!“ (im Sprung erst danach); unten „Gemacht in Eutin · von
+ * KARAMBA Eis“.
+ */
+export const halloSprung = async (page, check, device) => {
+  // Bewegung reduzieren: kein Sprung, nur die Sprechblase
+  await page.goto(BASE);
+  await page.locator('[data-hello="laeuft"]').waitFor({ timeout: 8000 });
+  await page.getByText("Ich bin bereit!").waitFor({ timeout: 4000 }).catch(() => {});
+  check(await page.getByText("Ich bin bereit!").isVisible(), "Bewegung reduzieren: Sprechblase kommt");
+  check((await page.locator('.hello-jump[data-sprung="an"]').count()) === 0, "Bewegung reduzieren: kein Sprung");
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  const sizes = [null, { width: 320, height: 568 }];
+  for (const size of sizes) {
+    if (size) await page.setViewportSize(size);
+    await page.goto(BASE);
+    await page.locator('[data-hello="laeuft"]').waitFor({ timeout: 8000 });
+    const where = size ? "iPhone SE" : device;
+    check(await page.locator(".hello-jump[data-sprung]").count() === 0, `${where}: vor 2 s noch kein Sprung`);
+    await page.waitForTimeout(2300);
+    check((await page.locator('.hello-jump[data-sprung="an"]').count()) === 1, `${where}: Sprung läuft`);
+    const bubble = page.getByText("Ich bin bereit!");
+    await bubble.waitFor({ timeout: 2500 });
+    const box = await bubble.boundingBox();
+    const vw = page.viewportSize().width;
+    check(Boolean(box && box.x >= 0 && box.x + box.width <= vw && box.y >= 0), `${where}: „Ich bin bereit!“ ganz im Bild (${box ? `${Math.round(box.x)}–${Math.round(box.x + box.width)} von ${vw}` : "fehlt"})`);
+    check(await page.getByText("Gemacht in Eutin · von KARAMBA Eis").isVisible(), `${where}: unten „Gemacht in Eutin · von KARAMBA Eis“`);
+    // Antippen während des Sprungs: erst danach kitzelig
+    await page.locator("[data-hello]").click({ force: true });
+    check(!(await page.getByText("Hihi, kitzelig!").count()), `${where}: im Sprung noch nicht`);
+    await page.getByText("Hihi, kitzelig!").waitFor({ timeout: 3500 }).catch(() => {});
+    check(await page.getByText("Hihi, kitzelig!").isVisible(), `${where}: danach „Hihi, kitzelig!“`);
+    check((await page.locator('.hello-jump[data-kitzel="an"]').count()) === 1, `${where}: wackelt kitzelig`);
+  }
+};

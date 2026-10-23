@@ -43,7 +43,7 @@ export const hallo2 = async (page, check) => {
   check(await page.locator("h1 .text-accent").innerText() === "Mia.", "„Mia.“ in Orange");
   check(await page.getByText("Erzähl mir einfach, was ansteht. Ich sortiere für euch.").isVisible(), "Zeile „Erzähl mir einfach …“");
   check((await page.locator("[data-tone]").count()) === 0 && !(await page.getByText("Euer Alltag an einem Ort.").count()), "keine Deko-Kacheln, alte Zeile weg");
-  check(await page.locator("[data-hello-marke] [data-brand=lockup]").isVisible() && (await page.getByText("möglich gemacht von KARAMBA").isVisible()), "unten Marke + „möglich gemacht von KARAMBA“");
+  check(await page.locator("[data-hello-marke] [data-brand=lockup]").isVisible() && (await page.getByText("Gemacht in Eutin · von KARAMBA Eis").isVisible()), "unten Marke + „Gemacht in Eutin · von KARAMBA Eis“");
   check(!(await page.getByText(/Anmelden/).count()), "kein Anmelden-Link auf der Begrüßung");
 
   // Link → Daten & App

@@ -46,7 +46,7 @@ export const TIP_TOOLS: BegleitungTool[] = [
       return {
         content: [
           "Treffer (werden als Karten angezeigt – nur diese nennen):",
-          ...hits.map((t) => `- ${t.titel} · ${DAY[weekday(t.beginn.slice(0, 10))]} ${t.beginn.slice(0, 10)} ${t.ganztags ? "ganztägig" : t.beginn.slice(11, 16)} · ${t.ort_name} (${Math.round(t.km)} km)${t.fuer_kinder ? " · für Kinder" : ""}${t.drinnen ? " · drinnen" : t.drinnen === false ? " · draußen" : ""}${t.kostenlos ? " · kostenlos" : ""}${t.karamba ? " · von KARAMBA" : ""}${t.quelle === "demo" ? " · Beispiel" : ""}`),
+          ...hits.map((t) => `- ${t.titel} · ${DAY[weekday(t.beginn.slice(0, 10))]} ${t.beginn.slice(0, 10)} ${t.ganztags ? "ganztägig" : t.beginn.slice(11, 16)} · ${t.ort_name} (${Math.round(t.km)} km)${t.fuer_kinder ? " · für Kinder" : ""}${t.drinnen ? " · drinnen" : t.drinnen === false ? " · draußen" : ""}${t.kostenlos ? " · kostenlos" : ""}${t.karamba ? " · von KARAMBA Eis" : ""}${t.quelle === "demo" ? " · Beispiel" : ""}`),
         ].join("\n"),
       };
     },

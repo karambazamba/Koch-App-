@@ -283,10 +283,23 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   ich bin Mia.“ („Mia.“ in Orange), „Erzähl mir einfach, was ansteht. Ich
   sortiere für euch.“, „Los geht’s“ (`startFresh`), „Schon mal genutzt? Daten
   wiederherstellen“ (`/profil/daten`), klein die Marke (BrandMark, gedämpft)
-  und „möglich gemacht von KARAMBA“. Die Deko-Kacheln und die Leiste mit Mikro
-  sind weg. Ablauf: 0 s Mia, 0,95 s Überschrift tippt, 1,8 s Zeile, 2,2 s
-  Knopf, Link und Marke. Beim Start fliegt
-  Mia in die Jetzt-Karte. Bewegung reduzieren = alles sofort, kein Puls.
+  und „Gemacht in Eutin · von KARAMBA Eis“ (immer „KARAMBA Eis“). Die
+  Deko-Kacheln und die Leiste mit Mikro sind weg. Ablauf (`HELLO_T` in
+  `core/hello.ts`): 0 s Mia, 0,95 s Überschrift tippt, 1,8 s Zeile, 2,0 s
+  Freudensprung, 2,2 s Knopf, Link und Marke. Beim Start fliegt Mia in die
+  Jetzt-Karte.
+- Freudensprung (v0.68.1, einmal je Anzeige, ohne Antippen, 2,8 s, nur
+  transform/opacity): ducken (Augen ^ ^) → Sprung bis ~115 px (auf kleinen
+  Bildschirmen nur so hoch, wie oben Platz ist, `--jump`) mit einer Drehung
+  → Landung breit, federt aus, Mund lacht, 8 Funken (`--app-spark-*`),
+  leichtes Vibrieren → ab 1,05 s Sprechblase „Ich bin bereit!“ oben rechts
+  (`HELLO_READY`, 2,5 s) → zwei kleine Hüpfer; „Los geht’s“ pulsiert bei
+  2,15 s und 2,8 s; der Schatten wird im Sprung kleiner und heller
+  (`helloJump`). Neuaufbau mitten in der Begrüßung: kein zweiter Sprung.
+  Bewegung reduzieren: kein Sprung, nur die Sprechblase.
+- Antippen = kitzelig: ~1 s kichernd hin und her (±10°, gedämpft), Augen ^ ^,
+  Mund lacht, drei Herzen, Sprechblase (`HELLO_TAPS`: zuerst „Hihi,
+  kitzelig!“, danach im Wechsel); im Sprung erst danach.
 - Erster Satz wie jede Nachricht (KI zuerst): „Ich bin Felix, wir sind Lisa
   und drei Kinder“ → Op `set_household` (Werkzeug `haushalt_vorstellen`, ohne
   KI `parseHouseholdIntro` in `einstellungen/householdIntro.ts`) mit Vorschau

@@ -2075,3 +2075,12 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Zähler, ✕ und „Passt sich deinem Tag an“.
 - „Alles ruhig – ich sag Bescheid.“, wenn nichts ansteht.
 
+## Hallo-Bildschirm: Freudensprung + „KARAMBA Eis“ (v0.68.1)
+
+- Nach 2 s springt Mia einmal vor Freude (ducken, eine Drehung, Landung mit
+  Funken, zwei kleine Hüpfer) und sagt „Ich bin bereit!“; „Los geht’s“
+  pulsiert zweimal. Antippen macht sie kitzelig (wackeln, Herzen, „Hihi,
+  kitzelig!“).
+- Unten „Gemacht in Eutin · von KARAMBA Eis“. Regel: immer „KARAMBA Eis“,
+  nie nur „KARAMBA“ (Test in `tests/app/regeln.test.ts`).
+

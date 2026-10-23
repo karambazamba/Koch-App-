@@ -187,10 +187,10 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - **Tipps aus der Region:** keine Termine, eigene lila Ebene, bis jemand
   „Übernehmen“ tippt. Kein GPS. KARAMBA nie bevorzugt (nur bei gleicher
   Uhrzeit zuerst, höchstens eine pro Woche in der Kachel), sichtbar „von
-  KARAMBA“. Nur offene Lizenzen (CC0/CC BY/CC BY-SA). `TIPS_SOURCE` off/demo/
+  KARAMBA Eis“. Nur offene Lizenzen (CC0/CC BY/CC BY-SA). `TIPS_SOURCE` off/demo/
   tldb, Zugang nie im Code. → `docs/bereiche/tipps.md`
 - **Spendentopf:** keine Zahlung in der App, Beiträge nur „zugesagt“. Texte
-  nur aus `POT_TEXTS`, nie „an KARAMBA“ – das Geld geht in die Region. Die App
+  nur aus `POT_TEXTS`, nie „an KARAMBA Eis“ – das Geld geht in die Region. Die App
   bleibt ohne Beitrag kostenlos. → `docs/bereiche/spendentopf.md`
 - **Wetter:** ehrliche Regel – Regenstunde = ≥ 0,2 mm UND ≥ 50 %, Tage immer
   aus den Stunden 7–21 Uhr. → `docs/bereiche/wetter.md`
@@ -207,6 +207,11 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - **Bilder der Gerichte:** eigene Zeichnungen im Code, keine fremden Fotos,
   keine KI (`docs/credits.md`); neues eingebautes Gericht → `npm run
   gerichte-bilder`. → `docs/bereiche/essen.md`
+
+- **Name KARAMBA:** immer „KARAMBA Eis“, nie nur „KARAMBA“ (Verwechslung
+  mit einem Online-Casino) – in allen Texten (Tipps „von KARAMBA Eis“,
+  Spendentopf, Mails, „Über Mia“, Hallo-Bildschirm „Gemacht in Eutin · von
+  KARAMBA Eis“). Test in `tests/app/regeln.test.ts`.
 
 ## Roadmap
 - Phase 1: Konten + Haushalt (Supabase) – Anmeldung, Haushalt mit Mitgliedern,
