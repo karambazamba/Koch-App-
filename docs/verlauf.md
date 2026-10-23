@@ -1976,3 +1976,14 @@ Fehler in `docs/aufraeumen-nachher.md`.
   in `public/brand/` (`npm run brand`). Komponente `BrandMark`, Tokens
   `--app-brand*`, Regeln in `docs/brand.md`, Vorschau `/brand` nur im
   Testmodus. Die App heißt noch „Was gibt’s?“ (Teil 4 erst nach „Name frei“).
+
+## Marke Mia – Teil 2: zwei Looks „Farbig“ und „Schlicht“ (Tafel 51, v0.64.0)
+- Profil v21: `look` (Standard Farbig) und `calendarColor` (die frühere
+  Lieblingsfarbe). Farbig = Pastell eine Stufe kräftiger mit gleicher
+  Sättigung, Innen-Kärtchen weiß, Uhrzeit in Tonfarbe, Wetter als Himmel;
+  Schlicht = weiße Kacheln mit feinem Rand. Wahl beim ersten Start („Wie
+  magst du’s?“), in der Bearbeiten-Leiste („+ Kacheln · Aussehen · Fertig“),
+  unter Einstellungen → Aussehen und per Mia („ruhiger“/„wieder farbig“).
+- Mia und das App-Icon sind immer orange; Farbbefehle an Mia entfallen.
+- Jetzt-Karte ohne Doppelung zu Kacheln, die schon „Morgen“ zeigen;
+  Beispiel-Tag mit echten Terminen statt Mahlzeiten.

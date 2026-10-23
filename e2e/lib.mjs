@@ -61,10 +61,18 @@ export async function newPage(browser, device, { dark = false, time = TIME, perm
   return page;
 }
 
-/** Erster Start wie im echten Leben: Hallo → „Los geht’s“ → Startseite mit Beispiel-Tag */
+/** „Los geht’s“ und danach die eine Frage nach dem Look („Weiter“ = Farbig bzw. die Wahl) */
+export async function losGehts(page, look) {
+  await page.getByRole("button", { name: "Los geht’s" }).click();
+  await page.getByRole("heading", { name: "Wie magst du’s?" }).waitFor();
+  if (look === "schlicht") await page.getByRole("radio", { name: /^Schlicht/ }).click();
+  await page.getByRole("button", { name: look === "ueberspringen" ? "Überspringen" : "Weiter" }).click();
+}
+
+/** Erster Start wie im echten Leben: Hallo → „Los geht’s“ → Look → Startseite mit Beispiel-Tag */
 export async function hello(page) {
   await page.goto(BASE);
-  await page.getByRole("button", { name: "Los geht’s" }).click();
+  await losGehts(page);
   await page.getByRole("tab", { name: "Heute", selected: true }).waitFor();
   // Startwerte werden kurz nach dem Hallo gespeichert – erst danach eigene Daten einspielen
   await page.waitForFunction(() => Boolean(localStorage.getItem("familienkueche.haushaltsprofil") && localStorage.getItem("wasgibts.beispiel")));

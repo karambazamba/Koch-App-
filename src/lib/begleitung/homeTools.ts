@@ -146,7 +146,7 @@ export const HOME_TOOLS: BegleitungTool[] = [
     definition: {
       name: "app_befehl",
       description:
-        "Für Bedienung der App, für die es kein eigenes Werkzeug gibt: Ansicht/Farben, Vorlesen, Einstellungen (z. B. 'Jonne isst jetzt vegetarisch', 'Lisa mag keine Pilze', 'Melde dich seltener'), eine neue Person ('Oma wohnt jetzt bei uns'), eigene Produkte ('Wir nehmen immer Alsan statt Butter'), Termine aus Google/Apple übernehmen ('Kalender übernehmen' – öffnet die Seite dafür), Seiten öffnen. text = der Wunsch als kurzer, klarer Satz. Die App führt ihn nach 'Übernehmen' selbst aus.",
+        "Für Bedienung der App, für die es kein eigenes Werkzeug gibt: Ansicht/Farben (hell/dunkel; Startseite 'Mach die Startseite schlichter' bzw. 'wieder farbig'), Vorlesen, Einstellungen (z. B. 'Jonne isst jetzt vegetarisch', 'Lisa mag keine Pilze', 'Melde dich seltener'), eine neue Person ('Oma wohnt jetzt bei uns'), eigene Produkte ('Wir nehmen immer Alsan statt Butter'), Termine aus Google/Apple übernehmen ('Kalender übernehmen' – öffnet die Seite dafür), Seiten öffnen. text = der Wunsch als kurzer, klarer Satz. Die App führt ihn nach 'Übernehmen' selbst aus.",
       input_schema: { type: "object", properties: { text: { type: "string" } }, required: ["text"], additionalProperties: false },
     },
     run: (ctx, raw) => {

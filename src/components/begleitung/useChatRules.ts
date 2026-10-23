@@ -13,7 +13,6 @@ import type { PantryItem } from "@/lib/vorrat/pantry";
 import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { addWish, parseWish, removeWish, wishLabel } from "@/lib/essen/wishes";
 import { settingsChange } from "@/lib/begleitung/settingsChat";
-import { iconChangeHint } from "@/lib/core/homescreen";
 import { isPlanUnlockRequest, unlockPlanning, type UnlockChoice } from "@/lib/essen/planUnlock";
 import { startAddPerson, type OnboardingState } from "@/lib/einstellungen/onboarding/engine";
 import { isAddPersonRequest } from "@/lib/einstellungen/onboarding/recognize";
@@ -325,7 +324,7 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
           {
             role: "assistant",
             local: true,
-            text: setting.profile.helper.farbe !== before.helper.farbe && iconChangeHint() ? `${setting.reply} ${iconChangeHint()}` : setting.reply,
+            text: setting.reply,
             undo: () => {
               saveProfile(before);
               if (voiceBefore !== null) saveSpeechSettings({ voice: voiceBefore });

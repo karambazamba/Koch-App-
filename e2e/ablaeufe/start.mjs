@@ -1,12 +1,19 @@
 // Hallo → Startseite, Bearbeiten-Modus, Wischen zwischen den Seiten
-import { BASE, hello, launch, newPage, seedFamily, setDark, swipe } from "../lib.mjs";
+import { BASE, hello, launch, losGehts, newPage, seedFamily, setDark, swipe } from "../lib.mjs";
 
 export const hallo = async (page, check) => {
   await page.goto(BASE);
   const hi = await page.getByText("Hallo, ich bin Mia.").waitFor({ timeout: 5000 }).then(() => true, () => false);
   check(hi, "Hallo-Bildschirm „Hallo, ich bin Mia.“");
+  // Danach EINE Frage: der Look (Farbig vorausgewählt), Antippen zeigt ihn sofort
   await page.getByRole("button", { name: "Los geht’s" }).click();
+  check(await page.getByRole("heading", { name: "Wie magst du’s?" }).waitFor({ timeout: 4000 }).then(() => true, () => false), "„Wie magst du’s?“ nach „Los geht’s“");
+  check((await page.getByRole("radio", { name: /^Farbig/ }).getAttribute("aria-checked")) === "true", "Farbig ist vorausgewählt");
+  await page.getByRole("radio", { name: /^Schlicht/ }).click();
+  check((await page.evaluate(() => document.documentElement.dataset.look)) === "schlicht", "Antippen zeigt Schlicht sofort");
+  await page.getByRole("button", { name: "Weiter" }).click();
   await page.waitForTimeout(900);
+  check((await page.evaluate(() => JSON.parse(localStorage.getItem("familienkueche.haushaltsprofil") || "{}").look)) === "schlicht", "Wahl im Profil gespeichert");
   check(await page.getByRole("tab", { name: "Heute", selected: true }).isVisible(), "danach die Startseite (Heute)");
   check(await page.getByText("So sieht ein Tag aus").isVisible(), "Beispiel-Tag mit „So sieht ein Tag aus“");
   check((await page.locator("[data-jetzt]").count()) > 0, "Jetzt-Karte oben");
@@ -63,11 +70,12 @@ export const hallo2 = async (page, check, device) => {
   await page.waitForURL(/\/profil\/daten/, { timeout: 5000 }).catch(() => {});
   check(page.url().includes("/profil/daten"), "Link öffnet /profil/daten");
 
-  // „Los geht’s“ → Startseite
+  // „Los geht’s“ → Überspringen → Startseite (Farbig)
   await page.goto(BASE);
-  await page.getByRole("button", { name: "Los geht’s" }).click();
+  await losGehts(page, "ueberspringen");
   await page.waitForTimeout(900);
-  check(await page.getByRole("tab", { name: "Heute", selected: true }).isVisible(), "„Los geht’s“ → Startseite");
+  check(await page.getByRole("tab", { name: "Heute", selected: true }).isVisible(), "„Los geht’s“ → Überspringen → Startseite");
+  check((await page.evaluate(() => document.documentElement.dataset.look)) === "farbig", "Überspringen = Farbig");
 
   // Passt ohne Scrollen: SE, 15 Pro, Pro Max, Pixel 7 – hell und dunkel
   const browser = page.context().browser();

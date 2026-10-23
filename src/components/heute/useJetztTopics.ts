@@ -56,6 +56,8 @@ export type JetztSource = {
   /** Beispiel-Einkauf statt der echten Liste */
   demoShop: boolean;
   firstTiles: HomeTileId[];
+  /** Kacheln, die schon „Morgen“ zeigen (Termine bzw. Wetter von morgen) */
+  tomorrowTiles?: HomeTileId[];
 };
 
 const termin = (i: DayItem): JetztTermin => ({
@@ -121,6 +123,7 @@ export function useJetztTopics(src: JetztSource) {
     weekCheck: src.weekCheck && state.weekOff !== src.weekCheck ? src.weekCheck : null,
     demo: src.demo,
     firstTiles: src.firstTiles,
+    tomorrowTiles: src.tomorrowTiles ?? [],
     weights: state.weights,
     hidden: hiddenToday(state, src.today),
   };

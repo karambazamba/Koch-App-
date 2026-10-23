@@ -282,6 +282,10 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     demoShop: demoDay.tiles.includes("einkauf"),
     weekCheck: demoDay.tiles.length || paused || (evening && routine.ruhe) ? null : weekCheckKey(data.todayIso, minutes),
     firstTiles,
+    tomorrowTiles: [
+      ...((demoDay.termine && demoDay.label && visible.some((t) => t.id === "termine")) || visible.some((t) => t.id === "morgen") ? (["termine"] as HomeTileId[]) : []),
+      ...(view.weatherTomorrow && visible.some((t) => t.id === "wetter") ? (["wetter"] as HomeTileId[]) : []),
+    ],
   });
   const openTopic = (t: JetztTopic) => {
     noteJetztTap(t.kind);
@@ -400,7 +404,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
           {editing.on && <div className="min-h-24 flex-1" aria-hidden />}
         </div>
       </Pressable>
-      {editing.on && !picking && <EditDoneBar onDone={editing.close} />}
+      {editing.on && !picking && <EditDoneBar onDone={editing.close} onAdd={() => setPicking(true)} />}
     </>
   );
 }

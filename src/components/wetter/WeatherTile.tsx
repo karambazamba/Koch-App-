@@ -1,6 +1,7 @@
 "use client";
 
-// WETTER (Standard S, Pastell-Gelb, eigenes Symbol-Set, keine Emojis):
+// WETTER (Standard S; Look „Farbig“ als Himmel je Wetterlage, nachts
+// Nachtblau – Look „Schlicht“ weiß; eigenes Symbol-Set, keine Emojis):
 // S = Symbol + Temperatur + EIN Satz; M = + Morgens/Mittags/Abends; L = + die
 // nächsten 5 Tage in Worten. Offline: letzte Werte mit "Stand 8:10". Antippen
 // → Wetter-Seite (Heute · Morgen · 7 Tage).
@@ -71,7 +72,7 @@ export function WeatherTile({
   const sentence = tip ?? `${kind.text}${range ? `, bis ${range.max}°` : ""}`;
   const parts = size === "S" ? [] : dayParts(forecast, today);
   return (
-    <Link href="/wetter" className={BOX} data-wx={weatherGroup(forecast.current.code)} aria-label={`${label} – öffnen`}>
+    <Link href="/wetter" className={BOX} data-wx={weatherGroup(forecast.current.code)} data-nacht={minutes < 7 * 60 || minutes >= 20 * 60 ? "" : undefined} aria-label={`${label} – öffnen`}>
       <span className={LABEL}>
         <span className="truncate">{label}</span>
         {stale && <span className="ml-auto shrink-0 font-semibold normal-case tracking-normal">Stand {shortClock(forecast.fetchedAt)}</span>}

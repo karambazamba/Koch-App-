@@ -1,14 +1,14 @@
 import type { MetadataRoute } from "next";
-import { cookies } from "next/headers";
-import { APP_NAME, APP_SHORT_NAME, BRAND_COLOR, FARBE_COOKIE, iconFor } from "@/lib/core/app";
+import { APP_NAME, APP_SHORT_NAME, BRAND_COLOR, iconFor } from "@/lib/core/app";
 
 /**
- * Manifest in der Lieblingsfarbe der Begleitung (Cookie "farbe", beim Wählen
- * gesetzt). Feste id und gleiche URL – so übernimmt Android/Chrome ein neues
- * Icon selbst. Maskable nur für das Icon mit mehr Rand.
+ * Manifest mit dem App-Icon in Mia-Orange (seit v0.64 immer orange, die
+ * Lieblingsfarbe färbt es nicht mehr um). Feste id und gleiche URL – so
+ * übernimmt Android/Chrome ein früher andersfarbiges Icon selbst wieder in
+ * Orange. Maskable nur für das Icon mit mehr Rand.
  */
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
-  const farbe = (await cookies()).get(FARBE_COOKIE)?.value;
+  const farbe = "orange";
   return {
     id: "/",
     name: APP_NAME,

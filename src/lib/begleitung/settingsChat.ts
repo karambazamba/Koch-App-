@@ -22,7 +22,7 @@ export function settingsChange(text: string, profile: HouseholdProfile): Setting
   const t = text.trim().replace(/^[A-ZÄÖÜa-zäöüß]+,\s*/, (m) => (/^(hey|hallo)\b/i.test(m) || m.replace(/,\s*$/, "").toLowerCase() === profile.helper.name.trim().toLowerCase() ? "" : m));
   const lower = t.toLowerCase();
 
-  // Die Begleitung selbst: Name, Art/Stimme, Icon-Farbe
+  // Die Begleitung selbst: Name, Art/Stimme
   const helper = parseHelperCommand(t, profile.helper);
   if (helper) return { profile: { ...profile, helper: helperWith(profile.helper, helper) }, reply: helperReply(helper) };
   const person = findPerson(t, profile.persons);
@@ -66,6 +66,14 @@ export function settingsChange(text: string, profile: HouseholdProfile): Setting
   }
 
   // Ansicht und Darstellung
+  // Look der Startseite: „Mach die Startseite ruhiger / schlichter / weniger bunt“ → Schlicht, „wieder farbig“ → Farbig
+  const lookContext = /\b(startseite|kacheln|app|look|aussehen|design|alles|farben?)\b/i.test(lower);
+  if (/weniger bunt|nicht so bunt/i.test(lower) || (lookContext && /(?<![a-zäöüß])(ruhiger|dezenter|schlichter|sachlicher|schlicht|dezent)(?![a-zäöüß])/i.test(lower))) {
+    return { profile: { ...profile, look: "schlicht" }, reply: "Gemacht ✓ Die Startseite ist jetzt schlicht – helle Kacheln, Farbe nur als Akzent." };
+  }
+  if (/(?<![a-zäöüß])(bunter|farbiger|wieder farbig|wieder bunt)(?![a-zäöüß])/i.test(lower) || (lookContext && /(?<![a-zäöüß])farbig(?![a-zäöüß])/i.test(lower))) {
+    return { profile: { ...profile, look: "farbig" }, reply: "Gemacht ✓ Die Startseite ist wieder farbig." };
+  }
   if (/\b(ansicht|darstellung|app|farben?|modus)\b/i.test(lower) || /dark ?mode|mach'?s? dunkel/i.test(lower)) {
     if (/\b(dunkel|nacht|dark)/i.test(lower)) return { profile: { ...profile, theme: "nacht", themeSet: true }, reply: "Gemacht ✓ Die App ist jetzt dunkel." };
     if (/\bautomatisch|wie das handy/i.test(lower)) return { profile: { ...profile, theme: "auto", themeSet: true }, reply: "Gemacht ✓ Hell oder dunkel – wie das Handy." };

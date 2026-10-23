@@ -40,10 +40,10 @@ export const fertigTippen = async (page, check) => {
   check(await editing(page), "Bearbeiten offen");
   const bar = page
     .locator("[data-keep-edit]")
-    .filter({ hasText: "Irgendwo tippen = fertig" });
+    .filter({ hasText: "Aussehen" });
   check(
     await bar.isVisible(),
-    "Fertig-Leiste unten mit „Irgendwo tippen = fertig“",
+    "Leiste unten mit „+ Kacheln · Aussehen · Fertig“",
   );
   check(
     !(await page.locator("[data-begleitung-leiste]").isVisible()) ||
@@ -67,6 +67,24 @@ export const fertigTippen = async (page, check) => {
   await bar.getByRole("button", { name: "Fertig" }).click();
   await page.waitForTimeout(400);
   check(!(await editing(page)), "Fertig unten = fertig");
+
+  // Aussehen: Farbig | Schlicht wirkt sofort, Bearbeiten bleibt offen
+  await openEdit(page);
+  await bar.getByRole("button", { name: "Aussehen" }).click();
+  await page.waitForTimeout(500);
+  const sheet = page.getByRole("dialog", { name: "Aussehen" });
+  check(await sheet.isVisible(), "„Aussehen“ öffnet das Fenster");
+  await sheet.getByRole("radio", { name: /^Schlicht/ }).click();
+  await page.waitForTimeout(300);
+  check((await page.evaluate(() => document.documentElement.dataset.look)) === "schlicht", "Schlicht wirkt sofort");
+  await sheet.getByRole("radio", { name: /^Farbig/ }).click();
+  await page.waitForTimeout(300);
+  check((await page.evaluate(() => document.documentElement.dataset.look)) === "farbig", "… und zurück zu Farbig");
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(500);
+  check(await editing(page), "Fenster zu – Bearbeiten bleibt offen");
+  await bar.getByRole("button", { name: "Fertig" }).click();
+  await page.waitForTimeout(400);
 
   // S/M/L beendet nicht
   await openEdit(page);

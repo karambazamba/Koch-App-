@@ -128,7 +128,7 @@ function TerminCard({ item, entering, onOpen }: { item: DayItem; entering?: Reac
     <li className={`${TILE_INNER} relative min-w-0 overflow-hidden`} style={entering} data-item={item.key}>
       <span className={`absolute inset-y-0 left-0 w-1 ${roomBarProps(item).className}`} style={roomBarProps(item).style} aria-hidden />
       <button type="button" onClick={onOpen} className="flex min-h-[46px] w-full flex-col justify-center py-1.5 pl-3 pr-3 text-left" aria-label={`${item.time ? clockLabel(item.time) : ""} ${item.title} – Möglichkeiten`}>
-        <span className="text-[13.5px] font-extrabold leading-tight tabular-nums">{item.time ? clockLabel(item.time) : "–"}</span>
+        <span className="text-[13.5px] font-extrabold leading-tight tabular-nums text-tile-accent">{item.time ? clockLabel(item.time) : "–"}</span>
         <span className="line-clamp-2 w-full break-words text-[12.5px] font-semibold leading-snug">{withoutEmoji(item.title)}</span>
       </button>
     </li>

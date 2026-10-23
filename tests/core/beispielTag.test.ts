@@ -38,21 +38,27 @@ describe("Beispiel-Tag (erster Start)", () => {
     if (!dish.tomorrow) expect(d.minutes).toBeLessThan(18 * 60 + 30 + 90);
   });
 
-  it("19:55 → Lieblingsserie 20:15, Ins Bett 22:30 (Fehler: Kaffeepause 21:00)", () => {
-    const d = demoAt("19:55");
+  it("19:00 → nur, was noch kommt: Elternabend 19:30, Lieblingsserie 20:15 (Fehler: Kaffeepause 21:00)", () => {
+    const d = demoAt("19:00");
     expect(d.tomorrow).toBe(false);
     expect(d.termine.map((t) => [t.start, t.title])).toEqual([
+      ["19:30", "Elternabend"],
       ["20:15", "Lieblingsserie"],
-      ["22:30", "Ins Bett"],
     ]);
+  });
+
+  it("echte Termine statt Mahlzeiten (Tafel 51)", () => {
+    const titles = demoAt("06:00").termine.map((t) => t.title);
+    expect(titles).toEqual(["Kita bringen", "Telefonat Versicherung", "Mathis Fußball", "Zahnarzt Jonne", "Elternabend", "Lieblingsserie"]);
+    expect(titles.some((t) => /frühstück|mittag|abendessen|kochen|essen/i.test(t))).toBe(false);
   });
 
   it("weniger als 2 heute → morgen ab dem Morgen; früh der ganze Tag", () => {
     const late = demoAt("21:00");
     expect(late.tomorrow).toBe(true);
     expect(late.date).toBe("2026-10-22");
-    expect(late.termine[0]).toMatchObject({ start: "07:30", title: "Frühstück" });
-    expect(demoAt("06:00").termine.slice(0, 3).map((t) => t.title)).toEqual(["Frühstück", "Kita bringen", "Kaffeepause"]);
+    expect(late.termine[0]).toMatchObject({ start: "08:00", title: "Kita bringen" });
+    expect(demoAt("06:00").termine.slice(0, 3).map((t) => t.title)).toEqual(["Kita bringen", "Telefonat Versicherung", "Mathis Fußball"]);
   });
 
   it("Essen: bis 18:30 + 90 Min Pasta heute, danach Ofengemüse für morgen", () => {

@@ -46,6 +46,14 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 ## So verhält es sich
 
 ### Kacheln
+- Zwei Looks (Profil `look`, `data-look` am `<html>`, Regeln in
+  `globals.css`): „Farbig“ = Pastell-Flächen eine Stufe kräftiger, alle mit
+  gleicher Sättigung (`--app-tile-<id>`/`-ac`, Text ≥ 4,5:1), Überschriften in
+  der dunklen Tonfarbe, Innen-Kärtchen weiß, Wetter als Himmel je Wetterlage
+  (`--app-sky-*`, nachts Nachtblau mit weißer Schrift); „Schlicht“ = weiße
+  Kacheln mit feinem Rand, Innen-Kärtchen sehr hell, Farbe nur in Überschrift,
+  Symbol, Uhrzeit und Termin-Strich. Termine: Uhrzeit fett in der Tonfarbe,
+  Strich links in Raumfarbe. Hell/Dunkel gilt für beide.
 - `HOME_TILES` in Standard-Reihenfolge: Pinnwand (S), Wetter (S), Termine (M),
   Aufgaben (M), Essen (S), Einkauf (S), Spendentopf (nur M), Tipps (M/L,
   Baustein), Timer (S/M), Sport, Notizen, Vorrat (S/M, Baustein), Ausblick morgen (nur M, Kalender-Icon),
@@ -69,9 +77,10 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 ### Bearbeiten-Modus (direkt auf der Startseite)
 - Öffnen: lange drücken, Link „Startseite bearbeiten“ unten, Einstellungen
   oder die Begleitung (`requestHomeEdit`). Schließen (Tafel 24): „Fertig“
-  oben oder in der Fertig-Leiste unten (`EditDoneBar`, ersetzt dort die
-  Leiste der Begleitung: „Festhalten & ziehen / Irgendwo tippen = fertig“,
-  Knopf 48 px), Zurück (eigener Verlaufseintrag), Danebentippen auf freie
+  oben oder in der Leiste unten (`EditDoneBar`, ersetzt dort den Mia-Knopf:
+  „+ Kacheln · Aussehen · Fertig“ mit hellem Verlauf dahinter, seit v0.64;
+  „Aussehen“ öffnet Farbig | Schlicht und Hell | Dunkel | Automatisch, wirkt
+  sofort), Zurück (eigener Verlaufseintrag), Danebentippen auf freie
   Fläche ODER ein kurzer Tipp auf eine Kachel (< 0,35 s, < 8 px, nicht nach
   Schwung). Beim Beenden kurz „✓ Gespeichert“.
 - Kopf (sticky): „+ Kachel“, „Fertig“, Titel und Hinweis. Beim ersten Mal
@@ -125,6 +134,9 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   „Milch, Brot, Butter + Paprika fürs Essen“). Ab ≤ 30 Min gewinnt das Essen
   (80). Ohne Gericht mit Startzeit bleibt der Einkauf bei 40.
 - Regeln: Was die erste Kachel-Reihe zeigt, zählt nur halb (außer mit Tipp).
+  Zeigt eine Kachel schon „Morgen“ (Termine bzw. Ausblick morgen, Wetter von
+  morgen – `tomorrowTiles`), entfällt das reine Morgen- bzw. Wetter-Thema;
+  ein Schirm-Hinweis zu einem Termin bleibt.
   `calm` (Feierabend mit Ruhe oder Wochenende) = nur sanfte Themen. Nachts
   (22–6 Uhr) nur Erinnerung, Timer, Kochen, Pause, Morgen, Geburtstag,
   Beispiel. Arbeit-Termine sind nicht sanft.
@@ -149,9 +161,13 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 ### Beispiel-Tag und erster Start
 - Erster Start ohne Profil: Hallo-Bildschirm („Hallo, ich bin Mia.“ aus
   `DEFAULT_HELPER`, „Ich behalte euren Alltag im Blick.“, Mikrofon-Hinweis,
-  „Los geht’s“, „Ich habe eine Sicherung“). „Los geht’s“ = `startFresh()`:
+  „Los geht’s“, „Ich habe eine Sicherung“). „Los geht’s“ → „Wie magst du’s?“
+  (Look, siehe einstellungen.md) → `startFresh(look)`:
   Standardwerte, `DEFAULT_HOME`, `startDemo()`; der Avatar fliegt in die Jetzt-Karte.
-- Beispiele liegen nie in echten Speichern. Termine aus `DEMO_DAY` (nur was
+- Beispiele liegen nie in echten Speichern. Termine aus `DEMO_DAY` (echte
+  Termine statt Mahlzeiten: 8:00 Kita bringen, 10:30 Telefonat Versicherung,
+  15:00 Mathis Fußball, 16:00 Zahnarzt Jonne, 19:30 Elternabend, 20:15
+  Lieblingsserie; nur was
   heute noch kommt; weniger als 2 → Beispiele für morgen, „Morgen · Do“),
   fünf Beispiel-Aufgaben, Pinnwand-Gruß, Einkauf `DEMO_SHOPS`, Beispielgericht.
 - Eine Zeile oben (`DemoRow`): „So sieht ein Tag aus“ · „Eigenen starten“.

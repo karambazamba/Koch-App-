@@ -3,7 +3,7 @@
 // Übernehmen; abgewählte Änderungen zählen für spätere Zeilen nicht mit.
 
 import type { RecipeCategory } from "@/lib/essen/cookbook";
-import { AVATAR_COLORS, MEAL_TIME_LABELS, personLabel } from "@/lib/einstellungen/profile";
+import { MEAL_TIME_LABELS, personLabel } from "@/lib/einstellungen/profile";
 import { SECTIONS } from "@/lib/einkauf/shoppingList";
 import { REMINDERS, repeatLabel, weekdayShort, type CalendarEntry } from "@/lib/kalender/model";
 import { clockLabel } from "@/lib/kalender/answers";
@@ -272,8 +272,7 @@ function describe(
       return { opId: op.id, group: "Pinnwand", order: 25_600, label: "📌 Pinnwand", before: null, after: op.text };
     case "set_helper": {
       const h = op.helper;
-      const color = h.farbe ? AVATAR_COLORS.find((c) => c.id === h.farbe)?.label : null;
-      const after = [h.name, h.art ? (h.art === "assistent" ? "Assistent · männliche Stimme" : "Assistentin · weibliche Stimme") : null, color].filter(Boolean).join(" · ");
+      const after = [h.name, h.art ? (h.art === "assistent" ? "Assistent · männliche Stimme" : "Assistentin · weibliche Stimme") : null].filter(Boolean).join(" · ");
       return { opId: op.id, group: "Begleitung", order: 25_650, label: "Ich", before: state.profile.helper.name, after };
     }
     case "set_household":

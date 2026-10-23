@@ -1,0 +1,138 @@
+// Zwei Looks „Farbig“ und „Schlicht“ (Tafel 51): Profil v21 mit Migration,
+// Lieblingsfarbe → „Meine Farbe im Kalender“, Mia-Befehle, Jetzt-Karte ohne
+// Doppelung und Kontrast aller Kachel-Farben (beide Looks, hell und dunkel).
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+import { migrateProfile } from "@/lib/einstellungen/profileStore";
+import { createEmptyProfile } from "@/lib/einstellungen/profile";
+import { settingsChange } from "@/lib/begleitung/settingsChat";
+import { jetztTopics, type JetztInput } from "@/lib/heute/jetztTopics";
+
+describe("Profil v21: Look und Kalenderfarbe", () => {
+  it("neue Profile: Farbig, Kalenderfarbe Orange", () => {
+    const p = createEmptyProfile();
+    expect(p.version).toBe(21);
+    expect(p.look).toBe("farbig");
+    expect(p.calendarColor).toBe("orange");
+  });
+
+  it("v20 ohne Look → Farbig; die Lieblingsfarbe der Begleitung wird die Kalenderfarbe", () => {
+    const old = { ...createEmptyProfile(), version: 20, helper: { name: "Mia", art: "assistentin", voice: "weiblich", farbe: "lila" } } as Record<string, unknown>;
+    delete old.look;
+    delete old.calendarColor;
+    const p = migrateProfile(old)!;
+    expect(p.version).toBe(21);
+    expect(p.look).toBe("farbig");
+    expect(p.calendarColor).toBe("lila");
+    // Verstecken heißt nie löschen: die alte Farbe bleibt in den Daten
+    expect(p.helper.farbe).toBe("lila");
+  });
+
+  it("v21 behält Schlicht und die gewählte Kalenderfarbe; Unsinn → Standard", () => {
+    expect(migrateProfile({ ...createEmptyProfile(), look: "schlicht", calendarColor: "senf" })).toMatchObject({ look: "schlicht", calendarColor: "senf" });
+    expect(migrateProfile({ ...createEmptyProfile(), look: "neon", calendarColor: "regenbogen" })).toMatchObject({ look: "farbig", calendarColor: "orange" });
+  });
+});
+
+describe("Mia: ruhiger ↔ farbig", () => {
+  const p = createEmptyProfile();
+  it.each(["Mach die Startseite ruhiger", "Bitte weniger bunt", "Mach die App schlichter", "Die Kacheln sachlicher bitte", "Startseite dezenter"])("„%s“ → Schlicht", (text) => {
+    expect(settingsChange(text, p)?.profile.look).toBe("schlicht");
+  });
+  it.each(["Wieder farbig bitte", "Mach die Startseite bunter", "Kacheln farbiger"])("„%s“ → Farbig", (text) => {
+    expect(settingsChange(text, { ...p, look: "schlicht" })?.profile.look).toBe("farbig");
+  });
+  it("„ruhiger“ ohne Bezug zur Startseite ändert den Look nicht", () => {
+    expect(settingsChange("Sprich ruhiger", p)?.profile.look ?? "farbig").toBe("farbig");
+  });
+  it("Mia bleibt orange: „Mach dich lila“ ändert keine Farbe", () => {
+    const r = settingsChange("Mach dich lila", p);
+    expect(r?.profile.helper.farbe ?? "orange").toBe("orange");
+  });
+});
+
+const input = (over: Partial<JetztInput>): JetztInput => ({
+  minutes: 20 * 60,
+  today: "2026-10-21",
+  calm: false,
+  upcoming: [],
+  tomorrow: { label: "Morgen · Do", date: "2026-10-22", items: [{ title: "Kita bringen", time: "08:00" }], weather: "Morgen 12° · Regen" },
+  urgent: [],
+  dueToday: [],
+  allDone: false,
+  pin: null,
+  weatherTip: "☂️ Morgen früh Regen",
+  weatherNow: null,
+  dish: null,
+  dinnerFree: false,
+  birthdays: [],
+  sport: null,
+  shop: null,
+  timer: null,
+  cookingStep: null,
+  reminder: null,
+  pause: null,
+  leisure: null,
+  tip: null,
+  region: null,
+  weekCheck: null,
+  demo: false,
+  firstTiles: [],
+  weights: {},
+  hidden: [],
+  ...over,
+});
+
+describe("Jetzt-Karte ohne Doppelung", () => {
+  it("ohne Morgen-Kacheln: Morgen- und Wetter-Thema kommen vor", () => {
+    const kinds = jetztTopics(input({})).map((t) => t.kind);
+    expect(kinds).toContain("morgen");
+    expect(kinds).toContain("wetter");
+  });
+  it("Termine-Kachel zeigt schon „Morgen“ → kein reines Morgen-Thema", () => {
+    expect(jetztTopics(input({ tomorrowTiles: ["termine"] })).map((t) => t.kind)).not.toContain("morgen");
+  });
+  it("Wetter-Kachel zeigt morgen → kein reines Wetter-Thema, ein Schirm-Hinweis zum Termin bleibt", () => {
+    expect(jetztTopics(input({ tomorrowTiles: ["wetter"] })).map((t) => t.kind)).not.toContain("wetter");
+    expect(jetztTopics(input({ tomorrowTiles: ["wetter"], weatherTip: "☂️ Ab 15 Uhr Regen – Schirm für Fußball" })).map((t) => t.kind)).toContain("wetter");
+  });
+});
+
+/** Kontrast nach WCAG */
+function contrast(a: string, b: string): number {
+  const lum = (hex: string) => {
+    const [r, g, bl] = [1, 3, 5].map((i) => {
+      const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * bl;
+  };
+  const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m);
+  return (x + 0.05) / (y + 0.05);
+}
+
+describe("Kontrast der Kachel-Farben (2 Looks × hell/dunkel)", () => {
+  const css = readFileSync("src/app/globals.css", "utf8");
+  const block = (start: string) => css.slice(css.indexOf(start), css.indexOf("}", css.indexOf(start)));
+  const tokens = (text: string) => Object.fromEntries([...text.matchAll(/--app-([\w-]+):\s*(#[0-9a-f]{6})\s*;/gi)].map((m) => [m[1], m[2].toLowerCase()]));
+  const light = tokens(block(":root {"));
+  const dark = tokens(block(':root[data-theme="nacht"] {'));
+  const ids = ["pinnwand", "wetter", "termine", "aufgaben", "essen", "einkauf", "tipps", "sport", "vorrat", "timer", "notizen", "spendentopf"];
+
+  it.each(ids)("%s: Tonfarbe auf der Fläche ≥ 4,5:1 (Farbig, hell und dunkel)", (id) => {
+    expect(contrast(light[`tile-${id}-ac`], light[`tile-${id}`])).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(dark[`tile-${id}-ac`], dark[`tile-${id}`])).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(light.ink, light[`tile-${id}`])).toBeGreaterThanOrEqual(4.5);
+  });
+  it.each(ids)("%s: Tonfarbe auf Weiß bzw. dunkler Karte ≥ 4,5:1 (Schlicht)", (id) => {
+    expect(contrast(light[`tile-${id}-ac`], light.surface)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(dark[`tile-${id}-ac`], dark.surface)).toBeGreaterThanOrEqual(4.5);
+  });
+  it("Wetter-Himmel: Schrift lesbar (Tag dunkel, Nacht weiß)", () => {
+    for (const lage of ["sonnig", "bewoelkt", "regen", "schnee", "gewitter"]) {
+      expect(contrast(light["sky-ink"], light[`sky-${lage}-a`])).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(dark["sky-ink"], dark[`sky-${lage}-a`])).toBeGreaterThanOrEqual(4.5);
+    }
+    expect(contrast(light["sky-nacht-ink"], light["sky-nacht-a"])).toBeGreaterThanOrEqual(4.5);
+  });
+});

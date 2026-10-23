@@ -62,7 +62,7 @@ export function everydayUses(latest: string, system: string): Anthropic.Beta.Bet
   }
   // App-Bedienung (Ansicht, Vorlesen, Einstellungen, neue Person, Produkte, Seiten)
   if (greetingCommand(latest) || isCalendarImportRequest(latest) || isWeekCheckRequest(latest)) return tools([{ name: "app_befehl", input: { text: latest } }]);
-  if (/\b(ansicht|dunkel|vorlesen|lies mir|sprich (langsamer|schneller)|melde dich|keine tipps|isst jetzt|mag kein\w*|allergisch|wohnt jetzt|immer .+ statt|zeig mir (alles|unsere rezepte|den vorrat)|koche jetzt spontan)\b/.test(t)) {
+  if (/\b(ansicht|dunkel|ruhiger|schlichter|dezenter|weniger bunt|bunter|farbiger|wieder farbig|vorlesen|lies mir|sprich (langsamer|schneller)|melde dich|keine tipps|isst jetzt|mag kein\w*|allergisch|wohnt jetzt|immer .+ statt|zeig mir (alles|unsere rezepte|den vorrat)|koche jetzt spontan)\b/.test(t)) {
     return tools([{ name: "app_befehl", input: { text: latest } }]);
   }
   return null;

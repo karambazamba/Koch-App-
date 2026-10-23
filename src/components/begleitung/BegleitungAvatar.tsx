@@ -3,7 +3,6 @@
 import type { CSSProperties } from "react";
 import { useAvatarZustand, type AvatarZustand } from "@/lib/core/avatarState";
 import { avatarHex } from "@/lib/einstellungen/profile";
-import { useProfile } from "@/lib/einstellungen/useProfile";
 
 /** Dunkle Icon-Farben bekommen im Dunkel-Modus (und auf der dunklen Leiste) einen feinen hellen Rand */
 const DARK_COLORS = new Set(["#2B4470", "#3E3A37", "#A33B67"]);
@@ -20,9 +19,9 @@ const DARK_COLORS = new Set(["#2B4470", "#3E3A37", "#A33B67"]);
  * und Denk-Punkte.
  */
 export function BegleitungAvatar({ size, color, zustand, groesse: fest, stabil = false }: { size: number; color?: string; zustand?: AvatarZustand; groesse?: "klein" | "gross"; /** Zustand wechselt am selben Element (kein Neuaufbau) – für Abläufe wie den Hallo-Bildschirm */ stabil?: boolean }) {
-  const profile = useProfile();
   const shared = useAvatarZustand();
-  const c = color ?? avatarHex(profile?.helper.farbe);
+  // Mia ist immer orange (Marke); `color` nur für feste Vorschauen
+  const c = color ?? avatarHex("orange");
   const z = zustand ?? shared.zustand;
   // Einmalige Zustände starten bei jedem Auslösen neu (neues Element)
   const key = stabil ? "stabil" : zustand ? z : z === "begruessen" || z === "freuen" || z === "verwirrt" ? `${z}-${shared.nonce}` : z;

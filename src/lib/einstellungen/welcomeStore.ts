@@ -10,6 +10,7 @@ import { DEFAULT_HOME, saveHomeTiles } from "@/lib/core/homeLayout";
 import { setFeature } from "@/lib/core/features";
 import { clearDemoStore, startDemo } from "@/lib/core/demo";
 import { saveProfile } from "@/lib/einstellungen/profileStore";
+import type { AppLook } from "@/lib/einstellungen/profile";
 import { homeTilesFor, profileFrom, startState, type HelpId, type WelcomeState } from "@/lib/einstellungen/welcome";
 
 type WelcomeStore = { version: 1; state: null; help: HelpId[] | null };
@@ -21,8 +22,8 @@ const store = createLocalStore("wasgibts.willkommen", (raw: unknown): WelcomeSto
 });
 
 /** Profil, Startseite und passende Bausteine speichern */
-function finishWelcome(state: WelcomeState) {
-  saveProfile(profileFrom(state));
+function finishWelcome(state: WelcomeState, look: AppLook = "farbig") {
+  saveProfile({ ...profileFrom(state), look });
   saveHomeTiles(homeTilesFor(state.help));
   if (state.help.includes("essen") && state.planStyle === "plan") setFeature("wochenplan", true);
   if (state.help.includes("essen") && state.planStyle === "spontan") setFeature("spontan", true);
@@ -32,12 +33,12 @@ function finishWelcome(state: WelcomeState) {
 }
 
 /**
- * Erster Start ("Los geht's" auf dem Hallo-Bildschirm): ohne weitere Fragen
- * Standardwerte, die Standard-Startseite (Pinnwand + Wetter klein
+ * Erster Start ("Los geht's" auf dem Hallo-Bildschirm, danach höchstens die
+ * eine Frage nach dem Look – Standard „Farbig“): sonst Standardwerte, die Standard-Startseite (Pinnwand + Wetter klein
  * nebeneinander, Termine, Aufgaben, Essen + Einkauf) und die Beispiele darin.
  */
-export function startFresh() {
-  finishWelcome(startState());
+export function startFresh(look: AppLook = "farbig") {
+  finishWelcome(startState(), look);
   saveHomeTiles(DEFAULT_HOME);
   startDemo();
 }

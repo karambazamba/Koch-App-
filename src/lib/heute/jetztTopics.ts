@@ -88,6 +88,9 @@ export type JetztInput = {
   demo: boolean;
   /** Kacheln ganz oben – was sie zeigen, wiederholt die Karte nicht (außer mit Tipp) */
   firstTiles: HomeTileId[];
+  /** Kacheln, die schon „Morgen“ zeigen (Termine/Morgen-Kachel bzw. Wetter von morgen) – dann
+   *  entfällt das reine Morgen- bzw. Wetter-Thema (keine Doppelung, Tafel 51) */
+  tomorrowTiles?: HomeTileId[];
   /** Interesse je Art (lokal gezählt), ausgeblendete Themen von heute */
   weights: Partial<Record<JetztKind, number>>;
   hidden: string[];
@@ -156,7 +159,8 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
 
   if (x.pin) add({ id: `pin:${x.pin.id}`, kind: "pinnwand", title: short(`${x.pin.author}: ${x.pin.text}`, 44), detail: `Neu auf der Pinnwand · ${x.pin.when}`, score: 72, target: { action: "pinnwand" }, tile: "pinnwand", gentle: true });
 
-  if (x.weatherTip) {
+  const tomorrowShown = x.tomorrowTiles ?? [];
+  if (x.weatherTip && (/Schirm für/.test(x.weatherTip) || !tomorrowShown.includes("wetter"))) {
     const withTermin = /Schirm für/.test(x.weatherTip);
     const rainy = /Regen|glatt|Sturm/.test(x.weatherTip);
     add({
@@ -226,7 +230,7 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
 
   if (x.minutes >= 19 * 60 || x.minutes < 6 * 60) {
     const items = x.tomorrow.items.slice(0, 2).map((i) => (i.time ? `${clock(i.time)} ${short(i.title, 18)}` : short(i.title, 22)));
-    if (items.length || x.tomorrow.weather)
+    if ((items.length || x.tomorrow.weather) && !tomorrowShown.length)
       add({ id: `morgen:${x.tomorrow.date}`, kind: "morgen", title: `${x.tomorrow.label}: ${items.length ? items.join(" · ") : "frei"}`, detail: x.tomorrow.weather ?? "Den Tag ansehen", score: night ? 60 : 46, target: { href: `/tag?datum=${x.tomorrow.date}` }, gentle: true });
   }
 

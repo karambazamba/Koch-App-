@@ -26,7 +26,7 @@ const v1 = {
 describe("Migration – alte Versionen", () => {
   it("v1: Personen mit Allergien und „mag nicht“ bleiben, Begleitung heißt Lotte", () => {
     const p = migrateProfile(v1)!;
-    expect(p.version).toBe(20);
+    expect(p.version).toBe(21);
     expect(p.householdName).toBe("Müller");
     expect(p.persons.map((x) => x.name)).toEqual(["Lisa", "Felix", "Mattis", "Ella"]);
     expect(p.persons[0]).toMatchObject({ allergies: ["Nüsse"], dislikes: ["Pilze"], weekdayLunch: "zuhause", employed: null });
@@ -80,7 +80,7 @@ describe("Migration – alte Versionen", () => {
   it("unbekannte Versionen und Unsinn → kein Profil", () => {
     expect(migrateProfile(null)).toBeNull();
     expect(migrateProfile("profil")).toBeNull();
-    expect(migrateProfile({ version: 21 })).toBeNull();
+    expect(migrateProfile({ version: 22 })).toBeNull();
     expect(migrateProfile({})).toBeNull();
   });
 });
@@ -190,7 +190,7 @@ describe("Profil speichern und laden", () => {
     const { localStorage } = fakeWindow({ [KEY]: JSON.stringify(v1) });
     const p = loadProfile()!;
     expect(p.persons.map((x) => x.name)).toEqual(["Lisa", "Felix", "Mattis", "Ella"]);
-    expect(JSON.parse(localStorage.getItem(KEY)!).version).toBe(20);
+    expect(JSON.parse(localStorage.getItem(KEY)!).version).toBe(21);
     expect(loadProfile()).toBe(p);
   });
 

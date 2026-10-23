@@ -1,64 +1,27 @@
 "use client";
 
-// DARSTELLUNG (Automatisch · Hell · Dunkel) in den Einstellungen und die
-// Farbwahl der Begleitung (auf deren Seite /profil/kuechenhelfer). Wirkt sofort.
+// AUSSEHEN in den Einstellungen (Tafel 51): oben die zwei Looks der
+// Startseite als Mini-Vorschauen, darunter Hell · Dunkel · Automatisch und
+// „Meine Farbe im Kalender“. Wirkt sofort. Die Begleitung und das App-Icon
+// sind immer orange (seit v0.64 keine Farbwahl mehr für sie).
 
-import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
-import { ColorDots } from "@/components/begleitung/BegleitungPicker";
-import { useState } from "react";
-import { CARD, NOTE } from "@/components/ui/styles";
-import { iconFor } from "@/lib/core/app";
-import { iconChangeHint } from "@/lib/core/homescreen";
-import { APP_THEMES, type AvatarColor, type HouseholdProfile } from "@/lib/einstellungen/profile";
+import { CARD, SECTION_TITLE } from "@/components/ui/styles";
+import { CalendarColorChoice, LookChoice, ThemeChoice } from "@/components/einstellungen/aussehen/LookChoice";
+import { helperName, type HouseholdProfile } from "@/lib/einstellungen/profile";
 import { saveProfile } from "@/lib/einstellungen/profileStore";
 
 export function DarstellungGroup({ profile }: { profile: HouseholdProfile }) {
   return (
-    <section className="flex flex-col gap-2" aria-label="Darstellung">
-      <h2 className="px-1 text-[15px] font-extrabold text-ink">Darstellung</h2>
-      <div className={`${CARD} flex gap-1 p-1.5`} role="radiogroup" aria-label="Hell oder dunkel">
-        {APP_THEMES.map((t) => (
-          <button
-            key={t.value}
-            type="button"
-            role="radio"
-            aria-checked={profile.theme === t.value}
-            onClick={() => saveProfile({ ...profile, theme: t.value, themeSet: true })}
-            className={`h-11 flex-1 rounded-field text-[15px] font-bold transition ${profile.theme === t.value ? "bg-accent text-on-accent" : "text-muted"}`}
-          >
-            {t.label}
-          </button>
-        ))}
+    <section className="flex flex-col gap-3" aria-label="Aussehen">
+      <h2 className="px-1 text-[15px] font-extrabold text-ink">Aussehen</h2>
+      <LookChoice value={profile.look} onChange={(look) => saveProfile({ ...profile, look })} />
+      <div className={`${CARD} flex flex-col gap-4 p-4`}>
+        <ThemeChoice value={profile.theme} onChange={(theme) => saveProfile({ ...profile, theme, themeSet: true })} />
+        <div className="flex flex-col gap-3">
+          <h3 className={SECTION_TITLE}>Meine Farbe im Kalender</h3>
+          <CalendarColorChoice name={helperName(profile)} value={profile.calendarColor} onChange={(calendarColor) => saveProfile({ ...profile, calendarColor })} />
+        </div>
       </div>
     </section>
-  );
-}
-
-/** Farbe wählen: Gesicht und App-Icon in derselben Farbe; nach einem Wechsel (iPhone-Homescreen-App) der Hinweis zum Icon */
-export function FarbeChoice({ profile, onPick }: { profile: HouseholdProfile; onPick: (farbe: AvatarColor) => void }) {
-  const [hint, setHint] = useState<string | null>(null);
-  return (
-    <>
-      <div className={`${CARD} flex flex-col items-center gap-4 p-5`}>
-        <div className="flex items-end gap-4">
-          <BegleitungAvatar size={96} />
-          {/* eslint-disable-next-line @next/next/no-img-element -- statisches App-Icon in der gewählten Farbe */}
-          <img src={iconFor(profile.helper.farbe, "icon.svg")} alt="App-Icon" width={56} height={56} className="rounded-icon shadow-card" />
-        </div>
-        <ColorDots
-          value={profile.helper.farbe}
-          onChange={(farbe) => {
-            onPick(farbe);
-            setHint(iconChangeHint());
-          }}
-        />
-      </div>
-      {hint && (
-        <p className={NOTE} role="status">
-          {hint}
-        </p>
-      )}
-      <p className="px-1 text-sm text-muted">Mein Gesicht und das App-Icon bekommen die Farbe – alle anderen App-Farben bleiben gleich.</p>
-    </>
   );
 }

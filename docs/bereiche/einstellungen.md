@@ -129,11 +129,27 @@ anfangen).
 - Texte nur über `helperName`, `helperTitle` („deine Assistentin“/„dein
   Assistent“), `helperMessage`.
 
-### Darstellung
+### Aussehen (seit v0.64, Tafel 51)
 
+- Abschnitt „Aussehen“ in `/profil` (`DarstellungGroup`, Bausteine in
+  `components/einstellungen/aussehen/LookChoice.tsx`): oben die zwei Looks
+  der Startseite als Mini-Vorschauen („Farbig“ – farbige Kacheln, „Schlicht“
+  – helle Kacheln, Farbe als Akzent; oranger Rahmen + Haken), darunter Hell ·
+  Dunkel · Automatisch und „Meine Farbe im Kalender“ (10 Farben) mit dem Satz
+  „<Name> und das App-Icon bleiben immer orange.“ Wirkt sofort.
+- Profil v21: `look` (`farbig` | `schlicht`, Standard `farbig`) und
+  `calendarColor` (bis v20 die Lieblingsfarbe der Begleitung `helper.farbe`;
+  die alte Angabe bleibt in den Daten, färbt aber nichts mehr). `data-look`
+  am `<html>` über `applyLook` (`core/theme.ts`, auch im Boot-Skript).
 - `theme`: `warm` (Hell, Standard neuer Profile), `nacht` (Dunkel), `auto`
   (wie das Handy). Umgesetzt in `core/theme.ts` und `ThemeSync` (siehe
   `core.md`).
+- Mia und das App-Icon sind immer orange (`BegleitungAvatar`, `IconSync`,
+  Manifest); die Farbwahl auf Mias Seite und „Mach dich lila“ gibt es nicht
+  mehr.
+- Mia: „Mach die Startseite ruhiger / dezenter / schlichter / sachlicher /
+  weniger bunt“ → Schlicht, „bunter / farbiger / wieder farbig“ → Farbig
+  (`settingsChange`; mit KI als `app_befehl`-Vorschlag mit „Übernehmen“).
 
 ### Mehr Funktionen (`/profil/bausteine`)
 
@@ -165,9 +181,11 @@ anfangen).
 
 ### Erster Start
 
-- „Los geht’s“ = `startFresh()`: `startState()` (Mia, Termine/Essen/Einkauf,
-  „mal so, mal so“), Profil daraus, `DEFAULT_HOME`, `startDemo()`. Keine
-  Fragen; alles Weitere später in den Einstellungen oder per Gespräch.
+- „Los geht’s“ → EIN Bildschirm „Wie magst du’s?“ (`LookStep`, „Jederzeit
+  änderbar.“, Farbig vorausgewählt, Antippen zeigt die Wahl sofort, „Weiter“
+  und leise „Überspringen“) → `startFresh(look)`: `startState()` (Mia,
+  Termine/Essen/Einkauf, „mal so, mal so“), Profil daraus mit dem Look,
+  `DEFAULT_HOME`, `startDemo()`. Sonst keine Fragen.
 
 ## Begleitung (Mia)
 

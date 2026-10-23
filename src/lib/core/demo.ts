@@ -104,17 +104,15 @@ const clock = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")
 const entry = (id: string, typ: "termin" | "aufgabe", data: Record<string, unknown>): CalendarEntry =>
   ({ id: `beispiel:${id}`, typ, raum: "familie", besitzer: "lokal", erstellt: `2000-01-01T00:0${id.slice(-1)}:00.000Z`, geaendert: "2000-01-01T00:00:00.000Z", data: { reminder: "aus", repeat: null, ...data } }) as CalendarEntry;
 
-/** Fester Beispiel-Tagesplan einer Familie (Minuten ab Mitternacht) */
+/** Fester Beispiel-Tagesplan einer Familie (Minuten ab Mitternacht) – echte
+ *  Termine, keine Mahlzeiten (v0.64, Tafel 51) */
 const DEMO_DAY: { id: string; title: string; at: number }[] = [
-  { id: "t1", title: "Frühstück", at: 7 * 60 + 30 },
   { id: "t2", title: "Kita bringen", at: 8 * 60 },
-  { id: "t3", title: "Kaffeepause", at: 10 * 60 + 30 },
-  { id: "t4", title: "Mittagessen", at: 12 * 60 + 30 },
-  { id: "t5", title: "Kinder abholen", at: 15 * 60 },
-  { id: "t6", title: "Einkaufen", at: 17 * 60 },
-  { id: "t7", title: "Kochen", at: 18 * 60 + 30 },
-  { id: "t8", title: "Lieblingsserie", at: 20 * 60 + 15 },
-  { id: "t9", title: "Ins Bett", at: 22 * 60 + 30 },
+  { id: "t3", title: "Telefonat Versicherung", at: 10 * 60 + 30 },
+  { id: "t5", title: "Mathis Fußball", at: 15 * 60 },
+  { id: "t6", title: "Zahnarzt Jonne", at: 16 * 60 },
+  { id: "t8", title: "Elternabend", at: 19 * 60 + 30 },
+  { id: "t9", title: "Lieblingsserie", at: 20 * 60 + 15 },
 ];
 
 /**

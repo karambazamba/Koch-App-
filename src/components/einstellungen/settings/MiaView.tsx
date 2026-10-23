@@ -11,10 +11,9 @@ import { BegleitungPicker } from "@/components/begleitung/BegleitungPicker";
 import { Segmented } from "@/components/ui/Segmented";
 import { SECTION_TITLE } from "@/components/ui/styles";
 import { useFeature } from "@/lib/core/features";
-import { helperName, helperTitle, helperWith, TIP_LEVELS, type HelperMode } from "@/lib/einstellungen/profile";
+import { helperName, helperTitle, TIP_LEVELS, type HelperMode } from "@/lib/einstellungen/profile";
 import { saveSpeechSettings } from "@/lib/begleitung/speech";
 import { useProfile } from "@/lib/einstellungen/useProfile";
-import { FarbeChoice } from "@/components/einstellungen/settings/BegleitungSettings";
 import { VoiceSettings } from "@/components/einstellungen/settings/ReadingView";
 import { ChoiceCards, Group, Row, SettingsPage, SwitchRow } from "@/components/einstellungen/settings/SettingsParts";
 
@@ -49,9 +48,6 @@ export function MiaView() {
               }}
             />
             <p className="px-1 text-sm text-muted">Oder einfach sagen: „Ich nenn dich ab jetzt Frieda.“</p>
-
-            <h2 className={`mt-2 px-1 ${SECTION_TITLE}`}>Farbe</h2>
-            <FarbeChoice profile={profile} onPick={(farbe) => set({ helper: helperWith(profile.helper, { farbe }) })} />
 
             <VoiceSettings profile={profile} />
 

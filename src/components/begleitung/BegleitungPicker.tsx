@@ -1,16 +1,17 @@
 "use client";
 
-// Wer soll dir helfen? Zwei große Karten (Mia – deine Assistentin, Orange;
-// Theo – dein Assistent, Nachtblau) mit "▶ Stimme", darunter "✎ Oder gib mir
-// einen eigenen Namen …" mit Textfeld, Assistentin/Assistent (Anrede und
-// Stimme) und Icon-Farbe. Für das Kennenlernen und die Einstellungen.
+// Wer soll dir helfen? Zwei große Karten (Mia – deine Assistentin; Theo –
+// dein Assistent; beide in Mia-Orange) mit "▶ Stimme", darunter "✎ Oder gib
+// mir einen eigenen Namen …" mit Textfeld und Assistentin/Assistent (Anrede
+// und Stimme). Für das Kennenlernen und die Einstellungen. `ColorDots` dient
+// seit v0.64 für „Meine Farbe im Kalender“.
 
 import { useState } from "react";
 import { Check, PenLine, Play } from "lucide-react";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { INPUT } from "@/components/ui/styles";
 import { showToast } from "@/lib/core/toast";
-import { AVATAR_COLORS, HELPER_NAME_MAX, STANDARD_HELPERS, avatarHex, helperWith, type AvatarColor, type HelperArt, type HelperSettings } from "@/lib/einstellungen/profile";
+import { AVATAR_COLORS, HELPER_NAME_MAX, STANDARD_HELPERS, helperWith, type AvatarColor, type HelperArt, type HelperSettings } from "@/lib/einstellungen/profile";
 import { previewHelperVoice, VOICE_HINT } from "@/lib/begleitung/speech";
 
 const isStandard = (h: HelperSettings) => STANDARD_HELPERS.some((s) => s.name === h.name && s.art === h.art);
@@ -43,7 +44,7 @@ export function BegleitungPicker({ value, onChange }: { value: HelperSettings; o
                 }}
                 className="flex w-full flex-col items-center gap-1.5"
               >
-                <BegleitungAvatar size={72} color={avatarHex(h.farbe)} zustand="ruhig" />
+                <BegleitungAvatar size={72} zustand="ruhig" />
                 <span className="text-[22px] font-extrabold leading-tight">{h.name}</span>
                 <span className="text-sm text-muted">{artTitle(h.art)}</span>
               </button>
@@ -76,7 +77,7 @@ export function BegleitungPicker({ value, onChange }: { value: HelperSettings; o
       ) : (
         <section className="flex flex-col gap-3 rounded-card border-2 border-accent bg-surface p-4 shadow-card" aria-label="Eigener Name">
           <div className="flex items-center gap-3">
-            <BegleitungAvatar size={44} color={avatarHex(value.farbe)} zustand="ruhig" />
+            <BegleitungAvatar size={44} zustand="ruhig" />
             <input
               type="text"
               value={draft}
@@ -95,7 +96,6 @@ export function BegleitungPicker({ value, onChange }: { value: HelperSettings; o
             />
           </div>
           <ArtChoice value={value.art} onChange={(art) => onChange(helperWith(value, { art, ...(draft.trim() ? { name: draft } : {}) }))} />
-          <ColorDots value={value.farbe} onChange={(farbe) => onChange(helperWith(value, { farbe, ...(draft.trim() ? { name: draft } : {}) }))} />
           <button
             type="button"
             onClick={() => {
@@ -135,7 +135,7 @@ function ArtChoice({ value, onChange }: { value: HelperArt; onChange: (art: Help
 /** 10 runde Farbtupfer (2 Reihen à 5), aktiver mit Ring */
 export function ColorDots({ value, onChange }: { value: AvatarColor; onChange: (c: AvatarColor) => void }) {
   return (
-    <div className="grid grid-cols-5 justify-items-center gap-y-2" role="radiogroup" aria-label="Icon-Farbe">
+    <div className="grid grid-cols-5 justify-items-center gap-y-2" role="radiogroup" aria-label="Farbe">
       {AVATAR_COLORS.map((c) => (
         <button
           key={c.id}

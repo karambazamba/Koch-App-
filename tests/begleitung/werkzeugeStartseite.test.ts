@@ -3,7 +3,7 @@ import { at } from "../helpers";
 import { helperNote, helperReply, parseHelperCommand, parseHelperInput } from "@/lib/begleitung/helperTools";
 import { DEFAULT_HELPER, STANDARD_HELPERS } from "@/lib/einstellungen/profile";
 import { findSlot, weekOf } from "@/lib/begleitung/ops";
-import { haushalt, kontext, letzte, rezept, rufe, WOCHEN } from "./werkzeugKontext";
+import { kontext, letzte, rezept, rufe, WOCHEN } from "./werkzeugKontext";
 
 beforeEach(() => at("2026-10-21T09:00"));
 
@@ -99,44 +99,33 @@ describe("Begleitung anpassen", () => {
     delete (globalThis as { window?: unknown }).window;
   });
 
-  it("Werkzeug: neuer Name, Standard-Begleitung bringt Art und Farbe mit", () => {
+  it("Werkzeug: neuer Name, Standard-Begleitung bringt ihre Art mit (Farbe ist fest orange)", () => {
     const ctx = kontext();
     expect(rufe(ctx, "assistent_anpassen", { name: "Mia" }).content).toBe("Das ist schon so eingestellt – nichts zu ändern.");
     expect(rufe(ctx, "assistent_anpassen", { name: "„Theo“" }).content).toBe('Vorgemerkt (mit "Übernehmen"): Gern – ab jetzt bin ich Theo. 😊');
-    expect(letzte(ctx)).toMatchObject({ type: "set_helper", helper: { name: "Theo", art: "assistent", farbe: "nachtblau" } });
+    expect(letzte(ctx)).toMatchObject({ type: "set_helper", helper: { name: "Theo", art: "assistent" } });
+    expect(letzte(ctx)).not.toHaveProperty("helper.farbe");
     expect(ctx.data.profile.helper.name).toBe("Theo");
-    expect(rufe(ctx, "assistent_anpassen", { farbe: "lila" }).content).toContain("ab jetzt in Lila");
+    expect(rufe(ctx, "assistent_anpassen", { farbe: "lila" }).content).toBe("Das ist schon so eingestellt – nichts zu ändern.");
     expect(rufe(ctx, "assistent_anpassen", { art: "assistentin" }).content).toContain("deine Assistentin, mit weiblicher Stimme");
   });
 
   it("Antworten und Hinweise", () => {
     expect(helperReply({ art: "assistent" })).toBe("Gern – ab jetzt bin ich dein Assistent, mit männlicher Stimme. 😊");
-    expect(helperNote({ name: "Frieda", art: "assistentin", farbe: "rosa" })).toBe("Ich heiße jetzt Frieda, meine Stimme ist weiblich, mein Gesicht ist rosa – ändern kannst du das in den Einstellungen unter „Deine Begleitung“.");
+    expect(helperNote({ name: "Frieda", art: "assistentin" })).toBe("Ich heiße jetzt Frieda, meine Stimme ist weiblich – ändern kannst du das in den Einstellungen unter „Deine Begleitung“.");
     expect(helperNote({ art: "assistent" })).toMatch(/^Meine Stimme ist männlich/);
   });
 
-  it("Regeln ohne KI erkennen Name, Stimme und Farbe", () => {
+  it("Regeln ohne KI erkennen Name und Stimme – Farbwünsche nicht mehr (Mia bleibt orange)", () => {
     const mia = { ...DEFAULT_HELPER };
     expect(parseHelperCommand("Ich nenn dich ab jetzt Frieda", mia)).toEqual({ name: "Frieda" });
-    expect(parseHelperCommand("Sei lieber Theo", mia)).toEqual({ name: "Theo", art: "assistent", farbe: "nachtblau" });
+    expect(parseHelperCommand("Sei lieber Theo", mia)).toEqual({ name: "Theo", art: "assistent" });
     expect(parseHelperCommand("Nimm eine männliche Stimme", mia)).toEqual({ art: "assistent" });
     expect(parseHelperCommand("Ich hätte lieber eine Frauenstimme", STANDARD_HELPERS[1])).toEqual({ art: "assistentin" });
-    expect(parseHelperCommand("Mach dich lila", mia)).toEqual({ farbe: "lila" });
-    expect(parseHelperCommand("Ändere deine Farbe auf dunkelblau", mia)).toEqual({ farbe: "nachtblau" });
+    expect(parseHelperCommand("Mach dich lila", mia)).toBeNull();
+    expect(parseHelperCommand("Ändere deine Farbe auf dunkelblau", mia)).toBeNull();
     expect(parseHelperCommand("Mach dich orange", mia)).toBeNull();
     expect(parseHelperCommand("Sei leise", mia)).toBeNull();
     expect(parseHelperInput("Wie spät ist es?")).toBeNull();
-  });
-
-  it("Icon-Hinweis nur als iPhone-Homescreen-App", () => {
-    (globalThis as { window?: unknown }).window = { matchMedia: () => ({ matches: true }) };
-    const nav = Object.getOwnPropertyDescriptor(globalThis, "navigator");
-    Object.defineProperty(globalThis, "navigator", { value: { userAgent: "iPhone", platform: "iPhone", maxTouchPoints: 5 }, configurable: true });
-    try {
-      expect(helperNote({ farbe: "lila" })).toContain("Das Icon auf dem Homescreen bleibt");
-    } finally {
-      if (nav) Object.defineProperty(globalThis, "navigator", nav);
-    }
-    expect(haushalt().helper.name).toBe("Mia");
   });
 });

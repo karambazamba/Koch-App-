@@ -56,7 +56,7 @@ function normalizeMealTime(value: unknown, fallback: MealTime): MealTime {
 export function migrateProfile(raw: unknown): HouseholdProfile | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as Record<string, unknown>;
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].includes(data.version as number)) return null;
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21].includes(data.version as number)) return null;
 
   const defaults = createEmptyProfile();
 
@@ -156,6 +156,10 @@ export function migrateProfile(raw: unknown): HouseholdProfile | null {
     // Bis v14 ohne Ansicht → Hell (wie bisher); "Frisch" gibt es nicht mehr → Automatisch
     // Bis v19: "Automatisch" war Standard für neue Profile – ohne eigene Wahl jetzt Hell (Dunkel bleibt)
     ...migrateTheme(data),
+    // Bis v20: kein Look → Farbig; die Lieblingsfarbe der Begleitung wird „Meine Farbe im Kalender“
+    // (Mia und das App-Icon sind ab v21 immer orange)
+    look: data.look === "schlicht" ? "schlicht" : "farbig",
+    calendarColor: migrateCalendarColor(data),
     helperMode: HELPER_MODES.some((m) => m.value === data.helperMode) ? (data.helperMode as HelperMode) : "normal",
     display: data.display === "alles" ? "alles" : "einfach",
     weekendIdeas: data.weekendIdeas !== false,
@@ -174,6 +178,11 @@ function migrateTheme(data: Record<string, unknown>): { theme: AppTheme; themeSe
   const theme: AppTheme = APP_THEMES.some((t) => t.value === raw) ? (raw as AppTheme) : "warm";
   if ((data.version as number) >= 20) return { theme, themeSet: data.themeSet === true };
   return theme === "nacht" ? { theme, themeSet: true } : { theme: "warm", themeSet: false };
+}
+
+function migrateCalendarColor(data: Record<string, unknown>): AvatarColor {
+  const raw = (data.version as number) >= 21 ? data.calendarColor : (data.helper as { farbe?: unknown } | undefined)?.farbe;
+  return AVATAR_COLORS.some((c) => c.id === raw) ? (raw as AvatarColor) : "orange";
 }
 
 const CLOCK = /^([01]\d|2[0-3]):[0-5]\d$/;

@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation";
 import { Check, ChevronLeft, Home, KeyRound } from "lucide-react";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { INPUT } from "@/components/ui/styles";
-import { DEFAULT_HELPER, avatarHex } from "@/lib/einstellungen/profile";
+import { avatarHex } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { householdTitle } from "@/lib/einstellungen/profileHousehold";
 import { startFresh } from "@/lib/einstellungen/welcomeStore";
@@ -34,7 +34,7 @@ export function WelcomeLogin({ code: linkCode = "" }: { code?: string }) {
   const router = useRouter();
   const account = useAccount();
   const profile = useProfile();
-  const color = avatarHex(profile?.helper.farbe ?? DEFAULT_HELPER.farbe);
+  const color = avatarHex("orange");
   const [chosen, setChosen] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
