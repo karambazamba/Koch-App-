@@ -245,42 +245,46 @@ Ideen“. Verschwindet mit dem ersten eigenen Gericht oder dem Beispiel-Tag.
   Lesbar und kochbar wie Kochbuch-Rezepte, „In unsere Rezepte“ übernimmt.
   Eigene Rezepte: Aufwand aus Zeit, Zutaten und Ofen geschätzt.
 
-### Kochtipp – spontan mit Mia (seit v0.60)
+### Kochidee – ohne Fragen, einfach erzählen (Tafel 64 C/65, seit v0.71; früher „Kochtipp“)
 
-- Kochmütze oben rechts in der Essen-Kachel (`components/essen/kochtipp/
-  KochtippHat.tsx`, 40 px orange, Tippfläche 44 px). Tipp → Kochtipp-Chat, der
-  Rest der Kachel bleibt wie bisher. In der kleinen Kachel (S) entfällt mit
-  Mütze das ⇄ „Andere Idee“.
-- Freischalten (`lib/essen/kochtipp/store.ts`, `wasgibts.kochtipp`): ab dem
-  3. Nutzungstag (3 verschiedene Kalendertage je Gerät), früher auf Nachfrage
-  („Kochtipp“, „Was soll ich kochen?“ – auch mit KI, `unlockKochtipp`) oder
-  mit „Alles zeigen“. Wer schon länger als 2 Tage dabei ist (Beispiel-Tag
-  `since`), sieht die Mütze sofort. Beim ersten Erscheinen ploppt sie einmal
-  auf, dazu EINMAL die dunkle Blase „(Neu:) Spontan? Tipp auf die Mütze …“
-  (Hinweis `kochtipp-muetze`, weg bei Tipp oder nach 6 s, nicht zur
-  Kochzeit). Am Beispiel-Tag steht die Mütze schon in der Beispiel-Essenskachel
-  (`DemoFoodTile`, `hatVisible(…, demo)`) – ohne Aufploppen und ohne Blase;
-  „ab Tag 3“ bleibt für echte Tage.
-- Chat (`useKochtippChat`, eigener Modus wie Spontan kochen): „Lust auf was
-  ganz anderes? 😋“ / „Sag mir, was noch da ist – oder kaufen wir neu ein?“
-  (mit der letzten Wahl: „Wie letztes Mal aus dem Vorrat?“), Schnellantworten
-  Schau in den Vorrat · Reste verwerten · Neu einkaufen. Mikro erlaubt → hört
-  gleich zu; Vorlesen an → Mia spricht die Frage (dann kein gleichzeitiges
-  Zuhören).
-- Antworten verstehen (`parseCookWish`): genannte Zutaten (zählen als da),
-  „was mit Fisch“, „vegetarisch“, „was Schnelles“, „für 4“, „lieber ohne
-  Reis“. Unverständliches beendet den Modus.
-- EIN Gericht (`pickCookDish`, eigene Rezepte + Gerichte-Liste): Vorrat =
-  höchstens eine Zutat auf die Liste, Reste = Bald-Verbrauchtes zuerst, Neu
-  einkaufen = egal. Allergien und „mag nicht“ strikt, keine der letzten 10
-  gezeigten und keine Gerichte der letzten 3 Tage. Nichts → „Dafür habe ich
-  gerade nichts. Sollen wir was einkaufen?“.
-- Karte (`KochtippCard`): Bild, Abzeichen (alles im Haus / fast alles im
-  Haus / Resteessen / Einkauf nötig), „für N ▾ · Min · nimmt deine …“,
-  „auf die Liste: …“, „Anderes“ / „Machen wir“. Machen wir → fehlt etwas,
-  erst „… auf die Einkaufsliste?“ (Ja / Hab ich, Mengen auf die Personen
-  umgerechnet), dann heutiges Essen (nur heute, `takeForToday` spontan),
-  Chat zu, „Heute gibt’s …“, Rückgängig über Mia.
+- Für Nutzer heißt es „Kochidee“; intern bleibt `kochtipp` (Ordner,
+  Speicher `wasgibts.kochtipp`, `app_befehl`-Erkennung `isKochtippRequest`,
+  die jetzt auch „Kochidee“ versteht).
+- Knopf oben rechts in der Essen-Kachel (`KochideeKnopf.tsx`, Text über
+  `kochideeButton`): heute geplant → weiße Pille „⇄ Was anderes?“ (30 px hoch,
+  Tippfläche 44 px; VoiceOver „Was anderes kochen? Mia schlägt Alternativen
+  vor“), sonst rundes orangenes Abzeichen 47 px mit Mütze und „Idee“
+  („Kochidee – Mia schlägt dir ein Gericht vor“). Mit Knopf kein ⇄. Ab dem 3.
+  Nutzungstag (wie bisher, `hatVisible`); beim ersten Mal wippt er einmal und
+  zeigt EINMAL „Neu: Kochidee“ (`kochtipp-muetze` in hints). Am Beispiel-Tag
+  steht die Pille ohne Blase.
+- Tipp → Bühne mit Kopf „KOCHIDEE“ (`useKochidee`): sofort drei Vorschläge,
+  keine Frage – zuerst, was Vorhandenes nutzt (Vorrat, „im Haus“, bald zu
+  Verbrauchendes), dann die Mischung; nie das geplante Gericht, nie die
+  letzten 7 Tage, Allergien und „mag nicht“ strikt (`rankIdeas`,
+  `startIdeas`). Mias Satz: „Lust auf was anderes als …?“ bzw. „Wie wär’s
+  damit? … hast du noch.“; bei geplantem Gericht gestrichelt „… – bleibt,
+  wenn du nichts nimmst“. Zeilen mit Bild, Minuten, „alles im Haus“ (grün)
+  bzw. „auf die Liste: …“ und „Nehmen“ (`KochideeViews.tsx`).
+- Darunter die Mia-Karte „Ganz was anderes?“ (Mia pulsiert, atmet, zwinkert;
+  kein Pfeil, kein Mikrofon) mit zwei Beispiel-Sätzen. Antippen = Mia hört
+  zu (Mikro aus → Tippfeld).
+- Erzähltes (`parseIdeaTalk`): Zutaten („Ich hab Hähnchen gekauft“, „Paprika
+  und Sahne sind noch da“) → „im Haus“ (mit Vorrat-Baustein in den Vorrat,
+  sonst `noteImHaus` für 3 Tage) und kurz „… merk ich mir als „im Haus“ ✓“;
+  Wünsche („was Cremiges“, „schnell“, „ohne Fleisch“, „was mit Kürbis“),
+  „lieber ohne Sahne“, „nicht schon wieder Hähnchen“, „für 3“. Ergebnis:
+  „Dann mach doch …!“, Stichworte, Karussell mit drei Gerichten (nächste
+  Karte schaut hervor, Punkte, Zutaten-Chips mit ✓, „Rezept ansehen“,
+  „Nehmen“), zuletzt „Noch was anderes?“, darunter „Passt nicht?“. Neues
+  Erzähltes ergänzt das Alte (`mergeTalk`). Alles ohne KI.
+- „Nehmen“ (`takeOutcome`): frei → Abendessen heute (nach dem Abendessen:
+  morgen); geplant → ersetzt das heutige, das alte steht wieder bei den
+  Ideen (als Wunsch); Fehlendes auf die Liste; Meldung „Eingetragen. …
+  steht auf der Liste.“ mit Rückgängig.
+- Nichts davor: kein Mikro beim Öffnen, kein Hilfefenster, kein Zugangscode.
+- Tests: `tests/essen/kochidee.test.ts`, `tests/essen/kochtipp.test.ts`,
+  Durchklick `kochtipp` und `muetzeBeispielTag`.
 
 ## Begleitung (Mia)
 

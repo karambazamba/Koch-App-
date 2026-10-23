@@ -231,7 +231,7 @@ function mockModel(): CreateMessage {
     // Wochencheck: alles in einem Rutsch über woche_eintragen (gleiche Erkennung wie ohne KI)
     if (typeof last.content === "string" && last.content.startsWith("[Wochencheck]")) return weekCheckUses(last.content, system);
     // „Kochtipp“, „Was soll ich kochen?“ → eigener Kochtipp in der App
-    if (typeof last.content === "string" && isKochtippRequest(last.content)) return tools([{ name: "app_befehl", input: { text: "Kochtipp" } }]);
+    if (typeof last.content === "string" && isKochtippRequest(last.content)) return tools([{ name: "app_befehl", input: { text: "Kochidee" } }]);
     if (resultFor("woche_eintragen") !== undefined) return text("Ich hab alles sortiert – schau kurz drüber und tipp „Alles übernehmen“.");
 
     // 1. Neue Frage: unklar → nachfragen, sonst Woche und Kochbuch lesen

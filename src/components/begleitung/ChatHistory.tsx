@@ -5,7 +5,7 @@
 // Wort und der offene Vorschlag mit "Übernehmen".
 
 import Link from "next/link";
-import type { Dispatch, ReactNode, RefObject, SetStateAction } from "react";
+import { useRef, type Dispatch, type ReactNode, type RefObject, type SetStateAction } from "react";
 import { NOTE } from "@/components/ui/styles";
 import { stockNearlyEmpty } from "@/lib/essen/dishIdeas";
 import type { useAssistantStatus } from "@/lib/begleitung/client";
@@ -16,8 +16,9 @@ import { AccessCodeCard, SpeakButton } from "@/components/begleitung/ChatBits";
 import { ChatTurnItem } from "@/components/begleitung/ChatTurnItem";
 import { MiaBubble, OwnBubble, StageTopic } from "@/components/begleitung/MiaStage";
 import { firstOfRun } from "@/lib/begleitung/stage";
-import { KochtippCard } from "@/components/essen/kochtipp/KochtippCard";
-import type { KochtippChat } from "@/components/essen/kochtipp/useKochtippChat";
+import { IdeaCarousel, IdeaRow, MiaInvite, StaysLine } from "@/components/essen/kochtipp/KochideeViews";
+import type { Kochidee } from "@/components/essen/kochtipp/useKochidee";
+import { IDEA_EXAMPLES } from "@/lib/essen/kochtipp/idee";
 import type { ChatState, ChatTurnView } from "@/components/begleitung/chatTypes";
 import { ProposalCard } from "@/components/begleitung/ProposalCard";
 import { AdjustSheet, EarlierIdeas, SpontanAnswer } from "@/components/begleitung/SpontanBoard";
@@ -49,7 +50,9 @@ type Props = {
   adjusting: boolean;
   setAdjusting: (on: boolean) => void;
   spontan: SpontanChat;
-  kochtipp: KochtippChat;
+  kochidee: Kochidee;
+  /** Mia-Karte in der Kochidee angetippt: Mia hört zu (bzw. Tippfeld bei Mikro aus) */
+  onTalk: () => void;
   market: ReturnType<typeof useMarketChat>;
   rules: (t: string) => boolean;
   onSubmit: (text: string) => void;
@@ -68,7 +71,7 @@ type Props = {
   children?: ReactNode;
 };
 
-export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, codeLater, onCodeLater, chat, setChat, busy, streaming, speakingId, tipsOn, adjusting, setAdjusting, spontan, kochtipp, market, rules, onSubmit, onAsk, onApply, onClose, from = 0, showGreeting = true, topic, heard, children }: Props) {
+export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, codeLater, onCodeLater, chat, setChat, busy, streaming, speakingId, tipsOn, adjusting, setAdjusting, spontan, kochidee, onTalk, market, rules, onSubmit, onAsk, onApply, onClose, from = 0, showGreeting = true, topic, heard, children }: Props) {
   const { ideasFor, stockFor, headingFor, speechFor, takeIdea, moreIdeas, adjusting2, setAdjusting2, applyFilters, acceptUnsure } = spontan;
   // Offene Ideen-Antwort (die letzte, solange Spontan kochen läuft) und eingeklappte frühere
   const spontanIndexes = chat.turns.flatMap((t, i) => (t.spontan ? [i] : []));
@@ -79,6 +82,14 @@ export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, co
   const firstEarlier = earlier[0] ?? -1;
   const earlierTitles = [...new Set(earlier.flatMap((i) => ideasFor(chat.turns[i]).map((idea) => idea.title)))];
   const roles = chat.turns.map((t) => t.role);
+  // Kochidee-Ergebnis: „Dann mach doch …!“ samt Karussell oben ins Bild holen
+  // (nach dem allgemeinen Scrollen ans Ende, sonst läge das Karussell oben außer Sicht)
+  const shownResult = useRef(-1);
+  const showResult = (index: number) => (el: HTMLDivElement | null) => {
+    if (!el || shownResult.current === index) return;
+    shownResult.current = index;
+    window.setTimeout(() => el.scrollIntoView({ block: "start", behavior: "smooth" }), 400);
+  };
   const greeting = showGreeting && data;
 
   return (
@@ -99,7 +110,8 @@ export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, co
           ) : greeting ? (
             <MiaBubble lead>Hi, ich bin {name} – was steht an?</MiaBubble>
           ) : null}
-          {status?.askCode && data && !codeLater && <AccessCodeCard onLater={onCodeLater} />}
+          {/* Kochidee geht ohne KI – der Zugangscode schiebt sich nicht davor */}
+          {status?.askCode && data && !codeLater && !chat.kochtipp && <AccessCodeCard onLater={onCodeLater} />}
           {chat.turns.map((turn, i) => {
             if (i < from) return null;
             const last = i === chat.turns.length - 1;
@@ -128,20 +140,31 @@ export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, co
               if (i !== firstEarlier) return null;
               return <EarlierIdeas key={i} titles={earlierTitles} />;
             }
-            if (turn.cook) {
-              const cook = turn.cook;
-              const live = last && chat.kochtipp != null;
+            if (turn.idea) {
+              const idea = turn.idea;
+              // Nur die neueste Kochidee ist lebendig (Knöpfe, Mia-Karte)
+              const live = chat.kochtipp != null && i === chat.turns.map((t) => Boolean(t.idea)).lastIndexOf(true);
+              const session = chat.kochtipp;
               return (
-                <KochtippCard
-                  key={i}
-                  card={cook.card}
-                  persons={cook.persons}
-                  live={live}
-                  onPersons={(n) => kochtipp.setPersons(i, n)}
-                  onAnother={() => chat.kochtipp && kochtipp.another(chat.kochtipp)}
-                  onTake={() => kochtipp.take(cook.card, cook.persons)}
-                  onNavigate={onClose}
-                />
+                <div key={i} ref={idea.kind === "ergebnis" && live ? showResult(i) : undefined} className="flex w-full scroll-mt-2 flex-col gap-2.5">
+                  <ChatTurnItem turn={{ role: "assistant", text: turn.text }} lead={i === from ? !greeting : firstOfRun(roles, i)} last={false} data={data} showBases={false} mailActive={false} speaking={speakingId === `turn-${i}`} onSpeak={() => toggleSpeak(turn.text, `turn-${i}`, voice)} onSubmit={onSubmit} onAsk={onAsk} onAcceptUnsure={() => undefined} onMarketAdd={market.addMarketItems} onMarketPlan={market.planMarketIdea} onClose={onClose} />
+                  {idea.kind === "start" ? (
+                    <>
+                      {idea.planned && <StaysLine dish={idea.planned} />}
+                      {idea.cards.map((c) => (
+                        <IdeaRow key={c.title} card={c} live={live} onTake={() => kochidee.take(c, session)} />
+                      ))}
+                      {live && <MiaInvite title="Ganz was anderes?" text="Sag mir, was du hast oder worauf du Lust hast." examples={IDEA_EXAMPLES} onTalk={onTalk} onExample={onSubmit} />}
+                    </>
+                  ) : (
+                    <>
+                      {idea.keywords && idea.keywords.length > 0 && <p className="ml-11 self-start rounded-full bg-fill px-3 py-1 text-[13px] font-semibold text-muted">{idea.keywords.join(" · ")}</p>}
+                      {idea.cards.length > 0 && <IdeaCarousel cards={idea.cards} persons={idea.persons ?? 2} live={live} onTake={(c) => kochidee.take(c, session, idea.persons)} onMore={() => session && kochidee.more(session)} onNavigate={onClose} />}
+                      {idea.remembered && <p className="text-[13px] font-semibold text-good-ink">{idea.remembered}</p>}
+                      {live && <MiaInvite title="Passt nicht?" text="Sag’s mir einfach – oder wisch weiter." onTalk={onTalk} />}
+                    </>
+                  )}
+                </div>
               );
             }
             return (

@@ -5,7 +5,7 @@
 // Sprechblase) – ein echter Tag 1 bleibt ohne Mütze.
 import { BASE, hello, seedFamily } from "../lib.mjs";
 
-const hat = (page) => page.getByRole("button", { name: /^Kochtipp – spontan mit/ });
+const hat = (page) => page.getByRole("button", { name: /^(Was anderes kochen\?|Kochidee –)/ });
 
 export const startseiteListe = async (page, check, device) => {
   await hello(page);
@@ -64,15 +64,15 @@ export const miaKnopfFrei = async (page, check) => {
 export const muetzeBeispielTag = async (page, check) => {
   await hello(page);
   await page.locator('[data-tile~="essen"]').evaluate((el) => el.scrollIntoView({ block: "center" }));
-  check(await hat(page).isVisible(), "Beispiel-Tag: Mütze in der Essen-Kachel");
-  check(!(await page.getByText("Tipp auf die Mütze", { exact: false }).count()), "Beispiel-Tag: ohne Sprechblase");
+  check(await hat(page).isVisible(), "Beispiel-Tag: Kochidee-Knopf in der Essen-Kachel");
+  check(!(await page.getByText("Neu: Kochidee").count()), "Beispiel-Tag: ohne Blase");
   const state = await page.evaluate(() => JSON.parse(localStorage.getItem("wasgibts.kochtipp") ?? "null"));
   check(!state?.popped && !state?.unlocked, "„ab Tag 3“ bleibt (nicht freigeschaltet)");
-  // Echter Tag 1 (eigene Daten statt Beispiel-Tag): keine Mütze
+  // Echter Tag 1 (eigene Daten statt Beispiel-Tag): kein Knopf
   await seedFamily(page);
   await page.reload();
   await page.waitForTimeout(900);
-  check(!(await hat(page).count()), "echtes Profil an Tag 1: keine Mütze");
+  check(!(await hat(page).count()), "echtes Profil an Tag 1: kein Kochidee-Knopf");
 };
 
 /**

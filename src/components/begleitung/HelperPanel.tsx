@@ -10,7 +10,7 @@ import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 
 import { isIdeaFilterRequest } from "@/lib/essen/spontan";
 import { isKochtippRequest } from "@/lib/essen/kochtipp/start";
 import { unlockKochtipp } from "@/lib/essen/kochtipp/store";
-import { useKochtippChat } from "@/components/essen/kochtipp/useKochtippChat";
+import { useKochidee } from "@/components/essen/kochtipp/useKochidee";
 import { useStock } from "@/lib/essen/useStock";
 import { effectivePlanStyle, helperName } from "@/lib/einstellungen/profile";
 import { saveProfile } from "@/lib/einstellungen/profileStore";
@@ -143,7 +143,14 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   // --- Spontan kochen ("mit dem, was da ist") und Supermarkt ------------------
   const spontan = useSpontanChat({ data, today, pantry, spontanStyle, setChat, setInput });
   const market = useMarketChat({ data, today, spontanStyle, setChat });
-  const kochtipp = useKochtippChat({ data, today, pantry, setChat, setInput, onClose });
+  const mealOver = Boolean(data && today && minutes !== undefined && cooked && mealOverOn(toIsoDate(today), weekdayName(today), data.profile, minutes, cooked));
+  const kochidee = useKochidee({ data, today, pantry, mealOver, setChat, onClose });
+  // Kochidee gerade geöffnet: sofort drei Vorschläge (keine Frage davor)
+  const freshIdea = chat.kochtipp?.fresh && data && today && pantry !== undefined ? chat.kochtipp : null;
+  useEffect(() => {
+    if (freshIdea) kochidee.start(freshIdea.planned);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [freshIdea]);
 
   const { rules } = useChatRules({ ruleCtx, chat, setGuided, startSpontan: spontan.startSpontan, pantry, shopping, shoppingSettings, speechSettings, spontanStyle, ready, ask });
 
@@ -185,12 +192,13 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       return;
     }
     if (chat.formular) setChat((c) => ({ ...c, formular: undefined }));
-    // „Kochtipp“, „Was soll ich kochen?“ schaltet die Kochmütze frei (auch mit KI)
+    // „Kochidee“, „Was soll ich kochen?“ schaltet den Knopf frei (auch mit KI)
     if (isKochtippRequest(t)) unlockKochtipp();
-    // Selbst geöffneter Kochtipp: Antworten („Ich hab noch …“, „was mit Fisch“) → Karte;
-    // alles andere beendet ihn und geht den normalen Weg
+    // Offene Kochidee: Erzähltes („Ich hab Hähnchen gekauft …“, „nicht schon wieder Hähnchen“)
+    // → neues Karussell; alles andere beendet sie und geht den normalen Weg
     if (chat.kochtipp) {
-      if (kochtipp.kochtippInput(t, chat.kochtipp)) return;
+      setInput("");
+      if (kochidee.input(t, chat.kochtipp)) return;
       setChat((c) => ({ ...c, kochtipp: null }));
     }
     // Eine eingefügte Mail ist nie eine Zutatenliste
@@ -407,7 +415,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           }}
           spontan={spontan}
           market={market}
-          kochtipp={kochtipp}
+          kochidee={kochidee}
+          onTalk={() => (state === "zuhoeren" ? undefined : tapMia())}
           rules={rules}
           onSubmit={submit}
           onAsk={(text) => void ask(text)}
