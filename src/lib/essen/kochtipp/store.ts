@@ -24,6 +24,8 @@ export type KochtippState = {
   last: Last | null;
   /** Zuletzt gezeigte Gerichte (höchstens 10) */
   shown: string[];
+  /** Kochidee: Erzähltes „im Haus“ (ohne Vorrat-Baustein) – zählt für Vorschläge der nächsten 3 Tage */
+  haus: { name: string; day: string }[];
 };
 
 const SOURCES: CookSource[] = ["vorrat", "reste", "einkauf"];
@@ -44,11 +46,13 @@ function migrate(raw: unknown): KochtippState | null {
         ? { source: l.source as CookSource, persons: typeof l.persons === "number" ? l.persons : null, category: CATEGORIES.includes(l.category as never) ? (l.category as Last["category"]) : null }
         : null,
     shown: strings(d.shown).slice(-10),
+    // seit v0.71 (fehlt in älteren Ständen und Sicherungen)
+    haus: Array.isArray(d.haus) ? d.haus.filter((h): h is { name: string; day: string } => Boolean(h) && typeof h.name === "string" && typeof h.day === "string").slice(-20) : [],
   };
 }
 
 const store = createLocalStore("wasgibts.kochtipp", migrate);
-const EMPTY: KochtippState = { version: 1, days: [], unlocked: false, popped: false, last: null, shown: [] };
+const EMPTY: KochtippState = { version: 1, days: [], unlocked: false, popped: false, last: null, shown: [], haus: [] };
 
 export const loadKochtipp = (): KochtippState => store.load() ?? EMPTY;
 
@@ -102,4 +106,11 @@ export function rememberKochtipp(last: Last) {
 export function noteKochtippShown(title: string) {
   const s = loadKochtipp();
   store.save({ ...s, shown: [...s.shown.filter((t) => t !== title), title].slice(-10) });
+}
+
+/** Kochidee: „Hähnchen gekauft“ als „im Haus“ merken (ohne Vorrat-Baustein), 3 Tage lang */
+export function noteImHaus(names: string[], today: string) {
+  const s = loadKochtipp();
+  const keep = s.haus.filter((h) => h.day >= addDays(today, -2) && !names.some((n) => n.toLowerCase() === h.name.toLowerCase()));
+  store.save({ ...s, haus: [...keep, ...names.map((name) => ({ name, day: today }))].slice(-20) });
 }

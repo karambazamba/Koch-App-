@@ -60,7 +60,7 @@ export const STORAGE = [
   { key: "wasgibts.mikroprotokoll", what: "Mikro-Protokoll: die letzten 20 Ereignisse rund um Mikrofon und Sprachnachrichten – nur auf dem Gerät, nie in der Sicherung oder an die KI", version: 1, migration: "core/micLog.ts", area: "local", backup: false },
   { key: "wasgibts.einmalhinweise", what: "Einmalige Hinweise (z. B. „+ Kachel“ beim ersten Bearbeiten)", version: 1, migration: "core/hints.ts", area: "local", backup: false },
   { key: "wasgibts.ideenmix", what: "Mehr Ideen: still gelerntes Interesse (Antippen, gezeigt) für die Tages-Mischung", version: 1, migration: "essen/mehrIdeen/store.ts", area: "local", backup: true },
-  { key: "wasgibts.kochtipp", what: "Kochtipp: Nutzungstage, Mütze freigeschaltet, letzte Wahl, zuletzt gezeigte Gerichte", version: 1, migration: "essen/kochtipp/store.ts", area: "local", backup: true },
+  { key: "wasgibts.kochtipp", what: "Kochidee: Nutzungstage, Knopf freigeschaltet, letzte Wahl, zuletzt gezeigte Gerichte, Erzähltes „im Haus“ (3 Tage)", version: 1, migration: "essen/kochtipp/store.ts", area: "local", backup: true },
   { key: "wasgibts.dunkeltipp", what: "Einmaliger Hinweis auf Dunkel/Automatisch (ab dem 3. Tag)", version: 1, migration: "core/darkTip.ts", area: "local", backup: false },
   { key: "wasgibts.beispiel", what: "Beispiel-Tag beim ersten Start (seit wann, geleerte Kacheln, Abgehaktes)", version: 1, migration: "core/demo.ts", area: "local", backup: false },
   { key: "wasgibts.willkommen", what: "Ergebnis des ersten Starts (wobei helfen)", version: 1, migration: "einstellungen/welcomeStore.ts (Zwischenstand bis v0.26 wird verworfen)", area: "local", backup: false },

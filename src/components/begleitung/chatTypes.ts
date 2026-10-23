@@ -9,7 +9,8 @@ import type { SpontanFilter } from "@/lib/essen/spontan";
 import type { MarketTarget } from "@/components/begleitung/MarketBoard";
 import type { MailDraft } from "@/lib/begleitung/mail";
 import type { TipView } from "@/lib/tipps/model";
-import type { CookCard, CookWish } from "@/lib/essen/kochtipp/pick";
+import type { CookCard } from "@/lib/essen/kochtipp/pick";
+import type { IdeaTalk } from "@/lib/essen/kochtipp/idee";
 
 export type ChatTurnView = ChatTurn & {
   /** Fehlermeldung – wird nicht an die KI geschickt */
@@ -47,15 +48,16 @@ export type ChatTurnView = ChatTurn & {
   /** Tipps aus der Region als Karten (bis zu 3) */
   tips?: TipView[];
   /** Kochtipp: EIN Gericht als Karte (Personen änderbar) */
-  cook?: { card: CookCard; persons: number };
+  /** Kochidee: drei Vorschläge (beim Öffnen) bzw. das Ergebnis zum Durchwischen */
+  idea?: { kind: "start" | "ergebnis"; cards: CookCard[]; planned: string | null; keywords?: string[]; remembered?: string; persons?: number };
 };
 
 export type Proposal = { ops: ChangeOp[]; selected: Set<string> };
 /** `spontan`: Spontan kochen ("mit dem, was da ist") mit gewählten Filtern; null = aus */
 /** `since`: ab dieser Nachricht läuft das aktuelle Gespräch (Mia-Ansicht zeigt nur das, „Verlauf“ alles).
  *  `formular`: ein „＋“ hat Mia geholt – „Lieber Formular“ öffnet das Formular (bis zur ersten eigenen Nachricht) */
-/** `kochtipp`: selbst geöffneter Kochtipp (Kochmütze) – bisherige Wünsche und schon Gezeigtes */
-export type ChatState = { turns: ChatTurnView[]; proposal: Proposal | null; spontan: SpontanFilter[] | null; kochtipp?: { wish: CookWish; exclude: string[] } | null; formular?: string; since?: number; /** Bereichs-Kopf auf der Bühne („KOCHIDEE“, „TERMIN“) */ topic?: string };
+/** `kochtipp`: offene Kochidee – Erzähltes, schon Gezeigtes, heute geplantes Gericht; `fresh` = gerade geöffnet, Vorschläge folgen */
+export type ChatState = { turns: ChatTurnView[]; proposal: Proposal | null; spontan: SpontanFilter[] | null; kochtipp?: { talk: IdeaTalk; exclude: string[]; planned: string | null; fresh?: boolean } | null; formular?: string; since?: number; /** Bereichs-Kopf auf der Bühne („KOCHIDEE“, „TERMIN“) */ topic?: string };
 
 /** Neue Ideen-Antwort (Text und Ideen rechnet das Panel live) */
 export function spontanStartTurn(filters: SpontanFilter[] = [], exclude: string[] = [], extra: string[] = []): ChatTurnView {

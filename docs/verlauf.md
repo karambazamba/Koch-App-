@@ -2103,3 +2103,14 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Blasen und Mias Zustand; statt „Tippen“ + großem Mikro-Knopf
   (`MiaControls`, entfernt) gilt: Mia antippen = zuhören ↔ fertig, „Lieber
   tippen“. Der Wochencheck nutzt dieselbe Bühne.
+
+## Kochidee statt Kochtipp (Tafel 64 C/65, v0.71.0)
+
+- Felix (Video): Die Mütze auf einem geplanten Gericht klang wie ein Tipp
+  ZUR Pasta, „Was da ist oder neu kaufen?“ wollte keiner entscheiden, eigene
+  Wünsche hatten keinen Platz, Mikro-Hilfe und Zugangscode schoben sich
+  davor. Jetzt: „Was anderes?“ bzw. „Idee“, sofort drei Vorschläge ohne
+  Frage, die einladende Mia-Karte, frei erzählen, Karussell, „Nehmen“
+  ersetzt und trägt Fehlendes ein. Kochtipp-Karte, Schnellantworten und die
+  alte Einzelauswahl (`pickCookDish`, `parseCookWish`) sind entfernt.
+

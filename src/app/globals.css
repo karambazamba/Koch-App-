@@ -1087,10 +1087,18 @@ body {
 .mia-tonwelle { display: flex; height: 22px; align-items: center; gap: 4px; }
 .mia-tonwelle > span { display: block; width: 4px; height: 22px; border-radius: 9999px; background: var(--app-accent); transform-origin: center; animation: mia-ton .9s ease-in-out infinite; }
 .mia-geist-schleier { animation: mia-aus .8s var(--mia-ease) both; }
+/* Kochidee: der Knopf wippt beim ersten Mal sanft; Mia in der Karte lädt ein
+   (Kreise wie ein ruhiger Herzschlag alle ~1,6 s, leichtes Atmen ±3 %, Zwinkern) */
+@keyframes kochidee-wippen { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-8deg); } 45% { transform: rotate(6deg); } 70% { transform: rotate(-3deg); } }
+.kochidee-wippen { animation: kochidee-wippen 1s var(--mia-ease) .6s both; }
+.mia-einladen .mia-wellen { border-width: 2px; animation-duration: 3.2s; }
+.mia-einladen .mia-wellen.zwei { animation-delay: 1.6s; }
+.mia-atmet { animation: mia-atmen-k 3.6s ease-in-out infinite; }
+@keyframes mia-atmen-k { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
 /* Mia ist auf der Bühne (oder fliegt zurück) – ihr Knopf unten rechts wartet unsichtbar */
 body:has(.mia-buehne-hintergrund, .mia-geist-schleier) [data-mia-knopf] { opacity: 0; }
 @media (prefers-reduced-motion: reduce) {
-  .mia-knopf, .mia-knopf::before, .mia-huepfer, .mia-wellen, .mia-tonwelle > span, .mia-zwinkern .av-eyes rect { animation: none; }
+  .mia-knopf, .mia-knopf::before, .mia-huepfer, .mia-wellen, .mia-tonwelle > span, .kochidee-wippen, .mia-atmet { animation: none; }
   .mia-karte { animation: mia-blende .4s ease both; }
   .mia-flug { transition: none; }
 }

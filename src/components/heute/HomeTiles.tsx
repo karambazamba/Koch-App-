@@ -32,14 +32,14 @@ import { sortNotes, useSchnellnotiz, useNotes } from "@/lib/notizen";
 import type { HomeData } from "@/components/heute/useHomeData";
 import { buzz } from "@/components/heute/actions";
 import { dishOf } from "@/components/essen/useMeals";
-import { KochtippHat } from "@/components/essen/kochtipp/KochtippHat";
+import { KochideeKnopf } from "@/components/essen/kochtipp/KochideeKnopf";
 import { helperName } from "@/lib/einstellungen/profile";
 
 const HALF = `${TILE} flex min-h-[92px] flex-col p-3.5`;
 const HALF_LABEL = `flex min-w-0 items-center gap-1.5 ${TILE_LABEL}`;
 
 /** ESSEN – S: Gericht + ⇄; M: breit mit Zeit, Zutaten-Status, ⇄; L: + Ideen für morgen */
-/** `hat`: Kochmütze oben rechts (Kochtipp) – `null` = keine, sonst ob ihr Hinweis gerade still sein soll */
+/** `hat`: Kochidee-Knopf oben rechts – `null` = keiner, sonst ob sein Hinweis gerade still sein soll */
 export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCook, hat = null }: { data: HomeData; dish: string | null; over: boolean; dishClock: string | null; onOpen: () => void; size?: TileSize; onCook?: () => void; hat?: { quiet: boolean } | null }) {
   const ideas = useTodayIdeas([], { tomorrow: over });
   const tomorrowIdeas = useTodayIdeas([], { tomorrow: true });
@@ -57,6 +57,8 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCo
       ? []
       : [recipe?.prepMinutes ? `${recipe.prepMinutes} Min` : "", needs ? (needs.length ? `auf die Liste: ${needs.slice(0, 2).join(", ")}${needs.length > 2 ? " …" : ""}` : "alles im Haus") : ""].filter(Boolean);
   const sub = idea ? `Idee · ${idea.minutes ?? "?"} Min` : !dish && !day?.away && list.length ? `${Math.min(3, list.length)} Ideen ansehen` : facts.join(" · ");
+  // Für „Was anderes?“ zählt nur ein heute geplantes Gericht (nach dem Abendessen: frei für morgen)
+  const planned = over ? null : dish;
   const take = () => {
     if (!idea || over) return;
     const before = loadMealPlans();
@@ -70,20 +72,20 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCo
   return (
     <section className={HALF} aria-label={over ? "Essen morgen" : label}>
       <button type="button" onClick={onOpen} className="flex flex-1 flex-col items-start gap-1 text-left">
-        <span className={`${HALF_LABEL} ${hat ? (list.length && size !== "S" ? "pr-20" : "pr-11") : "pr-6"}`}>
+        <span className={`${HALF_LABEL} ${hat ? (planned ? "pr-[124px]" : "pr-14") : list.length ? "pr-11" : "pr-6"}`}>
           <UtensilsCrossed className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
           <span className="truncate">{label}</span>
         </span>
         <span className={`line-clamp-2 font-bold leading-snug ${size === "S" ? "text-[15px]" : "text-[18px]"}`}>{title}</span>
         {sub && <span className="text-xs text-muted">{sub}</span>}
       </button>
-      {/* Mit Kochmütze in der kleinen Kachel kein ⇄ – die Mütze bringt andere Ideen */}
-      {list.length > 0 && !(hat && size === "S") && (
-        <span className={`absolute top-3 ${hat ? "right-14" : "right-3.5"}`}>
+      {/* Mit Kochidee-Knopf kein ⇄ – „Was anderes?“ bringt die anderen Ideen */}
+      {list.length > 0 && !hat && (
+        <span className="absolute right-3.5 top-3">
           <QuickButton icon={ArrowLeftRight} label="Andere Idee" onClick={() => setAlt((a) => (a === null ? 0 : a + 1))} />
         </span>
       )}
-      {hat && <KochtippHat name={helperName(data.profile)} quiet={hat.quiet} />}
+      {hat && <KochideeKnopf name={helperName(data.profile)} planned={planned} quiet={hat.quiet} />}
       {idea && !over && (
         <button type="button" onClick={take} className={`${buttonClass("soft", "sm")} mt-1 self-start`}>
           Nehmen

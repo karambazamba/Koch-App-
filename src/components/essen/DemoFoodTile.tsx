@@ -11,7 +11,7 @@ import { demoDishAt } from "@/lib/essen/demoDish";
 import { tomorrowLabel } from "@/lib/kalender/model";
 import { addDays } from "@/lib/core/now";
 import { DishPicture } from "@/components/essen/DishPicture";
-import { KochtippHat } from "@/components/essen/kochtipp/KochtippHat";
+import { KochideeKnopf } from "@/components/essen/kochtipp/KochideeKnopf";
 import { DemoBadge } from "@/components/heute/DemoBits";
 import { buttonClass } from "@/components/ui/styles";
 
@@ -24,7 +24,7 @@ function demoMeal(today: string, minutes: number, todayWord: string) {
   };
 }
 
-/** `hat`: Name der Begleitung → Kochmütze oben rechts (am Beispiel-Tag ohne Blase) */
+/** `hat`: Name der Begleitung → Kochidee-Knopf oben rechts („Was anderes?“, am Beispiel-Tag ohne Blase) */
 export function DemoFoodTile({
   half,
   today,
@@ -61,7 +61,7 @@ export function DemoFoodTile({
           </span>
         </span>
       </Link>
-      {hat && <KochtippHat name={hat} demo />}
+      {hat && <KochideeKnopf name={hat} planned={r.title} demo />}
     </div>
   );
 }

@@ -22,10 +22,10 @@ import { useHomeTiles } from "@/lib/core/homeLayout";
 import { MiaButton } from "@/components/begleitung/MiaButton";
 import { helperName, type HelperVoice } from "@/lib/einstellungen/profile";
 import { removeRetiredKeys } from "@/lib/core/storage";
-import { adoptLegacySpeech, loadSpeechSettings, toggleSpeak } from "@/lib/begleitung/speech";
+import { adoptLegacySpeech } from "@/lib/begleitung/speech";
 import { micState } from "@/lib/core/mic";
-import { loadKochtipp, unlockKochtipp } from "@/lib/essen/kochtipp/store";
-import { kochtippStart, sourceChips } from "@/lib/essen/kochtipp/start";
+import { unlockKochtipp } from "@/lib/essen/kochtipp/store";
+import { EMPTY_TALK } from "@/lib/essen/kochtipp/idee";
 import { stageTopic } from "@/lib/begleitung/stage";
 import { adoptSchnellnotiz } from "@/lib/notizen/schnellnotiz";
 import { spontanStartTurn, type ChatState } from "@/components/begleitung/chatTypes";
@@ -157,25 +157,11 @@ export function KitchenHelper() {
           if (micState().granted) setStart({ listen: true });
           return;
         }
-        // Kochtipp (Kochmütze oder Nachfrage): frischer Anfang mit drei Schnellantworten,
-        // danach hört das Mikro zu (nur wenn erlaubt, sonst ist das Textfeld dran)
+        // Kochidee (Knopf in der Essen-Kachel oder Nachfrage): Mia fragt nicht, sie schlägt
+        // gleich drei Gerichte vor (das Gespräch füllt sie, sobald es offen ist) – kein Mikro davor
         if (mode === "kochtipp") {
           unlockKochtipp();
-          const last = loadKochtipp().last;
-          const [hello, question] = kochtippStart(last);
-          // Vorlesen an: Mia spricht die Frage (dann hört das Mikro nicht gleichzeitig zu)
-          const reading = loadSpeechSettings().mode === "an";
-          setChat((c) => {
-            const id = `turn-${c.turns.length + 1}`;
-            if (reading) setTimeout(() => toggleSpeak(question, id, voiceRef.current), 300);
-            return {
-              ...c,
-              spontan: null,
-              kochtipp: { wish: { source: null, have: [], without: [], category: null, quick: false, persons: null }, exclude: [] },
-              turns: [...c.turns, { role: "assistant", local: true, text: hello }, { role: "assistant", local: true, text: question, chips: sourceChips(last) }],
-            };
-          });
-          if (micState().granted && !reading) setStart({ listen: true });
+          setChat((c) => ({ ...c, spontan: null, kochtipp: { talk: EMPTY_TALK, exclude: [], planned: filters?.[0] ?? null, fresh: true } }));
           return;
         }
         if (mode !== "spontan") return;

@@ -80,24 +80,29 @@ const weekCheck = async (page, done) => {
   await sheet.getByRole("button", { name: "Fertig" }).click();
   await page.getByRole("dialog", { name: "Deine Woche" }).waitFor({ timeout: 10000 });
 };
-const cookTip = async (page, card) => {
-  await page.evaluate(() => localStorage.setItem("wasgibts.kochtipp", JSON.stringify({ version: 1, days: ["2026-10-19", "2026-10-20", "2026-10-21"], unlocked: false, popped: true, last: null, shown: [] })));
+const cookTip = async (page, step) => {
+  await page.evaluate(() => localStorage.setItem("wasgibts.kochtipp", JSON.stringify({ version: 1, days: ["2026-10-19", "2026-10-20", "2026-10-21"], unlocked: false, popped: true, last: null, shown: [], haus: [] })));
   await page.reload();
   await page.waitForTimeout(900);
   await page.getByRole("region", { name: /^Essen/ }).evaluate((el) => el.scrollIntoView({ block: "center" }));
-  if (!card) return;
-  await page.getByRole("button", { name: /^Kochtipp – spontan mit/ }).click();
+  if (step === "knopf") return;
+  await page.getByRole("button", { name: /^(Was anderes kochen\?|Kochidee –)/ }).click();
+  await page.getByText("Ganz was anderes?").waitFor({ timeout: 5000 });
+  if (step === "start") return settle(page);
+  await page.getByText("Ganz was anderes?").click();
   const box = await tippenFeld(page);
-  await box.fill("Ich hab noch Hähnchen, Reis und Paprika");
+  await box.fill("Ich hab Hähnchen gekauft, Paprika und Sahne sind noch da, was Cremiges");
   await box.press("Enter");
-  await page.getByRole("article", { name: /^Vorschlag:/ }).waitFor({ timeout: 5000 });
+  await page.getByText("Dann mach doch", { exact: false }).waitFor({ timeout: 5000 });
+  await page.keyboard.press("Tab");
   await settle(page);
 };
 const SCENES = [
   ["stimme-angebot", voiceOffer],
   ["stimme-anleitung", async (page) => (await voiceOffer(page), await page.getByRole("button", { name: "Schönere Stimme holen" }).click())],
-  ["kochtipp-muetze", (page) => cookTip(page, false)],
-  ["kochtipp-karte", (page) => cookTip(page, true)],
+  ["kochidee-knopf", (page) => cookTip(page, "knopf")],
+  ["kochidee-start", (page) => cookTip(page, "start")],
+  ["kochidee-ergebnis", (page) => cookTip(page, "ergebnis")],
   ["wochencheck-erzaehlen", (page) => weekCheck(page, false)],
   ["wochencheck-woche", (page) => weekCheck(page, true)],
   ["termin-satz", (page) => openTermin(page, "Mittwoch 12.30 Physio")],
