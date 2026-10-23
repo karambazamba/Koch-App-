@@ -40,10 +40,10 @@ export function takeHelloFlight(): Rect | null {
 export const HELLO_T = { title: 950, sub: 1800, buttons: 2200, jump: 2000 } as const;
 export const HELLO_JUMP_MS = 2800;
 /** Sprechblase „Ich bin bereit!“ ab 1,05 s im Sprung, bleibt 2,5 s */
-export const HELLO_BUBBLE = { from: 1050, ms: 2500 } as const;
+const HELLO_BUBBLE = { from: 1050, ms: 2500 } as const;
 /** Mias Sätze auf dem Hallo-Bildschirm (Sprung und Antippen) */
 export const HELLO_READY = "Ich bin bereit!";
-export const HELLO_TAPS = ["Hihi, kitzelig!", "Bereit, wenn du es bist!", "Hihi!", "Los geht’s?"] as const;
+const HELLO_TAPS = ["Hihi, kitzelig!", "Bereit, wenn du es bist!", "Hihi!", "Los geht’s?"] as const;
 
 /** Satz beim n-ten Antippen: zuerst „Hihi, kitzelig!“, danach die übrigen im Wechsel */
 export const helloTapText = (n: number) => (n === 0 ? HELLO_TAPS[0] : HELLO_TAPS[1 + ((n - 1) % (HELLO_TAPS.length - 1))]);
