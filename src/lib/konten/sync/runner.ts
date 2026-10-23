@@ -7,6 +7,10 @@
 // Ablauf: Speichern auf dem Gerät → kurz warten → Änderungen erkennen →
 // hochladen → holen, was andere geändert haben. Ohne Netz bleibt alles in
 // der Warteschlange (`wasgibts.abgleich`) und geht beim nächsten Mal mit.
+// Sprachnachrichten (Etappe 3c): vor jedem Durchgang wird der Ton neuer Memos
+// hochgeladen; erst dann wird das Memo geteilt. Fremde Töne holt
+// `setMemoRemote` beim Abspielen. Abgelaufene Dateien räumt der Server
+// (Cron) weg – und, falls der nicht läuft, einmal je Start die App.
 
 import { createLocalStore, notifyStore, onLocalSave, readRaw, writeRaw } from "@/lib/core/localStore";
 import { now, nowIso } from "@/lib/core/now";
@@ -15,6 +19,9 @@ import { fail, ok, type Result } from "@/lib/konten/model";
 import { ADAPTERS, takeoverSummary, type CloudDoc } from "@/lib/konten/sync/docs";
 import { applyRemote, detectChanges, emptyState, localCounts, markSent, migrateSyncState, takeOver, type Io, type SyncState } from "@/lib/konten/sync/engine";
 import { resetSyncStatus, setSyncStatus } from "@/lib/konten/sync/status";
+import { expiredMemoFiles, uploadPendingMemos } from "@/lib/konten/memoShare";
+import { memoAudio, setMemoRemote } from "@/lib/pinnwand/memoAudio";
+import { changeMemos, loadMemos } from "@/lib/pinnwand/store";
 
 const stateStore = createLocalStore("wasgibts.abgleich", migrateSyncState);
 
@@ -83,6 +90,7 @@ async function cycle() {
   }
   busy = true;
   try {
+    await shareMemos(run);
     let s = detectChanges(load(run.householdId), io);
     save(s);
     let failed = false;
@@ -109,6 +117,25 @@ async function cycle() {
   }
 }
 
+/** Ton neuer Memos hochladen, dann den Pfad am Memo vermerken (wird damit geteilt) */
+async function shareMemos(run: Run) {
+  await uploadPendingMemos({
+    householdId: run.householdId,
+    memos: loadMemos,
+    load: (memo) => memoAudio.load(memo),
+    upload: (path, blob) => run.backend.uploadMemo(path, blob),
+    setPath: (id, path) => void changeMemos((list) => list.map((m) => (m.id === id ? { ...m, geaendert: nowIso(), data: { ...m.data, storagePath: path } } : m))),
+  }).catch(() => 0);
+}
+
+/** Abgelaufene Ton-Dateien des Haushalts wegräumen (falls der Server-Cron nicht läuft) */
+async function tidyMemoFiles(run: Run) {
+  const files = await run.backend.listMemos(run.householdId).catch(() => null);
+  if (!files?.ok) return;
+  const old = expiredMemoFiles(files.value, now().getTime());
+  if (old.length) await run.backend.removeMemos(old).catch(() => null);
+}
+
 function schedule(ms: number) {
   window.clearTimeout(timer);
   timer = window.setTimeout(() => void cycle(), ms);
@@ -122,7 +149,10 @@ function startLoop(run: Run) {
   const every = window.setInterval(() => schedule(0), FALLBACK_MS);
   window.addEventListener("online", onOnline);
   document.addEventListener("visibilitychange", onVisible);
+  setMemoRemote((path) => run.backend.downloadMemo(path));
+  void tidyMemoFiles(run);
   run.stop = () => {
+    setMemoRemote(null);
     offSave();
     offWatch();
     window.clearInterval(every);

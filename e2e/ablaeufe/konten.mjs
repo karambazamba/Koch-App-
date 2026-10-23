@@ -222,3 +222,92 @@ export const begruessung = async (page, check, device) => {
     await pageC.context().close();
   }
 };
+
+// Etappe 3c: Sprachnachricht teilen – A hat ein Memo (Ton im Gerät), nach dem
+// Abgleich liegt der Ton im Haushalt; B sieht das Memo mit Punkt, tippt
+// „Abspielen“ → Ton wird geholt, Punkt weg, „gehört“ kommt bei A an.
+const MEMO_AUF_GERAET = async (author) => {
+  const id = "e2e-memo-1";
+  const at = new Date().toISOString();
+  const memo = { id, typ: "memo", raum: "familie", besitzer: "lokal", erstellt: at, geaendert: at, data: { author, dauer: 1, mime: "audio/wav", wave: [], gehoertVon: [author], alleGehoertAm: null, reactions: {}, storagePath: null } };
+  const store = JSON.parse(localStorage.getItem("wasgibts.pinnwand") ?? "null") ?? { version: 3, messages: [], memos: [] };
+  localStorage.setItem("wasgibts.pinnwand", JSON.stringify({ ...store, version: 3, memos: [...(store.memos ?? []), memo] }));
+  await new Promise((resolve, reject) => {
+    const req = indexedDB.open("wasgibts-memos", 1);
+    req.onupgradeneeded = () => req.result.createObjectStore("audio", { keyPath: "id" });
+    req.onsuccess = () => {
+      const tx = req.result.transaction("audio", "readwrite");
+      // 0,3 s Stille als gültiges WAV (8 kHz, 8 Bit) – echter Ton, damit Abspielen klappt
+      const n = 2400;
+      const buf = new ArrayBuffer(44 + n);
+      const v = new DataView(buf);
+      const text = (o, t) => [...t].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+      text(0, "RIFF");
+      v.setUint32(4, 36 + n, true);
+      text(8, "WAVEfmt ");
+      v.setUint32(16, 16, true);
+      v.setUint16(20, 1, true);
+      v.setUint16(22, 1, true);
+      v.setUint32(24, 8000, true);
+      v.setUint32(28, 8000, true);
+      v.setUint16(32, 1, true);
+      v.setUint16(34, 8, true);
+      text(36, "data");
+      v.setUint32(40, n, true);
+      for (let i = 0; i < n; i++) v.setUint8(44 + i, 128);
+      tx.objectStore("audio").put({ id, buf, mime: "audio/wav", at: Date.now() });
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+    };
+    req.onerror = () => reject(req.error);
+  });
+};
+const memoOf = (page) => page.evaluate(() => (JSON.parse(localStorage.getItem("wasgibts.pinnwand") ?? "null")?.memos ?? []).find((m) => m.id === "e2e-memo-1") ?? null);
+const tonAufGeraet = (page) =>
+  page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        const req = indexedDB.open("wasgibts-memos", 1);
+        req.onupgradeneeded = () => req.result.createObjectStore("audio", { keyPath: "id" });
+        req.onsuccess = () => {
+          const get = req.result.transaction("audio").objectStore("audio").get("e2e-memo-1");
+          get.onsuccess = () => resolve(Boolean(get.result));
+          get.onerror = () => resolve(false);
+        };
+        req.onerror = () => resolve(false);
+      }),
+  );
+
+export const memosTeilen = async (page, check, device) => {
+  const tag = device.replace(/\W/g, "").toLowerCase() + Date.now();
+  await hello(page);
+  await login(page, `anna-memo-${tag}@example.com`);
+  await page.getByRole("button", { name: /Neuen Haushalt anlegen/ }).click();
+  await page.getByRole("button", { name: "Haushalt anlegen" }).click();
+  await page.getByRole("list", { name: "Wer dazugehört" }).waitFor();
+  const code = await invite(page);
+  await page.evaluate(MEMO_AUF_GERAET, "Anna");
+  await page.reload();
+  check(await waitFor(page, () => /^[0-9a-f-]{36}\/e2e-memo-1\.webm$/.test((JSON.parse(localStorage.getItem("wasgibts.pinnwand") ?? "null")?.memos ?? []).find((m) => m.id === "e2e-memo-1")?.data.storagePath ?? "")), "A: Ton im Haushalt abgelegt (storagePath)");
+
+  const pageB = await newPage(page.context().browser(), device);
+  try {
+    await hello(pageB);
+    await login(pageB, `ben-memo-${tag}@example.com`);
+    await join(pageB, code);
+    await pageB.getByRole("list", { name: "Wer dazugehört" }).waitFor();
+    check(await waitFor(pageB, () => (localStorage.getItem("wasgibts.pinnwand") ?? "").includes("e2e-memo-1")), "B: Memo kommt an");
+    check(!(await tonAufGeraet(pageB)), "B: Ton noch nicht auf dem Gerät");
+    await pageB.goto(BASE + "/pinnwand");
+    const play = pageB.getByRole("button", { name: /^Abspielen: Sprachnachricht von Anna/ }).first();
+    check(await play.waitFor({ timeout: 10000 }).then(() => true, () => false), "B: Memo von Anna in der Pinnwand");
+    check(await pageB.getByLabel("Noch nicht gehört").first().isVisible(), "B: Punkt „Noch nicht gehört“");
+    await play.click();
+    check(await waitFor(pageB, () => !document.querySelector("[aria-label='Noch nicht gehört']"), undefined, 10000), "B: nach dem Abspielen ist der Punkt weg");
+    check(await tonAufGeraet(pageB), "B: Ton aus dem Haushalt geholt und abgelegt");
+    check(await waitFor(page, () => ((JSON.parse(localStorage.getItem("wasgibts.pinnwand") ?? "null")?.memos ?? []).find((m) => m.id === "e2e-memo-1")?.data.gehoertVon ?? []).length > 1, undefined, 30000), "A: „gehört“ von B kommt an");
+    check((await memoOf(page))?.data.storagePath, "A: Memo bleibt geteilt");
+  } finally {
+    await pageB.context().close();
+  }
+};

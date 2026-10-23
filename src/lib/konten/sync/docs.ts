@@ -2,7 +2,7 @@
 // `entries` (Etappe 3b). Jeder geteilte Speicher wird in einzelne Einträge
 // („Dokumente“) zerlegt und wieder zusammengesetzt – verlustfrei:
 // fromDocs(toDocs(v), v) ergibt wieder v. Was nur das Gerät betrifft
-// (gesehene Erinnerungen, Sprachnachrichten bis 3c, Einstellungen) bleibt.
+// (gesehene Erinnerungen, Einstellungen, Memos ohne geteilten Ton) bleibt.
 // Rein: keine Speicherzugriffe, nur Werte rein, Werte raus.
 
 import type { StorageKey } from "@/lib/core/storage";
@@ -69,8 +69,24 @@ const kalender = entryAdapter("kalender", "wasgibts.eintraege", 2, "entries", ["
 
 const notizen = entryAdapter("notizen", "wasgibts.notizen", 1, "notes", ["notiz"], () => ({ version: 1 }));
 
-/** Sprachnachrichten bleiben bis Etappe 3c auf dem Gerät */
-const pinnwand = entryAdapter("pinnwand", "wasgibts.pinnwand", 3, "messages", ["pinnwand"], (v) => ({ version: 3, memos: Array.isArray(v?.memos) ? v.memos : [] }));
+// Pinnwand: Nachrichten und Sprachnachrichten (Etappe 3c). Ein Memo wird erst
+// geteilt, wenn sein Ton in Supabase Storage liegt (`storagePath`) – bis dahin
+// bleibt es nur auf dem Gerät (und beim Einspielen erhalten).
+const isShared = (m: Value) => isObj(m.data) && typeof m.data.storagePath === "string" && m.data.storagePath !== "";
+const nachrichten = entryAdapter("pinnwand", "wasgibts.pinnwand", 3, "messages", ["pinnwand"], () => ({}));
+const memos = entryAdapter("pinnwand", "wasgibts.pinnwand", 3, "memos", ["memo"], () => ({}));
+const pinnwand: Adapter = {
+  name: "pinnwand",
+  key: "wasgibts.pinnwand",
+  version: 3,
+  typs: ["pinnwand", "memo"],
+  toDocs: (value) => [...nachrichten.toDocs(value), ...memos.toDocs({ memos: list(value.memos).filter(isShared) })],
+  fromDocs: (docs, value) => {
+    const onlyHere = list(value?.memos).filter((m) => !isShared(m) && !docs.some((d) => d.id === m.id));
+    const shared = memos.fromDocs(docs.filter((d) => d.typ === "memo"), null).memos as Value[];
+    return { version: 3, messages: nachrichten.fromDocs(docs.filter((d) => d.typ === "pinnwand"), null).messages, memos: [...onlyHere, ...shared] };
+  },
+};
 
 const vorrat: Adapter = {
   name: "vorrat",
