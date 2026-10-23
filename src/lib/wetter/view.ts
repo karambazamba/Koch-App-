@@ -5,6 +5,7 @@
 
 import { WEEKDAYS_SO } from "@/lib/core/days";
 import { dayLook, isRainy, round, weatherKind, type Forecast, type ForecastDay, type TipTermin } from "@/lib/wetter/forecast";
+import { windOf, type Wind } from "@/lib/wetter/wind";
 
 /** Farbgruppe der Kachel (Verlauf): sonnig · bewoelkt · regen · schnee · gewitter */
 export type WeatherGroup = "sonnig" | "bewoelkt" | "regen" | "schnee" | "gewitter";
@@ -19,7 +20,7 @@ export function weatherGroup(code: number): WeatherGroup {
 }
 
 type PartId = "morgens" | "mittags" | "abends";
-export type DayPart = { id: PartId; label: string; code: number; text: string; temp: number; rain: number; gust: number; tips: string[] };
+export type DayPart = { id: PartId; label: string; code: number; text: string; temp: number; rain: number; gust: number; wind: Wind | null; tips: string[] };
 
 const PARTS: { id: PartId; label: string; from: number; to: number }[] = [
   { id: "morgens", label: "Morgens", from: 6, to: 11 },
@@ -27,8 +28,8 @@ const PARTS: { id: PartId; label: string; from: number; to: number }[] = [
   { id: "abends", label: "Abends", from: 17, to: 23 },
 ];
 
-/** Kleine Tipps je Tageszeit (höchstens 2) – Schirm nur bei echter Regenstunde */
-function partTips(code: number, temp: number, wet: number, gust: number): string[] {
+/** Kleine Tipps je Tageszeit (höchstens 2) – Schirm nur bei echter Regenstunde; Wind zeigt der Windsack-Chip */
+function partTips(code: number, temp: number, wet: number): string[] {
   const tips: string[] = [];
   const g = weatherGroup(code);
   if (g === "gewitter") tips.push("⚡ Lieber drinnen");
@@ -36,7 +37,6 @@ function partTips(code: number, temp: number, wet: number, gust: number): string
   if (temp <= 0) tips.push("❄️ Glatt");
   else if (temp <= 5) tips.push("🧣 Warm anziehen");
   else if (temp >= 25) tips.push("🧴 Sonnencreme");
-  if (gust >= 50 && tips.length < 2) tips.push("🌬️ Windig");
   return tips.slice(0, 2);
 }
 
@@ -50,7 +50,7 @@ export function dayParts(fc: Forecast, date: string): DayPart[] {
     const temp = round(part.reduce((s, h) => s + h.temp, 0) / part.length);
     const rain = Math.max(...part.map((h) => h.rain));
     const gust = Math.max(...part.map((h) => h.gust));
-    return [{ id: p.id, label: p.label, code: look.code, text: look.text, temp, rain, gust, tips: partTips(look.code, temp, look.wet, gust) }];
+    return [{ id: p.id, label: p.label, code: look.code, text: look.text, temp, rain, gust, wind: windOf(part), tips: partTips(look.code, temp, look.wet) }];
   });
 }
 

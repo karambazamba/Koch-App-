@@ -219,7 +219,7 @@ const LARGE_TOPICS = /\b(woche\w*|wochenplan|planen?|plan\b|rezept\w*|mail\w*|e-
 const LARGE_TOOLS = new Set(["rezept_erstellen", "mail_entwurf", "wochenplan_aendern", "vorgaben_aendern", "trainings_planen", "schnellnotiz_aufraeumen", "kochbuch_durchsuchen", "antwort_knoepfe"]);
 
 /** Klingt nach Wetter? ("Wie wird das Wetter morgen?", "Brauch ich einen Schirm?") */
-const WEATHER_QUESTION = /\b(wetter|schirm|regn\w*|regen|sonnig|sonne|warm|kalt|grad|temperatur|frost|glatt|schnee|wind\w*|gewitter)\b/i;
+const WEATHER_QUESTION = /\b(wetter|schirm|regn\w*|regen|sonnig|sonne|warm|kalt|grad|temperatur|frost|glatt|schnee|wind\w*|sturm|stürm\w*|böen|gewitter)\b/i;
 
 /** Trainings planen: Wetter für draußen-Sport mitdenken */
 const TRAINING_PLAN = /\bplan\w*\b.*\b(trainings?|sport\w*|läufe|laufen|einheiten)\b/i;

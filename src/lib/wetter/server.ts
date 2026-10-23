@@ -42,7 +42,11 @@ function mockForecast(place: string, scenario: Scenario = "regen", day?: string)
       const code = di === 0 ? codeFor(0, hour) : di === 1 && (hour < 9 || hour > 14) ? 3 : later;
       const rainy = [61, 73, 80, 95].includes(code);
       const sunny = code === 0 ? 50 : code === 1 || code === 2 ? (hour >= 10 && hour <= 13 ? 40 : 10) : 0;
-      return { date, hour, temp: Math.round(temp * 10) / 10, code, rain: rainy ? 80 : 10, gust: scenario === "sturm" ? 85 : 20, mm: rainy ? 1.2 : 0, sun: hour >= 7 && hour <= 18 ? sunny : 0, cloud: code === 0 ? 10 : code <= 2 ? 50 : 90 };
+      // Wind: tagsüber stärker; Sturm-Szenario stürmisch; Richtung dreht über die Woche (SW → W → NW …)
+      const wind = scenario === "sturm" ? 48 : [12, 26, 18, 9, 14, 32, 22, 16][di] ?? 14;
+      const windHour = Math.round(wind * (hour >= 9 && hour <= 18 ? 1 : 0.6));
+      const dir = [225, 270, 315, 300, 90, 250, 200, 0][di] ?? 270;
+      return { date, hour, temp: Math.round(temp * 10) / 10, code, rain: rainy ? 80 : 10, gust: scenario === "sturm" ? 85 : Math.round(windHour * 1.6), wind: windHour, dir, mm: rainy ? 1.2 : 0, sun: hour >= 7 && hour <= 18 ? sunny : 0, cloud: code === 0 ? 10 : code <= 2 ? 50 : 90 };
     }),
   );
   return {
@@ -102,7 +106,7 @@ async function fromIcon(geo: { name: string; lat: number; lon: number }): Promis
     longitude: String(geo.lon),
     models: "icon_seamless",
     current: "temperature_2m,weather_code",
-    hourly: "temperature_2m,weather_code,precipitation,precipitation_probability,sunshine_duration,cloud_cover,wind_gusts_10m",
+    hourly: "temperature_2m,weather_code,precipitation,precipitation_probability,sunshine_duration,cloud_cover,wind_gusts_10m,wind_speed_10m,wind_direction_10m",
     timezone: "Europe/Berlin",
     forecast_days: "7",
   });

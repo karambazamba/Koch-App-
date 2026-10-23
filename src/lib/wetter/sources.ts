@@ -25,6 +25,9 @@ function codeFromBrightSky(condition: unknown, icon: unknown, cloud: number | nu
   return cloud === null ? 3 : cloud < 25 ? 0 : cloud < 70 ? 2 : 3;
 }
 
+/** Windstärke (km/h) und -richtung (Grad) nur, wenn geliefert */
+const windFields = (speed: number | null, dir: number | null) => ({ ...(speed !== null ? { wind: Math.round(speed * 10) / 10 } : {}), ...(dir !== null ? { dir: Math.round(dir) } : {}) });
+
 /** Regenrisiko: Stundenwert, sonst 6-Stunden-Wert, sonst grob aus der Menge */
 const probability = (p: number | null, p6: number | null, mm: number) => p ?? p6 ?? (mm >= 0.2 ? 50 : 0);
 
@@ -50,6 +53,7 @@ export function fromBrightSky(weather: unknown, current: unknown, place: string,
         code: codeFromBrightSky(r.condition, r.icon, cloud),
         rain: Math.round(probability(num(r.precipitation_probability), num(r.precipitation_probability_6h), mm)),
         gust: num(r.wind_gust_speed) ?? 0,
+        ...windFields(num(r.wind_speed), num(r.wind_direction)),
         mm,
         sun: Math.min(60, num(r.sunshine) ?? 0),
         cloud: cloud ?? 0,
@@ -102,6 +106,7 @@ export function fromOpenMeteo(json: unknown, place: string, nowIso: string): For
       code: at("weather_code", i) ?? 3,
       rain: Math.round(probability(at("precipitation_probability", i), null, mm)),
       gust: at("wind_gusts_10m", i) ?? 0,
+      ...windFields(at("wind_speed_10m", i), at("wind_direction_10m", i)),
       mm,
       // Open-Meteo: Sekunden je Stunde
       sun: Math.min(60, Math.round((at("sunshine_duration", i) ?? 0) / 60)),
