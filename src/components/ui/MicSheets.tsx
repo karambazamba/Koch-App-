@@ -15,6 +15,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { buttonClass } from "@/components/ui/styles";
 import { markHintSeen } from "@/lib/core/hints";
 import { closeMicSheet, iosMajor, micPlatform, micState, micSteps, micSubscribe, preAskText, setMicPermission, withMicTimeout, type MicBlock, type MicPlatform } from "@/lib/core/mic";
+import { APP_NAME } from "@/lib/core/app";
 
 const platform = (): MicPlatform => (typeof navigator === "undefined" ? "andere" : micPlatform(navigator.userAgent));
 
@@ -44,7 +45,7 @@ function PreAsk({ then }: { then: () => void }) {
         <p className="text-base leading-snug">{text.text}</p>
         {/* Nachgebauter System-Dialog */}
         <div className="w-full max-w-[280px] overflow-hidden rounded-card border border-line bg-surface text-[14px] shadow-card" aria-hidden>
-          <p className="px-4 pb-3 pt-4 font-semibold leading-snug">{p === "ios" ? "„Was gibt’s?“ möchte auf das Mikrofon zugreifen" : "Was gibt’s? möchte dein Mikrofon verwenden"}</p>
+          <p className="px-4 pb-3 pt-4 font-semibold leading-snug">{p === "ios" ? `„${APP_NAME}“ möchte auf das Mikrofon zugreifen` : `${APP_NAME} möchte dein Mikrofon verwenden`}</p>
           <div className="grid grid-cols-2 border-t border-line">
             <span className="py-2.5 text-muted">{p === "ios" ? "Nicht erlauben" : "Nicht zulassen"}</span>
             <span className="border-l border-line py-2.5 font-extrabold text-accent-strong ring-2 ring-inset ring-accent">{text.allow}</span>

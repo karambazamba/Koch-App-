@@ -25,7 +25,7 @@ export function AccountDataSection() {
     const blob = new Blob([JSON.stringify(data, null, 1)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `was-gibts-meine-daten-${nowIso().slice(0, 10)}.json`;
+    a.download = `mia-meine-daten-${nowIso().slice(0, 10)}.json`;
     a.click();
     window.setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   };

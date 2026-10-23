@@ -31,6 +31,8 @@ import { spontanStartTurn, type ChatState } from "@/components/begleitung/chatTy
 import { loadSpontanFilters } from "@/lib/essen/spontanFilters";
 import dynamic from "next/dynamic";
 import { DoneNotes } from "@/components/kalender/abgeben/DoneNotes";
+import { showToast } from "@/lib/core/toast";
+import { loadProfile, saveProfile } from "@/lib/einstellungen/profileStore";
 
 // Das Gespräch (mit Mails, Backstube, Supermarkt …) wird erst gebraucht, wenn
 // man es öffnet – eigener Teil, der nach dem Laden der Seite im Leerlauf vorgeholt wird
@@ -76,6 +78,14 @@ export function KitchenHelper() {
   useEffect(() => {
     voiceRef.current = profile?.helper.voice ?? "weiblich";
   });
+  // Hieß die Begleitung vorher anders (Theo, eigener Name): einmal sagen, dass sie jetzt Mia heißt
+  const miaNotice = Boolean(profile?.miaNotice);
+  useEffect(() => {
+    if (!miaNotice) return;
+    const current = loadProfile();
+    if (current?.miaNotice) saveProfile({ ...current, miaNotice: false });
+    showToast({ text: `Ab jetzt heiße ich überall ${helperName(current)}.`, seconds: 4 });
+  }, [miaNotice]);
   const weekPlans = useWeekPlans();
   const mealPlans = useMealPlans();
   const recipes = useRecipes();

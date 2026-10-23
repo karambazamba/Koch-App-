@@ -19,7 +19,7 @@ import {
   type StoredEntry,
 } from "@/lib/essen/mealPlan";
 import type { PantryItem, PantryPlace } from "@/lib/vorrat/pantry";
-import { helperWith, type HelperSettings, type HouseholdProfile } from "@/lib/einstellungen/profile";
+import type { HouseholdProfile } from "@/lib/einstellungen/profile";
 import { applyHouseholdIntro, type HouseholdIntro } from "@/lib/einstellungen/householdIntro";
 import type { Section, WeekList } from "@/lib/einkauf/shoppingList";
 import { createWeekPlan, planForWeek, type WeekPlan, type WeekWish } from "@/lib/essen/weekPlan";
@@ -145,7 +145,6 @@ export type ChangeOp =
   | { id: string; type: "add_training"; training: TrainingData }
   | { id: string; type: "set_sport_goal"; goal: number }
   // Begleitung anpassen (Name, Art/Stimme, Icon-Farbe)
-  | { id: string; type: "set_helper"; helper: Partial<Pick<HelperSettings, "name" | "art" | "farbe">> }
   // Wer zum Haushalt gehört („Ich bin Felix, wir sind Lisa und drei Kinder“)
   | { id: string; type: "set_household"; intro: HouseholdIntro };
 
@@ -325,9 +324,6 @@ export function applyOps(
         break;
       case "set_schnellnotiz":
         next = { ...next, schnellnotiz: op.text };
-        break;
-      case "set_helper":
-        next = { ...next, profile: { ...next.profile, helper: helperWith(next.profile.helper, op.helper) } };
         break;
       case "set_household":
         next = { ...next, profile: applyHouseholdIntro(next.profile, op.intro) };

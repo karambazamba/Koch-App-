@@ -39,7 +39,7 @@ export function createBackup(storage: Pick<Storage, "getItem"> = localStorage, e
 }
 
 export function backupFileName(date = now()): string {
-  return `was-gibts-sicherung-${date.toISOString().slice(0, 10)}.json`;
+  return `mia-sicherung-${date.toISOString().slice(0, 10)}.json`;
 }
 
 /** Datei prüfen – null, wenn es keine Sicherung dieser App ist */

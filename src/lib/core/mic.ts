@@ -39,7 +39,7 @@ export function preAskText(p: MicPlatform): { title: string; text: string; allow
 }
 
 /** Symbol eines Schritts (nachgebaut, kein Foto) */
-export type StepIcon = "zahnrad" | "apps" | "safari" | "mikro" | "erlauben" | "regler" | "berechtigungen" | "allgemein" | "tastatur" | "diktat";
+export type StepIcon = "zahnrad" | "apps" | "safari" | "mikro" | "erlauben" | "regler" | "berechtigungen" | "allgemein" | "tastatur" | "diktat" | "teilen" | "entfernen" | "sichern";
 
 /** Ein Schritt mit nachgebautem Bildschirm: Titel oben, Zeilen, die gesuchte ist markiert */
 export type MicStep = { text: string; icon: StepIcon; screen: { title: string; rows: string[]; target: number } };

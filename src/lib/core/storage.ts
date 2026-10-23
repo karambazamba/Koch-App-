@@ -20,7 +20,7 @@ type StorageDef = {
 };
 
 export const STORAGE = [
-  { key: "familienkueche.haushaltsprofil", what: "Profil: Familie, Begleitung, Vorlieben, Einstellungen", version: 21, migration: "einstellungen/profileStore.ts migrateProfile", area: "local", backup: true },
+  { key: "familienkueche.haushaltsprofil", what: "Profil: Familie, Begleitung, Vorlieben, Einstellungen", version: 22, migration: "einstellungen/profileStore.ts migrateProfile", area: "local", backup: true },
   { key: "wasgibts.eintraege", what: "Termine und Aufgaben", version: 2, migration: "kalender/store.ts migrate", area: "local", backup: true },
   { key: "wasgibts.notizen", what: "Notizen", version: 1, migration: "notizen/store.ts", area: "local", backup: true },
   { key: "wasgibts.kladde", what: "Schnellnotiz (Schlüssel heißt noch Kladde)", version: 1, migration: "notizen/schnellnotiz.ts", area: "local", backup: true },

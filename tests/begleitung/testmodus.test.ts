@@ -76,11 +76,18 @@ describe("Timer, Kochen, Sport, Jetzt-Karte, Begleitung", () => {
     ["Wie oft war ich diese Woche beim Sport?", "sport_statistik", { zeitraum: "woche" }],
     ["Plan mir 3 Trainings nächste Woche, am liebsten morgens", "trainings_planen", { anzahl: 3, tageszeit: "morgens", woche: "naechste" }],
     ["Blende die Jetzt-Karte aus", "jetzt_karte", { an: false }],
-    ["Ich nenn dich ab jetzt Frieda", "assistent_anpassen", { name: "Frieda" }],
   ])("%s → %s", async (sentence, name, input) => {
     const r = await one(sentence);
     expect(r.uses).toHaveLength(1);
     expect(r.first).toMatchObject({ name, input });
+  });
+});
+
+describe("Mia bleibt Mia", () => {
+  it("„Ich nenn dich ab jetzt Frieda“ → freundlich nein, kein Werkzeug", async () => {
+    const r = await one("Ich nenn dich ab jetzt Frieda");
+    expect(r.uses).toHaveLength(0);
+    expect(r.text).toBe("Ich bleib lieber Mia 😊 (Testmodus)");
   });
 });
 

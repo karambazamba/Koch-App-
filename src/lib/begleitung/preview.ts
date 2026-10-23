@@ -270,11 +270,6 @@ function describe(
       return { opId: op.id, group: "Schnellnotiz", order: 25_500, label: "✎ Schnellnotiz", before: null, after: op.change };
     case "add_pin":
       return { opId: op.id, group: "Pinnwand", order: 25_600, label: "📌 Pinnwand", before: null, after: op.text };
-    case "set_helper": {
-      const h = op.helper;
-      const after = [h.name, h.art ? (h.art === "assistent" ? "Assistent · männliche Stimme" : "Assistentin · weibliche Stimme") : null].filter(Boolean).join(" · ");
-      return { opId: op.id, group: "Begleitung", order: 25_650, label: "Ich", before: state.profile.helper.name, after };
-    }
     case "set_household":
       return { opId: op.id, group: "Familie", order: 25_660, label: "Wer dazugehört", before: null, after: householdIntroSummary(op.intro, state.profile) };
     case "set_jetzt":

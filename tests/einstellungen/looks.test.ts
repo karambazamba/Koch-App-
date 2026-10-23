@@ -11,7 +11,7 @@ import { jetztTopics, type JetztInput } from "@/lib/heute/jetztTopics";
 describe("Profil v21: Look und Kalenderfarbe", () => {
   it("neue Profile: Farbig, Kalenderfarbe Orange", () => {
     const p = createEmptyProfile();
-    expect(p.version).toBe(21);
+    expect(p.version).toBe(22);
     expect(p.look).toBe("farbig");
     expect(p.calendarColor).toBe("orange");
   });
@@ -21,7 +21,7 @@ describe("Profil v21: Look und Kalenderfarbe", () => {
     delete old.look;
     delete old.calendarColor;
     const p = migrateProfile(old)!;
-    expect(p.version).toBe(21);
+    expect(p.version).toBe(22);
     expect(p.look).toBe("farbig");
     expect(p.calendarColor).toBe("lila");
     // Verstecken heißt nie löschen: die alte Farbe bleibt in den Daten

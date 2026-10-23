@@ -1,7 +1,7 @@
 # Begleitung
 
-Kurz: Die Begleitung (Standard Mia, Name/Art/Stimme/Farbe wählt die Familie)
-ist der Hauptweg in die App. Man spricht oder tippt, sie legt an, ändert und
+Kurz: Die Begleitung heißt fest Mia – wie die App (seit v0.67, `APP_NAME`;
+nur die Stimme ist wählbar) – und ist der Hauptweg in die App. Man spricht oder tippt, sie legt an, ändert und
 räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 
 ## Wo im Code
@@ -24,7 +24,6 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
     `chatTypes.ts`.
   - `GuidedChat.tsx` – geführtes Gespräch „neue Person“.
   - `BegleitungAvatar.tsx` – das eine Gesicht für alle Stellen.
-  - `BegleitungPicker.tsx` – Auswahl Mia/Theo/eigener Name, `ColorDots`.
   - `HelloScreen.tsx` – erster Start.
 - Logik `src/lib/begleitung/`:
   - `client.ts` – App-Seite: `askAssistant`, `useAssistantStatus`,
@@ -280,23 +279,14 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 
 ### Erster Start und neue Person
 
-- `HelloScreen` (Tafel 19, seit v0.49): drei Pastell-Kacheln als Deko
-  (`HelloTiles`, Termine/Essen/Einkauf, gedreht, aria-hidden), die Begleitung
-  (92 px, überlappt die Einkauf-Kachel), „Hallo, ich bin <Name>.“
-  (`helperName`), „Euer Alltag an einem Ort.“, „Los geht’s“ (`startFresh`),
-  „Schon mal genutzt? Daten wiederherstellen“ (`/profil/daten`) und ganz unten
-  die Leiste der Begleitung wie auf jeder Seite (Mikro „Mit <Name> sprechen“;
-  der frühere Sprech-Chip in der Mitte hakte und ist weg). Kein
-  Anmelden-Link, bis „Anmelden wie man es kennt“ (Tafel 22) fertig ist.
-  Ablauf: 0 s Begleitung, 0,3 s Kacheln (je 120 ms), 0,95 s Überschrift
-  tippt, 1,8 s Zeile, 2,2 s Knopf, Link und Leiste. Beim Start fliegt
-  die Begleitung in die Jetzt-Karte, die Kacheln blenden als Kopie aus
-  (`fadeOutGhost`). Bewegung reduzieren = alles sofort, kein Puls.
-- Mikro unten: im selben Tipp `primeMicrophone` (Freigabe über
-  `getUserMedia`, in `useSpeechInput.ts`), dann `startFresh` und
-  `openHelper("voice")` – die Leiste hört zu. Abgelehnt: Leiste zum Tippen und
-  das Hilfe-Fenster (`core/mic`); kein Sprechen im Browser: freundlicher Satz
-  (Toast), nie ein Fehler.
+- `HelloScreen` (Tafel 55, seit v0.67): Mia groß und rund (132 px), „Hallo,
+  ich bin Mia.“ („Mia.“ in Orange), „Erzähl mir einfach, was ansteht. Ich
+  sortiere für euch.“, „Los geht’s“ (`startFresh`), „Schon mal genutzt? Daten
+  wiederherstellen“ (`/profil/daten`), klein die Marke (BrandMark, gedämpft)
+  und „möglich gemacht von KARAMBA“. Die Deko-Kacheln und die Leiste mit Mikro
+  sind weg. Ablauf: 0 s Mia, 0,95 s Überschrift tippt, 1,8 s Zeile, 2,2 s
+  Knopf, Link und Marke. Beim Start fliegt
+  Mia in die Jetzt-Karte. Bewegung reduzieren = alles sofort, kein Puls.
 - Erster Satz wie jede Nachricht (KI zuerst): „Ich bin Felix, wir sind Lisa
   und drei Kinder“ → Op `set_household` (Werkzeug `haushalt_vorstellen`, ohne
   KI `parseHouseholdIntro` in `einstellungen/householdIntro.ts`) mit Vorschau
@@ -354,3 +344,16 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   `kiErkennungApp.test.ts`.
 - `tests/app/regeln.test.ts`: kein fest eingebauter Name der Begleitung in
   sichtbaren Texten.
+
+## Mia heißt Mia (v0.67)
+
+- Name an einer Stelle: `APP_NAME` (`src/lib/core/app.ts`); `helperName()`
+  liefert immer ihn, `helperTitle()` „deine Assistentin“.
+- „Ich nenn dich …“, „Sei lieber Theo“, „Nimm eine männliche Stimme“ →
+  `stayMiaReply` (`helperTools.ts`): „Ich bleib lieber Mia 😊“ (bei Stimme
+  mit Hinweis auf die Einstellungen). Mit KI über den Prompt; das Werkzeug
+  `assistent_anpassen` und die Op `set_helper` gibt es nicht mehr.
+- Profil v22: Theo, Lotte und eigene Namen → Mia (`migrateHelper`, alte Farbe
+  bleibt in den Daten), einmal „Ab jetzt heiße ich überall Mia.“
+  (`miaNotice`, KitchenHelper).
+

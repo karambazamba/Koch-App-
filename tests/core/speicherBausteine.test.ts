@@ -130,10 +130,10 @@ describe("Einträge und App-Angaben", () => {
   });
 
   it("Icon-Pfade mit Version und Farbe", () => {
-    expect(icon("icon-192.png")).toBe("/icons/icon-192-v3.png");
-    expect(iconFor("lila", "apple-touch-icon.png")).toBe("/icons/lila/apple-touch-icon-v3.png");
-    expect(iconFor("pink", "icon.svg")).toBe("/icons/orange/icon-v3.svg");
-    expect(iconFor(undefined, "icon.svg")).toBe("/icons/orange/icon-v3.svg");
+    expect(icon("icon-192.png")).toBe("/icons/icon-192-v4.png");
+    expect(iconFor("lila", "apple-touch-icon.png")).toBe("/icons/lila/apple-touch-icon-v4.png");
+    expect(iconFor("pink", "icon.svg")).toBe("/icons/orange/icon-v4.svg");
+    expect(iconFor(undefined, "icon.svg")).toBe("/icons/orange/icon-v4.svg");
   });
 
   it("Versions-Zeile mit und ohne Bau-Datum", async () => {

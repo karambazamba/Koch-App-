@@ -36,7 +36,7 @@ const MASKABLE = "translate(11.2 12.5) scale(.72)";
 const lighten = (hex, amount) =>
   `#${[1, 3, 5].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) + (255 - parseInt(hex.slice(i, i + 2), 16)) * amount).toString(16).padStart(2, "0")).join("").toUpperCase()}`;
 /** Lieblingsfarben aus dem Profil (eine Quelle) */
-const COLORS = [...readFileSync("src/lib/einstellungen/profile.ts", "utf8").matchAll(/\{ id: "(\w+)", label: "[^"]+", hex: "(#[0-9A-Fa-f]{6})" \}/g)].map((m) => ({ id: m[1], hex: m[2] }));
+const COLORS = [...readFileSync("src/lib/einstellungen/profileHelper.ts", "utf8").matchAll(/\{ id: "(\w+)", label: "[^"]+", hex: "(#[0-9A-Fa-f]{6})" \}/g)].map((m) => ({ id: m[1], hex: m[2] }));
 if (COLORS.length !== 10) throw new Error(`AVATAR_COLORS nicht gefunden (${COLORS.length})`);
 
 /** Avatar im orangen Kreis (wie BegleitungAvatar) */

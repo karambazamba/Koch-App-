@@ -131,7 +131,7 @@ describe("Push-Regeln (vorbereitet)", () => {
 
   it("Mitteilung im Namen der Begleitung mit ihrem Gesicht", () => {
     const push = begleitungPush({ helper: { name: "Theo", art: "assistent", voice: "maennlich", farbe: "nachtblau" } } as never, "Nudeln sind fertig.");
-    expect(push.body).toBe("Theo: Nudeln sind fertig.");
+    expect(push.body).toBe("Mia: Nudeln sind fertig.");
     expect(push.icon).toMatch(/^\/icons\/lotte-192-v\d+\.png$/);
     expect(push.badge).toMatch(/^\/icons\/favicon-48-v\d+\.png$/);
   });

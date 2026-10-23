@@ -78,8 +78,10 @@ import { dishOf } from "@/components/essen/useMeals";
 import { TipsTile } from "@/components/tipps/TipsTile";
 import { hideJetztTipWeekend, useTipSettings, useTipsOn, useTipsWindow } from "@/lib/tipps/client";
 import { weekendKey } from "@/lib/tipps/model";
+import { BrandMark } from "@/components/ui/BrandMark";
+import { headerDate } from "@/lib/heute/kopfDatum";
+import { MiaNameHint, useMiaHomeHint } from "@/components/heute/MiaNameHint";
 
-const DATE = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long" });
 
 /** Name für die Begrüßung: die erste Person im Haushalt (meist man selbst) */
 const firstName = (data: HomeData) => data.profile.persons[0]?.name.trim() ?? "";
@@ -235,6 +237,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const demoDish = demoDay.tiles.includes("essen");
   const demoMeal = demoDishAt(minutes);
   const potHint = usePotHint(demoDay.tiles.length > 0);
+  const miaHint = useMiaHomeHint(data.profile.miaHomeHint);
   const runningTimer = timers ? sortTimers(timers.timers.filter((x) => isRunning(x, nowMs)), nowMs)[0] : undefined;
   const steps = recipe?.steps ?? [];
   const step = cookingNow && cooking ? currentStep(steps.length, cooking.steps[recipe?.id ?? dish ?? ""] ?? []) : null;
@@ -359,12 +362,14 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
           {editing.on ? (
             <EditHeader onAdd={() => setPicking(true)} onDone={editing.close} />
           ) : (
-            <header className="flex flex-col gap-1 pt-1">
-              <h1 className="text-[28px] font-extrabold leading-tight tracking-tight">
+            // Kopf (Tafel 55): links die Marke, rechts das Datum – die Begrüßung bleibt für VoiceOver
+            <header className="flex h-9 items-center justify-between gap-3 pt-1">
+              <h1 className="sr-only">
                 {greeting(minutes)}
                 {name ? `, ${name}.` : "!"}
               </h1>
-              <p className="text-sm font-medium text-muted">{DATE.format(data.today)}</p>
+              <BrandMark height={30} />
+              <p className="text-[15px] font-semibold text-muted">{headerDate(data.today)}</p>
             </header>
           )}
 
@@ -372,9 +377,10 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
 
           {!editing.on && (
             <>
-              {/* Höchstens ein Hinweis: Spendentopf (Abstimmung bzw. Beitrags-Frage) vor dem Dunkel-Tipp */}
-              {potHint && <PotHintCard hint={potHint} />}
-              <DarkTip profile={data.profile} today={data.todayIso} quiet={demoDay.tiles.length > 0 || tipSeen === false || Boolean(potHint)} />
+              {/* Höchstens ein Hinweis: „Mia neu hinzufügen“ (iPhone), Spendentopf (Abstimmung bzw. Beitrags-Frage), dann der Dunkel-Tipp */}
+              {miaHint && <MiaNameHint />}
+              {potHint && !miaHint && <PotHintCard hint={potHint} />}
+              <DarkTip profile={data.profile} today={data.todayIso} quiet={demoDay.tiles.length > 0 || tipSeen === false || Boolean(potHint) || miaHint} />
               {tipSeen === false && welcomed && !demoDay.tiles.length && (
                 <div className="flex items-start gap-3 rounded-card bg-accent-soft px-4 py-3" role="status">
                   <p className="flex-1 text-[15px] leading-snug text-accent-strong">Tipp: Halte die Startseite gedrückt, um Kacheln hinzuzufügen oder zu entfernen.</p>

@@ -3,8 +3,8 @@
 // geänderte Profil und eine kurze Antwort zurück (die App bietet Rückgängig).
 
 import { extractDietItems } from "@/lib/einstellungen/onboarding/recognize";
-import { helperWith, personLabel, type HouseholdProfile, type Person } from "@/lib/einstellungen/profile";
-import { helperReply, parseHelperCommand } from "@/lib/begleitung/helperTools";
+import { personLabel, type HouseholdProfile, type Person } from "@/lib/einstellungen/profile";
+import { stayMiaReply } from "@/lib/begleitung/helperTools";
 
 type SettingsChange = { profile: HouseholdProfile; reply: string };
 
@@ -22,9 +22,9 @@ export function settingsChange(text: string, profile: HouseholdProfile): Setting
   const t = text.trim().replace(/^[A-ZÄÖÜa-zäöüß]+,\s*/, (m) => (/^(hey|hallo)\b/i.test(m) || m.replace(/,\s*$/, "").toLowerCase() === profile.helper.name.trim().toLowerCase() ? "" : m));
   const lower = t.toLowerCase();
 
-  // Die Begleitung selbst: Name, Art/Stimme
-  const helper = parseHelperCommand(t, profile.helper);
-  if (helper) return { profile: { ...profile, helper: helperWith(profile.helper, helper) }, reply: helperReply(helper) };
+  // Die Begleitung heißt fest Mia: „Ich nenn dich …“ → freundlich nein (nichts ändert sich)
+  const stay = stayMiaReply(t);
+  if (stay) return { profile, reply: stay };
   const person = findPerson(t, profile.persons);
   const withPerson = (change: (p: Person) => Person) => ({ ...profile, persons: profile.persons.map((p) => (p.id === person!.id ? change(p) : p)) });
   const label = person ? personLabel(person, profile.persons) : "";

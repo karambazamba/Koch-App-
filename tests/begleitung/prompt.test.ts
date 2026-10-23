@@ -3,7 +3,6 @@ import { at } from "../helpers";
 import { contextText, identityPrompt, SYSTEM_PROMPT } from "@/lib/begleitung/prompt";
 import { applyOps } from "@/lib/begleitung/ops";
 import { createNote } from "@/lib/notizen/model";
-import { STANDARD_HELPERS } from "@/lib/einstellungen/profile";
 import { aufgabe, daten, haushalt, HEUTE, rezept, termin, WOCHEN } from "./werkzeugKontext";
 
 beforeEach(() => at("2026-10-21T09:00"));
@@ -12,7 +11,10 @@ describe("Wer die Begleitung ist", () => {
   it("Name, Art und Haushalt", () => {
     const p = haushalt();
     expect(identityPrompt(p)).toMatch(/^Du heißt Mia und bist die persönliche Assistentin der Familie Müller in der App/);
-    expect(identityPrompt({ ...p, householdName: "Familie Schulz", helper: STANDARD_HELPERS[1] })).toMatch(/^Du heißt Theo und bist der persönliche Assistent der Familie Schulz /);
+    // Mia heißt fest Mia – auch ein altes „Theo“ im Profil ändert daran nichts
+    expect(identityPrompt({ ...p, householdName: "Familie Schulz", helper: { name: "Theo", art: "assistent", voice: "maennlich", farbe: "nachtblau" } })).toMatch(/^Du heißt Mia und bist die persönliche Assistentin der Familie Schulz /);
+    expect(identityPrompt(p)).toContain('in der App "Mia"');
+    expect(identityPrompt(p)).toContain("Ich bleib lieber Mia 😊");
     expect(identityPrompt({ ...p, householdName: "" })).toContain("Assistentin der Familie in der App");
     expect(identityPrompt({ ...p, householdType: "single" })).toContain("Assistentin von Felix");
     expect(identityPrompt({ ...p, householdType: "single", persons: [{ ...p.persons[0], name: "" }] })).toContain("für einen Ein-Personen-Haushalt");

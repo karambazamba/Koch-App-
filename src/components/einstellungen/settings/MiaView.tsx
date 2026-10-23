@@ -1,18 +1,17 @@
 "use client";
 
-// Die Seite der Begleitung (/profil/kuechenhelfer) bündelt alles über Mia:
-// Name & Art (Mia, Theo oder eigener Name), Farbe (Gesicht + App-Icon),
-// Vorlesen und Stimme, wie oft sie sich meldet (Selten | Normal | Gern) und
-// Pause. Früher eigene Seiten (/profil/lotte, /vorlesen, /farbe) leiten hierher.
+// Die Seite der Begleitung (/profil/kuechenhelfer): oben Mia groß und „Deine
+// Assistentin“, darunter Stimme (mit Probehören) und Vorlesen, wie oft sie
+// sich meldet (Selten | Normal | Gern) und Pause. Mia heißt fest Mia (seit
+// v0.67) – kein Umbenennen mehr. Früher eigene Seiten (/profil/lotte,
+// /vorlesen, /farbe) leiten hierher.
 
 import { Palmtree, Sun } from "lucide-react";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
-import { BegleitungPicker } from "@/components/begleitung/BegleitungPicker";
 import { Segmented } from "@/components/ui/Segmented";
 import { SECTION_TITLE } from "@/components/ui/styles";
 import { useFeature } from "@/lib/core/features";
 import { helperName, helperTitle, TIP_LEVELS, type HelperMode } from "@/lib/einstellungen/profile";
-import { saveSpeechSettings } from "@/lib/begleitung/speech";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { VoiceSettings } from "@/components/einstellungen/settings/ReadingView";
 import { ChoiceCards, Group, Row, SettingsPage, SwitchRow } from "@/components/einstellungen/settings/SettingsParts";
@@ -37,17 +36,6 @@ export function MiaView() {
               <BegleitungAvatar size={88} />
               <p className="text-sm text-muted">{helperTitle(profile).replace(/^\w/, (c) => c.toUpperCase())}</p>
             </div>
-
-            <h2 className={`px-1 ${SECTION_TITLE}`}>Name & Art</h2>
-            <BegleitungPicker
-              value={profile.helper}
-              onChange={(helper) => {
-                // Andere Art → passende Stimme statt der fest gewählten
-                if (helper.art !== profile.helper.art) saveSpeechSettings({ voice: "" });
-                set({ helper });
-              }}
-            />
-            <p className="px-1 text-sm text-muted">Oder einfach sagen: „Ich nenn dich ab jetzt Frieda.“</p>
 
             <VoiceSettings profile={profile} />
 

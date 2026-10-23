@@ -1,21 +1,22 @@
-# Leitbild „Was gibt’s?“
+# Leitbild „Mia“
 
 Bei ALLEN Änderungen beachten.
 
 ## Wofür die App da ist
-„Was gibt’s?“ ist eine cleane Alltags-App für Felix und seine Familie. Die
-Begleitung ist die Assistentin für Termine, Aufgaben, Essen und Einkauf – man
-gibt ihr Dinge ab wie einer guten Haushaltshilfe, mit der man ganz natürlich
-spricht. Sie legt an und räumt wieder weg.
+Die App heißt Mia (`APP_NAME` in `src/lib/core/app.ts` – einzige Stelle,
+nie fest schreiben). Mia ist eine cleane Alltags-App für Felix und seine
+Familie und zugleich die Assistentin für Termine, Aufgaben, Essen und Einkauf
+– man gibt ihr Dinge ab wie einer guten Haushaltshilfe, mit der man ganz
+natürlich spricht. Sie legt an und räumt wieder weg.
 
-Die Begleitung heißt nicht fest: Name, Art (Assistentin/Assistent) und Stimme
-sind Einstellungen; Standard Mia, Auswahl Mia / Theo. In Aufträgen meint
-„Lotte“ oder „Mia“ immer die gewählte Begleitung. Namen nie hart codieren
-(`helperName()`, `helperTitle()`, `helperMessage()`). Mia und App-Icon immer
-Orange (Marke). EIN Design (Warm) mit Hell/Dunkel/Automatisch. Einzige Wahl:
-Startseite „Farbig“ oder „Schlicht“ – gleiche App-Farben, nur die
-Kachel-Flächen (Profil `look`). Die frühere Lieblingsfarbe ist „Meine Farbe im
-Kalender“ (Profil `calendarColor`).
+Die Begleitung heißt fest Mia (Orange, rund, Assistentin; nur die Stimme ist
+wählbar). „Was gibt’s?“ ist nur noch der Essen-Bereich („Was gibt’s heute?“).
+In Aufträgen meint „Lotte“ immer Mia. Texte trotzdem über `helperName()`,
+`helperTitle()`, `helperMessage()`. Mia und App-Icon immer Orange (Marke). EIN
+Design (Warm) mit Hell/Dunkel/Automatisch. Einzige Wahl: Startseite „Farbig“
+oder „Schlicht“ – gleiche App-Farben, nur die Kachel-Flächen (Profil `look`).
+Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
+`calendarColor`).
 
 ## 1. Ruhig und leer
 - Drei Seiten: Kalender · Heute · Essen (Heute ist die Startseite), Wechsel per
@@ -140,7 +141,8 @@ Kalender“ (Profil `calendarColor`).
 - Marke Mia: Logo nur über `BrandMark` (`ui/`) bzw. die Dateien in
   `public/brand/` (Quelle `src/lib/core/brand.ts`, `npm run brand`), Farben
   `--app-brand*`; Regeln (Schutzzone, Mindestgröße, nie Orange auf Orange)
-  in `docs/brand.md`.
+  in `docs/brand.md`. Startseiten-Kopf: links BrandMark (30 px), rechts das
+  Datum („Fr, 23. Okt“); die Begrüßung steht nur noch für VoiceOver da.
 
 ## 8. Technik-Regeln
 - Nach jeder Änderung testen (siehe „Testen“), PR nach `main` und mergen –

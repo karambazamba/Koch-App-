@@ -8,7 +8,7 @@ import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { CARD, PAGE_MAIN } from "@/components/ui/styles";
-import { APP_VERSION, versionLabel } from "@/lib/core/app";
+import { APP_DESCRIPTION, APP_NAME, APP_VERSION, versionLabel } from "@/lib/core/app";
 import { sortedLikes } from "@/lib/essen/likes";
 import { HOUSEHOLD_TYPES, PLAN_STYLES, helperName, helperTitle, personLabel, type HouseholdProfile } from "@/lib/einstellungen/profile";
 import { useFeature } from "@/lib/core/features";
@@ -165,7 +165,8 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
           </Row>
         </Group>
         <section className="flex flex-col gap-1 px-1" aria-label="Über die App">
-          <h2 className="text-[15px] font-extrabold text-ink">Über die App</h2>
+          <h2 className="text-[15px] font-extrabold text-ink">Über {APP_NAME}</h2>
+          <p className="text-sm text-muted">{APP_DESCRIPTION}</p>
           <p className="text-sm text-muted">{POT_TEXTS.free}</p>
         </section>
         <p className="text-center text-sm text-muted" data-testid="version-stand">

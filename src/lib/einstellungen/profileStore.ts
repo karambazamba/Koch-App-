@@ -5,7 +5,7 @@ import { migrateBases } from "@/lib/essen/bases";
 import { createLocalStore, readRaw } from "@/lib/core/localStore";
 import { now } from "@/lib/core/now";
 import type { StorageKey } from "@/lib/core/storage";
-import { AVATAR_COLORS, DEFAULT_HELPER, HELPER_NAME_MAX, HOUSEHOLD_TYPES, deriveHouseholdType, PLAN_STYLES, APP_THEMES, HELPER_MODES, WEEKDAYS, LIMITS, newId, createEmptyProfile, wishDayOrder, syncPersons, type PersonRole, type KidAgeGroup, type WeekdayLunch, type Person, type MealTime, type WarmMealSchedule, type WeekRules, type WishDaySettings, type HelperArt, type AvatarColor, type HelperSettings, type NeverAgainEntry, type LikedIngredient, type HouseholdType, type MealClock, type PauseSettings, type WeatherSettings, type HouseholdProfile, type PlanStyle, type AppTheme, type HelperMode, DEFAULT_MEAL_CLOCK, voiceForArt } from "@/lib/einstellungen/profile";
+import { AVATAR_COLORS, DEFAULT_HELPER, HOUSEHOLD_TYPES, deriveHouseholdType, PLAN_STYLES, APP_THEMES, HELPER_MODES, WEEKDAYS, LIMITS, newId, createEmptyProfile, wishDayOrder, syncPersons, type PersonRole, type KidAgeGroup, type WeekdayLunch, type Person, type MealTime, type WarmMealSchedule, type WeekRules, type WishDaySettings, type AvatarColor, type HelperSettings, type NeverAgainEntry, type LikedIngredient, type HouseholdType, type MealClock, type PauseSettings, type WeatherSettings, type HouseholdProfile, type PlanStyle, type AppTheme, type HelperMode, DEFAULT_MEAL_CLOCK } from "@/lib/einstellungen/profile";
 
 /** Stehen schon Gerichte im Wochenplan? (nur für die Migration auf v16, liest den Speicher direkt) */
 function hasPlannedMeals(): boolean {
@@ -56,7 +56,7 @@ function normalizeMealTime(value: unknown, fallback: MealTime): MealTime {
 export function migrateProfile(raw: unknown): HouseholdProfile | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as Record<string, unknown>;
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21].includes(data.version as number)) return null;
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22].includes(data.version as number)) return null;
 
   const defaults = createEmptyProfile();
 
@@ -121,7 +121,11 @@ export function migrateProfile(raw: unknown): HouseholdProfile | null {
     shoppingDay: pick(data.shoppingDay, WEEKDAYS, defaults.shoppingDay),
     // Begleitung: bis v6 ohne Namen → Lotte; bis v18 ohne Art/Farbe (aus dem Namen geraten)
     // bis v6 gab es keine Begleitung mit Namen – damals hieß sie Lotte
-    helper: migrateHelper(data.helper, (data.version as number) < 7 ? "Lotte" : DEFAULT_HELPER.name),
+    // Ab v22 heißt die Begleitung fest Mia (Theo, Lotte, eigene Namen → Mia, einmal sagen)
+    helper: migrateHelper(data.helper),
+    miaNotice: (data.version as number) >= 22 ? data.miaNotice === true : oldHelperName(data) !== "mia",
+    // Schon vor der Umbenennung da: Unter dem iPhone-Icon steht noch der alte Name
+    miaHomeHint: (data.version as number) >= 22 ? data.miaHomeHint === true : true,
     // Bis v7 keine Basis-Statistik und keine "Nie wieder"-Liste
     bases: migrateBases(data.bases),
     neverAgain: migrateNeverAgain(data.neverAgain),
@@ -237,20 +241,19 @@ function migrateNeverAgain(raw: unknown): NeverAgainEntry[] {
 }
 
 /**
- * Begleitung prüfen. Ohne Namen → `fallback` (Standard Mia; bis v6 Lotte –
- * wer Lotte hat, behält Lotte).
- * Bis v18 ohne Art/Farbe: Art aus dem Namen (Mia/Lotte → Assistentin, Theo →
- * Assistent, sonst die bisher gewählte Stimme), Farbe Theo Nachtblau, sonst
- * Orange.
+ * Die Begleitung ist seit v22 fest Mia (Name, Art, Stimme wie DEFAULT_HELPER).
+ * Die frühere Lieblingsfarbe bleibt in den Daten (Verstecken heißt nie löschen);
+ * sie lebt als „Meine Farbe im Kalender“ weiter.
  */
-export function migrateHelper(raw: unknown, fallback = DEFAULT_HELPER.name): HelperSettings {
-  const h = (raw && typeof raw === "object" ? raw : {}) as Partial<HelperSettings>;
-  const name = (typeof h.name === "string" ? h.name.trim().slice(0, HELPER_NAME_MAX) : "") || fallback;
-  const lower = name.toLowerCase();
-  const art: HelperArt =
-    h.art === "assistent" || h.art === "assistentin" ? h.art : lower === "mia" || lower === "lotte" ? "assistentin" : lower === "theo" ? "assistent" : h.voice === "weiblich" ? "assistentin" : "assistent";
-  const farbe: AvatarColor = AVATAR_COLORS.some((c) => c.id === h.farbe) ? (h.farbe as AvatarColor) : lower === "theo" ? "nachtblau" : "orange";
-  return { name, art, voice: voiceForArt(art), farbe };
+export function migrateHelper(raw?: unknown): HelperSettings {
+  const farbe = (raw as { farbe?: unknown } | null | undefined)?.farbe;
+  return { ...DEFAULT_HELPER, farbe: AVATAR_COLORS.some((c) => c.id === farbe) ? (farbe as AvatarColor) : DEFAULT_HELPER.farbe };
+}
+
+/** Wie hieß die Begleitung bis v21? (klein; bis v6 hieß sie Lotte) */
+function oldHelperName(data: Record<string, unknown>): string {
+  const name = (data.helper as { name?: unknown } | undefined)?.name;
+  return (typeof name === "string" && name.trim() ? name.trim() : (data.version as number) < 7 ? "Lotte" : DEFAULT_HELPER.name).toLowerCase();
 }
 
 function migrateWishDay(raw: unknown, fallback: WishDaySettings): WishDaySettings {

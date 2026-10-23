@@ -54,18 +54,19 @@ describe("Daten sichern und wiederherstellen", () => {
 describe("Profil-Migration", () => {
   it("altes Profil (v1) wird zur aktuellen Version, Familie bleibt", () => {
     const p = migrateProfile({ version: 1, adults: 1, kids: 1, persons: [{ id: "a", role: "erwachsen", name: "Lisa" }, { id: "k", role: "kind", name: "Ella" }], warmMeal: "abends" });
-    expect(p?.version).toBe(21);
+    expect(p?.version).toBe(22);
     expect(p?.persons.map((x) => x.name)).toEqual(["Lisa", "Ella"]);
     expect(p?.householdType).toBe("familie");
     expect(p?.warmMeal.weekday).toBe("abends");
   });
 
-  it("Begleitung: ohne Namen Mia (alte Profile bis v6 Lotte), Theo wird Assistent in Nachtblau", () => {
-    expect(migrateHelper({}).name).toBe("Mia");
-    expect(migrateHelper({}, "Lotte").name).toBe("Lotte");
-    expect(migrateProfile({ version: 6, adults: 1, kids: 0, persons: [{ id: "a", role: "erwachsen", name: "Lisa" }] })?.helper.name).toBe("Lotte");
-    expect(migrateProfile({ version: 19, adults: 1, kids: 0, persons: [{ id: "a", role: "erwachsen", name: "Lisa" }], helper: { name: "" } })?.helper.name).toBe("Mia");
-    expect(migrateHelper({ name: "Theo" })).toMatchObject({ art: "assistent", farbe: "nachtblau", voice: "maennlich" });
+  it("Begleitung (v22): immer Mia – Lotte, Theo und eigene Namen werden Mia, einmal Bescheid sagen", () => {
+    expect(migrateHelper()).toEqual({ name: "Mia", art: "assistentin", voice: "weiblich", farbe: "orange" });
+    const lisa = { adults: 1, kids: 0, persons: [{ id: "a", role: "erwachsen", name: "Lisa" }] };
+    expect(migrateProfile({ version: 6, ...lisa })).toMatchObject({ helper: { name: "Mia" }, miaNotice: true });
+    expect(migrateProfile({ version: 19, ...lisa, helper: { name: "" } })).toMatchObject({ helper: { name: "Mia" }, miaNotice: false });
+    expect(migrateProfile({ version: 21, ...lisa, helper: { name: "Theo", art: "assistent" } })).toMatchObject({ helper: { name: "Mia", art: "assistentin", voice: "weiblich" }, miaNotice: true });
+    expect(migrateProfile({ version: 21, ...lisa, helper: { name: "mia" } })!.miaNotice).toBe(false);
   });
 
   it("Ansicht (v20): ohne eigene Wahl Hell, Dunkel bleibt, neue Profile Hell", () => {

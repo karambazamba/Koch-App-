@@ -160,11 +160,12 @@ describe("Einstellungen per Satz", () => {
     expect(settingsChange("Wochenend-Ideen wieder an", p)!.profile.weekendIdeas).toBe(true);
   });
 
-  it("Begleitung umbenennen, Anrede am Anfang", () => {
+  it("Umbenennen: Mia bleibt Mia, Anrede am Anfang", () => {
     const p = family();
     const r = settingsChange("Ich nenn dich ab jetzt Frieda", p)!;
-    expect(r.profile.helper.name).toBe("Frieda");
-    expect(r.reply).toMatch(/Frieda/);
+    expect(r.profile).toBe(p);
+    expect(r.reply).toBe("Ich bleib lieber Mia 😊");
+    expect(settingsChange("Nimm eine männliche Stimme", p)!.reply).toMatch(/^Ich bleib lieber Mia 😊 Eine andere Stimme/);
     // "Hey, …" wird abgeschnitten
     expect(settingsChange("Hey, melde dich seltener", p)!.profile.helperMode).toBe("locker");
     expect(settingsChange("Wie wird das Wetter?", p)).toBeNull();

@@ -2,7 +2,7 @@
 // Termine, Aufgaben, Mails, Tagesablauf, Pinnwand/Wetter, Schnellnotiz, Notizen.
 
 import { parseTimerCommand } from "@/lib/timer/model";
-import { parseHelperInput } from "@/lib/begleitung/helperTools";
+import { stayMiaReply } from "@/lib/begleitung/helperTools";
 import { parseHouseholdIntro } from "@/lib/einstellungen/householdIntro";
 import { isCalendarImportRequest } from "@/lib/kalender/import/chat";
 import { isWeekCheckRequest } from "@/lib/kalender/wochencheck";
@@ -102,8 +102,8 @@ export function dayUses(latest: string, system: string): Anthropic.Beta.BetaMess
   const today = system.match(/^Heute: .*\((\d{4}-\d{2}-\d{2})\)/m)?.[1] ?? "";
   const jetzt = jetztCommand(latest);
   if (jetzt !== null) return tools([{ name: "jetzt_karte", input: { an: jetzt } }]);
-  const helper = parseHelperInput(latest);
-  if (helper) return tools([{ name: "assistent_anpassen", input: helper }]);
+  const stay = stayMiaReply(latest);
+  if (stay) return text(`${stay} (Testmodus)`);
   const intro = parseHouseholdIntro(latest);
   if (intro) return tools([{ name: "haushalt_vorstellen", input: { ...(intro.me ? { ich: intro.me } : {}), erwachsene: intro.adults, kinder: intro.kids, weitere_kinder: intro.moreKids, allein: intro.single } }]);
   const timer = parseTimerCommand(latest);

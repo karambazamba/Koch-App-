@@ -10,8 +10,8 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { setAvatarFlag } from "@/lib/core/avatarState";
-import { hintSeen, markHintSeen } from "@/lib/core/hints";
-import { claimMic, classifyMicError, guardMic, micPlatform, micState, micSubscribe, releaseMic, reportMicBlocked, setMicPermission, withMicTimeout } from "@/lib/core/mic";
+import { hintSeen } from "@/lib/core/hints";
+import { claimMic, classifyMicError, guardMic, micPlatform, micState, micSubscribe, releaseMic, reportMicBlocked } from "@/lib/core/mic";
 
 // Minimal-Typen für die Web Speech API (nicht in allen TS-Libs enthalten)
 type SpeechResultList = ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>;
@@ -78,33 +78,6 @@ export function withoutPrevious(text: string, previous: string): string {
   const p = norm(previous);
   if (p && t.length > p.length && t.toLowerCase().startsWith(`${p.toLowerCase()} `)) return t.slice(p.length).trim();
   return t;
-}
-
-/**
- * Mikrofon im selben Tipp freigeben lassen (iPhone und Android fragen nur bei
- * einer Berührung) – z. B. beim Sprech-Knopf des Hallo-Bildschirms, bevor die
- * Leiste mit `useSpeechInput` zuhört. Muss direkt im Tipp aufgerufen werden.
- * "ok" = darf zuhören, "blocked" = abgelehnt/kein Mikrofon, "none" = kein Sprechen im Browser.
- */
-export async function primeMicrophone(): Promise<"ok" | "blocked" | "none"> {
-  if (!speechRecognitionClass()) return "none";
-  const media = typeof navigator === "undefined" ? undefined : navigator.mediaDevices;
-  // Ohne Abfrage-Möglichkeit fragt die Erkennung selbst
-  if (!media?.getUserMedia) return "ok";
-  try {
-    const stream = await withMicTimeout(media.getUserMedia({ audio: true }));
-    stream.getTracks().forEach((t) => t.stop());
-    // Gefragt und erlaubt: keine Vorab-Frage mehr nötig
-    markHintSeen("mikro-gefragt");
-    setMicPermission("granted");
-    return "ok";
-  } catch (e) {
-    // Hängt das Mikro, versucht es die Erkennung gleich selbst
-    if ((e as Error)?.name === "MicTimeout") return "ok";
-    const block = classifyMicError((e as Error)?.name ?? "", micPlatform(navigator.userAgent));
-    if (block) reportMicBlocked(block);
-    return "blocked";
-  }
 }
 
 type Options = {

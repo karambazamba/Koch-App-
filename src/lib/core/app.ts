@@ -1,11 +1,21 @@
-/** Name der App – überall verwenden statt den Namen fest zu schreiben. */
-export const APP_NAME = "Was gibt’s?";
+/**
+ * Name der App – EINZIGE Stelle (Markenprüfung läuft: hier ändern genügt).
+ * Überall verwenden statt den Namen fest zu schreiben. „Was gibt’s?“ heißt
+ * nur noch der Essen-Bereich.
+ */
+export const APP_NAME = "Mia";
 
-/** Kurzname für den Homescreen */
-export const APP_SHORT_NAME = "Was gibt’s?";
+/** Kurzname unter dem Icon auf dem Homescreen */
+export const APP_SHORT_NAME = `${APP_NAME}`;
+
+/** Langer Name im Manifest (Installieren, App-Übersicht) */
+export const APP_FULL_NAME = `${APP_NAME} – Familienplaner`;
+
+/** Beschreibung (Manifest, Suchmaschinen) */
+export const APP_DESCRIPTION = "Erzähl einfach, was ansteht – Termine, Aufgaben, Essen und Einkauf für die ganze Familie.";
 
 /** Versionsnummer (wie in package.json) – in den Einstellungen unter "Daten & App" */
-export const APP_VERSION = "0.66.1";
+export const APP_VERSION = "0.67.0";
 
 /** Tag der Auslieferung (beim Bauen gesetzt, next.config.ts) */
 const APP_BUILD_DATE = process.env.BUILD_DATE ?? "";
@@ -22,7 +32,7 @@ export function versionLabel(): string {
  * damit iPhone/Android ein neues Icon nicht aus dem Cache holen. Bei jedem neuen
  * Icon erhöhen; `npm run icons` liest den Wert von hier.
  */
-const ICON_VERSION = "v3";
+const ICON_VERSION = "v4";
 
 /** Pfad einer Icon-Datei mit Version: icon("icon-192.png") → "/icons/icon-192-v3.png" */
 export const icon = (file: string) => `/icons/${file.replace(/(\.\w+)$/, `-${ICON_VERSION}$1`)}`;
