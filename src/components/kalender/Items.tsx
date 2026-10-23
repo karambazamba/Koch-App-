@@ -1,20 +1,17 @@
 "use client";
 
-// Termine und Aufgaben eines Tages: Zeile (Uhrzeit, farbiger Strich, Titel,
-// Unterzeile, Kästchen), Karte mit "+ N weitere" und eingeklapptem
-// Erledigten, Menü beim Antippen. Ruhig: keine Zähler, nichts "Offenes".
+// Termine und Aufgaben: Farbe des Strichs (Raum bzw. verbundener Kalender)
+// und das Menü beim Antippen eines Eintrags. Ruhig: keine Zähler, nichts "Offenes".
 
 import { GiveRows } from "@/components/kalender/abgeben/GiveRows";
-import Link from "next/link";
-import { useRef, useState, type CSSProperties } from "react";
-import { Bell, Check, ChevronDown, ChevronRight, Pencil, Repeat2, Trash2, CalendarArrowUp, CheckCircle2, Circle } from "lucide-react";
+import { useState, type CSSProperties } from "react";
+import { Bell, Pencil, Repeat2, Trash2, CalendarArrowUp, CheckCircle2, Circle } from "lucide-react";
 import { CARD, chipClass } from "@/components/ui/styles";
 import { Sheet } from "@/components/ui/Sheet";
-import { clockLabel } from "@/lib/kalender/answers";
 import { isUrgent, moveItem, REMINDERS, removeItem, repeatLabel, setDone, setReminder, setUrgent, type DayItem } from "@/lib/kalender/model";
 import { UrgentMark } from "@/components/kalender/UrgentMark";
 import { addDays } from "@/lib/core/now";
-import { LEAVE_MS, act, buzz } from "@/components/heute/actions";
+import { act, buzz } from "@/components/heute/actions";
 import dynamic from "next/dynamic";
 import { aboOf } from "@/lib/kalender/abo/store";
 import { isAboEntry } from "@/lib/kalender/abo/model";
@@ -22,19 +19,6 @@ import { avatarHex } from "@/lib/einstellungen/profileHelper";
 
 const AboItemSheet = dynamic(() => import("@/components/kalender/AboItemSheet").then((m) => m.AboItemSheet), { ssr: false });
 
-// Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
-const EntryForm = dynamic(() => import("@/components/kalender/EntryForm").then((m) => m.EntryForm), { ssr: false });
-
-/** Unterzeile: Etikett · Erinnerung · Frist · "von gestern" · Wiederholung */
-function subline(item: DayItem): string[] {
-  return [
-    item.label ?? "",
-    item.carried ?? "",
-    item.dueLabel ?? "",
-    item.end ? `bis ${clockLabel(item.end)}` : "",
-    item.repeat ? repeatLabel(item.repeat, item.entry.data.date ?? undefined) : "",
-  ].filter(Boolean);
-}
 
 /** Farbe des Strichs: Orange = Familie, Blau = Arbeit */
 const roomBar = (room: DayItem["room"]) => (room === "arbeit" ? "bg-work" : "bg-accent");
@@ -44,136 +28,6 @@ export function roomBarProps(item: Pick<DayItem, "room" | "entry">): { className
   const abo = aboOf(item.entry);
   return abo ? { className: "", style: { backgroundColor: avatarHex(abo.color) } } : { className: roomBar(item.room) };
 }
-
-function ItemRow({ item, onOpen }: { item: DayItem; onOpen: (item: DayItem) => void }) {
-  // Abhaken: ca. 1 s durchgestrichen (nochmal tippen = doch nicht), dann wandert der Eintrag nach unten
-  const [popping, setPopping] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const checked = item.done || popping;
-  const toggle = () => {
-    buzz();
-    if (popping) {
-      if (timer.current) clearTimeout(timer.current);
-      timer.current = null;
-      return setPopping(false);
-    }
-    if (item.done) return act((list, stamp) => setDone(list, item, false, stamp));
-    setPopping(true);
-    timer.current = setTimeout(() => {
-      timer.current = null;
-      act((list, stamp) => setDone(list, item, true, stamp), item.title, { done: true });
-      setPopping(false);
-    }, LEAVE_MS);
-  };
-  const sub = subline(item);
-  const bar = roomBarProps(item);
-  const readOnly = isAboEntry(item.entry);
-  return (
-    <li className="flex items-center gap-3 py-2.5" data-item={item.key}>
-      <button type="button" onClick={() => onOpen(item)} className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left" aria-label={`${item.title} – Möglichkeiten`}>
-        <span className={`w-11 shrink-0 text-sm font-bold tabular-nums ${checked ? "text-muted" : "text-ink"}`}>{item.time ? clockLabel(item.time) : ""}</span>
-        <span className={`h-9 w-1 shrink-0 rounded-full ${bar.className} ${checked ? "opacity-40" : ""}`} style={bar.style} aria-hidden />
-        <span className="min-w-0 flex-1">
-          <span className={`flex items-center gap-1.5 truncate text-base font-semibold leading-snug ${checked ? "text-muted line-through" : ""}`}>
-            {isUrgent(item) && !checked && <UrgentMark />}
-            <span className="truncate">{item.title}</span>
-          </span>
-          {(sub.length > 0 || item.reminder !== "aus") && (
-            <span className="flex items-center gap-1 truncate text-sm text-muted">
-              {sub.join(" · ")}
-              {item.reminder !== "aus" && (
-                <>
-                  {sub.length > 0 && " · "}
-                  <Bell className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-label="Erinnerung" />
-                  {REMINDERS.find((r) => r.value === item.reminder)?.short}
-                </>
-              )}
-            </span>
-          )}
-        </span>
-      </button>
-      {readOnly ? (
-        <span className="-mr-1.5 h-11 w-11 shrink-0" aria-hidden />
-      ) : (
-      <button
-        type="button"
-        role="checkbox"
-        aria-checked={checked}
-        aria-label={`${item.title} erledigt`}
-        onClick={toggle}
-        className="-mr-1.5 flex h-11 w-11 shrink-0 items-center justify-center"
-      >
-        <span
-          className={`flex h-7 w-7 items-center justify-center rounded-full border-2 transition ${checked ? "border-accent bg-accent text-on-accent" : "border-line-strong"}`}
-          style={popping ? { animation: "check-pop 0.4s ease-out" } : undefined}
-        >
-          {checked && <Check className="h-4 w-4" strokeWidth={3} aria-hidden />}
-        </span>
-      </button>
-      )}
-    </li>
-  );
-}
-
-/**
- * Karte mit den Einträgen eines Tages: höchstens `limit` sichtbar, dann
- * "+ N weitere"; Erledigtes darunter eingeklappt ("✓ N erledigt"). Ist alles
- * erledigt: "Alles erledigt für heute 🌙". Ohne Einträge: keine Karte.
- */
-export function DayItemsCard({ items, title, limit = 3, allDoneText = "Alles erledigt für heute 🌙", titleHref, linkLabel = "Tag öffnen" }: { items: DayItem[]; title: string; limit?: number; allDoneText?: string; titleHref?: string; linkLabel?: string }) {
-  const [more, setMore] = useState(false);
-  const [showDone, setShowDone] = useState(false);
-  const [menu, setMenu] = useState<DayItem | null>(null);
-  const [editing, setEditing] = useState<DayItem | null>(null);
-  if (!items.length) return null;
-  const open = items.filter((i) => !i.done);
-  const done = items.filter((i) => i.done);
-  const shown = more ? open : open.slice(0, limit);
-  return (
-    <section className={`${CARD} px-4 pt-3 pb-2`} aria-label={title}>
-      {titleHref ? (
-        <Link href={titleHref} className="-my-2 flex h-10 items-center justify-between text-[15px] font-extrabold text-muted">
-          <h2>{title}</h2>
-          <span className="flex items-center gap-0.5 normal-case tracking-normal">
-            {linkLabel} <ChevronRight className="h-4 w-4" strokeWidth={2} aria-hidden />
-          </span>
-        </Link>
-      ) : (
-        <h2 className="text-[15px] font-extrabold text-muted">{title}</h2>
-      )}
-      {open.length === 0 && <p className="py-3 text-lg font-bold">{allDoneText}</p>}
-      {shown.length > 0 && (
-        <ul className="flex flex-col divide-y divide-line">
-          {shown.map((item) => (
-            <ItemRow key={item.key} item={item} onOpen={setMenu} />
-          ))}
-        </ul>
-      )}
-      {open.length > shown.length && (
-        <button type="button" onClick={() => setMore(true)} className="flex h-10 items-center gap-1 text-sm font-bold text-accent-strong">
-          + {open.length - shown.length} weitere <ChevronDown className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-        </button>
-      )}
-      {done.length > 0 && (
-        <div className="border-t border-line">
-          <button type="button" onClick={() => setShowDone((v) => !v)} aria-expanded={showDone} className="flex h-10 items-center gap-1 text-sm font-semibold text-muted">
-            {showDone ? "Erledigte ausblenden" : "Erledigte anzeigen"} <ChevronDown className={`h-4 w-4 transition ${showDone ? "rotate-180" : ""}`} strokeWidth={2.5} aria-hidden />
-          </button>
-          {showDone && (
-            <ul className="flex flex-col divide-y divide-line">
-              {done.map((item) => (
-                <ItemRow key={item.key} item={item} onOpen={setMenu} />
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-      {menu && <ItemMenu item={menu} onClose={() => setMenu(null)} onEdit={() => (setEditing(menu), setMenu(null))} />}
-      {editing && <EntryForm entry={editing.entry} onClose={() => setEditing(null)} />}
-    </section>
-  );
-}
-
 
 const MENU_ROW = "flex h-14 w-full items-center gap-3 px-4 text-left text-base font-semibold active:bg-fill";
 

@@ -1,8 +1,9 @@
 # Kalender
 
 Kurz: Termine (feste Uhrzeit) und Aufgaben (zu erledigen) im einheitlichen
-Eintrags-Modell. Dazu der Reiter Kalender (Monat/Woche/Liste), die Tag-Seite,
-die Aufgaben-Seite und das Eintragen-Fenster.
+Eintrags-Modell. Dazu der Reiter Kalender (Monat/Woche/Liste), die Tag-Seite
+und die Aufgaben-Seite. **Kalender = nur Termine** (Tafel 74, seit v0.73.0):
+Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag“.
 
 ## Wo im Code
 
@@ -18,10 +19,14 @@ die Aufgaben-Seite und das Eintragen-Fenster.
   Antworten `answers.ts` (`showAnswer`, `freeAnswer`, `contextLines`),
   Schnell-Eintrag `quick.ts` (`readQuickText`, `readTerminText`,
   `WHEN_CHOICES`), Begrüßung `summary.ts` (`greeting`).
-- Oberfläche `src/components/kalender/`: `CalendarPage.tsx` (`dayDots`,
-  `dayHeading`), `DayView.tsx` (/tag), `DayAgenda.tsx`, `TasksView.tsx`
-  (/aufgaben), `AddSheet.tsx`, `TerminQuickAdd.tsx`, `TaskQuickAdd.tsx`,
-  `EntryForm.tsx`, `Items.tsx` (Zeilen, Menü), `UrgentMark.tsx`.
+- Kalender (rein): `monat.ts` (`termineOn`, `calendarDots`, `dayDistance`,
+  `recurringSuggestions`).
+- Oberfläche `src/components/kalender/`: `CalendarPage.tsx` (Monat mit
+  `useDayHold`, Woche, Liste, `dayHeading`), `DayPanel.tsx` (der gewählte
+  Tag), `DayView.tsx` (/tag), `TasksView.tsx` (/aufgaben),
+  `TerminQuickAdd.tsx`, `TaskQuickAdd.tsx` (beide = „Mehr Details“ der
+  Schnelleingabe), `EntryForm.tsx`, `Items.tsx` (Strich-Farbe, Menü),
+  `UrgentMark.tsx`.
 - Kleine Änderungen aus der Oberfläche: `act()` in
   `src/components/heute/actions.ts`.
 
@@ -88,12 +93,31 @@ die Aufgaben-Seite und das Eintragen-Fenster.
 - Reiter Kalender auf der Startseite (`?seite=kalender`, alt `?seite=woche`):
   Monat | Woche | Liste, Filter Alle | Familie | Arbeit nur, wenn es Arbeit
   gibt (`useWorkRoom` oder Einträge mit Arbeit).
-- Monat: Raster Mo–So mit Punkten (`dayDots`: orange Familie, blau Arbeit,
-  grün Sport), heute oranger Kreis, darunter der gewählte Tag als `DayAgenda`
-  (Termine · Aufgaben · Essen). Mit Tipps aus der Region: Chip „Tipps“ und
-  lila Punkt (`components/tipps/CalendarTips`), nie als Termin.
+- Monat: Raster Mo–So, unter jedem Tag höchstens 3 Punkte (5 px,
+  `calendarDots`) in der Farbe der Person (`who` am Termin, feste Farbe je
+  Person wie bei der Pinnwand; ich = „Meine Farbe im Kalender“), Familie ohne
+  Person = Orange, Arbeit = Blau (sieht ohnehin nur der Besitzer). Heute =
+  Zahl in Orange mit feinem Ring, gewählter Tag = gefüllter oranger Kreis.
+  Mit Tipps aus der Region: Chip „Tipps“ und lila Punkt
+  (`components/tipps/CalendarTips`), nie als Termin.
+- Tag antippen → darunter der Tag (`DayPanel`, kein neuer Bildschirm): Kopf
+  „Freitag, 30. Oktober“ + rechts „heute / morgen / in 7 Tagen“
+  (`dayDistance`), Termine als ruhige Zeilen (Uhrzeit Blau, Titel, rechts der
+  Kreis der Person; antippen = Menü), dann die Zeile „Termin am Fr, 30. Okt“ /
+  „Antippen und eintragen“ (zart Orange, gestrichelt) → Schnelleingabe
+  „NEUER TERMIN“ mit diesem Tag. „Schnell eintragen“ nur bei Wiederkehrendem
+  (`recurringSuggestions`: ≥ 3× am selben Wochentag in 8 Wochen, gleiche
+  Uhrzeit ±30 Min, keine Serie, an dem Tag noch nicht da; höchstens 3 Chips,
+  „Eingetragen · Rückgängig“).
+- Lange drücken auf einen Tag (0,4 s, Vibrieren) und das ＋ oben = dieselbe
+  Schnelleingabe für den Tag. Das Fenster kommt erst beim Loslassen (bzw. bei
+  Android über „contextmenu“), sonst schlösse der Klick des Loslassens es.
 - Woche: sieben Tageskarten mit ‹ ›. Liste: die nächsten 14 Tage und
-  „Weitere Wochen“.
+  „Weitere Wochen“. Beide nur mit Terminen („frei“ wenn leer), kein Essen.
+- Leiste „Kalender · Heute · Essen“ bleibt auf Kalender und Essen oben
+  (sticky); beim Runterscrollen schmal, durchsichtig mit Weichzeichner und
+  feinem Schatten. „Heute“ trägt dort ein kleines Haus (orange, VoiceOver „Zur
+  Startseite“) – antippen = Startseite (Tafel 73).
 
 ### Aufgaben sind persönlich – abgeben geht (Tafel 52 B, seit v0.65)
 
@@ -122,7 +146,8 @@ die Aufgaben-Seite und das Eintragen-Fenster.
 
 ### Tag-Seite und Aufgaben-Seite
 - `/tag?datum=…`: Titel = Wochentag, darunter „22. Oktober · morgen“
-  (`dayHeading`), dann `DayAgenda`; leer „Ein freier Tag.“. Plus = Eintragen.
+  (`dayHeading`), dann der Tag (`DayPanel`, ohne eigenen Kopf). Plus =
+  Schnelleingabe „NEUER TERMIN“ für diesen Tag.
 - `/aufgaben`: Filter, Gruppen, „Erledigte anzeigen“ eingeklappt; leer
   „Alles erledigt.“ mit großer Begleitung.
 - Antippen eines Eintrags = Menü: Erledigt · Auf morgen · Erinnerung ändern ·
@@ -131,10 +156,10 @@ die Aufgaben-Seite und das Eintragen-Fenster.
   Löschen „Gelöscht · Rückgängig“.
 
 ### Eintragen
-- Ein Fenster „Was möchtest du eintragen?“ (`AddSheet`): Termin · Aufgabe ·
-  Notiz · Einkauf, dazu „einfach der Begleitung sagen“ (Mikrofon).
-- „Neuer Termin“ (`TerminQuickAdd`, Tafel 26) – ein Satz genügt: Text oder
-  Sprache ist der Hauptweg („Mittwoch 12.30 Zahnarzt“). Gemeinsamer Parser
+- Jedes ＋ öffnet die Schnelleingabe (`docs/bereiche/core.md`); das frühere
+  Fenster „Was möchtest du eintragen?“ gibt es nicht mehr.
+- „Neuer Termin“ (`TerminQuickAdd`, Tafel 26, „Mehr Details“) – ein Satz
+  genügt: Text ist der Hauptweg („Mittwoch 12.30 Zahnarzt“). Gemeinsamer Parser
   `src/lib/kalender/sentence.ts` (`readSentence`): Zeiten „12:30“, „12.30“,
   „12 Uhr 30“, „12 Uhr“, „um 4“ (→ 16:00), „halb eins“ (→ 12:30), „viertel
   nach/vor“, „mittags“, „abends“; Tage „28.10.“, „28.10“, „28.10.2026“, „28.
@@ -274,6 +299,11 @@ die Aufgaben-Seite und das Eintragen-Fenster.
 - `tests/core/sortierung.test.ts` („Termine und Aufgaben“),
   `tests/begleitung/werkzeugeKalender.test.ts`.
 - Durchklick `e2e/ablaeufe/alltag.mjs`: `eintragen`, `kalender`.
+- `tests/kalender/nurTermine.test.ts`: Punkte je Person (max. 3, Arbeit,
+  ich), Aufgaben nie im Kalender, „in 7 Tagen“, Schnell-Chips (≥ 3×, nie bei
+  Serien), Satz → 16:00 am gewählten Tag (anderes Datum gewinnt), ＋/Zeile/
+  lange drücken mit Tag, kein Essen, Mias eigene Fragen ohne KI, „⌂ Heute“.
+  Durchklick `kalenderTag` (`e2e/ablaeufe/kalendertag.mjs`).
 - `tests/kalender/einSatz.test.ts`: alle Formen von `readSentence`,
   Titelbereinigung, Vorschläge, „schon vorbei“. Durchklick `terminSatz`
   (`e2e/ablaeufe/termin.mjs`): „Mittwoch 12.30 …“, „28.10. …“ ganztägig,

@@ -2134,3 +2134,15 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Aufnahme (gehört oder nicht, Ton gleich mit) – außer „Dauerhaft anheften“
   (oben, kleine Nadel). Beim Start wird Altes aus der 3-Tage-Zeit still
   weggeräumt. Einmal im Kopf: „Nachrichten verschwinden nach 24 Stunden“.
+
+## Kalender – nur Termine (Tafel 74/73, angepasst an Tafel 76, v0.73.0)
+
+- Felix (Video): Tag antippen zeigte „Ein freier Tag“ und „Noch frei – Mia
+  fragen“ (das Abendessen, als Termin gelesen); Mia antwortete ohne
+  Zugangscode auf ihre eigene Frage „Hm, das hab ich nicht verstanden“; ein
+  einfacher Weg, am gewählten Tag einen Termin einzutragen, fehlte.
+- Jetzt: Kalender = nur Termine. Punkte je Person (max. 3), Tag darunter mit
+  „in 7 Tagen“, Zeile „Termin am Fr, 30. Okt“ → Schnelleingabe mit dem Tag
+  (auch ＋ und lange drücken), „Schnell eintragen“ nur bei Wiederkehrendem.
+  Leiste bleibt oben mit „⌂ Heute“. Mia versteht „Was könnten wir morgen
+  essen?“ und „Was gibt’s morgen?“ auch ohne KI.

@@ -96,11 +96,8 @@ describe("Seitenkopf: „‹ vorherige Seite“", () => {
 });
 
 describe("v0.31: Kalender, Essen, Rezepte", () => {
-  it("Kalender-Punkte: Familie orange, Arbeit blau, Sport grün – Erledigtes zählt nicht", async () => {
-    const { dayDots, dayHeading, mondayOf, relativeDay } = await import("@/components/kalender/CalendarPage");
-    const item = (room: "familie" | "arbeit", label: string | null = null, done = false) => ({ room, label, done }) as never;
-    expect(dayDots([item("familie"), item("arbeit"), item("familie", "Sport")])).toEqual(["familie", "arbeit", "sport"]);
-    expect(dayDots([item("familie", null, true)])).toEqual([]);
+  it("Kalender: Wochenbeginn, „morgen“, Tag-Kopf", async () => {
+    const { dayHeading, mondayOf, relativeDay } = await import("@/components/kalender/CalendarPage");
     expect(mondayOf("2026-10-21")).toBe("2026-10-19");
     expect(relativeDay("2026-10-22", "2026-10-21")).toBe("morgen");
     expect(dayHeading("2026-10-22", "2026-10-21")).toBe("22. Oktober · morgen");
