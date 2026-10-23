@@ -51,6 +51,8 @@ export type AssistantReply = {
   tips?: TipView[];
   /** Antwort-Knöpfe (z. B. "Zusagen", "Absagen", "Nachfragen") */
   chips?: string[];
+  /** Nur Server: „Kann ich noch nicht“-Wünsche (werden anonym gezählt, nie an die App geschickt) */
+  wishes?: string[];
 };
 
 /** Warum es gerade nicht geht – die App zeigt nie Technik-Texte, nur ihre eigene Antwort */

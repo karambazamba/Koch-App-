@@ -62,8 +62,18 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   sofort zu. Keine Schreib-Leiste.
 - Lieber eine Frage mit 2–3 Knöpfen als ein Formular.
 - Machen statt fragen: Kleines selbst erledigen und kurz melden. Rückfragen nur
-  bei echten Entscheidungen. Änderungen der KI immer als Vorschau mit
-  „Übernehmen“ (Timer und Kochschritte sofort).
+  bei echten Entscheidungen. Kleine, sichere Dinge (Einkauf, neue Termine,
+  Aufgaben, Notizen, Pinnwand, Im Haus, Timer, Kochschritte) macht Mia sofort
+  – kurze Bestätigung, „Rückgängig“ (10 s) und Eintrag in „Mia hat schon …“
+  (`begleitung/miaDone.ts`). Große Dinge (Wochenplan, Rezept, Mail, Ändern,
+  Löschen) als Vorschau mit „Übernehmen“.
+- Mia ist nie halbgar: lieber weniger, aber richtig. Keine Regel-Antwort
+  „nicht verstanden“ (offline: merken und nachholen; Fehler: einmal still
+  nochmal, dann „Hat grad nicht geklappt. Nochmal?“). Haiku nur für klare
+  Kurzbefehle, sonst Sonnet. Was Mia kann, steht im Prompt automatisch aus den
+  Werkzeugen; sonst „Kann ich noch nicht.“ (anonym gezählt, `mia_wuensche`).
+  Neue Mia-Funktion nur mit Prüfstand-Sätzen (`begleitung/pruefstand/`,
+  Ziel ≥ 95 %, vor jeder neuen Mia-Version unter „Für Entwickler“ laufen lassen).
 
 ## 2a. Volle Kontrolle (Grundregel)
 - Alles, was die Begleitung anlegt oder ändert, kann ich selbst sehen,

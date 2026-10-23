@@ -1,0 +1,57 @@
+// Prüfstand (nur für Admin): POST { von, bis } mit „Authorization: Bearer
+// <PRUEFSTAND_SECRET bzw. CRON_SECRET>“ schickt die Prüfsätze von–bis (höchstens
+// 20 je Aufruf) durch die echte Mia-Engine mit dem echten Modell und bewertet
+// sie. Der KI-Schlüssel bleibt hier; ins Log nur Zahlen, nie Inhalte. Ohne
+// Geheimnis ist die Route aus.
+
+import Anthropic from "@anthropic-ai/sdk";
+import { connection } from "next/server";
+import { runAssistant, type CreateMessage, type ModelChoice } from "@/lib/begleitung/engine";
+import { aiSetup } from "@/lib/begleitung/guard";
+import { createMockModel } from "@/lib/begleitung/mock";
+import { PRUEFSAETZE } from "@/lib/begleitung/pruefstand/saetze";
+import { bewerte, quote, type PruefErgebnis } from "@/lib/begleitung/pruefstand/bewerten";
+import { PRUEF_HEUTE, PRUEF_UHR, pruefHaushalt } from "@/lib/begleitung/pruefstand/haushalt";
+
+export const maxDuration = 300;
+
+const BATCH = 20;
+const CHOICE: ModelChoice = process.env.LOTTE_MODEL || { small: process.env.LOTTE_SMALL_MODEL || "claude-haiku-5-5", large: process.env.LOTTE_LARGE_MODEL || "claude-sonnet-5-5" };
+
+/** Zugang nur mit eigenem Geheimnis (zeitkonstanter Vergleich) */
+function allowed(request: Request): boolean {
+  const secret = process.env.PRUEFSTAND_SECRET || process.env.CRON_SECRET;
+  const given = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+  if (!secret || given.length !== secret.length) return false;
+  let diff = 0;
+  for (let i = 0; i < secret.length; i++) diff |= secret.charCodeAt(i) ^ given.charCodeAt(i);
+  return diff === 0;
+}
+
+export async function POST(request: Request) {
+  await connection();
+  if (!allowed(request)) return Response.json({ error: "zugang" }, { status: 401 });
+  const { configured, mock } = aiSetup();
+  if (!configured) return Response.json({ error: "aus" }, { status: 503 });
+  const body = (await request.json().catch(() => ({}))) as { von?: unknown; bis?: unknown };
+  const von = Math.max(0, Math.floor(Number(body.von) || 0));
+  const bis = Math.min(PRUEFSAETZE.length, von + BATCH, Math.floor(Number(body.bis) || PRUEFSAETZE.length));
+  const client = mock ? null : new Anthropic({ maxRetries: 1, timeout: 55_000 });
+  const create: CreateMessage = mock ? createMockModel() : (params) => client!.beta.messages.create(params) as never;
+  const results: PruefErgebnis[] = [];
+  for (const satz of PRUEFSAETZE.slice(von, bis)) {
+    const t0 = Date.now();
+    try {
+      const reply = await runAssistant(
+        { deviceId: "pruefstand", today: PRUEF_HEUTE, clock: PRUEF_UHR, messages: [{ role: "user", text: satz.text }], pending: [], data: pruefHaushalt() },
+        create,
+        mock ? "mock" : CHOICE,
+      );
+      results.push(bewerte(satz, reply, Date.now() - t0));
+    } catch {
+      results.push({ text: satz.text, ok: false, gruende: ["Fehler beim Aufruf"], ms: Date.now() - t0, antwort: "", ops: [] });
+    }
+  }
+  console.info("Prüfstand", { von, bis, richtig: results.filter((r) => r.ok).length, gesamt: results.length });
+  return Response.json({ von, bis, gesamt: PRUEFSAETZE.length, quote: quote(results), results });
+}

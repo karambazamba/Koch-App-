@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { expectReplace } from "@/lib/core/navigation";
@@ -138,6 +139,9 @@ export function DataView() {
       <main className={`${PAGE_MAIN} gap-4`}>
         <DataSection onReset={() => setConfirmReset(true)} />
         <AccountDataSection />
+        <Link href="/profil/admin" className="hit self-center px-2 py-2 text-[13px] font-semibold text-muted">
+          Für Entwickler
+        </Link>
         {confirmReset && (
           <ConfirmDialog
             title="Neu beginnen?"

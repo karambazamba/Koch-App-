@@ -63,17 +63,27 @@ const DEVICE_KEY: StorageKey = "wasgibts.geraet";
 const CODE_KEY: StorageKey = "wasgibts.zugangscode";
 const COUNT_KEY: StorageKey = "wasgibts.lotte.anfragen";
 
-/** Was die Begleitung sagt, wenn die KI gerade nicht kann – nie Technik-Wörter (Avatar "verwirrt") */
-const FALLBACK_TEXT = "Hm, das hab ich nicht verstanden.";
-/** Ohne Internet – freundlich, mit dem Hinweis, dass Eingetragenes bleibt */
-const OFFLINE_TEXT = "Bin grad offline. Was du einträgst, bleibt trotzdem.";
-/** Passender Satz je nach Lage (offline oder nicht verstanden) */
-export const unavailableText = () => (typeof navigator !== "undefined" && navigator.onLine === false ? OFFLINE_TEXT : FALLBACK_TEXT);
+/**
+ * Was Mia sagt, wenn die KI gerade nicht kann – nie Technik, nie „nicht
+ * verstanden“ (Auftrag „Mia auf Claude-Niveau“): offline wird nachgeholt,
+ * beim Tageslimit gehen Listen und Termine weiter, sonst „Nochmal?“.
+ */
+export const UNAVAILABLE_TEXT: Record<AssistantErrorCode | "offline", string> = {
+  offline: "Bin grad offline. Ich mach’s, sobald wieder Netz da ist.",
+  limit: "Für heute hab ich genug geredet. Listen und Termine gehen natürlich weiter.",
+  zugangscode: "Dafür brauch ich einmal euren Zugangscode.",
+  aus: "Hat grad nicht geklappt. Nochmal?",
+  fehler: "Hat grad nicht geklappt. Nochmal?",
+};
+
+/** Passender Satz je nach Lage */
+export const unavailableText = (reason?: AssistantErrorCode | "offline") =>
+  UNAVAILABLE_TEXT[reason ?? (typeof navigator !== "undefined" && navigator.onLine === false ? "offline" : "fehler")];
 
 /** KI gerade nicht erreichbar (offline, aus, Limit, falscher Code …) */
-class BegleitungUnavailable extends Error {
+export class BegleitungUnavailable extends Error {
   constructor(public reason: AssistantErrorCode | "offline") {
-    super(reason === "offline" ? OFFLINE_TEXT : FALLBACK_TEXT);
+    super(UNAVAILABLE_TEXT[reason]);
   }
 }
 

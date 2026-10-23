@@ -119,10 +119,11 @@ describe("Gerät, Tageslimit, Zugangscode", () => {
     expect(offline).toHaveBeenCalledTimes(2); // offline: beim nächsten Mal neu prüfen
   });
 
-  it("unavailableText: offline vs. nicht verstanden", () => {
-    expect(client.unavailableText()).toBe("Hm, das hab ich nicht verstanden.");
+  it("unavailableText: nie „nicht verstanden“ – offline, Limit, sonst „Nochmal?“", () => {
+    expect(client.unavailableText()).toBe("Hat grad nicht geklappt. Nochmal?");
+    expect(client.unavailableText("limit")).toBe("Für heute hab ich genug geredet. Listen und Termine gehen natürlich weiter.");
     vi.stubGlobal("navigator", { onLine: false });
-    expect(client.unavailableText()).toBe("Bin grad offline. Was du einträgst, bleibt trotzdem.");
+    expect(client.unavailableText()).toBe("Bin grad offline. Ich mach’s, sobald wieder Netz da ist.");
   });
 });
 
@@ -171,7 +172,7 @@ describe("askAssistant", () => {
     vi.stubGlobal("fetch", vi.fn(async () => ndjson([{ t: "text", d: "a" }], { failAfter: true })));
     await expect(ask()).rejects.toMatchObject({ reason: "offline" });
     vi.stubGlobal("fetch", vi.fn(async () => ndjson([{ t: "text", d: "a" }])));
-    await expect(ask()).rejects.toMatchObject({ reason: "fehler", message: "Hm, das hab ich nicht verstanden." });
+    await expect(ask()).rejects.toMatchObject({ reason: "fehler", message: "Hat grad nicht geklappt. Nochmal?" });
   });
 
   it("Antwort ohne Stream (JSON) und Fehlercodes", async () => {
@@ -186,7 +187,7 @@ describe("askAssistant", () => {
     vi.stubGlobal("fetch", vi.fn(async () => {
       throw new Error("kein Netz");
     }));
-    await expect(ask()).rejects.toMatchObject({ reason: "offline", message: "Bin grad offline. Was du einträgst, bleibt trotzdem." });
+    await expect(ask()).rejects.toMatchObject({ reason: "offline", message: "Bin grad offline. Ich mach’s, sobald wieder Netz da ist." });
     vi.stubGlobal("navigator", { onLine: false });
     await expect(ask()).rejects.toMatchObject({ reason: "offline" });
   });

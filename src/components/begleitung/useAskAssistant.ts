@@ -1,11 +1,16 @@
 "use client";
 
 // Frage an die KI (Streaming, Schleifenschutz, sofortige Kleinigkeiten,
-// Vorschau). Ist die KI nicht erreichbar, wandert die Frage an die eigenen
-// Regeln – sonst der freundliche Satz statt einer Fehlermeldung.
+// Vorschau). Ein Fehler wird einmal still wiederholt. Ist die KI nicht
+// erreichbar, wandert die Frage an die eigenen Regeln – sonst ein ehrlicher
+// Satz (nie „nicht verstanden“); offline merkt Mia sich die Frage und holt sie
+// nach, sobald wieder Netz da ist.
 
 import { useState, type Dispatch, type SetStateAction } from "react";
-import { askAssistant, runInstantOps, unavailableText } from "@/lib/begleitung/client";
+import { askAssistant, BegleitungUnavailable, commitOps, runInstantOps, unavailableText } from "@/lib/begleitung/client";
+import { isSafeOp, noteMiaDone } from "@/lib/begleitung/miaDone";
+import { queueForLater } from "@/lib/begleitung/nachholen";
+import type { AssistantErrorCode } from "@/lib/begleitung/protocol";
 import { clockNow, isSameReply } from "@/lib/begleitung/localAnswers";
 import { draftForHistory, revisionOf } from "@/lib/begleitung/mail";
 import type { AssistantData, ChangeOp } from "@/lib/begleitung/ops";
@@ -37,12 +42,14 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
   // Antwort, während sie noch kommt (Streaming)
   const [streaming, setStreaming] = useState<string | null>(null);
 
-  /** KI gerade nicht da: erst die eigenen Regeln, sonst der freundliche Satz */
-  const notUnderstood = (said: string, local?: (t: string) => boolean) => {
+  /** KI gerade nicht da: erst die eigenen Regeln, sonst ein ehrlicher Satz (offline: merken und nachholen) */
+  const notUnderstood = (said: string, local?: (t: string) => boolean, reason?: AssistantErrorCode | "offline") => {
     if (local?.(said)) return;
+    const why = reason ?? (typeof navigator !== "undefined" && navigator.onLine === false ? "offline" : "fehler");
+    if (why === "offline") queueForLater(said);
     setChat((c) => ({
       ...c,
-      turns: [...c.turns, { role: "user", text: said, local: true }, { role: "assistant", text: unavailableText(), error: true }],
+      turns: [...c.turns, { role: "user", text: said, local: true }, { role: "assistant", text: unavailableText(why), error: true }],
     }));
   };
 
@@ -77,7 +84,14 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
           shoppingNames: shopping?.list.items.filter((i) => !i.checked && !i.hidden).map((i) => (i.shop ? `${i.name} (${i.shop})` : i.name)),
           onText: setStreaming,
         });
-      let result = await send(history, chat.proposal?.ops ?? []);
+      // Ein Fehler (nicht offline/Limit/Code) wird einmal still wiederholt
+      let result = await send(history, chat.proposal?.ops ?? []).catch((e: unknown) => {
+        if (e instanceof BegleitungUnavailable && e.reason === "fehler") {
+          setStreaming(null);
+          return send(history, chat.proposal?.ops ?? []);
+        }
+        throw e;
+      });
       // Schleifenschutz: dieselbe Antwort wie eben → alten Verlauf und offenen Vorschlag vergessen
       // und die Nachricht frisch schicken (nur die Frage selbst)
       const lastReply = [...chat.turns].reverse().find((x) => x.role === "assistant" && !x.local && !x.error)?.text;
@@ -89,6 +103,14 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
       // Kleine Dinge (Timer, Stoppuhr, Kochschritt, "Ich koche jetzt") sofort – der Rest als Vorschau
       const instant = runInstantOps(result.ops);
       result = { ...result, ops: instant.rest, reply: instant.notes.length ? `${result.reply}\n${instant.notes.join(" ")}` : result.reply };
+      // Machen statt fragen: nur kleine, sichere Dinge → sofort, mit „Rückgängig“ und in „Mia hat schon …“
+      let done: (() => void) | null = null;
+      if (result.ops.length && !chat.proposal && result.ops.every(isSafeOp)) {
+        const committed = commitOps(data, result.ops, new Set(result.ops.map((op) => op.id)), question);
+        noteMiaDone(result.ops, committed.undo);
+        done = committed.undo;
+        result = { ...result, ops: [], reply: committed.notes.length ? `${result.reply}\n${committed.notes.join(" ")}` : result.reply };
+      }
       const tipsWhere = result.tips?.length ? unlockTips() : null;
       setChat((c) => {
         // Bisher abgewählte Punkte bleiben abgewählt, neue sind ausgewählt
@@ -106,17 +128,18 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
               ...(result.mail ? { mail: result.mail, send: `${result.reply}\n\n${draftForHistory(result.mail)}` } : {}),
               ...(result.chips?.length ? { chips: result.chips } : {}),
               ...(result.tips?.length ? { tips: result.tips } : {}),
+              ...(done ? { undo: done, quick: true } : {}),
             },
           ],
           proposal: result.ops.length > 0 ? { ops: result.ops, selected } : null,
         };
       });
       if (result.mail) rememberTone(result.mail, revisionOf(question));
-    } catch {
+    } catch (e) {
       // Offline, kein Guthaben, Limit, falscher Code …: nie Technik-Texte – die Frage
-      // wandert an die eigenen Regeln (ohne KI), sonst der freundliche Satz
+      // wandert an die eigenen Regeln (ohne KI), sonst der ehrliche Satz
       setChat((c) => ({ ...c, turns: c.turns.slice(0, -1) }));
-      notUnderstood(display ?? question, local);
+      notUnderstood(display ?? question, local, e instanceof BegleitungUnavailable ? e.reason : undefined);
     } finally {
       setBusy(false);
       setStreaming(null);

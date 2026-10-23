@@ -4,6 +4,7 @@
 // Supermarkt-/Back-Karten und Basis-Chips.
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { CircleHelp } from "lucide-react";
 import { bumpBase, sortedBases } from "@/lib/essen/bases";
 import { hasKids } from "@/lib/einstellungen/profile";
@@ -118,6 +119,7 @@ export function ChatTurnItem({ turn, lead = false, last, data, showBases, mailAc
             Rückgängig
           </button>
         )}
+        {turn.undo && turn.quick && !turn.deleted && <QuickUndo undo={turn.undo} />}
         {turn.market && (
           <MarketBoard
             answer={turn.market}
@@ -152,5 +154,22 @@ export function ChatTurnItem({ turn, lead = false, last, data, showBases, mailAc
           </div>
         )}
       </div>
+  );
+}
+
+/** Sofort Erledigtes: „Rückgängig“ für 10 Sekunden, danach still weg */
+const QUICK_UNDO_MS = 10_000;
+
+function QuickUndo({ undo }: { undo: () => void }) {
+  const [shown, setShown] = useState(true);
+  useEffect(() => {
+    const t = window.setTimeout(() => setShown(false), QUICK_UNDO_MS);
+    return () => window.clearTimeout(t);
+  }, []);
+  if (!shown) return null;
+  return (
+    <button type="button" onClick={() => (undo(), setShown(false))} className={`${chipClass(false, "muted")} self-start`}>
+      Rückgängig
+    </button>
   );
 }

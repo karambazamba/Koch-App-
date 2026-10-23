@@ -36,6 +36,8 @@ export type ToolContext = {
   regionTips?: TipView[] | null;
   /** Bis zu 3 Tipps als Karten unter der Antwort (`tipps_suchen`) */
   tipCards?: TipView[];
+  /** „Kann ich noch nicht“: Wünsche, die der Server anonym zählt */
+  wishes?: string[];
 };
 
 export type ToolResult = { content: string; isError?: boolean };

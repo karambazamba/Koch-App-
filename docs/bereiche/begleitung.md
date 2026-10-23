@@ -91,6 +91,41 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Spiegelstriche, höchstens ein „!“ – geprüft in `tests/begleitung/knapp.test.ts`
   (Werkzeug-Beschreibungen und Prompt liest nur die KI, sie zählen nicht).
 
+### Mia auf Claude-Niveau – nie halbgar (seit v0.78)
+- Nie „nicht verstanden“: Ist die KI erreichbar, bekommt sie jede Eingabe.
+  Fehler → einmal still nochmal, dann „Hat grad nicht geklappt. Nochmal?“.
+  Offline → „Bin grad offline. Ich mach’s, sobald wieder Netz da ist.“, der
+  Satz kommt in `wasgibts.lotte.nachholen` (`nachholen.ts`, max. 5, 24 Std.)
+  und wird beim nächsten „online“ auf der Bühne nachgeholt (KitchenHelper).
+  Tageslimit: „Für heute hab ich genug geredet. Listen und Termine gehen
+  natürlich weiter.“ (`UNAVAILABLE_TEXT` in `client.ts`).
+- Modell (`engine.ts`): Haiku nur für klare Kurzbefehle (`isShortCommand`:
+  kurz, keine Frage, eindeutige Aktion wie Liste/Timer/Termin mit Zeit),
+  sonst Sonnet. Zweite Chance: antwortet Haiku ohne Aktion unsicher oder gar
+  nicht (`HEDGE`), übernimmt Sonnet. Sonnet mit effort „medium“ bei Fragen,
+  „low“ bei Aktionen. Kosten je Anfrage wie bisher; Übersicht „KI-Kosten
+  letzte 7 Tage“ unter Einstellungen → Daten & App → „Für Entwickler“
+  (`/profil/admin`).
+- Machen statt fragen: Sind alle Vorschläge einer Antwort klein und sicher
+  (`isSafeOp`: Einkauf, neuer Termin/Aufgabe/Notiz, Pinnwand, Im Haus,
+  Wunsch, Abhaken), führt die App sie sofort aus (`commitOps`), zeigt
+  „Rückgängig“ 10 s in der Blase und merkt sie in „Mia hat schon …“
+  (`miaDone.ts`, `wasgibts.mia.erledigt`, oben in „Dein Tag“, antippbar,
+  Rückgängig solange die App offen ist, > 2 → „Ansehen“). Alles andere bleibt
+  Vorschau mit „Übernehmen“.
+- Ehrlich: Der Prompt bekommt „Das kannst du …“ automatisch aus den
+  angemeldeten Werkzeugen (`capabilities` in `wishTools.ts`). Allgemeine
+  Fragen beantwortet Mia selbst. Geht etwas nicht: Werkzeug
+  `kann_ich_noch_nicht` → „Kann ich noch nicht.“; der Server zählt den Wunsch
+  anonym in `mia_wuensche` (nur Text + Datum, RLS ohne Policies, nur der
+  geheime Schlüssel schreibt; `wishStore.ts`). Wünsche gehen nie an die App.
+- Prüfstand (`pruefstand/`): 120 Alltagssätze mit erwarteter Aktion, Bewertung
+  (Aktion, Datum/Uhrzeit/Person, max. 2 Sätze, Floskeln/Striche, Zeit),
+  Route `/api/pruefstand` (nur mit `PRUEFSTAND_SECRET` bzw. `CRON_SECRET`,
+  20 Sätze je Aufruf), Bericht unter „Für Entwickler“. Ziel ≥ 95 %.
+- Beim Nachdenken bewegen sich Mias Augen (Zustand „denken“), kein Spinner;
+  erste Worte kommen gestreamt.
+
 ### Versprechen offen halten (seit v0.65.1)
 
 - Mia verspricht nur, was die App halten kann: Erinnerungen erscheinen in der
