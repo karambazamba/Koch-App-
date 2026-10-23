@@ -11,7 +11,7 @@ export type EntryType = "termin" | "aufgabe" | "notiz" | "gericht" | "einkauf" |
 export type Room = "familie" | "arbeit";
 
 /** Ohne Konto gehört alles diesem Gerät */
-const LOCAL_OWNER = "lokal";
+export const LOCAL_OWNER = "lokal";
 
 export type Entry<T = Record<string, unknown>> = {
   id: string;

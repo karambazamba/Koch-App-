@@ -3,7 +3,9 @@
 // Seite "Aufgaben" (/aufgaben): zu erledigen, flexibel. Filter Alles ·
 // Familie · Arbeit, Gruppen Heute dran · Diese Woche · Später · Irgendwann
 // und eingeklappt "✓ N erledigt". Unerledigtes von gestern rutscht still in
-// "Heute dran" ("von gestern" – nie "überfällig").
+// "Heute dran" ("von gestern" – nie "überfällig"). Aufgaben sind persönlich
+// (Tafel 52 B): nur meine und die mir gegebenen; was ich abgegeben habe,
+// steht leise eingeklappt unter „Abgegeben“.
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
@@ -14,6 +16,8 @@ import { CARD, PAGE_MAIN, buttonClass } from "@/components/ui/styles";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { setDone, taskOverview, TASK_GROUPS, type DayItem } from "@/lib/kalender/model";
 import { useEntries } from "@/lib/kalender/store";
+import { useCachedAccount } from "@/lib/konten/cache";
+import { isMyTask, memberName, taskRole } from "@/lib/kalender/abgeben/model";
 import { toIsoDate, useToday } from "@/lib/core/now";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 import { act, buzz } from "@/components/heute/actions";
@@ -40,7 +44,12 @@ function TaskRow({ item, today, onOpen }: { item: DayItem; today: string; onOpen
 }
 
 export function TasksView() {
-  const entries = useEntries();
+  const all = useEntries();
+  const household = useCachedAccount().household;
+  const me = household?.me.userId ?? null;
+  const entries = all && me ? all.filter((e) => isMyTask(e, me)) : all;
+  const given = all && me ? all.filter((e) => taskRole(e, me) === "abgegeben") : [];
+  const [showGiven, setShowGiven] = useState(false);
   const now = useToday();
   const work = useWorkRoom();
   const [filter, setFilter] = useState<Filter>("alles");
@@ -50,6 +59,7 @@ export function TasksView() {
   const [adding, setAdding] = useState(false);
   const today = now ? toIsoDate(now) : undefined;
   const groups = entries && today ? taskOverview(entries, today) : null;
+  const givenItems = today && given.length ? Object.values(taskOverview(given, today)).flat() : [];
   const pick = (list: DayItem[]) => list.filter((i) => filter === "alles" || i.room === filter);
   const hasWork = work || Boolean(entries?.some((e) => e.raum === "arbeit"));
   const open = groups ? TASK_GROUPS.filter((g) => g.id !== "erledigt").map((g) => ({ ...g, items: pick(groups[g.id]) })).filter((g) => g.items.length) : [];
@@ -100,6 +110,25 @@ export function TasksView() {
                 </ul>
               </section>
             ))}
+            {givenItems.length > 0 && (
+              <section className="flex flex-col gap-1.5" aria-label="Abgegeben">
+                <button type="button" onClick={() => setShowGiven((v) => !v)} aria-expanded={showGiven} className="flex h-10 items-center gap-1 px-1 text-[15px] font-extrabold text-muted">
+                  Abgegeben <ChevronDown className={`h-4 w-4 transition ${showGiven ? "rotate-180" : ""}`} strokeWidth={2.5} aria-hidden />
+                </button>
+                {showGiven && (
+                  <ul className={`${CARD} divide-y divide-line overflow-hidden`}>
+                    {givenItems.map((item) => (
+                      <li key={item.key} className="flex min-h-12 items-center gap-3 px-4 py-2">
+                        <button type="button" onClick={() => setMenu(item)} className="flex min-w-0 flex-1 items-center gap-3 text-left" aria-label={`${item.title} – Möglichkeiten`}>
+                          <span className={`min-w-0 flex-1 truncate text-[15px] font-semibold ${item.done ? "text-muted line-through" : ""}`}>{item.title}</span>
+                          <span className="shrink-0 text-sm text-muted">{item.done ? "erledigt ✓" : `bei ${memberName(household?.members ?? [], (item.entry.data as { fuer?: string }).fuer) ?? "jemandem"}`}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            )}
             {done.length > 0 && (
               <section className="flex flex-col gap-1.5" aria-label="Erledigt">
                 <button type="button" onClick={() => setShowDone((v) => !v)} aria-expanded={showDone} className="flex h-10 items-center gap-1 px-1 text-[15px] font-extrabold text-muted">

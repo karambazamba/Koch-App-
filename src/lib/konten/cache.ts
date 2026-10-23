@@ -21,6 +21,9 @@ export const accountCache = createLocalStore("wasgibts.haushalt", (raw: unknown)
 /** Angemeldet und in einem Haushalt (dann wird synchronisiert) */
 export const cloudSync = (): boolean => Boolean(accountCache.load()?.household);
 
+/** Meine Konto-ID im Haushalt (ohne Konto null – dann ist jede Aufgabe meine) */
+export const myUserId = (): string | null => accountCache.load()?.household?.me.userId ?? null;
+
 /** Zuletzt bekanntes Konto (ohne Netz) – für Einstellungen und Daten & App */
 export function useCachedAccount(): { user: CloudUser | null; household: HouseholdInfo | null } {
   const data = useExternalStore(accountCache.subscribe, accountCache.load, () => null);

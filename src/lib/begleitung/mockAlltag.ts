@@ -240,11 +240,23 @@ function draftInput(draft: Draft, today?: string): { name: string; input: Record
   return { name: "aufgabe_anlegen", input: { ...common, ...(a.date ? { tag: a.date } : {}), ...(a.due ? { frist: a.due } : {}), ...(a.time ? { uhrzeit: a.time } : {}), ...(zeitraum ? { zeitraum } : {}) } };
 }
 
+/** „Sag Lisa, sie soll den Turnbeutel waschen“ / „Lisa soll …“ → Name und Aufgabe */
+export function parseGiveTask(text: string): { name: string; title: string } | null {
+  const m = text.trim().match(/^(?:(?:[Ss]ag|[Ff]rag)\s+)?(\p{Lu}[\p{L}-]+),?\s+(?:(?:sie|er)\s+)?soll\s+(?:bitte\s+)?(.+?)[.!]?$/u);
+  if (!m || /^(ich|du|wir|man|das|es)$/i.test(m[1])) return null;
+  const rest = m[2].replace(/^(den|die|das)\s+/i, "").trim();
+  const title = rest.charAt(0).toUpperCase() + rest.slice(1);
+  return { name: m[1], title };
+}
+
 export function calendarUses(latest: string, system: string): Anthropic.Beta.BetaMessage | null {
   const today = system.match(/^Heute: .*\((\d{4}-\d{2}-\d{2})\)/m)?.[1];
   if (!today) return null;
   // Personen aus dem Profil ("- Jonne; Kind, 6 J.") – Name als Kennung
   const persons = [...system.matchAll(/^- ([^;\n]+); (?:Kind|erwachsen)/gm)].map((m) => ({ id: m[1].trim(), name: m[1].trim() }));
+  // „Sag Lisa, sie soll den Turnbeutel waschen“ → Aufgabe für Lisa (Tafel 52 B)
+  const give = parseGiveTask(latest);
+  if (give) return tools([{ name: "aufgabe_anlegen", input: { titel: give.title, an: give.name } }]);
   const cmd = parseCalendar(latest, today, persons);
   if (!cmd) return null;
   if (cmd.kind === "create") return tools([draftInput(cmd.draft, today)]);

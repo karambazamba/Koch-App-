@@ -30,6 +30,7 @@ import { adoptSchnellnotiz } from "@/lib/notizen/schnellnotiz";
 import { spontanStartTurn, type ChatState } from "@/components/begleitung/chatTypes";
 import { loadSpontanFilters } from "@/lib/essen/spontanFilters";
 import dynamic from "next/dynamic";
+import { DoneNotes } from "@/components/kalender/abgeben/DoneNotes";
 
 // Das Gespräch (mit Mails, Backstube, Supermarkt …) wird erst gebraucht, wenn
 // man es öffnet – eigener Teil, der nach dem Laden der Seite im Leerlauf vorgeholt wird
@@ -219,6 +220,7 @@ export function KitchenHelper() {
 
   return (
     <>
+      <DoneNotes />
       {/* Auf allen Seiten derselbe runde Mia-Knopf wie auf der Startseite (dort zeichnet ihn HomePager) */}
       {!open && !typing && !hidden && <MiaButton name={helperName(profile)} />}
 

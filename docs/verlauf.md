@@ -1987,3 +1987,10 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Mia und das App-Icon sind immer orange; Farbbefehle an Mia entfallen.
 - Jetzt-Karte ohne Doppelung zu Kacheln, die schon „Morgen“ zeigen;
   Beispiel-Tag mit echten Terminen statt Mahlzeiten.
+
+## Marke Mia – Teil 3: Aufgaben sind persönlich, abgeben geht (Tafel 52 B, v0.65.0)
+- Aufgaben gehören der Person, die sie anlegt (RLS `entry_visible`,
+  Migration `aufgaben_persoenlich`); geteilt wird nur durch Abgeben
+  (`data.fuer`). „An … geben“, „von Felix“, „Passt gerade nicht“,
+  „Zurückholen“, eingeklappt „Abgegeben“, Meldung bei Erledigt, Mia „Sag Lisa,
+  sie soll …“. Kachel „Aufgaben“ als Checkliste (S 2 / M 4 / L 6).

@@ -4,6 +4,8 @@
 // Sprachausgabe. Geändert wird erst beim Übernehmen – über dieselben reinen
 // Funktionen, mit denen auch die Vorschau rechnet.
 
+import { resolveGiving } from "@/lib/kalender/abgeben/model";
+import { accountCache } from "@/lib/konten/cache";
 import { readRaw, writeRaw } from "@/lib/core/localStore";
 import { replaceNotes } from "@/lib/notizen/store";
 import { loadSchnellnotiz, saveSchnellnotiz } from "@/lib/notizen/schnellnotiz";
@@ -512,6 +514,13 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
   const spontan = effectivePlanStyle(current.profile, weekStartFor(now(), current.profile.shoppingDay || "Montag")) === "spontan";
   let data = spontan ? { ...applied, mealPlans: markSpontan(applied.mealPlans, current.mealPlans) } : applied;
   const notes: string[] = [];
+  // „Sag Lisa, sie soll …“: Aufgabe an jemanden aus dem Haushalt geben (Tafel 52 B)
+  if (data.entries?.some((e) => e.typ === "aufgabe" && (e.data as { an?: string }).an)) {
+    const household = accountCache.load()?.household;
+    const given = resolveGiving(data.entries, household?.members ?? [], household?.me.userId ?? null);
+    data = { ...data, entries: given.entries };
+    notes.push(...given.notes);
+  }
   // Was Lotte anlegt, muss man sehen können: versteckte Bereiche freischalten und sagen, wo es steht
   if (chosen.some((op) => op.type === "set_meal" || op.type === "update_week")) {
     unlockFeature("wochenplan");
