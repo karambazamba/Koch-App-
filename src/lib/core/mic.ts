@@ -125,3 +125,79 @@ export function guardMic(start: () => void, askedBefore: boolean) {
 
 /** Nur für Tests @public */
 export const resetMicState = () => set({ block: null, granted: false, sheet: null, justOn: false, origin: null });
+
+// --- Wer hat das Mikrofon? (immer nur EIN Nutzer) ------------------------------------------
+// iPhone-Safari teilt das Mikro schlecht: hört die Spracherkennung (Mia) noch
+// zu, liefert getUserMedia für die Pinnwand keinen Ton oder hängt. Darum gibt
+// jeder Nutzer das Mikro hier ab, bevor ein anderer es nimmt – und sagt
+// Bescheid, wenn er fertig ist (auch bei Abbruch, Fehler, Seitenwechsel).
+
+type MicOwner = { id: string; release: () => void };
+let owner: MicOwner | null = null;
+/** Wann zuletzt jemand das Mikro abgegeben hat (iOS braucht danach einen Moment) */
+let releasedAt = 0;
+
+/** Mikro nehmen: wer es gerade hat, wird vorher sauber beendet */
+export function claimMic(id: string, release: () => void, at = Date.now()) {
+  const previous = owner;
+  owner = { id, release };
+  if (previous && previous.id !== id) {
+    try {
+      previous.release();
+    } catch {
+      // schon beendet
+    }
+    releasedAt = at;
+  }
+}
+
+/** Mikro abgeben (nur wer es hat) */
+export function releaseMic(id: string, at = Date.now()) {
+  if (owner?.id !== id) return;
+  owner = null;
+  releasedAt = at;
+}
+
+/** Wer hat das Mikro gerade? (null = frei) */
+export const micOwner = () => owner?.id ?? null;
+
+/** So lange nach dem Abgeben kurz warten, bevor iOS das Mikro neu hergibt */
+export const MIC_SETTLE_MS = 350;
+/** Wie lange noch warten (0 = sofort) */
+export const micSettleWait = (at = Date.now()) => Math.max(0, releasedAt + MIC_SETTLE_MS - at);
+
+/** Länger als so lange auf das Mikro warten = es hängt */
+export const MIC_TIMEOUT_MS = 4000;
+export const MIC_HANGS_TEXT = "Das Mikrofon hängt gerade – nochmal antippen?";
+
+/**
+ * getUserMedia mit Zeitlimit: kommt nichts, gilt es als hängend („timeout“).
+ * Kommt der Ton doch noch zu spät, wird er sofort wieder freigegeben.
+ */
+export function withMicTimeout(request: Promise<MediaStream>, ms = MIC_TIMEOUT_MS): Promise<MediaStream> {
+  return new Promise((resolve, reject) => {
+    let late = false;
+    const timer = setTimeout(() => {
+      late = true;
+      reject(Object.assign(new Error("Mikrofon hängt"), { name: "MicTimeout" }));
+    }, ms);
+    request.then(
+      (stream) => {
+        if (late) return stream.getTracks().forEach((t) => t.stop());
+        clearTimeout(timer);
+        resolve(stream);
+      },
+      (error) => {
+        if (late) return;
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
+/** Nur für Tests @public */
+export const resetMicOwner = () => {
+  owner = null;
+  releasedAt = 0;
+};

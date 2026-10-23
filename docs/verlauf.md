@@ -2011,3 +2011,16 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Wischen). Startseiten-Kachel M/L mit kleinen Kacheln.
 - Rezept-Links an Mia (Teil B) und „Familie Bescheid sagen“ (Teil 6, wartet
   auf Push) folgen.
+
+## Pinnwand-Sprachnachricht geht wieder + Knöpfe getrennt (v0.66.1)
+
+- Ein Mikrofon-Verwalter in `core/mic` (nur ein Nutzer, Freigabe in allen
+  Wegen, kurze Pause nach dem Abgeben für iOS, getUserMedia mit 4 s Zeitlimit).
+  Spracheingabe (`useSpeechInput`) und Pinnwand-Aufnahme melden sich dort an.
+- Pinnwand-Aufnahme: AudioContext im Tipp, Aufräumen auch ohne „stop“-Ereignis,
+  „sehr kurz“ nur mit echtem Ton, nie hängen in „wird vorbereitet“.
+- Gefunden beim Testen: der nachgeschobene Klick vom Antippen landete auf
+  „Senden“ der Aufnahme-Zeile und verschluckte danach den nächsten Tipp.
+- Pinnwand-Kachel: „+“ oben, Mikro unten; e2e-Regel „Tippflächen in Kacheln
+  überlappen nie, kleine Knöpfe mit ≥ 8 px Abstand“.
+
