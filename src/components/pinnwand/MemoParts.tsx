@@ -7,7 +7,7 @@
 // schieben = frei sprechen). Per Tastatur/VoiceOver: Antippen startet, „Senden“
 // beendet.
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Lock, Mic, MicOff, SendHorizontal, Trash2 } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { MIC_BLOCKED, useMicBlocked } from "@/components/ui/MicPermission";
@@ -68,6 +68,8 @@ export function MemoMic({ recorder, size = 26 }: { recorder: MemoRecorder; size?
         setLocking(false);
         if (!p) return;
         swallowClick.current = true;
+        // Landet der nachgeschobene Klick woanders, darf die Sperre nicht den nächsten echten Tipp schlucken
+        setTimeout(() => (swallowClick.current = false), GHOST_CLICK_MS);
         recorder.release(performance.now() - p.at, p.up);
       }}
       onPointerCancel={() => {
@@ -104,18 +106,28 @@ export function MemoMic({ recorder, size = 26 }: { recorder: MemoRecorder; size?
  * großer Senden-Knopf. `compact` (kleine Kachel): Zeit und Welle oben,
  * Verwerfen und Senden darunter.
  */
+/** So lange nach dem Erscheinen zählen Klicks auf die Aufnahme-Zeile nicht (Geister-Klick vom Mikro) */
+const GHOST_CLICK_MS = 450;
+
 export function RecordingRow({ recorder, compact = false }: { recorder: MemoRecorder; compact?: boolean }) {
   const waiting = recorder.phase === "asking";
   const stopped = recorder.phase === "stopped";
   const holding = recorder.mode === "halten";
   const bars = [...Array.from({ length: Math.max(0, 28 - recorder.levels.length) }, () => 0), ...recorder.levels];
+  // Die Zeile erscheint unter dem Finger, der eben das Mikro angetippt hat: dessen
+  // nachgeschobener Klick darf nicht gleich „Senden“/„Verwerfen“ treffen
+  const shownAt = useRef(0);
+  useEffect(() => {
+    shownAt.current = performance.now();
+  }, []);
+  const fresh = () => performance.now() - shownAt.current < GHOST_CLICK_MS;
   const discard = (
-    <button type="button" onClick={recorder.discard} aria-label="Verwerfen" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted active:scale-95">
+    <button type="button" onClick={() => !fresh() && recorder.discard()} aria-label="Verwerfen" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted active:scale-95">
       <Trash2 className="h-5 w-5" strokeWidth={2.25} aria-hidden />
     </button>
   );
   const send = (
-    <button type="button" onClick={recorder.send} aria-label="Senden" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-tile-accent text-on-accent active:scale-95">
+    <button type="button" onClick={() => !fresh() && recorder.send()} aria-label="Senden" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-tile-accent text-on-accent active:scale-95">
       <SendHorizontal className="h-5 w-5" strokeWidth={2.5} aria-hidden />
     </button>
   );

@@ -2,7 +2,7 @@
 // Bearbeiten, Wischen, Eintragen, Kalender, Essen, Rezept, Einkauf, Vorrat,
 // Pinnwand, Wetter, Spendentopf, Tipps, Einstellungen, Chat im Testmodus,
 // Konten mit zwei Browsern, Vorführen: Fertig-Leiste, Memo antippen,
-// Offline, neue Version, Stammartikel, Sport-Kachel, Mikrofon aus, Termin in einem Satz, Stimme, Wochencheck, Kochtipp, Mehr Ideen, Mia zuerst).
+// Offline, neue Version, Stammartikel, Sport-Kachel, Mikrofon aus, Termin in einem Satz, Stimme, Wochencheck, Kochtipp, Mehr Ideen, Mia zuerst, Sprachnachricht 5× / Mikro hängt / Kachel-Knöpfe).
 // Startet selbst einen Testserver (vorher `npm run build`) oder nutzt
 // E2E_BASE. Nur einzelne Abläufe: `npm run durchklick -- wetter pinnwand`.
 import { checker, launch, newPage, startServer } from "./lib.mjs";
@@ -19,8 +19,9 @@ import * as wochencheck from "./ablaeufe/wochencheck.mjs";
 import * as kochtipp from "./ablaeufe/kochtipp.mjs";
 import * as mehrideen from "./ablaeufe/mehrideen.mjs";
 import * as miazuerst from "./ablaeufe/miazuerst.mjs";
+import * as sprachnachricht from "./ablaeufe/sprachnachricht.mjs";
 
-const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen, ...miazuerst };
+const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen, ...miazuerst, ...sprachnachricht };
 const pick = process.argv.slice(2);
 const flows = Object.entries(ALL).filter(([name, run]) => typeof run === "function" && (!pick.length || pick.includes(name)));
 const stop = await startServer();

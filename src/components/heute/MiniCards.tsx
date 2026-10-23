@@ -155,7 +155,7 @@ export function TermineSection({ items, all, href, today, size = "M", half = fal
   const rest = list.length - shown.length;
   const cols = size === "S" || shown.length === 1 ? "grid-cols-1" : "grid-cols-2";
   return (
-    <section className={`${TILE} flex flex-col gap-2 p-3.5`} aria-label="Termine">
+    <section className={`${TILE} flex flex-col gap-2.5 p-3.5`} aria-label="Termine">
       <TileHead title={demo?.label ?? "Termine"} more={half ? 0 : rest} moreLabel={size === "S" ? "weitere heute" : undefined} href={href} action={plus} />
       {list.length ? (
         <ul className={`grid gap-2 ${cols}`}>
@@ -226,7 +226,7 @@ export function AufgabenSection({ items, total, today, href = "/aufgaben", size 
   const rest = Math.max(0, Math.max(total ?? 0, items.length) - shown.length);
   return (
     <>
-      <section className={`${TILE} flex flex-col gap-2 p-3.5`} aria-label="Aufgaben">
+      <section className={`${TILE} flex flex-col gap-2.5 p-3.5`} aria-label="Aufgaben">
         <TileHead title="Aufgaben" more={0} href={href} action={plus} />
         {items.length > 0 ? (
           <ul className={`${TILE_INNER} flex flex-col divide-y divide-line overflow-hidden`}>

@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { setAvatarFlag } from "@/lib/core/avatarState";
 import { hintSeen, markHintSeen } from "@/lib/core/hints";
-import { classifyMicError, guardMic, micPlatform, micState, micSubscribe, reportMicBlocked, setMicPermission } from "@/lib/core/mic";
+import { claimMic, classifyMicError, guardMic, micPlatform, micState, micSubscribe, releaseMic, reportMicBlocked, setMicPermission, withMicTimeout } from "@/lib/core/mic";
 
 // Minimal-Typen für die Web Speech API (nicht in allen TS-Libs enthalten)
 type SpeechResultList = ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>;
@@ -41,6 +41,9 @@ function useSpeechSupported(): boolean | null {
 }
 
 const norm = (s: string) => s.trim().replace(/\s+/g, " ");
+
+/** Jede Spracheingabe ist ein eigener Mikro-Nutzer (core/mic: immer nur einer) */
+let speechUsers = 0;
 
 /**
  * Text der letzten Aufnahme – geräteweit, nicht je Eingabefeld: Der Browser
@@ -89,13 +92,15 @@ export async function primeMicrophone(): Promise<"ok" | "blocked" | "none"> {
   // Ohne Abfrage-Möglichkeit fragt die Erkennung selbst
   if (!media?.getUserMedia) return "ok";
   try {
-    const stream = await media.getUserMedia({ audio: true });
+    const stream = await withMicTimeout(media.getUserMedia({ audio: true }));
     stream.getTracks().forEach((t) => t.stop());
     // Gefragt und erlaubt: keine Vorab-Frage mehr nötig
     markHintSeen("mikro-gefragt");
     setMicPermission("granted");
     return "ok";
   } catch (e) {
+    // Hängt das Mikro, versucht es die Erkennung gleich selbst
+    if ((e as Error)?.name === "MicTimeout") return "ok";
     const block = classifyMicError((e as Error)?.name ?? "", micPlatform(navigator.userAgent));
     if (block) reportMicBlocked(block);
     return "blocked";
@@ -139,6 +144,8 @@ export function useSpeechInput({ onTranscript, onEnd, long = false }: Options) {
   }, []);
   /** Nummer der aktuellen Sitzung – Ergebnisse älterer Sitzungen werden ignoriert */
   const sessionRef = useRef(0);
+  const [micName] = useState(() => `sprache-${++speechUsers}`);
+  const micId = useRef(micName);
   // Immer die aktuellen Rückrufe nutzen, ohne die Erkennung neu zu starten
   const callbacks = useRef({ onTranscript, onEnd });
   useEffect(() => {
@@ -151,6 +158,7 @@ export function useSpeechInput({ onTranscript, onEnd, long = false }: Options) {
     const old = recognitionRef.current;
     recognitionRef.current = null;
     sessionRef.current++;
+    releaseMic(micId.current);
     if (!old) return;
     old.onresult = null;
     old.onerror = null;
@@ -247,6 +255,7 @@ export function useSpeechInput({ onTranscript, onEnd, long = false }: Options) {
       recognition.onerror = null;
       recognition.onend = null;
       recognitionRef.current = null;
+      releaseMic(micId.current);
       setListening(false);
       flagListening(false);
       setInterim("");
@@ -254,6 +263,12 @@ export function useSpeechInput({ onTranscript, onEnd, long = false }: Options) {
       callbacks.current.onEnd?.(text);
     };
     recognitionRef.current = recognition;
+    // Mikro übernehmen: z. B. eine laufende Pinnwand-Aufnahme endet vorher sauber
+    claimMic(micId.current, () => {
+      detach();
+      setListening(false);
+      setInterim("");
+    });
     (recognition as Recognition & { stopByUser?: () => void }).stopByUser = () => {
       stoppedByUser = true;
     };
@@ -263,6 +278,7 @@ export function useSpeechInput({ onTranscript, onEnd, long = false }: Options) {
       flagListening(true);
     } catch {
       recognitionRef.current = null;
+      releaseMic(micId.current);
       setError("Spracheingabe hat nicht geklappt – tipp es einfach ein.");
     }
   }, [detach, flagListening, long]);

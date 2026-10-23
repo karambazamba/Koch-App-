@@ -14,7 +14,7 @@ import { StepGuide, StepList } from "@/components/ui/StepGuide";
 import { Sheet } from "@/components/ui/Sheet";
 import { buttonClass } from "@/components/ui/styles";
 import { markHintSeen } from "@/lib/core/hints";
-import { closeMicSheet, iosMajor, micPlatform, micState, micSteps, micSubscribe, preAskText, setMicPermission, type MicBlock, type MicPlatform } from "@/lib/core/mic";
+import { closeMicSheet, iosMajor, micPlatform, micState, micSteps, micSubscribe, preAskText, setMicPermission, withMicTimeout, type MicBlock, type MicPlatform } from "@/lib/core/mic";
 
 const platform = (): MicPlatform => (typeof navigator === "undefined" ? "andere" : micPlatform(navigator.userAgent));
 
@@ -78,7 +78,7 @@ function Help({ block }: { block: MicBlock }) {
   const retry = async () => {
     if (block === "diktat_aus") return closeMicSheet();
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await withMicTimeout(navigator.mediaDevices.getUserMedia({ audio: true }));
       stream.getTracks().forEach((t) => t.stop());
       setMicPermission("granted");
       closeMicSheet();

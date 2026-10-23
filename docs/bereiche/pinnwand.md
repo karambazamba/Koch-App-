@@ -58,9 +58,19 @@ außer dauerhaft angeheftete Nachrichten.
   Zeile „Lisa · 7:48“, „Du · gestern“ oder „21.10.“ (`pinMeta`).
 
 ### Kachel und Seite
-- Kachel (Rosé): Kopf „PINNWAND“ (+ Punkt), rosé Mikro für Memos, „+“ für
-  eine neue Nachricht (Textfeld bis 140 mit Mikrofon, „Anheften“). S/M/L =
-  1/2/4 neueste Einträge. Das Label öffnet /pinnwand.
+- Kachel (Rosé): Kopf „PINNWAND“ (+ Punkt) mit dem „+“ oben rechts (wie jede
+  Kachel, neue Nachricht: Textfeld bis 140 mit Mikrofon, „Anheften“), das rosé
+  Mikro für Memos steht getrennt unten rechts – Tippflächen überlappen nie
+  (e2e `kachelKnoepfe`). S/M/L = 1/2/4 neueste Einträge. Das Label öffnet
+  /pinnwand.
+- Mikrofon (v0.66.1): immer nur EIN Nutzer (`core/mic`: `claimMic`/`releaseMic`).
+  Vor der Aufnahme endet Mias Zuhören sauber (abort, Tracks stop); nach jeder
+  Aufnahme werden Tracks, Analyser und AudioContext freigegeben – auch bei
+  Abbruch, Fehler, Seitenwechsel (kommt „stop“ vom Recorder nicht, nach 1,5 s
+  trotzdem). AudioContext entsteht im Tipp (iPhone), getUserMedia hat 4 s
+  Zeitlimit („Das Mikrofon hängt gerade – nochmal antippen?“, dann wieder
+  bereit). „Das war sehr kurz“ nur, wenn wirklich Ton kam. Der nachgeschobene
+  Klick vom Antippen trifft nicht die Aufnahme-Zeile (450 ms Sperre).
 - Seite /pinnwand: Feld „Nachricht an alle …“ mit Mikrofon/Senden und dem
   Memo-Mikro, darunter alle Einträge als Karten.
 - Beispiel-Tag: ein Gruß der Begleitung; die erste eigene Nachricht oder das
