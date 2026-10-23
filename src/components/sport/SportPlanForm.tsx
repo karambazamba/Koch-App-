@@ -157,7 +157,7 @@ export function SportPlanForm({ date: initialDate, days, today, entries, state, 
         {editing ? "Speichern" : "Planen"}
         {chosen ? ` · ${weekdayShort(date)} ${clockLabel(chosen)}` : ""}
       </button>
-      <p className="-mt-1 text-center text-sm text-muted">Ich erinnere dich 30 Min vorher.</p>
+      <p className="-mt-1 text-center text-sm text-muted">30 Min vorher steht es oben auf Heute.</p>
     </>
   );
 }

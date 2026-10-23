@@ -73,6 +73,15 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 
 ## So verhält es sich
 
+### Versprechen offen halten (seit v0.65.1)
+
+- Mia verspricht nur, was die App halten kann: Erinnerungen erscheinen in der
+  App (Jetzt-Karte oben auf „Heute“), Push gibt es noch nicht. Regel im
+  Prompt („Versprich nur, was die App halten kann …“) und Textregel in
+  `tests/app/regeln.test.ts` (kein „Ich erinnere dich“, „Ich schick dir eine
+  Nachricht“, „Ich melde mich morgen“ …). Sport-Formular: „30 Min vorher steht
+  es oben auf Heute.“ statt „Ich erinnere dich 30 Min vorher.“
+
 ### Reihenfolge im Chat (KI zuerst)
 
 - `HelperPanel.route`: Ist die KI bereit (`status.ready`), geht JEDE

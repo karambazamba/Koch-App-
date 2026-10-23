@@ -48,3 +48,16 @@ describe("Regeln für sichtbare Texte", () => {
     expect(hits((code, file) => (allowed.test(file) || NOT_VISIBLE.test(file) ? [] : texts(code).filter((t) => /\b(Lotte|Mia|Theo)\b/.test(t))))).toEqual([]);
   });
 });
+
+describe("Versprechen offen halten (Mia verspricht nur, was die App kann)", () => {
+  it("keine Versprechen, die es ohne Push nicht gibt", () => {
+    // Erinnerungen erscheinen in der App (Jetzt-Karte); Push gibt es noch nicht
+    const PROMISE = /\b(ich erinnere dich|ich schick(e)? dir (eine|die) (nachricht|push|mitteilung)|ich melde mich (morgen|später|nachher|bei dir)|ich weck(e)? dich)\b/i;
+    // Ausnahme: die Anweisung an die KI nennt die verbotenen Sätze als Beispiel
+    expect(hits((code, file) => (file === "lib/begleitung/prompt.ts" ? [] : texts(code).filter((t) => PROMISE.test(t))))).toEqual([]);
+  });
+  it("die KI kennt die Regel", async () => {
+    const src = (await import("node:fs")).readFileSync("src/lib/begleitung/prompt.ts", "utf8");
+    expect(src).toContain("Versprich nur, was die App halten kann");
+  });
+});
