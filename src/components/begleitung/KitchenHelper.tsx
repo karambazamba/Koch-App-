@@ -26,6 +26,7 @@ import { adoptLegacySpeech, loadSpeechSettings, toggleSpeak } from "@/lib/beglei
 import { micState } from "@/lib/core/mic";
 import { loadKochtipp, unlockKochtipp } from "@/lib/essen/kochtipp/store";
 import { kochtippStart, sourceChips } from "@/lib/essen/kochtipp/start";
+import { stageTopic } from "@/lib/begleitung/stage";
 import { adoptSchnellnotiz } from "@/lib/notizen/schnellnotiz";
 import { spontanStartTurn, type ChatState } from "@/components/begleitung/chatTypes";
 import { loadSpontanFilters } from "@/lib/essen/spontanFilters";
@@ -145,7 +146,7 @@ export function KitchenHelper() {
         }
         setOpen(true);
         // Neues Gespräch ab hier (Früheres steht im „Verlauf“)
-        setChat((c) => ({ ...c, since: c.turns.length }));
+        setChat((c) => ({ ...c, since: c.turns.length, topic: stageTopic(mode, filters?.[0]) }));
         // Mia holen: sie hört gleich zu, wenn das Mikro erlaubt ist (sonst ist das Tippen-Feld dran)
         if (mode === "voice" || ask) setStart({ listen: mode === "voice", ask });
         else if (!mode && micState().granted) setStart({ listen: true });

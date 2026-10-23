@@ -1,123 +1,181 @@
 "use client";
 
-// Mia in der Mitte (Tafel 53): eine Vollbild-Ebene über verschwommenem
-// Hintergrund. Oben ✕ und „Verlauf“, darunter die große Mia (fliegt beim
-// Öffnen vom Knopf in die Mitte), eine kleine Status-Zeile (ICH HÖRE ZU … /
-// ICH DENKE … / ERLEDIGT) und groß der Text: beim Zuhören das Gesagte (Tage,
-// Uhrzeiten, Namen orange), danach Mias Antwort als Untertitel. Ab der
-// zweiten Runde wird Mia kleiner. Schließen per ✕, Runterwischen, Zurück,
-// Escape. Bewegung nur über transform/opacity (globals.css „Mia zuerst“).
+// Eine Bühne für jedes Gespräch mit Mia (Startseiten-Mia, „＋“, Wochencheck,
+// Termin per Satz, Kochidee): die Seite dahinter bleibt verschwommen unter
+// einem warmen Schleier sichtbar, oben ✕ und „Verlauf“, das Gespräch läuft
+// oben mit, Mia steht groß im unteren Drittel. Sie fliegt beim Öffnen vom
+// Mia-Knopf an ihren Platz und beim Schließen dorthin zurück. Antippen =
+// zuhören ↔ fertig. Bewegung nur über transform/opacity (globals.css
+// „Eine Bühne“); Bewegung reduzieren = nur Überblenden.
 
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { History, X } from "lucide-react";
 import { StageSheet } from "@/components/ui/Sheet";
-import { readSentence } from "@/lib/kalender/sentence";
-import { todayIso } from "@/lib/core/now";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
+import type { AvatarZustand } from "@/lib/core/avatarState";
+import { STAGE_CENTER, STAGE_SIZE, type StageState } from "@/lib/begleitung/stage";
 
-export type StageStatus = "bereit" | "hoert" | "denkt" | "erledigt";
+/** So lange fliegt Mia beim Schließen zurück an ihren Knopf */
+const CLOSE_MS = 800;
 
-const STATUS_TEXT: Record<StageStatus, (name: string) => string> = {
-  bereit: (n) => n.toUpperCase(),
-  hoert: () => "ICH HÖRE ZU …",
-  denkt: () => "ICH DENKE …",
-  erledigt: () => "ERLEDIGT",
-};
+const AVATAR: Record<StageState, AvatarZustand | undefined> = { zuhoeren: "zuhoeren", ueberlegen: "denken", sprechen: "sprechen", warten: undefined };
 
-/** Kernwörter (Tag, Uhrzeit, Namen aus dem Haushalt) orange hervorheben */
-function Highlighted({ text, names }: { text: string; names: string[] }) {
-  const spans = readSentence(text, todayIso()).spans.map((s) => ({ ...s }));
-  for (const n of names) {
-    if (n.length < 2) continue;
-    const re = new RegExp(`(?<![a-zäöüß])${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![a-zäöüß])`, "gi");
-    for (const m of text.matchAll(re)) spans.push({ start: m.index!, end: m.index! + m[0].length });
-  }
-  spans.sort((a, b) => a.start - b.start);
-  const parts: ReactNode[] = [];
-  let at = 0;
-  spans.forEach((s, i) => {
-    if (s.start < at) return;
-    parts.push(text.slice(at, s.start));
-    parts.push(
-      <span key={i} className="text-accent-strong">
-        {text.slice(s.start, s.end)}
-      </span>,
-    );
-    at = s.end;
-  });
-  parts.push(text.slice(at));
-  return <>{parts}</>;
+/** Wo der Mia-Knopf beim Öffnen war – Start und Ziel des Flugs */
+let origin: DOMRect | null = null;
+const reduced = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+
+/** Verschiebung von `el` zum Mia-Knopf (Ort und Größe zugleich) */
+function towardOrigin(el: Element | null): string | undefined {
+  const own = el?.getBoundingClientRect();
+  if (!origin || !own?.width) return undefined;
+  const dx = origin.left + origin.width / 2 - (own.left + own.width / 2);
+  const dy = origin.top + origin.height / 2 - (own.top + own.height / 2);
+  return `translate(${dx}px, ${dy}px) scale(${origin.width / own.width})`;
 }
 
-/** Große Mia mit Status und Text – fliegt beim ersten Erscheinen vom Mia-Knopf in die Mitte */
-export function MiaStage({ name, status, text, live, compact, names, done }: { name: string; status: StageStatus; text: string; live: boolean; compact: boolean; names: string[]; done: boolean }) {
-  const avatar = useRef<HTMLDivElement>(null);
+/**
+ * Schließen: die Bühne ist sofort weg (Verlauf, Tipps, nächstes Fenster gehen
+ * gleich), nur eine Kopie von Mia fliegt zurück an ihren Knopf und der
+ * Schleier blendet aus – beides fängt keine Tipps ab.
+ */
+function flyBack() {
+  const mia = document.querySelector("[data-buehne-mia]");
+  const rect = mia?.getBoundingClientRect();
+  if (!mia || !rect?.width || !origin) return;
+  const veil = document.createElement("div");
+  veil.className = "mia-geist-schleier pointer-events-none fixed inset-0 z-40 bg-background/75 backdrop-blur-[14px]";
+  const ghost = document.createElement("div");
+  ghost.className = "mia-flug pointer-events-none fixed z-50";
+  Object.assign(ghost.style, { left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px` });
+  ghost.setAttribute("aria-hidden", "true");
+  ghost.appendChild(mia.cloneNode(true));
+  document.body.append(veil, ghost);
+  const to = towardOrigin(ghost);
+  requestAnimationFrame(() => requestAnimationFrame(() => (ghost.style.transform = to ?? "")));
+  window.setTimeout(() => (veil.remove(), ghost.remove()), CLOSE_MS);
+}
+
+/** Große Mia: Zustand, Wellen, Tonwelle, Satz darunter – ein Knopf (zuhören ↔ fertig) */
+export function StageMia({ state, size = STAGE_SIZE.big, hint, label, done = false, onTap }: { state: StageState; size?: number; hint?: string; label: string; done?: boolean; onTap: () => void }) {
+  const ref = useRef<HTMLButtonElement>(null);
   const [flight, setFlight] = useState<string | undefined>(undefined);
-  // Flug: Start dort, wo der Knopf ist (eine Bewegung, Größe und Ort zugleich)
+  // Einfliegen: Start dort, wo der Knopf ist (eine Bewegung, Größe und Ort zugleich)
   useLayoutEffect(() => {
-    const button = document.querySelector("[data-mia-knopf]")?.getBoundingClientRect();
-    const own = avatar.current?.getBoundingClientRect();
-    if (!button || !own || !own.width) return;
-    const dx = button.left + button.width / 2 - (own.left + own.width / 2);
-    const dy = button.top + button.height / 2 - (own.top + own.height / 2);
-    setFlight(`translate(${dx}px, ${dy}px) scale(${button.width / own.width})`);
+    origin = document.querySelector("[data-mia-knopf]")?.getBoundingClientRect() ?? origin;
+    const from = towardOrigin(ref.current);
+    if (!from) return;
+    setFlight(from);
     const raf = requestAnimationFrame(() => requestAnimationFrame(() => setFlight(undefined)));
     return () => cancelAnimationFrame(raf);
   }, []);
-  const size = compact ? 82 : 150;
+  const zustand = done ? "freuen" : AVATAR[state];
   return (
-    <div className="flex flex-col items-center gap-3 px-6 pt-2 text-center">
-      <div ref={avatar} className={`mia-flug relative ${done ? "mia-huepfer" : ""}`} style={{ transform: flight }}>
-        {status === "hoert" && (
+    <div className="flex flex-col items-center gap-2">
+      {state === "zuhoeren" && (
+        <span className="mia-tonwelle" aria-hidden>
+          {[0, 1, 2, 3, 4].map((i) => (
+            <span key={i} style={{ animationDelay: `${i * 0.12}s` }} />
+          ))}
+        </span>
+      )}
+      <button
+        ref={ref}
+        type="button"
+        data-buehne-mia
+        onClick={onTap}
+        aria-label={label}
+        aria-pressed={state === "zuhoeren"}
+        className={`mia-flug relative rounded-full ${state === "warten" && !done ? "mia-zwinkern" : ""} ${done ? "mia-huepfer" : ""}`}
+        style={{ transform: flight, width: size, height: size }}
+      >
+        {(state === "zuhoeren" || state === "warten") && (
           <>
-            <span className="mia-wellen" aria-hidden />
-            <span className="mia-wellen zwei" aria-hidden />
+            <span className={`mia-wellen ${state === "warten" ? "ruhig" : ""}`} aria-hidden />
+            <span className={`mia-wellen zwei ${state === "warten" ? "ruhig" : ""}`} aria-hidden />
           </>
         )}
-        <BegleitungAvatar size={size} groesse="gross" />
-      </div>
-      <p className="text-[13px] font-extrabold tracking-[0.12em] text-accent-strong" role="status">
-        {STATUS_TEXT[status](name)}
-      </p>
-      {text && (
-        <p key={live ? "live" : text} className={`mia-text max-w-md text-balance font-bold leading-snug text-ink ${compact ? "text-[19px]" : "text-[24px]"}`} aria-live="polite">
-          {live ? <Highlighted text={text} names={names} /> : text}
+        <BegleitungAvatar size={size} groesse="gross" zustand={zustand} />
+      </button>
+      {hint ? (
+        <p key={hint} className="mia-text text-center text-[13px] font-semibold text-muted" role="status">
+          {hint}
         </p>
+      ) : (
+        <span className="h-[18px]" aria-hidden />
       )}
     </div>
   );
 }
 
-/** Die Ebene selbst (Vollbild-Fenster `StageSheet`): Kopf mit ✕ bzw. „Abbrechen“ und „Verlauf“ */
-export function MiaLayer({ name, onClose, onHistory, history = false, inset = 0, closeText, children }: { name: string; onClose: () => void; onHistory?: () => void; history?: boolean; inset?: number; /** Text statt ✕ (z. B. „Abbrechen“) */ closeText?: string; children: ReactNode }) {
+/** Unterer Teil der Bühne: Mias Mittelpunkt bei ~64 % der Höhe (über der Safe-Area) */
+export function StageFoot({ children }: { children: ReactNode }) {
   return (
-    <StageSheet
-      title={name}
-      onClose={onClose}
-      inset={inset}
-      left={
-        closeText ? (
-          <button type="button" onClick={onClose} className="hit min-h-11 px-2 text-[15px] font-semibold text-accent-strong">
-            {closeText}
-          </button>
-        ) : (
-          <button type="button" onClick={onClose} aria-label="Schließen" className="hit flex h-11 w-11 items-center justify-center rounded-full text-ink active:bg-fill">
-            <X className="h-6 w-6" strokeWidth={2.25} aria-hidden />
-          </button>
-        )
-      }
-      right={
-        onHistory ? (
-          <button type="button" onClick={onHistory} aria-pressed={history} className="hit flex h-11 items-center gap-1.5 rounded-full px-3 text-[15px] font-bold text-accent-strong active:bg-fill">
-            <History className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-            Verlauf
-          </button>
-        ) : (
-          <span className="w-20" aria-hidden />
-        )
-      }
-    >
+    <div className="safe-bottom flex shrink-0 flex-col items-center gap-1 px-4" style={{ height: `calc(${Math.round((1 - STAGE_CENTER) * 100)}dvh + ${STAGE_SIZE.big / 2 + 22}px)` }}>
       {children}
-    </StageSheet>
+    </div>
+  );
+}
+
+/** Kleiner Bereichs-Kopf über Mias erster Blase („KOCHIDEE“, „WOCHENCHECK“, „TERMIN“) */
+export function StageTopic({ topic }: { topic?: string }) {
+  if (!topic) return null;
+  return <p className="pl-11 text-[12px] font-extrabold tracking-[0.12em] text-accent-strong">{topic}</p>;
+}
+
+/** Mias Blase mit kleiner Mia daneben (nur bei der ersten Blase einer Folge) */
+export function MiaBubble({ lead, children }: { lead: boolean; children: ReactNode }) {
+  return (
+    <div className="flex max-w-[92%] items-end gap-2 self-start">
+      {lead ? <BegleitungAvatar size={36} /> : <span className="w-9 shrink-0" aria-hidden />}
+      <div className="min-w-0 whitespace-pre-line rounded-card rounded-bl-md border border-line bg-surface px-4 py-2.5 text-base leading-snug text-ink">{children}</div>
+    </div>
+  );
+}
+
+/** Eigene Blase (Orange) – beim Sprechen erscheint der Text live */
+export function OwnBubble({ children, live = false }: { children: ReactNode; live?: boolean }) {
+  return (
+    <p className={`max-w-[85%] self-end whitespace-pre-line rounded-card rounded-br-md bg-accent px-4 py-2.5 text-base leading-snug text-on-accent ${live ? "opacity-90" : ""}`} aria-live={live ? "polite" : undefined}>
+      {children}
+    </p>
+  );
+}
+
+/** Die Bühne selbst (Vollbild `StageSheet`): Kopf mit ✕ bzw. „Abbrechen“ und „Verlauf“; Schließen fliegt Mia zurück */
+export function MiaLayer({ name, onClose, onHistory, history = false, inset = 0, closeText, children }: { name: string; onClose: () => void; onHistory?: () => void; history?: boolean; inset?: number; /** Text statt ✕ (z. B. „Abbrechen“) */ closeText?: string; children: ReactNode }) {
+  const close = () => {
+    if (!reduced()) flyBack();
+    onClose();
+  };
+  return (
+      <StageSheet
+        title={name}
+        onClose={close}
+        inset={inset}
+        left={
+          closeText ? (
+            <button type="button" onClick={close} className="hit min-h-11 px-2 text-[15px] font-semibold text-accent-strong">
+              {closeText}
+            </button>
+          ) : (
+            <button type="button" onClick={close} aria-label="Schließen" className="hit flex h-11 w-11 items-center justify-center rounded-full text-ink active:bg-fill">
+              <X className="h-6 w-6" strokeWidth={2.25} aria-hidden />
+            </button>
+          )
+        }
+        right={
+          onHistory ? (
+            <button type="button" onClick={onHistory} aria-pressed={history} className="hit flex h-11 items-center gap-1.5 rounded-full px-3 text-[15px] font-bold text-accent-strong active:bg-fill">
+              <History className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+              Verlauf
+            </button>
+          ) : (
+            <span className="w-20" aria-hidden />
+          )
+        }
+      >
+        {children}
+      </StageSheet>
   );
 }

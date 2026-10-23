@@ -47,7 +47,7 @@ describe("Bewegung", () => {
     expect(frames.length).toBeGreaterThanOrEqual(5);
     for (const f of frames) expect(f).not.toMatch(/(?<![-\w])(top|left|right|bottom|width|height|margin)\s*:/);
     expect(mia).toMatch(/cubic-bezier\(\.16, 1, \.3, 1\)/);
-    for (const file of ["src/components/begleitung/MiaStage.tsx", "src/components/begleitung/MiaButton.tsx", "src/components/begleitung/MiaControls.tsx"]) {
+    for (const file of ["src/components/begleitung/MiaStage.tsx", "src/components/begleitung/MiaButton.tsx", "src/components/begleitung/ChatInputBar.tsx"]) {
       expect(readFileSync(file, "utf8")).not.toMatch(/transition-(all|\[(top|left|width|height))/);
     }
   });

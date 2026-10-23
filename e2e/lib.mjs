@@ -225,7 +225,7 @@ export async function tippenFeld(page) {
   await page.getByRole("dialog").last().waitFor({ timeout: 5000 });
   const box = page.getByRole("textbox", { name: "Nachricht schreiben" });
   if (!(await box.isVisible().catch(() => false))) {
-    const tippen = page.getByRole("button", { name: "Tippen", exact: true });
+    const tippen = page.getByRole("button", { name: "Lieber tippen", exact: true });
     await tippen.waitFor({ timeout: 5000 });
     await tippen.click();
   }

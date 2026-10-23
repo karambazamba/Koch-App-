@@ -19,13 +19,14 @@ import { MailCard } from "@/components/begleitung/MailCard";
 import { MarketBoard, type MarketTarget } from "@/components/begleitung/MarketBoard";
 import { BakingBoard } from "@/components/begleitung/BakingBoard";
 import { TipCards } from "@/components/tipps/TipCards";
+import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 
-export const BUBBLE = "max-w-[85%] whitespace-pre-line rounded-card px-4 py-2.5 text-base leading-snug";
+const BUBBLE = "max-w-[85%] whitespace-pre-line rounded-card px-4 py-2.5 text-base leading-snug";
 
 type Props = {
   turn: ChatTurnView;
-  /** Mia-Ansicht: der Text steht schon groß als Untertitel */
-  hideText?: boolean;
+  /** Erste Blase einer Folge von Mia: kleine Mia daneben */
+  lead?: boolean;
   last: boolean;
   data: AssistantData | null | undefined;
   /** Basis-Chips zeigen (die KI fragt nach der Basis) */
@@ -41,11 +42,12 @@ type Props = {
   onClose: () => void;
 };
 
-export function ChatTurnItem({ turn, hideText = false, last, data, showBases, mailActive, speaking, onSpeak, onSubmit, onAsk, onAcceptUnsure, onMarketAdd, onMarketPlan, onClose }: Props) {
+export function ChatTurnItem({ turn, lead = false, last, data, showBases, mailActive, speaking, onSpeak, onSubmit, onAsk, onAcceptUnsure, onMarketAdd, onMarketPlan, onClose }: Props) {
   return (
       <div className={`flex flex-col gap-2 ${turn.role === "user" ? "items-end" : "items-start"}`}>
-        {!(hideText && !turn.items?.length && !turn.unsure?.length) && (
-        <div className={`flex w-full ${turn.role === "user" ? "items-end justify-end gap-1" : "flex-col items-start gap-0.5"}`}>
+        <div className={`flex w-full ${turn.role === "user" ? "items-end justify-end gap-1" : "items-end gap-2"}`}>
+        {turn.role === "assistant" && (lead ? <BegleitungAvatar size={36} /> : <span className="w-9 shrink-0" aria-hidden />)}
+        <div className={turn.role === "user" ? "contents" : "flex min-w-0 flex-1 flex-col items-start gap-0.5"}>
         <div
           className={`${BUBBLE} ${
             turn.role === "user"
@@ -84,7 +86,7 @@ export function ChatTurnItem({ turn, hideText = false, last, data, showBases, ma
           <SpeakButton speaking={speaking} onClick={onSpeak} />
         )}
         </div>
-        )}
+        </div>
         {turn.mail && (
           <MailCard
             draft={turn.mail}

@@ -2092,3 +2092,14 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Buchstaben. 7 Tage: Zeile unten je Spalte; Heute/Morgen: „22 km/h aus
   West“; Tageszeiten: „22 km/h · W“ (Böen ab 50). „🌬️ Windig“ entfällt.
 - Mia: „Ist es windig?“, „Woher kommt der Wind morgen?“.
+
+## Gespräch mit Mia – eine Bühne (v0.70.0)
+
+- Felix: Jedes Gespräch mit Mia soll gleich aussehen, egal ob über den
+  Mia-Knopf, „＋“, Wochencheck, Termin per Satz oder Kochidee. Aus „Mia in
+  der Mitte“ (Tafel 53) wurde die Bühne: Seite verschwommen dahinter,
+  Gespräch oben als Blasen, Mia groß im unteren Drittel, fliegt ein und
+  zurück. Statt Untertitel und Status-Zeile („ICH HÖRE ZU …“) sprechen jetzt
+  Blasen und Mias Zustand; statt „Tippen“ + großem Mikro-Knopf
+  (`MiaControls`, entfernt) gilt: Mia antippen = zuhören ↔ fertig, „Lieber
+  tippen“. Der Wochencheck nutzt dieselbe Bühne.

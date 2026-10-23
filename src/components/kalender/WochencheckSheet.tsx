@@ -1,20 +1,20 @@
 "use client";
 
 // Wochencheck (Tafel 36): einfach drauflos reden. Zuhören im langen Modus
-// (Pausen sind okay, bis „Fertig“), mitlaufender Text mit orange markierten
-// Kernwörtern und grauen Füllwörtern, darunter „Ich hab schon“ (grob lokal
+// (Pausen sind okay, bis „Fertig“ oder Mia antippen) auf der Bühne, das Gesagte
+// als eigene Blase (Kernwörter fett), darunter „Ich hab schon“ (grob lokal
 // erkannt). „Fertig“ → mit KI ein Rutsch über `woche_eintragen`, ohne KI die
 // eigene Erkennung → „Deine Woche“: ruhige Zeilen, Fragen als Chips, Zeile
 // antippen = ändern, „Alles übernehmen“ (ein Rückgängig für alles).
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mic, Square } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
-import { MiaLayer, MiaStage } from "@/components/begleitung/MiaStage";
+import { MiaBubble, MiaLayer, OwnBubble, StageFoot, StageMia, StageTopic } from "@/components/begleitung/MiaStage";
+import { stageHint, stageLabel, stageLayout, stageState, stageTap } from "@/lib/begleitung/stage";
 import { helperName } from "@/lib/einstellungen/profile";
-import { buttonClass } from "@/components/ui/styles";
-import { MIC_BLOCKED, MicStrip } from "@/components/ui/MicPermission";
+import { buttonClass, INPUT_BASE } from "@/components/ui/styles";
+import { MicStrip } from "@/components/ui/MicPermission";
 import { WeekItemCard, WeekLegend, WeekRow } from "@/components/kalender/WeekPreview";
 import { createEntry } from "@/lib/core/entries";
 import { todayIso } from "@/lib/core/now";
@@ -30,7 +30,7 @@ import type { AssistantData } from "@/lib/begleitung/ops";
 
 type Stage = "zuhoeren" | "sortieren" | "woche";
 
-/** Live: Kernwörter orange, Füllwörter grau */
+/** Live in der eigenen (orangen) Blase: Kernwörter fett unterstrichen, Füllwörter blasser */
 function TalkText({ text }: { text: string }) {
   const spans = [
     ...fillerSpans(text).map((s) => ({ ...s, kind: "f" as const })),
@@ -53,14 +53,14 @@ function TalkText({ text }: { text: string }) {
     if (s.start < at) continue;
     parts.push(text.slice(at, s.start));
     parts.push(
-      <span key={i} className={s.kind === "k" ? "rounded-field bg-accent-soft px-0.5 text-accent-strong" : "text-faint"}>
+      <span key={i} className={s.kind === "k" ? "font-extrabold underline decoration-2 underline-offset-2" : "opacity-70"}>
         {text.slice(s.start, s.end)}
       </span>,
     );
     at = s.end;
   }
   parts.push(text.slice(at));
-  return <p className="text-[17px] leading-relaxed whitespace-pre-wrap">{parts}</p>;
+  return <span className="text-[17px] leading-relaxed whitespace-pre-wrap">{parts}</span>;
 }
 
 export function WochencheckSheet({ data, onClose }: { data: AssistantData; onClose: () => void }) {
@@ -71,6 +71,8 @@ export function WochencheckSheet({ data, onClose }: { data: AssistantData; onClo
   const [items, setItems] = useState<WeekItem[]>([]);
   const [off, setOff] = useState<Set<string>>(new Set());
   const [edit, setEdit] = useState<WeekItem | null>(null);
+  const [typing, setTyping] = useState(false);
+  const name = helperName(data.profile);
   const persons = data.profile.persons.filter((p) => p.name.trim()).map((p) => ({ id: p.id, name: p.name.trim() }));
   const entries = data.entries ?? [];
   const speech = useSpeechInput({ long: true, onTranscript: setText, onEnd: (t) => t && setText(t) });
@@ -158,19 +160,34 @@ export function WochencheckSheet({ data, onClose }: { data: AssistantData; onClo
     );
   }
 
-  // Zuhören in derselben Mia-Ansicht wie sonst (Tafel 53): Mia in der Mitte, darunter der Text
+  // Zuhören auf derselben Bühne wie jedes Gespräch: oben Mias Satz und das Gesagte, unten Mia
+  const spoken = `${text}${speech.listening && speech.interim ? ` ${speech.interim}` : ""}`.trim();
+  const state = stageState({ listening: speech.listening, thinking: stage === "sortieren", speaking: false });
+  const mic = { blocked: speech.blocked, supported: speech.supported };
+  const layout = stageLayout({ typing, ...mic });
+  const tapMia = () => {
+    const what = stageTap(state, mic);
+    if (what === "fertig") void understand();
+    else if (what === "tippen") setTyping(true);
+    else if (stage !== "sortieren") speech.start();
+  };
+  const hint = stage === "sortieren" ? "Ich sortiere …" : speech.listening ? "Pausen sind okay – fertig? Einfach antippen" : stageHint(state, name, !text.trim());
+  const mia = <StageMia state={state} size={layout.size} hint={layout.field ? undefined : hint} label={stageLabel(state, mic)} onTap={tapMia} />;
+  const done = (
+    <button type="button" onClick={() => void understand()} disabled={!text.trim() || stage === "sortieren"} className={`${buttonClass("primary", "md")} px-7`}>
+      Fertig
+    </button>
+  );
   return (
     <MiaLayer name="Wochencheck" onClose={onClose} closeText="Abbrechen">
-      <MiaStage name={helperName(data.profile)} status={speech.listening ? "hoert" : stage === "sortieren" ? "denkt" : "bereit"} text={speech.listening ? "Ich höre zu – Pausen sind okay" : "Wochencheck – sag einfach alles, ich sortiere."} live={false} compact names={[]} done={false} />
-      <div className="safe-bottom flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 pt-3">
-        <MicStrip />
-        <div className="min-h-40 flex-1 overflow-y-auto rounded-card bg-surface p-4">
-          {speech.listening ? (
-            text || speech.interim ? <TalkText text={`${text}${speech.interim ? ` ${speech.interim}` : ""}`.trim()} /> : <p className="text-[17px] text-faint">Erzähl einfach, was diese Woche ansteht …</p>
-          ) : (
-            <textarea value={text} onChange={(e) => setText(e.target.value)} rows={7} placeholder="Erzähl einfach, was diese Woche ansteht – oder tipp es hier ein." aria-label="Was steht an?" className="h-full min-h-40 w-full resize-none bg-transparent text-[17px] leading-relaxed outline-none placeholder:text-faint" />
-          )}
-        </div>
+      <div className="mia-gespraech flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-4 pt-3">
+        <StageTopic topic="WOCHENCHECK" />
+        <MiaBubble lead>Sag einfach alles, was diese Woche ansteht – ich sortiere.</MiaBubble>
+        {spoken && !layout.field && (
+          <OwnBubble live={speech.listening}>
+            <TalkText text={spoken} />
+          </OwnBubble>
+        )}
         {rough.length > 0 && (
           <div className="flex flex-col gap-1.5">
             <span className="px-1 text-[13px] font-bold text-muted">Ich hab schon</span>
@@ -184,27 +201,27 @@ export function WochencheckSheet({ data, onClose }: { data: AssistantData; onClo
             </div>
           </div>
         )}
-        {stage === "sortieren" ? (
-          <p className="py-3 text-center text-base font-semibold text-muted" role="status">
-            Ich sortiere …
-          </p>
-        ) : (
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => (speech.listening ? speech.stop() : speech.start())}
-              aria-label={speech.blocked ? "Mikro aus – so machst du es an" : speech.listening ? "Zuhören anhalten" : "Erzählen"}
-              className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${speech.blocked ? MIC_BLOCKED : "bg-accent-soft text-accent-strong"} ${speech.listening ? "animate-pulse" : ""}`}
-            >
-              {speech.listening ? <Square className="h-5 w-5 fill-current" strokeWidth={2} aria-hidden /> : <Mic className="h-6 w-6" strokeWidth={2.25} aria-hidden />}
-            </button>
-            <span className="min-w-0 flex-1 text-[13px] text-muted">{speech.listening ? "Ich höre zu – Pausen sind okay" : "Tipp aufs Mikro"}</span>
-            <button type="button" onClick={() => void understand()} disabled={!text.trim() && !speech.listening} className={`${buttonClass("primary", "lg")} px-7`}>
-              Fertig
-            </button>
-          </div>
-        )}
       </div>
+      {layout.field ? (
+        <div className="safe-bottom flex shrink-0 flex-col items-center gap-2 px-4 pt-1">
+          {mia}
+          <div className="w-full">
+            <MicStrip />
+          </div>
+          <textarea value={text} onChange={(e) => setText(e.target.value)} rows={4} placeholder="Erzähl einfach, was diese Woche ansteht – oder tipp es hier ein." aria-label="Was steht an?" className={`${INPUT_BASE} w-full resize-none px-4 py-3 leading-relaxed`} />
+          <div className="flex w-full justify-end">{done}</div>
+        </div>
+      ) : (
+        <StageFoot>
+          {mia}
+          <div className="mia-gespraech flex items-center gap-5">
+            <button type="button" onClick={() => setTyping(true)} className="hit min-h-11 text-[15px] font-semibold text-muted active:text-ink">
+              Lieber tippen
+            </button>
+            {text.trim() && !speech.listening && done}
+          </div>
+        </StageFoot>
+      )}
     </MiaLayer>
   );
 }

@@ -8,7 +8,11 @@ import { FAKE_MIC, hello, seedFamily } from "../lib.mjs";
 async function micTap(page) {
   await page.getByRole("button", { name: /^Sag .*was ansteht/ }).first().click();
   await page.getByRole("dialog").last().waitFor({ timeout: 5000 });
-  await page.getByRole("button", { name: /^(Frage einsprechen|Mikro aus – so machst du es an)$/ }).last().click();
+  // Mia antippen; ist das Mikro schon als aus bekannt, öffnet sie das Tippfeld – dann „Anmachen ›“
+  const tap = page.getByRole("button", { name: /^(Frage einsprechen|Tippen statt sprechen)$/ }).last();
+  const blocked = (await tap.getAttribute("aria-label")) === "Tippen statt sprechen";
+  await tap.click();
+  if (blocked) await page.getByRole("button", { name: "Anmachen ›" }).click();
 }
 
 const mia = (page) => page.getByRole("dialog").filter({ has: page.getByRole("textbox", { name: "Nachricht schreiben" }) });
@@ -51,13 +55,16 @@ export const mikrofon = async (page, check, device) => {
   await page.getByRole("dialog", { name: "Ich kann dich gerade nicht hören" }).getByRole("button", { name: "Lieber tippen" }).click();
   await page.waitForTimeout(400);
 
-  // 4. An der Eingabe: gelber Streifen, grauer durchgestrichener Knopf
+  // 4. Auf der Bühne: Tippfeld mit gelbem Streifen, Mia klein darüber; kein Hilfefenster davor
   const chat = mia(page);
   check(await chat.getByText("Mikro aus – tippen geht immer.").isVisible(), "gelber Streifen");
-  const mic = chat.getByRole("button", { name: "Mikro aus – so machst du es an" });
-  check(await mic.isVisible(), "grauer Mikro-Knopf (kein Stopp-Knopf)");
-  await mic.click();
-  check(await page.getByRole("dialog", { name: "Ich kann dich gerade nicht hören" }).waitFor({ timeout: 3000 }).then(() => true, () => false), "grauer Knopf öffnet die Hilfe");
+  const small = chat.getByRole("button", { name: "Tippen statt sprechen" });
+  check(await small.isVisible(), "Mia klein über dem Feld (kein Stopp-Knopf)");
+  await small.click();
+  await page.waitForTimeout(400);
+  check(!(await page.getByRole("dialog", { name: "Ich kann dich gerade nicht hören" }).count()), "Mia antippen bei Mikro aus: kein Hilfefenster");
+  await chat.getByRole("button", { name: "Anmachen ›" }).click();
+  check(await page.getByRole("dialog", { name: "Ich kann dich gerade nicht hören" }).waitFor({ timeout: 3000 }).then(() => true, () => false), "„Anmachen ›“ öffnet die Hilfe");
 
   // 5. Diktieren aus (iPhone) – eigene Schritte
   await page.addInitScript(() => (window.__micError = "service-not-allowed"));
