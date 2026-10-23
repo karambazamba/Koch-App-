@@ -9,9 +9,11 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Plus } from "lucide-react";
+import { Bell, Plus } from "lucide-react";
+import { reminderFor } from "@/lib/heute/mitteilungen/erinnerungen";
 import { CARD } from "@/components/ui/styles";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
+import { loadNotify } from "@/lib/heute/mitteilungen/einstellungen";
 import { AddedBy } from "@/components/konten/AddedBy";
 import { ItemMenu } from "@/components/kalender/Items";
 import { TipsDayList, useCalendarTips } from "@/components/tipps/CalendarTips";
@@ -34,7 +36,7 @@ const LONG = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric",
 
 /** Wiederkehrendes mit einem Tipp eintragen – „Eingetragen · Rückgängig“ */
 function addSuggestion(s: Suggestion, date: string) {
-  const entry = sanitizeEntry(createEntry("termin", { title: s.title, date, start: s.time, reminder: "30", repeat: null, ...(s.label ? { label: s.label } : {}) }, { raum: s.room }) as CalendarEntry);
+  const entry = sanitizeEntry(createEntry("termin", { title: s.title, date, start: s.time, reminder: loadNotify().defaultReminder, repeat: null, ...(s.label ? { label: s.label } : {}) }, { raum: s.room }) as CalendarEntry);
   if (!entry) return;
   const undo = pushUndo(`${s.title} eingetragen`, changeEntries((list) => upsertEntry(list, entry)));
   showToast({ text: "Eingetragen", undo, undoneText: "Wieder weg", seconds: 4, small: true });
@@ -68,6 +70,7 @@ export function DayPanel({ date, today, entries, filter = "alles", heading = tru
                 <button type="button" onClick={() => setMenu(i)} className={`flex min-h-12 w-full items-center gap-3 text-left ${i.done ? "opacity-50" : ""}`} aria-label={`${i.title} – Möglichkeiten${i.time ? ` (${clockLabel(i.time)})` : ""}`}>
                   <span className="w-12 shrink-0 text-[15px] font-bold tabular-nums text-work">{i.time ? clockLabel(i.time) : "ganzt."}</span>
                   <span className="min-w-0 flex-1 truncate text-base font-semibold">{i.title}</span>
+                  {reminderFor(i) && <Bell className="h-[13px] w-[13px] shrink-0 text-muted" strokeWidth={2.25} aria-label="mit Erinnerung" />}
                   <AddedBy owner={i.entry.besitzer} />
                   {who && <PersonAvatar name={who.name} size={24} />}
                 </button>

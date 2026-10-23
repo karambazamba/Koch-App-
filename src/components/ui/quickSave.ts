@@ -17,18 +17,25 @@ import { changeNotes, createNote, upsertNote } from "@/lib/notizen";
 import { addPin, changePins, createPin } from "@/lib/pinnwand";
 import { noteUserAction } from "@/lib/core/activity";
 import { buzz } from "@/components/heute/actions";
+import { loadNotify } from "@/lib/heute/mitteilungen/einstellungen";
+import { askForNotifications } from "@/lib/heute/mitteilungen/geraet";
+import { cloudSync } from "@/lib/konten/cache";
 
 const VERB: Record<QuickRead["kind"], string> = { termin: "Eingetragen", aufgabe: "Eingetragen", einkauf: "Auf der Liste", notiz: "Notiert", pinnwand: "Angepinnt" };
 
-function saveEntry(read: Extract<QuickRead, { kind: "termin" | "aufgabe" }>): { undo: () => void; title: string } | null {
+function saveEntry(read: Extract<QuickRead, { kind: "termin" | "aufgabe" }>, remind: boolean): { undo: () => void; title: string } | null {
   const today = todayIso();
+  const standard = loadNotify().defaultReminder;
   const data =
     read.kind === "termin"
-      ? { title: read.title.slice(0, 120), date: read.date, start: read.time ?? "", reminder: read.time ? "30" : "aus", repeat: read.repeat, ...(read.label ? { label: read.label } : {}) }
-      : quickTaskData(read.title, read.when ?? "irgendwann", today, { time: read.time, label: read.label, dringend: read.urgent });
+      ? { title: read.title.slice(0, 120), date: read.date, start: read.time ?? "", reminder: read.time && remind ? standard : "aus", repeat: read.repeat, ...(read.label ? { label: read.label } : {}) }
+      : quickTaskData(read.title, read.when ?? "irgendwann", today, { time: read.time, label: read.label, dringend: read.urgent, reminder: read.time && remind && standard !== "aus" ? "30" : "aus" });
   const entry = sanitizeEntry(createEntry(read.kind, data, { raum: read.room }) as CalendarEntry);
   if (!entry) return null;
-  return { undo: changeEntries((list) => upsertEntry(list, entry)), title: entry.data.title };
+  const undo = changeEntries((list) => upsertEntry(list, entry));
+  // Termin mit Uhrzeit: der passende Moment für Mias Frage nach Erinnerungen
+  if (read.kind === "termin" && read.time && remind) askForNotifications("erster-termin");
+  return { undo, title: entry.data.title };
 }
 
 function saveShopping(text: string, weekStart: string): { undo: () => void; title: string } | null {
@@ -46,10 +53,10 @@ function saveShopping(text: string, weekStart: string): { undo: () => void; titl
 }
 
 /** Speichert, was gelesen wurde; `false` = nichts zu speichern (leer/unverständlich) */
-export function saveQuick(read: QuickRead, text: string, request: QuickRequest): boolean {
+export function saveQuick(read: QuickRead, text: string, request: QuickRequest, remind = true): boolean {
   if (!read.title) return false;
   let saved: { undo: () => void; title: string } | null = null;
-  if (read.kind === "termin" || read.kind === "aufgabe") saved = saveEntry(read);
+  if (read.kind === "termin" || read.kind === "aufgabe") saved = saveEntry(read, remind);
   else if (read.kind === "einkauf") saved = request.shopping ? saveShopping(text, request.shopping.weekStart) : null;
   else if (read.kind === "notiz") {
     const note = createNote({ title: read.title.slice(0, 80), ...(read.title.length > 80 ? { text: read.title } : {}) });
@@ -57,6 +64,8 @@ export function saveQuick(read: QuickRead, text: string, request: QuickRequest):
   } else {
     const pin = createPin(read.title, request.me ?? "Ich", request.quote ?? null);
     if (pin) saved = { undo: changePins((all) => addPin(all, pin)), title: pin.data.text };
+    // Mit Haushalt: Bescheid sagen, wenn jemand antwortet
+    if (pin && cloudSync()) askForNotifications("pinnwand");
   }
   if (!saved) return false;
   buzz();

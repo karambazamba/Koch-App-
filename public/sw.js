@@ -3,7 +3,7 @@
 // CACHE_VERSION bei jeder Auslieferung erhöhen. Eine neue Version wartet, bis
 // man den Hinweis "Neue Version da" antippt (Nachricht "SKIP_WAITING") – nie
 // ein Zwangs-Neuladen mitten im Tippen. Beim allerersten Mal sofort aktiv.
-const CACHE_VERSION = "v129";
+const CACHE_VERSION = "v130";
 // Interner Name (alter Arbeitsname) bleibt, damit alte Caches sauber aufgeräumt werden.
 const CACHE_NAME = `familienkueche-${CACHE_VERSION}`;
 
@@ -29,6 +29,7 @@ const PRECACHE_URLS = [
   "/profil/das-moegt-ihr",
   "/profil/daten",
   "/profil/admin",
+  "/profil/mitteilungen",
   "/profil/einkaufstag",
   "/profil/essen",
   "/profil/familie",
@@ -146,4 +147,37 @@ self.addEventListener("fetch", (event) => {
 
   // Seiten, RSC-Daten für Client-Navigation und alles andere → Netz zuerst.
   event.respondWith(networkFirst(request));
+});
+
+// Mitteilungen (Tafel 77): Antippen öffnet genau den Eintrag – ein offenes
+// Fenster der App wird nach vorne geholt, sonst ein neues geöffnet.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const raw = event.notification.data && event.notification.data.href;
+  const href = typeof raw === "string" && raw.startsWith("/") ? raw : "/";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+      for (const client of list) {
+        if (new URL(client.url).origin === self.location.origin && "focus" in client) {
+          client.navigate(href).catch(() => {});
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(href);
+    }),
+  );
+});
+
+// Web Push vom Server (Erinnerungen, wenn die App zu ist): { title, body, href, tag }
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = {};
+  }
+  const title = typeof data.title === "string" ? data.title : "Mia";
+  const body = typeof data.body === "string" ? data.body : "";
+  const href = typeof data.href === "string" && data.href.startsWith("/") ? data.href : "/";
+  event.waitUntil(self.registration.showNotification(title, { body, tag: typeof data.tag === "string" ? data.tag : undefined, icon: data.icon, data: { href } }));
 });

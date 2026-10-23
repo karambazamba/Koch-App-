@@ -10,7 +10,9 @@
 // sprechen geht über den Mia-Knopf (die iPhone-Tastatur hat ihr eigenes).
 
 import { useRef, useState } from "react";
-import { ArrowUp, CalendarDays, X } from "lucide-react";
+import { BellOff, Bell, ArrowUp, CalendarDays, X } from "lucide-react";
+import { quickReminderLabel } from "@/lib/heute/mitteilungen/erinnerungen";
+import { useNotify } from "@/lib/heute/mitteilungen/einstellungen";
 import { Sheet } from "@/components/ui/Sheet";
 import { ICON_BUTTON, INPUT_BASE, chipClass } from "@/components/ui/styles";
 import { todayIso } from "@/lib/core/now";
@@ -27,18 +29,22 @@ export function QuickEntry({ request, onClose }: { request: QuickRequest; onClos
   const [text, setText] = useState("");
   const [pick, setPick] = useState<QuickPick>({});
   const [editing, setEditing] = useState<"tag" | null>(null);
+  const [remind, setRemind] = useState(true);
   const field = useRef<HTMLInputElement>(null);
   const inset = useKeyboardInset();
   const work = useWorkRoom();
+  const notify = useNotify();
   const read = readQuick(request.kind, text, today, { date: request.date, pick });
   const chips = text.trim() || request.date ? quickChips(read, today) : [];
   const ready = Boolean(read.title);
+  const bell = (read.kind === "termin" || read.kind === "aufgabe") && chips.length ? quickReminderLabel(read.kind, read.time, notify?.defaultReminder ?? "30", remind) : null;
   const color = `var(--app-tile-${TILE[request.kind]}-ac)`;
 
   const send = () => {
-    if (!ready || !saveQuick(read, text, request)) return;
+    if (!ready || !saveQuick(read, text, request, remind)) return;
     setText("");
     setPick({});
+    setRemind(true);
     setEditing(null);
     field.current?.focus();
   };
@@ -117,6 +123,19 @@ export function QuickEntry({ request, onClose }: { request: QuickRequest; onClos
                 </button>
               );
             })}
+            {bell && (
+              <button
+                type="button"
+                onPointerDown={(e) => e.preventDefault()}
+                onClick={() => setRemind((v) => !v)}
+                aria-pressed={remind}
+                aria-label={`${bell} – ändern`}
+                className={`hit inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-[14px] font-semibold active:scale-95 ${remind ? "border-accent/40 bg-accent-soft text-accent-strong" : "border-line text-muted"}`}
+              >
+                {remind ? <Bell className="h-4 w-4" strokeWidth={2.25} aria-hidden /> : <BellOff className="h-4 w-4" strokeWidth={2.25} aria-hidden />}
+                {bell}
+              </button>
+            )}
           </div>
         )}
 

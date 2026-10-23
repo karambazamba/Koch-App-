@@ -25,10 +25,11 @@ export type Repeat = { kind: "taeglich" } | { kind: "woechentlich"; every?: numb
 export type TerminSource = { kind: "google" | "apple" | "ics"; uid: string };
 
 /** Erinnerung: aus, 15/30/60 Minuten vorher oder am Vorabend (19 Uhr) */
-export type Reminder = "aus" | "15" | "30" | "60" | "vorabend";
+export type Reminder = "aus" | "10" | "15" | "30" | "60" | "vorabend";
 
 export const REMINDERS: { value: Reminder; label: string; short: string }[] = [
   { value: "aus", label: "Keine Erinnerung", short: "aus" },
+  { value: "10", label: "10 Minuten vorher", short: "10 Min vorher" },
   { value: "15", label: "15 Minuten vorher", short: "15 Min vorher" },
   { value: "30", label: "30 Minuten vorher", short: "30 Min vorher" },
   { value: "60", label: "1 Stunde vorher", short: "1 Std vorher" },

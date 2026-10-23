@@ -3,7 +3,7 @@
 import { plural } from "@/lib/core/text";
 import Link from "next/link";
 import { useMailStyle } from "@/lib/begleitung/mailSettings";
-import { Blocks, HandCoins, MapPin, BookOpen, CalendarDays, CalendarPlus, ChefHat, ChevronRight, Clock, CloudSun, Database, Dumbbell, LayoutGrid, Mail, Refrigerator, Salad } from "lucide-react";
+import { Bell, Blocks, HandCoins, MapPin, BookOpen, CalendarDays, CalendarPlus, ChefHat, ChevronRight, Clock, CloudSun, Database, Dumbbell, LayoutGrid, Mail, Refrigerator, Salad } from "lucide-react";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
@@ -18,6 +18,8 @@ import { useHomeTiles } from "@/lib/core/homeLayout";
 import { useJetzt } from "@/lib/heute/jetztStore";
 import { useSport } from "@/lib/sport";
 import { Group, Row } from "@/components/einstellungen/settings/SettingsParts";
+import { notifyStatusLabel } from "@/lib/heute/mitteilungen/einstellungen";
+import { useNotifyPermission } from "@/lib/heute/mitteilungen/geraet";
 import { householdTitle } from "@/lib/einstellungen/profileHousehold";
 import { DarstellungGroup } from "@/components/einstellungen/settings/BegleitungSettings";
 import { useFamilyRegion } from "@/lib/spendentopf/store";
@@ -59,6 +61,7 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
   const kochstilOn = useFeature("kochstil");
   const kalenderOn = useFeature("kalender");
   const jetzt = useJetzt();
+  const notify = notifyStatusLabel(useNotifyPermission());
   const sport = useSport();
   const potRegion = useFamilyRegion().region;
   const tipsOn = useTipsOn();
@@ -96,6 +99,9 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
           </Row>
           <Row href="/profil/tagesablauf" icon={Clock} title="Tagesablauf" value={jetzt.on ? "Jetzt-Karte an" : "Jetzt-Karte aus"}>
             Jetzt-Karte, Feierabend, Arbeitstage
+          </Row>
+          <Row href="/profil/mitteilungen" icon={Bell} title="Mitteilungen" value={notify}>
+            Erinnerungen, Pinnwand, Ruhezeit
           </Row>
           {home?.find((t) => t.id === "wetter")?.visible && (
             <Row href="/profil/wetter" icon={CloudSun} title="Wetter-Ort" value={place}>

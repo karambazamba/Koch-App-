@@ -13,7 +13,8 @@
 import { TaskFrom } from "@/components/kalender/abgeben/TaskFrom";
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { Check, Plus } from "lucide-react";
+import { Bell, Check, Plus } from "lucide-react";
+import { reminderFor } from "@/lib/heute/mitteilungen/erinnerungen";
 import { TILE, TILE_INNER, TILE_LABEL } from "@/components/ui/styles";
 import { QuickButton } from "@/components/ui/QuickButton";
 import { clockLabel } from "@/lib/kalender/answers";
@@ -144,6 +145,7 @@ function TerminLine({ row, entering, onOpen }: { row: TerminRow; entering?: Reac
         <span className={`h-3.5 w-[3px] shrink-0 rounded-full ${roomBarProps(item).className}`} style={roomBarProps(item).style} aria-hidden />
         <span className="w-[38px] shrink-0 text-[13.5px] font-extrabold tabular-nums text-tile-accent">{item.time ? clockLabel(item.time) : "Tag"}</span>
         <span className={`min-w-0 flex-1 truncate text-[13.5px] leading-tight ${next ? "font-bold" : "font-semibold"}`}>{withoutEmoji(item.title)}</span>
+        {reminderFor(item) && <Bell className="h-[13px] w-[13px] shrink-0 text-muted" strokeWidth={2.25} aria-label="mit Erinnerung" />}
         {(state === "laeuft" || state === "gleich") && <span className={`shrink-0 text-[11px] font-bold ${state === "gleich" ? "text-accent-strong" : "text-muted"}`}>{STATE_LABEL[state]}</span>}
       </button>
     </li>
@@ -213,6 +215,7 @@ function TaskField({ item, today, leaving, entering, onOpen, onDone }: { item: D
         {isUrgent(item) && !leaving && <UrgentMark />}
         <span className={`min-w-0 flex-1 truncate text-[13.5px] font-semibold leading-tight ${leaving ? "text-muted line-through" : ""}`}>{withoutEmoji(item.title)}</span>
         <TaskFrom item={item} className="shrink-0 text-[11px] text-muted" />
+        {reminderFor(item) && !leaving && <Bell className="h-[13px] w-[13px] shrink-0 text-muted" strokeWidth={2.25} aria-label="mit Erinnerung" />}
         {badge && <span className={`shrink-0 text-[11px] ${badge === "heute" ? "font-bold text-accent-strong" : "text-muted"}`}>{badge}</span>}
       </button>
     </li>

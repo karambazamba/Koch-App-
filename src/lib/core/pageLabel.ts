@@ -22,6 +22,7 @@ const PAGES: Record<string, string> = {
   "/profil/kuechenhelfer": "Begleitung",
   "/profil/bausteine": "Mehr Funktionen",
   "/profil/tagesablauf": "Tagesablauf",
+  "/profil/mitteilungen": "Mitteilungen",
   "/profil/daten": "Daten & App",
   "/profil/produkte": "Produkte & Läden",
   "/pinnwand": "Pinnwand",

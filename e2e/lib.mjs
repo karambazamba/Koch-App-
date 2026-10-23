@@ -117,6 +117,8 @@ const FAMILY = {
     "wasgibts.pinnwand": { version: 2, messages: [entry("pin1", "pinnwand", { text: "Bin um 20 Uhr da", author: "Felix", reactions: {}, readBy: ["Felix"], pinned: false }, "familie", PIN_STAMP)], memos: [] },
     "wasgibts.funktionen": { version: 2, on: ["vorrat", "rezepte", "wochenplan", "regiontipps"] },
     "wasgibts.beispiel": { version: 1, since: "2026-10-21", cleared: ["termine", "aufgaben", "pinnwand", "einkauf", "essen"], done: [], gone: [], asked: true },
+    // Mias Frage nach Erinnerungen ist schon beantwortet (eigener Ablauf `erinnerungFrage`)
+    "wasgibts.mitteilungen": { version: 1, defaultReminder: "30", kinds: { erinnerungen: true, pinnwand: true, abgeben: true, morgen: false }, answer: "nein", askedAt: "2026-10-21T08:00:00.000Z", asks: 2, sent: [] },
   },
 };
 

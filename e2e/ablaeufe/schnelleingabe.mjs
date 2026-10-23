@@ -74,3 +74,36 @@ export const schnelleingabe = async (page, check) => {
   check(await page.getByText("Zahnarzt Jonne").first().isVisible(), "im Kalender am Freitag");
   check(await page.getByText("16:00").first().isVisible(), "um 16:00");
 };
+
+/**
+ * Erinnerungen (Tafel 77): beim ersten Start keine Frage; erster Termin mit
+ * Uhrzeit → Chip mit Glocke „15:30 erinnern“ → nach dem Schließen der
+ * Schnelleingabe Mias Frage „Soll ich dich erinnern?“ (Ja, gern / Lieber
+ * nicht) → „Lieber nicht“ wird gemerkt; Glocke am Termin in der Kachel.
+ */
+export const erinnerungFrage = async (page, check) => {
+  await hello(page);
+  await page.waitForTimeout(600);
+  check(!(await page.getByRole("dialog", { name: "Soll ich dich erinnern?" }).count()), "erster Start: keine Frage nach Mitteilungen");
+  const tplus = page.getByRole("button", { name: "Neuer Termin" }).first();
+  await tplus.evaluate((el) => el.scrollIntoView({ block: "center" }));
+  await tplus.click();
+  const sheet = page.getByRole("dialog", { name: "Schnelleingabe" });
+  await sheet.waitFor({ timeout: 5000 });
+  await sheet.getByRole("textbox").fill("Zahnarzt morgen 16 Uhr");
+  const chip = sheet.getByRole("button", { name: /15:30 erinnern/ });
+  check(await chip.isVisible(), "Chip „15:30 erinnern“");
+  await sheet.getByRole("button", { name: "Speichern" }).click();
+  await page.waitForTimeout(300);
+  check(!(await page.getByRole("dialog", { name: "Soll ich dich erinnern?" }).count()), "keine Frage mitten ins Tippen");
+  await sheet.getByRole("button", { name: "Schließen" }).last().click();
+  const ask = page.getByRole("dialog", { name: "Soll ich dich erinnern?" });
+  check(await ask.waitFor({ timeout: 4000 }).then(() => true, () => false), "danach Mias Frage");
+  check((await ask.getByRole("button", { name: "Ja, gern" }).isVisible()) && (await ask.getByRole("button", { name: "Lieber nicht" }).isVisible()), "„Ja, gern“ / „Lieber nicht“");
+  await ask.getByRole("button", { name: "Lieber nicht" }).click();
+  await page.waitForTimeout(400);
+  const saved = await store(page, "wasgibts.mitteilungen");
+  check(saved?.answer === "nein" && saved?.asks === 1, "„Lieber nicht“ gemerkt");
+  const t = (await entries(page)).find((e) => e.data.title === "Zahnarzt");
+  check(t?.data.reminder === "30", "Termin mit Erinnerung 30 Min vorher");
+};
