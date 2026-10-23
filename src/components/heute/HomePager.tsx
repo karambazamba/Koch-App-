@@ -12,7 +12,7 @@ import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Settings } from "lucide-react";
-import { BegleitungBar } from "@/components/begleitung/BegleitungBar";
+import { MiaButton } from "@/components/begleitung/MiaButton";
 import { CARD } from "@/components/ui/styles";
 import { useCalendarEntries } from "@/lib/kalender/useCalendarEntries";
 import { useMinutes } from "@/lib/core/now";
@@ -213,7 +213,7 @@ export function HomePager({ data }: { data: HomeData }) {
           );
         })}
       </main>
-      <BegleitungBar name={helperName(data.profile)} />
+      <MiaButton name={helperName(data.profile)} />
     </>
   );
 }

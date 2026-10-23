@@ -20,6 +20,7 @@ import { LEAVE_MS, act, buzz } from "@/components/heute/actions";
 import { ItemMenu, roomBarProps } from "@/components/kalender/Items";
 import { withoutEmoji } from "@/lib/core/text";
 import dynamic from "next/dynamic";
+import { askMiaFirst } from "@/lib/begleitung/open";
 
 // Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
 const TaskQuickAdd = dynamic(() => import("@/components/kalender/TaskQuickAdd").then((m) => m.TaskQuickAdd), { ssr: false });
@@ -149,7 +150,7 @@ export function TermineSection({ items, all, href, today, size = "M", half = fal
   const list = size === "L" && !demo ? (all ?? items).filter((i) => !i.done) : items;
   const shown = list.slice(0, TERMIN_COUNT[size]);
   const sheet = adding && <TerminQuickAdd onClose={() => setAdding(false)} defaultDate={today} />;
-  const plus = <QuickButton icon={Plus} label="Neuer Termin" onClick={() => setAdding(true)} />;
+  const plus = <QuickButton icon={Plus} label="Neuer Termin" onClick={() => askMiaFirst("termin", () => setAdding(true))} />;
   const rest = list.length - shown.length;
   const cols = size === "S" || shown.length === 1 ? "grid-cols-1" : "grid-cols-2";
   return (
@@ -217,7 +218,7 @@ export function AufgabenSection({ items, total, today, href = "/aufgaben", size 
   const [adding, setAdding] = useState(false);
   const shown = items.slice(0, TASK_COUNT[size]);
   const { leaving, start } = useLeaving((item) => (demo ? demo.onGone?.(item) : check(item, shown)));
-  const plus = <QuickButton icon={Plus} label="Neue Aufgabe" onClick={() => setAdding(true)} />;
+  const plus = <QuickButton icon={Plus} label="Neue Aufgabe" onClick={() => askMiaFirst("aufgabe", () => setAdding(true))} />;
   const rest = Math.max(0, Math.max(total ?? 0, items.length) - shown.length);
   const oneCol = size === "S" && half;
   return (

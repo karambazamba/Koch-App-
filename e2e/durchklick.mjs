@@ -2,7 +2,7 @@
 // Bearbeiten, Wischen, Eintragen, Kalender, Essen, Rezept, Einkauf, Vorrat,
 // Pinnwand, Wetter, Spendentopf, Tipps, Einstellungen, Chat im Testmodus,
 // Konten mit zwei Browsern, Vorführen: Fertig-Leiste, Memo antippen,
-// Offline, neue Version, Stammartikel, Sport-Kachel, Mikrofon aus, Termin in einem Satz, Stimme, Wochencheck, Kochtipp, Mehr Ideen).
+// Offline, neue Version, Stammartikel, Sport-Kachel, Mikrofon aus, Termin in einem Satz, Stimme, Wochencheck, Kochtipp, Mehr Ideen, Mia zuerst).
 // Startet selbst einen Testserver (vorher `npm run build`) oder nutzt
 // E2E_BASE. Nur einzelne Abläufe: `npm run durchklick -- wetter pinnwand`.
 import { checker, launch, newPage, startServer } from "./lib.mjs";
@@ -18,8 +18,9 @@ import * as stimme from "./ablaeufe/stimme.mjs";
 import * as wochencheck from "./ablaeufe/wochencheck.mjs";
 import * as kochtipp from "./ablaeufe/kochtipp.mjs";
 import * as mehrideen from "./ablaeufe/mehrideen.mjs";
+import * as miazuerst from "./ablaeufe/miazuerst.mjs";
 
-const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen };
+const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen, ...miazuerst };
 const pick = process.argv.slice(2);
 const flows = Object.entries(ALL).filter(([name, run]) => typeof run === "function" && (!pick.length || pick.includes(name)));
 const stop = await startServer();
@@ -35,6 +36,8 @@ for (const device of ["iPhone 15 Pro", "Pixel 7"]) {
       check(!page.errors.length, `keine Fehler ${page.errors.join(" | ")}`);
     } catch (e) {
       check(false, `abgebrochen: ${String(e.message).split("\n")[0]}`);
+      // Bildschirmfoto zum Nachsehen (.bilder/abbruch/)
+      await page.screenshot({ path: `.bilder/abbruch/${device.replace(/\W+/g, "-")}-${name}.png` }).catch(() => {});
     }
     failed.push(...f);
     await page.context().close();

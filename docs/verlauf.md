@@ -1960,3 +1960,11 @@ Fehler in `docs/aufraeumen-nachher.md`.
   eine andere Mischung (schnell, Lieblinge, besonders, wenn Zeit ist),
   passend zur Familie. Neuer Rezeptvorrat „Aus unserer Küche“ mit 34
   Gerichten und eigenen Zeichnungen.
+
+## Mia zuerst – erzählen statt ausfüllen (Tafel 53, v0.62.0)
+
+- Statt der Schreib-Leiste ein runder Mia-Knopf unten rechts. Tippen holt
+  Mia in die Mitte (sie fliegt hinein), sie hört gleich zu, Status und Text
+  groß, Antworten als Untertitel, Karten darunter, „Passt“ oder „ja“
+  übernimmt und Mia schließt von selbst. „＋“ holt erst Mia, „Lieber
+  Formular“ bleibt. Weiche Bewegung nur über transform/opacity.

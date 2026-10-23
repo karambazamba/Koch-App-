@@ -11,6 +11,7 @@ import { useSpeechInput } from "@/lib/begleitung/useSpeechInput";
 import { pushUndo } from "@/lib/core/undo";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 import { MIC_BLOCKED, MicStrip } from "@/components/ui/MicPermission";
+import { askMiaFirst } from "@/lib/begleitung/open";
 
 
 const sachen = (n: number) => `${n} ${n === 1 ? "Sache" : "Sachen"}`;
@@ -41,7 +42,7 @@ export function QuickAddButton({
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => askMiaFirst("einkauf", () => setOpen(true))}
         aria-label="Etwas auf die Einkaufsliste setzen"
         className={`flex h-11 w-11 items-center justify-center ${className}`}
       >

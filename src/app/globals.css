@@ -880,3 +880,33 @@ body {
 }
 .hat-pop { animation: hat-pop 0.45s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
 @media (prefers-reduced-motion: reduce) { .hat-pop { animation: none; } }
+
+/* ── Mia zuerst (Tafel 53): Knopf, Mitte, weiche Bewegung ──
+   Nur transform/opacity (flüssig auf alten Handys); sanftes Abbremsen. */
+:root { --mia-ease: cubic-bezier(.16, 1, .3, 1); }
+@keyframes mia-atmen { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025); } }
+@keyframes mia-schein { 0%, 100% { opacity: .45; transform: scale(1); } 50% { opacity: .7; transform: scale(1.06); } }
+@keyframes mia-ein { from { opacity: 0; transform: translateY(16px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes mia-blende { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mia-huepfer { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } 70% { transform: translateY(0); } }
+@keyframes mia-welle { from { opacity: .5; transform: scale(1); } to { opacity: 0; transform: scale(1.7); } }
+.mia-knopf { position: relative; animation: mia-atmen 4s ease-in-out infinite; }
+.mia-knopf::before { content: ""; position: absolute; inset: -8px; border-radius: 9999px; background: radial-gradient(closest-side, color-mix(in srgb, var(--app-accent) 45%, transparent), transparent); animation: mia-schein 4s ease-in-out infinite; pointer-events: none; z-index: -1; }
+.mia-einblenden { animation: mia-blende .8s var(--mia-ease) both; }
+.mia-karte { animation: mia-ein .8s var(--mia-ease) both; }
+.mia-text { animation: mia-blende .5s var(--mia-ease) both; }
+.mia-flug { transition: transform 1s var(--mia-ease); will-change: transform; }
+.mia-huepfer { animation: mia-huepfer 1s var(--mia-ease); }
+.mia-wellen { position: absolute; inset: 0; border-radius: 9999px; border: 3px solid var(--app-accent); animation: mia-welle 2.8s var(--mia-ease) infinite; pointer-events: none; }
+.mia-wellen.zwei { animation-delay: 1.4s; }
+.mia-buehne-hintergrund { animation: mia-blende .8s var(--mia-ease) both; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+@media (prefers-reduced-motion: reduce) {
+  .mia-knopf, .mia-knopf::before, .mia-huepfer, .mia-wellen { animation: none; }
+  .mia-karte { animation: mia-blende .4s ease both; }
+  .mia-flug { transition: none; }
+}
+
+/* Startseite bearbeiten: die Fertig-Leiste ersetzt den Mia-Knopf */
+body:has([data-edit-leiste]) [data-begleitung-leiste] {
+  visibility: hidden;
+}

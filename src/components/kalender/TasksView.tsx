@@ -21,6 +21,7 @@ import { ItemMenu } from "@/components/kalender/Items";
 import { EntryForm } from "@/components/kalender/EntryForm";
 import { TaskLine, useLeaving } from "@/components/heute/MiniCards";
 import { TaskQuickAdd } from "@/components/kalender/TaskQuickAdd";
+import { askMiaFirst } from "@/lib/begleitung/open";
 
 type Filter = "alles" | "familie" | "arbeit";
 
@@ -59,7 +60,7 @@ export function TasksView() {
         title="Aufgaben"
         backHref="/"
         action={
-          <PagePlus label="Neue Aufgabe" onClick={() => setAdding(true)} />
+          <PagePlus label="Neue Aufgabe" onClick={() => askMiaFirst("aufgabe", () => setAdding(true))} />
         }
       />
       <main className={PAGE_MAIN}>

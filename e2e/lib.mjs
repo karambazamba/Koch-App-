@@ -205,3 +205,30 @@ export const FAKE_VOICES = () => {
     }
   };
 };
+
+/** Mia holen (runder Knopf) und das Tippen-Feld öffnen – gibt das Feld zurück */
+export async function miaTippen(page) {
+  await page.getByRole("button", { name: /^Sag .*was ansteht/ }).first().click();
+  return tippenFeld(page);
+}
+
+/** In der offenen Mia-Ansicht das Tippen-Feld holen (falls Mia gerade zuhört) */
+export async function tippenFeld(page) {
+  await page.getByRole("dialog").last().waitFor({ timeout: 5000 });
+  const box = page.getByRole("textbox", { name: "Nachricht schreiben" });
+  if (!(await box.isVisible().catch(() => false))) {
+    const tippen = page.getByRole("button", { name: "Tippen", exact: true });
+    await tippen.waitFor({ timeout: 5000 });
+    await tippen.click();
+  }
+  await box.waitFor({ timeout: 5000 });
+  return box;
+}
+
+/** „＋“ holt erst Mia – „Lieber Formular“ öffnet das gewohnte Fenster */
+export async function lieberFormular(page) {
+  const link = page.getByRole("button", { name: "Lieber Formular" });
+  await link.waitFor({ timeout: 5000 });
+  await link.click();
+  await page.waitForTimeout(500);
+}

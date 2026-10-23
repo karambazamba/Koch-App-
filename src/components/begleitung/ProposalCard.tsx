@@ -35,7 +35,7 @@ export function ProposalCard({ data, proposal, adjusting, onToggle, onApply, onA
       <div>
         <h3 className="text-lg font-bold">Das würde ich machen:</h3>
         <p className="text-sm text-muted">
-          {adjusting ? "Sag oder schreib unten, was anders sein soll." : "Gespeichert wird erst mit „Übernehmen“."}
+          {adjusting ? "Sag oder schreib unten, was anders sein soll." : "Gespeichert wird erst mit „Passt“ – oder sag einfach „ja“."}
         </p>
       </div>
 
@@ -66,7 +66,7 @@ export function ProposalCard({ data, proposal, adjusting, onToggle, onApply, onA
         </button>
         <button type="button" onClick={onApply} disabled={count === 0} className={buttonClass("primary")}>
           <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-          Übernehmen{count > 0 ? ` (${count})` : ""}
+          Passt{count > 0 ? ` (${count})` : ""}
         </button>
       </div>
     </section>

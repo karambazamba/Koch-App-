@@ -23,6 +23,7 @@ import { roomBarProps } from "@/components/kalender/Items";
 import { DayAgenda, type RoomFilter } from "@/components/kalender/DayAgenda";
 import { TipDot, TipsChip, useCalendarTips } from "@/components/tipps/CalendarTips";
 import dynamic from "next/dynamic";
+import { askMiaFirst } from "@/lib/begleitung/open";
 
 // Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
 const AddSheet = dynamic(() => import("@/components/kalender/AddSheet").then((m) => m.AddSheet), { ssr: false });
@@ -83,7 +84,7 @@ export function CalendarPage({ today, entries, name }: { today: string; entries:
             ]}
           />
         </div>
-        <PagePlus label="Neu eintragen" onClick={() => setAdding(true)} />
+        <PagePlus label="Neu eintragen" onClick={() => askMiaFirst("eintrag", () => setAdding(true))} />
       </div>
       {work && (
         <Segmented

@@ -55,9 +55,17 @@ type Props = {
   onAsk: (text: string) => void;
   onApply: (selected: Set<string>) => void;
   onClose: () => void;
+  /** Mia-Ansicht: nur ab dieser Nachricht zeigen (sonst alles = „Verlauf“) */
+  from?: number;
+  /** Mia-Ansicht: Text dieser Antwort steht groß als Untertitel – hier nicht nochmal */
+  subtitleIndex?: number;
+  /** Begrüßung als Blase (nur im „Verlauf“ – sonst steht sie groß oben) */
+  showGreeting?: boolean;
+  /** Mia-Ansicht: die entstehende Antwort steht schon groß oben */
+  streamOnStage?: boolean;
 };
 
-export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, codeLater, onCodeLater, chat, setChat, busy, streaming, speakingId, tipsOn, adjusting, setAdjusting, spontan, kochtipp, market, rules, onSubmit, onAsk, onApply, onClose }: Props) {
+export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, codeLater, onCodeLater, chat, setChat, busy, streaming, speakingId, tipsOn, adjusting, setAdjusting, spontan, kochtipp, market, rules, onSubmit, onAsk, onApply, onClose, from = 0, subtitleIndex = -1, streamOnStage = false, showGreeting = true }: Props) {
   const { ideasFor, stockFor, headingFor, speechFor, takeIdea, moreIdeas, adjusting2, setAdjusting2, applyFilters, acceptUnsure } = spontan;
   // Offene Ideen-Antwort (die letzte, solange Spontan kochen läuft) und eingeklappte frühere
   const spontanIndexes = chat.turns.flatMap((t, i) => (t.spontan ? [i] : []));
@@ -82,13 +90,14 @@ export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, co
                 an – dann weiß ich, für wen ich plane.
               </span>
             </p>
-          ) : (
+          ) : showGreeting && from === 0 ? (
             <p className="max-w-[85%] self-start rounded-card rounded-bl-md border border-line bg-surface px-4 py-2.5 text-base leading-snug text-ink">
               Hi, ich bin {name} – was steht an?
             </p>
-          )}
+          ) : null}
           {status?.askCode && data && !codeLater && <AccessCodeCard onLater={onCodeLater} />}
           {chat.turns.map((turn, i) => {
+            if (i < from) return null;
             const last = i === chat.turns.length - 1;
             const showBases = last && !busy && !chat.spontan && asksForBase(turn);
             // Ideen-Antworten: nur die letzte (im Spontan-Modus) ist offen, ältere eingeklappt
@@ -135,6 +144,7 @@ export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, co
               <ChatTurnItem
                 key={i}
                 turn={turn}
+                hideText={i === subtitleIndex}
                 last={last}
                 data={data}
                 showBases={showBases}
@@ -159,6 +169,8 @@ export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, co
           {data && tipsOn && !chat.spontan && !busy && <TipBubble recipes={data.recipes} />}
 
           {busy &&
+            subtitleIndex < 0 &&
+            !streamOnStage &&
             (streaming ? (
               // Antwort erscheint Wort für Wort
               <p className={`${BUBBLE} self-start rounded-bl-md border border-line bg-surface text-ink`} aria-live="off">
