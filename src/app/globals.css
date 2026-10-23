@@ -116,6 +116,14 @@
   --app-muted: #6f675f;
   --app-faint: #a1988e;
   --app-accent: #f26b21;
+  /* Marke Mia (docs/brand.md) */
+  --app-brand: #ee5f14;
+  --app-brand-dark: #f7843e;
+  --app-brand-soft: #f7a36e;
+  --app-brand-wort: #ee5f14;
+  /* dunkler Grund für die Logo-Vorschau (/brand), in beiden Darstellungen gleich */
+  --app-brand-probe-dunkel: #17191c;
+  --app-brand-probe-hell: #ffffff;
   --app-accent-strong: #c4531a;
   --app-accent-soft: #fdebdf;
   --app-on-accent: #ffffff;
@@ -220,6 +228,7 @@
   --app-muted: #aaa49c;
   --app-faint: #8d929a;
   --app-accent: #ff8a4c;
+  --app-brand-wort: #f7843e;
   --app-accent-strong: #ffa774;
   --app-accent-soft: #3b2a20;
   --app-on-accent: #1c1206;
@@ -323,6 +332,7 @@
     --app-muted: #aaa49c;
     --app-faint: #8d929a;
     --app-accent: #ff8a4c;
+    --app-brand-wort: #f7843e;
     --app-accent-strong: #ffa774;
     --app-accent-soft: #3b2a20;
     --app-on-accent: #1c1206;

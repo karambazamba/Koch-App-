@@ -18,7 +18,7 @@ const TIMES = ["07:10", "12:30", "17:45", "21:30", "23:30"];
 export const PAGES = [
   "/", "/?seite=kalender", "/?seite=essen", "/kochbuch", "/kochbuch/rezept?id=sp", "/kochbuch/bearbeiten", "/kochbuch/kochen?id=sp",
   "/einkaufsliste", "/einkaufsliste/laden", "/vorrat", "/pinnwand", "/notizen", "/notizen/bearbeiten?id=n1", "/aufgaben", "/tag?datum=2026-10-21",
-  "/wetter", "/spendentopf", "/tipps", "/sport", "/wochenplan", "/woche/check",
+  "/wetter", "/brand", "/spendentopf", "/tipps", "/sport", "/wochenplan", "/woche/check",
   "/profil", "/profil/kuechenhelfer", "/profil/familie", "/profil/person?id=a1", "/profil/daten", "/profil/bausteine", "/profil/startseite",
   "/profil/tagesablauf", "/profil/kalender", "/profil/essen", "/profil/kochstil", "/profil/das-moegt-ihr", "/profil/gesundheit", "/profil/lieblingsgerichte",
   "/profil/nie-wieder", "/profil/basen", "/profil/einkaufstag", "/profil/produkte", "/profil/haushalt", "/profil/mails", "/profil/pause",

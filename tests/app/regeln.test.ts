@@ -44,7 +44,7 @@ describe("Regeln für sichtbare Texte", () => {
   });
 
   it("Name der Begleitung nie fest eingebaut (nur Auswahl und Standard)", () => {
-    const allowed = /^lib\/einstellungen\/(profileHelper|profileModel|profileStore|welcome)\.ts$|^components\/begleitung\/(BegleitungPicker|HelloScreen)\.tsx$|^lib\/begleitung\/(speech|settingsChat|helperTools)\.ts$|^lib\/einstellungen\/onboarding\/names\.ts$/;
+    const allowed = /^lib\/einstellungen\/(profileHelper|profileModel|profileStore|welcome)\.ts$|^components\/begleitung\/(BegleitungPicker|HelloScreen)\.tsx$|^lib\/begleitung\/(speech|settingsChat|helperTools)\.ts$|^lib\/einstellungen\/onboarding\/names\.ts$|^components\/ui\/Brand(Mark|Preview)\.tsx$/;
     expect(hits((code, file) => (allowed.test(file) || NOT_VISIBLE.test(file) ? [] : texts(code).filter((t) => /\b(Lotte|Mia|Theo)\b/.test(t))))).toEqual([]);
   });
 });
