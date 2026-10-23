@@ -127,5 +127,5 @@ export function useJetztTopics(src: JetztSource) {
     weights: state.weights,
     hidden: hiddenToday(state, src.today),
   };
-  return { on: state.on, topics: jetztTopics(input) };
+  return { on: state.on, topics: jetztTopics(input), shop: input.shop };
 }

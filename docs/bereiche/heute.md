@@ -18,6 +18,9 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Jetzt-Karte: `src/lib/heute/jetztTopics.ts` (Punkte), `jetztStore.ts`
   (Speicher), `jetztCommand.ts` (Satz an/aus); Oberfläche
   `src/components/heute/JetztCard.tsx`, Daten `useJetztTopics.ts`.
+- „Dein Tag“: `src/lib/heute/deinTag.ts` (Symbole, Zeilen, Übersicht,
+  Öffnen), `src/components/heute/DeinTag.tsx`; Mia-Knopf beim Scrollen
+  `src/lib/begleitung/knopfScroll.ts`.
 - Tagesphasen: `src/lib/heute/phases.ts`, Einstellungen `tagesablauf.ts`,
   Sofort-Wechsel `nudge.ts`, Push-Regeln (vorbereitet) `push.ts`;
   Hook `src/components/heute/useHomePhase.ts`.
@@ -129,15 +132,15 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Statt der Jetzt-Karte steht oben ein gestrichelter Platz (`JetztPlaceholder`).
 
 ### Jetzt-Karte (Tafel 60, v0.68.0)
-- Zeigt nur, was Mia weiß und die Kacheln NICHT zeigen – mit höchstens EINEM
-  Knopf rechts (Erledigt / Öffnen / Antworten / Liste / Kochen / Packliste).
+- Zeigt nur, was Mia weiß und die Kacheln NICHT zeigen – seit v0.74 ohne
+  eigenen Knopf (siehe „Weniger Mia + Dein Tag“).
   Kein Wetterbericht, keine Wiederholung, keine Zähler, kein ✕, keine
   „Passt sich deinem Tag an“-Zeile. Feste Höhe 78 px, zwei Zeilen: Zeile 1
   = was (höchstens 32 Zeichen, `TITLE_MAX`, gekürzt am Wortende), Zeile 2 =
   warum. Ganze Karte antippbar; Wischen = nächstes Thema (höchstens drei,
-  kleine Punkte oben rechts). „Erledigt“ zeigt kurz ✓ und wechselt weich
-  (Erinnerung gilt dann als gesehen, `doneJetztTopic` legt das Thema für
-  heute weg – ohne weniger Interesse).
+  kleine Punkte oben rechts, 1 → 3 und nicht weiter). „Erledigt“ (jetzt in
+  „Dein Tag“) legt das Thema mit `doneJetztTopic` für heute weg – ohne
+  weniger Interesse; eine Erinnerung gilt dann als gesehen.
 - Themen (`jetztTopics`, rein, nie leer – sonst „Alles ruhig – ich sag
   Bescheid.“): Erinnerung (100), Timer (nur ohne Timer-Kachel), Kochschritt,
   Pause, Gleich (Termin ≤ 15 Min mit Notiz/Ort; ohne Zusatz nur ohne
@@ -165,6 +168,29 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Tests: `tests/heute/jetztThemen.test.ts` (Tag wie Tafel 60 um 7:00, 8:10,
   10:20, 12:40, 16:45, 17:35, 19:00, 21:00; nie „°“; Regen nur mit
   Draußen-Termin; „Erledigt“), Durchklick `jetztKarte`.
+
+### Weniger Mia + „Dein Tag“ (Tafel 66 B, 67, 68, v0.74.0)
+- Auf der Startseite genau zwei Mias: das eckige Logo (`BrandMark`, nicht
+  antippbar) und der runde Mia-Knopf. Die Jetzt-Karte zeigt statt Mias
+  Gesicht ein Themen-Symbol (lucide, Orange im weißen 46-px-Kreis); die
+  Zuordnung steht an EINER Stelle: `topicIcon` in `src/lib/heute/deinTag.ts`.
+- Antippen öffnet „Dein Tag“ (`components/heute/DeinTag.tsx`, ein Sheet):
+  Datum klein, Titel 30/800; TERMINE nach Uhrzeit mit „Jetzt · 10:30“-Linie
+  (Vorbei grau mit ✓, `terminRows`), ESSEN (Abendessen mit „Kochen“ →
+  Kochmodus, „Einkaufen · REWE“ mit „Liste“), neue PINNWAND-Nachrichten von
+  heute, AUFGABEN zum Abhaken („von gestern“ leise). Das Thema der Karte ist
+  hervorgehoben und in Sicht gescrollt (`topicSpot`), mit dem Hinweis der
+  Karte; „Erledigt“ nur bei Vorbereiten/Packliste/Geburtstag/Erinnerung.
+  Leerer Tag: „Heute ist nichts geplant. Genieß es.“ Ab 22 Uhr Umschalter
+  „Morgen · Do“. Eintrag antippen = öffnen. „Arbeit“ trägt „Nur für dich“
+  (fremde Arbeit kommt per RLS nie aufs Gerät). Ausnahme: laufender Timer
+  öffnet den Timer.
+- Mia: „Was steht heute an?“ / „Wie sieht mein Tag aus?“ (`isDayQuestion`)
+  → 2 Sätze (`daySummary`), dann öffnet sich „Dein Tag“ (`openDeinTag`).
+  Mit KI läuft es als App-Befehl wie der Wochencheck.
+- Der Mia-Knopf gleitet beim Runterscrollen weg (`knopfAway`, nur
+  transform/opacity) und kommt beim Hochscrollen bzw. nach 0,6 s Ruhe zurück.
+- Tests: `tests/heute/deinTag.test.ts`, Durchklick `jetztKarte`.
 
 ### Tagesphasen
 - Kochen (50) > Sport (40) > Feierabend (30) > Morgens (20) > Tagsüber (10).
@@ -219,7 +245,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 
 ## Tests
 
-- `tests/heute/`: `jetztKarte.test.ts`, `jetztThemen.test.ts`,
+- `tests/heute/`: `jetztKarte.test.ts`, `jetztThemen.test.ts`, `deinTag.test.ts`,
   `phasen.test.ts`, `tagesphasen.test.ts`, `tagesablaufSpeicher.test.ts`.
 - `tests/core/`: `kachelAnordnung.test.ts`, `startseite.test.ts`,
   `beispielTag.test.ts`, `beispielTagSpeicher.test.ts`, `wischen.test.ts`.

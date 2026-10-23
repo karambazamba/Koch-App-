@@ -33,9 +33,13 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   + Einkauf sind ein Paar. Größe ändert nur die Menge (S ≤ M ≤ L). Standard für
   neue Nutzer: Pinnwand + Wetter (S), Termine, Aufgaben, Essen + Einkauf,
   Spendentopf (Vorrat nur mit Baustein). Jede Kachel öffnet ihre Seite.
-- Die Begleitung spricht auf der Startseite nur über die Jetzt-Karte: feste
-  Höhe, 2 Zeilen (Zeile 1 ≤ 32 Zeichen), Punktesystem, höchstens 3 Themen zum
-  Wischen, rechts höchstens EIN Knopf, nur was die Kacheln nicht zeigen. Nie
+- Auf der Startseite gibt es genau zwei Mias: das eckige Logo (BrandMark,
+  nicht antippbar) und den runden Mia-Knopf unten rechts (= reden).
+- Die Jetzt-Karte zeigt höchstens 3 Themen zum Wischen und öffnet wie jede
+  Kachel per Antippen – ohne eigenen Knopf – die Seite „Dein Tag“ (Ausnahme:
+  laufender Timer öffnet den Timer). Feste Höhe, 2 Zeilen (Zeile 1 ≤ 32
+  Zeichen, nie mitten im Wort abgeschnitten), Themen-Symbol statt Gesicht,
+  Punktesystem, nur was die Kacheln nicht zeigen. Nie
   Temperatur, Wetter nur mit Planbezug (Tafel 60). Tagesphasen ändern nur Inhalte, nie
   die Anordnung; Ruhe nach Feierabend ist ein eigener Schalter.
 - Gesten: Tippen = Eintrag öffnen, lange Drücken = Startseite bearbeiten,

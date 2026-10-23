@@ -22,6 +22,8 @@ import { TimerTile } from "@/components/timer/TimerTile";
 import { CookingTile } from "@/components/essen/CookingTile";
 import { DemoFoodTile } from "@/components/essen/DemoFoodTile";
 import { JetztCard, JetztPlaceholder } from "@/components/heute/JetztCard";
+import { DeinTag } from "@/components/heute/DeinTag";
+import { onOpenDeinTag } from "@/lib/heute/deinTag";
 import { useJetztTopics } from "@/components/heute/useJetztTopics";
 import { takeHelloFlight } from "@/lib/core/hello";
 import { SportTile } from "@/components/sport/SportTile";
@@ -293,20 +295,24 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
       ...(view.weatherTomorrow && visible.some((t) => t.id === "wetter") ? (["wetter"] as HomeTileId[]) : []),
     ],
   });
+  // Antippen der Jetzt-Karte = „Dein Tag“ mit dem Thema hervorgehoben (Tafel 66 B); läuft ein Timer: der Timer.
+  // Wochencheck und Pause bleiben Handlungen, kein Tagesinhalt.
   const openTopic = (t: JetztTopic) => {
     noteJetztTap(t.kind);
     if (t.kind === "erinnerung" && reminder) markReminderSeen(reminder.key);
-    if (!t.target) return;
-    if ("href" in t.target) return router.push(t.target.href);
-    if (t.target.action === "essen") return onOpenFood();
-    if (t.target.action === "ideen") return openHelper("spontan");
-    if (t.target.action === "pause") return endPause();
-    if (t.target.action === "wochencheck") {
-      weekCheckDone(t.id.slice("wochencheck:".length));
-      return openHelper("wochencheck");
+    if (t.target && "action" in t.target) {
+      if (t.target.action === "timer") return document.querySelector('[data-tile~="timer"]')?.scrollIntoView({ behavior: "smooth", block: "center" }) ?? router.push("/timer");
+      if (t.target.action === "pause") return endPause();
+      if (t.target.action === "wochencheck") {
+        weekCheckDone(t.id.slice("wochencheck:".length));
+        return openHelper("wochencheck");
+      }
     }
-    document.querySelector(`[data-tile~="${t.target.action === "timer" ? "timer" : "pinnwand"}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    setDayTopic({ topic: t });
   };
+  const [dayTopic, setDayTopic] = useState<{ topic: JetztTopic | null } | null>(null);
+  // Mia: „Was steht heute an?“ öffnet „Dein Tag“ (ohne Thema)
+  useEffect(() => onOpenDeinTag(() => setDayTopic({ topic: null })), []);
   // Weiterwischen: etwas weniger Interesse; ein Region-Tipp kommt dieses Wochenende nicht wieder
   const skipTopic = (t: JetztTopic) => {
     noteJetztSkip(t.kind);
@@ -375,7 +381,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
             </header>
           )}
 
-          {jetzt.on && (editing.on ? <JetztPlaceholder /> : <JetztCard topics={jetzt.topics} name={helperName(data.profile)} onOpen={openTopic} onDone={doneTopic} onSkip={skipTopic} arrive={arrive} />)}
+          {jetzt.on && (editing.on ? <JetztPlaceholder /> : <JetztCard topics={jetzt.topics} name={helperName(data.profile)} onOpen={openTopic} onSkip={skipTopic} arrive={arrive} />)}
 
           {!editing.on && (
             <>
@@ -401,6 +407,26 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
           </div>
 
           {demoItem && <DemoItemSheet item={demoItem} today={data.todayIso} onClose={() => setDemoItem(null)} />}
+          {dayTopic && (
+            <DeinTag
+              today={data.todayIso}
+              dateLabel={headerDate(data.today)}
+              minutes={minutes}
+              termine={allItems.filter((i) => i.entry.typ === "termin")}
+              tomorrow={tomorrowAll.filter((i) => i.entry.typ === "termin")}
+              tasks={allItems.filter((i) => i.entry.typ === "aufgabe")}
+              dish={
+                dish && !data.day?.away
+                  ? { name: dish, clock: dishClock, minutes: recipe?.prepMinutes ?? null, ready: Boolean(needs && !needs.length), missing: needs ?? [], cookHref: recipe ? `/kochbuch/kochen?id=${encodeURIComponent(recipe.id)}` : null }
+                  : null
+              }
+              shop={jetzt.shop}
+              pins={(pins ?? []).filter((p) => p.erstellt.slice(0, 10) === data.todayIso || toIsoDate(new Date(p.erstellt)) === data.todayIso)}
+              topic={dayTopic.topic}
+              onTopicDone={doneTopic}
+              onClose={() => setDayTopic(null)}
+            />
+          )}
 
           {!editing.on && (
             <button type="button" onClick={editing.open} className="mt-2 flex h-11 items-center justify-center gap-1.5 self-center text-sm font-semibold text-muted">

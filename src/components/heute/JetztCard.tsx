@@ -1,21 +1,23 @@
 "use client";
 
-// Jetzt-Karte (Tafel 60): oben auf "Heute", volle Breite, feste Höhe (zwei
-// Zeilen, wird nie größer), Pfirsich-Verlauf. Links Mia (32 px, beim Wechsel
-// kurz "sprechen"), Zeile 1 fett ohne Emoji = was, Zeile 2 in Dunkelorange =
-// warum. Rechts höchstens EIN Knopf (Erledigt / Öffnen / Antworten / Liste /
-// Kochen / Packliste); „Erledigt“ zeigt kurz ✓ und wechselt weich zum
-// nächsten Thema. Die ganze Karte ist antippbar; nach links wischen =
-// nächstes Thema (höchstens drei, kleine Punkte oben rechts).
+// Jetzt-Karte (Tafel 60/66 B): oben auf "Heute", volle Breite, feste Höhe
+// (zwei Zeilen, wird nie größer), Pfirsich-Verlauf. Links das Symbol des
+// Themas in einem weißen Kreis (46 px, Orange – Mia selbst steht nur als Logo
+// und als Knopf unten rechts auf der Startseite), Zeile 1 fett ohne Emoji =
+// was, Zeile 2 in Dunkelorange = warum. Kein Knopf: die ganze Karte öffnet
+// wie jede Kachel „Dein Tag“ (läuft ein Timer: den Timer); nach links wischen
+// = nächstes Thema (höchstens drei, kleine Punkte oben rechts).
 // Die Reihenfolge der Themen bleibt stehen, bis die App wieder geöffnet wird,
 // 15 Minuten vergehen oder etwas sehr Dringendes dazukommt – nichts springt.
 // Später Geladenes (Wetter, Tipps) kommt hinten dazu, solange Platz ist.
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Check } from "lucide-react";
-import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
+import { CalendarDays, CookingPot, ListChecks, MessageCircle, ShoppingCart, Sparkles, Sunrise, Timer, Umbrella, type LucideIcon } from "lucide-react";
 import type { JetztTopic } from "@/lib/heute/jetztTopics";
+import { topicIcon, type TopicIcon } from "@/lib/heute/deinTag";
 import { withoutEmoji } from "@/lib/core/text";
+
+const ICON: Record<TopicIcon, LucideIcon> = { Umbrella, CalendarDays, ListChecks, ShoppingCart, CookingPot, MessageCircle, Timer, Sunrise, Sparkles };
 
 const REFRESH_MS = 15 * 60_000;
 const URGENT = 90;
@@ -59,14 +61,12 @@ export function JetztCard({
   topics,
   name,
   onOpen,
-  onDone,
   onSkip,
   arrive = null,
 }: {
   topics: JetztTopic[];
   name: string;
   onOpen: (t: JetztTopic) => void;
-  onDone: (t: JetztTopic) => void;
   onSkip: (t: JetztTopic) => void;
   /** Vom Hallo-Bildschirm: Mia fliegt von dort hierher, der erste Satz tippt sich ein */
   arrive?: { x: number; y: number; size: number } | null;
@@ -76,34 +76,9 @@ export function JetztCard({
   const [index, setIndex] = useState(0);
   const i = shown.length ? index % shown.length : 0;
   const topic = shown[i];
-  // Beim Wechsel spricht Mia kurz
-  const [speaking, setSpeaking] = useState(false);
-  const shownId = topic?.id ?? "";
-  const [lastId, setLastId] = useState(shownId);
-  if (shownId !== lastId) {
-    setLastId(shownId);
-    setSpeaking(true);
-  }
-  useEffect(() => {
-    if (!speaking) return;
-    const t = window.setTimeout(() => setSpeaking(false), 1400);
-    return () => window.clearTimeout(t);
-  }, [speaking]);
-  // „Erledigt“: kurz ✓, dann weich weiter
-  const [ticked, setTicked] = useState<string | null>(null);
-  useEffect(() => {
-    if (!ticked) return;
-    const t = window.setTimeout(() => {
-      const done = shown.find((x) => x.id === ticked);
-      setTicked(null);
-      if (done) onDone(done);
-    }, 650);
-    return () => window.clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- nur beim Abhaken
-  }, [ticked]);
   const start = useRef<{ x: number; y: number } | null>(null);
   const swiped = useRef(false);
-  // Ankunft vom Hallo-Bildschirm: Mia fliegt (0,7 s), dann tippt sich der erste Satz ein
+  // Ankunft vom Hallo-Bildschirm: der Kreis fliegt (0,7 s), dann tippt sich der erste Satz ein
   const face = useRef<HTMLSpanElement>(null);
   const [typed, setTyped] = useState(arrive ? 0 : -1);
   useLayoutEffect(() => {
@@ -132,10 +107,13 @@ export function JetztCard({
     return () => window.clearTimeout(t);
   }, [typed, fullTitle.length]);
   if (!topic) return null;
+  const Icon = ICON[topicIcon(topic.kind)];
   const next = (dir: 1 | -1) => {
-    if (shown.length < 2) return;
+    // 1 → 3 und nicht weiter (kein Kreisel)
+    const to = i + dir;
+    if (to < 0 || to >= shown.length) return;
     if (dir === 1) onSkip(topic);
-    setIndex((n) => (((n + dir) % shown.length) + shown.length) % shown.length);
+    setIndex(to);
   };
   return (
     <section
@@ -169,26 +147,17 @@ export function JetztCard({
           }
           onOpen(topic);
         }}
-        className={`flex h-full w-full items-center gap-3 pl-3.5 text-left ${topic.button ? "pr-[128px]" : "pr-8"}`}
+        aria-label={`${fullTitle}${topic.detail ? ` – ${withoutEmoji(topic.detail)}` : ""}. ${topic.kind === "timer" ? "Timer öffnen" : "Dein Tag öffnen"}`}
+        className="flex h-full w-full items-center gap-3 pl-3 pr-8 text-left"
       >
-        <span ref={face} className="shrink-0">
-          <BegleitungAvatar size={32} zustand={speaking || typed >= 0 ? "sprechen" : undefined} stabil />
+        <span ref={face} className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-full bg-surface text-accent shadow-card" data-thema={topicIcon(topic.kind)}>
+          <Icon className="h-[22px] w-[22px]" strokeWidth={2} aria-hidden />
         </span>
         <span key={topic.id} className="flex min-w-0 flex-1 flex-col" style={{ animation: "jetzt-in 0.35s ease-out" }} role="status">
-          <span className="truncate text-[15.5px] font-extrabold leading-snug text-ink">{typed >= 0 ? fullTitle.slice(0, typed) || "\u00a0" : fullTitle}</span>
-          {topic.detail && <span className="truncate text-[13px] font-semibold leading-snug text-accent-strong">{withoutEmoji(topic.detail)}</span>}
+          <span className="line-clamp-1 break-words text-[15.5px] font-extrabold leading-snug text-ink">{typed >= 0 ? fullTitle.slice(0, typed) || "\u00a0" : fullTitle}</span>
+          {topic.detail && <span className="line-clamp-1 break-words text-[13px] font-semibold leading-snug text-accent-strong">{withoutEmoji(topic.detail)}</span>}
         </span>
       </button>
-      {topic.button && (
-        <button
-          type="button"
-          onClick={() => (topic.button === "Erledigt" ? setTicked(topic.id) : onOpen(topic))}
-          aria-label={ticked === topic.id ? "Erledigt" : `${topic.button}: ${fullTitle}`}
-          className="absolute right-3 top-1/2 flex h-11 min-w-[84px] -translate-y-1/2 items-center justify-center rounded-full bg-accent px-3.5 text-[14px] font-bold text-on-accent transition-transform active:scale-95"
-        >
-          {ticked === topic.id ? <Check className="h-5 w-5" strokeWidth={3} aria-hidden style={{ animation: "check-pop 0.4s ease-out" }} /> : topic.button}
-        </button>
-      )}
       {shown.length > 1 && (
         <span className="pointer-events-none absolute right-3.5 top-1.5 flex gap-1 text-jetzt-hint" aria-hidden>
           {shown.map((t, n) => (

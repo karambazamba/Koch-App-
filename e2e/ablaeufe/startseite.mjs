@@ -3,7 +3,8 @@
 // alles Wichtige ohne Scrollen, der Mia-Knopf verdeckt auf keiner Seite den
 // letzten Inhalt, und die Kochmütze zeigt sich schon am Beispiel-Tag (ohne
 // Sprechblase) – ein echter Tag 1 bleibt ohne Mütze.
-import { BASE, hello, seedFamily } from "../lib.mjs";
+import { BASE, hello, seedFamily, swipe } from "../lib.mjs";
+import { RECIPE_DATA } from "./essen.mjs";
 
 const hat = (page) => page.getByRole("button", { name: /^(Was anderes kochen\?|Kochidee –)/ });
 
@@ -76,39 +77,90 @@ export const muetzeBeispielTag = async (page, check) => {
 };
 
 /**
- * Jetzt-Karte (Tafel 60): Termin heute mit Notiz → „Versichertenkarte
- * einpacken?“ mit EINEM Knopf „Erledigt“ → kurz ✓, dann weich das nächste
- * Thema; kein ✕, keine „Passt sich …“-Zeile, nirgends „°“.
+ * Weniger Mia + „Dein Tag“ (Tafel 66 B, 67, 68): auf der Startseite genau EIN
+ * Mia-Gesicht (der Knopf), die Jetzt-Karte trägt ein Themen-Symbol und keinen
+ * Knopf; wischen 1 → 3 und nicht weiter; Antippen öffnet „Dein Tag“ mit dem
+ * Thema hervorgehoben („Versichertenkarte einpacken?“ am Zahnarzt), dort
+ * „Erledigt“ → heute weg; „Kochen“ öffnet den Kochmodus; beim Runterscrollen
+ * macht der Mia-Knopf Platz und kommt nach kurzer Ruhe zurück.
  */
 export const jetztKarte = async (page, check) => {
   await hello(page);
-  await seedFamily(page);
+  const plan = { version: 3, weeks: { "2026-10-19": { Mittwoch: { kind: "recipe", recipeId: "sp", title: "Spaghetti Bolognese", category: "fleisch" } } } };
+  await seedFamily(page, { ...RECIPE_DATA, "wasgibts.wochenplan": plan });
   await page.evaluate(() => {
     const raw = JSON.parse(localStorage.getItem("wasgibts.eintraege"));
     raw.entries = raw.entries.map((e) => (e.id === "t1" ? { ...e, data: { ...e.data, note: "Versichertenkarte einpacken" } } : e));
     localStorage.setItem("wasgibts.eintraege", JSON.stringify(raw));
-    // Pinnwand gelesen – sonst steht „Neu von der Familie“ vorn
     localStorage.setItem("wasgibts.pinnwand", JSON.stringify({ version: 2, messages: [], memos: [] }));
   });
   await page.reload();
   const card = page.locator("[data-jetzt]");
   await card.waitFor({ timeout: 5000 });
   await page.waitForTimeout(1500);
+  check((await page.locator("main .begleitung-avatar, [data-begleitung-leiste] .begleitung-avatar").count()) === 1, "Startseite: genau ein Mia-Gesicht (der Knopf)");
+  check((await card.locator("[data-thema]").count()) === 1 && !(await card.locator(".begleitung-avatar").count()), "Jetzt-Karte: Themen-Symbol statt Gesicht");
+  check((await card.getByRole("button").count()) === 1, "Jetzt-Karte: kein eigener Knopf (nur die Karte)");
   const text = await card.innerText();
-  check(/Versichertenkarte einpacken\?/.test(text) && /Heute 16:15 · Zahnarzt/.test(text), `Vorbereiten mit Notiz (${text.replace(/\s+/g, " ").slice(0, 80)})`);
-  check(!/°/.test(text) && !/Passt sich/.test(text), "kein „°“, keine „Passt sich …“-Zeile");
-  check(!(await card.getByRole("button", { name: "Für heute ausblenden" }).count()), "kein ✕");
-  const done = card.getByRole("button", { name: /^Erledigt: / });
-  check(await done.isVisible(), "ein Knopf „Erledigt“");
-  await done.click();
-  check(await card.getByRole("button", { name: "Erledigt" }).isVisible(), "kurz ✓");
+  check(/Versichertenkarte einpacken\?/.test(text), `Thema 1: Vorbereiten (${text.replace(/\s+/g, " ").slice(0, 60)})`);
+
+  // Wischen 1 → 3 und nicht weiter
+  const box = await card.boundingBox();
+  const dots = card.locator("span[aria-hidden] > span");
+  const n = await dots.count();
+  check(n >= 2 && n <= 3, `2–3 Themen (${n})`);
+  const activeIndex = () => dots.evaluateAll((els) => els.findIndex((e) => e.className.includes("w-3.5")));
+  for (let k = 0; k < n + 1; k++) {
+    await swipe(page, { x: box.x + box.width * 0.8, y: box.y + box.height / 2, dx: -box.width * 0.6 });
+    await page.waitForTimeout(450);
+  }
+  check((await activeIndex()) === n - 1, `nach ${n + 1}× Wischen beim letzten Thema (kein Kreisel)`);
+  for (let k = 0; k < n; k++) {
+    await swipe(page, { x: box.x + box.width * 0.2, y: box.y + box.height / 2, dx: box.width * 0.6 });
+    await page.waitForTimeout(450);
+  }
+  check((await activeIndex()) === 0, "zurückwischen bis Thema 1");
+
+  // Antippen → „Dein Tag“ mit dem Thema hervorgehoben
+  await card.getByRole("button").click();
+  const sheet = page.getByRole("dialog", { name: "Dein Tag" });
+  await sheet.waitFor({ timeout: 4000 });
+  check(await sheet.getByRole("heading", { name: "Dein Tag" }).isVisible(), "„Dein Tag“ offen");
+  const order = await sheet.locator("[data-abschnitt]").evaluateAll((els) => els.map((e) => e.getAttribute("data-abschnitt")));
+  check(order.join(",") === "termine,essen,aufgaben", `Abschnitte in Reihenfolge (${order.join(",")})`);
+  const marked = sheet.locator("li[data-key^='t1@'] > div.ring-1");
+  check(await marked.isVisible(), "Zahnarzt hervorgehoben");
+  check(await marked.getByText("Versichertenkarte einpacken?").isVisible(), "mit dem Hinweis der Karte");
+  check(await sheet.getByText(/^Jetzt · 10:30$/).isVisible(), "„Jetzt“-Linie");
+  await marked.getByRole("button", { name: "Erledigt" }).click();
+  await sheet.waitFor({ state: "detached", timeout: 3000 }).catch(() => {});
   await page.waitForTimeout(1200);
-  const after = await card.innerText();
-  check(!/Versichertenkarte/.test(after), `danach das nächste Thema (${after.replace(/\s+/g, " ").slice(0, 60)})`);
+  check(!/Versichertenkarte/.test(await card.innerText()), "„Erledigt“ → Thema heute weg");
   await page.reload();
   await card.waitFor({ timeout: 5000 });
   await page.waitForTimeout(1200);
   check(!/Versichertenkarte/.test(await card.innerText()), "erledigt bleibt heute weg");
+
+  // „Kochen“ → Kochmodus
+  await card.getByRole("button").click();
+  await sheet.waitFor({ timeout: 4000 });
+  await sheet.getByRole("link", { name: "Kochen" }).click();
+  await page.waitForURL(/\/kochbuch\/kochen\?id=sp/, { timeout: 5000 }).catch(() => {});
+  check(/\/kochbuch\/kochen\?id=sp/.test(page.url()), "„Kochen“ öffnet den Kochmodus");
+
+  // Mia-Knopf macht beim Runterscrollen Platz und kommt zurück
+  await page.goto(BASE);
+  await card.waitFor({ timeout: 5000 });
+  await page.waitForTimeout(800);
+  const knopf = page.locator("[data-begleitung-leiste] > div");
+  await page.mouse.move(200, 400);
+  await page.mouse.wheel(0, 300);
+  await page.waitForTimeout(120);
+  await page.mouse.wheel(0, 300);
+  await page.waitForTimeout(150);
+  check((await knopf.getAttribute("data-weg")) === "true", "runterscrollen: Mia-Knopf macht Platz");
+  await page.waitForTimeout(1600);
+  check((await knopf.getAttribute("data-weg")) === null, "nach kurzer Ruhe wieder da");
 };
 
 /**
