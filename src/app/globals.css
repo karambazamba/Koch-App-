@@ -1013,3 +1013,8 @@ body {
 body:has([data-edit-leiste]) [data-begleitung-leiste] {
   visibility: hidden;
 }
+
+/* Einkaufsliste: Mias Hinweis neben dem Knopf würde „Mehr hinzufügen“ verdecken */
+body:has([data-einkauf-knopf]) [data-begleitung-leiste] .mia-einblenden {
+  display: none;
+}

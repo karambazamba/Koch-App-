@@ -268,7 +268,7 @@ export function ShoppingListView() {
       </main>
 
       {/* Großer Knopf unten, rechts bleibt Platz für Mia */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-10 pb-[max(1rem,env(safe-area-inset-bottom))] pl-4 pr-28">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-10 pb-[max(1rem,env(safe-area-inset-bottom))] pl-4 pr-28" data-einkauf-knopf>
         <button
           type="button"
           onClick={() => setCatalogOpen(true)}
