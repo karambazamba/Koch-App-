@@ -196,8 +196,35 @@ export function withMicTimeout(request: Promise<MediaStream>, ms = MIC_TIMEOUT_M
   });
 }
 
+/**
+ * getUserMedia, hängt es: einmal still neu versuchen, erst dann aufgeben
+ * (wirft dann „MicTimeout“). `note` schreibt ins Mikro-Protokoll.
+ */
+export async function getMicWithRetry(request: () => Promise<MediaStream>, note: (text: string) => void = () => undefined, ms = MIC_TIMEOUT_MS): Promise<MediaStream> {
+  try {
+    return await withMicTimeout(request(), ms);
+  } catch (e) {
+    if (!(e instanceof Error) || e.name !== "MicTimeout") throw e;
+    note("getUserMedia hängt – neuer Versuch");
+    return withMicTimeout(request(), ms);
+  }
+}
+
+let ranThisSession = false;
+/**
+ * Lief das Mikro in dieser Sitzung schon einmal? Erst dann darf eine Aufnahme
+ * schon beim Aufsetzen des Fingers starten („halten“) – auf dem iPhone zählt
+ * nur Loslassen/Klick als echtes Antippen, sonst erscheint die Mikro-Frage
+ * beim ersten Mal nicht.
+ */
+export const micRanThisSession = () => ranThisSession;
+export const noteMicRan = () => {
+  ranThisSession = true;
+};
+
 /** Nur für Tests @public */
 export const resetMicOwner = () => {
   owner = null;
   releasedAt = 0;
+  ranThisSession = false;
 };

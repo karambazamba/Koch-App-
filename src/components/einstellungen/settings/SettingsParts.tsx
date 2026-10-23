@@ -5,7 +5,7 @@
 
 import Link from "next/link";
 import { useRef, useState, type ReactNode } from "react";
-import { Briefcase, Download, Home, Info, Plus, RefreshCw, School, Trash2, Upload, type LucideIcon } from "lucide-react";
+import { Briefcase, Download, Home, Plus, RefreshCw, School, Trash2, Upload, type LucideIcon } from "lucide-react";
 import { PERSON_ICONS } from "@/components/ui/NameField";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { lunchSummary } from "@/components/einstellungen/Editors";
@@ -14,7 +14,7 @@ import { IconBadge } from "@/components/ui/IconBadge";
 import { ListRow } from "@/components/ui/ListRow";
 import { SwipeRow } from "@/components/ui/SwipeRow";
 import { CARD, CARD_LIST, PAGE_MAIN, buttonClass } from "@/components/ui/styles";
-import { versionLabel } from "@/lib/core/app";
+import { VersionRow } from "@/components/einstellungen/settings/MicLogSection";
 import { backupFileName, backupSummary, createBackup, parseBackup, restoreBackup, type Backup } from "@/lib/core/backup";
 import { personLabel, personRoleLabel, type HouseholdProfile, type Person } from "@/lib/einstellungen/profile";
 import { saveProfile } from "@/lib/einstellungen/profileStore";
@@ -196,13 +196,7 @@ export function DataSection({ onReset }: { onReset: () => void }) {
         <Row onClick={() => file.current?.click()} icon={Upload} title="Daten wiederherstellen">
           <span>Eine gesicherte Datei wieder laden</span>
         </Row>
-        <li className="flex min-h-14 items-center gap-3 px-4 py-3">
-          <IconBadge icon={Info} />
-          <span className="flex-1 text-base font-bold">Version</span>
-          <span className="text-sm text-muted" data-testid="app-version">
-            {versionLabel().replace(/^Version /, "")}
-          </span>
-        </li>
+        <VersionRow />
       </ul>
       <input
         ref={file}

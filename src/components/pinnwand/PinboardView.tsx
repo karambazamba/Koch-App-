@@ -127,7 +127,7 @@ export function PinboardView() {
             </p>
           )
         )}
-        <MemoNote text={recorder.note} />
+        <MemoNote text={recorder.note} onResend={recorder.unsent ? recorder.resend : undefined} />
 
         {!sorted ? (
           <div className={`${CARD} h-32 animate-pulse`} />

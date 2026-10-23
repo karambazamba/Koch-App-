@@ -105,8 +105,11 @@ export const mikroHaengt = async (_page, check, device) => {
     const tile = page.getByRole("region", { name: "Pinnwand" });
     const box = await tile.getByRole("button", { name: "Aufnahme starten" }).boundingBox();
     await tap(page, box.x + box.width / 2, box.y + box.height / 2);
+    // erst ein stiller zweiter Versuch (4 s), dann der Satz
     await page.waitForTimeout(4800);
-    check(await page.getByText("Das Mikrofon hängt gerade – nochmal antippen?").isVisible(), "nach 4 s: „Das Mikrofon hängt gerade …“");
+    check(!(await page.getByText("Das Mikrofon hängt gerade – nochmal antippen?").count()), "nach 4 s: still ein zweiter Versuch");
+    await page.waitForTimeout(4200);
+    check(await page.getByText("Das Mikrofon hängt gerade – nochmal antippen?").isVisible(), "nach 8 s: „Das Mikrofon hängt gerade …“");
     check(await tile.getByRole("button", { name: "Aufnahme starten" }).isVisible(), "danach wieder bereit");
     // Mikro wieder da → klappt sofort
     await page.evaluate(() => (window.__micHang = false));
@@ -114,6 +117,65 @@ export const mikroHaengt = async (_page, check, device) => {
     check(time !== "0:00" && (await memoCount(page)) === 1, `danach aufnehmen: Zeit ${time}, gesendet`);
   } finally {
     await browser.close();
+  }
+};
+
+/** Beim Ablegen in IndexedDB wirft put() (wie Safari bei Blobs) */
+const PUT_FAILS = () => {
+  IDBObjectStore.prototype.put = function () {
+    throw Object.assign(new Error("DataCloneError"), { name: "DataCloneError" });
+  };
+};
+
+/** Pinnwand-Seite ohne Neuladen öffnen (der Ton im Arbeitsspeicher bleibt) und abspielen */
+async function playOnBoard(page) {
+  await page.getByRole("link", { name: "Pinnwand öffnen" }).click();
+  const play = page.getByRole("button", { name: /^Abspielen: Sprachnachricht/ }).first();
+  await play.waitFor({ timeout: 5000 });
+  await play.click();
+  return page.getByRole("button", { name: /^Anhalten: Sprachnachricht/ }).first().waitFor({ timeout: 4000 }).then(() => true, () => false);
+}
+
+/**
+ * Felix (v0.67.0, iPhone): erst der 2. Tipp nahm auf, Senden scheiterte und
+ * die Nachricht war weg. Jetzt: erster Tipp nimmt auf – im Beispiel-Tag und
+ * ohne Konto –, Senden legt die Nachricht immer ab (auch wenn IndexedDB
+ * scheitert), abspielbar; das Mikro-Protokoll zeigt, was passiert ist.
+ */
+export const sprachnachrichtErsterTipp = async (_page, check, device) => {
+  const { page, browser } = await micPage(device);
+  try {
+    await hello(page);
+    const time = await recordOnce(page);
+    check(time !== "0:00" && (await memoCount(page)) === 1, `Beispiel-Tag, erster Tipp: Zeit ${time}, gesendet`);
+    check(await playOnBoard(page), "in der Pinnwand abspielbar");
+    await page.goto(page.url().replace(/\/pinnwand.*/, "/profil/daten"));
+    const version = page.getByTestId("app-version");
+    await version.waitFor({ timeout: 5000 });
+    for (let i = 0; i < 5; i++) await version.click();
+    const log = page.getByRole("listitem", { name: "Mikro-Protokoll" });
+    check(await log.isVisible(), "5× Version: Mikro-Protokoll");
+    const text = await log.innerText();
+    check(/getUserMedia ok/.test(text) && /Recorder läuft/.test(text) && /Speichern ok/.test(text), "Protokoll: getUserMedia ok, Recorder, Speichern ok");
+  } finally {
+    await browser.close();
+  }
+  // IndexedDB lehnt ab → Nachricht trotzdem da, abspielbar, leiser Hinweis
+  const second = await micPage(device);
+  try {
+    const p = second.page;
+    await p.context().addInitScript(PUT_FAILS);
+    await hello(p);
+    await seedFamily(p);
+    await p.reload();
+    await p.waitForTimeout(1000);
+    const time = await recordOnce(p);
+    check(time !== "0:00" && (await memoCount(p)) === 1, `IndexedDB scheitert: trotzdem gesendet (${time})`);
+    check(await p.getByText(/Diese Sprachnachricht bleibt nur, bis du .* schließt\./).isVisible(), "leiser Hinweis: bleibt bis zum Schließen");
+    check(await playOnBoard(p), "trotzdem abspielbar");
+    check(!(await p.getByText("ließ sich gerade nicht speichern").count()), "kein „ließ sich nicht speichern“");
+  } finally {
+    await second.browser.close();
   }
 };
 

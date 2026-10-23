@@ -9,6 +9,9 @@ function isStandalone(): boolean {
   return window.matchMedia?.("(display-mode: standalone)").matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
 }
 
+/** iPhone im Safari-Tab (nicht als Homescreen-App) – dort fragt Safari jedes Mal nach dem Mikro */
+export const isIosBrowserTab = () => isIOS() && !isStandalone();
+
 /** iPhone/iPad (auch iPad mit Desktop-Kennung) */
 function isIOS(): boolean {
   if (typeof navigator === "undefined") return false;
