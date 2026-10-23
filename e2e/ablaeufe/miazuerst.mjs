@@ -1,6 +1,5 @@
 // Mia zuerst – erzählen statt ausfüllen (Tafel 53): runder Knopf statt
-// Leiste, Mia fliegt in die Mitte, Karte mit „Passt“, Zustimmung per „ja“,
-// danach schließt Mia von selbst; „＋“ holt nie Mia (Schnelleingabe);
+// Leiste, Mia fliegt in die Mitte, Kleines sofort mit „Rückgängig“ (v0.78); „＋“ holt nie Mia (Schnelleingabe);
 // Schließen per ✕ und Zurück. Zeit: Mi 21.10. 10:30.
 import { hello, miaTippen, seedFamily, store } from "../lib.mjs";
 
@@ -23,16 +22,16 @@ export const miaZuerst = async (page, check) => {
   const before = (await store(page, "wasgibts.eintraege")).entries.length;
   await box.fill("Morgen um 9 Steuerberater");
   await box.press("Enter");
-  const passt = mia.getByRole("button", { name: /^Passt/ });
-  check(await passt.waitFor({ timeout: 8000 }).then(() => true, () => false), "Karte mit „Passt“");
-  // Zustimmung per „ja“ (wie gesprochen)
-  const field = await (async () => ((await page.getByRole("textbox", { name: "Nachricht schreiben" }).isVisible()) ? page.getByRole("textbox", { name: "Nachricht schreiben" }) : (await mia.getByRole("button", { name: "Lieber tippen" }).click(), page.getByRole("textbox", { name: "Nachricht schreiben" }))))();
-  await field.fill("ja");
-  await field.press("Enter");
-  check(await mia.getByText("Erledigt", { exact: true }).waitFor({ timeout: 2000 }).then(() => true, () => false), "„Erledigt“ unter Mia");
-  check(await page.getByRole("button", { name: "Verlauf" }).waitFor({ state: "detached", timeout: 4000 }).then(() => true, () => false), "schließt nach ~1 s von selbst");
-  check(await page.getByRole("status").getByText("Übernommen", { exact: true }).isVisible(), "Meldung „Übernommen“");
+  // Kleines macht Mia sofort (seit v0.78): eingetragen, 10 s „Rückgängig“ im Gespräch
+  const undo = mia.getByRole("button", { name: "Rückgängig" });
+  check(await undo.waitFor({ timeout: 8000 }).then(() => true, () => false), "sofort eingetragen, mit „Rückgängig“");
   check((await store(page, "wasgibts.eintraege")).entries.length === before + 1, "Termin eingetragen");
+  check(!(await mia.getByRole("button", { name: /^Passt/ }).count()), "keine Vorschau für Kleines");
+  await undo.click();
+  await page.waitForTimeout(300);
+  check((await store(page, "wasgibts.eintraege")).entries.length === before, "„Rückgängig“ nimmt ihn wieder raus");
+  await mia.getByRole("button", { name: "Schließen" }).click();
+  await page.waitForTimeout(500);
 
   // „＋“ auf der Termine-Kachel → Schnelleingabe, nicht Mia
   const plus = page.getByRole("button", { name: "Neuer Termin" }).first();
@@ -58,7 +57,7 @@ export const miaZuerst = async (page, check) => {
 /**
  * Eine Bühne: Mia-Knopf → Mia groß unten in der Mitte (~64 % der Höhe), die
  * Startseite verschwommen dahinter → Satz → Blasen oben, nie hinter Mia →
- * Vorschau „Passt“ → ✕ → Mia wieder als Knopf unten rechts.
+ * sofort erledigt mit „Rückgängig“ → ✕ → Mia wieder als Knopf unten rechts.
  */
 export const buehne = async (page, check) => {
   await hello(page);
@@ -88,8 +87,8 @@ export const buehne = async (page, check) => {
   const field = stage.getByRole("textbox", { name: "Nachricht schreiben" });
   await field.fill("Morgen um 9 Steuerberater");
   await field.press("Enter");
-  const passt = stage.getByRole("button", { name: /^Passt/ });
-  check(await passt.waitFor({ timeout: 8000 }).then(() => true, () => false), "Vorschau mit „Passt“ im Gespräch");
+  const undo = stage.getByRole("button", { name: "Rückgängig" });
+  check(await undo.waitFor({ timeout: 8000 }).then(() => true, () => false), "sofort erledigt mit „Rückgängig“ im Gespräch");
   const own = stage.getByText("Morgen um 9 Steuerberater", { exact: true }).first();
   const small = stage.getByRole("button", { name: /^(Frage einsprechen|Zuhören beenden|Tippen statt sprechen)$/ });
   const [o, m] = [await own.boundingBox(), await small.boundingBox()];
