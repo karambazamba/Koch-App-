@@ -43,7 +43,8 @@ export function newsFromDocs(docs: CloudDoc[], knownBefore: (id: string) => bool
     } else if (d.typ === "termin" && d.raum === "familie") {
       const entry = isObj(data.data) ? data.data : {};
       const title = typeof entry.title === "string" ? entry.title.trim() : "";
-      if (title) news.push({ id: d.id, title: clip(`Neu: ${title}`, 32), detail: `Hat ${who.name} eingetragen.`, at: d.geaendert, href: "/kalender" });
+      const date = typeof entry.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(entry.date) ? entry.date : null;
+      if (title) news.push({ id: d.id, title: clip(`Neu: ${title}`, 32), detail: `Hat ${who.name} eingetragen.`, at: d.geaendert, href: date ? `/tag?datum=${date}` : "/" });
     }
   }
   return news;

@@ -1,6 +1,7 @@
 // Etappe 3d: Sichtbar machen – „von Lisa“ nur bei anderen und mehreren
 // Personen, leise Neuigkeiten für die Jetzt-Karte (höchstens eine am Tag,
 // jede nur einmal), Einkauf merkt sich „von“, Spendentopf je Haushalt.
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { addedBy, addNews, emptyNews, markNewsShown, migrateNews, newsForCard, newsFromDocs, NEWS_FRESH_MS } from "@/lib/konten/wer";
 import { ADAPTERS, type CloudDoc } from "@/lib/konten/sync/docs";
@@ -30,7 +31,7 @@ describe("Von wem", () => {
 describe("Neuigkeiten aus dem Haushalt", () => {
   const docs = [
     doc("ek:2026-10-19:i1", "einkauf", { week: "2026-10-19", item: { id: "i1", name: "Milch" } }),
-    doc("t9", "termin", { id: "t9", typ: "termin", data: { title: "Elternabend" } }),
+    doc("t9", "termin", { id: "t9", typ: "termin", data: { title: "Elternabend", date: "2026-10-22" } }),
     doc("t10", "termin", { id: "t10", typ: "termin", data: { title: "Kunde" } }, LISA, { raum: "arbeit" }),
     doc("ek:2026-10-19:i2", "einkauf", { week: "2026-10-19", item: { id: "i2", name: "Brot" } }, FELIX),
     doc("ek:2026-10-19:i3", "einkauf", { week: "2026-10-19", item: { id: "i3", name: "Eier" } }, LISA, { geloescht: true }),
@@ -41,10 +42,17 @@ describe("Neuigkeiten aus dem Haushalt", () => {
     const news = newsFromDocs(docs, (id) => id === "known", members, FELIX);
     expect(news.map((n) => [n.title, n.detail, n.href])).toEqual([
       ["Milch steht auf der Liste", "Hat Lisa gerade gesetzt.", "/einkaufsliste"],
-      ["Neu: Elternabend", "Hat Lisa eingetragen.", "/kalender"],
+      ["Neu: Elternabend", "Hat Lisa eingetragen.", "/tag?datum=2026-10-22"],
     ]);
     expect(newsFromDocs(docs, () => true, members, FELIX)).toEqual([]);
     expect(newsFromDocs(docs, () => false, [members[0]], FELIX)).toEqual([]);
+  });
+
+  it("jedes Ziel ist eine echte Seite (früher „/kalender“ – gibt es nicht)", () => {
+    for (const n of newsFromDocs(docs, () => false, members, FELIX)) {
+      const path = n.href.split("?")[0];
+      expect(existsSync(`src/app${path === "/" ? "" : path}/page.tsx`)).toBe(true);
+    }
   });
 
   it("Zeile 1 höchstens 32 Zeichen", () => {
