@@ -112,7 +112,7 @@ export function PinboardTile({ size = "M", me, demo = false, helper = "" }: { si
             Kurze Nachricht an alle – z. B. „Bin um 20 Uhr da“
           </button>
         )}
-        <MemoNote text={recorder.note} />
+        <MemoNote text={recorder.note} onResend={recorder.unsent ? recorder.resend : undefined} />
         {canRecord && (
           <div className="mt-auto flex justify-end pt-1.5">
             <MemoMic recorder={recorder} />

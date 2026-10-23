@@ -2052,3 +2052,16 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Kochmütze am Beispiel-Tag sichtbar, ohne Blase; „ab Tag 3“ bleibt.
 - Pinnwand S am Beispiel-Tag zweizeilig; Mia-Knopf verdeckt auf keiner Seite
   den letzten Inhalt (Durchklick `miaKnopfFrei`).
+
+## Sprachnachricht: erster Tipp nimmt auf, Speichern klappt immer (v0.67.2)
+
+- Felix (iPhone, v0.67.0): erst der 2. Tipp nahm auf, nach „Senden“ kam „ließ
+  sich gerade nicht speichern“ und die Nachricht war weg.
+- Ton als ArrayBuffer + Typ in IndexedDB, alte Blob-Zeilen lesbar; scheitert
+  IndexedDB, bleibt der Ton im Arbeitsspeicher und die Nachricht steht
+  trotzdem in der Pinnwand. Fehler beim Senden: Aufnahme bleibt, „Nochmal
+  senden“.
+- Erster Tipp der Sitzung startet beim Loslassen; hängendes Mikro: einmal
+  still neu versuchen. Safari-Tab: einmal der Tipp mit dem Homescreen-Icon.
+- Mikro-Protokoll (5× auf die Version in Daten & App).
+

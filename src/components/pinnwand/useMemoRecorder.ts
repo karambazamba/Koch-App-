@@ -22,7 +22,10 @@ import { showToast } from "@/lib/core/toast";
 import { useWakeLock } from "@/lib/core/wakeLock";
 import { buzz } from "@/components/heute/actions";
 import { hintSeen, markHintSeen } from "@/lib/core/hints";
-import { MIC_HANGS_TEXT, claimMic, classifyMicError, guardMic, micOwner, micPlatform, micSettleWait, micState, releaseMic, reportMicBlocked, setMicPermission, withMicTimeout } from "@/lib/core/mic";
+import { MIC_HANGS_TEXT, claimMic, classifyMicError, getMicWithRetry, guardMic, micOwner, micPlatform, micRanThisSession, micSettleWait, micState, noteMicRan, releaseMic, reportMicBlocked, setMicPermission } from "@/lib/core/mic";
+import { micLog } from "@/lib/core/micLog";
+import { APP_NAME } from "@/lib/core/app";
+import { isIosBrowserTab } from "@/lib/core/homescreen";
 
 type RecorderPhase = "idle" | "asking" | "recording" | "stopped";
 
@@ -83,6 +86,8 @@ export function useMemoRecorder({ me, onSent }: { me: string; onSent?: (memo: Me
   const [note, setNote] = useState<string | null>(null);
   /** Zurück während der Aufnahme: „Verwerfen?“ */
   const [askDiscard, setAskDiscard] = useState(false);
+  /** Senden hat nicht geklappt: die Aufnahme bleibt (take), „Nochmal senden“ */
+  const [unsent, setUnsent] = useState(false);
   const live = useRef<Live | null>(null);
   const take = useRef<Take | null>(null);
   /** Nach dem Anhalten gleich senden (Loslassen beim Halten, „Senden“ während der Aufnahme) */
@@ -107,20 +112,42 @@ export function useMemoRecorder({ me, onSent }: { me: string; onSent?: (memo: Me
   };
 
   const save = useCallback((t: Take) => {
+    micLog(`Senden: ${t.blob.size} Bytes, ${Math.round(t.ms / 100) / 10} s`);
     // Kam gar kein Ton, lief die Aufnahme nie richtig – das ist nicht „zu kurz“
     if (!t.blob.size) return setNote(MIC_HANGS_TEXT);
     if (t.ms < MEMO_MIN_MS) return setNote("Das war sehr kurz – einfach nochmal antippen und sprechen.");
     const memo = createMemo({ author: meRef.current, dauer: t.ms / 1000, mime: t.blob.type || t.mime, wave: resample(t.levels, WAVE_BARS * 2) });
+    setUnsent(false);
+    // Der Eintrag kommt erst nach dem Ablegen des Tons in die Pinnwand; klappt
+    // das Ablegen nie, bleibt die Aufnahme – nichts geht verloren
     void memoAudio
       .save(memo.id, t.blob)
-      .then(() => {
+      .then((place) => {
         changeMemos((all) => addMemo(all, memo));
         buzz();
         showToast({ text: "Gesendet", small: true, seconds: 1.5 });
+        if (place === "sitzung" && !hintSeen("memo-nur-sitzung")) {
+          markHintSeen("memo-nur-sitzung");
+          setNote(`Diese Sprachnachricht bleibt nur, bis du ${APP_NAME} schließt.`);
+        }
         sentRef.current?.(memo);
       })
-      .catch(() => setNote("Die Sprachnachricht ließ sich gerade nicht speichern."));
+      .catch((e: unknown) => {
+        micLog(`Senden fehlgeschlagen: ${e instanceof Error ? e.name || e.message : "Fehler"}`);
+        take.current = t;
+        setUnsent(true);
+        setNote("Die Sprachnachricht ließ sich gerade nicht speichern.");
+      });
   }, []);
+
+  /** Nach einem Fehler: dieselbe Aufnahme nochmal senden */
+  const resend = useCallback(() => {
+    const t = take.current;
+    if (!t) return setUnsent(false);
+    take.current = null;
+    setNote(null);
+    save(t);
+  }, [save]);
 
   /** Aufnahme anhalten – die Aufnahme bleibt (take) bis Senden/Verwerfen */
   const stopLive = useCallback(() => {
@@ -193,8 +220,12 @@ export function useMemoRecorder({ me, onSent }: { me: string; onSent?: (memo: Me
     async (mode: MemoMode) => {
       if (live.current || state.phase !== "bereit") return;
       take.current = null;
+      setUnsent(false);
       setNote(null);
       waiting.current = true;
+      micLog(`Tipp: Aufnahme starten (${mode})`);
+      const firstThisSession = !micRanThisSession();
+      const askedBefore = hintSeen("mikro-gefragt");
       dispatch({ type: "start", mode });
       buzz();
       // Mia hört gerade zu? Erst sauber beenden (immer nur ein Mikro-Nutzer)
@@ -225,9 +256,11 @@ export function useMemoRecorder({ me, onSent }: { me: string; onSent?: (memo: Me
         // Eben erst abgegeben (Mia)? iOS braucht einen Moment
         const wait = micSettleWait();
         if (wait) await new Promise((r) => setTimeout(r, wait));
-        stream = await withMicTimeout(navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } }));
+        stream = await getMicWithRetry(() => navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } }), micLog);
+        micLog("getUserMedia ok");
       } catch (e) {
         const name = e instanceof Error ? e.name : "";
+        micLog(`getUserMedia: ${name || "Fehler"}`);
         if (name === "MicTimeout") return giveUp(MIC_HANGS_TEXT);
         const block = classifyMicError(name, micPlatform(navigator.userAgent));
         // Gesperrt: großes Hilfe-Fenster (core/mic) statt Kleingedrucktem
@@ -248,13 +281,20 @@ export function useMemoRecorder({ me, onSent }: { me: string; onSent?: (memo: Me
         return;
       }
       waiting.current = false;
+      noteMicRan();
       markHintSeen("mikro-gefragt");
       setMicPermission("granted");
+      // Safari-Tab fragt jedes Mal neu nach dem Mikro – einmal den Weg übers Icon zeigen
+      if (firstThisSession && askedBefore && isIosBrowserTab() && !hintSeen("mikro-homescreen")) {
+        markHintSeen("mikro-homescreen");
+        setNote(`Tipp: Über das ${APP_NAME}-Icon auf dem Homescreen fragt das iPhone nicht jedes Mal nach dem Mikrofon.`);
+      }
       const mime = pickMemoMime((m) => MediaRecorder.isTypeSupported(m)) ?? "";
       let recorder: MediaRecorder;
       try {
         recorder = new MediaRecorder(stream, { ...(mime ? { mimeType: mime } : {}), audioBitsPerSecond: 32_000 });
-      } catch {
+      } catch (e) {
+        micLog(`Recorder: ${e instanceof Error ? e.name : "Fehler"}`);
         stream.getTracks().forEach((t) => t.stop());
         giveUp("Sprachnachrichten gehen auf diesem Gerät leider nicht.");
         return;
@@ -287,6 +327,7 @@ export function useMemoRecorder({ me, onSent }: { me: string; onSent?: (memo: Me
       }, 100);
       live.current = s;
       recorder.start(250);
+      micLog(`Recorder läuft (${recorder.mimeType || mime || "Standard"})`);
       dispatch({ type: "ready" });
     },
     [state.phase, stopLive],
@@ -295,12 +336,14 @@ export function useMemoRecorder({ me, onSent }: { me: string; onSent?: (memo: Me
   /** Gesperrt → Hilfe; allererstes Mal → erst „Darf ich zuhören?“; sonst sofort */
   const start = useCallback(
     async (mode: MemoMode) => {
+      // Eine Aufnahme wartet noch aufs Senden: erst die (nie still überschreiben)
+      if (unsent && take.current) return resend();
       const asked = hintSeen("mikro-gefragt");
       const m = micState();
       if (m.block || (!asked && !m.granted)) return guardMic(() => void begin(mode), asked);
       await begin(mode);
     },
-    [begin],
+    [begin, unsent, resend],
   );
 
   // Halten: loslassen = senden (ab 0,3 s), kurz = frei weiter, hochgeschoben = frei weiter
@@ -401,6 +444,8 @@ export function useMemoRecorder({ me, onSent }: { me: string; onSent?: (memo: Me
     release,
     send,
     discard,
+    unsent,
+    resend,
     clearNote: () => setNote(null),
   };
 }

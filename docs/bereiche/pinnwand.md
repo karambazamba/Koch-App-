@@ -35,7 +35,15 @@ außer dauerhaft angeheftete Nachrichten.
   `mime`, `wave` (28 Werte 0..1), `gehoertVon` (Autor zählt als gehört),
   `alleGehoertAm`, `reactions`, `storagePath` (null bis zu den Konten).
 - Ton in IndexedDB `wasgibts-memos` v1 (Tabelle „audio“, Schlüssel = Memo-ID),
-  nur auf diesem Gerät, nicht in der Sicherung.
+  nur auf diesem Gerät, nicht in der Sicherung. Seit v0.67.2 als ArrayBuffer +
+  `mime` (Safari/iOS lehnt Blobs in IndexedDB teils ab, im privaten Tab
+  immer); alte Zeilen mit `blob` werden weiter gelesen (`blobFromRow`).
+  Klappt IndexedDB nicht, bleibt der Ton im Arbeitsspeicher und die
+  Nachricht steht trotzdem in der Pinnwand – abspielbar, bis die App
+  geschlossen wird (einmal leise: „Diese Sprachnachricht bleibt nur, bis du
+  Mia schließt.“, Hinweis `memo-nur-sitzung`). Der Eintrag kommt erst nach
+  dem Ablegen des Tons; scheitert Senden trotzdem, bleibt die Aufnahme und
+  es gibt „Nochmal senden“ (ein Tipp aufs Mikro sendet dann auch erst diese).
 - In „Daten sichern“ steht die Pinnwand, die Memos aber nicht:
   `src/lib/core/backup.ts` leert `memos` und merkt nur die Zahl
   (`memosNichtGesichert`).
@@ -69,7 +77,15 @@ außer dauerhaft angeheftete Nachrichten.
   Abbruch, Fehler, Seitenwechsel (kommt „stop“ vom Recorder nicht, nach 1,5 s
   trotzdem). AudioContext entsteht im Tipp (iPhone), getUserMedia hat 4 s
   Zeitlimit („Das Mikrofon hängt gerade – nochmal antippen?“, dann wieder
-  bereit). „Das war sehr kurz“ nur, wenn wirklich Ton kam. Der nachgeschobene
+  bereit; seit v0.67.2 erst nach einem stillen zweiten Versuch). Erster Tipp
+  in einer Sitzung startet beim Loslassen (Klick) im Modus „tippen“ – auf dem
+  iPhone erscheint die Mikro-Frage nur bei einem echten Antippen; „Halten“
+  beim Aufsetzen erst, wenn das Mikro in dieser Sitzung schon lief
+  (`micRanThisSession`). Im Safari-Tab einmal: „Tipp: Über das Mia-Icon auf
+  dem Homescreen fragt das iPhone nicht jedes Mal nach dem Mikrofon.“
+  Mikro-Protokoll (`core/micLog.ts`, `wasgibts.mikroprotokoll`, nicht in der
+  Sicherung, nie an die KI): Einstellungen → Daten & App → 5× auf die
+  Version tippen; die letzten 20 Ereignisse. „Das war sehr kurz“ nur, wenn wirklich Ton kam. Der nachgeschobene
   Klick vom Antippen trifft nicht die Aufnahme-Zeile (450 ms Sperre).
 - Seite /pinnwand: Feld „Nachricht an alle …“ mit Mikrofon/Senden und dem
   Memo-Mikro, darunter alle Einträge als Karten.

@@ -13,6 +13,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { MIC_BLOCKED, useMicBlocked } from "@/components/ui/MicPermission";
 import { formatDauer } from "@/lib/pinnwand";
 import { LOCK_PX, timeWarns } from "@/lib/pinnwand/recorderState";
+import { micRanThisSession } from "@/lib/core/mic";
 import type { MemoRecorder } from "@/components/pinnwand/useMemoRecorder";
 
 /** Tonwelle: Balken, gespielt = Akzent, Rest blass */
@@ -48,6 +49,9 @@ export function MemoMic({ recorder, size = 26 }: { recorder: MemoRecorder; size?
       aria-pressed={active}
       onPointerDown={(e) => {
         if (e.button !== 0 || freeMode) return;
+        // Erstes Mal in dieser Sitzung: erst beim Loslassen starten (Klick) – auf dem
+        // iPhone erscheint die Mikro-Frage nur bei einem echten Antippen
+        if (recorder.phase === "idle" && !micRanThisSession()) return;
         e.preventDefault();
         e.currentTarget.setPointerCapture?.(e.pointerId);
         press.current = { at: performance.now(), y: e.clientY, up: false };
@@ -87,6 +91,8 @@ export function MemoMic({ recorder, size = 26 }: { recorder: MemoRecorder; size?
         }
         // Während freier Aufnahme: Mikro nochmal = senden
         if (freeMode && e.detail !== 0) return recorder.send();
+        // Erstes Antippen in dieser Sitzung: startet beim Loslassen, läuft frei
+        if (e.detail !== 0 && recorder.phase === "idle" && !micRanThisSession()) return void recorder.start("tippen");
         // Tastatur oder Bedienungshilfe (kein Finger davor): antippen startet, nochmal sendet
         if (e.detail !== 0) return;
         if (recorder.phase === "idle") void recorder.start("tippen");
@@ -167,11 +173,16 @@ export function RecordingRow({ recorder, compact = false }: { recorder: MemoReco
 }
 
 /** Freundlicher Satz unter der Pinnwand (z. B. Mikrofon nicht erlaubt) */
-export function MemoNote({ text }: { text: string | null }) {
-  if (!text) return null;
+export function MemoNote({ text, onResend }: { text: string | null; onResend?: () => void }) {
+  if (!text && !onResend) return null;
   return (
-    <p className="px-1 text-[13px] leading-snug text-muted" role="status">
+    <p className="flex flex-wrap items-center gap-x-3 px-1 text-[13px] leading-snug text-muted" role="status">
       {text}
+      {onResend && (
+        <button type="button" onClick={onResend} className="hit font-bold text-tile-accent">
+          Nochmal senden
+        </button>
+      )}
     </p>
   );
 }

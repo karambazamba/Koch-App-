@@ -57,6 +57,7 @@ export const STORAGE = [
   { key: "wasgibts.abgleich", what: "Abgleich mit dem Haushalt: zuletzt abgeglichener Stand je Eintrag (nur Fingerabdrücke), Warteschlange, Übernahme erledigt", version: 1, migration: "konten/sync/engine.ts migrateSyncState", area: "local", backup: false },
   { key: "wasgibts.kalenderabos", what: "Kalender-Links (Abos): Name, geheimer Link, Farbe, Familie/Arbeit, an/aus – nur auf dem Gerät, in der Sicherung nur auf Wunsch", version: 1, migration: "kalender/abo/store.ts", area: "local", backup: false },
   { key: "wasgibts.kalenderabo-termine", what: "Zwischenspeicher der Abo-Termine (nur lesen, wird neu abgerufen)", version: 1, migration: "kalender/abo/store.ts", area: "local", backup: false },
+  { key: "wasgibts.mikroprotokoll", what: "Mikro-Protokoll: die letzten 20 Ereignisse rund um Mikrofon und Sprachnachrichten – nur auf dem Gerät, nie in der Sicherung oder an die KI", version: 1, migration: "core/micLog.ts", area: "local", backup: false },
   { key: "wasgibts.einmalhinweise", what: "Einmalige Hinweise (z. B. „+ Kachel“ beim ersten Bearbeiten)", version: 1, migration: "core/hints.ts", area: "local", backup: false },
   { key: "wasgibts.ideenmix", what: "Mehr Ideen: still gelerntes Interesse (Antippen, gezeigt) für die Tages-Mischung", version: 1, migration: "essen/mehrIdeen/store.ts", area: "local", backup: true },
   { key: "wasgibts.kochtipp", what: "Kochtipp: Nutzungstage, Mütze freigeschaltet, letzte Wahl, zuletzt gezeigte Gerichte", version: 1, migration: "essen/kochtipp/store.ts", area: "local", backup: true },

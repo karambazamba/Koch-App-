@@ -1,16 +1,21 @@
 // Ton der Sprachnachrichten – hinter einer Schnittstelle, damit er später mit
 // den Konten in Supabase Storage liegt (`storagePath` am Eintrag) und geteilt
 // wird. Bis dahin: IndexedDB `wasgibts-memos` (v1, Tabelle "audio", Schlüssel
-// = Memo-ID) auf diesem Gerät, für alle Personen des Haushalts. Nicht in
-// „Daten sichern“. Verwaiste Töne (Memo abgelaufen oder gelöscht) räumt
+// = Memo-ID, Ton als ArrayBuffer + Typ) auf diesem Gerät, für alle Personen
+// des Haushalts; klappt IndexedDB nicht, im Arbeitsspeicher, bis die App
+// geschlossen wird. Nicht in „Daten sichern“. Verwaiste Töne (Memo abgelaufen oder gelöscht) räumt
 // `tidyMemos` (über `sweepMemoAudio`) beim Start weg.
 
+import { micLog } from "@/lib/core/micLog";
 import { now } from "@/lib/core/now";
 import { pruneMemos, type MemoMessage } from "@/lib/pinnwand/memo";
 import { changeMemos, loadMemos } from "@/lib/pinnwand/store";
 
+/** Wo der Ton liegt: auf dem Gerät (IndexedDB) oder nur, bis die App geschlossen wird */
+export type MemoAudioPlace = "geraet" | "sitzung";
+
 export interface MemoAudioStore {
-  save(id: string, blob: Blob): Promise<void>;
+  save(id: string, blob: Blob): Promise<MemoAudioPlace>;
   load(memo: Pick<MemoMessage, "id" | "data">): Promise<Blob | null>;
   remove(id: string): Promise<void>;
   /** Alle gespeicherten Töne mit Zeitpunkt (für das Aufräumen) */
@@ -19,7 +24,28 @@ export interface MemoAudioStore {
 
 const DB = "wasgibts-memos";
 const TABLE = "audio";
-type Row = { id: string; blob: Blob; at: number };
+/**
+ * Zeile in IndexedDB: Ton als ArrayBuffer + Typ (Safari/iOS lehnt Blobs in
+ * IndexedDB teils ab, im privaten Tab immer). Ältere Zeilen (bis v0.67) haben
+ * `blob` – sie werden weiter gelesen.
+ */
+type Row = { id: string; buf: ArrayBuffer; mime: string; at: number } | { id: string; blob: Blob; at: number };
+
+/** Die nötigen Griffe auf die Tabelle (in Tests ersetzbar) */
+export type MemoTable = {
+  put(row: Row): Promise<unknown>;
+  get(id: string): Promise<Row | undefined>;
+  delete(id: string): Promise<unknown>;
+  getAll(): Promise<Row[]>;
+};
+
+/** Ton aus einer Zeile – neue (ArrayBuffer) und alte (Blob) */
+export function blobFromRow(row: Row | undefined): Blob | null {
+  if (!row) return null;
+  if ("buf" in row && row.buf) return new Blob([row.buf], { type: row.mime });
+  if ("blob" in row && row.blob) return row.blob;
+  return null;
+}
 
 let opening: Promise<IDBDatabase> | null = null;
 
@@ -42,37 +68,73 @@ function run<T>(mode: IDBTransactionMode, work: (table: IDBObjectStore) => IDBRe
   return open().then(
     (db) =>
       new Promise<T>((resolve, reject) => {
-        const req = work(db.transaction(TABLE, mode).objectStore(TABLE));
+        const tx = db.transaction(TABLE, mode);
+        const req = work(tx.objectStore(TABLE));
         req.onsuccess = () => resolve(req.result);
         req.onerror = () => reject(req.error);
+        tx.onabort = () => reject(tx.error ?? new Error("abgebrochen"));
       }),
   );
 }
 
-/** Auf diesem Gerät (IndexedDB) */
-const localMemoAudio: MemoAudioStore = {
-  async save(id, blob) {
-    await run("readwrite", (t) => t.put({ id, blob, at: now().getTime() } satisfies Row));
-  },
-  async load(memo) {
-    try {
-      const row = (await run("readonly", (t) => t.get(memo.id))) as Row | undefined;
-      return row?.blob ?? null;
-    } catch {
-      return null;
-    }
-  },
-  async remove(id) {
-    await run("readwrite", (t) => t.delete(id));
-  },
-  async list() {
-    const rows = (await run("readonly", (t) => t.getAll())) as Row[];
-    return rows.map((r) => ({ id: r.id, at: r.at }));
-  },
+/** IndexedDB des Geräts als Tabelle */
+const idbTable: MemoTable = {
+  put: (row) => run("readwrite", (t) => t.put(row)),
+  get: (id) => run("readonly", (t) => t.get(id)) as Promise<Row | undefined>,
+  delete: (id) => run("readwrite", (t) => t.delete(id)),
+  getAll: () => run("readonly", (t) => t.getAll()) as Promise<Row[]>,
 };
 
+/**
+ * Ton-Speicher: zuerst IndexedDB; klappt das nicht (kein IndexedDB, Fehler
+ * beim Ablegen), bleibt der Ton im Arbeitsspeicher – die Nachricht geht nie
+ * verloren und bleibt abspielbar, bis die App geschlossen wird.
+ */
+export function createMemoAudio(table: () => MemoTable | null, log: (text: string) => void = () => undefined): MemoAudioStore {
+  const memory = new Map<string, { blob: Blob; at: number }>();
+  const keepInMemory = (id: string, blob: Blob, why: string): MemoAudioPlace => {
+    memory.set(id, { blob, at: now().getTime() });
+    log(`Speichern: nur im Arbeitsspeicher (${why})`);
+    return "sitzung";
+  };
+  return {
+    async save(id, blob) {
+      const t = table();
+      if (!t) return keepInMemory(id, blob, "kein IndexedDB");
+      try {
+        const buf = await blob.arrayBuffer();
+        await t.put({ id, buf, mime: blob.type, at: now().getTime() });
+        log(`Speichern ok (${buf.byteLength} Bytes)`);
+        return "geraet";
+      } catch (e) {
+        return keepInMemory(id, blob, e instanceof Error ? e.name || e.message : "Fehler");
+      }
+    },
+    async load(memo) {
+      const kept = memory.get(memo.id);
+      if (kept) return kept.blob;
+      try {
+        return blobFromRow(await table()?.get(memo.id));
+      } catch {
+        return null;
+      }
+    },
+    async remove(id) {
+      memory.delete(id);
+      await table()?.delete(id);
+    },
+    async list() {
+      const rows = (await table()?.getAll()) ?? [];
+      return [...rows.map((r) => ({ id: r.id, at: r.at })), ...[...memory].map(([id, m]) => ({ id, at: m.at }))];
+    },
+  };
+}
+
 /** Die eine Quelle für den Ton (später: Supabase Storage, wenn `storagePath` gesetzt ist) */
-export const memoAudio: MemoAudioStore = localMemoAudio;
+export const memoAudio: MemoAudioStore = createMemoAudio(
+  () => (typeof indexedDB === "undefined" ? null : idbTable),
+  (text) => micLog(text),
+);
 
 /** Töne ohne Memo-Eintrag löschen (nicht frisch Aufgenommenes – das Speichern des Eintrags kann noch laufen) */
 async function sweepMemoAudio(liveIds: string[], nowMs = now().getTime()): Promise<number> {
