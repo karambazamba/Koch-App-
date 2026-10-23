@@ -94,7 +94,7 @@ export function PinboardTile({ size = "S", me, demo = false }: { size?: TileSize
             </span>
           )}
         </div>
-        <div className={`mt-1.5 flex flex-col gap-1 ${recording ? "min-h-0 flex-1" : "h-[64px]"}`}>
+        <div className={`mt-1.5 flex flex-col gap-1 ${recording ? "min-h-0 flex-1" : "h-[64px]"} ${hintSeen === false && !recording ? "[&>*:first-child]:pr-16" : ""}`}>
           {recording ? (
             <RecordingRow recorder={recorder} compact />
           ) : showDemo ? (
@@ -131,7 +131,7 @@ export function PinboardTile({ size = "S", me, demo = false }: { size?: TileSize
                 <Check className="h-3.5 w-3.5" strokeWidth={2.75} aria-hidden /> Gesendet
               </span>
             ) : (
-              <span className="min-w-0 truncate text-[12px] font-semibold text-tile-accent">Sprachnachricht</span>
+              <span className="min-w-0 hyphens-auto break-words text-[12px] font-semibold leading-tight text-tile-accent" lang="de">Sprachnachricht</span>
             )}
             <MemoMic recorder={recorder} size={34} tapOnly />
           </div>
