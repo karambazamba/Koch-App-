@@ -57,10 +57,14 @@ export const kochtipp = async (page, check) => {
   check(await stage.getByText("Passt nicht?").isVisible(), "darunter „Passt nicht?“");
 
   // Zweimal wischen → dritte Karte nehmen
+  // Karussell sichtbar mittig holen (das Gespräch scrollt sonst ans Ende, unter Mia)
+  await track.evaluate((el) => el.scrollIntoView({ block: "center" }));
+  await page.waitForTimeout(400);
   const b = await track.boundingBox();
   for (let i = 0; i < 2; i++) {
-    await swipe(page, { x: b.x + b.width * 0.8, y: b.y + 80, dx: -b.width * 0.75 });
-    await page.waitForTimeout(500);
+    // je Wisch eine Karte weiter
+    await swipe(page, { x: b.x + b.width * 0.7, y: b.y + Math.min(120, b.height / 3), dx: -b.width * 0.55, ms: 260 });
+    await page.waitForTimeout(700);
   }
   const third = cards.nth(2);
   const title = ((await third.getAttribute("aria-label")) ?? "").replace(/^Vorschlag: /, "");

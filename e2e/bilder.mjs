@@ -89,12 +89,13 @@ const cookTip = async (page, step) => {
   await page.getByRole("button", { name: /^(Was anderes kochen\?|Kochidee –)/ }).click();
   await page.getByText("Ganz was anderes?").waitFor({ timeout: 5000 });
   if (step === "start") return settle(page);
-  await page.getByText("Ganz was anderes?").click();
+  // Direkt tippen (die einmalige Mikro-Frage gehört nicht ins Bild)
+  await page.getByRole("button", { name: "Lieber tippen" }).click();
   const box = await tippenFeld(page);
   await box.fill("Ich hab Hähnchen gekauft, Paprika und Sahne sind noch da, was Cremiges");
   await box.press("Enter");
   await page.getByText("Dann mach doch", { exact: false }).waitFor({ timeout: 5000 });
-  await page.keyboard.press("Tab");
+  await page.waitForTimeout(1200);
   await settle(page);
 };
 const SCENES = [

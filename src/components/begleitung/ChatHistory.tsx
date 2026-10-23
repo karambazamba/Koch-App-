@@ -5,7 +5,7 @@
 // Wort und der offene Vorschlag mit "Übernehmen".
 
 import Link from "next/link";
-import type { Dispatch, ReactNode, RefObject, SetStateAction } from "react";
+import { useRef, type Dispatch, type ReactNode, type RefObject, type SetStateAction } from "react";
 import { NOTE } from "@/components/ui/styles";
 import { stockNearlyEmpty } from "@/lib/essen/dishIdeas";
 import type { useAssistantStatus } from "@/lib/begleitung/client";
@@ -82,6 +82,14 @@ export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, co
   const firstEarlier = earlier[0] ?? -1;
   const earlierTitles = [...new Set(earlier.flatMap((i) => ideasFor(chat.turns[i]).map((idea) => idea.title)))];
   const roles = chat.turns.map((t) => t.role);
+  // Kochidee-Ergebnis: „Dann mach doch …!“ samt Karussell oben ins Bild holen
+  // (nach dem allgemeinen Scrollen ans Ende, sonst läge das Karussell oben außer Sicht)
+  const shownResult = useRef(-1);
+  const showResult = (index: number) => (el: HTMLDivElement | null) => {
+    if (!el || shownResult.current === index) return;
+    shownResult.current = index;
+    window.setTimeout(() => el.scrollIntoView({ block: "start", behavior: "smooth" }), 400);
+  };
   const greeting = showGreeting && data;
 
   return (
@@ -138,7 +146,7 @@ export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, co
               const live = chat.kochtipp != null && i === chat.turns.map((t) => Boolean(t.idea)).lastIndexOf(true);
               const session = chat.kochtipp;
               return (
-                <div key={i} className="flex w-full flex-col gap-2.5">
+                <div key={i} ref={idea.kind === "ergebnis" && live ? showResult(i) : undefined} className="flex w-full scroll-mt-2 flex-col gap-2.5">
                   <ChatTurnItem turn={{ role: "assistant", text: turn.text }} lead={i === from ? !greeting : firstOfRun(roles, i)} last={false} data={data} showBases={false} mailActive={false} speaking={speakingId === `turn-${i}`} onSpeak={() => toggleSpeak(turn.text, `turn-${i}`, voice)} onSubmit={onSubmit} onAsk={onAsk} onAcceptUnsure={() => undefined} onMarketAdd={market.addMarketItems} onMarketPlan={market.planMarketIdea} onClose={onClose} />
                   {idea.kind === "start" ? (
                     <>
