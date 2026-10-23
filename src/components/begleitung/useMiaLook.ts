@@ -49,7 +49,8 @@ export function useMiaMoment(): MiaMoment | null {
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const check = () => {
-      if (document.visibilityState !== "visible") return;
+      // Automatisierte Tests (Bildvergleich): keine zufälligen Momente
+      if (document.visibilityState !== "visible" || navigator.webdriver) return;
       const nowMs = now().getTime();
       const m = miaMoment(currentLage(), last, nowMs);
       if (!m) return;

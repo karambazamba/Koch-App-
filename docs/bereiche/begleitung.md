@@ -449,7 +449,7 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   (`miaNotice`, KitchenHelper).
 
 
-## Mia – die Familienmanagerin, Teil 1 (seit v0.83, Tafel 81/82)
+## Mia – die Familienmanagerin (seit v0.83, Tafel 81/82)
 
 - Steckbrief und feste Sätze zentral in `src/lib/mia/persona.ts`
   (`steckbrief(name)` steht im System-Prompt; `SAETZE` je 3–5 Varianten,
@@ -471,5 +471,19 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 - Knopf: 16 px Rand, 24 px über der Unterkante/Safe Area; Einstellungen →
   Mia → „Knopf links“ (Linkshänder, `wasgibts.miaknopf`).
 - Tests: `tests/mia/familienmanagerin.test.ts`.
-- Teil 2 (Routinen: Morgen-Info, Überschneidungen mit 2 Knöpfen, Vorabend-
-  Packliste) folgt.
+
+## Mia – die Familienmanagerin, Routinen (seit v0.83)
+
+- Rein in `src/lib/mia/routinen.ts`, auf Heute über
+  `src/components/heute/useMiaRoutinen.ts`:
+  - Morgens 6–10 Uhr Jetzt-Karte „Moin! Fußball 15, Zahnarzt 16“, Zeile 2
+    Wetter nur mit Planbezug („Ab 14 Uhr Regen. Regenjacke für Mathis?“).
+  - Überschneidung zweier Termine mit Personen (auch < 15 Min Fahrtzeit):
+    „Fußball und Zahnarzt – 15 und 16:10 Uhr. Das wird knapp. Wer fährt?“, in
+    „Dein Tag“ mit genau 2 Knöpfen „Ich fahre“ (Notiz am Termin) / „Lisa
+    fragen“ (Pinnwand-Nachricht). Kein Rot.
+  - Abends 17–20 Uhr, wenn morgen früh etwas mit Notiz ansteht: „Morgen
+    früh: Kita-Ausflug.“ – „Soll ich’s auf die Packliste setzen?“ → „Ja,
+    bitte“ (Aufgabe „Packen: …“ heute) / „Hab ich schon“.
+- Jede Frage nur einmal (`wasgibts.miafragen`). Nie im Beispiel-Tag.
+- Tests: `tests/mia/routinen.test.ts`.

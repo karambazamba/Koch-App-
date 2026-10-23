@@ -8,6 +8,7 @@
 // Einstellungen oder Lotte öffnen den Bearbeiten-Modus direkt hier: Kopf
 // "Startseite bearbeiten" + "Fertig", Kacheln wackeln, ziehen, "–", S · M · L.
 
+import { useMiaRoutinen } from "@/components/heute/useMiaRoutinen";
 import { greetOncePerDay } from "@/lib/core/avatarState";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -253,7 +254,9 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const leisure = evening && notes ? leisureIdea(notes, data.todayIso) : null;
   const regionTips = useTipsWindow(data.todayIso, regionOn && !demoDay.tiles.length);
   const potState = usePotState();
+  const mia = useMiaRoutinen({ today: data.todayIso, minutes, entries, termine: allItems, tomorrow: tomorrowAll, profile: data.profile, me: name || "Ich", regen: null, demo: Boolean(demoDay.termine) || demoDay.tiles.length > 0 });
   const jetzt = useJetztTopics({
+    routinen: mia.routinen,
     today: data.todayIso,
     minutes,
     me: name || "Ich",
@@ -426,6 +429,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
               shop={jetzt.shop}
               pins={(pins ?? []).filter((p) => p.erstellt.slice(0, 10) === data.todayIso || toIsoDate(new Date(p.erstellt)) === data.todayIso)}
               topic={dayTopic.topic}
+              fragen={mia.fragen}
               onTopicDone={doneTopic}
               onClose={() => setDayTopic(null)}
             />

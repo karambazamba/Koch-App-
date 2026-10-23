@@ -58,6 +58,7 @@ export const STORAGE = [
   { key: "wasgibts.mitteilungen", what: "Mitteilungen auf diesem Gerät: Standard-Erinnerung, Schalter je Art, Mias Frage (ja/nein, wann), schon gemeldete Erinnerungen", version: 1, migration: "heute/mitteilungen/einstellungen.ts migrateNotify", area: "local", backup: false },
   { key: "wasgibts.miaknopf", what: "Runder Knopf der Begleitung links (Linkshänder) – pro Gerät", version: 1, migration: "mia/knopf.ts migrateKnopf", area: "local", backup: false },
   { key: "wasgibts.miareaktion", what: "Wie oft sich die Begleitung heute groß gefreut hat (höchstens 3×)", version: 1, migration: "mia/reaktion.ts", area: "local", backup: false },
+  { key: "wasgibts.miafragen", what: "Beantwortete Fragen der Begleitung (Überschneidung, Packliste) – nie zweimal fragen", version: 1, migration: "mia/fragen.ts", area: "local", backup: false },
   { key: "wasgibts.neu", what: "Leise Neuigkeiten aus dem Haushalt für die Jetzt-Karte (wer was eingetragen hat, jede nur einmal)", version: 1, migration: "konten/wer.ts migrateNews", area: "local", backup: false },
   { key: "wasgibts.kalenderabos", what: "Kalender-Links (Abos): Name, geheimer Link, Farbe, Familie/Arbeit, an/aus – nur auf dem Gerät, in der Sicherung nur auf Wunsch", version: 1, migration: "kalender/abo/store.ts", area: "local", backup: false },
   { key: "wasgibts.kalenderabo-termine", what: "Zwischenspeicher der Abo-Termine (nur lesen, wird neu abgerufen)", version: 1, migration: "kalender/abo/store.ts", area: "local", backup: false },

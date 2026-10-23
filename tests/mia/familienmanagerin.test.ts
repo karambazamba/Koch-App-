@@ -119,3 +119,13 @@ describe("Ton", () => {
     expect(bigReactionAllowed({ conversation: 0, day: "2026-10-22", today: 3 }, "2026-10-23")).toBe(true);
   });
 });
+
+describe("Bewegung", () => {
+  it("reduzierte Bewegung blendet nie das Gesicht aus (nur Animation aus, Blatt weg)", async () => {
+    const { readFileSync } = await import("node:fs");
+    const css = readFileSync("src/app/globals.css", "utf8");
+    const rule = css.match(/@media \(prefers-reduced-motion:reduce\)\{\[data-moment\][^\n]*/)?.[0] ?? "";
+    expect(rule).toContain("animation:none");
+    expect(rule).not.toMatch(/\.av-body[^}]*opacity:0/);
+  });
+});

@@ -29,6 +29,9 @@ const ICONS: Partial<Record<JetztKind, TopicIcon>> = {
   absprache: "MessageCircle",
   timer: "Timer",
   ausblick: "Sunrise",
+  morgen: "Sunrise",
+  ueberschneidung: "CalendarDays",
+  packen: "ListChecks",
 };
 
 export const topicIcon = (kind: JetztKind): TopicIcon => ICONS[kind] ?? "Sparkles";
