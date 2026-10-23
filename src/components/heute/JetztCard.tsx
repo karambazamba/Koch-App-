@@ -169,7 +169,7 @@ export function JetztCard({
           }
           onOpen(topic);
         }}
-        className={`flex h-full w-full items-center gap-3 pl-3.5 text-left ${topic.button ? "pr-[104px]" : "pr-8"}`}
+        className={`flex h-full w-full items-center gap-3 pl-3.5 text-left ${topic.button ? "pr-[128px]" : "pr-8"}`}
       >
         <span ref={face} className="shrink-0">
           <BegleitungAvatar size={32} zustand={speaking || typed >= 0 ? "sprechen" : undefined} stabil />

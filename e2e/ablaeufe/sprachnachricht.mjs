@@ -130,10 +130,13 @@ const PUT_FAILS = () => {
 /** Pinnwand-Seite ohne Neuladen öffnen (der Ton im Arbeitsspeicher bleibt) und abspielen */
 async function playOnBoard(page) {
   await page.getByRole("link", { name: "Pinnwand öffnen" }).click();
-  const play = page.getByRole("button", { name: /^Abspielen: Sprachnachricht/ }).first();
+  // Erst die Pinnwand abwarten und nur sichtbare Knöpfe nehmen: die Startseite (mit dem
+  // Knopf in der Pinnwand-Kachel) bleibt beim Seitenwechsel versteckt im Hintergrund
+  await page.waitForURL(/\/pinnwand/);
+  const play = page.getByRole("button", { name: /^Abspielen: Sprachnachricht/ }).filter({ visible: true }).first();
   await play.waitFor({ timeout: 5000 });
   await play.click();
-  return page.getByRole("button", { name: /^Anhalten: Sprachnachricht/ }).first().waitFor({ timeout: 4000 }).then(() => true, () => false);
+  return page.getByRole("button", { name: /^Anhalten: Sprachnachricht/ }).filter({ visible: true }).first().waitFor({ timeout: 4000 }).then(() => true, () => false);
 }
 
 /**
