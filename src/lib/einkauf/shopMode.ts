@@ -1,5 +1,5 @@
-// Einkauf nach Läden: gemerkte Ansicht der Einkaufsliste (nach Abteilung oder
-// nach Laden), der Einkaufsmodus „Bei REWE“ (nur, was es dort gibt, dazu
+// Einkauf nach Läden: gemerkter Chip der Einkaufsliste („Alle“ oder ein
+// Laden), der Einkaufsmodus „Bei REWE“ (nur, was es dort gibt, dazu
 // „Egal wo“ und – eingeklappt – die anderen Läden) und das Lernen: wird im
 // Laden etwas ohne Laden abgehakt, merkt sich die Liste den Laden dafür.
 // Reine Logik + kleiner Speicher; Oberfläche in components/shopping/ShopMode.
@@ -8,23 +8,33 @@ import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 import { compareText } from "@/lib/core/sort";
 import type { ListItem } from "@/lib/einkauf/shoppingList";
+import type { ShopChip } from "@/lib/einkauf/kacheln/view";
 
-export type ShoppingView = "abteilung" | "laden";
-type ViewState = { version: 1; view: ShoppingView };
+/** Gemerkter Chip der Einkaufsliste; „meist“ = früher „Nach Laden“ (der Laden mit den meisten Sachen) */
+export type StoredChip = ShopChip | "meist";
+type ViewState = { version: 2; chip: StoredChip };
 
-const viewStore = createLocalStore("wasgibts.einkaufsansicht", (raw: unknown): ViewState | null => {
-  if (!raw || typeof raw !== "object" || (raw as ViewState).version !== 1) return null;
-  return { version: 1, view: (raw as ViewState).view === "laden" ? "laden" : "abteilung" };
-});
+const isChip = (c: unknown): c is StoredChip => c === "alle" || c === "ohne" || c === "meist" || (typeof c === "string" && c.startsWith("laden:") && c.length > 6);
 
-const loadView = (): ShoppingView => viewStore.load()?.view ?? "abteilung";
-
-/** Gemerkte Ansicht der Einkaufsliste (pro Gerät) */
-export function useShoppingView(): ShoppingView {
-  return useExternalStore(viewStore.subscribe, loadView, () => "abteilung" as const);
+/** v1 (bis 0.65): Ansicht „abteilung“/„laden“ → v2: Chip @public */
+export function migrateShopView(raw: unknown): ViewState | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as { version?: number; view?: unknown; chip?: unknown };
+  if (r.version === 1) return { version: 2, chip: r.view === "laden" ? "meist" : "alle" };
+  if (r.version === 2) return { version: 2, chip: isChip(r.chip) ? r.chip : "alle" };
+  return null;
 }
 
-export const setShoppingView = (view: ShoppingView) => viewStore.save({ version: 1, view });
+const viewStore = createLocalStore("wasgibts.einkaufsansicht", migrateShopView);
+
+const loadChip = (): StoredChip => viewStore.load()?.chip ?? "alle";
+
+/** Gemerkter Chip der Einkaufsliste (pro Gerät) */
+export function useShopChip(): StoredChip {
+  return useExternalStore(viewStore.subscribe, loadChip, () => "alle" as const);
+}
+
+export const setShopChip = (chip: ShopChip) => viewStore.save({ version: 2, chip });
 
 const lower = (s: string) => s.trim().toLowerCase();
 

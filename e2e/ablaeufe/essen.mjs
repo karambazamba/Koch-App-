@@ -27,14 +27,30 @@ export const rezept = async (page, check) => {
 
 export const einkauf = async (page, check) => {
   await family(page, "/einkaufsliste");
-  const field = page.getByRole("textbox").first();
-  await field.fill("Milch, Brot");
-  await field.press("Enter");
+  // „Mehr hinzufügen“: tippen (mehrere mit Komma), Fertig
+  await page.getByRole("button", { name: "Mehr hinzufügen" }).tap();
+  const sheet = page.getByRole("dialog", { name: "Mehr hinzufügen" });
+  await sheet.getByLabel("Suchen oder eintragen").fill("Milch, Brot");
+  await sheet.getByLabel("Suchen oder eintragen").press("Enter");
+  await sheet.getByText("2 ausgewählt").waitFor();
+  await sheet.getByRole("button", { name: "Bananen", exact: true }).tap();
+  check(await sheet.getByText("3 ausgewählt").isVisible(), "Katalog: „3 ausgewählt“");
+  await sheet.getByRole("button", { name: "Fertig" }).tap();
   await page.waitForTimeout(600);
-  check(await page.getByText("Milch").first().isVisible() && (await page.getByText("Brot").first().isVisible()), "Milch und Brot auf der Liste");
-  await page.getByRole("checkbox", { name: /Milch/ }).first().click();
+  const milch = page.getByRole("checkbox", { name: "Milch abhaken" });
+  check((await milch.isVisible()) && (await page.getByRole("checkbox", { name: "Bananen abhaken" }).isVisible()), "Milch und Bananen als Kacheln");
+  // Tippen = gekauft → nach 2 s unter „Zuletzt gekauft“
+  await milch.tap();
   await page.waitForTimeout(2600);
-  check(await page.getByText("Erledigte anzeigen").isVisible(), "abgehakt → „Erledigte anzeigen“");
+  check(await page.getByRole("region", { name: "Zuletzt gekauft" }).getByRole("checkbox", { name: /Milch/ }).isVisible(), "abgehakt → „Zuletzt gekauft“");
+  // Lange drücken = ändern
+  const brot = page.getByRole("checkbox", { name: "Brot abhaken" });
+  const box = await brot.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(700);
+  await page.mouse.up();
+  check(await page.getByRole("dialog", { name: "Artikel bearbeiten" }).isVisible(), "lange drücken → „Artikel bearbeiten“");
 };
 
 export const vorrat = async (page, check) => {

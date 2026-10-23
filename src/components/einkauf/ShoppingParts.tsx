@@ -17,8 +17,6 @@ import {
 } from "@/lib/einkauf/shoppingList";
 import { showDeleted } from "@/lib/core/toast";
 
-export { SwipeRow, type RowAction } from "@/components/ui/SwipeRow";
-
 /** Inhalt einer Artikelzeile: Häkchen, Name, Menge rechtsbündig, optional Info */
 export function ItemContent({
   item,
@@ -83,11 +81,14 @@ export function EditItemSheet({
   settings,
   onClose,
   onSave,
+  remove,
 }: {
   item: ListItem;
   settings: ShoppingSettings;
   onClose: () => void;
   onSave: (changes: { name: string; always: boolean; shop: string; amount: string }) => void;
+  /** Löschen (eigene Artikel) bzw. „Haben wir schon“ (Zutaten aus Gerichten) */
+  remove?: { label: string; onClick: () => void };
 }) {
   const [name, setName] = useState(item.name);
   const [amount, setAmount] = useState(item.amount);
@@ -168,6 +169,11 @@ export function EditItemSheet({
         <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
         Speichern
       </button>
+      {remove && (
+        <button type="button" onClick={remove.onClick} className={`${buttonClass("secondary", "lg")} w-full`}>
+          {remove.label}
+        </button>
+      )}
     </Sheet>
   );
 }

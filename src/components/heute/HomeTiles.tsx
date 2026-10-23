@@ -7,10 +7,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowLeftRight, Check, Pin, PenLine, Refrigerator, ShoppingCart, StickyNote, UtensilsCrossed } from "lucide-react";
+import { ArrowLeftRight, Pin, PenLine, Refrigerator, ShoppingCart, StickyNote, UtensilsCrossed } from "lucide-react";
 import { TILE, TILE_LABEL, buttonClass } from "@/components/ui/styles";
 import { QuickButton } from "@/components/ui/QuickButton";
 import { QuickAddButton } from "@/components/einkauf/QuickAdd";
+import { ItemTile, TILE_GRID } from "@/components/einkauf/kacheln/ItemTile";
 import { SchnellnotizSheet } from "@/components/notizen/Schnellnotiz";
 import { clockLabel, itemText } from "@/lib/kalender/answers";
 import { tomorrowLabel, weekdayShort, type DayItem } from "@/lib/kalender/model";
@@ -151,7 +152,8 @@ export function ShoppingTile({ size = "S", demo = false }: { half: boolean; size
         <QuickAddButton weekStart={shopping.weekStart} settings={shopping.settings} quick className="absolute right-0.5 top-0.5" />
       </section>
     );
-  const max = size === "L" ? 10 : 6;
+  // M: 4 kleine Kacheln, L: 8 (Einkauf wie Bring)
+  const max = size === "L" ? 8 : 4;
   return (
     <section className={HALF} aria-label="Einkauf">
       <Link href="/einkaufsliste" className="flex flex-col gap-1">
@@ -172,28 +174,24 @@ export function ShoppingTile({ size = "S", demo = false }: { half: boolean; size
         ))}
       </Link>
       {open.length > 0 && size !== "S" && (
-        <ul className="-mx-2 mt-0.5 grid grid-cols-2 gap-x-2" aria-label="Zum Abhaken">
+        <div className={`${TILE_GRID.mini} mt-1`} aria-label="Zum Abhaken">
           {open.slice(0, max).map((item) => (
-            <li key={item.key}>
-              <button
-                type="button"
-                role="checkbox"
-                aria-checked={false}
-                aria-label={`${item.name} abhaken`}
-                onClick={() => {
-                  buzz();
-                  toggleChecked(shopping.weekStart, item, todayIso());
-                }}
-                className="flex min-h-10 w-full items-center gap-2 rounded-field px-2 text-left active:bg-fill"
-              >
-                <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md border-2 border-line-strong">
-                  <Check className="h-3 w-3 text-transparent" strokeWidth={3} aria-hidden />
-                </span>
-                <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">{item.name}</span>
-              </button>
-            </li>
+            <ItemTile
+              key={item.key}
+              name={item.name}
+              section={item.section}
+              products={shopping.settings.products}
+              checked={false}
+              size="mini"
+              label={`${item.name} abhaken`}
+              onTap={() => {
+                buzz();
+                toggleChecked(shopping.weekStart, item, todayIso());
+                showToast({ text: "Gekauft", undo: () => toggleChecked(shopping.weekStart, { ...item, checked: true }, todayIso()), undoneText: "Wieder auf der Liste", seconds: 4, small: true });
+              }}
+            />
           ))}
-        </ul>
+        </div>
       )}
       {open.length > max && size !== "S" && (
         <Link href="/einkaufsliste" className="mt-1 text-xs font-bold text-tile-accent">
