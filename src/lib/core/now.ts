@@ -81,13 +81,14 @@ export function useToday(): Date | undefined {
  *  verschwindet) – und sofort, wenn man in die App zurückkommt */
 const everyHalfMinute = (onChange: () => void) => {
   const timer = window.setInterval(onChange, 30_000);
+  const doc = typeof document === "undefined" ? null : document;
   const back = () => {
-    if (document.visibilityState === "visible") onChange();
+    if (doc?.visibilityState === "visible") onChange();
   };
-  document.addEventListener("visibilitychange", back);
+  doc?.addEventListener("visibilitychange", back);
   return () => {
     window.clearInterval(timer);
-    document.removeEventListener("visibilitychange", back);
+    doc?.removeEventListener("visibilitychange", back);
   };
 };
 

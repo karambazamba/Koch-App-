@@ -8,9 +8,9 @@
 import { tomorrowLabel, type DayItem } from "@/lib/kalender/model";
 
 /** So lange bleibt ein Termin ohne Ende nach Beginn stehen */
-export const RUNNING_MIN = 30;
+const RUNNING_MIN = 30;
 /** Ab so vielen Minuten vorher heißt der nächste Termin „gleich“ */
-export const SOON_MIN = 60;
+const SOON_MIN = 60;
 
 export type TerminState = "laeuft" | "gleich" | "naechster" | null;
 export type TerminRow = { item: DayItem; state: TerminState };
