@@ -2084,3 +2084,11 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Unten „Gemacht in Eutin · von KARAMBA Eis“. Regel: immer „KARAMBA Eis“,
   nie nur „KARAMBA“ (Test in `tests/app/regeln.test.ts`).
 
+## Wetter: Wind mit Windsack und Richtung (Tafel 63 B, v0.69.0)
+
+- Je Stunde jetzt auch Windstärke und -richtung (Bright Sky bzw. Open-Meteo);
+  Tageswert aus 7–21 Uhr, Richtung als Vektor-Mittel, 8 Kürzel.
+- Windsack in drei Stufen (hängt · halb · gerade), Richtung nur als
+  Buchstaben. 7 Tage: Zeile unten je Spalte; Heute/Morgen: „22 km/h aus
+  West“; Tageszeiten: „22 km/h · W“ (Böen ab 50). „🌬️ Windig“ entfällt.
+- Mia: „Ist es windig?“, „Woher kommt der Wind morgen?“.

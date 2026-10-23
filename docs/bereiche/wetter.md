@@ -37,7 +37,18 @@ gerechnet, ohne Panik, mit höchstens EINEM Tipp.
 - Format `Forecast`: `place`, `fetchedAt`, `source` (`dwd` | `icon` | `mock`),
   `current` (`temp`, `code`, `measured`, `raining`), `hours`, `days`.
 - Stunde: `temp`, `code` (WMO), `rain` (Regenrisiko %), `mm`, `sun`
-  (Sonnenminuten), `cloud`, `gust`.
+  (Sonnenminuten), `cloud`, `gust`, seit v0.69 `wind` (mittlere Windstärke
+  km/h; Bright Sky `wind_speed`, Open-Meteo `wind_speed_10m`) und `dir`
+  (Windrichtung in Grad, woher; `wind_direction` bzw. `wind_direction_10m`).
+  Ältere gespeicherte Vorhersagen haben beides nicht – dann zeigt die Seite
+  keinen Wind (statt „0 km/h“).
+- Wind (`lib/wetter/wind.ts`, Tafel 63 B): Tageswert aus den Stunden 7–21 Uhr
+  (`windOf(…, true)`, am Tag als `wind`): höchste mittlere Windstärke, dazu
+  die stärkste Böe; Richtung als nach Stärke gewichteter Vektor-Mittelwert
+  (350° + 10° = Nord). Tageszeiten genauso je Abschnitt. 8 Kürzel N · NO · O ·
+  SO · S · SW · W · NW (Grenzen bei 22,5°), ausgeschrieben Nord … Nordwest,
+  im Satz „aus Westen“. Windsack-Stufen (`windLevel`): leicht < 20 km/h
+  (hängt), windig 20–39 (halb), stürmisch ab 40 oder Böen ab 60 (gerade).
 - Tage baut immer `buildDays` aus den Stunden (nur Tage mit ≥ 12 Stunden).
   `sanitizeForecast` baut auch alte gespeicherte Daten so neu.
 - Der Ort im Profil `weather.postcode` gehört nicht hierher (nutzt der
@@ -109,16 +120,32 @@ Ort: Einstellungen → Wetter-Ort (`WeatherPlaceForm`): Stadt eintippen oder
 „Meinen Standort verwenden“ (Koordinaten auf 2 Stellen gerundet, gespeichert
 wird nur die Stadt). Die App holt höchstens alle 30 Minuten neu.
 
+### Wind auf der Seite (v0.69)
+- Windsack (`Windsock` in `WeatherSymbol.tsx`): grauer Mast, 4 Streifen
+  Blau-Grau/Weiß wie die Regenbalken; zeigt nur die Stärke, nie die Richtung
+  (keine Pfeile – die Richtung steht als Buchstaben daneben).
+- 7 Tage: unten in jeder Spalte (feine Linie darüber) Windsack, Zahl („28“),
+  Kürzel („NW“); Legende zweizeilig „Balken = Regenrisiko · ☀ =
+  Sonnenstunden“ und „[Windsack] = Wind km/h · W = Wind aus Westen“.
+- Heute/Morgen: unter der Temperatur der Chip „[Windsack] 22 km/h aus West“.
+- Tageszeiten: rechts „[Windsack] 22 km/h · W“, Böen nur ab 50 km/h („35 · W
+  · Böen 60“). Der frühere Tipp „🌬️ Windig“ ist weg (sonst doppelt); die
+  Text-Hinweise bei Sturm bleiben.
+- VoiceOver: „Wind 22 Kilometer pro Stunde aus Westen, windig“.
+- Die Startseiten-Kachel bleibt ohne Wind (ruhig).
+
 ## Begleitung (Mia)
 
 - Mit KI: Werkzeug `wetter_abfragen` (`tag` als YYYY-MM-DD). Die Vorhersage
   holt `engine.ts` vorab, wenn die letzte Nachricht nach Wetter oder
   Trainingsplanung klingt (`WEATHER_QUESTION`, `TRAINING_PLAN`). Ergebnis:
-  Beschreibung, Tief/Hoch, Regenrisiko, Regenstunden, mm, Sonnenstunden; für
+  Beschreibung, Tief/Hoch, Regenrisiko, Regenstunden, mm, Sonnenstunden, Wind
+  („Tagsüber wird es windig – 28 km/h aus Westen, Böen bis 55 km/h.“); für
   heute die Regen-Uhrzeiten.
 - Ohne KI: `weatherQuestion` erkennt „Wie wird das Wetter morgen?“, „Brauch
-  ich heute einen Schirm?“, „… am Samstag?“, „übermorgen“; Antwort über
-  `dayAnswer` bzw. `umbrellaAnswer`.
+  ich heute einen Schirm?“, „… am Samstag?“, „übermorgen“, „Ist es windig?“,
+  „Woher kommt der Wind morgen?“; Antwort über `dayAnswer`, `umbrellaAnswer`
+  bzw. `windAnswer`.
 - Kontext: Wetter-Ort (`wetterOrt`). `trainings_planen` nutzt dieselbe
   Vorhersage für trockene Zeiten.
 
@@ -126,6 +153,9 @@ wird nur die Stadt). Die App holt höchstens alle 30 Minuten neu.
 
 - `tests/wetter/tagesbeschreibung.test.ts` – ehrliche Tage, Tipp nur bei
   echter Regenstunde, beide Quellen im gleichen Format, Himmel und Wochensatz.
+- `tests/wetter/wind.test.ts` – Stufen-Grenzen 19/20/39/40, Böen 59/60,
+  Richtung (350° + 10° → N, 8 Kürzel, 22,5°), Tageswert nur 7–21 Uhr, alte
+  Daten ohne Wind, Sätze und Mia.
 - `tests/wetter/wetterRegeln.test.ts` – WMO-Code, Tage, EIN Tipp, Antworten,
   Server-Daten prüfen, Seite, Quellen-Formate.
 - `tests/wetter/wetterServer.test.ts` – Testmodus, echter Abruf (fetch

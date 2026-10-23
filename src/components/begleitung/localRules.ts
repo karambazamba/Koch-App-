@@ -13,6 +13,7 @@ import { changeHome, describeHomeChange, requestHomeEdit, unlockHomeTile } from 
 import { addPin, changeMemos, changePins, createPin, formatDauer, householdNames, isPinboardQuery, loadMemos, loadPins, memoPlayRequest, memoToPlay, pinWriteCommand, setMemoHeard, visibleMemos, visiblePins } from "@/lib/pinnwand";
 import { playMemo } from "@/lib/pinnwand/memoPlayer";
 import { dayAnswer, umbrellaAnswer, weatherQuestion } from "@/lib/wetter/forecast";
+import { windAnswer, type Wind } from "@/lib/wetter/wind";
 import { allShops, loadShoppingSettings } from "@/lib/einkauf/shoppingList";
 import { shopModeHref, shopModeRequest } from "@/lib/einkauf/shopMode";
 import { tipQuestion } from "@/lib/tipps/question";
@@ -33,6 +34,9 @@ import { createEntry } from "@/lib/core/entries";
 import { berlinTime, now } from "@/lib/core/now";
 
 import type { ChatState, ChatTurnView } from "@/components/begleitung/chatTypes";
+
+/** „Ist es windig?“ ohne KI – ohne Winddaten ein freundlicher Satz */
+const windText = (w: Wind | null | undefined, label: string) => (w ? windAnswer(w, label) : "Zum Wind habe ich für den Tag gerade keine Angaben.");
 
 /** Was die festen Regeln vom Chat brauchen */
 export type RuleContext = {
@@ -193,9 +197,11 @@ export function boardRule(ctx: RuleContext, t: string): boolean {
       const minutes = berlinTime().minutes;
       const text = !fc
         ? "Gerade komme ich nicht an die Wetterdaten – probier’s gleich nochmal."
-        : question.umbrella
-          ? umbrellaAnswer(fc, question.date, minutes)
-          : (dayAnswer(fc, question.date, question.label) ?? "Für den Tag gibt’s noch keine Vorhersage – nur die nächsten 7 Tage.");
+        : question.wind
+          ? windText(fc.days.find((d) => d.date === question.date)?.wind, question.label)
+          : question.umbrella
+            ? umbrellaAnswer(fc, question.date, minutes)
+            : (dayAnswer(fc, question.date, question.label) ?? "Für den Tag gibt’s noch keine Vorhersage – nur die nächsten 7 Tage.");
       setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text, local: true }] }));
     });
     return true;

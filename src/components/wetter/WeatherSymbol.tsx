@@ -4,6 +4,7 @@
 // Komponente für Wetter-Seite, Kachel und Sport – Farben über Tokens (`--wx-*`).
 
 import { weatherKind, type WeatherKind } from "@/lib/wetter/forecast";
+import type { WindLevel } from "@/lib/wetter/wind";
 
 const Sun = ({ cx = 24, cy = 24, r = 10 }: { cx?: number; cy?: number; r?: number }) => (
   <g>
@@ -116,6 +117,31 @@ export function WeatherSymbol({ code, className = "h-6 w-6", night = false }: { 
   return (
     <svg viewBox="0 0 48 48" className={`shrink-0 ${className}`} aria-hidden>
       <Motif kind={weatherKind(code).kind} night={night} />
+    </svg>
+  );
+}
+
+/** Neigung des Windsacks je Stufe (Grad nach unten): hängt · halb · gerade */
+const SOCK_TILT: Record<WindLevel, number> = { leicht: 68, windig: 28, stuermisch: 0 };
+
+/**
+ * Windsack (Tafel 63 B): grauer Mast, Sack mit 4 Streifen in Blau-Grau und
+ * Weiß wie die Regenbalken. Zeigt nur die STÄRKE (hängt / halb / gerade),
+ * nie die Richtung – die steht als Buchstaben daneben.
+ */
+export function Windsock({ level, className = "h-5 w-5" }: { level: WindLevel; className?: string }) {
+  const tilt = SOCK_TILT[level];
+  return (
+    <svg viewBox="0 0 48 48" className={`shrink-0 ${className}`} aria-hidden data-windsack={level}>
+      <line x1="10" y1="44" x2="10" y2="6" stroke="var(--wx-cloud-dark-2)" strokeWidth="3" strokeLinecap="round" />
+      <g transform={`rotate(${tilt} 10 10)`}>
+        {[0, 1, 2, 3].map((i) => {
+          const x = 10 + i * 8.5;
+          const h0 = 7 - i * 1.1;
+          const h1 = 7 - (i + 1) * 1.1;
+          return <path key={i} d={`M${x} ${10 - h0}L${x + 8.5} ${10 - h1}L${x + 8.5} ${10 + h1}L${x} ${10 + h0}Z`} fill={i % 2 ? "var(--wx-cloud)" : "var(--wx-rain)"} stroke="var(--wx-cloud-2)" strokeWidth="1" strokeLinejoin="round" />;
+        })}
+      </g>
     </svg>
   );
 }

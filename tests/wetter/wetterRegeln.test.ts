@@ -124,12 +124,12 @@ describe("Antworten für Mia", () => {
   });
 
   it("Wetterfragen erkennen: heute, morgen, übermorgen, Wochentag, Schirm – sonst nichts", () => {
-    expect(weatherQuestion("Wie wird das Wetter?", TODAY)).toEqual({ date: TODAY, label: "Heute", umbrella: false });
+    expect(weatherQuestion("Wie wird das Wetter?", TODAY)).toEqual({ date: TODAY, label: "Heute", umbrella: false, wind: false });
     expect(weatherQuestion("Wie wird das Wetter morgen?", TODAY)?.date).toBe(plus(1));
     // Fehler bis v0.47: \b vor „ü“ greift in JS nicht – „übermorgen“ wurde zu „Heute“
-    expect(weatherQuestion("Wie wird das Wetter übermorgen?", TODAY)).toEqual({ date: plus(2), label: "Übermorgen", umbrella: false });
+    expect(weatherQuestion("Wie wird das Wetter übermorgen?", TODAY)).toEqual({ date: plus(2), label: "Übermorgen", umbrella: false, wind: false });
     expect(weatherQuestion("Brauch ich übermorgen einen Schirm?", TODAY)?.date).toBe(plus(2));
-    expect(weatherQuestion("Wie wird das Wetter am Samstag?", TODAY)).toEqual({ date: plus(2), label: "Am Samstag", umbrella: false });
+    expect(weatherQuestion("Wie wird das Wetter am Samstag?", TODAY)).toEqual({ date: plus(2), label: "Am Samstag", umbrella: false, wind: false });
     expect(weatherQuestion("Wetter am Donnerstag?", TODAY)?.date).toBe(plus(7));
     expect(weatherQuestion("Brauch ich heute einen Schirm?", TODAY)?.umbrella).toBe(true);
     expect(weatherQuestion("Was gibt's heute zu essen?", TODAY)).toBeNull();
@@ -160,7 +160,8 @@ describe("Wetter-Seite", () => {
     const fc = fcOf(day24((h) => (h < 11 ? { temp: -1, gust: 60 } : h < 17 ? { ...WET, temp: 3 } : { temp: 27, code: 95, mm: 2, rain: 90 })));
     const parts = dayParts(fc, TODAY);
     expect(parts.map((p) => p.id)).toEqual(["morgens", "mittags", "abends"]);
-    expect(parts[0].tips).toEqual(["❄️ Glatt", "🌬️ Windig"]);
+    // Wind zeigt jetzt der Windsack-Chip – kein „🌬️ Windig“ mehr (sonst doppelt)
+    expect(parts[0].tips).toEqual(["❄️ Glatt"]);
     expect(parts[1].tips).toEqual(["☂️ Schirm", "🧣 Warm anziehen"]);
     expect(parts[2].tips).toEqual(["⚡ Lieber drinnen", "🧴 Sonnencreme"]);
     expect(dayParts(fcOf([hour(8)]), TODAY)).toHaveLength(1);

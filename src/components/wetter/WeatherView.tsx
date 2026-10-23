@@ -22,7 +22,7 @@ import { round, weatherKind, type Forecast, type ForecastDay, type TipTermin } f
 import { bestOutdoorDay, dayParts, daySentence, dayWords, isNight, skyFor, skyLine, weatherStartTab, weekSentence, type DayPart } from "@/lib/wetter/view";
 import { useForecast } from "@/lib/wetter/client";
 import { WeatherSymbol } from "@/components/wetter/WeatherSymbol";
-import { BestDayCard, SkyCard, WeekBand, WeekNote } from "@/components/wetter/WeatherParts";
+import { BestDayCard, SkyCard, WeekBand, WeekNote, WindChip } from "@/components/wetter/WeatherParts";
 
 type Tab = "heute" | "morgen" | "woche";
 const TABS: { id: Tab; label: string }[] = [
@@ -112,9 +112,9 @@ function DayTab({ forecast, date, today, minutes, termine }: { forecast: Forecas
   return (
     <>
       {isToday ? (
-        <SkyCard sky={skyFor(code, night)} label={`Jetzt · ${clock}`} temp={round(nowFc.temp)} state={state} line={d ? skyLine(d, "Heute") : ""} code={code} night={night} parts={parts} />
+        <SkyCard sky={skyFor(code, night)} label={`Jetzt · ${clock}`} temp={round(nowFc.temp)} state={state} line={d ? skyLine(d, "Heute") : ""} code={code} night={night} parts={parts} wind={d?.wind ?? null} />
       ) : (
-        <SkyCard sky={skyFor(code)} label={tomorrowLabel(date)} temp={round(d?.max ?? 0)} sub={d ? `${round(d.min)} bis ${round(d.max)}°` : undefined} state={state} line={d ? skyLine(d).split(" · ").slice(1).join(" · ") : ""} code={code} night={false} parts={parts} />
+        <SkyCard sky={skyFor(code)} label={tomorrowLabel(date)} temp={round(d?.max ?? 0)} sub={d ? `${round(d.min)} bis ${round(d.max)}°` : undefined} state={state} line={d ? skyLine(d).split(" · ").slice(1).join(" · ") : ""} code={code} night={false} parts={parts} wind={d?.wind ?? null} />
       )}
       {sentence && <p className="px-1 text-[16px] font-semibold leading-snug">{sentence}</p>}
       <div className="flex flex-col gap-2">
@@ -136,8 +136,9 @@ function PartCard({ part }: { part: DayPart }) {
           {part.temp}° <span className="text-[15px] font-medium text-muted">{part.text}</span>
         </span>
       </span>
-      {part.tips.length > 0 && (
+      {(part.tips.length > 0 || part.wind) && (
         <span className="flex flex-col items-end gap-1">
+          {part.wind && <WindChip wind={part.wind} className="bg-fill" />}
           {part.tips.map((t) => (
             <span key={t} className={`${chipClass(false)} pointer-events-none whitespace-nowrap`}>
               {t}

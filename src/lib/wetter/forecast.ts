@@ -4,10 +4,13 @@
 // sich wenn möglich auf heutige Termine ("☂️ Ab 15 Uhr Regen – Schirm für
 // Kinderarzt"), sonst Frost, Hitze, Wind – oder nichts.
 
-/** Eine Stunde: rain = Regenrisiko %, mm = Niederschlag, sun = Sonnenminuten, cloud = Bewölkung % */
-export type ForecastHour = { date: string; hour: number; temp: number; code: number; rain: number; gust: number; mm: number; sun: number; cloud: number };
+import { windOf, type Wind } from "@/lib/wetter/wind";
+
+/** Eine Stunde: rain = Regenrisiko %, mm = Niederschlag, sun = Sonnenminuten, cloud = Bewölkung %,
+ *  wind = mittlere Windstärke km/h, dir = Windrichtung in Grad (woher) – beide fehlen in älteren Daten */
+export type ForecastHour = { date: string; hour: number; temp: number; code: number; rain: number; gust: number; mm: number; sun: number; cloud: number; wind?: number; dir?: number };
 /** Ein Tag (aus den Stunden gebaut): code/text = ehrliche Beschreibung 7–21 Uhr, rain = höchstes Regenrisiko, sun = Sonnenstunden */
-export type ForecastDay = { date: string; code: number; text: string; max: number; min: number; rain: number; mm: number; sun: number; wet: number };
+export type ForecastDay = { date: string; code: number; text: string; max: number; min: number; rain: number; mm: number; sun: number; wet: number; /** 7–21 Uhr; null in älteren Daten */ wind?: Wind | null };
 export type Forecast = {
   place: string;
   /** Abrufzeit (ISO) */
@@ -80,7 +83,7 @@ export function buildDays(hours: ForecastHour[]): ForecastDay[] {
     if (hs.length < 12) return [];
     const look = dayLook(hs);
     const daytime = hs.filter((h) => h.hour >= DAY_FROM && h.hour <= DAY_TO);
-    return [{ date, code: look.code, text: look.text, max: Math.max(...hs.map((h) => h.temp)), min: Math.min(...hs.map((h) => h.temp)), rain: Math.max(0, ...(daytime.length ? daytime : hs).map((h) => h.rain)), mm: look.mm, sun: look.sun, wet: look.wet }];
+    return [{ date, code: look.code, text: look.text, max: Math.max(...hs.map((h) => h.temp)), min: Math.min(...hs.map((h) => h.temp)), rain: Math.max(0, ...(daytime.length ? daytime : hs).map((h) => h.rain)), mm: look.mm, sun: look.sun, wet: look.wet, wind: windOf(hs, true) }];
   });
 }
 
@@ -157,10 +160,24 @@ export function sanitizeForecast(raw: unknown): Forecast | null {
   if (!raw || typeof raw !== "object") return null;
   const f = raw as Forecast;
   if (typeof f.place !== "string" || !Array.isArray(f.hours) || !Array.isArray(f.days) || !f.current) return null;
-  const num = (n: unknown) => (typeof n === "number" && Number.isFinite(n) ? n : 0);
+  const isNum = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n);
+  const num = (n: unknown) => (isNum(n) ? n : 0);
   const hours = f.hours
     .filter((h) => h && typeof h.date === "string")
-    .map((h) => ({ date: h.date, hour: num(h.hour), temp: num(h.temp), code: num(h.code), rain: num(h.rain), gust: num(h.gust), mm: num(h.mm), sun: num(h.sun), cloud: num(h.cloud) }));
+    .map((h) => ({
+      date: h.date,
+      hour: num(h.hour),
+      temp: num(h.temp),
+      code: num(h.code),
+      rain: num(h.rain),
+      gust: num(h.gust),
+      mm: num(h.mm),
+      sun: num(h.sun),
+      cloud: num(h.cloud),
+      // Wind nur, wenn er wirklich da ist (ältere Daten: keine Anzeige statt „0 km/h“)
+      ...(isNum(h.wind) ? { wind: h.wind } : {}),
+      ...(isNum(h.dir) ? { dir: h.dir } : {}),
+    }));
   // Tage immer selbst aus den Stunden (auch für ältere gespeicherte Daten ohne Beschreibung)
   const built = buildDays(hours);
   const days = built.length ? built : f.days.filter((d) => d && typeof d.date === "string").map((d) => ({ date: d.date, code: num(d.code), text: weatherKind(num(d.code)).text, max: num(d.max), min: num(d.min), rain: num(d.rain), mm: 0, sun: 0, wet: 0 }));
@@ -177,23 +194,25 @@ export function sanitizeForecast(raw: unknown): Forecast | null {
 const WEEKDAYS = ["sonntag", "montag", "dienstag", "mittwoch", "donnerstag", "freitag", "samstag"];
 
 /** Wetterfrage erkennen: Tag ("morgen", "am Samstag"), Bezeichnung, Schirm-Frage – oder null */
-export function weatherQuestion(text: string, today: string): { date: string; label: string; umbrella: boolean } | null {
+export function weatherQuestion(text: string, today: string): { date: string; label: string; umbrella: boolean; wind: boolean } | null {
   const t = text.toLowerCase();
   const umbrella = /\b(schirm|regnet|regen)\b/.test(t) && /\b(brauch|nehm|mitnehmen|wird|gibt)\w*/.test(t);
-  if (!umbrella && !(/\bwetter\b/.test(t) && /\?|\bwie\b|\bwird\b/.test(t))) return null;
+  // „Ist es windig?“, „Woher kommt der Wind morgen?“, „Stürmt es?“
+  const wind = /\b(windig|wind|stürm\w*|sturm|böen)(?![a-zäöüß])/.test(t) && /\?|\b(ist|wird|woher|wie|kommt|weht)\b/.test(t);
+  if (!umbrella && !wind && !(/\bwetter\b/.test(t) && /\?|\bwie\b|\bwird\b/.test(t))) return null;
   const add = (n: number) => {
     const d = new Date(`${today}T12:00:00Z`);
     d.setUTCDate(d.getUTCDate() + n);
     return d.toISOString().slice(0, 10);
   };
   // Kein \b vor „ü“: in JS-Regex ist „ü“ kein Wortzeichen, \bübermorgen griff nie
-  if (/übermorgen\b/.test(t)) return { date: add(2), label: "Übermorgen", umbrella };
-  if (/\bmorgen\b/.test(t)) return { date: add(1), label: "Morgen", umbrella };
+  if (/übermorgen\b/.test(t)) return { date: add(2), label: "Übermorgen", umbrella, wind };
+  if (/\bmorgen\b/.test(t)) return { date: add(1), label: "Morgen", umbrella, wind };
   const wd = WEEKDAYS.findIndex((d) => t.includes(d));
   if (wd >= 0) {
     const cur = new Date(`${today}T12:00:00Z`).getUTCDay();
     const n = (wd - cur + 7) % 7 || 7;
-    return { date: add(n), label: `Am ${WEEKDAYS[wd][0].toUpperCase()}${WEEKDAYS[wd].slice(1)}`, umbrella };
+    return { date: add(n), label: `Am ${WEEKDAYS[wd][0].toUpperCase()}${WEEKDAYS[wd].slice(1)}`, umbrella, wind };
   }
-  return { date: today, label: "Heute", umbrella };
+  return { date: today, label: "Heute", umbrella, wind };
 }
