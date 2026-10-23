@@ -62,13 +62,13 @@ function TileHead({ title, more, href, action, moreLabel }: { title: string; mor
     <div className="flex h-[26px] items-center gap-2">
       {/* Label öffnet die Seite dazu (Tag bzw. Aufgaben) – keine Sackgasse */}
       <h2 className={TILE_LABEL}>
-        <Link href={href} className="-my-2 inline-flex h-11 items-center">
+        <Link href={href} className="hit inline-flex h-[26px] items-center">
           {title}
         </Link>
       </h2>
       <span className="flex-1" />
       {more > 0 && (
-        <Link href={href} className="-my-2 flex h-11 items-center text-[12.5px] font-bold text-tile-accent">
+        <Link href={href} className="hit flex h-[26px] items-center text-[12.5px] font-bold text-tile-accent">
           +{more} {moreLabel ?? "weitere"}
         </Link>
       )}

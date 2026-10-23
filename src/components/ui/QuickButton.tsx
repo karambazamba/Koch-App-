@@ -15,7 +15,7 @@ export function QuickButton({ icon: Icon, label, onClick, className = "" }: { ic
         onClick();
       }}
       aria-label={label}
-      className={`-m-2 flex h-11 w-11 shrink-0 items-center justify-center active:scale-95 ${className}`}
+      className={`hit flex h-[26px] w-[26px] shrink-0 items-center justify-center active:scale-95 ${className}`}
     >
       <span className={TILE_PLUS_DOT}>
         <Icon className="h-3.5 w-3.5" strokeWidth={2.75} aria-hidden />
