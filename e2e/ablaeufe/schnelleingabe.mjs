@@ -82,6 +82,12 @@ export const schnelleingabe = async (page, check) => {
  * nicht) → „Lieber nicht“ wird gemerkt; Glocke am Termin in der Kachel.
  */
 export const erinnerungFrage = async (page, check) => {
+  // Wie ein neues Handy: Mitteilungen noch nicht gefragt (headless meldet sonst „abgelehnt“)
+  await page.addInitScript(() => {
+    if (!("Notification" in window)) return;
+    Object.defineProperty(Notification, "permission", { configurable: true, get: () => window.__notifyPerm ?? "default" });
+    Notification.requestPermission = async () => (window.__notifyPerm = "denied");
+  });
   await hello(page);
   await page.waitForTimeout(600);
   check(!(await page.getByRole("dialog", { name: "Soll ich dich erinnern?" }).count()), "erster Start: keine Frage nach Mitteilungen");
