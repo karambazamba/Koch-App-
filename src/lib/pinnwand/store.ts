@@ -2,8 +2,9 @@
 // Konten, Tabelle "eintraege" mit typ "pinnwand" bzw. "memo").
 // v2: Sprachnachrichten (`memos`, nur die Einträge – der Ton liegt in
 // IndexedDB); v1 bekommt eine leere Liste. v3: Reaktionen je Person
-// (Person → Emoji statt Emoji → Personen) und Antworten mit Zitat. Alte Nachrichten (älter als 3 Tage,
-// nicht angeheftet) und abgelaufene Memos räumt das Speichern weg.
+// (Person → Emoji statt Emoji → Personen) und Antworten mit Zitat. Alles
+// älter als 24 Std. (außer Angeheftetem) räumt das Speichern weg, beim Start
+// `tidyPinboard`.
 
 import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";

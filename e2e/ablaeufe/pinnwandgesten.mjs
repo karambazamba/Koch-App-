@@ -1,9 +1,9 @@
 // Pinnwand (Tafel 69–71) mit echten Touch-Gesten: Kachel klein (gleich hoch
-// wie Wetter, ＋ und Mikro ≥ 44 px auseinander), ＋ → Mia schreibt mit →
-// direkt angepinnt; Seite: eigene nach links weg (Gelöscht · Rückgängig),
+// wie Wetter, ＋ und Mikro ≥ 44 px auseinander), ＋ → Schnelleingabe
+// „NACHRICHT AN ALLE“ → ➤ = angepinnt; Seite: eigene nach links weg (Gelöscht · Rückgängig),
 // fremde federt zurück, rechts wischen = Antwort, lange drücken → ❤️ →
 // „❤️ Lisa“ unter der Nachricht; Wischen über der Kachel wechselt die Seite.
-import { BASE, hello, seedFamily, swipe, tippenFeld } from "../lib.mjs";
+import { BASE, hello, schnell, seedFamily, swipe } from "../lib.mjs";
 
 async function hold(page, x, y, ms = 650) {
   const cdp = await page.context().newCDPSession(page);
@@ -32,18 +32,16 @@ export const pinnwandGesten = async (page, check) => {
   if (mic) check(mic.y - (plus.y + plus.height) >= 44 || Math.abs(mic.x - plus.x) >= 44, "＋ und Mikro mindestens 44 px auseinander");
   check(!(await tile.getByLabel("Neue Nachricht").count()), "kein roter Punkt");
 
-  // ＋ → Mia schreibt mit → direkt angepinnt
+  // ＋ → Schnelleingabe „NACHRICHT AN ALLE“ → ➤ = angepinnt
   await tile.getByRole("button", { name: /^Nachricht an die Pinnwand/ }).click();
-  const stage = page.getByRole("dialog").last();
-  check(await stage.getByText("PINNWAND", { exact: true }).waitFor({ timeout: 5000 }).then(() => true, () => false), "Bühne mit Kopf „PINNWAND“");
-  const box = await tippenFeld(page);
-  await box.fill("Äh, ich bin um 6 zurück");
-  await box.press("Enter");
-  check(await stage.getByText("✓ Angepinnt", { exact: false }).waitFor({ timeout: 4000 }).then(() => true, () => false), "„✓ Angepinnt“ ohne Vorschau");
-  check(await stage.getByRole("button", { name: "Rückgängig" }).isVisible(), "mit „Rückgängig“");
-  await stage.getByRole("button", { name: "Schließen" }).click();
+  const sheet = page.getByRole("dialog", { name: "Schnelleingabe" });
+  check(await sheet.getByText("NACHRICHT AN ALLE", { exact: true }).waitFor({ timeout: 5000 }).then(() => true, () => false), "Schnelleingabe „NACHRICHT AN ALLE“");
+  await schnell(page, "Ich bin um 6 zurück", { close: false });
+  check(await page.getByText("Angepinnt: Ich bin um 6 zurück").isVisible(), "„Angepinnt: …“");
+  check(await page.getByRole("button", { name: "Rückgängig" }).isVisible(), "mit „Rückgängig“");
+  await sheet.getByRole("button", { name: "Schließen" }).last().click();
   await page.waitForTimeout(500);
-  check(await tile.getByText("Ich bin um 6 zurück").isVisible(), "Nachricht in der Kachel (ohne „Äh“)");
+  check(await tile.getByText("Ich bin um 6 zurück").isVisible(), "Nachricht in der Kachel");
 
   // Wischen über der Kachel wechselt weiter die Seite
   const t2 = await tile.boundingBox();
@@ -71,11 +69,11 @@ export const pinnwandGesten = async (page, check) => {
   check(!(await own.count()), "eigene Nachricht nach links weggewischt");
   check(await page.getByText("Gelöscht").isVisible(), "„Gelöscht · Rückgängig“");
 
-  // rechts wischen = antworten (Mia mit Pinnwand-Kopf)
+  // rechts wischen = antworten (Schnelleingabe)
   b = await other.boundingBox();
   await swipe(page, { x: b.x + 30, y: b.y + b.height / 2, dx: b.width * 0.4, ms: 300 });
-  check(await page.getByRole("dialog").last().getByText("PINNWAND", { exact: true }).waitFor({ timeout: 4000 }).then(() => true, () => false), "rechts wischen → Antwort");
-  await page.getByRole("dialog").last().getByRole("button", { name: "Schließen" }).click();
+  check(await page.getByRole("dialog", { name: "Schnelleingabe" }).waitFor({ timeout: 4000 }).then(() => true, () => false), "rechts wischen → Antwort");
+  await page.getByRole("dialog", { name: "Schnelleingabe" }).getByRole("button", { name: "Schließen" }).last().click();
   await page.waitForTimeout(500);
 
   // lange drücken → ❤️ → „❤️ Lisa“

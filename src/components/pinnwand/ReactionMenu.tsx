@@ -3,7 +3,7 @@
 // Lange gedrückt (Tafel 70): die Nachricht hebt sich leicht an, der Rest wird
 // abgedunkelt; darüber die Reaktionsleiste 👍 ❤️ 😂 😮 🙏 (antippen setzt,
 // tauscht oder entfernt die eigene), darunter das Menü „Antworten“,
-// „Weiterleiten an Mia“ (nur Text), „Anheften“ (nur Text), „Löschen“ (nur
+// „Weiterleiten an Mia“ (nur Text), „Dauerhaft anheften“ (nur Text), „Löschen“ (nur
 // eigene); bei der eigenen Sprachnachricht „Gehört von“. Schließt per
 // Danebentippen, Escape und Zurück.
 
@@ -12,11 +12,11 @@ import { Check, Forward, Pin, Reply, Trash2 } from "lucide-react";
 import { useBackCloses } from "@/lib/core/useBackCloses";
 import { now } from "@/lib/core/now";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
-import { REACTIONS, changeMemos, changePins, setMemoHeard, setPinPinned } from "@/lib/pinnwand";
+import { REACTIONS, changeMemos, changePins, setMemoHeard, setPinPinned, type PinQuote } from "@/lib/pinnwand";
 import { deleteItem, forwardToMia, mayDelete, reactTo, reactionsOf, replyTo } from "@/components/pinnwand/boardActions";
 import type { BoardItem } from "@/components/pinnwand/useBoard";
 
-type Props = { item: BoardItem; me: string; household: string[]; helper: string; onWrite: () => void; onClose: () => void; children: ReactNode };
+type Props = { item: BoardItem; me: string; household: string[]; helper: string; onWrite: (text: string, quote: PinQuote) => void; onClose: () => void; children: ReactNode };
 
 function MenuRow({ icon: Icon, label, danger = false, onClick }: { icon: typeof Reply; label: string; danger?: boolean; onClick: () => void }) {
   return (
@@ -67,10 +67,10 @@ export function ReactionMenu({ item, me, household, helper, onWrite, onClose, ch
       <div className="pin-angehoben relative">{children}</div>
       <div className="relative self-end overflow-hidden rounded-card bg-surface shadow-float" role="menu" style={{ minWidth: 240 }}>
         <div className="divide-y divide-line">
-          <MenuRow icon={Reply} label="Antworten" onClick={run(() => replyTo(item, onWrite))} />
+          <MenuRow icon={Reply} label="Antworten" onClick={run(() => replyTo(item, me, onWrite))} />
           {item.kind === "pin" && <MenuRow icon={Forward} label={`Weiterleiten an ${helper}`} onClick={run(() => forwardToMia(item))} />}
           {item.kind === "pin" && (
-            <MenuRow icon={Pin} label={item.pin.data.pinned ? "Nicht mehr anheften" : "Anheften"} onClick={run(() => changePins((all) => setPinPinned(all, item.id, !item.pin.data.pinned, now().toISOString())))} />
+            <MenuRow icon={Pin} label={item.pin.data.pinned ? "Nicht mehr anheften" : "Dauerhaft anheften"} onClick={run(() => changePins((all) => setPinPinned(all, item.id, !item.pin.data.pinned, now().toISOString())))} />
           )}
           {mayDelete(item, me) && <MenuRow icon={Trash2} label="Löschen" danger onClick={run(() => deleteItem(item, me))} />}
         </div>

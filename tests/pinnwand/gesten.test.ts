@@ -1,11 +1,11 @@
-// Pinnwand (Tafel 69–71): Kachel zeigt genau die 2 neuesten der letzten 2 Tage
-// + „+N“; löschen nur eigene; Reaktionen eine je Person (setzen, tauschen,
+// Pinnwand (Tafel 69–72): Kachel zeigt Angeheftetes + die neuesten der
+// letzten 24 Std. (2 Zeilen) + „+N“; löschen nur eigene; Reaktionen eine je Person (setzen, tauschen,
 // entfernen), altes Format wird übernommen, Abgleich und Sicherung tragen sie
-// mit; „＋“ pinnt 1:1 (nur Füllwörter weg), bei Einkauf/Termin kurz nachfragen.
+// mit; „＋“ = Schnelleingabe (Tafel 76).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { applyReaction, canDelete, migratePinStore, reactionLine, readReactions, sanitizeMemo, sanitizePin, tileEntries, toggleReaction, type PinMessage } from "@/lib/pinnwand";
-import { cleanFillers, pinChoiceLabels, pinIntent, pinnedText, quoteOf } from "@/lib/pinnwand/schreiben";
+import { quoteOf } from "@/lib/pinnwand/schreiben";
 import { ADAPTERS } from "@/lib/konten/sync/docs";
 import { STORAGE } from "@/lib/core/storage";
 
@@ -15,15 +15,18 @@ const pin = (id: string, author: string, reactions: unknown = {}): PinMessage =>
   sanitizePin({ id, typ: "pinnwand", raum: "familie", besitzer: "lokal", erstellt: "2026-10-21T08:00:00.000Z", geaendert: "2026-10-21T08:00:00.000Z", data: { text: "Bin um 20 Uhr da", author, reactions, readBy: [] } })!;
 
 describe("Kachel: klein und ruhig", () => {
-  it("genau die 2 neuesten der letzten 2 Tage, „+N“ für den Rest", () => {
+  it("genau 2 Zeilen: Angeheftetes zuerst, dann die neuesten der letzten 24 Std., „+N“ für den Rest", () => {
     const items = [at("2026-10-21T09:00:00Z"), at("2026-10-21T10:00:00Z"), at("2026-10-20T12:00:00Z"), at("2026-10-19T09:00:00Z")];
     const { shown, more } = tileEntries(items, NOW);
     expect(shown.map((i) => i.at)).toEqual(["2026-10-21T10:00:00Z", "2026-10-21T09:00:00Z"]);
     expect(more).toBe(1);
+    const pinnedOld = { ...at("2026-10-15T09:00:00Z"), pinned: true };
+    expect(tileEntries([...items, pinnedOld], NOW).shown[0]).toBe(pinnedOld);
   });
 
-  it("ältere als 2 Tage rutschen still aus der Kachel; ohne mehr kein „+N“", () => {
-    expect(tileEntries([at("2026-10-19T10:29:00Z")], NOW)).toEqual({ shown: [], more: 0 });
+  it("älter als 24 Std. ist auch aus der Kachel weg; ohne mehr kein „+N“", () => {
+    expect(tileEntries([at("2026-10-20T10:29:00Z")], NOW)).toEqual({ shown: [], more: 0 });
+    expect(tileEntries([at("2026-10-20T10:31:00Z")], NOW).shown).toHaveLength(1);
     expect(tileEntries([at("2026-10-21T09:00:00Z")], NOW).more).toBe(0);
   });
 
@@ -88,33 +91,19 @@ describe("Reaktionen wie bei WhatsApp", () => {
   });
 });
 
-describe("＋ = Mia schreibt mit", () => {
-  it("Füllwörter weg, Sinn 1:1", () => {
-    expect(cleanFillers("äh also bin um 20 Uhr da")).toBe("Bin um 20 Uhr da");
-    expect(cleanFillers("Also, ähm, Jonne hat heute Turnen, hm, bitte Schuhe mit")).toBe("Jonne hat heute Turnen, bitte Schuhe mit");
-    expect(cleanFillers("Wer holt Jonne ab?")).toBe("Wer holt Jonne ab?");
-    expect(pinnedText("Bin um 20 Uhr da")).toBe("Steht für alle an der Pinnwand:\n„Bin um 20 Uhr da“\n✓ Angepinnt");
-  });
-
-  it("Einkauf oder Termin → kurz nachfragen; Absprachen nie", () => {
-    expect(pinIntent("Milch auf die Liste")).toBe("einkauf");
-    expect(pinChoiceLabels("einkauf")).toEqual(["An die Pinnwand", "Auf die Einkaufsliste"]);
-    expect(pinIntent("Zahnarzt am Freitag um 16 Uhr")).toBe("termin");
-    expect(pinChoiceLabels("termin")[1]).toBe("In den Kalender");
-    expect(pinIntent("Bin heute um 20 Uhr da")).toBeNull();
-    expect(pinIntent("Bin um 20 Uhr da")).toBeNull();
-    expect(pinIntent("Wer holt Jonne ab?")).toBeNull();
-  });
-
+describe("Antworten und ＋", () => {
   it("Antwort trägt ein Zitat (Sprachnachrichten: „Sprachnachricht“)", () => {
     expect(quoteOf(pin("a", "Lisa"))).toEqual({ id: "a", author: "Lisa", text: "Bin um 20 Uhr da" });
     expect(quoteOf({ id: "m", data: { author: "Felix" } }).text).toBe("Sprachnachricht");
   });
 
-  it("Pinnwand-Modus pinnt direkt (keine Vorschau), mit Rückgängig", () => {
-    const src = readFileSync("src/components/begleitung/HelperPanel.tsx", "utf8");
-    expect(src).toMatch(/if \(chat\.topic === "PINNWAND"\) \{\s*setInput\(""\);\s*pinFlow\(t\);/);
-    expect(src).toMatch(/label: "Rückgängig"/);
+  it("＋ und Antworten öffnen die Schnelleingabe „NACHRICHT AN ALLE“ – keine Mia mehr", () => {
+    for (const f of ["src/components/pinnwand/PinboardTile.tsx", "src/components/pinnwand/PinboardView.tsx", "src/components/pinnwand/boardActions.ts"]) {
+      const src = readFileSync(f, "utf8");
+      expect(src).toMatch(/openQuick\(\{ kind: "pinnwand"/);
+      expect(src).not.toMatch(/askMiaFirst|replyOnPinboard/);
+    }
+    expect(readFileSync("src/components/begleitung/HelperPanel.tsx", "utf8")).not.toMatch(/pinFlow|PINNWAND/);
   });
 });
 

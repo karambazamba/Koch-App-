@@ -1,8 +1,10 @@
 # Pinnwand
 
 Kurz: Der Zettel am Kühlschrank. Kurze Nachrichten und Sprachnachrichten
-(Memos) an alle im Haushalt. Alles verschwindet nach spätestens 3 Tagen,
-außer dauerhaft angeheftete Nachrichten.
+(Memos) an alle im Haushalt. Alles verschwindet nach 24 Stunden (ab dem
+Schreiben bzw. der Aufnahme, Tafel 72) – außer dauerhaft angeheftete
+Nachrichten. Kein Countdown; einmal steht im Seitenkopf „Nachrichten
+verschwinden nach 24 Stunden“ (`pinnwand-24h`).
 
 ## Wo im Code
 
@@ -56,8 +58,10 @@ außer dauerhaft angeheftete Nachrichten.
 ## So verhält es sich
 
 ### Nachrichten
-- Sichtbar: dauerhaft angeheftet oder jünger als 3 Tage (`visiblePins`).
-  Ältere verschwinden leise.
+- Sichtbar: dauerhaft angeheftet oder jünger als 24 Std. ab `erstellt`
+  (`visiblePins`, `withinDay`, `PIN_HOURS`). Ältere verschwinden leise.
+  „Dauerhaft anheften“ (nur Text, im Lange-Drücken-Menü) – angeheftete stehen
+  oben, mit kleiner Nadel (13 px) auf der Seite und in der Kachel.
 - Sortierung der gemischten Liste (`useBoard`): angeheftete zuerst, dann
   neueste (`PINS` in `src/lib/core/sort.ts`). Text und Memos sind nach Zeit
   gemischt.
@@ -68,7 +72,8 @@ außer dauerhaft angeheftete Nachrichten.
   nach LINKS wischen = löschen, nur eigene (`canDelete`) – rote Fläche
   „Löschen“, ganz durchwischen oder antippen, „Gelöscht · Rückgängig“;
   fremde federn nur zurück. Nach RECHTS wischen = antworten (blaue Fläche):
-  Mia schreibt mit, die neue Nachricht trägt das Zitat (`replyOnPinboard`).
+  Schnelleingabe „NACHRICHT AN ALLE“, die neue Nachricht trägt das Zitat
+  (`boardActions.replyTo`, `quoteOf`).
   LANGE DRÜCKEN (0,4 s, Vibrieren; auf Android auch „contextmenu“) =
   `ReactionMenu.tsx`: Nachricht angehoben, Rest abgedunkelt, darüber 👍 ❤️ 😂
   😮 🙏 (setzen, tauschen, entfernen), darunter „Antworten“, „Weiterleiten an
@@ -83,24 +88,22 @@ außer dauerhaft angeheftete Nachrichten.
 
 ### Kachel und Seite
 - Kachel (Rosé, Tafel 71 B): feste Höhe 156 px (wie die Wetter-Kachel
-  daneben, auch breit nie höher), genau 2 Zeilen à 30 px mit den 2 neuesten
-  Einträgen der letzten 2 Tage (`tileEntries`): Text = Bild 22 px + eine
+  daneben, auch breit nie höher), genau 2 Zeilen à 30 px: Angeheftetes
+  zuerst, dann die neuesten Einträge der letzten 24 Std. (`tileEntries`): Text = Bild 22 px + eine
   Zeile …, Sprachnachricht = ▶ + kleine Tonwelle + Länge. „+N“ neben dem ＋,
-  wenn es mehr gibt; ältere als 2 Tage bleiben nur auf der Seite. Kein roter
-  Punkt. Leer: „Hinterlasst euch hier Nachrichten“. ＋ oben rechts = Mia
-  schreibt mit, Mikro (34 px, Tippfläche 44 px) unten rechts = Sprachnachricht
+  wenn es mehr gibt. Kein roter
+  Punkt. Leer: „Hinterlasst euch hier Nachrichten“. ＋ oben rechts =
+  Schnelleingabe, Mikro (34 px, Tippfläche 44 px) unten rechts = Sprachnachricht
   – deutlich getrennt. Antippen einer Zeile öffnet /pinnwand an dieser
   Nachricht (`?n=<id>`, kurz hervorgehoben). Keine Wisch-/Lange-Drücken-
-  Gesten in der Kachel. Einmal klein: „＋ = Mia schreibt mit · Mikro = deine
+  Gesten in der Kachel. Einmal klein: „＋ = schreiben · Mikro = deine
   Stimme“ (`pinnwand-kachel`).
-- ＋ = Mia schreibt mit (Tafel 69): Bühne mit Kopf „PINNWAND“ (Pin-Symbol),
-  „Was soll an die Pinnwand?“, Mia hört sofort zu, „Lieber tippen“ wie
-  überall. Gesagtes wird direkt angepinnt (`HelperPanel.pinFlow`): nur
-  Füllwörter weg (`cleanFillers`), Antwort „Steht für alle an der Pinnwand:
-  „…“ ✓ Angepinnt“ mit „Rückgängig“, keine Vorschau. Klingt es nach Einkauf
-  oder Termin (`pinIntent`), fragt Mia mit „An die Pinnwand“ / „Auf die
-  Einkaufsliste“ bzw. „In den Kalender“. Das Textfenster (`PinWriteSheet`)
-  bleibt nur als „Lieber Formular“.
+- ＋ = Schnelleingabe (Tafel 76, v0.72.0): Kopf „NACHRICHT AN ALLE“, ein
+  Feld, ➤ pinnt sofort an („Angepinnt: … · Rückgängig“), das Feld bleibt für
+  die nächste offen. Text kommt 1:1 an. Sprechen geht über den Mia-Knopf
+  („Schreib an die Pinnwand: …“, `localRules`) – die frühere Pinnwand-Bühne
+  ist weg. Das Textfenster (`PinWriteSheet`, mehrzeilig, 140 Zeichen) gibt es
+  nur über „Mehr Details“.
 - Mikrofon (v0.66.1): immer nur EIN Nutzer (`core/mic`: `claimMic`/`releaseMic`).
   Vor der Aufnahme endet Mias Zuhören sauber (abort, Tracks stop); nach jeder
   Aufnahme werden Tracks, Analyser und AudioContext freigegeben – auch bei
@@ -117,7 +120,7 @@ außer dauerhaft angeheftete Nachrichten.
   Sicherung, nie an die KI): Einstellungen → Daten & App → 5× auf die
   Version tippen; die letzten 20 Ereignisse. „Das war sehr kurz“ nur, wenn wirklich Ton kam. Der nachgeschobene
   Klick vom Antippen trifft nicht die Aufnahme-Zeile (450 ms Sperre).
-- Seite /pinnwand: oben rechts ＋ (Mia schreibt mit), darunter „Sprachnachricht
+- Seite /pinnwand: oben rechts ＋ (Schnelleingabe), darunter „Sprachnachricht
   an alle“ mit dem Mikro, dann alle Einträge als Karten (Antworten mit Zitat).
   Einmal: „Wischen: ← löschen · → antworten · Lange drücken: reagieren“
   (`pinnwand-gesten`).
@@ -151,11 +154,12 @@ außer dauerhaft angeheftete Nachrichten.
   (sonst spielt das iPhone nicht). Abspielen = gehört.
 - Fenster (`MemoSheet`): 👍/❤️; beim eigenen Memo „Gehört von“ (Häkchen je
   Person, antippbar) und „Memo löschen“ (Gelöscht · Rückgängig). Kein Anheften.
-- Verschwinden (`memoAlive`): 24 Std., nachdem alle im Haushalt es gehört
-  haben (`alleGehoertAm`, Haushalt = Personen im Profil, `householdNames`),
-  spätestens nach 3 Tagen.
-- Beim Start räumt `tidyMemos` (aus `KitchenHelper`) Abgelaufenes aus und
-  löscht verwaiste Töne, die älter als 10 Min sind.
+- Verschwinden (`memoAlive`): 24 Std. nach der Aufnahme – gehört oder nicht
+  (`alleGehoertAm` bleibt nur für „Gehört von“).
+- Beim Start räumt `tidyPinboard` (aus `KitchenHelper`) alles älter als 24
+  Std. aus (außer Angeheftetem; damit auch Altes aus der früheren
+  3-Tage-Regel) und löscht verwaiste Töne, die älter als 10 Min sind – der Ton
+  einer abgelaufenen Sprachnachricht geht also mit.
 
 ### Jetzt-Karte
 - Die neueste ungelesene Nachricht bzw. das neueste ungehörte Memo wird ein
@@ -179,9 +183,12 @@ außer dauerhaft angeheftete Nachrichten.
 
 ## Tests
 
+- `tests/pinnwand/vierundzwanzig.test.ts` (24 Std., Angeheftetes bleibt,
+  Aufräumen beim Start samt Ton), `tests/pinnwand/gesten.test.ts` (Kachel,
+  Reaktionen, Antworten, Pixel-Fehler).
 - `tests/pinnwand/pinnwand.test.ts` (Nachrichten, Memos, Speicher v2),
   `tests/pinnwand/memos.test.ts` (Verschwinden, Daten, Kleinigkeiten),
   `tests/pinnwand/pinnwandHooks.test.ts` (`usePins`, `useMemos`).
 - `tests/begleitung/werkzeugeNotizen.test.ts` („Aufgaben-Übersicht und
   Pinnwand“), `tests/core/sortierung.test.ts`, `tests/core/sicherung.test.ts`.
-- Durchklick `e2e/ablaeufe/alltag.mjs`: `pinnwand`.
+- Durchklick `e2e/ablaeufe/alltag.mjs`: `pinnwand`; `pinnwandgesten.mjs`.

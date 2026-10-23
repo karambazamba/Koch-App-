@@ -43,17 +43,19 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Erster Start = ruhiger Hallo-Bildschirm („Hallo, ich bin Mia.“, „Los
   geht’s“), danach höchstens EINE Frage (Look „Farbig“/„Schlicht“) mit
   Standard und Überspringen, dann die Startseite mit Beispiel-Tag.
-- Kein Rückgängig beim Hinzufügen; nur echtes Löschen zeigt „Gelöscht ·
-  Rückgängig“ (3 s). Typografischer Apostroph überall („Was gibt’s?“).
+- Rückgängig nur bei echtem Löschen („Gelöscht · Rückgängig“, 3 s) und in der
+  Schnelleingabe („Eingetragen: … · Rückgängig“); sonst meldet sich
+  Hinzufügen still. Typografischer Apostroph überall („Was gibt’s?“).
 
 ## 2. Gespräch zuerst
 - Die Begleitung (Sprache/Chat) ist der Hauptweg; jede Funktion ist auch per
   Gespräch erreichbar. Bildschirme dienen zum Nachschauen und Feinjustieren.
-- Erzählen statt ausfüllen: Jede Eingabe beginnt mit Mia (sprechen, notfalls
-  tippen). Formulare nur zum Ändern. Kein neues Eingabe-Formular ohne Mia-Weg
-  davor („＋“ holt Mia, „Lieber Formular“ bleibt). Mia ist ein runder Knopf
-  unten rechts; Tippen holt sie auf die Bühne, sie hört sofort zu. Keine
-  Schreib-Leiste.
+- ＋ = tippen, Mia = sprechen. Jedes ＋ öffnet eine Schnelleingabe (ein Feld,
+  Tastatur sofort, Satz rein, ➤ speichert; `ui/QuickEntry`, `core/schnelleingabe`).
+  Sprechen geht immer über den Mia-Knopf. Kein eigenes Mikro in Eingabefeldern
+  (die iPhone-Tastatur hat ihres). Formular nur über „Mehr Details“. Mia ist
+  ein runder Knopf unten rechts; Tippen holt sie auf die Bühne, sie hört
+  sofort zu. Keine Schreib-Leiste.
 - Lieber eine Frage mit 2–3 Knöpfen als ein Formular.
 - Machen statt fragen: Kleines selbst erledigen und kurz melden. Rückfragen nur
   bei echten Entscheidungen. Änderungen der KI immer als Vorschau mit

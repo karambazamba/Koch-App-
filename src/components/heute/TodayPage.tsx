@@ -340,7 +340,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
       case "wetter":
         return <WeatherTile size={tile.size} half={half} today={data.todayIso} minutes={minutes} termine={termine.flatMap((t) => (t.time ? [{ title: t.title, time: t.time }] : []))} tomorrow={Boolean(view.weatherTomorrow) && !edit} />;
       case "pinnwand":
-        return <PinboardTile size={tile.size} me={name || "Ich"} demo={demoDay.tiles.includes("pinnwand")} helper={helperName(data.profile)} />;
+        return <PinboardTile size={tile.size} me={name || "Ich"} demo={demoDay.tiles.includes("pinnwand")} />;
       case "timer":
         return <TimerTile size={tile.size} />;
       case "sport":

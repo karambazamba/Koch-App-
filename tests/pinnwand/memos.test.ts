@@ -14,30 +14,20 @@ const memoAt = (iso: string, author = "Lisa", dauer = 12.4) => {
 describe("Sprachnachrichten: Verschwinden", () => {
   const household = ["Felix", "Lisa", "Jonne"];
 
-  it("bleibt ohne „alle gehört“ höchstens 3 Tage", () => {
+  it("ungehört nach 24 Std. weg (ab der Aufnahme)", () => {
     const m = memoAt("2026-10-20T09:00");
     const t0 = new Date(m.erstellt).getTime();
-    expect(memoAlive(m, t0 + 71 * H)).toBe(true);
-    expect(memoAlive(m, t0 + 72 * H)).toBe(false);
+    expect(memoAlive(m, t0 + 23 * H + 59 * 60_000)).toBe(true);
+    expect(memoAlive(m, t0 + 24 * H)).toBe(false);
   });
 
-  it("verschwindet 24 Std., nachdem alle es gehört haben", () => {
+  it("„alle gehört“ verlängert nichts und verkürzt nichts – 24 Std. ab der Aufnahme", () => {
     const m = memoAt("2026-10-20T09:00");
-    let list = [m];
-    list = setMemoHeard(list, m.id, "Felix", true, household, "2026-10-20T10:00:00.000Z");
-    expect(list[0].data.alleGehoertAm).toBeNull();
-    list = setMemoHeard(list, m.id, "Jonne", true, household, "2026-10-20T12:00:00.000Z");
-    expect(list[0].data.alleGehoertAm).toBe("2026-10-20T12:00:00.000Z");
-    const heardMs = new Date("2026-10-20T12:00:00.000Z").getTime();
-    expect(memoAlive(list[0], heardMs + 23 * H)).toBe(true);
-    expect(memoAlive(list[0], heardMs + 24 * H)).toBe(false);
-    expect(pruneMemos(list, heardMs + 24 * H)).toEqual([]);
-  });
-
-  it("spätestens nach 3 Tagen, auch wenn „alle gehört“ später kam", () => {
-    const m = memoAt("2026-10-20T09:00");
-    const list = setMemoHeard(setMemoHeard([m], m.id, "Felix", true, household, "2026-10-22T20:00:00.000Z"), m.id, "Jonne", true, household, "2026-10-22T20:00:00.000Z");
-    expect(memoAlive(list[0], new Date(m.erstellt).getTime() + 72 * H)).toBe(false);
+    const list = setMemoHeard(setMemoHeard([m], m.id, "Felix", true, household, "2026-10-20T10:00:00.000Z"), m.id, "Jonne", true, household, "2026-10-20T10:00:00.000Z");
+    expect(list[0].data.alleGehoertAm).toBe("2026-10-20T10:00:00.000Z");
+    const t0 = new Date(m.erstellt).getTime();
+    expect(memoAlive(list[0], t0 + 23 * H)).toBe(true);
+    expect(pruneMemos(list, t0 + 24 * H)).toEqual([]);
   });
 
   it("Häkchen wieder weg → Frist läuft nicht mehr", () => {

@@ -1,6 +1,6 @@
 "use client";
 
-// "+" bei Termine – ein Satz genügt (Tafel 26): Text oder Sprache ist der
+// „Mehr Details“ der Schnelleingabe bei Terminen – ein Satz genügt (Tafel 26): Text ist der
 // Hauptweg („Mittwoch 12.30 Zahnarzt“). Darunter zwei Pillen [Tag] [Uhrzeit]
 // zeigen, was erkannt wurde, und dienen nur zum Korrigieren (Tag: Heute,
 // Morgen, Wochentage, Datum; Uhrzeit: Zeit-Rad oder ganztägig). Ohne Uhrzeit
@@ -11,7 +11,7 @@
 // „Eintragen“) über der Tastatur.
 
 import { useEffect, useRef, useState } from "react";
-import { CalendarDays, Check, ChevronDown, Clock, Mic, MicOff, Square, X } from "lucide-react";
+import { CalendarDays, Check, ChevronDown, Clock, X } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { TimeWheel } from "@/components/ui/TimeWheel";
 import { INPUT_BASE, LABEL, buttonClass, chipClass } from "@/components/ui/styles";
@@ -23,12 +23,10 @@ import { useEntries } from "@/lib/kalender/store";
 import { addDays, now, todayIso } from "@/lib/core/now";
 import { useKeyboardInset } from "@/lib/core/useMobileKeyboard";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
-import { useSpeechInput } from "@/lib/begleitung/useSpeechInput";
 import { act } from "@/components/heute/actions";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { PERSONS, sortBy } from "@/lib/core/sort";
 import { useProfile } from "@/lib/einstellungen/useProfile";
-import { MIC_BLOCKED, MicStrip } from "@/components/ui/MicPermission";
 
 const REMINDER_CHIPS: { value: Reminder; label: string }[] = [
   { value: "aus", label: "keine" },
@@ -62,11 +60,11 @@ function Highlight({ text, spans, shift }: { text: string; spans: Sentence["span
   );
 }
 
-export function TerminQuickAdd({ onClose, defaultDate }: { onClose: () => void; defaultDate?: string }) {
+export function TerminQuickAdd({ onClose, defaultDate, initialText = "" }: { onClose: () => void; defaultDate?: string; initialText?: string }) {
   const today = todayIso();
   const entries = useEntries();
-  const [text, setText] = useState("");
-  const [read, setRead] = useState<Sentence>({ title: "", spans: [] });
+  const [text, setText] = useState(initialText);
+  const [read, setRead] = useState<Sentence>(() => readSentence(initialText, today));
   const [manualDate, setManualDate] = useState<string | null>(null);
   /** von Hand: Uhrzeit oder "" = ganztägig; null = automatisch */
   const [manualTime, setManualTime] = useState<string | null>(null);
@@ -124,12 +122,9 @@ export function TerminQuickAdd({ onClose, defaultDate }: { onClose: () => void; 
     setPastOk(false);
     reread(value, instant);
   };
-  // Nach dem Diktat NICHT speichern – „Eintragen“ bleibt der letzte Tipp
-  const speech = useSpeechInput({ onTranscript: (t) => change(t, true), onEnd: (t) => t && change(t, true) });
 
   const save = () => {
     if (!title || past) return;
-    speech.reset();
     const entry = sanitizeEntry(
       createEntry(
         "termin",
@@ -155,12 +150,11 @@ export function TerminQuickAdd({ onClose, defaultDate }: { onClose: () => void; 
           save();
         }}
       >
-        <MicStrip />
         <div className="flex items-center gap-2">
           <div className="relative min-w-0 flex-1">
-            {!speech.listening && <Highlight text={text} spans={read.spans} shift={shift} />}
+            <Highlight text={text} spans={read.spans} shift={shift} />
             <input
-              value={speech.listening ? speech.interim || text : text}
+              value={text}
               onChange={(e) => change(e.target.value)}
               onScroll={(e) => setShift(e.currentTarget.scrollLeft)}
               placeholder="z. B. Mittwoch 12.30 Zahnarzt"
@@ -170,17 +164,6 @@ export function TerminQuickAdd({ onClose, defaultDate }: { onClose: () => void; 
               className={`${INPUT_BASE} relative h-12 w-full bg-transparent px-4`}
             />
           </div>
-          {speech.supported !== false && (
-            <button
-              type="button"
-              onClick={() => (speech.listening ? speech.stop() : speech.start())}
-              aria-label={speech.blocked ? "Mikro aus – so machst du es an" : speech.listening ? "Zuhören beenden" : "Einsprechen"}
-              aria-pressed={speech.listening}
-              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${speech.blocked ? MIC_BLOCKED : "bg-accent text-on-accent"} active:scale-95 ${speech.listening ? "animate-pulse" : ""}`}
-            >
-              {speech.blocked ? <MicOff className="h-5 w-5" strokeWidth={2.25} aria-hidden /> : speech.listening ? <Square className="h-5 w-5 fill-current" strokeWidth={2} aria-hidden /> : <Mic className="h-5 w-5" strokeWidth={2.25} aria-hidden />}
-            </button>
-          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

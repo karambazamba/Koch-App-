@@ -54,10 +54,9 @@ export type ChatTurnView = ChatTurn & {
 
 export type Proposal = { ops: ChangeOp[]; selected: Set<string> };
 /** `spontan`: Spontan kochen ("mit dem, was da ist") mit gewählten Filtern; null = aus */
-/** `since`: ab dieser Nachricht läuft das aktuelle Gespräch (Mia-Ansicht zeigt nur das, „Verlauf“ alles).
- *  `formular`: ein „＋“ hat Mia geholt – „Lieber Formular“ öffnet das Formular (bis zur ersten eigenen Nachricht) */
+/** `since`: ab dieser Nachricht läuft das aktuelle Gespräch (Mia-Ansicht zeigt nur das, „Verlauf“ alles) */
 /** `kochtipp`: offene Kochidee – Erzähltes, schon Gezeigtes, heute geplantes Gericht; `fresh` = gerade geöffnet, Vorschläge folgen */
-export type ChatState = { turns: ChatTurnView[]; proposal: Proposal | null; spontan: SpontanFilter[] | null; kochtipp?: { talk: IdeaTalk; exclude: string[]; planned: string | null; fresh?: boolean } | null; formular?: string; since?: number; /** Bereichs-Kopf auf der Bühne („KOCHIDEE“, „TERMIN“) */ topic?: string };
+export type ChatState = { turns: ChatTurnView[]; proposal: Proposal | null; spontan: SpontanFilter[] | null; kochtipp?: { talk: IdeaTalk; exclude: string[]; planned: string | null; fresh?: boolean } | null; since?: number; /** Bereichs-Kopf auf der Bühne („KOCHIDEE“, „WOCHENCHECK“) */ topic?: string };
 
 /** Neue Ideen-Antwort (Text und Ideen rechnet das Panel live) */
 export function spontanStartTurn(filters: SpontanFilter[] = [], exclude: string[] = [], extra: string[] = []): ChatTurnView {

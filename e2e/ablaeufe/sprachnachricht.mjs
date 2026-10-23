@@ -129,7 +129,7 @@ const PUT_FAILS = () => {
 
 /** Pinnwand-Seite ohne Neuladen öffnen (der Ton im Arbeitsspeicher bleibt) und abspielen */
 async function playOnBoard(page) {
-  await page.getByRole("link", { name: "Pinnwand öffnen" }).click();
+  await page.getByRole("link", { name: "Pinnwand öffnen", exact: true }).click();
   // Erst die Pinnwand abwarten und nur sichtbare Knöpfe nehmen: die Startseite (mit dem
   // Knopf in der Pinnwand-Kachel) bleibt beim Seitenwechsel versteckt im Hintergrund
   await page.waitForURL(/\/pinnwand/);

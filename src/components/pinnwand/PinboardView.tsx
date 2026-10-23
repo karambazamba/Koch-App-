@@ -9,7 +9,7 @@
 // (`?n=<id>`) springt die Seite zur Nachricht und hebt sie kurz hervor.
 
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { Pin, Plus } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD, PAGE_MAIN, PAGE_PLUS } from "@/components/ui/styles";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
@@ -17,7 +17,8 @@ import { useProfile } from "@/lib/einstellungen/useProfile";
 import { helperName } from "@/lib/einstellungen/profile";
 import { changePins, markPinsRead, reactionLine, type PinMessage } from "@/lib/pinnwand";
 import { markHintSeen, useHintSeen } from "@/lib/core/hints";
-import { askMiaFirst } from "@/lib/begleitung/open";
+import { openQuick } from "@/lib/core/schnelleingabe";
+import type { PinQuote } from "@/lib/pinnwand";
 import { PinWriteSheet, pinMetaLine } from "@/components/pinnwand/PinSheets";
 import { useBoard, type BoardItem } from "@/components/pinnwand/useBoard";
 import { MemoItem } from "@/components/pinnwand/MemoRow";
@@ -40,9 +41,9 @@ function PinBody({ pin, me }: { pin: PinMessage; me: string }) {
           </span>
         )}
         <span className="text-[16px] font-semibold leading-snug">{pin.data.text}</span>
-        <span className="text-sm text-muted">
+        <span className="flex items-center gap-1 text-sm text-muted">
+          {pin.data.pinned && <Pin className="h-[13px] w-[13px] shrink-0 text-accent" strokeWidth={2.25} aria-label="Dauerhaft angeheftet" />}
           {pinMetaLine(pin, me)}
-          {pin.data.pinned ? " · angeheftet" : ""}
         </span>
         {reacted && <span className="text-[13px] text-muted">{reacted}</span>}
       </span>
@@ -67,13 +68,19 @@ export function PinboardView() {
   const board = useBoard(me);
   const recorder = useMemoRecorder({ me });
   const canRecord = useCanRecordMemo();
-  const [writing, setWriting] = useState(false);
+  const [writing, setWriting] = useState<{ text: string; quote: PinQuote | null } | null>(null);
   const [held, setHeld] = useState<string | null>(null);
   const [focus, setFocus] = useState<string | null>(null);
   const gesturesSeen = useHintSeen("pinnwand-gesten");
+  // Einmal im Kopf: „Nachrichten verschwinden nach 24 Stunden“ – gesehen beim Verlassen der Seite
+  const dayHint = useHintSeen("pinnwand-24h") === false;
+  useEffect(() => {
+    if (dayHint) return () => markHintSeen("pinnwand-24h");
+  }, [dayHint]);
   const list = board.items;
   const heldItem = list?.find((i) => i.id === held) ?? null;
-  const write = () => askMiaFirst("pinnwand", () => setWriting(true));
+  const write = () => openQuick({ kind: "pinnwand", me, more: (text) => setWriting({ text, quote: null }) });
+  const reply = (text: string, quote: PinQuote) => setWriting({ text, quote });
 
   // Gelesen, sobald die Seite offen ist
   const hasList = Boolean(list?.length);
@@ -97,9 +104,10 @@ export function PinboardView() {
     <>
       <PageHeader
         title="Pinnwand"
+        subtitle={dayHint ? "Nachrichten verschwinden nach 24 Stunden" : undefined}
         backHref="/"
         action={
-          <button type="button" onClick={write} aria-label={`Nachricht an die Pinnwand – ${helper} schreibt mit`} className={PAGE_PLUS}>
+          <button type="button" onClick={write} aria-label="Nachricht an die Pinnwand" className={PAGE_PLUS}>
             <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
           </button>
         }
@@ -139,7 +147,7 @@ export function PinboardView() {
                     mine={mayDelete(item, me)}
                     highlight={focus === item.id}
                     onDelete={() => deleteItem(item, me)}
-                    onReply={() => replyTo(item, () => setWriting(true))}
+                    onReply={() => replyTo(item, me, reply)}
                     onHold={() => {
                       markHintSeen("pinnwand-gesten");
                       setHeld(item.id);
@@ -155,11 +163,11 @@ export function PinboardView() {
         <p className="px-1 text-center text-sm text-muted">Oder sag {helper}: „Schreib an die Pinnwand: …“</p>
       </main>
       {heldItem && (
-        <ReactionMenu item={heldItem} me={me} household={board.household} helper={helper} onWrite={() => setWriting(true)} onClose={() => setHeld(null)}>
+        <ReactionMenu item={heldItem} me={me} household={board.household} helper={helper} onWrite={reply} onClose={() => setHeld(null)}>
           <Body item={heldItem} me={me} household={board.household} />
         </ReactionMenu>
       )}
-      {writing && <PinWriteSheet me={me} onClose={() => setWriting(false)} />}
+      {writing && <PinWriteSheet me={me} initialText={writing.text} quote={writing.quote} onClose={() => setWriting(null)} />}
     </>
   );
 }

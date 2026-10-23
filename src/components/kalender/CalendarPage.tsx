@@ -23,10 +23,10 @@ import { roomBarProps } from "@/components/kalender/Items";
 import { DayAgenda, type RoomFilter } from "@/components/kalender/DayAgenda";
 import { TipDot, TipsChip, useCalendarTips } from "@/components/tipps/CalendarTips";
 import dynamic from "next/dynamic";
-import { askMiaFirst } from "@/lib/begleitung/open";
+import { openQuick } from "@/lib/core/schnelleingabe";
 
 // Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
-const AddSheet = dynamic(() => import("@/components/kalender/AddSheet").then((m) => m.AddSheet), { ssr: false });
+const TerminQuickAdd = dynamic(() => import("@/components/kalender/TerminQuickAdd").then((m) => m.TerminQuickAdd), { ssr: false });
 
 type View = "monat" | "woche" | "liste";
 const STEP = 14;
@@ -65,7 +65,8 @@ export function CalendarPage({ today, entries, name }: { today: string; entries:
   const [view, setView] = useState<View>("monat");
   const [filter, setFilter] = useState<RoomFilter>("alles");
   const [selected, setSelected] = useState(today);
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding] = useState<string | null>(null);
+  const day = view === "liste" ? today : selected;
   // Filter nur, wenn es "Arbeit" gibt (im Kennenlernen gewählt oder schon Einträge)
   const work = useWorkRoom() || entries.some((e) => e.raum === "arbeit");
   const pick = (list: DayItem[]) => list.filter((i) => filter === "alles" || i.room === filter);
@@ -84,7 +85,7 @@ export function CalendarPage({ today, entries, name }: { today: string; entries:
             ]}
           />
         </div>
-        <PagePlus label="Neu eintragen" onClick={() => askMiaFirst("eintrag", () => setAdding(true))} />
+        <PagePlus label="Neuer Termin" onClick={() => openQuick({ kind: "termin", date: day, more: setAdding })} />
       </div>
       {work && (
         <Segmented
@@ -101,7 +102,7 @@ export function CalendarPage({ today, entries, name }: { today: string; entries:
       {view === "monat" && <MonthView today={today} entries={entries} pick={pick} selected={selected} onSelect={setSelected} filter={filter} name={name} />}
       {view === "woche" && <WeekView today={today} entries={entries} pick={pick} selected={selected} onSelect={setSelected} filter={filter} />}
       {view === "liste" && <ListView today={today} entries={entries} pick={pick} filter={filter} />}
-      {adding && <AddSheet date={view === "liste" ? today : selected} name={name} onClose={() => setAdding(false)} />}
+      {adding !== null && <TerminQuickAdd defaultDate={day} initialText={adding} onClose={() => setAdding(null)} />}
     </div>
   );
 }

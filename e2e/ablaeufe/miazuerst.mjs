@@ -1,6 +1,6 @@
 // Mia zuerst – erzählen statt ausfüllen (Tafel 53): runder Knopf statt
 // Leiste, Mia fliegt in die Mitte, Karte mit „Passt“, Zustimmung per „ja“,
-// danach schließt Mia von selbst; „＋“ holt Mia, „Lieber Formular“ bleibt;
+// danach schließt Mia von selbst; „＋“ holt nie Mia (Schnelleingabe);
 // Schließen per ✕ und Zurück. Zeit: Mi 21.10. 10:30.
 import { hello, miaTippen, seedFamily, store } from "../lib.mjs";
 
@@ -34,13 +34,12 @@ export const miaZuerst = async (page, check) => {
   check(await page.getByRole("status").getByText("Übernommen", { exact: true }).isVisible(), "Meldung „Übernommen“");
   check((await store(page, "wasgibts.eintraege")).entries.length === before + 1, "Termin eingetragen");
 
-  // „＋“ auf der Termine-Kachel → Mia fragt, „Lieber Formular“ öffnet das Fenster
+  // „＋“ auf der Termine-Kachel → Schnelleingabe, nicht Mia
   const plus = page.getByRole("button", { name: "Neuer Termin" }).first();
   await plus.evaluate((el) => el.scrollIntoView({ block: "center" }));
   await plus.click();
-  check(await page.getByText("Welcher Termin? Sag einfach, wann und was.").waitFor({ timeout: 4000 }).then(() => true, () => false), "„＋“ → Mia: „Welcher Termin?“");
-  await page.getByRole("button", { name: "Lieber Formular" }).click();
-  check(await page.getByRole("dialog", { name: "Neuer Termin" }).waitFor({ timeout: 4000 }).then(() => true, () => false), "„Lieber Formular“ → Fenster „Neuer Termin“");
+  check(await page.getByRole("dialog", { name: "Schnelleingabe" }).waitFor({ timeout: 4000 }).then(() => true, () => false), "„＋“ → Schnelleingabe (nicht Mia)");
+  check(!(await page.getByRole("button", { name: "Verlauf" }).count()), "keine Mia-Bühne");
   await page.keyboard.press("Escape");
   await page.waitForTimeout(500);
 

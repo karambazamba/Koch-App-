@@ -11,6 +11,7 @@ type Span = { start: number; end: number };
 export type Sentence = { date?: string; time?: string; title: string; spans: Span[] };
 
 const WEEKDAYS = ["montag", "dienstag", "mittwoch", "donnerstag", "freitag", "samstag", "sonntag"];
+const SHORT = ["mo", "di", "mi", "do", "fr", "sa", "so"];
 const MONTHS = ["januar", "februar", "märz", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "dezember"];
 const HOUR_WORDS = ["eins", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun", "zehn", "elf", "zwölf"];
 const NUM_WORDS: Record<string, number> = { einem: 1, einen: 1, zwei: 2, drei: 3, vier: 4, fünf: 5, sechs: 6, sieben: 7, acht: 8, neun: 9, zehn: 10 };
@@ -67,6 +68,8 @@ function findDay(t: string, today: string): Hit | null {
     find(t, new RegExp(`${B}(?:am\\s+)?(\\d{1,2})\\.?\\s*(${MONTHS.join("|")})(?:\\s+(\\d{4}))?${E}`), (m) => dayMonth(Number(m[1]), MONTHS.indexOf(m[2]) + 1, m[3] ? Number(m[3]) : null, today)) ??
     find(t, new RegExp(`${B}(?:am\\s+)?(?:nächsten|kommenden)\\s+${WD}${E}`), (m) => nextWeekday(today, WEEKDAYS.indexOf(m[1]), true)) ??
     find(t, new RegExp(`${B}(?:am\\s+)?${WD}${E}`), (m) => nextWeekday(today, WEEKDAYS.indexOf(m[1]), false)) ??
+    // Getippt kurz: „Fr 16 Uhr“, „am Sa“ – nur vor Zahl/„um“ bzw. am Ende („so gut“ bleibt ein Wort)
+    find(t, new RegExp(`${B}(?:am\\s+)?(?:(mo|di|mi|do|fr|sa)\\.?(?=\\s*(?:\\d|um\\s)|\\s*$)|(so)\\.?(?=\\s*(?:\\d|um\\s)))`), (m) => nextWeekday(today, SHORT.indexOf(m[1] ?? m[2]), false)) ??
     find(t, new RegExp(`${B}nächste\\s+woche${E}`), () => nextWeekday(today, 0, true))
   );
 }

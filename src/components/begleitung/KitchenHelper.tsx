@@ -4,7 +4,7 @@ import { useSchnellnotiz, useNotes } from "@/lib/notizen";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Check } from "lucide-react";
-import { onOpenHelper, type EntryKind } from "@/lib/begleitung/open";
+import { onOpenHelper } from "@/lib/begleitung/open";
 import { learnLikes, likesFromIngredients, LIKE_WEIGHTS } from "@/lib/essen/likes";
 import { useRecipes } from "@/lib/essen/cookbook";
 import { useMealPlans } from "@/lib/essen/mealPlan";
@@ -32,6 +32,7 @@ import { spontanStartTurn, type ChatState } from "@/components/begleitung/chatTy
 import { loadSpontanFilters } from "@/lib/essen/spontanFilters";
 import dynamic from "next/dynamic";
 import { DoneNotes } from "@/components/kalender/abgeben/DoneNotes";
+import { QuickEntryHost } from "@/components/ui/QuickEntryHost";
 import { showToast } from "@/lib/core/toast";
 import { loadProfile, saveProfile } from "@/lib/einstellungen/profileStore";
 
@@ -45,16 +46,6 @@ const WochencheckSheet = dynamic(() => import("@/components/kalender/Wochencheck
 /** Nur nach echtem Löschen: kleine Meldung "Gelöscht · Rückgängig" für 3 Sekunden */
 const UNDO_SECONDS = 3;
 const DELETING = new Set(["remove_entry", "remove_note", "remove_shopping", "clear_shopping", "clear_week"]);
-
-/** „＋“ hat Mia geholt: passende Frage je Ort */
-const ENTRY_PROMPT: Record<EntryKind, string> = {
-  termin: "Welcher Termin? Sag einfach, wann und was.",
-  aufgabe: "Was soll erledigt werden?",
-  einkauf: "Was kommt auf die Liste?",
-  notiz: "Was soll ich mir merken?",
-  pinnwand: "Was soll an die Pinnwand?",
-  eintrag: "Was soll ich eintragen?",
-};
 
 const EMPTY_CHAT: ChatState = { turns: [], proposal: null, spontan: null };
 
@@ -116,7 +107,7 @@ export function KitchenHelper() {
     adoptSchnellnotiz();
     removeRetiredKeys(localStorage, sessionStorage);
     // Sprachnachrichten aufräumen (IndexedDB) – erst bei Bedarf geladen
-    void import("@/lib/pinnwand/memoAudio").then((m) => m.tidyMemos());
+    void import("@/lib/pinnwand/memoAudio").then((m) => m.tidyPinboard());
   }, []);
 
   // Kalender-Links: beim Öffnen und beim Zurückkommen abrufen, wenn fällig (höchstens alle 30 Min)
@@ -146,17 +137,10 @@ export function KitchenHelper() {
         }
         setOpen(true);
         // Neues Gespräch ab hier (Früheres steht im „Verlauf“)
-        setChat((c) => ({ ...c, since: c.turns.length, topic: stageTopic(mode, filters?.[0]) }));
+        setChat((c) => ({ ...c, since: c.turns.length, topic: stageTopic(mode) }));
         // Mia holen: sie hört gleich zu, wenn das Mikro erlaubt ist (sonst ist das Tippen-Feld dran)
         if (mode === "voice" || ask) setStart({ listen: mode === "voice", ask });
         else if (!mode && micState().granted) setStart({ listen: true });
-        // „＋“: erst Mia – „Was soll ich eintragen?“, das Formular nur auf Wunsch
-        if (mode === "eintragen") {
-          const kind = (filters?.[0] ?? "eintrag") as EntryKind;
-          setChat((c) => ({ ...c, spontan: null, kochtipp: null, formular: kind, turns: [...c.turns, { role: "assistant", local: true, text: ENTRY_PROMPT[kind] }] }));
-          if (micState().granted) setStart({ listen: true });
-          return;
-        }
         // Kochidee (Knopf in der Essen-Kachel oder Nachfrage): Mia fragt nicht, sie schlägt
         // gleich drei Gerichte vor (das Gespräch füllt sie, sobald es offen ist) – kein Mikro davor
         if (mode === "kochtipp") {
@@ -218,6 +202,7 @@ export function KitchenHelper() {
   return (
     <>
       <DoneNotes />
+      <QuickEntryHost />
       {/* Auf allen Seiten derselbe runde Mia-Knopf wie auf der Startseite (dort zeichnet ihn HomePager) */}
       {!open && !typing && !hidden && <MiaButton name={helperName(profile)} />}
 

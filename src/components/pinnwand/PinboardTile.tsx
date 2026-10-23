@@ -2,7 +2,7 @@
 
 // PINNWAND auf der Startseite (Tafel 71, Variante B): ruhig und klein. Feste
 // Höhe (wie die Wetter-Kachel daneben, auch breit nie höher), genau 2 Zeilen
-// à 30 px: die 2 neuesten Einträge der letzten 2 Tage – Text (Bild 22 px +
+// à 30 px: Angeheftetes, dann die neuesten Einträge der letzten 24 Std. – Text (Bild 22 px +
 // eine Zeile …) bzw. Sprachnachricht (▶, kleine Tonwelle, Länge). „+N“ neben
 // dem ＋, wenn es mehr gibt; kein roter Punkt, keine Zahl in Rot. Oben rechts
 // ＋ = Mia schreibt mit, unten rechts Mikro = Sprachnachricht (deutlich
@@ -20,7 +20,7 @@ import { now } from "@/lib/core/now";
 import { tileEntries } from "@/lib/pinnwand";
 import { markHintSeen, useHintSeen } from "@/lib/core/hints";
 import { clearDemoTile } from "@/lib/core/demo";
-import { askMiaFirst } from "@/lib/begleitung/open";
+import { openQuick } from "@/lib/core/schnelleingabe";
 import { useBoard } from "@/components/pinnwand/useBoard";
 import { PinWriteSheet } from "@/components/pinnwand/PinSheets";
 import { MemoMini } from "@/components/pinnwand/MemoRow";
@@ -30,7 +30,7 @@ import { useCanRecordMemo, useMemoRecorder } from "@/components/pinnwand/useMemo
 /** Beispiel-Tag: eine Familien-Nachricht (nicht von Mia) */
 const DEMO = { author: "Lisa", text: "Bringe Brot mit 🥖" };
 
-export function PinboardTile({ size = "S", me, demo = false, helper }: { size?: TileSize; me: string; demo?: boolean; helper: string }) {
+export function PinboardTile({ size = "S", me, demo = false }: { size?: TileSize; me: string; demo?: boolean }) {
   const board = useBoard(me);
   // Beispiel-Tag: erste eigene Nachricht → Beispiel verschwindet für immer
   const hasOwn = board.hasOwn;
@@ -38,7 +38,7 @@ export function PinboardTile({ size = "S", me, demo = false, helper }: { size?: 
     if (demo && hasOwn) clearDemoTile("pinnwand");
   }, [demo, hasOwn]);
   const showDemo = demo && !hasOwn;
-  const [writing, setWriting] = useState(false);
+  const [writing, setWriting] = useState<string | null>(null);
   const recorder = useMemoRecorder({ me });
   const canRecord = useCanRecordMemo();
   const hintSeen = useHintSeen("pinnwand-kachel");
@@ -46,7 +46,7 @@ export function PinboardTile({ size = "S", me, demo = false, helper }: { size?: 
   const { shown, more } = tileEntries(board.items ?? [], nowMs);
   const write = () => {
     markHintSeen("pinnwand-kachel");
-    askMiaFirst("pinnwand", () => setWriting(true));
+    openQuick({ kind: "pinnwand", me, more: setWriting });
   };
   return (
     <>
@@ -61,7 +61,7 @@ export function PinboardTile({ size = "S", me, demo = false, helper }: { size?: 
               +{more}
             </Link>
           )}
-          <QuickButton icon={Plus} label={`Nachricht an die Pinnwand – ${helper} schreibt mit`} onClick={write} />
+          <QuickButton icon={Plus} label="Nachricht an die Pinnwand" onClick={write} />
         </div>
         <div className="mt-1.5 flex h-[64px] flex-col gap-1">
           {recorder.phase !== "idle" ? (
@@ -82,6 +82,7 @@ export function PinboardTile({ size = "S", me, demo = false, helper }: { size?: 
                 <Link key={item.id} href={`/pinnwand?n=${item.id}`} data-zeile className="flex h-[30px] items-center gap-2" aria-label={`${item.pin.data.author}: ${item.pin.data.text} – auf der Pinnwand öffnen`}>
                   <PersonAvatar name={item.pin.data.author} size={22} soft />
                   <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">{item.pin.data.text}</span>
+                  {item.pinned && <Pin className="h-[13px] w-[13px] shrink-0 text-tile-accent" strokeWidth={2.25} aria-label="angeheftet" />}
                 </Link>
               ),
             )
@@ -93,11 +94,11 @@ export function PinboardTile({ size = "S", me, demo = false, helper }: { size?: 
         </div>
         <MemoNote text={recorder.note} onResend={recorder.unsent ? recorder.resend : undefined} />
         <div className="mt-auto flex items-end justify-between gap-2">
-          {hintSeen === false && !recorder.note ? <span className="min-w-0 truncate text-[11px] font-semibold text-muted">＋ = {helper} schreibt mit · Mikro = deine Stimme</span> : <span />}
+          {hintSeen === false && !recorder.note ? <span className="min-w-0 truncate text-[11px] font-semibold text-muted">＋ = schreiben · Mikro = deine Stimme</span> : <span />}
           {canRecord && <MemoMic recorder={recorder} size={34} />}
         </div>
       </section>
-      {writing && <PinWriteSheet me={me} onClose={() => setWriting(false)} />}
+      {writing !== null && <PinWriteSheet me={me} initialText={writing} onClose={() => setWriting(null)} />}
     </>
   );
 }

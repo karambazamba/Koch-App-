@@ -2,16 +2,17 @@
 
 // Was man mit einer Nachricht auf der Pinnwand tun kann – überall gleich
 // (Wischen, Lange-Drücken-Menü, VoiceOver-Aktionen): löschen (nur eigene,
-// „Gelöscht · Rückgängig“), reagieren (eine je Person), antworten (Mia
-// schreibt mit, die Antwort trägt ein Zitat), an Mia weiterleiten.
+// „Gelöscht · Rückgängig“), reagieren (eine je Person), antworten
+// (Schnelleingabe, die Antwort trägt ein Zitat), an Mia weiterleiten.
 
 import { now } from "@/lib/core/now";
 import { showDeleted } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
-import { canDelete, changeMemos, changePins, removeMemo, removePin, toggleMemoReaction, toggleReaction, type Reaction } from "@/lib/pinnwand";
+import { canDelete, changeMemos, changePins, removeMemo, removePin, toggleMemoReaction, toggleReaction, type PinQuote, type Reaction } from "@/lib/pinnwand";
 import { quoteOf } from "@/lib/pinnwand/schreiben";
 import { forgetMemo, stopMemo } from "@/lib/pinnwand/memoPlayer";
-import { openHelper, replyOnPinboard } from "@/lib/begleitung/open";
+import { openHelper } from "@/lib/begleitung/open";
+import { openQuick } from "@/lib/core/schnelleingabe";
 import { buzz } from "@/components/heute/actions";
 import type { BoardItem } from "@/components/pinnwand/useBoard";
 
@@ -42,9 +43,10 @@ export function reactTo(item: BoardItem, reaction: Reaction, me: string) {
   else changePins((all) => toggleReaction(all, item.id, reaction, me, stamp()));
 }
 
-/** Antworten: Mia schreibt mit, die neue Nachricht zitiert diese */
-export function replyTo(item: BoardItem, openForm: () => void) {
-  replyOnPinboard(quoteOf(item.kind === "pin" ? item.pin : { id: item.id, data: { author: item.memo.data.author } }), openForm);
+/** Antworten: Schnelleingabe „NACHRICHT AN ALLE“, die neue Nachricht zitiert diese */
+export function replyTo(item: BoardItem, me: string, openForm: (text: string, quote: PinQuote) => void) {
+  const quote = quoteOf(item.kind === "pin" ? item.pin : { id: item.id, data: { author: item.memo.data.author } });
+  openQuick({ kind: "pinnwand", me, quote, more: (text) => openForm(text, quote) });
 }
 
 /** An Mia weiterleiten: sie macht daraus z. B. einen Termin oder eine Aufgabe (Vorschau mit „Übernehmen“) */

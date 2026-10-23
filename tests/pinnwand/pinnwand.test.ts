@@ -1,5 +1,5 @@
 // Pinnwand: Nachrichten (bis 140 Zeichen, Reaktionen, gelesen, angeheftet,
-// nach 3 Tagen weg), Memos (24 Std. nach „alle gehört“, spätestens 3 Tage)
+// nach 24 Std. weg), Memos (24 Std. nach der Aufnahme, gehört oder nicht)
 // und der Speicher `wasgibts.pinnwand` v2 (Migration v1, Rückgängig).
 import { beforeEach, describe, expect, it } from "vitest";
 import { at, memoryStorage } from "../helpers";
@@ -78,15 +78,15 @@ describe("Nachrichten", () => {
     expect(p.data).toEqual({ text: "Hi du", author: "Ich", reactions: { Lisa: "👍" }, replyTo: null, readBy: [], pinned: false });
   });
 
-  it("nach 3 Tagen weg – außer angeheftet; neueste zuerst", () => {
+  it("nach 24 Std. weg (ab dem Schreiben) – außer dauerhaft angeheftet; neueste zuerst", () => {
     const old = pin("alt");
-    at("2026-10-24T09:00");
+    at("2026-10-22T20:00");
     const mid = pin("mitte");
-    at("2026-10-25T08:59");
+    at("2026-10-23T08:59");
     const fresh = pin("neu");
     const kept = setPinPinned([old], old.id, true, "s")[0];
     expect(visiblePins([old, mid, fresh], ms()).map((m) => m.data.text)).toEqual(["neu", "mitte", "alt"]);
-    at("2026-10-25T09:00");
+    at("2026-10-23T09:00");
     expect(visiblePins([old, mid, fresh], ms()).map((m) => m.data.text)).toEqual(["neu", "mitte"]);
     expect(prunePins([old, kept, mid], ms()).map((m) => m.data.text)).toEqual(["alt", "mitte"]);
     expect(setPinPinned([old, mid], old.id, true, "s")[1]).toBe(mid);
@@ -197,14 +197,13 @@ describe("Memos", () => {
     expect(setMemoHeard([m, other], m.id, "Felix", true, house, "t")[1]).toBe(other);
   });
 
-  it("verschwinden: 24 Std. nach „alle gehört“, spätestens nach 3 Tagen", () => {
+  it("verschwinden: 24 Std. nach der Aufnahme – gehört oder nicht", () => {
     const m = memo();
     const heard = { ...m, data: { ...m.data, alleGehoertAm: now().toISOString() } };
     expect(memoAlive(heard, ms() + DAY - 1)).toBe(true);
-    expect(memoAlive(heard, ms() + DAY)).toBe(false);
-    expect(memoAlive(m, ms() + 3 * DAY - 1)).toBe(true);
-    expect(memoAlive(m, ms() + 3 * DAY)).toBe(false);
-    expect(pruneMemos([m, heard], ms() + DAY)).toEqual([m]);
+    expect(memoAlive(m, ms() + DAY - 1)).toBe(true);
+    expect(memoAlive(m, ms() + DAY)).toBe(false);
+    expect(pruneMemos([m, heard], ms() + DAY)).toEqual([]);
   });
 
   it("anzeigen, hinzufügen, entfernen, reagieren", () => {

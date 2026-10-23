@@ -4,12 +4,13 @@
 // = Memo-ID, Ton als ArrayBuffer + Typ) auf diesem Gerät, für alle Personen
 // des Haushalts; klappt IndexedDB nicht, im Arbeitsspeicher, bis die App
 // geschlossen wird. Nicht in „Daten sichern“. Verwaiste Töne (Memo abgelaufen oder gelöscht) räumt
-// `tidyMemos` (über `sweepMemoAudio`) beim Start weg.
+// `tidyPinboard` (über `sweepMemoAudio`) beim Start weg.
 
 import { micLog } from "@/lib/core/micLog";
 import { now } from "@/lib/core/now";
 import { pruneMemos, type MemoMessage } from "@/lib/pinnwand/memo";
-import { changeMemos, loadMemos } from "@/lib/pinnwand/store";
+import { prunePins } from "@/lib/pinnwand/model";
+import { changeMemos, loadMemos, loadPins } from "@/lib/pinnwand/store";
 
 /** Wo der Ton liegt: auf dem Gerät (IndexedDB) oder nur, bis die App geschlossen wird */
 export type MemoAudioPlace = "geraet" | "sitzung";
@@ -149,10 +150,12 @@ async function sweepMemoAudio(liveIds: string[], nowMs = now().getTime()): Promi
   }
 }
 
-/** Beim Start: abgelaufene Memos austragen und ihren Ton löschen */
-export async function tidyMemos(): Promise<void> {
+/** Beim Start: alles älter als 24 Std. austragen (außer Angeheftetem) und den Ton abgelaufener Memos löschen */
+export async function tidyPinboard(): Promise<void> {
+  const nowMs = now().getTime();
   const stored = loadMemos();
-  const alive = pruneMemos(stored, now().getTime());
-  if (alive.length !== stored.length) changeMemos((all) => all);
+  const alive = pruneMemos(stored, nowMs);
+  // Speichern räumt beides weg (Nachrichten und Memos)
+  if (alive.length !== stored.length || prunePins(loadPins(), nowMs).length !== loadPins().length) changeMemos((all) => all);
   await sweepMemoAudio(alive.map((m) => m.id));
 }

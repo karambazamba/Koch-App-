@@ -1,7 +1,7 @@
 "use client";
 
 // Pinnwand als eine Liste: Text-Nachrichten und Sprachnachrichten nach Zeit
-// gemischt (neueste zuerst), dazu der Haushalt (für „alle gehört“) und ob es
+// gemischt (Angeheftetes oben, sonst neueste zuerst), dazu der Haushalt (für „alle gehört“) und ob es
 // Ungelesenes/Ungehörtes gibt. Für Kachel und Seite.
 
 import { now } from "@/lib/core/now";
@@ -9,7 +9,7 @@ import { useProfile } from "@/lib/einstellungen/useProfile";
 import { PINS, sortBy, via } from "@/lib/core/sort";
 import { hasUnread, householdNames, memoUnheard, useMemos, usePins, visibleMemos, visiblePins, type MemoMessage, type PinMessage } from "@/lib/pinnwand";
 
-export type BoardItem = { kind: "pin"; id: string; at: string; pin: PinMessage } | { kind: "memo"; id: string; at: string; memo: MemoMessage };
+export type BoardItem = { kind: "pin"; id: string; at: string; pinned: boolean; pin: PinMessage } | { kind: "memo"; id: string; at: string; pinned?: undefined; memo: MemoMessage };
 
 export function useBoard(me: string) {
   const pins = usePins();
@@ -23,7 +23,7 @@ export function useBoard(me: string) {
     pins === undefined
       ? undefined
       : [
-          ...visiblePins(pins, nowMs).map((pin): BoardItem => ({ kind: "pin", id: pin.id, at: pin.erstellt, pin })),
+          ...visiblePins(pins, nowMs).map((pin): BoardItem => ({ kind: "pin", id: pin.id, at: pin.erstellt, pinned: pin.data.pinned, pin })),
           ...liveMemos.map((memo): BoardItem => ({ kind: "memo", id: memo.id, at: memo.erstellt, memo })),
         ];
   const sorted = items && sortBy(items, ...via((i: BoardItem) => ({ pinned: i.kind === "pin" && i.pin.data.pinned, at: i.at }), PINS));

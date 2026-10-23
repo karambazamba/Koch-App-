@@ -233,21 +233,31 @@ export async function tippenFeld(page) {
   return box;
 }
 
-/** „＋“ holt erst Mia – „Lieber Formular“ öffnet das gewohnte Fenster */
-export async function lieberFormular(page) {
-  const link = page.getByRole("button", { name: "Lieber Formular" });
+/** „＋“ öffnet die Schnelleingabe – „Mehr Details“ öffnet das volle Fenster */
+export async function mehrDetails(page) {
+  const link = page.getByRole("dialog", { name: "Schnelleingabe" }).getByRole("button", { name: "Mehr Details" });
   await link.waitFor({ timeout: 5000 });
   await link.click();
   await page.waitForTimeout(500);
 }
 
-/** Auf der Pinnwand-Seite: ＋ → Mia schreibt mit (hier getippt) → direkt angepinnt → Bühne zu */
-export async function pinnwandSchreiben(page, text) {
-  await page.getByRole("button", { name: /^Nachricht an die Pinnwand/ }).first().click();
-  const box = await tippenFeld(page);
+/** Schnelleingabe: Satz tippen, ➤ (Return), Fenster zu */
+export async function schnell(page, text, { close = true } = {}) {
+  const sheet = page.getByRole("dialog", { name: "Schnelleingabe" });
+  await sheet.waitFor({ timeout: 5000 });
+  const box = sheet.getByRole("textbox");
   await box.fill(text);
   await box.press("Enter");
-  await page.getByText("✓ Angepinnt", { exact: false }).last().waitFor({ timeout: 5000 });
-  await page.getByRole("dialog").last().getByRole("button", { name: "Schließen" }).click();
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(300);
+  if (close) {
+    await sheet.getByRole("button", { name: "Schließen" }).last().click();
+    await page.waitForTimeout(400);
+  }
+  return sheet;
+}
+
+/** Pinnwand: ＋ → Schnelleingabe „NACHRICHT AN ALLE“ → ➤ = angepinnt */
+export async function pinnwandSchreiben(page, text) {
+  await page.getByRole("button", { name: /^Nachricht an die Pinnwand/ }).first().click();
+  await schnell(page, text);
 }

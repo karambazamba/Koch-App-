@@ -1,5 +1,4 @@
-// Mia zuerst (Tafel 53): „＋“ holt erst Mia, das Formular bleibt über „Lieber
-// Formular“; lange drücken = sprechen, Loslassen = absenden; Bewegungen nur
+// Mia zuerst (Tafel 53): lange drücken = sprechen, Loslassen = absenden; Bewegungen nur
 // über transform/opacity (flüssig auf alten Handys), reduzierte Bewegung = nur
 // Überblenden; keine Schreib-Leiste mehr.
 import { readFileSync, existsSync } from "node:fs";
@@ -8,23 +7,7 @@ import { fakeWindow, noBrowser } from "../helpers";
 
 afterEach(() => noBrowser());
 
-describe("„＋“: erst Mia, Formular auf Wunsch", () => {
-  it("askMiaFirst öffnet Mia im Modus „eintragen“ mit Art, das Formular kommt einmal", async () => {
-    fakeWindow();
-    vi.resetModules();
-    const { askMiaFirst, hasFormular, onOpenHelper, takeFormular } = await import("@/lib/begleitung/open");
-    const seen: unknown[][] = [];
-    const off = onOpenHelper((...args) => seen.push(args));
-    const form = vi.fn();
-    askMiaFirst("termin", form);
-    expect(seen).toEqual([["eintragen", undefined, ["termin"]]]);
-    expect(hasFormular()).toBe(true);
-    takeFormular()?.();
-    expect(form).toHaveBeenCalledOnce();
-    expect(takeFormular()).toBeNull();
-    off();
-  });
-
+describe("Mia hören", () => {
   it("Loslassen nach langem Drücken erreicht die offene Mia", async () => {
     fakeWindow();
     vi.resetModules();

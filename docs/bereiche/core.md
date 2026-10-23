@@ -104,10 +104,40 @@ Sortier-Regeln, Design-System, Service Worker, App-Icons und Manifest.
 
 - `toast.ts`: eine Meldung zugleich (`ToastHost`), Standard 6 s.
   `showDeleted` „Gelöscht · Rückgängig“ 3 s, `showDone` „Erledigt ·
-  Rückgängig“ 4 s. Hinzufügen und Übernehmen melden sich still.
+  Rückgängig“ 4 s. Hinzufügen und Übernehmen melden sich still – außer in
+  der Schnelleingabe („Eingetragen: … · Rückgängig“, 4 s).
 - `undo.ts`: jede Änderung legt ihr Zurücknehmen ab (höchstens 20, nur diese
   Sitzung). Das gelieferte Zurücknehmen wirkt nur einmal. `undoLast` = „Mach
   das rückgängig“ (letzte noch gültige).
+
+### Schnelleingabe („＋ = tippen, Mia = sprechen“, Tafel 76)
+
+- Jedes ＋ ruft `openQuick({ kind, date?, more?, me?, quote?, shopping? })`
+  (`core/schnelleingabe.ts`); `QuickEntryHost` (im KitchenHelper, überall)
+  zeigt dann `ui/QuickEntry.tsx` – geladen erst beim ersten ＋.
+- Fenster über `Sheet` (✕, Danebentippen, Runterwischen, Zurück), unten über
+  der Tastatur: Kopf in der Farbe des Bereichs („NEUER TERMIN“, „NEUE
+  AUFGABE“, „AUF DIE LISTE“, „NEUE NOTIZ“, „NACHRICHT AN ALLE“, Token
+  `--app-tile-<id>-ac`), EIN Feld (16 px, `autoFocus`), rechts das orange ➤
+  (leer blass, tut nichts). Kein Mikro – sprechen geht über den Mia-Knopf.
+- Live-Chips ohne KI (`readQuick`, `quickChips`; dahinter `kalender/sentence`
+  und `kalender/quick`): Termin „Fr, 23. Okt · 16:00“ (ohne Uhrzeit
+  „ganztägig“) + „Familie“/„Arbeit“; Aufgabe „bis Mi, 28. Okt“/„heute“/kein
+  Tag + „Für mich“. Antippen ändert (Tag-Leiste, Familie ↔ Arbeit, nur wenn
+  es Arbeit gibt); nötig sind sie nie. Kurze Wochentage („Fr 16 Uhr“, „am
+  Sa“) erkennt `readSentence` seit v0.72.0.
+- ➤ oder Return speichert sofort (`ui/quickSave.ts`): Termin (mit Uhrzeit 30
+  Min Erinnerung), Aufgabe (Startseite: heute; Aufgaben-Seite: ohne Tag),
+  Einkauf (alles auf die Liste, Unsicheres so wie getippt), Notiz, Pinnwand
+  (mit Zitat bei Antworten). Meldung „Eingetragen: …“ / „Auf der Liste: …“ /
+  „Notiert: …“ / „Angepinnt: …“ mit Rückgängig (auch `undoLast`). Das Feld
+  bleibt leer und offen für die nächste.
+- „Mehr Details“ schließt und öffnet das volle Formular mit dem Getippten
+  (`TerminQuickAdd`, `TaskQuickAdd`, Einkauf-Fenster, `PinWriteSheet`,
+  Notiz-Auswahl). Auch dort kein eigenes Mikro mehr.
+- Kalender-＋ und Tag-＋ = „NEUER TERMIN“ mit dem gewählten Tag; das frühere
+  Fenster „Was möchtest du eintragen?“ (`AddSheet`) ist weg. Kalender
+  übernehmen: Einstellungen → Kalender.
 
 ### Sortieren (`sort.ts`)
 
@@ -203,6 +233,8 @@ Sortier-Regeln, Design-System, Service Worker, App-Icons und Manifest.
 - `tests/core/navigation.test.ts`, `wischen.test.ts`,
   `rueckgaengig.test.ts`.
 - `tests/core/sortierung.test.ts`, `reihenfolgen.test.ts`.
+- `tests/core/schnelleingabe.test.ts` (Satz → Chips, Speichern + Rückgängig,
+  leer = nichts, jedes ＋ ohne Mia und Mikro); Durchklick `schnelleingabe`.
 - `tests/core/oberflaeche.test.ts` (Hallo, Homescreen-Hinweis, Icon-Farbe,
   Hell/Dunkel).
 - `tests/app/regeln.test.ts` (Speicher nur übers Verzeichnis, Zeit nur über

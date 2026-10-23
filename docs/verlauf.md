@@ -2114,13 +2114,23 @@ Fehler in `docs/aufraeumen-nachher.md`.
   ersetzt und trägt Fehlendes ein. Kochtipp-Karte, Schnellantworten und die
   alte Einzelauswahl (`pickCookDish`, `parseCookWish`) sind entfernt.
 
-## Pinnwand – ＋ schreiben, Mikro sprechen, wischen & reagieren (Tafel 69–71, v0.72.0)
+## Schnelleingabe + Pinnwand (Tafel 69–72, 76, v0.72.0)
 
-- Felix: Man will in die Pinnwand reinsprechen, Nachrichten wie bei WhatsApp
-  wegwischen und mit Daumen/Herz beantworten; die Kachel soll klein bleiben.
-  Jetzt: Kachel fest 156 px mit 2 Zeilen und „+N“, ＋ = Mia schreibt mit
-  (direkt angepinnt, Rückfrage bei Einkauf/Termin), Mikro = Sprachnachricht;
-  auf der Seite links wischen = löschen (eigene), rechts = antworten (Zitat),
-  lange drücken = 👍 ❤️ 😂 😮 🙏 + Menü. Reaktionen je Person (Speicher v3),
-  Mias Gruß im Beispiel-Tag ersetzt durch eine Familien-Nachricht.
-
+- Felix: „＋ = tippen, Mia = sprechen.“ Jedes ＋ öffnet jetzt eine
+  Schnelleingabe (ein Feld, Tastatur sofort, ➤ speichert, „Eingetragen: … ·
+  Rückgängig“, Feld bleibt offen) mit Live-Chips ohne KI (Tag · Uhrzeit,
+  Familie/Arbeit, „bis …“, „Für mich“). Kein eigenes Mikro mehr in
+  Eingabefeldern; Formulare nur über „Mehr Details“. Kalender-＋ = „NEUER
+  TERMIN“ mit gewähltem Tag (das Fenster „Was möchtest du eintragen?“ ist
+  weg). „＋ holt Mia“ und „Lieber Formular“ sind weg.
+- Pinnwand: Man will in die Pinnwand reinsprechen, Nachrichten wie bei
+  WhatsApp wegwischen und mit Daumen/Herz beantworten; die Kachel soll klein
+  bleiben. Jetzt: Kachel fest 156 px mit 2 Zeilen und „+N“, ＋ =
+  Schnelleingabe „NACHRICHT AN ALLE“, Mikro = Sprachnachricht; auf der Seite
+  links wischen = löschen (eigene), rechts = antworten (Zitat), lange drücken
+  = 👍 ❤️ 😂 😮 🙏 + Menü. Reaktionen je Person (Speicher v3), Mias Gruß im
+  Beispiel-Tag ersetzt durch eine Familien-Nachricht.
+- Alles an der Pinnwand verschwindet 24 Std. nach dem Schreiben bzw. der
+  Aufnahme (gehört oder nicht, Ton gleich mit) – außer „Dauerhaft anheften“
+  (oben, kleine Nadel). Beim Start wird Altes aus der 3-Tage-Zeit still
+  weggeräumt. Einmal im Kopf: „Nachrichten verschwinden nach 24 Stunden“.
