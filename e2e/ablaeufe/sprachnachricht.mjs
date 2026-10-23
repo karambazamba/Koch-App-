@@ -227,3 +227,47 @@ export const kachelKnoepfe = async (page, check) => {
   });
   check(problems.length === 0, `Kachel-Knöpfe mit Abstand ${problems.slice(0, 4).join(" | ")}`);
 };
+
+/**
+ * Aufnahme-Leiste in der Kachel (Tafel 80): EINE Pille unter dem Kopf, ➤
+ * rechts ganz sichtbar (nicht abgeschnitten, nicht über dem Mikro), ＋ und
+ * Mikro während der Aufnahme weg, unten „Sprachnachricht“ statt des alten
+ * Hinweises; ➤ → Nachricht oben in der Kachel, kurz „✓ Gesendet“. Auf dem
+ * jeweiligen Gerät und zusätzlich auf dem iPhone SE (kleinste Kachel).
+ */
+export const aufnahmeLeiste = async (_page, check, device) => {
+  for (const d of [device, "iPhone SE"]) {
+    const { page, browser } = await micPage(d);
+    try {
+      await hello(page);
+      await seedFamily(page);
+      await page.reload();
+      await page.waitForTimeout(1000);
+      const tile = page.getByRole("region", { name: "Pinnwand" });
+      await tile.evaluate((el) => el.scrollIntoView({ block: "center" }));
+      check(await tile.getByText("Sprachnachricht", { exact: true }).isVisible(), `${d}: unten „Sprachnachricht“`);
+      check(!(await tile.getByText(/＋ = schreiben/).count()), `${d}: alter Hinweis weg`);
+      const before = await memoCount(page);
+      const mic = await tile.getByRole("button", { name: "Aufnahme starten" }).boundingBox();
+      await tap(page, mic.x + mic.width / 2, mic.y + mic.height / 2);
+      const send = tile.getByRole("button", { name: "Senden" });
+      await send.waitFor({ timeout: 6000 });
+      await page.waitForTimeout(1300);
+      const t = await tile.boundingBox();
+      const s = await send.boundingBox();
+      const trash = await tile.getByRole("button", { name: "Verwerfen" }).boundingBox();
+      check(s.x + s.width <= t.x + t.width - 4 && s.y + s.height <= t.y + t.height - 4 && s.width >= 36, `${d}: ➤ rechts ganz sichtbar (${Math.round(s.width)} px)`);
+      check(Math.abs(s.y - trash.y) < 8 && trash.x < s.x, `${d}: eine Leiste – 🗑 links, ➤ rechts`);
+      check(!(await tile.getByRole("button", { name: /^Nachricht an die Pinnwand/ }).count()) && !(await tile.getByRole("button", { name: "Aufnahme starten" }).count()), `${d}: ＋ und Mikro während der Aufnahme weg`);
+      check(await tile.getByText("Aufnahme läuft – sprich einfach").isVisible(), `${d}: „Aufnahme läuft – sprich einfach“`);
+      await send.click();
+      for (let i = 0; i < 30 && (await memoCount(page)) === before; i++) await page.waitForTimeout(100);
+      check((await memoCount(page)) === before + 1, `${d}: ➤ → gesendet`);
+      check(await tile.getByText("Gesendet").isVisible(), `${d}: „✓ Gesendet“`);
+      const first = tile.locator("[data-zeile]").first();
+      check(/Sprachnachricht von/.test((await first.getAttribute("aria-label")) ?? ""), `${d}: neue Sprachnachricht oben`);
+    } finally {
+      await browser.close();
+    }
+  }
+};

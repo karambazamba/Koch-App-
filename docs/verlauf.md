@@ -2146,3 +2146,11 @@ Fehler in `docs/aufraeumen-nachher.md`.
   (auch ＋ und lange drücken), „Schnell eintragen“ nur bei Wiederkehrendem.
   Leiste bleibt oben mit „⌂ Heute“. Mia versteht „Was könnten wir morgen
   essen?“ und „Was gibt’s morgen?“ auch ohne KI.
+
+## Pinnwand: Aufnahme-Leiste & Hinweis (Tafel 80, v0.73.0)
+
+- Felix (Video, v0.70): Beim Aufnehmen lag Senden unten rechts auf dem Mikro,
+  der Hinweis „＋ = schreiben · Mik…“ war abgeschnitten. Jetzt: EINE Leiste
+  wie bei WhatsApp (🗑 · Zeit · Welle · ➤ rechts), ＋ und Mikro währenddessen
+  weg, unten nur „Sprachnachricht“, beim ersten Mal „schreiben“ unter dem ＋,
+  nach dem Senden „✓ Gesendet“.

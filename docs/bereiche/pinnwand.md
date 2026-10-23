@@ -87,6 +87,17 @@ verschwinden nach 24 Stunden“ (`pinnwand-24h`).
   Zeile „Lisa · 7:48“, „Du · gestern“ oder „21.10.“ (`pinMeta`).
 
 ### Kachel und Seite
+- Aufnahme in der Kachel (Tafel 80): EINE weiße Pille (44 px) statt der
+  Zeilen – links Mülleimer, roter Punkt, Zeit, Tonwelle (`MemoWave fit`: wird
+  schmaler, nie abgeschnitten), rechts ➤ (38 px, Tippfläche 44 px). ＋ und
+  Mikro sind währenddessen weg; gesendet wird nur über ➤ (in der Kachel nur
+  antippen, kein Halten: `MemoMic tapOnly`). Darunter „Aufnahme läuft – sprich
+  einfach“ und klein „➤ senden · 🗑 verwerfen“ (Linien-Symbole). Passt in S
+  (SE) und M. In Ruhe unten links nur „Sprachnachricht“, rechts das Mikro;
+  beim ersten Mal ein kleines Schild „schreiben“ unter dem ＋ (weg nach dem
+  ersten Tipp auf ＋ oder nach 2 Besuchen: `pinnwand-kachel-1`,
+  `pinnwand-kachel`). Nach dem Senden steht die Sprachnachricht oben (zart
+  hervorgehoben), unten 1,5 s „✓ Gesendet“.
 - Kachel (Rosé, Tafel 71 B): feste Höhe 156 px (wie die Wetter-Kachel
   daneben, auch breit nie höher), genau 2 Zeilen à 30 px: Angeheftetes
   zuerst, dann die neuesten Einträge der letzten 24 Std. (`tileEntries`): Text = Bild 22 px + eine
@@ -96,8 +107,7 @@ verschwinden nach 24 Stunden“ (`pinnwand-24h`).
   Schnelleingabe, Mikro (34 px, Tippfläche 44 px) unten rechts = Sprachnachricht
   – deutlich getrennt. Antippen einer Zeile öffnet /pinnwand an dieser
   Nachricht (`?n=<id>`, kurz hervorgehoben). Keine Wisch-/Lange-Drücken-
-  Gesten in der Kachel. Einmal klein: „＋ = schreiben · Mikro = deine
-  Stimme“ (`pinnwand-kachel`).
+  Gesten in der Kachel. Hinweis siehe Aufnahme (Tafel 80).
 - ＋ = Schnelleingabe (Tafel 76, v0.72.0): Kopf „NACHRICHT AN ALLE“, ein
   Feld, ➤ pinnt sofort an („Angepinnt: … · Rückgängig“), das Feld bleibt für
   die nächste offen. Text kommt 1:1 an. Sprechen geht über den Mia-Knopf
@@ -191,4 +201,6 @@ verschwinden nach 24 Stunden“ (`pinnwand-24h`).
   `tests/pinnwand/pinnwandHooks.test.ts` (`usePins`, `useMemos`).
 - `tests/begleitung/werkzeugeNotizen.test.ts` („Aufgaben-Übersicht und
   Pinnwand“), `tests/core/sortierung.test.ts`, `tests/core/sicherung.test.ts`.
-- Durchklick `e2e/ablaeufe/alltag.mjs`: `pinnwand`; `pinnwandgesten.mjs`.
+- Durchklick `e2e/ablaeufe/alltag.mjs`: `pinnwand`; `pinnwandgesten.mjs`;
+  `aufnahmeLeiste` (`sprachnachricht.mjs`, auch iPhone SE);
+  `tests/pinnwand/aufnahmeleiste.test.ts`.

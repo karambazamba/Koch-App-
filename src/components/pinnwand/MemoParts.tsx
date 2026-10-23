@@ -16,14 +16,14 @@ import { LOCK_PX, timeWarns } from "@/lib/pinnwand/recorderState";
 import { micRanThisSession } from "@/lib/core/mic";
 import type { MemoRecorder } from "@/components/pinnwand/useMemoRecorder";
 
-/** Tonwelle: Balken, gespielt = Akzent, Rest blass */
-export function MemoWave({ wave, progress = 0, className = "" }: { wave: number[]; progress?: number; className?: string }) {
+/** Tonwelle: Balken, gespielt = Akzent, Rest blass. `fit`: Balken werden schmaler statt abgeschnitten (kleine Kachel) */
+export function MemoWave({ wave, progress = 0, className = "", fit = false }: { wave: number[]; progress?: number; className?: string; fit?: boolean }) {
   return (
-    <span className={`flex h-6 items-center gap-[2px] ${className}`} aria-hidden>
+    <span className={`flex h-6 items-center ${fit ? "gap-px" : "gap-[2px]"} ${className}`} aria-hidden>
       {wave.map((v, i) => (
         <span
           key={i}
-          className={`w-[3px] shrink-0 rounded-full bg-tile-accent transition-opacity duration-150 ${(i + 0.5) / wave.length <= progress ? "opacity-100" : "opacity-35"}`}
+          className={`${fit ? "min-w-0 max-w-[3px] flex-1" : "w-[3px] shrink-0"} rounded-full bg-tile-accent transition-opacity duration-150 ${(i + 0.5) / wave.length <= progress ? "opacity-100" : "opacity-35"}`}
           style={{ height: `${Math.round(18 + v * 82)}%` }}
         />
       ))}
@@ -32,7 +32,7 @@ export function MemoWave({ wave, progress = 0, className = "" }: { wave: number[
 }
 
 /** Mikro für Sprachnachrichten: antippen = Aufnahme startet (läuft frei); halten = loslassen sendet, hochschieben = frei sprechen */
-export function MemoMic({ recorder, size = 26 }: { recorder: MemoRecorder; size?: number }) {
+export function MemoMic({ recorder, size = 26, tapOnly = false }: { recorder: MemoRecorder; size?: number; tapOnly?: boolean }) {
   const press = useRef<{ at: number; y: number; up: boolean } | null>(null);
   /** Der Klick, den der Browser nach dem Loslassen schickt, gehört noch zum Start */
   const swallowClick = useRef(false);
@@ -48,7 +48,8 @@ export function MemoMic({ recorder, size = 26 }: { recorder: MemoRecorder; size?
       aria-label={blocked ? "Mikro aus – so machst du es an" : freeMode ? "Senden" : active ? "Aufnahme läuft – loslassen zum Senden" : "Aufnahme starten"}
       aria-pressed={active}
       onPointerDown={(e) => {
-        if (e.button !== 0 || freeMode) return;
+        // Kachel: nur antippen (das Mikro verschwindet während der Aufnahme – Halten ginge ins Leere)
+        if (e.button !== 0 || freeMode || tapOnly) return;
         // Erstes Mal in dieser Sitzung: erst beim Loslassen starten (Klick) – auf dem
         // iPhone erscheint die Mikro-Frage nur bei einem echten Antippen
         if (recorder.phase === "idle" && !micRanThisSession()) return;
@@ -91,8 +92,8 @@ export function MemoMic({ recorder, size = 26 }: { recorder: MemoRecorder; size?
         }
         // Während freier Aufnahme: Mikro nochmal = senden
         if (freeMode && e.detail !== 0) return recorder.send();
-        // Erstes Antippen in dieser Sitzung: startet beim Loslassen, läuft frei
-        if (e.detail !== 0 && recorder.phase === "idle" && !micRanThisSession()) return void recorder.start("tippen");
+        // Erstes Antippen in dieser Sitzung (bzw. Kachel): startet beim Loslassen, läuft frei
+        if (e.detail !== 0 && recorder.phase === "idle" && (tapOnly || !micRanThisSession())) return void recorder.start("tippen");
         // Tastatur oder Bedienungshilfe (kein Finger davor): antippen startet, nochmal sendet
         if (e.detail !== 0) return;
         if (recorder.phase === "idle") void recorder.start("tippen");
@@ -109,8 +110,9 @@ export function MemoMic({ recorder, size = 26 }: { recorder: MemoRecorder; size?
 
 /**
  * Aufnahme-Leiste: links Verwerfen, Mitte roter Punkt + Zeit + Welle, rechts
- * großer Senden-Knopf. `compact` (kleine Kachel): Zeit und Welle oben,
- * Verwerfen und Senden darunter.
+ * Senden. `compact` (Kachel, Tafel 80): EINE weiße Pille (44 px) wie bei
+ * WhatsApp – Mülleimer, Punkt, Zeit, Welle (wird schmaler, nie abgeschnitten),
+ * rechts ➤; passt in S (176 px) und M.
  */
 /** So lange nach dem Erscheinen zählen Klicks auf die Aufnahme-Zeile nicht (Geister-Klick vom Mikro) */
 const GHOST_CLICK_MS = 450;
@@ -141,29 +143,43 @@ export function RecordingRow({ recorder, compact = false }: { recorder: MemoReco
     <>
       <span className={`h-2.5 w-2.5 shrink-0 rounded-full bg-danger ${waiting || stopped ? "opacity-40" : "animate-pulse"}`} aria-hidden />
       <span className={`shrink-0 text-[14px] font-bold tabular-nums ${timeWarns(recorder.elapsed) ? "text-accent-strong" : ""}`}>{formatDauer(recorder.elapsed / 1000)}</span>
-      <MemoWave wave={compact ? bars.slice(-12) : bars} progress={1} className="min-w-0 flex-1 overflow-hidden" />
+      <MemoWave wave={bars} progress={1} className="min-w-0 flex-1 overflow-hidden" />
     </>
   );
   return (
     <div className="flex flex-col gap-1.5" data-no-swipe>
       {compact ? (
         <>
-          <div className="flex h-9 min-w-0 items-center gap-2 rounded-full bg-tile-inner px-2.5">{time}</div>
-          <div className="flex items-center justify-between">
-            {discard}
-            {send}
+          <div className="flex h-11 min-w-0 items-center gap-1 rounded-full bg-tile-inner pl-0.5 pr-[3px]">
+            <button type="button" onClick={() => !fresh() && recorder.discard()} aria-label="Verwerfen" className="hit flex h-8 w-6 shrink-0 items-center justify-center rounded-full text-muted active:scale-95">
+              <Trash2 className="h-[17px] w-[17px]" strokeWidth={2.25} aria-hidden />
+            </button>
+            <span className={`h-1.5 w-1.5 shrink-0 rounded-full bg-danger ${waiting || stopped ? "opacity-40" : "animate-pulse"}`} aria-hidden />
+            <span className={`shrink-0 text-[13px] font-bold tabular-nums ${timeWarns(recorder.elapsed) ? "text-accent-strong" : ""}`}>{formatDauer(recorder.elapsed / 1000)}</span>
+            <MemoWave wave={bars.slice(-14)} progress={1} fit className="min-w-0 flex-1 overflow-hidden" />
+            <button type="button" onClick={() => !fresh() && recorder.send()} aria-label="Senden" className="hit flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-tile-accent text-on-accent active:scale-95">
+              <SendHorizontal className="h-[18px] w-[18px]" strokeWidth={2.5} aria-hidden />
+            </button>
           </div>
+          <span className="px-1 text-[12px] leading-snug text-muted" role="status">
+            {waiting ? "Mikrofon wird vorbereitet …" : stopped ? "Fertig aufgenommen – senden oder verwerfen?" : "Aufnahme läuft – sprich einfach"}
+          </span>
+          <span className="px-1 text-[11px] leading-tight text-muted" aria-hidden>
+            <SendHorizontal className="inline h-3 w-3 align-[-2px]" strokeWidth={2.5} /> senden · <Trash2 className="inline h-3 w-3 align-[-2px]" strokeWidth={2.25} /> verwerfen
+          </span>
         </>
       ) : (
-        <div className="flex h-12 items-center gap-2">
-          {discard}
-          <div className="flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-full bg-tile-inner px-3">{time}</div>
-          {send}
-        </div>
+        <>
+          <div className="flex h-12 items-center gap-2">
+            {discard}
+            <div className="flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-full bg-tile-inner px-3">{time}</div>
+            {send}
+          </div>
+          <span className="px-1 text-xs text-muted" role="status">
+            {waiting ? "Mikrofon wird vorbereitet …" : stopped ? "Memo fertig aufgenommen – Senden oder Verwerfen?" : holding ? "Loslassen = senden · nach oben schieben = frei sprechen" : "Aufnahme läuft – sprich einfach"}
+          </span>
+        </>
       )}
-      <span className="px-1 text-xs text-muted" role="status">
-        {waiting ? "Mikrofon wird vorbereitet …" : stopped ? "Memo fertig aufgenommen – Senden oder Verwerfen?" : holding ? "Loslassen = senden · nach oben schieben = frei sprechen" : "Aufnahme läuft – sprich einfach"}
-      </span>
       <span className="sr-only" aria-live="polite">
         {recorder.announce}
       </span>
