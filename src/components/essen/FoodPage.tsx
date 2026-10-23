@@ -27,7 +27,13 @@ import type { HomeData } from "@/components/heute/useHomeData";
 import { mondayOf } from "@/components/kalender/CalendarPage";
 import { dishOf, useMeals } from "@/components/essen/useMeals";
 import { BausteinSections } from "@/components/essen/BausteinSections";
-import { CookIdeas, StockChips } from "@/components/essen/CookFromStock";
+import { StockChips } from "@/components/essen/CookFromStock";
+import { MoreIdeas } from "@/components/essen/rezepte/MoreIdeas";
+import { loadMealPlans, replaceMealPlans } from "@/lib/essen/mealPlan";
+import { takeForDay } from "@/lib/essen/spontanTake";
+import { showToast } from "@/lib/core/toast";
+import { pushUndo } from "@/lib/core/undo";
+import type { Recipe } from "@/lib/essen/cookbook";
 import { useFeature } from "@/lib/core/features";
 import { demoTiles, useDemo } from "@/lib/core/demo";
 import { DishPicture } from "@/components/essen/DishPicture";
@@ -94,12 +100,28 @@ export function FoodPage({ data, minutes }: { data: HomeData; minutes: number })
       </section>
 
       <StockChips today={data.todayIso} />
-      <CookIdeas data={data} over={over} planned={dishOf(main)} />
+      <MoreIdeas
+        current={main?.slot.entry?.recipeId ?? ""}
+        exclude={dishOf(main)}
+        demo={demoDish}
+        title={over ? "Ideen für morgen" : dishOf(main) ? "Mehr Ideen" : "Ideen für heute"}
+        take={{ label: "Fürs Abendessen", onTake: (r) => takeDinner(data, r, over ? addDays(data.todayIso, 1) : data.todayIso) }}
+      />
       <BausteinSections />
       <ShoppingChips />
       {swap && <SwapSheet data={data} day={swap} onClose={() => setSwap(null)} />}
     </div>
   );
+}
+
+/** „Fürs Abendessen“ aus den Ideen: direkt für heute (nach dem Essen für morgen) eintragen, kurz melden (Mia kann es rückgängig machen) */
+function takeDinner(data: HomeData, r: Recipe, date: string) {
+  const before = loadMealPlans();
+  const result = takeForDay({ profile: data.profile, weekPlans: data.weekPlans, mealPlans: before, recipes: data.recipes }, data.today, { title: r.title, recipeId: r.id, category: r.category }, date, { spontan: data.planStyle === "spontan" });
+  if (!result.ok) return showToast({ text: result.text });
+  replaceMealPlans(result.weeks);
+  pushUndo(result.text, () => replaceMealPlans(before));
+  showToast({ text: result.text, small: true });
 }
 
 /** Großes Gericht mit Uhrzeit, Dauer, „Alles im Haus“ (grüner Punkt) bzw. „auf die Liste: …“ */

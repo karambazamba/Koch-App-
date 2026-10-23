@@ -68,9 +68,11 @@ export function rice(rng: Rng, reg: Region, tint: boolean | string = false): str
 
 /** Soße/Eintopf in der Schale */
 export function stew(art: DishArt, rng: Rng, reg: Region): string {
+  if (art.variant === "poke") return poke(art, rng, reg);
   const [cx, cy] = center(reg);
   const r = size(reg);
-  const color = art.variant === "curry" ? "#E2A23B" : art.variant === "chili" ? "#A8432A" : "#8E4A2A";
+  // Paprikarot statt Braun (Tafel 62 B), Curry bleibt Gelb
+  const color = art.variant === "curry" ? "#E2A23B" : art.variant === "chili" ? "#CC4A2C" : "#C9502E";
   let out = `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(r)}" fill="${color}"/><ellipse cx="${f(cx - r * 0.3)}" cy="${f(cy - r * 0.35)}" rx="${f(r * 0.35)}" ry="${f(r * 0.15)}" fill="#fff" opacity="0.18"/>`;
   let food = ellipse(cx, cy, r * 0.9);
   if (art.side === "reis") {
@@ -78,13 +80,32 @@ export function stew(art: DishArt, rng: Rng, reg: Region): string {
     food = ellipse(cx + r * 0.38, cy, r * 0.45, r * 0.75);
   }
   if (art.variant === "chili" && !has(art, "bohnen")) out += scatter(["bohnen"], rng, food);
-  if (art.variant === "gulasch") out += Array.from({ length: 9 }, () => { const [x, y] = spot(rng, food); return blob(rng, x, y, between(rng, 14, 20), "#6A3420", 0.4); }).join("");
+  if (art.variant === "gulasch") out += Array.from({ length: 9 }, () => { const [x, y] = spot(rng, food); return blob(rng, x, y, between(rng, 14, 20), "#A8381F", 0.4); }).join("");
   out += scatter(art.toppings, rng, food);
   if (art.variant === "chili" || art.variant === "curry") out += blob(rng, cx + r * 0.2, cy - r * 0.2, r * 0.18, "#FBF6EE", 0.3);
   return out;
 }
 
-const SOUP: Record<string, string> = { tomate: "#D9472B", kuerbis: "#E58A2E", linsen: "#B9763A", kartoffel: "#E8CE8E", erbsen: "#8DB24A", gemuese: "#D99A4A" };
+/** Bowl ohne Soße („poke“): heller Reis, darauf Lachs, Edamame, Avocado, Gurke, Sesam – nichts Braunes */
+function poke(art: DishArt, rng: Rng, reg: Region): string {
+  const [cx, cy] = center(reg);
+  const r = size(reg);
+  let out = rice(rng, ellipse(cx, cy, r * 0.95));
+  // Edamame: kleine grüne Schoten
+  for (let i = 0; i < 7; i++) {
+    const a = -0.6 + i * 0.22;
+    const x = cx + Math.cos(a) * r * 0.5;
+    const y = cy + Math.sin(a) * r * 0.5;
+    out += `<g transform="translate(${f(x)} ${f(y)}) rotate(${f(between(rng, 0, 180))})"><ellipse rx="15" ry="8" fill="#7FB55A"/><circle cx="-6" r="5" fill="#95C76C"/><circle cx="5" r="5" fill="#95C76C"/></g>`;
+  }
+  const extra: Topping[] = ["lachs", "avocado", "gurke"].filter((t) => !art.toppings.includes(t as Topping)) as Topping[];
+  out += scatter([...art.toppings, ...extra], rng, ellipse(cx - r * 0.15, cy - r * 0.05, r * 0.6), { density: 1.6, s: 1.45 });
+  // Sesam
+  out += Array.from({ length: 22 }, () => { const [x, y] = spot(rng, ellipse(cx, cy, r * 0.8)); return `<ellipse cx="${f(x)}" cy="${f(y)}" rx="3" ry="1.8" fill="#F6EBD2" transform="rotate(${f(between(rng, 0, 180))} ${f(x)} ${f(y)})"/>`; }).join("");
+  return out;
+}
+
+const SOUP: Record<string, string> = { tomate: "#D9472B", kuerbis: "#E58A2E", linsen: "#E0873E", kartoffel: "#E8CE8E", erbsen: "#8DB24A", gemuese: "#D99A4A" };
 
 /** Suppe: glatte Fläche, Sahne-Spirale, Kräuter (+ Brot daneben macht dishSvg) */
 export function soup(art: DishArt, rng: Rng, reg: Region): string {
@@ -99,17 +120,33 @@ export function soup(art: DishArt, rng: Rng, reg: Region): string {
 }
 
 /** Pfanne/Geschnetzeltes: Glanz-Soße, viele Stückchen (optional Reis daneben) */
+/**
+ * Soße passend zum Gericht und sparsam (Tafel 62 B): Tomate/Hack/Shakshuka
+ * rot, Ei/Hähnchen/Curry goldgelb, sonst nur ein heller Glanz – das Gemüse
+ * bringt die Farbe. Nie Braun als große Fläche.
+ */
+export function panSauce(art: DishArt): { color: string; opacity: number } {
+  if (has(art, "tomate") || has(art, "hack") || art.variant === "shakshuka") return { color: "#E2552F", opacity: 0.8 };
+  if (has(art, "ei") || has(art, "ruehrei") || has(art, "haehnchen") || art.variant === "curry") return { color: "#F4C64E", opacity: 0.65 };
+  return { color: "#EBD27A", opacity: 0.35 };
+}
+
 export function stirFry(art: DishArt, rng: Rng, reg: Region): string {
   const [cx, cy] = center(reg);
   const r = size(reg);
-  let out = blob(rng, cx, cy, r, has(art, "hack") ? "#A8693E" : "#D9A35A", 0.12, ' opacity="0.7"');
-  let food = reg;
-  if (art.side === "reis") {
-    out += rice(rng, ellipse(cx - r * 0.45, cy, r * 0.48, r * 0.7));
-    food = ellipse(cx + r * 0.35, cy, r * 0.55, r * 0.8);
+  const sauce = panSauce(art);
+  const withRice = art.side === "reis";
+  // Soße als klare Fläche unter dem Gemüse – der helle Pfannenrand bleibt frei
+  let out = blob(rng, withRice ? cx + r * 0.3 : cx, cy, r * (withRice ? 0.62 : 0.72), sauce.color, 0.06, ` opacity="${sauce.opacity}"`);
+  let food = ellipse(cx, cy, r * 0.72);
+  if (withRice) {
+    out += rice(rng, ellipse(cx - r * 0.45, cy, r * 0.42, r * 0.66));
+    food = ellipse(cx + r * 0.3, cy, r * 0.5, r * 0.62);
   }
-  if (has(art, "ei") && art.side === "reis") out += scatter(["ruehrei"], rng, ellipse(cx - r * 0.45, cy, r * 0.3), { s: 0.55 });
-  return out + scatter(art.toppings, rng, food, { density: 1.5, s: 1.25, skip: ["ei"] });
+  if (has(art, "ei") && withRice) out += scatter(["ruehrei"], rng, ellipse(cx - r * 0.45, cy, r * 0.3), { s: 0.55 });
+  // Viel buntes Gemüse obendrauf, damit die helle Pfanne nicht leer wirkt
+  const tops: Topping[] = art.toppings.length >= 3 ? art.toppings : [...new Set<Topping>([...art.toppings, "paprika", "zucchini", "brokkoli"])].slice(0, 4);
+  return out + scatter(tops, rng, food, { density: 1.8, s: 1.25, skip: ["ei"] });
 }
 
 /** Ofengemüse: Kartoffelspalten + Gemüse auf dem Blech */

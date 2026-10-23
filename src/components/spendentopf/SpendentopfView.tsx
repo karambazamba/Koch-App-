@@ -5,8 +5,10 @@
 // Region“), Pate und Stiftung, „Wohin geht der Topf?“ mit Balken und Stimmen
 // (eigene Wahl orange umrandet), Zeitplan, euer Beitrag. Ohne Topf: blasser
 // Topf, „Bescheid geben“, „Ostholstein unterstützen“, „Pate werden“.
+// Vorschau (`POT_STATUS`): ruhiges Band oben, Summe und Projekte als
+// „Beispiel“, Beiträge nur „vormerken“ – es fließt kein Geld.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bell, BookOpen, Check, ChevronDown, Flame, Heart, HeartHandshake, Mail, TreePine, Trophy, type LucideIcon } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD, CARD_LIST, PAGE_MAIN, SECTION_TITLE, TILE } from "@/components/ui/styles";
@@ -14,7 +16,7 @@ import { SwitchRow, Row } from "@/components/einstellungen/settings/SettingsPart
 import { todayIso } from "@/lib/core/now";
 import { useToday } from "@/lib/essen/weekPlan";
 import { POT_TEXTS, activePot, euro, fallbackRegion, potPhase, potTotal, projectVotes, projectsFor, voteDaysLeft } from "@/lib/spendentopf/model";
-import { PATE_MAIL, isKarambaPate, type PotProject } from "@/lib/spendentopf/regions";
+import { PATE_MAIL, POT_STATUS, isKarambaPate, type PotProject } from "@/lib/spendentopf/regions";
 import { changePot, useFamilyRegion, usePotState } from "@/lib/spendentopf/store";
 import { buzz } from "@/components/heute/actions";
 import { PotGraphic } from "@/components/spendentopf/PotGraphic";
@@ -30,6 +32,11 @@ export function SpendentopfView() {
   const { region } = useFamilyRegion();
   const today = useToday();
   const [choosing, setChoosing] = useState(false);
+  const preview = POT_STATUS !== "live";
+  // Nach dem Start: wer die Seite öffnet, wurde gefragt (die Jetzt-Karte fragt nicht mehr)
+  useEffect(() => {
+    if (!preview && state?.pledge?.status === "vorgemerkt" && !state.liveAsked) changePot((s) => ({ ...s, liveAsked: true }));
+  }, [preview, state?.pledge?.status, state?.liveAsked]);
   if (!state || !today) return <div className="mx-auto w-full max-w-lg flex-1" />;
   const iso = todayIso();
   const year = Number(iso.slice(0, 4));
@@ -45,12 +52,17 @@ export function SpendentopfView() {
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
       <PageHeader title="Spendentopf" backHref="/" action={chip} />
       <main className={`${PAGE_MAIN} gap-5`}>
+        {preview && (
+          <p role="note" className="rounded-card bg-tile px-4 py-3 text-[15px] font-semibold leading-snug text-ink" data-tone="spendentopf">
+            {POT_TEXTS.preview}
+          </p>
+        )}
         {region && !pot ? <NoPot regionName={region.name} regionId={region.id} interest={state.interest.includes(region.id)} /> : null}
         {!region && <p className="px-1 text-base text-muted">Wähl oben eure Region – dann siehst du euren Topf.</p>}
         {pot && (
           <>
             {supporting && <p className="px-1 text-sm text-muted">Ihr unterstützt {pot.name}, bis es in {region!.name} einen Topf gibt.</p>}
-            <PotCard name={pot.name} year={year} total={potTotal(pot, state.pledge?.betrag ?? null)} example={Boolean(pot.beispiel)} />
+            <PotCard name={pot.name} year={year} total={potTotal(pot, preview ? null : (state.pledge?.betrag ?? null))} example={preview || Boolean(pot.beispiel)} />
             <ul className={CARD_LIST}>
               <li className="flex items-start gap-3 px-4 py-3">
                 <HeartHandshake className="mt-0.5 h-5 w-5 shrink-0 text-karamba" strokeWidth={2} aria-hidden />
@@ -69,7 +81,7 @@ export function SpendentopfView() {
                 </span>
               </li>
             </ul>
-            <Projects potId={pot.id} year={year} today={iso} vote={state.votes[String(year)] ?? null} />
+            <Projects potId={pot.id} year={year} today={iso} vote={state.votes[String(year)] ?? null} example={preview} />
             <Schedule year={year} today={iso} />
             <section className="flex flex-col gap-2" aria-label="Euer Beitrag">
               <h2 className={`px-1 ${SECTION_TITLE}`}>{POT_TEXTS.together(region?.name)}</h2>
@@ -99,17 +111,18 @@ function PotCard({ name, year, total, example }: { name: string; year: number; t
     <section data-tone="spendentopf" className={`${TILE} flex items-center gap-4 p-5`} aria-label={`Spendentopf ${name}`}>
       <PotGraphic size={76} />
       <span className="flex min-w-0 flex-col">
-        <span className="text-[11px] font-extrabold uppercase tracking-wider text-tile-accent">
-          {year} bisher{example ? " · Beispiel" : ""}
+        <span className="text-[11px] font-extrabold uppercase tracking-wider text-tile-accent">{year} bisher</span>
+        <span className="flex items-center gap-2">
+          <span className="text-[34px] font-extrabold leading-tight tabular-nums">{euro(total)}</span>
+          {example && <span className="rounded-full bg-surface px-2 py-0.5 text-[11px] font-extrabold uppercase tracking-wider text-tile-accent">Beispiel</span>}
         </span>
-        <span className="text-[34px] font-extrabold leading-tight tabular-nums">{euro(total)}</span>
         <span className="text-sm font-semibold text-tile-accent">{POT_TEXTS.share}</span>
       </span>
     </section>
   );
 }
 
-function Projects({ potId, year, today, vote }: { potId: string; year: number; today: string; vote: string | null }) {
+function Projects({ potId, year, today, vote, example }: { potId: string; year: number; today: string; vote: string | null; example: boolean }) {
   const projects = projectsFor(potId, year);
   if (!projects.length) return null;
   const left = voteDaysLeft(today);
@@ -142,6 +155,7 @@ function Projects({ potId, year, today, vote }: { potId: string; year: number; t
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="text-base font-bold leading-snug">{project.titel}</span>
+                    {example && <span className="text-[12px] font-bold uppercase tracking-wide text-muted">Beispiel-Projekt</span>}
                     <span className="text-sm text-muted">{project.kurztext}</span>
                   </span>
                   {mine && (

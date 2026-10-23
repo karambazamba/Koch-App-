@@ -275,7 +275,8 @@ function variantFor(form: DishForm, t: string, all: string): string | undefined 
     case "fleisch":
       return /hahnchen|huhn|pute/.test(t) ? "haehnchen" : /schnitzel|cordon/.test(t) ? "schnitzel" : /wurst/.test(t) ? "wurst" : "frikadellen";
     case "bowl":
-      return /chili/.test(t) ? "chili" : /curry|dal\b/.test(t) ? "curry" : "gulasch";
+      // Nur Eintöpfe sind „gulasch“; eine Bowl ohne Soße (Lachs-Bowl) wird „poke“
+      return /chili/.test(t) ? "chili" : /curry|dal\b/.test(t) ? "curry" : /gulasch|ragout|stew/.test(t) ? "gulasch" : "poke";
     case "suess":
       return /griess|gries/.test(t) ? "griess" : "milchreis";
     case "kekse":

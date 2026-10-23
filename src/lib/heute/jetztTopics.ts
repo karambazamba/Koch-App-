@@ -29,6 +29,7 @@ export type JetztKind =
   | "freizeit"
   | "tipp"
   | "region"
+  | "spendentopf"
   | "beispiel"
   | "ruhig";
 
@@ -94,6 +95,8 @@ export type JetztInput = {
   leisure: { text: string; href: string } | null;
   tip: string | null;
   region: { id: string; title: string; detail: string } | null;
+  /** Spendentopf gestartet + vorgemerkt: einmal sanft fragen */
+  potInvite?: { title: string; detail: string } | null;
   /** Kinder im Haushalt (für die Absprache bei Abendterminen) */
   kids: boolean;
   /** „Kurzer Wochencheck?“ für diese Woche (Montag bzw. Sonntag ab 17 Uhr, nicht in Ruhe/Pause) – sonst null */
@@ -257,6 +260,7 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
   // Selbst eingeschaltete Bausteine – leise, wenn sonst wenig ansteht
   if (x.leisure && x.calm) add({ id: `freizeit:${x.today}`, kind: "freizeit", title: x.leisure.text, detail: "Aus deiner Freizeit-Liste", score: 27, target: { href: x.leisure.href }, button: "Öffnen", gentle: true });
   if (x.region && !shows("tipps") && !night) add({ id: `region:${x.region.id}`, kind: "region", title: x.region.title, detail: x.region.detail, score: 38, target: { href: `/tipps?tipp=${encodeURIComponent(x.region.id)}` }, button: "Öffnen", gentle: true });
+  if (x.potInvite && !night) add({ id: `spendentopf:live`, kind: "spendentopf", title: x.potInvite.title, detail: x.potInvite.detail, score: 40, target: { href: "/spendentopf" }, button: "Öffnen", gentle: true });
   if (x.tip) add({ id: `tipp:${x.today}`, kind: "tipp", title: x.tip, detail: "Kleiner Tipp", score: 18, target: null, button: null, gentle: true });
 
   if (x.weekCheck && !night) add({ id: `wochencheck:${x.weekCheck}`, kind: "wochencheck", title: "Kurzer Wochencheck?", detail: "Sag einfach alles, ich sortiere.", score: 50, target: { action: "wochencheck" }, button: "Öffnen", gentle: true });

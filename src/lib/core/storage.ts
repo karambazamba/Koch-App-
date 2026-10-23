@@ -51,7 +51,7 @@ export const STORAGE = [
   { key: "wasgibts.wetterdaten", what: "Letzte Wetterdaten (offline)", version: 1, area: "local", backup: false },
   { key: "wasgibts.jetzt", what: "Jetzt-Karte: an/aus, heute ausgeblendete Themen, Interesse je Thema, Woche ohne Wochencheck (weekOff, optional)", version: 1, migration: "heute/jetztStore.ts", area: "local", backup: true },
   { key: "wasgibts.regiontipps", what: "Tipps aus der Region: Ort, Umkreis, im Kalender zeigen, gemerkte und übernommene Tipps, Jetzt-Karte am Wochenende aus", version: 1, migration: "tipps/client.ts migrateTipSettings", area: "local", backup: true },
-  { key: "wasgibts.spendentopf", what: "Spendentopf: Region, Bescheid geben, Stimme je Jahr, zugesagter Beitrag (keine Zahlung), Beitrags-Frage", version: 1, migration: "spendentopf/store.ts migratePot", area: "local", backup: true },
+  { key: "wasgibts.spendentopf", what: "Spendentopf: Region, Bescheid geben, Stimme je Jahr, vorgemerkter bzw. zugesagter Beitrag (keine Zahlung), Beitrags-Frage", version: 2, migration: "spendentopf/store.ts migratePot", area: "local", backup: true },
   { key: "wasgibts.konto", what: "Anmeldung (Sitzung) – nur auf dem Gerät, nie in der Sicherung", area: "local", backup: false },
   { key: "wasgibts.haushalt", what: "Zuletzt bekannter Haushalt (Name, Mitglieder, eigene Rolle) für offline", version: 1, migration: "konten/account.ts", area: "local", backup: false },
   { key: "wasgibts.abgleich", what: "Abgleich mit dem Haushalt: zuletzt abgeglichener Stand je Eintrag (nur Fingerabdrücke), Warteschlange, Übernahme erledigt", version: 1, migration: "konten/sync/engine.ts migrateSyncState", area: "local", backup: false },

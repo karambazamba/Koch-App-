@@ -168,18 +168,18 @@ describe("Beitrags-Frage „Gemeinsam für …“", () => {
   });
 });
 
-describe("Speicher `wasgibts.spendentopf` v1", () => {
+describe("Speicher `wasgibts.spendentopf` v2 (liest v1)", () => {
   const store = () => import("@/lib/spendentopf/store");
 
-  it("Prüfen: nur v1, Zusage nur mit positivem Betrag und immer „zugesagt“", async () => {
+  it("Prüfen: v1 und v2, Beitrag nur mit positivem Betrag, v1 immer „zugesagt“", async () => {
     const { migratePot } = await store();
     expect(migratePot(null)).toBeNull();
-    expect(migratePot({ version: 2 })).toBeNull();
-    expect(migratePot({ version: 1 })).toEqual({ version: 1, region: null, support: null, interest: [], votes: {}, pledge: null, ask: { since: null, asked: 0, next: null, done: false }, voteCardHidden: [] });
+    expect(migratePot({ version: 3 })).toBeNull();
+    expect(migratePot({ version: 1 })).toEqual({ version: 2, region: null, support: null, interest: [], votes: {}, pledge: null, ask: { since: null, asked: 0, next: null, done: false }, voteCardHidden: [], liveAsked: false });
     const s = migratePot({ version: 1, region: "kiel", support: "ostholstein", interest: ["kiel", 3], votes: { 2026: "oh-bolzplatz", 2025: 7 }, pledge: { betrag: 4, status: "bezahlt" }, ask: { since: "2026-10-01", asked: "2", next: "2026-11-01", done: true }, voteCardHidden: [2026, "2025"] })!;
     expect(s).toMatchObject({ region: "kiel", support: "ostholstein", interest: ["kiel"], votes: { 2026: "oh-bolzplatz" }, pledge: { betrag: 4, monat: "", status: "zugesagt" }, ask: { since: "2026-10-01", asked: 2, next: "2026-11-01", done: true }, voteCardHidden: [2026] });
     expect(migratePot({ version: 1, pledge: { betrag: 0 } })?.pledge).toBeNull();
-    expect(migratePot({ version: 1, pledge: { betrag: 7, monat: "2026-10" } })?.pledge).toEqual({ betrag: 7, monat: "2026-10", status: "zugesagt" });
+    expect(migratePot({ version: 1, pledge: { betrag: 7, monat: "2026-10" } })?.pledge).toEqual({ betrag: 7, art: "monatlich", monat: "2026-10", status: "zugesagt" });
   });
 
   it("ändern und erstes Öffnen merken (nur einmal)", async () => {
@@ -188,7 +188,7 @@ describe("Speicher `wasgibts.spendentopf` v1", () => {
     notePotStart("2026-10-01");
     notePotStart("2026-10-20");
     expect(usePotState()?.ask.since).toBe("2026-10-01");
-    changePot((s) => ({ ...s, pledge: { betrag: 4, monat: "2026-10", status: "zugesagt" } }));
+    changePot((s) => ({ ...s, pledge: { betrag: 4, art: "monatlich", monat: "2026-10", status: "zugesagt" } }));
     expect(JSON.parse(local.getItem("wasgibts.spendentopf")!).pledge.betrag).toBe(4);
     expect(usePotState()?.ask.since).toBe("2026-10-01");
   });

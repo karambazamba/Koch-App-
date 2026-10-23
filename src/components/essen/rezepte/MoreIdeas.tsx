@@ -5,7 +5,8 @@
 // Karten sichtbar, Einrasten pro Karte, endlos in beide Richtungen (die Liste
 // liegt dreifach da und springt unbemerkt in die Mitte zurück). Keine Pfeile,
 // keine Punkte. Für Tastatur und Screenreader zählt nur die mittlere Liste.
-// Wischen hier wechselt nie die Seite (`data-no-swipe`).
+// Wischen hier wechselt nie die Seite (`data-no-swipe`). Dieselbe Reihe steht
+// auch auf der Essen-Seite („Ideen für heute“) – dort mit „Fürs Abendessen“.
 
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
@@ -22,30 +23,46 @@ import { useMealPlans } from "@/lib/essen/mealPlan";
 import { toIsoDate, useToday, useWeekPlans } from "@/lib/essen/weekPlan";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { useStock } from "@/lib/essen/useStock";
+import type { Recipe } from "@/lib/essen/cookbook";
 
-function IdeaCard({ card, hidden }: { card: MixCard; hidden: boolean }) {
+function IdeaCard({ card, hidden, take }: { card: MixCard; hidden: boolean; take?: { label: string; onTake: (r: Recipe) => void } }) {
   const r = card.recipe;
   const look = demoLook(r.id);
   return (
     <li aria-hidden={hidden || undefined} className="w-[calc((100%-1rem)/2.5)] shrink-0 snap-start">
-      <Link
-        href={`/kochbuch/rezept?id=${encodeURIComponent(r.id)}`}
-        tabIndex={hidden ? -1 : undefined}
-        onClick={() => noteIdeaInterest(r)}
-        className="flex h-full flex-col gap-1.5 rounded-card border border-line bg-surface p-1.5 shadow-card"
-      >
-        <DishPicture photo={look?.photo} title={r.title} ingredients={r.ingredients.map((i) => i.name)} category={r.category} tone={look?.tone ?? dishTone(r.title, r.category)} alt="" className="aspect-square w-full rounded-field" small />
-        <span className="line-clamp-2 px-1 text-[13px] font-bold leading-tight">{r.title}</span>
-        <span className="mt-auto flex flex-wrap items-center gap-x-1.5 px-1 pb-1 text-xs text-muted">
-          {r.prepMinutes ? <span>{r.prepMinutes} Min</span> : null}
-          {card.label && <span className="font-semibold text-accent-strong">{card.label}</span>}
-        </span>
-      </Link>
+      <div className="flex h-full flex-col rounded-card border border-line bg-surface p-1.5 shadow-card">
+        <Link href={`/kochbuch/rezept?id=${encodeURIComponent(r.id)}`} tabIndex={hidden ? -1 : undefined} onClick={() => noteIdeaInterest(r)} className="flex flex-1 flex-col gap-1.5" aria-label={`${r.title}${r.prepMinutes ? ` · ${r.prepMinutes} Min` : ""}`}>
+          <DishPicture photo={look?.photo} title={r.title} ingredients={r.ingredients.map((i) => i.name)} category={r.category} tone={look?.tone ?? dishTone(r.title, r.category)} alt="" className="aspect-square w-full rounded-field" small />
+          <span className="line-clamp-2 px-1 text-[13px] font-bold leading-tight">{r.title}</span>
+          <span className="mt-auto flex flex-wrap items-center gap-x-1.5 px-1 pb-1 text-xs text-muted">
+            {r.prepMinutes ? <span>{r.prepMinutes} Min</span> : null}
+            {card.label && <span className="font-semibold text-accent-strong">{card.label}</span>}
+          </span>
+        </Link>
+        {take && (
+          <button type="button" tabIndex={hidden ? -1 : undefined} onClick={() => (noteIdeaInterest(r), take.onTake(r))} className="hit mt-0.5 min-h-9 rounded-full bg-accent-soft px-2 text-[12.5px] font-bold text-accent-strong active:scale-95">
+            {take.label}
+          </button>
+        )}
+      </div>
     </li>
   );
 }
 
-export function MoreIdeas({ current, demo = false }: { current: string; demo?: boolean }) {
+export function MoreIdeas({
+  current,
+  demo = false,
+  title = "Mehr Ideen",
+  exclude = null,
+  take,
+}: {
+  current: string;
+  demo?: boolean;
+  title?: string;
+  /** Titel, der schon geplant ist (steht nie in der Reihe) */
+  exclude?: string | null;
+  take?: { label: string; onTake: (r: Recipe) => void };
+}) {
   const recipes = useRecipes();
   const profile = useProfile();
   const stock = useStock();
@@ -65,11 +82,11 @@ export function MoreIdeas({ current, demo = false }: { current: string; demo?: b
       date: toIsoDate(today),
       household: profile?.householdName || "haushalt",
       avoid: profile ? profile.persons.flatMap((p) => [...p.allergies, ...p.dislikes]) : [],
-      recent,
+      recent: exclude ? [...recent, exclude] : recent,
       stock: stock ?? [],
       interest,
     });
-  }, [recipes, today, profile, weekPlans, mealPlans, stock, interest, current, demo]);
+  }, [recipes, today, profile, weekPlans, mealPlans, stock, interest, current, demo, exclude]);
 
   const loop = cards.length >= 3;
   const ids = cards.map((c) => c.recipe.id).join("|");
@@ -116,10 +133,10 @@ export function MoreIdeas({ current, demo = false }: { current: string; demo?: b
   if (!cards.length) return null;
   const copies = loop ? [0, 1, 2] : [1];
   return (
-    <section className="flex flex-col gap-2" aria-label="Mehr Ideen">
-      <h3 className={SECTION_TITLE}>Mehr Ideen</h3>
+    <section className="flex flex-col gap-2" aria-label={title}>
+      <h3 className={`${SECTION_TITLE} ${take ? "px-1" : ""}`}>{title}</h3>
       <ul ref={scroller} data-no-swipe className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none]">
-        {copies.flatMap((copy) => cards.map((c) => <IdeaCard key={`${copy}-${c.recipe.id}`} card={c} hidden={copy !== 1} />))}
+        {copies.flatMap((copy) => cards.map((c) => <IdeaCard key={`${copy}-${c.recipe.id}`} card={c} hidden={copy !== 1} take={take} />))}
       </ul>
     </section>
   );

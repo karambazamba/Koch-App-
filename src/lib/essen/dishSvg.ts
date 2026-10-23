@@ -15,7 +15,6 @@ const DEFS = `<radialGradient id="plate" cx="0.45" cy="0.4" r="0.7"><stop offset
 <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6FB25A"/><stop offset="1" stop-color="#3E8A35"/></linearGradient>
 <radialGradient id="gloss" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.28"/><stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="1" stop-color="#000000" stop-opacity="0.12"/></radialGradient>
 <linearGradient id="wood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#D9A367"/><stop offset="1" stop-color="#B07640"/></linearGradient>
-<linearGradient id="pan" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4A4440"/><stop offset="1" stop-color="#26221F"/></linearGradient>
 <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="14"/></filter>`;
 
 const shadow = (cx: number, cy: number, rx: number, ry: number) => `<ellipse cx="${f(cx + 10)}" cy="${f(cy + 22)}" rx="${f(rx)}" ry="${f(ry)}" fill="#5A2A12" opacity="0.33" filter="url(#soft)"/>`;
@@ -49,9 +48,11 @@ function bowl(rng: Rng): Vessel {
   };
 }
 
-function skillet(): Vessel {
+/** Helle Emaille-Pfanne mit farbigem Rand und Holzgriff (Tafel 62 B – nie dunkel) */
+function skillet(rng: Rng): Vessel {
+  const rim = pick(rng, ["#3E7C8C", "#E8643A", "#8FAE8B"]);
   return {
-    svg: `${shadow(CX, CY, R * 0.95, R * 0.92)}<g transform="rotate(-28 ${CX} ${CY})"><rect x="${f(CX + R * 0.85)}" y="${f(CY - 18)}" width="230" height="36" rx="18" fill="#2F2A27"/><rect x="${f(CX + R * 0.85 + 170)}" y="${f(CY - 8)}" width="40" height="16" rx="8" fill="#4A4440"/></g><circle cx="${CX}" cy="${CY}" r="${f(R * 0.95)}" fill="url(#pan)"/><circle cx="${CX}" cy="${CY}" r="${f(R * 0.84)}" fill="#2E2A27"/><ellipse cx="${f(CX - R * 0.35)}" cy="${f(CY - R * 0.5)}" rx="${f(R * 0.3)}" ry="${f(R * 0.1)}" fill="#fff" opacity="0.08"/>`,
+    svg: `${shadow(CX, CY, R * 0.95, R * 0.92)}<g transform="rotate(-28 ${CX} ${CY})"><rect x="${f(CX + R * 0.85)}" y="${f(CY - 18)}" width="230" height="36" rx="18" fill="#C98A4E"/><rect x="${f(CX + R * 0.85 + 12)}" y="${f(CY - 12)}" width="200" height="7" rx="3.5" fill="#E2A96A"/></g><circle cx="${CX}" cy="${CY}" r="${f(R * 0.95)}" fill="${rim}"/><circle cx="${CX}" cy="${CY}" r="${f(R * 0.86)}" fill="#F7F1E6"/><circle cx="${CX}" cy="${CY}" r="${f(R * 0.82)}" fill="#FBF7F0"/><ellipse cx="${f(CX - R * 0.35)}" cy="${f(CY - R * 0.5)}" rx="${f(R * 0.3)}" ry="${f(R * 0.1)}" fill="#fff" opacity="0.35"/>`,
     food: ellipse(CX, CY, R * 0.78),
   };
 }
@@ -115,7 +116,7 @@ function dish(art: DishArt, rng: Rng): { svg: string; savory: boolean; oil: bool
       return { svg: vessel.svg + soup(art, rng, vessel.food) + breadSlice(rng, CX - R * 0.95, CY + R * 0.72, 1.1, -24), savory: false, oil: false };
     }
     case "pfanne":
-      return v(skillet(), (reg) => stirFry(art, rng, reg));
+      return v(skillet(rng), (reg) => stirFry(art, rng, reg));
     case "blech":
       return v(tray(), (reg) => trayVeg(art, rng, reg), true, true);
     case "wrap":

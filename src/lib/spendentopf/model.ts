@@ -94,11 +94,33 @@ export function askLater(a: AskState, today: string): AskState {
   return { ...a, asked, next: addDays(today, ASK_AFTER_DAYS), done: asked >= ASK_MAX };
 }
 
+export type PledgeArt = "monatlich" | "einmalig";
+
+/** „6 € im Monat“ bzw. „6 € einmalig“ */
+export const pledgeLabel = (betrag: number, art: PledgeArt) => `${euro(betrag)} ${art === "monatlich" ? "im Monat" : "einmalig"}`;
+
+/**
+ * Nach dem Start („live“) einmal sanft fragen, wer vorgemerkt hat – solange
+ * die Seite seitdem nicht geöffnet wurde: { title, detail } für die
+ * Jetzt-Karte, sonst null.
+ */
+export function liveInvite(status: "vorschau" | "live", pledge: { betrag: number; art: PledgeArt; status: string } | null, asked: boolean): { title: string; detail: string } | null {
+  if (status !== "live" || !pledge || pledge.status !== "vorgemerkt" || asked) return null;
+  return { title: POT_TEXTS.liveTitle, detail: POT_TEXTS.liveDetail(pledgeLabel(pledge.betrag, pledge.art)) };
+}
+
 /** Feste Texte – nie „an KARAMBA“ */
 export const POT_TEXTS = {
   share: "100 % für Projekte in deiner Region",
   everyEuro: "Jeder Euro geht in deine Region",
-  free: "Die App ist kostenlos. KARAMBA Eis zahlt Server & KI. Keine Werbung, kein Abo, keine Daten verkauft.",
+  free: "Die App ist kostenlos. KARAMBA Eis zahlt Server & KI. Kein Abo, keine Daten verkauft.",
+  /** Vorschau: ruhiges Band oben auf der Seite */
+  preview: "Vorschau – der Spendentopf startet bald. Noch wird kein Geld gesammelt.",
+  noMoney: "Bis zum Start fließt kein Geld.",
+  thanksPreview: "Danke! Wir melden uns, sobald der Spendentopf startet – dann entscheidest du nochmal in Ruhe.",
+  /** Nach dem Start: „Der Spendentopf ist gestartet – magst du deine 6 € im Monat jetzt einrichten?“ */
+  liveTitle: "Der Spendentopf ist gestartet",
+  liveDetail: (what: string) => `Magst du deine ${what} jetzt einrichten?`,
   /** Überschrift der Beitrags-Frage – nie so, als bezahle man die App: das Geld geht in die Region */
   together: (region?: string | null) => `Gemeinsam für ${region ?? "Ostholstein"}`,
   askText: "Jeder Euro geht in den Spendentopf – für Projekte in deiner Region.",
