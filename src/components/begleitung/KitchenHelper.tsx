@@ -34,6 +34,7 @@ import { loadSpontanFilters } from "@/lib/essen/spontanFilters";
 import dynamic from "next/dynamic";
 import { DoneNotes } from "@/components/kalender/abgeben/DoneNotes";
 import { QuickEntryHost } from "@/components/ui/QuickEntryHost";
+import { NotifyHost } from "@/components/heute/mitteilungen/NotifyHost";
 import { showToast } from "@/lib/core/toast";
 import { loadProfile, saveProfile } from "@/lib/einstellungen/profileStore";
 
@@ -217,6 +218,7 @@ export function KitchenHelper() {
     <>
       <DoneNotes />
       <QuickEntryHost />
+      <NotifyHost />
       {/* Auf allen Seiten derselbe runde Mia-Knopf wie auf der Startseite (dort zeichnet ihn HomePager) */}
       {!open && !typing && !hidden && <MiaButton name={helperName(profile)} />}
 

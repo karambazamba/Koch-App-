@@ -2209,3 +2209,13 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Jetzt-Karte: höchstens eine Neuigkeit am Tag aus dem Haushalt („Milch
   steht auf der Liste – hat Lisa gerade gesetzt.“), jede nur einmal.
 - Spendentopf: Region, Stimme und Beitrag gelten für den ganzen Haushalt.
+
+## Erinnerungen & Mitteilungen, Teil 1 (v0.81.0, Tafel 77)
+- Erinnerung = Uhrzeit an Termin/Aufgabe: Standard 30 Min vorher (in
+  „Mitteilungen“ änderbar), ganztägig 8:00, am Vorabend 19:00, Aufgaben mit
+  Uhrzeit genau dann. Glocke an Einträgen, Chip „17:00 erinnern“ in der
+  Schnelleingabe.
+- Mia fragt im passenden Moment (erster Termin mit Uhrzeit), nie beim ersten
+  Start, erst nach „Ja, gern“ die Systemabfrage; im Safari-Tab die
+  Homescreen-Anleitung. Einstellungen → „Mitteilungen“.
+- Mitteilungen kommen, solange die App offen ist; der Server-Versand folgt.

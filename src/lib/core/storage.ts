@@ -55,6 +55,7 @@ export const STORAGE = [
   { key: "wasgibts.konto", what: "Anmeldung (Sitzung) – nur auf dem Gerät, nie in der Sicherung", area: "local", backup: false },
   { key: "wasgibts.haushalt", what: "Zuletzt bekannter Haushalt (Name, Mitglieder, eigene Rolle) für offline", version: 1, migration: "konten/account.ts", area: "local", backup: false },
   { key: "wasgibts.abgleich", what: "Abgleich mit dem Haushalt: zuletzt abgeglichener Stand je Eintrag (nur Fingerabdrücke), Warteschlange, Übernahme erledigt", version: 1, migration: "konten/sync/engine.ts migrateSyncState", area: "local", backup: false },
+  { key: "wasgibts.mitteilungen", what: "Mitteilungen auf diesem Gerät: Standard-Erinnerung, Schalter je Art, Mias Frage (ja/nein, wann), schon gemeldete Erinnerungen", version: 1, migration: "heute/mitteilungen/einstellungen.ts migrateNotify", area: "local", backup: false },
   { key: "wasgibts.neu", what: "Leise Neuigkeiten aus dem Haushalt für die Jetzt-Karte (wer was eingetragen hat, jede nur einmal)", version: 1, migration: "konten/wer.ts migrateNews", area: "local", backup: false },
   { key: "wasgibts.kalenderabos", what: "Kalender-Links (Abos): Name, geheimer Link, Farbe, Familie/Arbeit, an/aus – nur auf dem Gerät, in der Sicherung nur auf Wunsch", version: 1, migration: "kalender/abo/store.ts", area: "local", backup: false },
   { key: "wasgibts.kalenderabo-termine", what: "Zwischenspeicher der Abo-Termine (nur lesen, wird neu abgerufen)", version: 1, migration: "kalender/abo/store.ts", area: "local", backup: false },
