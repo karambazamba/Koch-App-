@@ -43,7 +43,7 @@ describe("Woche gelesen → Vorschlag", () => {
     const free = await afterTools(S, "Morgen gibt's Flammkuchen", both, { woche_lesen: week(WEEK), kochbuch_durchsuchen: lasagne });
     expect(free.uses[0].input).toEqual({ woche: "2026-10-19", tag: "Freitag", gericht: "Flammkuchen" });
     const missing = await afterTools(S, "Morgen gibt's Flammkuchen", both, { woche_lesen: week(WEEK.slice(0, 2)), kochbuch_durchsuchen: lasagne });
-    expect(missing.text).toBe("Den Tag finde ich gerade nicht im Plan – magst du ihn mir nochmal sagen?");
+    expect(missing.text).toBe("Den Tag find ich grad nicht im Plan. Welcher war’s?");
   });
 
   it("nur schnelle Gerichte: Langsames und Freies ersetzen, Ausflug/frei bleibt", async () => {
@@ -56,7 +56,7 @@ describe("Woche gelesen → Vorschlag", () => {
       ["Sonntag", "r4"],
     ]);
     const fast: Day[] = [{ tag: "Montag", datum: "19.10.", gericht: "Rührei", rezept_id: "r4" }];
-    expect((await plan("Nur noch schnelle Gerichte", fast)).text).toBe("Diese Woche ist schon alles schnell – passt! (Testmodus)");
+    expect((await plan("Nur noch schnelle Gerichte", fast)).text).toBe("Diese Woche ist schon alles schnell. Passt. (Testmodus)");
     const spontan = context(["Kochstil: Ich koche spontan – keine Planung"]);
     expect(names(await plan("Nur noch schnelle Gerichte", WEEK, spontan))).toEqual(["gericht_setzen"]);
   });
@@ -91,7 +91,7 @@ describe("Woche gelesen → Vorschlag", () => {
     expect((await plan("Lösch den Montag und den Mittwoch", tage)).uses.map((u) => [u.name, u.input.tag])).toEqual([["platz_leeren", "Montag"]]);
     expect((await plan("Am Montag doppelt kochen", tage)).uses.map((u) => [u.name, u.input])).toEqual([["doppelt_kochen", { woche: "aktuell", tag: "Montag", an: true }]]);
     expect((await plan("Tausch Montag und Dienstag", tage)).uses.map((u) => [u.name, u.input])).toEqual([["gericht_verschieben", { woche: "aktuell", von_tag: "Montag", nach_tag: "Dienstag" }]]);
-    expect((await plan("Tausch Montag und Mittwoch", tage)).text).toMatch(/^Ich habe nichts gefunden/);
+    expect((await plan("Tausch Montag und Mittwoch", tage)).text).toMatch(/^Hab nichts gefunden/);
   });
 
   it("Woche planen: Bekanntes, Schnelles zuerst und ein neues Gericht", async () => {
@@ -117,17 +117,17 @@ describe("Nach den Werkzeugen kurz antworten", () => {
     const p = [{ name: "portionen_anpassen", input: { personen: 2 } }];
     expect((await afterTools(S, "Nur zu zweit", p, { portionen_anpassen: "Vorgemerkt: Pasta am Freitag nur für 2 Personen." })).text).toBe("Klar! Pasta am Freitag nur für 2 Personen. Tipp unten auf Übernehmen. (Testmodus)");
     expect((await afterTools(S, "Nur zu zweit", p, { portionen_anpassen: "Heute ist nichts geplant." })).text).toBe("Heute ist nichts geplant. (Testmodus)");
-    expect((await afterTools(S, "Mach dunkel", [{ name: "app_befehl" }], {})).text).toBe("Mach ich – tipp unten auf Übernehmen. (Testmodus)");
+    expect((await afterTools(S, "Mach dunkel", [{ name: "app_befehl" }], {})).text).toBe("Steht unten bereit. (Testmodus)");
   });
 
   it("Mails: Kurzfassung, Frage nach der Richtung, Termin dazu", async () => {
     const drafted = await afterTools(S, "Schreib der Kita …", [{ name: "mail_entwurf", input: { kurzfassung: "Jonne ist krank." } }], {});
-    expect(drafted.text).toBe("Kurz gesagt: Jonne ist krank. Hier mein Vorschlag – senden machst du selbst. (Testmodus)");
+    expect(drafted.text).toBe("Kurz gesagt: Jonne ist krank. Hier mein Entwurf. Senden machst du selbst. (Testmodus)");
     const noSummary = await afterTools(S, "Schreib der Kita …", [{ name: "mail_entwurf", input: {} }], {});
-    expect(noSummary.text).toBe("Hier mein Vorschlag – senden machst du selbst. (Testmodus)");
+    expect(noSummary.text).toBe("Hier mein Entwurf. Senden machst du selbst. (Testmodus)");
     const mail = "Von: Kita <info@kita.de>\nBetreff: Elternabend\n\nLiebe Eltern,\n\nder Elternabend findet am Donnerstag um 19:30 statt.\n\nLiebe Grüße\nAnna";
     const asked = await afterTools(S, mail, [{ name: "antwort_knoepfe" }, { name: "termin_anlegen" }], {});
-    expect(asked.text).toBe("Kurz gesagt: Der Elternabend findet am Donnerstag um 19:30 statt. Wie willst du antworten? Da steht auch ein Termin drin – soll ich das eintragen? Tipp unten auf Übernehmen. (Testmodus)");
+    expect(asked.text).toBe("Kurz gesagt: Der Elternabend findet am Donnerstag um 19:30 statt. Wie willst du antworten? Da steht auch ein Termin drin. Soll ich ihn eintragen? (Testmodus)");
   });
 
   it("Timer, Begleitung, Sport-Ziel", async () => {
@@ -137,7 +137,7 @@ describe("Nach den Werkzeugen kurz antworten", () => {
   });
 
   it("Tipps aus der Region und Wetter", async () => {
-    expect((await afterTools(S, "Was ist los?", [{ name: "tipps_suchen" }], { tipps_suchen: "Treffer: Kürbisfest" })).text).toMatch(/^Da wäre was in eurer Nähe/);
+    expect((await afterTools(S, "Was ist los?", [{ name: "tipps_suchen" }], { tipps_suchen: "Treffer: Kürbisfest" })).text).toMatch(/^Da wär was in eurer Nähe/);
     expect((await afterTools(S, "Was ist los?", [{ name: "tipps_suchen" }], { tipps_suchen: "Keine Treffer" })).text).toBe("Dafür habe ich in eurer Nähe gerade nichts gefunden. (Testmodus)");
     expect((await afterTools(S, "Wetter?", [{ name: "wetter_abfragen" }], { wetter_abfragen: "Freitag, 23.10.\nRegnerisch, 8 bis 11°\nKurz: Ab 15 Uhr Regen." })).text).toBe("Ab 15 Uhr Regen. (Freitag, 23.10.) (Testmodus)");
     expect((await afterTools(S, "Wetter?", [{ name: "wetter_abfragen" }], { wetter_abfragen: "Freitag, 23.10.\nSonnig, 12°" })).text).toBe("Sonnig, 12° (Freitag, 23.10.) (Testmodus)");
@@ -153,12 +153,12 @@ describe("Nach den Werkzeugen kurz antworten", () => {
     const created = [{ name: "rezept_erstellen", id: "mock_rezept_Freitag_1" }];
     const r = await afterTools(S, "Der Rest vegetarisch", created, { rezept_erstellen: "Angelegt, ref: neu-7" });
     expect(r.uses).toEqual([expect.objectContaining({ name: "gericht_setzen", input: { woche: "aktuell", tag: "Freitag", neues_rezept: "neu-7" } })]);
-    expect((await afterTools(S, "Der Rest vegetarisch", created, { rezept_erstellen: "Abgelehnt: Allergie" })).text).toMatch(/^Ich habe dir einen Vorschlag gemacht/);
+    expect((await afterTools(S, "Der Rest vegetarisch", created, { rezept_erstellen: "Abgelehnt: Allergie" })).text).toMatch(/^Steht unten als Vorschlag/);
   });
 
   it("Abschluss: bereit zum Übernehmen bzw. ehrlich bei Fehlern", async () => {
-    expect((await afterTools(S, "Morgen 15 Uhr Zahnarzt", [{ name: "termin_anlegen" }], { termin_anlegen: "ok" })).text).toBe("Steht bereit – tipp unten auf Übernehmen. (Testmodus)");
-    expect((await afterTools(S, "Setz Pasta", [{ name: "gericht_setzen" }], { gericht_setzen: "ok" })).text).toMatch(/^Ich habe dir einen Vorschlag gemacht \(Testmodus\)/);
+    expect((await afterTools(S, "Morgen 15 Uhr Zahnarzt", [{ name: "termin_anlegen" }], { termin_anlegen: "ok" })).text).toBe("Steht unten bereit. (Testmodus)");
+    expect((await afterTools(S, "Setz Pasta", [{ name: "gericht_setzen" }], { gericht_setzen: "ok" })).text).toMatch(/^Steht unten als Vorschlag\. .*\(Testmodus\)/);
     expect((await afterTools(S, "Setz Pasta", [{ name: "gericht_setzen" }], { gericht_setzen: "Fehler" }, ["gericht_setzen"])).text).toBe("Das hat leider nicht geklappt. Magst du es anders formulieren?");
   });
 });
@@ -169,8 +169,8 @@ describe("Kurze Antwort aus der Terminliste", () => {
   it("Woche nach Tagen, Tag ohne Wochentag", () => {
     expect(calendarAnswer(list, { label: "diese Woche" })).toBe("Diese Woche: Do: 9:00 Zahnarzt, 16:00 Turnen, Wäsche. Fr: 8:00 Kita-Fest. (Testmodus)");
     expect(calendarAnswer(list.split("\n")[1], { datum: "2026-10-23", label: "morgen" })).toBe("Morgen: 8:00 Kita-Fest. (Testmodus)");
-    expect(calendarAnswer("", { label: "morgen" })).toBe("Morgen steht nichts an – schön ruhig. (Testmodus)");
-    expect(calendarAnswer("", {})).toBe("Da steht nichts an – schön ruhig. (Testmodus)");
+    expect(calendarAnswer("", { label: "morgen" })).toBe("Morgen steht nichts an. Schön ruhig. (Testmodus)");
+    expect(calendarAnswer("", {})).toBe("Da steht nichts an. Schön ruhig. (Testmodus)");
   });
 
   it("frei oder belegt im Zeitfenster", () => {

@@ -143,10 +143,10 @@ describe("previewRows", () => {
     const rows = previewRows(base, ctx.ops, alle(ctx.ops));
     const text = rows.map((r) => `${r.group}|${r.label}|${r.before ?? "-"}|${r.after}`);
     expect(text).toEqual([
-      "Mo 19.10.|Hauptgericht · abends|frei|Pizza (doppelt – Reste für morgen)",
+      "Mo 19.10.|Hauptgericht · abends|frei|Pizza (doppelt, Reste für morgen)",
       "Mo 19.10.|Hauptgericht · abends|Chili|frei",
       "Mi 21.10.|Hauptgericht · abends|frei|Chili",
-      "Mi 21.10.|Hauptgericht · abends|-|Chili doppelt kochen – Reste für morgen",
+      "Mi 21.10.|Hauptgericht · abends|-|Chili doppelt kochen, Reste für morgen",
       "Mi 21.10.|verschieben → Montag|Chili|getauscht mit Pizza",
       "Mo 26.10.|Hauptgericht · abends|frei|Suppe",
       "Kochbuch|neues Rezept|-|Brot",
@@ -173,9 +173,9 @@ describe("previewRows", () => {
     const rows = previewRows(base, ctx.ops, alle(ctx.ops));
     const by = (g: string) => rows.filter((r) => r.group.startsWith(g));
     expect(rows.slice(0, 4).map((r) => r.group)).toEqual(["Pause", "Pause", "Rückgängig", "Wochenplan"]);
-    expect(by("Pause").map((r) => r.after)).toEqual(["Pause beenden – alles wie gewohnt", "von Di., 1.12. bis Do., 3.12. – an diesen Tagen plane ich nichts"]);
+    expect(by("Pause").map((r) => r.after)).toEqual(["Pause beenden, alles wie gewohnt", "von Di., 1.12. bis Do., 3.12. – an diesen Tagen plane ich nichts"]);
     expect(by("So 25.10.")[0].after).toBe("Milchreis – Wunsch von Mathis 🎉");
-    expect(by("Do 22.10.").map((r) => r.after)).toEqual(["Lasagne", "Lasagne für 2 Personen – Zutaten und Einkaufsliste passen sich an"]);
+    expect(by("Do 22.10.").map((r) => r.after)).toEqual(["Lasagne", "Lasagne für 2 Personen, Zutaten und Einkaufsliste passen sich an"]);
     const vorgaben = by("Vorgaben");
     expect(vorgaben[0].lines).toEqual(["Fleisch-Tage: 2 → 1", "Ausflugstage: keine → Samstag", "Cheat Day 🍕: aus", "Wunsch entfernt"]);
     expect(vorgaben[1].lines).toEqual(["Cheat Day 🍕: Freitag", "Wunsch 🎉: Mathis wünscht sich etwas (Montag)"]);

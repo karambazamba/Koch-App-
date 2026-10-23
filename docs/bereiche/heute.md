@@ -208,7 +208,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   20–7 Uhr, im Feierabend mit Ruhe nichts zu Arbeit und Aufgaben.
 
 ### Beispiel-Tag und erster Start
-- Erster Start ohne Profil: Hallo-Bildschirm („Hallo, ich bin Mia.“ aus
+- Erster Start ohne Profil: Hallo-Bildschirm („Moin!“, früher „Hallo, ich bin Mia.“ aus
   `DEFAULT_HELPER`, „Ich behalte euren Alltag im Blick.“, Mikrofon-Hinweis,
   „Los geht’s“, „Ich habe eine Sicherung“). „Los geht’s“ → „Wie magst du’s?“
   (Look, siehe einstellungen.md) → `startFresh(look)`:

@@ -72,6 +72,25 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 
 ## So verhält es sich
 
+### Mia spricht knapp (seit v0.77)
+- Norddeutsch, kurz, nie vorstellen: Begrüßung im Chat „Was steht an?“
+  (5–11 Uhr „Moin! Was steht an?“, `greetingText`), Hallo-Bildschirm
+  „Moin!“, Stimm- und Vorlese-Probe „Moin! So klinge ich.“ bzw. „Moin!
+  Heute gibt’s Spaghetti. Um 18:30 ist alles fertig.“ Auf „Wer bist du?“
+  antwortet die KI „Mia. Ich organisier euren Alltag.“
+- `tidyMiaText()` (`lib/begleitung/tidy.ts`) für jede KI-Antwort vor Anzeige
+  (Stream und fertige Antwort in `client.ts`) und Vorlesen (`speak`):
+  Gedankenstrich zwischen Satzteilen → Punkt (Großbuchstabe danach) bzw.
+  Komma, Zahlen-Spannen bleiben („9–11 Uhr“), Spiegelstriche/Nummern am
+  Zeilenanfang weg, „!!“ → „!“, höchstens ein „!“ pro Nachricht.
+- Prompt: höchstens 2 kurze Sätze, Bestätigungen 1–3 Wörter, keine
+  Gedankenstriche/Aufzählungszeichen/Floskeln, höchstens ein „!“ und ein
+  Emoji, drei Beispiele gut/schlecht.
+- Alle festen Mia-Sätze (Begleitung, Jetzt-Karte, Kochidee, Pinnwand,
+  Wetter, Testmodus) ohne Gedankenstrich als Satzverbindung, ohne
+  Spiegelstriche, höchstens ein „!“ – geprüft in `tests/begleitung/knapp.test.ts`
+  (Werkzeug-Beschreibungen und Prompt liest nur die KI, sie zählen nicht).
+
 ### Versprechen offen halten (seit v0.65.1)
 
 - Mia verspricht nur, was die App halten kann: Erinnerungen erscheinen in der
@@ -303,8 +322,8 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 
 ### Erster Start und neue Person
 
-- `HelloScreen` (Tafel 55, seit v0.67): Mia groß und rund (132 px), „Hallo,
-  ich bin Mia.“ („Mia.“ in Orange), „Erzähl mir einfach, was ansteht. Ich
+- `HelloScreen` (Tafel 55, seit v0.67): Mia groß und rund (132 px), „Moin!“
+  (seit v0.77, das „!“ in Orange – Mia stellt sich nie vor), „Erzähl mir einfach, was ansteht. Ich
   sortiere für euch.“, „Los geht’s“ (`startFresh`), „Schon mal genutzt? Daten
   wiederherstellen“ (`/profil/daten`), klein die Marke (BrandMark, gedämpft)
   und „Gemacht in Eutin · von KARAMBA Eis“ (immer „KARAMBA Eis“). Die

@@ -55,8 +55,8 @@ describe("Kochen", () => {
     expect(rufe(ctx, "kochschritt", { aktion: "zeigen" }).content).toBe("Schritt 2 von 3: Nudeln kochen");
     expect(rufe(ctx, "kochschritt", { aktion: "weiter" }).content).toBe("Schritt 2 abgehakt. Jetzt Schritt 3 von 3: Soße rühren");
     expect(letzte(ctx)).toMatchObject({ type: "cook_step", recipe: "r1", index: 1 });
-    expect(rufe(ctx, "kochschritt", { aktion: "weiter" }).content).toBe("Schritt 3 abgehakt – das war der letzte. Guten Appetit!");
-    expect(rufe(ctx, "kochschritt", { aktion: "weiter" }).content).toBe("Alle Schritte sind fertig – guten Appetit!");
+    expect(rufe(ctx, "kochschritt", { aktion: "weiter" }).content).toBe("Schritt 3 abgehakt. Das war der letzte. Guten Appetit!");
+    expect(rufe(ctx, "kochschritt", { aktion: "weiter" }).content).toBe("Alle Schritte fertig. Guten Appetit!");
   });
 });
 

@@ -157,7 +157,7 @@ describe("Jetzt-Karte: Knöpfe und Ruhe", () => {
     });
   });
 
-  it("nichts Passendes: „Alles ruhig – ich sag Bescheid.“ ohne Zahlen", () => {
+  it("nichts Passendes: „Alles ruhig. Ich sag Bescheid.“ ohne Zahlen", () => {
     const t = jetztTopics(base(H(11)));
     expect(t).toEqual([{ id: "ruhig:2026-10-21", kind: "ruhig", title: QUIET_TEXT, detail: "", score: 1, target: null, button: null }]);
   });

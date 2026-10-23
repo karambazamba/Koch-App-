@@ -77,13 +77,13 @@ describe("EIN Tipp für heute", () => {
   it("Regen zur Termin-Zeit mit gekürztem Titel; Termine vor jetzt zählen nicht", () => {
     const fc = fcOf(day24((h) => (h >= 15 && h <= 17 ? WET : {})));
     const long = "Elternabend in der Grundschule am See";
-    expect(weatherTip(fc, TODAY, 9 * 60, [{ title: "Früh", time: "08:00" }, { title: long, time: "16:00" }, { title: "ohne Zeit", time: "" }])).toBe(`☂️ Ab 15 Uhr Regen – Schirm für ${long.slice(0, 23)}…`);
+    expect(weatherTip(fc, TODAY, 9 * 60, [{ title: "Früh", time: "08:00" }, { title: long, time: "16:00" }, { title: "ohne Zeit", time: "" }])).toBe(`☂️ Ab 15 Uhr Regen. Schirm für ${long.slice(0, 23)}…`);
     expect(weatherTip(fc, TODAY, 9 * 60, [{ title: "Sport", time: "19:00" }])).toBe("☂️ Ab 15 Uhr Regen");
   });
 
   it("„Gerade“ nur, wenn die Station Regen misst – auch ohne Regenstunde in der Vorhersage", () => {
     const fc = fcOf(day24(), { raining: true });
-    expect(weatherTip(fc, TODAY, 10 * 60, [{ title: "Bäcker", time: "10:30" }])).toBe("☂️ Gerade Regen – Schirm für Bäcker");
+    expect(weatherTip(fc, TODAY, 10 * 60, [{ title: "Bäcker", time: "10:30" }])).toBe("☂️ Gerade Regen. Schirm für Bäcker");
     expect(umbrellaAnswer(fc, TODAY, 10 * 60)).toBe("Ja, gerade regnet es in Eutin – Schirm lohnt sich ☂️");
   });
 
@@ -95,7 +95,7 @@ describe("EIN Tipp für heute", () => {
     const hot = fcOf(day24((h) => ({ temp: h === 15 ? 27 : 20 })));
     expect(weatherTip(hot, TODAY, 9 * 60)).toBe("Sonnencreme einpacken ☀️");
     expect(weatherTip(hot, TODAY, 18 * 60)).toBeNull();
-    expect(weatherTip(fcOf(day24(() => ({ gust: 52 }))), TODAY, 9 * 60)).toBe("Windig – Böen bis 50 km/h 🌬️");
+    expect(weatherTip(fcOf(day24(() => ({ gust: 52 }))), TODAY, 9 * 60)).toBe("Windig, Böen bis 50 km/h 🌬️");
     expect(weatherTip(fcOf(day24()), TODAY, 9 * 60)).toBeNull();
   });
 
@@ -177,7 +177,7 @@ describe("Wetter-Seite", () => {
     expect(dayExtras({ ...d, rain: 30, sun: 2.6 })).toEqual({ rain: "☂ 30 %", sun: "☀ 3 Std." });
     expect(skyLine({ ...d, sun: 0 }, "Heute")).toBe("Heute 0 bis 12° · ☂ 80 %");
     expect(skyLine({ ...d, rain: 0, sun: 0 })).toBe("0 bis 12°");
-    expect(daySentence(fc, TODAY, [{ title: "Kinderarzt", time: "15:10" }])).toBe("Zu Kinderarzt um 15 Uhr regnet es – Schirm mit.");
+    expect(daySentence(fc, TODAY, [{ title: "Kinderarzt", time: "15:10" }])).toBe("Zu Kinderarzt um 15 Uhr regnet es. Schirm mit.");
     expect(daySentence(fc, TODAY, [{ title: "Elternabend", time: "19:00" }])).toBe("Für Elternabend bleibt es trocken.");
     expect(daySentence(fc, TODAY)).toBe("Ab 14 Uhr Schauer möglich, 0 bis 12°.");
     expect(daySentence(fc, TODAY, [], 16)).toBe("Schauer möglich, 0 bis 12°.");
@@ -219,17 +219,17 @@ describe("Wetter-Seite", () => {
     const week = (wet: boolean[], o: { sun?: number; touch?: boolean } = {}) =>
       fcOf(wet.flatMap((w, i) => day24((h) => (w ? (h >= 8 && h <= 12 ? WET : {}) : { sun: o.sun ?? 0, ...(o.touch && i === 0 && h === 10 ? { mm: 0.3, rain: 60 } : {}) }), plus(i))));
     expect(weekSentence(week([false, false]), TODAY)).toBeNull();
-    expect(weekSentence(week([false, false, false, false]), TODAY)?.text).toBe("Die ganze Woche trocken – gut für draußen.");
-    expect(weekSentence(week([false, false, false], { touch: true }), TODAY)?.text).toBe("Fast die ganze Woche trocken – gut für draußen.");
+    expect(weekSentence(week([false, false, false, false]), TODAY)?.text).toBe("Die ganze Woche trocken. Gut für draußen.");
+    expect(weekSentence(week([false, false, false], { touch: true }), TODAY)?.text).toBe("Fast die ganze Woche trocken. Gut für draußen.");
     // Do Fr Sa So …: Sa+So nass, ohne Sonne
     expect(weekSentence(week([false, false, true, true, false]), TODAY)).toEqual({ text: "Wochenende eher nass. Gut für drinnen.", tone: "regen" });
     expect(weekSentence(week([true, false, false, false]), TODAY)?.text).toBe("Ab morgen wird’s freundlicher.");
     expect(weekSentence(week([true, true, false, false]), TODAY)?.text).toBe("Ab Samstag wird’s freundlicher.");
-    expect(weekSentence(week([false, true, false, false, true]), TODAY)?.text).toBe("Zum Wochenende wird’s trocken – gut für draußen.");
+    expect(weekSentence(week([false, true, false, false, true]), TODAY)?.text).toBe("Zum Wochenende wird’s trocken. Gut für draußen.");
     expect(weekSentence(week([false, false, false, true, true, true]), TODAY)?.text).toBe("Bis Samstag trocken, danach wird’s nasser.");
-    expect(weekSentence(week([true, true, true]), TODAY)?.text).toBe("Eine nasse Woche – gemütlich drinnen und mit Schirm raus.");
+    expect(weekSentence(week([true, true, true]), TODAY)?.text).toBe("Eine nasse Woche. Gemütlich drinnen, mit Schirm raus.");
     const mixed = weekSentence(week([true, false, true, false, true, true], { sun: 40 }), TODAY)!;
-    expect(mixed.text).toBe("Wechselhaft – am besten für draußen: morgen.");
+    expect(mixed.text).toBe("Wechselhaft. Am besten für draußen: morgen.");
     expect(mixed.tone).toBe("regen");
   });
 });

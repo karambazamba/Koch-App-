@@ -122,7 +122,7 @@ describe("Gerät, Tageslimit, Zugangscode", () => {
   it("unavailableText: offline vs. nicht verstanden", () => {
     expect(client.unavailableText()).toBe("Hm, das hab ich nicht verstanden.");
     vi.stubGlobal("navigator", { onLine: false });
-    expect(client.unavailableText()).toBe("Ich bin gerade offline – was du einträgst, speichere ich trotzdem.");
+    expect(client.unavailableText()).toBe("Bin grad offline. Was du einträgst, bleibt trotzdem.");
   });
 });
 
@@ -186,7 +186,7 @@ describe("askAssistant", () => {
     vi.stubGlobal("fetch", vi.fn(async () => {
       throw new Error("kein Netz");
     }));
-    await expect(ask()).rejects.toMatchObject({ reason: "offline", message: "Ich bin gerade offline – was du einträgst, speichere ich trotzdem." });
+    await expect(ask()).rejects.toMatchObject({ reason: "offline", message: "Bin grad offline. Was du einträgst, bleibt trotzdem." });
     vi.stubGlobal("navigator", { onLine: false });
     await expect(ask()).rejects.toMatchObject({ reason: "offline" });
   });
@@ -225,7 +225,7 @@ describe("Sofort ausgeführt: Timer, Stoppuhr, Kochen", () => {
   it("höchstens fünf Timer", () => {
     const five: ChangeOp[] = [1, 2, 3, 4, 5].map((i) => ({ id: `t${i}`, type: "add_timer", name: `T${i}`, minutes: 3 }));
     client.runInstantOps(five);
-    expect(client.runInstantOps([{ id: "t6", type: "add_timer", name: "T6", minutes: 3 }]).notes).toContain("Fünf Timer laufen schon – sobald einer fertig ist, geht der nächste.");
+    expect(client.runInstantOps([{ id: "t6", type: "add_timer", name: "T6", minutes: 3 }]).notes).toContain("Fünf Timer laufen schon. Sobald einer fertig ist, geht der nächste.");
   });
 
   it("Kochen starten und Schritt abhaken", () => {

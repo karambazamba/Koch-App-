@@ -7,7 +7,7 @@
 import type { MicPlatform, MicStep } from "@/lib/core/mic";
 
 export const MIA_HOME_HINT = (name: string) =>
-  `Ich heiße jetzt ${name}. Damit der neue Name unter dem Icon steht: App vom Home-Bildschirm entfernen und in Safari neu hinzufügen – vorher kurz sichern, dann bleiben deine Daten.`;
+  `Ich heiße jetzt ${name}. Damit der neue Name unter dem Icon steht: App vom Home-Bildschirm entfernen und in Safari neu hinzufügen. Vorher kurz sichern, dann bleiben deine Daten.`;
 
 /** Hinweis zeigen? Nur iPhone/iPad als Web-App, nur einmal, nur bei alter Installation */
 export const showMiaHomeHint = (o: { platform: MicPlatform; standalone: boolean; fromBefore: boolean; seen: boolean }) =>

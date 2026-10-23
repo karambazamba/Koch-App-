@@ -4,7 +4,7 @@
 // jedes mögliche Thema bekommt Punkte aus Dringlichkeit und Handlung,
 // Interesse (oft angetippt = mehr, weggewischt/erledigt = weniger) wird
 // langsam gelernt. Höchstens drei Themen zum Wischen; nichts Passendes =
-// „Alles ruhig – ich sag Bescheid.“ Die Kachel-Anordnung bleibt unberührt.
+// „Alles ruhig. Ich sag Bescheid.“ Die Kachel-Anordnung bleibt unberührt.
 
 import type { HomeTileId } from "@/lib/core/homeLayout";
 
@@ -116,7 +116,7 @@ type Candidate = JetztTopic & { gentle?: boolean; night?: boolean };
 
 /** Zeile 1 höchstens so lang */
 export const TITLE_MAX = 32;
-export const QUIET_TEXT = "Alles ruhig – ich sag Bescheid.";
+export const QUIET_TEXT = "Alles ruhig. Ich sag Bescheid.";
 
 const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
 const clock = (t: string) => t.replace(/^0(\d)/, "$1");
@@ -264,7 +264,7 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
   if (x.tip) add({ id: `tipp:${x.today}`, kind: "tipp", title: x.tip, detail: "Kleiner Tipp", score: 18, target: null, button: null, gentle: true });
 
   if (x.weekCheck && !night) add({ id: `wochencheck:${x.weekCheck}`, kind: "wochencheck", title: "Kurzer Wochencheck?", detail: "Sag einfach alles, ich sortiere.", score: 50, target: { action: "wochencheck" }, button: "Öffnen", gentle: true });
-  if (x.demo) add({ id: "beispiel", kind: "beispiel", title: "Das ist ein Beispiel-Tag", detail: "Probier alles aus – tippen, abhaken, verschieben", score: 24, target: null, button: null, gentle: true, night: true });
+  if (x.demo) add({ id: "beispiel", kind: "beispiel", title: "Das ist ein Beispiel-Tag", detail: "Probier alles aus: tippen, abhaken, verschieben", score: 24, target: null, button: null, gentle: true, night: true });
 
   const ranked = c
     .filter((t) => !x.hidden.includes(t.id))

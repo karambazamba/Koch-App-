@@ -166,7 +166,7 @@ describe("Wetter-Seite v0.47: Himmel und Wochensatz", () => {
   });
 
   it("trockene Woche", () => {
-    expect(weekSentence(fc(dates.map((d) => fd(d))), WED)).toEqual({ text: "Die ganze Woche trocken – gut für draußen.", tone: "sonne" });
+    expect(weekSentence(fc(dates.map((d) => fd(d))), WED)).toEqual({ text: "Die ganze Woche trocken. Gut für draußen.", tone: "sonne" });
   });
 
   it("Besserung ab einem Tag (und ab morgen)", () => {

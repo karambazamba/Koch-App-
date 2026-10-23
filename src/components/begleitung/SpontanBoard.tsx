@@ -16,11 +16,11 @@ const spontanCard = (i: SpontanIdea): CardIdea => ({ id: i.id, title: i.title, c
 
 /** Lottes eine Zeile über den Ideen */
 export function spontanHeading(ideas: SpontanIdea[], filters: SpontanFilter[], extra: string[], nearlyEmpty: boolean): string {
-  if (!ideas.length) return "Damit fällt mir gerade nichts ein – sag mir, was noch da ist, oder pass die Ideen an.";
+  if (!ideas.length) return "Damit fällt mir grad nichts ein. Was ist noch da?";
   const from = extra.length ? `Mit ${extra.join(", ")} und dem, was da ist` : nearlyEmpty ? "Mit Grundzutaten" : "Mit dem, was da ist";
   const order = filters.includes("reste") ? "Reste zuerst" : ideas.length > 1 ? "die schnellste zuerst" : "";
   const count = ideas.length === 3 ? "diese drei" : ideas.length === 2 ? "diese zwei" : "das hier";
-  return `${from}, ${ideas.length === 1 ? "geht heute" : "gehen heute"} ${count}${order ? ` – ${order}` : ""}:`;
+  return `${from}, ${ideas.length === 1 ? "geht heute" : "gehen heute"} ${count}${order ? `, ${order}` : ""}:`;
 }
 
 /**
@@ -65,7 +65,7 @@ export function SpontanAnswer({
           <>
             Noch da: {shown.join(", ")}
             {stock.length > 5 ? " …" : ""}
-            {nearlyEmpty ? ` – ${EMPTY_STOCK_HINT}` : ""}
+            {nearlyEmpty ? `. ${EMPTY_STOCK_HINT}` : ""}
           </>
         )}{" "}
         <Link href="/vorrat" onClick={onNavigate} className="font-semibold text-accent-strong underline">

@@ -39,7 +39,7 @@ export function ChatInputBar({ inputRef, input, setInput, name, canType, busy, s
           {(speech.error || dictationHint) && (
             <p className="text-sm text-muted" role="note">
               {speech.error ||
-                "Spracheingabe gibt es in diesem Browser nicht – tipp aufs Mikrofon deiner Tastatur und diktiere einfach."}
+                "Spracheingabe gibt’s in diesem Browser nicht. Nimm das Mikro deiner Tastatur."}
             </p>
           )}
           {suggestions.length > 0 && <SuggestionChips suggestions={suggestions} onPick={onSubmit} />}

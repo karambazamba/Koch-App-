@@ -259,7 +259,7 @@ export function KitchenHelper() {
               />
             </>
           ) : (
-            <span className="flex-1 font-semibold">Rückgängig gemacht – alles wie vorher.</span>
+            <span className="flex-1 font-semibold">Rückgängig. Alles wie vorher.</span>
           )}
         </div>
       )}

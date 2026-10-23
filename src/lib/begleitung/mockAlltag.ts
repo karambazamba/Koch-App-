@@ -269,7 +269,7 @@ export function calendarUses(latest: string, system: string): Anthropic.Beta.Bet
     .filter((e): e is CalendarEntry => e !== null);
   const hit = findByTitle(asEntries, cmd.query)[0];
   const found = hit ? known.find((k) => k.id === hit.id)! : null;
-  if (!found) return text("Den Eintrag finde ich gerade nicht – wie heißt er genau? (Testmodus)");
+  if (!found) return text("Den Eintrag find ich grad nicht. Wie heißt er genau? (Testmodus)");
   if (cmd.kind === "move") {
     if (found.typ === "termin") return tools([{ name: "termin_aendern", input: { id: found.id, datum: cmd.to, ...(cmd.time ? { start: cmd.time } : {}), ...(found.repeat ? { nur_am: found.date } : {}) } }]);
     return tools([{ name: "aufgabe_verschieben", input: { id: found.id, auf: cmd.to, ...(found.repeat ? { am: found.date } : {}) } }]);
@@ -289,7 +289,7 @@ export function calendarAnswer(content: string, input: Record<string, unknown>):
     const busy = open.filter((d) => d.typ === "termin" && d.time && d.time >= from && d.time < to);
     return busy.length ? `${cap1(label)} hast du ${busy.map((b) => `${b.time!.replace(/^0/, "")} ${b.title}`).join(" und ")}. (Testmodus)` : `Ja, ${label} ist frei. (Testmodus)`;
   }
-  if (!open.length) return `${cap1(label)} steht nichts an – schön ruhig. (Testmodus)`;
+  if (!open.length) return `${cap1(label)} steht nichts an. Schön ruhig. (Testmodus)`;
   const byDay = [...new Set(open.map((d) => d.date))].slice(0, 5).map((date) => {
     const items = open.filter((d) => d.date === date).map((d) => `${d.time ? `${d.time.replace(/^0/, "")} ` : ""}${d.title}`);
     const wd = new Intl.DateTimeFormat("de-DE", { weekday: "short", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`)).replace(".", "");

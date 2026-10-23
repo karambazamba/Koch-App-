@@ -141,11 +141,11 @@ function cookTools(): BegleitungTool[] {
         if (!k || !k.steps.length) return { content: "Für heute gibt es kein Rezept mit Schritten." };
         const done = [...k.done, ...ctx.ops.flatMap((o) => (o.type === "cook_step" ? [o.index] : []))];
         const cur = k.steps.findIndex((_, i) => !done.includes(i));
-        if (cur < 0) return { content: "Alle Schritte sind fertig – guten Appetit!" };
+        if (cur < 0) return { content: "Alle Schritte fertig. Guten Appetit!" };
         if (str((raw as Input | null)?.aktion) !== "weiter") return { content: `Schritt ${cur + 1} von ${k.steps.length}: ${k.steps[cur]}` };
         propose(ctx, { id: nextId(ctx), type: "cook_step", recipe: k.recipe || k.dish, index: cur });
         const next = k.steps.findIndex((_, i) => !done.includes(i) && i !== cur);
-        return { content: next < 0 ? `Schritt ${cur + 1} abgehakt – das war der letzte. Guten Appetit!` : `Schritt ${cur + 1} abgehakt. Jetzt Schritt ${next + 1} von ${k.steps.length}: ${k.steps[next]}` };
+        return { content: next < 0 ? `Schritt ${cur + 1} abgehakt. Das war der letzte. Guten Appetit!` : `Schritt ${cur + 1} abgehakt. Jetzt Schritt ${next + 1} von ${k.steps.length}: ${k.steps[next]}` };
       },
     },
   ];

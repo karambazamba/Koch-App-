@@ -6,6 +6,7 @@
 // geht es nicht (kein Ton, stumm geschaltet, keine Stimme), passiert einfach nichts.
 
 import { setAvatarFlag } from "@/lib/core/avatarState";
+import { tidyMiaText } from "@/lib/begleitung/tidy";
 import { useEffect, useState } from "react";
 import { createLocalStore, readRaw, writeRaw } from "@/lib/core/localStore";
 import type { HelperVoice } from "@/lib/einstellungen/profile";
@@ -172,7 +173,7 @@ function takeVoiceHint(voices: SpeechSynthesisVoice[], voice: HelperVoice): bool
 /** "▶ Stimme": kurzer Satz in der Stimme, die zur Art passt (automatisch gewählt) */
 export function previewHelperVoice(name: string, voice: HelperVoice): boolean {
   unlockSpeech();
-  speak(`Hallo, ich bin ${name}!`, { id: `probe-${name}`, gender: voice, voice: "" });
+  speak("Moin! So klinge ich.", { id: `probe-${name}`, gender: voice, voice: "" });
   return takeVoiceHint(currentVoices(), voice);
 }
 
@@ -334,7 +335,7 @@ function wordSpoken() {
  */
 export function speak(text: string, options: { id?: string; gender?: HelperVoice; voice?: string } = {}) {
   if (!speechSupported()) return;
-  const chunks = speechChunks(cleanForSpeech(text));
+  const chunks = speechChunks(cleanForSpeech(tidyMiaText(text)));
   stopSpeaking();
   if (!chunks.length) return;
   const mine = ++token;

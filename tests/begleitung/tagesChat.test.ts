@@ -71,7 +71,7 @@ describe("Jetzt-Karte und Timer", () => {
 
   it("höchstens fünf Timer gleichzeitig", () => {
     for (let i = 1; i <= 5; i++) expect(say(`Timer ${i} Minuten`)).not.toBeNull();
-    expect(say("Timer 9 Minuten")!.text).toBe("Fünf Timer laufen schon – sobald einer fertig ist, geht der nächste.");
+    expect(say("Timer 9 Minuten")!.text).toBe("Fünf Timer laufen schon. Sobald einer fertig ist, geht der nächste.");
   });
 });
 
@@ -85,9 +85,9 @@ describe("Kochen Schritt für Schritt", () => {
     second.undo!();
     expect(say("Was kommt jetzt?")!.text).toBe("Schritt 2 von 3: Nudeln kochen.");
     say("Nächster Schritt");
-    expect(say("Nächster Schritt")!.text).toBe("Abgehakt ✓ Das war der letzte Schritt – guten Appetit!");
-    expect(say("Nächster Schritt")!.text).toBe("Alle Schritte sind fertig – guten Appetit!");
-    expect(say("Was kommt jetzt?")!.text).toBe("Alle Schritte sind fertig – guten Appetit!");
+    expect(say("Nächster Schritt")!.text).toBe("Abgehakt ✓ Das war der letzte Schritt. Guten Appetit!");
+    expect(say("Nächster Schritt")!.text).toBe("Alle Schritte fertig. Guten Appetit!");
+    expect(say("Was kommt jetzt?")!.text).toBe("Alle Schritte fertig. Guten Appetit!");
   });
 
   it("ohne Gericht: trotzdem loslegen, aber keine Schritte", () => {
@@ -98,7 +98,7 @@ describe("Kochen Schritt für Schritt", () => {
 
 describe("Sport", () => {
   it("Ziel, Eintragen, Woche und Monat – ohne Druck", () => {
-    expect(say("Wie oft war ich diese Woche beim Sport?")!.text).toBe("Diese Woche ist noch frisch – bereit, wenn du’s bist.");
+    expect(say("Wie oft war ich diese Woche beim Sport?")!.text).toBe("Die Woche ist noch frisch. Bereit, wenn du’s bist.");
     expect(say("Ich will 2× pro Woche Sport machen")!.text).toBe("Wochenziel: 2× pro Woche ✓ Die Sport-Kachel steht jetzt auf der Startseite.");
     expect(say("Ich will 3× pro Woche Sport machen")!.text).toBe("Wochenziel: 3× pro Woche ✓");
     const run = say("War heute 5 km laufen")!;

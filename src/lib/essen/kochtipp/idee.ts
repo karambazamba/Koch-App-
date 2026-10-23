@@ -212,7 +212,7 @@ export function ideaHello(planned: string | null, first: CookCard | undefined): 
 }
 
 /** Nach dem Erzählen: „Dann mach doch …!“ */
-export const ideaResult = (first: CookCard | undefined) => (first ? `Dann mach doch ${first.title}!` : "Dafür hab ich gerade nichts Passendes – sag mir gern was anderes.");
+export const ideaResult = (first: CookCard | undefined) => (first ? `Dann mach doch ${first.title}!` : "Dafür hab ich grad nichts Passendes. Was anderes?");
 
 /** „Hähnchen merk ich mir als „im Haus“ ✓“ */
 export const rememberedText = (have: string[]) => (have.length ? `${list(have.slice(0, 3))} merk ich mir als „im Haus“ ✓` : "");

@@ -1,7 +1,7 @@
 "use client";
 
 // Erster Start (nur ganz am Anfang oder nach "Neu anfangen"): der
-// Hallo-Bildschirm nach Tafel 55 – Mia groß und rund, „Hallo, ich bin Mia.“
+// Hallo-Bildschirm nach Tafel 55 – Mia groß und rund, „Moin!“ (Mia stellt sich nie vor)
 // („Mia.“ in Orange), „Erzähl mir einfach, was ansteht. Ich sortiere für
 // euch.“, „Los geht’s“, „Daten wiederherstellen“ und klein unten die Marke
 // (BrandMark, gedämpft) mit „Gemacht in Eutin · von KARAMBA Eis“. Ablauf:
@@ -22,7 +22,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { BrandMark } from "@/components/ui/BrandMark";
-import { DEFAULT_HELPER, avatarHex, helperName } from "@/lib/einstellungen/profile";
+import { DEFAULT_HELPER, avatarHex } from "@/lib/einstellungen/profile";
 import { startFresh } from "@/lib/einstellungen/welcomeStore";
 import { LookStep } from "@/components/einstellungen/aussehen/LookStep";
 import type { AppLook } from "@/lib/einstellungen/profile";
@@ -67,8 +67,8 @@ export function HelloScreen() {
   const router = useRouter();
   const path = usePathname();
   const color = avatarHex(DEFAULT_HELPER.farbe);
-  const name = helperName(null);
-  const title = `Hallo, ich bin ${name}.`;
+  // Jeder kennt Mia – sie stellt sich nie vor (Auftrag „Mia spricht knapp“)
+  const title = "Moin!";
   const ready = usePageReady();
   useEffect(markHelloShown, []);
   const [still] = useState(reducedMotion);
@@ -176,7 +176,8 @@ export function HelloScreen() {
       router.replace("/");
     }
   };
-  const prefix = title.slice(0, title.length - name.length - 1);
+  // „Moin“ dunkel, das „!“ in Orange
+  const prefix = title.slice(0, -1);
   const shown = title.slice(0, typed);
   return (
     <main className="fixed inset-0 z-40 overflow-y-auto bg-background" aria-label="Willkommen">

@@ -56,6 +56,7 @@ import {
   type StreamEvent,
 } from "@/lib/begleitung/protocol";
 import { now } from "@/lib/core/now";
+import { tidyMiaText } from "@/lib/begleitung/tidy";
 import type { StorageKey } from "@/lib/core/storage";
 
 const DEVICE_KEY: StorageKey = "wasgibts.geraet";
@@ -65,7 +66,7 @@ const COUNT_KEY: StorageKey = "wasgibts.lotte.anfragen";
 /** Was die Begleitung sagt, wenn die KI gerade nicht kann – nie Technik-Wörter (Avatar "verwirrt") */
 const FALLBACK_TEXT = "Hm, das hab ich nicht verstanden.";
 /** Ohne Internet – freundlich, mit dem Hinweis, dass Eingetragenes bleibt */
-const OFFLINE_TEXT = "Ich bin gerade offline – was du einträgst, speichere ich trotzdem.";
+const OFFLINE_TEXT = "Bin grad offline. Was du einträgst, bleibt trotzdem.";
 /** Passender Satz je nach Lage (offline oder nicht verstanden) */
 export const unavailableText = () => (typeof navigator !== "undefined" && navigator.onLine === false ? OFFLINE_TEXT : FALLBACK_TEXT);
 
@@ -309,7 +310,7 @@ export function runInstantOps(ops: ChangeOp[]): { rest: ChangeOp[]; notes: strin
   for (const op of ops) {
     if (op.type === "add_timer") {
       const started = startTimer({ name: op.name, minutes: op.minutes }, { quiet: true });
-      if (!started) notes.push("Fünf Timer laufen schon – sobald einer fertig ist, geht der nächste.");
+      if (!started) notes.push("Fünf Timer laufen schon. Sobald einer fertig ist, geht der nächste.");
       else {
         undo.push(started.undo);
         tileShown ||= started.tileShown;
@@ -413,12 +414,12 @@ export async function askAssistant(
           freshRound = false;
         }
         text += event.d;
-        opts.onText?.(text);
+        opts.onText?.(tidyMiaText(text));
       } else if (event.t === "round") {
         freshRound = true;
       } else if (event.t === "done") {
         recordUsage(today, event.usage);
-        return { reply: event.reply, ops: event.ops, mail: event.mail, chips: event.chips, tips: event.tips };
+        return { reply: tidyMiaText(event.reply), ops: event.ops, mail: event.mail, chips: event.chips, tips: event.tips };
       } else if (event.t === "error") {
         if (event.error === "zugangscode") forgetAccessCode();
         throw new BegleitungUnavailable(event.error);
@@ -543,7 +544,7 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
     if (setFeature(op.feature as Feature, op.on)) {
       switched.push({ feature: op.feature as Feature, on: op.on });
       const b = bausteinOf(op.feature as Feature)!;
-      notes.push(op.on ? b.where : `${b.name} ist aus – die Daten bleiben.`);
+      notes.push(op.on ? b.where : `${b.name} ist aus. Die Daten bleiben.`);
     }
   }
   if (chosen.some((op) => op.type === "upsert_note")) notes.push("Notizen findest du in der Woche ganz unten unter „Notizen“.");
@@ -557,7 +558,7 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
     }
   }
   const jetztOps = chosen.filter((op) => op.type === "set_jetzt");
-  if (chosen.some((op) => op.type === "set_household")) notes.push(`Steht jetzt in den Einstellungen unter „${householdTitle(data.profile)}“ – dort kannst du alles ergänzen.`);
+  if (chosen.some((op) => op.type === "set_household")) notes.push(`Steht drin, unter „${householdTitle(data.profile)}“ in den Einstellungen.`);
   if (chosen.some((op) => op.type === "set_meal" || op.type === "add_shopping")) {
     const note = shoppingNote(data, current);
     if (note) notes.push(note);

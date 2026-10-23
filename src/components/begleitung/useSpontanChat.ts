@@ -139,7 +139,7 @@ export function useSpontanChat({ data, today, pantry, spontanStyle, setChat, set
           undo: result.ok
             ? () => {
                 replaceMealPlans(before);
-                setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig gemacht – alles wie vorher.", local: true }] }));
+                setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig. Alles wie vorher.", local: true }] }));
               }
             : undefined,
         },

@@ -74,7 +74,7 @@ export function dayChat(text: string, ctx: DayChatContext): DayChatReply | null 
     const undo = pushUndo(jetzt ? "„Jetzt-Karte an“" : "„Jetzt-Karte aus“", setJetztOn(jetzt));
     return {
       text: jetzt
-        ? "Erledigt ✓ Die Jetzt-Karte steht wieder oben – mit dem Wichtigsten für den Moment."
+        ? "Erledigt ✓ Die Jetzt-Karte steht wieder oben."
         : "Erledigt ✓ Die Jetzt-Karte ist aus. Die Kacheln bleiben ohnehin immer so, wie du sie sortiert hast. Wieder an: Einstellungen → Startseite & Tageszeiten.",
       undo,
     };
@@ -85,7 +85,7 @@ export function dayChat(text: string, ctx: DayChatContext): DayChatReply | null 
   if (timer) {
     if (timer.kind === "start") {
       const started = startTimer({ minutes: timer.minutes, name: timer.name });
-      if (!started) return { text: "Fünf Timer laufen schon – sobald einer fertig ist, geht der nächste." };
+      if (!started) return { text: "Fünf Timer laufen schon. Sobald einer fertig ist, geht der nächste." };
       // Ohne Timer-Kachel blendet startTimer sie ein – dann sagen, wo er steht
       const where = started.tileShown ? " Der Timer steht jetzt auf der Startseite." : "";
       return { text: `Läuft ⏱ ${started.timer.name} – ${durationLabel(started.timer.durationMs)}.${where}`, undo: pushUndo("den Timer", started.undo) };
@@ -115,11 +115,11 @@ export function dayChat(text: string, ctx: DayChatContext): DayChatReply | null 
     const c = ctx.cooking;
     if (WHAT_NOW.test(t)) {
       const cur = currentStep(c.steps.length, loadCooking().steps[c.recipe] ?? []);
-      return { text: cur === null ? "Alle Schritte sind fertig – guten Appetit!" : `Schritt ${cur + 1} von ${c.steps.length}: ${c.steps[cur]}` };
+      return { text: cur === null ? "Alle Schritte fertig. Guten Appetit!" : `Schritt ${cur + 1} von ${c.steps.length}: ${c.steps[cur]}` };
     }
     const step = nextStep(c.recipe, c.steps.length);
-    if (step.done === null) return { text: "Alle Schritte sind fertig – guten Appetit!" };
-    return { text: step.next === null ? "Abgehakt ✓ Das war der letzte Schritt – guten Appetit!" : `Abgehakt ✓ Jetzt Schritt ${step.next + 1}: ${c.steps[step.next]}`, undo: pushUndo("den Kochschritt", step.undo) };
+    if (step.done === null) return { text: "Alle Schritte fertig. Guten Appetit!" };
+    return { text: step.next === null ? "Abgehakt ✓ Das war der letzte Schritt. Guten Appetit!" : `Abgehakt ✓ Jetzt Schritt ${step.next + 1}: ${c.steps[step.next]}`, undo: pushUndo("den Kochschritt", step.undo) };
   }
 
   // --- Sport ---
@@ -149,7 +149,7 @@ export function dayChat(text: string, ctx: DayChatContext): DayChatReply | null 
       const streak = weekStreak(state, entries, ctx.today, ctx.me);
       if (sport.what === "monat" || sport.km)
         return { text: `${monthName(ctx.today)}: ${m.count} ${m.count === 1 ? "Einheit" : "Einheiten"}, ${hoursLabel(m.minutes)}${m.km ? `, ${m.km} km` : ""}.${streak >= 2 ? ` ${streak} Wochen in Folge geschafft 🔥` : ""}` };
-      return { text: week.count ? `Diese Woche ${week.count}× – ${week.count >= week.goal ? (week.count > week.goal ? "Bonusrunde! 🔥" : "Wochenziel geschafft 🎉") : `Ziel sind ${week.goal}.`}` : "Diese Woche ist noch frisch – bereit, wenn du’s bist." };
+      return { text: week.count ? `Diese Woche ${week.count}× – ${week.count >= week.goal ? (week.count > week.goal ? "Bonusrunde! 🔥" : "Wochenziel geschafft 🎉") : `Ziel sind ${week.goal}.`}` : "Die Woche ist noch frisch. Bereit, wenn du’s bist." };
     }
     // Trainings planen: freie Lücken, Wunsch-Tageszeit, Wetter (falls bekannt)
     const fc = loadForecast();

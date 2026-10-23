@@ -430,7 +430,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           heard={heard}
         >
           {!layout.field && suggestions.length > 0 && <SuggestionChips suggestions={suggestions} onPick={submit} />}
-          <VoiceOffer readCount={readCount} speaking={speakingId !== null} gender={voice} name={name} />
+          <VoiceOffer readCount={readCount} speaking={speakingId !== null} gender={voice} />
         </ChatHistory>
 
         {layout.field ? (

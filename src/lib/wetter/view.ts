@@ -80,7 +80,7 @@ export function daySentence(fc: Forecast, date: string, termine: TipTermin[] = [
     const h = at(t);
     return h && isRainy(h);
   });
-  if (wet) return `Zu ${short(wet.title)} um ${Number(wet.time.slice(0, 2))} Uhr regnet es – Schirm mit.`;
+  if (wet) return `Zu ${short(wet.title)} um ${Number(wet.time.slice(0, 2))} Uhr regnet es. Schirm mit.`;
   const first = timed.find((t) => at(t));
   if (first && hs.length) return `Für ${short(first.title)} bleibt es trocken.`;
   const rain = hs.find(isRainy);
@@ -163,7 +163,7 @@ const isWet = (d: ForecastDay) => d.wet >= 2 || d.mm >= 3 || weatherGroup(d.code
  * EIN Satz zur Woche bzw. zum Wochenende (rein, ohne KI) und die Farbe der
  * Karte. Ruhig, ohne Druck-Wörter, nie Panik: „Wochenende eher nass. Am
  * Sonntag gibt’s zwischendurch 2 Std. Sonne.“ · „Ab Dienstag wird’s
- * freundlicher.“ · „Die ganze Woche trocken – gut für draußen.“
+ * freundlicher.“ · „Die ganze Woche trocken. Gut für draußen.“
  */
 export function weekSentence(fc: Forecast, today: string): { text: string; tone: ColumnTone } | null {
   const days = fc.days.filter((d) => d.date >= today).slice(0, 7);
@@ -171,7 +171,7 @@ export function weekSentence(fc: Forecast, today: string): { text: string; tone:
   const wet = days.map(isWet);
   const name = (d: ForecastDay) => (d.date === days[1]?.date ? "morgen" : weekdayOf(d.date));
   const sunny = (d: ForecastDay) => Math.round(d.sun);
-  if (!wet.some(Boolean)) return { text: days.some((d) => d.wet > 0) ? "Fast die ganze Woche trocken – gut für draußen." : "Die ganze Woche trocken – gut für draußen.", tone: "sonne" };
+  if (!wet.some(Boolean)) return { text: days.some((d) => d.wet > 0) ? "Fast die ganze Woche trocken. Gut für draußen." : "Die ganze Woche trocken. Gut für draußen.", tone: "sonne" };
   // Wochenende (Sa/So, nicht heute) – wenn es vorkommt und beide Tage nass sind
   const weekend = days.slice(1).filter((d) => ["Samstag", "Sonntag"].includes(weekdayOf(d.date)));
   if (weekend.length === 2 && weekend.every(isWet)) {
@@ -184,11 +184,11 @@ export function weekSentence(fc: Forecast, today: string): { text: string; tone:
     const d = days[firstDry];
     return { text: d.date === days[1].date ? "Ab morgen wird’s freundlicher." : `Ab ${weekdayOf(d.date)} wird’s freundlicher.`, tone: "wolken" };
   }
-  if (weekend.length === 2 && !weekend.some(isWet)) return { text: "Zum Wochenende wird’s trocken – gut für draußen.", tone: "sonne" };
+  if (weekend.length === 2 && !weekend.some(isWet)) return { text: "Zum Wochenende wird’s trocken. Gut für draußen.", tone: "sonne" };
   // Erst trocken, dann nasser
   const firstWet = wet.findIndex(Boolean);
   if (firstWet >= 2 && wet.slice(firstWet).every(Boolean)) return { text: `Bis ${weekdayOf(days[firstWet - 1].date)} trocken, danach wird’s nasser.`, tone: "wolken" };
-  if (wet.every(Boolean)) return { text: "Eine nasse Woche – gemütlich drinnen und mit Schirm raus.", tone: "regen" };
+  if (wet.every(Boolean)) return { text: "Eine nasse Woche. Gemütlich drinnen, mit Schirm raus.", tone: "regen" };
   const best = bestOutdoorDay(fc, today);
-  return { text: best ? `Wechselhaft – am besten für draußen: ${best.date === today ? "heute" : name(best)}.` : "Eine wechselhafte Woche.", tone: wet.filter(Boolean).length > days.length / 2 ? "regen" : "wolken" };
+  return { text: best ? `Wechselhaft. Am besten für draußen: ${best.date === today ? "heute" : name(best)}.` : "Eine wechselhafte Woche.", tone: wet.filter(Boolean).length > days.length / 2 ? "regen" : "wolken" };
 }

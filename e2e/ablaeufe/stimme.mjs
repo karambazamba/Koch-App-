@@ -33,7 +33,7 @@ export const stimme = async (page, check, device) => {
   await page.evaluate(() => window.__voices.push(window.__mk("Anna (Premium)")));
   await guide.getByRole("button", { name: "Fertig geladen" }).click();
   await page.waitForTimeout(400);
-  check(await page.getByText("Neue Stimme gefunden – ab jetzt spreche ich mit „Anna (Premium)“.").isVisible(), "grüne Karte mit neuer Stimme");
+  check(await page.getByText("Neue Stimme gefunden. Ab jetzt sprech ich mit „Anna (Premium)“.").isVisible(), "grüne Karte mit neuer Stimme");
   check(await page.getByRole("button", { name: "Probehören" }).isVisible(), "„Probehören“");
 
   // Zweites Gerät: „Passt so“ → nie wieder
