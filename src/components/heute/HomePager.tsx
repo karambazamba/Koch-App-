@@ -11,7 +11,7 @@
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Settings } from "lucide-react";
+import { House, Settings } from "lucide-react";
 import { MiaButton } from "@/components/begleitung/MiaButton";
 import { CARD } from "@/components/ui/styles";
 import { useCalendarEntries } from "@/lib/kalender/useCalendarEntries";
@@ -155,20 +155,36 @@ export function HomePager({ data }: { data: HomeData }) {
     else commit(next);
   };
 
+  // Auf Kalender und Essen bleibt die Leiste oben; beim Runterscrollen schmal mit Weichzeichner (Tafel 73)
+  const away = tab !== "heute";
+  const [slim, setSlim] = useState(false);
+  useEffect(() => {
+    if (!away) return;
+    const onScroll = () => setSlim(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [away]);
+  const compact = away && slim;
+
   const ready = entries !== undefined && minutes !== undefined;
   const content = (t: HomeTab) => {
     if (!ready) return t === tab ? <div className={`${CARD} h-48 animate-pulse`} /> : null;
     if (t === "heute") return <TodayPage data={data} entries={entries} minutes={minutes} realMinutes={realMinutes} onOpenFood={() => go("essen")} />;
-    if (t === "kalender") return <CalendarPage today={data.todayIso} entries={entries} name={helperName(data.profile)} />;
+    if (t === "kalender") return <CalendarPage today={data.todayIso} entries={entries} />;
     return <FoodPage data={data} minutes={minutes} />;
   };
   return (
     <>
       <main
         ref={mainRef}
-        className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-3 overflow-x-hidden px-4 pb-[calc(max(0.75rem,env(safe-area-inset-bottom))+6.5rem)] pt-[calc(env(safe-area-inset-top)+0.75rem)]"
+        className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-3 overflow-x-clip px-4 pb-[calc(max(0.75rem,env(safe-area-inset-bottom))+6.5rem)] pt-[calc(env(safe-area-inset-top)+0.75rem)]"
       >
-        <nav className="relative z-10 flex items-center gap-2 bg-background" aria-label="Seiten">
+        <nav
+          className={`z-20 -mx-4 flex items-center gap-2 px-4 transition-[padding,background-color] duration-300 ${away ? "sticky top-0" : "relative"} ${compact ? "bg-background/80 pb-1.5 pt-[calc(env(safe-area-inset-top)+0.375rem)] shadow-card backdrop-blur-[14px]" : "bg-background"}`}
+          aria-label="Seiten"
+          data-schmal={compact || undefined}
+        >
           <div role="tablist" aria-label="Kalender, Heute, Essen" className="relative flex flex-1 rounded-card bg-segment p-1">
             <span className="pointer-events-none absolute inset-y-1 left-1 w-[calc((100%-0.5rem)/3)]" aria-hidden>
               <span ref={thumbRef} className="block h-full w-full rounded-field bg-surface shadow-card" style={{ transform: `translateX(${indexOf(tab) * 100}%)` }} />
@@ -179,9 +195,11 @@ export function HomePager({ data }: { data: HomeData }) {
                 type="button"
                 role="tab"
                 aria-selected={tab === t.value}
+                aria-label={t.value === "heute" && away ? "Zur Startseite" : undefined}
                 onClick={() => go(t.value)}
-                className={`hit relative h-10 flex-1 rounded-field text-[15px] font-bold transition-colors ${tab === t.value ? "text-ink" : "text-muted"}`}
+                className={`hit relative flex flex-1 items-center justify-center gap-1 rounded-field text-[15px] font-bold transition-colors ${compact ? "h-7" : "h-10"} ${tab === t.value ? "text-ink" : t.value === "heute" ? "text-accent-strong" : "text-muted"}`}
               >
+                {t.value === "heute" && away && <House className="h-4 w-4" strokeWidth={2.25} aria-hidden />}
                 {t.label}
               </button>
             ))}

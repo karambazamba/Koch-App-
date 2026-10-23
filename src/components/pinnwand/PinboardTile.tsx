@@ -5,13 +5,16 @@
 // à 30 px: Angeheftetes, dann die neuesten Einträge der letzten 24 Std. – Text (Bild 22 px +
 // eine Zeile …) bzw. Sprachnachricht (▶, kleine Tonwelle, Länge). „+N“ neben
 // dem ＋, wenn es mehr gibt; kein roter Punkt, keine Zahl in Rot. Oben rechts
-// ＋ = Mia schreibt mit, unten rechts Mikro = Sprachnachricht (deutlich
-// getrennt). Antippen öffnet die Pinnwand-Seite an dieser Nachricht; keine
-// Wisch- oder Lange-Drücken-Gesten in der Kachel.
+// ＋ = Schnelleingabe (beim ersten Mal kleines Schild „schreiben“), unten links
+// „Sprachnachricht“, rechts das Mikro. Aufnahme (Tafel 80) = EINE Leiste statt
+// der Zeilen (＋ und Mikro sind dann weg), gesendet nur über ➤; danach steht
+// die Sprachnachricht oben (zart hervorgehoben) und unten kurz „✓ Gesendet“.
+// Antippen öffnet die Pinnwand-Seite an dieser Nachricht; keine Wisch- oder
+// Lange-Drücken-Gesten in der Kachel.
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { Pin, Plus } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Check, Pin, Plus } from "lucide-react";
 import { TILE, TILE_LABEL } from "@/components/ui/styles";
 import { QuickButton } from "@/components/ui/QuickButton";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
@@ -39,9 +42,26 @@ export function PinboardTile({ size = "S", me, demo = false }: { size?: TileSize
   }, [demo, hasOwn]);
   const showDemo = demo && !hasOwn;
   const [writing, setWriting] = useState<string | null>(null);
-  const recorder = useMemoRecorder({ me });
+  // Nach dem Senden: die neue Sprachnachricht kurz hervorheben, unten „✓ Gesendet“ (1,5 s)
+  const [sent, setSent] = useState<string | null>(null);
+  useEffect(() => {
+    if (!sent) return;
+    const t = setTimeout(() => setSent(null), 1500);
+    return () => clearTimeout(t);
+  }, [sent]);
+  const recorder = useMemoRecorder({ me, onSent: (m) => setSent(m.id) });
+  const recording = recorder.phase !== "idle";
   const canRecord = useCanRecordMemo();
+  // Schild „schreiben“ unter dem ＋: bis zum ersten Tipp darauf oder nach 2 Besuchen
   const hintSeen = useHintSeen("pinnwand-kachel");
+  const visited = useHintSeen("pinnwand-kachel-1");
+  const counted = useRef(false);
+  useEffect(() => {
+    if (visited === undefined || counted.current) return;
+    counted.current = true;
+    if (!visited) markHintSeen("pinnwand-kachel-1");
+    else return () => markHintSeen("pinnwand-kachel");
+  }, [visited]);
   const nowMs = board.items ? now().getTime() : 0;
   const { shown, more } = tileEntries(board.items ?? [], nowMs);
   const write = () => {
@@ -61,10 +81,21 @@ export function PinboardTile({ size = "S", me, demo = false }: { size?: TileSize
               +{more}
             </Link>
           )}
-          <QuickButton icon={Plus} label="Nachricht an die Pinnwand" onClick={write} />
+          {recording ? (
+            <span className="h-[26px] w-[26px] shrink-0" aria-hidden />
+          ) : (
+            <span className="relative shrink-0">
+              <QuickButton icon={Plus} label="Nachricht an die Pinnwand" onClick={write} />
+              {hintSeen === false && (
+                <span className="pointer-events-none absolute right-0 top-[28px] rounded-full bg-tile-inner px-1.5 py-px text-[10px] font-bold text-tile-accent shadow-card" aria-hidden>
+                  schreiben
+                </span>
+              )}
+            </span>
+          )}
         </div>
-        <div className="mt-1.5 flex h-[64px] flex-col gap-1">
-          {recorder.phase !== "idle" ? (
+        <div className={`mt-1.5 flex flex-col gap-1 ${recording ? "min-h-0 flex-1" : "h-[64px]"} ${hintSeen === false && !recording ? "[&>*:first-child]:pr-16" : ""}`}>
+          {recording ? (
             <RecordingRow recorder={recorder} compact />
           ) : showDemo ? (
             <Link href="/pinnwand" data-zeile className="flex h-[30px] items-center gap-2" aria-label={`Beispiel: ${DEMO.author}: ${DEMO.text}`}>
@@ -74,7 +105,7 @@ export function PinboardTile({ size = "S", me, demo = false }: { size?: TileSize
           ) : shown.length ? (
             shown.map((item) =>
               item.kind === "memo" ? (
-                <div key={item.id} className="relative flex h-[30px] items-center gap-2">
+                <div key={item.id} className={`relative flex h-[30px] items-center gap-2 rounded-field ${sent === item.id ? "pin-hervor" : ""}`}>
                   <MemoMini memo={item.memo} me={me} household={board.household} />
                   <Link href={`/pinnwand?n=${item.id}`} data-zeile className="absolute inset-y-0 left-[60px] right-0" aria-label={`Sprachnachricht von ${item.memo.data.author} – auf der Pinnwand öffnen`} />
                 </div>
@@ -93,10 +124,18 @@ export function PinboardTile({ size = "S", me, demo = false }: { size?: TileSize
           )}
         </div>
         <MemoNote text={recorder.note} onResend={recorder.unsent ? recorder.resend : undefined} />
-        <div className="mt-auto flex items-end justify-between gap-2">
-          {hintSeen === false && !recorder.note ? <span className="min-w-0 truncate text-[11px] font-semibold text-muted">＋ = schreiben · Mikro = deine Stimme</span> : <span />}
-          {canRecord && <MemoMic recorder={recorder} size={34} />}
-        </div>
+        {!recording && canRecord && (
+          <div className="mt-auto flex items-center justify-between gap-2">
+            {sent ? (
+              <span className="flex items-center gap-1 text-[12px] font-bold text-tile-accent" role="status">
+                <Check className="h-3.5 w-3.5" strokeWidth={2.75} aria-hidden /> Gesendet
+              </span>
+            ) : (
+              <span className="min-w-0 text-[12px] font-semibold leading-tight text-tile-accent">Sprach&shy;nachricht</span>
+            )}
+            <MemoMic recorder={recorder} size={34} tapOnly />
+          </div>
+        )}
       </section>
       {writing !== null && <PinWriteSheet me={me} initialText={writing} onClose={() => setWriting(null)} />}
     </>

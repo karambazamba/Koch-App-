@@ -5,7 +5,7 @@ import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 
 // „kachel-hinzufuegen“ = alte Sprechblase (bis v0.48.0), bleibt nur als gespeicherter Wert
-export type HintId = "kachel-hinzufuegen" | "kachel-tipp" | "mikro-gefragt" | "stimme-angeboten" | "kochtipp-muetze" | "mia-knopf" | "aufgaben-persoenlich" | "mia-name-neu" | "memo-nur-sitzung" | "mikro-homescreen" | "pinnwand-kachel" | "pinnwand-gesten" | "pinnwand-24h";
+export type HintId = "kachel-hinzufuegen" | "kachel-tipp" | "mikro-gefragt" | "stimme-angeboten" | "kochtipp-muetze" | "mia-knopf" | "aufgaben-persoenlich" | "mia-name-neu" | "memo-nur-sitzung" | "mikro-homescreen" | "pinnwand-kachel" | "pinnwand-gesten" | "pinnwand-24h" | "pinnwand-kachel-1";
 
 type HintState = { version: 1; seen: HintId[] };
 
