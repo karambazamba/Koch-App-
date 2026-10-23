@@ -65,7 +65,8 @@ export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, d
   const [menu, setMenu] = useState<DayItem | null>(null);
   const [editing, setEditing] = useState<DayItem | null>(null);
   const spot = topic ? topicSpot(topic) : null;
-  const hint = topic?.detail || topic?.title || "";
+  // Der Hinweis der Karte: meist Zeile 1 („Versichertenkarte einpacken?“), bei „gleich“ der Zusatz
+  const hint = (topic?.kind === "gleich" ? topic.detail : topic?.title) || topic?.detail || "";
   const list = showTomorrow ? tomorrow : termine;
   const { rows, nowAt } = terminRows(list, showTomorrow ? -1 : minutes);
   const body = useRef<HTMLDivElement>(null);

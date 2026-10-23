@@ -133,7 +133,9 @@ export function JetztCard({
         const dx = e.changedTouches[0].clientX - s.x;
         const dy = e.changedTouches[0].clientY - s.y;
         if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+          // Der Klick nach dem Wischen öffnet nichts – danach zählt der nächste Tipp wieder
           swiped.current = true;
+          window.setTimeout(() => (swiped.current = false), 400);
           next(dx < 0 ? 1 : -1);
         }
       }}

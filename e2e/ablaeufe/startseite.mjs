@@ -90,9 +90,13 @@ export const jetztKarte = async (page, check) => {
   await seedFamily(page, { ...RECIPE_DATA, "wasgibts.wochenplan": plan });
   await page.evaluate(() => {
     const raw = JSON.parse(localStorage.getItem("wasgibts.eintraege"));
-    raw.entries = raw.entries.map((e) => (e.id === "t1" ? { ...e, data: { ...e.data, note: "Versichertenkarte einpacken" } } : e));
+    raw.entries = raw.entries.map((e) => (e.id === "t1" ? { ...e, data: { ...e.data, note: "Versichertenkarte einpacken" } } : e.id === "t2" ? { ...e, data: { ...e.data, note: "Zettel unterschreiben" } } : e));
     localStorage.setItem("wasgibts.eintraege", JSON.stringify(raw));
-    localStorage.setItem("wasgibts.pinnwand", JSON.stringify({ version: 2, messages: [], memos: [] }));
+    // Elternabend mit Notiz = zweites Thema; neu von Oma steht in „Dein Tag“ unter Pinnwand
+    const pin = JSON.parse(localStorage.getItem("wasgibts.pinnwand"));
+    const m = pin.messages[0];
+    pin.messages = [{ ...m, id: "pin2", erstellt: "2026-10-21T07:30:00.000Z", geaendert: "2026-10-21T07:30:00.000Z", data: { ...m.data, text: "Bin um 18 Uhr da", author: "Oma", readBy: [] } }];
+    localStorage.setItem("wasgibts.pinnwand", JSON.stringify(pin));
   });
   await page.reload();
   const card = page.locator("[data-jetzt]");
@@ -101,12 +105,10 @@ export const jetztKarte = async (page, check) => {
   check((await page.locator("main .begleitung-avatar, [data-begleitung-leiste] .begleitung-avatar").count()) === 1, "Startseite: genau ein Mia-Gesicht (der Knopf)");
   check((await card.locator("[data-thema]").count()) === 1 && !(await card.locator(".begleitung-avatar").count()), "Jetzt-Karte: Themen-Symbol statt Gesicht");
   check((await card.getByRole("button").count()) === 1, "Jetzt-Karte: kein eigener Knopf (nur die Karte)");
-  const text = await card.innerText();
-  check(/Versichertenkarte einpacken\?/.test(text), `Thema 1: Vorbereiten (${text.replace(/\s+/g, " ").slice(0, 60)})`);
 
   // Wischen 1 → 3 und nicht weiter
   const box = await card.boundingBox();
-  const dots = card.locator("span[aria-hidden] > span");
+  const dots = card.locator("span.bg-current");
   const n = await dots.count();
   check(n >= 2 && n <= 3, `2–3 Themen (${n})`);
   const activeIndex = () => dots.evaluateAll((els) => els.findIndex((e) => e.className.includes("w-3.5")));
@@ -120,6 +122,14 @@ export const jetztKarte = async (page, check) => {
     await page.waitForTimeout(450);
   }
   check((await activeIndex()) === 0, "zurückwischen bis Thema 1");
+  // Zum Thema „Versichertenkarte einpacken?“ wischen
+  for (let k = 0; k < n && !/Versichertenkarte einpacken\?/.test(await card.innerText()); k++) {
+    await swipe(page, { x: box.x + box.width * 0.8, y: box.y + box.height / 2, dx: -box.width * 0.6 });
+    await page.waitForTimeout(600);
+  }
+  const text = await card.innerText();
+  check(/Versichertenkarte einpacken\?/.test(text), `Thema Vorbereiten (${text.replace(/\s+/g, " ").slice(0, 60)})`);
+  await page.waitForTimeout(450);
 
   // Antippen → „Dein Tag“ mit dem Thema hervorgehoben
   await card.getByRole("button").click();
@@ -127,7 +137,7 @@ export const jetztKarte = async (page, check) => {
   await sheet.waitFor({ timeout: 4000 });
   check(await sheet.getByRole("heading", { name: "Dein Tag" }).isVisible(), "„Dein Tag“ offen");
   const order = await sheet.locator("[data-abschnitt]").evaluateAll((els) => els.map((e) => e.getAttribute("data-abschnitt")));
-  check(order.join(",") === "termine,essen,aufgaben", `Abschnitte in Reihenfolge (${order.join(",")})`);
+  check(order.join(",") === "termine,essen,pinnwand,aufgaben", `Abschnitte in Reihenfolge (${order.join(",")})`);
   const marked = sheet.locator("li[data-key^='t1@'] > div.ring-1");
   check(await marked.isVisible(), "Zahnarzt hervorgehoben");
   check(await marked.getByText("Versichertenkarte einpacken?").isVisible(), "mit dem Hinweis der Karte");
@@ -135,7 +145,7 @@ export const jetztKarte = async (page, check) => {
   await marked.getByRole("button", { name: "Erledigt" }).click();
   await sheet.waitFor({ state: "detached", timeout: 3000 }).catch(() => {});
   await page.waitForTimeout(1200);
-  check(!/Versichertenkarte/.test(await card.innerText()), "„Erledigt“ → Thema heute weg");
+  check(!(await card.innerText()).includes("Versichertenkarte"), "„Erledigt“ → Thema heute weg");
   await page.reload();
   await card.waitFor({ timeout: 5000 });
   await page.waitForTimeout(1200);
