@@ -64,7 +64,7 @@ export function PinboardTile({ size = "M", me, demo = false, helper = "" }: { si
           <button type="button" onClick={() => setWriting(true)} className="mt-1.5 flex w-full items-start gap-2.5 text-left" aria-label="Beispiel-Nachricht – eigene schreiben">
             <BegleitungAvatar size={28} />
             <span className="flex min-w-0 flex-1 flex-col">
-              <span className="line-clamp-3 text-[14px] font-semibold leading-snug">Willkommen! Hier hinterlasst ihr euch kleine Nachrichten.</span>
+              <span className={`${size === "S" ? "line-clamp-2" : "line-clamp-3"} text-[14px] font-semibold leading-snug`}>Willkommen! Hier hinterlasst ihr euch kleine Nachrichten.</span>
               <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
                 {helper} · gerade eben
               </span>

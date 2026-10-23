@@ -360,7 +360,7 @@ export function HomeBoard({
     // Flaches Raster (2 Spalten): jede Einheit liegt direkt im Board – so behält sie
     // beim Umsortieren ihr Element (React verschiebt es nur). Zwei S nebeneinander je
     // eine Spalte, alles andere (auch eine einzelne S) über die volle Breite.
-    <div ref={board} className="grid grid-cols-2 gap-x-2 gap-y-3" data-no-swipe={editing ? true : undefined}>
+    <div ref={board} className="grid grid-cols-2 gap-2" data-no-swipe={editing ? true : undefined}>
       {rowsOf(preview).flatMap((row, r) => row.map((u, i) => renderUnit(u, r * 2 + i, row.length === 2, false, row.length !== 2)))}
       {editing && (
         <div className="col-span-2 flex flex-col gap-3">

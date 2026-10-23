@@ -2036,3 +2036,19 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - iPhone-Hinweis „neu hinzufügen“ (einmal, mit Sichern zuerst).
 - Mail-Vorlage `docs/mail-vorlage.md`. „Was gibt’s?“ bleibt nur fürs Essen.
 
+## Startseite – Feinschliff nach dem Handy-Test (Tafel 58/59, v0.67.1)
+
+- Termine und Aufgaben im gleichen Listenstil: ein weißes Feld, Zeilen 30 px
+  (ganze Zeile tippbar, `data-zeile`), Kopf auf allen Kacheln gleich (26 px,
+  Titel 11 px, „+N weitere“ neben dem Plus), S 2 / M 4 / L 6, 8 px zwischen
+  den Kacheln.
+- Termine: ganztägig oben, „läuft“ (30 Min bzw. bis Ende), nächster Termin
+  als Pfirsich-Zeile mit „gleich“, alles vorbei → „Morgen · Sa“
+  (`lib/heute/termineKachel.ts`); neu gerechnet auch beim Zurückkommen.
+- Aufgaben: erledigt 1,5 s durchgestrichen, dann weich weg (auch am
+  Beispiel-Tag).
+- Spendentopf fragt „Gemeinsam für Ostholstein“ (`POT_TEXTS.together`), nie
+  „App wert“ (Test in `tests/app/regeln.test.ts`).
+- Kochmütze am Beispiel-Tag sichtbar, ohne Blase; „ab Tag 3“ bleibt.
+- Pinnwand S am Beispiel-Tag zweizeilig; Mia-Knopf verdeckt auf keiner Seite
+  den letzten Inhalt (Durchklick `miaKnopfFrei`).

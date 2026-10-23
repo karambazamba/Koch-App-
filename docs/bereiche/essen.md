@@ -258,7 +258,9 @@ Ideen“. Verschwindet mit dem ersten eigenen Gericht oder dem Beispiel-Tag.
   `since`), sieht die Mütze sofort. Beim ersten Erscheinen ploppt sie einmal
   auf, dazu EINMAL die dunkle Blase „(Neu:) Spontan? Tipp auf die Mütze …“
   (Hinweis `kochtipp-muetze`, weg bei Tipp oder nach 6 s, nicht zur
-  Kochzeit).
+  Kochzeit). Am Beispiel-Tag steht die Mütze schon in der Beispiel-Essenskachel
+  (`DemoFoodTile`, `hatVisible(…, demo)`) – ohne Aufploppen und ohne Blase;
+  „ab Tag 3“ bleibt für echte Tage.
 - Chat (`useKochtippChat`, eigener Modus wie Spontan kochen): „Lust auf was
   ganz anderes? 😋“ / „Sag mir, was noch da ist – oder kaufen wir neu ein?“
   (mit der letzten Wahl: „Wie letztes Mal aus dem Vorrat?“), Schnellantworten

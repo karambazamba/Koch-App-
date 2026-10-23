@@ -81,6 +81,7 @@ import { weekendKey } from "@/lib/tipps/model";
 import { BrandMark } from "@/components/ui/BrandMark";
 import { headerDate } from "@/lib/heute/kopfDatum";
 import { MiaNameHint, useMiaHomeHint } from "@/components/heute/MiaNameHint";
+import { termineTile } from "@/lib/heute/termineKachel";
 
 
 /** Name für die Begrüßung: die erste Person im Haushalt (meist man selbst) */
@@ -181,7 +182,6 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   // Kochmütze (Kochtipp): ab dem 3. Nutzungstag, früher auf Nachfrage oder mit „Alles zeigen“
   const kochtipp = useKochtipp();
   useEffect(() => noteKochtippDay(data.todayIso), [data.todayIso]);
-  const hat = Boolean(kochtipp && hatVisible(kochtipp, data.profile.display === "alles"));
   useWakeLock(Boolean(view.wakeLock) && !editing.on);
   // Tipp-Sammlung (150 Tipps) erst laden, wenn Tipps oder Wochenend-Ideen an sind
   const [tipModule, setTipModule] = useState<typeof import("@/lib/essen/tips/daily") | null>(null);
@@ -199,6 +199,13 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const upcoming = upcomingTermine(entries, data.todayIso, minutes).filter((i) => !view.hideWork || i.room !== "arbeit");
   const termine = view.familyUpcomingOnly ? upcoming.filter((i) => i.room === "familie") : upcoming;
   const termineAll = view.familyUpcomingOnly ? termine : items.filter((i) => i.entry.typ === "termin");
+  // Termine-Kachel: läuft 30 Min, „gleich“, alles vorbei → „Morgen · Sa“ (lib/heute/termineKachel.ts)
+  const terminTile = termineTile(
+    items.filter((i) => i.entry.typ === "termin" && (!view.familyUpcomingOnly || i.room === "familie")),
+    tomorrowAll.filter((i) => i.entry.typ === "termin" && (!view.hideWork || i.room !== "arbeit")),
+    tomorrowIso,
+    minutes,
+  );
   // Beispiel-Tag (erster Start): Beispiele in denselben Kacheln, auch im Bearbeiten-Modus als Vorschau
   const demoDay = useDemoDay(entries, data.todayIso, minutes, helperName(data.profile), Boolean(dish));
   const [demoItem, setDemoItem] = useState<DayItem | null>(null);
@@ -235,6 +242,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
 
   // --- Jetzt-Karte ----------------------------------------------------------------------
   const demoDish = demoDay.tiles.includes("essen");
+  const hat = Boolean(kochtipp && hatVisible(kochtipp, data.profile.display === "alles", demoDish));
   const demoMeal = demoDishAt(minutes);
   const potHint = usePotHint(demoDay.tiles.length > 0);
   const miaHint = useMiaHomeHint(data.profile.miaHomeHint);
@@ -320,13 +328,13 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const renderTile = (tile: HomeTile, half: boolean, edit: boolean) => {
     switch (tile.id) {
       case "termine":
-        if (demoDay.termine) return <TermineSection items={demoDay.termine} href={`/tag?datum=${data.todayIso}`} today={data.todayIso} size={tile.size} half={half} demo={demoProps} />;
-        return <TermineSection items={termine} all={termineAll} href={`/tag?datum=${data.todayIso}`} today={data.todayIso} size={tile.size} half={half} />;
+        if (demoDay.termine) return <TermineSection rows={demoDay.termine.map((item) => ({ item, state: null }))} href={`/tag?datum=${data.todayIso}`} today={data.todayIso} size={tile.size} half={half} demo={demoProps} />;
+        return <TermineSection rows={terminTile.rows} label={terminTile.label} href={`/tag?datum=${terminTile.label ? tomorrowIso : data.todayIso}`} today={data.todayIso} size={tile.size} half={half} />;
       case "aufgaben":
         if (demoDay.tasks) return <AufgabenSection items={demoDay.tasks} today={data.todayIso} size={tile.size} half={half} demo={demoProps} />;
         return <AufgabenSection items={tasks} total={view.tasksRest ? 0 : openTaskCount(entries, data.todayIso)} today={data.todayIso} size={tile.size} half={half} />;
       case "essen":
-        if (demoDish) return <DemoFoodTile half={half} today={data.todayIso} minutes={minutes} />;
+        if (demoDish) return <DemoFoodTile half={half} today={data.todayIso} minutes={minutes} hat={hat && !edit ? helperName(data.profile) : undefined} />;
         if (cookingNow && dish && !edit) return <CookingTile dish={dish} clock={dishClock} persons={data.day?.persons ?? null} recipe={recipe} today={data.todayIso} onEaten={eaten} />;
         return <FoodTile data={data} dish={dish} over={over} dishClock={dishClock} onOpen={onOpenFood} size={tile.size} onCook={dish && !over && !edit ? cookNow : undefined} hat={hat && !edit ? { quiet: cookingNow } : null} />;
       case "einkauf":

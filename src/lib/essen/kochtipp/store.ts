@@ -56,8 +56,8 @@ export function useKochtipp(): KochtippState | undefined {
   return useExternalStore(store.subscribe, () => store.load() ?? EMPTY, () => undefined);
 }
 
-/** Mütze sichtbar? */
-export const hatVisible = (s: KochtippState, showAll: boolean) => showAll || s.unlocked || s.days.length >= 3;
+/** Mütze sichtbar? Am Beispiel-Tag immer (zum Zeigen, ohne Blase) – „ab Tag 3“ bleibt für echte Tage */
+export const hatVisible = (s: KochtippState, showAll: boolean, demo = false) => demo || showAll || s.unlocked || s.days.length >= 3;
 
 /** Seit wann gibt es die App auf dem Gerät? (Beispiel-Tag „since“) */
 function firstDay(): string | null {

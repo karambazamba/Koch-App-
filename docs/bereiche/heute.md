@@ -68,11 +68,25 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Die Anordnung ändert sich nie von selbst. „zeigen“ setzt eine Kachel in
   Standard-Größe hinter die nächste sichtbare, die laut Standard davor steht
   (Paar: neben den Partner). `standardLayout`: Reihenfolge und Größen wie am Anfang.
-- Größe ändert nur die Menge: Termine S 1 / M bis 4 / L bis 6 (höchstens zwei
-  Spalten), Aufgaben S 2 / M 4 / L 6 als Checkliste in einem Feld (`TERMIN_COUNT`, `TASK_COUNT`, seit v0.65).
-  Aufgaben auf der Startseite: dringend, heute dran und diese Woche.
-- Jede Kachel öffnet ihre Seite. Abhaken: 2 s durchgestrichen (`LEAVE_MS`),
-  dann „Erledigt · Rückgängig“. Die Kachel „Ausblick morgen“ (bis v0.51.0 „Morgen“, missverständlich wie „der Morgen“) füllt sich erst ab 16 Uhr; Titel in der Kachel „Ausblick morgen · Do“, Platzhalter im Bearbeiten-Modus „ab 16 Uhr“, in der Auswahl „Was morgen ansteht, ab 16 Uhr“.
+- Termine und Aufgaben im gleichen Listenstil (v0.67.1, Tafel 58/59): ein
+  weißes Feld je Kachel, feine Trennlinien, Zeilen 30 px (`data-zeile`, die
+  ganze Zeile ist tippbar), Titel 13,5 px, Uhrzeit 13,5 px fett in fester
+  Breite (tabular-nums), Nebeninfo 11 px. Größe ändert nur die Menge: S 2 /
+  M 4 / L 6 (`ROW_COUNT`). Kopf auf allen Kacheln gleich (26 px, Titel 11 px,
+  „+N weitere“ 12,5 px neben dem Plus), unten nichts; Abstand der Kacheln 8 px.
+- Termine (`lib/heute/termineKachel.ts`, `termineTile`): ganztägige oben, dann
+  nach Uhrzeit; ein laufender Termin bleibt 30 Min nach Beginn („läuft“) bzw.
+  bis zum Ende, wenn es eins gibt; der nächste Termin hat eine Pfirsich-Zeile
+  mit kräftigerem Titel, in der nächsten Stunde dazu „gleich“. Alles vorbei →
+  „Morgen · Sa“ mit den Terminen von morgen. Neu gerechnet jede halbe Minute
+  und sofort beim Zurückkommen in die App (`useMinutes`, `visibilitychange`).
+- Aufgaben: Kreis (Tippfläche 44 × 30), Titel, „heute“ / „bis Fr“ / „diese
+  Woche“, „!“ bei dringend; dringend, heute dran und diese Woche. Abhaken:
+  1,5 s durchgestrichen (`TASK_LEAVE_MS`), dann weich weg – auch am
+  Beispiel-Tag.
+- Jede Kachel öffnet ihre Seite. Auf dem iPhone 15 Pro (als App) sind
+  Pinnwand/Wetter, Termine und Aufgaben ohne Scrollen ganz zu sehen, Essen +
+  Einkauf angeschnitten (`e2e/ablaeufe/startseite.mjs`). Die Kachel „Ausblick morgen“ (bis v0.51.0 „Morgen“, missverständlich wie „der Morgen“) füllt sich erst ab 16 Uhr; Titel in der Kachel „Ausblick morgen · Do“, Platzhalter im Bearbeiten-Modus „ab 16 Uhr“, in der Auswahl „Was morgen ansteht, ab 16 Uhr“.
 
 ### Bearbeiten-Modus (direkt auf der Startseite)
 - Öffnen: lange drücken, Link „Startseite bearbeiten“ unten, Einstellungen

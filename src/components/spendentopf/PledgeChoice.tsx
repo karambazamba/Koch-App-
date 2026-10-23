@@ -1,6 +1,6 @@
 "use client";
 
-// „Was ist dir die App wert?“ – 2 € · 4 € · 7 € im Monat. Gespeichert wird nur
+// Beitrags-Frage („Gemeinsam für <Region>“) – 2 € · 4 € · 7 € im Monat. Gespeichert wird nur
 // „zugesagt“ (KEINE Zahlung, keine Zahlungsanbindung); danach kurz Danke, eine
 // Münze fällt in den Topf, der Betrag steigt.
 

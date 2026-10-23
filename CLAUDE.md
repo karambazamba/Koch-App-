@@ -162,7 +162,9 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Zurück = eine Ebene zurück, Pfeil und Geste gleich, Scrollposition bleibt.
   Kalender und Essen zählen als eine Ebene unter Heute.
 - Eingabefelder mindestens 16 px Schrift, Safe-Areas beachten, Tippflächen
-  mindestens 44 × 44 px (`hit`). Weiter/Zurück am Inhaltsende, nicht fixiert.
+  mindestens 44 × 44 px (`hit`). Listenzeilen auf der Startseite dürfen 30 px
+  hoch sein, wenn die ganze Zeile tippbar ist (`data-zeile`). Weiter/Zurück am
+  Inhaltsende, nicht fixiert.
 - Farben, Radien, Komponenten nur über Tokens und `src/components/ui/`; im Code
   nie `var(--color-…)`, nur `var(--app-…)`.
 - Einstellungen nach Nutzungshäufigkeit sortieren, aktueller Wert rechts.

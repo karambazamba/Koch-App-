@@ -14,12 +14,13 @@ import { openHelper } from "@/lib/begleitung/open";
 const HINT_MS = 6000;
 const BUBBLE = 224;
 
-/** `quiet`: gerade keinen Hinweis zeigen (z. B. zur Kochzeit) */
-export function KochtippHat({ name, quiet = false }: { name: string; quiet?: boolean }) {
+/** `quiet`: gerade keinen Hinweis zeigen (z. B. zur Kochzeit); `demo`: Beispiel-Tag –
+ *  Mütze nur zeigen, kein Aufploppen, keine Blase (beides bleibt für den echten Tag 3) */
+export function KochtippHat({ name, quiet = false, demo = false }: { name: string; quiet?: boolean; demo?: boolean }) {
   const state = useKochtipp();
   const seen = useHintSeen("kochtipp-muetze");
-  const [pop] = useState(() => state !== undefined && !state.popped);
-  const hint = seen === false && !quiet;
+  const [pop] = useState(() => !demo && state !== undefined && !state.popped);
+  const hint = seen === false && !quiet && !demo;
   const button = useRef<HTMLButtonElement>(null);
   // Blase unter der Mütze, aber immer ganz im Bild (die Kachel kann links oder rechts stehen)
   const [place, setPlace] = useState<{ left: number; arrow: number } | null>(null);
@@ -33,8 +34,8 @@ export function KochtippHat({ name, quiet = false }: { name: string; quiet?: boo
     setPlace({ left: left - box.left, arrow: hat.left + hat.width / 2 - left });
   }, [hint]);
   useEffect(() => {
-    if (state && !state.popped) markHatPopped();
-  }, [state]);
+    if (!demo && state && !state.popped) markHatPopped();
+  }, [state, demo]);
   useEffect(() => {
     if (!hint) return;
     const done = () => markHintSeen("kochtipp-muetze");
