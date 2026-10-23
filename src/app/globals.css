@@ -123,6 +123,7 @@
   --app-brand-wort: #ee5f14;
   /* dunkler Grund für die Logo-Vorschau (/brand), in beiden Darstellungen gleich */
   --app-brand-probe-dunkel: #17191c;
+  --app-brand-probe-hell: #ffffff;
   --app-accent-strong: #c4531a;
   --app-accent-soft: #fdebdf;
   --app-on-accent: #ffffff;
