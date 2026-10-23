@@ -29,7 +29,7 @@ type Value = Record<string, unknown>;
 
 export type Adapter = {
   /** Kurzname für den Abgleich-Speicher */
-  name: "kalender" | "notizen" | "pinnwand" | "einkauf" | "wochenplan" | "vorrat";
+  name: "kalender" | "notizen" | "pinnwand" | "einkauf" | "wochenplan" | "vorrat" | "spendentopf";
   key: StorageKey;
   /** Speicher-Version, die der Übersetzer kennt (andere: auslassen, bis migriert) */
   version: number;
@@ -114,7 +114,10 @@ const einkauf: Adapter = {
     for (const [week, raw] of Object.entries(weeks)) {
       if (!isObj(raw)) continue;
       for (const item of list(raw.manual)) {
-        if (typeof item.id === "string") docs.push({ id: `ek:${week}:${item.id}`, typ: "einkauf", raum: "familie", besitzer: null, data: { week, item } });
+        // „von“ = Besitzer des Eintrags (setzt der Server) – nicht in den Daten hochladen
+        const { von: _von, ...own } = item;
+        void _von;
+        if (typeof item.id === "string") docs.push({ id: `ek:${week}:${item.id}`, typ: "einkauf", raum: "familie", besitzer: ownerOf(item.von), data: { week, item: own } });
       }
       const rest: Value = {};
       for (const f of WEEK_FIELDS) if (raw[f] !== undefined) rest[f] = raw[f];
@@ -134,7 +137,7 @@ const einkauf: Adapter = {
       else if (d.typ === "einkauf-woche") {
         const { week: w, ...rest } = data;
         Object.assign(week(w as string), rest);
-      } else if (d.typ === "einkauf" && isObj(data.item)) (week(data.week).manual as Value[]).push(data.item);
+      } else if (d.typ === "einkauf" && isObj(data.item)) (week(data.week).manual as Value[]).push(d.besitzer ? { ...data.item, von: d.besitzer } : data.item);
     }
     return { version: 4, weeks, ...settings };
   },
@@ -166,8 +169,27 @@ const wochenplan: Adapter = {
   },
 };
 
+// Spendentopf (Etappe 3d): Region, Stimme je Jahr und Beitrag gelten für den
+// ganzen Haushalt (eine Stimme pro Familie); Frage-Zeitpunkte und
+// weggetippte Karten bleiben auf dem Gerät.
+const POT_SHARED = ["region", "support", "interest", "votes", "pledge"] as const;
+const POT_DEVICE = ["ask", "voteCardHidden", "liveAsked"] as const;
+const spendentopf: Adapter = {
+  name: "spendentopf",
+  key: "wasgibts.spendentopf",
+  version: 2,
+  typs: ["spendentopf"],
+  toDocs: (value) => [{ id: "pot:haushalt", typ: "spendentopf", raum: "familie", besitzer: null, data: Object.fromEntries(POT_SHARED.map((k) => [k, value[k] ?? null])) }],
+  fromDocs: (docs, value) => {
+    const shared = docs.find((d) => d.typ === "spendentopf");
+    const data = shared && isObj(shared.data) ? shared.data : {};
+    const device = Object.fromEntries(POT_DEVICE.filter((k) => value?.[k] !== undefined).map((k) => [k, value?.[k]]));
+    return { version: 2, ...Object.fromEntries(POT_SHARED.map((k) => [k, data[k] ?? value?.[k] ?? (k === "interest" ? [] : k === "votes" ? {} : null)])), ...device };
+  },
+};
+
 /** Alles, was geteilt wird (Einstellungen und Startseite bleiben pro Gerät) */
-export const ADAPTERS: Adapter[] = [kalender, notizen, pinnwand, einkauf, wochenplan, vorrat];
+export const ADAPTERS: Adapter[] = [kalender, notizen, pinnwand, einkauf, wochenplan, vorrat, spendentopf];
 
 export const adapterFor = (typ: string): Adapter | undefined => ADAPTERS.find((a) => a.typs.includes(typ));
 

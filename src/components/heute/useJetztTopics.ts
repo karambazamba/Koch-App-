@@ -21,6 +21,9 @@ import { DEMO_SHOPS } from "@/lib/core/demo";
 import { jetztTip, type TipView } from "@/lib/tipps/model";
 import { tipWhen } from "@/components/tipps/TipBits";
 import { tipTags } from "@/lib/tipps/categories";
+import { useEffect } from "react";
+import { newsForCard } from "@/lib/konten/wer";
+import { markFamilyNewsShown, useFamilyNews } from "@/lib/konten/neuigkeiten";
 
 export type JetztSource = {
   today: string;
@@ -72,6 +75,8 @@ const termin = (i: DayItem): JetztTermin => {
 export function useJetztTopics(src: JetztSource) {
   const state = useJetzt();
   const { forecast } = useForecast();
+  const newsState = useFamilyNews();
+  const news = newsState && !src.demo ? newsForCard(newsState, src.nowMs, src.today) : null;
   const shopping = useWeekShoppingList("planning");
   const openItems = (shopping?.list.items ?? []).filter((i) => !i.checked && !i.hidden);
   const topShop = src.demoShop ? DEMO_SHOPS[0] : shopGroups(openItems, 1).find((g) => g.shop) ?? null;
@@ -120,6 +125,7 @@ export function useJetztTopics(src: JetztSource) {
     leisure: src.leisure,
     tip: src.tip,
     potInvite: src.potInvite ?? null,
+    family: news ? { id: news.id, title: news.title, detail: news.detail, href: news.href } : null,
     region: region ? { id: region.id, title: `Tipp: ${region.titel}`, detail: [tipWhen(region), region.ort_name, tipTags(region, 1)[0]].filter(Boolean).join(" · ") } : null,
     kids: src.kids,
     weekCheck: src.weekCheck && state.weekOff !== src.weekCheck ? src.weekCheck : null,
@@ -129,5 +135,11 @@ export function useJetztTopics(src: JetztSource) {
     weights: state.weights,
     hidden: hiddenToday(state, src.today),
   };
-  return { on: state.on, topics: jetztTopics(input), shop: input.shop };
+  const topics = jetztTopics(input);
+  // Neuigkeit gezeigt → merken (kommt nie wieder, heute keine andere)
+  const shownNews = news && topics.some((t) => t.id === `familie:${news.id}`) ? news.id : null;
+  useEffect(() => {
+    if (shownNews) markFamilyNewsShown(shownNews, src.today);
+  }, [shownNews, src.today]);
+  return { on: state.on, topics, shop: input.shop };
 }

@@ -5,7 +5,7 @@ Anmelden immer per E-Mail-Code (6 Ziffern), nie per Link. Ohne Konto – und
 ohne Supabase-Variablen – läuft die App wie bisher komplett auf dem Gerät.
 
 Etappen: **3a Anmeldung und Haushalt** · **3b Synchronisieren** ·
-**3c Sprachmemos teilen** (fertig) · 3d Sichtbar machen (wer hat was eingetragen).
+**3c Sprachmemos teilen** · **3d Sichtbar machen** (alle fertig).
 
 ## FESTE REGELN
 
@@ -189,3 +189,23 @@ Etappen: **3a Anmeldung und Haushalt** · **3b Synchronisieren** ·
 - Durchklick `konten` – zwei bzw. drei Browser: anmelden (Code über die
   Test-Schnittstelle), Haushalt, Einladen, Beitreten, Kind ohne Einladen,
   Abmelden (Daten bleiben), Konto löschen.
+
+## Sichtbar machen (3d, seit v0.80)
+
+- „von Lisa“ (leiser Text, `AddedBy` in `src/components/konten/`) an
+  Terminen (Tag-Ansicht) und auf der Einkaufsliste – nur mit mehreren
+  Personen und nie bei Eigenem (`addedBy` in `src/lib/konten/wer.ts`). Text
+  statt Kreis, weil der Kreis bei Terminen schon „für wen“ heißt. Aufgaben
+  haben ihr „von Felix“ schon über Abgeben, die Pinnwand ihren Absender.
+- Einkauf: wer etwas gesetzt hat, steckt im Besitzer des Eintrags (setzt der
+  Server); beim Einspielen kommt es als `von` an die Zeile, hochgeladen wird
+  es nie in den Daten (Fingerabdruck bleibt gleich).
+- Jetzt-Karte: der Abgleich merkt sich Neues von anderen (Einkauf,
+  Familien-Termine; nicht bei der ersten Übernahme) in `wasgibts.neu` –
+  höchstens eine Neuigkeit am Tag, jede nur einmal (siehe `heute.md`).
+- Spendentopf: Region, Stimme je Jahr und Beitrag gelten für den Haushalt
+  (Eintrag `pot:haushalt`, typ „spendentopf“); Frage-Zeitpunkte und
+  weggetippte Karten bleiben auf dem Gerät. Eigene Tabellen für die Summe
+  aller Haushalte kommen erst, wenn der Topf live geht (jetzt Vorschau –
+  „vorgemerkt“ zählt noch nicht).
+- Tests: `tests/konten/sichtbar.test.ts`.

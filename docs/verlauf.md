@@ -2202,3 +2202,10 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Ton oben liegt. Andere Geräte holen den Ton beim ersten Abspielen.
 - „Gehört von“ und Reaktionen gehen mit. Aufräumen nach 25 Std. per Vercel
   Cron (`/api/memos/aufraeumen`, `CRON_SECRET`) und einmal je Start in der App.
+
+## Konten 3d: Sichtbar machen (v0.80.0)
+- Leises „von Lisa“ an Terminen und auf der Einkaufsliste (nur bei anderen,
+  nur mit mehreren Personen).
+- Jetzt-Karte: höchstens eine Neuigkeit am Tag aus dem Haushalt („Milch
+  steht auf der Liste – hat Lisa gerade gesetzt.“), jede nur einmal.
+- Spendentopf: Region, Stimme und Beitrag gelten für den ganzen Haushalt.

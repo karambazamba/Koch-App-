@@ -22,6 +22,9 @@ import { resetSyncStatus, setSyncStatus } from "@/lib/konten/sync/status";
 import { expiredMemoFiles, uploadPendingMemos } from "@/lib/konten/memoShare";
 import { memoAudio, setMemoRemote } from "@/lib/pinnwand/memoAudio";
 import { changeMemos, loadMemos } from "@/lib/pinnwand/store";
+import { accountCache } from "@/lib/konten/cache";
+import { newsFromDocs } from "@/lib/konten/wer";
+import { noteFamilyNews } from "@/lib/konten/neuigkeiten";
 
 const stateStore = createLocalStore("wasgibts.abgleich", migrateSyncState);
 
@@ -102,7 +105,12 @@ async function cycle() {
     }
     if (!failed) {
       const docs = await pullAll(run.backend, s.cursor);
-      if (docs) s = applyRemote(s, io, docs).state;
+      if (docs) {
+        const before = s.known;
+        const household = accountCache.load()?.household;
+        if (household) noteFamilyNews(newsFromDocs(docs, (id) => id in before, household.members, household.me.userId));
+        s = applyRemote(s, io, docs).state;
+      }
       else failed = true;
     }
     if (current === run) save(s);

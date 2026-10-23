@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, Info, Plus, Trash2 } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
+import { AddedBy } from "@/components/konten/AddedBy";
 import { CARD_LIST, INPUT, INPUT_BASE, LABEL, buttonClass, chipClass } from "@/components/ui/styles";
 import { compareText } from "@/lib/core/sort";
 import {
@@ -62,6 +63,7 @@ export function ItemContent({
             <Info className="h-4 w-4" strokeWidth={2} aria-hidden />
           </button>
         )}
+        {!item.checked && <AddedBy owner={item.von} />}
         <span className={`shrink-0 text-right text-sm tabular-nums ${item.checked ? "text-faint line-through" : "text-muted"}`}>
           {item.amount}
         </span>
