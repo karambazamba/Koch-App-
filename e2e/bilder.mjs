@@ -118,6 +118,12 @@ for (const device of DEVICES) {
     await first.goto(BASE);
     await first.waitForTimeout(1200);
     await first.screenshot({ path: `${dir}/hallo-${tag}.png` });
+    // Die eine Frage nach „Los geht’s“: der Look
+    await first.getByRole("button", { name: "Los geht’s" }).click();
+    await first.getByRole("heading", { name: "Wie magst du’s?" }).waitFor();
+    await first.waitForTimeout(700);
+    await first.screenshot({ path: `${dir}/look-wahl-${tag}.png` });
+    n++;
     await hello(first);
     await settle(first);
     await first.screenshot({ path: `${dir}/beispieltag-${tag}.png`, fullPage: true });
@@ -135,6 +141,16 @@ for (const device of DEVICES) {
       await page.screenshot({ path: `${dir}/${name}-${tag}.png`, fullPage: true, mask: [page.getByText(/^Version \d/)] });
       n++;
     }
+    // Startseite im Look „Schlicht“
+    await page.evaluate(() => {
+      const key = "familienkueche.haushaltsprofil";
+      localStorage.setItem(key, JSON.stringify({ ...JSON.parse(localStorage.getItem(key) || "{}"), look: "schlicht" }));
+    });
+    await page.goto(BASE);
+    await page.waitForTimeout(900);
+    await settle(page);
+    await page.screenshot({ path: `${dir}/heute-schlicht-${tag}.png`, fullPage: true });
+    n++;
     await page.context().close();
     // Fenster, die nur nach einer Handlung erscheinen (Szenen)
     for (const [name, run] of SCENES) {
