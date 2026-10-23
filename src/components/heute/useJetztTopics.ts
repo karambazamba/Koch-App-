@@ -42,6 +42,7 @@ export type JetztSource = {
   tip: string | null;
   /** Tipps aus der Region (nur wenn an), mit Kindern im Haushalt, am Wochenende schon weggewischt */
   regionTips: TipView[] | null;
+  potInvite?: { title: string; detail: string } | null;
   regionHidden: string | null;
   /** Training heute (für Packliste und Wetter) */
   training: { key: string; title: string; time: string } | null;
@@ -118,6 +119,7 @@ export function useJetztTopics(src: JetztSource) {
     dinnerFree: src.dinnerFree,
     leisure: src.leisure,
     tip: src.tip,
+    potInvite: src.potInvite ?? null,
     region: region ? { id: region.id, title: `Tipp: ${region.titel}`, detail: [tipWhen(region), region.ort_name, tipTags(region, 1)[0]].filter(Boolean).join(" · ") } : null,
     kids: src.kids,
     weekCheck: src.weekCheck && state.weekOff !== src.weekCheck ? src.weekCheck : null,

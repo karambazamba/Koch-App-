@@ -55,6 +55,9 @@ import { Pressable } from "@/components/heute/Pressable";
 import { DarkTip } from "@/components/heute/DarkTip";
 import { hatVisible, noteKochtippDay, useKochtipp } from "@/lib/essen/kochtipp/store";
 import { PotHintCard, usePotHint } from "@/components/spendentopf/PotHintCard";
+import { usePotState } from "@/lib/spendentopf/store";
+import { liveInvite } from "@/lib/spendentopf/model";
+import { POT_STATUS } from "@/lib/spendentopf/regions";
 import { SpendentopfTile } from "@/components/spendentopf/SpendentopfTile";
 import { hideDemoItem, toggleDemoDone } from "@/lib/core/demo";
 import { showDone, showToast } from "@/lib/core/toast";
@@ -253,6 +256,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const training = ctx?.sport.training;
   const leisure = evening && notes ? leisureIdea(notes, data.todayIso) : null;
   const regionTips = useTipsWindow(data.todayIso, regionOn && !demoDay.tiles.length);
+  const potState = usePotState();
   const jetzt = useJetztTopics({
     today: data.todayIso,
     minutes,
@@ -284,6 +288,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     leisure: leisure ? { text: leisure.item.text, href: `/notizen/bearbeiten?id=${leisure.note.id}` } : null,
     tip: tip?.text ?? null,
     regionTips: regionTips?.tips ?? null,
+    potInvite: potState ? liveInvite(POT_STATUS, potState.pledge, potState.liveAsked) : null,
     kids: hasKids(data.profile),
     regionHidden: tipSettings.jetztAus,
     demo: demoDay.tiles.length > 0,
@@ -308,6 +313,8 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
         return openHelper("wochencheck");
       }
     }
+    // Region-Tipp und Spendentopf haben keinen Platz in „Dein Tag“ – sie öffnen ihre Seite
+    if ((t.kind === "spendentopf" || t.kind === "region") && t.target && "href" in t.target) return router.push(t.target.href);
     setDayTopic({ topic: t });
   };
   const [dayTopic, setDayTopic] = useState<{ topic: JetztTopic | null } | null>(null);

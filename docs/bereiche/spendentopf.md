@@ -108,6 +108,22 @@ Dunkel-Tipp, nicht im Beispiel-Tag):
   (`notePotStart`), „Später“ = in 28 Tagen wieder, höchstens 3×; nie mit
   Zusage. Nach der Wahl Danke, dann blendet sich die Karte aus.
 
+### Vorschau („bald verfügbar“, v0.76)
+- `POT_STATUS` in `lib/spendentopf/regions.ts` (Standard „vorschau“): oben
+  ein ruhiges Band „Vorschau – der Spendentopf startet bald. Noch wird kein
+  Geld gesammelt.“, Summe mit Etikett „BEISPIEL“ (ohne eigenen Beitrag),
+  Projekte als „Beispiel-Projekt“, Kachel „Spendentopf · bald“.
+- Beitrag (`PledgeChoice`): Monatlich/Einmalig, 3 € · 6 € · 10 € oder eigener
+  Betrag (Standard 6 € im Monat), EIN Knopf „6 € im Monat vormerken“ →
+  „Danke! Wir melden uns, sobald der Spendentopf startet …“; gespeichert als
+  „vorgemerkt“ (Speicher v2 mit `art`), löschbar mit „Gelöscht · Rückgängig“,
+  klein „Bis zum Start fließt kein Geld.“
+- „live“: echte Summe, „… zusagen“ (gespeichert „zugesagt“). Wer vorgemerkt
+  hat, sieht einmal sanft in der Jetzt-Karte „Der Spendentopf ist gestartet –
+  Magst du deine 6 € im Monat jetzt einrichten?“ (bis die Seite geöffnet
+  wurde, `liveAsked`). Push folgt mit dem Push-Auftrag.
+- Texte ohne „Keine Werbung“ (`POT_TEXTS.free`).
+
 ## Begleitung (Mia)
 
 Die Begleitung kennt den Spendentopf noch nicht: kein Werkzeug, keine Regel,

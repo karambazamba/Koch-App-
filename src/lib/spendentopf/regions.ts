@@ -35,6 +35,13 @@ export const PATE_MAIL = "mia@karamba-eis.de";
 /** Wohin Beiträge gehen, solange die eigene Region noch keinen Topf hat */
 export const FALLBACK_REGION = "ostholstein";
 
+/**
+ * Schalter für später: „vorschau“ = Spendentopf startet bald (Band, Beispiel-
+ * Etiketten, „vormerken“, kein Geld); „live“ = echte Summen und „zusagen“.
+ */
+export type PotStatus = "vorschau" | "live";
+export const POT_STATUS: PotStatus = "vorschau";
+
 export const REGIONS: Region[] = [
   {
     id: "ostholstein",

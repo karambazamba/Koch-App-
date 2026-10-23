@@ -76,14 +76,14 @@ describe("Spendentopf: Beitrags-Frage", () => {
   it("nach einer Zusage nicht mehr; Zusage ist nur „zugesagt“", () => {
     expect(askDue(fresh, "2026-11-01", true)).toBe(false);
     const s = migratePot({ version: 1, pledge: { betrag: 4, monat: "2026-10", status: "bezahlt" } });
-    expect(s?.pledge).toEqual({ betrag: 4, monat: "2026-10", status: "zugesagt" });
+    expect(s?.pledge).toEqual({ betrag: 4, art: "monatlich", monat: "2026-10", status: "zugesagt" });
   });
 });
 
 describe("Spendentopf: feste Texte", () => {
   it("immer „100 % für Projekte in deiner Region“, nie „an KARAMBA“", () => {
     expect(POT_TEXTS.share).toBe("100 % für Projekte in deiner Region");
-    expect(POT_TEXTS.free).toBe("Die App ist kostenlos. KARAMBA Eis zahlt Server & KI. Keine Werbung, kein Abo, keine Daten verkauft.");
+    expect(POT_TEXTS.free).toBe("Die App ist kostenlos. KARAMBA Eis zahlt Server & KI. Kein Abo, keine Daten verkauft.");
     const dir = join(__dirname, "../../src/components/spendentopf");
     const all = readdirSync(dir).map((f) => readFileSync(join(dir, f), "utf8")).join("\n") + readFileSync(join(__dirname, "../../src/lib/spendentopf/model.ts"), "utf8");
     // nur Texte (in Anführungszeichen), keine Kommentare

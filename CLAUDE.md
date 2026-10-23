@@ -198,8 +198,10 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   Uhrzeit zuerst, höchstens eine pro Woche in der Kachel), sichtbar „von
   KARAMBA Eis“. Nur offene Lizenzen (CC0/CC BY/CC BY-SA). `TIPS_SOURCE` off/demo/
   tldb, Zugang nie im Code. → `docs/bereiche/tipps.md`
-- **Spendentopf:** keine Zahlung in der App, Beiträge nur „zugesagt“. Texte
-  nur aus `POT_TEXTS`, nie „an KARAMBA Eis“ – das Geld geht in die Region. Die App
+- **Spendentopf:** keine Zahlung in der App. Solange `POT_STATUS` „vorschau“
+  ist: Band „Vorschau“, Summe/Projekte als „Beispiel“, Beiträge nur
+  „vorgemerkt“ (kein Geld, kein Partner-Link); „live“ = „zugesagt“. Texte nur
+  aus `POT_TEXTS`, nie „an KARAMBA Eis“ – das Geld geht in die Region. Die App
   bleibt ohne Beitrag kostenlos. → `docs/bereiche/spendentopf.md`
 - **Wetter:** ehrliche Regel – Regenstunde = ≥ 0,2 mm UND ≥ 50 %, Tage immer
   aus den Stunden 7–21 Uhr. → `docs/bereiche/wetter.md`

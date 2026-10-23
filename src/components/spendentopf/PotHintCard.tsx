@@ -3,7 +3,7 @@
 // Startseite, unter der Jetzt-Karte (höchstens ein Hinweis): zu Beginn der
 // Abstimmung „2.344 € im Topf – stimmt jetzt ab!“ (bis abgestimmt oder ✕,
 // einmal im Jahr) – später als Web-Push. Sonst nach ca. 4 Wochen einmal
-// „Gemeinsam für <Region>“ mit 2 € · 4 € · 7 € · Später (höchstens 3×).
+// „Gemeinsam für <Region>“ mit Beitrag vormerken (Vorschau) bzw. zusagen · Später (höchstens 3×).
 
 import { useEffect, useState } from "react";
 import Link from "next/link";

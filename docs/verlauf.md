@@ -2168,3 +2168,10 @@ Fehler in `docs/aufraeumen-nachher.md`.
   „Daraus kannst du kochen“), mit „Fürs Abendessen“.
 - Pfannen hell mit farbigem Rand und Holzgriff, Soße passend und sparsam,
   Eintöpfe rot, Lachs-Bowl als Bowl („poke“), Linsensuppe orange.
+
+## Spendentopf als Vorschau („bald verfügbar“, v0.76.0)
+- `POT_STATUS` vorschau/live; Band „Vorschau“, Etikett „Beispiel“ an Summe
+  und Projekten, Kachel „Spendentopf · bald“; Monatlich/Einmalig, 3/6/10 €
+  oder eigener Betrag, „6 € im Monat vormerken“ (gespeichert als
+  „vorgemerkt“, Speicher v2), löschbar mit Rückgängig; nach dem Start einmal
+  sanft in der Jetzt-Karte. Ohne „Keine Werbung“.
