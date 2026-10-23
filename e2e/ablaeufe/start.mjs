@@ -1,5 +1,5 @@
 // Hallo → Startseite, Bearbeiten-Modus, Wischen zwischen den Seiten
-import { BASE, hello, launch, losGehts, newPage, seedFamily, setDark, swipe } from "../lib.mjs";
+import { BASE, hello, losGehts, newPage, seedFamily, setDark, swipe } from "../lib.mjs";
 
 export const hallo = async (page, check) => {
   await page.goto(BASE);
@@ -19,24 +19,9 @@ export const hallo = async (page, check) => {
   check((await page.locator("[data-jetzt]").count()) > 0, "Jetzt-Karte oben");
 };
 
-/** Schein-Spracherkennung (Chromium ohne Netz kann nicht wirklich zuhören) */
-const FAKE_SPEECH = () => {
-  window.SpeechRecognition = class {
-    start() {
-      window.__zuhoeren = (window.__zuhoeren ?? 0) + 1;
-    }
-    stop() {
-      this.onend?.();
-    }
-    abort() {
-      this.onend?.();
-    }
-  };
-};
-
-/** Begrüßung neu (Tafel 19): 10× frisch, passt ohne Scrollen, Mikro unten in der Leiste, Link */
-export const hallo2 = async (page, check, device) => {
-  // 10× frisch: keine zweite Navigation (nur Dokument-Anfragen zählen), Begleitung genau einmal
+/** Begrüßung nach Tafel 55: 10× frisch, Mia groß, neue Zeile, Marke unten, passt ohne Scrollen */
+export const hallo2 = async (page, check) => {
+  // 10× frisch: keine zweite Navigation (nur Dokument-Anfragen zählen), Mia genau einmal
   let navs = 0;
   page.on("request", (r) => r.isNavigationRequest() && r.frame() === page.mainFrame() && navs++);
   let ok = 0;
@@ -52,17 +37,13 @@ export const hallo2 = async (page, check, device) => {
     const same = Boolean(handle && (await handle.evaluate((el) => el.isConnected)));
     if (same && (await page.locator("[data-hello]").count()) === 1 && navs === 1) ok++;
   }
-  check(ok === 10, `10× frisch: eine Navigation, Begleitung genau einmal (${ok}/10)`);
+  check(ok === 10, `10× frisch: eine Navigation, Mia genau einmal (${ok}/10)`);
   await page.waitForTimeout(1500);
-  check((await page.locator("[data-tone]").count()) === 3, "drei Kacheln (Termine, Essen, Einkauf)");
-  check(await page.getByText("Euer Alltag an einem Ort.").isVisible(), "Zeile „Euer Alltag an einem Ort.“");
-  check(!(await page.getByText("Ich behalte euren Alltag im Blick.").count()) && !(await page.getByText("Ich habe eine Sicherung").count()), "alte Texte sind weg");
-  check(!(await page.getByText("Einfach mit mir sprechen").count()), "Sprech-Chip ist weg");
-  const talk = page.getByRole("button", { name: "Mit Mia sprechen" });
-  check(await talk.isVisible(), "Mikro unten „Mit Mia sprechen“");
-  const box = await talk.boundingBox();
-  const losBox = await page.getByRole("button", { name: "Los geht’s" }).boundingBox();
-  check(box.height >= 44 && box.width >= 44 && box.y > losBox.y, `Mikro unten unter „Los geht’s“, mind. 44 px (${Math.round(box.height)} px)`);
+  check(await page.getByRole("heading", { name: "Hallo, ich bin Mia." }).isVisible(), "„Hallo, ich bin Mia.“");
+  check(await page.locator("h1 .text-accent").innerText() === "Mia.", "„Mia.“ in Orange");
+  check(await page.getByText("Erzähl mir einfach, was ansteht. Ich sortiere für euch.").isVisible(), "Zeile „Erzähl mir einfach …“");
+  check((await page.locator("[data-tone]").count()) === 0 && !(await page.getByText("Euer Alltag an einem Ort.").count()), "keine Deko-Kacheln, alte Zeile weg");
+  check(await page.locator("[data-hello-marke] [data-brand=lockup]").isVisible() && (await page.getByText("möglich gemacht von KARAMBA").isVisible()), "unten Marke + „möglich gemacht von KARAMBA“");
   check(!(await page.getByText(/Anmelden/).count()), "kein Anmelden-Link auf der Begrüßung");
 
   // Link → Daten & App
@@ -70,12 +51,14 @@ export const hallo2 = async (page, check, device) => {
   await page.waitForURL(/\/profil\/daten/, { timeout: 5000 }).catch(() => {});
   check(page.url().includes("/profil/daten"), "Link öffnet /profil/daten");
 
-  // „Los geht’s“ → Überspringen → Startseite (Farbig)
+  // „Los geht’s“ → Überspringen → Startseite (Farbig) mit Marke und Datum im Kopf
   await page.goto(BASE);
   await losGehts(page, "ueberspringen");
   await page.waitForTimeout(900);
   check(await page.getByRole("tab", { name: "Heute", selected: true }).isVisible(), "„Los geht’s“ → Überspringen → Startseite");
   check((await page.evaluate(() => document.documentElement.dataset.look)) === "farbig", "Überspringen = Farbig");
+  const head = page.locator("main header").first();
+  check((await head.locator("[data-brand=lockup]").isVisible()) && /^\w{2}, \d{1,2}\. \w{3,4}$/.test((await head.locator("p").innerText()).trim()), "Kopf: Marke links, kurzes Datum rechts");
 
   // Passt ohne Scrollen: SE, 15 Pro, Pro Max, Pixel 7 – hell und dunkel
   const browser = page.context().browser();
@@ -87,41 +70,13 @@ export const hallo2 = async (page, check, device) => {
       await p.waitForTimeout(400);
       const fit = await p.evaluate(() => {
         const main = document.querySelector("main[aria-label=Willkommen]");
-        const link = [...document.querySelectorAll("a")].find((a) => a.textContent.includes("Daten wiederherstellen"));
-        const mic = document.querySelector("button[aria-label^='Mit ']");
-        return main.scrollHeight <= main.clientHeight + 1 && link.getBoundingClientRect().bottom <= innerHeight && mic.getBoundingClientRect().bottom <= innerHeight;
+        const marke = document.querySelector("[data-hello-marke]");
+        return main.scrollHeight <= main.clientHeight + 1 && marke.getBoundingClientRect().bottom <= innerHeight;
       });
-      check(fit, `${name} ${dark ? "dunkel" : "hell"}: passt ohne Scrollen, Mikro unten sichtbar`);
+      check(fit, `${name} ${dark ? "dunkel" : "hell"}: passt ohne Scrollen, Marke unten sichtbar`);
       await p.context().close();
     }
   }
-
-  // Mikro mit (Schein-)Mikrofon → Startseite + Leiste hört zu
-  const micBrowser = await launch(["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"]);
-  const withMic = await newPage(micBrowser, device, { permissions: ["microphone"] });
-  await withMic.addInitScript(FAKE_SPEECH);
-  await withMic.goto(BASE);
-  await withMic.getByRole("button", { name: "Mit Mia sprechen" }).click();
-  await withMic.waitForTimeout(1500);
-  check(await withMic.getByRole("tab", { name: "Heute", selected: true }).isVisible(), "Mikro → Startseite");
-  check(await withMic.getByRole("button", { name: "Zuhören beenden" }).isVisible(), "… und die Leiste hört zu");
-  check(!withMic.errors.length, `Mikro: keine Fehler ${withMic.errors.join(" | ")}`);
-  await micBrowser.close();
-
-  // Mikrofon abgelehnt → Startseite, Leiste zum Tippen, Hilfe-Fenster (Tafel 27)
-  const denied = await newPage(browser, device, { permissions: [] });
-  await denied.addInitScript(FAKE_SPEECH);
-  await denied.addInitScript(() => {
-    navigator.mediaDevices.getUserMedia = () => Promise.reject(new DOMException("nein", "NotAllowedError"));
-  });
-  await denied.goto(BASE);
-  await denied.getByRole("button", { name: "Mit Mia sprechen" }).click();
-  await denied.waitForTimeout(1500);
-  check(await denied.getByRole("tab", { name: "Heute", selected: true }).isVisible(), "abgelehnt → Startseite");
-  check(await denied.getByRole("textbox").last().isVisible(), "… Leiste offen zum Tippen");
-  check(await denied.getByRole("dialog", { name: "Ich kann dich gerade nicht hören" }).isVisible(), "… mit Hilfe zum Anmachen");
-  check(!(await denied.evaluate(() => window.__zuhoeren ?? 0)), "… und hört nicht zu");
-  await denied.context().close();
 };
 
 export const bearbeiten = async (page, check) => {
