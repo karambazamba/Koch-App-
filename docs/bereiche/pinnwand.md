@@ -40,9 +40,10 @@ verschwinden nach 24 Stunden“ (`pinnwand-24h`).
   (Zitat `{id, author, text}` oder null), `readBy`, `pinned`.
 - Memo (typ „memo“, Raum Familie): `author`, `dauer` (Sekunden, max. 60),
   `mime`, `wave` (28 Werte 0..1), `gehoertVon` (Autor zählt als gehört),
-  `alleGehoertAm`, `reactions`, `storagePath` (null bis zu den Konten).
+  `alleGehoertAm`, `reactions`, `storagePath` (null = nur auf diesem Gerät; mit
+  Konto der Pfad in Supabase Storage, siehe `konten.md` „Sprachnachrichten teilen“).
 - Ton in IndexedDB `wasgibts-memos` v1 (Tabelle „audio“, Schlüssel = Memo-ID),
-  nur auf diesem Gerät, nicht in der Sicherung. Seit v0.67.2 als ArrayBuffer +
+  nicht in der Sicherung; mit Konto zusätzlich im Haushalt (Etappe 3c). Seit v0.67.2 als ArrayBuffer +
   `mime` (Safari/iOS lehnt Blobs in IndexedDB teils ab, im privaten Tab
   immer); alte Zeilen mit `blob` werden weiter gelesen (`blobFromRow`).
   Klappt IndexedDB nicht, bleibt der Ton im Arbeitsspeicher und die

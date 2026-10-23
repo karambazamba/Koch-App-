@@ -1,6 +1,7 @@
-// Ton der Sprachnachrichten – hinter einer Schnittstelle, damit er später mit
-// den Konten in Supabase Storage liegt (`storagePath` am Eintrag) und geteilt
-// wird. Bis dahin: IndexedDB `wasgibts-memos` (v1, Tabelle "audio", Schlüssel
+// Ton der Sprachnachrichten – hinter einer Schnittstelle. Mit Konto liegt er
+// zusätzlich in Supabase Storage (`storagePath` am Eintrag, Etappe 3c): fehlt
+// er auf dem Gerät, holt `setMemoRemote` ihn einmal und legt ihn ab. Auf dem
+// Gerät: IndexedDB `wasgibts-memos` (v1, Tabelle "audio", Schlüssel
 // = Memo-ID, Ton als ArrayBuffer + Typ) auf diesem Gerät, für alle Personen
 // des Haushalts; klappt IndexedDB nicht, im Arbeitsspeicher, bis die App
 // geschlossen wird. Nicht in „Daten sichern“. Verwaiste Töne (Memo abgelaufen oder gelöscht) räumt
@@ -91,14 +92,14 @@ const idbTable: MemoTable = {
  * beim Ablegen), bleibt der Ton im Arbeitsspeicher – die Nachricht geht nie
  * verloren und bleibt abspielbar, bis die App geschlossen wird.
  */
-export function createMemoAudio(table: () => MemoTable | null, log: (text: string) => void = () => undefined): MemoAudioStore {
+export function createMemoAudio(table: () => MemoTable | null, log: (text: string) => void = () => undefined, remote: () => RemoteLoader | null = () => null): MemoAudioStore {
   const memory = new Map<string, { blob: Blob; at: number }>();
   const keepInMemory = (id: string, blob: Blob, why: string): MemoAudioPlace => {
     memory.set(id, { blob, at: now().getTime() });
     log(`Speichern: nur im Arbeitsspeicher (${why})`);
     return "sitzung";
   };
-  return {
+  const store: MemoAudioStore = {
     async save(id, blob) {
       const t = table();
       if (!t) return keepInMemory(id, blob, "kein IndexedDB");
@@ -114,11 +115,19 @@ export function createMemoAudio(table: () => MemoTable | null, log: (text: strin
     async load(memo) {
       const kept = memory.get(memo.id);
       if (kept) return kept.blob;
+      let here: Blob | null = null;
       try {
-        return blobFromRow(await table()?.get(memo.id));
+        here = blobFromRow(await table()?.get(memo.id));
       } catch {
-        return null;
+        here = null;
       }
+      const path = memo.data.storagePath;
+      const fetchIt = remote();
+      if (here || !path || !fetchIt) return here;
+      // Aus dem Haushalt holen und für das nächste Mal ablegen
+      const blob = await fetchIt(path).catch(() => null);
+      if (blob) await store.save(memo.id, blob);
+      return blob;
     },
     async remove(id) {
       memory.delete(id);
@@ -129,12 +138,23 @@ export function createMemoAudio(table: () => MemoTable | null, log: (text: strin
       return [...rows.map((r) => ({ id: r.id, at: r.at })), ...[...memory].map(([id, m]) => ({ id, at: m.at }))];
     },
   };
+  return store;
 }
 
-/** Die eine Quelle für den Ton (später: Supabase Storage, wenn `storagePath` gesetzt ist) */
+/** Holt den Ton eines geteilten Memos (Pfad in Storage); null = gerade nicht */
+export type RemoteLoader = (path: string) => Promise<Blob | null>;
+let remoteLoader: RemoteLoader | null = null;
+
+/** Der Abgleich meldet hier, wie Töne aus dem Haushalt geholt werden (null = kein Haushalt) */
+export function setMemoRemote(loader: RemoteLoader | null) {
+  remoteLoader = loader;
+}
+
+/** Die eine Quelle für den Ton (Gerät, sonst Haushalt, wenn `storagePath` gesetzt ist) */
 export const memoAudio: MemoAudioStore = createMemoAudio(
   () => (typeof indexedDB === "undefined" ? null : idbTable),
   (text) => micLog(text),
+  () => remoteLoader,
 );
 
 /** Töne ohne Memo-Eintrag löschen (nicht frisch Aufgenommenes – das Speichern des Eintrags kann noch laufen) */

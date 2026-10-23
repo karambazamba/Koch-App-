@@ -4,8 +4,8 @@ Kurz: Mit einem Konto (Supabase) teilt sich eine Familie einen Haushalt.
 Anmelden immer per E-Mail-Code (6 Ziffern), nie per Link. Ohne Konto – und
 ohne Supabase-Variablen – läuft die App wie bisher komplett auf dem Gerät.
 
-Etappen: **3a Anmeldung und Haushalt** · **3b Synchronisieren** (beide fertig) ·
-3c Sprachmemos teilen · 3d Sichtbar machen (wer hat was eingetragen).
+Etappen: **3a Anmeldung und Haushalt** · **3b Synchronisieren** ·
+**3c Sprachmemos teilen** (fertig) · 3d Sichtbar machen (wer hat was eingetragen).
 
 ## FESTE REGELN
 
@@ -29,7 +29,7 @@ Etappen: **3a Anmeldung und Haushalt** · **3b Synchronisieren** (beide fertig) 
   Test: `tests/datenbank/aufgaben.test.sql`.
 - Abgleich (3b): neueste Änderung je Eintrag gewinnt; Löschen nur als
   Markierung (`geloescht`), nie hart. Geteilt werden Termine, Aufgaben,
-  Notizen, Pinnwand (ohne Sprachnachrichten bis 3c), Einkaufsliste,
+  Notizen, Pinnwand (mit Sprachnachrichten, 3c), Einkaufsliste,
   Wochenplan und Vorrat – Einstellungen, Startseite und Beispiel-Tag nie.
 - Übernahme: Beim ersten Mal mit einem Haushalt bleibt alles nur auf dem
   Gerät, bis „Mitnehmen“ getippt ist (Vorschau „3 Termine, 2 Aufgaben …
@@ -142,7 +142,32 @@ Etappen: **3a Anmeldung und Haushalt** · **3b Synchronisieren** (beide fertig) 
 - Echter Mail-Test (von Hand, nicht im Durchklick – der nutzt das
   Test-Backend): in der App auf /konto eine echte Adresse eingeben, prüfen,
   dass Betreff und 6-stelliger Code ankommen, Code eingeben.
-- Offen bei Felix: `CRON_SECRET` (für 3c).
+- Offen bei Felix: `CRON_SECRET` (für 3c – ohne räumt die App auf).
+
+## Sprachnachrichten teilen (3c, seit v0.79)
+
+- Ton in Supabase Storage, Bucket `memos` (privat, höchstens 2 MB, nur Ton),
+  Pfad `<haushalt>/<memo-id>.m4a|webm|ogg` (`memoPath` in
+  `src/lib/konten/memoShare.ts`). Migration
+  `supabase/migrations/20261026120000_memos_teilen.sql`: lesen und löschen
+  nur Mitglieder des Haushalts (`memo_household(name)` + `is_member`),
+  ablegen nur in den eigenen Haushalt, falsche Pfade (`..`, Unterordner,
+  keine Ton-Endung) nie. Test: `tests/datenbank/memos.test.sql`.
+- Ablauf: Vor jedem Abgleich lädt der Runner den Ton neuer Memos hoch
+  (`uploadPendingMemos`) und vermerkt `storagePath` am Memo – erst dann wird
+  das Memo geteilt (Übersetzer `pinnwand` in `sync/docs.ts`; Memos ohne Pfad
+  bleiben nur auf dem Gerät und gehen beim Einspielen nicht verloren).
+  Auf den anderen Geräten holt `memoAudio` den Ton beim ersten Abspielen
+  (`setMemoRemote`) und legt ihn in IndexedDB ab. „Gehört von“ und
+  Reaktionen gehen mit dem Eintrag.
+- Lebensdauer wie bisher: 24 Std. ab der Aufnahme (Tafel 72, statt „24 Std.
+  nach alle gehört“ aus dem Konten-Auftrag). Dateien älter als 25 Std. räumt
+  `/api/memos/aufraeumen` täglich weg (Vercel Cron 3:30 UTC, nur mit
+  `CRON_SECRET`, geheimer Schlüssel nur dort). Zusätzlich räumt die App
+  einmal je Start ihren Haushalt auf (`tidyMemoFiles` im Runner) – so klappt
+  es auch ohne `CRON_SECRET`.
+- Test-Backend: `upload_memo`, `download_memo`, `list_memos`, `remove_memos`
+  mit denselben Regeln. Tests: `tests/konten/memosTeilen.test.ts`.
 
 ## Tests
 

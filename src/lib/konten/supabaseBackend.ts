@@ -11,6 +11,7 @@ import { readRaw, writeRaw } from "@/lib/core/localStore";
 import { fail, friendlyError, ok, type CloudUser, type HouseholdInfo, type Member, type Role } from "@/lib/konten/model";
 import type { CloudBackend } from "@/lib/konten/backend";
 import type { CloudDoc } from "@/lib/konten/sync/docs";
+import { memoContentType } from "@/lib/konten/memoShare";
 
 /** Sitzung nur unter unserem Schlüssel speichern */
 const storage = {
@@ -124,6 +125,25 @@ export function supabaseBackend(url: string, key: string): CloudBackend {
         .on("postgres_changes", { event: "*", schema: "public", table: "entries", filter: `household_id=eq.${householdId}` }, () => onChange())
         .subscribe();
       return () => void sb.removeChannel(channel);
+    },
+    uploadMemo: async (path, blob) => {
+      const { error } = await sb.storage.from("memos").upload(path, blob, { contentType: memoContentType(blob.type), upsert: false });
+      // Schon da (zweiter Versuch nach Netzabbruch) = geklappt
+      return !error || /exist|duplicate/i.test(error.message) ? ok(true) : fail(friendlyError(error.message));
+    },
+    downloadMemo: async (path) => {
+      const { data, error } = await sb.storage.from("memos").download(path);
+      return error ? null : data;
+    },
+    listMemos: async (householdId) => {
+      const { data, error } = await sb.storage.from("memos").list(householdId, { limit: 1000 });
+      if (error) return fail(friendlyError(error.message));
+      return ok((data ?? []).filter((f) => f.id).map((f) => ({ name: `${householdId}/${f.name}`, createdAt: f.created_at ?? "" })));
+    },
+    removeMemos: async (paths) => {
+      if (!paths.length) return ok(true);
+      const { error } = await sb.storage.from("memos").remove(paths);
+      return error ? fail(friendlyError(error.message)) : ok(true);
     },
   };
 }

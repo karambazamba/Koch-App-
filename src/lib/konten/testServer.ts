@@ -5,7 +5,9 @@
 // Fehlversuche pro Stunde, leerer Haushalt verschwindet. Kein Netz, keine
 // echten Mails – `admin_code` liefert den Code für den Test. Einträge
 // (Etappe 3b) wie die Tabelle `entries`: neueste Änderung gewinnt, Arbeit nur
-// für den Besitzer, Löschen nur als Markierung, `rev` zählt hoch.
+// für den Besitzer, Löschen nur als Markierung, `rev` zählt hoch. Sprach-
+// nachrichten (Etappe 3c) wie der Bucket „memos“: nur der eigene Haushalt
+// (erster Ordner), nur harmlose Pfade, höchstens 2 MB.
 
 import type { HouseholdInfo, Member, Role } from "@/lib/konten/model";
 import { normalizeInviteCode } from "@/lib/konten/model";
@@ -26,6 +28,8 @@ type State = {
   /** Haushalt → Einträge */
   entries: Map<string, Map<string, CloudDoc & { besitzer: string }>>;
   rev: number;
+  /** Ton der Sprachnachrichten: Pfad <haushalt>/<datei> → Inhalt (wie Bucket „memos“) */
+  files: Map<string, { data: string; mime: string; at: number }>;
 };
 
 const OTP_MS = 900_000;
@@ -34,7 +38,7 @@ const ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 
 const g = globalThis as unknown as { __wasgibtsKonten?: State };
 const state = (): State =>
-  (g.__wasgibtsKonten ??= { users: new Map(), otps: new Map(), sessions: new Map(), households: new Map(), members: [], invites: new Map(), attempts: new Map(), entries: new Map(), rev: 0 });
+  (g.__wasgibtsKonten ??= { users: new Map(), otps: new Map(), sessions: new Map(), households: new Map(), members: [], invites: new Map(), attempts: new Map(), entries: new Map(), rev: 0, files: new Map() });
 
 /** Für Tests: alles leeren @public */
 export function resetTestKonten() {
@@ -54,6 +58,10 @@ function visible(d: { typ: string; raum: string; besitzer: string; data: unknown
   return d.raum === "familie" || d.besitzer === uid;
 }
 
+/** Wie `memo_household` in der Datenbank: Haushalt aus dem Pfad, sonst null */
+const MEMO_PATH = /^([0-9a-f-]{36})\/[A-Za-z0-9_-]{1,80}\.(m4a|webm|ogg)$/;
+const memoHousehold = (path: unknown) => (typeof path === "string" ? (MEMO_PATH.exec(path)?.[1] ?? null) : null);
+
 function householdOf(s: State, userId: string): HouseholdInfo | null {
   const mine = s.members.find((m) => m.userId === userId);
   if (!mine) return null;
@@ -72,6 +80,7 @@ function removeMember(s: State, userId: string) {
   if (mine && !s.members.some((m) => m.householdId === mine.householdId)) {
     s.households.delete(mine.householdId);
     s.entries.delete(mine.householdId);
+    for (const p of s.files.keys()) if (memoHousehold(p) === mine.householdId) s.files.delete(p);
     for (const [code, inv] of s.invites) if (inv.householdId === mine.householdId) s.invites.delete(code);
   }
 }
@@ -178,6 +187,28 @@ export function testKonten(body: Record<string, unknown>, nowMs = Date.now()): R
         .filter((d) => (d.rev ?? 0) > since && visible(d, user.id))
         .sort((a, b) => (a.rev ?? 0) - (b.rev ?? 0));
       return { docs: docs.slice(0, 500), more: docs.length > 500 };
+    }
+    case "upload_memo": {
+      const hh = s.members.find((m) => m.userId === user.id)?.householdId;
+      const data = str(body.data, 3_000_000);
+      if (!hh || memoHousehold(body.path) !== hh || !data || data.length > 2_800_000) return { error: "nicht_erlaubt" };
+      s.files.set(body.path as string, { data, mime: str(body.mime, 60) || "audio/webm", at: nowMs });
+      return { ok: true };
+    }
+    case "download_memo": {
+      const hh = s.members.find((m) => m.userId === user.id)?.householdId;
+      const f = hh && memoHousehold(body.path) === hh ? s.files.get(body.path as string) : undefined;
+      return f ? { data: f.data, mime: f.mime } : { error: "nicht_gefunden" };
+    }
+    case "list_memos": {
+      const hh = s.members.find((m) => m.userId === user.id)?.householdId;
+      if (!hh || body.householdId !== hh) return { files: [] };
+      return { files: [...s.files].filter(([p]) => memoHousehold(p) === hh).map(([name, f]) => ({ name, createdAt: new Date(f.at).toISOString() })) };
+    }
+    case "remove_memos": {
+      const hh = s.members.find((m) => m.userId === user.id)?.householdId;
+      for (const p of Array.isArray(body.paths) ? body.paths : []) if (hh && memoHousehold(p) === hh) s.files.delete(p as string);
+      return { ok: true };
     }
     case "export":
       return { konto: { userId: user.id, email: user.email }, haushalt: householdOf(s, user.id) };

@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { readRaw, writeRaw } from "@/lib/core/localStore";
 import { fail, friendlyError, ok, type CloudUser, type HouseholdInfo, type Result, type Role } from "@/lib/konten/model";
 import type { CloudDoc } from "@/lib/konten/sync/docs";
+import { memoContentType, type MemoFile } from "@/lib/konten/memoShare";
 
 export type CloudMode = "aus" | "supabase" | "test";
 
@@ -33,6 +34,13 @@ export interface CloudBackend {
   pullEntries(since: number): Promise<Result<{ docs: CloudDoc[]; more: boolean }>>;
   /** Bescheid sagen, wenn sich im Haushalt etwas ändert (Realtime); liefert „aufhören“ */
   watchEntries(householdId: string, onChange: () => void): () => void;
+  /** Ton einer Sprachnachricht ablegen (Bucket „memos“, Pfad <haushalt>/<id>.<endung>) */
+  uploadMemo(path: string, blob: Blob): Promise<Result>;
+  /** Ton holen; null = gerade nicht (offline, schon weggeräumt) */
+  downloadMemo(path: string): Promise<Blob | null>;
+  /** Ton-Dateien des Haushalts (zum Aufräumen) */
+  listMemos(householdId: string): Promise<Result<MemoFile[]>>;
+  removeMemos(paths: string[]): Promise<Result>;
 }
 
 type Config = { mode: "aus" } | { mode: "test" } | { mode: "supabase"; url: string; key: string };
@@ -95,6 +103,20 @@ async function call(action: string, body: Record<string, unknown> = {}): Promise
   } catch {
     return { error: "network" };
   }
+}
+
+async function toBase64(blob: Blob): Promise<string> {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+
+function fromBase64(data: string, mime: string): Blob {
+  const bin = atob(data);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
 }
 
 const err = (r: Record<string, unknown>) => (typeof r.error === "string" ? friendlyError(r.error) : null);
@@ -160,6 +182,22 @@ function testBackend(): CloudBackend {
     pullEntries: async (since) => {
       const r = await call("pull_entries", { since });
       return err(r) ? fail(err(r) as string) : ok({ docs: (r.docs as CloudDoc[]) ?? [], more: r.more === true });
+    },
+    uploadMemo: async (path, blob) => {
+      const r = await call("upload_memo", { path, mime: memoContentType(blob.type), data: await toBase64(blob) });
+      return err(r) ? fail(err(r) as string) : ok(true);
+    },
+    downloadMemo: async (path) => {
+      const r = await call("download_memo", { path });
+      return typeof r.data === "string" ? fromBase64(r.data, String(r.mime ?? "audio/webm")) : null;
+    },
+    listMemos: async (householdId) => {
+      const r = await call("list_memos", { householdId });
+      return err(r) ? fail(err(r) as string) : ok((r.files as MemoFile[]) ?? []);
+    },
+    removeMemos: async (paths) => {
+      const r = await call("remove_memos", { paths });
+      return err(r) ? fail(err(r) as string) : ok(true);
     },
     // Im Test ohne Realtime: alle 2 Sekunden nachsehen lassen
     watchEntries: (_householdId, onChange) => {

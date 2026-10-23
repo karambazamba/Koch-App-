@@ -2195,3 +2195,10 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Was Mia noch nicht kann, landet als Wunsch (Tabelle `mia_wuensche`, nur
   Server). Prüfstand mit 120 Sätzen (`/api/pruefstand`) und Seite „Für
   Entwickler“ mit Trefferquote und KI-Kosten.
+
+## Konten 3c: Sprachnachrichten teilen (v0.79.0)
+- Ton in Supabase Storage (Bucket `memos`, privat, nur Haushalt, 2 MB), Pfad
+  `<haushalt>/<memo-id>.m4a|webm|ogg`; das Memo wird erst geteilt, wenn der
+  Ton oben liegt. Andere Geräte holen den Ton beim ersten Abspielen.
+- „Gehört von“ und Reaktionen gehen mit. Aufräumen nach 25 Std. per Vercel
+  Cron (`/api/memos/aufraeumen`, `CRON_SECRET`) und einmal je Start in der App.
