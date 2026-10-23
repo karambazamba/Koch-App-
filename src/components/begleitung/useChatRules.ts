@@ -36,6 +36,8 @@ import { mailRule } from "@/components/begleitung/mailRules";
 import { openHelper } from "@/lib/begleitung/open";
 import { isWeekCheckRequest } from "@/lib/kalender/wochencheck";
 import { isKochtippRequest } from "@/lib/essen/kochtipp/start";
+import { daySummary, isDayQuestion, openDeinTag } from "@/lib/heute/deinTag";
+import { itemsForDay } from "@/lib/kalender/model";
 import type { SpontanChat } from "@/components/begleitung/useSpontanChat";
 
 type Options = {
@@ -117,6 +119,20 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
   /** Feste Regeln (ohne KI, oder wenn die KI ein `app_befehl` schickt). true = erledigt */
   const rules = (t: string): boolean => {
     if (!data || !today) return false;
+    // „Was steht heute an?“ → kurz in 2 Sätzen, dann öffnet sich „Dein Tag“ (Tafel 68)
+    if (isDayQuestion(t)) {
+      setInput("");
+      const iso = toIsoDate(today);
+      const items = itemsForDay(loadCalendarEntries(), iso, iso);
+      const text = daySummary({ termine: items.filter((i) => i.entry.typ === "termin"), tasks: items.filter((i) => i.entry.typ === "aufgabe"), dish: null, minutes: today.getHours() * 60 + today.getMinutes() });
+      setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text, local: true }] }));
+      setTimeout(() => {
+        onClose();
+        router.push("/");
+        openDeinTag();
+      }, 1800);
+      return true;
+    }
     // „Wochencheck“, „Lass uns die Woche durchgehen“ → eigenes Fenster (Tafel 36)
     if (isWeekCheckRequest(t)) {
       setInput("");

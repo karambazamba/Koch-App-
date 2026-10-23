@@ -2154,3 +2154,11 @@ Fehler in `docs/aufraeumen-nachher.md`.
   wie bei WhatsApp (🗑 · Zeit · Welle · ➤ rechts), ＋ und Mikro währenddessen
   weg, unten nur „Sprachnachricht“, beim ersten Mal „schreiben“ unter dem ＋,
   nach dem Senden „✓ Gesendet“.
+
+## Weniger Mia + „Dein Tag“ (Tafel 66 B, 67, 68, v0.74.0)
+- Startseite mit genau zwei Mias (Logo + Knopf); die Jetzt-Karte trägt ein
+  Themen-Symbol statt Mias Gesicht und keinen Knopf mehr, wischt 1 → 3 ohne
+  Kreisel und öffnet per Antippen „Dein Tag“ (Termine mit „Jetzt“-Linie,
+  Essen mit „Kochen“, Pinnwand von heute, Aufgaben zum Abhaken; Thema
+  hervorgehoben). Mia beantwortet „Was steht heute an?“ in zwei Sätzen und
+  öffnet „Dein Tag“. Der Mia-Knopf macht beim Runterscrollen Platz.

@@ -1065,6 +1065,8 @@ body {
 @keyframes mia-welle { from { opacity: .5; transform: scale(1); } to { opacity: 0; transform: scale(1.7); } }
 .mia-knopf { position: relative; animation: mia-atmen 4s ease-in-out infinite; }
 .mia-knopf::before { content: ""; position: absolute; inset: -8px; border-radius: 9999px; background: radial-gradient(closest-side, color-mix(in srgb, var(--app-accent) 45%, transparent), transparent); animation: mia-schein 4s ease-in-out infinite; pointer-events: none; z-index: -1; }
+.mia-knopf-gleiten { transition: transform .9s var(--mia-ease), opacity .9s var(--mia-ease); }
+.mia-knopf-gleiten[data-weg] { transform: translateY(140%); opacity: 0; }
 .mia-einblenden { animation: mia-blende .8s var(--mia-ease) both; }
 .mia-karte { animation: mia-ein .8s var(--mia-ease) both; }
 .mia-text { animation: mia-blende .5s var(--mia-ease) both; }
@@ -1105,6 +1107,7 @@ body:has(.mia-buehne-hintergrund, .mia-geist-schleier) [data-mia-knopf] { opacit
   .mia-knopf, .mia-knopf::before, .mia-huepfer, .mia-wellen, .mia-tonwelle > span, .kochidee-wippen, .mia-atmet { animation: none; }
   .mia-karte { animation: mia-blende .4s ease both; }
   .mia-flug { transition: none; }
+  .mia-knopf-gleiten, .mia-knopf-gleiten[data-weg] { transition: opacity .4s ease; transform: none; }
 }
 
 /* Startseite bearbeiten: die Fertig-Leiste ersetzt den Mia-Knopf */

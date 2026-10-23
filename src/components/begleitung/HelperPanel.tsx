@@ -34,6 +34,7 @@ import { looksLikeMail, splitInstruction } from "@/lib/begleitung/mail";
 import { useTipStore } from "@/lib/essen/healthTips";
 import { useFeature } from "@/lib/core/features";
 import { onReleaseHelperVoice } from "@/lib/begleitung/open";
+import { isDayQuestion } from "@/lib/heute/deinTag";
 import { showToast } from "@/lib/core/toast";
 
 import type { ChatState } from "@/components/begleitung/chatTypes";
@@ -193,6 +194,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     }
     // „Kochidee“, „Was soll ich kochen?“ schaltet den Knopf frei (auch mit KI)
     if (isKochtippRequest(t)) unlockKochtipp();
+    // „Was steht heute an?“ – Mia fasst kurz zusammen und öffnet „Dein Tag“ (ein App-Befehl wie der Wochencheck)
+    if (isDayQuestion(t) && rules(t)) return;
     // Offene Kochidee: Erzähltes („Ich hab Hähnchen gekauft …“, „nicht schon wieder Hähnchen“)
     // → neues Karussell; alles andere beendet sie und geht den normalen Weg
     if (chat.kochtipp) {
