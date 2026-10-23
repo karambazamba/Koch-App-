@@ -1,33 +1,36 @@
 "use client";
 
-// PINNWAND (Rosé): Zettel am Kühlschrank. Kopf "PINNWAND" (+ Punkt bei
-// Ungelesenem/Ungehörtem), rosé Mikro = Sprachnachricht (gedrückt halten),
-// "+" = neue Nachricht (bis 140 Zeichen, "Anheften"). S/M/L = 1/2/4 neueste
-// Einträge – Text (Kreis mit Anfangsbuchstabe, Text, "Lisa · 7:48") und
-// Sprachnachrichten (Abspielen, Tonwelle, Dauer) gemischt. Antippen → 👍 ❤️,
-// anheften (nur Text), Gehört von / Löschen (nur eigene, mit Rückgängig).
+// PINNWAND auf der Startseite (Tafel 71, Variante B): ruhig und klein. Feste
+// Höhe (wie die Wetter-Kachel daneben, auch breit nie höher), genau 2 Zeilen
+// à 30 px: Angeheftetes, dann die neuesten Einträge der letzten 24 Std. – Text (Bild 22 px +
+// eine Zeile …) bzw. Sprachnachricht (▶, kleine Tonwelle, Länge). „+N“ neben
+// dem ＋, wenn es mehr gibt; kein roter Punkt, keine Zahl in Rot. Oben rechts
+// ＋ = Mia schreibt mit, unten rechts Mikro = Sprachnachricht (deutlich
+// getrennt). Antippen öffnet die Pinnwand-Seite an dieser Nachricht; keine
+// Wisch- oder Lange-Drücken-Gesten in der Kachel.
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { PinSheet, PinWriteSheet, pinMetaLine } from "@/components/pinnwand/PinSheets";
 import { Pin, Plus } from "lucide-react";
 import { TILE, TILE_LABEL } from "@/components/ui/styles";
 import { QuickButton } from "@/components/ui/QuickButton";
+import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import type { TileSize } from "@/lib/core/homeLayout";
-import { REACTIONS, changePins, markPinsRead } from "@/lib/pinnwand";
+import { now } from "@/lib/core/now";
+import { tileEntries } from "@/lib/pinnwand";
+import { markHintSeen, useHintSeen } from "@/lib/core/hints";
+import { clearDemoTile } from "@/lib/core/demo";
+import { openQuick } from "@/lib/core/schnelleingabe";
 import { useBoard } from "@/components/pinnwand/useBoard";
-import { MemoItem, MemoSheet } from "@/components/pinnwand/MemoRow";
+import { PinWriteSheet } from "@/components/pinnwand/PinSheets";
+import { MemoMini } from "@/components/pinnwand/MemoRow";
 import { MemoMic, MemoNote, RecordingRow } from "@/components/pinnwand/MemoParts";
 import { useCanRecordMemo, useMemoRecorder } from "@/components/pinnwand/useMemoRecorder";
-import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
-import { clearDemoTile } from "@/lib/core/demo";
-import { PersonAvatar } from "@/components/ui/PersonAvatar";
-import { askMiaFirst } from "@/lib/begleitung/open";
 
+/** Beispiel-Tag: eine Familien-Nachricht (nicht von Mia) */
+const DEMO = { author: "Lisa", text: "Bringe Brot mit 🥖" };
 
-const meta = pinMetaLine;
-
-export function PinboardTile({ size = "M", me, demo = false, helper = "" }: { size?: TileSize; me: string; demo?: boolean; helper?: string }) {
+export function PinboardTile({ size = "S", me, demo = false }: { size?: TileSize; me: string; demo?: boolean }) {
   const board = useBoard(me);
   // Beispiel-Tag: erste eigene Nachricht → Beispiel verschwindet für immer
   const hasOwn = board.hasOwn;
@@ -35,93 +38,67 @@ export function PinboardTile({ size = "M", me, demo = false, helper = "" }: { si
     if (demo && hasOwn) clearDemoTile("pinnwand");
   }, [demo, hasOwn]);
   const showDemo = demo && !hasOwn;
-  const [writing, setWriting] = useState(false);
-  const [open, setOpen] = useState<string | null>(null);
+  const [writing, setWriting] = useState<string | null>(null);
   const recorder = useMemoRecorder({ me });
   const canRecord = useCanRecordMemo();
-  const list = board.items ?? [];
-  const shown = list.slice(0, size === "S" ? 1 : size === "L" ? 4 : 2);
-  const unread = board.unread;
-  const selected = list.find((m) => m.id === open) ?? null;
+  const hintSeen = useHintSeen("pinnwand-kachel");
+  const nowMs = board.items ? now().getTime() : 0;
+  const { shown, more } = tileEntries(board.items ?? [], nowMs);
+  const write = () => {
+    markHintSeen("pinnwand-kachel");
+    openQuick({ kind: "pinnwand", me, more: setWriting });
+  };
   return (
     <>
-      <section className={`${TILE} flex min-h-[92px] flex-col p-3.5`} aria-label="Pinnwand">
-        {/* Kopf: Titel links, Plus oben rechts (wie jede Kachel); das Mikro steht unten
-            rechts – getrennt, damit sich die Tippflächen nie überlappen */}
-        <div className="-mt-0.5 flex items-center gap-4">
+      <section className={`${TILE} flex h-[156px] flex-col overflow-hidden px-3.5 pb-2.5 pt-3`} aria-label="Pinnwand" data-groesse={size}>
+        <div className="flex items-center gap-2">
           <Link href="/pinnwand" className={`hit flex min-w-0 flex-1 items-center gap-1.5 ${TILE_LABEL}`} aria-label="Pinnwand öffnen">
             <Pin className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
             <span className="truncate">Pinnwand</span>
-            {(unread || showDemo) && <span className="h-2 w-2 shrink-0 rounded-full bg-tile-accent" aria-label="Neue Nachricht" />}
           </Link>
-          <QuickButton icon={Plus} label="Neue Nachricht an die Pinnwand" onClick={() => askMiaFirst("pinnwand", () => setWriting(true))} />
+          {more > 0 && (
+            <Link href="/pinnwand" className="hit shrink-0 text-[13px] font-bold text-tile-accent" aria-label={`${more} weitere Nachrichten ansehen`}>
+              +{more}
+            </Link>
+          )}
+          <QuickButton icon={Plus} label="Nachricht an die Pinnwand" onClick={write} />
         </div>
-        {recorder.phase !== "idle" ? (
-          <div className="mt-2">
-            <RecordingRow recorder={recorder} compact={size === "S"} />
-          </div>
-        ) : showDemo ? (
-          <button type="button" onClick={() => setWriting(true)} className="mt-1.5 flex w-full items-start gap-2.5 text-left" aria-label="Beispiel-Nachricht – eigene schreiben">
-            <BegleitungAvatar size={28} />
-            <span className="flex min-w-0 flex-1 flex-col">
-              <span className={`${size === "S" ? "line-clamp-2" : "line-clamp-3"} text-[14px] font-semibold leading-snug`}>Willkommen! Hier hinterlasst ihr euch kleine Nachrichten.</span>
-              <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
-                {helper} · gerade eben
-              </span>
-            </span>
-          </button>
-        ) : shown.length ? (
-          <ul className="mt-2 flex flex-col gap-2">
-            {shown.map((item) => {
-              if (item.kind === "memo") {
-                return (
-                  <li key={item.id}>
-                    <MemoItem memo={item.memo} me={me} household={board.household} soft onOpen={() => setOpen(item.id)} />
-                  </li>
-                );
-              }
-              const m = item.pin;
-              const reacted = REACTIONS.filter((r) => (m.data.reactions[r]?.length ?? 0) > 0);
-              return (
-                <li key={m.id}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOpen(m.id);
-                      changePins((all) => markPinsRead(all, me));
-                    }}
-                    className="hit flex w-full items-start gap-2.5 text-left"
-                    aria-label={`${m.data.text} – ${meta(m, me)}`}
-                  >
-                    <PersonAvatar name={m.data.author} soft />
-                    <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="line-clamp-2 text-[14.5px] font-semibold leading-snug">{m.data.text}</span>
-                      <span className="text-xs text-muted">
-                        {meta(m, me)}
-                        {m.data.pinned ? " · angeheftet" : ""}
-                      </span>
-                    </span>
-                    {reacted.length > 0 && <span className="shrink-0 text-sm">{reacted.join("")}</span>}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <button type="button" onClick={() => setWriting(true)} className="hit mt-1 text-left text-[14px] text-muted">
-            Kurze Nachricht an alle – z. B. „Bin um 20 Uhr da“
-          </button>
-        )}
+        <div className="mt-1.5 flex h-[64px] flex-col gap-1">
+          {recorder.phase !== "idle" ? (
+            <RecordingRow recorder={recorder} compact />
+          ) : showDemo ? (
+            <Link href="/pinnwand" data-zeile className="flex h-[30px] items-center gap-2" aria-label={`Beispiel: ${DEMO.author}: ${DEMO.text}`}>
+              <PersonAvatar name={DEMO.author} size={22} soft />
+              <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">{DEMO.text}</span>
+            </Link>
+          ) : shown.length ? (
+            shown.map((item) =>
+              item.kind === "memo" ? (
+                <div key={item.id} className="relative flex h-[30px] items-center gap-2">
+                  <MemoMini memo={item.memo} me={me} household={board.household} />
+                  <Link href={`/pinnwand?n=${item.id}`} data-zeile className="absolute inset-y-0 left-[60px] right-0" aria-label={`Sprachnachricht von ${item.memo.data.author} – auf der Pinnwand öffnen`} />
+                </div>
+              ) : (
+                <Link key={item.id} href={`/pinnwand?n=${item.id}`} data-zeile className="flex h-[30px] items-center gap-2" aria-label={`${item.pin.data.author}: ${item.pin.data.text} – auf der Pinnwand öffnen`}>
+                  <PersonAvatar name={item.pin.data.author} size={22} soft />
+                  <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">{item.pin.data.text}</span>
+                  {item.pinned && <Pin className="h-[13px] w-[13px] shrink-0 text-tile-accent" strokeWidth={2.25} aria-label="angeheftet" />}
+                </Link>
+              ),
+            )
+          ) : (
+            <button type="button" onClick={write} className="hit text-left text-[14px] text-muted">
+              Hinterlasst euch hier Nachrichten
+            </button>
+          )}
+        </div>
         <MemoNote text={recorder.note} onResend={recorder.unsent ? recorder.resend : undefined} />
-        {canRecord && (
-          <div className="mt-auto flex justify-end pt-1.5">
-            <MemoMic recorder={recorder} />
-          </div>
-        )}
+        <div className="mt-auto flex items-end justify-between gap-2">
+          {hintSeen === false && !recorder.note ? <span className="min-w-0 truncate text-[11px] font-semibold text-muted">＋ = schreiben · Mikro = deine Stimme</span> : <span />}
+          {canRecord && <MemoMic recorder={recorder} size={34} />}
+        </div>
       </section>
-      {writing && <PinWriteSheet me={me} onClose={() => setWriting(false)} />}
-      {selected?.kind === "pin" && <PinSheet message={selected.pin} me={me} onClose={() => setOpen(null)} />}
-      {selected?.kind === "memo" && <MemoSheet memo={selected.memo} me={me} household={board.household} onClose={() => setOpen(null)} />}
+      {writing !== null && <PinWriteSheet me={me} initialText={writing} onClose={() => setWriting(null)} />}
     </>
   );
 }

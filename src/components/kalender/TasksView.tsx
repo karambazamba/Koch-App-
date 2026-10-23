@@ -25,7 +25,7 @@ import { ItemMenu } from "@/components/kalender/Items";
 import { EntryForm } from "@/components/kalender/EntryForm";
 import { TaskLine, useLeaving } from "@/components/heute/MiniCards";
 import { TaskQuickAdd } from "@/components/kalender/TaskQuickAdd";
-import { askMiaFirst } from "@/lib/begleitung/open";
+import { openQuick } from "@/lib/core/schnelleingabe";
 
 type Filter = "alles" | "familie" | "arbeit";
 
@@ -56,7 +56,7 @@ export function TasksView() {
   const [showDone, setShowDone] = useState(false);
   const [menu, setMenu] = useState<DayItem | null>(null);
   const [editing, setEditing] = useState<DayItem | null>(null);
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding] = useState<string | null>(null);
   const today = now ? toIsoDate(now) : undefined;
   const groups = entries && today ? taskOverview(entries, today) : null;
   const givenItems = today && given.length ? Object.values(taskOverview(given, today)).flat() : [];
@@ -70,7 +70,7 @@ export function TasksView() {
         title="Aufgaben"
         backHref="/"
         action={
-          <PagePlus label="Neue Aufgabe" onClick={() => askMiaFirst("aufgabe", () => setAdding(true))} />
+          <PagePlus label="Neue Aufgabe" onClick={() => openQuick({ kind: "aufgabe", more: setAdding })} />
         }
       />
       <main className={PAGE_MAIN}>
@@ -95,7 +95,7 @@ export function TasksView() {
                 <BegleitungAvatar size={88} />
                 <h2 className="text-[22px] font-extrabold">Alles erledigt.</h2>
                 <p className="max-w-xs text-base text-muted">Wenn dir etwas einfällt, sag einfach „Ich muss noch …“ – ich merk’s mir.</p>
-                <button type="button" onClick={() => setAdding(true)} className={`${buttonClass("primary", "md")} mt-1`}>
+                <button type="button" onClick={() => openQuick({ kind: "aufgabe", more: setAdding })} className={`${buttonClass("primary", "md")} mt-1`}>
                   Neue Aufgabe
                 </button>
               </section>
@@ -148,7 +148,7 @@ export function TasksView() {
       </main>
       {menu && <ItemMenu item={menu} onClose={() => setMenu(null)} onEdit={() => (setEditing(menu), setMenu(null))} />}
       {editing && <EntryForm entry={editing.entry} onClose={() => setEditing(null)} />}
-      {adding && <TaskQuickAdd defaultWhen="irgendwann" onClose={() => setAdding(false)} />}
+      {adding !== null && <TaskQuickAdd defaultWhen="irgendwann" initialText={adding} onClose={() => setAdding(null)} />}
     </>
   );
 }

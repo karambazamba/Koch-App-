@@ -1,12 +1,11 @@
 "use client";
 
-// "+" bei Aufgaben: Fenster von unten mit Textfeld (und Mikrofon), WANN
+// „Mehr Details“ der Schnelleingabe bei Aufgaben: Fenster von unten mit Textfeld, WANN
 // (Heute · Morgen · Diese Woche · Irgendwann – steht ein Tag im Text, wird er
 // übernommen), WO (Familie · Arbeit, vorgeschlagen) und klein "+ Uhrzeit oder
 // Erinnerung". Enter fügt hinzu und lässt das Fenster für die nächste offen.
 
 import { useRef, useState } from "react";
-import { Mic, MicOff, Square } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { INPUT_BASE, LABEL, buttonClass, chipClass } from "@/components/ui/styles";
 import { createEntry, type Room } from "@/lib/core/entries";
@@ -14,16 +13,14 @@ import { REMINDERS, sanitizeEntry, upsertEntry, type CalendarEntry, type Reminde
 import { quickTaskData, readQuickText, WHEN_CHOICES, whenLabel, type When } from "@/lib/kalender/quick";
 import { todayIso } from "@/lib/core/now";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
-import { useSpeechInput } from "@/lib/begleitung/useSpeechInput";
 import { act } from "@/components/heute/actions";
 import { UrgentMark } from "@/components/kalender/UrgentMark";
-import { MIC_BLOCKED, MicStrip } from "@/components/ui/MicPermission";
 
 const sameWhen = (a: When, b: When) => (typeof a === "string" || typeof b === "string" ? a === b : a.date === b.date && a.due === b.due);
 
-export function TaskQuickAdd({ onClose, defaultWhen = "heute" }: { onClose: () => void; defaultWhen?: When }) {
+export function TaskQuickAdd({ onClose, defaultWhen = "heute", initialText = "" }: { onClose: () => void; defaultWhen?: When; initialText?: string }) {
   const today = todayIso();
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initialText);
   const [picked, setPicked] = useState<When | null>(null);
   const [room, setRoom] = useState<Room | null>(null);
   const [more, setMore] = useState(false);
@@ -46,10 +43,6 @@ export function TaskQuickAdd({ onClose, defaultWhen = "heute" }: { onClose: () =
     setText(value);
   };
 
-  const speech = useSpeechInput({
-    onTranscript: change,
-    onEnd: (t) => t && change(t),
-  });
 
   // Kein doppeltes Absenden (zweimal schnell Enter/Tippen)
   const sending = useRef(false);
@@ -58,8 +51,6 @@ export function TaskQuickAdd({ onClose, defaultWhen = "heute" }: { onClose: () =
     if (!title || sending.current) return;
     sending.current = true;
     setTimeout(() => (sending.current = false), 400);
-    // Erst die Aufnahme verwerfen – sonst schreibt ihr Ende den alten Text zurück
-    speech.reset();
     const data = quickTaskData(title, when, today, { time: time || read.time, reminder, label: read.label, dringend: urgent ?? read.urgent });
     const entry = sanitizeEntry(createEntry("aufgabe", data, { raum: where }) as CalendarEntry);
     if (!entry) return;
@@ -81,10 +72,9 @@ export function TaskQuickAdd({ onClose, defaultWhen = "heute" }: { onClose: () =
           add();
         }}
       >
-        <MicStrip />
         <div className="flex items-center gap-2">
           <input
-            value={speech.listening ? speech.interim || text : text}
+            value={text}
             onChange={(e) => change(e.target.value)}
             placeholder="z. B. Malersachen kaufen"
             aria-label="Aufgabe"
@@ -92,17 +82,6 @@ export function TaskQuickAdd({ onClose, defaultWhen = "heute" }: { onClose: () =
             enterKeyHint="done"
             className={`${INPUT_BASE} h-12 min-w-0 flex-1 px-4`}
           />
-          {speech.supported !== false && (
-            <button
-              type="button"
-              onClick={() => (speech.listening ? speech.stop() : speech.start())}
-              aria-label={speech.blocked ? "Mikro aus – so machst du es an" : speech.listening ? "Zuhören beenden" : "Einsprechen"}
-              aria-pressed={speech.listening}
-              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${speech.blocked ? MIC_BLOCKED : "bg-accent text-on-accent"} active:scale-95 ${speech.listening ? "animate-pulse" : ""}`}
-            >
-              {speech.blocked ? <MicOff className="h-5 w-5" strokeWidth={2.25} aria-hidden /> : speech.listening ? <Square className="h-5 w-5 fill-current" strokeWidth={2} aria-hidden /> : <Mic className="h-5 w-5" strokeWidth={2.25} aria-hidden />}
-            </button>
-          )}
         </div>
 
         <div className="flex flex-col gap-2">

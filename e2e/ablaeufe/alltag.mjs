@@ -1,5 +1,5 @@
 // Eintragen, Kalender, Pinnwand, Wetter, Chat ohne KI (Testmodus)
-import { BASE, hello, lieberFormular, miaTippen, seedFamily, store } from "../lib.mjs";
+import { BASE, hello, miaTippen, schnell, seedFamily, store, pinnwandSchreiben } from "../lib.mjs";
 
 const family = async (page, path = "/") => {
   await hello(page);
@@ -10,16 +10,9 @@ const family = async (page, path = "/") => {
 
 export const eintragen = async (page, check) => {
   await family(page, "/?seite=kalender");
-  await page.locator("[role=tabpanel]:not([inert])").getByRole("button", { name: "Neu eintragen" }).click();
-  await lieberFormular(page);
-  await page.waitForTimeout(500);
-  check(await page.getByText("Was möchtest du eintragen?").isVisible(), "Eintragen-Fenster");
-  await page.getByRole("button", { name: /^Termin/ }).first().click();
-  await page.waitForTimeout(400);
-  await page.getByRole("textbox").first().fill("Friseur 14:00");
-  await page.waitForTimeout(400);
-  await page.getByRole("dialog").getByRole("button", { name: "Eintragen" }).last().click();
-  await page.waitForTimeout(600);
+  await page.locator("[role=tabpanel]:not([inert])").getByRole("button", { name: "Neuer Termin" }).click();
+  check(await page.getByText("NEUER TERMIN", { exact: true }).waitFor({ timeout: 5000 }).then(() => true, () => false), "Schnelleingabe „NEUER TERMIN“");
+  await schnell(page, "Friseur 14:00");
   const entries = (await store(page, "wasgibts.eintraege")).entries;
   check(entries.some((e) => e.data.title === "Friseur" && e.typ === "termin"), "Termin „Friseur“ gespeichert");
 };
@@ -36,10 +29,8 @@ export const kalender = async (page, check) => {
 export const pinnwand = async (page, check) => {
   await family(page, "/pinnwand");
   check(await page.getByText("Bin um 20 Uhr da").isVisible(), "Nachricht von Felix");
-  await page.getByRole("textbox", { name: "Nachricht an alle" }).fill("Pizza ist im Ofen");
-  await page.getByRole("button", { name: "Anheften" }).click();
-  await page.waitForTimeout(400);
-  check(await page.getByText("Pizza ist im Ofen").isVisible(), "eigene Nachricht angeheftet");
+  await pinnwandSchreiben(page, "Pizza ist im Ofen");
+  check(await page.getByText("Pizza ist im Ofen", { exact: true }).first().isVisible(), "eigene Nachricht angeheftet");
 };
 
 export const wetter = async (page, check) => {
@@ -88,15 +79,8 @@ const ICS = [
 export const kalenderImport = async (page, check) => {
   await hello(page);
   await seedFamily(page, { "wasgibts.funktionen": { version: 2, on: ["vorrat", "rezepte", "wochenplan", "regiontipps", "kalender"] } });
-  // Eintragen-Fenster: leiser Link
-  await page.goto(BASE + "/?seite=kalender");
+  await page.goto(BASE + "/profil/kalender");
   await page.waitForTimeout(900);
-  await page.locator("[role=tabpanel]:not([inert])").getByRole("button", { name: "Neu eintragen" }).click();
-  await lieberFormular(page);
-  await page.waitForTimeout(400);
-  await page.getByRole("button", { name: "Aus Apple/Google übernehmen" }).click();
-  await page.waitForURL(/\/profil\/kalender/, { timeout: 5000 }).catch(() => {});
-  check(page.url().includes("/profil/kalender"), "Eintragen → „Aus Apple/Google übernehmen“ öffnet die Seite");
   const before = (await store(page, "wasgibts.eintraege")).entries.length;
   await page.locator("#kalender-datei").setInputFiles({ name: "familie.ics", mimeType: "text/calendar", buffer: Buffer.from(ICS) });
   await page.waitForTimeout(500);

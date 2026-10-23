@@ -80,7 +80,9 @@ export async function hello(page) {
 }
 
 const stamp = "2026-10-20T08:00:00.000Z";
-const entry = (id, typ, data, raum = "familie") => ({ id, typ, raum, besitzer: "lokal", erstellt: stamp, geaendert: stamp, data });
+const entry = (id, typ, data, raum = "familie", at = stamp) => ({ id, typ, raum, besitzer: "lokal", erstellt: at, geaendert: at, data });
+/** Pinnwand: alles verschwindet nach 24 Std. – die Nachricht ist von gestern Abend */
+const PIN_STAMP = "2026-10-20T18:00:00.000Z";
 
 /** Beispiel-Familie mit eigenen Einträgen (statt Beispiel-Tag) */
 const FAMILY = {
@@ -112,7 +114,7 @@ const FAMILY = {
       ],
     },
     "wasgibts.notizen": { version: 1, notes: [entry("n1", "notiz", { title: "WLAN", kind: "text", text: "Passwort: Sonnenblume42", pinned: true })] },
-    "wasgibts.pinnwand": { version: 2, messages: [entry("pin1", "pinnwand", { text: "Bin um 20 Uhr da", author: "Felix", reactions: {}, readBy: ["Felix"], pinned: false })], memos: [] },
+    "wasgibts.pinnwand": { version: 2, messages: [entry("pin1", "pinnwand", { text: "Bin um 20 Uhr da", author: "Felix", reactions: {}, readBy: ["Felix"], pinned: false }, "familie", PIN_STAMP)], memos: [] },
     "wasgibts.funktionen": { version: 2, on: ["vorrat", "rezepte", "wochenplan", "regiontipps"] },
     "wasgibts.beispiel": { version: 1, since: "2026-10-21", cleared: ["termine", "aufgaben", "pinnwand", "einkauf", "essen"], done: [], gone: [], asked: true },
   },
@@ -233,10 +235,31 @@ export async function tippenFeld(page) {
   return box;
 }
 
-/** „＋“ holt erst Mia – „Lieber Formular“ öffnet das gewohnte Fenster */
-export async function lieberFormular(page) {
-  const link = page.getByRole("button", { name: "Lieber Formular" });
+/** „＋“ öffnet die Schnelleingabe – „Mehr Details“ öffnet das volle Fenster */
+export async function mehrDetails(page) {
+  const link = page.getByRole("dialog", { name: "Schnelleingabe" }).getByRole("button", { name: "Mehr Details" });
   await link.waitFor({ timeout: 5000 });
   await link.click();
   await page.waitForTimeout(500);
+}
+
+/** Schnelleingabe: Satz tippen, ➤ (Return), Fenster zu */
+export async function schnell(page, text, { close = true } = {}) {
+  const sheet = page.getByRole("dialog", { name: "Schnelleingabe" });
+  await sheet.waitFor({ timeout: 5000 });
+  const box = sheet.getByRole("textbox");
+  await box.fill(text);
+  await box.press("Enter");
+  await page.waitForTimeout(300);
+  if (close) {
+    await sheet.getByRole("button", { name: "Schließen" }).last().click();
+    await page.waitForTimeout(400);
+  }
+  return sheet;
+}
+
+/** Pinnwand: ＋ → Schnelleingabe „NACHRICHT AN ALLE“ → ➤ = angepinnt */
+export async function pinnwandSchreiben(page, text) {
+  await page.getByRole("button", { name: /^Nachricht an die Pinnwand/ }).first().click();
+  await schnell(page, text);
 }

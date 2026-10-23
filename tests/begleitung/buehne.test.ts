@@ -59,8 +59,7 @@ describe("Gespräch oben", () => {
   it("Bereichs-Kopf nur mit Anlass", () => {
     expect(stageTopic("kochtipp")).toBe("KOCHIDEE");
     expect(stageTopic("wochencheck")).toBe("WOCHENCHECK");
-    expect(stageTopic("eintragen", "termin")).toBe("TERMIN");
-    expect(stageTopic("eintragen", "eintrag")).toBeUndefined();
+    expect(stageTopic("voice")).toBeUndefined();
     expect(stageTopic("voice")).toBeUndefined();
     expect(stageTopic(undefined)).toBeUndefined();
   });

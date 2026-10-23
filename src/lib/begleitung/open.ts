@@ -4,16 +4,12 @@
 // Der Küchenhelfer im Layout hört auf dieses Ereignis.
 // "spontan" = Spontan kochen (mit dem, was da ist; früher "reste"),
 // "voice" = Mikrofon startet direkt; "wochencheck" = Wochencheck (eigenes
-// Fenster, Tafel 36); "eintragen" = ein „＋“ wurde getippt: erst Mia fragen
-// (Erzählen statt ausfüllen), das Formular bleibt über „Lieber Formular“;
-// `ask` = gleich fragen.
+// Fenster, Tafel 36); `ask` = gleich fragen. Ein „＋“ holt nie Mia, sondern
+// die Schnelleingabe (`core/schnelleingabe`).
 
 import { unlockSpeech } from "@/lib/begleitung/speech";
 
-type HelperMode = "spontan" | "voice" | "wochencheck" | "kochtipp" | "eintragen";
-
-/** Was ein „＋“ eintragen will – Mia fragt passend */
-export type EntryKind = "termin" | "aufgabe" | "einkauf" | "notiz" | "pinnwand" | "eintrag";
+type HelperMode = "spontan" | "voice" | "wochencheck" | "kochtipp";
 
 type Detail = { mode?: HelperMode; ask?: string; filters?: string[] };
 
@@ -62,22 +58,3 @@ export function onReleaseHelperVoice(listener: () => void): () => void {
   window.addEventListener(RELEASE, listener);
   return () => window.removeEventListener(RELEASE, listener);
 }
-
-// --- „＋“: erst Mia, das Formular nur auf Wunsch ---------------------------------
-
-let formular: (() => void) | null = null;
-
-/** „＋“ getippt: Mia fragt („Was soll ich eintragen?“), „Lieber Formular“ öffnet `form` */
-export function askMiaFirst(kind: EntryKind, form: () => void) {
-  formular = form;
-  openHelper("eintragen", undefined, [kind]);
-}
-
-/** Das gemerkte Formular (einmal) – für „Lieber Formular“ */
-export function takeFormular(): (() => void) | null {
-  const f = formular;
-  formular = null;
-  return f;
-}
-
-export const hasFormular = () => formular !== null;

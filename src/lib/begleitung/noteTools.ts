@@ -260,7 +260,7 @@ export const NOTE_TOOLS: BegleitungTool[] = [
     area: "alltag",
     definition: {
       name: "pinnwand_schreiben",
-      description: "Kurze Nachricht an die Familien-Pinnwand (Zettel am Kühlschrank, bis 140 Zeichen, verschwindet nach 3 Tagen): 'Schreib an die Pinnwand: Bin um 20 Uhr da' → text 'Bin um 20 Uhr da'.",
+      description: "Kurze Nachricht an die Familien-Pinnwand (Zettel am Kühlschrank, bis 140 Zeichen, verschwindet nach 24 Stunden): 'Schreib an die Pinnwand: Bin um 20 Uhr da' → text 'Bin um 20 Uhr da'.",
       input_schema: { type: "object", properties: { text: { type: "string", description: "Die Nachricht, kurz, ohne Anführungszeichen" } }, required: ["text"], additionalProperties: false },
     },
     run: (ctx, raw) => {

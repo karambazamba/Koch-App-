@@ -9,7 +9,7 @@
 // „Eine Bühne“); Bewegung reduzieren = nur Überblenden.
 
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { History, X } from "lucide-react";
+import { CalendarDays, ChefHat, History, ListChecks, Pin, ShoppingCart, StickyNote, X, type LucideIcon } from "lucide-react";
 import { StageSheet } from "@/components/ui/Sheet";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import type { AvatarZustand } from "@/lib/core/avatarState";
@@ -117,10 +117,18 @@ export function StageFoot({ children }: { children: ReactNode }) {
   );
 }
 
-/** Kleiner Bereichs-Kopf über Mias erster Blase („KOCHIDEE“, „WOCHENCHECK“, „TERMIN“) */
+const TOPIC_ICON: Record<string, LucideIcon> = { PINNWAND: Pin, TERMIN: CalendarDays, KOCHIDEE: ChefHat, WOCHENCHECK: ListChecks, AUFGABE: ListChecks, EINKAUF: ShoppingCart, NOTIZ: StickyNote };
+
+/** Kleiner Bereichs-Kopf über Mias erster Blase („📌 PINNWAND“, „KOCHIDEE“ …) – Symbol als Linien-Icon */
 export function StageTopic({ topic }: { topic?: string }) {
   if (!topic) return null;
-  return <p className="pl-11 text-[12px] font-extrabold tracking-[0.12em] text-accent-strong">{topic}</p>;
+  const Icon = TOPIC_ICON[topic];
+  return (
+    <p className="flex items-center gap-1.5 pl-11 text-[12px] font-extrabold tracking-[0.12em] text-accent-strong">
+      {Icon && <Icon className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />}
+      {topic}
+    </p>
+  );
 }
 
 /** Mias Blase mit kleiner Mia daneben (nur bei der ersten Blase einer Folge) */

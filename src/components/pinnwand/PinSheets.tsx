@@ -1,33 +1,24 @@
 "use client";
 
-// Pinnwand-Fenster: neue Nachricht (Textfeld bis 140 Zeichen, Mikrofon rechts,
-// "Anheften") und Nachricht ansehen (reagieren, dauerhaft anheften, eigene
-// löschen). Von der Kachel und der Seite /pinnwand genutzt.
+// Pinnwand: „wer · wann“-Zeile und das Text-Fenster (bis 140 Zeichen,
+// „Anheften“) – nur noch als „Mehr Details“ hinter der Schnelleingabe (Tafel 76).
 
-import { useEffect, useState } from "react";
-import { Mic, MicOff, Pin, Square, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { Sheet } from "@/components/ui/Sheet";
-import { INPUT_BASE, buttonClass, chipClass } from "@/components/ui/styles";
-import { PersonAvatar } from "@/components/ui/PersonAvatar";
-import { now, todayIso, toIsoDate } from "@/lib/core/now";
-import { showDeleted } from "@/lib/core/toast";
-import { pushUndo } from "@/lib/core/undo";
-import { PIN_MAX, REACTIONS, addPin, changePins, createPin, markPinsRead, pinMeta, removePin, setPinPinned, toggleReaction, type PinMessage } from "@/lib/pinnwand";
-import { useSpeechInput } from "@/lib/begleitung/useSpeechInput";
+import { INPUT_BASE, buttonClass } from "@/components/ui/styles";
+import { todayIso, toIsoDate } from "@/lib/core/now";
+import { PIN_MAX, addPin, changePins, createPin, pinMeta, type PinQuote } from "@/lib/pinnwand";
 import { shortClock } from "@/components/notizen/Schnellnotiz";
 import { buzz } from "@/components/heute/actions";
-import { MIC_BLOCKED, MicStrip } from "@/components/ui/MicPermission";
 
 export const pinMetaLine = (m: { erstellt: string; data: { author: string } }, me: string) => pinMeta(m, me, todayIso(), shortClock, (iso) => toIsoDate(new Date(iso)));
 
-/** Neue Nachricht: Textfeld (max. 140) mit Mikrofon, "Anheften" */
-export function PinWriteSheet({ me, onClose }: { me: string; onClose: () => void }) {
-  const [text, setText] = useState("");
-  const speech = useSpeechInput({ onTranscript: (t) => setText(t.slice(0, PIN_MAX)), onEnd: (t) => t && setText(t.slice(0, PIN_MAX)) });
+/** „Mehr Details“ der Schnelleingabe: Textfeld (max. 140, mehrzeilig), "Anheften" */
+export function PinWriteSheet({ me, onClose, initialText = "", quote = null }: { me: string; onClose: () => void; initialText?: string; quote?: PinQuote | null }) {
+  const [text, setText] = useState(initialText.slice(0, PIN_MAX));
   const save = () => {
-    const pin = createPin(text, me);
+    const pin = createPin(text, me, quote);
     if (!pin) return;
-    speech.reset();
     changePins((all) => addPin(all, pin));
     buzz();
     onClose();
@@ -41,10 +32,9 @@ export function PinWriteSheet({ me, onClose }: { me: string; onClose: () => void
           save();
         }}
       >
-        <MicStrip />
         <div className="flex items-start gap-2">
           <textarea
-            value={speech.listening ? speech.interim || text : text}
+            value={text}
             onChange={(e) => setText(e.target.value.slice(0, PIN_MAX))}
             placeholder="z. B. Bin um 20 Uhr da"
             aria-label="Nachricht"
@@ -53,16 +43,6 @@ export function PinWriteSheet({ me, onClose }: { me: string; onClose: () => void
             maxLength={PIN_MAX}
             className={`${INPUT_BASE} min-w-0 flex-1 resize-none px-4 py-3`}
           />
-          {speech.supported !== false && (
-            <button
-              type="button"
-              onClick={() => (speech.listening ? speech.stop() : speech.start())}
-              aria-label={speech.blocked ? "Mikro aus – so machst du es an" : speech.listening ? "Zuhören beenden" : "Einsprechen"}
-              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${speech.blocked ? MIC_BLOCKED : "bg-accent text-on-accent"} active:scale-95 ${speech.listening ? "animate-pulse" : ""}`}
-            >
-              {speech.blocked ? <MicOff className="h-5 w-5" strokeWidth={2.25} aria-hidden /> : speech.listening ? <Square className="h-5 w-5 fill-current" strokeWidth={2} aria-hidden /> : <Mic className="h-5 w-5" strokeWidth={2.25} aria-hidden />}
-            </button>
-          )}
         </div>
         <span className="-mt-1 self-end text-xs text-muted">
           {text.length}/{PIN_MAX}
@@ -71,73 +51,6 @@ export function PinWriteSheet({ me, onClose }: { me: string; onClose: () => void
           Anheften
         </button>
       </form>
-    </Sheet>
-  );
-}
-
-/** Nachricht: reagieren, dauerhaft anheften, löschen (nur eigene) */
-export function PinSheet({ message, me, onClose }: { message: PinMessage; me: string; onClose: () => void }) {
-  const stamp = () => now().toISOString();
-  useEffect(() => {
-    changePins((all) => markPinsRead(all, me));
-  }, [me]);
-  const mine = message.data.author === me;
-  return (
-    <Sheet title="Pinnwand" onClose={onClose}>
-      <div className="flex flex-col gap-4 pb-3">
-        <div className="flex items-start gap-3">
-          <PersonAvatar name={message.data.author} />
-          <div className="flex min-w-0 flex-col">
-            <p className="text-lg font-semibold leading-snug">{message.data.text}</p>
-            <span className="text-sm text-muted">{pinMetaLine(message, me)}</span>
-          </div>
-        </div>
-        <div className="flex gap-2" role="group" aria-label="Reagieren">
-          {REACTIONS.map((r) => {
-            const on = message.data.reactions[r]?.includes(me) ?? false;
-            const count = message.data.reactions[r]?.length ?? 0;
-            return (
-              <button
-                key={r}
-                type="button"
-                aria-pressed={on}
-                aria-label={`Mit ${r} reagieren`}
-                onClick={() => {
-                  buzz();
-                  changePins((all) => toggleReaction(all, message.id, r, me, stamp()));
-                }}
-                className={`${chipClass(on)} text-lg`}
-              >
-                {r}
-                {count > 0 && <span className="text-sm">{count}</span>}
-              </button>
-            );
-          })}
-        </div>
-        <button
-          type="button"
-          onClick={() => changePins((all) => setPinPinned(all, message.id, !message.data.pinned, stamp()))}
-          className={buttonClass("secondary", "sm")}
-        >
-          <Pin className="h-4 w-4" strokeWidth={2} aria-hidden />
-          {message.data.pinned ? "Nicht mehr dauerhaft – nach 3 Tagen weg" : "Dauerhaft anheften"}
-        </button>
-        {mine && (
-          <button
-            type="button"
-            onClick={() => {
-              const undo = changePins((all) => removePin(all, message.id));
-              showDeleted(pushUndo("das Löschen der Pinnwand-Nachricht", undo));
-              onClose();
-            }}
-            className={`${buttonClass("ghost", "sm")} text-danger`}
-          >
-            <Trash2 className="h-4 w-4" strokeWidth={2} aria-hidden />
-            Löschen
-          </button>
-        )}
-        {!message.data.pinned && <p className="text-xs text-muted">Nachrichten verschwinden nach 3 Tagen von selbst.</p>}
-      </div>
     </Sheet>
   );
 }

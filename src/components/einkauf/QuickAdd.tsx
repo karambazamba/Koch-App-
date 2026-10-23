@@ -1,25 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { ArrowUp, CircleHelp, Mic, MicOff, Plus, Square } from "lucide-react";
+import { useRef, useState } from "react";
+import { ArrowUp, CircleHelp, Plus } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { INPUT_BASE, chipClass, PAGE_PLUS, TILE_PLUS_DOT } from "@/components/ui/styles";
 import { parseQuickAdd, type QuickAddUnsure } from "@/lib/einkauf/quickAdd";
 import { addManualItem, removeManualItems, sectionFor, setItemShop, type ShoppingSettings } from "@/lib/einkauf/shoppingList";
 import { useKeyboardInset } from "@/lib/core/useMobileKeyboard";
-import { useSpeechInput } from "@/lib/begleitung/useSpeechInput";
 import { pushUndo } from "@/lib/core/undo";
-import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
-import { MIC_BLOCKED, MicStrip } from "@/components/ui/MicPermission";
-import { askMiaFirst } from "@/lib/begleitung/open";
+import { openQuick } from "@/lib/core/schnelleingabe";
 
 
 const sachen = (n: number) => `${n} ${n === 1 ? "Sache" : "Sachen"}`;
 
 /**
- * Rundes "+" (Trefferfläche 44×44): öffnet von unten ein kleines Feld mit
- * Mikrofon. Erkanntes landet direkt auf der Liste (still, ohne Rückgängig-
- * Leiste), Unsicheres kommt als grauer Chip zum Bestätigen.
+ * Rundes "+" (Trefferfläche 44×44): öffnet die Schnelleingabe „AUF DIE LISTE“.
+ * „Mehr Details“ = das Einkauf-Fenster: Unsicheres als grauer Chip zum
+ * Bestätigen, „Oft gekauft“ zum Antippen.
  */
 export function QuickAddButton({
   weekStart,
@@ -36,13 +33,13 @@ export function QuickAddButton({
   quick?: boolean;
   className?: string;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState<string | null>(null);
 
   return (
     <>
       <button
         type="button"
-        onClick={() => askMiaFirst("einkauf", () => setOpen(true))}
+        onClick={() => openQuick({ kind: "einkauf", shopping: { weekStart }, more: setOpen })}
         aria-label="Etwas auf die Einkaufsliste setzen"
         className={`flex h-11 w-11 items-center justify-center ${className}`}
       >
@@ -56,12 +53,13 @@ export function QuickAddButton({
           </span>
         )}
       </button>
-      {open && (
+      {open !== null && (
         <QuickAddSheet
           weekStart={weekStart}
           settings={settings}
+          initialText={open}
           onClose={(added) => {
-            setOpen(false);
+            setOpen(null);
             // Still: kein Rückgängig beim Hinzufügen ("Mach das rückgängig" geht trotzdem)
             if (added.length) pushUndo(`${sachen(added.length)} auf der Liste`, () => removeManualItems(weekStart, added));
           }}
@@ -71,28 +69,12 @@ export function QuickAddButton({
   );
 }
 
-/** Einkauf-Fenster ohne eigenen Knopf (z. B. aus „Was möchtest du eintragen?“) */
-export function ShoppingQuickAdd({ onClose }: { onClose: () => void }) {
-  const shopping = useWeekShoppingList("planning");
-  if (!shopping) return null;
-  return (
-    <QuickAddSheet
-      weekStart={shopping.weekStart}
-      settings={shopping.settings}
-      onClose={(added) => {
-        onClose();
-        if (added.length) pushUndo(`${sachen(added.length)} auf der Liste`, () => removeManualItems(shopping.weekStart, added));
-      }}
-    />
-  );
-}
-
-function QuickAddSheet({ weekStart, settings, onClose }: { weekStart: string; settings: ShoppingSettings; onClose: (addedIds: string[]) => void }) {
+function QuickAddSheet({ weekStart, settings, initialText, onClose }: { weekStart: string; settings: ShoppingSettings; initialText: string; onClose: (addedIds: string[]) => void }) {
   const inset = useKeyboardInset();
   const added = useRef<string[]>([]);
   return (
     <Sheet title="Auf die Liste" onClose={() => onClose(added.current)} inset={inset}>
-      <QuickAddBody weekStart={weekStart} settings={settings} onAdded={onClose} onChange={(ids) => (added.current = ids)} autoFocus />
+      <QuickAddBody weekStart={weekStart} settings={settings} initialText={initialText} onAdded={onClose} onChange={(ids) => (added.current = ids)} />
     </Sheet>
   );
 }
@@ -102,16 +84,16 @@ function QuickAddBody({
   settings,
   onAdded,
   onChange,
-  autoFocus = false,
+  initialText,
 }: {
   weekStart: string;
   settings: ShoppingSettings;
   /** Alles erkannt bzw. „Fertig“ */
   onAdded: (addedIds: string[]) => void;
   onChange?: (addedIds: string[]) => void;
-  autoFocus?: boolean;
+  initialText: string;
 }) {
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(initialText);
   const [added, setAddedState] = useState<string[]>([]);
   const setAdded = (next: string[] | ((a: string[]) => string[])) =>
     setAddedState((a) => {
@@ -142,8 +124,6 @@ function QuickAddBody({
 
   const submit = (text: string) => {
     if (!text.trim()) return;
-    // Aufnahme verwerfen – ihr Ende darf den Text nicht zurückschreiben
-    speech.reset();
     const result = parseQuickAdd(text, settings);
     const ids = result.items.map((i) => add(i.name, i.amount, i.shop));
     setInput("");
@@ -166,36 +146,6 @@ function QuickAddBody({
     setAdded(all);
     setUnsure(rest);
     if (rest.length === 0) finish(all);
-  };
-
-  // Sheet zu → laufende Aufnahme nicht mehr abschicken
-  const mounted = useRef(true);
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
-
-  const speech = useSpeechInput({
-    onTranscript: (t) => setInput(t),
-    onEnd: (t) => {
-      setInput("");
-      if (t && mounted.current) submit(t);
-    },
-  });
-
-  const toggleMic = () => {
-    if (speech.supported === false) {
-      setHint("Spracheingabe gibt es hier nicht – tipp aufs Mikrofon deiner Tastatur und diktiere einfach.");
-      inputRef.current?.focus();
-      return;
-    }
-    if (speech.listening) speech.stop();
-    else {
-      setInput("");
-      speech.start();
-    }
   };
 
   return (
@@ -262,7 +212,6 @@ function QuickAddBody({
           </p>
         )}
 
-        <MicStrip />
         <form
           className="flex items-center gap-2"
           onSubmit={(e) => {
@@ -272,39 +221,17 @@ function QuickAddBody({
         >
           <input
             ref={inputRef}
-            autoFocus={autoFocus}
+            autoFocus
             value={input}
             onChange={(e) => setInput(e.target.value)}
             enterKeyHint="done"
             aria-label="Was soll auf die Liste?"
-            placeholder={speech.listening ? speech.interim || "Ich höre zu …" : "z. B. Milch, Windeln, Müsli von Rossmann"}
+            placeholder="z. B. Milch, Windeln, Müsli von Rossmann"
             className={`${INPUT_BASE} h-12 min-w-0 flex-1 px-4`}
           />
-          {input.trim() ? (
-            <button type="submit" aria-label="Hinzufügen" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-field bg-accent text-on-accent shadow-sm active:scale-95">
-              <ArrowUp className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={toggleMic}
-              aria-pressed={speech.listening}
-              aria-label={speech.blocked ? "Mikro aus – so machst du es an" : speech.listening ? "Zuhören beenden" : "Einsprechen"}
-              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${speech.blocked ? MIC_BLOCKED : "bg-accent text-on-accent shadow-md"} active:scale-95 ${
-                speech.listening ? "animate-pulse ring-4 ring-accent/25" : ""
-              }`}
-            >
-              {speech.blocked ? (
-                <MicOff className="h-6 w-6" strokeWidth={2} aria-hidden />
-              ) : speech.listening ? (
-                <Square className="h-5 w-5 fill-current" strokeWidth={2} aria-hidden />
-              ) : speech.supported === false ? (
-                <MicOff className="h-6 w-6" strokeWidth={2} aria-hidden />
-              ) : (
-                <Mic className="h-6 w-6" strokeWidth={2} aria-hidden />
-              )}
-            </button>
-          )}
+          <button type="submit" aria-label="Hinzufügen" aria-disabled={!input.trim()} className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent active:scale-95 ${input.trim() ? "" : "opacity-35"}`}>
+            <ArrowUp className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+          </button>
         </form>
     </>
   );

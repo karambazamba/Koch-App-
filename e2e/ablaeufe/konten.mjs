@@ -2,7 +2,7 @@
 // Haushalt – Anmelden per Code (Code über die Test-Schnittstelle, nur im
 // Testserver), Haushalt anlegen, Einladen, Beitreten, Kind darf nicht
 // einladen, Abmelden (Daten bleiben), Konto löschen.
-import { BASE, hello, newPage, seedFamily } from "../lib.mjs";
+import { BASE, hello, newPage, seedFamily, pinnwandSchreiben } from "../lib.mjs";
 
 const adminCode = (page, email) => page.evaluate(async (e) => (await (await fetch("/api/test-konten", { method: "POST", body: JSON.stringify({ action: "admin_code", email: e }) })).json()).code, email);
 
@@ -134,15 +134,13 @@ export const abgleich = async (page, check, device) => {
     check(termin, "Termin von A ist bei B");
     await pageB.goto(BASE + "/pinnwand");
     check(await pageB.getByText("Bin um 20 Uhr da").waitFor({ timeout: 10000 }).then(() => true, () => false), "Pinnwand von A bei B");
-    await pageB.getByRole("textbox", { name: "Nachricht an alle" }).fill("Pizza ist im Ofen");
-    await pageB.getByRole("button", { name: "Anheften" }).click();
+    await pinnwandSchreiben(pageB, "Pizza ist im Ofen");
     await page.goto(BASE + "/pinnwand");
     check(await waitFor(page, () => document.body.innerText.includes("Pizza ist im Ofen")), "Nachricht von B kommt bei A an");
 
     // offline → online
     await pageB.context().setOffline(true);
-    await pageB.getByRole("textbox", { name: "Nachricht an alle" }).fill("Bin im Funkloch");
-    await pageB.getByRole("button", { name: "Anheften" }).click();
+    await pinnwandSchreiben(pageB, "Bin im Funkloch");
     await pageB.waitForTimeout(3000);
     check(!(await pinTexts(page)).includes("Bin im Funkloch"), "offline: noch nicht bei A");
     check((await pinTexts(pageB)).includes("Bin im Funkloch"), "offline: bei B auf dem Handy");

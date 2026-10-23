@@ -290,9 +290,9 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   große Hilfefenster. Der Zugangscode erscheint als Hinweis im Gespräch.
 - „Passt“ (Knopf) oder „ja/passt/mach“ übernimmt; Mia freut sich, unter ihr
   „Erledigt“, nach ~1 s zu, Meldung „Übernommen“.
-- „＋“ (Termine, Aufgaben, Kalender, Tag, Notizen, Pinnwand, Einkauf) holt
-  erst Mia (`askMiaFirst`, Modus „eintragen“, passende Frage), „Lieber
-  Formular“ steht neben „Lieber tippen“.
+- „＋“ holt nie Mia (seit v0.72.0, Tafel 76): „＋ = tippen, Mia = sprechen“ –
+  jedes ＋ öffnet die Schnelleingabe (`docs/bereiche/core.md`). Der frühere
+  Modus „eintragen“ und „Lieber Formular“ sind weg.
 - Wochencheck auf der Bühne: Mias Satz oben, das Gesagte als eigene Blase
   (Kernwörter fett), „Ich hab schon“; Mia antippen beim Zuhören = fertig
   (sortieren), „Lieber tippen“ = Feld + „Fertig“.

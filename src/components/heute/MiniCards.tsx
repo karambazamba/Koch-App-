@@ -25,7 +25,7 @@ import { LEAVE_MS, act, buzz } from "@/components/heute/actions";
 import { ItemMenu, roomBarProps } from "@/components/kalender/Items";
 import { withoutEmoji } from "@/lib/core/text";
 import dynamic from "next/dynamic";
-import { askMiaFirst } from "@/lib/begleitung/open";
+import { openQuick } from "@/lib/core/schnelleingabe";
 
 // Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
 const TaskQuickAdd = dynamic(() => import("@/components/kalender/TaskQuickAdd").then((m) => m.TaskQuickAdd), { ssr: false });
@@ -156,10 +156,10 @@ function TerminLine({ row, entering, onOpen }: { row: TerminRow; entering?: Reac
  */
 export function TermineSection({ rows, label, href, today, size = "M", half = false, demo }: { rows: TerminRow[]; label?: string | null; href: string; today?: string; size?: TileSize; half?: boolean; demo?: DemoProps }) {
   const { setMenu, before, overlays } = useSection();
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding] = useState<string | null>(null);
   const shown = rows.slice(0, ROW_COUNT[size]);
-  const sheet = adding && <TerminQuickAdd onClose={() => setAdding(false)} defaultDate={today} />;
-  const plus = <QuickButton icon={Plus} label="Neuer Termin" onClick={() => askMiaFirst("termin", () => setAdding(true))} />;
+  const sheet = adding !== null && <TerminQuickAdd onClose={() => setAdding(null)} defaultDate={today} initialText={adding} />;
+  const plus = <QuickButton icon={Plus} label="Neuer Termin" onClick={() => openQuick({ kind: "termin", date: today, more: setAdding })} />;
   const rest = rows.length - shown.length;
   return (
     <section className={`${TILE} flex flex-col gap-[7px] px-3 py-2.5`} aria-label="Termine">
@@ -171,7 +171,7 @@ export function TermineSection({ rows, label, href, today, size = "M", half = fa
           ))}
         </ul>
       ) : (
-        <AddLine label="Termin eintragen" onClick={() => setAdding(true)} />
+        <AddLine label="Termin eintragen" onClick={() => openQuick({ kind: "termin", date: today, more: setAdding })} />
       )}
       {overlays}
       {sheet}
@@ -222,12 +222,12 @@ function TaskField({ item, today, leaving, entering, onOpen, onDone }: { item: D
 /** AUFGABEN – eine weiße Checkliste: S 2, M 4, L 6 Zeilen, „+N weitere“ im Kopf neben dem Plus */
 export function AufgabenSection({ items, total, today, href = "/aufgaben", size = "M", half = false, demo }: { items: DayItem[]; total?: number; today: string; href?: string; size?: TileSize; half?: boolean; demo?: DemoProps }) {
   const { setMenu, check, before, overlays } = useSection();
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding] = useState<string | null>(null);
   // Erledigtes steht nicht herum (auch nicht im Beispiel-Tag)
   const open = demo?.done ? items.filter((i) => !demo.done!.includes(i.entry.id)) : items;
   const shown = open.slice(0, ROW_COUNT[size]);
   const { leaving, start } = useLeaving((item) => (demo ? demo.onGone?.(item) : check(item, shown)), TASK_LEAVE_MS);
-  const plus = <QuickButton icon={Plus} label="Neue Aufgabe" onClick={() => askMiaFirst("aufgabe", () => setAdding(true))} />;
+  const plus = <QuickButton icon={Plus} label="Neue Aufgabe" onClick={() => openQuick({ kind: "aufgabe", date: today, more: setAdding })} />;
   const rest = Math.max(0, Math.max(total ?? 0, open.length) - shown.length);
   return (
     <>
@@ -240,11 +240,11 @@ export function AufgabenSection({ items, total, today, href = "/aufgaben", size 
             ))}
           </ul>
         ) : (
-          <AddLine label="Aufgabe eintragen" onClick={() => setAdding(true)} />
+          <AddLine label="Aufgabe eintragen" onClick={() => openQuick({ kind: "aufgabe", date: today, more: setAdding })} />
         )}
       </section>
       {overlays}
-      {adding && <TaskQuickAdd onClose={() => setAdding(false)} />}
+      {adding !== null && <TaskQuickAdd initialText={adding} onClose={() => setAdding(null)} />}
     </>
   );
 }

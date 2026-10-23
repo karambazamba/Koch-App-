@@ -43,17 +43,19 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Erster Start = ruhiger Hallo-Bildschirm („Hallo, ich bin Mia.“, „Los
   geht’s“), danach höchstens EINE Frage (Look „Farbig“/„Schlicht“) mit
   Standard und Überspringen, dann die Startseite mit Beispiel-Tag.
-- Kein Rückgängig beim Hinzufügen; nur echtes Löschen zeigt „Gelöscht ·
-  Rückgängig“ (3 s). Typografischer Apostroph überall („Was gibt’s?“).
+- Rückgängig nur bei echtem Löschen („Gelöscht · Rückgängig“, 3 s) und in der
+  Schnelleingabe („Eingetragen: … · Rückgängig“); sonst meldet sich
+  Hinzufügen still. Typografischer Apostroph überall („Was gibt’s?“).
 
 ## 2. Gespräch zuerst
 - Die Begleitung (Sprache/Chat) ist der Hauptweg; jede Funktion ist auch per
   Gespräch erreichbar. Bildschirme dienen zum Nachschauen und Feinjustieren.
-- Erzählen statt ausfüllen: Jede Eingabe beginnt mit Mia (sprechen, notfalls
-  tippen). Formulare nur zum Ändern. Kein neues Eingabe-Formular ohne Mia-Weg
-  davor („＋“ holt Mia, „Lieber Formular“ bleibt). Mia ist ein runder Knopf
-  unten rechts; Tippen holt sie auf die Bühne, sie hört sofort zu. Keine
-  Schreib-Leiste.
+- ＋ = tippen, Mia = sprechen. Jedes ＋ öffnet eine Schnelleingabe (ein Feld,
+  Tastatur sofort, Satz rein, ➤ speichert; `ui/QuickEntry`, `core/schnelleingabe`).
+  Sprechen geht immer über den Mia-Knopf. Kein eigenes Mikro in Eingabefeldern
+  (die iPhone-Tastatur hat ihres). Formular nur über „Mehr Details“. Mia ist
+  ein runder Knopf unten rechts; Tippen holt sie auf die Bühne, sie hört
+  sofort zu. Keine Schreib-Leiste.
 - Lieber eine Frage mit 2–3 Knöpfen als ein Formular.
 - Machen statt fragen: Kleines selbst erledigen und kurz melden. Rückfragen nur
   bei echten Entscheidungen. Änderungen der KI immer als Vorschau mit
@@ -116,8 +118,9 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   (weiß mit feinem Rand, Farbe nur in Überschrift, Symbol, Uhrzeit,
   Termin-Strich; `data-look` am `<html>`), weiße Karten auf Unterseiten, EINE
   Akzentfarbe (Orange) nur für Knöpfe und die Begleitung, Pastell nie für
-  Knöpfe. Linien-Icons (lucide), Emojis nur als Inhalt (Gerichte, Notizen),
-  nie in Knöpfen, Chips, Kacheln oder Termin-Titeln.
+  Knöpfe. Linien-Icons (lucide), Emojis nur als Inhalt (Gerichte, Notizen,
+  Pinnwand-Reaktionen 👍 ❤️ 😂 😮 🙏 – die sind Inhalt), nie in Knöpfen,
+  Chips, Kacheln oder Termin-Titeln.
 - Schrift Plus Jakarta Sans; Seitentitel 30/800 (`PageHeader`), Abschnitte
   `SECTION_TITLE`, Kachel-Label `TILE_LABEL` nur in Kacheln. Radien nur über
   Tokens: `rounded-card` 20 px, `rounded-field` 14 px, `rounded-full`, dazu

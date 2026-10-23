@@ -1,34 +1,48 @@
 // Pinnwand = Zettel am Kühlschrank: kurze Nachrichten an die Familie
-// (Text bis 140 Zeichen, Autor, Zeit, Reaktionen 👍/❤️, gelesen von).
+// (Text bis 140 Zeichen, Autor, Zeit, Reaktionen je Person, gelesen von,
+// Antwort mit Zitat).
 // Im einheitlichen Eintrags-Modell (typ "pinnwand", Raum Familie), damit sie
 // später mit den Konten geteilt werden; bis dahin ist der Autor der eigene
-// Name. Nach 3 Tagen verschwinden Nachrichten leise – außer dauerhaft
-// angeheftete. Rein, damit Oberfläche, Lotte und Tests gleich rechnen.
+// Name. 24 Stunden nach dem Schreiben verschwinden Nachrichten leise – außer
+// dauerhaft angeheftete (Tafel 72). Rein, damit Oberfläche, Lotte und Tests gleich rechnen.
 
 import { createEntry, type Entry } from "@/lib/core/entries";
+import { applyReaction, readReactions, type Reaction, type Reactions } from "@/lib/pinnwand/reactions";
 
 export const PIN_MAX = 140;
-const PIN_DAYS = 3;
-export const REACTIONS = ["👍", "❤️"] as const;
-export type Reaction = (typeof REACTIONS)[number];
+/** So lange bleibt alles an der Pinnwand (ab dem Schreiben) */
+const PIN_HOURS = 24;
+const PIN_MS = PIN_HOURS * 3_600_000;
+/** Jünger als 24 Std. (gerechnet ab `erstellt`) */
+export const withinDay = (iso: string, nowMs: number) => nowMs - new Date(iso).getTime() < PIN_MS;
+
+/** Antwort auf eine Nachricht: kurzes Zitat (Text bzw. „Sprachnachricht“) */
+export type PinQuote = { id: string; author: string; text: string };
 
 type PinData = {
   text: string;
   author: string;
-  reactions: Partial<Record<Reaction, string[]>>;
+  /** Person → Emoji (eine Reaktion je Person) */
+  reactions: Reactions;
+  replyTo: PinQuote | null;
   readBy: string[];
-  /** Dauerhaft angeheftet (verschwindet nicht nach 3 Tagen) */
+  /** Dauerhaft angeheftet (verschwindet nicht nach 24 Std.) */
   pinned: boolean;
 };
 export type PinMessage = Entry<PinData> & { typ: "pinnwand" };
 
 const clean = (text: string) => text.replace(/\s+/g, " ").trim().slice(0, PIN_MAX);
 
-export function createPin(text: string, author: string): PinMessage | null {
+export function createPin(text: string, author: string, replyTo: PinQuote | null = null): PinMessage | null {
   const t = clean(text);
   if (!t) return null;
-  return createEntry("pinnwand", { text: t, author: author.trim() || "Ich", reactions: {}, readBy: [author.trim() || "Ich"], pinned: false }, { raum: "familie" }) as PinMessage;
+  return createEntry("pinnwand", { text: t, author: author.trim() || "Ich", reactions: {}, replyTo, readBy: [author.trim() || "Ich"], pinned: false }, { raum: "familie" }) as PinMessage;
 }
+
+const readQuote = (v: unknown): PinQuote | null => {
+  const q = v as Partial<PinQuote> | null;
+  return q && typeof q === "object" && typeof q.id === "string" && typeof q.text === "string" ? { id: q.id, author: typeof q.author === "string" ? q.author : "", text: q.text.slice(0, PIN_MAX) } : null;
+};
 
 export function sanitizePin(raw: unknown): PinMessage | null {
   if (!raw || typeof raw !== "object") return null;
@@ -42,15 +56,16 @@ export function sanitizePin(raw: unknown): PinMessage | null {
     data: {
       text: clean(d.text),
       author: typeof d.author === "string" && d.author.trim() ? d.author : "Ich",
-      reactions: Object.fromEntries(REACTIONS.map((r) => [r, list(d.reactions?.[r])]).filter(([, v]) => (v as string[]).length)),
+      reactions: readReactions(d.reactions),
+      replyTo: readQuote(d.replyTo),
       readBy: list(d.readBy),
       pinned: d.pinned === true,
     },
   };
 }
 
-/** Noch sichtbar: dauerhaft angeheftet oder jünger als 3 Tage */
-const isFresh = (m: PinMessage, nowMs: number) => m.data.pinned || nowMs - new Date(m.erstellt).getTime() < PIN_DAYS * 86_400_000;
+/** Noch sichtbar: dauerhaft angeheftet oder jünger als 24 Std. */
+const isFresh = (m: PinMessage, nowMs: number) => m.data.pinned || withinDay(m.erstellt, nowMs);
 
 /** Sichtbare Nachrichten, neueste zuerst */
 export function visiblePins(list: PinMessage[], nowMs: number): PinMessage[] {
@@ -66,14 +81,21 @@ export const removePin = (list: PinMessage[], id: string) => list.filter((m) => 
 
 const touch = (m: PinMessage, data: Partial<PinData>, stamp: string): PinMessage => ({ ...m, data: { ...m.data, ...data }, geaendert: stamp });
 
-/** Reaktion an/aus (eine Person je Reaktion einmal) */
+/** Reaktion setzen, tauschen oder (gleiche nochmal) entfernen – eine je Person */
 export function toggleReaction(list: PinMessage[], id: string, reaction: Reaction, me: string, stamp: string): PinMessage[] {
-  return list.map((m) => {
-    if (m.id !== id) return m;
-    const who = m.data.reactions[reaction] ?? [];
-    const next = who.includes(me) ? who.filter((w) => w !== me) : [...who, me];
-    return touch(m, { reactions: { ...m.data.reactions, [reaction]: next } }, stamp);
-  });
+  return list.map((m) => (m.id === id ? touch(m, { reactions: applyReaction(m.data.reactions, me, reaction) }, stamp) : m));
+}
+
+/** Löschen darf nur, wer die Nachricht geschrieben bzw. gesprochen hat */
+export const canDelete = (m: { data: { author: string } }, me: string) => m.data.author === me;
+
+/**
+ * Kachel auf der Startseite: Angeheftetes zuerst, dann die neuesten der
+ * letzten 24 Std. – genau 2 Zeilen, dazu wie viele es noch gibt („+N“).
+ */
+export function tileEntries<T extends { at: string; pinned?: boolean }>(items: T[], nowMs: number): { shown: T[]; more: number } {
+  const live = items.filter((i) => i.pinned || withinDay(i.at, nowMs)).sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || b.at.localeCompare(a.at));
+  return { shown: live.slice(0, 2), more: Math.max(0, live.length - 2) };
 }
 
 export const setPinPinned = (list: PinMessage[], id: string, pinned: boolean, stamp: string) => list.map((m) => (m.id === id ? touch(m, { pinned }, stamp) : m));

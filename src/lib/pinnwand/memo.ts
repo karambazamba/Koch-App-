@@ -2,12 +2,13 @@
 // Kein Mia, keine KI, keine Abschrift: nur Aufnahme, Abspielen, Verschwinden.
 // Der Eintrag (typ "memo") liegt in `wasgibts.pinnwand`, der Ton selbst in
 // IndexedDB (`memoAudio.ts`) – später in Supabase Storage (`storagePath`).
-// Gelöscht wird 24 Std., nachdem alle im Haushalt es gehört haben, spätestens
-// nach 3 Tagen; anheften geht bei Memos nicht. Rein, damit Oberfläche, Mia
+// Gelöscht wird 24 Std. nach der Aufnahme – gehört oder nicht, der Ton gleich
+// mit (Tafel 72); anheften geht bei Memos nicht. Rein, damit Oberfläche, Mia
 // und Tests gleich rechnen.
 
 import { createEntry, type Entry } from "@/lib/core/entries";
-import { REACTIONS, type Reaction } from "@/lib/pinnwand/model";
+import { applyReaction, readReactions, type Reaction, type Reactions } from "@/lib/pinnwand/reactions";
+import { withinDay } from "@/lib/pinnwand/model";
 
 /** Höchstens 60 s, danach wird automatisch gesendet */
 export const MEMO_MAX_S = 60;
@@ -15,9 +16,6 @@ export const MEMO_MAX_S = 60;
 export const MEMO_MIN_MS = 1000;
 /** Balken der Tonwelle */
 export const WAVE_BARS = 28;
-const DAY_MS = 86_400_000;
-const MEMO_DAYS = 3;
-const AFTER_HEARD_MS = DAY_MS;
 
 type MemoData = {
   author: string;
@@ -31,7 +29,8 @@ type MemoData = {
   gehoertVon: string[];
   /** Zeitpunkt, an dem alle im Haushalt es gehört hatten – ab da noch 24 Std. */
   alleGehoertAm: string | null;
-  reactions: Partial<Record<Reaction, string[]>>;
+  /** Person → Emoji (eine Reaktion je Person) */
+  reactions: Reactions;
   /** Pfad in Supabase Storage (später, mit Konten); bis dahin null = nur auf diesem Gerät */
   storagePath: string | null;
 };
@@ -86,17 +85,14 @@ export function sanitizeMemo(raw: unknown): MemoMessage | null {
       wave: clampWave(Array.isArray(d.wave) ? d.wave.filter((v): v is number => typeof v === "number") : []),
       gehoertVon: list(d.gehoertVon),
       alleGehoertAm: typeof d.alleGehoertAm === "string" ? d.alleGehoertAm : null,
-      reactions: Object.fromEntries(REACTIONS.map((r) => [r, list(d.reactions?.[r])]).filter(([, v]) => (v as string[]).length)),
+      reactions: readReactions(d.reactions),
       storagePath: typeof d.storagePath === "string" ? d.storagePath : null,
     },
   };
 }
 
-/** Noch da: jünger als 3 Tage und nicht seit 24 Std. von allen gehört */
-export function memoAlive(m: MemoMessage, nowMs: number): boolean {
-  if (nowMs - new Date(m.erstellt).getTime() >= MEMO_DAYS * DAY_MS) return false;
-  return !(m.data.alleGehoertAm && nowMs - new Date(m.data.alleGehoertAm).getTime() >= AFTER_HEARD_MS);
-}
+/** Noch da: jünger als 24 Std. (ab der Aufnahme, egal ob gehört) */
+export const memoAlive = (m: MemoMessage, nowMs: number) => withinDay(m.erstellt, nowMs);
 
 /** Sichtbare Memos, neueste zuerst */
 export const visibleMemos = (list: MemoMessage[], nowMs: number) => list.filter((m) => memoAlive(m, nowMs)).sort((a, b) => b.erstellt.localeCompare(a.erstellt));
@@ -119,14 +115,9 @@ export function setMemoHeard(list: MemoMessage[], id: string, who: string, heard
   });
 }
 
-/** Reaktion an/aus (wie bei Text) */
+/** Reaktion setzen, tauschen oder entfernen (wie bei Text) */
 export function toggleMemoReaction(list: MemoMessage[], id: string, reaction: Reaction, me: string, stamp: string): MemoMessage[] {
-  return list.map((m) => {
-    if (m.id !== id) return m;
-    const who = m.data.reactions[reaction] ?? [];
-    const next = who.includes(me) ? who.filter((w) => w !== me) : [...who, me];
-    return { ...m, geaendert: stamp, data: { ...m.data, reactions: { ...m.data.reactions, [reaction]: next } } };
-  });
+  return list.map((m) => (m.id === id ? { ...m, geaendert: stamp, data: { ...m.data, reactions: applyReaction(m.data.reactions, me, reaction) } } : m));
 }
 
 /** Noch nicht gehört (von jemand anderem) */

@@ -19,11 +19,13 @@ import * as wochencheck from "./ablaeufe/wochencheck.mjs";
 import * as kochtipp from "./ablaeufe/kochtipp.mjs";
 import * as mehrideen from "./ablaeufe/mehrideen.mjs";
 import * as miazuerst from "./ablaeufe/miazuerst.mjs";
+import * as pinnwandgesten from "./ablaeufe/pinnwandgesten.mjs";
 import * as sprachnachricht from "./ablaeufe/sprachnachricht.mjs";
 import * as mianame from "./ablaeufe/mianame.mjs";
 import * as startseite from "./ablaeufe/startseite.mjs";
+import * as schnelleingabe from "./ablaeufe/schnelleingabe.mjs";
 
-const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen, ...miazuerst, ...sprachnachricht, ...mianame, ...startseite };
+const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen, ...miazuerst, ...pinnwandgesten, ...sprachnachricht, ...mianame, ...startseite, ...schnelleingabe };
 const pick = process.argv.slice(2);
 const flows = Object.entries(ALL).filter(([name, run]) => typeof run === "function" && (!pick.length || pick.includes(name)));
 const stop = await startServer();

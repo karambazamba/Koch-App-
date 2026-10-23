@@ -1,14 +1,13 @@
 // Termin eintragen – ein Satz genügt (Tafel 26): erkennen beim Tippen,
 // Pillen zum Korrigieren, ganztägig ohne Uhrzeit, Zeit schon vorbei, Hand
 // schlägt Automatik, alles sichtbar mit offener Tastatur (SE). Zeit: Mi 21.10. 10:30.
-import { BASE, hello, lieberFormular, seedFamily, store } from "../lib.mjs";
+import { BASE, hello, mehrDetails, seedFamily, store } from "../lib.mjs";
 
 async function open(page) {
   await page.goto(BASE + "/?seite=kalender");
   await page.waitForTimeout(900);
-  await page.locator("[role=tabpanel]:not([inert])").getByRole("button", { name: "Neu eintragen" }).click();
-  await lieberFormular(page);
-  await page.getByRole("button", { name: /^Termin/ }).first().click();
+  await page.locator("[role=tabpanel]:not([inert])").getByRole("button", { name: "Neuer Termin" }).click();
+  await mehrDetails(page);
   const sheet = page.getByRole("dialog", { name: "Neuer Termin" });
   await sheet.waitFor();
   return sheet;

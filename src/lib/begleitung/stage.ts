@@ -3,7 +3,6 @@
 // reinen Regeln: Zustand, Hinweis unter Mia, was ein Tipp auf Mia tut,
 // Tippen-Modus und der kleine Bereichs-Kopf über Mias erster Blase.
 
-import type { EntryKind } from "@/lib/begleitung/open";
 
 /** zuhören · überlegen · sprechen · warten – setzt die App automatisch */
 export type StageState = "zuhoeren" | "ueberlegen" | "sprechen" | "warten";
@@ -49,13 +48,10 @@ export const STAGE_SIZE = { big: 120, small: 64 } as const;
 /** Mias Mittelpunkt liegt bei ~64 % der Bildschirmhöhe */
 export const STAGE_CENTER = 0.64;
 
-const TOPIC: Partial<Record<EntryKind, string>> = { termin: "TERMIN", aufgabe: "AUFGABE", einkauf: "EINKAUF", notiz: "NOTIZ", pinnwand: "PINNWAND" };
-
 /** Bereichs-Kopf über Mias erster Blase – nur mit Anlass */
-export function stageTopic(mode: string | undefined, kind?: string): string | undefined {
+export function stageTopic(mode: string | undefined): string | undefined {
   if (mode === "wochencheck") return "WOCHENCHECK";
   if (mode === "kochtipp") return "KOCHIDEE";
-  if (mode === "eintragen") return TOPIC[kind as EntryKind];
   return undefined;
 }
 

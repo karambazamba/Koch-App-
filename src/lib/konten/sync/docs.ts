@@ -70,7 +70,7 @@ const kalender = entryAdapter("kalender", "wasgibts.eintraege", 2, "entries", ["
 const notizen = entryAdapter("notizen", "wasgibts.notizen", 1, "notes", ["notiz"], () => ({ version: 1 }));
 
 /** Sprachnachrichten bleiben bis Etappe 3c auf dem Gerät */
-const pinnwand = entryAdapter("pinnwand", "wasgibts.pinnwand", 2, "messages", ["pinnwand"], (v) => ({ version: 2, memos: Array.isArray(v?.memos) ? v.memos : [] }));
+const pinnwand = entryAdapter("pinnwand", "wasgibts.pinnwand", 3, "messages", ["pinnwand"], (v) => ({ version: 3, memos: Array.isArray(v?.memos) ? v.memos : [] }));
 
 const vorrat: Adapter = {
   name: "vorrat",

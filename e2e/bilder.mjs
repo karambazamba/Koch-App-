@@ -4,7 +4,7 @@
 // npm run bilder:vergleich – vergleicht aktuell mit basis (Abweichung > 0,1 %
 // wird gemeldet, Unterschiedsbild in .bilder/unterschied).
 import { mkdirSync } from "node:fs";
-import { BASE, DEVICES, FAKE_MIC, FAKE_VOICES, hello, launch, lieberFormular, miaTippen, newPage, seedFamily, setDark, startServer, tippenFeld } from "./lib.mjs";
+import { BASE, DEVICES, FAKE_MIC, FAKE_VOICES, hello, launch, mehrDetails, miaTippen, newPage, seedFamily, setDark, startServer, tippenFeld } from "./lib.mjs";
 import { RECIPE_DATA } from "./ablaeufe/essen.mjs";
 
 /** Warten, bis Netz ruhig und alle Bilder (auch live gezeichnete Gerichte) fertig sind */
@@ -46,16 +46,15 @@ const micTap = async (page) => {
 const openTermin = async (page, text) => {
   await page.goto(BASE + "/?seite=kalender");
   await page.waitForTimeout(900);
-  // Mia zuerst, dann „Lieber Formular“ – einmal wiederholen, falls das Fenster zu langsam kam
+  // Schnelleingabe, dann „Mehr Details“ – einmal wiederholen, falls das Fenster zu langsam kam
   for (let i = 0; i < 2; i++) {
-    await page.locator("[role=tabpanel]:not([inert])").getByRole("button", { name: "Neu eintragen" }).click();
-    await lieberFormular(page);
-    if (await page.getByRole("button", { name: /^Termin/ }).first().waitFor({ timeout: 6000 }).then(() => true, () => false)) break;
+    await page.locator("[role=tabpanel]:not([inert])").getByRole("button", { name: "Neuer Termin" }).click();
+    await mehrDetails(page);
+    if (await page.getByRole("dialog", { name: "Neuer Termin" }).waitFor({ timeout: 6000 }).then(() => true, () => false)) break;
     await page.keyboard.press("Escape");
     await page.waitForTimeout(800);
   }
-  await page.getByRole("button", { name: /^Termin/ }).first().click();
-  await page.getByRole("textbox", { name: "Termin" }).fill(text);
+  await page.getByRole("dialog", { name: "Neuer Termin" }).getByRole("textbox", { name: "Termin" }).fill(text);
   await page.waitForTimeout(500);
 };
 const voiceOffer = async (page) => {

@@ -33,7 +33,7 @@ import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 import { looksLikeMail, splitInstruction } from "@/lib/begleitung/mail";
 import { useTipStore } from "@/lib/essen/healthTips";
 import { useFeature } from "@/lib/core/features";
-import { onReleaseHelperVoice, takeFormular } from "@/lib/begleitung/open";
+import { onReleaseHelperVoice } from "@/lib/begleitung/open";
 import { showToast } from "@/lib/core/toast";
 
 import type { ChatState } from "@/components/begleitung/chatTypes";
@@ -191,7 +191,6 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       applyAndClose(chat.proposal.selected);
       return;
     }
-    if (chat.formular) setChat((c) => ({ ...c, formular: undefined }));
     // „Kochidee“, „Was soll ich kochen?“ schaltet den Knopf frei (auch mit KI)
     if (isKochtippRequest(t)) unlockKochtipp();
     // Offene Kochidee: Erzähltes („Ich hab Hähnchen gekauft …“, „nicht schon wieder Hähnchen“)
@@ -443,19 +442,6 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
               <button type="button" onClick={() => setTyping(true)} disabled={!canType} className="hit min-h-11 text-[15px] font-semibold text-muted underline-offset-2 active:text-ink">
                 Lieber tippen
               </button>
-              {chat.formular && !userTurns && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const form = takeFormular();
-                    onClose();
-                    form?.();
-                  }}
-                  className="hit min-h-11 text-[15px] font-semibold text-muted underline-offset-2 active:text-ink"
-                >
-                  Lieber Formular
-                </button>
-              )}
             </div>
           </StageFoot>
         )}

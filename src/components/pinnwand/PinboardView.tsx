@@ -1,212 +1,173 @@
 "use client";
 
-// Seite /pinnwand: oben das Feld „Nachricht an alle …“ (Mias Diktat-Mikro
-// orange) und daneben das rosé Mikro für Sprachnachrichten (gedrückt halten),
-// darunter Nachrichten und Sprachnachrichten als weiße Karten – dauerhaft
-// Angeheftetes zuerst, hellorange umrandet. Antippen = reagieren, anheften,
-// eigene löschen; beim eigenen Memo „Gehört von“.
+// Seite /pinnwand (Tafel 69, 70): oben rechts ＋ = Mia schreibt mit, darunter
+// das Mikro für Sprachnachrichten; die Nachrichten als weiße Karten –
+// dauerhaft Angeheftetes zuerst. Gesten wie bei WhatsApp (SwipeRow): links
+// wischen = löschen (nur eigene), rechts wischen = antworten, lange drücken =
+// Reaktionen + Menü (ReactionMenu). Antworten zeigen das Zitat, Reaktionen
+// stehen klein darunter („❤️ 👍 Lisa, Felix“). Aus der Kachel geöffnet
+// (`?n=<id>`) springt die Seite zur Nachricht und hebt sie kurz hervor.
 
-import { useState } from "react";
-import { ArrowUp, Mic, MicOff, Square } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Pin, Plus } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { CARD, PAGE_MAIN } from "@/components/ui/styles";
+import { CARD, PAGE_MAIN, PAGE_PLUS } from "@/components/ui/styles";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { helperName } from "@/lib/einstellungen/profile";
-import {
-  PIN_MAX,
-  REACTIONS,
-  addPin,
-  changePins,
-  createPin,
-  markPinsRead,
-} from "@/lib/pinnwand";
-import { useSpeechInput } from "@/lib/begleitung/useSpeechInput";
-import { buzz } from "@/components/heute/actions";
-import { PinSheet, pinMetaLine } from "@/components/pinnwand/PinSheets";
-import { useBoard } from "@/components/pinnwand/useBoard";
-import { MemoItem, MemoSheet } from "@/components/pinnwand/MemoRow";
+import { changePins, markPinsRead, reactionLine, type PinMessage } from "@/lib/pinnwand";
+import { markHintSeen, useHintSeen } from "@/lib/core/hints";
+import { openQuick } from "@/lib/core/schnelleingabe";
+import type { PinQuote } from "@/lib/pinnwand";
+import { PinWriteSheet, pinMetaLine } from "@/components/pinnwand/PinSheets";
+import { useBoard, type BoardItem } from "@/components/pinnwand/useBoard";
+import { MemoItem } from "@/components/pinnwand/MemoRow";
 import { MemoMic, MemoNote, RecordingRow } from "@/components/pinnwand/MemoParts";
 import { useCanRecordMemo, useMemoRecorder } from "@/components/pinnwand/useMemoRecorder";
-import { MIC_BLOCKED, MicStrip } from "@/components/ui/MicPermission";
+import { SwipeRow } from "@/components/pinnwand/SwipeRow";
+import { ReactionMenu } from "@/components/pinnwand/ReactionMenu";
+import { deleteItem, mayDelete, replyTo } from "@/components/pinnwand/boardActions";
+import { MicStrip } from "@/components/ui/MicPermission";
+
+function PinBody({ pin, me }: { pin: PinMessage; me: string }) {
+  const reacted = reactionLine(pin.data.reactions);
+  return (
+    <div className={`${CARD} flex w-full items-start gap-3 p-3.5 ${pin.data.pinned ? "border-2 border-accent-soft" : ""}`}>
+      <PersonAvatar name={pin.data.author} />
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        {pin.data.replyTo && (
+          <span className="mb-1 rounded-field border-l-[3px] border-work bg-fill px-2.5 py-1.5 text-[13px] leading-snug text-muted">
+            <span className="font-bold text-ink">{pin.data.replyTo.author}</span> {pin.data.replyTo.text}
+          </span>
+        )}
+        <span className="text-[16px] font-semibold leading-snug">{pin.data.text}</span>
+        <span className="flex items-center gap-1 text-sm text-muted">
+          {pin.data.pinned && <Pin className="h-[13px] w-[13px] shrink-0 text-accent" strokeWidth={2.25} aria-label="Dauerhaft angeheftet" />}
+          {pinMetaLine(pin, me)}
+        </span>
+        {reacted && <span className="text-[13px] text-muted">{reacted}</span>}
+      </span>
+    </div>
+  );
+}
+
+function Body({ item, me, household }: { item: BoardItem; me: string; household: string[] }) {
+  return item.kind === "pin" ? (
+    <PinBody pin={item.pin} me={me} />
+  ) : (
+    <div className={`${CARD} p-3.5`}>
+      <MemoItem memo={item.memo} me={me} household={household} />
+    </div>
+  );
+}
 
 export function PinboardView() {
   const profile = useProfile();
   const me = profile?.persons[0]?.name.trim() || "Ich";
+  const helper = helperName(profile);
   const board = useBoard(me);
   const recorder = useMemoRecorder({ me });
   const canRecord = useCanRecordMemo();
-  const [text, setText] = useState("");
-  const [open, setOpen] = useState<string | null>(null);
-  const speech = useSpeechInput({
-    onTranscript: (t) => setText(t.slice(0, PIN_MAX)),
-    onEnd: (t) => t && setText(t.slice(0, PIN_MAX)),
-  });
-  // Reihenfolge (angeheftet → neueste) kommt aus useBoard (Regel `PINS`)
+  const [writing, setWriting] = useState<{ text: string; quote: PinQuote | null } | null>(null);
+  const [held, setHeld] = useState<string | null>(null);
+  const [focus, setFocus] = useState<string | null>(null);
+  const gesturesSeen = useHintSeen("pinnwand-gesten");
+  // Einmal im Kopf: „Nachrichten verschwinden nach 24 Stunden“ – gesehen beim Verlassen der Seite
+  const dayHint = useHintSeen("pinnwand-24h") === false;
+  useEffect(() => {
+    if (dayHint) return () => markHintSeen("pinnwand-24h");
+  }, [dayHint]);
   const list = board.items;
-  const sorted = list;
-  const selected = list?.find((m) => m.id === open) ?? null;
-  const send = () => {
-    const pin = createPin(text, me);
-    if (!pin) return;
-    speech.reset();
-    changePins((all) => addPin(all, pin));
-    setText("");
-    buzz();
-  };
+  const heldItem = list?.find((i) => i.id === held) ?? null;
+  const write = () => openQuick({ kind: "pinnwand", me, more: (text) => setWriting({ text, quote: null }) });
+  const reply = (text: string, quote: PinQuote) => setWriting({ text, quote });
+
+  // Gelesen, sobald die Seite offen ist
+  const hasList = Boolean(list?.length);
+  useEffect(() => {
+    if (hasList) changePins((all) => markPinsRead(all, me));
+  }, [hasList, me]);
+
+  // Aus der Kachel: zur Nachricht springen und sie kurz hervorheben
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("n");
+    if (!id || !hasList) return;
+    const on = setTimeout(() => {
+      setFocus(id);
+      document.getElementById(`n-${id}`)?.scrollIntoView({ block: "center" });
+    }, 0);
+    const off = setTimeout(() => setFocus(null), 2400);
+    return () => (clearTimeout(on), clearTimeout(off));
+  }, [hasList]);
+
   return (
     <>
-      <PageHeader title="Pinnwand" backHref="/" />
+      <PageHeader
+        title="Pinnwand"
+        subtitle={dayHint ? "Nachrichten verschwinden nach 24 Stunden" : undefined}
+        backHref="/"
+        action={
+          <button type="button" onClick={write} aria-label="Nachricht an die Pinnwand" className={PAGE_PLUS}>
+            <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+          </button>
+        }
+      />
       <main className={PAGE_MAIN} data-tone="pinnwand">
         <MicStrip />
-        <div className="flex items-center gap-2.5">
-          <form
-            className={`${CARD} flex min-w-0 flex-1 items-center gap-2 py-1.5 pl-4 pr-1.5`}
-            onSubmit={(e) => {
-              e.preventDefault();
-              send();
-            }}
-          >
-            <input
-              value={speech.listening ? speech.interim || text : text}
-              onChange={(e) => setText(e.target.value.slice(0, PIN_MAX))}
-              placeholder="Nachricht an alle …"
-              aria-label="Nachricht an alle"
-              maxLength={PIN_MAX}
-              enterKeyHint="send"
-              className="h-11 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-faint"
-            />
-            {text.trim() ? (
-              <button
-                type="submit"
-                aria-label="Anheften"
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent active:scale-95"
-              >
-                <ArrowUp className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-              </button>
+        {canRecord && (
+          <div className={`${CARD} flex items-center gap-3 p-3`}>
+            {recorder.phase !== "idle" ? (
+              <div className="min-w-0 flex-1">
+                <RecordingRow recorder={recorder} />
+              </div>
             ) : (
-              speech.supported !== false && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    speech.listening ? speech.stop() : speech.start()
-                  }
-                  aria-label={
-                    speech.blocked ? "Mikro aus – so machst du es an" : speech.listening ? "Zuhören beenden" : "Einsprechen"
-                  }
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${speech.blocked ? MIC_BLOCKED : "bg-accent text-on-accent"} active:scale-95 ${speech.listening ? "animate-pulse" : ""}`}
-                >
-                  {speech.blocked ? (
-                    <MicOff className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-                  ) : speech.listening ? (
-                    <Square
-                      className="h-4 w-4 fill-current"
-                      strokeWidth={2}
-                      aria-hidden
-                    />
-                  ) : (
-                    <Mic className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-                  )}
-                </button>
-              )
+              <span className="min-w-0 flex-1 text-[15px] text-muted">Sprachnachricht an alle</span>
             )}
-          </form>
-          {canRecord && (
-            <MemoMic recorder={recorder} size={44} />
-          )}
-        </div>
-        {recorder.phase !== "idle" ? (
-          <div className={`${CARD} p-3`}>
-            <RecordingRow recorder={recorder} />
+            {recorder.phase === "idle" && <MemoMic recorder={recorder} size={44} />}
           </div>
-        ) : (
-          canRecord &&
-          !recorder.note && (
-            <p className="-mt-1 px-1 text-[13px] text-muted">
-              Rosa Mikro antippen = Sprachnachricht an alle
-            </p>
-          )
         )}
         <MemoNote text={recorder.note} onResend={recorder.unsent ? recorder.resend : undefined} />
 
-        {!sorted ? (
+        {!list ? (
           <div className={`${CARD} h-32 animate-pulse`} />
-        ) : sorted.length === 0 ? (
-          <p className="px-1 py-6 text-center text-base text-muted">
-            Hier hinterlasst ihr euch kleine Nachrichten – z. B. „Bin um 20 Uhr
-            da“ – oder sprecht sie einfach ein. Sie verschwinden nach ein paar
-            Tagen von selbst.
-          </p>
+        ) : list.length === 0 ? (
+          <p className="px-1 py-6 text-center text-base text-muted">Hinterlasst euch hier Nachrichten – tippt auf ＋ oder sprecht eine Sprachnachricht ein.</p>
         ) : (
-          <ul className="flex flex-col gap-2" aria-label="Nachrichten">
-            {sorted.map((item) => {
-              if (item.kind === "memo") {
-                return (
-                  <li key={item.id} className={`${CARD} p-3.5`}>
-                    <MemoItem
-                      memo={item.memo}
-                      me={me}
-                      household={board.household}
-                      onOpen={() => setOpen(item.id)}
-                    />
-                  </li>
-                );
-              }
-              const m = item.pin;
-              const reacted = REACTIONS.filter(
-                (r) => (m.data.reactions[r]?.length ?? 0) > 0,
-              );
-              return (
-                <li key={m.id}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOpen(m.id);
-                      changePins((all) => markPinsRead(all, me));
+          <>
+            {gesturesSeen === false && (
+              <button type="button" onClick={() => markHintSeen("pinnwand-gesten")} className="rounded-field bg-fill px-3 py-2 text-left text-[13px] font-semibold text-muted">
+                Wischen: ← löschen · → antworten · Lange drücken: reagieren
+              </button>
+            )}
+            <ul className="flex flex-col gap-2" aria-label="Nachrichten">
+              {list.map((item) => (
+                <li key={item.id} id={`n-${item.id}`}>
+                  <SwipeRow
+                    label={item.kind === "pin" ? `${item.pin.data.text} – ${pinMetaLine(item.pin, me)}` : `Sprachnachricht – ${pinMetaLine(item.memo, me)}`}
+                    mine={mayDelete(item, me)}
+                    highlight={focus === item.id}
+                    onDelete={() => deleteItem(item, me)}
+                    onReply={() => replyTo(item, me, reply)}
+                    onHold={() => {
+                      markHintSeen("pinnwand-gesten");
+                      setHeld(item.id);
                     }}
-                    className={`${CARD} flex w-full items-start gap-3 p-3.5 text-left ${m.data.pinned ? "border-2 border-accent-soft" : ""}`}
-                    aria-label={`${m.data.text} – ${pinMetaLine(m, me)}${m.data.pinned ? " – angeheftet" : ""}`}
                   >
-                    <PersonAvatar name={m.data.author} />
-                    <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="text-[16px] font-semibold leading-snug">
-                        {m.data.text}
-                      </span>
-                      <span className="text-sm text-muted">
-                        {pinMetaLine(m, me)}
-                        {m.data.pinned ? " · angeheftet" : ""}
-                      </span>
-                    </span>
-                    {reacted.length > 0 && (
-                      <span className="shrink-0 text-sm">
-                        {reacted.join("")}
-                      </span>
-                    )}
-                  </button>
+                    <Body item={item} me={me} household={board.household} />
+                  </SwipeRow>
                 </li>
-              );
-            })}
-          </ul>
+              ))}
+            </ul>
+          </>
         )}
-        <p className="px-1 text-center text-sm text-muted">
-          Oder sag {helperName(profile)}: „Schreib an die Pinnwand: …“
-        </p>
+        <p className="px-1 text-center text-sm text-muted">Oder sag {helper}: „Schreib an die Pinnwand: …“</p>
       </main>
-      {selected?.kind === "pin" && (
-        <PinSheet
-          message={selected.pin}
-          me={me}
-          onClose={() => setOpen(null)}
-        />
+      {heldItem && (
+        <ReactionMenu item={heldItem} me={me} household={board.household} helper={helper} onWrite={reply} onClose={() => setHeld(null)}>
+          <Body item={heldItem} me={me} household={board.household} />
+        </ReactionMenu>
       )}
-      {selected?.kind === "memo" && (
-        <MemoSheet
-          memo={selected.memo}
-          me={me}
-          household={board.household}
-          onClose={() => setOpen(null)}
-        />
-      )}
+      {writing && <PinWriteSheet me={me} initialText={writing.text} quote={writing.quote} onClose={() => setWriting(null)} />}
     </>
   );
 }

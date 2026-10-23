@@ -1087,6 +1087,10 @@ body {
 .mia-tonwelle { display: flex; height: 22px; align-items: center; gap: 4px; }
 .mia-tonwelle > span { display: block; width: 4px; height: 22px; border-radius: 9999px; background: var(--app-accent); transform-origin: center; animation: mia-ton .9s ease-in-out infinite; }
 .mia-geist-schleier { animation: mia-aus .8s var(--mia-ease) both; }
+/* Pinnwand: aus der Kachel geöffnete Nachricht kurz hervorheben; lange gedrückt = leicht angehoben */
+@keyframes pin-hervor { 0%, 70% { box-shadow: 0 0 0 3px var(--app-accent-soft); } 100% { box-shadow: 0 0 0 0 transparent; } }
+.pin-hervor { animation: pin-hervor 2.4s var(--mia-ease) both; border-radius: 20px; }
+.pin-angehoben { transform: scale(1.02); }
 /* Kochidee: der Knopf wippt beim ersten Mal sanft; Mia in der Karte lädt ein
    (Kreise wie ein ruhiger Herzschlag alle ~1,6 s, leichtes Atmen ±3 %, Zwinkern) */
 @keyframes kochidee-wippen { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-8deg); } 45% { transform: rotate(6deg); } 70% { transform: rotate(-3deg); } }

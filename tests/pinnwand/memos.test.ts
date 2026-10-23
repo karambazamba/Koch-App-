@@ -14,30 +14,20 @@ const memoAt = (iso: string, author = "Lisa", dauer = 12.4) => {
 describe("Sprachnachrichten: Verschwinden", () => {
   const household = ["Felix", "Lisa", "Jonne"];
 
-  it("bleibt ohne „alle gehört“ höchstens 3 Tage", () => {
+  it("ungehört nach 24 Std. weg (ab der Aufnahme)", () => {
     const m = memoAt("2026-10-20T09:00");
     const t0 = new Date(m.erstellt).getTime();
-    expect(memoAlive(m, t0 + 71 * H)).toBe(true);
-    expect(memoAlive(m, t0 + 72 * H)).toBe(false);
+    expect(memoAlive(m, t0 + 23 * H + 59 * 60_000)).toBe(true);
+    expect(memoAlive(m, t0 + 24 * H)).toBe(false);
   });
 
-  it("verschwindet 24 Std., nachdem alle es gehört haben", () => {
+  it("„alle gehört“ verlängert nichts und verkürzt nichts – 24 Std. ab der Aufnahme", () => {
     const m = memoAt("2026-10-20T09:00");
-    let list = [m];
-    list = setMemoHeard(list, m.id, "Felix", true, household, "2026-10-20T10:00:00.000Z");
-    expect(list[0].data.alleGehoertAm).toBeNull();
-    list = setMemoHeard(list, m.id, "Jonne", true, household, "2026-10-20T12:00:00.000Z");
-    expect(list[0].data.alleGehoertAm).toBe("2026-10-20T12:00:00.000Z");
-    const heardMs = new Date("2026-10-20T12:00:00.000Z").getTime();
-    expect(memoAlive(list[0], heardMs + 23 * H)).toBe(true);
-    expect(memoAlive(list[0], heardMs + 24 * H)).toBe(false);
-    expect(pruneMemos(list, heardMs + 24 * H)).toEqual([]);
-  });
-
-  it("spätestens nach 3 Tagen, auch wenn „alle gehört“ später kam", () => {
-    const m = memoAt("2026-10-20T09:00");
-    const list = setMemoHeard(setMemoHeard([m], m.id, "Felix", true, household, "2026-10-22T20:00:00.000Z"), m.id, "Jonne", true, household, "2026-10-22T20:00:00.000Z");
-    expect(memoAlive(list[0], new Date(m.erstellt).getTime() + 72 * H)).toBe(false);
+    const list = setMemoHeard(setMemoHeard([m], m.id, "Felix", true, household, "2026-10-20T10:00:00.000Z"), m.id, "Jonne", true, household, "2026-10-20T10:00:00.000Z");
+    expect(list[0].data.alleGehoertAm).toBe("2026-10-20T10:00:00.000Z");
+    const t0 = new Date(m.erstellt).getTime();
+    expect(memoAlive(list[0], t0 + 23 * H)).toBe(true);
+    expect(pruneMemos(list, t0 + 24 * H)).toEqual([]);
   });
 
   it("Häkchen wieder weg → Frist läuft nicht mehr", () => {
@@ -54,20 +44,20 @@ describe("Sprachnachrichten: Verschwinden", () => {
     expect(memoUnheard(setMemoHeard([m], m.id, "Felix", true, household, "x")[0], "Felix")).toBe(false);
   });
 
-  it("Reaktionen wie bei Text", () => {
+  it("Reaktionen wie bei Text (eine je Person)", () => {
     const m = memoAt("2026-10-20T09:00");
     const once = toggleMemoReaction([m], m.id, "❤️", "Felix", "x");
-    expect(once[0].data.reactions["❤️"]).toEqual(["Felix"]);
-    expect(toggleMemoReaction(once, m.id, "❤️", "Felix", "y")[0].data.reactions["❤️"]).toEqual([]);
+    expect(once[0].data.reactions).toEqual({ Felix: "❤️" });
+    expect(toggleMemoReaction(once, m.id, "❤️", "Felix", "y")[0].data.reactions).toEqual({});
   });
 });
 
 describe("Sprachnachrichten: Daten", () => {
-  it("Migration v1 → v2: Nachrichten bleiben, Memos leer", () => {
+  it("Migration v1 → v3: Nachrichten bleiben, Memos leer", () => {
     at("2026-10-20T09:00");
     const v1 = { version: 1, messages: [{ id: "a", typ: "pinnwand", raum: "familie", besitzer: "lokal", erstellt: "2026-10-20T07:00:00.000Z", geaendert: "2026-10-20T07:00:00.000Z", data: { text: "Bin um 20 Uhr da", author: "Lisa", reactions: {}, readBy: ["Lisa"], pinned: false } }] };
     const v2 = migratePinStore(v1);
-    expect(v2?.version).toBe(2);
+    expect(v2?.version).toBe(3);
     expect(v2?.messages.map((m) => m.data.text)).toEqual(["Bin um 20 Uhr da"]);
     expect(v2?.memos).toEqual([]);
     expect(migratePinStore({ version: 7 })).toBeNull();
