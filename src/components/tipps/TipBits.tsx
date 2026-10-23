@@ -1,7 +1,7 @@
 "use client";
 
 // Kleine Bausteine für Tipps aus der Region: Icon (Linien, lila), „von
-// KARAMBA“ (Pink), Etiketten, Zeitangaben und die Zeile für Listen.
+// KARAMBA Eis“ (Pink), Etiketten, Zeitangaben und die Zeile für Listen.
 
 import { WEEKDAYS_SHORT_MO } from "@/lib/core/days";
 import { Baby, Bike, Heart, Leaf, Music, ShoppingBasket, Ticket, type LucideIcon } from "lucide-react";
@@ -19,7 +19,7 @@ export function TipIcon({ tip, size = 40 }: { tip: TipView; size?: number }) {
   );
 }
 
-export const KarambaLine = () => <span className="block text-[11px] font-extrabold uppercase tracking-wide text-karamba">von KARAMBA</span>;
+export const KarambaLine = () => <span className="block text-[11px] font-extrabold uppercase tracking-wide text-karamba">von KARAMBA Eis</span>;
 
 export const SampleMark = () => <span className="rounded-full bg-fill px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-muted">Beispiel</span>;
 

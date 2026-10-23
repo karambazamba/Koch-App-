@@ -48,6 +48,12 @@ describe("Regeln für sichtbare Texte", () => {
     expect(hits((code, file) => (allowed.test(file) || NOT_VISIBLE.test(file) ? [] : texts(code).filter((t) => /\b(Lotte|Mia|Theo)\b/.test(t))))).toEqual([]);
   });
 
+  // Immer „KARAMBA Eis“ – nie nur „KARAMBA“ (Verwechslung mit einem Online-Casino);
+  // nur die Liste der Veranstalter-Namen (Erkennung) darf das Wort allein haben
+  it("„KARAMBA“ nur als „KARAMBA Eis“", () => {
+    expect(hits((code, file) => (file === "lib/tipps/karamba.ts" ? [] : texts(code).filter((t) => /KARAMBA(?! Eis)(?![_-])/.test(t))))).toEqual([]);
+  });
+
   // Spendentopf fragt „Gemeinsam für <Region>“ – nie, was einem „die App wert“ ist
   it("nie „App wert“", () => {
     expect(hits((code) => texts(code).filter((t) => /App wert/i.test(t)))).toEqual([]);

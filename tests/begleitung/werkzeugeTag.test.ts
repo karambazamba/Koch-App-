@@ -170,7 +170,7 @@ describe("Tipps aus der Region", () => {
     const r = rufe(ctx, "tipps_suchen", { von: "2026-10-24", bis: "2026-10-25", filter: ["unsinn"], ort: " " });
     expect(r.content.split("\n")).toEqual([
       "Treffer (werden als Karten angezeigt – nur diese nennen):",
-      "- Tipp a · Sa 2026-10-24 15:00 · Malente (8 km) · für Kinder · drinnen · kostenlos · von KARAMBA · Beispiel",
+      "- Tipp a · Sa 2026-10-24 15:00 · Malente (8 km) · für Kinder · drinnen · kostenlos · von KARAMBA Eis · Beispiel",
       "- Tipp b · So 2026-10-25 ganztägig · Malente (8 km) · draußen · Beispiel",
     ]);
     expect(ctx.tipCards?.map((t) => t.id)).toEqual(["a", "b"]);

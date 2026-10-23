@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { knownShop, shopModeLists, shopModeRequest } from "@/lib/einkauf/shopMode";
 import type { ListItem } from "@/lib/einkauf/shoppingList";
 import { jetztTopics, type JetztInput } from "@/lib/heute/jetztTopics";
+import { jetztInput } from "../helpers";
 
 const SHOPS = ["Aldi", "Lidl", "Edeka", "Rewe", "Rossmann", "dm", "Wochenmarkt", "Bäcker", "Hofladen"];
 const item = (name: string, shop = "", checked = false): ListItem => ({ key: name, name, originalName: name, amount: "", section: "sonstiges", dishes: [], days: [], shop, checked, hidden: false });
@@ -49,19 +50,11 @@ describe("„Ich bin bei REWE“ erkennen (ohne KI)", () => {
 
 describe("Jetzt-Karte „Auf dem Heimweg?“ öffnet den Einkaufsmodus", () => {
   it("echte Liste → /einkaufsliste/laden?name=…, Beispiel-Tag → Einkaufsliste", () => {
-    const base = { today: "2026-10-21", minutes: 16 * 60 + 40, shop: { shop: "REWE", names: ["Milch", "Brot", "Butter"] } } as unknown as JetztInput;
+    const shop = { shop: "REWE", names: ["Milch", "Brot", "Butter"] };
     const find = (x: JetztInput) => jetztTopics(x).find((t) => t.kind === "einkauf");
-    const real = find({ ...emptyInput(), ...base, demo: false });
+    const real = find(jetztInput(16 * 60 + 40, { shop, demo: false }));
     expect(real?.target).toEqual({ href: "/einkaufsliste/laden?name=REWE" });
-    const demo = find({ ...emptyInput(), ...base, demo: true });
+    const demo = find(jetztInput(16 * 60 + 40, { shop, demo: true }));
     expect(demo?.target).toEqual({ href: "/einkaufsliste" });
   });
 });
-
-function emptyInput(): JetztInput {
-  return {
-    minutes: 600, today: "2026-10-21", calm: false, upcoming: [], tomorrow: { label: "Morgen · Do", date: "2026-10-22", items: [], weather: null },
-    urgent: [], dueToday: [], allDone: false, pin: null, weatherTip: null, weatherNow: null, dish: null, dinnerFree: false, birthdays: [], sport: null,
-    shop: null, timer: null, cookingStep: null, reminder: null, pause: null, leisure: null, tip: null, region: null, weekCheck: null, demo: false, firstTiles: [], weights: {}, hidden: [],
-  } as JetztInput;
-}

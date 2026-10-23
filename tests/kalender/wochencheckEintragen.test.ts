@@ -1,13 +1,13 @@
 // Wochencheck (Tafel 36): Werkzeug woche_eintragen, Testmodus, Einträge,
 // Jetzt-Karte und Stoppwort beim langen Zuhören.
 import { beforeEach, describe, expect, it } from "vitest";
-import { at, fakeWindow, noBrowser } from "../helpers";
+import { at, fakeWindow, jetztInput, noBrowser } from "../helpers";
 import { createEntry } from "@/lib/core/entries";
 import { sanitizeEntry, type CalendarEntry } from "@/lib/kalender/model";
 import { isWeekCheckRequest, itemFromEntry, weekCheckKey, weekEntries, type WeekItem } from "@/lib/kalender/wochencheck";
 import { stripStopWord } from "@/lib/begleitung/useSpeechInput";
 import { isWeekCheck } from "@/lib/begleitung/engine";
-import { jetztTopics, type JetztInput } from "@/lib/heute/jetztTopics";
+import { jetztTopics } from "@/lib/heute/jetztTopics";
 import { loadJetzt, weekCheckDone } from "@/lib/heute/jetztStore";
 import { kontext, rufe } from "../begleitung/werkzeugKontext";
 import { ask, context } from "../begleitung/testmodusHilfen";
@@ -119,7 +119,7 @@ describe("Einstiege", () => {
   });
 
   it("Thema „Kurzer Wochencheck?“ – nicht nachts, ✕ = diese Woche nicht mehr", () => {
-    const base = { minutes: 600, today: "2026-10-26", calm: false, upcoming: [], tomorrow: { label: "Morgen · Di", date: "2026-10-27", items: [] }, urgent: [], dueToday: [], allDone: false, pin: null, weatherTip: null, weatherNow: null, dish: null, dinnerFree: false, birthdays: [], sport: null, shop: null, timer: null, cookingStep: null, reminder: null, pause: null, leisure: null, tip: null, region: null, demo: false, firstTiles: [], weights: {}, hidden: [] } satisfies Omit<JetztInput, "weekCheck">;
+    const base = jetztInput(600, { today: "2026-10-26", tomorrow: { label: "Morgen · Di", date: "2026-10-27", items: [] } });
     const t = jetztTopics({ ...base, weekCheck: "2026-10-26" })[0];
     expect(t).toMatchObject({ kind: "wochencheck", title: "Kurzer Wochencheck?", detail: "Sag einfach alles, ich sortiere.", target: { action: "wochencheck" } });
     expect(jetztTopics({ ...base, weekCheck: "2026-10-26", minutes: 23 * 60 }).some((x) => x.kind === "wochencheck")).toBe(false);

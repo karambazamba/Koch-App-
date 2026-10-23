@@ -98,7 +98,7 @@ export function askLater(a: AskState, today: string): AskState {
 export const POT_TEXTS = {
   share: "100 % für Projekte in deiner Region",
   everyEuro: "Jeder Euro geht in deine Region",
-  free: "Die App ist kostenlos. KARAMBA zahlt Server & KI. Keine Werbung, kein Abo, keine Daten verkauft.",
+  free: "Die App ist kostenlos. KARAMBA Eis zahlt Server & KI. Keine Werbung, kein Abo, keine Daten verkauft.",
   /** Überschrift der Beitrags-Frage – nie so, als bezahle man die App: das Geld geht in die Region */
   together: (region?: string | null) => `Gemeinsam für ${region ?? "Ostholstein"}`,
   askText: "Jeder Euro geht in den Spendentopf – für Projekte in deiner Region.",

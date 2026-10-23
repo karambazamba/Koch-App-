@@ -7,6 +7,7 @@ import { migrateProfile } from "@/lib/einstellungen/profileStore";
 import { createEmptyProfile } from "@/lib/einstellungen/profile";
 import { settingsChange } from "@/lib/begleitung/settingsChat";
 import { jetztTopics, type JetztInput } from "@/lib/heute/jetztTopics";
+import { jetztInput, jetztTermin } from "../helpers";
 
 describe("Profil v21: Look und Kalenderfarbe", () => {
   it("neue Profile: Farbig, Kalenderfarbe Orange", () => {
@@ -51,50 +52,20 @@ describe("Mia: ruhiger ↔ farbig", () => {
   });
 });
 
-const input = (over: Partial<JetztInput>): JetztInput => ({
-  minutes: 20 * 60,
-  today: "2026-10-21",
-  calm: false,
-  upcoming: [],
-  tomorrow: { label: "Morgen · Do", date: "2026-10-22", items: [{ title: "Kita bringen", time: "08:00" }], weather: "Morgen 12° · Regen" },
-  urgent: [],
-  dueToday: [],
-  allDone: false,
-  pin: null,
-  weatherTip: "☂️ Morgen früh Regen",
-  weatherNow: null,
-  dish: null,
-  dinnerFree: false,
-  birthdays: [],
-  sport: null,
-  shop: null,
-  timer: null,
-  cookingStep: null,
-  reminder: null,
-  pause: null,
-  leisure: null,
-  tip: null,
-  region: null,
-  weekCheck: null,
-  demo: false,
-  firstTiles: [],
-  weights: {},
-  hidden: [],
-  ...over,
-});
-
 describe("Jetzt-Karte ohne Doppelung", () => {
-  it("ohne Morgen-Kacheln: Morgen- und Wetter-Thema kommen vor", () => {
-    const kinds = jetztTopics(input({})).map((t) => t.kind);
-    expect(kinds).toContain("morgen");
-    expect(kinds).toContain("wetter");
+  const evening = (over: Partial<JetztInput> = {}) =>
+    jetztInput(20 * 60, { tomorrow: { label: "Morgen · Do", date: "2026-10-22", items: [jetztTermin("Kita bringen", "08:00", {}, "2026-10-22")] }, ...over });
+  it("ohne Morgen-Kacheln: Ausblick kommt vor; Wetter nie ohne Plan", () => {
+    const kinds = jetztTopics(evening()).map((t) => t.kind);
+    expect(kinds).toContain("ausblick");
+    expect(kinds).not.toContain("wetter");
   });
-  it("Termine-Kachel zeigt schon „Morgen“ → kein reines Morgen-Thema", () => {
-    expect(jetztTopics(input({ tomorrowTiles: ["termine"] })).map((t) => t.kind)).not.toContain("morgen");
+  it("Termine-Kachel zeigt schon „Morgen“ → kein Ausblick ohne Zusatz", () => {
+    expect(jetztTopics(evening({ tomorrowTiles: ["termine"] })).map((t) => t.kind)).not.toContain("ausblick");
   });
-  it("Wetter-Kachel zeigt morgen → kein reines Wetter-Thema, ein Schirm-Hinweis zum Termin bleibt", () => {
-    expect(jetztTopics(input({ tomorrowTiles: ["wetter"] })).map((t) => t.kind)).not.toContain("wetter");
-    expect(jetztTopics(input({ tomorrowTiles: ["wetter"], weatherTip: "☂️ Ab 15 Uhr Regen – Schirm für Fußball" })).map((t) => t.kind)).toContain("wetter");
+  it("Regen zum Draußen-Termin bleibt – auch wenn die Wetter-Kachel da ist", () => {
+    const planWeather = { key: "f", title: "Fußball", time: "17:00", word: "Regen" };
+    expect(jetztTopics(jetztInput(14 * 60, { planWeather })).map((t) => t.kind)).toContain("wetter");
   });
 });
 

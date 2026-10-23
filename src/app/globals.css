@@ -106,6 +106,9 @@
  * (data-theme am <html>). Jeder Token hat einen hellen und einen dunklen Wert.
  */
 :root {
+  /* Funken beim Freudensprung (Hallo-Bildschirm) – gleich in hell und dunkel */
+  --app-spark-orange: #f26b21;
+  --app-spark-yellow: #ffc23d;
   --app-background: #f7f4ef;
   --app-surface: #ffffff;
   --app-line: #ece6de;
@@ -971,8 +974,75 @@ body {
 .tiles-arrive [data-unit]:nth-child(5) { animation-delay: 1.03s; }
 .tiles-arrive [data-unit]:nth-child(6) { animation-delay: 1.1s; }
 .tiles-arrive [data-unit]:nth-child(n + 7) { animation-delay: 1.17s; }
+/* Freudensprung nach 2 s (2,8 s): ducken → Sprung ~115 px mit einer Drehung → Landung breit, federt aus → zwei kleine Hüpfer.
+   Außen hoch/runter und quetschen (Ursprung unten), innen die Drehung (Ursprung Mitte); nur transform/opacity. */
+.hello-jump { position: relative; transform-origin: 50% 100%; }
+.hello-spin { transform-origin: 50% 50%; }
+.hello-jump[data-sprung="an"] { animation: hello-hop 2.8s linear both; }
+.hello-jump[data-sprung="an"] .hello-spin { animation: hello-spin 2.8s both; }
+.hello-jump[data-sprung="an"] .av-body { animation: none !important; }
+.hello-jump[data-sprung="an"] .av-eyes { opacity: 0; }
+.hello-jump[data-sprung="an"] .av-happy { opacity: 1; }
+.hello-jump[data-sprung="an"] .av-mouth { transform: scale(1.15, 1.55); transform-box: fill-box; transform-origin: 50% 0; }
+@keyframes hello-hop {
+  0% { transform: none; animation-timing-function: ease-out; }
+  7.1% { transform: scale(1.1, 0.86); animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1); }
+  12% { transform: translateY(calc(var(--jump, 115px) * -0.4)) scale(0.94, 1.08); animation-timing-function: ease-out; }
+  20.5% { transform: translateY(calc(var(--jump, 115px) * -1)) scale(1, 1); animation-timing-function: ease-in; }
+  33.9% { transform: translateY(0) scale(1, 1); animation-timing-function: ease-out; }
+  37.5% { transform: scale(1.13, 0.85); animation-timing-function: ease-in-out; }
+  43% { transform: translateY(0) scale(0.96, 1.05); }
+  50% { transform: scale(1.03, 0.98); }
+  58.9% { transform: none; animation-timing-function: ease-out; }
+  65% { transform: translateY(-20px); animation-timing-function: ease-in; }
+  71% { transform: translateY(0) scale(1.06, 0.94); animation-timing-function: ease-out; }
+  78% { transform: translateY(-11px); animation-timing-function: ease-in; }
+  85% { transform: translateY(0) scale(1.03, 0.97); }
+  94.6%, 100% { transform: none; }
+}
+@keyframes hello-spin {
+  0%, 7.1% { transform: rotate(0deg); animation-timing-function: ease-in-out; }
+  33.9%, 100% { transform: rotate(360deg); }
+}
+/* Schatten unter Mia: im Sprung kleiner und heller */
+.hello-shadow { position: absolute; left: 50%; bottom: -10px; width: 96px; height: 12px; margin-left: -48px; border-radius: 9999px; background: color-mix(in srgb, var(--color-ink) 12%, transparent); filter: blur(3px); }
+.hello-shadow[data-sprung="an"] { animation: hello-shadow 2.8s linear both; }
+@keyframes hello-shadow {
+  0%, 7.1% { transform: scale(1); opacity: 1; }
+  20.5% { transform: scale(0.5); opacity: 0.35; }
+  33.9% { transform: scale(1.12); opacity: 1; }
+  58.9% { transform: scale(1); }
+  65% { transform: scale(0.85); opacity: 0.75; }
+  71% { transform: scale(1); opacity: 1; }
+  78% { transform: scale(0.92); }
+  85%, 100% { transform: scale(1); opacity: 1; }
+}
+/* 8 Funken bei der Landung */
+.hello-spark { position: absolute; left: 50%; bottom: 8px; width: 9px; height: 9px; border-radius: 9999px; opacity: 0; animation: hello-spark 0.7s ease-out both; }
+@keyframes hello-spark { from { opacity: 1; transform: translate(-50%, 0) scale(1); } to { opacity: 0; transform: translate(calc(-50% + var(--dx)), var(--dy)) scale(0.35); } }
+/* „Ich bin bereit!“ oben rechts, Spitze zu Mia */
+.hello-ready { transform: translateY(-100%); animation: hello-ready 0.4s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
+.hello-ready::after { content: ""; position: absolute; left: 14px; bottom: -6px; width: 12px; height: 12px; background: inherit; transform: rotate(45deg); border-radius: 2px; }
+@keyframes hello-ready { from { opacity: 0; transform: translateY(-80%) scale(0.7); } to { opacity: 1; transform: translateY(-100%) scale(1); } }
+/* „Los geht’s“ pulsiert sanft */
+.hello-nudge { animation: hello-nudge 0.4s ease-in-out both; }
+@keyframes hello-nudge { 50% { transform: scale(1.035); box-shadow: 0 10px 24px -8px color-mix(in srgb, var(--color-accent-strong) 55%, transparent); } }
+/* Antippen = kitzelig: kichernd hin und her (±10°, gedämpft, leicht gequetscht) */
+.hello-jump[data-kitzel="an"] .av-body { animation: hello-tickle 1s ease-out both !important; transform-origin: 50% 70%; transform-box: fill-box; }
+@keyframes hello-tickle {
+  0% { transform: none; }
+  12% { transform: rotate(-10deg) scale(1.04, 0.95); }
+  27% { transform: rotate(9deg) scale(0.97, 1.03); }
+  42% { transform: rotate(-7deg) scale(1.03, 0.97); }
+  57% { transform: rotate(5deg); }
+  72% { transform: rotate(-3deg); }
+  86% { transform: rotate(1.5deg); }
+  100% { transform: none; }
+}
+.hello-jump[data-kitzel="an"] .av-mouth { transform: scale(1.15, 1.45); transform-box: fill-box; transform-origin: 50% 0; }
 @media (prefers-reduced-motion: reduce) {
-  .hello-face *, .hello-in, .hello-tile, .hello-caret, .hello-pulse, .hello-bubble, .hello-heart, .tiles-arrive [data-unit] { animation: none !important; transition: none !important; }
+  .hello-face *, .hello-in, .hello-tile, .hello-caret, .hello-pulse, .hello-bubble, .hello-heart, .tiles-arrive [data-unit],
+  .hello-jump, .hello-spin, .hello-shadow, .hello-spark, .hello-nudge, .hello-ready, .hello-jump .av-body { animation: none !important; transition: none !important; }
 }
 
 /* Kochmütze (Kochtipp): ploppt beim ersten Erscheinen einmal auf */

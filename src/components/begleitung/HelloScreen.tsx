@@ -4,11 +4,14 @@
 // Hallo-Bildschirm nach Tafel 55 – Mia groß und rund, „Hallo, ich bin Mia.“
 // („Mia.“ in Orange), „Erzähl mir einfach, was ansteht. Ich sortiere für
 // euch.“, „Los geht’s“, „Daten wiederherstellen“ und klein unten die Marke
-// (BrandMark, gedämpft) mit „möglich gemacht von KARAMBA“. Ablauf:
+// (BrandMark, gedämpft) mit „Gemacht in Eutin · von KARAMBA Eis“. Ablauf:
 //   0,0 s Mia ploppt auf, 0,95 s Überschrift tippt sich ein (sie spricht
-//   dabei), 1,8 s Zeile, 2,2 s „Los geht’s“, Link und Marke
-// Danach blinzelt sie, die Augen folgen dem Finger (max. ~3 px); antippen:
-// hüpfen, Smiley-Augen, Herzchen, kleiner Satz. „Los geht’s“ fragt einmal
+//   dabei), 1,8 s Zeile, 2,0 s Freudensprung (ducken, eine Drehung, Landung
+//   mit Funken, „Ich bin bereit!“, zwei kleine Hüpfer, „Los geht’s“
+//   pulsiert zweimal), 2,2 s „Los geht’s“, Link und Marke
+// Danach blinzelt sie, die Augen folgen dem Finger (max. ~3 px); antippen =
+// kitzelig: kichernd wackeln, Smiley-Augen, drei Herzen, kleiner Satz
+// (während des Sprungs erst danach). „Los geht’s“ fragt einmal
 // den Look und startet frisch (`startFresh`), Mia fliegt in die Jetzt-Karte
 // (`hello.ts`). Die Begrüßung läuft genau einmal: erst wenn die Seite fertig
 // ist (nach dem Laden, Schrift da) – vorher ist alles unsichtbar; ein
@@ -24,13 +27,21 @@ import { startFresh } from "@/lib/einstellungen/welcomeStore";
 import { LookStep } from "@/components/einstellungen/aussehen/LookStep";
 import type { AppLook } from "@/lib/einstellungen/profile";
 import { expectReplace } from "@/lib/core/navigation";
-import { helloElapsed, markHelloShown, reducedMotion, setHelloElapsed, setHelloFlight } from "@/lib/core/hello";
+import { HELLO_JUMP_MS, HELLO_READY, HELLO_T, helloElapsed, helloJump, helloTapText, markHelloShown, reducedMotion, setHelloElapsed, setHelloFlight } from "@/lib/core/hello";
+import { helperMessage } from "@/lib/einstellungen/profile";
+import { buzz } from "@/components/heute/actions";
 import type { AvatarZustand } from "@/lib/core/avatarState";
 
-const T = { title: 950, sub: 1800, buttons: 2200 };
+const T = HELLO_T;
 const CHAR_MS = 45;
 const STEP = 30;
-const TAPS = ["Hihi!", "Bereit, wenn du es bist!", "Kitzelig!", "Los geht’s?"];
+/** So lange läuft der Takt (bis die Sprechblase nach dem Sprung weg ist) */
+const TICK_END = T.jump + 1050 + 2500 + 100;
+/** Funken bei der Landung: Richtung (px) und Farbe */
+const SPARKS = Array.from({ length: 8 }, (_, i) => {
+  const a = (i / 8) * Math.PI * 2 + 0.3;
+  return { dx: Math.round(Math.cos(a) * 64), dy: Math.round(Math.sin(a) * 34 - 26), tone: i % 2 ? "var(--app-spark-yellow)" : "var(--app-spark-orange)" };
+});
 
 /** Seite fertig: nach dem ersten Zeichnen und wenn die Schrift geladen ist (höchstens 600 ms warten) */
 function usePageReady(): boolean {
@@ -61,6 +72,8 @@ export function HelloScreen() {
   const ready = usePageReady();
   useEffect(markHelloShown, []);
   const [still] = useState(reducedMotion);
+  // Lief der Sprung schon (Neuaufbau mitten in der Begrüßung)? Dann nicht doppelt
+  const [jumpDone] = useState(() => helloElapsed() > T.jump);
   // Zeit seit Beginn der Begrüßung (läuft weiter, wenn der Bildschirm neu aufgebaut wird)
   const [ms, setMs] = useState<number | null>(null);
   useEffect(() => {
@@ -73,7 +86,7 @@ export function HelloScreen() {
     const tick = () => {
       setMs(now);
       setHelloElapsed(now);
-      if (now >= T.buttons + 600) return;
+      if (now >= TICK_END) return;
       timer = window.setTimeout(() => {
         // echte Zeit, mindestens aber ein Schritt (steht die Uhr, läuft der Ablauf trotzdem)
         now = Math.max(now + STEP, from + performance.now() - base);
@@ -86,9 +99,41 @@ export function HelloScreen() {
   const at = ms ?? -1;
   const typed = still ? title.length : at < T.title ? 0 : Math.min(title.length, Math.floor((at - T.title) / CHAR_MS) + 1);
   const typing = typed > 0 && typed < title.length;
-  // Antippen: hüpfen, Smiley-Augen, Herzchen, kleiner Satz
+  // Freudensprung bei 2,0 s (einmal, ohne Antippen)
+  const jump = helloJump(at, jumpDone || still);
+  const landed = jump.on && at - T.jump >= 950;
+  useEffect(() => {
+    if (landed) buzz();
+  }, [landed]);
+  // Bewegung reduzieren: kein Sprung, nur die Sprechblase
+  const [stillBubble, setStillBubble] = useState(false);
+  useEffect(() => {
+    if (!still || !ready || jumpDone) return;
+    const show = window.setTimeout(() => setStillBubble(true), T.jump);
+    const hide = window.setTimeout(() => setStillBubble(false), T.jump + 2500);
+    return () => {
+      window.clearTimeout(show);
+      window.clearTimeout(hide);
+    };
+  }, [still, ready, jumpDone]);
+  const readyBubble = jump.bubble || stillBubble;
+  // Sprunghöhe: bis ~115 px, aber nie oben aus dem Bild (kleine Bildschirme)
+  const [jumpHeight, setJumpHeight] = useState(115);
+  useEffect(() => {
+    if (!jump.on) return;
+    const top = face.current?.getBoundingClientRect().top ?? 200;
+    setJumpHeight(Math.max(24, Math.min(115, Math.round(top - 6))));
+  }, [jump.on]);
+  // Antippen = kitzelig: wackeln, Smiley-Augen, Herzen, kleiner Satz (im Sprung erst danach)
   const [tap, setTap] = useState<{ n: number; text: string } | null>(null);
   const taps = useRef(0);
+  const jumpEndsIn = jump.on ? T.jump + HELLO_JUMP_MS - at : 0;
+  const tickle = () => {
+    const n = taps.current++;
+    const go = () => setTap({ n, text: helloTapText(n) });
+    if (jumpEndsIn > 0) window.setTimeout(go, jumpEndsIn);
+    else go();
+  };
   useEffect(() => {
     if (!tap) return;
     const t = window.setTimeout(() => setTap(null), 1800);
@@ -96,6 +141,7 @@ export function HelloScreen() {
   }, [tap]);
   // Vor dem Start ruhig (unsichtbar) – so beginnt das Aufploppen erst, wenn Mia sichtbar wird
   const zustand: AvatarZustand = still || ms === null ? "ruhig" : tap ? "freuen" : at < T.title ? "begruessen" : typing ? "sprechen" : "ruhig";
+  const bubbleText = tap?.text ?? (readyBubble ? HELLO_READY : null);
   // Augen folgen dem Finger (max. ~3 px)
   const face = useRef<HTMLButtonElement>(null);
   const [look, setLook] = useState({ x: 0, y: 0 });
@@ -137,33 +183,42 @@ export function HelloScreen() {
       <div className="mx-auto flex min-h-full w-full max-w-lg flex-col items-center px-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[calc(env(safe-area-inset-top)+2.5rem)] text-center [@media(max-height:620px)]:pt-[calc(env(safe-area-inset-top)+0.75rem)]">
         <div className="flex w-full flex-1 flex-col items-center justify-center pb-4">
           <div className="relative">
-            <button
-              ref={face}
-              type="button"
-              tabIndex={-1}
-              aria-hidden
-              onClick={() => {
-                const n = taps.current++;
-                setTap({ n, text: TAPS[n % TAPS.length] });
-              }}
-              className={`hello-face block rounded-full ${ms === null ? "opacity-0" : ""}`}
-              style={{ "--ex": `${look.x}px`, "--ey": `${look.y}px` } as CSSProperties}
-              data-hello={ms === null ? "wartet" : "laeuft"}
-            >
-              <BegleitungAvatar size={132} color={color} zustand={zustand} groesse="gross" stabil />
-            </button>
-            {tap && (
-              <>
-                <span key={`b${tap.n}`} className="hello-bubble absolute -top-3 left-1/2 whitespace-nowrap rounded-card bg-surface px-3 py-1.5 text-sm font-bold shadow-card" role="status">
-                  {tap.text}
-                </span>
-                {[0, 1, 2].map((i) => (
-                  <span key={`h${tap.n}-${i}`} className="hello-heart pointer-events-none absolute text-lg" style={{ left: `${18 + i * 28}%`, top: "10%", animationDelay: `${i * 90}ms`, color }} aria-hidden>
-                    {i === 1 ? "✦" : "♥"}
-                  </span>
-                ))}
-              </>
+            <span className="hello-shadow" data-sprung={jump.on ? "an" : undefined} aria-hidden />
+            <div className="hello-jump" data-sprung={jump.on ? "an" : undefined} data-kitzel={tap ? "an" : undefined} style={{ "--jump": `${jumpHeight}px` } as CSSProperties}>
+              <div className="hello-spin">
+                <button
+                  ref={face}
+                  type="button"
+                  tabIndex={-1}
+                  aria-hidden
+                  onClick={tickle}
+                  className={`hello-face block rounded-full ${ms === null ? "opacity-0" : ""}`}
+                  style={{ "--ex": `${look.x}px`, "--ey": `${look.y}px` } as CSSProperties}
+                  data-hello={ms === null ? "wartet" : "laeuft"}
+                >
+                  <BegleitungAvatar size={132} color={color} zustand={zustand} groesse="gross" stabil />
+                </button>
+              </div>
+            </div>
+            {landed &&
+              SPARKS.map((p, i) => <span key={`s${i}`} className="hello-spark" style={{ "--dx": `${p.dx}px`, "--dy": `${p.dy}px`, background: p.tone } as CSSProperties} aria-hidden />)}
+            {bubbleText && (
+              <span
+                key={tap ? `b${tap.n}` : "bereit"}
+                className={`absolute whitespace-nowrap rounded-card bg-surface px-3 py-1.5 text-[15px] font-extrabold shadow-card ${tap ? "hello-bubble -top-3 left-1/2 text-ink" : "hello-ready -top-4 left-[58%] text-accent-strong"}`}
+                role="status"
+                aria-label={helperMessage(null, bubbleText)}
+                data-hello-blase
+              >
+                {bubbleText}
+              </span>
             )}
+            {tap &&
+              [0, 1, 2].map((i) => (
+                <span key={`h${tap.n}-${i}`} className="hello-heart pointer-events-none absolute text-lg" style={{ left: `${18 + i * 28}%`, top: "10%", animationDelay: `${i * 110}ms`, color }} aria-hidden>
+                  ♥
+                </span>
+              ))}
           </div>
           <h1 tabIndex={-1} className="mt-8 min-h-[38px] text-[31px] font-extrabold leading-tight tracking-tight outline-none" aria-label={title}>
             <span aria-hidden>
@@ -175,7 +230,7 @@ export function HelloScreen() {
           <p className={`mt-2 max-w-[19rem] text-[16px] font-medium leading-snug text-muted ${show(T.sub)}`}>Erzähl mir einfach, was ansteht. Ich sortiere für euch.</p>
         </div>
         <div className={`flex w-full flex-col items-center gap-1 ${show(T.buttons)}`}>
-          <button type="button" onClick={() => setAsking(true)} className="h-14 w-full rounded-field text-[17px] font-bold text-on-color active:scale-[0.98]" style={{ backgroundColor: color }}>
+          <button key={`los${jump.nudge}`} type="button" onClick={() => setAsking(true)} className={`h-14 w-full rounded-field text-[17px] font-bold text-on-color active:scale-[0.98] ${jump.nudge ? "hello-nudge" : ""}`} style={{ backgroundColor: color }}>
             Los geht’s
           </button>
           <Link href="/profil/daten" className="hit inline-flex h-11 items-center gap-1 whitespace-nowrap text-[clamp(12px,3.6vw,14px)] font-semibold text-muted">
@@ -183,7 +238,7 @@ export function HelloScreen() {
           </Link>
           <div className="mt-3 flex flex-col items-center gap-1 opacity-60" data-hello-marke>
             <BrandMark height={22} />
-            <span className="text-xs font-semibold text-muted">möglich gemacht von KARAMBA</span>
+            <span className="text-xs font-semibold text-muted">Gemacht in Eutin · von KARAMBA Eis</span>
           </div>
         </div>
       </div>

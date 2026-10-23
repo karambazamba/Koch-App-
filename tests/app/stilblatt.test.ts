@@ -3,7 +3,8 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { celebrationText, statusLine } from "@/lib/sport/model";
 import { pageLabel } from "@/lib/core/pageLabel";
-import { jetztTopics, type JetztInput } from "@/lib/heute/jetztTopics";
+import { jetztTopics } from "@/lib/heute/jetztTopics";
+import { jetztInput } from "../helpers";
 
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((f) => {
@@ -74,11 +75,12 @@ describe("Ohne Druck: Sport ohne Zähler und Serien", () => {
     expect(celebrationText("Felix")).toBe("Stark, Felix! Dein Wochenziel ist geschafft.");
   });
 
-  it("Jetzt-Karte: Sport nur als heute geplantes Training, ohne „noch N“", () => {
-    const base = { minutes: 10 * 60, today: "2026-10-21", calm: false, upcoming: [], tomorrow: { label: "Morgen · Do", date: "2026-10-22", items: [] }, urgent: [], dueToday: [], allDone: false, pin: null, weatherTip: null, weatherNow: null, dish: null, dinnerFree: false, birthdays: [], shop: null, timer: null, cookingStep: null, reminder: null, pause: null, leisure: null, tip: null, demo: false, firstTiles: [], weights: {}, hidden: [] } as unknown as JetztInput;
-    const t = jetztTopics({ ...base, sport: { today: "Heute 18:00 Laufen" } }).find((x) => x.kind === "sport");
-    expect(t?.title).toBe("Heute 18:00 Laufen");
-    expect(jetztTopics({ ...base, sport: null }).some((x) => x.kind === "sport")).toBe(false);
+  it("Jetzt-Karte: Sport nur als Packliste fürs heute geplante Training, ohne „noch N“", () => {
+    const sport = { key: "s", title: "Laufen", time: "18:00", pack: ["Laufschuhe", "Kopfhörer"] };
+    const t = jetztTopics(jetztInput(10 * 60, { sport })).find((x) => x.kind === "packliste");
+    expect(t?.title).toBe("Laufschuhe einpacken?");
+    expect(t?.detail).not.toMatch(/noch \d|\d+ von/);
+    expect(jetztTopics(jetztInput(10 * 60)).some((x) => x.kind === "packliste")).toBe(false);
   });
 });
 
@@ -117,9 +119,9 @@ describe("v0.31: Kalender, Essen, Rezepte", () => {
   });
 
   it("„auf die Liste“ statt „noch:“ – auch in der Jetzt-Karte", () => {
-    const base = { minutes: 16 * 60, today: "2026-10-21", calm: false, upcoming: [], tomorrow: { label: "Morgen · Do", date: "2026-10-22", items: [] }, urgent: [], dueToday: [], allDone: false, pin: null, weatherTip: null, weatherNow: null, dinnerFree: false, birthdays: [], sport: null, shop: null, timer: null, cookingStep: null, reminder: null, pause: null, leisure: null, tip: null, demo: false, firstTiles: [], weights: {}, hidden: [] } as unknown as JetztInput;
-    const t = jetztTopics({ ...base, dish: { name: "Pasta", clock: "18:30", minutes: 25, ready: false, missing: ["Basilikum"] } })[0];
-    expect(t.title).toBe("Pasta – auf die Liste: Basilikum");
+    const t = jetztTopics(jetztInput(17 * 60 + 40, { dish: { name: "Pasta", clock: "18:30", minutes: 25, ready: false, missing: ["Basilikum"] } }))[0];
+    expect(t.kind).toBe("kochstart");
+    expect(t.detail).toBe("auf die Liste: Basilikum");
   });
 });
 

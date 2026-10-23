@@ -3,6 +3,7 @@
 import { setNowForTests } from "@/lib/core/now";
 import { createEntry } from "@/lib/core/entries";
 import type { AufgabeData, CalendarEntry, TerminData } from "@/lib/kalender/model";
+import type { JetztInput, JetztTermin } from "@/lib/heute/jetztTopics";
 
 /** Feste Zeit (Europe/Berlin), z. B. "2026-10-20T09:00" */
 export function at(iso: string) {
@@ -116,3 +117,41 @@ export const termin = (data: Partial<TerminData> & { title: string; date: string
 /** Aufgabe (Familie, ohne Erinnerung) */
 export const aufgabe = (data: Partial<AufgabeData> & { title: string }, opts: EntryOpts = "familie") =>
   createEntry("aufgabe", { reminder: "aus", ...data }, entryOpts(opts)) as CalendarEntry;
+
+/** Leere Eingabe für die Jetzt-Karte (Mi 21.10.2026), alle Kacheln des Standards sichtbar */
+export function jetztInput(minutes: number, extra: Partial<JetztInput> = {}): JetztInput {
+  return {
+    minutes,
+    today: "2026-10-21",
+    calm: false,
+    upcoming: [],
+    tomorrow: { label: "Morgen · Do", date: "2026-10-22", items: [] },
+    urgent: [],
+    dueToday: [],
+    pin: null,
+    planWeather: null,
+    dish: null,
+    dinnerFree: false,
+    leisure: null,
+    tip: null,
+    region: null,
+    birthdays: [],
+    sport: null,
+    shop: null,
+    timer: null,
+    cookingStep: null,
+    reminder: null,
+    pause: null,
+    kids: false,
+    weekCheck: null,
+    demo: false,
+    tiles: ["pinnwand", "wetter", "termine", "aufgaben", "essen", "einkauf", "spendentopf"],
+    tomorrowTiles: [],
+    weights: {},
+    hidden: [],
+    ...extra,
+  };
+}
+
+/** Termin für die Jetzt-Karte */
+export const jetztTermin = (title: string, time: string, extra: Partial<JetztTermin> = {}, date = "2026-10-21"): JetztTermin => ({ key: `${title}@${date}`, title, time, date, ...extra });

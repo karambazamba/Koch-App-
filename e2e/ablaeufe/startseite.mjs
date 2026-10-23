@@ -74,3 +74,77 @@ export const muetzeBeispielTag = async (page, check) => {
   await page.waitForTimeout(900);
   check(!(await hat(page).count()), "echtes Profil an Tag 1: keine Mütze");
 };
+
+/**
+ * Jetzt-Karte (Tafel 60): Termin heute mit Notiz → „Versichertenkarte
+ * einpacken?“ mit EINEM Knopf „Erledigt“ → kurz ✓, dann weich das nächste
+ * Thema; kein ✕, keine „Passt sich …“-Zeile, nirgends „°“.
+ */
+export const jetztKarte = async (page, check) => {
+  await hello(page);
+  await seedFamily(page);
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem("wasgibts.eintraege"));
+    raw.entries = raw.entries.map((e) => (e.id === "t1" ? { ...e, data: { ...e.data, note: "Versichertenkarte einpacken" } } : e));
+    localStorage.setItem("wasgibts.eintraege", JSON.stringify(raw));
+    // Pinnwand gelesen – sonst steht „Neu von der Familie“ vorn
+    localStorage.setItem("wasgibts.pinnwand", JSON.stringify({ version: 2, messages: [], memos: [] }));
+  });
+  await page.reload();
+  const card = page.locator("[data-jetzt]");
+  await card.waitFor({ timeout: 5000 });
+  await page.waitForTimeout(1500);
+  const text = await card.innerText();
+  check(/Versichertenkarte einpacken\?/.test(text) && /Heute 16:15 · Zahnarzt/.test(text), `Vorbereiten mit Notiz (${text.replace(/\s+/g, " ").slice(0, 80)})`);
+  check(!/°/.test(text) && !/Passt sich/.test(text), "kein „°“, keine „Passt sich …“-Zeile");
+  check(!(await card.getByRole("button", { name: "Für heute ausblenden" }).count()), "kein ✕");
+  const done = card.getByRole("button", { name: /^Erledigt: / });
+  check(await done.isVisible(), "ein Knopf „Erledigt“");
+  await done.click();
+  check(await card.getByRole("button", { name: "Erledigt" }).isVisible(), "kurz ✓");
+  await page.waitForTimeout(1200);
+  const after = await card.innerText();
+  check(!/Versichertenkarte/.test(after), `danach das nächste Thema (${after.replace(/\s+/g, " ").slice(0, 60)})`);
+  await page.reload();
+  await card.waitFor({ timeout: 5000 });
+  await page.waitForTimeout(1200);
+  check(!/Versichertenkarte/.test(await card.innerText()), "erledigt bleibt heute weg");
+};
+
+/**
+ * Hallo-Bildschirm: nach 2 s springt Mia einmal vor Freude und sagt „Ich bin
+ * bereit!“ (Sprechblase ganz im Bild – auch auf dem iPhone SE); Antippen →
+ * „Hihi, kitzelig!“ (im Sprung erst danach); unten „Gemacht in Eutin · von
+ * KARAMBA Eis“.
+ */
+export const halloSprung = async (page, check, device) => {
+  // Bewegung reduzieren: kein Sprung, nur die Sprechblase
+  await page.goto(BASE);
+  await page.locator('[data-hello="laeuft"]').waitFor({ timeout: 8000 });
+  await page.getByText("Ich bin bereit!").waitFor({ timeout: 4000 }).catch(() => {});
+  check(await page.getByText("Ich bin bereit!").isVisible(), "Bewegung reduzieren: Sprechblase kommt");
+  check((await page.locator('.hello-jump[data-sprung="an"]').count()) === 0, "Bewegung reduzieren: kein Sprung");
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  const sizes = [null, { width: 320, height: 568 }];
+  for (const size of sizes) {
+    if (size) await page.setViewportSize(size);
+    await page.goto(BASE);
+    await page.locator('[data-hello="laeuft"]').waitFor({ timeout: 8000 });
+    const where = size ? "iPhone SE" : device;
+    check(await page.locator(".hello-jump[data-sprung]").count() === 0, `${where}: vor 2 s noch kein Sprung`);
+    await page.waitForTimeout(2300);
+    check((await page.locator('.hello-jump[data-sprung="an"]').count()) === 1, `${where}: Sprung läuft`);
+    const bubble = page.getByText("Ich bin bereit!");
+    await bubble.waitFor({ timeout: 2500 });
+    const box = await bubble.boundingBox();
+    const vw = page.viewportSize().width;
+    check(Boolean(box && box.x >= 0 && box.x + box.width <= vw && box.y >= 0), `${where}: „Ich bin bereit!“ ganz im Bild (${box ? `${Math.round(box.x)}–${Math.round(box.x + box.width)} von ${vw}` : "fehlt"})`);
+    check(await page.getByText("Gemacht in Eutin · von KARAMBA Eis").isVisible(), `${where}: unten „Gemacht in Eutin · von KARAMBA Eis“`);
+    // Antippen während des Sprungs: erst danach kitzelig
+    await page.locator("[data-hello]").click({ force: true });
+    check(!(await page.getByText("Hihi, kitzelig!").count()), `${where}: im Sprung noch nicht`);
+    await page.getByText("Hihi, kitzelig!").waitFor({ timeout: 3500 }).catch(() => {});
+    check(await page.getByText("Hihi, kitzelig!").isVisible(), `${where}: danach „Hihi, kitzelig!“`);
+    check((await page.locator('.hello-jump[data-kitzel="an"]').count()) === 1, `${where}: wackelt kitzelig`);
+  }
+};

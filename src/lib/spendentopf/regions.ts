@@ -27,7 +27,10 @@ export type Region = {
 
 export type PotProject = { id: string; region_id: string; jahr: number; titel: string; icon: "ball" | "book" | "flame" | "heart" | "tree"; kurztext: string; stimmen: number };
 
-const KARAMBA = "KARAMBA";
+const KARAMBA = "KARAMBA Eis";
+
+/** Pate ist KARAMBA Eis (Name in KARAMBA-Pink) – auch alte Daten mit kurzem Namen */
+export const isKarambaPate = (name: string | null) => Boolean(name && name.toUpperCase().startsWith(KARAMBA.split(" ")[0]));
 export const PATE_MAIL = "mia@karamba-eis.de";
 /** Wohin Beiträge gehen, solange die eigene Region noch keinen Topf hat */
 export const FALLBACK_REGION = "ostholstein";
