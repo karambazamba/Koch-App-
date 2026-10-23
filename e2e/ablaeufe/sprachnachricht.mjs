@@ -245,7 +245,7 @@ export const aufnahmeLeiste = async (_page, check, device) => {
       await page.waitForTimeout(1000);
       const tile = page.getByRole("region", { name: "Pinnwand" });
       await tile.evaluate((el) => el.scrollIntoView({ block: "center" }));
-      check(await tile.getByText("Sprachnachricht", { exact: true }).isVisible(), `${d}: unten „Sprachnachricht“`);
+      check(await tile.getByText(/^Sprach\u00ad?nachricht$/).isVisible(), `${d}: unten „Sprachnachricht“`);
       check(!(await tile.getByText(/＋ = schreiben/).count()), `${d}: alter Hinweis weg`);
       const before = await memoCount(page);
       const mic = await tile.getByRole("button", { name: "Aufnahme starten" }).boundingBox();

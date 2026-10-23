@@ -29,7 +29,7 @@ describe("Aufnahme-Leiste in der Kachel", () => {
   });
 
   it("in Ruhe unten nur „Sprachnachricht“ – der alte Hinweis ist weg; Schild „schreiben“ beim ersten Mal", () => {
-    expect(tile).toMatch(/hyphens-auto[^>]*>Sprachnachricht<\/span>/);
+    expect(tile).toMatch(/>Sprach&shy;nachricht<\/span>/);
     expect(tile).toMatch(/\[&>\*:first-child\]:pr-16/);
     expect(tile).not.toContain("＋ = schreiben");
     expect(tile).toMatch(/hintSeen === false && \(\s*<span className="pointer-events-none absolute/);

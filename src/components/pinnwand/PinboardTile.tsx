@@ -131,7 +131,7 @@ export function PinboardTile({ size = "S", me, demo = false }: { size?: TileSize
                 <Check className="h-3.5 w-3.5" strokeWidth={2.75} aria-hidden /> Gesendet
               </span>
             ) : (
-              <span className="min-w-0 hyphens-auto break-words text-[12px] font-semibold leading-tight text-tile-accent" lang="de">Sprachnachricht</span>
+              <span className="min-w-0 text-[12px] font-semibold leading-tight text-tile-accent">Sprach&shy;nachricht</span>
             )}
             <MemoMic recorder={recorder} size={34} tapOnly />
           </div>
