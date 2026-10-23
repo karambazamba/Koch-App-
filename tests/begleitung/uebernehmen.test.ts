@@ -132,7 +132,7 @@ describe("commitOps", () => {
     ];
     const r = m.client.commitOps(daten(), ops, alle(ops), "");
     expect(r.notes[0]).toBe("Die Sport-Kachel steht jetzt auf der Startseite.");
-    expect(r.notes[1]).toMatch(/^Ich heiße jetzt Theo, meine Stimme ist männlich, mein Gesicht ist nachtblau/);
+    expect(r.notes[1]).toMatch(/^Ich heiße jetzt Theo, meine Stimme ist männlich –/);
     expect(m.sport.loadSport()).toMatchObject({ goal: 4, trainings: [{ data: { sport: "laufen" } }] });
     expect(m.jetzt.loadJetzt().on).toBe(false);
     expect(m.speech.loadSpeechSettings().voice).toBe("");

@@ -117,12 +117,12 @@ describe("Beispiel-Tag: Tagesplan", () => {
     const morning = demo.demoEntries("2026-10-20", 9 * 60, "Mia");
     expect(morning.tomorrow).toBe(false);
     const termine = morning.entries.filter((e) => e.typ === "termin");
-    expect(termine[0].data.title).toBe("Kaffeepause");
+    expect(termine[0].data.title).toBe("Telefonat Versicherung");
     expect(morning.entries.find((e) => e.id === "beispiel:a2")!.data.title).toBe("Mia etwas fragen");
     const late = demo.demoEntries("2026-10-20", 21 * 60, "Theo");
     expect(late.tomorrow).toBe(true);
     expect(late.date).toBe("2026-10-21");
-    expect(late.entries.filter((e) => e.typ === "termin")).toHaveLength(9);
+    expect(late.entries.filter((e) => e.typ === "termin")).toHaveLength(6);
     // Wochen-Aufgaben am Montag dieser Woche
     expect(late.entries.find((e) => e.id === "beispiel:a4")!.data).toMatchObject({ week: "2026-10-19" });
     expect(demo.DEMO_SHOPS.map((s) => s.shop)).toEqual(["REWE", "EDEKA", "Lidl"]);

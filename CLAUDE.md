@@ -8,13 +8,14 @@ Begleitung ist die Assistentin für Termine, Aufgaben, Essen und Einkauf – man
 gibt ihr Dinge ab wie einer guten Haushaltshilfe, mit der man ganz natürlich
 spricht. Sie legt an und räumt wieder weg.
 
-Die Begleitung heißt nicht fest: Name, Art (Assistentin/Assistent), Stimme und
-Lieblingsfarbe sind Einstellungen; Standard Mia (Orange), Auswahl Mia / Theo
-(Nachtblau). In Aufträgen meint „Lotte“ oder „Mia“ immer die gewählte
-Begleitung. Namen nie hart codieren (`helperName()`, `helperTitle()`,
-`helperMessage()`). Nur ein Design (Warm) mit Hell/Dunkel/Automatisch; die
-App-Farben sind fest, nur die Lieblingsfarbe (10 Farben) ist wählbar – sie gilt
-für die Begleitung UND das App-Icon.
+Die Begleitung heißt nicht fest: Name, Art (Assistentin/Assistent) und Stimme
+sind Einstellungen; Standard Mia, Auswahl Mia / Theo. In Aufträgen meint
+„Lotte“ oder „Mia“ immer die gewählte Begleitung. Namen nie hart codieren
+(`helperName()`, `helperTitle()`, `helperMessage()`). Mia und App-Icon immer
+Orange (Marke). EIN Design (Warm) mit Hell/Dunkel/Automatisch. Einzige Wahl:
+Startseite „Farbig“ oder „Schlicht“ – gleiche App-Farben, nur die
+Kachel-Flächen (Profil `look`). Die frühere Lieblingsfarbe ist „Meine Farbe im
+Kalender“ (Profil `calendarColor`).
 
 ## 1. Ruhig und leer
 - Drei Seiten: Kalender · Heute · Essen (Heute ist die Startseite), Wechsel per
@@ -38,7 +39,8 @@ für die Begleitung UND das App-Icon.
 - Gesten: Tippen = Eintrag öffnen, lange Drücken = Startseite bearbeiten,
   Wischen = Seite wechseln.
 - Erster Start = ruhiger Hallo-Bildschirm („Hallo, ich bin Mia.“, „Los
-  geht’s“), danach sofort die Startseite mit Beispiel-Tag – keine Fragen.
+  geht’s“), danach höchstens EINE Frage (Look „Farbig“/„Schlicht“) mit
+  Standard und Überspringen, dann die Startseite mit Beispiel-Tag.
 - Kein Rückgängig beim Hinzufügen; nur echtes Löschen zeigt „Gelöscht ·
   Rückgängig“ (3 s). Typografischer Apostroph überall („Was gibt’s?“).
 
@@ -103,8 +105,11 @@ für die Begleitung UND das App-Icon.
   „Konto löschen“ in Daten & App.
 
 ## 7. Design
-- Warmes Off-White, Pastell-Kacheln auf der Startseite (feste Palette je
-  Kachel, Tokens `--app-tile-<id>`/`-ac`), weiße Karten auf Unterseiten, EINE
+- Warmes Off-White, Kacheln auf der Startseite im Look „Farbig“ (Pastell,
+  feste Palette je Kachel, gleiche Sättigung, Tokens `--app-tile-<id>`/`-ac`,
+  Innen-Kärtchen weiß, Wetter als Himmel `--app-sky-*`) oder „Schlicht“
+  (weiß mit feinem Rand, Farbe nur in Überschrift, Symbol, Uhrzeit,
+  Termin-Strich; `data-look` am `<html>`), weiße Karten auf Unterseiten, EINE
   Akzentfarbe (Orange) nur für Knöpfe und die Begleitung, Pastell nie für
   Knöpfe. Linien-Icons (lucide), Emojis nur als Inhalt (Gerichte, Notizen),
   nie in Knöpfen, Chips, Kacheln oder Termin-Titeln.
@@ -123,9 +128,10 @@ für die Begleitung UND das App-Icon.
 - Ein Fenster für alles (`ui/Sheet.tsx`); jedes Fenster schließt per ✕,
   Danebentippen, Runterwischen und Zurück.
 - Avatar: EINE Komponente `BegleitungAvatar` (Sprechblase mit mittiger Spitze,
-  senkrechte Augen, dezentes Lächeln) in der Lieblingsfarbe; Zustände setzt die
+  senkrechte Augen, dezentes Lächeln) immer in Orange; Zustände setzt die
   App automatisch. App-Icon: einzige Quelle `scripts/generate-icons.mjs`
-  (`npm run icons`, je Farbe ein Satz); Dateien tragen `ICON_VERSION` im Namen
+  (`npm run icons`; angeboten wird nur Orange, die übrigen Farbsätze bleiben
+  nur für ältere Installationen); Dateien tragen `ICON_VERSION` im Namen
   (Pfade nur über `icon()`/`iconFor()`); neues Icon = Version erhöhen, Liste in
   `public/sw.js` und `CACHE_VERSION` anpassen. Manifest-Farbe `BRAND_COLOR`.
 - Marke Mia: Logo nur über `BrandMark` (`ui/`) bzw. die Dateien in

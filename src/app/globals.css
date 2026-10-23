@@ -181,36 +181,54 @@
   --app-shadow-float: 0 8px 22px rgb(31 27 22 / 0.09), 0 1px 3px rgb(31 27 22 / 0.05);
   --app-shadow-sheet: 0 -8px 32px rgb(31 27 22 / 0.12);
   --app-shadow-bar: 0 8px 24px rgb(60 40 20 / 0.14);
-  /* Pastell-Kacheln: Fläche + Akzent (Label, Icon, Plus) */
-  --app-tile-pinnwand: #fbeef1;
-  --app-tile-pinnwand-ac: #b24a66;
-  --app-tile-wetter: #fff5d6;
-  --app-tile-wetter-ac: #9a7410;
-  --app-tile-termine: #edf2fc;
-  --app-tile-termine-ac: #3f5fbf;
-  --app-tile-aufgaben: #e9f5ee;
-  --app-tile-aufgaben-ac: #2b8a5e;
-  --app-tile-essen: #fdeee4;
-  --app-tile-essen-ac: #c4531a;
-  --app-tile-einkauf: #eef4e6;
-  --app-tile-einkauf-ac: #5e7f2e;
-  --app-tile-tipps: #f3eefb;
-  --app-tile-tipps-ac: #6b45b5;
-  --app-tile-sport: #e6f4ec;
-  --app-tile-sport-ac: #2e8b5f;
-  --app-tile-vorrat: #e8f4f4;
-  --app-tile-vorrat-ac: #2f7d80;
-  --app-tile-timer: #f5f0e8;
-  --app-tile-timer-ac: #7a6a55;
-  --app-tile-notizen: #fff8e5;
-  --app-tile-notizen-ac: #9a7410;
-  --app-tile-spendentopf: #fbf0d9;
-  --app-tile-spendentopf-ac: #a8730c;
+  /* Pastell-Kacheln (Look „Farbig“, v0.64: eine Stufe kräftiger, alle mit
+     gleicher Sättigung): Fläche + dunkle Tonfarbe (Label, Icon, Uhrzeit, Plus) */
+  --app-tile-pinnwand: #f4d9e0;
+  --app-tile-pinnwand-ac: #8e2f4f;
+  --app-tile-wetter: #f4e8c4;
+  --app-tile-wetter-ac: #6e5208;
+  --app-tile-termine: #dce2f7;
+  --app-tile-termine-ac: #2b4596;
+  --app-tile-aufgaben: #d6ebdd;
+  --app-tile-aufgaben-ac: #1d6340;
+  --app-tile-essen: #f6dccb;
+  --app-tile-essen-ac: #8f3a0e;
+  --app-tile-einkauf: #e0ebd2;
+  --app-tile-einkauf-ac: #3f5a1a;
+  --app-tile-tipps: #e4dcf5;
+  --app-tile-tipps-ac: #52309a;
+  --app-tile-sport: #d4eadf;
+  --app-tile-sport-ac: #1c6342;
+  --app-tile-vorrat: #d3e8e8;
+  --app-tile-vorrat-ac: #1c5f61;
+  --app-tile-timer: #e9e1d5;
+  --app-tile-timer-ac: #5a4c3c;
+  --app-tile-notizen: #f4e9c6;
+  --app-tile-notizen-ac: #6e5208;
+  --app-tile-spendentopf: #f2e2c0;
+  --app-tile-spendentopf-ac: #7a5306;
+  /* Wetter-Kachel als Himmel (Look „Farbig“): Verlauf je Wetterlage */
+  --app-sky-sonnig-a: #cfe6fb;
+  --app-sky-sonnig-b: #fde9b0;
+  --app-sky-bewoelkt-a: #d5dde8;
+  --app-sky-bewoelkt-b: #e9edf3;
+  --app-sky-regen-a: #b9c6d6;
+  --app-sky-regen-b: #d6dee8;
+  --app-sky-schnee-a: #eef3f9;
+  --app-sky-schnee-b: #ffffff;
+  --app-sky-gewitter-a: #c6c2dc;
+  --app-sky-gewitter-b: #dcd9ea;
+  --app-sky-nacht-a: #1d2a52;
+  --app-sky-nacht-b: #3a4a7a;
+  --app-sky-ink: #1f1b16;
+  --app-sky-nacht-ink: #ffffff;
+  /* Look „Schlicht“: weiße Kacheln mit feinem Rand, Innen-Kärtchen sehr hell */
+  --app-schlicht-inner: #f9f6f1;
   --app-karamba: #d6336c;
   /* Tipps aus der Region: Lila (nie für Termine) */
   --app-tipp: #8a63d2;
   --app-tipp-soft: #f1ecf9;
-  --app-tile-inner: rgb(255 255 255 / 0.72);
+  --app-tile-inner: #ffffff;
   --app-jetzt-from: #fff3e8;
   --app-jetzt-to: #fde2cd;
   --app-jetzt-hint: #c98e6e;
@@ -314,6 +332,21 @@
   --app-tipp: #b497f0;
   --app-tipp-soft: #2a2238;
   --app-tile-inner: rgb(255 255 255 / 0.06);
+  --app-sky-sonnig-a: #233a5c;
+  --app-sky-sonnig-b: #4a4528;
+  --app-sky-bewoelkt-a: #2a3140;
+  --app-sky-bewoelkt-b: #343c4c;
+  --app-sky-regen-a: #1f2a3a;
+  --app-sky-regen-b: #2c3a4e;
+  --app-sky-schnee-a: #2e3542;
+  --app-sky-schnee-b: #3a4252;
+  --app-sky-gewitter-a: #272338;
+  --app-sky-gewitter-b: #363049;
+  --app-sky-nacht-a: #121a33;
+  --app-sky-nacht-b: #23305a;
+  --app-sky-ink: #f2eee9;
+  --app-sky-nacht-ink: #ffffff;
+  --app-schlicht-inner: #1d2024;
   --app-jetzt-from: #3b2a1f;
   --app-jetzt-to: #2b211b;
   --app-jetzt-hint: #c9a088;
@@ -418,6 +451,21 @@
     --app-tipp: #b497f0;
     --app-tipp-soft: #2a2238;
     --app-tile-inner: rgb(255 255 255 / 0.06);
+    --app-sky-sonnig-a: #233a5c;
+    --app-sky-sonnig-b: #4a4528;
+    --app-sky-bewoelkt-a: #2a3140;
+    --app-sky-bewoelkt-b: #343c4c;
+    --app-sky-regen-a: #1f2a3a;
+    --app-sky-regen-b: #2c3a4e;
+    --app-sky-schnee-a: #2e3542;
+    --app-sky-schnee-b: #3a4252;
+    --app-sky-gewitter-a: #272338;
+    --app-sky-gewitter-b: #363049;
+    --app-sky-nacht-a: #121a33;
+    --app-sky-nacht-b: #23305a;
+    --app-sky-ink: #f2eee9;
+    --app-sky-nacht-ink: #ffffff;
+    --app-schlicht-inner: #1d2024;
     --app-jetzt-from: #3b2a1f;
     --app-jetzt-to: #2b211b;
     --app-jetzt-hint: #c9a088;
@@ -828,6 +876,27 @@ body {
 [data-tone="timer"] { --tile-bg: var(--app-tile-timer); --tile-ac: var(--app-tile-timer-ac); }
 [data-tone="notizen"] { --tile-bg: var(--app-tile-notizen); --tile-ac: var(--app-tile-notizen-ac); }
 [data-tone="spendentopf"] { --tile-bg: var(--app-tile-spendentopf); --tile-ac: var(--app-tile-spendentopf-ac); }
+
+/* Zwei Looks der Startseite (Profil `look`, data-look am <html>):
+   „Farbig“ = Pastell-Flächen (oben), Wetter als Himmel;
+   „Schlicht“ = weiße Kacheln mit feinem Rand, Farbe nur in Überschrift,
+   Symbol, Uhrzeit und Termin-Strich; Wetter weiß, nur das Symbol farbig. */
+[data-look="farbig"] [data-tone="wetter"] [data-wx], [data-look="farbig"] [data-tone="wetter"][data-wx] {
+  background: linear-gradient(160deg, var(--sky-a, var(--app-sky-bewoelkt-a)), var(--sky-b, var(--app-sky-bewoelkt-b)));
+  color: var(--sky-ink, var(--app-sky-ink));
+}
+[data-look="farbig"] [data-wx="sonnig"] { --sky-a: var(--app-sky-sonnig-a); --sky-b: var(--app-sky-sonnig-b); }
+[data-look="farbig"] [data-wx="bewoelkt"] { --sky-a: var(--app-sky-bewoelkt-a); --sky-b: var(--app-sky-bewoelkt-b); }
+[data-look="farbig"] [data-wx="regen"] { --sky-a: var(--app-sky-regen-a); --sky-b: var(--app-sky-regen-b); }
+[data-look="farbig"] [data-wx="schnee"] { --sky-a: var(--app-sky-schnee-a); --sky-b: var(--app-sky-schnee-b); }
+[data-look="farbig"] [data-wx="gewitter"] { --sky-a: var(--app-sky-gewitter-a); --sky-b: var(--app-sky-gewitter-b); }
+[data-look="farbig"] [data-wx][data-nacht] { --sky-a: var(--app-sky-nacht-a); --sky-b: var(--app-sky-nacht-b); --sky-ink: var(--app-sky-nacht-ink); }
+[data-look="farbig"] [data-wx][data-nacht] .text-muted, [data-look="farbig"] [data-wx][data-nacht] .text-tile-label { color: rgb(255 255 255 / 0.82); }
+[data-look="schlicht"] [data-tone] {
+  --tile-bg: var(--app-surface);
+  --tile-inner: var(--app-schlicht-inner);
+}
+[data-look="schlicht"] .bg-tile { box-shadow: inset 0 0 0 1px var(--app-line); }
 
 /* Neu hinzugefügte Kachel leuchtet kurz sanft auf (Bearbeiten-Modus) */
 @keyframes tile-glow {

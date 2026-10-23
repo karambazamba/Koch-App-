@@ -54,7 +54,7 @@ describe("Daten sichern und wiederherstellen", () => {
 describe("Profil-Migration", () => {
   it("altes Profil (v1) wird zur aktuellen Version, Familie bleibt", () => {
     const p = migrateProfile({ version: 1, adults: 1, kids: 1, persons: [{ id: "a", role: "erwachsen", name: "Lisa" }, { id: "k", role: "kind", name: "Ella" }], warmMeal: "abends" });
-    expect(p?.version).toBe(20);
+    expect(p?.version).toBe(21);
     expect(p?.persons.map((x) => x.name)).toEqual(["Lisa", "Ella"]);
     expect(p?.householdType).toBe("familie");
     expect(p?.warmMeal.weekday).toBe("abends");

@@ -3,7 +3,7 @@
 // Farben selbst stehen als CSS-Variablen in globals.css; hier nur das
 // Umschalten und die Farbe der Statusleiste (theme-color).
 
-import type { AppTheme } from "@/lib/einstellungen/profile";
+import type { AppLook, AppTheme } from "@/lib/einstellungen/profile";
 
 /** Hintergrundfarbe je Ansicht – für die Statusleiste und die Vorschau-Karten */
 export const THEME_COLORS: Record<Exclude<AppTheme, "auto">, { background: string; surface: string; accent: string; ink: string; muted: string; line: string }> = {
@@ -17,6 +17,11 @@ function resolvedTheme(theme: AppTheme): Exclude<AppTheme, "auto"> {
   return typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches ? "nacht" : "warm";
 }
 
+/** Look der Startseite (data-look am <html>): Farben stehen in globals.css */
+export function applyLook(look: AppLook) {
+  document.documentElement.dataset.look = look;
+}
+
 export function applyTheme(theme: AppTheme) {
   const root = document.documentElement;
   root.dataset.theme = theme;
@@ -28,4 +33,4 @@ export function applyTheme(theme: AppTheme) {
  * Läuft vor dem ersten Zeichnen (Inline-Skript im <head>), damit die Seite
  * nicht kurz in der falschen Ansicht aufblitzt. Liest das Profil direkt.
  */
-export const THEME_BOOT_SCRIPT = `(function(){try{var p=JSON.parse(localStorage.getItem("familienkueche.haushaltsprofil")||"null");var t=p&&p.theme;if(t==="frisch")t="auto";if(t==="nacht"||t==="auto"||t==="warm")document.documentElement.dataset.theme=t;else if(p)document.documentElement.dataset.theme="warm";}catch(e){}})();`;
+export const THEME_BOOT_SCRIPT = `(function(){try{var p=JSON.parse(localStorage.getItem("familienkueche.haushaltsprofil")||"null");var t=p&&p.theme;if(t==="frisch")t="auto";if(t==="nacht"||t==="auto"||t==="warm")document.documentElement.dataset.theme=t;else if(p)document.documentElement.dataset.theme="warm";document.documentElement.dataset.look=p&&p.look==="schlicht"?"schlicht":"farbig";}catch(e){}})();`;

@@ -31,6 +31,8 @@ import { primeMicrophone } from "@/lib/begleitung/useSpeechInput";
 import { micState } from "@/lib/core/mic";
 import { showToast } from "@/lib/core/toast";
 import { startFresh } from "@/lib/einstellungen/welcomeStore";
+import { LookStep } from "@/components/einstellungen/aussehen/LookStep";
+import type { AppLook } from "@/lib/einstellungen/profile";
 import { expectReplace } from "@/lib/core/navigation";
 import { helloElapsed, markHelloShown, reducedMotion, setHelloElapsed, setHelloFlight } from "@/lib/core/hello";
 import type { AvatarZustand } from "@/lib/core/avatarState";
@@ -129,11 +131,13 @@ export function HelloScreen() {
   const show = (from: number) => (still ? "" : at >= from ? "hello-in" : "opacity-0");
 
   const tiles = useRef<HTMLDivElement>(null);
-  const start = () => {
+  // „Los geht’s“ → einmal der Look (Farbig/Schlicht), dann die Startseite
+  const [asking, setAsking] = useState(false);
+  const start = (look: AppLook = "farbig") => {
     const r = face.current?.getBoundingClientRect();
-    setHelloFlight(r ? { x: r.left, y: r.top, size: r.width } : null);
+    setHelloFlight(r && r.width ? { x: r.left, y: r.top, size: r.width } : null);
     if (!still) fadeOutGhost(tiles.current);
-    startFresh();
+    startFresh(look);
     if (path !== "/") {
       expectReplace();
       router.replace("/");
@@ -195,7 +199,7 @@ export function HelloScreen() {
           <p className={`mt-1 text-[15.5px] font-medium text-muted ${show(T.sub)}`}>Euer Alltag an einem Ort.</p>
         </div>
         <div className={`flex w-full flex-col items-center gap-1 ${show(T.buttons)}`}>
-          <button type="button" onClick={start} className="h-14 w-full rounded-field text-[17px] font-bold text-on-color active:scale-[0.98]" style={{ backgroundColor: color }}>
+          <button type="button" onClick={() => setAsking(true)} className="h-14 w-full rounded-field text-[17px] font-bold text-on-color active:scale-[0.98]" style={{ backgroundColor: color }}>
             Los geht’s
           </button>
           <Link href="/profil/daten" className="hit inline-flex h-11 items-center gap-1 whitespace-nowrap text-[clamp(12px,3.6vw,14px)] font-semibold text-muted">
@@ -213,6 +217,7 @@ export function HelloScreen() {
           </div>
         </div>
       </div>
+      {asking && <LookStep onDone={start} />}
     </main>
   );
 }

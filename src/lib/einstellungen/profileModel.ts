@@ -3,7 +3,7 @@
 // und Essen haben eigene Dateien; Speichern und Migration in profileStore.ts.
 
 import { EMPTY_BASES, type BaseCounts } from "@/lib/essen/bases";
-import { DEFAULT_HELPER, type HelperMode, type HelperSettings } from "@/lib/einstellungen/profileHelper";
+import { DEFAULT_HELPER, type AvatarColor, type HelperMode, type HelperSettings } from "@/lib/einstellungen/profileHelper";
 import type { HouseholdType } from "@/lib/einstellungen/profileHousehold";
 import type {
   CookingStyle,
@@ -86,7 +86,7 @@ export type MealClock = Record<MealTime, string>;
 export const DEFAULT_MEAL_CLOCK: MealClock = { mittags: "12:30", abends: "18:30" };
 
 export type HouseholdProfile = {
-  version: 20;
+  version: 21;
   householdName: string;
   adults: number;
   kids: number;
@@ -131,6 +131,10 @@ export type HouseholdProfile = {
   theme: AppTheme;
   /** Ansicht selbst gewählt (Profil v20) – sonst bleibt es bei Hell */
   themeSet: boolean;
+  /** Startseite „Farbig“ oder „Schlicht“ (Profil v21, Standard „farbig“) */
+  look: AppLook;
+  /** Meine Farbe im Kalender (Profil v21 – bis v20 die Lieblingsfarbe der Begleitung) */
+  calendarColor: AvatarColor;
   /** Wie oft sich Lotte meldet (Profil v15, Standard "normal") */
   helperMode: HelperMode;
   /** Darstellung (Profil v15, Standard "einfach") */
@@ -152,6 +156,14 @@ export type HouseholdProfile = {
  * Automatisch.
  */
 export type AppTheme = "auto" | "warm" | "nacht";
+
+/** Zwei Looks der Startseite: gleiche App, nur die Kachel-Flächen ändern sich */
+export type AppLook = "farbig" | "schlicht";
+
+export const APP_LOOKS: { value: AppLook; label: string; hint: string }[] = [
+  { value: "farbig", label: "Farbig", hint: "Farbige Kacheln" },
+  { value: "schlicht", label: "Schlicht", hint: "Helle Kacheln, Farbe als Akzent" },
+];
 
 export const APP_THEMES: { value: AppTheme; label: string; hint: string }[] = [
   { value: "auto", label: "Automatisch", hint: "Wie das Handy – hell oder dunkel" },
@@ -215,7 +227,7 @@ export function createPerson(role: PersonRole): Person {
 
 export function createEmptyProfile(): HouseholdProfile {
   return {
-    version: 20,
+    version: 21,
     householdName: "",
     adults: 2,
     kids: 1,
@@ -252,6 +264,8 @@ export function createEmptyProfile(): HouseholdProfile {
     kitchenMachine: "keine",
     theme: "warm",
     themeSet: false,
+    look: "farbig",
+    calendarColor: "orange",
     helperMode: "normal",
     display: "einfach",
     weekendIdeas: true,

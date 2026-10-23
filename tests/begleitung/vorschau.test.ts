@@ -205,7 +205,7 @@ describe("previewRows", () => {
     rufe(ctx, "notiz_loeschen", { id: wlan.id });
     rufe(ctx, "schnellnotiz_schreiben", { text: "Oma anrufen" });
     rufe(ctx, "pinnwand_schreiben", { text: "Bin um 20 Uhr da" });
-    rufe(ctx, "assistent_anpassen", { name: "Frieda", art: "assistentin", farbe: "lila" });
+    rufe(ctx, "assistent_anpassen", { name: "Frieda", art: "assistentin" });
     rufe(ctx, "jetzt_karte", { an: true });
     rufe(ctx, "sport_eintragen", { sportart: "laufen", minuten: 30, km: 5 });
     rufe(ctx, "sport_eintragen", { sportart: "yoga", minuten: 20, datum: "2026-10-20" });
@@ -236,7 +236,7 @@ describe("previewRows", () => {
         "Notizen|löschen|WLAN|gelöscht",
         "Schnellnotiz|✎ Schnellnotiz|-|+ Oma anrufen",
         "Pinnwand|📌 Pinnwand|-|Bin um 20 Uhr da",
-        "Begleitung|Ich|Mia|Frieda · Lila",
+        "Begleitung|Ich|Mia|Frieda",
         "Startseite|Jetzt-Karte|-|✨ an",
         "Sport|🏃 eintragen|-|Laufen · 30 Min · 5 km · heute",
         "Sport|🧘 eintragen|-|Yoga · 20 Min · Di 20.10.",

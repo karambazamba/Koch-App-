@@ -59,7 +59,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="de" data-theme="warm" className={`${jakarta.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="de" data-theme="warm" data-look="farbig" className={`${jakarta.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         {/* Ansicht vor dem ersten Zeichnen setzen (kein Aufblitzen) */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
