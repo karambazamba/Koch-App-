@@ -47,7 +47,7 @@ type EngineEvents = { onText?: (delta: string) => void; onRound?: () => void };
 
 export class AssistantInputError extends Error {}
 
-const OP_TYPES = new Set(["add_timer", "stop_timer", "stopwatch", "cook_step", "start_cooking", "set_jetzt", "set_helper", "set_household", "add_training", "set_sport_goal", "add_pin", "set_schnellnotiz", "upsert_note", "remove_note", "set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last", "set_persons", "set_pause", "app_command", "set_feature"]);
+const OP_TYPES = new Set(["add_timer", "stop_timer", "stopwatch", "cook_step", "start_cooking", "set_jetzt", "set_household", "add_training", "set_sport_goal", "add_pin", "set_schnellnotiz", "upsert_note", "remove_note", "set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last", "set_persons", "set_pause", "app_command", "set_feature"]);
 
 /** Anfrage prüfen und auf das Nötige kürzen */
 export function parseRequest(body: unknown): AssistantRequest {

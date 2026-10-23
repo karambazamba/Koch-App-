@@ -13,7 +13,7 @@ import { SportCelebration } from "@/components/sport/SportCelebration";
 import { SyncRunner } from "@/components/konten/SyncRunner";
 import { MicSheetHost } from "@/components/ui/MicPermission";
 import { THEME_BOOT_SCRIPT, THEME_COLORS } from "@/lib/core/theme";
-import { APP_NAME, APP_SHORT_NAME, icon } from "@/lib/core/app";
+import { APP_DESCRIPTION, APP_NAME, APP_SHORT_NAME, icon } from "@/lib/core/app";
 import "@/app/globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -24,11 +24,10 @@ const jakarta = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: {
     default: APP_NAME,
-    // Unterseiten setzen nur ihren eigenen Namen, z. B. "Wochenplan · Was gibt's?"
+    // Unterseiten setzen nur ihren eigenen Namen, z. B. "Wochenplan · Mia"
     template: `%s · ${APP_NAME}`,
   },
-  description:
-    "Deine Begleitung für den Familienalltag – Termine, Aufgaben, Essen und Einkauf.",
+  description: APP_DESCRIPTION,
   applicationName: APP_NAME,
   appleWebApp: {
     capable: true,

@@ -6,7 +6,7 @@ import { VoiceGuideSheet } from "@/components/begleitung/VoiceOffer";
 import { goodVoice, voiceLabel } from "@/lib/begleitung/voiceGuide";
 import { showToast } from "@/lib/core/toast";
 import { helperName, type HouseholdProfile } from "@/lib/einstellungen/profile";
-import { SECTION_TITLE, buttonClass } from "@/components/ui/styles";
+import { SECTION_TITLE } from "@/components/ui/styles";
 import {
   READ_MODES,
   SPEECH_RATES,
@@ -22,7 +22,7 @@ import {
 } from "@/lib/begleitung/speech";
 import { ChoiceCards } from "@/components/einstellungen/settings/SettingsParts";
 
-/** Auf der Mia-Seite: Vorlesen an/aus, Stimme (mit Probehören), Sprechtempo – gilt für dieses Gerät */
+/** Auf der Mia-Seite: Stimme (aktuelle oben rechts, Auswahl mit Probehören, „Schönere Stimme holen“), Sprechtempo, darunter Vorlesen – gilt für dieses Gerät */
 export function VoiceSettings({ profile }: { profile: HouseholdProfile }) {
   const settings = useSpeechSettings();
   const voices = useVoices();
@@ -54,12 +54,18 @@ export function VoiceSettings({ profile }: { profile: HouseholdProfile }) {
           // Natürlichere Stimmen stehen schon oben (germanVoices sortiert)
           ...german.map((v) => ({ uri: v.voiceURI, label: v.name, hint: v.lang.replace("_", "-"), natural: isNaturalVoice(v) })),
         ];
+        const current = german.find((v) => v.voiceURI === settings.voice) ?? auto;
         return (
           <>
-            <h2 className={`mt-2 px-1 ${SECTION_TITLE}`}>Vorlesen</h2>
-            <ChoiceCards label="Vorlesen" value={settings.mode} onChange={(mode) => saveSpeechSettings({ mode })} options={READ_MODES} />
-
-            <h2 className={`mt-2 px-1 ${SECTION_TITLE}`}>{name}s Stimme</h2>
+            <div className="mt-2 flex items-baseline justify-between gap-3 px-1">
+              <h2 className={SECTION_TITLE}>Stimme</h2>
+              {current && (
+                <span className="min-w-0 truncate text-sm text-muted">
+                  {voiceLabel(current)}
+                  {isNaturalVoice(current) ? " (Premium)" : ""}
+                </span>
+              )}
+            </div>
             <ul className="flex flex-col gap-2" role="radiogroup" aria-label="Stimme">
               {options.map((o) => {
                 const chosen = settings.voice === o.uri || (o.uri === "" && !german.some((v) => v.voiceURI === settings.voice));
@@ -95,7 +101,7 @@ export function VoiceSettings({ profile }: { profile: HouseholdProfile }) {
               <p className="px-1 text-sm text-muted">Auf diesem Gerät finde ich keine deutsche Stimme – ich nehme die Standardstimme.</p>
             )}
             {!goodVoice(voices) && voices.length > 0 && (
-              <button type="button" onClick={() => setGuide(true)} className={`${buttonClass("secondary", "md")} self-start`}>
+              <button type="button" onClick={() => setGuide(true)} className="hit self-start px-1 text-sm font-semibold text-accent-strong underline">
                 Schönere Stimme holen
               </button>
             )}
@@ -105,6 +111,9 @@ export function VoiceSettings({ profile }: { profile: HouseholdProfile }) {
             <p className="px-1 text-sm text-muted" role="status">
               Stimme und Tempo gelten nur auf diesem Gerät.
             </p>
+
+            <h2 className={`mt-2 px-1 ${SECTION_TITLE}`}>Vorlesen</h2>
+            <ChoiceCards label="Vorlesen" value={settings.mode} onChange={(mode) => saveSpeechSettings({ mode })} options={READ_MODES} />
           </>
         );
       })()}

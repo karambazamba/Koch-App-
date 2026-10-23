@@ -1,9 +1,10 @@
-// Profil – die Begleitung: Name, Art (Assistentin/Assistent → Anrede und
-// Stimme), Icon-Farbe und wie oft sie sich meldet. Texte nur über diese
-// Hilfen (helperName, helperTitle, helperMessage) – nie einen Namen fest
-// einbauen.
+// Profil – die Begleitung: Sie heißt seit v0.67 fest Mia (Assistentin,
+// weibliche Stimme, Orange – „App heißt Mia“), dazu wie oft sie sich meldet.
+// Texte trotzdem nur über diese Hilfen (helperName, helperTitle,
+// helperMessage) – so bleibt der Name an einer Stelle.
 
 import type { HouseholdProfile } from "@/lib/einstellungen/profileModel";
+import { APP_NAME } from "@/lib/core/app";
 
 /** Stimme der Begleitung für die Sprachausgabe (folgt der Art) */
 export type HelperVoice = "weiblich" | "maennlich";
@@ -41,34 +42,24 @@ export type HelperSettings = {
   farbe: AvatarColor;
 };
 
-/** Die beiden Standard-Begleitungen im Kennenlernen */
-export const STANDARD_HELPERS: HelperSettings[] = [
-  { name: "Mia", art: "assistentin", voice: "weiblich", farbe: "orange" },
-  { name: "Theo", art: "assistent", voice: "maennlich", farbe: "nachtblau" },
-];
+/** Die Begleitung – fest Mia (Name wie die App, APP_NAME) */
+export const DEFAULT_HELPER: HelperSettings = { name: APP_NAME, art: "assistentin", voice: "weiblich", farbe: "orange" };
 
-export const HELPER_NAME_MAX = 20;
-
-export const DEFAULT_HELPER: HelperSettings = STANDARD_HELPERS[0];
-
-export const voiceForArt = (art: HelperArt): HelperVoice => (art === "assistent" ? "maennlich" : "weiblich");
-
-/** Begleitung mit geänderter Art: Stimme wechselt mit */
-export const helperWith = (h: HelperSettings, patch: Partial<Pick<HelperSettings, "name" | "art" | "farbe">>): HelperSettings => {
-  const art = patch.art ?? h.art;
-  return { ...h, ...patch, name: (patch.name ?? h.name).trim().slice(0, HELPER_NAME_MAX) || h.name, art, voice: voiceForArt(art) };
-};
-
-/** Name der Begleitung */
-export function helperName(profile: Pick<HouseholdProfile, "helper"> | null | undefined): string {
-  return profile?.helper.name.trim() || DEFAULT_HELPER.name;
+/** Name der Begleitung – immer Mia (das Profil bleibt Parameter, falls es je wieder wählbar wird) */
+export function helperName(profile?: Pick<HouseholdProfile, "helper"> | null): string {
+  void profile;
+  return DEFAULT_HELPER.name;
 }
 
-export const helperArtOf = (profile: Pick<HouseholdProfile, "helper"> | null | undefined): HelperArt => profile?.helper.art ?? DEFAULT_HELPER.art;
+export const helperArtOf = (profile?: Pick<HouseholdProfile, "helper"> | null): HelperArt => {
+  void profile;
+  return DEFAULT_HELPER.art;
+};
 
-/** "deine Assistentin" bzw. "dein Assistent" */
-export function helperTitle(profile: Pick<HouseholdProfile, "helper"> | null | undefined): string {
-  return helperArtOf(profile) === "assistent" ? "dein Assistent" : "deine Assistentin";
+/** „deine Assistentin“ */
+export function helperTitle(profile?: Pick<HouseholdProfile, "helper"> | null): string {
+  void profile;
+  return "deine Assistentin";
 }
 
 /** Mitteilung im Namen der Begleitung, z. B. "Mia: Heute gibt's Gulasch" (auch für Push) */

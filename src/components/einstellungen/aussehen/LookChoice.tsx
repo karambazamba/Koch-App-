@@ -8,7 +8,7 @@
 
 import type { CSSProperties } from "react";
 import { Check } from "lucide-react";
-import { ColorDots } from "@/components/begleitung/BegleitungPicker";
+import { ColorDots } from "@/components/einstellungen/aussehen/ColorDots";
 import { Segmented } from "@/components/ui/Segmented";
 import { APP_LOOKS, APP_THEMES, type AppLook, type AppTheme, type AvatarColor } from "@/lib/einstellungen/profile";
 

@@ -2,6 +2,8 @@
 // (Einladung „4K7-P2Q“, Anmelde-Code 6 Ziffern), Teilen-Text und freundliche
 // Sätze statt Technik-Fehlern. Die Verbindung steckt in `backend.ts`.
 
+import { APP_NAME } from "@/lib/core/app";
+
 export type Role = "erwachsener" | "kind";
 
 export type Member = { userId: string; displayName: string; role: Role; personId: string | null };
@@ -34,7 +36,7 @@ const inviteLink = (origin: string, code: string) => `${origin.replace(/\/$/, ""
 
 /** Text für das Teilen-Menü (mit Link, wenn bekannt) */
 export const inviteShareText = (code: string, origin?: string) =>
-  `Komm in unseren Haushalt bei Was gibt’s? Code: ${formatInviteCode(code)}${origin ? `\n${inviteLink(origin, code)}` : ""}`;
+  `Komm in unseren Haushalt bei ${APP_NAME}. Code: ${formatInviteCode(code)}${origin ? `\n${inviteLink(origin, code)}` : ""}`;
 
 export const isEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
 

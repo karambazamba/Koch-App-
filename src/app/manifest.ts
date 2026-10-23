@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { APP_NAME, APP_SHORT_NAME, BRAND_COLOR, iconFor } from "@/lib/core/app";
+import { APP_DESCRIPTION, APP_FULL_NAME, APP_SHORT_NAME, BRAND_COLOR, iconFor } from "@/lib/core/app";
 
 /**
  * Manifest mit dem App-Icon in Mia-Orange (seit v0.64 immer orange, die
@@ -11,10 +11,9 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const farbe = "orange";
   return {
     id: "/",
-    name: APP_NAME,
+    name: APP_FULL_NAME,
     short_name: APP_SHORT_NAME,
-    description:
-      "Deine Begleitung für den Familienalltag – Termine, Aufgaben, Essen und Einkauf.",
+    description: APP_DESCRIPTION,
     lang: "de",
     start_url: "/",
     scope: "/",
