@@ -10,7 +10,10 @@ Familie und zugleich die Assistentin für Termine, Aufgaben, Essen und Einkauf
 natürlich spricht. Sie legt an und räumt wieder weg.
 
 Die Begleitung heißt fest Mia (Orange, rund, Assistentin; nur die Stimme ist
-wählbar). „Was gibt’s?“ ist nur noch der Essen-Bereich („Was gibt’s heute?“).
+wählbar). Steckbrief: Familienmanagerin, warm, organisiert, trockener
+norddeutscher Humor, nie chefig (`src/lib/mia/persona.ts`). Lebendig ohne
+Ansprüche: EIN Zubehör je Anlass/Wetter/Tageszeit, nachts schläft sie, nie
+Bedürfnisse, nie traurig (`src/lib/mia/zubehoer.ts`). „Was gibt’s?“ ist nur noch der Essen-Bereich („Was gibt’s heute?“).
 In Aufträgen meint „Lotte“ immer Mia. Texte trotzdem über `helperName()`,
 `helperTitle()`, `helperMessage()`. Mia und App-Icon immer Orange (Marke). EIN
 Design (Warm) mit Hell/Dunkel/Automatisch. Einzige Wahl: Startseite „Farbig“

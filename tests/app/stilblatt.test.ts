@@ -30,7 +30,7 @@ describe("Stilblatt: Farben und Radien nur über Tokens", () => {
   });
 
   it("feste Hex-Farben nur in Zeichnungen (Avatar, Teller, Spendentopf) – sonst Tokens", () => {
-    const drawings = /(BegleitungAvatar|DishPicture|PotGraphic|ItemSymbol)\.tsx$/;
+    const drawings = /(BegleitungAvatar|MiaZubehoer|DishPicture|PotGraphic|ItemSymbol)\.tsx$/;
     const bad = SOURCES.filter(({ p }) => /components\/.*\.tsx$/.test(p) && !drawings.test(p)).flatMap(({ p, s }) => [...s.replace(/\/\/.*$/gm, "").matchAll(/#[0-9a-fA-F]{6}\b/g)].map((m) => `${p}: ${m[0]}`));
     expect(bad).toEqual([]);
   });

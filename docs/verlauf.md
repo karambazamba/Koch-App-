@@ -2226,3 +2226,13 @@ Fehler in `docs/aufraeumen-nachher.md`.
   RLS). Versand jede Minute über pg_cron/pg_net → `/api/push/senden`.
 - Familien-Termine an alle, Arbeit nur Besitzer, Aufgaben nur wer sie hat;
   Pinnwand und Abgeben höchstens 1× am Tag, nicht 20–7 Uhr.
+
+## Mia – die Familienmanagerin, Teil 1 (v0.83.0, Tafel 81/82)
+- Steckbrief und feste Sätze zentral (`src/lib/mia/persona.ts`), Varianten
+  nie doppelt, verbotene Formulierungen per Test.
+- Lebendig ohne Ansprüche: EIN Zubehör (Partyhut, Halloween-Kürbis,
+  Adventsmütze, Silvester-Konfetti, Osterei, Kochmütze, Schirm, Sonnenbrille,
+  Schal), nachts schläft Mia, morgens verschlafen, abends ruhiger; kurze
+  Momente (Sturm wackelt, Herbstblatt).
+- „Danke“ → Herzen, Lob → Freudensprung (max. 1× je Gespräch, 3× am Tag).
+  Knopf links für Linkshänder.

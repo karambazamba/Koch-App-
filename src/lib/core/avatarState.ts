@@ -1,7 +1,8 @@
 // Zustand des Avatars der Begleitung – zentral, damit alle Avatare auf der
 // Seite gleich reagieren. Die App setzt ihn selbst (nie der Nutzer):
 // zuhoeren (Mikrofon an), sprechen (beim Vorlesen, nur während Worte kommen),
-// denken (KI-Antwort lädt), verwirrt (statt Fehlermeldung, kurz), freuen und
+// denken (KI-Antwort lädt), verwirrt (statt Fehlermeldung, kurz), freuen (Lob),
+// herzen (Danke: Herzchen-Augen + Herzen) und
 // begruessen (einmalig), schlafen (Feierabend mit Ruhe), sonst ruhig.
 // Vorlage der Animationen: docs/vorlagen/avatar-animation.md (CSS in globals.css).
 
@@ -9,12 +10,12 @@ import { readRaw, writeRaw } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 import type { StorageKey } from "@/lib/core/storage";
 
-export type AvatarZustand = "ruhig" | "begruessen" | "zuhoeren" | "denken" | "sprechen" | "freuen" | "verwirrt" | "schlafen";
+export type AvatarZustand = "ruhig" | "begruessen" | "zuhoeren" | "denken" | "sprechen" | "freuen" | "herzen" | "verwirrt" | "schlafen";
 type Laufend = "zuhoeren" | "denken" | "sprechen";
-type Einmalig = "begruessen" | "freuen" | "verwirrt";
+type Einmalig = "begruessen" | "freuen" | "herzen" | "verwirrt";
 
 /** Dauer der einmaligen Zustände (Animation der Vorlage + kurzer Nachklang) */
-const EINMALIG_MS: Record<Einmalig, number> = { begruessen: 1800, freuen: 1400, verwirrt: 3500 };
+const EINMALIG_MS: Record<Einmalig, number> = { begruessen: 1800, freuen: 1400, herzen: 1800, verwirrt: 3500 };
 
 const counts: Record<Laufend, number> = { zuhoeren: 0, denken: 0, sprechen: 0 };
 let shot: { zustand: Einmalig; nonce: number; until: number } | null = null;

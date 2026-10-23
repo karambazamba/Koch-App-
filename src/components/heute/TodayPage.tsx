@@ -8,7 +8,7 @@
 // Einstellungen oder Lotte öffnen den Bearbeiten-Modus direkt hier: Kopf
 // "Startseite bearbeiten" + "Fertig", Kacheln wackeln, ziehen, "–", S · M · L.
 
-import { greetOncePerDay, setAvatarSleeping } from "@/lib/core/avatarState";
+import { greetOncePerDay } from "@/lib/core/avatarState";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { PenLine } from "lucide-react";
@@ -31,7 +31,7 @@ import { useHomePhase } from "@/components/heute/useHomePhase";
 import type { PhaseContext } from "@/lib/heute/phases";
 import { clockMinutes, DEFAULT_ROUTINE, usePreview, useRoutine } from "@/lib/heute/tagesablauf";
 import { nudgePhase } from "@/lib/heute/nudge";
-import { now, toIsoDate } from "@/lib/core/now";
+import { berlinTime, now, toIsoDate } from "@/lib/core/now";
 import { useWakeLock } from "@/lib/core/wakeLock";
 import { useNowMs } from "@/lib/core/useNowMs";
 import { isExpired, isRunning, leftWords, sortTimers } from "@/lib/timer/model";
@@ -173,14 +173,10 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const phase = useHomePhase(ctx, { preview, today: data.todayIso, editing: editing.on });
   const view = phase.view;
   const evening = phase.def?.id === "feierabend";
-  // Avatar: schläft im Feierabend mit "Ruhe nach Feierabend"; begrüßt einmal am Tag beim ersten Öffnen
-  const sleepy = evening && routine.ruhe;
+  // Avatar: begrüßt einmal am Tag beim ersten Öffnen (nachts schläft Mia – useMiaLook)
   useEffect(() => {
-    setAvatarSleeping(sleepy);
-  }, [sleepy]);
-  useEffect(() => () => setAvatarSleeping(false), []);
-  useEffect(() => {
-    if (!sleepy) greetOncePerDay(data.todayIso);
+    const m = berlinTime().minutes;
+    if (m >= 6 * 60 && m < 22 * 60) greetOncePerDay(data.todayIso);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- nur beim Öffnen
   }, []);
   const cookingNow = Boolean(view.cooking);

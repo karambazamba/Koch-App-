@@ -4,6 +4,7 @@
 // offen bzw. eingeklappt), Gesundheits-Tipp, "denkt …"/Antwort Wort für
 // Wort und der offene Vorschlag mit "Übernehmen".
 
+import { miaSatz } from "@/lib/mia/persona";
 import { now } from "@/lib/core/now";
 import Link from "next/link";
 import { useRef, type Dispatch, type ReactNode, type RefObject, type SetStateAction } from "react";
@@ -73,7 +74,7 @@ type Props = {
 };
 
 /** Mia stellt sich nie vor: „Was steht an?“, morgens (5–11 Uhr) „Moin! Was steht an?“ */
-export const greetingText = (hour: number) => (hour >= 5 && hour < 11 ? "Moin! Was steht an?" : "Was steht an?");
+export const greetingText = (hour: number, minute = 0) => (hour >= 22 || hour < 6 ? miaSatz("nachtWach", null, () => (minute % 4) / 4) : hour >= 5 && hour < 11 ? "Moin! Was steht an?" : "Was steht an?");
 
 export function ChatHistory({ scrollRef, inputRef, status, data, voice, codeLater, onCodeLater, chat, setChat, busy, streaming, speakingId, tipsOn, adjusting, setAdjusting, spontan, kochidee, onTalk, market, rules, onSubmit, onAsk, onApply, onClose, from = 0, showGreeting = true, topic, heard, children }: Props) {
   const { ideasFor, stockFor, headingFor, speechFor, takeIdea, moreIdeas, adjusting2, setAdjusting2, applyFilters, acceptUnsure } = spontan;
@@ -112,7 +113,7 @@ export function ChatHistory({ scrollRef, inputRef, status, data, voice, codeLate
               </span>
             </p>
           ) : greeting ? (
-            <MiaBubble lead>{greetingText(now().getHours())}</MiaBubble>
+            <MiaBubble lead>{greetingText(now().getHours(), now().getMinutes())}</MiaBubble>
           ) : null}
           {/* Kochidee geht ohne KI – der Zugangscode schiebt sich nicht davor */}
           {status?.askCode && data && !codeLater && !chat.kochtipp && <AccessCodeCard onLater={onCodeLater} />}

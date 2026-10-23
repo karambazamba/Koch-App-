@@ -6,6 +6,7 @@
 // Satz (nie „nicht verstanden“); offline merkt Mia sich die Frage und holt sie
 // nach, sobald wieder Netz da ist.
 
+import { newMiaConversation, reactToUser } from "@/lib/mia/reaktion";
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { askAssistant, BegleitungUnavailable, commitOps, runInstantOps, unavailableText } from "@/lib/begleitung/client";
 import { isSafeOp, noteMiaDone } from "@/lib/begleitung/miaDone";
@@ -70,6 +71,8 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
       { role: "user", text: question },
     ];
     setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: display ?? question, send: display ? question : undefined }] }));
+    if (!chat.turns.some((t) => t.role === "user")) newMiaConversation();
+    reactToUser(question, toIsoDate(today));
     setInput("");
     setAdjusting(false);
     setBusy(true);

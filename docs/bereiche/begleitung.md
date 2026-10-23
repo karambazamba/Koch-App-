@@ -448,3 +448,28 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   bleibt in den Daten), einmal „Ab jetzt heiße ich überall Mia.“
   (`miaNotice`, KitchenHelper).
 
+
+## Mia – die Familienmanagerin, Teil 1 (seit v0.83, Tafel 81/82)
+
+- Steckbrief und feste Sätze zentral in `src/lib/mia/persona.ts`
+  (`steckbrief(name)` steht im System-Prompt; `SAETZE` je 3–5 Varianten,
+  `miaSatz` nie zweimal dieselbe hintereinander; `VERBOTEN` prüft der Test).
+- Lebendig ohne Ansprüche: `miaLook` in `src/lib/mia/zubehoer.ts` (rein,
+  Datum/Uhrzeit/Wetter/Familie als Parameter) – EIN Zubehör, Rangfolge
+  Familien-Geburtstag (Partyhut) > Anlass (Halloween Kürbis, 1.–24.12. Mütze,
+  Silvester 23:55–1:00 Konfetti und wach, Ostern Ei) > Kochen (Timer läuft:
+  Kochmütze) > Wetter (Schirm nur bei Regen jetzt/nächste Stunde,
+  Sonnenbrille nur jetzt sonnig > 22 °C im Sommer) > Jahreszeit (Schal
+  Dez–Feb). Nachts 22–6 schläft Mia, 6–8 verschlafen, ab 19 Uhr ruhiger.
+  Gezeichnet in `MiaZubehoer.tsx`, angewendet über `useMiaLook` am Knopf.
+- Kurze Momente (`miaMoment`, nur sichtbare Seite, nie Dauerschleife): Sturm
+  (Böen ≥ 60 km/h jetzt) einmal wackeln, höchstens alle 30 Min; Herbst
+  (Sep–Nov) ein fallendes Blatt, höchstens 1×/h. Reduzierte Bewegung = still.
+- Bühne: „Danke“ → Herzchen-Augen und Herzen, Lob → Freudensprung
+  (`src/lib/mia/reaktion.ts`), höchstens 1× je Gespräch und 3× am Tag.
+  Nachts begrüßt Mia mit „Moin … äh, Nacht! Was liegt an?“ (Varianten).
+- Knopf: 16 px Rand, 24 px über der Unterkante/Safe Area; Einstellungen →
+  Mia → „Knopf links“ (Linkshänder, `wasgibts.miaknopf`).
+- Tests: `tests/mia/familienmanagerin.test.ts`.
+- Teil 2 (Routinen: Morgen-Info, Überschneidungen mit 2 Knöpfen, Vorabend-
+  Packliste) folgt.

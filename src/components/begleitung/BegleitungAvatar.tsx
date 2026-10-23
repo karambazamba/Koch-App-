@@ -3,6 +3,8 @@
 import type { CSSProperties } from "react";
 import { useAvatarZustand, type AvatarZustand } from "@/lib/core/avatarState";
 import { avatarHex } from "@/lib/einstellungen/profile";
+import type { Zubehoer } from "@/lib/mia/zubehoer";
+import { MiaZubehoer } from "@/components/begleitung/MiaZubehoer";
 
 /** Dunkle Icon-Farben bekommen im Dunkel-Modus (und auf der dunklen Leiste) einen feinen hellen Rand */
 const DARK_COLORS = new Set(["#2B4470", "#3E3A37", "#A33B67"]);
@@ -18,17 +20,17 @@ const DARK_COLORS = new Set(["#2B4470", "#3E3A37", "#A33B67"]);
  * "begruessen"). `.klein` (< 44 px) und `.gross` (≥ 56 px) steuern Blinzeln
  * und Denk-Punkte.
  */
-export function BegleitungAvatar({ size, color, zustand, groesse: fest, stabil = false }: { size: number; color?: string; zustand?: AvatarZustand; groesse?: "klein" | "gross"; /** Zustand wechselt am selben Element (kein Neuaufbau) – für Abläufe wie den Hallo-Bildschirm */ stabil?: boolean }) {
+export function BegleitungAvatar({ size, color, zustand, groesse: fest, stabil = false, zubehoer = null, stimmung }: { size: number; color?: string; zustand?: AvatarZustand; groesse?: "klein" | "gross"; /** Zustand wechselt am selben Element (kein Neuaufbau) – für Abläufe wie den Hallo-Bildschirm */ stabil?: boolean; /** EIN Zubehör (Kürbis, Mütze …) aus `miaLook` */ zubehoer?: Zubehoer | null; /** verschlafen (6–8 Uhr) bzw. ruhig (ab 19 Uhr) – nur Atmen/Blick */ stimmung?: "verschlafen" | "ruhig" }) {
   const shared = useAvatarZustand();
   // Mia ist immer orange (Marke); `color` nur für feste Vorschauen
   const c = color ?? avatarHex("orange");
   const z = zustand ?? shared.zustand;
   // Einmalige Zustände starten bei jedem Auslösen neu (neues Element)
-  const key = stabil ? "stabil" : zustand ? z : z === "begruessen" || z === "freuen" || z === "verwirrt" ? `${z}-${shared.nonce}` : z;
+  const key = stabil ? "stabil" : zustand ? z : z === "begruessen" || z === "freuen" || z === "herzen" || z === "verwirrt" ? `${z}-${shared.nonce}` : z;
   // Leiste zählt als klein (ganz still), Chat-Kopf und Vorstellung als groß (blinzeln)
   const groesse = fest ?? (size < 44 ? "klein" : size >= 56 ? "gross" : "");
   return (
-    <span key={key} className={`avatar ${groesse} inline-flex shrink-0`} data-zustand={z} style={{ "--c": c, width: size, height: size } as CSSProperties} aria-hidden>
+    <span key={key} className={`avatar ${groesse} inline-flex shrink-0`} data-zustand={z} data-stimmung={stimmung} style={{ "--c": c, width: size, height: size } as CSSProperties} aria-hidden>
       <svg width={size} height={size} viewBox="0 0 80 80" overflow="visible" className="begleitung-avatar" data-farbe={c} data-dunkel={DARK_COLORS.has(c.toUpperCase()) || undefined}>
         <circle className="av-ring" cx="40" cy="40" r="40" fill="none" stroke="var(--c)" strokeWidth="3" />
         <g className="av-body">
@@ -58,10 +60,17 @@ export function BegleitungAvatar({ size, color, zustand, groesse: fest, stabil =
             </g>
           </g>
         </g>
+        {zubehoer && <MiaZubehoer was={zubehoer} />}
         {/* Zwei kleine "z" – als Linien gezeichnet (kein Text, damit sie nicht im Seitentext/Vorlesen auftauchen) */}
         <g className="av-zzz" fill="none" stroke="var(--c)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
           <path d="M64.5 4.5h6l-6 7h6" />
           <path d="M73 -3.5h4.5l-4.5 5h4.5" strokeWidth="1.9" />
+        </g>
+        {/* Danke: zwei, drei kleine Herzen steigen auf */}
+        <g className="av-herzen" fill="var(--c)">
+          <path d="M66 10c-2-3-6-1-4 2l4 4 4-4c2-3-2-5-4-2z" />
+          <path d="M14 6c-1.6-2.4-4.8-.8-3.2 1.6l3.2 3.2 3.2-3.2c1.6-2.4-1.6-4-3.2-1.6z" />
+          <path d="M74 26c-1.2-1.8-3.6-.6-2.4 1.2l2.4 2.4 2.4-2.4c1.2-1.8-1.2-3-2.4-1.2z" />
         </g>
         <g className="av-dots" fill="var(--c)">
           <circle cx="66" cy="8" r="2.6" />
