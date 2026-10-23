@@ -63,3 +63,10 @@ describe("Bewegung", () => {
     expect(readFileSync("src/components/heute/HomePager.tsx", "utf8")).toContain("<MiaButton");
   });
 });
+
+describe("Mia-Knopf: Schein bleibt mittig", () => {
+  it("der Knopf nutzt nicht `hit` (dessen ::before würde den Schein verschieben)", () => {
+    const src = readFileSync("src/components/begleitung/MiaButton.tsx", "utf8");
+    expect(src).toMatch(/className="mia-knopf (?![^"]*\bhit\b)/);
+  });
+});

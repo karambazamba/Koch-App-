@@ -344,6 +344,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   // lange Antworten bleiben eine normale Blase, damit nichts verdeckt wird
   const short = (t: string) => t.length <= SUBTITLE_MAX;
   const subtitleIndex = !history && newest?.role === "assistant" && newest.text && short(newest.text) && !newest.error && !newest.spontan && !newest.mail ? lastIndex : -1;
+  // Lange Antwort als Blase: Mia kleiner, damit die Antwort Platz hat
+  const longReply = (!history && newest?.role === "assistant" && !short(newest.text)) || (busy && streaming != null && !short(streaming));
   const streamOnStage = busy && streaming != null && short(streaming);
   const greeting = data === null ? "" : chat.turns.length <= since ? `Hi, ich bin ${name} – was steht an?` : "";
   const heard = speech.listening ? `${input}${speech.interim ? ` ${speech.interim}` : ""}`.trim() : "";
@@ -382,7 +384,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           />
         ) : (
           <>
-        <MiaStage name={name} status={stageStatus} text={stageText} live={Boolean(heard)} compact={userTurns >= 2 || history || Boolean(chat.proposal)} names={names} done={done} />
+        <MiaStage name={name} status={stageStatus} text={stageText} live={Boolean(heard)} compact={userTurns >= 2 || history || Boolean(chat.proposal) || longReply} names={names} done={done} />
         {chat.formular && !userTurns && (
           <button
             type="button"
@@ -432,6 +434,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           from={history ? 0 : Math.max(since, lastUser)}
           subtitleIndex={subtitleIndex}
           streamOnStage={streamOnStage}
+          showGreeting={history}
         />
 
         <div className="flex flex-col gap-2 px-4 empty:hidden">

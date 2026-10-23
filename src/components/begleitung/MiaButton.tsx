@@ -63,7 +63,7 @@ export function MiaButton({ name }: { name: string }) {
             openHelper();
           }}
           aria-label={`Sag ${name}, was ansteht … (${name} holen)`}
-          className="mia-knopf hit flex h-[72px] w-[72px] items-center justify-center rounded-full select-none"
+          className="mia-knopf flex h-[72px] w-[72px] items-center justify-center rounded-full select-none"
           data-mia-knopf
         >
           <BegleitungAvatar size={72} groesse="gross" />
