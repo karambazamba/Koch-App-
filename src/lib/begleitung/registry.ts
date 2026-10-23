@@ -36,6 +36,6 @@ export function runRegisteredTool(ctx: ToolContext, name: string, input: unknown
   try {
     return tool.run(ctx, input);
   } catch {
-    return { content: "Das hat gerade nicht geklappt – bitte anders versuchen.", isError: true };
+    return { content: "Hat grad nicht geklappt. Nochmal anders?", isError: true };
   }
 }

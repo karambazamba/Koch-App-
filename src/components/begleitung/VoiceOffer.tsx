@@ -54,7 +54,7 @@ export function VoiceGuideSheet({ onClose, onChecked }: { onClose: () => void; o
 type Stage = "still" | "angebot" | "anleitung" | { found: string } | "nicht";
 
 /** Im Chat über der Eingabe: Vorlese-Anzeige und das Stimmen-Angebot */
-export function VoiceOffer({ readCount, speaking, gender, name }: { readCount: number; speaking: boolean; gender: HelperVoice; name: string }) {
+export function VoiceOffer({ readCount, speaking, gender }: { readCount: number; speaking: boolean; gender: HelperVoice }) {
   const [stage, setStage] = useState<Stage>("still");
   // Nach dem ersten Vorlesen: nur ohne gute Stimme, nur einmal
   useEffect(() => {
@@ -81,7 +81,7 @@ export function VoiceOffer({ readCount, speaking, gender, name }: { readCount: n
 
   const probe = () => {
     unlockSpeech();
-    speak(`Hallo, ich bin ${name}. So klinge ich jetzt.`, { id: "probe-neu", gender, voice: "" });
+    speak("Moin! So klinge ich.", { id: "probe-neu", gender, voice: "" });
   };
 
   return (
@@ -110,7 +110,7 @@ export function VoiceOffer({ readCount, speaking, gender, name }: { readCount: n
       {typeof stage === "object" && (
         <div className="flex items-center gap-2 rounded-card bg-good-soft p-3 text-good-ink" role="status">
           <Check className="h-5 w-5 shrink-0" strokeWidth={3} aria-hidden />
-          <p className="min-w-0 flex-1 text-[15px] font-semibold leading-snug">Neue Stimme gefunden – ab jetzt spreche ich mit „{voiceLabel({ name: stage.found })}“.</p>
+          <p className="min-w-0 flex-1 text-[15px] font-semibold leading-snug">Neue Stimme gefunden. Ab jetzt sprech ich mit „{voiceLabel({ name: stage.found })}“.</p>
           <button type="button" onClick={probe} className={`${buttonClass("secondary", "sm")} shrink-0`}>
             <Play className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Probehören
           </button>

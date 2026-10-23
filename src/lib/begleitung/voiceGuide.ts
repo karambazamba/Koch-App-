@@ -23,7 +23,7 @@ export function voiceLabel(v: Pick<VoiceLike, "name">): string {
 
 /** Hinweis-Karte im Chat: nur, wenn das Gerät keine gute Stimme hat */
 export function voiceOfferText(platform: MicPlatform): string {
-  return `Klinge ich blechern? 🤖 Dein ${platform === "ios" ? "iPhone" : "Handy"} hat eine viel schönere Stimme für mich. Einmal laden – dauert 1 Minute.`;
+  return `Klinge ich blechern? 🤖 Dein ${platform === "ios" ? "iPhone" : "Handy"} hat eine viel schönere Stimme für mich. Einmal laden, dauert 1 Minute.`;
 }
 
 /**

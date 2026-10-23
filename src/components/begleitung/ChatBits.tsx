@@ -26,7 +26,7 @@ export function AccessCodeCard({ onLater }: { onLater: () => void }) {
       }}
     >
       <p className="font-bold">Damit ich ganze Sätze verstehe, brauch ich einmal euren Zugangscode.</p>
-      <p className="text-sm text-muted">Ich merke ihn mir auf diesem Gerät. Ohne Code helfe ich trotzdem – nur etwas einfacher.</p>
+      <p className="text-sm text-muted">Ich merke ihn mir auf diesem Gerät. Ohne Code helf ich trotzdem, nur einfacher.</p>
       <input
         type="password"
         value={code}
@@ -36,8 +36,8 @@ export function AccessCodeCard({ onLater }: { onLater: () => void }) {
         placeholder="Zugangscode"
         className={`${INPUT_BASE} h-12 px-4`}
       />
-      {state === "falsch" && <p className="text-sm text-muted" role="status">Der Code passt noch nicht – schau nochmal nach.</p>}
-      {state === "offline" && <p className="text-sm text-muted" role="status">Gerade komme ich nicht durch – probier es gleich nochmal.</p>}
+      {state === "falsch" && <p className="text-sm text-muted" role="status">Der Code passt noch nicht. Schau nochmal nach.</p>}
+      {state === "offline" && <p className="text-sm text-muted" role="status">Komm grad nicht durch. Gleich nochmal?</p>}
       <div className="flex gap-2">
         <button type="submit" disabled={!code.trim() || state === "busy"} className={buttonClass("primary", "sm")}>
           Freischalten

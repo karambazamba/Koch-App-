@@ -4,6 +4,7 @@
 // offen bzw. eingeklappt), Gesundheits-Tipp, "denkt …"/Antwort Wort für
 // Wort und der offene Vorschlag mit "Übernehmen".
 
+import { now } from "@/lib/core/now";
 import Link from "next/link";
 import { useRef, type Dispatch, type ReactNode, type RefObject, type SetStateAction } from "react";
 import { NOTE } from "@/components/ui/styles";
@@ -61,7 +62,7 @@ type Props = {
   onClose: () => void;
   /** Bühne: nur ab dieser Nachricht zeigen (sonst alles = „Verlauf“) */
   from?: number;
-  /** Begrüßung als erste Blase („Hi, ich bin Mia – was steht an?“) */
+  /** Begrüßung als erste Blase („Was steht an?“, morgens „Moin! Was steht an?“) */
   showGreeting?: boolean;
   /** Bereichs-Kopf über Mias erster Blase („KOCHIDEE“, „TERMIN“ …) */
   topic?: string;
@@ -71,7 +72,10 @@ type Props = {
   children?: ReactNode;
 };
 
-export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, codeLater, onCodeLater, chat, setChat, busy, streaming, speakingId, tipsOn, adjusting, setAdjusting, spontan, kochidee, onTalk, market, rules, onSubmit, onAsk, onApply, onClose, from = 0, showGreeting = true, topic, heard, children }: Props) {
+/** Mia stellt sich nie vor: „Was steht an?“, morgens (5–11 Uhr) „Moin! Was steht an?“ */
+export const greetingText = (hour: number) => (hour >= 5 && hour < 11 ? "Moin! Was steht an?" : "Was steht an?");
+
+export function ChatHistory({ scrollRef, inputRef, status, data, voice, codeLater, onCodeLater, chat, setChat, busy, streaming, speakingId, tipsOn, adjusting, setAdjusting, spontan, kochidee, onTalk, market, rules, onSubmit, onAsk, onApply, onClose, from = 0, showGreeting = true, topic, heard, children }: Props) {
   const { ideasFor, stockFor, headingFor, speechFor, takeIdea, moreIdeas, adjusting2, setAdjusting2, applyFilters, acceptUnsure } = spontan;
   // Offene Ideen-Antwort (die letzte, solange Spontan kochen läuft) und eingeklappte frühere
   const spontanIndexes = chat.turns.flatMap((t, i) => (t.spontan ? [i] : []));
@@ -104,11 +108,11 @@ export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, co
                 <Link href="/profil" onClick={onClose} className="font-bold text-accent-strong underline">
                   Haushaltsprofil
                 </Link>{" "}
-                an – dann weiß ich, für wen ich plane.
+                an, dann weiß ich, für wen ich plane.
               </span>
             </p>
           ) : greeting ? (
-            <MiaBubble lead>Hi, ich bin {name} – was steht an?</MiaBubble>
+            <MiaBubble lead>{greetingText(now().getHours())}</MiaBubble>
           ) : null}
           {/* Kochidee geht ohne KI – der Zugangscode schiebt sich nicht davor */}
           {status?.askCode && data && !codeLater && !chat.kochtipp && <AccessCodeCard onLater={onCodeLater} />}
@@ -161,7 +165,7 @@ export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, co
                       {idea.keywords && idea.keywords.length > 0 && <p className="ml-11 self-start rounded-full bg-fill px-3 py-1 text-[13px] font-semibold text-muted">{idea.keywords.join(" · ")}</p>}
                       {idea.cards.length > 0 && <IdeaCarousel cards={idea.cards} persons={idea.persons ?? 2} live={live} onTake={(c) => kochidee.take(c, session, idea.persons)} onMore={() => session && kochidee.more(session)} onNavigate={onClose} />}
                       {idea.remembered && <p className="text-[13px] font-semibold text-good-ink">{idea.remembered}</p>}
-                      {live && <MiaInvite title="Passt nicht?" text="Sag’s mir einfach – oder wisch weiter." onTalk={onTalk} />}
+                      {live && <MiaInvite title="Passt nicht?" text="Sag’s mir einfach oder wisch weiter." onTalk={onTalk} />}
                     </>
                   )}
                 </div>
@@ -220,7 +224,7 @@ export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, co
                 const commands = chat.proposal.ops.flatMap((op) => (op.type === "app_command" && chat.proposal!.selected.has(op.id) ? [op.text] : []));
                 onApply(chat.proposal.selected);
                 for (const text of commands) {
-                  if (!rules(text)) setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text: `„${text}“ kann ich in der App so nicht umsetzen – sag’s mir gern anders.`, local: true }] }));
+                  if (!rules(text)) setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text: `„${text}“ kann ich so nicht umsetzen. Sag’s mir anders?`, local: true }] }));
                 }
               }}
               onAdjust={() => {

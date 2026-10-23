@@ -187,7 +187,7 @@ describe("Termine und Aufgaben", () => {
   });
 
   it("unbekannter Eintrag: freundlich nachfragen", async () => {
-    expect((await one("Lösch den Friseur")).text).toBe("Den Eintrag finde ich gerade nicht – wie heißt er genau? (Testmodus)");
+    expect((await one("Lösch den Friseur")).text).toBe("Den Eintrag find ich grad nicht. Wie heißt er genau? (Testmodus)");
   });
 });
 
@@ -254,8 +254,8 @@ describe("Wochenplanung – erste Runde", () => {
   });
 
   it("nichts Erkennbares: kurze Vorstellung mit Beispiel", async () => {
-    expect((await one("Hallo")).text).toMatch(/^Ich bin Mia \(Testmodus\)\. Sag zum Beispiel:/);
+    expect((await one("Hallo")).text).toMatch(/^Sag einfach, was ansteht \(Testmodus\)\. Zum Beispiel:/);
     const noName = S.replace(/^Du heißt .*$/m, "Ohne Namen");
-    expect((await one("Hallo", noName)).text).toMatch(/^Ich bin deine Begleitung \(Testmodus\)/);
+    expect((await one("Hallo", noName)).text).toMatch(/^Sag einfach, was ansteht \(Testmodus\)/);
   });
 });

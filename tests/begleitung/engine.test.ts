@@ -136,7 +136,7 @@ describe("runAssistant: Werkzeug-Schleife", () => {
     const refusal = modell([{ content: [], stop: "refusal" }]);
     expect((await runAssistant(anfrage("Hm"), refusal.create, "claude-sonnet-5-5")).reply).toBe("Dabei kann ich leider nicht helfen. Frag mich gern etwas anderes.");
     const leer = modell([{ content: [] }]);
-    expect((await runAssistant(anfrage("Hm"), leer.create, "claude-sonnet-5-5")).reply).toBe("Erledigt – schau dir den Vorschlag unten an.");
+    expect((await runAssistant(anfrage("Hm"), leer.create, "claude-sonnet-5-5")).reply).toBe("Steht unten als Vorschlag.");
     const mailOnly = modell([{ content: [tool("mail_entwurf", { betreff: "A", text: "B", anrede: "sie" })], stop: "tool_use" }, { content: [] }]);
     expect((await runAssistant(anfrage("Hm"), mailOnly.create, "claude-sonnet-5-5")).reply).toBe("Hier mein Vorschlag:");
   });
@@ -166,7 +166,7 @@ describe("runAssistant: Werkzeug-Schleife", () => {
     const endlos = modell([{ content: [tool("rueckgaengig", {})], stop: "tool_use" }]);
     const r = await runAssistant(anfrage("Hallo"), endlos.create, "claude-sonnet-5-5");
     expect(endlos.calls).toHaveLength(6);
-    expect(r.reply).toBe("Das war mehr, als ich auf einmal schaffe – hier ist, was ich bisher vorgeschlagen habe.");
+    expect(r.reply).toBe("Das war mehr, als ich auf einmal schaffe. Hier ist, was ich bisher hab.");
   });
 
   it("nach einem Ausweich-Wechsel zählen nur Werkzeuge ab dem Wechsel", async () => {

@@ -5,7 +5,7 @@ import { Check, Volume2 } from "lucide-react";
 import { VoiceGuideSheet } from "@/components/begleitung/VoiceOffer";
 import { goodVoice, voiceLabel } from "@/lib/begleitung/voiceGuide";
 import { showToast } from "@/lib/core/toast";
-import { helperName, type HouseholdProfile } from "@/lib/einstellungen/profile";
+import type { HouseholdProfile } from "@/lib/einstellungen/profile";
 import { SECTION_TITLE } from "@/components/ui/styles";
 import {
   READ_MODES,
@@ -30,13 +30,12 @@ export function VoiceSettings({ profile }: { profile: HouseholdProfile }) {
   const [guide, setGuide] = useState(false);
   return (
     <>
-      {guide && <VoiceGuideSheet onClose={() => setGuide(false)} onChecked={(found) => (setGuide(false), showToast({ text: found ? `Neue Stimme gefunden – ab jetzt „${voiceLabel(found)}“.` : "Hm, ich finde sie noch nicht. Lädt sie vielleicht noch?" }))} />}
+      {guide && <VoiceGuideSheet onClose={() => setGuide(false)} onChecked={(found) => (setGuide(false), showToast({ text: found ? `Neue Stimme gefunden. Ab jetzt „${voiceLabel(found)}“.` : "Hm, ich finde sie noch nicht. Lädt sie vielleicht noch?" }))} />}
       {(() => {
-        const name = helperName(profile);
         const gender = profile.helper.voice;
         const german = germanVoices(voices);
         const auto = pickVoice(voices, gender);
-        const sample = `Hallo, ich bin ${name}. Heute gibt’s Spaghetti – um 18:30 ist alles fertig.`;
+        const sample = "Moin! Heute gibt’s Spaghetti. Um 18:30 ist alles fertig.";
         const listen = (voiceURI: string) => {
           unlockSpeech();
           speak(sample, { id: "probe", gender, voice: voiceURI });

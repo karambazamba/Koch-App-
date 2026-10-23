@@ -299,7 +299,7 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
         return [{ type: "tool_result" as const, tool_use_id: block.id, content: result.content, is_error: result.isError }];
       });
       messages.push({ role: "user", content: results });
-      if (round === ENGINE_LIMITS.maxRounds - 1) reply ||= "Das war mehr, als ich auf einmal schaffe – hier ist, was ich bisher vorgeschlagen habe.";
+      if (round === ENGINE_LIMITS.maxRounds - 1) reply ||= "Das war mehr, als ich auf einmal schaffe. Hier ist, was ich bisher hab.";
     }
     return { escalate: false as const, usage, reply, ctx };
   };
@@ -325,7 +325,7 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
   const micro = costs.every((c): c is number => c !== null) ? costs.reduce((a, b) => a + b, 0) : null;
   const extras = { ...(ctx.mail ? { mail: ctx.mail } : {}), ...(ctx.chips?.length ? { chips: ctx.chips } : {}), ...(ctx.tipCards?.length ? { tips: ctx.tipCards } : {}) };
   return {
-    reply: reply || (ctx.mail ? "Hier mein Vorschlag:" : "Erledigt – schau dir den Vorschlag unten an."),
+    reply: reply || (ctx.mail ? "Hier mein Vorschlag:" : "Steht unten als Vorschlag."),
     ops: compactOps(ctx.ops),
     ...extras,
     ...(model !== "mock" ? { usage: { size: /haiku/.test(model) ? ("klein" as const) : ("gross" as const), upgraded: spent.length > 1, micro } } : {}),

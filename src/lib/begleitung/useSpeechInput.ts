@@ -211,8 +211,8 @@ export function useSpeechInput({ onTranscript, onEnd, long = false }: Options) {
       if (e.error === "aborted" || stoppedByUser || heard) return;
       setError(
         e.error === "no-speech"
-            ? "Ich habe nichts gehört – nochmal versuchen?"
-            : "Spracheingabe hat nicht geklappt – tipp es einfach ein.",
+            ? "Hab nichts gehört. Nochmal?"
+            : "Spracheingabe hat nicht geklappt. Tipp es einfach ein.",
       );
     };
     recognition.onend = () => {
@@ -252,7 +252,7 @@ export function useSpeechInput({ onTranscript, onEnd, long = false }: Options) {
     } catch {
       recognitionRef.current = null;
       releaseMic(micId.current);
-      setError("Spracheingabe hat nicht geklappt – tipp es einfach ein.");
+      setError("Spracheingabe hat nicht geklappt. Tipp es einfach ein.");
     }
   }, [detach, flagListening, long]);
 

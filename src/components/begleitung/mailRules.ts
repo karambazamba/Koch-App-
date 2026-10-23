@@ -54,7 +54,7 @@ export function mailRule(ctx: RuleContext, turns: ChatTurnView[], t: string): bo
   if (looksLikeMail(mail)) {
     setInput("");
     const events = eventChoices(ctx, mail);
-    const eventLine = events.length ? " Da steht auch ein Termin drin – soll ich ihn eintragen?" : "";
+    const eventLine = events.length ? " Da steht auch ein Termin drin. Soll ich ihn eintragen?" : "";
     const summary = `Kurz gesagt: ${summaryOf(mail)}`;
     if (instruction) {
       const draft = mailReply(mail, { instruction }, style, myName());
@@ -87,7 +87,7 @@ export function mailRule(ctx: RuleContext, turns: ChatTurnView[], t: string): bo
   const fresh = localNewMail(t, style, myName(), data?.profile.persons.map((p) => p.name) ?? []);
   if (fresh) {
     setInput("");
-    setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, mailTurn(fresh, "Hier mein Vorschlag – senden machst du selbst.")] }));
+    setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, mailTurn(fresh, "Hier mein Entwurf. Senden machst du selbst.")] }));
     return true;
   }
   return false;

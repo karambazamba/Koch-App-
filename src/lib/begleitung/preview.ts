@@ -97,7 +97,7 @@ function describe(
     case "clear_slot": {
       const p = place(op.slot.weekStart, op.slot.weekday);
       const before = findSlot(p.week, op.slot.weekday)?.entry?.title ?? "frei";
-      const after = op.type === "set_meal" ? `${op.dish.title}${op.double ? " (doppelt – Reste für morgen)" : ""}` : "frei";
+      const after = op.type === "set_meal" ? `${op.dish.title}${op.double ? " (doppelt, Reste für morgen)" : ""}` : "frei";
       if (before === after && op.type === "clear_slot") return null;
       return {
         opId: op.id,
@@ -120,7 +120,7 @@ function describe(
         order: p.order,
         label: p.label,
         before: null,
-        after: op.double ? `${entry.title} doppelt kochen – Reste für morgen` : `${entry.title} nicht mehr doppelt kochen`,
+        after: op.double ? `${entry.title} doppelt kochen, Reste für morgen` : `${entry.title} nicht mehr doppelt kochen`,
         category: entry.category,
       };
     }
@@ -208,7 +208,7 @@ function describe(
       const p = place(op.slot.weekStart, op.slot.weekday);
       const entry = findSlot(p.week, op.slot.weekday)?.entry;
       if (!entry) return null;
-      return { opId: op.id, group: p.group, order: p.order, label: "nur für diesen Tag", before: p.day?.persons ? `${p.day.persons} Personen` : null, after: `${entry.title} für ${op.persons ?? "alle"} Personen – Zutaten und Einkaufsliste passen sich an` };
+      return { opId: op.id, group: p.group, order: p.order, label: "nur für diesen Tag", before: p.day?.persons ? `${p.day.persons} Personen` : null, after: `${entry.title} für ${op.persons ?? "alle"} Personen, Zutaten und Einkaufsliste passen sich an` };
     }
     case "set_pause":
       return {
@@ -217,7 +217,7 @@ function describe(
         order: -3,
         label: op.pause ? "Urlaub / Pause" : "Pause",
         before: null,
-        after: op.pause ? `${pauseLabel(op.pause)} – an diesen Tagen plane ich nichts` : "Pause beenden – alles wie gewohnt",
+        after: op.pause ? `${pauseLabel(op.pause)} – an diesen Tagen plane ich nichts` : "Pause beenden, alles wie gewohnt",
       };
     case "set_feature": {
       const b = bausteinOf(op.feature as Feature);

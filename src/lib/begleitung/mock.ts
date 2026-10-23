@@ -232,7 +232,7 @@ function mockModel(): CreateMessage {
     if (typeof last.content === "string" && last.content.startsWith("[Wochencheck]")) return weekCheckUses(last.content, system);
     // „Kochtipp“, „Was soll ich kochen?“ → eigener Kochtipp in der App
     if (typeof last.content === "string" && isKochtippRequest(last.content)) return tools([{ name: "app_befehl", input: { text: "Kochidee" } }]);
-    if (resultFor("woche_eintragen") !== undefined) return text("Ich hab alles sortiert – schau kurz drüber und tipp „Alles übernehmen“.");
+    if (resultFor("woche_eintragen") !== undefined) return text("Hab alles sortiert. Schau kurz drüber und tipp „Alles übernehmen“.");
 
     // 1. Neue Frage: unklar → nachfragen, sonst Woche und Kochbuch lesen
     if (typeof last.content === "string") {
@@ -302,7 +302,7 @@ function mockModel(): CreateMessage {
         );
       }
       if (/(neues rezept|neue rezepte|denk dir|rezeptidee|was neues)/i.test(latest)) {
-        return text("Klar, mach ich! Was soll die Basis sein – Kartoffeln, Reis, Nudeln oder was anderes?");
+        return text("Klappt. Was soll die Basis sein: Kartoffeln, Reis oder Nudeln?");
       }
       if (typeof prevAssistant?.content === "string" && /basis/i.test(prevAssistant.content)) {
         return text(`Mit ${latest} – wie wär’s mit einer cremigen Gemüsepfanne dazu? Sag Bescheid, für welchen Tag (Testmodus).`);
@@ -310,14 +310,13 @@ function mockModel(): CreateMessage {
       if (intent.myDays.length > 0 && intent.named.length < intent.myDays.length) {
         const choice = intent.titles.slice(0, 6).join(", ");
         return text(
-          `Gern! Welche deiner Rezepte soll es am ${intent.myDays.join(" und am ")} geben?${choice ? ` Zur Auswahl hast du zum Beispiel: ${choice}.` : " Im Kochbuch ist noch nichts – sag mir einfach die Gerichte."}`,
+          `Gern! Welche deiner Rezepte soll es am ${intent.myDays.join(" und am ")} geben?${choice ? ` Zur Auswahl hast du zum Beispiel: ${choice}.` : " Im Kochbuch ist noch nichts. Sag mir einfach die Gerichte."}`,
         );
       }
       const actionable =
         intent.myDays.length || intent.wish || intent.restVeggie || intent.planWeek || intent.clear.length || intent.double.length || intent.swap.length >= 2 || intent.shopping;
       if (!actionable) {
-        const name = system.match(/^Du heißt (.+?) und bist /)?.[1] ?? "deine Begleitung";
-        return text(`Ich bin ${name} (Testmodus). Sag zum Beispiel: „Donnerstag und Freitag gibt es meine Rezepte, Mattis wünscht sich Sonntag Milchreis, der Rest vegetarische KI-Rezepte.“`);
+        return text(`Sag einfach, was ansteht (Testmodus). Zum Beispiel: „Donnerstag und Freitag gibt es meine Rezepte, Mattis wünscht sich Sonntag Milchreis, der Rest vegetarische KI-Rezepte.“`);
       }
       return tools([
         { name: "woche_lesen", input: { woche: intent.week } },
@@ -342,7 +341,7 @@ function mockModel(): CreateMessage {
           .map((u) => parse<WeekResult>(results.find((r) => r.tool_use_id === u.id)?.content))
           .filter((w): w is WeekResult => Boolean(w));
         const hit = weeks.flatMap((w) => w.tage.map((t) => ({ w, t }))).find(({ t }) => t.datum === label);
-        if (!hit) return text("Den Tag finde ich gerade nicht im Plan – magst du ihn mir nochmal sagen?");
+        if (!hit) return text("Den Tag find ich grad nicht im Plan. Welcher war’s?");
         const recipe = book?.rezepte.find((r) => r.titel.toLowerCase().includes(day.dish!.gericht.toLowerCase()));
         return tools([
           {
@@ -364,7 +363,7 @@ function mockModel(): CreateMessage {
           const recipe = replace ? quick[k++ % Math.max(1, quick.length)] : undefined;
           if (recipe && recipe.rezept_id !== t.rezept_id) uses.push({ name: "gericht_setzen", input: { woche: week.woche, tag: t.tag, rezept_id: recipe.rezept_id } });
         }
-        return uses.length ? tools(uses) : text("Diese Woche ist schon alles schnell – passt! (Testmodus)");
+        return uses.length ? tools(uses) : text("Diese Woche ist schon alles schnell. Passt. (Testmodus)");
       }
       // Der Tag mit seinem einen Hauptgericht (null bei Ausflug)
       const main = (tag: string) => {
@@ -455,7 +454,7 @@ function mockModel(): CreateMessage {
           });
         });
       }
-      return uses.length ? tools(uses) : text("Ich habe nichts gefunden, was ich ändern könnte – sag mir gern genauer, was du möchtest.");
+      return uses.length ? tools(uses) : text("Hab nichts gefunden, was ich ändern könnte. Was genau?");
     }
 
     // Umgerechnet → die Zutaten nennen
@@ -464,16 +463,16 @@ function mockModel(): CreateMessage {
       const content = String(resultFor("portionen_anpassen") ?? "");
       return text(content.startsWith("Vorgemerkt") ? `Klar! ${content.replace(/^Vorgemerkt: /, "")} Tipp unten auf Übernehmen. (Testmodus)` : `${content} (Testmodus)`);
     }
-    if (prevUses.some((u) => u.name === "app_befehl")) return text("Mach ich – tipp unten auf Übernehmen. (Testmodus)");
+    if (prevUses.some((u) => u.name === "app_befehl")) return text("Steht unten bereit. (Testmodus)");
 
     // Mails: ein Satz zum Entwurf bzw. zur Frage, evtl. "Soll ich das eintragen?"
     const drafted = prevUses.find((u) => u.name === "mail_entwurf");
     const asked = prevUses.some((u) => u.name === "antwort_knoepfe");
     if (drafted || asked) {
       const summary = drafted ? String((drafted.input as Record<string, unknown>).kurzfassung ?? "") : summaryOf(splitInstruction(intentText(msgs)).mail);
-      const event = prevUses.some((u) => u.name === "termin_anlegen" || u.name === "aufgabe_anlegen") ? " Da steht auch ein Termin drin – soll ich das eintragen? Tipp unten auf Übernehmen." : "";
+      const event = prevUses.some((u) => u.name === "termin_anlegen" || u.name === "aufgabe_anlegen") ? " Da steht auch ein Termin drin. Soll ich ihn eintragen?" : "";
       if (asked) return text(`Kurz gesagt: ${summary} Wie willst du antworten?${event} (Testmodus)`);
-      return text(`${summary ? `Kurz gesagt: ${summary} ` : ""}Hier mein Vorschlag – senden machst du selbst.${event} (Testmodus)`);
+      return text(`${summary ? `Kurz gesagt: ${summary} ` : ""}Hier mein Entwurf. Senden machst du selbst.${event} (Testmodus)`);
     }
 
     // Timer, Kochen, Sport, Startseiten-Modus → kurz aus dem Werkzeug-Ergebnis
@@ -489,7 +488,7 @@ function mockModel(): CreateMessage {
     // Tipps gelesen → kurz, ehrlich, mit Frage
     if (prevUses.some((u) => u.name === "tipps_suchen")) {
       const found = String(resultFor("tipps_suchen") ?? "");
-      return text(found.startsWith("Treffer") ? "Da wäre was in eurer Nähe – schau dir die Karten an. Soll ich einen davon eintragen? (Testmodus)" : "Dafür habe ich in eurer Nähe gerade nichts gefunden. (Testmodus)");
+      return text(found.startsWith("Treffer") ? "Da wär was in eurer Nähe. Soll ich einen davon eintragen? (Testmodus)" : "Dafür habe ich in eurer Nähe gerade nichts gefunden. (Testmodus)");
     }
 
     // Wetter gelesen → ein, zwei Sätze
@@ -519,10 +518,10 @@ function mockModel(): CreateMessage {
 
     // 4. Fertig
     const ok = results.filter((r) => !r.is_error).length;
-    if (ok > 0 && prevUses.some((u) => CALENDAR_WRITE.has(u.name))) return text("Steht bereit – tipp unten auf Übernehmen. (Testmodus)");
+    if (ok > 0 && prevUses.some((u) => CALENDAR_WRITE.has(u.name))) return text("Steht unten bereit. (Testmodus)");
     return text(
       ok > 0
-        ? "Ich habe dir einen Vorschlag gemacht (Testmodus). Schau ihn dir unten an – du kannst einzelne Punkte abwählen und dann übernehmen."
+        ? "Steht unten als Vorschlag. Einzelnes kannst du abwählen. (Testmodus)"
         : "Das hat leider nicht geklappt. Magst du es anders formulieren?",
     );
   };

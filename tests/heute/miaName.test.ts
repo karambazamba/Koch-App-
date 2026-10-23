@@ -28,6 +28,6 @@ describe("Hinweis „neu hinzufügen“", () => {
     expect(steps[2].text).toContain("koch-app-two.vercel.app");
     expect(steps[3].text).toContain("„Zum Home-Bildschirm“");
     expect(steps[4].text).toContain("Daten wiederherstellen");
-    expect(MIA_HOME_HINT("Mia")).toMatch(/^Ich heiße jetzt Mia\. .*vorher kurz sichern/);
+    expect(MIA_HOME_HINT("Mia")).toMatch(/^Ich heiße jetzt Mia\. .*Vorher kurz sichern/);
   });
 });

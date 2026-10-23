@@ -72,7 +72,7 @@ const localReplyOf = (ctx: RuleContext) => (t: string, text: string, undo?: () =
           ? {
               undo: () => {
                 undo();
-                ctx.setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig gemacht – alles wie vorher.", local: true }] }));
+                ctx.setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig. Alles wie vorher.", local: true }] }));
               },
             }
           : {}),
@@ -160,7 +160,7 @@ export function boardRule(ctx: RuleContext, t: string): boolean {
     if (!pin) return false;
     pushUndo("die Pinnwand-Nachricht", changePins((all) => addPin(all, pin)));
     const shown = unlockHomeTile("pinnwand");
-    say(`Hängt an der Pinnwand ✓ „${pin.data.text}“${shown ? " – die Pinnwand steht jetzt oben auf der Startseite." : ""}`);
+    say(`Hängt an der Pinnwand ✓ „${pin.data.text}“${shown ? " Die Pinnwand steht jetzt oben auf der Startseite." : ""}`);
     return true;
   }
   if (isPinboardQuery(t)) {
@@ -181,7 +181,7 @@ export function boardRule(ctx: RuleContext, t: string): boolean {
       const hits = answerTips(res.tips, tipAsk);
       const where = hits.length ? unlockTips() : null;
       const text = res.failed
-        ? "Gerade komme ich nicht an die Tipps – probier’s gleich nochmal."
+        ? "Komm grad nicht an die Tipps. Gleich nochmal?"
         : hits.length
           ? `${tipAsk.label.replace(/^./, (x) => x.toUpperCase())} in eurer Nähe: ${hits.length === 1 ? "ein Tipp" : "ein paar Tipps"}. Soll ich einen davon eintragen?${where ? `\n${where}` : ""}`
           : `Für ${tipAsk.label} habe ich in eurer Nähe nichts gefunden. Unter Einstellungen → Tipps aus der Region kannst du den Umkreis vergrößern.`;
@@ -196,12 +196,12 @@ export function boardRule(ctx: RuleContext, t: string): boolean {
     void refreshForecast(loadPlace()).then((fc) => {
       const minutes = berlinTime().minutes;
       const text = !fc
-        ? "Gerade komme ich nicht an die Wetterdaten – probier’s gleich nochmal."
+        ? "Komm grad nicht an die Wetterdaten. Gleich nochmal?"
         : question.wind
           ? windText(fc.days.find((d) => d.date === question.date)?.wind, question.label)
           : question.umbrella
             ? umbrellaAnswer(fc, question.date, minutes)
-            : (dayAnswer(fc, question.date, question.label) ?? "Für den Tag gibt’s noch keine Vorhersage – nur die nächsten 7 Tage.");
+            : (dayAnswer(fc, question.date, question.label) ?? "Für den Tag gibt’s noch keine Vorhersage. Nur die nächsten 7 Tage.");
       setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text, local: true }] }));
     });
     return true;
@@ -227,7 +227,7 @@ export function schnellnotizRule(ctx: RuleContext, t: string): boolean {
     const iso = toIsoDate(today);
     const lines = tidySchnellnotiz(loadSchnellnotiz().text, iso).filter((l) => l.kind);
     if (!lines.length) {
-      say("In deiner Schnellnotiz finde ich gerade nichts, was ein Termin, eine Aufgabe oder eine Notiz wird – alles bleibt, wie es ist.");
+      say("In der Schnellnotiz ist grad nichts für Termine, Aufgaben oder Notizen. Bleibt, wie es ist.");
       return true;
     }
     const label = (l: (typeof lines)[number]) => (l.kind === "termin" ? "Termin" : l.kind === "aufgabe" ? "Aufgabe" : "Notiz");
@@ -248,7 +248,7 @@ export function schnellnotizRule(ctx: RuleContext, t: string): boolean {
         }
       }
       saveSchnellnotiz(withoutLines(beforeSchnellnotiz, lines.map((l) => l.line)));
-      const text = `Übernommen ✓ ${lines.length} ${lines.length === 1 ? "Zeile" : "Zeilen"} – der Rest bleibt in der Schnellnotiz.`;
+      const text = `Übernommen ✓ ${lines.length} ${lines.length === 1 ? "Zeile" : "Zeilen"}. Der Rest bleibt in der Schnellnotiz.`;
       setChat((c) => ({
         ...c,
         turns: [...c.turns, { role: "assistant", text, local: true, undo: pushUndo("das Aufräumen der Schnellnotiz", () => (replaceEntries(beforeEntries), replaceNotes(beforeNotes), saveSchnellnotiz(beforeSchnellnotiz))) }],
@@ -292,7 +292,7 @@ export function noteRule(ctx: RuleContext, t: string): boolean {
     case "tasks": {
       const g = taskOverview(loadEntries(), toIsoDate(today));
       const part = (label: string, list: typeof g.heute) => (list.length ? `${label}: ${list.slice(0, 5).map((i) => `${i.title}${i.carried ? ` (${i.carried})` : i.dueLabel ? ` (${i.dueLabel})` : ""}`).join(", ")}.` : "");
-      const text = [part("Heute dran", g.heute), part("Diese Woche", g.woche)].filter(Boolean).join(" ") || "Heute liegt nichts an – schön ruhig.";
+      const text = [part("Heute dran", g.heute), part("Diese Woche", g.woche)].filter(Boolean).join(" ") || "Heute liegt nichts an. Schön ruhig.";
       say(cmd.open ? `${text} Ich hab dir die Aufgaben aufgemacht.` : text);
       if (cmd.open) {
         router.push("/aufgaben");
@@ -307,13 +307,13 @@ export function noteRule(ctx: RuleContext, t: string): boolean {
       return true;
     case "show": {
       const note = noteFor(notes, cmd.query);
-      say(note ? noteAnswer(note) : notes.length ? `Dazu hab ich keine Notiz. Da sind: ${notes.map((n) => n.data.title).join(", ")}.` : "Dazu hab ich noch nichts notiert – sag einfach „Merk dir …“.");
+      say(note ? noteAnswer(note) : notes.length ? `Dazu hab ich keine Notiz. Da sind: ${notes.map((n) => n.data.title).join(", ")}.` : "Dazu hab ich noch nichts notiert. Sag einfach „Merk dir …“.");
       return true;
     }
     case "pin": {
       const note = noteFor(notes, cmd.query.replace(/^(das|die|den|der|meine|unsere)\s+/i, ""));
       if (!note) {
-        say("Die Notiz finde ich gerade nicht – wie heißt sie?");
+        say("Die Notiz find ich grad nicht. Wie heißt sie?");
         return true;
       }
       const undo = changeNotes((list) => setPinned(list, note.id, cmd.on));
@@ -340,7 +340,7 @@ export function noteRule(ctx: RuleContext, t: string): boolean {
       } else {
         const note = createNote({ title: cmd.title, text: cmd.text });
         const undo = changeNotes((all) => upsertNote(all, note));
-        say(`Gemerkt ✓ ${note.data.emoji} ${note.data.title} – steht unter Notizen.`, undo);
+        say(`Gemerkt ✓ ${note.data.emoji} ${note.data.title}, steht unter Notizen.`, undo);
       }
       return true;
     }
@@ -355,7 +355,7 @@ export function bausteinRule(ctx: RuleContext, t: string): boolean {
   if (cmd.kind === "list") {
     const off = BAUSTEINE.filter((b) => !featureOn(b.feature));
     setInput("");
-    localTurn(t, off.length ? `Außerdem kann ich: ${off.map((b) => `${b.name} – ${b.text.replace(/\.$/, "")}`).join("; ")}. Sag einfach, was ich einschalten soll – oder schau unter Einstellungen → Bausteine.` : "Gerade ist alles an, was ich kann.");
+    localTurn(t, off.length ? `Außerdem kann ich: ${off.map((b) => `${b.name} (${b.text.replace(/\.$/, "")})`).join("; ")}. Sag einfach, was ich einschalten soll.` : "Gerade ist alles an, was ich kann.");
     return true;
   }
   const b = bausteinOf(cmd.feature);
@@ -363,7 +363,7 @@ export function bausteinRule(ctx: RuleContext, t: string): boolean {
   if (!b || featureOn(cmd.feature) === cmd.on) return false;
   setInput("");
   setFeature(cmd.feature, cmd.on);
-  localTurn(t, cmd.on ? `Erledigt ✓ ${b.where}` : `Erledigt ✓ ${b.name} ist aus – die Daten bleiben.`, () => setFeature(cmd.feature, !cmd.on));
+  localTurn(t, cmd.on ? `Erledigt ✓ ${b.where}` : `Erledigt ✓ ${b.name} ist aus. Die Daten bleiben.`, () => setFeature(cmd.feature, !cmd.on));
   return true;
 }
 
@@ -371,7 +371,7 @@ export function bausteinRule(ctx: RuleContext, t: string): boolean {
 export function shopModeRule(ctx: RuleContext, t: string): boolean {
   const shop = shopModeRequest(t, allShops(loadShoppingSettings()));
   if (!shop) return false;
-  localReplyOf(ctx)(t, `Viel Spaß bei ${shop}! Ich zeig dir nur, was es dort gibt – und merke mir, was du sonst noch mitnimmst.`);
+  localReplyOf(ctx)(t, `Viel Spaß bei ${shop}. Ich zeig dir, was es dort gibt, und merk mir, was du mitnimmst.`);
   ctx.router.push(shopModeHref(shop));
   ctx.onClose();
   return true;
@@ -427,7 +427,7 @@ export function homeCommand(ctx: RuleContext, t: string): boolean {
         ? { id: "lokal-liste", type: "clear_shopping", weekStart }
         : { id: "lokal-weg", type: "remove_shopping", weekStart, names: cmd.names };
   const { undo } = commitOps(data, [op], new Set([op.id]), t);
-  const text = cmd.kind === "clear_week" ? "Erledigt ✓ Der Wochenplan ist wieder leer – die Rezepte bleiben." : cmd.kind === "clear_shopping" ? "Erledigt ✓ Die Einkaufsliste ist leer." : `Erledigt ✓ ${cmd.names.join(", ")} ${cmd.names.length === 1 ? "ist" : "sind"} von der Liste.`;
+  const text = cmd.kind === "clear_week" ? "Erledigt ✓ Der Wochenplan ist wieder leer. Die Rezepte bleiben." : cmd.kind === "clear_shopping" ? "Erledigt ✓ Die Einkaufsliste ist leer." : `Erledigt ✓ ${cmd.names.join(", ")} ${cmd.names.length === 1 ? "ist" : "sind"} von der Liste.`;
   localReply(t, text, undo, true);
   return true;
 }

@@ -245,7 +245,7 @@ export function GuidedChat({ state, onChange, onFinish }: Props) {
             <MicStrip />
             {(speech.error || dictationHint) && (
               <p className="text-sm text-muted" role="note">
-                {speech.error || "Spracheingabe gibt es in diesem Browser nicht – tipp aufs Mikrofon deiner Tastatur und diktiere einfach."}
+                {speech.error || "Spracheingabe gibt’s in diesem Browser nicht. Nimm das Mikro deiner Tastatur."}
               </p>
             )}
             <form
@@ -260,7 +260,7 @@ export function GuidedChat({ state, onChange, onFinish }: Props) {
                 onClick={toggleMic}
                 disabled={busy}
                 aria-pressed={speech.listening}
-                aria-label={speech.blocked ? "Mikro aus – so machst du es an" : speech.listening ? "Zuhören beenden" : "Antwort einsprechen"}
+                aria-label={speech.blocked ? "Mikro aus? So machst du es an" : speech.listening ? "Zuhören beenden" : "Antwort einsprechen"}
                 className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${speech.blocked ? MIC_BLOCKED : "bg-accent text-on-accent shadow-md"} transition active:scale-95 disabled:opacity-40 ${
                   speech.listening ? "animate-pulse ring-4 ring-accent/25" : ""
                 }`}

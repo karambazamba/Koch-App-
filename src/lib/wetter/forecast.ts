@@ -122,7 +122,7 @@ export function weatherTip(fc: Forecast, today: string, nowMinutes: number, term
       .sort((a, b) => a.time.localeCompare(b.time))
       .find((t) => rainHours.has(Number(t.time.slice(0, 2))));
     const start = raining ? "Gerade" : `Ab ${firstRain.hour} Uhr`;
-    if (hit) return `☂️ ${start} Regen – Schirm für ${hit.title.length > 24 ? `${hit.title.slice(0, 23)}…` : hit.title}`;
+    if (hit) return `☂️ ${start} Regen. Schirm für ${hit.title.length > 24 ? `${hit.title.slice(0, 23)}…` : hit.title}`;
     return `☂️ ${start} Regen`;
   }
   const early = hs.filter((h) => h.hour >= 5 && h.hour <= 9);
@@ -131,7 +131,7 @@ export function weatherTip(fc: Forecast, today: string, nowMinutes: number, term
   if (gust >= 75) return `Sturmböen bis ${Math.round(gust / 5) * 5} km/h 🌬️`;
   const range = todayRange(fc, today);
   if (range && range.max >= 25 && nowHour < 18) return "Sonnencreme einpacken ☀️";
-  if (gust >= 50) return `Windig – Böen bis ${Math.round(gust / 5) * 5} km/h 🌬️`;
+  if (gust >= 50) return `Windig, Böen bis ${Math.round(gust / 5) * 5} km/h 🌬️`;
   return null;
 }
 

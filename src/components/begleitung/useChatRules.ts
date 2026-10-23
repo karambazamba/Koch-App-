@@ -63,7 +63,7 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
     const product = parseProductStatement(t);
     if (!product) return null;
     setProduct(product.ingredient, product.product);
-    return `Gemerkt ✓ Statt ${product.ingredient} steht ab jetzt ${product.product} auf der Einkaufsliste – die Rezepte bleiben gleich.`;
+    return `Gemerkt ✓ Statt ${product.ingredient} steht ab jetzt ${product.product} auf der Einkaufsliste. Die Rezepte bleiben gleich.`;
   };
 
   /** "… auf die Liste", "Wir brauchen Milch und Eier" → erledigen und Antwort (ohne KI) */
@@ -83,7 +83,7 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
       text: `Steht drauf ✓ ${names.join(", ")}`,
       undo: () => {
         remove();
-        setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig gemacht – wieder runter von der Liste.", local: true }] }));
+        setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig. Wieder runter von der Liste.", local: true }] }));
       },
     };
   };
@@ -232,10 +232,10 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
           {
             role: "assistant",
             local: true,
-            text: `Notiert ✓ ${wishLabel(wish.who)}: ${wish.dish} – steht ganz oben bei den Ideen.`,
+            text: `Notiert ✓ ${wishLabel(wish.who)}: ${wish.dish}, steht ganz oben bei den Ideen.`,
             undo: () => {
               removeWish(created.id);
-              setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig gemacht – Wunsch ist wieder weg.", local: true }] }));
+              setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig. Wunsch ist wieder weg.", local: true }] }));
             },
           },
         ],
@@ -273,7 +273,7 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
             text: reading.reply,
             undo: () => {
               saveSpeechSettings(before);
-              setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig gemacht – alles wie vorher.", local: true }] }));
+              setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig. Alles wie vorher.", local: true }] }));
             },
           },
         ],
@@ -285,7 +285,7 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
       setInput("");
       const finish = (choice: UnlockChoice) => {
         const result = unlockPlanning(data.profile, today, choice);
-        setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", local: true, text: result.text, undo: () => { result.undo(); setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Okay, alles wie vorher – weiter spontan.", local: true }] })); } }] }));
+        setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", local: true, text: result.text, undo: () => { result.undo(); setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Klappt. Weiter spontan.", local: true }] })); } }] }));
       };
       setChat((c) => ({
         ...c,
@@ -308,7 +308,7 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
                       {
                         role: "assistant",
                         local: true,
-                        text: "Mal so, mal so – oder richtig mit Wochenplan?",
+                        text: "Mal so, mal so, oder richtig mit Wochenplan?",
                         choices: [
                           { label: "Mal so, mal so", onClick: () => finish({ kind: "immer", style: "mix" }) },
                           { label: "Ich plane gern", onClick: () => finish({ kind: "immer", style: "plan" }) },
@@ -344,7 +344,7 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
             undo: () => {
               saveProfile(before);
               if (voiceBefore !== null) saveSpeechSettings({ voice: voiceBefore });
-              setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig gemacht – alles wie vorher.", local: true }] }));
+              setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig. Alles wie vorher.", local: true }] }));
             },
           },
         ],
@@ -366,7 +366,7 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
       const reply: ChatTurnView = {
         role: "assistant",
         local: true,
-        text: `Gemerkt ✓ ${names} ${liked.length === 1 ? "kommt" : "kommen"} auf eure Liste „Das mögt ihr“ – baue ich gern öfter ein.`,
+        text: `Gemerkt ✓ ${names} ${liked.length === 1 ? "kommt" : "kommen"} auf eure Liste „Das mögt ihr“. Bau ich gern öfter ein.`,
       };
       // Reine Aussage → nur merken; steckt noch eine Frage drin, auch die KI fragen
       const more = /\?|plan|setz|woche|rezept|vorschlag|idee|koch/i.test(t);

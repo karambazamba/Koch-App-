@@ -45,7 +45,7 @@ describe("Wetter (B9)", () => {
   });
 
   it("Satz mit Bezug auf Termine", () => {
-    expect(daySentence(forecast(15), TODAY, [{ title: "Kinderarzt", time: "16:00" }], 12)).toBe("Zu Kinderarzt um 16 Uhr regnet es – Schirm mit.");
+    expect(daySentence(forecast(15), TODAY, [{ title: "Kinderarzt", time: "16:00" }], 12)).toBe("Zu Kinderarzt um 16 Uhr regnet es. Schirm mit.");
     expect(daySentence(forecast(), TODAY, [{ title: "Elternabend", time: "19:00" }], 12)).toBe("Für Elternabend bleibt es trocken.");
     expect(daySentence(forecast(15), TODAY, [], 12)).toBe("Ab 15 Uhr Regen, 6 bis 13°.");
   });

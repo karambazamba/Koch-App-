@@ -3,8 +3,8 @@ import { BASE, hello, losGehts, newPage, seedFamily, setDark, swipe } from "../l
 
 export const hallo = async (page, check) => {
   await page.goto(BASE);
-  const hi = await page.getByText("Hallo, ich bin Mia.").waitFor({ timeout: 5000 }).then(() => true, () => false);
-  check(hi, "Hallo-Bildschirm „Hallo, ich bin Mia.“");
+  const hi = await page.getByRole("heading", { name: "Moin!" }).waitFor({ timeout: 5000 }).then(() => true, () => false);
+  check(hi, "Hallo-Bildschirm „Moin!“");
   // Danach EINE Frage: der Look (Farbig vorausgewählt), Antippen zeigt ihn sofort
   await page.getByRole("button", { name: "Los geht’s" }).click();
   check(await page.getByRole("heading", { name: "Wie magst du’s?" }).waitFor({ timeout: 4000 }).then(() => true, () => false), "„Wie magst du’s?“ nach „Los geht’s“");
@@ -39,7 +39,7 @@ export const hallo2 = async (page, check) => {
   }
   check(ok === 10, `10× frisch: eine Navigation, Mia genau einmal (${ok}/10)`);
   await page.waitForTimeout(1500);
-  check(await page.getByRole("heading", { name: "Hallo, ich bin Mia." }).isVisible(), "„Hallo, ich bin Mia.“");
+  check(await page.getByRole("heading", { name: "Moin!" }).isVisible(), "„Moin!“ (Mia stellt sich nie vor)");
   check(await page.locator("h1 .text-accent").innerText() === "Mia.", "„Mia.“ in Orange");
   check(await page.getByText("Erzähl mir einfach, was ansteht. Ich sortiere für euch.").isVisible(), "Zeile „Erzähl mir einfach …“");
   check((await page.locator("[data-tone]").count()) === 0 && !(await page.getByText("Euer Alltag an einem Ort.").count()), "keine Deko-Kacheln, alte Zeile weg");

@@ -35,7 +35,7 @@ export function ProposalCard({ data, proposal, adjusting, onToggle, onApply, onA
       <div>
         <h3 className="text-lg font-bold">Das würde ich machen:</h3>
         <p className="text-sm text-muted">
-          {adjusting ? "Sag oder schreib unten, was anders sein soll." : "Gespeichert wird erst mit „Passt“ – oder sag einfach „ja“."}
+          {adjusting ? "Sag oder schreib unten, was anders sein soll." : "Gespeichert wird erst mit „Passt“ oder einem „Ja“."}
         </p>
       </div>
 

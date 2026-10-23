@@ -2175,3 +2175,11 @@ Fehler in `docs/aufraeumen-nachher.md`.
   oder eigener Betrag, „6 € im Monat vormerken“ (gespeichert als
   „vorgemerkt“, Speicher v2), löschbar mit Rückgängig; nach dem Start einmal
   sanft in der Jetzt-Karte. Ohne „Keine Werbung“.
+
+## Mia spricht knapp (v0.77.0)
+- Norddeutsch, kurz, nie vorstellen: „Moin!“ statt „Hallo, ich bin Mia.“,
+  Chat-Begrüßung „Was steht an?“, Stimmprobe „Moin! So klinge ich.“
+- `tidyMiaText()` für jede KI-Antwort (Anzeige, Vorlesen): keine
+  Gedankenstriche als Satzverbindung, keine Spiegelstriche, höchstens ein „!“.
+- Prompt: max. 2 Sätze, Bestätigungen 1–3 Wörter, keine Floskeln, drei
+  Beispiele gut/schlecht. Alle festen Mia-Sätze umgeschrieben, Test prüft sie.

@@ -42,7 +42,7 @@ export function useMarketChat({ data, today, spontanStyle, setChat }: Options) {
           text: `Steht oben unter „Jetzt mitnehmen“ ✓ ${names.join(", ")}`,
           undo: () => {
             removeManualItems(weekStart, ids);
-            setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig gemacht – wieder runter von der Liste.", local: true }] }));
+            setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig. Wieder runter von der Liste.", local: true }] }));
           },
         },
       ],
@@ -70,7 +70,7 @@ export function useMarketChat({ data, today, spontanStyle, setChat }: Options) {
           undo: result.ok
             ? () => {
                 replaceMealPlans(before);
-                setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig gemacht – alles wie vorher.", local: true }] }));
+                setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig. Alles wie vorher.", local: true }] }));
               }
             : undefined,
         },

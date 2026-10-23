@@ -29,10 +29,10 @@ export function TipBubble({ recipes }: { recipes: Record<string, Recipe> }) {
       <div className="flex flex-col items-start gap-2">
         <p className={BUBBLE}>
           {done.how === "tried"
-            ? `Ausprobiert ✓ Steht jetzt so im Rezept „${done.tip.title}“ – auch auf der Einkaufsliste.`
+            ? `Ausprobiert ✓ Steht jetzt so im Rezept „${done.tip.title}“, auch auf der Einkaufsliste.`
             : done.how === "undone"
               ? "Okay, wieder wie vorher."
-              : "Alles klar – bleibt, wie es ist."}
+              : "Klappt. Bleibt, wie es ist."}
         </p>
         {done.how === "tried" && done.previous && (
           <button
