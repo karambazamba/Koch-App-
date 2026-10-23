@@ -7,7 +7,7 @@
 // und Tests gleich rechnen.
 
 import { createEntry, type Entry } from "@/lib/core/entries";
-import { REACTIONS, type Reaction } from "@/lib/pinnwand/model";
+import { applyReaction, readReactions, type Reaction, type Reactions } from "@/lib/pinnwand/reactions";
 
 /** Höchstens 60 s, danach wird automatisch gesendet */
 export const MEMO_MAX_S = 60;
@@ -31,7 +31,8 @@ type MemoData = {
   gehoertVon: string[];
   /** Zeitpunkt, an dem alle im Haushalt es gehört hatten – ab da noch 24 Std. */
   alleGehoertAm: string | null;
-  reactions: Partial<Record<Reaction, string[]>>;
+  /** Person → Emoji (eine Reaktion je Person) */
+  reactions: Reactions;
   /** Pfad in Supabase Storage (später, mit Konten); bis dahin null = nur auf diesem Gerät */
   storagePath: string | null;
 };
@@ -86,7 +87,7 @@ export function sanitizeMemo(raw: unknown): MemoMessage | null {
       wave: clampWave(Array.isArray(d.wave) ? d.wave.filter((v): v is number => typeof v === "number") : []),
       gehoertVon: list(d.gehoertVon),
       alleGehoertAm: typeof d.alleGehoertAm === "string" ? d.alleGehoertAm : null,
-      reactions: Object.fromEntries(REACTIONS.map((r) => [r, list(d.reactions?.[r])]).filter(([, v]) => (v as string[]).length)),
+      reactions: readReactions(d.reactions),
       storagePath: typeof d.storagePath === "string" ? d.storagePath : null,
     },
   };
@@ -119,14 +120,9 @@ export function setMemoHeard(list: MemoMessage[], id: string, who: string, heard
   });
 }
 
-/** Reaktion an/aus (wie bei Text) */
+/** Reaktion setzen, tauschen oder entfernen (wie bei Text) */
 export function toggleMemoReaction(list: MemoMessage[], id: string, reaction: Reaction, me: string, stamp: string): MemoMessage[] {
-  return list.map((m) => {
-    if (m.id !== id) return m;
-    const who = m.data.reactions[reaction] ?? [];
-    const next = who.includes(me) ? who.filter((w) => w !== me) : [...who, me];
-    return { ...m, geaendert: stamp, data: { ...m.data, reactions: { ...m.data.reactions, [reaction]: next } } };
-  });
+  return list.map((m) => (m.id === id ? { ...m, geaendert: stamp, data: { ...m.data, reactions: applyReaction(m.data.reactions, me, reaction) } } : m));
 }
 
 /** Noch nicht gehört (von jemand anderem) */

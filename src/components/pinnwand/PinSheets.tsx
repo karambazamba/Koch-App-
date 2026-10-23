@@ -1,18 +1,15 @@
 "use client";
 
-// Pinnwand-Fenster: neue Nachricht (Textfeld bis 140 Zeichen, Mikrofon rechts,
-// "Anheften") und Nachricht ansehen (reagieren, dauerhaft anheften, eigene
-// löschen). Von der Kachel und der Seite /pinnwand genutzt.
+// Pinnwand: „wer · wann“-Zeile und das Text-Fenster (bis 140 Zeichen,
+// „Anheften“) – nur noch als „Lieber Formular“-Weg hinter Mia (Tafel 69).
 
-import { useEffect, useState } from "react";
-import { Mic, MicOff, Pin, Square, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Mic, MicOff, Square } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
-import { INPUT_BASE, buttonClass, chipClass } from "@/components/ui/styles";
-import { PersonAvatar } from "@/components/ui/PersonAvatar";
-import { now, todayIso, toIsoDate } from "@/lib/core/now";
-import { showDeleted } from "@/lib/core/toast";
-import { pushUndo } from "@/lib/core/undo";
-import { PIN_MAX, REACTIONS, addPin, changePins, createPin, markPinsRead, pinMeta, removePin, setPinPinned, toggleReaction, type PinMessage } from "@/lib/pinnwand";
+import { INPUT_BASE, buttonClass } from "@/components/ui/styles";
+import { todayIso, toIsoDate } from "@/lib/core/now";
+import { PIN_MAX, addPin, changePins, createPin, pinMeta } from "@/lib/pinnwand";
+import { takePinReply } from "@/lib/begleitung/open";
 import { useSpeechInput } from "@/lib/begleitung/useSpeechInput";
 import { shortClock } from "@/components/notizen/Schnellnotiz";
 import { buzz } from "@/components/heute/actions";
@@ -25,7 +22,7 @@ export function PinWriteSheet({ me, onClose }: { me: string; onClose: () => void
   const [text, setText] = useState("");
   const speech = useSpeechInput({ onTranscript: (t) => setText(t.slice(0, PIN_MAX)), onEnd: (t) => t && setText(t.slice(0, PIN_MAX)) });
   const save = () => {
-    const pin = createPin(text, me);
+    const pin = createPin(text, me, takePinReply());
     if (!pin) return;
     speech.reset();
     changePins((all) => addPin(all, pin));
@@ -71,73 +68,6 @@ export function PinWriteSheet({ me, onClose }: { me: string; onClose: () => void
           Anheften
         </button>
       </form>
-    </Sheet>
-  );
-}
-
-/** Nachricht: reagieren, dauerhaft anheften, löschen (nur eigene) */
-export function PinSheet({ message, me, onClose }: { message: PinMessage; me: string; onClose: () => void }) {
-  const stamp = () => now().toISOString();
-  useEffect(() => {
-    changePins((all) => markPinsRead(all, me));
-  }, [me]);
-  const mine = message.data.author === me;
-  return (
-    <Sheet title="Pinnwand" onClose={onClose}>
-      <div className="flex flex-col gap-4 pb-3">
-        <div className="flex items-start gap-3">
-          <PersonAvatar name={message.data.author} />
-          <div className="flex min-w-0 flex-col">
-            <p className="text-lg font-semibold leading-snug">{message.data.text}</p>
-            <span className="text-sm text-muted">{pinMetaLine(message, me)}</span>
-          </div>
-        </div>
-        <div className="flex gap-2" role="group" aria-label="Reagieren">
-          {REACTIONS.map((r) => {
-            const on = message.data.reactions[r]?.includes(me) ?? false;
-            const count = message.data.reactions[r]?.length ?? 0;
-            return (
-              <button
-                key={r}
-                type="button"
-                aria-pressed={on}
-                aria-label={`Mit ${r} reagieren`}
-                onClick={() => {
-                  buzz();
-                  changePins((all) => toggleReaction(all, message.id, r, me, stamp()));
-                }}
-                className={`${chipClass(on)} text-lg`}
-              >
-                {r}
-                {count > 0 && <span className="text-sm">{count}</span>}
-              </button>
-            );
-          })}
-        </div>
-        <button
-          type="button"
-          onClick={() => changePins((all) => setPinPinned(all, message.id, !message.data.pinned, stamp()))}
-          className={buttonClass("secondary", "sm")}
-        >
-          <Pin className="h-4 w-4" strokeWidth={2} aria-hidden />
-          {message.data.pinned ? "Nicht mehr dauerhaft – nach 3 Tagen weg" : "Dauerhaft anheften"}
-        </button>
-        {mine && (
-          <button
-            type="button"
-            onClick={() => {
-              const undo = changePins((all) => removePin(all, message.id));
-              showDeleted(pushUndo("das Löschen der Pinnwand-Nachricht", undo));
-              onClose();
-            }}
-            className={`${buttonClass("ghost", "sm")} text-danger`}
-          >
-            <Trash2 className="h-4 w-4" strokeWidth={2} aria-hidden />
-            Löschen
-          </button>
-        )}
-        {!message.data.pinned && <p className="text-xs text-muted">Nachrichten verschwinden nach 3 Tagen von selbst.</p>}
-      </div>
     </Sheet>
   );
 }

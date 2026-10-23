@@ -24,7 +24,7 @@ export const STORAGE = [
   { key: "wasgibts.eintraege", what: "Termine und Aufgaben", version: 2, migration: "kalender/store.ts migrate", area: "local", backup: true },
   { key: "wasgibts.notizen", what: "Notizen", version: 1, migration: "notizen/store.ts", area: "local", backup: true },
   { key: "wasgibts.kladde", what: "Schnellnotiz (Schlüssel heißt noch Kladde)", version: 1, migration: "notizen/schnellnotiz.ts", area: "local", backup: true },
-  { key: "wasgibts.pinnwand", what: "Pinnwand: Nachrichten und Sprachnachrichten (Einträge; Memos nicht in der Sicherung)", version: 2, migration: "pinnwand/store.ts migratePinStore", area: "local", backup: true },
+  { key: "wasgibts.pinnwand", what: "Pinnwand: Nachrichten und Sprachnachrichten (Einträge; Memos nicht in der Sicherung), Reaktionen je Person, Antworten mit Zitat", version: 3, migration: "pinnwand/store.ts migratePinStore", area: "local", backup: true },
   { key: "wasgibts-memos", what: "Ton der Sprachnachrichten (IndexedDB, bleibt auf dem Gerät)", version: 1, migration: "pinnwand/memoAudio.ts", area: "indexeddb", backup: false },
   { key: "wasgibts.startseite", what: "Startseite: Kacheln, Reihenfolge, Größen", version: 4, migration: "core/homeLayout.ts migrateHome", area: "local", backup: true },
   { key: "wasgibts.funktionen", what: "Eingeschaltete Bausteine", version: 2, migration: "core/features.ts migrate", area: "local", backup: true },

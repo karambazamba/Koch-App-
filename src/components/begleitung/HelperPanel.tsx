@@ -33,10 +33,12 @@ import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 import { looksLikeMail, splitInstruction } from "@/lib/begleitung/mail";
 import { useTipStore } from "@/lib/essen/healthTips";
 import { useFeature } from "@/lib/core/features";
-import { onReleaseHelperVoice, takeFormular } from "@/lib/begleitung/open";
+import { onReleaseHelperVoice, takeFormular, takePinReply } from "@/lib/begleitung/open";
+import { addPin, changePins, createPin } from "@/lib/pinnwand";
+import { cleanFillers, pinChoiceLabels, pinIntent, pinnedText } from "@/lib/pinnwand/schreiben";
 import { showToast } from "@/lib/core/toast";
 
-import type { ChatState } from "@/components/begleitung/chatTypes";
+import type { ChatState, ChatTurnView } from "@/components/begleitung/chatTypes";
 import type { RuleContext } from "@/components/begleitung/localRules";
 import { ChatHistory } from "@/components/begleitung/ChatHistory";
 import { ChatInputBar } from "@/components/begleitung/ChatInputBar";
@@ -191,6 +193,12 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       applyAndClose(chat.proposal.selected);
       return;
     }
+    // „＋“ in der Pinnwand: Mia schreibt mit und pinnt direkt an (Tafel 69)
+    if (chat.topic === "PINNWAND") {
+      setInput("");
+      pinFlow(t);
+      return;
+    }
     if (chat.formular) setChat((c) => ({ ...c, formular: undefined }));
     // „Kochidee“, „Was soll ich kochen?“ schaltet den Knopf frei (auch mit KI)
     if (isKochtippRequest(t)) unlockKochtipp();
@@ -222,6 +230,68 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       return;
     }
     route(t);
+  };
+
+  /** Pinnwand-Modus: Füllwörter weg, sonst 1:1 anpinnen – bei Einkauf/Termin kurz nachfragen */
+  const pinFlow = (said: string) => {
+    const text = cleanFillers(said) || said;
+    const intent = pinIntent(text);
+    const user = { role: "user" as const, text: said, local: true };
+    if (!intent) return pinIt(text, user);
+    const [toBoard, other] = pinChoiceLabels(intent);
+    setChat((c) => ({
+      ...c,
+      formular: undefined,
+      turns: [
+        ...c.turns,
+        user,
+        {
+          role: "assistant",
+          local: true,
+          text: intent === "einkauf" ? "Klingt nach Einkauf – wohin damit?" : "Klingt nach einem Termin – wohin damit?",
+          choices: [
+            { label: toBoard, onClick: () => pinIt(text) },
+            {
+              label: other,
+              onClick: () => {
+                // Pinnwand-Modus aus, dann der normale Weg (KI bzw. feste Regeln)
+                setChat((c2) => ({ ...c2, topic: undefined }));
+                route(said);
+              },
+            },
+          ],
+        },
+      ],
+    }));
+  };
+
+  const pinIt = (text: string, user?: ChatTurnView) => {
+    const me = data?.profile.persons[0]?.name.trim() || "Ich";
+    const pin = createPin(text, me, takePinReply());
+    if (!pin) return;
+    const undo = changePins((all) => addPin(all, pin));
+    setChat((c) => ({
+      ...c,
+      formular: undefined,
+      turns: [
+        ...c.turns,
+        ...(user ? [user] : []),
+        {
+          role: "assistant",
+          local: true,
+          text: pinnedText(pin.data.text),
+          choices: [
+            {
+              label: "Rückgängig",
+              onClick: () => {
+                undo();
+                setChat((c2) => ({ ...c2, turns: [...c2.turns, { role: "assistant", local: true, text: "Wieder weg." }] }));
+              },
+            },
+          ],
+        },
+      ],
+    }));
   };
 
   /**

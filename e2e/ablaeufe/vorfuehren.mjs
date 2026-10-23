@@ -2,7 +2,7 @@
 // Sprachnachricht antippen statt halten – mit echten Touch-Gesten (CDP).
 import { readFileSync, writeFileSync } from "node:fs";
 import { devices } from "playwright";
-import { BASE, hello, launch, seedFamily, swipe } from "../lib.mjs";
+import { BASE, hello, launch, seedFamily, swipe, pinnwandSchreiben } from "../lib.mjs";
 
 const editing = (page) =>
   page.getByRole("button", { name: "Fertig" }).first().isVisible();
@@ -274,11 +274,7 @@ export const offline = async (page, check) => {
       .waitFor({ timeout: 8000 });
     check(true, "offline: Startseite startet");
     await page.goto(BASE + "/pinnwand");
-    await page
-      .getByRole("textbox", { name: "Nachricht an alle" })
-      .fill("Offline geschrieben");
-    await page.getByRole("button", { name: "Anheften" }).click();
-    await page.waitForTimeout(400);
+    await pinnwandSchreiben(page, "Offline geschrieben");
     check(
       await page.getByText("Offline geschrieben").isVisible(),
       "offline: Eintragen geht",

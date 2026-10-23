@@ -240,3 +240,14 @@ export async function lieberFormular(page) {
   await link.click();
   await page.waitForTimeout(500);
 }
+
+/** Auf der Pinnwand-Seite: ＋ → Mia schreibt mit (hier getippt) → direkt angepinnt → Bühne zu */
+export async function pinnwandSchreiben(page, text) {
+  await page.getByRole("button", { name: /^Nachricht an die Pinnwand/ }).first().click();
+  const box = await tippenFeld(page);
+  await box.fill(text);
+  await box.press("Enter");
+  await page.getByText("✓ Angepinnt", { exact: false }).last().waitFor({ timeout: 5000 });
+  await page.getByRole("dialog").last().getByRole("button", { name: "Schließen" }).click();
+  await page.waitForTimeout(400);
+}

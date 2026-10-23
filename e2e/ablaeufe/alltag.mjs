@@ -1,5 +1,5 @@
 // Eintragen, Kalender, Pinnwand, Wetter, Chat ohne KI (Testmodus)
-import { BASE, hello, lieberFormular, miaTippen, seedFamily, store } from "../lib.mjs";
+import { BASE, hello, lieberFormular, miaTippen, seedFamily, store, pinnwandSchreiben } from "../lib.mjs";
 
 const family = async (page, path = "/") => {
   await hello(page);
@@ -36,9 +36,7 @@ export const kalender = async (page, check) => {
 export const pinnwand = async (page, check) => {
   await family(page, "/pinnwand");
   check(await page.getByText("Bin um 20 Uhr da").isVisible(), "Nachricht von Felix");
-  await page.getByRole("textbox", { name: "Nachricht an alle" }).fill("Pizza ist im Ofen");
-  await page.getByRole("button", { name: "Anheften" }).click();
-  await page.waitForTimeout(400);
+  await pinnwandSchreiben(page, "Pizza ist im Ofen");
   check(await page.getByText("Pizza ist im Ofen").isVisible(), "eigene Nachricht angeheftet");
 };
 

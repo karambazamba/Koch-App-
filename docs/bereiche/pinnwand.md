@@ -25,12 +25,17 @@ außer dauerhaft angeheftete Nachrichten.
 
 ## Daten und Speicher
 
-- `wasgibts.pinnwand` v2 `{version: 2, messages, memos}`
-  (`migratePinStore`): v1 behält die Nachrichten und bekommt leere `memos`.
+- `wasgibts.pinnwand` v3 `{version: 3, messages, memos}`
+  (`migratePinStore`): v1 behält die Nachrichten und bekommt leere `memos`;
+  v2 → v3 dreht die Reaktionen um (Emoji → Personen wird Person → Emoji,
+  `readReactions`, auch in alten Sicherungen) und ergänzt `replyTo: null`.
+  Der Abgleich (`konten/sync/docs.ts`, Übersetzer v3) trägt Reaktionen und
+  Antworten mit; Löschen geht als Markierung.
   Beim Speichern räumen `prunePins` und `pruneMemos` Abgelaufenes weg.
 - Nachricht (typ „pinnwand“, Raum immer Familie): `text` (bis 140),
   `author` (bis zu den Konten der eigene Name, sonst „Ich“), `reactions`
-  (👍/❤️ → Namen), `readBy`, `pinned`.
+  (Person → 👍 ❤️ 😂 😮 🙏, eine je Person, `reactions.ts`), `replyTo`
+  (Zitat `{id, author, text}` oder null), `readBy`, `pinned`.
 - Memo (typ „memo“, Raum Familie): `author`, `dauer` (Sekunden, max. 60),
   `mime`, `wave` (28 Werte 0..1), `gehoertVon` (Autor zählt als gehört),
   `alleGehoertAm`, `reactions`, `storagePath` (null bis zu den Konten).
@@ -56,21 +61,46 @@ außer dauerhaft angeheftete Nachrichten.
 - Sortierung der gemischten Liste (`useBoard`): angeheftete zuerst, dann
   neueste (`PINS` in `src/lib/core/sort.ts`). Text und Memos sind nach Zeit
   gemischt.
-- Ungelesen = von jemand anderem und noch nicht in `readBy`. Die Kachel zeigt
-  dann einen Punkt in der Kachel-Akzentfarbe (Rosé). Öffnet man eine
-  Nachricht, gilt alles als gelesen (`markPinsRead`).
-- Antippen einer Nachricht (`PinSheet`): 👍/❤️ (je Person einmal),
-  „Dauerhaft anheften“ / „Nicht mehr dauerhaft – nach 3 Tagen weg“, Löschen nur
-  bei eigenen (Gelöscht · Rückgängig).
+- Ungelesen = von jemand anderem und noch nicht in `readBy`; die Kachel zeigt
+  dafür keinen Punkt mehr (Tafel 71). Öffnen der Seite gilt als gelesen
+  (`markPinsRead`).
+- Gesten auf der Seite wie bei WhatsApp (Tafel 70, `SwipeRow.tsx`):
+  nach LINKS wischen = löschen, nur eigene (`canDelete`) – rote Fläche
+  „Löschen“, ganz durchwischen oder antippen, „Gelöscht · Rückgängig“;
+  fremde federn nur zurück. Nach RECHTS wischen = antworten (blaue Fläche):
+  Mia schreibt mit, die neue Nachricht trägt das Zitat (`replyOnPinboard`).
+  LANGE DRÜCKEN (0,4 s, Vibrieren; auf Android auch „contextmenu“) =
+  `ReactionMenu.tsx`: Nachricht angehoben, Rest abgedunkelt, darüber 👍 ❤️ 😂
+  😮 🙏 (setzen, tauschen, entfernen), darunter „Antworten“, „Weiterleiten an
+  Mia“ (macht daraus eine Vorschau mit „Übernehmen“), „Anheften“, „Löschen“
+  (nur eigene), bei der eigenen Sprachnachricht „Gehört von“. Das Loslassen
+  des langen Drückens schließt das Menü nicht (erst eine neue Berührung
+  zählt). Unter der Nachricht klein „❤️ 👍 Lisa, Felix“ (`reactionLine`,
+  keine Zahlen). Für VoiceOver dieselben Aktionen als unsichtbare Knöpfe.
+  Die Zeilen tragen `data-no-swipe` (kein Seitenwechsel).
 - Autor-Kreis mit Anfangsbuchstabe in fester Farbe je Person (`personTone`),
   Zeile „Lisa · 7:48“, „Du · gestern“ oder „21.10.“ (`pinMeta`).
 
 ### Kachel und Seite
-- Kachel (Rosé): Kopf „PINNWAND“ (+ Punkt) mit dem „+“ oben rechts (wie jede
-  Kachel, neue Nachricht: Textfeld bis 140 mit Mikrofon, „Anheften“), das rosé
-  Mikro für Memos steht getrennt unten rechts – Tippflächen überlappen nie
-  (e2e `kachelKnoepfe`). S/M/L = 1/2/4 neueste Einträge. Das Label öffnet
-  /pinnwand.
+- Kachel (Rosé, Tafel 71 B): feste Höhe 156 px (wie die Wetter-Kachel
+  daneben, auch breit nie höher), genau 2 Zeilen à 30 px mit den 2 neuesten
+  Einträgen der letzten 2 Tage (`tileEntries`): Text = Bild 22 px + eine
+  Zeile …, Sprachnachricht = ▶ + kleine Tonwelle + Länge. „+N“ neben dem ＋,
+  wenn es mehr gibt; ältere als 2 Tage bleiben nur auf der Seite. Kein roter
+  Punkt. Leer: „Hinterlasst euch hier Nachrichten“. ＋ oben rechts = Mia
+  schreibt mit, Mikro (34 px, Tippfläche 44 px) unten rechts = Sprachnachricht
+  – deutlich getrennt. Antippen einer Zeile öffnet /pinnwand an dieser
+  Nachricht (`?n=<id>`, kurz hervorgehoben). Keine Wisch-/Lange-Drücken-
+  Gesten in der Kachel. Einmal klein: „＋ = Mia schreibt mit · Mikro = deine
+  Stimme“ (`pinnwand-kachel`).
+- ＋ = Mia schreibt mit (Tafel 69): Bühne mit Kopf „PINNWAND“ (Pin-Symbol),
+  „Was soll an die Pinnwand?“, Mia hört sofort zu, „Lieber tippen“ wie
+  überall. Gesagtes wird direkt angepinnt (`HelperPanel.pinFlow`): nur
+  Füllwörter weg (`cleanFillers`), Antwort „Steht für alle an der Pinnwand:
+  „…“ ✓ Angepinnt“ mit „Rückgängig“, keine Vorschau. Klingt es nach Einkauf
+  oder Termin (`pinIntent`), fragt Mia mit „An die Pinnwand“ / „Auf die
+  Einkaufsliste“ bzw. „In den Kalender“. Das Textfenster (`PinWriteSheet`)
+  bleibt nur als „Lieber Formular“.
 - Mikrofon (v0.66.1): immer nur EIN Nutzer (`core/mic`: `claimMic`/`releaseMic`).
   Vor der Aufnahme endet Mias Zuhören sauber (abort, Tracks stop); nach jeder
   Aufnahme werden Tracks, Analyser und AudioContext freigegeben – auch bei
@@ -87,10 +117,13 @@ außer dauerhaft angeheftete Nachrichten.
   Sicherung, nie an die KI): Einstellungen → Daten & App → 5× auf die
   Version tippen; die letzten 20 Ereignisse. „Das war sehr kurz“ nur, wenn wirklich Ton kam. Der nachgeschobene
   Klick vom Antippen trifft nicht die Aufnahme-Zeile (450 ms Sperre).
-- Seite /pinnwand: Feld „Nachricht an alle …“ mit Mikrofon/Senden und dem
-  Memo-Mikro, darunter alle Einträge als Karten.
-- Beispiel-Tag: ein Gruß der Begleitung; die erste eigene Nachricht oder das
-  erste Memo lässt ihn für immer verschwinden (`clearDemoTile("pinnwand")`).
+- Seite /pinnwand: oben rechts ＋ (Mia schreibt mit), darunter „Sprachnachricht
+  an alle“ mit dem Mikro, dann alle Einträge als Karten (Antworten mit Zitat).
+  Einmal: „Wischen: ← löschen · → antworten · Lange drücken: reagieren“
+  (`pinnwand-gesten`).
+- Beispiel-Tag: eine Familien-Nachricht (Lisa: „Bringe Brot mit 🥖“) statt
+  eines Grußes von Mia; die erste eigene Nachricht oder das erste Memo lässt
+  sie für immer verschwinden (`clearDemoTile("pinnwand")`).
 
 ### Sprachnachrichten (Memos)
 - Kein KI-Anteil, keine Abschrift. Das Mikro ist rosé (nie Orange – Orange ist

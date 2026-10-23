@@ -54,20 +54,20 @@ describe("Sprachnachrichten: Verschwinden", () => {
     expect(memoUnheard(setMemoHeard([m], m.id, "Felix", true, household, "x")[0], "Felix")).toBe(false);
   });
 
-  it("Reaktionen wie bei Text", () => {
+  it("Reaktionen wie bei Text (eine je Person)", () => {
     const m = memoAt("2026-10-20T09:00");
     const once = toggleMemoReaction([m], m.id, "❤️", "Felix", "x");
-    expect(once[0].data.reactions["❤️"]).toEqual(["Felix"]);
-    expect(toggleMemoReaction(once, m.id, "❤️", "Felix", "y")[0].data.reactions["❤️"]).toEqual([]);
+    expect(once[0].data.reactions).toEqual({ Felix: "❤️" });
+    expect(toggleMemoReaction(once, m.id, "❤️", "Felix", "y")[0].data.reactions).toEqual({});
   });
 });
 
 describe("Sprachnachrichten: Daten", () => {
-  it("Migration v1 → v2: Nachrichten bleiben, Memos leer", () => {
+  it("Migration v1 → v3: Nachrichten bleiben, Memos leer", () => {
     at("2026-10-20T09:00");
     const v1 = { version: 1, messages: [{ id: "a", typ: "pinnwand", raum: "familie", besitzer: "lokal", erstellt: "2026-10-20T07:00:00.000Z", geaendert: "2026-10-20T07:00:00.000Z", data: { text: "Bin um 20 Uhr da", author: "Lisa", reactions: {}, readBy: ["Lisa"], pinned: false } }] };
     const v2 = migratePinStore(v1);
-    expect(v2?.version).toBe(2);
+    expect(v2?.version).toBe(3);
     expect(v2?.messages.map((m) => m.data.text)).toEqual(["Bin um 20 Uhr da"]);
     expect(v2?.memos).toEqual([]);
     expect(migratePinStore({ version: 7 })).toBeNull();

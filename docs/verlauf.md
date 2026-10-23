@@ -2114,3 +2114,13 @@ Fehler in `docs/aufraeumen-nachher.md`.
   ersetzt und trägt Fehlendes ein. Kochtipp-Karte, Schnellantworten und die
   alte Einzelauswahl (`pickCookDish`, `parseCookWish`) sind entfernt.
 
+## Pinnwand – ＋ schreiben, Mikro sprechen, wischen & reagieren (Tafel 69–71, v0.72.0)
+
+- Felix: Man will in die Pinnwand reinsprechen, Nachrichten wie bei WhatsApp
+  wegwischen und mit Daumen/Herz beantworten; die Kachel soll klein bleiben.
+  Jetzt: Kachel fest 156 px mit 2 Zeilen und „+N“, ＋ = Mia schreibt mit
+  (direkt angepinnt, Rückfrage bei Einkauf/Termin), Mikro = Sprachnachricht;
+  auf der Seite links wischen = löschen (eigene), rechts = antworten (Zitat),
+  lange drücken = 👍 ❤️ 😂 😮 🙏 + Menü. Reaktionen je Person (Speicher v3),
+  Mias Gruß im Beispiel-Tag ersetzt durch eine Familien-Nachricht.
+

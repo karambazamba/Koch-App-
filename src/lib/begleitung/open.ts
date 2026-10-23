@@ -9,6 +9,7 @@
 // `ask` = gleich fragen.
 
 import { unlockSpeech } from "@/lib/begleitung/speech";
+import type { PinQuote } from "@/lib/pinnwand/model";
 
 type HelperMode = "spontan" | "voice" | "wochencheck" | "kochtipp" | "eintragen";
 
@@ -81,3 +82,20 @@ export function takeFormular(): (() => void) | null {
 }
 
 export const hasFormular = () => formular !== null;
+
+// --- Pinnwand: Antwort auf eine Nachricht ----------------------------------------
+
+let pinReply: PinQuote | null = null;
+
+/** Rechts wischen / „Antworten“: Mia holen, die neue Nachricht trägt das Zitat */
+export function replyOnPinboard(quote: PinQuote, form: () => void) {
+  pinReply = quote;
+  askMiaFirst("pinnwand", form);
+}
+
+/** Das gemerkte Zitat (einmal) – beim Anpinnen */
+export function takePinReply(): PinQuote | null {
+  const q = pinReply;
+  pinReply = null;
+  return q;
+}

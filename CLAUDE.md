@@ -116,8 +116,9 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   (weiß mit feinem Rand, Farbe nur in Überschrift, Symbol, Uhrzeit,
   Termin-Strich; `data-look` am `<html>`), weiße Karten auf Unterseiten, EINE
   Akzentfarbe (Orange) nur für Knöpfe und die Begleitung, Pastell nie für
-  Knöpfe. Linien-Icons (lucide), Emojis nur als Inhalt (Gerichte, Notizen),
-  nie in Knöpfen, Chips, Kacheln oder Termin-Titeln.
+  Knöpfe. Linien-Icons (lucide), Emojis nur als Inhalt (Gerichte, Notizen,
+  Pinnwand-Reaktionen 👍 ❤️ 😂 😮 🙏 – die sind Inhalt), nie in Knöpfen,
+  Chips, Kacheln oder Termin-Titeln.
 - Schrift Plus Jakarta Sans; Seitentitel 30/800 (`PageHeader`), Abschnitte
   `SECTION_TITLE`, Kachel-Label `TILE_LABEL` nur in Kacheln. Radien nur über
   Tokens: `rounded-card` 20 px, `rounded-field` 14 px, `rounded-full`, dazu
