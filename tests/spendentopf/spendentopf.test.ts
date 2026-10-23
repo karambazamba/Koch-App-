@@ -145,7 +145,7 @@ describe("Topf, Stimmen, Betrag", () => {
   });
 });
 
-describe("Beitrags-Frage „Was ist dir die App wert?“", () => {
+describe("Beitrags-Frage „Gemeinsam für …“", () => {
   const start = { since: "2026-10-01", asked: 0, next: null, done: false };
 
   it("nach 28 Tagen fällig; nie mit Zusage, erledigt oder ohne Start", () => {

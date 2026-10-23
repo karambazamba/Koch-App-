@@ -119,6 +119,14 @@ describe("Mütze schrittweise freischalten", () => {
       expect(hatVisible(loadKochtipp(), false)).toBe(true);
     }));
 
+  it("Beispiel-Tag zeigt die Mütze, ein echter Tag 1 nicht – „ab Tag 3“ bleibt", () =>
+    withApp("2026-10-21", () => {
+      noteKochtippDay("2026-10-21");
+      expect(hatVisible(loadKochtipp(), false, true)).toBe(true);
+      expect(hatVisible(loadKochtipp(), false)).toBe(false);
+      expect(loadKochtipp()).toMatchObject({ unlocked: false, popped: false });
+    }));
+
   it("Nachfrage an Tag 1 oder „Alles zeigen“ → sofort", () =>
     withApp("2026-10-21", () => {
       noteKochtippDay("2026-10-21");

@@ -72,7 +72,7 @@ export function SpendentopfView() {
             <Projects potId={pot.id} year={year} today={iso} vote={state.votes[String(year)] ?? null} />
             <Schedule year={year} today={iso} />
             <section className="flex flex-col gap-2" aria-label="Euer Beitrag">
-              <h2 className={`px-1 ${SECTION_TITLE}`}>{POT_TEXTS.askTitle}</h2>
+              <h2 className={`px-1 ${SECTION_TITLE}`}>{POT_TEXTS.together(region?.name)}</h2>
               <PledgeChoice />
             </section>
           </>

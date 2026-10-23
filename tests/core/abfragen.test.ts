@@ -116,4 +116,20 @@ describe("Gespeicherte Merker, wie die Oberfläche sie sieht", () => {
     expect(t.toIsoDate(t.useToday()!)).toBe("2026-10-21");
     expect(t.useMinutes()).toBe(1110);
   });
+
+  // Fehler v0.67.1 (Entwurf): ohne `document` (Tests, Server) brach useMinutes ab
+  it("Minuten: beim Zurückkommen in die App neu – und ohne document kein Absturz", async () => {
+    fakeWindow();
+    await atFresh("2026-10-21T18:30");
+    const doc = { visibilityState: "visible", addEventListener: vi.fn(), removeEventListener: vi.fn() };
+    vi.stubGlobal("document", doc);
+    try {
+      const t = await import("@/lib/core/now");
+      expect(t.useMinutes()).toBe(1110);
+      expect(doc.addEventListener).toHaveBeenCalledWith("visibilitychange", expect.any(Function));
+      expect(doc.removeEventListener).toHaveBeenCalledWith("visibilitychange", doc.addEventListener.mock.calls[0][1]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });

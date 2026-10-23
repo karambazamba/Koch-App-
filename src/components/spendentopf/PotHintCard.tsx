@@ -2,8 +2,8 @@
 
 // Startseite, unter der Jetzt-Karte (höchstens ein Hinweis): zu Beginn der
 // Abstimmung „2.344 € im Topf – stimmt jetzt ab!“ (bis abgestimmt oder ✕,
-// einmal im Jahr) – später als Web-Push. Sonst nach ca. 4 Wochen einmal „Was
-// ist dir die App wert?“ mit 2 € · 4 € · 7 € · Später (höchstens 3×).
+// einmal im Jahr) – später als Web-Push. Sonst nach ca. 4 Wochen einmal
+// „Gemeinsam für <Region>“ mit 2 € · 4 € · 7 € · Später (höchstens 3×).
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -32,6 +32,7 @@ export function usePotHint(quiet: boolean): PotHint {
 export function PotHintCard({ hint }: { hint: Exclude<PotHint, null> }) {
   const year = Number(todayIso().slice(0, 4));
   const [gone, setGone] = useState(false);
+  const { region } = useFamilyRegion();
   if (gone) return null;
   if (hint.kind === "vote")
     return (
@@ -46,9 +47,9 @@ export function PotHintCard({ hint }: { hint: Exclude<PotHint, null> }) {
       </div>
     );
   return (
-    <div className={`${CARD} flex flex-col gap-2 px-4 py-3.5`} role="note" aria-label={POT_TEXTS.askTitle}>
+    <div className={`${CARD} flex flex-col gap-2 px-4 py-3.5`} role="note" aria-label={POT_TEXTS.together(region?.name)}>
       <div className="flex items-start gap-2">
-        <p className="flex-1 text-[16px] font-extrabold leading-snug">{POT_TEXTS.askTitle}</p>
+        <p className="flex-1 text-[16px] font-extrabold leading-snug">{POT_TEXTS.together(region?.name)}</p>
         <button type="button" onClick={() => changePot((s) => ({ ...s, ask: askLater(s.ask, todayIso()) }))} className="hit shrink-0 text-sm font-bold text-muted">
           Später
         </button>

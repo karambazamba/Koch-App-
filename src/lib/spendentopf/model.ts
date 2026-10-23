@@ -76,7 +76,7 @@ export const potTotal = (pot: Region, pledge: number | null) => pot.bisher + (pl
 
 export const euro = (n: number) => `${new Intl.NumberFormat("de-DE").format(n)} €`;
 
-// --- Beitrags-Frage „Was ist dir die App wert?“ --------------------------------
+// --- Beitrags-Frage „Gemeinsam für <Region>“ ----------------------------------
 
 const ASK_AFTER_DAYS = 28;
 const ASK_MAX = 3;
@@ -99,7 +99,8 @@ export const POT_TEXTS = {
   share: "100 % für Projekte in deiner Region",
   everyEuro: "Jeder Euro geht in deine Region",
   free: "Die App ist kostenlos. KARAMBA zahlt Server & KI. Keine Werbung, kein Abo, keine Daten verkauft.",
-  askTitle: "Was ist dir die App wert?",
+  /** Überschrift der Beitrags-Frage – nie so, als bezahle man die App: das Geld geht in die Region */
+  together: (region?: string | null) => `Gemeinsam für ${region ?? "Ostholstein"}`,
   askText: "Jeder Euro geht in den Spendentopf – für Projekte in deiner Region.",
   thanks: "Danke! Wir melden uns, sobald Beiträge möglich sind.",
   stillFree: "Die App bleibt für dich trotzdem komplett kostenlos.",

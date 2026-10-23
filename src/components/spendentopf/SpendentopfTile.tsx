@@ -2,7 +2,7 @@
 
 // SPENDENTOPF-Kachel (Gold, volle Breite): Topf, Region, Betrag und eine
 // Statuszeile. Während der Abstimmung der Knopf „Abstimmen“, sonst „Euer
-// Beitrag“ bzw. „Was ist dir die App wert?“. Region ohne Topf: „noch kein Topf“.
+// Beitrag“ bzw. „Gemeinsam für <Region>“. Region ohne Topf: „noch kein Topf“.
 // Antippen öffnet die Seite.
 
 import Link from "next/link";
@@ -26,7 +26,7 @@ export function SpendentopfTile() {
       ? `Abstimmen: noch ${left} ${left === 1 ? "Tag" : "Tage"}`
       : state.pledge
         ? `Euer Beitrag: ${euro(state.pledge.betrag)} im Monat · zugesagt`
-        : POT_TEXTS.askTitle;
+        : POT_TEXTS.together(region?.name);
   return (
     <section className={`${TILE} flex flex-col gap-2 p-3.5`} aria-label="Spendentopf">
       <Link href="/spendentopf" className="flex items-center gap-3" aria-label="Spendentopf öffnen">

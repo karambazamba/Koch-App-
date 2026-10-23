@@ -90,8 +90,8 @@ export const LABEL = "text-sm font-semibold text-muted";
 /** Abschnitts-Überschrift in einer Seite oder Karte */
 export const SECTION_TITLE = "text-[15px] font-extrabold text-ink";
 
-/** Kachel-Label: 10/800 in Großbuchstaben – nur innerhalb von Kacheln (Farbe = Kachel-Akzent) */
-export const TILE_LABEL = "text-[10px] font-extrabold uppercase tracking-wider text-tile-label";
+/** Kachel-Label: 11/800 in Großbuchstaben – nur innerhalb von Kacheln (Farbe = Kachel-Akzent) */
+export const TILE_LABEL = "text-[11px] font-extrabold uppercase tracking-wider text-tile-label";
 
 /**
  * Pastell-Kachel (`data-tone="<id>"` dazu): Fläche je Kachel, Label/Icon/Plus

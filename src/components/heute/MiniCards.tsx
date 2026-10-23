@@ -1,11 +1,14 @@
 "use client";
 
-// "Heute": TERMINE (blau) und AUFGABEN (grün) als Pastell-Kacheln – Kopf
-// mit Label, „+N weitere“ und Plus IN der Kachel. Die Größe ändert nur die
-// Menge, nie das Aussehen (S ≤ M ≤ L): Termine als schlanke Kärtchen ohne
-// Kästchen (S 1, M bis 4, L bis 6, höchstens 2 nebeneinander), Aufgaben im
-// 2er-Raster (S 2 – halb untereinander –, M 2×2, L 2×4). Antippen = Menü,
-// Kreis = abhaken: ca. 2 s durchgestrichen (nochmal tippen = doch nicht).
+// "Heute": TERMINE (blau) und AUFGABEN (grün) im gleichen Listen-Stil
+// (Feinschliff nach Handy-Test, Tafel 58/59): je Kachel EIN weißes Feld mit
+// feinen Trennlinien, Zeilen 30 px (die ganze Zeile tippbar, der Abhak-Kreis
+// mit unsichtbar größerer Fläche), Kopf 26 px mit „+N weitere“ neben dem
+// Plus, unten nichts. Menge je Größe S 2, M 4, L 6. Termine chronologisch mit
+// Strich in Raumfarbe, Uhrzeit, Titel; der laufende bleibt 30 Min („läuft“),
+// der nächste ist zart hervorgehoben („gleich“) – Logik in
+// lib/heute/termineKachel.ts. Erledigte Aufgaben: ca. 1,5 s durchgestrichen,
+// dann weich weg.
 
 import { TaskFrom } from "@/components/kalender/abgeben/TaskFrom";
 import Link from "next/link";
@@ -15,6 +18,7 @@ import { TILE, TILE_INNER, TILE_LABEL } from "@/components/ui/styles";
 import { QuickButton } from "@/components/ui/QuickButton";
 import { clockLabel } from "@/lib/kalender/answers";
 import { isUrgent, setDone, taskBadge, type DayItem } from "@/lib/kalender/model";
+import type { TerminRow, TerminState } from "@/lib/heute/termineKachel";
 import { UrgentMark } from "@/components/kalender/UrgentMark";
 import type { TileSize } from "@/lib/core/homeLayout";
 import { LEAVE_MS, act, buzz } from "@/components/heute/actions";
@@ -31,8 +35,6 @@ const EntryForm = dynamic(() => import("@/components/kalender/EntryForm").then((
 /** Beispiel-Tag: Beispiele statt echter Einträge (Antippen erklärt, Abhaken nur hier) */
 export type DemoProps = { label?: string | null; done?: string[]; onToggle?: (item: DayItem) => void; onGone?: (item: DayItem) => void; onOpen: (item: DayItem) => void };
 
-/** Abgehakt: kurz vor dem Verschwinden weich ausblenden */
-const FADE = { animation: `card-out 0.4s ease-in ${LEAVE_MS - 400}ms forwards` };
 
 
 function useSection() {
@@ -54,19 +56,19 @@ function useSection() {
   return { setMenu, check, before, overlays };
 }
 
-/** Kopf IN der Kachel: Label (öffnet die Seite), „+N weitere“, Plus */
+/** Kopf IN der Kachel (26 px, bei allen Kacheln gleich): Label (öffnet die Seite), „+N weitere“ neben dem Plus */
 function TileHead({ title, more, href, action, moreLabel }: { title: string; more: number; href: string; action?: React.ReactNode; moreLabel?: string }) {
   return (
-    <div className="flex h-6 items-center gap-2">
+    <div className="flex h-[26px] items-center gap-2">
       {/* Label öffnet die Seite dazu (Tag bzw. Aufgaben) – keine Sackgasse */}
       <h2 className={TILE_LABEL}>
-        <Link href={href} className="-my-2 inline-flex h-11 items-center">
+        <Link href={href} className="hit inline-flex h-[26px] items-center">
           {title}
         </Link>
       </h2>
       <span className="flex-1" />
       {more > 0 && (
-        <Link href={href} className="-my-2 flex h-11 items-center text-[12px] font-bold text-tile-accent">
+        <Link href={href} className="hit flex h-[26px] items-center text-[12.5px] font-bold text-tile-accent">
           +{more} {moreLabel ?? "weitere"}
         </Link>
       )}
@@ -76,7 +78,7 @@ function TileHead({ title, more, href, action, moreLabel }: { title: string; mor
 }
 
 /** Abhaken mit kurzer Bedenkzeit: ca. 2 s durchgestrichen, nochmal tippen = doch nicht */
-export function useLeaving(onDone: (item: DayItem) => void) {
+export function useLeaving(onDone: (item: DayItem) => void, ms = LEAVE_MS) {
   const [leaving, setLeaving] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const start = (item: DayItem) => {
@@ -93,7 +95,7 @@ export function useLeaving(onDone: (item: DayItem) => void) {
       timer.current = null;
       setLeaving(null);
       onDone(item);
-    }, LEAVE_MS);
+    }, ms);
   };
   return { leaving, start };
 }
@@ -123,44 +125,49 @@ function CheckBox({ item, checked, onClick, round = false }: { item: DayItem; ch
 
 const entersAnim = (before: string[] | null, key: string) => (before && !before.includes(key) ? { animation: "card-in 0.32s ease-out" } : undefined);
 
-/** Termin-Kärtchen (ohne Kästchen): Uhrzeit fett, Titel bis 2 Zeilen ohne Emojis, Farbstreifen links (Familie/Arbeit) */
-function TerminCard({ item, entering, onOpen }: { item: DayItem; entering?: React.CSSProperties; onOpen: () => void }) {
+/** Wie viele Zeilen je Größe – Termine und Aufgaben gleich: S 2, M 4, L 6 */
+const ROW_COUNT = { S: 2, M: 4, L: 6 } as const;
+/** Erledigte Aufgabe: so lange durchgestrichen, dann weich weg */
+const TASK_LEAVE_MS = 1500;
+const TASK_FADE = { animation: `card-out 0.4s ease-in ${TASK_LEAVE_MS - 400}ms forwards` };
+const LIST = `${TILE_INNER} flex flex-col divide-y divide-line overflow-hidden`;
+
+const STATE_LABEL: Record<Exclude<TerminState, null | "naechster">, string> = { laeuft: "läuft", gleich: "gleich" };
+
+/** Termin-Zeile (30 px): Strich in Raumfarbe, Uhrzeit (feste Breite), Titel einzeilig, rechts „läuft“/„gleich“ */
+function TerminLine({ row, entering, onOpen }: { row: TerminRow; entering?: React.CSSProperties; onOpen: () => void }) {
+  const { item, state } = row;
+  const next = state === "gleich" || state === "naechster";
   return (
-    <li className={`${TILE_INNER} relative min-w-0 overflow-hidden`} style={entering} data-item={item.key}>
-      <span className={`absolute inset-y-0 left-0 w-1 ${roomBarProps(item).className}`} style={roomBarProps(item).style} aria-hidden />
-      <button type="button" onClick={onOpen} className="flex min-h-[46px] w-full flex-col justify-center py-1.5 pl-3 pr-3 text-left" aria-label={`${item.time ? clockLabel(item.time) : ""} ${item.title} – Möglichkeiten`}>
-        <span className="text-[13.5px] font-extrabold leading-tight tabular-nums text-tile-accent">{item.time ? clockLabel(item.time) : "–"}</span>
-        <span className="line-clamp-2 w-full break-words text-[12.5px] font-semibold leading-snug">{withoutEmoji(item.title)}</span>
+    <li className={next ? "bg-accent-soft/60" : undefined} style={entering} data-item={item.key} data-state={state ?? undefined} data-zeile>
+      <button type="button" onClick={onOpen} className="flex h-[30px] w-full items-center gap-2 pl-2.5 pr-3 text-left" aria-label={`${item.time ? clockLabel(item.time) : "ganztägig"} ${item.title}${state === "laeuft" ? " – läuft" : state === "gleich" ? " – gleich" : ""} – Möglichkeiten`}>
+        <span className={`h-3.5 w-[3px] shrink-0 rounded-full ${roomBarProps(item).className}`} style={roomBarProps(item).style} aria-hidden />
+        <span className="w-[38px] shrink-0 text-[13.5px] font-extrabold tabular-nums text-tile-accent">{item.time ? clockLabel(item.time) : "Tag"}</span>
+        <span className={`min-w-0 flex-1 truncate text-[13.5px] leading-tight ${next ? "font-bold" : "font-semibold"}`}>{withoutEmoji(item.title)}</span>
+        {(state === "laeuft" || state === "gleich") && <span className={`shrink-0 text-[11px] font-bold ${state === "gleich" ? "text-accent-strong" : "text-muted"}`}>{STATE_LABEL[state]}</span>}
       </button>
     </li>
   );
 }
 
-/** Wie viele Termine je Größe (höchstens 2 nebeneinander): S 1, M bis 4 (2×2), L bis 6 (2×3) */
-const TERMIN_COUNT = { S: 1, M: 4, L: 6 } as const;
-/** Wie viele Aufgaben-Felder je Größe: S 2, M 2×2, L 2×4 */
-const TASK_COUNT = { S: 2, M: 4, L: 6 } as const;
-
 /**
- * TERMINE – Pastell-Kachel mit schlanken Kärtchen, höchstens 2 nebeneinander:
- * S 1 (mit „+N weitere heute“), M bis 4 (2×2), L bis 6 (2×3). Plus = neuer Termin.
+ * TERMINE – eine weiße Liste, chronologisch: S 2, M 4, L 6 Zeilen, „+N weitere“
+ * im Kopf. Alles vorbei → „Morgen · Sa“ mit den ersten Terminen von morgen.
  */
-export function TermineSection({ items, all, href, today, size = "M", half = false, demo }: { items: DayItem[]; all?: DayItem[]; href: string; today?: string; size?: TileSize; half?: boolean; demo?: DemoProps }) {
+export function TermineSection({ rows, label, href, today, size = "M", half = false, demo }: { rows: TerminRow[]; label?: string | null; href: string; today?: string; size?: TileSize; half?: boolean; demo?: DemoProps }) {
   const { setMenu, before, overlays } = useSection();
   const [adding, setAdding] = useState(false);
-  const list = size === "L" && !demo ? (all ?? items).filter((i) => !i.done) : items;
-  const shown = list.slice(0, TERMIN_COUNT[size]);
+  const shown = rows.slice(0, ROW_COUNT[size]);
   const sheet = adding && <TerminQuickAdd onClose={() => setAdding(false)} defaultDate={today} />;
   const plus = <QuickButton icon={Plus} label="Neuer Termin" onClick={() => askMiaFirst("termin", () => setAdding(true))} />;
-  const rest = list.length - shown.length;
-  const cols = size === "S" || shown.length === 1 ? "grid-cols-1" : "grid-cols-2";
+  const rest = rows.length - shown.length;
   return (
-    <section className={`${TILE} flex flex-col gap-2.5 p-3.5`} aria-label="Termine">
-      <TileHead title={demo?.label ?? "Termine"} more={half ? 0 : rest} moreLabel={size === "S" ? "weitere heute" : undefined} href={href} action={plus} />
-      {list.length ? (
-        <ul className={`grid gap-2 ${cols}`}>
-          {shown.map((item) => (
-            <TerminCard key={item.key} item={item} entering={entersAnim(before, item.key)} onOpen={() => (demo ? demo.onOpen(item) : setMenu(item))} />
+    <section className={`${TILE} flex flex-col gap-[7px] px-3 py-2.5`} aria-label="Termine">
+      <TileHead title={demo?.label ?? label ?? "Termine"} more={half ? 0 : rest} href={href} action={plus} />
+      {rows.length ? (
+        <ul className={LIST}>
+          {shown.map((row) => (
+            <TerminLine key={row.item.key} row={row} entering={entersAnim(before, row.item.key)} onOpen={() => (demo ? demo.onOpen(row.item) : setMenu(row.item))} />
           ))}
         </ul>
       ) : (
@@ -192,55 +199,48 @@ export function TaskLine({ item, today, onOpen, onDone, leaving, entering }: { i
   );
 }
 
-/** Eine Zeile der Aufgaben-Checkliste (Tafel 52 B): Kreis, voller Titel (… nur wenn wirklich zu lang), rechts „heute“/„bis Fr“, „!“ bei dringend, „von Lisa“ klein darunter */
-function TaskField({ item, today, leaving, fading = false, entering, onOpen, onDone }: { item: DayItem; today: string; leaving: boolean; fading?: boolean; entering?: React.CSSProperties; onOpen: () => void; onDone: () => void }) {
+/** Aufgaben-Zeile (30 px): Kreis 20 px (Tippfläche 44 × 30), Titel, rechts „heute“/„bis Fr“/„diese Woche“, „!“ bei dringend */
+function TaskField({ item, today, leaving, entering, onOpen, onDone }: { item: DayItem; today: string; leaving: boolean; entering?: React.CSSProperties; onOpen: () => void; onDone: () => void }) {
   const badge = taskBadge(item, today);
   return (
-    <li className="flex min-w-0 items-center" style={fading ? FADE : entering} data-item={item.key}>
-      <button type="button" role="checkbox" aria-checked={leaving} aria-label={`${item.title} erledigt`} onClick={onDone} className="hit flex h-11 w-10 shrink-0 items-center justify-center">
-        <span className={`flex h-[19px] w-[19px] items-center justify-center rounded-full border-2 ${leaving ? "border-tile-accent bg-tile-accent text-on-color" : "border-line-strong"}`} style={leaving ? { animation: "check-pop 0.4s ease-out" } : undefined}>
+    <li className="flex min-w-0 items-center" style={leaving ? TASK_FADE : entering} data-item={item.key} data-zeile>
+      <button type="button" role="checkbox" aria-checked={leaving} aria-label={`${item.title} erledigt`} onClick={onDone} className="flex h-[30px] w-11 shrink-0 items-center justify-center">
+        <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${leaving ? "border-good bg-good text-on-color" : "border-line-strong"}`} style={leaving ? { animation: "check-pop 0.4s ease-out" } : undefined}>
           {leaving && <Check className="h-3 w-3" strokeWidth={3.5} aria-hidden />}
         </span>
       </button>
-      <button type="button" onClick={onOpen} className="flex min-h-11 min-w-0 flex-1 items-center gap-2 py-1.5 pr-3 text-left" aria-label={`${item.title} – Möglichkeiten`}>
-        <span className="flex min-w-0 flex-1 flex-col">
-          <span className="flex min-w-0 items-center gap-1">
-            {isUrgent(item) && !leaving && <UrgentMark />}
-            <span className={`min-w-0 flex-1 truncate text-[14px] font-semibold leading-snug ${leaving ? "text-muted line-through" : ""}`}>{withoutEmoji(item.title)}</span>
-          </span>
-          <TaskFrom item={item} className="text-[11px] leading-tight text-muted" />
-        </span>
-        {badge && <span className={`shrink-0 text-[12px] ${badge === "heute" ? "font-bold text-accent-strong" : "text-muted"}`}>{badge}</span>}
+      <button type="button" onClick={onOpen} className="flex h-[30px] min-w-0 flex-1 items-center gap-1 pr-3 text-left" aria-label={`${item.title} – Möglichkeiten`}>
+        {isUrgent(item) && !leaving && <UrgentMark />}
+        <span className={`min-w-0 flex-1 truncate text-[13.5px] font-semibold leading-tight ${leaving ? "text-muted line-through" : ""}`}>{withoutEmoji(item.title)}</span>
+        <TaskFrom item={item} className="shrink-0 text-[11px] text-muted" />
+        {badge && <span className={`shrink-0 text-[11px] ${badge === "heute" ? "font-bold text-accent-strong" : "text-muted"}`}>{badge}</span>}
       </button>
     </li>
   );
 }
 
-/** AUFGABEN – Kachel als Checkliste in EINEM hellen Feld (Tafel 52 B): S 2, M 4, L 6 Zeilen, „+ N weitere“ unten, Plus im Kopf */
+/** AUFGABEN – eine weiße Checkliste: S 2, M 4, L 6 Zeilen, „+N weitere“ im Kopf neben dem Plus */
 export function AufgabenSection({ items, total, today, href = "/aufgaben", size = "M", half = false, demo }: { items: DayItem[]; total?: number; today: string; href?: string; size?: TileSize; half?: boolean; demo?: DemoProps }) {
   const { setMenu, check, before, overlays } = useSection();
   const [adding, setAdding] = useState(false);
-  const shown = items.slice(0, TASK_COUNT[size]);
-  const { leaving, start } = useLeaving((item) => (demo ? demo.onGone?.(item) : check(item, shown)));
+  // Erledigtes steht nicht herum (auch nicht im Beispiel-Tag)
+  const open = demo?.done ? items.filter((i) => !demo.done!.includes(i.entry.id)) : items;
+  const shown = open.slice(0, ROW_COUNT[size]);
+  const { leaving, start } = useLeaving((item) => (demo ? demo.onGone?.(item) : check(item, shown)), TASK_LEAVE_MS);
   const plus = <QuickButton icon={Plus} label="Neue Aufgabe" onClick={() => askMiaFirst("aufgabe", () => setAdding(true))} />;
-  const rest = Math.max(0, Math.max(total ?? 0, items.length) - shown.length);
+  const rest = Math.max(0, Math.max(total ?? 0, open.length) - shown.length);
   return (
     <>
-      <section className={`${TILE} flex flex-col gap-2.5 p-3.5`} aria-label="Aufgaben">
-        <TileHead title="Aufgaben" more={0} href={href} action={plus} />
-        {items.length > 0 ? (
-          <ul className={`${TILE_INNER} flex flex-col divide-y divide-line overflow-hidden`}>
+      <section className={`${TILE} flex flex-col gap-[7px] px-3 py-2.5`} aria-label="Aufgaben">
+        <TileHead title="Aufgaben" more={half ? 0 : rest} href={href} action={plus} />
+        {open.length > 0 ? (
+          <ul className={LIST}>
             {shown.map((item) => (
-              <TaskField key={item.key} item={item} today={today} leaving={leaving === item.key || Boolean(demo?.done?.includes(item.entry.id))} fading={leaving === item.key} entering={entersAnim(before, item.key)} onOpen={() => (demo ? demo.onOpen(item) : setMenu(item))} onDone={() => (demo?.done?.includes(item.entry.id) ? demo.onToggle?.(item) : start(item))} />
+              <TaskField key={item.key} item={item} today={today} leaving={leaving === item.key} entering={entersAnim(before, item.key)} onOpen={() => (demo ? demo.onOpen(item) : setMenu(item))} onDone={() => start(item)} />
             ))}
           </ul>
         ) : (
           <AddLine label="Aufgabe eintragen" onClick={() => setAdding(true)} />
-        )}
-        {rest > 0 && !half && (
-          <Link href={href} className="-my-2 flex h-11 items-center self-start text-[13px] font-bold text-tile-accent">
-            + {rest} weitere
-          </Link>
         )}
       </section>
       {overlays}

@@ -53,6 +53,8 @@ function inspect() {
     const r = el.getBoundingClientRect();
     // versteckte Schalter (sr-only) und Kästchen in einer Zeile: die Zeile ist die Tippfläche
     if (r.width <= 2 || (el.tagName === "INPUT" && el.closest("label")?.getBoundingClientRect().height >= 44)) continue;
+    // Listenzeilen der Startseite (`data-zeile`): 30 px reichen, die ganze Zeile ist tippbar
+    if (el.closest("[data-zeile]") && r.height >= 29) continue;
     // 7-Spalten-Raster (Monat, Woche) sind schmal, aber hoch genug – wie im Apple-Kalender
     if (r.height < 40 || r.width < (r.height >= 44 ? 30 : 40)) out.push(`kleine Tippfläche ${Math.round(r.width)}×${Math.round(r.height)}: „${(el.getAttribute("aria-label") || el.textContent || "").trim().slice(0, 40)}“`);
   }

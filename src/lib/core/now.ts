@@ -77,10 +77,19 @@ export function useToday(): Date | undefined {
   return iso ? fromIsoDate(iso) : undefined;
 }
 
-/** Jede halbe Minute neu nachsehen (z. B. damit das Gericht nach dem Essen von selbst verschwindet) */
+/** Jede halbe Minute neu nachsehen (z. B. damit das Gericht nach dem Essen von selbst
+ *  verschwindet) – und sofort, wenn man in die App zurückkommt */
 const everyHalfMinute = (onChange: () => void) => {
   const timer = window.setInterval(onChange, 30_000);
-  return () => window.clearInterval(timer);
+  const doc = typeof document === "undefined" ? null : document;
+  const back = () => {
+    if (doc?.visibilityState === "visible") onChange();
+  };
+  doc?.addEventListener("visibilitychange", back);
+  return () => {
+    window.clearInterval(timer);
+    doc?.removeEventListener("visibilitychange", back);
+  };
 };
 
 /** Minuten seit Mitternacht (im Browser, läuft mit) */
