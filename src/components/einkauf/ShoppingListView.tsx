@@ -272,7 +272,7 @@ export function ShoppingListView() {
         <button
           type="button"
           onClick={() => setCatalogOpen(true)}
-          className={`${buttonClass("primary", "lg")} pointer-events-auto mb-2 w-full max-w-sm shadow-float`}
+          className={`${buttonClass("primary", "lg")} pointer-events-auto mb-2 w-full max-w-sm whitespace-nowrap px-4 shadow-float`}
         >
           <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
           Mehr hinzufügen
