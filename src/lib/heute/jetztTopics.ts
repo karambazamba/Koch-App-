@@ -1,9 +1,10 @@
-// Jetzt-Karte (oben auf "Heute"): EIN Thema für den Moment, bis zu drei zum
-// Weiterwischen. Rein und lokal (ohne KI): jedes mögliche Thema bekommt
-// Punkte aus Dringlichkeit (Zeit bis zum Ereignis, heute dran), Handlung (ein
-// konkreter Tipp schlägt reine Info) und Interesse (oft angetippt = mehr
-// Gewicht, weggewischt/ausgeblendet = weniger – langsam gelernt). Die
-// Kachel-Anordnung bleibt davon unberührt.
+// Jetzt-Karte (oben auf "Heute", Tafel 60): zeigt nur, was Mia weiß und die
+// Kacheln NICHT zeigen – mit höchstens einem Knopf zum Erledigen. Kein
+// Wetterbericht, keine Wiederholung, keine Zähler. Rein und lokal (ohne KI):
+// jedes mögliche Thema bekommt Punkte aus Dringlichkeit und Handlung,
+// Interesse (oft angetippt = mehr, weggewischt/erledigt = weniger) wird
+// langsam gelernt. Höchstens drei Themen zum Wischen; nichts Passendes =
+// „Alles ruhig – ich sag Bescheid.“ Die Kachel-Anordnung bleibt unberührt.
 
 import type { HomeTileId } from "@/lib/core/homeLayout";
 
@@ -12,19 +13,19 @@ export type JetztKind =
   | "timer"
   | "kochen"
   | "pause"
-  | "termin"
+  | "vorbereiten"
+  | "packliste"
+  | "gleich"
   | "pinnwand"
-  | "wetter"
-  | "start"
-  | "essen"
-  | "ideen"
-  | "wochencheck"
-  | "dringend"
-  | "geburtstag"
-  | "sport"
   | "einkauf"
-  | "morgen"
-  | "geschafft"
+  | "kochstart"
+  | "absprache"
+  | "geburtstag"
+  | "ausblick"
+  | "wochencheck"
+  | "wetter"
+  | "aufgabe"
+  | "ideen"
   | "freizeit"
   | "tipp"
   | "region"
@@ -34,19 +35,33 @@ export type JetztKind =
 /** Wohin Antippen führt: eine Seite oder etwas, das die Startseite selbst öffnet */
 type JetztTarget = { href: string } | { action: "essen" | "ideen" | "timer" | "pinnwand" | "pause" | "wochencheck" };
 
+/** Der eine Knopf rechts: „Erledigt“ hakt ab (Thema geht für heute weg), sonst wie Antippen */
+type JetztButton = "Erledigt" | "Öffnen" | "Antworten" | "Liste" | "Kochen" | "Packliste";
+
 export type JetztTopic = {
   id: string;
   kind: JetztKind;
-  /** Zeile 1 (fett) – das Wichtigste */
+  /** Zeile 1 (fett) – was (höchstens 32 Zeichen) */
   title: string;
-  /** Zeile 2 – Detail oder Tipp */
+  /** Zeile 2 – warum / was dazu */
   detail: string;
   score: number;
   target: JetztTarget | null;
+  button: JetztButton | null;
 };
 
-
-export type JetztTermin = { key: string; title: string; time: string; place?: string; work?: boolean; date: string };
+export type JetztTermin = {
+  key: string;
+  title: string;
+  time: string;
+  date: string;
+  place?: string;
+  /** Notiz zum Termin („Versichertenkarte einpacken“) – nur damit gibt es „Vorbereiten“ */
+  note?: string;
+  work?: boolean;
+  /** Draußen (Fußball, Spielplatz, Laufen …) – nur dann zählt Wetter */
+  outdoor?: boolean;
+};
 
 export type JetztInput = {
   minutes: number;
@@ -55,58 +70,72 @@ export type JetztInput = {
   calm: boolean;
   /** Termine heute, die noch kommen (mit Uhrzeit, sortiert) */
   upcoming: JetztTermin[];
-  /** "Morgen · Mi" und das, was morgen ansteht (Termine mit Uhrzeit zuerst) */
-  tomorrow: { label: string; date: string; items: { title: string; time?: string }[]; weather?: string | null };
+  /** "Morgen · Mi" und die Termine von morgen (mit Uhrzeit zuerst) */
+  tomorrow: { label: string; date: string; items: JetztTermin[] };
   urgent: { key: string; title: string; work?: boolean }[];
   dueToday: { key: string; title: string; work?: boolean }[];
-  /** Heute gab es etwas (Termine/Erledigtes) und nichts ist mehr übrig */
-  allDone: boolean;
   pin: { id: string; author: string; text: string; when: string } | null;
-  /** EIN Wetter-Tipp für heute ("☂️ Ab 15 Uhr Regen – Schirm für …") und das Wetter kurz */
-  weatherTip: string | null;
-  weatherNow: { temp: number; text: string; range?: string } | null;
+  /** Regen/Sturm/Glätte zur Zeit eines Draußen-Termins oder -Trainings heute (sonst null) */
+  planWeather: { key: string; title: string; time: string; word: string } | null;
   /** Gericht von heute (solange nicht gegessen) */
   dish: { name: string; clock: string | null; minutes: number | null; ready: boolean; missing: string[]; demo?: boolean } | null;
-  /** Kein Gericht, aber eins wäre dran (Ideen anbieten) */
-  dinnerFree: boolean;
   birthdays: { title: string; date: string; when: "heute" | "morgen" }[];
-  /** Heute geplantes Training (ohne Zähler) */
-  sport: { today: string } | null;
-  /** Laden mit den meisten offenen Sachen (mindestens 2) */
+  /** Heute geplantes Training mit Packliste */
+  sport: { key: string; title: string; time: string; pack: string[] } | null;
+  /** Laden mit den meisten Sachen auf der Liste (mindestens 2) */
   shop: { shop: string; names: string[] } | null;
   timer: { name: string; left: string } | null;
   cookingStep: string | null;
   reminder: { key: string; text: string } | null;
   pause: string | null;
+  /** Kein Gericht, aber eins wäre dran (Ideen – nur ohne Essen-Kachel) */
+  dinnerFree: boolean;
+  /** Selbst eingeschaltete Bausteine: Freizeit-Idee, kleiner Tipp, Tipp aus der Region */
   leisure: { text: string; href: string } | null;
   tip: string | null;
-  /** Tipp aus der Region fürs Wochenende (Fr 12 Uhr bis So Mittag, höchstens einmal) */
   region: { id: string; title: string; detail: string } | null;
+  /** Kinder im Haushalt (für die Absprache bei Abendterminen) */
+  kids: boolean;
   /** „Kurzer Wochencheck?“ für diese Woche (Montag bzw. Sonntag ab 17 Uhr, nicht in Ruhe/Pause) – sonst null */
   weekCheck: string | null;
   /** Beispiel-Tag: ein Thema, das ihn kurz erklärt */
   demo: boolean;
-  /** Kacheln ganz oben – was sie zeigen, wiederholt die Karte nicht (außer mit Tipp) */
-  firstTiles: HomeTileId[];
-  /** Kacheln, die schon „Morgen“ zeigen (Termine/Morgen-Kachel bzw. Wetter von morgen) – dann
-   *  entfällt das reine Morgen- bzw. Wetter-Thema (keine Doppelung, Tafel 51) */
+  /** Sichtbare Kacheln – was sie zeigen, wiederholt die Karte nicht */
+  tiles: HomeTileId[];
+  /** Kacheln, die schon „Morgen“ zeigen (Termine bzw. Morgen-Kachel) */
   tomorrowTiles?: HomeTileId[];
-  /** Interesse je Art (lokal gezählt), ausgeblendete Themen von heute */
+  /** Interesse je Art (lokal gezählt), heute erledigte/ausgeblendete Themen */
   weights: Partial<Record<JetztKind, number>>;
   hidden: string[];
 };
 
-type Candidate = JetztTopic & { tile?: HomeTileId; tip?: boolean; gentle?: boolean; night?: boolean };
+type Candidate = JetztTopic & { gentle?: boolean; night?: boolean };
+
+/** Zeile 1 höchstens so lang */
+export const TITLE_MAX = 32;
+export const QUIET_TEXT = "Alles ruhig – ich sag Bescheid.";
 
 const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
 const clock = (t: string) => t.replace(/^0(\d)/, "$1");
 const fromMin = (m: number) => `${Math.floor(m / 60)}:${String(((m % 60) + 60) % 60).padStart(2, "0")}`;
-const short = (s: string, max = 30) => (s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s);
-/** Emoji ans Ende ("☂️ Ab 15 Uhr Regen" → "Ab 15 Uhr Regen ☂️") */
-const emojiLast = (s: string) => {
-  const m = s.match(/^(\p{Extended_Pictographic}️?)\s*(.*)$/u);
-  return m ? `${m[2]} ${m[1]}` : s;
+/** Kürzen auf `max` Zeichen – möglichst an einem Wortende */
+const short = (s: string, max = TITLE_MAX) => {
+  if (s.length <= max) return s;
+  const cut = s.slice(0, max - 1);
+  const space = cut.lastIndexOf(" ");
+  return `${(space > max - 12 ? cut.slice(0, space) : cut).replace(/[\s–,·-]+$/, "")}…`;
 };
+/** Notiz als Frage („Versichertenkarte einpacken“ → „Versichertenkarte einpacken?“) */
+const ask = (note: string) => (/[?!.]$/.test(note.trim()) ? note.trim() : `${note.trim()}?`);
+/** Steht jemand für die Kinder in der Notiz? („Oma bleibt bei den Kindern“) */
+const careNoted = (note?: string) => Boolean(note && /bleibt|babysitter|betreu|passt auf/i.test(note));
+
+/** Draußen? (Sportart draußen oder typische Draußen-Wörter) – nur dann zählt Regen */
+export function isOutdoor(title: string, place = "", sportOutdoor = false): boolean {
+  if (sportOutdoor) return true;
+  return /fu(ß|ss)ball|training|spielplatz|park\b|garten|wander|ausflug|drau(ß|ss)en|zoo|grill|turnier|laufen|joggen|radtour|fahrrad|spaziergang|flohmarkt|wochenmarkt|schwimmbad|freibad|see\b|strand/i.test(`${title} ${place}`);
+}
+
 /** Wer Geburtstag hat ("Geburtstag Oma", "Omas Geburtstag") – oder null */
 export function birthdayName(title: string): string | null {
   const clean = title.replace(/\p{Extended_Pictographic}/gu, "").trim();
@@ -122,138 +151,128 @@ export function birthdayName(title: string): string | null {
 }
 
 const MAX = 3;
-const NIGHT_KINDS: JetztKind[] = ["erinnerung", "timer", "kochen", "pause", "morgen", "geburtstag", "beispiel", "ruhig"];
+/** Nachts (22–6) nur Erinnerung, Timer, Kochen, Pause, Ausblick, Geburtstag */
+const NIGHT_KINDS: JetztKind[] = ["erinnerung", "timer", "kochen", "pause", "ausblick", "geburtstag", "beispiel"];
 
 /** Die Themen für jetzt – höchstens drei, das Wichtigste zuerst (nie leer) */
 export function jetztTopics(x: JetztInput): JetztTopic[] {
   const c: Candidate[] = [];
   const add = (t: Candidate) => c.push(t);
   const night = x.minutes >= 22 * 60 || x.minutes < 6 * 60;
-  const morning = x.minutes >= 5 * 60 && x.minutes < 11 * 60;
   const dayHref = `/tag?datum=${x.today}`;
+  const shows = (tile: HomeTileId) => x.tiles.includes(tile);
 
-  if (x.reminder) add({ id: `erinnerung:${x.reminder.key}`, kind: "erinnerung", title: x.reminder.text, detail: "Erinnerung · ✕ = gesehen", score: 100, target: { href: dayHref }, gentle: true });
-  if (x.timer) add({ id: `timer:${x.today}`, kind: "timer", title: `${x.timer.name}: ${x.timer.left}`, detail: "Timer läuft", score: 96, target: { action: "timer" }, tile: "timer", tip: true, gentle: true });
-  if (x.cookingStep) add({ id: `kochen:${x.today}`, kind: "kochen", title: `Jetzt: ${short(x.cookingStep, 40)}`, detail: "Schritt für Schritt kochen", score: 92, target: { action: "essen" }, tip: true, gentle: true });
-  if (x.pause) add({ id: `pause:${x.today}`, kind: "pause", title: `Pause ${x.pause} – genießt die Zeit ☀️`, detail: "Antippen: Pause beenden", score: 94, target: { action: "pause" }, gentle: true });
+  if (x.reminder) add({ id: `erinnerung:${x.reminder.key}`, kind: "erinnerung", title: x.reminder.text, detail: "Erinnerung", score: 100, target: { href: dayHref }, button: "Erledigt", gentle: true });
+  if (x.timer && !shows("timer")) add({ id: `timer:${x.today}`, kind: "timer", title: `${x.timer.name}: ${x.timer.left}`, detail: "Timer läuft", score: 96, target: { action: "timer" }, button: "Öffnen", gentle: true });
+  if (x.cookingStep) add({ id: `kochen:${x.today}`, kind: "kochen", title: `Jetzt: ${x.cookingStep}`, detail: "Schritt für Schritt kochen", score: 92, target: { action: "essen" }, button: "Kochen", gentle: true });
+  if (x.pause) add({ id: `pause:${x.today}`, kind: "pause", title: `Pause ${x.pause}`, detail: "Genießt die Zeit", score: 94, target: { action: "pause" }, button: "Öffnen", gentle: true });
 
-  // Termine: gleich (≤ 60 Min) mit Ort/Wetter, sonst der nächste
-  const soon = x.upcoming.find((t) => toMin(t.time) - x.minutes <= 60 && toMin(t.time) >= x.minutes - 5);
-  if (soon) {
+  // Gleich (≤ 15 Min): mit Zusatz aus der Notiz – ohne Zusatz nur, wenn die Termine-Kachel fehlt
+  const soon = x.upcoming.find((t) => toMin(t.time) - x.minutes <= 15 && toMin(t.time) >= x.minutes);
+  if (soon && (soon.note || soon.place || !shows("termine"))) {
     const inMin = Math.max(0, toMin(soon.time) - x.minutes);
-    const rain = x.weatherTip && /Schirm für/.test(x.weatherTip) && x.weatherTip.includes(soon.title.slice(0, 12));
     add({
-      id: `termin:${soon.key}`,
-      kind: "termin",
-      title: `${inMin <= 1 ? "Jetzt" : `In ${inMin} Min`}: ${short(soon.title)}`,
-      detail: rain ? "Regen – Schirm mit ☂️" : soon.place ? `${clock(soon.time)} · ${short(soon.place, 28)}` : `um ${clock(soon.time)}`,
-      score: 70 + (60 - inMin) / 2,
+      id: `gleich:${soon.key}`,
+      kind: "gleich",
+      title: `${inMin <= 1 ? "Jetzt" : `In ${inMin} Min`}: ${soon.title}`,
+      detail: soon.note ?? (soon.place ? `${clock(soon.time)} · ${soon.place}` : `um ${clock(soon.time)}`),
+      score: 88 - inMin,
       target: { href: dayHref },
-      tile: "termine",
-      tip: Boolean(rain || soon.place),
+      button: "Öffnen",
       gentle: !soon.work,
     });
   }
-  const next = x.upcoming.find((t) => t !== soon && toMin(t.time) > x.minutes);
-  if (next && !morning) add({ id: `termin:${next.key}`, kind: "termin", title: `${clock(next.time)} ${short(next.title)}`, detail: "Als Nächstes heute", score: 28, target: { href: dayHref }, tile: "termine", gentle: !next.work });
 
-  if (x.pin) add({ id: `pin:${x.pin.id}`, kind: "pinnwand", title: short(`${x.pin.author}: ${x.pin.text}`, 44), detail: `Neu auf der Pinnwand · ${x.pin.when}`, score: 72, target: { action: "pinnwand" }, tile: "pinnwand", gentle: true });
+  // Vorbereiten: Termin heute (später) mit Notiz → „Versichertenkarte einpacken?“
+  for (const t of x.upcoming.filter((u) => u !== soon && u.note && !careNoted(u.note) && toMin(u.time) - x.minutes > 15).slice(0, 1))
+    add({ id: `vorbereiten:${t.key}`, kind: "vorbereiten", title: ask(t.note!), detail: `Heute ${clock(t.time)} · ${t.title}`, score: 66, target: { href: dayHref }, button: "Erledigt", gentle: !t.work });
 
-  const tomorrowShown = x.tomorrowTiles ?? [];
-  if (x.weatherTip && (/Schirm für/.test(x.weatherTip) || !tomorrowShown.includes("wetter"))) {
-    const withTermin = /Schirm für/.test(x.weatherTip);
-    const rainy = /Regen|glatt|Sturm/.test(x.weatherTip);
-    add({
-      id: `wetter:${x.today}`,
-      kind: "wetter",
-      title: emojiLast(x.weatherTip),
-      detail: x.weatherNow ? `Jetzt ${x.weatherNow.temp}° · ${x.weatherNow.text}` : "Wetter ansehen",
-      score: (withTermin ? 74 : rainy ? 55 : 38) + (morning ? 8 : 0),
-      target: { href: "/wetter" },
-      tile: "wetter",
-      tip: true,
-      gentle: true,
-    });
-  }
-  // Morgens ohne Besonderes: Wetter kurz + erster Termin
-  if (morning && (x.weatherNow || x.upcoming.length)) {
-    const first = x.upcoming[0];
-    const parts = [x.weatherNow ? `${x.weatherNow.temp}°` : "", first ? `${clock(first.time)} ${short(first.title, 24)}` : x.weatherNow?.text ?? ""].filter(Boolean);
-    add({ id: `start:${x.today}`, kind: "start", title: parts.join(" · "), detail: x.weatherNow?.range ? `Heute ${x.weatherNow.range}` : "Guten Start in den Tag", score: 34, target: first ? { href: dayHref } : { href: "/wetter" }, gentle: true });
+  // Packliste fürs Training heute (bis zum Start)
+  if (x.sport && x.sport.pack.length && toMin(x.sport.time) > x.minutes && !night)
+    add({ id: `packliste:${x.sport.key}`, kind: "packliste", title: ask(`${x.sport.pack[0]} einpacken`), detail: `Heute ${clock(x.sport.time)} · ${x.sport.title}`, score: 62, target: { href: "/sport" }, button: "Erledigt", gentle: true });
+
+  // Wetter NUR mit Planbezug: Regen/Sturm/Glätte zur Zeit eines Draußen-Termins
+  if (x.planWeather && !night) {
+    const h = Number(x.planWeather.time.slice(0, 2));
+    add({ id: `wetter:${x.planWeather.key}`, kind: "wetter", title: `${x.planWeather.word} um ${h} Uhr`, detail: `${x.planWeather.title} – lieber drinnen?`, score: 74, target: { href: dayHref }, button: "Öffnen", gentle: true });
   }
 
-  // Essen: ab 15 Uhr das Gericht mit Startzeit (Essenszeit − Kochdauer) oder Ideen
-  /** Score des Essens (für „zuerst einkaufen, dann kochen“) und ob sein Kochstart noch > 30 Min weg ist */
-  let dishScore: number | null = null;
+  // Neu von der Familie
+  if (x.pin) add({ id: `pin:${x.pin.id}`, kind: "pinnwand", title: `${x.pin.author}: ${x.pin.text}`, detail: `Neu auf der Pinnwand · ${x.pin.when}`, score: 72, target: { action: "pinnwand" }, button: "Antworten", gentle: true });
+
+  // Kochstart: kurz vor dem Start (≤ 30 Min) bis zum Essen – sonst zeigt die Essen-Kachel das Gericht
   let dishLater = false;
-  if (x.minutes >= 15 * 60 && x.dish && !night) {
-    const meal = x.dish.clock ? toMin(x.dish.clock) : null;
-    const start = meal !== null ? meal - (x.dish.minutes ?? 30) : null;
-    if (meal === null || x.minutes < meal + 30) {
-      const near = start !== null ? start - x.minutes : 999;
-      dishScore = near <= 30 ? 80 : 52;
-      dishLater = start !== null && near > 30;
+  let dishScore = 0;
+  if (x.dish && x.dish.clock && !night) {
+    const meal = toMin(x.dish.clock);
+    const start = meal - (x.dish.minutes ?? 30);
+    const near = start - x.minutes;
+    dishLater = near > 30;
+    if (x.minutes < meal && (near <= 30 || !shows("essen"))) {
+      dishScore = near <= 30 ? 84 : 52;
       add({
-        id: `essen:${x.today}`,
-        kind: "essen",
-        title: `${short(x.dish.name, 26)} – ${x.dish.ready ? "alles im Haus" : `auf die Liste: ${x.dish.missing.slice(0, 2).join(", ")}`}`,
-        detail: start !== null ? (near <= 0 ? `Jetzt anfangen · Essen ${clock(x.dish.clock!)}` : `Start ${fromMin(start)} · Essen ${clock(x.dish.clock!)}`) : "Rezept ansehen",
+        id: `kochstart:${x.today}`,
+        kind: "kochstart",
+        title: near <= 0 ? `Jetzt kochen: ${x.dish.name}` : `${fromMin(start)} kochen: ${x.dish.name}`,
+        detail: x.dish.ready ? `Essen um ${clock(x.dish.clock)} · alles im Haus` : `auf die Liste: ${x.dish.missing.slice(0, 2).join(", ")}`,
         score: dishScore,
         target: { action: "essen" },
-        tile: "essen",
-        tip: start !== null,
+        button: "Kochen",
         gentle: true,
       });
     }
-  } else if (x.minutes >= 15 * 60 && x.minutes < 20 * 60 && x.dinnerFree) {
-    add({ id: `ideen:${x.today}`, kind: "ideen", title: "Noch nichts zum Essen – 3 Ideen", detail: "Mit dem, was da ist", score: 56, target: { action: "ideen" }, tile: "essen", tip: true, gentle: true });
   }
 
-  for (const t of x.urgent.slice(0, 1)) add({ id: `dringend:${t.key}`, kind: "dringend", title: `Heute wichtig: ${short(t.title)}`, detail: "Aufgaben ansehen", score: 64, target: { href: "/aufgaben" }, tile: "aufgaben", gentle: false });
-  for (const t of x.dueToday.filter((d) => !x.urgent.some((u) => u.key === d.key)).slice(0, 1))
-    add({ id: `frist:${t.key}`, kind: "dringend", title: `Heute dran: ${short(t.title)}`, detail: "Aufgaben ansehen", score: 60, target: { href: "/aufgaben" }, tile: "aufgaben", gentle: false });
+  // Heimweg-Einkauf (vor dem Kochen): ohne Zahl, nur der Laden und was fürs Essen fehlt
+  const forDish = dishLater && x.dish && !x.dish.ready ? x.dish.missing.filter((m) => !x.shop?.names.some((n) => n.toLowerCase() === m.toLowerCase())) : [];
+  if (x.shop && x.shop.names.length + forDish.length >= 2 && x.minutes >= 15 * 60 && x.minutes < 19 * 60 + 30)
+    add({ id: `einkauf:${x.today}:${x.shop.shop}`, kind: "einkauf", title: `Auf dem Heimweg bei ${x.shop.shop}?`, detail: [...x.shop.names.slice(0, 3), ...forDish.map((m) => `${m} fürs Essen`)].join(", "), score: dishLater ? 86 : 58, target: { href: x.demo ? "/einkaufsliste" : `/einkaufsliste/laden?name=${encodeURIComponent(x.shop.shop)}` }, button: "Liste", gentle: true });
+
+  // Absprache bei Abendterminen (ab 18 Uhr) mit Kindern im Haushalt
+  if (x.kids && x.minutes >= 12 * 60 && !night)
+    for (const t of x.upcoming.filter((u) => toMin(u.time) >= 18 * 60 && toMin(u.time) > x.minutes).slice(0, 1)) {
+      const done = careNoted(t.note);
+      add({ id: `absprache:${t.key}`, kind: "absprache", title: `${clock(t.time)} ${t.title}`, detail: done ? `${t.note!.trim()} ✓` : "Wer bleibt bei den Kindern?", score: done ? 45 : 64, target: { href: dayHref }, button: "Öffnen", gentle: true });
+    }
 
   for (const b of x.birthdays.slice(0, 1)) {
     const name = birthdayName(b.title);
     const when = b.when === "heute" ? "Heute" : "Morgen";
-    add({ id: `geburtstag:${b.date}:${b.title}`, kind: "geburtstag", title: name ? `${when} hat ${name} Geburtstag 🎂` : `${when}: ${short(b.title)} 🎂`, detail: b.when === "heute" ? "Vielleicht kurz anrufen?" : "Noch Zeit für eine Kleinigkeit", score: b.when === "heute" ? 82 : 58, target: { href: `/tag?datum=${b.date}` }, gentle: true, night: true });
+    add({ id: `geburtstag:${b.date}:${b.title}`, kind: "geburtstag", title: name ? `${when} hat ${name} Geburtstag` : `${when}: ${b.title}`, detail: b.when === "heute" ? "Vielleicht kurz anrufen?" : "Noch Zeit für eine Kleinigkeit", score: b.when === "heute" ? 82 : 58, target: { href: `/tag?datum=${b.date}` }, button: "Erledigt", gentle: true, night: true });
   }
 
-  if (x.sport && !night) add({ id: `sport:${x.today}`, kind: "sport", title: x.sport.today, detail: "Packliste und Wetter ansehen", score: 44, target: { href: "/sport" }, tile: "sport", gentle: true });
-
-  // Nachmittags: auf dem Heimweg beim Laden vorbei? Was zuerst zu tun ist, steht zuerst: Ist der
-  // Kochstart noch > 30 Min weg, kommt der Einkauf vor das Essen – mit dessen Zutaten fürs Essen.
-  const forDish = dishLater && x.dish && !x.dish.ready ? x.dish.missing.filter((m) => !x.shop?.names.some((n) => n.toLowerCase() === m.toLowerCase())) : [];
-  const shopCount = (x.shop?.names.length ?? 0) + forDish.length;
-  if (x.shop && shopCount >= 2 && x.minutes >= 15 * 60 && x.minutes < 19 * 60 + 30)
-    add({ id: `einkauf:${x.today}:${x.shop.shop}`, kind: "einkauf", title: `Auf dem Heimweg? ${shopCount} Sachen bei ${x.shop.shop}`, detail: short(`${x.shop.names.join(", ")}${forDish.length ? ` + ${forDish.join(", ")} fürs Essen` : ""}`, 52), score: dishLater && dishScore !== null ? dishScore + 4 : 40, target: { href: x.demo ? "/einkaufsliste" : `/einkaufsliste/laden?name=${encodeURIComponent(x.shop.shop)}` }, tile: "einkauf", tip: true, gentle: true });
-
+  // Ausblick abends (ab 19 Uhr): erster Termin morgen – mit Notiz als Packliste; ohne Notiz nur, wenn keine Kachel „Morgen“ zeigt
   if (x.minutes >= 19 * 60 || x.minutes < 6 * 60) {
-    const items = x.tomorrow.items.slice(0, 2).map((i) => (i.time ? `${clock(i.time)} ${short(i.title, 18)}` : short(i.title, 22)));
-    if ((items.length || x.tomorrow.weather) && !tomorrowShown.length)
-      add({ id: `morgen:${x.tomorrow.date}`, kind: "morgen", title: `${x.tomorrow.label}: ${items.length ? items.join(" · ") : "frei"}`, detail: x.tomorrow.weather ?? "Den Tag ansehen", score: night ? 60 : 46, target: { href: `/tag?datum=${x.tomorrow.date}` }, gentle: true });
+    const first = x.tomorrow.items.find((i) => i.note) ?? x.tomorrow.items[0];
+    if (first && (first.note || !(x.tomorrowTiles ?? []).length))
+      add({ id: `ausblick:${first.key}`, kind: "ausblick", title: `${x.tomorrow.label}: ${first.time ? `${clock(first.time)} ` : ""}${first.title}`, detail: first.note ? ask(first.note) : "Den Tag ansehen", score: night ? 60 : 50, target: { href: `/tag?datum=${x.tomorrow.date}` }, button: first.note ? "Packliste" : "Öffnen", gentle: true });
   }
 
-  if (x.allDone && !night) add({ id: `geschafft:${x.today}`, kind: "geschafft", title: "Alles geschafft für heute 🎉", detail: x.minutes >= 17 * 60 ? "Schönen Feierabend" : "Gönn dir was Schönes", score: 26, target: null, gentle: true });
-  if (x.leisure && x.calm) add({ id: `freizeit:${x.today}`, kind: "freizeit", title: `Freizeit-Idee: ${short(x.leisure.text)}`, detail: "Aus deiner Freizeit-Liste", score: 27, target: { href: x.leisure.href }, gentle: true });
-  if (x.region && !night) add({ id: `region:${x.region.id}`, kind: "region", title: short(`Tipp: ${x.region.title}`, 44), detail: x.region.detail, score: 38, target: { href: `/tipps?tipp=${encodeURIComponent(x.region.id)}` }, tile: "tipps", gentle: true });
-  if (x.tip) add({ id: `tipp:${x.today}`, kind: "tipp", title: short(x.tip, 44), detail: "Kleiner Tipp", score: 18, target: null, gentle: true });
-  if (x.weekCheck && !night) add({ id: `wochencheck:${x.weekCheck}`, kind: "wochencheck", title: "Kurzer Wochencheck?", detail: "Sag einfach alles, ich sortiere.", score: 50, target: { action: "wochencheck" }, gentle: true });
-  if (x.demo) add({ id: "beispiel", kind: "beispiel", title: "Das ist ein Beispiel-Tag", detail: "Probier alles aus – tippen, abhaken, verschieben", score: 24, target: null, gentle: true, night: true });
+  // Aufgaben nur, wenn die Aufgaben-Kachel fehlt
+  if (!shows("aufgaben"))
+    for (const t of [...x.urgent, ...x.dueToday].slice(0, 1)) add({ id: `aufgabe:${t.key}`, kind: "aufgabe", title: t.title, detail: "Heute dran", score: 54, target: { href: "/aufgaben" }, button: "Öffnen", gentle: !t.work });
+
+  if (!x.dish && x.dinnerFree && !shows("essen") && x.minutes >= 15 * 60 && x.minutes < 20 * 60) add({ id: `ideen:${x.today}`, kind: "ideen", title: "Ideen fürs Abendessen", detail: "Mit dem, was da ist", score: 56, target: { action: "ideen" }, button: "Öffnen", gentle: true });
+
+  // Selbst eingeschaltete Bausteine – leise, wenn sonst wenig ansteht
+  if (x.leisure && x.calm) add({ id: `freizeit:${x.today}`, kind: "freizeit", title: x.leisure.text, detail: "Aus deiner Freizeit-Liste", score: 27, target: { href: x.leisure.href }, button: "Öffnen", gentle: true });
+  if (x.region && !shows("tipps") && !night) add({ id: `region:${x.region.id}`, kind: "region", title: x.region.title, detail: x.region.detail, score: 38, target: { href: `/tipps?tipp=${encodeURIComponent(x.region.id)}` }, button: "Öffnen", gentle: true });
+  if (x.tip) add({ id: `tipp:${x.today}`, kind: "tipp", title: x.tip, detail: "Kleiner Tipp", score: 18, target: null, button: null, gentle: true });
+
+  if (x.weekCheck && !night) add({ id: `wochencheck:${x.weekCheck}`, kind: "wochencheck", title: "Kurzer Wochencheck?", detail: "Sag einfach alles, ich sortiere.", score: 50, target: { action: "wochencheck" }, button: "Öffnen", gentle: true });
+  if (x.demo) add({ id: "beispiel", kind: "beispiel", title: "Das ist ein Beispiel-Tag", detail: "Probier alles aus – tippen, abhaken, verschieben", score: 24, target: null, button: null, gentle: true, night: true });
 
   const ranked = c
     .filter((t) => !x.hidden.includes(t.id))
     .filter((t) => !x.calm || t.gentle)
     .filter((t) => !night || NIGHT_KINDS.includes(t.kind) || t.night)
     .map((t) => {
-      // Was die Kachel direkt darunter schon zeigt, nur mit Tipp ganz oben
-      const repeat = t.tile && x.firstTiles.includes(t.tile) && !t.tip ? 0.5 : 1;
       const w = Math.max(-6, Math.min(6, x.weights[t.kind] ?? 0));
-      return { ...t, score: Math.round(t.score * repeat * (1 + w * 0.05) * 10) / 10 };
+      return { ...t, title: short(t.title), score: Math.round(t.score * (1 + w * 0.05) * 10) / 10 };
     })
     .sort((a, b) => b.score - a.score)
     .slice(0, MAX)
-    .map(({ id, kind, title, detail, score, target }) => ({ id, kind, title, detail, score, target }));
+    .map(({ id, kind, title, detail, score, target, button }) => ({ id, kind, title, detail, score, target, button }));
   if (ranked.length) return ranked;
-  return [{ id: `ruhig:${x.today}`, kind: "ruhig", title: night || x.minutes >= 20 * 60 ? "Heute ist es ruhig 🌙" : "Heute ist es ruhig ☀️", detail: x.weatherNow ? `Jetzt ${x.weatherNow.temp}° · ${x.weatherNow.text}` : "Ich sag Bescheid, wenn was ansteht", score: 1, target: null }];
+  return [{ id: `ruhig:${x.today}`, kind: "ruhig", title: QUIET_TEXT, detail: "", score: 1, target: null, button: null }];
 }

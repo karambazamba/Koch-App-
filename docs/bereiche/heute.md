@@ -128,34 +128,43 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   ihn beim Hinzufügen ein.
 - Statt der Jetzt-Karte steht oben ein gestrichelter Platz (`JetztPlaceholder`).
 
-### Jetzt-Karte
-- Feste Höhe 78 px, zwei Zeilen (Titel fett, Detail in Dunkelorange), Emojis
-  werden entfernt (`withoutEmoji`). Ganze Karte antippbar; ✕ blendet das Thema
-  für heute aus („Für heute ausgeblendet“ mit Rückgängig). Wischen = nächstes
-  Thema, höchstens drei.
-- `jetztTopics` ist rein und nie leer (sonst „Heute ist es ruhig“). Punkte aus
-  Dringlichkeit, Handlung (`tip` schlägt Info) und Interesse (`weights`,
-  ±5 % je Punkt; Antippen +1, Weiterwischen −0,5, ✕ −1,5).
-- Themen u. a.: Erinnerung (100), Timer, Kochschritt, Pause, Termin ≤ 60 Min,
-  Pinnwand ungelesen (auch Sprachnachricht nur mit Dauer), Wetter-Tipp,
-  morgens „8° · 8:15 …“, ab 15 Uhr Essen mit Startzeit oder „Noch nichts zum
-  Essen – 3 Ideen“, „Heute wichtig/dran“, Geburtstag, Sport, „Auf dem
-  Heimweg?“ (15:00–19:30), ab 19 Uhr „Morgen · Mi: …“, „Alles geschafft“,
-  Freizeit-Idee, Regional-Tipp, Tipp, Beispiel-Tag.
-- Zuerst einkaufen, dann kochen: Ist der Kochstart des heutigen Gerichts noch
-  mehr als 30 Min weg, steht „Auf dem Heimweg?“ knapp über dem Essen (Essen +
-  4); fehlende Zutaten des Gerichts kommen dazu („4 Sachen bei REWE“ ·
-  „Milch, Brot, Butter + Paprika fürs Essen“). Ab ≤ 30 Min gewinnt das Essen
-  (80). Ohne Gericht mit Startzeit bleibt der Einkauf bei 40.
-- Regeln: Was die erste Kachel-Reihe zeigt, zählt nur halb (außer mit Tipp).
-  Zeigt eine Kachel schon „Morgen“ (Termine bzw. Ausblick morgen, Wetter von
-  morgen – `tomorrowTiles`), entfällt das reine Morgen- bzw. Wetter-Thema;
-  ein Schirm-Hinweis zu einem Termin bleibt.
-  `calm` (Feierabend mit Ruhe oder Wochenende) = nur sanfte Themen. Nachts
-  (22–6 Uhr) nur Erinnerung, Timer, Kochen, Pause, Morgen, Geburtstag,
-  Beispiel. Arbeit-Termine sind nicht sanft.
+### Jetzt-Karte (Tafel 60, v0.68.0)
+- Zeigt nur, was Mia weiß und die Kacheln NICHT zeigen – mit höchstens EINEM
+  Knopf rechts (Erledigt / Öffnen / Antworten / Liste / Kochen / Packliste).
+  Kein Wetterbericht, keine Wiederholung, keine Zähler, kein ✕, keine
+  „Passt sich deinem Tag an“-Zeile. Feste Höhe 78 px, zwei Zeilen: Zeile 1
+  = was (höchstens 32 Zeichen, `TITLE_MAX`, gekürzt am Wortende), Zeile 2 =
+  warum. Ganze Karte antippbar; Wischen = nächstes Thema (höchstens drei,
+  kleine Punkte oben rechts). „Erledigt“ zeigt kurz ✓ und wechselt weich
+  (Erinnerung gilt dann als gesehen, `doneJetztTopic` legt das Thema für
+  heute weg – ohne weniger Interesse).
+- Themen (`jetztTopics`, rein, nie leer – sonst „Alles ruhig – ich sag
+  Bescheid.“): Erinnerung (100), Timer (nur ohne Timer-Kachel), Kochschritt,
+  Pause, Gleich (Termin ≤ 15 Min mit Notiz/Ort; ohne Zusatz nur ohne
+  Termine-Kachel), Vorbereiten (Termin heute mit Notiz → „Versichertenkarte
+  einpacken?“), Packliste fürs Training heute, Wetter NUR mit Planbezug
+  (Regen zur Stunde eines Draußen-Termins/-Trainings, `isOutdoor`: „Regen um
+  17 Uhr · Fußball – lieber drinnen?“), Neu von der Familie (Pinnwand,
+  „Antworten“), Heimweg-Einkauf ohne Zahl („Auf dem Heimweg bei REWE?“, vor
+  dem Kochen), Kochstart (≤ 30 Min vor dem Start; ohne Essen-Kachel früher),
+  Absprache bei Abendterminen ab 18 Uhr mit Kindern („Wer bleibt bei den
+  Kindern?“, mit Notiz „Oma bleibt …“ ✓), Geburtstag, Ausblick ab 19 Uhr
+  (erster Termin morgen, mit Notiz als Packliste; ohne Notiz nur, wenn keine
+  Kachel „Morgen“ zeigt), Aufgaben/Ideen nur ohne ihre Kachel,
+  Wochencheck. Selbst eingeschaltete Bausteine leise: Freizeit-Idee (Ruhe),
+  Tipp aus der Region (nur ohne Tipps-Kachel; Weiterwischen = dieses
+  Wochenende nicht mehr), kleiner Tipp. Beispiel-Tag erklärt sich.
+- Weggefallen: „start“ (Grad · Termin), reines „morgen“, Wetter-Tipps ohne
+  Plan, „Als Nächstes“-Termin, „Alles geschafft“, Sport-Info ohne Packliste.
+- Punkte aus Dringlichkeit und Interesse (`weights`, ±5 % je Punkt;
+  Antippen +1, Weiterwischen −0,5). `calm` (Feierabend mit Ruhe oder
+  Wochenende) = nur sanfte Themen. Nachts (22–6 Uhr) nur Erinnerung, Timer,
+  Kochen, Pause, Ausblick, Geburtstag, Beispiel. Arbeit-Termine sind nicht sanft.
 - Die Reihenfolge bleibt stehen (`useStableOrder`), bis die App zurückkehrt,
   15 Min vergehen, ein Thema wegfällt oder eines mit ≥ 90 Punkten dazukommt.
+- Tests: `tests/heute/jetztThemen.test.ts` (Tag wie Tafel 60 um 7:00, 8:10,
+  10:20, 12:40, 16:45, 17:35, 19:00, 21:00; nie „°“; Regen nur mit
+  Draußen-Termin; „Erledigt“), Durchklick `jetztKarte`.
 
 ### Tagesphasen
 - Kochen (50) > Sport (40) > Feierabend (30) > Morgens (20) > Tagsüber (10).

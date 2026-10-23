@@ -1,17 +1,18 @@
 "use client";
 
-// Jetzt-Karte: oben auf "Heute", volle Breite, feste Höhe (zwei Zeilen, wird
-// nie größer), Pfirsich-Verlauf. Links Mia (32 px, beim Wechsel kurz
-// "sprechen"), Zeile 1 fett ohne Emoji = das Wichtigste, Zeile 2 in
-// Dunkelorange = Detail. Rechts Punkte und ✕, kein "›" – die ganze Karte ist
-// antippbar und öffnet den passenden Bereich. Nach links wischen = nächstes
-// Thema (höchstens drei), ✕ = Thema für heute ausblenden.
+// Jetzt-Karte (Tafel 60): oben auf "Heute", volle Breite, feste Höhe (zwei
+// Zeilen, wird nie größer), Pfirsich-Verlauf. Links Mia (32 px, beim Wechsel
+// kurz "sprechen"), Zeile 1 fett ohne Emoji = was, Zeile 2 in Dunkelorange =
+// warum. Rechts höchstens EIN Knopf (Erledigt / Öffnen / Antworten / Liste /
+// Kochen / Packliste); „Erledigt“ zeigt kurz ✓ und wechselt weich zum
+// nächsten Thema. Die ganze Karte ist antippbar; nach links wischen =
+// nächstes Thema (höchstens drei, kleine Punkte oben rechts).
 // Die Reihenfolge der Themen bleibt stehen, bis die App wieder geöffnet wird,
 // 15 Minuten vergehen oder etwas sehr Dringendes dazukommt – nichts springt.
 // Später Geladenes (Wetter, Tipps) kommt hinten dazu, solange Platz ist.
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { Check } from "lucide-react";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import type { JetztTopic } from "@/lib/heute/jetztTopics";
 import { withoutEmoji } from "@/lib/core/text";
@@ -58,14 +59,14 @@ export function JetztCard({
   topics,
   name,
   onOpen,
-  onHide,
+  onDone,
   onSkip,
   arrive = null,
 }: {
   topics: JetztTopic[];
   name: string;
   onOpen: (t: JetztTopic) => void;
-  onHide: (t: JetztTopic) => void;
+  onDone: (t: JetztTopic) => void;
   onSkip: (t: JetztTopic) => void;
   /** Vom Hallo-Bildschirm: Mia fliegt von dort hierher, der erste Satz tippt sich ein */
   arrive?: { x: number; y: number; size: number } | null;
@@ -88,6 +89,18 @@ export function JetztCard({
     const t = window.setTimeout(() => setSpeaking(false), 1400);
     return () => window.clearTimeout(t);
   }, [speaking]);
+  // „Erledigt“: kurz ✓, dann weich weiter
+  const [ticked, setTicked] = useState<string | null>(null);
+  useEffect(() => {
+    if (!ticked) return;
+    const t = window.setTimeout(() => {
+      const done = shown.find((x) => x.id === ticked);
+      setTicked(null);
+      if (done) onDone(done);
+    }, 650);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- nur beim Abhaken
+  }, [ticked]);
   const start = useRef<{ x: number; y: number } | null>(null);
   const swiped = useRef(false);
   // Ankunft vom Hallo-Bildschirm: Mia fliegt (0,7 s), dann tippt sich der erste Satz ein
@@ -147,7 +160,6 @@ export function JetztCard({
         }
       }}
     >
-      <span className="pointer-events-none absolute right-3 top-1.5 text-[10.5px] font-medium italic text-jetzt-hint">Passt sich deinem Tag an</span>
       <button
         type="button"
         onClick={() => {
@@ -157,33 +169,30 @@ export function JetztCard({
           }
           onOpen(topic);
         }}
-        className="flex h-full w-full items-center gap-3 pl-3.5 pr-20 text-left"
+        className={`flex h-full w-full items-center gap-3 pl-3.5 text-left ${topic.button ? "pr-[104px]" : "pr-8"}`}
       >
         <span ref={face} className="shrink-0">
           <BegleitungAvatar size={32} zustand={speaking || typed >= 0 ? "sprechen" : undefined} stabil />
         </span>
-        <span key={topic.id} className="flex min-w-0 flex-1 flex-col pt-2" style={{ animation: "jetzt-in 0.35s ease-out" }} role="status">
+        <span key={topic.id} className="flex min-w-0 flex-1 flex-col" style={{ animation: "jetzt-in 0.35s ease-out" }} role="status">
           <span className="truncate text-[15.5px] font-extrabold leading-snug text-ink">{typed >= 0 ? fullTitle.slice(0, typed) || "\u00a0" : fullTitle}</span>
-          <span className="truncate text-[13px] font-semibold leading-snug text-accent-strong">{withoutEmoji(topic.detail)}</span>
+          {topic.detail && <span className="truncate text-[13px] font-semibold leading-snug text-accent-strong">{withoutEmoji(topic.detail)}</span>}
         </span>
       </button>
-      {topic.kind !== "ruhig" && (
-        <button type="button" onClick={() => onHide(topic)} aria-label="Für heute ausblenden" className="hit absolute right-2.5 top-1/2 mt-1.5 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-jetzt-hint active:opacity-60">
-          <X className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+      {topic.button && (
+        <button
+          type="button"
+          onClick={() => (topic.button === "Erledigt" ? setTicked(topic.id) : onOpen(topic))}
+          aria-label={ticked === topic.id ? "Erledigt" : `${topic.button}: ${fullTitle}`}
+          className="absolute right-3 top-1/2 flex h-11 min-w-[84px] -translate-y-1/2 items-center justify-center rounded-full bg-accent px-3.5 text-[14px] font-bold text-on-accent transition-transform active:scale-95"
+        >
+          {ticked === topic.id ? <Check className="h-5 w-5" strokeWidth={3} aria-hidden style={{ animation: "check-pop 0.4s ease-out" }} /> : topic.button}
         </button>
       )}
       {shown.length > 1 && (
-        <span className="absolute right-10 top-1/2 mt-1.5 flex -translate-y-1/2 gap-1 text-jetzt-hint" role="tablist" aria-label="Themen">
+        <span className="pointer-events-none absolute right-3.5 top-1.5 flex gap-1 text-jetzt-hint" aria-hidden>
           {shown.map((t, n) => (
-            <button
-              key={t.id}
-              type="button"
-              role="tab"
-              aria-selected={n === i}
-              aria-label={`Thema ${n + 1}`}
-              onClick={() => setIndex(n)}
-              className={`h-1.5 rounded-full bg-current transition-all ${n === i ? "w-3.5 opacity-80" : "w-1.5 opacity-30"}`}
-            />
+            <span key={t.id} className={`h-1.5 rounded-full bg-current transition-all ${n === i ? "w-3.5 opacity-80" : "w-1.5 opacity-30"}`} />
           ))}
         </span>
       )}

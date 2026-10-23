@@ -70,7 +70,7 @@ import { matchStock } from "@/lib/essen/dishIdeas";
 import { useStock } from "@/lib/essen/useStock";
 import { demoDishAt } from "@/lib/essen/demoDish";
 import { openHelper } from "@/lib/begleitung/open";
-import { hideJetztTopic, noteJetztSkip, noteJetztTap, weekCheckDone } from "@/lib/heute/jetztStore";
+import { doneJetztTopic, noteJetztSkip, noteJetztTap, weekCheckDone } from "@/lib/heute/jetztStore";
 import { weekCheckKey } from "@/lib/kalender/wochencheck";
 import type { JetztTopic } from "@/lib/heute/jetztTopics";
 import type { HomeData } from "@/components/heute/useHomeData";
@@ -198,7 +198,6 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
       : null;
   const upcoming = upcomingTermine(entries, data.todayIso, minutes).filter((i) => !view.hideWork || i.room !== "arbeit");
   const termine = view.familyUpcomingOnly ? upcoming.filter((i) => i.room === "familie") : upcoming;
-  const termineAll = view.familyUpcomingOnly ? termine : items.filter((i) => i.entry.typ === "termin");
   // Termine-Kachel: läuft 30 Min, „gleich“, alles vorbei → „Morgen · Sa“ (lib/heute/termineKachel.ts)
   const terminTile = termineTile(
     items.filter((i) => i.entry.typ === "termin" && (!view.familyUpcomingOnly || i.room === "familie")),
@@ -218,8 +217,6 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
 
   // Kacheln: genau die gespeicherte Reihenfolge und Größe – im Bearbeiten-Modus dieselbe
   const visible = all.filter((t) => t.visible && !tileMeta(t.id).soon && (t.id !== "vorrat" || pantryOn) && (t.id !== "tipps" || regionOn));
-  // Erste Reihe (zwei S nebeneinander zählen zusammen) – was dort steht, wiederholt die Jetzt-Karte nicht
-  const firstTiles: HomeTileId[] = visible.length ? (visible[0].size === "S" && visible[1]?.size === "S" ? [visible[0].id, visible[1].id] : [visible[0].id]) : [];
 
   const entry = cookableEntry(data.day);
   const recipe = entry?.recipeId ? data.recipes[entry.recipeId] : undefined;
@@ -253,7 +250,6 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const dueToday = workless(overview.heute).filter((i) => !i.carried && i.entry.typ === "aufgabe" && (i.entry.data.due === data.todayIso || i.entry.data.date === data.todayIso));
   const training = ctx?.sport.training;
   const leisure = evening && notes ? leisureIdea(notes, data.todayIso) : null;
-  const hadSomething = termineAll.length > 0 || overview.erledigt.some((i) => i.date === data.todayIso);
   const regionTips = useTipsWindow(data.todayIso, regionOn && !demoDay.tiles.length);
   const jetzt = useJetztTopics({
     today: data.todayIso,
@@ -265,7 +261,6 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     tomorrow: demoDay.termine && demoDay.label ? demoDay.termine : tomorrowAll.filter((i) => !view.hideWork || i.room !== "arbeit"),
     urgent: view.tasksRest ? [] : tasksAll.filter(isUrgent).filter((i) => !i.done),
     dueToday: view.tasksRest ? [] : dueToday.filter((i) => !i.done),
-    allDone: !demoDay.tiles.length && hadSomething && !termine.length && !tasksAll.filter((i) => !i.done).length,
     pins: demoDay.tiles.includes("pinnwand") ? [] : pins,
     memos: demoDay.tiles.includes("pinnwand") ? [] : memos,
     nowMs,
@@ -279,7 +274,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
         : null,
     dinnerFree: !dish && !over && !data.day?.away && Boolean(dishClock && dishClock >= "15:00"),
     todayAll: allItems,
-    sport: sportTile?.visible && training ? { today: `Heute ${Math.floor(training.start / 60)}:${String(training.start % 60).padStart(2, "0")} ${training.title}` } : null,
+    training: training && !demoDay.tiles.length ? { key: `sport:${data.todayIso}`, title: training.title, time: `${String(Math.floor(training.start / 60)).padStart(2, "0")}:${String(training.start % 60).padStart(2, "0")}` } : null,
     timer: runningTimer ? { name: runningTimer.name, left: leftWords(runningTimer.endsAt - nowMs) } : null,
     cookingStep: step !== null && steps[step] ? steps[step] : null,
     reminder: reminder ? { key: reminder.key, text: reminder.text } : null,
@@ -292,7 +287,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     demo: demoDay.tiles.length > 0,
     demoShop: demoDay.tiles.includes("einkauf"),
     weekCheck: demoDay.tiles.length || paused || (evening && routine.ruhe) ? null : weekCheckKey(data.todayIso, minutes),
-    firstTiles,
+    tiles: visible.map((t) => t.id),
     tomorrowTiles: [
       ...((demoDay.termine && demoDay.label && visible.some((t) => t.id === "termine")) || visible.some((t) => t.id === "morgen") ? (["termine"] as HomeTileId[]) : []),
       ...(view.weatherTomorrow && visible.some((t) => t.id === "wetter") ? (["wetter"] as HomeTileId[]) : []),
@@ -312,17 +307,16 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     }
     document.querySelector(`[data-tile~="${t.target.action === "timer" ? "timer" : "pinnwand"}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
-  const hideTopic = (t: JetztTopic) => {
+  // Weiterwischen: etwas weniger Interesse; ein Region-Tipp kommt dieses Wochenende nicht wieder
+  const skipTopic = (t: JetztTopic) => {
+    noteJetztSkip(t.kind);
     if (t.kind === "region") hideJetztTipWeekend(weekendKey(data.todayIso));
+  };
+  // „Erledigt“: abhaken (Erinnerung gesehen) und das Thema für heute weglegen – die Karte zeigt kurz ✓
+  const doneTopic = (t: JetztTopic) => {
     if (t.kind === "erinnerung" && reminder) markReminderSeen(reminder.key);
-    if (t.kind === "wochencheck") {
-      const undo = weekCheckDone(t.id.slice("wochencheck:".length));
-      buzz();
-      return showToast({ text: "Diese Woche nicht mehr", undo, undoneText: "Wieder da", seconds: 3, small: true });
-    }
-    const undo = hideJetztTopic(t.id, t.kind, data.todayIso);
+    doneJetztTopic(t.id, data.todayIso);
     buzz();
-    showToast({ text: "Für heute ausgeblendet", undo, undoneText: "Wieder da", seconds: 3, small: true });
   };
 
   const renderTile = (tile: HomeTile, half: boolean, edit: boolean) => {
@@ -381,7 +375,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
             </header>
           )}
 
-          {jetzt.on && (editing.on ? <JetztPlaceholder /> : <JetztCard topics={jetzt.topics} name={helperName(data.profile)} onOpen={openTopic} onHide={hideTopic} onSkip={(t) => noteJetztSkip(t.kind)} arrive={arrive} />)}
+          {jetzt.on && (editing.on ? <JetztPlaceholder /> : <JetztCard topics={jetzt.topics} name={helperName(data.profile)} onOpen={openTopic} onDone={doneTopic} onSkip={skipTopic} arrive={arrive} />)}
 
           {!editing.on && (
             <>

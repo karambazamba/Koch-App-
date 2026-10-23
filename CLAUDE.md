@@ -34,8 +34,9 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   neue Nutzer: Pinnwand + Wetter (S), Termine, Aufgaben, Essen + Einkauf,
   Spendentopf (Vorrat nur mit Baustein). Jede Kachel öffnet ihre Seite.
 - Die Begleitung spricht auf der Startseite nur über die Jetzt-Karte: feste
-  Höhe, 2 Zeilen, Punktesystem, höchstens 3 Themen zum Wischen, nur was die
-  Kacheln nicht zeigen (außer mit Tipp). Tagesphasen ändern nur Inhalte, nie
+  Höhe, 2 Zeilen (Zeile 1 ≤ 32 Zeichen), Punktesystem, höchstens 3 Themen zum
+  Wischen, rechts höchstens EIN Knopf, nur was die Kacheln nicht zeigen. Nie
+  Temperatur, Wetter nur mit Planbezug (Tafel 60). Tagesphasen ändern nur Inhalte, nie
   die Anordnung; Ruhe nach Feierabend ist ein eigener Schalter.
 - Gesten: Tippen = Eintrag öffnen, lange Drücken = Startseite bearbeiten,
   Wischen = Seite wechseln.

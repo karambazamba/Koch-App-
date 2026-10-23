@@ -74,3 +74,39 @@ export const muetzeBeispielTag = async (page, check) => {
   await page.waitForTimeout(900);
   check(!(await hat(page).count()), "echtes Profil an Tag 1: keine Mütze");
 };
+
+/**
+ * Jetzt-Karte (Tafel 60): Termin heute mit Notiz → „Versichertenkarte
+ * einpacken?“ mit EINEM Knopf „Erledigt“ → kurz ✓, dann weich das nächste
+ * Thema; kein ✕, keine „Passt sich …“-Zeile, nirgends „°“.
+ */
+export const jetztKarte = async (page, check) => {
+  await hello(page);
+  await seedFamily(page);
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem("wasgibts.eintraege"));
+    raw.entries = raw.entries.map((e) => (e.id === "t1" ? { ...e, data: { ...e.data, note: "Versichertenkarte einpacken" } } : e));
+    localStorage.setItem("wasgibts.eintraege", JSON.stringify(raw));
+    // Pinnwand gelesen – sonst steht „Neu von der Familie“ vorn
+    localStorage.setItem("wasgibts.pinnwand", JSON.stringify({ version: 2, messages: [], memos: [] }));
+  });
+  await page.reload();
+  const card = page.locator("[data-jetzt]");
+  await card.waitFor({ timeout: 5000 });
+  await page.waitForTimeout(1500);
+  const text = await card.innerText();
+  check(/Versichertenkarte einpacken\?/.test(text) && /Heute 16:15 · Zahnarzt/.test(text), `Vorbereiten mit Notiz (${text.replace(/\s+/g, " ").slice(0, 80)})`);
+  check(!/°/.test(text) && !/Passt sich/.test(text), "kein „°“, keine „Passt sich …“-Zeile");
+  check(!(await card.getByRole("button", { name: "Für heute ausblenden" }).count()), "kein ✕");
+  const done = card.getByRole("button", { name: /^Erledigt: / });
+  check(await done.isVisible(), "ein Knopf „Erledigt“");
+  await done.click();
+  check(await card.getByRole("button", { name: "Erledigt" }).isVisible(), "kurz ✓");
+  await page.waitForTimeout(1200);
+  const after = await card.innerText();
+  check(!/Versichertenkarte/.test(after), `danach das nächste Thema (${after.replace(/\s+/g, " ").slice(0, 60)})`);
+  await page.reload();
+  await card.waitFor({ timeout: 5000 });
+  await page.waitForTimeout(1200);
+  check(!/Versichertenkarte/.test(await card.innerText()), "erledigt bleibt heute weg");
+};

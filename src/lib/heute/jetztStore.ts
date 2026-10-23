@@ -1,6 +1,7 @@
 // Jetzt-Karte (`wasgibts.jetzt` v1): an/aus (Standard an), die heute mit ✕
 // ausgeblendeten Themen und das Interesse je Thema-Art – lokal und langsam
-// gelernt: Antippen +1, Weiterwischen −0,5, Ausblenden −1,5 (begrenzt auf ±6).
+// gelernt: Antippen +1, Weiterwischen −0,5 (begrenzt auf ±6); „Erledigt“ legt
+// ein Thema für heute weg.
 // `weekOff`: Woche (Montag), in der „Kurzer Wochencheck?“ nicht mehr kommt.
 
 import { createLocalStore } from "@/lib/core/localStore";
@@ -57,12 +58,11 @@ export function noteJetztSkip(kind: JetztKind) {
   store.save({ ...s, weights: learn(s, kind, -0.5) });
 }
 
-/** ✕: Thema für heute ausblenden (weniger Interesse); gibt das Zurücknehmen zurück */
-export function hideJetztTopic(id: string, kind: JetztKind, today: string): () => void {
-  const before = loadJetzt();
-  const hidden = before.day === today ? before.hidden : [];
-  store.save({ ...before, day: today, hidden: [...new Set([...hidden, id])], weights: learn(before, kind, -1.5) });
-  return () => store.save({ ...loadJetzt(), day: before.day, hidden: before.hidden, weights: before.weights });
+/** „Erledigt“ (Knopf auf der Karte): Thema für heute weg – ohne weniger Interesse */
+export function doneJetztTopic(id: string, today: string) {
+  const s = loadJetzt();
+  const hidden = s.day === today ? s.hidden : [];
+  store.save({ ...s, day: today, hidden: [...new Set([...hidden, id])] });
 }
 
 /** "Ausgeblendete Themen zurücksetzen": nichts mehr ausgeblendet, Interesse von vorn */

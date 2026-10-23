@@ -94,30 +94,29 @@ describe("Jetzt-Karte: an/aus, Ausblenden, Interesse", () => {
     j.noteJetztTap("wetter");
     j.noteJetztSkip("wetter");
     expect(j.loadJetzt().weights.wetter).toBe(0.5);
-    for (let i = 0; i < 10; i++) j.noteJetztTap("essen");
-    expect(j.loadJetzt().weights.essen).toBe(6);
+    for (let i = 0; i < 10; i++) j.noteJetztTap("kochstart");
+    expect(j.loadJetzt().weights.kochstart).toBe(6);
   });
 
-  it("✕ blendet nur heute aus (−1,5) und lässt sich zurücknehmen", async () => {
+  it("„Erledigt“ legt ein Thema nur heute weg – ohne weniger Interesse", async () => {
     const j = await load(jetzt);
-    const undo = j.hideJetztTopic("wetter:2026-10-21", "wetter", "2026-10-21");
-    j.hideJetztTopic("wetter:2026-10-21", "wetter", "2026-10-21");
+    j.doneJetztTopic("erinnerung:e1", "2026-10-21");
+    j.doneJetztTopic("erinnerung:e1", "2026-10-21");
     const s = j.loadJetzt();
-    expect(s.hidden).toEqual(["wetter:2026-10-21"]);
-    expect(s.weights.wetter).toBe(-3);
-    expect(j.hiddenToday(s, "2026-10-21")).toEqual(["wetter:2026-10-21"]);
+    expect(s.hidden).toEqual(["erinnerung:e1"]);
+    expect(s.weights).toEqual({});
+    expect(j.hiddenToday(s, "2026-10-21")).toEqual(["erinnerung:e1"]);
     expect(j.hiddenToday(s, "2026-10-22")).toEqual([]);
     // am nächsten Tag beginnt die Liste neu
-    j.hideJetztTopic("pin:p1", "pinnwand", "2026-10-22");
+    j.doneJetztTopic("pin:p1", "2026-10-22");
     expect(j.loadJetzt().hidden).toEqual(["pin:p1"]);
-    undo();
-    expect(j.loadJetzt()).toMatchObject({ day: "", hidden: [], weights: {} });
   });
 
   it("Zurücksetzen: nichts ausgeblendet, Interesse von vorn – an/aus bleibt", async () => {
     const j = await load(jetzt);
     j.setJetztOn(false);
-    j.hideJetztTopic("x", "tipp", "2026-10-21");
+    j.doneJetztTopic("x", "2026-10-21");
+    j.noteJetztTap("tipp");
     j.resetJetztTopics();
     expect(j.loadJetzt()).toEqual({ version: 1, on: false, day: "", hidden: [], weights: {} });
   });
