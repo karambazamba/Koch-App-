@@ -16,14 +16,21 @@ Einkaufsmodus für den Laden. Immer sichtbar (kein Baustein).
 - Woche + Liste als Hook: `useWeekShoppingList("planning" | "current" |
   "next")` in `src/lib/einkauf/useWeekShoppingList.ts`.
 - Läden: `shopGroups.ts` (Gruppen, `shopTone`, `shopType`), `shopMode.ts`
-  (gemerkte Ansicht, `shopModeLists`, `shopModeRequest`).
+  (gemerkter Chip, `shopModeLists`, `shopModeRequest`).
+- Kacheln wie Bring (v0.66): `src/lib/einkauf/kacheln/` – `symbols.ts`
+  (`symbolFor`: Stichwort → gezeichnetes Symbol, Sonderfälle zuerst, eigene
+  Produkte nehmen das Symbol der Zutat), `view.ts` (`shopChips`,
+  `filterByChip`, `resolveChip`, `walkOrder`, `isCompact` ab 24,
+  `recentBought`, `catalog`), `basics.ts` (Grundsortiment für den Katalog).
 - Schnell-Eintrag/Sprache: `quickAdd.ts` (`parseQuickAdd`), `shoppingParse.ts`
   (`parseShoppingText`, `isShoppingRequest`, `parseProductStatement`).
 - Oberfläche `src/components/einkauf/`: `ShoppingListView.tsx` (Seite
-  `/einkaufsliste`), `ShoppingParts.tsx` (`ItemContent`, `EditItemSheet`,
-  `StaplesSheet`), `StapleBar.tsx`, `QuickAdd.tsx` (`QuickAddButton`,
-  `ShoppingAddField`, `ShoppingQuickAdd`), `ShopMode.tsx`
-  (`/einkaufsliste/laden?name=…`).
+  `/einkaufsliste`), `ShoppingParts.tsx` (`ItemContent`, `EditItemSheet`
+  mit Löschen/„Haben wir schon“, `StaplesSheet`), `StapleBar.tsx`,
+  `QuickAdd.tsx` (`QuickAddButton`, `ShoppingQuickAdd`), `ShopMode.tsx`
+  (`/einkaufsliste/laden?name=…`); `kacheln/ItemTile.tsx` (Kachel, Größen
+  normal/compact/mini, `TILE_GRID`), `kacheln/ItemSymbol.tsx` (56 eigene
+  Zeichnungen), `kacheln/CatalogSheet.tsx` („Mehr hinzufügen“).
 - Kachel „Einkauf“ auf Heute: `ShoppingTile`/`ShopRows` in
   `src/components/heute/HomeTiles.tsx`. Chips auf dem Essen-Reiter:
   `ShoppingChips` in `src/components/essen/FoodPage.tsx`.
@@ -51,10 +58,30 @@ Einkaufsmodus für den Laden. Immer sichtbar (kein Baustein).
     Käse, Butter, Milch, Joghurt, Obst – je wöchentlich, `basicsToStaples(null)`).
 - Artikel aus Rezepten werden nie gespeichert, nur ihr Häkchen (Schlüssel
   „zutat|einheitenfamilie“) – so übersteht es Änderungen am Plan.
-- `wasgibts.einkaufsansicht` v1 (pro Gerät, nicht in der Sicherung):
-  `{ version: 1, view: "abteilung" | "laden" }`.
+- `wasgibts.einkaufsansicht` v2 (pro Gerät, nicht in der Sicherung):
+  `{ version: 2, chip: "alle" | "ohne" | "laden:<Name>" | "meist" }`.
+  Migration `migrateShopView`: v1 „abteilung“ → „alle“, v1 „laden“ →
+  „meist“ (= der Laden mit den meisten Sachen, `resolveChip`).
+- Kachel-Farben je Abteilung: Tokens `--app-shop-section-<abteilung>`
+  (hell und dunkel in `globals.css`).
 
 ## So verhält es sich
+
+- **Einfach wie Bring (v0.66)**: Jeder Artikel ist eine quadratische Kachel
+  in der Farbe seiner Abteilung (Symbol, Name, Menge, oben links das
+  Gericht); 3 Spalten, ab 390 px 4, ab 24 Artikeln eine Stufe kleiner.
+  Tippen = gekauft (bleibt 2 s stehen, dann „Zuletzt gekauft“, ab 8
+  eingeklappt; dort Tippen = wieder auf die Liste). Lange drücken =
+  „Artikel bearbeiten“ (mit Löschen bzw. „Haben wir schon“). Oben Chips
+  „Alle“ + Läden (meiste zuerst) + „Ohne Laden“; den gewählten Laden nochmal
+  tippen = Einkaufsmodus. Abschnitte: Jetzt mitnehmen · Für heute · Bald
+  wieder fällig · Für die Woche (bzw. „Auf der Liste“) · Zuletzt gekauft.
+  Unten groß „Mehr hinzufügen“ (rechts bleibt Platz für Mia): Katalog mit
+  Suche + Mikro (mehrere mit Komma, `parseQuickAdd`), „Oft gekauft“ zuerst,
+  dann alles im Laufweg; antippen wählt aus/ab, „N ausgewählt“, „Fertig“
+  übernimmt alles (abgewählt: Eigenes fällt weg, Zutaten → „Haben wir
+  schon“). Startseiten-Kachel M: 4 kleine Kacheln, L: 8, + „und N weitere“;
+  Tippen = gekauft mit „Gekauft · Rückgängig“.
 
 - **Welche Woche**: Die Planungswoche beginnt am Einkaufstag (Profil
   `shoppingDay`, Standard Montag). „planning“ = ab 2 Tage vor dem nächsten

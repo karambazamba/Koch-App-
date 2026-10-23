@@ -85,12 +85,12 @@ describe("Einkaufsmodus", () => {
     expect(shopModeRequest("Hallo", ["Aldi"])).toBeNull();
   });
 
-  it("Ansicht wird pro Gerät gemerkt", async () => {
+  it("Chip wird pro Gerät gemerkt", async () => {
     vi.resetModules();
     const w = fakeWindow();
-    const { setShoppingView } = await import("@/lib/einkauf/shopMode");
-    setShoppingView("laden");
-    expect(JSON.parse(w.localStorage.getItem("wasgibts.einkaufsansicht")!)).toEqual({ version: 1, view: "laden" });
+    const { setShopChip } = await import("@/lib/einkauf/shopMode");
+    setShopChip("laden:Rewe");
+    expect(JSON.parse(w.localStorage.getItem("wasgibts.einkaufsansicht")!)).toEqual({ version: 2, chip: "laden:Rewe" });
   });
 });
 

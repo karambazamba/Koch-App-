@@ -15,6 +15,12 @@
   ein Bild jederzeit ersetzen – dann hier Quelle und Lizenz eintragen und
   `CACHE_VERSION` in `public/sw.js` erhöhen.
 
+## Einkaufs-Symbole
+
+- Die Symbole auf den Einkaufs-Kacheln sind **eigene Zeichnungen im Code**
+  (`src/components/einkauf/kacheln/ItemSymbol.tsx`) – keine fremden Bilder,
+  keine KI, keine Lizenzpflicht.
+
 ## Wetterdaten
 
 - Hauptquelle: **Deutscher Wetterdienst (DWD)**, Vorhersage MOSMIX und

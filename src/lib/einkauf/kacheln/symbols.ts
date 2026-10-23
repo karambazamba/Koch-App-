@@ -5,6 +5,7 @@
 // null (die Kachel zeigt dann den Anfangsbuchstaben in der Abteilungsfarbe).
 // Die Zeichnungen selbst: components/einkauf/kacheln/ItemSymbol.tsx.
 
+/** Alle gezeichneten Symbole @public */
 export const SYMBOLS = [
   "milch", "kaese", "butter", "joghurt", "eier", "sahne",
   "brot", "broetchen", "toast",

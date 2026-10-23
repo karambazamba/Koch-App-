@@ -1,38 +1,17 @@
 "use client";
 
-// Seite /einkaufsliste: Woche wählen, „Was brauchst du?“, Abteilungen oder Läden,
-// „Für heute“, fällige Stammartikel (StapleBar.tsx), Erledigtes und Teilen.
+// Seite /einkaufsliste – einfach wie Bring (Tafel 35): oben die Läden als
+// Chips (gewählten Laden nochmal tippen = Einkaufsmodus), darunter Kacheln:
+// Jetzt mitnehmen · Für heute · Bald wieder fällig · Für die Woche · Zuletzt
+// gekauft. Tippen = gekauft, lange drücken = bearbeiten. Unten der große
+// Knopf „Mehr hinzufügen“ (Katalog mit Suche und Mikro).
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import {
-  Beef,
-  CalendarCheck,
-  Carrot,
-  Check,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Croissant,
-  CupSoda,
-  EyeOff,
-  Milk,
-  Package,
-  Pencil,
-  PenLine,
-  Repeat,
-  Share2,
-  ShoppingBag,
-  Snowflake,
-  Store,
-  Trash2,
-  type LucideIcon,
-} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ChevronLeft, ChevronRight, PenLine, Plus, Repeat, Share2, ShoppingBasket } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Segmented } from "@/components/ui/Segmented";
-import { CARD, CARD_LIST, ICON_BUTTON, PAGE_MAIN, buttonClass, chipClass } from "@/components/ui/styles";
+import { CARD, CARD_LIST, ICON_BUTTON, PAGE_MAIN, SECTION_TITLE, buttonClass, chipClass } from "@/components/ui/styles";
 import {
-  SECTIONS,
   carryOverManual,
   dueStaples,
   removeManualItem,
@@ -45,52 +24,43 @@ import {
   toggleChecked,
   updateManualItem,
   type ListItem,
-  type Section,
 } from "@/lib/einkauf/shoppingList";
-import { QuickAddButton, ShoppingAddField } from "@/components/einkauf/QuickAdd";
+import { QuickAddButton } from "@/components/einkauf/QuickAdd";
 import { useWeekShoppingList, type WeekChoice } from "@/lib/einkauf/useWeekShoppingList";
 import { addDays, formatWeekRange, toIsoDate, useToday } from "@/lib/essen/weekPlan";
-import { EditItemSheet, ItemContent, StaplesSheet, SwipeRow, type RowAction } from "@/components/einkauf/ShoppingParts";
-import { setShoppingView, shopModeHref, useShoppingView } from "@/lib/einkauf/shopMode";
-import { shopGroups, shopTone } from "@/lib/einkauf/shopGroups";
-import { SHOP_GROUPS, sortBy } from "@/lib/core/sort";
+import { EditItemSheet, StaplesSheet } from "@/components/einkauf/ShoppingParts";
+import { setShopChip, shopModeHref, useShopChip } from "@/lib/einkauf/shopMode";
+import { shopTone } from "@/lib/einkauf/shopGroups";
+import { RECENT_FOLD, filterByChip, isCompact, recentBought, resolveChip, shopChips, walkOrder } from "@/lib/einkauf/kacheln/view";
+import { ItemTile, TILE_GRID, dishLabel, type TileSize } from "@/components/einkauf/kacheln/ItemTile";
+import { CatalogSheet } from "@/components/einkauf/kacheln/CatalogSheet";
 import { StapleBar } from "@/components/einkauf/StapleBar";
 import { showDeleted } from "@/lib/core/toast";
+import { helperName } from "@/lib/einstellungen/profile";
+import { useProfile } from "@/lib/einstellungen/useProfile";
+import { buzz } from "@/components/heute/actions";
 
 const SKELETON = <div className={`${CARD} m-4 h-64 animate-pulse`} />;
 
-/** Abteilungen als Linien-Icons (das Emoji in SECTIONS bleibt für den Teilen-Text) */
-const SECTION_ICONS: Record<Section, LucideIcon> = {
-  "obst-gemuese": Carrot,
-  "fleisch-fisch": Beef,
-  kuehlregal: Milk,
-  brot: Croissant,
-  vorrat: Package,
-  tiefkuehl: Snowflake,
-  getraenke: CupSoda,
-  sonstiges: ShoppingBag,
-};
-
 const WEEKDAY = new Intl.DateTimeFormat("de-DE", { weekday: "long" });
-
-type Group = { id: string; label: string; icon: LucideIcon; items: ListItem[]; shop?: string };
 
 /** /einkaufsliste: automatisch aus dem Wochenplan, plus eigene Artikel und Stammartikel. */
 export function ShoppingListView() {
+  const router = useRouter();
   // Start mit der Woche, für die gerade eingekauft wird; dann umschaltbar.
   const [choice, setChoice] = useState<WeekChoice>("planning");
   const data = useWeekShoppingList(choice);
-  // Wochenplan-Oberfläche versteckt (Neustart): kein Verweis dorthin
   const today = useToday();
-  // Ansicht gemerkt (pro Gerät): nach Abteilung oder nach Laden
-  const mode = useShoppingView();
+  // Chip gemerkt (pro Gerät): Alle oder ein Laden
+  const stored = useShopChip();
+  const profile = useProfile();
   const [showHidden, setShowHidden] = useState(false);
+  const [allRecent, setAllRecent] = useState(false);
   const [shareNote, setShareNote] = useState("");
-  const [expanded, setExpanded] = useState<string[]>([]);
   const [leaving, setLeaving] = useState<string[]>([]);
-  const [info, setInfo] = useState<string | null>(null);
   const [editing, setEditing] = useState<ListItem | null>(null);
   const [staplesOpen, setStaplesOpen] = useState(false);
+  const [catalogOpen, setCatalogOpen] = useState(false);
   // "Für heute" kommt immer aus der laufenden Woche (auch wenn die nächste angezeigt wird)
   const current = useWeekShoppingList("current");
   // Spontan: offene Artikel früherer Wochen in die laufende Woche holen
@@ -105,26 +75,33 @@ export function ShoppingListView() {
   const range = formatWeekRange(weekStart);
   const visible = list.items.filter((i) => !i.hidden);
   const hidden = list.items.filter((i) => i.hidden);
+  const open = visible.filter((i) => !i.checked);
   const due = dueStaples(settings.staples, weekStart, list, weekList);
+  const chips = shopChips(open);
+  const chip = resolveChip(stored, open);
+  const shown = (items: ListItem[]) => filterByChip(items, chip);
+  const stays = (i: ListItem) => !i.checked || leaving.includes(i.key);
 
   // "Für heute": offene Artikel für heute (aus Ideen, Twist oder Plan) – immer aus der laufenden Woche
   const inWeek = todayIso >= weekStart && todayIso <= addDays(weekStart, 6);
   const todayName = WEEKDAY.format(today);
-  const forToday = (i: ListItem) => !i.checked && !i.hidden && i.days.includes(todayName);
+  const forToday = (i: ListItem) => !i.hidden && i.days.includes(todayName) && stays(i);
   // "Jetzt mitnehmen" (aus dem Supermarkt-Gespräch): oben, bis abgehakt
-  const nowItems = visible.filter((i) => i.now && !i.checked);
-  const todayItems = inWeek ? visible.filter((i) => forToday(i) && !nowItems.includes(i)) : (current?.list.items.filter(forToday) ?? []);
+  const nowItems = shown(visible.filter((i) => i.now && stays(i)));
+  const todayItems = shown(inWeek ? visible.filter((i) => forToday(i) && !nowItems.includes(i)) : (current?.list.items.filter(forToday) ?? []));
   const todayWeek = inWeek ? weekStart : (current?.weekStart ?? weekStart);
-  const grouped = visible.filter((i) => !(i.now && !i.checked) && !(inWeek && todayItems.includes(i)));
+  const weekItems = walkOrder(shown(visible.filter((i) => stays(i) && !nowItems.includes(i) && !(inWeek && todayItems.includes(i)))));
+  const recent = recentBought([visible.filter((i) => !leaving.includes(i.key))]);
+  const recentShown = allRecent || recent.length <= RECENT_FOLD ? recent : recent.slice(0, RECENT_FOLD);
 
-  const toggle = (item: ListItem) => {
+  const toggle = (week: string, item: ListItem) => {
     if (!item.checked) {
+      buzz();
       setLeaving((l) => [...l, item.key]);
       window.setTimeout(() => setLeaving((l) => l.filter((k) => k !== item.key)), 2000);
     }
-    toggleChecked(weekStart, item, todayIso);
+    toggleChecked(week, item, todayIso);
   };
-  const doneItems = grouped.filter((i) => i.checked && !leaving.includes(i.key));
 
   const share = async (shop?: string) => {
     const text = shoppingListText(list, `🛒 Einkaufsliste ${range}${shop ? ` – ${shop}` : ""}`, shop);
@@ -141,113 +118,99 @@ export function ShoppingListView() {
     }
   };
 
-  // Gruppen: nach Abteilung (Supermarkt-Reihenfolge) oder nach Laden
-  const groups: Group[] =
-    mode === "abteilung"
-      ? SECTIONS.map((s) => ({ id: s.value, label: s.label, icon: SECTION_ICONS[s.value], items: grouped.filter((i) => i.section === s.value) }))
-      : [
-          ...sortBy(
-            [...new Set(grouped.map((i) => i.shop).filter(Boolean))].map((shop) => ({ shop, count: grouped.filter((i) => i.shop === shop && !i.checked).length })),
-            ...SHOP_GROUPS,
-          )
-            .map(({ shop }) => shop)
-            .map((shop) => ({ id: `laden:${shop}`, label: shop, icon: Store, shop, items: grouped.filter((i) => i.shop === shop) })),
-          { id: "laden:", label: "Ohne Laden", icon: ShoppingBag, items: grouped.filter((i) => !i.shop) },
-        ];
+  const tiles = (items: ListItem[], week: string, size: TileSize = "normal") => (
+    <div className={TILE_GRID[size]}>
+      {items.map((item) => (
+        <ItemTile
+          key={item.key}
+          name={item.name}
+          section={item.section}
+          amount={item.amount}
+          dish={item.checked ? "" : dishLabel(item.dishes)}
+          products={settings.products}
+          checked={item.checked}
+          size={size}
+          label={`${item.name} ${item.checked ? "nicht mehr abhaken" : "abhaken"}`}
+          onTap={() => toggle(week, item)}
+          onLongPress={week === weekStart ? () => setEditing(item) : undefined}
+        />
+      ))}
+    </div>
+  );
 
-  const actionsFor = (item: ListItem): RowAction[] => [
-    item.manualId
-      ? { label: "Löschen", icon: Trash2, tone: "danger", onClick: () => showDeleted(removeManualItem(weekStart, item.manualId!), `${item.name} gelöscht`) }
-      : { label: "Haben wir", icon: EyeOff, onClick: () => setHave(weekStart, item.key, true) },
-    { label: "Bearbeiten", icon: Pencil, onClick: () => setEditing(item) },
-  ];
+  const section = (label: string, items: ListItem[], week: string, size: TileSize = "normal") =>
+    items.length > 0 && (
+      <section aria-label={label} className="flex flex-col gap-2">
+        <h2 className={`${SECTION_TITLE} px-1`}>{label}</h2>
+        {tiles(items, week, size)}
+      </section>
+    );
+
+  const selectedShop = chips.find((c) => c.id === chip)?.shop;
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
       <PageHeader title="Einkaufsliste" action={<QuickAddButton weekStart={data.weekStart} settings={data.settings} className="-mr-1.5" />} />
       <main className={PAGE_MAIN}>
         {data.planning && (
-        <div className="flex items-center justify-between gap-2">
-          <button type="button" onClick={() => setChoice("current")} disabled={!isNext} aria-label="Diese Woche" className={ICON_BUTTON}>
-            <ChevronLeft className="h-6 w-6" strokeWidth={2.25} aria-hidden />
-          </button>
-          <div className="text-center">
-            <p className="text-lg font-bold">{isNext ? "Nächste Woche" : "Diese Woche"}</p>
-            <p className="whitespace-nowrap text-sm text-muted">{range}</p>
+          <div className="flex items-center justify-between gap-2">
+            <button type="button" onClick={() => setChoice("current")} disabled={!isNext} aria-label="Diese Woche" className={ICON_BUTTON}>
+              <ChevronLeft className="h-6 w-6" strokeWidth={2.25} aria-hidden />
+            </button>
+            <div className="text-center">
+              <p className="text-lg font-bold">{isNext ? "Nächste Woche" : "Diese Woche"}</p>
+              <p className="whitespace-nowrap text-sm text-muted">{range}</p>
+            </div>
+            <button type="button" onClick={() => setChoice("next")} disabled={isNext} aria-label="Nächste Woche" className={ICON_BUTTON}>
+              <ChevronRight className="h-6 w-6" strokeWidth={2.25} aria-hidden />
+            </button>
           </div>
-          <button type="button" onClick={() => setChoice("next")} disabled={isNext} aria-label="Nächste Woche" className={ICON_BUTTON}>
-            <ChevronRight className="h-6 w-6" strokeWidth={2.25} aria-hidden />
-          </button>
-        </div>
         )}
 
-        {/* Großes Feld „Was brauchst du?“ immer oben (mit Mikrofon, mehrere mit Komma, „Oft gekauft“) */}
-        <ShoppingAddField weekStart={weekStart} settings={settings} />
-
-        <Segmented
-          label="Sortierung"
-          value={mode}
-          onChange={setShoppingView}
-          options={[
-            { value: "abteilung", label: "Nach Abteilung" },
-            { value: "laden", label: "Nach Laden" },
-          ]}
-        />
-
-        {(() => {
-          // Im Laden? → Einkaufsmodus (Läden mit offenen Sachen, meiste zuerst)
-          const shops = shopGroups(visible.filter((i) => !i.checked), 4).filter((g) => g.shop);
-          return shops.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-2 px-1" aria-label="Einkaufen bei">
-              <span className="text-sm font-semibold text-muted">Einkaufen bei</span>
-              {shops.map((g) => (
-                <Link key={g.shop} href={shopModeHref(g.shop!)} className={`${chipClass(false)} gap-1.5`}>
-                  <span className="h-2 w-2 rounded-full" style={{ background: `var(--app-shop-${shopTone(g.shop!)})` }} aria-hidden />
-                  {g.shop}
-                </Link>
+        {chips.length > 1 && (
+          <div className="flex flex-col gap-1.5">
+            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" role="radiogroup" aria-label="Laden" data-no-swipe>
+              {chips.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={c.id === chip}
+                  onClick={() => (c.id === chip && c.shop ? router.push(shopModeHref(c.shop)) : setShopChip(c.id))}
+                  className={`${chipClass(c.id === chip)} shrink-0`}
+                >
+                  {c.shop && <span className="h-2 w-2 rounded-full" style={{ background: `var(--app-shop-${shopTone(c.shop)})` }} aria-hidden />}
+                  {c.label}
+                  <span className="text-[13px] tabular-nums text-muted">{c.count}</span>
+                </button>
               ))}
             </div>
-          ) : null;
-        })()}
+            {selectedShop && (
+              <p className="px-1 text-xs text-muted">
+                Nochmal auf {selectedShop} tippen: Einkaufsmodus.
+              </p>
+            )}
+          </div>
+        )}
 
         {shareNote && <p className="rounded-field bg-accent-soft px-4 py-2 text-sm font-semibold text-accent-strong">{shareNote}</p>}
 
-        {nowItems.length > 0 && (
-          <section aria-label="Jetzt mitnehmen" className="flex flex-col gap-1.5">
-            <h2 className="flex items-center gap-1.5 px-1 text-[15px] font-extrabold text-accent-strong">
-              <ShoppingBag className="h-4 w-4" strokeWidth={2} aria-hidden />
-              Jetzt mitnehmen
-            </h2>
-            <ul className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
-              {nowItems.map((item) => (
-                <SwipeRow key={item.key} label={item.name} actions={actionsFor(item)} onLongPress={() => setInfo(info === item.key ? null : item.key)}>
-                  <ItemContent item={item} onToggle={() => toggle(item)} onInfo={() => setInfo(info === item.key ? null : item.key)} infoOpen={info === item.key} />
-                </SwipeRow>
-              ))}
-            </ul>
-          </section>
+        {open.length === 0 && recent.length === 0 && !due.length && (
+          <div className={`${CARD} flex flex-col items-center gap-2 px-6 py-8 text-center`}>
+            <ShoppingBasket className="h-8 w-8 text-accent" strokeWidth={1.75} aria-hidden />
+            <p className="text-base font-semibold">Die Liste ist leer.</p>
+            <p className="text-sm text-muted">Sag {helperName(profile)} einfach, was ihr braucht – oder such es unten aus.</p>
+          </div>
         )}
 
-        {todayItems.length > 0 && (
-          <section aria-label="Für heute" className="flex flex-col gap-1.5">
-            <h2 className="flex items-center gap-1.5 px-1 text-[15px] font-extrabold text-accent-strong">
-              <CalendarCheck className="h-4 w-4" strokeWidth={2} aria-hidden />
-              Für heute
-            </h2>
-            <ul className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
-              {todayItems.map((item) => (
-                <SwipeRow key={item.key} label={item.name} actions={inWeek ? actionsFor(item) : []} onLongPress={() => setInfo(info === item.key ? null : item.key)}>
-                  <ItemContent item={item} onToggle={() => toggleChecked(todayWeek, item, todayIso)} onInfo={() => setInfo(info === item.key ? null : item.key)} infoOpen={info === item.key} />
-                </SwipeRow>
-              ))}
-            </ul>
-          </section>
-        )}
-        {todayItems.length > 0 && grouped.length > 0 && <h2 className="-mb-1 mt-1 px-1 text-[15px] font-extrabold text-muted">Für die Woche</h2>}
+        {section("Jetzt mitnehmen", nowItems, weekStart)}
+        {section("Für heute", todayItems, todayWeek)}
 
-        {due.length > 0 && (
+        {due.length > 0 && chip === "alle" && (
           <StapleBar staples={due} onTake={(st) => takeStaple(weekStart, st)} onSkip={(st) => skipStaple(weekStart, st)} onManage={() => setStaplesOpen(true)} />
         )}
+
+        {section(todayItems.length || nowItems.length ? "Für die Woche" : "Auf der Liste", weekItems, weekStart, isCompact(weekItems.length) ? "compact" : "normal")}
 
         {data.planning && list.missing.length > 0 && (
           <p className="flex items-start gap-2 px-1 text-sm text-muted">
@@ -256,76 +219,16 @@ export function ShoppingListView() {
           </p>
         )}
 
+        {open.length > 0 && <p className="-mt-2 px-1 text-xs text-muted">Antippen: gekauft. Lange drücken: ändern.</p>}
 
-        {groups.map((group) => {
-          // Abgehaktes steht gesammelt unten unter „Erledigte anzeigen“
-          const open = group.items.filter((i) => !i.checked);
-          if (open.length === 0 && !group.items.some((i) => leaving.includes(i.key))) return null;
-          // eben Abgehaktes bleibt kurz durchgestrichen stehen, dann rutscht es nach unten
-          const checked = group.items.filter((i) => i.checked && leaving.includes(i.key));
-          const Icon = group.icon;
-          return (
-            <section key={group.id} aria-label={group.label} className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-2 px-1">
-                <h2 className="flex min-w-0 flex-1 items-center gap-1.5 text-[15px] font-extrabold text-muted">
-                  {group.shop ? (
-                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: `var(--app-shop-${shopTone(group.shop)})` }} aria-hidden />
-                  ) : (
-                    <Icon className="h-4 w-4 text-accent" strokeWidth={2} aria-hidden />
-                  )}
-                  <span className="truncate">{group.label}</span>
-                </h2>
-                {group.shop && (
-                  <Link href={shopModeHref(group.shop)} className="hit flex h-8 items-center rounded-full bg-accent-soft px-3 text-[13px] font-bold text-accent-strong">
-                    Einkaufen
-                  </Link>
-                )}
-                {group.shop && (
-                  <button
-                    type="button"
-                    onClick={() => share(group.shop)}
-                    aria-label={`Liste für ${group.shop} teilen`}
-                    className="flex h-8 w-8 items-center justify-center text-muted"
-                  >
-                    <Share2 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-                  </button>
-                )}
-              </div>
-              {(
-                <ul className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
-                  {[...open, ...checked].map((item) => (
-                    <SwipeRow key={item.key} label={item.name} actions={actionsFor(item)} onLongPress={() => setInfo(info === item.key ? null : item.key)}>
-                      <ItemContent
-                        item={item}
-                        onToggle={() => toggle(item)}
-                        onInfo={() => setInfo(info === item.key ? null : item.key)}
-                        infoOpen={info === item.key}
-                      />
-                    </SwipeRow>
-                  ))}
-                </ul>
-              )}
-            </section>
-          );
-        })}
-
-        {visible.length > 0 && <p className="-mt-2 px-1 text-xs text-muted">Nach links wischen: „Haben wir schon“ oder bearbeiten.</p>}
-
-        {doneItems.length > 0 && (
-          <section aria-label="Erledigt" className="flex flex-col gap-1.5">
-            <button type="button" onClick={() => setExpanded((e) => (e.includes("erledigt") ? e.filter((x) => x !== "erledigt") : [...e, "erledigt"]))} aria-expanded={expanded.includes("erledigt")} className="hit flex items-center gap-1.5 self-start px-1 text-sm font-semibold text-muted">
-              <Check className="h-4 w-4 text-good" strokeWidth={2.5} aria-hidden />
-              {expanded.includes("erledigt") ? "Erledigte ausblenden" : "Erledigte anzeigen"}
-              <ChevronDown className={`h-4 w-4 transition ${expanded.includes("erledigt") ? "rotate-180" : ""}`} strokeWidth={2.25} aria-hidden />
-            </button>
-            {expanded.includes("erledigt") && (
-              <ul className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
-                {doneItems.map((item) => (
-                  <SwipeRow key={item.key} label={item.name} actions={actionsFor(item)} onLongPress={() => setInfo(info === item.key ? null : item.key)}>
-                    <ItemContent item={item} onToggle={() => toggle(item)} onInfo={() => setInfo(info === item.key ? null : item.key)} infoOpen={info === item.key} />
-                  </SwipeRow>
-                ))}
-              </ul>
+        {recent.length > 0 && (
+          <section aria-label="Zuletzt gekauft" className="flex flex-col gap-2">
+            <h2 className={`${SECTION_TITLE} px-1`}>Zuletzt gekauft</h2>
+            {tiles(recentShown, weekStart, "compact")}
+            {recent.length > RECENT_FOLD && (
+              <button type="button" onClick={() => setAllRecent((v) => !v)} aria-expanded={allRecent} className="hit self-start px-1 text-sm font-semibold text-muted">
+                {allRecent ? "Weniger zeigen" : `Alle ${recent.length} zeigen`}
+              </button>
             )}
           </section>
         )}
@@ -350,23 +253,55 @@ export function ShoppingListView() {
           </div>
         )}
 
-        {visible.some((i) => !i.checked) && (
-          <button type="button" onClick={() => share()} className="hit -mt-1 flex items-center gap-1.5 self-start px-1 text-sm font-semibold text-muted">
-            <Share2 className="h-4 w-4" strokeWidth={2} aria-hidden />
-            Liste teilen
+        <div className="flex flex-wrap gap-x-4">
+          {open.length > 0 && (
+            <button type="button" onClick={() => share(selectedShop)} className="hit flex items-center gap-1.5 px-1 text-sm font-semibold text-muted">
+              <Share2 className="h-4 w-4" strokeWidth={2} aria-hidden />
+              {selectedShop ? `Liste für ${selectedShop} teilen` : "Liste teilen"}
+            </button>
+          )}
+          <button type="button" onClick={() => setStaplesOpen(true)} className="hit flex items-center gap-1.5 px-1 text-sm font-semibold text-muted">
+            <Repeat className="h-4 w-4" strokeWidth={2} aria-hidden />
+            Stammliste ansehen
           </button>
-        )}
-        <button type="button" onClick={() => setStaplesOpen(true)} className="hit -mt-1 flex items-center gap-1.5 self-start px-1 text-sm font-semibold text-muted">
-          <Repeat className="h-4 w-4" strokeWidth={2} aria-hidden />
-          Stammliste ansehen
-        </button>
+        </div>
       </main>
 
+      {/* Großer Knopf unten, rechts bleibt Platz für Mia */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-10 pb-[max(1rem,env(safe-area-inset-bottom))] pl-4 pr-28">
+        <button
+          type="button"
+          onClick={() => setCatalogOpen(true)}
+          className={`${buttonClass("primary", "lg")} pointer-events-auto mb-2 w-full max-w-sm shadow-float`}
+        >
+          <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+          Mehr hinzufügen
+        </button>
+      </div>
+
+      {catalogOpen && <CatalogSheet weekStart={weekStart} settings={settings} open={open} recent={recent} onClose={() => setCatalogOpen(false)} />}
       {editing && (
         <EditItemSheet
           item={editing}
           settings={settings}
           onClose={() => setEditing(null)}
+          remove={
+            editing.manualId
+              ? {
+                  label: "Löschen",
+                  onClick: () => {
+                    showDeleted(removeManualItem(weekStart, editing.manualId!), `${editing.name} gelöscht`);
+                    setEditing(null);
+                  },
+                }
+              : {
+                  label: "Haben wir schon",
+                  onClick: () => {
+                    setHave(weekStart, editing.key, true);
+                    setEditing(null);
+                  },
+                }
+          }
           onSave={({ name, always, shop, amount }) => {
             if (name.trim() !== editing.name) renameItem(weekStart, editing, name, always);
             if (editing.manualId && amount !== editing.amount) updateManualItem(weekStart, editing.manualId, { amount });

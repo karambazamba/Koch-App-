@@ -2,7 +2,7 @@
 // Chip-Reihe (Alle + Läden, meiste zuerst, „Ohne Laden“ nur wenn nötig),
 // Filter, Laufweg-Reihenfolge, kleinere Kacheln ab 24, „Zuletzt gekauft“ und
 // den Katalog „Mehr hinzufügen“ („Oft gekauft“ zuerst, schon auf der Liste =
-// ausgewählt). Dazu die Migration der gemerkten Ansicht.
+// ausgewählt). Dazu der gemerkte Chip.
 
 import { SHOP_GROUPS, SHOPPING, sortBy } from "@/lib/core/sort";
 import type { ListItem, Section, Staple } from "@/lib/einkauf/shoppingList";
@@ -38,7 +38,7 @@ export function filterByChip(items: ListItem[], chip: ShopChip): ListItem[] {
 /** Kachel-Reihenfolge = Laufweg (Abteilung), innerhalb wie bisher */
 export const walkOrder = (items: ListItem[]) => sortBy(items, ...SHOPPING);
 
-/** Ab so vielen Artikeln „Für die Woche“ werden die Kacheln eine Stufe kleiner */
+/** Ab so vielen Artikeln „Für die Woche“ werden die Kacheln eine Stufe kleiner @public */
 export const COMPACT_FROM = 24;
 export const isCompact = (count: number) => count >= COMPACT_FROM;
 
@@ -47,7 +47,12 @@ export const RECENT_FOLD = 8;
 export function recentBought(weeks: ListItem[][]): ListItem[] {
   const seen = new Set<string>();
   const out: ListItem[] = [];
-  for (const items of weeks) for (const i of items) if (i.checked && !seen.has(lower(i.name))) (seen.add(lower(i.name)), out.push(i));
+  for (const items of weeks)
+    for (const i of items) {
+      if (!i.checked || seen.has(lower(i.name))) continue;
+      seen.add(lower(i.name));
+      out.push(i);
+    }
   return out;
 }
 
@@ -75,9 +80,10 @@ export function catalog(opts: { staples: Staple[]; recent: ListItem[]; open: Lis
   return [...oftenList, ...restList];
 }
 
-/** Gemerkte Ansicht bis v0.65 („abteilung“/„laden“) → Chip: „Alle“ bzw. der meistgenutzte Laden */
-export function chipFromOldView(view: unknown, open: ListItem[]): ShopChip {
-  if (view !== "laden") return "alle";
-  const first = shopChips(open).find((c) => c.shop);
-  return first ? first.id : "alle";
+/** Gemerkter Chip → angezeigter Chip: „meist“ (alte Ansicht „Nach Laden“) = der Laden mit den meisten Sachen; ein Laden ohne offene Sachen → „Alle“ */
+export function resolveChip(stored: ShopChip | "meist", open: ListItem[]): ShopChip {
+  const chips = shopChips(open);
+  if (stored === "meist") return chips.find((c) => c.shop)?.id ?? "alle";
+  const want = lower(stored);
+  return chips.find((c) => lower(c.id) === want)?.id ?? "alle";
 }

@@ -1998,3 +1998,16 @@ Fehler in `docs/aufraeumen-nachher.md`.
 ## Versprechen offen halten (v0.65.1)
 - Mia verspricht nur, was die App kann: keine Erinnerungs-/Nachrichten-
   Versprechen ohne Push (Prompt-Regel, Textregel, Sport-Formular ehrlich).
+
+## Einkauf – einfach wie Bring (Tafel 35, v0.66.0)
+
+- Einkaufsliste als Kacheln in Abteilungsfarben mit 56 eigenen, im Code
+  gezeichneten Symbolen (`symbolFor`, `ItemSymbol`); unbekannt = Anfangs-
+  buchstabe. Chips „Alle“ + Läden statt „Nach Abteilung/Nach Laden“;
+  gewählten Laden nochmal tippen = Einkaufsmodus. Ansicht v1 → Chip v2.
+- „Mehr hinzufügen“: Katalog mit Suche/Mikro, „Oft gekauft“, Mehrfachauswahl.
+  Das große Feld „Was brauchst du?“ ist dafür weg (`ShoppingAddField`).
+- Tippen = gekauft → „Zuletzt gekauft“; lange drücken = bearbeiten (statt
+  Wischen). Startseiten-Kachel M/L mit kleinen Kacheln.
+- Rezept-Links an Mia (Teil B) und „Familie Bescheid sagen“ (Teil 6, wartet
+  auf Push) folgen.

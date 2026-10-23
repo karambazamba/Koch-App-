@@ -406,11 +406,11 @@ const S: Record<SymbolId, ReactNode> = {
   ),
 };
 
-/** Symbol eines Artikels; ohne Symbol der Anfangsbuchstabe in der Abteilungsfarbe */
+/** Symbol eines Artikels; ohne Symbol der Anfangsbuchstabe */
 export function ItemSymbol({ id, name, className = "" }: { id: SymbolId | null; name: string; className?: string }) {
   if (!id)
     return (
-      <span className={`flex items-center justify-center font-extrabold text-tile-accent ${className}`} aria-hidden>
+      <span className={`flex items-center justify-center font-extrabold text-muted ${className}`} aria-hidden>
         {name.trim().charAt(0).toUpperCase() || "?"}
       </span>
     );
