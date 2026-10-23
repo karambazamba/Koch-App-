@@ -15,6 +15,7 @@ import { DEFAULT_ROUTINE, type DayRoutine } from "@/lib/heute/tagesablauf";
 import { dueNow, pauseOn, type ReminderMoment } from "@/lib/heute/mitteilungen/erinnerungen";
 import type { CalendarEntry } from "@/lib/kalender/model";
 import type { NotifyKind } from "@/lib/heute/mitteilungen/einstellungen";
+import { helperName } from "@/lib/einstellungen/profile";
 
 /** Eine Zeile aus `entries` (so wie der Server sie liest) */
 export type PushEntryRow = { household_id: string; id: string; typ: string; raum: string; besitzer: string; erstellt: string; geaendert: string; data: unknown };
@@ -89,7 +90,7 @@ export function planPushes(input: {
     const s = abo.settings ?? {};
     if (pauseOn(s.pause, input.today)) continue;
     const routine: DayRoutine = { ...DEFAULT_ROUTINE, ...(s.routine ?? {}) };
-    const title = s.name?.trim() || "Mia";
+    const title = s.name?.trim() || helperName(null);
     const rows = input.rows.filter((r) => r.household_id === abo.household_id);
     if (kindOn(s, "erinnerungen")) {
       const due: ReminderMoment[] = dueNow(visibleEntries(rows, abo.user_id), input.today, input.minute, []);
