@@ -1994,3 +1994,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
   (`data.fuer`). „An … geben“, „von Felix“, „Passt gerade nicht“,
   „Zurückholen“, eingeklappt „Abgegeben“, Meldung bei Erledigt, Mia „Sag Lisa,
   sie soll …“. Kachel „Aufgaben“ als Checkliste (S 2 / M 4 / L 6).
+
+## Versprechen offen halten (v0.65.1)
+- Mia verspricht nur, was die App kann: keine Erinnerungs-/Nachrichten-
+  Versprechen ohne Push (Prompt-Regel, Textregel, Sport-Formular ehrlich).
