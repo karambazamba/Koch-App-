@@ -122,21 +122,19 @@ describe("commitOps", () => {
     expect(m.features.featureOn("tipps")).toBe(false);
   });
 
-  it("Sport, Jetzt-Karte und Begleitung – Rückgängig nimmt alles zurück (Fehler: Training blieb nach Rückgängig)", () => {
+  it("Sport und Jetzt-Karte – Rückgängig nimmt alles zurück (Fehler: Training blieb nach Rückgängig)", () => {
     m.speech.saveSpeechSettings({ voice: "Anna" });
     const ops: ChangeOp[] = [
       { id: "1", type: "add_training", training: { sport: "laufen", minutes: 30, date: HEUTE } },
       { id: "2", type: "set_sport_goal", goal: 4 },
       { id: "3", type: "set_jetzt", on: false },
-      { id: "4", type: "set_helper", helper: { name: "Theo", art: "assistent", farbe: "nachtblau" } },
     ];
     const r = m.client.commitOps(daten(), ops, alle(ops), "");
     expect(r.notes[0]).toBe("Die Sport-Kachel steht jetzt auf der Startseite.");
-    expect(r.notes[1]).toMatch(/^Ich heiße jetzt Theo, meine Stimme ist männlich –/);
     expect(m.sport.loadSport()).toMatchObject({ goal: 4, trainings: [{ data: { sport: "laufen" } }] });
     expect(m.jetzt.loadJetzt().on).toBe(false);
-    expect(m.speech.loadSpeechSettings().voice).toBe("");
-    expect(m.profile.loadProfile()?.helper.name).toBe("Theo");
+    // Mia heißt fest Mia: die gewählte Stimme bleibt
+    expect(m.speech.loadSpeechSettings().voice).toBe("Anna");
     r.undo();
     expect(m.sport.loadSport().trainings).toEqual([]);
     expect(m.jetzt.loadJetzt().on).toBe(true);

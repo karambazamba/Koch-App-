@@ -117,7 +117,7 @@ Etappen: **3a Anmeldung und Haushalt** · **3b Synchronisieren** (beide fertig) 
 - Danach: „Neuen Haushalt anlegen“ (Name aus dem Profil vorgeschlagen) oder
   „Mit Code beitreten“ (z. B. 4K7-P2Q, Groß/Klein und Bindestrich egal).
 - Einladen (nur Erwachsene): Erwachsene/Kind → Code (7 Tage, einmal) →
-  Teilen: „Komm in unseren Haushalt bei Was gibt’s? Code: 4K7-P2Q“.
+  Teilen: „Komm in unseren Haushalt bei Mia. Code: 4K7-P2Q“.
 - Abgleich: Änderungen gehen kurz nach dem Speichern raus; was andere ändern,
   kommt per Realtime sofort. Offline geht alles weiter, die Warteschlange
   bleibt auf dem Gerät und geht beim nächsten Netz mit.
@@ -137,7 +137,7 @@ Etappen: **3a Anmeldung und Haushalt** · **3b Synchronisieren** (beide fertig) 
   `NEXT_PUBLIC_`); geheim `SUPABASE_SERVICE_ROLE_KEY` oder
   `SUPABASE_SECRET_KEY`.
 - Mails: Resend-SMTP, Absender mia@karamba-eis.de (Domain karamba-eis.de
-  verifiziert), Betreff „Dein Code für Was gibt’s?“, Code 6-stellig, 900 s
+  verifiziert), Absendername „Mia“, Betreff „Dein Code für Mia: {{ .Token }}“ (Vorlage: `docs/mail-vorlage.md`), Code 6-stellig, 900 s
   gültig, höchstens 30 Mails pro Stunde.
 - Echter Mail-Test (von Hand, nicht im Durchklick – der nutzt das
   Test-Backend): in der App auf /konto eine echte Adresse eingeben, prüfen,

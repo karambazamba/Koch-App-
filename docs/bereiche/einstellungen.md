@@ -211,3 +211,16 @@ anfangen).
 - `tests/core/bausteine.test.ts`, `speicherBausteine.test.ts` – Bausteine.
 - `tests/core/sicherung.test.ts`, `verzeichnis.test.ts` – Sicherung.
 - `tests/begleitung/regelnOhneKi.test.ts` – Einstellungen per Satz.
+
+## Seite „Mia“ (v0.67)
+
+- `/profil/kuechenhelfer` (`MiaView`): oben Mia groß und „Deine Assistentin“,
+  darunter „Stimme“ (aktuelle rechts, z. B. „Anna (Premium)“, Auswahl der
+  deutschen Stimmen mit ▶ Probehören, Link „Schönere Stimme holen“), Tempo,
+  „Vorlesen“, dann wie oft sie sich meldet, Tipps, Pause. „Name & Art“ ist
+  weg. Profil v22 (`miaNotice`, `miaHomeHint`), Stimmen-Wahl bleibt.
+- „Über Mia“ (Familie & Einstellungen): Beschreibung `APP_DESCRIPTION`.
+- Sicherung heißt `mia-sicherung-<Datum>.json`; alte Dateien
+  (`was-gibts-…`) lassen sich weiter einspielen (der Inhalt zählt, `app:
+  "was-gibts"` bleibt als Kennung).
+

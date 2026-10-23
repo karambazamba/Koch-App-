@@ -115,9 +115,9 @@ describe("App-Icon in der Lieblingsfarbe", () => {
     const { setIconColor } = await import("@/lib/core/iconColor");
     setIconColor("lila");
     expect(doc.cookie).toBe("farbe=lila; path=/; max-age=31536000; samesite=lax");
-    expect(links.map((l) => l.href)).toEqual(["/icons/lila/apple-touch-icon-v3.png", "/icons/lila/icon-v3.svg", "/icons/lila/favicon-32-v3.png", "/icons/lila/favicon-32-v3.png"]);
+    expect(links.map((l) => l.href)).toEqual(["/icons/lila/apple-touch-icon-v4.png", "/icons/lila/icon-v4.svg", "/icons/lila/favicon-32-v4.png", "/icons/lila/favicon-32-v4.png"]);
     setIconColor("orange");
-    expect(links[0].href).toBe("/icons/orange/apple-touch-icon-v3.png");
+    expect(links[0].href).toBe("/icons/orange/apple-touch-icon-v4.png");
     // nur ein Beobachter
     expect(observed).toHaveLength(1);
   });

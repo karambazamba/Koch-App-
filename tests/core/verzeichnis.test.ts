@@ -50,7 +50,7 @@ describe("Daten sichern und wiederherstellen", () => {
     expect(Object.keys(backup.data).sort()).toEqual(["wasgibts.eintraege", "wasgibts.pinnwand"]);
     expect(JSON.parse(backup.data["wasgibts.pinnwand"])).toMatchObject({ memos: [], memosNichtGesichert: 2 });
     expect(backupSummary(backup)).toBe("1 Termin, 2 Aufgaben, 2 Sprachnachrichten (nicht gesichert)");
-    expect(backupFileName()).toBe("was-gibts-sicherung-2026-10-22.json");
+    expect(backupFileName()).toBe("mia-sicherung-2026-10-22.json");
   });
 
   it("Pinnwand ohne Memos oder kaputt bleibt, wie sie ist", () => {

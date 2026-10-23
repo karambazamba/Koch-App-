@@ -24,9 +24,9 @@ const v1 = {
 };
 
 describe("Migration – alte Versionen", () => {
-  it("v1: Personen mit Allergien und „mag nicht“ bleiben, Begleitung heißt Lotte", () => {
+  it("v1: Personen mit Allergien und „mag nicht“ bleiben, Begleitung Lotte wird Mia", () => {
     const p = migrateProfile(v1)!;
-    expect(p.version).toBe(21);
+    expect(p.version).toBe(22);
     expect(p.householdName).toBe("Müller");
     expect(p.persons.map((x) => x.name)).toEqual(["Lisa", "Felix", "Mattis", "Ella"]);
     expect(p.persons[0]).toMatchObject({ allergies: ["Nüsse"], dislikes: ["Pilze"], weekdayLunch: "zuhause", employed: null });
@@ -34,7 +34,9 @@ describe("Migration – alte Versionen", () => {
     expect(p.persons[3]).toMatchObject({ ageGroup: "kitakind", age: null, allergies: [], dislikes: [] });
     expect(p.warmMeal).toEqual({ weekday: "mittags", weekend: "mittags" });
     expect(p.favoriteDishes).toEqual(["Lasagne"]);
-    expect(p.helper).toEqual({ name: "Lotte", art: "assistentin", voice: "weiblich", farbe: "orange" });
+    // Seit v22 heißt sie fest Mia (Lotte → Mia, einmal Bescheid sagen)
+    expect(p.helper).toEqual({ name: "Mia", art: "assistentin", voice: "weiblich", farbe: "orange" });
+    expect(p.miaNotice).toBe(true);
     expect(p.householdType).toBe("familie");
     expect(p.theme).toBe("warm");
     expect(p.themeSet).toBe(false);
@@ -57,9 +59,10 @@ describe("Migration – alte Versionen", () => {
     expect(q.warmMeal).toEqual({ weekday: "abends", weekend: "abends" });
   });
 
-  it("v7+: ohne Namen der Begleitung → Standard-Name, eigener Name bleibt", () => {
+  it("v7+: ohne Namen der Begleitung → Mia, eigener Name wird Mia", () => {
     expect(migrateProfile({ version: 7 })!.helper.name).toBe(DEFAULT_HELPER.name);
-    expect(migrateProfile({ version: 18, helper: { name: "Frieda", voice: "weiblich" } })!.helper).toEqual({ name: "Frieda", art: "assistentin", voice: "weiblich", farbe: "orange" });
+    // Seit v22 fest Mia (eigener Name → Mia, einmal sagen)
+    expect(migrateProfile({ version: 18, helper: { name: "Frieda", voice: "weiblich" } })).toMatchObject({ helper: { name: "Mia", art: "assistentin", voice: "weiblich", farbe: "orange" }, miaNotice: true });
   });
 
   it("v17: offene Pause ohne Ende wird entfernt, ab v18 bleibt sie", () => {
@@ -80,7 +83,7 @@ describe("Migration – alte Versionen", () => {
   it("unbekannte Versionen und Unsinn → kein Profil", () => {
     expect(migrateProfile(null)).toBeNull();
     expect(migrateProfile("profil")).toBeNull();
-    expect(migrateProfile({ version: 22 })).toBeNull();
+    expect(migrateProfile({ version: 23 })).toBeNull();
     expect(migrateProfile({})).toBeNull();
   });
 });
@@ -148,19 +151,13 @@ describe("Migration – Felder prüfen und begrenzen", () => {
 });
 
 describe("Migration – Begleitung", () => {
-  it("Art und Farbe aus dem Namen bzw. der Stimme", () => {
-    expect(migrateHelper({ name: "Theo" })).toEqual({ name: "Theo", art: "assistent", voice: "maennlich", farbe: "nachtblau" });
-    expect(migrateHelper({ name: "Mia" }).art).toBe("assistentin");
-    expect(migrateHelper({ name: "Frieda", voice: "weiblich" }).art).toBe("assistentin");
-    expect(migrateHelper({ name: "Kalle", voice: "maennlich" }).art).toBe("assistent");
-    expect(migrateHelper({ name: "Kalle", art: "assistentin", farbe: "lila" })).toEqual({ name: "Kalle", art: "assistentin", voice: "weiblich", farbe: "lila" });
-    expect(migrateHelper({ name: "Kalle", farbe: "neon" }).farbe).toBe("orange");
-  });
-
-  it("Name wird gekürzt; ohne Namen der Ersatz", () => {
-    expect(migrateHelper({ name: "  Ein sehr sehr langer Name  " }).name).toBe("Ein sehr sehr langer");
-    expect(migrateHelper(null).name).toBe(DEFAULT_HELPER.name);
-    expect(migrateHelper({ name: "   " }, "Lotte").name).toBe("Lotte");
+  it("v22: immer Mia; „neu hinzufügen“-Hinweis nur für schon installierte Apps", () => {
+    expect(migrateHelper()).toEqual(DEFAULT_HELPER);
+    // Theo wird Mia; seine Farbe bleibt in den Daten (Verstecken heißt nie löschen)
+    expect(migrateProfile({ version: 21, helper: { name: "Theo", art: "assistent", farbe: "nachtblau" } })).toMatchObject({ helper: { ...DEFAULT_HELPER, farbe: "nachtblau" }, miaNotice: true, miaHomeHint: true });
+    expect(migrateHelper({ farbe: "neon" }).farbe).toBe("orange");
+    expect(migrateProfile({ version: 22, miaNotice: true, miaHomeHint: false })).toMatchObject({ miaNotice: true, miaHomeHint: false });
+    expect(migrateProfile({ version: 22 })).toMatchObject({ miaNotice: false, miaHomeHint: false });
   });
 });
 
@@ -190,7 +187,7 @@ describe("Profil speichern und laden", () => {
     const { localStorage } = fakeWindow({ [KEY]: JSON.stringify(v1) });
     const p = loadProfile()!;
     expect(p.persons.map((x) => x.name)).toEqual(["Lisa", "Felix", "Mattis", "Ella"]);
-    expect(JSON.parse(localStorage.getItem(KEY)!).version).toBe(21);
+    expect(JSON.parse(localStorage.getItem(KEY)!).version).toBe(22);
     expect(loadProfile()).toBe(p);
   });
 

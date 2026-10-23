@@ -202,3 +202,15 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   `beispielTag.test.ts`, `beispielTagSpeicher.test.ts`, `wischen.test.ts`.
 - `tests/einstellungen/ersterStart.test.ts`, `tests/begleitung/werkzeugeStartseite.test.ts`.
 - Durchklick `e2e/ablaeufe/start.mjs`: `hallo`, `bearbeiten`, `wischen`.
+
+## Kopf und „neu hinzufügen“ (v0.67)
+
+- Kopf (Tafel 55): links BrandMark (30 px), rechts „Fr, 23. Okt“
+  (`headerDate`, `lib/heute/kopfDatum.ts`); „Guten Morgen, Lisa.“ bleibt als
+  Überschrift für VoiceOver (unsichtbar).
+- iPhone/iPad als Web-App, vor v0.67 installiert (`miaHomeHint`): einmal der
+  Hinweis „Ich heiße jetzt Mia …“ (`MiaNameHint`, Vorrang vor den anderen
+  Hinweisen) mit „Zeig mir wie“: sichern → Icon entfernen → Safari → Zum
+  Home-Bildschirm → wiederherstellen (`miaHomeSteps`). Sichern zuerst, weil
+  iOS beim Entfernen die Daten der Web-App löscht.
+

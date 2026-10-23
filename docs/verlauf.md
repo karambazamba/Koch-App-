@@ -2024,3 +2024,15 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Pinnwand-Kachel: „+“ oben, Mikro unten; e2e-Regel „Tippflächen in Kacheln
   überlappen nie, kleine Knöpfe mit ≥ 8 px Abstand“.
 
+## App heißt Mia (Teil 4, Tafel 55, v0.67.0)
+
+- Name an einer Stelle (`APP_NAME`), Manifest „Mia – Familienplaner“ /
+  „Mia“, Icons v4 (gleiches Motiv, neuer Dateiname), CACHE_VERSION.
+- Begrüßung nach Tafel 55, Startseiten-Kopf mit BrandMark und Datum,
+  „Über Mia“, Sicherung `mia-sicherung-…`, Einladungstext.
+- Begleitung fest Mia: Auswahl Mia/Theo und Umbenennen entfernt, Profil v22
+  (Migration, einmal „Ab jetzt heiße ich überall Mia.“), „Ich bleib lieber
+  Mia 😊“. Einstellungsseite „Mia“: Stimme oben, Vorlesen darunter.
+- iPhone-Hinweis „neu hinzufügen“ (einmal, mit Sichern zuerst).
+- Mail-Vorlage `docs/mail-vorlage.md`. „Was gibt’s?“ bleibt nur fürs Essen.
+

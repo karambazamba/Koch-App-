@@ -122,8 +122,10 @@ export function migrateProfile(raw: unknown): HouseholdProfile | null {
     // Begleitung: bis v6 ohne Namen → Lotte; bis v18 ohne Art/Farbe (aus dem Namen geraten)
     // bis v6 gab es keine Begleitung mit Namen – damals hieß sie Lotte
     // Ab v22 heißt die Begleitung fest Mia (Theo, Lotte, eigene Namen → Mia, einmal sagen)
-    helper: migrateHelper(),
+    helper: migrateHelper(data.helper),
     miaNotice: (data.version as number) >= 22 ? data.miaNotice === true : oldHelperName(data) !== "mia",
+    // Schon vor der Umbenennung da: Unter dem iPhone-Icon steht noch der alte Name
+    miaHomeHint: (data.version as number) >= 22 ? data.miaHomeHint === true : true,
     // Bis v7 keine Basis-Statistik und keine "Nie wieder"-Liste
     bases: migrateBases(data.bases),
     neverAgain: migrateNeverAgain(data.neverAgain),
@@ -239,14 +241,14 @@ function migrateNeverAgain(raw: unknown): NeverAgainEntry[] {
 }
 
 /**
- * Begleitung prüfen. Ohne Namen → `fallback` (Standard Mia; bis v6 Lotte –
- * wer Lotte hat, behält Lotte).
- * Bis v18 ohne Art/Farbe: Art aus dem Namen (Mia/Lotte → Assistentin, Theo →
- * Assistent, sonst die bisher gewählte Stimme), Farbe Theo Nachtblau, sonst
- * Orange.
+ * Die Begleitung ist seit v22 fest Mia (Name, Art, Stimme wie DEFAULT_HELPER).
+ * Die frühere Lieblingsfarbe bleibt in den Daten (Verstecken heißt nie löschen);
+ * sie lebt als „Meine Farbe im Kalender“ weiter.
  */
-/** Die Begleitung ist seit v22 fest Mia (Art, Stimme, Farbe wie DEFAULT_HELPER) */
-export const migrateHelper = (): HelperSettings => ({ ...DEFAULT_HELPER });
+export function migrateHelper(raw?: unknown): HelperSettings {
+  const farbe = (raw as { farbe?: unknown } | null | undefined)?.farbe;
+  return { ...DEFAULT_HELPER, farbe: AVATAR_COLORS.some((c) => c.id === farbe) ? (farbe as AvatarColor) : DEFAULT_HELPER.farbe };
+}
 
 /** Wie hieß die Begleitung bis v21? (klein; bis v6 hieß sie Lotte) */
 function oldHelperName(data: Record<string, unknown>): string {

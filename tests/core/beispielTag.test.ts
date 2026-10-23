@@ -102,12 +102,12 @@ describe("Beispiel-Tag (erster Start)", () => {
     expect(STORAGE.find((s) => s.key === "wasgibts.beispiel")?.backup).toBe(false);
   });
 
-  it("Standardwerte ohne Fragen; App-Name mit typografischem Apostroph", () => {
+  it("Standardwerte ohne Fragen; die App heißt Mia", () => {
     const p = profileFrom(startState());
     expect(p.helper.name).toBe("Mia");
     expect(p.persons).toHaveLength(1);
-    expect(APP_NAME).toBe("Was gibt’s?");
-    expect(APP_SHORT_NAME).toBe("Was gibt’s?");
+    expect(APP_NAME).toBe("Mia");
+    expect(APP_SHORT_NAME).toBe("Mia");
   });
 });
 

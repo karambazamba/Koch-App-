@@ -1,6 +1,6 @@
 # Marke Mia
 
-Stand v0.63 (Teil 1: Logo-Dateien – die App heißt noch „Was gibt’s?“).
+Stand v0.67: Die App heißt Mia (APP_NAME in `src/lib/core/app.ts`). „Was gibt’s?“ heißt nur noch der Essen-Bereich.
 
 ## Logo
 

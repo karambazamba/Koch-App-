@@ -139,6 +139,8 @@ export type HouseholdProfile = {
   helperMode: HelperMode;
   /** Einmal sagen „Ab jetzt heiße ich überall Mia.“ (Profil v22: hieß die Begleitung vorher anders) */
   miaNotice: boolean;
+  /** iPhone-Web-App vor der Umbenennung installiert: einmal „neu hinzufügen“ anbieten (Profil v22) */
+  miaHomeHint: boolean;
   /** Darstellung (Profil v15, Standard "einfach") */
   display: DisplayMode;
   /** Wochenend-Ideen auf Lottes Platz (Profil v15, Standard an) */
@@ -270,6 +272,7 @@ export function createEmptyProfile(): HouseholdProfile {
     calendarColor: "orange",
     helperMode: "normal",
     miaNotice: false,
+    miaHomeHint: false,
     display: "einfach",
     weekendIdeas: true,
     planStyle: "mix",

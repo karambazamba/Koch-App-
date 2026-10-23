@@ -1,8 +1,8 @@
 // Haushalt, Begleitung und Essen im Profil: reine Hilfen.
 import { describe, expect, it } from "vitest";
 import {
-  AVATAR_COLORS, DEFAULT_HELPER, STANDARD_HELPERS, avatarHex, createEmptyProfile, createPerson, deriveHouseholdType, effectivePlanStyle,
-  fitHouseholdType, hasKids, helperArtOf, helperMessage, helperName, helperTitle, helperWith, isSmallHousehold, isSolo, isWeekendDay,
+  AVATAR_COLORS, DEFAULT_HELPER, avatarHex, createEmptyProfile, createPerson, deriveHouseholdType, effectivePlanStyle,
+  fitHouseholdType, hasKids, helperArtOf, helperMessage, helperName, helperTitle, isSmallHousehold, isSolo, isWeekendDay,
   isWishDayEligible, mainMealHeadcount, mainMealTime, mealClockFor, pausedOn, personLabel, planningVisible, planningWeekLabel,
   standardWeekDays, syncPersons, usualLunch, weekdayLunchHeadcount, wishDayActive, wishDayKids, wishDayOrder, type HouseholdProfile, type Person,
 } from "@/lib/einstellungen/profile";
@@ -151,9 +151,8 @@ describe("Essen – Wunschtag", () => {
 });
 
 describe("Begleitung", () => {
-  it("Standard ist Mia (Assistentin, Orange), Theo ist Assistent in Nachtblau", () => {
-    expect(DEFAULT_HELPER).toBe(STANDARD_HELPERS[0]);
-    expect(STANDARD_HELPERS[1]).toMatchObject({ art: "assistent", voice: "maennlich", farbe: "nachtblau" });
+  it("Mia ist fest: Assistentin, weibliche Stimme, Orange, Name wie die App", () => {
+    expect(DEFAULT_HELPER).toEqual({ name: "Mia", art: "assistentin", voice: "weiblich", farbe: "orange" });
     expect(AVATAR_COLORS).toHaveLength(10);
   });
 
@@ -162,23 +161,15 @@ describe("Begleitung", () => {
     expect(avatarHex(undefined)).toBe("#F26B21");
   });
 
-  it("Art ändern wechselt die Stimme; leerer Name bleibt beim alten", () => {
-    const h = helperWith(DEFAULT_HELPER, { art: "assistent", name: "  Frieda  " });
-    expect(h).toEqual({ name: "Frieda", art: "assistent", voice: "maennlich", farbe: "orange" });
-    expect(helperWith(h, { name: "   " }).name).toBe("Frieda");
-    expect(helperWith(h, { farbe: "senf" })).toMatchObject({ farbe: "senf", voice: "maennlich" });
-  });
-
-  it("Name, Anrede und Mitteilungen kommen aus dem Profil – nie fest eingebaut", () => {
+  it("Name, Anrede und Mitteilungen: immer Mia", () => {
     const frieda = { helper: { name: "Frieda", art: "assistentin" as const, voice: "weiblich" as const, farbe: "rosa" as const } };
     const kalle = { helper: { name: "Kalle", art: "assistent" as const, voice: "maennlich" as const, farbe: "senf" as const } };
-    expect(helperName(frieda)).toBe("Frieda");
-    expect(helperName({ helper: { ...frieda.helper, name: "  " } })).toBe(DEFAULT_HELPER.name);
-    expect(helperName(null)).toBe(DEFAULT_HELPER.name);
-    expect(helperTitle(frieda)).toBe("deine Assistentin");
-    expect(helperTitle(kalle)).toBe("dein Assistent");
+    // Seit v0.67 immer Mia – auch wenn ein altes Profil noch etwas anderes trägt
+    expect(helperName(frieda)).toBe("Mia");
+    expect(helperName(null)).toBe("Mia");
+    expect(helperTitle(kalle)).toBe("deine Assistentin");
     expect(helperTitle(undefined)).toBe("deine Assistentin");
-    expect(helperArtOf(null)).toBe(DEFAULT_HELPER.art);
-    expect(helperMessage(kalle, "Heute gibt’s Gulasch")).toBe("Kalle: Heute gibt’s Gulasch");
+    expect(helperArtOf(kalle)).toBe("assistentin");
+    expect(helperMessage(kalle, "Heute gibt’s Gulasch")).toBe("Mia: Heute gibt’s Gulasch");
   });
 });

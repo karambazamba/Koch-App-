@@ -1,6 +1,12 @@
-# Was gibt's? 🍲
+# Mia – Familienplaner
 
-Koch-App für Familien als PWA (installierbar auf dem Homescreen) – Next.js + Tailwind CSS.
+Mia ist die Assistentin für den Familienalltag: Termine, Aufgaben, Essen und
+Einkauf – man erzählt ihr einfach, was ansteht. PWA (installierbar auf dem
+Homescreen), Next.js + Tailwind CSS. „Was gibt’s?“ heißt nur noch der
+Essen-Bereich. Der App-Name steht an einer Stelle: `APP_NAME` in
+`src/lib/core/app.ts`.
+
+Die folgenden Abschnitte stammen aus der ersten Etappe (damals „Was gibt’s?“).
 
 **Etappe 1:** Grundgerüst, PWA (Manifest, Icons, offline-fähig), Startseite mit
 Wochenplan, „Was ist noch da?“ (Vorrat per Sprache oder Text, Treffer aus dem Kochbuch), Einkaufsliste, Kochbuch und Onboarding „Haushaltsprofil“.

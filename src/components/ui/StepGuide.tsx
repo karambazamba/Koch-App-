@@ -6,7 +6,7 @@
 // orange umrandet + Fingerkreis, wischbar, „Schritt 2 von 4“, Punkte unten.
 
 import { useRef, useState } from "react";
-import { Check, Compass, Keyboard, LayoutGrid, Mic, Settings, ShieldCheck, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { Check, Compass, Download, Keyboard, LayoutGrid, Mic, Settings, Share, ShieldCheck, SlidersHorizontal, Trash2, type LucideIcon } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { buttonClass } from "@/components/ui/styles";
 import type { MicStep, StepIcon } from "@/lib/core/mic";
@@ -22,6 +22,9 @@ const ICONS: Record<StepIcon, { icon: LucideIcon; tone: string }> = {
   regler: { icon: SlidersHorizontal, tone: "bg-fill-strong text-ink" },
   berechtigungen: { icon: ShieldCheck, tone: "bg-work text-on-accent" },
   tastatur: { icon: Keyboard, tone: "bg-fill-strong text-ink" },
+  teilen: { icon: Share, tone: "bg-work text-on-accent" },
+  entfernen: { icon: Trash2, tone: "bg-fill-strong text-ink" },
+  sichern: { icon: Download, tone: "bg-accent text-on-accent" },
 };
 
 function StepIconBadge({ icon }: { icon: StepIcon }) {
