@@ -26,6 +26,7 @@ const PAGES = [
   ["notizen", "/notizen"],
   ["aufgaben", "/aufgaben"],
   ["wetter", "/wetter"],
+  ["marke", "/brand"],
   ["spendentopf", "/spendentopf"],
   ["tipps", "/tipps"],
   ["einstellungen", "/profil"],

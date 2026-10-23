@@ -1968,3 +1968,11 @@ Fehler in `docs/aufraeumen-nachher.md`.
   groß, Antworten als Untertitel, Karten darunter, „Passt“ oder „ja“
   übernimmt und Mia schließt von selbst. „＋“ holt erst Mia, „Lieber
   Formular“ bleibt. Weiche Bewegung nur über transform/opacity.
+
+## Marke Mia – Teil 1: Logo-Dateien (v0.63.0)
+- Hauptlogo = App-Icon + Schriftzug „Mia“ (Plus Jakarta Sans 800, leicht
+  eng, als Pfad, runder i-Punkt). Varianten hell, dunkel, auf Orange, nur
+  Icon, runder Aufkleber, „Mia.“ – je SVG, PNG 1×/2×/3× und Druck (300 dpi)
+  in `public/brand/` (`npm run brand`). Komponente `BrandMark`, Tokens
+  `--app-brand*`, Regeln in `docs/brand.md`, Vorschau `/brand` nur im
+  Testmodus. Die App heißt noch „Was gibt’s?“ (Teil 4 erst nach „Name frei“).

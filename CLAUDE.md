@@ -128,6 +128,10 @@ für die Begleitung UND das App-Icon.
   (`npm run icons`, je Farbe ein Satz); Dateien tragen `ICON_VERSION` im Namen
   (Pfade nur über `icon()`/`iconFor()`); neues Icon = Version erhöhen, Liste in
   `public/sw.js` und `CACHE_VERSION` anpassen. Manifest-Farbe `BRAND_COLOR`.
+- Marke Mia: Logo nur über `BrandMark` (`ui/`) bzw. die Dateien in
+  `public/brand/` (Quelle `src/lib/core/brand.ts`, `npm run brand`), Farben
+  `--app-brand*`; Regeln (Schutzzone, Mindestgröße, nie Orange auf Orange)
+  in `docs/brand.md`.
 
 ## 8. Technik-Regeln
 - Nach jeder Änderung testen (siehe „Testen“), PR nach `main` und mergen –

@@ -5,7 +5,7 @@ export const APP_NAME = "Was gibt’s?";
 export const APP_SHORT_NAME = "Was gibt’s?";
 
 /** Versionsnummer (wie in package.json) – in den Einstellungen unter "Daten & App" */
-export const APP_VERSION = "0.62.0";
+export const APP_VERSION = "0.63.0";
 
 /** Tag der Auslieferung (beim Bauen gesetzt, next.config.ts) */
 const APP_BUILD_DATE = process.env.BUILD_DATE ?? "";
@@ -41,5 +41,5 @@ const ICON_FARBEN = ["orange", "nachtblau", "himmelblau", "lila", "beere", "rosa
 /** Lottes Gesicht für Push-Mitteilungen (orange Kreis, aus scripts/generate-icons.mjs) */
 export const BEGLEITUNG_PUSH_ICON = icon("lotte-192.png");
 
-/** Markenfarbe (Verlauf-Ende des App-Icons) – Statusleiste der installierten App */
-export const BRAND_COLOR = "#EE5F14";
+/** Markenfarbe (Mia-Orange, src/lib/core/brand.ts) – Statusleiste der installierten App */
+export { BRAND as BRAND_COLOR } from "@/lib/core/brand";
