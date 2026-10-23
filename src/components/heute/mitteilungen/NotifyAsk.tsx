@@ -44,7 +44,11 @@ export function NotifyAsk({ moment, kind, onClose }: { moment: AskMoment; kind: 
     changeNotify((s) => ({ ...s, answer: "ja" }));
     const p = await requestNotifyPermission();
     onClose();
-    if (p === "granted") showToast({ text: "Mach ich." });
+    if (p === "granted") {
+      // Abo beim Server (mit Konto) – der NotifyHost frischt es mit den Einstellungen auf
+      changeNotify((s) => ({ ...s }));
+      showToast({ text: "Mach ich." });
+    }
   };
   return (
     <Sheet title={text.title} onClose={no}>

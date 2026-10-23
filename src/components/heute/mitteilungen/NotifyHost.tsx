@@ -15,7 +15,8 @@ import { loadRoutine } from "@/lib/heute/tagesablauf";
 import { pushAllowed } from "@/lib/heute/push";
 import { loadProfile } from "@/lib/einstellungen/profileStore";
 import { helperName } from "@/lib/einstellungen/profile";
-import { askDecision, changeNotify, loadNotify, type AskMoment } from "@/lib/heute/mitteilungen/einstellungen";
+import { askDecision, changeNotify, loadNotify, useNotify, type AskMoment } from "@/lib/heute/mitteilungen/einstellungen";
+import { syncPushSubscription } from "@/lib/heute/mitteilungen/serverPush";
 import { pauseOn, remindersToSend } from "@/lib/heute/mitteilungen/erinnerungen";
 import { iosTab, notifyPermission, onAskForNotifications, showNotify } from "@/lib/heute/mitteilungen/geraet";
 
@@ -46,7 +47,21 @@ async function tick() {
   if (sent.length) changeNotify((x) => ({ ...x, sent: [...x.sent, ...sent].slice(-200) }));
 }
 
+/** Abo beim Server auffrischen (Einstellungen, Pause, Tagesablauf) */
+function syncServer() {
+  const s = loadNotify();
+  const profile = loadProfile();
+  const r = loadRoutine();
+  void syncPushSubscription({ kinds: s.kinds, pause: profile?.pause ?? null, routine: { ruhe: r.ruhe, morgenBis: r.morgenBis, feierabendAb: r.feierabendAb, nachArbeit: r.nachArbeit, arbeitstage: r.arbeitstage }, name: helperName(profile ?? null) });
+}
+
 export function NotifyHost() {
+  const notify = useNotify();
+  useEffect(() => {
+    if (!notify) return;
+    const t = window.setTimeout(syncServer, 1500);
+    return () => window.clearTimeout(t);
+  }, [notify]);
   const [ask, setAsk] = useState<{ moment: AskMoment; kind: "frage" | "homescreen" } | null>(null);
   useEffect(
     () =>

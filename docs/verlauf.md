@@ -2219,3 +2219,10 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Start, erst nach „Ja, gern“ die Systemabfrage; im Safari-Tab die
   Homescreen-Anleitung. Einstellungen → „Mitteilungen“.
 - Mitteilungen kommen, solange die App offen ist; der Server-Versand folgt.
+
+## Erinnerungen & Mitteilungen, Teil 2: Server-Push (v0.82.0)
+- Web Push mit VAPID: Schlüssel erzeugt der Server selbst und legt sie nur in
+  Supabase ab (`push_config`, nur Service-Rolle). Abo je Gerät (`push_abos`,
+  RLS). Versand jede Minute über pg_cron/pg_net → `/api/push/senden`.
+- Familien-Termine an alle, Arbeit nur Besitzer, Aufgaben nur wer sie hat;
+  Pinnwand und Abgeben höchstens 1× am Tag, nicht 20–7 Uhr.
