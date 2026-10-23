@@ -106,7 +106,7 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   schon …“). Zutaten: „alles im Haus“ (grün) bzw. „auf die Liste: …“.
 - Jetzt-Karte: nachts (22–6) nur Morgen/Erinnerung/Timer, im Feierabend und am
   Wochenende nur Sanftes. Höchstens EIN Hinweis unter der Jetzt-Karte.
-  Push (später): höchstens 1 proaktive Mitteilung pro Tag, Ruhe 20–7 Uhr,
+  Push (`docs/bereiche/push.md`): höchstens 1 proaktive Mitteilung pro Tag, Ruhe 20–7 Uhr,
   Pause-Modus = absolute Ruhe.
 
 ## 5. Ton

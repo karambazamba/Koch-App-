@@ -52,16 +52,33 @@ Nichts geht verloren.
   Erinnerung.
 - Mitteilungs-Arten: Erinnerungen, Pinnwand, Abgeben, Morgen-Überblick (aus).
 
-## Stand
+## Server-Push (Teil 2, seit v0.82)
 
-- v0.81: alles auf dem Gerät – Mitteilungen, solange die App offen (oder im
-  Hintergrund aktiv) ist; sonst Jetzt-Karte.
-- Nächster Schritt: Server-Push (Web Push mit VAPID, Abos je Gerät in
-  Supabase, Versand per Cron), damit Erinnerungen auch bei geschlossener App
-  kommen.
+- Abo je Gerät: nach der Erlaubnis meldet `syncPushSubscription`
+  (`src/lib/heute/mitteilungen/serverPush.ts`) das Gerät an – nur mit Konto
+  und Supabase. Mit dem Abo gehen die Einstellungen des Geräts mit (Arten,
+  Pause, Tagesablauf, Absender), damit der Server sie beachtet.
+- Routen: `GET /api/push/schluessel` (öffentlicher VAPID-Schlüssel; beim
+  ersten Aufruf erzeugt der Server Schlüsselpaar und Cron-Zeichen selbst und
+  legt sie NUR in `push_config` ab), `POST/DELETE /api/push/abo` (als das
+  Konto, RLS), `POST /api/push/senden` (nur mit dem Cron-Zeichen oder
+  `CRON_SECRET`).
+- Versand jede Minute: pg_cron ruft über pg_net `/api/push/senden` auf
+  (Migration `20261027120000_push.sql`; ohne die Erweiterungen bleibt der
+  Versand aus und es gilt Teil 1). Planung rein in
+  `src/lib/heute/mitteilungen/versand.ts` (`planPushes`): Familien-Termine an
+  alle, Arbeit nur Besitzer, Aufgaben nur wer sie hat; Pinnwand und Abgeben
+  proaktiv (1 am Tag, nicht 20–7 Uhr, nie Eigenes); nie doppelt
+  (`push_gesendet`). Abgelaufene Abos (404/410) werden entfernt.
+- Gleicher `tag` wie die Mitteilung auf dem Gerät – kommt beides, ersetzt die
+  eine die andere.
+- Tabellen: `push_abos` (RLS: nur eigene, nur eigener Haushalt),
+  `push_config` und `push_gesendet` (nur Service-Rolle). Test:
+  `tests/datenbank/push.test.sql`.
 
 ## Tests
 
 - `tests/heute/erinnerungen.test.ts` (Zeitpunkte, Texte, Ruhe, Pause, Frage-
   Zeitpunkt, kein Fragen beim ersten Start, Anleitung ohne Homescreen, Chip).
+- `tests/heute/pushVersand.test.ts` (wer bekommt was, Pause, 1-pro-Tag, nie doppelt).
 - `tests/heute/tagesphasen.test.ts` (`pushAllowed`).
