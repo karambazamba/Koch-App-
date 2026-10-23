@@ -42,8 +42,14 @@ const micTap = async (page) => {
 const openTermin = async (page, text) => {
   await page.goto(BASE + "/?seite=kalender");
   await page.waitForTimeout(900);
-  await page.locator("[role=tabpanel]:not([inert])").getByRole("button", { name: "Neu eintragen" }).click();
-  await lieberFormular(page);
+  // Mia zuerst, dann „Lieber Formular“ – einmal wiederholen, falls das Fenster zu langsam kam
+  for (let i = 0; i < 2; i++) {
+    await page.locator("[role=tabpanel]:not([inert])").getByRole("button", { name: "Neu eintragen" }).click();
+    await lieberFormular(page);
+    if (await page.getByRole("button", { name: /^Termin/ }).first().waitFor({ timeout: 6000 }).then(() => true, () => false)) break;
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(800);
+  }
   await page.getByRole("button", { name: /^Termin/ }).first().click();
   await page.getByRole("textbox", { name: "Termin" }).fill(text);
   await page.waitForTimeout(500);
