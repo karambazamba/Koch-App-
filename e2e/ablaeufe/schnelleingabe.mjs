@@ -29,9 +29,10 @@ export const schnelleingabe = async (page, check) => {
 
   // Leeres ➤ tut nichts
   const before = (await entries(page)).length;
-  await sheet.getByRole("button", { name: "Speichern" }).click();
+  check((await sheet.getByRole("button", { name: "Speichern" }).getAttribute("aria-disabled")) === "true", "leeres ➤ blass");
+  await box.press("Enter");
   await page.waitForTimeout(300);
-  check((await entries(page)).length === before && (await sheet.isVisible()), "leeres ➤ tut nichts");
+  check((await entries(page)).length === before && (await sheet.isVisible()), "leer speichern tut nichts");
 
   await box.fill("Malersachen kaufen");
   check(await sheet.getByRole("button", { name: /^Für mich/ }).or(sheet.getByText("Für mich")).first().isVisible(), "Chip „Für mich“");

@@ -11,7 +11,7 @@ const family = async (page, path = "/") => {
 export const eintragen = async (page, check) => {
   await family(page, "/?seite=kalender");
   await page.locator("[role=tabpanel]:not([inert])").getByRole("button", { name: "Neuer Termin" }).click();
-  check(await page.getByText("NEUER TERMIN", { exact: true }).isVisible(), "Schnelleingabe „NEUER TERMIN“");
+  check(await page.getByText("NEUER TERMIN", { exact: true }).waitFor({ timeout: 5000 }).then(() => true, () => false), "Schnelleingabe „NEUER TERMIN“");
   await schnell(page, "Friseur 14:00");
   const entries = (await store(page, "wasgibts.eintraege")).entries;
   check(entries.some((e) => e.data.title === "Friseur" && e.typ === "termin"), "Termin „Friseur“ gespeichert");
@@ -30,7 +30,7 @@ export const pinnwand = async (page, check) => {
   await family(page, "/pinnwand");
   check(await page.getByText("Bin um 20 Uhr da").isVisible(), "Nachricht von Felix");
   await pinnwandSchreiben(page, "Pizza ist im Ofen");
-  check(await page.getByText("Pizza ist im Ofen").isVisible(), "eigene Nachricht angeheftet");
+  check(await page.getByText("Pizza ist im Ofen", { exact: true }).first().isVisible(), "eigene Nachricht angeheftet");
 };
 
 export const wetter = async (page, check) => {

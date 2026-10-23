@@ -276,7 +276,7 @@ export const offline = async (page, check) => {
     await page.goto(BASE + "/pinnwand");
     await pinnwandSchreiben(page, "Offline geschrieben");
     check(
-      await page.getByText("Offline geschrieben").isVisible(),
+      await page.getByText("Offline geschrieben", { exact: true }).first().isVisible(),
       "offline: Eintragen geht",
     );
     check(

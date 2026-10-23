@@ -80,7 +80,9 @@ export async function hello(page) {
 }
 
 const stamp = "2026-10-20T08:00:00.000Z";
-const entry = (id, typ, data, raum = "familie") => ({ id, typ, raum, besitzer: "lokal", erstellt: stamp, geaendert: stamp, data });
+const entry = (id, typ, data, raum = "familie", at = stamp) => ({ id, typ, raum, besitzer: "lokal", erstellt: at, geaendert: at, data });
+/** Pinnwand: alles verschwindet nach 24 Std. – die Nachricht ist von gestern Abend */
+const PIN_STAMP = "2026-10-20T18:00:00.000Z";
 
 /** Beispiel-Familie mit eigenen Einträgen (statt Beispiel-Tag) */
 const FAMILY = {
@@ -112,7 +114,7 @@ const FAMILY = {
       ],
     },
     "wasgibts.notizen": { version: 1, notes: [entry("n1", "notiz", { title: "WLAN", kind: "text", text: "Passwort: Sonnenblume42", pinned: true })] },
-    "wasgibts.pinnwand": { version: 2, messages: [entry("pin1", "pinnwand", { text: "Bin um 20 Uhr da", author: "Felix", reactions: {}, readBy: ["Felix"], pinned: false })], memos: [] },
+    "wasgibts.pinnwand": { version: 2, messages: [entry("pin1", "pinnwand", { text: "Bin um 20 Uhr da", author: "Felix", reactions: {}, readBy: ["Felix"], pinned: false }, "familie", PIN_STAMP)], memos: [] },
     "wasgibts.funktionen": { version: 2, on: ["vorrat", "rezepte", "wochenplan", "regiontipps"] },
     "wasgibts.beispiel": { version: 1, since: "2026-10-21", cleared: ["termine", "aufgaben", "pinnwand", "einkauf", "essen"], done: [], gone: [], asked: true },
   },
