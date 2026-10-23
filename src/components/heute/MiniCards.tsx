@@ -238,7 +238,7 @@ export function AufgabenSection({ items, total, today, href = "/aufgaben", size 
           <AddLine label="Aufgabe eintragen" onClick={() => setAdding(true)} />
         )}
         {rest > 0 && !half && (
-          <Link href={href} className="-my-1 flex h-9 items-center self-start text-[13px] font-bold text-tile-accent">
+          <Link href={href} className="-my-2 flex h-11 items-center self-start text-[13px] font-bold text-tile-accent">
             + {rest} weitere
           </Link>
         )}
