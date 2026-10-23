@@ -47,6 +47,11 @@ describe("Themen-Symbol statt Mias Gesicht", () => {
     expect(src).toMatch(/if \(to < 0 \|\| to >= shown\.length\) return;/);
   });
 
+  it("Fehler aus dem Durchklick: nach dem Wischen ging der nächste Tipp verloren", () => {
+    const src = readFileSync("src/components/heute/JetztCard.tsx", "utf8");
+    expect(src).toMatch(/swiped\.current = true;\s*window\.setTimeout\(\(\) => \(swiped\.current = false\), 400\);/);
+  });
+
   it("Startseite: genau zwei Mias – Logo (nicht antippbar) und der Knopf", () => {
     const brand = readFileSync("src/components/ui/BrandMark.tsx", "utf8");
     expect(brand).toMatch(/role="img"/);
