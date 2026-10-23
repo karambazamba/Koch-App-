@@ -69,7 +69,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Standard-Größe hinter die nächste sichtbare, die laut Standard davor steht
   (Paar: neben den Partner). `standardLayout`: Reihenfolge und Größen wie am Anfang.
 - Größe ändert nur die Menge: Termine S 1 / M bis 4 / L bis 6 (höchstens zwei
-  Spalten), Aufgaben S 2 / M 4 / L 8 (`TERMIN_COUNT`, `TASK_COUNT`).
+  Spalten), Aufgaben S 2 / M 4 / L 6 als Checkliste in einem Feld (`TERMIN_COUNT`, `TASK_COUNT`, seit v0.65).
   Aufgaben auf der Startseite: dringend, heute dran und diese Woche.
 - Jede Kachel öffnet ihre Seite. Abhaken: 2 s durchgestrichen (`LEAVE_MS`),
   dann „Erledigt · Rückgängig“. Die Kachel „Ausblick morgen“ (bis v0.51.0 „Morgen“, missverständlich wie „der Morgen“) füllt sich erst ab 16 Uhr; Titel in der Kachel „Ausblick morgen · Do“, Platzhalter im Bearbeiten-Modus „ab 16 Uhr“, in der Auswahl „Was morgen ansteht, ab 16 Uhr“.

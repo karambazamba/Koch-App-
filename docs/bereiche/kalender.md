@@ -95,6 +95,31 @@ die Aufgaben-Seite und das Eintragen-Fenster.
 - Woche: sieben Tageskarten mit ‹ ›. Liste: die nächsten 14 Tage und
   „Weitere Wochen“.
 
+### Aufgaben sind persönlich – abgeben geht (Tafel 52 B, seit v0.65)
+
+- Logik rein in `lib/kalender/abgeben/model.ts`: `taskRole` (meine ·
+  bekommen · abgegeben · fremd), `isMyTask`, `fromLabel` („von Felix“),
+  `giveTo` / `giveBack` („Passt gerade nicht“) / `takeBack`, `changeTask`,
+  `doneNotes`, `memberByName`, `resolveGiving`. Ohne Konto ist jede Aufgabe
+  meine.
+- Anzeige: `useCalendarEntries`/`loadCalendarEntries` zeigen nur meine und
+  bekommene Aufgaben; die Aufgaben-Seite hat unten eingeklappt „Abgegeben“
+  (bei wem bzw. „erledigt ✓“). Im Menü einer Aufgabe (`abgeben/GiveRows`):
+  „An … geben“ mit den Leuten aus dem Haushalt, bei bekommenen „Passt gerade
+  nicht“, bei abgegebenen „Zurückholen“.
+- Meldung beim Absender, wenn eine abgegebene Aufgabe erledigt wurde
+  (`DoneNotes` im Layout: „Lisa hat ‚Turnbeutel waschen‘ erledigt ✓“, Push
+  später). Einmaliger Hinweis „Aufgaben sind jetzt nur für dich – abgeben geht
+  mit einem Tipp.“ (Merker `aufgaben-persoenlich`).
+- Mia: „Sag Lisa, sie soll den Turnbeutel waschen“ → `aufgabe_anlegen` mit
+  `an: "Lisa"`; beim Übernehmen wird daraus das Konto (`resolveGiving` in
+  `commitOps`), unbekannte Namen bleiben bei mir („Oma ist noch nicht im
+  Haushalt – ich hab’s erstmal bei dir notiert.“). „Gib das an Lisa“ geht
+  über `aufgabe_aendern` mit `an`.
+- Kachel „Aufgaben“ als Checkliste in EINEM hellen Feld: Kreis, voller Titel,
+  rechts „heute“/„bis Fr“, „!“ bei dringend, „von Lisa“ klein darunter;
+  S 2, M 4, L 6 Zeilen, „+ N weitere“ unten.
+
 ### Tag-Seite und Aufgaben-Seite
 - `/tag?datum=…`: Titel = Wochentag, darunter „22. Oktober · morgen“
   (`dayHeading`), dann `DayAgenda`; leer „Ein freier Tag.“. Plus = Eintragen.

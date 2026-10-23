@@ -122,6 +122,8 @@ function aufgabeInput(ctx: ToolContext, input: Input, base?: AufgabeData): Aufga
     repeat,
     reminder: input.erinnerung !== undefined ? reminderFrom(input.erinnerung) : (base?.reminder ?? "aus"),
     dringend: input.dringend !== undefined ? input.dringend === true || undefined : base?.dringend,
+    // An wen (Name) – beim Übernehmen wird daraus das Konto im Haushalt (kalender/abgeben)
+    an: input.an !== undefined ? str(input.an) || undefined : base?.an,
   };
 }
 
@@ -155,6 +157,7 @@ const AUFGABE_FIELDS = {
   wiederholung: REPEAT_PROP,
   erinnerung: REMINDER_PROP,
   dringend: { type: "boolean", description: "Dringend/wichtig ('Dringend: …', '… ist wichtig') – steht dann ganz vorne. Keine zusätzlichen Erinnerungen deswegen." },
+  an: { type: "string", description: "Abgeben an jemanden aus dem Haushalt (Name): 'Sag Lisa, sie soll den Turnbeutel waschen' → an 'Lisa', titel 'Turnbeutel waschen'; 'Gib das an Lisa' (aufgabe_aendern). Aufgaben sind sonst persönlich." },
 } as const;
 
 export const CALENDAR_TOOLS: BegleitungTool[] = [

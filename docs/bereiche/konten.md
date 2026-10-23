@@ -18,6 +18,15 @@ Etappen: **3a Anmeldung und Haushalt** · **3b Synchronisieren** (beide fertig) 
   Bauen `.next/static` durchsuchen. Nie loggen.
 - Jede Tabelle mit Row Level Security; Zugriff nur für Mitglieder des eigenen
   Haushalts. „Arbeit“ nur für den Besitzer (ab 3b, Tabelle `entries`).
+- Aufgaben sind persönlich (seit v0.65, Migration
+  `20261024120000_aufgaben_persoenlich.sql`, Funktion `entry_visible`): eine
+  Aufgabe sehen und ändern nur der Besitzer, wer sie bekommen hat
+  (`data.fuer` = Konto-ID) und wer sie zuletzt zurückgegeben hat
+  (`data.zurueck` – nötig, weil Postgres keine Änderung erlaubt, nach der man
+  die Zeile nicht mehr sieht; die App blendet sie dort aus). Seit 3b geteilte
+  Aufgaben bleiben beim Ersteller und sind jetzt nur für ihn – nichts wird
+  gelöscht. Der Test-Server (`testServer.ts`) spiegelt dieselbe Regel.
+  Test: `tests/datenbank/aufgaben.test.sql`.
 - Abgleich (3b): neueste Änderung je Eintrag gewinnt; Löschen nur als
   Markierung (`geloescht`), nie hart. Geteilt werden Termine, Aufgaben,
   Notizen, Pinnwand (ohne Sprachnachrichten bis 3c), Einkaufsliste,

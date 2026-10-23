@@ -73,6 +73,9 @@ Kalender“ (Profil `calendarColor`).
   zur Familie. Familie = Orange (`bg-accent`), Arbeit = Blau (`bg-work`).
 - Mit Konto teilt der Haushalt „Familie“; „Arbeit“ sieht nur der Besitzer.
   Ohne Konto bleibt alles auf dem Gerät – die App geht immer auch ohne.
+- Aufgaben gehören standardmäßig der Person, die sie anlegt; geteilt wird nur
+  durch Abgeben („An … geben“, beim Empfänger „von Felix“, zurück mit „Passt
+  gerade nicht“; `kalender/abgeben`). Für Absprachen ist die Pinnwand da.
 
 ## 4. Ohne Druck
 - Keine Streaks, keine Zähler, keine roten Badges, keine Aufgaben-Stapel.

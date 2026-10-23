@@ -106,6 +106,12 @@ export type AufgabeData = {
   dringend?: boolean;
   /** Platz in der Reihenfolge (Zeitstempel): sonst `erstellt`; "Auf morgen" setzt ihn neu (dort hinten) */
   seit?: string;
+  /** Abgegeben an (Konto-ID im Haushalt, Tafel 52 B) – siehe kalender/abgeben */
+  fuer?: string;
+  /** Zuletzt zurückgegeben von (Konto-ID) – nur für die Datenbank-Regeln */
+  zurueck?: string;
+  /** Aus dem Gespräch: an wen (Name), wird beim Übernehmen zur Konto-ID */
+  an?: string;
 };
 
 export type Termin = Entry<TerminData> & { typ: "termin" };

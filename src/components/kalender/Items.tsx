@@ -4,6 +4,7 @@
 // Unterzeile, Kästchen), Karte mit "+ N weitere" und eingeklapptem
 // Erledigten, Menü beim Antippen. Ruhig: keine Zähler, nichts "Offenes".
 
+import { GiveRows } from "@/components/kalender/abgeben/GiveRows";
 import Link from "next/link";
 import { useRef, useState, type CSSProperties } from "react";
 import { Bell, Check, ChevronDown, ChevronRight, Pencil, Repeat2, Trash2, CalendarArrowUp, CheckCircle2, Circle } from "lucide-react";
@@ -206,6 +207,7 @@ export function ItemMenu({ item, onClose, onEdit }: { item: DayItem; onClose: ()
               {isUrgent(item) ? "Nicht mehr dringend" : "Als dringend markieren"}
             </button>
           )}
+          <GiveRows item={item} row={MENU_ROW} onDone={onClose} />
           <button type="button" className={MENU_ROW} onClick={() => setStep("erinnerung")}>
             <Bell className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
             <span className="flex-1">Erinnerung ändern</span>

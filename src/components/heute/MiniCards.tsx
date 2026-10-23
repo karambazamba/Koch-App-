@@ -7,6 +7,7 @@
 // 2er-Raster (S 2 – halb untereinander –, M 2×2, L 2×4). Antippen = Menü,
 // Kreis = abhaken: ca. 2 s durchgestrichen (nochmal tippen = doch nicht).
 
+import { TaskFrom } from "@/components/kalender/abgeben/TaskFrom";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { Check, Plus } from "lucide-react";
@@ -138,7 +139,7 @@ function TerminCard({ item, entering, onOpen }: { item: DayItem; entering?: Reac
 /** Wie viele Termine je Größe (höchstens 2 nebeneinander): S 1, M bis 4 (2×2), L bis 6 (2×3) */
 const TERMIN_COUNT = { S: 1, M: 4, L: 6 } as const;
 /** Wie viele Aufgaben-Felder je Größe: S 2, M 2×2, L 2×4 */
-const TASK_COUNT = { S: 2, M: 4, L: 8 } as const;
+const TASK_COUNT = { S: 2, M: 4, L: 6 } as const;
 
 /**
  * TERMINE – Pastell-Kachel mit schlanken Kärtchen, höchstens 2 nebeneinander:
@@ -180,7 +181,10 @@ export function TaskLine({ item, today, onOpen, onDone, leaving, entering }: { i
       <CheckBox item={item} checked={checked} onClick={() => onDone(item)} round />
       <button type="button" onClick={() => onOpen(item)} className="flex min-h-11 min-w-0 flex-1 items-center gap-2 py-1 text-left" aria-label={`${item.title} – Möglichkeiten`}>
         {isUrgent(item) && !checked && <UrgentMark />}
-        <span className={`min-w-0 flex-1 truncate text-[15px] font-semibold leading-snug ${checked ? "text-muted line-through" : ""}`}>{item.title}</span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className={`min-w-0 truncate text-[15px] font-semibold leading-snug ${checked ? "text-muted line-through" : ""}`}>{item.title}</span>
+          <TaskFrom item={item} className="text-xs text-muted" />
+        </span>
         {badge && <span className={`shrink-0 text-xs ${badge === "heute" ? "font-semibold text-accent-strong" : "text-muted"}`}>{badge}</span>}
         <span className={`h-2 w-2 shrink-0 rounded-full ${roomBarProps(item).className}`} style={roomBarProps(item).style} aria-hidden />
       </button>
@@ -188,31 +192,31 @@ export function TaskLine({ item, today, onOpen, onDone, leaving, entering }: { i
   );
 }
 
-/** Ein Feld im Aufgaben-Raster (~44 px): Kreis 17 px, evtl. rotes „!“, Titel fett einzeilig, darunter Punkt + Frist */
+/** Eine Zeile der Aufgaben-Checkliste (Tafel 52 B): Kreis, voller Titel (… nur wenn wirklich zu lang), rechts „heute“/„bis Fr“, „!“ bei dringend, „von Lisa“ klein darunter */
 function TaskField({ item, today, leaving, fading = false, entering, onOpen, onDone }: { item: DayItem; today: string; leaving: boolean; fading?: boolean; entering?: React.CSSProperties; onOpen: () => void; onDone: () => void }) {
   const badge = taskBadge(item, today);
   return (
-    <li className={`${TILE_INNER} relative flex min-w-0 items-center`} style={fading ? FADE : entering} data-item={item.key}>
-      <button type="button" role="checkbox" aria-checked={leaving} aria-label={`${item.title} erledigt`} onClick={onDone} className="hit flex h-11 w-9 shrink-0 items-center justify-end pr-1">
-        <span className={`flex h-[17px] w-[17px] items-center justify-center rounded-full border-2 ${leaving ? "border-tile-accent bg-tile-accent text-on-color" : "border-line-strong"}`} style={leaving ? { animation: "check-pop 0.4s ease-out" } : undefined}>
-          {leaving && <Check className="h-2.5 w-2.5" strokeWidth={3.5} aria-hidden />}
+    <li className="flex min-w-0 items-center" style={fading ? FADE : entering} data-item={item.key}>
+      <button type="button" role="checkbox" aria-checked={leaving} aria-label={`${item.title} erledigt`} onClick={onDone} className="hit flex h-11 w-10 shrink-0 items-center justify-center">
+        <span className={`flex h-[19px] w-[19px] items-center justify-center rounded-full border-2 ${leaving ? "border-tile-accent bg-tile-accent text-on-color" : "border-line-strong"}`} style={leaving ? { animation: "check-pop 0.4s ease-out" } : undefined}>
+          {leaving && <Check className="h-3 w-3" strokeWidth={3.5} aria-hidden />}
         </span>
       </button>
-      <button type="button" onClick={onOpen} className="flex min-h-11 min-w-0 flex-1 flex-col justify-center py-[7px] pr-[10px] pl-1 text-left" aria-label={`${item.title} – Möglichkeiten`}>
-        <span className="flex w-full min-w-0 items-center gap-1">
-          {isUrgent(item) && !leaving && <UrgentMark />}
-          <span className={`min-w-0 flex-1 truncate text-[13px] font-bold leading-tight ${leaving ? "text-muted line-through" : ""}`}>{withoutEmoji(item.title)}</span>
+      <button type="button" onClick={onOpen} className="flex min-h-11 min-w-0 flex-1 items-center gap-2 py-1.5 pr-3 text-left" aria-label={`${item.title} – Möglichkeiten`}>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="flex min-w-0 items-center gap-1">
+            {isUrgent(item) && !leaving && <UrgentMark />}
+            <span className={`min-w-0 flex-1 truncate text-[14px] font-semibold leading-snug ${leaving ? "text-muted line-through" : ""}`}>{withoutEmoji(item.title)}</span>
+          </span>
+          <TaskFrom item={item} className="text-[11px] leading-tight text-muted" />
         </span>
-        <span className="flex items-center gap-1 text-[11px] leading-tight">
-          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${roomBarProps(item).className}`} style={roomBarProps(item).style} aria-hidden />
-          {badge && <span className={badge === "heute" ? "font-semibold text-tile-accent" : "text-muted"}>{badge}</span>}
-        </span>
+        {badge && <span className={`shrink-0 text-[12px] ${badge === "heute" ? "font-bold text-accent-strong" : "text-muted"}`}>{badge}</span>}
       </button>
     </li>
   );
 }
 
-/** AUFGABEN – Pastell-Kachel mit 2er-Raster: S 2 Felder, M 2×2, L 2×4; „+N weitere“ und Plus im Kopf */
+/** AUFGABEN – Kachel als Checkliste in EINEM hellen Feld (Tafel 52 B): S 2, M 4, L 6 Zeilen, „+ N weitere“ unten, Plus im Kopf */
 export function AufgabenSection({ items, total, today, href = "/aufgaben", size = "M", half = false, demo }: { items: DayItem[]; total?: number; today: string; href?: string; size?: TileSize; half?: boolean; demo?: DemoProps }) {
   const { setMenu, check, before, overlays } = useSection();
   const [adding, setAdding] = useState(false);
@@ -220,19 +224,23 @@ export function AufgabenSection({ items, total, today, href = "/aufgaben", size 
   const { leaving, start } = useLeaving((item) => (demo ? demo.onGone?.(item) : check(item, shown)));
   const plus = <QuickButton icon={Plus} label="Neue Aufgabe" onClick={() => askMiaFirst("aufgabe", () => setAdding(true))} />;
   const rest = Math.max(0, Math.max(total ?? 0, items.length) - shown.length);
-  const oneCol = size === "S" && half;
   return (
     <>
       <section className={`${TILE} flex flex-col gap-2 p-3.5`} aria-label="Aufgaben">
-        <TileHead title="Aufgaben" more={half ? 0 : rest} href={href} action={plus} />
+        <TileHead title="Aufgaben" more={0} href={href} action={plus} />
         {items.length > 0 ? (
-          <ul className={`grid gap-1.5 ${oneCol ? "grid-cols-1" : "grid-cols-2"}`}>
+          <ul className={`${TILE_INNER} flex flex-col divide-y divide-line overflow-hidden`}>
             {shown.map((item) => (
               <TaskField key={item.key} item={item} today={today} leaving={leaving === item.key || Boolean(demo?.done?.includes(item.entry.id))} fading={leaving === item.key} entering={entersAnim(before, item.key)} onOpen={() => (demo ? demo.onOpen(item) : setMenu(item))} onDone={() => (demo?.done?.includes(item.entry.id) ? demo.onToggle?.(item) : start(item))} />
             ))}
           </ul>
         ) : (
           <AddLine label="Aufgabe eintragen" onClick={() => setAdding(true)} />
+        )}
+        {rest > 0 && !half && (
+          <Link href={href} className="-my-1 flex h-9 items-center self-start text-[13px] font-bold text-tile-accent">
+            + {rest} weitere
+          </Link>
         )}
       </section>
       {overlays}

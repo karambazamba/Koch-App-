@@ -45,6 +45,15 @@ const rand = (n: number, chars: string) => Array.from({ length: n }, () => chars
 const id = () => `${rand(8, "0123456789abcdef")}-${rand(4, "0123456789abcdef")}-4${rand(3, "0123456789abcdef")}-a${rand(3, "0123456789abcdef")}-${rand(12, "0123456789abcdef")}`;
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max) : "");
 
+/** Sichtbar wie in der Datenbank: Aufgaben nur für Besitzer, Empfänger und wer sie zurückgab; sonst Familie oder eigene Arbeit */
+function visible(d: { typ: string; raum: string; besitzer: string; data: unknown }, uid: string): boolean {
+  if (d.typ === "aufgabe") {
+    const data = (d.data ?? {}) as { fuer?: unknown; zurueck?: unknown };
+    return d.besitzer === uid || data.fuer === uid || data.zurueck === uid;
+  }
+  return d.raum === "familie" || d.besitzer === uid;
+}
+
 function householdOf(s: State, userId: string): HouseholdInfo | null {
   const mine = s.members.find((m) => m.userId === userId);
   if (!mine) return null;
@@ -144,6 +153,7 @@ export function testKonten(body: Record<string, unknown>, nowMs = Date.now()): R
       for (const [t, u] of s.sessions) if (u === user.id) s.sessions.delete(t);
       return { ok: true };
     case "push_entries": {
+      // wie die RLS-Regel entry_visible (Migration aufgaben_persoenlich)
       const hh = s.members.find((m) => m.userId === user.id)?.householdId;
       if (!hh) return { error: "kein_haushalt" };
       const rows = s.entries.get(hh) ?? new Map();
@@ -152,7 +162,7 @@ export function testKonten(body: Record<string, unknown>, nowMs = Date.now()): R
       for (const d of Array.isArray(body.docs) ? (body.docs as CloudDoc[]).slice(0, 500) : []) {
         const old = rows.get(d.id);
         const raum = d.raum === "arbeit" ? "arbeit" : "familie";
-        if (old && ((old.raum === "arbeit" && old.besitzer !== user.id) || (raum === "arbeit" && old.besitzer !== user.id))) {
+        if (old && (!visible(old, user.id) || (old.typ !== "aufgabe" && raum === "arbeit" && old.besitzer !== user.id))) {
           skipped.push(d.id);
           continue;
         }
@@ -165,7 +175,7 @@ export function testKonten(body: Record<string, unknown>, nowMs = Date.now()): R
       const hh = s.members.find((m) => m.userId === user.id)?.householdId;
       const since = Number(body.since) || 0;
       const docs = [...(hh ? (s.entries.get(hh)?.values() ?? []) : [])]
-        .filter((d) => (d.rev ?? 0) > since && (d.raum === "familie" || d.besitzer === user.id))
+        .filter((d) => (d.rev ?? 0) > since && visible(d, user.id))
         .sort((a, b) => (a.rev ?? 0) - (b.rev ?? 0));
       return { docs: docs.slice(0, 500), more: docs.length > 500 };
     }
