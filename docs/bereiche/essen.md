@@ -245,6 +245,25 @@ Ideen“. Verschwindet mit dem ersten eigenen Gericht oder dem Beispiel-Tag.
   Lesbar und kochbar wie Kochbuch-Rezepte, „In unsere Rezepte“ übernimmt.
   Eigene Rezepte: Aufwand aus Zeit, Zutaten und Ofen geschätzt.
 
+### 8 Ideen immer auf der Essen-Seite (v0.75)
+- Die Reihe aus „Mehr Ideen“ (`essen/rezepte/MoreIdeas`, gleiche Karten)
+  steht immer auf der Essen-Seite – Beispiel-Tag und eigener Tag, mit und
+  ohne Konto, Plan oder Vorrat. Sie ersetzt „Daraus kannst du kochen“
+  (`CookIdeas` ist weg). Überschrift: nichts geplant → „Ideen für heute“,
+  nach dem Abendessen „Ideen für morgen“, sonst „Mehr Ideen“; das geplante
+  Gericht steht nie dabei. Antippen öffnet das Rezept, „Fürs Abendessen“
+  trägt es für heute (nach dem Essen für morgen) ein.
+
+### Gerichte-Bilder ohne Braun (Tafel 62 B, v0.75)
+- Pfanne hell wie Emaille (`skillet`): Innen #FBF7F0, farbiger Rand
+  (Petrol/Orange/Salbei), Holzgriff. Soße (`panSauce`): Tomate/Hack/
+  Shakshuka rot, Ei/Hähnchen/Curry goldgelb, sonst nur heller Glanz; als
+  klare Fläche unter dem Gemüse (0,72 × Pfanne, mit Reis 0,62 rechts), Rand
+  frei, mehr Gemüse obendrauf. Eintöpfe Paprikarot, Chili #CC4A2C,
+  Linsensuppe orange. Bowl ohne Soße = Variante „poke“ (Reis, Lachs,
+  Edamame, Avocado, Gurke, Sesam). Vorher/nachher:
+  `docs/vorlagen/gerichte-ohne-braun.webp`. Tests `tests/essen/ohneBraun.test.ts`.
+
 ### Kochidee – ohne Fragen, einfach erzählen (Tafel 64 C/65, seit v0.71; früher „Kochtipp“)
 
 - Für Nutzer heißt es „Kochidee“; intern bleibt `kochtipp` (Ordner,

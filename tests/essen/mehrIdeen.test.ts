@@ -124,3 +124,21 @@ describe("Still mitlernen (Speicher)", () => {
     expect(recipeKind({ ...BUILTIN_COOK[0], id: "r", prepMinutes: 35 }).aufwand).toBe("normal");
   });
 });
+
+describe("Essen-Seite: 8 Ideen immer da (statt „Daraus kannst du kochen“)", () => {
+  it("ohne Vorrat 8 Ideen, das geplante Gericht steht nie dabei", () => {
+    const planned = BUILTIN_COOK[0].title;
+    const cards = moreIdeas(base({ stock: [], recent: [planned] }));
+    expect(cards).toHaveLength(8);
+    expect(cards.some((c) => c.recipe.title === planned)).toBe(false);
+  });
+
+  it("gleiche Karten wie unter dem Rezept, „Fürs Abendessen“, Überschrift je Lage", async () => {
+    const { readFileSync } = await import("node:fs");
+    const page = readFileSync("src/components/essen/FoodPage.tsx", "utf8");
+    expect(page).toMatch(/<MoreIdeas/);
+    expect(page).not.toMatch(/CookIdeas|Daraus kannst du kochen/);
+    expect(page).toMatch(/over \? "Ideen für morgen" : dishOf\(main\) \? "Mehr Ideen" : "Ideen für heute"/);
+    expect(page).toMatch(/label: "Fürs Abendessen"/);
+  });
+});

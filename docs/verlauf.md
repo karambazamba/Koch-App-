@@ -2162,3 +2162,9 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Essen mit „Kochen“, Pinnwand von heute, Aufgaben zum Abhaken; Thema
   hervorgehoben). Mia beantwortet „Was steht heute an?“ in zwei Sätzen und
   öffnet „Dein Tag“. Der Mia-Knopf macht beim Runterscrollen Platz.
+
+## Essen: 8 Ideen immer da + Gerichte ohne Braun (Tafel 62 B, v0.75.0)
+- Die 8 Ideen zum Durchschieben stehen immer auf der Essen-Seite (statt
+  „Daraus kannst du kochen“), mit „Fürs Abendessen“.
+- Pfannen hell mit farbigem Rand und Holzgriff, Soße passend und sparsam,
+  Eintöpfe rot, Lachs-Bowl als Bowl („poke“), Linsensuppe orange.

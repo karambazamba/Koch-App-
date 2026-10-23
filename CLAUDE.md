@@ -215,7 +215,10 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   → `docs/bereiche/konten.md`
 - **Bilder der Gerichte:** eigene Zeichnungen im Code, keine fremden Fotos,
   keine KI (`docs/credits.md`); neues eingebautes Gericht → `npm run
-  gerichte-bilder`. → `docs/bereiche/essen.md`
+  gerichte-bilder`. Kein Braun und kein Dunkelgrau als große Fläche. Soßen
+  frisch: Rot, Gelb, Grün, Creme, und sparsam (Fläche unter dem Essen, Rand
+  bleibt frei). Braun nur für Kleinteile (Kruste, Brot, Gewürz).
+  → `docs/bereiche/essen.md`
 
 - **Name KARAMBA:** immer „KARAMBA Eis“, nie nur „KARAMBA“ (Verwechslung
   mit einem Online-Casino) – in allen Texten (Tipps „von KARAMBA Eis“,
