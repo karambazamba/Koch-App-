@@ -12,6 +12,7 @@ import dynamic from "next/dynamic";
 import { Plus } from "lucide-react";
 import { CARD } from "@/components/ui/styles";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
+import { AddedBy } from "@/components/konten/AddedBy";
 import { ItemMenu } from "@/components/kalender/Items";
 import { TipsDayList, useCalendarTips } from "@/components/tipps/CalendarTips";
 import { clockLabel } from "@/lib/kalender/answers";
@@ -67,6 +68,7 @@ export function DayPanel({ date, today, entries, filter = "alles", heading = tru
                 <button type="button" onClick={() => setMenu(i)} className={`flex min-h-12 w-full items-center gap-3 text-left ${i.done ? "opacity-50" : ""}`} aria-label={`${i.title} – Möglichkeiten${i.time ? ` (${clockLabel(i.time)})` : ""}`}>
                   <span className="w-12 shrink-0 text-[15px] font-bold tabular-nums text-work">{i.time ? clockLabel(i.time) : "ganzt."}</span>
                   <span className="min-w-0 flex-1 truncate text-base font-semibold">{i.title}</span>
+                  <AddedBy owner={i.entry.besitzer} />
                   {who && <PersonAvatar name={who.name} size={24} />}
                 </button>
               </li>

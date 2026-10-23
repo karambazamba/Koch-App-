@@ -92,6 +92,7 @@ export function buildShoppingList(
       days: m.day ? [m.day] : [],
       shop: shopOf(name),
       manualId: m.id,
+      ...(m.von ? { von: m.von } : {}),
       ...(m.now ? { now: true } : {}),
       checked: m.done,
       hidden: false,

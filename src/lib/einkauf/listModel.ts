@@ -15,6 +15,8 @@ export type ManualItem = {
   now?: boolean;
   /** Für welches Gericht (z. B. von Lotte angelegt) */
   dish?: string;
+  /** Konto, das es auf die Liste gesetzt hat (nur im Haushalt, kommt vom Abgleich) */
+  von?: string;
 };
 
 export type WeekList = {
@@ -75,6 +77,8 @@ export type ListItem = {
   optional?: boolean;
   /** Nur bei eigenen Artikeln */
   manualId?: string;
+  /** Wer es auf die Liste gesetzt hat (Konto, nur im Haushalt) */
+  von?: string;
   /** "Jetzt mitnehmen" – oben in der Liste */
   now?: boolean;
   checked: boolean;

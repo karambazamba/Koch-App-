@@ -157,6 +157,11 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Wochencheck. Selbst eingeschaltete Bausteine leise: Freizeit-Idee (Ruhe),
   Tipp aus der Region (nur ohne Tipps-Kachel; Weiterwischen = dieses
   Wochenende nicht mehr), kleiner Tipp. Beispiel-Tag erklärt sich.
+  Mit Haushalt (seit v0.80, Konten 3d): leise Neuigkeit von anderen
+  („Milch steht auf der Liste“ – „Hat Lisa gerade gesetzt.“, „Neu:
+  Elternabend“ – „Hat Lisa eingetragen.“), sanft, 45 Punkte, höchstens eine
+  am Tag, jede nur einmal, nur 6 Std. frisch (`newsForCard` in
+  `src/lib/konten/wer.ts`, Speicher `wasgibts.neu`).
 - Weggefallen: „start“ (Grad · Termin), reines „morgen“, Wetter-Tipps ohne
   Plan, „Als Nächstes“-Termin, „Alles geschafft“, Sport-Info ohne Packliste.
 - Punkte aus Dringlichkeit und Interesse (`weights`, ±5 % je Punkt;

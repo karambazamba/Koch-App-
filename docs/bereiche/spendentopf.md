@@ -124,6 +124,12 @@ Dunkel-Tipp, nicht im Beispiel-Tag):
   wurde, `liveAsked`). Push folgt mit dem Push-Auftrag.
 - Texte ohne „Keine Werbung“ (`POT_TEXTS.free`).
 
+## Mit Konto (seit v0.80)
+
+- Region, Stimme und Beitrag teilt der Haushalt (eine Stimme pro Familie),
+  über `entries` (Eintrag `pot:haushalt`). Fragen und weggetippte Karten
+  bleiben pro Gerät. Siehe `konten.md` „Sichtbar machen“.
+
 ## Begleitung (Mia)
 
 Die Begleitung kennt den Spendentopf noch nicht: kein Werkzeug, keine Regel,

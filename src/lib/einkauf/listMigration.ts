@@ -25,6 +25,7 @@ function migrateManual(raw: unknown): ManualItem[] {
       ...(typeof m.day === "string" && m.day ? { day: m.day } : {}),
       ...(m.now === true ? { now: true } : {}),
       ...(typeof m.dish === "string" && m.dish ? { dish: m.dish } : {}),
+      ...(typeof m.von === "string" && m.von ? { von: m.von } : {}),
     }));
 }
 
