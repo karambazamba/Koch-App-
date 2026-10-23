@@ -9,7 +9,7 @@
 import { useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD, CARD_LIST, PAGE_MAIN, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
-import { todayIso } from "@/lib/core/now";
+import { toIsoDate, useToday } from "@/lib/core/now";
 import { lastWeekCosts } from "@/lib/begleitung/usage";
 import { helperName } from "@/lib/einstellungen/profile";
 import type { PruefErgebnis } from "@/lib/begleitung/pruefstand/bewerten";
@@ -17,7 +17,9 @@ import type { PruefErgebnis } from "@/lib/begleitung/pruefstand/bewerten";
 const BATCH = 20;
 
 export function AdminView() {
-  const cost = lastWeekCosts(todayIso());
+  // Erst im Browser (beim Vorrendern gibt es kein „heute“ und keinen Speicher)
+  const today = useToday();
+  const cost = today ? lastWeekCosts(toIsoDate(today)) : { requests: 0, small: 0, large: 0, upgraded: 0, usd: 0 };
   const [secret, setSecret] = useState("");
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<PruefErgebnis[]>([]);
