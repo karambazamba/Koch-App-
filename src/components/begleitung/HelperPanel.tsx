@@ -40,8 +40,8 @@ import type { ChatState } from "@/components/begleitung/chatTypes";
 import type { RuleContext } from "@/components/begleitung/localRules";
 import { ChatHistory } from "@/components/begleitung/ChatHistory";
 import { ChatInputBar } from "@/components/begleitung/ChatInputBar";
-import { MiaLayer, MiaStage, type StageStatus } from "@/components/begleitung/MiaStage";
-import { MiaControls } from "@/components/begleitung/MiaControls";
+import { MiaLayer, StageFoot, StageMia } from "@/components/begleitung/MiaStage";
+import { stageHint, stageLabel, stageLayout, stageState, stageTap } from "@/lib/begleitung/stage";
 import { SuggestionChips } from "@/components/begleitung/SuggestionChips";
 import { useAskAssistant } from "@/components/begleitung/useAskAssistant";
 import { useChatRules } from "@/components/begleitung/useChatRules";
@@ -51,10 +51,8 @@ import { VoiceOffer } from "@/components/begleitung/VoiceOffer";
 
 /** Zustimmung per Sprache („ja“, „passt“, „mach“) */
 const YES = /^(ja|jo|jap|jawohl|passt|passt so|mach( das| es)?|übernehmen|übernimm|okay|ok|gerne?|genau)[.!]*$/i;
-/** Nach einer Rückfrage hört Mia wieder zu – höchstens so lange */
+/** Nach einer Rückfrage mit Knöpfen hört Mia kurz mit – höchstens so lange */
 const ASK_BACK_MS = 8000;
-/** Längere Antworten sind kein Untertitel, sondern eine Blase */
-const SUBTITLE_MAX = 140;
 
 type Props = {
   data: AssistantData | null | undefined;
@@ -152,7 +150,6 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   // Mia-Ansicht: Tippen-Feld, Verlauf, „Erledigt“
   // Nur das aktuelle Gespräch zählt (ab `since`, Früheres steht im „Verlauf“)
   const since = Math.min(chat.since ?? 0, chat.turns.length);
-  const lastUser = chat.turns.map((t) => t.role).lastIndexOf("user");
   const userTurns = chat.turns.filter((t, i) => i >= since && t.role === "user").length;
   const lastIndex = chat.turns.length - 1;
   const newest = chat.turns[lastIndex];
@@ -292,8 +289,10 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   // Mia-Knopf lange gedrückt: Loslassen schickt das Gesagte ab
   useEffect(() => onReleaseHelperVoice(() => latest.current.stopListening()), []);
 
-  // Rückfrage per Sprache: nach dem Vorlesen hört Mia wieder zu (höchstens 8 s, dann leise aus)
-  const askedBack = newest?.role === "assistant" && !newest.local && newest.text.trim().endsWith("?") && viaVoice ? lastIndex : -1;
+  // Nach Mias Antwort wartet sie (Strom, Privatsphäre) – nur bei einer Rückfrage mit
+  // Knöpfen hört sie nach dem Vorlesen kurz mit (höchstens 8 s, dann leise aus)
+  const withButtons = Boolean(newest?.chips?.length || newest?.choices?.length);
+  const askedBack = newest?.role === "assistant" && !newest.local && newest.text.trim().endsWith("?") && withButtons && viaVoice ? lastIndex : -1;
   const listenedFor = useRef(-1);
   useEffect(() => {
     if (askedBack < 0 || listenedFor.current === askedBack || speakingId !== null || busy || speech.blocked) return;
@@ -339,30 +338,27 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     setAdjusting(false);
     setInput("");
   };
-  // --- Mia in der Mitte: Status, Untertitel, Verlauf, Tippen ------------------
-  // Mias neueste Antwort steht groß als Untertitel (nicht nochmal als Blase) –
-  // lange Antworten bleiben eine normale Blase, damit nichts verdeckt wird
-  const short = (t: string) => t.length <= SUBTITLE_MAX;
-  const subtitleIndex = !history && newest?.role === "assistant" && newest.text && short(newest.text) && !newest.error && !newest.spontan && !newest.mail ? lastIndex : -1;
-  // Lange Antwort als Blase: Mia kleiner, damit die Antwort Platz hat
-  const longReply = (!history && newest?.role === "assistant" && !short(newest.text)) || (busy && streaming != null && !short(streaming));
-  const streamOnStage = busy && streaming != null && short(streaming);
-  const greeting = data === null ? "" : chat.turns.length <= since ? `Hi, ich bin ${name} – was steht an?` : "";
+  // --- Die Bühne: Gespräch oben, Mia unten ------------------------------------
   const heard = speech.listening ? `${input}${speech.interim ? ` ${speech.interim}` : ""}`.trim() : "";
-  // Beim Zuhören das Gesagte – solange noch nichts kam, bleibt Mias Frage stehen
-  const stageText = heard
-    ? heard
-    : busy
-      ? streamOnStage
-        ? streaming!
-        : ""
-      : subtitleIndex >= 0
-        ? newest!.text
-        : greeting;
-  const stageStatus: StageStatus = speech.listening ? "hoert" : busy ? "denkt" : done ? "erledigt" : "bereit";
+  const state = stageState({ listening: speech.listening, thinking, speaking: speakingId !== null || (busy && streaming != null) });
+  const mic = { blocked: speech.blocked, supported: speech.supported };
   // Tippen-Feld: auf Wunsch, ohne Mikro, beim Ändern eines Vorschlags und im geführten Gespräch
-  const showField = typing || speech.blocked || speech.supported === false || dictationHint || adjusting || Boolean(guided) || suggestions.length > 0 && chat.turns.length === 0 && typing;
-  const names = data?.profile.persons.map((p) => p.name).filter(Boolean) ?? [];
+  const layout = stageLayout({ typing: typing || dictationHint || adjusting || Boolean(guided), ...mic });
+  const tapMia = () => {
+    const what = stageTap(state, mic);
+    if (what === "tippen") {
+      setTyping(true);
+      inputRef.current?.focus();
+    } else toggleMic();
+  };
+  // Tastatur zu (und nichts getippt) → Mia wieder groß unten
+  const keyboardWas = useRef(0);
+  useEffect(() => {
+    if (keyboardWas.current > 0 && inset === 0 && !input.trim() && !adjusting) setTyping(false);
+    keyboardWas.current = inset;
+  }, [inset, input, adjusting]);
+  const hint = done ? "Erledigt" : stageHint(state, name, userTurns === 0);
+  const mia = <StageMia state={state} size={layout.size} hint={layout.field && !done ? undefined : hint} label={stageLabel(state, mic)} done={done} onTap={tapMia} />;
 
   return (
     <MiaLayer name={name} onClose={onClose} onHistory={() => setHistory((h) => !h)} history={history} inset={inset}>
@@ -384,22 +380,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           />
         ) : (
           <>
-        <MiaStage name={name} status={stageStatus} text={stageText} live={Boolean(heard)} compact={userTurns >= 2 || history || Boolean(chat.proposal) || longReply} names={names} done={done} />
-        {chat.formular && !userTurns && (
-          <button
-            type="button"
-            onClick={() => {
-              const form = takeFormular();
-              onClose();
-              form?.();
-            }}
-            className="hit mx-auto -mt-1 min-h-11 text-[15px] font-semibold text-muted underline"
-          >
-            Lieber Formular
-          </button>
-        )}
         {history && chat.turns.length > 0 && (
-          <button type="button" onClick={newChat} className="hit mx-auto min-h-11 text-[15px] font-semibold text-accent-strong">
+          <button type="button" onClick={newChat} className="hit mia-gespraech mx-auto min-h-11 text-[15px] font-semibold text-accent-strong">
             Neues Gespräch
           </button>
         )}
@@ -431,38 +413,42 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           onAsk={(text) => void ask(text)}
           onApply={applyAndClose}
           onClose={onClose}
-          from={history ? 0 : Math.max(since, lastUser)}
-          subtitleIndex={subtitleIndex}
-          streamOnStage={streamOnStage}
-          showGreeting={history}
-        />
-
-        <div className="flex flex-col gap-2 px-4 empty:hidden">
+          from={history ? 0 : since}
+          showGreeting={history || chat.turns.length <= since}
+          topic={history ? undefined : chat.topic}
+          heard={heard}
+        >
+          {!layout.field && suggestions.length > 0 && <SuggestionChips suggestions={suggestions} onPick={submit} />}
           <VoiceOffer readCount={readCount} speaking={speakingId !== null} gender={voice} name={name} />
-        </div>
-        {showField ? (
-          <ChatInputBar
-            inputRef={inputRef}
-            input={input}
-            setInput={setInput}
-            name={name}
-            canType={canType}
-            busy={busy}
-            speech={speech}
-            dictationHint={dictationHint}
-            suggestions={suggestions}
-            onSubmit={submit}
-            onToggleMic={toggleMic}
-          />
+        </ChatHistory>
+
+        {layout.field ? (
+          <div className="flex shrink-0 flex-col items-center pt-1">
+            {mia}
+            <ChatInputBar inputRef={inputRef} input={input} setInput={setInput} name={name} canType={canType} busy={busy} speech={speech} dictationHint={dictationHint} suggestions={suggestions} onSubmit={submit} />
+          </div>
         ) : (
-          <>
-            {suggestions.length > 0 && (
-              <div className="px-4">
-                <SuggestionChips suggestions={suggestions} onPick={submit} />
-              </div>
-            )}
-            <MiaControls speech={speech} typing={typing} disabled={!canType || busy} onType={() => setTyping(true)} onMic={toggleMic} />
-          </>
+          <StageFoot>
+            {mia}
+            <div className="mia-gespraech flex items-center gap-5">
+              <button type="button" onClick={() => setTyping(true)} disabled={!canType} className="hit min-h-11 text-[15px] font-semibold text-muted underline-offset-2 active:text-ink">
+                Lieber tippen
+              </button>
+              {chat.formular && !userTurns && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const form = takeFormular();
+                    onClose();
+                    form?.();
+                  }}
+                  className="hit min-h-11 text-[15px] font-semibold text-muted underline-offset-2 active:text-ink"
+                >
+                  Lieber Formular
+                </button>
+              )}
+            </div>
+          </StageFoot>
         )}
           </>
         )}

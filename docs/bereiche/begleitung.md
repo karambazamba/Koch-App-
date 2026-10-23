@@ -249,33 +249,57 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   (`greetOncePerDay`), Feierabend mit Ruhe → schlafen (Leiste antippen weckt).
 - Mia-Knopf unten rechts (`MiaButton`, seit v0.62, statt der Schreib-Leiste):
   72 px, atmet leicht (1,00–1,025 über 4 s) mit weichem Schein; Tippen holt
-  Mia in die Mitte, lange drücken = sofort sprechen, Loslassen = absenden;
+  Mia auf die Bühne, lange drücken = sofort sprechen, Loslassen = absenden;
   einmal der Hinweis „Tippen & sprechen“ (`mia-knopf`). Auf der Startseite
   zeichnet ihn der Pager.
 
-### Mia zuerst – erzählen statt ausfüllen (Tafel 53, seit v0.62)
+### Eine Bühne für jedes Gespräch (seit v0.70, ersetzt „Mia in der Mitte“)
 
-- Mia in der Mitte (`MiaStage.tsx`: `MiaLayer` + `MiaStage`): Vollbild über
-  verschwommenem Hintergrund, oben ✕ und „Verlauf“. Mia fliegt beim Öffnen
-  vom Knopf in die Mitte (eine Bewegung, 1 s), Status-Zeile (ICH HÖRE ZU … /
-  ICH DENKE … / ERLEDIGT), groß der Live-Text (Tage, Uhrzeiten, Namen
-  orange) bzw. Mias Antwort als Untertitel (nur bis 140 Zeichen, längere
-  bleiben eine Blase). Jedes Öffnen beginnt ein neues Gespräch
-  (`ChatState.since`). Darunter nur die letzte Runde
-  (Karten wie Vorschlag, Kochtipp, Mail), „Verlauf“ zeigt alles (mit „Neues
-  Gespräch“). Ab der zweiten Runde ist Mia kleiner.
-- Unten Tippen + großes Sprechen (`MiaControls`); das Tippen-Feld kommt auf
-  Wunsch, ohne Mikro, beim „Ändern“ und im geführten Gespräch. Mikro erlaubt
-  → Mia hört beim Öffnen gleich zu.
-- „Passt“ (Knopf) oder „ja/passt/mach“ übernimmt; Mia freut sich, nach ~1 s
-  schließt die Ansicht, Meldung „Übernommen“. Rückfrage per Sprache → nach
-  dem Vorlesen hört Mia wieder zu (höchstens 8 s).
+- Ein Ort für alles (`MiaStage.tsx`, Regeln in `lib/begleitung/stage.ts`):
+  Startseiten-Mia, „＋“ in Kacheln, Termin per Satz, Wochencheck und die
+  Kochidee öffnen dieselbe Bühne. Die Seite dahinter bleibt sichtbar – weich
+  verschwommen (`backdrop-blur-[14px]`, als Tailwind-Klasse – roh in CSS blieb
+  nach dem Bauen nur die -webkit-Form) unter dem warmen Schleier
+  (`bg-background/75`, Dunkel entsprechend). Oben ✕ (bzw. „Abbrechen“) und
+  „Verlauf“. Kein Mikrofon-Knopf, keine Schreib-Leiste.
+- Mia (`StageMia`) steht groß (120 px) im unteren Drittel, Mittelpunkt bei
+  ~64 % der Höhe über der Safe-Area (`StageFoot`). Sie fliegt beim Öffnen
+  vom Mia-Knopf an ihren Platz und beim Schließen (✕, Runterwischen, Zurück,
+  Escape) dorthin zurück; dabei blenden Schleier und Gespräch aus
+  (`data-closing`, 0,8 s). Bewegung reduzieren = nur Überblenden.
+- Oben läuft das Gespräch mit (`ChatHistory`): neueste Blase unten, endet
+  immer über Mia. Mias Blasen links in Weiß mit kleiner Mia (36 px) nur bei
+  der ersten Blase einer Folge (`firstOfRun`), eigene rechts in Orange; beim
+  Sprechen erscheint der Text live als eigene Blase. Vorschauen (Termin,
+  Aufgabe, Einkauf, Gericht …) als Karten mit „Passt“/„Übernehmen“. Kleiner
+  Bereichs-Kopf über Mias erster Blase nur mit Anlass (`stageTopic`:
+  KOCHIDEE, WOCHENCHECK, TERMIN, AUFGABE, EINKAUF, NOTIZ, PINNWAND;
+  `ChatState.topic`). Jedes Öffnen beginnt ein neues Gespräch
+  (`ChatState.since`), „Verlauf“ zeigt alles (mit „Neues Gespräch“).
+- Zustände (`stageState`, automatisch): hört zu (Mund offen, zwei Kreise,
+  Tonwelle darüber, „Fertig? Einfach Mia antippen“) · überlegt (Augen nach
+  oben, drei Punkte) · spricht (Mund beim Vorlesen bzw. beim Erscheinen der
+  Antwort) · wartet (atmet, zwinkert alle ~5 s, ruhige Einlade-Kreise, „Tipp
+  mich an, wenn du noch was hast“). Mia antippen = zuhören ↔ fertig
+  (`stageTap`). Nach Mias Antwort wartet sie; nur bei einer Rückfrage mit
+  Knöpfen hört sie nach dem Vorlesen kurz mit (8 s).
+- „Lieber tippen“ unter Mia: das Feld kommt, Mia wird klein (64 px) und
+  steht direkt darüber (`stageLayout`); Tastatur zu (nichts getippt) → Mia
+  wieder groß. Mikro aus/gesperrt: direkt das Tippfeld mit dem Streifen
+  „Mikro aus – tippen geht immer · Anmachen ›“ – Mia antippen öffnet nie das
+  große Hilfefenster. Der Zugangscode erscheint als Hinweis im Gespräch.
+- „Passt“ (Knopf) oder „ja/passt/mach“ übernimmt; Mia freut sich, unter ihr
+  „Erledigt“, nach ~1 s zu, Meldung „Übernommen“.
 - „＋“ (Termine, Aufgaben, Kalender, Tag, Notizen, Pinnwand, Einkauf) holt
   erst Mia (`askMiaFirst`, Modus „eintragen“, passende Frage), „Lieber
-  Formular“ öffnet das gewohnte Fenster. Kochmütze und Wochencheck nutzen
-  dieselbe Ansicht.
-- Bewegung (globals.css „Mia zuerst“): 0,8–1,2 s, `cubic-bezier(.16,1,.3,1)`,
-  nur transform/opacity; reduzierte Bewegung = nur Überblenden.
+  Formular“ steht neben „Lieber tippen“.
+- Wochencheck auf der Bühne: Mias Satz oben, das Gesagte als eigene Blase
+  (Kernwörter fett), „Ich hab schon“; Mia antippen beim Zuhören = fertig
+  (sortieren), „Lieber tippen“ = Feld + „Fertig“.
+- Bewegung (globals.css „Mia zuerst“ und „Eine Bühne“): 0,8–1,2 s,
+  `cubic-bezier(.16,1,.3,1)`, nur transform/opacity.
+- Tests: `tests/begleitung/buehne.test.ts`, Durchklick `buehne`
+  (`e2e/ablaeufe/miazuerst.mjs`).
 
 ### Erster Start und neue Person
 

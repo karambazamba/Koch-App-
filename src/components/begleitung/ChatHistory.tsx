@@ -5,8 +5,7 @@
 // Wort und der offene Vorschlag mit "Übernehmen".
 
 import Link from "next/link";
-import type { Dispatch, RefObject, SetStateAction } from "react";
-import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
+import type { Dispatch, ReactNode, RefObject, SetStateAction } from "react";
 import { NOTE } from "@/components/ui/styles";
 import { stockNearlyEmpty } from "@/lib/essen/dishIdeas";
 import type { useAssistantStatus } from "@/lib/begleitung/client";
@@ -14,7 +13,9 @@ import type { HelperVoice } from "@/lib/einstellungen/profile";
 import type { AssistantData } from "@/lib/begleitung/ops";
 import { speechSupported, toggleSpeak } from "@/lib/begleitung/speech";
 import { AccessCodeCard, SpeakButton } from "@/components/begleitung/ChatBits";
-import { BUBBLE, ChatTurnItem } from "@/components/begleitung/ChatTurnItem";
+import { ChatTurnItem } from "@/components/begleitung/ChatTurnItem";
+import { MiaBubble, OwnBubble, StageTopic } from "@/components/begleitung/MiaStage";
+import { firstOfRun } from "@/lib/begleitung/stage";
 import { KochtippCard } from "@/components/essen/kochtipp/KochtippCard";
 import type { KochtippChat } from "@/components/essen/kochtipp/useKochtippChat";
 import type { ChatState, ChatTurnView } from "@/components/begleitung/chatTypes";
@@ -55,17 +56,19 @@ type Props = {
   onAsk: (text: string) => void;
   onApply: (selected: Set<string>) => void;
   onClose: () => void;
-  /** Mia-Ansicht: nur ab dieser Nachricht zeigen (sonst alles = „Verlauf“) */
+  /** Bühne: nur ab dieser Nachricht zeigen (sonst alles = „Verlauf“) */
   from?: number;
-  /** Mia-Ansicht: Text dieser Antwort steht groß als Untertitel – hier nicht nochmal */
-  subtitleIndex?: number;
-  /** Begrüßung als Blase (nur im „Verlauf“ – sonst steht sie groß oben) */
+  /** Begrüßung als erste Blase („Hi, ich bin Mia – was steht an?“) */
   showGreeting?: boolean;
-  /** Mia-Ansicht: die entstehende Antwort steht schon groß oben */
-  streamOnStage?: boolean;
+  /** Bereichs-Kopf über Mias erster Blase („KOCHIDEE“, „TERMIN“ …) */
+  topic?: string;
+  /** Gerade Gesagtes – erscheint live als eigene Blase */
+  heard?: string;
+  /** Am Ende des Gesprächs (Beispiele, schönere Stimme) */
+  children?: ReactNode;
 };
 
-export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, codeLater, onCodeLater, chat, setChat, busy, streaming, speakingId, tipsOn, adjusting, setAdjusting, spontan, kochtipp, market, rules, onSubmit, onAsk, onApply, onClose, from = 0, subtitleIndex = -1, streamOnStage = false, showGreeting = true }: Props) {
+export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, codeLater, onCodeLater, chat, setChat, busy, streaming, speakingId, tipsOn, adjusting, setAdjusting, spontan, kochtipp, market, rules, onSubmit, onAsk, onApply, onClose, from = 0, showGreeting = true, topic, heard, children }: Props) {
   const { ideasFor, stockFor, headingFor, speechFor, takeIdea, moreIdeas, adjusting2, setAdjusting2, applyFilters, acceptUnsure } = spontan;
   // Offene Ideen-Antwort (die letzte, solange Spontan kochen läuft) und eingeklappte frühere
   const spontanIndexes = chat.turns.flatMap((t, i) => (t.spontan ? [i] : []));
@@ -75,9 +78,12 @@ export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, co
   const earlier = spontanIndexes.filter((i) => i !== liveSpontan);
   const firstEarlier = earlier[0] ?? -1;
   const earlierTitles = [...new Set(earlier.flatMap((i) => ideasFor(chat.turns[i]).map((idea) => idea.title)))];
+  const roles = chat.turns.map((t) => t.role);
+  const greeting = showGreeting && data;
 
   return (
-        <div ref={scrollRef} className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4" aria-live="polite">
+        <div ref={scrollRef} className="mia-gespraech flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-4 pt-3" aria-live="polite">
+          <StageTopic topic={topic} />
           {status === undefined || data === undefined ? (
             <div className="h-20 animate-pulse rounded-card bg-surface" />
           ) : data === null ? (
@@ -90,10 +96,8 @@ export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, co
                 an – dann weiß ich, für wen ich plane.
               </span>
             </p>
-          ) : showGreeting && from === 0 ? (
-            <p className="max-w-[85%] self-start rounded-card rounded-bl-md border border-line bg-surface px-4 py-2.5 text-base leading-snug text-ink">
-              Hi, ich bin {name} – was steht an?
-            </p>
+          ) : greeting ? (
+            <MiaBubble lead>Hi, ich bin {name} – was steht an?</MiaBubble>
           ) : null}
           {status?.askCode && data && !codeLater && <AccessCodeCard onLater={onCodeLater} />}
           {chat.turns.map((turn, i) => {
@@ -144,7 +148,7 @@ export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, co
               <ChatTurnItem
                 key={i}
                 turn={turn}
-                hideText={i === subtitleIndex}
+                lead={i === from ? turn.role === "assistant" && !greeting : firstOfRun(roles, i)}
                 last={last}
                 data={data}
                 showBases={showBases}
@@ -168,20 +172,10 @@ export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, co
           {/* Sanfter Gesundheits-Tipp (laut Einstellung, nie als Pop-up) */}
           {data && tipsOn && !chat.spontan && !busy && <TipBubble recipes={data.recipes} />}
 
-          {busy &&
-            subtitleIndex < 0 &&
-            !streamOnStage &&
-            (streaming ? (
-              // Antwort erscheint Wort für Wort
-              <p className={`${BUBBLE} self-start rounded-bl-md border border-line bg-surface text-ink`} aria-live="off">
-                {streaming}
-              </p>
-            ) : (
-              // Statt Lade-Text: nur der denkende Avatar mit Punkten, danach direkt die Antwort
-              <div className="self-start pl-1 pt-2 pr-8" role="status" aria-label={`${name} denkt nach`}>
-                <BegleitungAvatar size={44} />
-              </div>
-            ))}
+          {heard && <OwnBubble live>{heard}</OwnBubble>}
+
+          {/* Antwort erscheint Wort für Wort; das Überlegen zeigt die große Mia unten */}
+          {busy && streaming && <MiaBubble lead={roles[roles.length - 1] !== "assistant"}>{streaming}</MiaBubble>}
 
           {chat.proposal && data && !busy && (
             <ProposalCard
@@ -216,6 +210,7 @@ export function ChatHistory({ scrollRef, inputRef, status, data, name, voice, co
               }}
             />
           )}
+          {children}
         </div>
   );
 }

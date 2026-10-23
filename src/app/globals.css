@@ -1072,9 +1072,25 @@ body {
 .mia-huepfer { animation: mia-huepfer 1s var(--mia-ease); }
 .mia-wellen { position: absolute; inset: 0; border-radius: 9999px; border: 3px solid var(--app-accent); animation: mia-welle 2.8s var(--mia-ease) infinite; pointer-events: none; }
 .mia-wellen.zwei { animation-delay: 1.4s; }
-.mia-buehne-hintergrund { animation: mia-blende .8s var(--mia-ease) both; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.mia-buehne-hintergrund { animation: mia-blende .8s var(--mia-ease) both; }
+
+/* ── Eine Bühne: Mia unten, Gespräch oben, die Seite schimmert durch ──
+   Wartet: ruhige Einlade-Kreise und alle ~5 s ein Zwinkern; hört zu: Tonwelle
+   über ihr; Schließen: die Bühne ist sofort weg, eine Kopie von Mia fliegt
+   zurück und der Schleier blendet aus (fängt keine Tipps ab). */
+@keyframes mia-aus { from { opacity: 1; } to { opacity: 0; } }
+@keyframes mia-zwinker { 0%, 90%, 100% { transform: scaleY(1); } 94% { transform: scaleY(.12); } }
+@keyframes mia-ton { 0%, 100% { transform: scaleY(.35); } 50% { transform: scaleY(1); } }
+.mia-wellen.ruhig { border-width: 2px; animation-duration: 4.4s; opacity: .6; }
+.mia-wellen.zwei.ruhig { animation-delay: 2.2s; }
+.mia-zwinkern .av-eyes rect:last-of-type { transform-box: fill-box; transform-origin: center; animation: mia-zwinker 5s ease-in-out 2s infinite; }
+.mia-tonwelle { display: flex; height: 22px; align-items: center; gap: 4px; }
+.mia-tonwelle > span { display: block; width: 4px; height: 22px; border-radius: 9999px; background: var(--app-accent); transform-origin: center; animation: mia-ton .9s ease-in-out infinite; }
+.mia-geist-schleier { animation: mia-aus .8s var(--mia-ease) both; }
+/* Mia ist auf der Bühne (oder fliegt zurück) – ihr Knopf unten rechts wartet unsichtbar */
+body:has(.mia-buehne-hintergrund, .mia-geist-schleier) [data-mia-knopf] { opacity: 0; }
 @media (prefers-reduced-motion: reduce) {
-  .mia-knopf, .mia-knopf::before, .mia-huepfer, .mia-wellen { animation: none; }
+  .mia-knopf, .mia-knopf::before, .mia-huepfer, .mia-wellen, .mia-tonwelle > span, .mia-zwinkern .av-eyes rect { animation: none; }
   .mia-karte { animation: mia-blende .4s ease both; }
   .mia-flug { transition: none; }
 }

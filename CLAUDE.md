@@ -52,7 +52,7 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Erzählen statt ausfüllen: Jede Eingabe beginnt mit Mia (sprechen, notfalls
   tippen). Formulare nur zum Ändern. Kein neues Eingabe-Formular ohne Mia-Weg
   davor („＋“ holt Mia, „Lieber Formular“ bleibt). Mia ist ein runder Knopf
-  unten rechts; Tippen holt sie in die Mitte, sie hört sofort zu. Keine
+  unten rechts; Tippen holt sie auf die Bühne, sie hört sofort zu. Keine
   Schreib-Leiste.
 - Lieber eine Frage mit 2–3 Knöpfen als ein Formular.
 - Machen statt fragen: Kleines selbst erledigen und kurz melden. Rückfragen nur
@@ -125,7 +125,9 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Seitenkopf: „‹ <vorherige Seite>“, rechts höchstens ein Knopf (Seiten-Plus
   34 px orange oder „…“), darunter der große Titel. Kachel-Plus 26 px
   hellorange. Mia-Knopf unten rechts (72 px, atmet leicht), auf allen Seiten
-  gleich; Mia in der Mitte über verschwommenem Hintergrund (`MiaStage`).
+  gleich. Jedes Gespräch auf EINER Bühne (`MiaStage`): Seite verschwommen
+  dahinter, Gespräch oben, Mia groß im unteren Drittel (antippen = zuhören ↔
+  fertig, „Lieber tippen“), fliegt vom Knopf ein und dorthin zurück.
 - Bewegung sehr weich: 0,8–1,2 s, `cubic-bezier(.16,1,.3,1)`, nur
   transform/opacity, `prefers-reduced-motion` = nur Überblenden.
 - Knöpfe nie schwarz. Standard für neue Nutzer = Hell; Dunkel/Automatisch nur

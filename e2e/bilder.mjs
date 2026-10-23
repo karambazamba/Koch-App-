@@ -37,7 +37,11 @@ const PAGES = [
 const micTap = async (page) => {
   await page.getByRole("button", { name: /^Sag .*was ansteht/ }).first().click();
   await page.getByRole("dialog").last().waitFor({ timeout: 5000 });
-  await page.getByRole("button", { name: /^(Frage einsprechen|Mikro aus – so machst du es an)$/ }).last().click();
+  // Mia antippen; ist das Mikro schon als aus bekannt, öffnet sie das Tippfeld – dann „Anmachen ›“
+  const tap = page.getByRole("button", { name: /^(Frage einsprechen|Tippen statt sprechen)$/ }).last();
+  const blocked = (await tap.getAttribute("aria-label")) === "Tippen statt sprechen";
+  await tap.click();
+  if (blocked) await page.getByRole("button", { name: "Anmachen ›" }).click();
 };
 const openTermin = async (page, text) => {
   await page.goto(BASE + "/?seite=kalender");
@@ -70,6 +74,7 @@ const weekCheck = async (page, done) => {
   await box.press("Enter");
   const sheet = page.getByRole("dialog", { name: "Wochencheck" });
   await sheet.waitFor({ timeout: 10000 });
+  await sheet.getByRole("button", { name: "Lieber tippen" }).click();
   await sheet.getByRole("textbox", { name: "Was steht an?" }).fill(WOCHE);
   if (!done) return page.waitForTimeout(400);
   await sheet.getByRole("button", { name: "Fertig" }).click();

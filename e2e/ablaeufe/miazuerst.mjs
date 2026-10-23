@@ -26,10 +26,10 @@ export const miaZuerst = async (page, check) => {
   const passt = mia.getByRole("button", { name: /^Passt/ });
   check(await passt.waitFor({ timeout: 8000 }).then(() => true, () => false), "Karte mit „Passt“");
   // Zustimmung per „ja“ (wie gesprochen)
-  const field = await (async () => ((await page.getByRole("textbox", { name: "Nachricht schreiben" }).isVisible()) ? page.getByRole("textbox", { name: "Nachricht schreiben" }) : (await mia.getByRole("button", { name: "Tippen" }).click(), page.getByRole("textbox", { name: "Nachricht schreiben" }))))();
+  const field = await (async () => ((await page.getByRole("textbox", { name: "Nachricht schreiben" }).isVisible()) ? page.getByRole("textbox", { name: "Nachricht schreiben" }) : (await mia.getByRole("button", { name: "Lieber tippen" }).click(), page.getByRole("textbox", { name: "Nachricht schreiben" }))))();
   await field.fill("ja");
   await field.press("Enter");
-  check(await mia.getByText("ERLEDIGT").waitFor({ timeout: 2000 }).then(() => true, () => false), "„ERLEDIGT“");
+  check(await mia.getByText("Erledigt", { exact: true }).waitFor({ timeout: 2000 }).then(() => true, () => false), "„Erledigt“ unter Mia");
   check(await page.getByRole("button", { name: "Verlauf" }).waitFor({ state: "detached", timeout: 4000 }).then(() => true, () => false), "schließt nach ~1 s von selbst");
   check(await page.getByRole("status").getByText("Übernommen", { exact: true }).isVisible(), "Meldung „Übernommen“");
   check((await store(page, "wasgibts.eintraege")).entries.length === before + 1, "Termin eingetragen");
@@ -54,4 +54,53 @@ export const miaZuerst = async (page, check) => {
   await page.goBack();
   await page.waitForTimeout(600);
   check(!(await page.getByRole("button", { name: "Verlauf" }).count()) && page.url().endsWith("/"), "Zurück schließt (Seite bleibt)");
+};
+
+/**
+ * Eine Bühne: Mia-Knopf → Mia groß unten in der Mitte (~64 % der Höhe), die
+ * Startseite verschwommen dahinter → Satz → Blasen oben, nie hinter Mia →
+ * Vorschau „Passt“ → ✕ → Mia wieder als Knopf unten rechts.
+ */
+export const buehne = async (page, check) => {
+  await hello(page);
+  await seedFamily(page);
+  await page.reload();
+  await page.waitForTimeout(900);
+  await page.getByRole("button", { name: /^Sag .*was ansteht/ }).first().click();
+  const stage = page.getByRole("dialog").last();
+  await stage.waitFor({ timeout: 5000 });
+  const vp = page.viewportSize();
+  const mia = stage.getByRole("button", { name: /^(Frage einsprechen|Zuhören beenden)$/ });
+  await page.waitForTimeout(400);
+  const box = await mia.boundingBox();
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  check(Math.abs(cx - vp.width / 2) < 4 && box.width >= 110 && box.width <= 130, `Mia groß, waagrecht in der Mitte (${Math.round(box.width)} px)`);
+  check(cy / vp.height > 0.56 && cy / vp.height < 0.72, `Mia im unteren Drittel (${Math.round((cy / vp.height) * 100)} %)`);
+  const veil = await page.evaluate(() => {
+    const el = document.querySelector(".mia-buehne-hintergrund");
+    const st = el && getComputedStyle(el);
+    return { blur: st?.backdropFilter ?? st?.webkitBackdropFilter ?? "", home: Boolean(document.querySelector("main [aria-label^='Mia: Jetzt']")) };
+  });
+  check(/blur\(14px\)/.test(veil.blur) && veil.home, "Startseite verschwommen dahinter");
+  check(!(await stage.getByRole("textbox", { name: "Nachricht schreiben" }).count()), "keine Schreib-Leiste");
+
+  await stage.getByRole("button", { name: "Lieber tippen" }).click();
+  const field = stage.getByRole("textbox", { name: "Nachricht schreiben" });
+  await field.fill("Morgen um 9 Steuerberater");
+  await field.press("Enter");
+  const passt = stage.getByRole("button", { name: /^Passt/ });
+  check(await passt.waitFor({ timeout: 8000 }).then(() => true, () => false), "Vorschau mit „Passt“ im Gespräch");
+  const own = stage.getByText("Morgen um 9 Steuerberater", { exact: true }).first();
+  const small = stage.getByRole("button", { name: /^(Frage einsprechen|Zuhören beenden|Tippen statt sprechen)$/ });
+  const [o, m] = [await own.boundingBox(), await small.boundingBox()];
+  check(o && m && o.y + o.height <= m.y, "eigene Blase oben, nie hinter Mia");
+  const list = await page.evaluate(() => document.querySelector("[role=dialog] .mia-gespraech[aria-live]")?.getBoundingClientRect().bottom ?? 0);
+  check(list <= m.y + 1, "Gespräch endet über Mia");
+
+  await stage.getByRole("button", { name: "Schließen" }).click();
+  check(await stage.waitFor({ state: "detached", timeout: 3000 }).then(() => true, () => false), "✕ schließt die Bühne");
+  const knopf = page.getByRole("button", { name: /^Sag .*was ansteht/ }).first();
+  const k = await knopf.boundingBox();
+  check(Boolean(k) && k.x + k.width > vp.width - 40, "Mia wieder als Knopf unten rechts");
 };

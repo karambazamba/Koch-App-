@@ -123,7 +123,7 @@ export function StageSheet({ title, onClose, left, right, inset = 0, children }:
   }, [onClose]);
   return (
     <div className="fixed inset-0 z-40" role="dialog" aria-modal aria-label={title}>
-      <div className="mia-buehne-hintergrund absolute inset-0 bg-background/80" aria-hidden />
+      <div className="mia-buehne-hintergrund absolute inset-0 bg-background/75 backdrop-blur-[14px]" aria-hidden />
       <div className="relative mx-auto flex h-full max-w-lg flex-col pt-[env(safe-area-inset-top)]" style={{ transform: dy ? `translateY(${dy}px)` : undefined, paddingBottom: inset || undefined }}>
         <div
           className="flex touch-none items-center justify-between px-3 pt-2"
