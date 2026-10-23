@@ -905,3 +905,8 @@ body {
   .mia-karte { animation: mia-blende .4s ease both; }
   .mia-flug { transition: none; }
 }
+
+/* Startseite bearbeiten: die Fertig-Leiste ersetzt den Mia-Knopf */
+body:has([data-edit-leiste]) [data-begleitung-leiste] {
+  visibility: hidden;
+}
