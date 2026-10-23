@@ -40,7 +40,7 @@ export const hallo2 = async (page, check) => {
   check(ok === 10, `10× frisch: eine Navigation, Mia genau einmal (${ok}/10)`);
   await page.waitForTimeout(1500);
   check(await page.getByRole("heading", { name: "Moin!" }).isVisible(), "„Moin!“ (Mia stellt sich nie vor)");
-  check(await page.locator("h1 .text-accent").innerText() === "Mia.", "„Mia.“ in Orange");
+  check(await page.locator("h1 .text-accent").innerText() === "!", "„Moin“ mit orangem „!“");
   check(await page.getByText("Erzähl mir einfach, was ansteht. Ich sortiere für euch.").isVisible(), "Zeile „Erzähl mir einfach …“");
   check((await page.locator("[data-tone]").count()) === 0 && !(await page.getByText("Euer Alltag an einem Ort.").count()), "keine Deko-Kacheln, alte Zeile weg");
   check(await page.locator("[data-hello-marke] [data-brand=lockup]").isVisible() && (await page.getByText("Gemacht in Eutin · von KARAMBA Eis").isVisible()), "unten Marke + „Gemacht in Eutin · von KARAMBA Eis“");
