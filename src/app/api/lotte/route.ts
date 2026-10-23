@@ -12,6 +12,8 @@ import { aiSetup, checkAccess, clientIp, takeDailySlot } from "@/lib/begleitung/
 import { createMockModel } from "@/lib/begleitung/mock";
 import { ACCESS_HEADER, LIMITS, type AssistantErrorCode, type AssistantStatus, type StreamEvent } from "@/lib/begleitung/protocol";
 import { allowRequest } from "@/lib/begleitung/rateLimit";
+import { cleanWish } from "@/lib/begleitung/wishTools";
+import { supabasePublic, supabaseSecret } from "@/lib/konten/serverEnv";
 
 export const maxDuration = 60;
 
@@ -71,7 +73,9 @@ export async function POST(request: Request) {
 
   if (!req.stream) {
     try {
-      return Response.json(await runAssistant(req, create, model));
+      const { wishes, ...result } = await runAssistant(req, create, model);
+      void recordWishes(wishes, req.today);
+      return Response.json(result);
     } catch (e) {
       const code = errorCode(e);
       return fail(code, code === "limit" ? 429 : 502);
@@ -85,6 +89,7 @@ export async function POST(request: Request) {
       const send = (event: StreamEvent) => controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
       try {
         const result = await runAssistant(req, create, model, { onText: (d) => send({ t: "text", d }), onRound: () => send({ t: "round" }) });
+        void recordWishes(result.wishes, req.today);
         send({ t: "done", reply: result.reply, ops: result.ops, mail: result.mail, chips: result.chips, tips: result.tips, usage: result.usage });
       } catch (e) {
         send({ t: "error", error: errorCode(e) });
@@ -104,4 +109,25 @@ function errorCode(e: unknown): AssistantErrorCode {
   }
   console.error("Lotte: Fehler", e instanceof Error ? e.name : typeof e);
   return "fehler";
+}
+
+/**
+ * „Kann ich noch nicht“-Wünsche anonym zählen (Tabelle mia_wuensche: Text +
+ * Datum, keine Person, kein Haushalt, keine IP). Ohne Supabase passiert
+ * nichts; Fehler werden still verschluckt. Nie Inhalte ins Log.
+ */
+async function recordWishes(wishes: string[] | undefined, today: string): Promise<void> {
+  const clean = (wishes ?? []).map(cleanWish).filter((w): w is string => w !== null).slice(0, 3);
+  const pub = supabasePublic();
+  const secret = supabaseSecret();
+  if (!clean.length || !pub || !secret) return;
+  try {
+    await fetch(`${pub.url}/rest/v1/mia_wuensche`, {
+      method: "POST",
+      headers: { apikey: secret, authorization: `Bearer ${secret}`, "content-type": "application/json", prefer: "return=minimal" },
+      body: JSON.stringify(clean.map((text) => ({ text, tag: today }))),
+    });
+  } catch {
+    // still – Zählen ist nur Statistik
+  }
 }

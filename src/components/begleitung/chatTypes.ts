@@ -35,6 +35,8 @@ export type ChatTurnView = ChatTurn & {
   undo?: () => void;
   /** Echtes Löschen: dann (und nur dann) steht "Rückgängig" als Knopf darunter */
   deleted?: boolean;
+  /** Mia hat es sofort erledigt: „Rückgängig“ steht 10 Sekunden da */
+  quick?: boolean;
   /** Im Supermarkt: Ideen zum Produkt, darunter Liste und "Statt <Tag>" */
   market?: MarketAnswer & { target: MarketTarget | null };
   /** Backwunsch: passende Rezepte mit "Zusammen backen" */

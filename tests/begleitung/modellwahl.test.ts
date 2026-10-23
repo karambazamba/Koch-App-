@@ -41,19 +41,34 @@ describe("Hochschalten", () => {
   it("Haiku will ein Rezept erstellen → Sonnet übernimmt, die App setzt den Text zurück", async () => {
     const { create, models } = fake({ "claude-haiku-5-5": { tool: "rezept_erstellen" }, "claude-sonnet-5-5": { text: "Hier dein Rezept." } });
     const onRound = vi.fn();
-    const r = await runAssistant(req("Hast du was mit Linsen?"), create, choice, { onRound });
+    const r = await runAssistant(req("Linsensuppe am Freitag"), create, choice, { onRound });
     expect(models).toEqual(["claude-haiku-5-5", "claude-sonnet-5-5"]);
     expect(onRound).toHaveBeenCalled();
     expect(r.reply).toBe("Hier dein Rezept.");
     expect(r.usage).toMatchObject({ size: "gross", upgraded: true });
   });
 
-  it("Alltägliches bleibt bei Haiku", async () => {
-    const { create, models } = fake({ "claude-haiku-5-5": { text: "Timer läuft." }, "claude-sonnet-5-5": { text: "-" } });
-    const r = await runAssistant(req("Danke dir!"), create, choice);
+  it("Klarer Kurzbefehl bleibt bei Haiku", async () => {
+    const { create, models } = fake({ "claude-haiku-5-5": { text: "Ist drauf." }, "claude-sonnet-5-5": { text: "-" } });
+    const r = await runAssistant(req("Milch auf die Liste"), create, choice);
     expect(models).toEqual(["claude-haiku-5-5"]);
     expect(r.usage).toMatchObject({ size: "klein", upgraded: false });
     expect(r.usage?.micro).toBe(150); // 1000 × 0,1 + 100 × 0,5
+  });
+
+  it("Fragen, offene Bitten und „Danke“ gehen gleich an Sonnet", async () => {
+    for (const q of ["Hast du was mit Linsen?", "Danke dir!", "Wie lange muss ein Ei kochen", "Plan mir die Woche"]) {
+      const { create, models } = fake({ "claude-haiku-5-5": { text: "x" }, "claude-sonnet-5-5": { text: "Ok." } });
+      await runAssistant(req(q), create, choice);
+      expect(models, q).toEqual(["claude-sonnet-5-5"]);
+    }
+  });
+
+  it("zweite Chance: Haiku antwortet ohne Aktion unsicher → Sonnet", async () => {
+    const { create, models } = fake({ "claude-haiku-5-5": { text: "Leider weiß ich nicht, was du meinst." }, "claude-sonnet-5-5": { text: "Steht drin." } });
+    const r = await runAssistant(req("Zahnarzt Do 16 Uhr"), create, choice);
+    expect(models).toEqual(["claude-haiku-5-5", "claude-sonnet-5-5"]);
+    expect(r.reply).toBe("Steht drin.");
   });
 
   it("fest eingestelltes Modell (LOTTE_MODEL) schaltet nie", async () => {

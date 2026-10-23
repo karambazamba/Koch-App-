@@ -1,7 +1,7 @@
 // KI-Verbrauch je Tag auf diesem Gerät – nur Zahlen, nie Inhalte. Vorbereitung
 // für ein späteres Guthaben: Anfragen, davon mit kleinem/großem Modell bzw.
-// hochgeschaltet, Kosten in Millionstel US-Dollar. Wird (noch) nirgends
-// angezeigt – keine Zähler in der App.
+// hochgeschaltet, Kosten in Millionstel US-Dollar. Nur in den Entwickler-
+// Einstellungen sichtbar („KI-Kosten letzte 7 Tage“) – keine Zähler in der App.
 
 import { createLocalStore } from "@/lib/core/localStore";
 import type { AssistantUsage } from "@/lib/begleitung/protocol";
@@ -41,3 +41,25 @@ export function recordUsage(today: string, u: AssistantUsage | undefined) {
     // Speicher voll/gesperrt – Verbrauch ist nur Vorbereitung
   }
 }
+
+export type CostSummary = { requests: number; small: number; large: number; upgraded: number; usd: number };
+
+/** Summe der letzten `days` Tage bis einschließlich `today` (rein) @public */
+export function costSummary(state: UsageState | null, today: string, days = 7): CostSummary {
+  const from = new Date(`${today}T12:00:00Z`);
+  from.setUTCDate(from.getUTCDate() - (days - 1));
+  const start = from.toISOString().slice(0, 10);
+  const sum: CostSummary = { requests: 0, small: 0, large: 0, upgraded: 0, usd: 0 };
+  for (const [date, d] of Object.entries(state?.days ?? {})) {
+    if (date < start || date > today) continue;
+    sum.requests += d.requests;
+    sum.small += d.small;
+    sum.large += d.large;
+    sum.upgraded += d.upgraded;
+    sum.usd += d.micro / 1_000_000;
+  }
+  return sum;
+}
+
+/** KI-Kosten der letzten 7 Tage auf diesem Gerät */
+export const lastWeekCosts = (today: string) => costSummary(store.load(), today);

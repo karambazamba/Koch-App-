@@ -2183,3 +2183,15 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Gedankenstriche als Satzverbindung, keine Spiegelstriche, höchstens ein „!“.
 - Prompt: max. 2 Sätze, Bestätigungen 1–3 Wörter, keine Floskeln, drei
   Beispiele gut/schlecht. Alle festen Mia-Sätze umgeschrieben, Test prüft sie.
+
+## Mia auf Claude-Niveau – nie halbgar (v0.78.0)
+- KI zuerst, ehrlich: ohne Netz merkt Mia sich den Satz und macht ihn, sobald
+  wieder Netz da ist; Limit/Fehler mit eigenem Satz, ein stiller zweiter
+  Versuch bei Fehlern.
+- Modellwahl: kurze Befehle schnell, alles andere mit dem großen Modell;
+  zögert das kleine ohne Werkzeug, übernimmt das große.
+- Kleines sofort („Ist drauf.“ + 10 s Rückgängig im Chat, „Mia hat schon …“
+  in Dein Tag), Großes als Vorschau.
+- Was Mia noch nicht kann, landet als Wunsch (Tabelle `mia_wuensche`, nur
+  Server). Prüfstand mit 120 Sätzen (`/api/pruefstand`) und Seite „Für
+  Entwickler“ mit Trefferquote und KI-Kosten.

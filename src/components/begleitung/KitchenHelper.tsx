@@ -4,7 +4,8 @@ import { useSchnellnotiz, useNotes } from "@/lib/notizen";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Check } from "lucide-react";
-import { onOpenHelper } from "@/lib/begleitung/open";
+import { onOpenHelper, openHelper } from "@/lib/begleitung/open";
+import { takeQueued } from "@/lib/begleitung/nachholen";
 import { learnLikes, likesFromIngredients, LIKE_WEIGHTS } from "@/lib/essen/likes";
 import { useRecipes } from "@/lib/essen/cookbook";
 import { useMealPlans } from "@/lib/essen/mealPlan";
@@ -123,6 +124,19 @@ export function KitchenHelper() {
   useEffect(() => {
     if (today) recordOpen(toIsoDate(today));
   }, [today]);
+
+  // Offline Gesagtes nachholen, sobald wieder Netz da ist (Mia sagt es dann auf der Bühne)
+  useEffect(() => {
+    const replay = () => {
+      if (navigator.onLine === false) return;
+      const [first, ...rest] = takeQueued();
+      if (!first) return;
+      openHelper(undefined, [first, ...rest].join(". "));
+    };
+    replay();
+    window.addEventListener("online", replay);
+    return () => window.removeEventListener("online", replay);
+  }, []);
 
   // Von außen öffnen, z. B. "Spontan kochen" → Spontan-Modus (Filter der Sitzung)
   useEffect(

@@ -148,7 +148,7 @@ describe("runAssistant: Werkzeug-Schleife", () => {
       const haiku = /haiku/.test(params.model as string);
       return { content: haiku ? [] : [text("Gern.")], stop_reason: haiku ? "refusal" : "end_turn", usage: { input_tokens: 1, output_tokens: 1 } } as never;
     };
-    const r = await runAssistant(anfrage("Danke"), create, { small: "claude-haiku-5-5", large: "claude-sonnet-5-5" });
+    const r = await runAssistant(anfrage("Timer 10 Minuten"), create, { small: "claude-haiku-5-5", large: "claude-sonnet-5-5" });
     expect(n).toBe(2);
     expect(r).toMatchObject({ reply: "Gern.", usage: { size: "gross", upgraded: true } });
   });

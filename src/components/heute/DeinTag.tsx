@@ -10,6 +10,8 @@
 // hervorgehoben, trägt ihren Hinweis und steht in Sicht. Nach 22 Uhr: „Morgen
 // · Sa“ zum Umschalten. Leerer Tag: „Heute ist nichts geplant. Genieß es.“
 
+import { helperName } from "@/lib/einstellungen/profile";
+import { miaDoneUndo, useMiaDone } from "@/lib/begleitung/miaDone";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Check, Pin } from "lucide-react";
@@ -112,6 +114,7 @@ export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, d
       }
     >
       <div ref={body} className="flex flex-col gap-5 pb-6">
+        {!showTomorrow && <MiaDoneRow today={today} onClose={onClose} />}
         {empty && !showTomorrow ? (
           <p className="py-10 text-center text-[17px] font-semibold text-muted">Heute ist nichts geplant. Genieß es.</p>
         ) : (
@@ -228,5 +231,44 @@ function NowLine({ minutes }: { minutes: number }) {
       <span className="text-[12px] font-extrabold text-accent-strong">Jetzt · {t}</span>
       <span className="h-px flex-1 bg-accent" />
     </span>
+  );
+}
+
+/** „Mia hat schon …“: was Mia heute still erledigt hat – antippbar, mit „Rückgängig“; mehr als 2 → „Ansehen“ */
+function MiaDoneRow({ today, onClose }: { today: string; onClose: () => void }) {
+  const items = useMiaDone(today);
+  const [all, setAll] = useState(false);
+  if (!items.length) return null;
+  const shown = all ? items : items.slice(-2);
+  return (
+    <section className="flex flex-col gap-1 rounded-field bg-accent-soft/50 px-3 py-2" aria-label={`${helperName(null)} hat schon`}>
+      <span className="text-[13px] font-bold text-accent-strong">{helperName(null)} hat schon …</span>
+      <ul className="flex flex-col">
+        {shown.map((i) => {
+          const undo = miaDoneUndo(i.id);
+          return (
+            <li key={i.id} className="flex min-h-11 items-center gap-2">
+              {i.href ? (
+                <Link href={i.href} onClick={onClose} className="min-w-0 flex-1 truncate text-[15px] font-semibold">
+                  {i.text}
+                </Link>
+              ) : (
+                <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">{i.text}</span>
+              )}
+              {undo && (
+                <button type="button" onClick={undo} className="hit shrink-0 text-[13px] font-bold text-accent-strong">
+                  Rückgängig
+                </button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      {items.length > 2 && !all && (
+        <button type="button" onClick={() => setAll(true)} className="hit self-start text-[13px] font-bold text-accent-strong">
+          Ansehen
+        </button>
+      )}
+    </section>
   );
 }

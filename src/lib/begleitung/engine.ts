@@ -3,6 +3,7 @@
 // kommt Stück für Stück über `onText` (Streaming), am Ende die fertige
 // Antwort samt Vorschlag.
 
+import { capabilities } from "@/lib/begleitung/wishTools";
 import { fetchForecast } from "@/lib/wetter/server";
 import { tipsMode, tipsNear } from "@/lib/tipps/server";
 import { tipQuestion } from "@/lib/tipps/question";
@@ -209,6 +210,26 @@ export function needsLargeModel(req: Pick<AssistantRequest, "messages" | "pendin
   return LARGE_TOPICS.test(last);
 }
 
+/**
+ * Klarer Kurzbefehl mit eindeutiger Aktion („Milch auf die Liste“, „Timer 10
+ * Minuten“, „Zahnarzt Do 16 Uhr“) – nur dafür das kleine Modell (rein, ohne KI).
+ * Fragen, offene Bitten, mehrere Dinge, Ratschläge → großes Modell.
+ */
+export function isShortCommand(text: string): boolean {
+  const t = text.trim().toLowerCase();
+  if (!t || t.length > 90 || t.includes("?")) return false;
+  if (/(^|\s)(wie|was|warum|wieso|weshalb|welche[rsmn]?|wer|wo|wann|kannst du|könntest|soll ich|sollen wir|hast du|gibt es|meinst du|empfiehl|idee)(\s|$)/.test(t)) return false;
+  // mehrere Dinge auf einmal („… und dann …“, Aufzählung mit Komma und „und“)
+  if (/\bund dann\b|,.*\bund\b.*,/.test(t)) return false;
+  return /auf die (einkaufs)?liste|auf den zettel|\bkaufen\b|einkauf|\btimer\b|\bwecker\b|\bstoppuhr\b|\bminuten?\b|erinner|\bpinnwand\b|\bnotier|merk dir|abhaken|erledigt|\bum \d{1,2}([:.]\d{2})?\b|\b\d{1,2}([:.]\d{2})? ?uhr\b|\b(mo|di|mi|do|fr|sa|so)\b|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|morgen|übermorgen|im haus|vorrat/.test(t);
+}
+
+/** Frage oder Ratschlag (dann denkt das große Modell etwas gründlicher: effort „medium“) */
+export const isQuestion = (text: string) => /\?|^(wie|was|warum|wieso|welche|wer|wo|wann|kannst du|soll ich|hast du|gibt es)\b/i.test(text.trim());
+
+/** Unsichere Antwort des kleinen Modells ohne passende Aktion → das große übernimmt (zweite Chance) */
+const HEDGE = /(nicht sicher|weiß ich nicht|kann ich (leider )?nicht|leider|keine ahnung|verstehe? (ich )?nicht|unklar|meinst du|was genau)/i;
+
 /** Wochencheck (App schickt „[Wochencheck] …“): großes Modell, mehr Ausgabe */
 export const isWeekCheck = (req: Pick<AssistantRequest, "messages">) => (req.messages[req.messages.length - 1]?.text ?? "").startsWith("[Wochencheck]");
 
@@ -237,7 +258,7 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
 
   const system: Anthropic.Beta.BetaTextBlockParam[] = [
     // Name/Ton und Arbeitsweise ändern sich selten → gecacht; Kontext pro Anfrage
-    { type: "text", text: `${identityPrompt(req.data.profile)}\n\n${SYSTEM_PROMPT}`, cache_control: { type: "ephemeral" } },
+    { type: "text", text: `${identityPrompt(req.data.profile)}\n\n${SYSTEM_PROMPT}\n\n${capabilities(toolDefinitions())}`, cache_control: { type: "ephemeral" } },
     { type: "text", text: contextText(req.data, req.today, weeks, req.tipsThisWeek, { clock: req.clock, shopping: req.shoppingNames }) + pendingSummary(req.pending) },
   ];
 
@@ -251,6 +272,7 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
     if (messages[0].role !== "user") messages.shift();
     const usage: Usage = { in: 0, out: 0, write: 0, read: 0, rounds: 0 };
     let reply = "";
+    let usedTool = false;
     for (let round = 0; round < ENGINE_LIMITS.maxRounds; round++) {
       if (round > 0) events.onRound?.();
       const params: Anthropic.Beta.MessageCreateParamsNonStreaming = {
@@ -260,8 +282,8 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
         system,
         tools: toolDefinitions(),
         messages,
-        // Schnell und günstig fürs Gespräch: Nachdenken nur bei Bedarf (adaptiv), geringer Aufwand (nicht bei Haiku)
-        ...(/haiku/.test(model) ? {} : { output_config: { effort: "low" as const } }),
+        // Fragen/Ratschläge etwas gründlicher (medium), reine Aktionen schnell (low); Haiku ohne
+        ...(/haiku/.test(model) ? {} : { output_config: { effort: isQuestion(lastText) && !isShortCommand(lastText) ? ("medium" as const) : ("low" as const) } }),
         // Lehnt das Modell ab, springt serverseitig ein Ersatzmodell ein (nur Claude API)
         ...(FALLBACK_MODELS.test(model) ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const } : {}),
       };
@@ -284,6 +306,9 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
       // Zu groß für das kleine Modell (Planen, Rezepte, Mails …) oder abgeschnitten → das große übernimmt
       if (small && (response.stop_reason === "max_tokens" || content.some((b) => b.type === "tool_use" && LARGE_TOOLS.has(b.name)))) return { escalate: true as const, usage };
       const text = content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("\n").trim();
+      // Zweite Chance: das kleine Modell antwortet ohne Aktion unsicher oder gar nicht → das große
+      if (small && response.stop_reason !== "tool_use" && !usedTool && (!text || HEDGE.test(text))) return { escalate: true as const, usage };
+      if (content.some((b) => b.type === "tool_use")) usedTool = true;
       if (text) reply = text;
       messages.push({ role: "assistant", content });
 
@@ -306,7 +331,8 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
 
   // Modell wählen: fest eingestellt, sonst klein – oder gleich groß, wenn die Anfrage danach klingt
   const fixed = typeof choice === "string";
-  const firstModel = fixed ? choice : needsLargeModel(req) ? choice.large : choice.small;
+  // Kleines Modell nur für klare Kurzbefehle – alles andere gleich groß
+  const firstModel = fixed ? choice : needsLargeModel(req) || !isShortCommand(lastText) ? choice.large : choice.small;
   const canUpgrade = !fixed && firstModel === choice.small && choice.small !== choice.large;
   let run = await attempt(firstModel, canUpgrade);
   let model = firstModel;
@@ -323,7 +349,7 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
   const { ctx, reply } = run;
   const costs = spent.map((s) => costMicro(s.model, s.usage));
   const micro = costs.every((c): c is number => c !== null) ? costs.reduce((a, b) => a + b, 0) : null;
-  const extras = { ...(ctx.mail ? { mail: ctx.mail } : {}), ...(ctx.chips?.length ? { chips: ctx.chips } : {}), ...(ctx.tipCards?.length ? { tips: ctx.tipCards } : {}) };
+  const extras = { ...(ctx.wishes?.length ? { wishes: ctx.wishes } : {}), ...(ctx.mail ? { mail: ctx.mail } : {}), ...(ctx.chips?.length ? { chips: ctx.chips } : {}), ...(ctx.tipCards?.length ? { tips: ctx.tipCards } : {}) };
   return {
     reply: reply || (ctx.mail ? "Hier mein Vorschlag:" : "Steht unten als Vorschlag."),
     ops: compactOps(ctx.ops),
