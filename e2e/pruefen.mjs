@@ -8,6 +8,7 @@
 // Nur Teile: `npm run pruefen -- --schnell` (nur 15 Pro hell, Browser).
 import { BASE, hello, launch, newPage, seedFamily, setDark, startServer } from "./lib.mjs";
 import { RECIPE_DATA } from "./ablaeufe/essen.mjs";
+import { miaKnopfUeberText } from "./regeln.mjs";
 
 const quick = process.argv.includes("--schnell");
 const DEVICES = quick ? ["iPhone 15 Pro"] : ["iPhone SE", "iPhone 15 Pro", "Pixel 7"];
@@ -138,11 +139,12 @@ function blocked() {
   return out;
 }
 
-/** Ganz nach unten scrollen: liegt Inhalt unter der Leiste der Begleitung? */
+/** Ganz nach unten scrollen: liegt Inhalt unter der Leiste der Begleitung bzw. unter dem Mia-Knopf? */
 async function bottomCheck(page) {
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   await page.waitForTimeout(350);
-  return page.evaluate(() => {
+  const knopf = await page.evaluate(miaKnopfUeberText);
+  return [...knopf, ...(await page.evaluate(() => {
     const bar = document.querySelector("[data-begleitung-leiste] > div");
     if (!bar) return [];
     const top = bar.getBoundingClientRect().top;
@@ -158,7 +160,7 @@ async function bottomCheck(page) {
       })
       .filter((el) => !el.closest("[role=dialog]"));
     return hidden.slice(0, 2).map((el) => `ganz unten unter der Leiste: „${(el.getAttribute("aria-label") || el.textContent || el.tagName).trim().slice(0, 40)}“`);
-  });
+  }))];
 }
 
 const stop = await startServer();

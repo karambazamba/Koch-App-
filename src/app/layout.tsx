@@ -12,6 +12,7 @@ import { TimerAlarm } from "@/components/timer/TimerAlarm";
 import { SportCelebration } from "@/components/sport/SportCelebration";
 import { SyncRunner } from "@/components/konten/SyncRunner";
 import { MicSheetHost } from "@/components/ui/MicPermission";
+import { ZustimmungGate } from "@/components/datenschutz/ZustimmungGate";
 import { THEME_BOOT_SCRIPT, THEME_COLORS } from "@/lib/core/theme";
 import { APP_DESCRIPTION, APP_NAME, APP_SHORT_NAME, icon } from "@/lib/core/app";
 import "@/app/globals.css";
@@ -78,6 +79,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <TimerAlarm />
         <SportCelebration />
         <SyncRunner />
+        <ZustimmungGate />
         <MicSheetHost />
         <ServiceWorkerRegistration />
       </body>

@@ -5,8 +5,11 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import nextConfig from "../../next.config";
-import { SOURCES, stripComments } from "../textQuellen";
-import { DATENSCHUTZ, ENTWURF, IMPRESSUM, KURZ_GESAGT, NUTZUNGSBEDINGUNGEN } from "@/lib/datenschutz/rechtstexte";
+import { SOURCES, stripComments, texts } from "../textQuellen";
+import { BETREIBER, DATENSCHUTZ, ENTWURF, IMPRESSUM, KURZ_GESAGT, NUTZUNGSBEDINGUNGEN, RECHTSTEXTE_STAND, VOR_DEM_START, entwurfOffen } from "@/lib/datenschutz/rechtstexte";
+import { knopfVersteckt } from "@/lib/mia/knopf";
+import { zustimmungNoetig } from "@/lib/datenschutz/zustimmung";
+import { TEXT_VERSION } from "@/lib/datenschutz/einwilligung";
 
 describe("Technik", () => {
   it("Server-Funktionen in Frankfurt (vercel.json)", () => {
@@ -59,6 +62,40 @@ describe("Seiten Datenschutz, Impressum, Nutzungsbedingungen", () => {
   it("KI klar als KI benannt (Nutzungsbedingungen und Datenschutz)", () => {
     expect(JSON.stringify(NUTZUNGSBEDINGUNGEN)).toMatch(/ist eine KI/);
     expect(JSON.stringify(DATENSCHUTZ)).toMatch(/ist eine KI/);
+  });
+
+  it("Werbung ehrlich: kein Text verspricht „keine Werbung“, Werbe-Profile und Tracking ausgeschlossen", () => {
+    const promise = /keine Werbung|ohne Werbung|werbefrei|nie Werbung/i;
+    const bad = SOURCES.flatMap(({ file, code }) => texts(code).filter((t) => promise.test(t)).map((t) => `${file}: ${t.slice(0, 80)}`));
+    expect(bad).toEqual([]);
+    expect(KURZ_GESAGT.find((k) => k.titel === "Nie verkauft")?.text).toBe("Keine Tracker, keine Werbe-Profile. Eure Daten werden nie verkauft.");
+    const abschnitt = DATENSCHUTZ.find((a) => a.titel === "Kein Tracking, keine Werbe-Profile");
+    expect(abschnitt?.absaetze.join(" ")).toMatch(/nur allgemeine Werbung, ohne Tracking und ohne eure Daten/);
+  });
+
+  it("Band „Entwurf“, solange Verantwortlicher, Anschrift oder Kontakt-Mail Platzhalter sind", () => {
+    expect(entwurfOffen()).toBe(true);
+    const fertig = { name: "Felix Muster", anschrift: "Musterweg 1, 23701 Eutin", mail: "hallo@example.de" };
+    expect(entwurfOffen(fertig)).toBe(false);
+    for (const k of ["name", "anschrift", "mail"] as const) expect(entwurfOffen({ ...fertig, [k]: BETREIBER[k] })).toBe(true);
+    expect(readFileSync("src/components/datenschutz/RechtstextView.tsx", "utf8")).toMatch(/entwurfOffen\(\) &&/);
+  });
+
+  it("Rechtsseiten ohne Mia-Knopf, andere Unterseiten mit", () => {
+    for (const p of ["/datenschutz", "/impressum", "/nutzungsbedingungen", "/", "/anmelden", "/beitreten"]) expect(knopfVersteckt(p, true)).toBe(true);
+    for (const p of ["/aufgaben", "/profil", "/einkaufsliste"]) expect(knopfVersteckt(p, true)).toBe(false);
+    expect(knopfVersteckt("/profil", false)).toBe(true);
+  });
+
+  it("„Bevor’s losgeht“: vor der App für alle, Rechtstexte und Anmelden frei, neu gefragt bei neuer Fassung", () => {
+    for (const p of ["/", "/aufgaben", "/profil", "/kochbuch"]) expect(zustimmungNoetig(p, false)).toBe(true);
+    for (const p of ["/datenschutz", "/impressum", "/nutzungsbedingungen", "/anmelden", "/beitreten", "/e/abc"]) expect(zustimmungNoetig(p, false)).toBe(false);
+    expect(zustimmungNoetig("/", true)).toBe(false);
+    expect(TEXT_VERSION.bedingungen).toBe(RECHTSTEXTE_STAND.version);
+    expect(VOR_DEM_START.saetze).toHaveLength(3);
+    expect(VOR_DEM_START.haken).toBe("Ich akzeptiere die Nutzungsbedingungen und habe die Datenschutzerklärung gelesen.");
+    expect(readFileSync("src/app/layout.tsx", "utf8")).toContain("<ZustimmungGate />");
+    expect(readFileSync("src/components/begleitung/HelloScreen.tsx", "utf8")).toMatch(/einwilligungErteilt\("bedingungen"\) \? setAsking\(true\) : setZustimmen\(true\)/);
   });
 
   it("Seiten gibt es", () => {

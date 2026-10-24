@@ -6,13 +6,14 @@
 // gefragt. Widerruf wirkt sofort.
 
 import { createLocalStore } from "@/lib/core/localStore";
+import { RECHTSTEXTE_STAND } from "@/lib/datenschutz/rechtstexte";
 import { nowIso } from "@/lib/core/now";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 
 export type EinwilligungArt = "ki" | "bedingungen" | "mails";
 
-/** Stand der Texte je Art (bei wesentlicher Änderung erhöhen) */
-export const TEXT_VERSION: Record<EinwilligungArt, number> = { ki: 1, bedingungen: 1, mails: 1 };
+/** Stand der Texte je Art (bei wesentlicher Änderung erhöhen); Bedingungen = Stand der Rechtstexte */
+export const TEXT_VERSION: Record<EinwilligungArt, number> = { ki: 1, bedingungen: RECHTSTEXTE_STAND.version, mails: 1 };
 
 export type Einwilligung = { ja: boolean; version: number; at: string };
 type Store = { version: 1; arten: Partial<Record<EinwilligungArt, Einwilligung>> };

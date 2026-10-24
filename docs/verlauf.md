@@ -2318,3 +2318,13 @@ Fehler in `docs/aufraeumen-nachher.md`.
   `helperName()`) in Orange, immer eine Zeile (auch iPhone SE).
 - Regel „nie vorstellen“ mit genau einer Ausnahme: der Hallo-Bildschirm beim
   allerersten Start (Test in `tests/begleitung/knapp.test.ts`).
+
+## Datenschutz nachschärfen (v0.93.0)
+- Werbung ehrlich: „Kein Tracking, keine Werbe-Profile“ statt „Keine
+  Werbung“; Test, dass kein Text „keine Werbung“ verspricht.
+- „Bevor’s losgeht“ vor der App für alle: neue Nutzer nach „Los geht’s“,
+  bestehende einmal beim nächsten Öffnen; Häkchen Pflicht, kein Schließen,
+  Rechtstexte bleiben lesbar; neue Textfassung = einmal neu fragen.
+- Mia-Knopf verdeckt keinen Text mehr: mehr Platz unten auf allen Seiten,
+  auf den Rechtsseiten kein Knopf; `pruefen` meldet es.
+- Rechtsseiten mit Band „Entwurf“, solange Betreiber-Angaben fehlen.

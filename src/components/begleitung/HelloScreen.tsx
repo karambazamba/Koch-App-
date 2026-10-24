@@ -26,6 +26,8 @@ import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { DEFAULT_HELPER, avatarHex } from "@/lib/einstellungen/profile";
 import { startFresh } from "@/lib/einstellungen/welcomeStore";
 import { LookStep } from "@/components/einstellungen/aussehen/LookStep";
+import { ZustimmungStep } from "@/components/datenschutz/ZustimmungStep";
+import { einwilligungErteilt } from "@/lib/datenschutz/einwilligung";
 import type { AppLook } from "@/lib/einstellungen/profile";
 import { expectReplace } from "@/lib/core/navigation";
 import { useCloudMode } from "@/lib/konten/backend";
@@ -170,8 +172,10 @@ export function HelloScreen() {
   }, [still]);
   const show = (from: number) => (still ? "" : at >= from ? "hello-in" : "opacity-0");
 
-  // „Los geht’s“ → einmal der Look (Farbig/Schlicht), dann die Startseite
+  // „Los geht’s“ → „Bevor’s losgeht“ (Zustimmung, falls noch nicht erteilt) → einmal der Look (Farbig/Schlicht) → Startseite
   const [asking, setAsking] = useState(false);
+  const [zustimmen, setZustimmen] = useState(false);
+  const losGehts = () => (einwilligungErteilt("bedingungen") ? setAsking(true) : setZustimmen(true));
   const start = (look: AppLook = "farbig") => {
     const r = face.current?.getBoundingClientRect();
     setHelloFlight(r && r.width ? { x: r.left, y: r.top, size: r.width } : null);
@@ -240,7 +244,7 @@ export function HelloScreen() {
           </p>
         </div>
         <div className={`flex w-full flex-col items-center gap-1 ${show(T.buttons)}`}>
-          <button key={`los${jump.nudge}`} type="button" onClick={() => setAsking(true)} className={`h-14 w-full rounded-field text-[17px] font-bold text-on-color active:scale-[0.98] ${jump.nudge ? "hello-nudge" : ""}`} style={{ backgroundColor: color }}>
+          <button key={`los${jump.nudge}`} type="button" onClick={losGehts} className={`h-14 w-full rounded-field text-[17px] font-bold text-on-color active:scale-[0.98] ${jump.nudge ? "hello-nudge" : ""}`} style={{ backgroundColor: color }}>
             Los geht’s
           </button>
           {/* Tafel 22: nur mit Konten „Schon ein Konto? Anmelden“ – „Daten wiederherstellen“ steht in Einstellungen → Daten & App */}
@@ -266,6 +270,14 @@ export function HelloScreen() {
           </div>
         </div>
       </div>
+      {zustimmen && !asking && (
+        <ZustimmungStep
+          onDone={() => {
+            setZustimmen(false);
+            setAsking(true);
+          }}
+        />
+      )}
       {asking && <LookStep onDone={start} />}
     </main>
   );

@@ -30,7 +30,7 @@ berechtigtes Interesse.
 | KI-Verbrauch (`wasgibts.verbrauch`) | Gerät, nur Zahlen | Tageslimit, Guthaben | 62 Tage | nur Gerät | lit. f |
 | Zugangscode, Geräte-Kennung | Gerät | Tageslimit | bis gelöscht | nur Gerät; Kennung geht als Zahl an den Server (Limit) | lit. f |
 | Server-Logs (Vercel) | Vercel | Fehler finden | laut Vercel-Plan **bitte prüfen** | Betreiber | lit. f; enthalten nur Technik (Dauer, Kosten, Fehlercode) – Test `tests/app/datenschutz.test.ts` |
-| Einwilligungen | Server (`einwilligungen`, ab 23b) | Nachweis | solange Konto besteht | nur die Person | Art. 7 Abs. 1 |
+| Einwilligungen | Gerät (`wasgibts.einwilligungen`: Art, ja/nein, Textfassung, Zeit; „Bevor’s losgeht“ ab v0.93) und mit Konto Server (`einwilligungen`, ab 23b) | Nachweis | Gerät bis gelöscht, Server solange Konto besteht | nur die Person | Art. 7 Abs. 1 |
 
 Nicht gespeichert: Rohmails, Chat-Verläufe, GPS-Koordinaten, Werbe- oder
 Tracking-Kennungen. Keine Analyse-Werkzeuge, keine Tracker.
