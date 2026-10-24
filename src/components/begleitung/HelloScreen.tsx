@@ -25,18 +25,18 @@ import { usePathname, useRouter } from "next/navigation";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { DEFAULT_HELPER, avatarHex } from "@/lib/einstellungen/profile";
 import { startFresh } from "@/lib/einstellungen/welcomeStore";
-import { LookStep } from "@/components/einstellungen/aussehen/LookStep";
+import { ZeigMalStep } from "@/components/begleitung/ZeigMalStep";
 import { ZustimmungStep } from "@/components/datenschutz/ZustimmungStep";
 import { einwilligungErteilt } from "@/lib/datenschutz/einwilligung";
-import type { AppLook } from "@/lib/einstellungen/profile";
 import { expectReplace } from "@/lib/core/navigation";
 import { useCloudMode } from "@/lib/konten/backend";
-import { HELLO_JUMP_MS, HELLO_READY, HELLO_T, helloElapsed, helloJump, helloTapText, markHelloShown, reducedMotion, setHelloElapsed, setHelloFlight } from "@/lib/core/hello";
+import { HELLO_JUMP_MS, HELLO_READY, HELLO_T, helloElapsed, helloJump, helloTapText, markErsterStart, markHelloShown, reducedMotion, setHelloElapsed, setHelloFlight } from "@/lib/core/hello";
 import { helperMessage, helperName } from "@/lib/einstellungen/profile";
 import { buzz } from "@/components/heute/actions";
 import type { AvatarZustand } from "@/lib/core/avatarState";
 
 const T = HELLO_T;
+type Schritt = "hallo" | "zustimmung" | "zeigmal";
 const CHAR_MS = 45;
 const STEP = 30;
 /** So lange läuft der Takt (bis die Sprechblase nach dem Sprung weg ist) */
@@ -172,14 +172,34 @@ export function HelloScreen() {
   }, [still]);
   const show = (from: number) => (still ? "" : at >= from ? "hello-in" : "opacity-0");
 
-  // „Los geht’s“ → „Bevor’s losgeht“ (Zustimmung, falls noch nicht erteilt) → einmal der Look (Farbig/Schlicht) → Startseite
-  const [asking, setAsking] = useState(false);
-  const [zustimmen, setZustimmen] = useState(false);
-  const losGehts = () => (einwilligungErteilt("bedingungen") ? setAsking(true) : setZustimmen(true));
-  const start = (look: AppLook = "farbig") => {
-    const r = face.current?.getBoundingClientRect();
+  // „Los geht’s“ → „Bevor’s losgeht“ (nur ohne Zustimmung) → „Zeig mal“ → Startseite mit Beispiel-Tag.
+  // Jeder Schritt ist ein Eintrag im Verlauf: die Zurück-Geste geht genau einen Schritt zurück.
+  const [schritt, setSchritt] = useState<Schritt>("hallo");
+  const tiefe = useRef(0);
+  useEffect(() => {
+    const onPop = (e: PopStateEvent) => {
+      const s = (e.state as { hallo?: Schritt } | null)?.hallo;
+      tiefe.current = Math.max(0, tiefe.current - 1);
+      setSchritt(s === "zustimmung" || s === "zeigmal" ? s : "hallo");
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+  const weiterZu = (s: Schritt) => {
+    window.history.pushState({ ...window.history.state, hallo: s }, "");
+    tiefe.current += 1;
+    setSchritt(s);
+  };
+  const losGehts = () => weiterZu(einwilligungErteilt("bedingungen") ? "zeigmal" : "zustimmung");
+  const start = (r: DOMRect | null) => {
     setHelloFlight(r && r.width ? { x: r.left, y: r.top, size: r.width } : null);
-    startFresh(look);
+    // Standard „Farbig“ (die Look-Frage entfällt; „Lieber schlicht?“ kommt nach 3 Tagen einmal als Hinweis)
+    startFresh("farbig");
+    markErsterStart();
+    // Die Hallo-Schritte aus dem Verlauf nehmen: Zurück auf der Startseite führt nicht in den Hallo-Ablauf
+    const t = tiefe.current;
+    tiefe.current = 0;
+    if (t > 0) window.history.go(-t);
     if (path !== "/") {
       expectReplace();
       router.replace("/");
@@ -270,15 +290,8 @@ export function HelloScreen() {
           </div>
         </div>
       </div>
-      {zustimmen && !asking && (
-        <ZustimmungStep
-          onDone={() => {
-            setZustimmen(false);
-            setAsking(true);
-          }}
-        />
-      )}
-      {asking && <LookStep onDone={start} />}
+      {schritt === "zustimmung" && <ZustimmungStep onDone={() => weiterZu("zeigmal")} />}
+      {schritt === "zeigmal" && <ZeigMalStep onDone={start} />}
     </main>
   );
 }

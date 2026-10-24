@@ -57,3 +57,15 @@ export function bigReactionAllowed(state: { conversation: number; day: string; t
   const today = state.day === todayIso ? state.today : 0;
   return state.conversation < 1 && today < 3;
 }
+
+/** Erster Start, Bildschirm 3 („Zeig mal“): Mia sagt kurz, wie’s losgeht */
+export const ERSTER_START = {
+  titel: "Kein Stress. Ich zeig dir alles Stück für Stück.",
+  zeilen: [
+    { id: "ansehen", vor: "Erst mal den ", hervor: "Beispiel-Tag", nach: " angucken" },
+    { id: "eintragen", vor: "Eigenes mit ＋ eintragen", hervor: "", nach: "" },
+    { id: "erzaehlen", vor: "Oder mich antippen und erzählen", hervor: "", nach: "" },
+  ],
+  knopf: "Zeig mal",
+  leise: "Die Beispiele verschwinden, sobald du Eigenes einträgst.",
+} as const;

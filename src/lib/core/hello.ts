@@ -57,3 +57,11 @@ export function helloJump(at: number, skip: boolean): { on: boolean; bubble: boo
   return { on: t < HELLO_JUMP_MS, bubble, nudge };
 }
 
+
+/** Gerade eben „Zeig mal“ getippt (nur diese Sitzung): der Mia-Knopf zwinkert beim ersten Erscheinen einmal, die ersten Sekunden kein weiterer Hinweis */
+let ersterStart = 0;
+export function markErsterStart() {
+  ersterStart = Date.now();
+}
+/** Wie lange ist „Zeig mal“ her? (`null` = nicht in dieser Sitzung) */
+export const seitErsterStart = () => (ersterStart ? Date.now() - ersterStart : null);

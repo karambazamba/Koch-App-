@@ -2328,3 +2328,12 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Mia-Knopf verdeckt keinen Text mehr: mehr Platz unten auf allen Seiten,
   auf den Rechtsseiten kein Knopf; `pruefen` meldet es.
 - Rechtsseiten mit Band „Entwurf“, solange Betreiber-Angaben fehlen.
+
+## Erster Start: Mia sagt, wie’s losgeht (v0.94.0)
+- Höchstens 3 Bildschirme vor der App, jeder mit genau 1 Knopf: Hallo,
+  „Bevor’s losgeht“, NEU „Zeig mal“ (Mia zwinkert, Sprechblase mit drei
+  Zeilen: Beispiel-Tag angucken, Eigenes mit ＋, Mia antippen).
+- Look-Frage entfällt: Standard „Farbig“, nach 3 Tagen einmal „Lieber
+  schlicht?“ als Hinweis (nie zusammen mit dem Dunkel-Tipp).
+- Zurück-Geste geht im Hallo-Ablauf einen Schritt zurück; der Mia-Knopf
+  zwinkert beim ersten Erscheinen einmal, „Tippen & sprechen“ erst nach 4 s.

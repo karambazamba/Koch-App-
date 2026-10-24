@@ -153,7 +153,7 @@ describe("Einmalige Hinweise und Dunkel-Tipp", () => {
     noteDarkTipStart("2026-10-20");
     noteDarkTipStart("2026-10-21"); // erstes Öffnen bleibt
     const state = JSON.parse(win.localStorage.getItem("wasgibts.dunkeltipp")!);
-    expect(state).toEqual({ version: 1, since: "2026-10-20", done: false });
+    expect(state).toEqual({ version: 1, since: "2026-10-20", done: false, look: false });
     expect(showDarkTip(state, "2026-10-21", false)).toBe(false);
     expect(showDarkTip(state, "2026-10-22", false)).toBe(true);
     expect(showDarkTip(state, "2026-10-22", true)).toBe(false);
