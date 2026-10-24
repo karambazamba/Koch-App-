@@ -500,6 +500,12 @@
   }
 }
 
+/* Kein Gummiband: verschiebt sonst die Seite beim seitlichen Wischen (auch kein Ziehen zum Neuladen) */
+html,
+body {
+  overscroll-behavior-y: none;
+}
+
 body {
   background: var(--color-background);
   color: var(--color-ink);

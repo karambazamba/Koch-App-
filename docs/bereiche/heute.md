@@ -262,7 +262,13 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   entfernen?“ (`askRemoveAll`).
 
 ### Seiten-Pager
-- Wischen: Richtung einmal pro Geste (> 10 px), Wechsel ab 25 % Breite oder
+- Wischen ohne Wackeln (v0.106): Richtung früh und fest (`swipeAxis`: ab 6 px,
+  waagerecht nur bei |dx| > 1,2 · |dy|, dann für die ganze Geste). Waagerecht
+  steht die Seite senkrecht still (html `overflow: hidden` + gemerkte
+  Scrollhöhe, beim Loslassen frei), senkrecht kein seitliches Wischen. Pager
+  `touch-action: pan-y` (Zoomen bleibt), html/body `overscroll-behavior-y:
+  none` (kein Gummiband, kein Ziehen zum Neuladen). Durchklick `wischen.mjs`.
+- Wechsel ab 25 % Breite oder
   > 0,35 px/ms, sonst zurückfedern; Gummiband am Rand. Nicht in Feldern,
   Fenstern und `[data-no-swipe]`.
 - Verlauf: Heute → Kalender/Essen ein Eintrag, Kalender ↔ Essen ersetzt; Zurück

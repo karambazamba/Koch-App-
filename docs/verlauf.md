@@ -2461,3 +2461,12 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Verhalten: Vorlieben direkt ins Profil (`vorliebe_merken`), nie in
   ausgeblendete Notizen schreiben, vager Einkauf als Vorschau, mehrtägige
   Termine als ein Eintrag, „Woche“ allein schaltet nicht aufs große Modell.
+
+## Wischen ohne Wackeln (v0.106.0)
+
+- Befund (Video Felix, iPhone Safari): beim seitlichen Wischen wanderte die
+  Seite senkrecht mit und federte nach. Ursache: Richtung erst ab 10 px –
+  bis dahin hatte iOS schon senkrecht gescrollt – und das Gummiband.
+- Jetzt: `touch-action: pan-y` am Pager, Richtung ab 6 px mit Verhältnis
+  1,2 und dann fest, waagerecht Scrollhöhe gesperrt, kein Overscroll.
+
