@@ -2307,3 +2307,8 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Einschalten; mit Konto als Nachweis in `einwilligungen`.
 - Einstellungen → „Deine Daten“: Kurz gesagt, Einwilligungen widerrufen,
   Daten mitnehmen, „Auf diesem Gerät löschen“, Kontakt.
+
+## Hallo-Bildschirm cleaner (v0.91.0, Tafel 84 Variante A)
+- Unten kein kleines Logo mehr (die große Mia reicht): mittig „Gemacht in
+  Eutin von KARAMBA Eis“, darunter leiser „Datenschutz · Impressum“.
+- Untertitel kürzer: „Erzähl einfach, was ansteht. / Ich sortier das.“

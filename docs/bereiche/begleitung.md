@@ -358,13 +358,16 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 ### Erster Start und neue Person
 
 - `HelloScreen` (Tafel 55, seit v0.67): Mia groß und rund (132 px), „Moin!“
-  (seit v0.77, das „!“ in Orange – Mia stellt sich nie vor), „Erzähl mir einfach, was ansteht. Ich
-  sortiere für euch.“, „Los geht’s“ (`startFresh`), „Schon mal genutzt? Daten
-  wiederherstellen“ (`/profil/daten`), klein die Marke (BrandMark, gedämpft)
-  und „Gemacht in Eutin · von KARAMBA Eis“ (immer „KARAMBA Eis“). Die
+  (seit v0.77, das „!“ in Orange – Mia stellt sich nie vor), „Erzähl einfach,
+  was ansteht. / Ich sortier das.“ (zwei Zeilen, seit v0.91), „Los geht’s“
+  (`startFresh`), mit Konten „Schon ein Konto? Anmelden“. Unten seit v0.91
+  (Tafel 84, Variante A) nur ein ruhiger, mittiger Abschluss ohne kleines
+  Logo: „Gemacht in Eutin von KARAMBA Eis“ (nie umbrechend, Schrift per
+  `clamp`), darunter leiser „Datenschutz · Impressum“ (Links, 44-px-
+  Tippfläche über `hit`), ca. 40 px über der Unterkante. Immer „KARAMBA Eis“. Die
   Deko-Kacheln und die Leiste mit Mikro sind weg. Ablauf (`HELLO_T` in
   `core/hello.ts`): 0 s Mia, 0,95 s Überschrift tippt, 1,8 s Zeile, 2,0 s
-  Freudensprung, 2,2 s Knopf, Link und Marke. Beim Start fliegt Mia in die
+  Freudensprung, 2,2 s Knopf, Link und Abschluss unten. Beim Start fliegt Mia in die
   Jetzt-Karte.
 - Freudensprung (v0.68.1, einmal je Anzeige, ohne Antippen, 2,8 s, nur
   transform/opacity): ducken (Augen ^ ^) → Sprung bis ~115 px (auf kleinen

@@ -1,5 +1,5 @@
 // Hallo-Bildschirm: Mia springt nach 2 s einmal vor Freude („Ich bin
-// bereit!“), Antippen macht sie kitzelig, unten „Gemacht in Eutin · von
+// bereit!“), Antippen macht sie kitzelig, unten „Gemacht in Eutin von
 // KARAMBA Eis“.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
@@ -41,9 +41,13 @@ describe("Freudensprung", () => {
     expect(reduce).toMatch(/\.hello-jump/);
   });
 
-  it("unten „Gemacht in Eutin · von KARAMBA Eis“", () => {
+  it("unten ruhig (Tafel 84): „Gemacht in Eutin von KARAMBA Eis“, darunter Datenschutz · Impressum, kein kleines Logo", () => {
     const src = readFileSync("src/components/begleitung/HelloScreen.tsx", "utf8");
-    expect(src).toContain("Gemacht in Eutin · von KARAMBA Eis");
+    expect(src).toContain("Gemacht in Eutin von KARAMBA Eis");
+    expect(src).not.toContain("Gemacht in Eutin · von");
     expect(src).not.toContain("möglich gemacht von KARAMBA");
+    expect(src).not.toMatch(/<BrandMark/);
+    expect(src).toMatch(/href="\/datenschutz"[\s\S]*href="\/impressum"/);
+    expect(src).toMatch(/Erzähl einfach, was ansteht\.\s*<br \/>\s*Ich sortier das\./);
   });
 });
