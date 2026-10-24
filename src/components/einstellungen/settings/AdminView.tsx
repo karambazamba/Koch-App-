@@ -19,7 +19,7 @@ const BATCH = 20;
 export function AdminView() {
   // Erst im Browser (beim Vorrendern gibt es kein „heute“ und keinen Speicher)
   const today = useToday();
-  const cost = today ? lastWeekCosts(toIsoDate(today)) : { requests: 0, small: 0, large: 0, upgraded: 0, usd: 0 };
+  const cost = today ? lastWeekCosts(toIsoDate(today)) : { requests: 0, small: 0, large: 0, upgraded: 0, zeichen: 0, sekunden: 0, usd: 0 };
   const [secret, setSecret] = useState("");
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<PruefErgebnis[]>([]);
@@ -63,6 +63,10 @@ export function AdminView() {
             </span>
             <span>hochgeschaltet</span>
             <span className="text-right font-bold tabular-nums">{cost.upgraded}</span>
+            <span>Vorgelesen (Zeichen)</span>
+            <span className="text-right font-bold tabular-nums">{cost.zeichen}</span>
+            <span>Zugehört (Sekunden)</span>
+            <span className="text-right font-bold tabular-nums">{cost.sekunden}</span>
             <span>Kosten (dieses Gerät)</span>
             <span className="text-right font-bold tabular-nums">{cost.usd.toFixed(2)} $</span>
           </div>

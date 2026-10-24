@@ -104,7 +104,8 @@ async function privatVerdacht(): Promise<boolean> {
   return vielleichtPrivat(quota ?? null, standalone);
 }
 
-export function useMicCheck(start: MicFehler | null) {
+/** `serverOhr`: Mia hört über den Server – dann nur „Mikrofon erlaubt? Ton kommt an?“ */
+export function useMicCheck(start: MicFehler | null, serverOhr = false) {
   const [ergebnis, setErgebnis] = useState<CheckErgebnis>(() => (start ? ergebnisAusFehler(start) : { mikro: "ungeprueft", erkennung: "ungeprueft", ton: "ungeprueft" }));
   const [fehler, setFehler] = useState<MicFehler | null>(start);
   const [laeuft, setLaeuft] = useState(false);
@@ -119,17 +120,17 @@ export function useMicCheck(start: MicFehler | null) {
     setLaeuft(true);
     setFehler(null);
     const platform = micPlatform(navigator.userAgent);
-    let r: CheckErgebnis = { mikro: "ungeprueft", erkennung: "laeuft", ton: "ungeprueft" };
+    let r: CheckErgebnis = { mikro: "ungeprueft", erkennung: serverOhr ? "ok" : "laeuft", ton: "ungeprueft" };
     const show = (patch: Partial<CheckErgebnis>) => {
       r = { ...r, ...patch };
       setErgebnis(r);
     };
     setErgebnis(r);
     micLog("Mikro-Check: Start");
-    const erkennung = probeErkennung();
+    const erkennung = serverOhr ? Promise.resolve("ok") : probeErkennung();
     void (async () => {
       const e = await erkennung;
-      micLog(`Mikro-Check: Spracherkennung ${e}`);
+      micLog(serverOhr ? "Mikro-Check: Ohr vom Server, ohne Spracherkennung" : `Mikro-Check: Spracherkennung ${e}`);
       show(e === "ok" ? { erkennung: "ok" } : { erkennung: "fehler", erkennungFehler: e });
       const settle = micSettleWait();
       await wait(Math.max(settle, 350));
@@ -164,7 +165,7 @@ export function useMicCheck(start: MicFehler | null) {
       running.current = false;
       setLaeuft(false);
     })();
-  }, []);
+  }, [serverOhr]);
 
   const fertig = !laeuft && ergebnis.mikro === "ok" && ergebnis.erkennung === "ok" && ergebnis.ton === "ok";
   return { ergebnis, fehler, laeuft, sprich, pegel, pruefen, fertig };

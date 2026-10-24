@@ -45,7 +45,6 @@ import { loadRoutine } from "@/lib/heute/tagesablauf";
 import { loadJetzt, setJetztOn } from "@/lib/heute/jetztStore";
 import { nudgePhase } from "@/lib/heute/nudge";
 import {
-  ACCESS_HEADER,
   ASSISTANT_ENDPOINT,
   LIMITS,
   type AssistantError,
@@ -59,9 +58,10 @@ import { now } from "@/lib/core/now";
 import { einwilligungErteilt, useEinwilligungen } from "@/lib/datenschutz/einwilligung";
 import { tidyMiaText } from "@/lib/begleitung/tidy";
 import type { StorageKey } from "@/lib/core/storage";
+import { accessHeaders, deviceId, fetchStatus, forgetAccessCode, onCodeChange } from "@/lib/begleitung/zugang";
 
-const DEVICE_KEY: StorageKey = "wasgibts.geraet";
-const CODE_KEY: StorageKey = "wasgibts.zugangscode";
+export { accessHeaders, deviceId, forgetAccessCode, saveAccessCode } from "@/lib/begleitung/zugang";
+
 const COUNT_KEY: StorageKey = "wasgibts.lotte.anfragen";
 
 /**
@@ -87,48 +87,6 @@ export class BegleitungUnavailable extends Error {
   constructor(public reason: AssistantErrorCode | "offline" | "einwilligung") {
     super(UNAVAILABLE_TEXT[reason]);
   }
-}
-
-// --- Zugangscode ----------------------------------------------------------------
-
-const codeListeners = new Set<() => void>();
-
-function loadAccessCode(): string {
-  try {
-    return readRaw(CODE_KEY) ?? "";
-  } catch {
-    return "";
-  }
-}
-
-function storeAccessCode(code: string) {
-  try {
-    if (code) writeRaw(CODE_KEY, code);
-    else writeRaw(CODE_KEY, null);
-  } catch {
-    // ohne Speicher gilt der Code nur bis zum Neuladen
-  }
-  statusPromise = null;
-  codeListeners.forEach((l) => l());
-}
-
-/** Code einmal prüfen und merken; liefert, ob er stimmt (null = keine Verbindung) */
-export async function saveAccessCode(code: string): Promise<boolean | null> {
-  const trimmed = code.trim();
-  if (!trimmed) return false;
-  try {
-    const r = await fetch(ASSISTANT_ENDPOINT, { cache: "no-store", headers: { [ACCESS_HEADER]: trimmed } });
-    const s = (await r.json()) as AssistantStatus;
-    if (s.access !== "ok") return false;
-  } catch {
-    return null;
-  }
-  storeAccessCode(trimmed);
-  return true;
-}
-
-export function forgetAccessCode() {
-  storeAccessCode("");
 }
 
 // --- Tageslimit pro Gerät -----------------------------------------------------------
@@ -158,49 +116,6 @@ export function takeAiSlot(): boolean {
   return true;
 }
 
-/** Header für KI-Anfragen: gemerkter Zugangscode, falls vorhanden */
-export function accessHeaders(): Record<string, string> {
-  const code = loadAccessCode();
-  return code ? { [ACCESS_HEADER]: code } : {};
-}
-
-export function deviceId(): string {
-  try {
-    let id = readRaw(DEVICE_KEY);
-    if (!id) {
-      id = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `geraet-${Math.random().toString(36).slice(2, 14)}`;
-      writeRaw(DEVICE_KEY, id);
-    }
-    return id;
-  } catch {
-    return "geraet-ohne-speicher";
-  }
-}
-
-let statusPromise: Promise<AssistantStatus> | null = null;
-const OFF: AssistantStatus = { configured: false, mock: false, needsCode: false };
-
-/** KI-Status inkl. Code-Prüfung; Ergebnis wird geteilt */
-function fetchStatus(): Promise<AssistantStatus> {
-  const code = loadAccessCode();
-  statusPromise ??= fetch(ASSISTANT_ENDPOINT, { cache: "no-store", headers: code ? { [ACCESS_HEADER]: code } : {} })
-    .then((r) => (r.ok ? (r.json() as Promise<AssistantStatus>) : OFF))
-    .then((s) => {
-      // Gemerkter Code stimmt nicht mehr (z. B. geändert) → neu fragen
-      if (s.access === "falsch") {
-        try {
-          writeRaw(CODE_KEY, null);
-        } catch {}
-      }
-      return s;
-    })
-    .catch(() => {
-      statusPromise = null; // offline: später erneut prüfen
-      return OFF;
-    });
-  return statusPromise;
-}
-
 /** Darf die App die KI gerade fragen? (eingerichtet und – falls verlangt – Code gemerkt) */
 export async function aiUsable(): Promise<boolean> {
   if (!einwilligungErteilt("ki")) return false;
@@ -224,10 +139,7 @@ export function useAssistantStatus(enabled: boolean): BegleitungStatus | undefin
   const [version, setVersion] = useState(0);
   useEffect(() => {
     const onChange = () => setVersion((v) => v + 1);
-    codeListeners.add(onChange);
-    return () => {
-      codeListeners.delete(onChange);
-    };
+    return onCodeChange(onChange);
   }, []);
   useEffect(() => {
     if (!enabled) return;

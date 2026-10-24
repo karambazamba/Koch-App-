@@ -12,8 +12,8 @@ import { useExternalStore } from "@/lib/core/useExternalStore";
 
 export type EinwilligungArt = "ki" | "bedingungen" | "mails";
 
-/** Stand der Texte je Art (bei wesentlicher Änderung erhöhen); Bedingungen = Stand der Rechtstexte */
-export const TEXT_VERSION: Record<EinwilligungArt, number> = { ki: 1, bedingungen: RECHTSTEXTE_STAND.version, mails: 1 };
+/** Stand der Texte je Art (bei wesentlicher Änderung erhöhen; KI 2 = mit Sprach-Anbieter ElevenLabs); Bedingungen = Stand der Rechtstexte */
+export const TEXT_VERSION: Record<EinwilligungArt, number> = { ki: 2, bedingungen: RECHTSTEXTE_STAND.version, mails: 1 };
 
 export type Einwilligung = { ja: boolean; version: number; at: string };
 type Store = { version: 1; arten: Partial<Record<EinwilligungArt, Einwilligung>> };

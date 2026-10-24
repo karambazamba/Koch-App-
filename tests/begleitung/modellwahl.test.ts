@@ -82,7 +82,7 @@ describe("Verbrauch je Tag (nur Zahlen)", () => {
   it("zählt Anfragen, Größe, Hochschalten und Kosten; behält 62 Tage", () => {
     let s = addUsage(null, "2026-10-21", { size: "klein", upgraded: false, micro: 150 });
     s = addUsage(s, "2026-10-21", { size: "gross", upgraded: true, micro: 3000 });
-    expect(s.days["2026-10-21"]).toEqual({ requests: 2, small: 1, large: 1, upgraded: 1, micro: 3150 });
+    expect(s.days["2026-10-21"]).toEqual({ requests: 2, small: 1, large: 1, upgraded: 1, micro: 3150, zeichen: 0, sekunden: 0 });
     for (let i = 0; i < 70; i++) s = addUsage(s, `2027-01-${String((i % 28) + 1).padStart(2, "0")}`.replace(/-01-/, `-${String(Math.floor(i / 28) + 1).padStart(2, "0")}-`), { size: "klein", upgraded: false, micro: 1 });
     expect(Object.keys(s.days).length).toBeLessThanOrEqual(62);
   });

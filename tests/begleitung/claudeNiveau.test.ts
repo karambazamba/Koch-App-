@@ -162,8 +162,8 @@ describe("Prüfstand", () => {
 
 describe("KI-Kosten letzte 7 Tage", () => {
   it("summiert nur die letzten 7 Tage", () => {
-    const state = { version: 1 as const, days: { "2026-10-14": { requests: 9, small: 9, large: 0, upgraded: 0, micro: 9_000_000 }, "2026-10-15": { requests: 2, small: 1, large: 1, upgraded: 1, micro: 1_500_000 }, "2026-10-21": { requests: 3, small: 2, large: 1, upgraded: 0, micro: 500_000 } } };
-    expect(costSummary(state, "2026-10-21")).toEqual({ requests: 5, small: 3, large: 2, upgraded: 1, usd: 2 });
+    const state = { version: 1 as const, days: { "2026-10-14": { requests: 9, small: 9, large: 0, upgraded: 0, micro: 9_000_000, zeichen: 0, sekunden: 0 }, "2026-10-15": { requests: 2, small: 1, large: 1, upgraded: 1, micro: 1_500_000, zeichen: 0, sekunden: 0 }, "2026-10-21": { requests: 3, small: 2, large: 1, upgraded: 0, micro: 500_000, zeichen: 300, sekunden: 12 } } };
+    expect(costSummary(state, "2026-10-21")).toEqual({ requests: 5, small: 3, large: 2, upgraded: 1, zeichen: 300, sekunden: 12, usd: 2 });
   });
 
   it("Seite „Für Entwickler“ liest „heute“ erst im Browser (Build brach beim Vorrendern ab)", () => {

@@ -21,13 +21,22 @@ import {
   isNaturalVoice,
 } from "@/lib/begleitung/speech";
 import { ChoiceCards } from "@/components/einstellungen/settings/SettingsParts";
+import { useMiasStimme } from "@/lib/begleitung/stimmeClient";
 
-/** Auf der Mia-Seite: Stimme (aktuelle oben rechts, Auswahl mit Probehören, „Schönere Stimme holen“), Sprechtempo, darunter Vorlesen – gilt für dieses Gerät */
+/**
+ * Auf der Mia-Seite: wer spricht (Mias Stimme vom Server oder die des Handys –
+ * die Wahl nur, wenn der Server eingerichtet ist), Probe hören; bei der Stimme
+ * des Handys Auswahl, „Schönere Stimme holen“, Sprechtempo; darunter Vorlesen.
+ * Gilt für dieses Gerät.
+ */
 export function VoiceSettings({ profile }: { profile: HouseholdProfile }) {
   const settings = useSpeechSettings();
   const voices = useVoices();
   const supported = speechSupported();
   const [guide, setGuide] = useState(false);
+  const mia = useMiasStimme();
+  const miaSpricht = mia && settings.quelle === "mia";
+  const miasStimme = `${helperName(profile)}s Stimme`;
   return (
     <>
       {guide && <VoiceGuideSheet onClose={() => setGuide(false)} onChecked={(found) => (setGuide(false), (found && saveSpeechSettings({ voice: found.voiceURI }), showToast({ text: found ? `Neue Stimme gefunden. Ab jetzt „${voiceLabel(found)}“.` : "Hm, ich finde sie noch nicht. Lädt sie vielleicht noch?" })))} />}
@@ -40,7 +49,7 @@ export function VoiceSettings({ profile }: { profile: HouseholdProfile }) {
           unlockSpeech();
           speak(sample, { id: "probe", gender, voice: voiceURI });
         };
-        if (!supported) {
+        if (!supported && !mia) {
           return <p className="px-1 text-base text-muted">Dieser Browser kann leider nicht vorlesen – alles andere funktioniert wie immer.</p>;
         }
         const options = [
@@ -58,70 +67,94 @@ export function VoiceSettings({ profile }: { profile: HouseholdProfile }) {
           <>
             <div className="mt-2 flex items-baseline justify-between gap-3 px-1">
               <h2 className={SECTION_TITLE}>Stimme</h2>
-              {current && (
-                <span className="min-w-0 truncate text-sm text-muted">
-                  {voiceLabel(current)}
-                  {isNaturalVoice(current) ? " (Premium)" : ""}
-                </span>
+              {miaSpricht ? (
+                <span className="min-w-0 truncate text-sm text-muted">{miasStimme}</span>
+              ) : (
+                current && (
+                  <span className="min-w-0 truncate text-sm text-muted">
+                    {voiceLabel(current)}
+                    {isNaturalVoice(current) ? " (Premium)" : ""}
+                  </span>
+                )
               )}
             </div>
-            <button type="button" onClick={() => listen(settings.voice)} className={`${buttonClass("secondary", "md")} w-full`}>
+            {mia && (
+              <ChoiceCards
+                label="Wer spricht?"
+                value={settings.quelle}
+                onChange={(quelle) => saveSpeechSettings({ quelle })}
+                options={[
+                  { value: "mia", label: miasStimme, hint: "Klingt auf jedem Handy gleich." },
+                  { value: "handy", label: "Stimme des Handys", hint: "Eine Stimme von diesem Gerät, geht auch ohne Netz." },
+                ]}
+              />
+            )}
+            <button type="button" onClick={() => (miaSpricht ? (unlockSpeech(), speak(sample, { id: "probe", gender, quelle: "mia" })) : listen(settings.voice))} className={`${buttonClass("secondary", "md")} w-full`}>
               <Play className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Probe hören
             </button>
-            {!goodVoice(voices) && voices.length > 0 && (
-              <button type="button" onClick={() => setGuide(true)} className="flex items-center gap-3 rounded-card bg-accent-soft px-4 py-3 text-left" data-schoener-klingen>
-                <Sparkles className="h-5 w-5 shrink-0 text-accent-strong" strokeWidth={2.25} aria-hidden />
-                <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="text-[15px] font-bold">{`${helperName(profile)} kann schöner klingen`}</span>
-                  <span className="text-sm text-muted">Einmal eine bessere Stimme laden. Ich zeig dir, wie.</span>
-                </span>
-              </button>
-            )}
-            <ul className="flex flex-col gap-2" role="radiogroup" aria-label="Stimme">
-              {options.map((o) => {
-                const chosen = settings.voice === o.uri || (o.uri === "" && !german.some((v) => v.voiceURI === settings.voice));
-                return (
-                  <li key={o.uri || "auto"} className={`flex min-h-14 items-center gap-2 rounded-field border pl-4 pr-2 ${chosen ? "border-accent bg-accent-soft" : "border-line bg-surface"}`}>
-                    <button
-                      type="button"
-                      role="radio"
-                      aria-checked={chosen}
-                      onClick={() => saveSpeechSettings({ voice: o.uri })}
-                      className="flex min-w-0 flex-1 flex-col py-3 text-left"
-                    >
-                      <span className={`truncate text-base font-bold ${chosen ? "text-accent-strong" : "text-ink"}`}>{o.label}</span>
-                      <span className="flex min-w-0 items-center gap-1.5 text-sm text-muted">
-                        {o.natural && <NaturalTag />}
-                        <span className="truncate">{o.hint}</span>
-                      </span>
-                    </button>
-                    {chosen && <Check className="h-5 w-5 shrink-0 text-accent" strokeWidth={2.5} aria-hidden />}
-                    <button
-                      type="button"
-                      onClick={() => listen(o.uri)}
-                      aria-label={`Probehören: ${o.label}`}
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-accent-strong active:bg-accent-soft"
-                    >
-                      <Volume2 className="h-5 w-5" strokeWidth={2} aria-hidden />
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-            {german.length === 0 && voices.length > 0 && (
-              <p className="px-1 text-sm text-muted">Auf diesem Gerät finde ich keine deutsche Stimme – ich nehme die Standardstimme.</p>
-            )}
-
-            <h2 className={`mt-2 px-1 ${SECTION_TITLE}`}>Wie schnell?</h2>
-            <ChoiceCards label="Sprechtempo" value={settings.rate} onChange={(rate) => saveSpeechSettings({ rate })} options={SPEECH_RATES} />
-            <p className="px-1 text-sm text-muted" role="status">
-              Stimme und Tempo gelten nur auf diesem Gerät.
-            </p>
+            {!miaSpricht && supported && handyStimmen()}
 
             <h2 className={`mt-2 px-1 ${SECTION_TITLE}`}>Vorlesen</h2>
             <ChoiceCards label="Vorlesen" value={settings.mode} onChange={(mode) => saveSpeechSettings({ mode })} options={READ_MODES} />
           </>
         );
+
+        /** Stimmen des Handys: schönere laden, auswählen, Tempo */
+        function handyStimmen() {
+          return (
+            <>
+              {!goodVoice(voices) && voices.length > 0 && (
+                <button type="button" onClick={() => setGuide(true)} className="flex items-center gap-3 rounded-card bg-accent-soft px-4 py-3 text-left" data-schoener-klingen>
+                  <Sparkles className="h-5 w-5 shrink-0 text-accent-strong" strokeWidth={2.25} aria-hidden />
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="text-[15px] font-bold">{`${helperName(profile)} kann schöner klingen`}</span>
+                    <span className="text-sm text-muted">Einmal eine bessere Stimme laden. Ich zeig dir, wie.</span>
+                  </span>
+                </button>
+              )}
+              <ul className="flex flex-col gap-2" role="radiogroup" aria-label="Stimme">
+                {options.map((o) => {
+                  const chosen = settings.voice === o.uri || (o.uri === "" && !german.some((v) => v.voiceURI === settings.voice));
+                  return (
+                    <li key={o.uri || "auto"} className={`flex min-h-14 items-center gap-2 rounded-field border pl-4 pr-2 ${chosen ? "border-accent bg-accent-soft" : "border-line bg-surface"}`}>
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={chosen}
+                        onClick={() => saveSpeechSettings({ voice: o.uri })}
+                        className="flex min-w-0 flex-1 flex-col py-3 text-left"
+                      >
+                        <span className={`truncate text-base font-bold ${chosen ? "text-accent-strong" : "text-ink"}`}>{o.label}</span>
+                        <span className="flex min-w-0 items-center gap-1.5 text-sm text-muted">
+                          {o.natural && <NaturalTag />}
+                          <span className="truncate">{o.hint}</span>
+                        </span>
+                      </button>
+                      {chosen && <Check className="h-5 w-5 shrink-0 text-accent" strokeWidth={2.5} aria-hidden />}
+                      <button
+                        type="button"
+                        onClick={() => listen(o.uri)}
+                        aria-label={`Probehören: ${o.label}`}
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-accent-strong active:bg-accent-soft"
+                      >
+                        <Volume2 className="h-5 w-5" strokeWidth={2} aria-hidden />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              {german.length === 0 && voices.length > 0 && (
+                <p className="px-1 text-sm text-muted">Auf diesem Gerät finde ich keine deutsche Stimme – ich nehme die Standardstimme.</p>
+              )}
+
+              <h2 className={`mt-2 px-1 ${SECTION_TITLE}`}>Wie schnell?</h2>
+              <ChoiceCards label="Sprechtempo" value={settings.rate} onChange={(rate) => saveSpeechSettings({ rate })} options={SPEECH_RATES} />
+              <p className="px-1 text-sm text-muted" role="status">
+                Stimme und Tempo gelten nur auf diesem Gerät.
+              </p>
+            </>
+          );
+        }
       })()}
     </>
   );

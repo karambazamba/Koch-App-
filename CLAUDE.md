@@ -245,6 +245,12 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   speichern (Domain, Betreff, Auszug ≤ 300), 7 Tage; nur Weitergeleitetes von
   Mitgliedern, Webhook-Signatur (`RESEND_WEBHOOK_SECRET`) immer prüfen.
   → `docs/bereiche/mails.md`
+- **Mias Stimme und Ohr (ElevenLabs):** `ELEVENLABS_API_KEY` nur in Vercel
+  (Sensitive), nie im Repo, Client, Log oder Chat; fehlt er, alles wie bisher
+  über den Browser. Nur mit KI-Einwilligung, gleiche Grenzen wie die KI,
+  Aufnahmen nie speichern oder protokollieren, Pinnwand-Sprachnachrichten nie
+  dorthin. Einstellung „Wer spricht?“ (Mias Stimme / Stimme des Handys).
+  → `docs/bereiche/begleitung.md`
 - **Bilder der Gerichte:** eigene Zeichnungen im Code, keine fremden Fotos,
   keine KI (`docs/credits.md`); neues eingebautes Gericht → `npm run
   gerichte-bilder`. Kein Braun und kein Dunkelgrau als große Fläche. Soßen

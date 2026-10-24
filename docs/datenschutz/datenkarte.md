@@ -1,4 +1,4 @@
-# Datenkarte (Stand v0.90)
+# Datenkarte (Stand v0.98)
 
 Jede Datenart: wo sie liegt, wozu, wie lange, wer sie sieht, Rechtsgrundlage
 (ENTWURF – vor Veröffentlichung juristisch prüfen lassen).
@@ -16,6 +16,8 @@ berechtigtes Interesse.
 | Pinnwand-Nachrichten | Gerät; mit Konto Server | Absprachen | 24 Std. sichtbar, dann aufgeräumt | Familie | lit. b |
 | Sprachnachrichten (Ton) | IndexedDB; mit Konto Supabase Storage „memos“ | Pinnwand | 24 Std.; Server räumt täglich auf (`/api/memos/aufraeumen`) | Familie | lit. b |
 | Chat mit Mia | nur im Arbeitsspeicher der offenen Seite | Gespräch | bis die Seite geschlossen wird – nie gespeichert | niemand außer der Person; Inhalt geht pro Anfrage an Anthropic | lit. a (KI-Einwilligung, ab 23b) |
+| Aufnahme beim Sprechen mit Mia (Ohr vom Server) | nur im Arbeitsspeicher, auf dem Weg über unseren Server zu ElevenLabs | Satz verstehen | bis der Text da ist (Sekunden) – nie gespeichert, nie protokolliert | niemand; geht nur an ElevenLabs | lit. a (KI-Einwilligung) |
+| Mias Antworttext zum Vorlesen (Stimme vom Server) | auf dem Weg über unseren Server zu ElevenLabs; der Ton nur im Arbeitsspeicher | Vorlesen | bis vorgelesen – nie gespeichert (feste Sätze wie „Steht drin.“ liegen ohne Personenbezug im Zwischenspeicher) | niemand; geht nur an ElevenLabs | lit. a (KI-Einwilligung) |
 | „Was Mia heute erledigt hat“ (`wasgibts.mia.erledigt`) | Gerät | Übersicht | ein Tag | nur Gerät | lit. b |
 | Offline Gesagtes (`wasgibts.lotte.nachholen`) | Gerät | später nachholen | bis gesendet | nur Gerät | lit. b |
 | Kalender-Links (Abos) | nur Gerät (`wasgibts.kalenderabos`); Abruf über `/api/kalender/abo` | fremde Termine anzeigen | bis entfernt | nur Gerät; der Link geht pro Abruf durch unseren Server, wird nicht gespeichert oder protokolliert | lit. b |
@@ -28,7 +30,7 @@ berechtigtes Interesse.
 | Mails an Mia: Adressen, Vorschläge, gelernte Absender | Server (`mail_addresses`, `mail_items`, `mail_senders`) | Vorschläge aus Mails | Vorschläge 7 Tage, „angekommen“ 24 Std.; Rohmail nie | Familie bzw. nur Person (Arbeit) | lit. a (Einschalten des Bausteins) |
 | Mia-Wünsche („Kann ich noch nicht“) | Server (`mia_wuensche`), nur Text + Datum | sehen, was gefragt wird | **bitte festlegen** (Vorschlag 12 Monate) | nur Betreiber | lit. f |
 | Bekannte Stimmen (`wasgibts.stimmen`) | Gerät, nur Kennungen der Systemstimmen | „Neue Stimme gefunden … Nehmen?“ | bis gelöscht | nur Gerät | lit. b |
-| KI-Verbrauch (`wasgibts.verbrauch`) | Gerät, nur Zahlen | Tageslimit, Guthaben | 62 Tage | nur Gerät | lit. f |
+| KI-Verbrauch (`wasgibts.verbrauch`) | Gerät, nur Zahlen (auch vorgelesene Zeichen, gehörte Sekunden) | Tageslimit, Guthaben | 62 Tage | nur Gerät | lit. f |
 | Zugangscode, Geräte-Kennung | Gerät | Tageslimit | bis gelöscht | nur Gerät; Kennung geht als Zahl an den Server (Limit) | lit. f |
 | Server-Logs (Vercel) | Vercel | Fehler finden | laut Vercel-Plan **bitte prüfen** | Betreiber | lit. f; enthalten nur Technik (Dauer, Kosten, Fehlercode) – Test `tests/app/datenschutz.test.ts` |
 | Einwilligungen | Gerät (`wasgibts.einwilligungen`: Art, ja/nein, Textfassung, Zeit; „Bevor’s losgeht“ ab v0.93) und mit Konto Server (`einwilligungen`, ab 23b) | Nachweis | Gerät bis gelöscht, Server solange Konto besteht | nur die Person | Art. 7 Abs. 1 |
