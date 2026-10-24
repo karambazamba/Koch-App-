@@ -257,6 +257,42 @@ export const FAKE_MIC_CHECK = () => {
   if (navigator.storage) navigator.storage.estimate = () => Promise.resolve({ quota: window.__privat ? 40 * 1024 * 1024 : 10 * 1024 * 1024 * 1024, usage: 0 });
 };
 
+/**
+ * Schein-Spracherkennung zum Steuern aus dem Test: `__sag(ergebnisse, ab)`
+ * meldet Ergebnisse ([text, fertig?] je Position), `__ende()` = der Browser
+ * beendet nach Stille, `__starts` zählt die Starts.
+ */
+export const FAKE_HOEREN = () => {
+  window.__starts = 0;
+  class FakeRecognition {
+    start() {
+      window.__starts++;
+      window.__rec = this;
+      this.running = true;
+    }
+    stop() {
+      if (!this.running) return;
+      this.running = false;
+      setTimeout(() => this.onend?.(), 30);
+    }
+    abort() {
+      this.running = false;
+    }
+  }
+  window.webkitSpeechRecognition = FakeRecognition;
+  window.SpeechRecognition = FakeRecognition;
+  window.__sag = (list, ab = 0) => {
+    const results = list.map(([text, fertig]) => Object.assign([{ transcript: text }], { isFinal: Boolean(fertig) }));
+    window.__rec?.onresult?.({ resultIndex: ab, results });
+  };
+  window.__ende = () => {
+    const r = window.__rec;
+    if (!r?.running) return;
+    r.running = false;
+    r.onend?.();
+  };
+};
+
 /** Schein-Sprachausgabe: Stimmen aus `window.__voices`, Sprechen endet sofort */
 export const FAKE_VOICES = () => {
   const mk = (name) => ({ name, voiceURI: `com.apple.voice.${name}`, lang: "de-DE", localService: true, default: false });

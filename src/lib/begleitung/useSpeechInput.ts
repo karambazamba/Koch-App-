@@ -1,17 +1,23 @@
 "use client";
 
-// Spracheingabe (Web Speech API, Deutsch) für Küchenhelfer, Eingabeleiste,
+// Spracheingabe (Web Speech API, Deutsch) für die Bühne mit Mia, Eingabeleiste,
 // "Was ist noch da?", Plus der Einkaufsliste, Kennenlernen und Rezept erzählen.
 // Jede Aufnahme ist eine frische Sitzung: Die alte Erkennung wird sauber
 // beendet, ihre Ergebnisse zählen nicht mehr. Der Hook liefert immer den
-// GANZEN Text der aktuellen Aufnahme (nie angehängt) – so kann nichts doppelt
-// oder von früher mitkommen. Fehler werden nur bei echten Problemen gemeldet;
-// ein gesperrtes Mikro meldet `core/mic` (Hilfe-Fenster, grauer Knopf).
+// GANZEN Text der aktuellen Aufnahme (nie angehängt). Die Mitschrift
+// (`mitschrift.ts`) sorgt dafür, dass nichts verloren geht: Neustarts der
+// Ergebnisliste werden angehängt, am Ende zählt auch der unfertige Teil.
+// Auf der Bühne (`buehne`) schickt eine kurze Atempause nichts ab: beendet
+// der Browser nach Stille, hört Mia still weiter; abgeschickt wird erst nach
+// 2,5 s Stille nach dem letzten Wort, beim Antippen oder bei „fertig“.
+// Ein gesperrtes Mikro meldet `core/mic` (Mikro-Check, grauer Knopf).
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { setAvatarFlag } from "@/lib/core/avatarState";
 import { hintSeen } from "@/lib/core/hints";
 import { claimMic, classifyMicError, guardMic, micPlatform, micState, micSubscribe, releaseMic, reportMicBlocked } from "@/lib/core/mic";
+import { micLog } from "@/lib/core/micLog";
+import { BUEHNE_MAX_MS, NICHTS_MS, STILLE_MS, WARTEN_AB_MS, etwasGesagt, mitErgebnis, mitNeustart, mitschriftText, neueMitschrift, withoutPrevious, type Mitschrift } from "@/lib/begleitung/mitschrift";
 
 // Minimal-Typen für die Web Speech API (nicht in allen TS-Libs enthalten)
 type SpeechResultList = ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>;
@@ -40,45 +46,21 @@ function useSpeechSupported(): boolean | null {
   return useSyncExternalStore(noopSubscribe, () => Boolean(speechRecognitionClass()), () => null);
 }
 
-const norm = (s: string) => s.trim().replace(/\s+/g, " ");
-
 /** Jede Spracheingabe ist ein eigener Mikro-Nutzer (core/mic: immer nur einer) */
 let speechUsers = 0;
 
 /**
- * Text der letzten Aufnahme – geräteweit, nicht je Eingabefeld: Der Browser
- * kann ihn auch in einem anderen (neu geöffneten) Feld erneut mitliefern.
+ * Text der letzten Aufnahme und wann er abgeschickt wurde – geräteweit, nicht
+ * je Eingabefeld: Der Browser kann ihn auch in einem neu geöffneten Feld
+ * erneut mitliefern (nur „gerade eben“ und nur bei mehr als einem Wort).
  */
 let previousText = "";
-
-/**
- * Fertige Abschnitte zu einem Text zusammensetzen. Manche Geräte (Android
- * Chrome) liefern fertige Abschnitte kumuliert ("Milch", "Milch und Eier") –
- * dann zählt nur der längere.
- */
-export function joinFinals(finals: string[]): string {
-  const kept: string[] = [];
-  for (const raw of finals) {
-    const f = norm(raw);
-    if (!f) continue;
-    const last = kept[kept.length - 1];
-    if (last && f.toLowerCase().startsWith(last.toLowerCase())) kept[kept.length - 1] = f;
-    else if (last && last.toLowerCase().startsWith(f.toLowerCase())) continue;
-    else kept.push(f);
-  }
-  return kept.join(" ");
-}
-
-/**
- * Text einer neuen Aufnahme ohne den eben schon abgeschickten Text davor
- * (manche Browser liefern ihn in der nächsten Sitzung erneut mit: "alt neu").
- */
-export function withoutPrevious(text: string, previous: string): string {
-  const t = norm(text);
-  const p = norm(previous);
-  if (p && t.length > p.length && t.toLowerCase().startsWith(`${p.toLowerCase()} `)) return t.slice(p.length).trim();
-  return t;
-}
+let previousAt = 0;
+const remember = (text: string) => {
+  if (!text) return;
+  previousText = text;
+  previousAt = Date.now();
+};
 
 type Options = {
   /** Text der aktuellen Aufnahme bisher (fertig erkannte Teile) – ersetzt, nie anhängen */
@@ -91,6 +73,13 @@ type Options = {
    * (Knopf oder gesagt: „fertig“, „das war’s“) oder nach 5 Minuten.
    */
   long?: boolean;
+  /**
+   * Auf der Bühne mit Mia: eine kurze Atempause schickt nichts ab. Beendet der
+   * Browser nach Stille, hört Mia still weiter; abgeschickt wird nach 2,5 s
+   * Stille nach dem letzten Wort, beim Antippen (stop) oder bei „fertig“
+   * (höchstens 2 Minuten am Stück).
+   */
+  buehne?: boolean;
 };
 
 const LONG_MS = 5 * 60_000;
@@ -98,13 +87,15 @@ const STOP_WORDS = /[\s,.]*(?:fertig|das\s+war[’']?s)[\s.!]*$/i;
 /** Langes Zuhören: „… fertig“ am Ende = Schluss (das Wort selbst gehört nicht zum Text) */
 export const stripStopWord = (text: string) => (STOP_WORDS.test(text) ? { text: text.replace(STOP_WORDS, "").trim(), stop: true } : { text, stop: false });
 
-export function useSpeechInput({ onTranscript, onEnd, long = false }: Options) {
+export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = false }: Options) {
   const supported = useSpeechSupported();
   /** Mikro gesperrt (geräteweit) – Knopf grau, Tipp öffnet die Hilfe */
   const blocked = useSyncExternalStore(micSubscribe, () => micState().block !== null, () => false);
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState("");
   const [error, setError] = useState("");
+  /** Bühne: es ist still, gleich wird abgeschickt (Ring läuft ab) */
+  const [wartet, setWartet] = useState(false);
   const recognitionRef = useRef<Recognition | null>(null);
   /** Text der laufenden Aufnahme bisher (für reset) */
   const textRef = useRef("");
@@ -147,114 +138,162 @@ export function useSpeechInput({ onTranscript, onEnd, long = false }: Options) {
   // Beim Verlassen (z. B. Chat schließen): abbrechen, nichts abschicken
   useEffect(() => () => detach(), [detach]);
 
-  /** Neu starten beim langen Zuhören (Verweis, weil `begin` sich selbst aufruft) */
-  const restart = useRef<(base: string, startedAt: number) => void>(() => {});
-  const begin = useCallback((base = "", startedAt = Date.now()) => {
-    const Recognition = speechRecognitionClass();
-    if (!Recognition) return;
-    detach();
-    const session = sessionRef.current;
-    const finals: string[] = [];
-    let stoppedByUser = false;
-    let heard = false;
-    let text = "";
-    textRef.current = "";
-    setError("");
-    setInterim("");
-
-    const recognition = new Recognition();
-    recognition.lang = "de-DE";
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.onresult = (e) => {
-      if (session !== sessionRef.current) return;
-      let pending = "";
-      // Nur Ergebnisse dieser Aufnahme, ab resultIndex; fertige je Position merken
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const result = e.results[i];
-        const said = result[0]?.transcript ?? "";
-        if (said.trim()) heard = true;
-        if (result.isFinal) finals[i] = said;
-        else pending += said;
+  /** Neu starten nach Stille (lang/Bühne) – Verweis, weil `begin` sich selbst aufruft */
+  const restart = useRef<(m: Mitschrift, startedAt: number, neustarts: number) => void>(() => {});
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  /** Eine Aufnahme kann aus mehreren Erkennungen bestehen (Neustart nach Stille) – Zeitgeber gelten für die ganze Aufnahme */
+  const aufnahmeRef = useRef(0);
+  const finishRef = useRef<() => void>(() => {});
+  const heardRef = useRef(false);
+  const clearTimers = useCallback(() => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+  }, []);
+  const begin = useCallback(
+    (fortsetzung: Mitschrift | null = null, startedAt = Date.now(), neustarts = 0) => {
+      const Recognition = speechRecognitionClass();
+      if (!Recognition) return;
+      const weiter = fortsetzung !== null;
+      // Beim Weiterhören die Zeitgeber (Stille, Ende) behalten
+      if (!weiter) {
+        clearTimers();
+        aufnahmeRef.current++;
+        heardRef.current = false;
       }
-      const own = joinFinals(finals.filter((f) => f !== undefined));
-      // Weiter zuhören (lang): an den bisherigen Text anhängen
-      text = base ? `${base} ${own}`.trim() : withoutPrevious(own, previousText);
-      if (long) {
-        const said = stripStopWord(text);
-        text = said.text;
-        if (said.stop) {
-          stoppedByUser = true;
-          try {
-            recognition.stop();
-          } catch {
-            // schon beendet
-          }
-        }
-      }
+      const aufnahme = aufnahmeRef.current;
+      detach();
+      const session = sessionRef.current;
+      let m: Mitschrift = fortsetzung ?? neueMitschrift();
+      let stoppedByUser = false;
+      let finished = false;
+      if (weiter && etwasGesagt(m)) heardRef.current = true;
+      const sinceSent = Date.now() - previousAt;
+      let text = mitschriftText(m);
       textRef.current = text;
-      setInterim(pending);
-      callbacks.current.onTranscript(text);
-    };
-    recognition.onerror = (e) => {
-      if (session !== sessionRef.current) return;
-      const block = classifyMicError(e.error, micPlatform(navigator.userAgent));
-      if (block) {
-        // Sofort zurück: kein hängender Stopp-Knopf, Hilfe statt Kleingedrucktem
+      setError("");
+      if (!weiter) {
+        setInterim("");
+        setWartet(false);
+      }
+
+      const recognition = new Recognition();
+      recognition.lang = "de-DE";
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      /** Jetzt Schluss: Erkennung beenden, onend schickt ab */
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        stoppedByUser = true;
+        clearTimers();
+        try {
+          recognition.stop();
+        } catch {
+          // schon beendet
+        }
+      };
+      finishRef.current = finish;
+      const gleicheAufnahme = () => aufnahme === aufnahmeRef.current;
+      /** Bühne: Stille-Uhr neu stellen (nach jedem erkannten Wort) */
+      const stilleNeu = () => {
+        if (!buehne) return;
+        clearTimers();
+        setWartet(false);
+        timers.current.push(setTimeout(() => gleicheAufnahme() && setWartet(true), WARTEN_AB_MS));
+        timers.current.push(setTimeout(() => gleicheAufnahme() && finishRef.current(), STILLE_MS));
+      };
+
+      recognition.onresult = (e) => {
+        if (session !== sessionRef.current) return;
+        const results = Array.from({ length: e.results.length }, (_, i) => ({ isFinal: e.results[i].isFinal, text: e.results[i][0]?.transcript ?? "" }));
+        m = mitErgebnis(m, e.resultIndex, results);
+        const said = mitschriftText(m);
+        if (said) heardRef.current = true;
+        // Neue Sitzung, die mit dem eben Abgeschickten beginnt: das nicht doppelt
+        text = weiter || long ? said : withoutPrevious(said, previousText, sinceSent);
+        if (long || buehne) {
+          const s = stripStopWord(text);
+          text = s.text;
+          if (s.stop) finish();
+        }
+        textRef.current = text;
+        setInterim(m.pending);
+        callbacks.current.onTranscript(text);
+        if (said) stilleNeu();
+      };
+      recognition.onerror = (e) => {
+        if (session !== sessionRef.current) return;
+        const block = classifyMicError(e.error, micPlatform(navigator.userAgent));
+        if (block) {
+          // Sofort zurück: kein hängender Stopp-Knopf, Mikro-Check statt Kleingedrucktem
+          clearTimers();
+          detach();
+          setListening(false);
+          setInterim("");
+          setWartet(false);
+          reportMicBlocked(block);
+          return;
+        }
+        // Kein Fehler, wenn selbst beendet ("aborted") oder schon etwas erkannt wurde
+        if (e.error === "aborted" || stoppedByUser || heardRef.current || buehne) return;
+        setError(e.error === "no-speech" ? "Hab nichts gehört. Nochmal?" : "Spracheingabe hat nicht geklappt. Tipp es einfach ein.");
+      };
+      recognition.onend = () => {
+        if (session !== sessionRef.current) return;
+        const elapsed = Date.now() - startedAt;
+        // Stille beendet nicht: still weiter zuhören und anhängen (lang: 5 Min., Bühne: 2 Min.)
+        if (!stoppedByUser && ((long && elapsed < LONG_MS) || (buehne && elapsed < BUEHNE_MAX_MS))) {
+          micLog(`Zuhören: Neustart ${neustarts + 1}`);
+          restart.current(mitNeustart(m), startedAt, neustarts + 1);
+          return;
+        }
+        // Was diese Erkennung danach noch meldet, zählt nicht mehr
+        clearTimers();
+        sessionRef.current++;
+        recognition.onresult = null;
+        recognition.onerror = null;
+        recognition.onend = null;
+        recognitionRef.current = null;
+        releaseMic(micId.current);
+        setListening(false);
+        flagListening(false);
+        setInterim("");
+        setWartet(false);
+        // Am Ende zählt alles: fertige Teile plus der letzte unfertige
+        const all = mitschriftText(m);
+        let final = weiter || long ? all : withoutPrevious(all, previousText, sinceSent);
+        if (long || buehne) final = stripStopWord(final).text;
+        if (buehne) micLog(`Zuhören: fertig nach ${neustarts} Neustart(s)`);
+        remember(final);
+        callbacks.current.onEnd?.(final);
+      };
+      recognitionRef.current = recognition;
+      // Mikro übernehmen: z. B. eine laufende Pinnwand-Aufnahme endet vorher sauber
+      claimMic(micId.current, () => {
+        clearTimers();
         detach();
         setListening(false);
         setInterim("");
-        reportMicBlocked(block);
-        return;
+        setWartet(false);
+      });
+      (recognition as Recognition & { stopByUser?: () => void }).stopByUser = finish;
+      // Bühne: niemand sagt etwas → leise wieder aufhören; feste Obergrenze
+      if (buehne && !weiter) {
+        timers.current.push(setTimeout(() => gleicheAufnahme() && !heardRef.current && finishRef.current(), NICHTS_MS));
       }
-      // Kein Fehler, wenn selbst beendet ("aborted") oder schon etwas erkannt wurde
-      if (e.error === "aborted" || stoppedByUser || heard) return;
-      setError(
-        e.error === "no-speech"
-            ? "Hab nichts gehört. Nochmal?"
-            : "Spracheingabe hat nicht geklappt. Tipp es einfach ein.",
-      );
-    };
-    recognition.onend = () => {
-      if (session !== sessionRef.current) return;
-      // Lang: Stille beendet nicht – weiter zuhören und anhängen (höchstens 5 Minuten)
-      if (long && !stoppedByUser && Date.now() - startedAt < LONG_MS) {
-        restart.current(text, startedAt);
-        return;
+      try {
+        recognition.start();
+        setListening(true);
+        flagListening(true);
+      } catch {
+        recognitionRef.current = null;
+        releaseMic(micId.current);
+        setError("Spracheingabe hat nicht geklappt. Tipp es einfach ein.");
       }
-      // Was diese Erkennung danach noch meldet, zählt nicht mehr
-      sessionRef.current++;
-      recognition.onresult = null;
-      recognition.onerror = null;
-      recognition.onend = null;
-      recognitionRef.current = null;
-      releaseMic(micId.current);
-      setListening(false);
-      flagListening(false);
-      setInterim("");
-      if (text) previousText = text;
-      callbacks.current.onEnd?.(text);
-    };
-    recognitionRef.current = recognition;
-    // Mikro übernehmen: z. B. eine laufende Pinnwand-Aufnahme endet vorher sauber
-    claimMic(micId.current, () => {
-      detach();
-      setListening(false);
-      setInterim("");
-    });
-    (recognition as Recognition & { stopByUser?: () => void }).stopByUser = () => {
-      stoppedByUser = true;
-    };
-    try {
-      recognition.start();
-      setListening(true);
-      flagListening(true);
-    } catch {
-      recognitionRef.current = null;
-      releaseMic(micId.current);
-      setError("Spracheingabe hat nicht geklappt. Tipp es einfach ein.");
-    }
-  }, [detach, flagListening, long]);
+    },
+    [detach, flagListening, long, buehne, clearTimers],
+  );
 
   useEffect(() => {
     restart.current = begin;
@@ -262,6 +301,9 @@ export function useSpeechInput({ onTranscript, onEnd, long = false }: Options) {
 
   /** Zuhören starten – gesperrt: Hilfe; allererstes Mal: erst „Darf ich zuhören?“ (im Tipp aufrufen) */
   const start = useCallback(() => guardMic(() => begin(), hintSeen("mikro-gefragt")), [begin]);
+
+  // Beim Verlassen keine Zeitgeber übrig lassen
+  useEffect(() => clearTimers, [clearTimers]);
 
   /** Aufnahme beenden – der erkannte Text wird über onEnd abgeschickt */
   const stop = useCallback(() => {
@@ -277,10 +319,12 @@ export function useSpeechInput({ onTranscript, onEnd, long = false }: Options) {
 
   /** Aufnahme abbrechen – nichts wird abgeschickt, alles ist leer */
   const cancel = useCallback(() => {
+    clearTimers();
     detach();
     setListening(false);
     setInterim("");
-  }, [detach]);
+    setWartet(false);
+  }, [detach, clearTimers]);
 
   /**
    * Beim Absenden IMMER zuerst aufrufen: Aufnahme verwerfen (keine Rückrufe
@@ -288,13 +332,15 @@ export function useSpeechInput({ onTranscript, onEnd, long = false }: Options) {
    * kann weder onEnd noch die nächste Aufnahme ihn wieder ins Feld schreiben.
    */
   const reset = useCallback(() => {
-    if (textRef.current) previousText = textRef.current;
+    remember(textRef.current);
     textRef.current = "";
+    clearTimers();
     detach();
     setListening(false);
     setInterim("");
     setError("");
-  }, [detach]);
+    setWartet(false);
+  }, [detach, clearTimers]);
 
-  return { supported, blocked, listening, interim, error, start, stop, cancel, reset };
+  return { supported, blocked, listening, interim, error, wartet, start, stop, cancel, reset };
 }

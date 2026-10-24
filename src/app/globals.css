@@ -1086,6 +1086,14 @@ body {
 .mia-wellen.ruhig { border-width: 2px; animation-duration: 4.4s; opacity: .6; }
 .mia-wellen.zwei.ruhig { animation-delay: 2.2s; }
 .mia-zwinkern .av-eyes rect:last-of-type { transform-box: fill-box; transform-origin: center; animation: mia-zwinker 5s ease-in-out 2s infinite; }
+/* Bühne: Stille nach dem letzten Wort – dünner Ring läuft ab (1,9 s), dann wird abgeschickt */
+@keyframes mia-pause-ring { from { stroke-dashoffset: 0; } to { stroke-dashoffset: 100; } }
+.mia-pause-ring { transform: rotate(-90deg); }
+.mia-pause-ring circle { stroke-dasharray: 100; animation: mia-pause-ring 1.9s linear both; }
+/* Live-Blase: wächst mit, sehr lang = die letzten Zeilen, oben leicht ausgeblendet */
+.live-blase { display: flex; flex-direction: column; justify-content: flex-end; max-height: 28dvh; overflow: hidden; }
+.live-blase:has(.live-blase-text) { mask-image: linear-gradient(to bottom, transparent 0, #000 1.6em); }
+@supports not selector(:has(*)) { .live-blase { mask-image: none; } }
 /* Mikro-Anleitung „Mia ganz schließen“: Karte nach oben wegschieben, der Finger wischt mit */
 @keyframes anleitung-weg { 0%, 25% { transform: translateY(0); opacity: 1; } 70%, 100% { transform: translateY(-150px); opacity: 0; } }
 @keyframes anleitung-finger { 0%, 20% { transform: translateY(0); opacity: 0; } 30% { opacity: 1; } 70% { transform: translateY(-110px); opacity: 0; } 100% { opacity: 0; } }
