@@ -2,21 +2,26 @@
 
 // /profil/mitteilungen (Tafel 77): Status der Erlaubnis (mit Anleitung, wenn
 // abgelehnt bzw. im Safari-Tab), Standard-Erinnerung für neue Termine,
-// Schalter je Art, Ruhezeit 20–7 Uhr (fest) und Pause. Pro Gerät.
+// Schalter je Art (mit Konto auch „Familie beim Einkaufen Bescheid sagen“),
+// Ruhezeit 20–7 Uhr (fest) und Pause. Pro Gerät.
 
 import { useState } from "react";
-import { Bell, CalendarClock, HandHelping, Palmtree, Pin, Sunrise } from "lucide-react";
+import { Bell, CalendarClock, HandHelping, Megaphone, Palmtree, Pin, ShoppingBasket, Sunrise } from "lucide-react";
 import { CARD, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
 import { REMINDERS } from "@/lib/kalender/model";
 import { APP_NAME } from "@/lib/core/app";
 import { changeNotify, notifyStatusLabel, NOTIFY_KINDS, useNotify, type NotifyKind, type Permission } from "@/lib/heute/mitteilungen/einstellungen";
 import { iosTab, requestNotifyPermission, useNotifyPermission } from "@/lib/heute/mitteilungen/geraet";
+import { setBescheidAnswer, useBescheid } from "@/lib/einkauf/unterwegs/unterwegs";
+import { useCachedAccount } from "@/lib/konten/cache";
 import { ChoiceCards, Group, Row, SettingsPage, SwitchRow } from "@/components/einstellungen/settings/SettingsParts";
 
-const ICONS: Record<NotifyKind, typeof Bell> = { erinnerungen: CalendarClock, pinnwand: Pin, abgeben: HandHelping, morgen: Sunrise };
+const ICONS: Record<NotifyKind, typeof Bell> = { erinnerungen: CalendarClock, pinnwand: Pin, abgeben: HandHelping, einkauf: ShoppingBasket, morgen: Sunrise };
 
 export function NotifySettingsView() {
   const s = useNotify();
+  const bescheid = useBescheid();
+  const { household } = useCachedAccount();
   const known = useNotifyPermission();
   const [asked, setPermission] = useState<Permission | null>(null);
   const permission: Permission = asked ?? known ?? "default";
@@ -49,6 +54,9 @@ export function NotifySettingsView() {
               {NOTIFY_KINDS.map((k) => (
                 <SwitchRow key={k.id} icon={ICONS[k.id]} title={k.title} hint={k.hint} checked={s.kinds[k.id]} onChange={(on) => changeNotify((x) => ({ ...x, kinds: { ...x.kinds, [k.id]: on } }))} />
               ))}
+              {household && (
+                <SwitchRow icon={Megaphone} title="Familie beim Einkaufen Bescheid sagen" hint="Wenn du einen Laden öffnest" checked={bescheid?.answer === "ja"} onChange={(on) => setBescheidAnswer(on ? "ja" : "nein")} />
+              )}
             </Group>
 
             <Group title="Ruhe">

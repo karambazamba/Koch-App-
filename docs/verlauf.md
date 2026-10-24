@@ -2239,3 +2239,11 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Routinen: Morgen-Info („Moin! Fußball 15, Zahnarzt 16“), Überschneidungen
   mit 2 Knöpfen („Ich fahre“ / „Lisa fragen“), Packliste am Vorabend
   („Ja, bitte“ / „Hab ich schon“) – jede Frage nur einmal.
+
+## Einkauf Teil 6: Familie Bescheid sagen (v0.84.0)
+- Mit Konto fragt der erste Einkaufsmodus einmal „Familie Bescheid sagen?“;
+  bei „Ja, immer“ bekommen die anderen „Felix ist gleich bei REWE. Braucht
+  ihr noch was?“ mit Schnellknöpfen („+ Butter“, „Nichts, danke“).
+- Was andere während des Einkaufs draufsetzen, steht gelb „Neu von Lisa ·
+  gerade eben“; „Fertig eingekauft“ meldet „Eingekauft ✓ – 9 Sachen bei
+  REWE“. Ruhezeit 20–7 und Pause gelten, zählt nicht als proaktiv.

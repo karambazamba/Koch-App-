@@ -36,6 +36,7 @@ const FULL = {
   },
   "wasgibts.wochenplan": { version: 3, weeks: { "2026-10-19": { mo: { kind: "text", title: "Nudeln", category: null }, "mo:notiz": { kind: "note", text: "Oma kommt" } } } },
   "wasgibts.vorrat": { version: 2, items: [{ id: "v1", name: "Reis", amount: 1, unit: "kg", addedAt: T0, place: "schrank" }] },
+  "wasgibts.einkaufswege": { version: 1, trips: [{ id: "w1", shop: "REWE", by: "Felix", start: T0, end: null, count: null, vorschlaege: ["Butter"] }] },
   "wasgibts.spendentopf": { version: 2, region: "ostholstein", support: null, interest: ["kiel"], votes: { "2026": "spielplatz" }, pledge: { betrag: 6, art: "monatlich", monat: "2026-10", status: "vorgemerkt" }, ask: { since: "2026-10-01", asked: 1, next: null, done: false }, voteCardHidden: [], liveAsked: false },
 };
 
@@ -84,8 +85,9 @@ describe("Übersetzer: verlustfrei hin und zurück", () => {
 
   it("geteilt werden nur Familien-Daten aus der Sicherung – nie Beispiel-Tag, Einstellungen oder Startseite", () => {
     const keys = ADAPTERS.map((a) => a.key);
-    expect(keys).toEqual(["wasgibts.eintraege", "wasgibts.notizen", "wasgibts.pinnwand", "wasgibts.einkaufsliste", "wasgibts.wochenplan", "wasgibts.vorrat", "wasgibts.spendentopf"]);
-    for (const k of keys) expect(STORAGE.find((s) => s.key === k)?.backup).toBe(true);
+    expect(keys).toEqual(["wasgibts.eintraege", "wasgibts.notizen", "wasgibts.pinnwand", "wasgibts.einkaufsliste", "wasgibts.wochenplan", "wasgibts.vorrat", "wasgibts.spendentopf", "wasgibts.einkaufswege"]);
+    // „Einkauf unterwegs“ ist nur für den Moment (2 Tage) – nicht in der Sicherung
+    for (const k of keys) expect(STORAGE.find((s) => s.key === k)?.backup).toBe(k !== "wasgibts.einkaufswege");
     for (const a of ADAPTERS) expect((STORAGE.find((s) => s.key === a.key) as { version?: number } | undefined)?.version).toBe(a.version);
   });
 

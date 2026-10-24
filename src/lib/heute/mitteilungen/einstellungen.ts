@@ -9,12 +9,13 @@ import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 import { REMINDERS, type Reminder } from "@/lib/kalender/model";
 
-export type NotifyKind = "erinnerungen" | "pinnwand" | "abgeben" | "morgen";
+export type NotifyKind = "erinnerungen" | "pinnwand" | "abgeben" | "einkauf" | "morgen";
 
 export const NOTIFY_KINDS: { id: NotifyKind; title: string; hint: string }[] = [
   { id: "erinnerungen", title: "Erinnerungen", hint: "An Terminen und Aufgaben mit Uhrzeit" },
   { id: "pinnwand", title: "Pinnwand", hint: "Wenn jemand etwas an die Pinnwand hängt" },
   { id: "abgeben", title: "Abgeben", hint: "Wenn dir jemand eine Aufgabe gibt" },
+  { id: "einkauf", title: "Einkauf unterwegs", hint: "Wenn jemand gleich im Laden ist" },
   { id: "morgen", title: "Morgen-Überblick", hint: "Kurz, was der Tag bringt" },
 ];
 
@@ -33,7 +34,7 @@ export type NotifySettings = {
 export const DEFAULT_NOTIFY: NotifySettings = {
   version: 1,
   defaultReminder: "30",
-  kinds: { erinnerungen: true, pinnwand: true, abgeben: true, morgen: false },
+  kinds: { erinnerungen: true, pinnwand: true, abgeben: true, einkauf: true, morgen: false },
   answer: null,
   askedAt: null,
   asks: 0,

@@ -29,7 +29,7 @@ type Value = Record<string, unknown>;
 
 export type Adapter = {
   /** Kurzname für den Abgleich-Speicher */
-  name: "kalender" | "notizen" | "pinnwand" | "einkauf" | "wochenplan" | "vorrat" | "spendentopf";
+  name: "kalender" | "notizen" | "pinnwand" | "einkauf" | "wochenplan" | "vorrat" | "spendentopf" | "unterwegs";
   key: StorageKey;
   /** Speicher-Version, die der Übersetzer kennt (andere: auslassen, bis migriert) */
   version: number;
@@ -188,8 +188,26 @@ const spendentopf: Adapter = {
   },
 };
 
+// Einkauf unterwegs (Einkauf Teil 6): je Einkauf ein Eintrag; „von“ setzt der
+// Server (Besitzer), der Server schickt daraus die Mitteilungen.
+const unterwegs: Adapter = {
+  name: "unterwegs",
+  key: "wasgibts.einkaufswege",
+  version: 1,
+  typs: ["unterwegs"],
+  toDocs: (value) =>
+    list(value.trips)
+      .filter((t) => typeof t.id === "string")
+      .map((t) => {
+        const { von: _von, ...own } = t;
+        void _von;
+        return { id: `uw:${t.id as string}`, typ: "unterwegs", raum: "familie", besitzer: ownerOf(t.von), erstellt: typeof t.start === "string" ? t.start : undefined, data: own };
+      }),
+  fromDocs: (docs) => ({ version: 1, trips: docs.filter((d) => isObj(d.data)).map((d) => (d.besitzer ? { ...(d.data as Value), von: d.besitzer } : d.data)) }),
+};
+
 /** Alles, was geteilt wird (Einstellungen und Startseite bleiben pro Gerät) */
-export const ADAPTERS: Adapter[] = [kalender, notizen, pinnwand, einkauf, wochenplan, vorrat, spendentopf];
+export const ADAPTERS: Adapter[] = [kalender, notizen, pinnwand, einkauf, wochenplan, vorrat, spendentopf, unterwegs];
 
 export const adapterFor = (typ: string): Adapter | undefined => ADAPTERS.find((a) => a.typs.includes(typ));
 

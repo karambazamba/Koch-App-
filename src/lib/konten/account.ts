@@ -32,7 +32,7 @@ const SERVER: AccountState = { mode: "laedt", user: null, household: null };
 let refreshing: Promise<void> | null = null;
 
 /** Neu fragen: eingerichtet? angemeldet? Haushalt? (offline: alter Stand bleibt) */
-function refreshAccount(): Promise<void> {
+export function refreshAccount(): Promise<void> {
   refreshing ??= (async () => {
     const backend = await getBackend();
     if (!backend) return set({ mode: "aus" });

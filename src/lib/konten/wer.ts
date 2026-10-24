@@ -28,8 +28,8 @@ const isObj = (v: unknown): v is Record<string, unknown> => Boolean(v) && typeof
 
 /**
  * Was beim Abgleich neu von anderen kam (nur Neues – Änderungen nicht):
- * Einkauf und Termine. Aufgaben haben ihr eigenes „von …“ (Abgeben), die
- * Pinnwand ihr eigenes Thema.
+ * Einkauf, Termine und „unterwegs“ („Lisa ist gleich bei REWE“). Aufgaben
+ * haben ihr eigenes „von …“ (Abgeben), die Pinnwand ihr eigenes Thema.
  */
 export function newsFromDocs(docs: CloudDoc[], knownBefore: (id: string) => boolean, members: Member[], me: string | null): FamilyNews[] {
   const news: FamilyNews[] = [];
@@ -45,6 +45,8 @@ export function newsFromDocs(docs: CloudDoc[], knownBefore: (id: string) => bool
       const title = typeof entry.title === "string" ? entry.title.trim() : "";
       const date = typeof entry.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(entry.date) ? entry.date : null;
       if (title) news.push({ id: d.id, title: clip(`Neu: ${title}`, 32), detail: `Hat ${who.name} eingetragen.`, at: d.geaendert, href: date ? `/tag?datum=${date}` : "/" });
+    } else if (d.typ === "unterwegs" && typeof data.shop === "string" && data.shop.trim() && typeof data.end !== "string") {
+      news.push({ id: d.id, title: clip(`${who.name} ist gleich bei ${data.shop.trim()}`, 32), detail: "Braucht ihr noch was?", at: d.geaendert, href: "/einkaufsliste" });
     }
   }
   return news;
