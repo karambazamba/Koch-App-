@@ -20,8 +20,9 @@ export function sentenceCount(text: string): number {
 function entryFacts(reply: AssistantReply): { dates: string[]; times: string[]; text: string } {
   const entries = reply.ops.flatMap((op) => (op.type === "upsert_entry" ? [op.entry] : []));
   const dates = entries.flatMap((e) => {
-    const d = e.data as { date?: string; frist?: string; wunschtag?: string };
-    return [d.date, d.frist, d.wunschtag].filter((x): x is string => typeof x === "string");
+    // Aufgaben speichern die Frist als `due` (Fehler: „bis Freitag“ zählte nie)
+    const d = e.data as { date?: string; due?: string; frist?: string; wunschtag?: string };
+    return [d.date, d.due, d.frist, d.wunschtag].filter((x): x is string => typeof x === "string");
   });
   const times = entries.flatMap((e) => {
     const d = e.data as { start?: string; time?: string };

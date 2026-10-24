@@ -179,7 +179,7 @@ export function WochencheckSheet({ data, onClose }: { data: AssistantData; onClo
     </button>
   );
   return (
-    <MiaLayer name="Wochencheck" onClose={onClose} closeText="Abbrechen">
+    <MiaLayer name="Wochencheck" onClose={onClose}>
       <div className="mia-gespraech flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-4 pt-3">
         <StageTopic topic="WOCHENCHECK" />
         <MiaBubble lead>Sag einfach alles, was diese Woche ansteht – ich sortiere.</MiaBubble>

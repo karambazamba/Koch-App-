@@ -9,6 +9,7 @@
 
 import type { Room } from "@/lib/core/entries";
 import { addDays } from "@/lib/core/now";
+import { nextDayOfMonth } from "@/lib/kalender/sentence";
 import { weekdayIndex, type AufgabeData, type Reminder, type Repeat, type TerminData } from "@/lib/kalender/model";
 
 const WEEKDAYS = ["montag", "dienstag", "mittwoch", "donnerstag", "freitag", "samstag", "sonntag"];
@@ -65,30 +66,46 @@ export function findDate(text: string, today: string): { date: string; match: st
     if (iso < today) iso = `${y + 1}-${iso.slice(5)}`;
     return { date: iso, match: m[0] };
   }
+  m = t.match(/\bam\s+(\d{1,2})\.(?!\s*\d)/);
+  if (m && nextDayOfMonth(Number(m[1]), today)) return { date: nextDayOfMonth(Number(m[1]), today)!, match: m[0] };
+  m = t.match(new RegExp(`\\b${WD}\\s+in\\s+(?:einer|1)\\s+woche\\b`));
+  if (m) return { date: addDays(nextWeekday(today, WEEKDAYS.indexOf(m[1]), true), 7), match: m[0] };
+  m = t.match(new RegExp(`\\b${WD}\\s+(?:in\\s+der\\s+)?nächsten?\\s+woche\\b`));
+  if (m) return { date: addDays(nextWeekday(today, 0, true), WEEKDAYS.indexOf(m[1])), match: m[0] };
   m = t.match(new RegExp(`\\b(nächsten|kommenden)\\s+${WD}\\b`));
   if (m) return { date: nextWeekday(today, WEEKDAYS.indexOf(m[2]), true), match: m[0] };
   m = t.match(new RegExp(`\\b(?:am\\s+|ab\\s+)?${WD}\\b`));
   if (m) return { date: nextWeekday(today, WEEKDAYS.indexOf(m[1])), match: m[0] };
   m = t.match(/\bnächste woche\b/);
   if (m) return { date: nextWeekday(today, 0, true), match: m[0] };
+  // Kurz: "do 16 uhr" (nur direkt vor einer Uhrzeit, "so" bleibt ein Wort)
+  m = t.match(/\b(mo|di|mi|do|fr|sa)\.?\s+(?=(?:um\s+)?\d)/);
+  if (m) return { date: nextWeekday(today, ["mo", "di", "mi", "do", "fr", "sa"].indexOf(m[1])), match: m[0].trim() };
   return null;
 }
 
-/** Uhrzeit aus dem Text: "um 9", "um 9:30", "14 Uhr", "halb drei", Tageszeit */
+const HOURS = ["eins", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun", "zehn", "elf", "zwölf"];
+const HOUR = `(\\d{1,2}|ein|${HOURS.join("|")})`;
+const hourOf = (w: string) => Number(w) || (w === "ein" ? 1 : HOURS.indexOf(w) + 1);
+
+/** Uhrzeit aus dem Text: "um 9", "um 9:30", "14 Uhr", "halb drei", "viertel nach drei", Tageszeit */
 function findTime(text: string): { time: string; match: string; vague: boolean } | null {
   const t = text.toLowerCase();
   const evening = /\b(abends|abend|nachmittags|nachmittag)\b/.test(t);
-  const fix = (h: number) => (h >= 1 && h <= 7 && !/\b(früh|morgens)\b/.test(t)) || (evening && h < 12) ? h + 12 : h;
-  let m = t.match(/\bum\s+halb\s+(\d{1,2}|eins|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf)\b/);
+  // "um 3" heißt nachmittags; mit "Uhr" oder Minuten ("6 Uhr", "7:30") nur bis 5 Uhr
+  const fix = (h: number, genau = false) => (h >= 1 && h <= (genau ? 5 : 7) && !/\b(früh|morgens)\b/.test(t)) || (evening && h < 12) ? h + 12 : h;
+  let m = t.match(new RegExp(`\\b(?:um\\s+)?(halb|viertel\\s+nach|viertel\\s+vor|dreiviertel)\\s+${HOUR}(?![a-zäöüß])`));
   if (m) {
-    const words = ["eins", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun", "zehn", "elf", "zwölf"];
-    const h = Number(m[1]) || words.indexOf(m[1]) + 1;
-    return { time: `${pad(fix(h - 1 === 0 ? 12 : h - 1) % 24)}:30`, match: m[0], vague: false };
+    const h = hourOf(m[2]);
+    const [hour, min] = /^halb/.test(m[1]) ? [h - 1, 30] : /nach/.test(m[1]) ? [h, 15] : [h - 1, 45];
+    return { time: `${pad(fix(hour === 0 ? 12 : hour) % 24)}:${min}`, match: m[0], vague: false };
   }
   m = t.match(/\b(?:um\s+)?(\d{1,2})[:.](\d{2})(?:\s*uhr)?\b/);
-  if (m && Number(m[1]) < 24 && Number(m[2]) < 60 && !/\d{1,2}\.\d{1,2}\./.test(m[0] + ".")) return { time: `${pad(fix(Number(m[1])))}:${m[2]}`, match: m[0], vague: false };
-  m = t.match(/\bum\s+(\d{1,2})(?:\s*uhr)?\b/) ?? t.match(/\b(\d{1,2})\s*uhr\b/);
-  if (m && Number(m[1]) < 24) return { time: `${pad(fix(Number(m[1])))}:00`, match: m[0], vague: false };
+  if (m && Number(m[1]) < 24 && Number(m[2]) < 60 && !/\d{1,2}\.\d{1,2}\./.test(m[0] + ".")) return { time: `${pad(fix(Number(m[1]), true))}:${m[2]}`, match: m[0], vague: false };
+  m = t.match(/\b(?:um\s+)?(\d{1,2})\s*uhr\b/);
+  if (m && Number(m[1]) < 24) return { time: `${pad(fix(Number(m[1]), true))}:00`, match: m[0], vague: false };
+  m = t.match(new RegExp(`\\bum\\s+${HOUR}(?![a-zäöüß])`));
+  if (m && hourOf(m[1]) < 24) return { time: `${pad(fix(hourOf(m[1])))}:00`, match: m[0], vague: false };
   m = t.match(/\b(früh|morgens|vormittags?|mittags?|nachmittags?|abends?)\b/);
   if (m) {
     const map: Record<string, string> = { früh: "08:00", morgens: "08:00", vormittag: "10:00", vormittags: "10:00", mittag: "12:00", mittags: "12:00", nachmittag: "15:00", nachmittags: "15:00", abend: "19:00", abends: "19:00" };
@@ -253,7 +270,12 @@ export function parseCalendar(text: string, today: string, persons: Person[] = [
   if (QUESTION.test(raw)) return null;
   // Anlegen: braucht einen Hinweis auf Zeit, Tag, Frist, Wiederholung oder ein Merk-Wort ("Dringend: …" zählt)
   const urgent = urgentFrom(raw);
-  let rest = urgent.text;
+  // "also nicht Donnerstag sondern Freitag" → Freitag
+  // "also nicht Donnerstag sondern Freitag" / "ähm morgen, nee übermorgen" → das Letzte gilt
+  let rest = urgent.text
+    .replace(/\b(?:also\s+)?nicht\s+[^,.]{1,20}?\s+sondern\s+/i, " ")
+    .replace(/^(?:ähm?|öhm?)\s+(?:also\s+)?/i, "")
+    .replace(/(?:^|\s)(?:also\s+)?[^\s,]{3,12},?\s+(?:nee|nein|ach nee),?\s+/i, " ");
   const strip = (match: string) => {
     const at = rest.toLowerCase().indexOf(match.toLowerCase());
     if (at >= 0) rest = `${rest.slice(0, at)} ${rest.slice(at + match.length)}`;
@@ -265,9 +287,11 @@ export function parseCalendar(text: string, today: string, persons: Person[] = [
   const deadline = findDeadline(rest, today);
   if (deadline) strip(deadline.match);
   // "Ich muss diese Woche noch die Reifen machen" → Aufgabe für diese Woche (ohne festen Tag)
-  const period = !deadline ? findPeriod(rest, today) : null;
+  // "Mittwoch nächste Woche" ist ein Tag, "nächste Woche" allein ein Zeitraum
+  const day = findDate(rest, today);
+  const period = !deadline && (!day || day.match === "nächste woche") ? findPeriod(rest, today) : null;
   if (period) strip(period.match);
-  const date = findDate(rest, today);
+  const date = period ? null : day;
   if (date) strip(date.match);
   const time = findTime(rest);
   if (time) strip(time.match);

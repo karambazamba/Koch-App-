@@ -2401,3 +2401,16 @@ Fehler in `docs/aufraeumen-nachher.md`.
   noch nicht.“). Anmelden nur per E-Mail-Code. ElevenLabs bleibt aus, solange
   kein Schlüssel gesetzt ist.
 - Neue Startseite ohne Spendentopf.
+
+## Mia-Bühne launchfest (v0.101.0)
+- Danebentippen schließt die Bühne (freie Fläche, auch zwischen den Blasen);
+  bei offener Tastatur schließt der erste Tipp nur die Tastatur.
+- Wochencheck schließt mit ✕ statt „Abbrechen“ (ein Fenster für alles).
+- Termine ohne KI (Schnelleingabe, Testmodus, Rückfall): „am 29.“,
+  „Mittwoch nächste Woche“, „Donnerstag in einer Woche“, „do 16 uhr“,
+  „viertel nach drei“, „um drei“, Selbstkorrektur („nicht Donnerstag sondern
+  Freitag“, „morgen, nee übermorgen“), mehrere Termine in einem Satz. „6 Uhr“
+  und „7:30“ bleiben morgens, nur „um 3“ meint nachmittags.
+- Prüfstand: 124 Sätze; Fehler in der Bewertung behoben (Frist einer Aufgabe
+  zählte nicht als Datum). Der echte Lauf braucht die KI in Vercel.
+- Durchklick „Mia sprechen“: Pausen, Rückgängig, Lieber tippen, Danebentippen.

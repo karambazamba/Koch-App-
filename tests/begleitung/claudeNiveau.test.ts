@@ -1,6 +1,6 @@
 // Mia auf Claude-Niveau – nie halbgar: offline merken und nachholen, kleine
 // Dinge sofort mit „Rückgängig“ und „Mia hat schon …“, Fähigkeitsliste aus
-// den Werkzeugen, „Kann ich noch nicht“ anonym, Prüfstand mit 120 Sätzen.
+// den Werkzeugen, „Kann ich noch nicht“ anonym, Prüfstand mit 124 Sätzen.
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { atFresh, fakeWindow } from "../helpers";
@@ -128,9 +128,9 @@ describe("Ehrlich über Fähigkeiten", () => {
 });
 
 describe("Prüfstand", () => {
-  it("120 Sätze, alle verschieden, jede Gruppe dabei", () => {
-    expect(PRUEFSAETZE).toHaveLength(120);
-    expect(new Set(PRUEFSAETZE.map((s) => s.text)).size).toBe(120);
+  it("124 Sätze, alle verschieden, jede Gruppe dabei", () => {
+    expect(PRUEFSAETZE).toHaveLength(124);
+    expect(new Set(PRUEFSAETZE.map((s) => s.text)).size).toBe(124);
     expect(PRUEFSAETZE.filter((s) => s.ops.length === 0).length).toBeGreaterThanOrEqual(20);
     expect(PRUEFSAETZE.filter((s) => s.ops.includes("kann_nicht")).length).toBeGreaterThanOrEqual(3);
     expect(pruefHaushalt().profile.persons.map((p) => p.name)).toEqual(["Felix", "Lisa", "Mathis"]);
@@ -150,6 +150,12 @@ describe("Prüfstand", () => {
     expect(sentenceCount("Ist drauf.")).toBe(1);
     const nein = PRUEFSAETZE.find((s) => s.text === "Bestell mir eine Pizza")!;
     expect(bewerte(nein, { reply: "Kann ich noch nicht.", ops: [], wishes: ["Pizza bestellen"] }, 900).ok).toBe(true);
+  });
+
+  it("Frist einer Aufgabe zählt als Datum (Fehler: `due` wurde übersehen)", () => {
+    const satz = PRUEFSAETZE.find((s) => s.text === "Kita-Formular bis Freitag abgeben")!;
+    const reply: AssistantReply = { reply: "Steht drin.", ops: [{ id: "1", type: "upsert_entry", isNew: true, entry: { typ: "aufgabe", data: { title: "Kita-Formular abgeben", due: "2026-10-23" } } } as unknown as ChangeOp] };
+    expect(bewerte(satz, reply, 900).ok).toBe(true);
   });
 
   it("Route geschützt (eigenes Geheimnis, zeitkonstant), Schlüssel bleibt auf dem Server", () => {

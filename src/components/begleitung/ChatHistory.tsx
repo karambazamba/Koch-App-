@@ -104,8 +104,8 @@ export function ChatHistory({ scrollRef, inputRef, status, data, voice, codeLate
   const stick = useStickToBottom(scrollRef);
 
   return (
-      <div className="relative flex min-h-0 flex-1 flex-col">
-        <div ref={scrollRef} className="mia-gespraech flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-4 pt-3" aria-live="polite" data-gespraech>
+      <div className="relative flex min-h-0 flex-1 flex-col" data-daneben>
+        <div ref={scrollRef} className="mia-gespraech flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-4 pt-3" aria-live="polite" data-gespraech data-daneben>
           <StageTopic topic={topic} />
           {status === undefined || data === undefined ? (
             <div className="h-20 animate-pulse rounded-card bg-surface" />

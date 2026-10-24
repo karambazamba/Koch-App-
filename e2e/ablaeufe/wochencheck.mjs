@@ -20,7 +20,7 @@ export const wochencheck = async (page, check) => {
   await box.press("Enter");
   const sheet = page.getByRole("dialog", { name: "Wochencheck" });
   check(await sheet.waitFor({ timeout: 8000 }).then(() => true, () => false), "„Wochencheck“ → eigenes Fenster");
-  check(await sheet.getByRole("button", { name: "Abbrechen" }).isVisible(), "oben „Abbrechen“");
+  check(await sheet.getByRole("button", { name: "Schließen" }).first().isVisible(), "oben ✕ wie überall (kein „Abbrechen“)");
 
   // Dieselbe Bühne wie jedes Gespräch: Mia unten, „Lieber tippen“
   check(await sheet.getByRole("button", { name: "Frage einsprechen" }).isVisible(), "Mia unten auf der Bühne");

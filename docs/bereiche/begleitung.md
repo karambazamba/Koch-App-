@@ -119,7 +119,7 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   `kann_ich_noch_nicht` → „Kann ich noch nicht.“; der Server zählt den Wunsch
   anonym in `mia_wuensche` (nur Text + Datum, RLS ohne Policies, nur der
   geheime Schlüssel schreibt; `wishStore.ts`). Wünsche gehen nie an die App.
-- Prüfstand (`pruefstand/`): 120 Alltagssätze mit erwarteter Aktion, Bewertung
+- Prüfstand (`pruefstand/`): 124 Alltagssätze mit erwarteter Aktion, Bewertung
   (Aktion, Datum/Uhrzeit/Person, max. 2 Sätze, Floskeln/Striche, Zeit),
   Route `/api/pruefstand` (nur mit `PRUEFSTAND_SECRET` bzw. `CRON_SECRET`,
   20 Sätze je Aufruf), Bericht unter „Für Entwickler“. Ziel ≥ 95 %.
@@ -411,12 +411,15 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Kochidee öffnen dieselbe Bühne. Die Seite dahinter bleibt sichtbar – weich
   verschwommen (`backdrop-blur-[14px]`, als Tailwind-Klasse – roh in CSS blieb
   nach dem Bauen nur die -webkit-Form) unter dem warmen Schleier
-  (`bg-background/75`, Dunkel entsprechend). Oben ✕ (bzw. „Abbrechen“) und
-  „Verlauf“. Kein Mikrofon-Knopf, keine Schreib-Leiste.
+  (`bg-background/75`, Dunkel entsprechend). Oben ✕ (immer, auch im
+  Wochencheck) und „Verlauf“. Kein Mikrofon-Knopf, keine Schreib-Leiste.
+- Danebentippen schließt (seit v0.101): jede freie Fläche mit `data-daneben`
+  (Schleier, Gesprächsfläche zwischen den Blasen, Mias Bereich). Ist die
+  Tastatur offen, schließt der erste Tipp nur die Tastatur.
 - Mia (`StageMia`) steht groß (120 px) im unteren Drittel, Mittelpunkt bei
   ~64 % der Höhe über der Safe-Area (`StageFoot`). Sie fliegt beim Öffnen
-  vom Mia-Knopf an ihren Platz und beim Schließen (✕, Runterwischen, Zurück,
-  Escape) dorthin zurück; dabei blenden Schleier und Gespräch aus
+  vom Mia-Knopf an ihren Platz und beim Schließen (✕, Danebentippen,
+  Runterwischen, Zurück, Escape) dorthin zurück; dabei blenden Schleier und Gespräch aus
   (`data-closing`, 0,8 s). Bewegung reduzieren = nur Überblenden.
 - Oben läuft das Gespräch mit (`ChatHistory`): neueste Blase unten, endet
   immer über Mia. Mias Blasen links in Weiß mit kleiner Mia (36 px) nur bei
