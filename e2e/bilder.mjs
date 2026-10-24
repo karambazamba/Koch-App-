@@ -54,7 +54,7 @@ const openTermin = async (page, text) => {
     await page.keyboard.press("Escape");
     await page.waitForTimeout(800);
   }
-  await page.getByRole("dialog", { name: "Neuer Termin" }).getByRole("textbox", { name: "Termin" }).fill(text);
+  await page.getByRole("dialog", { name: "Neuer Termin" }).getByRole("textbox", { name: "Titel" }).fill(text);
   await page.waitForTimeout(500);
 };
 const voiceOffer = async (page) => {
@@ -126,6 +126,8 @@ mkdirSync(dir, { recursive: true });
 const stop = await startServer();
 const browser = await launch();
 let n = 0;
+// Bricht ein Bild ab: Server trotzdem beenden (sonst blockiert er Port 3210 für die nächste Runde)
+try {
 for (const device of DEVICES) {
   for (const dark of [false, true]) {
     const tag = `${device.replace(/ /g, "")}-${dark ? "dunkel" : "hell"}`;
@@ -186,6 +188,8 @@ for (const device of DEVICES) {
     }
   }
 }
-await browser.close();
-stop();
+} finally {
+  await browser.close();
+  stop();
+}
 console.log(`${n + DEVICES.length * 4} Bilder in ${dir}`);
