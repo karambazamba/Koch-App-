@@ -4,6 +4,7 @@
 // autocomplete="one-time-code", sendet bei 6 Ziffern selbst) → fertig.
 // „Code neu senden“ nach 60 s. Fehler als freundlicher Satz.
 
+import { BedingungenHaken, useBedingungenOk } from "@/components/datenschutz/BedingungenHaken";
 import { useEffect, useRef, useState } from "react";
 import { Mail } from "lucide-react";
 import { INPUT, LABEL, NOTE, buttonClass } from "@/components/ui/styles";
@@ -14,6 +15,7 @@ const RESEND_S = 60;
 
 export function LoginSteps({ onDone }: { onDone?: () => void }) {
   const [email, setEmail] = useState("");
+  const termsOk = useBedingungenOk();
   const [step, setStep] = useState<"email" | "code">("email");
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -68,7 +70,8 @@ export function LoginSteps({ onDone }: { onDone?: () => void }) {
           <input type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@beispiel.de" className={INPUT} />
         </label>
         {error && <p className={NOTE}>{error}</p>}
-        <button type="submit" disabled={busy || !email.trim()} className={`${buttonClass("primary")} w-full disabled:opacity-50`}>
+        <BedingungenHaken />
+        <button type="submit" disabled={busy || !email.trim() || !termsOk} className={`${buttonClass("primary")} w-full disabled:opacity-50`}>
           <Mail className="h-5 w-5" strokeWidth={2.25} aria-hidden />
           {busy ? "Schicke …" : "Code schicken"}
         </button>

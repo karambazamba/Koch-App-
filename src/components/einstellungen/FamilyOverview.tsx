@@ -1,9 +1,10 @@
 "use client";
 
+import { RechtLinks } from "@/components/datenschutz/RechtstextView";
 import { plural } from "@/lib/core/text";
 import Link from "next/link";
 import { useMailStyle } from "@/lib/begleitung/mailSettings";
-import { Bell, Blocks, HandCoins, MapPin, BookOpen, CalendarDays, CalendarPlus, ChefHat, ChevronRight, Clock, CloudSun, Database, Dumbbell, Forward, LayoutGrid, Mail, Refrigerator, Salad } from "lucide-react";
+import { Bell, Blocks, HandCoins, MapPin, BookOpen, CalendarDays, CalendarPlus, ChefHat, ChevronRight, Clock, CloudSun, Database, Dumbbell, Forward, LayoutGrid, Mail, Refrigerator, Salad, ShieldCheck } from "lucide-react";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
@@ -172,6 +173,9 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
           <Row href="/profil/mails" icon={Mail} title="Mails" value={mailStyle?.greeting}>
             Gruß und Signatur für deine Mails
           </Row>
+          <Row href="/profil/deine-daten" icon={ShieldCheck} title="Deine Daten">
+            Was gespeichert ist, wer es sieht, Einwilligungen
+          </Row>
           <Row href="/profil/daten" icon={Database} title="Daten & App" value={APP_VERSION}>
             Sichern, einspielen, neu anfangen
           </Row>
@@ -184,6 +188,7 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
         <p className="text-center text-sm text-muted" data-testid="version-stand">
           {versionLabel()}
         </p>
+        <RechtLinks className="-mt-3" />
       </main>
     </div>
   );

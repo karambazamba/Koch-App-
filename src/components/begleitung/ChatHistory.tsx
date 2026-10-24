@@ -11,10 +11,10 @@ import { useRef, type Dispatch, type ReactNode, type RefObject, type SetStateAct
 import { NOTE } from "@/components/ui/styles";
 import { stockNearlyEmpty } from "@/lib/essen/dishIdeas";
 import type { useAssistantStatus } from "@/lib/begleitung/client";
-import type { HelperVoice } from "@/lib/einstellungen/profile";
+import { helperName, type HelperVoice } from "@/lib/einstellungen/profile";
 import type { AssistantData } from "@/lib/begleitung/ops";
 import { speechSupported, toggleSpeak } from "@/lib/begleitung/speech";
-import { AccessCodeCard, SpeakButton } from "@/components/begleitung/ChatBits";
+import { AccessCodeCard, ConsentCard, SpeakButton } from "@/components/begleitung/ChatBits";
 import { ChatTurnItem } from "@/components/begleitung/ChatTurnItem";
 import { MiaBubble, OwnBubble, StageTopic } from "@/components/begleitung/MiaStage";
 import { firstOfRun } from "@/lib/begleitung/stage";
@@ -116,6 +116,7 @@ export function ChatHistory({ scrollRef, inputRef, status, data, voice, codeLate
             <MiaBubble lead>{greetingText(now().getHours(), now().getMinutes())}</MiaBubble>
           ) : null}
           {/* Kochidee geht ohne KI – der Zugangscode schiebt sich nicht davor */}
+          {status?.askConsent && data && !codeLater && !chat.kochtipp && <ConsentCard name={helperName(data.profile)} onLater={onCodeLater} />}
           {status?.askCode && data && !codeLater && !chat.kochtipp && <AccessCodeCard onLater={onCodeLater} />}
           {chat.turns.map((turn, i) => {
             if (i < from) return null;

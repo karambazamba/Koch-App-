@@ -12,14 +12,14 @@ import { loadTimers } from "@/lib/timer/store";
 import { createEmptyProfile, createPerson } from "@/lib/einstellungen/profile";
 import type { AssistantData } from "@/lib/begleitung/ops";
 import type { Recipe } from "@/lib/essen/cookbook";
-import { at, memoryStorage } from "../helpers";
+import { KI_ERLAUBT, at, memoryStorage } from "../helpers";
 
 type FakeWindow = { localStorage: Storage; addEventListener: (t: string, h: (e: Event) => void) => void; removeEventListener: (t: string, h: (e: Event) => void) => void; dispatchEvent: (e: Event) => boolean };
 
 function freshWindow(): FakeWindow {
   const handlers = new Map<string, Set<(e: Event) => void>>();
   const w: FakeWindow = {
-    localStorage: memoryStorage(),
+    localStorage: memoryStorage(KI_ERLAUBT),
     addEventListener: (t, h) => void (handlers.get(t) ?? handlers.set(t, new Set()).get(t)!).add(h),
     removeEventListener: (t, h) => void handlers.get(t)?.delete(h),
     dispatchEvent: (e) => {

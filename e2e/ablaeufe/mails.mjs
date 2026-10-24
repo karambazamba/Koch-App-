@@ -35,6 +35,9 @@ export const mailsAnMia = async (page, check, device) => {
 
   await page.goto(BASE + "/profil");
   await page.getByRole("link", { name: /^Mails an / }).click();
+  // Datenschutz: einmal erlauben, erst dann gibt es eine Adresse
+  check(!(await page.getByTestId("mail-adresse-familie").count()), "vor dem Erlauben keine Adresse");
+  await page.getByRole("region", { name: "Einschalten" }).getByRole("button", { name: "Erlauben" }).click();
   const addr = page.getByTestId("mail-adresse-familie");
   await addr.filter({ hasText: "@" }).waitFor();
   const address = ((await addr.textContent()) ?? "").trim();

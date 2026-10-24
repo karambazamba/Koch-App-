@@ -17,6 +17,7 @@
 // ist (nach dem Laden, Schrift da) – vorher ist alles unsichtbar; ein
 // Neuaufbau setzt sie fort statt neu. Bewegung reduzieren = alles sofort.
 
+import { RechtLinks } from "@/components/datenschutz/RechtstextView";
 import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -247,6 +248,7 @@ export function HelloScreen() {
           <div className="mt-3 flex flex-col items-center gap-1 opacity-60" data-hello-marke>
             <BrandMark height={22} />
             <span className="text-xs font-semibold text-muted">Gemacht in Eutin · von KARAMBA Eis</span>
+            <RechtLinks dicht />
           </div>
         </div>
       </div>

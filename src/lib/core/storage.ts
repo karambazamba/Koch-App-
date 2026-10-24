@@ -46,6 +46,7 @@ export const STORAGE = [
   { key: "wasgibts.wuensche", what: "Wünsche (\"… wünscht sich …\")", version: 1, migration: "essen/wishes.ts", area: "local", backup: true },
   { key: "wasgibts.ideen", what: "Ideen von heute", version: 1, migration: "essen/useIdeas.ts", area: "local", backup: false },
   { key: "wasgibts.tipps", what: "Gezeigte Gesundheits-Tipps je Woche", version: 1, migration: "essen/healthTips.ts", area: "local", backup: false },
+  { key: "wasgibts.einwilligungen", what: "Einwilligungen dieser Person: KI darf mitdenken, Bedingungen, Mails weiterleiten (ja/nein, Textfassung, Zeitpunkt) – pro Gerät, nicht in der Sicherung; mit Konto zusätzlich auf dem Server", version: 1, migration: "datenschutz/einwilligung.ts", area: "local", backup: false },
   { key: "wasgibts.mails", what: "Mails: Gruß, Signatur, Anrede", version: 1, migration: "begleitung/mailSettings.ts", area: "local", backup: true },
   { key: "wasgibts.vorlesen", what: "Vorlesen: Modus, Stimme, Tempo (pro Gerät)", version: 1, migration: "begleitung/speech.ts migrate", area: "local", backup: true },
   { key: "wasgibts.wetterort", what: "Wetter-Ort", version: 1, migration: "wetter/client.ts", area: "local", backup: true },

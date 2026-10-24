@@ -17,6 +17,7 @@ import { showToast } from "@/lib/core/toast";
 import { useAccount } from "@/lib/konten/account";
 import { helperName } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";
+import { setEinwilligung, useEinwilligungen } from "@/lib/datenschutz/einwilligung";
 import { decideSender, mailAddress, useMails } from "@/lib/mails/konto";
 import { absenderName, gmailFilterXml, gmailSuche } from "@/lib/mails/lernen";
 import { EINZELN, POSTFACH_NAME, automatisch, postfachVon, type Postfach } from "@/lib/mails/anleitung";
@@ -172,9 +173,10 @@ export function MailsAnMiaView() {
   const ready = Boolean(account.user && account.household);
   const adult = account.household?.me.role === "erwachsener";
   const name = helperName(useProfile() ?? null);
+  const consent = useEinwilligungen().erteilt("mails");
   useEffect(() => {
-    if (ready && adult) void mailAddress("familie").then((r) => r.ok && setForward(r.value));
-  }, [ready, adult]);
+    if (ready && adult && consent) void mailAddress("familie").then((r) => r.ok && setForward(r.value));
+  }, [ready, adult, consent]);
   return (
     <SettingsPage title={`Mails an ${name}`} question="Mails einfach an mich weiterleiten" note={false}>
       {() =>
@@ -187,6 +189,18 @@ export function MailsAnMiaView() {
               Zum Konto
             </Link>
           </>
+        ) : !consent ? (
+          <section className={`${CARD} flex flex-col gap-3 p-4`} aria-label="Einschalten">
+            <p className="text-[15px]">Was ihr weiterleitet, kommt bei unserem Mail-Dienst (Resend) an. Ich speichere nur Absender-Domain, Betreff, einen kurzen Auszug und die Vorschläge, 7 Tage lang. Nie die ganze Mail.</p>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setEinwilligung("mails", true)} className={buttonClass("primary")}>
+                Erlauben
+              </button>
+              <Link href="/profil" className={buttonClass("ghost")}>
+                Nicht jetzt
+              </Link>
+            </div>
+          </section>
         ) : (
           <>
             {adult && <AddressCard room="familie" title="Für die Familie" />}

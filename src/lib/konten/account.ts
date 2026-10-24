@@ -12,6 +12,7 @@ import { readRaw, writeRaw } from "@/lib/core/localStore";
 import { RETURN_KEY, safeReturn, type OAuthProvider } from "@/lib/konten/oauth";
 import { getBackend, type CloudMode, type JoinOutcome } from "@/lib/konten/backend";
 import { accountCache } from "@/lib/konten/cache";
+import { alleEinwilligungen, onEinwilligung } from "@/lib/datenschutz/einwilligung";
 import { fail, friendlyError, normalizeInviteCode, type CloudUser, type HouseholdInfo, type InviteInfo, type InviteLink, type Result, type Role } from "@/lib/konten/model";
 
 export type AccountState = { mode: CloudMode | "laedt"; user: CloudUser | null; household: HouseholdInfo | null };
@@ -56,6 +57,16 @@ export function useAccount(): AccountState {
   return value;
 }
 
+/** Einwilligungen mit Konto zusätzlich auf dem Server festhalten (Nachweis): nach dem Anmelden alle, danach jede Änderung */
+async function recordConsents() {
+  const b = await getBackend();
+  if (b) for (const [art, e] of alleEinwilligungen()) await b.saveConsent(art, e.version, e.ja);
+}
+if (typeof window !== "undefined")
+  onEinwilligung((art, e) => {
+    if (state.user) void getBackend().then((b) => b?.saveConsent(art, e.version, e.ja));
+  });
+
 const notReady = () => fail<never>("Konten sind gerade nicht erreichbar – gleich nochmal?");
 
 export async function sendLoginCode(email: string): Promise<Result> {
@@ -67,7 +78,7 @@ export async function verifyLoginCode(email: string, code: string): Promise<Resu
   const b = await getBackend();
   if (!b) return notReady();
   const r = await b.verifyCode(email, code);
-  if (r.ok) await refreshAccount();
+  if (r.ok) await Promise.all([refreshAccount(), recordConsents()]);
   return r;
 }
 
@@ -103,7 +114,7 @@ export async function finishOAuth(code: string): Promise<Result<string>> {
   if (!b) return notReady();
   const r = await b.finishOAuth(code);
   if (!r.ok) return r;
-  await refreshAccount();
+  await Promise.all([refreshAccount(), recordConsents()]);
   const to = safeReturn(readRaw(RETURN_KEY, "session"));
   writeRaw(RETURN_KEY, null, "session");
   return { ok: true, value: to };

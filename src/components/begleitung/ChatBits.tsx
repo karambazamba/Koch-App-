@@ -5,7 +5,32 @@
 import { useState } from "react";
 import { Square, Volume2 } from "lucide-react";
 import { saveAccessCode } from "@/lib/begleitung/client";
+import Link from "next/link";
+import { setEinwilligung } from "@/lib/datenschutz/einwilligung";
 import { INPUT_BASE, buttonClass } from "@/components/ui/styles";
+
+/** KI-Einwilligung (Platz 23): freiwillig, ein Satz, „Erlauben“ / „Nicht jetzt“ – ohne OK fragt die App die KI nie */
+export function ConsentCard({ name, onLater }: { name: string; onLater: () => void }) {
+  return (
+    <section className="flex w-full flex-col gap-2 rounded-card border border-line bg-surface p-4 shadow-card" aria-label="Darf ich mitdenken?">
+      <p className="font-bold">{name} braucht kurz dein OK.</p>
+      <p className="text-sm text-muted">
+        Damit ich mitdenken kann, geht dein Satz mit dem Nötigen verschlüsselt an unseren KI-Anbieter (Anthropic). Nicht für Werbung.{" "}
+        <Link href="/datenschutz" className="font-semibold text-accent-strong underline">
+          Mehr dazu
+        </Link>
+      </p>
+      <div className="flex gap-2">
+        <button type="button" onClick={() => setEinwilligung("ki", true)} className={buttonClass("primary")}>
+          Erlauben
+        </button>
+        <button type="button" onClick={onLater} className={buttonClass("ghost")}>
+          Nicht jetzt
+        </button>
+      </div>
+    </section>
+  );
+}
 
 /** Einmal den Zugangscode der Familie eingeben – danach versteht Lotte ganze Sätze */
 export function AccessCodeCard({ onLater }: { onLater: () => void }) {

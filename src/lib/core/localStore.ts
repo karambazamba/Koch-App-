@@ -4,7 +4,7 @@
 // Versionen weiter funktionieren. Später durch Supabase ersetzbar.
 // Schlüssel nur aus dem Verzeichnis `storage.ts` (STORAGE).
 
-import type { RetiredKey, StorageKey } from "@/lib/core/storage";
+import { STORAGE, type RetiredKey, type StorageKey } from "@/lib/core/storage";
 
 type LocalStore<T> = {
   load: () => T | null;
@@ -123,4 +123,34 @@ export function writeRaw(key: StorageKey | RetiredKey, value: string | null, are
   } catch {
     // ohne Speicher nichts zu tun
   }
+}
+
+/**
+ * „Auf diesem Gerät löschen“ (Datenschutz): Web Storage dieser App ganz
+ * leeren und die eigenen Datenbanken (IndexedDB, z. B. Ton der
+ * Sprachnachrichten) entfernen. Danach neu laden – die App startet wie neu.
+ */
+export async function wipeDevice(): Promise<void> {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+  } catch {
+    // Speicher gesperrt (privater Modus) – dann gibt es auch nichts zu löschen
+  }
+  const dbs = STORAGE.filter((s) => s.area === "indexeddb").map((s) => s.key);
+  await Promise.all(
+    dbs.map(
+      (name) =>
+        new Promise<void>((done) => {
+          try {
+            const req = window.indexedDB?.deleteDatabase(name);
+            if (!req) return done();
+            req.onsuccess = req.onerror = req.onblocked = () => done();
+          } catch {
+            done();
+          }
+        }),
+    ),
+  );
 }

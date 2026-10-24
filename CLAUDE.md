@@ -251,6 +251,17 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   Spendentopf, Mails, „Über Mia“, Hallo-Bildschirm „Gemacht in Eutin · von
   KARAMBA Eis“). Test in `tests/app/regeln.test.ts`.
 
+## Datenschutz
+- So wenig Daten wie möglich, so lange wie nötig, nie verkauft, keine Tracker,
+  keine Werbe-Profile. Neue Datenart oder neuer Anbieter → im selben PR
+  `docs/datenschutz/datenkarte.md`, `anbieter.md` und die Datenschutzerklärung
+  (`src/lib/datenschutz/rechtstexte.ts`) aktualisieren.
+- Server-Funktionen in Frankfurt (`vercel.json`), Sicherheits-Header in
+  `next.config.ts`, jede Tabelle mit RLS (`tests/datenbank/sicherheit.test.sql`),
+  Protokolle nur mit Technik-Zahlen (`tests/app/datenschutz.test.ts`).
+- Falls je Werbung kommt: nur nicht personalisiert und ohne Tracking, sonst
+  braucht es eine Einwilligung.
+
 ## Roadmap
 - Phase 1: Konten + Haushalt (Supabase) – Anmeldung, Haushalt mit Mitgliedern,
   gemeinsame Daten (Pinnwand teilen, Push, Guthaben auf dem Server).
