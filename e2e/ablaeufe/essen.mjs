@@ -82,3 +82,18 @@ export const imHaus = async (page, check) => {
   await page.getByRole("button", { name: "Was kann ich daraus kochen?" }).tap();
   check(await page.getByRole("dialog").first().waitFor({ timeout: 5000 }).then(() => true, () => false), "„Was kann ich daraus kochen?“ öffnet die Kochidee");
 };
+
+// Rezept-Link an Mia (Teilen-Menü): Karte mit Zutaten → „auf die Liste“
+export const rezeptLink = async (page, check) => {
+  await family(page, "/?geteilt=1&title=Suppe&url=" + encodeURIComponent("https://rezept.test/kuerbissuppe"));
+  const card = page.locator("[data-rezept-link]");
+  check(await card.waitFor({ timeout: 10000 }).then(() => true, () => false), "Karte zum Rezept-Link");
+  check(await card.getByText("Kürbissuppe mit Ingwer").isVisible(), "Titel aus der Seite");
+  check(await card.getByRole("link", { name: /rezept\.test/ }).isVisible(), "Quelle verlinkt");
+  check(await card.getByText(/^auf die Liste: /).isVisible(), "„auf die Liste: …“");
+  await card.getByRole("button", { name: /auf die Liste$/ }).click();
+  check(await card.getByText("Steht auf der Liste.").isVisible(), "„Steht auf der Liste.“");
+  const list = await store(page, "wasgibts.einkaufsliste");
+  check(Object.values(list.weeks).some((w) => w.manual.some((m) => m.name === "Hokkaido-Kürbis" && m.dish === "Kürbissuppe mit Ingwer")), "Kürbis mit Gericht auf der Liste");
+  check(!page.url().includes("geteilt"), "Adresse aufgeräumt");
+};

@@ -20,6 +20,7 @@ import { changeEntries } from "@/lib/kalender/store";
 import { parseIcs, type IcsCalendar } from "@/lib/kalender/import/ics";
 import { mergeImport, planImport, summarize, type ImportRange } from "@/lib/kalender/import/plan";
 import { AboSection } from "@/components/kalender/import/AboSection";
+import { MitbringenHost } from "@/components/kalender/mitbringen/KalenderMitbringen";
 
 const SOURCE: Record<IcsCalendar["source"], string> = { google: "Google", apple: "Apple", ics: "Kalender" };
 /** Kalender, die nach Arbeit klingen, starten in „Arbeit“ */
@@ -147,6 +148,7 @@ export function CalendarImportView() {
           )}
 
           <AboSection />
+          <MitbringenHost />
         </>
       )}
     </SettingsPage>

@@ -9,6 +9,7 @@ import { parseHomeCommand } from "@/lib/begleitung/homeChat";
 import { parseBausteinCommand } from "@/lib/begleitung/bausteinChat";
 import { BAUSTEINE, bausteinOf, featureOn, setFeature } from "@/lib/core/features";
 import { CALENDAR_IMPORT_REPLY, isCalendarImportRequest } from "@/lib/kalender/import/chat";
+import { anbieterIn, openMitbringen } from "@/lib/kalender/mitbringen/angebot";
 import { changeHome, describeHomeChange, requestHomeEdit, unlockHomeTile } from "@/lib/core/homeLayout";
 import { addPin, changeMemos, changePins, createPin, formatDauer, householdNames, isPinboardQuery, loadMemos, loadPins, memoPlayRequest, memoToPlay, pinWriteCommand, setMemoHeard, visibleMemos, visiblePins } from "@/lib/pinnwand";
 import { playMemo } from "@/lib/pinnwand/memoPlayer";
@@ -436,8 +437,11 @@ export function homeCommand(ctx: RuleContext, t: string): boolean {
 export function calendarImportRule(ctx: RuleContext, t: string): boolean {
   if (!isCalendarImportRequest(t)) return false;
   const unlocked = setFeature("kalender", true);
-  localReplyOf(ctx)(t, unlocked ? `${CALENDAR_IMPORT_REPLY} Du findest es auch in den Einstellungen.` : CALENDAR_IMPORT_REPLY);
+  const anbieter = anbieterIn(t);
+  const reply = anbieter ? `Klar, ich zeig dir Schritt für Schritt, wie dein ${anbieter === "apple" ? "Apple" : anbieter === "google" ? "Google" : "Outlook"}-Kalender reinkommt.` : CALENDAR_IMPORT_REPLY;
+  localReplyOf(ctx)(t, unlocked ? `${reply} Du findest es auch in den Einstellungen.` : reply);
   ctx.router.push("/profil/kalender");
+  if (anbieter) openMitbringen(anbieter);
   ctx.onClose();
   return true;
 }

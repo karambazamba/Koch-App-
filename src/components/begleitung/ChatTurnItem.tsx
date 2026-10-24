@@ -20,6 +20,7 @@ import { MailCard } from "@/components/begleitung/MailCard";
 import { MarketBoard, type MarketTarget } from "@/components/begleitung/MarketBoard";
 import { BakingBoard } from "@/components/begleitung/BakingBoard";
 import { TipCards } from "@/components/tipps/TipCards";
+import { RezeptLinkKarte } from "@/components/essen/rezeptLink/RezeptLinkKarte";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 
 const BUBBLE = "max-w-[85%] whitespace-pre-line rounded-card px-4 py-2.5 text-base leading-snug";
@@ -96,6 +97,7 @@ export function ChatTurnItem({ turn, lead = false, last, data, showBases, mailAc
           />
         )}
         {turn.tips?.length ? <TipCards tips={turn.tips} /> : null}
+        {turn.rezept && <RezeptLinkKarte rezept={turn.rezept} />}
         {turn.chips && last && (
           <div className="flex flex-wrap gap-2" aria-label="Antworten">
             {turn.chips.map((c) => (

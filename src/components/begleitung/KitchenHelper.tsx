@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { Check } from "lucide-react";
 import { onOpenHelper, openHelper } from "@/lib/begleitung/open";
 import { takeQueued } from "@/lib/begleitung/nachholen";
+import { geteiltAnMia } from "@/lib/essen/rezeptLink/lesen";
 import { learnLikes, likesFromIngredients, LIKE_WEIGHTS } from "@/lib/essen/likes";
 import { useRecipes } from "@/lib/essen/cookbook";
 import { useMealPlans } from "@/lib/essen/mealPlan";
@@ -36,6 +37,7 @@ import { DoneNotes } from "@/components/kalender/abgeben/DoneNotes";
 import { QuickEntryHost } from "@/components/ui/QuickEntryHost";
 import { NotifyHost } from "@/components/heute/mitteilungen/NotifyHost";
 import { showToast } from "@/lib/core/toast";
+import { onOpenListe } from "@/lib/kalender/liste/einfuegen";
 import { loadProfile, saveProfile } from "@/lib/einstellungen/profileStore";
 
 // Das Gespräch (mit Mails, Backstube, Supermarkt …) wird erst gebraucht, wenn
@@ -43,6 +45,7 @@ import { loadProfile, saveProfile } from "@/lib/einstellungen/profileStore";
 const loadPanel = () => import("@/components/begleitung/HelperPanel").then((m) => m.HelperPanel);
 const HelperPanel = dynamic(loadPanel, { ssr: false });
 // Wochencheck erst beim Öffnen laden
+const ListeEinfuegen = dynamic(() => import("@/components/kalender/liste/ListeEinfuegen").then((m) => m.ListeEinfuegen), { ssr: false });
 const WochencheckSheet = dynamic(() => import("@/components/kalender/WochencheckSheet").then((m) => m.WochencheckSheet), { ssr: false });
 
 /** Nur nach echtem Löschen: kleine Meldung "Gelöscht · Rückgängig" für 3 Sekunden */
@@ -66,12 +69,21 @@ export function KitchenHelper() {
   // Von der Startseite: Mikrofon direkt starten bzw. gleich fragen
   const [start, setStart] = useState<{ listen?: boolean; ask?: string } | null>(null);
   const [weekCheck, setWeekCheck] = useState(false);
+  const [liste, setListe] = useState<string | null>(null);
+  useEffect(() => onOpenListe(setListe), []);
   const voiceRef = useRef<HelperVoice>("weiblich");
 
   const profile = useProfile();
   useEffect(() => {
     voiceRef.current = profile?.helper.voice ?? "weiblich";
   });
+  // Aus dem Teilen-Menü (Rezept-Link, Text): einmal an Mia, dann die Adresse aufräumen
+  useEffect(() => {
+    const shared = geteiltAnMia(window.location.search);
+    if (!shared) return;
+    window.history.replaceState(null, "", window.location.pathname);
+    openHelper(undefined, shared);
+  }, []);
   // Hieß die Begleitung vorher anders (Theo, eigener Name): einmal sagen, dass sie jetzt Mia heißt
   const miaNotice = Boolean(profile?.miaNotice);
   useEffect(() => {
@@ -218,6 +230,7 @@ export function KitchenHelper() {
     <>
       <DoneNotes />
       <QuickEntryHost />
+      {liste !== null && <ListeEinfuegen initial={liste} onClose={() => setListe(null)} />}
       <NotifyHost />
       {/* Auf allen Seiten derselbe runde Mia-Knopf wie auf der Startseite (dort zeichnet ihn HomePager) */}
       {!open && !typing && !hidden && <MiaButton name={helperName(profile)} />}

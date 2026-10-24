@@ -61,6 +61,8 @@ export const STORAGE = [
   { key: "wasgibts.miareaktion", what: "Wie oft sich die Begleitung heute groß gefreut hat (höchstens 3×)", version: 1, migration: "mia/reaktion.ts", area: "local", backup: false },
   { key: "wasgibts.miafragen", what: "Beantwortete Fragen der Begleitung (Überschneidung, Packliste) – nie zweimal fragen", version: 1, migration: "mia/fragen.ts", area: "local", backup: false },
   { key: "wasgibts.neu", what: "Leise Neuigkeiten aus dem Haushalt für die Jetzt-Karte (wer was eingetragen hat, jede nur einmal)", version: 1, migration: "konten/wer.ts migrateNews", area: "local", backup: false },
+  { key: "wasgibts.aufgabenvorschlag", what: "Aufgaben-Vorschlag „3 für diese Woche“: Woche, in der er nicht mehr kommt – pro Gerät", version: 1, migration: "kalender/liste/vorschlag.ts migrateVorschlag", area: "local", backup: false },
+  { key: "wasgibts.kalenderangebot", what: "„Kalender mitbringen“: später gesagt (Tage), erledigt – pro Gerät", version: 1, migration: "kalender/mitbringen/angebot.ts migrateAngebot", area: "local", backup: false },
   { key: "wasgibts.kalenderabos", what: "Kalender-Links (Abos): Name, geheimer Link, Farbe, Familie/Arbeit, an/aus – nur auf dem Gerät, in der Sicherung nur auf Wunsch", version: 1, migration: "kalender/abo/store.ts", area: "local", backup: false },
   { key: "wasgibts.kalenderabo-termine", what: "Zwischenspeicher der Abo-Termine (nur lesen, wird neu abgerufen)", version: 1, migration: "kalender/abo/store.ts", area: "local", backup: false },
   { key: "wasgibts.mikroprotokoll", what: "Mikro-Protokoll: die letzten 20 Ereignisse rund um Mikrofon und Sprachnachrichten – nur auf dem Gerät, nie in der Sicherung oder an die KI", version: 1, migration: "core/micLog.ts", area: "local", backup: false },

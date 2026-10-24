@@ -21,6 +21,8 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     orientation: "portrait",
     background_color: "#faf7f2",
     theme_color: BRAND_COLOR,
+    // Teilen-Menü: Rezept-Links (und Texte) gehen direkt an Mia
+    share_target: { action: "/?geteilt=1", method: "GET", params: { title: "title", text: "text", url: "url" } },
     icons: [
       { src: iconFor(farbe, "icon.svg"), sizes: "any", type: "image/svg+xml", purpose: "any" },
       { src: iconFor(farbe, "favicon-32.png"), sizes: "32x32", type: "image/png", purpose: "any" },

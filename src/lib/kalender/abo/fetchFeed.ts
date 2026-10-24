@@ -68,9 +68,9 @@ async function checkHost(url: URL, deps: FeedDeps) {
 }
 
 /** Antwort lesen, höchstens `max` Bytes */
-async function readLimited(res: Response, max: number): Promise<string> {
+async function readLimited(res: Response, max: number, tooBig: string): Promise<string> {
   const declared = Number(res.headers.get("content-length"));
-  if (declared > max) throw new FeedError("Der Kalender ist zu groß (mehr als 5 MB).");
+  if (declared > max) throw new FeedError(tooBig);
   if (!res.body) return "";
   const reader = res.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -81,7 +81,7 @@ async function readLimited(res: Response, max: number): Promise<string> {
     size += value.byteLength;
     if (size > max) {
       await reader.cancel().catch(() => {});
-      throw new FeedError("Der Kalender ist zu groß (mehr als 5 MB).");
+      throw new FeedError(tooBig);
     }
     chunks.push(value);
   }
@@ -94,10 +94,35 @@ async function readLimited(res: Response, max: number): Promise<string> {
   return new TextDecoder().decode(all);
 }
 
-/** Kalender-Text holen; Fehler als freundlicher Satz (`FeedError`) */
-export async function fetchFeed(raw: string, deps: FeedDeps): Promise<string> {
+/** Texte für Kalender bzw. Web-Seiten (Rezept-Links) */
+type Texte = { notUrl: string; slow: string; failed: string; gone: string; tooBig: string; wrong: string; accept: string; check: (text: string) => boolean };
+
+const KALENDER: Texte = {
+  notUrl: "Das ist kein Kalender-Link – er beginnt mit https:// oder webcal://.",
+  slow: "Der Kalender hat zu lange gebraucht – später nochmal?",
+  failed: "Den Kalender konnte ich gerade nicht abrufen.",
+  gone: "Den Kalender gibt es unter diesem Link nicht (mehr) – ist er noch geteilt?",
+  tooBig: "Der Kalender ist zu groß (mehr als 5 MB).",
+  wrong: "Unter dem Link liegt kein Kalender.",
+  accept: "text/calendar, text/plain;q=0.8, */*;q=0.1",
+  check: (text) => /BEGIN:VCALENDAR/i.test(text),
+};
+
+const SEITE: Texte = {
+  notUrl: "Das ist kein Link – er beginnt mit https://.",
+  slow: "Die Seite hat zu lange gebraucht – später nochmal?",
+  failed: "Die Seite konnte ich gerade nicht öffnen.",
+  gone: "Die Seite gibt es unter diesem Link nicht (mehr).",
+  tooBig: "Die Seite ist zu groß.",
+  wrong: "Das ist keine Web-Seite.",
+  accept: "text/html, application/xhtml+xml;q=0.9, */*;q=0.1",
+  check: (text) => /<html|<head|<script/i.test(text),
+};
+
+/** Text sicher holen (gemeinsam für Kalender und Seiten); Fehler als freundlicher Satz */
+async function fetchText(raw: string, deps: FeedDeps, t: Texte): Promise<string> {
   let url = normalizeFeedUrl(raw);
-  if (!url) throw new FeedError("Das ist kein Kalender-Link – er beginnt mit https:// oder webcal://.");
+  if (!url) throw new FeedError(t.notUrl);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), deps.timeoutMs ?? TIMEOUT_MS);
   try {
@@ -105,27 +130,33 @@ export async function fetchFeed(raw: string, deps: FeedDeps): Promise<string> {
       await checkHost(url, deps);
       let res: Response;
       try {
-        res = await deps.fetch(url.toString(), { redirect: "manual", signal: controller.signal, headers: { accept: "text/calendar, text/plain;q=0.8, */*;q=0.1" } });
+        res = await deps.fetch(url.toString(), { redirect: "manual", signal: controller.signal, headers: { accept: t.accept, "user-agent": "Mozilla/5.0 (compatible; Familien-App)" } });
       } catch {
-        throw new FeedError(controller.signal.aborted ? "Der Kalender hat zu lange gebraucht – später nochmal?" : "Den Kalender konnte ich gerade nicht abrufen.");
+        throw new FeedError(controller.signal.aborted ? t.slow : t.failed);
       }
       if (res.status >= 300 && res.status < 400 && res.headers.get("location")) {
-        if (hop >= MAX_REDIRECTS) throw new FeedError("Den Kalender konnte ich gerade nicht abrufen.");
+        if (hop >= MAX_REDIRECTS) throw new FeedError(t.failed);
         const next = normalizeFeedUrl(new URL(res.headers.get("location") as string, url).toString());
         if (!next) throw new FeedError("Diese Adresse kann ich nicht abrufen.");
         url = next;
         continue;
       }
-      if (res.status === 404 || res.status === 403 || res.status === 401) throw new FeedError("Den Kalender gibt es unter diesem Link nicht (mehr) – ist er noch geteilt?");
-      if (!res.ok) throw new FeedError("Den Kalender konnte ich gerade nicht abrufen.");
-      const text = await readLimited(res, deps.maxBytes ?? MAX_BYTES).catch((e: unknown) => {
+      if (res.status === 404 || res.status === 403 || res.status === 401) throw new FeedError(t.gone);
+      if (!res.ok) throw new FeedError(t.failed);
+      const text = await readLimited(res, deps.maxBytes ?? MAX_BYTES, t.tooBig).catch((e: unknown) => {
         if (e instanceof FeedError) throw e;
-        throw new FeedError(controller.signal.aborted ? "Der Kalender hat zu lange gebraucht – später nochmal?" : "Den Kalender konnte ich gerade nicht abrufen.");
+        throw new FeedError(controller.signal.aborted ? t.slow : t.failed);
       });
-      if (!/BEGIN:VCALENDAR/i.test(text)) throw new FeedError("Unter dem Link liegt kein Kalender.");
+      if (!t.check(text)) throw new FeedError(t.wrong);
       return text;
     }
   } finally {
     clearTimeout(timer);
   }
 }
+
+/** Kalender-Text holen; Fehler als freundlicher Satz (`FeedError`) */
+export const fetchFeed = (raw: string, deps: FeedDeps) => fetchText(raw, deps, KALENDER);
+
+/** Web-Seite holen (Rezept-Links) – derselbe Schutz wie bei Kalendern */
+export const fetchPage = (raw: string, deps: FeedDeps) => fetchText(raw, deps, SEITE);

@@ -79,6 +79,19 @@ export function terminExtras(data: TerminExtras | undefined): TerminExtras {
   };
 }
 
+type AufgabeExtras = Pick<AufgabeData, "dringend" | "seit" | "fuer" | "zurueck" | "liste">;
+
+/** Was das Formular bei Aufgaben nicht zeigt, aber beim Sichern bleiben muss (dringend, Reihenfolge, abgegeben) */
+export function aufgabeExtras(data: AufgabeExtras | undefined): AufgabeExtras {
+  return {
+    ...(data?.dringend ? { dringend: true } : {}),
+    ...(data?.seit ? { seit: data.seit } : {}),
+    ...(data?.fuer ? { fuer: data.fuer } : {}),
+    ...(data?.zurueck ? { zurueck: data.zurueck } : {}),
+    ...(data?.liste ? { liste: data.liste } : {}),
+  };
+}
+
 /** „aus Google“ / „aus Apple“ / „aus dem Kalender“ (kleiner Hinweis im Termin) */
 export function sourceLabel(source: TerminSource | undefined): string | null {
   if (!source) return null;
@@ -107,6 +120,8 @@ export type AufgabeData = {
   dringend?: boolean;
   /** Platz in der Reihenfolge (Zeitstempel): sonst `erstellt`; "Auf morgen" setzt ihn neu (dort hinten) */
   seit?: string;
+  /** Liste („Haus“, „Kinder“ …) aus einer eingefügten To-do-Liste (kalender/liste) */
+  liste?: string;
   /** Abgegeben an (Konto-ID im Haushalt, Tafel 52 B) – siehe kalender/abgeben */
   fuer?: string;
   /** Zuletzt zurückgegeben von (Konto-ID) – nur für die Datenbank-Regeln */
@@ -586,6 +601,11 @@ export function sanitizeEntry(raw: unknown): CalendarEntry | null {
       skipDates: dates(d.skipDates),
       ...(d.dringend === true ? { dringend: true } : {}),
       ...(typeof d.seit === "string" && d.seit ? { seit: d.seit } : {}),
+      ...(typeof d.liste === "string" && d.liste.trim() ? { liste: d.liste.trim().slice(0, 40) } : {}),
+      // Abgeben (kalender/abgeben): beim Laden nie verlieren
+      ...(typeof d.fuer === "string" && d.fuer ? { fuer: d.fuer } : {}),
+      ...(typeof d.zurueck === "string" && d.zurueck ? { zurueck: d.zurueck } : {}),
+      ...(typeof d.an === "string" && d.an.trim() ? { an: d.an.trim().slice(0, 40) } : {}),
     },
   };
 }

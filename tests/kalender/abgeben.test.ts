@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { changeTask, doneNotes, fromLabel, giveBack, giveTargets, giveTo, isMyTask, memberByName, resolveGiving, takeBack, taskRole } from "@/lib/kalender/abgeben/model";
 import { parseGiveTask } from "@/lib/begleitung/mockAlltag";
 import type { Member } from "@/lib/konten/model";
+import { sanitizeEntry } from "@/lib/kalender/model";
 
 const FELIX = "u-felix";
 const LISA = "u-lisa";
@@ -79,5 +80,22 @@ describe("Mia: „Sag Lisa, sie soll …“", () => {
     expect(unknown.entries[0].data).toEqual({ title: "x" });
     expect(unknown.notes[0]).toBe("Oma ist noch nicht im Haushalt – ich hab’s erstmal bei dir notiert.");
     expect(memberByName(members, "felix")?.userId).toBe(FELIX);
+  });
+});
+
+describe("Beim Laden bleibt die Abgabe erhalten (Fehler: fuer/an fielen weg)", () => {
+  it("fuer, zurueck und an überleben die Prüfung", () => {
+    const e = sanitizeEntry({ ...task(FELIX, { reminder: "aus", fuer: LISA, zurueck: FELIX }), raum: "familie" });
+    expect(e?.data).toMatchObject({ fuer: LISA, zurueck: FELIX });
+    const vonMia = sanitizeEntry({ ...task(FELIX, { reminder: "aus", an: "Lisa" }), raum: "familie" });
+    expect(resolveGiving([vonMia!], members, FELIX).entries[0].data).toMatchObject({ fuer: LISA });
+  });
+});
+
+describe("Formular behält, was es nicht zeigt (Fehler: Ändern löschte „abgegeben“ und „dringend“)", () => {
+  it("aufgabeExtras", async () => {
+    const { aufgabeExtras } = await import("@/lib/kalender/model");
+    expect(aufgabeExtras({ dringend: true, seit: "s", fuer: LISA, zurueck: FELIX, liste: "Haus" })).toEqual({ dringend: true, seit: "s", fuer: LISA, zurueck: FELIX, liste: "Haus" });
+    expect(aufgabeExtras(undefined)).toEqual({});
   });
 });

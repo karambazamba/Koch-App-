@@ -4,6 +4,8 @@
 // sprechen, mehrere mit Komma), „Oft gekauft“ zuerst, dann alles nach
 // Abteilung. Antippen wählt aus bzw. ab; „Fertig“ übernimmt alles auf einmal.
 
+import { rezeptLinkIn } from "@/lib/essen/rezeptLink/lesen";
+import { openHelper } from "@/lib/begleitung/open";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Mic, MicOff, Search, Square } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
@@ -147,6 +149,14 @@ export function CatalogSheet({
         className="flex items-center gap-2"
         onSubmit={(e) => {
           e.preventDefault();
+          // Ein eingefügter Rezept-Link geht an Mia (Karte mit Zutaten)
+          const link = rezeptLinkIn(query);
+          if (link) {
+            setQuery("");
+            onClose();
+            openHelper(undefined, link);
+            return;
+          }
           submit(query);
         }}
       >

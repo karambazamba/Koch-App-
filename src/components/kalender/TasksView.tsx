@@ -26,6 +26,12 @@ import { EntryForm } from "@/components/kalender/EntryForm";
 import { TaskLine, useLeaving } from "@/components/heute/MiniCards";
 import { TaskQuickAdd } from "@/components/kalender/TaskQuickAdd";
 import { openQuick } from "@/lib/core/schnelleingabe";
+import { listenAnsicht } from "@/lib/kalender/liste/ordnung";
+import { inDieseWoche, useVorschlagState, vorschlagRuhe, wochenVorschlag } from "@/lib/kalender/liste/vorschlag";
+import { changeEntries } from "@/lib/kalender/store";
+import { showToast } from "@/lib/core/toast";
+import { pushUndo } from "@/lib/core/undo";
+import { openListe } from "@/lib/kalender/liste/einfuegen";
 
 type Filter = "alles" | "familie" | "arbeit";
 
@@ -62,7 +68,28 @@ export function TasksView() {
   const givenItems = today && given.length ? Object.values(taskOverview(given, today)).flat() : [];
   const pick = (list: DayItem[]) => list.filter((i) => filter === "alles" || i.room === filter);
   const hasWork = work || Boolean(entries?.some((e) => e.raum === "arbeit"));
-  const open = groups ? TASK_GROUPS.filter((g) => g.id !== "erledigt").map((g) => ({ ...g, items: pick(groups[g.id]) })).filter((g) => g.items.length) : [];
+  // Mit Listen (eingefügte To-do-Listen): oben „Jetzt dran“, darunter jede Liste eingeklappt
+  const ansicht = groups ? listenAnsicht(groups) : null;
+  const [openLists, setOpenLists] = useState<string[]>([]);
+  const lists = ansicht ? ansicht.listen.map((l) => ({ ...l, items: pick(l.items) })).filter((l) => l.items.length) : [];
+  const sections = ansicht
+    ? [
+        { id: "jetzt", label: "Jetzt dran", items: ansicht.jetzt },
+        { id: "spaeter", label: "Später", items: ansicht.spaeter },
+        { id: "irgendwann", label: "Irgendwann", items: ansicht.irgendwann },
+      ]
+    : groups
+      ? TASK_GROUPS.filter((g) => g.id !== "erledigt").map((g) => ({ id: g.id as string, label: g.label, items: groups[g.id] }))
+      : [];
+  // Höchstens einmal pro Woche: drei Aufgaben ohne Datum für diese Woche vorschlagen
+  const vorschlagState = useVorschlagState();
+  const vorschlag = entries && today && vorschlagState && filter === "alles" ? wochenVorschlag(entries, today, vorschlagState) : null;
+  const takeVorschlag = (items: DayItem[]) => {
+    const undo = changeEntries((list, stamp) => inDieseWoche(list, items.map((i) => i.entry.id), today!, stamp));
+    vorschlagRuhe(today!);
+    showToast({ text: "Für diese Woche eingeplant", undo: pushUndo("Für diese Woche", undo), undoneText: "Wieder raus", seconds: 4, small: true });
+  };
+  const open = sections.map((g) => ({ ...g, items: pick(g.items) })).filter((g) => g.items.length);
   const done = groups ? pick(groups.erledigt) : [];
   return (
     <>
@@ -90,13 +117,30 @@ export function TasksView() {
           <div className={`${CARD} h-40 animate-pulse`} />
         ) : (
           <>
-            {open.length === 0 && (
+            {vorschlag && (
+              <section className={`${CARD} flex flex-col gap-2 p-4`} aria-label="Vorschlag für diese Woche" data-vorschlag>
+                <h2 className="text-[17px] font-bold">Drei für diese Woche?</h2>
+                <p className="text-[15px] text-muted">{vorschlag.map((i) => i.title).join(" · ")}</p>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <button type="button" onClick={() => takeVorschlag(vorschlag)} className={buttonClass("primary", "md")}>
+                    Übernehmen
+                  </button>
+                  <button type="button" onClick={() => vorschlagRuhe(today!)} className={buttonClass("secondary", "md")}>
+                    Nicht jetzt
+                  </button>
+                </div>
+              </section>
+            )}
+            {open.length === 0 && lists.length === 0 && (
               <section className="flex flex-col items-center gap-3 px-4 py-8 text-center" aria-label="Alles erledigt">
                 <BegleitungAvatar size={88} />
                 <h2 className="text-[22px] font-extrabold">Alles erledigt.</h2>
                 <p className="max-w-xs text-base text-muted">Wenn dir etwas einfällt, sag einfach „Ich muss noch …“ – ich merk’s mir.</p>
                 <button type="button" onClick={() => openQuick({ kind: "aufgabe", more: setAdding })} className={`${buttonClass("primary", "md")} mt-1`}>
                   Neue Aufgabe
+                </button>
+                <button type="button" onClick={() => openListe()} className="hit text-[15px] font-semibold text-muted">
+                  Liste einfügen
                 </button>
               </section>
             )}
@@ -110,6 +154,28 @@ export function TasksView() {
                 </ul>
               </section>
             ))}
+            {lists.map((l) => {
+              const shown = openLists.includes(l.name);
+              return (
+                <section key={l.name} className="flex flex-col gap-1.5" aria-label={`Liste ${l.name}`} data-liste={l.name}>
+                  <button
+                    type="button"
+                    onClick={() => setOpenLists((v) => (shown ? v.filter((x) => x !== l.name) : [...v, l.name]))}
+                    aria-expanded={shown}
+                    className="flex h-11 items-center gap-1 px-1 text-[15px] font-extrabold text-muted"
+                  >
+                    {l.name} · {l.items.length} <ChevronDown className={`h-4 w-4 transition ${shown ? "rotate-180" : ""}`} strokeWidth={2.5} aria-hidden />
+                  </button>
+                  {shown && (
+                    <ul className={`${CARD} divide-y divide-line overflow-hidden`}>
+                      {l.items.map((item) => (
+                        <TaskRow key={item.key} item={item} today={today!} onOpen={setMenu} />
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              );
+            })}
             {givenItems.length > 0 && (
               <section className="flex flex-col gap-1.5" aria-label="Abgegeben">
                 <button type="button" onClick={() => setShowGiven((v) => !v)} aria-expanded={showGiven} className="flex h-10 items-center gap-1 px-1 text-[15px] font-extrabold text-muted">
