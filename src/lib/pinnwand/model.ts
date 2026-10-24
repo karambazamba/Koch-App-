@@ -93,9 +93,12 @@ export const canDelete = (m: { data: { author: string } }, me: string) => m.data
  * Kachel auf der Startseite: Angeheftetes zuerst, dann die neuesten der
  * letzten 24 Std. – genau 2 Zeilen, dazu wie viele es noch gibt („+N“).
  */
-export function tileEntries<T extends { at: string; pinned?: boolean }>(items: T[], nowMs: number): { shown: T[]; more: number } {
+/** Zeilen der Pinnwand-Kachel je Größe (S/M/L) – Größe ändert nur die Menge */
+export const PIN_ROWS = { S: 1, M: 2, L: 4 } as const;
+
+export function tileEntries<T extends { at: string; pinned?: boolean }>(items: T[], nowMs: number, rows = 2): { shown: T[]; more: number } {
   const live = items.filter((i) => i.pinned || withinDay(i.at, nowMs)).sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || b.at.localeCompare(a.at));
-  return { shown: live.slice(0, 2), more: Math.max(0, live.length - 2) };
+  return { shown: live.slice(0, rows), more: Math.max(0, live.length - rows) };
 }
 
 export const setPinPinned = (list: PinMessage[], id: string, pinned: boolean, stamp: string) => list.map((m) => (m.id === id ? touch(m, { pinned }, stamp) : m));

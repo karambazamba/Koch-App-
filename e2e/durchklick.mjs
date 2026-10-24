@@ -1,7 +1,7 @@
 // npm run durchklick – alle Abläufe auf iPhone 15 Pro und Pixel 7 (Hallo,
 // Bearbeiten, Wischen, Eintragen, Kalender, Essen, Rezept, Einkauf, Vorrat,
 // Pinnwand, Wetter, Spendentopf, Tipps, Einstellungen, Chat im Testmodus,
-// Konten mit zwei Browsern, Vorführen: Fertig-Leiste, Memo antippen,
+// Konten mit zwei Browsern, Vorführen: Bearbeiten beenden, Memo antippen,
 // Offline, neue Version, Stammartikel, Sport-Kachel, Mikrofon aus, Termin in einem Satz, Stimme, Wochencheck, Kochtipp, Mehr Ideen, Mia zuerst, Sprachnachricht 5× / Mikro hängt / Kachel-Knöpfe, App heißt Mia).
 // Startet selbst einen Testserver (vorher `npm run build`) oder nutzt
 // E2E_BASE. Nur einzelne Abläufe: `npm run durchklick -- wetter pinnwand`.

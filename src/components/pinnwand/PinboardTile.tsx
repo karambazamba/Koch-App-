@@ -1,11 +1,12 @@
 "use client";
 
-// PINNWAND auf der Startseite (Tafel 71, Variante B): ruhig und klein. Feste
-// Höhe (wie die Wetter-Kachel daneben, auch breit nie höher), genau 2 Zeilen
-// à 30 px: Angeheftetes, dann die neuesten Einträge der letzten 24 Std. – Text (Bild 22 px +
+// PINNWAND auf der Startseite (Tafel 71, Variante B): ruhig und klein. Größe =
+// Menge (Launch 1.0): S 1, M 2, L 4 Zeilen à 30 px (S mit fester Höhe wie die
+// Wetter-Kachel daneben): Angeheftetes, dann die neuesten Einträge der letzten 24 Std. – Text (Bild 22 px +
 // eine Zeile …) bzw. Sprachnachricht (▶, kleine Tonwelle, Länge). „+N“ neben
 // dem ＋, wenn es mehr gibt; kein roter Punkt, keine Zahl in Rot. Oben rechts
-// ＋ = Schnelleingabe (beim ersten Mal kleines Schild „schreiben“), unten links
+// ＋ = Schnelleingabe (beim ersten Mal kleines Schild „schreiben“ links neben
+// dem ＋, nie über dem Text; in S weg, sonst würde „Pinnwand“ abgeschnitten), unten links
 // „Sprachnachricht“, rechts das Mikro. Aufnahme (Tafel 80) = EINE Leiste statt
 // der Zeilen (＋ und Mikro sind dann weg), gesendet nur über ➤; danach steht
 // die Sprachnachricht oben (zart hervorgehoben) und unten kurz „✓ Gesendet“.
@@ -20,7 +21,7 @@ import { QuickButton } from "@/components/ui/QuickButton";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import type { TileSize } from "@/lib/core/homeLayout";
 import { now } from "@/lib/core/now";
-import { tileEntries } from "@/lib/pinnwand";
+import { PIN_ROWS, tileEntries } from "@/lib/pinnwand";
 import { markHintSeen, useHintSeen } from "@/lib/core/hints";
 import { clearDemoTile } from "@/lib/core/demo";
 import { openQuick } from "@/lib/core/schnelleingabe";
@@ -63,14 +64,15 @@ export function PinboardTile({ size = "S", me, demo = false }: { size?: TileSize
     else return () => markHintSeen("pinnwand-kachel");
   }, [visited]);
   const nowMs = board.items ? now().getTime() : 0;
-  const { shown, more } = tileEntries(board.items ?? [], nowMs);
+  const rows = PIN_ROWS[size];
+  const { shown, more } = tileEntries(board.items ?? [], nowMs, rows);
   const write = () => {
     markHintSeen("pinnwand-kachel");
     openQuick({ kind: "pinnwand", me, more: setWriting });
   };
   return (
     <>
-      <section className={`${TILE} flex h-[156px] flex-col overflow-hidden px-3.5 pb-2.5 pt-3`} aria-label="Pinnwand" data-groesse={size}>
+      <section className={`${TILE} flex ${size === "S" ? "h-[156px]" : ""} flex-col overflow-hidden px-3.5 pb-2.5 pt-3`} aria-label="Pinnwand" data-groesse={size}>
         <div className="flex items-center gap-2">
           <Link href="/pinnwand" className={`hit flex min-w-0 flex-1 items-center gap-1.5 ${TILE_LABEL}`} aria-label="Pinnwand öffnen">
             <Pin className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
@@ -84,17 +86,17 @@ export function PinboardTile({ size = "S", me, demo = false }: { size?: TileSize
           {recording ? (
             <span className="h-[26px] w-[26px] shrink-0" aria-hidden />
           ) : (
-            <span className="relative shrink-0">
-              <QuickButton icon={Plus} label="Nachricht an die Pinnwand" onClick={write} />
-              {hintSeen === false && (
-                <span className="pointer-events-none absolute right-0 top-[28px] rounded-full bg-tile-inner px-1.5 py-px text-[10px] font-bold text-tile-accent shadow-card" aria-hidden>
+            <span className="flex shrink-0 items-center gap-1">
+              {hintSeen === false && size !== "S" && (
+                <span className="pointer-events-none rounded-full bg-tile-inner px-1.5 py-px text-[10px] font-bold text-tile-accent" aria-hidden>
                   schreiben
                 </span>
               )}
+              <QuickButton icon={Plus} label="Nachricht an die Pinnwand" onClick={write} />
             </span>
           )}
         </div>
-        <div className={`mt-1.5 flex flex-col gap-1 ${recording ? "min-h-0 flex-1" : "h-[64px]"} ${hintSeen === false && !recording ? "[&>*:first-child]:pr-16" : ""}`}>
+        <div className={`mt-1.5 flex flex-col gap-1 ${recording ? "min-h-0 flex-1" : ""}`} style={recording ? undefined : { minHeight: Math.max(64, rows * 30 + (rows - 1) * 4) }}>
           {recording ? (
             <RecordingRow recorder={recorder} compact />
           ) : showDemo ? (

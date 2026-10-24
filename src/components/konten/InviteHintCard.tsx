@@ -1,13 +1,11 @@
 "use client";
 
-// Startseite, unter der Jetzt-Karte (höchstens ein Hinweis): „Soll Lisa auch
+// Startseite, unter der Jetzt-Karte (höchstens ein Hinweis, ohne Mia-Gesicht): „Soll Lisa auch
 // sehen, was du einträgst?“ → „Familie einladen“ (ohne Konto erst anmelden,
 // danach gleich weiter zum Einladen) / „Später“.
 
 import Link from "next/link";
 import { CARD, buttonClass } from "@/components/ui/styles";
-import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
-import { avatarHex } from "@/lib/einstellungen/profile";
 import { appSince } from "@/lib/core/activity";
 import { useCloudMode } from "@/lib/konten/backend";
 import { useCachedAccount } from "@/lib/konten/cache";
@@ -26,7 +24,6 @@ export function useInviteHint(profile: HouseholdProfile, today: string, quiet: b
 export function InviteHintCard({ text, today }: { text: string; today: string }) {
   return (
     <div className={`${CARD} flex items-center gap-3 px-4 py-3`} role="note" aria-label="Familie einladen">
-      <BegleitungAvatar size={36} color={avatarHex("orange")} zustand="ruhig" />
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <p className="text-[15px] font-bold leading-snug">{text}</p>
         <div className="flex flex-wrap gap-2">

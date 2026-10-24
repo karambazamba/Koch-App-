@@ -15,7 +15,7 @@
 // oben“). Essen + Einkauf (beide S) wandern zusammen.
 
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode, type TouchEvent as ReactTouchEvent } from "react";
-import { Plus } from "lucide-react";
+import { EditLook } from "@/components/heute/EditLook";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { applyHomeChange, reorderVisible, saveHomeTiles, standardLayout, tileMeta, type HomeTile, type HomeTileId, type TileSize } from "@/lib/core/homeLayout";
 import { showDeleted } from "@/lib/core/toast";
@@ -42,7 +42,7 @@ export function HomeBoard({
   render,
   picking,
   onPicking,
-  onDone,
+  hrefFor,
 }: {
   tiles: HomeTile[];
   all: HomeTile[];
@@ -51,8 +51,8 @@ export function HomeBoard({
   /** „Kachel hinzufügen“ offen (auch vom „+ Kachel“ im Kopf) */
   picking: boolean;
   onPicking: (open: boolean) => void;
-  /** Kurz angetippt: Bearbeiten beenden */
-  onDone: () => void;
+  /** Ganze Kachel = Seite: wohin ein Tipp auf freie Fläche führt */
+  hrefFor?: (id: HomeTile["id"]) => string | null;
 }) {
   const units = unitsOf(tiles);
   const board = useRef<HTMLDivElement>(null);
@@ -133,15 +133,12 @@ export function HomeBoard({
     pointer.current = { x, y };
     setDrag({ ...d, x, y, target: targetFor(d.key, x, y + window.scrollY) });
   };
-  /** Loslassen: abgelegt und sofort gespeichert – oder (kurz angetippt) fertig */
+  /** Loslassen: abgelegt und sofort gespeichert */
   const release = () => {
-    const tapped = hold.current?.key;
     cancelHold();
     const d = dragRef.current;
-    if (!d) {
-      if (tapped) onDone();
-      return;
-    }
+    // Kurz angetippt: nichts (Launch 1.0 – „fertig“ nur per Fertig oder Tipp auf freie Fläche)
+    if (!d) return;
     const rest = units.filter((u) => u.key !== d.key);
     const unit = units.find((u) => u.key === d.key);
     if (unit) {
@@ -347,7 +344,7 @@ export function HomeBoard({
           style={editing && !floating && !drag && !holding ? { animation: `${index % 2 ? "wiggle-b" : "wiggle"} 1.6s ease-in-out infinite` } : undefined}
         >
           {unit.tiles.map((tile) => (
-            <EditFrame key={tile.id} tile={tile} editing={editing} onRemove={() => remove(tile.id)} onResize={(s) => resize(tile.id, s)}>
+            <EditFrame key={tile.id} tile={tile} editing={editing} href={hrefFor?.(tile.id)} onRemove={() => remove(tile.id)} onResize={(s) => resize(tile.id, s)}>
               {render(tile, half || pair, editing)}
             </EditFrame>
           ))}
@@ -364,10 +361,7 @@ export function HomeBoard({
       {rowsOf(preview).flatMap((row, r) => row.map((u, i) => renderUnit(u, r * 2 + i, row.length === 2, false, row.length !== 2)))}
       {editing && (
         <div className="col-span-2 flex flex-col gap-3">
-          <button type="button" onClick={() => onPicking(true)} className="flex h-14 items-center justify-center gap-2 rounded-card border-2 border-dashed border-line text-base font-bold text-muted active:bg-fill">
-            <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-            Kachel hinzufügen
-          </button>
+          <EditLook />
           <button type="button" onClick={() => setConfirmReset(true)} className="hit self-center py-2 text-sm font-semibold text-muted underline">
             Standard-Anordnung wiederherstellen
           </button>

@@ -30,9 +30,10 @@ describe("Aufnahme-Leiste in der Kachel", () => {
 
   it("in Ruhe unten nur „Sprachnachricht“ – der alte Hinweis ist weg; Schild „schreiben“ beim ersten Mal", () => {
     expect(tile).toMatch(/>Sprach&shy;nachricht<\/span>/);
-    expect(tile).toMatch(/\[&>\*:first-child\]:pr-16/);
     expect(tile).not.toContain("＋ = schreiben");
-    expect(tile).toMatch(/hintSeen === false && \(\s*<span className="pointer-events-none absolute/);
+    // Schild links neben dem ＋ im Kopf (nie über dem Text, Launch 1.0)
+    expect(tile).toMatch(/hintSeen === false && size !== "S" && \(\s*<span className="pointer-events-none rounded-full/);
+    expect(tile).not.toMatch(/pointer-events-none absolute/);
     expect(tile).toContain("schreiben\n");
     expect(tile).toMatch(/markHintSeen\("pinnwand-kachel-1"\)/);
     expect(tile).toMatch(/return \(\) => markHintSeen\("pinnwand-kachel"\)/);

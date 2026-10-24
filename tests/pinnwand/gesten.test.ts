@@ -4,7 +4,7 @@
 // mit; „＋“ = Schnelleingabe (Tafel 76).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { applyReaction, canDelete, migratePinStore, reactionLine, readReactions, sanitizeMemo, sanitizePin, tileEntries, toggleReaction, type PinMessage } from "@/lib/pinnwand";
+import { PIN_ROWS, applyReaction, canDelete, migratePinStore, reactionLine, readReactions, sanitizeMemo, sanitizePin, tileEntries, toggleReaction, type PinMessage } from "@/lib/pinnwand";
 import { quoteOf } from "@/lib/pinnwand/schreiben";
 import { ADAPTERS } from "@/lib/konten/sync/docs";
 import { STORAGE } from "@/lib/core/storage";
@@ -22,6 +22,10 @@ describe("Kachel: klein und ruhig", () => {
     expect(more).toBe(1);
     const pinnedOld = { ...at("2026-10-15T09:00:00Z"), pinned: true };
     expect(tileEntries([...items, pinnedOld], NOW).shown[0]).toBe(pinnedOld);
+    // Größe = Menge (Launch 1.0): S 1, M 2, L 4
+    expect(PIN_ROWS).toEqual({ S: 1, M: 2, L: 4 });
+    expect(tileEntries([...items, pinnedOld], NOW, PIN_ROWS.S).shown).toHaveLength(1);
+    expect(tileEntries([...items, pinnedOld], NOW, PIN_ROWS.L).shown.length).toBeLessThanOrEqual(4);
   });
 
   it("älter als 24 Std. ist auch aus der Kachel weg; ohne mehr kein „+N“", () => {
@@ -30,9 +34,9 @@ describe("Kachel: klein und ruhig", () => {
     expect(tileEntries([at("2026-10-21T09:00:00Z")], NOW).more).toBe(0);
   });
 
-  it("feste Höhe, kein roter Punkt, ＋ oben und Mikro unten getrennt, keine Gesten", () => {
+  it("S mit fester Höhe, kein roter Punkt, ＋ oben und Mikro unten getrennt, keine Gesten", () => {
     const src = readFileSync("src/components/pinnwand/PinboardTile.tsx", "utf8");
-    expect(src).toMatch(/flex h-\[156px\] flex-col overflow-hidden/);
+    expect(src).toMatch(/size === "S" \? "h-\[156px\]"/);
     expect(src).not.toMatch(/Neue Nachricht"|bg-danger|unread/);
     expect(src).toMatch(/h-\[30px\]/);
     expect(src).not.toMatch(/SwipeRow|onPointerDown|onContextMenu/);
