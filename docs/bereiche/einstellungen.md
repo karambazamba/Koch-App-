@@ -162,6 +162,15 @@ anfangen).
   „Rückgängig“. Aus heißt nur ausgeblendet.
 - API: `featureOn`, `useFeature`, `useBausteine`, `setFeature`,
   `unlockFeature`, `bausteinOf`; Seiten eines Bausteins hinter `FeatureGate`.
+- Launch „Mia 1.0“ (seit v0.100): `LAUNCH_AUS` = Wochenplan, Im Haus, Tipps
+  aus der Region, Mails an Mia, Sport, Notizen, Spendentopf (die letzten drei
+  sind dafür neue Bausteine). Ausgeblendetes steht nur in der Liste, wenn es
+  an ist (`launchSichtbar`), erscheint nicht unter „＋ Kachel“, Mia schaltet
+  es nicht frei (`unlockFeature`, `launchFilter` in `client.ts`, Prompt-Zeile
+  `launchLine`: „Kann ich noch nicht.“). `launchUebernahme` (einmal beim
+  Start, Speicher v3 `launch`): wer Sport, Notizen oder den Spendentopf schon
+  nutzt (Kachel sichtbar oder Daten da), behält sie. Anmelden nur per
+  E-Mail-Code (`LAUNCH_NUR_EMAIL` in `konten/oauth.ts`).
 
 ### Daten & App (`/profil/daten`)
 

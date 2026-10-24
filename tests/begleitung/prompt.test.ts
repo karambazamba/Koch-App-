@@ -99,7 +99,7 @@ describe("Kontext je Anfrage", () => {
     expect(text).toContain('Pinnwand: Lisa: "Bin um 8 da"');
     expect(text).toContain("Wetter-Ort: Malente");
     expect(text).toMatch(/Timer: Nudeln 2:00 übrig/);
-    expect(text).toMatch(/Bausteine an: Im Haus\. Aus: Wochenplan \(wochenplan:/);
+    expect(text).toMatch(/Bausteine an: Im Haus\. Aus: Rezepte \(rezepte:/);
     expect(text).toContain('Mail-Stil: Gruß "Liebe Grüße", Name "Felix", Signatur (nur förmlich): "Felix Müller / Eutin"; gemerkte Anrede: Kita = Sie, Bernd = Du');
     expect(text).toContain("Startseite (Reihenfolge): wetter S, post ausgeblendet");
     expect(text).toContain("Essen heute: Ofengemüse (18:30 Uhr); morgen: kein Kochtag");

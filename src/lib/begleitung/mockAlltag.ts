@@ -15,7 +15,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { parseCalendar, type Draft } from "@/lib/kalender/parse";
 import { parseHomeCommand } from "@/lib/begleitung/homeChat";
 import { parseBausteinCommand } from "@/lib/begleitung/bausteinChat";
-import { BAUSTEINE } from "@/lib/core/features";
+import { BAUSTEINE, LAUNCH_AUS } from "@/lib/core/features";
 import { parsePauseRequest } from "@/lib/essen/spontan";
 import { findByTitle, sanitizeEntry, type CalendarEntry } from "@/lib/kalender/model";
 import { text, tools, type ToolUse } from "@/lib/begleitung/mockShared";
@@ -45,7 +45,7 @@ export function everydayUses(latest: string, system: string): Anthropic.Beta.Bet
   if (baustein) {
     const offLine = system.match(/Aus: (.+)$/m)?.[1] ?? "";
     if (baustein.kind === "list") {
-      const off = BAUSTEINE.filter((b) => offLine.includes(`(${b.feature}:`));
+      const off = BAUSTEINE.filter((b) => offLine.includes(`(${b.feature}:`) && !LAUNCH_AUS.includes(b.feature));
       return text(off.length ? `Außerdem kann ich: ${off.map((b) => `${b.name} – ${b.text.replace(/\.$/, "")}`).join("; ")}. Soll ich was davon einschalten? (Testmodus)` : "Gerade ist alles an, was ich kann. (Testmodus)");
     }
     const isOff = offLine.includes(`(${baustein.feature}:`);

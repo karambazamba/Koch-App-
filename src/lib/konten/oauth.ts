@@ -5,8 +5,12 @@
 
 export type OAuthProvider = "apple" | "google";
 
-/** Eingeschaltete Anbieter (Reihenfolge Apple, Google) */
-export function oauthProviders(env: Record<string, string | undefined> = { apple: process.env.NEXT_PUBLIC_AUTH_APPLE, google: process.env.NEXT_PUBLIC_AUTH_GOOGLE }): OAuthProvider[] {
+/** Launch „Mia 1.0“: nur Anmelden per E-Mail-Code – Apple/Google kommen später */
+export const LAUNCH_NUR_EMAIL = true;
+
+/** Eingeschaltete Anbieter (Reihenfolge Apple, Google); `launch`: 1.0 = keiner */
+export function oauthProviders(env: Record<string, string | undefined> = { apple: process.env.NEXT_PUBLIC_AUTH_APPLE, google: process.env.NEXT_PUBLIC_AUTH_GOOGLE }, launch = LAUNCH_NUR_EMAIL): OAuthProvider[] {
+  if (launch) return [];
   return (["apple", "google"] as const).filter((p) => env[p] === "1");
 }
 

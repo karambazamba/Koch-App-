@@ -161,7 +161,7 @@ describe("Seite und Kachel", () => {
 });
 
 describe("Kreislauf Einkauf ↔ Im Haus", () => {
-  it("abhaken = rein (nur Essen), Haken weg = raus; Baustein wird frei", async () => {
+  it("abhaken = rein (nur Essen), Haken weg = raus; Baustein bleibt für 1.0 aus (Daten bleiben)", async () => {
     const { boughtToHouse, unboughtFromHouse } = await import("@/lib/vorrat/kreislauf");
     const p = await import("@/lib/vorrat/pantry");
     const f = await import("@/lib/core/features");
@@ -169,7 +169,7 @@ describe("Kreislauf Einkauf ↔ Im Haus", () => {
     boughtToHouse("Äpfel", T);
     boughtToHouse("Shampoo", T);
     expect(p.loadPantry().map((i) => i.name)).toEqual(["Brot", "Äpfel"]);
-    expect(f.featureOn("vorrat")).toBe(true);
+    expect(f.featureOn("vorrat")).toBe(false);
     unboughtFromHouse("Brot", T);
     expect(p.loadPantry().map((i) => i.name)).toEqual(["Äpfel"]);
   });

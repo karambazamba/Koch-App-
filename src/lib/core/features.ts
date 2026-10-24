@@ -25,6 +25,9 @@ const FEATURES = {
   regiontipps: "Tipps aus der Region (Veranstaltungen in der Nähe) – nur sichtbar, wenn eine Quelle läuft",
   kalender: "Kalender übernehmen: Termine aus Apple- oder Google-Kalender (Datei oder Kalender-Link)",
   mails: "Mails weiterleiten: aus weitergeleiteten Mails werden Vorschläge (nur mit Konto)",
+  sport: "Sport (/sport, Kachel, Wochenziel)",
+  notizen: "Notizen (/notizen, Kachel, Schnellnotiz)",
+  spendentopf: "Spendentopf (/spendentopf, Kachel, Beitrags-Frage)",
 } as const;
 
 export type Feature = keyof typeof FEATURES;
@@ -43,7 +46,20 @@ export const BAUSTEINE: Baustein[] = [
   { feature: "kalender", name: "Kalender übernehmen", text: "Termine aus Apple- oder Google-Kalender holen – einmal per Datei.", where: "„Kalender übernehmen“ steht jetzt in den Einstellungen – und unten im Eintragen-Fenster.", icon: "calendarPlus" },
   { feature: "mails", name: "Mails weiterleiten", text: "Mails von Kita, Schule oder Verein weiterleiten – ich mache Vorschläge daraus.", where: "„Mails weiterleiten“ steht jetzt in den Einstellungen.", icon: "mail" },
   { feature: "kochstil", name: "Kochstil & Vorlieben", text: "Plan oder spontan, Das mögt ihr, Nie wieder, Lieblingsgerichte.", where: "Kochstil & Vorlieben stehen jetzt in den Einstellungen.", icon: "chef" },
+  { feature: "sport", name: "Sport", text: "Trainings und ein Wochenziel – gezählt werden nur Wochen.", where: "Die Sport-Kachel steht jetzt auf der Startseite.", icon: "dumbbell" },
+  { feature: "notizen", name: "Notizen", text: "Notizen und Listen festhalten.", where: "Notizen stehen jetzt als Kachel auf der Startseite.", icon: "note" },
+  { feature: "spendentopf", name: "Spendentopf", text: "Jeder Euro geht in eure Region.", where: "Der Spendentopf steht jetzt auf der Startseite.", icon: "coins" },
 ];
+
+/**
+ * Launch „Mia 1.0“: diese Bausteine sind ausgeblendet. Sie erscheinen nicht in
+ * „Mehr Funktionen“ oder „＋ Kachel“, Mia schaltet sie nicht frei. Wer einen
+ * schon nutzt, behält ihn (`launchUebernahme`). Daten bleiben immer.
+ */
+export const LAUNCH_AUS: Feature[] = ["wochenplan", "vorrat", "regiontipps", "mails", "sport", "notizen", "spendentopf"];
+
+/** Darf der Baustein gezeigt bzw. angeboten werden? (nicht für 1.0 ausgeblendet oder schon an) */
+export const launchSichtbar = (feature: Feature, on: Feature[]) => !LAUNCH_AUS.includes(feature) || on.includes(feature);
 
 /**
  * Tipps aus der Region: eigener Baustein, nur in „Mehr Funktionen“ zu sehen,
@@ -63,8 +79,11 @@ export const bausteinOf = (feature: Feature) => BAUSTEINE.find((b) => b.feature 
 /** Dauerhaft eingeschaltet – hier freischalten, was immer gebraucht wird */
 const ENABLED: Partial<Record<Feature, true>> = {};
 
-/** v2: eingeschaltete Bausteine. v1 hatte `legacy` (alter Test-Schalter) und `unlocked`. */
-type FeatureStore = { version: 2; on: Feature[] };
+/**
+ * v3: eingeschaltete Bausteine + `launch` (Übernahme für 1.0 erledigt).
+ * v2 ohne `launch`, v1 hatte `legacy` (alter Test-Schalter) und `unlocked`.
+ */
+type FeatureStore = { version: 3; on: Feature[]; launch: boolean };
 
 const isFeature = (f: unknown): f is Feature => typeof f === "string" && f in FEATURES;
 
@@ -97,12 +116,12 @@ function usedFeatures(): Feature[] {
 function migrate(raw: unknown): FeatureStore | null {
   if (!raw || typeof raw !== "object") return null;
   const d = raw as { version?: number; legacy?: unknown; unlocked?: unknown; on?: unknown };
-  if (d.version === 2) return { version: 2, on: (Array.isArray(d.on) ? d.on : []).filter(isFeature) };
+  if (d.version === 3 || d.version === 2) return { version: 3, on: (Array.isArray(d.on) ? d.on : []).filter(isFeature), launch: d.version === 3 && (d as { launch?: unknown }).launch === true };
   if (d.version !== 1) return null;
   // Alter Test-Schalter: wird zurückgesetzt; was genutzt wurde, wird als Baustein übernommen
   const unlocked = (Array.isArray(d.unlocked) ? d.unlocked : []).filter(isFeature);
   const used = d.legacy === true && typeof localStorage !== "undefined" ? usedFeatures() : [];
-  return { version: 2, on: [...new Set([...unlocked, ...used])] };
+  return { version: 3, on: [...new Set([...unlocked, ...used])], launch: false };
 }
 
 const store = createLocalStore("wasgibts.funktionen", migrate);
@@ -124,7 +143,7 @@ export function featureOn(feature: Feature): boolean {
 export function setFeature(feature: Feature, on: boolean): boolean {
   const list = onList();
   if (list.includes(feature) === on) return false;
-  store.save({ version: 2, on: on ? [...list, feature] : list.filter((f) => f !== feature) });
+  store.save({ version: 3, on: on ? [...list, feature] : list.filter((f) => f !== feature), launch: store.load()?.launch ?? false });
   return true;
 }
 
@@ -133,7 +152,8 @@ export function setFeature(feature: Feature, on: boolean): boolean {
  * Lotte anlegt, muss ich sehen können"). Liefert true, wenn er vorher aus war.
  */
 export function unlockFeature(feature: Feature): boolean {
-  if (featureOn(feature)) return false;
+  // Für 1.0 ausgeblendet: Mia schaltet es nicht frei
+  if (featureOn(feature) || LAUNCH_AUS.includes(feature)) return false;
   return setFeature(feature, true);
 }
 
@@ -149,4 +169,32 @@ export function useFeature(feature: Feature): boolean | undefined {
   if (ENABLED[feature]) return true;
   if (on === undefined) return undefined;
   return isOn(feature, on);
+}
+
+/**
+ * Einmal beim Start nach dem Update auf 1.0: Wer Sport, Notizen oder den
+ * Spendentopf schon nutzt (Kachel sichtbar oder Daten da), behält sie als
+ * Baustein. Neue Nutzer starten ohne. @public für Tests
+ */
+export function launchUebernahme(read: (key: StorageKey) => string | null = readRaw) {
+  const s = store.load();
+  if (s?.launch) return;
+  const json = (key: StorageKey): unknown => {
+    try {
+      return JSON.parse(read(key) ?? "null");
+    } catch {
+      return null;
+    }
+  };
+  const home = json("wasgibts.startseite") as { tiles?: { id?: string; visible?: boolean }[] } | { id?: string; visible?: boolean }[] | null;
+  const tiles = Array.isArray(home) ? home : (home?.tiles ?? []);
+  const shown = (id: string) => tiles.some((t) => t?.id === id && t.visible !== false);
+  const used: Feature[] = [];
+  const sport = json("wasgibts.sport") as { trainings?: unknown[] } | null;
+  if (shown("sport") || (sport?.trainings?.length ?? 0) > 0) used.push("sport");
+  const notes = json("wasgibts.notizen") as { notes?: unknown[] } | null;
+  if (shown("notizen") || (notes?.notes?.length ?? 0) > 0) used.push("notizen");
+  if (shown("spendentopf")) used.push("spendentopf");
+  const on = s?.on ?? EMPTY;
+  store.save({ version: 3, on: [...new Set([...on, ...used])], launch: true });
 }

@@ -25,6 +25,7 @@ import { MiaButton } from "@/components/begleitung/MiaButton";
 import { knopfVersteckt } from "@/lib/mia/knopf";
 import { helperName, type HelperVoice } from "@/lib/einstellungen/profile";
 import { removeRetiredKeys } from "@/lib/core/storage";
+import { launchUebernahme } from "@/lib/core/features";
 import { adoptLegacySpeech } from "@/lib/begleitung/speech";
 import { micState } from "@/lib/core/mic";
 import { unlockKochtipp } from "@/lib/essen/kochtipp/store";
@@ -117,6 +118,8 @@ export function KitchenHelper() {
 
   // Alte Daten einmalig übernehmen, dann nicht mehr genutzte Schlüssel löschen
   useEffect(() => {
+    // Launch 1.0: wer Sport, Notizen oder den Spendentopf schon nutzt, behält sie
+    launchUebernahme();
     migrateOldTermine();
     adoptLegacySpeech();
     adoptSchnellnotiz();

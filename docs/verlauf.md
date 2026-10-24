@@ -2391,3 +2391,13 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Feiertage bundesweit + Schleswig-Holstein wie Sonntag (`core/feiertage.ts`).
   Am Wochenende alle Beispiel-Aufgaben „diese Woche“, keine dringend; Essen
   samstags Lasagne, sonntags Ofen-Hähnchen am Mittag.
+
+## Launch-Schnitt „Mia 1.0“ (v0.100.0)
+- Feature-Stopp bis zum Launch (CLAUDE.md „Launch Mia 1.0“).
+- Ausgeblendet als Baustein (nichts gelöscht, Daten bleiben): Mails an Mia,
+  Tipps aus der Region, Im Haus, Wochenplan, Sport, Notizen, Spendentopf
+  (Satz unter „Über Mia“ bleibt). Wer etwas davon schon nutzt, behält es.
+- Mia bietet Ausgeblendetes nicht an und schaltet es nicht frei („Kann ich
+  noch nicht.“). Anmelden nur per E-Mail-Code. ElevenLabs bleibt aus, solange
+  kein Schlüssel gesetzt ist.
+- Neue Startseite ohne Spendentopf.

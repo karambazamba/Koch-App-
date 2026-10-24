@@ -19,18 +19,18 @@ export type HomeTile = { id: HomeTileId; visible: boolean; size: TileSize };
  * Standard; `feature`: gehört zu einem Baustein (wird beim Hinzufügen
  * eingeschaltet); `soon`: gibt es noch nicht ("bald"); `fresh`: "NEU".
  */
-export const HOME_TILES: { id: HomeTileId; label: string; hint: string; sizes: TileSize[]; size: TileSize; feature?: "vorrat" | "regiontipps"; soon?: boolean; fresh?: boolean }[] = [
+export const HOME_TILES: { id: HomeTileId; label: string; hint: string; sizes: TileSize[]; size: TileSize; feature?: "vorrat" | "regiontipps" | "sport" | "notizen" | "spendentopf"; soon?: boolean; fresh?: boolean }[] = [
   { id: "pinnwand", label: "Pinnwand", hint: "Kurze Nachrichten an die Familie", sizes: ["S", "M", "L"], size: "S", fresh: true },
   { id: "wetter", label: "Wetter", hint: "Heute und die nächsten Tage", sizes: ["S", "M", "L"], size: "S", fresh: true },
   { id: "termine", label: "Termine", hint: "Die nächsten von heute", sizes: ["S", "M", "L"], size: "M" },
   { id: "aufgaben", label: "Aufgaben", hint: "Was heute dran ist", sizes: ["S", "M", "L"], size: "M" },
   { id: "essen", label: "Essen", hint: "Gericht von heute", sizes: ["S", "M", "L"], size: "S" },
   { id: "einkauf", label: "Einkauf", hint: "Die Einkaufsliste", sizes: ["S", "M", "L"], size: "S" },
-  { id: "spendentopf", label: "Spendentopf", hint: "Jeder Euro geht in eure Region", sizes: ["M"], size: "M", fresh: true },
+  { id: "spendentopf", label: "Spendentopf", hint: "Jeder Euro geht in eure Region", sizes: ["M"], size: "M", feature: "spendentopf", fresh: true },
   { id: "tipps", label: "Tipps fürs Wochenende", hint: "Was in eurer Nähe los ist", sizes: ["M", "L"], size: "M", feature: "regiontipps", fresh: true },
   { id: "timer", label: "Timer", hint: "Bis zu 5 Timer und eine Stoppuhr", sizes: ["S", "M"], size: "M", fresh: true },
-  { id: "sport", label: "Sport", hint: "Wochenziel und Trainings", sizes: ["S", "M", "L"], size: "M", fresh: true },
-  { id: "notizen", label: "Notizen", hint: "Schnellnotiz + Angeheftetes", sizes: ["S", "M", "L"], size: "M" },
+  { id: "sport", label: "Sport", hint: "Wochenziel und Trainings", sizes: ["S", "M", "L"], size: "M", feature: "sport", fresh: true },
+  { id: "notizen", label: "Notizen", hint: "Schnellnotiz + Angeheftetes", sizes: ["S", "M", "L"], size: "M", feature: "notizen" },
   { id: "vorrat", label: "Im Haus", hint: "Füllt sich von selbst beim Einkaufen", sizes: ["S", "M"], size: "S", feature: "vorrat" },
   { id: "morgen", label: "Ausblick morgen", hint: "Was morgen ansteht, ab 16 Uhr", sizes: ["M"], size: "M" },
   { id: "post", label: "Post", hint: "Briefe und Rechnungen", sizes: ["S", "M"], size: "M", soon: true },
@@ -43,7 +43,8 @@ export const tileMeta = (id: HomeTileId) => HOME_TILES.find((t) => t.id === id)!
 
 export const tileLabel = (id: HomeTileId) => HOME_TILES.find((t) => t.id === id)?.label ?? id;
 
-const ON_BY_DEFAULT: HomeTileId[] = ["pinnwand", "wetter", "termine", "aufgaben", "essen", "einkauf", "spendentopf", "vorrat"];
+/** Launch 1.0: ohne Spendentopf (Baustein, ausgeblendet); Im Haus nur mit Baustein */
+const ON_BY_DEFAULT: HomeTileId[] = ["pinnwand", "wetter", "termine", "aufgaben", "essen", "einkauf", "vorrat"];
 
 /**
  * Standard: Pinnwand + Wetter (klein nebeneinander), Termine, Aufgaben, Essen +

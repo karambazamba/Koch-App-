@@ -27,7 +27,8 @@ const mods = async () => ({
 let m: Awaited<ReturnType<typeof mods>>;
 
 beforeEach(async () => {
-  local = memoryStorage();
+  // Familie, die Wochenplan, Sport und Notizen schon nutzt (Launch 1.0: behält sie); Im Haus ist aus
+  local = memoryStorage({ "wasgibts.funktionen": JSON.stringify({ version: 3, on: ["wochenplan", "sport", "notizen"], launch: true }) });
   (globalThis as { window?: unknown }).window = {
     localStorage: local,
     sessionStorage: memoryStorage(),
@@ -85,7 +86,7 @@ describe("commitOps", () => {
     expect(entry.spontan).toBe(true);
   });
 
-  it("Vorrat, Wunsch, Rezept und Pinnwand landen in ihren Speichern und schalten frei", () => {
+  it("Wunsch, Rezept und Pinnwand landen in ihren Speichern und schalten frei – Im Haus (für 1.0 aus) nicht: „Kann ich noch nicht.“", () => {
     const ops: ChangeOp[] = [
       { id: "1", type: "add_pantry", name: "Chili", place: "tiefkuehler" },
       { id: "2", type: "add_wish", personId: "p-mathis", who: "Mathis", dish: "Pfannkuchen" },
@@ -94,8 +95,9 @@ describe("commitOps", () => {
     ];
     const current = daten({ home: m.home.DEFAULT_HOME.map((t) => (t.id === "pinnwand" ? { ...t, visible: false } : t)) });
     const r = m.client.commitOps(current, ops, alle(ops), "");
-    expect(r.notes).toEqual(["„Im Haus“ steht jetzt unter Essen – und als Kachel auf Heute.", "Eure Rezepte stehen jetzt rechts unter Essen.", "Die Pinnwand steht jetzt oben auf der Startseite."]);
-    expect(m.pantry.loadPantry().map((p) => p.name)).toEqual(["Chili"]);
+    expect(r.notes).toEqual(["Eure Rezepte stehen jetzt rechts unter Essen.", "Die Pinnwand steht jetzt oben auf der Startseite.", "Kann ich noch nicht."]);
+    expect(m.pantry.loadPantry()).toEqual([]);
+    expect(m.features.featureOn("vorrat")).toBe(false);
     expect(m.wishes.loadWishes().map((w) => w.dish)).toEqual(["Pfannkuchen"]);
     expect(m.pins.loadPins().map((p) => p.data.text)).toEqual(["Bin um 20 Uhr da"]);
     expect(m.pins.loadPins()[0].data.author).toBe("Felix");
@@ -142,12 +144,12 @@ describe("commitOps", () => {
   });
 
   it("„Mach das rückgängig“ nimmt die letzte Änderung zurück", () => {
-    const first: ChangeOp[] = [{ id: "1", type: "add_pantry", name: "Milch", place: "kuehlschrank" }];
-    m.client.commitOps(daten(), first, alle(first), "Milch in den Vorrat");
-    expect(m.pantry.loadPantry()).toHaveLength(1);
+    const first: ChangeOp[] = [{ id: "1", type: "add_wish", personId: "p-mathis", who: "Mathis", dish: "Pfannkuchen" }];
+    m.client.commitOps(daten(), first, alle(first), "Mathis will Pfannkuchen");
+    expect(m.wishes.loadWishes()).toHaveLength(1);
     const undo: ChangeOp[] = [{ id: "2", type: "undo_last" }];
-    expect(m.client.commitOps(daten(), undo, alle(undo), "").notes).toEqual(["Zurückgenommen: „Milch in den Vorrat“"]);
-    expect(m.pantry.loadPantry()).toEqual([]);
+    expect(m.client.commitOps(daten(), undo, alle(undo), "").notes).toEqual(["Zurückgenommen: „Mathis will Pfannkuchen“"]);
+    expect(m.wishes.loadWishes()).toEqual([]);
     expect(m.client.commitOps(daten(), undo, alle(undo), "").notes).toEqual(["Da gibt’s gerade nichts zurückzunehmen."]);
   });
 

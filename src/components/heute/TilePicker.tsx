@@ -13,7 +13,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { TILE_PLUS_DOT } from "@/components/ui/styles";
 import { HOME_TILES, applyHomeChange, saveHomeTiles, tileMeta, useHomeTiles, type HomeTile, type HomeTileId } from "@/lib/core/homeLayout";
 import { showDeleted } from "@/lib/core/toast";
-import { featureOn, setFeature } from "@/lib/core/features";
+import { featureOn, launchSichtbar, setFeature, useBausteine } from "@/lib/core/features";
 import { pushUndo } from "@/lib/core/undo";
 import { buzz } from "@/components/heute/actions";
 import { sortBy, TILE_PICKER } from "@/lib/core/sort";
@@ -58,6 +58,7 @@ export function TilePicker({ onClose, onClosed }: { onClose: () => void; onClose
   const all = useHomeTiles();
   const added = useRef<HomeTileId | null>(null);
   const tipsMode = useTipsMode();
+  const on = useBausteine();
   if (!all) return null;
   const close = () => {
     onClose();
@@ -66,7 +67,7 @@ export function TilePicker({ onClose, onClosed }: { onClose: () => void; onClose
   return (
     <Sheet title="Kachel hinzufügen" onClose={close} above>
       <ul className="grid grid-cols-2 gap-2 pb-3" aria-label="Kacheln">
-        {sortBy(HOME_TILES.filter((meta) => !meta.soon && (meta.id !== "tipps" || (tipsMode && tipsMode !== "off"))), ...TILE_PICKER).map((meta) => {
+        {sortBy(HOME_TILES.filter((meta) => !meta.soon && (meta.id !== "tipps" || (tipsMode && tipsMode !== "off")) && (!meta.feature || launchSichtbar(meta.feature, on ?? []))), ...TILE_PICKER).map((meta) => {
           const tile = all.find((t) => t.id === meta.id);
           const active = Boolean(tile && isActive(tile));
           const Icon = TILE_ICONS[meta.id] ?? Box;
