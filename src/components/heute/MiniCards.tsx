@@ -29,8 +29,6 @@ import dynamic from "next/dynamic";
 import { openQuick } from "@/lib/core/schnelleingabe";
 
 // Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
-const TaskQuickAdd = dynamic(() => import("@/components/kalender/TaskQuickAdd").then((m) => m.TaskQuickAdd), { ssr: false });
-const TerminQuickAdd = dynamic(() => import("@/components/kalender/TerminQuickAdd").then((m) => m.TerminQuickAdd), { ssr: false });
 const EntryForm = dynamic(() => import("@/components/kalender/EntryForm").then((m) => m.EntryForm), { ssr: false });
 
 /** Beispiel-Tag: Beispiele statt echter Einträge (Antippen erklärt, Abhaken nur hier) */
@@ -161,7 +159,7 @@ export function TermineSection({ rows, label, href, today, size = "M", half = fa
   const { setMenu, before, overlays } = useSection();
   const [adding, setAdding] = useState<string | null>(null);
   const shown = rows.slice(0, ROW_COUNT[size]);
-  const sheet = adding !== null && <TerminQuickAdd onClose={() => setAdding(null)} defaultDate={today} initialText={adding} />;
+  const sheet = adding !== null && <EntryForm kind="termin" onClose={() => setAdding(null)} date={today} initialText={adding} />;
   const plus = <QuickButton icon={Plus} label="Neuer Termin" onClick={() => openQuick({ kind: "termin", date: today, more: setAdding })} />;
   const rest = rows.length - shown.length;
   return (
@@ -248,7 +246,7 @@ export function AufgabenSection({ items, total, today, href = "/aufgaben", size 
         )}
       </section>
       {overlays}
-      {adding !== null && <TaskQuickAdd initialText={adding} onClose={() => setAdding(null)} />}
+      {adding !== null && <EntryForm kind="aufgabe" initialText={adding} onClose={() => setAdding(null)} />}
     </>
   );
 }

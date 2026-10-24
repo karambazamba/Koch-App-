@@ -31,7 +31,7 @@ export function roomBarProps(item: Pick<DayItem, "room" | "entry">): { className
 
 const MENU_ROW = "flex h-14 w-full items-center gap-3 px-4 text-left text-base font-semibold active:bg-fill";
 
-/** Antippen eines Eintrags: Erledigt · Auf morgen · Erinnerung ändern · Bearbeiten · Löschen */
+/** Antippen eines Eintrags: Erledigt (nur Aufgaben – ein Termin ist einfach vorbei) · Auf morgen · Erinnerung ändern · Bearbeiten · Löschen */
 export function ItemMenu({ item, onClose, onEdit }: { item: DayItem; onClose: () => void; onEdit: () => void }) {
   const [step, setStep] = useState<"menu" | "erinnerung" | "loeschen">("menu");
   const series = Boolean(item.repeat);
@@ -45,10 +45,12 @@ export function ItemMenu({ item, onClose, onEdit }: { item: DayItem; onClose: ()
     <Sheet title={item.title} onClose={onClose}>
       {step === "menu" && (
         <div className={`${CARD} mb-2 flex flex-col divide-y divide-line overflow-hidden`}>
-          <button type="button" className={MENU_ROW} onClick={close(() => (buzz(), item.done ? act((l, s) => setDone(l, item, false, s)) : act((l, s) => setDone(l, item, true, s), item.title, { done: true })))}>
-            {item.done ? <Circle className="h-5 w-5 text-muted" strokeWidth={2} aria-hidden /> : <CheckCircle2 className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />}
-            {item.done ? "Doch nicht erledigt" : "Erledigt"}
-          </button>
+          {item.entry.typ === "aufgabe" && (
+            <button type="button" className={MENU_ROW} onClick={close(() => (buzz(), item.done ? act((l, s) => setDone(l, item, false, s)) : act((l, s) => setDone(l, item, true, s), item.title, { done: true })))}>
+              {item.done ? <Circle className="h-5 w-5 text-muted" strokeWidth={2} aria-hidden /> : <CheckCircle2 className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />}
+              {item.done ? "Doch nicht erledigt" : "Erledigt"}
+            </button>
+          )}
           {!item.done && (
             <button type="button" className={MENU_ROW} onClick={close(() => act((l, s) => moveItem(l, item, addDays(item.date, 1), s), `${item.title} auf morgen`))}>
               <CalendarArrowUp className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />

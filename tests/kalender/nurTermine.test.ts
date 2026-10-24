@@ -79,23 +79,13 @@ describe("Eintragen am gewählten Tag (Schnelleingabe)", () => {
     expect(readQuick("termin", "Zahnarzt am 2.11. um 16 Uhr", TODAY, { date: "2026-10-30" })).toMatchObject({ date: "2026-11-02", time: "16:00" });
   });
 
-  it("＋ oben, „Termin am …“ und lange drücken öffnen die Schnelleingabe mit dem Tag", () => {
+  it("Launch 1.0: nur ＋ oben öffnet die Schnelleingabe mit dem gewählten Tag (kein langes Drücken, keine Zeile „Termin am …“)", () => {
     const page = readFileSync("src/components/kalender/CalendarPage.tsx", "utf8");
     const panel = readFileSync("src/components/kalender/DayPanel.tsx", "utf8");
     expect(page).toMatch(/openQuick\(\{ kind: "termin", date: day, more: setAdding \}\)/);
-    expect(page).toMatch(/const HOLD_MS = 400;/);
-    expect(page).toMatch(/openQuick\(\{ kind: "termin", date \}\)/);
-    expect(panel).toMatch(/openQuick\(\{ kind: "termin", date, more: setForm \}\)/);
-    expect(panel).toContain("Antippen und eintragen");
-  });
-
-  it("Fehler aus dem Durchklick: lange drücken öffnet erst beim Loslassen (sonst schließt der Klick das Fenster gleich wieder)", () => {
-    const page = readFileSync("src/components/kalender/CalendarPage.tsx", "utf8");
-    const hold = page.slice(page.indexOf("function useDayHold"), page.indexOf("function MonthView"));
-    const timeout = hold.slice(hold.indexOf("setTimeout("), hold.indexOf("}, HOLD_MS)"));
-    expect(timeout).not.toMatch(/open\(|openQuick/);
-    expect(hold).toMatch(/onClick: \(\) => \{\s*if \(held\.current\) return open\(date\);/);
-    expect(hold).toMatch(/onContextMenu:[\s\S]*open\(date\)/);
+    expect(page).not.toMatch(/HOLD_MS|useDayHold/);
+    expect(page).toMatch(/onClick=\{\(\) => onSelect\(date\)\}/);
+    expect(panel).not.toMatch(/openQuick|Antippen und eintragen/);
   });
 
   it("kein Essen und keine Aufgaben im Kalender, kein „freier Tag“", () => {

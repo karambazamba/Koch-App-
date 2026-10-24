@@ -3,13 +3,13 @@
 // Ein Tag im Kalender (Tafel 74) – direkt unter dem Monat bzw. auf /tag, kein
 // neuer Bildschirm: Kopf „Freitag, 30. Oktober“ + rechts klein „heute /
 // morgen / in 7 Tagen“, darunter nur die Termine (Uhrzeit Blau, Titel, rechts
-// kleiner Kreis der Person; antippen = Termin). Dann die große Zeile „Termin
-// am Fr, 30. Okt“ (zart Orange, gestrichelt) → Schnelleingabe mit diesem Tag.
-// „Schnell eintragen“ nur bei Wiederkehrendem. Kein Essen, keine Aufgaben.
+// kleiner Kreis der Person; antippen = Termin). Eintragen nur über ＋ (Launch
+// 1.0: keine eigene Zeile „Termin am …“). „Schnell eintragen“ nur bei
+// Wiederkehrendem. Kein Essen, keine Aufgaben.
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Bell, Plus } from "lucide-react";
+import { Bell } from "lucide-react";
 import { reminderFor } from "@/lib/heute/mitteilungen/erinnerungen";
 import { CARD } from "@/components/ui/styles";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
@@ -21,14 +21,12 @@ import { clockLabel } from "@/lib/kalender/answers";
 import { dayDistance, recurringSuggestions, termineOn, type Suggestion } from "@/lib/kalender/monat";
 import { sanitizeEntry, upsertEntry, type CalendarEntry, type DayItem } from "@/lib/kalender/model";
 import { createEntry } from "@/lib/core/entries";
-import { openQuick, shortDay } from "@/lib/core/schnelleingabe";
 import { showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
 import { changeEntries } from "@/lib/kalender/store";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 
 const EntryForm = dynamic(() => import("@/components/kalender/EntryForm").then((m) => m.EntryForm), { ssr: false });
-const TerminQuickAdd = dynamic(() => import("@/components/kalender/TerminQuickAdd").then((m) => m.TerminQuickAdd), { ssr: false });
 
 export type RoomFilter = "alles" | "familie" | "arbeit";
 
@@ -50,8 +48,6 @@ export function DayPanel({ date, today, entries, filter = "alles", heading = tru
   const chips = date >= today ? recurringSuggestions(entries, date, today) : [];
   const [menu, setMenu] = useState<DayItem | null>(null);
   const [editing, setEditing] = useState<DayItem | null>(null);
-  const [form, setForm] = useState<string | null>(null);
-  const day = shortDay(date);
   return (
     <section className="flex flex-col gap-2.5" aria-label="Gewählter Tag">
       {heading && (
@@ -80,19 +76,6 @@ export function DayPanel({ date, today, entries, filter = "alles", heading = tru
         </ul>
       )}
       {filter !== "arbeit" && <TipsDayList tips={tips} />}
-      <button
-        type="button"
-        onClick={() => openQuick({ kind: "termin", date, more: setForm })}
-        className="flex min-h-14 w-full items-center gap-3 rounded-card border-2 border-dashed border-accent/40 bg-accent-soft/60 px-4 py-2 text-left active:scale-[0.99]"
-      >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent">
-          <Plus className="h-4 w-4" strokeWidth={2.75} aria-hidden />
-        </span>
-        <span className="flex min-w-0 flex-col">
-          <span className="text-base font-bold text-accent-strong">Termin am {day}</span>
-          <span className="text-sm text-muted">Antippen und eintragen</span>
-        </span>
-      </button>
       {chips.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 px-1" aria-label="Schnell eintragen">
           <span className="text-sm font-semibold text-muted">Schnell eintragen</span>
@@ -105,7 +88,6 @@ export function DayPanel({ date, today, entries, filter = "alles", heading = tru
       )}
       {menu && <ItemMenu item={menu} onClose={() => setMenu(null)} onEdit={() => (setEditing(menu), setMenu(null))} />}
       {editing && <EntryForm entry={editing.entry} onClose={() => setEditing(null)} />}
-      {form !== null && <TerminQuickAdd defaultDate={date} initialText={form} onClose={() => setForm(null)} />}
     </section>
   );
 }

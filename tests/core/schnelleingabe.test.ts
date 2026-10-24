@@ -157,7 +157,7 @@ describe("Regel „＋ = tippen, Mia = sprechen“", () => {
   });
 
   it("kein eigenes Mikro in der Schnelleingabe und den Formularen dahinter", () => {
-    for (const f of ["src/components/ui/QuickEntry.tsx", "src/components/kalender/TaskQuickAdd.tsx", "src/components/kalender/TerminQuickAdd.tsx", "src/components/einkauf/QuickAdd.tsx", "src/components/pinnwand/PinSheets.tsx"]) {
+    for (const f of ["src/components/ui/QuickEntry.tsx", "src/components/kalender/EntryForm.tsx", "src/components/einkauf/QuickAdd.tsx", "src/components/pinnwand/PinSheets.tsx"]) {
       expect(readFileSync(f, "utf8"), f).not.toMatch(/useSpeechInput|MicStrip|<Mic /);
     }
   });
@@ -174,3 +174,24 @@ describe("Regel „＋ = tippen, Mia = sprechen“", () => {
 });
 
 at("2026-10-21T10:30");
+
+describe("Launch 1.0: ein Weg zum Eintragen", () => {
+  it("„Mehr Details“ öffnet überall das eine Formular (Titel + ✕, oranges „Speichern“)", () => {
+    for (const f of ["src/components/heute/MiniCards.tsx", "src/components/kalender/CalendarPage.tsx", "src/components/kalender/TasksView.tsx", "src/components/kalender/DayView.tsx", "src/components/heute/DemoBits.tsx"]) {
+      const src = readFileSync(f, "utf8");
+      expect(src, f).not.toMatch(/TerminQuickAdd|TaskQuickAdd/);
+      expect(src, f).toMatch(/<EntryForm /);
+    }
+    const form = readFileSync("src/components/kalender/EntryForm.tsx", "utf8");
+    expect(form).not.toMatch(/Abbrechen|Sichern/);
+    expect(form).toMatch(/buttonClass\("primary"\)[^\n]*\n\s*Speichern/);
+  });
+
+  it("Kalender: kein langes Drücken auf einen Tag, keine Zeile „Termin am …“, Termine ohne „Erledigt“", () => {
+    expect(readFileSync("src/components/kalender/CalendarPage.tsx", "utf8")).not.toMatch(/useDayHold|onContextMenu|HOLD_MS/);
+    expect(readFileSync("src/components/kalender/DayPanel.tsx", "utf8")).not.toMatch(/Termin am \{/);
+    const items = readFileSync("src/components/kalender/Items.tsx", "utf8");
+    const erledigt = items.indexOf('"Doch nicht erledigt" : "Erledigt"');
+    expect(items.slice(Math.max(0, erledigt - 700), erledigt)).toContain('item.entry.typ === "aufgabe" && (');
+  });
+});

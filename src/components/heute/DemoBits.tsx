@@ -11,8 +11,7 @@ import { clearDemo, markDemoAsked } from "@/lib/core/demo";
 import dynamic from "next/dynamic";
 
 // Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
-const TerminQuickAdd = dynamic(() => import("@/components/kalender/TerminQuickAdd").then((m) => m.TerminQuickAdd), { ssr: false });
-const TaskQuickAdd = dynamic(() => import("@/components/kalender/TaskQuickAdd").then((m) => m.TaskQuickAdd), { ssr: false });
+const EntryForm = dynamic(() => import("@/components/kalender/EntryForm").then((m) => m.EntryForm), { ssr: false });
 
 export function DemoBadge() {
   return <span className="rounded-md bg-demo px-1.5 py-0.5 text-[9.5px] font-extrabold tracking-wider text-demo-ink">BEISPIEL</span>;
@@ -70,6 +69,6 @@ function DemoSheet({ title, addLabel, onAdd, onClose }: { title: string; addLabe
 export function DemoItemSheet({ item, today, onClose }: { item: DayItem; today: string; onClose: () => void }) {
   const [adding, setAdding] = useState(false);
   const termin = item.entry.typ === "termin";
-  if (adding) return termin ? <TerminQuickAdd onClose={onClose} defaultDate={today} /> : <TaskQuickAdd onClose={onClose} />;
+  if (adding) return <EntryForm kind={termin ? "termin" : "aufgabe"} date={termin ? today : undefined} onClose={onClose} />;
   return <DemoSheet title={item.title} addLabel={termin ? "Eigenen Termin eintragen" : "Eigene Aufgabe eintragen"} onAdd={() => setAdding(true)} onClose={onClose} />;
 }

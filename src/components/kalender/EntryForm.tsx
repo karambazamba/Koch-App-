@@ -1,10 +1,11 @@
 "use client";
 
-// Termin oder Aufgabe anlegen/bearbeiten – wie auf dem iPhone: oben
-// "Abbrechen | Titel | Sichern", darunter gruppierte Zeilen (Titel/Ort ·
-// Tag/Uhrzeit · Familie/Arbeit/Für wen/Etikett · Wiederholen/Erinnerung),
-// unten rot "Löschen". Mia ist der Hauptweg – das Formular dient zum
-// Nachschauen und Feinjustieren.
+// Termin oder Aufgabe anlegen/bearbeiten – das EINE Formular (Launch 1.0,
+// auch „Mehr Details“ der Schnelleingabe): oben Titel + ✕, darunter
+// gruppierte Zeilen (Titel/Ort · Tag/Uhrzeit · Für/Wer/Etikett ·
+// Wiederholen/Erinnerung), am Ende oranges „Speichern“ und bei Bestehendem
+// rot "Löschen". Getippter Satz (`initialText`) füllt Titel, Tag und Uhrzeit
+// vor. Mia ist der Hauptweg – das Formular dient zum Feinjustieren.
 
 import { WEEKDAYS_SHORT_MO } from "@/lib/core/days";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
@@ -12,11 +13,13 @@ import { useState, type ReactNode } from "react";
 import { Sheet } from "@/components/ui/Sheet";
 import { Segmented } from "@/components/ui/Segmented";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
-import { CARD_LIST, chipClass } from "@/components/ui/styles";
+import { CARD_LIST, buttonClass, chipClass } from "@/components/ui/styles";
 import { createEntry, type Room } from "@/lib/core/entries";
 import { ExternalLink } from "lucide-react";
 import { aufgabeExtras, mondayOf, REMINDERS, removeItem, sanitizeEntry, sourceLabel, terminExtras, upsertEntry, weekdayIndex, type CalendarEntry, type Reminder, type Repeat } from "@/lib/kalender/model";
-import { nowIso, todayIso } from "@/lib/core/now";
+import { berlinTime, nowIso, todayIso } from "@/lib/core/now";
+import { isPast, timeLabel } from "@/lib/kalender/sentence";
+import { quickTaskData, readQuickText, readTerminText, type When } from "@/lib/kalender/quick";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { PERSONS, sortBy } from "@/lib/core/sort";
 import { act } from "@/components/heute/actions";
@@ -65,21 +68,38 @@ function SourceLink({ href, note }: { href: string; note?: string }) {
   );
 }
 
-export function EntryForm({ entry, date, kind, onClose }: { entry?: CalendarEntry; date?: string; kind?: "termin" | "aufgabe"; onClose: () => void }) {
-  const d = entry?.data;
+const minutesNow = () => berlinTime().minutes;
+
+/** Neu aus der Schnelleingabe: was der Satz schon sagt (Titel, Tag, Uhrzeit, Raum, Etikett) */
+function vorbelegt(kind: "termin" | "aufgabe", text: string, date: string | undefined, when: When): CalendarEntry | undefined {
+  if (!text.trim()) return undefined;
+  const today = todayIso();
+  if (kind === "termin") {
+    const r = readTerminText(text, today);
+    return { id: "", typ: "termin", raum: r.room, besitzer: "", erstellt: "", geaendert: "", data: { title: r.title, date: r.date ?? date ?? today, start: r.time ?? "", label: r.label, repeat: r.repeat ?? null, reminder: "aus" } } as unknown as CalendarEntry;
+  }
+  const q = readQuickText(text, today);
+  const data = quickTaskData(q.title, q.when ?? (date ? { date } : when), today, { time: q.time, label: q.label, dringend: q.urgent });
+  return { id: "", typ: "aufgabe", raum: q.room, besitzer: "", erstellt: "", geaendert: "", data } as unknown as CalendarEntry;
+}
+
+export function EntryForm({ entry, date, kind, initialText = "", when = "heute", onClose }: { entry?: CalendarEntry; date?: string; kind?: "termin" | "aufgabe"; initialText?: string; when?: When; onClose: () => void }) {
+  const [pre] = useState(() => (entry ? undefined : vorbelegt(kind ?? "termin", initialText, date, when)));
+  const d = entry?.data ?? pre?.data;
   const profile = useProfile();
   const persons = sortBy((profile?.persons ?? []).filter((p) => p.name.trim()), ...PERSONS);
+  const src = entry ?? pre;
   const [typ, setTyp] = useState<"termin" | "aufgabe">(entry?.typ ?? kind ?? "termin");
   const [title, setTitle] = useState(d?.title ?? "");
   // Neue Aufgabe von der Aufgaben-Seite: ohne Tag ("Irgendwann")
   const [day, setDay] = useState(d?.date ?? date ?? (kind === "aufgabe" ? "" : todayIso()));
-  const [week, setWeek] = useState(entry?.typ === "aufgabe" ? (entry.data.week ?? "") : "");
-  const [time, setTime] = useState(entry?.typ === "termin" ? entry.data.start : entry?.typ === "aufgabe" ? (entry.data.time ?? "") : "");
+  const [week, setWeek] = useState(src?.typ === "aufgabe" ? (src.data.week ?? "") : "");
+  const [time, setTime] = useState(src?.typ === "termin" ? src.data.start : src?.typ === "aufgabe" ? (src.data.time ?? "") : "");
   const [end, setEnd] = useState(entry?.typ === "termin" ? (entry.data.end ?? "") : "");
-  const [due, setDue] = useState(entry?.typ === "aufgabe" ? (entry.data.due ?? "") : "");
+  const [due, setDue] = useState(src?.typ === "aufgabe" ? (src.data.due ?? "") : "");
   const [place, setPlace] = useState(entry?.typ === "termin" ? (entry.data.place ?? "") : "");
   const [who, setWho] = useState<string[]>(entry?.typ === "termin" ? (entry.data.who ?? []) : []);
-  const [room, setRoom] = useState<Room>(entry?.raum ?? "familie");
+  const [room, setRoom] = useState<Room>(src?.raum ?? "familie");
   const [label, setLabel] = useState(d?.label ?? "");
   const [liste, setListe] = useState(entry?.typ === "aufgabe" ? (entry.data.liste ?? "") : "");
   const [repeat, setRepeat] = useState<RepeatKind>(d?.repeat?.kind ?? "nie");
@@ -90,16 +110,17 @@ export function EntryForm({ entry, date, kind, onClose }: { entry?: CalendarEntr
 
   const save = () => {
     if (!title.trim()) return setHint("Wie heißt es? Ein Wort reicht.");
-    // Ganztägig (z. B. aus Google übernommen) bleibt ohne Uhrzeit speicherbar
-    if (typ === "termin" && !time && !(entry?.typ === "termin" && entry.data.start === "")) return setHint("Für einen Termin brauche ich eine Uhrzeit – ohne Uhrzeit ist es eine Aufgabe.");
+    // Ohne Uhrzeit = ganztägig (wie in der Schnelleingabe)
     if (typ === "termin" && !day) return setHint("An welchem Tag?");
+    // Nie still in der Vergangenheit speichern (nur Neues)
+    if (!entry && typ === "termin" && isPast(day, time, todayIso(), minutesNow())) return setHint(`${timeLabel(time)} ist heute schon vorbei.`);
     // Gleiche Art wie vorher → Feinheiten (z. B. „alle 2 Wochen“ aus Google) bleiben
     const rep: Repeat | null = repeat === "nie" ? null : repeat === "wochentage" ? { kind: "wochentage", days: days.length ? days : [weekdayIndex(day || todayIso())] } : d?.repeat?.kind === repeat ? d.repeat : { kind: repeat };
     const keep = { doneDates: d?.doneDates ?? [], skipDates: d?.skipDates ?? [] };
     const data =
       typ === "termin"
         ? { title, date: day, start: time, end: end || undefined, place: place || undefined, label: label || undefined, repeat: rep, reminder, who: who.length ? who : undefined, ...terminExtras(entry?.typ === "termin" ? entry.data : undefined), ...keep }
-        : { title, date: day || undefined, due: due || undefined, week: !day && !due && week ? week : undefined, time: time || undefined, label: label || undefined, repeat: rep, reminder, doneOn: entry?.typ === "aufgabe" ? entry.data.doneOn : null, ...aufgabeExtras(entry?.typ === "aufgabe" ? entry.data : undefined), liste: liste.trim() || undefined, ...keep };
+        : { title, date: day || undefined, due: due || undefined, week: !day && !due && week ? week : undefined, time: time || undefined, label: label || undefined, repeat: rep, reminder, doneOn: entry?.typ === "aufgabe" ? entry.data.doneOn : null, ...aufgabeExtras(src?.typ === "aufgabe" ? src.data : undefined), liste: liste.trim() || undefined, ...keep };
     const base = entry ? { ...entry, typ, raum: room, data } : createEntry(typ, data, { raum: room });
     const clean = sanitizeEntry({ ...base, geaendert: nowIso() });
     if (!clean) return setHint("Das hat nicht geklappt – schau bitte nochmal auf Datum und Uhrzeit.");
@@ -109,21 +130,7 @@ export function EntryForm({ entry, date, kind, onClose }: { entry?: CalendarEntr
 
   const heading = entry ? (typ === "termin" ? "Termin" : "Aufgabe") : typ === "termin" ? "Neuer Termin" : "Neue Aufgabe";
   return (
-    <Sheet
-      title={heading}
-      onClose={onClose}
-      header={
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-          <button type="button" onClick={onClose} className="hit justify-self-start text-[17px] font-semibold text-accent-strong">
-            Abbrechen
-          </button>
-          <h2 className="text-[17px] font-extrabold">{heading}</h2>
-          <button type="button" onClick={save} className="hit justify-self-end text-[17px] font-extrabold text-accent-strong">
-            Sichern
-          </button>
-        </div>
-      }
-    >
+    <Sheet title={heading} onClose={onClose}    >
       <div className="flex flex-col gap-4 pb-3">
         {!entry && (
           <Segmented
@@ -254,7 +261,7 @@ export function EntryForm({ entry, date, kind, onClose }: { entry?: CalendarEntr
             <select value={reminder} onChange={(e) => setReminder(e.target.value as Reminder)} className={`${FIELD} appearance-none text-accent-strong`}>
               {REMINDERS.map((r) => (
                 <option key={r.value} value={r.value}>
-                  {r.value === "aus" ? "Keine" : r.label}
+                  {r.label}
                 </option>
               ))}
             </select>
@@ -266,6 +273,9 @@ export function EntryForm({ entry, date, kind, onClose }: { entry?: CalendarEntr
             {hint}
           </p>
         )}
+        <button type="button" onClick={save} className={`${buttonClass("primary")} w-full`}>
+          Speichern
+        </button>
         {entry && (
           <button
             type="button"
