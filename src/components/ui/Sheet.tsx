@@ -113,6 +113,7 @@ export function StageSheet({ title, onClose, left, right, inset = 0, children }:
   useBackCloses(onClose);
   // Fest an den sichtbaren Bereich gebunden: das Feld sitzt direkt über der Tastatur
   const box = useVisualViewportBox();
+  const typing = useRef(false);
   const drag = useRef<number | null>(null);
   const [dy, setDy] = useState(0);
   useEffect(() => {
@@ -134,11 +135,18 @@ export function StageSheet({ title, onClose, left, right, inset = 0, children }:
       style={box ? { top: box.top, height: box.height } : undefined}
       data-buehne
       data-daneben
+      // Tastatur offen? Beim Aufsetzen merken – der Browser nimmt den Fokus schon vor dem Klick weg
+      onPointerDownCapture={(e) => {
+        const active = document.activeElement;
+        typing.current = Boolean(active && e.currentTarget.contains(active) && /^(INPUT|TEXTAREA)$/.test(active.tagName));
+      }}
       onClick={(e) => {
         if (!(e.target as Element).hasAttribute?.("data-daneben")) return;
         // Wird gerade getippt: erst nur die Tastatur weg (nichts Getipptes geht verloren)
-        const active = document.activeElement;
-        if (active && e.currentTarget.contains(active) && /^(INPUT|TEXTAREA)$/.test(active.tagName)) return (active as HTMLElement).blur();
+        if (typing.current) {
+          typing.current = false;
+          return (document.activeElement as HTMLElement | null)?.blur?.();
+        }
         onClose();
       }}
     >
