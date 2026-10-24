@@ -2435,3 +2435,13 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Fehler je Aufruf: einmal still nochmal, sonst „Fehler beim Aufruf“ und
   weiter; Verbindungsabbruch → „Nochmal ab hier?“ mit „Weiter“.
 - Hinweis „Bildschirm anlassen“, am Ende Fehlschläge zum Kopieren.
+
+## Termine & Kalender – ein Weg (v0.104.0)
+- Eintragen nur über ＋ (Schnelleingabe); kein langes Drücken auf einen Tag,
+  keine Zeile „Termin am …“, die Chips „Schnell eintragen“ bleiben.
+- „Mehr Details“ = das EINE Formular (`EntryForm`) für Termine und
+  Aufgaben, vorbefüllt aus dem Satz: oben Titel + ✕, am Ende oranges
+  „Speichern“; ohne Uhrzeit ganztägig, Vergangenes heute nie still
+  gespeichert. `TerminQuickAdd`, `TaskQuickAdd` und das Zeit-Rad sind weg.
+- Tag antippen in Monat, Woche und Liste gleich: der Tag steht darunter.
+- Termine ohne „Erledigt“; Erinnerung „Keine Erinnerung“ … „Am Vorabend“.

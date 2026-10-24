@@ -1,82 +1,91 @@
-// Termin eintragen – ein Satz genügt (Tafel 26): erkennen beim Tippen,
-// Pillen zum Korrigieren, ganztägig ohne Uhrzeit, Zeit schon vorbei, Hand
-// schlägt Automatik, alles sichtbar mit offener Tastatur (SE). Zeit: Mi 21.10. 10:30.
+// Termin eintragen – ein Weg (Launch 1.0): ＋ → Schnelleingabe (ein Satz
+// genügt) → ➤ speichert; „Mehr Details“ öffnet das EINE Formular (Titel + ✕,
+// oranges „Speichern“), vorbefüllt aus dem Satz. Kein langes Drücken auf
+// einen Tag, keine Zeile „Termin am …“, Tag antippen ist in Monat/Woche/Liste
+// gleich (der Tag steht darunter). Termine ohne „Erledigt“. Zeit: Mi 21.10. 10:30.
 import { BASE, hello, mehrDetails, seedFamily, store } from "../lib.mjs";
 
-async function open(page) {
+const panel = (page) => page.locator("[role=tabpanel]:not([inert])");
+
+async function plus(page) {
   await page.goto(BASE + "/?seite=kalender");
   await page.waitForTimeout(900);
-  await page.locator("[role=tabpanel]:not([inert])").getByRole("button", { name: "Neuer Termin" }).click();
-  await mehrDetails(page);
-  const sheet = page.getByRole("dialog", { name: "Neuer Termin" });
-  await sheet.waitFor();
-  return sheet;
+  await panel(page).getByRole("button", { name: "Neuer Termin" }).click();
+  const quick = page.getByRole("dialog", { name: "Schnelleingabe" });
+  await quick.waitFor({ timeout: 5000 });
+  return quick;
 }
 
-const type = async (sheet, text) => {
-  await sheet.getByRole("textbox", { name: "Termin" }).fill(text);
-  await sheet.page().waitForTimeout(450);
-};
 const termine = async (page) => (await store(page, "wasgibts.eintraege")).entries.filter((e) => e.typ === "termin");
 
 export const terminSatz = async (page, check) => {
   await hello(page);
   await seedFamily(page);
 
-  // „Mittwoch 12.30 Physio“ → Mi 12:30, gespeichert als „Physio“
-  let sheet = await open(page);
-  await type(sheet, "Mittwoch 12.30 Physio");
-  check(await sheet.getByRole("button", { name: /^Uhrzeit: 12:30/ }).isVisible(), "Uhrzeit-Pille zeigt 12:30");
-  check(await sheet.getByText("Erkannt aus deinem Text").isVisible(), "„✓ Erkannt aus deinem Text“");
-  check((await sheet.locator("mark").count()) === 2, "erkannte Wörter hinterlegt");
-  await sheet.getByRole("button", { name: "Eintragen" }).click();
+  // Ein Satz genügt: „Mittwoch 12.30 Physio“ → ➤ → Mi 12:30 „Physio“
+  let quick = await plus(page);
+  await quick.getByRole("textbox").fill("Mittwoch 12.30 Physio");
+  await quick.getByRole("textbox").press("Enter");
   await page.waitForTimeout(500);
   let saved = (await termine(page)).find((e) => e.data.title === "Physio");
-  check(saved?.data.date === "2026-10-21" && saved?.data.start === "12:30", `gespeichert Mi 12:30 „Physio“ (${saved?.data.date} ${saved?.data.start})`);
+  check(saved?.data.date === "2026-10-21" && saved?.data.start === "12:30", `➤ speichert Mi 12:30 „Physio“ (${saved?.data.date} ${saved?.data.start})`);
+  await quick.getByRole("button", { name: "Schließen" }).last().click();
+  await page.waitForTimeout(400);
 
-  // „28.10. Zahnarzt“ → 28. Okt, ganztägig
-  sheet = await open(page);
-  await type(sheet, "28.10. Kieferorthopäde");
-  check(await sheet.getByRole("button", { name: /^Uhrzeit: ganztägig/ }).isVisible(), "ohne Uhrzeit: „ganztägig“");
-  await sheet.getByRole("button", { name: "Eintragen" }).click();
+  // „Mehr Details“ = das eine Formular, vorbefüllt; Titel + ✕, oranges „Speichern“
+  quick = await plus(page);
+  await quick.getByRole("textbox").fill("28.10. um 15 Uhr Kieferorthopäde");
+  await mehrDetails(page);
+  const form = page.getByRole("dialog", { name: "Neuer Termin" });
+  await form.waitFor({ timeout: 5000 });
+  check((await form.getByRole("textbox", { name: "Titel" }).inputValue()) === "Kieferorthopäde", "Titel aus dem Satz");
+  check((await form.locator('input[type="date"]').first().inputValue()) === "2026-10-28", "Tag aus dem Satz");
+  check((await form.locator('input[type="time"]').first().inputValue()) === "15:00", "Uhrzeit aus dem Satz");
+  check(await form.getByRole("button", { name: "Schließen" }).first().isVisible(), "oben ✕");
+  check(!(await form.getByRole("button", { name: /^(Abbrechen|Sichern)$/ }).count()), "kein „Abbrechen | Sichern“ mehr");
+  await form.getByRole("button", { name: "Speichern" }).click();
   await page.waitForTimeout(500);
   saved = (await termine(page)).find((e) => e.data.title === "Kieferorthopäde");
-  check(saved?.data.date === "2026-10-28" && saved?.data.start === "", `28.10. ganztägig (${saved?.data.date} „${saved?.data.start}“)`);
+  check(saved?.data.date === "2026-10-28" && saved?.data.start === "15:00", `Speichern: 28.10. 15:00 (${saved?.data.date} ${saved?.data.start})`);
 
-  // „Hallo“ → Heute, ganztägig, nur Zeiten, die noch kommen
-  sheet = await open(page);
-  await type(sheet, "Hallo");
-  check(await sheet.getByRole("button", { name: /^Tag: Heute/ }).isVisible(), "„Hallo“ → Heute");
-  check(await sheet.getByText("Heute noch frei").isVisible(), "„Heute noch frei“");
-  const chips = await sheet.getByRole("group", { name: "Zeit-Vorschläge" }).getByRole("button").allInnerTexts();
-  check(chips.filter((c) => /\d/.test(c)).every((c) => Number(c.split(":")[0]) * 60 + Number(c.split(":")[1]) > 10 * 60 + 30), `nur spätere Zeiten (${chips.join(", ")})`);
-
-  // Zeit schon vorbei → Hinweis
-  await type(sheet, "Bäcker 9 Uhr");
-  check(await sheet.getByText("9:00 ist heute schon vorbei.").isVisible(), "Hinweis „schon vorbei“");
-  check(await sheet.getByRole("button", { name: "Eintragen" }).isDisabled(), "nie still in der Vergangenheit speichern");
-  await sheet.getByRole("button", { name: "Morgen 9:00" }).click();
-  check(await sheet.getByRole("button", { name: /^Tag: Morgen/ }).isVisible(), "„Morgen 9:00“ setzt morgen");
-
-  // Hand schlägt Automatik
-  await type(sheet, "Bäcker Freitag 9 Uhr");
-  check(await sheet.getByRole("button", { name: /^Tag: Morgen/ }).isVisible(), "von Hand gewählter Tag bleibt beim Weitertippen");
-  await sheet.getByRole("button", { name: "Tag wieder automatisch" }).click();
-  check(await sheet.getByRole("button", { name: /^Tag: Fr/ }).isVisible(), "„×“ = wieder automatisch (Freitag)");
-  await sheet.getByRole("button", { name: "Schließen" }).first().click();
+  // Zeit schon vorbei → Hinweis, nichts gespeichert
+  quick = await plus(page);
+  await quick.getByRole("textbox").fill("Bäcker heute 9:00");
+  await mehrDetails(page);
+  await form.getByRole("button", { name: "Speichern" }).click();
   await page.waitForTimeout(300);
+  check(await form.getByText("9:00 ist heute schon vorbei.").isVisible(), "Hinweis „schon vorbei“");
+  check(!(await termine(page)).some((e) => e.data.title === "Bäcker"), "nie still in der Vergangenheit speichern");
+  await form.getByRole("button", { name: "Schließen" }).first().click();
+  await page.waitForTimeout(400);
 
-  // iPhone SE mit offener Tastatur (sichtbare Höhe ~380 px): alles ohne Scrollen
-  await page.setViewportSize({ width: 375, height: 380 });
-  sheet = await open(page);
-  await type(sheet, "Elternabend");
-  const h = 380;
-  const inView = async (loc) => {
-    const b = await loc.boundingBox();
-    return Boolean(b) && b.y >= 0 && b.y + b.height <= h + 1;
-  };
-  check(await inView(sheet.getByRole("textbox", { name: "Termin" })), "SE + Tastatur: Titel sichtbar");
-  check(await inView(sheet.getByRole("button", { name: /^Tag:/ })), "SE + Tastatur: Tag-Pille sichtbar");
-  check(await inView(sheet.getByRole("button", { name: /^Uhrzeit:/ })), "SE + Tastatur: Uhrzeit-Pille sichtbar");
-  check(await inView(sheet.getByRole("button", { name: "Eintragen" })), "SE + Tastatur: „Eintragen“ sichtbar");
+  // Kein langes Drücken auf einen Tag, keine Zeile „Termin am …“
+  await page.goto(BASE + "/?seite=kalender");
+  await page.waitForTimeout(900);
+  const tag = panel(page).getByRole("gridcell", { name: /23\. Oktober/ });
+  const b = await tag.boundingBox();
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(700);
+  await page.mouse.up();
+  await page.waitForTimeout(500);
+  check(!(await page.getByRole("dialog", { name: "Schnelleingabe" }).count()), "langes Drücken öffnet nichts");
+  check((await tag.getAttribute("aria-selected")) === "true", "… es wählt nur den Tag");
+  check(!(await panel(page).getByText(/^Termin am /).count()), "keine Zeile „Termin am …“");
+
+  // Woche und Liste: Tag antippen → der Tag steht direkt darunter (wie im Monat)
+  for (const ansicht of ["Woche", "Liste"]) {
+    await panel(page).getByRole("radio", { name: ansicht }).click();
+    await page.waitForTimeout(400);
+    const karte = panel(page).getByRole("button", { name: /^Mi 28\./ });
+    await karte.click();
+    await page.waitForTimeout(400);
+    check((await karte.getAttribute("aria-pressed")) === "true" && (await panel(page).getByRole("button", { name: /^Kieferorthopäde – Möglichkeiten/ }).isVisible()), `${ansicht}: Tag antippen zeigt ihn darunter`);
+  }
+
+  // Termin antippen: kein „Erledigt“
+  await panel(page).getByRole("button", { name: /^Kieferorthopäde – Möglichkeiten/ }).click();
+  const menu = page.getByRole("dialog", { name: "Kieferorthopäde" });
+  await menu.waitFor({ timeout: 4000 });
+  check(!(await menu.getByRole("button", { name: "Erledigt" }).count()) && (await menu.getByRole("button", { name: "Bearbeiten" }).isVisible()), "Termin ohne „Erledigt“");
 };

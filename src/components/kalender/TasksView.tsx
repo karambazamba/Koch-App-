@@ -25,7 +25,6 @@ import { act, buzz, readOnlyDone } from "@/components/heute/actions";
 import { ItemMenu } from "@/components/kalender/Items";
 import { EntryForm } from "@/components/kalender/EntryForm";
 import { TaskLine, useLeaving } from "@/components/heute/MiniCards";
-import { TaskQuickAdd } from "@/components/kalender/TaskQuickAdd";
 import { openQuick } from "@/lib/core/schnelleingabe";
 import { listenAnsicht } from "@/lib/kalender/liste/ordnung";
 import { inDieseWoche, useVorschlagState, vorschlagRuhe, wochenVorschlag } from "@/lib/kalender/liste/vorschlag";
@@ -218,7 +217,7 @@ export function TasksView() {
       </main>
       {menu && <ItemMenu item={menu} onClose={() => setMenu(null)} onEdit={() => (setEditing(menu), setMenu(null))} />}
       {editing && <EntryForm entry={editing.entry} onClose={() => setEditing(null)} />}
-      {adding !== null && <TaskQuickAdd defaultWhen="irgendwann" initialText={adding} onClose={() => setAdding(null)} />}
+      {adding !== null && <EntryForm kind="aufgabe" when="irgendwann" initialText={adding} onClose={() => setAdding(null)} />}
     </>
   );
 }

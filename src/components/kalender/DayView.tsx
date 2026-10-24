@@ -11,7 +11,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD, PAGE_MAIN } from "@/components/ui/styles";
 import { useCalendarEntries } from "@/lib/kalender/useCalendarEntries";
 import { useToday, toIsoDate } from "@/lib/core/now";
-import { TerminQuickAdd } from "@/components/kalender/TerminQuickAdd";
+import { EntryForm } from "@/components/kalender/EntryForm";
 import { DayPanel } from "@/components/kalender/DayPanel";
 import { dayHeading } from "@/components/kalender/CalendarPage";
 import { openQuick } from "@/lib/core/schnelleingabe";
@@ -37,7 +37,7 @@ export function DayView() {
           <DayPanel date={date} today={today} entries={entries} heading={false} />
         )}
       </main>
-      {adding !== null && date && <TerminQuickAdd defaultDate={date} initialText={adding} onClose={() => setAdding(null)} />}
+      {adding !== null && date && <EntryForm kind="termin" date={date} initialText={adding} onClose={() => setAdding(null)} />}
     </>
   );
 }

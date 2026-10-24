@@ -133,7 +133,7 @@ Sortier-Regeln, Design-System, Service Worker, App-Icons und Manifest.
   „Notiert: …“ / „Angepinnt: …“ mit Rückgängig (auch `undoLast`). Das Feld
   bleibt leer und offen für die nächste.
 - „Mehr Details“ schließt und öffnet das volle Formular mit dem Getippten
-  (`TerminQuickAdd`, `TaskQuickAdd`, Einkauf-Fenster, `PinWriteSheet`,
+  (`EntryForm` für Termine und Aufgaben, Einkauf-Fenster, `PinWriteSheet`,
   Notiz-Auswahl). Auch dort kein eigenes Mikro mehr.
 - Kalender-＋ und Tag-＋ = „NEUER TERMIN“ mit dem gewählten Tag; das frühere
   Fenster „Was möchtest du eintragen?“ (`AddSheet`) ist weg. Kalender

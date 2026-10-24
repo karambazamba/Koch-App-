@@ -3,15 +3,15 @@
 // Reiter "Kalender" – nur Termine (Tafel 74): Monat | Woche | Liste. Monat:
 // Raster Mo–So, unter jedem Tag bis zu 3 Punkte in der Farbe der Person
 // (Familie ohne Person Orange, Arbeit Blau), heute = Zahl in Orange mit Ring,
-// gewählter Tag = oranger Kreis; darunter der Tag (`DayPanel`). Lange drücken
-// auf einen Tag (0,4 s) bzw. ＋ = Schnelleingabe „NEUER TERMIN“ für diesen
-// Tag. Woche/Liste: Termine je Tag. Aufgaben und Essen stehen nie hier.
+// gewählter Tag = oranger Kreis; darunter der Tag (`DayPanel`). Woche/Liste:
+// Termine je Tag, Antippen zeigt den Tag genauso direkt darunter. Eintragen
+// nur über ＋ (Schnelleingabe für den gewählten Tag), kein langes Drücken.
+// Aufgaben und Essen stehen nie hier.
 // Tipps aus der Region: eigene lila Ebene (Chip „Tipps“), nie als Termin.
 // Oben (solange nichts verbunden ist) „Kalender mitbringen“.
 
 import { WEEKDAYS_SHORT_MO } from "@/lib/core/days";
-import Link from "next/link";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { PagePlus } from "@/components/ui/QuickButton";
 import { Segmented } from "@/components/ui/Segmented";
@@ -26,14 +26,13 @@ import { avatarHex } from "@/lib/einstellungen/profileHelper";
 import { roomBarProps } from "@/components/kalender/Items";
 import { DayPanel, type RoomFilter } from "@/components/kalender/DayPanel";
 import { TipDot, TipsChip, useCalendarTips } from "@/components/tipps/CalendarTips";
-import { buzz } from "@/components/heute/actions";
 import dynamic from "next/dynamic";
 import { openQuick } from "@/lib/core/schnelleingabe";
 import { isAboEntry } from "@/lib/kalender/abo/model";
 import { MitbringenKarte } from "@/components/kalender/mitbringen/KalenderMitbringen";
 
 // Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
-const TerminQuickAdd = dynamic(() => import("@/components/kalender/TerminQuickAdd").then((m) => m.TerminQuickAdd), { ssr: false });
+const EntryForm = dynamic(() => import("@/components/kalender/EntryForm").then((m) => m.EntryForm), { ssr: false });
 
 type View = "monat" | "woche" | "liste";
 const STEP = 14;
@@ -50,7 +49,6 @@ const monthStart = (iso: string, offset: number) => {
 };
 
 const TONES = ["bg-accent", "bg-work", "bg-person-3", "bg-person-4"];
-const HOLD_MS = 400;
 
 /** Punkt unter einem Tag: Person, Familie (Orange), Arbeit (Blau), ich = „Meine Farbe im Kalender“ */
 function DotMark({ dot, myHex }: { dot: Dot; myHex: string }) {
@@ -72,7 +70,7 @@ export function CalendarPage({ today, entries }: { today: string; entries: Calen
   const [filter, setFilter] = useState<RoomFilter>("alles");
   const [selected, setSelected] = useState(today);
   const [adding, setAdding] = useState<string | null>(null);
-  const day = view === "liste" ? today : selected;
+  const day = selected;
   // Filter nur, wenn es "Arbeit" gibt (im Kennenlernen gewählt oder schon Einträge)
   const work = useWorkRoom() || entries.some((e) => e.raum === "arbeit");
   const pick = (list: DayItem[]) => list.filter((i) => filter === "alles" || i.room === filter);
@@ -108,62 +106,13 @@ export function CalendarPage({ today, entries }: { today: string; entries: Calen
       <MitbringenKarte today={today} ownTermine={entries.filter((e) => e.typ === "termin" && !isAboEntry(e)).length} />
       {view === "monat" && <MonthView today={today} entries={entries} pick={pick} selected={selected} onSelect={setSelected} filter={filter} />}
       {view === "woche" && <WeekView today={today} entries={entries} pick={pick} selected={selected} onSelect={setSelected} filter={filter} />}
-      {view === "liste" && <ListView today={today} entries={entries} pick={pick} filter={filter} />}
-      {adding !== null && <TerminQuickAdd defaultDate={day} initialText={adding} onClose={() => setAdding(null)} />}
+      {view === "liste" && <ListView today={today} entries={entries} pick={pick} filter={filter} selected={selected} onSelect={setSelected} />}
+      {adding !== null && <EntryForm kind="termin" date={day} initialText={adding} onClose={() => setAdding(null)} />}
     </div>
   );
 }
 
 type ViewProps = { today: string; entries: CalendarEntry[]; pick: (l: DayItem[]) => DayItem[]; filter: RoomFilter };
-
-/**
- * Lange drücken (0,4 s, leichtes Vibrieren) = Schnelleingabe für diesen Tag;
- * kurz = auswählen. Das Fenster kommt erst beim Loslassen (sonst schlösse der
- * Klick des Loslassens es gleich wieder) – auf Android über „contextmenu“,
- * weil dort die Berührung beim Halten abbricht.
- */
-function useDayHold(onTap: (date: string) => void) {
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const held = useRef(false);
-  const opened = useRef(false);
-  const startY = useRef(0);
-  const clear = () => timer.current && (clearTimeout(timer.current), (timer.current = null));
-  const open = (date: string) => {
-    if (opened.current) return;
-    opened.current = true;
-    openQuick({ kind: "termin", date });
-  };
-  return (date: string) => ({
-    onPointerDown: () => {
-      held.current = false;
-      opened.current = false;
-      startY.current = window.scrollY;
-      clear();
-      timer.current = setTimeout(() => {
-        timer.current = null;
-        // Hat die Seite inzwischen gescrollt, war es kein Halten
-        if (Math.abs(window.scrollY - startY.current) > 6) return;
-        held.current = true;
-        buzz();
-        onTap(date);
-      }, HOLD_MS);
-    },
-    onPointerUp: clear,
-    onPointerMove: (e: React.PointerEvent) => e.pointerType !== "mouse" && Math.abs(e.movementX) + Math.abs(e.movementY) > 8 && clear(),
-    onContextMenu: (e: React.MouseEvent) => {
-      e.preventDefault();
-      if (held.current || timer.current) {
-        clear();
-        held.current = true;
-        open(date);
-      }
-    },
-    onClick: () => {
-      if (held.current) return open(date);
-      onTap(date);
-    },
-  });
-}
 
 function MonthView({ today, entries, pick, selected, onSelect, filter }: ViewProps & { selected: string; onSelect: (d: string) => void }) {
   const [offset, setOffset] = useState(0);
@@ -177,7 +126,6 @@ function MonthView({ today, entries, pick, selected, onSelect, filter }: ViewPro
   const days = Array.from({ length: 42 }, (_, i) => addDays(start, i));
   const rows = days[35].slice(0, 7) === month ? 6 : 5;
   const tipLayer = useCalendarTips(today);
-  const hold = useDayHold(onSelect);
   return (
     <>
       <section className={`${CARD} flex flex-col gap-2 p-3`} aria-label="Monat">
@@ -212,7 +160,7 @@ function MonthView({ today, entries, pick, selected, onSelect, filter }: ViewPro
                 aria-selected={isSelected}
                 aria-current={isToday ? "date" : undefined}
                 aria-label={`${LONG.format(utc(date))}${isToday ? " (heute)" : ""}${dots.length ? " – Termine" : ""}`}
-                {...hold(date)}
+                onClick={() => onSelect(date)}
                 className="flex h-12 select-none flex-col items-center justify-start gap-0.5 pt-1 [-webkit-touch-callout:none]"
               >
                 <span
@@ -238,36 +186,49 @@ function MonthView({ today, entries, pick, selected, onSelect, filter }: ViewPro
   );
 }
 
-/** Karte eines Tages: links Wochentag + Datum, rechts die Termine */
-function DayCard({ date, today, items }: { date: string; today: string; items: DayItem[] }) {
+/**
+ * Karte eines Tages (Woche, Liste): links Wochentag + Datum, rechts die
+ * Termine. Antippen wählt den Tag – wie im Monat steht er dann direkt darunter
+ * (`DayPanel`), überall gleich.
+ */
+function DayCard({ date, today, items, selected, onSelect, entries, filter }: { date: string; today: string; items: DayItem[]; selected: boolean; onSelect: (d: string) => void; entries: CalendarEntry[]; filter: RoomFilter }) {
   const isToday = date === today;
   return (
-    <Link
-      href={`/tag?datum=${date}`}
-      className={`${CARD} flex gap-4 p-3.5 ${isToday ? "border-2 border-accent" : ""}`}
-      aria-label={`${weekdayShort(date)} ${Number(date.slice(8))}.${isToday ? " (heute)" : ""}`}
-      aria-current={isToday ? "date" : undefined}
-    >
-      <span className="flex w-11 shrink-0 flex-col items-center">
-        <span className={`text-[15px] font-extrabold ${isToday ? "text-accent-strong" : "text-muted"}`}>{weekdayShort(date)}</span>
-        <span className="text-[26px] font-extrabold leading-tight">{Number(date.slice(8))}</span>
-      </span>
-      <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
-        {items.length === 0 && <span className="text-base text-muted">frei</span>}
-        {items.slice(0, 4).map((i) => (
-          <span key={i.key} className="flex items-center gap-2 text-base">
-            <span className={`h-2 w-2 shrink-0 rounded-full ${roomBarProps(i).className}`} style={roomBarProps(i).style} aria-hidden />
-            {i.time && <span className="shrink-0 text-sm font-bold tabular-nums text-work">{clockLabel(i.time)}</span>}
-            <span className="truncate">{i.title}</span>
-          </span>
-        ))}
-        {items.length > 4 && <span className="text-sm text-muted">+ {items.length - 4} weitere</span>}
-      </span>
-    </Link>
+    <>
+      <button
+        type="button"
+        onClick={() => onSelect(date)}
+        aria-pressed={selected}
+        className={`${CARD} flex w-full gap-4 p-3.5 text-left ${selected ? "border-2 border-accent" : isToday ? "border-2 border-accent/40" : ""}`}
+        aria-label={`${weekdayShort(date)} ${Number(date.slice(8))}.${isToday ? " (heute)" : ""}`}
+        aria-current={isToday ? "date" : undefined}
+      >
+        <span className="flex w-11 shrink-0 flex-col items-center">
+          <span className={`text-[15px] font-extrabold ${isToday ? "text-accent-strong" : "text-muted"}`}>{weekdayShort(date)}</span>
+          <span className="text-[26px] font-extrabold leading-tight">{Number(date.slice(8))}</span>
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
+          {items.length === 0 && <span className="text-base text-muted">frei</span>}
+          {items.slice(0, 4).map((i) => (
+            <span key={i.key} className="flex items-center gap-2 text-base">
+              <span className={`h-2 w-2 shrink-0 rounded-full ${roomBarProps(i).className}`} style={roomBarProps(i).style} aria-hidden />
+              {i.time && <span className="shrink-0 text-sm font-bold tabular-nums text-work">{clockLabel(i.time)}</span>}
+              <span className="truncate">{i.title}</span>
+            </span>
+          ))}
+          {items.length > 4 && <span className="text-sm text-muted">+ {items.length - 4} weitere</span>}
+        </span>
+      </button>
+      {selected && (
+        <div className="mt-2.5">
+          <DayPanel date={date} today={today} entries={entries} filter={filter} heading={false} />
+        </div>
+      )}
+    </>
   );
 }
 
-function WeekView({ today, entries, pick, selected, onSelect }: ViewProps & { selected: string; onSelect: (d: string) => void }) {
+function WeekView({ today, entries, pick, selected, onSelect, filter }: ViewProps & { selected: string; onSelect: (d: string) => void }) {
   const monday = mondayOf(selected);
   const dates = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
   const thisWeek = monday === mondayOf(today);
@@ -286,7 +247,7 @@ function WeekView({ today, entries, pick, selected, onSelect }: ViewProps & { se
       <ol className="flex flex-col gap-2.5" aria-label="Woche">
         {dates.map((date) => (
           <li key={date}>
-            <DayCard date={date} today={today} items={pick(termineOn(entries, date, today)).filter((i) => !i.done)} />
+            <DayCard date={date} today={today} items={pick(termineOn(entries, date, today)).filter((i) => !i.done)} selected={date === selected} onSelect={onSelect} entries={entries} filter={filter} />
           </li>
         ))}
       </ol>
@@ -294,7 +255,7 @@ function WeekView({ today, entries, pick, selected, onSelect }: ViewProps & { se
   );
 }
 
-function ListView({ today, entries, pick }: ViewProps) {
+function ListView({ today, entries, pick, filter, selected, onSelect }: ViewProps & { selected: string; onSelect: (d: string) => void }) {
   const [days, setDays] = useState(STEP);
   const dates = Array.from({ length: days }, (_, i) => addDays(today, i));
   return (
@@ -302,7 +263,7 @@ function ListView({ today, entries, pick }: ViewProps) {
       <ol className="flex flex-col gap-2.5" aria-label="Die nächsten Tage">
         {dates.map((date) => (
           <li key={date}>
-            <DayCard date={date} today={today} items={pick(termineOn(entries, date, today)).filter((i) => !i.done)} />
+            <DayCard date={date} today={today} items={pick(termineOn(entries, date, today)).filter((i) => !i.done)} selected={date === selected} onSelect={onSelect} entries={entries} filter={filter} />
           </li>
         ))}
       </ol>

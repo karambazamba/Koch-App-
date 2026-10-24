@@ -21,12 +21,11 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
   `WHEN_CHOICES`), Begrüßung `summary.ts` (`greeting`).
 - Kalender (rein): `monat.ts` (`termineOn`, `calendarDots`, `dayDistance`,
   `recurringSuggestions`).
-- Oberfläche `src/components/kalender/`: `CalendarPage.tsx` (Monat mit
-  `useDayHold`, Woche, Liste, `dayHeading`), `DayPanel.tsx` (der gewählte
-  Tag), `DayView.tsx` (/tag), `TasksView.tsx` (/aufgaben),
-  `TerminQuickAdd.tsx`, `TaskQuickAdd.tsx` (beide = „Mehr Details“ der
-  Schnelleingabe), `EntryForm.tsx`, `Items.tsx` (Strich-Farbe, Menü),
-  `UrgentMark.tsx`.
+- Oberfläche `src/components/kalender/`: `CalendarPage.tsx` (Monat, Woche,
+  Liste – Tag antippen überall gleich, `dayHeading`), `DayPanel.tsx` (der
+  gewählte Tag), `DayView.tsx` (/tag), `TasksView.tsx` (/aufgaben),
+  `EntryForm.tsx` (das EINE Formular, auch „Mehr Details“ der
+  Schnelleingabe), `Items.tsx` (Strich-Farbe, Menü), `UrgentMark.tsx`.
 - Kleine Änderungen aus der Oberfläche: `act()` in
   `src/components/heute/actions.ts`.
 
@@ -189,32 +188,26 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
 ### Eintragen
 - Jedes ＋ öffnet die Schnelleingabe (`docs/bereiche/core.md`); das frühere
   Fenster „Was möchtest du eintragen?“ gibt es nicht mehr.
-- „Neuer Termin“ (`TerminQuickAdd`, Tafel 26, „Mehr Details“) – ein Satz
-  genügt: Text ist der Hauptweg („Mittwoch 12.30 Zahnarzt“). Gemeinsamer Parser
-  `src/lib/kalender/sentence.ts` (`readSentence`): Zeiten „12:30“, „12.30“,
-  „12 Uhr 30“, „12 Uhr“, „um 4“ (→ 16:00), „halb eins“ (→ 12:30), „viertel
-  nach/vor“, „mittags“, „abends“; Tage „28.10.“, „28.10“, „28.10.2026“, „28.
-  Oktober“, heute/morgen/übermorgen, Wochentage, „nächsten Mittwoch“, „in 3
-  Tagen“, „nächste Woche“ (Montag); vergangenes Datum ohne Jahr = nächstes
-  Jahr. Erkennung 250 ms nach dem Tippen, nach dem Diktat sofort (nie
-  automatisch speichern). Erkannte Wörter orange hinterlegt (Ebene hinter dem
-  Feld) und beim Speichern aus dem Titel entfernt.
-- Zwei Pillen [Tag ▾] [Uhrzeit ▾] zeigen das Erkannte (mit Wert orange
-  getönt, kurzes Ploppen, „✓ Erkannt aus deinem Text“) und dienen nur zum
-  Korrigieren: Tag → Heute, Morgen, Wochentage, „Datum wählen“; Uhrzeit →
-  Zeit-Rad (`ui/TimeWheel`, 5-Minuten-Schritte) oder „ganztägig“. Von Hand
-  gewählt schlägt Automatik, „×“ = wieder automatisch.
-- Ohne Uhrzeit: Termin ganztägig, darunter „Heute noch frei“ (ab der nächsten
-  halben Stunde, ohne belegte Zeiten) bzw. „Vorschläge“ (08:00 · 12:00 ·
-  15:00 · 19:30) + „Andere“. Zeit heute schon vorbei → gelber Hinweis
-  „12:00 ist heute schon vorbei.“ mit „Morgen 12:00“ / „Trotzdem heute“.
-- Unten klebt die Leiste über der Tastatur (`useKeyboardInset`, `Sheet`
-  passt seine Höhe an): links „Familie · Erinnerung 30 Min“ (= mehr Optionen:
-  Für wen, Familie | Arbeit, Ort, Erinnerung), rechts „Eintragen“.
-- Aufgabe (`TaskQuickAdd`): Heute · Morgen · Diese Woche · Irgendwann,
-  Familie | Arbeit, „+ Uhrzeit oder Erinnerung“; Enter lässt das Fenster offen.
-- Bearbeiten (`EntryForm`): „Abbrechen | Titel | Sichern“, gruppierte Zeilen,
-  unten rot „Löschen“. Link und Notiz aus Tipps bleiben (`terminExtras`).
+- Launch 1.0: EIN Weg. ＋ öffnet die Schnelleingabe (ein Satz genügt, ➤
+  speichert; Parser `src/lib/kalender/sentence.ts` bzw. `parse.ts`: Zeiten
+  „12:30“, „12.30“, „12 Uhr 30“, „um 4“ (→ 16:00), „6 Uhr“ (bleibt 6:00),
+  „halb eins“, „viertel nach/vor“; Tage „28.10.“, „28. Oktober“, „am 29.“,
+  heute/morgen/übermorgen, Wochentage, „do“, „nächsten Mittwoch“, „Mittwoch
+  nächste Woche“, „Donnerstag in einer Woche“, „in 3 Tagen“; mehrere Termine
+  in einem Satz; Selbstkorrektur „nicht … sondern …“, „…, nee …“).
+- „Mehr Details“ = das EINE Formular (`EntryForm`) für Termine und
+  Aufgaben, vorbefüllt aus dem Satz (Titel, Tag, Uhrzeit, Raum, Etikett,
+  dringend): oben Titel + ✕, gruppierte Zeilen (Für, Wer ist dabei,
+  Etikett, Wiederholen, Erinnerung „Keine Erinnerung“ … „Am Vorabend“), am
+  Ende oranges „Speichern“, bei Bestehendem rot „Löschen“. Ohne Uhrzeit =
+  ganztägig; Neues heute in der Vergangenheit → „9:00 ist heute schon
+  vorbei.“ (nie still speichern). Die früheren Fenster `TerminQuickAdd` /
+  `TaskQuickAdd` und das Zeit-Rad sind weg.
+- Kalender: kein langes Drücken auf einen Tag, keine Zeile „Termin am …“;
+  die Vorschlags-Chips „Schnell eintragen“ bleiben. Tag antippen in Monat,
+  Woche und Liste gleich: der Tag steht direkt darunter (`DayPanel`).
+- Termine haben kein „Erledigt“ (ein Termin ist einfach vorbei); Aufgaben
+  schon.
 - Ohne Angabe gehört alles zur Familie.
 
 ### Kalender übernehmen (Baustein „kalender“, seit v0.50)
