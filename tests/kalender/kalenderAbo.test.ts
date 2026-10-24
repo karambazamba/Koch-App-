@@ -155,3 +155,36 @@ describe("Sicherung", () => {
     expect(Object.keys(createBackup(storage, ["wasgibts.kalenderabos"]).data).sort()).toEqual(["wasgibts.eintraege", "wasgibts.kalenderabos"]);
   });
 });
+
+describe("Aufgaben aus Kalender-Links (Todoist, VTODO) und RDATE", () => {
+  const base: Abo = { id: "t1", name: "Todoist", url: "https://todoist.test/ical", color: "lila", raum: "familie", on: true, fetchedAt: null, error: null };
+  it("Todoist-Link: Einträge werden schreibgeschützte Aufgaben (Tag, ggf. Uhrzeit, Etikett Todoist)", () => {
+    at("2026-10-21T10:00");
+    const feed = feedEntries(base, mockFeed(new URL(base.url))!, "2026-10-21")!;
+    expect(feed.entries.map((e) => [e.typ, e.data.title, e.data.date, (e.data as { time?: string }).time ?? null, e.data.label])).toEqual([
+      ["aufgabe", "Steuer abgeben", "2026-10-23", null, "Todoist"],
+      ["aufgabe", "Oma anrufen", "2026-10-22", "10:00", "Todoist"],
+    ]);
+    expect(feed.entries.every(isAboEntry)).toBe(true);
+  });
+  it("VTODO mit DUE wird Aufgabe, erledigte bleiben draußen; RDATE gibt zusätzliche Tage", () => {
+    at("2026-10-21T10:00");
+    const ics = [
+      "BEGIN:VCALENDAR",
+      "BEGIN:VTODO", "UID:t-a", "DUE;VALUE=DATE:20261025", "SUMMARY:Reifen wechseln", "END:VTODO",
+      "BEGIN:VTODO", "UID:t-b", "DUE;VALUE=DATE:20261025", "STATUS:COMPLETED", "SUMMARY:Schon erledigt", "END:VTODO",
+      "BEGIN:VEVENT", "UID:e-r", "DTSTART;TZID=Europe/Berlin:20261022T090000", "RDATE;TZID=Europe/Berlin:20261029T090000", "SUMMARY:Sprechstunde", "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+    const feed = feedEntries({ ...base, url: "https://kalender.test/x.ics" }, ics, "2026-10-21")!;
+    expect(feed.entries.map((e) => `${e.typ} ${e.data.title} ${e.data.date}`).sort()).toEqual(["aufgabe Reifen wechseln 2026-10-25", "termin Sprechstunde 2026-10-22", "termin Sprechstunde 2026-10-29"]);
+  });
+  it("dieselbe UID aus zwei Kalendern nur einmal", async () => {
+    at("2026-10-21T10:00");
+    const { withoutDoubles } = await import("@/lib/kalender/abo/model");
+    const a = feedEntries({ ...base, id: "x", url: "https://kalender.test/a.ics" }, mockFeed(new URL("https://kalender.test/a.ics"))!, "2026-10-21")!.entries;
+    const b = feedEntries({ ...base, id: "y", url: "https://kalender.test/b.ics" }, mockFeed(new URL("https://kalender.test/b.ics"))!, "2026-10-21")!.entries;
+    expect(withoutDoubles([...a, ...b]).map((e) => e.id)).toEqual(a.map((e) => e.id));
+  });
+});
+

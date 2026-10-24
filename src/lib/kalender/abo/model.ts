@@ -46,3 +46,15 @@ export function copyToOwn(entry: CalendarEntry): CalendarEntry {
   const data = entry.typ === "termin" ? { ...entry.data, source: undefined, doneDates: [] } : entry.data;
   return createEntry(entry.typ, data, { raum: entry.raum }) as CalendarEntry;
 }
+
+/** Derselbe Termin aus zwei Quellen (z. B. Familienkalender bei Felix UND Lisa abonniert): nur einmal zeigen */
+export function withoutDoubles(entries: CalendarEntry[]): CalendarEntry[] {
+  const seen = new Set<string>();
+  return entries.filter((e) => {
+    const uid = e.id.split(":").slice(2).join(":");
+    const key = `${e.typ}|${uid || e.id}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}

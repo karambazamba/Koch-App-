@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CalendarDays, ClipboardPaste, Copy, FileUp, Info, Link2, Mail, Monitor, Settings2, Share2, ToggleRight, type LucideIcon } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
-import { CARD, INPUT, NOTE, buttonClass } from "@/components/ui/styles";
+import { CARD, INPUT, NOTE, buttonClass, chipClass } from "@/components/ui/styles";
 import { APP_NAME } from "@/lib/core/app";
 import { unlockFeature } from "@/lib/core/features";
 import { todayIso } from "@/lib/core/now";
@@ -21,28 +21,27 @@ import {
   ANBIETER,
   HINWEIS_GEHEIM,
   HINWEIS_RICHTUNG,
-  SCHRITTE,
+  ANBIETER_NAME,
   angebotFuer,
   changeAngebot,
   erfolgsSatz,
   kalenderLink,
   laterAngebot,
-  mailAnMich,
   onOpenMitbringen,
   termineIn4Wochen,
   useAngebot,
   type Anbieter,
   type Schritt,
 } from "@/lib/kalender/mitbringen/angebot";
+import { GERAETE, WEISS_NICHT, geraetVon, linkFehler, mailAnMich, schritte, type Geraet } from "@/lib/kalender/mitbringen/anleitung";
 
 const ICONS: Record<Schritt["icon"], LucideIcon> = { einstellungen: Settings2, kalender: CalendarDays, info: Info, schalter: ToggleRight, teilen: Share2, kopieren: Copy, computer: Monitor, link: Link2 };
 
-/** Karte oben im Kalender (nur solange etwas zu bringen ist) */
+/** Karte oben im Kalender (nur solange etwas zu bringen ist). Mias „Hol meinen …“ öffnet NICHT hier, sondern im Host auf /profil/kalender – die Karte auf der Startseite verschwindet beim Seitenwechsel. */
 export function MitbringenKarte({ today, ownTermine }: { today: string; ownTermine: number }) {
   const state = useAngebot();
   const abos = useAbos();
   const [open, setOpen] = useState<Anbieter | null>(null);
-  useEffect(() => onOpenMitbringen(setOpen), []);
   const kind = state && abos ? angebotFuer(state, { today, ownTermine, abos: abos.length }) : null;
   return (
     <>
@@ -59,6 +58,11 @@ export function MitbringenKarte({ today, ownTermine }: { today: string; ownTermi
               Später
             </button>
           </div>
+          {kind === "gross" && (
+            <button type="button" onClick={() => setOpen("todoist")} className="hit self-start text-sm font-semibold text-muted underline">
+              Aufgaben aus Todoist holen
+            </button>
+          )}
         </section>
       )}
       {open && <MitbringenSheet anbieter={open} onClose={() => setOpen(null)} />}
@@ -74,8 +78,11 @@ export function MitbringenHost() {
 }
 
 function MitbringenSheet({ anbieter, onClose }: { anbieter: Anbieter; onClose: () => void }) {
-  const steps = SCHRITTE[anbieter];
-  const name = ANBIETER.find((a) => a.id === anbieter)!.name;
+  const [geraet, setGeraet] = useState<Geraet>(() => (typeof navigator === "undefined" ? "iphone" : geraetVon(navigator.userAgent)));
+  const [help, setHelp] = useState(false);
+  const steps = schritte(anbieter, geraet);
+  const name = ANBIETER_NAME[anbieter];
+  const tasks = anbieter === "todoist";
   const [step, setStep] = useState(0);
   const [url, setUrl] = useState("");
   const [found, setFound] = useState<string | null>(null);
@@ -96,6 +103,13 @@ function MitbringenSheet({ anbieter, onClose }: { anbieter: Anbieter; onClose: (
   };
 
   const connect = async (link: string) => {
+    // Falscher Link (z. B. normale Google-Seite): freundlich sagen, was fehlt, und zur passenden Stelle
+    const wrong = linkFehler(link);
+    if (wrong) {
+      setError(wrong.text);
+      if (wrong.anbieter === anbieter) setStep(Math.min(wrong.schritt, steps.length - 1));
+      return;
+    }
     setBusy(true);
     setError("");
     unlockFeature("kalender");
@@ -105,7 +119,8 @@ function MitbringenSheet({ anbieter, onClose }: { anbieter: Anbieter; onClose: (
     if ("error" in result) return setError(result.error);
     changeAngebot((s) => ({ ...s, done: true }));
     triggerAvatar("freuen");
-    setDone(erfolgsSatz(termineIn4Wochen(loadAboEntries(), todayIso())));
+    const aufgaben = loadAboEntries().filter((e) => e.typ === "aufgabe").length;
+    setDone(tasks ? `Steht drin. ${aufgaben} ${aufgaben === 1 ? "Aufgabe" : "Aufgaben"} zum Nachschauen.` : erfolgsSatz(termineIn4Wochen(loadAboEntries(), todayIso())));
   };
 
   if (done) {
@@ -136,7 +151,7 @@ function MitbringenSheet({ anbieter, onClose }: { anbieter: Anbieter; onClose: (
 
   const Icon = last ? Link2 : ICONS[steps[step].icon];
   return (
-    <Sheet title={`${name}-Kalender holen`} onClose={onClose}>
+    <Sheet title={tasks ? "Todoist-Aufgaben holen" : `${name}-Kalender holen`} onClose={onClose}>
       <div className="flex flex-col gap-4 pb-3">
         <p className="text-sm font-semibold text-muted">{last ? "Zum Schluss" : `Schritt ${step + 1} von ${steps.length}`}</p>
         <span className="flex h-20 w-20 items-center justify-center self-center rounded-full bg-accent-soft text-accent-strong">
@@ -145,12 +160,33 @@ function MitbringenSheet({ anbieter, onClose }: { anbieter: Anbieter; onClose: (
         {!last ? (
           <>
             <p className="text-center text-[17px] leading-snug">{steps[step].text}</p>
-            {anbieter === "google" && step === 0 && (
-              <a href={mailAnMich("google", APP_NAME)} className={`${buttonClass("ghost", "md")} self-center`}>
+            {anbieter === "google" && step === 0 && geraet !== "computer" && (
+              <a href="https://calendar.google.com/" target="_blank" rel="noopener noreferrer" className={`${buttonClass("secondary", "md")} self-center`}>
+                calendar.google.com öffnen
+              </a>
+            )}
+            {(anbieter === "google" || anbieter === "todoist") && step === 0 && geraet !== "computer" && (
+              <a href={mailAnMich(anbieter, APP_NAME)} className={`${buttonClass("ghost", "md")} self-center`}>
                 <Mail className="h-5 w-5" strokeWidth={2.25} aria-hidden />
                 Anleitung per Mail an mich schicken
               </a>
             )}
+            {step === 0 && (
+              <div className="flex flex-wrap items-center justify-center gap-2" role="radiogroup" aria-label="Ich bin am">
+                <span className="text-sm text-muted">Ich bin am</span>
+                {GERAETE.map((g) => (
+                  <button key={g.id} type="button" role="radio" aria-checked={geraet === g.id} onClick={() => setGeraet(g.id)} className={chipClass(geraet === g.id)}>
+                    {g.name}
+                  </button>
+                ))}
+              </div>
+            )}
+            {step === 0 && !tasks && (
+              <button type="button" onClick={() => setHelp((v) => !v)} aria-expanded={help} className="hit self-center text-sm font-semibold text-muted underline">
+                Weiß nicht, wo meine Termine liegen?
+              </button>
+            )}
+            {help && step === 0 && <p className={NOTE}>{WEISS_NICHT[geraet]}</p>}
           </>
         ) : found ? (
           <div className="flex flex-col gap-3">

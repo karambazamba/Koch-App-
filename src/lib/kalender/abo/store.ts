@@ -11,7 +11,7 @@ import { useExternalStore } from "@/lib/core/useExternalStore";
 import { featureOn, useFeature } from "@/lib/core/features";
 import type { Room } from "@/lib/core/entries";
 import { sanitizeEntry, type CalendarEntry } from "@/lib/kalender/model";
-import { aboIdOf, isDue, type Abo } from "@/lib/kalender/abo/model";
+import { aboIdOf, isDue, withoutDoubles, type Abo } from "@/lib/kalender/abo/model";
 import { now } from "@/lib/core/now";
 
 type AboState = { version: 1; abos: Abo[] };
@@ -68,7 +68,7 @@ export function useAbos(): Abo[] | undefined {
 
 /** Termine der eingeschalteten Abos (ohne Baustein: keine – versteckt, nicht gelöscht) */
 function visible(list: Abo[], all: Record<string, CalendarEntry[]>): CalendarEntry[] {
-  const out = list.filter((a) => a.on).flatMap((a) => all[a.id] ?? NONE);
+  const out = withoutDoubles(list.filter((a) => a.on).flatMap((a) => all[a.id] ?? NONE));
   return out.length ? out : NONE;
 }
 

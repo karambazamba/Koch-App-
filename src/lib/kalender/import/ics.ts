@@ -42,6 +42,8 @@ export type IcsEvent = {
   cancelled: boolean;
   /** Erinnerungen in Minuten vor Beginn */
   alarms: number[];
+  /** Aus einer Aufgabe (VTODO, z. B. Todoist) statt einem Termin */
+  todo?: boolean;
 };
 
 type IcsSource = "google" | "apple" | "ics";
@@ -212,7 +214,7 @@ export function parseIcs(raw: string): IcsCalendar | null {
     if (!p) continue;
     if (p.name === "BEGIN") {
       stack.push(p.value.toUpperCase());
-      if (p.value.toUpperCase() === "VEVENT") {
+      if (p.value.toUpperCase() === "VEVENT" || p.value.toUpperCase() === "VTODO") {
         props = [];
         alarms = [];
       }
@@ -225,9 +227,20 @@ export function parseIcs(raw: string): IcsCalendar | null {
         const m = durationMinutes(alarmTrigger.value);
         if (m !== null) alarms.push(-m);
       }
-      if (done === "VEVENT") {
-        const event = buildEvent(props, alarms, zone);
-        if (event) events.push(event);
+      if (done === "VEVENT" || done === "VTODO") {
+        // Aufgaben: DUE statt DTSTART; Erledigtes bleibt draußen
+        const todo = done === "VTODO";
+        if (todo && /^(COMPLETED|CANCELLED)$/i.test(props.find((x) => x.name === "STATUS")?.value.trim() ?? "")) continue;
+        const own = todo && !props.some((x) => x.name === "DTSTART") ? props.map((x) => (x.name === "DUE" ? { ...x, name: "DTSTART" } : x)) : props;
+        const event = buildEvent(own, alarms, zone);
+        if (event) {
+          events.push(todo ? { ...event, todo: true } : event);
+          // RDATE: zusätzliche einzelne Tage einer Serie
+          for (const extra of own.filter((x) => x.name === "RDATE").flatMap((x) => parseTimes(x, zone))) {
+            if (extra.local.date === event.start.date) continue;
+            events.push({ ...event, uid: `${event.uid}#${extra.local.date}`, start: { date: extra.local.date, time: extra.allDay ? null : extra.local.time }, end: null, rrule: null, exdates: [], ...(todo ? { todo: true } : {}) });
+          }
+        }
       }
       continue;
     }
@@ -236,7 +249,7 @@ export function parseIcs(raw: string): IcsCalendar | null {
       if (p.name === "X-WR-CALNAME") name = text(p.value) || null;
       if (p.name === "PRODID") prodId = p.value;
       if (p.name === "X-WR-TIMEZONE") zone = validZone(p.value.trim());
-    } else if (where === "VEVENT") props.push(p);
+    } else if (where === "VEVENT" || where === "VTODO") props.push(p);
     else if (where === "VALARM" && p.name === "TRIGGER" && p.params.VALUE !== "DATE-TIME") alarmTrigger = p;
   }
   return { name, source: sourceOf(prodId), events };

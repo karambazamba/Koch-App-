@@ -264,6 +264,35 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
   „Was du hier einträgst, bleibt erst mal nur hier.“, „Noch einen
   hinzufügen“. Je verbundenem Kalender „zuletzt aktualisiert 10:12“.
 
+### Kalender verbinden – auf jedem Gerät (Tafel 23, seit v0.87)
+
+- Nicht das Gerät entscheidet, sondern wo die Termine liegen. Die Schritte in
+  „Kalender mitbringen“ passen zu Dienst UND Gerät
+  (`lib/kalender/mitbringen/anleitung.ts`: `schritte(anbieter, geraet)`,
+  Gerät aus dem Browser, umschaltbar „Ich bin am iPhone · Android ·
+  Computer“). Apple: iPhone (ⓘ → Öffentlicher Kalender), Mac, sonst
+  icloud.com. Google: nur calendar.google.com („Einstellungen und Freigabe“ →
+  „Geheime Adresse im iCal-Format“), am Handy mit Knopf
+  „calendar.google.com öffnen“ und Hinweis „Desktop-Website anfordern“, dazu
+  „Anleitung per Mail an mich schicken“. Outlook: „Kalender veröffentlichen“.
+- „Weiß nicht, wo meine Termine liegen?“ – kurze Hilfe je Gerät.
+- Falsch eingefügt (`linkFehler`): normaler Google-Link, öffentliche statt
+  geheime Adresse, iCloud-/Outlook-Seite statt Link, Todoist-App-Link →
+  freundlicher Satz und zurück zum passenden Schritt.
+- Todoist als AUFGABEN (vierter Weg, klein unter der Karte „Aufgaben aus
+  Todoist holen“ und per Mia „Hol meine Todoist-Aufgaben“): die
+  „Kalender-Abonnement-URL“ verbinden; die Einträge werden schreibgeschützte
+  Aufgaben (Etikett „Todoist“, Tag bzw. Tag + Uhrzeit, `feedEntries` +
+  `isTodoistUrl`). Sie stehen in der Aufgaben-Seite und auf Heute; Abhaken
+  sagt freundlich „In Todoist abhaken …“ (`readOnlyDone`), antippen zeigt
+  „In Todoist öffnen“ und „Zu meinen Aufgaben kopieren“.
+- Parser: VTODO (DUE statt DTSTART, erledigte/abgesagte bleiben draußen) und
+  RDATE (zusätzliche Tage). Derselbe Termin aus zwei Kalendern (gleiche UID)
+  erscheint nur einmal (`withoutDoubles`).
+- Noch nicht: „Mit Google verbinden“ per OAuth (Calendar API, nur Leserecht)
+  – kommt mit dem Google-Knopf (🔑, siehe Konten); ETag/Last-Modified beim
+  Abruf.
+
 ### Kalender-Link (Abo, nur lesen, seit v0.51)
 
 - Auf `/profil/kalender` unten „Dauerhaft verbinden – per Link“
@@ -345,7 +374,8 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
 
 - `tests/kalender/kalenderAbo.test.ts`: Server-Schutz (private IPs, DNS, Weiterleitungen, zu groß, Zeitüberschreitung, kein Kalender), Abo-Termine, Kopie, Fälligkeit, Schreibschutz, Sicherung nur auf Wunsch; Durchklick `kalenderAbo` (verbinden, im Kalender, kopieren, Änderung kommt an).
 - `tests/kalender/listeEinfuegen.test.ts`: Zeilen bereinigen (alle Kästchen-/Aufzählungsformen), Abgehaktes, Fristen, Überschriften → Listen, Doppelte, Gespräch, Ordnung (Kachel nur jetzt dran, Listen eingeklappt), Vorschlag; Durchklick `listeEinfuegen` (30 Zeilen).
-- `tests/kalender/mitbringen.test.ts`: Angebot einmal/nach 14 Tagen/nie wieder, Link aus der Zwischenablage, Anbieter aus dem Satz, Erfolgs-Satz, „zuletzt aktualisiert“; Durchklick `kalenderMitbringen`.
+- `tests/kalender/mitbringen.test.ts`: Angebot einmal/nach 14 Tagen/nie wieder, Link aus der Zwischenablage, Anbieter aus dem Satz, Erfolgs-Satz, „zuletzt aktualisiert“, Schritte je Dienst und Gerät, falsche Links; Durchklick `kalenderMitbringen`, `todoistAufgaben`.
+- `tests/kalender/kalenderAbo.test.ts` zusätzlich: Todoist-Feed → Aufgaben, VTODO, RDATE, doppelte UID.
 - `tests/kalender/kalenderImport.test.ts`: Dateien im Google- und Apple-Stil (Serie mit Ausnahme, verschobener Einzeltermin, ganztägig, mehrtägig, Sommerzeit, andere Zeitzone, Erinnerungen, Umlaute/Emojis, doppelt einlesen); Durchklick `kalenderImport`.
 
 - `tests/kalender/`: `termineAufgaben.test.ts`, `wiederholungen.test.ts`,

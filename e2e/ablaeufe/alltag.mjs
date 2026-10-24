@@ -160,7 +160,8 @@ export const kalenderMitbringen = async (page, check) => {
   check(await card.getByText("Termine schon woanders? Hol sie rein.").isVisible(), "Karte „Termine schon woanders?“");
   await card.getByRole("button", { name: "Apple" }).click();
   const sheet = page.getByRole("dialog", { name: "Apple-Kalender holen" });
-  check(await sheet.getByText("Schritt 1 von 4").isVisible(), "Schritt 1 von 4");
+  await sheet.getByRole("radio", { name: "iPhone" }).click();
+  check(await sheet.getByText("Schritt 1 von 4").isVisible(), "iPhone: Schritt 1 von 4");
   for (let i = 0; i < 4; i++) await sheet.getByRole("button", { name: "Weiter" }).click();
   check(await sheet.getByText(/Der Link ist geheim/).isVisible(), "Hinweis: Link ist geheim");
   await sheet.getByLabel("Kalender-Link").fill("webcal://kalender.test/verein.ics");
@@ -207,4 +208,30 @@ export const listeEinfuegen = async (page, check) => {
   const tile = page.locator('[data-tile~="aufgaben"]').first();
   check(await tile.getByText("Angebot").isVisible(), "Kachel zeigt „Angebot“ (bis Freitag)");
   check(!(await tile.getByText("Haus-Sache 1").isVisible()), "Kachel zeigt keine Liste ohne Datum");
+};
+
+export const todoistAufgaben = async (page, check) => {
+  await family(page, "/");
+  const box = await miaTippen(page);
+  await box.fill("Hol meine Todoist-Aufgaben");
+  await box.press("Enter");
+  // Vorschlag der KI (Testmodus): „Passt“ führt den App-Befehl aus
+  const passt = page.getByRole("button", { name: /^Passt/ });
+  if (await passt.waitFor({ timeout: 5000 }).then(() => true, () => false)) await passt.click();
+  const sheet = page.getByRole("dialog", { name: "Todoist-Aufgaben holen" });
+  check(await sheet.waitFor({ timeout: 8000 }).then(() => true, () => false), "Mia öffnet „Todoist-Aufgaben holen“");
+  check(await sheet.getByRole("radiogroup", { name: "Ich bin am" }).isVisible(), "Umschalter „Ich bin am …“");
+  for (let i = 0; i < 3; i++) await sheet.getByRole("button", { name: "Weiter" }).click();
+  await sheet.getByLabel("Kalender-Link").fill("https://app.todoist.com/app/today");
+  await sheet.getByRole("button", { name: "Verbinden" }).click();
+  check(await sheet.getByText(/Kalender-Abonnement-URL/).first().isVisible(), "falscher Link: freundlich erklärt");
+  while (await sheet.getByRole("button", { name: "Weiter" }).isVisible()) await sheet.getByRole("button", { name: "Weiter" }).click();
+  await sheet.getByLabel("Kalender-Link").fill("https://todoist.test/ical");
+  await sheet.getByRole("button", { name: "Verbinden" }).click();
+  const done = page.getByRole("dialog", { name: "Todoist verbunden" });
+  check(await done.getByText("Steht drin. 2 Aufgaben zum Nachschauen.").waitFor({ timeout: 8000 }).then(() => true, () => false), "„Steht drin. 2 Aufgaben zum Nachschauen.“");
+  await done.getByRole("button", { name: "Fertig" }).click();
+  await page.goto(BASE + "/aufgaben");
+  await page.waitForTimeout(1000);
+  check(await page.getByText("Oma anrufen").isVisible(), "Todoist-Aufgabe auf der Aufgaben-Seite");
 };

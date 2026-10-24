@@ -1,6 +1,7 @@
 // „Kalender mitbringen“: Angebot einmal / nach 14 Tagen nochmal / nie wieder,
 // Link aus der Zwischenablage (webcal/https), Anbieter aus dem Satz,
 // Erfolgs-Satz, „zuletzt aktualisiert“, freundliche Fehler.
+import { geraetVon, linkFehler, mailAnMich, schritte } from "@/lib/kalender/mitbringen/anleitung";
 import { describe, expect, it } from "vitest";
 import {
   angebotFuer,
@@ -8,7 +9,6 @@ import {
   erfolgsSatz,
   kalenderLink,
   laterAngebot,
-  mailAnMich,
   migrateAngebot,
   refreshedLabel,
   termineIn4Wochen,
@@ -78,5 +78,28 @@ describe("Danach", () => {
     const link = mailAnMich("google", "Mia");
     expect(link.startsWith("mailto:?subject=")).toBe(true);
     expect(decodeURIComponent(link)).toContain("calendar.google.com");
+  });
+
+  it("Anleitung je Dienst und Gerät, Gerät aus dem Browser", () => {
+    expect(geraetVon("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)")).toBe("iphone");
+    expect(geraetVon("Mozilla/5.0 (Linux; Android 14; Pixel 7)")).toBe("android");
+    expect(geraetVon("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)")).toBe("computer");
+    expect(schritte("apple", "iphone")[2].text).toContain("Öffentlicher Kalender");
+    expect(schritte("apple", "android")[0].text).toContain("icloud.com/calendar");
+    expect(schritte("google", "iphone")[0].text).toContain("Desktop-Website anfordern");
+    expect(schritte("google", "computer")[0].text).not.toContain("Desktop");
+    expect(schritte("todoist", "computer")[2].text).toContain("Kalender-Abonnement-URL");
+  });
+
+  it("falsch eingefügte Links freundlich erklären", () => {
+    expect(linkFehler("https://calendar.google.com/calendar/u/0/r")?.text).toContain("Geheime Adresse");
+    expect(linkFehler("https://calendar.google.com/calendar/ical/x%40gmail.com/public/basic.ics")?.text).toContain("öffentliche Adresse");
+    expect(linkFehler("https://calendar.google.com/calendar/ical/x%40gmail.com/private-1/basic.ics")).toBeNull();
+    expect(linkFehler("https://www.icloud.com/calendar/")?.anbieter).toBe("apple");
+    expect(linkFehler("webcal://p52-caldav.icloud.com/published/2/abc")).toBeNull();
+    expect(linkFehler("https://outlook.live.com/calendar/0/view/month")?.anbieter).toBe("outlook");
+    expect(linkFehler("https://outlook.office365.com/owa/calendar/abc/reachcalendar.ics")).toBeNull();
+    expect(linkFehler("https://app.todoist.com/app/today")?.anbieter).toBe("todoist");
+    expect(anbieterIn("Hol meine Todoist-Aufgaben")).toBe("todoist");
   });
 });

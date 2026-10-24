@@ -2268,3 +2268,10 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Woche „Drei für diese Woche?“.
 - Fehler behoben: „abgegeben an“ (und Mias „Sag Lisa …“) ging beim Laden
   verloren – die Prüfung der Einträge behält jetzt `fuer`, `zurueck`, `an`.
+
+## Kalender verbinden – auf jedem Gerät (v0.87.0)
+- Anleitung je Dienst und Gerät („Ich bin am …“), „Weiß nicht?“-Hilfe,
+  falsch eingefügte Links freundlich erklärt.
+- Todoist als schreibgeschützte Aufgaben über die Kalender-Abonnement-URL;
+  Abhaken bleibt in Todoist.
+- Parser: VTODO und RDATE; derselbe Termin aus zwei Kalendern nur einmal.
