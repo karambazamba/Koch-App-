@@ -122,7 +122,14 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 - Prüfstand (`pruefstand/`): 124 Alltagssätze mit erwarteter Aktion, Bewertung
   (Aktion, Datum/Uhrzeit/Person, max. 2 Sätze, Floskeln/Striche, Zeit),
   Route `/api/pruefstand` (nur mit `PRUEFSTAND_SECRET` bzw. `CRON_SECRET`,
-  20 Sätze je Aufruf), Bericht unter „Für Entwickler“. Ziel ≥ 95 %.
+  3 Sätze je Aufruf – länger bricht Vercel ab, „Load failed“), Bericht unter
+  „Für Entwickler“. Ziel ≥ 95 %. Der Lauf (`pruefstand/lauf.ts`) ruft der
+  Reihe nach auf und zeigt „Läuft … 12 von 124“; jeder Aufruf wird einmal
+  still wiederholt, Server-Fehler zählen als „Fehler beim Aufruf“ und es geht
+  weiter; bricht die Verbindung ab: „Verbindung abgebrochen bei Satz 13.
+  Nochmal ab hier?“ mit „Weiter“. Hinweis „Bildschirm anlassen, dauert ca. 5
+  Minuten.“ Am Ende Quote + Fehlschläge (Satz, erwartet, bekommen) mit
+  „Kopieren“.
 - Beim Nachdenken bewegen sich Mias Augen (Zustand „denken“), kein Spinner;
   erste Worte kommen gestreamt.
 

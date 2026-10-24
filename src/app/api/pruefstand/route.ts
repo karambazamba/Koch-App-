@@ -1,6 +1,6 @@
 // Prüfstand (nur für Admin): POST { von, bis } mit „Authorization: Bearer
 // <PRUEFSTAND_SECRET bzw. CRON_SECRET>“ schickt die Prüfsätze von–bis (höchstens
-// 20 je Aufruf) durch die echte Mia-Engine mit dem echten Modell und bewertet
+// 3 je Aufruf, damit Vercel nicht abbricht) durch die echte Mia-Engine mit dem echten Modell und bewertet
 // sie. Der KI-Schlüssel bleibt hier; ins Log nur Zahlen, nie Inhalte. Ohne
 // Geheimnis ist die Route aus.
 
@@ -15,7 +15,7 @@ import { PRUEF_HEUTE, PRUEF_UHR, pruefHaushalt } from "@/lib/begleitung/pruefsta
 
 export const maxDuration = 300;
 
-const BATCH = 20;
+const BATCH = 3;
 const CHOICE: ModelChoice = process.env.LOTTE_MODEL || { small: process.env.LOTTE_SMALL_MODEL || "claude-haiku-5-5", large: process.env.LOTTE_LARGE_MODEL || "claude-sonnet-5-5" };
 
 /** Zugang nur mit eigenem Geheimnis (zeitkonstanter Vergleich) */
