@@ -10,7 +10,9 @@ import { useExternalStore } from "@/lib/core/useExternalStore";
 import { berlinTime } from "@/lib/core/now";
 import type { CalendarEntry } from "@/lib/kalender/model";
 
-export type Anbieter = "apple" | "google" | "outlook";
+export type Anbieter = "apple" | "google" | "outlook" | "todoist";
+
+export const ANBIETER_NAME: Record<Anbieter, string> = { apple: "Apple", google: "Google", outlook: "Outlook", todoist: "Todoist" };
 
 export const ANBIETER: { id: Anbieter; name: string }[] = [
   { id: "apple", name: "Apple" },
@@ -48,12 +50,13 @@ export function kalenderLink(text: string): string | null {
   if (!m) return null;
   const url = m[0].replace(/[).,;]+$/, "");
   if (/^webcals?:/i.test(url)) return url;
-  return /\.ics(\?|$)|ical|calendar\.google\.com|outlook\.(live|office|office365)\.com|icloud\.com|kalender\.test/i.test(url) ? url : null;
+  return /\.ics(\?|$)|ical|calendar\.google\.com|outlook\.(live|office|office365)\.com|icloud\.com|todoist\.com|kalender\.test|todoist\.test/i.test(url) ? url : null;
 }
 
 /** Wer etwas sagt wie „Hol meinen Google-Kalender rein“: welcher Anbieter? */
 export function anbieterIn(text: string): Anbieter | null {
   const t = text.toLowerCase();
+  if (/todoist/.test(t)) return "todoist";
   if (/google|gmail/.test(t)) return "google";
   if (/outlook|microsoft|office/.test(t)) return "outlook";
   if (/apple|icloud|iphone|ipad|mac/.test(t)) return "apple";
@@ -62,37 +65,9 @@ export function anbieterIn(text: string): Anbieter | null {
 
 export type Schritt = { text: string; icon: "einstellungen" | "kalender" | "info" | "schalter" | "teilen" | "kopieren" | "computer" | "link" };
 
-/** Ein Schritt pro Bildschirm (der letzte: Link einfügen) */
-export const SCHRITTE: Record<Anbieter, Schritt[]> = {
-  apple: [
-    { icon: "kalender", text: "Öffne die Kalender-App und tippe unten auf „Kalender“." },
-    { icon: "info", text: "Tippe auf das ⓘ neben deinem Kalender." },
-    { icon: "schalter", text: "Schalte „Öffentlicher Kalender“ ein." },
-    { icon: "teilen", text: "Tippe auf „Link teilen …“ → „Kopieren“ und komm zurück." },
-  ],
-  google: [
-    { icon: "computer", text: "Das geht nur am Computer oder in der Web-Version: calendar.google.com öffnen." },
-    { icon: "einstellungen", text: "Oben rechts aufs Zahnrad → „Einstellungen“, links deinen Kalender wählen." },
-    { icon: "kopieren", text: "Unter „Kalender integrieren“ die „Privatadresse im iCal-Format“ kopieren." },
-  ],
-  outlook: [
-    { icon: "computer", text: "outlook.com im Browser öffnen → Zahnrad → „Kalender“." },
-    { icon: "teilen", text: "„Freigegebene Kalender“ → „Kalender veröffentlichen“, Kalender wählen." },
-    { icon: "kopieren", text: "Den ICS-Link kopieren und hier einfügen." },
-  ],
-};
-
 /** Kurz und ehrlich, was passiert */
 export const HINWEIS_GEHEIM = "Der Link ist geheim. Wer ihn hat, kann die Termine sehen. Gib ihn nicht weiter.";
 export const HINWEIS_RICHTUNG = "Termine von dort erscheinen bei mir. Was du hier einträgst, bleibt erst mal nur hier.";
-
-/** Mail an sich selbst, um es am Computer zu machen */
-export function mailAnMich(anbieter: Anbieter, app: string): string {
-  const steps = SCHRITTE[anbieter].map((s, i) => `${i + 1}. ${s.text}`).join("\n");
-  const subject = `${app}: Kalender verbinden`;
-  const body = `${steps}\n\nDanach den Link in ${app} unter Einstellungen → Kalender einfügen.`;
-  return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-}
 
 /** Wie viele Termine in den nächsten 4 Wochen (für den Erfolgs-Satz) */
 export function termineIn4Wochen(entries: CalendarEntry[], today: string): number {

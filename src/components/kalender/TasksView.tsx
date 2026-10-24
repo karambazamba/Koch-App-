@@ -16,11 +16,12 @@ import { CARD, PAGE_MAIN, buttonClass } from "@/components/ui/styles";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { setDone, taskOverview, TASK_GROUPS, type DayItem } from "@/lib/kalender/model";
 import { useEntries } from "@/lib/kalender/store";
+import { useAboEntries } from "@/lib/kalender/abo/store";
 import { useCachedAccount } from "@/lib/konten/cache";
 import { isMyTask, memberName, taskRole } from "@/lib/kalender/abgeben/model";
 import { toIsoDate, useToday } from "@/lib/core/now";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
-import { act, buzz } from "@/components/heute/actions";
+import { act, buzz, readOnlyDone } from "@/components/heute/actions";
 import { ItemMenu } from "@/components/kalender/Items";
 import { EntryForm } from "@/components/kalender/EntryForm";
 import { TaskLine, useLeaving } from "@/components/heute/MiniCards";
@@ -40,6 +41,7 @@ function TaskRow({ item, today, onOpen }: { item: DayItem; today: string; onOpen
   // Abhaken: ca. 2 s durchgestrichen (nochmal tippen = doch nicht); Erledigtes unter "✓ erledigt" zurückholen
   const { leaving, start } = useLeaving((it) => act((list, stamp) => setDone(list, it, true, stamp), it.title, { done: true }));
   const toggle = (it: DayItem) => {
+    if (readOnlyDone(it)) return;
     if (it.done) {
       buzz();
       return act((list, stamp) => setDone(list, it, false, stamp));
@@ -64,7 +66,9 @@ export function TasksView() {
   const [editing, setEditing] = useState<DayItem | null>(null);
   const [adding, setAdding] = useState<string | null>(null);
   const today = now ? toIsoDate(now) : undefined;
-  const groups = entries && today ? taskOverview(entries, today) : null;
+  // Aufgaben aus verbundenen Listen (Todoist, nur lesen) stehen mit dabei
+  const aboTasks = useAboEntries().filter((e) => e.typ === "aufgabe");
+  const groups = entries && today ? taskOverview(aboTasks.length ? [...entries, ...aboTasks] : entries, today) : null;
   const givenItems = today && given.length ? Object.values(taskOverview(given, today)).flat() : [];
   const pick = (list: DayItem[]) => list.filter((i) => filter === "alles" || i.room === filter);
   const hasWork = work || Boolean(entries?.some((e) => e.raum === "arbeit"));

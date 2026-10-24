@@ -438,7 +438,7 @@ export function calendarImportRule(ctx: RuleContext, t: string): boolean {
   if (!isCalendarImportRequest(t)) return false;
   const unlocked = setFeature("kalender", true);
   const anbieter = anbieterIn(t);
-  const reply = anbieter ? `Klar, ich zeig dir Schritt für Schritt, wie dein ${anbieter === "apple" ? "Apple" : anbieter === "google" ? "Google" : "Outlook"}-Kalender reinkommt.` : CALENDAR_IMPORT_REPLY;
+  const reply = anbieter === "todoist" ? "Klar, ich zeig dir Schritt für Schritt, wie deine Todoist-Aufgaben reinkommen. Abgehakt wird weiter in Todoist." : anbieter ? `Klar, ich zeig dir Schritt für Schritt, wie dein ${anbieter === "apple" ? "Apple" : anbieter === "google" ? "Google" : "Outlook"}-Kalender reinkommt.` : CALENDAR_IMPORT_REPLY;
   localReplyOf(ctx)(t, unlocked ? `${reply} Du findest es auch in den Einstellungen.` : reply);
   ctx.router.push("/profil/kalender");
   if (anbieter) openMitbringen(anbieter);

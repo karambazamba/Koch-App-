@@ -19,7 +19,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { buttonClass, chipClass, SECTION_TITLE } from "@/components/ui/styles";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { ItemMenu } from "@/components/kalender/Items";
-import { act, buzz } from "@/components/heute/actions";
+import { act, buzz, readOnlyDone } from "@/components/heute/actions";
 import { clockLabel } from "@/lib/kalender/answers";
 import { addDays } from "@/lib/core/now";
 import { stockLine } from "@/lib/essen/dishIdeas";
@@ -224,7 +224,7 @@ export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, d
                             role="checkbox"
                             aria-checked={t.done}
                             aria-label={`${t.title} erledigt`}
-                            onClick={() => (buzz(), act((list, stamp) => setDone(list, t, !t.done, stamp), t.title, { done: !t.done }))}
+                            onClick={() => readOnlyDone(t) || (buzz(), act((list, stamp) => setDone(list, t, !t.done, stamp), t.title, { done: !t.done }))}
                             className="-ml-1.5 flex h-11 w-11 shrink-0 items-center justify-center"
                           >
                             <span className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${t.done ? "border-accent bg-accent text-on-accent" : "border-line-strong"}`}>{t.done && <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />}</span>

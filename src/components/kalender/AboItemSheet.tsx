@@ -4,7 +4,7 @@
 // aus welchem Kalender – und „In unseren Kalender kopieren“ (eigener Termin,
 // frei änderbar). Ändern und Löschen geht im Original; es kommt von selbst an.
 
-import { CalendarPlus } from "lucide-react";
+import { CalendarPlus, ExternalLink } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { NOTE, buttonClass } from "@/components/ui/styles";
 import { clockLabel } from "@/lib/kalender/answers";
@@ -20,9 +20,11 @@ export function AboItemSheet({ item, onClose }: { item: DayItem; onClose: () => 
   const [, m, day] = item.date.split("-");
   const when = [`${weekdayShort(item.date)} ${Number(day)}.${Number(m)}.`, item.time ? `${clockLabel(item.time)}${item.end ? `–${clockLabel(item.end)}` : ""}` : "ganztägig", item.repeat ? repeatLabel(item.repeat, d.date) : ""].filter(Boolean).join(" · ");
   const place = item.entry.typ === "termin" ? item.entry.data.place : undefined;
+  const task = item.entry.typ === "aufgabe";
+  const todoist = task && item.label === "Todoist";
   const copy = () => {
     changeEntries((list) => [...list, copyToOwn(item.entry)]);
-    showToast({ text: "In euren Kalender kopiert", small: true, seconds: 3 });
+    showToast({ text: task ? "Zu deinen Aufgaben kopiert" : "In euren Kalender kopiert", small: true, seconds: 3 });
     onClose();
   };
   return (
@@ -30,12 +32,18 @@ export function AboItemSheet({ item, onClose }: { item: DayItem; onClose: () => 
       <div className="mb-3 flex flex-col gap-1 px-1">
         <p className="text-base font-semibold">{when}</p>
         {place && <p className="text-base text-muted">{place}</p>}
-        <p className="text-sm text-muted">aus {abo ? `„${abo.name}“` : "einem verbundenen Kalender"} · nur lesen</p>
+        <p className="text-sm text-muted">aus {abo ? `„${abo.name}“` : task ? "einer verbundenen Liste" : "einem verbundenen Kalender"} · nur lesen</p>
       </div>
-      <p className={`${NOTE} mb-3`}>Ändern und löschen geht im Original – das kommt hier von selbst an.</p>
-      <button type="button" onClick={copy} className={`${buttonClass("primary")} mb-2 w-full`}>
+      <p className={`${NOTE} mb-3`}>{todoist ? "Abhaken, ändern und löschen geht in Todoist – das kommt hier von selbst an." : "Ändern und löschen geht im Original – das kommt hier von selbst an."}</p>
+      {todoist && (
+        <a href="https://todoist.com/app" target="_blank" rel="noopener noreferrer" className={`${buttonClass("primary")} mb-2 w-full`}>
+          <ExternalLink className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+          In Todoist öffnen
+        </a>
+      )}
+      <button type="button" onClick={copy} className={`${buttonClass(todoist ? "secondary" : "primary")} mb-2 w-full`}>
         <CalendarPlus className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-        In unseren Kalender kopieren
+        {task ? "Zu meinen Aufgaben kopieren" : "In unseren Kalender kopieren"}
       </button>
     </Sheet>
   );

@@ -10,8 +10,17 @@ import { itemsForDay, type CalendarEntry } from "@/lib/kalender/model";
 import { triggerAvatar } from "@/lib/core/avatarState";
 import { noteUserAction } from "@/lib/core/activity";
 import { todayIso } from "@/lib/core/now";
-import { showDeleted, showDone } from "@/lib/core/toast";
+import { showDeleted, showDone, showToast } from "@/lib/core/toast";
+import { isAboEntry } from "@/lib/kalender/abo/model";
+import type { DayItem } from "@/lib/kalender/model";
 import { pushUndo } from "@/lib/core/undo";
+
+/** Aufgabe aus einer verbundenen Liste (z. B. Todoist, nur lesen): Abhaken geht dort – kurz sagen, nichts ändern */
+export function readOnlyDone(item: Pick<DayItem, "entry" | "label">): boolean {
+  if (!isAboEntry(item.entry)) return false;
+  showToast({ text: item.label === "Todoist" ? "In Todoist abhaken – hier steht’s zum Nachschauen." : "Das ist nur zum Nachschauen – abhaken geht im Original.", small: true, seconds: 4 });
+  return true;
+}
 
 /** Abgehakt: so lange durchgestrichen stehen (nochmal tippen = doch nicht), dann weich weg */
 export const LEAVE_MS = 2000;

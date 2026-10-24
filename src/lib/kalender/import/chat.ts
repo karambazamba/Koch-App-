@@ -7,7 +7,7 @@ export function isCalendarImportRequest(text: string): boolean {
   const t = text.toLowerCase();
   const source = /(google|apple|icloud|outlook|iphone|handy)[- ]?(kalender|termine)|(kalender|termine) (aus|von|vom) (google|apple|icloud|outlook|dem iphone|meinem iphone|dem handy|meinem handy)/;
   const verb = /(übernimm|übernehmen|importier|hol|rein|rüber|synchron|verbind|einlesen|bekomm|krieg)/;
-  return (source.test(t) && verb.test(t)) || /(?<![a-zäöüß])kalender (übernehmen|importieren|einlesen)(?![a-zäöüß])/.test(t);
+  return ((source.test(t) || /todoist/.test(t)) && verb.test(t)) || /(?<![a-zäöüß])kalender (übernehmen|importieren|einlesen)(?![a-zäöüß])/.test(t);
 }
 
 /** Antwort: kurz beide Wege (die App kann den Handy-Kalender nicht direkt lesen) */

@@ -22,7 +22,7 @@ import { isUrgent, setDone, taskBadge, type DayItem } from "@/lib/kalender/model
 import type { TerminRow, TerminState } from "@/lib/heute/termineKachel";
 import { UrgentMark } from "@/components/kalender/UrgentMark";
 import type { TileSize } from "@/lib/core/homeLayout";
-import { LEAVE_MS, act, buzz } from "@/components/heute/actions";
+import { LEAVE_MS, act, buzz, readOnlyDone } from "@/components/heute/actions";
 import { ItemMenu, roomBarProps } from "@/components/kalender/Items";
 import { withoutEmoji } from "@/lib/core/text";
 import dynamic from "next/dynamic";
@@ -44,6 +44,7 @@ function useSection() {
   // Nach dem Abhaken: welche Einträge vorher da waren – neue gleiten herein
   const [before, setBefore] = useState<string[] | null>(null);
   const check = (item: DayItem, shown: DayItem[]) => {
+    if (readOnlyDone(item)) return;
     setBefore(shown.map((i) => i.key));
     act((list, stamp) => setDone(list, item, true, stamp), item.title, { done: true });
     setTimeout(() => setBefore(null), 700);
