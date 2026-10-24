@@ -223,8 +223,8 @@ export const ganzeKachel = async (page, check) => {
     const el = page.locator(`[data-kachel-ziel] > section[aria-label="${id}"]`).first();
     await el.evaluate((e) => e.scrollIntoView({ block: "center" }));
     const b = await el.boundingBox();
-    // rechts unten in der Kachel: freie Fläche (keine Zeile, kein Knopf)
-    await page.mouse.click(b.x + b.width - 6, b.y + b.height - 4);
+    // unten in der Kachel (nicht in der runden Ecke): freie Fläche, keine Zeile, kein Knopf
+    await page.mouse.click(b.x + b.width - 40, b.y + b.height - 5);
     await page.waitForTimeout(900);
     return page.url();
   };

@@ -49,7 +49,7 @@ export function DishTile({
   const frame = `relative block h-full w-full overflow-hidden rounded-card text-left shadow-card ${half ? "min-h-[168px]" : "min-h-[180px]"}`;
   const cookClass = "absolute bottom-0 left-0 flex h-11 items-center px-3 text-[13px] font-bold text-on-color";
   return (
-    <div className="relative h-full">
+    <section className="relative h-full" aria-label={when}>
       {typeof open === "string" ? (
         <Link href={open} aria-label={label} className={frame}>
           {body}
@@ -70,6 +70,6 @@ export function DishTile({
           </button>
         ))}
       {corner}
-    </div>
+    </section>
   );
 }

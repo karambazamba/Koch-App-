@@ -8,10 +8,12 @@ const since = "2026-10-01";
 const alle = { "mia-name-neu": true, einladen: true, spendentopf: true, "startseite-halten": true, "lieber-schlicht": true, "abends-dunkel": true };
 
 describe("naechsterHinweis", () => {
-  it("in den ersten 3 Tagen und beim Beispiel-Tag: keiner", () => {
-    for (let d = 0; d < RUHE_TAGE; d++) expect(naechsterHinweis(alle, { today: `2026-10-0${1 + d}`, since, demo: false, gezeigt: {} })).toBeNull();
-    expect(naechsterHinweis(alle, { today: "2026-10-04", since, demo: true, gezeigt: {} })).toBeNull();
-    expect(naechsterHinweis(alle, { today: "2026-10-04", since: null, demo: false, gezeigt: {} })).toBeNull();
+  it("in den ersten 3 Tagen und beim Beispiel-Tag: keiner (außer „Ich heiße jetzt Mia“)", () => {
+    const ohneMia = { ...alle, "mia-name-neu": false };
+    expect(naechsterHinweis(alle, { today: "2026-10-01", since, demo: true, gezeigt: {} })).toBe("mia-name-neu");
+    for (let d = 0; d < RUHE_TAGE; d++) expect(naechsterHinweis(ohneMia, { today: `2026-10-0${1 + d}`, since, demo: false, gezeigt: {} })).toBeNull();
+    expect(naechsterHinweis(ohneMia, { today: "2026-10-04", since, demo: true, gezeigt: {} })).toBeNull();
+    expect(naechsterHinweis(ohneMia, { today: "2026-10-04", since: null, demo: false, gezeigt: {} })).toBeNull();
   });
 
   it("ab Tag 4 genau einer, in fester Reihenfolge", () => {
@@ -21,10 +23,11 @@ describe("naechsterHinweis", () => {
   });
 
   it("jeder nur einmal: am selben Tag bleibt er, ab dem nächsten Tag kommt der nächste", () => {
-    const gezeigt = { "mia-name-neu": "2026-10-04" };
-    expect(naechsterHinweis(alle, { today: "2026-10-04", since, demo: false, gezeigt })).toBe("mia-name-neu");
-    expect(naechsterHinweis(alle, { today: "2026-10-05", since, demo: false, gezeigt })).toBe("einladen");
-    expect(abgelaufen(gezeigt, "mia-name-neu", "2026-10-05")).toBe(true);
+    const ohneMia = { ...alle, "mia-name-neu": false };
+    const gezeigt = { einladen: "2026-10-04" };
+    expect(naechsterHinweis(ohneMia, { today: "2026-10-04", since, demo: false, gezeigt })).toBe("einladen");
+    expect(naechsterHinweis(ohneMia, { today: "2026-10-05", since, demo: false, gezeigt })).toBe("spendentopf");
+    expect(abgelaufen(gezeigt, "einladen", "2026-10-05")).toBe(true);
   });
 });
 

@@ -2,7 +2,8 @@
 // unter der Jetzt-Karte und höchstens EINE schwebende Blase je Öffnen. Jeder
 // Hinweis nur einmal: an dem Tag, an dem er zuerst steht, bleibt er; ab dem
 // nächsten Tag ist er weg (auch ohne Antippen). In den ersten 3 Tagen nur der
-// Beispiel-Tag und die Blase „Tippen & sprechen“.
+// Beispiel-Tag und die Blase „Tippen & sprechen“ – Ausnahme „Ich heiße jetzt
+// Mia“ (alte Installationen, sichern vor dem Neu-Hinzufügen; bis „✕“).
 
 import { addDays } from "@/lib/core/now";
 import { createLocalStore } from "@/lib/core/localStore";
@@ -34,6 +35,8 @@ export const abgelaufen = (gezeigt: State["gezeigt"], id: HinweisId, today: stri
  * `since`: erster Tag der App; `demo`: Beispiel-Tag läuft.
  */
 export function naechsterHinweis(aktiv: Partial<Record<HinweisId, boolean>>, opts: { today: string; since: string | null; demo: boolean; gezeigt: State["gezeigt"] }): HinweisId | null {
+  // „Ich heiße jetzt Mia“ betrifft nur alte Installationen und schützt vor Datenverlust: immer zuerst, auch in der Ruhezeit
+  if (aktiv["mia-name-neu"]) return "mia-name-neu";
   if (opts.demo) return null;
   if (!opts.since || opts.today < addDays(opts.since, RUHE_TAGE)) return null;
   return HINWEISE.find((id) => aktiv[id] && !abgelaufen(opts.gezeigt, id, opts.today)) ?? null;

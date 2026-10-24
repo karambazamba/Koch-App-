@@ -96,7 +96,7 @@ export function PinboardTile({ size = "S", me, demo = false }: { size?: TileSize
             </span>
           )}
         </div>
-        <div className={`mt-1.5 flex flex-col gap-1 ${recording ? "min-h-0 flex-1" : ""}`} style={recording ? undefined : { minHeight: rows * 30 + (rows - 1) * 4 }}>
+        <div className={`mt-1.5 flex flex-col gap-1 ${recording ? "min-h-0 flex-1" : ""}`} style={recording ? undefined : { minHeight: Math.max(64, rows * 30 + (rows - 1) * 4) }}>
           {recording ? (
             <RecordingRow recorder={recorder} compact />
           ) : showDemo ? (

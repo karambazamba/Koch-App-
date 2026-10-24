@@ -57,6 +57,8 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Jeder Hinweis nur einmal: am ersten Tag bleibt er, ab dem nächsten ist er
   weg (auch ohne Antippen). In den ersten 3 Tagen nur Beispiel-Tag und
   „Tippen & sprechen“; „Lieber schlicht?“ kommt damit frühestens am 4. Tag.
+  Ausnahme „Ich heiße jetzt Mia“ (nur alte Installationen, schützt vor
+  Datenverlust): steht immer zuerst, bis ✕.
 
 ### Kacheln
 - Zwei Looks (Profil `look`, `data-look` am `<html>`, Regeln in
