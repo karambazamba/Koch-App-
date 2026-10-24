@@ -20,8 +20,8 @@ function pages(dir = join(ROOT, "src/app"), base = ""): string[] {
 describe("Service Worker: Vorladen", () => {
   it("lädt genau die echten Seiten vor – keine Umleitungen (Safari mag keine umgeleiteten Antworten aus dem Cache)", () => {
     const pageUrls = precache.filter((u) => !/\.[a-z]+$/.test(u) && u !== "/manifest.webmanifest");
-    // /brand gibt es nur im Testmodus (sonst 404) – nie vorladen
-    expect(pageUrls.sort()).toEqual(pages().filter((u) => u !== "/brand").sort());
+    // /brand gibt es nur im Testmodus (sonst 404) – nie vorladen; Einladungen (/e/[token]) sind je Link verschieden
+    expect(pageUrls.sort()).toEqual(pages().filter((u) => u !== "/brand" && !u.includes("[")).sort());
   });
 
   it("Icons mit Version im Namen und das Beispielgericht sind dabei", () => {

@@ -3,7 +3,7 @@
 // Erster Start (nur ganz am Anfang oder nach "Neu anfangen"): der
 // Hallo-Bildschirm nach Tafel 55 – Mia groß und rund, „Moin!“ (Mia stellt sich nie vor)
 // („Mia.“ in Orange), „Erzähl mir einfach, was ansteht. Ich sortiere für
-// euch.“, „Los geht’s“, „Daten wiederherstellen“ und klein unten die Marke
+// euch.“, „Los geht’s“, mit Konten „Schon ein Konto? Anmelden“ und klein unten die Marke
 // (BrandMark, gedämpft) mit „Gemacht in Eutin · von KARAMBA Eis“. Ablauf:
 //   0,0 s Mia ploppt auf, 0,95 s Überschrift tippt sich ein (sie spricht
 //   dabei), 1,8 s Zeile, 2,0 s Freudensprung (ducken, eine Drehung, Landung
@@ -27,6 +27,7 @@ import { startFresh } from "@/lib/einstellungen/welcomeStore";
 import { LookStep } from "@/components/einstellungen/aussehen/LookStep";
 import type { AppLook } from "@/lib/einstellungen/profile";
 import { expectReplace } from "@/lib/core/navigation";
+import { useCloudMode } from "@/lib/konten/backend";
 import { HELLO_JUMP_MS, HELLO_READY, HELLO_T, helloElapsed, helloJump, helloTapText, markHelloShown, reducedMotion, setHelloElapsed, setHelloFlight } from "@/lib/core/hello";
 import { helperMessage } from "@/lib/einstellungen/profile";
 import { buzz } from "@/components/heute/actions";
@@ -67,6 +68,7 @@ export function HelloScreen() {
   const router = useRouter();
   const path = usePathname();
   const color = avatarHex(DEFAULT_HELPER.farbe);
+  const cloud = useCloudMode();
   // Jeder kennt Mia – sie stellt sich nie vor (Auftrag „Mia spricht knapp“)
   const title = "Moin!";
   const ready = usePageReady();
@@ -234,9 +236,14 @@ export function HelloScreen() {
           <button key={`los${jump.nudge}`} type="button" onClick={() => setAsking(true)} className={`h-14 w-full rounded-field text-[17px] font-bold text-on-color active:scale-[0.98] ${jump.nudge ? "hello-nudge" : ""}`} style={{ backgroundColor: color }}>
             Los geht’s
           </button>
-          <Link href="/profil/daten" className="hit inline-flex h-11 items-center gap-1 whitespace-nowrap text-[clamp(12px,3.6vw,14px)] font-semibold text-muted">
-            Schon mal genutzt? <span className="text-accent-strong">Daten wiederherstellen</span>
-          </Link>
+          {/* Tafel 22: nur mit Konten „Schon ein Konto? Anmelden“ – „Daten wiederherstellen“ steht in Einstellungen → Daten & App */}
+          {cloud === "supabase" || cloud === "test" ? (
+            <Link href="/anmelden" className="hit inline-flex h-11 items-center gap-1 whitespace-nowrap text-[clamp(12px,3.6vw,14px)] font-semibold text-muted">
+              Schon ein Konto? <span className="text-accent-strong">Anmelden</span>
+            </Link>
+          ) : (
+            <span className="h-11" aria-hidden />
+          )}
           <div className="mt-3 flex flex-col items-center gap-1 opacity-60" data-hello-marke>
             <BrandMark height={22} />
             <span className="text-xs font-semibold text-muted">Gemacht in Eutin · von KARAMBA Eis</span>

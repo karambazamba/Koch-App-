@@ -31,12 +31,33 @@ export function normalizeInviteCode(raw: string): string | null {
 /** „4K7P2Q“ → „4K7-P2Q“ */
 export const formatInviteCode = (code: string) => (code.length === 6 ? `${code.slice(0, 3)}-${code.slice(3)}` : code);
 
-/** Link zum Beitreten (öffnet direkt „Anmelden“, der Code ist schon eingetragen) */
-const inviteLink = (origin: string, code: string) => `${origin.replace(/\/$/, "")}/beitreten?code=${formatInviteCode(code)}`;
+// --- Einladen per Link (Tafel 22) --------------------------------------------
 
-/** Text für das Teilen-Menü (mit Link, wenn bekannt) */
-export const inviteShareText = (code: string, origin?: string) =>
-  `Komm in unseren Haushalt bei ${APP_NAME}. Code: ${formatInviteCode(code)}${origin ? `\n${inviteLink(origin, code)}` : ""}`;
+/** Offene Einladung (ohne Token; `ref` = kurze Kennung zum Zurückziehen) */
+export type InviteLink = { ref: string; role: Role; inviterName: string; expiresAt: string; uses: number };
+
+/** Was die Einladungsseite vor dem Anmelden sehen darf */
+export type InviteInfo = { status: "gueltig" | "abgelaufen" | "unbekannt"; inviter: string; family: string };
+
+/** https://<app>/e/<token> */
+export const inviteLinkUrl = (origin: string, token: string) => `${origin.replace(/\/$/, "")}/e/${token}`;
+
+/** Text für das Teilen-Menü */
+export const inviteLinkShareText = (origin: string, token: string) => `Komm zu uns in „${APP_NAME}“ 🧡 ${inviteLinkUrl(origin, token)}`;
+
+/** Token aus einem eingefügten Link (oder dem Token selbst); null = keiner */
+export function tokenFromLink(text: string): string | null {
+  const m = text.trim().match(/(?:\/e\/|^)([0-9a-f]{32})(?![0-9a-f])/i);
+  return m ? m[1].toLowerCase() : null;
+}
+
+/** Nach dem Anmelden ohne Familie: „Familie <Nachname>“, sonst „Familie <Vorname>“ */
+export function familyNameFor(name: string, lastName?: string | null): string {
+  const last = (lastName ?? "").trim();
+  if (last) return `Familie ${last}`.slice(0, 60);
+  const first = name.trim().split(/\s+/)[0] ?? "";
+  return first ? `Familie ${first}`.slice(0, 60) : "Unsere Familie";
+}
 
 export const isEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
 
@@ -49,8 +70,10 @@ export function friendlyError(code: string | undefined | null): string {
   if (/code_unbekannt/.test(c)) return "Diesen Code kenne ich nicht – nochmal schauen?";
   if (/code_benutzt/.test(c)) return "Dieser Code wurde schon benutzt – bitte um einen neuen.";
   if (/code_abgelaufen/.test(c)) return "Der Code ist abgelaufen – bitte um einen neuen.";
+  if (/link_unbekannt/.test(c)) return "Diese Einladung gibt es nicht mehr – bitte um einen neuen Link.";
+  if (/link_abgelaufen/.test(c)) return "Die Einladung ist abgelaufen – bitte um einen neuen Link.";
   if (/zu_viele_versuche/.test(c)) return "Zu viele Versuche – in einer Stunde geht’s wieder.";
-  if (/schon_im_haushalt/.test(c)) return "Du bist schon in einem Haushalt.";
+  if (/schon_im_haushalt/.test(c)) return "Du bist schon in einer Familie.";
   if (/darf_nicht_einladen/.test(c)) return "Einladen können nur Erwachsene.";
   if (/nicht_angemeldet|jwt|session/.test(c)) return "Bitte melde dich nochmal an.";
   if (/otp_expired|expired|invalid.*(token|otp)|token.*(invalid|expired)/.test(c)) return "Der Code stimmt nicht oder ist abgelaufen – nochmal versuchen oder neu senden.";

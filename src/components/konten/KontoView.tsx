@@ -1,8 +1,8 @@
 "use client";
 
 // /konto: Familie verbinden. Nicht angemeldet → Anmelden per Code; ohne
-// Haushalt → anlegen oder mit Code beitreten; verbunden → Haushalt,
-// Mitglieder, Einladen, Abmelden. `?einladen=1` öffnet gleich das Einladen,
+// Familie → still „Familie <Name>“ anlegen; verbunden → Familie,
+// Mitglieder, Einladen per Link, Abmelden. `?einladen=1` öffnet gleich das Einladen,
 // `?von=hallo` startet danach die App (erster Start ohne Profil).
 
 import { useState } from "react";
@@ -10,12 +10,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD, PAGE_MAIN, SECTION_TITLE } from "@/components/ui/styles";
 import { useProfile } from "@/lib/einstellungen/useProfile";
-import { householdTitle } from "@/lib/einstellungen/profileHousehold";
 import { startFresh } from "@/lib/einstellungen/welcomeStore";
 import { expectReplace } from "@/lib/core/navigation";
 import { useAccount } from "@/lib/konten/account";
+import { familyNameFor } from "@/lib/konten/model";
 import { LoginSteps } from "@/components/konten/LoginSteps";
-import { HouseholdChoice } from "@/components/konten/HouseholdChoice";
+import { AutoFamily } from "@/components/konten/AutoFamily";
 import { HouseholdCard, InviteSheet } from "@/components/konten/HouseholdCard";
 import { TakeoverCard } from "@/components/konten/TakeoverCard";
 
@@ -28,7 +28,7 @@ export function KontoView() {
   const [invite, setInvite] = useState(params.get("einladen") === "1");
   const me = profile?.persons[0];
   const displayName = me?.name.trim() || account.user?.email.split("@")[0] || "";
-  const suggested = profile?.householdName ? `Familie ${profile.householdName}` : profile ? householdTitle(profile).replace(/^Unser(e)? /, "") : "";
+  const suggested = profile?.householdName ? `Familie ${profile.householdName}` : familyNameFor(displayName);
 
   const finished = () => {
     if (!fromHello) return;
@@ -51,7 +51,7 @@ export function KontoView() {
           </section>
         )}
         {account.user && !account.household && account.mode !== "laedt" && (
-          <HouseholdChoice suggestedName={suggested} displayName={displayName} personId={me?.id ?? null} onDone={finished} />
+          <AutoFamily name={suggested} displayName={displayName} personId={me?.id ?? null} onDone={finished} />
         )}
         {account.user && account.household && (
           <>

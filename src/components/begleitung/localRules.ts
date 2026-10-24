@@ -10,6 +10,7 @@ import { parseBausteinCommand } from "@/lib/begleitung/bausteinChat";
 import { BAUSTEINE, bausteinOf, featureOn, setFeature } from "@/lib/core/features";
 import { CALENDAR_IMPORT_REPLY, isCalendarImportRequest } from "@/lib/kalender/import/chat";
 import { anbieterIn, openMitbringen } from "@/lib/kalender/mitbringen/angebot";
+import { einladenWunsch } from "@/lib/konten/einladenHinweis";
 import { changeHome, describeHomeChange, requestHomeEdit, unlockHomeTile } from "@/lib/core/homeLayout";
 import { addPin, changeMemos, changePins, createPin, formatDauer, householdNames, isPinboardQuery, loadMemos, loadPins, memoPlayRequest, memoToPlay, pinWriteCommand, setMemoHeard, visibleMemos, visiblePins } from "@/lib/pinnwand";
 import { playMemo } from "@/lib/pinnwand/memoPlayer";
@@ -442,6 +443,16 @@ export function calendarImportRule(ctx: RuleContext, t: string): boolean {
   localReplyOf(ctx)(t, unlocked ? `${reply} Du findest es auch in den Einstellungen.` : reply);
   ctx.router.push("/profil/kalender");
   if (anbieter) openMitbringen(anbieter);
+  ctx.onClose();
+  return true;
+}
+
+/** „Lade Lisa ein“ → Einladungs-Link (Familie → Einladen) */
+export function inviteRule(ctx: RuleContext, t: string): boolean {
+  const who = einladenWunsch(t);
+  if (who === null) return false;
+  localReplyOf(ctx)(t, `Klar. Ich mach dir einen Einladungs-Link. Den schickst du ${who ? `${who} ` : ""}einfach weiter.`);
+  ctx.router.push("/konto?einladen=1");
   ctx.onClose();
   return true;
 }

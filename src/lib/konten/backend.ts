@@ -7,11 +7,15 @@
 
 import { useEffect, useState } from "react";
 import { readRaw, writeRaw } from "@/lib/core/localStore";
-import { fail, friendlyError, ok, type CloudUser, type HouseholdInfo, type Result, type Role } from "@/lib/konten/model";
+import { fail, friendlyError, ok, type CloudUser, type HouseholdInfo, type InviteInfo, type InviteLink, type Result, type Role } from "@/lib/konten/model";
 import type { CloudDoc } from "@/lib/konten/sync/docs";
+import type { OAuthProvider } from "@/lib/konten/oauth";
 import { memoContentType, type MemoFile } from "@/lib/konten/memoShare";
 
 export type CloudMode = "aus" | "supabase" | "test";
+
+/** Beitreten per Link: geklappt, oder schon in einer anderen Familie (Name) */
+export type JoinOutcome = { householdId: string } | { otherFamily: string };
 
 export interface CloudBackend {
   mode: CloudMode;
@@ -25,6 +29,16 @@ export interface CloudBackend {
   createHousehold(name: string, displayName: string, personId: string | null): Promise<Result<string>>;
   createInvite(role: Role): Promise<Result<string>>;
   joinHousehold(code: string, displayName: string, personId: string | null): Promise<Result<string>>;
+  /** Mit Apple/Google anmelden (verlässt die Seite); Rückkehr: finishOAuth mit dem Code aus /auth/callback */
+  startOAuth(provider: OAuthProvider): Promise<Result>;
+  finishOAuth(code: string): Promise<Result<CloudUser>>;
+  /** Einladen per Link (Tafel 22): Token, 14 Tage, mehrfach nutzbar */
+  createInviteLink(role: Role): Promise<Result<string>>;
+  listInviteLinks(): Promise<Result<InviteLink[]>>;
+  revokeInviteLink(ref: string): Promise<Result>;
+  /** Auch ohne Anmeldung: wer lädt ein, in welche Familie, noch gültig? */
+  inviteInfo(token: string): Promise<Result<InviteInfo>>;
+  joinByLink(token: string, displayName: string, personId: string | null, switchFamily: boolean): Promise<Result<JoinOutcome>>;
   leaveHousehold(): Promise<Result>;
   deleteAccount(): Promise<Result>;
   exportData(): Promise<Result<Record<string, unknown>>>;
@@ -159,6 +173,30 @@ function testBackend(): CloudBackend {
     joinHousehold: async (code, displayName, personId) => {
       const r = await call("join_household", { code, displayName, personId });
       return err(r) ? fail(err(r) as string) : ok(r.householdId as string);
+    },
+    // Im Durchklick gibt es kein Apple/Google
+    startOAuth: async () => fail(friendlyError("oauth")),
+    finishOAuth: async () => fail(friendlyError("oauth")),
+    createInviteLink: async (role) => {
+      const r = await call("create_invite_link", { role });
+      return err(r) ? fail(err(r) as string) : ok(r.token as string);
+    },
+    listInviteLinks: async () => {
+      const r = await call("list_invite_links");
+      return err(r) ? fail(err(r) as string) : ok((r.links as InviteLink[]) ?? []);
+    },
+    revokeInviteLink: async (ref) => {
+      const r = await call("revoke_invite_link", { ref });
+      return err(r) ? fail(err(r) as string) : ok(true);
+    },
+    inviteInfo: async (token) => {
+      const r = await call("invite_link_info", { linkToken: token });
+      return err(r) ? fail(err(r) as string) : ok(r as unknown as InviteInfo);
+    },
+    joinByLink: async (token, displayName, personId, switchFamily) => {
+      const r = await call("join_by_link", { linkToken: token, displayName, personId, switchFamily });
+      if (r.error === "andere_familie") return ok({ otherFamily: String(r.family ?? "") });
+      return err(r) ? fail(err(r) as string) : ok({ householdId: r.householdId as string });
     },
     leaveHousehold: async () => {
       const r = await call("leave_household");
