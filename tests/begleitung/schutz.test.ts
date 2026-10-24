@@ -91,8 +91,8 @@ describe("Verbrauch still speichern", () => {
     recordUsage("2026-10-21", { size: "gross", upgraded: true, micro: 300 });
     const saved = JSON.parse(local.getItem("wasgibts.verbrauch") ?? "{}");
     expect(saved.days).toEqual({
-      "2026-10-20": { requests: 0, small: 0, large: 1, upgraded: 0, micro: 5 },
-      "2026-10-21": { requests: 2, small: 1, large: 1, upgraded: 1, micro: 300 },
+      "2026-10-20": { requests: 0, small: 0, large: 1, upgraded: 0, micro: 5, zeichen: 0, sekunden: 0 },
+      "2026-10-21": { requests: 2, small: 1, large: 1, upgraded: 1, micro: 300, zeichen: 0, sekunden: 0 },
     });
   });
 

@@ -63,15 +63,16 @@ export const DATENSCHUTZ: Abschnitt[] = [
     titel: `KI („${APP_NAME}“)`,
     absaetze: [
       `${APP_NAME} ist eine KI. Antworten können Fehler enthalten. Für eine Antwort schicken wir deinen Satz und den nötigen Ausschnitt (zum Beispiel heutige Termine oder die Einkaufsliste) an Anthropic PBC (USA). Sprachnachrichten gehen nie an die KI. Wie lange Anthropic Anfragen aufbewahrt und ob sie zum Training genutzt werden: [nach Prüfung der aktuellen Anbieter-Bedingungen ergänzen].`,
+      `Damit ${APP_NAME} auf jedem Handy gleich klingt und dich gut versteht, gehen ihre Antworten zum Vorlesen und deine Aufnahme beim Sprechen mit ${APP_NAME} kurz an unseren Sprach-Anbieter ElevenLabs. Wir speichern die Aufnahme nicht; sie dient nur dazu, deinen Satz zu verstehen. Pinnwand-Sprachnachrichten gehen nie dorthin. Ohne KI-Einwilligung oder wenn du „Stimme des Handys“ wählst, bleibt es bei den Funktionen deines Browsers. Speicherdauer und Serverstandort bei ElevenLabs: [nach Prüfung der Anbieter-Bedingungen ergänzen].`,
     ],
   },
   {
     titel: "Anbieter, die für uns arbeiten",
     absaetze: [
-      "Vercel Inc. (Hosting, Server-Funktionen in Frankfurt), Supabase Inc. (Konten, Datenbank, Sprachnachrichten; Region " + BETREIBER.supabaseRegion + "), Anthropic PBC (KI), Resend (Empfang von „Mails an " + APP_NAME + "“). Mit allen besteht ein Vertrag zur Auftragsverarbeitung [bitte bestätigen]. Übermittlung in die USA auf Grundlage des EU-US Data Privacy Framework bzw. von Standardvertragsklauseln [je Anbieter bitte prüfen].",
+      "Vercel Inc. (Hosting, Server-Funktionen in Frankfurt), Supabase Inc. (Konten, Datenbank, Sprachnachrichten; Region " + BETREIBER.supabaseRegion + "), Anthropic PBC (KI), ElevenLabs (Sprachausgabe und Spracherkennung), Resend (Empfang von „Mails an " + APP_NAME + "“). Mit allen besteht ein Vertrag zur Auftragsverarbeitung [bitte bestätigen]. Übermittlung in die USA auf Grundlage des EU-US Data Privacy Framework bzw. von Standardvertragsklauseln [je Anbieter bitte prüfen].",
       "Wetter: Bright Sky (Daten des Deutschen Wetterdienstes) und Open-Meteo bekommen nur den Ortsnamen. Bei „Meinen Standort verwenden“ gehen auf etwa einen Kilometer gerundete Koordinaten an OpenStreetMap Nominatim; gespeichert wird nur der Ortsname.",
       "Kalender-Links: Der Link bleibt auf deinem Gerät. Zum Abrufen geht er über unseren Server zum Kalender-Anbieter, wird dabei aber weder gespeichert noch protokolliert.",
-      "Spracheingabe und Vorlesen nutzen die Funktionen deines Browsers. Bei Chrome und Android kann der Ton an Google gehen, bei Safari und iOS an Apple. Erinnerungen (Push) laufen über die Push-Dienste von Apple, Google oder Mozilla.",
+      "Ohne Sprach-Anbieter nutzen Spracheingabe und Vorlesen die Funktionen deines Browsers. Bei Chrome und Android kann der Ton an Google gehen, bei Safari und iOS an Apple. Erinnerungen (Push) laufen über die Push-Dienste von Apple, Google oder Mozilla.",
     ],
   },
   {

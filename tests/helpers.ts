@@ -158,5 +158,5 @@ export const jetztTermin = (title: string, time: string, extra: Partial<JetztTer
 
 /** Einwilligung „KI darf mitdenken“ (Datenschutz, Platz 23) – für Tests, die die KI fragen */
 export const KI_ERLAUBT: Record<string, string> = {
-  "wasgibts.einwilligungen": JSON.stringify({ version: 1, arten: { ki: { ja: true, version: 1, at: "2026-10-01T00:00:00.000Z" } } }),
+  "wasgibts.einwilligungen": JSON.stringify({ version: 1, arten: { ki: { ja: true, version: 2, at: "2026-10-01T00:00:00.000Z" } } }),
 };

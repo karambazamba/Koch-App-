@@ -11,12 +11,19 @@
 // der Browser nach Stille, hört Mia still weiter; abgeschickt wird erst nach
 // 2,5 s Stille nach dem letzten Wort, beim Antippen oder bei „fertig“.
 // Ein gesperrtes Mikro meldet `core/mic` (Mikro-Check, grauer Knopf).
+// Ist Mias Ohr vom Server eingerichtet (`stimmeClient`), nimmt die Bühne
+// selbst auf (`aufnahme.ts`, nur Mikrofon-Freigabe nötig), erkennt das
+// Satzende am Pegel und lässt den Ton auf dem Server verstehen; geht das
+// nicht, hört sie wie bisher über den Browser.
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { setAvatarFlag } from "@/lib/core/avatarState";
 import { hintSeen } from "@/lib/core/hints";
 import { claimMic, classifyMicError, guardMic, micPlatform, micState, micSubscribe, releaseMic, reportMicBlocked } from "@/lib/core/mic";
 import { micLog } from "@/lib/core/micLog";
+import { aufnahmeStarten, type Aufnahme } from "@/lib/begleitung/aufnahme";
+import { aufnahmeVerstehen, serverOhr } from "@/lib/begleitung/stimmeClient";
+import { serverStimme, serverStimmeJetzt } from "@/lib/begleitung/zugang";
 import { BUEHNE_MAX_MS, NICHTS_MS, STILLE_MS, WARTEN_AB_MS, etwasGesagt, mitErgebnis, mitNeustart, mitschriftText, neueMitschrift, withoutPrevious, type Mitschrift } from "@/lib/begleitung/mitschrift";
 
 // Minimal-Typen für die Web Speech API (nicht in allen TS-Libs enthalten)
@@ -116,9 +123,16 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
     callbacks.current = { onTranscript, onEnd };
   });
 
+  /** Eigene Aufnahme (Ohr vom Server) und ihre Nummer – ältere melden nichts mehr */
+  const ohrRef = useRef<Aufnahme | null>(null);
+  const ohrLauf = useRef(0);
+
   /** Laufende Erkennung beenden, ohne dass noch etwas von ihr ankommt */
   const detach = useCallback(() => {
     flagListening(false);
+    ohrLauf.current++;
+    ohrRef.current?.abbrechen();
+    ohrRef.current = null;
     const old = recognitionRef.current;
     recognitionRef.current = null;
     sessionRef.current++;
@@ -149,11 +163,78 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
     timers.current.forEach(clearTimeout);
     timers.current = [];
   }, []);
+  // Bühne: früh nachfragen, ob Mias Ohr vom Server da ist
+  useEffect(() => {
+    if (buehne) void serverStimme();
+  }, [buehne]);
+
+  /** Bühne mit Mias Ohr vom Server: selbst aufnehmen, Satzende am Pegel, Text vom Server */
+  const beginOhr = useCallback(() => {
+    clearTimers();
+    detach();
+    const lauf = ++ohrLauf.current;
+    const aktuell = () => lauf === ohrLauf.current;
+    heardRef.current = false;
+    textRef.current = "";
+    setError("");
+    setInterim("");
+    setWartet(false);
+    const zuEnde = () => {
+      ohrRef.current = null;
+      releaseMic(micId.current);
+      setListening(false);
+      flagListening(false);
+      setWartet(false);
+    };
+    const ohr = aufnahmeStarten({
+      laut: () => {
+        heardRef.current = true;
+      },
+      wartet: (an) => aktuell() && setWartet(an),
+      fertig: (ton, ms) => {
+        if (!aktuell()) return;
+        zuEnde();
+        if (!ton) return callbacks.current.onEnd?.("");
+        micLog(`Ohr: ${Math.round(ms / 100) / 10} s an den Server`);
+        setAvatarFlag("denken", true);
+        void aufnahmeVerstehen(ton, ms).then((said) => {
+          setAvatarFlag("denken", false);
+          if (!aktuell()) return;
+          if (said === null) {
+            setError("Hat grad nicht geklappt. Nochmal?");
+            return callbacks.current.onEnd?.("");
+          }
+          const text = stripStopWord(said).text;
+          textRef.current = text;
+          callbacks.current.onTranscript(text);
+          remember(text);
+          callbacks.current.onEnd?.(text);
+        });
+      },
+      fehler: (name) => {
+        if (!aktuell()) return;
+        zuEnde();
+        const block = classifyMicError(name, micPlatform(navigator.userAgent));
+        if (block) reportMicBlocked(block);
+        else setError("Spracheingabe hat nicht geklappt. Tipp es einfach ein.");
+      },
+    });
+    ohrRef.current = ohr;
+    claimMic(micId.current, () => {
+      ohrLauf.current++;
+      ohr.abbrechen();
+      zuEnde();
+    });
+    setListening(true);
+    flagListening(true);
+  }, [clearTimers, detach, flagListening]);
+
   const begin = useCallback(
     (fortsetzung: Mitschrift | null = null, startedAt = Date.now(), neustarts = 0) => {
+      const weiter = fortsetzung !== null;
+      if (buehne && !weiter && serverOhr(serverStimmeJetzt())) return beginOhr();
       const Recognition = speechRecognitionClass();
       if (!Recognition) return;
-      const weiter = fortsetzung !== null;
       // Beim Weiterhören die Zeitgeber (Stille, Ende) behalten
       if (!weiter) {
         clearTimers();
@@ -292,7 +373,7 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
         setError("Spracheingabe hat nicht geklappt. Tipp es einfach ein.");
       }
     },
-    [detach, flagListening, long, buehne, clearTimers],
+    [detach, flagListening, long, buehne, clearTimers, beginOhr],
   );
 
   useEffect(() => {
@@ -307,6 +388,7 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
 
   /** Aufnahme beenden – der erkannte Text wird über onEnd abgeschickt */
   const stop = useCallback(() => {
+    if (ohrRef.current) return ohrRef.current.stoppen();
     const r = recognitionRef.current as (Recognition & { stopByUser?: () => void }) | null;
     if (!r) return;
     r.stopByUser?.();

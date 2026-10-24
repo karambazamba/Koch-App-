@@ -2364,3 +2364,17 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Seite hoch, die gemessene Tastaturhöhe sprang kurz auf 0). Jetzt zählt der
   Fokus des Felds; schließen nur bei echtem Fokusverlust, leerem Feld und nach
   300 ms. „Lieber sprechen“ als Weg zurück, Bühne am sichtbaren Bereich.
+
+## Mia hört und spricht über den Server (v0.98.0, ElevenLabs)
+- Sprechen: `/api/stimme` (Antwort bereinigt wie Anzeige und Vorlesen,
+  Stimme `MIA_VOICE_ID`, Modell Flash, Deutsch), feste Sätze („Steht drin.“
+  …) einmal erzeugt und zwischengespeichert. Kommt die erste Silbe nicht in
+  ~1 s oder klappt es nicht: still die Stimme des Handys.
+- Hören: auf der Bühne eigene Aufnahme (nur Mikrofon-Freigabe, Satzende an
+  der Stille, höchstens 60 s), `/api/hoeren` (Scribe, Deutsch). Fehler: einmal
+  still nochmal, dann „Hat grad nicht geklappt. Nochmal?“; „aus“ → Browser.
+- Einstellungen → Mia → „Wer spricht?“: Mias Stimme (Standard) oder Stimme
+  des Handys. Mikro-Check mit Server-Ohr: nur Mikrofon und Ton.
+- Grenzen wie die KI (Zugangscode, je Minute/Stunde/Tag), Kosten in
+  „KI-Kosten letzte 7 Tage“ (Zeichen, Sekunden). Ohne `ELEVENLABS_API_KEY`
+  alles wie bisher. KI-Einwilligung Fassung 2 (mit Sprach-Anbieter).

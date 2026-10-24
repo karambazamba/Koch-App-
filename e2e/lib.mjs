@@ -53,7 +53,7 @@ const CONSENT = () => {
   try {
     if (!localStorage.getItem("wasgibts.einwilligungen")) {
       const ok = { ja: true, version: 1, at: "2026-10-01T00:00:00.000Z" };
-      localStorage.setItem("wasgibts.einwilligungen", JSON.stringify({ version: 1, arten: { ki: ok, bedingungen: ok } }));
+      localStorage.setItem("wasgibts.einwilligungen", JSON.stringify({ version: 1, arten: { ki: { ...ok, version: 2 }, bedingungen: ok } }));
     }
   } catch {
     // ohne Speicher (about:blank) nichts zu tun

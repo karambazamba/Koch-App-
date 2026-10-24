@@ -1,7 +1,8 @@
 "use client";
 
 // Mikro-Check (Tafel 86): Mia sagt selbst, was fehlt. Häkchen-Liste
-// (Mikrofon erlaubt · Diktierfunktion und Spracherkennung · Ton kommt an),
+// (Mikrofon erlaubt · Diktierfunktion und Spracherkennung · Ton kommt an;
+// hört Mia über den Server zu, nur Mikrofon und Ton),
 // darunter NUR die Schritte für den fehlenden Schalter (iPhone: drei Schalter
 // an drei Stellen), „Zeig’s mir“ Schritt für Schritt, am Ende immer
 // „Nochmal testen“. „Details“ zeigt das Mikro-Protokoll mit Kopieren.
@@ -14,7 +15,8 @@ import { Sheet } from "@/components/ui/Sheet";
 import { StepGuide, StepList } from "@/components/ui/StepGuide";
 import { buttonClass } from "@/components/ui/styles";
 import { closeMicSheet, iosMajor, micPlatform, type MicBlock } from "@/lib/core/mic";
-import { CHECK_ZEILEN, MENUE_HINWEIS, SEITEN_KASTEN, anleitung, fehlerSatz, schalterFuer, type PruefStand } from "@/lib/core/micCheck";
+import { useServerOhr } from "@/lib/begleitung/stimmeClient";
+import { MENUE_HINWEIS, checkZeilen, SEITEN_KASTEN, anleitung, fehlerSatz, schalterFuer, type PruefStand } from "@/lib/core/micCheck";
 import { useMicLog } from "@/lib/core/micLog";
 import { useMicCheck } from "@/lib/core/useMicCheck";
 
@@ -58,7 +60,8 @@ function Details() {
 
 export function MicCheck({ start, onTyping }: { start: MicBlock | null; onTyping: () => void }) {
   const platform = micPlatform(ua());
-  const check = useMicCheck(start);
+  const ohr = useServerOhr();
+  const check = useMicCheck(start, ohr);
   const [guide, setGuide] = useState(false);
   const fehler = check.fehler;
   const schalter = fehler ? schalterFuer(fehler, platform) : [];
@@ -72,7 +75,7 @@ export function MicCheck({ start, onTyping }: { start: MicBlock | null; onTyping
     <Sheet title="Mikrofon prüfen" onClose={closeMicSheet} layer="above">
       <div className="flex flex-col gap-3 pb-3" data-mikro-check>
         <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-field bg-surface" aria-label="Prüfung">
-          {CHECK_ZEILEN.map((z) => (
+          {checkZeilen(ohr).map((z) => (
             <li key={z.id} className="flex min-h-12 items-center justify-between gap-3 px-3.5 text-[15px] font-semibold" data-pruef={z.id} data-stand={check.ergebnis[z.id]}>
               <span>{z.text}</span>
               <Stand stand={check.ergebnis[z.id]} />

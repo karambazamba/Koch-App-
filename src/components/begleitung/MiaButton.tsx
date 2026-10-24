@@ -13,6 +13,7 @@ import { wakeAvatar } from "@/lib/core/avatarState";
 import { markHintSeen, useHintSeen } from "@/lib/core/hints";
 import { seitErsterStart } from "@/lib/core/hello";
 import { openHelper, releaseHelperVoice } from "@/lib/begleitung/open";
+import { serverStimme } from "@/lib/begleitung/zugang";
 import { knopfAway, REST_MS } from "@/lib/begleitung/knopfScroll";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { useMiaLook, useMiaMoment } from "@/components/begleitung/useMiaLook";
@@ -68,6 +69,10 @@ export function MiaButton({ name }: { name: string }) {
   const look = useMiaLook();
   const moment = useMiaMoment();
   const links = useKnopfLinks();
+  // Früh wissen, ob Mia über den Server hört und spricht (nur mit KI-Einwilligung) – sonst nähme das erste Zuhören den Browser
+  useEffect(() => {
+    void serverStimme();
+  }, []);
   useEffect(() => {
     if (!hint) return;
     const t = setTimeout(() => markHintSeen("mia-knopf"), HINT_MS);

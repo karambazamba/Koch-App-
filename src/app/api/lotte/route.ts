@@ -12,6 +12,7 @@ import { aiSetup, checkAccess, clientIp, takeDailySlot } from "@/lib/begleitung/
 import { createMockModel } from "@/lib/begleitung/mock";
 import { ACCESS_HEADER, LIMITS, type AssistantErrorCode, type AssistantStatus, type StreamEvent } from "@/lib/begleitung/protocol";
 import { allowRequest } from "@/lib/begleitung/rateLimit";
+import { stimmeStatus } from "@/lib/begleitung/stimmeServer";
 import { cleanWish } from "@/lib/begleitung/wishTools";
 import { supabasePublic, supabaseSecret } from "@/lib/konten/serverEnv";
 
@@ -30,7 +31,7 @@ const fail = (code: AssistantErrorCode, status: number) => Response.json({ error
 export async function GET(request: Request) {
   await connection(); // zur Laufzeit prüfen, nicht beim Bauen
   const { mock, needsCode, configured } = aiSetup();
-  const status: AssistantStatus = { configured, mock, needsCode };
+  const status: AssistantStatus = { configured, mock, needsCode, stimme: stimmeStatus() };
   if (configured && needsCode && request.headers.has(ACCESS_HEADER)) {
     status.access = checkAccess(request) === null ? "ok" : "falsch";
   }

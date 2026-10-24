@@ -13,7 +13,7 @@ import { LIMITS } from "@/lib/begleitung/protocol";
 import { createEmptyProfile, createPerson, type HouseholdProfile, type Person } from "@/lib/einstellungen/profile";
 import type { PantryItem } from "@/lib/vorrat/pantry";
 
-const speech: SpeechSettings = { version: 1, mode: "auto", voice: "", rate: "normal" };
+const speech: SpeechSettings = { version: 1, mode: "auto", quelle: "mia", voice: "", rate: "normal" };
 
 function person(name: string, role: Person["role"] = "erwachsen", extra: Partial<Person> = {}): Person {
   return { ...createPerson(role), name, ...extra };

@@ -7,6 +7,8 @@
 
 import { setAvatarFlag } from "@/lib/core/avatarState";
 import { tidyMiaText } from "@/lib/begleitung/tidy";
+import { cleanForSpeech, speechChunks } from "@/lib/begleitung/vorlesText";
+import { audioFreischalten, mitMiasStimme, serverStimmeStoppen } from "@/lib/begleitung/stimmeClient";
 import { useEffect, useState } from "react";
 import { createLocalStore, readRaw, writeRaw } from "@/lib/core/localStore";
 import type { HelperVoice } from "@/lib/einstellungen/profile";
@@ -19,9 +21,14 @@ import type { StorageKey } from "@/lib/core/storage";
 export type ReadMode = "auto" | "an" | "aus";
 export type SpeechRate = "langsam" | "normal" | "schnell";
 
+/** mia = Mias Stimme vom Server (falls eingerichtet), handy = Stimme des Handys */
+export type VoiceSource = "mia" | "handy";
+
 export type SpeechSettings = {
   version: 1;
   mode: ReadMode;
+  /** Wer spricht: Mias Stimme (Standard) oder die des Handys */
+  quelle: VoiceSource;
   /** Gewählte Stimme (voiceURI); leer = automatisch passend zu weiblich/männlich */
   voice: string;
   rate: SpeechRate;
@@ -40,7 +47,7 @@ export const SPEECH_RATES: { value: SpeechRate; label: string; rate: number }[] 
   { value: "schnell", label: "Schnell", rate: 1.2 },
 ];
 
-const DEFAULTS: SpeechSettings = { version: 1, mode: "auto", voice: "", rate: "normal" };
+const DEFAULTS: SpeechSettings = { version: 1, mode: "auto", quelle: "mia", voice: "", rate: "normal" };
 const LEGACY_ON: SpeechSettings = { ...DEFAULTS, mode: "an" };
 /** Früher: nur an/aus im Küchenhelfer-Kopf */
 const LEGACY_KEY = "wasgibts.kuechenhelfer.vorlesen";
@@ -51,6 +58,7 @@ function migrate(raw: unknown): SpeechSettings | null {
   return {
     version: 1,
     mode: READ_MODES.some((m) => m.value === d.mode) ? (d.mode as ReadMode) : "auto",
+    quelle: d.quelle === "handy" ? "handy" : "mia",
     voice: typeof d.voice === "string" ? d.voice : "",
     rate: SPEECH_RATES.some((r) => r.value === d.rate) ? (d.rate as SpeechRate) : "normal",
   };
@@ -173,7 +181,8 @@ function takeVoiceHint(voices: SpeechSynthesisVoice[], voice: HelperVoice): bool
 /** "▶ Stimme": kurzer Satz in der Stimme, die zur Art passt (automatisch gewählt) */
 export function previewHelperVoice(name: string, voice: HelperVoice): boolean {
   unlockSpeech();
-  speak("Moin! So klinge ich.", { id: `probe-${name}`, gender: voice, voice: "" });
+  // Mias Stimme (fester Satz, zwischengespeichert) bzw. die passende des Handys
+  speak("Moin! So klinge ich.", { id: `probe-${name}`, gender: voice });
   return takeVoiceHint(currentVoices(), voice);
 }
 
@@ -208,69 +217,6 @@ export function useVoices(): SpeechSynthesisVoice[] {
   return voices;
 }
 
-// --- Text fürs Vorlesen -------------------------------------------------------------
-
-const UNITS: [RegExp, string][] = [
-  [/(\d)\s?kg\b/g, "$1 Kilogramm"],
-  [/(\d)\s?g\b/g, "$1 Gramm"],
-  [/(\d)\s?ml\b/g, "$1 Milliliter"],
-  [/(\d)\s?l\b/g, "$1 Liter"],
-  [/(\d)\s?EL\b/g, "$1 Esslöffel"],
-  [/(\d)\s?TL\b/g, "$1 Teelöffel"],
-  [/(\d)\s?°\s?C\b/g, "$1 Grad"],
-  [/\bMin\.(?=\s|$|[,)])/g, "Minuten"],
-  [/\bStd\.(?=\s|$|[,)])/g, "Stunden"],
-  [/\bPers\.(?=\s|$|[,)])/g, "Personen"],
-  [/\bPck\.(?=\s|$|[,)])/g, "Packung"],
-  [/\bz\.\s?B\./g, "zum Beispiel"],
-  [/\bca\./g, "circa"],
-  [/\bbzw\./g, "beziehungsweise"],
-  [/\bggf\./g, "gegebenenfalls"],
-];
-
-/**
- * Vorlesbarer Text: ohne Emojis, Sonderzeichen und Markdown; Einheiten und
- * Abkürzungen ausgeschrieben, Uhrzeiten natürlich ("17:30" → "17 Uhr 30").
- */
-function cleanForSpeech(text: string): string {
-  let t = text
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1") // Links
-    .replace(/\p{Extended_Pictographic}|\p{Emoji_Modifier}|[\u{FE0F}\u{200D}\u{20E3}]/gu, "")
-    .replace(/[✓✔✗✕×•]/g, "")
-    .replace(/[*_`#>~|]+/g, " ")
-    .replace(/\s*[→⇒]\s*/g, ", ")
-    .replace(/\s+[·–—]\s+/g, ", ")
-    .replace(/[„“”"«»]/g, "")
-    // Klammern, Schrägstriche und Auslassungen klingen vorgelesen holprig
-    .replace(/\s*\(([^)]*)\)/g, ", $1,")
-    .replace(/(\d+)\s*\/\s*(\d+)/g, "$1 von $2")
-    .replace(/([A-Za-zÄÖÜäöüß])\s*\/\s*(?=[A-Za-zÄÖÜäöüß])/g, "$1 oder ")
-    .replace(/…|\.{3}/g, ".")
-    .replace(/\bMo\s*[–-]\s*Fr\b/g, "Montag bis Freitag")
-    .replace(/\bSa\s*[–-]\s*So\b/g, "Samstag und Sonntag");
-  // Uhrzeiten: "07:30" → "7 Uhr 30", "18:00" → "18 Uhr"
-  t = t.replace(/\b([01]?\d|2[0-3]):([0-5]\d)\b/g, (_, h: string, m: string) => `${Number(h)} Uhr${m === "00" ? "" : ` ${Number(m)}`}`);
-  for (const [re, to] of UNITS) t = t.replace(re, to);
-  return t
-    .replace(/\s+([,.!?])/g, "$1")
-    .replace(/([,.!?:])(?:\s*,)+/g, "$1")
-    .replace(/^[\s,]+/, "")
-    .replace(/\s{2,}/g, " ")
-    .trim();
-}
-
-/** In Sätze bis ~200 Zeichen teilen – Chrome bricht lange Äußerungen sonst nach ~15 s ab */
-function speechChunks(text: string, max = 200): string[] {
-  const sentences = text.match(/[^.!?]+[.!?]*\s*/g) ?? [text];
-  const chunks: string[] = [];
-  for (const s of sentences) {
-    const last = chunks[chunks.length - 1];
-    if (last && (last + s).length <= max) chunks[chunks.length - 1] = last + s;
-    else chunks.push(s);
-  }
-  return chunks.map((c) => c.trim()).filter(Boolean);
-}
-
 // --- Vorlesen ---------------------------------------------------------------------------
 
 /** Was gerade vorgelesen wird (Kennung, z. B. "turn-3"), sonst null */
@@ -299,6 +245,7 @@ let unlocked = false;
  * Tippen (Mikrofon, Lautsprecher, Weiter …) eine stille Äußerung abspielen.
  */
 export function unlockSpeech() {
+  audioFreischalten();
   if (unlocked || !speechSupported()) return;
   unlocked = true;
   try {
@@ -333,16 +280,32 @@ function wordSpoken() {
  * Text vorlesen (vorher bereinigt, in Sätzen). `id` kennzeichnet, was gerade
  * läuft (für den Lautsprecher-Knopf). Läuft schon etwas, wird es ersetzt.
  */
-export function speak(text: string, options: { id?: string; gender?: HelperVoice; voice?: string } = {}) {
-  if (!speechSupported()) return;
-  const chunks = speechChunks(cleanForSpeech(tidyMiaText(text)));
+export function speak(text: string, options: { id?: string; gender?: HelperVoice; voice?: string; quelle?: VoiceSource } = {}) {
+  const clean = cleanForSpeech(tidyMiaText(text));
   stopSpeaking();
-  if (!chunks.length) return;
+  if (!clean) return;
   const mine = ++token;
   setSpeaking(options.id ?? "text");
-  // Stimmen laden manchmal verzögert – kurz darauf warten, sonst Standardstimme
-  if (currentVoices().length) say(chunks, options, mine);
-  else whenVoicesReady(() => mine === token && say(chunks, options, mine));
+  /** Stimme des Handys – auch als stiller Ersatz, wenn Mias Stimme nicht kommt */
+  const handy = (rest: string) => {
+    if (mine !== token) return;
+    const chunks = speechChunks(rest);
+    if (!chunks.length || !speechSupported()) return setSpeaking(null);
+    // Stimmen laden manchmal verzögert – kurz darauf warten, sonst Standardstimme
+    if (currentVoices().length) say(chunks, options, mine);
+    else whenVoicesReady(() => mine === token && say(chunks, options, mine));
+  };
+  // Probehören einer Handy-Stimme (`voice`) spricht immer mit dem Handy
+  const quelle = options.quelle ?? (options.voice === undefined ? loadSpeechSettings().quelle : "handy");
+  if (quelle === "handy") return handy(clean);
+  void mitMiasStimme(clean, {
+    anfang: () => mine === token && setTalking(true),
+    ende: () => {
+      setTalking(false);
+      if (mine === token) setSpeaking(null);
+    },
+    ersatz: handy,
+  });
 }
 
 function whenVoicesReady(run: () => void) {
@@ -395,6 +358,7 @@ export function stopSpeaking() {
   token++;
   setTalking(false);
   if (speakingId !== null) setSpeaking(null);
+  serverStimmeStoppen();
   if (!speechSupported()) return;
   try {
     window.speechSynthesis.cancel();

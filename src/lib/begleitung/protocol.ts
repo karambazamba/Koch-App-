@@ -2,6 +2,7 @@
 
 import type { AssistantData, ChangeOp } from "@/lib/begleitung/ops";
 import type { MailDraft } from "@/lib/begleitung/mail";
+import type { StimmeStatus } from "@/lib/begleitung/stimmeProtokoll";
 import type { TipView } from "@/lib/tipps/model";
 
 export type ChatTurn = { role: "user" | "assistant"; text: string };
@@ -68,6 +69,8 @@ export type AssistantStatus = {
   needsCode: boolean;
   /** Nur wenn ein Code mitgeschickt wurde: stimmt er? */
   access?: "ok" | "falsch";
+  /** Mias Stimme und Ohr über den Server (fehlt = Browser) */
+  stimme?: StimmeStatus;
 };
 
 export const ASSISTANT_ENDPOINT = "/api/lotte";

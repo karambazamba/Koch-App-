@@ -57,11 +57,14 @@ export type CheckErgebnis = {
   erkennungFehler?: string;
 };
 
-export const CHECK_ZEILEN: { id: "mikro" | "erkennung" | "ton"; text: string }[] = [
+const CHECK_ZEILEN: { id: "mikro" | "erkennung" | "ton"; text: string }[] = [
   { id: "mikro", text: "Mikrofon erlaubt" },
   { id: "erkennung", text: "Diktierfunktion und Spracherkennung" },
   { id: "ton", text: "Ton kommt an" },
 ];
+
+/** Hört Mia über den Server zu, zählt die Spracherkennung des Handys nicht – nur Mikrofon und Ton */
+export const checkZeilen = (serverOhr: boolean) => (serverOhr ? CHECK_ZEILEN.filter((z) => z.id !== "erkennung") : CHECK_ZEILEN);
 
 /** Aus den Prüfschritten den Fehler bestimmen (null = alles gut bzw. noch nicht fertig) */
 export function diagnose(r: CheckErgebnis, platform: MicPlatform, privat = false): MicFehler | null {

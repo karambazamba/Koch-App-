@@ -342,6 +342,40 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 - Per Satz ohne KI: „Lies mir vor“, „Nicht mehr vorlesen“, „Sprich langsamer“
   (`readingChange`).
 
+### Mias Stimme und Ohr vom Server (seit v0.98, ElevenLabs)
+
+- Nur mit `ELEVENLABS_API_KEY` (Vercel, Sensitive) und echter KI; Stimme
+  `MIA_VOICE_ID` (nicht geheim), Modelle per `ELEVENLABS_TTS_MODEL`
+  (`eleven_flash_v2_5`) bzw. `ELEVENLABS_STT_MODEL` (`scribe_v1`). Fehlt der
+  Schlüssel: Routen antworten „aus“ (503), die App spricht und hört über den
+  Browser. Testmodus `STIMME_MOCK=1` (nie Produktion): Stille als WAV, fester Text.
+- Server `begleitung/stimmeServer.ts` (Routen `/api/stimme`, `/api/hoeren`
+  dünn): gleicher Zugangscode und Grenzen wie die KI (`guard.ts`,
+  `rateLimit.ts`, eigene Zähler je Gerät/IP), Text vor dem Senden durch
+  `vorlesText` (= `tidyMiaText` + `cleanForSpeech`, gemeinsam mit dem
+  Handy), höchstens 600 Zeichen je Stück. Aufnahmen höchstens 3 MB / 60 s,
+  nur `audio/*`, werden nur weitergereicht. Ins Log nur „Stimme:
+  Anbieter-Fehler“ + Status. Status steht im KI-Status (`GET /api/lotte` →
+  `stimme: { sprechen, hoeren, v }`, `v` = Kennung von Stimme+Modell).
+- Feste Sätze (`FESTE_SAETZE` in `stimmeProtokoll.ts`): `GET
+  /api/stimme?satz=<Nr>&v=<Kennung>` ohne Zugangscode, lange gültig
+  zwischengespeichert (Server-Instanz, Netz, Gerät).
+- App `stimmeClient.ts`: `speak()` (speech.ts) nimmt bei „Mias Stimme“
+  (`wasgibts.vorlesen.quelle`, Standard `mia`) den Server: Antwort in
+  Stücken (~300 Zeichen) holen, nacheinander über EINEN beim ersten Tippen
+  freigeschalteten Abspieler (iPhone). Erste Silbe nach höchstens 1 s, sonst
+  bzw. bei Fehlern liest die Stimme des Handys den Rest (`ersatz`).
+- Hören (nur Bühne, `useSpeechInput` → `aufnahme.ts`): getUserMedia +
+  MediaRecorder, Pegel alle 50 ms (`lauschen.ts`, rein): Sprechen ab ~150 ms
+  am Stück über dem Grundrauschen, Ring nach 0,6 s Stille, abgeschickt nach
+  2,5 s, nichts gesagt → nach 8 s leise aus, höchstens 60 s. Danach „denkt“
+  Mia, `aufnahmeVerstehen` schickt den Ton; Fehler einmal still nochmal,
+  dann „Hat grad nicht geklappt. Nochmal?“; 503 → bis zum Neuladen Browser.
+- Mikro-Check mit Server-Ohr: nur „Mikrofon erlaubt“ und „Ton kommt an“.
+- Kosten: `recordStimme` (Zeichen, Sekunden, geschätzte Dollar) in
+  `wasgibts.verbrauch`, sichtbar unter „Für Entwickler“.
+- Pinnwand-Sprachnachrichten gehen nie an ElevenLabs (Test).
+
 ### Mails
 
 - Nie automatisch senden, kein Postfach. Werkzeuge `mail_entwurf` und
@@ -493,6 +527,11 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Streifen + grauer Knopf, Diktieren aus; iPhone- bzw. Android-Texte. Bilder:
   Szenen `mikro-fragen`, `mikro-hilfe`, `mikro-zeigen`. Testgeräte haben das
   Mikrofon sonst erlaubt (`newPage`).
+- `tests/begleitung/stimmeServer.test.ts` – Mias Stimme/Ohr vom Server:
+  ohne Schlüssel „aus“, Text bereinigt, nie Ton/Text im Log, Grenzen, feste
+  Sätze zwischengespeichert, Satzende am Pegel, Kosten, Mikro-Check ohne
+  Spracherkennung, Pinnwand nie über den Anbieter. Durchklick `stimmeServer`
+  und `ohrServer` (`e2e/ablaeufe/serverstimme.mjs`, Server nachgestellt).
 - `tests/einstellungen/neuePerson.test.ts`, `erkennung.test.ts`,
   `kiErkennungApp.test.ts`.
 - `tests/app/regeln.test.ts`: kein fest eingebauter Name der Begleitung in
