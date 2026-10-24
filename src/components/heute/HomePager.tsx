@@ -178,7 +178,7 @@ export function HomePager({ data }: { data: HomeData }) {
     <>
       <main
         ref={mainRef}
-        className={`mx-auto flex w-full max-w-lg flex-1 flex-col gap-3 overflow-x-clip px-4 ${FAB_CLEARANCE} pt-[calc(env(safe-area-inset-top)+0.75rem)]`}
+        className={`mx-auto flex w-full max-w-lg flex-1 touch-pan-y touch-pinch-zoom flex-col gap-3 overflow-x-clip px-4 ${FAB_CLEARANCE} pt-[calc(env(safe-area-inset-top)+0.75rem)]`}
       >
         <nav
           className={`z-20 -mx-4 flex items-center gap-2 px-4 transition-[padding,background-color] duration-300 ${away ? "sticky top-0" : "relative"} ${compact ? "bg-background/80 pb-1.5 pt-[calc(env(safe-area-inset-top)+0.375rem)] shadow-card backdrop-blur-[14px]" : "bg-background"}`}

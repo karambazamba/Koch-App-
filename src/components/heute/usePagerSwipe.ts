@@ -2,8 +2,11 @@
 
 // Wischen zwischen Kalender · Heute · Essen wie in einer iPhone-App: Die Seite
 // folgt dem Finger 1:1, die Nachbarseite schaut am Rand herein. Die Richtung
-// wird einmal pro Geste festgelegt (> 10 px, mehr waagerecht als senkrecht) –
-// senkrechtes Scrollen bleibt unberührt. Loslassen: Wechsel ab 25 % der
+// wird früh und einmal pro Geste festgelegt (`swipeAxis`: ab 6 px, waagerecht
+// erst bei |dx| > 1,2 · |dy|) und bleibt dann fest. Waagerecht steht die Seite
+// senkrecht still (Scrollhöhe gesperrt, senkrechter Fingeranteil zählt nicht),
+// senkrecht gibt es kein seitliches Wischen. Dazu `touch-action: pan-y` am
+// Pager und `overscroll-behavior-y: none` an html/body (kein Gummiband). Loslassen: Wechsel ab 25 % der
 // Breite oder bei schnellem Wisch (> 0,35 px/ms), sonst federt die Seite
 // zurück; am Rand gedämpft (Gummiband). Bewegt wird nur per transform direkt
 // am Element (kein React-Rendern während des Wischens).
@@ -12,7 +15,8 @@ import { useEffect, useRef } from "react";
 
 export const PAGER_MS = 280;
 const EASE = "cubic-bezier(0.22, 0.61, 0.36, 1)";
-const LOCK_PX = 10;
+const LOCK_PX = 6;
+const AXIS_RATIO = 1.2;
 const SWITCH_SHARE = 0.25;
 const FLING_SPEED = 0.35;
 
@@ -28,6 +32,29 @@ export function swipeDecision(dx: number, velocity: number, width: number, canPr
   if (dx < 0 && canNext) return 1;
   if (dx > 0 && canPrev) return -1;
   return 0;
+}
+
+/** Richtung einer Geste (rein): erst ab 6 px, waagerecht nur eindeutig – danach fest @public */
+export function swipeAxis(mx: number, my: number): "none" | "x" | "y" {
+  if (Math.abs(mx) < LOCK_PX && Math.abs(my) < LOCK_PX) return "none";
+  return Math.abs(mx) > AXIS_RATIO * Math.abs(my) ? "x" : "y";
+}
+
+/** Senkrechtes Scrollen während des waagerechten Wischens sperren (Scrollhöhe bleibt) */
+function lockScroll(): () => void {
+  const y = window.scrollY;
+  const html = document.documentElement;
+  const before = html.style.overflow;
+  html.style.overflow = "hidden";
+  const hold = () => {
+    if (window.scrollY !== y) window.scrollTo(0, y);
+  };
+  window.addEventListener("scroll", hold, { passive: true });
+  return () => {
+    window.removeEventListener("scroll", hold);
+    html.style.overflow = before;
+    hold();
+  };
 }
 
 /** Gummiband am Rand: Bewegung gedämpft */
@@ -96,6 +123,11 @@ export function usePagerSwipe(root: React.RefObject<HTMLElement | null>, handles
     let dx = 0;
     let samples: { x: number; t: number }[] = [];
     let busy = false;
+    let unlock: (() => void) | null = null;
+    const release = () => {
+      unlock?.();
+      unlock = null;
+    };
     const width = () => window.innerWidth;
 
     const onStart = (e: TouchEvent) => {
@@ -115,14 +147,12 @@ export function usePagerSwipe(root: React.RefObject<HTMLElement | null>, handles
       const mx = t.clientX - start.x;
       const my = t.clientY - start.y;
       if (mode === "none") {
-        if (Math.abs(mx) < LOCK_PX && Math.abs(my) < LOCK_PX) return;
-        if (Math.abs(mx) <= Math.abs(my)) {
-          mode = "y";
-          return;
-        }
-        mode = "x";
+        mode = swipeAxis(mx, my);
+        if (mode !== "x") return;
+        unlock = lockScroll();
         h.current.prepare();
       }
+      // Waagerecht: nur dx zählt, die Seite bleibt senkrecht stehen
       e.preventDefault();
       samples.push({ x: t.clientX, t: e.timeStamp });
       if (samples.length > 6) samples.shift();
@@ -134,6 +164,7 @@ export function usePagerSwipe(root: React.RefObject<HTMLElement | null>, handles
       h.current.progress(edge ? 0 : -dx / width(), false);
     };
     const onEnd = (e: TouchEvent) => {
+      release();
       if (!start || mode !== "x") {
         start = null;
         return;
@@ -171,6 +202,7 @@ export function usePagerSwipe(root: React.RefObject<HTMLElement | null>, handles
     el.addEventListener("touchend", onEnd, { passive: true });
     el.addEventListener("touchcancel", onEnd, { passive: true });
     return () => {
+      release();
       el.removeEventListener("touchstart", onStart);
       el.removeEventListener("touchmove", onMove);
       el.removeEventListener("touchend", onEnd);
