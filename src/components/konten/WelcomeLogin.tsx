@@ -1,66 +1,74 @@
 "use client";
 
-// Anmelden direkt von der Begrüßung (Tafel 20) – ruhige Seiten im Stil des
-// Hallo-Bildschirms, Zurück jederzeit (‹ oben links):
-//   1. E-Mail: Begleitung, „Schön, dass ihr dabei seid.“ → „Code senden“
-//   2. Code: ein Feld (Ziffern, autocomplete="one-time-code" – iPhone und
-//      Android schlagen den Code aus der Mail über der Tastatur vor), prüft
-//      bei 6 Ziffern selbst; „Neuen Code senden in 0:60“
-//   3. „Angemeldet ✓ – Wie wollt ihr starten?“ → anlegen oder beitreten;
-//      „Was schon auf diesem Handy ist, nehmen wir mit.“ (Übernahme ohne Frage)
-// Danach Startseite; die Begleitung fliegt wie beim normalen Start in die
-// Jetzt-Karte. Über den Einladungs-Link (/beitreten?code=…) ist der Code
-// beim Beitreten schon eingetragen.
+// Anmelden wie man es kennt (Tafel 22) – ruhige Seiten im Stil des
+// Hallo-Bildschirms, Zurück jederzeit (‹ oben links). EIN Ablauf für alle
+// Einstiege:
+//   - „Schon ein Konto? Anmelden“: „Willkommen zurück“
+//   - Einladungs-Link (/e/…): „<Name> lädt dich ein.“
+//   - alter Code-Link (/beitreten?code=…): Code ist schon eingetragen
+// Knöpfe: „Mit Apple/Google fortfahren“ (nur wenn eingerichtet,
+// NEXT_PUBLIC_AUTH_APPLE/…_GOOGLE) und „Mit E-Mail fortfahren“ → E-Mail →
+// 6-stelliger Code (prüft selbst, „Neuen Code senden in 0:60“). Danach keine
+// Frage: per Einladung beitreten (schon in einer anderen Familie: „Wechseln?“),
+// sonst still „Familie <Name>“ anlegen. Was schon auf dem Handy ist, kommt
+// mit. Startseite; die Begleitung fliegt in die Jetzt-Karte.
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronLeft, Home, KeyRound } from "lucide-react";
+import { ChevronLeft, Mail } from "lucide-react";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
-import { INPUT } from "@/components/ui/styles";
+import { INPUT, buttonClass } from "@/components/ui/styles";
 import { avatarHex } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";
-import { householdTitle } from "@/lib/einstellungen/profileHousehold";
 import { startFresh } from "@/lib/einstellungen/welcomeStore";
 import { expectReplace } from "@/lib/core/navigation";
 import { setHelloFlight } from "@/lib/core/hello";
-import { createHousehold, joinHousehold, sendLoginCode, useAccount, verifyLoginCode } from "@/lib/konten/account";
-import { isEmail, otpDigits } from "@/lib/konten/model";
+import { ensureFamily, joinByLink, joinHousehold, sendLoginCode, startOAuth, useAccount, verifyLoginCode } from "@/lib/konten/account";
+import { familyNameFor, isEmail, otpDigits } from "@/lib/konten/model";
+import { oauthProviders } from "@/lib/konten/oauth";
+import { AnbieterLogo } from "@/components/konten/AnbieterLogo";
 
-type Step = "email" | "code" | "start" | "neu" | "beitreten";
+type Step = "knoepfe" | "email" | "code" | "weiter" | "wechseln";
 const RESEND_S = 60;
-const BACK: Record<Step, Step | null> = { email: null, code: "email", start: null, neu: "start", beitreten: "start" };
+const BACK: Record<Step, Step | null> = { knoepfe: null, email: "knoepfe", code: "email", weiter: null, wechseln: null };
 
-export function WelcomeLogin({ code: linkCode = "" }: { code?: string }) {
+export function WelcomeLogin({ code: linkCode = "", einladung = "", inviter = "" }: { code?: string; einladung?: string; inviter?: string }) {
   const router = useRouter();
   const account = useAccount();
   const profile = useProfile();
   const color = avatarHex("orange");
-  const [chosen, setChosen] = useState<Step>("email");
+  const providers = oauthProviders();
+  const [chosen, setChosen] = useState<Step>(providers.length ? "knoepfe" : "email");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
-  const [invite, setInvite] = useState(linkCode.toUpperCase());
-  const [name, setName] = useState("");
+  const [otherFamily, setOtherFamily] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [wait, setWait] = useState(0);
   const face = useRef<HTMLDivElement>(null);
   const field = useRef<HTMLInputElement>(null);
-
   const finishing = useRef(false);
+  const continuing = useRef(false);
 
-  // Angemeldet (oder schon vorher, z. B. Einladungs-Link geöffnet): weiter zum Start
   const signedIn = Boolean(account.user);
-  const inHousehold = Boolean(account.household);
-  const step: Step = signedIn && (chosen === "email" || chosen === "code") ? (linkCode ? "beitreten" : "start") : chosen;
+  const step: Step = signedIn && chosen !== "wechseln" ? "weiter" : chosen;
   const setStep = (next: Step) => {
     setError("");
     setChosen(next);
   };
+
+  const me = profile?.persons[0];
+  const displayName = me?.name.trim() || account.user?.email.split("@")[0] || "";
+  const familyName = profile?.householdName ? `Familie ${profile.householdName}` : familyNameFor(displayName);
+
+  // Angemeldet: ohne Frage weiter (Einladung annehmen bzw. Familie anlegen)
   useEffect(() => {
-    if (signedIn && inHousehold) void finish();
-    // finish nur, wenn der Zustand feststeht
+    if (!signedIn || account.mode === "laedt" || continuing.current) return;
+    continuing.current = true;
+    void proceed(false);
+    // nur, wenn der Zustand feststeht
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signedIn, inHousehold]);
+  }, [signedIn, account.mode]);
 
   useEffect(() => {
     if (wait <= 0) return;
@@ -78,6 +86,29 @@ export function WelcomeLogin({ code: linkCode = "" }: { code?: string }) {
     if (to) return setStep(to);
     router.back();
   };
+
+  async function proceed(switchFamily: boolean) {
+    setBusy(true);
+    setError("");
+    if (einladung) {
+      const r = await joinByLink(einladung, displayName, me?.id ?? null, switchFamily);
+      setBusy(false);
+      if (!r.ok) return setError(r.error);
+      if ("otherFamily" in r.value) {
+        setOtherFamily(r.value.otherFamily);
+        return setStep("wechseln");
+      }
+      return void finish();
+    }
+    if (linkCode && !account.household) {
+      const r = await joinHousehold(linkCode, displayName, me?.id ?? null);
+      setBusy(false);
+      return r.ok ? void finish() : setError(r.error);
+    }
+    const r = await ensureFamily(familyName, displayName, me?.id ?? null);
+    setBusy(false);
+    return r.ok ? void finish() : setError(r.error);
+  }
 
   const run = async (action: () => Promise<{ ok: boolean; error?: string }>, next: () => void) => {
     setBusy(true);
@@ -122,9 +153,8 @@ export function WelcomeLogin({ code: linkCode = "" }: { code?: string }) {
     router.replace("/");
   }
 
-  const me = profile?.persons[0];
-  const displayName = me?.name.trim() || account.user?.email.split("@")[0] || "";
-  const suggested = profile?.householdName ? `Familie ${profile.householdName}` : profile ? householdTitle(profile).replace(/^Unser(e)? /, "") : "";
+  const title = einladung ? `${inviter || "Jemand"} lädt dich ein.` : linkCode ? "Schön, dass ihr dabei seid." : "Willkommen zurück";
+  const sub = einladung ? "Termine, Einkauf und Pinnwand – gemeinsam." : linkCode ? "Melde dich an, der Code ist schon eingetragen." : "Melde dich an wie beim letzten Mal.";
 
   return (
     <main className="fixed inset-0 z-40 overflow-y-auto bg-background" aria-label="Anmelden">
@@ -135,7 +165,7 @@ export function WelcomeLogin({ code: linkCode = "" }: { code?: string }) {
         </button>
         <div className="flex flex-1 flex-col items-center pt-6 text-center">
           <div ref={face} className="rounded-full">
-            <BegleitungAvatar size={76} color={color} zustand={busy ? "denken" : step === "start" ? "freuen" : "ruhig"} groesse="gross" stabil />
+            <BegleitungAvatar size={76} color={color} zustand={busy ? "denken" : step === "weiter" ? "freuen" : "ruhig"} groesse="gross" stabil />
           </div>
 
           {account.mode === "aus" && (
@@ -144,8 +174,27 @@ export function WelcomeLogin({ code: linkCode = "" }: { code?: string }) {
             </Screen>
           )}
 
+          {account.mode !== "aus" && step === "knoepfe" && (
+            <Screen title={title} sub={sub}>
+              <div className="flex w-full flex-col gap-3">
+                {providers.map((p) => (
+                  <button key={p} type="button" disabled={busy} onClick={() => void run(() => startOAuth(p, window.location.pathname + window.location.search), () => {})} className={`${buttonClass("secondary", "lg")} w-full`}>
+                    <AnbieterLogo id={p} />
+                    {p === "apple" ? "Mit Apple fortfahren" : "Mit Google fortfahren"}
+                  </button>
+                ))}
+                <button type="button" onClick={() => setStep("email")} className={`${buttonClass("secondary", "lg")} w-full`}>
+                  <Mail className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+                  Mit E-Mail fortfahren
+                </button>
+                <ErrorLine text={error} />
+                <p className="text-sm text-muted">Kein Passwort nötig. Kostenlos.</p>
+              </div>
+            </Screen>
+          )}
+
           {account.mode !== "aus" && step === "email" && (
-            <Screen title="Schön, dass ihr dabei seid." sub="Ich schick dir einen Code per Mail.">
+            <Screen title={title} sub={providers.length ? "Ich schick dir einen Code per Mail." : sub}>
               <form
                 className="flex w-full flex-col gap-3"
                 onSubmit={(e) => {
@@ -158,7 +207,7 @@ export function WelcomeLogin({ code: linkCode = "" }: { code?: string }) {
                 <BigButton color={color} disabled={busy || !email.trim()}>
                   {busy ? "Schicke …" : "Code senden"}
                 </BigButton>
-                <p className="text-sm text-muted">Kein Passwort nötig.</p>
+                <p className="text-sm text-muted">Kein Passwort nötig. Kostenlos.</p>
               </form>
             </Screen>
           )}
@@ -198,58 +247,30 @@ export function WelcomeLogin({ code: linkCode = "" }: { code?: string }) {
             </Screen>
           )}
 
-          {step === "start" && (
-            <Screen
-              title={
-                <>
-                  Angemeldet <Check className="inline h-7 w-7 -translate-y-0.5 text-good" strokeWidth={3} aria-label="✓" />
-                </>
-              }
-              sub="Wie wollt ihr starten?"
-            >
+          {step === "weiter" && (
+            <Screen title={einladung ? "Einen Moment …" : "Angemeldet"} sub="Was schon auf diesem Handy ist, nehmen wir mit.">
               <div className="flex w-full flex-col gap-3">
-                <Choice icon={Home} title="Neuen Haushalt anlegen" hint="Danach lädst du die anderen ein." onClick={() => (setName(suggested), setStep("neu"))} />
-                <Choice icon={KeyRound} title="Mit Code beitreten" hint="Jemand aus der Familie hat dir einen Code geschickt." onClick={() => setStep("beitreten")} />
-                <p className="pt-1 text-sm text-muted">Was schon auf diesem Handy ist, nehmen wir mit.</p>
+                <ErrorLine text={error} />
+                {error && (
+                  <button type="button" onClick={() => void proceed(false)} className={`${buttonClass("primary", "lg")} w-full`}>
+                    Nochmal
+                  </button>
+                )}
               </div>
             </Screen>
           )}
 
-          {step === "neu" && (
-            <Screen title="Wie heißt euer Haushalt?">
-              <form
-                className="flex w-full flex-col gap-3"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void run(() => createHousehold(name, displayName, me?.id ?? null), () => void finish());
-                }}
-              >
-                <input ref={field} value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder="z. B. Familie Müller" aria-label="Name des Haushalts" className={`${INPUT} h-14 text-center text-[17px]`} />
+          {step === "wechseln" && (
+            <Screen title={`Du bist schon in ${otherFamily || "einer anderen Familie"}.`} sub="Wechseln? Deine Einträge auf diesem Handy bleiben.">
+              <div className="flex w-full flex-col gap-3">
                 <ErrorLine text={error} />
-                <BigButton color={color} disabled={busy}>
-                  {busy ? "Lege an …" : "Haushalt anlegen"}
-                </BigButton>
-                <p className="text-sm text-muted">Was schon auf diesem Handy ist, nehmen wir mit.</p>
-              </form>
-            </Screen>
-          )}
-
-          {step === "beitreten" && (
-            <Screen title="Mit Code beitreten" sub={linkCode ? "Der Code aus der Einladung ist schon eingetragen." : "Zum Beispiel 4K7-P2Q."}>
-              <form
-                className="flex w-full flex-col gap-3"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void run(() => joinHousehold(invite, displayName, me?.id ?? null), () => void finish());
-                }}
-              >
-                <input ref={field} value={invite} maxLength={9} autoCapitalize="characters" autoComplete="off" onChange={(e) => setInvite(e.target.value.toUpperCase())} placeholder="4K7-P2Q" aria-label="Einladungs-Code" className={`${INPUT} h-14 text-center text-[24px] font-bold tracking-[0.2em]`} />
-                <ErrorLine text={error} />
-                <BigButton color={color} disabled={busy || invite.replace(/[^0-9A-Za-z]/g, "").length !== 6}>
-                  {busy ? "Trete bei …" : "Beitreten"}
-                </BigButton>
-                <p className="text-sm text-muted">Was schon auf diesem Handy ist, nehmen wir mit.</p>
-              </form>
+                <button type="button" disabled={busy} onClick={() => void proceed(true)} className={`${buttonClass("primary", "lg")} w-full`}>
+                  Wechseln
+                </button>
+                <button type="button" disabled={busy} onClick={() => void finish()} className={`${buttonClass("secondary", "lg")} w-full`}>
+                  Bleiben
+                </button>
+              </div>
             </Screen>
           )}
         </div>
@@ -284,16 +305,4 @@ function ErrorLine({ text }: { text: string }) {
       {text}
     </p>
   ) : null;
-}
-
-function Choice({ icon: Icon, title, hint, onClick }: { icon: typeof Home; title: string; hint: string; onClick: () => void }) {
-  return (
-    <button type="button" onClick={onClick} className="flex min-h-16 w-full items-center gap-3 rounded-card border border-line bg-surface p-4 text-left shadow-card active:scale-[0.99]">
-      <Icon className="h-6 w-6 shrink-0 text-accent" strokeWidth={2} aria-hidden />
-      <span className="flex flex-col">
-        <span className="text-base font-bold">{title}</span>
-        <span className="text-sm text-muted">{hint}</span>
-      </span>
-    </button>
-  );
 }

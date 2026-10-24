@@ -44,12 +44,11 @@ export const hallo2 = async (page, check) => {
   check(await page.getByText("Erzähl mir einfach, was ansteht. Ich sortiere für euch.").isVisible(), "Zeile „Erzähl mir einfach …“");
   check((await page.locator("[data-tone]").count()) === 0 && !(await page.getByText("Euer Alltag an einem Ort.").count()), "keine Deko-Kacheln, alte Zeile weg");
   check(await page.locator("[data-hello-marke] [data-brand=lockup]").isVisible() && (await page.getByText("Gemacht in Eutin · von KARAMBA Eis").isVisible()), "unten Marke + „Gemacht in Eutin · von KARAMBA Eis“");
-  check(!(await page.getByText(/Anmelden/).count()), "kein Anmelden-Link auf der Begrüßung");
-
-  // Link → Daten & App
-  await page.getByRole("link", { name: /Daten wiederherstellen/ }).click();
-  await page.waitForURL(/\/profil\/daten/, { timeout: 5000 }).catch(() => {});
-  check(page.url().includes("/profil/daten"), "Link öffnet /profil/daten");
+  // Tafel 22: mit Konten (Testserver) „Schon ein Konto? Anmelden“ statt „Daten wiederherstellen“
+  check(!(await page.getByText(/Daten wiederherstellen/).count()), "kein „Daten wiederherstellen“ mehr auf der Begrüßung");
+  await page.getByRole("link", { name: /Schon ein Konto\? Anmelden/ }).click();
+  await page.waitForURL(/\/anmelden/, { timeout: 5000 }).catch(() => {});
+  check(page.url().includes("/anmelden"), "„Schon ein Konto? Anmelden“ öffnet /anmelden");
 
   // „Los geht’s“ → Überspringen → Startseite (Farbig) mit Marke und Datum im Kopf
   await page.goto(BASE);

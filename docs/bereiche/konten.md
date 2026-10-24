@@ -114,10 +114,10 @@ Etappen: **3a Anmeldung und Haushalt** · **3b Synchronisieren** ·
   (`autocomplete="one-time-code"`, prüft bei 6 Ziffern selbst) → „Code neu
   senden“ nach 60 s. Falscher oder abgelaufener Code: „Der Code stimmt nicht
   oder ist abgelaufen – nochmal versuchen oder neu senden.“
-- Danach: „Neuen Haushalt anlegen“ (Name aus dem Profil vorgeschlagen) oder
-  „Mit Code beitreten“ (z. B. 4K7-P2Q, Groß/Klein und Bindestrich egal).
-- Einladen (nur Erwachsene): Erwachsene/Kind → Code (7 Tage, einmal) →
-  Teilen: „Komm in unseren Haushalt bei Mia. Code: 4K7-P2Q“.
+- Danach (seit v0.88): keine Frage – die Familie wird still angelegt bzw.
+  per Einladungs-Link beigetreten (siehe „Anmelden wie man es kennt“).
+- Einladen (nur Erwachsene): per Link, 14 Tage, mehrfach nutzbar. Codes
+  (7 Tage, einmal) gibt es nur noch für alte Links.
 - Abgleich: Änderungen gehen kurz nach dem Speichern raus; was andere ändern,
   kommt per Realtime sofort. Offline geht alles weiter, die Warteschlange
   bleibt auf dem Gerät und geht beim nächsten Netz mit.
@@ -143,6 +143,87 @@ Etappen: **3a Anmeldung und Haushalt** · **3b Synchronisieren** ·
   Test-Backend): in der App auf /konto eine echte Adresse eingeben, prüfen,
   dass Betreff und 6-stelliger Code ankommen, Code eingeben.
 - Offen bei Felix: `CRON_SECRET` (für 3c – ohne räumt die App auf).
+
+## Anmelden wie man es kennt (Tafel 22, seit v0.88)
+
+- Starten ohne Konto; ein Konto erst, wenn man teilen will. In der
+  Oberfläche gibt es die Wörter „Haushalt“ und „Familien-Code“ nicht mehr
+  (Test in `tests/app/regeln.test.ts`).
+- Begrüßung: nur mit Konten klein „Schon ein Konto? Anmelden“ (→ `/anmelden`,
+  „Willkommen zurück“). „Daten wiederherstellen“ steht in Einstellungen →
+  Daten & App.
+- EIN Anmelde-Ablauf (`WelcomeLogin`): „Mit Apple fortfahren“ / „Mit Google
+  fortfahren“ nur mit Schalter (`NEXT_PUBLIC_AUTH_APPLE=1`,
+  `NEXT_PUBLIC_AUTH_GOOGLE=1`, `lib/konten/oauth.ts`; Start: nur E-Mail),
+  dann „Mit E-Mail fortfahren“ → E-Mail → 6-stelliger Code. „Kein Passwort
+  nötig. Kostenlos.“ Apple/Google per Supabase OAuth mit PKCE, Rückkehr auf
+  `/auth/callback` (`OAuthCallback`, Prüfwert unter `wasgibts.konto-pkce`,
+  Rückkehr-Ziel unter `wasgibts.anmelden-zurueck`, nur eigene Seiten).
+  Der Apple-Knopf ist weiß mit Rand (Leitbild: Knöpfe nie schwarz).
+- Nach dem Anmelden keine Frage: Familie wird still angelegt („Familie
+  <Nachname aus dem Profil>“, sonst „Familie <Vorname>“, `familyNameFor`,
+  `ensureFamily`; umbenennbar). Was auf dem Handy ist, kommt wie bisher über
+  die Übernahme mit.
+- Einladen per Link (`InviteSheet`): „Familie einladen“ → Erwachsene/Kind →
+  „Einladungs-Link erstellen“ → Teilen-Menü „Komm zu uns in „Mia“ 🧡
+  https://…/e/<token>“. Token zufällig (32 Zeichen), in der Datenbank nur
+  der Hash, 14 Tage gültig, mehrfach nutzbar; „Eure Einladungen“ mit
+  „Zurückziehen“ (nur Erwachsene). Migration
+  `20261028120000_einladen_link.sql`: Tabelle `invite_links` (kein direkter
+  Zugriff), `create_invite_link`, `list_invite_links`, `revoke_invite_link`,
+  `join_by_link` (Fehlversuche zählen wie beim Code), `invite_link_info`
+  (auch ohne Konto: nur Name der einladenden Person und der Familie).
+  Test: `tests/datenbank/einladen.test.sql`.
+- Einladungsseite `/e/<token>` (Rewrite auf die statische Seite `/einladung`,
+  `EinladungView` liest den Token aus der Adresse): „<Name> lädt dich ein.“,
+  „Termine, Einkauf und Pinnwand – gemeinsam.“, anmelden → sofort Mitglied →
+  Startseite. Schon in einer anderen Familie: „Du bist schon in Familie X.
+  Wechseln?“ (Wechseln/Bleiben). Abgelaufen/zurückgezogen: freundliche
+  Seite. Vorschau (Open Graph): „Einladung zu Mia“ mit Mia – der Name in
+  der Vorschau bräuchte eine dynamische Seite (mit Cache Components später).
+- Notfall ohne Link zum Antippen: Familie → klein „Ich wurde eingeladen“ →
+  Link einfügen. Alte Code-Links (`/beitreten?code=…`) gehen weiter.
+- Startseite: nach 3 Tagen Nutzung (oder mit zweiter erwachsener Person im
+  Profil) EINE Karte unter der Jetzt-Karte „Soll Lisa auch sehen, was du
+  einträgst?“ → „Familie einladen“ / „Später“ (7 Tage Ruhe, beim zweiten Mal
+  nur noch in den Einstellungen; `einladenHinweis.ts`,
+  `wasgibts.einladenhinweis`). Nur mit Konten, nicht wenn schon verbunden.
+- Mia: „Lade Lisa ein“ → Einladungs-Link (`inviteRule`).
+- Noch nicht: Name/Foto von Apple/Google als Vorschlag fürs Profil,
+  Apple-Token beim Konto löschen widerrufen (kommt mit dem Apple-Knopf),
+  Pinnwand/Einkauf „Mit Familie teilen“, Jetzt-Karte „<Name> hat schon 2
+  Termine eingetragen.“
+
+### Einrichten (wartet auf Felix)
+
+Google („Mit Google fortfahren“):
+1. console.cloud.google.com → Projekt anlegen → „APIs & Dienste“ →
+   „OAuth-Zustimmungsbildschirm“: Extern, App-Name „Mia“, Support-Mail.
+2. „Anmeldedaten“ → „Anmeldedaten erstellen“ → „OAuth-Client-ID“ →
+   Webanwendung. Autorisierte Weiterleitungs-URI: die Callback-Adresse aus
+   Supabase (Authentication → Providers → Google, steht dort zum Kopieren).
+3. In Supabase: Authentication → Providers → Google einschalten, Client-ID
+   und Client-Secret aus Schritt 2 einfügen, speichern.
+4. Supabase → Authentication → URL Configuration: unter „Redirect URLs“
+   `https://<deine-app>/auth/callback` eintragen.
+5. In Vercel: Umgebungsvariable `NEXT_PUBLIC_AUTH_GOOGLE` = `1` (kein
+   Geheimnis), neu ausliefern. Danach erscheint der Knopf.
+
+Apple („Mit Apple fortfahren“):
+1. Apple-Developer-Konto (99 €/Jahr) → Certificates, Identifiers & Profiles.
+2. Identifiers → App ID mit „Sign in with Apple“; dann Services ID (z. B.
+   `de.karamba-eis.mia.web`) mit „Sign in with Apple“, Domain der App und
+   Return URL = Callback-Adresse aus Supabase (Providers → Apple).
+3. Keys → neuen Key mit „Sign in with Apple“ anlegen, `.p8` herunterladen
+   (Key-ID und Team-ID notieren).
+4. In Supabase: Providers → Apple einschalten, Services ID, Team-ID, Key-ID
+   und den Inhalt der `.p8` eintragen (bleibt bei Supabase, nie im Repo).
+5. In Vercel: `NEXT_PUBLIC_AUTH_APPLE` = `1`, neu ausliefern.
+
+Hinweis Homescreen-App (iPhone): Die Rückkehr von Apple/Google kann im
+Safari-Fenster statt in der App landen. Dann dort einmal anmelden und die
+App neu öffnen; klappt es nicht zuverlässig, den Knopf wieder ausschalten –
+E-Mail bleibt immer der sichere Weg. Bitte am echten iPhone prüfen.
 
 ## Sprachnachrichten teilen (3c, seit v0.79)
 

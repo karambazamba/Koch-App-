@@ -1,5 +1,5 @@
 // Test-Backend (nur Durchklick, KONTEN_TEST=1): Konten, Anmelde-Codes,
-// Haushalt, Einladungen im Speicher des Testservers – mit denselben Regeln wie
+// Haushalt, Einladungen (Code und Link) im Speicher des Testservers – mit denselben Regeln wie
 // die Datenbank-Funktionen (supabase/migrations): ein Haushalt je Konto, nur
 // Erwachsene laden ein, Code 7 Tage gültig und einmal nutzbar, höchstens 10
 // Fehlversuche pro Stunde, leerer Haushalt verschwindet. Kein Netz, keine
@@ -16,6 +16,7 @@ import type { CloudDoc } from "@/lib/konten/sync/docs";
 type User = { id: string; email: string };
 type Membership = Member & { householdId: string };
 type Invite = { householdId: string; role: Role; expires: number; usedBy: string | null };
+type InviteLinkRow = { householdId: string; role: Role; inviterName: string; expires: number; revoked: boolean; uses: number; createdBy: string };
 
 type State = {
   users: Map<string, User>;
@@ -24,6 +25,8 @@ type State = {
   households: Map<string, { id: string; name: string; region: string | null }>;
   members: Membership[];
   invites: Map<string, Invite>;
+  /** Einladungs-Links (Token → Einladung), wie Tabelle `invite_links` */
+  links: Map<string, InviteLinkRow>;
   attempts: Map<string, number[]>;
   /** Haushalt → Einträge */
   entries: Map<string, Map<string, CloudDoc & { besitzer: string }>>;
@@ -34,11 +37,12 @@ type State = {
 
 const OTP_MS = 900_000;
 const INVITE_MS = 7 * 86_400_000;
+const LINK_MS = 14 * 86_400_000;
 const ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 
 const g = globalThis as unknown as { __wasgibtsKonten?: State };
 const state = (): State =>
-  (g.__wasgibtsKonten ??= { users: new Map(), otps: new Map(), sessions: new Map(), households: new Map(), members: [], invites: new Map(), attempts: new Map(), entries: new Map(), rev: 0, files: new Map() });
+  (g.__wasgibtsKonten ??= { users: new Map(), otps: new Map(), sessions: new Map(), households: new Map(), members: [], invites: new Map(), links: new Map(), attempts: new Map(), entries: new Map(), rev: 0, files: new Map() });
 
 /** Für Tests: alles leeren @public */
 export function resetTestKonten() {
@@ -82,6 +86,7 @@ function removeMember(s: State, userId: string) {
     s.entries.delete(mine.householdId);
     for (const p of s.files.keys()) if (memoHousehold(p) === mine.householdId) s.files.delete(p);
     for (const [code, inv] of s.invites) if (inv.householdId === mine.householdId) s.invites.delete(code);
+    for (const [token, l] of s.links) if (l.householdId === mine.householdId) s.links.delete(token);
   }
 }
 
@@ -99,6 +104,12 @@ export function testKonten(body: Record<string, unknown>, nowMs = Date.now()): R
     }
     case "admin_code":
       return { code: s.otps.get(email)?.code ?? null };
+    case "invite_link_info": {
+      const l = s.links.get(str(body.linkToken, 64).toLowerCase());
+      if (!l || l.revoked) return { status: "unbekannt", inviter: "", family: "" };
+      if (l.expires < nowMs) return { status: "abgelaufen", inviter: l.inviterName, family: "" };
+      return { status: "gueltig", inviter: l.inviterName, family: s.households.get(l.householdId)?.name ?? "" };
+    }
     case "verify": {
       const otp = s.otps.get(email);
       if (!otp || otp.code !== str(body.code, 6) || nowMs - otp.at > OTP_MS) return { error: "otp_expired" };
@@ -136,6 +147,45 @@ export function testKonten(body: Record<string, unknown>, nowMs = Date.now()): R
       const code = rand(6, ALPHABET);
       s.invites.set(code, { householdId: mine.householdId, role, expires: nowMs + INVITE_MS, usedBy: null });
       return { code: `${code.slice(0, 3)}-${code.slice(3)}` };
+    }
+    case "create_invite_link": {
+      const mine = s.members.find((m) => m.userId === user.id && m.role === "erwachsener");
+      if (!mine) return { error: "darf_nicht_einladen" };
+      const token = rand(32, "0123456789abcdef");
+      s.links.set(token, { householdId: mine.householdId, role: body.role === "kind" ? "kind" : "erwachsener", inviterName: mine.displayName, expires: nowMs + LINK_MS, revoked: false, uses: 0, createdBy: user.id });
+      return { token };
+    }
+    case "list_invite_links": {
+      const mine = s.members.find((m) => m.userId === user.id && m.role === "erwachsener");
+      if (!mine) return { links: [] };
+      const links = [...s.links].filter(([, l]) => l.householdId === mine.householdId && !l.revoked && l.expires > nowMs).map(([token, l]) => ({ ref: token.slice(0, 12), role: l.role, inviterName: l.inviterName, expiresAt: new Date(l.expires).toISOString(), uses: l.uses }));
+      return { links };
+    }
+    case "revoke_invite_link": {
+      const mine = s.members.find((m) => m.userId === user.id && m.role === "erwachsener");
+      if (!mine) return { error: "darf_nicht_einladen" };
+      for (const [token, l] of s.links) if (l.householdId === mine.householdId && token.slice(0, 12) === str(body.ref, 12)) l.revoked = true;
+      return { ok: true };
+    }
+    case "join_by_link": {
+      const recent = (s.attempts.get(user.id) ?? []).filter((t) => nowMs - t < 3_600_000);
+      if (recent.length >= 10) return { error: "zu_viele_versuche" };
+      const l = s.links.get(str(body.linkToken, 64).toLowerCase());
+      const problem = !l || l.revoked ? "link_unbekannt" : l.expires < nowMs ? "link_abgelaufen" : null;
+      if (problem || !l) {
+        s.attempts.set(user.id, [...recent, nowMs]);
+        return { error: problem };
+      }
+      const current = s.members.find((m) => m.userId === user.id);
+      if (current?.householdId === l.householdId) return { householdId: l.householdId };
+      if (current) {
+        if (body.switchFamily !== true) return { error: "andere_familie", family: s.households.get(current.householdId)?.name ?? "" };
+        removeMember(s, user.id);
+      }
+      s.members.push({ householdId: l.householdId, userId: user.id, displayName: str(body.displayName, 40), role: l.role, personId: str(body.personId, 80) || null });
+      l.uses += 1;
+      s.attempts.delete(user.id);
+      return { householdId: l.householdId };
     }
     case "join_household": {
       if (s.members.some((m) => m.userId === user.id)) return { error: "schon_im_haushalt" };

@@ -42,7 +42,7 @@ export function AccountDataSection() {
       {confirm && (
         <ConfirmDialog
           title="Konto löschen?"
-          text="Dein Konto und deine Mitgliedschaft im Haushalt werden gelöscht. Die Daten auf diesem Handy bleiben. Bist du die letzte Person im Haushalt, wird er mit gelöscht."
+          text="Dein Konto und deine Mitgliedschaft in der Familie werden gelöscht. Die Daten auf diesem Handy bleiben. Bist du die letzte Person in der Familie, wird sie mit gelöscht."
           confirmLabel="Konto löschen"
           danger
           onCancel={() => setConfirm(false)}

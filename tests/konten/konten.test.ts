@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { formatInviteCode, friendlyError, inviteShareText, isEmail, normalizeInviteCode, otpDigits } from "@/lib/konten/model";
+import { familyNameFor, formatInviteCode, friendlyError, inviteLinkShareText, isEmail, normalizeInviteCode, otpDigits, tokenFromLink } from "@/lib/konten/model";
 import { resetTestKonten, testKonten } from "@/lib/konten/testServer";
 import { fakeWindow, noBrowser } from "../helpers";
 
@@ -11,8 +11,19 @@ describe("Codes und Texte", () => {
     expect(normalizeInviteCode("4K7-P0Q")).toBeNull();
     expect(normalizeInviteCode("4K7-PIQ")).toBeNull();
     expect(formatInviteCode("4K7P2Q")).toBe("4K7-P2Q");
-    expect(inviteShareText("4K7P2Q")).toBe("Komm in unseren Haushalt bei Mia. Code: 4K7-P2Q");
-    expect(inviteShareText("4K7P2Q", "https://koch-app-two.vercel.app/")).toBe("Komm in unseren Haushalt bei Mia. Code: 4K7-P2Q\nhttps://koch-app-two.vercel.app/beitreten?code=4K7-P2Q");
+  });
+
+  it("Einladen per Link: Teilen-Text, Token aus dem Link, Familienname", () => {
+    const t = "0123456789abcdef0123456789abcdef";
+    expect(inviteLinkShareText("https://koch-app-two.vercel.app/", t)).toBe(`Komm zu uns in „Mia“ 🧡 https://koch-app-two.vercel.app/e/${t}`);
+    expect(tokenFromLink(`Schau mal https://koch-app-two.vercel.app/e/${t.toUpperCase()}`)).toBe(t);
+    expect(tokenFromLink(t)).toBe(t);
+    expect(tokenFromLink("https://koch-app-two.vercel.app/e/123")).toBeNull();
+    expect(familyNameFor("Felix Berg")).toBe("Familie Felix");
+    expect(familyNameFor("Felix", "Berg")).toBe("Familie Berg");
+    expect(familyNameFor("")).toBe("Unsere Familie");
+    expect(friendlyError("link_abgelaufen")).toMatch(/abgelaufen/);
+    expect(friendlyError("link_unbekannt")).toMatch(/neuen Link/);
   });
 
   it("E-Mail und Anmelde-Code", () => {

@@ -28,6 +28,10 @@ const nextConfig: NextConfig = {
   async redirects() {
     return OLD_PAGES.map(([source, destination]) => ({ source, destination, permanent: false }));
   },
+  // Einladungs-Links (Tafel 22): /e/<token> zeigt die statische Einladungsseite (Token liest die Seite selbst)
+  async rewrites() {
+    return [{ source: "/e/:token", destination: "/einladung" }];
+  },
   async headers() {
     return [
       {

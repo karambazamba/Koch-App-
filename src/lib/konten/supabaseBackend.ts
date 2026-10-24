@@ -1,23 +1,25 @@
 "use client";
 
 // Supabase-Umsetzung der Konten-Schnittstelle (erst bei Bedarf geladen).
-// Anmeldung immer per 6-stelligem Code (signInWithOtp + verifyOtp) – nie per
-// Magic-Link, der auf dem iPhone in Safari statt in der App aufgeht. Die
+// Anmeldung per 6-stelligem Code (signInWithOtp + verifyOtp) – nie per
+// Magic-Link, der auf dem iPhone in Safari statt in der App aufgeht. Apple/
+// Google (nur wenn eingeschaltet) per OAuth mit PKCE, Rückkehr auf /auth/callback. Die
 // Sitzung liegt unter `wasgibts.konto` (Speicher-Verzeichnis, nicht in der
 // Sicherung). Haushalt über die Datenbank-Funktionen (RLS schützt den Rest).
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { readRaw, writeRaw } from "@/lib/core/localStore";
-import { fail, friendlyError, ok, type CloudUser, type HouseholdInfo, type Member, type Role } from "@/lib/konten/model";
+import { fail, friendlyError, ok, type CloudUser, type HouseholdInfo, type InviteInfo, type InviteLink, type Member, type Role } from "@/lib/konten/model";
 import type { CloudBackend } from "@/lib/konten/backend";
 import type { CloudDoc } from "@/lib/konten/sync/docs";
 import { memoContentType } from "@/lib/konten/memoShare";
 
 /** Sitzung nur unter unserem Schlüssel speichern */
+const slot = (key: string) => (key.endsWith("-code-verifier") ? "wasgibts.konto-pkce" : "wasgibts.konto");
 const storage = {
-  getItem: () => readRaw("wasgibts.konto"),
-  setItem: (_key: string, value: string) => writeRaw("wasgibts.konto", value),
-  removeItem: () => writeRaw("wasgibts.konto", null),
+  getItem: (key: string) => readRaw(slot(key)),
+  setItem: (key: string, value: string) => writeRaw(slot(key), value),
+  removeItem: (key: string) => writeRaw(slot(key), null),
 };
 
 type MemberRow = { user_id: string; display_name: string; role: Role; person_id: string | null; household_id: string };
@@ -32,7 +34,7 @@ const member = (r: MemberRow): Member => ({ userId: r.user_id, displayName: r.di
 
 export function supabaseBackend(url: string, key: string): CloudBackend {
   const sb: SupabaseClient = createClient(url, key, {
-    auth: { storageKey: "wasgibts.konto", storage, persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+    auth: { storageKey: "wasgibts.konto", storage, persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, flowType: "pkce" },
   });
   const user = async (): Promise<CloudUser | null> => {
     const { data } = await sb.auth.getSession();
@@ -81,6 +83,42 @@ export function supabaseBackend(url: string, key: string): CloudBackend {
       if (error) return fail(friendlyError(error.message));
       const r = data as { household_id?: string; error?: string };
       return r.household_id ? ok(r.household_id) : fail(friendlyError(r.error));
+    },
+    startOAuth: async (provider) => {
+      const { error } = await sb.auth.signInWithOAuth({ provider, options: { redirectTo: `${window.location.origin}/auth/callback` } });
+      return error ? fail(friendlyError(error.message)) : ok(true);
+    },
+    finishOAuth: async (code) => {
+      const { data, error } = await sb.auth.exchangeCodeForSession(code);
+      const u = data.session?.user;
+      return error || !u ? fail(friendlyError(error?.message ?? "nicht_angemeldet")) : ok({ userId: u.id, email: u.email ?? "" });
+    },
+    createInviteLink: async (role) => {
+      const { data, error } = await sb.rpc("create_invite_link", { p_role: role });
+      return error ? fail(friendlyError(error.message)) : ok(data as string);
+    },
+    listInviteLinks: async () => {
+      const { data, error } = await sb.rpc("list_invite_links");
+      if (error) return fail(friendlyError(error.message));
+      const rows = (data ?? []) as { ref: string; role: Role; inviter_name: string; expires_at: string; uses: number }[];
+      return ok(rows.map((r): InviteLink => ({ ref: r.ref, role: r.role, inviterName: r.inviter_name, expiresAt: iso(r.expires_at), uses: Number(r.uses) })));
+    },
+    revokeInviteLink: async (ref) => {
+      const { error } = await sb.rpc("revoke_invite_link", { p_ref: ref });
+      return error ? fail(friendlyError(error.message)) : ok(true);
+    },
+    inviteInfo: async (token) => {
+      const { data, error } = await sb.rpc("invite_link_info", { p_token: token });
+      if (error) return fail(friendlyError(error.message));
+      const r = (data ?? {}) as Partial<InviteInfo>;
+      return ok({ status: r.status === "gueltig" || r.status === "abgelaufen" ? r.status : "unbekannt", inviter: r.inviter ?? "", family: r.family ?? "" });
+    },
+    joinByLink: async (token, displayName, personId, switchFamily) => {
+      const { data, error } = await sb.rpc("join_by_link", { p_token: token, p_display_name: displayName, p_person_id: personId, p_switch: switchFamily });
+      if (error) return fail(friendlyError(error.message));
+      const r = data as { household_id?: string; error?: string; family?: string };
+      if (r.error === "andere_familie") return ok({ otherFamily: r.family ?? "" });
+      return r.household_id ? ok({ householdId: r.household_id }) : fail(friendlyError(r.error));
     },
     leaveHousehold: async () => {
       const { error } = await sb.rpc("leave_household");

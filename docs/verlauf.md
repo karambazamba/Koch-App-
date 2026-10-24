@@ -2275,3 +2275,11 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Todoist als schreibgeschützte Aufgaben über die Kalender-Abonnement-URL;
   Abhaken bleibt in Todoist.
 - Parser: VTODO und RDATE; derselbe Termin aus zwei Kalendern nur einmal.
+
+## Anmelden wie man es kennt (v0.88.0)
+- Ohne Konto starten; „Schon ein Konto? Anmelden“ auf der Begrüßung (nur mit
+  Konten); nach dem Anmelden keine Frage, die Familie wird still angelegt.
+- Einladen per Link (/e/…, 14 Tage, mehrfach, zurückziehbar) statt Code;
+  Einladungsseite „<Name> lädt dich ein.“, Wechseln nur auf Wunsch.
+- Karte „Soll Lisa auch sehen, was du einträgst?“ nach 3 Tagen; Mia: „Lade
+  Lisa ein“. Apple/Google vorbereitet (Schalter, PKCE, /auth/callback).

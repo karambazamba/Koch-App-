@@ -94,6 +94,8 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - „Familie“ ist gemeinsam, „Arbeit“ ist persönlich. Ohne Angabe gehört etwas
   zur Familie. Familie = Orange (`bg-accent`), Arbeit = Blau (`bg-work`).
 - Mit Konto teilt der Haushalt „Familie“; „Arbeit“ sieht nur der Besitzer.
+  Konto erst, wenn man teilen will; eingeladen wird per Link (/e/…), in der
+  Oberfläche heißt es immer „Familie“, nie „Haushalt“.
   Ohne Konto bleibt alles auf dem Gerät – die App geht immer auch ohne.
 - Aufgaben gehören standardmäßig der Person, die sie anlegt; geteilt wird nur
   durch Abgeben („An … geben“, beim Empfänger „von Felix“, zurück mit „Passt

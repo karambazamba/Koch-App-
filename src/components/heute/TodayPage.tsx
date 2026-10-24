@@ -87,6 +87,7 @@ import { weekendKey } from "@/lib/tipps/model";
 import { BrandMark } from "@/components/ui/BrandMark";
 import { headerDate } from "@/lib/heute/kopfDatum";
 import { MiaNameHint, useMiaHomeHint } from "@/components/heute/MiaNameHint";
+import { InviteHintCard, useInviteHint } from "@/components/konten/InviteHintCard";
 import { termineTile } from "@/lib/heute/termineKachel";
 
 
@@ -245,6 +246,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const demoMeal = demoDishAt(minutes);
   const potHint = usePotHint(demoDay.tiles.length > 0);
   const miaHint = useMiaHomeHint(data.profile.miaHomeHint);
+  const inviteHint = useInviteHint(data.profile, data.todayIso, demoDay.tiles.length > 0 || tipSeen === false || miaHint);
   const runningTimer = timers ? sortTimers(timers.timers.filter((x) => isRunning(x, nowMs)), nowMs)[0] : undefined;
   const steps = recipe?.steps ?? [];
   const step = cookingNow && cooking ? currentStep(steps.length, cooking.steps[recipe?.id ?? dish ?? ""] ?? []) : null;
@@ -395,7 +397,8 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
               {/* Höchstens ein Hinweis: „Mia neu hinzufügen“ (iPhone), Spendentopf (Abstimmung bzw. Beitrags-Frage), dann der Dunkel-Tipp */}
               {miaHint && <MiaNameHint />}
               {potHint && !miaHint && <PotHintCard hint={potHint} />}
-              <DarkTip profile={data.profile} today={data.todayIso} quiet={demoDay.tiles.length > 0 || tipSeen === false || Boolean(potHint) || miaHint} />
+              {inviteHint && !potHint && !miaHint && <InviteHintCard text={inviteHint} today={data.todayIso} />}
+              <DarkTip profile={data.profile} today={data.todayIso} quiet={demoDay.tiles.length > 0 || tipSeen === false || Boolean(potHint) || miaHint || Boolean(inviteHint)} />
               {tipSeen === false && welcomed && !demoDay.tiles.length && (
                 <div className="flex items-start gap-3 rounded-card bg-accent-soft px-4 py-3" role="status">
                   <p className="flex-1 text-[15px] leading-snug text-accent-strong">Tipp: Halte die Startseite gedrückt, um Kacheln hinzuzufügen oder zu entfernen.</p>

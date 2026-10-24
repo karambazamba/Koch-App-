@@ -35,6 +35,12 @@ describe("Regeln für den Code", () => {
 });
 
 describe("Regeln für sichtbare Texte", () => {
+  it("Anmelden wie man es kennt (Tafel 22): in Konto-Seiten nie „Haushalt“ oder „Familien-Code“", () => {
+    const konto = /^(components\/konten\/|app\/(konto|anmelden|beitreten|e|auth)\/)/;
+    expect(hits((code, file) => (konto.test(file) ? texts(code).filter((t) => /Haushalt|Familien-Code/.test(t)) : []))).toEqual([]);
+  });
+
+
   it("typografischer Apostroph (gibt’s, geht’s – nie gibt's)", () => {
     expect(hits((code, file) => (NOT_VISIBLE.test(file) ? [] : texts(code).filter((t) => /[a-zäöüß]'[a-zäöüß]/i.test(t))))).toEqual([]);
   });

@@ -71,3 +71,6 @@ export function todayIso(): string {
   const d = now();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
+
+/** Seit wann die App auf diesem Gerät genutzt wird (null = noch nie geöffnet) */
+export const appSince = (): string | null => store.load()?.since ?? null;

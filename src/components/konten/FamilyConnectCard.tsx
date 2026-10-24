@@ -22,7 +22,7 @@ export function FamilyConnectCard() {
         <Users className="h-5 w-5" strokeWidth={2.25} />
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-[17px] font-extrabold">{household ? household.name || "Unser Haushalt" : "Familie verbinden"}</span>
+        <span className="truncate text-[17px] font-extrabold">{household ? household.name || "Unsere Familie" : "Familie verbinden"}</span>
         <span className="truncate text-sm text-muted">{!household ? "Alle sehen dasselbe" : takeover ? "Eigene Daten mitnehmen?" : "Verbunden"}</span>
       </span>
       <ChevronRight className="h-5 w-5 shrink-0 text-faint" strokeWidth={2} aria-hidden />
