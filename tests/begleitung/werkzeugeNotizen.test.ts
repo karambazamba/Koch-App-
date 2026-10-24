@@ -8,7 +8,7 @@ beforeEach(() => at("2026-10-21T09:00"));
 
 describe("Schnellnotiz", () => {
   it("anhängen, ersetzen und aufräumen", () => {
-    const ctx = kontext({ schnellnotiz: "Handwerker Müller 0176\nMilch kaufen" });
+    const ctx = kontext({ features: ["notizen"], schnellnotiz: "Handwerker Müller 0176\nMilch kaufen" });
     expect(rufe(ctx, "schnellnotiz_schreiben", { text: "" }).isError).toBe(true);
     expect(rufe(ctx, "schnellnotiz_schreiben", { text: "Oma anrufen" }).content).toMatch(/Schnellnotiz/);
     expect(ctx.data.schnellnotiz).toBe("Handwerker Müller 0176\nMilch kaufen\nOma anrufen");
@@ -26,7 +26,7 @@ describe("Schnellnotiz", () => {
 
 describe("Notizen", () => {
   it("anlegen als Text oder Liste", () => {
-    const ctx = kontext();
+    const ctx = kontext({ features: ["notizen"] });
     expect(rufe(ctx, "notiz_anlegen", { titel: " " }).isError).toBe(true);
     expect(rufe(ctx, "notiz_anlegen", { titel: "WLAN-Passwort", text: "geheim123", angeheftet: true, raum: "arbeit" }).content).toBe("Vorgemerkt: Notiz „WLAN-Passwort“ (Text).");
     expect(letzte(ctx)).toMatchObject({ type: "upsert_note", isNew: true, note: { raum: "arbeit", data: { pinned: true, text: "geheim123" } } });
@@ -37,7 +37,7 @@ describe("Notizen", () => {
   it("ändern, anheften, löschen über id oder Titel", () => {
     const wlan = createNote({ title: "WLAN-Passwort", text: "alt" });
     const pack = createNote({ title: "Packliste Urlaub", items: ["Zelt"] });
-    const ctx = kontext({ notes: [wlan, pack] });
+    const ctx = kontext({ features: ["notizen"], notes: [wlan, pack] });
     expect(rufe(ctx, "notiz_aendern", { id: "zzz" }).isError).toBe(true);
     expect(rufe(ctx, "notiz_aendern", { id: wlan.id, text: "neu", emoji: "🔑", titel: "WLAN", raum: "arbeit" }).content).toBe("Vorgemerkt: „WLAN“ ändern.");
     expect(letzte(ctx)).toMatchObject({ isNew: false, note: { raum: "arbeit", data: { text: "neu", emoji: "🔑", title: "WLAN" } } });
@@ -54,7 +54,7 @@ describe("Notizen", () => {
 
   it("liste_eintrag_hinzufuegen hängt an oder legt die Liste an", () => {
     const pack = createNote({ title: "Packliste", items: ["Zelt"] });
-    const ctx = kontext({ notes: [pack] });
+    const ctx = kontext({ features: ["notizen"], notes: [pack] });
     expect(rufe(ctx, "liste_eintrag_hinzufuegen", { liste: "Packliste", eintraege: [] }).isError).toBe(true);
     expect(rufe(ctx, "liste_eintrag_hinzufuegen", { liste: "Packliste", eintraege: ["Sonnencreme"] }).content).toBe("Vorgemerkt: Sonnencreme auf „Packliste“.");
     expect(ctx.data.notes?.[0].data.items?.map((i) => i.text)).toEqual(["Zelt", "Sonnencreme"]);

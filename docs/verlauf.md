@@ -2445,3 +2445,19 @@ Fehler in `docs/aufraeumen-nachher.md`.
   gespeichert. `TerminQuickAdd`, `TaskQuickAdd` und das Zeit-Rad sind weg.
 - Tag antippen in Monat, Woche und Liste gleich: der Tag steht darunter.
 - Termine ohne „Erledigt“; Erinnerung „Keine Erinnerung“ … „Am Vorabend“.
+
+## Prüfstand fair + Mia knapper (v0.105.0)
+
+- Felix’ echter Lauf: 85/124 (69 %). Viele Fehlschläge waren unfair
+  (Haushalt passte nicht zum Satz, Daten als Satzende gezählt). Jetzt: je
+  Satz eine Ausgangslage, feste Test-Vorhersage, Satzzähler ohne Daten und
+  Abkürzungen, Grenzen 2/3 Sätze, erlaubte Wege (Ideen + Frage, Kalender
+  vorlesen, „steht schon drin“), langsam = Warnung ab 6 s, Fehler ab 10 s.
+  129 Sätze (neu: „Ich bin müde“, „Merk dir: Lisa mag keine Pilze“,
+  „Klassenfahrt 9. bis 13. Nov“, „Sachen fürs Frühstück“, Zahnarzt doppelt).
+- Mia knapper: Prompt (eine Frage ODER ein Angebot, keine Oberflächen-
+  Erklärungen, keine erfundenen Angebote, Allergien nur bei Bedarf, ehrlich
+  KI) und `tidyMiaText` (wirft solche Sätze und zweite Fragen raus).
+- Verhalten: Vorlieben direkt ins Profil (`vorliebe_merken`), nie in
+  ausgeblendete Notizen schreiben, vager Einkauf als Vorschau, mehrtägige
+  Termine als ein Eintrag, „Woche“ allein schaltet nicht aufs große Modell.

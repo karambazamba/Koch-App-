@@ -1,21 +1,35 @@
-// Prüfstand (Auftrag „Mia auf Claude-Niveau“): 124 echte Alltagssätze einer
+// Prüfstand (Auftrag „Mia auf Claude-Niveau“): 129 echte Alltagssätze einer
 // Familie mit erwarteter Aktion – Einkauf, Termine, Aufgaben, Kochen, Fragen,
 // Durcheinander, Dialekt, Tippfehler. Bezug: Mittwoch, 21.10.2026, 10:30,
 // Familie Müller (Felix, Lisa, Mathis 8). `ops` = welche Vorschlags-Arten
 // richtig sind (eine genügt), leer = reine Antwort ohne Aktion; `datum`/`zeit`
 // prüfen die Daten des Termins bzw. der Aufgabe, `person` den Namen im Titel
-// oder bei „wer“.
+// oder bei „wer“. `lage` = passende Ausgangslage (haushalt.ts), `max` =
+// erlaubte Sätze (Aktion 2, Ratgeber/Zusammenfassung 3).
+
+import type { Lage } from "@/lib/begleitung/pruefstand/haushalt";
 
 export type PruefSatz = {
   text: string;
-  /** Richtige Vorschlags-Arten (ChangeOp.type) – leer = nur antworten; "kann_nicht" = ehrlich ablehnen */
+  /**
+   * Richtige Vorschlags-Arten (ChangeOp.type) – leer = nur antworten.
+   * Besondere: "kann_nicht" = ehrlich ablehnen, "antwort" = Antwort ohne
+   * Aktion zählt auch, "hinweis_doppelt" = keine Aktion + Hinweis „steht schon drin“.
+   */
   ops: string[];
   datum?: string;
+  /** Letzter Tag bei mehrtägigen Terminen */
+  bis?: string;
   zeit?: string;
   person?: string;
+  lage?: Lage[];
+  /** Höchstens so viele Sätze (Standard 2) */
+  max?: number;
 };
 
 const S = (text: string, ops: string[], extra: Omit<PruefSatz, "text" | "ops"> = {}): PruefSatz => ({ text, ops, ...extra });
+/** Wissens-/Ratgeberfrage: Antwort ohne Aktion, bis 3 kurze Sätze */
+const R = (text: string, extra: Omit<PruefSatz, "text" | "ops"> = {}): PruefSatz => ({ text, ops: [], max: 3, ...extra });
 const EINKAUF = ["add_shopping"];
 const TERMIN = ["upsert_entry"];
 const ANTWORT: string[] = [];
@@ -43,7 +57,8 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Wir brauchen Mehl, Zucker und Backpulver zum Backen", EINKAUF),
   S("Batterien AA auf die Liste", EINKAUF),
   // Termine (28)
-  S("Zahnarzt Donnerstag 16 Uhr", TERMIN, { datum: "2026-10-22", zeit: "16:00" }),
+  S("Zahnarzt Donnerstag 16 Uhr", TERMIN, { datum: "2026-10-22", zeit: "16:00", lage: ["ohne-zahnarzt"] }),
+  S("Trag den Zahnarzt Donnerstag 16 Uhr ein", ["hinweis_doppelt"]),
   S("Morgen um 9 Steuerberater", TERMIN, { datum: "2026-10-22", zeit: "09:00" }),
   S("Mathis hat Freitag um 15 Uhr Fußball", TERMIN, { datum: "2026-10-23", zeit: "15:00", person: "Mathis" }),
   S("Elternabend nächsten Dienstag 19:30", TERMIN, { datum: "2026-10-27", zeit: "19:30" }),
@@ -53,7 +68,7 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Samstag Grillen bei Oma ab 14 Uhr", TERMIN, { datum: "2026-10-24", zeit: "14:00" }),
   S("heute abend 20 uhr kino", TERMIN, { datum: "2026-10-21", zeit: "20:00" }),
   S("Trag ein: Werkstatt am Freitag um 7:30", TERMIN, { datum: "2026-10-23", zeit: "07:30" }),
-  S("zahnartz do 16 uhr", TERMIN, { datum: "2026-10-22", zeit: "16:00" }),
+  S("zahnartz do 16 uhr", TERMIN, { datum: "2026-10-22", zeit: "16:00", lage: ["ohne-zahnarzt"] }),
   S("Jeden Montag Schwimmen um 17 Uhr", TERMIN, { zeit: "17:00" }),
   S("Felix fliegt am 5.11. um 6 Uhr nach München", TERMIN, { datum: "2026-11-05", zeit: "06:00", person: "Felix" }),
   S("Termin beim Bürgeramt morgen 11:00", TERMIN, { datum: "2026-10-22", zeit: "11:00" }),
@@ -66,24 +81,26 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Physio Donnerstag in einer Woche um 10", TERMIN, { datum: "2026-10-29", zeit: "10:00" }),
   S("Laternenumzug am 11.11. um 17 Uhr", TERMIN, { datum: "2026-11-11", zeit: "17:00" }),
   S("Verschieb den Zahnarzt auf Freitag", ["move_entry", "upsert_entry"]),
-  S("Mathis Klassenfahrt vom 9. bis 13. November", TERMIN),
+  S("Mathis Klassenfahrt vom 9. bis 13. November", TERMIN, { datum: "2026-11-09", bis: "2026-11-13", person: "Mathis" }),
+  S("Klassenfahrt 9. bis 13. Nov", TERMIN, { datum: "2026-11-09", bis: "2026-11-13" }),
   S("Moin, Lisa hat morgen um viertel nach drei Elterngespräch", TERMIN, { datum: "2026-10-22", zeit: "15:15", person: "Lisa" }),
-  S("Hab grad gesehen, Freitag 16 Uhr Turnen fällt aus", ["remove_entry", "upsert_entry", "move_entry"]),
+  S("Hab grad gesehen, Freitag 16 Uhr Turnen fällt aus", ["remove_entry", "upsert_entry", "move_entry"], { lage: ["turnen"] }),
   S("Ich muss am Mittwoch nächste Woche um 9 zum Arzt", TERMIN, { datum: "2026-10-28", zeit: "09:00" }),
   S("Fußballtraining Mathis immer dienstags 16 Uhr", TERMIN, { zeit: "16:00", person: "Mathis" }),
   S("Geburtstag Oma am 30. Oktober", TERMIN, { datum: "2026-10-30" }),
   // Aufgaben und Notizen (16)
-  S("Ich muss noch die Steuer machen", TERMIN),
+  S("Ich muss noch die Steuer machen", TERMIN, { lage: ["ohne-steuer"] }),
   S("Kita-Formular bis Freitag abgeben", TERMIN, { datum: "2026-10-23" }),
   S("Erinner mich morgen an den Müll", TERMIN, { datum: "2026-10-22" }),
   S("Lisa soll die Geschenke besorgen", TERMIN, { person: "Lisa" }),
-  S("Merk dir das WLAN-Passwort: Sonnenblume42", ["upsert_note"]),
-  S("Notier dir, Mathis' Schuhgröße ist 33", ["upsert_note"]),
+  // 1.0: Notizen sind aus – nie in ausgeblendete Bausteine schreiben
+  S("Merk dir das WLAN-Passwort: Sonnenblume42", ["kann_nicht"]),
+  S("Notier dir, Mathis' Schuhgröße ist 33", ["kann_nicht"]),
   S("Dringend: Versicherung anrufen", TERMIN),
   S("Steuer ist erledigt", ["done_entry"]),
   S("Irgendwann mal den Keller aufräumen", TERMIN),
   S("Diese Woche noch Reifen wechseln", TERMIN),
-  S("Idee fürs Wochenende: Tierpark", ["upsert_note", "upsert_entry"]),
+  S("Idee fürs Wochenende: Tierpark", TERMIN),
   S("Mathis braucht bis Montag Bastelsachen für die Schule", TERMIN, { datum: "2026-10-26", person: "Mathis" }),
   S("Ruf mal Opa wegen Sonntag an", ["upsert_entry", "kann_nicht"]),
   S("Rechnung vom Klempner bezahlen", TERMIN),
@@ -91,42 +108,43 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Sag allen, dass es heute Pizza gibt", ["add_pin"]),
   // Kochen und Essen (20)
   S("Was soll ich heute kochen?", ["app_command", "set_meal"]),
-  S("Plan mir die Woche, vegetarisch bitte", ["set_meal", "add_recipe", "update_week"]),
+  S("Plan mir die Woche, vegetarisch bitte", ["set_meal", "add_recipe", "update_week"], { max: 3 }),
   S("Freitag gibt’s Pizza", ["set_meal"]),
-  S("Mathis wünscht sich Sonntag Milchreis", ["add_wish", "set_meal"]),
-  S("Heute sind wir nur zu zweit", ["set_persons"]),
+  S("Mathis wünscht sich Sonntag Milchreis", ["add_wish", "set_meal", "update_week"]),
+  S("Heute sind wir nur zu zweit", ["set_persons"], { lage: ["plan"] }),
   S("Timer 10 Minuten", ["add_timer"]),
   S("Stell einen Timer für die Nudeln auf 8 Minuten", ["add_timer"]),
-  S("Wir haben noch Paprika und Reis, was geht damit?", ["app_command", "set_meal", "add_recipe"], {}),
+  S("Wir haben noch Paprika und Reis, was geht damit?", ["app_command", "set_meal", "add_recipe", "antwort"], { max: 3 }),
   S("Kannst du ein Rezept für Linsensuppe anlegen?", ["add_recipe"]),
-  S("Tausch Montag und Mittwoch", ["move_meal", "set_meal"]),
-  S("Donnerstag doppelt kochen, Reste für Freitag", ["set_double"]),
+  S("Tausch Montag und Mittwoch", ["move_meal", "set_meal"], { lage: ["plan"] }),
+  S("Donnerstag doppelt kochen, Reste für Freitag", ["set_double"], { lage: ["plan"] }),
   S("Lösch den Wochenplan", ["clear_week"]),
   S("Wir sind ab Montag eine Woche im Urlaub", ["set_pause"]),
   S("Ich koche jetzt", ["start_cooking"]),
-  S("Nächster Schritt", ["cook_step"]),
+  S("Nächster Schritt", ["cook_step"], { lage: ["kochmodus"] }),
   S("Kochidee", ["app_command"]),
   S("Wir haben noch 4 Joghurt im Kühlschrank", ["add_pantry"]),
   S("Was anderes als Spaghetti bitte", ["app_command", "set_meal"]),
   S("Mach heute was Schnelles, wir haben wenig Zeit", ["set_meal", "app_command"]),
-  S("Lisa mag keine Pilze mehr in Soßen, merk dir das", ANTWORT),
+  S("Lisa mag keine Pilze mehr in Soßen, merk dir das", ["set_dislike", "antwort"]),
+  S("Merk dir: Lisa mag keine Pilze", ["set_dislike", "antwort"]),
   // Allgemeine Fragen (20) – Mia antwortet selbst, kurz und richtig
-  S("Wie lange muss ein Ei hart kochen?", ANTWORT),
-  S("Wie viel Gramm sind ein Esslöffel Mehl?", ANTWORT),
-  S("Kann man Reis einfrieren?", ANTWORT),
-  S("Was hilft gegen Kalk im Wasserkocher?", ANTWORT),
-  S("Wie lange hält gekochter Reis im Kühlschrank?", ANTWORT),
-  S("Rechne 3 Tassen in Milliliter um", ANTWORT),
-  S("Was ist ein guter Ersatz für Buttermilch?", ANTWORT),
-  S("Ab wann dürfen Kinder Honig essen?", ANTWORT),
-  S("Wie bekomme ich Rotweinflecken raus?", ANTWORT),
-  S("Wie viele Löffel Kaffee für eine Kanne?", ANTWORT),
-  S("Wann ist eigentlich Laternelaufen?", ANTWORT),
-  S("Wie heißt der Hauptstadt von Australien?", ANTWORT),
-  S("Was kann ich mit übrigen Kartoffeln machen?", ANTWORT),
-  S("Muss man Zucchini schälen?", ANTWORT),
-  S("Wie lange Spaghetti al dente?", ANTWORT),
-  S("Was steht heute an?", ANTWORT),
+  R("Wie lange muss ein Ei hart kochen?"),
+  R("Wie viel Gramm sind ein Esslöffel Mehl?"),
+  R("Kann man Reis einfrieren?"),
+  R("Was hilft gegen Kalk im Wasserkocher?"),
+  R("Wie lange hält gekochter Reis im Kühlschrank?"),
+  R("Rechne 3 Tassen in Milliliter um"),
+  R("Was ist ein guter Ersatz für Buttermilch?"),
+  R("Ab wann dürfen Kinder Honig essen?"),
+  R("Wie bekomme ich Rotweinflecken raus?"),
+  R("Wie viele Löffel Kaffee für eine Kanne?"),
+  R("Wann ist eigentlich Laternelaufen?"),
+  R("Wie heißt der Hauptstadt von Australien?"),
+  R("Was kann ich mit übrigen Kartoffeln machen?"),
+  R("Muss man Zucchini schälen?"),
+  R("Wie lange Spaghetti al dente?"),
+  S("Was steht heute an?", ANTWORT, { max: 3 }),
   S("Wie wird das Wetter morgen?", ANTWORT),
   S("Wer bist du?", ANTWORT),
   S("Danke dir!", ANTWORT),
@@ -137,6 +155,7 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Watt gifft dat hüüt to eten?", ["app_command", "set_meal"]),
   S("Mach ma Milch und Eier rauf", EINKAUF),
   S("Ich glaub wir brauchen noch so Sachen fürs Frühstück", EINKAUF),
+  S("Sachen fürs Frühstück", EINKAUF),
   S("Termin Zahnarzt, also nicht Donnerstag sondern Freitag 16 Uhr", TERMIN, { datum: "2026-10-23", zeit: "16:00" }),
   S("Bestell mir eine Pizza", ["kann_nicht"]),
   S("Schick Lisa eine SMS", ["kann_nicht", "add_pin"]),
@@ -146,10 +165,11 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Nimm die Einkaufsliste von der Startseite", ["home"]),
   S("Zeig mir den Vorrat", ["kann_nicht", "app_command"]),
   S("Schreib der Kita, dass Mathis morgen krank ist", ["mail_draft", "app_command"]),
-  S("Lies mir den Kalender vor", ["app_command"]),
-  S("Lass uns die Woche durchgehen", ["app_command"]),
+  S("Lies mir den Kalender vor", ["app_command", "antwort"], { max: 3 }),
+  S("Lass uns die Woche durchgehen", ["app_command"], { max: 3 }),
   S("Brauch ich morgen einen Schirm?", ANTWORT),
-  S("Mathis hat Halsschmerzen, was soll ich tun?", ANTWORT),
+  R("Mathis hat Halsschmerzen, was soll ich tun?"),
   S("Ich bin so müde heute", ANTWORT),
+  S("Ich bin müde", ANTWORT),
   S("äh ja also nee doch nicht", ANTWORT),
 ];

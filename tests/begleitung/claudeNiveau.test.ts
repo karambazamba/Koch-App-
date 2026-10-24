@@ -1,13 +1,13 @@
 // Mia auf Claude-Niveau – nie halbgar: offline merken und nachholen, kleine
 // Dinge sofort mit „Rückgängig“ und „Mia hat schon …“, Fähigkeitsliste aus
-// den Werkzeugen, „Kann ich noch nicht“ anonym, Prüfstand mit 124 Sätzen.
+// den Werkzeugen, „Kann ich noch nicht“ anonym, Prüfstand mit 129 Sätzen.
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { atFresh, fakeWindow } from "../helpers";
 import { capabilities, cleanWish, WISH_TOOL } from "@/lib/begleitung/wishTools";
 import { PRUEFSAETZE } from "@/lib/begleitung/pruefstand/saetze";
 import { bewerte, quote, sentenceCount } from "@/lib/begleitung/pruefstand/bewerten";
-import { pruefHaushalt } from "@/lib/begleitung/pruefstand/haushalt";
+import { pruefHaushalt, pruefWetter } from "@/lib/begleitung/pruefstand/haushalt";
 import { costSummary } from "@/lib/begleitung/usage";
 import { isQuestion, isShortCommand } from "@/lib/begleitung/engine";
 import { toolDefinitions } from "@/lib/begleitung/toolset";
@@ -128,9 +128,9 @@ describe("Ehrlich über Fähigkeiten", () => {
 });
 
 describe("Prüfstand", () => {
-  it("124 Sätze, alle verschieden, jede Gruppe dabei", () => {
-    expect(PRUEFSAETZE).toHaveLength(124);
-    expect(new Set(PRUEFSAETZE.map((s) => s.text)).size).toBe(124);
+  it("129 Sätze, alle verschieden, jede Gruppe dabei", () => {
+    expect(PRUEFSAETZE).toHaveLength(129);
+    expect(new Set(PRUEFSAETZE.map((s) => s.text)).size).toBe(129);
     expect(PRUEFSAETZE.filter((s) => s.ops.length === 0).length).toBeGreaterThanOrEqual(20);
     expect(PRUEFSAETZE.filter((s) => s.ops.includes("kann_nicht")).length).toBeGreaterThanOrEqual(3);
     expect(pruefHaushalt().profile.persons.map((p) => p.name)).toEqual(["Felix", "Lisa", "Mathis"]);
@@ -143,9 +143,9 @@ describe("Prüfstand", () => {
     const wrongTime = { ...good, ops: [{ ...good.ops[0], entry: { typ: "termin", data: { title: "Zahnarzt", date: "2026-10-22", start: "15:00" } } } as unknown as ChangeOp] };
     expect(bewerte(termin, wrongTime, 1200).gruende).toContain("Uhrzeit 16:00 nicht getroffen (15:00)");
     const chatty: AssistantReply = { reply: "Natürlich! Ich habe den Termin eingetragen – Donnerstag. Gern geschehen! Wenn du noch etwas brauchst, sag Bescheid.", ops: good.ops };
-    const r = bewerte(termin, chatty, 9000);
+    const r = bewerte(termin, chatty, 10_000);
     expect(r.ok).toBe(false);
-    expect(r.gruende).toEqual(expect.arrayContaining(["mehr als 2 Sätze", "Floskel", "Gedanken- oder Spiegelstrich", "langsam (9 s)"]));
+    expect(r.gruende).toEqual(expect.arrayContaining(["mehr als 2 Sätze", "Floskel", "Gedanken- oder Spiegelstrich", "langsam (10 s)"]));
     expect(quote([bewerte(termin, good, 1), r])).toBe(50);
     expect(sentenceCount("Ist drauf.")).toBe(1);
     const nein = PRUEFSAETZE.find((s) => s.text === "Bestell mir eine Pizza")!;
@@ -176,5 +176,60 @@ describe("KI-Kosten letzte 7 Tage", () => {
     const src = readFileSync("src/components/einstellungen/settings/AdminView.tsx", "utf8");
     expect(src).toContain("useToday()");
     expect(src).not.toMatch(/todayIso\(\)/);
+  });
+});
+
+describe("Prüfstand fair (Auftrag „Prüfstand fair + Mia knapper“)", () => {
+  it("Satzzähler: Daten, Abkürzungen und Uhrzeiten sind kein Satzende", () => {
+    expect(sentenceCount("Klassenfahrt vom 9. bis 13. November, steht drin.")).toBe(1);
+    expect(sentenceCount("Am 25.10. um 14.30 Uhr Zahnarzt. Steht drin.")).toBe(2);
+    expect(sentenceCount("Mi. 1.11. passt, ca. 20 Min. Steht drin.")).toBe(2);
+    expect(sentenceCount("Z. B. Brot und Butter, bzw. Müsli. Ist drauf.")).toBe(2);
+    expect(sentenceCount("Machen wir so. Morgen gibt’s Pizza.")).toBe(2);
+  });
+
+  it("Ratgeber bis 3 Sätze, Aktion bis 2; höchstens eine Rückfrage", () => {
+    const frage = PRUEFSAETZE.find((s) => s.text === "Kann man Reis einfrieren?")!;
+    const drei = "Ja, gut abgekühlt in Portionen. Hält etwa drei Monate. Zum Auftauen kurz erhitzen.";
+    expect(bewerte(frage, { reply: drei, ops: [] }, 2000).ok).toBe(true);
+    const termin = PRUEFSAETZE.find((s) => s.text === "Morgen um 9 Steuerberater")!;
+    const op = { id: "1", type: "upsert_entry", isNew: true, entry: { typ: "termin", data: { title: "Steuerberater", date: "2026-10-22", start: "09:00" } } } as unknown as ChangeOp;
+    expect(bewerte(termin, { reply: drei, ops: [op] }, 2000).gruende).toContain("mehr als 2 Sätze");
+    expect(bewerte(termin, { reply: "Steht drin. Soll ich erinnern? Und den Ordner raussuchen?", ops: [op] }, 2000).gruende).toContain("mehr als eine Rückfrage");
+  });
+
+  it("Alternativen: Ideen + Frage ohne Aktion, Kalender vorlesen, „steht schon drin“", () => {
+    const paprika = PRUEFSAETZE.find((s) => s.text.startsWith("Wir haben noch Paprika"))!;
+    expect(bewerte(paprika, { reply: "Paprika-Reis-Pfanne oder gefüllte Paprika. Soll ich eins für heute eintragen?", ops: [] }, 3000).ok).toBe(true);
+    const doppelt = PRUEFSAETZE.find((s) => s.text === "Trag den Zahnarzt Donnerstag 16 Uhr ein")!;
+    expect(bewerte(doppelt, { reply: "Der steht schon drin, Do 16 Uhr.", ops: [] }, 2000).ok).toBe(true);
+    expect(bewerte(PRUEFSAETZE.find((s) => s.text === "Lies mir den Kalender vor")!, { reply: "Heute Zahnarzt nicht, morgen 16 Uhr Zahnarzt.", ops: [] }, 2000).ok).toBe(true);
+  });
+
+  it("Mehrtägig: bis-Tag wird geprüft", () => {
+    const fahrt = PRUEFSAETZE.find((s) => s.text === "Klassenfahrt 9. bis 13. Nov")!;
+    const op = (endDate?: string) => ({ id: "1", type: "upsert_entry", isNew: true, entry: { typ: "termin", data: { title: "Klassenfahrt", date: "2026-11-09", start: "", ...(endDate ? { endDate } : {}) } } }) as unknown as ChangeOp;
+    expect(bewerte(fahrt, { reply: "Steht drin.", ops: [op("2026-11-13")] }, 2000).ok).toBe(true);
+    expect(bewerte(fahrt, { reply: "Steht drin.", ops: [op()] }, 2000).gruende[0]).toMatch(/^bis 2026-11-13/);
+  });
+
+  it("Tempo: Warnung ab 6 s, Fehler erst ab 10 s; Oberfläche erklären und menschliche Gefühle sind Fehler", () => {
+    const satz = PRUEFSAETZE.find((s) => s.text === "Ich bin müde")!;
+    const r = bewerte(satz, { reply: "Dann mach heute langsam. Soll ich das Abendessen übernehmen?", ops: [] }, 7000);
+    expect(r.ok).toBe(true);
+    expect(r.warnung).toBe("etwas langsam (7 s)");
+    expect(bewerte(satz, { reply: "Dann mach heute langsam.", ops: [] }, 10_500).gruende).toContain("langsam (10.5 s)");
+    expect(bewerte(satz, { reply: "Das kenn ich. Mach langsam.", ops: [] }, 1000).gruende).toContain("tut so, als wäre sie ein Mensch");
+    expect(bewerte(satz, { reply: "Mit „Übernehmen“ kommt es in den Plan.", ops: [] }, 1000).gruende).toContain("erklärt die Oberfläche");
+  });
+
+  it("Ausgangslage je Satz: ohne Zahnarzt, mit Turnen, Plan, Kochmodus", () => {
+    expect(pruefHaushalt(["ohne-zahnarzt"]).entries?.some((e) => e.data.title === "Zahnarzt")).toBe(false);
+    expect(pruefHaushalt().entries?.some((e) => e.data.title === "Zahnarzt")).toBe(true);
+    expect(pruefHaushalt(["turnen"]).entries?.find((e) => e.data.title === "Turnen")?.data.date).toBe("2026-10-23");
+    expect(Object.values(pruefHaushalt(["plan"]).mealPlans).flatMap((w) => Object.keys(w))).toHaveLength(5);
+    expect(pruefHaushalt(["kochmodus"]).kochen?.active).toBe(true);
+    expect(PRUEFSAETZE.find((s) => s.text === "Zahnarzt Donnerstag 16 Uhr")?.lage).toEqual(["ohne-zahnarzt"]);
+    expect(pruefWetter().place).toBeTruthy();
   });
 });

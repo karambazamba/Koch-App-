@@ -102,7 +102,7 @@ export type ChangeOp =
   | { id: string; type: "move_meal"; from: SlotRef; to: SlotRef }
   | { id: string; type: "update_week"; weekStart: string; changes: WeekChanges }
   | { id: string; type: "add_recipe"; recipe: NewRecipe }
-  | { id: string; type: "add_shopping"; weekStart: string; name: string; amount: string; section: Section; day?: string; dish?: string; shop?: string }
+  | { id: string; type: "add_shopping"; weekStart: string; name: string; amount: string; section: Section; day?: string; dish?: string; shop?: string; /** vage gewünscht („Sachen fürs Frühstück“): Vorschau mit „Übernehmen“ statt sofort */ vorschlag?: boolean }
   | { id: string; type: "remove_shopping"; weekStart: string; names: string[] }
   | { id: string; type: "clear_shopping"; weekStart: string }
   | { id: string; type: "clear_week"; weekStart: string }
@@ -148,7 +148,9 @@ export type ChangeOp =
   | { id: string; type: "set_sport_goal"; goal: number }
   // Begleitung anpassen (Name, Art/Stimme, Icon-Farbe)
   // Wer zum Haushalt gehört („Ich bin Felix, wir sind Lisa und drei Kinder“)
-  | { id: string; type: "set_household"; intro: HouseholdIntro };
+  | { id: string; type: "set_household"; intro: HouseholdIntro }
+  /** „Merk dir: Lisa mag keine Pilze“ – direkt ins Profil (mag = false: mag nicht, true: mag wieder) */
+  | { id: string; type: "set_dislike"; personId: string; who: string; term: string; mag: boolean };
 
 /** Werden sofort ausgeführt (ohne "Übernehmen") – kleine, flüchtige Dinge */
 export const INSTANT_OP_TYPES = new Set(["add_timer", "stop_timer", "stopwatch", "cook_step", "start_cooking"]);
@@ -330,6 +332,14 @@ export function applyOps(
       case "set_household":
         next = { ...next, profile: applyHouseholdIntro(next.profile, op.intro) };
         break;
+      case "set_dislike": {
+        const same = (a: string) => a.trim().toLowerCase() === op.term.trim().toLowerCase();
+        const persons = next.profile.persons.map((p) =>
+          p.id !== op.personId ? p : { ...p, dislikes: op.mag ? p.dislikes.filter((d) => !same(d)) : p.dislikes.some(same) ? p.dislikes : [...p.dislikes, op.term.trim()] },
+        );
+        next = { ...next, profile: { ...next.profile, persons } };
+        break;
+      }
       case "set_jetzt":
         next = { ...next, tagesablauf: { ...(next.tagesablauf ?? { feierabendAb: "20:00", morgenBis: "10:00" }), jetzt: op.on } };
         break;

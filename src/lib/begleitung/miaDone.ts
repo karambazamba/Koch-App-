@@ -27,8 +27,8 @@ const undos = new Map<string, () => void>();
  * Was Mia sofort selbst macht (ohne „Übernehmen“): kleine, sichere Dinge.
  * Große (Wochenplan, Rezept, Mail, Löschen) bleiben Vorschläge.
  */
-const SAFE_OP_TYPES = new Set<ChangeOp["type"]>(["add_shopping", "add_pin", "add_pantry", "use_pantry", "add_wish", "done_entry"]);
-export const isSafeOp = (op: ChangeOp) => SAFE_OP_TYPES.has(op.type) || ((op.type === "upsert_entry" || op.type === "upsert_note") && op.isNew);
+const SAFE_OP_TYPES = new Set<ChangeOp["type"]>(["add_shopping", "add_pin", "add_pantry", "use_pantry", "add_wish", "done_entry", "set_dislike"]);
+export const isSafeOp = (op: ChangeOp) => (SAFE_OP_TYPES.has(op.type) && !(op.type === "add_shopping" && op.vorschlag)) || ((op.type === "upsert_entry" || op.type === "upsert_note") && op.isNew);
 
 /** Kurz, was passiert ist – und wo es steht */
 function doneLine(op: ChangeOp): { text: string; href: string | null } | null {
@@ -45,6 +45,8 @@ function doneLine(op: ChangeOp): { text: string; href: string | null } | null {
       return { text: `Wunsch: ${op.dish}`, href: "/?seite=essen" };
     case "done_entry":
       return { text: `${op.title} abgehakt`, href: "/aufgaben" };
+    case "set_dislike":
+      return { text: op.mag ? `${op.who} mag wieder ${op.term}` : `${op.who} mag kein ${op.term}`, href: "/profil/das-moegt-ihr" };
     case "upsert_entry":
       return { text: `${op.entry.data.title} eingetragen`, href: op.entry.typ === "termin" ? `/tag?datum=${op.entry.data.date}` : "/aufgaben" };
     case "upsert_note":

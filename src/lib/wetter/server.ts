@@ -18,7 +18,8 @@ type Scenario = "regen" | "frost" | "heiss" | "klar" | "sturm" | "schnee" | "gew
 const SCENARIOS: Scenario[] = ["regen", "frost", "heiss", "klar", "sturm", "schnee", "gewitter", "wolkig"];
 
 /** Testmodus: feste Wetterlage rund um heute */
-function mockForecast(place: string, scenario: Scenario = "regen", day?: string): Forecast {
+/** Feste Vorhersage (Testmodus, Prüfstand) */
+export function mockForecast(place: string, scenario: Scenario = "regen", day?: string): Forecast {
   const today = day && /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : berlinTime().iso;
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(`${today}T12:00:00Z`);

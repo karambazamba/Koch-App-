@@ -84,12 +84,16 @@ function terminInput(ctx: ToolContext, input: Input, base?: TerminData): TerminD
   const title = input.titel !== undefined ? str(input.titel) : (base?.title ?? "");
   if (!title) return "titel angeben.";
   if (!date) return "datum nicht erkannt – YYYY-MM-DD aus der Datumsliste nehmen.";
-  if (!start) return "start als HH:MM angeben (ohne feste Uhrzeit ist es eine Aufgabe).";
+  // Mehrtägig („vom 9. bis 13. November“): ein ganztägiger Eintrag über alle Tage
+  const until = input.bis_datum !== undefined ? dateFrom(ctx, input.bis_datum) : null;
+  const endDate = until && until > date ? until : base?.endDate;
+  if (!start && !endDate) return "start als HH:MM angeben (ohne feste Uhrzeit ist es eine Aufgabe; mehrtägig: bis_datum).";
   return {
     ...(base ?? { reminder: "aus" as Reminder }),
     title,
     date,
-    start,
+    start: start ?? "",
+    ...(endDate ? { endDate } : {}),
     end: input.ende !== undefined ? timeFrom(input.ende) : base?.end,
     place: input.ort !== undefined ? str(input.ort) || undefined : base?.place,
     label: input.etikett !== undefined ? str(input.etikett) || undefined : base?.label,
@@ -138,6 +142,7 @@ const TERMIN_FIELDS = {
   datum: DATE_PROP,
   start: TIME_PROP,
   ende: TIME_PROP,
+  bis_datum: { ...DATE_PROP, description: "Letzter Tag bei mehrtägigen Terminen ('Klassenfahrt vom 9. bis 13. November') – dann start weglassen (ganztägig über alle Tage, EIN Eintrag)" },
   ort: { type: "string", description: "Ort oder Notiz" },
   etikett: LABEL_PROP,
   raum: ROOM_PROP,
@@ -166,8 +171,8 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
     definition: {
       name: "termin_anlegen",
       description:
-        "Legt einen Termin an (feste Uhrzeit an einem Tag, optional wiederkehrend): 'Morgen um 9 Steuerberater, erinner mich 30 Minuten vorher'. Ohne feste Uhrzeit ist es eine Aufgabe (aufgabe_anlegen).",
-      input_schema: { type: "object", properties: TERMIN_FIELDS, required: ["titel", "datum", "start"], additionalProperties: false },
+        "Legt einen Termin an (feste Uhrzeit an einem Tag, optional wiederkehrend): 'Morgen um 9 Steuerberater, erinner mich 30 Minuten vorher'. Mehrtägig ('Klassenfahrt vom 9. bis 13. November'): datum + bis_datum ohne start = EIN ganztägiger Eintrag. Ohne feste Uhrzeit (und nicht mehrtägig) ist es eine Aufgabe (aufgabe_anlegen).",
+      input_schema: { type: "object", properties: TERMIN_FIELDS, required: ["titel", "datum"], additionalProperties: false },
     },
     run: (ctx, raw) => {
       const input = (raw ?? {}) as Input;

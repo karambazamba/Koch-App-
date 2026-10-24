@@ -30,7 +30,7 @@ function proposeNote(ctx: ToolContext, note: Note, isNew: boolean, change?: stri
 
 const shortList = (lines: string[]) => lines.map((l) => (l.length > 40 ? `${l.slice(0, 38)}…` : l)).join(", ");
 
-export const NOTE_TOOLS: BegleitungTool[] = [
+const TOOLS: BegleitungTool[] = [
   {
     area: "alltag",
     definition: {
@@ -297,3 +297,13 @@ export const NOTE_TOOLS: BegleitungTool[] = [
     },
   },
 ];
+
+/** Schreibende Notiz-Werkzeuge: nie in den ausgeblendeten Baustein „Notizen“ schreiben (Launch 1.0) */
+const SCHREIBT_NOTIZ = new Set(["schnellnotiz_schreiben", "schnellnotiz_aufraeumen", "notiz_anlegen", "notiz_aendern", "liste_eintrag_hinzufuegen", "notiz_anheften"]);
+export const NOTIZEN_AUS =
+  "Notizen gibt es in dieser Version noch nicht. Ideen und Dinge zum Festhalten als Aufgabe ohne Tag anlegen (aufgabe_anlegen, passendes Etikett, z. B. Freizeit) und höchstens eine Frage nach dem Tag stellen; sonst „Kann ich noch nicht.“";
+
+export const NOTE_TOOLS: BegleitungTool[] = TOOLS.map((tool) =>
+  SCHREIBT_NOTIZ.has(tool.definition.name) ? { ...tool, run: (ctx, raw) => (ctx.data.features?.includes("notizen") ? tool.run(ctx, raw) : fail(NOTIZEN_AUS)) } : tool,
+);
+

@@ -48,7 +48,7 @@ type EngineEvents = { onText?: (delta: string) => void; onRound?: () => void };
 
 export class AssistantInputError extends Error {}
 
-const OP_TYPES = new Set(["add_timer", "stop_timer", "stopwatch", "cook_step", "start_cooking", "set_jetzt", "set_household", "add_training", "set_sport_goal", "add_pin", "set_schnellnotiz", "upsert_note", "remove_note", "set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last", "set_persons", "set_pause", "app_command", "set_feature"]);
+const OP_TYPES = new Set(["add_timer", "stop_timer", "stopwatch", "cook_step", "start_cooking", "set_jetzt", "set_household", "set_dislike", "add_training", "set_sport_goal", "add_pin", "set_schnellnotiz", "upsert_note", "remove_note", "set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last", "set_persons", "set_pause", "app_command", "set_feature"]);
 
 /** Anfrage prüfen und auf das Nötige kürzen */
 export function parseRequest(body: unknown): AssistantRequest {
@@ -233,8 +233,12 @@ const HEDGE = /(nicht sicher|weiß ich nicht|kann ich (leider )?nicht|leider|kei
 /** Wochencheck (App schickt „[Wochencheck] …“): großes Modell, mehr Ausgabe */
 export const isWeekCheck = (req: Pick<AssistantRequest, "messages">) => (req.messages[req.messages.length - 1]?.text ?? "").startsWith("[Wochencheck]");
 
-/** Planen, Rezepte, Mails, mehrere Dinge auf einmal → gleich das große Modell */
-const LARGE_TOPICS = /\b(woche\w*|wochenplan|planen?|plan\b|rezept\w*|mail\w*|e-mail|antworte|schreib (eine|dem|der|den|an)|vorschl\w*|ideen für|kochen wir|was koche|essensplan|trainings?\s*plan|trainings planen|räum\w* .*auf|aufräumen)\b/i;
+/**
+ * Planen, Rezepte, Mails, mehrere Dinge auf einmal → gleich das große Modell.
+ * „Woche“ allein nicht (Fehler: „Mittwoch nächste Woche um 14 Uhr …“ ging
+ * immer zum großen Modell) – nur Wochenplan/Wochencheck/planen.
+ */
+const LARGE_TOPICS = /\b(wochenplan\w*|wochencheck|planen?|plan\b|rezept\w*|mail\w*|e-mail|antworte|schreib (eine|dem|der|den|an)|vorschl\w*|ideen für|kochen wir|was koche|essensplan|trainings?\s*plan|trainings planen|räum\w* .*auf|aufräumen)\b/i;
 
 /** Ruft das kleine Modell eines dieser Werkzeuge auf, übernimmt das große */
 const LARGE_TOOLS = new Set(["rezept_erstellen", "mail_entwurf", "wochenplan_aendern", "vorgaben_aendern", "trainings_planen", "schnellnotiz_aufraeumen", "kochbuch_durchsuchen", "antwort_knoepfe"]);
@@ -252,7 +256,9 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
 
   // Wetterfragen: Vorhersage vorab holen (Werkzeuge laufen synchron; 30 Min zwischengespeichert)
   const lastText = req.messages[req.messages.length - 1]?.text ?? "";
-  const forecast = WEATHER_QUESTION.test(lastText) || TRAINING_PLAN.test(lastText) ? await fetchForecast(req.data.wetterOrt || "Eutin", undefined, req.today).catch(() => null) : undefined;
+  const wantsWeather = WEATHER_QUESTION.test(lastText) || TRAINING_PLAN.test(lastText);
+  // Prüfstand: feste Test-Vorhersage (kein Abruf für ein vergangenes Datum)
+  const forecast = !wantsWeather ? undefined : req.forecast !== undefined ? req.forecast : await fetchForecast(req.data.wetterOrt || "Eutin", undefined, req.today).catch(() => null);
   // Fragen nach Tipps aus der Region: Tipps im Umkreis vorab holen (nur mit laufender Quelle)
   const regionTips = tipsMode() !== "off" && tipQuestion(lastText, req.today) ? await tipsNear({ ort: req.data.tippOrt || req.data.wetterOrt || "Eutin", km: req.data.tippKm ?? 20, von: req.today, bis: plusDays(req.today, 20), today: req.today }).then((r) => (r.ort ? r.tips : null)).catch(() => null) : undefined;
 

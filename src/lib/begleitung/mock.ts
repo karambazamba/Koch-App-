@@ -466,7 +466,7 @@ function mockModel(): CreateMessage {
     const portions = prevUses.find((u) => u.name === "portionen_anpassen");
     if (portions) {
       const content = String(resultFor("portionen_anpassen") ?? "");
-      return text(content.startsWith("Vorgemerkt") ? `Klar! ${content.replace(/^Vorgemerkt: /, "")} Tipp unten auf Übernehmen. (Testmodus)` : `${content} (Testmodus)`);
+      return text(content.startsWith("Vorgemerkt") ? `Klar! ${content.replace(/^Vorgemerkt: /, "")} (Testmodus)` : `${content} (Testmodus)`);
     }
     if (prevUses.some((u) => u.name === "app_befehl")) return text("Steht unten bereit. (Testmodus)");
 
@@ -486,8 +486,8 @@ function mockModel(): CreateMessage {
       const content = String(resultFor(day.name) ?? "");
       if (/^(timer_stellen|timer_stoppen|stoppuhr|kochen_starten|kochschritt|timer_status|sport_statistik)$/.test(day.name)) return text(`${content.replace(/^Läuft gleich \(die App startet ihn sofort\): /, "Läuft: ")} (Testmodus)`);
       if (day.name === "haushalt_vorstellen") return text(`Schön, euch kennenzulernen! ${content.replace(/^Vorgemerkt[^:]*: /, "").replace(/\. Antworte.*$/, "")} – tipp unten auf Übernehmen. (Testmodus)`);
-      if (day.name === "assistent_anpassen") return text(`${content.replace(/^Vorgemerkt[^:]*: /, "")} Tipp unten auf Übernehmen. (Testmodus)`);
-      return text(`${content.replace(/^Vorgemerkt[^:]*: /, "Klar: ")} Tipp unten auf Übernehmen. (Testmodus)`);
+      if (day.name === "assistent_anpassen") return text(`${content.replace(/^Vorgemerkt[^:]*: /, "")} (Testmodus)`);
+      return text(`${content.replace(/^Vorgemerkt[^:]*: /, "Klar: ")} (Testmodus)`);
     }
 
     // Tipps gelesen → kurz, ehrlich, mit Frage
