@@ -6,16 +6,18 @@
 // gekauft. Tippen = gekauft, lange drücken = bearbeiten. Unten der große
 // Knopf „Mehr hinzufügen“ (Katalog mit Suche und Mikro).
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, PenLine, Plus, Repeat, Share2, ShoppingBasket } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD, CARD_LIST, ICON_BUTTON, PAGE_MAIN, SECTION_TITLE, buttonClass, chipClass } from "@/components/ui/styles";
 import {
+  addManualItem,
   carryOverManual,
   dueStaples,
   removeManualItem,
   renameItem,
+  sectionFor,
   setHave,
   setItemShop,
   shoppingListText,
@@ -39,6 +41,8 @@ import { showDeleted } from "@/lib/core/toast";
 import { helperName } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { buzz } from "@/components/heute/actions";
+import { plusFromLink } from "@/lib/einkauf/unterwegs/unterwegs";
+import { showToast } from "@/lib/core/toast";
 
 const SKELETON = <div className={`${CARD} m-4 h-64 animate-pulse`} />;
 
@@ -68,6 +72,19 @@ export function ShoppingListView() {
   useEffect(() => {
     if (carryWeek) carryOverManual(carryWeek);
   }, [carryWeek]);
+  // Schnellknopf „+ Butter“ aus der Mitteilung (Einkauf unterwegs): einmal draufsetzen
+  const plusDone = useRef(false);
+  const plusWeek = data?.weekStart;
+  useEffect(() => {
+    if (!data || plusDone.current) return;
+    plusDone.current = true;
+    const plus = plusFromLink(window.location.search, data.list.items);
+    if (!plus) return;
+    if (!plus.already) addManualItem(data.weekStart, { name: plus.name, amount: "", section: sectionFor(plus.name) });
+    showToast({ text: `${plus.name} steht auf der Liste.` });
+    router.replace("/einkaufsliste");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- nur einmal, sobald die Liste da ist
+  }, [plusWeek]);
 
   if (!data || !today) return SKELETON;
   const { weekStart, isNext, list, weekList, settings } = data;

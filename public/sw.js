@@ -3,7 +3,7 @@
 // CACHE_VERSION bei jeder Auslieferung erhöhen. Eine neue Version wartet, bis
 // man den Hinweis "Neue Version da" antippt (Nachricht "SKIP_WAITING") – nie
 // ein Zwangs-Neuladen mitten im Tippen. Beim allerersten Mal sofort aktiv.
-const CACHE_VERSION = "v132";
+const CACHE_VERSION = "v133";
 // Interner Name (alter Arbeitsname) bleibt, damit alte Caches sauber aufgeräumt werden.
 const CACHE_NAME = `familienkueche-${CACHE_VERSION}`;
 
@@ -151,10 +151,15 @@ self.addEventListener("fetch", (event) => {
 
 // Mitteilungen (Tafel 77): Antippen öffnet genau den Eintrag – ein offenes
 // Fenster der App wird nach vorne geholt, sonst ein neues geöffnet.
+// Schnellknöpfe (Einkauf unterwegs): „+ Butter“ öffnet die Liste mit
+// ?plus=Butter (die Liste setzt es drauf), „Nichts, danke“ schließt nur.
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+  if (event.action === "nichts") return;
   const raw = event.notification.data && event.notification.data.href;
-  const href = typeof raw === "string" && raw.startsWith("/") ? raw : "/";
+  const base = typeof raw === "string" && raw.startsWith("/") ? raw : "/";
+  const plus = typeof event.action === "string" && event.action.startsWith("plus:") ? event.action.slice(5).trim().slice(0, 40) : "";
+  const href = plus ? `/einkaufsliste?plus=${encodeURIComponent(plus)}` : base;
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
       for (const client of list) {
@@ -168,7 +173,7 @@ self.addEventListener("notificationclick", (event) => {
   );
 });
 
-// Web Push vom Server (Erinnerungen, wenn die App zu ist): { title, body, href, tag }
+// Web Push vom Server (Erinnerungen, wenn die App zu ist): { title, body, href, tag, actions? }
 self.addEventListener("push", (event) => {
   let data = {};
   try {
@@ -179,5 +184,6 @@ self.addEventListener("push", (event) => {
   const title = typeof data.title === "string" ? data.title : "Mia";
   const body = typeof data.body === "string" ? data.body : "";
   const href = typeof data.href === "string" && data.href.startsWith("/") ? data.href : "/";
-  event.waitUntil(self.registration.showNotification(title, { body, tag: typeof data.tag === "string" ? data.tag : undefined, icon: data.icon, data: { href } }));
+  const actions = Array.isArray(data.actions) ? data.actions.filter((a) => a && typeof a.action === "string" && typeof a.title === "string").slice(0, 3) : [];
+  event.waitUntil(self.registration.showNotification(title, { body, tag: typeof data.tag === "string" ? data.tag : undefined, icon: data.icon, data: { href }, ...(actions.length ? { actions } : {}) }));
 });

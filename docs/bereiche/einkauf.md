@@ -152,6 +152,23 @@ Einkaufsmodus für den Laden. Immer sichtbar (kein Baustein).
 - **Kachel auf Heute**: S bis zu 3 Läden als Zeilen (Farbpunkt, Name,
   Artikel), ohne Läden 3 Sachen + „und N weitere“; M 6, L 10 zum Abhaken.
   Jetzt-Karte 15:00–19:30: „Auf dem Heimweg? 3 Sachen bei REWE“ → Einkaufsmodus.
+- **Familie Bescheid sagen** (Einkauf Teil 6, `src/lib/einkauf/unterwegs/`,
+  `components/einkauf/unterwegs/BescheidAsk.tsx`): nur mit Konto. Beim ersten
+  Einkaufsmodus einmal „Familie Bescheid sagen?“ [Ja, immer] [Nein] – gemerkt
+  pro Gerät (`wasgibts.einkaufbescheid`), änderbar in Einstellungen →
+  Mitteilungen („Familie beim Einkaufen Bescheid sagen“). Bei „Ja“ wird der
+  Einkauf geteilt (`wasgibts.einkaufswege`, Abgleich-Typ `unterwegs`, Doc
+  `uw:<id>`, 2 Tage, nicht in der Sicherung): Laden, Name, Start und die 2
+  häufigsten fälligen Stammartikel (`tripSuggestions`). Der Server schickt den
+  anderen „Felix ist gleich bei REWE. Braucht ihr noch was?“ mit Knöpfen
+  „+ Butter“, „+ Kaffee“, „Nichts, danke“ (Service Worker →
+  `/einkaufsliste?plus=Butter`, die Liste setzt es still drauf:
+  `plusFromLink`). Neues von anderen während des Einkaufs steht gelb mit „Neu
+  von Lisa · gerade eben“ (`newDuringTrip`: was beim Start noch nicht auf der
+  Liste war). „Fertig eingekauft“ meldet „Eingekauft ✓ – 9 Sachen bei REWE“
+  (`boughtCount`). Nur 7–20 Uhr, nie in der Pause; zählt nicht als proaktive
+  Mitteilung. Auf der Jetzt-Karte der anderen leise „Felix ist gleich bei
+  REWE“ (`newsFromDocs`).
 
 ## Begleitung (Mia)
 
@@ -181,5 +198,11 @@ Einkaufsmodus für den Laden. Immer sichtbar (kein Baustein).
 - `tests/einkauf/stammartikel.test.ts` – Rhythmus, fällig, ändern.
 - `tests/einkauf/laeden.test.ts` – Einkaufsmodus, „Ich bin bei REWE“,
   Jetzt-Karte „Auf dem Heimweg?“.
+- `tests/einkauf/unterwegs.test.ts` – Familie Bescheid sagen: Speicher,
+  Schnellknöpfe, Gelb, Texte, Abgleich, Server-Mitteilungen (Ruhezeit,
+  Pause, nicht proaktiv).
+- Durchklick: Ablauf `einkaufUnterwegs` in `e2e/ablaeufe/konten.mjs` (zwei
+  Geräte mit `KONTEN_TEST`: Bescheid sagen → Hinweis bei B, „+ Butter“ →
+  gelb bei A, „Fertig eingekauft“ kommt an).
 - Durchklick: Ablauf `einkauf` in `e2e/ablaeufe/essen.mjs` (Milch, Brot
   eintragen, abhaken → „Erledigte anzeigen“).

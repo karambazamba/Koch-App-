@@ -8,6 +8,9 @@
 //   in der Ruhezeit (außer Pause und „Ruhe nach Feierabend“ für Arbeit).
 // - Pinnwand und Abgeben sind proaktiv: höchstens 1 am Tag, nicht 20–7 Uhr,
 //   nie in der Pause, nie für eigene Einträge.
+// - Einkauf unterwegs (Einkauf Teil 6): „Felix ist gleich bei REWE“ mit
+//   Schnellknöpfen und „Eingekauft ✓“ – vom Menschen ausgelöst, zählt also
+//   nicht als proaktiv, aber nur 7–20 Uhr und nie in der Pause.
 // - Nie doppelt (Schlüssel je Abo, `push_gesendet`).
 
 import { pushAllowed } from "@/lib/heute/push";
@@ -16,6 +19,7 @@ import { dueNow, pauseOn, type ReminderMoment } from "@/lib/heute/mitteilungen/e
 import type { CalendarEntry } from "@/lib/kalender/model";
 import type { NotifyKind } from "@/lib/heute/mitteilungen/einstellungen";
 import { helperName } from "@/lib/einstellungen/profile";
+import { endText, startText } from "@/lib/einkauf/unterwegs/unterwegs";
 
 /** Eine Zeile aus `entries` (so wie der Server sie liest) */
 export type PushEntryRow = { household_id: string; id: string; typ: string; raum: string; besitzer: string; erstellt: string; geaendert: string; data: unknown };
@@ -31,7 +35,10 @@ export type AboSettings = {
 
 export type PushAbo = { id: string; user_id: string; household_id: string | null; settings: AboSettings };
 
-export type PushMessage = { aboId: string; key: string; payload: { title: string; body: string; href: string; tag: string } };
+/** Schnellknopf in der Mitteilung („plus:Butter“, „nichts“) */
+type PushAction = { action: string; title: string };
+
+export type PushMessage = { aboId: string; key: string; payload: { title: string; body: string; href: string; tag: string; actions?: PushAction[] } };
 
 const isObj = (v: unknown): v is Record<string, unknown> => Boolean(v) && typeof v === "object" && !Array.isArray(v);
 const kindOn = (s: AboSettings, k: NotifyKind) => s.kinds?.[k] ?? k !== "morgen";
@@ -71,6 +78,30 @@ function freshFromOthers(rows: PushEntryRow[], userId: string, nowMs: number, si
   return out;
 }
 
+/** Wie lange eine Einkaufs-Mitteilung noch frisch ist */
+const TRIP_FRESH_MS = 10 * 60_000;
+
+/** Einkauf unterwegs von anderen: Start (mit Schnellknöpfen) bzw. Ende */
+function tripMessages(rows: PushEntryRow[], userId: string, nowMs: number): { key: string; body: string; href: string; actions?: PushAction[] }[] {
+  const out: { key: string; body: string; href: string; actions?: PushAction[] }[] = [];
+  for (const r of rows) {
+    if (r.typ !== "unterwegs" || r.besitzer === userId || !isObj(r.data)) continue;
+    const d = r.data;
+    const trip = { by: typeof d.by === "string" ? d.by : "", shop: typeof d.shop === "string" ? d.shop : "", count: typeof d.count === "number" ? d.count : null };
+    if (!trip.shop) continue;
+    const end = typeof d.end === "string" ? Date.parse(d.end) : NaN;
+    const start = typeof d.start === "string" ? Date.parse(d.start) : NaN;
+    if (!Number.isNaN(end)) {
+      if (nowMs - end <= TRIP_FRESH_MS) out.push({ key: `unterwegs:${r.id}:ende`, body: endText(trip), href: "/einkaufsliste" });
+    } else if (nowMs - start <= TRIP_FRESH_MS) {
+      const names = (Array.isArray(d.vorschlaege) ? d.vorschlaege : []).filter((s): s is string => typeof s === "string" && s.trim() !== "").slice(0, 2);
+      const actions = [...names.map((n) => ({ action: `plus:${n.trim()}`, title: `+ ${n.trim()}` })), { action: "nichts", title: "Nichts, danke" }];
+      out.push({ key: `unterwegs:${r.id}:start`, body: startText(trip), href: "/einkaufsliste", actions });
+    }
+  }
+  return out;
+}
+
 /**
  * Was jetzt rausgeht. `sent` = schon gesendete Schlüssel je Abo; `proactiveToday`
  * = Abos, die heute schon eine proaktive Mitteilung hatten.
@@ -99,6 +130,12 @@ export function planPushes(input: {
         if (input.sent.has(`${abo.id}|${key}`)) continue;
         if (!pushAllowed({ kind: m.kind, minutes: input.minute, routine, workEnd: null, paused: false, proactiveSentToday: false })) continue;
         out.push({ aboId: abo.id, key, payload: { title, body: m.body, href: m.href, tag: `erinnerung:${m.key}` } });
+      }
+    }
+    if (kindOn(s, "einkauf") && input.minute >= 7 * 60 && input.minute < 20 * 60) {
+      for (const t of tripMessages(rows, abo.user_id, input.nowMs)) {
+        if (input.sent.has(`${abo.id}|${t.key}`)) continue;
+        out.push({ aboId: abo.id, key: t.key, payload: { title, body: t.body, href: t.href, tag: t.key.replace(/:(start|ende)$/, ""), ...(t.actions ? { actions: t.actions } : {}) } });
       }
     }
     if (input.proactiveToday.has(abo.id)) continue;

@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     const abos = (await rest<Abo[]>("push_abos?select=id,user_id,household_id,settings,endpoint,p256dh,auth&household_id=not.is.null")).data ?? [];
     if (!abos.length) return Response.json({ sent: 0 });
     const households = [...new Set(abos.map((a) => a.household_id))].join(",");
-    const rows = (await rest<PushEntryRow[]>(`entries?select=household_id,id,typ,raum,besitzer,erstellt,geaendert,data&geloescht=eq.false&typ=in.(termin,aufgabe,pinnwand,memo)&household_id=in.(${households})`)).data ?? [];
+    const rows = (await rest<PushEntryRow[]>(`entries?select=household_id,id,typ,raum,besitzer,erstellt,geaendert,data&geloescht=eq.false&typ=in.(termin,aufgabe,pinnwand,memo,unterwegs)&household_id=in.(${households})`)).data ?? [];
     const since = new Date(now().getTime() - 2 * 86_400_000).toISOString();
     const sentRows = (await rest<{ abo_id: string; key: string }[]>(`push_gesendet?select=abo_id,key&sent_at=gte.${since}`)).data ?? [];
     const t = berlinTime();

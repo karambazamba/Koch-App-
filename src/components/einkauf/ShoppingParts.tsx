@@ -24,11 +24,14 @@ export function ItemContent({
   onToggle,
   onInfo,
   infoOpen,
+  neuVon,
 }: {
   item: ListItem;
   onToggle: () => void;
   onInfo: () => void;
   infoOpen: boolean;
+  /** Während des Einkaufs von jemand anderem dazugesetzt (Name, "" = unbekannt) */
+  neuVon?: string;
 }) {
   return (
     <>
@@ -63,7 +66,7 @@ export function ItemContent({
             <Info className="h-4 w-4" strokeWidth={2} aria-hidden />
           </button>
         )}
-        {!item.checked && <AddedBy owner={item.von} />}
+        {!item.checked && (neuVon !== undefined ? <span className="shrink-0 text-sm font-semibold text-warn-ink">{neuVon ? `Neu von ${neuVon}` : "Neu"} · gerade eben</span> : <AddedBy owner={item.von} />)}
         <span className={`shrink-0 text-right text-sm tabular-nums ${item.checked ? "text-faint line-through" : "text-muted"}`}>
           {item.amount}
         </span>

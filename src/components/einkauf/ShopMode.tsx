@@ -5,8 +5,11 @@
 // und eingeklappt die anderen Läden. Bildschirm bleibt an. Wird hier etwas
 // ohne Laden abgehakt, merkt sich die Liste den Laden dafür (Lernen) – leise,
 // zurück mit „Mach das rückgängig“. Fertig = eine Ebene zurück.
+// Mit Konto (Einkauf Teil 6): einmal fragen „Familie Bescheid sagen?“; bei
+// „Ja, immer“ wird der Einkauf geteilt, Neues von anderen erscheint gelb,
+// „Fertig eingekauft“ meldet „Eingekauft ✓“ an den Haushalt.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Check, ChevronDown, ShoppingBag, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -20,6 +23,14 @@ import { useWakeLock } from "@/lib/core/wakeLock";
 import { useGoBack } from "@/lib/core/useGoBack";
 import { pushUndo } from "@/lib/core/undo";
 import { ItemContent } from "@/components/einkauf/ShoppingParts";
+import { BescheidAsk } from "@/components/einkauf/unterwegs/BescheidAsk";
+import { now, nowIso } from "@/lib/core/now";
+import { dueStaples } from "@/lib/einkauf/staples";
+import { newId } from "@/lib/einkauf/listModel";
+import { addTrip, boughtCount, changeBescheid, changeTrips, finishTrip, loadBescheid, newDuringTrip, sameTrip, tripSuggestions, useBescheid } from "@/lib/einkauf/unterwegs/unterwegs";
+import { cloudSync, useCachedAccount } from "@/lib/konten/cache";
+import { refreshAccount } from "@/lib/konten/account";
+import { addedBy } from "@/lib/konten/wer";
 
 export function ShopMode() {
   const params = useSearchParams();
@@ -31,10 +42,51 @@ export function ShopMode() {
   const [othersOpen, setOthersOpen] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
   useWakeLock(Boolean(shop));
+  const { household } = useCachedAccount();
+  const bescheid = useBescheid();
+  const started = useRef(false);
+  // Nur mit Konto; Mitglieder frisch holen (für „Neu von Lisa“)
+  const family = household;
+  useEffect(() => {
+    if (cloudSync()) void refreshAccount();
+  }, []);
+
+  // Einkauf auf diesem Gerät beginnen (einmal je Laden, 3 Std.) – mit Familie teilen, wenn gewünscht
+  const share = () => {
+    if (!data || !family) return;
+    const id = newId();
+    const due = dueStaples(data.settings.staples, data.weekStart, data.list, data.weekList);
+    changeTrips((t) => addTrip(t, { id, shop, by: family.me.displayName, start: nowIso(), end: null, count: null, vorschlaege: tripSuggestions(due) }, now().getTime()));
+    changeBescheid((b) => (b.active ? { ...b, active: { ...b.active, tripId: id } } : b));
+  };
+  const ready = Boolean(data && bescheid && shop);
+  useEffect(() => {
+    if (!ready || !data || started.current) return;
+    started.current = true;
+    const b = loadBescheid();
+    if (sameTrip(b.active, shop, now().getTime())) return;
+    const items = data.list.items;
+    changeBescheid((s) => ({ ...s, active: { tripId: null, shop, since: nowIso(), known: items.map((i) => i.key), doneBefore: items.filter((i) => i.checked).map((i) => i.key) } }));
+    if (family && b.answer === "ja") share();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- nur beim ersten Laden
+  }, [ready]);
 
   if (!data || !today) return <div className={`${CARD} m-4 h-64 animate-pulse`} />;
   const todayIso = toIsoDate(today);
   const lists = shopModeLists(data.list.items, shop);
+  const active = bescheid && sameTrip(bescheid.active, shop, now().getTime()) ? bescheid.active : null;
+  // Die eine Frage – bis sie beantwortet ist (dann merkt das Gerät die Antwort)
+  const ask = Boolean(family && active && bescheid?.answer === null);
+  const fresh = newDuringTrip(data.list.items, active, family?.me.userId ?? null);
+  const finish = () => {
+    if (active?.tripId) {
+      const id = active.tripId;
+      const count = boughtCount(data.list.items, active);
+      changeTrips((t) => finishTrip(t, id, nowIso(), count));
+    }
+    changeBescheid((b) => ({ ...b, active: null }));
+    goBack("/einkaufsliste");
+  };
 
   const tick = (item: ListItem) => {
     toggleChecked(data.weekStart, item, todayIso);
@@ -46,11 +98,14 @@ export function ShopMode() {
     }
   };
 
-  const row = (item: ListItem) => (
-    <li key={item.key}>
-      <ItemContent item={item} onToggle={() => tick(item)} onInfo={() => setInfo(info === item.key ? null : item.key)} infoOpen={info === item.key} />
-    </li>
-  );
+  const row = (item: ListItem) => {
+    const neu = fresh.has(item.key) ? (addedBy(item.von, family?.members ?? [], family?.me.userId ?? null)?.name ?? "") : undefined;
+    return (
+      <li key={item.key} className={neu !== undefined ? "bg-warn-soft" : undefined} data-neu={neu !== undefined ? "" : undefined}>
+        <ItemContent item={item} onToggle={() => tick(item)} onInfo={() => setInfo(info === item.key ? null : item.key)} infoOpen={info === item.key} neuVon={neu} />
+      </li>
+    );
+  };
 
   const nothingHere = !lists.here.length && !lists.anywhere.length;
   return (
@@ -59,7 +114,7 @@ export function ShopMode() {
       <main className={PAGE_MAIN}>
         <p className="flex items-center gap-2 px-1 text-sm text-muted">
           <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: `var(--app-shop-${shopTone(shop)})` }} aria-hidden />
-          Der Bildschirm bleibt an, solange du einkaufst.
+          {active?.tripId ? "Die Familie weiß Bescheid. Der Bildschirm bleibt an." : "Der Bildschirm bleibt an, solange du einkaufst."}
         </p>
 
         {lists.here.length > 0 && (
@@ -124,10 +179,18 @@ export function ShopMode() {
           </section>
         )}
 
-        <button type="button" onClick={() => goBack("/einkaufsliste")} className={`${buttonClass("primary", "lg")} w-full`}>
-          Fertig
+        <button type="button" onClick={finish} className={`${buttonClass("primary", "lg")} w-full`}>
+          {active?.tripId ? "Fertig eingekauft" : "Fertig"}
         </button>
       </main>
+      {ask && (
+        <BescheidAsk
+          shop={shop}
+          onClose={(yes) => {
+            if (yes) share();
+          }}
+        />
+      )}
     </div>
   );
 }
