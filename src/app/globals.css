@@ -1086,6 +1086,17 @@ body {
 .mia-wellen.ruhig { border-width: 2px; animation-duration: 4.4s; opacity: .6; }
 .mia-wellen.zwei.ruhig { animation-delay: 2.2s; }
 .mia-zwinkern .av-eyes rect:last-of-type { transform-box: fill-box; transform-origin: center; animation: mia-zwinker 5s ease-in-out 2s infinite; }
+/* Erster Start, Bildschirm 3 und der Mia-Knopf beim ersten Erscheinen: genau EIN Zwinkern */
+@keyframes mia-zwinker-1 { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(.12); } }
+.mia-zwinkern-einmal .av-eyes rect:last-of-type { transform-box: fill-box; transform-origin: center; animation: mia-zwinker-1 .5s ease-in-out .9s 1 both; }
+/* Erster Start: weiches Überblenden zwischen den Schritten (1 s) */
+@keyframes erster-start-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.erster-start-in { animation: erster-start-in 1s var(--mia-ease) both; }
+@media (prefers-reduced-motion: reduce) {
+  .mia-zwinkern-einmal .av-eyes rect:last-of-type { animation: none; }
+  .erster-start-in { animation: erster-start-fade 1s ease both; }
+}
+@keyframes erster-start-fade { from { opacity: 0; } to { opacity: 1; } }
 .mia-tonwelle { display: flex; height: 22px; align-items: center; gap: 4px; }
 .mia-tonwelle > span { display: block; width: 4px; height: 22px; border-radius: 9999px; background: var(--app-accent); transform-origin: center; animation: mia-ton .9s ease-in-out infinite; }
 .mia-geist-schleier { animation: mia-aus .8s var(--mia-ease) both; }

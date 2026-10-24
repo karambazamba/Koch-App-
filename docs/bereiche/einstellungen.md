@@ -181,11 +181,13 @@ anfangen).
 
 ### Erster Start
 
-- „Los geht’s“ → EIN Bildschirm „Wie magst du’s?“ (`LookStep`, „Jederzeit
-  änderbar.“, Farbig vorausgewählt, Antippen zeigt die Wahl sofort, „Weiter“
-  und leise „Überspringen“) → `startFresh(look)`: `startState()` (Mia,
-  Termine/Essen/Einkauf, „mal so, mal so“), Profil daraus mit dem Look,
-  `DEFAULT_HOME`, `startDemo()`. Sonst keine Fragen.
+- Seit v0.94 keine Look-Frage mehr: „Los geht’s“ → („Bevor’s losgeht“) →
+  „Zeig mal“ (`ZeigMalStep`) → `startFresh("farbig")`: `startState()` (Mia,
+  Termine/Essen/Einkauf, „mal so, mal so“), Profil daraus, `DEFAULT_HOME`,
+  `startDemo()`. Sonst keine Fragen.
+- „Lieber schlicht?“ (Farbig · Schlicht): einmal ab dem 3. Tag, nur im Look
+  Farbig, im Platz der Hinweise unter der Jetzt-Karte (`DarkTip`, Merker
+  `look` in `wasgibts.dunkeltipp`); erst danach der Dunkel-Tipp, nie beide.
 
 ## Begleitung (Mia)
 

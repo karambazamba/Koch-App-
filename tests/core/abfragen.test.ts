@@ -87,7 +87,7 @@ describe("Gespeicherte Merker, wie die Oberfläche sie sieht", () => {
     expect(hints.useHintSeen("kachel-hinzufuegen")).toBe(true);
     expect(dark.useDarkTip()).toBeNull();
     dark.noteDarkTipStart("2026-10-20");
-    expect(dark.useDarkTip()).toEqual({ version: 1, since: "2026-10-20", done: false });
+    expect(dark.useDarkTip()).toEqual({ version: 1, since: "2026-10-20", done: false, look: false });
     expect(demo.useDemo()).toBeNull();
     demo.startDemo();
     expect(demo.useDemo()?.done).toEqual(["beispiel:a1"]);

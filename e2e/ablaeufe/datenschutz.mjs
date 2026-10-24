@@ -121,7 +121,7 @@ export const vorDemStart = async (page, check, device) => {
     check(await fresh.locator("[data-zustimmung]").getByRole("link", { name: "Nutzungsbedingungen" }).isVisible(), "Link Nutzungsbedingungen sichtbar");
     await fresh.getByText(/^Ich akzeptiere die/).click();
     await weiter.click();
-    check(await fresh.getByRole("heading", { name: "Wie magst du’s?" }).waitFor({ timeout: 5000 }).then(() => true, () => false), "mit Häkchen weiter zur Look-Frage");
+    check(await fresh.getByRole("button", { name: "Zeig mal" }).waitFor({ timeout: 5000 }).then(() => true, () => false), "mit Häkchen weiter zu „Zeig mal“");
     const stand = await fresh.evaluate(() => JSON.parse(localStorage.getItem("wasgibts.einwilligungen") ?? "null")?.arten?.bedingungen);
     check(stand?.ja === true && stand.version >= 1 && typeof stand.at === "string", "Fassung und Zeit gespeichert");
   } finally {

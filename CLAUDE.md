@@ -48,11 +48,13 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   die Anordnung; Ruhe nach Feierabend ist ein eigener Schalter.
 - Gesten: Tippen = Eintrag öffnen, lange Drücken = Startseite bearbeiten,
   Wischen = Seite wechseln.
-- Erster Start = ruhiger Hallo-Bildschirm („Moin, ich bin Mia.“, „Los
-  geht’s“), dann „Bevor’s losgeht“ (Zustimmung zu Bedingungen und
-  Datenschutz, Pflicht für alle, `ZustimmungGate`), danach höchstens EINE
-  Frage (Look „Farbig“/„Schlicht“) mit Standard und Überspringen, dann die
-  Startseite mit Beispiel-Tag.
+- Erster Start = höchstens 3 Bildschirme vor der App, jeder mit genau 1
+  Knopf: Hallo („Moin, ich bin Mia.“ → „Los geht’s“), „Bevor’s losgeht“
+  (Zustimmung, Pflicht für alle, `ZustimmungGate`) und „Zeig mal“ (Mia sagt,
+  wie’s losgeht, `ZeigMalStep`, nur beim allerersten Start), dann die
+  Startseite mit Beispiel-Tag. Zurück-Geste = ein Schritt zurück. Keine
+  Look-Frage: Standard „Farbig“, nach 3 Tagen einmal „Lieber schlicht?“ als
+  Hinweis, sonst Einstellungen → Aussehen.
 - Rückgängig nur bei echtem Löschen („Gelöscht · Rückgängig“, 3 s) und in der
   Schnelleingabe („Eingetragen: … · Rückgängig“); sonst meldet sich
   Hinzufügen still. Typografischer Apostroph überall („Was gibt’s?“).

@@ -11,6 +11,7 @@
 import { useEffect, useRef, useState } from "react";
 import { wakeAvatar } from "@/lib/core/avatarState";
 import { markHintSeen, useHintSeen } from "@/lib/core/hints";
+import { seitErsterStart } from "@/lib/core/hello";
 import { openHelper, releaseHelperVoice } from "@/lib/begleitung/open";
 import { knopfAway, REST_MS } from "@/lib/begleitung/knopfScroll";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
@@ -42,8 +43,26 @@ function useScrollAway(): boolean {
   return away;
 }
 
+/** Nach „Zeig mal“: einmal zwinkern beim ersten Erscheinen, den Hinweis erst nach ein paar ruhigen Sekunden */
+const ERSTER_START_RUHE_MS = 4000;
+
+function useErsterStart() {
+  const [state] = useState(() => {
+    const seit = seitErsterStart();
+    return { zwinkern: seit !== null && seit < 10_000, warten: seit === null ? 0 : Math.max(0, ERSTER_START_RUHE_MS - seit) };
+  });
+  const [ruhig, setRuhig] = useState(state.warten > 0);
+  useEffect(() => {
+    if (!state.warten) return;
+    const t = setTimeout(() => setRuhig(false), state.warten);
+    return () => clearTimeout(t);
+  }, [state.warten]);
+  return { zwinkern: state.zwinkern, ruhig };
+}
+
 export function MiaButton({ name }: { name: string }) {
-  const hint = useHintSeen("mia-knopf") === false;
+  const erster = useErsterStart();
+  const hint = useHintSeen("mia-knopf") === false && !erster.ruhig;
   const press = useRef<{ timer: ReturnType<typeof setTimeout>; long: boolean } | null>(null);
   const away = useScrollAway();
   const look = useMiaLook();
@@ -94,7 +113,7 @@ export function MiaButton({ name }: { name: string }) {
             openHelper();
           }}
           aria-label={`Sag ${name}, was ansteht … (${name} holen)`}
-          className="mia-knopf flex h-[72px] w-[72px] items-center justify-center rounded-full select-none"
+          className={`mia-knopf flex h-[72px] w-[72px] items-center justify-center rounded-full select-none ${erster.zwinkern ? "mia-zwinkern-einmal" : ""}`}
           data-mia-knopf
           data-moment={moment ?? undefined}
         >

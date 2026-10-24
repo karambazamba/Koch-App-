@@ -134,11 +134,11 @@ for (const device of DEVICES) {
     await first.goto(BASE);
     await first.waitForTimeout(1200);
     await first.screenshot({ path: `${dir}/hallo-${tag}.png` });
-    // Die eine Frage nach „Los geht’s“: der Look
+    // Bildschirm 3 nach „Los geht’s“: Mia sagt, wie’s losgeht
     await first.getByRole("button", { name: "Los geht’s" }).click();
-    await first.getByRole("heading", { name: "Wie magst du’s?" }).waitFor();
-    await first.waitForTimeout(700);
-    await first.screenshot({ path: `${dir}/look-wahl-${tag}.png` });
+    await first.getByRole("button", { name: "Zeig mal" }).waitFor();
+    await first.waitForTimeout(1500);
+    await first.screenshot({ path: `${dir}/zeig-mal-${tag}.png` });
     n++;
     await hello(first);
     await settle(first);

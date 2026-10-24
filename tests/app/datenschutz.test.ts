@@ -95,7 +95,7 @@ describe("Seiten Datenschutz, Impressum, Nutzungsbedingungen", () => {
     expect(VOR_DEM_START.saetze).toHaveLength(3);
     expect(VOR_DEM_START.haken).toBe("Ich akzeptiere die Nutzungsbedingungen und habe die Datenschutzerklärung gelesen.");
     expect(readFileSync("src/app/layout.tsx", "utf8")).toContain("<ZustimmungGate />");
-    expect(readFileSync("src/components/begleitung/HelloScreen.tsx", "utf8")).toMatch(/einwilligungErteilt\("bedingungen"\) \? setAsking\(true\) : setZustimmen\(true\)/);
+    expect(readFileSync("src/components/begleitung/HelloScreen.tsx", "utf8")).toMatch(/weiterZu\(einwilligungErteilt\("bedingungen"\) \? "zeigmal" : "zustimmung"\)/);
   });
 
   it("Seiten gibt es", () => {

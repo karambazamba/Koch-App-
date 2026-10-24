@@ -215,9 +215,14 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 ### Beispiel-Tag und erster Start
 - Erster Start ohne Profil: Hallo-Bildschirm („Moin!“, früher „Hallo, ich bin Mia.“ aus
   `DEFAULT_HELPER`, „Ich behalte euren Alltag im Blick.“, Mikrofon-Hinweis,
-  „Los geht’s“, „Ich habe eine Sicherung“). „Los geht’s“ → „Wie magst du’s?“
-  (Look, siehe einstellungen.md) → `startFresh(look)`:
-  Standardwerte, `DEFAULT_HOME`, `startDemo()`; der Avatar fliegt in die Jetzt-Karte.
+  „Los geht’s“, „Ich habe eine Sicherung“). Seit v0.94: „Los geht’s“ →
+  („Bevor’s losgeht“) → „Zeig mal“ (Mia 110 px zwinkert einmal, Sprechblase
+  „Kein Stress. Ich zeig dir alles Stück für Stück.“ mit drei Zeilen, Texte
+  `ERSTER_START` in `mia/persona.ts`) → `startFresh("farbig")`: Standardwerte,
+  `DEFAULT_HOME`, `startDemo()`; Mia fliegt von „Zeig mal“ zum Mia-Knopf, der
+  beim ersten Erscheinen einmal zwinkert; „Tippen & sprechen“ erst nach 4 s.
+  Jeder Schritt ist ein Verlaufseintrag (Zurück = ein Schritt), nach „Zeig
+  mal“ werden die Schritte aus dem Verlauf genommen.
 - Beispiele liegen nie in echten Speichern. Termine aus `DEMO_DAY` (echte
   Termine statt Mahlzeiten: 8:00 Kita bringen, 10:30 Telefonat Versicherung,
   15:00 Mathis Fußball, 16:00 Zahnarzt Jonne, 19:30 Elternabend, 20:15
