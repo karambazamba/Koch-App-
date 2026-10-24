@@ -2312,3 +2312,9 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Unten kein kleines Logo mehr (die große Mia reicht): mittig „Gemacht in
   Eutin von KARAMBA Eis“, darunter leiser „Datenschutz · Impressum“.
 - Untertitel kürzer: „Erzähl einfach, was ansteht. / Ich sortier das.“
+
+## Mia stellt sich vor (v0.92.0)
+- Hallo-Bildschirm: „Moin, ich bin Mia.“ statt „Moin!“, der Name (über
+  `helperName()`) in Orange, immer eine Zeile (auch iPhone SE).
+- Regel „nie vorstellen“ mit genau einer Ausnahme: der Hallo-Bildschirm beim
+  allerersten Start (Test in `tests/begleitung/knapp.test.ts`).

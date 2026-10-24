@@ -35,8 +35,11 @@ describe("Nie vorstellen", () => {
     expect(greetingText(15)).toBe("Was steht an?");
   });
 
-  it("Hallo-Bildschirm „Moin!“, Stimmprobe und Vorlese-Probe ohne Vorstellung", () => {
-    expect(readFileSync("src/components/begleitung/HelloScreen.tsx", "utf8")).toMatch(/const title = "Moin!";/);
+  it("Hallo-Bildschirm „Moin, ich bin Mia.“ (einzige Vorstellung, Name über helperName), Stimmprobe und Vorlese-Probe ohne", () => {
+    const hello = readFileSync("src/components/begleitung/HelloScreen.tsx", "utf8");
+    expect(hello).toMatch(/const name = helperName\(\);/);
+    expect(hello).toMatch(/const lead = "Moin, ich bin ";/);
+    expect(hello).toMatch(/const title = `\$\{lead\}\$\{name\}\.`;/);
     expect(readFileSync("src/components/begleitung/VoiceOffer.tsx", "utf8")).toContain("Moin! So klinge ich.");
     expect(readFileSync("src/lib/begleitung/speech.ts", "utf8")).toContain("Moin! So klinge ich.");
     expect(readFileSync("src/components/einstellungen/settings/ReadingView.tsx", "utf8")).toContain("Moin! Heute gibt’s Spaghetti. Um 18:30 ist alles fertig.");
@@ -76,7 +79,8 @@ describe("Feste Mia-Texte", () => {
     for (const f of files) {
       // Regex-Bausteine und das Kontext-Format für die KI zählen nicht als Text
       for (const s of literals(readFileSync(f, "utf8")).filter((x) => !/\(\?<|\\p\{|\[id=/.test(x))) {
-        if (/ich bin (mia|\$\{name\})/i.test(s)) bad.push(`${f}: vorgestellt: ${s}`);
+        // Einzige Ausnahme: der Hallo-Bildschirm beim allerersten Start
+        if (/ich bin (mia|\$\{name\})|ich bin $/i.test(s) && !f.endsWith("begleitung/HelloScreen.tsx")) bad.push(`${f}: vorgestellt: ${s}`);
         // Zahlen-Spannen („19.10. – 25.10.“) sind erlaubt
         if (DASH.test(s.replace(/\d[\d.:]*\s[–—]\s\d/g, ""))) bad.push(`${f}: Strich: ${s.slice(0, 80)}`);
         if (/(^|\\n)[-•] [A-ZÄÖÜa-zäöü]/.test(s)) bad.push(`${f}: Spiegelstrich: ${s.slice(0, 80)}`);

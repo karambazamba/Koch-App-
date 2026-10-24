@@ -75,7 +75,7 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 ### Mia spricht knapp (seit v0.77)
 - Norddeutsch, kurz, nie vorstellen: Begrüßung im Chat „Was steht an?“
   (5–11 Uhr „Moin! Was steht an?“, `greetingText`), Hallo-Bildschirm
-  „Moin!“, Stimm- und Vorlese-Probe „Moin! So klinge ich.“ bzw. „Moin!
+  „Moin, ich bin Mia.“ (einzige Vorstellung), Stimm- und Vorlese-Probe „Moin! So klinge ich.“ bzw. „Moin!
   Heute gibt’s Spaghetti. Um 18:30 ist alles fertig.“ Auf „Wer bist du?“
   antwortet die KI „Mia. Ich organisier euren Alltag.“
 - `tidyMiaText()` (`lib/begleitung/tidy.ts`) für jede KI-Antwort vor Anzeige
@@ -357,8 +357,9 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 
 ### Erster Start und neue Person
 
-- `HelloScreen` (Tafel 55, seit v0.67): Mia groß und rund (132 px), „Moin!“
-  (seit v0.77, das „!“ in Orange – Mia stellt sich nie vor), „Erzähl einfach,
+- `HelloScreen` (Tafel 55, seit v0.67): Mia groß und rund (132 px), „Moin, ich bin Mia.“ (seit v0.92; Name über
+  `helperName()` in Orange, eine Zeile mit `clamp(26px,9vw,38px)`)
+  (vorher seit v0.77 „Moin!“ mit orangem „!“), „Erzähl einfach,
   was ansteht. / Ich sortier das.“ (zwei Zeilen, seit v0.91), „Los geht’s“
   (`startFresh`), mit Konten „Schon ein Konto? Anmelden“. Unten seit v0.91
   (Tafel 84, Variante A) nur ein ruhiger, mittiger Abschluss ohne kleines
