@@ -17,6 +17,7 @@ import { speechSupported, toggleSpeak } from "@/lib/begleitung/speech";
 import { AccessCodeCard, ConsentCard, SpeakButton } from "@/components/begleitung/ChatBits";
 import { ChatTurnItem } from "@/components/begleitung/ChatTurnItem";
 import { MiaBubble, OwnBubble, StageTopic } from "@/components/begleitung/MiaStage";
+import { useStickToBottom } from "@/components/begleitung/useStickToBottom";
 import { firstOfRun } from "@/lib/begleitung/stage";
 import { IdeaCarousel, IdeaRow, MiaInvite, StaysLine } from "@/components/essen/kochtipp/KochideeViews";
 import type { Kochidee } from "@/components/essen/kochtipp/useKochidee";
@@ -69,6 +70,10 @@ type Props = {
   topic?: string;
   /** Gerade Gesagtes – erscheint live als eigene Blase */
   heard?: string;
+  /** Mia antwortet gerade: das live Gesagte geht danach raus (Blase „wartet“) */
+  heardWaits?: boolean;
+  /** Gemerkt, während Mia antwortete – geht gleich raus */
+  waiting?: string;
   /** Am Ende des Gesprächs (Beispiele, schönere Stimme) */
   children?: ReactNode;
 };
@@ -76,7 +81,7 @@ type Props = {
 /** Mia stellt sich nie vor: „Was steht an?“, morgens (5–11 Uhr) „Moin! Was steht an?“ */
 export const greetingText = (hour: number, minute = 0) => (hour >= 22 || hour < 6 ? miaSatz("nachtWach", null, () => (minute % 4) / 4) : hour >= 5 && hour < 11 ? "Moin! Was steht an?" : "Was steht an?");
 
-export function ChatHistory({ scrollRef, inputRef, status, data, voice, codeLater, onCodeLater, chat, setChat, busy, streaming, speakingId, tipsOn, adjusting, setAdjusting, spontan, kochidee, onTalk, market, rules, onSubmit, onAsk, onApply, onClose, from = 0, showGreeting = true, topic, heard, children }: Props) {
+export function ChatHistory({ scrollRef, inputRef, status, data, voice, codeLater, onCodeLater, chat, setChat, busy, streaming, speakingId, tipsOn, adjusting, setAdjusting, spontan, kochidee, onTalk, market, rules, onSubmit, onAsk, onApply, onClose, from = 0, showGreeting = true, topic, heard, heardWaits = false, waiting = "", children }: Props) {
   const { ideasFor, stockFor, headingFor, speechFor, takeIdea, moreIdeas, adjusting2, setAdjusting2, applyFilters, acceptUnsure } = spontan;
   // Offene Ideen-Antwort (die letzte, solange Spontan kochen läuft) und eingeklappte frühere
   const spontanIndexes = chat.turns.flatMap((t, i) => (t.spontan ? [i] : []));
@@ -96,9 +101,11 @@ export function ChatHistory({ scrollRef, inputRef, status, data, voice, codeLate
     window.setTimeout(() => el.scrollIntoView({ block: "start", behavior: "smooth" }), 400);
   };
   const greeting = showGreeting && data;
+  const stick = useStickToBottom(scrollRef);
 
   return (
-        <div ref={scrollRef} className="mia-gespraech flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-4 pt-3" aria-live="polite">
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div ref={scrollRef} className="mia-gespraech flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-4 pt-3" aria-live="polite" data-gespraech>
           <StageTopic topic={topic} />
           {status === undefined || data === undefined ? (
             <div className="h-20 animate-pulse rounded-card bg-surface" />
@@ -201,7 +208,12 @@ export function ChatHistory({ scrollRef, inputRef, status, data, voice, codeLate
           {/* Sanfter Gesundheits-Tipp (laut Einstellung, nie als Pop-up) */}
           {data && tipsOn && !chat.spontan && !busy && <TipBubble recipes={data.recipes} />}
 
-          {heard && <OwnBubble live>{heard}</OwnBubble>}
+          {heard && (
+            <OwnBubble live wartet={heardWaits}>
+              {heard}
+            </OwnBubble>
+          )}
+          {waiting && <OwnBubble wartet>{waiting}</OwnBubble>}
 
           {/* Antwort erscheint Wort für Wort; das Überlegen zeigt die große Mia unten */}
           {busy && streaming && <MiaBubble lead={roles[roles.length - 1] !== "assistant"}>{streaming}</MiaBubble>}
@@ -241,5 +253,11 @@ export function ChatHistory({ scrollRef, inputRef, status, data, voice, codeLate
           )}
           {children}
         </div>
+        {stick.neu && (
+          <button type="button" onClick={stick.runter} className="hit absolute bottom-2 left-1/2 flex min-h-9 -translate-x-1/2 items-center gap-1 rounded-full bg-surface px-3.5 text-[14px] font-bold text-accent-strong shadow-float" data-neu>
+            ↓ Neu
+          </button>
+        )}
+      </div>
   );
 }

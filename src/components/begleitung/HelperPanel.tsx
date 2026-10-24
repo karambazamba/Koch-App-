@@ -285,12 +285,28 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     };
   }, []);
 
-  // Gesprochenes dieser Aufnahme anzeigen; wenn sie endet, wird genau das abgeschickt
+  // Gesprochenes dieser Aufnahme anzeigen; wenn sie endet, wird genau das abgeschickt.
+  // Bühne: Atempausen schicken nichts ab (erst 2,5 s Stille, Antippen oder „fertig“).
+  // Spricht man weiter, während Mia antwortet, wird es gemerkt („wartet“) und danach geschickt.
+  const [wartend, setWartend] = useState("");
+  const busyNow = useRef(busy);
+  useEffect(() => {
+    busyNow.current = busy;
+  }, [busy]);
+  /** Nach einer Sprach-Nachricht weiter zuhören (Vorlesen aus: sofort; an: nach dem Vorlesen) */
+  const weiterHoeren = useRef(false);
   const speech = useSpeechInput({
+    buehne: true,
     onTranscript: (t) => setInput(t),
     onEnd: (t) => {
       setInput("");
-      if (t && mounted.current) submit(t, true);
+      if (!t || !mounted.current) return;
+      if (busyNow.current) {
+        setWartend((w) => `${w} ${t}`.trim());
+        return;
+      }
+      submit(t, true);
+      weiterHoeren.current = true;
     },
   });
 
@@ -346,13 +362,41 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     return () => window.clearTimeout(t);
   }, [askedBack, speakingId, busy, speech.blocked]);
 
+  // Weiterreden: Vorlesen aus → Mikro bleibt gleich an, während Mia denkt/antwortet;
+  // Vorlesen an → erst sprechen lassen, dann sofort wieder zuhören (sonst hört Mia sich selbst)
+  const readsVoice = shouldRead(speechSettings.mode, true);
+  const listenAgain = () => {
+    if (!weiterHoeren.current || speech.listening || speech.blocked || speech.supported === false) return;
+    weiterHoeren.current = false;
+    speech.start();
+  };
+  const again = useRef(listenAgain);
+  useEffect(() => {
+    again.current = listenAgain;
+  });
+  useEffect(() => {
+    if (readsVoice || !busy) return;
+    const t = window.setTimeout(() => again.current(), 300);
+    return () => window.clearTimeout(t);
+  }, [busy, readsVoice]);
+  useEffect(() => {
+    if (!readsVoice || busy || speakingId !== null) return;
+    const t = window.setTimeout(() => again.current(), 350);
+    return () => window.clearTimeout(t);
+  }, [busy, readsVoice, speakingId]);
+  // Gemerktes nach Mias Antwort abschicken
+  useEffect(() => {
+    if (busy || !wartend || speech.listening) return;
+    const timer = window.setTimeout(() => {
+      setWartend("");
+      latest.current.submit(wartend, true);
+      weiterHoeren.current = true;
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [busy, wartend, speech.listening]);
+
   // Schließen beendet das Vorlesen (Escape, Danebentippen, Zurück übernimmt das Fenster)
   useEffect(() => () => stopSpeaking(), []);
-
-  // Neue Nachrichten sichtbar machen
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [chat.turns.length, busy, chat.proposal]);
 
   // Antworten vorlesen: an, wenn eingeschaltet – im Standard, wenn per Mikrofon gefragt
   const readingOn = shouldRead(speechSettings.mode, viaVoice);
@@ -402,7 +446,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     keyboardWas.current = inset;
   }, [inset, input, adjusting]);
   const hint = done ? "Erledigt" : stageHint(state, name, userTurns === 0);
-  const mia = <StageMia state={state} size={layout.size} hint={layout.field && !done ? undefined : hint} label={stageLabel(state, mic)} done={done} onTap={tapMia} />;
+  const mia = <StageMia state={state} size={layout.size} hint={layout.field && !done ? undefined : speech.wartet ? "Gleich schick ich’s ab" : hint} label={stageLabel(state, mic)} done={done} pause={speech.wartet} onTap={tapMia} />;
 
   return (
     <MiaLayer name={name} onClose={onClose} onHistory={() => setHistory((h) => !h)} history={history} inset={inset}>
@@ -462,6 +506,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           showGreeting={history || chat.turns.length <= since}
           topic={history ? undefined : chat.topic}
           heard={heard}
+          heardWaits={busy}
+          waiting={speech.listening ? "" : wartend}
         >
           {!layout.field && suggestions.length > 0 && <SuggestionChips suggestions={suggestions} onPick={submit} />}
           <VoiceOffer readCount={readCount} speaking={speakingId !== null} gender={voice} />

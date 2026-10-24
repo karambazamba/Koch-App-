@@ -2349,3 +2349,12 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Stimme: „Probe hören“, Karte „Mia kann schöner klingen“, neue Anleitung
   (iOS 26 „Lesen & Sprechen“, laden UND antippen), nach Rückkehr „Neue
   Stimme gefunden: … Nehmen?“.
+
+## Mia hört zuverlässig zu (v0.96.0)
+- Kurze Atempause schickt nichts mehr ab: Mia hört still weiter und schickt
+  erst nach 2,5 s Stille, beim Antippen oder bei „fertig“ (Ring zeigt es).
+- Nichts geht verloren: unfertiger letzter Teil kommt mit, neu begonnene
+  Ergebnisliste wird angehängt, „Okay“ wird nie abgeschnitten.
+- Weiterreden, während Mia antwortet: als „wartet“ gemerkt, danach geschickt.
+- Gespräch scrollt mit, „↓ Neu“ beim Hochscrollen, lange Live-Blase zeigt die
+  letzten Zeilen über Mia.

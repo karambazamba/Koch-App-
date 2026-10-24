@@ -57,7 +57,7 @@ function flyBack() {
 }
 
 /** Große Mia: Zustand, Wellen, Tonwelle, Satz darunter – ein Knopf (zuhören ↔ fertig) */
-export function StageMia({ state, size = STAGE_SIZE.big, hint, label, done = false, onTap }: { state: StageState; size?: number; hint?: string; label: string; done?: boolean; onTap: () => void }) {
+export function StageMia({ state, size = STAGE_SIZE.big, hint, label, done = false, pause = false, onTap }: { state: StageState; size?: number; hint?: string; label: string; done?: boolean; /** Stille nach dem letzten Wort: Mia blinzelt, ein dünner Ring läuft ab, dann wird abgeschickt */ pause?: boolean; onTap: () => void }) {
   const ref = useRef<HTMLButtonElement>(null);
   const [flight, setFlight] = useState<string | undefined>(undefined);
   // Einfliegen: Start dort, wo der Knopf ist (eine Bewegung, Größe und Ort zugleich)
@@ -86,7 +86,7 @@ export function StageMia({ state, size = STAGE_SIZE.big, hint, label, done = fal
         onClick={onTap}
         aria-label={label}
         aria-pressed={state === "zuhoeren"}
-        className={`mia-flug relative rounded-full ${state === "warten" && !done ? "mia-zwinkern" : ""} ${done ? "mia-huepfer" : ""}`}
+        className={`mia-flug relative rounded-full ${(state === "warten" || pause) && !done ? "mia-zwinkern" : ""} ${done ? "mia-huepfer" : ""}`}
         style={{ transform: flight, width: size, height: size }}
       >
         {(state === "zuhoeren" || state === "warten") && (
@@ -96,6 +96,11 @@ export function StageMia({ state, size = STAGE_SIZE.big, hint, label, done = fal
           </>
         )}
         <BegleitungAvatar size={size} groesse="gross" zustand={zustand} />
+        {pause && (
+          <svg className="mia-pause-ring pointer-events-none absolute -inset-2" viewBox="0 0 100 100" aria-hidden data-pause-ring>
+            <circle cx="50" cy="50" r="48" fill="none" stroke="var(--app-accent)" strokeWidth="1.5" pathLength="100" />
+          </svg>
+        )}
       </button>
       {hint ? (
         <p key={hint} className="mia-text text-center text-[13px] font-semibold text-muted" role="status">
@@ -141,12 +146,19 @@ export function MiaBubble({ lead, children }: { lead: boolean; children: ReactNo
   );
 }
 
-/** Eigene Blase (Orange) – beim Sprechen erscheint der Text live */
-export function OwnBubble({ children, live = false }: { children: ReactNode; live?: boolean }) {
+/**
+ * Eigene Blase (Orange) – beim Sprechen erscheint der Text live und wächst
+ * mit; ist er sehr lang, zeigt sie die letzten Zeilen (oben leicht
+ * ausgeblendet). `wartet`: gemerkt, geht nach Mias Antwort raus.
+ */
+export function OwnBubble({ children, live = false, wartet = false }: { children: ReactNode; live?: boolean; wartet?: boolean }) {
   return (
-    <p className={`max-w-[85%] self-end whitespace-pre-line rounded-card rounded-br-md bg-accent px-4 py-2.5 text-base leading-snug text-on-accent ${live ? "opacity-90" : ""}`} aria-live={live ? "polite" : undefined}>
-      {children}
-    </p>
+    <div className={`flex max-w-[85%] flex-col items-end gap-1 self-end ${live ? "opacity-90" : ""}`} data-eigene-blase={live ? "live" : wartet ? "wartet" : undefined}>
+      <p className={`whitespace-pre-line rounded-card rounded-br-md bg-accent px-4 py-2.5 text-base leading-snug text-on-accent ${live ? "live-blase" : ""}`} aria-live={live ? "polite" : undefined}>
+        {live ? <span className="live-blase-text">{children}</span> : children}
+      </p>
+      {wartet && <span className="text-[12px] font-semibold text-muted">wartet</span>}
+    </div>
   );
 }
 

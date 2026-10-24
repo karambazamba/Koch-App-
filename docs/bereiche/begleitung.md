@@ -233,6 +233,29 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Aufnahme eine frische Sitzung, geliefert wird immer der ganze Text dieser
   Aufnahme; `cancel`/`reset` verwerfen. `HelperPanel.submit` ruft immer
   `speech.reset()`; nach dem Ende wird genau das Gesprochene abgeschickt.
+- Seit v0.96 (zuverlässig zuhören): Mitschrift in `mitschrift.ts` (rein):
+  neu begonnene Ergebnisliste (Position 0 mit anderem Text) wird gesichert
+  statt überschrieben, beim Neustart nach Stille wandern fertige UND
+  unfertige Teile in die Sicherung, am Ende zählt immer alles (fertig +
+  unfertiger Rest). `withoutPrevious` nur für gerade eben (8 s) Abgeschicktes
+  mit mehr als einem Wort – „Okay“ wird nie abgeschnitten.
+- Bühne (`useSpeechInput({ buehne: true })`): beendet der Browser nach
+  Stille, hört Mia still weiter (`continuous`, Neustart nur nach echtem
+  Ende – auf dem iPhone also höchstens ein Systemton je Pause; im Test 1
+  Neustart je Atempause). Abgeschickt wird nach 2,5 s Stille nach dem letzten
+  Wort (`STILLE_MS`), beim Antippen von Mia oder bei „fertig“/„das war’s“,
+  höchstens 2 Minuten. Ab 0,6 s Stille blinzelt Mia und ein dünner Ring läuft
+  ab („Gleich schick ich’s ab“). Sagt niemand etwas, hört sie nach 8 s auf.
+- Weiterreden: Vorlesen aus → das Mikro bleibt an, während Mia denkt und
+  antwortet; Vorlesen an → erst sprechen, dann sofort wieder zuhören. Was in
+  der Antwortzeit gesagt wird, steht als Blase „wartet“ da und geht nach
+  Mias Antwort raus.
+- Gespräch scrollt mit (`useStickToBottom`): endet immer oberhalb von Mia,
+  neue Nachrichten und die Live-Blase bleiben im Bild; wer hochscrollt,
+  bleibt dort und bekommt „↓ Neu“. Die Live-Blase wächst mit und zeigt bei
+  sehr langem Text die letzten Zeilen (oben ausgeblendet).
+- Der „Düdüp“ beim Zuhören ist der Systemton von iOS/Safari (Erkennung
+  startet/endet) und lässt sich im Web nicht ändern.
 - Mikrofon-Freigabe (Tafel 27) für ALLE Mikro-Stellen über `src/lib/core/mic.ts`
   (Zustand geräteweit, nur im Speicher) und `src/components/ui/MicPermission.tsx`
   (`MicSheetHost` im Layout, `MicStrip`, `useMicBlocked`, `MIC_BLOCKED`) +
