@@ -41,9 +41,16 @@ export const hallo2 = async (page, check) => {
   await page.waitForTimeout(1500);
   check(await page.getByRole("heading", { name: "Moin!" }).isVisible(), "„Moin!“ (Mia stellt sich nie vor)");
   check(await page.locator("h1 .text-accent").innerText() === "!", "„Moin“ mit orangem „!“");
-  check(await page.getByText("Erzähl mir einfach, was ansteht. Ich sortiere für euch.").isVisible(), "Zeile „Erzähl mir einfach …“");
   check((await page.locator("[data-tone]").count()) === 0 && !(await page.getByText("Euer Alltag an einem Ort.").count()), "keine Deko-Kacheln, alte Zeile weg");
-  check(await page.locator("[data-hello-marke] [data-brand=lockup]").isVisible() && (await page.getByText("Gemacht in Eutin · von KARAMBA Eis").isVisible()), "unten Marke + „Gemacht in Eutin · von KARAMBA Eis“");
+  check(!(await page.locator("[data-hello-marke] [data-brand]").count()) && (await page.getByText("Gemacht in Eutin von KARAMBA Eis").isVisible()), "unten ohne kleines Logo: „Gemacht in Eutin von KARAMBA Eis“");
+  const zeile = page.getByText("Gemacht in Eutin von KARAMBA Eis");
+  check((await zeile.evaluate((el) => el.getClientRects().length)) === 1, "Zeile 1 bricht nicht um");
+  const rechtlich = page.locator("[data-hello-marke] nav");
+  check((await rechtlich.getByRole("link", { name: "Datenschutz" }).isVisible()) && (await rechtlich.getByRole("link", { name: "Impressum" }).isVisible()), "darunter „Datenschutz · Impressum“");
+  const nb = await rechtlich.boundingBox();
+  const unten = page.viewportSize().height - (nb.y + nb.height);
+  check(unten >= 30 && unten <= 60, `Zeile 2 sitzt ca. 40 px über der Unterkante (${Math.round(unten)} px)`);
+  check(await page.getByText("Ich sortier das.").isVisible(), "Untertitel „Erzähl einfach, was ansteht. / Ich sortier das.“");
   // Tafel 22: mit Konten (Testserver) „Schon ein Konto? Anmelden“ statt „Daten wiederherstellen“
   check(!(await page.getByText(/Daten wiederherstellen/).count()), "kein „Daten wiederherstellen“ mehr auf der Begrüßung");
   await page.getByRole("link", { name: /Schon ein Konto\? Anmelden/ }).click();

@@ -57,6 +57,12 @@ describe("Regeln für sichtbare Texte", () => {
 
   // Immer „KARAMBA Eis“ – nie nur „KARAMBA“ (Verwechslung mit einem Online-Casino);
   // nur die Liste der Veranstalter-Namen (Erkennung) darf das Wort allein haben
+  it("Hallo-Bildschirm: „Gemacht in Eutin von KARAMBA Eis“ (Tafel 84, ohne „·“)", () => {
+    const hello = SOURCES.find((x) => x.file === "components/begleitung/HelloScreen.tsx")!.code;
+    expect(texts(hello)).toContain("Gemacht in Eutin von KARAMBA Eis");
+    expect(hits((code) => texts(code).filter((t) => /Gemacht in Eutin · von/.test(t)))).toEqual([]);
+  });
+
   it("„KARAMBA“ nur als „KARAMBA Eis“", () => {
     expect(hits((code, file) => (file === "lib/tipps/karamba.ts" ? [] : texts(code).filter((t) => /KARAMBA(?! Eis)(?![_-])/.test(t))))).toEqual([]);
   });

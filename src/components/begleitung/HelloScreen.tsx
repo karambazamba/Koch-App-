@@ -2,13 +2,15 @@
 
 // Erster Start (nur ganz am Anfang oder nach "Neu anfangen"): der
 // Hallo-Bildschirm nach Tafel 55 – Mia groß und rund, „Moin!“ (Mia stellt sich nie vor)
-// („Mia.“ in Orange), „Erzähl mir einfach, was ansteht. Ich sortiere für
-// euch.“, „Los geht’s“, mit Konten „Schon ein Konto? Anmelden“ und klein unten die Marke
-// (BrandMark, gedämpft) mit „Gemacht in Eutin · von KARAMBA Eis“. Ablauf:
+// („!“ in Orange), „Erzähl einfach, was ansteht. / Ich sortier das.“ (zwei
+// Zeilen), „Los geht’s“, mit Konten „Schon ein Konto? Anmelden“ und unten nur
+// ein ruhiger, mittiger Abschluss (Tafel 84, Variante A – kein kleines Logo,
+// die große Mia reicht): „Gemacht in Eutin von KARAMBA Eis“, darunter leiser
+// „Datenschutz · Impressum“ (Links mit 44-px-Tippfläche). Ablauf:
 //   0,0 s Mia ploppt auf, 0,95 s Überschrift tippt sich ein (sie spricht
 //   dabei), 1,8 s Zeile, 2,0 s Freudensprung (ducken, eine Drehung, Landung
 //   mit Funken, „Ich bin bereit!“, zwei kleine Hüpfer, „Los geht’s“
-//   pulsiert zweimal), 2,2 s „Los geht’s“, Link und Marke
+//   pulsiert zweimal), 2,2 s „Los geht’s“, Link und Abschluss unten
 // Danach blinzelt sie, die Augen folgen dem Finger (max. ~3 px); antippen =
 // kitzelig: kichernd wackeln, Smiley-Augen, drei Herzen, kleiner Satz
 // (während des Sprungs erst danach). „Los geht’s“ fragt einmal
@@ -17,12 +19,10 @@
 // ist (nach dem Laden, Schrift da) – vorher ist alles unsichtbar; ein
 // Neuaufbau setzt sie fort statt neu. Bewegung reduzieren = alles sofort.
 
-import { RechtLinks } from "@/components/datenschutz/RechtstextView";
 import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
-import { BrandMark } from "@/components/ui/BrandMark";
 import { DEFAULT_HELPER, avatarHex } from "@/lib/einstellungen/profile";
 import { startFresh } from "@/lib/einstellungen/welcomeStore";
 import { LookStep } from "@/components/einstellungen/aussehen/LookStep";
@@ -184,7 +184,7 @@ export function HelloScreen() {
   const shown = title.slice(0, typed);
   return (
     <main className="fixed inset-0 z-40 overflow-y-auto bg-background" aria-label="Willkommen">
-      <div className="mx-auto flex min-h-full w-full max-w-lg flex-col items-center px-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[calc(env(safe-area-inset-top)+2.5rem)] text-center [@media(max-height:620px)]:pt-[calc(env(safe-area-inset-top)+0.75rem)]">
+      <div className="mx-auto flex min-h-full w-full max-w-lg flex-col items-center px-6 pb-[calc(env(safe-area-inset-bottom)+2.25rem)] pt-[calc(env(safe-area-inset-top)+2.5rem)] text-center [@media(max-height:620px)]:pt-[calc(env(safe-area-inset-top)+0.75rem)]">
         <div className="flex w-full flex-1 flex-col items-center justify-center pb-4">
           <div className="relative">
             <span className="hello-shadow" data-sprung={jump.on ? "an" : undefined} aria-hidden />
@@ -231,7 +231,11 @@ export function HelloScreen() {
             </span>
             {typing && <span className="hello-caret" aria-hidden />}
           </h1>
-          <p className={`mt-2 max-w-[19rem] text-[16px] font-medium leading-snug text-muted ${show(T.sub)}`}>Erzähl mir einfach, was ansteht. Ich sortiere für euch.</p>
+          <p className={`mt-2 max-w-[19rem] text-[16px] font-medium leading-snug text-muted ${show(T.sub)}`}>
+            Erzähl einfach, was ansteht.
+            <br />
+            Ich sortier das.
+          </p>
         </div>
         <div className={`flex w-full flex-col items-center gap-1 ${show(T.buttons)}`}>
           <button key={`los${jump.nudge}`} type="button" onClick={() => setAsking(true)} className={`h-14 w-full rounded-field text-[17px] font-bold text-on-color active:scale-[0.98] ${jump.nudge ? "hello-nudge" : ""}`} style={{ backgroundColor: color }}>
@@ -245,12 +249,18 @@ export function HelloScreen() {
           ) : (
             <span className="h-11" aria-hidden />
           )}
-          <div className="mt-3 flex flex-col items-center gap-1 opacity-60" data-hello-marke>
-            <BrandMark height={22} />
-            <span className="flex flex-wrap items-center justify-center gap-x-2">
-              <span className="whitespace-nowrap text-xs font-semibold text-muted">Gemacht in Eutin · von KARAMBA Eis</span>
-              <RechtLinks dicht nur={["/datenschutz"]} />
-            </span>
+          {/* Tafel 84 (Variante A): unten nur ein ruhiger Abschluss – die große Mia oben reicht, kein kleines Logo */}
+          <div className="mt-4 flex flex-col items-center" data-hello-marke>
+            <span className="whitespace-nowrap text-[clamp(11.5px,3.9vw,13px)] font-semibold text-muted">Gemacht in Eutin von KARAMBA Eis</span>
+            <nav aria-label="Rechtliches" className="mt-2 flex items-center gap-1.5 text-[12px] font-semibold text-faint">
+              <Link href="/datenschutz" className="hit inline-flex h-4 items-center">
+                Datenschutz
+              </Link>
+              <span aria-hidden>·</span>
+              <Link href="/impressum" className="hit inline-flex h-4 items-center">
+                Impressum
+              </Link>
+            </nav>
           </div>
         </div>
       </div>

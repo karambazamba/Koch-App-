@@ -248,7 +248,7 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 
 - **Name KARAMBA:** immer „KARAMBA Eis“, nie nur „KARAMBA“ (Verwechslung
   mit einem Online-Casino) – in allen Texten (Tipps „von KARAMBA Eis“,
-  Spendentopf, Mails, „Über Mia“, Hallo-Bildschirm „Gemacht in Eutin · von
+  Spendentopf, Mails, „Über Mia“, Hallo-Bildschirm „Gemacht in Eutin von
   KARAMBA Eis“). Test in `tests/app/regeln.test.ts`.
 
 ## Datenschutz

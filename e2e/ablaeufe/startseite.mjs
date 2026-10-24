@@ -176,7 +176,7 @@ export const jetztKarte = async (page, check) => {
 /**
  * Hallo-Bildschirm: nach 2 s springt Mia einmal vor Freude und sagt „Ich bin
  * bereit!“ (Sprechblase ganz im Bild – auch auf dem iPhone SE); Antippen →
- * „Hihi, kitzelig!“ (im Sprung erst danach); unten „Gemacht in Eutin · von
+ * „Hihi, kitzelig!“ (im Sprung erst danach); unten „Gemacht in Eutin von
  * KARAMBA Eis“.
  */
 export const halloSprung = async (page, check, device) => {
@@ -201,7 +201,9 @@ export const halloSprung = async (page, check, device) => {
     const box = await bubble.boundingBox();
     const vw = page.viewportSize().width;
     check(Boolean(box && box.x >= 0 && box.x + box.width <= vw && box.y >= 0), `${where}: „Ich bin bereit!“ ganz im Bild (${box ? `${Math.round(box.x)}–${Math.round(box.x + box.width)} von ${vw}` : "fehlt"})`);
-    check(await page.getByText("Gemacht in Eutin · von KARAMBA Eis").isVisible(), `${where}: unten „Gemacht in Eutin · von KARAMBA Eis“`);
+    check(await page.getByText("Gemacht in Eutin von KARAMBA Eis").isVisible(), `${where}: unten „Gemacht in Eutin von KARAMBA Eis“`);
+    const zeile = await page.getByText("Gemacht in Eutin von KARAMBA Eis").evaluate((el) => ({ lines: el.getClientRects().length, right: el.getBoundingClientRect().right }));
+    check(zeile.lines === 1 && zeile.right <= page.viewportSize().width, `${where}: Zeile bricht nie um`);
     // Antippen während des Sprungs: erst danach kitzelig
     await page.locator("[data-hello]").click({ force: true });
     check(!(await page.getByText("Hihi, kitzelig!").count()), `${where}: im Sprung noch nicht`);
