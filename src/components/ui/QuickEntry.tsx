@@ -21,6 +21,7 @@ import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 import { QUICK_HEADER, QUICK_LABEL, QUICK_PLACEHOLDER, dayChoices, quickChips, readQuick, type QuickPick, type QuickRequest } from "@/lib/core/schnelleingabe";
 import { WHEN_CHOICES } from "@/lib/kalender/quick";
 import { saveQuick } from "@/components/ui/quickSave";
+import { looksLikeList, openListe } from "@/lib/kalender/liste/einfuegen";
 
 const TILE: Record<QuickRequest["kind"], string> = { termin: "termine", aufgabe: "aufgaben", einkauf: "einkauf", notiz: "notizen", pinnwand: "pinnwand", imhaus: "vorrat" };
 
@@ -77,6 +78,15 @@ export function QuickEntry({ request, onClose }: { request: QuickRequest; onClos
             ref={field}
             value={text}
             onChange={(e) => setText(e.target.value)}
+            onPaste={(e) => {
+              // Eine ganze To-do-Liste eingefügt → „Liste einfügen“ mit Vorschau
+              const pasted = e.clipboardData.getData("text");
+              if (request.kind === "aufgabe" && looksLikeList(pasted)) {
+                e.preventDefault();
+                onClose();
+                openListe(pasted);
+              }
+            }}
             placeholder={QUICK_PLACEHOLDER[request.kind]}
             aria-label={QUICK_LABEL[request.kind]}
             autoFocus
@@ -162,18 +172,27 @@ export function QuickEntry({ request, onClose }: { request: QuickRequest; onClos
           </div>
         )}
 
-        {request.more && (
-          <button
-            type="button"
-            onClick={() => {
-              const more = request.more!;
-              onClose();
-              more(text);
-            }}
-            className="hit self-start text-[15px] font-semibold text-muted"
-          >
-            Mehr Details
-          </button>
+        {(request.more || request.kind === "aufgabe") && (
+          <div className="flex items-center gap-5">
+            {request.more && (
+              <button
+                type="button"
+                onClick={() => {
+                  const more = request.more!;
+                  onClose();
+                  more(text);
+                }}
+                className="hit text-[15px] font-semibold text-muted"
+              >
+                Mehr Details
+              </button>
+            )}
+            {request.kind === "aufgabe" && (
+              <button type="button" onClick={() => (onClose(), openListe(text))} className="hit text-[15px] font-semibold text-muted">
+                Liste einfügen
+              </button>
+            )}
+          </div>
         )}
       </form>
     </Sheet>

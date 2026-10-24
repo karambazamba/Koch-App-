@@ -30,6 +30,7 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Pro Bildschirm eine große Hauptsache, wenig Text, viel Weißraum. Leere
   Zustände freundlich und einladend, nie als Fehler.
 - Termin = feste Uhrzeit, Aufgabe = zu erledigen, Notiz = nur festhalten.
+  Leerer Kalender = Angebot „Kalender mitbringen“ (Apple/Google/Outlook).
 - Startseite = Kacheln in EINER gespeicherten Anordnung, die sich nie von
   selbst ändert. Bearbeiten direkt auf der Startseite (lange drücken: wackeln,
   ziehen, „–“, S/M/L); zwei S nebeneinander, eine einzelne S wird breit; Essen

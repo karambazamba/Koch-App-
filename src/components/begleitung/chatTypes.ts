@@ -11,6 +11,7 @@ import type { MailDraft } from "@/lib/begleitung/mail";
 import type { TipView } from "@/lib/tipps/model";
 import type { CookCard } from "@/lib/essen/kochtipp/pick";
 import type { IdeaTalk } from "@/lib/essen/kochtipp/idee";
+import type { LinkRezept } from "@/lib/essen/rezeptLink/lesen";
 
 export type ChatTurnView = ChatTurn & {
   /** Fehlermeldung – wird nicht an die KI geschickt */
@@ -51,6 +52,8 @@ export type ChatTurnView = ChatTurn & {
   tips?: TipView[];
   /** Kochtipp: EIN Gericht als Karte (Personen änderbar) */
   /** Kochidee: drei Vorschläge (beim Öffnen) bzw. das Ergebnis zum Durchwischen */
+  /** Rezept-Link: Karte mit Zutaten, „auf die Liste“, „In den Wochenplan“ */
+  rezept?: LinkRezept;
   idea?: { kind: "start" | "ergebnis"; cards: CookCard[]; planned: string | null; keywords?: string[]; remembered?: string; persons?: number };
 };
 

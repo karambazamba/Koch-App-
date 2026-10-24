@@ -305,6 +305,25 @@ Ideen“. Verschwindet mit dem ersten eigenen Gericht oder dem Beispiel-Tag.
 - Tests: `tests/essen/kochidee.test.ts`, `tests/essen/kochtipp.test.ts`,
   Durchklick `kochtipp` und `muetzeBeispielTag`.
 
+### Rezept-Links an Mia (Einkauf Teil B, v0.86.0)
+- Ein Link im Gespräch (fast nur der Link, kein Kalender-Link,
+  `rezeptLinkIn`), aus dem Teilen-Menü (Manifest `share_target` →
+  `/?geteilt=1`, `geteiltAnMia`) oder ins Gerichte-Feld eingefügt → Mia
+  liest die Seite (`/api/rezept-link`, gleicher Schutz wie Kalender-Abos:
+  nur https, keine privaten Adressen, Größe/Zeit begrenzt).
+- Gelesen wird nur das Nötigste (`essen/rezeptLink/lesen.ts`): schema.org
+  Recipe als JSON-LD (auch `@graph`/Listen), sonst Microdata – Titel, Bild
+  (nur verlinkt), Portionen, Zutaten, Quelle. Kein Rezepttext.
+- Karte im Gespräch (`RezeptLinkKarte`): „Für 5 ▾“ (Haushaltsgröße,
+  umgerechnet und sinnvoll gerundet), „auf die Liste: …“, grün „im Haus:
+  …“, „vermutlich im Haus: …“, „steht schon drauf: …“; Grundsachen zählen
+  nicht. Knöpfe „3 auf die Liste“ / „In den Wochenplan“ (Tag wählen → schlankes
+  Rezept mit Notiz „Quelle: …“), beides mit Rückgängig.
+- Nicht lesbar → „Auf der Seite finde ich kein Rezept – magst du mir die
+  Zutaten einfach sagen?“ Testmodus: Host
+  `rezept.test` (`mock.ts`).
+- Tests: `tests/essen/rezeptLink.test.ts`, Durchklick `rezeptLink`.
+
 ## Begleitung (Mia)
 
 - Werkzeuge (Vorschau + „Übernehmen“): `woche_lesen`, `gericht_setzen`,

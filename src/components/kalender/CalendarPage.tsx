@@ -7,6 +7,7 @@
 // auf einen Tag (0,4 s) bzw. ＋ = Schnelleingabe „NEUER TERMIN“ für diesen
 // Tag. Woche/Liste: Termine je Tag. Aufgaben und Essen stehen nie hier.
 // Tipps aus der Region: eigene lila Ebene (Chip „Tipps“), nie als Termin.
+// Oben (solange nichts verbunden ist) „Kalender mitbringen“.
 
 import { WEEKDAYS_SHORT_MO } from "@/lib/core/days";
 import Link from "next/link";
@@ -28,6 +29,8 @@ import { TipDot, TipsChip, useCalendarTips } from "@/components/tipps/CalendarTi
 import { buzz } from "@/components/heute/actions";
 import dynamic from "next/dynamic";
 import { openQuick } from "@/lib/core/schnelleingabe";
+import { isAboEntry } from "@/lib/kalender/abo/model";
+import { MitbringenKarte } from "@/components/kalender/mitbringen/KalenderMitbringen";
 
 // Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
 const TerminQuickAdd = dynamic(() => import("@/components/kalender/TerminQuickAdd").then((m) => m.TerminQuickAdd), { ssr: false });
@@ -102,6 +105,7 @@ export function CalendarPage({ today, entries }: { today: string; entries: Calen
           ]}
         />
       )}
+      <MitbringenKarte today={today} ownTermine={entries.filter((e) => e.typ === "termin" && !isAboEntry(e)).length} />
       {view === "monat" && <MonthView today={today} entries={entries} pick={pick} selected={selected} onSelect={setSelected} filter={filter} />}
       {view === "woche" && <WeekView today={today} entries={entries} pick={pick} selected={selected} onSelect={setSelected} filter={filter} />}
       {view === "liste" && <ListView today={today} entries={entries} pick={pick} filter={filter} />}

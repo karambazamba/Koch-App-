@@ -155,6 +155,37 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
   Abhaken: 2 s durchgestrichen (`LEAVE_MS`), dann „Erledigt · Rückgängig“;
   Löschen „Gelöscht · Rückgängig“.
 
+### Aufgaben übernehmen – große Listen ohne Chaos (seit v0.86)
+
+- Regel: importiert wird alles, angezeigt wird nur, was jetzt dran ist.
+- „Liste einfügen“ (`kalender/liste/ListeEinfuegen.tsx`, Logik
+  `lib/kalender/liste/einfuegen.ts`): in der Schnelleingabe jeder Aufgabe
+  („＋“ → „Liste einfügen“), automatisch beim Einfügen von mehreren Zeilen
+  ins Feld, im leeren Zustand der Aufgaben-Seite und per Mia („Ich hab hier
+  meine To-do-Liste:“ + Zeilen – ein App-Befehl vor der KI, wie Rezept-Links).
+- Jede Zeile = eine Aufgabe; Kästchen/Aufzählungen (☐ - [ ] * • 1. 2) –)
+  und Leerzeilen fallen weg, Abgehaktes (☑ [x] ✓ ~~durchgestrichen~~) wird
+  weggelassen. Fristen und Tage erkennt der gemeinsame Parser
+  (`parseCalendar`: „bis Freitag“, „28.10.“, „morgen“, „nächste Woche“).
+  Überschriften („Haus:“, „KINDER“, „## Arbeit“) werden zum Listennamen
+  (`data.liste`); eine Liste „Arbeit/Büro/Job“ landet in „Arbeit“.
+- Vorschau: „37 Aufgaben gefunden · 12 mit Datum · 3 Listen (Haus, Arbeit,
+  Kinder)“, darunter alle Zeilen zum Abwählen; „Alle übernehmen“ (bzw. „N
+  übernehmen“) / „Nur mit Datum“; „4 schon vorhanden“ (gleicher Text, gleiche
+  Liste, offen) wird nicht doppelt angelegt. Kleine Anleitung je Gerät
+  (Apple Erinnerungen bzw. Android). Danach „Eingetragen: 29 Aufgaben ·
+  Rückgängig“.
+- Ordnung (`lib/kalender/liste/ordnung.ts`): Die Startseiten-Kachel zeigt wie
+  bisher nur dringend, heute und diese Woche. Gibt es Listen, zeigt die
+  Aufgaben-Seite oben „Jetzt dran“ (heute, von gestern, diese Woche), dann
+  Später/Irgendwann ohne Liste und jede Liste eingeklappt mit Anzahl („Haus ·
+  14“, nach Name, `TASK_LISTS`). Ohne Listen bleibt die Seite wie gehabt.
+- Vorschlag (`lib/kalender/liste/vorschlag.ts`): ab 8 Aufgaben ohne Datum, die
+  schon 3 Tage liegen, oben auf der Aufgaben-Seite „Drei für diese Woche?“
+  (dringende, dann die ältesten) mit „Übernehmen“ (→ diese Woche, Rückgängig)
+  und „Nicht jetzt“; höchstens einmal pro Woche (`wasgibts.aufgabenvorschlag`).
+- Todoist verbinden (Teil 3) folgt mit den Verbindungen (🔑).
+
 ### Eintragen
 - Jedes ＋ öffnet die Schnelleingabe (`docs/bereiche/core.md`); das frühere
   Fenster „Was möchtest du eintragen?“ gibt es nicht mehr.
@@ -211,6 +242,27 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
   Termine (`start: ""`), `until` (Serienende), `endDate` (mehrtägig, Uhrzeit nur
   am ersten, Ende nur am letzten Tag), `woechentlich.every` (alle N Wochen).
   Das Formular behält diese Feinheiten beim Sichern (`terminExtras`).
+
+### Kalender mitbringen (seit v0.86)
+
+- Oben im Kalender eine ruhige Karte „Termine schon woanders? Hol sie rein.“
+  – Apple · Google · Outlook · Später (`kalender/mitbringen/KalenderMitbringen.tsx`,
+  Logik `lib/kalender/mitbringen/angebot.ts`). Groß bei leerem Kalender, klein,
+  wenn schon eigene Termine da sind; weg, sobald ein Kalender verbunden ist.
+  „Später“: nach 14 Tagen noch EINMAL, danach nie wieder
+  (`wasgibts.kalenderangebot`, pro Gerät). Immer erreichbar unter
+  Einstellungen → Kalender und per Mia („Hol meinen Google-Kalender rein“ →
+  `/profil/kalender` mit den Schritten für Google, `openMitbringen`).
+- Geführte Schritte je Anbieter (ein Schritt pro Bildschirm, Weiter/Zurück am
+  Ende): Apple (Öffentlicher Kalender → Link teilen → Kopieren), Google
+  (ehrlich: nur am Computer; „Anleitung per Mail an mich schicken“), Outlook
+  (Kalender veröffentlichen → ICS-Link). Zum Schluss „Link aus der
+  Zwischenablage holen“ (`kalenderLink`: webcal, .ics, iCal, Google, Outlook,
+  iCloud) → „Diesen Link verwenden?“ oder einfügen → Verbinden. Daneben
+  „Lieber eine .ics-Datei einlesen“. Bei Apple: „Der Link ist geheim …“.
+- Erfolg: Mia freut sich, „Steht drin. 23 Termine in den nächsten 4 Wochen.“,
+  „Was du hier einträgst, bleibt erst mal nur hier.“, „Noch einen
+  hinzufügen“. Je verbundenem Kalender „zuletzt aktualisiert 10:12“.
 
 ### Kalender-Link (Abo, nur lesen, seit v0.51)
 
@@ -292,6 +344,8 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
 ## Tests
 
 - `tests/kalender/kalenderAbo.test.ts`: Server-Schutz (private IPs, DNS, Weiterleitungen, zu groß, Zeitüberschreitung, kein Kalender), Abo-Termine, Kopie, Fälligkeit, Schreibschutz, Sicherung nur auf Wunsch; Durchklick `kalenderAbo` (verbinden, im Kalender, kopieren, Änderung kommt an).
+- `tests/kalender/listeEinfuegen.test.ts`: Zeilen bereinigen (alle Kästchen-/Aufzählungsformen), Abgehaktes, Fristen, Überschriften → Listen, Doppelte, Gespräch, Ordnung (Kachel nur jetzt dran, Listen eingeklappt), Vorschlag; Durchklick `listeEinfuegen` (30 Zeilen).
+- `tests/kalender/mitbringen.test.ts`: Angebot einmal/nach 14 Tagen/nie wieder, Link aus der Zwischenablage, Anbieter aus dem Satz, Erfolgs-Satz, „zuletzt aktualisiert“; Durchklick `kalenderMitbringen`.
 - `tests/kalender/kalenderImport.test.ts`: Dateien im Google- und Apple-Stil (Serie mit Ausnahme, verschobener Einzeltermin, ganztägig, mehrtägig, Sommerzeit, andere Zeitzone, Erinnerungen, Umlaute/Emojis, doppelt einlesen); Durchklick `kalenderImport`.
 
 - `tests/kalender/`: `termineAufgaben.test.ts`, `wiederholungen.test.ts`,

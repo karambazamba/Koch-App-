@@ -73,7 +73,7 @@ export function readQuick(kind: QuickKind, text: string, today: string, opts: { 
 /** „Fr, 30. Okt“ */
 export const shortDay = (iso: string) => headerDate(new Date(`${iso}T12:00:00Z`));
 
-function dayWord(iso: string, today: string): string {
+export function dayWord(iso: string, today: string): string {
   if (iso === today) return "Heute";
   if (iso === addDays(today, 1)) return tomorrowLabel(iso);
   return shortDay(iso);

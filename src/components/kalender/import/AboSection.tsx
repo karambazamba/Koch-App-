@@ -10,6 +10,8 @@ import { useState } from "react";
 import { Copy, Link2, RefreshCw, Settings2, Share2, ToggleRight } from "lucide-react";
 import { CARD, INPUT, LABEL, NOTE, SECTION_TITLE, buttonClass, chipClass } from "@/components/ui/styles";
 import type { Room } from "@/lib/core/entries";
+import { todayIso } from "@/lib/core/now";
+import { refreshedLabel } from "@/lib/kalender/mitbringen/angebot";
 import { showDeleted, showToast } from "@/lib/core/toast";
 import { plural } from "@/lib/core/text";
 import { AVATAR_COLORS, avatarHex } from "@/lib/einstellungen/profileHelper";
@@ -59,7 +61,7 @@ function AboRow({ abo }: { abo: Abo }) {
           Entfernen
         </button>
       </div>
-      {abo.error && <p className={`${NOTE} ml-14`}>{abo.error}</p>}
+      {abo.error ? <p className={`${NOTE} ml-14`}>{abo.error}</p> : abo.fetchedAt && <p className="ml-14 text-sm text-muted">{refreshedLabel(abo.fetchedAt, todayIso())}</p>}
     </li>
   );
 }

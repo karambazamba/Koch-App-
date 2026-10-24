@@ -2254,3 +2254,17 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Füllt sich von selbst (Einkauf abhaken → rein, kochen → raus), vergisst
   still je Sorte, Grundsachen immer da. „Vom Einkauf einräumen“ entfällt.
 - Ehrlich: „alles im Haus“ nur sicher, sonst „vermutlich im Haus“.
+
+## Kalender mitbringen, Rezept-Links, Aufgaben übernehmen (v0.86.0)
+- Ruhige Karte oben im Kalender: „Termine schon woanders? Hol sie rein.“
+  (Apple · Google · Outlook · Später – nach 14 Tagen noch einmal, dann nie).
+- Geführte Schritte je Anbieter, Link aus der Zwischenablage erkennen,
+  „Steht drin. 23 Termine in den nächsten 4 Wochen.“, „zuletzt aktualisiert“.
+- Rezept-Links an Mia: Link schicken oder teilen → Karte mit umgerechneten
+  Zutaten, „im Haus“-Abgleich, „auf die Liste“ oder „In den Wochenplan“.
+- Aufgaben übernehmen: To-do-Liste einfügen (Kästchen weg, Fristen erkannt,
+  Überschriften = Listen, Doppelte nur einmal), Vorschau zum Abwählen; die
+  Aufgaben-Seite zeigt „Jetzt dran“ und die Listen eingeklappt; einmal pro
+  Woche „Drei für diese Woche?“.
+- Fehler behoben: „abgegeben an“ (und Mias „Sag Lisa …“) ging beim Laden
+  verloren – die Prüfung der Einträge behält jetzt `fuer`, `zurueck`, `an`.

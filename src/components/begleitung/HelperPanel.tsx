@@ -5,6 +5,9 @@
 // festen Regeln (`useChatRules`); Spontan kochen, Supermarkt und die
 // KI-Anfrage stecken in eigenen Hooks.
 
+import { rezeptLinkIn } from "@/lib/essen/rezeptLink/lesen";
+import { listeAusChat, openListe } from "@/lib/kalender/liste/einfuegen";
+import { fetchRezeptLink } from "@/lib/essen/rezeptLink/abrufen";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { isIdeaFilterRequest } from "@/lib/essen/spontan";
@@ -176,6 +179,21 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     }, 1100);
   };
 
+  /** Rezept-Link: kurz „schau rein“, dann die Karte (oder ein freundlicher Satz) */
+  const showRezeptLink = (url: string, said: string) => {
+    setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: said, local: true }, { role: "assistant", text: "Moment, ich schau rein …", local: true }] }));
+    void fetchRezeptLink(url).then((r) =>
+      setChat((c) => {
+        const turns = [...c.turns];
+        const at = turns.map((x) => x.text).lastIndexOf("Moment, ich schau rein …");
+        const reply = "rezept" in r ? { role: "assistant" as const, text: "Hab’s gelesen. Das brauchst du dafür:", local: true, rezept: r.rezept } : { role: "assistant" as const, text: r.error, local: true };
+        if (at >= 0) turns[at] = reply;
+        else turns.push(reply);
+        return { ...c, turns };
+      }),
+    );
+  };
+
   /** Eingabe abschicken: neue Person, Reste-Modus oder Frage an die KI (`byVoice` = per Mikrofon) */
   const submit = (text: string, byVoice = false) => {
     const t = text.trim();
@@ -190,6 +208,22 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     if (chat.proposal && chat.proposal.selected.size > 0 && YES.test(t)) {
       setInput("");
       applyAndClose(chat.proposal.selected);
+      return;
+    }
+    // Ein Rezept-Link ist ein App-Befehl (wie ein geteilter Link): Seite lesen, Karte zeigen
+    const link = rezeptLinkIn(t);
+    if (link) {
+      setInput("");
+      showRezeptLink(link, t);
+      return;
+    }
+    // Eine eingefügte To-do-Liste ist ein App-Befehl: Vorschau „Liste einfügen“ (dort wird abgewählt und übernommen)
+    const liste = listeAusChat(t);
+    if (liste !== null) {
+      setInput("");
+      const reply = liste ? "Hab sie sortiert. Schau kurz drüber:" : "Gern. Füg sie einfach hier ein:";
+      setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text: reply, local: true }] }));
+      openListe(liste);
       return;
     }
     // „Kochidee“, „Was soll ich kochen?“ schaltet den Knopf frei (auch mit KI)

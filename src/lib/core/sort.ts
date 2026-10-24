@@ -165,6 +165,12 @@ export const IDEAS: Cmp<{ score: number; minutes: number | null }>[] = [descNum(
 
 // --- Notizen, Pinnwand, Tipps -----------------------------------------------------
 
+/** Aufgaben-Listen („Haus · 14“): nach Name */
+export const TASK_LISTS: Cmp<{ name: string }>[] = [byName((l) => l.name)];
+
+/** Wochen-Vorschlag aus Aufgaben ohne Datum: dringende, dann die ältesten */
+export const TASK_SUGGEST: Cmp<{ urgent: boolean; erstellt: string }>[] = [first((t) => t.urgent), asc((t) => t.erstellt)];
+
 /** Notizen: angeheftet → zuletzt geändert */
 export const NOTES: Cmp<{ pinned?: boolean; geaendert: string }>[] = [first((n) => n.pinned), desc((n) => n.geaendert)];
 

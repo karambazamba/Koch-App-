@@ -15,7 +15,7 @@ import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { CARD_LIST, chipClass } from "@/components/ui/styles";
 import { createEntry, type Room } from "@/lib/core/entries";
 import { ExternalLink } from "lucide-react";
-import { mondayOf, REMINDERS, removeItem, sanitizeEntry, sourceLabel, terminExtras, upsertEntry, weekdayIndex, type CalendarEntry, type Reminder, type Repeat } from "@/lib/kalender/model";
+import { aufgabeExtras, mondayOf, REMINDERS, removeItem, sanitizeEntry, sourceLabel, terminExtras, upsertEntry, weekdayIndex, type CalendarEntry, type Reminder, type Repeat } from "@/lib/kalender/model";
 import { nowIso, todayIso } from "@/lib/core/now";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { PERSONS, sortBy } from "@/lib/core/sort";
@@ -81,6 +81,7 @@ export function EntryForm({ entry, date, kind, onClose }: { entry?: CalendarEntr
   const [who, setWho] = useState<string[]>(entry?.typ === "termin" ? (entry.data.who ?? []) : []);
   const [room, setRoom] = useState<Room>(entry?.raum ?? "familie");
   const [label, setLabel] = useState(d?.label ?? "");
+  const [liste, setListe] = useState(entry?.typ === "aufgabe" ? (entry.data.liste ?? "") : "");
   const [repeat, setRepeat] = useState<RepeatKind>(d?.repeat?.kind ?? "nie");
   const [days, setDays] = useState<number[]>(d?.repeat?.kind === "wochentage" ? d.repeat.days : [weekdayIndex(day || todayIso())]);
   const [reminder, setReminder] = useState<Reminder>(d?.reminder ?? "aus");
@@ -98,7 +99,7 @@ export function EntryForm({ entry, date, kind, onClose }: { entry?: CalendarEntr
     const data =
       typ === "termin"
         ? { title, date: day, start: time, end: end || undefined, place: place || undefined, label: label || undefined, repeat: rep, reminder, who: who.length ? who : undefined, ...terminExtras(entry?.typ === "termin" ? entry.data : undefined), ...keep }
-        : { title, date: day || undefined, due: due || undefined, week: !day && !due && week ? week : undefined, time: time || undefined, label: label || undefined, repeat: rep, reminder, doneOn: entry?.typ === "aufgabe" ? entry.data.doneOn : null, ...keep };
+        : { title, date: day || undefined, due: due || undefined, week: !day && !due && week ? week : undefined, time: time || undefined, label: label || undefined, repeat: rep, reminder, doneOn: entry?.typ === "aufgabe" ? entry.data.doneOn : null, ...aufgabeExtras(entry?.typ === "aufgabe" ? entry.data : undefined), liste: liste.trim() || undefined, ...keep };
     const base = entry ? { ...entry, typ, raum: room, data } : createEntry(typ, data, { raum: room });
     const clean = sanitizeEntry({ ...base, geaendert: nowIso() });
     if (!clean) return setHint("Das hat nicht geklappt – schau bitte nochmal auf Datum und Uhrzeit.");
@@ -137,6 +138,9 @@ export function EntryForm({ entry, date, kind, onClose }: { entry?: CalendarEntr
         )}
         <div className={CARD_LIST}>
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={typ === "termin" ? "Titel, z. B. Steuerberater" : "Titel, z. B. Kita-Formular"} aria-label="Titel" className="h-12 w-full bg-transparent px-4 text-base font-semibold outline-none placeholder:font-normal placeholder:text-faint" autoFocus={!entry} />
+          {typ === "aufgabe" && entry?.typ === "aufgabe" && entry.data.liste !== undefined && (
+            <input value={liste} onChange={(e) => setListe(e.target.value)} placeholder="Liste, z. B. Haus" aria-label="Liste" className="h-12 w-full bg-transparent px-4 text-base outline-none placeholder:text-faint" />
+          )}
           {typ === "termin" && <input value={place} onChange={(e) => setPlace(e.target.value)} placeholder="Ort" aria-label="Ort" className="h-12 w-full bg-transparent px-4 text-base outline-none placeholder:text-faint" />}
           {entry?.typ === "termin" && entry.data.link && <SourceLink href={entry.data.link} note={entry.data.note} />}
           {entry?.typ === "termin" && entry.data.source && <p className="px-4 py-3 text-sm text-muted">{sourceLabel(entry.data.source)}</p>}

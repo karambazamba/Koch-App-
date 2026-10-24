@@ -42,7 +42,7 @@ async function refreshOne(abo: Abo): Promise<{ count: number; name: string | nul
 }
 
 /** Neuen Kalender verbinden (erst abrufen, dann speichern) */
-export async function addAbo(input: { url: string; name: string; raum: Room }): Promise<{ count: number } | { error: string }> {
+export async function addAbo(input: { url: string; name: string; raum: Room; fallback?: string }): Promise<{ count: number } | { error: string }> {
   const list = loadAbos();
   const abo: Abo = { id: newId(), name: input.name.trim().slice(0, 40), url: input.url.trim(), color: nextColor(list), raum: input.raum, on: true, fetchedAt: null, error: null };
   saveAbos([...list, abo]);
@@ -52,7 +52,7 @@ export async function addAbo(input: { url: string; name: string; raum: Room }): 
     return result;
   }
   if (!abo.name && result.name) patchAbo(abo.id, { name: result.name.slice(0, 40) });
-  else if (!abo.name) patchAbo(abo.id, { name: "Kalender" });
+  else if (!abo.name) patchAbo(abo.id, { name: input.fallback ?? "Kalender" });
   return { count: result.count };
 }
 

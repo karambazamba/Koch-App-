@@ -151,3 +151,60 @@ export const kalenderAbo = async (page, check) => {
   panel = await day("Samstag, 24. Oktober");
   check(!(await panel.getByText("Turnier").count()), "im Original gelöschter Termin verschwindet");
 };
+
+/** „Kalender mitbringen“: Karte im Kalender → Apple → Schritte → Link → „Steht drin.“; „Später“ blendet aus */
+export const kalenderMitbringen = async (page, check) => {
+  await family(page, "/?seite=kalender");
+  const panel = page.locator("[role=tabpanel]:not([inert])");
+  const card = panel.getByRole("region", { name: "Kalender mitbringen" });
+  check(await card.getByText("Termine schon woanders? Hol sie rein.").isVisible(), "Karte „Termine schon woanders?“");
+  await card.getByRole("button", { name: "Apple" }).click();
+  const sheet = page.getByRole("dialog", { name: "Apple-Kalender holen" });
+  check(await sheet.getByText("Schritt 1 von 4").isVisible(), "Schritt 1 von 4");
+  for (let i = 0; i < 4; i++) await sheet.getByRole("button", { name: "Weiter" }).click();
+  check(await sheet.getByText(/Der Link ist geheim/).isVisible(), "Hinweis: Link ist geheim");
+  await sheet.getByLabel("Kalender-Link").fill("webcal://kalender.test/verein.ics");
+  await sheet.getByRole("button", { name: "Verbinden" }).click();
+  const done = page.getByRole("dialog", { name: "Apple verbunden" });
+  check(await done.getByText(/^Steht drin\./).waitFor({ timeout: 8000 }).then(() => true, () => false), "„Steht drin. … in den nächsten 4 Wochen.“");
+  await done.getByRole("button", { name: "Fertig" }).click();
+  check(!(await card.isVisible()), "danach keine Karte mehr");
+  const abos = await store(page, "wasgibts.kalenderabos");
+  check(abos.abos.length === 1 && abos.abos[0].name === "Fußballverein", "Kalender verbunden, Name aus dem Kalender");
+
+  // Später: bei einer neuen Familie blendet „Später“ die Karte aus
+  await page.evaluate(() => localStorage.removeItem("wasgibts.kalenderabos"));
+  await page.evaluate(() => localStorage.removeItem("wasgibts.kalenderangebot"));
+  await page.reload();
+  await page.waitForTimeout(1000);
+  await card.getByRole("button", { name: "Später" }).click();
+  check(!(await card.isVisible()), "„Später“ blendet die Karte aus");
+};
+
+export const listeEinfuegen = async (page, check) => {
+  await family(page, "/aufgaben");
+  const text = ["Haus:", ...Array.from({ length: 14 }, (_, i) => `☐ Haus-Sache ${i + 1}`), "☑ Fenster putzen", "KINDER", "- [ ] Turnbeutel morgen waschen", ...Array.from({ length: 12 }, (_, i) => `• Kinder-Sache ${i + 1}`), "Arbeit:", "* Angebot bis Freitag", "* Präsentation nächste Woche", "1. Ablage machen"].join("\n");
+  await page.getByRole("button", { name: "Neue Aufgabe" }).first().click();
+  await page.getByRole("button", { name: "Liste einfügen" }).click();
+  const sheet = page.getByRole("dialog", { name: "Liste einfügen" });
+  await sheet.getByLabel("Liste hier einfügen").fill(text);
+  await sheet.getByRole("button", { name: "Weiter" }).click();
+  check(await sheet.getByText("30 Aufgaben gefunden · 3 mit Datum · 3 Listen (Haus, Kinder, Arbeit)").isVisible(), "Vorschau: 30 Aufgaben · 3 mit Datum · 3 Listen");
+  check(await sheet.getByText("1 schon abgehakt").isVisible(), "Abgehaktes weggelassen");
+  await sheet.getByRole("checkbox", { name: /Ablage machen/ }).click();
+  await sheet.getByRole("button", { name: "29 übernehmen" }).click();
+  const entries = (await store(page, "wasgibts.eintraege")).entries;
+  check(entries.filter((e) => e.data.liste === "Haus").length === 14, "14 Aufgaben in der Liste „Haus“");
+  check(!entries.some((e) => e.data.title === "Ablage machen"), "Abgewähltes nicht übernommen");
+  check(await page.getByRole("region", { name: "Jetzt dran" }).getByText("Turnbeutel waschen").isVisible(), "„Jetzt dran“ zeigt den Turnbeutel");
+  const haus = page.getByRole("button", { name: /^Haus · 14/ });
+  check(await haus.isVisible(), "Liste „Haus · 14“ eingeklappt");
+  check(!(await page.getByText("Haus-Sache 1", { exact: true }).isVisible()), "Haus-Sachen erst nach Aufklappen");
+  await haus.click();
+  check(await page.getByText("Haus-Sache 1", { exact: true }).isVisible(), "Aufklappen zeigt die Haus-Sachen");
+  await page.goto(BASE + "/");
+  await page.waitForTimeout(1000);
+  const tile = page.locator('[data-tile~="aufgaben"]').first();
+  check(await tile.getByText("Angebot").isVisible(), "Kachel zeigt „Angebot“ (bis Freitag)");
+  check(!(await tile.getByText("Haus-Sache 1").isVisible()), "Kachel zeigt keine Liste ohne Datum");
+};
