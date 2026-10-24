@@ -3,17 +3,19 @@
 // Erster Start, Bildschirm 3 (nach „Bevor’s losgeht“): Mia sagt kurz, wie’s
 // losgeht. Mia (110 px) oben, zwinkert einmal beim Erscheinen; darunter eine
 // weiße Sprechblase (Spitze zu Mia) mit Überschrift und drei Zeilen (Linien-
-// Icons in runden hellorangen Kreisen), unten „Zeig mal“ und leise der Satz
+// Icons in runden hellorangen Kreisen, „erzählen“ = Mia als Umriss), unten „Zeig mal“ und leise der Satz
 // zu den Beispielen. Nur beim allerersten Start (Hallo → „Los geht’s“), wer
 // über Anmelden oder eine Einladung kommt, sieht ihn nicht.
 
-import { useRef } from "react";
-import { Eye, MessageCircle, Plus, type LucideIcon } from "lucide-react";
+import { useRef, type ComponentType } from "react";
+import { Eye, Plus } from "lucide-react";
+import { MiaLineIcon } from "@/components/ui/MiaLineIcon";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { ERSTER_START } from "@/lib/mia/persona";
 import { helperName } from "@/lib/einstellungen/profile";
 
-const ICONS: Record<(typeof ERSTER_START.zeilen)[number]["id"], LucideIcon> = { ansehen: Eye, eintragen: Plus, erzaehlen: MessageCircle };
+/** Linien-Icons im hellorangen Kreis; „erzählen“ = Mia selbst als Umriss */
+const ICONS: Record<(typeof ERSTER_START.zeilen)[number]["id"], ComponentType<{ className?: string; strokeWidth?: number }>> = { ansehen: Eye, eintragen: Plus, erzaehlen: MiaLineIcon };
 
 /** `onDone(rect)`: Mias Platz, damit sie von hier zum Mia-Knopf fliegt */
 export function ZeigMalStep({ onDone }: { onDone: (mia: DOMRect | null) => void }) {
@@ -37,7 +39,7 @@ export function ZeigMalStep({ onDone }: { onDone: (mia: DOMRect | null) => void 
                 return (
                   <li key={z.id} className="flex items-center gap-3 text-[16px] font-semibold leading-snug">
                     <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent-strong">
-                      <Icon className="h-5 w-5" strokeWidth={2.2} />
+                      <Icon className="h-5 w-5" strokeWidth={2} />
                     </span>
                     <span>
                       {z.vor}

@@ -32,7 +32,7 @@ describe("Beispiel-Tag (erster Start)", () => {
     expect(d.termine.length).toBeGreaterThanOrEqual(2);
     expect(d.termine.some((t) => t.title === "Kaffeepause" && t.date === TODAY && t.start > "17:00")).toBe(false);
     expect(d.entries.filter((e) => e.typ === "aufgabe").every((e) => !(e.data as { date?: string }).date || (e.data as { date: string }).date === d.date)).toBe(true);
-    const dish = demoDishAt(d.minutes);
+    const dish = demoDishAt(TODAY, d.minutes);
     const dishStamp = `${dish.tomorrow ? "2026-10-22" : TODAY} ${dish.clock}`;
     expect(dishStamp > `${TODAY} ${clock}` || !dish.tomorrow).toBe(true);
     if (!dish.tomorrow) expect(d.minutes).toBeLessThan(18 * 60 + 30 + 90);
@@ -62,9 +62,9 @@ describe("Beispiel-Tag (erster Start)", () => {
   });
 
   it("Essen: bis 18:30 + 90 Min Pasta heute, danach Ofengemüse für morgen", () => {
-    expect(demoDishAt(19 * 60 + 59)).toMatchObject({ tomorrow: false, clock: "18:30" });
-    expect(demoDishAt(19 * 60 + 59).recipe.title).toBe("Pasta mit Tomaten & Burrata");
-    const later = demoDishAt(20 * 60);
+    expect(demoDishAt(TODAY, 19 * 60 + 59)).toMatchObject({ tomorrow: false, clock: "18:30" });
+    expect(demoDishAt(TODAY, 19 * 60 + 59).recipe.title).toBe("Pasta mit Tomaten & Burrata");
+    const later = demoDishAt(TODAY, 20 * 60);
     expect(later.tomorrow).toBe(true);
     expect(later.recipe.title).toBe("Ofengemüse mit Feta");
     expect(later.photo).toBe("/gerichte/ofengemuese-mit-feta.webp");

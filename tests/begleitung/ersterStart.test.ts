@@ -46,3 +46,20 @@ describe("„Lieber schlicht?“ statt Look-Frage", () => {
     expect(src).toMatch(/!state\.look && profile\.look === "farbig"\)\) return null/);
   });
 });
+
+describe("Mia als Linien-Icon („Oder mich antippen und erzählen“)", () => {
+  it("Zeile „erzählen“ zeigt Mia als Umriss, Linienstärke 2 wie Auge und Plus", () => {
+    const step = readFileSync("src/components/begleitung/ZeigMalStep.tsx", "utf8");
+    expect(step).toMatch(/erzaehlen: MiaLineIcon/);
+    expect(step).not.toMatch(/MessageCircle/);
+    expect(step).toMatch(/<Icon className="h-5 w-5" strokeWidth=\{2\} \/>/);
+  });
+
+  it("eine Komponente: Sprechblase mit mittiger Spitze, zwei senkrechte Augen, Lächeln, currentColor", () => {
+    const icon = readFileSync("src/components/ui/MiaLineIcon.tsx", "utf8");
+    expect(icon).toMatch(/stroke="currentColor"/);
+    expect(icon).toMatch(/strokeWidth = 2/);
+    expect(icon).toMatch(/L12 21\.6/); // Spitze genau in der Mitte (x = 12)
+    expect(icon).toMatch(/M9 9\.2v2\.2M15 9\.2v2\.2/); // Augen senkrecht, symmetrisch zu x = 12
+  });
+});

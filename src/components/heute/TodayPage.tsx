@@ -243,7 +243,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   // --- Jetzt-Karte ----------------------------------------------------------------------
   const demoDish = demoDay.tiles.includes("essen");
   const hat = Boolean(kochtipp && hatVisible(kochtipp, data.profile.display === "alles", demoDish));
-  const demoMeal = demoDishAt(minutes);
+  const demoMeal = demoDishAt(data.todayIso, minutes);
   const potHint = usePotHint(demoDay.tiles.length > 0);
   const miaHint = useMiaHomeHint(data.profile.miaHomeHint);
   const inviteHint = useInviteHint(data.profile, data.todayIso, demoDay.tiles.length > 0 || tipSeen === false || miaHint);

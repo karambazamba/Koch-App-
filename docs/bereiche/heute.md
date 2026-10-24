@@ -223,12 +223,23 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   beim ersten Erscheinen einmal zwinkert; „Tippen & sprechen“ erst nach 4 s.
   Jeder Schritt ist ein Verlaufseintrag (Zurück = ein Schritt), nach „Zeig
   mal“ werden die Schritte aus dem Verlauf genommen.
-- Beispiele liegen nie in echten Speichern. Termine aus `DEMO_DAY` (echte
-  Termine statt Mahlzeiten: 8:00 Kita bringen, 10:30 Telefonat Versicherung,
-  15:00 Mathis Fußball, 16:00 Zahnarzt Jonne, 19:30 Elternabend, 20:15
-  Lieblingsserie; nur was
-  heute noch kommt; weniger als 2 → Beispiele für morgen, „Morgen · Do“),
-  fünf Beispiel-Aufgaben, Pinnwand-Gruß, Einkauf `DEMO_SHOPS`, Beispielgericht.
+- Beispiele liegen nie in echten Speichern. Termine aus `demoDay(datum)`,
+  passend zum Wochentag (seit v0.99, `demoArt`; Feiertage bundesweit + SH aus
+  `core/feiertage.ts` wie Sonntag), echte Termine statt Mahlzeiten:
+  - Mo–Fr: 8:00 Kita bringen, 10:30 Telefonat Versicherung, 15:00 Mathis
+    Fußball, 16:00 Zahnarzt Jonne, 19:30 Elternabend (nur Di–Do), 20:15
+    Lieblingsserie
+  - Samstag: 9:00 Brötchen holen, 10:00 Wochenmarkt, 11:30 Fußballspiel
+    Mathis, 15:00 Kindergeburtstag Ben, 18:30 Grillen mit Nachbarn
+  - Sonntag/Feiertag: 9:30 Familienfrühstück, 11:00 Spaziergang am See, 15:00
+    Kaffee bei Oma, 18:00 Pizza backen, 20:15 Tatort
+
+  Nur was heute noch kommt; weniger als 2 → Beispiele für morgen mit dem Plan
+  von morgen („Morgen · Sa“). Fünf Beispiel-Aufgaben (am Wochenende/Feiertag
+  alle „diese Woche“, keine dringend), Pinnwand-Gruß, Einkauf `DEMO_SHOPS`,
+  Beispielgericht je Tag (`demoDishAt(heute, minuten)`: werktags Pasta 18:30,
+  samstags Lasagne 18:30, sonntags Ofen-Hähnchen 12:30; danach das von morgen).
+  Wechselt der Tag, wechselt der Plan von selbst (alles aus Datum und Uhrzeit).
 - Eine Zeile oben (`DemoRow`): „So sieht ein Tag aus“ · „Eigenen starten“.
   Je Kachel verschwinden die Beispiele beim ersten Eigenen (`clearDemoTile`),
   alle nach 3 Tagen oder per „Eigenen starten“. Danach einmal „Alle Beispiele

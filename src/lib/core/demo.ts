@@ -2,8 +2,9 @@
 // (Termine, Aufgaben, Pinnwand, Einkauf, Essen mit Beispielgericht), damit nichts leer aussieht. Die
 // Beispiele liegen NICHT in den echten Speichern – nur die Startseite zeigt
 // sie, nie Sicherung, Kalender, Push oder KI. Uhrzeiten werden beim Öffnen
-// aus einem festen Tagesplan (`DEMO_DAY`, nur was noch kommt; kommen
-// heute weniger als 2, Beispiele für morgen). Eine
+// aus einem festen Tagesplan passend zum Wochentag (`demoDay`: Werktag,
+// Samstag, Sonntag/Feiertag; nur was noch kommt; kommen heute weniger als 2,
+// Beispiele für morgen). Eine
 // Kachel verliert ihre Beispiele beim ersten eigenen Eintrag, alle nach 3
 // Tagen oder mit "Jetzt leeren".
 
@@ -11,6 +12,7 @@ import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 import { addDays, todayIso } from "@/lib/core/now";
 import { weekdayIndex, type CalendarEntry } from "@/lib/kalender/model";
+import { istFeiertag } from "@/lib/core/feiertage";
 
 export type DemoTile = "termine" | "aufgaben" | "pinnwand" | "einkauf" | "essen";
 const TILES: DemoTile[] = ["termine", "aufgaben", "pinnwand", "einkauf", "essen"];
@@ -104,32 +106,73 @@ const clock = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")
 const entry = (id: string, typ: "termin" | "aufgabe", data: Record<string, unknown>): CalendarEntry =>
   ({ id: `beispiel:${id}`, typ, raum: "familie", besitzer: "lokal", erstellt: `2000-01-01T00:0${id.slice(-1)}:00.000Z`, geaendert: "2000-01-01T00:00:00.000Z", data: { reminder: "aus", repeat: null, ...data } }) as CalendarEntry;
 
-/** Fester Beispiel-Tagesplan einer Familie (Minuten ab Mitternacht) – echte
- *  Termine, keine Mahlzeiten (v0.64, Tafel 51) */
-const DEMO_DAY: { id: string; title: string; at: number }[] = [
-  { id: "t2", title: "Kita bringen", at: 8 * 60 },
-  { id: "t3", title: "Telefonat Versicherung", at: 10 * 60 + 30 },
-  { id: "t5", title: "Mathis Fußball", at: 15 * 60 },
-  { id: "t6", title: "Zahnarzt Jonne", at: 16 * 60 },
-  { id: "t8", title: "Elternabend", at: 19 * 60 + 30 },
-  { id: "t9", title: "Lieblingsserie", at: 20 * 60 + 15 },
-];
+/** Art des Beispiel-Tags: Werktag, Samstag oder Sonntag (Feiertage wie Sonntag) */
+export type DemoArt = "werktag" | "samstag" | "sonntag";
+
+export function demoArt(date: string): DemoArt {
+  const w = weekdayIndex(date);
+  if (w === 6 || istFeiertag(date)) return "sonntag";
+  return w === 5 ? "samstag" : "werktag";
+}
+
+type DemoTermin = { id: string; title: string; at: number };
+const h = (std: number, min = 0) => std * 60 + min;
+
+/** Feste Beispiel-Tagespläne einer Familie (Minuten ab Mitternacht) – echte
+ *  Termine, keine Mahlzeiten (v0.64, Tafel 51); passend zum Wochentag (v0.100) */
+const DEMO_DAYS: Record<DemoArt, DemoTermin[]> = {
+  werktag: [
+    { id: "t2", title: "Kita bringen", at: h(8) },
+    { id: "t3", title: "Telefonat Versicherung", at: h(10, 30) },
+    { id: "t5", title: "Mathis Fußball", at: h(15) },
+    { id: "t6", title: "Zahnarzt Jonne", at: h(16) },
+    { id: "t8", title: "Elternabend", at: h(19, 30) },
+    { id: "t9", title: "Lieblingsserie", at: h(20, 15) },
+  ],
+  samstag: [
+    { id: "s1", title: "Brötchen holen", at: h(9) },
+    { id: "s2", title: "Wochenmarkt", at: h(10) },
+    { id: "s3", title: "Fußballspiel Mathis", at: h(11, 30) },
+    { id: "s4", title: "Kindergeburtstag Ben", at: h(15) },
+    { id: "s5", title: "Grillen mit Nachbarn", at: h(18, 30) },
+  ],
+  sonntag: [
+    { id: "o1", title: "Familienfrühstück", at: h(9, 30) },
+    { id: "o2", title: "Spaziergang am See", at: h(11) },
+    { id: "o3", title: "Kaffee bei Oma", at: h(15) },
+    { id: "o4", title: "Pizza backen", at: h(18) },
+    { id: "o5", title: "Tatort", at: h(20, 15) },
+  ],
+};
+
+/** Beispiel-Termine eines Tages (Elternabend nur Di bis Do) */
+export function demoDay(date: string): DemoTermin[] {
+  const art = demoArt(date);
+  const w = weekdayIndex(date);
+  return DEMO_DAYS[art].filter((t) => t.id !== "t8" || (w >= 1 && w <= 3));
+}
 
 /**
- * Beispiel-Termine und -Aufgaben: aus dem festen Tagesplan nur, was heute noch
- * kommt (sortiert; die Kachel zeigt davon so viele, wie ihre Größe erlaubt).
- * Kommen heute weniger als 2, gilt der Beispiel-Tag für morgen ab dem Morgen
- * ("Morgen · Do") – die Aufgaben wechseln mit.
+ * Beispiel-Termine und -Aufgaben: aus dem Tagesplan nur, was heute noch kommt
+ * (sortiert; die Kachel zeigt davon so viele, wie ihre Größe erlaubt). Kommen
+ * heute weniger als 2, gilt der Beispiel-Tag für morgen ab dem Morgen
+ * ("Morgen · Do") – mit dem Plan dieses Tages, die Aufgaben wechseln mit.
+ * Am Wochenende und an Feiertagen kein „heute dran“: alle Aufgaben für die
+ * Woche, keine dringend.
  */
 export function demoEntries(today: string, minutes: number, helper: string): { date: string; tomorrow: boolean; entries: CalendarEntry[] } {
-  const tomorrow = DEMO_DAY.filter((t) => t.at > minutes).length < 2;
+  const tomorrow = demoDay(today).filter((t) => t.at > minutes).length < 2;
   const date = tomorrow ? addDays(today, 1) : today;
-  const termine = DEMO_DAY.filter((t) => tomorrow || t.at > minutes).map((t) => entry(t.id, "termin", { title: t.title, date, start: clock(t.at) }));
+  const termine = demoDay(date)
+    .filter((t) => tomorrow || t.at > minutes)
+    .map((t) => entry(t.id, "termin", { title: t.title, date, start: clock(t.at) }));
   const monday = addDays(date, -weekdayIndex(date));
+  const frei = demoArt(date) !== "werktag";
+  const wann = frei ? { week: monday } : { date };
   const aufgaben = [
-    entry("a1", "aufgabe", { title: "App kennenlernen", date }),
-    entry("a2", "aufgabe", { title: `${helper} etwas fragen`, date, dringend: true }),
-    entry("a3", "aufgabe", { title: "Ersten Termin eintragen", date }),
+    entry("a1", "aufgabe", { title: "App kennenlernen", ...wann }),
+    entry("a2", "aufgabe", { title: `${helper} etwas fragen`, ...wann, ...(frei ? {} : { dringend: true }) }),
+    entry("a3", "aufgabe", { title: "Ersten Termin eintragen", ...wann }),
     entry("a4", "aufgabe", { title: "Kachel verschieben", week: monday }),
     entry("a5", "aufgabe", { title: "Pinnwand ausprobieren", week: monday }),
   ];
