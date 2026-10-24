@@ -3,8 +3,8 @@ import { BASE, hello, losGehts, newPage, seedFamily, setDark, swipe } from "../l
 
 export const hallo = async (page, check) => {
   await page.goto(BASE);
-  const hi = await page.getByRole("heading", { name: "Moin!" }).waitFor({ timeout: 5000 }).then(() => true, () => false);
-  check(hi, "Hallo-Bildschirm „Moin!“");
+  const hi = await page.getByRole("heading", { name: "Moin, ich bin Mia." }).waitFor({ timeout: 5000 }).then(() => true, () => false);
+  check(hi, "Hallo-Bildschirm „Moin, ich bin Mia.“");
   // Danach EINE Frage: der Look (Farbig vorausgewählt), Antippen zeigt ihn sofort
   await page.getByRole("button", { name: "Los geht’s" }).click();
   check(await page.getByRole("heading", { name: "Wie magst du’s?" }).waitFor({ timeout: 4000 }).then(() => true, () => false), "„Wie magst du’s?“ nach „Los geht’s“");
@@ -39,8 +39,10 @@ export const hallo2 = async (page, check) => {
   }
   check(ok === 10, `10× frisch: eine Navigation, Mia genau einmal (${ok}/10)`);
   await page.waitForTimeout(1500);
-  check(await page.getByRole("heading", { name: "Moin!" }).isVisible(), "„Moin!“ (Mia stellt sich nie vor)");
-  check(await page.locator("h1 .text-accent").innerText() === "!", "„Moin“ mit orangem „!“");
+  check(await page.getByRole("heading", { name: "Moin, ich bin Mia." }).isVisible(), "„Moin, ich bin Mia.“ (einzige Vorstellung)");
+  check(await page.locator("h1 .text-accent").innerText() === "Mia", "„Mia“ in Orange");
+  const h1 = await page.locator("h1").evaluate((el) => ({ h: el.getBoundingClientRect().height, lh: parseFloat(getComputedStyle(el).lineHeight), fs: parseFloat(getComputedStyle(el).fontSize), w: el.scrollWidth, cw: document.documentElement.clientWidth }));
+  check(h1.h < h1.lh * 1.5 && h1.w <= h1.cw, `Überschrift in einer Zeile (${h1.fs}px)`);
   check((await page.locator("[data-tone]").count()) === 0 && !(await page.getByText("Euer Alltag an einem Ort.").count()), "keine Deko-Kacheln, alte Zeile weg");
   check(!(await page.locator("[data-hello-marke] [data-brand]").count()) && (await page.getByText("Gemacht in Eutin von KARAMBA Eis").isVisible()), "unten ohne kleines Logo: „Gemacht in Eutin von KARAMBA Eis“");
   const zeile = page.getByText("Gemacht in Eutin von KARAMBA Eis");

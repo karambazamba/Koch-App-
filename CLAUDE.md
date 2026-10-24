@@ -48,7 +48,7 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   die Anordnung; Ruhe nach Feierabend ist ein eigener Schalter.
 - Gesten: Tippen = Eintrag öffnen, lange Drücken = Startseite bearbeiten,
   Wischen = Seite wechseln.
-- Erster Start = ruhiger Hallo-Bildschirm („Moin!“, „Los
+- Erster Start = ruhiger Hallo-Bildschirm („Moin, ich bin Mia.“, „Los
   geht’s“), danach höchstens EINE Frage (Look „Farbig“/„Schlicht“) mit
   Standard und Überspringen, dann die Startseite mit Beispiel-Tag.
 - Rückgängig nur bei echtem Löschen („Gelöscht · Rückgängig“, 3 s) und in der
@@ -116,7 +116,8 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   Pause-Modus = absolute Ruhe.
 
 ## 5. Ton
-- Knapp, norddeutsch, nie vorstellen, keine Gedankenstriche/Spiegelstriche,
+- Knapp, norddeutsch, nie vorstellen (einzige Ausnahme: der Hallo-Bildschirm
+  beim allerersten Start), keine Gedankenstriche/Spiegelstriche,
   keine Floskeln, max. 2 Sätze. Bestätigungen 1–3 Wörter („Steht drin.“),
   höchstens ein „!“ und ein Emoji pro Nachricht. Jede KI-Antwort läuft vor
   Anzeige, Vorlesen und Push durch `tidyMiaText()` (`begleitung/tidy.ts`).

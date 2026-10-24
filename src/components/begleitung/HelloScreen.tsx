@@ -1,8 +1,8 @@
 "use client";
 
 // Erster Start (nur ganz am Anfang oder nach "Neu anfangen"): der
-// Hallo-Bildschirm nach Tafel 55 – Mia groß und rund, „Moin!“ (Mia stellt sich nie vor)
-// („!“ in Orange), „Erzähl einfach, was ansteht. / Ich sortier das.“ (zwei
+// Hallo-Bildschirm nach Tafel 55 – Mia groß und rund, „Moin, ich bin Mia.“
+// (Name in Orange, eine Zeile; die einzige Stelle, an der sie sich vorstellt), „Erzähl einfach, was ansteht. / Ich sortier das.“ (zwei
 // Zeilen), „Los geht’s“, mit Konten „Schon ein Konto? Anmelden“ und unten nur
 // ein ruhiger, mittiger Abschluss (Tafel 84, Variante A – kein kleines Logo,
 // die große Mia reicht): „Gemacht in Eutin von KARAMBA Eis“, darunter leiser
@@ -30,7 +30,7 @@ import type { AppLook } from "@/lib/einstellungen/profile";
 import { expectReplace } from "@/lib/core/navigation";
 import { useCloudMode } from "@/lib/konten/backend";
 import { HELLO_JUMP_MS, HELLO_READY, HELLO_T, helloElapsed, helloJump, helloTapText, markHelloShown, reducedMotion, setHelloElapsed, setHelloFlight } from "@/lib/core/hello";
-import { helperMessage } from "@/lib/einstellungen/profile";
+import { helperMessage, helperName } from "@/lib/einstellungen/profile";
 import { buzz } from "@/components/heute/actions";
 import type { AvatarZustand } from "@/lib/core/avatarState";
 
@@ -70,8 +70,10 @@ export function HelloScreen() {
   const path = usePathname();
   const color = avatarHex(DEFAULT_HELPER.farbe);
   const cloud = useCloudMode();
-  // Jeder kennt Mia – sie stellt sich nie vor (Auftrag „Mia spricht knapp“)
-  const title = "Moin!";
+  // Einzige Vorstellung: beim allerersten Start (sonst stellt sie sich nie vor)
+  const name = helperName();
+  const lead = "Moin, ich bin ";
+  const title = `${lead}${name}.`;
   const ready = usePageReady();
   useEffect(markHelloShown, []);
   const [still] = useState(reducedMotion);
@@ -179,8 +181,7 @@ export function HelloScreen() {
       router.replace("/");
     }
   };
-  // „Moin“ dunkel, das „!“ in Orange
-  const prefix = title.slice(0, -1);
+  // „Moin, ich bin “ dunkel, der Name in Orange, der Punkt wieder dunkel
   const shown = title.slice(0, typed);
   return (
     <main className="fixed inset-0 z-40 overflow-y-auto bg-background" aria-label="Willkommen">
@@ -224,10 +225,11 @@ export function HelloScreen() {
                 </span>
               ))}
           </div>
-          <h1 tabIndex={-1} className="mt-8 min-h-[38px] text-[31px] font-extrabold leading-tight tracking-tight outline-none" aria-label={title}>
+          <h1 tabIndex={-1} className="mt-8 min-h-[38px] whitespace-nowrap text-[clamp(26px,9vw,38px)] font-extrabold leading-tight tracking-tight outline-none" aria-label={title}>
             <span aria-hidden>
-              {shown.slice(0, prefix.length)}
-              <span className="text-accent">{shown.slice(prefix.length)}</span>
+              {shown.slice(0, lead.length)}
+              <span className="text-accent">{shown.slice(lead.length, lead.length + name.length)}</span>
+              {shown.slice(lead.length + name.length)}
             </span>
             {typing && <span className="hello-caret" aria-hidden />}
           </h1>
