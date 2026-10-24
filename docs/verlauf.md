@@ -2283,3 +2283,13 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Einladungsseite „<Name> lädt dich ein.“, Wechseln nur auf Wunsch.
 - Karte „Soll Lisa auch sehen, was du einträgst?“ nach 3 Tagen; Mia: „Lade
   Lisa ein“. Apple/Google vorbereitet (Schalter, PKCE, /auth/callback).
+
+## Mails an Mia (v0.89.0)
+- Mails weiterleiten statt abtippen: eigene Adresse je Familie (und je Person
+  für die Arbeit), Mia macht Vorschläge (Termin mit Ort, Aufgabe mit Frist,
+  Einkauf) – „Übernehmen“ trägt ein, nichts automatisch.
+- Nur Weitergeleitetes von Mitgliedern, keine Werbung, keine Rohmail
+  gespeichert, Vorschläge 7 Tage. Gmail-/Outlook-Code zur Bestätigung direkt
+  in der App.
+- Mia lernt Absender („Von der Kita kommt öfter was …“) und liefert den
+  fertigen Gmail-Filter.

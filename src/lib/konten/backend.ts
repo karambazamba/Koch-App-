@@ -11,6 +11,9 @@ import { fail, friendlyError, ok, type CloudUser, type HouseholdInfo, type Invit
 import type { CloudDoc } from "@/lib/konten/sync/docs";
 import type { OAuthProvider } from "@/lib/konten/oauth";
 import { memoContentType, type MemoFile } from "@/lib/konten/memoShare";
+import type { Room } from "@/lib/core/entries";
+import type { MailEintrag } from "@/lib/mails/vorschlag";
+import type { Absender } from "@/lib/mails/lernen";
 
 export type CloudMode = "aus" | "supabase" | "test";
 
@@ -55,7 +58,16 @@ export interface CloudBackend {
   /** Ton-Dateien des Haushalts (zum Aufräumen) */
   listMemos(householdId: string): Promise<Result<MemoFile[]>>;
   removeMemos(paths: string[]): Promise<Result>;
+  /** Mails an Mia: lokaler Teil der Adresse (Familie bzw. eigene Arbeit); `renew` = neue Adresse, alte nimmt nichts mehr an */
+  mailAddress(room: Room, renew: boolean): Promise<Result<string>>;
+  listMailItems(): Promise<Result<MailEintrag[]>>;
+  dropMailItem(id: string): Promise<Result>;
+  mailSenders(): Promise<Result<MailAbsender[]>>;
+  /** „Ja, gern“ / „Nein danke“ bzw. „übernommen“ zählen */
+  markSender(sender: string, room: Room, change: { decision: "ja" | "nein" } | { accepted: true }): Promise<Result>;
 }
+
+export type MailAbsender = Absender & { room: Room };
 
 type Config = { mode: "aus" } | { mode: "test" } | { mode: "supabase"; url: string; key: string };
 
@@ -235,6 +247,26 @@ function testBackend(): CloudBackend {
     },
     removeMemos: async (paths) => {
       const r = await call("remove_memos", { paths });
+      return err(r) ? fail(err(r) as string) : ok(true);
+    },
+    mailAddress: async (room, renew) => {
+      const r = await call("mail_address", { room, renew });
+      return err(r) ? fail(err(r) as string) : ok(r.local as string);
+    },
+    listMailItems: async () => {
+      const r = await call("mail_items");
+      return err(r) ? fail(err(r) as string) : ok((r.items as MailEintrag[]) ?? []);
+    },
+    dropMailItem: async (id) => {
+      const r = await call("drop_mail_item", { id });
+      return err(r) ? fail(err(r) as string) : ok(true);
+    },
+    mailSenders: async () => {
+      const r = await call("mail_senders");
+      return err(r) ? fail(err(r) as string) : ok((r.senders as MailAbsender[]) ?? []);
+    },
+    markSender: async (sender, room, change) => {
+      const r = await call("mail_sender", { sender, room, ...change });
       return err(r) ? fail(err(r) as string) : ok(true);
     },
     // Im Test ohne Realtime: alle 2 Sekunden nachsehen lassen

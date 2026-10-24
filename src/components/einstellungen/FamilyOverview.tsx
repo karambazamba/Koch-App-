@@ -3,7 +3,7 @@
 import { plural } from "@/lib/core/text";
 import Link from "next/link";
 import { useMailStyle } from "@/lib/begleitung/mailSettings";
-import { Bell, Blocks, HandCoins, MapPin, BookOpen, CalendarDays, CalendarPlus, ChefHat, ChevronRight, Clock, CloudSun, Database, Dumbbell, LayoutGrid, Mail, Refrigerator, Salad } from "lucide-react";
+import { Bell, Blocks, HandCoins, MapPin, BookOpen, CalendarDays, CalendarPlus, ChefHat, ChevronRight, Clock, CloudSun, Database, Dumbbell, Forward, LayoutGrid, Mail, Refrigerator, Salad } from "lucide-react";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
@@ -60,6 +60,7 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
   const planOn = useFeature("wochenplan");
   const kochstilOn = useFeature("kochstil");
   const kalenderOn = useFeature("kalender");
+  const mailsOn = useFeature("mails");
   const jetzt = useJetzt();
   const notify = notifyStatusLabel(useNotifyPermission());
   const sport = useSport();
@@ -121,6 +122,11 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
           {kalenderOn && (
             <Row href="/profil/kalender" icon={CalendarPlus} title="Kalender übernehmen">
               Termine aus Apple oder Google holen
+            </Row>
+          )}
+          {mailsOn && (
+            <Row href="/profil/mails-an-mia" icon={Forward} title={`Mails an ${name}`}>
+              Weiterleiten, ich mache Vorschläge
             </Row>
           )}
           <Row href="/profil/bausteine" icon={Blocks} title="Mehr Funktionen">

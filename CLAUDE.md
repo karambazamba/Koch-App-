@@ -235,6 +235,10 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   Abgleich: neueste Änderung je Eintrag gewinnt, Löschen nur als Markierung;
   neue geteilte Daten = Übersetzer in `src/lib/konten/sync/docs.ts`.
   → `docs/bereiche/konten.md`
+- **Mails an Mia:** nur Vorschläge mit „Übernehmen“, nie die Rohmail
+  speichern (Domain, Betreff, Auszug ≤ 300), 7 Tage; nur Weitergeleitetes von
+  Mitgliedern, Webhook-Signatur (`RESEND_WEBHOOK_SECRET`) immer prüfen.
+  → `docs/bereiche/mails.md`
 - **Bilder der Gerichte:** eigene Zeichnungen im Code, keine fremden Fotos,
   keine KI (`docs/credits.md`); neues eingebautes Gericht → `npm run
   gerichte-bilder`. Kein Braun und kein Dunkelgrau als große Fläche. Soßen
@@ -291,6 +295,7 @@ Gleiche Bereichsnamen in `src/lib/<bereich>` (Logik, rein wo möglich),
 | `begleitung` | Chat, KI-Route, Werkzeuge, Sprache, Avatar, Hallo-Bildschirm |
 | `einstellungen` | Profil, Einstellungen, Mehr Funktionen |
 | `konten` | Konto, Haushalt, Einladen (Supabase), Datenbank-Tests (`tests/datenbank`) |
+| `mails` | Mails an Mia: Eingang (Webhook), Vorschläge, Absender lernen |
 | `core` | Speicher, Sicherung, Zeit, Navigation, Toast/Rückgängig, Sortieren, Bausteine |
 | `ui` | Bausteine der Oberfläche (`styles.ts`, `Sheet`, `PageHeader` …) |
 

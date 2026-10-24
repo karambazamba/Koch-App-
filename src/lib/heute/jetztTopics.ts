@@ -30,6 +30,7 @@ export type JetztKind =
   | "tipp"
   | "region"
   | "spendentopf"
+  | "mail"
   | "familie"
   | "morgen"
   | "ueberschneidung"
@@ -103,6 +104,8 @@ export type JetztInput = {
   routinen?: { morgen: { title: string; detail: string } | null; ueber: { key: string; title: string; detail: string } | null; pack: { key: string; title: string; detail: string } | null };
   /** Leise Neuigkeit aus dem Haushalt („Milch steht auf der Liste“ – höchstens eine am Tag) */
   family?: { id: string; title: string; detail: string; href: string } | null;
+  /** Vorschläge aus weitergeleiteten Mails (Baustein „mails“) */
+  mail?: { id: string; title: string; detail: string } | null;
   /** Spendentopf gestartet + vorgemerkt: einmal sanft fragen */
   potInvite?: { title: string; detail: string } | null;
   /** Kinder im Haushalt (für die Absprache bei Abendterminen) */
@@ -272,6 +275,7 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
   if (x.routinen?.pack && !night) add({ id: x.routinen.pack.key, kind: "packen", title: short(x.routinen.pack.title), detail: x.routinen.pack.detail, score: 70, target: null, button: null, gentle: true });
   if (x.routinen?.morgen && !night) add({ id: `morgen:${x.today}`, kind: "morgen", title: short(x.routinen.morgen.title), detail: x.routinen.morgen.detail, score: 62, target: null, button: null, gentle: true });
   if (x.family && !night) add({ id: `familie:${x.family.id}`, kind: "familie", title: short(x.family.title), detail: x.family.detail, score: 45, target: { href: x.family.href }, button: "Öffnen", gentle: true });
+  if (x.mail && !night) add({ id: `mail:${x.mail.id}`, kind: "mail", title: short(x.mail.title), detail: x.mail.detail, score: 68, target: { href: "/mails" }, button: "Öffnen", gentle: true });
   if (x.potInvite && !night) add({ id: `spendentopf:live`, kind: "spendentopf", title: x.potInvite.title, detail: x.potInvite.detail, score: 40, target: { href: "/spendentopf" }, button: "Öffnen", gentle: true });
   if (x.tip) add({ id: `tipp:${x.today}`, kind: "tipp", title: x.tip, detail: "Kleiner Tipp", score: 18, target: null, button: null, gentle: true });
 
