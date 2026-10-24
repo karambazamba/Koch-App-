@@ -25,7 +25,8 @@ import { useAssistantStatus } from "@/lib/begleitung/client";
 import { setAvatarFlag, triggerAvatar } from "@/lib/core/avatarState";
 import { shouldRead, speak, stopSpeaking, unlockSpeech, useSpeakingId, useSpeechSettings } from "@/lib/begleitung/speech";
 import type { AssistantData } from "@/lib/begleitung/ops";
-import { useKeyboardInset } from "@/lib/core/useMobileKeyboard";
+import { textFieldFocused, useKeyboardInset } from "@/lib/core/useMobileKeyboard";
+import { TIPPEN_ZU_MS, tippenSchliessen } from "@/lib/begleitung/tippModus";
 import { useSpeechInput } from "@/lib/begleitung/useSpeechInput";
 import { toIsoDate, useToday, weekStartFor, weekdayName } from "@/lib/essen/weekPlan";
 import { chatSuggestions, noteChatMessage, useShowSuggestions } from "@/lib/begleitung/chatSuggestions";
@@ -439,12 +440,23 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       inputRef.current?.focus();
     } else toggleMic();
   };
-  // Tastatur zu (und nichts getippt) → Mia wieder groß unten
-  const keyboardWas = useRef(0);
-  useEffect(() => {
-    if (keyboardWas.current > 0 && inset === 0 && !input.trim() && !adjusting) setTyping(false);
-    keyboardWas.current = inset;
-  }, [inset, input, adjusting]);
+  // Feld verlassen (und nichts getippt) → Mia wieder groß unten. Nur nach echtem
+  // Fokusverlust, nie wegen eines Layout-Sprungs beim Öffnen der Tastatur (Safari).
+  const leaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const fieldLeft = () => {
+    clearTimeout(leaveTimer.current);
+    leaveTimer.current = setTimeout(() => {
+      if (tippenSchliessen({ feldFokussiert: textFieldFocused(), leer: !inputRef.current?.value.trim(), aendern: adjusting })) setTyping(false);
+    }, TIPPEN_ZU_MS);
+  };
+  useEffect(() => () => clearTimeout(leaveTimer.current), []);
+  /** „Lieber sprechen“: zurück zu Mia, sie hört gleich zu */
+  const preferSpeaking = () => {
+    clearTimeout(leaveTimer.current);
+    inputRef.current?.blur();
+    setTyping(false);
+    if (!speech.listening) toggleMic();
+  };
   const hint = done ? "Erledigt" : stageHint(state, name, userTurns === 0);
   const mia = <StageMia state={state} size={layout.size} hint={layout.field && !done ? undefined : speech.wartet ? "Gleich schick ich’s ab" : hint} label={stageLabel(state, mic)} done={done} pause={speech.wartet} onTap={tapMia} />;
 
@@ -516,7 +528,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
         {layout.field ? (
           <div className="flex shrink-0 flex-col items-center pt-1">
             {mia}
-            <ChatInputBar inputRef={inputRef} input={input} setInput={setInput} name={name} canType={canType} busy={busy} speech={speech} dictationHint={dictationHint} suggestions={suggestions} onSubmit={submit} />
+            <ChatInputBar inputRef={inputRef} input={input} setInput={setInput} name={name} canType={canType} busy={busy} speech={speech} dictationHint={dictationHint} suggestions={suggestions} onSubmit={submit} onLeave={fieldLeft} onSpeak={mic.blocked || mic.supported === false ? undefined : preferSpeaking} />
           </div>
         ) : (
           <StageFoot>
