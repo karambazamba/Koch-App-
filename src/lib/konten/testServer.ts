@@ -41,6 +41,8 @@ type State = {
   /** Mails an Mia (wie mail_addresses / mail_items / mail_senders) */
   mailAddresses: Map<string, { householdId: string; userId: string | null; room: Room; active: boolean }>;
   mailItems: (MailItem & { id: string; householdId: string; userId: string | null; at: number; expires: number })[];
+  /** Einwilligungen je Person (nur anhängen), wie Tabelle `einwilligungen` */
+  consents: { userId: string; art: string; version: number; ja: boolean; at: number }[];
   mailSenders: { householdId: string; userId: string | null; room: Room; sender: string; count: number; accepted: number; decision: "ja" | "nein" | null }[];
 };
 
@@ -51,7 +53,7 @@ const ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 
 const g = globalThis as unknown as { __wasgibtsKonten?: State };
 const state = (): State =>
-  (g.__wasgibtsKonten ??= { users: new Map(), otps: new Map(), sessions: new Map(), households: new Map(), members: [], invites: new Map(), links: new Map(), attempts: new Map(), entries: new Map(), rev: 0, files: new Map(), mailAddresses: new Map(), mailItems: [], mailSenders: [] });
+  (g.__wasgibtsKonten ??= { users: new Map(), otps: new Map(), sessions: new Map(), households: new Map(), members: [], invites: new Map(), links: new Map(), attempts: new Map(), entries: new Map(), rev: 0, files: new Map(), mailAddresses: new Map(), mailItems: [], mailSenders: [], consents: [] });
 
 /** Für Tests: alles leeren @public */
 export function resetTestKonten() {
@@ -226,6 +228,7 @@ export function testKonten(body: Record<string, unknown>, nowMs = Date.now()): R
       return { ok: true };
     case "delete_account":
       removeMember(s, user.id);
+      s.consents = s.consents.filter((c) => c.userId !== user.id);
       s.users.delete(user.email);
       for (const [t, u] of s.sessions) if (u === user.id) s.sessions.delete(t);
       return { ok: true };
@@ -313,8 +316,17 @@ export function testKonten(body: Record<string, unknown>, nowMs = Date.now()): R
       if (row && body.accepted === true) row.accepted += 1;
       return { ok: true };
     }
+    case "consent": {
+      if (!["ki", "bedingungen", "mails"].includes(body.art as string) || typeof body.ja !== "boolean") return { error: "unbekannt" };
+      s.consents.push({ userId: user.id, art: body.art as string, version: Number(body.version) || 1, ja: body.ja, at: nowMs });
+      return { ok: true };
+    }
     case "export":
-      return { konto: { userId: user.id, email: user.email }, haushalt: householdOf(s, user.id) };
+      return {
+        konto: { userId: user.id, email: user.email },
+        haushalt: householdOf(s, user.id),
+        einwilligungen: s.consents.filter((c) => c.userId === user.id).map(({ art, version, ja, at }) => ({ art, version, ja, at: new Date(at).toISOString() })),
+      };
     default:
       return { error: "unbekannt" };
   }

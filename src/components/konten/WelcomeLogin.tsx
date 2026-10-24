@@ -13,6 +13,8 @@
 // sonst still „Familie <Name>“ anlegen. Was schon auf dem Handy ist, kommt
 // mit. Startseite; die Begleitung fliegt in die Jetzt-Karte.
 
+import { BedingungenHaken, useBedingungenOk } from "@/components/datenschutz/BedingungenHaken";
+import { RechtLinks } from "@/components/datenschutz/RechtstextView";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, Mail } from "lucide-react";
@@ -36,6 +38,7 @@ export function WelcomeLogin({ code: linkCode = "", einladung = "", inviter = ""
   const router = useRouter();
   const account = useAccount();
   const profile = useProfile();
+  const termsOk = useBedingungenOk();
   const color = avatarHex("orange");
   const providers = oauthProviders();
   const [chosen, setChosen] = useState<Step>(providers.length ? "knoepfe" : "email");
@@ -178,7 +181,7 @@ export function WelcomeLogin({ code: linkCode = "", einladung = "", inviter = ""
             <Screen title={title} sub={sub}>
               <div className="flex w-full flex-col gap-3">
                 {providers.map((p) => (
-                  <button key={p} type="button" disabled={busy} onClick={() => void run(() => startOAuth(p, window.location.pathname + window.location.search), () => {})} className={`${buttonClass("secondary", "lg")} w-full`}>
+                  <button key={p} type="button" disabled={busy || !termsOk} onClick={() => void run(() => startOAuth(p, window.location.pathname + window.location.search), () => {})} className={`${buttonClass("secondary", "lg")} w-full`}>
                     <AnbieterLogo id={p} />
                     {p === "apple" ? "Mit Apple fortfahren" : "Mit Google fortfahren"}
                   </button>
@@ -188,7 +191,7 @@ export function WelcomeLogin({ code: linkCode = "", einladung = "", inviter = ""
                   Mit E-Mail fortfahren
                 </button>
                 <ErrorLine text={error} />
-                <p className="text-sm text-muted">Kein Passwort nötig. Kostenlos.</p>
+                <BedingungenHaken links={false} />
               </div>
             </Screen>
           )}
@@ -204,7 +207,8 @@ export function WelcomeLogin({ code: linkCode = "", einladung = "", inviter = ""
               >
                 <input ref={field} type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@beispiel.de" aria-label="Deine E-Mail-Adresse" className={`${INPUT} h-14 text-center text-[17px]`} />
                 <ErrorLine text={error} />
-                <BigButton color={color} disabled={busy || !email.trim()}>
+                <BedingungenHaken links={false} />
+                <BigButton color={color} disabled={busy || !email.trim() || !termsOk}>
                   {busy ? "Schicke …" : "Code senden"}
                 </BigButton>
                 <p className="text-sm text-muted">Kein Passwort nötig. Kostenlos.</p>
@@ -274,6 +278,7 @@ export function WelcomeLogin({ code: linkCode = "", einladung = "", inviter = ""
             </Screen>
           )}
         </div>
+        <RechtLinks dicht className="pb-2" />
       </div>
     </main>
   );

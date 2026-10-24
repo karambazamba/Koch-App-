@@ -48,9 +48,21 @@ const SEEDED_RANDOM = () => {
   Math.random = () => ((s = (s * 1664525 + 1013904223) % 4294967296) / 4294967296);
 };
 
+/** Einwilligungen (KI, Bedingungen) als gegeben – wie nach „Erlauben“ */
+const CONSENT = () => {
+  try {
+    if (!localStorage.getItem("wasgibts.einwilligungen")) {
+      const ok = { ja: true, version: 1, at: "2026-10-01T00:00:00.000Z" };
+      localStorage.setItem("wasgibts.einwilligungen", JSON.stringify({ version: 1, arten: { ki: ok, bedingungen: ok } }));
+    }
+  } catch {
+    // ohne Speicher (about:blank) nichts zu tun
+  }
+};
+
 /** Neue Seite auf einem Gerät: feste Zeit, Zeitzone Berlin, Bewegung reduziert, hell/dunkel */
 /** Mikrofon erlaubt wie bei jemandem, der „Erlauben“ getippt hat (Sperre stellt `FAKE_MIC` nach) */
-export async function newPage(browser, device, { dark = false, time = TIME, permissions = ["microphone"] } = {}) {
+export async function newPage(browser, device, { dark = false, time = TIME, permissions = ["microphone"], consent = true } = {}) {
   const ctx = await browser.newContext({ ...devices[device], timezoneId: "Europe/Berlin", locale: "de-DE", colorScheme: dark ? "dark" : "light", reducedMotion: "reduce", permissions });
   const page = await ctx.newPage();
   page.errors = [];
@@ -58,6 +70,8 @@ export async function newPage(browser, device, { dark = false, time = TIME, perm
   page.on("console", (m) => m.type() === "error" && !/Failed to load resource|favicon/.test(m.text()) && page.errors.push(m.text()));
   await page.clock.setFixedTime(new Date(time));
   await page.addInitScript(SEEDED_RANDOM);
+  // Datenschutz (Platz 23): Einwilligungen für KI und Bedingungen schon gegeben – nur wenn noch keine da sind
+  if (consent) await page.addInitScript(CONSENT);
   return page;
 }
 

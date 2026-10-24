@@ -141,8 +141,12 @@ export function supabaseBackend(url: string, key: string): CloudBackend {
       const me = await user();
       if (!me) return fail(friendlyError("nicht_angemeldet"));
       const [members, households, profiles] = await Promise.all([sb.from("members").select("*"), sb.from("households").select("*"), sb.from("profiles").select("*").eq("user_id", me.userId)]);
-      const entries = await sb.from("entries").select("id, typ, raum, erstellt, geaendert, geloescht, data").eq("besitzer", me.userId);
-      return ok({ konto: me, mitglieder: members.data ?? [], haushalt: households.data ?? [], profil: profiles.data ?? [], eintraege: entries.data ?? [] });
+      const [entries, consents, mails] = await Promise.all([
+        sb.from("entries").select("id, typ, raum, erstellt, geaendert, geloescht, data").eq("besitzer", me.userId),
+        sb.from("einwilligungen").select("art, version, ja, at"),
+        sb.from("mail_items").select("room, sender_domain, subject, excerpt, vorschlaege, created_at"),
+      ]);
+      return ok({ konto: me, mitglieder: members.data ?? [], haushalt: households.data ?? [], profil: profiles.data ?? [], eintraege: entries.data ?? [], einwilligungen: consents.data ?? [], mail_vorschlaege: mails.data ?? [] });
     },
     pushEntries: async (docs) => {
       const skipped: string[] = [];
@@ -203,6 +207,10 @@ export function supabaseBackend(url: string, key: string): CloudBackend {
     mailSenders: async () => {
       const { data, error } = await sb.from("mail_senders").select("room, sender, count, accepted, decision").order("updated_at", { ascending: false }).limit(100);
       return error ? fail(friendlyError(error.message)) : ok((data ?? []) as MailAbsender[]);
+    },
+    saveConsent: async (art, version, ja) => {
+      const { error } = await sb.from("einwilligungen").insert({ art, version, ja });
+      return error ? fail(friendlyError(error.message)) : ok(true);
     },
     markSender: async (sender, room, change) => {
       const { error } = "decision" in change ? await sb.rpc("mail_sender_decide", { p_sender: sender, p_room: room, p_decision: change.decision }) : await sb.rpc("mail_sender_accepted", { p_sender: sender, p_room: room });

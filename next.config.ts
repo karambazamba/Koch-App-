@@ -11,6 +11,16 @@ const OLD_PAGES: [string, string][] = [
   ["/profil/wochenende", "/profil/kochstil"],
 ];
 
+/** Mikrofon und Standort nur für die eigene Seite, alles andere aus; nie in fremden Rahmen */
+const SECURITY_HEADERS = [
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(self), geolocation=(self), payment=(), usb=(), interest-cohort=()" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Content-Security-Policy", value: "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'" },
+];
+
 const nextConfig: NextConfig = {
   // Stand der Auslieferung – in den Einstellungen "Version 0.25 · Stand 20.10.2026"
   env: { BUILD_DATE: new Date().toISOString().slice(0, 10) },
@@ -34,6 +44,8 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      // Sicherheits-Header für alle Seiten (Datenschutz & Sicherheit, Platz 23) – Test tests/app/datenschutz.test.ts
+      { source: "/:path*", headers: SECURITY_HEADERS },
       {
         // Der Service Worker darf nie aus dem HTTP-Cache kommen,
         // sonst erreichen Updates die installierte App nicht.

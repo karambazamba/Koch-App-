@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { at, memoryStorage } from "../helpers";
+import { KI_ERLAUBT, at, memoryStorage } from "../helpers";
 import type { AssistantData, ChangeOp } from "@/lib/begleitung/ops";
 import type { StreamEvent } from "@/lib/begleitung/protocol";
 import { daten, HEUTE, rezept, termin, WOCHEN } from "./werkzeugKontext";
@@ -10,7 +10,7 @@ let client: Client;
 
 /** Kleiner Browser-Ersatz; Module danach frisch laden (eigene Zwischenspeicher) */
 async function frisch(initial: Record<string, string> = {}) {
-  local = memoryStorage(initial);
+  local = memoryStorage({ ...KI_ERLAUBT, ...initial });
   (globalThis as { window?: unknown }).window = {
     localStorage: local,
     sessionStorage: memoryStorage(),
@@ -124,6 +124,17 @@ describe("Gerät, Tageslimit, Zugangscode", () => {
     expect(client.unavailableText("limit")).toBe("Für heute hab ich genug geredet. Listen und Termine gehen natürlich weiter.");
     vi.stubGlobal("navigator", { onLine: false });
     expect(client.unavailableText()).toBe("Bin grad offline. Ich mach’s, sobald wieder Netz da ist.");
+  });
+});
+
+describe("Datenschutz: KI nur mit Einwilligung", () => {
+  it("ohne OK fragt die App die KI nie – auch nicht nach dem Status", async () => {
+    await frisch({ "wasgibts.einwilligungen": "null" });
+    const fetchMock = vi.fn(async () => json({ configured: true, mock: true, needsCode: false }));
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await client.aiUsable()).toBe(false);
+    await expect(ask()).rejects.toMatchObject({ reason: "einwilligung" });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 

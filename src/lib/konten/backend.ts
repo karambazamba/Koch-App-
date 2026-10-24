@@ -63,6 +63,8 @@ export interface CloudBackend {
   listMailItems(): Promise<Result<MailEintrag[]>>;
   dropMailItem(id: string): Promise<Result>;
   mailSenders(): Promise<Result<MailAbsender[]>>;
+  /** Einwilligung festhalten (Nachweis; nur anhängen) */
+  saveConsent(art: string, version: number, ja: boolean): Promise<Result>;
   /** „Ja, gern“ / „Nein danke“ bzw. „übernommen“ zählen */
   markSender(sender: string, room: Room, change: { decision: "ja" | "nein" } | { accepted: true }): Promise<Result>;
 }
@@ -267,6 +269,10 @@ function testBackend(): CloudBackend {
     },
     markSender: async (sender, room, change) => {
       const r = await call("mail_sender", { sender, room, ...change });
+      return err(r) ? fail(err(r) as string) : ok(true);
+    },
+    saveConsent: async (art, version, ja) => {
+      const r = await call("consent", { art, version, ja });
       return err(r) ? fail(err(r) as string) : ok(true);
     },
     // Im Test ohne Realtime: alle 2 Sekunden nachsehen lassen

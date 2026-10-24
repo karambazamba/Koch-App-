@@ -2293,3 +2293,17 @@ Fehler in `docs/aufraeumen-nachher.md`.
   in der App.
 - Mia lernt Absender („Von der Kita kommt öfter was …“) und liefert den
   fertigen Gmail-Filter.
+
+## Datenschutz & Sicherheit (v0.90.0, Platz 23)
+- Bestandsaufnahme in `docs/datenschutz/` (Datenkarte, Anbieter,
+  Verarbeitungsverzeichnis, TOMs, OWASP-Selbstprüfung, Liste für Felix).
+- Server-Funktionen in Frankfurt, Sicherheits-Header für alle Seiten, Test:
+  jede Tabelle mit RLS, Familien getrennt, Austritt wirkt sofort; Protokolle
+  ohne Inhalte.
+- Seiten Datenschutz (mit „Kurz gesagt“), Impressum, Nutzungsbedingungen als
+  Entwurf mit Platzhaltern; Links in Einstellungen, Begrüßung, Anmelden.
+- Einwilligungen: Pflicht-Häkchen beim Anmelden, „Darf ich mitdenken?“ vor der
+  ersten KI-Anfrage (ohne OK fragt die App die KI nie), Mails an Mia beim
+  Einschalten; mit Konto als Nachweis in `einwilligungen`.
+- Einstellungen → „Deine Daten“: Kurz gesagt, Einwilligungen widerrufen,
+  Daten mitnehmen, „Auf diesem Gerät löschen“, Kontakt.

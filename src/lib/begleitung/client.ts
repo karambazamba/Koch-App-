@@ -56,6 +56,7 @@ import {
   type StreamEvent,
 } from "@/lib/begleitung/protocol";
 import { now } from "@/lib/core/now";
+import { einwilligungErteilt, useEinwilligungen } from "@/lib/datenschutz/einwilligung";
 import { tidyMiaText } from "@/lib/begleitung/tidy";
 import type { StorageKey } from "@/lib/core/storage";
 
@@ -68,7 +69,8 @@ const COUNT_KEY: StorageKey = "wasgibts.lotte.anfragen";
  * verstanden“ (Auftrag „Mia auf Claude-Niveau“): offline wird nachgeholt,
  * beim Tageslimit gehen Listen und Termine weiter, sonst „Nochmal?“.
  */
-export const UNAVAILABLE_TEXT: Record<AssistantErrorCode | "offline", string> = {
+export const UNAVAILABLE_TEXT: Record<AssistantErrorCode | "offline" | "einwilligung", string> = {
+  einwilligung: "Dafür brauch ich kurz dein OK.",
   offline: "Bin grad offline. Ich mach’s, sobald wieder Netz da ist.",
   limit: "Für heute hab ich genug geredet. Listen und Termine gehen natürlich weiter.",
   zugangscode: "Dafür brauch ich einmal euren Zugangscode.",
@@ -77,12 +79,12 @@ export const UNAVAILABLE_TEXT: Record<AssistantErrorCode | "offline", string> = 
 };
 
 /** Passender Satz je nach Lage */
-export const unavailableText = (reason?: AssistantErrorCode | "offline") =>
+export const unavailableText = (reason?: AssistantErrorCode | "offline" | "einwilligung") =>
   UNAVAILABLE_TEXT[reason ?? (typeof navigator !== "undefined" && navigator.onLine === false ? "offline" : "fehler")];
 
 /** KI gerade nicht erreichbar (offline, aus, Limit, falscher Code …) */
 export class BegleitungUnavailable extends Error {
-  constructor(public reason: AssistantErrorCode | "offline") {
+  constructor(public reason: AssistantErrorCode | "offline" | "einwilligung") {
     super(UNAVAILABLE_TEXT[reason]);
   }
 }
@@ -201,6 +203,7 @@ function fetchStatus(): Promise<AssistantStatus> {
 
 /** Darf die App die KI gerade fragen? (eingerichtet und – falls verlangt – Code gemerkt) */
 export async function aiUsable(): Promise<boolean> {
+  if (!einwilligungErteilt("ki")) return false;
   const s = await fetchStatus();
   return s.configured && (!s.needsCode || s.access === "ok");
 }
@@ -210,10 +213,13 @@ type BegleitungStatus = AssistantStatus & {
   ready: boolean;
   /** Der Zugangscode wird noch gebraucht */
   askCode: boolean;
+  /** Die Person hat (noch) nicht erlaubt, dass die KI mitdenkt (Datenschutz, Platz 23) */
+  askConsent: boolean;
 };
 
 /** Ist die KI eingerichtet und freigeschaltet? (`undefined` = wird geprüft) */
 export function useAssistantStatus(enabled: boolean): BegleitungStatus | undefined {
+  const consent = useEinwilligungen().erteilt("ki");
   const [status, setStatus] = useState<AssistantStatus>();
   const [version, setVersion] = useState(0);
   useEffect(() => {
@@ -233,7 +239,7 @@ export function useAssistantStatus(enabled: boolean): BegleitungStatus | undefin
   }, [enabled, version]);
   if (!status) return undefined;
   const hasCode = status.access === "ok" || (!status.needsCode && status.configured);
-  return { ...status, ready: status.configured && hasCode, askCode: status.configured && status.needsCode && status.access !== "ok" };
+  return { ...status, ready: status.configured && hasCode && consent, askCode: consent && status.configured && status.needsCode && status.access !== "ok", askConsent: status.configured && !consent };
 }
 
 /**
@@ -359,6 +365,7 @@ export async function askAssistant(
   tipsThisWeek = 0,
   opts: AskOptions = {},
 ): Promise<AssistantReply> {
+  if (!einwilligungErteilt("ki")) throw new BegleitungUnavailable("einwilligung");
   if (typeof navigator !== "undefined" && navigator.onLine === false) throw new BegleitungUnavailable("offline");
   if (!takeAiSlot()) throw new BegleitungUnavailable("limit");
   let response: Response;

@@ -44,7 +44,7 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
   const [streaming, setStreaming] = useState<string | null>(null);
 
   /** KI gerade nicht da: erst die eigenen Regeln, sonst ein ehrlicher Satz (offline: merken und nachholen) */
-  const notUnderstood = (said: string, local?: (t: string) => boolean, reason?: AssistantErrorCode | "offline") => {
+  const notUnderstood = (said: string, local?: (t: string) => boolean, reason?: AssistantErrorCode | "offline" | "einwilligung") => {
     if (local?.(said)) return;
     const why = reason ?? (typeof navigator !== "undefined" && navigator.onLine === false ? "offline" : "fehler");
     if (why === "offline") queueForLater(said);

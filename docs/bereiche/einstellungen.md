@@ -224,3 +224,16 @@ anfangen).
   (`was-gibts-…`) lassen sich weiter einspielen (der Inhalt zählt, `app:
   "was-gibts"` bleibt als Kennung).
 
+
+## Deine Daten (seit v0.90)
+- `/profil/deine-daten` (`components/datenschutz/DeineDatenView.tsx`): „So
+  schützen wir eure Daten“ (`KURZ_GESAGT`), Einwilligungen (KI, Mails an Mia)
+  mit Schalter – Widerruf wirkt sofort –, Mitteilungen, Zustimmung zu den
+  Bedingungen (Datum), „Daten & App“ (herunterladen, Konto löschen), „Auf
+  diesem Gerät löschen“ (`wipeDevice` in `core/localStore.ts`: Web Storage und
+  eigene IndexedDB), Kontakt. Unten Links zu Datenschutz, Impressum,
+  Nutzungsbedingungen (`RechtLinks`).
+- Einwilligungen: `lib/datenschutz/einwilligung.ts` (Speicher
+  `wasgibts.einwilligungen`, pro Gerät, nicht in der Sicherung; `TEXT_VERSION`
+  erhöhen = einmal neu fragen). Mit Konto zusätzlich Tabelle `einwilligungen`
+  (nur anhängen). Details: `docs/datenschutz/`.
