@@ -25,6 +25,7 @@ import { addDays } from "@/lib/core/now";
 import { setDone, tomorrowLabel, type DayItem } from "@/lib/kalender/model";
 import { terminRows, topicSpot, type DaySection } from "@/lib/heute/deinTag";
 import type { JetztTopic } from "@/lib/heute/jetztTopics";
+import type { MiaFrage } from "@/components/heute/useMiaRoutinen";
 import type { PinMessage } from "@/lib/pinnwand";
 import dynamic from "next/dynamic";
 
@@ -44,6 +45,8 @@ type Props = {
   shop: { shop: string; names: string[] } | null;
   pins: PinMessage[];
   topic: JetztTopic | null;
+  /** Mias Fragen (Überschneidung, Packliste) – je genau 2 Knöpfe */
+  fragen?: MiaFrage[];
   /** „Erledigt“ am hervorgehobenen Thema (nur wo die Karte früher „Erledigt“ hatte) */
   onTopicDone: (t: JetztTopic) => void;
   onClose: () => void;
@@ -51,6 +54,27 @@ type Props = {
 
 const clock = (t: string) => clockLabel(t);
 const HL = "rounded-field bg-accent-soft/70 ring-1 ring-accent/30";
+
+/** Eine Frage von Mia mit genau zwei Knöpfen – ruhig, kein Rot */
+function FrageCard({ frage }: { frage: MiaFrage }) {
+  const [gone, setGone] = useState(false);
+  if (gone) return null;
+  const pick = (run: () => void) => () => (run(), setGone(true));
+  return (
+    <section className={`${HL} flex flex-col gap-2 px-3 py-3`} aria-label={frage.title} data-frage={frage.key}>
+      <p className="text-[15px] font-bold leading-snug">{frage.title}</p>
+      <p className="text-sm leading-snug text-muted">{frage.detail}</p>
+      <div className="flex gap-2">
+        <button type="button" onClick={pick(frage.yes.run)} className={buttonClass("primary", "sm")}>
+          {frage.yes.label}
+        </button>
+        <button type="button" onClick={pick(frage.no.run)} className={buttonClass("secondary", "sm")}>
+          {frage.no.label}
+        </button>
+      </div>
+    </section>
+  );
+}
 
 function Section({ id, title, children, highlight }: { id: DaySection; title: string; children: ReactNode; highlight?: boolean }) {
   return (
@@ -61,7 +85,7 @@ function Section({ id, title, children, highlight }: { id: DaySection; title: st
   );
 }
 
-export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, dish, shop, pins, topic, onTopicDone, onClose }: Props) {
+export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, dish, shop, pins, topic, fragen = [], onTopicDone, onClose }: Props) {
   const night = minutes >= 22 * 60;
   const [showTomorrow, setShowTomorrow] = useState(false);
   const [menu, setMenu] = useState<DayItem | null>(null);
@@ -115,6 +139,7 @@ export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, d
     >
       <div ref={body} className="flex flex-col gap-5 pb-6">
         {!showTomorrow && <MiaDoneRow today={today} onClose={onClose} />}
+        {!showTomorrow && fragen.map((f) => <FrageCard key={f.key} frage={f} />)}
         {empty && !showTomorrow ? (
           <p className="py-10 text-center text-[17px] font-semibold text-muted">Heute ist nichts geplant. Genieß es.</p>
         ) : (

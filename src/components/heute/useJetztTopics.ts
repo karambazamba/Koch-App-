@@ -46,6 +46,7 @@ export type JetztSource = {
   /** Tipps aus der Region (nur wenn an), mit Kindern im Haushalt, am Wochenende schon weggewischt */
   regionTips: TipView[] | null;
   potInvite?: { title: string; detail: string } | null;
+  routinen?: JetztInput["routinen"];
   regionHidden: string | null;
   /** Training heute (für Packliste und Wetter) */
   training: { key: string; title: string; time: string } | null;
@@ -125,6 +126,8 @@ export function useJetztTopics(src: JetztSource) {
     leisure: src.leisure,
     tip: src.tip,
     potInvite: src.potInvite ?? null,
+    // Morgen-Info: Wetter nur mit Planbezug (Regen zur Zeit eines Draußen-Termins)
+    routinen: src.demo || !src.routinen ? undefined : { ...src.routinen, morgen: src.routinen.morgen && wet ? { ...src.routinen.morgen, detail: `Ab ${Number(wet.time.slice(0, 2))} Uhr Regen. Regenjacke für ${wet.title}?` } : src.routinen.morgen },
     family: news ? { id: news.id, title: news.title, detail: news.detail, href: news.href } : null,
     region: region ? { id: region.id, title: `Tipp: ${region.titel}`, detail: [tipWhen(region), region.ort_name, tipTags(region, 1)[0]].filter(Boolean).join(" · ") } : null,
     kids: src.kids,

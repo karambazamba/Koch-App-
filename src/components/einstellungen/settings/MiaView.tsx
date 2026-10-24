@@ -6,7 +6,8 @@
 // v0.67) – kein Umbenennen mehr. Früher eigene Seiten (/profil/lotte,
 // /vorlesen, /farbe) leiten hierher.
 
-import { Palmtree, Sun } from "lucide-react";
+import { Hand, Palmtree, Sun } from "lucide-react";
+import { setKnopfLinks, useKnopfLinks } from "@/lib/mia/knopf";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { Segmented } from "@/components/ui/Segmented";
 import { SECTION_TITLE } from "@/components/ui/styles";
@@ -26,6 +27,7 @@ export function MiaView() {
   const title = helperName(useProfile());
   const tipsOn = useFeature("tipps");
   const weekendOn = useFeature("wochenendIdeen");
+  const links = useKnopfLinks();
   return (
     <SettingsPage title={title}>
       {(profile, set) => {
@@ -51,6 +53,7 @@ export function MiaView() {
               {weekendOn && (
                 <SwitchRow icon={Sun} title="Wochenend-Ideen" hint="Freitags bis sonntags ab und zu eine Idee fürs Wochenende." checked={profile.weekendIdeas} onChange={(weekendIdeas) => set({ weekendIdeas })} />
               )}
+              <SwitchRow icon={Hand} title="Knopf links" hint="Für Linkshänder: der runde Knopf unten links." checked={links} onChange={setKnopfLinks} />
               <Row href="/profil/pause" icon={Palmtree} title="Pause" value={profile.pause ? "An" : "Aus"}>
                 Im Urlaub halte ich mich raus
               </Row>
