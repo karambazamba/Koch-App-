@@ -41,13 +41,13 @@ describe("Ist das Essen vorbei?", () => {
 });
 
 describe("Als gekocht vermerken", () => {
-  it("zählt das Rezept, nimmt Frisches aus dem Vorrat (Schrank bleibt) und nimmt alles zurück", () => {
+  it("zählt das Rezept, nimmt die Zutaten aus „Im Haus“ (alle Orte) und nimmt alles zurück", () => {
     const r = rezept("Hack-Nudeln", ["Hackfleisch", "Nudeln", "Salz", "Paprika"], { id: "hn", cookedCount: 1, lastCookedAt: "2026-10-01T12:00:00.000Z" });
     replaceRecipes(buch(r));
     replacePantry([vorrat("Hackfleisch"), vorrat("Nudeln", "schrank"), vorrat("Paprika", "tiefkuehler"), vorrat("Milch")]);
     markCooked("2026-10-22", { title: r.title, recipeId: "hn" }, buch(r));
     expect(kochbuch().hn).toMatchObject({ cookedCount: 2, lastCookedAt: "2026-10-22T12:00:00.000Z" });
-    expect(loadPantry().map((p) => p.name)).toEqual(["Nudeln", "Milch"]);
+    expect(loadPantry().map((p) => p.name)).toEqual(["Milch"]);
     const day = cooked()["2026-10-22"];
     expect(day).toMatchObject({ title: "Hack-Nudeln", recipeId: "hn", how: "auto", counted: true, lastCookedBefore: "2026-10-01T12:00:00.000Z" });
     expect(day.used).toEqual(["Hackfleisch", "Nudeln", "Paprika"]);

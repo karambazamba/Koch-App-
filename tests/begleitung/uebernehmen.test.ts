@@ -87,14 +87,14 @@ describe("commitOps", () => {
 
   it("Vorrat, Wunsch, Rezept und Pinnwand landen in ihren Speichern und schalten frei", () => {
     const ops: ChangeOp[] = [
-      { id: "1", type: "add_pantry", name: "Chili", amount: 4, unit: "Portionen", place: "tiefkuehler" },
+      { id: "1", type: "add_pantry", name: "Chili", place: "tiefkuehler" },
       { id: "2", type: "add_wish", personId: "p-mathis", who: "Mathis", dish: "Pfannkuchen" },
       { id: "3", type: "add_recipe", recipe: { ref: "rezept-1", title: "Brot", category: "vegetarisch", servings: 2, prepMinutes: 60, ingredients: [], steps: ["Backen"], note: "" } },
       { id: "4", type: "add_pin", text: "Bin um 20 Uhr da" },
     ];
     const current = daten({ home: m.home.DEFAULT_HOME.map((t) => (t.id === "pinnwand" ? { ...t, visible: false } : t)) });
     const r = m.client.commitOps(current, ops, alle(ops), "");
-    expect(r.notes).toEqual(["Der Vorrat steht jetzt rechts unter Essen – und als Kachel auf Heute.", "Eure Rezepte stehen jetzt rechts unter Essen.", "Die Pinnwand steht jetzt oben auf der Startseite."]);
+    expect(r.notes).toEqual(["„Im Haus“ steht jetzt unter Essen – und als Kachel auf Heute.", "Eure Rezepte stehen jetzt rechts unter Essen.", "Die Pinnwand steht jetzt oben auf der Startseite."]);
     expect(m.pantry.loadPantry().map((p) => p.name)).toEqual(["Chili"]);
     expect(m.wishes.loadWishes().map((w) => w.dish)).toEqual(["Pfannkuchen"]);
     expect(m.pins.loadPins().map((p) => p.data.text)).toEqual(["Bin um 20 Uhr da"]);
@@ -142,7 +142,7 @@ describe("commitOps", () => {
   });
 
   it("„Mach das rückgängig“ nimmt die letzte Änderung zurück", () => {
-    const first: ChangeOp[] = [{ id: "1", type: "add_pantry", name: "Milch", amount: null, unit: "", place: "kuehlschrank" }];
+    const first: ChangeOp[] = [{ id: "1", type: "add_pantry", name: "Milch", place: "kuehlschrank" }];
     m.client.commitOps(daten(), first, alle(first), "Milch in den Vorrat");
     expect(m.pantry.loadPantry()).toHaveLength(1);
     const undo: ChangeOp[] = [{ id: "2", type: "undo_last" }];

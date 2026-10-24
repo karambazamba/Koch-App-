@@ -5,7 +5,6 @@
 import { germanNumber } from "@/lib/essen/leftovers/ruleParser";
 import type { Recipe, RecipeCategory } from "@/lib/essen/cookbook";
 import type { PantryItem } from "@/lib/vorrat/pantry";
-import { formatPantryItem } from "@/lib/vorrat/pantry";
 import type { NeverAgainEntry, PauseSettings } from "@/lib/einstellungen/profile";
 import { isNeverAgain } from "@/lib/essen/neverAgain";
 import { baseFromText, recipeBase, type BaseId } from "@/lib/essen/bases";
@@ -102,9 +101,9 @@ const SNACKY = /apfel|äpfel|banane|birne|traube|mandarine|clementine|beere|möh
 
 /** Snacks aus dem Vorrat für unterwegs */
 export function snackReply(pantry: PantryItem[]): string {
-  const items = pantry.filter((p) => SNACKY.test(p.name) || sectionFor(p.name) === "brot").map(formatPantryItem).slice(0, 5);
+  const items = pantry.filter((p) => SNACKY.test(p.name) || sectionFor(p.name) === "brot").map((p) => p.name).slice(0, 5);
   if (items.length === 0) return "Im Vorrat ist gerade nichts Passendes – Brezeln, Obst und Wasser gehen immer. Gute Fahrt! 🚗";
-  return `Aus dem Vorrat passt: ${items.join(", ")}. Dazu Wasser – und gute Fahrt! 🚗`;
+  return `Im Haus passt: ${items.join(", ")}. Dazu Wasser – und gute Fahrt! 🚗`;
 }
 
 // --- Drei schnelle Ideen -----------------------------------------------------------

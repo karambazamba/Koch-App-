@@ -1,9 +1,11 @@
-// Einkaufsliste: Ändern der Wochenlisten (abhaken, eigene Artikel, "Haben wir
+// Einkaufsliste: Ändern der Wochenlisten (abhaken – Gekauftes wandert nach
+// „Im Haus“ –, eigene Artikel, "Haben wir
 // schon", Stammartikel übernehmen) und eigene Produkte ("Immer so").
 
 import { lower, newId, EMPTY_LIST, type ListItem, type ManualItem, type Staple, type WeekList } from "@/lib/einkauf/listModel";
 import { store, update, updateList } from "@/lib/einkauf/listStore";
 import { recordPurchase } from "@/lib/einkauf/staples";
+import { boughtToHouse, unboughtFromHouse } from "@/lib/vorrat/kreislauf";
 
 const toggle = (list: string[], key: string) =>
   list.includes(key) ? list.filter((k) => k !== key) : [...list, key];
@@ -15,7 +17,12 @@ export function toggleChecked(weekStart: string, item: ListItem, today?: string)
       ? { ...l, manual: l.manual.map((m) => (m.id === item.manualId ? { ...m, done: !m.done } : m)) }
       : { ...l, checked: toggle(l.checked, item.key) },
   );
-  if (today) recordPurchase(item, !item.checked, today);
+  if (today) {
+    recordPurchase(item, !item.checked, today);
+    // Kreislauf Einkauf ↔ Im Haus: gekauft → rein, Haken weg → wieder raus
+    if (!item.checked) boughtToHouse(item.name, today);
+    else unboughtFromHouse(item.name, today);
+  }
 }
 
 export function setHave(weekStart: string, key: string, have: boolean) {

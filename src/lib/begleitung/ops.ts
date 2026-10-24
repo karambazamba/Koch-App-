@@ -119,7 +119,9 @@ export type ChangeOp =
   | { id: string; type: "set_feature"; feature: string; on: boolean }
   // Vorrat und Wunsch-Ideen liegen in eigenen Speichern – sie werden erst beim
   // Übernehmen dort eingetragen (`commitOps`), hier ändern sie nichts.
-  | { id: string; type: "add_pantry"; name: string; amount: number | null; unit: string; place: PantryPlace }
+  | { id: string; type: "add_pantry"; name: string; place: PantryPlace }
+  /** „Die Milch ist alle“ – in „Im Haus“ als aufgebraucht */
+  | { id: string; type: "use_pantry"; name: string }
   | { id: string; type: "add_wish"; personId: string | null; who: string; dish: string }
   // Termine und Aufgaben (`entries`): anlegen/ändern, löschen, abhaken, verschieben
   // `hint`: Vorschlag von Mia mit kurzer Begründung (Wochencheck: „Vorschlag · trocken“)
@@ -340,6 +342,7 @@ export function applyOps(
         next = { ...next, sport: { ...sanitizeSport(next.sport), goal: op.goal } };
         break;
       case "add_pantry":
+      case "use_pantry":
       case "add_wish":
       case "add_pin":
       case "add_timer":

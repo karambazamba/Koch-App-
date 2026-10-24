@@ -84,7 +84,7 @@ describe("Daten sichern und wiederherstellen", () => {
         },
       }),
     )!;
-    expect(backupSummary(b)).toBe("2 Rezepte, 1 Sache im Vorrat, 3 Trainings, 2 Personen");
+    expect(backupSummary(b)).toBe("2 Rezepte, 1 Sache im Haus, 3 Trainings, 2 Personen");
   });
 
   it("einspielen ersetzt die Daten, Geräte-Daten und Memos dieses Geräts bleiben", () => {

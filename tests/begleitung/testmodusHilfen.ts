@@ -21,7 +21,7 @@ export function context(extra: string[] = [], opts: { on?: string[]; vorrat?: st
     'Mail-Stil: Gruß "Viele Grüße", Name "Felix"',
     "Planungswoche, wenn nichts gesagt wird: aktuell",
     `Kochbuch: ${opts.kochbuch ?? "3 Rezepte – Spaghetti Bolognese (👍2), Kartoffelsuppe, Linsencurry"}`,
-    ...(opts.vorrat === "" ? [] : [`Vorrat (aktuell): ${opts.vorrat ?? "Hack 500 g (Kühlschrank), Paprika (Kühlschrank)"}`]),
+    ...(opts.vorrat === "" ? [] : [`Im Haus (vermutlich da, ohne Mengen): ${opts.vorrat ?? "Hack (Kühlschrank), Paprika (Kühlschrank)"}`]),
     "- Do 2026-10-22: 09:00 Zahnarzt [id=t1; termin, familie] | Steuer machen [id=a1; aufgabe, familie]",
     "- Fr 2026-10-23: 08:00 Kita-Fest [id=t2; termin, familie, wiederkehrend]",
     ...extra,

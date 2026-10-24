@@ -13,7 +13,7 @@ import { createLocalStore, readRaw } from "@/lib/core/localStore";
 
 const FEATURES = {
   wochenplan: "Wochenplan-Oberfläche (/wochenplan, Wochen-Check, Vorlagen)",
-  vorrat: "Vorrat (/vorrat) und Vorrats-Hinweise",
+  vorrat: "Im Haus (/vorrat) und Im-Haus-Hinweise",
   rezepte: "Rezepte (/kochbuch), Kochen Schritt für Schritt",
   backen: "Backstube mit Timern (eingebaute Backrezepte, Zusammen backen)",
   ideen: "Ideen-Seite (\"Was gibt’s heute?\") – kommt mit dem Baustein Spontan-Ideen",
@@ -33,7 +33,7 @@ export type Baustein = { feature: Feature; name: string; text: string; where: st
 
 export const BAUSTEINE: Baustein[] = [
   { feature: "wochenplan", name: "Wochenplan", text: "Gerichte für die ganze Woche planen – mit Vorgaben und Vorlagen.", where: "Der Wochenplan steht jetzt rechts unter Essen.", icon: "calendar" },
-  { feature: "vorrat", name: "Vorrat & Tiefkühler", text: "Merken, was im Kühlschrank, Tiefkühler und Schrank ist.", where: "Der Vorrat steht jetzt rechts unter Essen – und als Kachel auf Heute.", icon: "fridge" },
+  { feature: "vorrat", name: "Im Haus", text: "Füllt sich von selbst: Gekauftes kommt rein, Gekochtes geht raus.", where: "„Im Haus“ steht jetzt unter Essen – und als Kachel auf Heute.", icon: "fridge" },
   { feature: "rezepte", name: "Rezepte", text: "Eure eigenen Rezepte sammeln und Schritt für Schritt kochen.", where: "Eure Rezepte stehen jetzt rechts unter Essen.", icon: "book" },
   { feature: "backen", name: "Backen mit Timern", text: "20 Familien-Backrezepte, zusammen backen mit Timer und Kinder-Schritten.", where: "Backen steht jetzt rechts unter Essen.", icon: "cake" },
   { feature: "spontan", name: "Spontan-Ideen", text: "Ideen aus dem, was gerade da ist – ohne Planen.", where: "Spontan kochen steht jetzt rechts unter Essen.", icon: "carrot" },

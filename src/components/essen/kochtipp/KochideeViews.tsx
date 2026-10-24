@@ -16,9 +16,9 @@ import { dishTone } from "@/lib/essen/dishLook";
 import { ingredientLine } from "@/lib/essen/kochtipp/idee";
 import type { CookCard } from "@/lib/essen/kochtipp/pick";
 
-/** Grün „alles im Haus“ bzw. orange „auf die Liste: …“ */
+/** Grün „alles im Haus“, grau „vermutlich im Haus: …“ bzw. orange „auf die Liste: …“ */
 function Line({ card }: { card: CookCard }) {
-  return <span className={`text-[13px] font-semibold ${card.needs.length ? "text-accent-strong" : "text-good-ink"}`}>{ingredientLine(card)}</span>;
+  return <span className={`text-[13px] font-semibold ${card.needs.length ? "text-accent-strong" : card.unsure?.length ? "text-muted" : "text-good-ink"}`}>{ingredientLine(card)}</span>;
 }
 
 /** Ein Vorschlag als Zeile (ohne Frage, gleich beim Öffnen) */

@@ -1,105 +1,86 @@
-# Vorrat
+# Im Haus (früher Vorrat)
 
-Kurz: Merkt sich, was zu Hause ist – im Kühlschrank, Tiefkühler und
-Vorratsschrank. Grundlage für „Das ist da“, „Daraus kannst du kochen“,
-Spontan kochen und die Ideen der Begleitung. Alles sichtbare liegt hinter dem
-Baustein **Vorrat & Tiefkühler** (`vorrat` in `src/lib/core/features.ts`).
+Kurz: Was zu Hause ist – ohne Mengen, nur da oder nicht da. Füllt sich von
+selbst (im Einkauf Abgehaktes kommt rein, Gekochtes geht raus), vergisst
+still, wenn man nicht pflegt, und sieht aus wie der Einkauf. Alles Sichtbare
+liegt hinter dem Baustein **Im Haus** (`vorrat` in `src/lib/core/features.ts`,
+aus als Standard); Abhaken im Einkauf, „Hab … gekauft“ oder ＋ schalten ihn
+frei. Intern heißt alles weiter Vorrat (`src/lib/vorrat/`, `/vorrat`,
+`wasgibts.vorrat`).
 
 ## Wo im Code
 
-- Daten und Regeln: `src/lib/vorrat/pantry.ts` (Orte, Mengen, Zusammenzählen,
-  Zutaten-Abgleich `sameIngredient`/`ingredientStem`, Speicher).
-- Vom Einkauf einräumen: `src/lib/vorrat/einraeumen.ts` (`toPutAway`,
-  `markMoved`, `useMovedKeys`).
-- Seite `/vorrat`: `src/app/vorrat/page.tsx` (`FeatureGate feature="vorrat"`)
-  → `src/components/vorrat/PantryView.tsx` (`PantryView`, `PantryRow`,
-  `EditSheet`).
-- Kachel „Vorrat“ auf Heute: `PantryTile` in
-  `src/components/heute/HomeTiles.tsx` (S/M; `HOME_TILES` in
-  `src/lib/core/homeLayout.ts`, nur mit Baustein sichtbar).
-- „Bald aufbrauchen“: `soonToUse` in `src/lib/essen/dishIdeas.ts`.
-- Bestand für Ideen (Vorrat + Gekauftes): `useStock` in
-  `src/lib/essen/useStock.ts`.
-- Feste Reihenfolge: Regel `PANTRY` in `src/lib/core/sort.ts`.
+- Regeln an EINER Stelle: `src/lib/vorrat/haltbar.ts` – Orte (`placeFor`),
+  Sorten und „vermutlich noch da“-Zeiten (`HALTBAR_TAGE`), `isGone`,
+  `isUnsure`, `isSoon`, `soonBadge`, Grundsachen (`GRUNDSACHEN`), Nicht-Essen
+  (`isFood`), ein Eintrag (`PantryItem`, `cleanPantryItem`).
+- Speicher: `src/lib/vorrat/pantry.ts` (Migration, rein/raus, Ort merken,
+  aufgebraucht, still aufräumen, Zutaten-Abgleich `sameIngredient`).
+- Kreislauf: `src/lib/vorrat/kreislauf.ts` (`boughtToHouse`,
+  `unboughtFromHouse`, `backToList`, Sätze ohne KI `pantrySentence`).
+- Seite: `src/lib/vorrat/imHaus.ts` (`houseSections`, `houseTile`) →
+  `src/components/vorrat/PantryView.tsx`.
+- Kachel auf Heute: `PantryTile` in `src/components/heute/HomeTiles.tsx`.
+- Gleiche Kachel wie im Einkauf: `ItemTile`
+  (`src/components/einkauf/kacheln/ItemTile.tsx`, mit `badge` und `faded`).
+- Ehrliche Zutaten-Zeile: `matchStock(names, stock, today)` und `stockLine`
+  in `src/lib/essen/dishIdeas.ts`.
 
 ## Daten und Speicher
 
-- `wasgibts.vorrat` v2 (in der Sicherung):
-  `{ version: 2, items: PantryItem[] }`. `PantryItem` = `id`, `name`,
-  `amount` (Zahl oder `null` = ohne Menge), `unit` (leer = Stück), `addedAt`
-  („YYYY-MM-DD“), `place` (`kuehlschrank` | `tiefkuehler` | `schrank`).
-  Migration `migrateStore` in `pantry.ts`: v1 ohne Ort bekommt den
-  naheliegenden Ort (`placeFor`); Einträge ohne `id`/`name` fallen weg,
-  ungültige Mengen werden `null`; unbekannte Versionen werden nicht gelesen.
-- `wasgibts.eingeraeumt` v1 (pro Gerät, nicht in der Sicherung):
-  `{ version: 1, weeks: { <Wochenbeginn>: string[] } }` – Schlüssel der
-  Einkaufs-Artikel, die schon eingeräumt wurden. Nur die letzten 8 Wochen, je
-  Woche höchstens 200 Schlüssel; Kaputtes wird beim Laden aussortiert.
+- `wasgibts.vorrat` v3 (in der Sicherung, im Haushalt geteilt):
+  `{ version: 3, items: PantryItem[], places: { <name klein>: Ort } }`.
+  `PantryItem` = `id`, `name`, `addedAt` („YYYY-MM-DD“), `place`
+  (`kuehlschrank` | `schrank` | `tiefkuehler`), `usedAt` (aufgebraucht).
+- Migration v1/v2 → v3 (`migratePantry`): Mengen und Einheiten fallen weg,
+  Namen ohne Zahl („3 Karotten“ → „Karotten“), v1 ohne Ort bekommt den
+  naheliegenden Ort; nichts Gültiges geht verloren.
+- Abgleich (`docs.ts`): je Sache `vr:<id>`, dazu einmal `vr:orte`. Ältere
+  Geräte mit Mengen werden sauber gelesen (`cleanPantryItem`).
+- `wasgibts.eingeraeumt` ist ausgemustert (`RETIRED_KEYS`).
 
 ## So verhält es sich
 
-- **Orte** (`PANTRY_PLACES`): Kühlschrank 🧊, Tiefkühler ❄️, Vorratsschrank 🥫 –
-  auf der Seite als Segment-Schalter in dieser Reihenfolge. `placeFor` wählt
-  den naheliegenden Ort: TK/Tiefkühl/Eis/Fischstäbchen → Tiefkühler, sonst
-  nach Einkaufs-Abteilung (`sectionFor`): Tiefkühl → Tiefkühler,
-  Vorrat/Getränke → Schrank, alles andere → Kühlschrank.
-- **Eintragen**: Feld unter der Liste („z. B. 2 Karotten, Joghurt“). Der Text
-  wird mit `parseLeftovers` zerlegt; auch Unbekanntes wird übernommen (wie
-  geschrieben bzw. mit Vorschlag) – in den gerade gewählten Ort.
-- **Zusammenzählen** (`addPantryItems`): gleiches Lebensmittel (Einzahl =
-  Mehrzahl), gleiche Einheit, gleicher Ort → Menge wird addiert, Datum neu,
-  Name passend zur Menge („3 Karotten“).
-- **Liste je Ort** (`PantryRow`): Ort-Symbol, Name, kleine Info („seit
-  gestern“, „seit 3 Tagen“, im Tiefkühler „seit 12.10.“), Menge mit −/+.
-  Schritt 100 bei g/ml, sonst 1. − bis null = aufgebraucht: Eintrag weg,
-  Meldung „<Name> aufgebraucht“ mit Rückgängig (`showDeleted`).
-- Antippen öffnet „Im Vorrat ändern“: Menge, Einheit (`PANTRY_UNITS`), Name,
-  Ort (Chips) – „Speichern“ oder „Löschen“ (Löschen mit „Gelöscht · Rückgängig“, seit Etappe 8).
-- Sortierung (`PANTRY`): Bald aufbrauchen → Ort → Name (deutsch).
-- **Bald aufbrauchen** (`soonToUse`): im Kühlschrank seit 2 oder mehr Tagen
-  (nicht Gekauftes `b:…` oder eben Gesagtes `s:…`). Oben auf der Seite eine
-  hellorange Karte mit bis zu 4 Sachen (mit −/+) und „Rezept dazu“ →
-  Essen-Reiter (`/?seite=essen`).
-- **Vom Einkauf einräumen**: grüne Zeile oben, nur wenn passend. Sie zeigt
-  abgehakte Artikel der laufenden Einkaufswoche, die nicht „Haben wir schon“
-  sind, noch nicht im Vorrat stehen (`sameIngredient`) und nicht schon
-  eingeräumt wurden. „Einräumen“ trägt alle ohne Menge an ihren
-  naheliegenden Ort ein und merkt sie (`markMoved`); zurück mit „Mach das
-  rückgängig“ (`pushUndo`).
-- Leer (Kühlschrank): „Noch nichts eingetragen – erzähl <Name> einfach, was
-  übrig ist.“ Unten „Spontan kochen mit <Name>“ (Spontan-Modus im Chat).
-- **Nach dem Essen** (`markCooked` in `src/lib/essen/mealDone.ts`): passende
-  Zutaten aus Kühlschrank und Tiefkühler werden entfernt, der Schrank bleibt.
-  „Auf morgen verschieben“ im Wochenplan legt sie zurück.
-- **Kachel auf Heute**: „Bald aufbrauchen“ mit 2 (S) bzw. 4 (M) Sachen, sonst
-  „Zuletzt dazu“; leer „+ eintragen“. Antippen → `/vorrat`.
-- **Essen-Reiter**: „Das ist da“ (Chips, Bald aufbrauchen zuerst mit Sanduhr,
-  höchstens 8, dann „+ N“ → `/vorrat`); bei leerem Vorrat der Einstieg „Trag
-  ein, was da ist – dann passen die Ideen.“ (`BausteinSections`). Beides nur
-  mit Baustein.
+- **Orte automatisch**: Milch, Käse, Sahne, Fleisch, Gemüse → Kühlschrank;
+  Kartoffeln, Nudeln, Reis, Zwiebeln, Konserven, Brot, Tomaten, Äpfel →
+  Schrank; TK-Ware, Fischstäbchen, Eis → Tiefkühler. Lange drücken = Ort
+  ändern; gilt ab dann für diese Sorte (`places`).
+- **Vergisst von selbst** (still, keine Nachfrage): Fleisch/Fisch 3 Tage,
+  Milchprodukte/Obst/Gemüse/Brot 7, Kartoffeln/Zwiebeln 21, Trockenes 42,
+  Tiefkühler 90. Danach verschwindet der Eintrag. Grundsachen (Salz, Pfeffer,
+  Öl, Zucker, Mehl, Essig, Gewürze) gelten immer als da und stehen nicht da.
+- **Kreislauf**: Im Einkauf abhaken → rein (nur Lebensmittel, Drogerie nicht),
+  Meldung „Im Haus: Brot, Äpfel · Rückgängig“ (kurz Nacheinanderes in EINER
+  Meldung); Haken weg → wieder raus. Antippen im Haus = aufgebraucht (blass
+  unter „Aufgebraucht“, 3 Tage), nochmal = wieder auf die Liste („Steht
+  wieder auf der Liste · Rückgängig“). Gekocht (`markCooked`) → Zutaten raus.
+  ＋ = Schnelleingabe „IM HAUS“.
+- **Seite**: Hinweis „Füllt sich von selbst …“, Chips Alle · Kühlschrank ·
+  Schrank · TK, Abschnitte Bald aufbrauchen → Kühlschrank → Schrank →
+  Tiefkühler → Aufgebraucht, unten „Was kann ich daraus kochen?“ → Kochidee.
+- **Bald aufbrauchen**: nur Frisches im letzten Drittel seiner Zeit, Schild
+  „heute“/„morgen“ (Orange) bzw. „bis Sa“ (Gelb), nie rot.
+- **Kachel** (S/M): „Bald aufbrauchen“ (2 bzw. 4 Zeilen à 30 px), sonst
+  „Zuletzt eingekauft“; „Daraus kochen“ → Kochidee; leer „Was du einkaufst,
+  landet hier von selbst.“
+- **Ehrlich**: „alles im Haus“ (grün) nur, wenn die Zutaten in der ersten
+  Hälfte ihrer Zeit sind; sonst „vermutlich im Haus: …“ (grau); fehlt etwas,
+  „auf die Liste: …“. Leeres „Im Haus“ → nie „im Haus“.
 
 ## Begleitung (Mia)
 
-- Werkzeug `vorrat_hinzufuegen` (`src/lib/begleitung/pantryTools.ts`, Bereich
-  „essen“): Sachen mit Menge, Einheit, Ort → Op `add_pantry`, Vorschau mit
-  „Übernehmen“. Eingetragen wird erst beim Übernehmen (`commitSideOps` in
-  `src/lib/begleitung/client.ts`, mit Rückgängig). Ist der Baustein aus, wird
-  er eingeschaltet und die Begleitung (Standard Mia) sagt, wo der Vorrat
-  steht.
-- Die KI bekommt den Bestand kompakt im Kontext (`prompt.ts`: Name, Menge,
-  Ort, „seit 4 Tagen – bald verbrauchen“, Gekauftes).
-- Ohne KI: Im Spontan-Modus genannte Zutaten landen im Vorrat („Notiert ✓“)
-  und schalten den Baustein frei (`useSpontanChat.ts`). „Zeig mir den Vorrat“
-  schaltet den Baustein ein bzw. öffnet `/vorrat` (`bausteinRule`,
-  `useChatRules.ts`). „Wir fahren spontan los, was nehmen wir mit?“ →
-  Ausflugs-Snacks aus dem Vorrat (`snackReply` in `src/lib/essen/spontan.ts`).
+- `vorrat_hinzufuegen` („Hab Hähnchen gekauft“, „Chili eingefroren“) und
+  `vorrat_aufgebraucht` („Die Milch ist alle“) in
+  `src/lib/begleitung/pantryTools.ts` → Ops `add_pantry`/`use_pantry`, sofort
+  mit Rückgängig (`miaDone.ts`). Ohne KI dieselben Sätze über
+  `pantrySentence` (`useChatRules.ts`). Kontext: „Im Haus (vermutlich da, ohne
+  Mengen): …“.
 
 ## Tests
 
-- `tests/vorrat/vorratOrte.test.ts` – Orte, Bruch-Mengen, gleiche Zutat,
-  Migration v1 → v2, Zusammenzählen, Ändern/Löschen/Ersetzen, Merker fürs
-  Einräumen (8 Wochen, Reparatur, falsche Version).
-- `tests/vorrat/einraeumen.test.ts` – Auswahl für „Vom Einkauf einräumen“.
-- Verbrauch nach dem Essen: `tests/essen/nachDemEssen.test.ts`.
-- Durchklick: Ablauf `vorrat` in `e2e/ablaeufe/essen.mjs` („Bald aufbrauchen“
-  sichtbar, Paprika + 1 im Speicher).
+- `tests/vorrat/imHaus.test.ts` – Orte, Ablauf je Sorte, vermutlich, Schilder,
+  Grundsachen, Migration ohne Mengen, Ort merken, aufgebraucht, Seite und
+  Kachel, Kreislauf (auch über `toggleChecked`), Mia-Sätze, ehrliche Zeile,
+  Abgleich.
+- Gekocht: `tests/essen/nachDemEssen.test.ts`.
+- Durchklick: Ablauf `imHaus` in `e2e/ablaeufe/essen.mjs`.

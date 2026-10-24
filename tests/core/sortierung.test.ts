@@ -108,7 +108,7 @@ describe("Vorrat", () => {
       { name: "Äpfel", place: "kuehlschrank" },
       { name: "Sahne", place: "kuehlschrank", soon: true },
     ];
-    expect(names(sortBy(list, ...PANTRY))).toEqual(["Sahne", "Äpfel", "Joghurt", "Erbsen", "Reis"]);
+    expect(names(sortBy(list, ...PANTRY))).toEqual(["Sahne", "Äpfel", "Joghurt", "Reis", "Erbsen"]);
   });
 });
 

@@ -52,11 +52,13 @@ export function migrateSyncState(raw: unknown): SyncState | null {
 
 const ms = (iso: string) => Date.parse(iso) || 0;
 
-/** Speicher lesen – nur in der Version, die der Übersetzer kennt */
+/** Speicher lesen – in der Version, die der Übersetzer kennt (ältere hebt `upgrade` an, ohne zu speichern) */
 function readDocs(io: Io, a: Adapter): LocalDoc[] | null {
   const v = io.read(a.key);
   if (!v) return [];
-  return v.version === a.version ? a.toDocs(v) : null;
+  if (v.version === a.version) return a.toDocs(v);
+  const up = a.upgrade?.(v);
+  return up && up.version === a.version ? a.toDocs(up) : null;
 }
 
 /** Einen Zeitstempel, der sicher nach allem Bekannten liegt (Uhr des Geräts kann hinken) */

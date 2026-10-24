@@ -22,7 +22,7 @@ import { QUICK_HEADER, QUICK_LABEL, QUICK_PLACEHOLDER, dayChoices, quickChips, r
 import { WHEN_CHOICES } from "@/lib/kalender/quick";
 import { saveQuick } from "@/components/ui/quickSave";
 
-const TILE: Record<QuickRequest["kind"], string> = { termin: "termine", aufgabe: "aufgaben", einkauf: "einkauf", notiz: "notizen", pinnwand: "pinnwand" };
+const TILE: Record<QuickRequest["kind"], string> = { termin: "termine", aufgabe: "aufgaben", einkauf: "einkauf", notiz: "notizen", pinnwand: "pinnwand", imhaus: "vorrat" };
 
 export function QuickEntry({ request, onClose }: { request: QuickRequest; onClose: () => void }) {
   const today = todayIso();

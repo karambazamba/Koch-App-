@@ -22,6 +22,7 @@ import { ItemMenu } from "@/components/kalender/Items";
 import { act, buzz } from "@/components/heute/actions";
 import { clockLabel } from "@/lib/kalender/answers";
 import { addDays } from "@/lib/core/now";
+import { stockLine } from "@/lib/essen/dishIdeas";
 import { setDone, tomorrowLabel, type DayItem } from "@/lib/kalender/model";
 import { terminRows, topicSpot, type DaySection } from "@/lib/heute/deinTag";
 import type { JetztTopic } from "@/lib/heute/jetztTopics";
@@ -31,7 +32,7 @@ import dynamic from "next/dynamic";
 
 const EntryForm = dynamic(() => import("@/components/kalender/EntryForm").then((m) => m.EntryForm), { ssr: false });
 
-type DayDish = { name: string; clock: string | null; minutes: number | null; ready: boolean; missing: string[]; cookHref: string | null };
+type DayDish = { name: string; clock: string | null; minutes: number | null; ready: boolean; missing: string[]; unsure?: string[]; cookHref: string | null };
 
 type Props = {
   today: string;
@@ -178,7 +179,7 @@ export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, d
                         <span className="w-12 shrink-0 text-[15px] font-bold tabular-nums text-accent-strong">{dish.clock ? clock(dish.clock) : ""}</span>
                         <span className="flex min-w-0 flex-1 flex-col">
                           <span className="truncate text-base font-semibold">{dish.name}</span>
-                          <span className={`text-[13px] font-semibold ${dish.ready ? "text-good" : "text-muted"}`}>{dish.ready ? `alles im Haus${dish.minutes ? ` · ${dish.minutes} Min` : ""}` : `auf die Liste: ${dish.missing.slice(0, 3).join(", ")}`}</span>
+                          <span className={`text-[13px] font-semibold ${dish.ready && !dish.unsure?.length ? "text-good" : "text-muted"}`}>{dish.ready ? `${stockLine({ needs: [], unsure: dish.unsure }).text}${dish.minutes ? ` · ${dish.minutes} Min` : ""}` : `auf die Liste: ${dish.missing.slice(0, 3).join(", ")}`}</span>
                         </span>
                         {dish.cookHref && (
                           <Link href={dish.cookHref} onClick={onClose} className={`${buttonClass("soft", "sm")} shrink-0`}>

@@ -49,7 +49,7 @@ export function useKochidee({ data, today, pantry, mealOver, setChat, onClose }:
   const ranked = (talk: IdeaTalk, exclude: string[]): CookCard[] => {
     if (!data || !today) return [];
     const recent = addDays(toIsoDate(today), -2);
-    const stock = [...(pantry ?? []), ...loadKochtipp().haus.filter((h) => h.day >= recent).map((h) => ({ id: h.name, name: h.name, amount: null, unit: "", addedAt: h.day, place: "kuehlschrank" as const }))];
+    const stock = [...(pantry ?? []), ...loadKochtipp().haus.filter((h) => h.day >= recent).map((h) => ({ id: `s:${h.name}`, name: h.name, addedAt: h.day, place: "kuehlschrank" as const }))];
     return rankIdeas({
       candidates: cookCandidates([...Object.values(data.recipes), ...BUILTIN_COOK]),
       stock,
@@ -57,6 +57,7 @@ export function useKochidee({ data, today, pantry, mealOver, setChat, onClose }:
       soon: soonToUse(pantry ?? [], toIsoDate(today)).map((p) => p.name),
       exclude: [...exclude, ...recentDishTitles(data, today, 7)],
       avoid: data.profile.persons.flatMap((p) => [...(p.allergies ?? []), ...(p.dislikes ?? [])]),
+      today: toIsoDate(today),
     });
   };
 
@@ -84,7 +85,7 @@ export function useKochidee({ data, today, pantry, mealOver, setChat, onClose }:
     cards.forEach((c) => noteKochtippShown(c.title));
     const fresh = talk.have.filter((h) => !session.talk.have.includes(h));
     if (fresh.length && today) {
-      if (featureOn("vorrat")) addPantryItems(fresh.map((name) => ({ name, amount: null, unit: "" })), toIsoDate(today));
+      if (featureOn("vorrat")) addPantryItems(fresh.map((name) => ({ name })), toIsoDate(today));
       else noteImHaus(fresh, toIsoDate(today));
     }
     setChat((c) => ({

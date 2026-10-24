@@ -4,14 +4,14 @@
 // andere: Abschnitts-Titel, weiße Karten, ein Link zur ausführlichen Seite.
 
 import Link from "next/link";
-import { CakeSlice, Carrot, ChevronRight } from "lucide-react";
+import { CakeSlice, Carrot, ChevronRight, Refrigerator } from "lucide-react";
 import { IconBadge } from "@/components/ui/IconBadge";
 import { CARD, SECTION_TITLE } from "@/components/ui/styles";
 import { DishPicture } from "@/components/essen/DishPicture";
 import { useFeature } from "@/lib/core/features";
 import { useRecipes } from "@/lib/essen/cookbook";
 import { dishTone } from "@/lib/essen/dishLook";
-import { PANTRY_PLACES, usePantry } from "@/lib/vorrat/pantry";
+import { usePantry } from "@/lib/vorrat/pantry";
 import { openHelper } from "@/lib/begleitung/open";
 
 const SECTION = "flex flex-col gap-2";
@@ -81,14 +81,12 @@ export function BausteinSections() {
       )}
       {/* Vorrat mit Inhalt steht oben als „Das ist da“; leer: ein freundlicher Einstieg (ohne Zähler) */}
       {pantryOn && pantry && pantry.length === 0 && (
-        <section className={SECTION} aria-label="Vorrat">
+        <section className={SECTION} aria-label="Im Haus">
           <Link href="/vorrat" className={`${CARD} flex items-center gap-3 p-4 active:scale-[0.99]`}>
-            <span className="text-2xl" aria-hidden>
-              {PANTRY_PLACES[0].emoji}
-            </span>
+            <Refrigerator className="h-6 w-6 shrink-0 text-accent" strokeWidth={2} aria-hidden />
             <span className="min-w-0 flex-1">
-              <span className="block text-base font-bold">Vorrat</span>
-              <span className="block text-sm text-muted">Trag ein, was da ist – dann passen die Ideen.</span>
+              <span className="block text-base font-bold">Im Haus</span>
+              <span className="block text-sm text-muted">Was du einkaufst, landet hier von selbst.</span>
             </span>
             <ChevronRight className="h-5 w-5 shrink-0 text-muted" strokeWidth={2} aria-hidden />
           </Link>

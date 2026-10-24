@@ -35,7 +35,7 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   ziehen, „–“, S/M/L); zwei S nebeneinander, eine einzelne S wird breit; Essen
   + Einkauf sind ein Paar. Größe ändert nur die Menge (S ≤ M ≤ L). Standard für
   neue Nutzer: Pinnwand + Wetter (S), Termine, Aufgaben, Essen + Einkauf,
-  Spendentopf (Vorrat nur mit Baustein). Jede Kachel öffnet ihre Seite.
+  Spendentopf („Im Haus“ nur mit Baustein). Jede Kachel öffnet ihre Seite.
 - Auf der Startseite gibt es genau zwei Mias: das eckige Logo (BrandMark,
   nicht antippbar) und den runden Mia-Knopf unten rechts (= reden).
 - Die Jetzt-Karte zeigt höchstens 3 Themen zum Wischen und öffnet wie jede
@@ -277,7 +277,7 @@ Gleiche Bereichsnamen in `src/lib/<bereich>` (Logik, rein wo möglich),
 | `kalender` | Termine, Aufgaben, Kalender- und Tag-Seite, Eintragen |
 | `essen` | Essen-Reiter, Wochenplan (`essen/plan`), Rezepte (`essen/rezepte`), Ideen, Bilder, Kochmodus |
 | `einkauf` | Einkaufsliste, Läden, Stammartikel |
-| `vorrat` | Vorrat mit Orten |
+| `vorrat` | „Im Haus“: was da ist (ohne Mengen), Orte, vergisst von selbst |
 | `pinnwand` | Nachrichten und Sprachnachrichten |
 | `notizen` | Notizen, Schnellnotiz |
 | `wetter` | Wetter-Server, Kachel, Seite |

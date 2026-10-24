@@ -10,7 +10,7 @@ import { countCookedOn, uncountCooked, type Recipe } from "@/lib/essen/cookbook"
 import { AT_HOME, DISHES } from "@/lib/essen/dishIdeas";
 import { createLocalStore } from "@/lib/core/localStore";
 import { composeWeek, entriesWithoutSlot, mealPlansWithWeek, type PlanDay, type StoredEntry } from "@/lib/essen/mealPlan";
-import { loadPantry, replacePantry, sameIngredient, type PantryItem } from "@/lib/vorrat/pantry";
+import { activePantry, loadPantryAll, replacePantry, sameIngredient, type PantryItem } from "@/lib/vorrat/pantry";
 import { mealClockFor, type HouseholdProfile } from "@/lib/einstellungen/profile";
 import { addDays, DEFAULT_SHOPPING_DAY, weekStartFor, type WeekPlan } from "@/lib/essen/weekPlan";
 
@@ -137,9 +137,9 @@ export function markCooked(
   const count = Boolean(recipe && !opts.alreadyCounted && !recipe.lastCookedAt?.startsWith(date));
   const lastCookedBefore = count && recipe ? countCookedOn(recipe.id, date) : null;
   const used = ingredientsOf(entry.title, recipe);
-  // Frisches und Tiefgekühltes ist danach weg; der Vorratsschrank bleibt (Packungen reichen meist länger)
-  const pantry = loadPantry();
-  const removed = pantry.filter((p) => p.place !== "schrank" && used.some((n) => sameIngredient(n, p.name)));
+  // Gekocht → Zutaten gehen aus „Im Haus“ raus (alle Orte)
+  const pantry = loadPantryAll();
+  const removed = activePantry(pantry, date).filter((p) => used.some((n) => sameIngredient(n, p.name)));
   if (removed.length) replacePantry(pantry.filter((p) => !removed.some((r) => r.id === p.id)));
   saveDay(date, {
     title: entry.title,
@@ -158,7 +158,7 @@ export function unmarkCooked(date: string) {
   if (!day) return;
   if (day.counted && day.recipeId) uncountCooked(day.recipeId, day.lastCookedBefore);
   if (day.removed.length) {
-    const pantry = loadPantry();
+    const pantry = loadPantryAll();
     replacePantry([...pantry, ...day.removed.filter((r) => !pantry.some((p) => p.id === r.id))]);
   }
   saveDay(date, null);

@@ -1,4 +1,4 @@
-// Essen, Rezept, Einkauf, Vorrat
+// Essen, Rezept, Einkauf, Im Haus
 import { BASE, hello, seedFamily, store } from "../lib.mjs";
 
 const RECIPE = { id: "sp", title: "Spaghetti Bolognese", category: "fleisch", servings: 4, prepMinutes: 30, ingredients: [{ id: "a", amount: 500, unit: "g", name: "Spaghetti" }, { id: "b", amount: 400, unit: "g", name: "Hackfleisch" }], steps: ["Zwiebeln schneiden.", "Anbraten.", "Köcheln lassen."], note: "", source: "eigenes", ai: null, favorite: true, thumbsUp: 0, thumbsDown: 0, cookedCount: 3, lastCookedAt: null, known: true, createdAt: "2026-10-01", updatedAt: "2026-10-01" };
@@ -53,12 +53,32 @@ export const einkauf = async (page, check) => {
   check(await page.getByRole("dialog", { name: "Artikel bearbeiten" }).isVisible(), "lange drücken → „Artikel bearbeiten“");
 };
 
-export const vorrat = async (page, check) => {
+// „Im Haus“ (Tafel 78/79): Brot im Einkauf abhaken → steht im Schrank, ohne
+// Menge → antippen = aufgebraucht → nochmal = wieder im Einkauf; „Daraus
+// kochen“ (Kachel) bzw. „Was kann ich daraus kochen?“ → Kochidee.
+export const imHaus = async (page, check) => {
   await family(page, "/vorrat");
-  check(await page.getByText("Bald aufbrauchen").first().isVisible(), "„Bald aufbrauchen“");
-  const before = (await store(page, "wasgibts.vorrat")).items.find((i) => i.name === "Paprika").amount;
-  await page.getByRole("button", { name: /Paprika.*mehr|Mehr Paprika|\+.*Paprika/ }).first().click();
-  await page.waitForTimeout(400);
-  const after = (await store(page, "wasgibts.vorrat")).items.find((i) => i.name === "Paprika").amount;
-  check(after === before + 1, `Paprika + 1 (${before} → ${after})`);
+  check(await page.getByRole("heading", { name: "Im Haus", level: 1 }).isVisible(), "Seite heißt „Im Haus“");
+  check(await page.getByRole("region", { name: "Bald aufbrauchen" }).getByText("Joghurt").isVisible(), "„Bald aufbrauchen“: Joghurt");
+  check(!(await page.getByText(/500 g|2 Stück/).count()), "keine Mengen");
+  await page.goto(BASE + "/einkaufsliste");
+  await page.getByRole("button", { name: "Mehr hinzufügen" }).tap();
+  const sheet = page.getByRole("dialog", { name: "Mehr hinzufügen" });
+  await sheet.getByLabel("Suchen oder eintragen").fill("Brot");
+  await sheet.getByLabel("Suchen oder eintragen").press("Enter");
+  await sheet.getByRole("button", { name: "Fertig" }).tap();
+  await page.getByRole("checkbox", { name: "Brot abhaken" }).tap();
+  check(await page.getByText("Im Haus: Brot").waitFor({ timeout: 5000 }).then(() => true, () => false), "Meldung „Im Haus: Brot“");
+  await page.goto(BASE + "/vorrat");
+  const schrank = page.getByRole("region", { name: "Schrank" });
+  check(await schrank.getByRole("button", { name: "Brot aufgebraucht" }).waitFor({ timeout: 5000 }).then(() => true, () => false), "Brot steht im Schrank");
+  await schrank.getByRole("button", { name: "Brot aufgebraucht" }).tap();
+  const used = page.getByRole("region", { name: /^Aufgebraucht/ });
+  check(await used.getByRole("button", { name: "Brot wieder auf die Liste" }).waitFor({ timeout: 5000 }).then(() => true, () => false), "antippen → aufgebraucht");
+  await used.getByRole("button", { name: "Brot wieder auf die Liste" }).tap();
+  check(await page.getByText("Steht wieder auf der Liste").isVisible(), "nochmal → wieder auf der Liste");
+  const list = await store(page, "wasgibts.einkaufsliste");
+  check(Object.values(list.weeks).some((w) => w.manual.some((m) => m.name === "Brot" && !m.done)), "Brot steht wieder im Einkauf");
+  await page.getByRole("button", { name: "Was kann ich daraus kochen?" }).tap();
+  check(await page.getByRole("dialog").first().waitFor({ timeout: 5000 }).then(() => true, () => false), "„Was kann ich daraus kochen?“ öffnet die Kochidee");
 };

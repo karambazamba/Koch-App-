@@ -248,7 +248,8 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const runningTimer = timers ? sortTimers(timers.timers.filter((x) => isRunning(x, nowMs)), nowMs)[0] : undefined;
   const steps = recipe?.steps ?? [];
   const step = cookingNow && cooking ? currentStep(steps.length, cooking.steps[recipe?.id ?? dish ?? ""] ?? []) : null;
-  const needs = recipe && stock ? matchStock(recipe.ingredients.map((i) => i.name), stock).needs : null;
+  const match = recipe && stock ? matchStock(recipe.ingredients.map((i) => i.name), stock, data.todayIso) : null;
+  const needs = match?.needs ?? null;
   const dueToday = workless(overview.heute).filter((i) => !i.carried && i.entry.typ === "aufgabe" && (i.entry.data.due === data.todayIso || i.entry.data.date === data.todayIso));
   const training = ctx?.sport.training;
   const leisure = evening && notes ? leisureIdea(notes, data.todayIso) : null;
@@ -275,7 +276,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
         ? null
         : { name: demoMeal.recipe.title, clock: demoMeal.clock, minutes: demoMeal.recipe.prepMinutes, ready: true, missing: [], demo: true }
       : dish && !data.day?.away
-        ? { name: dish, clock: dishClock, minutes: recipe?.prepMinutes ?? null, ready: Boolean(needs && !needs.length), missing: needs ?? [] }
+        ? { name: dish, clock: dishClock, minutes: recipe?.prepMinutes ?? null, ready: Boolean(needs && !needs.length), missing: needs ?? [], unsure: match?.unsure ?? [] }
         : null,
     dinnerFree: !dish && !over && !data.day?.away && Boolean(dishClock && dishClock >= "15:00"),
     todayAll: allItems,
@@ -423,7 +424,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
               tasks={allItems.filter((i) => i.entry.typ === "aufgabe")}
               dish={
                 dish && !data.day?.away
-                  ? { name: dish, clock: dishClock, minutes: recipe?.prepMinutes ?? null, ready: Boolean(needs && !needs.length), missing: needs ?? [], cookHref: recipe ? `/kochbuch/kochen?id=${encodeURIComponent(recipe.id)}` : null }
+                  ? { name: dish, clock: dishClock, minutes: recipe?.prepMinutes ?? null, ready: Boolean(needs && !needs.length), missing: needs ?? [], unsure: match?.unsure ?? [], cookHref: recipe ? `/kochbuch/kochen?id=${encodeURIComponent(recipe.id)}` : null }
                   : null
               }
               shop={jetzt.shop}

@@ -118,7 +118,7 @@ export const abgleich = async (page, check, device) => {
   const preview = page.getByTestId("uebernahme-vorschau");
   await preview.waitFor();
   const text = (await preview.textContent()) ?? "";
-  check(/3 Termine, 2 Aufgaben, 1 Notiz, 1 Nachricht und 4 Sachen im Vorrat werden mitgenommen\./.test(text), `Vorschau: ${text}`);
+  check(/3 Termine, 2 Aufgaben, 1 Notiz, 1 Nachricht und 4 Sachen im Haus werden mitgenommen\./.test(text), `Vorschau: ${text}`);
   await page.getByRole("button", { name: "Mitnehmen" }).click();
   await preview.waitFor({ state: "detached" });
   const code = await invite(page);

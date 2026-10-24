@@ -35,7 +35,7 @@ const FULL = {
     staples: [{ id: "s1", name: "Brot" }],
   },
   "wasgibts.wochenplan": { version: 3, weeks: { "2026-10-19": { mo: { kind: "text", title: "Nudeln", category: null }, "mo:notiz": { kind: "note", text: "Oma kommt" } } } },
-  "wasgibts.vorrat": { version: 2, items: [{ id: "v1", name: "Reis", amount: 1, unit: "kg", addedAt: T0, place: "schrank" }] },
+  "wasgibts.vorrat": { version: 3, items: [{ id: "v1", name: "Reis", addedAt: "2026-10-21", place: "schrank", usedAt: null }], places: { reis: "schrank" } },
   "wasgibts.einkaufswege": { version: 1, trips: [{ id: "w1", shop: "REWE", by: "Felix", start: T0, end: null, count: null, vorschlaege: ["Butter"] }] },
   "wasgibts.spendentopf": { version: 2, region: "ostholstein", support: null, interest: ["kiel"], votes: { "2026": "spielplatz" }, pledge: { betrag: 6, art: "monatlich", monat: "2026-10", status: "vorgemerkt" }, ask: { since: "2026-10-01", asked: 1, next: null, done: false }, voteCardHidden: [], liveAsked: false },
 };
@@ -227,15 +227,15 @@ describe("Abgleich zwischen zwei Handys", () => {
     const { a } = ctx;
     let { sa } = ctx;
     a.tick();
-    a.write("wasgibts.vorrat", { version: 2, items: [{ id: "v1", name: "Reis", amount: 2, unit: "kg", addedAt: T0, place: "schrank" }] });
+    a.write("wasgibts.vorrat", { version: 3, items: [{ id: "v1", name: "Reis", addedAt: "2026-10-21", place: "schrank", usedAt: null }], places: {} });
     sa = detectChanges(sa, a);
     const sending = sa.queue;
     a.tick();
-    a.write("wasgibts.vorrat", { version: 2, items: [{ id: "v1", name: "Reis", amount: 3, unit: "kg", addedAt: T0, place: "schrank" }] });
+    a.write("wasgibts.vorrat", { version: 3, items: [{ id: "v1", name: "Reis", addedAt: "2026-10-21", place: "schrank", usedAt: "2026-10-21" }], places: {} });
     sa = detectChanges(sa, a);
     sa = markSent(sa, sending);
     expect(sa.queue).toHaveLength(1);
-    expect((sa.queue[0].data as { amount: number }).amount).toBe(3);
+    expect((sa.queue[0].data as { usedAt: string }).usedAt).toBe("2026-10-21");
   });
 
   it("Übernahme führt Listen-Einstellungen zusammen statt zu überschreiben", () => {
@@ -257,8 +257,8 @@ describe("Abgleich zwischen zwei Handys", () => {
     expect(migrateSyncState({ version: 9 })).toBeNull();
   });
 
-  it("Speicher in alter Version wird ausgelassen, bis er migriert ist", () => {
-    const io = device({ "wasgibts.vorrat": { version: 1, items: [{ id: "v1", name: "Reis" }] } });
+  it("Speicher in alter Version wird ausgelassen, bis er migriert ist (ohne eigenes Anheben)", () => {
+    const io = device({ "wasgibts.notizen": { version: 0, notes: [{ id: "n1", typ: "notiz" }] } });
     const s = detectChanges({ ...emptyState("hh"), takeover: "fertig" }, io);
     expect(s.queue).toEqual([]);
   });

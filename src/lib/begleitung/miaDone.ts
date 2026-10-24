@@ -27,7 +27,7 @@ const undos = new Map<string, () => void>();
  * Was Mia sofort selbst macht (ohne „Übernehmen“): kleine, sichere Dinge.
  * Große (Wochenplan, Rezept, Mail, Löschen) bleiben Vorschläge.
  */
-const SAFE_OP_TYPES = new Set<ChangeOp["type"]>(["add_shopping", "add_pin", "add_pantry", "add_wish", "done_entry"]);
+const SAFE_OP_TYPES = new Set<ChangeOp["type"]>(["add_shopping", "add_pin", "add_pantry", "use_pantry", "add_wish", "done_entry"]);
 export const isSafeOp = (op: ChangeOp) => SAFE_OP_TYPES.has(op.type) || ((op.type === "upsert_entry" || op.type === "upsert_note") && op.isNew);
 
 /** Kurz, was passiert ist – und wo es steht */
@@ -39,6 +39,8 @@ function doneLine(op: ChangeOp): { text: string; href: string | null } | null {
       return { text: "Nachricht an die Pinnwand", href: "/pinnwand" };
     case "add_pantry":
       return { text: `${op.name} im Haus vermerkt`, href: "/vorrat" };
+    case "use_pantry":
+      return { text: `${op.name} ist alle`, href: "/vorrat" };
     case "add_wish":
       return { text: `Wunsch: ${op.dish}`, href: "/?seite=essen" };
     case "done_entry":

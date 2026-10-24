@@ -24,7 +24,7 @@ import { replaceMealPlans } from "@/lib/essen/mealPlan";
 import { effectivePlanStyle } from "@/lib/einstellungen/profile";
 import { householdTitle } from "@/lib/einstellungen/profileHousehold";
 import { saveProfile } from "@/lib/einstellungen/profileStore";
-import { addPantryItems, loadPantry, replacePantry } from "@/lib/vorrat/pantry";
+import { addPantryItems, consumePantry, loadPantry, loadPantryAll, replacePantry } from "@/lib/vorrat/pantry";
 import { loadShoppingSettings, replaceShoppingLists, setItemShop } from "@/lib/einkauf/shoppingList";
 import { recordUsage } from "@/lib/begleitung/usage";
 import { addWish, loadWishes, restoreWishes } from "@/lib/essen/wishes";
@@ -273,7 +273,7 @@ function trimmed(data: AssistantData, currentWeekStart: string, pantry: Assistan
     // Notizen: kompakt (Listen bis 60 Einträge, Text bis 1500 Zeichen)
     notes: (data.notes ?? []).slice(0, 60).map((n) => ({ ...n, data: { ...n.data, text: n.data.text?.slice(0, 1500), items: n.data.items?.slice(0, 60) } })),
     // Kompakt: Name, Menge, Ort, seit wann; Gekauftes ("b:") als "gekauft" markiert
-    pantry: (pantry ?? []).slice(0, 80).map(({ id, name, amount, unit, place, addedAt }) => ({ id: id.startsWith("b:") ? "gekauft" : "", name, amount, unit, place, addedAt })),
+    pantry: (pantry ?? []).slice(0, 80).map(({ id, name, place, addedAt }) => ({ id: id.startsWith("b:") ? "gekauft" : "", name, place, addedAt })),
     // Termine/Aufgaben: ohne Vergangenes (erledigte Aufgaben älter als 2 Wochen, einmalige Termine vor gestern)
     entries: (data.entries ?? []).filter((e) => {
       const old = toIsoDate(new Date(now().getTime() - 14 * 86_400_000));
@@ -470,8 +470,14 @@ function commitSideOps(ops: ChangeOp[], author = "Ich"): () => void {
   const undo: (() => void)[] = [];
   const pantry = ops.filter((op) => op.type === "add_pantry");
   if (pantry.length) {
-    const before = loadPantry();
-    addPantryItems(pantry.map(({ name, amount, unit, place }) => ({ name, amount, unit, place })), today);
+    const before = loadPantryAll();
+    addPantryItems(pantry.map(({ name, place }) => ({ name, place })), today);
+    undo.push(() => replacePantry(before));
+  }
+  const usedUp = ops.filter((op) => op.type === "use_pantry");
+  if (usedUp.length) {
+    const before = loadPantryAll();
+    consumePantry(usedUp.map((op) => op.name), today);
     undo.push(() => replacePantry(before));
   }
   const wishes = ops.filter((op) => op.type === "add_wish");
@@ -538,7 +544,7 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
     notes.push("Dein Wochenplan steht rechts unter Essen.");
   }
   // Nutzt Lotte einen ausgeschalteten Baustein, wird er eingeschaltet – und sie sagt, wo er steht
-  if (chosen.some((op) => op.type === "add_pantry") && unlockFeature("vorrat")) notes.push(bausteinOf("vorrat")!.where);
+  if (chosen.some((op) => op.type === "add_pantry" || op.type === "use_pantry") && unlockFeature("vorrat")) notes.push(bausteinOf("vorrat")!.where);
   if (chosen.some((op) => op.type === "add_recipe") && unlockFeature("rezepte")) notes.push(bausteinOf("rezepte")!.where);
   if (chosen.some((op) => op.type === "add_pin")) {
     const tiles = data.home ?? loadHomeTiles();

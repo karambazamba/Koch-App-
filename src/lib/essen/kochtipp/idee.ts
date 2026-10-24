@@ -5,7 +5,8 @@
 // Hähnchen“, „lieber ohne Sahne“, „für 3“, „was Schnelleres“ ändern nur das.
 // Rein, damit es testbar ist. Intern heißt es weiter `kochtipp`.
 
-import { AT_HOME, realStock } from "@/lib/essen/dishIdeas";
+import { AT_HOME, realStock, stockLine } from "@/lib/essen/dishIdeas";
+import { isUnsure } from "@/lib/vorrat/haltbar";
 import { germanNumber } from "@/lib/essen/leftovers/ruleParser";
 import { sameIngredient, type PantryItem } from "@/lib/vorrat/pantry";
 import type { CookCard, CookCandidate } from "@/lib/essen/kochtipp/pick";
@@ -138,6 +139,8 @@ export type IdeaInput = {
   exclude: string[];
   /** Allergien und „mag nicht“ (strikt) */
   avoid: string[];
+  /** Heute (für „vermutlich im Haus“) */
+  today?: string;
 };
 
 /** Hauptzutaten („Salz, Paprikapulver“ zählt als zwei Dinge aus dem Haus) */
@@ -148,7 +151,8 @@ const main = (needs: string[]) => needs.flatMap((n) => n.split(/,\s*/)).map((n) 
  * bald zu Verbrauchendes) – Allergien, „mag nicht“ und „ohne“ strikt, nie
  * etwas aus `exclude`. Mit Wünschen nur, was dazu passt.
  */
-export function rankIdeas({ candidates, stock, talk, soon, exclude, avoid }: IdeaInput): CookCard[] {
+export function rankIdeas({ candidates, stock, talk, soon, exclude, avoid, today }: IdeaInput): CookCard[] {
+  const unsureStock = today ? realStock(stock).filter((p) => !/^[bs]:/.test(p.id) && isUnsure(p, today)) : [];
   const there = [...realStock(stock).map((p) => p.name), ...talk.have];
   const has = (n: string) => there.some((h) => sameIngredient(h, n));
   const banned = [...talk.not, ...avoid];
@@ -180,6 +184,7 @@ export function rankIdeas({ candidates, stock, talk, soon, exclude, avoid }: Ide
       ingredients: x.needs,
       uses: [...new Set(x.uses.map((n) => there.find((h) => sameIngredient(h, n)) ?? n))],
       needs: x.missing,
+      unsure: unsureStock.filter((p) => x.uses.some((n) => sameIngredient(n, p.name))).map((p) => p.name),
       badge: x.missing.length === 0 ? "alles" : x.missing.length === 1 ? "fast" : "einkauf",
     }));
 }
@@ -201,8 +206,8 @@ export function startIdeas(ranked: CookCard[], mix: CookCard[], count = 3): Cook
   return out;
 }
 
-/** Zutaten-Zeile: grün „alles im Haus“ bzw. orange „auf die Liste: …“ (nie „fehlt“) */
-export const ingredientLine = (card: CookCard) => (card.needs.length ? `auf die Liste: ${card.needs.slice(0, 3).join(", ")}${card.needs.length > 3 ? " …" : ""}` : "alles im Haus");
+/** Zutaten-Zeile: grün „alles im Haus“, grau „vermutlich im Haus: …“ bzw. orange „auf die Liste: …“ (nie „fehlt“) */
+export const ingredientLine = (card: Pick<CookCard, "needs" | "unsure">) => stockLine(card, 3).text;
 
 /** Mias erster Satz – geplant: „Lust auf was anderes als …?“, frei: „Wie wär’s damit? …“ */
 export function ideaHello(planned: string | null, first: CookCard | undefined): string {

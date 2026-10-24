@@ -17,12 +17,14 @@ import { parseWeekTalk } from "@/lib/kalender/wochencheck";
 import { isKochtippRequest } from "@/lib/essen/kochtipp/start";
 import { todayIso } from "@/lib/core/now";
 
-/** Namen aus "Vorrat (aktuell): Hack 500 g (Kühlschrank), Paprika (Kühlschrank)" im Kontext */
+const STOCK_LINE = "Im Haus (vermutlich da, ohne Mengen): ";
+
+/** Namen aus "Im Haus (vermutlich da, ohne Mengen): Hack (Kühlschrank), Paprika (Kühlschrank)" im Kontext */
 function stockNames(system: string): string[] {
-  const line = system.split("\n").find((l) => l.startsWith("Vorrat (aktuell): "));
+  const line = system.split("\n").find((l) => l.startsWith(STOCK_LINE));
   if (!line) return [];
   return line
-    .slice("Vorrat (aktuell): ".length)
+    .slice(STOCK_LINE.length)
     .split(/\),\s*/)
     .map((part) => part.replace(/\s*\(.*$/, "").replace(/\s+\d.*$/, "").trim())
     .filter(Boolean);
@@ -116,12 +118,13 @@ function everyday(t: string) {
     pantry: pantry
       ? {
           name: cap(pantry[3].trim()),
-          menge: pantry[1] ? Number(pantry[1].replace(",", ".")) : null,
-          einheit: pantry[2] ? (/^portion/i.test(pantry[2]) ? "Portionen" : pantry[2]) : "",
           ort: /eingefroren|tiefkühler/i.test(pantry[4]) ? "tiefkuehler" : /kühlschrank/i.test(pantry[4]) ? "kuehlschrank" : "schrank",
         }
       : null,
     wish: wish ? { person: wish[1], gericht: wish[2].trim() } : null,
+    // „Hab Hähnchen gekauft“ → Im Haus; „Die Milch ist alle“ → aufgebraucht
+    bought: s.match(/^(?:ich\s+)?hab(?:e)?\s+(?:gerade\s+|eben\s+|noch\s+)?(.+?)\s+(?:gekauft|mitgebracht|geholt)$/i)?.[1]?.trim() ?? null,
+    gone: s.match(/^(?:die|der|das)?\s*(.+?)\s+(?:ist|sind)\s+(?:alle|aufgebraucht|leer)$/i)?.[1]?.trim() ?? null,
     need: s.match(/^(?:wir|ich)\s+brauch(?:en|e)\s+(?:noch\s+)?(.+)$/i)?.[1] ?? null,
     quick: /nur (noch )?schnelle/i.test(s),
   };
@@ -275,6 +278,8 @@ function mockModel(): CreateMessage {
         );
       }
       if (day.pantry) return tools([{ name: "vorrat_hinzufuegen", input: { sachen: [day.pantry] } }]);
+      if (day.bought) return tools([{ name: "vorrat_hinzufuegen", input: { sachen: day.bought.split(/\s*(?:,|\bund\b)\s*/).filter(Boolean).map((n) => ({ name: cap(n) })) } }]);
+      if (day.gone) return tools([{ name: "vorrat_aufgebraucht", input: { namen: [cap(day.gone)] } }]);
       if (day.wish) return tools([{ name: "wunsch_merken", input: day.wish }]);
       if (day.need) {
         const artikel = day.need.split(/,|\bund\b/).map((n) => n.trim()).filter(Boolean).map((name) => ({ name: cap(name) }));

@@ -107,7 +107,7 @@ const FAMILY = {
     "wasgibts.vorrat": {
       version: 2,
       items: [
-        { id: "p1", name: "Joghurt", amount: null, unit: "", addedAt: "2026-10-17", place: "kuehlschrank" },
+        { id: "p1", name: "Joghurt", amount: null, unit: "", addedAt: "2026-10-16", place: "kuehlschrank" },
         { id: "p2", name: "Paprika", amount: 2, unit: "Stück", addedAt: "2026-10-18", place: "kuehlschrank" },
         { id: "p3", name: "Reis", amount: 500, unit: "g", addedAt: "2026-10-10", place: "schrank" },
         { id: "p4", name: "Erbsen", amount: null, unit: "", addedAt: "2026-10-01", place: "tiefkuehler" },

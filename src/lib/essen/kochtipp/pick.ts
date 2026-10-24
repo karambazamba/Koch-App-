@@ -22,6 +22,8 @@ export type CookCard = {
   uses: string[];
   /** Für die Einkaufsliste */
   needs: string[];
+  /** Nur noch vermutlich im Haus („vermutlich im Haus: …“, grau) */
+  unsure?: string[];
   badge: "alles" | "fast" | "einkauf";
 };
 

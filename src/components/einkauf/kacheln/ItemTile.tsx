@@ -2,6 +2,7 @@
 
 // Einkauf wie Bring (Tafel 35): ein Artikel als quadratische Kachel in der
 // Farbe seiner Abteilung – Symbol, Name, Menge, oben links das Gericht.
+// Dieselbe Kachel zeigt „Im Haus“ (ohne Menge, mit Schild „morgen“/„bis Sa“).
 // Tippen = gekauft (bzw. auswählen), lange drücken = bearbeiten.
 
 import { useRef } from "react";
@@ -36,6 +37,8 @@ export function ItemTile({
   dashed = false,
   label,
   size = "normal",
+  badge,
+  faded = false,
   onTap,
   onLongPress,
 }: {
@@ -52,6 +55,10 @@ export function ItemTile({
   dashed?: boolean;
   label: string;
   size?: TileSize;
+  /** Schild oben rechts („morgen“ orange, „bis Sa“ gelb) – Im Haus */
+  badge?: { text: string; tone: "orange" | "gelb" } | null;
+  /** Blass (Im Haus: aufgebraucht) */
+  faded?: boolean;
   onTap: () => void;
   onLongPress?: () => void;
 }) {
@@ -93,13 +100,16 @@ export function ItemTile({
         size === "mini" ? "h-11 flex-row gap-1.5 px-1.5 text-left" : "aspect-square flex-col justify-center gap-0.5 px-1 pb-1 pt-3 text-center"
       } ${
         dashed ? "border-2 border-dashed border-line-strong" : ""
-      } ${checked ? "opacity-55" : ""} ${selected ? "ring-2 ring-accent" : ""}`}
+      } ${checked || faded ? "opacity-55" : ""} ${selected ? "ring-2 ring-accent" : ""}`}
       style={{ background: dashed ? undefined : `var(--app-shop-section-${section})`, WebkitTouchCallout: "none" }}
     >
       {dish && size !== "mini" && <span className="absolute left-1.5 right-1.5 top-1 truncate text-left text-[10px] font-bold leading-tight text-muted">{dish}</span>}
       <ItemSymbol id={symbolFor(name, products)} name={name} className={SYMBOL_SIZE[size]} />
       <span className={`${size === "mini" ? "min-w-0 flex-1 truncate" : "line-clamp-2 w-full break-words"} font-bold leading-tight text-ink ${NAME_SIZE[size]} ${checked ? "line-through" : ""}`}>{name}</span>
       {amount && size !== "mini" && <span className="w-full truncate text-[11px] tabular-nums leading-tight text-muted">{amount}</span>}
+      {badge && !done && (
+        <span className={`absolute right-1 top-1 rounded-full px-1.5 py-px text-[10px] font-bold leading-tight ${badge.tone === "orange" ? "bg-accent-soft text-accent-strong" : "bg-warn-soft text-warn-ink"}`}>{badge.text}</span>
+      )}
       {done && (
         <span className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-on-accent" aria-hidden>
           <Check className="h-3 w-3" strokeWidth={3} />

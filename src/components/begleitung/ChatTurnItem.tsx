@@ -79,7 +79,7 @@ export function ChatTurnItem({ turn, lead = false, last, data, showBases, mailAc
           ) : null}
           {turn.items?.length ? (
             <Link href="/vorrat" onClick={onClose} className="mt-2 block text-sm font-semibold text-accent-strong underline">
-              Im Vorrat ansehen
+              Im Haus ansehen
             </Link>
           ) : null}
         </div>

@@ -9,7 +9,9 @@
 import type { Dispatch, SetStateAction } from "react";
 import { baseLabel, type BaseId } from "@/lib/essen/bases";
 import { ingredientsFromQuestion, isCookIdeasRequest } from "@/lib/essen/dishIdeas";
-import type { PantryItem } from "@/lib/vorrat/pantry";
+import { addPantryItems, consumePantry, loadPantryAll, replacePantry, type PantryItem } from "@/lib/vorrat/pantry";
+import { pantrySentence } from "@/lib/vorrat/kreislauf";
+import { unlockFeature } from "@/lib/core/features";
 import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { addWish, parseWish, removeWish, wishLabel } from "@/lib/essen/wishes";
 import { settingsChange } from "@/lib/begleitung/settingsChat";
@@ -84,6 +86,28 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
       undo: () => {
         remove();
         setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig. Wieder runter von der Liste.", local: true }] }));
+      },
+    };
+  };
+
+  /** „Hab Hähnchen gekauft“ / „Die Milch ist alle“ → Im Haus (ohne KI), sofort mit Rückgängig */
+  const pantryReply = (t: string): { text: string; undo: () => void } | null => {
+    if (!today) return null;
+    const said = pantrySentence(t);
+    if (!said) return null;
+    const before = loadPantryAll();
+    const day = toIsoDate(today);
+    const names = "add" in said ? addPantryItems(said.add.map((name) => ({ name })), day) : consumePantry(said.used, day);
+    if (!names.length) return null;
+    // Versteckter Baustein wird freigeschaltet – kurz sagen, wo er steht
+    const where = unlockFeature("vorrat") ? " „Im Haus“ steht jetzt unter Essen." : "";
+    const text = `${"add" in said ? `Ist im Haus ✓ ${names.join(", ")}` : `Notiert: ${names.join(", ")} ist alle.`}${where}`;
+    const undo = pushUndo(text, () => replacePantry(before));
+    return {
+      text,
+      undo: () => {
+        undo();
+        setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig gemacht.", local: true }] }));
       },
     };
   };
@@ -213,7 +237,7 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
       return true;
     }
     const quick = isQuickRequest(t) ? quickAnswer(data) : null;
-    const reply = shoppingReply(t) ?? calendarReply(t) ?? (quick ? { text: quick, undo: undefined } : null);
+    const reply = shoppingReply(t) ?? pantryReply(t) ?? calendarReply(t) ?? (quick ? { text: quick, undo: undefined } : null);
     if (reply) {
       setInput("");
       setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text: reply.text, local: true, undo: reply.undo }] }));

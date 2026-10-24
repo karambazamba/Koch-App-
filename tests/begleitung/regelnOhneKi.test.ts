@@ -177,7 +177,7 @@ describe("Einstellungen per Satz", () => {
 });
 
 describe("Vorschläge im leeren Chat", () => {
-  const pantry = (name: string): PantryItem => ({ id: name, name, amount: null, unit: "", addedAt: "2026-10-20", place: "kuehlschrank" });
+  const pantry = (name: string): PantryItem => ({ id: name, name, addedAt: "2026-10-20", place: "kuehlschrank" });
 
   it("vor dem Essen 'heute', mit Name aus dem Profil, höchstens drei", () => {
     const out = chatSuggestions({ profile: family(), mealOver: false, pantry: [pantry("Paprika")], shopping: [], ai: true, rand: 0.1 });

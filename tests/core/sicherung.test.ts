@@ -17,7 +17,7 @@ describe("Sicherung von v0.47", () => {
   it("wird erkannt und richtig zusammengefasst", () => {
     const backup = parseBackup(file);
     expect(backup?.version).toBe("0.47.0");
-    expect(backupSummary(backup!)).toBe("3 Termine, 2 Aufgaben, 1 Notiz, 1 Rezept, 4 Sachen im Vorrat, 1 Sprachnachricht (nicht gesichert), 3 Personen");
+    expect(backupSummary(backup!)).toBe("3 Termine, 2 Aufgaben, 1 Notiz, 1 Rezept, 4 Sachen im Haus, 1 Sprachnachricht (nicht gesichert), 3 Personen");
   });
 
   it("enthält keine Tonaufnahmen, Zugangscode oder Geräte-Daten", () => {

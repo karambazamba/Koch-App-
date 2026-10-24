@@ -1,7 +1,7 @@
 import { PantryView } from "@/components/vorrat/PantryView";
 import { FeatureGate } from "@/components/core/FeatureGate";
 
-export const metadata = { title: "Vorrat" };
+export const metadata = { title: "Im Haus" };
 
 function VorratPageContent() {
   return <PantryView />;
