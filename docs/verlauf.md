@@ -2378,3 +2378,16 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Grenzen wie die KI (Zugangscode, je Minute/Stunde/Tag), Kosten in
   „KI-Kosten letzte 7 Tage“ (Zeichen, Sekunden). Ohne `ELEVENLABS_API_KEY`
   alles wie bisher. KI-Einwilligung Fassung 2 (mit Sprach-Anbieter).
+
+## Mia als Umriss und Beispiel-Tag nach Wochentag (v0.99.0)
+- „Zeig mal“ (Erster Start, „Kein Stress …“): die Zeile „Oder mich antippen
+  und erzählen“ zeigt Mia als Linien-Icon statt einer Sprechblase.
+- Neue Komponente `ui/MiaLineIcon` (aus `BegleitungAvatar` abgeleitet:
+  Sprechblase mit mittiger Spitze, senkrechte Augen, Lächeln; 24er Raster,
+  Linienstärke 2, currentColor) – auch für Seiten-Tipps und Einstellungen → Mia.
+- Beispiel-Tag passt zum Wochentag: Mo–Fr wie bisher (Elternabend nur
+  Di–Do), Samstag (Brötchen, Wochenmarkt, Fußballspiel, Kindergeburtstag,
+  Grillen) und Sonntag (Familienfrühstück, See, Oma, Pizza backen, Tatort);
+  Feiertage bundesweit + Schleswig-Holstein wie Sonntag (`core/feiertage.ts`).
+  Am Wochenende alle Beispiel-Aufgaben „diese Woche“, keine dringend; Essen
+  samstags Lasagne, sonntags Ofen-Hähnchen am Mittag.

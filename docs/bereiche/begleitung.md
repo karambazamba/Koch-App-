@@ -387,6 +387,11 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 
 ### Gesicht und Zustände
 
+- Mia als Linien-Icon: `components/ui/MiaLineIcon` (seit v0.99) – gleiche Form
+  wie `BegleitungAvatar` (Maßstab 0,3), nur Umriss, Linienstärke 2,
+  `currentColor`; für Stellen zwischen anderen lucide-Symbolen (Erster Start
+  „Zeig mal“, später Seiten-Tipps). Das farbige Gesicht bleibt `BegleitungAvatar`.
+
 - `BegleitungAvatar` (Kreis in der Lieblingsfarbe, Sprechblase mit Gesicht;
   dunkle Farben mit feinem Rand). Zustände setzt nur die App
   (`avatarState.ts`): zuhören > sprechen > denken > verwirrt >

@@ -1,7 +1,7 @@
 "use client";
 
 // ESSEN im Beispiel-Tag: das Beispielgericht mit Bild vollflächig, unten ein
-// weicher dunkler Verlauf mit weißer Schrift ("ESSEN · 18:30", Name, "alles im
+// weicher dunkler Verlauf mit weißer Schrift ("ESSEN · 18:30", sonntags 12:30, Name, "alles im
 // Haus · 25 Min"). Nach dem Essen (18:30 + 90 Min) das zweite Beispielgericht
 // für morgen ("MORGEN · Do · 18:30"). Antippen = Beispiel-Rezept. (Das Schild BEISPIEL steht
 // nur einmal oben in der Beispiel-Zeile.)
@@ -17,7 +17,7 @@ import { buttonClass } from "@/components/ui/styles";
 
 /** "Essen · 18:30" bzw. "Morgen · Do · 18:30" */
 function demoMeal(today: string, minutes: number, todayWord: string) {
-  const d = demoDishAt(minutes);
+  const d = demoDishAt(today, minutes);
   return {
     ...d,
     when: `${d.tomorrow ? tomorrowLabel(addDays(today, 1)) : todayWord} · ${d.clock}`,

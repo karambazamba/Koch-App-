@@ -1,9 +1,13 @@
-// Beispielgericht für den Beispiel-Tag: Pasta mit Tomaten & Burrata (mit Bild,
-// nach dem Essen Ofengemüse mit Feta für morgen) und drei weitere Beispiel-Ideen. Lesbar und kochbar wie eingebaute Rezepte
+// Beispielgericht für den Beispiel-Tag passend zum Wochentag: werktags Pasta
+// mit Tomaten & Burrata (nach dem Essen Ofengemüse mit Feta für morgen),
+// samstags Lasagne, sonntags und an Feiertagen Ofen-Hähnchen am Mittag – am
+// Wochenende ist Zeit zum Kochen. Dazu zwei weitere Beispiel-Ideen. Lesbar und kochbar wie eingebaute Rezepte
 // (ID "d:<id>", siehe `findRecipe`), liegen aber nie im Kochbuch, Wochenplan
 // oder in der Sicherung – sie verschwinden mit dem Beispiel-Tag.
 
 import { createIngredient, createRecipe, type Recipe } from "@/lib/essen/cookbook";
+import { addDays } from "@/lib/core/now";
+import { demoArt, type DemoArt } from "@/lib/core/demo";
 
 const DEMO_PREFIX = "d:";
 
@@ -45,6 +49,28 @@ const DEFS: DemoDef[] = [
     tone: "#E0A040",
     ingredients: [[600, "g", "Kartoffeln"], [2, "", "Paprika"], [1, "", "Zucchini"], [200, "g", "Feta"], [3, "EL", "Olivenöl"], [null, "", "Rosmarin, Salz"]],
     steps: ["Ofen auf 220 °C vorheizen.", "Gemüse in Stücke schneiden, mit Öl und Gewürzen mischen.", "30 Minuten backen, Feta drüberbröseln, 5 Minuten weiter."],
+  },
+  {
+    id: "lasagne",
+    title: "Lasagne",
+    emoji: "🍝",
+    minutes: 75,
+    category: "fleisch",
+    photo: "/gerichte/lasagne.webp",
+    tone: "#D9603B",
+    ingredients: [[12, "", "Lasagneplatten"], [500, "g", "Rinderhack"], [1, "", "Zwiebel"], [800, "g", "passierte Tomaten"], [500, "ml", "Milch"], [40, "g", "Butter"], [40, "g", "Mehl"], [150, "g", "geriebener Käse"], [null, "", "Salz, Pfeffer, Oregano"]],
+    steps: ["Zwiebel würfeln, mit dem Hack anbraten, Tomaten dazu, 20 Minuten köcheln.", "Butter schmelzen, Mehl einrühren, Milch nach und nach dazu, aufkochen.", "Abwechselnd Soße, Platten und Béchamel schichten, oben Käse.", "Bei 180 °C etwa 40 Minuten backen."],
+  },
+  {
+    id: "ofen-haehnchen",
+    title: "Ofen-Hähnchen mit Kartoffeln",
+    emoji: "🍗",
+    minutes: 80,
+    category: "fleisch",
+    photo: "/gerichte/ofen-haehnchen-mit-kartoffeln.webp",
+    tone: "#E0A040",
+    ingredients: [[1, "", "Hähnchen (ca. 1,5 kg)"], [1, "kg", "Kartoffeln"], [2, "", "Möhren"], [1, "", "Zitrone"], [3, "EL", "Olivenöl"], [null, "", "Rosmarin, Thymian, Salz, Paprikapulver"]],
+    steps: ["Ofen auf 200 °C vorheizen.", "Hähnchen mit Öl, Salz, Paprika einreiben, Zitrone und Kräuter hinein.", "Kartoffeln und Möhren in Stücken drumherum legen.", "Etwa 70 Minuten backen, zwischendurch mit dem Saft begießen."],
   },
   {
     id: "lachs-reis",
@@ -94,18 +120,30 @@ export function demoLook(id: string): { photo?: string; emoji: string; tone: str
   return d ? { photo: d.photo, emoji: d.emoji, tone: d.tone } : null;
 }
 
-/** Das Beispielgericht des Beispiel-Tags (18:30) */
-const DEMO_DISH = { recipe: DEMO_RECIPES[0], clock: "18:30", photo: DEFS[0].photo! };
-
-const DEMO_MEAL = 18 * 60 + 30;
+/** Beispielgericht je Art des Tages, mit Uhrzeit (sonntags der Braten am Mittag) */
+const DISH_FOR: Record<DemoArt, { id: string; at: number }> = {
+  werktag: { id: "pasta-burrata", at: 18 * 60 + 30 },
+  samstag: { id: "lasagne", at: 18 * 60 + 30 },
+  sonntag: { id: "ofen-haehnchen", at: 12 * 60 + 30 },
+};
 /** Wie AutoCooked: ab Essenszeit + 90 Minuten ist das Essen vorbei */
-const DEMO_MEAL_OVER = DEMO_MEAL + 90;
+const OVER = 90;
+const clockOf = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+const pick = (id: string, at: number, tomorrow: boolean) => {
+  const d = DEFS.find((x) => x.id === id)!;
+  return { recipe: BY_ID[`${DEMO_PREFIX}${id}`], clock: clockOf(at), photo: d.photo!, tomorrow };
+};
 
 /**
- * Beispielgericht passend zur Uhrzeit: bis 18:30 + 90 Min die Pasta für heute,
- * danach das Ofengemüse für morgen – nie eine Uhrzeit, die schon vorbei ist.
+ * Beispielgericht passend zu Tag und Uhrzeit: bis Essenszeit + 90 Min das
+ * Gericht von heute, danach das von morgen – zwei Werktage hintereinander
+ * zeigen morgen das Ofengemüse (Abwechslung). Nie eine Uhrzeit, die schon vorbei ist.
  */
-export function demoDishAt(minutes: number): { recipe: Recipe; clock: string; photo: string; tomorrow: boolean } {
-  if (minutes < DEMO_MEAL_OVER) return { ...DEMO_DISH, tomorrow: false };
-  return { recipe: DEMO_RECIPES[1], clock: DEMO_DISH.clock, photo: DEFS[1].photo!, tomorrow: true };
+export function demoDishAt(today: string, minutes: number): { recipe: Recipe; clock: string; photo: string; tomorrow: boolean } {
+  const heute = DISH_FOR[demoArt(today)];
+  if (minutes < heute.at + OVER) return pick(heute.id, heute.at, false);
+  const art = demoArt(addDays(today, 1));
+  const morgen = DISH_FOR[art];
+  if (art === "werktag" && demoArt(today) === "werktag") return pick("ofengemuese", morgen.at, true);
+  return pick(morgen.id, morgen.at, true);
 }
