@@ -16,3 +16,11 @@ export const setKnopfLinks = (links: boolean) => store.save({ version: 1, links 
 export function useKnopfLinks(): boolean {
   return useExternalStore(store.subscribe, () => store.load()?.links ?? false, () => false);
 }
+
+/** Rechtsseiten: in Ruhe lesen, kein Knopf über dem Text */
+const RECHT = ["/datenschutz", "/impressum", "/nutzungsbedingungen"];
+
+/** Seiten ohne den Mia-Knopf der Unterseiten (Startseite hat ihren eigenen, Anmelden/Beitreten und Rechtstexte keinen) */
+export function knopfVersteckt(pathname: string, hatProfil: boolean): boolean {
+  return (!hatProfil && pathname === "/profil") || pathname === "/" || pathname === "/anmelden" || pathname === "/beitreten" || RECHT.includes(pathname);
+}

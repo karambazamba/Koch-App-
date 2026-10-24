@@ -13,7 +13,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { House, Settings } from "lucide-react";
 import { MiaButton } from "@/components/begleitung/MiaButton";
-import { CARD } from "@/components/ui/styles";
+import { CARD, FAB_CLEARANCE } from "@/components/ui/styles";
 import { useCalendarEntries } from "@/lib/kalender/useCalendarEntries";
 import { useMinutes } from "@/lib/core/now";
 import { expectReplace, expectTabSwitch, previousUrl } from "@/lib/core/navigation";
@@ -178,7 +178,7 @@ export function HomePager({ data }: { data: HomeData }) {
     <>
       <main
         ref={mainRef}
-        className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-3 overflow-x-clip px-4 pb-[calc(max(0.75rem,env(safe-area-inset-bottom))+6.5rem)] pt-[calc(env(safe-area-inset-top)+0.75rem)]"
+        className={`mx-auto flex w-full max-w-lg flex-1 flex-col gap-3 overflow-x-clip px-4 ${FAB_CLEARANCE} pt-[calc(env(safe-area-inset-top)+0.75rem)]`}
       >
         <nav
           className={`z-20 -mx-4 flex items-center gap-2 px-4 transition-[padding,background-color] duration-300 ${away ? "sticky top-0" : "relative"} ${compact ? "bg-background/80 pb-1.5 pt-[calc(env(safe-area-inset-top)+0.375rem)] shadow-card backdrop-blur-[14px]" : "bg-background"}`}

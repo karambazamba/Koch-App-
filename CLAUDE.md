@@ -49,8 +49,10 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Gesten: Tippen = Eintrag öffnen, lange Drücken = Startseite bearbeiten,
   Wischen = Seite wechseln.
 - Erster Start = ruhiger Hallo-Bildschirm („Moin, ich bin Mia.“, „Los
-  geht’s“), danach höchstens EINE Frage (Look „Farbig“/„Schlicht“) mit
-  Standard und Überspringen, dann die Startseite mit Beispiel-Tag.
+  geht’s“), dann „Bevor’s losgeht“ (Zustimmung zu Bedingungen und
+  Datenschutz, Pflicht für alle, `ZustimmungGate`), danach höchstens EINE
+  Frage (Look „Farbig“/„Schlicht“) mit Standard und Überspringen, dann die
+  Startseite mit Beispiel-Tag.
 - Rückgängig nur bei echtem Löschen („Gelöscht · Rückgängig“, 3 s) und in der
   Schnelleingabe („Eingetragen: … · Rückgängig“); sonst meldet sich
   Hinzufügen still. Typografischer Apostroph überall („Was gibt’s?“).
@@ -260,6 +262,9 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Server-Funktionen in Frankfurt (`vercel.json`), Sicherheits-Header in
   `next.config.ts`, jede Tabelle mit RLS (`tests/datenbank/sicherheit.test.sql`),
   Protokolle nur mit Technik-Zahlen (`tests/app/datenschutz.test.ts`).
+- Nie „keine Werbung“ versprechen (Test): ehrlich ist „Kein Tracking, keine
+  Werbe-Profile, nie verkauft“. Rechtsseiten ohne Mia-Knopf, mit Band
+  „Entwurf“, solange Betreiber-Angaben Platzhalter sind.
 - Falls je Werbung kommt: nur nicht personalisiert und ohne Tracking, sonst
   braucht es eine Einwilligung.
 

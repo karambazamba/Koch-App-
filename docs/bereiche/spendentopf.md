@@ -11,8 +11,8 @@ geht. Eine Zahlung gibt es (noch) nicht.
 - Texte nur aus `POT_TEXTS` (`src/lib/spendentopf/model.ts`):
   - `share` „100 % für Projekte in deiner Region“
   - `everyEuro` „Jeder Euro geht in deine Region“
-  - `free` „Die App ist kostenlos. KARAMBA zahlt Server & KI. Keine Werbung,
-    kein Abo, keine Daten verkauft.“
+  - `free` „Die App ist kostenlos. KARAMBA Eis zahlt Server & KI. Kein Abo,
+    keine Daten verkauft.“
   - `together(region)` „Gemeinsam für Ostholstein“ (nie „App wert“), `askText`, `thanks` „Danke! Wir
     melden uns, sobald Beiträge möglich sind.“, `stillFree` „Die App bleibt für
     dich trotzdem komplett kostenlos.“

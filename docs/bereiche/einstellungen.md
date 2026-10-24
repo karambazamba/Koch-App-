@@ -237,3 +237,17 @@ anfangen).
   `wasgibts.einwilligungen`, pro Gerät, nicht in der Sicherung; `TEXT_VERSION`
   erhöhen = einmal neu fragen). Mit Konto zusätzlich Tabelle `einwilligungen`
   (nur anhängen). Details: `docs/datenschutz/`.
+- „Bevor’s losgeht“ (seit v0.93, `components/datenschutz/ZustimmungStep.tsx`,
+  Texte `VOR_DEM_START` in `rechtstexte.ts`): drei Sätze, Links Datenschutz
+  und Nutzungsbedingungen, Häkchen, „Weiter“ erst mit Häkchen, kein
+  Schließen. Neue Nutzer nach „Los geht’s“ (vor der Look-Frage), bestehende
+  einmal beim nächsten Öffnen (`ZustimmungGate` im Layout, Regel
+  `zustimmungNoetig`: frei bleiben Rechtstexte, Anmelden, Beitreten, `/e/…`).
+  `TEXT_VERSION.bedingungen` = `RECHTSTEXTE_STAND.version`: neue Fassung =
+  einmal neu fragen. KI-Einwilligung bleibt getrennt.
+- Rechtsseiten: Band „Entwurf · Angaben zum Betreiber folgen noch“, solange
+  Verantwortlicher, Anschrift oder Kontakt-Mail Platzhalter sind
+  (`entwurfOffen`); kein Mia-Knopf (`knopfVersteckt` in `lib/mia/knopf.ts`).
+- Platz unten: `FAB_CLEARANCE` = Safe-Area + 1,5rem + 72 px Knopf + 1rem, auch
+  auf der Startseite. `pruefen` meldet „Knopf über Text: Mia-Knopf verdeckt …“
+  (Regel `e2e/regeln.mjs`, Gegenprobe im Durchklick `miaKnopfPlatz`).

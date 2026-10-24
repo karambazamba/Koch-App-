@@ -20,7 +20,21 @@ export const BETREIBER = {
   supabaseRegion: "[Supabase-Region]",
 };
 
+/** „Bevor’s losgeht“ (vor der App, für alle): drei kurze Sätze, dann Häkchen und „Weiter“ */
+export const VOR_DEM_START = {
+  titel: "Bevor’s losgeht",
+  saetze: [
+    "Eure Sachen bleiben auf diesem Handy. Mit Konto teilt ihr sie in der Familie.",
+    "Ich bin eine KI und kann mich auch mal irren.",
+    "Eure Daten werden nie verkauft.",
+  ],
+  haken: "Ich akzeptiere die Nutzungsbedingungen und habe die Datenschutzerklärung gelesen.",
+};
+
 export const ENTWURF = "Entwurf – vor Veröffentlichung juristisch prüfen lassen.";
+
+/** Solange Verantwortlicher, Anschrift oder Kontakt-Mail Platzhalter sind: Band „Entwurf“ oben auf den Rechtsseiten */
+export const entwurfOffen = (b: Pick<typeof BETREIBER, "name" | "anschrift" | "mail"> = BETREIBER) => [b.name, b.anschrift, b.mail].some((v) => /^\[.*\]$/.test(v.trim()));
 
 export type Abschnitt = { titel: string; absaetze: string[] };
 
@@ -30,7 +44,7 @@ export const KURZ_GESAGT: { titel: string; text: string }[] = [
   { titel: "Was ich sehe", text: "Nur, was ihr mir sagt oder weiterleitet. Für eine Antwort geht der Satz mit dem nötigen Ausschnitt an unseren KI-Anbieter. Sprachnachrichten nie." },
   { titel: "Wer sie sonst sieht", text: "Eure Familie, was ihr teilt. „Arbeit“ nur du. Niemand sonst." },
   { titel: "Wie lange", text: "Bis ihr es löscht. Pinnwand und Sprachnachrichten 24 Stunden, Vorschläge aus Mails 7 Tage. Den Chat speichere ich gar nicht." },
-  { titel: "Nie verkauft", text: "Keine Werbung, keine Tracker, keine Profile. Eure Daten gehören euch." },
+  { titel: "Nie verkauft", text: "Keine Tracker, keine Werbe-Profile. Eure Daten werden nie verkauft." },
   { titel: "Eure Rechte", text: "Ansehen, mitnehmen, löschen: alles in den Einstellungen unter „Daten & App“. Fragen gern an " + BETREIBER.mail + "." },
 ];
 
@@ -73,7 +87,7 @@ export const DATENSCHUTZ: Abschnitt[] = [
       "Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit und Widerspruch sowie das Recht, eine Einwilligung jederzeit zu widerrufen. In der App: Einstellungen → Daten & App (Daten herunterladen, Konto löschen). Du kannst dich bei einer Datenschutz-Aufsichtsbehörde beschweren, zum Beispiel beim Unabhängigen Landeszentrum für Datenschutz Schleswig-Holstein [zuständige Behörde bitte prüfen].",
     ],
   },
-  { titel: "Keine Werbung, kein Tracking", absaetze: ["Wir verkaufen keine Daten, zeigen keine personalisierte Werbung und nutzen keine Analyse- oder Tracking-Dienste. Cookies setzen wir nicht; im Browser-Speicher liegt nur, was die App selbst braucht."] },
+  { titel: "Kein Tracking, keine Werbe-Profile", absaetze: [`Wir verkaufen keine Daten und nutzen keine Analyse- oder Tracking-Dienste. Falls ${APP_NAME} einmal Werbung zeigt, dann nur allgemeine Werbung, ohne Tracking und ohne eure Daten. Cookies setzen wir nicht; im Browser-Speicher liegt nur, was die App selbst braucht.`] },
   { titel: "Kinder", absaetze: [`${APP_NAME} ist für Erwachsene. Zugänge für Kinder unter 16 Jahren richten nur die Eltern ein; von Kindern speichern wir so wenig wie möglich (meist nur den Vornamen).`] },
 ];
 

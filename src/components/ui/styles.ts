@@ -112,11 +112,11 @@ export const WARNING =
   "flex items-start gap-2 rounded-field border border-danger-line bg-danger-soft px-4 py-3 text-sm font-semibold text-danger";
 
 /**
- * Unterer Abstand: Home-Leiste (Safe-Area) plus Platz für den Küchenhelfer-Knopf
- * (56px + Rand + Luft), damit am Seitenende nichts unter dem Knopf liegt.
- * Auf allen Seiten ans <main>.
+ * Unterer Abstand: so viel wie der Mia-Knopf braucht (Home-Leiste/Safe-Area
+ * + 1,5rem Rand + 72px Knopf + 1rem Luft), damit am Seitenende nichts unter
+ * dem Knopf liegt. Auf allen Seiten ans <main>, auch auf der Startseite.
  */
-export const FAB_CLEARANCE = "pb-[calc(max(1rem,env(safe-area-inset-bottom))+6.5rem)]";
+export const FAB_CLEARANCE = "pb-[calc(env(safe-area-inset-bottom)+1.5rem+72px+1rem)]";
 
 /**
  * Inhaltsbereich einer Unterseite: 16px Rand, 16px Abstand zwischen Karten,

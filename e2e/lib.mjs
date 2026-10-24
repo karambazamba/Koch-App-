@@ -78,6 +78,15 @@ export async function newPage(browser, device, { dark = false, time = TIME, perm
 /** „Los geht’s“ und danach die eine Frage nach dem Look („Weiter“ = Farbig bzw. die Wahl) */
 export async function losGehts(page, look) {
   await page.getByRole("button", { name: "Los geht’s" }).click();
+  // Ohne Zustimmung zuerst „Bevor’s losgeht“ (Häkchen, „Weiter“)
+  const next = await Promise.race([
+    page.getByRole("heading", { name: "Wie magst du’s?" }).waitFor().then(() => "look"),
+    page.getByRole("heading", { name: "Bevor’s losgeht" }).waitFor().then(() => "zustimmung"),
+  ]);
+  if (next === "zustimmung") {
+    await page.getByText(/^Ich akzeptiere die/).click();
+    await page.getByRole("button", { name: "Weiter" }).click();
+  }
   await page.getByRole("heading", { name: "Wie magst du’s?" }).waitFor();
   if (look === "schlicht") await page.getByRole("radio", { name: /^Schlicht/ }).click();
   await page.getByRole("button", { name: look === "ueberspringen" ? "Überspringen" : "Weiter" }).click();

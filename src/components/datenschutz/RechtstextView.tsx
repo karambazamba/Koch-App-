@@ -1,12 +1,14 @@
 // Datenschutz, Impressum, Nutzungsbedingungen: eine ruhige Leseseite –
 // großer Titel, optional „Kurz gesagt“ in Karten, darunter die Abschnitte,
 // unten Stand und Entwurfs-Hinweis. Links zu den beiden anderen Seiten.
+// Solange Betreiber-Angaben Platzhalter sind, oben ein leises Band „Entwurf“.
+// Ohne Mia-Knopf (in Ruhe lesen, `knopfVersteckt`).
 
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD, NOTE, PAGE_MAIN, SECTION_TITLE } from "@/components/ui/styles";
 import { APP_VERSION } from "@/lib/core/app";
-import { ENTWURF, KURZ_GESAGT, RECHTSTEXTE_STAND, type Abschnitt } from "@/lib/datenschutz/rechtstexte";
+import { ENTWURF, KURZ_GESAGT, RECHTSTEXTE_STAND, entwurfOffen, type Abschnitt } from "@/lib/datenschutz/rechtstexte";
 
 const SEITEN = [
   { href: "/datenschutz", label: "Datenschutz" },
@@ -32,6 +34,11 @@ export function RechtstextView({ title, abschnitte, kurz = false }: { title: str
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
       <PageHeader title={title} backHref="/profil" />
       <main className={PAGE_MAIN}>
+        {entwurfOffen() && (
+          <p role="note" data-entwurf className="rounded-field border border-line bg-fill px-4 py-2 text-center text-[13px] font-semibold text-muted">
+            Entwurf · Angaben zum Betreiber folgen noch
+          </p>
+        )}
         {kurz && (
           <section className="flex flex-col gap-2" aria-label="Kurz gesagt">
             <h2 className={`px-1 ${SECTION_TITLE}`}>Kurz gesagt</h2>

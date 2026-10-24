@@ -22,6 +22,7 @@ import { useCalendarEntries } from "@/lib/kalender/useCalendarEntries";
 import { aboRefreshDue } from "@/lib/kalender/abo/store";
 import { useHomeTiles } from "@/lib/core/homeLayout";
 import { MiaButton } from "@/components/begleitung/MiaButton";
+import { knopfVersteckt } from "@/lib/mia/knopf";
 import { helperName, type HelperVoice } from "@/lib/einstellungen/profile";
 import { removeRetiredKeys } from "@/lib/core/storage";
 import { adoptLegacySpeech } from "@/lib/begleitung/speech";
@@ -222,7 +223,7 @@ export function KitchenHelper() {
 
   // Kein schwebender Knopf beim ersten Kennenlernen (Vollbild-Gespräch) und
   // auf der Startseite (dort gibt es die Eingabeleiste)
-  const hidden = (profile === null && pathname === "/profil") || pathname === "/" || pathname === "/anmelden" || pathname === "/beitreten";
+  const hidden = knopfVersteckt(pathname, profile !== null);
 
   const bottom = "max(1rem, env(safe-area-inset-bottom))";
 
