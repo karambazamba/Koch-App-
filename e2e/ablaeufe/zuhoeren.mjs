@@ -107,3 +107,42 @@ export const zuhoeren = async (page, check) => {
   });
   check(Boolean(pos) && pos.bottom <= pos.miaTop + 1 && pos.top >= 0, "lange Live-Blase: ganz sichtbar und über Mia");
 };
+
+/** „Lieber tippen“ schließt sich nicht von selbst: Layout-Sprung lässt es offen, echter Fokusverlust (leer) führt zurück zu Mia */
+export const lieberTippen = async (page, check) => {
+  await page.addInitScript(FAKE_HOEREN);
+  await hello(page);
+  await seedFamily(page, { "wasgibts.einmalhinweise": { version: 1, seen: ["mikro-gefragt", "mia-knopf"] } });
+  await page.reload();
+  await page.waitForTimeout(900);
+  await page.getByRole("button", { name: /^Sag .*was ansteht/ }).first().click();
+  await page.getByRole("dialog").last().waitFor({ timeout: 5000 });
+  await page.getByRole("button", { name: "Lieber tippen", exact: true }).click();
+  const box = page.getByRole("textbox", { name: "Nachricht schreiben" });
+  await box.waitFor({ timeout: 5000 });
+  await box.focus();
+  // Safari schiebt die Seite beim Öffnen der Tastatur hoch: Sprünge des sichtbaren Bereichs nachstellen
+  await page.evaluate(() => {
+    for (const t of ["resize", "scroll", "resize"]) window.visualViewport?.dispatchEvent(new Event(t));
+    window.scrollTo(0, 120);
+  });
+  await page.waitForTimeout(700);
+  check(await box.isVisible(), "Layout-Sprung: Tippen bleibt offen");
+  await box.fill("Was gibt es heute");
+  await box.press("Enter");
+  await page.waitForTimeout(800);
+  check(await page.locator("[data-gespraech] .bg-accent.rounded-br-md").filter({ hasText: "Was gibt es heute" }).count() > 0, "tippen → abschicken");
+  // Feld leer, echter Fokusverlust → nach 300 ms zurück zu Mia
+  await box.focus();
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.waitForTimeout(150);
+  check(await box.isVisible(), "kurz nach dem Fokusverlust noch offen");
+  await page.waitForTimeout(400);
+  check(!(await box.isVisible().catch(() => false)), "leer + Fokus weg → zurück zu Mia");
+  // „Lieber sprechen“ als klarer Weg zurück
+  await page.getByRole("button", { name: "Lieber tippen", exact: true }).click();
+  await box.waitFor({ timeout: 5000 });
+  await page.getByRole("button", { name: "Lieber sprechen" }).click();
+  await page.waitForTimeout(500);
+  check(await page.evaluate(() => Boolean(window.__rec?.running)), "„Lieber sprechen“: Mia hört zu");
+};

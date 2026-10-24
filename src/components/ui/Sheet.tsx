@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { ICON_BUTTON } from "@/components/ui/styles";
 import { useBackCloses } from "@/lib/core/useBackCloses";
+import { useVisualViewportBox } from "@/lib/core/useMobileKeyboard";
 
 /**
  * Das eine Fenster der App: kommt von unten herein (Eintrag-Aktionen, Chat,
@@ -109,6 +110,8 @@ export function Sheet({
  */
 export function StageSheet({ title, onClose, left, right, inset = 0, children }: { title: string; onClose: () => void; left: ReactNode; right: ReactNode; inset?: number; children: ReactNode }) {
   useBackCloses(onClose);
+  // Fest an den sichtbaren Bereich gebunden: das Feld sitzt direkt über der Tastatur
+  const box = useVisualViewportBox();
   const drag = useRef<number | null>(null);
   const [dy, setDy] = useState(0);
   useEffect(() => {
@@ -122,9 +125,9 @@ export function StageSheet({ title, onClose, left, right, inset = 0, children }:
     };
   }, [onClose]);
   return (
-    <div className="fixed inset-0 z-40" role="dialog" aria-modal aria-label={title}>
+    <div className="fixed inset-x-0 top-0 z-40 h-full" role="dialog" aria-modal aria-label={title} style={box ? { top: box.top, height: box.height } : undefined} data-buehne>
       <div className="mia-buehne-hintergrund absolute inset-0 bg-background/75 backdrop-blur-[14px]" aria-hidden />
-      <div className="relative mx-auto flex h-full max-w-lg flex-col pt-[env(safe-area-inset-top)]" style={{ transform: dy ? `translateY(${dy}px)` : undefined, paddingBottom: inset || undefined }}>
+      <div className="relative mx-auto flex h-full max-w-lg flex-col pt-[env(safe-area-inset-top)]" style={{ transform: dy ? `translateY(${dy}px)` : undefined, paddingBottom: box ? undefined : inset || undefined }}>
         <div
           className="flex touch-none items-center justify-between px-3 pt-2"
           data-no-swipe

@@ -254,6 +254,16 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   neue Nachrichten und die Live-Blase bleiben im Bild; wer hochscrollt,
   bleibt dort und bekommt „↓ Neu“. Die Live-Blase wächst mit und zeigt bei
   sehr langem Text die letzten Zeilen (oben ausgeblendet).
+- „Lieber tippen“ (seit v0.97): Ob getippt wird, entscheidet der Fokus des
+  Felds, nicht die gemessene Tastaturhöhe (Safari schiebt beim Öffnen der
+  Tastatur die Seite hoch, die Höhe sprang kurz auf 0 und der Tippen-Modus
+  ging zu). Er schließt nur bei echtem Fokusverlust, leerem Feld und nach
+  300 ms ohne fokussiertes Feld (`tippModus.ts`). „Lieber sprechen“ unter
+  dem Feld führt zurück zu Mia (sie hört gleich zu). Die Bühne (`StageSheet`)
+  ist fest an den sichtbaren Bereich gebunden (`useVisualViewportBox`), das
+  Feld sitzt direkt über der Tastatur. Die anderen Fenster mit
+  `useKeyboardInset` (Schnelleingabe, Termin, Einkauf, Katalog) nutzen die
+  Höhe nur als Abstand nach unten und schließen nie von selbst.
 - Der „Düdüp“ beim Zuhören ist der Systemton von iOS/Safari (Erkennung
   startet/endet) und lässt sich im Web nicht ändern.
 - Mikrofon-Freigabe (Tafel 27) für ALLE Mikro-Stellen über `src/lib/core/mic.ts`

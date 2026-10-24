@@ -22,9 +22,13 @@ type Props = {
   dictationHint: boolean;
   suggestions: string[];
   onSubmit: (text: string) => void;
+  /** Feld verliert den Fokus (die Bühne entscheidet, ob der Tippen-Modus schließt) */
+  onLeave?: () => void;
+  /** „Lieber sprechen“: zurück zu Mia */
+  onSpeak?: () => void;
 };
 
-export function ChatInputBar({ inputRef, input, setInput, name, canType, busy, speech, dictationHint, suggestions, onSubmit }: Props) {
+export function ChatInputBar({ inputRef, input, setInput, name, canType, busy, speech, dictationHint, suggestions, onSubmit, onLeave, onSpeak }: Props) {
   // Eingabefeld wächst mit (eingefügte Mails), höchstens ~6 Zeilen
   useEffect(() => {
     const el = inputRef.current;
@@ -58,6 +62,7 @@ export function ChatInputBar({ inputRef, input, setInput, name, canType, busy, s
               rows={1}
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onBlur={onLeave}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                   e.preventDefault();
@@ -79,6 +84,17 @@ export function ChatInputBar({ inputRef, input, setInput, name, canType, busy, s
               <ArrowUp className="h-5 w-5" strokeWidth={2.5} aria-hidden />
             </button>
           </form>
+          {onSpeak && (
+            <button
+              type="button"
+              // Vor dem Fokusverlust des Felds auslösen (sonst schließt erst der Tippen-Modus)
+              onPointerDown={(e) => e.preventDefault()}
+              onClick={onSpeak}
+              className="hit mx-auto min-h-11 text-[15px] font-semibold text-muted active:text-ink"
+            >
+              Lieber sprechen
+            </button>
+          )}
         </footer>
   );
 }

@@ -37,6 +37,31 @@ export function focusNextInChain(current: HTMLElement) {
   else current.blur();
 }
 
+/** Ist gerade ein Textfeld fokussiert? (ohne React) */
+export const textFieldFocused = () => typeof document !== "undefined" && isTextField(document.activeElement);
+
+/**
+ * Der sichtbare Bereich (visualViewport): oben und Höhe. Wer daran gebunden
+ * ist (Bühne mit Mia), sitzt immer genau über der Tastatur – Safari muss die
+ * Seite dafür nicht hochschieben.
+ */
+export function useVisualViewportBox(): { top: number; height: number } | null {
+  const [box, setBox] = useState<{ top: number; height: number } | null>(null);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => setBox((b) => (b && b.top === vv.offsetTop && b.height === vv.height ? b : { top: vv.offsetTop, height: vv.height }));
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
+  return box;
+}
+
 /**
  * Nur melden, ob gerade ein Textfeld fokussiert ist (ohne Scroll-Hilfen) –
  * z. B. um schwebende Knöpfe über der Tastatur auszublenden.

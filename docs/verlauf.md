@@ -2358,3 +2358,9 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Weiterreden, während Mia antwortet: als „wartet“ gemerkt, danach geschickt.
 - Gespräch scrollt mit, „↓ Neu“ beim Hochscrollen, lange Live-Blase zeigt die
   letzten Zeilen über Mia.
+
+## „Lieber tippen“ bleibt offen (v0.97.0)
+- Der Tippen-Modus schloss sich auf dem iPhone von selbst (Safari schob die
+  Seite hoch, die gemessene Tastaturhöhe sprang kurz auf 0). Jetzt zählt der
+  Fokus des Felds; schließen nur bei echtem Fokusverlust, leerem Feld und nach
+  300 ms. „Lieber sprechen“ als Weg zurück, Bühne am sichtbaren Bereich.
