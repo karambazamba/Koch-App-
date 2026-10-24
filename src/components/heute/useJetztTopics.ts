@@ -24,6 +24,8 @@ import { tipTags } from "@/lib/tipps/categories";
 import { useEffect } from "react";
 import { newsForCard } from "@/lib/konten/wer";
 import { markFamilyNewsShown, useFamilyNews } from "@/lib/konten/neuigkeiten";
+import { useMails } from "@/lib/mails/konto";
+import { mailThema } from "@/lib/mails/vorschlag";
 
 export type JetztSource = {
   today: string;
@@ -79,6 +81,8 @@ export function useJetztTopics(src: JetztSource) {
   const newsState = useFamilyNews();
   const news = newsState && !src.demo ? newsForCard(newsState, src.nowMs, src.today) : null;
   const shopping = useWeekShoppingList("planning");
+  const mails = useMails().items ?? [];
+  const mailTitle = src.demo ? null : mailThema(mails);
   const openItems = (shopping?.list.items ?? []).filter((i) => !i.checked && !i.hidden);
   const topShop = src.demoShop ? DEMO_SHOPS[0] : shopGroups(openItems, 1).find((g) => g.shop) ?? null;
   const tomorrowIso = addDays(src.today, 1);
@@ -126,6 +130,7 @@ export function useJetztTopics(src: JetztSource) {
     leisure: src.leisure,
     tip: src.tip,
     potInvite: src.potInvite ?? null,
+    mail: mailTitle ? { id: `${mails[0].id}:${mails.length}`, title: mailTitle, detail: mails[0].subject || mails[0].senderDomain || "Weitergeleitet" } : null,
     // Morgen-Info: Wetter nur mit Planbezug (Regen zur Zeit eines Draußen-Termins)
     routinen: src.demo || !src.routinen ? undefined : { ...src.routinen, morgen: src.routinen.morgen && wet ? { ...src.routinen.morgen, detail: `Ab ${Number(wet.time.slice(0, 2))} Uhr Regen. Regenjacke für ${wet.title}?` } : src.routinen.morgen },
     family: news ? { id: news.id, title: news.title, detail: news.detail, href: news.href } : null,

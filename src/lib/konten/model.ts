@@ -74,6 +74,7 @@ export function friendlyError(code: string | undefined | null): string {
   if (/link_abgelaufen/.test(c)) return "Die Einladung ist abgelaufen – bitte um einen neuen Link.";
   if (/zu_viele_versuche/.test(c)) return "Zu viele Versuche – in einer Stunde geht’s wieder.";
   if (/schon_im_haushalt/.test(c)) return "Du bist schon in einer Familie.";
+  if (/keine_familie/.test(c)) return "Dafür braucht es zuerst eine Familie im Konto.";
   if (/darf_nicht_einladen/.test(c)) return "Einladen können nur Erwachsene.";
   if (/nicht_angemeldet|jwt|session/.test(c)) return "Bitte melde dich nochmal an.";
   if (/otp_expired|expired|invalid.*(token|otp)|token.*(invalid|expired)/.test(c)) return "Der Code stimmt nicht oder ist abgelaufen – nochmal versuchen oder neu senden.";

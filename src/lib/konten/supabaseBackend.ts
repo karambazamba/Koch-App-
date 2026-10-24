@@ -10,7 +10,9 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { readRaw, writeRaw } from "@/lib/core/localStore";
 import { fail, friendlyError, ok, type CloudUser, type HouseholdInfo, type InviteInfo, type InviteLink, type Member, type Role } from "@/lib/konten/model";
-import type { CloudBackend } from "@/lib/konten/backend";
+import type { CloudBackend, MailAbsender } from "@/lib/konten/backend";
+import type { MailEintrag, MailVorschlag } from "@/lib/mails/vorschlag";
+import type { Room } from "@/lib/core/entries";
 import type { CloudDoc } from "@/lib/konten/sync/docs";
 import { memoContentType } from "@/lib/konten/memoShare";
 
@@ -29,6 +31,9 @@ type EntryRow = Omit<CloudDoc, "rev"> & { rev: number | string };
 /** Zeiten einheitlich als ISO (die Datenbank schreibt „+00:00“) */
 const iso = (t: string) => new Date(t).toISOString();
 const fromRow = (r: EntryRow): CloudDoc => ({ ...r, erstellt: iso(r.erstellt), geaendert: iso(r.geaendert), rev: Number(r.rev) });
+
+type MailRow = { id: string; room: Room; sender_domain: string; sender_key: string; subject: string; excerpt: string; vorschlaege: MailVorschlag[]; attachments: string[]; confirmation: MailEintrag["confirmation"]; created_at: string };
+const mailItem = (r: MailRow): MailEintrag => ({ id: r.id, room: r.room, senderDomain: r.sender_domain, senderKey: r.sender_key, subject: r.subject, excerpt: r.excerpt, vorschlaege: r.vorschlaege ?? [], attachments: r.attachments ?? [], confirmation: r.confirmation ?? null, at: iso(r.created_at) });
 
 const member = (r: MemberRow): Member => ({ userId: r.user_id, displayName: r.display_name, role: r.role, personId: r.person_id });
 
@@ -181,6 +186,26 @@ export function supabaseBackend(url: string, key: string): CloudBackend {
     removeMemos: async (paths) => {
       if (!paths.length) return ok(true);
       const { error } = await sb.storage.from("memos").remove(paths);
+      return error ? fail(friendlyError(error.message)) : ok(true);
+    },
+    mailAddress: async (room, renew) => {
+      const { data, error } = await sb.rpc("mail_address", { p_room: room, p_renew: renew });
+      return error ? fail(friendlyError(error.message)) : ok(String(data));
+    },
+    listMailItems: async () => {
+      const { data, error } = await sb.from("mail_items").select("id, room, sender_domain, sender_key, subject, excerpt, vorschlaege, attachments, confirmation, created_at").order("created_at", { ascending: false }).limit(50);
+      return error ? fail(friendlyError(error.message)) : ok(((data ?? []) as MailRow[]).map(mailItem));
+    },
+    dropMailItem: async (id) => {
+      const { error } = await sb.from("mail_items").delete().eq("id", id);
+      return error ? fail(friendlyError(error.message)) : ok(true);
+    },
+    mailSenders: async () => {
+      const { data, error } = await sb.from("mail_senders").select("room, sender, count, accepted, decision").order("updated_at", { ascending: false }).limit(100);
+      return error ? fail(friendlyError(error.message)) : ok((data ?? []) as MailAbsender[]);
+    },
+    markSender: async (sender, room, change) => {
+      const { error } = "decision" in change ? await sb.rpc("mail_sender_decide", { p_sender: sender, p_room: room, p_decision: change.decision }) : await sb.rpc("mail_sender_accepted", { p_sender: sender, p_room: room });
       return error ? fail(friendlyError(error.message)) : ok(true);
     },
   };

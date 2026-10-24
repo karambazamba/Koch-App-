@@ -12,6 +12,11 @@
 import type { HouseholdInfo, Member, Role } from "@/lib/konten/model";
 import { normalizeInviteCode } from "@/lib/konten/model";
 import type { CloudDoc } from "@/lib/konten/sync/docs";
+import type { Room } from "@/lib/core/entries";
+import type { InboundMail } from "@/lib/mails/eingang";
+import { localPart } from "@/lib/mails/adresse";
+import { verarbeite, type MailItem } from "@/lib/mails/verarbeiten";
+import type { MailEintrag } from "@/lib/mails/vorschlag";
 
 type User = { id: string; email: string };
 type Membership = Member & { householdId: string };
@@ -33,6 +38,10 @@ type State = {
   rev: number;
   /** Ton der Sprachnachrichten: Pfad <haushalt>/<datei> → Inhalt (wie Bucket „memos“) */
   files: Map<string, { data: string; mime: string; at: number }>;
+  /** Mails an Mia (wie mail_addresses / mail_items / mail_senders) */
+  mailAddresses: Map<string, { householdId: string; userId: string | null; room: Room; active: boolean }>;
+  mailItems: (MailItem & { id: string; householdId: string; userId: string | null; at: number; expires: number })[];
+  mailSenders: { householdId: string; userId: string | null; room: Room; sender: string; count: number; accepted: number; decision: "ja" | "nein" | null }[];
 };
 
 const OTP_MS = 900_000;
@@ -42,7 +51,7 @@ const ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 
 const g = globalThis as unknown as { __wasgibtsKonten?: State };
 const state = (): State =>
-  (g.__wasgibtsKonten ??= { users: new Map(), otps: new Map(), sessions: new Map(), households: new Map(), members: [], invites: new Map(), links: new Map(), attempts: new Map(), entries: new Map(), rev: 0, files: new Map() });
+  (g.__wasgibtsKonten ??= { users: new Map(), otps: new Map(), sessions: new Map(), households: new Map(), members: [], invites: new Map(), links: new Map(), attempts: new Map(), entries: new Map(), rev: 0, files: new Map(), mailAddresses: new Map(), mailItems: [], mailSenders: [] });
 
 /** Für Tests: alles leeren @public */
 export function resetTestKonten() {
@@ -87,7 +96,14 @@ function removeMember(s: State, userId: string) {
     for (const p of s.files.keys()) if (memoHousehold(p) === mine.householdId) s.files.delete(p);
     for (const [code, inv] of s.invites) if (inv.householdId === mine.householdId) s.invites.delete(code);
     for (const [token, l] of s.links) if (l.householdId === mine.householdId) s.links.delete(token);
+    for (const [local, a] of s.mailAddresses) if (a.householdId === mine.householdId) s.mailAddresses.delete(local);
+    s.mailItems = s.mailItems.filter((m) => m.householdId !== mine.householdId);
+    s.mailSenders = s.mailSenders.filter((m) => m.householdId !== mine.householdId);
   }
+  // „Arbeit“-Mails gehen mit
+  s.mailItems = s.mailItems.filter((m) => m.userId !== userId);
+  s.mailSenders = s.mailSenders.filter((m) => m.userId !== userId);
+  for (const [local, a] of s.mailAddresses) if (a.userId === userId) s.mailAddresses.delete(local);
 }
 
 /** Eine Aktion ausführen (wie ein Aufruf an Supabase) */
@@ -123,6 +139,8 @@ export function testKonten(body: Record<string, unknown>, nowMs = Date.now()): R
       s.sessions.set(token, u.id);
       return { token, user: { userId: u.id, email } };
     }
+    case "mail_eingang":
+      return mailEingang(s, body.mail as InboundMail, str(body.local, 80), nowMs);
   }
   if (!user) return { error: "nicht_angemeldet" };
   switch (body.action) {
@@ -260,9 +278,67 @@ export function testKonten(body: Record<string, unknown>, nowMs = Date.now()): R
       for (const p of Array.isArray(body.paths) ? body.paths : []) if (hh && memoHousehold(p) === hh) s.files.delete(p as string);
       return { ok: true };
     }
+    case "mail_address": {
+      const me = s.members.find((m) => m.userId === user.id);
+      const room: Room = body.room === "arbeit" ? "arbeit" : "familie";
+      if (!me) return { error: "keine_familie" };
+      if (room === "familie" && me.role !== "erwachsener") return { error: "darf_nicht_einladen" };
+      const mine = (a: { householdId: string; userId: string | null; room: Room }) => a.householdId === me.householdId && a.room === room && (room === "familie" || a.userId === user.id);
+      const existing = [...s.mailAddresses].find(([, a]) => a.active && mine(a));
+      if (existing && body.renew !== true) return { local: existing[0] };
+      for (const a of s.mailAddresses.values()) if (mine(a)) a.active = false;
+      const local = localPart(room, room === "arbeit" ? me.displayName : (s.households.get(me.householdId)?.name ?? ""), rand(4, "0123456789abcdef"));
+      s.mailAddresses.set(local, { householdId: me.householdId, userId: room === "arbeit" ? user.id : null, room, active: true });
+      return { local };
+    }
+    case "mail_items": {
+      const hh = s.members.find((m) => m.userId === user.id)?.householdId;
+      const items: MailEintrag[] = s.mailItems
+        .filter((m) => m.householdId === hh && m.expires > nowMs && (m.room === "familie" || m.userId === user.id))
+        .map((m) => ({ id: m.id, room: m.room, senderDomain: m.senderDomain, senderKey: m.senderKey, subject: m.subject, excerpt: m.excerpt, vorschlaege: m.vorschlaege, attachments: m.attachments, confirmation: m.confirmation, at: new Date(m.at).toISOString() }));
+      return { items };
+    }
+    case "drop_mail_item": {
+      s.mailItems = s.mailItems.filter((m) => !(m.id === body.id && (m.room === "familie" || m.userId === user.id) && s.members.some((x) => x.userId === user.id && x.householdId === m.householdId)));
+      return { ok: true };
+    }
+    case "mail_senders": {
+      const hh = s.members.find((m) => m.userId === user.id)?.householdId;
+      return { senders: s.mailSenders.filter((m) => m.householdId === hh && (m.room === "familie" || m.userId === user.id)).map(({ room, sender, count, accepted, decision }) => ({ room, sender, count, accepted, decision })) };
+    }
+    case "mail_sender": {
+      const hh = s.members.find((m) => m.userId === user.id)?.householdId;
+      const row = s.mailSenders.find((m) => m.householdId === hh && m.room === body.room && m.sender === body.sender && (m.room === "familie" || m.userId === user.id));
+      if (row && (body.decision === "ja" || body.decision === "nein")) row.decision = body.decision;
+      if (row && body.accepted === true) row.accepted += 1;
+      return { ok: true };
+    }
     case "export":
       return { konto: { userId: user.id, email: user.email }, haushalt: householdOf(s, user.id) };
     default:
       return { error: "unbekannt" };
   }
+}
+
+/** Wie der Webhook: Adresse finden, prüfen, Vorschlag ablegen, Absender zählen */
+function mailEingang(s: State, mail: InboundMail, local: string, nowMs: number): Record<string, unknown> {
+  s.mailItems = s.mailItems.filter((m) => m.expires > nowMs);
+  const addr = s.mailAddresses.get(local);
+  if (!addr?.active || !mail) return { ok: true, verworfen: "adresse" };
+  const allowed = s.members.filter((m) => m.householdId === addr.householdId && (addr.room === "familie" || m.userId === addr.userId));
+  const memberEmails = [...s.users.values()].filter((u) => allowed.some((m) => m.userId === u.id)).map((u) => u.email);
+  const own = (m: { householdId: string; userId: string | null; room: Room }) => m.householdId === addr.householdId && m.room === addr.room && m.userId === addr.userId;
+  const learned = s.mailSenders.filter((m) => own(m) && m.decision === "ja").map((m) => m.sender);
+  const day = new Date(nowMs).toISOString().slice(0, 10);
+  const todayCount = s.mailItems.filter((m) => m.householdId === addr.householdId && new Date(m.at).toISOString().startsWith(day)).length;
+  const result = verarbeite(mail, { room: addr.room, memberEmails, learned, todayCount, today: day });
+  if (result.action === "verwerfen") return { ok: true, verworfen: result.reason };
+  const it = result.item;
+  s.mailItems.push({ ...it, id: id(), householdId: addr.householdId, userId: addr.userId, at: nowMs, expires: nowMs + it.hours * 3_600_000 });
+  if (it.senderKey) {
+    const row = s.mailSenders.find((m) => own(m) && m.sender === it.senderKey);
+    if (row) row.count += 1;
+    else s.mailSenders.push({ householdId: addr.householdId, userId: addr.userId, room: addr.room, sender: it.senderKey, count: 1, accepted: 0, decision: null });
+  }
+  return { ok: true };
 }

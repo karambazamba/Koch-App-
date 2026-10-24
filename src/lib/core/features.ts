@@ -24,6 +24,7 @@ const FEATURES = {
   modi: "Wie oft sich die Assistentin meldet, Pause",
   regiontipps: "Tipps aus der Region (Veranstaltungen in der Nähe) – nur sichtbar, wenn eine Quelle läuft",
   kalender: "Kalender übernehmen: Termine aus Apple- oder Google-Kalender (Datei oder Kalender-Link)",
+  mails: "Mails weiterleiten: aus weitergeleiteten Mails werden Vorschläge (nur mit Konto)",
 } as const;
 
 export type Feature = keyof typeof FEATURES;
@@ -40,6 +41,7 @@ export const BAUSTEINE: Baustein[] = [
   { feature: "tipps", name: "Tipps", text: "Ab und zu ein kleiner Küchen-Tipp – oben auf Heute.", where: "Tipps kommen ab jetzt ab und zu oben auf Heute.", icon: "bulb" },
   { feature: "wochenendIdeen", name: "Wochenend-Ideen", text: "Freitags bis sonntags eine Idee fürs Wochenende – oben auf Heute.", where: "Wochenend-Ideen kommen ab jetzt freitags bis sonntags oben auf Heute.", icon: "sun" },
   { feature: "kalender", name: "Kalender übernehmen", text: "Termine aus Apple- oder Google-Kalender holen – einmal per Datei.", where: "„Kalender übernehmen“ steht jetzt in den Einstellungen – und unten im Eintragen-Fenster.", icon: "calendarPlus" },
+  { feature: "mails", name: "Mails weiterleiten", text: "Mails von Kita, Schule oder Verein weiterleiten – ich mache Vorschläge daraus.", where: "„Mails weiterleiten“ steht jetzt in den Einstellungen.", icon: "mail" },
   { feature: "kochstil", name: "Kochstil & Vorlieben", text: "Plan oder spontan, Das mögt ihr, Nie wieder, Lieblingsgerichte.", where: "Kochstil & Vorlieben stehen jetzt in den Einstellungen.", icon: "chef" },
 ];
 
