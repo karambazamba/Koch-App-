@@ -184,7 +184,7 @@ export function HelloScreen() {
   const shown = title.slice(0, typed);
   return (
     <main className="fixed inset-0 z-40 overflow-y-auto bg-background" aria-label="Willkommen">
-      <div className="mx-auto flex min-h-full w-full max-w-lg flex-col items-center px-6 pb-[calc(env(safe-area-inset-bottom)+2.25rem)] pt-[calc(env(safe-area-inset-top)+2.5rem)] text-center [@media(max-height:620px)]:pt-[calc(env(safe-area-inset-top)+0.75rem)]">
+      <div className="mx-auto flex min-h-full w-full max-w-lg flex-col items-center px-6 pb-[calc(env(safe-area-inset-bottom)+2.25rem)] [@media(max-height:620px)]:pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-[calc(env(safe-area-inset-top)+2.5rem)] text-center [@media(max-height:620px)]:pt-[calc(env(safe-area-inset-top)+0.75rem)]">
         <div className="flex w-full flex-1 flex-col items-center justify-center pb-4">
           <div className="relative">
             <span className="hello-shadow" data-sprung={jump.on ? "an" : undefined} aria-hidden />
@@ -250,7 +250,7 @@ export function HelloScreen() {
             <span className="h-11" aria-hidden />
           )}
           {/* Tafel 84 (Variante A): unten nur ein ruhiger Abschluss – die große Mia oben reicht, kein kleines Logo */}
-          <div className="mt-4 flex flex-col items-center" data-hello-marke>
+          <div className="mt-4 flex flex-col items-center [@media(max-height:620px)]:mt-1" data-hello-marke>
             <span className="whitespace-nowrap text-[clamp(11.5px,3.9vw,13px)] font-semibold text-muted">Gemacht in Eutin von KARAMBA Eis</span>
             <nav aria-label="Rechtliches" className="mt-2 flex items-center gap-1.5 text-[12px] font-semibold text-faint">
               <Link href="/datenschutz" className="hit inline-flex h-4 items-center">

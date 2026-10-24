@@ -49,7 +49,7 @@ export const hallo2 = async (page, check) => {
   check((await rechtlich.getByRole("link", { name: "Datenschutz" }).isVisible()) && (await rechtlich.getByRole("link", { name: "Impressum" }).isVisible()), "darunter „Datenschutz · Impressum“");
   const nb = await rechtlich.boundingBox();
   const unten = page.viewportSize().height - (nb.y + nb.height);
-  check(unten >= 30 && unten <= 60, `Zeile 2 sitzt ca. 40 px über der Unterkante (${Math.round(unten)} px)`);
+  check(unten >= 30 && unten <= 60, `Zeile 2 sitzt ca. 40 px über der Unterkante (${Math.round(unten)} px)`); // große Handys; auf dem SE (≤ 620 px hoch) etwas weniger, damit alles ins Bild passt
   check(await page.getByText("Ich sortier das.").isVisible(), "Untertitel „Erzähl einfach, was ansteht. / Ich sortier das.“");
   // Tafel 22: mit Konten (Testserver) „Schon ein Konto? Anmelden“ statt „Daten wiederherstellen“
   check(!(await page.getByText(/Daten wiederherstellen/).count()), "kein „Daten wiederherstellen“ mehr auf der Begrüßung");
