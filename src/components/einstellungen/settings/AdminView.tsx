@@ -4,7 +4,10 @@
 // Tage auf diesem Gerät und der Prüfstand (124 Alltagssätze durch die echte
 // Mia, Ziel ≥ 95 %). Der Prüfstand braucht das Prüfstand-Geheimnis aus Vercel
 // (PRUEFSTAND_SECRET) – es wird nur für diesen Aufruf eingetippt, nie
-// gespeichert, nie angezeigt.
+// gespeichert, nie angezeigt. Der Lauf geht in kleinen Häppchen
+// (`pruefstand/lauf.ts`), zeigt den Fortschritt, macht nach einem
+// Verbindungsabbruch mit „Weiter“ dort weiter und listet am Ende die
+// Fehlschläge zum Kopieren.
 
 import { useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -14,8 +17,7 @@ import { lastWeekCosts } from "@/lib/begleitung/usage";
 import { helperName } from "@/lib/einstellungen/profile";
 import type { PruefErgebnis } from "@/lib/begleitung/pruefstand/bewerten";
 import { PRUEFSAETZE } from "@/lib/begleitung/pruefstand/saetze";
-
-const BATCH = 20;
+import { fehlerText, laufQuote, pruefLauf, type Abruf } from "@/lib/begleitung/pruefstand/lauf";
 
 export function AdminView() {
   // Erst im Browser (beim Vorrendern gibt es kein „heute“ und keinen Speicher)
@@ -25,29 +27,45 @@ export function AdminView() {
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<PruefErgebnis[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [abbruch, setAbbruch] = useState<number | null>(null);
+  const [fertig, setFertig] = useState(false);
+  const [kopiert, setKopiert] = useState(false);
 
-  const run = async () => {
+  const abruf: Abruf = async (von, bis) => {
+    const res = await fetch("/api/pruefstand", { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${secret}` }, body: JSON.stringify({ von, bis }) });
+    if (!res.ok) return { status: res.status };
+    return { status: res.status, results: ((await res.json()) as { results: PruefErgebnis[] }).results };
+  };
+
+  /** Starten (von vorn) oder nach einem Abbruch ab dort weiter */
+  const run = async (from: number | null) => {
     setRunning(true);
     setError(null);
-    setResults([]);
-    let von = 0;
-    let gesamt = Infinity;
-    try {
-      while (von < gesamt) {
-        const res = await fetch("/api/pruefstand", { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${secret}` }, body: JSON.stringify({ von, bis: von + BATCH }) });
-        if (!res.ok) throw new Error(res.status === 401 ? "Das Geheimnis passt nicht." : "Hat grad nicht geklappt.");
-        const body = (await res.json()) as { gesamt: number; bis: number; results: PruefErgebnis[] };
-        gesamt = body.gesamt;
-        von = body.bis;
-        setResults((r) => [...r, ...body.results]);
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Hat grad nicht geklappt.");
-    } finally {
-      setRunning(false);
+    setAbbruch(null);
+    setFertig(false);
+    setKopiert(false);
+    const start = from === null ? { von: 0, results: [] } : { von: from, results };
+    if (from === null) setResults([]);
+    const stand = await pruefLauf(PRUEFSAETZE, abruf, start, (s) => setResults(s.results));
+    setResults(stand.results);
+    setRunning(false);
+    if (stand.zugang) return setError("Das Geheimnis passt nicht.");
+    if (stand.abbruch !== null) {
+      setAbbruch(stand.abbruch);
+      return setError(`Verbindung abgebrochen bei Satz ${stand.abbruch + 1}. Nochmal ab hier?`);
     }
+    setFertig(true);
   };
   const ok = results.filter((r) => r.ok).length;
+  const failed = results.filter((r) => !r.ok);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(fehlerText(results, PRUEFSAETZE));
+      setKopiert(true);
+    } catch {
+      setError("Kopieren ging grad nicht.");
+    }
+  };
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
@@ -84,17 +102,36 @@ export function AdminView() {
             aria-label="Prüfstand-Geheimnis"
             className="h-12 rounded-field border border-line bg-surface px-3 text-base"
           />
-          <button type="button" disabled={!secret || running} onClick={run} className={buttonClass("primary", "lg")}>
-            {running ? `Läuft … ${results.length} von 120` : "Prüfstand starten"}
+          <p className="px-1 text-sm text-muted">Bildschirm anlassen, dauert ca. 5 Minuten.</p>
+          <button type="button" disabled={!secret || running} onClick={() => run(null)} className={buttonClass("primary", "lg")}>
+            {running ? `Läuft … ${results.length} von ${PRUEFSAETZE.length}` : "Prüfstand starten"}
           </button>
-          {error && <p className="px-1 text-sm font-semibold text-muted" role="status">{error}</p>}
+          {error && (
+            <div className="flex items-center gap-3 px-1" role="status">
+              <p className="flex-1 text-sm font-semibold text-muted">{error}</p>
+              {abbruch !== null && !running && (
+                <button type="button" onClick={() => run(abbruch)} className={buttonClass("soft", "sm")}>
+                  Weiter
+                </button>
+              )}
+            </div>
+          )}
           {results.length > 0 && (
             <>
               <p className="px-1 text-base font-bold" role="status">
-                {ok} von {results.length} richtig ({Math.round((ok / results.length) * 100)} %)
+                {ok} von {results.length} richtig ({laufQuote(results)} %)
               </p>
+              {fertig && failed.length > 0 && (
+                <div className="flex items-center gap-3 px-1">
+                  <p className="flex-1 text-sm text-muted">{failed.length} Fehlschläge – Satz, erwartet, bekommen.</p>
+                  <button type="button" onClick={copy} className={buttonClass("soft", "sm")}>
+                    {kopiert ? "Kopiert" : "Kopieren"}
+                  </button>
+                </div>
+              )}
               <ul className={CARD_LIST}>
-                {results.map((r) => (
+                {/* Am Ende nur die Fehlschläge (wie beim Kopieren), während des Laufs alles */}
+                {(fertig ? failed : results).map((r) => (
                   <li key={r.text} className="flex flex-col gap-0.5 px-4 py-2.5">
                     <span className="text-[15px] font-semibold">
                       {r.ok ? "✓" : "✗"} {r.text}

@@ -2428,3 +2428,10 @@ Fehler in `docs/aufraeumen-nachher.md`.
   neben dem ＋ und nie über dem Text.
 - Bearbeiten: genau ein „＋ Kachel“ und ein „Fertig“ (oben), keine Leiste
   unten; ein Tipp auf eine Kachel beendet nicht mehr, nur freie Fläche.
+
+## Prüfstand ohne „Load failed“ (v0.103.0)
+- 20 Sätze in einem Aufruf dauerten länger, als Vercel erlaubt: jetzt 3 je
+  Aufruf, der Reihe nach, mit Fortschritt („Läuft … 12 von 124“).
+- Fehler je Aufruf: einmal still nochmal, sonst „Fehler beim Aufruf“ und
+  weiter; Verbindungsabbruch → „Nochmal ab hier?“ mit „Weiter“.
+- Hinweis „Bildschirm anlassen“, am Ende Fehlschläge zum Kopieren.
