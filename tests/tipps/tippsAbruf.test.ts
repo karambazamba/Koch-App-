@@ -179,7 +179,8 @@ describe("Aktionen", () => {
     expect(e.data).toMatchObject({ title: t.titel, date: "2026-10-24", start: "15:00", place: "Stadtbibliothek, Schloßplatz 4, Eutin", reminder: "60", who: ["Lisa"], note: "aus Tipps", link: "https://example.org/kino" });
     expect(e.data.end).toBeUndefined();
     expect(read("wasgibts.regiontipps").uebernommen).toEqual({ [t.id]: id });
-    expect(read("wasgibts.funktionen").on).toContain("regiontipps");
+    // Launch 1.0: Tipps bleiben ein ausgeblendeter Baustein
+    expect(read("wasgibts.funktionen")?.on ?? []).not.toContain("regiontipps");
     expect(client.isTaken(t.id)).toBe(true);
     expect([...client.takenIds(client.useTipSettings(), entries)]).toEqual([t.id]);
     expect(client.takenIds(client.useTipSettings(), undefined).size).toBe(0);
@@ -223,11 +224,9 @@ describe("Aktionen", () => {
     expect(read("wasgibts.pinnwand").messages).toHaveLength(0);
   });
 
-  it("Mia nutzt die Tipps: Baustein + Kachel an, Satz nur beim ersten Mal", async () => {
-    const { TIPS_BAUSTEIN } = await import("@/lib/core/features");
-    expect(client.unlockTips()).toBe(TIPS_BAUSTEIN.where);
-    expect(read("wasgibts.funktionen").on).toContain("regiontipps");
-    expect(read("wasgibts.startseite").tiles.find((t: { id: string }) => t.id === "tipps")?.visible).toBe(true);
+  it("Launch 1.0: Mia schaltet die Tipps nicht frei (Baustein und Kachel bleiben aus)", async () => {
     expect(client.unlockTips()).toBeNull();
+    expect(read("wasgibts.funktionen")?.on ?? []).not.toContain("regiontipps");
+    expect(read("wasgibts.startseite")?.tiles?.find((t: { id: string }) => t.id === "tipps")?.visible ?? false).toBe(false);
   });
 });

@@ -113,6 +113,10 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const tipsOn = useFeature("tipps");
   const weekendOn = useFeature("wochenendIdeen");
   const pantryOn = useFeature("vorrat");
+  // Launch 1.0: Sport, Notizen, Spendentopf nur als Baustein (wer sie nutzt, behält sie)
+  const sportOn = useFeature("sport");
+  const notesOn = useFeature("notizen");
+  const potOn = useFeature("spendentopf");
   const regionOn = useTipsOn();
   const tipSettings = useTipSettings();
   const paused = pausedOn(data.profile, data.todayIso);
@@ -219,7 +223,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const tasks = view.tasksRest ? [] : tasksAll;
 
   // Kacheln: genau die gespeicherte Reihenfolge und Größe – im Bearbeiten-Modus dieselbe
-  const visible = all.filter((t) => t.visible && !tileMeta(t.id).soon && (t.id !== "vorrat" || pantryOn) && (t.id !== "tipps" || regionOn));
+  const visible = all.filter((t) => t.visible && !tileMeta(t.id).soon && (t.id !== "vorrat" || pantryOn) && (t.id !== "tipps" || regionOn) && (t.id !== "sport" || sportOn) && (t.id !== "notizen" || notesOn) && (t.id !== "spendentopf" || potOn));
 
   const entry = cookableEntry(data.day);
   const recipe = entry?.recipeId ? data.recipes[entry.recipeId] : undefined;
@@ -244,7 +248,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const demoDish = demoDay.tiles.includes("essen");
   const hat = Boolean(kochtipp && hatVisible(kochtipp, data.profile.display === "alles", demoDish));
   const demoMeal = demoDishAt(data.todayIso, minutes);
-  const potHint = usePotHint(demoDay.tiles.length > 0);
+  const potHint = usePotHint(demoDay.tiles.length > 0 || potOn !== true);
   const miaHint = useMiaHomeHint(data.profile.miaHomeHint);
   const inviteHint = useInviteHint(data.profile, data.todayIso, demoDay.tiles.length > 0 || tipSeen === false || miaHint);
   const runningTimer = timers ? sortTimers(timers.timers.filter((x) => isRunning(x, nowMs)), nowMs)[0] : undefined;

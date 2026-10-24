@@ -235,8 +235,8 @@ export const hideJetztTipWeekend = (key: string) => changeTipSettings((s) => ({ 
 
 /** Lotte nutzt die Tipps: Baustein + Kachel an; liefert den Satz, wo sie stehen (nur beim ersten Mal) */
 export function unlockTips(): string | null {
-  if (featureOn("regiontipps")) return null;
-  unlockFeature("regiontipps");
+  // Launch 1.0: Tipps ausgeblendet – Mia schaltet sie nicht frei
+  if (featureOn("regiontipps") || !unlockFeature("regiontipps")) return null;
   unlockHomeTile("tipps");
   return TIPS_BAUSTEIN.where;
 }

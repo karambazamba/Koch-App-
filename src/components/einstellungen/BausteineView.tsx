@@ -5,10 +5,10 @@
 // Design ein (Essen-Seite, Kachel auf Heute, Satz oben auf Heute); aus heißt
 // nur ausgeblendet – Daten bleiben.
 
-import { BookOpen, CalendarDays, CalendarPlus, Cake, Carrot, ChefHat, Lightbulb, Mail, MapPin, MessageCircle, Refrigerator, Sun, type LucideIcon } from "lucide-react";
+import { BookOpen, Cake, CalendarDays, CalendarPlus, Carrot, ChefHat, Dumbbell, HandCoins, Lightbulb, Mail, MapPin, MessageCircle, Refrigerator, StickyNote, Sun, type LucideIcon } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD, PAGE_MAIN } from "@/components/ui/styles";
-import { BAUSTEINE, TIPS_BAUSTEIN, setFeature, useBausteine, type Baustein } from "@/lib/core/features";
+import { BAUSTEINE, TIPS_BAUSTEIN, launchSichtbar, setFeature, useBausteine, type Baustein } from "@/lib/core/features";
 import { unlockHomeTile } from "@/lib/core/homeLayout";
 import { useTipsMode } from "@/lib/tipps/client";
 import { showToast } from "@/lib/core/toast";
@@ -25,6 +25,9 @@ const BAUSTEIN_ICONS: Record<string, LucideIcon> = {
   carrot: Carrot,
   bulb: Lightbulb,
   sun: Sun,
+  dumbbell: Dumbbell,
+  note: StickyNote,
+  coins: HandCoins,
   chef: ChefHat,
   message: MessageCircle,
   map: MapPin,
@@ -48,7 +51,8 @@ export function BausteineView() {
   const profile = useProfile();
   const name = helperName(profile);
   const tipsMode = useTipsMode();
-  const list = tipsMode && tipsMode !== "off" ? [...BAUSTEINE, TIPS_BAUSTEIN] : BAUSTEINE;
+  // Launch 1.0: Ausgeblendetes nur, wenn es schon an ist (zum Ausschalten)
+  const list = (tipsMode && tipsMode !== "off" ? [...BAUSTEINE, TIPS_BAUSTEIN] : BAUSTEINE).filter((b) => launchSichtbar(b.feature, on ?? []));
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
       <PageHeader title="Mehr Funktionen" backHref="/profil" />

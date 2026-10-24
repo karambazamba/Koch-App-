@@ -16,7 +16,7 @@ import { loadMailStyle } from "@/lib/begleitung/mailSettings";
 import { useEffect, useState } from "react";
 import { replaceEntries } from "@/lib/kalender/store";
 import { applyHomeChange, loadHomeTiles, saveHomeTiles } from "@/lib/core/homeLayout";
-import { BAUSTEINE, bausteinOf, featureOn, setFeature, unlockFeature, type Feature } from "@/lib/core/features";
+import { BAUSTEINE, LAUNCH_AUS, bausteinOf, featureOn, setFeature, unlockFeature, type Feature } from "@/lib/core/features";
 import { pushUndo, undoLast } from "@/lib/core/undo";
 import { buildShoppingList } from "@/lib/einkauf/shoppingList";
 import { replaceRecipes } from "@/lib/essen/cookbook";
@@ -436,8 +436,35 @@ function shoppingNote(data: AssistantData, before: AssistantData): string | null
 }
 
 /** Ausgewählte Änderungen übernehmen; liefert Rückgängig und kurze Hinweise */
+/**
+ * Launch 1.0: Änderungen an ausgeblendeten Bausteinen (Sport, Notizen, Im Haus)
+ * übernimmt die App nur, wenn der Baustein schon an ist – Mia schaltet sie
+ * nicht frei („Kann ich noch nicht.“). @public für Tests
+ */
+export const LAUNCH_OPS: Partial<Record<ChangeOp["type"], Feature>> = {
+  add_training: "sport",
+  set_sport_goal: "sport",
+  upsert_note: "notizen",
+  remove_note: "notizen",
+  set_schnellnotiz: "notizen",
+  add_pantry: "vorrat",
+  use_pantry: "vorrat",
+};
+
+/** Ausgeblendetes für 1.0 herausfiltern; `gesperrt` = etwas wurde weggelassen @public für Tests */
+export function launchFilter(ops: ChangeOp[], on: (f: Feature) => boolean): { ops: ChangeOp[]; gesperrt: boolean } {
+  const erlaubt = (op: ChangeOp) => {
+    const f = op.type === "set_feature" ? (op.feature as Feature) : LAUNCH_OPS[op.type];
+    if (!f || !LAUNCH_AUS.includes(f)) return true;
+    return op.type === "set_feature" ? !op.on || on(f) : on(f);
+  };
+  const kept = ops.filter(erlaubt);
+  return { ops: kept, gesperrt: kept.length < ops.length };
+}
+
 export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set<string>, prompt: string): CommitResult {
-  const chosen = selectedOps(ops, selected);
+  const launch = launchFilter(selectedOps(ops, selected), featureOn);
+  const chosen = launch.ops;
   // "Mach das rückgängig": die letzte Änderung zurücknehmen (sonst nichts)
   if (chosen.some((op) => op.type === "undo_last")) {
     const label = undoLast();
@@ -460,7 +487,8 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
     unlockFeature("wochenplan");
     const tiles = data.home ?? loadHomeTiles();
     if (!tiles.find((t) => t.id === "essen")?.visible) data = { ...data, home: applyHomeChange(tiles, { tile: "essen", action: "zeigen" }) };
-    notes.push("Dein Wochenplan steht rechts unter Essen.");
+    // Launch 1.0: Wochenplan ausgeblendet – das Gericht steht trotzdem unter Essen
+    notes.push(featureOn("wochenplan") ? "Dein Wochenplan steht rechts unter Essen." : "Steht unter Essen.");
   }
   // Nutzt Lotte einen ausgeschalteten Baustein, wird er eingeschaltet – und sie sagt, wo er steht
   if (chosen.some((op) => op.type === "add_pantry" || op.type === "use_pantry") && unlockFeature("vorrat")) notes.push(bausteinOf("vorrat")!.where);
@@ -483,6 +511,7 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
     }
   }
   if (chosen.some((op) => op.type === "upsert_note")) notes.push("Notizen findest du in der Woche ganz unten unter „Notizen“.");
+  if (launch.gesperrt) notes.push("Kann ich noch nicht.");
   // Sport: Training/Wochenziel in den eigenen Speicher, Sport-Kachel einblenden
   const sportOps = chosen.filter((op) => op.type === "add_training" || op.type === "set_sport_goal" || (op.type === "upsert_entry" && op.isNew && (op.entry.data.label ?? "").toLowerCase() === "sport"));
   if (sportOps.length) {

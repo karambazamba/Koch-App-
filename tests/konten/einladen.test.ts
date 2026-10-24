@@ -67,10 +67,12 @@ describe("Karte „Familie einladen“", () => {
 
 describe("Apple/Google nur mit Schalter", () => {
   it("Reihenfolge Apple, Google; ohne Schalter nur E-Mail", () => {
-    expect(oauthProviders({})).toEqual([]);
-    expect(oauthProviders({ google: "1" })).toEqual(["google"]);
-    expect(oauthProviders({ apple: "1", google: "1" })).toEqual(["apple", "google"]);
-    expect(oauthProviders({ apple: "true" })).toEqual([]);
+    expect(oauthProviders({}, false)).toEqual([]);
+    expect(oauthProviders({ google: "1" }, false)).toEqual(["google"]);
+    expect(oauthProviders({ apple: "1", google: "1" }, false)).toEqual(["apple", "google"]);
+    expect(oauthProviders({ apple: "true" }, false)).toEqual([]);
+    // Launch 1.0: nur E-Mail-Code, auch wenn Apple/Google eingerichtet wären
+    expect(oauthProviders({ apple: "1", google: "1" })).toEqual([]);
   });
   it("Rückkehr nur auf eigene Seiten", () => {
     expect(safeReturn("/e/0123456789abcdef0123456789abcdef")).toBe("/e/0123456789abcdef0123456789abcdef");

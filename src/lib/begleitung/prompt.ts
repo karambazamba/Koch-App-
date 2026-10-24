@@ -11,7 +11,7 @@ import { soonToUse } from "@/lib/essen/dishIdeas";
 import { formatWeekRange, planningWeekStart, weekStartFor } from "@/lib/essen/weekPlan";
 import { weekOf, type AssistantData } from "@/lib/begleitung/ops";
 import { calendarContext } from "@/lib/begleitung/calendarTools";
-import { BAUSTEINE } from "@/lib/core/features";
+import { BAUSTEINE, LAUNCH_AUS } from "@/lib/core/features";
 import { addDays } from "@/lib/core/now";
 import { APP_NAME } from "@/lib/core/app";
 import { steckbrief } from "@/lib/mia/persona";
@@ -250,7 +250,8 @@ export function contextText(
     `Pinnwand: ${data.pinnwand?.length ? data.pinnwand.map((p) => `${p.author}: ${JSON.stringify(p.text)}`).join(" · ") : "leer"}`,
     `Wetter-Ort: ${data.wetterOrt ?? "Eutin"}`,
     ...dayContextLines({ data, today: todayIso }),
-    `Bausteine an: ${BAUSTEINE.filter((b) => data.features?.includes(b.feature)).map((b) => b.name).join(", ") || "keine"}. Aus: ${BAUSTEINE.filter((b) => !data.features?.includes(b.feature)).map((b) => `${b.name} (${b.feature}: ${b.text})`).join("; ") || "keine"}`,
+    `Bausteine an: ${BAUSTEINE.filter((b) => data.features?.includes(b.feature)).map((b) => b.name).join(", ") || "keine"}. Aus: ${BAUSTEINE.filter((b) => !data.features?.includes(b.feature) && !LAUNCH_AUS.includes(b.feature)).map((b) => `${b.name} (${b.feature}: ${b.text})`).join("; ") || "keine"}`,
+    launchLine(data.features ?? []),
     mailContext(data),
     data.home ? `Startseite (Reihenfolge): ${data.home.map((t) => `${t.id} ${t.visible ? t.size : "ausgeblendet"}`).join(", ")}` : "",
     "",
@@ -267,4 +268,10 @@ export function contextText(
     pantryText(data, todayIso),
     `Kochbuch: ${recipes.length} Rezepte${recipes.length ? ` – ${recipes.slice(0, 60).map((r) => `${r.title}${r.thumbsUp > 0 ? ` (👍${r.thumbsUp})` : ""}`).join(", ")}` : ""}`,
   ].join("\n");
+}
+
+/** Launch 1.0: was es (noch) nicht gibt – nicht anbieten, nicht einschalten @public für Tests */
+export function launchLine(on: string[]): string {
+  const aus = BAUSTEINE.filter((b) => LAUNCH_AUS.includes(b.feature) && !on.includes(b.feature)).map((b) => b.name);
+  return aus.length ? `Gibt es in dieser Version noch nicht (nicht anbieten, nicht einschalten, auf Nachfrage „Kann ich noch nicht.“): ${aus.join(", ")}, Tipps aus der Region.` : "";
 }

@@ -21,6 +21,20 @@ oder „Schlicht“ – gleiche App-Farben, nur die Kachel-Flächen (Profil `loo
 Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 `calendarColor`).
 
+## Launch „Mia 1.0“
+- **Bis zum Launch keine neuen Funktionen.** Nur Aufräumen, Fehler,
+  Einheitlichkeit.
+- Drin: Mia (sprechen, tippen, erledigen), Startseite, Termine (inkl.
+  Kalender mitbringen per Link), Aufgaben, Einkauf, Essen (heute, Ideen,
+  Rezept, Kochmodus), Pinnwand + Sprachnachrichten, Wetter, Timer (Baustein),
+  Familie teilen per E-Mail-Code, Datenschutz.
+- Ausgeblendet (Baustein aus, nicht gelöscht, Daten bleiben; wer ihn schon
+  nutzt, behält ihn): Mails an Mia, Tipps aus der Region, Im Haus,
+  Wochenplan, Sport, Notizen, Spendentopf (ein Satz unter „Über Mia“
+  bleibt), Anmelden mit Apple/Google (nur E-Mail-Code), ElevenLabs (aus,
+  solange kein Schlüssel). Liste `LAUNCH_AUS` in `core/features.ts`,
+  `LAUNCH_NUR_EMAIL` in `konten/oauth.ts`; Mia schaltet nichts davon frei.
+
 ## 1. Ruhig und leer
 - Drei Seiten: Kalender · Heute · Essen (Heute ist die Startseite), Wechsel per
   Segment-Schalter oder Wischen. Nichts steht herum, was nicht gebraucht wird.

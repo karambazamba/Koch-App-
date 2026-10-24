@@ -62,6 +62,8 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
   const kochstilOn = useFeature("kochstil");
   const kalenderOn = useFeature("kalender");
   const mailsOn = useFeature("mails");
+  const sportOn = useFeature("sport");
+  const potOn = useFeature("spendentopf");
   const jetzt = useJetzt();
   const notify = notifyStatusLabel(useNotifyPermission());
   const sport = useSport();
@@ -110,7 +112,7 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
               Für die Wetter-Kachel
             </Row>
           )}
-          {home?.find((t) => t.id === "sport")?.visible && (
+          {sportOn && home?.find((t) => t.id === "sport")?.visible && (
             <Row href="/sport" icon={Dumbbell} title="Sport" value={sport ? `${sport.goal}× pro Woche` : undefined}>
               Wochenziel, Trainings, Packliste
             </Row>
@@ -167,9 +169,11 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
 
         <DarstellungGroup profile={profile} />
         <Group title="">
-          <Row href="/spendentopf" icon={HandCoins} title="Spendentopf" value={potRegion?.name}>
-            {POT_TEXTS.everyEuro}
-          </Row>
+          {potOn && (
+            <Row href="/spendentopf" icon={HandCoins} title="Spendentopf" value={potRegion?.name}>
+              {POT_TEXTS.everyEuro}
+            </Row>
+          )}
           <Row href="/profil/mails" icon={Mail} title="Mails" value={mailStyle?.greeting}>
             Gruß und Signatur für deine Mails
           </Row>
