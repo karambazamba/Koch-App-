@@ -1,4 +1,4 @@
-// Prüfstand (Auftrag „Mia auf Claude-Niveau“): 120 echte Alltagssätze einer
+// Prüfstand (Auftrag „Mia auf Claude-Niveau“): 124 echte Alltagssätze einer
 // Familie mit erwarteter Aktion – Einkauf, Termine, Aufgaben, Kochen, Fragen,
 // Durcheinander, Dialekt, Tippfehler. Bezug: Mittwoch, 21.10.2026, 10:30,
 // Familie Müller (Felix, Lisa, Mathis 8). `ops` = welche Vorschlags-Arten
@@ -42,7 +42,7 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Für den Kindergeburtstag Luftballons und Kuchen", EINKAUF),
   S("Wir brauchen Mehl, Zucker und Backpulver zum Backen", EINKAUF),
   S("Batterien AA auf die Liste", EINKAUF),
-  // Termine (24)
+  // Termine (28)
   S("Zahnarzt Donnerstag 16 Uhr", TERMIN, { datum: "2026-10-22", zeit: "16:00" }),
   S("Morgen um 9 Steuerberater", TERMIN, { datum: "2026-10-22", zeit: "09:00" }),
   S("Mathis hat Freitag um 15 Uhr Fußball", TERMIN, { datum: "2026-10-23", zeit: "15:00", person: "Mathis" }),
@@ -58,6 +58,11 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Felix fliegt am 5.11. um 6 Uhr nach München", TERMIN, { datum: "2026-11-05", zeit: "06:00", person: "Felix" }),
   S("Termin beim Bürgeramt morgen 11:00", TERMIN, { datum: "2026-10-22", zeit: "11:00" }),
   S("Sonntag Brunch mit Jensens um 11", TERMIN, { datum: "2026-10-25", zeit: "11:00" }),
+  // Launch 1.0: Tag ohne Monat, „um 14 Uhr“, Wochentag der nächsten Woche, mehrere Termine
+  S("Am 29. um 14 Uhr Kinderturnen", TERMIN, { datum: "2026-10-29", zeit: "14:00" }),
+  S("Mittwoch nächste Woche um 14 Uhr Elterngespräch", TERMIN, { datum: "2026-10-28", zeit: "14:00" }),
+  S("Montag Zahnarzt um 9 und Dienstag Friseur um 14 Uhr", TERMIN, { datum: "2026-10-26", zeit: "09:00" }),
+  S("Lisa hat Donnerstag um 14 Uhr Physio und Freitag um 10 Uhr Friseur", TERMIN, { datum: "2026-10-22", zeit: "14:00", person: "Lisa" }),
   S("Physio Donnerstag in einer Woche um 10", TERMIN, { datum: "2026-10-29", zeit: "10:00" }),
   S("Laternenumzug am 11.11. um 17 Uhr", TERMIN, { datum: "2026-11-11", zeit: "17:00" }),
   S("Verschieb den Zahnarzt auf Freitag", ["move_entry", "upsert_entry"]),
@@ -139,7 +144,7 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Buch uns einen Tisch beim Italiener", ["kann_nicht", "upsert_entry"]),
   S("Mach das rückgängig", ["undo_last"]),
   S("Nimm die Einkaufsliste von der Startseite", ["home"]),
-  S("Zeig mir den Vorrat", ["set_feature", "app_command"]),
+  S("Zeig mir den Vorrat", ["kann_nicht", "app_command"]),
   S("Schreib der Kita, dass Mathis morgen krank ist", ["mail_draft", "app_command"]),
   S("Lies mir den Kalender vor", ["app_command"]),
   S("Lass uns die Woche durchgehen", ["app_command"]),

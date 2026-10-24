@@ -71,7 +71,7 @@ export function StageMia({ state, size = STAGE_SIZE.big, hint, label, done = fal
   }, []);
   const zustand = done ? "freuen" : AVATAR[state];
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-2" data-daneben>
       {state === "zuhoeren" && (
         <span className="mia-tonwelle" aria-hidden>
           {[0, 1, 2, 3, 4].map((i) => (
@@ -116,7 +116,7 @@ export function StageMia({ state, size = STAGE_SIZE.big, hint, label, done = fal
 /** Unterer Teil der Bühne: Mias Mittelpunkt bei ~64 % der Höhe (über der Safe-Area) */
 export function StageFoot({ children }: { children: ReactNode }) {
   return (
-    <div className="safe-bottom flex shrink-0 flex-col items-center gap-1 px-4" style={{ height: `calc(${Math.round((1 - STAGE_CENTER) * 100)}dvh + ${STAGE_SIZE.big / 2 + 22}px)` }}>
+    <div className="safe-bottom flex shrink-0 flex-col items-center gap-1 px-4" style={{ height: `calc(${Math.round((1 - STAGE_CENTER) * 100)}dvh + ${STAGE_SIZE.big / 2 + 22}px)` }} data-daneben>
       {children}
     </div>
   );
@@ -163,7 +163,7 @@ export function OwnBubble({ children, live = false, wartet = false }: { children
 }
 
 /** Die Bühne selbst (Vollbild `StageSheet`): Kopf mit ✕ bzw. „Abbrechen“ und „Verlauf“; Schließen fliegt Mia zurück */
-export function MiaLayer({ name, onClose, onHistory, history = false, inset = 0, closeText, children }: { name: string; onClose: () => void; onHistory?: () => void; history?: boolean; inset?: number; /** Text statt ✕ (z. B. „Abbrechen“) */ closeText?: string; children: ReactNode }) {
+export function MiaLayer({ name, onClose, onHistory, history = false, inset = 0, children }: { name: string; onClose: () => void; onHistory?: () => void; history?: boolean; inset?: number; children: ReactNode }) {
   const close = () => {
     if (!reduced()) flyBack();
     onClose();
@@ -174,15 +174,10 @@ export function MiaLayer({ name, onClose, onHistory, history = false, inset = 0,
         onClose={close}
         inset={inset}
         left={
-          closeText ? (
-            <button type="button" onClick={close} className="hit min-h-11 px-2 text-[15px] font-semibold text-accent-strong">
-              {closeText}
-            </button>
-          ) : (
-            <button type="button" onClick={close} aria-label="Schließen" className="hit flex h-11 w-11 items-center justify-center rounded-full text-ink active:bg-fill">
-              <X className="h-6 w-6" strokeWidth={2.25} aria-hidden />
-            </button>
-          )
+          // Immer ✕ – wie jedes Fenster (Launch 1.0, auch im Wochencheck)
+          <button type="button" onClick={close} aria-label="Schließen" className="hit flex h-11 w-11 items-center justify-center rounded-full text-ink active:bg-fill">
+            <X className="h-6 w-6" strokeWidth={2.25} aria-hidden />
+          </button>
         }
         right={
           onHistory ? (

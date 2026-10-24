@@ -1,7 +1,7 @@
 "use client";
 
 // Für Entwickler (Auftrag „Mia auf Claude-Niveau“): KI-Kosten der letzten 7
-// Tage auf diesem Gerät und der Prüfstand (120 Alltagssätze durch die echte
+// Tage auf diesem Gerät und der Prüfstand (124 Alltagssätze durch die echte
 // Mia, Ziel ≥ 95 %). Der Prüfstand braucht das Prüfstand-Geheimnis aus Vercel
 // (PRUEFSTAND_SECRET) – es wird nur für diesen Aufruf eingetippt, nie
 // gespeichert, nie angezeigt.
@@ -13,6 +13,7 @@ import { toIsoDate, useToday } from "@/lib/core/now";
 import { lastWeekCosts } from "@/lib/begleitung/usage";
 import { helperName } from "@/lib/einstellungen/profile";
 import type { PruefErgebnis } from "@/lib/begleitung/pruefstand/bewerten";
+import { PRUEFSAETZE } from "@/lib/begleitung/pruefstand/saetze";
 
 const BATCH = 20;
 
@@ -73,7 +74,7 @@ export function AdminView() {
         </section>
         <section className="flex flex-col gap-2" aria-label="Prüfstand">
           <h2 className={`px-1 ${SECTION_TITLE}`}>Prüfstand</h2>
-          <p className="px-1 text-sm text-muted">{`120 Alltagssätze durch ${helperName(null)}. Ziel: mindestens 95 % richtig. Kostet ein paar Cent.`}</p>
+          <p className="px-1 text-sm text-muted">{`${PRUEFSAETZE.length} Alltagssätze durch ${helperName(null)}. Ziel: mindestens 95 % richtig. Kostet ein paar Cent.`}</p>
           <input
             type="password"
             autoComplete="off"

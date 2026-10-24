@@ -533,7 +533,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
         ) : (
           <StageFoot>
             {mia}
-            <div className="mia-gespraech flex items-center gap-5">
+            <div className="mia-gespraech flex items-center gap-5" data-daneben>
               <button type="button" onClick={() => setTyping(true)} disabled={!canType} className="hit min-h-11 text-[15px] font-semibold text-muted underline-offset-2 active:text-ink">
                 Lieber tippen
               </button>

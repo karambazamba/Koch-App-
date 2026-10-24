@@ -13,6 +13,7 @@ import { isPinboardQuery, pinWriteCommand } from "@/lib/pinnwand/model";
 import { eventsIn, greetingCommand, localNewMail, localReply, looksLikeMail, parseHistoryDraft, REPLY_CHOICES, reviseDraft, revisionOf, splitInstruction, styleFromContext, type MailDraft } from "@/lib/begleitung/mail";
 import type Anthropic from "@anthropic-ai/sdk";
 import { parseCalendar, type Draft } from "@/lib/kalender/parse";
+import { splitTermine } from "@/lib/kalender/sentence";
 import { parseHomeCommand } from "@/lib/begleitung/homeChat";
 import { parseBausteinCommand } from "@/lib/begleitung/bausteinChat";
 import { BAUSTEINE, LAUNCH_AUS } from "@/lib/core/features";
@@ -257,6 +258,12 @@ export function calendarUses(latest: string, system: string): Anthropic.Beta.Bet
   // „Sag Lisa, sie soll den Turnbeutel waschen“ → Aufgabe für Lisa (Tafel 52 B)
   const give = parseGiveTask(latest);
   if (give) return tools([{ name: "aufgabe_anlegen", input: { titel: give.title, an: give.name } }]);
+  // Mehrere Termine in einem Satz: je einer
+  const teile = splitTermine(latest, today);
+  if (teile.length > 1) {
+    const drafts = teile.map((t) => parseCalendar(t, today, persons)).flatMap((c) => (c?.kind === "create" ? [draftInput(c.draft, today)] : []));
+    if (drafts.length === teile.length) return tools(drafts);
+  }
   const cmd = parseCalendar(latest, today, persons);
   if (!cmd) return null;
   if (cmd.kind === "create") return tools([draftInput(cmd.draft, today)]);

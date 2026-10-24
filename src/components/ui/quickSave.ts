@@ -23,6 +23,8 @@ import { cloudSync } from "@/lib/konten/cache";
 import { parseShoppingText } from "@/lib/einkauf/shoppingParse";
 import { addPantryItems, loadPantryAll, replacePantry } from "@/lib/vorrat/pantry";
 import { unlockFeature } from "@/lib/core/features";
+import { readQuick } from "@/lib/core/schnelleingabe";
+import { splitTermine } from "@/lib/kalender/sentence";
 
 const VERB: Record<QuickRead["kind"], string> = { termin: "Eingetragen", aufgabe: "Eingetragen", einkauf: "Auf der Liste", notiz: "Notiert", pinnwand: "Angepinnt", imhaus: "Im Haus" };
 
@@ -68,7 +70,12 @@ function saveImHaus(text: string): { undo: () => void; title: string } | null {
 export function saveQuick(read: QuickRead, text: string, request: QuickRequest, remind = true): boolean {
   if (!read.title) return false;
   let saved: { undo: () => void; title: string } | null = null;
-  if (read.kind === "termin" || read.kind === "aufgabe") saved = saveEntry(read, remind);
+  // Mehrere Termine in einem Satz: jeder wird ein eigener Termin (ein Rückgängig für alle)
+  const teile = read.kind === "termin" ? splitTermine(text, todayIso()) : [];
+  if (teile.length > 1) {
+    const all = teile.map((t) => readQuick("termin", t, todayIso())).flatMap((r) => (r.kind === "termin" && r.title ? [saveEntry(r, remind)] : [])).filter((x): x is NonNullable<typeof x> => x !== null);
+    saved = all.length ? { undo: () => all.forEach((x) => x.undo()), title: all.map((x) => x.title).join(", ") } : null;
+  } else if (read.kind === "termin" || read.kind === "aufgabe") saved = saveEntry(read, remind);
   else if (read.kind === "einkauf") saved = request.shopping ? saveShopping(text, request.shopping.weekStart) : null;
   else if (read.kind === "imhaus") saved = saveImHaus(text);
   else if (read.kind === "notiz") {
