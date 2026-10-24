@@ -186,7 +186,7 @@ describe("previewRows", () => {
     const t = termin({ title: "Zahnarzt", date: "2026-10-22", start: "15:00" });
     const a = aufgabe({ title: "Steuer", due: "2026-10-30" });
     const wlan = createNote({ title: "WLAN", text: "abc" });
-    const ctx = kontext({ entries: [t, a], notes: [wlan], sport: { goal: 3, trainings: [], packs: {}, celebrated: [], skipped: [] } as never });
+    const ctx = kontext({ features: ["notizen"], entries: [t, a], notes: [wlan], sport: { goal: 3, trainings: [], packs: {}, celebrated: [], skipped: [] } as never });
     const base = ctx.data;
     rufe(ctx, "einkaufsliste_hinzufuegen", { woche: "aktuell", artikel: [{ name: "Milch", menge: "1 l", fuer_tag: "Freitag", gericht: "Kaffee", laden: "REWE" }] });
     rufe(ctx, "einkaufsliste_entfernen", { artikel: ["Brot", "Eier"] });

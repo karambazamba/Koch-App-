@@ -115,7 +115,7 @@ describe("Woche gelesen → Vorschlag", () => {
 describe("Nach den Werkzeugen kurz antworten", () => {
   it("Portionen und App-Befehl", async () => {
     const p = [{ name: "portionen_anpassen", input: { personen: 2 } }];
-    expect((await afterTools(S, "Nur zu zweit", p, { portionen_anpassen: "Vorgemerkt: Pasta am Freitag nur für 2 Personen." })).text).toBe("Klar! Pasta am Freitag nur für 2 Personen. Tipp unten auf Übernehmen. (Testmodus)");
+    expect((await afterTools(S, "Nur zu zweit", p, { portionen_anpassen: "Vorgemerkt: Pasta am Freitag nur für 2 Personen." })).text).toBe("Klar! Pasta am Freitag nur für 2 Personen. (Testmodus)");
     expect((await afterTools(S, "Nur zu zweit", p, { portionen_anpassen: "Heute ist nichts geplant." })).text).toBe("Heute ist nichts geplant. (Testmodus)");
     expect((await afterTools(S, "Mach dunkel", [{ name: "app_befehl" }], {})).text).toBe("Steht unten bereit. (Testmodus)");
   });
@@ -132,8 +132,8 @@ describe("Nach den Werkzeugen kurz antworten", () => {
 
   it("Timer, Begleitung, Sport-Ziel", async () => {
     expect((await afterTools(S, "Timer", [{ name: "timer_stellen" }], { timer_stellen: "Läuft gleich (die App startet ihn sofort): Nudeln, 10 Min." })).text).toBe("Läuft: Nudeln, 10 Min. (Testmodus)");
-    expect((await afterTools(S, "Frieda", [{ name: "assistent_anpassen" }], { assistent_anpassen: "Vorgemerkt (mit Übernehmen): Gern – ab jetzt bin ich Frieda." })).text).toBe("Gern – ab jetzt bin ich Frieda. Tipp unten auf Übernehmen. (Testmodus)");
-    expect((await afterTools(S, "Ziel", [{ name: "sport_ziel_setzen" }], { sport_ziel_setzen: "Vorgemerkt: Wochenziel 4×." })).text).toBe("Klar: Wochenziel 4×. Tipp unten auf Übernehmen. (Testmodus)");
+    expect((await afterTools(S, "Frieda", [{ name: "assistent_anpassen" }], { assistent_anpassen: "Vorgemerkt (mit Übernehmen): Gern – ab jetzt bin ich Frieda." })).text).toBe("Gern – ab jetzt bin ich Frieda. (Testmodus)");
+    expect((await afterTools(S, "Ziel", [{ name: "sport_ziel_setzen" }], { sport_ziel_setzen: "Vorgemerkt: Wochenziel 4×." })).text).toBe("Klar: Wochenziel 4×. (Testmodus)");
   });
 
   it("Tipps aus der Region und Wetter", async () => {

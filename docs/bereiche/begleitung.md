@@ -82,10 +82,26 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   (Stream und fertige Antwort in `client.ts`) und Vorlesen (`speak`):
   Gedankenstrich zwischen Satzteilen → Punkt (Großbuchstabe danach) bzw.
   Komma, Zahlen-Spannen bleiben („9–11 Uhr“), Spiegelstriche/Nummern am
-  Zeilenanfang weg, „!!“ → „!“, höchstens ein „!“ pro Nachricht.
-- Prompt: höchstens 2 kurze Sätze, Bestätigungen 1–3 Wörter, keine
-  Gedankenstriche/Aufzählungszeichen/Floskeln, höchstens ein „!“ und ein
-  Emoji, drei Beispiele gut/schlecht.
+  Zeilenanfang weg, „!!“ → „!“, höchstens ein „!“ pro Nachricht. Seit
+  v0.105 fallen Sätze weg, die die Oberfläche erklären (`UI_ERKLAERUNG`:
+  „Mit ‚Übernehmen‘ kommt es …“, „Unter Essen findest du es“) oder Gefühle
+  vorspielen (`MENSCHLICH`: „Das kenn ich“, „ich bin auch müde“); von
+  mehreren Fragen bleibt die erste; nie alles weg.
+- Prompt: höchstens 2 kurze Sätze (Rat/Wissen 3), Bestätigungen 1–3 Wörter,
+  keine Gedankenstriche/Aufzählungszeichen/Floskeln, höchstens ein „!“ und ein
+  Emoji, drei Beispiele gut/schlecht. Eine Frage ODER ein Angebot, keine
+  erfundenen Zusatz-Angebote, Allergien/„mag nicht“ nur erwähnen, wenn ein
+  Vorschlag dagegen verstoßen würde, keine Oberflächen-Erklärungen, ehrlich KI
+  (keine menschlichen Erlebnisse; „Ich bin müde“ → „Dann mach heute langsam.
+  Soll ich das Abendessen übernehmen?“).
+- Seit v0.105: „Merk dir: Lisa mag keine Pilze“ → `vorliebe_merken` (Op
+  `set_dislike`, sofort mit Rückgängig, „Gemerkt.“). Ausgeblendete Bausteine
+  bekommen nichts: Notizen aus → die schreibenden Notiz-Werkzeuge lehnen ab
+  (`NOTIZEN_AUS`), Ideen werden eine Aufgabe ohne Tag + eine Frage nach dem
+  Tag. Vager Einkauf („Sachen fürs Frühstück“) → `einkaufsliste_hinzufuegen`
+  mit `nur_vorschlag` (Op `add_shopping` mit `vorschlag`, Vorschau mit
+  „Übernehmen“). Mehrtägig („vom 9. bis 13. November“) → `termin_anlegen` mit
+  `bis_datum` = EIN ganztägiger Eintrag. Tests: `tests/begleitung/miaKnapper.test.ts`.
 - Alle festen Mia-Sätze (Begleitung, Jetzt-Karte, Kochidee, Pinnwand,
   Wetter, Testmodus) ohne Gedankenstrich als Satzverbindung, ohne
   Spiegelstriche, höchstens ein „!“ – geprüft in `tests/begleitung/knapp.test.ts`
@@ -119,8 +135,17 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   `kann_ich_noch_nicht` → „Kann ich noch nicht.“; der Server zählt den Wunsch
   anonym in `mia_wuensche` (nur Text + Datum, RLS ohne Policies, nur der
   geheime Schlüssel schreibt; `wishStore.ts`). Wünsche gehen nie an die App.
-- Prüfstand (`pruefstand/`): 124 Alltagssätze mit erwarteter Aktion, Bewertung
-  (Aktion, Datum/Uhrzeit/Person, max. 2 Sätze, Floskeln/Striche, Zeit),
+- Prüfstand (`pruefstand/`): 129 Alltagssätze mit erwarteter Aktion, Bewertung
+  (Aktion, Datum/Uhrzeit/Person, Floskeln/Striche, Zeit). Fair: je Satz eine
+  passende Ausgangslage (`Lage` in `haushalt.ts`: ohne Zahnarzt, ohne Steuer,
+  Turnen Fr 16 Uhr, Gerichte im Plan, laufender Kochmodus) und eine feste
+  Test-Vorhersage (`pruefWetter`, Anfrage-Feld `forecast`). Satzzähler
+  übersieht Daten („30.“, „25.10.“) und Abkürzungen („ca.“, „z. B.“, „Mi.“);
+  Grenzen: Aktion 2 Sätze, Rat/Wissen und Plan-Zusammenfassung 3 (`max`),
+  höchstens eine „?“. Erlaubte Wege: Ideen + eine Frage (`antwort`), Kalender
+  vorlesen ohne Aktion, „steht schon drin“ ohne Aktion (`hinweis_doppelt`),
+  Wunsch als Vorschlag. Fehler sind auch „erklärt die Oberfläche“ und „tut so,
+  als wäre sie ein Mensch“. Langsam: Warnung ab 6 s, Fehler ab 10 s.
   Route `/api/pruefstand` (nur mit `PRUEFSTAND_SECRET` bzw. `CRON_SECRET`,
   3 Sätze je Aufruf – länger bricht Vercel ab, „Load failed“), Bericht unter
   „Für Entwickler“. Ziel ≥ 95 %. Der Lauf (`pruefstand/lauf.ts`) ruft der
@@ -183,7 +208,8 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Profil, diese/nächste Woche, Kochbuch ohne Schritte, Vorrat, Termine …).
 - Modellwahl (`CHOICE` in `route.ts`, `needsLargeModel` in `engine.ts`):
   klein für Alltägliches, groß gleich bei offenem Vorschlag, langen Texten
-  (> 280 Zeichen), Mails oder Planen/Rezepten (`LARGE_TOPICS`). Will das
+  (> 280 Zeichen), Mails oder Planen/Rezepten (`LARGE_TOPICS`; „Woche“ allein
+  reicht nicht, nur Wochenplan, planen, Essensplan …). Will das
   kleine Modell ein großes Werkzeug (`LARGE_TOOLS`), lehnt es ab oder läuft
   über, übernimmt das große (Ereignis `round`). `LOTTE_MODEL` (alt
   `KUECHENHELFER_MODEL`) = festes Modell; `LOTTE_SMALL_MODEL` /

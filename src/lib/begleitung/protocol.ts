@@ -4,6 +4,7 @@ import type { AssistantData, ChangeOp } from "@/lib/begleitung/ops";
 import type { MailDraft } from "@/lib/begleitung/mail";
 import type { StimmeStatus } from "@/lib/begleitung/stimmeProtokoll";
 import type { TipView } from "@/lib/tipps/model";
+import type { Forecast } from "@/lib/wetter/forecast";
 
 export type ChatTurn = { role: "user" | "assistant"; text: string };
 
@@ -25,6 +26,8 @@ export type AssistantRequest = {
   shoppingNames?: string[];
   /** Antwort Stück für Stück (NDJSON, siehe StreamEvent) */
   stream?: boolean;
+  /** Nur Prüfstand (nie aus der App): feste Vorhersage statt Abruf */
+  forecast?: Forecast | null;
 };
 
 /**

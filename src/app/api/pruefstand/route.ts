@@ -11,7 +11,7 @@ import { aiSetup } from "@/lib/begleitung/guard";
 import { createMockModel } from "@/lib/begleitung/mock";
 import { PRUEFSAETZE } from "@/lib/begleitung/pruefstand/saetze";
 import { bewerte, quote, type PruefErgebnis } from "@/lib/begleitung/pruefstand/bewerten";
-import { PRUEF_HEUTE, PRUEF_UHR, pruefHaushalt } from "@/lib/begleitung/pruefstand/haushalt";
+import { PRUEF_HEUTE, PRUEF_UHR, pruefHaushalt, pruefWetter } from "@/lib/begleitung/pruefstand/haushalt";
 
 export const maxDuration = 300;
 
@@ -43,7 +43,8 @@ export async function POST(request: Request) {
     const t0 = Date.now();
     try {
       const reply = await runAssistant(
-        { deviceId: "pruefstand", today: PRUEF_HEUTE, clock: PRUEF_UHR, messages: [{ role: "user", text: satz.text }], pending: [], data: pruefHaushalt() },
+        // Je Satz die passende Ausgangslage, Wetter aus der festen Test-Vorhersage
+        { deviceId: "pruefstand", today: PRUEF_HEUTE, clock: PRUEF_UHR, messages: [{ role: "user", text: satz.text }], pending: [], data: pruefHaushalt(satz.lage), forecast: pruefWetter() },
         create,
         mock ? "mock" : CHOICE,
       );

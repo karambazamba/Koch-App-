@@ -6,7 +6,41 @@ import { householdIntroFrom, householdIntroSummary } from "@/lib/einstellungen/h
 import type { BegleitungTool } from "@/lib/begleitung/registry";
 import { nextId, propose } from "@/lib/begleitung/tools";
 
+/** Person aus dem Haushalt per Name (ohne Name: die erste Person = ich) */
+const personByName = (ctx: Parameters<BegleitungTool["run"]>[0], name: unknown) => {
+  const n = typeof name === "string" ? name.trim().toLowerCase() : "";
+  const persons = ctx.data.profile.persons;
+  return (n && persons.find((p) => p.name.trim().toLowerCase() === n)) || (!n || /^(ich|mir|mich)$/.test(n) ? persons[0] : undefined);
+};
+
 export const HOUSEHOLD_TOOLS: BegleitungTool[] = [
+  {
+    area: "alltag",
+    definition: {
+      name: "vorliebe_merken",
+      description:
+        "„Merk dir: Lisa mag keine Pilze“, „Mathis isst wieder Tomaten“: trägt es direkt im Profil der Person ein (sofort, mit Rückgängig, keine Einstellungen öffnen). Danach nur „Gemerkt.“ antworten. Allergien nicht hierüber.",
+      input_schema: {
+        type: "object",
+        properties: {
+          person: { type: "string", description: "Vorname aus dem Haushalt (ohne Name: ich)" },
+          sachen: { type: "array", items: { type: "string" }, description: "Zutaten/Gerichte, z. B. ['Pilze']" },
+          mag: { type: "boolean", description: "true = mag es wieder (aus „mag nicht“ entfernen), sonst false" },
+        },
+        required: ["sachen"],
+        additionalProperties: false,
+      },
+    },
+    run: (ctx, raw) => {
+      const input = (raw as { person?: unknown; sachen?: unknown; mag?: unknown } | null) ?? {};
+      const person = personByName(ctx, input.person);
+      if (!person) return { content: "Die Person gibt es im Haushalt nicht – kurz nachfragen, wen du meinst.", isError: true };
+      const sachen = (Array.isArray(input.sachen) ? input.sachen : []).filter((x): x is string => typeof x === "string" && x.trim().length > 0).slice(0, 8);
+      if (!sachen.length) return { content: "Was genau? Nichts eingetragen.", isError: true };
+      for (const term of sachen) propose(ctx, { id: nextId(ctx), type: "set_dislike", personId: person.id, who: person.name || "Ich", term: term.trim().slice(0, 40), mag: input.mag === true });
+      return { content: `Gemerkt (sofort, mit Rückgängig). Antworte nur „Gemerkt.“` };
+    },
+  },
   {
     area: "alltag",
     definition: {

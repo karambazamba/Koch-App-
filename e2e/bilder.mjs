@@ -43,18 +43,19 @@ const micTap = async (page) => {
   await tap.click();
   if (blocked) await page.getByRole("button", { name: "Anmachen ›" }).click();
 };
-const openTermin = async (page, text) => {
+const openTermin = async (page, text, speichern = false) => {
   await page.goto(BASE + "/?seite=kalender");
   await page.waitForTimeout(900);
-  // Schnelleingabe, dann „Mehr Details“ – einmal wiederholen, falls das Fenster zu langsam kam
+  // Satz in die Schnelleingabe, dann „Mehr Details“ = das Formular, vorbefüllt – einmal wiederholen, falls das Fenster zu langsam kam
   for (let i = 0; i < 2; i++) {
     await page.locator("[role=tabpanel]:not([inert])").getByRole("button", { name: "Neuer Termin" }).click();
+    await page.getByRole("dialog", { name: "Schnelleingabe" }).getByRole("textbox").fill(text);
     await mehrDetails(page);
     if (await page.getByRole("dialog", { name: "Neuer Termin" }).waitFor({ timeout: 6000 }).then(() => true, () => false)) break;
     await page.keyboard.press("Escape");
     await page.waitForTimeout(800);
   }
-  await page.getByRole("dialog", { name: "Neuer Termin" }).getByRole("textbox", { name: "Termin" }).fill(text);
+  if (speichern) await page.getByRole("dialog", { name: "Neuer Termin" }).getByRole("button", { name: "Speichern" }).click();
   await page.waitForTimeout(500);
 };
 const voiceOffer = async (page) => {
@@ -107,7 +108,7 @@ const SCENES = [
   ["wochencheck-woche", (page) => weekCheck(page, true)],
   ["termin-satz", (page) => openTermin(page, "Mittwoch 12.30 Physio")],
   ["termin-frei", (page) => openTermin(page, "Elternabend")],
-  ["termin-vorbei", (page) => openTermin(page, "Bäcker 9 Uhr")],
+  ["termin-vorbei", (page) => openTermin(page, "Bäcker heute 9:00", true)],
   ["mikro-fragen", (page) => micTap(page)],
   ["mikro-hilfe", async (page) => (await micTap(page), await page.getByRole("button", { name: "Okay, frag mich" }).click())],
   [
@@ -126,6 +127,8 @@ mkdirSync(dir, { recursive: true });
 const stop = await startServer();
 const browser = await launch();
 let n = 0;
+// Bricht ein Bild ab: Server trotzdem beenden (sonst blockiert er Port 3210 für die nächste Runde)
+try {
 for (const device of DEVICES) {
   for (const dark of [false, true]) {
     const tag = `${device.replace(/ /g, "")}-${dark ? "dunkel" : "hell"}`;
@@ -186,6 +189,8 @@ for (const device of DEVICES) {
     }
   }
 }
-await browser.close();
-stop();
+} finally {
+  await browser.close();
+  stop();
+}
 console.log(`${n + DEVICES.length * 4} Bilder in ${dir}`);

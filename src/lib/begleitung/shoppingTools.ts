@@ -19,6 +19,7 @@ export const SHOPPING_TOOLS = {
         type: "object",
         properties: {
           woche: WEEK_PROP,
+          nur_vorschlag: { type: "boolean", description: "true bei vagen Wünschen ('so Sachen fürs Frühstück'): passende Artikel aus Stammartikeln/zuletzt Gekauftem vorschlagen – sie erscheinen als Vorschau mit 'Übernehmen' statt sofort. Statt nachzufragen." },
           artikel: {
             type: "array",
             minItems: 1,
@@ -53,10 +54,10 @@ export const SHOPPING_TOOLS = {
         const section = SECTIONS.some((s) => s.value === a.abteilung) ? (a.abteilung as Section) : sectionFor(itemName);
         const forDay = str(a.fuer_tag) ? dateForDay(ctx.today, str(a.fuer_tag)) : null;
         const day = forDay ? WEEKDAYS[(new Date(`${forDay}T00:00:00Z`).getUTCDay() + 6) % 7] : undefined;
-        propose(ctx, { id: nextId(ctx), type: "add_shopping", weekStart, name: itemName, amount: str(a.menge), section, ...(day ? { day } : {}), ...(str(a.gericht) ? { dish: str(a.gericht) } : {}), ...(str(a.laden) ? { shop: str(a.laden).slice(0, 30) } : {}) });
+        propose(ctx, { id: nextId(ctx), type: "add_shopping", weekStart, name: itemName, amount: str(a.menge), section, ...(day ? { day } : {}), ...(str(a.gericht) ? { dish: str(a.gericht) } : {}), ...(str(a.laden) ? { shop: str(a.laden).slice(0, 30) } : {}), ...(input.nur_vorschlag === true ? { vorschlag: true } : {}) });
         names.push(itemName);
       }
-      return { content: `Vorgemerkt für die Einkaufsliste: ${names.join(", ")}.` };
+      return { content: input.nur_vorschlag === true ? `Als Vorschlag mit "Übernehmen": ${names.join(", ")}. Antworte nur kurz, z. B. "Mein Vorschlag fürs Frühstück:"` : `Vorgemerkt für die Einkaufsliste: ${names.join(", ")}.` };
     },
   },
 } satisfies Record<string, BegleitungTool>;

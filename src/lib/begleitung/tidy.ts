@@ -1,7 +1,14 @@
 // Mia spricht knapp: jede KI-Antwort läuft vor Anzeige, Vorlesen und Push
 // durch tidyMiaText(). Gedankenstriche als Satzverbindung werden zu Punkt
 // bzw. Komma, Spiegelstriche am Zeilenanfang fallen weg, Doppel-Ausrufezeichen
-// werden einfach, höchstens ein „!“ pro Nachricht. Rein, damit testbar.
+// werden einfach, höchstens ein „!“ pro Nachricht. Sätze, die die Oberfläche
+// erklären oder menschliche Gefühle vorspielen, fallen weg, und von mehreren
+// Fragen bleibt nur die erste (EINE Frage oder EIN Angebot). Rein, damit testbar.
+
+/** Erklärt die Oberfläche („Mit ‚Übernehmen‘ kommt es …“, „Unter Essen findest du es“) */
+export const UI_ERKLAERUNG = /mit [„"'‚]?übernehmen|tipp(e)? (auf|unten)|unter (essen|einstellungen|aufgaben|kalender)(?![a-zäöüß]).*(findest|steht)|findest du (unter|rechts|oben|unten)|rechts unter/i;
+/** Tut so, als wäre Mia ein Mensch („Das kenn ich“, „ich bin auch müde“) */
+export const MENSCHLICH = /(das )?kenn(e)? ich( gut)?[.!,]|geht mir (auch|genauso) so|ich bin auch (müde|kaputt|erschöpft)|ich fühle mich|ich hatte auch/i;
 
 const DASH = /\s+[–—]\s+/g;
 
@@ -15,6 +22,21 @@ function joinParts(text: string): string {
     // Großbuchstabe danach (Nomen oder neuer Satz) → neuer Satz; klein → Komma
     return /[A-ZÄÖÜ„"]/.test(after) ? `${before}. ${after}` : `${before}, ${after}`;
   });
+}
+
+/** Sätze samt Leerraum dahinter; Datumspunkte („30. Oktober“) trennen nicht */
+const SENTENCES = /[^.!?]*(?:(?<=\d)\.(?=\s*\d|\s+[A-ZÄÖÜa-zäöüß])[^.!?]*)*[.!?…]*["“”]?\s*/g;
+
+/** Unpassende Sätze weg, nur die erste Frage bleibt – nie alles */
+function keepSentences(text: string): string {
+  const parts = text.match(SENTENCES)?.filter(Boolean) ?? [text];
+  let questions = 0;
+  const kept = parts.filter((part) => {
+    if (UI_ERKLAERUNG.test(part) || MENSCHLICH.test(part)) return false;
+    if (/\?["“”]?\s*$/.test(part) && ++questions > 1) return false;
+    return true;
+  });
+  return kept.length ? kept.join("") : text;
 }
 
 export function tidyMiaText(text: string): string {
@@ -31,5 +53,6 @@ export function tidyMiaText(text: string): string {
     let seen = 0;
     out = out.replace(/!/g, () => (++seen < bangs ? "." : "!"));
   }
+  out = keepSentences(out);
   return out.replace(/[ \t]{2,}/g, " ").replace(/\n{3,}/g, "\n\n").trim();
 }
