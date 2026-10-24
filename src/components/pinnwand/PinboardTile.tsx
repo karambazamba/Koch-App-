@@ -6,7 +6,7 @@
 // eine Zeile …) bzw. Sprachnachricht (▶, kleine Tonwelle, Länge). „+N“ neben
 // dem ＋, wenn es mehr gibt; kein roter Punkt, keine Zahl in Rot. Oben rechts
 // ＋ = Schnelleingabe (beim ersten Mal kleines Schild „schreiben“ links neben
-// dem ＋, nie über dem Text), unten links
+// dem ＋, nie über dem Text; in S weg, sonst würde „Pinnwand“ abgeschnitten), unten links
 // „Sprachnachricht“, rechts das Mikro. Aufnahme (Tafel 80) = EINE Leiste statt
 // der Zeilen (＋ und Mikro sind dann weg), gesendet nur über ➤; danach steht
 // die Sprachnachricht oben (zart hervorgehoben) und unten kurz „✓ Gesendet“.
@@ -87,7 +87,7 @@ export function PinboardTile({ size = "S", me, demo = false }: { size?: TileSize
             <span className="h-[26px] w-[26px] shrink-0" aria-hidden />
           ) : (
             <span className="flex shrink-0 items-center gap-1">
-              {hintSeen === false && (
+              {hintSeen === false && size !== "S" && (
                 <span className="pointer-events-none rounded-full bg-tile-inner px-1.5 py-px text-[10px] font-bold text-tile-accent" aria-hidden>
                   schreiben
                 </span>

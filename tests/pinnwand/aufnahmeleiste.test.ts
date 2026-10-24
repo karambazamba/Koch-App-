@@ -32,7 +32,7 @@ describe("Aufnahme-Leiste in der Kachel", () => {
     expect(tile).toMatch(/>Sprach&shy;nachricht<\/span>/);
     expect(tile).not.toContain("＋ = schreiben");
     // Schild links neben dem ＋ im Kopf (nie über dem Text, Launch 1.0)
-    expect(tile).toMatch(/hintSeen === false && \(\s*<span className="pointer-events-none rounded-full/);
+    expect(tile).toMatch(/hintSeen === false && size !== "S" && \(\s*<span className="pointer-events-none rounded-full/);
     expect(tile).not.toMatch(/pointer-events-none absolute/);
     expect(tile).toContain("schreiben\n");
     expect(tile).toMatch(/markHintSeen\("pinnwand-kachel-1"\)/);
