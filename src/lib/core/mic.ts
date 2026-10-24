@@ -4,9 +4,11 @@
 // gesperrtes Mikro ist überall gesperrt) und lebt nur im Speicher der Seite –
 // beim Zurückkommen in die App wird neu geprüft.
 
+import { micFehler, type MicFehler } from "@/lib/core/micCheck";
+
 export type MicPlatform = "ios" | "android" | "andere";
-/** gesperrt = Mikrofon nicht erlaubt; diktat_aus = iPhone-Diktierfunktion aus */
-export type MicBlock = "gesperrt" | "diktat_aus";
+/** Was fehlt (Tafel 86, `core/micCheck`): gesperrt, Diktieren/Spracherkennung aus, kein Ton, hängt, privat, unklar */
+export type MicBlock = MicFehler;
 
 export function micPlatform(ua: string): MicPlatform {
   if (/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && /Mobile/.test(ua))) return "ios";
@@ -21,63 +23,37 @@ export function iosMajor(ua: string): number | null {
 }
 
 /**
- * Fehler einordnen: getUserMedia „NotAllowedError“/„SecurityError“ und die
- * Spracherkennung „not-allowed“ = gesperrt; „service-not-allowed“ heißt auf
- * dem iPhone meist „Diktieren ist aus“, sonst ebenfalls gesperrt.
+ * Fehler einordnen (Tafel 86): getUserMedia „NotAllowedError“ und die
+ * Spracherkennung „not-allowed“ = gesperrt – außer das Mikro ist schon
+ * erlaubt, dann fehlen auf dem iPhone Diktieren bzw. Spracherkennung;
+ * „service-not-allowed“ = Diktieren/Spracherkennung aus (iPhone).
  */
 export function classifyMicError(error: string, platform: MicPlatform): MicBlock | null {
-  if (error === "service-not-allowed") return platform === "ios" ? "diktat_aus" : "gesperrt";
-  if (error === "not-allowed" || error === "NotAllowedError" || error === "SecurityError" || error === "PermissionDeniedError") return "gesperrt";
-  return null;
+  return micFehler(error, platform, state.granted);
 }
 
 const device = (p: MicPlatform) => (p === "ios" ? "dein iPhone" : "dein Handy");
 
-/** Vorab-Sheet „Darf ich zuhören?“ */
-export function preAskText(p: MicPlatform): { title: string; text: string; allow: string } {
-  return { title: "Darf ich zuhören?", text: `Gleich fragt ${device(p)} nach dem Mikrofon. Tippe dann auf „${p === "ios" ? "Erlauben" : "Zulassen"}“.`, allow: p === "ios" ? "Erlauben" : "Zulassen" };
+/** Vorab-Sheet „Darf ich zuhören?“ (iPhone: „Falls danach nichts passiert …“) */
+export function preAskText(p: MicPlatform): { title: string; text: string; allow: string; zusatz: string | null } {
+  return {
+    title: "Darf ich zuhören?",
+    text: `Gleich fragt ${device(p)} nach dem Mikrofon. Tippe dann auf „${p === "ios" ? "Erlauben" : "Zulassen"}“.`,
+    allow: p === "ios" ? "Erlauben" : "Zulassen",
+    zusatz: p === "ios" ? "Falls danach nichts passiert: Ich zeig dir, woran’s liegt." : null,
+  };
 }
 
 /** Symbol eines Schritts (nachgebaut, kein Foto) */
-export type StepIcon = "zahnrad" | "apps" | "safari" | "mikro" | "erlauben" | "regler" | "berechtigungen" | "allgemein" | "tastatur" | "diktat" | "teilen" | "entfernen" | "sichern";
+export type StepIcon = "zahnrad" | "apps" | "safari" | "mikro" | "erlauben" | "regler" | "berechtigungen" | "allgemein" | "tastatur" | "diktat" | "teilen" | "entfernen" | "sichern" | "neustart" | "chrome" | "menue";
 
-/** Ein Schritt mit nachgebautem Bildschirm: Titel oben, Zeilen, die gesuchte ist markiert */
-export type MicStep = { text: string; icon: StepIcon; screen: { title: string; rows: string[]; target: number } };
-
-/**
- * Schritte zum Anmachen. iOS 18 und neuer: Einstellungen → Apps → Safari →
- * Mikrofon (Abschnitt „Einstellungen für Websites“); bis iOS 17 ohne „Apps“.
- * Android/Chrome: Symbol links neben der Adresse → Berechtigungen → Mikrofon.
- */
-export function micSteps(p: MicPlatform, block: MicBlock, ios: number | null, host = "wasgibts.app"): MicStep[] {
-  if (block === "diktat_aus")
-    return [
-      { text: "Öffne die App „Einstellungen“", icon: "zahnrad", screen: { title: "Home-Bildschirm", rows: ["Fotos", "Kamera", "Einstellungen", "Uhr"], target: 2 } },
-      { text: "Tippe auf „Allgemein“", icon: "allgemein", screen: { title: "Einstellungen", rows: ["WLAN", "Bluetooth", "Allgemein", "Bedienungshilfen"], target: 2 } },
-      { text: "Tippe auf „Tastatur“", icon: "tastatur", screen: { title: "Allgemein", rows: ["Info", "Softwareupdate", "Datum & Uhrzeit", "Tastatur"], target: 3 } },
-      { text: "Schalte „Diktierfunktion“ ein", icon: "diktat", screen: { title: "Tastaturen", rows: ["Tastaturen", "Auto-Korrektur", "Diktierfunktion"], target: 2 } },
-    ];
-  if (p === "android")
-    return [
-      { text: "Tippe oben links neben der Adresse auf das Symbol (Schieberegler oder Schloss)", icon: "regler", screen: { title: "Chrome", rows: [`⊶  ${host}`, "Seite"], target: 0 } },
-      { text: "Tippe auf „Berechtigungen“", icon: "berechtigungen", screen: { title: host, rows: ["Verbindung ist sicher", "Berechtigungen", "Cookies"], target: 1 } },
-      { text: "Tippe auf „Mikrofon“", icon: "mikro", screen: { title: "Berechtigungen", rows: ["Mikrofon", "Benachrichtigungen"], target: 0 } },
-      { text: "Wähle „Zulassen“", icon: "erlauben", screen: { title: "Mikrofon", rows: ["Zulassen", "Nicht zulassen"], target: 0 } },
-    ];
-  const withApps = ios === null || ios >= 18;
-  return [
-    { text: "Öffne die App „Einstellungen“ (graues Zahnrad)", icon: "zahnrad", screen: { title: "Home-Bildschirm", rows: ["Fotos", "Kamera", "Einstellungen", "Uhr"], target: 2 } },
-    withApps
-      ? { text: "Tippe ganz unten auf „Apps“, dann „Safari“", icon: "apps", screen: { title: "Apps", rows: ["Kalender", "Nachrichten", "Safari", "Wetter"], target: 2 } }
-      : { text: "Tippe auf „Safari“ (blauer Kompass)", icon: "safari", screen: { title: "Einstellungen", rows: ["Passwörter", "Mail", "Safari", "Wetter"], target: 2 } },
-    { text: "Ganz unten bei „Einstellungen für Websites“: „Mikrofon“", icon: "mikro", screen: { title: "Safari", rows: ["Seitenzoom", "Kamera", "Mikrofon", "Standort"], target: 2 } },
-    { text: "Wähle „Erlauben“", icon: "erlauben", screen: { title: "Mikrofon", rows: ["Fragen", "Ablehnen", "Erlauben"], target: 2 } },
-  ];
-}
+/** Ein Schritt mit nachgebautem Bildschirm: Titel oben, Zeilen, die gesuchte ist markiert (`wischen`: kleine Animation „hochwischen“) */
+export type MicStep = { text: string; icon: StepIcon; schalter?: number; screen: { title: string; rows: string[]; target: number; wischen?: boolean } };
 
 // --- Zustand (geräteweit, nur im Speicher) -------------------------------------------------
 
-type MicSheet = { kind: "fragen"; then: () => void } | { kind: "hilfe"; block: MicBlock } | null;
+/** „check“: der Mikro-Check; `fehler` = schon bekannt (automatisch nach einem Fehlschlag) */
+type MicSheet = { kind: "fragen"; then: () => void } | { kind: "check"; fehler: MicBlock | null } | null;
 type MicState = { block: MicBlock | null; granted: boolean; sheet: MicSheet; justOn: boolean; origin: Element | null };
 
 let state: MicState = { block: null, granted: false, sheet: null, justOn: false, origin: null };
@@ -95,9 +71,9 @@ export const micSubscribe = (l: () => void) => {
 };
 export const micState = () => state;
 
-/** Mikro gesperrt (Fehler beim Zuhören/Aufnehmen) – Hilfe öffnen */
+/** Zuhören/Aufnehmen gescheitert – der Mikro-Check sagt, was fehlt */
 export function reportMicBlocked(block: MicBlock) {
-  set({ block, granted: false, sheet: { kind: "hilfe", block }, origin: state.origin ?? focused() });
+  set({ block, granted: block === "gesperrt" ? false : state.granted, sheet: { kind: "check", fehler: block }, origin: state.origin ?? focused() });
 }
 
 /** Bekannter Stand der Freigabe (aus navigator.permissions) */
@@ -107,7 +83,10 @@ export function setMicPermission(permission: "granted" | "denied" | "prompt") {
   else if (state.block === "gesperrt") set({ block: null, granted: false });
 }
 
-export const openMicHelp = () => set({ sheet: { kind: "hilfe", block: state.block ?? "gesperrt" }, origin: focused() });
+/** Mikro-Check öffnen (Einstellungen → Mia → „Mikrofon prüfen“, „Anmachen ›“) */
+export const openMicHelp = () => set({ sheet: { kind: "check", fehler: state.block }, origin: focused() });
+/** Der Check hat alles grün: Sperre vergessen */
+export const micCheckOk = () => set({ block: null, granted: true, justOn: state.block !== null });
 export const closeMicSheet = () => set({ sheet: null });
 export const clearMicJustOn = () => set({ justOn: false });
 
@@ -117,7 +96,7 @@ export const clearMicJustOn = () => set({ justOn: false });
  * Muss im Tipp aufgerufen werden (das Sheet ruft `start` im nächsten Tipp).
  */
 export function guardMic(start: () => void, askedBefore: boolean) {
-  if (state.block) return set({ sheet: { kind: "hilfe", block: state.block }, origin: focused() });
+  if (state.block) return set({ sheet: { kind: "check", fehler: state.block }, origin: focused() });
   if (!askedBefore && !state.granted) return set({ sheet: { kind: "fragen", then: start }, origin: focused() });
   set({ origin: focused() });
   start();

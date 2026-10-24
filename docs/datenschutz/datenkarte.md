@@ -27,6 +27,7 @@ berechtigtes Interesse.
 | Push-Abos | Server (`push_abos`) | Erinnerungen | bis abbestellt | nur Server | lit. a (Browser-Erlaubnis) |
 | Mails an Mia: Adressen, Vorschläge, gelernte Absender | Server (`mail_addresses`, `mail_items`, `mail_senders`) | Vorschläge aus Mails | Vorschläge 7 Tage, „angekommen“ 24 Std.; Rohmail nie | Familie bzw. nur Person (Arbeit) | lit. a (Einschalten des Bausteins) |
 | Mia-Wünsche („Kann ich noch nicht“) | Server (`mia_wuensche`), nur Text + Datum | sehen, was gefragt wird | **bitte festlegen** (Vorschlag 12 Monate) | nur Betreiber | lit. f |
+| Bekannte Stimmen (`wasgibts.stimmen`) | Gerät, nur Kennungen der Systemstimmen | „Neue Stimme gefunden … Nehmen?“ | bis gelöscht | nur Gerät | lit. b |
 | KI-Verbrauch (`wasgibts.verbrauch`) | Gerät, nur Zahlen | Tageslimit, Guthaben | 62 Tage | nur Gerät | lit. f |
 | Zugangscode, Geräte-Kennung | Gerät | Tageslimit | bis gelöscht | nur Gerät; Kennung geht als Zahl an den Server (Limit) | lit. f |
 | Server-Logs (Vercel) | Vercel | Fehler finden | laut Vercel-Plan **bitte prüfen** | Betreiber | lit. f; enthalten nur Technik (Dauer, Kosten, Fehlercode) – Test `tests/app/datenschutz.test.ts` |

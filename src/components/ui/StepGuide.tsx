@@ -6,7 +6,7 @@
 // orange umrandet + Fingerkreis, wischbar, „Schritt 2 von 4“, Punkte unten.
 
 import { useRef, useState } from "react";
-import { Check, Compass, Download, Keyboard, LayoutGrid, Mic, Settings, Share, ShieldCheck, SlidersHorizontal, Trash2, type LucideIcon } from "lucide-react";
+import { Check, Compass, Download, EllipsisVertical, Globe, Keyboard, LayoutGrid, Mic, RotateCcw, Settings, Share, ShieldCheck, SlidersHorizontal, Trash2, type LucideIcon } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { buttonClass } from "@/components/ui/styles";
 import type { MicStep, StepIcon } from "@/lib/core/mic";
@@ -25,6 +25,9 @@ const ICONS: Record<StepIcon, { icon: LucideIcon; tone: string }> = {
   teilen: { icon: Share, tone: "bg-work text-on-accent" },
   entfernen: { icon: Trash2, tone: "bg-fill-strong text-ink" },
   sichern: { icon: Download, tone: "bg-accent text-on-accent" },
+  neustart: { icon: RotateCcw, tone: "bg-accent text-on-accent" },
+  chrome: { icon: Globe, tone: "bg-work text-on-accent" },
+  menue: { icon: EllipsisVertical, tone: "bg-fill-strong text-ink" },
 };
 
 function StepIconBadge({ icon }: { icon: StepIcon }) {
@@ -51,8 +54,19 @@ export function StepList({ steps }: { steps: MicStep[] }) {
   );
 }
 
-/** Ein nachgebauter Einstellungen-Bildschirm mit markierter Zeile */
+/** Ein nachgebauter Einstellungen-Bildschirm mit markierter Zeile (bzw. Mia, die nach oben weggeschoben wird) */
 function FakeScreen({ step }: { step: MicStep }) {
+  if (step.screen.wischen)
+    return (
+      <div className="relative mx-auto flex h-[180px] w-full max-w-[260px] items-center justify-center gap-3 overflow-hidden rounded-card border border-line bg-fill shadow-card" aria-hidden data-wischen>
+        {step.screen.rows.map((row, i) => (
+          <span key={row} className={`flex h-[120px] w-[76px] items-end justify-center rounded-field bg-surface pb-2 text-[12px] font-bold shadow-card ${i === step.screen.target ? "anleitung-wegwischen ring-2 ring-accent" : "text-muted"}`}>
+            {row}
+          </span>
+        ))}
+        <span className="anleitung-finger absolute bottom-3 left-[calc(50%-58px)] h-7 w-7 rounded-full border-2 border-accent bg-accent-soft" />
+      </div>
+    );
   return (
     <div className="mx-auto w-full max-w-[260px] overflow-hidden rounded-card border border-line bg-background shadow-card" aria-hidden>
       <p className="border-b border-line bg-surface px-4 py-2.5 text-center text-[13px] font-bold">{step.screen.title}</p>
@@ -68,8 +82,8 @@ function FakeScreen({ step }: { step: MicStep }) {
   );
 }
 
-/** „Zeig’s mir“: Schritt für Schritt; am Ende `lastLabel` (z. B. „Nochmal versuchen“) */
-export function StepGuide({ steps, onBack, onDone, onClose, lastLabel }: { steps: MicStep[]; onBack: () => void; onDone: () => void; onClose: () => void; lastLabel: string }) {
+/** „Zeig’s mir“: ein Schritt pro Bildschirm, große Schrift; am Ende `lastLabel` (z. B. „Nochmal testen“), `hinweis` klein darunter */
+export function StepGuide({ steps, onBack, onDone, onClose, lastLabel, hinweis }: { steps: MicStep[]; onBack: () => void; onDone: () => void; onClose: () => void; lastLabel: string; hinweis?: string }) {
   const [at, setAt] = useState(0);
   const track = useRef<HTMLDivElement>(null);
   const go = (i: number) => {
@@ -95,7 +109,7 @@ export function StepGuide({ steps, onBack, onDone, onClose, lastLabel }: { steps
           {steps.map((s, i) => (
             <section key={s.text} className="flex w-full shrink-0 snap-center flex-col gap-3 px-1" aria-label={`Schritt ${i + 1}`} aria-hidden={i !== at}>
               <FakeScreen step={s} />
-              <p className="text-center text-base font-semibold leading-snug">{s.text}</p>
+              <p className="text-center text-[18px] font-bold leading-snug">{s.text}</p>
             </section>
           ))}
         </div>
@@ -104,6 +118,7 @@ export function StepGuide({ steps, onBack, onDone, onClose, lastLabel }: { steps
             <span key={s.text} className={`h-2 w-2 rounded-full ${i === at ? "bg-accent" : "bg-line-strong"}`} />
           ))}
         </div>
+        {hinweis && <p className="text-center text-[13px] text-muted">{hinweis}</p>}
         <div className="grid grid-cols-2 gap-2">
           <button type="button" onClick={() => (at === 0 ? onBack() : go(at - 1))} className={buttonClass("secondary", "md")}>
             Zurück

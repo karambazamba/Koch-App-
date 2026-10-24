@@ -1086,6 +1086,12 @@ body {
 .mia-wellen.ruhig { border-width: 2px; animation-duration: 4.4s; opacity: .6; }
 .mia-wellen.zwei.ruhig { animation-delay: 2.2s; }
 .mia-zwinkern .av-eyes rect:last-of-type { transform-box: fill-box; transform-origin: center; animation: mia-zwinker 5s ease-in-out 2s infinite; }
+/* Mikro-Anleitung „Mia ganz schließen“: Karte nach oben wegschieben, der Finger wischt mit */
+@keyframes anleitung-weg { 0%, 25% { transform: translateY(0); opacity: 1; } 70%, 100% { transform: translateY(-150px); opacity: 0; } }
+@keyframes anleitung-finger { 0%, 20% { transform: translateY(0); opacity: 0; } 30% { opacity: 1; } 70% { transform: translateY(-110px); opacity: 0; } 100% { opacity: 0; } }
+.anleitung-wegwischen { animation: anleitung-weg 2.4s var(--mia-ease) infinite; }
+.anleitung-finger { animation: anleitung-finger 2.4s var(--mia-ease) infinite; }
+@media (prefers-reduced-motion: reduce) { .anleitung-wegwischen, .anleitung-finger { animation: none; } }
 /* Erster Start, Bildschirm 3 und der Mia-Knopf beim ersten Erscheinen: genau EIN Zwinkern */
 @keyframes mia-zwinker-1 { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(.12); } }
 .mia-zwinkern-einmal .av-eyes rect:last-of-type { transform-box: fill-box; transform-origin: center; animation: mia-zwinker-1 .5s ease-in-out .9s 1 both; }

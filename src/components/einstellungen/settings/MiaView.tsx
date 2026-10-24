@@ -6,7 +6,8 @@
 // v0.67) – kein Umbenennen mehr. Früher eigene Seiten (/profil/lotte,
 // /vorlesen, /farbe) leiten hierher.
 
-import { Hand, Palmtree, Sun } from "lucide-react";
+import { Hand, Mic, Palmtree, Sun } from "lucide-react";
+import { openMicHelp } from "@/lib/core/mic";
 import { setKnopfLinks, useKnopfLinks } from "@/lib/mia/knopf";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { Segmented } from "@/components/ui/Segmented";
@@ -40,6 +41,12 @@ export function MiaView() {
             </div>
 
             <VoiceSettings profile={profile} />
+
+            <Group title="">
+              <Row onClick={openMicHelp} icon={Mic} title="Mikrofon prüfen">
+                Ich sag dir, woran’s liegt
+              </Row>
+            </Group>
 
             <h2 className={`mt-2 px-1 ${SECTION_TITLE}`}>Wie oft melde ich mich?</h2>
             <Segmented label={`Wie oft meldet sich ${name}?`} value={profile.helperMode} onChange={(helperMode) => set({ helperMode })} options={MODES} />

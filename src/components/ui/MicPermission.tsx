@@ -4,7 +4,8 @@
 // den grauen, durchgestrichenen Knopf, `MicStrip` (gelber Streifen „Mikro aus
 // – tippen geht immer.“ + „Anmachen ›“, kurz „✓ Mikro ist an“), `MicSheetHost`
 // im Layout: prüft die Freigabe beim Start und beim Zurückkommen in die App und
-// lädt die Fenster (Vorab-Frage, Hilfe, „Zeig’s mir“) erst bei Bedarf.
+// lädt die Fenster (Vorab-Frage, Mikro-Check, „Zeig’s mir“) erst bei Bedarf,
+// dazu der Stimmen-Vorschlag nach der Rückkehr (Tafel 86).
 
 import { useEffect, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
@@ -12,6 +13,7 @@ import { Check, MicOff } from "lucide-react";
 import { clearMicJustOn, micState, micSubscribe, openMicHelp, setMicPermission } from "@/lib/core/mic";
 
 const MicSheets = dynamic(() => import("@/components/ui/MicSheets").then((m) => m.MicSheets), { ssr: false });
+const StimmenVorschlag = dynamic(() => import("@/components/begleitung/StimmenVorschlag").then((m) => m.StimmenVorschlag), { ssr: false });
 
 /** Mikro gesperrt (oder Diktieren aus)? */
 export function useMicBlocked(): boolean {
@@ -75,5 +77,10 @@ export function MicSheetHost() {
       if (status) status.onchange = null;
     };
   }, []);
-  return open ? <MicSheets /> : null;
+  return (
+    <>
+      {open && <MicSheets />}
+      <StimmenVorschlag />
+    </>
+  );
 }

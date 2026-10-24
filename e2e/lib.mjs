@@ -208,9 +208,53 @@ export const FAKE_MIC = () => {
   window.SpeechRecognition = FakeRecognition;
   const deny = () => Promise.reject(new DOMException("nein", "NotAllowedError"));
   if (navigator.mediaDevices) navigator.mediaDevices.getUserMedia = deny;
+  // Speicher wie in einem normalen Tab (privat nur, wenn ein Ablauf es will)
+  if (navigator.storage) navigator.storage.estimate = () => Promise.resolve({ quota: window.__privat ? 40 * 1024 * 1024 : 10 * 1024 * 1024 * 1024, usage: 0 });
   const query = navigator.permissions?.query?.bind(navigator.permissions);
   if (navigator.permissions)
     navigator.permissions.query = (d) => (d?.name === "microphone" ? Promise.resolve({ state: "prompt", onchange: null }) : query(d));
+};
+
+/**
+ * Schein-Mikrofon für den Mikro-Check (Tafel 86), gesteuert über window-Werte:
+ * `__erkennung` ("ok" oder Fehlername der Spracherkennung), `__gum` ("ton" =
+ * Ton kommt an, "still" = kein Ton, "haengt" = antwortet nie, sonst
+ * Fehlername), `__privat` (privater Tab).
+ */
+export const FAKE_MIC_CHECK = () => {
+  window.__erkennung = window.__erkennung ?? "ok";
+  window.__gum = window.__gum ?? "ton";
+  class FakeRecognition {
+    start() {
+      setTimeout(() => {
+        if (window.__erkennung === "ok") this.onstart?.();
+        else {
+          this.onerror?.({ error: window.__erkennung });
+          this.onend?.();
+        }
+      }, 50);
+    }
+    stop() {}
+    abort() {}
+  }
+  window.webkitSpeechRecognition = FakeRecognition;
+  window.SpeechRecognition = FakeRecognition;
+  if (navigator.mediaDevices)
+    navigator.mediaDevices.getUserMedia = () => {
+      if (window.__gum === "haengt") return new Promise(() => {});
+      if (window.__gum !== "ton" && window.__gum !== "still") return Promise.reject(new DOMException("nein", window.__gum));
+      const ctx = new AudioContext();
+      const dest = ctx.createMediaStreamDestination();
+      if (window.__gum === "ton") {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        gain.gain.value = 0.6;
+        osc.connect(gain).connect(dest);
+        osc.start();
+      }
+      return Promise.resolve(dest.stream);
+    };
+  if (navigator.storage) navigator.storage.estimate = () => Promise.resolve({ quota: window.__privat ? 40 * 1024 * 1024 : 10 * 1024 * 1024 * 1024, usage: 0 });
 };
 
 /** Schein-Sprachausgabe: Stimmen aus `window.__voices`, Sprechen endet sofort */

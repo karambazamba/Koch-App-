@@ -32,46 +32,62 @@ export const mikrofon = async (page, check, device) => {
   check(await ask.getByText(android ? "dein Handy" : "dein iPhone", { exact: false }).isVisible(), android ? "Android: „dein Handy“" : "iPhone: „dein iPhone“");
   check(await ask.getByText("↑ so sieht die Frage aus").isVisible(), "nachgebauter System-Dialog");
 
-  // 2. Okay → Erkennung startet erst jetzt → gesperrt → Hilfe
+  if (!android) check(await ask.getByText("Falls danach nichts passiert: Ich zeig dir, woran’s liegt.").isVisible(), "iPhone: „Falls danach nichts passiert …“");
+
+  // 2. Okay → Erkennung startet erst jetzt → gesperrt → Mikro-Check mit nur den passenden Schritten
   await ask.getByRole("button", { name: "Okay, frag mich" }).click();
-  const help = page.getByRole("dialog", { name: "Ich kann dich gerade nicht hören" });
-  check(await help.waitFor({ timeout: 5000 }).then(() => true, () => false), "gesperrt → Hilfe-Fenster");
-  check(await help.getByText(android ? "„Berechtigungen“" : "„Einstellungen“", { exact: false }).first().isVisible(), android ? "Android-Schritte" : "iPhone-Schritte");
+  const help = page.getByRole("dialog", { name: "Mikrofon prüfen" });
+  check(await help.waitFor({ timeout: 5000 }).then(() => true, () => false), "gesperrt → „Mikrofon prüfen“ öffnet sich von selbst");
+  check((await help.locator("[data-pruef=mikro]").getAttribute("data-stand")) === "fehler", "Häkchen-Liste: Mikrofon ✗");
+  check(await help.getByText(android ? "„Website-Einstellungen“ → „Mikrofon“" : "„Safari“ → „Mikrofon“ → „Erlauben“", { exact: false }).first().isVisible(), android ? "Android-Schritte" : "iPhone: Schalter Mikrofon");
+  if (!android) {
+    check(!(await help.getByText("„Diktierfunktion“ an", { exact: false }).count()), "iPhone: nur der fehlende Schalter (keine Diktierfunktion)");
+    check(await help.locator("[data-seiten-kasten]").isVisible(), "Kasten „Immer noch durchgestrichen?“");
+  }
+  check(await help.getByText("Menünamen können je nach Handy leicht abweichen.").isVisible(), "Hinweis Menünamen");
   check(!(await page.getByRole("button", { name: "Zuhören beenden" }).count()), "kein hängender Stopp-Knopf");
 
-  // 3. Zeig’s mir: 4 Schritte
+  // 3. Zeig’s mir: ein Schritt pro Bildschirm, am Ende „Nochmal testen“
   await help.getByRole("button", { name: "Zeig’s mir" }).click();
   const guide = page.getByRole("dialog", { name: "Zeig’s mir" });
-  check(await guide.getByText("Schritt 1 von 4").isVisible(), "„Schritt 1 von 4“");
-  for (let i = 0; i < 3; i++) {
+  const n = android ? 5 : 3;
+  check(await guide.getByText(`Schritt 1 von ${n}`).isVisible(), `„Schritt 1 von ${n}“`);
+  for (let i = 0; i < n - 1; i++) {
     await guide.getByRole("button", { name: "Weiter" }).click();
     await page.waitForTimeout(450);
   }
-  check(await guide.getByText("Schritt 4 von 4").isVisible(), "bis „Schritt 4 von 4“");
-  check(await guide.getByRole("button", { name: "Nochmal versuchen" }).isVisible(), "am Ende „Nochmal versuchen“");
-  await guide.getByRole("button", { name: "Nochmal versuchen" }).click();
-  await page.waitForTimeout(400);
-  check(await page.getByText("Hm, noch aus.").isVisible(), "noch gesperrt → freundlicher Satz");
-  await page.getByRole("dialog", { name: "Ich kann dich gerade nicht hören" }).getByRole("button", { name: "Lieber tippen" }).click();
+  check(await guide.getByText(`Schritt ${n} von ${n}`).isVisible(), `bis „Schritt ${n} von ${n}“`);
+  check((await guide.locator("[data-wischen]").count()) > 0, "letzter Schritt: neu öffnen mit kleiner Animation");
+  await guide.getByRole("button", { name: "Nochmal testen" }).click();
+  const again = page.getByRole("dialog", { name: "Mikrofon prüfen" });
+  await again.getByText(android ? "Das Mikrofon ist für" : "Safari darf das Mikrofon nicht benutzen", { exact: false }).waitFor({ timeout: 8000 });
+  check((await again.locator("[data-pruef=mikro]").getAttribute("data-stand")) === "fehler", "„Nochmal testen“ prüft neu: noch gesperrt");
+  await again.getByRole("button", { name: "Lieber tippen" }).click();
   await page.waitForTimeout(400);
 
-  // 4. Auf der Bühne: Tippfeld mit gelbem Streifen, Mia klein darüber; kein Hilfefenster davor
+  // 4. Auf der Bühne: Tippfeld mit gelbem Streifen, Mia klein darüber; kein Fenster davor
   const chat = mia(page);
   check(await chat.getByText("Mikro aus – tippen geht immer.").isVisible(), "gelber Streifen");
   const small = chat.getByRole("button", { name: "Tippen statt sprechen" });
   check(await small.isVisible(), "Mia klein über dem Feld (kein Stopp-Knopf)");
   await small.click();
   await page.waitForTimeout(400);
-  check(!(await page.getByRole("dialog", { name: "Ich kann dich gerade nicht hören" }).count()), "Mia antippen bei Mikro aus: kein Hilfefenster");
+  check(!(await page.getByRole("dialog", { name: "Mikrofon prüfen" }).count()), "Mia antippen bei Mikro aus: kein Fenster");
   await chat.getByRole("button", { name: "Anmachen ›" }).click();
-  check(await page.getByRole("dialog", { name: "Ich kann dich gerade nicht hören" }).waitFor({ timeout: 3000 }).then(() => true, () => false), "„Anmachen ›“ öffnet die Hilfe");
+  check(await page.getByRole("dialog", { name: "Mikrofon prüfen" }).waitFor({ timeout: 3000 }).then(() => true, () => false), "„Anmachen ›“ öffnet den Mikro-Check");
 
-  // 5. Diktieren aus (iPhone) – eigene Schritte
+  // 5. Diktieren/Spracherkennung aus (iPhone: service-not-allowed) – nur Schalter 2 und 3
   await page.addInitScript(() => (window.__micError = "service-not-allowed"));
   await page.reload();
   await page.waitForTimeout(900);
   await micTap(page);
-  const second = page.getByRole("dialog", { name: "Ich kann dich gerade nicht hören" });
-  check(await second.waitFor({ timeout: 5000 }).then(() => true, () => false), "zweites Mal ohne Vorab-Frage direkt Hilfe");
-  check(await second.getByText(android ? "Das Mikrofon ist aus" : "Die Diktierfunktion ist aus", { exact: false }).isVisible(), android ? "Android: Mikrofon-Schritte" : "iPhone: Diktierfunktion-Schritte");
+  const second = page.getByRole("dialog", { name: "Mikrofon prüfen" });
+  check(await second.waitFor({ timeout: 5000 }).then(() => true, () => false), "zweites Mal ohne Vorab-Frage direkt der Mikro-Check");
+  if (android) check(await second.getByText("Öffne Chrome").isVisible(), "Android: Chrome-Schritte");
+  else {
+    check(await second.getByText("Das Mikrofon ist an, aber das Zuhören ist aus.", { exact: false }).isVisible(), "iPhone: Zuhören aus");
+    check(await second.getByText("„Allgemein“ → „Tastatur“ → „Diktierfunktion“ an", { exact: false }).isVisible(), "Schalter Diktierfunktion");
+    check(await second.getByText("„Datenschutz & Sicherheit“ → „Spracherkennung“ → „Safari“ an", { exact: false }).isVisible(), "Schalter Spracherkennung → Safari");
+    check(!(await second.getByText("„Safari“ → „Mikrofon“", { exact: false }).count()), "kein Mikrofon-Schalter");
+  }
 };
