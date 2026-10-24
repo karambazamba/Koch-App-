@@ -37,3 +37,41 @@ describe("Stimme: Anleitung", () => {
     expect(voiceOfferText("ios")).toContain("Dein iPhone");
   });
 });
+
+describe("Tafel 86: Stimme laden und vorschlagen", () => {
+  it("iPhone ab iOS 26: Lesen & Sprechen (unter „Sehen“), Deutsch, laden, antippen, neu öffnen", async () => {
+    const { VOICE_HINWEIS } = await import("@/lib/begleitung/voiceGuide");
+    const s = voiceSteps("ios", 26).map((x) => x.text);
+    expect(s[1]).toContain("„Lesen & Sprechen“ (unter „Sehen“) → „Stimmen“");
+    expect(s[1]).toContain("„Gesprochene Inhalte“");
+    expect(s.join(" ")).toContain("Premium");
+    expect(s.join(" ")).toContain("antippen");
+    expect(s.at(-1)).toMatch(/ganz schließen und neu öffnen$/);
+    expect(VOICE_HINWEIS).toBe("Laden allein reicht nicht. Danach die Stimme antippen.");
+  });
+
+  it("bis iOS 18: Gesprochene Inhalte; Android: Sprachausgabe von Google, Sprachdaten, Samsung", () => {
+    expect(voiceSteps("ios", 18)[1].text).toBe("„Gesprochene Inhalte“ → „Stimmen“");
+    const a = voiceSteps("android", null).map((x) => x.text).join(" | ");
+    expect(a).toContain("„Sprachausgabe von Google“ → ⚙");
+    expect(a).toContain("„Sprachdaten installieren“ → „Deutsch“");
+    expect(a).toContain("Samsung: „Allgemeine Verwaltung“");
+    expect(a).toContain("Samsung: „Text-zu-Sprache“");
+  });
+
+  it("neue gute Stimme nach Rückkehr: einmal vorschlagen, nie beim ersten Blick, nie die gewählte", async () => {
+    const { goodVoiceIds, neueStimme } = await import("@/lib/begleitung/voiceGuide");
+    const good = goodVoiceIds([v("Anna"), v("Anna (Premium)"), v("Markus (Erweitert)")]);
+    expect(good).toEqual(["com.apple.voice.Anna (Premium)", "com.apple.voice.Markus (Erweitert)"]);
+    expect(neueStimme(good, null, "")).toBeNull();
+    expect(neueStimme(good, [], "")).toBe("com.apple.voice.Anna (Premium)");
+    expect(neueStimme(good, ["com.apple.voice.Anna (Premium)"], "")).toBe("com.apple.voice.Markus (Erweitert)");
+    expect(neueStimme(good, ["com.apple.voice.Anna (Premium)"], "com.apple.voice.Markus (Erweitert)")).toBeNull();
+  });
+
+  it("Speicher der bekannten Stimmen: Fremdes verworfen", async () => {
+    const { migrateStimmen } = await import("@/lib/begleitung/stimmenStore");
+    expect(migrateStimmen({ version: 1, bekannt: ["a", 3, "b"] })).toEqual({ version: 1, bekannt: ["a", "b"] });
+    expect(migrateStimmen({ version: 2 })).toBeNull();
+  });
+});

@@ -206,7 +206,8 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Version bei jeder Auslieferung erhöhen: `package.json` (+ `package-lock.json`),
   `APP_VERSION` in `src/lib/core/app.ts`, `CACHE_VERSION` in `public/sw.js`.
 - Spracheingabe nur über `useSpeechInput`; beim Absenden immer `reset()`.
-  Mikro-Freigabe/Sperre nur über `core/mic` (Vorab-Frage, Hilfe, Streifen).
+  Mikro-Freigabe/Sperre nur über `core/mic` (Vorab-Frage, Mikro-Check `core/micCheck`, Streifen):
+  scheitert Zuhören, sagt der Mikro-Check, welcher Schalter fehlt – nur dessen Schritte.
 - Reihenfolgen nur über `src/lib/core/sort.ts` (deutsche Sortierung, stabil).
   Aufgaben: dringend → heute → Frist → Woche → irgendwann, innerhalb Uhrzeit
   bzw. Erstellungszeit, nie alphabetisch.

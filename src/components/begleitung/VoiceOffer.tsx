@@ -18,8 +18,9 @@ import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { hintSeen, markHintSeen } from "@/lib/core/hints";
 import { iosMajor, micPlatform } from "@/lib/core/mic";
 import { speak, stopSpeaking, unlockSpeech } from "@/lib/begleitung/speech";
-import { goodVoice, voiceLabel, voiceOfferText, voiceSteps } from "@/lib/begleitung/voiceGuide";
-import type { HelperVoice } from "@/lib/einstellungen/profile";
+import { VOICE_HINWEIS, goodVoice, voiceLabel, voiceOfferText, voiceSteps } from "@/lib/begleitung/voiceGuide";
+import { MENUE_HINWEIS } from "@/lib/core/micCheck";
+import { helperName, type HelperVoice } from "@/lib/einstellungen/profile";
 
 const voicesNow = () => (typeof window !== "undefined" && window.speechSynthesis ? window.speechSynthesis.getVoices() : []);
 const ua = () => (typeof navigator === "undefined" ? "" : navigator.userAgent);
@@ -29,12 +30,14 @@ export function VoiceGuideSheet({ onClose, onChecked }: { onClose: () => void; o
   const steps = voiceSteps(micPlatform(ua()), iosMajor(ua()));
   const [guide, setGuide] = useState(false);
   const check = () => onChecked((goodVoice(voicesNow()) as SpeechSynthesisVoice | null) ?? null);
-  if (guide) return <StepGuide steps={steps} onBack={() => setGuide(false)} onDone={check} onClose={onClose} lastLabel="Fertig geladen" />;
+  if (guide) return <StepGuide steps={steps} onBack={() => setGuide(false)} onDone={check} onClose={onClose} lastLabel="Fertig geladen" hinweis={MENUE_HINWEIS} />;
   return (
-    <Sheet title="Schönere Stimme holen" onClose={onClose} layer="above">
-      <div className="flex flex-col gap-3 pb-3">
+    <Sheet title={`${helperName()} kann schöner klingen`} onClose={onClose} layer="above">
+      <div className="flex flex-col gap-3 pb-3" data-stimmen-anleitung>
         <p className="text-base font-semibold">So lädst du eine natürliche Stimme:</p>
         <StepList steps={steps} />
+        <p className="rounded-field bg-accent-soft px-3 py-2 text-[14px] font-semibold text-accent-strong">{VOICE_HINWEIS}</p>
+        <p className="text-[13px] text-muted">{MENUE_HINWEIS}</p>
         <div className="grid grid-cols-2 gap-2">
           <button type="button" onClick={() => setGuide(true)} className={buttonClass("secondary", "md")}>
             <Play className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Zeig’s mir

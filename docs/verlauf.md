@@ -2337,3 +2337,15 @@ Fehler in `docs/aufraeumen-nachher.md`.
   schlicht?“ als Hinweis (nie zusammen mit dem Dunkel-Tipp).
 - Zurück-Geste geht im Hallo-Ablauf einen Schritt zurück; der Mia-Knopf
   zwinkert beim ersten Erscheinen einmal, „Tippen & sprechen“ erst nach 4 s.
+
+## Mikrofon und Stimme – richtig einfach (v0.95.0, Tafel 86)
+- Mikro-Check: Häkchen-Liste (Mikrofon · Diktierfunktion/Spracherkennung ·
+  Ton), öffnet sich von selbst, wenn Zuhören scheitert, und unter
+  Einstellungen → Mia → „Mikrofon prüfen“. Zeigt nur die Schritte für den
+  fehlenden Schalter (iPhone: drei Schalter an drei Stellen), erkennt den
+  privaten Tab, „Details“ mit Mikro-Protokoll, am Ende „Nochmal testen“.
+- Echter Fall: Mikrofon und Diktierfunktion an, „Spracherkennung → Safari“
+  aus → jetzt genau dieser Schalter.
+- Stimme: „Probe hören“, Karte „Mia kann schöner klingen“, neue Anleitung
+  (iOS 26 „Lesen & Sprechen“, laden UND antippen), nach Rückkehr „Neue
+  Stimme gefunden: … Nehmen?“.

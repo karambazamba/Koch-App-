@@ -242,14 +242,31 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
     frag mich“ startet Erkennung bzw. `getUserMedia`. „Lieber tippen“ = Fokus
     ins Feld neben dem Mikro. iPhone: „dein iPhone“/„Erlauben“, sonst „dein
     Handy“/„Zulassen“.
-  - Gesperrt (`NotAllowedError`, „not-allowed“, Freigabe „denied“) bzw.
-    Diktieren aus („service-not-allowed“ auf dem iPhone): Hilfe-Fenster „Ich
-    kann dich gerade nicht hören“ mit vier Schritten (`micSteps`: iOS ab 18
-    „Apps → Safari → Mikrofon“, bis 17 „Safari → Mikrofon“; Android/Chrome
-    Symbol neben der Adresse → Berechtigungen → Mikrofon → Zulassen; Diktieren
-    Einstellungen → Allgemein → Tastatur → Diktierfunktion), „Zeig’s mir“
-    (wischbar, nachgebaute Bildschirme, markierte Zeile + Fingerkreis),
-    „Nochmal versuchen“ (fragt erneut; noch aus → „Hm, noch aus.“).
+  - Seit v0.95 (Tafel 86) statt des Hilfe-Fensters der **Mikro-Check**
+    (`ui/MicCheck.tsx`, Logik rein in `core/micCheck.ts`, Browser-Teil
+    `core/useMicCheck.ts`): öffnet sich von selbst, sobald Zuhören scheitert,
+    und über Einstellungen → Mia → „Mikrofon prüfen“. Häkchen-Liste
+    „Mikrofon erlaubt · Diktierfunktion und Spracherkennung · Ton kommt an“;
+    geprüft wird Spracherkennung (startet im Tipp), `getUserMedia` (Zeitlimit,
+    einmal still neu) und ein Pegel-Test („Sag mal kurz „Moin““).
+  - Fehlerarten (`micFehler`/`diagnose`): gesperrt (NotAllowedError, bzw.
+    „not-allowed“ ohne erlaubtes Mikro), erkennung_aus („service-not-allowed“,
+    bzw. „not-allowed“ obwohl das Mikro erlaubt ist = Felix’ Fall
+    „Spracherkennung → Safari“ aus), kein_ton, haengt, privat (Verdacht über
+    sehr wenig Speicher, nicht vom Home-Bildschirm), unklar.
+  - Nur die Schritte für den fehlenden Schalter (`schalterFuer`, `anleitung`):
+    iPhone Schalter 1 „Apps → Safari → Mikrofon → Erlauben“ (bis iOS 17 ohne
+    „Apps“), Schalter 2 „Allgemein → Tastatur → Diktierfunktion“, Schalter 3
+    „Datenschutz & Sicherheit → Spracherkennung → Safari“, unklar = alle drei
+    nummeriert; am Ende „Mia ganz schließen und neu öffnen“ mit kleiner
+    Wisch-Animation. Bei Sperre der Kasten „Immer noch durchgestrichen?“
+    (Website-Einstellungen in Safari). Android: Chrome → ⋮ Einstellungen →
+    Website-Einstellungen → Mikrofon → Adresse → Zulassen → neu öffnen.
+    Klein „Menünamen können je nach Handy leicht abweichen.“
+  - „Zeig’s mir“ ein Schritt pro Bildschirm (große Schrift, Mini-Bild),
+    am Ende „Nochmal testen“. „Details“ zeigt das Mikro-Protokoll mit
+    „Kopieren“. „Darf ich zuhören?“ hat auf dem iPhone den Zusatz „Falls
+    danach nichts passiert: Ich zeig dir, woran’s liegt.“
   - Danach: gelber Streifen „Mikro aus – tippen geht immer. Anmachen ›“,
     Mikro-Knopf grau + durchgestrichen (nie der Stopp-Knopf), Tipp darauf =
     Hilfe. Zurück in der App (`visibilitychange`) wird `navigator.permissions`
@@ -258,6 +275,14 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
     (kein hängender Stopp-Knopf, keine laufenden Tracks).
   - Schritt-Karten und „Zeig’s mir“ sind ein gemeinsamer Baustein
     (`ui/StepGuide.tsx`: `StepList`, `StepGuide`) – auch für die Stimme.
+- Stimme (Tafel 86): Einstellungen → Mia → Stimme oben „Probe hören“; ohne
+  Premium/Erweitert-Stimme die Karte „Mia kann schöner klingen“ → Anleitung
+  (`voiceSteps`: iOS ab 26 „Lesen & Sprechen“ unter „Sehen“ → „Stimmen“, sonst
+  „Gesprochene Inhalte“; laden, dann antippen, Hinweis „Laden allein reicht
+  nicht. Danach die Stimme antippen.“; Android Sprachausgabe von Google →
+  Sprachdaten installieren, Samsung „Allgemeine Verwaltung“). Nach der
+  Rückkehr in die App: „Neue Stimme gefunden: Anna. Nehmen?“ (Ja/Nein,
+  `StimmenVorschlag`, bekannte Stimmen in `wasgibts.stimmen`).
 - Stimme – weg vom Blech-Klang (Tafel 28): `speech.ts` nimmt immer die beste
   deutsche Stimme (Premium > Erweitert/Enhanced > Google-Netzstimme > Rest,
   Spaß-/Eloquence-Stimmen nie), Tempo „Normal“ = 1,0. `voiceGuide.ts`:

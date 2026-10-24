@@ -26,7 +26,7 @@ export const stimme = async (page, check, device) => {
 
   // Anleitung → neue Stimme (Schein) → grüne Karte
   await page.getByRole("button", { name: "Schönere Stimme holen" }).click();
-  const guide = page.getByRole("dialog", { name: "Schönere Stimme holen" });
+  const guide = page.getByRole("dialog", { name: "Mia kann schöner klingen" });
   check(await guide.isVisible(), "Anleitung offen");
   // Test-iPhone meldet iOS 17 → „Gesprochene Inhalte“ (ab iOS 26 „Lesen & Sprechen“, siehe Unit-Test)
   check(await guide.getByText(android ? "Text-in-Sprache-Ausgabe" : "Gesprochene Inhalte", { exact: false }).isVisible(), android ? "Android-Schritte" : "iOS-Schritte passend zur Version");
