@@ -15,11 +15,11 @@ const SEITEN = [
 ];
 
 /** Kleine Links zu den drei Seiten (Einstellungen, Begrüßung, Anmelden) */
-export function RechtLinks({ className = "", dicht = false }: { className?: string; dicht?: boolean }) {
+export function RechtLinks({ className = "", dicht = false, nur }: { className?: string; dicht?: boolean; nur?: string[] }) {
   return (
     <nav aria-label="Rechtliches" className={`flex flex-wrap items-center justify-center gap-x-3 text-xs font-semibold text-muted ${className}`}>
-      {SEITEN.map((s) => (
-        <Link key={s.href} href={s.href} className={`hit inline-flex items-center ${dicht ? "h-6" : "h-11"}`}>
+      {SEITEN.filter((s) => !nur || nur.includes(s.href)).map((s) => (
+        <Link key={s.href} href={s.href} className={`hit inline-flex items-center ${dicht ? "h-4" : "h-11"}`}>
           {s.label}
         </Link>
       ))}

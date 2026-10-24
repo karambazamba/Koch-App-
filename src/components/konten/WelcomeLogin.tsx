@@ -191,7 +191,7 @@ export function WelcomeLogin({ code: linkCode = "", einladung = "", inviter = ""
                   Mit E-Mail fortfahren
                 </button>
                 <ErrorLine text={error} />
-                <BedingungenHaken />
+                <BedingungenHaken links={false} />
               </div>
             </Screen>
           )}
@@ -207,7 +207,7 @@ export function WelcomeLogin({ code: linkCode = "", einladung = "", inviter = ""
               >
                 <input ref={field} type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@beispiel.de" aria-label="Deine E-Mail-Adresse" className={`${INPUT} h-14 text-center text-[17px]`} />
                 <ErrorLine text={error} />
-                <BedingungenHaken />
+                <BedingungenHaken links={false} />
                 <BigButton color={color} disabled={busy || !email.trim() || !termsOk}>
                   {busy ? "Schicke …" : "Code senden"}
                 </BigButton>
