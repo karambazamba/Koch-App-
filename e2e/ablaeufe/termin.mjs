@@ -41,7 +41,8 @@ export const terminSatz = async (page, check) => {
   check((await form.getByRole("textbox", { name: "Titel" }).inputValue()) === "Kieferorthopäde", "Titel aus dem Satz");
   check((await form.locator('input[type="date"]').first().inputValue()) === "2026-10-28", "Tag aus dem Satz");
   check((await form.locator('input[type="time"]').first().inputValue()) === "15:00", "Uhrzeit aus dem Satz");
-  check(await form.getByRole("button", { name: "Schließen" }).first().isVisible(), "oben ✕");
+  // [0] = dunkle Fläche dahinter (Danebentippen), [1] = ✕ oben im Kopf
+  check(await form.getByRole("button", { name: "Schließen" }).nth(1).isVisible(), "oben ✕");
   check(!(await form.getByRole("button", { name: /^(Abbrechen|Sichern)$/ }).count()), "kein „Abbrechen | Sichern“ mehr");
   await form.getByRole("button", { name: "Speichern" }).click();
   await page.waitForTimeout(500);
@@ -56,7 +57,7 @@ export const terminSatz = async (page, check) => {
   await page.waitForTimeout(300);
   check(await form.getByText("9:00 ist heute schon vorbei.").isVisible(), "Hinweis „schon vorbei“");
   check(!(await termine(page)).some((e) => e.data.title === "Bäcker"), "nie still in der Vergangenheit speichern");
-  await form.getByRole("button", { name: "Schließen" }).first().click();
+  await page.keyboard.press("Escape");
   await page.waitForTimeout(400);
 
   // Kein langes Drücken auf einen Tag, keine Zeile „Termin am …“
@@ -73,7 +74,10 @@ export const terminSatz = async (page, check) => {
   check((await tag.getAttribute("aria-selected")) === "true", "… es wählt nur den Tag");
   check(!(await panel(page).getByText(/^Termin am /).count()), "keine Zeile „Termin am …“");
 
-  // Woche und Liste: Tag antippen → der Tag steht direkt darunter (wie im Monat)
+  // Woche und Liste: Tag antippen → der Tag steht direkt darunter (wie im Monat);
+  // die Woche zeigt die Woche des gewählten Tages – also erst den 28. wählen
+  await panel(page).getByRole("gridcell", { name: /28\. Oktober/ }).click();
+  await page.waitForTimeout(300);
   for (const ansicht of ["Woche", "Liste"]) {
     await panel(page).getByRole("radio", { name: ansicht }).click();
     await page.waitForTimeout(400);

@@ -1,7 +1,7 @@
-// Kalender = nur Termine (Tafel 74/76): 30. antippen → Tag darunter →
-// „Termin am Fr, 30. Okt“ → Schnelleingabe mit dem Tag → Satz → ➤ → Punkt am
-// 30.; „Mehr Details“ → Formular mit dem Datum; lange drücken auf den 31. →
-// Schnelleingabe „Sa, 31. Okt“; Liste runterscrollen → „⌂ Heute“ → Startseite.
+// Kalender = nur Termine (Tafel 74/76, Launch 1.0 „ein Weg“): 30. antippen →
+// Tag darunter → ＋ oben → Schnelleingabe mit dem gewählten Tag → Satz → ➤ →
+// Punkt am 30.; „Mehr Details“ → das eine Formular mit dem Datum; lange
+// drücken auf den 31. wählt nur; Liste runterscrollen → „⌂ Heute“ → Startseite.
 // Zeit: Mi 21.10. 10:30.
 import { BASE, hello, seedFamily, store } from "../lib.mjs";
 
@@ -27,9 +27,10 @@ export const kalenderTag = async (page, check) => {
   const day = panel.getByRole("region", { name: "Gewählter Tag" });
   check(await day.getByText("Freitag, 30. Oktober").isVisible(), "Kopf „Freitag, 30. Oktober“");
   check(await day.getByText("in 9 Tagen").isVisible(), "rechts „in 9 Tagen“");
-  await day.getByRole("button", { name: /^Termin am Fr, 30\. Okt/ }).click();
+  check(!(await day.getByText(/^Termin am /).count()), "keine Zeile „Termin am …“");
+  await panel.getByRole("button", { name: "Neuer Termin" }).click();
   const sheet = page.getByRole("dialog", { name: "Schnelleingabe" });
-  check(await sheet.waitFor({ timeout: 5000 }).then(() => true, () => false), "„Termin am …“ → Schnelleingabe");
+  check(await sheet.waitFor({ timeout: 5000 }).then(() => true, () => false), "＋ → Schnelleingabe");
   check(await sheet.getByRole("button", { name: /^Fr, 30\. Okt/ }).isVisible(), "Tag schon drin: „Fr, 30. Okt“");
   const box = sheet.getByRole("textbox", { name: "Neuer Termin" });
   await box.fill("Zahnarzt Jonne 16 Uhr");
@@ -38,23 +39,21 @@ export const kalenderTag = async (page, check) => {
   const t = (await store(page, "wasgibts.eintraege")).entries.find((e) => e.data.title === "Zahnarzt Jonne");
   check(t?.data.date === "2026-10-30" && t?.data.start === "16:00", `gespeichert am 30. um 16:00 (${t?.data.date} ${t?.data.start})`);
 
-  // „Mehr Details“ → Formular mit dem Datum
+  // „Mehr Details“ → das eine Formular mit dem Datum
   await sheet.getByRole("button", { name: "Mehr Details" }).click();
   const form = page.getByRole("dialog", { name: "Neuer Termin" });
   check(await form.waitFor({ timeout: 5000 }).then(() => true, () => false), "„Mehr Details“ → Formular");
-  check(await form.getByRole("button", { name: /^Tag: Fr 30\.10\./ }).isVisible(), "Formular mit dem Datum");
+  check((await form.locator('input[type="date"]').first().inputValue()) === "2026-10-30", "Formular mit dem Datum");
   await page.keyboard.press("Escape");
   await page.waitForTimeout(500);
   check(await day.getByRole("button", { name: /^Zahnarzt Jonne – Möglichkeiten/ }).isVisible(), "Termin am 30. im Tag");
   check((await panel.locator('button[aria-label^="Freitag, 30. Oktober"] span[aria-hidden] > span').count()) >= 1, "Punkt am 30.");
 
-  // Lange drücken auf den 31. → Schnelleingabe für diesen Tag
+  // Lange drücken auf den 31. → wählt nur (kein Fenster)
   const b31 = await panel.locator('button[aria-label^="Samstag, 31. Oktober"]').boundingBox();
   await hold(page, b31.x + b31.width / 2, b31.y + b31.height / 2);
-  check(await sheet.waitFor({ timeout: 4000 }).then(() => true, () => false), "lange drücken → Schnelleingabe");
-  check(await sheet.getByRole("button", { name: /^Sa, 31\. Okt/ }).isVisible(), "mit „Sa, 31. Okt“");
-  await page.keyboard.press("Escape");
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(600);
+  check(!(await sheet.isVisible().catch(() => false)), "lange drücken öffnet kein Fenster");
 
   // Liste runterscrollen → „⌂ Heute“ → Startseite
   await panel.getByRole("radio", { name: "Liste" }).click();
