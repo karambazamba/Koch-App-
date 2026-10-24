@@ -15,7 +15,7 @@ const HEAD = "flex items-center justify-between px-1";
 const MORE = "flex h-10 items-center gap-0.5 text-[15px] font-bold text-accent-strong";
 const CHIPS_SHOWN = 8;
 
-/** „Das ist da“: Vorrat als Chips (nur mit Baustein Vorrat und wenn etwas da ist) */
+/** „Das ist da“: Im Haus als Chips (nur mit Baustein und wenn etwas da ist) */
 export function StockChips({ today }: { today: string }) {
   const pantryOn = useFeature("vorrat");
   const pantry = usePantry();
@@ -29,7 +29,7 @@ export function StockChips({ today }: { today: string }) {
       <div className={HEAD}>
         <h2 className={SECTION_TITLE}>Das ist da</h2>
         <Link href="/vorrat" className={MORE}>
-          Vorrat <ChevronRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+          Im Haus <ChevronRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
         </Link>
       </div>
       <div className="flex flex-wrap gap-2">

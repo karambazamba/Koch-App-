@@ -29,6 +29,7 @@ const FOOD_TOOLS: BegleitungTool[] = [
   COOKBOOK_TOOLS.rezept_erstellen,
   SHOPPING_TOOLS.einkaufsliste_hinzufuegen,
   PANTRY_TOOLS.vorrat_hinzufuegen,
+  PANTRY_TOOLS.vorrat_aufgebraucht,
   PLAN_TOOLS.wunsch_merken,
 ];
 

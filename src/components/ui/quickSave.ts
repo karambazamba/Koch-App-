@@ -20,8 +20,11 @@ import { buzz } from "@/components/heute/actions";
 import { loadNotify } from "@/lib/heute/mitteilungen/einstellungen";
 import { askForNotifications } from "@/lib/heute/mitteilungen/geraet";
 import { cloudSync } from "@/lib/konten/cache";
+import { parseShoppingText } from "@/lib/einkauf/shoppingParse";
+import { addPantryItems, loadPantryAll, replacePantry } from "@/lib/vorrat/pantry";
+import { unlockFeature } from "@/lib/core/features";
 
-const VERB: Record<QuickRead["kind"], string> = { termin: "Eingetragen", aufgabe: "Eingetragen", einkauf: "Auf der Liste", notiz: "Notiert", pinnwand: "Angepinnt" };
+const VERB: Record<QuickRead["kind"], string> = { termin: "Eingetragen", aufgabe: "Eingetragen", einkauf: "Auf der Liste", notiz: "Notiert", pinnwand: "Angepinnt", imhaus: "Im Haus" };
 
 function saveEntry(read: Extract<QuickRead, { kind: "termin" | "aufgabe" }>, remind: boolean): { undo: () => void; title: string } | null {
   const today = todayIso();
@@ -52,12 +55,22 @@ function saveShopping(text: string, weekStart: string): { undo: () => void; titl
   return { undo: () => removeManualItems(weekStart, ids), title: all.map((i) => i.name).join(", ") };
 }
 
+/** „Kartoffeln, Eier“ → Im Haus (ohne Mengen; Grundsachen und Nicht-Essen bleiben draußen) */
+function saveImHaus(text: string): { undo: () => void; title: string } | null {
+  const before = loadPantryAll();
+  const added = addPantryItems(parseShoppingText(text).map((i) => ({ name: i.name })), todayIso());
+  if (!added.length) return null;
+  unlockFeature("vorrat");
+  return { undo: () => replacePantry(before), title: added.join(", ") };
+}
+
 /** Speichert, was gelesen wurde; `false` = nichts zu speichern (leer/unverständlich) */
 export function saveQuick(read: QuickRead, text: string, request: QuickRequest, remind = true): boolean {
   if (!read.title) return false;
   let saved: { undo: () => void; title: string } | null = null;
   if (read.kind === "termin" || read.kind === "aufgabe") saved = saveEntry(read, remind);
   else if (read.kind === "einkauf") saved = request.shopping ? saveShopping(text, request.shopping.weekStart) : null;
+  else if (read.kind === "imhaus") saved = saveImHaus(text);
   else if (read.kind === "notiz") {
     const note = createNote({ title: read.title.slice(0, 80), ...(read.title.length > 80 ? { text: read.title } : {}) });
     saved = { undo: changeNotes((all) => upsertNote(all, note)), title: note.data.title };

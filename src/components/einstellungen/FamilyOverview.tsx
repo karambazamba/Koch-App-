@@ -151,8 +151,8 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
               </Row>
             )}
             {unlockedPantry && (
-              <Row href="/vorrat" icon={Refrigerator} title="Vorrat">
-                Kühlschrank, Tiefkühler, Vorratsschrank
+              <Row href="/vorrat" icon={Refrigerator} title="Im Haus">
+                Füllt sich von selbst beim Einkaufen
               </Row>
             )}
           </Group>

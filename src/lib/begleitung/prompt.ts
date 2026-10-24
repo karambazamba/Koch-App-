@@ -6,7 +6,7 @@ import { DEFAULT_MAIL_STYLE } from "@/lib/begleitung/mail";
 import { HOUSEHOLD_TYPES, KID_AGE_GROUP_LABELS, MEAL_TIME_LABELS, helperArtOf, helperName, mealClockFor, isSmallHousehold, personLabel, wishDayActive, type HouseholdProfile } from "@/lib/einstellungen/profile";
 import { sortedBases } from "@/lib/essen/bases";
 import { sortedLikes } from "@/lib/essen/likes";
-import { formatPantryAmount, PANTRY_PLACES } from "@/lib/vorrat/pantry";
+import { PANTRY_PLACES } from "@/lib/vorrat/pantry";
 import { soonToUse } from "@/lib/essen/dishIdeas";
 import { formatWeekRange, planningWeekStart, weekStartFor } from "@/lib/essen/weekPlan";
 import { weekOf, type AssistantData } from "@/lib/begleitung/ops";
@@ -109,7 +109,7 @@ Essen und Einkauf (Werkzeuge vorhanden):
 - Geplant wird höchstens EIN Hauptgericht pro Tag. Planen ist freiwillig; spontan ist genauso gut.
 - "Morgen gibt’s Lachs": gericht_setzen für den Tag (passendes Rezept aus dem Kochbuch, sonst freier Text). Vorher die Woche mit woche_lesen ansehen; ohne Angabe ist die Planungswoche gemeint.
 - "Wir brauchen Milch und Eier": einkaufsliste_hinzufuegen. Was schon auf der Einkaufsliste steht (Kontext), nicht doppelt eintragen.
-- Vorrat ("Ich hab 4 Portionen Chili eingefroren"): vorrat_hinzufuegen. Wunsch ohne Tag ("Mathis wünscht sich Pfannkuchen"): wunsch_merken. Ein Kinderwunsch mit Tag: vorgaben_aendern mit wunsch.
+- Im Haus (ohne Mengen; „Vorrat“ heißt jetzt „Im Haus“): "Hab Hähnchen gekauft", "Ich hab Chili eingefroren" → vorrat_hinzufuegen; "Die Milch ist alle" → vorrat_aufgebraucht. Sag nie, dass etwas da ist, wenn es nicht im Kontext „Im Haus“ steht; bei „vermutlich“ ehrlich „vermutlich“. Wunsch ohne Tag ("Mathis wünscht sich Pfannkuchen"): wunsch_merken. Ein Kinderwunsch mit Tag: vorgaben_aendern mit wunsch.
 - An einem vollen Tag (Termine am späten Nachmittag) darfst du etwas Schnelles fürs Abendessen anbieten.
 - Ideen ("Was gibt’s heute?", "Was mach ich mit Hack und Paprika?"): 2–3 kurze Ideen mit Minuten, zuerst aus dem aktuellen Vorrat (besonders "bald verbrauchen") und bekannten Rezepten; noch nichts eintragen, sondern anbieten. Nach der Essenszeit denk an morgen statt an heute.
 - Neue Rezepte (rezept_erstellen) nur auf Wunsch, vollständig mit Mengen für die Personenzahl, dann mit gericht_setzen eintragen. "Nie wieder"-Gerichte und sehr ähnliche nie vorschlagen.
@@ -184,18 +184,18 @@ function neverAgainText(profile: HouseholdProfile): string {
   return `NIE WIEDER (diese und sehr ähnliche Gerichte nie vorschlagen, Gründe beachten):\n${lines.join("\n")}`;
 }
 
-/** Aktueller Vorrat, kompakt: "Hack 500 g (Kühlschrank), Zucchini (Kühlschrank, seit 4 Tagen – bald verbrauchen), Milch (gekauft)" */
+/** „Im Haus“, kompakt (ohne Mengen): "Hack (Kühlschrank), Zucchini (Kühlschrank, seit 4 Tagen – bald verbrauchen), Milch (gekauft)" */
 function pantryText(data: AssistantData, todayIso: string): string {
   const items = data.pantry ?? [];
-  if (!items.length) return "Vorrat: nichts notiert (Ideen aus Grundzutaten wie Nudeln, Eier, Reis; anbieten, dass die Familie sagt, was da ist)";
+  if (!items.length) return "Im Haus: nichts notiert (Ideen aus Grundzutaten wie Nudeln, Eier, Reis; anbieten, dass die Familie sagt, was da ist)";
   const soon = new Set(soonToUse(items, todayIso).map((p) => p.name));
   const days = (iso: string) => Math.round((Date.parse(`${todayIso}T12:00:00Z`) - Date.parse(`${iso}T12:00:00Z`)) / 86_400_000);
   const parts = items.slice(0, 40).map((p) => {
     const where = p.id === "gekauft" ? "gekauft" : PANTRY_PLACES.find((x) => x.value === p.place)?.short ?? "";
     const note = soon.has(p.name) ? `, seit ${days(p.addedAt)} Tagen – bald verbrauchen` : "";
-    return `${[p.name, formatPantryAmount(p.amount), p.unit].filter(Boolean).join(" ")} (${where}${note})`;
+    return `${p.name} (${where}${note})`;
   });
-  return `Vorrat (aktuell): ${parts.join(", ")}`;
+  return `Im Haus (vermutlich da, ohne Mengen): ${parts.join(", ")}`;
 }
 
 /** Was es heute und morgen zu essen gibt (aus dem Plan) */

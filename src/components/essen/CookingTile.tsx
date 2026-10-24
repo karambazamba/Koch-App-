@@ -12,7 +12,8 @@ import { Check, Timer as TimerIcon, UtensilsCrossed } from "lucide-react";
 import { TILE, TILE_LABEL, buttonClass } from "@/components/ui/styles";
 import { clockLabel } from "@/lib/kalender/answers";
 import type { Recipe } from "@/lib/essen/cookbook";
-import { matchStock } from "@/lib/essen/dishIdeas";
+import { matchStock, stockLine } from "@/lib/essen/dishIdeas";
+import { todayIso } from "@/lib/core/now";
 import { useStock } from "@/lib/essen/useStock";
 import { currentStep, stepMinutes, stepTimerName, toggleStep, useCooking } from "@/lib/essen/kochSession";
 import { startTimer } from "@/lib/timer/actions";
@@ -25,7 +26,7 @@ export function CookingTile({ dish, clock, persons, recipe, today, onEaten }: { 
   const key = recipe?.id ?? dish;
   const done = session?.steps[key] ?? [];
   const cur = currentStep(steps.length, done);
-  const needs = recipe && stock ? matchStock(recipe.ingredients.map((i) => i.name), stock).needs : null;
+  const match = recipe && stock ? matchStock(recipe.ingredients.map((i) => i.name), stock, todayIso()) : null;
   const head = ["Essen", clock ? clockLabel(clock) : "", persons ? `${persons} ${persons === 1 ? "Person" : "Personen"}` : ""].filter(Boolean).join(" · ");
   return (
     <section className={`${TILE} flex flex-col gap-2 p-4`} aria-label={`Kochen: ${dish}`}>
@@ -79,7 +80,7 @@ export function CookingTile({ dish, clock, persons, recipe, today, onEaten }: { 
           })}
         </ol>
       ) : (
-        <p className="text-[14px] text-muted">{needs ? (needs.length ? `auf die Liste: ${needs.slice(0, 4).join(", ")}` : "alles im Haus") : "Guten Appetit beim Kochen!"}</p>
+        <p className="text-[14px] text-muted">{match ? stockLine(match, 4).text : "Guten Appetit beim Kochen!"}</p>
       )}
       <div className="flex flex-wrap items-center gap-2 pt-1">
         {recipe && (

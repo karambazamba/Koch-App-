@@ -36,12 +36,11 @@ export const STORAGE = [
   { key: "wasgibts.wochenvorgaben", what: "Wochen-Vorgaben (Wochen-Check)", version: 4, migration: "essen/weekPlan.ts", area: "local", backup: true },
   { key: "wasgibts.vorlagen", what: "Lieblingswochen (Vorlagen)", version: 1, migration: "essen/templates.ts", area: "local", backup: true },
   { key: "wasgibts.kochbuch", what: "Rezepte", version: 3, migration: "essen/cookbook.ts", area: "local", backup: true },
-  { key: "wasgibts.vorrat", what: "Vorrat: Kühlschrank, Tiefkühler, Schrank", version: 2, migration: "vorrat/pantry.ts migrateStore", area: "local", backup: true },
+  { key: "wasgibts.vorrat", what: "Im Haus: was da ist (ohne Mengen), Orte Kühlschrank/Schrank/Tiefkühler, aufgebraucht, gemerkte Orte je Sorte", version: 3, migration: "vorrat/pantry.ts migratePantry", area: "local", backup: true },
   { key: "wasgibts.einkaufsliste", what: "Einkaufsliste, Produkte, Läden, Stammliste", version: 4, migration: "einkauf/listMigration.ts migrateStore", area: "local", backup: true },
   { key: "wasgibts.einkaufsansicht", what: "Einkaufsliste: gewählter Chip – Alle oder ein Laden (pro Gerät)", version: 2, migration: "einkauf/shopMode.ts", area: "local", backup: false },
   { key: "wasgibts.einkaufswege", what: "Einkauf unterwegs: wer gerade wo einkauft (im Haushalt geteilt, 2 Tage)", version: 1, migration: "einkauf/unterwegs/unterwegs.ts migrateTrips", area: "local", backup: false },
   { key: "wasgibts.einkaufbescheid", what: "Familie beim Einkaufen Bescheid sagen: Antwort und laufender Einkauf (pro Gerät)", version: 1, migration: "einkauf/unterwegs/unterwegs.ts migrateBescheid", area: "local", backup: false },
-  { key: "wasgibts.eingeraeumt", what: "Vom Einkauf schon in den Vorrat eingeräumt (je Woche, nur Kennungen)", version: 1, migration: "vorrat/einraeumen.ts", area: "local", backup: false },
   { key: "wasgibts.verbrauch", what: "KI-Verbrauch je Tag (nur Zahlen: Anfragen, Modellgröße, Kosten) – Vorbereitung Guthaben", version: 1, migration: "begleitung/usage.ts", area: "local", backup: false },
   { key: "wasgibts.gekocht", what: "Gekochte Tage", version: 1, migration: "essen/mealDone.ts", area: "local", backup: true },
   { key: "wasgibts.wuensche", what: "Wünsche (\"… wünscht sich …\")", version: 1, migration: "essen/wishes.ts", area: "local", backup: true },
@@ -102,6 +101,8 @@ const RETIRED_KEYS = [
   "wasgibts.wetter",
   "wasgibts.tippkarten",
   "wasgibts.kuechenhelfer.vorlesen",
+  // „Vom Einkauf einräumen“ – seit „Im Haus“ (v0.85) geht Gekauftes von selbst rein
+  "wasgibts.eingeraeumt",
 ] as const;
 
 const RETIRED_SESSION_KEYS = ["wasgibts.entwicklung", "wasgibts.alleszeigen"] as const;

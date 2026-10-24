@@ -217,7 +217,7 @@ describe("Offener Vorschlag", () => {
       { id: "op-x-7", type: "update_week", weekStart: "2026-10-19", changes: { meatDays: 1 } },
       { id: "op-x-8", type: "add_recipe", recipe: { ref: "rezept-12", title: "Brot", category: "vegetarisch", servings: 2, prepMinutes: 60, ingredients: [], steps: ["Backen"], note: "" } },
       { id: "op-x-9", type: "add_shopping", weekStart: "2026-10-19", name: "Milch", amount: "", section: "kuehlregal" },
-      { id: "op-x-10", type: "add_pantry", name: "Chili", amount: 2, unit: "", place: "tiefkuehler" },
+      { id: "op-x-10", type: "add_pantry", name: "Chili", place: "tiefkuehler" },
       { id: "op-x-11", type: "add_wish", personId: null, who: "Mathis", dish: "Pfannkuchen" },
       { id: "op-x-12", type: "remove_shopping", weekStart: "2026-10-19", names: ["Brot"] },
       { id: "op-x-13", type: "clear_shopping", weekStart: "2026-10-19" },

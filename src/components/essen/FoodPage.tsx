@@ -17,7 +17,7 @@ import { addDays } from "@/lib/core/now";
 import { helperName, mealClockFor } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
-import { matchStock } from "@/lib/essen/dishIdeas";
+import { matchStock, stockLine } from "@/lib/essen/dishIdeas";
 import { dishTone } from "@/lib/essen/dishLook";
 import { mealIsOver, useCookedDays } from "@/lib/essen/mealDone";
 import type { PlanDay } from "@/lib/essen/mealPlan";
@@ -129,7 +129,8 @@ function DishHero({ data, day, when, onSwap }: { data: HomeData; day: PlanDay | 
   const stock = useStock();
   const entry = day && !day.away ? day.slot.entry : null;
   const recipe = entry?.recipeId ? data.recipes[entry.recipeId] : undefined;
-  const needs = recipe && stock ? matchStock(recipe.ingredients.map((i) => i.name), stock).needs : null;
+  const match = recipe && stock ? matchStock(recipe.ingredients.map((i) => i.name), stock, data.todayIso) : null;
+  const line = match ? stockLine(match) : null;
   const todayPersons = entry && entry.stored.kind !== "wish" ? entry.stored.persons : undefined;
   const facts = [todayPersons ? `für ${todayPersons} Personen` : "", recipe?.prepMinutes ? `${recipe.prepMinutes} Min` : ""].filter(Boolean);
   const clock = entry && day ? clockLabel(mealClockFor(data.profile, day.weekday)) : "";
@@ -152,10 +153,10 @@ function DishHero({ data, day, when, onSwap }: { data: HomeData; day: PlanDay | 
           </span>
           <h2 className="text-[24px] font-extrabold leading-tight tracking-tight">{entry.title}</h2>
           <div className="pointer-events-auto flex flex-wrap items-center gap-1.5">
-            {needs && (
-              <span className={`inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-bold ${needs.length ? "bg-surface/90 text-accent-strong" : "bg-good-soft text-good-ink"}`}>
-                {!needs.length && <span className="h-2 w-2 rounded-full bg-good" aria-hidden />}
-                {needs.length ? `auf die Liste: ${needs.slice(0, 2).join(", ")}${needs.length > 2 ? " …" : ""}` : "alles im Haus"}
+            {line && (
+              <span className={`inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-bold ${line.tone === "liste" ? "bg-surface/90 text-accent-strong" : line.tone === "grau" ? "bg-surface/90 text-muted" : "bg-good-soft text-good-ink"}`}>
+                {line.tone === "gut" && <span className="h-2 w-2 rounded-full bg-good" aria-hidden />}
+                {line.text}
               </span>
             )}
             {facts.map((f) => (

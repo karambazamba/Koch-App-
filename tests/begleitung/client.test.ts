@@ -149,7 +149,7 @@ describe("askAssistant", () => {
       recipes: { r: rezept("r", "Chili", ["Bohnen"]) },
       mealPlans: { "2026-10-12": {}, [WOCHEN.aktuell]: {} },
       entries: [termin({ title: "Alt", date: "2026-09-01", start: "10:00" }), termin({ title: "Neu", date: "2026-10-22", start: "10:00" }), termin({ title: "Serie", date: "2026-01-05", start: "10:00", repeat: { kind: "woechentlich" } })],
-      pantry: [{ id: "b:Milch", name: "Milch", amount: null, unit: "", addedAt: HEUTE, place: "schrank" }],
+      pantry: [{ id: "b:Milch", name: "Milch", addedAt: HEUTE, place: "schrank" }],
     });
     await ask(data);
     const sent = JSON.parse(String(fetchMock.mock.calls[0][1]?.body)).data as AssistantData;

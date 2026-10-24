@@ -19,7 +19,11 @@ import type { TileSize } from "@/lib/core/homeLayout";
 import { addDays, todayIso } from "@/lib/core/now";
 import { toggleChecked } from "@/lib/einkauf/shoppingList";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
-import { matchStock, soonToUse } from "@/lib/essen/dishIdeas";
+import { matchStock, stockLine } from "@/lib/essen/dishIdeas";
+import { houseTile } from "@/lib/vorrat/imHaus";
+import { openHelper } from "@/lib/begleitung/open";
+import { ItemSymbol } from "@/components/einkauf/kacheln/ItemSymbol";
+import { symbolFor } from "@/lib/einkauf/kacheln/symbols";
 import { loadMealPlans, replaceMealPlans, type PlanDay } from "@/lib/essen/mealPlan";
 import { usePantry } from "@/lib/vorrat/pantry";
 import { takeForToday } from "@/lib/essen/spontanTake";
@@ -51,11 +55,11 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCo
   const title = idea ? idea.title : (over ? dishOf(data.tomorrow) : dish) ?? (day?.away ? (day.paused ? "Pause" : "Kein Kochtag") : "Noch frei");
   const entry = day && !day.away ? day.slot.entry : null;
   const recipe = !idea && entry?.recipeId ? data.recipes[entry.recipeId] : undefined;
-  const needs = recipe && stock ? matchStock(recipe.ingredients.map((i) => i.name), stock).needs : null;
+  const match = recipe && stock ? matchStock(recipe.ingredients.map((i) => i.name), stock, todayIso()) : null;
   const facts =
     size === "S"
       ? []
-      : [recipe?.prepMinutes ? `${recipe.prepMinutes} Min` : "", needs ? (needs.length ? `auf die Liste: ${needs.slice(0, 2).join(", ")}${needs.length > 2 ? " …" : ""}` : "alles im Haus") : ""].filter(Boolean);
+      : [recipe?.prepMinutes ? `${recipe.prepMinutes} Min` : "", match ? stockLine(match).text : ""].filter(Boolean);
   const sub = idea ? `Idee · ${idea.minutes ?? "?"} Min` : !dish && !day?.away && list.length ? `${Math.min(3, list.length)} Ideen ansehen` : facts.join(" · ");
   // Für „Was anderes?“ zählt nur ein heute geplantes Gericht (nach dem Abendessen: frei für morgen)
   const planned = over ? null : dish;
@@ -268,31 +272,43 @@ export function NotesTile({ name, size = "M" }: { name: string; size?: TileSize 
   );
 }
 
-/** VORRAT (Baustein) – „Bald aufbrauchen“ mit 2 Sachen (seit ein paar Tagen im Kühlschrank), sonst die neuesten */
+/**
+ * IM HAUS (Baustein, Tafel 78/79): oben „Bald aufbrauchen“ (bis zu 2 Zeilen à
+ * 30 px: Symbol, Name, Schild), sonst die 2 zuletzt eingekauften Sachen;
+ * unten „Daraus kochen“ → Kochidee. Leer: ein freundlicher Satz.
+ */
 export function PantryTile({ size = "S" }: { size?: TileSize }) {
   const pantry = usePantry();
-  if (!pantry) return <section className={`${HALF} animate-pulse`} aria-label="Vorrat" />;
-  const soon = soonToUse(pantry, todayIso());
-  const shown = (soon.length ? soon : pantry).slice(0, size === "S" ? 2 : 4);
+  if (!pantry) return <section className={`${HALF} animate-pulse`} aria-label="Im Haus" />;
+  const tile = houseTile(pantry, todayIso(), size === "S" ? 2 : 4);
   return (
-    <Link href="/vorrat" className={HALF} aria-label="Vorrat">
-      <span className={HALF_LABEL}>
-        <Refrigerator className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-        <span className="truncate">Vorrat</span>
-      </span>
-      {shown.length ? (
-        <>
-          <span className="mt-1 text-[13px] font-semibold text-muted">{soon.length ? "Bald aufbrauchen" : "Zuletzt dazu"}</span>
-          {shown.map((p) => (
-            <span key={p.id} className="truncate text-[14.5px] font-bold leading-snug">
-              {p.name}
-            </span>
-          ))}
-        </>
-      ) : (
-        <span className="mt-1 text-[14px] font-semibold text-muted">+ eintragen</span>
+    <section className={`${HALF} gap-1`} aria-label="Im Haus">
+      <Link href="/vorrat" className="flex min-w-0 flex-col gap-1" data-zeile>
+        <span className={HALF_LABEL}>
+          <Refrigerator className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
+          <span className="truncate">Im Haus</span>
+        </span>
+        {tile.items.length ? (
+          <>
+            <span className="text-[13px] font-semibold text-muted">{tile.soon ? "Bald aufbrauchen" : "Zuletzt eingekauft"}</span>
+            {tile.items.map(({ item, badge }) => (
+              <span key={item.id} className="flex h-[30px] min-w-0 items-center gap-1.5">
+                <ItemSymbol id={symbolFor(item.name)} name={item.name} className="h-6 w-6 shrink-0 text-base" />
+                <span className="min-w-0 flex-1 truncate text-[14.5px] font-bold">{item.name}</span>
+                {badge && <span className={`shrink-0 rounded-full px-1.5 text-[11px] font-bold ${badge.tone === "orange" ? "bg-accent-soft text-accent-strong" : "bg-warn-soft text-warn-ink"}`}>{badge.text}</span>}
+              </span>
+            ))}
+          </>
+        ) : (
+          <span className="mt-1 text-[14px] font-semibold text-muted">Was du einkaufst, landet hier von selbst.</span>
+        )}
+      </Link>
+      {tile.items.length > 0 && (
+        <button type="button" onClick={() => openHelper("kochtipp")} className={`${buttonClass("primary", "sm")} hit mt-auto self-start`}>
+          Daraus kochen
+        </button>
       )}
-    </Link>
+    </section>
   );
 }
 

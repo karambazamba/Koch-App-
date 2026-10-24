@@ -50,8 +50,8 @@ export function rezept(
 export const buch = (...list: Recipe[]): Record<string, Recipe> => Object.fromEntries(list.map((r) => [r.id, r]));
 
 /** Vorrats-Eintrag */
-export function vorrat(name: string, place: PantryPlace = "kuehlschrank", addedAt = "2026-10-22", amount: number | null = null): PantryItem {
-  return { id: `p:${name}`, name, amount, unit: "", addedAt, place };
+export function vorrat(name: string, place: PantryPlace = "kuehlschrank", addedAt = "2026-10-22"): PantryItem {
+  return { id: `p:${name}`, name, addedAt, place };
 }
 
 /** Familie: Anna, Ben (Erwachsene), Mathis (Schulkind, 8) – Standardwoche ab Montag */

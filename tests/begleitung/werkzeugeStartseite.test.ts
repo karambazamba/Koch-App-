@@ -12,7 +12,7 @@ beforeEach(() => at("2026-10-21T09:00"));
 describe("Bausteine", () => {
   it("einschalten sagt, wo er steht; schon an/aus → nichts vorschlagen", () => {
     const ctx = kontext({ features: ["tipps"] });
-    expect(rufe(ctx, "baustein_an", { baustein: "vorrat" }).content).toBe("Vorgemerkt: Vorrat & Tiefkühler einschalten. Der Vorrat steht jetzt rechts unter Essen – und als Kachel auf Heute.");
+    expect(rufe(ctx, "baustein_an", { baustein: "vorrat" }).content).toBe("Vorgemerkt: Im Haus einschalten. „Im Haus“ steht jetzt unter Essen – und als Kachel auf Heute.");
     expect(ctx.data.features).toContain("vorrat");
     expect(rufe(ctx, "baustein_an", { baustein: "tipps" }).content).toBe("Tipps ist schon an.");
     expect(rufe(ctx, "baustein_aus", { baustein: "tipps" }).content).toBe("Vorgemerkt: Tipps ausschalten.");

@@ -172,9 +172,12 @@ describe("Kochbuch, Einkauf, Vorrat", () => {
   it("vorrat_hinzufuegen wählt den naheliegenden Ort", () => {
     const ctx = kontext();
     expect(rufe(ctx, "vorrat_hinzufuegen", { sachen: [{ name: "" }] }).content).toBe("sachen mit name angeben.");
-    expect(rufe(ctx, "vorrat_hinzufuegen", { sachen: [{ name: "Chili", menge: 4, einheit: "Portionen", ort: "tiefkuehler" }, { name: "Joghurt", menge: 0 }] }).content).toBe("Vorgemerkt für den Vorrat: Chili, Joghurt.");
-    expect(ctx.ops[0]).toMatchObject({ type: "add_pantry", amount: 4, unit: "Portionen", place: "tiefkuehler" });
-    expect(ctx.ops[1]).toMatchObject({ amount: null, place: "kuehlschrank" });
+    expect(rufe(ctx, "vorrat_hinzufuegen", { sachen: [{ name: "Chili", ort: "tiefkuehler" }, { name: "Joghurt" }] }).content).toBe("Im Haus (die App trägt es sofort ein): Chili, Joghurt.");
+    expect(ctx.ops[0]).toEqual({ id: expect.any(String), type: "add_pantry", name: "Chili", place: "tiefkuehler" });
+    expect(ctx.ops[1]).toMatchObject({ name: "Joghurt", place: "kuehlschrank" });
+    expect(rufe(ctx, "vorrat_aufgebraucht", { namen: [] }).content).toBe("namen angeben.");
+    expect(rufe(ctx, "vorrat_aufgebraucht", { namen: ["Milch"] }).content).toBe("Aufgebraucht (die App nimmt es sofort raus): Milch.");
+    expect(ctx.ops[2]).toMatchObject({ type: "use_pantry", name: "Milch" });
   });
 });
 

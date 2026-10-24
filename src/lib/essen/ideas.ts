@@ -25,12 +25,14 @@ export type Idea = {
   recipeId?: string;
   category: RecipeCategory | null;
   minutes: number | null;
-  /** Kurzer Grund: "Mathis' Wunsch", "kennt ihr", "mit Lachs aus dem Vorrat" … */
+  /** Kurzer Grund: "Mathis' Wunsch", "kennt ihr", "mit Lachs (im Haus)" … */
   reason: string;
   /** Was dafür noch gebraucht wird (ohne Vorrat und "hat man da") */
   needs: string[];
   /** Genutzte Sachen aus dem Vorrat */
   uses: string[];
+  /** Davon nur noch vermutlich im Haus (zweite Hälfte ihrer Zeit) */
+  unsure?: string[];
   wishId?: string;
   known: boolean;
 };
@@ -85,7 +87,7 @@ export function ideasFor(ctx: IdeaContext): Idea[] {
   const hasStock = stock.length > 0;
   // Reste und bald Ablaufendes (Kühlschrank seit 2+ Tagen) zuerst
   const leftovers = soonToUse(stock, date);
-  const check = (names: string[]) => matchStock(names, stock);
+  const check = (names: string[]) => matchStock(names, stock, date);
   /** Wie gut passt ein Gericht zum Bestand? Überwiegt alles andere, sobald etwas da ist */
   const stockScore = (uses: string[], needs: string[], rest: number) => {
     if (!hasStock) return 0;
@@ -98,7 +100,7 @@ export function ideasFor(ctx: IdeaContext): Idea[] {
   // Wünsche: immer ganz oben, in der Reihenfolge, in der sie kamen
   const wishes: Idea[] = ctx.wishes.map((w) => {
     const r = findRecipe(w.dish);
-    const { uses, needs } = check(r ? r.ingredients.map((i) => i.name) : []);
+    const { uses, needs, unsure } = check(r ? r.ingredients.map((i) => i.name) : []);
     return {
       id: `w:${w.id}`,
       title: w.dish,
@@ -108,6 +110,7 @@ export function ideasFor(ctx: IdeaContext): Idea[] {
       reason: wishLabel(w.who),
       needs,
       uses,
+      unsure,
       wishId: w.id,
       known: r ? recipeIsKnown(r) : true,
     };
@@ -117,7 +120,7 @@ export function ideasFor(ctx: IdeaContext): Idea[] {
   const scored: Scored[] = [];
   for (const r of Object.values(ctx.recipes)) {
     if (r.kind === "backen" || isNeverAgain(r.title, ctx.neverAgain) || recent.has(r.title.trim().toLowerCase())) continue;
-    const { uses, needs } = check(r.ingredients.map((i) => i.name));
+    const { uses, needs, unsure } = check(r.ingredients.map((i) => i.name));
     const known = recipeIsKnown(r);
     const rest = leftovers.filter((p) => uses.includes(p.name));
     let score = 1;
@@ -130,20 +133,20 @@ export function ideasFor(ctx: IdeaContext): Idea[] {
     const reason = rest.length
       ? `Reste zuerst: ${list(rest.slice(0, 2).map((p) => p.name))}`
       : uses.length
-        ? `mit ${list(uses.slice(0, 2))} aus dem Vorrat`
+        ? `mit ${list(uses.slice(0, 2))} (im Haus)`
         : r.favorite
           ? "euer Liebling"
           : known
             ? "kennt ihr"
             : "mal was Neues";
-    scored.push({ id: r.id, title: r.title, recipeId: r.id, category: r.category, minutes: r.prepMinutes, reason, needs, uses, known, score });
+    scored.push({ id: r.id, title: r.title, recipeId: r.id, category: r.category, minutes: r.prepMinutes, reason, needs, uses, unsure, known, score });
   }
   const own = new Set(Object.values(ctx.recipes).map((r) => r.title.trim().toLowerCase()));
   for (const c of DISHES) {
     const key = c.title.toLowerCase();
     if (own.has(key) || recent.has(key) || isNeverAgain(c.title, ctx.neverAgain)) continue;
     if (c.season && c.season !== season) continue;
-    const { uses, needs } = check(c.needs);
+    const { uses, needs, unsure } = check(c.needs);
     let score = 0;
     if (c.season === season) score += 1.5;
     if (!hasStock && c.usual) score += 1.5;
@@ -153,11 +156,11 @@ export function ideasFor(ctx: IdeaContext): Idea[] {
     const reason = rest.length
       ? `Reste zuerst: ${list(rest.slice(0, 2).map((p) => p.name))}`
       : uses.length
-        ? `mit ${list(uses.slice(0, 2))} aus dem Vorrat`
+        ? `mit ${list(uses.slice(0, 2))} (im Haus)`
         : c.season === season
           ? "passt zur Jahreszeit"
           : "geht fast immer";
-    scored.push({ id: `k:${c.title}`, title: c.title, category: c.category, minutes: c.minutes, reason, needs, uses, known: true, score });
+    scored.push({ id: `k:${c.title}`, title: c.title, category: c.category, minutes: c.minutes, reason, needs, uses, unsure, known: true, score });
   }
   // Regel `IDEAS`: Punkte (mit festem Tages-Zufall) → bei Gleichstand die schnellere
   const ranked = sortBy(scored, ...via((s: (typeof scored)[number]) => ({ score: s.score + dayHash(date, s.id), minutes: s.minutes }), IDEAS));

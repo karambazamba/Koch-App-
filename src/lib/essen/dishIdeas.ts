@@ -4,6 +4,7 @@
 
 import type { RecipeCategory } from "@/lib/essen/cookbook";
 import { sameIngredient, type PantryItem } from "@/lib/vorrat/pantry";
+import { isSoon, isUnsure } from "@/lib/vorrat/haltbar";
 
 export type Season = "fruehling" | "sommer" | "herbst" | "winter";
 
@@ -67,13 +68,27 @@ export const DISHES: DishIdea[] = [
 /** Hat man meistens im Haus – zählt nicht als Einkauf und nicht als "nutzt" */
 export const AT_HOME = /^(salz|pfeffer|öl|olivenöl|rapsöl|wasser|zucker|mehl|essig|butter|brühe|gemüsebrühe|gewürze?|zwiebeln?|knoblauch|knoblauchzehen?|tomatenmark|senf|ketchup|kräuter|petersilie|schnittlauch|paprikapulver|currypulver|curry|muskat|oregano|basilikum|thymian|zimt|backpulver|honig|sojasoße|sojasauce|lorbeer\w*)$/i;
 
-/** Was davon da ist (`uses`, Namen wie im Vorrat) und was noch fehlt (`needs`) */
-export function matchStock(names: string[], stock: PantryItem[]): { uses: string[]; needs: string[] } {
+/**
+ * Was davon da ist (`uses`, Namen wie im Haus), was auf die Liste muss
+ * (`needs`) und – mit `today` – was nur noch vermutlich da ist (`unsure`:
+ * zweite Hälfte seiner Zeit, siehe vorrat/haltbar.ts).
+ */
+export function matchStock(names: string[], stock: PantryItem[], today?: string): { uses: string[]; needs: string[]; unsure: string[] } {
   const needed = names.map((n) => n.trim()).filter((n) => n && !AT_HOME.test(n));
+  const used = stock.filter((p) => needed.some((n) => sameIngredient(n, p.name)));
   return {
-    uses: [...new Set(stock.filter((p) => needed.some((n) => sameIngredient(n, p.name))).map((p) => p.name))],
+    uses: [...new Set(used.map((p) => p.name))],
     needs: needed.filter((n) => !stock.some((p) => sameIngredient(n, p.name))),
+    unsure: today ? [...new Set(used.filter((p) => !/^[bs]:/.test(p.id) && isUnsure(p, today)).map((p) => p.name))] : [],
   };
+}
+
+/** Ehrliche Zutaten-Zeile: „alles im Haus“ (sicher), „vermutlich im Haus: …“ oder „auf die Liste: …“ */
+export function stockLine(m: { needs: string[]; unsure?: string[] }, max = 2): { text: string; tone: "gut" | "grau" | "liste" } {
+  const list = (xs: string[]) => `${xs.slice(0, max).join(", ")}${xs.length > max ? " …" : ""}`;
+  if (m.needs.length) return { text: `auf die Liste: ${list(m.needs)}`, tone: "liste" };
+  if (m.unsure?.length) return { text: `vermutlich im Haus: ${list(m.unsure)}`, tone: "grau" };
+  return { text: "alles im Haus", tone: "gut" };
 }
 
 /** Echte Zutaten im Vorrat (ohne Salz, Öl & Co.) */
@@ -85,17 +100,14 @@ export const stockNearlyEmpty = (stock: PantryItem[]) => realStock(stock).length
 /** Hinweis bei (fast) leerem Vorrat */
 export const EMPTY_STOCK_HINT = "Sag mir, was da ist, dann passe ich die Ideen an.";
 
-/** Kühlschrank-Sachen, die seit 2+ Tagen da sind – bald verbrauchen */
+/** „Bald aufbrauchen“: Frisches im letzten Drittel seiner Zeit (vorrat/haltbar.ts) */
 export function soonToUse(stock: PantryItem[], today: string): PantryItem[] {
-  const limit = new Date(`${today}T12:00:00Z`);
-  limit.setUTCDate(limit.getUTCDate() - 2);
-  const cutoff = limit.toISOString().slice(0, 10);
-  return stock.filter((p) => p.place === "kuehlschrank" && p.addedAt && p.addedAt <= cutoff && !p.id.startsWith("b:") && !p.id.startsWith("s:"));
+  return stock.filter((p) => p.addedAt && !p.usedAt && !p.id.startsWith("b:") && !p.id.startsWith("s:") && isSoon(p, today));
 }
 
 /** Einfacher Vorrats-Eintrag für Gekauftes ("b:") bzw. eben Gesagtes ("s:") */
 export function stockItem(name: string, kind: "b" | "s", today: string): PantryItem {
-  return { id: `${kind}:${name}`, name, amount: null, unit: "", addedAt: today, place: "schrank" };
+  return { id: `${kind}:${name}`, name, addedAt: today, place: "schrank" };
 }
 
 /** Vorrat + Gekauftes + Gesagtes, ohne doppelte Zutaten */
@@ -106,7 +118,7 @@ export function mergeStock(pantry: PantryItem[], extra: PantryItem[]): PantryIte
 /** Stabile Kennung des Bestands – ändert sie sich, sind alte Ideen hinfällig */
 export function stockKey(stock: PantryItem[]): string {
   return stock
-    .map((p) => `${p.name.trim().toLowerCase()}:${p.amount ?? ""}`)
+    .map((p) => p.name.trim().toLowerCase())
     .sort()
     .join("|");
 }

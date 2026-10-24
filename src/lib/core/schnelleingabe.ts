@@ -14,7 +14,7 @@ import { readQuickText, readTerminText, type When } from "@/lib/kalender/quick";
 import { readSentence, timeLabel } from "@/lib/kalender/sentence";
 import type { PinQuote } from "@/lib/pinnwand/model";
 
-export type QuickKind = "termin" | "aufgabe" | "einkauf" | "notiz" | "pinnwand";
+export type QuickKind = "termin" | "aufgabe" | "einkauf" | "notiz" | "pinnwand" | "imhaus";
 
 /** Kopf in der Farbe des Bereichs */
 export const QUICK_HEADER: Record<QuickKind, string> = {
@@ -23,10 +23,11 @@ export const QUICK_HEADER: Record<QuickKind, string> = {
   einkauf: "AUF DIE LISTE",
   notiz: "NEUE NOTIZ",
   pinnwand: "NACHRICHT AN ALLE",
+  imhaus: "IM HAUS",
 };
 
 /** Name des Feldes (VoiceOver) */
-export const QUICK_LABEL: Record<QuickKind, string> = { termin: "Neuer Termin", aufgabe: "Neue Aufgabe", einkauf: "Auf die Liste", notiz: "Neue Notiz", pinnwand: "Nachricht an alle" };
+export const QUICK_LABEL: Record<QuickKind, string> = { termin: "Neuer Termin", aufgabe: "Neue Aufgabe", einkauf: "Auf die Liste", notiz: "Neue Notiz", pinnwand: "Nachricht an alle", imhaus: "Im Haus" };
 
 export const QUICK_PLACEHOLDER: Record<QuickKind, string> = {
   termin: "z. B. Zahnarzt Jonne Fr 16 Uhr",
@@ -34,6 +35,7 @@ export const QUICK_PLACEHOLDER: Record<QuickKind, string> = {
   einkauf: "z. B. Milch, Brot und Äpfel",
   notiz: "z. B. WLAN-Passwort: …",
   pinnwand: "z. B. Bin um 20 Uhr da",
+  imhaus: "z. B. Kartoffeln, Eier",
 };
 
 /** Von Hand gewählt (Chip angetippt) – geht vor dem, was im Text steht */
@@ -42,7 +44,7 @@ export type QuickPick = { date?: string; allDay?: boolean; room?: Room; when?: W
 export type QuickRead =
   | { kind: "termin"; title: string; date: string; time: string | null; room: Room; label?: string; repeat: Repeat | null }
   | { kind: "aufgabe"; title: string; when: When | null; time?: string; room: Room; label?: string; urgent: boolean }
-  | { kind: "einkauf" | "notiz" | "pinnwand"; title: string };
+  | { kind: "einkauf" | "notiz" | "pinnwand" | "imhaus"; title: string };
 
 /** Den Satz lesen: Titel ohne Tag/Uhrzeit, dazu Tag, Uhrzeit, Raum (ohne KI) */
 export function readQuick(kind: QuickKind, text: string, today: string, opts: { date?: string; pick?: QuickPick } = {}): QuickRead {

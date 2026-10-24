@@ -85,7 +85,7 @@ export function BausteineView() {
             );
           })}
         </ul>
-        <p className="text-sm text-muted">Auch per Gespräch: „Zeig mir den Vorrat“, „Ich brauche die Tipps nicht“ oder „Was kannst du noch?“</p>
+        <p className="text-sm text-muted">Auch per Gespräch: „Hab Hähnchen gekauft“, „Ich brauche die Tipps nicht“ oder „Was kannst du noch?“</p>
       </main>
     </div>
   );

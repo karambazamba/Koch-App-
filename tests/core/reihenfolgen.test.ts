@@ -99,7 +99,7 @@ describe("Einkauf, Läden, Vorrat", () => {
     expect(names(sortBy([{ name: "b", uses: 1 }, { name: "a", uses: 1 }, { name: "c", uses: 4 }], ...SHOPS))).toEqual(["c", "a", "b"]);
   });
 
-  it("Vorrat: bald aufbrauchen, Ort, Name", () => {
+  it("Im Haus: bald aufbrauchen, Ort (Kühlschrank, Schrank, TK), Name", () => {
     const p = [
       { name: "Nudeln", place: "schrank" },
       { name: "Erbsen", place: "tiefkuehler" },
@@ -107,7 +107,7 @@ describe("Einkauf, Läden, Vorrat", () => {
       { name: "Feta", place: "kuehlschrank", soon: true },
       { name: "Irgendwas" },
     ];
-    expect(names(sortBy(p, ...PANTRY))).toEqual(["Feta", "Milch", "Erbsen", "Nudeln", "Irgendwas"]);
+    expect(names(sortBy(p, ...PANTRY))).toEqual(["Feta", "Milch", "Nudeln", "Erbsen", "Irgendwas"]);
   });
 });
 

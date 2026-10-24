@@ -31,7 +31,7 @@ export const HOME_TILES: { id: HomeTileId; label: string; hint: string; sizes: T
   { id: "timer", label: "Timer", hint: "Bis zu 5 Timer und eine Stoppuhr", sizes: ["S", "M"], size: "M", fresh: true },
   { id: "sport", label: "Sport", hint: "Wochenziel und Trainings", sizes: ["S", "M", "L"], size: "M", fresh: true },
   { id: "notizen", label: "Notizen", hint: "Schnellnotiz + Angeheftetes", sizes: ["S", "M", "L"], size: "M" },
-  { id: "vorrat", label: "Vorrat", hint: "Kühlschrank, Tiefkühler, Schrank", sizes: ["S", "M"], size: "S", feature: "vorrat" },
+  { id: "vorrat", label: "Im Haus", hint: "Füllt sich von selbst beim Einkaufen", sizes: ["S", "M"], size: "S", feature: "vorrat" },
   { id: "morgen", label: "Ausblick morgen", hint: "Was morgen ansteht, ab 16 Uhr", sizes: ["M"], size: "M" },
   { id: "post", label: "Post", hint: "Briefe und Rechnungen", sizes: ["S", "M"], size: "M", soon: true },
 ];

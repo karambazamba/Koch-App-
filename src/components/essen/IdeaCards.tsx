@@ -5,6 +5,7 @@ import { ChevronRight } from "lucide-react";
 import { buttonClass } from "@/components/ui/styles";
 import type { RecipeCategory } from "@/lib/essen/cookbook";
 import { dishTone } from "@/lib/essen/dishLook";
+import { stockLine } from "@/lib/essen/dishIdeas";
 import { DishPicture } from "@/components/essen/DishPicture";
 
 /** Eine Idee, wie sie überall gleich aussieht (Chat, Ideen-Seite, "Was gibt's heute?") */
@@ -16,18 +17,19 @@ export type CardIdea = {
   recipeId?: string;
   /** Was dafür noch gebraucht wird (leer = alles im Haus) */
   needs: string[];
+  /** Nur vermutlich im Haus (grau statt grün) */
+  unsure?: string[];
   /** Kurzer Vorspann, z. B. "Mathis' Wunsch 🎉" */
   note?: string;
 };
 
-const list = (items: string[]) => (items.length <= 1 ? items.join("") : `${items.slice(0, -1).join(", ")} und ${items[items.length - 1]}`);
 
 /** "25 Min · alles im Haus" bzw. "35 Min · auf die Liste: Kokosmilch" */
 function ideaMeta(idea: CardIdea): { time: string; stock: string; ready: boolean } {
   return {
     time: idea.minutes !== null ? `${idea.minutes} Min` : "",
-    stock: idea.needs.length ? `auf die Liste: ${list(idea.needs.slice(0, 2))}${idea.needs.length > 2 ? " …" : ""}` : "alles im Haus",
-    ready: idea.needs.length === 0,
+    stock: stockLine(idea).text,
+    ready: stockLine(idea).tone === "gut",
   };
 }
 

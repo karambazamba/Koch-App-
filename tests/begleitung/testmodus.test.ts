@@ -165,7 +165,7 @@ describe("Alltag: Portionen, Pause, Bausteine, Startseite, App-Bedienung", () =>
     expect((await one("Wir fahren bald in den Urlaub")).text).toBe("Schön! Von wann bis wann seid ihr weg? (Testmodus)");
     const all = context([], { on: ["wochenplan", "vorrat", "rezepte", "backen", "spontan", "tipps", "wochenendIdeen", "kochstil", "kalender"] });
     expect((await one("Was kannst du noch?", all)).text).toBe("Gerade ist alles an, was ich kann. (Testmodus)");
-    expect((await one("Was kannst du noch?")).text).toMatch(/^Außerdem kann ich: Vorrat & Tiefkühler – /);
+    expect((await one("Was kannst du noch?")).text).toMatch(/^Außerdem kann ich: Im Haus – /);
     expect((await one("Zeig mir den Vorrat", all)).names).not.toContain("baustein_an");
   });
 });
@@ -209,9 +209,11 @@ describe("Essen ohne Wochenplan", () => {
   });
 
   it.each([
-    ["Ich hab noch 2 Portionen Chili eingefroren", "vorrat_hinzufuegen", { sachen: [{ name: "Chili", menge: 2, einheit: "Portionen", ort: "tiefkuehler" }] }],
-    ["Ich habe Joghurt im Kühlschrank", "vorrat_hinzufuegen", { sachen: [{ name: "Joghurt", menge: null, einheit: "", ort: "kuehlschrank" }] }],
-    ["Ich hab 500 g Nudeln im Schrank", "vorrat_hinzufuegen", { sachen: [{ name: "Nudeln", menge: 500, einheit: "g", ort: "schrank" }] }],
+    ["Ich hab noch 2 Portionen Chili eingefroren", "vorrat_hinzufuegen", { sachen: [{ name: "Chili", ort: "tiefkuehler" }] }],
+    ["Ich habe Joghurt im Kühlschrank", "vorrat_hinzufuegen", { sachen: [{ name: "Joghurt", ort: "kuehlschrank" }] }],
+    ["Ich hab 500 g Nudeln im Schrank", "vorrat_hinzufuegen", { sachen: [{ name: "Nudeln", ort: "schrank" }] }],
+    ["Hab Hähnchen und Brot gekauft", "vorrat_hinzufuegen", { sachen: [{ name: "Hähnchen" }, { name: "Brot" }] }],
+    ["Die Milch ist alle", "vorrat_aufgebraucht", { namen: ["Milch"] }],
     ["Mattis wünscht sich Pfannkuchen", "wunsch_merken", { person: "Mattis", gericht: "Pfannkuchen" }],
     ["Wir brauchen Milch und Brot", "einkaufsliste_hinzufuegen", { woche: "aktuell", artikel: [{ name: "Milch" }, { name: "Brot" }] }],
   ])("%s → %s", async (sentence, name, input) => {

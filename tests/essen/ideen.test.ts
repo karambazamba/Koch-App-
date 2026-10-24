@@ -69,12 +69,12 @@ describe("Ideen für heute", () => {
     const neu = rezept("Exotisch", ["Drachenfrucht"], { id: "ex" });
     const ideas = ideasFor(ctx({
       recipes: buch(r, neu),
-      pantry: [vorrat("Hackfleisch", "kuehlschrank", "2026-10-18"), vorrat("Paprika"), vorrat("Reis", "schrank")],
+      pantry: [vorrat("Hackfleisch", "kuehlschrank", "2026-10-20"), vorrat("Paprika"), vorrat("Reis", "schrank")],
     }));
     expect(ideas[0].title).toMatch(/Hack/);
     expect(ideas.find((i) => i.id === "hp")?.reason).toBe("Reste zuerst: Hackfleisch");
     expect(ideas.find((i) => i.id === "ex")?.reason).toBe("mal was Neues");
-    expect(ideas.find((i) => i.title === "Hähnchenpfanne mit Reis")?.reason).toBe("mit Paprika und Reis aus dem Vorrat");
+    expect(ideas.find((i) => i.title === "Hähnchenpfanne mit Reis")?.reason).toBe("mit Paprika und Reis (im Haus)");
     expect(ideas.find((i) => i.title === "Hack-Paprika-Pfanne mit Reis")?.reason).toBe("Reste zuerst: Hackfleisch");
     // Bekannte eigene Rezepte ohne Vorrat: „kennt ihr“, nie „fehlt“
     const known = ideasFor(ctx({ recipes: buch(rezept("Lieblingssuppe", [], { id: "k", known: true })) }));
@@ -125,22 +125,22 @@ describe("Ideen für heute", () => {
 
 describe("Bestand", () => {
   it("Abgleich ohne Grundzutaten, Synonyme", () => {
-    expect(matchStock(["Möhren", "Salz", " ", "Hack"], [vorrat("Karotten"), vorrat("Hackfleisch")])).toEqual({ uses: ["Karotten", "Hackfleisch"], needs: [] });
+    expect(matchStock(["Möhren", "Salz", " ", "Hack"], [vorrat("Karotten"), vorrat("Hackfleisch")])).toEqual({ uses: ["Karotten", "Hackfleisch"], needs: [], unsure: [] });
     expect(stockNearlyEmpty([vorrat("Salz"), vorrat("Milch")])).toBe(true);
     expect(stockNearlyEmpty([vorrat("Eier"), vorrat("Milch"), vorrat("Brot")])).toBe(false);
     expect(EMPTY_STOCK_HINT).toMatch(/Sag mir/);
   });
 
-  it("bald verbrauchen: nur Kühlschrank seit 2+ Tagen, nicht Gekauftes/Gesagtes", () => {
-    const list = [vorrat("Milch", "kuehlschrank", "2026-10-20"), vorrat("Käse", "kuehlschrank", "2026-10-21"), vorrat("Reis", "schrank", "2026-10-01"), stockItem("Quark", "b", "2026-10-01")];
+  it("bald verbrauchen: Frisches im letzten Drittel seiner Zeit, nicht Gekauftes/Gesagtes", () => {
+    const list = [vorrat("Milch", "kuehlschrank", "2026-10-17"), vorrat("Käse", "kuehlschrank", "2026-10-21"), vorrat("Reis", "schrank", "2026-10-01"), stockItem("Quark", "b", "2026-10-17")];
     expect(soonToUse(list, "2026-10-22").map((p) => p.name)).toEqual(["Milch"]);
-    expect(stockItem("Quark", "s", "2026-10-22")).toEqual({ id: "s:Quark", name: "Quark", amount: null, unit: "", addedAt: "2026-10-22", place: "schrank" });
+    expect(stockItem("Quark", "s", "2026-10-22")).toEqual({ id: "s:Quark", name: "Quark", addedAt: "2026-10-22", place: "schrank" });
   });
 
   it("zusammenführen und Kennung", () => {
     const merged = mergeStock([vorrat("Eier")], [stockItem("Ei", "b", "x"), stockItem("Brot", "s", "x")]);
     expect(merged.map((p) => p.name)).toEqual(["Eier", "Brot"]);
-    expect(stockKey([vorrat("B", "kuehlschrank", "x", 2), vorrat("a")])).toBe("a:|b:2");
+    expect(stockKey([vorrat("B", "kuehlschrank", "x"), vorrat("a")])).toBe("a|b");
   });
 
   it("drei Ideen nur aus der Gerichte-Liste", () => {

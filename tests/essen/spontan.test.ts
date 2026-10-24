@@ -89,9 +89,9 @@ describe("Ausflugs-Snacks", () => {
   });
 
   it("nimmt Passendes aus dem Vorrat, sonst ein freundlicher Satz", () => {
-    const text = snackReply([vorrat("Äpfel"), vorrat("Hackfleisch"), { ...vorrat("Käse"), amount: 200, unit: "g" }, vorrat("Brezeln")]);
+    const text = snackReply([vorrat("Äpfel"), vorrat("Hackfleisch"), vorrat("Käse"), vorrat("Brezeln")]);
     expect(text).toContain("Äpfel");
-    expect(text).toContain("200 g Käse");
+    expect(text).toContain("Käse");
     expect(text).not.toContain("Hackfleisch");
     expect(snackReply([vorrat("Hackfleisch")])).toMatch(/nichts Passendes.*gute Fahrt/i);
   });

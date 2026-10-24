@@ -10,7 +10,7 @@ import { clockLabel } from "@/lib/kalender/answers";
 import { describeHomeChange, tileLabel } from "@/lib/core/homeLayout";
 import { pauseLabel } from "@/lib/essen/spontan";
 import { bausteinOf, type Feature } from "@/lib/core/features";
-import { formatPantryItem, PANTRY_PLACES } from "@/lib/vorrat/pantry";
+import { PANTRY_PLACES } from "@/lib/vorrat/pantry";
 import { formatWeekRange, planForWeek } from "@/lib/essen/weekPlan";
 import { sportById } from "@/lib/sport/model";
 import { householdIntroSummary } from "@/lib/einstellungen/householdIntro";
@@ -229,8 +229,10 @@ function describe(
       return { opId: op.id, group: "Rückgängig", order: -2, label: "letzte Änderung", before: null, after: "zurücknehmen" };
     case "add_pantry": {
       const place = PANTRY_PLACES.find((p) => p.value === op.place);
-      return { opId: op.id, group: "Vorrat", order: 21_000, label: place?.label ?? "Vorrat", before: null, after: formatPantryItem(op) };
+      return { opId: op.id, group: "Im Haus", order: 21_000, label: place?.label ?? "Im Haus", before: null, after: op.name };
     }
+    case "use_pantry":
+      return { opId: op.id, group: "Im Haus", order: 21_001, label: "aufgebraucht", before: null, after: `${op.name} ist alle` };
     case "add_wish":
       return { opId: op.id, group: "Wünsche", order: 22_000, label: `Wunsch von ${op.who}`, before: null, after: `${op.dish} 🎉 – ganz oben bei den Ideen` };
     case "upsert_entry": {

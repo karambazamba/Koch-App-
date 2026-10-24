@@ -2247,3 +2247,10 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Was andere während des Einkaufs draufsetzen, steht gelb „Neu von Lisa ·
   gerade eben“; „Fertig eingekauft“ meldet „Eingekauft ✓ – 9 Sachen bei
   REWE“. Ruhezeit 20–7 und Pause gelten, zählt nicht als proaktiv.
+
+## „Im Haus“ statt Vorrat (v0.85.0, Tafel 78/79)
+- Ohne Mengen, nur da / nicht da; dieselben Kacheln wie im Einkauf; Orte
+  Kühlschrank/Schrank/Tiefkühler automatisch (lange drücken = ändern, gemerkt).
+- Füllt sich von selbst (Einkauf abhaken → rein, kochen → raus), vergisst
+  still je Sorte, Grundsachen immer da. „Vom Einkauf einräumen“ entfällt.
+- Ehrlich: „alles im Haus“ nur sicher, sonst „vermutlich im Haus“.

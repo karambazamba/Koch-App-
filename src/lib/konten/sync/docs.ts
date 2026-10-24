@@ -6,6 +6,7 @@
 // Rein: keine Speicherzugriffe, nur Werte rein, Werte raus.
 
 import type { StorageKey } from "@/lib/core/storage";
+import { cleanPantryItem, migratePantry } from "@/lib/vorrat/haltbar";
 
 /** Ein Eintrag, wie er in der Tabelle liegt (ohne Haushalt) */
 export type CloudDoc = {
@@ -36,6 +37,8 @@ export type Adapter = {
   typs: string[];
   toDocs(value: Value): LocalDoc[];
   fromDocs(docs: LocalDoc[], value: Value | null): Value;
+  /** Älteren Stand auf `version` heben (sonst wird er ausgelassen, bis die App ihn migriert) */
+  upgrade?: (value: Value) => Value | null;
 };
 
 const isObj = (v: unknown): v is Value => Boolean(v) && typeof v === "object" && !Array.isArray(v);
@@ -88,13 +91,29 @@ const pinnwand: Adapter = {
   },
 };
 
+// Im Haus (v3, ohne Mengen): je Sache ein Eintrag, dazu einmal die gemerkten
+// Orte je Sorte. Ältere Geräte schicken noch Mengen – die fallen beim Lesen weg.
+const VR_ORTE = "vr:orte";
 const vorrat: Adapter = {
   name: "vorrat",
   key: "wasgibts.vorrat",
-  version: 2,
-  typs: ["vorrat"],
-  toDocs: (value) => list(value.items).filter((i) => typeof i.id === "string").map((i) => ({ id: `vr:${i.id as string}`, typ: "vorrat", raum: "familie", besitzer: null, data: i })),
-  fromDocs: (docs) => ({ version: 2, items: docs.map((d) => d.data).filter(isObj) }),
+  version: 3,
+  typs: ["vorrat", "vorrat-orte"],
+  upgrade: (value) => migratePantry(value),
+  toDocs: (value) => [
+    ...list(value.items)
+      .filter((i) => typeof i.id === "string")
+      .map((i): LocalDoc => ({ id: `vr:${i.id as string}`, typ: "vorrat", raum: "familie", besitzer: null, data: i })),
+    ...(isObj(value.places) && Object.keys(value.places).length ? [{ id: VR_ORTE, typ: "vorrat-orte", raum: "familie" as const, besitzer: null, data: value.places }] : []),
+  ],
+  fromDocs: (docs) => {
+    const places = docs.find((d) => d.typ === "vorrat-orte");
+    return {
+      version: 3,
+      items: docs.filter((d) => d.typ === "vorrat").map((d) => cleanPantryItem(d.data)).filter(Boolean),
+      places: places && isObj(places.data) ? places.data : {},
+    };
+  },
 };
 
 // Einkaufsliste: jede eigene Zeile einzeln (gleichzeitig abhaken geht gut),
@@ -245,7 +264,7 @@ const LABELS: [string, string, string][] = [
   ["pinnwand", "Nachricht", "Nachrichten"],
   ["einkauf", "Sache auf der Einkaufsliste", "Sachen auf der Einkaufsliste"],
   ["wochenplan", "Tag im Wochenplan", "Tage im Wochenplan"],
-  ["vorrat", "Sache im Vorrat", "Sachen im Vorrat"],
+  ["vorrat", "Sache im Haus", "Sachen im Haus"],
 ];
 
 /** Zählt, was mitgenommen würde (Einstellungen der Liste zählen nicht) */

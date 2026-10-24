@@ -7,7 +7,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { IdeaCards, type CardIdea } from "@/components/essen/IdeaCards";
 import { buttonClass, chipClass } from "@/components/ui/styles";
 import { EMPTY_STOCK_HINT } from "@/lib/essen/dishIdeas";
-import { formatPantryItem, type PantryItem } from "@/lib/vorrat/pantry";
+import type { PantryItem } from "@/lib/vorrat/pantry";
 import { SPONTAN_FILTERS, type SpontanFilter, type SpontanIdea } from "@/lib/essen/spontan";
 import { sortedBases, type BaseCounts } from "@/lib/essen/bases";
 
@@ -51,7 +51,7 @@ export function SpontanAnswer({
   onMore: () => void;
   onNavigate: () => void;
 }) {
-  const shown = stock.slice(0, 5).map(formatPantryItem);
+  const shown = stock.slice(0, 5).map((p) => p.name);
   return (
     <div className="flex w-full flex-col gap-2" aria-label="Spontan kochen">
       <div className="flex w-full flex-col items-start gap-0.5">

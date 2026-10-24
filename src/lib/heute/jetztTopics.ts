@@ -83,7 +83,7 @@ export type JetztInput = {
   /** Regen/Sturm/Glätte zur Zeit eines Draußen-Termins oder -Trainings heute (sonst null) */
   planWeather: { key: string; title: string; time: string; word: string } | null;
   /** Gericht von heute (solange nicht gegessen) */
-  dish: { name: string; clock: string | null; minutes: number | null; ready: boolean; missing: string[]; demo?: boolean } | null;
+  dish: { name: string; clock: string | null; minutes: number | null; ready: boolean; missing: string[]; unsure?: string[]; demo?: boolean } | null;
   birthdays: { title: string; date: string; when: "heute" | "morgen" }[];
   /** Heute geplantes Training mit Packliste */
   sport: { key: string; title: string; time: string; pack: string[] } | null;
@@ -225,7 +225,7 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
         id: `kochstart:${x.today}`,
         kind: "kochstart",
         title: near <= 0 ? `Jetzt kochen: ${x.dish.name}` : `${fromMin(start)} kochen: ${x.dish.name}`,
-        detail: x.dish.ready ? `Essen um ${clock(x.dish.clock)} · alles im Haus` : `auf die Liste: ${x.dish.missing.slice(0, 2).join(", ")}`,
+        detail: x.dish.ready ? `Essen um ${clock(x.dish.clock)} · ${x.dish.unsure?.length ? "vermutlich im Haus" : "alles im Haus"}` : `auf die Liste: ${x.dish.missing.slice(0, 2).join(", ")}`,
         score: dishScore,
         target: { action: "essen" },
         button: "Kochen",

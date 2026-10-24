@@ -41,7 +41,7 @@ describe("Kontext je Anfrage", () => {
     expect(text).toContain('Mail-Stil: Gruß "Viele Grüße", Name "Felix"');
     expect(text).toContain("Essen heute: nichts eingetragen; morgen: nichts eingetragen");
     expect(text).toContain("Einkaufsliste: gerade leer");
-    expect(text).toMatch(/Vorrat: nichts notiert/);
+    expect(text).toMatch(/Im Haus: nichts notiert/);
     expect(text).toContain("Kochbuch: 0 Rezepte");
     expect(text).toContain("Bausteine an: keine.");
     expect(text).toContain("- Mathis; Kind, 8 J.; ALLERGIE: Nüsse");
@@ -64,9 +64,9 @@ describe("Kontext je Anfrage", () => {
       mail: { greeting: "Liebe Grüße", signature: "Felix Müller\nEutin", tones: { Kita: "sie", Bernd: "du" } },
       timers: [{ name: "Nudeln", leftSec: 120, paused: false, done: false }],
       pantry: [
-        { id: "p1", name: "Zucchini", amount: null, unit: "", addedAt: "2026-10-16", place: "kuehlschrank" },
-        { id: "p2", name: "Hack", amount: 500, unit: "g", addedAt: HEUTE, place: "kuehlschrank" },
-        { id: "gekauft", name: "Milch", amount: null, unit: "", addedAt: HEUTE, place: "schrank" },
+        { id: "p1", name: "Zucchini", addedAt: "2026-10-16", place: "kuehlschrank" },
+        { id: "p2", name: "Hack", addedAt: HEUTE, place: "kuehlschrank" },
+        { id: "gekauft", name: "Milch", addedAt: HEUTE, place: "schrank" },
       ],
       recipes: { r: rezept("r", "Linsencurry", ["Linsen"], { thumbsUp: 2 }) },
       profile: {
@@ -99,7 +99,7 @@ describe("Kontext je Anfrage", () => {
     expect(text).toContain('Pinnwand: Lisa: "Bin um 8 da"');
     expect(text).toContain("Wetter-Ort: Malente");
     expect(text).toMatch(/Timer: Nudeln 2:00 übrig/);
-    expect(text).toMatch(/Bausteine an: Vorrat & Tiefkühler\. Aus: Wochenplan \(wochenplan:/);
+    expect(text).toMatch(/Bausteine an: Im Haus\. Aus: Wochenplan \(wochenplan:/);
     expect(text).toContain('Mail-Stil: Gruß "Liebe Grüße", Name "Felix", Signatur (nur förmlich): "Felix Müller / Eutin"; gemerkte Anrede: Kita = Sie, Bernd = Du');
     expect(text).toContain("Startseite (Reihenfolge): wetter S, post ausgeblendet");
     expect(text).toContain("Essen heute: Ofengemüse (18:30 Uhr); morgen: kein Kochtag");
@@ -118,7 +118,7 @@ describe("Kontext je Anfrage", () => {
     expect(text).toContain("Gesundheits-Tipps: aus\n");
     expect(text).toContain("Einkaufsliste (steht schon drauf): Milch, Eier");
     expect(text).toContain("Zucchini (Kühlschrank, seit 5 Tagen – bald verbrauchen)");
-    expect(text).toContain("Hack 500 g (Kühlschrank)");
+    expect(text).toContain("Hack (Kühlschrank)");
     expect(text).toContain("Milch (gekauft)");
     expect(text).toContain("Kochbuch: 1 Rezepte – Linsencurry (👍2)");
   });

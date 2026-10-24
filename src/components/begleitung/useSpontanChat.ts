@@ -7,7 +7,7 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { bumpBase, type BaseId } from "@/lib/essen/bases";
 import { parseLeftovers, type ParsedLeftover } from "@/lib/essen/leftovers/parser";
-import { addPantryItems, formatPantryItem, type PantryItem } from "@/lib/vorrat/pantry";
+import { addPantryItems, type PantryItem } from "@/lib/vorrat/pantry";
 import { mergeStock, stockItem, stockNearlyEmpty } from "@/lib/essen/dishIdeas";
 import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { spontanIdeas, type SpontanFilter, type SpontanIdea } from "@/lib/essen/spontan";
@@ -59,7 +59,7 @@ export function useSpontanChat({ data, today, pantry, spontanStyle, setChat, set
             role: "assistant",
             local: true,
             text: known.length ? (shown ? `Notiert ✓ ${bausteinOf("vorrat")?.where ?? ""}`.trim() : "Notiert ✓") : "Das kenne ich nicht ganz:",
-            items: known.map(formatPantryItem),
+            items: known.map((p) => p.name),
             unsure,
           },
           // Neue Ideen mit dem, was jetzt da ist (die alten klappen ein)
@@ -150,13 +150,13 @@ export function useSpontanChat({ data, today, pantry, spontanStyle, setChat, set
   /** Unbekanntes Wort übernehmen (Vorschlag oder wie gehört) */
   const acceptUnsure = (turnIndex: number, item: ParsedLeftover) => {
     if (!today) return;
-    addPantryItems([{ name: item.suggestion ?? item.name, amount: item.amount, unit: item.unit }], toIsoDate(today));
+    addPantryItems([{ name: item.suggestion ?? item.name }], toIsoDate(today));
     unlockFeature("vorrat");
     setChat((c) => ({
       ...c,
       turns: c.turns.map((t, i) =>
         i === turnIndex
-          ? { ...t, unsure: t.unsure?.filter((u) => u !== item), items: [...(t.items ?? []), formatPantryItem({ ...item, name: item.suggestion ?? item.name })] }
+          ? { ...t, unsure: t.unsure?.filter((u) => u !== item), items: [...(t.items ?? []), item.suggestion ?? item.name] }
           : t,
       ),
     }));

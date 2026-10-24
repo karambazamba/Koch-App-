@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { EMPTY_TALK, ideaHello, ideaResult, ideaUnderstood, ingredientLine, kochideeButton, mergeTalk, parseIdeaTalk, pickIdeas, rankIdeas, rememberedText, startIdeas, takeOutcome, talkKeywords, type IdeaTalk } from "@/lib/essen/kochtipp/idee";
 import type { PantryItem } from "@/lib/vorrat/pantry";
 
-const item = (name: string): PantryItem => ({ id: name, name, amount: null, unit: "", addedAt: "2026-10-21", place: "kuehlschrank" });
+const item = (name: string): PantryItem => ({ id: name, name, addedAt: "2026-10-21", place: "kuehlschrank" });
 const ALL = cookCandidates(BUILTIN_COOK);
 const ideas = (talk: IdeaTalk, extra: { stock?: PantryItem[]; exclude?: string[]; avoid?: string[] } = {}) =>
   pickIdeas({ candidates: ALL, stock: extra.stock ?? [], talk, soon: [], exclude: extra.exclude ?? [], avoid: extra.avoid ?? [] });

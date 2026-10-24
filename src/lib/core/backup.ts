@@ -77,7 +77,7 @@ export function backupSummary(backup: Backup): string {
   const recipes = Object.keys((read(backup, "wasgibts.kochbuch") as { recipes?: object } | null)?.recipes ?? {}).length;
   if (recipes) parts.push(count(recipes, "Rezept", "Rezepte"));
   const pantry = (read(backup, "wasgibts.vorrat") as { items?: unknown[] } | null)?.items?.length ?? 0;
-  if (pantry) parts.push(count(pantry, "Sache im Vorrat", "Sachen im Vorrat"));
+  if (pantry) parts.push(count(pantry, "Sache im Haus", "Sachen im Haus"));
   const trainings = (read(backup, "wasgibts.sport") as { trainings?: unknown[] } | null)?.trainings?.length ?? 0;
   if (trainings) parts.push(count(trainings, "Training", "Trainings"));
   const memos = (read(backup, PINNWAND) as { memosNichtGesichert?: unknown } | null)?.memosNichtGesichert;
