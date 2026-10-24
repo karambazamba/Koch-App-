@@ -212,3 +212,25 @@ export const halloSprung = async (page, check, device) => {
     check((await page.locator('.hello-jump[data-kitzel="an"]').count()) === 1, `${where}: wackelt kitzelig`);
   }
 };
+
+/** Launch 1.0: ganze Kachel = Seite (freie Fläche, nicht nur der Titel); Zeilen behalten ihr Ziel */
+export const ganzeKachel = async (page, check) => {
+  await hello(page);
+  await seedFamily(page);
+  await page.goto(BASE);
+  await page.waitForTimeout(1000);
+  const ziel = async (id) => {
+    const el = page.locator(`[data-kachel-ziel] > section[aria-label="${id}"]`).first();
+    await el.evaluate((e) => e.scrollIntoView({ block: "center" }));
+    const b = await el.boundingBox();
+    // rechts unten in der Kachel: freie Fläche (keine Zeile, kein Knopf)
+    await page.mouse.click(b.x + b.width - 6, b.y + b.height - 4);
+    await page.waitForTimeout(900);
+    return page.url();
+  };
+  check((await ziel("Termine")).includes("seite=kalender"), "Termine-Kachel öffnet den Kalender");
+  check((await page.getByRole("tab", { name: "Kalender", selected: true }).count()) > 0, "Kalender steht da");
+  await page.goBack();
+  await page.waitForTimeout(800);
+  check((await ziel("Aufgaben")).endsWith("/aufgaben"), "Aufgaben-Kachel öffnet Aufgaben");
+};

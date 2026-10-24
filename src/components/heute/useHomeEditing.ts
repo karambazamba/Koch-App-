@@ -13,9 +13,8 @@ import { showToast } from "@/lib/core/toast";
  * `requestHomeEdit`), schließen ("Fertig", Zurück, Danebentippen). Zurück
  * (Pfeil/Geste) schließt nur den Modus – dafür ein eigener Verlaufseintrag.
  * Danebentippen zentral: ein echter Klick (kein Wisch – nach dem Scrollen
- * schickt der Browser keinen) auf jede freie Fläche beendet; ein kurzer Tipp
- * auf eine Kachel ebenso (das erkennt `HomeBoard`). Knöpfe, Links, Felder,
- * Fenster und die Fertig-Leiste nicht. Beim Beenden kurz „✓ Gespeichert“. Der Seiten-Schalter
+ * schickt der Browser keinen) auf jede freie Fläche beendet – ein Tipp auf
+ * eine Kachel nicht (Launch 1.0). Knöpfe, Links, Felder und Fenster auch nicht. Beim Beenden kurz „✓ Gespeichert“. Der Seiten-Schalter
  * wechselt wie gewohnt und beendet dabei den Modus.
  */
 export function useHomeEditing() {

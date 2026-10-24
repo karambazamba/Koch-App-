@@ -54,6 +54,7 @@ export function EditHeader({ onAdd, onDone }: { onAdd: () => void; onDone: () =>
     <header
       className={`sticky top-0 -mx-4 flex flex-col gap-1 px-4 pb-2 pt-1 ${open ? "pointer-events-none z-[55]" : "z-20 bg-background/95 backdrop-blur"}`}
       aria-label="Startseite bearbeiten"
+      data-edit-leiste
     >
       <div className="relative flex items-center justify-between gap-3">
         <button
@@ -78,7 +79,7 @@ export function EditHeader({ onAdd, onDone }: { onAdd: () => void; onDone: () =>
       {/* Titel verschwindet unter der Karte (halb verdeckt wirkte er abgeschnitten) */}
       <div inert={open} className={`flex flex-col gap-1 transition-opacity duration-200 motion-reduce:transition-none ${lit ? "opacity-0" : ""}`}>
         <h1 className="text-[24px] font-extrabold leading-tight tracking-tight">Startseite bearbeiten</h1>
-        <p className="text-sm text-muted">Festhalten &amp; ziehen · Irgendwo tippen = fertig</p>
+        <p className="text-sm text-muted">Festhalten &amp; ziehen · Freie Fläche tippen = fertig</p>
       </div>
       {open && <AddTileTip anchor={addButton} shown={shown} onDismiss={() => dismiss()} />}
     </header>

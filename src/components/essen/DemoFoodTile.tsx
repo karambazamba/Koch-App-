@@ -1,8 +1,8 @@
 "use client";
 
-// ESSEN im Beispiel-Tag: das Beispielgericht mit Bild vollflächig, unten ein
-// weicher dunkler Verlauf mit weißer Schrift ("ESSEN · 18:30", sonntags 12:30, Name, "alles im
-// Haus · 25 Min"). Nach dem Essen (18:30 + 90 Min) das zweite Beispielgericht
+// ESSEN im Beispiel-Tag: das Beispielgericht in derselben Bild-Kachel wie das
+// echte Gericht (`DishTile`: "ESSEN · 18:30", sonntags 12:30, Name, "alles im
+// Haus · 25 Min", „Ich koche jetzt ›“). Nach dem Essen (18:30 + 90 Min) das zweite Beispielgericht
 // für morgen ("MORGEN · Do · 18:30"). Antippen = Beispiel-Rezept. (Das Schild BEISPIEL steht
 // nur einmal oben in der Beispiel-Zeile.)
 
@@ -11,6 +11,7 @@ import { demoDishAt } from "@/lib/essen/demoDish";
 import { tomorrowLabel } from "@/lib/kalender/model";
 import { addDays } from "@/lib/core/now";
 import { DishPicture } from "@/components/essen/DishPicture";
+import { DishTile } from "@/components/essen/DishTile";
 import { KochideeKnopf } from "@/components/essen/kochtipp/KochideeKnopf";
 import { DemoBadge } from "@/components/heute/DemoBits";
 import { buttonClass } from "@/components/ui/styles";
@@ -38,31 +39,19 @@ export function DemoFoodTile({
 }) {
   const d = demoMeal(today, minutes, "Essen");
   const r = d.recipe;
+  const id = encodeURIComponent(r.id);
   return (
-    <div className="relative h-full">
-      <Link
-        href={`/kochbuch/rezept?id=${encodeURIComponent(r.id)}`}
-        aria-label={`${d.when} · ${r.title} · Beispiel`}
-        className={`relative block h-full overflow-hidden rounded-card shadow-card ${half ? "min-h-[168px]" : "min-h-[180px]"}`}
-      >
-        <DishPicture photo={d.photo} alt="" className="absolute inset-0" />
-        <span className="dish-shade absolute inset-0" aria-hidden />
-        <span className="absolute inset-x-0 bottom-0 flex flex-col gap-0.5 p-3 text-on-color">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider opacity-90">
-            {d.when}
-          </span>
-          <span
-            className={`line-clamp-2 font-extrabold leading-tight ${half ? "text-[16px]" : "text-[20px]"}`}
-          >
-            {r.title}
-          </span>
-          <span className="text-xs font-semibold opacity-90">
-            alles im Haus · {r.prepMinutes} Min
-          </span>
-        </span>
-      </Link>
-      {hat && <KochideeKnopf name={hat} planned={r.title} demo />}
-    </div>
+    <DishTile
+      when={d.when}
+      title={r.title}
+      sub={`alles im Haus · ${r.prepMinutes} Min`}
+      picture={{ photo: d.photo, title: r.title }}
+      open={`/kochbuch/rezept?id=${id}`}
+      cook={d.tomorrow ? undefined : `/kochbuch/kochen?id=${id}`}
+      half={half}
+      label={`${d.when} · ${r.title} · Beispiel`}
+      corner={hat && <KochideeKnopf name={hat} planned={r.title} demo />}
+    />
   );
 }
 

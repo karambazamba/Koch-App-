@@ -2414,3 +2414,17 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Prüfstand: 124 Sätze; Fehler in der Bewertung behoben (Frist einer Aufgabe
   zählte nicht als Datum). Der echte Lauf braucht die KI in Vercel.
 - Durchklick „Mia sprechen“: Pausen, Rückgängig, Lieber tippen, Danebentippen.
+
+## Startseite aus einem Guss (v0.102.0)
+- Ganze Kachel = Seite: ein Tipp auf freie Fläche öffnet die Seite der
+  Kachel; Termine öffnet den Kalender (steht auf „Heute“).
+- Hinweis-Warteschlange `core/hinweise.ts`: höchstens ein Hinweis unter der
+  Jetzt-Karte, jeder nur einmal (ab dem nächsten Tag weg), in den ersten 3
+  Tagen nur Beispiel-Tag und „Tippen & sprechen“. Einladen ohne Mia-Gesicht.
+- Statusleiste weich verschwommen statt deckend.
+- Essen-Kachel mit Bild für das geplante Gericht: dieselbe Komponente wie im
+  Beispiel-Tag (`DishTile`), mit „Ich koche jetzt ›“.
+- Pinnwand-Kachel: S 1, M 2, L 4 Nachrichten; das Schild „schreiben“ steht
+  neben dem ＋ und nie über dem Text.
+- Bearbeiten: genau ein „＋ Kachel“ und ein „Fertig“ (oben), keine Leiste
+  unten; ein Tipp auf eine Kachel beendet nicht mehr, nur freie Fläche.

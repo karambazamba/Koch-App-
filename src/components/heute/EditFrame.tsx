@@ -2,18 +2,22 @@
 
 // Rahmen einer Kachel auf der Startseite (`HomeBoard`): normal nur die
 // Pastell-Farbe (data-tone), im Bearbeiten-Modus "–" und S · M · L.
+// Ganze Kachel = Seite: ein Tipp auf freie Fläche öffnet `href` (Zeilen,
+// Knöpfe und Links in der Kachel behalten ihr eigenes Ziel).
 
 import type { ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { Minus } from "lucide-react";
 import { tileMeta, type HomeTile, type TileSize } from "@/lib/core/homeLayout";
 
 /** Im Bearbeiten-Modus: "–" oben links, S · M · L unten rechts, Inhalt nicht antippbar */
-export function EditFrame({ tile, editing, onRemove, onResize, children }: { tile: HomeTile; editing: boolean; onRemove: () => void; onResize: (s: TileSize) => void; children: ReactNode }) {
+export function EditFrame({ tile, editing, href, onRemove, onResize, children }: { tile: HomeTile; editing: boolean; href?: string | null; onRemove: () => void; onResize: (s: TileSize) => void; children: ReactNode }) {
   const meta = tileMeta(tile.id);
+  const router = useRouter();
   // data-tone: Pastell-Farben der Kachel (Fläche, Akzent, innere Karten)
   if (!editing)
     return (
-      <div data-tone={tile.id} className="contents">
+      <div data-tone={tile.id} className="contents" data-kachel-ziel={href ?? undefined} onClick={href ? (e) => !eigenesZiel(e.target, e.currentTarget) && router.push(href, { scroll: false }) : undefined}>
         {children}
       </div>
     );
@@ -46,4 +50,10 @@ export function EditFrame({ tile, editing, onRemove, onResize, children }: { til
       )}
     </div>
   );
+}
+
+/** Liegt der Tipp auf etwas mit eigenem Ziel (Knopf, Link, Feld, Fenster)? */
+function eigenesZiel(target: EventTarget | null, frame: Element): boolean {
+  const el = target instanceof Element ? target.closest("a, button, input, textarea, select, label, [role=button], [role=checkbox], [role=dialog], [data-kein-ziel]") : null;
+  return Boolean(el && frame.contains(el)) || !(target instanceof Node && frame.contains(target));
 }

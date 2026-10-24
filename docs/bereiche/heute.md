@@ -9,7 +9,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Seiten-Pager: `src/components/heute/HomePager.tsx` (Kalender · Heute · Essen),
   Wischen in `usePagerSwipe.ts` (`swipeDecision`); Einstieg `HomeView.tsx`.
 - Seite Heute: `TodayPage.tsx`; Kacheln `HomeBoard.tsx`, `EditFrame.tsx`,
-  `EditHeader.tsx`, `EditDoneBar.tsx`, `TilePicker.tsx`, `useHomeEditing.ts`, `Pressable.tsx`.
+  `EditHeader.tsx`, `EditLook.tsx`, `TilePicker.tsx`, `useHomeEditing.ts`, `Pressable.tsx`.
 - Kachel-Inhalte: `MiniCards.tsx` (Termine, Aufgaben), `HomeTiles.tsx` (Essen,
   Einkauf, Notizen, Vorrat, Ausblick morgen); andere Kacheln in ihren Bereichen
   (`wetter/WeatherTile`, `pinnwand/PinboardTile`, `timer/TimerTile`, …).
@@ -44,9 +44,19 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - `wasgibts.zeitvorschau` (Sitzung): „So tun, als wäre es …“, wirkt nur auf
   die Startseite (`setPreview`, `PreviewBanner`).
 - Nur auf dem Gerät: `wasgibts.beispiel` v1 `{since, cleared, done, gone, asked}`,
-  `wasgibts.einmalhinweise` („+ Kachel“), `wasgibts.dunkeltipp`, `wasgibts.willkommen`.
+  `wasgibts.einmalhinweise` („+ Kachel“), `wasgibts.dunkeltipp`, `wasgibts.willkommen`,
+  `wasgibts.hinweise` v1 `{gezeigt: {id: Tag}}` (Hinweis-Warteschlange).
 
 ## So verhält es sich
+
+### Hinweise (Launch 1.0, `core/hinweise.ts`)
+- Höchstens EIN Hinweis unter der Jetzt-Karte und höchstens EINE schwebende
+  Blase je Öffnen („Tippen & sprechen“ am Mia-Knopf). Reihenfolge: „Ich heiße
+  jetzt Mia“ → Familie einladen (ohne Mia-Gesicht) → Spendentopf → „Halte die
+  Startseite gedrückt“ → „Lieber schlicht?“ → „Abends lieber dunkel?“.
+- Jeder Hinweis nur einmal: am ersten Tag bleibt er, ab dem nächsten ist er
+  weg (auch ohne Antippen). In den ersten 3 Tagen nur Beispiel-Tag und
+  „Tippen & sprechen“; „Lieber schlicht?“ kommt damit frühestens am 4. Tag.
 
 ### Kacheln
 - Zwei Looks (Profil `look`, `data-look` am `<html>`, Regeln in
@@ -87,19 +97,23 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Woche“, „!“ bei dringend; dringend, heute dran und diese Woche. Abhaken:
   1,5 s durchgestrichen (`TASK_LEAVE_MS`), dann weich weg – auch am
   Beispiel-Tag.
-- Jede Kachel öffnet ihre Seite. Auf dem iPhone 15 Pro (als App) sind
+- Jede Kachel öffnet ihre Seite – die ganze Kachel, nicht nur der Titel
+  (`EditFrame` mit `TILE_PAGE` in `TodayPage`; Zeilen, Knöpfe und Links in der
+  Kachel behalten ihr Ziel). Termine öffnet den Kalender (er steht auf
+  „Heute“), Essen den Essen-Reiter; Timer bleibt ein Fenster. Auf dem iPhone 15 Pro (als App) sind
   Pinnwand/Wetter, Termine und Aufgaben ohne Scrollen ganz zu sehen, Essen +
   Einkauf angeschnitten (`e2e/ablaeufe/startseite.mjs`). Die Kachel „Ausblick morgen“ (bis v0.51.0 „Morgen“, missverständlich wie „der Morgen“) füllt sich erst ab 16 Uhr; Titel in der Kachel „Ausblick morgen · Do“, Platzhalter im Bearbeiten-Modus „ab 16 Uhr“, in der Auswahl „Was morgen ansteht, ab 16 Uhr“.
 
 ### Bearbeiten-Modus (direkt auf der Startseite)
 - Öffnen: lange drücken, Link „Startseite bearbeiten“ unten, Einstellungen
-  oder die Begleitung (`requestHomeEdit`). Schließen (Tafel 24): „Fertig“
-  oben oder in der Leiste unten (`EditDoneBar`, ersetzt dort den Mia-Knopf:
-  „+ Kacheln · Aussehen · Fertig“ mit hellem Verlauf dahinter, seit v0.64;
-  „Aussehen“ öffnet Farbig | Schlicht und Hell | Dunkel | Automatisch, wirkt
-  sofort), Zurück (eigener Verlaufseintrag), Danebentippen auf freie
-  Fläche ODER ein kurzer Tipp auf eine Kachel (< 0,35 s, < 8 px, nicht nach
-  Schwung). Beim Beenden kurz „✓ Gespeichert“.
+  oder die Begleitung (`requestHomeEdit`). Seit Launch 1.0 genau EIN
+  „＋ Kachel“ und EIN „Fertig“ (beide im Kopf); die frühere Leiste unten
+  (`EditDoneBar`) und der gestrichelte „Kachel hinzufügen“ sind weg, Mia
+  ruht solange (`data-edit-leiste`). Schließen: „Fertig“, Zurück (eigener
+  Verlaufseintrag) oder ein Tipp auf freie Fläche – ein Tipp auf eine Kachel
+  beendet NICHT. Beim Beenden kurz „✓ Gespeichert“. Unten im Board leise
+  „Aussehen“ (`EditLook`: Farbig | Schlicht und Hell | Dunkel | Automatisch,
+  wirkt sofort).
 - Kopf (sticky): „+ Kachel“, „Fertig“, Titel und Hinweis. Beim ersten Mal
   der Tipp „Neue Kacheln holen“ (`heute/AddTileTip.tsx`, Vorlage Variante D):
   Abdunklung (`bg-tip-scrim`, Portal an `body`, z-50), der Kopf darüber
@@ -125,7 +139,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   ruhiges Festhalten (`HOLD_MS` 350, Toleranz 8 px) hebt an. Antippen kurz nach
   dem Scrollen (`FLING_MS` 120) hält nur den Schwung an. Schwebende Kopie,
   gestrichelter Platzhalter, Auto-Scroll am Rand.
-- Unten „Kachel hinzufügen“ und „Standard-Anordnung wiederherstellen“ (mit
+- Unten „Aussehen“ und „Standard-Anordnung wiederherstellen“ (mit
   Nachfrage). Hinzufügen ist still (kein Rückgängig); nach dem Schließen der
   Auswahl leuchtet die neue Kachel kurz auf. Kacheln eines Bausteins schalten
   ihn beim Hinzufügen ein.

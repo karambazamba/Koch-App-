@@ -756,14 +756,13 @@ body {
   }
 }
 
-/* Statusleiste (Safe-Area oben): deckender Hintergrund in Seitenfarbe – beim Scrollen läuft nichts unter die Uhrzeit (hell und dunkel) */
+/* Statusleiste (Safe-Area oben): Seitenfarbe, leicht durchscheinend und weich verschwommen (Klassen am Element: bg-background/75 backdrop-blur) – beim Scrollen bleibt die Uhrzeit lesbar (hell und dunkel) */
 .status-veil {
   position: fixed;
   inset-inline: 0;
   top: 0;
   z-index: 60;
   height: env(safe-area-inset-top, 0px);
-  background: var(--color-background);
   pointer-events: none;
 }
 
@@ -1135,7 +1134,7 @@ body:has(.mia-buehne-hintergrund, .mia-geist-schleier) [data-mia-knopf] { opacit
   .mia-knopf-gleiten, .mia-knopf-gleiten[data-weg] { transition: opacity .4s ease; transform: none; }
 }
 
-/* Startseite bearbeiten: die Fertig-Leiste ersetzt den Mia-Knopf */
+/* Startseite bearbeiten: Mia ruht, solange der Bearbeiten-Kopf steht */
 body:has([data-edit-leiste]) [data-begleitung-leiste] {
   visibility: hidden;
 }

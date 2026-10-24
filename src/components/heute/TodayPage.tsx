@@ -45,7 +45,6 @@ import { useNotes } from "@/lib/notizen";
 import { todaysTraining } from "@/lib/sport";
 import { weekdayIndex } from "@/lib/kalender/model";
 import { buzz } from "@/components/heute/actions";
-import { EditDoneBar } from "@/components/heute/EditDoneBar";
 import { isUrgent, itemsForDay, openTaskCount, orderedTasks, taskOverview, upcomingTermine, type CalendarEntry, type DayItem } from "@/lib/kalender/model";
 import { AufgabenSection, TermineSection, type DemoProps } from "@/components/heute/MiniCards";
 import { useDemoDay } from "@/components/heute/useDemoDay";
@@ -54,6 +53,9 @@ import { EditHeader } from "@/components/heute/EditHeader";
 import { useHomeEditing } from "@/components/heute/useHomeEditing";
 import { Pressable } from "@/components/heute/Pressable";
 import { DarkTip } from "@/components/heute/DarkTip";
+import { showDarkTip, showLookTip, useDarkTip } from "@/lib/core/darkTip";
+import { appSince } from "@/lib/core/activity";
+import { hinweisGezeigt, naechsterHinweis, useHinweiseGezeigt } from "@/lib/core/hinweise";
 import { hatVisible, noteKochtippDay, useKochtipp } from "@/lib/essen/kochtipp/store";
 import { PotHintCard, usePotHint } from "@/components/spendentopf/PotHintCard";
 import { usePotState } from "@/lib/spendentopf/store";
@@ -93,6 +95,21 @@ import { termineTile } from "@/lib/heute/termineKachel";
 
 /** Name für die Begrüßung: die erste Person im Haushalt (meist man selbst) */
 const firstName = (data: HomeData) => data.profile.persons[0]?.name.trim() ?? "";
+
+/** Seite je Kachel (ganze Kachel = Seite); Timer hat keine eigene Seite (Fenster) */
+const TILE_PAGE: Partial<Record<HomeTileId, string>> = {
+  termine: "/?seite=kalender",
+  aufgaben: "/aufgaben",
+  essen: "/?seite=essen",
+  einkauf: "/einkaufsliste",
+  wetter: "/wetter",
+  pinnwand: "/pinnwand",
+  notizen: "/notizen",
+  vorrat: "/vorrat",
+  sport: "/sport",
+  spendentopf: "/spendentopf",
+  tipps: "/tipps",
+};
 
 export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: { data: HomeData; entries: CalendarEntry[]; minutes: number; realMinutes?: number; onOpenFood: () => void }) {
   const router = useRouter();
@@ -248,9 +265,30 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const demoDish = demoDay.tiles.includes("essen");
   const hat = Boolean(kochtipp && hatVisible(kochtipp, data.profile.display === "alles", demoDish));
   const demoMeal = demoDishAt(data.todayIso, minutes);
-  const potHint = usePotHint(demoDay.tiles.length > 0 || potOn !== true);
+  // Höchstens EIN Hinweis unter der Jetzt-Karte (zentral in core/hinweise.ts)
+  const demoOn = demoDay.tiles.length > 0;
+  const potHint = usePotHint(demoOn || potOn !== true);
   const miaHint = useMiaHomeHint(data.profile.miaHomeHint);
-  const inviteHint = useInviteHint(data.profile, data.todayIso, demoDay.tiles.length > 0 || tipSeen === false || miaHint);
+  const inviteHint = useInviteHint(data.profile, data.todayIso, demoOn);
+  const darkState = useDarkTip();
+  const lookOn = showLookTip(darkState, data.todayIso, data.profile.look);
+  const gezeigt = useHinweiseGezeigt();
+  const hinweis = gezeigt
+    ? naechsterHinweis(
+        {
+          "mia-name-neu": miaHint,
+          einladen: Boolean(inviteHint),
+          spendentopf: Boolean(potHint),
+          "startseite-halten": tipSeen === false && welcomed,
+          "lieber-schlicht": lookOn,
+          "abends-dunkel": !lookOn && showDarkTip(darkState, data.todayIso, data.profile.themeSet) && !(darkState && !darkState.look && data.profile.look === "farbig"),
+        },
+        { today: data.todayIso, since: appSince(), demo: demoOn, gezeigt },
+      )
+    : null;
+  useEffect(() => {
+    if (hinweis) hinweisGezeigt(hinweis, data.todayIso);
+  }, [hinweis, data.todayIso]);
   const runningTimer = timers ? sortTimers(timers.timers.filter((x) => isRunning(x, nowMs)), nowMs)[0] : undefined;
   const steps = recipe?.steps ?? [];
   const step = cookingNow && cooking ? currentStep(steps.length, cooking.steps[recipe?.id ?? dish ?? ""] ?? []) : null;
@@ -338,11 +376,14 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     buzz();
   };
 
+  /** Ganze Kachel = Seite (Termine öffnet den Kalender, er steht auf „Heute“) */
+  const tileHref = (id: HomeTileId): string | null => TILE_PAGE[id] ?? null;
+
   const renderTile = (tile: HomeTile, half: boolean, edit: boolean) => {
     switch (tile.id) {
       case "termine":
-        if (demoDay.termine) return <TermineSection rows={demoDay.termine.map((item) => ({ item, state: null }))} href={`/tag?datum=${data.todayIso}`} today={data.todayIso} size={tile.size} half={half} demo={demoProps} />;
-        return <TermineSection rows={terminTile.rows} label={terminTile.label} href={`/tag?datum=${terminTile.label ? tomorrowIso : data.todayIso}`} today={data.todayIso} size={tile.size} half={half} />;
+        if (demoDay.termine) return <TermineSection rows={demoDay.termine.map((item) => ({ item, state: null }))} href={TILE_PAGE.termine!} today={data.todayIso} size={tile.size} half={half} demo={demoProps} />;
+        return <TermineSection rows={terminTile.rows} label={terminTile.label} href={TILE_PAGE.termine!} today={data.todayIso} size={tile.size} half={half} />;
       case "aufgaben":
         if (demoDay.tasks) return <AufgabenSection items={demoDay.tasks} today={data.todayIso} size={tile.size} half={half} demo={demoProps} />;
         return <AufgabenSection items={tasks} total={view.tasksRest ? 0 : openTaskCount(entries, data.todayIso)} today={data.todayIso} size={tile.size} half={half} />;
@@ -398,12 +439,12 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
 
           {!editing.on && (
             <>
-              {/* Höchstens ein Hinweis: „Mia neu hinzufügen“ (iPhone), Spendentopf (Abstimmung bzw. Beitrags-Frage), dann der Dunkel-Tipp */}
-              {miaHint && <MiaNameHint />}
-              {potHint && !miaHint && <PotHintCard hint={potHint} />}
-              {inviteHint && !potHint && !miaHint && <InviteHintCard text={inviteHint} today={data.todayIso} />}
-              <DarkTip profile={data.profile} today={data.todayIso} quiet={demoDay.tiles.length > 0 || tipSeen === false || Boolean(potHint) || miaHint || Boolean(inviteHint)} />
-              {tipSeen === false && welcomed && !demoDay.tiles.length && (
+              {/* Höchstens ein Hinweis, Reihenfolge und „nur einmal“ in core/hinweise.ts */}
+              {hinweis === "mia-name-neu" && <MiaNameHint />}
+              {hinweis === "einladen" && inviteHint && <InviteHintCard text={inviteHint} today={data.todayIso} />}
+              {hinweis === "spendentopf" && potHint && <PotHintCard hint={potHint} />}
+              <DarkTip profile={data.profile} today={data.todayIso} quiet={hinweis !== "lieber-schlicht" && hinweis !== "abends-dunkel"} />
+              {hinweis === "startseite-halten" && (
                 <div className="flex items-start gap-3 rounded-card bg-accent-soft px-4 py-3" role="status">
                   <p className="flex-1 text-[15px] leading-snug text-accent-strong">Tipp: Halte die Startseite gedrückt, um Kacheln hinzuzufügen oder zu entfernen.</p>
                   <button type="button" onClick={markHomeTipSeen} className="hit shrink-0 text-sm font-bold text-accent-strong underline">
@@ -417,7 +458,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
           {!editing.on && demoDay.tiles.length > 0 && <DemoRow ask={demoDay.ask} />}
 
           <div className={arrive ? "tiles-arrive" : undefined}>
-            <HomeBoard tiles={visible} all={all} editing={editing.on} render={renderTile} picking={picking} onPicking={setPicking} onDone={editing.close} />
+            <HomeBoard tiles={visible} all={all} editing={editing.on} render={renderTile} hrefFor={tileHref} picking={picking} onPicking={setPicking} />
           </div>
 
           {demoItem && <DemoItemSheet item={demoItem} today={data.todayIso} onClose={() => setDemoItem(null)} />}
@@ -453,7 +494,6 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
           {editing.on && <div className="min-h-24 flex-1" aria-hidden />}
         </div>
       </Pressable>
-      {editing.on && !picking && <EditDoneBar onDone={editing.close} onAdd={() => setPicking(true)} />}
     </>
   );
 }

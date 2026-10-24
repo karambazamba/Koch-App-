@@ -37,12 +37,13 @@ import type { HomeData } from "@/components/heute/useHomeData";
 import { buzz } from "@/components/heute/actions";
 import { dishOf } from "@/components/essen/useMeals";
 import { KochideeKnopf } from "@/components/essen/kochtipp/KochideeKnopf";
+import { DishTile } from "@/components/essen/DishTile";
 import { helperName } from "@/lib/einstellungen/profile";
 
 const HALF = `${TILE} flex min-h-[92px] flex-col p-3.5`;
 const HALF_LABEL = `flex min-w-0 items-center gap-1.5 ${TILE_LABEL}`;
 
-/** ESSEN – S: Gericht + ⇄; M: breit mit Zeit, Zutaten-Status, ⇄; L: + Ideen für morgen */
+/** ESSEN – geplantes Gericht als Bild-Kachel (`DishTile`); sonst S: „Noch frei“ + Ideen; M: breit; L: + Ideen für morgen */
 /** `hat`: Kochidee-Knopf oben rechts – `null` = keiner, sonst ob sein Hinweis gerade still sein soll */
 export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCook, hat = null }: { data: HomeData; dish: string | null; over: boolean; dishClock: string | null; onOpen: () => void; size?: TileSize; onCook?: () => void; hat?: { quiet: boolean } | null }) {
   const ideas = useTodayIdeas([], { tomorrow: over });
@@ -73,6 +74,24 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCo
     buzz();
   };
   const label = over ? tomorrowLabel(addDays(todayIso(), 1)) : `Essen${dish && dishClock ? ` · ${clockLabel(dishClock)}` : ""}`;
+  const corner = hat && <KochideeKnopf name={helperName(data.profile)} planned={planned} quiet={hat.quiet} />;
+  // Heute geplantes Gericht: dieselbe Bild-Kachel wie im Beispiel-Tag
+  if (dish && !over && !idea && !day?.away) {
+    const facts = [recipe?.prepMinutes ? `${recipe.prepMinutes} Min` : "", match ? stockLine(match).text : ""].filter(Boolean);
+    return (
+      <DishTile
+        when={label}
+        title={dish}
+        sub={facts.join(" · ") || undefined}
+        picture={{ title: dish, ingredients: recipe?.ingredients.map((i) => i.name), category: recipe?.category }}
+        open={onOpen}
+        cook={onCook}
+        half={size === "S"}
+        label={`${label} · ${dish}`}
+        corner={corner}
+      />
+    );
+  }
   return (
     <section className={HALF} aria-label={over ? "Essen morgen" : label}>
       <button type="button" onClick={onOpen} className="flex flex-1 flex-col items-start gap-1 text-left">
@@ -89,7 +108,7 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCo
           <QuickButton icon={ArrowLeftRight} label="Andere Idee" onClick={() => setAlt((a) => (a === null ? 0 : a + 1))} />
         </span>
       )}
-      {hat && <KochideeKnopf name={helperName(data.profile)} planned={planned} quiet={hat.quiet} />}
+      {corner}
       {idea && !over && (
         <button type="button" onClick={take} className={`${buttonClass("soft", "sm")} mt-1 self-start`}>
           Nehmen

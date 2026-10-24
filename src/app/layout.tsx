@@ -66,7 +66,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="min-h-full flex flex-col">
         {/* Hinter der Statusleiste: ruhiger, leicht durchscheinender Hintergrund statt durchlaufender Inhalte */}
-        <div className="status-veil" aria-hidden />
+        <div className="status-veil bg-background/75 backdrop-blur-[14px]" aria-hidden />
         {children}
         <ThemeSync />
         <IconSync />

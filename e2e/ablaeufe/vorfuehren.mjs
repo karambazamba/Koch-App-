@@ -1,4 +1,5 @@
-// Für das Vorführen: Bearbeiten beenden ganz leicht (Tafel 24) und
+// Für das Vorführen: Bearbeiten beenden ganz leicht (Tafel 24, Launch 1.0:
+// Fertig oben oder Tipp auf freie Fläche, nie ein Tipp auf eine Kachel) und
 // Sprachnachricht antippen statt halten – mit echten Touch-Gesten (CDP).
 import { readFileSync, writeFileSync } from "node:fs";
 import { devices } from "playwright";
@@ -38,39 +39,42 @@ export const fertigTippen = async (page, check) => {
   await page.waitForTimeout(900);
   await openEdit(page);
   check(await editing(page), "Bearbeiten offen");
-  const bar = page
-    .locator("[data-keep-edit]")
-    .filter({ hasText: "Aussehen" });
-  check(
-    await bar.isVisible(),
-    "Leiste unten mit „+ Kacheln · Aussehen · Fertig“",
-  );
-  check(
-    !(await page.locator("[data-begleitung-leiste]").isVisible()) ||
-      (await bar.boundingBox()).y >=
-        (await page.locator("[data-begleitung-leiste]").boundingBox()).y - 1,
-    "Fertig-Leiste liegt über der Mia-Leiste",
-  );
+  // Launch 1.0: genau ein „＋ Kachel“ und ein „Fertig“ (oben), keine Leiste unten
+  const kopf = page.locator("[data-edit-leiste]");
+  check((await page.getByRole("button", { name: "Fertig" }).count()) === 1 && (await page.getByRole("button", { name: "Kachel", exact: true }).count()) === 1, "ein „＋ Kachel“ und ein „Fertig“");
+  check(!(await page.locator("[data-begleitung-leiste]").isVisible().catch(() => false)), "Mia-Knopf ruht im Bearbeiten");
 
-  // Mitte der Seite: Tipp auf eine Kachel beendet
+  // Tipp auf eine Kachel beendet NICHT
   await page.mouse.wheel(0, 400);
   await page.waitForTimeout(700);
   const tile = await page.locator("[data-unit]").nth(2).boundingBox();
   await tap(page, tile.x + tile.width / 2, Math.max(tile.y + 20, 140));
   await page.waitForTimeout(500);
-  check(!(await editing(page)), "kurzer Tipp auf eine Kachel = fertig");
+  check(await editing(page), "kurzer Tipp auf eine Kachel = bleibt im Bearbeiten");
+
+  // Tipp auf freie Fläche (unter den Kacheln) = fertig
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await page.waitForTimeout(500);
+  const vp = page.viewportSize();
+  const frei = await page.evaluate(() => {
+    const b = document.querySelector("[data-no-swipe]")?.getBoundingClientRect();
+    return b ? Math.min(window.innerHeight - 20, b.bottom + 30) : window.innerHeight - 60;
+  });
+  await tap(page, vp.width / 2, frei);
+  await page.waitForTimeout(500);
+  check(!(await editing(page)), "Tipp auf freie Fläche = fertig");
   check(await page.getByText("✓ Gespeichert").isVisible(), "„✓ Gespeichert“");
 
-  // Fertig unten
+  // Fertig oben
   await page.evaluate(() => window.scrollTo(0, 0));
   await openEdit(page);
-  await bar.getByRole("button", { name: "Fertig" }).click();
+  await kopf.getByRole("button", { name: "Fertig" }).click();
   await page.waitForTimeout(400);
-  check(!(await editing(page)), "Fertig unten = fertig");
+  check(!(await editing(page)), "Fertig = fertig");
 
-  // Aussehen: Farbig | Schlicht wirkt sofort, Bearbeiten bleibt offen
+  // Aussehen (leiser Link unten im Board): Farbig | Schlicht wirkt sofort, Bearbeiten bleibt offen
   await openEdit(page);
-  await bar.getByRole("button", { name: "Aussehen" }).click();
+  await page.getByRole("button", { name: "Aussehen" }).click();
   await page.waitForTimeout(500);
   const sheet = page.getByRole("dialog", { name: "Aussehen" });
   check(await sheet.isVisible(), "„Aussehen“ öffnet das Fenster");
@@ -83,7 +87,8 @@ export const fertigTippen = async (page, check) => {
   await page.keyboard.press("Escape");
   await page.waitForTimeout(500);
   check(await editing(page), "Fenster zu – Bearbeiten bleibt offen");
-  await bar.getByRole("button", { name: "Fertig" }).click();
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await kopf.getByRole("button", { name: "Fertig" }).click();
   await page.waitForTimeout(400);
 
   // S/M/L beendet nicht
