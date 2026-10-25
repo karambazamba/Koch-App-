@@ -126,6 +126,7 @@ describe("Nichts davor, Mia ist der Knopf", () => {
     const helper = read("src/components/begleitung/KitchenHelper.tsx");
     const block = helper.slice(helper.indexOf('if (mode === "kochtipp")'), helper.indexOf('if (mode !== "spontan")'));
     expect(block).not.toMatch(/setStart\(\{ listen/);
-    expect(read("src/components/begleitung/ChatHistory.tsx")).toMatch(/!codeLater && !chat\.kochtipp && <AccessCodeCard/);
+    // Der Testcode steht nie im Gespräch (eigener Bildschirm, `CodeScreen`)
+    expect(read("src/components/begleitung/ChatHistory.tsx")).not.toMatch(/AccessCodeCard/);
   });
 });

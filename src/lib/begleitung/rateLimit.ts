@@ -47,7 +47,7 @@ export function allowDaily(key: string, factor = 1, now = Date.now()): boolean {
 const wrongCodes = new Map<string, number[]>();
 
 /** Gegen Durchprobieren: nach 5 falschen Codes 15 Minuten Pause (je Adresse) */
-export const CODE_TRIES = 5;
+const CODE_TRIES = 5;
 const CODE_PAUSE_MS = 15 * 60_000;
 
 export function codeAttemptsLeft(key: string, now = Date.now()): boolean {

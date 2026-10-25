@@ -37,7 +37,7 @@ export function CodeScreen({ change = false }: { change?: boolean }) {
     if (result === "falsch") setCode("");
   };
   return (
-    <section className="erster-start-in fixed inset-0 z-[60] overflow-y-auto bg-background" role="dialog" aria-modal aria-labelledby="code-titel" data-code-screen>
+    <section className="erster-start-in fixed inset-0 z-[60] overflow-y-auto bg-background" aria-labelledby="code-titel" data-code-screen>
       <form
         className="mx-auto flex min-h-full w-full max-w-lg flex-col items-center px-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[calc(env(safe-area-inset-top)+2rem)]"
         onSubmit={(e) => {
