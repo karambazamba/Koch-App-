@@ -1,5 +1,5 @@
-// Mehreres auf einmal = kurze Übersicht (Testmodus): „Milch, Brot und Eier auf
-// die Liste“ → Mia sagt nur „Erledigt.“, darunter die Karte mit
+// Mehreres auf einmal = kurze Übersicht (Testmodus): „Wir brauchen Milch, Brot
+// und Eier“ → Mia sagt nur „Erledigt.“, darunter die Karte mit
 // „Einkaufsliste · Milch · Brot · Eier“; „Alles rückgängig“ nimmt alles zurück.
 import { BASE, hello, miaTippen, seedFamily, store } from "../lib.mjs";
 
@@ -14,7 +14,7 @@ export const miaUebersicht = async (page, check) => {
   await page.goto(BASE + "/");
   await page.waitForTimeout(1200);
   const box = await miaTippen(page);
-  await box.fill("Milch, Brot und Eier auf die Liste");
+  await box.fill("Wir brauchen Milch, Brot und Eier");
   await box.press("Enter");
   const card = page.locator("[data-mia-uebersicht]");
   check(await card.waitFor({ timeout: 8000 }).then(() => true, () => false), "Übersicht unter der Antwort");
