@@ -97,7 +97,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   und sofort beim Zurückkommen in die App (`useMinutes`, `visibilitychange`).
 - Aufgaben: Kreis (Tippfläche 44 × 30), Titel, „heute“ / „bis Fr“ / „diese
   Woche“, „!“ bei dringend; dringend, heute dran und diese Woche. Abhaken:
-  1,5 s durchgestrichen (`TASK_LEAVE_MS`), dann weich weg – auch am
+  1,5 s durchgestrichen (`LEAVE_MS`, überall gleich), dann weich weg – auch am
   Beispiel-Tag.
 - Jede Kachel öffnet ihre Seite – die ganze Kachel, nicht nur der Titel
   (`EditFrame` mit `TILE_PAGE` in `TodayPage`; Zeilen, Knöpfe und Links in der
@@ -199,7 +199,10 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Datum klein, Titel 30/800; TERMINE nach Uhrzeit mit „Jetzt · 10:30“-Linie
   (Vorbei grau mit ✓, `terminRows`), ESSEN (Abendessen mit „Kochen“ →
   Kochmodus, „Einkaufen · REWE“ mit „Liste“), neue PINNWAND-Nachrichten von
-  heute, AUFGABEN zum Abhaken („von gestern“ leise). Das Thema der Karte ist
+  heute, AUFGABEN zum Abhaken („von gestern“ leise; seit v0.107 wie überall:
+  1,5 s durchgestrichen, weg, „Erledigt · Rückgängig“; Erledigtes steht
+  nicht mehr da). Oben rechts ✕; schließt wie jedes Fenster (✕,
+  Danebentippen, Runterwischen, Zurück). Das Thema der Karte ist
   hervorgehoben und in Sicht gescrollt (`topicSpot`), mit dem Hinweis der
   Karte; „Erledigt“ nur bei Vorbereiten/Packliste/Geburtstag/Erinnerung.
   Leerer Tag: „Heute ist nichts geplant. Genieß es.“ Ab 22 Uhr Umschalter

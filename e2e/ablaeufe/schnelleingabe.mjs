@@ -35,7 +35,7 @@ export const schnelleingabe = async (page, check) => {
   check((await entries(page)).length === before && (await sheet.isVisible()), "leer speichern tut nichts");
 
   await box.fill("Malersachen kaufen");
-  check(await sheet.getByRole("button", { name: /^Für mich/ }).or(sheet.getByText("Für mich")).first().isVisible(), "Chip „Für mich“");
+  check(await sheet.getByRole("button", { name: /^Familie/ }).or(sheet.getByText("Familie", { exact: true })).first().isVisible(), "Chip „Familie“");
   await sheet.getByRole("button", { name: "Speichern" }).click();
   await page.waitForTimeout(400);
   check(await page.getByText("Eingetragen: Malersachen kaufen").isVisible(), "„Eingetragen: Malersachen kaufen“");

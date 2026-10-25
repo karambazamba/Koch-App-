@@ -77,7 +77,7 @@ function TileHead({ title, more, href, action, moreLabel }: { title: string; mor
   );
 }
 
-/** Abhaken mit kurzer Bedenkzeit: ca. 2 s durchgestrichen, nochmal tippen = doch nicht */
+/** Abhaken mit kurzer Bedenkzeit, überall gleich (Kachel, Aufgaben-Seite, Dein Tag): 1,5 s durchgestrichen, nochmal tippen = doch nicht, dann „Erledigt · Rückgängig“ */
 export function useLeaving(onDone: (item: DayItem) => void, ms = LEAVE_MS) {
   const [leaving, setLeaving] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -128,8 +128,7 @@ const entersAnim = (before: string[] | null, key: string) => (before && !before.
 /** Wie viele Zeilen je Größe – Termine und Aufgaben gleich: S 2, M 4, L 6 */
 const ROW_COUNT = { S: 2, M: 4, L: 6 } as const;
 /** Erledigte Aufgabe: so lange durchgestrichen, dann weich weg */
-const TASK_LEAVE_MS = 1500;
-const TASK_FADE = { animation: `card-out 0.4s ease-in ${TASK_LEAVE_MS - 400}ms forwards` };
+const TASK_FADE = { animation: `card-out 0.4s ease-in ${LEAVE_MS - 400}ms forwards` };
 const LIST = `${TILE_INNER} flex flex-col divide-y divide-line overflow-hidden`;
 
 const STATE_LABEL: Record<Exclude<TerminState, null | "naechster">, string> = { laeuft: "läuft", gleich: "gleich" };
@@ -228,7 +227,7 @@ export function AufgabenSection({ items, total, today, href = "/aufgaben", size 
   // Erledigtes steht nicht herum (auch nicht im Beispiel-Tag)
   const open = demo?.done ? items.filter((i) => !demo.done!.includes(i.entry.id)) : items;
   const shown = open.slice(0, ROW_COUNT[size]);
-  const { leaving, start } = useLeaving((item) => (demo ? demo.onGone?.(item) : check(item, shown)), TASK_LEAVE_MS);
+  const { leaving, start } = useLeaving((item) => (demo ? demo.onGone?.(item) : check(item, shown)));
   const plus = <QuickButton icon={Plus} label="Neue Aufgabe" onClick={() => openQuick({ kind: "aufgabe", date: today, more: setAdding })} />;
   const rest = Math.max(0, Math.max(total ?? 0, open.length) - shown.length);
   return (

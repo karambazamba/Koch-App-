@@ -148,10 +148,10 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
   (`dayHeading`), dann der Tag (`DayPanel`, ohne eigenen Kopf). Plus =
   Schnelleingabe „NEUER TERMIN“ für diesen Tag.
 - `/aufgaben`: Filter, Gruppen, „Erledigte anzeigen“ eingeklappt; leer
-  „Alles erledigt.“ mit großer Begleitung.
+  „Gerade nichts.“ mit großer Begleitung („Fällt dir was ein? Mit ＋ eintragen oder mir einfach sagen.“).
 - Antippen eines Eintrags = Menü: Erledigt · Auf morgen · Erinnerung ändern ·
   Bearbeiten · Löschen; bei Serien „Nur diesen Tag“ / „Alle – die ganze Reihe“.
-  Abhaken: 2 s durchgestrichen (`LEAVE_MS`), dann „Erledigt · Rückgängig“;
+  Abhaken überall gleich (Kachel, Aufgaben-Seite, Dein Tag): 1,5 s durchgestrichen (`LEAVE_MS`), dann „Erledigt · Rückgängig“;
   Löschen „Gelöscht · Rückgängig“.
 
 ### Aufgaben übernehmen – große Listen ohne Chaos (seit v0.86)

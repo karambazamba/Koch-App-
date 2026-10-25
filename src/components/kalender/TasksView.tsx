@@ -135,10 +135,10 @@ export function TasksView() {
               </section>
             )}
             {open.length === 0 && lists.length === 0 && (
-              <section className="flex flex-col items-center gap-3 px-4 py-8 text-center" aria-label="Alles erledigt">
+              <section className="flex flex-col items-center gap-3 px-4 py-8 text-center" aria-label="Gerade nichts">
                 <BegleitungAvatar size={88} />
-                <h2 className="text-[22px] font-extrabold">Alles erledigt.</h2>
-                <p className="max-w-xs text-base text-muted">Wenn dir etwas einfällt, sag einfach „Ich muss noch …“ – ich merk’s mir.</p>
+                <h2 className="text-[22px] font-extrabold">Gerade nichts.</h2>
+                <p className="max-w-xs text-base text-muted">Fällt dir was ein? Mit ＋ eintragen oder mir einfach sagen.</p>
                 <button type="button" onClick={() => openQuick({ kind: "aufgabe", more: setAdding })} className={`${buttonClass("primary", "md")} mt-1`}>
                   Neue Aufgabe
                 </button>

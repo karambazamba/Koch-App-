@@ -2,7 +2,7 @@
 
 // Kleine Änderungen an Terminen/Aufgaben aus der Oberfläche: sofort und still
 // (Hinzufügen, Verschieben – nur leichte Vibration). Abhaken meldet sich kurz
-// mit "Erledigt · Rückgängig" (4 Sekunden), echtes Löschen mit "Gelöscht ·
+// mit "Erledigt · Rückgängig" (4 Sekunden, nach 1,5 s Durchgestrichen), echtes Löschen mit "Gelöscht ·
 // Rückgängig" (3 Sekunden).
 
 import { changeEntries, loadEntries } from "@/lib/kalender/store";
@@ -22,8 +22,8 @@ export function readOnlyDone(item: Pick<DayItem, "entry" | "label">): boolean {
   return true;
 }
 
-/** Abgehakt: so lange durchgestrichen stehen (nochmal tippen = doch nicht), dann weich weg */
-export const LEAVE_MS = 2000;
+/** Abgehakt: überall gleich 1,5 s durchgestrichen (nochmal tippen = doch nicht), dann weich weg */
+export const LEAVE_MS = 1500;
 
 /**
  * Änderung anwenden – still. `label` merkt sich das Zurücknehmen für "Mach das

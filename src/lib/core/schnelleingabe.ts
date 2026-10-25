@@ -103,7 +103,7 @@ export function quickChips(read: QuickRead, today: string): QuickChip[] {
   if (read.kind === "aufgabe") {
     const day = whenChip(read.when, today);
     const time = read.time ? ` · ${timeLabel(read.time)}` : "";
-    return [...(day ? [{ id: "tag" as const, label: `${day}${time}` }] : []), { id: "raum", label: read.room === "arbeit" ? "Arbeit" : "Für mich", room: read.room }];
+    return [...(day ? [{ id: "tag" as const, label: `${day}${time}` }] : []), { id: "raum", label: read.room === "arbeit" ? "Arbeit" : "Familie", room: read.room }];
   }
   return [];
 }

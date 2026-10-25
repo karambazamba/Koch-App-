@@ -2470,3 +2470,14 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Jetzt: `touch-action: pan-y` am Pager, Richtung ab 6 px mit Verhältnis
   1,2 und dann fest, waagerecht Scrollhöhe gesperrt, kein Overscroll.
 
+## Aufgaben & „Dein Tag“ – gleich abhaken (v0.107.0)
+
+- Abhaken überall gleich (Kachel, Aufgaben-Seite, Dein Tag): durchstreichen,
+  1,5 s (`LEAVE_MS`), weg, „Erledigt · Rückgängig“. In „Dein Tag“ früher
+  sofort umgeschaltet und Erledigtes blieb stehen.
+- „Dein Tag“ mit ✕ im Kopf.
+- Schnelleingabe Aufgaben: Raum-Chip „Familie“ statt „Für mich“.
+- Aufgaben leer: „Gerade nichts.“ statt „Alles erledigt.“, ohne „Ich muss
+  noch …“. Ohne-Druck-Test um „alles erledigt“, „ich muss noch“, „ich
+  vermisse dich“, „nicht gemacht“ erweitert. Durchklick `abhaken.mjs`.
+

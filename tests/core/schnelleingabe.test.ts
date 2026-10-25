@@ -1,6 +1,6 @@
 // Schnelleingabe (Tafel 76): „＋ = tippen, Mia = sprechen“. Satz → Chips ohne
 // KI (Termin: Tag · Uhrzeit + Familie/Arbeit; Aufgabe: „bis …“/„heute“/kein
-// Tag + „Für mich“); ➤ speichert sofort mit „Eingetragen: … · Rückgängig“,
+// Tag + „Familie“); ➤ speichert sofort mit „Eingetragen: … · Rückgängig“,
 // das Feld bleibt offen; leer = nichts; jedes „＋“ ohne Mia und ohne Mikro.
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -32,11 +32,11 @@ describe("Satz → Chips (ohne KI)", () => {
     expect(picked).toMatchObject({ date: "2026-10-26", time: null, room: "arbeit" });
   });
 
-  it("Aufgabe: „bis Mi, 28. Okt“ / „heute“ / ohne Tag + „Für mich“", () => {
+  it("Aufgabe: „bis Mi, 28. Okt“ / „heute“ / ohne Tag + „Familie“", () => {
     const due = readQuick("aufgabe", "Steuer abgeben bis Dienstag", TODAY);
-    expect(quickChips(due, TODAY).map((c) => c.label)).toEqual(["bis Di, 27. Okt", "Für mich"]);
+    expect(quickChips(due, TODAY).map((c) => c.label)).toEqual(["bis Di, 27. Okt", "Familie"]);
     expect(quickChips(readQuick("aufgabe", "Blumen gießen heute", TODAY), TODAY)[0].label).toBe("heute");
-    expect(quickChips(readQuick("aufgabe", "Malersachen kaufen", TODAY), TODAY).map((c) => c.label)).toEqual(["Für mich"]);
+    expect(quickChips(readQuick("aufgabe", "Malersachen kaufen", TODAY), TODAY).map((c) => c.label)).toEqual(["Familie"]);
     // Startseiten-Kachel gibt „heute“ vor
     expect(quickChips(readQuick("aufgabe", "Malersachen kaufen", TODAY, { date: TODAY }), TODAY)[0].label).toBe("heute");
     expect(whenChip("woche", TODAY)).toBe("diese Woche");
