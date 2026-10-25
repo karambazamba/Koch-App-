@@ -14,12 +14,13 @@ import { helperName } from "@/lib/einstellungen/profile";
 import { miaDoneUndo, useMiaDone } from "@/lib/begleitung/miaDone";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Check, Pin } from "lucide-react";
+import { Check, Pin, X } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
-import { buttonClass, chipClass, SECTION_TITLE } from "@/components/ui/styles";
+import { buttonClass, chipClass, ICON_BUTTON, SECTION_TITLE } from "@/components/ui/styles";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { ItemMenu } from "@/components/kalender/Items";
-import { act, buzz, readOnlyDone } from "@/components/heute/actions";
+import { act, readOnlyDone } from "@/components/heute/actions";
+import { useLeaving } from "@/components/heute/MiniCards";
 import { clockLabel } from "@/lib/kalender/answers";
 import { addDays } from "@/lib/core/now";
 import { stockLine } from "@/lib/essen/dishIdeas";
@@ -92,6 +93,9 @@ export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, d
   const [menu, setMenu] = useState<DayItem | null>(null);
   const [editing, setEditing] = useState<DayItem | null>(null);
   const spot = topic ? topicSpot(topic) : null;
+  // Abhaken wie überall: durchgestrichen, 1,5 s, weg, „Erledigt · Rückgängig“
+  const { leaving, start } = useLeaving((t) => act((all, stamp) => setDone(all, t, true, stamp), t.title, { done: true }));
+  const openTasks = tasks.filter((t) => !t.done || leaving === t.key);
   // Der Hinweis der Karte: meist Zeile 1 („Versichertenkarte einpacken?“), bei „gleich“ der Zusatz
   const hint = (topic?.kind === "gleich" ? topic.detail : topic?.title) || topic?.detail || "";
   const list = showTomorrow ? tomorrow : termine;
@@ -104,7 +108,7 @@ export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, d
     el?.scrollIntoView({ block: "center" });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- nur beim Öffnen
   }, []);
-  const empty = !termine.length && !dish && !shop && !tasks.length && !pins.length;
+  const empty = !termine.length && !dish && !shop && !openTasks.length && !pins.length;
   const marked = (key: string) => Boolean(spot && spot.key && key === spot.key);
   const doneButton = topic && ["vorbereiten", "packliste", "geburtstag", "erinnerung"].includes(topic.kind);
   const topicHint =
@@ -130,11 +134,16 @@ export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, d
             <p className="text-[13px] font-semibold text-muted">{dateLabel}</p>
             <h2 className="text-[30px] font-extrabold leading-tight tracking-tight">Dein Tag</h2>
           </div>
-          {night && (
-            <button type="button" onClick={() => setShowTomorrow((v) => !v)} aria-pressed={showTomorrow} className={`${chipClass(showTomorrow)} mt-1`}>
-              {tomorrowLabel(addDays(today, 1))}
+          <div className="flex items-center gap-2">
+            {night && (
+              <button type="button" onClick={() => setShowTomorrow((v) => !v)} aria-pressed={showTomorrow} className={chipClass(showTomorrow)}>
+                {tomorrowLabel(addDays(today, 1))}
+              </button>
+            )}
+            <button type="button" onClick={onClose} aria-label="Schließen" className={ICON_BUTTON}>
+              <X className="h-5 w-5" strokeWidth={2.25} aria-hidden />
             </button>
-          )}
+          </div>
         </div>
       }
     >
@@ -214,27 +223,30 @@ export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, d
                   </Section>
                 )}
 
-                {tasks.length > 0 && (
-                  <Section id="aufgaben" title="Aufgaben" highlight={spot?.section === "aufgaben" && !tasks.some((t) => marked(t.entry.id) || marked(t.key))}>
+                {openTasks.length > 0 && (
+                  <Section id="aufgaben" title="Aufgaben" highlight={spot?.section === "aufgaben" && !openTasks.some((t) => marked(t.entry.id) || marked(t.key))}>
                     <ul className="flex flex-col">
-                      {tasks.map((t) => (
+                      {openTasks.map((t) => {
+                        const checked = leaving === t.key;
+                        return (
                         <li key={t.key} data-key={t.key} className={`flex min-h-12 items-center gap-3 px-1 ${marked(t.key) || marked(t.entry.id) ? HL : ""}`}>
                           <button
                             type="button"
                             role="checkbox"
-                            aria-checked={t.done}
+                            aria-checked={checked}
                             aria-label={`${t.title} erledigt`}
-                            onClick={() => readOnlyDone(t) || (buzz(), act((list, stamp) => setDone(list, t, !t.done, stamp), t.title, { done: !t.done }))}
+                            onClick={() => readOnlyDone(t) || start(t)}
                             className="-ml-1.5 flex h-11 w-11 shrink-0 items-center justify-center"
                           >
-                            <span className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${t.done ? "border-accent bg-accent text-on-accent" : "border-line-strong"}`}>{t.done && <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />}</span>
+                            <span className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${checked ? "border-accent bg-accent text-on-accent" : "border-line-strong"}`}>{checked && <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />}</span>
                           </button>
                           <button type="button" onClick={() => setMenu(t)} className="flex min-w-0 flex-1 flex-col text-left">
-                            <span className={`truncate text-base font-semibold ${t.done ? "text-muted line-through" : ""}`}>{t.title}</span>
+                            <span className={`truncate text-base font-semibold ${checked ? "text-muted line-through" : ""}`}>{t.title}</span>
                             {(t.carried || t.time) && <span className="text-[13px] text-muted">{[t.time ? clock(t.time) : "", t.carried ?? ""].filter(Boolean).join(" · ")}</span>}
                           </button>
                         </li>
-                      ))}
+                        );
+                      })}
                     </ul>
                     {spot?.section === "aufgaben" && topicHint}
                   </Section>

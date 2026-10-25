@@ -8,7 +8,7 @@ import { SOURCES, stripComments, texts } from "../textQuellen";
 const hits = (test: (code: string, file: string) => string[]) => SOURCES.flatMap(({ file, code }) => test(code, file).map((h) => `${file}: ${h}`));
 
 /** Texte, die an die KI gehen oder Regeln beschreiben – keine sichtbaren Texte */
-const NOT_VISIBLE = /^lib\/begleitung\/(prompt|engine|mock\w*|\w*Tools|tools|toolset|registry|ops|protocol|guard)\.ts$|^app\/api\//;
+const NOT_VISIBLE = /^lib\/begleitung\/(prompt|engine|mock\w*|\w*Tools|tools|toolset|registry|ops|protocol|guard)\.ts$|^lib\/begleitung\/pruefstand\/saetze\.ts$|^app\/api\//;
 
 describe("Regeln für den Code", () => {
   it("Speicher nur über localStore.ts (createLocalStore, readRaw/writeRaw)", () => {
@@ -46,7 +46,7 @@ describe("Regeln für sichtbare Texte", () => {
   });
 
   it("Ohne Druck: keine Druck-Wörter", () => {
-    const words = /\b(fehlt|fehlen|offen|offene[nrs]?|überfällig\w*|verpasst\w*|noch zu erledigen|du musst|du solltest|vergiss nicht|alles da)\b|noch: /i;
+    const words = /\b(fehlt|fehlen|offen|offene[nrs]?|überfällig\w*|verpasst\w*|noch zu erledigen|du musst|du solltest|vergiss nicht|alles da|alles erledigt|ich muss noch|ich vermisse dich|nicht gemacht)\b|noch: /i;
     expect(hits((code, file) => (NOT_VISIBLE.test(file) ? [] : texts(code).filter((t) => words.test(t))))).toEqual([]);
   });
 

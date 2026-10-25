@@ -123,7 +123,7 @@ Sortier-Regeln, Design-System, Service Worker, App-Icons und Manifest.
 - Live-Chips ohne KI (`readQuick`, `quickChips`; dahinter `kalender/sentence`
   und `kalender/quick`): Termin „Fr, 23. Okt · 16:00“ (ohne Uhrzeit
   „ganztägig“) + „Familie“/„Arbeit“; Aufgabe „bis Mi, 28. Okt“/„heute“/kein
-  Tag + „Für mich“. Antippen ändert (Tag-Leiste, Familie ↔ Arbeit, nur wenn
+  Tag + „Familie“. Antippen ändert (Tag-Leiste, Familie ↔ Arbeit, nur wenn
   es Arbeit gibt); nötig sind sie nie. Kurze Wochentage („Fr 16 Uhr“, „am
   Sa“) erkennt `readSentence` seit v0.72.0.
 - ➤ oder Return speichert sofort (`ui/quickSave.ts`): Termin (mit Uhrzeit 30

@@ -4,12 +4,14 @@
 import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 import { backupSummary, parseBackup, restoreBackup } from "@/lib/core/backup";
-import { memoryStorage } from "../helpers";
+import { at, memoryStorage } from "../helpers";
 
 const file = readFileSync(new URL("../fixtures/sicherung-v0.47.json", import.meta.url), "utf8");
 const storage = memoryStorage();
 
 beforeAll(() => {
+  // Feste Zeit wie beim Sichern (21.10.): „Im Haus“ vergisst sonst Joghurt von selbst, sobald echte Tage vergehen
+  at("2026-10-21T10:30");
   (globalThis as { window?: unknown }).window = { localStorage: storage, addEventListener() {}, removeEventListener() {} };
 });
 
