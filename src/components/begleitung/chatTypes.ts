@@ -12,6 +12,7 @@ import type { TipView } from "@/lib/tipps/model";
 import type { CookCard } from "@/lib/essen/kochtipp/pick";
 import type { IdeaTalk } from "@/lib/essen/kochtipp/idee";
 import type { LinkRezept } from "@/lib/essen/rezeptLink/lesen";
+import type { DoneGroup } from "@/lib/begleitung/uebersicht";
 
 export type ChatTurnView = ChatTurn & {
   /** Fehlermeldung – wird nicht an die KI geschickt */
@@ -38,6 +39,8 @@ export type ChatTurnView = ChatTurn & {
   deleted?: boolean;
   /** Mia hat es sofort erledigt: „Rückgängig“ steht 10 Sekunden da */
   quick?: boolean;
+  /** Mehreres auf einmal erledigt: kompakte Übersicht statt Aufzählung (mit „Alles rückgängig“) */
+  overview?: DoneGroup[];
   /** Im Supermarkt: Ideen zum Produkt, darunter Liste und "Statt <Tag>" */
   market?: MarketAnswer & { target: MarketTarget | null };
   /** Backwunsch: passende Rezepte mit "Zusammen backen" */

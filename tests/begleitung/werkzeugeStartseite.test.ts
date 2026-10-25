@@ -12,13 +12,39 @@ beforeEach(() => at("2026-10-21T09:00"));
 describe("Bausteine", () => {
   it("einschalten sagt, wo er steht; schon an/aus → nichts vorschlagen", () => {
     const ctx = kontext({ features: ["tipps"] });
-    expect(rufe(ctx, "baustein_an", { baustein: "vorrat" }).content).toBe("Vorgemerkt: Im Haus einschalten. „Im Haus“ steht jetzt unter Essen – und als Kachel auf Heute.");
-    expect(ctx.data.features).toContain("vorrat");
+    expect(rufe(ctx, "baustein_an", { baustein: "rezepte" }).content).toBe("Vorgemerkt: Rezepte einschalten. Eure Rezepte stehen jetzt rechts unter Essen.");
+    expect(ctx.data.features).toContain("rezepte");
     expect(rufe(ctx, "baustein_an", { baustein: "tipps" }).content).toBe("Tipps ist schon an.");
     expect(rufe(ctx, "baustein_aus", { baustein: "tipps" }).content).toBe("Vorgemerkt: Tipps ausschalten.");
     expect(ctx.data.features).not.toContain("tipps");
-    expect(rufe(ctx, "baustein_aus", { baustein: "rezepte" }).content).toBe("Rezepte ist schon aus.");
+    expect(rufe(ctx, "baustein_aus", { baustein: "backen" }).content).toBe("Backen mit Timern ist schon aus.");
     expect(rufe(ctx, "baustein_an", { baustein: "zaubern" }).isError).toBe(true);
+  });
+});
+
+describe("Launch 1.0: „später“-Bausteine", () => {
+  it("Mia schaltet sie nie ein – „Kommt bald.“, Wunsch anonym gezählt", () => {
+    for (const baustein of ["vorrat", "wochenplan", "notizen", "sport", "mails", "spendentopf"]) {
+      const ctx = kontext();
+      const res = rufe(ctx, "baustein_an", { baustein });
+      expect(res.content).toMatch(/Kommt bald\./);
+      expect(ctx.ops).toHaveLength(0);
+      expect(ctx.wishes?.length).toBe(1);
+    }
+  });
+
+  it("Unsere Rezepte darf Mia einschalten; Wochenplan löschen und Im Haus sind gesperrt", () => {
+    expect(rufe(kontext(), "baustein_an", { baustein: "rezepte" }).content).toMatch(/^Vorgemerkt: Rezepte einschalten\./);
+    const ctx = kontext();
+    expect(rufe(ctx, "wochenplan_loeschen", {}).content).toMatch(/Kommt bald\./);
+    expect(rufe(ctx, "vorrat_hinzufuegen", { sachen: [{ name: "Joghurt" }] }).content).toMatch(/Kommt bald\./);
+    expect(ctx.ops).toHaveLength(0);
+  });
+
+  it("wer den Baustein schon nutzt, behält ihn", () => {
+    const ctx = kontext({ features: ["vorrat"] });
+    expect(rufe(ctx, "vorrat_hinzufuegen", { sachen: [{ name: "Joghurt" }] }).content).not.toMatch(/Kommt bald/);
+    expect(rufe(ctx, "baustein_aus", { baustein: "vorrat" }).content).toMatch(/^Vorgemerkt: Im Haus ausschalten/);
   });
 });
 
@@ -72,7 +98,7 @@ describe("App-Befehl, Startseite, Wochenplan, Einkaufsliste, Rückgängig", () =
   });
 
   it("wochenplan_anzeigen/_aendern/_loeschen nutzen die Plan-Werkzeuge", () => {
-    const ctx = kontext({ recipes: { r: rezept("r", "Chili", ["Bohnen"]) } });
+    const ctx = kontext({ features: ["wochenplan"], recipes: { r: rezept("r", "Chili", ["Bohnen"]) } });
     expect(JSON.parse(rufe(ctx, "wochenplan_anzeigen", { woche: "naechste" }).content).woche).toBe("naechste");
     expect(rufe(ctx, "wochenplan_aendern", { tag: "Montag", gericht: "Ofengemüse" }).content).toBe("Vorgemerkt: Montag – Ofengemüse.");
     expect(rufe(ctx, "wochenplan_aendern", { woche: "naechste", tag: "Montag", rezept_id: "r" }).content).toBe("Vorgemerkt: Montag – Chili.");

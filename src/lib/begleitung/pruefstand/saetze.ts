@@ -14,7 +14,9 @@ export type PruefSatz = {
   /**
    * Richtige Vorschlags-Arten (ChangeOp.type) – leer = nur antworten.
    * Besondere: "kann_nicht" = ehrlich ablehnen, "antwort" = Antwort ohne
-   * Aktion zählt auch, "hinweis_doppelt" = keine Aktion + Hinweis „steht schon drin“.
+   * Aktion zählt auch, "hinweis_doppelt" = keine Aktion + Hinweis „steht schon drin“,
+   * "kommt_bald" = in 1.0 gesperrt: keine Aktion + „Kommt bald.“, "rueckfrage" =
+   * keine Aktion + eine Frage (z. B. Tausch mit einem schon vergangenen Tag).
    */
   ops: string[];
   datum?: string;
@@ -25,6 +27,10 @@ export type PruefSatz = {
   lage?: Lage[];
   /** Höchstens so viele Sätze (Standard 2) */
   max?: number;
+  /** Alle erwarteten Aktionen müssen kommen (Mehrfach-Aktion) */
+  alle?: boolean;
+  /** Höchstens so viele Wörter (Mehrfach-Aktion: „Erledigt.“) */
+  woerter?: number;
 };
 
 const S = (text: string, ops: string[], extra: Omit<PruefSatz, "text" | "ops"> = {}): PruefSatz => ({ text, ops, ...extra });
@@ -116,14 +122,17 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Stell einen Timer für die Nudeln auf 8 Minuten", ["add_timer"]),
   S("Wir haben noch Paprika und Reis, was geht damit?", ["app_command", "set_meal", "add_recipe", "antwort"], { max: 3 }),
   S("Kannst du ein Rezept für Linsensuppe anlegen?", ["add_recipe"]),
-  S("Tausch Montag und Mittwoch", ["move_meal", "set_meal"], { lage: ["plan"] }),
+  // Montag ist am Prüftag (Mi) schon vorbei – eine Rückfrage ist richtig
+  S("Tausch Montag und Mittwoch", ["move_meal", "set_meal", "rueckfrage"], { lage: ["plan"] }),
   S("Donnerstag doppelt kochen, Reste für Freitag", ["set_double"], { lage: ["plan"] }),
-  S("Lösch den Wochenplan", ["clear_week"]),
+  // 1.0: Wochenplan ist „später“
+  S("Lösch den Wochenplan", ["kommt_bald"]),
   S("Wir sind ab Montag eine Woche im Urlaub", ["set_pause"]),
   S("Ich koche jetzt", ["start_cooking"]),
   S("Nächster Schritt", ["cook_step"], { lage: ["kochmodus"] }),
   S("Kochidee", ["app_command"]),
-  S("Wir haben noch 4 Joghurt im Kühlschrank", ["add_pantry"]),
+  // 1.0: „Im Haus“ ist „später“ → „Kommt bald.“ (wer es nutzt, behält es)
+  S("Wir haben noch 4 Joghurt im Kühlschrank", ["kommt_bald", "antwort"]),
   S("Was anderes als Spaghetti bitte", ["app_command", "set_meal"]),
   S("Mach heute was Schnelles, wir haben wenig Zeit", ["set_meal", "app_command"]),
   S("Lisa mag keine Pilze mehr in Soßen, merk dir das", ["set_dislike", "antwort"]),
@@ -163,7 +172,7 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Buch uns einen Tisch beim Italiener", ["kann_nicht", "upsert_entry"]),
   S("Mach das rückgängig", ["undo_last"]),
   S("Nimm die Einkaufsliste von der Startseite", ["home"]),
-  S("Zeig mir den Vorrat", ["kann_nicht", "app_command"]),
+  S("Zeig mir den Vorrat", ["kommt_bald"]),
   S("Schreib der Kita, dass Mathis morgen krank ist", ["mail_draft", "app_command"]),
   S("Lies mir den Kalender vor", ["app_command", "antwort"], { max: 3 }),
   S("Lass uns die Woche durchgehen", ["app_command"], { max: 3 }),
@@ -172,4 +181,9 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Ich bin so müde heute", ANTWORT),
   S("Ich bin müde", ANTWORT),
   S("äh ja also nee doch nicht", ANTWORT),
+
+  // Mehreres auf einmal: alle Aktionen, Text nur „Erledigt.“ (3)
+  S("Pack Milch, Brot und Eier auf die Liste und Kita-Formular und Geschenk für Oma in die Aufgaben", ["add_shopping", "upsert_entry"], { alle: true, woerter: 2 }),
+  S("Zahnarzt Montag 10 Uhr, Turnen Freitag 16 Uhr und Butter auf die Liste", ["upsert_entry", "add_shopping"], { alle: true, woerter: 2, lage: ["ohne-zahnarzt"] }),
+  S("Kaffee und Klopapier auf die Liste, Mathis Freitag 15 Uhr Fußball und Steuer bis Mittwoch als Aufgabe", ["add_shopping", "upsert_entry"], { alle: true, woerter: 2, lage: ["ohne-steuer"] }),
 ];

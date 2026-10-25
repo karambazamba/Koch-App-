@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { memoryStorage } from "../helpers";
 import type { ChangeOp } from "@/lib/begleitung/ops";
-import { daten, haushalt, HEUTE, WOCHEN } from "./werkzeugKontext";
+import { aufgabe, daten, haushalt, HEUTE, termin, WOCHEN } from "./werkzeugKontext";
 
 // Übernehmen und Rückgängig (commitOps): mit frisch geladenen Speichern,
 // geprüft über die Lade-Funktionen der Bereiche.
@@ -66,6 +66,28 @@ describe("commitOps", () => {
     r.undo();
     expect(m.meal.loadMealPlans()[WOCHEN.aktuell] ?? {}).toEqual({});
     expect(m.shopping.loadShoppingSettings().itemShops.feta).toBeUndefined();
+  });
+
+  it("Mehreres auf einmal: Übersicht gruppiert, „Alles rückgängig“ nimmt alles dieser Antwort zurück", async () => {
+    const { doneGroups } = await import("@/lib/begleitung/uebersicht");
+    const ops: ChangeOp[] = [
+      { id: "1", type: "add_shopping", weekStart: WOCHEN.aktuell, name: "Milch", amount: "", section: "kuehlregal" },
+      { id: "2", type: "upsert_entry", isNew: true, entry: aufgabe({ title: "Kita-Formular" }) },
+      { id: "3", type: "upsert_entry", isNew: true, entry: termin({ title: "Zahnarzt", date: "2026-10-26", start: "10:00" }) },
+      { id: "4", type: "add_shopping", weekStart: WOCHEN.aktuell, name: "Brot", amount: "", section: "brot" },
+    ];
+    expect(doneGroups(ops).map((g) => [g.label, g.items.join(" · ")])).toEqual([
+      ["Termine", "Mo 10:00 Zahnarzt"],
+      ["Aufgaben", "Kita-Formular"],
+      ["Einkaufsliste", "Milch · Brot"],
+    ]);
+    const r = m.client.commitOps(daten({ entries: [] }), ops, alle(ops), "Pack Milch und Brot …");
+    expect(m.entries.loadEntries().map((e) => e.data.title).sort()).toEqual(["Kita-Formular", "Zahnarzt"]);
+    expect(local.getItem("wasgibts.einkaufsliste")).toMatch(/Milch[\s\S]*Brot/);
+    r.undo();
+    expect(m.entries.loadEntries()).toHaveLength(0);
+    // Stammartikel (Standard) bleiben, die Woche ist wieder leer
+    expect(JSON.stringify(JSON.parse(local.getItem("wasgibts.einkaufsliste") ?? "{}").weeks ?? {})).not.toMatch(/Milch|Brot/);
   });
 
   it("nur Ausgewähltes wird übernommen", () => {

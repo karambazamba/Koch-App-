@@ -6,6 +6,7 @@
 import { PANTRY_PLACES, placeFor, type PantryPlace } from "@/lib/vorrat/pantry";
 import type { BegleitungTool } from "@/lib/begleitung/registry";
 import { fail, nextId, propose, str, toolInput, type Input } from "@/lib/begleitung/tools";
+import { spaeter } from "@/lib/begleitung/wishTools";
 
 export const PANTRY_TOOLS = {
   vorrat_hinzufuegen: {
@@ -33,6 +34,9 @@ export const PANTRY_TOOLS = {
       },
     },
     run: (ctx, raw) => {
+      // Launch 1.0: „Im Haus“ ist „später“ (wer es nutzt, behält es)
+      const later = spaeter(ctx, "vorrat");
+      if (later) return later;
       const input = toolInput(raw);
       const sachen = Array.isArray(input.sachen) ? (input.sachen as Input[]) : [];
       const names: string[] = [];
@@ -60,6 +64,9 @@ export const PANTRY_TOOLS = {
       },
     },
     run: (ctx, raw) => {
+      // Launch 1.0: „Im Haus“ ist „später“ (wer es nutzt, behält es)
+      const later = spaeter(ctx, "vorrat");
+      if (later) return later;
       const input = toolInput(raw);
       const names = (Array.isArray(input.namen) ? input.namen : []).map(str).filter(Boolean).slice(0, 20);
       if (!names.length) return fail("namen angeben.");

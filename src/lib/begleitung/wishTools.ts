@@ -6,6 +6,8 @@
 
 import type Anthropic from "@anthropic-ai/sdk";
 import type { BegleitungTool } from "@/lib/begleitung/registry";
+import type { ToolContext, ToolResult } from "@/lib/begleitung/tools";
+import { LAUNCH_AUS, bausteinOf, type Feature } from "@/lib/core/features";
 
 /** Wunsch kurz und ohne Namen/Zahlen-Folgen speichern (max. 120 Zeichen) */
 export function cleanWish(text: unknown): string | null {
@@ -45,4 +47,16 @@ export function capabilities(tools: Anthropic.Beta.BetaTool[]): string {
     .filter((t) => t.name !== WISH_TOOL.definition.name)
     .map((t) => `${t.name}: ${(t.description ?? "").split(/(?<=[.!?])\s/)[0].slice(0, 140)}`);
   return `Das kannst du (nur das, aus deinen Werkzeugen): ${lines.join(" | ")}. Alles andere: allgemeine Fragen (Kochen, Haushalt, Umrechnen, Kinder, Wissen) beantwortest du kurz und richtig selbst, bei Unsicherheit ehrlich. Aktionen, die es hier nicht gibt: kann_ich_noch_nicht und „Kann ich noch nicht.“ – nie etwas versprechen, das die App nicht kann, nie „Dafür bin ich nicht da“.`;
+}
+
+/**
+ * Launch 1.0: Bausteine mit Kennzeichen „später“ (`LAUNCH_AUS`) schaltet Mia
+ * nie ein und schreibt nicht hinein – wer ihn schon nutzt, behält ihn. Sonst
+ * „Kommt bald.“ und der Wunsch wird anonym gezählt wie bei „Kann ich noch nicht.“
+ */
+export function spaeter(ctx: ToolContext, feature: Feature): ToolResult | null {
+  if (!LAUNCH_AUS.includes(feature) || (ctx.data.features ?? []).includes(feature)) return null;
+  const wish = cleanWish(bausteinOf(feature)?.name ?? feature);
+  if (wish) ctx.wishes = [...(ctx.wishes ?? []), wish].slice(0, 3);
+  return { content: "Gibt es in dieser Version noch nicht. Antworte nur „Kommt bald.“ – nichts einschalten, nichts anbieten." };
 }

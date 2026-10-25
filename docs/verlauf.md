@@ -2481,3 +2481,16 @@ Fehler in `docs/aufraeumen-nachher.md`.
   noch …“. Ohne-Druck-Test um „alles erledigt“, „ich muss noch“, „ich
   vermisse dich“, „nicht gemacht“ erweitert. Durchklick `abhaken.mjs`.
 
+## Prüfstand auf 95 % (v0.108.0)
+
+- Felix’ Lauf: 117/129 (91 %). Test angepasst, wo Mia richtig lag: Tausch
+  mit vergangenem Montag darf nachfragen (`rueckfrage`), „Lösch den
+  Wochenplan“ und „Zeig mir den Vorrat“ → „Kommt bald.“ (`kommt_bald`).
+- „Später“-Bausteine (`LAUNCH_AUS`) schaltet Mia nie ein (`spaeter()`), nur
+  „Kommt bald.“ + Wunsch anonym. „Unsere Rezepte“ bleibt einschaltbar.
+- „… ist alle“ → direkt auf die Einkaufsliste; Prompt kürzer (Bestätigung,
+  Wochenplan, Ideen, Gesundheit).
+- Mehreres auf einmal = kurze Übersicht: bei 2+ erledigten Dingen nur
+  „Erledigt.“ und darunter die Karte `MiaDoneCard` (Termine · Aufgaben ·
+  Einkaufsliste …, „Alles rückgängig“). Prüfstand jetzt 132 Sätze.
+
