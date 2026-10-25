@@ -1,7 +1,7 @@
 "use client";
 
 // Für Entwickler (Auftrag „Mia auf Claude-Niveau“): KI-Kosten der letzten 7
-// Tage auf diesem Gerät und der Prüfstand (129 Alltagssätze durch die echte
+// Tage auf diesem Gerät und der Prüfstand (132 Alltagssätze durch die echte
 // Mia, Ziel ≥ 95 %). Der Prüfstand braucht das Prüfstand-Geheimnis aus Vercel
 // (PRUEFSTAND_SECRET) – es wird nur für diesen Aufruf eingetippt, nie
 // gespeichert, nie angezeigt. Der Lauf geht in kleinen Häppchen

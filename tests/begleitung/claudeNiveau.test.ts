@@ -1,6 +1,6 @@
 // Mia auf Claude-Niveau – nie halbgar: offline merken und nachholen, kleine
 // Dinge sofort mit „Rückgängig“ und „Mia hat schon …“, Fähigkeitsliste aus
-// den Werkzeugen, „Kann ich noch nicht“ anonym, Prüfstand mit 129 Sätzen.
+// den Werkzeugen, „Kann ich noch nicht“ anonym, Prüfstand mit 132 Sätzen.
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { atFresh, fakeWindow } from "../helpers";
@@ -128,9 +128,9 @@ describe("Ehrlich über Fähigkeiten", () => {
 });
 
 describe("Prüfstand", () => {
-  it("129 Sätze, alle verschieden, jede Gruppe dabei", () => {
-    expect(PRUEFSAETZE).toHaveLength(129);
-    expect(new Set(PRUEFSAETZE.map((s) => s.text)).size).toBe(129);
+  it("132 Sätze, alle verschieden, jede Gruppe dabei", () => {
+    expect(PRUEFSAETZE).toHaveLength(132);
+    expect(new Set(PRUEFSAETZE.map((s) => s.text)).size).toBe(132);
     expect(PRUEFSAETZE.filter((s) => s.ops.length === 0).length).toBeGreaterThanOrEqual(20);
     expect(PRUEFSAETZE.filter((s) => s.ops.includes("kann_nicht")).length).toBeGreaterThanOrEqual(3);
     expect(pruefHaushalt().profile.persons.map((p) => p.name)).toEqual(["Felix", "Lisa", "Mathis"]);
@@ -176,6 +176,32 @@ describe("KI-Kosten letzte 7 Tage", () => {
     const src = readFileSync("src/components/einstellungen/settings/AdminView.tsx", "utf8");
     expect(src).toContain("useToday()");
     expect(src).not.toMatch(/todayIso\(\)/);
+  });
+});
+
+describe("Prüfstand auf 95 % (Auftrag „Prüfstand auf 95 %“)", () => {
+  const satz = (text: string) => PRUEFSAETZE.find((s) => s.text === text)!;
+  const op = (type: string) => ({ id: "1", type }) as unknown as ChangeOp;
+
+  it("„später“ in 1.0: Vorrat zeigen und Wochenplan löschen → „Kommt bald.“ ohne Aktion", () => {
+    for (const text of ["Zeig mir den Vorrat", "Lösch den Wochenplan"]) {
+      expect(bewerte(satz(text), { reply: "Kommt bald.", ops: [] }, 2000).ok).toBe(true);
+      expect(bewerte(satz(text), { reply: "Kommt bald.", ops: [op("set_feature")] }, 2000).ok).toBe(false);
+    }
+  });
+
+  it("Tausch mit vergangenem Montag: Rückfrage zählt, Tausch auch", () => {
+    const tausch = satz("Tausch Montag und Mittwoch");
+    expect(bewerte(tausch, { reply: "Montag ist schon vorbei. Nächste Woche tauschen?", ops: [] }, 2000).ok).toBe(true);
+    expect(bewerte(tausch, { reply: "Getauscht.", ops: [op("move_meal")] }, 2000).ok).toBe(true);
+  });
+
+  it("Linsensuppe: Rezept anlegen, Rezepte einschalten ist erlaubt", () => {
+    expect(bewerte(satz("Kannst du ein Rezept für Linsensuppe anlegen?"), { reply: "Liegt bereit.", ops: [op("add_recipe"), op("set_feature")] }, 2000).ok).toBe(true);
+  });
+
+  it("„Eier sind alle“ → direkt auf die Liste", () => {
+    expect(bewerte(satz("Eier sind alle"), { reply: "Eier sind drauf.", ops: [op("add_shopping")] }, 2000).ok).toBe(true);
   });
 });
 

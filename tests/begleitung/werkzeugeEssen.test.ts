@@ -169,8 +169,8 @@ describe("Kochbuch, Einkauf, Vorrat", () => {
     expect(ctx.data.shopping[WOCHEN.aktuell].manual.map((m) => m.name)).toEqual(["Milch", "Müsli"]);
   });
 
-  it("vorrat_hinzufuegen wählt den naheliegenden Ort", () => {
-    const ctx = kontext();
+  it("vorrat_hinzufuegen wählt den naheliegenden Ort (wer „Im Haus“ schon nutzt)", () => {
+    const ctx = kontext({ features: ["vorrat"] });
     expect(rufe(ctx, "vorrat_hinzufuegen", { sachen: [{ name: "" }] }).content).toBe("sachen mit name angeben.");
     expect(rufe(ctx, "vorrat_hinzufuegen", { sachen: [{ name: "Chili", ort: "tiefkuehler" }, { name: "Joghurt" }] }).content).toBe("Im Haus (die App trägt es sofort ein): Chili, Joghurt.");
     expect(ctx.ops[0]).toEqual({ id: expect.any(String), type: "add_pantry", name: "Chili", place: "tiefkuehler" });

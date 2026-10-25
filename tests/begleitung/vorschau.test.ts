@@ -158,7 +158,7 @@ describe("previewRows", () => {
   });
 
   it("Vorgaben, Wunsch, Personen, Pause und Startseite", () => {
-    const ctx = kontext({ profile: { ...haushalt(), pause: { from: "2026-11-01", until: "2026-11-05" } } });
+    const ctx = kontext({ features: ["wochenplan"], profile: { ...haushalt(), pause: { from: "2026-11-01", until: "2026-11-05" } } });
     const base = ctx.data;
     rufe(ctx, "gericht_setzen", { woche: "aktuell", tag: "Donnerstag", gericht: "Lasagne" });
     rufe(ctx, "vorgaben_aendern", { woche: "aktuell", wunsch: { kind: "Mathis", gericht: "Milchreis", tag: "Sonntag" } });
@@ -186,14 +186,14 @@ describe("previewRows", () => {
     const t = termin({ title: "Zahnarzt", date: "2026-10-22", start: "15:00" });
     const a = aufgabe({ title: "Steuer", due: "2026-10-30" });
     const wlan = createNote({ title: "WLAN", text: "abc" });
-    const ctx = kontext({ features: ["notizen"], entries: [t, a], notes: [wlan], sport: { goal: 3, trainings: [], packs: {}, celebrated: [], skipped: [] } as never });
+    const ctx = kontext({ features: ["notizen", "vorrat"], entries: [t, a], notes: [wlan], sport: { goal: 3, trainings: [], packs: {}, celebrated: [], skipped: [] } as never });
     const base = ctx.data;
     rufe(ctx, "einkaufsliste_hinzufuegen", { woche: "aktuell", artikel: [{ name: "Milch", menge: "1 l", fuer_tag: "Freitag", gericht: "Kaffee", laden: "REWE" }] });
     rufe(ctx, "einkaufsliste_entfernen", { artikel: ["Brot", "Eier"] });
     rufe(ctx, "einkaufsliste_leeren", { woche: "naechste" });
     rufe(ctx, "vorrat_hinzufuegen", { sachen: [{ name: "Chili", menge: 4, einheit: "Portionen", ort: "tiefkuehler" }] });
     rufe(ctx, "wunsch_merken", { person: "Mathis", gericht: "Pfannkuchen" });
-    rufe(ctx, "baustein_an", { baustein: "vorrat" });
+    rufe(ctx, "baustein_an", { baustein: "backen" });
     rufe(ctx, "baustein_aus", { baustein: "zaubern" });
     ctx.ops.push({ id: "x-feature", type: "set_feature", feature: "tipps", on: false });
     rufe(ctx, "app_befehl", { text: "Mach die Ansicht dunkel" });
@@ -227,7 +227,7 @@ describe("previewRows", () => {
         "Einkaufsliste|Woche 26.10. – 1.11.|alles|Liste leer",
         "Im Haus|Tiefkühler|-|Chili",
         "Wünsche|Wunsch von Mathis|-|Pfannkuchen 🎉 – ganz oben bei den Ideen",
-        "Mehr Funktionen|Im Haus|-|einschalten – „Im Haus“ steht jetzt unter Essen – und als Kachel auf Heute.",
+        "Mehr Funktionen|Backen mit Timern|-|einschalten – Backen steht jetzt rechts unter Essen.",
         "Mehr Funktionen|Tipps|-|ausschalten (Daten bleiben)",
         "In der App|ausführen|-|„Mach die Ansicht dunkel“",
         "Notizen|🧳 Packliste|-|neue Liste: Zelt, Lampe",

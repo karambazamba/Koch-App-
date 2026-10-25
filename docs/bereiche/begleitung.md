@@ -94,6 +94,29 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Vorschlag dagegen verstoßen würde, keine Oberflächen-Erklärungen, ehrlich KI
   (keine menschlichen Erlebnisse; „Ich bin müde“ → „Dann mach heute langsam.
   Soll ich das Abendessen übernehmen?“).
+- Mehreres auf einmal = kurze Übersicht (seit v0.108): Erledigt Mia mit
+  einer Antwort 2+ Dinge sofort, steht nur „Erledigt.“ da (Vorlesen auch;
+  eigene Fassung bis 2 Wörter wie „Steht alles.“ bleibt), plus höchstens EIN
+  Satz, wenn etwas unklar war oder nicht ging (`shortDoneReply`, ohne
+  Anschluss-Angebote). Darunter `MiaDoneCard`: Gruppen in fester Reihenfolge
+  Termine · Aufgaben · Einkaufsliste · Pinnwand · Notizen · Essen · Im Haus ·
+  Familie (`doneGroups` in `lib/begleitung/uebersicht.ts`), je Gruppe Symbol,
+  Überschrift und Einträge mit „·“ („Mo 10:00 Zahnarzt“), Zeile antippen =
+  Seite; „Alles rückgängig“ 10 s (eine Rücknahme für alles), danach bleibt
+  es in „Mia hat schon …“. Keine Zahlen. Die KI bekommt die Liste im Verlauf
+  (`send`). Prüfstand: 3 Mehrfach-Sätze (`alle`, `woerter: 2`). Durchklick
+  `uebersicht.mjs`.
+- Seit v0.108 (Launch 1.0): Bausteine mit Kennzeichen „später“
+  (`LAUNCH_AUS`: Im Haus, Wochenplan, Notizen, Sport, Mails an Mia, Tipps aus
+  der Region, Spendentopf) schaltet Mia nie ein und schreibt nicht hinein
+  (`spaeter()` in `wishTools.ts`: `baustein_an`, `wochenplan_loeschen`,
+  `vorrat_*`) → nur „Kommt bald.“, Wunsch anonym gezählt wie bei „Kann ich
+  noch nicht.“; wer den Baustein schon nutzt, behält ihn. „Unsere Rezepte“
+  darf Mia einschalten. „… ist alle / ist leer“ → sofort auf die
+  Einkaufsliste („Eier sind drauf.“). Kürzer: Bestätigung 1 Satz + höchstens
+  1 kurze Frage, Wochenplan 1 Satz (Gerichte zeigt die Vorschau), Ideen als
+  eine Aufzählung in einem Satz, Gesundheit 3 Sätze + Arzt-Hinweis ohne
+  Essens-Angebot. Prüfstand: `kommt_bald` und `rueckfrage` als erlaubte Wege.
 - Seit v0.105: „Merk dir: Lisa mag keine Pilze“ → `vorliebe_merken` (Op
   `set_dislike`, sofort mit Rückgängig, „Gemerkt.“). Ausgeblendete Bausteine
   bekommen nichts: Notizen aus → die schreibenden Notiz-Werkzeuge lehnen ab
@@ -135,7 +158,7 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   `kann_ich_noch_nicht` → „Kann ich noch nicht.“; der Server zählt den Wunsch
   anonym in `mia_wuensche` (nur Text + Datum, RLS ohne Policies, nur der
   geheime Schlüssel schreibt; `wishStore.ts`). Wünsche gehen nie an die App.
-- Prüfstand (`pruefstand/`): 129 Alltagssätze mit erwarteter Aktion, Bewertung
+- Prüfstand (`pruefstand/`): 132 Alltagssätze mit erwarteter Aktion, Bewertung
   (Aktion, Datum/Uhrzeit/Person, Floskeln/Striche, Zeit). Fair: je Satz eine
   passende Ausgangslage (`Lage` in `haushalt.ts`: ohne Zahnarzt, ohne Steuer,
   Turnen Fr 16 Uhr, Gerichte im Plan, laufender Kochmodus) und eine feste

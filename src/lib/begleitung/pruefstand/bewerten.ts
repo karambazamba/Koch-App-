@@ -67,11 +67,16 @@ export function bewerte(satz: PruefSatz, reply: AssistantReply, ms: number): Pru
           ? types.length === 0 && Boolean(reply.reply.trim())
           : want === "hinweis_doppelt"
             ? types.length === 0 && DOPPELT.test(reply.reply)
-            : types.includes(want);
+            : want === "kommt_bald"
+              ? types.length === 0 && /kommt bald/i.test(reply.reply)
+              : want === "rueckfrage"
+                ? types.length === 0 && reply.reply.includes("?")
+                : types.includes(want);
   if (satz.ops.length === 0) {
     if (types.length) gruende.push(`unerwartete Aktion: ${types.join(", ")}`);
     if (!reply.reply.trim()) gruende.push("keine Antwort");
-  } else if (!satz.ops.some(has)) gruende.push(`Aktion nicht getroffen (erwartet ${satz.ops.join(" oder ")}, bekommen ${types.join(", ") || "keine"})`);
+  } else if (satz.alle ? !satz.ops.every(has) : !satz.ops.some(has)) gruende.push(`Aktion nicht getroffen (erwartet ${satz.ops.join(satz.alle ? " und " : " oder ")}, bekommen ${types.join(", ") || "keine"})`);
+  if (satz.woerter && reply.reply.trim().split(/\s+/).filter(Boolean).length > satz.woerter) gruende.push(`mehr als ${satz.woerter} Wörter`);
   if (satz.datum || satz.zeit || satz.person || satz.bis) {
     const facts = entryFacts(reply);
     if (satz.datum && !facts.dates.includes(satz.datum)) gruende.push(`Datum ${satz.datum} nicht getroffen (${facts.dates.join(", ") || "keins"})`);

@@ -10,6 +10,7 @@ import { newMiaConversation, reactToUser } from "@/lib/mia/reaktion";
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { askAssistant, BegleitungUnavailable, commitOps, runInstantOps, unavailableText } from "@/lib/begleitung/client";
 import { isSafeOp, noteMiaDone } from "@/lib/begleitung/miaDone";
+import { doneCount, doneGroups, doneSummary, shortDoneReply, type DoneGroup } from "@/lib/begleitung/uebersicht";
 import { queueForLater } from "@/lib/begleitung/nachholen";
 import type { AssistantErrorCode } from "@/lib/begleitung/protocol";
 import { clockNow, isSameReply } from "@/lib/begleitung/localAnswers";
@@ -108,11 +109,17 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
       result = { ...result, ops: instant.rest, reply: instant.notes.length ? `${result.reply}\n${instant.notes.join(" ")}` : result.reply };
       // Machen statt fragen: nur kleine, sichere Dinge → sofort, mit „Rückgängig“ und in „Mia hat schon …“
       let done: (() => void) | null = null;
+      // Mehreres auf einmal: nur „Erledigt.“ + kompakte Übersicht (die KI bekommt die Liste im Verlauf)
+      let overview: DoneGroup[] | null = null;
       if (result.ops.length && !chat.proposal && result.ops.every(isSafeOp)) {
         const committed = commitOps(data, result.ops, new Set(result.ops.map((op) => op.id)), question);
         noteMiaDone(result.ops, committed.undo);
         done = committed.undo;
-        result = { ...result, ops: [], reply: committed.notes.length ? `${result.reply}\n${committed.notes.join(" ")}` : result.reply };
+        const groups = doneGroups(result.ops);
+        if (doneCount(groups) >= 2) {
+          overview = groups;
+          result = { ...result, ops: [], reply: shortDoneReply(result.reply, doneCount(groups)) };
+        } else result = { ...result, ops: [], reply: committed.notes.length ? `${result.reply}\n${committed.notes.join(" ")}` : result.reply };
       }
       const tipsWhere = result.tips?.length ? unlockTips() : null;
       setChat((c) => {
@@ -132,6 +139,7 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
               ...(result.chips?.length ? { chips: result.chips } : {}),
               ...(result.tips?.length ? { tips: result.tips } : {}),
               ...(done ? { undo: done, quick: true } : {}),
+              ...(overview ? { overview, send: `${result.reply} (${doneSummary(overview)})` } : {}),
             },
           ],
           proposal: result.ops.length > 0 ? { ops: result.ops, selected } : null,

@@ -31,7 +31,7 @@ const SAFE_OP_TYPES = new Set<ChangeOp["type"]>(["add_shopping", "add_pin", "add
 export const isSafeOp = (op: ChangeOp) => (SAFE_OP_TYPES.has(op.type) && !(op.type === "add_shopping" && op.vorschlag)) || ((op.type === "upsert_entry" || op.type === "upsert_note") && op.isNew);
 
 /** Kurz, was passiert ist – und wo es steht */
-function doneLine(op: ChangeOp): { text: string; href: string | null } | null {
+export function doneLine(op: ChangeOp): { text: string; href: string | null } | null {
   switch (op.type) {
     case "add_shopping":
       return { text: `${op.name} auf die Liste`, href: "/einkaufsliste" };

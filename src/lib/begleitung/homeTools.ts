@@ -3,6 +3,7 @@
 // entfernen und die letzte Änderung zurücknehmen. Wie immer nur als
 // Vorschlag mit "Übernehmen".
 
+import { spaeter } from "@/lib/begleitung/wishTools";
 import { HOME_ACTIONS, HOME_TILES, type HomeAction, type HomeTileId } from "@/lib/core/homeLayout";
 import { WEEKDAYS } from "@/lib/einstellungen/profile";
 import { buildShoppingList } from "@/lib/einkauf/shoppingList";
@@ -59,6 +60,9 @@ const bausteinTool = (on: boolean): BegleitungTool => ({
     const feature = str((raw as Input | null)?.baustein);
     const b = BAUSTEINE.find((x) => x.feature === feature);
     if (!b) return fail("baustein angeben.");
+    // Launch 1.0: „später“-Bausteine nie einschalten → „Kommt bald.“
+    const later = on ? spaeter(ctx, b.feature) : null;
+    if (later) return later;
     if ((ctx.data.features ?? []).includes(feature) === on) return { content: `${b.name} ist schon ${on ? "an" : "aus"}.` };
     propose(ctx, { id: nextId(ctx), type: "set_feature", feature, on });
     return { content: `Vorgemerkt: ${b.name} ${on ? "einschalten" : "ausschalten"}.${on ? ` ${b.where}` : ""}` };
@@ -217,6 +221,8 @@ export const HOME_TOOLS: BegleitungTool[] = [
       input_schema: { type: "object", properties: { woche: WEEK_PROP }, additionalProperties: false },
     },
     run: (ctx, raw) => {
+      const later = spaeter(ctx, "wochenplan");
+      if (later) return later;
       const weekStart = weekStartOf(ctx, (raw as Input | null)?.woche);
       propose(ctx, { id: nextId(ctx), type: "clear_week", weekStart });
       return { content: `Vorgemerkt: Wochenplan ${formatWeekRange(weekStart)} leeren.` };
