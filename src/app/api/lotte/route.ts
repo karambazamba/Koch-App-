@@ -33,7 +33,8 @@ export async function GET(request: Request) {
   const { mock, needsCode, configured } = aiSetup();
   const status: AssistantStatus = { configured, mock, needsCode, stimme: stimmeStatus() };
   if (configured && needsCode && request.headers.has(ACCESS_HEADER)) {
-    status.access = checkAccess(request) === null ? "ok" : "falsch";
+    const denied = checkAccess(request);
+    status.access = denied === null ? "ok" : denied === "limit" ? "pause" : "falsch";
   }
   return Response.json(status);
 }

@@ -59,6 +59,7 @@ import { einwilligungErteilt, useEinwilligungen } from "@/lib/datenschutz/einwil
 import { tidyMiaText } from "@/lib/begleitung/tidy";
 import type { StorageKey } from "@/lib/core/storage";
 import { accessHeaders, deviceId, fetchStatus, forgetAccessCode, onCodeChange } from "@/lib/begleitung/zugang";
+import { onKiVersuchOhneCode } from "@/lib/begleitung/codeAbfrage";
 
 export { accessHeaders, deviceId, forgetAccessCode, saveAccessCode } from "@/lib/begleitung/zugang";
 
@@ -73,7 +74,7 @@ export const UNAVAILABLE_TEXT: Record<AssistantErrorCode | "offline" | "einwilli
   einwilligung: "Dafür brauch ich kurz dein OK.",
   offline: "Bin grad offline. Ich mach’s, sobald wieder Netz da ist.",
   limit: "Für heute hab ich genug geredet. Listen und Termine gehen natürlich weiter.",
-  zugangscode: "Dafür brauch ich einmal euren Zugangscode.",
+  zugangscode: "Dafür brauch ich einmal deinen Testcode.",
   aus: "Hat grad nicht geklappt. Nochmal?",
   fehler: "Hat grad nicht geklappt. Nochmal?",
 };
@@ -308,7 +309,10 @@ export async function askAssistant(
       return body;
     }
     const reason = body && "error" in body ? body.error : "fehler";
-    if (reason === "zugangscode") forgetAccessCode();
+    if (reason === "zugangscode") {
+      forgetAccessCode();
+      onKiVersuchOhneCode();
+    }
     throw new BegleitungUnavailable(reason);
   }
   // Stück für Stück lesen: eine JSON-Zeile pro Ereignis
@@ -350,7 +354,10 @@ export async function askAssistant(
         recordUsage(today, event.usage);
         return { reply: tidyMiaText(event.reply), ops: event.ops, mail: event.mail, chips: event.chips, tips: event.tips };
       } else if (event.t === "error") {
-        if (event.error === "zugangscode") forgetAccessCode();
+        if (event.error === "zugangscode") {
+          forgetAccessCode();
+          onKiVersuchOhneCode();
+        }
         throw new BegleitungUnavailable(event.error);
       }
     }

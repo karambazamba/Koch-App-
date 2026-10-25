@@ -34,8 +34,9 @@ import * as serverstimme from "./ablaeufe/serverstimme.mjs";
 import * as wischen from "./ablaeufe/wischen.mjs";
 import * as abhaken from "./ablaeufe/abhaken.mjs";
 import * as uebersicht from "./ablaeufe/uebersicht.mjs";
+import * as testcode from "./ablaeufe/testcode.mjs";
 
-const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen, ...miazuerst, ...pinnwandgesten, ...sprachnachricht, ...mianame, ...startseite, ...schnelleingabe, ...kalendertag, ...mails, ...datenschutz, ...mikrocheck, ...zuhoeren, ...serverstimme, ...miasprechen, ...wischen, ...abhaken, ...uebersicht };
+const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen, ...miazuerst, ...pinnwandgesten, ...sprachnachricht, ...mianame, ...startseite, ...schnelleingabe, ...kalendertag, ...mails, ...datenschutz, ...mikrocheck, ...zuhoeren, ...serverstimme, ...miasprechen, ...wischen, ...abhaken, ...uebersicht, ...testcode };
 const pick = process.argv.slice(2);
 const flows = Object.entries(ALL).filter(([name, run]) => typeof run === "function" && (!pick.length || pick.includes(name)));
 const stop = await startServer();

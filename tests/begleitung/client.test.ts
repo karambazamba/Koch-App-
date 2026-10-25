@@ -75,18 +75,25 @@ describe("Gerät, Tageslimit, Zugangscode", () => {
   });
 
   it("saveAccessCode prüft beim Server und merkt nur richtige Codes", async () => {
-    expect(await client.saveAccessCode("  ")).toBe(false);
+    expect(await client.saveAccessCode("  ")).toBe("falsch");
     const fetchMock = vi.fn(async () => json({ configured: true, mock: false, needsCode: true, access: "falsch" }));
     vi.stubGlobal("fetch", fetchMock);
-    expect(await client.saveAccessCode("mond")).toBe(false);
+    expect(await client.saveAccessCode("mond")).toBe("falsch");
     expect(client.accessHeaders()).toEqual({});
     fetchMock.mockImplementation(async () => json({ configured: true, mock: false, needsCode: true, access: "ok" }));
-    expect(await client.saveAccessCode(" sonne ")).toBe(true);
+    fetchMock.mockImplementation(async () => json({ configured: true, mock: false, needsCode: true, access: "pause" }));
+    expect(await client.saveAccessCode("mond")).toBe("pause");
+    fetchMock.mockImplementation(async () => json({ configured: true, mock: false, needsCode: true, access: "ok" }));
+    expect(await client.saveAccessCode(" sonne ")).toBe("ok");
+    // nur im Header, nie in der Adresse
+    const [url, init] = fetchMock.mock.calls.at(-1) as unknown as [string, RequestInit];
+    expect(url).not.toContain("sonne");
+    expect(init.headers).toEqual({ "x-lotte-code": "sonne" });
     expect(client.accessHeaders()).toEqual({ "x-lotte-code": "sonne" });
     fetchMock.mockImplementation(async () => {
       throw new Error("offline");
     });
-    expect(await client.saveAccessCode("stern")).toBeNull();
+    expect(await client.saveAccessCode("stern")).toBe("offline");
     client.forgetAccessCode();
     expect(client.accessHeaders()).toEqual({});
   });
@@ -178,6 +185,8 @@ describe("askAssistant", () => {
     vi.stubGlobal("fetch", vi.fn(async () => ndjson([{ t: "error", error: "zugangscode" }])));
     await expect(ask()).rejects.toMatchObject({ reason: "zugangscode" });
     expect(local.getItem("wasgibts.zugangscode")).toBeNull();
+    // falscher Code beim KI-Versuch → der Testcode-Bildschirm kommt (nicht der Chat)
+    expect((await import("@/lib/begleitung/codeAbfrage")).codeScreenState().open).toBe(true);
     vi.stubGlobal("fetch", vi.fn(async () => ndjson([{ t: "error", error: "limit" }])));
     await expect(ask()).rejects.toMatchObject({ reason: "limit" });
     vi.stubGlobal("fetch", vi.fn(async () => ndjson([{ t: "text", d: "a" }], { failAfter: true })));

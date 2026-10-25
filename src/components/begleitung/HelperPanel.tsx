@@ -5,6 +5,7 @@
 // festen Regeln (`useChatRules`); Spontan kochen, Supermarkt und die
 // KI-Anfrage stecken in eigenen Hooks.
 
+import { onKiVersuchOhneCode } from "@/lib/begleitung/codeAbfrage";
 import { rezeptLinkIn } from "@/lib/essen/rezeptLink/lesen";
 import { listeAusChat, openListe } from "@/lib/kalender/liste/einfuegen";
 import { fetchRezeptLink } from "@/lib/essen/rezeptLink/abrufen";
@@ -271,6 +272,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       void ask(t, undefined, rules);
       return;
     }
+    // KI eingerichtet, aber kein Testcode („Später“): einmal den Code-Bildschirm zeigen, die Regeln helfen trotzdem
+    if (status?.askCode) onKiVersuchOhneCode();
     if (rules(t)) return;
     setInput("");
     notUnderstood(t);

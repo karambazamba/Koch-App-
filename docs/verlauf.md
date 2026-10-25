@@ -2494,3 +2494,11 @@ Fehler in `docs/aufraeumen-nachher.md`.
   „Erledigt.“ und darunter die Karte `MiaDoneCard` (Termine · Aufgaben ·
   Einkaufsliste …, „Alles rückgängig“). Prüfstand jetzt 132 Sätze.
 
+## Testcode gleich am Anfang (v0.109.0)
+
+- Vorher fragte Mia den Code erst im Gespräch (Karte im Chat). Jetzt EIN
+  Bildschirm „Fast geschafft.“ direkt nach dem ersten Start bzw. beim
+  nächsten Öffnen; „Später“ geht, dann kommt er beim ersten KI-Versuch.
+- „Testcode ändern“ unter Einstellungen → Mia. Schutz gegen Durchprobieren:
+  5 Fehlversuche, dann 15 Minuten Pause (vorher 10 pro Stunde).
+

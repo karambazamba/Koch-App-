@@ -25,14 +25,14 @@ describe("KI nur mit Schlüssel UND Zugangscode", () => {
     expect(aiSetup()).toMatchObject({ mock: true, configured: true });
   });
 
-  it("checkAccess: ohne Code ok, falscher Code zählt, nach 10 Fehlversuchen Limit", () => {
+  it("checkAccess: ohne Code ok, falscher Code zählt, nach 5 Fehlversuchen kurze Pause", () => {
     vi.stubEnv("APP_ACCESS_CODE", "");
     expect(checkAccess(anfrage())).toBeNull();
     vi.stubEnv("APP_ACCESS_CODE", " sonne ");
     expect(checkAccess(anfrage())).toBe("zugangscode");
     expect(checkAccess(anfrage({ [ACCESS_HEADER]: "sonne", "x-forwarded-for": "10.0.0.1" }))).toBeNull();
     const ip = { "x-forwarded-for": "10.0.0.2, 1.1.1.1" };
-    for (let i = 0; i < 10; i++) expect(checkAccess(anfrage({ ...ip, [ACCESS_HEADER]: "mond" }))).toBe("zugangscode");
+    for (let i = 0; i < 5; i++) expect(checkAccess(anfrage({ ...ip, [ACCESS_HEADER]: "mond" }))).toBe("zugangscode");
     expect(checkAccess(anfrage({ ...ip, [ACCESS_HEADER]: "sonne" }))).toBe("limit");
     expect(clientIp(anfrage(ip))).toBe("10.0.0.2");
     expect(clientIp(anfrage())).toBe("unbekannt");
@@ -73,9 +73,12 @@ describe("Rate-Limit", () => {
     for (let i = 0; i < LIMITS.dailyPerDevice; i++) allowDaily("d1", 1, t0);
     expect(allowDaily("d1", 1, t0)).toBe(false);
     expect(allowDaily("d1", 1, t0 + 25 * 60 * 60_000)).toBe(true);
-    for (let i = 0; i < 10; i++) noteWrongCode("ip-x", t0);
+    for (let i = 0; i < 4; i++) noteWrongCode("ip-x", t0);
+    expect(codeAttemptsLeft("ip-x", t0)).toBe(true);
+    noteWrongCode("ip-x", t0);
     expect(codeAttemptsLeft("ip-x", t0)).toBe(false);
-    expect(codeAttemptsLeft("ip-x", t0 + 61 * 60_000)).toBe(true);
+    expect(codeAttemptsLeft("ip-x", t0 + 14 * 60_000)).toBe(false);
+    expect(codeAttemptsLeft("ip-x", t0 + 15 * 60_000)).toBe(true);
     for (let i = 0; i < 5002; i++) noteWrongCode(`ip-${i}`, t0);
     expect(codeAttemptsLeft("ip-x", t0)).toBe(true);
   });

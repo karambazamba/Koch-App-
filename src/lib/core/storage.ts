@@ -84,6 +84,7 @@ export const STORAGE = [
   { key: "wasgibts.stimmenhinweis", what: "Stimmen-Hinweis schon gezeigt", area: "local", backup: false },
   { key: "wasgibts.avatargruss", what: "Begrüßung des Avatars heute schon gezeigt", area: "local", backup: false },
   { key: "wasgibts.zugangscode", what: "Zugangscode für die KI (pro Gerät)", area: "local", backup: false },
+  { key: "wasgibts.zugangscode.spaeter", what: "Testcode-Abfrage auf „Später“ gestellt", area: "local", backup: false },
   { key: "wasgibts.lotte.anfragen", what: "KI-Anfragen heute (Tageslimit)", area: "local", backup: false },
   { key: "wasgibts.mia.erledigt", what: "Was die Begleitung heute still erledigt hat (nur Text und Ort)", version: 1, migration: "begleitung/miaDone.ts", area: "local", backup: false },
   { key: "wasgibts.lotte.nachholen", what: "Offline Gesagtes an die Begleitung, wird nachgeholt, sobald wieder Netz da ist", version: 1, migration: "begleitung/nachholen.ts", area: "local", backup: false },
