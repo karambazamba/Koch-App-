@@ -497,7 +497,8 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   steht direkt darüber (`stageLayout`); Tastatur zu (nichts getippt) → Mia
   wieder groß. Mikro aus/gesperrt: direkt das Tippfeld mit dem Streifen
   „Mikro aus – tippen geht immer · Anmachen ›“ – Mia antippen öffnet nie das
-  große Hilfefenster. Der Zugangscode erscheint als Hinweis im Gespräch.
+  große Hilfefenster. Der Testcode wird nie im Gespräch abgefragt, sondern
+  auf dem eigenen Bildschirm (siehe „Testcode gleich am Anfang“).
 - „Passt“ (Knopf) oder „ja/passt/mach“ übernimmt; Mia freut sich, unter ihr
   „Erledigt“, nach ~1 s zu, Meldung „Übernommen“.
 - „＋“ holt nie Mia (seit v0.72.0, Tafel 76): „＋ = tippen, Mia = sprechen“ –
@@ -652,3 +653,28 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
     bitte“ (Aufgabe „Packen: …“ heute) / „Hab ich schon“.
 - Jede Frage nur einmal (`wasgibts.miafragen`). Nie im Beispiel-Tag.
 - Tests: `tests/mia/routinen.test.ts`.
+
+## Testcode gleich am Anfang (v0.109.0)
+
+- Braucht die KI einen Code (`APP_ACCESS_CODE` in Vercel) und es ist keiner
+  gemerkt bzw. er passt nicht, steht EIN ruhiger Bildschirm (`CodeGate` im
+  Layout → `CodeScreen`, erst bei Bedarf geladen): „Fast geschafft.“, „Gib
+  deinen Testcode ein, dann kann ich zuhören und mitdenken.“, ein
+  Passwortfeld ohne Autofill, „Los geht’s“, leise „Ohne Code geht’s auch:
+  Tippen mit ＋ funktioniert immer.“ + „Später“.
+- Wann: neue Nutzer nach Hallo, Zustimmung und „Zeig mal“ (vorher kein
+  Profil), Bestandsnutzer beim nächsten Öffnen. Nie auf Rechtsseiten,
+  Anmelden, Einladungen.
+- „Später“ wird gemerkt (`wasgibts.zugangscode.spaeter`, nur Gerät, nicht in
+  der Sicherung); dann kommt derselbe Bildschirm beim ersten KI-Versuch
+  (einmal je Sitzung, `onKiVersuchOhneCode` – Mia ohne Code oder Antwort
+  „zugangscode“). Richtiger Code löscht „Später“.
+- Einstellungen → Mia: „Testcode ändern“ (nur wenn ein Code nötig ist).
+- Prüfung nur auf dem Server: Code im Header (`x-lotte-code`), nie in der
+  Adresse; Vergleich über Hashes (`guard.ts`). Gegen Durchprobieren: nach 5
+  falschen Codes je Adresse 15 Minuten Pause („Kurz Pause. Gleich
+  nochmal?“, `CODE_TRIES` in `rateLimit.ts`). Falsch: „Der Code passt nicht.
+  Nochmal?“. Die KI-Einwilligung bleibt eine eigene Frage im Gespräch.
+- Logik rein in `lib/begleitung/codeAbfrage.ts` (`codeScreenNoetig`). Tests
+  `tests/begleitung/codeAbfrage.test.ts`, Durchklick `testcode.mjs` (Server
+  nur nachgestellt, nie der echte Code), Bild `testcode`.

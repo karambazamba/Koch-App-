@@ -1,6 +1,6 @@
 "use client";
 
-// Verlauf des Chats: Begrüßung, Zugangscode, Nachrichten (Ideen-Antworten
+// Verlauf des Chats: Begrüßung, Einwilligung, Nachrichten (Ideen-Antworten
 // offen bzw. eingeklappt), Gesundheits-Tipp, "denkt …"/Antwort Wort für
 // Wort und der offene Vorschlag mit "Übernehmen".
 
@@ -14,7 +14,7 @@ import type { useAssistantStatus } from "@/lib/begleitung/client";
 import { helperName, type HelperVoice } from "@/lib/einstellungen/profile";
 import type { AssistantData } from "@/lib/begleitung/ops";
 import { speechSupported, toggleSpeak } from "@/lib/begleitung/speech";
-import { AccessCodeCard, ConsentCard, SpeakButton } from "@/components/begleitung/ChatBits";
+import { ConsentCard, SpeakButton } from "@/components/begleitung/ChatBits";
 import { ChatTurnItem } from "@/components/begleitung/ChatTurnItem";
 import { MiaBubble, OwnBubble, StageTopic } from "@/components/begleitung/MiaStage";
 import { useStickToBottom } from "@/components/begleitung/useStickToBottom";
@@ -124,7 +124,6 @@ export function ChatHistory({ scrollRef, inputRef, status, data, voice, codeLate
           ) : null}
           {/* Kochidee geht ohne KI – der Zugangscode schiebt sich nicht davor */}
           {status?.askConsent && data && !codeLater && !chat.kochtipp && <ConsentCard name={helperName(data.profile)} onLater={onCodeLater} />}
-          {status?.askCode && data && !codeLater && !chat.kochtipp && <AccessCodeCard onLater={onCodeLater} />}
           {chat.turns.map((turn, i) => {
             if (i < from) return null;
             const last = i === chat.turns.length - 1;

@@ -6,7 +6,10 @@
 // v0.67) – kein Umbenennen mehr. Früher eigene Seiten (/profil/lotte,
 // /vorlesen, /farbe) leiten hierher.
 
-import { Hand, Mic, Palmtree, Sun } from "lucide-react";
+import { Hand, KeyRound, Mic, Palmtree, Sun } from "lucide-react";
+import { useEffect, useState } from "react";
+import { requestCodeScreen } from "@/lib/begleitung/codeAbfrage";
+import { fetchStatus } from "@/lib/begleitung/zugang";
 import { openMicHelp } from "@/lib/core/mic";
 import { setKnopfLinks, useKnopfLinks } from "@/lib/mia/knopf";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
@@ -29,6 +32,7 @@ export function MiaView() {
   const tipsOn = useFeature("tipps");
   const weekendOn = useFeature("wochenendIdeen");
   const links = useKnopfLinks();
+  const needsCode = useNeedsCode();
   return (
     <SettingsPage title={title}>
       {(profile, set) => {
@@ -46,6 +50,11 @@ export function MiaView() {
               <Row onClick={openMicHelp} icon={Mic} title="Mikrofon prüfen">
                 Ich sag dir, woran’s liegt
               </Row>
+              {needsCode && (
+                <Row onClick={() => requestCodeScreen(true)} icon={KeyRound} title="Testcode ändern">
+                  Für Zuhören und Mitdenken
+                </Row>
+              )}
             </Group>
 
             <h2 className={`mt-2 px-1 ${SECTION_TITLE}`}>Wie oft melde ich mich?</h2>
@@ -70,4 +79,17 @@ export function MiaView() {
       }}
     </SettingsPage>
   );
+}
+
+/** Braucht die KI einen Testcode? Nur dann steht „Testcode ändern“ da */
+function useNeedsCode(): boolean {
+  const [needs, setNeeds] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void fetchStatus().then((s) => active && setNeeds(Boolean(s.configured && s.needsCode)));
+    return () => {
+      active = false;
+    };
+  }, []);
+  return needs;
 }

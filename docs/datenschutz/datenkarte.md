@@ -31,7 +31,7 @@ berechtigtes Interesse.
 | Mia-Wünsche („Kann ich noch nicht“) | Server (`mia_wuensche`), nur Text + Datum | sehen, was gefragt wird | **bitte festlegen** (Vorschlag 12 Monate) | nur Betreiber | lit. f |
 | Bekannte Stimmen (`wasgibts.stimmen`) | Gerät, nur Kennungen der Systemstimmen | „Neue Stimme gefunden … Nehmen?“ | bis gelöscht | nur Gerät | lit. b |
 | KI-Verbrauch (`wasgibts.verbrauch`) | Gerät, nur Zahlen (auch vorgelesene Zeichen, gehörte Sekunden) | Tageslimit, Guthaben | 62 Tage | nur Gerät | lit. f |
-| Zugangscode, Geräte-Kennung | Gerät | Tageslimit | bis gelöscht | nur Gerät; Kennung geht als Zahl an den Server (Limit) | lit. f |
+| Zugangscode (+ Merker „Später“), Geräte-Kennung | Gerät | Tageslimit | bis gelöscht | nur Gerät; Code nur im Header an den Server (Prüfung), Kennung als Zahl (Limit) | lit. f |
 | Server-Logs (Vercel) | Vercel | Fehler finden | laut Vercel-Plan **bitte prüfen** | Betreiber | lit. f; enthalten nur Technik (Dauer, Kosten, Fehlercode) – Test `tests/app/datenschutz.test.ts` |
 | Einwilligungen | Gerät (`wasgibts.einwilligungen`: Art, ja/nein, Textfassung, Zeit; „Bevor’s losgeht“ ab v0.93) und mit Konto Server (`einwilligungen`, ab 23b) | Nachweis | Gerät bis gelöscht, Server solange Konto besteht | nur die Person | Art. 7 Abs. 1 |
 

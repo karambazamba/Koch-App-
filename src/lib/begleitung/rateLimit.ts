@@ -44,13 +44,16 @@ export function allowDaily(key: string, factor = 1, now = Date.now()): boolean {
   return ok;
 }
 
-/** Falsche Zugangscodes: höchstens 10 Versuche pro Stunde und Adresse */
 const wrongCodes = new Map<string, number[]>();
 
+/** Gegen Durchprobieren: nach 5 falschen Codes 15 Minuten Pause (je Adresse) */
+const CODE_TRIES = 5;
+const CODE_PAUSE_MS = 15 * 60_000;
+
 export function codeAttemptsLeft(key: string, now = Date.now()): boolean {
-  const list = (wrongCodes.get(key) ?? []).filter((t) => now - t < 60 * 60_000);
+  const list = (wrongCodes.get(key) ?? []).filter((t) => now - t < CODE_PAUSE_MS);
   wrongCodes.set(key, list);
-  return list.length < 10;
+  return list.length < CODE_TRIES;
 }
 
 export function noteWrongCode(key: string, now = Date.now()) {

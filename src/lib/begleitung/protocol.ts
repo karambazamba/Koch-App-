@@ -71,7 +71,8 @@ export type AssistantStatus = {
   /** Der Server verlangt einen Zugangscode (APP_ACCESS_CODE) */
   needsCode: boolean;
   /** Nur wenn ein Code mitgeschickt wurde: stimmt er? */
-  access?: "ok" | "falsch";
+  /** Code-Prüfung: passt, passt nicht, oder nach zu vielen Fehlversuchen kurz Pause */
+  access?: "ok" | "falsch" | "pause";
   /** Mias Stimme und Ohr über den Server (fehlt = Browser) */
   stimme?: StimmeStatus;
 };

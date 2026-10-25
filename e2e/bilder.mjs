@@ -98,7 +98,16 @@ const cookTip = async (page, step) => {
   await page.waitForTimeout(1200);
   await settle(page);
 };
+/** Testcode-Bildschirm: Server nur nachgestellt („braucht Code“), kein echter Code */
+const codeScreen = async (page) => {
+  await page.route("**/api/lotte**", (route) => route.fulfill({ json: { configured: true, mock: false, needsCode: true } }));
+  await page.reload();
+  await page.locator("[data-code-screen]").waitFor({ timeout: 8000 });
+  await page.locator("[data-code-screen] input").blur();
+  await settle(page);
+};
 const SCENES = [
+  ["testcode", codeScreen],
   ["stimme-angebot", voiceOffer],
   ["stimme-anleitung", async (page) => (await voiceOffer(page), await page.getByRole("button", { name: "Schönere Stimme holen" }).click())],
   ["kochidee-knopf", (page) => cookTip(page, "knopf")],

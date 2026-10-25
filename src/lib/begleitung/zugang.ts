@@ -33,22 +33,23 @@ function storeAccessCode(code: string) {
   codeListeners.forEach((l) => l());
 }
 
-/** Code einmal prüfen und merken; liefert, ob er stimmt (null = keine Verbindung) */
-export async function saveAccessCode(code: string): Promise<boolean | null> {
+/** Code einmal auf dem Server prüfen (Header, nie URL) und merken; „offline“ = keine Verbindung */
+export async function saveAccessCode(code: string): Promise<"ok" | "falsch" | "pause" | "offline"> {
   const trimmed = code.trim();
-  if (!trimmed) return false;
+  if (!trimmed) return "falsch";
   try {
     const r = await fetch(ASSISTANT_ENDPOINT, {
       cache: "no-store",
       headers: { [ACCESS_HEADER]: trimmed },
     });
     const s = (await r.json()) as AssistantStatus;
-    if (s.access !== "ok") return false;
+    if (s.access === "pause") return "pause";
+    if (s.access !== "ok") return "falsch";
   } catch {
-    return null;
+    return "offline";
   }
   storeAccessCode(trimmed);
-  return true;
+  return "ok";
 }
 
 export function forgetAccessCode() {
