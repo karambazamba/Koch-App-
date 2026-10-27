@@ -46,8 +46,8 @@ export function SiebenTage({ data, tage }: { data: HomeData; tage: PlanDay[] }) 
 
   return (
     <section className="flex flex-col gap-2" aria-label="Die nächsten 7 Tage" id="woche" data-wochenkarte>
-      <div className="flex items-center gap-2 px-1">
-        <h2 className={`${SECTION_TITLE} flex-1`}>Die nächsten 7 Tage</h2>
+      <div className="flex flex-wrap items-center gap-2 px-1">
+        <h2 className={`${SECTION_TITLE} flex-1 whitespace-nowrap`}>Die nächsten 7 Tage</h2>
         <div className="flex rounded-full bg-segment p-0.5" role="radiogroup" aria-label="Ansicht">
           {(
             [

@@ -105,6 +105,15 @@ describe("Ansicht Liste/Reihe gemerkt", () => {
   });
 });
 
+// Fehler v0.126.0 (Bildschirmfotos): auf schmalen Bildschirmen brach die
+// Überschrift neben dem Liste/Reihe-Schalter in drei Zeilen um
+describe("Überschrift bleibt einzeilig", () => {
+  it("nowrap, der Schalter rutscht notfalls darunter", () => {
+    const src = readFileSync("src/components/essen/sieben/SiebenTage.tsx", "utf8");
+    expect(src).toMatch(/flex flex-wrap items-center gap-2 px-1">\s*<h2 className=\{`\$\{SECTION_TITLE\} flex-1 whitespace-nowrap`\}>Die nächsten 7 Tage/);
+  });
+});
+
 describe("Mia verschiebt in den nächsten 7 Tagen", () => {
   // Heute: Mi 21.10.; aktuelle Woche ab Mo 19.10., nächste ab Mo 26.10.
   const ctx = () => {
