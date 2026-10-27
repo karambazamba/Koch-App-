@@ -4,7 +4,7 @@
 
 import type { Room } from "@/lib/core/entries";
 import { aufgabeToTermin, taskOverview, terminToAufgabe, TASK_GROUPS } from "@/lib/kalender/model";
-import { addListItems, appendLine, createNote, findNote, noteAnswer, setPinned, withoutLines, type Note } from "@/lib/notizen";
+import { addListItems, createNote, findNote, noteAnswer, setPinned, type Note } from "@/lib/notizen";
 import { PIN_MAX } from "@/lib/pinnwand/model";
 import { dayAnswer, hoursToday, isRainy, umbrellaAnswer, round } from "@/lib/wetter/forecast";
 import { windAnswer } from "@/lib/wetter/wind";
@@ -28,44 +28,7 @@ function proposeNote(ctx: ToolContext, note: Note, isNew: boolean, change?: stri
   propose(ctx, { id: nextId(ctx), type: "upsert_note", note, isNew, ...(change ? { change } : {}) });
 }
 
-const shortList = (lines: string[]) => lines.map((l) => (l.length > 40 ? `${l.slice(0, 38)}…` : l)).join(", ");
-
 const TOOLS: BegleitungTool[] = [
-  {
-    area: "alltag",
-    definition: {
-      name: "schnellnotiz_schreiben",
-      description: "Etwas in die Schnellnotiz (früher Kladde, Schmierzettel) schreiben: 'Schreib in die Schnellnotiz/Kladde: Handwerker Müller 0176 …', 'Notier mir schnell …'. Wird als neue Zeile angehängt.",
-      input_schema: { type: "object", properties: { text: { type: "string" }, ersetzen: { type: "boolean", description: "Ganze Schnellnotiz ersetzen statt anhängen (nur wenn ausdrücklich gewünscht)" } }, required: ["text"], additionalProperties: false },
-    },
-    run: (ctx, raw) => {
-      const input = (raw ?? {}) as Input;
-      const text = str(input.text);
-      if (!text) return fail("text angeben.");
-      const current = ctx.data.schnellnotiz ?? "";
-      const next = input.ersetzen === true ? text : appendLine(current, text);
-      propose(ctx, { id: nextId(ctx), type: "set_schnellnotiz", text: next, change: input.ersetzen === true ? `neu: ${shortList([text])}` : `+ ${shortList([text])}` });
-      return { content: "Vorgemerkt: steht dann in der Schnellnotiz (Notizen, ganz oben)." };
-    },
-  },
-  {
-    area: "alltag",
-    definition: {
-      name: "schnellnotiz_aufraeumen",
-      description:
-        "Schnellnotiz aufräumen ('Räum meine Schnellnotiz/Kladde auf'): Zuerst die passenden Zeilen mit termin_anlegen / aufgabe_anlegen / notiz_anlegen bzw. liste_eintrag_hinzufuegen übernehmen, dann hier genau diese Zeilen angeben – sie werden aus der Schnellnotiz genommen. Unklares bleibt stehen.",
-      input_schema: { type: "object", properties: { zeilen: { type: "array", items: { type: "string" }, description: "Übernommene Zeilen, wörtlich wie in der Schnellnotiz" } }, required: ["zeilen"], additionalProperties: false },
-    },
-    run: (ctx, raw) => {
-      const lines = list((raw as Input | null)?.zeilen);
-      const current = ctx.data.schnellnotiz ?? "";
-      const present = lines.filter((l) => current.split(/\n/).some((c) => c.trim() === l));
-      if (!present.length) return fail("Keine dieser Zeilen steht in der Schnellnotiz – wörtlich angeben.");
-      const rest = withoutLines(current, present);
-      propose(ctx, { id: nextId(ctx), type: "set_schnellnotiz", text: rest, change: `${present.length} ${present.length === 1 ? "Zeile" : "Zeilen"} übernommen${rest ? " – der Rest bleibt" : ", Schnellnotiz ist leer"}` });
-      return { content: `Vorgemerkt: ${present.length} Zeilen aus der Schnellnotiz nehmen.` };
-    },
-  },
   {
     area: "alltag",
     definition: {
@@ -106,7 +69,7 @@ const TOOLS: BegleitungTool[] = [
     definition: {
       name: "notiz_anlegen",
       description:
-        "Neue Notiz (nur festhalten – kein Termin, keine Aufgabe): 'Merk dir das WLAN-Passwort: …', 'Notier dir …', 'Idee: …'. Text ODER Liste. Passt es in eine vorhandene Liste (z. B. Geschenkideen, Packliste), stattdessen liste_eintrag_hinzufuegen.",
+        "Neue Notiz (nur festhalten – kein Termin, keine Aufgabe): 'Merk dir das WLAN-Passwort: …', 'Notier dir …', 'Schreib auf …', 'Schreib in die Schnellnotiz …', 'Idee: …'. Jede Notiz ist eigen; bei mehreren Zeilen ist die erste der Titel. Text ODER Liste, Absätze im text mit \\n. Kein Emoji im Titel. Passt es in eine vorhandene Liste (z. B. Geschenkideen, Packliste), stattdessen liste_eintrag_hinzufuegen.",
       input_schema: {
         type: "object",
         properties: {

@@ -24,7 +24,7 @@ const kalender = (...entries: ReturnType<typeof termin>[]) => ({ version: 2, ent
 
 const FULL = {
   "wasgibts.eintraege": kalender(termin("t1", "Kita"), { ...termin("a1", "Müll"), typ: "aufgabe" }),
-  "wasgibts.notizen": { version: 1, notes: [{ id: "n1", typ: "notiz", raum: "arbeit", besitzer: "lokal", erstellt: T0, geaendert: T0, data: { title: "WLAN", text: "abc" } }] },
+  "wasgibts.notizen": { version: 2, notes: [{ id: "n1", typ: "notiz", raum: "arbeit", besitzer: "lokal", erstellt: T0, geaendert: T0, data: { title: "WLAN", text: "abc" } }] },
   "wasgibts.pinnwand": { version: 3, messages: [{ id: "p1", typ: "pinnwand", raum: "familie", besitzer: "lokal", erstellt: T0, geaendert: T0, data: { text: "Hallo" } }], memos: [{ id: "m1", typ: "memo" }] },
   "wasgibts.einkaufsliste": {
     version: 4,
@@ -198,7 +198,7 @@ describe("Abgleich zwischen zwei Handys", () => {
     const { a, srv } = ctx;
     let { sa } = ctx;
     a.tick();
-    a.write("wasgibts.notizen", { version: 1, notes: [] });
+    a.write("wasgibts.notizen", { version: 2, notes: [] });
     sa = detectChanges(sa, a);
     expect(sa.queue).toMatchObject([{ id: "n1", raum: "arbeit", geloescht: true, typ: "notiz" }]);
     void srv;

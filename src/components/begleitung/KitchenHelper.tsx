@@ -1,6 +1,6 @@
 "use client";
 
-import { useSchnellnotiz, useNotes } from "@/lib/notizen";
+import { useNotes } from "@/lib/notizen";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Check } from "lucide-react";
@@ -101,13 +101,12 @@ export function KitchenHelper() {
   const entries = useCalendarEntries();
   const home = useHomeTiles();
   const notes = useNotes();
-  const schnellnotiz = useSchnellnotiz();
   const data: AssistantData | null | undefined =
-    profile === undefined || !weekPlans || !mealPlans || !recipes || !shopping || !entries || !home || !notes || !schnellnotiz
+    profile === undefined || !weekPlans || !mealPlans || !recipes || !shopping || !entries || !home || !notes
       ? undefined
       : profile === null
         ? null
-        : { profile, weekPlans, mealPlans, recipes, shopping, entries, home, notes, schnellnotiz: schnellnotiz.text };
+        : { profile, weekPlans, mealPlans, recipes, shopping, entries, home, notes };
 
   // Gespräch im Leerlauf vorholen, damit es beim Antippen sofort da ist
   useEffect(() => {

@@ -68,7 +68,6 @@ describe("parseRequest prüft und kürzt", () => {
         features: ["vorrat", 3],
         entries: [t, { id: "kaputt" }],
         notes: [note, {}],
-        schnellnotiz: "s".repeat(5000),
         pinnwand: [{ author: "Lisa", text: "Hallo", at: 5 }, { text: "ohne Autor" }],
         timers: [{ name: "Nudeln", leftSec: "61.6", paused: true }, { leftSec: 3 }],
         stopwatch: { sec: -5, running: true },
@@ -90,7 +89,6 @@ describe("parseRequest prüft und kürzt", () => {
     expect(d.features).toEqual(["vorrat"]);
     expect(d.entries?.map((e) => e.id)).toEqual([t.id]);
     expect(d.notes?.map((n) => n.id)).toEqual([note.id]);
-    expect(d.schnellnotiz).toHaveLength(4000);
     expect(d.pinnwand).toEqual([{ author: "Lisa", text: "Hallo", at: "" }]);
     expect(d.timers).toEqual([{ name: "Nudeln", leftSec: 62, paused: true, done: false }]);
     expect(d.stopwatch).toEqual({ sec: 0, running: true });
@@ -235,7 +233,6 @@ describe("Offener Vorschlag", () => {
       { id: "op-x-25", type: "move_entry", entryId: "e", title: "Sport", date: "2026-10-21", to: "2026-10-22", time: "18:00" },
       { id: "op-x-26", type: "upsert_note", note: createNote({ title: "Idee" }), isNew: false, change: "+ x" },
       { id: "op-x-27", type: "remove_note", noteId: "n", title: "Alt" },
-      { id: "op-x-28", type: "set_schnellnotiz", text: "", change: "leer" },
       { id: "op-x-29", type: "add_pin", text: "Hallo" },
     ];
     const req = anfrage("Lieber Freitag", { pending });
@@ -243,7 +240,7 @@ describe("Offener Vorschlag", () => {
     const r = await runAssistant(req, create, { small: "claude-haiku-5-5", large: "claude-sonnet-5-5" });
     expect(calls[0].model).toBe("claude-sonnet-5-5"); // offener Vorschlag → groß
     const summary = calls[0].system[1].text;
-    for (const s of ["Montag: Pizza (doppelt)", "Montag: nicht doppelt", "Dienstag: leeren", "Montag → Freitag", 'Vorgaben: {"meatDays":1}', "Neues Rezept: Brot", "Einkaufsliste: Milch", "Vorrat: Chili", "Wunsch: Mathis – Pfannkuchen", "Von der Einkaufsliste: Brot", "Einkaufsliste leeren", "Wochenplan ab 2026-10-26 leeren", "Startseite: wetter klein", "Letzte Änderung zurücknehmen", "Freitag: für alle Personen", "Pause 2026-11-01 bis offen", "Pause beenden", "In der App: Mach dunkel", "Baustein vorrat an", "Neu (termin): Arzt", "Löschen: Kino (nur 2026-10-24)", "Erledigt: Müll", "Verschieben: Sport → 2026-10-22 18:00", "Notiz ändern: Idee (+ x)", "Notiz löschen: Alt", "Schnellnotiz: leer", "Pinnwand: Hallo"]) {
+    for (const s of ["Montag: Pizza (doppelt)", "Montag: nicht doppelt", "Dienstag: leeren", "Montag → Freitag", 'Vorgaben: {"meatDays":1}', "Neues Rezept: Brot", "Einkaufsliste: Milch", "Vorrat: Chili", "Wunsch: Mathis – Pfannkuchen", "Von der Einkaufsliste: Brot", "Einkaufsliste leeren", "Wochenplan ab 2026-10-26 leeren", "Startseite: wetter klein", "Letzte Änderung zurücknehmen", "Freitag: für alle Personen", "Pause 2026-11-01 bis offen", "Pause beenden", "In der App: Mach dunkel", "Baustein vorrat an", "Neu (termin): Arzt", "Löschen: Kino (nur 2026-10-24)", "Erledigt: Müll", "Verschieben: Sport → 2026-10-22 18:00", "Notiz ändern: Idee (+ x)", "Notiz löschen: Alt", "Pinnwand: Hallo"]) {
       expect(summary).toContain(s);
     }
     // Neue Kennungen zählen hinter den bisherigen weiter

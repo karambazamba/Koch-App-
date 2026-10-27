@@ -46,8 +46,6 @@ export type AssistantData = {
   features?: string[];
   /** Notizen (Text oder Liste) */
   notes?: Note[];
-  /** Schnellnotiz (früher Kladde; Schmierzettel, ein freier Text) */
-  schnellnotiz?: string;
   /** Pinnwand: sichtbare Nachrichten (nur zum Lesen; neue über `add_pin`) */
   pinnwand?: { author: string; text: string; at: string }[];
   /** Wetter-Ort (für wetter_abfragen) */
@@ -132,8 +130,6 @@ export type ChangeOp =
   // Notizen (`notes`): anlegen/ändern (auch Listen-Einträge, anheften), löschen
   | { id: string; type: "upsert_note"; note: Note; isNew: boolean; change?: string }
   | { id: string; type: "remove_note"; noteId: string; title: string }
-  // Schnellnotiz neu setzen (anhängen bzw. übernommene Zeilen herausnehmen)
-  | { id: string; type: "set_schnellnotiz"; text: string; change: string }
   // Pinnwand: neue Nachricht (landet beim Übernehmen im eigenen Speicher)
   | { id: string; type: "add_pin"; text: string }
   // Sofort (kleine Dinge, mit Meldung): Timer, Stoppuhr, Kochschritt, Kochen starten
@@ -325,9 +321,6 @@ export function applyOps(
         break;
       case "remove_note":
         next = { ...next, notes: removeNote(next.notes ?? [], op.noteId) };
-        break;
-      case "set_schnellnotiz":
-        next = { ...next, schnellnotiz: op.text };
         break;
       case "set_household":
         next = { ...next, profile: applyHouseholdIntro(next.profile, op.intro) };

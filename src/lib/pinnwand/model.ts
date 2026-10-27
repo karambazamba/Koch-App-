@@ -31,7 +31,18 @@ type PinData = {
 };
 export type PinMessage = Entry<PinData> & { typ: "pinnwand" };
 
-const clean = (text: string) => text.replace(/\s+/g, " ").trim().slice(0, PIN_MAX);
+/** Absätze bleiben (höchstens eine Leerzeile), sonst Leerzeichen zusammengefasst @public */
+export const cleanPinText = (text: string) =>
+  text
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((l) => l.replace(/[^\S\n]+/g, " ").trim())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()
+    .slice(0, PIN_MAX)
+    .trim();
+const clean = cleanPinText;
 
 export function createPin(text: string, author: string, replyTo: PinQuote | null = null): PinMessage | null {
   const t = clean(text);

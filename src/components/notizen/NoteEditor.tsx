@@ -1,23 +1,27 @@
 "use client";
 
-// Notiz bearbeiten (/notizen/bearbeiten?id=… bzw. ?neu=text|liste): Titel,
-// Text oder Liste (Einträge abhakbar), Raum, oben anheften, löschen. Wirkt
-// sofort – jede Änderung wird gespeichert.
+// Notiz bearbeiten im Vollbild (/notizen/bearbeiten?id=… bzw. ?neu=text|liste):
+// oben „‹ Notizen“ und „Fertig“, darunter großer Titel und Text mit Absätzen.
+// Listen: Return = neuer Eintrag, leerer Eintrag + Return = Liste zu Ende
+// (weiter im Text darunter). Werkzeugleiste über der Tastatur: Liste ·
+// Anheften · Familie/Arbeit · Teilen · Löschen. Sichert von selbst; „Fertig“
+// schließt nur, eine leere Notiz fällt beim Schließen weg.
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Check, Pin, Trash2, X } from "lucide-react";
+import { Check, ListChecks, Pin, Plus, Share2, Trash2 } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
+import { MehrzeilenFeld } from "@/components/ui/MehrzeilenFeld";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { CARD, INPUT_BASE, PAGE_MAIN, buttonClass, chipClass } from "@/components/ui/styles";
-import { createNote, loadNotes, noteEmoji, removeNote, replaceNotes, upsertNote, useNotes, type Note, type NoteItem } from "@/lib/notizen";
+import { CARD, PAGE_MAIN, chipClass } from "@/components/ui/styles";
+import { createNote, itemEnter, newItemId, loadNotes, noteShareText, persistNote, removeNote, replaceNotes, toggleList, useNotes, type Note, type NoteItem } from "@/lib/notizen";
+import { createAutosave } from "@/lib/notizen/autosave";
 import { nowIso } from "@/lib/core/now";
-import { showDeleted } from "@/lib/core/toast";
+import { showDeleted, showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
 import { useGoBack } from "@/lib/core/useGoBack";
+import { useKeyboardInset } from "@/lib/core/useMobileKeyboard";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
-import { helperName } from "@/lib/einstellungen/profile";
-import { useProfile } from "@/lib/einstellungen/useProfile";
-import { SchnellnotizActions } from "@/components/notizen/Schnellnotiz";
 
 export function NoteEditor() {
   const params = useSearchParams();
@@ -36,141 +40,174 @@ export function NoteEditor() {
       </>
     );
   }
-  return <Editor key={existing?.id ?? `neu-${kind}`} initial={existing ?? createNote({ title: "", ...(kind === "liste" ? { items: [] } : { text: "" }) })} isNew={!existing} />;
+  return <Editor key={existing?.id ?? `neu-${kind}`} initial={existing ?? (kind === "liste" ? toggleList(createNote({ title: "", text: "" })) : createNote({ title: "", text: "" }))} isNew={!existing} />;
 }
 
-const itemId = () => Math.random().toString(36).slice(2, 10);
+const TOOL = "hit flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-field py-1 text-[11px] font-semibold text-muted active:bg-fill";
 
 function Editor({ initial, isNew }: { initial: Note; isNew: boolean }) {
   const [note, setNote] = useState(initial);
-  const [fresh, setFresh] = useState("");
+  const [focusItem, setFocusItem] = useState<string | null>(null);
   const work = useWorkRoom() || note.raum === "arbeit";
   const goBack = useGoBack();
-  const isList = note.data.kind === "liste";
-  const profile = useProfile();
-  const fallbackTitle = isList ? "Neue Liste" : "Notiz";
+  const inset = useKeyboardInset();
+  const textRef = useRef<HTMLTextAreaElement>(null);
+  const deleted = useRef(false);
+  const autosave = useMemo(() => createAutosave<Note>((n) => replaceNotes(persistNote(loadNotes(), n))), []);
+  // Beim Verlassen (Fertig, Zurück, Geste) sofort sichern bzw. Leeres verwerfen
+  useEffect(() => () => void (deleted.current || autosave.flush()), [autosave]);
+  useEffect(() => {
+    if (!focusItem) return;
+    document.querySelector<HTMLInputElement>(`[data-eintrag="${focusItem}"]`)?.focus();
+  }, [focusItem]);
 
-  /** Lokal ändern und speichern (sobald es Inhalt gibt) */
-  const update = (patch: Partial<Note["data"]>, raum = note.raum) => {
-    const data = { ...note.data, ...patch };
-    if (isNew && patch.title !== undefined && !initial.data.title) data.emoji = noteEmoji(patch.title, data.kind);
-    const next: Note = { ...note, raum, data, geaendert: nowIso() };
-    setNote(next);
-    const hasContent = data.title.trim() || data.text?.trim() || data.items?.length;
-    if (hasContent) replaceNotes(upsertNote(loadNotes(), { ...next, data: { ...data, title: data.title.trim() || fallbackTitle } }));
+  const change = (next: Note) => {
+    const stamped = { ...next, geaendert: nowIso() };
+    setNote(stamped);
+    autosave.push(stamped);
   };
-  const setItems = (items: NoteItem[]) => update({ items });
-  const addItem = () => {
-    const text = fresh.trim();
-    if (!text) return;
-    setItems([...(note.data.items ?? []), { id: itemId(), text }]);
-    setFresh("");
+  const update = (patch: Partial<Note["data"]>) => change({ ...note, data: { ...note.data, ...patch } });
+  const items = note.data.items ?? [];
+  const setItems = (list: NoteItem[]) => update({ items: list });
+  const isList = note.data.kind === "liste";
+
+  const close = () => {
+    autosave.flush();
+    goBack("/notizen");
   };
   const remove = () => {
+    deleted.current = true;
     const before = loadNotes();
     replaceNotes(removeNote(before, note.id));
-    showDeleted(pushUndo(`das Löschen von ${note.data.title || fallbackTitle}`, () => replaceNotes(before)));
+    if (!isNew || before.some((n) => n.id === note.id)) showDeleted(pushUndo(`das Löschen von ${note.data.title || "der Notiz"}`, () => replaceNotes(before)));
     goBack("/notizen");
+  };
+  const share = async () => {
+    const text = noteShareText(note);
+    if (!text) return;
+    try {
+      if (navigator.share) return void (await navigator.share({ title: note.data.title || "Notiz", text }));
+      await navigator.clipboard.writeText(text);
+      showToast({ text: "Kopiert", seconds: 2, small: true });
+    } catch (error) {
+      // Abbrechen im Teilen-Menü ist kein Fehler
+      if ((error as Error)?.name !== "AbortError") showToast({ text: "Teilen hat grad nicht geklappt.", seconds: 3, small: true });
+    }
   };
 
   return (
-    <>
-      <PageHeader title={isList ? "Liste" : "Notiz"} backHref="/notizen" />
-      <main className={PAGE_MAIN}>
-        <div className="flex items-center gap-2">
-          <span className="text-2xl" aria-hidden>
-            {note.data.emoji}
-          </span>
-          <input
-            value={note.data.title}
-            onChange={(e) => update({ title: e.target.value.slice(0, 80) })}
-            placeholder={isList ? "Titel, z. B. Packliste" : "Titel, z. B. WLAN-Passwort"}
-            aria-label="Titel"
-            autoFocus={isNew}
-            className="min-w-0 flex-1 bg-transparent text-[22px] font-extrabold tracking-tight placeholder:text-muted/60 focus:outline-none"
-          />
-        </div>
+    <div className="flex min-h-dvh flex-col" data-notiz-vollbild>
+      <header data-sticky-header className="sticky top-0 z-10 flex h-12 items-center justify-between gap-3 bg-background/90 px-4 pt-[env(safe-area-inset-top)] backdrop-blur [box-sizing:content-box]">
+        <BackButton fallback="/notizen" />
+        <button type="button" onClick={close} className="hit -mr-2 px-2 text-[17px] font-bold text-accent-strong active:opacity-60">
+          Fertig
+        </button>
+      </header>
+      <main className="flex flex-1 flex-col gap-3 px-4 pb-28 pt-2">
+        <input
+          value={note.data.title}
+          onChange={(e) => update({ title: e.target.value.slice(0, 80) })}
+          onKeyDown={(e) => {
+            if (e.key !== "Enter") return;
+            e.preventDefault();
+            if (isList && items[0]) setFocusItem(items[0].id);
+            else textRef.current?.focus();
+          }}
+          placeholder="Titel"
+          aria-label="Titel"
+          autoFocus={isNew}
+          enterKeyHint="next"
+          className="w-full bg-transparent text-[30px] font-extrabold leading-tight tracking-tight placeholder:text-faint focus:outline-none"
+        />
 
-        {isList ? (
-          <section className={`${CARD} flex flex-col divide-y divide-line overflow-hidden`} aria-label="Einträge">
-            {(note.data.items ?? []).map((item) => (
-              <div key={item.id} className="flex items-center gap-1 pr-1">
+        {isList && (
+          <ul className="flex flex-col" aria-label="Liste">
+            {items.map((item) => (
+              <li key={item.id} className="flex items-center gap-1">
                 <button
                   type="button"
                   role="checkbox"
                   aria-checked={Boolean(item.done)}
-                  aria-label={`${item.text} abhaken`}
-                  onClick={() => setItems((note.data.items ?? []).map((i) => (i.id === item.id ? { ...i, done: !i.done } : i)))}
-                  className="flex h-12 w-12 shrink-0 items-center justify-center"
+                  aria-label={`${item.text || "Eintrag"} abhaken`}
+                  onClick={() => setItems(items.map((i) => (i.id === item.id ? { ...i, done: !i.done } : i)))}
+                  className="-ml-2.5 flex h-11 w-11 shrink-0 items-center justify-center"
                 >
-                  <span className={`flex h-6 w-6 items-center justify-center rounded-md border-2 transition ${item.done ? "border-accent bg-accent text-on-accent" : "border-line-strong"}`}>
+                  <span className={`flex h-[22px] w-[22px] items-center justify-center rounded-full border-2 transition ${item.done ? "border-accent bg-accent text-on-accent" : "border-line-strong"}`}>
                     {item.done && <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />}
                   </span>
                 </button>
                 <input
                   value={item.text}
-                  onChange={(e) => setItems((note.data.items ?? []).map((i) => (i.id === item.id ? { ...i, text: e.target.value } : i)))}
+                  onChange={(e) => setItems(items.map((i) => (i.id === item.id ? { ...i, text: e.target.value.slice(0, 200) } : i)))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const next = itemEnter(items, item.id);
+                      setItems(next.items);
+                      setFocusItem(next.focus);
+                      if (!next.focus) textRef.current?.focus();
+                    } else if (e.key === "Backspace" && !item.text && items.length > 1) {
+                      e.preventDefault();
+                      const at = items.findIndex((i) => i.id === item.id);
+                      setItems(items.filter((i) => i.id !== item.id));
+                      setFocusItem(items[Math.max(0, at - 1)]?.id ?? null);
+                    }
+                  }}
                   aria-label="Eintrag"
-                  className={`min-w-0 flex-1 bg-transparent py-3 text-base focus:outline-none ${item.done ? "text-muted line-through" : ""}`}
+                  enterKeyHint="enter"
+                  data-eintrag={item.id}
+                  className={`min-w-0 flex-1 bg-transparent py-2.5 text-[17px] focus:outline-none ${item.done ? "text-muted line-through" : ""}`}
                 />
-                <button type="button" onClick={() => setItems((note.data.items ?? []).filter((i) => i.id !== item.id))} aria-label={`${item.text} entfernen`} className="flex h-11 w-11 shrink-0 items-center justify-center text-muted">
-                  <X className="h-5 w-5" strokeWidth={2} aria-hidden />
-                </button>
-              </div>
+              </li>
             ))}
-            <form
-              className="flex items-center gap-2 pl-4 pr-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                addItem();
-              }}
-            >
-              <input value={fresh} onChange={(e) => setFresh(e.target.value)} onBlur={addItem} placeholder="Neuer Eintrag …" aria-label="Neuer Eintrag" enterKeyHint="done" className="min-w-0 flex-1 bg-transparent py-3.5 text-base focus:outline-none" />
-            </form>
-          </section>
-        ) : (
-          <textarea
-            value={note.data.text ?? ""}
-            onChange={(e) => update({ text: e.target.value })}
-            placeholder="Was soll ich mir merken?"
-            aria-label="Text"
-            rows={8}
-            className={`${INPUT_BASE} w-full resize-none p-4 leading-relaxed`}
-          />
-        )}
-
-        {note.data.schnell && (
-          <div className="flex flex-wrap gap-2">
-            <SchnellnotizActions name={helperName(profile)} text={note.data.text ?? ""} />
-          </div>
-        )}
-
-        <div className="flex flex-wrap gap-2">
-          {work &&
-            (["familie", "arbeit"] as const).map((r) => (
-              <button key={r} type="button" role="radio" aria-checked={note.raum === r} onClick={() => update({}, r)} className={chipClass(note.raum === r)}>
-                <span className={`h-2.5 w-2.5 rounded-full ${r === "arbeit" ? "bg-work" : "bg-accent"}`} aria-hidden />
-                {r === "familie" ? "Familie" : "Arbeit"}
+            <li>
+              <button type="button" onClick={() => {
+                const next = { id: newItemId(), text: "" };
+                setItems([...items, next]);
+                setFocusItem(next.id);
+              }} className="hit -ml-1 flex min-h-11 items-center gap-2 text-[15px] font-semibold text-muted">
+                <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                Eintrag
               </button>
-            ))}
-          <button type="button" aria-pressed={note.data.pinned} onClick={() => update({ pinned: !note.data.pinned })} className={chipClass(note.data.pinned)}>
-            <Pin className={`h-4 w-4 ${note.data.pinned ? "fill-current" : ""}`} strokeWidth={2} aria-hidden />
-            {note.data.pinned ? "Oben angeheftet" : "Oben anheften"}
+            </li>
+          </ul>
+        )}
+
+        {isList && (
+          <button type="button" aria-pressed={Boolean(note.data.freizeit)} onClick={() => update({ freizeit: !note.data.freizeit })} className={`${chipClass(Boolean(note.data.freizeit))} self-start`}>
+            {note.data.freizeit ? "Freizeit-Liste" : "Als Freizeit markieren"}
           </button>
-          {note.data.kind === "liste" && (
-            <button type="button" aria-pressed={Boolean(note.data.freizeit)} onClick={() => update({ freizeit: !note.data.freizeit })} className={chipClass(Boolean(note.data.freizeit))}>
-              {note.data.freizeit ? "Freizeit-Liste" : "Als Freizeit markieren"}
+        )}
+
+        <MehrzeilenFeld ref={textRef} voll value={note.data.text ?? ""} onChange={(text) => update({ text: text.slice(0, 4000) })} label="Text" placeholder={isList ? "" : "Text mit Absätzen …"} className="min-h-40" />
+      </main>
+
+      <nav aria-label="Werkzeuge" className="fixed inset-x-0 z-20 border-t border-line bg-surface/95 px-2 pb-[max(env(safe-area-inset-bottom),6px)] pt-1.5 backdrop-blur" style={{ bottom: inset }} data-werkzeugleiste>
+        <div className="mx-auto flex max-w-xl items-stretch gap-1">
+          <button type="button" aria-pressed={isList} onPointerDown={(e) => e.preventDefault()} onClick={() => change(toggleList(note))} className={`${TOOL} ${isList ? "text-accent-strong" : ""}`}>
+            <ListChecks className="h-5 w-5" strokeWidth={2} aria-hidden />
+            Liste
+          </button>
+          <button type="button" aria-pressed={note.data.pinned} onPointerDown={(e) => e.preventDefault()} onClick={() => update({ pinned: !note.data.pinned })} className={`${TOOL} ${note.data.pinned ? "text-accent-strong" : ""}`}>
+            <Pin className={`h-5 w-5 ${note.data.pinned ? "fill-current" : ""}`} strokeWidth={2} aria-hidden />
+            {note.data.pinned ? "Angeheftet" : "Anheften"}
+          </button>
+          {work && (
+            <button type="button" onPointerDown={(e) => e.preventDefault()} onClick={() => change({ ...note, raum: note.raum === "arbeit" ? "familie" : "arbeit" })} aria-label={`Raum: ${note.raum === "arbeit" ? "Arbeit" : "Familie"} – wechseln`} className={TOOL}>
+              <span className={`mt-1 h-3 w-3 rounded-full ${note.raum === "arbeit" ? "bg-work" : "bg-accent"}`} aria-hidden />
+              {note.raum === "arbeit" ? "Arbeit" : "Familie"}
             </button>
           )}
-        </div>
-
-        {!isNew || note.data.title || note.data.text || note.data.items?.length ? (
-          <button type="button" onClick={remove} className={`${buttonClass("ghost", "sm")} self-start text-danger`}>
-            <Trash2 className="h-4 w-4" strokeWidth={2} aria-hidden />
+          <button type="button" onClick={share} className={TOOL}>
+            <Share2 className="h-5 w-5" strokeWidth={2} aria-hidden />
+            Teilen
+          </button>
+          <button type="button" onClick={remove} className={TOOL}>
+            <Trash2 className="h-5 w-5" strokeWidth={2} aria-hidden />
             Löschen
           </button>
-        ) : null}
-      </main>
-    </>
+        </div>
+      </nav>
+    </div>
   );
 }

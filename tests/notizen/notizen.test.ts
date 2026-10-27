@@ -3,7 +3,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { noteAnswer, noteFor, parseNoteCommand } from "@/lib/notizen/chat";
 import { addListItems, createNote, findNote, leisureIdea, noteEmoji, notePreview, removeNote, sanitizeNote, setPinned, sortNotes, upsertNote, type Note } from "@/lib/notizen/model";
-import { appendLine, isSchnellnotizTidyRequest, schnellnotizCommand, tidySchnellnotiz, withoutLines } from "@/lib/notizen/schnellnotiz";
+import { kladdeNotes, schnellnotizCommand } from "@/lib/notizen/schnellnotiz";
 import { at, fakeWindow } from "../helpers";
 
 beforeEach(() => at("2026-10-20T08:00"));
@@ -146,51 +146,30 @@ describe("Gespräch ohne KI", () => {
 });
 
 describe("Schnellnotiz", () => {
-  it("Sätze erkennen", () => {
+  it("Sätze erkennen (auch mehrzeilig)", () => {
     expect(schnellnotizCommand("Schreib in die Kladde: Handwerker anrufen")).toBe("Handwerker anrufen");
     expect(schnellnotizCommand("Notier mir mal schnell: Müller 0172")).toBe("Müller 0172");
-    expect(schnellnotizCommand("Schnellnotiz: Idee")).toBe("Idee");
+    expect(schnellnotizCommand("Schnellnotiz: Idee\nzweite Zeile")).toBe("Idee\nzweite Zeile");
     expect(schnellnotizCommand("Hallo")).toBeNull();
-    expect(isSchnellnotizTidyRequest("Räum meine Schnellnotiz auf")).toBe(true);
-    expect(isSchnellnotizTidyRequest("Kladde sortieren")).toBe(true);
-    expect(isSchnellnotizTidyRequest("Räum auf")).toBe(false);
-    expect(appendLine("", " Milch ")).toBe("Milch");
-    expect(appendLine("Brot  \n", "Milch")).toBe("Brot\nMilch");
   });
 
-  it("aufräumen ohne KI: Termin, Aufgabe, Notiz – der Rest bleibt", () => {
-    const text = "Morgen um 9 Zahnarzt\n- geschenkpapier kaufen\nMerk dir das WLAN: abc\n\nHandwerker Müller 0172 1234567\nIrgendwas";
-    const lines = tidySchnellnotiz(text, "2026-10-20");
-    expect(lines.map((l) => l.kind)).toEqual(["termin", "aufgabe", "notiz", null, null]);
-    expect(lines[1].draft?.data.title).toBe("Geschenkpapier kaufen");
-    expect(withoutLines(text, [lines[0].line, lines[1].line, lines[2].line])).toBe("Handwerker Müller 0172 1234567\nIrgendwas");
+  it("alter gelber Zettel → eine Notiz je Zeile (rein)", () => {
+    expect(kladdeNotes("Milch\n\n  Brot ").map((n) => n.data.title)).toEqual(["Milch", "Brot"]);
   });
 
   describe("Speicher", () => {
     beforeEach(() => vi.resetModules());
 
-    it("ohne Notiz: leer bzw. alter Zettel; schreiben legt die angeheftete Notiz an", async () => {
+    it("alter Zettel wird einmal übernommen, leerer Zettel ändert nichts", async () => {
       const w = fakeWindow();
-      const { loadSchnellnotiz, saveSchnellnotiz } = await import("@/lib/notizen/schnellnotiz");
+      const { adoptSchnellnotiz } = await import("@/lib/notizen/schnellnotiz");
       const { loadNotes } = await import("@/lib/notizen/store");
-      expect(loadSchnellnotiz()).toEqual({ text: "", geaendert: null });
-      w.localStorage.setItem("wasgibts.kladde", JSON.stringify({ text: 5 }));
-      expect(loadSchnellnotiz()).toEqual({ version: 1, text: "", geaendert: null });
-      saveSchnellnotiz("Milch");
-      saveSchnellnotiz("Milch\nBrot");
-      const notes = loadNotes();
-      expect(notes).toHaveLength(1);
-      expect(notes[0].data).toMatchObject({ title: "Schnellnotiz", pinned: true, schnell: true, text: "Milch\nBrot" });
-    });
-
-    it("alter Zettel wird an bestehende Schnellnotiz angehängt, leerer Zettel ändert nichts", async () => {
-      const w = fakeWindow();
-      const { adoptSchnellnotiz, saveSchnellnotiz, loadSchnellnotiz } = await import("@/lib/notizen/schnellnotiz");
       adoptSchnellnotiz();
-      saveSchnellnotiz("Schon da  ");
-      w.localStorage.setItem("wasgibts.kladde", JSON.stringify({ version: 1, text: "Alt", geaendert: "2026-01-01" }));
+      expect(loadNotes()).toEqual([]);
+      w.localStorage.setItem("wasgibts.kladde", JSON.stringify({ version: 1, text: "Alt\nNoch was", geaendert: "2026-01-01" }));
       adoptSchnellnotiz();
-      expect(loadSchnellnotiz().text).toBe("Schon da\nAlt");
+      adoptSchnellnotiz();
+      expect(loadNotes().map((n) => n.data.title)).toEqual(["Alt", "Noch was"]);
       expect(JSON.parse(w.localStorage.getItem("wasgibts.kladde")!)).toEqual({ version: 1, text: "", geaendert: "2026-01-01" });
     });
 
@@ -199,11 +178,11 @@ describe("Schnellnotiz", () => {
       const { loadNotes } = await import("@/lib/notizen/store");
       expect(loadNotes().map((n) => n.data.title)).toEqual(["Gut"]);
       vi.resetModules();
-      fakeWindow({ "wasgibts.notizen": JSON.stringify({ version: 2, notes: [] }) });
+      fakeWindow({ "wasgibts.notizen": JSON.stringify({ version: 3, notes: [{ id: "a", typ: "notiz", data: { title: "Gut" } }] }) });
       const again = await import("@/lib/notizen/store");
       expect(again.loadNotes()).toEqual([]);
       vi.resetModules();
-      fakeWindow({ "wasgibts.notizen": JSON.stringify({ version: 1, notes: "kaputt" }) });
+      fakeWindow({ "wasgibts.notizen": JSON.stringify({ version: 2, notes: "kaputt" }) });
       expect((await import("@/lib/notizen/store")).loadNotes()).toEqual([]);
     });
   });

@@ -19,7 +19,6 @@ describe("Notizen gehören zu 1.0", () => {
     for (const [name, input] of [
       ["notiz_anlegen", { titel: "Tierpark" }],
       ["liste_eintrag_hinzufuegen", { liste: "Ideen", eintraege: ["Tierpark"] }],
-      ["schnellnotiz_schreiben", { text: "Tierpark" }],
     ] as const) {
       expect(rufe(ctx, name, input).isError).toBeFalsy();
     }

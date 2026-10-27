@@ -394,7 +394,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
       case "einkauf":
         return <ShoppingTile half={half} size={tile.size} demo={demoDay.tiles.includes("einkauf")} />;
       case "notizen":
-        return <NotesTile name={helperName(data.profile)} size={tile.size} />;
+        return <NotesTile size={tile.size} />;
       case "vorrat":
         return <PantryTile size={tile.size} />;
       case "wetter":

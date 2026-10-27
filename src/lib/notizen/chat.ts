@@ -57,10 +57,16 @@ export function parseNoteCommand(text: string): NoteCommand | null {
   if (m) return { kind: "add", list: `Ideen ${cap(m[1].replace(/^(das|den|die)\s+/i, ""))}`, items: splitItems(m[2]) };
   m = t.match(/^idee\s*:\s*(.+)$/i);
   if (m) return { kind: "add", list: "Ideen", items: splitItems(m[1]) };
-  // "Merk dir …" / "Notier …" / "Schreib dir auf …"
-  m = t.match(/^(?:bitte\s+)?(?:merk\w*\s+(?:dir|euch)|notier\w*(?:\s+dir)?|schreib\w*\s+(?:dir|mir)\s+auf|halt\w*\s+fest)\s*[:,]?\s*(?:dass\s+)?(.+)$/i);
+  // "Setz Laufrad auf die Geschenkideen" / "Pack Sonnencreme auf die Packliste" (nicht die Einkaufsliste)
+  m = t.match(/^(?:bitte\s+)?(?:setz|pack|schreib|tu|trag)\w*\s+(.+?)\s+(?:mit\s+)?(?:auf|in|zu)\s+(?:die|meine|unsere|den)\s+([\wäöüß-]*(?:liste|ideen))[.!]?$/i);
+  if (m && !/einkauf/i.test(m[2])) return { kind: "add", list: cap(m[2]), items: splitItems(m[1]) };
+  // "Merk dir …" / "Notier …" / "Schreib dir auf …" / "Schreib auf: …"
+  m = text.trim().match(/^(?:bitte\s+)?(?:merk\w*\s+(?:dir|euch)|notier\w*(?:\s+dir)?|schreib\w*\s+(?:(?:dir|mir)\s+)?auf(?!\s+(?:die|den|der|meine|unsere)\s)|halt\w*\s+fest)\s*[:,]?\s*(?:dass\s+)?([\s\S]+)$/i);
   if (!m) return null;
-  const content = m[1].trim();
+  // Mehrere Zeilen: erste Zeile = Titel, der Rest = Text
+  const lines = m[1].trim().split(/\n/);
+  if (lines.length > 1 && lines[0].trim()) return { kind: "create", title: cap(clean(lines[0])).slice(0, 80), text: lines.slice(1).join("\n").trim() };
+  const content = m[1].trim().replace(/\s+/g, " ");
   const target = listFor(content);
   if (target) return { kind: "add", list: target.list, items: splitItems(target.item).length > 1 && !target.item.includes("(für") ? splitItems(target.item) : [target.item] };
   // "das WLAN-Passwort: abc123" / "der Code vom Fahrradschloss ist 4711"

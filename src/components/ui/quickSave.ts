@@ -13,7 +13,7 @@ import { quickTaskData } from "@/lib/kalender/quick";
 import { changeEntries } from "@/lib/kalender/store";
 import { parseQuickAdd } from "@/lib/einkauf/quickAdd";
 import { addManualItem, loadShoppingSettings, removeManualItems, sectionFor, setItemShop } from "@/lib/einkauf/shoppingList";
-import { changeNotes, createNote, upsertNote } from "@/lib/notizen";
+import { changeNotes, noteFromText, upsertNote } from "@/lib/notizen";
 import { addPin, changePins, createPin } from "@/lib/pinnwand";
 import { noteUserAction } from "@/lib/core/activity";
 import { buzz } from "@/components/heute/actions";
@@ -79,8 +79,9 @@ export function saveQuick(read: QuickRead, text: string, request: QuickRequest, 
   else if (read.kind === "einkauf") saved = request.shopping ? saveShopping(text, request.shopping.weekStart) : null;
   else if (read.kind === "imhaus") saved = saveImHaus(text);
   else if (read.kind === "notiz") {
-    const note = createNote({ title: read.title.slice(0, 80), ...(read.title.length > 80 ? { text: read.title } : {}) });
-    saved = { undo: changeNotes((all) => upsertNote(all, note)), title: note.data.title };
+    // Eigene Notiz: erste Zeile = Titel, der Rest = Text (mit Absätzen)
+    const note = noteFromText(read.title);
+    if (note) saved = { undo: changeNotes((all) => upsertNote(all, note)), title: note.data.title };
   } else {
     const pin = createPin(read.title, request.me ?? "Ich", request.quote ?? null);
     if (pin) saved = { undo: changePins((all) => addPin(all, pin)), title: pin.data.text };

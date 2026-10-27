@@ -30,9 +30,8 @@ import type { AssistantData, ChangeOp } from "@/lib/begleitung/ops";
 import { DEFAULT_SHOPPING_DAY, planningWeekStart, toIsoDate, weekStartFor } from "@/lib/essen/weekPlan";
 import { parsePauseRequest, pauseLabel } from "@/lib/essen/spontan";
 import { composeWeek } from "@/lib/essen/mealPlan";
-import { replaceEntries, taskOverview, terminToAufgabe, upsertEntry, type CalendarEntry } from "@/lib/kalender";
-import { addListItems, appendLine, changeSchnellnotiz, changeNotes, createNote, isSchnellnotizTidyRequest, schnellnotizCommand, loadSchnellnotiz, loadNotes, noteAnswer, noteFor, parseNoteCommand, replaceNotes, saveSchnellnotiz, setPinned, tidySchnellnotiz, upsertNote, withoutLines } from "@/lib/notizen";
-import { createEntry } from "@/lib/core/entries";
+import { taskOverview, terminToAufgabe } from "@/lib/kalender";
+import { addListItems, changeNotes, createNote, noteFromText, schnellnotizCommand, loadNotes, noteAnswer, noteFor, parseNoteCommand, setPinned, upsertNote } from "@/lib/notizen";
 import { berlinTime, now } from "@/lib/core/now";
 
 import type { ChatState, ChatTurnView } from "@/components/begleitung/chatTypes";
@@ -211,57 +210,18 @@ export function boardRule(ctx: RuleContext, t: string): boolean {
   return false;
 }
 
-/** Schnellnotiz (früher Kladde) ohne KI: "Schreib in die Schnellnotiz/Kladde: …", "Notier mir schnell …", "Räum meine Schnellnotiz auf"; dazu "Das ist kein Termin, sondern eine Aufgabe" */
+/** Schnellnotiz ohne KI: "Schreib in die Schnellnotiz/Kladde: …", "Notier mir schnell …" = eigene Notiz (erste Zeile = Titel); dazu "Das ist kein Termin, sondern eine Aufgabe" */
 export function schnellnotizRule(ctx: RuleContext, t: string): boolean {
   const { today, setChat, setInput } = ctx;
   if (!today) return false;
   const say = (text: string, extra: Partial<ChatTurnView> = {}) => setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text, local: true, ...extra }] }));
   const write = schnellnotizCommand(t);
-  if (write) {
+  const note = write ? noteFromText(write) : null;
+  if (note) {
     setInput("");
-    const undo = changeSchnellnotiz(appendLine(loadSchnellnotiz().text, write));
-    const text = "Steht in der Schnellnotiz ✓ (Notizen, ganz oben)";
+    const undo = changeNotes((all) => upsertNote(all, note));
+    const text = "Steht in den Notizen.";
     say(text, { undo: pushUndo(text, undo) });
-    return true;
-  }
-  if (isSchnellnotizTidyRequest(t)) {
-    setInput("");
-    const iso = toIsoDate(today);
-    const lines = tidySchnellnotiz(loadSchnellnotiz().text, iso).filter((l) => l.kind);
-    if (!lines.length) {
-      say("In der Schnellnotiz ist grad nichts für Termine, Aufgaben oder Notizen. Bleibt, wie es ist.");
-      return true;
-    }
-    const label = (l: (typeof lines)[number]) => (l.kind === "termin" ? "Termin" : l.kind === "aufgabe" ? "Aufgabe" : "Notiz");
-    const apply = () => {
-      const beforeEntries = loadEntries();
-      const beforeNotes = loadNotes();
-      const beforeSchnellnotiz = loadSchnellnotiz().text;
-      const created = lines.flatMap((l) => (l.draft ? [createEntry(l.draft.typ, l.draft.data, { raum: l.draft.raum }) as CalendarEntry] : []));
-      if (created.length) changeEntries((list) => created.reduce((acc, e) => upsertEntry(acc, e), list));
-      for (const l of lines) {
-        if (l.note?.kind === "add") {
-          const list = noteFor(loadNotes(), l.note.list);
-          const items = l.note.items;
-          changeNotes((all) => (list ? addListItems(all, list.id, items) : upsertNote(all, createNote({ title: l.note!.kind === "add" ? l.note!.list : l.line, items }))));
-        } else if (l.note?.kind === "create") {
-          const n = l.note;
-          changeNotes((all) => upsertNote(all, createNote({ title: n.title, text: n.text })));
-        }
-      }
-      saveSchnellnotiz(withoutLines(beforeSchnellnotiz, lines.map((l) => l.line)));
-      const text = `Übernommen ✓ ${lines.length} ${lines.length === 1 ? "Zeile" : "Zeilen"}. Der Rest bleibt in der Schnellnotiz.`;
-      setChat((c) => ({
-        ...c,
-        turns: [...c.turns, { role: "assistant", text, local: true, undo: pushUndo("das Aufräumen der Schnellnotiz", () => (replaceEntries(beforeEntries), replaceNotes(beforeNotes), saveSchnellnotiz(beforeSchnellnotiz))) }],
-      }));
-    };
-    say(`Daraus würde ich machen: ${lines.map((l) => `${label(l)}: ${l.draft?.data.title ?? (l.note?.kind === "create" ? l.note.title : l.line)}`).join(" · ")}. Der Rest bleibt in der Schnellnotiz.`, {
-      choices: [
-        { label: "Übernehmen", onClick: apply },
-        { label: "Nein, lass", onClick: () => setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text: "Okay, die Schnellnotiz bleibt, wie sie ist.", local: true }] })) },
-      ],
-    });
     return true;
   }
   // "Das ist kein Termin, sondern eine Aufgabe" – der zuletzt geänderte Termin

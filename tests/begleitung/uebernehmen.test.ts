@@ -130,13 +130,12 @@ describe("commitOps", () => {
     expect(m.pins.loadPins()).toEqual([]);
   });
 
-  it("Bausteine schalten, Notizen, Einträge, Schnellnotiz", () => {
+  it("Bausteine schalten, Notizen, Einträge", () => {
     const ops: ChangeOp[] = [
       { id: "1", type: "set_feature", feature: "tipps", on: true },
       { id: "2", type: "set_feature", feature: "backen", on: false },
       { id: "3", type: "set_feature", feature: "gibtsnicht", on: true },
       { id: "4", type: "upsert_note", note: { id: "n1", typ: "notiz", raum: "familie", besitzer: "lokal", erstellt: "2026-10-21T07:00:00.000Z", geaendert: "2026-10-21T07:00:00.000Z", data: { title: "Idee", kind: "text", text: "x", pinned: false } } as never, isNew: true },
-      { id: "5", type: "set_schnellnotiz", text: "Oma anrufen", change: "+ Oma anrufen" },
     ];
     const r = m.client.commitOps(daten(), ops, alle(ops), "");
     expect(r.notes).toEqual(["Tipps kommen ab jetzt ab und zu oben auf Heute.", "Notizen findest du in der Woche ganz unten unter „Notizen“."]);

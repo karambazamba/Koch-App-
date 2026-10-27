@@ -22,7 +22,7 @@ type StorageDef = {
 export const STORAGE = [
   { key: "familienkueche.haushaltsprofil", what: "Profil: Familie, Begleitung, Vorlieben, Einstellungen", version: 22, migration: "einstellungen/profileStore.ts migrateProfile", area: "local", backup: true },
   { key: "wasgibts.eintraege", what: "Termine und Aufgaben", version: 2, migration: "kalender/store.ts migrate", area: "local", backup: true },
-  { key: "wasgibts.notizen", what: "Notizen", version: 1, migration: "notizen/store.ts", area: "local", backup: true },
+  { key: "wasgibts.notizen", what: "Notizen", version: 2, migration: "notizen/store.ts", area: "local", backup: true },
   { key: "wasgibts.kladde", what: "Schnellnotiz (Schlüssel heißt noch Kladde)", version: 1, migration: "notizen/schnellnotiz.ts", area: "local", backup: true },
   { key: "wasgibts.pinnwand", what: "Pinnwand: Nachrichten und Sprachnachrichten (Einträge; Memos nicht in der Sicherung), Reaktionen je Person, Antworten mit Zitat", version: 3, migration: "pinnwand/store.ts migratePinStore", area: "local", backup: true },
   { key: "wasgibts-memos", what: "Ton der Sprachnachrichten (IndexedDB; mit Konto zusätzlich im Haushalt, Bucket „memos“)", version: 1, migration: "pinnwand/memoAudio.ts", area: "indexeddb", backup: false },

@@ -169,7 +169,7 @@ export const HOME_TOOLS: BegleitungTool[] = [
       input_schema: {
         type: "object",
         properties: {
-          kachel: { type: "string", enum: HOME_TILES.map((t) => t.id), description: "pinnwand, termine, aufgaben, wetter, essen, einkauf, notizen (Schnellnotiz + Angeheftetes; früher Kladde), vorrat, morgen = Vorschau morgen" },
+          kachel: { type: "string", enum: HOME_TILES.map((t) => t.id), description: "pinnwand, termine, aufgaben, wetter, essen, einkauf, notizen (neueste und angeheftete Notizen), vorrat, morgen = Vorschau morgen" },
           aktion: { type: "string", enum: ACTIONS },
         },
         required: ["kachel", "aktion"],

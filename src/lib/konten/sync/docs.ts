@@ -7,6 +7,7 @@
 
 import type { StorageKey } from "@/lib/core/storage";
 import { cleanPantryItem, migratePantry } from "@/lib/vorrat/haltbar";
+import { migrateNotes } from "@/lib/notizen/model";
 
 /** Ein Eintrag, wie er in der Tabelle liegt (ohne Haushalt) */
 export type CloudDoc = {
@@ -70,7 +71,8 @@ const kalender = entryAdapter("kalender", "wasgibts.eintraege", 2, "entries", ["
   seenReminders: Array.isArray(v?.seenReminders) ? v.seenReminders : [],
 }));
 
-const notizen = entryAdapter("notizen", "wasgibts.notizen", 1, "notes", ["notiz"], () => ({ version: 1 }));
+// v1 → v2: die alte Sammel-Schnellnotiz kommt als einzelne Notizen an
+const notizen = { ...entryAdapter("notizen", "wasgibts.notizen", 2, "notes", ["notiz"], () => ({ version: 2 })), upgrade: (v: Value) => migrateNotes(v) as Value | null };
 
 // Pinnwand: Nachrichten und Sprachnachrichten (Etappe 3c). Ein Memo wird erst
 // geteilt, wenn sein Ton in Supabase Storage liegt (`storagePath`) – bis dahin

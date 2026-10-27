@@ -111,15 +111,9 @@ describe("Pinnwand und Wetter", () => {
 });
 
 describe("Schnellnotiz und Notizen", () => {
-  it("schreibt in die Schnellnotiz und räumt auf", async () => {
-    expect((await one("Schreib in die Schnellnotiz: Kita-Fest vorbereiten")).first).toMatchObject({ name: "schnellnotiz_schreiben", input: { text: "Kita-Fest vorbereiten" } });
-    expect((await one("Räum meine Schnellnotiz auf")).text).toMatch(/finde ich gerade nichts/);
-    const full = context([], { schnellnotiz: "Morgen 15 Uhr Zahnarzt\nWLAN-Passwort: abc123\nSteuer bis Freitag" });
-    const tidy = await one("Räum meine Schnellnotiz auf", full);
-    expect(tidy.names[tidy.names.length - 1]).toBe("schnellnotiz_aufraeumen");
-    expect(tidy.names).toContain("termin_anlegen");
-    const zeilen = tidy.uses[tidy.uses.length - 1].input.zeilen as string[];
-    expect(zeilen).toContain("Morgen 15 Uhr Zahnarzt");
+  it("„Schreib in die Schnellnotiz …“ legt eine eigene Notiz an (erste Zeile = Titel)", async () => {
+    expect((await one("Schreib in die Schnellnotiz: Kita-Fest vorbereiten")).first).toMatchObject({ name: "notiz_anlegen", input: { titel: "Kita-Fest vorbereiten", text: "" } });
+    expect((await one("Schnellnotiz: Kita-Fest\nKuchen backen\nGirlanden")).first).toMatchObject({ name: "notiz_anlegen", input: { titel: "Kita-Fest", text: "Kuchen backen\nGirlanden" } });
   });
 
   it("wandelt Termin ↔ Aufgabe um", async () => {

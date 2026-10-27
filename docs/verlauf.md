@@ -2518,3 +2518,19 @@ Fehler in `docs/aufraeumen-nachher.md`.
   freien Hälfte (nur S-fähige Kacheln). Essen + Einkauf bleiben ein Paar.
 - Startseite v6: eine einzelne S, die bisher breit war, wird einmal M.
 - Notizen-Kachel S/M/L mit Stift (Schnellnotiz), Angeheftete zuerst.
+
+## Notizen neu + Absätze überall (v0.112.0)
+
+- Ein Mehrzeilen-Feld (`ui/MehrzeilenFeld`) für Notizen-Schnellfeld,
+  Schnelleingabe von Notiz und Pinnwand und Notiz bearbeiten: Return = neue
+  Zeile, gespeichert nur per Knopf; Anzeige mit `whitespace-pre-line`.
+- Jede Schnellnotiz wird eine eigene Notiz (erste Zeile = Titel). Notizen v2:
+  die alte Sammel-Schnellnotiz wird in einzelne Notizen geteilt (Ids am
+  Inhalt, auch für Sicherung und Abgleich), nichts geht verloren.
+- Notizen-Seite: Schnellfeld, „Angeheftet“ und „Zuletzt“ als Karten in 2
+  Spalten, Seiten-Plus = leere Notiz. Bearbeiten im Vollbild mit
+  Werkzeugleiste (Liste · Anheften · Familie/Arbeit · Teilen · Löschen),
+  Autosave, Leeres fällt weg.
+- Mia: „Schreib auf …“ und „Schreib in die Schnellnotiz …“ = eigene Notiz,
+  „Setz Laufrad auf die Geschenkideen“ = Listen-Eintrag; Werkzeuge
+  `schnellnotiz_schreiben`/`_aufraeumen` entfallen. Prüfstand 136 Sätze.

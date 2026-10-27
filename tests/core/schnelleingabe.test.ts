@@ -142,11 +142,14 @@ describe("Regel „＋ = tippen, Mia = sprechen“", () => {
     "src/components/kalender/CalendarPage.tsx",
     "src/components/kalender/DayView.tsx",
     "src/components/kalender/TasksView.tsx",
-    "src/components/notizen/NotesView.tsx",
     "src/components/einkauf/QuickAdd.tsx",
     "src/components/pinnwand/PinboardTile.tsx",
     "src/components/pinnwand/PinboardView.tsx",
   ];
+
+  it("Notizen: das Seiten-Plus öffnet eine neue leere Notiz zum Bearbeiten (Tafel 93)", () => {
+    expect(readFileSync("src/components/notizen/NotesView.tsx", "utf8")).toMatch(/PagePlus[^\n]*\/notizen\/bearbeiten\?neu=text/);
+  });
 
   it("jedes „＋“ öffnet die Schnelleingabe – nie Mia", () => {
     for (const f of PLUS) {

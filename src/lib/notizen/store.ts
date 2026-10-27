@@ -1,17 +1,14 @@
-// Speicher für Notizen (`wasgibts.notizen` v1, lokal – später Supabase,
-// gleiche Tabelle "eintraege" mit typ "notiz").
+// Speicher für Notizen (`wasgibts.notizen` v2, lokal bzw. mit Konto im
+// Abgleich, Tabelle "eintraege" mit typ "notiz"). v1 → v2: die alte
+// Sammel-Schnellnotiz wird zu einzelnen Notizen (`splitSchnellnotiz`); das
+// passiert bei jedem Laden, damit auch Daten von älteren Geräten oder aus
+// alten Sicherungen geteilt ankommen.
 
-import { createLocalStore } from "@/lib/core/localStore";
+import { createLocalStore, readRaw } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
-import { sanitizeNote, type Note } from "@/lib/notizen/model";
+import { migrateNotes, type Note } from "@/lib/notizen/model";
 
-type NoteStore = { version: 1; notes: Note[] };
-
-const store = createLocalStore("wasgibts.notizen", (raw: unknown): NoteStore | null => {
-  if (!raw || typeof raw !== "object" || (raw as NoteStore).version !== 1) return null;
-  const notes = Array.isArray((raw as NoteStore).notes) ? (raw as NoteStore).notes : [];
-  return { version: 1, notes: notes.map(sanitizeNote).filter((n): n is Note => n !== null) };
-});
+const store = createLocalStore("wasgibts.notizen", migrateNotes);
 
 const EMPTY: Note[] = [];
 
@@ -20,7 +17,12 @@ export function loadNotes(): Note[] {
 }
 
 export function replaceNotes(notes: Note[]) {
-  store.save({ version: 1, notes });
+  store.save({ version: 2, notes });
+}
+
+/** Beim Start: geteilte Schnellnotiz auch speichern (damit der Abgleich sie sieht) */
+export function persistNotes() {
+  if (readRaw("wasgibts.notizen")?.includes('"schnell":true')) replaceNotes(loadNotes());
 }
 
 /** Änderung anwenden; liefert "Rückgängig" */

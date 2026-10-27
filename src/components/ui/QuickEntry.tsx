@@ -8,12 +8,16 @@
 // („Eingetragen: … · Rückgängig“), das Feld bleibt leer für die nächste.
 // „Mehr Details“ öffnet das volle Formular mit dem Getippten. Kein Mikro:
 // sprechen geht über den Mia-Knopf (die iPhone-Tastatur hat ihr eigenes).
+// Notiz und Pinnwand: mehrzeilig (`MehrzeilenFeld`, bis 6 Zeilen), Return =
+// neue Zeile, gespeichert wird nur mit ➤; bei der Notiz ist die erste Zeile
+// der Titel.
 
 import { useRef, useState } from "react";
 import { BellOff, Bell, ArrowUp, CalendarDays, X } from "lucide-react";
 import { quickReminderLabel } from "@/lib/heute/mitteilungen/erinnerungen";
 import { useNotify } from "@/lib/heute/mitteilungen/einstellungen";
 import { Sheet } from "@/components/ui/Sheet";
+import { MehrzeilenFeld } from "@/components/ui/MehrzeilenFeld";
 import { ICON_BUTTON, INPUT_BASE, chipClass } from "@/components/ui/styles";
 import { todayIso } from "@/lib/core/now";
 import { useKeyboardInset } from "@/lib/core/useMobileKeyboard";
@@ -32,6 +36,8 @@ export function QuickEntry({ request, onClose }: { request: QuickRequest; onClos
   const [editing, setEditing] = useState<"tag" | null>(null);
   const [remind, setRemind] = useState(true);
   const field = useRef<HTMLInputElement>(null);
+  const area = useRef<HTMLTextAreaElement>(null);
+  const multi = request.kind === "notiz" || request.kind === "pinnwand";
   const inset = useKeyboardInset();
   const work = useWorkRoom();
   const notify = useNotify();
@@ -47,7 +53,7 @@ export function QuickEntry({ request, onClose }: { request: QuickRequest; onClos
     setPick({});
     setRemind(true);
     setEditing(null);
-    field.current?.focus();
+    (multi ? area : field).current?.focus();
   };
 
   return (
@@ -73,7 +79,10 @@ export function QuickEntry({ request, onClose }: { request: QuickRequest; onClos
           send();
         }}
       >
-        <div className="flex items-center gap-2">
+        <div className={`flex gap-2 ${multi ? "items-end" : "items-center"}`}>
+          {multi ? (
+            <MehrzeilenFeld ref={area} value={text} onChange={setText} label={QUICK_LABEL[request.kind]} placeholder={QUICK_PLACEHOLDER[request.kind]} autoFocus />
+          ) : (
           <input
             ref={field}
             value={text}
@@ -94,6 +103,7 @@ export function QuickEntry({ request, onClose }: { request: QuickRequest; onClos
             autoComplete="off"
             className={`${INPUT_BASE} h-12 min-w-0 flex-1 px-4`}
           />
+          )}
           <button
             type="submit"
             aria-label="Speichern"

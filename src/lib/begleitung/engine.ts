@@ -48,7 +48,7 @@ type EngineEvents = { onText?: (delta: string) => void; onRound?: () => void };
 
 export class AssistantInputError extends Error {}
 
-const OP_TYPES = new Set(["add_timer", "stop_timer", "stopwatch", "cook_step", "start_cooking", "set_jetzt", "set_household", "set_dislike", "add_training", "set_sport_goal", "add_pin", "set_schnellnotiz", "upsert_note", "remove_note", "set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last", "set_persons", "set_pause", "app_command", "set_feature"]);
+const OP_TYPES = new Set(["add_timer", "stop_timer", "stopwatch", "cook_step", "start_cooking", "set_jetzt", "set_household", "set_dislike", "add_training", "set_sport_goal", "add_pin", "upsert_note", "remove_note", "set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last", "set_persons", "set_pause", "app_command", "set_feature"]);
 
 /** Anfrage prüfen und auf das Nötige kürzen */
 export function parseRequest(body: unknown): AssistantRequest {
@@ -79,7 +79,6 @@ export function parseRequest(body: unknown): AssistantRequest {
     features: (Array.isArray(b.data?.features) ? b.data.features : []).filter((f): f is string => typeof f === "string").slice(0, 30),
     entries: (Array.isArray(b.data?.entries) ? b.data.entries : []).map(sanitizeEntry).filter((e): e is CalendarEntry => e !== null).slice(0, 400),
     mail: sanitizeMailStyle(b.data?.mail),
-    schnellnotiz: typeof b.data?.schnellnotiz === "string" ? b.data.schnellnotiz.slice(0, 4000) : "",
     pinnwand: (Array.isArray(b.data?.pinnwand) ? b.data.pinnwand : [])
       .filter((p): p is { author: string; text: string; at: string } => Boolean(p) && typeof p === "object" && typeof p.text === "string" && typeof p.author === "string")
       .slice(0, 10)
@@ -175,8 +174,6 @@ function pendingSummary(ops: ChangeOp[]): string {
         return `Notiz ${op.isNew ? "neu" : "ändern"}: ${op.note.data.title}${op.change ? ` (${op.change})` : ""}`;
       case "remove_note":
         return `Notiz löschen: ${op.title}`;
-      case "set_schnellnotiz":
-        return `Schnellnotiz: ${op.change}`;
       case "add_pin":
         return `Pinnwand: ${op.text}`;
     }
@@ -241,7 +238,7 @@ export const isWeekCheck = (req: Pick<AssistantRequest, "messages">) => (req.mes
 const LARGE_TOPICS = /\b(wochenplan\w*|wochencheck|planen?|plan\b|rezept\w*|mail\w*|e-mail|antworte|schreib (eine|dem|der|den|an)|vorschl\w*|ideen für|kochen wir|was koche|essensplan|trainings?\s*plan|trainings planen|räum\w* .*auf|aufräumen)\b/i;
 
 /** Ruft das kleine Modell eines dieser Werkzeuge auf, übernimmt das große */
-const LARGE_TOOLS = new Set(["rezept_erstellen", "mail_entwurf", "wochenplan_aendern", "vorgaben_aendern", "trainings_planen", "schnellnotiz_aufraeumen", "kochbuch_durchsuchen", "antwort_knoepfe"]);
+const LARGE_TOOLS = new Set(["rezept_erstellen", "mail_entwurf", "wochenplan_aendern", "vorgaben_aendern", "trainings_planen", "kochbuch_durchsuchen", "antwort_knoepfe"]);
 
 /** Klingt nach Wetter? ("Wie wird das Wetter morgen?", "Brauch ich einen Schirm?") */
 const WEATHER_QUESTION = /\b(wetter|schirm|regn\w*|regen|sonnig|sonne|warm|kalt|grad|temperatur|frost|glatt|schnee|wind\w*|sturm|stürm\w*|böen|gewitter)\b/i;
