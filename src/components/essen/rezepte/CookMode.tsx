@@ -4,10 +4,10 @@ import { useWakeLock } from "@/lib/core/wakeLock";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, RotateCcw, Timer, Volume2, VolumeX, X } from "lucide-react";
+import { ChefHat, ChevronLeft, ChevronRight, RotateCcw, Timer, Volume2, VolumeX, X } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD, FAB_CLEARANCE, PAGE_MAIN, SECTION_TITLE, buttonClass, chipClass } from "@/components/ui/styles";
-import { formatAmount, type Recipe } from "@/lib/essen/cookbook";
+import { formatAmount, personsParam, scaledAmount, type Recipe } from "@/lib/essen/cookbook";
 import { useRecipeLookup } from "@/lib/essen/baking";
 import { kidStepLabel, ovenText, stepMinutes } from "@/lib/essen/baking/steps";
 import { personLabel, type HouseholdProfile } from "@/lib/einstellungen/profile";
@@ -20,13 +20,15 @@ export function CookMode() {
   const params = useSearchParams();
   const { bfcacheId } = useRouter();
   const id = params.get("id") ?? "";
+  // "?personen=2": die im Rezept gewählte Personenzahl
+  const persons = personsParam(params.get("personen"));
   // Jeder neue Aufruf beginnt wieder bei den Zutaten
-  return <CookSteps key={`${bfcacheId}|${id}`} id={id} />;
+  return <CookSteps key={`${bfcacheId}|${id}|${persons}`} id={id} persons={persons} />;
 }
 
 type RunningTimer = { label: string; endsAt: number; minutes: number };
 
-function CookSteps({ id }: { id: string }) {
+function CookSteps({ id, persons }: { id: string; persons: number | null }) {
   const lookup = useRecipeLookup();
   const profile = useProfile();
   const [step, setStep] = useState(0);
@@ -60,16 +62,19 @@ function CookSteps({ id }: { id: string }) {
   }
 
   const baking = recipe.kind === "backen";
+  // Backen bleibt beim Rezept (Stück), Kochen nimmt die gewählten Personen
+  const servings = baking ? recipe.servings : (persons ?? recipe.servings);
+  const amountOf = (amount: number | null) => (baking ? amount : scaledAmount(amount, recipe.servings, servings));
   const useMachine = machine.on && recipe.machineSteps.length > 0;
   const steps = useMachine ? recipe.machineSteps.map((m) => m.text) : recipe.steps;
   // 0 = Zutaten, 1…n = Schritte, n+1 = fertig
   const total = steps.length;
   const done = step > total;
-  const back = `/kochbuch/rezept?id=${encodeURIComponent(recipe.id)}`;
+  const back = `/kochbuch/rezept?id=${encodeURIComponent(recipe.id)}${!baking && servings !== recipe.servings ? `&personen=${servings}` : ""}`;
   const current = step >= 1 && step <= total ? steps[step - 1] : "";
   const minutes = current ? stepMinutes(current) : null;
   const kid = !useMachine && step >= 1 && !done ? kidFor(recipe, step - 1, profile) : null;
-  const spoken = stepSpeech(recipe, step, total, current, kid, baking);
+  const spoken = stepSpeech(recipe, step, total, current, kid, baking, amountOf);
   if (spoken !== said) setSaid(spoken);
   const toggleReading = () => {
     unlockSpeech();
@@ -122,7 +127,7 @@ function CookSteps({ id }: { id: string }) {
                 {[recipe.oven ? ovenText(recipe.oven) : "", recipe.pan].filter(Boolean).join(" · ")}
               </p>
             )}
-            <h3 className={SECTION_TITLE}>Das brauchst du ({recipe.servings} {baking ? "Stück" : "Personen"})</h3>
+            <h3 className={SECTION_TITLE}>Das brauchst du ({servings} {baking ? "Stück" : servings === 1 ? "Person" : "Personen"})</h3>
             {recipe.ingredients.length === 0 ? (
               <p className="text-sm text-muted">Keine Zutaten eingetragen.</p>
             ) : (
@@ -130,7 +135,7 @@ function CookSteps({ id }: { id: string }) {
                 {recipe.ingredients.map((i) => (
                   <li key={i.id} className="flex gap-3 py-2 text-base">
                     <span className="w-20 shrink-0 whitespace-nowrap text-right font-semibold text-muted">
-                      {formatAmount(i.amount)} {i.unit}
+                      {formatAmount(amountOf(i.amount))} {i.unit}
                     </span>
                     <span>{i.name}</span>
                   </li>
@@ -140,9 +145,7 @@ function CookSteps({ id }: { id: string }) {
           </section>
         ) : done ? (
           <section className={`${CARD} flex flex-col items-center gap-2 p-6 text-center`} aria-label="Fertig">
-            <span className="text-5xl" aria-hidden>
-              {baking ? "🧁" : "😋"}
-            </span>
+            <ChefHat className="h-12 w-12 text-accent" strokeWidth={1.75} aria-hidden />
             <p className="text-xl font-extrabold">{baking ? "Fertig – lasst es euch schmecken!" : "Fertig – guten Appetit!"}</p>
           </section>
         ) : (
@@ -150,7 +153,7 @@ function CookSteps({ id }: { id: string }) {
             <p className="text-sm font-bold text-accent">
               Schritt {step} von {total}
             </p>
-            {kid && <p className="rounded-field bg-accent-soft px-3 py-2 text-base font-bold text-accent-strong">🧒 {kid} darf jetzt:</p>}
+            {kid && <p className="rounded-field bg-accent-soft px-3 py-2 text-base font-bold text-accent-strong">{kid} darf jetzt:</p>}
             <p className="text-xl leading-relaxed">{current}</p>
             {useMachine && <MachineStepView step={recipe.machineSteps[step - 1]} />}
             {minutes !== null && (!timer || timer.label !== current) && (
@@ -195,9 +198,9 @@ function CookSteps({ id }: { id: string }) {
 }
 
 /** Was beim Vorlesen gesagt wird: Zutaten, ein Schritt oder "Fertig" */
-function stepSpeech(recipe: Recipe, step: number, total: number, current: string, kid: string | null, baking: boolean): string {
+function stepSpeech(recipe: Recipe, step: number, total: number, current: string, kid: string | null, baking: boolean, amountOf: (amount: number | null) => number | null): string {
   if (step === 0) {
-    const items = recipe.ingredients.map((i) => [formatAmount(i.amount), i.unit, i.name].filter(Boolean).join(" "));
+    const items = recipe.ingredients.map((i) => [formatAmount(amountOf(i.amount)), i.unit, i.name].filter(Boolean).join(" "));
     return items.length ? `${recipe.title}. Das brauchst du: ${items.join(", ")}.` : recipe.title;
   }
   if (step > total) return baking ? "Fertig – lasst es euch schmecken!" : "Fertig – guten Appetit!";
@@ -237,7 +240,7 @@ function TimerBar({ timer, onClear }: { timer: RunningTimer; onClear: () => void
     <div role="timer" aria-live={finished ? "assertive" : "off"} className={`sticky top-2 z-10 flex items-center gap-3 rounded-card px-4 py-3 shadow-card ${finished ? "bg-accent text-on-accent" : "border border-line bg-surface"}`}>
       <Timer className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
       <span className="min-w-0 flex-1">
-        <span className="block text-lg font-extrabold tabular-nums">{finished ? "Zeit ist um! ⏰" : `${mm}:${String(ss).padStart(2, "0")}`}</span>
+        <span className="block text-lg font-extrabold tabular-nums">{finished ? "Zeit ist um!" : `${mm}:${String(ss).padStart(2, "0")}`}</span>
         <span className={`block truncate text-xs ${finished ? "text-on-accent/90" : "text-muted"}`}>{timer.label}</span>
       </span>
       <button type="button" onClick={onClear} aria-label={finished ? "Timer schließen" : "Timer abbrechen"} className="flex h-10 w-10 items-center justify-center rounded-full active:bg-scrim">

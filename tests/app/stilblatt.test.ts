@@ -88,7 +88,7 @@ describe("Seitenkopf: „‹ vorherige Seite“", () => {
   it("benennt die Seite, zu der Zurück führt", () => {
     expect(pageLabel("/")).toBe("Heute");
     expect(pageLabel("/?seite=essen")).toBe("Essen");
-    expect(pageLabel("/kochbuch")).toBe("Rezepte");
+    expect(pageLabel("/kochbuch")).toBe("Unsere Rezepte");
     expect(pageLabel("/profil")).toBe("Einstellungen");
     expect(pageLabel("/irgendwo")).toBe("Zurück");
     expect(pageLabel(null)).toBe("Zurück");

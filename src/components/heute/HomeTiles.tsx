@@ -30,6 +30,7 @@ import type { Idea } from "@/lib/essen/ideas";
 import { GerichtSheet } from "@/components/essen/GerichtSheet";
 import { useTodayIdeas } from "@/lib/essen/useIdeas";
 import { useStock } from "@/lib/essen/useStock";
+import { recipeHref } from "@/lib/essen/baking";
 import { DEMO_SHOPS, clearDemoTile } from "@/lib/core/demo";
 import { shopTone, tileRows, type TileRows } from "@/lib/einkauf/shopGroups";
 import { setShopChip } from "@/lib/einkauf/shopMode";
@@ -112,7 +113,7 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCo
           corner={corner || swap}
           week={WEEK_HREF}
         />
-        {chosen && <GerichtSheet dish={chosen} take={takeLabel(over ? "morgen" : "heute")} onTake={() => take(chosen)} onClose={() => setChosen(null)} recipeHref={chosen.recipeId ? `/kochbuch/rezept?id=${encodeURIComponent(chosen.recipeId)}` : undefined} />}
+        {chosen && <GerichtSheet dish={chosen} take={takeLabel(over ? "morgen" : "heute")} onTake={() => take(chosen)} onClose={() => setChosen(null)} recipeHref={recipeHref(data.recipes, chosen.recipeId) ?? undefined} />}
       </>
     );
   }

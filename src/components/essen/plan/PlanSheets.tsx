@@ -13,7 +13,8 @@ import { ArrowLeftRight, BookOpen, Check, Heart, Repeat, Trash2 } from "lucide-r
 import { Sheet } from "@/components/ui/Sheet";
 import { CategoryChip, CategoryDot, categoryLabel } from "@/components/ui/Category";
 import { CARD, CARD_LIST, INPUT, INPUT_BASE, buttonClass, chipClass, tileClass } from "@/components/ui/styles";
-import { RECIPE_CATEGORIES, setRecipeKnown, type Recipe, type RecipeCategory } from "@/lib/essen/cookbook";
+import { RECIPE_CATEGORIES, setRecipeKnown, useRecipes, type Recipe, type RecipeCategory } from "@/lib/essen/cookbook";
+import { recipeHref } from "@/lib/essen/baking";
 import { recipeIsKnown } from "@/lib/essen/dishStatus";
 import { guessDishCategory } from "@/lib/essen/dishCategory";
 import { RECIPES, sortBy } from "@/lib/core/sort";
@@ -45,6 +46,8 @@ export function EntrySheet({
   const wish = entry.stored.kind === "wish";
   const profile = useProfile();
   const small = profile ? isSmallHousehold(profile) : false;
+  // Link nur, wenn es das Rezept (noch) gibt
+  const href = recipeHref(useRecipes(), entry.recipeId);
   return (
     <Sheet title={`${day.weekday} · Hauptgericht`} onClose={onClose}>
       <div className={`${CARD} p-4`}>
@@ -55,9 +58,9 @@ export function EntrySheet({
           {entry.category ? <CategoryChip category={entry.category} /> : wish ? "Wunschtag" : "ohne Kategorie"}
           {entry.origin === "fest" && <span>fest eingeplant im Wochen-Check</span>}
         </p>
-        {entry.recipeId && (
+        {href && (
           <Link
-            href={`/kochbuch/rezept?id=${encodeURIComponent(entry.recipeId)}`}
+            href={href}
             className={`${buttonClass("soft")} mt-4 w-full`}
           >
             <BookOpen className="h-5 w-5" strokeWidth={2} aria-hidden />
@@ -149,10 +152,10 @@ export function RecipePickerSheet({
   const empty = Object.keys(recipes).length === 0;
 
   return (
-    <Sheet title={`Aus Kochbuch: ${title}`} onClose={onClose}>
+    <Sheet title={`Aus unseren Rezepten: ${title}`} onClose={onClose}>
       {empty ? (
         <p className={`${CARD} p-4 text-muted`}>
-          Noch keine Rezepte im Kochbuch.{" "}
+          Noch keine eigenen Rezepte.{" "}
           <Link href="/kochbuch/bearbeiten" className="font-bold text-accent-strong underline">
             Rezept anlegen
           </Link>{" "}

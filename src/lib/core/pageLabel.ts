@@ -1,11 +1,11 @@
-// Kurzer Name einer Seite für den Zurück-Text im Seitenkopf ("‹ Rezepte").
+// Kurzer Name einer Seite für den Zurück-Text im Seitenkopf ("‹ Unsere Rezepte").
 // Unbekannte Seiten heißen schlicht "Zurück".
 
 const PAGES: Record<string, string> = {
   "/aufgaben": "Aufgaben",
   "/einkaufsliste": "Einkaufsliste",
   "/einkaufsliste/laden": "Einkaufen",
-  "/kochbuch": "Rezepte",
+  "/kochbuch": "Unsere Rezepte",
   "/kochbuch/rezept": "Rezept",
   "/kochbuch/kochen": "Kochen",
   "/notizen": "Notizen",

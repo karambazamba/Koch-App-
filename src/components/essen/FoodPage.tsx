@@ -26,6 +26,7 @@ import { dishTone } from "@/lib/essen/dishLook";
 import { mealIsOver, useCookedDays } from "@/lib/essen/mealDone";
 import type { PlanDay } from "@/lib/essen/mealPlan";
 import { useStock } from "@/lib/essen/useStock";
+import { recipeHref as hrefFor } from "@/lib/essen/baking";
 import { openHelper } from "@/lib/begleitung/open";
 import type { HomeData } from "@/components/heute/useHomeData";
 import { mondayOf } from "@/components/kalender/CalendarPage";
@@ -94,8 +95,8 @@ export function FoodPage({ data, minutes }: { data: HomeData; minutes: number })
                   onClick={() => {
                     if (!day || past) return;
                     // Antippen = das Gericht: mit Rezept die Rezeptseite, sonst das eine Fenster (frei: „Was gibt’s?“)
-                    const recipeId = day.slot.entry?.recipeId;
-                    if (dish && recipeId) router.push(`/kochbuch/rezept?id=${encodeURIComponent(recipeId)}`);
+                    const href = hrefFor(data.recipes, day.slot.entry?.recipeId);
+                    if (dish && href) router.push(href);
                     else setSwap(day);
                   }}
                   disabled={past || !day}
@@ -156,8 +157,9 @@ function DishHero({ data, day, when, onSwap }: { data: HomeData; day: PlanDay | 
   const facts = [todayPersons ? `für ${todayPersons} Personen` : "", recipe?.prepMinutes ? `${recipe.prepMinutes} Min` : ""].filter(Boolean);
   const clock = entry && day ? clockLabel(mealClockFor(data.profile, day.weekday)) : "";
   if (entry) {
-    const recipeHref = entry.recipeId ? `/kochbuch/rezept?id=${entry.recipeId}${todayPersons ? `&personen=${todayPersons}` : ""}` : null;
-    const cookHref = entry.recipeId ? `/kochbuch/kochen?id=${entry.recipeId}` : null;
+    // Links nur, wenn es das Rezept (noch) gibt
+    const recipeHref = hrefFor(data.recipes, entry.recipeId, todayPersons);
+    const cookHref = recipeHref && entry.recipeId ? `/kochbuch/kochen?id=${encodeURIComponent(entry.recipeId)}${todayPersons ? `&personen=${todayPersons}` : ""}` : null;
     return (
       <section className="relative overflow-hidden rounded-card shadow-card" aria-label={`Essen ${when.toLowerCase()} · ${entry.title}`}>
         <DishPicture title={entry.title} category={entry.category} tone={dishTone(entry.title, entry.category)} alt="" className="absolute inset-0" />

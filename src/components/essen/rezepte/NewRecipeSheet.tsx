@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { Mic, MicOff, PenLine, Square } from "lucide-react";
+import { useState } from "react";
+import { PenLine } from "lucide-react";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { Sheet } from "@/components/ui/Sheet";
 import { INPUT_BASE, buttonClass, chipClass, tileClass } from "@/components/ui/styles";
@@ -11,12 +11,11 @@ import { createRecipe, formatAmount, saveRecipe } from "@/lib/essen/cookbook";
 import { helperName } from "@/lib/einstellungen/profile";
 import { parseSpokenRecipe, type SpokenRecipe } from "@/lib/essen/recipeSpeech";
 import { useProfile } from "@/lib/einstellungen/useProfile";
-import { useSpeechInput } from "@/lib/begleitung/useSpeechInput";
-import { MIC_BLOCKED, MicStrip } from "@/components/ui/MicPermission";
 
 /**
- * "+" auf "Rezepte": <Name> erzählen (Sprache → Zutaten und Schritte) oder
- * selbst eintippen. Was es noch nicht gibt, wird nicht ausgegraut gezeigt.
+ * "+" auf „Unsere Rezepte“: <Name> erzählen (ein Satz → Zutaten und Schritte)
+ * oder selbst eintippen. Sprechen geht über den Mia-Knopf bzw. das Mikro der
+ * Tastatur, das Fenster hat kein eigenes. Was es noch nicht gibt, wird nicht ausgegraut gezeigt.
  */
 export function NewRecipeSheet({ onClose }: { onClose: () => void }) {
   const profile = useProfile();
@@ -46,21 +45,12 @@ export function NewRecipeSheet({ onClose }: { onClose: () => void }) {
   );
 }
 
-/** Rezept einsprechen (oder diktieren/tippen), dann Vorschau zum Speichern */
+/** Rezept erzählen (tippen oder per Tastatur diktieren), dann Vorschau zum Speichern */
 function TellRecipe({ name, onClose }: { name: string; onClose: () => void }) {
   const router = useRouter();
   const [text, setText] = useState("");
   const [parsed, setParsed] = useState<SpokenRecipe | null>(null);
   const [hint, setHint] = useState("");
-  /** Text vor der Aufnahme – die Aufnahme ergänzt ihn (Erzählen in mehreren Anläufen) */
-  const base = useRef("");
-  const mounted = useRef(true);
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
 
   const understand = (value: string) => {
     const result = parseSpokenRecipe(value);
@@ -72,17 +62,8 @@ function TellRecipe({ name, onClose }: { name: string; onClose: () => void }) {
     setParsed(result);
   };
 
-  const speech = useSpeechInput({
-    onTranscript: (t) => setText(`${base.current} ${t}`.trim()),
-    onEnd: (t) => {
-      const all = `${base.current} ${t}`.trim();
-      if (t && mounted.current) understand(all);
-    },
-  });
-
   const save = (edit: boolean) => {
     if (!parsed) return;
-    speech.reset();
     const recipe = saveRecipe(createRecipe({ ...parsed, source: "eigenes" }));
     onClose();
     router.push(edit ? `/kochbuch/bearbeiten?id=${encodeURIComponent(recipe.id)}` : `/kochbuch/rezept?id=${encodeURIComponent(recipe.id)}`);
@@ -137,7 +118,7 @@ function TellRecipe({ name, onClose }: { name: string; onClose: () => void }) {
       <div className="flex flex-col gap-3 pb-2">
         <p className="text-sm text-muted">Name, Zutaten mit Mengen, dann wie es geht – ganz normal erzählt.</p>
         <textarea
-          value={speech.listening ? speech.interim || text : text}
+          value={text}
           onChange={(e) => setText(e.target.value)}
           rows={4}
           aria-label="Rezept erzählen"
@@ -145,35 +126,9 @@ function TellRecipe({ name, onClose }: { name: string; onClose: () => void }) {
           className={`${INPUT_BASE} w-full px-4 py-3`}
         />
         {hint && <p className="text-sm text-muted">{hint}</p>}
-        <MicStrip />
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              if (speech.listening) speech.stop();
-              else {
-                base.current = text;
-                speech.start();
-              }
-            }}
-            disabled={speech.supported === false}
-            aria-pressed={speech.listening}
-            aria-label={speech.blocked ? "Mikro aus – so machst du es an" : speech.listening ? "Zuhören beenden" : "Rezept einsprechen"}
-            className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${speech.blocked ? MIC_BLOCKED : "bg-accent text-on-accent shadow-md"} active:scale-95 disabled:opacity-40 ${speech.listening ? "animate-pulse ring-4 ring-accent/25" : ""}`}
-          >
-            {speech.blocked || speech.supported === false ? (
-              <MicOff className="h-6 w-6" strokeWidth={2} aria-hidden />
-            ) : speech.listening ? (
-              <Square className="h-5 w-5 fill-current" strokeWidth={2} aria-hidden />
-            ) : (
-              <Mic className="h-7 w-7" strokeWidth={2} aria-hidden />
-            )}
-          </button>
-          <button type="button" disabled={!text.trim()} onClick={() => understand(text)} className={`${buttonClass("primary", "lg")} flex-1`}>
-            Fertig erzählt
-          </button>
-        </div>
-        {speech.supported === false && <p className="text-xs text-muted">Spracheingabe gibt es hier nicht – tipp aufs Mikrofon deiner Tastatur und diktiere einfach.</p>}
+        <button type="button" disabled={!text.trim()} onClick={() => understand(text)} className={`${buttonClass("primary", "lg")} w-full`}>
+          Fertig erzählt
+        </button>
       </div>
     </Sheet>
   );

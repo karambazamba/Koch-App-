@@ -21,7 +21,7 @@ export function NeverAgainView() {
       <main className={PAGE_MAIN}>
         <p className={SUBTLE}>
           Diese Gerichte (und sehr ähnliche) schlägt {helperName(profile)} nie mehr vor. Wiederherstellen holt ein
-          Rezept zurück ins Kochbuch.
+          Rezept zurück zu euren Rezepten.
         </p>
         {list.length === 0 ? (
           <p className={`${CARD} p-4 text-muted`}>Noch nichts – bisher hat euch alles geschmeckt. 😋</p>

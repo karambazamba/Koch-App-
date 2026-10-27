@@ -13,12 +13,13 @@ import { BackButton } from "@/components/ui/BackButton";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CategoryChip } from "@/components/ui/Category";
 import { MoreMenu, type MoreItem } from "@/components/ui/MoreMenu";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Sheet } from "@/components/ui/Sheet";
 import { CARD, CARD_LIST, FAB_CLEARANCE, PAGE_MAIN, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
 import { DishPicture } from "@/components/essen/DishPicture";
 import { FavoriteButton } from "@/components/essen/rezepte/CookbookList";
 import { KnownSwitch } from "@/components/essen/plan/PlanSheets";
-import { deleteRecipe, formatAmount, useRecipes, type Recipe } from "@/lib/essen/cookbook";
+import { deleteRecipe, formatAmount, personsParam, restoreRecipe, scaledAmount, useRecipes, type Recipe } from "@/lib/essen/cookbook";
 import { adoptBuiltin, findRecipe, isBuiltin } from "@/lib/essen/baking";
 import { ovenText } from "@/lib/essen/baking/steps";
 import { useProfile } from "@/lib/einstellungen/useProfile";
@@ -28,7 +29,7 @@ import { takeForDay } from "@/lib/essen/spontanTake";
 import { addDays, toIsoDate, useToday, useWeekPlans } from "@/lib/essen/weekPlan";
 import { dishTone } from "@/lib/essen/dishLook";
 import { demoLook, isDemoRecipe } from "@/lib/essen/demoDish";
-import { showToast } from "@/lib/core/toast";
+import { showDeleted, showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
 import { weekdayLong } from "@/lib/kalender/model";
 import { MachineStepView, MachineToggle, useMachineView } from "@/components/essen/rezepte/MachineSteps";
@@ -41,7 +42,7 @@ export function RecipeView() {
   const { bfcacheId } = useRouter();
   const id = params.get("id") ?? "";
   // "?personen=2": nur für heute umgerechnet ("heute sind wir nur zu zweit")
-  const persons = Number(params.get("personen")) || null;
+  const persons = personsParam(params.get("personen"));
   return <RecipeDetails key={`${bfcacheId}|${id}`} id={id} persons={persons} />;
 }
 
@@ -55,6 +56,7 @@ function RecipeDetails({ id, persons }: { id: string; persons: number | null }) 
   const mealPlans = useMealPlans();
   const [people, setPeople] = useState<number | null>(persons);
   const [planning, setPlanning] = useState(false);
+  const [asking, setAsking] = useState(false);
 
   if (recipes === undefined) return <div className={`${CARD} m-4 h-64 animate-pulse`} />;
   // Auch eingebaute Backrezepte ("b:…") und Beispiel-Rezepte ("d:…") lassen sich ansehen
@@ -93,10 +95,13 @@ function RecipeDetails({ id, persons }: { id: string; persons: number | null }) 
       // Abbrechen im Teilen-Menü ist kein Fehler
     }
   };
+  // Echtes Löschen: erst kurz fragen, danach „Gelöscht · Rückgängig“
   const remove = () => {
-    if (!window.confirm(`„${recipe.title}“ wirklich aus euren Rezepten löschen?`)) return;
+    setAsking(false);
+    const gone = recipe;
     router.push("/kochbuch");
-    deleteRecipe(recipe.id);
+    deleteRecipe(gone.id);
+    showDeleted(pushUndo(`das Löschen von ${gone.title}`, () => void restoreRecipe(gone)));
   };
   const menu: MoreItem[] = builtin
     ? [
@@ -106,7 +111,7 @@ function RecipeDetails({ id, persons }: { id: string; persons: number | null }) 
     : [
         { label: "Bearbeiten", icon: PenLine, onClick: () => router.push(`/kochbuch/bearbeiten?id=${encodeURIComponent(recipe.id)}`) },
         { label: "Teilen", icon: Share2, onClick: () => void share() },
-        { label: "Löschen", icon: Trash2, onClick: remove, danger: true },
+        { label: "Löschen", icon: Trash2, onClick: () => setAsking(true), danger: true },
       ];
 
   return (
@@ -115,10 +120,7 @@ function RecipeDetails({ id, persons }: { id: string; persons: number | null }) 
         <DishPicture photo={look?.photo} title={recipe.title} ingredients={recipe.ingredients.map((i) => i.name)} category={recipe.category} tone={look?.tone ?? dishTone(recipe.title, recipe.category)} alt={recipe.title} className="aspect-[4/3] w-full" />
         <div className="absolute inset-x-0 top-0 flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
           <BackButton fallback="/kochbuch" round />
-          <span className="flex gap-2">
-            {!builtin && <FavoriteButton recipe={recipe} />}
-            <MoreMenu title={recipe.title} items={menu} light />
-          </span>
+          <MoreMenu title={recipe.title} items={menu} light />
         </div>
       </div>
       <main className={`${PAGE_MAIN} pt-4`}>
@@ -137,11 +139,16 @@ function RecipeDetails({ id, persons }: { id: string; persons: number | null }) 
               {demo ? "Beispiel-Rezept" : builtin ? (baking ? "Aus unserer Backstube" : "Aus unserer Küche") : "Vorschlag"}
             </span>
           )}
+          {!builtin && (
+            <span className="ml-auto">
+              <FavoriteButton recipe={recipe} />
+            </span>
+          )}
         </p>
 
         <div className="flex flex-col gap-2">
           {recipe.steps.length > 0 && (
-            <Link href={`/kochbuch/kochen?id=${encodeURIComponent(recipe.id)}`} className={`${buttonClass("primary", "lg")} w-full`}>
+            <Link href={`/kochbuch/kochen?id=${encodeURIComponent(recipe.id)}${baking ? "" : `&personen=${servings}`}`} className={`${buttonClass("primary", "lg")} w-full`}>
               <ChefHat className="h-5 w-5" strokeWidth={2.25} aria-hidden />
               {baking ? "Zusammen backen" : "Jetzt kochen"}
             </Link>
@@ -190,7 +197,7 @@ function RecipeDetails({ id, persons }: { id: string; persons: number | null }) 
               {recipe.ingredients.map((i) => (
                 <li key={i.id} className="flex gap-3 py-2 text-base">
                   <span className="w-24 shrink-0 whitespace-nowrap text-right font-semibold text-muted">
-                    {formatAmount(i.amount === null || !scaleTo ? i.amount : Math.round((i.amount * scaleTo * 10) / recipe.servings) / 10)} {i.unit}
+                    {formatAmount(scaledAmount(i.amount, recipe.servings, scaleTo))} {i.unit}
                   </span>
                   <span>{i.name}</span>
                 </li>
@@ -242,6 +249,16 @@ function RecipeDetails({ id, persons }: { id: string; persons: number | null }) 
 
         {!baking && <MoreIdeas current={recipe.id} demo={demo} />}
       </main>
+      {asking && (
+        <ConfirmDialog
+          title={`„${recipe.title}“ löschen?`}
+          text="Dann ist es aus euren Rezepten raus."
+          confirmLabel="Löschen"
+          danger
+          onConfirm={remove}
+          onCancel={() => setAsking(false)}
+        />
+      )}
       {planning && profile && today && weekPlans && mealPlans && (
         <PlanDaySheet
           recipe={recipe}

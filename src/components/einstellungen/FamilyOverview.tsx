@@ -155,7 +155,7 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
               </Row>
             )}
             {unlockedRecipes && (
-              <Row href="/kochbuch" icon={BookOpen} title="Rezepte">
+              <Row href="/kochbuch" icon={BookOpen} title="Unsere Rezepte">
                 Was ihr gern kocht
               </Row>
             )}

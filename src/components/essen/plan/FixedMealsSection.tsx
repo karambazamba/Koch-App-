@@ -93,7 +93,7 @@ export function FixedMealsSection({
           Feste Gerichte diese Woche
         </h3>
         <p className="text-sm text-muted">
-          Aus eurem Kochbuch – zählen in ihre Kategorie (z.&nbsp;B. Gulasch = Fleisch).
+          Aus euren Rezepten – zählen in ihre Kategorie (z.&nbsp;B. Gulasch = Fleisch).
         </p>
       </div>
 
@@ -127,7 +127,7 @@ export function FixedMealsSection({
 
       {recipes !== undefined && list.length === 0 ? (
         <p className="rounded-field bg-background px-4 py-3 text-muted">
-          Noch keine Rezepte im Kochbuch.{" "}
+          Noch keine eigenen Rezepte.{" "}
           <Link href="/kochbuch/bearbeiten" className="font-bold text-accent-strong underline">
             Rezept anlegen
           </Link>

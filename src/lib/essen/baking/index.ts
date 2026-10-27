@@ -45,6 +45,12 @@ export function findRecipe(recipes: Record<string, Recipe>, id: string): Recipe 
   return recipes[id] ?? BY_ID[id] ?? cookRecipe(id) ?? demoRecipe(id);
 }
 
+/** Adresse eines Rezepts – nur, wenn es das Rezept gibt (sonst null, also kein Link) */
+export function recipeHref(recipes: Record<string, Recipe> | undefined, id: string | null | undefined, persons?: number | null): string | null {
+  if (!id || !recipes || !findRecipe(recipes, id)) return null;
+  return `/kochbuch/rezept?id=${encodeURIComponent(id)}${persons ? `&personen=${persons}` : ""}`;
+}
+
 /** Kochbuch inkl. eingebauter Backrezepte zum Nachschlagen (`undefined` = lädt) */
 export function useRecipeLookup(): ((id: string) => Recipe | undefined) | undefined {
   const recipes = useRecipes();

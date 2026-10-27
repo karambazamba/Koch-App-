@@ -3,7 +3,7 @@
 // Essen-Kachel beim Kochen (L, ganz oben): "ESSEN · 18:30 · 4 PERSONEN",
 // Gericht groß, Rezept-Schritte zum Abhaken (aktueller fett mit "JETZT",
 // erledigte durchgestrichen); Schritte mit Zeitangabe haben einen kleinen
-// ⏱-Knopf (startet einen Timer mit Schrittname und Dauer); "Rezept groß öffnen ›"
+// ⏱-Knopf (startet einen Timer mit Schrittname und Dauer); "Kochmodus ›"
 // (Vollbild-Kochansicht). Ohne Schritte: Gericht + Zutaten-Status. Unten
 // "Gegessen" – beendet das Kochen.
 
@@ -85,7 +85,7 @@ export function CookingTile({ dish, clock, persons, recipe, today, onEaten }: { 
       <div className="flex flex-wrap items-center gap-2 pt-1">
         {recipe && (
           <Link href={`/kochbuch/kochen?id=${encodeURIComponent(recipe.id)}`} className="text-sm font-bold text-tile-accent">
-            Rezept groß öffnen ›
+            Kochmodus ›
           </Link>
         )}
         <span className="flex-1" />
