@@ -4,26 +4,26 @@
 // Mengen – nur da oder nicht da. Oben ein kurzer Hinweis und die Chips
 // Alle · Kühlschrank · Schrank · TK; dann „Bald aufbrauchen“, die Orte und
 // „Aufgebraucht“. Antippen = aufgebraucht (blass), nochmal = wieder auf die
-// Liste. Lange drücken = Ort ändern (gilt ab jetzt für diese Sorte). ＋ =
-// Schnelleingabe. Unten „Was kann ich daraus kochen?“ → Kochidee.
+// Liste. Lange drücken = Sache ändern (`SacheSheet`: Ort, „Ist alle“,
+// Entfernen). ＋ = Schnelleingabe. Unten „Was koch ich daraus?“ → Spontan
+// kochen (wie unter Essen).
 
 import { useState } from "react";
-import { ChefHat, Refrigerator, Trash2 } from "lucide-react";
+import { ChefHat, Refrigerator } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PagePlus } from "@/components/ui/QuickButton";
-import { Sheet } from "@/components/ui/Sheet";
 import { CARD, PAGE_MAIN, SECTION_TITLE, buttonClass, chipClass } from "@/components/ui/styles";
+import { SacheSheet } from "@/components/vorrat/SacheSheet";
 import { ItemTile, TILE_GRID } from "@/components/einkauf/kacheln/ItemTile";
 import { openHelper } from "@/lib/begleitung/open";
 import { openQuick } from "@/lib/core/schnelleingabe";
-import { showDeleted } from "@/lib/core/toast";
 import { sectionFor } from "@/lib/einkauf/sections";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 import { toIsoDate, useToday } from "@/lib/essen/weekPlan";
 import { soonBadge } from "@/lib/vorrat/haltbar";
 import { HOUSE_CHIPS, houseSections, type HouseChip } from "@/lib/vorrat/imHaus";
 import { backToList } from "@/lib/vorrat/kreislauf";
-import { PANTRY_PLACES, loadPantryAll, markPantryUsed, removePantryItem, replacePantry, setPantryPlace, usePantryAll, type PantryItem } from "@/lib/vorrat/pantry";
+import { markPantryUsed, usePantryAll, type PantryItem } from "@/lib/vorrat/pantry";
 
 export function PantryView() {
   const all = usePantryAll();
@@ -40,12 +40,6 @@ export function PantryView() {
   const tap = (item: PantryItem) => {
     if (!item.usedAt) markPantryUsed(item.id, todayIso);
     else if (shopping) backToList(item, shopping.weekStart);
-  };
-  const remove = (item: PantryItem) => {
-    const before = loadPantryAll();
-    removePantryItem(item.id);
-    setEditing(null);
-    showDeleted(() => replacePantry(before));
   };
 
   return (
@@ -92,42 +86,13 @@ export function PantryView() {
           </>
         )}
 
-        <button type="button" onClick={() => openHelper("kochtipp")} className={`${buttonClass("primary", "lg")} w-full`}>
+        <button type="button" onClick={() => openHelper("spontan")} className={`${buttonClass("primary", "lg")} w-full`}>
           <ChefHat className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-          Was kann ich daraus kochen?
+          Was koch ich daraus?
         </button>
       </main>
 
-      {editing && (
-        <Sheet title={editing.name} onClose={() => setEditing(null)}>
-          <div className="flex flex-col gap-4 pb-3">
-            <div className="flex flex-col gap-2">
-              <p className="text-sm text-muted">Wo liegt das? Merk ich mir für {editing.name}.</p>
-              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Ort">
-                {PANTRY_PLACES.map((p) => (
-                  <button
-                    key={p.value}
-                    type="button"
-                    role="radio"
-                    aria-checked={editing.place === p.value}
-                    onClick={() => {
-                      setPantryPlace(editing.id, p.value);
-                      setEditing(null);
-                    }}
-                    className={chipClass(editing.place === p.value)}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <button type="button" onClick={() => remove(editing)} className={`${buttonClass("ghost", "md")} text-danger`}>
-              <Trash2 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-              Entfernen
-            </button>
-          </div>
-        </Sheet>
-      )}
+      {editing && <SacheSheet item={editing} today={todayIso} weekStart={shopping?.weekStart ?? null} onClose={() => setEditing(null)} />}
     </div>
   );
 }

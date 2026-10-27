@@ -28,11 +28,12 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Drin: Mia (sprechen, tippen, erledigen), Startseite, Termine (inkl.
   Kalender mitbringen per Link), Aufgaben, Einkauf, Essen (heute, Ideen,
   Rezept, Kochmodus, Wochenkarte), Pinnwand + Sprachnachrichten, Notizen
-  (Kachel standardmäßig an), Sport (Baustein, nur Wochen zählen), Wochenplan
-  (Baustein), Wetter, Timer (Baustein), Familie teilen per E-Mail-Code,
-  Datenschutz.
+  (Kachel standardmäßig an), Im Haus mit Spontan kochen (Baustein an,
+  Bereich unter Essen mit „Was koch ich daraus?“, Kachel S/M nur über die
+  Auswahl), Sport (Baustein, nur Wochen zählen), Wochenplan (Baustein),
+  Wetter, Timer (Baustein), Familie teilen per E-Mail-Code, Datenschutz.
 - Ausgeblendet (Baustein aus, nicht gelöscht, Daten bleiben; wer ihn schon
-  nutzt, behält ihn): Mails an Mia, Tipps aus der Region, Im Haus,
+  nutzt, behält ihn): Mails an Mia, Tipps aus der Region,
   Spendentopf (ein Satz unter „Über Mia“
   bleibt), Anmelden mit Apple/Google (nur E-Mail-Code), ElevenLabs (aus,
   solange kein Schlüssel). Liste `LAUNCH_AUS` in `core/features.ts`,
@@ -58,7 +59,7 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   S-fähige Kachel mit jeder anderen (eine einzelne S bleibt halb, im Bearbeiten
   zeigt die freie Hälfte „＋ Kachel“); Essen + Einkauf sind ein festes Paar. Größe ändert nur die Menge (S ≤ M ≤ L). Standard für
   neue Nutzer: Pinnwand + Wetter (S), Termine, Aufgaben, Essen + Einkauf,
-  Notizen („Im Haus“ nur mit Baustein). Jede Kachel öffnet ihre Seite.
+  Notizen („Im Haus“ nur über die Kachel-Auswahl). Jede Kachel öffnet ihre Seite.
 - Auf der Startseite gibt es genau zwei Mias: das eckige Logo (BrandMark,
   nicht antippbar) und den runden Mia-Knopf rechts in der Leiste (= reden).
 - Die Jetzt-Karte zeigt höchstens 3 Themen zum Wischen und öffnet wie jede

@@ -169,15 +169,30 @@ describe("Kochbuch, Einkauf, Vorrat", () => {
     expect(ctx.data.shopping[WOCHEN.aktuell].manual.map((m) => m.name)).toEqual(["Milch", "Müsli"]);
   });
 
-  it("vorrat_hinzufuegen wählt den naheliegenden Ort (wer „Im Haus“ schon nutzt)", () => {
-    const ctx = kontext({ features: ["vorrat"] });
+  it("vorrat_hinzufuegen wählt den naheliegenden Ort (Im Haus gehört zu 1.0)", () => {
+    const ctx = kontext();
     expect(rufe(ctx, "vorrat_hinzufuegen", { sachen: [{ name: "" }] }).content).toBe("sachen mit name angeben.");
     expect(rufe(ctx, "vorrat_hinzufuegen", { sachen: [{ name: "Chili", ort: "tiefkuehler" }, { name: "Joghurt" }] }).content).toBe("Im Haus (die App trägt es sofort ein): Chili, Joghurt.");
     expect(ctx.ops[0]).toEqual({ id: expect.any(String), type: "add_pantry", name: "Chili", place: "tiefkuehler" });
     expect(ctx.ops[1]).toMatchObject({ name: "Joghurt", place: "kuehlschrank" });
     expect(rufe(ctx, "vorrat_aufgebraucht", { namen: [] }).content).toBe("namen angeben.");
-    expect(rufe(ctx, "vorrat_aufgebraucht", { namen: ["Milch"] }).content).toBe("Aufgebraucht (die App nimmt es sofort raus): Milch.");
+    expect(rufe(ctx, "vorrat_aufgebraucht", { namen: ["Milch"] }).content).toMatch(/^Aufgebraucht \(die App nimmt es sofort raus\) und auf der Einkaufsliste: Milch\./);
     expect(ctx.ops[2]).toMatchObject({ type: "use_pantry", name: "Milch" });
+    expect(ctx.ops[3]).toMatchObject({ type: "add_shopping", name: "Milch", weekStart: WOCHEN.aktuell, section: "kuehlregal" });
+  });
+
+  it("„Eier sind alle“ = raus aus Im Haus und auf die Liste – was schon draufsteht, nicht doppelt", () => {
+    const ctx = kontext();
+    rufe(ctx, "einkaufsliste_hinzufuegen", { woche: "aktuell", artikel: [{ name: "Milch" }] });
+    const r = rufe(ctx, "vorrat_aufgebraucht", { namen: ["Eier", "Milch"] });
+    expect(r.content).toMatch(/Einkaufsliste: Eier\./);
+    expect(ctx.ops.map((o) => [o.type, (o as { name?: string }).name])).toEqual([
+      ["add_shopping", "Milch"],
+      ["use_pantry", "Eier"],
+      ["add_shopping", "Eier"],
+      ["use_pantry", "Milch"],
+    ]);
+    expect(ctx.data.shopping[WOCHEN.aktuell].manual.map((m) => m.name)).toEqual(["Milch", "Eier"]);
   });
 });
 

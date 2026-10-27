@@ -444,7 +444,7 @@ function shoppingNote(data: AssistantData, before: AssistantData): string | null
 
 /** Ausgewählte Änderungen übernehmen; liefert Rückgängig und kurze Hinweise */
 /**
- * Launch 1.0: Änderungen an ausgeblendeten Bausteinen (Sport, Notizen, Im Haus)
+ * Launch 1.0: Änderungen an ausgeblendeten Bausteinen (Liste `LAUNCH_AUS`)
  * übernimmt die App nur, wenn der Baustein schon an ist – Mia schaltet sie
  * nicht frei („Kann ich noch nicht.“). @public für Tests
  */
@@ -453,8 +453,6 @@ export const LAUNCH_OPS: Partial<Record<ChangeOp["type"], Feature>> = {
   set_sport_goal: "sport",
   upsert_note: "notizen",
   remove_note: "notizen",
-  add_pantry: "vorrat",
-  use_pantry: "vorrat",
 };
 
 /** Ausgeblendetes für 1.0 herausfiltern; `gesperrt` = etwas wurde weggelassen @public für Tests */

@@ -35,7 +35,7 @@ export const QUICK_PLACEHOLDER: Record<QuickKind, string> = {
   einkauf: "z. B. Milch, Brot und Äpfel",
   notiz: "z. B. WLAN-Passwort: …",
   pinnwand: "z. B. Bin um 20 Uhr da",
-  imhaus: "z. B. Kartoffeln, Eier",
+  imhaus: "z. B. Eier, Milch, Hack",
 };
 
 /** Von Hand gewählt (Chip angetippt) – geht vor dem, was im Text steht */

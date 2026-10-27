@@ -126,6 +126,8 @@ function everyday(t: string) {
     // „Hab Hähnchen gekauft“ → Im Haus; „Die Milch ist alle“ → aufgebraucht
     bought: s.match(/^(?:ich\s+)?hab(?:e)?\s+(?:gerade\s+|eben\s+|noch\s+)?(.+?)\s+(?:gekauft|mitgebracht|geholt)$/i)?.[1]?.trim() ?? null,
     gone: s.match(/^(?:die|der|das)?\s*(.+?)\s+(?:ist|sind)\s+(?:alle|aufgebraucht|leer)$/i)?.[1]?.trim() ?? null,
+    // „Hab noch Hack“ → Im Haus
+    still: s.match(/^(?:(?:ich|wir)\s+)?hab(?:e|en)?\s+noch\s+([a-zäöüß]+(?:\s*(?:,|und)\s*[a-zäöüß]+)*)$/i)?.[1] ?? null,
     need: s.match(/^(?:wir|ich)\s+brauch(?:en|e)\s+(?:noch\s+)?(.+)$/i)?.[1] ?? null,
     quick: /nur (noch )?schnelle/i.test(s),
   };
@@ -289,6 +291,7 @@ function mockModel(): CreateMessage {
       if (day.pantry) return tools([{ name: "vorrat_hinzufuegen", input: { sachen: [day.pantry] } }]);
       if (day.bought) return tools([{ name: "vorrat_hinzufuegen", input: { sachen: day.bought.split(/\s*(?:,|\bund\b)\s*/).filter(Boolean).map((n) => ({ name: cap(n) })) } }]);
       if (day.gone) return tools([{ name: "vorrat_aufgebraucht", input: { namen: [cap(day.gone)] } }]);
+      if (day.still) return tools([{ name: "vorrat_hinzufuegen", input: { sachen: day.still.split(/\s*(?:,|\bund\b)\s*/).filter(Boolean).map((n) => ({ name: cap(n) })) } }]);
       if (day.wish) return tools([{ name: "wunsch_merken", input: day.wish }]);
       if (day.need) {
         const artikel = day.need.split(/,|\bund\b/).map((n) => n.trim()).filter(Boolean).map((name) => ({ name: cap(name) }));

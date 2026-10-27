@@ -25,9 +25,15 @@ afterEach(() => {
   noBrowser();
 });
 
+/** Standard + „Im Haus“ aus der Kachel-Auswahl */
+const MIT_HAUS = applyHomeChange(DEFAULT_HOME, { tile: "vorrat", action: "zeigen" });
+
 describe("Startseite: Prüfen", () => {
-  it("Standard: Pinnwand + Wetter, Termine, Aufgaben, Essen + Einkauf, Notizen (Launch 1.0: ohne Spendentopf; Im Haus nur mit Baustein)", () => {
-    expect(visible(DEFAULT_HOME)).toEqual(["pinnwand", "wetter", "termine", "aufgaben", "essen", "einkauf", "vorrat", "notizen"]);
+  it("Standard: Pinnwand + Wetter, Termine, Aufgaben, Essen + Einkauf, Notizen (Launch 1.0: ohne Spendentopf; Im Haus nur über die Auswahl)", () => {
+    expect(visible(DEFAULT_HOME)).toEqual(["pinnwand", "wetter", "termine", "aufgaben", "essen", "einkauf", "notizen"]);
+    // Im Haus dazugewählt: an seinen Platz hinter Essen + Einkauf, klein
+    expect(visible(MIT_HAUS)).toEqual(["pinnwand", "wetter", "termine", "aufgaben", "essen", "einkauf", "vorrat", "notizen"]);
+    expect(MIT_HAUS.find((t) => t.id === "vorrat")?.size).toBe("S");
     expect(DEFAULT_HOME).toHaveLength(HOME_TILES.length);
   });
 
@@ -134,13 +140,13 @@ describe("Startseite: Verschieben", () => {
   it("Essen + Einkauf wandern zusammen", () => {
     const up = visible(applyHomeChange(DEFAULT_HOME, { tile: "einkauf", action: "nach_oben" }));
     expect(up.slice(0, 2)).toEqual(["essen", "einkauf"]);
-    const down = visible(applyHomeChange(DEFAULT_HOME, { tile: "essen", action: "runter" }));
+    const down = visible(applyHomeChange(MIT_HAUS, { tile: "essen", action: "runter" }));
     expect(down.slice(4, 7)).toEqual(["vorrat", "essen", "einkauf"]);
   });
 
   it("über das Paar hinweg: eine Kachel springt am ganzen Paar vorbei", () => {
     // Im Haus steht direkt hinter Essen + Einkauf → nach oben = vor das Paar
-    const up = visible(applyHomeChange(DEFAULT_HOME, { tile: "vorrat", action: "hoch" }));
+    const up = visible(applyHomeChange(MIT_HAUS, { tile: "vorrat", action: "hoch" }));
     expect(up.slice(3, 7)).toEqual(["aufgaben", "vorrat", "essen", "einkauf"]);
     // Aufgaben direkt davor → nach unten = hinter das Paar
     const down = visible(applyHomeChange(DEFAULT_HOME, { tile: "aufgaben", action: "runter" }));
@@ -290,7 +296,7 @@ describe("Startseite: Speicher", () => {
 
 describe("Startseite: Einheiten und Reihen", () => {
   it("Essen + Einkauf (beide S) = eine Einheit; zwei einzelne S nebeneinander", () => {
-    const units = unitsOf(DEFAULT_HOME.filter((t) => t.visible));
+    const units = unitsOf(MIT_HAUS.filter((t) => t.visible));
     expect(units.map((u) => u.key)).toEqual(["pinnwand", "wetter", "termine", "aufgaben", "essen+einkauf", "vorrat", "notizen"]);
     const rows = rowsOf(units).map((r) => r.map((u) => u.key));
     expect(rows).toEqual([["pinnwand", "wetter"], ["termine"], ["aufgaben"], ["essen+einkauf"], ["vorrat"], ["notizen"]]);

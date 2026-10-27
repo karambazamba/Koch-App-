@@ -16,16 +16,20 @@ afterEach(() => {
 });
 
 describe("Bausteine an und aus", () => {
-  it("startet alles aus und schaltet einzeln", async () => {
+  it("startet mit Notizen und Im Haus, alles andere aus, und schaltet einzeln", async () => {
     const { win, featureOn, setFeature } = await load();
-    expect(featureOn("vorrat")).toBe(false);
-    expect(setFeature("vorrat", true)).toBe(true);
-    expect(setFeature("vorrat", true)).toBe(false);
-    expect(featureOn("vorrat")).toBe(true);
-    expect(JSON.parse(win.localStorage.getItem(KEY)!)).toEqual({ version: 4, on: ["notizen", "vorrat"], launch: false });
+    expect(featureOn("notizen") && featureOn("vorrat")).toBe(true);
+    expect(featureOn("rezepte")).toBe(false);
+    expect(setFeature("rezepte", true)).toBe(true);
+    expect(setFeature("rezepte", true)).toBe(false);
+    expect(featureOn("rezepte")).toBe(true);
+    expect(JSON.parse(win.localStorage.getItem(KEY)!)).toEqual({ version: 5, on: ["notizen", "vorrat", "rezepte"], launch: false, imHaus: false });
+    expect(setFeature("rezepte", false)).toBe(true);
+    expect(featureOn("rezepte")).toBe(false);
+    expect(setFeature("rezepte", false)).toBe(false);
+    // Im Haus lässt sich abschalten (Daten bleiben)
     expect(setFeature("vorrat", false)).toBe(true);
     expect(featureOn("vorrat")).toBe(false);
-    expect(setFeature("vorrat", false)).toBe(false);
   });
 
   it("Spontan-Ideen bringen die Ideen-Seite mit", async () => {
@@ -62,16 +66,17 @@ describe("Bausteine: Migration", () => {
     expect(on2("vorrat")).toBe(false);
   });
 
-  it("unbekannte Version oder kaputt = alles aus", async () => {
-    expect((await load({ [KEY]: JSON.stringify({ version: 9, on: ["vorrat"] }) })).featureOn("vorrat")).toBe(false);
-    expect((await load({ [KEY]: "null" })).featureOn("vorrat")).toBe(false);
-    expect((await load({ [KEY]: "{kaputt" })).featureOn("vorrat")).toBe(false);
+  it("unbekannte Version oder kaputt = Standard (wie neu)", async () => {
+    expect((await load({ [KEY]: JSON.stringify({ version: 9, on: ["rezepte"] }) })).featureOn("rezepte")).toBe(false);
+    expect((await load({ [KEY]: "null" })).featureOn("rezepte")).toBe(false);
+    expect((await load({ [KEY]: "{kaputt" })).featureOn("rezepte")).toBe(false);
+    expect((await load({ [KEY]: "{kaputt" })).featureOn("notizen")).toBe(true);
   });
 
-  it("v1 ohne alten Test-Schalter: freigeschaltete bleiben (+ Notizen), wird als v4 zurückgeschrieben", async () => {
+  it("v1 ohne alten Test-Schalter: freigeschaltete bleiben (+ Notizen), wird als v5 zurückgeschrieben", async () => {
     const { win, featureOn } = await load({ [KEY]: JSON.stringify({ version: 1, legacy: false, unlocked: ["wochenplan", "nix"] }) });
     expect(featureOn("wochenplan")).toBe(true);
-    expect(JSON.parse(win.localStorage.getItem(KEY)!)).toEqual({ version: 4, on: ["wochenplan", "notizen"], launch: false });
+    expect(JSON.parse(win.localStorage.getItem(KEY)!)).toEqual({ version: 5, on: ["wochenplan", "notizen"], launch: false, imHaus: false });
     const { featureOn: on2 } = await load({ [KEY]: JSON.stringify({ version: 1 }) });
     expect(on2("wochenplan")).toBe(false);
   });

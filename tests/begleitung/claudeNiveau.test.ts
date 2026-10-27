@@ -183,9 +183,10 @@ describe("Prüfstand auf 95 % (Auftrag „Prüfstand auf 95 %“)", () => {
   const satz = (text: string) => PRUEFSAETZE.find((s) => s.text === text)!;
   const op = (type: string) => ({ id: "1", type }) as unknown as ChangeOp;
 
-  it("„später“ in 1.0: Vorrat zeigen → „Kommt bald.“ ohne Aktion; Wochenplan und Sport gehören zu 1.0", () => {
-    expect(bewerte(satz("Zeig mir den Vorrat"), { reply: "Kommt bald.", ops: [] }, 2000).ok).toBe(true);
-    expect(bewerte(satz("Zeig mir den Vorrat"), { reply: "Kommt bald.", ops: [op("set_feature")] }, 2000).ok).toBe(false);
+  it("Im Haus, Wochenplan und Sport gehören zu 1.0: kein „Kommt bald.“", () => {
+    expect(bewerte(satz("Zeig mir den Vorrat"), { reply: "Steht unter Essen.", ops: [op("app_command")] }, 2000).ok).toBe(true);
+    expect(bewerte(satz("Wir haben noch 4 Joghurt im Kühlschrank"), { reply: "Steht drin.", ops: [op("add_pantry")] }, 2000).ok).toBe(true);
+    expect(bewerte(satz("Wir haben noch 4 Joghurt im Kühlschrank"), { reply: "Kommt bald.", ops: [] }, 2000).ok).toBe(false);
     expect(bewerte(satz("Lösch den Wochenplan"), { reply: "Liegt bereit.", ops: [op("clear_week")] }, 2000).ok).toBe(true);
     expect(bewerte(satz("Lösch den Wochenplan"), { reply: "Kommt bald.", ops: [] }, 2000).ok).toBe(false);
     expect(bewerte(satz("Schalt Sport ein"), { reply: "Steht drin.", ops: [op("set_feature")] }, 2000).ok).toBe(true);

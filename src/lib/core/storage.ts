@@ -27,7 +27,7 @@ export const STORAGE = [
   { key: "wasgibts.pinnwand", what: "Pinnwand: Nachrichten und Sprachnachrichten (Einträge; Memos nicht in der Sicherung), Reaktionen je Person, Antworten mit Zitat", version: 3, migration: "pinnwand/store.ts migratePinStore", area: "local", backup: true },
   { key: "wasgibts-memos", what: "Ton der Sprachnachrichten (IndexedDB; mit Konto zusätzlich im Haushalt, Bucket „memos“)", version: 1, migration: "pinnwand/memoAudio.ts", area: "indexeddb", backup: false },
   { key: "wasgibts.startseite", what: "Startseite: Kacheln, Reihenfolge, Größen", version: 7, migration: "core/homeLayout.ts migrateHome", area: "local", backup: true },
-  { key: "wasgibts.funktionen", what: "Eingeschaltete Bausteine (+ Übernahme Launch 1.0)", version: 4, migration: "core/features.ts migrate", area: "local", backup: true },
+  { key: "wasgibts.funktionen", what: "Eingeschaltete Bausteine (+ Übernahme Launch 1.0, Im Haus)", version: 5, migration: "core/features.ts migrate", area: "local", backup: true },
   { key: "wasgibts.tagesablauf", what: "Tagesablauf: Morgens, Feierabend, Ruhe, Arbeitstage, Kochen", version: 1, migration: "heute/tagesablauf.ts", area: "local", backup: true },
   { key: "wasgibts.sport", what: "Sport: Trainings, Wochenziel, Packlisten", version: 1, migration: "sport/store.ts", area: "local", backup: true },
   { key: "wasgibts.timer", what: "Laufende Timer", version: 1, migration: "timer/store.ts", area: "local", backup: false },

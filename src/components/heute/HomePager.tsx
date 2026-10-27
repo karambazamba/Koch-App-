@@ -11,6 +11,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ErsterBesuch } from "@/components/begleitung/denktmit/ErsterBesuch";
+import { seiteFuerTab } from "@/lib/mia/denktmit/seiten";
 import { CARD, FAB_CLEARANCE } from "@/components/ui/styles";
 import { useCalendarEntries } from "@/lib/kalender/useCalendarEntries";
 import { useMinutes } from "@/lib/core/now";
@@ -201,7 +202,7 @@ export function HomePager({ data }: { data: HomeData }) {
           );
         })}
       </main>
-      {tab !== "heute" && <ErsterBesuch seite={`seite:${tab}`} />}
+      {tab !== "heute" && <ErsterBesuch seite={seiteFuerTab(tab)} />}
     </>
   );
 }

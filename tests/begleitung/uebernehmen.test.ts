@@ -108,7 +108,7 @@ describe("commitOps", () => {
     expect(entry.spontan).toBe(true);
   });
 
-  it("Wunsch, Rezept und Pinnwand landen in ihren Speichern und schalten frei – Im Haus (für 1.0 aus) nicht: „Kann ich noch nicht.“", () => {
+  it("Wunsch, Rezept, Pinnwand und Im Haus landen in ihren Speichern und schalten frei", () => {
     const ops: ChangeOp[] = [
       { id: "1", type: "add_pantry", name: "Chili", place: "tiefkuehler" },
       { id: "2", type: "add_wish", personId: "p-mathis", who: "Mathis", dish: "Pfannkuchen" },
@@ -117,9 +117,9 @@ describe("commitOps", () => {
     ];
     const current = daten({ home: m.home.DEFAULT_HOME.map((t) => (t.id === "pinnwand" ? { ...t, visible: false } : t)) });
     const r = m.client.commitOps(current, ops, alle(ops), "");
-    expect(r.notes).toEqual(["Eure Rezepte stehen jetzt rechts unter Essen.", "Die Pinnwand steht jetzt oben auf der Startseite.", "Kann ich noch nicht."]);
-    expect(m.pantry.loadPantry()).toEqual([]);
-    expect(m.features.featureOn("vorrat")).toBe(false);
+    expect(r.notes).toEqual(["„Im Haus“ steht jetzt unter Essen.", "Eure Rezepte stehen jetzt rechts unter Essen.", "Die Pinnwand steht jetzt oben auf der Startseite."]);
+    expect(m.pantry.loadPantry().map((p) => p.name)).toEqual(["Chili"]);
+    expect(m.features.featureOn("vorrat")).toBe(true);
     expect(m.wishes.loadWishes().map((w) => w.dish)).toEqual(["Pfannkuchen"]);
     expect(m.pins.loadPins().map((p) => p.data.text)).toEqual(["Bin um 20 Uhr da"]);
     expect(m.pins.loadPins()[0].data.author).toBe("Felix");

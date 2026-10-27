@@ -2,11 +2,14 @@
 
 Kurz: Was zu Hause ist – ohne Mengen, nur da oder nicht da. Füllt sich von
 selbst (im Einkauf Abgehaktes kommt rein, Gekochtes geht raus), vergisst
-still, wenn man nicht pflegt, und sieht aus wie der Einkauf. Alles Sichtbare
-liegt hinter dem Baustein **Im Haus** (`vorrat` in `src/lib/core/features.ts`,
-aus als Standard); Abhaken im Einkauf, „Hab … gekauft“ oder ＋ schalten ihn
-frei. Intern heißt alles weiter Vorrat (`src/lib/vorrat/`, `/vorrat`,
-`wasgibts.vorrat`).
+still, wenn man nicht pflegt, und sieht aus wie der Einkauf. Gehört zu
+„Mia 1.0“ (zusammen mit Spontan kochen): Baustein **Im Haus** (`vorrat` in
+`src/lib/core/features.ts`) ist für alle an – neue Nutzer über `DEFAULT_ON`,
+bisherige einmal beim Start (`launchUebernahme`, Feld `imHaus`). Man kann ihn
+in „Mehr Funktionen“ abschalten (Daten bleiben); Abhaken im Einkauf, „Hab …
+gekauft“, ＋ oder Mia schalten ihn dann wieder frei. Die Kachel steht nie von
+selbst auf der Startseite, nur über die Kachel-Auswahl. Intern heißt alles
+weiter Vorrat (`src/lib/vorrat/`, `/vorrat`, `wasgibts.vorrat`).
 
 ## Wo im Code
 
@@ -17,9 +20,13 @@ frei. Intern heißt alles weiter Vorrat (`src/lib/vorrat/`, `/vorrat`,
 - Speicher: `src/lib/vorrat/pantry.ts` (Migration, rein/raus, Ort merken,
   aufgebraucht, still aufräumen, Zutaten-Abgleich `sameIngredient`).
 - Kreislauf: `src/lib/vorrat/kreislauf.ts` (`boughtToHouse`,
-  `unboughtFromHouse`, `backToList`, Sätze ohne KI `pantrySentence`).
-- Seite: `src/lib/vorrat/imHaus.ts` (`houseSections`, `houseTile`) →
-  `src/components/vorrat/PantryView.tsx`.
+  `unboughtFromHouse`, `backToList`, `istAlle` = raus und auf die Liste,
+  Sätze ohne KI `pantrySentence`).
+- Seite: `src/lib/vorrat/imHaus.ts` (`houseSections`, `houseTile`,
+  `HOUSE_TILE_MAX`, `imHausReihe`, `IM_HAUS_CHIPS`) →
+  `src/components/vorrat/PantryView.tsx`; eine Sache ändern (Ort, „Ist alle“,
+  Entfernen): `src/components/vorrat/SacheSheet.tsx`.
+- Bereich unter Essen: `src/components/essen/ImHausBereich.tsx`.
 - Kachel auf Heute: `PantryTile` in `src/components/heute/HomeTiles.tsx`.
 - Gleiche Kachel wie im Einkauf: `ItemTile`
   (`src/components/einkauf/kacheln/ItemTile.tsx`, mit `badge` und `faded`).
@@ -38,6 +45,10 @@ frei. Intern heißt alles weiter Vorrat (`src/lib/vorrat/`, `/vorrat`,
 - Abgleich (`docs.ts`): je Sache `vr:<id>`, dazu einmal `vr:orte`. Ältere
   Geräte mit Mengen werden sauber gelesen (`cleanPantryItem`).
 - `wasgibts.eingeraeumt` ist ausgemustert (`RETIRED_KEYS`).
+- Baustein: `wasgibts.funktionen` v5 (`imHaus: true` = Übernahme für 1.0
+  erledigt). Beim Update v4 → v5 ändern sich keine Daten; wer „Im Haus“ noch
+  nicht an hatte, bekommt es an und die Kachel (stand im alten Standard
+  unsichtbar mit `visible: true`) wird dabei auf `visible: false` gesetzt.
 
 ## So verhält es sich
 
@@ -53,28 +64,48 @@ frei. Intern heißt alles weiter Vorrat (`src/lib/vorrat/`, `/vorrat`,
   Meldung „Im Haus: Brot, Äpfel · Rückgängig“ (kurz Nacheinanderes in EINER
   Meldung); Haken weg → wieder raus. Antippen im Haus = aufgebraucht (blass
   unter „Aufgebraucht“, 3 Tage), nochmal = wieder auf die Liste („Steht
-  wieder auf der Liste · Rückgängig“). Gekocht (`markCooked`) → Zutaten raus.
-  ＋ = Schnelleingabe „IM HAUS“.
+  wieder auf der Liste · Rückgängig“). Gekocht/„Gegessen“ (`markCooked`, auch
+  automatisch nach der Essenszeit) → Zutaten raus (Rezept oder Klassiker aus
+  `DISHES`), „Auf morgen verschieben“ holt sie zurück. „Eier sind alle“ (Mia,
+  Regel, „Ist alle · auf die Liste“ im Fenster) → raus und auf die
+  Einkaufsliste der laufenden Woche, was dort schon steht, nicht doppelt.
+  ＋ = Schnelleingabe „IM HAUS“, mehrere auf einmal („Eier, Milch, Hack“).
 - **Seite**: Hinweis „Füllt sich von selbst …“, Chips Alle · Kühlschrank ·
   Schrank · TK, Abschnitte Bald aufbrauchen → Kühlschrank → Schrank →
-  Tiefkühler → Aufgebraucht, unten „Was kann ich daraus kochen?“ → Kochidee.
+  Tiefkühler → Aufgebraucht, unten „Was koch ich daraus?“ → Spontan kochen.
+  Lange drücken = Sache ändern (`SacheSheet`).
+- **Unter Essen** (EIN Bereich statt „Spontan kochen“ und „Das ist da“):
+  Überschrift „Im Haus“ mit ＋ und „Alle ›“; Chips (`imHausReihe`): „bald
+  aufbrauchen“ zuerst (leicht orange, Sanduhr), dann das zuletzt
+  Reingekommene, höchstens 8; Antippen = Sache öffnen. Darunter groß „Was koch
+  ich daraus?“ = Spontan kochen; das Gespräch rechnet mit genau diesen Sachen
+  in derselben Reihe („Noch da: …“). Leer: „Sag mir, was da ist, dann schlag
+  ich was vor.“ + „Eintragen“. Ist der Baustein aus, fehlt der Bereich (mit
+  Spontan-Ideen steht dann die alte Karte „Spontan kochen“).
 - **Bald aufbrauchen**: nur Frisches im letzten Drittel seiner Zeit, Schild
   „heute“/„morgen“ (Orange) bzw. „bis Sa“ (Gelb), nie rot.
-- **Kachel** (S/M): „Bald aufbrauchen“ (2 bzw. 4 Zeilen à 30 px), sonst
-  „Zuletzt eingekauft“; „Daraus kochen“ → Kochidee; leer „Was du einkaufst,
-  landet hier von selbst.“
+- **Kachel** (S/M, nur über die Auswahl, nicht im Standard): „Bald
+  aufbrauchen“ (S 3, M 6 Zeilen à 30 px), sonst „Zuletzt eingekauft“; unten
+  „Was koch ich daraus?“ → Spontan kochen; leer „Sag mir, was da ist, dann
+  schlag ich was vor.“
+- **Mia denkt mit**: beim ersten Besuch der Essen-Seite einmal „Sag mir, was
+  im Kühlschrank ist, dann koch ich mit dir spontan.“ (eigener Schlüssel
+  `seite:essen-imhaus`, also auch für alle, die Essen schon kannten).
 - **Ehrlich**: „alles im Haus“ (grün) nur, wenn die Zutaten in der ersten
   Hälfte ihrer Zeit sind; sonst „vermutlich im Haus: …“ (grau); fehlt etwas,
   „auf die Liste: …“. Leeres „Im Haus“ → nie „im Haus“.
 
 ## Begleitung (Mia)
 
-- `vorrat_hinzufuegen` („Hab Hähnchen gekauft“, „Chili eingefroren“) und
-  `vorrat_aufgebraucht` („Die Milch ist alle“) in
+- `vorrat_hinzufuegen` („Hab Hähnchen gekauft“, „Hab noch Hack“, „Chili
+  eingefroren“) und `vorrat_aufgebraucht` („Die Milch ist alle“ → raus und
+  `add_shopping` für die aktuelle Woche, nicht doppelt) in
   `src/lib/begleitung/pantryTools.ts` → Ops `add_pantry`/`use_pantry`, sofort
-  mit Rückgängig (`miaDone.ts`). Ohne KI dieselben Sätze über
-  `pantrySentence` (`useChatRules.ts`). Kontext: „Im Haus (vermutlich da, ohne
-  Mengen): …“.
+  mit Rückgängig (`miaDone.ts`). Seit 1.0 kein „Kommt bald.“ mehr. Ohne KI
+  dieselben Sätze über `pantrySentence` + `istAlle` (`useChatRules.ts`; „Hab
+  noch …“ nur mit bekannten Lebensmitteln). Kontext: „Im Haus (vermutlich da,
+  ohne Mengen): …“. Prüfstand: „Wir haben noch 4 Joghurt im Kühlschrank“ →
+  `add_pantry`, „Zeig mir den Vorrat“ → `app_command`/`set_feature`/Antwort.
 
 ## Tests
 
@@ -82,5 +113,9 @@ frei. Intern heißt alles weiter Vorrat (`src/lib/vorrat/`, `/vorrat`,
   Grundsachen, Migration ohne Mengen, Ort merken, aufgebraucht, Seite und
   Kachel, Kreislauf (auch über `toggleChecked`), Mia-Sätze, ehrliche Zeile,
   Abgleich.
+- `tests/vorrat/imHausEssen.test.ts` – Einkauf abhaken → Im Haus, Gegessen →
+  raus, „… ist alle“ → raus + Liste, „Hab noch Hack“, Bereich unter Essen
+  (Reihe, höchstens 8, „Was koch ich daraus?“ mit diesen Sachen), Kachel S/M,
+  Mia stellt es einmal vor. Übernahme für 1.0: `tests/core/launch.test.ts`.
 - Gekocht: `tests/essen/nachDemEssen.test.ts`.
-- Durchklick: Ablauf `imHaus` in `e2e/ablaeufe/essen.mjs`.
+- Durchklick: Abläufe `imHaus` und `imHausEssen` in `e2e/ablaeufe/essen.mjs`.
