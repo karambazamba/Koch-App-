@@ -6,7 +6,7 @@
 // v0.67) – kein Umbenennen mehr. Früher eigene Seiten (/profil/lotte,
 // /vorlesen, /farbe) leiten hierher.
 
-import { Hand, KeyRound, Mic, Palmtree, Sun } from "lucide-react";
+import { Brain, Hand, KeyRound, Mic, Palmtree, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import { requestCodeScreen } from "@/lib/begleitung/codeAbfrage";
 import { fetchStatus } from "@/lib/begleitung/zugang";
@@ -19,6 +19,8 @@ import { useFeature } from "@/lib/core/features";
 import { helperName, helperTitle, TIP_LEVELS, type HelperMode } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { VoiceSettings } from "@/components/einstellungen/settings/ReadingView";
+import { GESPRAECHIG } from "@/lib/mia/denktmit/regeln";
+import { setGespraechig, useDenkt } from "@/lib/mia/denktmit/store";
 import { ChoiceCards, Group, Row, SettingsPage, SwitchRow } from "@/components/einstellungen/settings/SettingsParts";
 
 const MODES: { value: HelperMode; label: string }[] = [
@@ -33,6 +35,7 @@ export function MiaView() {
   const weekendOn = useFeature("wochenendIdeen");
   const links = useKnopfLinks();
   const needsCode = useNeedsCode();
+  const denkt = useDenkt();
   return (
     <SettingsPage title={title}>
       {(profile, set) => {
@@ -59,6 +62,13 @@ export function MiaView() {
 
             <h2 className={`mt-2 px-1 ${SECTION_TITLE}`}>Wie oft melde ich mich?</h2>
             <Segmented label={`Wie oft meldet sich ${name}?`} value={profile.helperMode} onChange={(helperMode) => set({ helperMode })} options={MODES} />
+            <h2 className={`mt-2 px-1 ${SECTION_TITLE}`}>Wie gesprächig?</h2>
+            <ChoiceCards label="Wie gesprächig?" value={denkt?.level ?? "normal"} onChange={setGespraechig} options={GESPRAECHIG.map((g) => ({ value: g.value, label: g.label, hint: g.detail }))} />
+            <Group title="">
+              <Row href="/profil/mia-merkt" icon={Brain} title="Was ich mir merke">
+                Gewohnheiten und Läden, einzeln löschbar
+              </Row>
+            </Group>
             {tipsOn && (
               <>
                 <h2 className={`mt-2 px-1 ${SECTION_TITLE}`}>Tipps auf der Startseite</h2>

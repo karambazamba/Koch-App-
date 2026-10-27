@@ -36,6 +36,7 @@ export type JetztKind =
   | "ueberschneidung"
   | "packen"
   | "beispiel"
+  | "spruch"
   | "ruhig";
 
 /** Wohin Antippen führt: eine Seite oder etwas, das die Startseite selbst öffnet */
@@ -118,6 +119,8 @@ export type JetztInput = {
   tiles: HomeTileId[];
   /** Kacheln, die schon „Morgen“ zeigen (Termine bzw. Morgen-Kachel) */
   tomorrowTiles?: HomeTileId[];
+  /** Spruch des Tages (Mia denkt mit) – steht nur, wenn sonst nichts dran ist */
+  spruch?: string | null;
   /** Interesse je Art (lokal gezählt), heute erledigte/ausgeblendete Themen */
   weights: Partial<Record<JetztKind, number>>;
   hidden: string[];
@@ -166,6 +169,13 @@ export function birthdayName(title: string): string | null {
 
 const MAX = 3;
 /** Nachts (22–6) nur Erinnerung, Timer, Kochen, Pause, Ausblick, Geburtstag */
+/** Spruch auf zwei Zeilen: Zeile 1 bis 32 Zeichen, nur am Wortende umbrochen */
+export function spruchZeilen(s: string): [string, string] {
+  if (s.length <= TITLE_MAX) return [s, ""];
+  const space = s.slice(0, TITLE_MAX + 1).lastIndexOf(" ");
+  return [s.slice(0, space), s.slice(space + 1)];
+}
+
 const NIGHT_KINDS: JetztKind[] = ["erinnerung", "timer", "kochen", "pause", "ausblick", "geburtstag", "beispiel"];
 
 /** Die Themen für jetzt – höchstens drei, das Wichtigste zuerst (nie leer) */
@@ -294,5 +304,9 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
     .slice(0, MAX)
     .map(({ id, kind, title, detail, score, target, button }) => ({ id, kind, title, detail, score, target, button }));
   if (ranked.length) return ranked;
+  if (x.spruch && !night) {
+    const [title, detail] = spruchZeilen(x.spruch);
+    return [{ id: `spruch:${x.today}`, kind: "spruch", title, detail, score: 1, target: null, button: null }];
+  }
   return [{ id: `ruhig:${x.today}`, kind: "ruhig", title: QUIET_TEXT, detail: "", score: 1, target: null, button: null }];
 }
