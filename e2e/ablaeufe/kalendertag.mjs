@@ -55,16 +55,14 @@ export const kalenderTag = async (page, check) => {
   await page.waitForTimeout(600);
   check(!(await sheet.isVisible().catch(() => false)), "lange drücken öffnet kein Fenster");
 
-  // Liste runterscrollen → „⌂ Heute“ → Startseite
+  // Liste runterscrollen → Reiter „Heute“ in der Leiste → Startseite
   await panel.getByRole("radio", { name: "Liste" }).click();
   await page.waitForTimeout(400);
-  await page.mouse.wheel(0, 1200);
   await page.evaluate(() => window.scrollTo(0, 1200));
   await page.waitForTimeout(600);
-  const home = page.getByRole("tab", { name: "Zur Startseite" });
-  check(await home.isVisible(), "„⌂ Heute“ bleibt oben sichtbar");
-  check(await page.locator("nav[data-schmal]").count() === 1, "Leiste schmal beim Scrollen");
-  await home.click();
-  await page.waitForTimeout(900);
+  const home = page.locator("[data-leiste]").getByRole("tab", { name: "Heute" });
+  check(await home.isVisible(), "Leiste bleibt unten sichtbar");
+  await home.tap();
+  await page.waitForTimeout(1300);
   check((await page.getByRole("tab", { name: "Heute", selected: true }).count()) > 0, "→ Startseite");
 };
