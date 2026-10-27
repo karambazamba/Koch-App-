@@ -15,6 +15,7 @@ import { useProfile } from "@/lib/einstellungen/useProfile";
 import { toIsoDate, useToday, useWeekPlans } from "@/lib/essen/weekPlan";
 import { useWishes } from "@/lib/essen/wishes";
 import type { Recipe } from "@/lib/essen/cookbook";
+import { useIdeenGezeigt } from "@/lib/essen/ideenGezeigt";
 
 /** `key`: Bestand, zu dem `index` gehört – ändert sich der Bestand, beginnt es wieder vorn */
 type IdeaDay = { version: 1; date: string; dismissed: string[]; index: number; key?: string };
@@ -60,6 +61,7 @@ export function useTodayIdeas(filters: IdeaFilter[] = [], opts: { tomorrow?: boo
   const weekPlans = useWeekPlans();
   const mealPlans = useMealPlans();
   const state = useExternalStore(store.subscribe, store.load, () => undefined);
+  const shown = useIdeenGezeigt();
   if (!today || profile === undefined || !recipes || !pantry || !wishes || !weekPlans || !mealPlans || state === undefined) return undefined;
   if (!profile) return null;
   const todayIso = toIsoDate(today);
@@ -75,6 +77,7 @@ export function useTodayIdeas(filters: IdeaFilter[] = [], opts: { tomorrow?: boo
     recent: recentDishes(todayIso, profile, weekPlans, mealPlans, recipes),
     dismissed: day.dismissed,
     filters,
+    shown,
   });
   return { ideas, index: ideas.length ? day.index % ideas.length : 0, profile, recipes, today, todayIso, stockKey: key, nearlyEmpty: stockNearlyEmpty(pantry) };
 }

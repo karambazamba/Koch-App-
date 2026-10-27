@@ -113,13 +113,14 @@ describe("Ideen für heute", () => {
     expect(ideasFor(ctx({ date: "2026-01-15" })).map((i) => i.title)).toContain("Linsensuppe");
   });
 
-  it("Gerichte der letzten 5 Tage aus dem Plan", () => {
+  it("Gerichte der letzten 14 Tage aus dem Plan", () => {
     const WEEK = "2026-10-19";
     const plans = {
-      "2026-10-12": { Freitag: { kind: "text" as const, title: "Zu alt", category: null }, Sonntag: { kind: "text" as const, title: "Braten", category: null } },
+      "2026-10-05": { Mittwoch: { kind: "text" as const, title: "Zu alt", category: null }, Freitag: { kind: "text" as const, title: "Lasagne", category: null } },
+      "2026-10-12": { Freitag: { kind: "text" as const, title: "Fisch", category: null }, Sonntag: { kind: "text" as const, title: "Braten", category: null } },
       [WEEK]: { Montag: { kind: "text" as const, title: "Pizza", category: null }, Donnerstag: { kind: "text" as const, title: "Heute", category: null } },
     };
-    expect(recentDishes("2026-10-22", familie({ shoppingDay: "" }), {}, plans, {})).toEqual(["Braten", "Pizza"]);
+    expect(recentDishes("2026-10-22", familie({ shoppingDay: "" }), {}, plans, {})).toEqual(["Lasagne", "Fisch", "Braten", "Pizza"]);
   });
 });
 

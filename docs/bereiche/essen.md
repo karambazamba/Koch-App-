@@ -82,6 +82,17 @@ Alle Schlüssel aus `src/lib/core/storage.ts`:
 
 ## So verhält es sich
 
+- **Wochenkarte und Abwechslung (v0.117)**: Essen-Seite mit „Diese Woche“ /
+  „Nächste Woche“ (‹ ›), Tag antippen = Gericht (mit Rezept die Rezeptseite,
+  sonst das Tausch-Fenster), freier Tag = „Was gibt’s am …?“. Essen-Kachel mit
+  „Woche ›“. Ideen: 14 Tage nach dem Essen nicht wieder; gezeigt und nicht
+  genommen → 7 Tage weiter hinten (`ideenGezeigt.ts`, Speicher
+  `wasgibts.ideengezeigt`, 30 Tage, nicht in der Sicherung); unter den ersten
+  drei höchstens eine je Grundlage (`mixFirst`); fester Tages-Zufall bei
+  Gleichstand; ⇄ nie zweimal dieselbe (`naechsteIdee`). 123 eingebaute
+  Gerichte in `dishList.ts`, jedes mit Bild. Tests `tests/essen/abwechslung.test.ts`,
+  Durchklick `wochenkarte`.
+
 **Essen-Reiter** (von oben):
 - Gericht von heute, nach dem Essen (Essenszeit + 90 Min oder gegessen) das
   von morgen: Bild vollflächig, „HEUTE · 18:30“, Name, Chip „alles im Haus“

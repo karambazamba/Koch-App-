@@ -34,3 +34,16 @@ export function foodTileView(o: {
 
 /** Knopf im Gericht-Fenster */
 export const takeLabel = (takeFor: "heute" | "morgen") => (takeFor === "morgen" ? "Für morgen nehmen" : "Für heute nehmen");
+
+/**
+ * ⇄ „Andere Idee“: die nächste Idee, die nicht das gerade Gezeigte ist – nie
+ * zweimal dieselbe hintereinander. `null` = keine andere da.
+ */
+export function naechsteIdee(titles: string[], alt: number | null, shown: string | null): number | null {
+  const now = shown?.trim().toLowerCase() ?? "";
+  for (let step = 1; step <= titles.length; step++) {
+    const i = ((alt ?? -1) + step) % titles.length;
+    if (titles[i].trim().toLowerCase() !== now) return i;
+  }
+  return null;
+}
