@@ -2743,7 +2743,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Durchklick `familieTeilen` (zwei Konten, Einkauf live ≤ 5 s, Termine
   Familie/Arbeit, Pinnwand live, „Steh grad davor“).
 
-## Einkauf: erst einsortieren, dann einkaufen (vX)
+## Einkauf: erst einsortieren, dann einkaufen (v0.130.0)
 
 - Tafel 99: In der Einkaufsliste heißt Antippen „Wo kaufst du das?“ (Meine
   Läden als große Knöpfe, „Egal wo“, Häkchen „immer bei“, unten „Schon
