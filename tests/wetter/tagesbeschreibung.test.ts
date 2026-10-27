@@ -66,7 +66,7 @@ describe("Ehrliche Tagesbeschreibung (aus den Stunden 7–21 Uhr)", () => {
     const parts = dayParts(fc, DAY);
     expect(parts.find((p) => p.id === "mittags")?.text).toBe("Sonnig");
     expect(parts.find((p) => p.id === "abends")?.text).toBe("Schauer möglich");
-    expect(parts.find((p) => p.id === "abends")?.tips).toContain("☂️ Schirm");
+    expect(parts.find((p) => p.id === "abends")?.tips.map((t) => t.text)).toContain("Schirm");
   });
 });
 

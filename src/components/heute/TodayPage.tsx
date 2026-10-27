@@ -20,6 +20,7 @@ import { FoodTile, MorgenTile, NotesTile, PantryTile, ShoppingTile } from "@/com
 import { WeatherTile } from "@/components/wetter/WeatherTile";
 import { PinboardTile } from "@/components/pinnwand/PinboardTile";
 import { TimerTile } from "@/components/timer/TimerTile";
+import { Sheet } from "@/components/ui/Sheet";
 import { CookingTile } from "@/components/essen/CookingTile";
 import { DemoFoodTile } from "@/components/essen/DemoFoodTile";
 import { JetztCard, JetztPlaceholder } from "@/components/heute/JetztCard";
@@ -362,7 +363,11 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     noteJetztTap(t.kind);
     if (t.kind === "erinnerung" && reminder) markReminderSeen(reminder.key);
     if (t.target && "action" in t.target) {
-      if (t.target.action === "timer") return document.querySelector('[data-tile~="timer"]')?.scrollIntoView({ behavior: "smooth", block: "center" }) ?? router.push("/timer");
+      // Timer-Kachel da: dorthin scrollen; sonst das Timer-Fenster (eine Seite /timer gibt es nicht)
+      if (t.target.action === "timer") {
+        const kachel = document.querySelector('[data-tile~="timer"]');
+        return kachel ? kachel.scrollIntoView({ behavior: "smooth", block: "center" }) : setTimerOpen(true);
+      }
       if (t.target.action === "pause") return endPause();
       if (t.target.action === "wochencheck") {
         weekCheckDone(t.id.slice("wochencheck:".length));
@@ -373,6 +378,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     if ((t.kind === "spendentopf" || t.kind === "region") && t.target && "href" in t.target) return router.push(t.target.href);
     setDayTopic({ topic: t });
   };
+  const [timerOpen, setTimerOpen] = useState(false);
   const [dayTopic, setDayTopic] = useState<{ topic: JetztTopic | null } | null>(null);
   // Mia: „Was steht heute an?“ öffnet „Dein Tag“ (ohne Thema)
   useEffect(() => onOpenDeinTag(() => setDayTopic({ topic: null })), []);
@@ -483,6 +489,13 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
             <HomeBoard tiles={visible} all={all} editing={editing.on} render={renderTile} hrefFor={tileHref} picking={picking} onPicking={setPicking} glow={editing.on ? null : denkt.glow} />
           </div>
 
+          {timerOpen && (
+            <Sheet title="Timer" onClose={() => setTimerOpen(false)}>
+              <div className="pb-3">
+                <TimerTile size="M" />
+              </div>
+            </Sheet>
+          )}
           {demoItem && <DemoItemSheet item={demoItem} today={data.todayIso} onClose={() => setDemoItem(null)} />}
           {dayTopic && (
             <DeinTag

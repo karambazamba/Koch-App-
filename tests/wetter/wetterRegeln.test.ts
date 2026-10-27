@@ -161,9 +161,9 @@ describe("Wetter-Seite", () => {
     const parts = dayParts(fc, TODAY);
     expect(parts.map((p) => p.id)).toEqual(["morgens", "mittags", "abends"]);
     // Wind zeigt jetzt der Windsack-Chip – kein „🌬️ Windig“ mehr (sonst doppelt)
-    expect(parts[0].tips).toEqual(["❄️ Glatt"]);
-    expect(parts[1].tips).toEqual(["☂️ Schirm", "🧣 Warm anziehen"]);
-    expect(parts[2].tips).toEqual(["⚡ Lieber drinnen", "🧴 Sonnencreme"]);
+    expect(parts[0].tips.map((t) => t.text)).toEqual(["Glatt"]);
+    expect(parts[1].tips.map((t) => t.text)).toEqual(["Schirm", "Warm anziehen"]);
+    expect(parts[2].tips.map((t) => t.text)).toEqual(["Lieber drinnen", "Sonnencreme"]);
     expect(dayParts(fcOf([hour(8)]), TODAY)).toHaveLength(1);
     expect(dayParts(fc, plus(1))).toEqual([]);
   });

@@ -20,7 +20,10 @@ export function weatherGroup(code: number): WeatherGroup {
 }
 
 type PartId = "morgens" | "mittags" | "abends";
-export type DayPart = { id: PartId; label: string; code: number; text: string; temp: number; rain: number; gust: number; wind: Wind | null; tips: string[] };
+export type DayPart = { id: PartId; label: string; code: number; text: string; temp: number; rain: number; gust: number; wind: Wind | null; tips: WetterTipp[] };
+
+/** Tipp-Chip mit Linien-Symbol (kein Emoji) */
+export type WetterTipp = { icon: "gewitter" | "schirm" | "glatt" | "warm" | "sonne"; text: string };
 
 const PARTS: { id: PartId; label: string; from: number; to: number }[] = [
   { id: "morgens", label: "Morgens", from: 6, to: 11 },
@@ -29,14 +32,14 @@ const PARTS: { id: PartId; label: string; from: number; to: number }[] = [
 ];
 
 /** Kleine Tipps je Tageszeit (höchstens 2) – Schirm nur bei echter Regenstunde; Wind zeigt der Windsack-Chip */
-function partTips(code: number, temp: number, wet: number): string[] {
-  const tips: string[] = [];
+function partTips(code: number, temp: number, wet: number): WetterTipp[] {
+  const tips: WetterTipp[] = [];
   const g = weatherGroup(code);
-  if (g === "gewitter") tips.push("⚡ Lieber drinnen");
-  else if (wet > 0) tips.push("☂️ Schirm");
-  if (temp <= 0) tips.push("❄️ Glatt");
-  else if (temp <= 5) tips.push("🧣 Warm anziehen");
-  else if (temp >= 25) tips.push("🧴 Sonnencreme");
+  if (g === "gewitter") tips.push({ icon: "gewitter", text: "Lieber drinnen" });
+  else if (wet > 0) tips.push({ icon: "schirm", text: "Schirm" });
+  if (temp <= 0) tips.push({ icon: "glatt", text: "Glatt" });
+  else if (temp <= 5) tips.push({ icon: "warm", text: "Warm anziehen" });
+  else if (temp >= 25) tips.push({ icon: "sonne", text: "Sonnencreme" });
   return tips.slice(0, 2);
 }
 
@@ -191,4 +194,16 @@ export function weekSentence(fc: Forecast, today: string): { text: string; tone:
   if (wet.every(Boolean)) return { text: "Eine nasse Woche. Gemütlich drinnen, mit Schirm raus.", tone: "regen" };
   const best = bestOutdoorDay(fc, today);
   return { text: best ? `Wechselhaft. Am besten für draußen: ${best.date === today ? "heute" : name(best)}.` : "Eine wechselhafte Woche.", tone: wet.filter(Boolean).length > days.length / 2 ? "regen" : "wolken" };
+}
+
+export type Stunde = { key: string; label: string; code: number; temp: number; rain: number };
+
+/**
+ * Stundenleiste unter der großen Karte: die nächsten 12 Stunden ab jetzt
+ * (heute, erste heißt „Jetzt“) bzw. ab 7 Uhr (morgen); auch über Mitternacht.
+ */
+export function nextHours(fc: Forecast, date: string, fromHour: number, now: boolean, count = 12): Stunde[] {
+  const start = fc.hours.findIndex((h) => h.date === date && h.hour >= fromHour);
+  if (start < 0) return [];
+  return fc.hours.slice(start, start + count).map((h, i) => ({ key: `${h.date}-${h.hour}`, label: now && i === 0 ? "Jetzt" : `${h.hour} Uhr`, code: h.code, temp: round(h.temp), rain: h.rain }));
 }

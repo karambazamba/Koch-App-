@@ -4,7 +4,7 @@
 // Uhr öffnet die Seite auf "Morgen". Heute/Morgen (Tafel 16 B „Himmel oben“):
 // große Himmel-Karte je Lage (nachts Nachtblau) mit Jetzt-Temperatur bzw.
 // Höchstwert, Zustand, Zeile „9 bis 12° · ☂ 39 % · ☀ 3 Std.“ und
-// Morgens/Mittags/Abends; darunter ein Satz zu den Terminen und die drei
+// Morgens/Mittags/Abends; darunter die Stundenleiste (12 Std.), ein Satz zu den Terminen und die drei
 // Tageszeit-Karten mit Tipp-Chips. 7 Tage (Tafel 16 D „Wochen-Band“): bester
 // Tag für draußen, 7 Säulen mit Regenbalken und Sonnenstunden, EIN Satz zur
 // Woche; Säule antippen = Einzelheiten.
@@ -19,7 +19,9 @@ import { itemsForDay, tomorrowLabel, weekdayLong, weekdayShort } from "@/lib/kal
 import { useCalendarEntries } from "@/lib/kalender/useCalendarEntries";
 import { addDays, toIsoDate, useMinutes, useToday } from "@/lib/core/now";
 import { round, weatherKind, type Forecast, type ForecastDay, type TipTermin } from "@/lib/wetter/forecast";
-import { bestOutdoorDay, dayParts, daySentence, dayWords, isNight, skyFor, skyLine, weatherStartTab, weekSentence, type DayPart } from "@/lib/wetter/view";
+import { bestOutdoorDay, dayParts, daySentence, dayWords, isNight, nextHours, skyFor, skyLine, weatherStartTab, weekSentence, type DayPart, type WetterTipp } from "@/lib/wetter/view";
+import { HourStrip } from "@/components/wetter/HourStrip";
+import { Shirt, Snowflake, Sun, Umbrella, Zap, type LucideIcon } from "lucide-react";
 import { useForecast } from "@/lib/wetter/client";
 import { WeatherSymbol } from "@/components/wetter/WeatherSymbol";
 import { BestDayCard, SkyCard, WeekBand, WeekNote, WindChip } from "@/components/wetter/WeatherParts";
@@ -49,7 +51,7 @@ export function WeatherView() {
   const go = (i: number) => setTab(TABS[Math.max(0, Math.min(TABS.length - 1, i))].id);
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
-      <PageHeader title={`Wetter · ${place}`} backHref="/" />
+      <PageHeader title="Wetter" subtitle={place} backHref="/" />
       <main
         className={`${PAGE_MAIN} gap-4 [@media(max-height:620px)]:gap-2.5`}
         onTouchStart={(e) => (touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY })}
@@ -116,6 +118,7 @@ function DayTab({ forecast, date, today, minutes, termine }: { forecast: Forecas
       ) : (
         <SkyCard sky={skyFor(code)} label={tomorrowLabel(date)} temp={round(d?.max ?? 0)} sub={d ? `${round(d.min)} bis ${round(d.max)}°` : undefined} state={state} line={d ? skyLine(d).split(" · ").slice(1).join(" · ") : ""} code={code} night={false} parts={parts} wind={d?.wind ?? null} />
       )}
+      <HourStrip hours={nextHours(forecast, date, isToday ? Math.floor(minutes / 60) : 7, isToday)} />
       {sentence && <p className="px-1 text-[16px] font-semibold leading-snug">{sentence}</p>}
       <div className="flex flex-col gap-2">
         {parts.map((p) => (
@@ -125,6 +128,8 @@ function DayTab({ forecast, date, today, minutes, termine }: { forecast: Forecas
     </>
   );
 }
+
+const TIPP_ICON: Record<WetterTipp["icon"], LucideIcon> = { gewitter: Zap, schirm: Umbrella, glatt: Snowflake, warm: Shirt, sonne: Sun };
 
 function PartCard({ part }: { part: DayPart }) {
   return (
@@ -139,11 +144,15 @@ function PartCard({ part }: { part: DayPart }) {
       {(part.tips.length > 0 || part.wind) && (
         <span className="flex flex-col items-end gap-1">
           {part.wind && <WindChip wind={part.wind} className="bg-fill" />}
-          {part.tips.map((t) => (
-            <span key={t} className={`${chipClass(false)} pointer-events-none whitespace-nowrap`}>
-              {t}
-            </span>
-          ))}
+          {part.tips.map((t) => {
+            const Icon = TIPP_ICON[t.icon];
+            return (
+              <span key={t.text} className={`${chipClass(false)} pointer-events-none gap-1 whitespace-nowrap`}>
+                <Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
+                {t.text}
+              </span>
+            );
+          })}
         </span>
       )}
     </section>
