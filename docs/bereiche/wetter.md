@@ -170,3 +170,7 @@ wird nur die Stadt). Die App holt höchstens alle 30 Minuten neu.
   `useForecast`.
 - `tests/wetter/seite.test.ts` – Wetter-Seite.
 - Durchklick `e2e/ablaeufe/alltag.mjs` → `wetter` (Himmel-Karte, 7 Säulen).
+
+## Stundenleiste (v0.122.0)
+
+- Heute: die nächsten 12 Stunden ab jetzt, Morgen: ab 7 Uhr (`nextHours`, `HourStrip`), waagerecht wischbar, ohne die Seiten umzublättern. Tipp-Chips mit Linien-Symbol (`WetterTipp`). Titel „Wetter“, Ort als Untertitel. Tests `tests/wetter/phase0Reste.test.ts`.

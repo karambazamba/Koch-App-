@@ -380,3 +380,7 @@ Ideen“. Verschwindet mit dem ersten eigenen Gericht oder dem Beispiel-Tag.
 - Beispiel-Tag: Antippen öffnet das Beispielgericht im selben Fenster, erst
   „Nehmen“ übernimmt es in den echten Plan (Beispiel verschwindet).
 - Tests `tests/heute/essenKachel.test.ts`, Durchklick `essenkachel.mjs`.
+
+## Fehler raus (v0.122.0)
+
+- Löschen über `ConfirmDialog` + „Gelöscht · Rückgängig“ (kein `window.confirm`). Kochmodus mit `&personen=N` (`personsParam`, `scaledAmount`). Variante `hackbraten` (Scheiben vom Laib). Herz in der Infozeile. „Kochmodus ›“, „Unsere Rezepte“, Kochmodus ohne Emojis. „Rezept erzählen“ ohne eigenes Mikro. Rezept-Links nur über `recipeHref` (nur wenn es das Rezept gibt). Tests `tests/essen/essenOhneFehler.test.ts`.

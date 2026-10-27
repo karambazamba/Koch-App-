@@ -2622,3 +2622,21 @@ Fehler in `docs/aufraeumen-nachher.md`.
   bringt?, Regen × Wäsche, voller Tag → schnelles Gericht) und hat einen
   Spruch des Tages statt „Alles ruhig“. Höchstens eine Karte am Tag, Regler
   „Wie gesprächig?“, Liste „Was ich mir merke“. Ersetzt Phase-0-Auftrag 8.
+
+## Phase-0-Reste (v0.122.0)
+
+- Einkauf ein Weg: kein fester Knopf „Mehr hinzufügen“ mehr, der Katalog
+  kommt über ＋ → „Mehr Details“; Schließen (✕, Wischen, Zurück) übernimmt die
+  Auswahl; kein eigenes Mikro im Katalog; Laden-Chips ohne Zahl; sichtbar
+  heißt es überall „Einkaufsliste“.
+- Essen: Rezept löschen mit Fenster und „Gelöscht · Rückgängig“ statt
+  Browser-Frage (auch Wochen-Check); Kochmodus übernimmt die Personenzahl;
+  Hackbraten als Scheiben vom Laib; Herz in der Infozeile, oben nur „…“;
+  „Kochmodus ›“, „Unsere Rezepte“, keine Emojis im Kochmodus; „Rezept
+  erzählen“ ohne eigenes Mikro; Links zu Rezepten nur, wenn es sie gibt.
+- Pinnwand: „Senden“ und „Gesendet“; Kopfzeile immer „Nachrichten und
+  Sprachnachrichten verschwinden nach 24 Stunden.“
+- Wetter: Stundenleiste (12 Std.) unter der großen Karte, Tipp-Chips mit
+  Linien-Symbolen statt Emojis, Titel „Wetter“ mit Ort darunter.
+- Timer: laufender Timer auf der Jetzt-Karte ohne Timer-Kachel öffnet das
+  Timer-Fenster (vorher die Fehlerseite /timer, mit Kachel sogar beides).
