@@ -16,7 +16,8 @@ export const essen = async (page, check) => {
   await family(page, "/?seite=essen");
   const panel = page.locator("[role=tabpanel]:not([inert])");
   check(await panel.getByRole("heading", { name: "Die nächsten 7 Tage" }).isVisible(), "„Die nächsten 7 Tage“");
-  check(await panel.getByRole("region", { name: "Das ist da" }).getByText("Joghurt").isVisible(), "„Das ist da“ mit Joghurt");
+  check(await panel.getByRole("region", { name: "Im Haus" }).getByRole("button", { name: /^Joghurt/ }).isVisible(), "„Im Haus“ mit Joghurt");
+  check(!(await panel.getByRole("region", { name: "Spontan kochen" }).count()), "kein eigener Bereich „Spontan kochen“ mehr");
 };
 
 export const rezept = async (page, check) => {
@@ -59,8 +60,8 @@ export const einkauf = async (page, check) => {
 };
 
 // „Im Haus“ (Tafel 78/79): Brot im Einkauf abhaken → steht im Schrank, ohne
-// Menge → antippen = aufgebraucht → nochmal = wieder im Einkauf; „Daraus
-// kochen“ (Kachel) bzw. „Was kann ich daraus kochen?“ → Kochidee.
+// Menge → antippen = aufgebraucht → nochmal = wieder im Einkauf; „Was koch
+// ich daraus?“ → Spontan kochen (wie unter Essen).
 export const imHaus = async (page, check) => {
   await family(page, "/vorrat");
   check(await page.getByRole("heading", { name: "Im Haus", level: 1 }).isVisible(), "Seite heißt „Im Haus“");
@@ -83,8 +84,51 @@ export const imHaus = async (page, check) => {
   check(await page.getByText("Steht wieder auf der Liste").isVisible(), "nochmal → wieder auf der Liste");
   const list = await store(page, "wasgibts.einkaufsliste");
   check(Object.values(list.weeks).some((w) => w.manual.some((m) => m.name === "Brot" && !m.done)), "Brot steht wieder im Einkauf");
-  await page.getByRole("button", { name: "Was kann ich daraus kochen?" }).tap();
-  check(await page.getByRole("dialog").first().waitFor({ timeout: 5000 }).then(() => true, () => false), "„Was kann ich daraus kochen?“ öffnet die Kochidee");
+  await page.getByRole("button", { name: "Was koch ich daraus?" }).tap();
+  check(await page.getByRole("dialog").last().getByText(/^Noch da:/).waitFor({ timeout: 5000 }).then(() => true, () => false), "„Was koch ich daraus?“ öffnet Spontan kochen");
+};
+
+// Essen-Seite: EIN Bereich „Im Haus“ (gehört zu 1.0). Mia stellt ihn beim
+// ersten Besuch vor; Chips (bald aufbrauchen zuerst, leicht orange), Chip
+// antippen = Sache öffnen; ＋ = mehrere auf einmal („Eier, Milch, Hack“);
+// „Was koch ich daraus?“ = Spontan kochen mit genau diesen Sachen.
+export const imHausEssen = async (page, check) => {
+  await family(page, "/?seite=essen");
+  const panel = page.locator("[role=tabpanel]:not([inert])");
+  const besuch = page.locator('[data-erster-besuch="seite:essen-imhaus"]');
+  check(await besuch.getByText("Sag mir, was im Kühlschrank ist, dann koch ich mit dir spontan.").isVisible(), "Mia stellt „Im Haus“ beim ersten Besuch vor");
+  await besuch.getByRole("button", { name: "Alles klar" }).tap();
+  const bereich = panel.getByRole("region", { name: "Im Haus" });
+  await bereich.evaluate((el) => el.scrollIntoView({ block: "center" }));
+  const chips = bereich.locator("div.flex-wrap > button");
+  check((await chips.first().getAttribute("aria-label")) === "Joghurt, bald aufbrauchen", "„bald aufbrauchen“ zuerst (Joghurt)");
+  check((await chips.count()) <= 8, `höchstens 8 Chips (${await chips.count()})`);
+  check(await bereich.getByRole("link", { name: "Alle" }).isVisible(), "„Alle ›“ zur Seite „Im Haus“");
+
+  // Chip antippen = Sache öffnen
+  await chips.first().tap();
+  const sache = page.getByRole("dialog", { name: "Joghurt" });
+  check(await sache.waitFor({ timeout: 5000 }).then(() => true, () => false), "Chip → Fenster „Joghurt“");
+  check(await sache.getByRole("button", { name: "Ist alle · auf die Liste" }).isVisible(), "„Ist alle · auf die Liste“");
+  await sache.getByRole("button", { name: "Schließen" }).last().click();
+  await page.waitForTimeout(500);
+
+  // ＋ = mehrere auf einmal
+  await bereich.getByRole("button", { name: "Ins Haus eintragen" }).tap();
+  const quick = page.getByRole("dialog", { name: "Schnelleingabe" });
+  await quick.waitFor({ timeout: 5000 });
+  await quick.getByRole("textbox", { name: "Im Haus" }).fill("Eier, Milch, Hack");
+  await quick.getByRole("textbox", { name: "Im Haus" }).press("Enter");
+  check(await page.getByText("Im Haus: Eier, Milch, Hack").waitFor({ timeout: 5000 }).then(() => true, () => false), "„Im Haus: Eier, Milch, Hack“");
+  await quick.getByRole("button", { name: "Schließen" }).last().click();
+  await page.waitForTimeout(500);
+  for (const name of ["Eier", "Milch", "Hack"]) check(await bereich.getByRole("button", { name, exact: true }).isVisible(), `Chip ${name}`);
+
+  // „Was koch ich daraus?“ = Spontan kochen mit diesen Sachen
+  await bereich.getByRole("button", { name: "Was koch ich daraus?" }).tap();
+  const noch = page.getByRole("dialog").last().getByText(/^Noch da:/);
+  check(await noch.waitFor({ timeout: 5000 }).then(() => true, () => false), "Spontan kochen öffnet");
+  check(/^Noch da: Joghurt/.test(await noch.innerText()), "dieselbe Reihe wie die Chips (Joghurt zuerst)");
 };
 
 // Rezept-Link an Mia (Teilen-Menü): Karte mit Zutaten → „auf die Liste“

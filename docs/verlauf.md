@@ -2691,3 +2691,18 @@ Fehler in `docs/aufraeumen-nachher.md`.
   planen“ übergibt an Mia. Mia verschiebt rollend, auch über den Namen des
   Gerichts.
 
+## „Im Haus“ gehört zu 1.0 – mit Spontan kochen (vX)
+
+- Baustein `vorrat` nicht mehr in `LAUNCH_AUS`: für neue Nutzer an, bisherige
+  einmal beim Start (`wasgibts.funktionen` v5, `imHaus`); die Kachel kommt
+  dabei nicht auf die Startseite (nur über die Auswahl, S/M, S = 3 Sachen
+  „bald aufbrauchen“ + „Was koch ich daraus?“). Daten bleiben, wie sie sind.
+- Essen: EIN Bereich „Im Haus“ statt „Spontan kochen“ und „Das ist da“ –
+  Chips (bald zuerst, höchstens 8, Antippen = Sache öffnen), ＋ für mehrere
+  auf einmal, „Alle ›“, groß „Was koch ich daraus?“ = Spontan kochen mit genau
+  diesen Sachen; leer „Sag mir, was da ist, dann schlag ich was vor.“
+- Füllt sich ohne Arbeit: Einkauf abhaken → rein, Gegessen → raus, „Eier sind
+  alle“ → raus und auf die Einkaufsliste (Mia, Regel, Fenster), „Hab noch
+  Hack“ → rein. Mia darf „Im Haus“ nutzen (kein „Kommt bald.“ mehr).
+- Mia denkt mit: beim ersten Besuch der Essen-Seite einmal „Sag mir, was im
+  Kühlschrank ist, dann koch ich mit dir spontan.“

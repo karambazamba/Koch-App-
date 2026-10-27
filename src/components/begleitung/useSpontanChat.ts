@@ -8,6 +8,7 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 import { bumpBase, type BaseId } from "@/lib/essen/bases";
 import { parseLeftovers, type ParsedLeftover } from "@/lib/essen/leftovers/parser";
 import { addPantryItems, type PantryItem } from "@/lib/vorrat/pantry";
+import { imHausReihe } from "@/lib/vorrat/imHaus";
 import { mergeStock, stockItem, stockNearlyEmpty } from "@/lib/essen/dishIdeas";
 import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { spontanIdeas, type SpontanFilter, type SpontanIdea } from "@/lib/essen/spontan";
@@ -83,8 +84,15 @@ export function useSpontanChat({ data, today, pantry, spontanStyle, setChat, set
     });
   };
 
-  /** Bestand für eine Ideen-Antwort: Vorrat + Gekauftes + eben Genanntes */
-  const stockFor = (turn: ChatTurnView) => mergeStock(pantry ?? [], (turn.extra ?? []).map((n) => stockItem(n, "s", today ? toIsoDate(today) : "")));
+  /**
+   * Bestand für eine Ideen-Antwort: Im Haus + Gekauftes + eben Genanntes – in
+   * derselben Reihe wie die Chips unter Essen („bald aufbrauchen“ zuerst)
+   */
+  const stockFor = (turn: ChatTurnView) => {
+    const day = today ? toIsoDate(today) : "";
+    const stock = mergeStock(pantry ?? [], (turn.extra ?? []).map((n) => stockItem(n, "s", day)));
+    return day ? imHausReihe(stock, day).map((x) => x.item) : stock;
+  };
 
   /** Die Ideen einer Antwort – immer frisch aus dem aktuellen Bestand */
   const ideasFor = (turn: ChatTurnView): SpontanIdea[] =>

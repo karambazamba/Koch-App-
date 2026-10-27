@@ -6,8 +6,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Pin, PenLine, Refrigerator, ShoppingCart, StickyNote } from "lucide-react";
-import { TILE, TILE_LABEL, buttonClass } from "@/components/ui/styles";
+import { ChefHat, Pin, PenLine, Refrigerator, ShoppingCart, StickyNote } from "lucide-react";
+import { TILE, TILE_LABEL } from "@/components/ui/styles";
 import { QuickButton } from "@/components/ui/QuickButton";
 import { QuickAddButton } from "@/components/einkauf/QuickAdd";
 import { clockLabel } from "@/lib/kalender/answers";
@@ -16,7 +16,7 @@ import type { TileSize } from "@/lib/core/homeLayout";
 import { addDays, todayIso } from "@/lib/core/now";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 import { matchStock, stockLine } from "@/lib/essen/dishIdeas";
-import { houseTile } from "@/lib/vorrat/imHaus";
+import { HOUSE_TILE_MAX, houseTile } from "@/lib/vorrat/imHaus";
 import { openHelper } from "@/lib/begleitung/open";
 import { ItemSymbol } from "@/components/einkauf/kacheln/ItemSymbol";
 import { symbolFor } from "@/lib/einkauf/kacheln/symbols";
@@ -309,14 +309,15 @@ export function NotesTile({ size = "M" }: { size?: TileSize }) {
 }
 
 /**
- * IM HAUS (Baustein, Tafel 78/79): oben „Bald aufbrauchen“ (bis zu 2 Zeilen à
- * 30 px: Symbol, Name, Schild), sonst die 2 zuletzt eingekauften Sachen;
- * unten „Daraus kochen“ → Kochidee. Leer: ein freundlicher Satz.
+ * IM HAUS (Baustein, nur über die Kachel-Auswahl): „Bald aufbrauchen“ (S: 3,
+ * M: 6 Zeilen à 30 px: Symbol, Name, Schild), sonst die zuletzt eingekauften;
+ * unten „Was koch ich daraus?“ = Spontan kochen (wie unter Essen). Leer: ein
+ * freundlicher Satz.
  */
 export function PantryTile({ size = "S" }: { size?: TileSize }) {
   const pantry = usePantry();
   if (!pantry) return <section className={`${HALF} animate-pulse`} aria-label="Im Haus" />;
-  const tile = houseTile(pantry, todayIso(), size === "S" ? 2 : 4);
+  const tile = houseTile(pantry, todayIso(), HOUSE_TILE_MAX[size === "S" ? "S" : "M"]);
   return (
     <section className={`${HALF} gap-1`} aria-label="Im Haus">
       <Link href="/vorrat" className="flex min-w-0 flex-col gap-1" data-zeile>
@@ -336,12 +337,13 @@ export function PantryTile({ size = "S" }: { size?: TileSize }) {
             ))}
           </>
         ) : (
-          <span className="mt-1 text-[14px] font-semibold text-muted">Was du einkaufst, landet hier von selbst.</span>
+          <span className="mt-1 text-[14px] font-semibold text-muted">Sag mir, was da ist, dann schlag ich was vor.</span>
         )}
       </Link>
       {tile.items.length > 0 && (
-        <button type="button" onClick={() => openHelper("kochtipp")} className={`${buttonClass("primary", "sm")} hit mt-auto self-start`}>
-          Daraus kochen
+        <button type="button" onClick={() => openHelper("spontan")} className="hit mt-auto flex min-h-[30px] items-center gap-1 self-start text-left text-[13px] font-bold leading-tight text-accent-strong">
+          <ChefHat className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} aria-hidden />
+          Was koch ich daraus?
         </button>
       )}
     </section>

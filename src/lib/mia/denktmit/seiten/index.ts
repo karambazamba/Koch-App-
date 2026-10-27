@@ -3,7 +3,7 @@
 
 import { AUFGABEN } from "@/lib/mia/denktmit/seiten/aufgaben";
 import { EINKAUF } from "@/lib/mia/denktmit/seiten/einkauf";
-import { ESSEN } from "@/lib/mia/denktmit/seiten/essen";
+import { ESSEN, ESSEN_SEITE } from "@/lib/mia/denktmit/seiten/essen";
 import { NOTIZEN } from "@/lib/mia/denktmit/seiten/notizen";
 import { PINNWAND } from "@/lib/mia/denktmit/seiten/pinnwand";
 import { TERMINE } from "@/lib/mia/denktmit/seiten/termine";
@@ -29,8 +29,13 @@ export const SEITE_FUER: Record<string, VorstellTile> = {
   "seite:kalender": "termine",
   "/aufgaben": "aufgaben",
   "/einkaufsliste": "einkauf",
+  // früherer Besuch zählt weiter als „benutzt“, die Karte kommt mit dem neuen Schlüssel einmal
   "seite:essen": "essen",
+  [ESSEN_SEITE]: "essen",
   "/pinnwand": "pinnwand",
   "/wetter": "wetter",
   "/notizen": "notizen",
 };
+
+/** Schlüssel für den ersten Besuch einer Seite der Startseite (Kalender, Essen) */
+export const seiteFuerTab = (tab: string) => (tab === "essen" ? ESSEN_SEITE : `seite:${tab}`);

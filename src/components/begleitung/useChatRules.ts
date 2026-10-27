@@ -9,8 +9,8 @@
 import type { Dispatch, SetStateAction } from "react";
 import { baseLabel, type BaseId } from "@/lib/essen/bases";
 import { ingredientsFromQuestion, isCookIdeasRequest } from "@/lib/essen/dishIdeas";
-import { addPantryItems, consumePantry, loadPantryAll, replacePantry, type PantryItem } from "@/lib/vorrat/pantry";
-import { pantrySentence } from "@/lib/vorrat/kreislauf";
+import { addPantryItems, loadPantryAll, replacePantry, type PantryItem } from "@/lib/vorrat/pantry";
+import { istAlle, pantrySentence } from "@/lib/vorrat/kreislauf";
 import { unlockFeature } from "@/lib/core/features";
 import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { addWish, parseWish, removeWish, wishLabel } from "@/lib/essen/wishes";
@@ -25,7 +25,7 @@ import { pushUndo } from "@/lib/core/undo";
 import { loadSpeechSettings, saveSpeechSettings, stopSpeaking, unlockSpeech, type SpeechSettings } from "@/lib/begleitung/speech";
 import { readingChange } from "@/lib/begleitung/speechChat";
 import { bakingAnswer, marketAnswer, quickAnswer } from "@/lib/begleitung/localAnswers";
-import { DEFAULT_SHOPPING_DAY, planningWeekStart, toIsoDate } from "@/lib/essen/weekPlan";
+import { DEFAULT_SHOPPING_DAY, planningWeekStart, toIsoDate, weekStartFor } from "@/lib/essen/weekPlan";
 import { addManualItem, removeManualItems, sectionFor, setItemShop, setProduct, useShoppingSettings } from "@/lib/einkauf/shoppingList";
 import type { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 import { isShoppingRequest, parseProductStatement, parseShoppingText } from "@/lib/einkauf/shoppingParse";
@@ -90,19 +90,31 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
     };
   };
 
-  /** „Hab Hähnchen gekauft“ / „Die Milch ist alle“ → Im Haus (ohne KI), sofort mit Rückgängig */
+  /** „Hab Hähnchen gekauft“ / „Hab noch Hack“ → Im Haus; „Die Milch ist alle“ → raus und auf die Liste (ohne KI), sofort mit Rückgängig */
   const pantryReply = (t: string): { text: string; undo: () => void } | null => {
-    if (!today) return null;
+    if (!today || !data) return null;
     const said = pantrySentence(t);
     if (!said) return null;
-    const before = loadPantryAll();
     const day = toIsoDate(today);
-    const names = "add" in said ? addPantryItems(said.add.map((name) => ({ name })), day) : consumePantry(said.used, day);
-    if (!names.length) return null;
-    // Versteckter Baustein wird freigeschaltet – kurz sagen, wo er steht
-    const where = unlockFeature("vorrat") ? " „Im Haus“ steht jetzt unter Essen." : "";
-    const text = `${"add" in said ? `Ist im Haus ✓ ${names.join(", ")}` : `Notiert: ${names.join(", ")} ist alle.`}${where}`;
-    const undo = pushUndo(text, () => replacePantry(before));
+    let text: string;
+    let back: () => void;
+    if ("add" in said) {
+      const before = loadPantryAll();
+      const names = addPantryItems(said.add.map((name) => ({ name })), day);
+      if (!names.length) return null;
+      text = `Ist im Haus ✓ ${names.join(", ")}`;
+      back = () => replacePantry(before);
+    } else {
+      // Alle = jetzt gebraucht: laufende Einkaufswoche (wie Mia und die Seite „Im Haus“)
+      const weekStart = weekStartFor(today, data.profile.shoppingDay || DEFAULT_SHOPPING_DAY);
+      const done = istAlle(said.used, day, weekStart);
+      if (!done.used.length && !done.toList.length) return null;
+      text = done.toList.length ? `Auf die Liste ✓ ${done.toList.join(", ")}` : `Notiert: ${done.used.join(", ")} ist alle.`;
+      back = done.undo;
+    }
+    // Ausgeschalteter Baustein wird eingeschaltet – kurz sagen, wo er steht
+    if (unlockFeature("vorrat")) text += " „Im Haus“ steht jetzt unter Essen.";
+    const undo = pushUndo(text, back);
     return {
       text,
       undo: () => {

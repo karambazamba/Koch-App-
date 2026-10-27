@@ -10,6 +10,7 @@
 import type { RetiredKey, StorageKey } from "@/lib/core/storage";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 import { createLocalStore, readRaw } from "@/lib/core/localStore";
+import { loadHomeTiles, saveHomeTiles } from "@/lib/core/homeLayout";
 
 const FEATURES = {
   wochenplan: "Wochenplan-Oberfläche (/wochenplan, Wochen-Check, Vorlagen)",
@@ -37,7 +38,7 @@ export type Baustein = { feature: Feature; name: string; text: string; where: st
 
 export const BAUSTEINE: Baustein[] = [
   { feature: "wochenplan", name: "Wochenplan", text: "Gerichte für die ganze Woche planen – mit Vorgaben und Vorlagen.", where: "Der Wochenplan steht jetzt rechts unter Essen.", icon: "calendar" },
-  { feature: "vorrat", name: "Im Haus", text: "Füllt sich von selbst: Gekauftes kommt rein, Gekochtes geht raus.", where: "„Im Haus“ steht jetzt unter Essen – und als Kachel auf Heute.", icon: "fridge" },
+  { feature: "vorrat", name: "Im Haus", text: "Füllt sich von selbst: Gekauftes kommt rein, Gekochtes geht raus.", where: "„Im Haus“ steht jetzt unter Essen.", icon: "fridge" },
   { feature: "rezepte", name: "Rezepte", text: "Eure eigenen Rezepte sammeln und Schritt für Schritt kochen.", where: "Eure Rezepte stehen jetzt rechts unter Essen.", icon: "book" },
   { feature: "backen", name: "Backen mit Timern", text: "20 Familien-Backrezepte, zusammen backen mit Timer und Kinder-Schritten.", where: "Backen steht jetzt rechts unter Essen.", icon: "cake" },
   { feature: "spontan", name: "Spontan-Ideen", text: "Ideen aus dem, was gerade da ist – ohne Planen.", where: "Spontan kochen steht jetzt rechts unter Essen.", icon: "carrot" },
@@ -56,7 +57,7 @@ export const BAUSTEINE: Baustein[] = [
  * „Mehr Funktionen“ oder „＋ Kachel“, Mia schaltet sie nicht frei. Wer einen
  * schon nutzt, behält ihn (`launchUebernahme`). Daten bleiben immer.
  */
-export const LAUNCH_AUS: Feature[] = ["vorrat", "regiontipps", "mails", "spendentopf"];
+export const LAUNCH_AUS: Feature[] = ["regiontipps", "mails", "spendentopf"];
 
 /** Darf der Baustein gezeigt bzw. angeboten werden? (nicht für 1.0 ausgeblendet oder schon an) */
 export const launchSichtbar = (feature: Feature, on: Feature[]) => !LAUNCH_AUS.includes(feature) || on.includes(feature);
@@ -80,14 +81,18 @@ export const bausteinOf = (feature: Feature) => BAUSTEINE.find((b) => b.feature 
 const ENABLED: Partial<Record<Feature, true>> = {};
 
 /**
- * v4: Notizen gehören zu 1.0 – beim Update einmal eingeschaltet (danach
- * selbst abschaltbar). v3: eingeschaltete Bausteine + `launch` (Übernahme
- * für 1.0 erledigt). v2 ohne `launch`, v1 hatte `legacy` und `unlocked`.
+ * v5: „Im Haus“ gehört zu 1.0 – `imHaus` = beim Update einmal eingeschaltet
+ * (die Kachel bleibt dabei aus, `launchUebernahme`). v4: Notizen gehören zu
+ * 1.0 – beim Update einmal eingeschaltet (danach selbst abschaltbar). v3:
+ * eingeschaltete Bausteine + `launch` (Übernahme für 1.0 erledigt). v2 ohne
+ * `launch`, v1 hatte `legacy` und `unlocked`.
  */
-type FeatureStore = { version: 4; on: Feature[]; launch: boolean };
+type FeatureStore = { version: 5; on: Feature[]; launch: boolean; imHaus: boolean };
 
-/** Standard für neue Nutzer (und beim Update auf v4 einmal dazu) */
-const DEFAULT_ON: Feature[] = ["notizen"];
+/** Standard für neue Nutzer: Notizen und Im Haus (Bereich unter Essen; die Kachel nur über die Auswahl) */
+const DEFAULT_ON: Feature[] = ["notizen", "vorrat"];
+/** Beim Update auf v4 einmal dazu (Im Haus kommt über `launchUebernahme`, damit die Kachel aus bleibt) */
+const NOTIZEN_ON: Feature[] = ["notizen"];
 
 const isFeature = (f: unknown): f is Feature => typeof f === "string" && f in FEATURES;
 
@@ -121,13 +126,15 @@ function migrate(raw: unknown): FeatureStore | null {
   if (!raw || typeof raw !== "object") return null;
   const d = raw as { version?: number; legacy?: unknown; unlocked?: unknown; on?: unknown };
   const list = (Array.isArray(d.on) ? d.on : []).filter(isFeature);
-  if (d.version === 4) return { version: 4, on: list, launch: (d as { launch?: unknown }).launch === true };
-  if (d.version === 3 || d.version === 2) return { version: 4, on: [...new Set([...list, ...DEFAULT_ON])], launch: d.version === 3 && (d as { launch?: unknown }).launch === true };
+  const launch = (d as { launch?: unknown }).launch === true;
+  if (d.version === 5) return { version: 5, on: list, launch, imHaus: (d as { imHaus?: unknown }).imHaus === true };
+  if (d.version === 4) return { version: 5, on: list, launch, imHaus: false };
+  if (d.version === 3 || d.version === 2) return { version: 5, on: [...new Set([...list, ...NOTIZEN_ON])], launch: d.version === 3 && launch, imHaus: false };
   if (d.version !== 1) return null;
   // Alter Test-Schalter: wird zurückgesetzt; was genutzt wurde, wird als Baustein übernommen
   const unlocked = (Array.isArray(d.unlocked) ? d.unlocked : []).filter(isFeature);
   const used = d.legacy === true && typeof localStorage !== "undefined" ? usedFeatures() : [];
-  return { version: 4, on: [...new Set([...unlocked, ...used, ...DEFAULT_ON])], launch: false };
+  return { version: 5, on: [...new Set([...unlocked, ...used, ...NOTIZEN_ON])], launch: false, imHaus: false };
 }
 
 const store = createLocalStore("wasgibts.funktionen", migrate);
@@ -148,7 +155,8 @@ export function featureOn(feature: Feature): boolean {
 export function setFeature(feature: Feature, on: boolean): boolean {
   const list = onList();
   if (list.includes(feature) === on) return false;
-  store.save({ version: 4, on: on ? [...list, feature] : list.filter((f) => f !== feature), launch: store.load()?.launch ?? false });
+  const s = store.load();
+  store.save({ version: 5, on: on ? [...list, feature] : list.filter((f) => f !== feature), launch: s?.launch ?? false, imHaus: s?.imHaus ?? false });
   return true;
 }
 
@@ -179,9 +187,29 @@ export function useFeature(feature: Feature): boolean | undefined {
 /**
  * Einmal beim Start nach dem Update auf 1.0: Wer Sport oder den Spendentopf
  * schon nutzt (Kachel sichtbar oder Daten da), behält sie als Baustein. Neue
- * Nutzer starten ohne – Notizen sind für alle an. @public für Tests
+ * Nutzer starten ohne – Notizen sind für alle an. Danach (eigener Schritt,
+ * `imHaus`): „Im Haus“ für alle an; wer den Baustein bisher nicht hatte,
+ * bekommt die Kachel nicht auf die Startseite (sie stand nur unsichtbar im
+ * alten Standard). @public für Tests
  */
 export function launchUebernahme(read: (key: StorageKey) => string | null = readRaw) {
+  launchSchnitt(read);
+  imHausUebernahme();
+}
+
+function imHausUebernahme() {
+  const s = store.load();
+  if (s?.imHaus) return;
+  const on = s?.on ?? DEFAULT_ON;
+  if (!on.includes("vorrat")) {
+    // Erst die Kachel aus, dann der Baustein an – so blitzt sie nie auf
+    const tiles = loadHomeTiles();
+    if (tiles.some((t) => t.id === "vorrat" && t.visible)) saveHomeTiles(tiles.map((t) => (t.id === "vorrat" ? { ...t, visible: false } : t)));
+  }
+  store.save({ version: 5, on: [...new Set([...on, "vorrat" as Feature])], launch: s?.launch ?? false, imHaus: true });
+}
+
+function launchSchnitt(read: (key: StorageKey) => string | null) {
   const s = store.load();
   if (s?.launch) return;
   const json = (key: StorageKey): unknown => {
@@ -199,5 +227,5 @@ export function launchUebernahme(read: (key: StorageKey) => string | null = read
   if (shown("sport") || (sport?.trainings?.length ?? 0) > 0) used.push("sport");
   if (shown("spendentopf")) used.push("spendentopf");
   const on = s?.on ?? DEFAULT_ON;
-  store.save({ version: 4, on: [...new Set([...on, ...used])], launch: true });
+  store.save({ version: 5, on: [...new Set([...on, ...used])], launch: true, imHaus: s?.imHaus ?? false });
 }

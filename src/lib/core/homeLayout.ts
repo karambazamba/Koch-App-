@@ -32,7 +32,7 @@ export const HOME_TILES: { id: HomeTileId; label: string; hint: string; sizes: T
   { id: "tipps", label: "Tipps fürs Wochenende", hint: "Was in eurer Nähe los ist", sizes: ["M", "L"], size: "M", feature: "regiontipps", fresh: true },
   { id: "timer", label: "Timer", hint: "Bis zu 5 Timer und eine Stoppuhr", sizes: ["S", "M"], size: "M", fresh: true },
   { id: "sport", label: "Sport", hint: "Wochenziel und Trainings", sizes: ["S", "M", "L"], size: "M", feature: "sport", fresh: true },
-  { id: "vorrat", label: "Im Haus", hint: "Füllt sich von selbst beim Einkaufen", sizes: ["S", "M"], size: "S", feature: "vorrat" },
+  { id: "vorrat", label: "Im Haus", hint: "Bald aufbrauchen und spontan daraus kochen", sizes: ["S", "M"], size: "S", feature: "vorrat" },
   { id: "notizen", label: "Notizen", hint: "Schnellnotiz + Angeheftetes", sizes: ["S", "M", "L"], size: "M", feature: "notizen" },
   { id: "post", label: "Post", hint: "Briefe und Rechnungen", sizes: ["S", "M"], size: "M", soon: true },
 ];
@@ -44,12 +44,12 @@ export const tileMeta = (id: HomeTileId) => HOME_TILES.find((t) => t.id === id)!
 
 export const tileLabel = (id: HomeTileId) => HOME_TILES.find((t) => t.id === id)?.label ?? id;
 
-/** Launch 1.0: mit Notizen, ohne Spendentopf (Baustein, ausgeblendet); Im Haus nur mit Baustein */
-const ON_BY_DEFAULT: HomeTileId[] = ["pinnwand", "wetter", "termine", "aufgaben", "essen", "einkauf", "vorrat", "notizen"];
+/** Launch 1.0: mit Notizen, ohne Spendentopf (Baustein, ausgeblendet); Im Haus nur über die Kachel-Auswahl */
+const ON_BY_DEFAULT: HomeTileId[] = ["pinnwand", "wetter", "termine", "aufgaben", "essen", "einkauf", "notizen"];
 
 /**
  * Standard: Pinnwand + Wetter (klein nebeneinander), Termine, Aufgaben, Essen +
- * Einkauf, Notizen (Vorrat nur mit Baustein). Die Reihenfolge ist die gespeicherte –
+ * Einkauf, Notizen (Im Haus nur über die Auswahl). Die Reihenfolge ist die gespeicherte –
  * sie ändert sich nie von selbst.
  */
 export const DEFAULT_HOME: HomeTile[] = HOME_TILES.map((t) => ({ id: t.id, visible: ON_BY_DEFAULT.includes(t.id), size: t.size }));

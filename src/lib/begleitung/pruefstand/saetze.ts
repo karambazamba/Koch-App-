@@ -156,8 +156,8 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Ich koche jetzt", ["start_cooking"]),
   S("Nächster Schritt", ["cook_step"], { lage: ["kochmodus"] }),
   S("Kochidee", ["app_command"]),
-  // 1.0: „Im Haus“ ist „später“ → „Kommt bald.“ (wer es nutzt, behält es)
-  S("Wir haben noch 4 Joghurt im Kühlschrank", ["kommt_bald", "antwort"]),
+  // „Im Haus“ gehört zu 1.0: „Hab noch …“ = rein
+  S("Wir haben noch 4 Joghurt im Kühlschrank", ["add_pantry"]),
   S("Was anderes als Spaghetti bitte", ["app_command", "set_meal"]),
   S("Mach heute was Schnelles, wir haben wenig Zeit", ["set_meal", "app_command"]),
   S("Lisa mag keine Pilze mehr in Soßen, merk dir das", ["set_dislike", "antwort"]),
@@ -197,7 +197,7 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Buch uns einen Tisch beim Italiener", ["kann_nicht", "upsert_entry"]),
   S("Mach das rückgängig", ["undo_last"]),
   S("Nimm die Einkaufsliste von der Startseite", ["home"]),
-  S("Zeig mir den Vorrat", ["kommt_bald"]),
+  S("Zeig mir den Vorrat", ["app_command", "set_feature", "antwort"]),
   S("Schreib der Kita, dass Mathis morgen krank ist", ["mail_draft", "app_command"]),
   S("Lies mir den Kalender vor", ["app_command", "antwort"], { max: 3 }),
   S("Lass uns die Woche durchgehen", ["app_command"], { max: 3 }),

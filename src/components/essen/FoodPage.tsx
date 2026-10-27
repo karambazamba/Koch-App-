@@ -4,7 +4,8 @@
 // (nach dem Essen: morgen) mit Teller-Bild, darunter „Die nächsten 7 Tage“
 // ab heute (Tafel 97, `sieben/SiebenTage`): Liste oder Reihe, jeder Tag
 // öffnet dasselbe Fenster (`sieben/TagFenster`), Ziehen tauscht Tage. Dazu
-// Ideen und Einkauf als Chips. So einfach wie möglich, große Bilder.
+// „Im Haus“ mit „Was koch ich daraus?“ (`ImHausBereich`), Ideen und Einkauf
+// als Chips. So einfach wie möglich, große Bilder.
 
 import Link from "next/link";
 import { useState } from "react";
@@ -29,7 +30,7 @@ import { openHelper } from "@/lib/begleitung/open";
 import type { HomeData } from "@/components/heute/useHomeData";
 import { dishOf, useMeals } from "@/components/essen/useMeals";
 import { BausteinSections } from "@/components/essen/BausteinSections";
-import { StockChips } from "@/components/essen/CookFromStock";
+import { ImHausBereich } from "@/components/essen/ImHausBereich";
 import { MoreIdeas } from "@/components/essen/rezepte/MoreIdeas";
 import { loadMealPlans, replaceMealPlans } from "@/lib/essen/mealPlan";
 import { takeForDay } from "@/lib/essen/spontanTake";
@@ -58,7 +59,7 @@ export function FoodPage({ data, minutes }: { data: HomeData; minutes: number })
 
       {tage.length > 0 && <SiebenTage data={data} tage={tage} />}
 
-      <StockChips today={data.todayIso} />
+      <ImHausBereich today={data.todayIso} />
       <MoreIdeas
         current={main?.slot.entry?.recipeId ?? ""}
         exclude={dishOf(main)}

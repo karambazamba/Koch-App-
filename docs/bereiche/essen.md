@@ -8,8 +8,8 @@ jeweils als Baustein (`src/lib/core/features.ts`), alles Neue zuerst aus.
 ## Wo im Code
 
 - Essen-Reiter (`/?seite=essen`): `src/components/essen/FoodPage.tsx`
-  (`DishHero`, Woche, `ShoppingChips`), `CookFromStock.tsx` (`StockChips` =
-  „Das ist da“, `CookIdeas` = „Daraus kannst du kochen“),
+  (`DishHero`, Woche, `ShoppingChips`), `ImHausBereich.tsx` (EIN Bereich „Im
+  Haus“ mit „Was koch ich daraus?“ = Spontan kochen, siehe `vorrat.md`),
   `BausteinSections.tsx`, `SwapSheet.tsx` (das eine Fenster „Was koche ich?“),
   `useMeals.ts`, `DemoFoodTile.tsx` (Beispielgericht), `DishPicture.tsx`.
 - Startseite: `FoodTile` in `src/components/heute/HomeTiles.tsx`,
@@ -128,15 +128,19 @@ Alle Schlüssel aus `src/lib/core/storage.ts`:
 - „Diese Woche“: Mo–So mit Bildern, heute orange umrandet, frei gestrichelt
   mit Plus, feste Gerichte hellorange; Antippen öffnet „Was koche ich?“.
   „Plan öffnen ›“ nur mit Baustein Wochenplan.
-- „Das ist da“ (nur mit Baustein Vorrat und Inhalt, siehe `vorrat.md`).
+- „Im Haus“ (gehört zu 1.0, ersetzt „Spontan kochen“ und „Das ist da“):
+  Chips der Sachen, „bald aufbrauchen“ zuerst, höchstens 8, ＋ und „Alle ›“,
+  darunter groß „Was koch ich daraus?“ (öffnet Spontan kochen mit genau diesen
+  Sachen). Leer: „Sag mir, was da ist, dann schlag ich was vor.“ +
+  „Eintragen“. Mia stellt es beim ersten Besuch einmal vor. Siehe `vorrat.md`.
 - „Daraus kannst du kochen“ (nach dem Essen „Ideen für morgen“): 3 Ideen aus
   `useTodayIdeas` (ohne das geplante Gericht) mit Bild, Zeit · Grund. „alles
   im Haus“ → „Heute“ (`takeForToday`), sonst „auf die Liste: …“ → „Einkauf“
   legt die Zutaten für heute auf die Liste (mit Gericht) und zeigt „✓ Liste“.
   Immer sichtbar, kein Baustein.
-- Bausteine: „Spontan kochen“ (Spontan-Ideen), „Unsere Rezepte“ (Rezepte,
-  bis 8 Bilder, meistgekochte zuerst), „Backen“, leerer Vorrat. Darunter
-  „Einkauf“ als Chips (bis 14) mit Plus.
+- Bausteine: „Unsere Rezepte“ (Rezepte, bis 8 Bilder, meistgekochte
+  zuerst), „Backen“; „Spontan kochen“ als eigene Karte nur noch, wenn „Im
+  Haus“ abgeschaltet ist. Darunter „Einkauf“ als Chips (bis 14) mit Plus.
 - **„Was koche ich?“** (`SwapSheet`): Titel „Statt <Gericht>“ bzw. „Was gibt’s
   heute?“, 3 Ideen „Nehmen“ (`takeForDay`: das alte Gericht rutscht auf den
   nächsten freien Tag dieser/nächster Woche), „<Name> fragen“, „Tag
@@ -208,8 +212,10 @@ Alle Schlüssel aus `src/lib/core/storage.ts`:
 - Bestand (`useStock`): Vorrat + auf der Liste Abgehaktes/„Haben wir schon“
   (diese und Einkaufswoche), ohne gerade Verkochtes (`usedRecently`).
   Grundzutaten (`AT_HOME`) zählen nie als Einkauf.
-- Spontan-Modus im Chat (Baustein `spontan` für den Einstieg auf Essen; im
-  Chat immer per Satz): ein Satz, „Noch da: …“, genau 3 Ideen
+- Spontan-Modus im Chat (Einstieg auf Essen: „Was koch ich daraus?“ im
+  Bereich „Im Haus“, auch auf /vorrat und in der Kachel; im Chat immer per
+  Satz): ein Satz, „Noch da: …“ (dieselbe Reihe wie die Chips, `imHausReihe`),
+  genau 3 Ideen
   (`spontanIdeas`: meiste Vorrats-Zutaten, angezeigt schnellste zuerst;
   Fertigprodukte aus dem Vorrat zählen; reicht es nicht, dürfen 1–2
   Kleinigkeiten auf die Liste), „Anpassen“ (Zeit, Vorrang, Beilage) und

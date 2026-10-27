@@ -4,17 +4,20 @@
 //   kurz hintereinander Abgehaktes kommt in EINE Meldung.
 // - Zurückgenommen (Haken weg) = heute Reingelegtes wieder raus.
 // - Im Haus aufgebraucht und nochmal angetippt = wieder auf die Liste.
+// - „Eier sind alle“ (Mia, Regel, „Ist alle“ im Fenster) = raus und auf die
+//   Liste (`istAlle`, was schon draufsteht, nicht doppelt).
 // Schaltet den Baustein frei, sobald etwas reinkommt.
 
 import { unlockFeature } from "@/lib/core/features";
 import { now } from "@/lib/core/now";
 import { showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
-import { newId } from "@/lib/einkauf/listModel";
-import { updateList } from "@/lib/einkauf/listStore";
+import { EMPTY_LIST, newId } from "@/lib/einkauf/listModel";
+import { store as listStore, updateList } from "@/lib/einkauf/listStore";
+import { findFood } from "@/lib/essen/leftovers/foods";
 import { sectionFor } from "@/lib/einkauf/sections";
 import { isFood, isGrundsache } from "@/lib/vorrat/haltbar";
-import { addPantryItems, loadPantryAll, replacePantry, sameIngredient, type PantryItem } from "@/lib/vorrat/pantry";
+import { addPantryItems, consumePantry, loadPantryAll, replacePantry, sameIngredient, type PantryItem } from "@/lib/vorrat/pantry";
 
 /** Abgehakt innerhalb dieser Zeit = eine gemeinsame Meldung */
 const JOIN_MS = 5000;
@@ -61,14 +64,46 @@ export function backToList(item: PantryItem, weekStart: string) {
 }
 
 /**
+ * „Eier sind alle“: raus aus Im Haus und auf die Einkaufsliste der Woche
+ * `weekStart` (steht es dort schon und ist nicht abgehakt, nicht nochmal).
+ * Liefert, was rausging, was auf die Liste kam, und das Rückgängig.
+ */
+export function istAlle(names: string[], today: string, weekStart: string): { used: string[]; toList: string[]; undo: () => void } {
+  const before = loadPantryAll();
+  const used = consumePantry(names, today);
+  const list = listStore.load()?.weeks[weekStart] ?? EMPTY_LIST;
+  const toList = names.filter((n, i) => !list.manual.some((m) => !m.done && sameIngredient(m.name, n)) && names.findIndex((x) => sameIngredient(x, n)) === i);
+  const items = toList.map((name) => ({ id: newId(), name, amount: "", section: sectionFor(name), done: false }));
+  if (items.length) updateList(weekStart, (l) => ({ ...l, manual: [...l.manual, ...items] }));
+  return {
+    used,
+    toList,
+    undo: () => {
+      replacePantry(before);
+      if (items.length) updateList(weekStart, (l) => ({ ...l, manual: l.manual.filter((m) => !items.some((i) => i.id === m.id)) }));
+    },
+  };
+}
+
+/** Steht in der Lebensmittel-Liste (für „Hab noch …“, damit „Hab noch Zeit“ nichts einträgt) */
+const knownFood = (name: string) => Boolean(findFood(name.replace(/^\d+\s*/, "")));
+
+/**
  * Sätze ohne KI (Notlösung): „Hab Hähnchen gekauft“, „Ich hab Brot und Eier
- * mitgebracht“ → rein; „Die Milch ist alle“, „Eier sind aufgebraucht“ → raus.
+ * mitgebracht“, „Hab noch Hack“ → rein; „Die Milch ist alle“, „Eier sind
+ * aufgebraucht“ → raus.
  */
 export function pantrySentence(text: string): { add: string[] } | { used: string[] } | null {
   const s = text.trim().replace(/[.!]+$/, "");
   const split = (x: string) => x.split(/\s*(?:,|(?<![a-zäöüß])und(?![a-zäöüß]))\s*/i).map((n) => n.trim()).filter(Boolean).map((n) => n.charAt(0).toUpperCase() + n.slice(1));
   const bought = s.match(/^(?:ich\s+)?hab(?:e)?\s+(?:gerade\s+|eben\s+|grad\s+)?(.+?)\s+(?:gekauft|mitgebracht|geholt)$/i);
   if (bought) return { add: split(bought[1]) };
+  // „Hab noch Hack“, „Wir haben noch Eier im Kühlschrank“ – nur bekannte Lebensmittel
+  const still = s.match(/^(?:(?:ich|wir)\s+)?hab(?:e|en)?\s+noch\s+(.+?)(?:\s+(?:da|im haus|zu hause|im kühlschrank|im schrank|im tiefkühler))?$/i);
+  if (still) {
+    const names = split(still[1]);
+    if (names.length && names.every(knownFood)) return { add: names };
+  }
   const gone = s.match(/^(?:die|der|das)?\s*(.+?)\s+(?:ist|sind)\s+(?:alle|aufgebraucht|leer)$/i);
   if (gone && gone[1].split(/\s+/).length <= 4) return { used: split(gone[1]) };
   return null;

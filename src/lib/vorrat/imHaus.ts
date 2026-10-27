@@ -1,10 +1,11 @@
-// Seite „Im Haus“ (Tafel 78/79, Punkt 7) – reine Aufteilung:
+// Seite „Im Haus“ (Tafel 78/79, Punkt 7) – reine Aufteilung, dazu der
+// Bereich „Im Haus“ auf der Essen-Seite (`imHausReihe`) und die Kachel:
 // „Bald aufbrauchen“ (nur Frisches im letzten Drittel) → Kühlschrank →
 // Schrank → Tiefkühler → „Aufgebraucht“ (3 Tage, blass). Chips oben wie die
 // Läden im Einkauf: Alle · Kühlschrank · Schrank · TK.
 
 import { PANTRY, PANTRY_RECENT, sortBy, via } from "@/lib/core/sort";
-import { isSoon, soonBadge } from "@/lib/vorrat/haltbar";
+import { isGone, isGrundsache, isSoon, soonBadge } from "@/lib/vorrat/haltbar";
 import { activePantry, usedPantry, type PantryItem, type PantryPlace } from "@/lib/vorrat/pantry";
 
 export type HouseChip = "alle" | PantryPlace;
@@ -42,10 +43,29 @@ export function houseSections(items: PantryItem[], today: string, chip: HouseChi
   return sections.filter((s) => s.items.length);
 }
 
+/** Kachel auf Heute: „Bald aufbrauchen“ (S: 3, M: 6), sonst die zuletzt eingekauften */
+export const HOUSE_TILE_MAX: Record<"S" | "M", number> = { S: 3, M: 6 };
+
 /** Kachel auf Heute: „Bald aufbrauchen“ (höchstens `max`), sonst die zuletzt eingekauften */
-export function houseTile(items: PantryItem[], today: string, max = 2): { soon: boolean; items: { item: PantryItem; badge: ReturnType<typeof soonBadge> }[] } {
+export function houseTile(items: PantryItem[], today: string, max = HOUSE_TILE_MAX.S): { soon: boolean; items: { item: PantryItem; badge: ReturnType<typeof soonBadge> }[] } {
   const active = activePantry(items, today);
   const soon = order(active.filter((p) => isSoon(p, today)));
   const shown = soon.length ? soon : sortBy(active, ...PANTRY_RECENT);
   return { soon: soon.length > 0, items: shown.slice(0, max).map((item) => ({ item, badge: soonBadge(item, today) })) };
+}
+
+/** Höchstens so viele Chips im Bereich „Im Haus“ auf der Essen-Seite */
+export const IM_HAUS_CHIPS = 8;
+
+/**
+ * Essen-Seite „Im Haus“ und „Was koch ich daraus?“: was gerade da ist,
+ * „bald aufbrauchen“ zuerst, dann das zuletzt Reingekommene. Gekauftes aus
+ * der Einkaufsliste („b:“) und eben Gesagtes („s:“) sind nie „bald“.
+ */
+export function imHausReihe(items: PantryItem[], today: string): { item: PantryItem; soon: boolean }[] {
+  const active = items.filter((p) => !p.usedAt && !isGone(p, today) && !isGrundsache(p.name));
+  const fresh = (p: PantryItem) => !p.id.startsWith("b:") && !p.id.startsWith("s:") && isSoon(p, today);
+  const soon = order(active.filter(fresh));
+  const rest = sortBy(active.filter((p) => !soon.includes(p)), ...PANTRY_RECENT);
+  return [...soon.map((item) => ({ item, soon: true })), ...rest.map((item) => ({ item, soon: false }))];
 }

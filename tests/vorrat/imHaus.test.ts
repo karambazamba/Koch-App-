@@ -155,13 +155,13 @@ describe("Seite und Kachel", () => {
     expect(houseTile(all, T)).toMatchObject({ soon: true, items: [{ item: { name: "Joghurt" }, badge: { text: "bis Do" } }] });
     const fresh = houseTile([item("Nudeln", 2), item("Milch"), item("Reis", 1)], T);
     expect(fresh.soon).toBe(false);
-    expect(fresh.items.map((x) => x.item.name)).toEqual(["Milch", "Reis"]);
+    expect(fresh.items.map((x) => x.item.name)).toEqual(["Milch", "Reis", "Nudeln"]);
     expect(soonToUse(all, T).map((i) => i.name)).toEqual(["Joghurt"]);
   });
 });
 
 describe("Kreislauf Einkauf ↔ Im Haus", () => {
-  it("abhaken = rein (nur Essen), Haken weg = raus; Baustein bleibt für 1.0 aus (Daten bleiben)", async () => {
+  it("abhaken = rein (nur Essen), Haken weg = raus; Im Haus ist an (gehört zu 1.0)", async () => {
     const { boughtToHouse, unboughtFromHouse } = await import("@/lib/vorrat/kreislauf");
     const p = await import("@/lib/vorrat/pantry");
     const f = await import("@/lib/core/features");
@@ -169,7 +169,7 @@ describe("Kreislauf Einkauf ↔ Im Haus", () => {
     boughtToHouse("Äpfel", T);
     boughtToHouse("Shampoo", T);
     expect(p.loadPantry().map((i) => i.name)).toEqual(["Brot", "Äpfel"]);
-    expect(f.featureOn("vorrat")).toBe(false);
+    expect(f.featureOn("vorrat")).toBe(true);
     unboughtFromHouse("Brot", T);
     expect(p.loadPantry().map((i) => i.name)).toEqual(["Äpfel"]);
   });
