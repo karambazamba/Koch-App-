@@ -42,8 +42,8 @@ export const miaSprechen = async (page, check) => {
   await page.waitForTimeout(400);
   check((await store(page, "wasgibts.eintraege")).entries.length === vorher, "„Rückgängig“ nimmt ihn raus");
 
-  // Lieber tippen → tippen → senden
-  await mia.getByRole("button", { name: "Lieber tippen", exact: true }).click();
+  // Lieber schreiben → tippen → senden
+  await mia.getByRole("button", { name: "Lieber schreiben", exact: true }).click();
   const box = page.getByRole("textbox", { name: "Nachricht schreiben" });
   await box.waitFor({ timeout: 5000 });
   await box.fill("Freitag um 16 Uhr Friseur");

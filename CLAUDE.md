@@ -77,7 +77,7 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 ## 2. Gespräch zuerst
 - Die Begleitung (Sprache/Chat) ist der Hauptweg; jede Funktion ist auch per
   Gespräch erreichbar. Bildschirme dienen zum Nachschauen und Feinjustieren.
-- ＋ = tippen, Mia = sprechen. Jedes ＋ öffnet eine Schnelleingabe (ein Feld,
+- ＋ = schreiben, Mia = sprechen. Jedes ＋ öffnet eine Schnelleingabe (ein Feld,
   Tastatur sofort, Satz rein, ➤ speichert; `ui/QuickEntry`, `core/schnelleingabe`;
   Ausnahme: das Seiten-Plus der Notizen öffnet eine leere Notiz). Absätze:
   Notiz und Pinnwand mehrzeilig (`ui/MehrzeilenFeld`, Return = neue Zeile,
@@ -177,7 +177,7 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   hellorange. Mia-Knopf unten rechts (72 px, atmet leicht), auf allen Seiten
   gleich. Jedes Gespräch auf EINER Bühne (`MiaStage`): Seite verschwommen
   dahinter, Gespräch oben, Mia groß im unteren Drittel (antippen = zuhören ↔
-  fertig, „Lieber tippen“), fliegt vom Knopf ein und dorthin zurück.
+  fertig, „Lieber schreiben“), fliegt vom Knopf ein und dorthin zurück.
 - Bewegung sehr weich: 0,8–1,2 s, `cubic-bezier(.16,1,.3,1)`, nur
   transform/opacity, `prefers-reduced-motion` = nur Überblenden.
 - Knöpfe nie schwarz. Standard für neue Nutzer = Hell; Dunkel/Automatisch nur

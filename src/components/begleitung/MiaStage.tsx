@@ -97,8 +97,15 @@ export function StageMia({ state, size = STAGE_SIZE.big, hint, label, done = fal
         )}
         <BegleitungAvatar size={size} groesse="gross" zustand={zustand} />
         {pause && (
-          <svg className="mia-pause-ring pointer-events-none absolute -inset-2" viewBox="0 0 100 100" aria-hidden data-pause-ring>
-            <circle cx="50" cy="50" r="48" fill="none" stroke="var(--app-accent)" strokeWidth="1.5" pathLength="100" />
+          // Ring konzentrisch: feste Größe (Mia + 2 × 8 px), Mitte = Mitte des Knopfs; Start oben, läuft im Uhrzeigersinn ab
+          <svg
+            className="mia-pause-ring pointer-events-none absolute"
+            style={{ width: size + 16, height: size + 16, left: -8, top: -8 }}
+            viewBox="0 0 100 100"
+            aria-hidden
+            data-pause-ring
+          >
+            <circle cx="50" cy="50" r="48.5" fill="none" stroke="var(--app-accent)" strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinecap="round" pathLength="100" transform="rotate(-90 50 50)" />
           </svg>
         )}
       </button>

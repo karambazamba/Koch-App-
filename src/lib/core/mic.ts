@@ -57,7 +57,7 @@ type MicSheet = { kind: "fragen"; then: () => void } | { kind: "check"; fehler: 
 type MicState = { block: MicBlock | null; granted: boolean; sheet: MicSheet; justOn: boolean; origin: Element | null };
 
 let state: MicState = { block: null, granted: false, sheet: null, justOn: false, origin: null };
-/** Knopf, von dem aus gefragt wurde („Lieber tippen“ setzt den Fokus ins Feld daneben) */
+/** Knopf, von dem aus gefragt wurde („Lieber schreiben“ setzt den Fokus ins Feld daneben) */
 const focused = () => (typeof document === "undefined" ? null : document.activeElement);
 const listeners = new Set<() => void>();
 const set = (patch: Partial<MicState>) => {

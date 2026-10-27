@@ -77,7 +77,7 @@ export function CodeScreen({ change = false }: { change?: boolean }) {
             Los geht’s
           </button>
           <p className="text-center text-sm text-muted">
-            Ohne Code geht’s auch: Tippen mit ＋ funktioniert immer.{" "}
+            Ohne Code geht’s auch: Schreiben mit ＋ funktioniert immer.{" "}
             <button type="button" onClick={later} className="hit font-semibold text-accent-strong underline">
               {change ? "Abbrechen" : "Später"}
             </button>

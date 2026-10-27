@@ -22,10 +22,10 @@ export const wochencheck = async (page, check) => {
   check(await sheet.waitFor({ timeout: 8000 }).then(() => true, () => false), "„Wochencheck“ → eigenes Fenster");
   check(await sheet.getByRole("button", { name: "Schließen" }).first().isVisible(), "oben ✕ wie überall (kein „Abbrechen“)");
 
-  // Dieselbe Bühne wie jedes Gespräch: Mia unten, „Lieber tippen“
+  // Dieselbe Bühne wie jedes Gespräch: Mia unten, „Lieber schreiben“
   check(await sheet.getByRole("button", { name: "Frage einsprechen" }).isVisible(), "Mia unten auf der Bühne");
   check(await sheet.getByText("WOCHENCHECK", { exact: true }).isVisible(), "Bereichs-Kopf „WOCHENCHECK“");
-  await sheet.getByRole("button", { name: "Lieber tippen" }).click();
+  await sheet.getByRole("button", { name: "Lieber schreiben" }).click();
 
   // Erzählen (getippt) → „Ich hab schon“
   await sheet.getByRole("textbox", { name: "Was steht an?" }).fill(TAFEL);

@@ -37,7 +37,7 @@ export function NewRecipeSheet({ onClose }: { onClose: () => void }) {
         <Link href="/kochbuch/bearbeiten" onClick={onClose} className={tileClass(false)}>
           <PenLine className="h-6 w-6 shrink-0 text-accent" strokeWidth={2} aria-hidden />
           <span className="flex flex-1 flex-col text-left">
-            <span className="text-base font-bold">Selbst eintippen</span>
+            <span className="text-base font-bold">Selbst schreiben</span>
             <span className="text-sm text-muted">Zutaten und Schritte im Formular</span>
           </span>
         </Link>

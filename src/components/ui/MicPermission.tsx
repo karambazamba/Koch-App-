@@ -2,7 +2,7 @@
 
 // Mikrofon-Freigabe für alle Mikro-Stellen (Tafel 27): `useMicBlocked` für
 // den grauen, durchgestrichenen Knopf, `MicStrip` (gelber Streifen „Mikro aus
-// – tippen geht immer.“ + „Anmachen ›“, kurz „✓ Mikro ist an“), `MicSheetHost`
+// – schreiben geht immer.“ + „Anmachen ›“, kurz „✓ Mikro ist an“), `MicSheetHost`
 // im Layout: prüft die Freigabe beim Start und beim Zurückkommen in die App und
 // lädt die Fenster (Vorab-Frage, Mikro-Check, „Zeig’s mir“) erst bei Bedarf,
 // dazu der Stimmen-Vorschlag nach der Rückkehr (Tafel 86).
@@ -42,7 +42,7 @@ export function MicStrip() {
   return (
     <p className="flex min-h-11 items-center gap-2 rounded-field bg-warn-soft px-3 text-sm font-semibold text-warn-ink" role="status">
       <MicOff className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
-      <span className="flex-1">Mikro aus – tippen geht immer.</span>
+      <span className="flex-1">Mikro aus – schreiben geht immer.</span>
       <button type="button" onClick={openMicHelp} className="hit -mr-1 min-h-11 px-1 font-extrabold underline-offset-2">
         Anmachen ›
       </button>

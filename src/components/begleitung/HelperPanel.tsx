@@ -431,7 +431,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     setInput("");
   };
   // --- Die Bühne: Gespräch oben, Mia unten ------------------------------------
-  const heard = speech.listening ? `${input}${speech.interim ? ` ${speech.interim}` : ""}`.trim() : "";
+  // `input` ist schon der ganze Text der Aufnahme (fertig + unfertig) – nie den unfertigen Teil nochmal anhängen
+  const heard = speech.listening ? input.trim() : "";
   const state = stageState({ listening: speech.listening, thinking, speaking: speakingId !== null || (busy && streaming != null) });
   const mic = { blocked: speech.blocked, supported: speech.supported };
   // Tippen-Feld: auf Wunsch, ohne Mikro, beim Ändern eines Vorschlags und im geführten Gespräch
@@ -538,7 +539,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
             {mia}
             <div className="mia-gespraech flex items-center gap-5" data-daneben>
               <button type="button" onClick={() => setTyping(true)} disabled={!canType} className="hit min-h-11 text-[15px] font-semibold text-muted underline-offset-2 active:text-ink">
-                Lieber tippen
+                Lieber schreiben
               </button>
             </div>
           </StageFoot>

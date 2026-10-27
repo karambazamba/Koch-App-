@@ -51,12 +51,12 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 
 ### Hinweise (Launch 1.0, `core/hinweise.ts`)
 - Höchstens EIN Hinweis unter der Jetzt-Karte und höchstens EINE schwebende
-  Blase je Öffnen („Tippen & sprechen“ am Mia-Knopf). Reihenfolge: „Ich heiße
+  Blase je Öffnen („Schreiben & sprechen“ am Mia-Knopf). Reihenfolge: „Ich heiße
   jetzt Mia“ → Familie einladen (ohne Mia-Gesicht) → Spendentopf → „Halte die
   Startseite gedrückt“ → „Lieber schlicht?“ → „Abends lieber dunkel?“.
 - Jeder Hinweis nur einmal: am ersten Tag bleibt er, ab dem nächsten ist er
   weg (auch ohne Antippen). In den ersten 3 Tagen nur Beispiel-Tag und
-  „Tippen & sprechen“; „Lieber schlicht?“ kommt damit frühestens am 4. Tag.
+  „Schreiben & sprechen“; „Lieber schlicht?“ kommt damit frühestens am 4. Tag.
   Ausnahme „Ich heiße jetzt Mia“ (nur alte Installationen, schützt vor
   Datenverlust): steht immer zuerst, bis ✕.
 
@@ -248,7 +248,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   „Kein Stress. Ich zeig dir alles Stück für Stück.“ mit drei Zeilen, Texte
   `ERSTER_START` in `mia/persona.ts`) → `startFresh("farbig")`: Standardwerte,
   `DEFAULT_HOME`, `startDemo()`; Mia fliegt von „Zeig mal“ zum Mia-Knopf, der
-  beim ersten Erscheinen einmal zwinkert; „Tippen & sprechen“ erst nach 4 s.
+  beim ersten Erscheinen einmal zwinkert; „Schreiben & sprechen“ erst nach 4 s.
   Jeder Schritt ist ein Verlaufseintrag (Zurück = ein Schritt), nach „Zeig
   mal“ werden die Schritte aus dem Verlauf genommen.
 - Beispiele liegen nie in echten Speichern. Termine aus `demoDay(datum)`,

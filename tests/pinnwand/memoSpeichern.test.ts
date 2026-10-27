@@ -100,12 +100,12 @@ describe("Mikro hängt: einmal still neu versuchen", () => {
 describe("Mikro-Protokoll", () => {
   afterEach(() => noBrowser());
 
-  it("behält die letzten 20 Ereignisse mit Uhrzeit, nur auf dem Gerät", async () => {
+  it("behält die letzten 50 Ereignisse mit Uhrzeit, nur auf dem Gerät", async () => {
     fakeWindow();
     const { micLog, migrateMicLog } = await import("@/lib/core/micLog");
-    for (let i = 0; i < 25; i++) micLog(`Ereignis ${i}`);
+    for (let i = 0; i < 55; i++) micLog(`Ereignis ${i}`);
     const saved = migrateMicLog(JSON.parse(window.localStorage.getItem("wasgibts.mikroprotokoll")!));
-    expect(saved?.entries).toHaveLength(20);
+    expect(saved?.entries).toHaveLength(50);
     expect(saved?.entries[0].text).toBe("Ereignis 5");
     expect(typeof saved?.entries[0].at).toBe("number");
     expect(migrateMicLog({ version: 2 })).toBeNull();

@@ -18,6 +18,7 @@ import { helperName } from "@/lib/einstellungen/profile";
 import type { PruefErgebnis } from "@/lib/begleitung/pruefstand/bewerten";
 import { PRUEFSAETZE } from "@/lib/begleitung/pruefstand/saetze";
 import { fehlerText, laufQuote, pruefLauf, type Abruf } from "@/lib/begleitung/pruefstand/lauf";
+import { MicLogList } from "@/components/einstellungen/settings/MicLogSection";
 
 export function AdminView() {
   // Erst im Browser (beim Vorrendern gibt es kein „heute“ und keinen Speicher)
@@ -90,6 +91,9 @@ export function AdminView() {
             <span className="text-right font-bold tabular-nums">{cost.usd.toFixed(2)} $</span>
           </div>
         </section>
+        <div className={`${CARD} overflow-hidden`}>
+          <MicLogList as="section" />
+        </div>
         <section className="flex flex-col gap-2" aria-label="Prüfstand">
           <h2 className={`px-1 ${SECTION_TITLE}`}>Prüfstand</h2>
           <p className="px-1 text-sm text-muted">{`${PRUEFSAETZE.length} Alltagssätze durch ${helperName(null)}. Ziel: mindestens 95 % richtig. Kostet ein paar Cent.`}</p>

@@ -34,7 +34,7 @@ export const testcodeNeu = async (page, check) => {
   check(await page.getByRole("heading", { name: "Fast geschafft." }).isVisible(), "Überschrift „Fast geschafft.“");
   const feld = page.getByLabel("Testcode");
   check((await feld.getAttribute("type")) === "password" && (await feld.getAttribute("autocomplete")) === "off", "Passwortfeld ohne Autofill");
-  check(await page.getByText("Ohne Code geht’s auch: Tippen mit ＋ funktioniert immer.").isVisible(), "leiser Satz mit ＋");
+  check(await page.getByText("Ohne Code geht’s auch: Schreiben mit ＋ funktioniert immer.").isVisible(), "leiser Satz mit ＋");
   await feld.fill("falsch-geraten");
   await page.getByRole("button", { name: "Los geht’s" }).click();
   check(await page.getByText("Der Code passt nicht. Nochmal?").waitFor({ timeout: 5000 }).then(() => true, () => false), "falscher Code: „Der Code passt nicht. Nochmal?“");

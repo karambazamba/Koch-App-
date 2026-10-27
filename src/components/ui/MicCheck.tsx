@@ -132,7 +132,7 @@ export function MicCheck({ start, onTyping }: { start: MicBlock | null; onTyping
         )}
         {!check.fertig && (
           <button type="button" onClick={onTyping} className="hit mx-auto min-h-11 text-[15px] font-semibold text-muted">
-            Lieber tippen
+            Lieber schreiben
           </button>
         )}
         <Details />
