@@ -1,19 +1,60 @@
-// Wind (Tafel 63 B): Windsack-Stufen, Richtung als Vektor-Mittel, 8 Kürzel,
-// Tageswert nur aus 7–21 Uhr, ältere Daten ohne Wind, Mia-Antworten.
+// Wind (Tafel 87): neun Stufen nach Beaufort (Grenzen), Windsack-Aussehen,
+// Böen ab 60, Richtung als Vektor-Mittel, 8 Kürzel, Tageswert nur aus 7–21
+// Uhr, ältere Daten ohne Wind, gleiche Wörter für Seite und Mia.
 import { describe, expect, it } from "vitest";
 import { buildDays, sanitizeForecast, weatherQuestion, type ForecastHour } from "@/lib/wetter/forecast";
-import { dirFrom, dirLong, dirShort, meanDirection, windAnswer, windLevel, windLong, windOf, windShort, windSpoken } from "@/lib/wetter/wind";
+import { dirFrom, dirLong, dirShort, gustText, stormForPlan, meanDirection, WIND_STUFEN, windAnswer, windLevel, windLine, windLong, windLook, windOf, windShort, windSpoken, windWord, windWords } from "@/lib/wetter/wind";
 
 const hour = (h: number, wind?: number, dir?: number, gust = 0): ForecastHour => ({ date: "2026-10-23", hour: h, temp: 10, code: 3, rain: 0, gust, mm: 0, sun: 0, cloud: 80, ...(wind === undefined ? {} : { wind }), ...(dir === undefined ? {} : { dir }) });
 
-describe("Windsack: drei Stufen", () => {
-  it("Grenzen 19/20 und 39/40 km/h, Böen 59/60", () => {
-    expect(windLevel(19)).toBe("leicht");
-    expect(windLevel(20)).toBe("windig");
-    expect(windLevel(39)).toBe("windig");
-    expect(windLevel(40)).toBe("stuermisch");
-    expect(windLevel(10, 59)).toBe("leicht");
-    expect(windLevel(10, 60)).toBe("stuermisch");
+describe("Windstufen nach Tafel 87 (Mittelwind, Beaufort)", () => {
+  it.each([
+    [0, "kaum", "Kaum Wind"],
+    [11, "kaum", "Kaum Wind"],
+    [12, "leicht", "Leichter Wind"],
+    [19, "leicht", "Leichter Wind"],
+    [20, "maessig", "Mäßiger Wind"],
+    [28, "maessig", "Mäßiger Wind"],
+    [29, "frisch", "Frischer Wind"],
+    [38, "frisch", "Frischer Wind"],
+    [39, "lebhaft", "Lebhafter Wind"],
+    [49, "lebhaft", "Lebhafter Wind"],
+    [50, "stark", "Starker Wind"],
+    [61, "stark", "Starker Wind"],
+    [62, "stuermisch", "Stürmischer Wind"],
+    [74, "stuermisch", "Stürmischer Wind"],
+    [75, "sturm", "Sturm"],
+    [102, "sturm", "Sturm"],
+    [103, "orkan", "Orkanartiger Wind"],
+    [140, "orkan", "Orkanartiger Wind"],
+  ] as const)("%i km/h → %s („%s“)", (speed, level, word) => {
+    expect(windLevel(speed)).toBe(level);
+    expect(windWord(windLevel(speed))).toBe(word);
+  });
+
+  it("gerundet wie angezeigt (11,6 → 12 = Leichter Wind), neun Stufen, Böen ändern die Stufe nicht", () => {
+    expect(windLevel(11.4)).toBe("kaum");
+    expect(windLevel(11.6)).toBe("leicht");
+    expect(WIND_STUFEN.map((s) => s.ab)).toEqual([0, 12, 20, 29, 39, 50, 62, 75, 103]);
+    expect(windLine({ speed: 10, gust: 70, dir: null }).wort).toBe("Kaum Wind");
+  });
+
+  it("Windsack: Striche ab „Lebhaft“, warm ab „Stürmisch“, rot ab „Sturm“", () => {
+    expect(windLook("frisch")).toEqual({ striche: 0, ton: null, rot: false });
+    expect(windLook("lebhaft")).toEqual({ striche: 1, ton: null, rot: false });
+    expect(windLook("stark")).toEqual({ striche: 1, ton: null, rot: false });
+    expect(windLook("stuermisch")).toEqual({ striche: 2, ton: "warm", rot: false });
+    expect(windLook("sturm")).toEqual({ striche: 3, ton: "sturm", rot: true });
+    expect(windLook("orkan")).toEqual({ striche: 4, ton: "sturm", rot: true });
+  });
+});
+
+describe("Böen-Zusatz ab 60 km/h", () => {
+  it("59 nein, 60 ja – auch wenn der Mittelwind niedriger ist", () => {
+    expect(gustText({ speed: 32, gust: 59, dir: 270 })).toBeNull();
+    expect(gustText({ speed: 32, gust: 60, dir: 270 })).toBe("Böen 60");
+    expect(windLine({ speed: 32, gust: 85, dir: 270 })).toEqual({ wort: "Frischer Wind", zahl: "32 km/h aus West", boeen: "Böen 85" });
+    expect(windLine({ speed: 32, gust: 45, dir: 270 }).boeen).toBeNull();
   });
 });
 
@@ -54,24 +95,55 @@ describe("Tageswert und Tageszeiten", () => {
   });
 });
 
-describe("Wind in Worten", () => {
+describe("Wind in Worten (Seite, VoiceOver und Mia mit denselben Wörtern)", () => {
   const w = { speed: 22, gust: 30, dir: 270 };
-  it("Chips: lang „22 km/h aus West“, kurz „22 km/h · W“, Böen erst ab 50", () => {
+  it("Chips: lang „22 km/h aus West“, kurz „22 km/h · W“, Böen erst ab 60", () => {
     expect(windLong(w)).toBe("22 km/h aus West");
     expect(windShort(w)).toBe("22 km/h · W");
     expect(windShort({ speed: 35, gust: 60, dir: 270 })).toBe("35 · W · Böen 60");
-    expect(windShort({ speed: 35, gust: 49, dir: null })).toBe("35 km/h");
+    expect(windShort({ speed: 35, gust: 59, dir: null })).toBe("35 km/h");
   });
 
-  it("VoiceOver: „Wind 22 Kilometer pro Stunde aus Westen, windig“", () => {
-    expect(windSpoken(w)).toBe("Wind 22 Kilometer pro Stunde aus Westen, windig");
+  it("VoiceOver: „Mäßiger Wind, 22 Kilometer pro Stunde aus Westen“", () => {
+    expect(windSpoken(w)).toBe("Mäßiger Wind, 22 Kilometer pro Stunde aus Westen");
+    expect(windSpoken({ speed: 80, gust: 110, dir: null })).toBe("Sturm, 80 Kilometer pro Stunde, Böen bis 110 Kilometer pro Stunde");
   });
 
   it("Mia: „Ist es windig?“, „Woher kommt der Wind morgen?“", () => {
     expect(weatherQuestion("Ist es windig?", "2026-10-23")).toMatchObject({ date: "2026-10-23", wind: true });
     expect(weatherQuestion("Woher kommt der Wind morgen?", "2026-10-23")).toMatchObject({ date: "2026-10-24", label: "Morgen", wind: true });
     expect(weatherQuestion("Wie wird das Wetter morgen?", "2026-10-23")).toMatchObject({ wind: false });
-    expect(windAnswer({ speed: 28, gust: 55, dir: 270 }, "Morgen")).toBe("Morgen wird es windig – 28 km/h aus Westen, Böen bis 55 km/h.");
-    expect(windAnswer({ speed: 8, gust: 15, dir: 90 }, "Heute")).toBe("Heute weht nur ein leichter Wind – 8 km/h aus Osten.");
+    expect(windAnswer({ speed: 28, gust: 55, dir: 270 }, "Morgen")).toBe("Morgen: Mäßiger Wind, 28 km/h aus Westen.");
+    expect(windAnswer({ speed: 32, gust: 85, dir: 270 }, "Heute")).toBe("Heute: Frischer Wind, 32 km/h aus Westen, Böen bis 85 km/h.");
+    expect(windAnswer({ speed: 8, gust: 15, dir: 90 }, "Heute")).toBe("Heute: Kaum Wind, 8 km/h aus Osten.");
+    expect(windWords({ speed: 64, gust: 90, dir: null })).toBe("Stürmischer Wind, 64 km/h, Böen bis 90 km/h");
+  });
+});
+
+describe("Jetzt-Karte: Wind nur ab „Stürmisch“ und nur mit Planbezug", () => {
+  const D = "2026-10-23";
+  const day = (wind: (h: number) => number) => Array.from({ length: 24 }, (_, h) => ({ ...hour(h, wind(h), 270, 90), date: D }));
+  const plan = (title: string, time = "16:00") => [{ key: "p", title, time }];
+
+  it("„Stürmisch ab 14 Uhr“ + passende Frage zum Plan", () => {
+    const hs = day((h) => (h >= 14 ? 65 : 30));
+    expect(stormForPlan(hs, D, 10, plan("Trampolin aufbauen"))).toMatchObject({ key: "p", head: "Stürmisch ab 14 Uhr", detail: "Trampolin sichern?" });
+    expect(stormForPlan(hs, D, 10, plan("Grillen bei Oma"))?.detail).toBe("Grill lieber drinnen lassen?");
+    expect(stormForPlan(hs, D, 10, plan("Wäsche aufhängen"))?.detail).toBe("Wäsche lieber drinnen trocknen?");
+    expect(stormForPlan(hs, D, 10, plan("Mit dem Rad zur Oma"))?.detail).toBe("Heute lieber ohne Rad?");
+    expect(stormForPlan(hs, D, 10, plan("Fußball Mathis"))?.detail).toBe("Fußball Mathis lieber drinnen?");
+  });
+
+  it("Sturm/Orkan mit eigenem Wort; ab jetzt gerechnet", () => {
+    expect(stormForPlan(day((h) => (h >= 12 ? 80 : 30)), D, 10, plan("Garten"))?.head).toBe("Sturm ab 12 Uhr");
+    expect(stormForPlan(day(() => 110), D, 10, plan("Garten"))?.head).toBe("Orkan ab 10 Uhr");
+  });
+
+  it("unter „Stürmisch“ (61 km/h, auch mit Böen 90), Plan vorher oder ohne Winddaten: nichts", () => {
+    expect(stormForPlan(day(() => 61), D, 10, plan("Trampolin"))).toBeNull();
+    expect(stormForPlan(day((h) => (h >= 18 ? 70 : 30)), D, 10, plan("Trampolin"))).toBeNull();
+    expect(stormForPlan(day(() => 70), D, 10, [])).toBeNull();
+    const old = day(() => 70).map((h) => ({ ...h, wind: undefined }));
+    expect(stormForPlan(old, D, 10, plan("Trampolin"))).toBeNull();
   });
 });

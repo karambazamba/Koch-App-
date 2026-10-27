@@ -102,8 +102,8 @@ export type JetztInput = {
   urgent: { key: string; title: string; work?: boolean }[];
   dueToday: { key: string; title: string; work?: boolean }[];
   pin: { id: string; author: string; text: string; when: string } | null;
-  /** Regen/Sturm/Glätte zur Zeit eines Draußen-Termins oder -Trainings heute (sonst null) */
-  planWeather: { key: string; title: string; time: string; word: string } | null;
+  /** Regen/Sturm/Glätte zur Zeit eines Draußen-Termins oder -Trainings heute (sonst null); Sturm mit eigenen Zeilen („Stürmisch ab 14 Uhr“ · „Trampolin sichern?“, `stormForPlan`) */
+  planWeather: { key: string; title: string; time: string; word: string; head?: string; detail?: string } | null;
   /** Gericht von heute (solange nicht gegessen) */
   dish: { name: string; clock: string | null; minutes: number | null; ready: boolean; missing: string[]; unsure?: string[]; demo?: boolean } | null;
   birthdays: { title: string; date: string; when: "heute" | "morgen" }[];
@@ -168,7 +168,7 @@ const careNoted = (note?: string) => Boolean(note && /bleibt|babysitter|betreu|p
 /** Draußen? (Sportart draußen oder typische Draußen-Wörter) – nur dann zählt Regen */
 export function isOutdoor(title: string, place = "", sportOutdoor = false): boolean {
   if (sportOutdoor) return true;
-  return /fu(ß|ss)ball|training|spielplatz|park\b|garten|wander|ausflug|drau(ß|ss)en|zoo|grill|turnier|laufen|joggen|radtour|fahrrad|spaziergang|flohmarkt|wochenmarkt|schwimmbad|freibad|see\b|strand/i.test(`${title} ${place}`);
+  return /fu(ß|ss)ball|training|spielplatz|park\b|garten|trampolin|w(ä|ae)sche|balkon|terrasse|wander|ausflug|drau(ß|ss)en|zoo|grill|turnier|laufen|joggen|radtour|fahrrad|spaziergang|flohmarkt|wochenmarkt|schwimmbad|freibad|see\b|strand/i.test(`${title} ${place}`);
 }
 
 const MAX = 3;
@@ -224,7 +224,7 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
   // Wetter NUR mit Planbezug: Regen/Sturm/Glätte zur Zeit eines Draußen-Termins
   if (x.planWeather && !night) {
     const h = Number(x.planWeather.time.slice(0, 2));
-    add({ id: `wetter:${x.planWeather.key}`, kind: "wetter", title: `${x.planWeather.word} um ${h} Uhr`, detail: `${x.planWeather.title} – lieber drinnen?`, score: 74, target: { href: dayHref }, button: "Öffnen", gentle: true });
+    add({ id: `wetter:${x.planWeather.key}`, kind: "wetter", title: x.planWeather.head ?? `${x.planWeather.word} um ${h} Uhr`, detail: x.planWeather.detail ?? `${x.planWeather.title} – lieber drinnen?`, score: 74, target: { href: dayHref }, button: "Öffnen", gentle: true });
   }
 
   // Neu von der Familie

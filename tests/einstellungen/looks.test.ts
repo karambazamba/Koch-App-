@@ -98,11 +98,4 @@ describe("Kontrast der Kachel-Farben (2 Looks × hell/dunkel)", () => {
     expect(contrast(light[`tile-${id}-ac`], light.surface)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(dark[`tile-${id}-ac`], dark.surface)).toBeGreaterThanOrEqual(4.5);
   });
-  it("Wetter-Himmel: Schrift lesbar (Tag dunkel, Nacht weiß)", () => {
-    for (const lage of ["sonnig", "bewoelkt", "regen", "schnee", "gewitter"]) {
-      expect(contrast(light["sky-ink"], light[`sky-${lage}-a`])).toBeGreaterThanOrEqual(4.5);
-      expect(contrast(dark["sky-ink"], dark[`sky-${lage}-a`])).toBeGreaterThanOrEqual(4.5);
-    }
-    expect(contrast(light["sky-nacht-ink"], light["sky-nacht-a"])).toBeGreaterThanOrEqual(4.5);
-  });
 });

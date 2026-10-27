@@ -7,7 +7,7 @@ import { aufgabeToTermin, taskOverview, terminToAufgabe, TASK_GROUPS } from "@/l
 import { addListItems, createNote, findNote, noteAnswer, setPinned, type Note } from "@/lib/notizen";
 import { PIN_MAX } from "@/lib/pinnwand/model";
 import { dayAnswer, hoursToday, isRainy, umbrellaAnswer, round } from "@/lib/wetter/forecast";
-import { windAnswer } from "@/lib/wetter/wind";
+import { windWords } from "@/lib/wetter/wind";
 import type { BegleitungTool } from "@/lib/begleitung/registry";
 import { nextId, propose, type ToolContext, type ToolResult } from "@/lib/begleitung/tools";
 
@@ -237,7 +237,7 @@ const TOOLS: BegleitungTool[] = [
     area: "alltag",
     definition: {
       name: "wetter_abfragen",
-      description: "Wetter am Wetter-Ort für einen Tag (Standard heute): Beschreibung, Tief/Hoch, Regenrisiko, Wind (Stärke km/h, Richtung, Böen), bei heute auch ab wann Regen. Für 'Wie wird das Wetter morgen?', 'Brauch ich heute einen Schirm?', 'Ist es windig?', 'Woher kommt der Wind morgen?'. Richtung immer ausgeschrieben sagen („aus Westen“), Böen nur ab 50 km/h nennen.",
+      description: "Wetter am Wetter-Ort für einen Tag (Standard heute): Beschreibung, Tief/Hoch, Regenrisiko, Wind (Stärke km/h, Richtung, Böen), bei heute auch ab wann Regen. Für 'Wie wird das Wetter morgen?', 'Brauch ich heute einen Schirm?', 'Ist es windig?', 'Woher kommt der Wind morgen?'. Windstärke mit genau dem Wort aus dem Ergebnis sagen (Kaum Wind, Leichter, Mäßiger, Frischer, Lebhafter, Starker, Stürmischer Wind, Sturm, Orkanartiger Wind), Richtung immer ausgeschrieben („aus Westen“), Böen nur ab 60 km/h nennen.",
       input_schema: { type: "object", properties: { tag: { type: "string", description: "YYYY-MM-DD (aus der Datumsliste), Standard heute" } }, additionalProperties: false },
     },
     run: (ctx, raw) => {
@@ -247,7 +247,7 @@ const TOOLS: BegleitungTool[] = [
       const d = fc.days.find((x) => x.date === day);
       if (!d) return { content: `Für ${day} gibt es noch keine Vorhersage (nur die nächsten 7 Tage).` };
       const lines = [`${fc.place}, ${day}: ${d.text}, ${round(d.min)} bis ${round(d.max)} °C, Regenrisiko ${d.rain} %, Regenstunden ${d.wet}, ${d.mm} mm, Sonne etwa ${Math.round(d.sun)} Std.`];
-      if (d.wind) lines.push(`Wind: ${windAnswer(d.wind, "Tagsüber")}`);
+      if (d.wind) lines.push(`Wind tagsüber: ${windWords(d.wind)}.`);
       if (day === ctx.today) {
         const rain = hoursToday(fc, day).filter(isRainy).map((h) => h.hour);
         lines.push(rain.length ? `Regen heute um ${rain.join(", ")} Uhr.` : "Heute trocken.");

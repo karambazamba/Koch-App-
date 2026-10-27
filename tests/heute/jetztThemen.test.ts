@@ -103,6 +103,13 @@ describe("Jetzt-Karte: Wetter nur mit Plan", () => {
     expect(kinds(tafelTag(H(14), { planWeather: null }))).not.toContain("wetter");
   });
 
+  it("Sturm mit eigenen Zeilen (Tafel 87): „Stürmisch ab 14 Uhr“ · „Trampolin sichern?“", () => {
+    const storm = { key: "tr", title: "Trampolin aufbauen", time: "15:00", word: "Wind", head: "Stürmisch ab 14 Uhr", detail: "Trampolin sichern?" };
+    expect(first(tafelTag(H(12), { planWeather: storm, upcoming: [termin("Trampolin aufbauen", "15:00", { outdoor: true })], pin: null, shop: null, dish: null }))).toMatchObject({ kind: "wetter", title: "Stürmisch ab 14 Uhr", detail: "Trampolin sichern?" });
+    expect(isOutdoor("Trampolin aufbauen")).toBe(true);
+    expect(isOutdoor("Wäsche aufhängen")).toBe(true);
+  });
+
   it("draußen erkennen: Fußball, Spielplatz, Laufen – nicht Zahnarzt", () => {
     expect(isOutdoor("Mathis Fußball")).toBe(true);
     expect(isOutdoor("Treffen", "Spielplatz am See")).toBe(true);

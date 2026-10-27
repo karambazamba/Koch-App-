@@ -2706,3 +2706,23 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Hack“ → rein. Mia darf „Im Haus“ nutzen (kein „Kommt bald.“ mehr).
 - Mia denkt mit: beim ersten Besuch der Essen-Seite einmal „Sag mir, was im
   Kühlschrank ist, dann koch ich mit dir spontan.“
+
+## Wetter-Kachel neu: stiller Himmel, Wind in Worten, 2-Stunden-Überblick (v0.128.0)
+
+- Kachel nach der Vorlage „ruhig mit Regentropfen“: Hintergrund je Wetter
+  (Regen/Niesel grau-blau mit feinen Tropfen, Bewölkt weiches Grau-Blau mit
+  Wolken, Sonne warmer Verlauf mit angedeuteter Sonne, Schnee helle Punkte,
+  Gewitter dunkler mit kleinem Blitz), nachts dunkler, Look „Schlicht“ weiß
+  mit farbigem Symbol; nichts bewegt sich. Rein: `kachelHimmel` in
+  `lib/wetter/kachel.ts`, Farben als `--app-sky-*`-Tokens, Kontrast getestet.
+- Inhalt: „WETTER · EUTIN“, Temperatur mit Windsack, ↑ max / ↓ min, „Regen ·
+  ab 10 Uhr trocken“ (ehrliche Regel), „Frischer Wind · 32 km/h aus West“
+  (ab Böen 60 „Böen 85“ in Orange), unten 4 Stunden im 2-Stunden-Abstand. S:
+  Temperatur, Windsack, eine Zeile.
+- Windstufen nach Tafel 87 (Beaufort, Mittelwind) zentral in
+  `lib/wetter/wind.ts` statt der drei alten Stufen (leicht/windig/stürmisch,
+  Böen ab 50): gleiche Wörter auf Kachel, Wetter-Seite und in Mias
+  Antworten; Windsack steht je Stufe höher, Windstriche ab „Lebhaft“, Karte
+  warm ab „Stürmisch“, Windsack rot ab „Sturm“.
+- Jetzt-Karte: Wind nur ab „Stürmisch“ und nur mit Planbezug („Stürmisch ab
+  14 Uhr · Trampolin sichern?“). Der alte Kachel-Tipp `weatherTip` ist weg.

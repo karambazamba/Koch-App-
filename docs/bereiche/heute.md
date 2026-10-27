@@ -65,8 +65,9 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Zwei Looks (Profil `look`, `data-look` am `<html>`, Regeln in
   `globals.css`): „Farbig“ = Pastell-Flächen eine Stufe kräftiger, alle mit
   gleicher Sättigung (`--app-tile-<id>`/`-ac`, Text ≥ 4,5:1), Überschriften in
-  der dunklen Tonfarbe, Innen-Kärtchen weiß, Wetter als Himmel je Wetterlage
-  (`--app-sky-*`, nachts Nachtblau mit weißer Schrift); „Schlicht“ = weiße
+  der dunklen Tonfarbe, Innen-Kärtchen weiß, Wetter als stiller Himmel je Wetterlage
+  und Tag/Nacht (`kachelHimmel`, `--app-sky-<lage>[-nacht]-*`, siehe
+  `wetter.md`); „Schlicht“ = weiße
   Kacheln mit feinem Rand, Innen-Kärtchen sehr hell, Farbe nur in Überschrift,
   Symbol, Uhrzeit und Termin-Strich. Termine: Uhrzeit fett in der Tonfarbe,
   Strich links in Raumfarbe. Hell/Dunkel gilt für beide.
@@ -175,7 +176,10 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Termine-Kachel), Vorbereiten (Termin heute mit Notiz → „Versichertenkarte
   einpacken?“), Packliste fürs Training heute, Wetter NUR mit Planbezug
   (Regen zur Stunde eines Draußen-Termins/-Trainings, `isOutdoor`: „Regen um
-  17 Uhr · Fußball – lieber drinnen?“), Neu von der Familie (Pinnwand,
+  17 Uhr · Fußball – lieber drinnen?“; ohne Regen Wind erst ab „Stürmisch“
+  zur Stunde des Plans, `stormForPlan` in `lib/wetter/wind.ts`: „Stürmisch ab
+  14 Uhr · Trampolin sichern?“; draußen sind jetzt auch Trampolin, Wäsche,
+  Balkon, Terrasse), Neu von der Familie (Pinnwand,
   „Antworten“), Heimweg-Einkauf ohne Zahl („Auf dem Heimweg bei REWE?“, vor
   dem Kochen), Kochstart (≤ 30 Min vor dem Start; ohne Essen-Kachel früher),
   Absprache bei Abendterminen ab 18 Uhr mit Kindern („Wer bleibt bei den
