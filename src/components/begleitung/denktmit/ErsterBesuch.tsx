@@ -7,7 +7,7 @@
 // nie wieder. „Ruhig“ = keine Karte.
 
 import { useEffect } from "react";
-import { CARD, buttonClass } from "@/components/ui/styles";
+import { CARD, UEBER_LEISTE, buttonClass } from "@/components/ui/styles";
 import { tidyMiaText } from "@/lib/begleitung/tidy";
 import { seiteBesucht, useDenkt } from "@/lib/mia/denktmit/store";
 import { ersterBesuch } from "@/lib/mia/denktmit/vorstellen";
@@ -25,7 +25,7 @@ export function ErsterBesuch({ seite }: { seite: string }) {
   return (
     <div
       className={`${CARD} fixed right-4 z-30 flex max-w-[300px] flex-col gap-2 px-4 py-3`}
-      style={{ bottom: "calc(max(1rem, env(safe-area-inset-bottom)) + 84px)" }}
+      style={{ bottom: `calc(${UEBER_LEISTE} + 30px)` }}
       role="note"
       aria-label="Kurz erklärt"
       data-erster-besuch={seite}

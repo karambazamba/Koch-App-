@@ -1,30 +1,27 @@
 "use client";
 
 // Startseite mit drei Seiten: Kalender · Heute · Essen (Heute in der Mitte).
-// Wechsel per Tipp auf die Leiste oben oder seitlichem Wischen – die Seiten
-// liegen nebeneinander und folgen dem Finger (`usePagerSwipe`), der Schalter
-// oben gleitet mit. Hoch/runter scrollt normal, Scrollhöhe je Seite bleibt.
-// Verlauf: von Heute zu Kalender/Essen EIN Eintrag, zwischen Kalender und
-// Essen nur ersetzen – Zurück (Pfeil, Safari-Geste, Android) führt immer zu
-// Heute. (?seite=kalender, alt ?seite=woche.) Unten immer dieselbe Mia-Leiste.
+// Wechsel per Reiter in der Leiste unten (`ui/Leiste`, Brücke
+// `core/leiste`) oder seitlichem Wischen – die Seiten liegen nebeneinander und
+// folgen dem Finger (`usePagerSwipe`). Hoch/runter scrollt normal, Scrollhöhe
+// je Seite bleibt; aktiver Reiter = weich nach oben. Verlauf: von Heute zu
+// Kalender/Essen EIN Eintrag, zwischen Kalender und Essen nur ersetzen –
+// Zurück führt immer zu Heute. (?seite=kalender, alt ?seite=woche.)
 
-import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { House, Settings } from "lucide-react";
-import { MiaButton } from "@/components/begleitung/MiaButton";
 import { ErsterBesuch } from "@/components/begleitung/denktmit/ErsterBesuch";
 import { CARD, FAB_CLEARANCE } from "@/components/ui/styles";
 import { useCalendarEntries } from "@/lib/kalender/useCalendarEntries";
 import { useMinutes } from "@/lib/core/now";
 import { expectReplace, expectTabSwitch, previousUrl } from "@/lib/core/navigation";
-import { helperName } from "@/lib/einstellungen/profile";
+import { pagerAnmelden } from "@/lib/core/leiste";
 import type { HomeData } from "@/components/heute/useHomeData";
 import { TodayPage } from "@/components/heute/TodayPage";
 import { CalendarPage } from "@/components/kalender/CalendarPage";
 import { FoodPage } from "@/components/essen/FoodPage";
 import { PreviewBanner } from "@/components/heute/PreviewBanner";
-import { PAGER_MS, slideTo, usePagerSwipe } from "@/components/heute/usePagerSwipe";
+import { slideTo, usePagerSwipe } from "@/components/heute/usePagerSwipe";
 import { clockMinutes, usePreview } from "@/lib/heute/tagesablauf";
 
 type HomeTab = "kalender" | "heute" | "essen";
@@ -58,7 +55,6 @@ export function HomePager({ data }: { data: HomeData }) {
   const scrolls = useRef<Partial<Record<HomeTab, number>>>({});
   const mainRef = useRef<HTMLElement>(null);
   const panelRefs = useRef<Partial<Record<HomeTab, HTMLDivElement | null>>>({});
-  const thumbRef = useRef<HTMLSpanElement>(null);
   // Nachbarseiten erst kurz nach dem Start (oder beim ersten Anfassen) rendern – danach bleiben sie
   const [warm, setWarm] = useState(false);
   useEffect(() => {
@@ -91,10 +87,6 @@ export function HomePager({ data }: { data: HomeData }) {
       el.style.transform = "";
       el.style.visibility = "";
       el.style.top = "";
-    }
-    if (thumbRef.current) {
-      thumbRef.current.style.transition = "none";
-      thumbRef.current.style.transform = `translateX(${indexOf(tab) * 100}%)`;
     }
     window.scrollTo(0, scrolls.current[tab] ?? 0);
   }, [tab]);
@@ -135,12 +127,8 @@ export function HomePager({ data }: { data: HomeData }) {
         if (t && el) placeAt(el, top + window.scrollY - (scrolls.current[t] ?? 0));
       }
     },
-    progress: (share: number, animate: boolean) => {
-      const thumb = thumbRef.current;
-      if (!thumb) return;
-      thumb.style.transition = animate ? `transform ${PAGER_MS}ms cubic-bezier(0.22, 0.61, 0.36, 1)` : "none";
-      thumb.style.transform = `translateX(${(indexOf(tabRef.current) + Math.max(-1, Math.min(1, share))) * 100}%)`;
-    },
+    // Früher glitt der Segment-Schalter mit; die Leiste unten springt erst beim Wechsel
+    progress: () => {},
     commit: (step: -1 | 1) => {
       const t = neighbor(step);
       if (t) commit(t);
@@ -156,24 +144,33 @@ export function HomePager({ data }: { data: HomeData }) {
     else commit(next);
   };
 
-  // Auf Kalender und Essen bleibt die Leiste oben; beim Runterscrollen schmal mit Weichzeichner (Tafel 73)
-  const away = tab !== "heute";
-  const [slim, setSlim] = useState(false);
+  // Reiter in der Leiste unten: anderer Bereich = hinüber, gleicher = weich nach oben (von einer Unterseite zurück: bleiben)
+  const goRef = useRef(go);
   useEffect(() => {
-    if (!away) return;
-    const onScroll = () => setSlim(window.scrollY > 24);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [away]);
-  const compact = away && slim;
+    goRef.current = go;
+  });
+  useEffect(
+    () =>
+      pagerAnmelden((b, gemerkt) => {
+        if (b !== tabRef.current) return goRef.current(b);
+        if (gemerkt) return;
+        const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+        window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
+      }),
+    [],
+  );
 
   const ready = entries !== undefined && minutes !== undefined;
   const content = (t: HomeTab) => {
     if (!ready) return t === tab ? <div className={`${CARD} h-48 animate-pulse`} /> : null;
     if (t === "heute") return <TodayPage data={data} entries={entries} minutes={minutes} realMinutes={realMinutes} onOpenFood={() => go("essen")} />;
-    if (t === "kalender") return <CalendarPage today={data.todayIso} entries={entries} />;
-    return <FoodPage data={data} minutes={minutes} />;
+    // Kalender und Essen: großer Titel oben, kein Zurück (Hauptseiten)
+    return (
+      <>
+        <h1 className="pt-1 text-[30px] font-extrabold leading-tight tracking-tight">{t === "kalender" ? "Kalender" : "Essen"}</h1>
+        {t === "kalender" ? <CalendarPage today={data.todayIso} entries={entries} /> : <FoodPage data={data} minutes={minutes} />}
+      </>
+    );
   };
   return (
     <>
@@ -181,34 +178,6 @@ export function HomePager({ data }: { data: HomeData }) {
         ref={mainRef}
         className={`mx-auto flex w-full max-w-lg flex-1 touch-pan-y touch-pinch-zoom flex-col gap-3 overflow-x-clip px-4 ${FAB_CLEARANCE} pt-[calc(env(safe-area-inset-top)+0.75rem)]`}
       >
-        <nav
-          className={`z-20 -mx-4 flex items-center gap-2 px-4 transition-[padding,background-color] duration-300 ${away ? "sticky top-0" : "relative"} ${compact ? "bg-background/80 pb-1.5 pt-[calc(env(safe-area-inset-top)+0.375rem)] shadow-card backdrop-blur-[14px]" : "bg-background"}`}
-          aria-label="Seiten"
-          data-schmal={compact || undefined}
-        >
-          <div role="tablist" aria-label="Kalender, Heute, Essen" className="relative flex flex-1 rounded-card bg-segment p-1">
-            <span className="pointer-events-none absolute inset-y-1 left-1 w-[calc((100%-0.5rem)/3)]" aria-hidden>
-              <span ref={thumbRef} className="block h-full w-full rounded-field bg-surface shadow-card" style={{ transform: `translateX(${indexOf(tab) * 100}%)` }} />
-            </span>
-            {TABS.map((t) => (
-              <button
-                key={t.value}
-                type="button"
-                role="tab"
-                aria-selected={tab === t.value}
-                aria-label={t.value === "heute" && away ? "Zur Startseite" : undefined}
-                onClick={() => go(t.value)}
-                className={`hit relative flex flex-1 items-center justify-center gap-1 rounded-field text-[15px] font-bold transition-colors ${compact ? "h-7" : "h-10"} ${tab === t.value ? "text-ink" : t.value === "heute" ? "text-accent-strong" : "text-muted"}`}
-              >
-                {t.value === "heute" && away && <House className="h-4 w-4" strokeWidth={2.25} aria-hidden />}
-                {t.label}
-              </button>
-            ))}
-          </div>
-          <Link href="/profil" aria-label="Einstellungen" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted active:bg-fill">
-            <Settings className="h-5 w-5" strokeWidth={2} aria-hidden />
-          </Link>
-        </nav>
         <PreviewBanner />
         {/* Die sichtbare Seite steht im DOM zuerst (gleiche keys – nichts wird neu aufgebaut) */}
         {[...TABS].sort((a, b) => Number(b.value === tab) - Number(a.value === tab)).map((t) => {
@@ -232,7 +201,6 @@ export function HomePager({ data }: { data: HomeData }) {
           );
         })}
       </main>
-      <MiaButton name={helperName(data.profile)} />
       {tab !== "heute" && <ErsterBesuch seite={`seite:${tab}`} />}
     </>
   );

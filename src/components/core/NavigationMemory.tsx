@@ -3,7 +3,8 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { expectReplace, installNavigationMemory, onRouteChange, resetNavigation } from "@/lib/core/navigation";
-import { merkeWeg, vergissWeg, wegSeit, zurStartseite } from "@/lib/core/heimkehr";
+import { HEIM_MS, merkeWeg, vergissWeg, wegSeit, zurStartseite } from "@/lib/core/heimkehr";
+import { closeHelper } from "@/lib/begleitung/open";
 import { now } from "@/lib/core/now";
 
 /**
@@ -21,6 +22,8 @@ export function NavigationMemory() {
       const url = `${window.location.pathname}${window.location.search}`;
       const weg = wegSeit();
       vergissWeg();
+      // Lange weg: Mia-Bühne zu (der Kochmodus bleibt, siehe heimkehr.ts)
+      if (weg !== null && now().getTime() - weg > HEIM_MS) closeHelper();
       if (!zurStartseite(url, weg, now().getTime())) return;
       resetNavigation();
       expectReplace();

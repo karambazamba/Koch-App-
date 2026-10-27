@@ -71,7 +71,9 @@ export const konten = async (page, check, device) => {
     await pageB.goto(BASE + "/konto");
     await familyReady(pageB);
     check(await pageB.getByRole("listitem").filter({ hasText: "(du)" }).isVisible(), "B ist per Link in der Familie");
-    check((await pageB.getByRole("listitem").count()) >= 2, "B sieht A");
+    // Mitglieder kommen über den Abgleich (Testserver: alle 2 s) – kurz warten statt sofort zählen
+    const seesA = await pageB.waitForFunction(() => document.querySelectorAll("ul[aria-label='Wer dazugehört'] > li").length >= 2, null, { timeout: 8000 }).then(() => true, () => false);
+    check(seesA, "B sieht A");
     const kidLink = await invite(pageB, true);
 
     // Kind (dritter Browser) darf nicht einladen

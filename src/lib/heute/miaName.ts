@@ -27,3 +27,6 @@ export function miaHomeSteps(host: string, name: string): MicStep[] {
     { text: `Öffne ${name} vom neuen Icon → „Schon mal genutzt? Daten wiederherstellen“`, icon: "erlauben", screen: { title: name, rows: ["Los geht’s", "Daten wiederherstellen"], target: 1 } },
   ];
 }
+
+/** Leiste unten neu (Tafel 96): einmal kurz Mia */
+export const LEISTE_NEU = "Unten findest du jetzt Kalender, Heute und Essen. Ein Tipp, und du bist da.";

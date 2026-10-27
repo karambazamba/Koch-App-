@@ -249,3 +249,24 @@ Sortier-Regeln, Design-System, Service Worker, App-Icons und Manifest.
   `now()`, Fenster nur über Sheet/ConfirmDialog, Apostroph, Wortliste),
   `stilblatt.test.ts` (Tokens, keine festen Farben, kein `var(--color-…)`),
   `serviceWorker.test.ts` (alle Seiten vorgeladen), `umlaute.test.ts`.
+
+## Leiste unten (v0.123.0, Tafel 96)
+
+- `ui/Leiste.tsx` (im Layout über `KitchenHelper`, auf allen Seiten mit Profil),
+  Logik rein in `core/leiste.ts`: `bereichVon` (Heute: Pinnwand, Einkauf,
+  Notizen, Aufgaben, Timer, Wetter, Dein Tag, Einstellungen …; Kalender: `/tag`,
+  `/woche`; Essen: `/kochbuch`, `/wochenplan`), `tabSchritt` (oben / wechseln /
+  im Verlauf zurück zur Hauptseite mit `stepsToHome(istHauptseite)` / neu),
+  `leisteVersteckt`, `randZurueck` und die Brücke `pagerAnmelden` /
+  `bereichWaehlen` zum Pager (gemerkter Wunsch = Scrollhöhe bleibt).
+- Mia-Knopf (`begleitung/MiaButton`, 60 px) sitzt rechts in der Leiste und ragt
+  30 px heraus; „Knopf links“ setzt ihn links. Kein Wegrutschen mehr beim Scrollen.
+- Ausblenden per CSS (`.leiste`): `data-weg` (Tastatur), offene Fenster
+  (`[role=dialog][aria-modal]`, `alertdialog`), Testcode/Zustimmung, Bearbeiten;
+  bei der Bühne nur unsichtbar (Mia fliegt von hier ein und zurück).
+- `FAB_CLEARANCE` = Leiste + Mia + Luft, `UEBER_LEISTE` für Schwebendes.
+- Wischen vom linken Rand auf Unterseiten = eine Ebene zurück
+  (`core/RandZurueck`). Nach > 5 Min weg schließt eine offene Bühne
+  (`closeHelper`). Der Haus-Knopf (v0.115) ist weg.
+- Einmal-Hinweis „leiste-neu“ unter der Jetzt-Karte für alle, die die App schon
+  vorher hatten. Tests `tests/core/leiste.test.ts`, Durchklick `leisteReiter`.

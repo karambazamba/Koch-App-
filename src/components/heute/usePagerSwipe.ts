@@ -13,7 +13,7 @@
 
 import { useEffect, useRef } from "react";
 
-export const PAGER_MS = 280;
+const PAGER_MS = 280;
 const EASE = "cubic-bezier(0.22, 0.61, 0.36, 1)";
 const LOCK_PX = 6;
 const AXIS_RATIO = 1.2;

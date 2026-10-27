@@ -46,7 +46,7 @@ export const miaKnopfFrei = async (page, check) => {
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     await page.waitForTimeout(400);
     const hit = await page.evaluate(() => {
-      const btn = document.querySelector("[data-begleitung-leiste] button");
+      const btn = document.querySelector("[data-leiste-flaeche]");
       if (!btn) return null;
       const b = btn.getBoundingClientRect();
       const el = [...document.querySelectorAll("main button, main a, main p, main h2, main h3, main li, main img, main input, main span")].find((el) => {
@@ -158,19 +158,14 @@ export const jetztKarte = async (page, check) => {
   await page.waitForURL(/\/kochbuch\/kochen\?id=sp/, { timeout: 5000 }).catch(() => {});
   check(/\/kochbuch\/kochen\?id=sp/.test(page.url()), "„Kochen“ öffnet den Kochmodus");
 
-  // Mia-Knopf macht beim Runterscrollen Platz und kommt zurück
+  // Leiste bleibt beim Scrollen (kein Wegschieben mehr)
   await page.goto(BASE);
   await card.waitFor({ timeout: 5000 });
   await page.waitForTimeout(800);
-  const knopf = page.locator("[data-begleitung-leiste] > div");
   await page.mouse.move(200, 400);
-  await page.mouse.wheel(0, 300);
-  await page.waitForTimeout(120);
-  await page.mouse.wheel(0, 300);
-  await page.waitForTimeout(150);
-  check((await knopf.getAttribute("data-weg")) === "true", "runterscrollen: Mia-Knopf macht Platz");
-  await page.waitForTimeout(1600);
-  check((await knopf.getAttribute("data-weg")) === null, "nach kurzer Ruhe wieder da");
+  await page.mouse.wheel(0, 600);
+  await page.waitForTimeout(400);
+  check((await page.locator("[data-leiste]").getAttribute("data-weg")) === null, "runterscrollen: Leiste bleibt");
 };
 
 /**

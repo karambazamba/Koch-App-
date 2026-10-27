@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import nextConfig from "../../next.config";
 import { SOURCES, stripComments, texts } from "../textQuellen";
 import { BETREIBER, DATENSCHUTZ, ENTWURF, IMPRESSUM, KURZ_GESAGT, NUTZUNGSBEDINGUNGEN, RECHTSTEXTE_STAND, VOR_DEM_START, entwurfOffen } from "@/lib/datenschutz/rechtstexte";
-import { knopfVersteckt } from "@/lib/mia/knopf";
+import { leisteVersteckt } from "@/lib/core/leiste";
 import { zustimmungNoetig } from "@/lib/datenschutz/zustimmung";
 import { TEXT_VERSION } from "@/lib/datenschutz/einwilligung";
 
@@ -82,9 +82,9 @@ describe("Seiten Datenschutz, Impressum, Nutzungsbedingungen", () => {
   });
 
   it("Rechtsseiten ohne Mia-Knopf, andere Unterseiten mit", () => {
-    for (const p of ["/datenschutz", "/impressum", "/nutzungsbedingungen", "/", "/anmelden", "/beitreten"]) expect(knopfVersteckt(p, true)).toBe(true);
-    for (const p of ["/aufgaben", "/profil", "/einkaufsliste"]) expect(knopfVersteckt(p, true)).toBe(false);
-    expect(knopfVersteckt("/profil", false)).toBe(true);
+    for (const p of ["/datenschutz", "/impressum", "/nutzungsbedingungen", "/anmelden", "/beitreten"]) expect(leisteVersteckt(p, true)).toBe(true);
+    for (const p of ["/", "/aufgaben", "/profil", "/einkaufsliste"]) expect(leisteVersteckt(p, true)).toBe(false);
+    expect(leisteVersteckt("/profil", false)).toBe(true);
   });
 
   it("„Bevor’s losgeht“: vor der App für alle, Rechtstexte und Anmelden frei, neu gefragt bei neuer Fassung", () => {

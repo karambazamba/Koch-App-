@@ -39,8 +39,12 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   `LAUNCH_NUR_EMAIL` in `konten/oauth.ts`; Mia schaltet nichts davon frei.
 
 ## 1. Ruhig und leer
-- Drei Seiten: Kalender · Heute · Essen (Heute ist die Startseite), Wechsel per
-  Segment-Schalter oder Wischen. Nichts steht herum, was nicht gebraucht wird.
+- Drei Seiten: Kalender · Heute · Essen (Heute ist die Startseite), Wechsel über
+  die Leiste unten (`ui/Leiste`, Logik `core/leiste.ts`, Tafel 96) oder Wischen;
+  kein Segment-Schalter oben. Jede Unterseite gehört zu einem Bereich und lässt
+  dessen Reiter leuchten. Reiter: anderer Bereich = Hauptseite, aktiver auf
+  Unterseite = zurück zur Hauptseite, aktiver auf Hauptseite = nach oben.
+  Nichts steht herum, was nicht gebraucht wird.
 - EIN Design. Zusätzliche Funktionen sind Bausteine (`src/lib/core/features.ts`,
   Einstellungen → „Mehr Funktionen – Was <Name> noch kann“). Alles Neue startet
   als ausgeschalteter Baustein und erscheint nur bei Bedarf.
@@ -56,7 +60,7 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   neue Nutzer: Pinnwand + Wetter (S), Termine, Aufgaben, Essen + Einkauf,
   Notizen („Im Haus“ nur mit Baustein). Jede Kachel öffnet ihre Seite.
 - Auf der Startseite gibt es genau zwei Mias: das eckige Logo (BrandMark,
-  nicht antippbar) und den runden Mia-Knopf unten rechts (= reden).
+  nicht antippbar) und den runden Mia-Knopf rechts in der Leiste (= reden).
 - Die Jetzt-Karte zeigt höchstens 3 Themen zum Wischen und öffnet wie jede
   Kachel per Antippen – ohne eigenen Knopf – die Seite „Dein Tag“ (Ausnahme:
   laufender Timer öffnet den Timer). Feste Höhe, 2 Zeilen (Zeile 1 ≤ 32
@@ -65,7 +69,8 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   Temperatur, Wetter nur mit Planbezug (Tafel 60). Tagesphasen ändern nur Inhalte, nie
   die Anordnung; Ruhe nach Feierabend ist ein eigener Schalter.
 - Gesten: Tippen = Eintrag öffnen, lange Drücken = Startseite bearbeiten,
-  Wischen = Seite wechseln.
+  Wischen = Seite wechseln (Kalender · Heute · Essen), Wischen vom linken Rand
+  auf Unterseiten = eine Ebene zurück.
 - Erster Start = höchstens 3 Bildschirme vor der App: Hallo („Moin, ich bin
   Mia.“ → „Los geht’s“), „Bevor’s losgeht“ (Zustimmung, Pflicht für alle,
   `ZustimmungGate`) und „Für wen soll ich sortieren?“ (`ZeigMalStep`, nur
@@ -88,7 +93,7 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   gespeichert nur per Knopf), angezeigt mit `whitespace-pre-line`.
   Sprechen geht immer über den Mia-Knopf. Kein eigenes Mikro in Eingabefeldern
   (die iPhone-Tastatur hat ihres). Formular nur über „Mehr Details“. Mia ist
-  ein runder Knopf unten rechts; Tippen holt sie auf die Bühne, sie hört
+  ein runder Knopf rechts in der Leiste unten; Tippen holt sie auf die Bühne, sie hört
   sofort zu. Keine Schreib-Leiste.
 - Lieber eine Frage mit 2–3 Knöpfen als ein Formular.
 - Machen statt fragen: Kleines selbst erledigen und kurz melden. Rückfragen nur
@@ -179,9 +184,15 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   Tokens: `rounded-card` 20 px, `rounded-field` 14 px, `rounded-full`, dazu
   `rounded-bar`/`-sky`/`-pair`/`-icon`.
 - Seitenkopf: „‹ <vorherige Seite>“, rechts höchstens ein Knopf (Seiten-Plus
-  34 px orange oder „…“), darunter der große Titel. Kachel-Plus 26 px
-  hellorange. Mia-Knopf unten rechts (72 px, atmet leicht), auf allen Seiten
-  gleich. Jedes Gespräch auf EINER Bühne (`MiaStage`): Seite verschwommen
+  34 px orange oder „…“), darunter der große Titel. Kalender und Essen: großer
+  Titel, kein Zurück. Kachel-Plus 26 px hellorange.
+- Leiste unten (Stil B1): schwebend, weiß (dunkel: Kartenfarbe), 12 px Rand,
+  rounded-card, ca. 66 px, Reiter mit Linien-Icon + 12 px Text (aktiv Orange),
+  Mia rechts IN der Leiste (60 px, ragt 30 px heraus, atmet leicht), auf allen
+  Seiten gleich. Weg bei Tastatur, Fenstern, Kochmodus, Notiz-Editor, erstem
+  Start/Zustimmung/Testcode, Rechtsseiten (nur transform/opacity; bei der Bühne
+  nur unsichtbar). Unten genug Platz (`FAB_CLEARANCE`), Schwebendes über der
+  Leiste (`UEBER_LEISTE`). Jedes Gespräch auf EINER Bühne (`MiaStage`): Seite verschwommen
   dahinter, Gespräch oben, Mia groß im unteren Drittel (antippen = zuhören ↔
   fertig, „Lieber schreiben“), fliegt vom Knopf ein und dorthin zurück.
 - Bewegung sehr weich: 0,8–1,2 s, `cubic-bezier(.16,1,.3,1)`, nur
@@ -201,7 +212,8 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   `public/brand/` (Quelle `src/lib/core/brand.ts`, `npm run brand`), Farben
   `--app-brand*`; Regeln (Schutzzone, Mindestgröße, nie Orange auf Orange)
   in `docs/brand.md`. Startseiten-Kopf: links BrandMark (30 px), rechts das
-  Datum („Fr, 23. Okt“); die Begrüßung steht nur noch für VoiceOver da.
+  Datum („Fr, 23. Okt“) und „···“ (Einstellungen, Startseite bearbeiten), kein
+  Zahnrad; die Begrüßung steht nur noch für VoiceOver da.
 
 ## 8. Technik-Regeln
 - Nach jeder Änderung testen (siehe „Testen“), PR nach `main` und mergen –
@@ -219,9 +231,9 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Zeit immer über `now()` aus `src/lib/core/now.ts` (Europe/Berlin, in Tests
   überschreibbar), nie `new Date()` für „jetzt“.
 - Zurück = eine Ebene zurück, Pfeil und Geste gleich, Scrollposition bleibt.
-  Kalender und Essen zählen als eine Ebene unter Heute. Tiefer als eine Ebene:
-  Haus neben „‹ …“ (`HomeButton`) direkt zur Startseite. Öffnen nach mehr als
-  5 Minuten weg = Startseite, Kochmodus bleibt (`core/heimkehr.ts`).
+  Kalender und Essen sind Hauptseiten (Zurück führt zu Heute). Zur Startseite
+  führt die Leiste unten. Öffnen nach mehr als 5 Minuten weg = Startseite,
+  Kochmodus bleibt, offene Mia-Bühne schließt (`core/heimkehr.ts`).
 - Eingabefelder mindestens 16 px Schrift, Safe-Areas beachten, Tippflächen
   mindestens 44 × 44 px (`hit`). Listenzeilen auf der Startseite dürfen 30 px
   hoch sein, wenn die ganze Zeile tippbar ist (`data-zeile`). Weiter/Zurück am

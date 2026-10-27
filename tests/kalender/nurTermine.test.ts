@@ -107,13 +107,3 @@ describe("Mia versteht ihre eigenen Fragen auch ohne KI", () => {
   });
 });
 
-describe("⌂ Heute – Leiste bleibt oben", () => {
-  it("auf Kalender und Essen sticky, beim Scrollen schmal mit Weichzeichner, Haus und „Zur Startseite“", () => {
-    const src = readFileSync("src/components/heute/HomePager.tsx", "utf8");
-    expect(src).toMatch(/away \? "sticky top-0" : "relative"/);
-    expect(src).toMatch(/backdrop-blur-\[14px\]/);
-    expect(src).toMatch(/aria-label=\{t\.value === "heute" && away \? "Zur Startseite" : undefined\}/);
-    expect(src).toMatch(/<House /);
-    expect(src).toMatch(/overflow-x-clip/);
-  });
-});

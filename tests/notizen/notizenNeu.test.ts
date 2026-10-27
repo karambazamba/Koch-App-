@@ -114,7 +114,7 @@ describe("Bearbeiten im Vollbild", () => {
   it("Werkzeugleiste, Fertig, kein Mia-Knopf darüber", () => {
     const src = readFileSync("src/components/notizen/NoteEditor.tsx", "utf8");
     for (const s of [">\n            Liste", "Anheften", "Teilen", "Löschen", "Fertig", "showDeleted", "autosave.flush"]) expect(src).toContain(s);
-    expect(readFileSync("src/lib/mia/knopf.ts", "utf8")).toContain('"/notizen/bearbeiten"');
+    expect(readFileSync("src/lib/core/leiste.ts", "utf8")).toContain('"/notizen/bearbeiten"');
   });
 });
 

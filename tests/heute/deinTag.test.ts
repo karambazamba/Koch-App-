@@ -9,7 +9,6 @@ import { aufgabe, fakeWindow, jetztInput, jetztTermin, termin } from "../helpers
 import { daySummary, isDayQuestion, openDeinTag, onOpenDeinTag, terminRows, topicIcon, topicSpot } from "@/lib/heute/deinTag";
 import { jetztTopics, type JetztKind } from "@/lib/heute/jetztTopics";
 import { itemsForDay } from "@/lib/kalender/model";
-import { knopfAway, REST_MS } from "@/lib/begleitung/knopfScroll";
 
 const TODAY = "2026-10-21";
 const day = (entries: Parameters<typeof itemsForDay>[0]) => itemsForDay(entries, TODAY, TODAY);
@@ -158,20 +157,3 @@ describe("Mia: „Was steht heute an?“", () => {
   });
 });
 
-describe("Mia-Knopf macht beim Scrollen Platz", () => {
-  it("runter = weg, hoch = da, oben immer da", () => {
-    expect(knopfAway(false, 200, 260)).toBe(true);
-    expect(knopfAway(true, 260, 200)).toBe(false);
-    expect(knopfAway(true, 260, 262)).toBe(true);
-    expect(knopfAway(true, 120, 40)).toBe(false);
-    expect(knopfAway(false, 0, 60)).toBe(false);
-    expect(REST_MS).toBe(600);
-  });
-
-  it("nur transform/opacity, kommt nach Ruhe zurück", () => {
-    const css = readFileSync("src/app/globals.css", "utf8");
-    expect(css).toMatch(/\.mia-knopf-gleiten\[data-weg\] \{ transform: translateY\(140%\); opacity: 0; \}/);
-    const src = readFileSync("src/components/begleitung/MiaButton.tsx", "utf8");
-    expect(src).toMatch(/setTimeout\(\(\) => setAway\(false\), REST_MS\)/);
-  });
-});

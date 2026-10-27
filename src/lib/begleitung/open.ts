@@ -58,3 +58,14 @@ export function onReleaseHelperVoice(listener: () => void): () => void {
   window.addEventListener(RELEASE, listener);
   return () => window.removeEventListener(RELEASE, listener);
 }
+
+// --- Lange weg (> 5 Minuten): offene Bühne schließt (Öffnen = Startseite) ----
+
+const CLOSE = "kuechenhelfer:schliessen";
+
+export const closeHelper = () => window.dispatchEvent(new Event(CLOSE));
+
+export function onCloseHelper(listener: () => void): () => void {
+  window.addEventListener(CLOSE, listener);
+  return () => window.removeEventListener(CLOSE, listener);
+}

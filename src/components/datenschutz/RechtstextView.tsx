@@ -2,7 +2,7 @@
 // großer Titel, optional „Kurz gesagt“ in Karten, darunter die Abschnitte,
 // unten Stand und Entwurfs-Hinweis. Links zu den beiden anderen Seiten.
 // Solange Betreiber-Angaben Platzhalter sind, oben ein leises Band „Entwurf“.
-// Ohne Mia-Knopf (in Ruhe lesen, `knopfVersteckt`).
+// Ohne Leiste und Mia-Knopf (in Ruhe lesen, `leisteVersteckt`).
 
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/PageHeader";

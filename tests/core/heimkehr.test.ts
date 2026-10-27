@@ -1,7 +1,7 @@
 // Navigation: immer zur Startseite – Haus-Knopf (mehrere Ebenen zurück),
 // Öffnen nach mehr als 5 Minuten = Heute, Ausnahmen, Wischen im Kalender.
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { HEIM_MS, istHeute, zurStartseite } from "@/lib/core/heimkehr";
 import { fakeWindow } from "../helpers";
 
@@ -49,10 +49,9 @@ describe("Haus-Knopf", () => {
     expect(nav.stepsToHome(istHeute)).toBeNull();
   });
 
-  it("steht im Seitenkopf neben „‹ …“, nur tiefer als eine Ebene unter Heute", () => {
-    const head = readFileSync("src/components/ui/PageHeader.tsx", "utf8");
-    expect(head).toMatch(/<BackButton[^>]*\/>\s*<HomeButton/);
-    expect(readFileSync("src/components/ui/HomeButton.tsx", "utf8")).toMatch(/if \(istHeute\(prev \?\? fallback\)\) return null/);
+  it("Haus-Knopf ist weg: die Leiste unten führt zur Startseite", () => {
+    expect(existsSync("src/components/ui/HomeButton.tsx")).toBe(false);
+    expect(readFileSync("src/components/ui/PageHeader.tsx", "utf8")).not.toMatch(/HomeButton/);
   });
 });
 
