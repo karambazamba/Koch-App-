@@ -2534,7 +2534,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Mia: „Schreib auf …“ und „Schreib in die Schnellnotiz …“ = eigene Notiz,
   „Setz Laufrad auf die Geschenkideen“ = Listen-Eintrag; Werkzeuge
   `schnellnotiz_schreiben`/`_aufraeumen` entfallen. Prüfstand 136 Sätze.
-## Sprechen hängt nicht mehr + „Lieber schreiben“ (v0.111.0)
+## Sprechen hängt nicht mehr + „Lieber schreiben“ (v0.113.0)
 
 - Wachhund für die Spracherkennung (iPhone hing nach 3–4 Runden), erzwungenes
   Ende, Notausgang, Mia verstummt vor dem Zuhören, Hintergrund setzt zurück.

@@ -679,7 +679,7 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   `tests/begleitung/codeAbfrage.test.ts`, Durchklick `testcode.mjs` (Server
   nur nachgestellt, nie der echte Code), Bild `testcode`.
 
-## Sprechen hängt nicht mehr (v0.111.0)
+## Sprechen hängt nicht mehr (v0.113.0)
 
 - Felix (iPhone, Web-App): nach 3–4 Runden startete Mia antippen kein
   Zuhören mehr. Die Browser-Erkennung steckt jetzt in
