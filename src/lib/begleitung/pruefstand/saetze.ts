@@ -144,6 +144,11 @@ export const PRUEFSAETZE: PruefSatz[] = [
   // Montag ist am Prüftag (Mi) schon vorbei – eine Rückfrage ist richtig
   S("Tausch Montag und Mittwoch", ["move_meal", "set_meal", "rueckfrage"], { lage: ["plan"] }),
   S("Donnerstag doppelt kochen, Reste für Freitag", ["set_double"], { lage: ["plan"] }),
+  // Die nächsten 7 Tage: verschieben über den Namen, auch über die Wochengrenze; nachschauen
+  S("Schieb die Pizza auf Samstag", ["move_meal"], { lage: ["plan"] }),
+  S("Schieb das Curry auf Montag", ["move_meal"], { lage: ["plan"] }),
+  S("Tausch Freitag und Samstag", ["move_meal"], { lage: ["plan"] }),
+  S("Was gibt’s Samstag?", ["antwort"], { lage: ["plan"] }),
   // Wochenplan gehört zu 1.0: leeren = Vorschau mit „Übernehmen“
   S("Lösch den Wochenplan", ["clear_week"]),
   S("Schalt Sport ein", ["set_feature"]),

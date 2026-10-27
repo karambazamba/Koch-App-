@@ -227,11 +227,19 @@ export function applyOps(
         break;
       }
       case "move_meal": {
-        const week = weekOf(next, op.from.weekStart);
-        const from = findSlot(week, op.from.weekday);
-        const to = findSlot(week, op.to.weekday);
+        const from = findSlot(weekOf(next, op.from.weekStart), op.from.weekday);
+        const to = findSlot(weekOf(next, op.to.weekStart), op.to.weekday);
         if (!from?.entry || !to) break;
-        next = { ...next, mealPlans: mealPlansWithWeek(next.mealPlans, op.from.weekStart, (e) => entriesWithMove(e, from, to)) };
+        if (op.from.weekStart === op.to.weekStart) {
+          next = { ...next, mealPlans: mealPlansWithWeek(next.mealPlans, op.from.weekStart, (e) => entriesWithMove(e, from, to)) };
+          break;
+        }
+        // Über die Wochengrenze (die nächsten 7 Tage): Quelle leeren bzw. tauschen, dann das Ziel setzen
+        const a = from.entry.stored;
+        const b = to.entry?.stored;
+        let plans = mealPlansWithWeek(next.mealPlans, op.from.weekStart, (e) => (b ? { ...e, [from.key]: b } : entriesWithoutSlot(e, from)));
+        plans = mealPlansWithWeek(plans, op.to.weekStart, (e) => ({ ...e, [to.key]: a }));
+        next = { ...next, mealPlans: plans };
         break;
       }
       case "update_week": {

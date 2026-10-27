@@ -1,22 +1,20 @@
 "use client";
 
 // Seite "Essen" (der einzige Ort für den Plan): groß das Gericht von heute
-// (nach dem Essen: morgen) mit Teller-Bild, darunter die Wochenkarte Mo–So
-// („Diese Woche“ / „Nächste Woche“ mit ‹ ›, jeder Tag mit Gericht-Bild,
-// feste Tage hellorange): Antippen = das Gericht (Rezept bzw. das eine
-// Tausch-Fenster), freier Tag = „Was gibt’s?“ mit Vorschlägen. Dazu "Plan
-// öffnen" und Einkauf als Chips.
+// (nach dem Essen: morgen) mit Teller-Bild, darunter „Die nächsten 7 Tage“
+// ab heute (Tafel 97, `sieben/SiebenTage`): Liste oder Reihe, jeder Tag
+// öffnet dasselbe Fenster (`sieben/TagFenster`), Ziehen tauscht Tage. Dazu
+// Ideen und Einkauf als Chips. So einfach wie möglich, große Bilder.
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeftRight, ChevronLeft, ChevronRight, Plus } from "lucide-react";
-import { CARD, ICON_BUTTON, SECTION_TITLE, buttonClass, chipClass } from "@/components/ui/styles";
-import { formatWeekRange } from "@/lib/essen/weekPlan";
+import { ArrowLeftRight, ChevronRight } from "lucide-react";
+import { CARD, SECTION_TITLE, buttonClass, chipClass } from "@/components/ui/styles";
 import { QuickAddButton } from "@/components/einkauf/QuickAdd";
-import { SwapSheet } from "@/components/essen/SwapSheet";
+import { SiebenTage } from "@/components/essen/sieben/SiebenTage";
+import { TagFenster } from "@/components/essen/sieben/TagFenster";
+import { naechsteSieben } from "@/lib/essen/sieben";
 import { clockLabel } from "@/lib/kalender/answers";
-import { weekdayShort } from "@/lib/kalender/model";
 import { addDays } from "@/lib/core/now";
 import { helperName, mealClockFor } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";
@@ -29,7 +27,6 @@ import { useStock } from "@/lib/essen/useStock";
 import { recipeHref as hrefFor } from "@/lib/essen/baking";
 import { openHelper } from "@/lib/begleitung/open";
 import type { HomeData } from "@/components/heute/useHomeData";
-import { mondayOf } from "@/components/kalender/CalendarPage";
 import { dishOf, useMeals } from "@/components/essen/useMeals";
 import { BausteinSections } from "@/components/essen/BausteinSections";
 import { StockChips } from "@/components/essen/CookFromStock";
@@ -39,7 +36,6 @@ import { takeForDay } from "@/lib/essen/spontanTake";
 import { showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
 import type { Recipe } from "@/lib/essen/cookbook";
-import { useFeature } from "@/lib/core/features";
 import { demoTiles, useDemo } from "@/lib/core/demo";
 import { DishPicture } from "@/components/essen/DishPicture";
 import { DemoDishHero } from "@/components/essen/DemoFoodTile";
@@ -47,14 +43,11 @@ import { DemoDishHero } from "@/components/essen/DemoFoodTile";
 export function FoodPage({ data, minutes }: { data: HomeData; minutes: number }) {
   const cooked = useCookedDays();
   const over = Boolean(cooked && mealIsOver(data.day, data.profile, minutes, cooked));
-  const router = useRouter();
-  const [next, setNext] = useState(false);
-  const monday = addDays(mondayOf(data.todayIso), next ? 7 : 0);
-  const meals = useMeals(monday, 7);
+  // Rollend ab heute über die Wochengrenze; vergangene Tage fallen raus
+  const meals = useMeals(data.todayIso, 7);
+  const tage = naechsteSieben(data.todayIso).flatMap((d) => (meals?.get(d) ? [meals.get(d)!] : []));
   const [swap, setSwap] = useState<PlanDay | null>(null);
-  const planOn = useFeature("wochenplan");
   const main = over ? data.tomorrow : data.day;
-  const week = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
   // Beispiel-Tag: ohne eigenes Gericht steht das Beispielgericht da ("Heute",
   // nach dem Essen das zweite für "Morgen" – auch wenn der Tag schon vorbei ist)
   const demo = useDemo();
@@ -63,63 +56,7 @@ export function FoodPage({ data, minutes }: { data: HomeData; minutes: number })
     <div className="flex flex-col gap-4">
       {demoDish ? <DemoDishHero today={data.todayIso} minutes={minutes} /> : <DishHero data={data} day={main} when={over ? "Morgen" : "Heute"} onSwap={() => main && setSwap(main)} />}
 
-      <section className="flex flex-col gap-2" aria-label={next ? "Nächste Woche" : "Diese Woche"} id="woche" data-wochenkarte>
-        <div className="flex items-center justify-between gap-1 px-1">
-          <button type="button" onClick={() => setNext(false)} disabled={!next} aria-label="Diese Woche" className={`${ICON_BUTTON} h-11 w-11 border-0 disabled:opacity-30`}>
-            <ChevronLeft className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-          </button>
-          <div className="min-w-0 flex-1 text-center">
-            <h2 className={SECTION_TITLE}>{next ? "Nächste Woche" : "Diese Woche"}</h2>
-            <p className="text-[13px] text-muted">{formatWeekRange(monday)}</p>
-          </div>
-          <button type="button" onClick={() => setNext(true)} disabled={next} aria-label="Nächste Woche" className={`${ICON_BUTTON} h-11 w-11 border-0 disabled:opacity-30`}>
-            <ChevronRight className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-          </button>
-        </div>
-        {planOn && (
-          <Link href="/wochenplan" className="-mt-1 flex h-10 items-center gap-0.5 self-end px-1 text-[15px] font-bold text-accent-strong">
-            Plan öffnen <ChevronRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-          </Link>
-        )}
-        <ol className={`${CARD} grid grid-cols-7 gap-1 p-2`}>
-          {week.map((date) => {
-            const day = meals?.get(date);
-            const dish = dishOf(day);
-            const fixed = day?.slot.entry?.origin === "fest";
-            const past = date < data.todayIso;
-            const isToday = date === data.todayIso;
-            return (
-              <li key={date}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!day || past) return;
-                    // Antippen = das Gericht: mit Rezept die Rezeptseite, sonst das eine Fenster (frei: „Was gibt’s?“)
-                    const href = hrefFor(data.recipes, day.slot.entry?.recipeId);
-                    if (dish && href) router.push(href);
-                    else setSwap(day);
-                  }}
-                  disabled={past || !day}
-                  aria-label={`${weekdayShort(date)}: ${dish ?? (day?.away ? (day.paused ? "Pause" : "kein Kochtag") : "noch frei")}`}
-                  className={`flex w-full flex-col items-center gap-1 rounded-field py-1.5 ${fixed ? "bg-accent-soft" : ""} ${past ? "opacity-45" : ""}`}
-                  aria-current={isToday ? "date" : undefined}
-                >
-                  <span className={`text-[12px] font-bold ${isToday ? "text-accent-strong" : "text-muted"}`}>{weekdayShort(date)}</span>
-                  {dish ? (
-                    <DishPicture title={dish} category={day?.slot.entry?.category} tone={dishTone(dish, day?.slot.entry?.category)} alt="" small className={`h-10 w-10 rounded-full ${isToday ? "ring-2 ring-accent ring-offset-2 ring-offset-surface" : ""}`} />
-                  ) : day?.away ? (
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-fill text-[11px] text-muted">{day.paused ? "Pause" : "–"}</span>
-                  ) : (
-                    <span className={`flex h-10 w-10 items-center justify-center rounded-full border-2 border-dashed text-faint ${isToday ? "border-accent" : "border-line-strong"}`}>
-                      <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-                    </span>
-                  )}
-                </button>
-              </li>
-            );
-          })}
-        </ol>
-      </section>
+      {tage.length > 0 && <SiebenTage data={data} tage={tage} />}
 
       <StockChips today={data.todayIso} />
       <MoreIdeas
@@ -131,7 +68,7 @@ export function FoodPage({ data, minutes }: { data: HomeData; minutes: number })
       />
       <BausteinSections />
       <ShoppingChips />
-      {swap && <SwapSheet data={data} day={swap} onClose={() => setSwap(null)} />}
+      {swap && <TagFenster data={data} day={swap} tage={tage} onClose={() => setSwap(null)} />}
     </div>
   );
 }

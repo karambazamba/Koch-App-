@@ -10,7 +10,8 @@ import { formatWeekRange, planForWeek } from "@/lib/essen/weekPlan";
 import { dietConflicts } from "@/lib/begleitung/diet";
 import { findSlot, weekOf, type ChangeOp, type WeekChanges } from "@/lib/begleitung/ops";
 import type { BegleitungTool } from "@/lib/begleitung/registry";
-import { category, CATEGORY_PROP, fail, findPersons, nextId, propose, str, toolInput, WEEK_PROP, weekStartOf, type Input } from "@/lib/begleitung/tools";
+import { category, CATEGORY_PROP, dateForDay, fail, findPersons, nextId, propose, str, toolInput, WEEK_PROP, weekStartOf, type Input, type ToolContext } from "@/lib/begleitung/tools";
+import { addDays } from "@/lib/core/now";
 
 const DAY_PROP = { type: "string", enum: WEEKDAYS, description: "Wochentag" } as const;
 
@@ -30,6 +31,39 @@ const dateLabel = (iso: string) => {
   const [, m, d] = iso.split("-");
   return `${Number(d)}.${Number(m)}.`;
 };
+
+type SlotRef = { weekStart: string; weekday: string };
+
+const inWeek = (weekStart: string | null, weekday: string): SlotRef | null => (weekStart ? { weekStart, weekday } : null);
+
+/** Tag in den nächsten 7 Tagen (heute zählt mit) → Planungswoche + Wochentag */
+function refForDate(ctx: ToolContext, date: string): SlotRef | null {
+  for (const weekStart of [ctx.weeks.aktuell, ctx.weeks.naechste]) {
+    const d = weekOf(ctx.data, weekStart).days.find((x) => x.date === date);
+    if (d) return { weekStart, weekday: d.weekday };
+  }
+  return null;
+}
+
+const nextDate = (ctx: ToolContext, weekday: string) => {
+  const date = dateForDay(ctx.today, weekday);
+  return date ? refForDate(ctx, date) : null;
+};
+
+const plain = (t: string) => t.toLowerCase().replace(/[^a-zäöüß0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+
+/** Quelle in den nächsten 7 Tagen: über den Namen des Gerichts oder den Wochentag */
+function rolling(ctx: ToolContext, input: Input): SlotRef | null {
+  const name = plain(str(input.gericht));
+  if (!name) return nextDate(ctx, day(input.von_tag)!);
+  for (let i = 0; i < 7; i++) {
+    const ref = refForDate(ctx, addDays(ctx.today, i));
+    const entry = ref ? findSlot(weekOf(ctx.data, ref.weekStart), ref.weekday)?.entry : null;
+    const title = entry ? plain(entry.title) : "";
+    if (ref && title && (title.includes(name) || name.includes(title))) return ref;
+  }
+  return null;
+}
 
 export const PLAN_TOOLS = {
   woche_lesen: {
@@ -202,32 +236,36 @@ export const PLAN_TOOLS = {
     area: "essen",
     definition: {
       name: "gericht_verschieben",
-      description: "Schlägt vor, ein Gericht auf einen anderen Tag derselben Woche zu verschieben. Ist der Tag belegt, wird getauscht.",
+      description:
+        "Schlägt vor, ein Gericht auf einen anderen Tag zu verschieben ('Schieb das Pad Thai auf Mittwoch', 'Tausch Freitag und Samstag'). Gericht über von_tag oder gericht (Name). Ohne woche zählen die nächsten 7 Tage ab heute, auch über die Wochengrenze. Ist der Tag belegt, wird getauscht.",
       input_schema: {
         type: "object",
-        properties: { woche: WEEK_PROP, von_tag: DAY_PROP, nach_tag: DAY_PROP },
-        required: ["woche", "von_tag", "nach_tag"],
+        properties: {
+          woche: WEEK_PROP,
+          von_tag: DAY_PROP,
+          nach_tag: DAY_PROP,
+          gericht: { type: "string", description: "Name des Gerichts statt von_tag" },
+        },
+        required: ["nach_tag"],
         additionalProperties: false,
       },
     },
     run: (ctx, raw) => {
       const input = toolInput(raw);
-      const { data } = ctx;
-      const weekStart = weekStartOf(ctx, input);
-      const fromDay = day(input.von_tag);
       const toDay = day(input.nach_tag);
-      if (!weekStart || !fromDay || !toDay) return fail("woche, von_tag und nach_tag angeben.");
-      const week = weekOf(data, weekStart);
-      const from = findSlot(week, fromDay);
-      if (!from?.entry) return fail(`${fromDay} ist frei – nichts zu verschieben.`);
-      if (week.days.find((d) => d.weekday === toDay)?.away) return fail(`${toDay} ist ein Ausflugstag.`);
-      const to = findSlot(week, toDay);
-      propose(ctx, {
-        id: nextId(ctx),
-        type: "move_meal",
-        from: { weekStart, weekday: fromDay },
-        to: { weekStart, weekday: toDay },
-      });
+      if (!toDay || (!day(input.von_tag) && !str(input.gericht))) return fail("von_tag oder gericht und nach_tag angeben.");
+      // Mit Woche: wie bisher innerhalb dieser Planungswoche; sonst die nächsten 7 Tage ab heute
+      const fromRef = input.woche !== undefined && day(input.von_tag) ? inWeek(weekStartOf(ctx, input), day(input.von_tag)!) : rolling(ctx, input);
+      if (!fromRef) return fail(str(input.gericht) ? `${str(input.gericht)} steht in den nächsten 7 Tagen nicht im Plan.` : "woche, von_tag und nach_tag angeben.");
+      const from = findSlot(weekOf(ctx.data, fromRef.weekStart), fromRef.weekday);
+      if (!from?.entry) return fail(`${fromRef.weekday} ist frei – nichts zu verschieben.`);
+      const toRef = input.woche !== undefined && day(input.von_tag) ? inWeek(fromRef.weekStart, toDay) : nextDate(ctx, toDay);
+      if (!toRef) return fail(`${toDay} liegt nicht in den nächsten 7 Tagen.`);
+      const toWeek = weekOf(ctx.data, toRef.weekStart);
+      if (toWeek.days.find((d) => d.weekday === toDay)?.away) return fail(`${toDay} ist ein Ausflugstag.`);
+      const to = findSlot(toWeek, toDay);
+      if (toRef.weekStart === fromRef.weekStart && toDay === fromRef.weekday) return { content: `${from.entry.title} steht schon am ${toDay}.` };
+      propose(ctx, { id: nextId(ctx), type: "move_meal", from: fromRef, to: toRef });
       return {
         content: to?.entry
           ? `Vorgemerkt: ${from.entry.title} und ${to.entry.title} tauschen.`
