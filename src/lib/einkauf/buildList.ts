@@ -9,7 +9,7 @@ import { formatTotal, roundSmall, unitFamily } from "@/lib/einkauf/amounts";
 import { SECTIONS, sectionFor } from "@/lib/einkauf/sections";
 import { SHOPPING, sortBy } from "@/lib/core/sort";
 import { EMPTY_LIST, lower, type ListItem, type ShoppingList, type ShoppingSettings, type WeekList } from "@/lib/einkauf/listModel";
-import { shopForItem } from "@/lib/einkauf/shopRules";
+import { shopChoice } from "@/lib/einkauf/shopRules";
 
 export function buildShoppingList(
   week: PlanWeek,
@@ -63,8 +63,13 @@ export function buildShoppingList(
   }
 
   const display = (key: string, name: string) => list.renamed?.[key] ?? settings.products[lower(name)] ?? name;
-  // Feste Laden-Regeln gelten überall (Rezept, Plan, Stammartikel, eigene Artikel); dann der gemerkte Laden
-  const shopOf = (name: string, original: string) => shopForItem(name, settings) || (lower(original) !== lower(name) ? shopForItem(original, settings) : "");
+  // Feste Laden-Regeln gelten überall (Rezept, Plan, Stammartikel, eigene Artikel); dann der gemerkte Laden.
+  // Bewusst „Egal wo“ (leerer Laden) ≠ noch ohne Laden (nichts bekannt)
+  const shopOf = (name: string, original: string): Pick<ListItem, "shop" | "anywhere"> => {
+    const own = shopChoice(name, settings);
+    const choice = own || lower(original) === lower(name) ? own : (shopChoice(original, settings) ?? own);
+    return choice === "" ? { shop: "", anywhere: true } : { shop: choice ?? "" };
+  };
 
   const generated: ListItem[] = [...acc.entries()].map(([key, a]) => {
     const name = display(key, a.name);
@@ -76,7 +81,7 @@ export function buildShoppingList(
       section: sectionFor(a.name),
       dishes: a.dishes,
       days: a.days,
-      shop: shopOf(name, a.name),
+      ...shopOf(name, a.name),
       optional: a.optional,
       checked: list.checked.includes(key),
       hidden: list.have.includes(key),
@@ -92,7 +97,7 @@ export function buildShoppingList(
       section: m.section,
       dishes: m.dish ? [m.dish] : [],
       days: m.day ? [m.day] : [],
-      shop: shopOf(name, m.name),
+      ...shopOf(name, m.name),
       manualId: m.id,
       ...(m.von ? { von: m.von } : {}),
       ...(m.now ? { now: true } : {}),

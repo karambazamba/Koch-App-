@@ -2742,3 +2742,17 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Härtetest „Familie teilen“: `tests/konten/familieTeilen.test.ts` und
   Durchklick `familieTeilen` (zwei Konten, Einkauf live ≤ 5 s, Termine
   Familie/Arbeit, Pinnwand live, „Steh grad davor“).
+
+## Einkauf: erst einsortieren, dann einkaufen (v0.130.0)
+
+- Tafel 99: In der Einkaufsliste heißt Antippen „Wo kaufst du das?“ (Meine
+  Läden als große Knöpfe, „Egal wo“, Häkchen „immer bei“, unten „Schon
+  gekauft · Ändern · Löschen“), nie mehr „gekauft“ – abgehakt wird im
+  Einkaufsmodus. Meldung „Spinat → Rewe. Merk ich mir. · Rückgängig“.
+- Neuer Zustand „noch ohne Laden“ neben bewusst „Egal wo“ (leerer gemerkter
+  Laden; Bisheriges gilt als noch ohne Laden, kein Formatwechsel). Zone
+  „Noch ohne Laden“ oben mit „Mia sortiert“ (Gelerntes, eindeutige ähnliche
+  Namen) und „5 einsortiert · Rückgängig“.
+- Einkauf-Kachel: immer die Läden aus „Meine Läden“ (auch mit 0), darunter
+  „6 noch ohne Laden · Sortieren ›“; die Symbolreihe (Variante A) entfällt.
+- Durchklick: neuer Ablauf `einsortieren`, `einkauf`/`imHaus` angepasst.

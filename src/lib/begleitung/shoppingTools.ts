@@ -66,7 +66,7 @@ export const SHOPPING_TOOLS = {
     definition: {
       name: "laden_regel",
       description:
-        "Feste Laden-Regel für einen Artikel: 'Tomaten kaufe ich immer bei Rewe', 'Butter immer bei Lidl', 'Shampoo nur bei Rossmann' → laden setzen. 'Tomaten nicht mehr bei Rewe', 'Milch egal wo' → laden leer = Regel weg. Gilt danach überall (Liste, Wochenplan, Rezepte). Antwort knapp: 'Merk ich mir. Tomaten → Rewe.'",
+        "Feste Laden-Regel für einen Artikel: 'Tomaten kaufe ich immer bei Rewe', 'Butter immer bei Lidl', 'Shampoo nur bei Rossmann' → laden setzen. 'Tomaten nicht mehr bei Rewe', 'Milch egal wo' → laden leer = Regel weg, Artikel bewusst egal wo. Gilt danach überall (Liste, Wochenplan, Rezepte). Antwort knapp: 'Merk ich mir. Tomaten → Rewe.'",
       input_schema: {
         type: "object",
         properties: {

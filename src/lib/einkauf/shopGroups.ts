@@ -1,5 +1,5 @@
 // Einkauf nach Läden (Startseite, Jetzt-Karte): offene Artikel je Laden
-// gruppiert – meiste Artikel zuerst, ohne Laden („Egal wo“) zuletzt. Keine
+// gruppiert – meiste Artikel zuerst, ohne Laden zuletzt. Keine
 // Firmenlogos: je Laden ein neutrales Symbol nach Ladentyp, der Name und eine
 // feste Farbe (Punkt) aus einer ruhigen Palette, bis man sie selbst wählt
 // (kommt mit „Läden“).
@@ -25,21 +25,25 @@ export function shopGroups(items: { name: string; shop: string }[], max = 3): Sh
 }
 
 type TileRow = ShopGroup & { count: number };
-/** Einkauf-Kachel: Zeilen je Laden und die leise Rest-Zeile („+ Rossmann 3, Egal wo 2“) */
-export type TileRows = { rows: TileRow[]; rest: string | null };
+/** Einkauf-Kachel: Zeilen je Laden, die leise Rest-Zeile („+ Rossmann 3“) und was noch ohne Laden ist */
+export type TileRows = { rows: TileRow[]; rest: string | null; ohne: string[] };
 
 /**
- * Einkauf-Kachel (Variante C2): eine Zeile je Laden in der Reihenfolge von
- * „Meine Läden“, andere Läden danach (meiste Artikel zuerst), „Egal wo“
- * immer zuletzt. S/M: höchstens 3 Zeilen plus Rest-Zeile, L: alle.
+ * Einkauf-Kachel (Variante C2, Tafel 99): IMMER eine Zeile je Laden aus
+ * „Meine Läden“ in ihrer Reihenfolge (auch mit 0), andere Läden mit Sachen
+ * danach (meiste zuerst), bewusst „Egal wo“ zuletzt. Was noch ohne Laden ist,
+ * zählt extra („6 noch ohne Laden · Sortieren ›“). S/M: höchstens 3 Zeilen
+ * plus Rest-Zeile (nur Läden mit Sachen), L: alle.
  */
-export function tileRows(items: { name: string; shop: string }[], myShops: string[], size: "S" | "M" | "L"): TileRows {
+export function tileRows(items: { name: string; shop: string; anywhere?: boolean }[], myShops: string[], size: "S" | "M" | "L"): TileRows {
   const map = new Map<string, { shop: string; names: string[] }>();
-  const loose: string[] = [];
+  for (const s of myShops) if (s.trim() && !map.has(s.trim().toLowerCase())) map.set(s.trim().toLowerCase(), { shop: s.trim(), names: [] });
+  const egal: string[] = [];
+  const ohne: string[] = [];
   for (const i of items) {
     const shop = i.shop.trim();
     if (!shop) {
-      loose.push(i.name);
+      (i.anywhere ? egal : ohne).push(i.name);
       continue;
     }
     const key = shop.toLowerCase();
@@ -54,20 +58,14 @@ export function tileRows(items: { name: string; shop: string }[], myShops: strin
   };
   const shops: TileRow[] = [...map.values()].map((g) => ({ ...g, count: g.names.length }));
   const ordered = sortBy(shops, ascNum((g) => rank(g.shop ?? "")), ...byCount);
-  const all: TileRow[] = loose.length ? [...ordered, { shop: null, names: loose, count: loose.length }] : ordered;
+  const all: TileRow[] = egal.length ? [...ordered, { shop: null, names: egal, count: egal.length }] : ordered;
   const max = size === "L" ? all.length : 3;
-  const rest = all.slice(max);
-  return { rows: all.slice(0, max), rest: rest.length ? `+ ${rest.map((r) => `${r.shop ?? "Egal wo"} ${r.count}`).join(", ")}` : null };
+  const rest = all.slice(max).filter((r) => r.count > 0);
+  return { rows: all.slice(0, max), rest: rest.length ? `+ ${rest.map((r) => `${r.shop ?? "Egal wo"} ${r.count}`).join(", ")}` : null, ohne };
 }
 
-/**
- * Wie zeigt die Kachel die Zeilen? Nur „Egal wo“ (noch keine Läden) = Reihe
- * runder Symbole der ersten Sachen (Variante A), sonst Zeilen je Laden (C2).
- */
-export function tileArt(r: TileRows): "leer" | "symbole" | "zeilen" {
-  if (!r.rows.length) return "leer";
-  return r.rows.length === 1 && r.rows[0].shop === null ? "symbole" : "zeilen";
-}
+/** Leise Zeile unter den Läden: „6 noch ohne Laden“ */
+export const ohneLadenZeile = (n: number) => `${n} noch ohne Laden`;
 
 const TONES = 8;
 /** Bekannte Läden: passender Farbton (rot, gelb, blau …) – sonst aus dem Namen */

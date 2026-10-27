@@ -31,8 +31,7 @@ import { useTodayIdeas } from "@/lib/essen/useIdeas";
 import { useStock } from "@/lib/essen/useStock";
 import { recipeHref } from "@/lib/essen/baking";
 import { DEMO_SHOPS, clearDemoTile } from "@/lib/core/demo";
-import { shopTone, tileArt, tileRows, type TileRows } from "@/lib/einkauf/shopGroups";
-import { symbolReihe } from "@/lib/einkauf/kacheln/abteilung";
+import { ohneLadenZeile, shopTone, tileRows, type TileRows } from "@/lib/einkauf/shopGroups";
 import { setShopChip } from "@/lib/einkauf/shopMode";
 import { useMeineLaeden } from "@/lib/einkauf/meineLaeden";
 import type { ShopChip } from "@/lib/einkauf/kacheln/view";
@@ -123,85 +122,64 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCo
 /** Laden-Zeile antippen: Einkaufsliste genau auf diesen Laden gefiltert („Egal wo“ = ohne Laden) */
 const chipFor = (shop: string | null): ShopChip => (shop ? `laden:${shop}` : "ohne");
 
+/** Eine Zeile der Einkauf-Kachel: Strich links in Ladenfarbe, Name, 2 Symbole, Zahl (mit 0 nur Name + 0) */
+function ShopRow({ shop, label, names, count, chip, products, demo }: { shop: string | null; label: string; names: string[]; count: number; chip: ShopChip; products: Record<string, string>; demo: boolean }) {
+  const tone = shop ? `var(--app-shop-${shopTone(shop)})` : "var(--app-faint)";
+  return (
+    <li>
+      <Link
+        href="/einkaufsliste"
+        onClick={(e) => {
+          e.stopPropagation();
+          setShopChip(chip);
+        }}
+        className="relative flex min-h-[30px] min-w-0 items-center gap-1.5 overflow-hidden rounded-field py-1 pl-3 pr-2"
+        style={{ background: shop ? `var(--app-shop-${shopTone(shop)}-soft)` : "var(--app-fill)" }}
+        aria-label={`${label}: ${count} ${count === 1 ? "Sache" : "Sachen"}${demo ? " · Beispiel" : ""}`}
+        data-zeile
+        data-laden-zeile
+      >
+        <span className="absolute inset-y-0 left-0 w-1" style={{ background: tone }} aria-hidden />
+        <span className="min-w-0 flex-1 truncate text-[14px] font-bold">{label}</span>
+        {names.slice(0, 2).map((n, i) => (
+          <ItemSymbol key={`${n}-${i}`} id={symbolFor(n, products)} name={n} className="h-5 w-5 shrink-0" />
+        ))}
+        <span className={`min-w-[1.25rem] shrink-0 text-right text-[14px] font-extrabold ${shop ? "" : "text-muted"}`} style={shop ? { color: tone } : undefined}>
+          {count}
+        </span>
+      </Link>
+    </li>
+  );
+}
+
 /**
- * Einkauf-Kachel (Variante C2): je Laden eine Zeile – helle Ladenfarbe, Strich
- * links, Name fett, rechts 2 Symbole der ersten Sachen (ohne eigene Zeichnung
- * das Symbol der Abteilung, nie ein Buchstabe) und die Zahl. Keine
- * abgeschnittenen Artikelnamen, keine Logos, keine Emojis.
+ * Einkauf-Kachel (Variante C2, Tafel 99): IMMER je Laden aus „Meine Läden“
+ * eine Zeile – helle Ladenfarbe, Strich links, Name fett, rechts 2 Symbole
+ * der ersten Sachen (ohne eigene Zeichnung das Symbol der Abteilung, nie ein
+ * Buchstabe) und die Zahl, auch mit 0. Darunter leise „6 noch ohne Laden ·
+ * Sortieren ›“ (öffnet die Liste an der Zone). Ohne „Meine Läden“: eine
+ * neutrale Zeile „Liste“ mit allem ohne Laden. Keine Logos, keine Emojis.
  */
-function ShopRows({ rows, rest, products, demo = false }: TileRows & { products: Record<string, string>; demo?: boolean }) {
+function ShopRows({ rows, rest, ohne, mine, products, demo = false }: TileRows & { mine: boolean; products: Record<string, string>; demo?: boolean }) {
   return (
     <>
       <ul className="mt-1 flex flex-col gap-1" aria-label="Nach Laden">
-        {rows.map((r) => {
-          const tone = r.shop ? `var(--app-shop-${shopTone(r.shop)})` : "var(--app-faint)";
-          const name = r.shop ?? "Egal wo";
-          return (
-            <li key={r.shop ?? "egal"}>
-              <Link
-                href="/einkaufsliste"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShopChip(chipFor(r.shop));
-                }}
-                className="relative flex min-h-[30px] min-w-0 items-center gap-1.5 overflow-hidden rounded-field py-1 pl-3 pr-2"
-                style={{ background: r.shop ? `var(--app-shop-${shopTone(r.shop)}-soft)` : "var(--app-fill)" }}
-                aria-label={`${name}: ${r.count} ${r.count === 1 ? "Sache" : "Sachen"}${demo ? " · Beispiel" : ""}`}
-                data-zeile
-                data-laden-zeile
-              >
-                <span className="absolute inset-y-0 left-0 w-1" style={{ background: tone }} aria-hidden />
-                <span className="min-w-0 flex-1 truncate text-[14px] font-bold">{name}</span>
-                {r.names.slice(0, 2).map((n, i) => (
-                  <ItemSymbol key={`${n}-${i}`} id={symbolFor(n, products)} name={n} className="h-5 w-5 shrink-0" />
-                ))}
-                <span className={`min-w-[1.25rem] shrink-0 text-right text-[14px] font-extrabold ${r.shop ? "" : "text-muted"}`} style={r.shop ? { color: tone } : undefined}>
-                  {r.count}
-                </span>
-              </Link>
-            </li>
-          );
-        })}
+        {rows.map((r) => (
+          <ShopRow key={r.shop ?? "egal"} shop={r.shop} label={r.shop ?? "Egal wo"} names={r.names} count={r.count} chip={chipFor(r.shop)} products={products} demo={demo} />
+        ))}
+        {!mine && ohne.length > 0 && <ShopRow shop={null} label="Liste" names={ohne} count={ohne.length} chip="alle" products={products} demo={demo} />}
       </ul>
       {rest && (
         <Link href="/einkaufsliste" onClick={() => setShopChip("alle")} className="flex min-h-[30px] items-center truncate text-[12.5px] font-semibold text-muted" data-zeile>
           {rest}
         </Link>
       )}
+      {mine && ohne.length > 0 && (
+        <Link href="/einkaufsliste#ohne-laden" onClick={() => setShopChip("alle")} className="flex min-h-[30px] items-center gap-1 truncate text-[12.5px] font-semibold text-muted" data-zeile data-ohne-laden-zeile>
+          {ohneLadenZeile(ohne.length)} · <span className="font-bold text-accent-strong">Sortieren ›</span>
+        </Link>
+      )}
     </>
-  );
-}
-
-/**
- * Einkauf-Kachel, solange es nur „Egal wo“ gibt (Variante A): bis zu 6 runde
- * Symbole der ersten Sachen, dahinter „+N“ und die Zahl – die Kachel wirkt
- * nicht leer. Antippen = Liste „Ohne Laden“.
- */
-function SymbolRow({ row, products, demo = false }: { row: TileRows["rows"][number]; products: Record<string, string>; demo?: boolean }) {
-  const { names, more } = symbolReihe(row.names);
-  const count = `${row.count} ${row.count === 1 ? "Sache" : "Sachen"}`;
-  return (
-    <Link
-      href="/einkaufsliste"
-      onClick={(e) => {
-        e.stopPropagation();
-        setShopChip(chipFor(null));
-      }}
-      className="mt-1 flex min-w-0 flex-col gap-1.5"
-      aria-label={`${count} auf der Liste${demo ? " · Beispiel" : ""}`}
-      data-zeile
-      data-symbol-reihe
-    >
-      <span className="flex flex-wrap gap-1.5" aria-hidden>
-        {names.map((n, i) => (
-          <span key={`${n}-${i}`} className="flex h-9 w-9 items-center justify-center rounded-full bg-tile-inner">
-            <ItemSymbol id={symbolFor(n, products)} name={n} className="h-6 w-6" />
-          </span>
-        ))}
-        {more > 0 && <span className="flex h-9 min-w-9 items-center justify-center rounded-full bg-tile-inner px-1.5 text-[13px] font-extrabold text-tile-accent">+{more}</span>}
-      </span>
-      <span className="text-[12.5px] font-semibold text-muted">{count}</span>
-    </Link>
   );
 }
 
@@ -236,19 +214,19 @@ export function ShoppingTile({ size = "S", demo = false }: { half: boolean; size
   }, [demo, hasOwn]);
   if (!shopping) return <section className={`${HALF} animate-pulse`} aria-label="Einkaufsliste" />;
   const showDemo = demo && !hasOwn;
-  const rows = showDemo ? tileRows(DEMO_ITEMS, DEMO_ORDER, size) : tileRows(open, laeden?.myShops ?? [], size);
-  const art = tileArt(rows);
+  const myShops = laeden?.myShops ?? [];
+  const rows = showDemo ? tileRows(DEMO_ITEMS, DEMO_ORDER, size) : tileRows(open, myShops, size);
+  // Nichts zu kaufen: freundlicher Satz statt lauter Nullen
+  const empty = !showDemo && open.length === 0;
   return (
     <section className={HALF} aria-label={showDemo ? "Einkaufsliste · Beispiel" : "Einkaufsliste"}>
       <ShoppingHead />
-      {art === "symbole" ? (
-        <SymbolRow row={rows.rows[0]} products={shopping.settings.products} demo={showDemo} />
-      ) : art === "zeilen" ? (
-        <ShopRows {...rows} products={shopping.settings.products} demo={showDemo} />
-      ) : (
+      {empty ? (
         <Link href="/einkaufsliste" onClick={() => setShopChip("alle")} className="-mt-3 flex-1 text-[14px] font-semibold leading-snug text-muted">
           Liste ist leer. Sag mir einfach, was ihr braucht.
         </Link>
+      ) : (
+        <ShopRows {...rows} mine={showDemo || myShops.length > 0} products={shopping.settings.products} demo={showDemo} />
       )}
       <QuickAddButton weekStart={shopping.weekStart} settings={shopping.settings} quick className="absolute right-0.5 top-0.5" />
     </section>

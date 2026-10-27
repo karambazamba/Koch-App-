@@ -1,7 +1,7 @@
 "use client";
 
 // „Kommt auf die Liste für“ in der Schnelleingabe des Einkaufs: Vorwahl =
-// gemerkter Laden des ersten Artikels → offener Reiter → „Egal wo“; von Hand
+// gemerkter Laden des ersten Artikels → offener Reiter → nichts; von Hand
 // gewählt geht vor. Nur mit „Meine Läden“.
 
 import { LadenWahl } from "@/components/einkauf/MeineLaeden";
@@ -18,7 +18,8 @@ export function EinkaufLaden({ text, tab, choice, onChoice }: { text: string; ta
   const first = parseShoppingText(text, settings.shops)[0];
   const said = first?.shop ?? "";
   const pre = ladenVorwahl({ name: first?.name ?? "", itemShops: settings.itemShops, products: settings.products, tab });
-  const value = said || (choice.picked ? choice.shop : pre.shop);
+  // Nichts gewählt = kein Knopf an (Neues landet in „Noch ohne Laden“)
+  const value = said || (choice.picked ? choice.shop : pre.shop || null);
   const hint = !said && !choice.picked && pre.remembered && first ? vorwahlHinweis(first.name, pre.shop) : undefined;
   return <LadenWahl myShops={meine.myShops} value={value} onChange={(shop) => onChoice({ shop, picked: true })} hint={hint} />;
 }

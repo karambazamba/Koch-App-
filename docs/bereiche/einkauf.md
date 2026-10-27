@@ -55,7 +55,11 @@ Einkaufsmodus für den Laden. Immer sichtbar (kein Baustein).
     Rezept-Artikel), `have` („Haben wir schon“), `renamed` (nur diese Woche),
     `skippedStaples` („diesmal nicht“).
   - `products`: Zutat (klein) → euer Produkt. `shops`: eigene Läden.
-    `itemShops`: Artikel (klein) → Laden. `staples`: Stammartikel (`name`,
+    `itemShops`: Artikel (klein) → Laden; leerer Laden = bewusst „Egal wo“,
+    kein Eintrag = „noch ohne Laden“ (seit vX; v6 hat nie leere Läden
+    gespeichert, deshalb kein Formatwechsel: alles Bisherige gilt als „noch
+    ohne Laden“, ältere Geräte im Haushalt lesen „“ wie bisher als ohne
+    Laden). `staples`: Stammartikel (`name`,
     `amount`, `section`, `purchases` = letzte 12 Kauftage, `intervalDays`
     fest oder `null` = gelernt, `active`).
   - Migration `migrateStore` (`listMigration.ts`): v1 → leer mit
@@ -74,6 +78,43 @@ Einkaufsmodus für den Laden. Immer sichtbar (kein Baustein).
   (hell und dunkel in `globals.css`).
 
 ## So verhält es sich
+
+- **Erst einsortieren, dann einkaufen (vX, Tafel 99, `einsortieren.ts`,
+  `components/einkauf/Einsortieren.tsx`)**:
+  - Zwei klare Momente: in der Einkaufsliste (zu Hause) öffnet Antippen das
+    Fenster „Wo kaufst du das?“ – nie „gekauft“. Abgehakt wird im
+    Einkaufsmodus („Bei Rewe einkaufen“, Antippen = gekauft wie bisher) oder
+    über „Schon gekauft“ im Fenster. Hinweis: „Antippen: Laden wählen.
+    Abhaken im Laden.“ Lange drücken = „Artikel bearbeiten“ wie bisher.
+  - Drei Zustände je Artikel (`ListItem.shop` / `anywhere`, `shopChoice`):
+    Laden · bewusst „Egal wo“ · noch ohne Laden (`ohneLaden`).
+  - Zone „Noch ohne Laden · 6“ ganz oben (nur unter „Alle“ mit „Meine
+    Läden“; gestrichelt, warm, „Antippen = Laden wählen“); leer = weg.
+    Darüber die Mia-Zeile „6 Sachen noch ohne Laden.“ + „Mia sortiert“ – nur,
+    wenn Mia etwas davon kennt (`sortierVorschlaege`: Gelerntes aus dem
+    Einkaufsmodus, ein gemerkter ähnlicher Name mit genau einem Laden; nie
+    raten). Danach „5 einsortiert · Rückgängig“. Feste Regeln und gemerkte
+    Läden greifen schon beim Eintragen (Hand, Mia, Wochenplan).
+  - Fenster (`WoKaufstDuSheet`, `ui/Sheet`): Symbol, Name, „100 g · für
+    Gemüselasagne“; „Meine Läden“ als große Knöpfe (2 Spalten, Farbpunkt,
+    aktueller bzw. vorgeschlagener Laden in Ladenfarbe hervorgehoben) + „Egal
+    wo“; Häkchen „Spinat immer bei Rewe“ (vorausgewählt = feste Regel); unten
+    „Schon gekauft“ (bei Gekauftem „Doch kaufen“) · „Ändern“ · „Löschen“ bzw.
+    „Haben wir schon“. Ein Tipp: Artikel wandert, Fenster schließt, Meldung
+    „Spinat → Rewe. Merk ich mir. · Rückgängig“ (ausdrücklich gewünscht),
+    der Artikel ist kurz umrandet. Ohne „Meine Läden“ zeigt das Fenster die
+    ersten Läden der Frage; ein gewählter Laden kommt zu „Meine Läden“.
+  - Liste danach: Abschnitte je Laden in der Reihenfolge „Meine Läden“, dann
+    andere, „Egal wo“ nur mit bewusst gewählten Sachen.
+  - Beim Hinzufügen („Kommt auf die Liste für“) ist ohne gemerkten Laden
+    und ohne Reiter nichts vorgewählt → „Noch ohne Laden“; „Egal wo“ nur, wenn
+    man es antippt (`ladenMerken`).
+  - Startseiten-Kachel: IMMER die Läden aus „Meine Läden“ als Zeilen
+    (Streifen, 2 Symbole, Zahl; mit 0 nur Name + 0), S/M bis 3 + „+ Rossmann
+    1“, L alle; darunter leise „6 noch ohne Laden · Sortieren ›“ (öffnet die
+    Liste an der Zone, `#ohne-laden`). Der Symbol-Haufen (Variante A) ist
+    weg. Ohne „Meine Läden“: eine neutrale Zeile „Liste“ mit allem ohne
+    Laden; leere Liste: „Liste ist leer. …“ statt lauter Nullen.
 
 - **Einkaufsliste aufgeräumt + Läden (v0.119, Tafel 88/89/91/92,
   `meineLaeden.ts`, `kacheln/gruppen.ts`, `shopRules.ts`,
@@ -104,8 +145,7 @@ Einkaufsmodus für den Laden. Immer sichtbar (kein Baustein).
   - Einkauf-Kachel C2: je Laden eine Zeile in Ladenfarbe (Streifen, 2
     Symbole, Zahl), S/M bis 3 + „+ Rossmann 3“, L alle; Zeile = Liste mit
     diesem Laden. Beispiel-Tag: Edeka, Rewe, Lidl, Rossmann (`DEMO_SHOPS`).
-  - Nur „Egal wo“ (noch keine Läden): bis zu 6 runde Symbole + „+N“ und die
-    Zahl (Variante A, `tileArt`). Artikel ohne Zeichnung zeigen überall das
+  - (bis vX: nur „Egal wo“ = Symbolreihe, Variante A – entfallen.) Artikel ohne Zeichnung zeigen überall das
     Linien-Symbol ihrer Abteilung (Obst, Kühlregal, Drogerie …), nie einen
     Buchstaben. Neue Zeichnung „Aufschnitt“ (Salami, Schinken, Mortadella);
     Würstchen/Wiener = Wurst, Frischkäse/Cheddar … = Käse.
@@ -113,8 +153,8 @@ Einkaufsmodus für den Laden. Immer sichtbar (kein Baustein).
 - **Einfach wie Bring (v0.66)**: Jeder Artikel ist eine quadratische Kachel
   in der Farbe seiner Abteilung (Symbol, Name, Menge, oben links das
   Gericht); 3 Spalten, ab 390 px 4, ab 24 Artikeln eine Stufe kleiner.
-  Tippen = gekauft (bleibt 2 s stehen, dann „Zuletzt gekauft“, ab 8
-  eingeklappt; dort Tippen = wieder auf die Liste). Lange drücken =
+  Tippen = gekauft (seit vX: Tippen = „Wo kaufst du das?“, s. o.; gekauft
+  bleibt 2 s stehen, dann „Zuletzt gekauft“). Lange drücken =
   „Artikel bearbeiten“ (mit Löschen bzw. „Haben wir schon“). Oben Chips
   „Alle“ + Läden (meiste zuerst) + „Ohne Laden“ (seit v0.113 die Laden-Reihe
   mit „Meine Läden“, s. o.). Abschnitte: Jetzt mitnehmen · Für heute · Bald
@@ -231,7 +271,7 @@ Einkaufsmodus für den Laden. Immer sichtbar (kein Baustein).
   mit Menge, Abteilung, `fuer_tag`, `gericht`, `laden` → Op `add_shopping`
   (Vorschau „Übernehmen“; der Laden wird beim Übernehmen gemerkt).
 - `laden_regel` (Op `set_shop_rule`, sofort mit Rückgängig: „Merk ich mir.
-  Tomaten → Rewe.“, leerer Laden = Regel weg) und `laeden_anzeigen` („Was
+  Tomaten → Rewe.“, leerer Laden = Regel weg, Artikel bewusst „Egal wo“) und `laeden_anzeigen` („Was
   kauf ich wo?“) in `shoppingTools.ts`; Mia sieht Läden und Regeln im
   Kontext. Ohne KI dasselbe über `parseShopRule` bzw.
   `isShopOverviewQuestion` (`shopRuleRule` in `localRules.ts`).
@@ -251,6 +291,13 @@ Einkaufsmodus für den Laden. Immer sichtbar (kein Baustein).
 
 ## Tests
 
+- `tests/einkauf/einsortieren.test.ts` – Antippen in der Liste ändert nie
+  „gekauft“, Einkaufsmodus hakt ab, drei Zustände (Bisheriges = noch ohne
+  Laden), Laden wählen + „immer bei“ + Rückgängig, „Mia sortiert“ +
+  Rückgängig, nie raten, Zone und Kachel. `tests/heute/einkaufKachel.test.ts`
+  – Kachel mit 0-Läden, „noch ohne Laden“, Beispiel-Tag. Durchklick
+  `einsortieren` (`e2e/ablaeufe/einsortieren.mjs`), angepasst `einkauf` und
+  `imHaus` (`essen.mjs`: Antippen → Fenster → „Schon gekauft“).
 - `tests/einkauf/listeBauen.test.ts` – Mengen, Liste aus dem Plan, Teilen.
 - `tests/einkauf/listeBearbeiten.test.ts` – Ändern, Läden, Migration v1–v5.
 - `tests/einkauf/meineLaeden.test.ts` – Läden bewusst wählen: Frage

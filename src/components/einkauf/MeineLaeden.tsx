@@ -177,8 +177,8 @@ export function MeineLaedenSheet({ shops, myShops, rules = {}, onClose }: { shop
   );
 }
 
-/** Beim Hinzufügen: „Kommt auf die Liste für“ – Egal wo + meine Läden */
-export function LadenWahl({ myShops, value, onChange, hint }: { myShops: string[]; value: string; onChange: (shop: string) => void; hint?: string }) {
+/** Beim Hinzufügen: „Kommt auf die Liste für“ – Egal wo + meine Läden (`null` = nichts gewählt → „Noch ohne Laden“) */
+export function LadenWahl({ myShops, value, onChange, hint }: { myShops: string[]; value: string | null; onChange: (shop: string) => void; hint?: string }) {
   if (!myShops.length) return null;
   const options = ["", ...myShops];
   return (
@@ -186,7 +186,7 @@ export function LadenWahl({ myShops, value, onChange, hint }: { myShops: string[
       <p className="text-[13px] font-semibold text-muted">Kommt auf die Liste für</p>
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" role="radiogroup" aria-label="Kommt auf die Liste für" data-no-swipe>
         {options.map((s) => (
-          <button key={s || "egal"} type="button" role="radio" aria-checked={lower(value) === lower(s)} onPointerDown={(e) => e.preventDefault()} onClick={() => onChange(s)} className={`${chipClass(lower(value) === lower(s))} shrink-0`}>
+          <button key={s || "egal"} type="button" role="radio" aria-checked={value !== null && lower(value) === lower(s)} onPointerDown={(e) => e.preventDefault()} onClick={() => onChange(s)} className={`${chipClass(value !== null && lower(value) === lower(s))} shrink-0`}>
             {s && <ShopDot shop={s} />}
             {s || "Egal wo"}
           </button>

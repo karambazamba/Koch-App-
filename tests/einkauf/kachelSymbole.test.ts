@@ -1,11 +1,11 @@
 // Einkauf-Kachel (Auftrag „Sofort-Kachel“): Artikel ohne eigene Zeichnung
-// zeigen das Symbol ihrer Abteilung – nie einen Buchstaben. Nur „Egal wo“ =
-// Symbolreihe (Variante A), mit Läden = Zeilen (C2).
+// zeigen das Symbol ihrer Abteilung – nie einen Buchstaben. Immer Zeilen je
+// Laden (C2), keine Symbolreihe mehr (Tafel 99).
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { abteilungSymbol, symbolReihe } from "@/lib/einkauf/kacheln/abteilung";
+import { abteilungSymbol } from "@/lib/einkauf/kacheln/abteilung";
 import { symbolFor } from "@/lib/einkauf/kacheln/symbols";
-import { tileArt, tileRows } from "@/lib/einkauf/shopGroups";
+import { tileRows } from "@/lib/einkauf/shopGroups";
 import { loadCooking, markStepsBefore } from "@/lib/essen/kochSession";
 import { fakeWindow } from "../helpers";
 
@@ -51,24 +51,17 @@ describe("Symbol der Abteilung statt Buchstabe", () => {
   });
 });
 
-describe("Nur „Egal wo“: Symbolreihe (Variante A), mit Läden: Zeilen (C2)", () => {
-  it("bis zu 6 Symbole, Rest als +N", () => {
-    const names = ["Milch", "Brot", "Käse", "Äpfel", "Deo", "Speck", "Batterien", "Tofu"];
-    expect(symbolReihe(names)).toEqual({ names: names.slice(0, 6), more: 2 });
-    expect(symbolReihe(["Milch"])).toEqual({ names: ["Milch"], more: 0 });
+describe("Kein Symbol-Haufen mehr (Tafel 99)", () => {
+  it("nur „Egal wo“ ist eine normale Zeile, nichts ohne Ordnung", () => {
+    const r = tileRows([{ name: "Milch", shop: "", anywhere: true }, { name: "Brot", shop: "" }], [], "S");
+    expect(r.rows).toEqual([{ shop: null, names: ["Milch"], count: 1 }]);
+    expect(r.ohne).toEqual(["Brot"]);
   });
 
-  it("Art der Kachel: leer, nur Egal wo = Symbole, sonst Zeilen", () => {
-    expect(tileArt(tileRows([], [], "S"))).toBe("leer");
-    expect(tileArt(tileRows([{ name: "Milch", shop: "" }, { name: "Brot", shop: "" }], [], "S"))).toBe("symbole");
-    expect(tileArt(tileRows([{ name: "Milch", shop: "Rewe" }, { name: "Brot", shop: "" }], [], "S"))).toBe("zeilen");
-    expect(tileArt(tileRows([{ name: "Milch", shop: "Rewe" }], [], "M"))).toBe("zeilen");
-  });
-
-  it("die Kachel nutzt die Symbolreihe nur bei „symbole“", () => {
+  it("die Kachel hat keine Symbolreihe mehr", () => {
     const src = readFileSync("src/components/heute/HomeTiles.tsx", "utf8");
-    expect(src).toMatch(/art === "symbole" \? \(\s*<SymbolRow/);
-    expect(src).toMatch(/art === "zeilen" \? \(\s*<ShopRows/);
+    expect(src).not.toMatch(/SymbolRow|symbolReihe|tileArt/);
+    expect(src).toMatch(/<ShopRows/);
   });
 });
 

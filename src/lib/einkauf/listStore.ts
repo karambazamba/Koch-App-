@@ -49,7 +49,7 @@ let cachedSettings: { source: ShoppingListStore | null; value: ShoppingSettings 
 function settingsOf(data: ShoppingListStore | null): ShoppingSettings {
   if (!data) return DEFAULT_SETTINGS;
   if (cachedSettings?.source === data) return cachedSettings.value;
-  const value = { products: data.products, shops: data.shops, itemShops: data.itemShops, staples: data.staples, shopRules: data.shopRules, alwaysList: data.alwaysList };
+  const value = { products: data.products, shops: data.shops, itemShops: data.itemShops, staples: data.staples, shopRules: data.shopRules, alwaysList: data.alwaysList, learned: data.learned };
   cachedSettings = { source: data, value };
   return value;
 }

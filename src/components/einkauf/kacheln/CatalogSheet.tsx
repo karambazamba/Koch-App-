@@ -21,7 +21,7 @@ import { addManualItem, removeManualItems, sectionFor, setHave, setItemShop, typ
 import { useKeyboardInset } from "@/lib/core/useMobileKeyboard";
 import { pushUndo } from "@/lib/core/undo";
 import { LadenWahl } from "@/components/einkauf/MeineLaeden";
-import { rememberedShop, vorwahlHinweis } from "@/lib/einkauf/meineLaeden";
+import { ladenMerken, rememberedShop, vorwahlHinweis } from "@/lib/einkauf/meineLaeden";
 
 const lower = (s: string) => s.trim().toLowerCase();
 const sachen = (n: number) => `${n} ${n === 1 ? "Sache" : "Sachen"}`;
@@ -65,7 +65,8 @@ export function CatalogSheet({
   const [lastOn, setLastOn] = useState("");
   const remembered = (name: string) => rememberedShop(name, settings.itemShops, settings.products);
   const lastShop = lastOn ? remembered(lastOn) : "";
-  const shopValue = picked ?? (lastShop || tab || "");
+  // Nichts gewählt = kein Knopf an (Neues landet in „Noch ohne Laden“)
+  const shopValue = picked ?? (lastShop || tab || null);
   const shopFor = (name: string) => (picked !== null ? picked : remembered(name) || tab || "");
   const full = catalog({ staples: settings.staples, recent, open, basics: BASICS });
   const entries = catalog({ staples: settings.staples, recent, open, basics: BASICS, query });
@@ -114,7 +115,7 @@ export function CatalogSheet({
       if (!entry) continue;
       ids.push(addManualItem(weekStart, { name: entry.name, amount: extra?.amount ?? staple(n)?.amount ?? "", section: entry.section }));
       const shop = extra?.shop || (myShops.length ? shopFor(entry.name) : "");
-      if (shop !== remembered(entry.name) && (shop || picked !== null)) setItemShop(settings.products[n] ?? entry.name, shop);
+      if (ladenMerken({ name: entry.name, shop, picked: picked !== null, itemShops: settings.itemShops, products: settings.products })) setItemShop(settings.products[n] ?? entry.name, shop);
     }
     // Abgewählt: Eigenes fällt weg, Zutaten aus Gerichten → „Haben wir schon“
     const manual = open.filter((i) => !chosen.has(lower(i.name)) && i.manualId).map((i) => i.manualId!);
