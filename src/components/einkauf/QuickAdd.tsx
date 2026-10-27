@@ -23,6 +23,7 @@ export function QuickAddButton({
   settings,
   small = false,
   quick = false,
+  shop,
   className = "",
 }: {
   weekStart: string;
@@ -31,6 +32,8 @@ export function QuickAddButton({
   small?: boolean;
   /** Kleiner hell-oranger Schnell-Knopf (Kacheln auf der Startseite) */
   quick?: boolean;
+  /** Offener Laden-Reiter: vorgewählt bei „Kommt auf die Liste für“ */
+  shop?: string;
   className?: string;
 }) {
   const [open, setOpen] = useState<string | null>(null);
@@ -39,7 +42,7 @@ export function QuickAddButton({
     <>
       <button
         type="button"
-        onClick={() => openQuick({ kind: "einkauf", shopping: { weekStart }, more: setOpen })}
+        onClick={() => openQuick({ kind: "einkauf", shopping: { weekStart, ...(shop ? { shop } : {}) }, more: setOpen })}
         aria-label="Etwas auf die Einkaufsliste setzen"
         className={`flex h-11 w-11 items-center justify-center ${className}`}
       >

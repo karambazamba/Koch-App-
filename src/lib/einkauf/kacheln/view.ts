@@ -42,8 +42,7 @@ export const walkOrder = (items: ListItem[]) => sortBy(items, ...SHOPPING);
 export const COMPACT_FROM = 24;
 export const isCompact = (count: number) => count >= COMPACT_FROM;
 
-/** „Zuletzt gekauft“: abgehakte Artikel (neueste Woche zuerst, ohne Doppelte) – ab 8 eingeklappt */
-export const RECENT_FOLD = 8;
+/** „Zuletzt gekauft“: abgehakte Artikel (neueste Woche zuerst, ohne Doppelte) */
 export function recentBought(weeks: ListItem[][]): ListItem[] {
   const seen = new Set<string>();
   const out: ListItem[] = [];

@@ -64,6 +64,8 @@ export type AssistantData = {
   sport?: SportState;
   /** Tagesablauf: Jetzt-Karte an/aus, Zeiten der Phasen */
   tagesablauf?: { jetzt: boolean; feierabendAb: string; morgenBis: string };
+  /** Läden: feste Regeln (Artikel klein → Laden) und „Meine Läden“ (nur zum Lesen; ändern über `set_shop_rule`) */
+  laeden?: { regeln: Record<string, string>; meine: string[] };
   /** Personen-ID von mir (für Sport-Termine) */
   me?: string | null;
 };
@@ -101,6 +103,8 @@ export type ChangeOp =
   | { id: string; type: "update_week"; weekStart: string; changes: WeekChanges }
   | { id: string; type: "add_recipe"; recipe: NewRecipe }
   | { id: string; type: "add_shopping"; weekStart: string; name: string; amount: string; section: Section; day?: string; dish?: string; shop?: string; /** vage gewünscht („Sachen fürs Frühstück“): Vorschau mit „Übernehmen“ statt sofort */ vorschlag?: boolean }
+  /** „Tomaten kaufe ich immer bei Rewe“: feste Laden-Regel (shop leer = egal wo); landet beim Übernehmen im Einkaufs-Speicher */
+  | { id: string; type: "set_shop_rule"; name: string; shop: string }
   | { id: string; type: "remove_shopping"; weekStart: string; names: string[] }
   | { id: string; type: "clear_shopping"; weekStart: string }
   | { id: string; type: "clear_week"; weekStart: string }
@@ -344,6 +348,7 @@ export function applyOps(
       case "set_sport_goal":
         next = { ...next, sport: { ...sanitizeSport(next.sport), goal: op.goal } };
         break;
+      case "set_shop_rule":
       case "add_pantry":
       case "use_pantry":
       case "add_wish":

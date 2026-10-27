@@ -45,8 +45,8 @@ export type Staple = {
 };
 
 export type ShoppingListStore = {
-  /** v4: eigene Produkte, Läden, Stammliste (statt "Immer da") */
-  version: 4;
+  /** v6: feste Laden-Regeln, Gelerntes, „hat man da“-Ausnahmen; v5: „Meine Läden“ + schon gefragt; v4: eigene Produkte, Läden, Stammliste */
+  version: 6;
   weeks: Record<string, WeekList>;
   /** Zutat (klein) → euer Produkt */
   products: Record<string, string>;
@@ -55,9 +55,21 @@ export type ShoppingListStore = {
   /** Artikel (Anzeigename, klein) → Laden */
   itemShops: Record<string, string>;
   staples: Staple[];
+  /** „Meine Läden“ in gewählter Reihenfolge (leer = noch keine gewählt) */
+  myShops: string[];
+  /** „In welchen Läden kaufst du ein?“ schon beantwortet (Fertig oder Später) – nie wieder fragen */
+  shopsAsked: boolean;
+  /** Feste Regeln „immer“: Artikel (klein) → Laden („Tomaten kaufe ich immer bei Rewe“) */
+  shopRules: Record<string, string>;
+  /** Still gelernt im Einkaufsmodus: Artikel (klein) → Laden und wie oft hintereinander */
+  learned: Record<string, { shop: string; n: number }>;
+  /** Schon gefragt „Soll ich mir das merken?“ (je Artikel höchstens einmal) */
+  learnAsked: string[];
+  /** Grundsachen, die trotzdem immer auf die Liste sollen (sonst „Hast du bestimmt im Haus“) */
+  alwaysList: string[];
 };
 
-export type ShoppingSettings = Pick<ShoppingListStore, "products" | "shops" | "itemShops" | "staples">;
+export type ShoppingSettings = Pick<ShoppingListStore, "products" | "shops" | "itemShops" | "staples"> & Partial<Pick<ShoppingListStore, "shopRules" | "alwaysList">>;
 
 export type ListItem = {
   key: string;

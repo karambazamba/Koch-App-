@@ -179,9 +179,10 @@ export function demoEntries(today: string, minutes: number, helper: string): { d
   return { date, tomorrow, entries: [...termine, ...aufgaben] };
 }
 
-/** Beispiel-Einkauf nach Läden */
+/** Beispiel-Einkauf nach Läden (Reihenfolge = Zeilen der Einkauf-Kachel) */
 export const DEMO_SHOPS: { shop: string; names: string[] }[] = [
-  { shop: "REWE", names: ["Milch", "Brot", "Butter"] },
-  { shop: "EDEKA", names: ["Äpfel", "Eier"] },
-  { shop: "Lidl", names: ["Zahnpasta", "Küchenrolle"] },
+  { shop: "Edeka", names: ["Äpfel", "Eier", "Käse"] },
+  { shop: "Rewe", names: ["Milch", "Brot", "Butter"] },
+  { shop: "Lidl", names: ["Bananen", "Nudeln"] },
+  { shop: "Rossmann", names: ["Zahnpasta", "Küchenrolle"] },
 ];

@@ -122,7 +122,7 @@ Sammel-Schnellnotiz wird in einzelne Notizen geteilt.
     wünscht sich …“ (Liste „Geschenkideen“, nicht bei Essen), „Was steht auf
     der Packliste?“, „Häng das WLAN oben an“, „Zeig mir meine Notizen“.
 - Prüfstand: „Schreib auf: …“, „Schreib in die Schnellnotiz: …“, „Setz
-  Laufrad auf die Geschenkideen“ (139 Sätze).
+  Laufrad auf die Geschenkideen“ (148 Sätze).
 
 ## Tests
 

@@ -2594,3 +2594,12 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Wetter: „Gerade Regen“ nur noch aus dem DWD-Regenradar über Bright Sky
   (gleicher Anbieter); hört es auf, „Regen hat aufgehört“. Station nur
   ≤ 10 km und ≤ 40 Min alt, App lädt nach 15 statt 30 Minuten neu.
+
+## Einkaufsliste aufgeräumt + Läden + Mia merkt sich den Laden (v0.119.0)
+
+- Läden-Frage als Chips (Tafel 91), Laden-Reihe immer sichtbar, Liste nach
+  Laden bzw. Laufweg, 3 Spalten mit Silbentrennung, Grundsachen-Karte,
+  Zugeklapptes, Wochenwechsel in einer Zeile (Tafel 89).
+- Feste Laden-Regeln per Mia und ohne KI, gelten überall; Lernen nach 2×
+  Abhaken mit einmaliger Frage; „Was kauf ich wo?“. Speicher v6.
+- Einkauf-Kachel C2 (Tafel 92) und Beispiel-Einkauf nach Läden.

@@ -84,6 +84,10 @@ export function bewerte(satz: PruefSatz, reply: AssistantReply, ms: number): Pru
     if (satz.zeit && !facts.times.includes(satz.zeit)) gruende.push(`Uhrzeit ${satz.zeit} nicht getroffen (${facts.times.join(", ") || "keine"})`);
     if (satz.person && !facts.text.includes(satz.person) && !reply.reply.includes(satz.person)) gruende.push(`Person ${satz.person} nicht erkannt`);
   }
+  if (satz.laden) {
+    const shops = reply.ops.filter((op) => op.type === "add_shopping" || op.type === "set_shop_rule").map((op) => ("shop" in op ? String(op.shop ?? "") : ""));
+    if (!shops.length || shops.some((x) => x.trim().toLowerCase() !== satz.laden!.toLowerCase())) gruende.push(`Laden ${satz.laden} nicht getroffen (${shops.join(", ") || "keiner"})`);
+  }
   const max = satz.max ?? 2;
   if (sentenceCount(reply.reply) > max) gruende.push(`mehr als ${max} Sätze`);
   if ((reply.reply.match(/\?/g) ?? []).length > 1) gruende.push("mehr als eine Rückfrage");

@@ -1,16 +1,22 @@
 "use client";
 
-// Seite /einkaufsliste – einfach wie Bring (Tafel 35): oben die Läden als
-// Chips (gewählten Laden nochmal tippen = Einkaufsmodus), darunter Kacheln:
-// Jetzt mitnehmen · Für heute · Bald wieder fällig · Für die Woche · Zuletzt
-// gekauft. Tippen = gekauft, lange drücken = bearbeiten. Unten der große
-// Knopf „Mehr hinzufügen“ (Katalog mit Suche und Mikro).
+// Seite /einkaufsliste – aufgeräumt (Tafel 89): Wochenwechsel in einer Zeile,
+// die Laden-Reihe (Alle + „Meine Läden“ + ＋; mit gewähltem Laden „Bei Edeka
+// einkaufen ›“), darunter Kacheln: Jetzt mitnehmen · Für heute · „Bald
+// wieder fällig“ als eine Zeile · „Alle“ nach Laden in der Reihenfolge von
+// „Meine Läden“ („Egal wo“ zuletzt), ein gewählter Laden (oder ohne eigene
+// Läden) nach Abteilung im Laufweg · „Hast du bestimmt im Haus“ (Grundsachen)
+// · zugeklappt „Zuletzt gekauft“ und „Gerichte ohne Zutaten“ · leise „Liste
+// teilen · Stammliste“. Die einmalige Läden-Frage steht nach der Liste (nach
+// dem Beispiel, nicht darüber). Tippen = gekauft, lange drücken = bearbeiten.
+// Unten der große Knopf „Mehr hinzufügen“ bzw. „Zu Edeka hinzufügen“.
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, PenLine, Plus, Repeat, Share2, ShoppingBasket } from "lucide-react";
+import { Plus, ShoppingBasket, ShoppingCart } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { CARD, CARD_LIST, ICON_BUTTON, PAGE_MAIN, SECTION_TITLE, buttonClass, chipClass } from "@/components/ui/styles";
+import { CARD, CARD_LIST, PAGE_MAIN, SECTION_TITLE, buttonClass, chipClass } from "@/components/ui/styles";
 import {
   addManualItem,
   carryOverManual,
@@ -21,7 +27,6 @@ import {
   setHave,
   setItemShop,
   shoppingListText,
-  skipStaple,
   takeStaple,
   toggleChecked,
   updateManualItem,
@@ -32,9 +37,13 @@ import { useWeekShoppingList, type WeekChoice } from "@/lib/einkauf/useWeekShopp
 import { addDays, formatWeekRange, toIsoDate, useToday } from "@/lib/essen/weekPlan";
 import { EditItemSheet, StaplesSheet } from "@/components/einkauf/ShoppingParts";
 import { setShopChip, shopModeHref, useShopChip } from "@/lib/einkauf/shopMode";
-import { shopTone } from "@/lib/einkauf/shopGroups";
-import { RECENT_FOLD, filterByChip, isCompact, recentBought, resolveChip, shopChips, walkOrder } from "@/lib/einkauf/kacheln/view";
-import { ItemTile, TILE_GRID, dishLabel, type TileSize } from "@/components/einkauf/kacheln/ItemTile";
+import { filterByChip, recentBought, resolveChip, shopChips } from "@/lib/einkauf/kacheln/view";
+import { abteilungsGruppen, grundsachen, ladenGruppen } from "@/lib/einkauf/kacheln/gruppen";
+import { GruppenListe, GrundsachenKarte, KlappZeile, WochenZeile } from "@/components/einkauf/ListeTeile";
+import { useEinkaufBeispiel } from "@/components/einkauf/EinkaufBeispiel";
+import { addLabel, chipIn, shopModeLabel, shopRow, useMeineLaeden, vorauswahl } from "@/lib/einkauf/meineLaeden";
+import { LadenFrage, MeineLaedenSheet, ShopDot } from "@/components/einkauf/MeineLaeden";
+import { ItemTile, TILE_GRID, type TileSize } from "@/components/einkauf/kacheln/ItemTile";
 import { CatalogSheet } from "@/components/einkauf/kacheln/CatalogSheet";
 import { StapleBar } from "@/components/einkauf/StapleBar";
 import { showDeleted } from "@/lib/core/toast";
@@ -59,12 +68,15 @@ export function ShoppingListView() {
   const stored = useShopChip();
   const profile = useProfile();
   const [showHidden, setShowHidden] = useState(false);
-  const [allRecent, setAllRecent] = useState(false);
   const [shareNote, setShareNote] = useState("");
   const [leaving, setLeaving] = useState<string[]>([]);
   const [editing, setEditing] = useState<ListItem | null>(null);
   const [staplesOpen, setStaplesOpen] = useState(false);
   const [catalogOpen, setCatalogOpen] = useState(false);
+  const [shopsOpen, setShopsOpen] = useState(false);
+  const meine = useMeineLaeden();
+  const beispiel = useEinkaufBeispiel();
+  const myShops = meine?.myShops ?? [];
   // "Für heute" kommt immer aus der laufenden Woche (auch wenn die nächste angezeigt wird)
   const current = useWeekShoppingList("current");
   // Spontan: offene Artikel früherer Wochen in die laufende Woche holen
@@ -94,8 +106,8 @@ export function ShoppingListView() {
   const hidden = list.items.filter((i) => i.hidden);
   const open = visible.filter((i) => !i.checked);
   const due = dueStaples(settings.staples, weekStart, list, weekList);
-  const chips = shopChips(open);
-  const chip = resolveChip(stored, open);
+  const chips = myShops.length ? shopRow(open, myShops) : shopChips(open);
+  const chip = myShops.length ? chipIn(chips, stored) : resolveChip(stored, open);
   const shown = (items: ListItem[]) => filterByChip(items, chip);
   const stays = (i: ListItem) => !i.checked || leaving.includes(i.key);
 
@@ -107,9 +119,10 @@ export function ShoppingListView() {
   const nowItems = shown(visible.filter((i) => i.now && stays(i)));
   const todayItems = shown(inWeek ? visible.filter((i) => forToday(i) && !nowItems.includes(i)) : (current?.list.items.filter(forToday) ?? []));
   const todayWeek = inWeek ? weekStart : (current?.weekStart ?? weekStart);
-  const weekItems = walkOrder(shown(visible.filter((i) => stays(i) && !nowItems.includes(i) && !(inWeek && todayItems.includes(i)))));
+  // Grundsachen aus Rezepten („hat man meist da“) in die Karte, nicht auf die Liste
+  const basics = grundsachen(visible.filter((i) => !i.checked && !nowItems.includes(i)), settings.alwaysList);
+  const weekItems = shown(basics.liste.filter((i) => stays(i) && !nowItems.includes(i) && !(inWeek && todayItems.includes(i))));
   const recent = recentBought([visible.filter((i) => !leaving.includes(i.key))]);
-  const recentShown = allRecent || recent.length <= RECENT_FOLD ? recent : recent.slice(0, RECENT_FOLD);
 
   const toggle = (week: string, item: ListItem) => {
     if (!item.checked) {
@@ -143,7 +156,6 @@ export function ShoppingListView() {
           name={item.name}
           section={item.section}
           amount={item.amount}
-          dish={item.checked ? "" : dishLabel(item.dishes)}
           products={settings.products}
           checked={item.checked}
           size={size}
@@ -163,91 +175,85 @@ export function ShoppingListView() {
       </section>
     );
 
-  const selectedShop = chips.find((c) => c.id === chip)?.shop;
+  const selectedChip = chips.find((c) => c.id === chip);
+  const selectedShop = selectedChip?.shop;
+  // „Alle“ mit eigenen Läden: nach Laden; sonst (oder ein Laden gewählt) nach Abteilung im Laufweg
+  const nachLaden = chip === "alle" && myShops.length > 0;
+  const gruppen = nachLaden ? ladenGruppen(weekItems, myShops) : abteilungsGruppen(weekItems);
+  const nothing = open.length === 0 && recent.length === 0 && !due.length;
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
-      <PageHeader title="Einkaufsliste" action={<QuickAddButton weekStart={data.weekStart} settings={data.settings} className="-mr-1.5" />} />
+      <PageHeader title="Einkaufsliste" action={<QuickAddButton weekStart={data.weekStart} settings={data.settings} shop={selectedShop} className="-mr-1.5" />} />
       <main className={PAGE_MAIN}>
-        {data.planning && (
-          <div className="flex items-center justify-between gap-2">
-            <button type="button" onClick={() => setChoice("current")} disabled={!isNext} aria-label="Diese Woche" className={ICON_BUTTON}>
-              <ChevronLeft className="h-6 w-6" strokeWidth={2.25} aria-hidden />
-            </button>
-            <div className="text-center">
-              <p className="text-lg font-bold">{isNext ? "Nächste Woche" : "Diese Woche"}</p>
-              <p className="whitespace-nowrap text-sm text-muted">{range}</p>
-            </div>
-            <button type="button" onClick={() => setChoice("next")} disabled={isNext} aria-label="Nächste Woche" className={ICON_BUTTON}>
-              <ChevronRight className="h-6 w-6" strokeWidth={2.25} aria-hidden />
-            </button>
-          </div>
-        )}
+        {data.planning && <WochenZeile isNext={isNext} range={range} onPrev={() => setChoice("current")} onNext={() => setChoice("next")} />}
 
-        {chips.length > 1 && (
-          <div className="flex flex-col gap-1.5">
-            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" role="radiogroup" aria-label="Laden" data-no-swipe>
+        {/* Laden-Reihe immer sichtbar: Alle · meine Läden · ＋ */}
+        <div className="flex flex-col gap-2">
+            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" role="radiogroup" aria-label="Laden" data-no-swipe data-laden-reihe>
               {chips.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={c.id === chip}
-                  onClick={() => (c.id === chip && c.shop ? router.push(shopModeHref(c.shop)) : setShopChip(c.id))}
-                  className={`${chipClass(c.id === chip)} shrink-0`}
-                >
-                  {c.shop && <span className="h-2 w-2 rounded-full" style={{ background: `var(--app-shop-${shopTone(c.shop)})` }} aria-hidden />}
+                <button key={c.id} type="button" role="radio" aria-checked={c.id === chip} onClick={() => setShopChip(c.id)} className={`${chipClass(c.id === chip)} shrink-0`}>
+                  {c.shop && <ShopDot shop={c.shop} />}
                   {c.label}
-                  <span className="text-[13px] tabular-nums text-muted">{c.count}</span>
+                  <span className={`text-[13px] tabular-nums ${c.count ? "text-muted" : "text-muted/50"}`}>{c.count}</span>
                 </button>
               ))}
+              <button type="button" onClick={() => setShopsOpen(true)} aria-label="Meine Läden" className={`${chipClass(false)} shrink-0`}>
+                <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+              </button>
             </div>
-            {selectedShop && (
-              <p className="px-1 text-xs text-muted">
-                Nochmal auf {selectedShop} tippen: Einkaufsmodus.
-              </p>
+            {selectedShop && selectedChip.count > 0 && (
+              <Link href={shopModeHref(selectedShop)} className={`${buttonClass("secondary", "md")} self-start`} data-einkaufsmodus>
+                <ShoppingCart className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                {shopModeLabel(selectedShop)} ›
+              </Link>
             )}
           </div>
-        )}
 
         {shareNote && <p className="rounded-field bg-accent-soft px-4 py-2 text-sm font-semibold text-accent-strong">{shareNote}</p>}
 
-        {open.length === 0 && recent.length === 0 && !due.length && (
+        {nothing && beispiel ? (
+          beispiel
+        ) : nothing ? (
           <div className={`${CARD} flex flex-col items-center gap-2 px-6 py-8 text-center`}>
             <ShoppingBasket className="h-8 w-8 text-accent" strokeWidth={1.75} aria-hidden />
             <p className="text-base font-semibold">Die Liste ist leer.</p>
-            <p className="text-sm text-muted">Sag {helperName(profile)} einfach, was ihr braucht – oder such es unten aus.</p>
+            <p className="text-sm text-muted">Sag {helperName(profile)} einfach, was ihr braucht. Oder such es unten aus.</p>
           </div>
-        )}
+        ) : null}
 
         {section("Jetzt mitnehmen", nowItems, weekStart)}
         {section("Für heute", todayItems, todayWeek)}
 
-        {due.length > 0 && chip === "alle" && (
-          <StapleBar staples={due} onTake={(st) => takeStaple(weekStart, st)} onSkip={(st) => skipStaple(weekStart, st)} onManage={() => setStaplesOpen(true)} />
+        {due.length > 0 && chip === "alle" && <StapleBar staples={due} onTake={(st) => takeStaple(weekStart, st)} />}
+
+        <GruppenListe gruppen={gruppen} nachLaden={nachLaden} tiles={(items) => tiles(items, weekStart)} />
+        {!nachLaden && selectedShop && gruppen.length > 0 && <p className="-mt-2 px-1 text-xs text-muted">Sortiert wie dein Weg durch den Laden</p>}
+
+        {open.length > 0 && <p className="px-1 text-xs text-muted">Antippen: gekauft. Lange drücken: ändern oder anderer Laden.</p>}
+
+        {chip === "alle" && (
+          <GrundsachenKarte
+            items={basics.karte}
+            onAdd={(i) => {
+              addManualItem(weekStart, { name: i.name, amount: i.amount, section: i.section });
+              showToast({ text: `${i.name} steht auf der Liste.`, small: true });
+            }}
+          />
         )}
 
-        {section(todayItems.length || nowItems.length ? "Für die Woche" : "Auf der Liste", weekItems, weekStart, isCompact(weekItems.length) ? "compact" : "normal")}
-
-        {data.planning && list.missing.length > 0 && (
-          <p className="flex items-start gap-2 px-1 text-sm text-muted">
-            <PenLine className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={2} aria-hidden />
-            <span>Ohne Zutaten: {list.missing.join(", ")} – selbst ergänzen.</span>
-          </p>
-        )}
-
-        {open.length > 0 && <p className="-mt-2 px-1 text-xs text-muted">Antippen: gekauft. Lange drücken: ändern.</p>}
+        {meine && !meine.shopsAsked && <LadenFrage shops={settings.shops} preselected={vorauswahl(settings.itemShops)} />}
 
         {recent.length > 0 && (
-          <section aria-label="Zuletzt gekauft" className="flex flex-col gap-2">
-            <h2 className={`${SECTION_TITLE} px-1`}>Zuletzt gekauft</h2>
-            {tiles(recentShown, weekStart, "compact")}
-            {recent.length > RECENT_FOLD && (
-              <button type="button" onClick={() => setAllRecent((v) => !v)} aria-expanded={allRecent} className="hit self-start px-1 text-sm font-semibold text-muted">
-                {allRecent ? "Weniger zeigen" : `Alle ${recent.length} zeigen`}
-              </button>
-            )}
-          </section>
+          <KlappZeile name="Zuletzt gekauft" label={`Zuletzt gekauft · ${recent.length}`}>
+            {tiles(recent, weekStart, "compact")}
+          </KlappZeile>
+        )}
+
+        {data.planning && list.missing.length > 0 && (
+          <KlappZeile name="Gerichte ohne Zutaten" label={`${list.missing.length} ${list.missing.length === 1 ? "Gericht" : "Gerichte"} ohne Zutaten`}>
+            <p className="px-1 text-sm text-muted">{list.missing.join(", ")}. Selbst ergänzen geht unten über ＋.</p>
+          </KlappZeile>
         )}
 
         {hidden.length > 0 && (
@@ -270,18 +276,19 @@ export function ShoppingListView() {
           </div>
         )}
 
-        <div className="flex flex-wrap gap-x-4">
+        <p className="flex items-center justify-center gap-1 text-[13px] font-semibold text-muted" data-leise>
           {open.length > 0 && (
-            <button type="button" onClick={() => share(selectedShop)} className="hit flex items-center gap-1.5 px-1 text-sm font-semibold text-muted">
-              <Share2 className="h-4 w-4" strokeWidth={2} aria-hidden />
-              {selectedShop ? `Liste für ${selectedShop} teilen` : "Liste teilen"}
-            </button>
+            <>
+              <button type="button" onClick={() => share(selectedShop)} className="hit px-1">
+                {selectedShop ? `Liste für ${selectedShop} teilen` : "Liste teilen"}
+              </button>
+              <span aria-hidden>·</span>
+            </>
           )}
-          <button type="button" onClick={() => setStaplesOpen(true)} className="hit flex items-center gap-1.5 px-1 text-sm font-semibold text-muted">
-            <Repeat className="h-4 w-4" strokeWidth={2} aria-hidden />
-            Stammliste ansehen
+          <button type="button" onClick={() => setStaplesOpen(true)} className="hit px-1">
+            Stammliste
           </button>
-        </div>
+        </p>
       </main>
 
       {/* Großer Knopf unten, rechts bleibt Platz für Mia */}
@@ -292,11 +299,12 @@ export function ShoppingListView() {
           className={`${buttonClass("primary", "lg")} pointer-events-auto mb-2 w-full max-w-sm whitespace-nowrap px-4 shadow-float`}
         >
           <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-          Mehr hinzufügen
+          {addLabel(selectedShop)}
         </button>
       </div>
 
-      {catalogOpen && <CatalogSheet weekStart={weekStart} settings={settings} open={open} recent={recent} onClose={() => setCatalogOpen(false)} />}
+      {catalogOpen && <CatalogSheet weekStart={weekStart} settings={settings} open={open} recent={recent} myShops={myShops} tab={selectedShop} onClose={() => setCatalogOpen(false)} />}
+      {shopsOpen && <MeineLaedenSheet shops={settings.shops} myShops={myShops} rules={settings.shopRules} onClose={() => setShopsOpen(false)} />}
       {editing && (
         <EditItemSheet
           item={editing}

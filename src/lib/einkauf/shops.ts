@@ -6,7 +6,7 @@ import { update } from "@/lib/einkauf/listStore";
 import { SHOPS, sortBy } from "@/lib/core/sort";
 
 /** Läden als Vorschläge – eigene kommen dazu */
-export const SHOP_SUGGESTIONS = ["Aldi", "Lidl", "Edeka", "Rewe", "Rossmann", "dm", "Wochenmarkt", "Bäcker"];
+export const SHOP_SUGGESTIONS = ["Aldi", "Lidl", "Edeka", "Rewe", "Penny", "Netto", "Kaufland", "Rossmann", "dm", "Wochenmarkt", "Bäcker"];
 
 export function addShop(name: string) {
   const clean = name.trim().slice(0, 30);
@@ -24,7 +24,7 @@ export function removeShop(name: string) {
   }));
 }
 
-/** Laden für einen Artikel merken (leer = keiner) */
+/** Laden für einen Artikel merken (leer = keiner); ein neuer Laden kommt zu „Meine Läden“ */
 export function setItemShop(itemName: string, shop: string) {
   const key = lower(itemName);
   if (!key) return;
@@ -32,8 +32,15 @@ export function setItemShop(itemName: string, shop: string) {
     const itemShops = { ...s.itemShops };
     if (shop.trim()) itemShops[key] = shop.trim();
     else delete itemShops[key];
+    // Von Hand umgestellt: eine feste Regel zieht mit (sonst bliebe der Artikel im alten Laden)
+    const shopRules = { ...(s.shopRules ?? {}) };
+    if (shopRules[key]) {
+      if (shop.trim()) shopRules[key] = shop.trim();
+      else delete shopRules[key];
+    }
     const known = [...SHOP_SUGGESTIONS, ...s.shops].some((x) => lower(x) === lower(shop));
-    return { ...s, itemShops, shops: shop.trim() && !known ? [...s.shops, shop.trim()] : s.shops };
+    const mine = !shop.trim() || s.myShops.some((x) => lower(x) === lower(shop));
+    return { ...s, itemShops, shopRules, shops: shop.trim() && !known ? [...s.shops, shop.trim()] : s.shops, myShops: mine ? s.myShops : [...s.myShops, shop.trim()] };
   });
 }
 

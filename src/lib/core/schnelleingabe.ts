@@ -117,7 +117,7 @@ export const dayChoices = (today: string, count = 7) => Array.from({ length: cou
  * Was ein „＋“ mitgibt: `date` = vorgewählter Tag (Kalender), `more` = das
  * volle Formular („Mehr Details“, bekommt den getippten Text), `me` = wer
  * schreibt (Pinnwand), `quote` = Antwort auf eine Nachricht, `shopping` =
- * Woche und Einstellungen der Einkaufsliste.
+ * Woche der Einkaufsliste und der Laden.
  */
 export type QuickRequest = {
   kind: QuickKind;
@@ -125,7 +125,8 @@ export type QuickRequest = {
   more?: (text: string) => void;
   me?: string;
   quote?: PinQuote | null;
-  shopping?: { weekStart: string };
+  /** `shop` = offener Laden-Reiter bzw. gewählter Laden („Kommt auf die Liste für“), `picked` = von Hand gewählt */
+  shopping?: { weekStart: string; shop?: string; picked?: boolean };
 };
 
 const EVENT = "mia:schnelleingabe";

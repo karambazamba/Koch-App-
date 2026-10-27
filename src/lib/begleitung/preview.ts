@@ -196,6 +196,8 @@ function describe(
       const forWhat = [op.day ? `für ${op.day}` : "", op.dish ? `(${op.dish})` : "", op.shop ? `bei ${op.shop}` : ""].filter(Boolean).join(" ");
       return { opId: op.id, group: "Einkaufsliste", order: 20_000, label: section, before: null, after: [op.amount, op.name, forWhat].filter(Boolean).join(" ") };
     }
+    case "set_shop_rule":
+      return { opId: op.id, group: "Einkaufsliste", order: 20_050, label: "Laden merken", before: null, after: op.shop ? `${op.name} immer bei ${op.shop}` : `${op.name} egal wo` };
     case "remove_shopping":
       return { opId: op.id, group: "Einkaufsliste", order: 20_100, label: "von der Liste", before: op.names.join(", "), after: "weg" };
     case "clear_shopping":

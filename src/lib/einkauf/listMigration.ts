@@ -1,5 +1,6 @@
-// Einkaufsliste: Migration des gespeicherten Stands (v1–v3 → v4). Die frühere
-// "Immer da"-Liste wird dabei zu Stammartikeln mit festem Wochenrhythmus.
+// Einkaufsliste: Migration des gespeicherten Stands (v1–v5 → v6). Die frühere
+// "Immer da"-Liste wird dabei zu Stammartikeln mit festem Wochenrhythmus; v5 → v6
+// bekommt leere feste Laden-Regeln, nichts Gelerntes, keine „hat man da“-Ausnahmen.
 
 import { SECTION_VALUES, sectionFor } from "@/lib/einkauf/sections";
 import { newId, type ManualItem, type ShoppingListStore, type Staple, type WeekList } from "@/lib/einkauf/listModel";
@@ -32,15 +33,16 @@ function migrateManual(raw: unknown): ManualItem[] {
 export function migrateStore(raw: unknown): ShoppingListStore | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as { version?: number; weeks?: Record<string, unknown> };
-  const empty: ShoppingListStore = { version: 4, weeks: {}, products: {}, shops: [], itemShops: {}, staples: [] };
+  const empty: ShoppingListStore = { version: 6, weeks: {}, products: {}, shops: [], itemShops: {}, staples: [], myShops: [], shopsAsked: false, shopRules: {}, learned: {}, learnAsked: [], alwaysList: [] };
   // v1 war nur ein Datenmodell ohne Seite – es gibt dort keine echten Daten.
   if (data.version === 1) return { ...empty, staples: basicsToStaples(null) };
-  if (![2, 3, 4].includes(data.version as number) || !data.weeks || typeof data.weeks !== "object") return null;
+  if (![2, 3, 4, 5, 6].includes(data.version as number) || !data.weeks || typeof data.weeks !== "object") return null;
+  const modern = data.version === 4 || data.version === 5 || data.version === 6;
 
   // v2/v3: "Immer da"-Basics (null = Standardliste)
   const rawBasics = (raw as { basics?: unknown }).basics;
   const basics =
-    data.version === 4
+    modern
       ? []
       : Array.isArray(rawBasics)
         ? rawBasics.filter((b): b is { id: string; name: string; amount?: string; active?: boolean } => Boolean(b) && typeof b.id === "string" && typeof b.name === "string")
@@ -54,7 +56,7 @@ export function migrateStore(raw: unknown): ShoppingListStore | null {
     let checked = strings(w.checked);
     let have = strings(w.have);
     // Häkchen an Basics ("b:<id>") bleiben als eigene Artikel dieser Woche erhalten
-    if (data.version !== 4) {
+    if (!modern) {
       const basicKeys = [...new Set([...checked, ...have].filter((k) => k.startsWith("b:")))];
       for (const k of basicKeys) {
         const id = k.slice(2);
@@ -73,11 +75,21 @@ export function migrateStore(raw: unknown): ShoppingListStore | null {
     };
   }
 
-  if (data.version !== 4) return { ...empty, weeks, staples: basicsToStaples(basics) };
+  if (!modern) return { ...empty, weeks, staples: basicsToStaples(basics) };
 
+  // v4 → v5: „Meine Läden“ leer, Frage noch offen (die Karte zeigt sich einmal, Läden an Artikeln vorausgewählt)
+  // v5 → v6: keine festen Regeln, nichts gelernt, keine Ausnahmen
   const v4 = raw as Partial<ShoppingListStore>;
+  const v5 = data.version === 5 || data.version === 6;
+  const v6 = data.version === 6;
   return {
-    version: 4,
+    version: 6,
+    myShops: v5 ? strings(v4.myShops) : [],
+    shopsAsked: v5 && v4.shopsAsked === true,
+    shopRules: v6 ? stringMap(v4.shopRules) : {},
+    learned: v6 ? learnedMap(v4.learned) : {},
+    learnAsked: v6 ? strings(v4.learnAsked) : [],
+    alwaysList: v6 ? strings(v4.alwaysList) : [],
     weeks,
     products: stringMap(v4.products),
     shops: strings(v4.shops),
@@ -94,6 +106,15 @@ export function migrateStore(raw: unknown): ShoppingListStore | null {
         active: st.active !== false,
       })),
   };
+}
+
+function learnedMap(v: unknown): ShoppingListStore["learned"] {
+  if (!v || typeof v !== "object") return {};
+  return Object.fromEntries(
+    Object.entries(v as Record<string, { shop?: unknown; n?: unknown }>)
+      .filter(([, x]) => x && typeof x.shop === "string" && typeof x.n === "number" && x.n > 0)
+      .map(([k, x]) => [k, { shop: x.shop as string, n: Math.min(9, Math.round(x.n as number)) }]),
+  );
 }
 
 function defaultBasics() {

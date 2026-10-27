@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Check, Info, Plus, Trash2 } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
+import { istGrundsache } from "@/lib/einkauf/kacheln/gruppen";
+import { setImmerAufDieListe } from "@/lib/einkauf/meineLaeden";
 import { AddedBy } from "@/components/konten/AddedBy";
 import { CARD_LIST, INPUT, INPUT_BASE, LABEL, buttonClass, chipClass } from "@/components/ui/styles";
 import { compareText } from "@/lib/core/sort";
@@ -100,6 +102,11 @@ export function EditItemSheet({
   const [shop, setShop] = useState(item.shop);
   const [newShop, setNewShop] = useState("");
   const [ask, setAsk] = useState(false);
+  const [always, setAlwaysState] = useState(() => (settings.alwaysList ?? []).some((x) => x.toLowerCase() === item.originalName.trim().toLowerCase()));
+  const setAlways = (on: boolean) => {
+    setAlwaysState(on);
+    setImmerAufDieListe(item.originalName, on);
+  };
   const renamed = name.trim() && name.trim() !== item.name;
   const shops = allShops(settings);
 
@@ -121,6 +128,17 @@ export function EditItemSheet({
 
   return (
     <Sheet title="Artikel bearbeiten" onClose={onClose}>
+      {item.dishes.length > 0 && (
+        <p className="-mt-1 text-[15px] text-muted" data-fuer-gericht>
+          für {item.dishes.map((d) => d.replace(/\s*\([^)]*\)\s*$/, "")).join(", ")}
+        </p>
+      )}
+      {istGrundsache(item.originalName) && (
+        <label className="flex min-h-11 items-center gap-3 text-[15px]">
+          <input type="checkbox" checked={always} onChange={(e) => setAlways(e.target.checked)} className="h-5 w-5 accent-[var(--app-accent)]" />
+          Immer auf die Liste (nicht zu „Hast du bestimmt im Haus“)
+        </label>
+      )}
       <label className="flex flex-col gap-1">
         <span className={LABEL}>Name</span>
         <input value={name} onChange={(e) => setName(e.target.value)} className={INPUT} aria-label="Name" />

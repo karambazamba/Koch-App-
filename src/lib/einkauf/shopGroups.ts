@@ -4,7 +4,7 @@
 // feste Farbe (Punkt) aus einer ruhigen Palette, bis man sie selbst wählt
 // (kommt mit „Läden“).
 
-import { SHOP_GROUPS, sortBy, via } from "@/lib/core/sort";
+import { SHOP_GROUPS, ascNum, sortBy, via } from "@/lib/core/sort";
 
 export type ShopGroup = { shop: string | null; names: string[] };
 
@@ -24,9 +24,45 @@ export function shopGroups(items: { name: string; shop: string }[], max = 3): Sh
   return sortBy(groups, ...byCount).slice(0, max);
 }
 
+type TileRow = ShopGroup & { count: number };
+/** Einkauf-Kachel: Zeilen je Laden und die leise Rest-Zeile („+ Rossmann 3, Egal wo 2“) */
+export type TileRows = { rows: TileRow[]; rest: string | null };
+
+/**
+ * Einkauf-Kachel (Variante C2): eine Zeile je Laden in der Reihenfolge von
+ * „Meine Läden“, andere Läden danach (meiste Artikel zuerst), „Egal wo“
+ * immer zuletzt. S/M: höchstens 3 Zeilen plus Rest-Zeile, L: alle.
+ */
+export function tileRows(items: { name: string; shop: string }[], myShops: string[], size: "S" | "M" | "L"): TileRows {
+  const map = new Map<string, { shop: string; names: string[] }>();
+  const loose: string[] = [];
+  for (const i of items) {
+    const shop = i.shop.trim();
+    if (!shop) {
+      loose.push(i.name);
+      continue;
+    }
+    const key = shop.toLowerCase();
+    const g = map.get(key) ?? { shop, names: [] };
+    g.names.push(i.name);
+    map.set(key, g);
+  }
+  const mine = myShops.map((s) => s.trim().toLowerCase());
+  const rank = (shop: string) => {
+    const i = mine.indexOf(shop.toLowerCase());
+    return i < 0 ? mine.length : i;
+  };
+  const shops: TileRow[] = [...map.values()].map((g) => ({ ...g, count: g.names.length }));
+  const ordered = sortBy(shops, ascNum((g) => rank(g.shop ?? "")), ...byCount);
+  const all: TileRow[] = loose.length ? [...ordered, { shop: null, names: loose, count: loose.length }] : ordered;
+  const max = size === "L" ? all.length : 3;
+  const rest = all.slice(max);
+  return { rows: all.slice(0, max), rest: rest.length ? `+ ${rest.map((r) => `${r.shop ?? "Egal wo"} ${r.count}`).join(", ")}` : null };
+}
+
 const TONES = 8;
 /** Bekannte Läden: passender Farbton (rot, gelb, blau …) – sonst aus dem Namen */
-const KNOWN_TONES: Record<string, number> = { rewe: 1, edeka: 2, lidl: 4, aldi: 4, penny: 1, netto: 2, kaufland: 1, biomarkt: 3, dm: 5, rossmann: 6, "bäcker": 8, wochenmarkt: 3 };
+const KNOWN_TONES: Record<string, number> = { rewe: 1, edeka: 2, lidl: 4, aldi: 7, penny: 6, netto: 3, kaufland: 8, biomarkt: 3, dm: 5, rossmann: 6, "bäcker": 8, wochenmarkt: 3 };
 
 /** Feste Farbe je Laden (1–8, Token `--app-shop-N`) */
 export function shopTone(name: string): number {

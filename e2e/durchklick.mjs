@@ -40,8 +40,9 @@ import * as sprechenhaengt from "./ablaeufe/sprechenhaengt.mjs";
 import * as heim from "./ablaeufe/startseite-heim.mjs";
 import * as essenkachel from "./ablaeufe/essenkachel.mjs";
 import * as wochenkarte from "./ablaeufe/wochenkarte.mjs";
+import * as laeden from "./ablaeufe/laeden.mjs";
 
-const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen, ...miazuerst, ...pinnwandgesten, ...sprachnachricht, ...mianame, ...startseite, ...schnelleingabe, ...kalendertag, ...mails, ...datenschutz, ...mikrocheck, ...zuhoeren, ...serverstimme, ...miasprechen, ...wischen, ...abhaken, ...uebersicht, ...testcode, ...notizen, ...sprechenhaengt, ...heim, ...essenkachel, ...wochenkarte };
+const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen, ...miazuerst, ...pinnwandgesten, ...sprachnachricht, ...mianame, ...startseite, ...schnelleingabe, ...kalendertag, ...mails, ...datenschutz, ...mikrocheck, ...zuhoeren, ...serverstimme, ...miasprechen, ...wischen, ...abhaken, ...uebersicht, ...testcode, ...notizen, ...sprechenhaengt, ...heim, ...essenkachel, ...wochenkarte, ...laeden };
 const pick = process.argv.slice(2);
 const flows = Object.entries(ALL).filter(([name, run]) => typeof run === "function" && (!pick.length || pick.includes(name)));
 const stop = await startServer();

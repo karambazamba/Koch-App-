@@ -30,8 +30,22 @@ function splitShop(part: string, shops: string[]): { rest: string; shop: string 
   return { rest: part, shop: "" };
 }
 
+/**
+ * Laden vorne für alles: „Für Lidl: Milch, Eier“, „Bei Lidl Milch und Eier“.
+ * Nur bei bekanntem Laden oder mit Doppelpunkt (sonst wäre „Für Oma Kuchen“ ein Laden).
+ */
+function leadingShop(text: string, shops: string[]): { rest: string; shop: string } | null {
+  const m = text.match(/^\s*(?:für|fuer|bei|beim|von|vom)\s+(?:den\s+|dem\s+|der\s+)?([A-Za-zÄÖÜäöüß][\wÄÖÜäöüß-]*)\s*(:)?\s*(.+)$/i);
+  if (!m) return null;
+  const known = [...SHOP_SUGGESTIONS, ...shops].find((s) => s.toLowerCase() === m[1].toLowerCase());
+  if (!known && !m[2]) return null;
+  return { rest: m[3], shop: known ?? cap(m[1]) };
+}
+
 /** Artikel aus einem Satz (ohne "setz … auf die Liste") */
 export function parseShoppingText(text: string, shops: string[] = []): ParsedShoppingItem[] {
+  const lead = leadingShop(text.replace(/^\s*(einkaufsliste\s*:|bitte\s+)/i, ""), shops);
+  if (lead) return parseShoppingText(lead.rest, shops).map((i) => ({ ...i, shop: i.shop || lead.shop }));
   const core = text
     .replace(/^\s*(einkaufsliste\s*:|bitte\s+)/i, "")
     .replace(/^\s*(wir|ich)\s+brauch(en|e)\b/i, "")

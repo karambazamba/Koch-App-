@@ -124,11 +124,26 @@ const vorrat: Adapter = {
 const WEEK_FIELDS = ["checked", "have", "renamed", "skippedStaples"] as const;
 const SETTINGS = "ek:einstellungen";
 
+/** Läden der Familie (v5/v6): Meine Läden, feste Regeln, Gelerntes, Ausnahmen */
+const shopSettings = (value: Value | null) => ({
+  myShops: value?.myShops ?? [],
+  shopsAsked: value?.shopsAsked === true,
+  shopRules: value?.shopRules ?? {},
+  learned: value?.learned ?? {},
+  learnAsked: value?.learnAsked ?? [],
+  alwaysList: value?.alwaysList ?? [],
+});
+
 const einkauf: Adapter = {
   name: "einkauf",
   key: "wasgibts.einkaufsliste",
-  version: 4,
+  version: 6,
   typs: ["einkauf", "einkauf-woche", "einkauf-einstellungen"],
+  // v4/v5 (noch nicht neu gespeichert): „Meine Läden“ leer bzw. wie da, keine festen Regeln
+  upgrade: (value) =>
+    value.version === 4 || value.version === 5
+      ? { myShops: [], shopsAsked: false, ...value, version: 6, shopRules: {}, learned: {}, learnAsked: [], alwaysList: [] }
+      : null,
   toDocs: (value) => {
     const docs: LocalDoc[] = [];
     const weeks = isObj(value.weeks) ? value.weeks : {};
@@ -144,13 +159,13 @@ const einkauf: Adapter = {
       for (const f of WEEK_FIELDS) if (raw[f] !== undefined) rest[f] = raw[f];
       if (Object.keys(rest).length) docs.push({ id: `ekw:${week}`, typ: "einkauf-woche", raum: "familie", besitzer: null, data: { week, ...rest } });
     }
-    docs.push({ id: SETTINGS, typ: "einkauf-einstellungen", raum: "familie", besitzer: null, data: { products: value.products ?? {}, shops: value.shops ?? [], itemShops: value.itemShops ?? {}, staples: value.staples ?? [] } });
+    docs.push({ id: SETTINGS, typ: "einkauf-einstellungen", raum: "familie", besitzer: null, data: { products: value.products ?? {}, shops: value.shops ?? [], itemShops: value.itemShops ?? {}, staples: value.staples ?? [], ...shopSettings(value) } });
     return docs;
   },
   fromDocs: (docs, value) => {
     const weeks: Record<string, Value> = {};
     const week = (w: string) => (weeks[w] ??= { manual: [], checked: [], have: [] });
-    let settings: Value = { products: value?.products ?? {}, shops: value?.shops ?? [], itemShops: value?.itemShops ?? {}, staples: value?.staples ?? [] };
+    let settings: Value = { products: value?.products ?? {}, shops: value?.shops ?? [], itemShops: value?.itemShops ?? {}, staples: value?.staples ?? [], ...shopSettings(value) };
     for (const d of docs) {
       const data = isObj(d.data) ? d.data : {};
       if (d.typ === "einkauf-einstellungen") settings = { ...settings, ...data };
@@ -160,7 +175,7 @@ const einkauf: Adapter = {
         Object.assign(week(w as string), rest);
       } else if (d.typ === "einkauf" && isObj(data.item)) (week(data.week).manual as Value[]).push(d.besitzer ? { ...data.item, von: d.besitzer } : data.item);
     }
-    return { version: 4, weeks, ...settings };
+    return { version: 6, weeks, ...settings };
   },
 };
 

@@ -7,16 +7,14 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowLeftRight, Pin, PenLine, Refrigerator, ShoppingCart, StickyNote, UtensilsCrossed } from "lucide-react";
+import { Pin, PenLine, Refrigerator, ShoppingCart, StickyNote, UtensilsCrossed } from "lucide-react";
 import { TILE, TILE_LABEL, buttonClass } from "@/components/ui/styles";
 import { QuickButton } from "@/components/ui/QuickButton";
 import { QuickAddButton } from "@/components/einkauf/QuickAdd";
-import { ItemTile, TILE_GRID } from "@/components/einkauf/kacheln/ItemTile";
 import { clockLabel, itemText } from "@/lib/kalender/answers";
 import { tomorrowLabel, weekdayShort, type DayItem } from "@/lib/kalender/model";
 import type { TileSize } from "@/lib/core/homeLayout";
 import { addDays, todayIso } from "@/lib/core/now";
-import { toggleChecked } from "@/lib/einkauf/shoppingList";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 import { matchStock, stockLine } from "@/lib/essen/dishIdeas";
 import { houseTile } from "@/lib/vorrat/imHaus";
@@ -32,14 +30,15 @@ import type { Idea } from "@/lib/essen/ideas";
 import { GerichtSheet } from "@/components/essen/GerichtSheet";
 import { useTodayIdeas } from "@/lib/essen/useIdeas";
 import { useStock } from "@/lib/essen/useStock";
-import { showToast } from "@/lib/core/toast";
 import { DEMO_SHOPS, clearDemoTile } from "@/lib/core/demo";
-import { shopGroups, shopTone, type ShopGroup } from "@/lib/einkauf/shopGroups";
+import { shopTone, tileRows, type TileRows } from "@/lib/einkauf/shopGroups";
+import { setShopChip } from "@/lib/einkauf/shopMode";
+import { useMeineLaeden } from "@/lib/einkauf/meineLaeden";
+import type { ShopChip } from "@/lib/einkauf/kacheln/view";
 import { useNotes } from "@/lib/notizen";
 import { openQuick } from "@/lib/core/schnelleingabe";
 import { notizZeilen } from "@/lib/heute/notizenKachel";
 import type { HomeData } from "@/components/heute/useHomeData";
-import { buzz } from "@/components/heute/actions";
 import { dishOf } from "@/components/essen/useMeals";
 import { KochideeKnopf } from "@/components/essen/kochtipp/KochideeKnopf";
 import { DishTile } from "@/components/essen/DishTile";
@@ -81,11 +80,19 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCo
   };
   const label = over ? tomorrowLabel(addDays(todayIso(), 1)) : `Essen${dish && dishClock ? ` · ${clockLabel(dishClock)}` : ""}`;
   const corner = hat && <KochideeKnopf name={helperName(data.profile)} planned={planned} quiet={hat.quiet} />;
-  // ⇄ wechselt die Idee (nicht bei einem heute geplanten Gericht und nicht neben dem Kochidee-Knopf)
+  // „Was anderes?“ wechselt die Idee (nicht bei einem heute geplanten Gericht und nicht neben dem Kochidee-Knopf)
   const swap = list.length > 0 && !hat && !(view.kind === "geplant" && view.when === "heute") && (
-    <span className="absolute right-3.5 top-3 z-10">
-      <QuickButton icon={ArrowLeftRight} label="Andere Idee" onClick={() => setAlt((a) => naechsteIdee(list.map((i) => i.title), a, view.title) ?? a)} />
-    </span>
+    <button
+      type="button"
+      aria-label="Andere Idee"
+      onClick={(e) => {
+        e.stopPropagation();
+        setAlt((a) => naechsteIdee(list.map((i) => i.title), a, view.title) ?? a);
+      }}
+      className="hit absolute right-2 top-2 z-10 flex items-center active:scale-95"
+    >
+      <span className="flex h-[26px] items-center rounded-full bg-tile-inner px-2.5 text-[12.5px] font-bold text-tile-accent shadow-card">Was anderes?</span>
+    </button>
   );
   // Jedes gezeigte Gericht als Bild-Kachel – Antippen öffnet genau dieses Gericht
   if (view.kind !== "frei") {
@@ -112,7 +119,7 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCo
   return (
     <section className={HALF} aria-label={over ? "Essen morgen" : label}>
       <button type="button" onClick={onOpen} className="flex flex-1 flex-col items-start gap-1 text-left">
-        <span className={`${HALF_LABEL} ${hat ? (planned ? "pr-[124px]" : "pr-14") : list.length ? "pr-11" : "pr-6"}`}>
+        <span className={`${HALF_LABEL} ${hat ? (planned ? "pr-[124px]" : "pr-14") : list.length ? "pr-[108px]" : "pr-6"}`}>
           <UtensilsCrossed className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
           <span className="truncate">{label}</span>
         </span>
@@ -140,24 +147,77 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCo
   );
 }
 
-/** Bis zu 3 Läden als Zeilen: Farbpunkt, Name fett, Artikel grau („REWE Milch, Brot, Butter“) – keine Logos, keine Emojis */
-function ShopRows({ groups }: { groups: ShopGroup[] }) {
+/** Laden-Zeile antippen: Einkaufsliste genau auf diesen Laden gefiltert („Egal wo“ = ohne Laden) */
+const chipFor = (shop: string | null): ShopChip => (shop ? `laden:${shop}` : "ohne");
+
+/**
+ * Einkauf-Kachel (Variante C2): je Laden eine Zeile – helle Ladenfarbe, Strich
+ * links, Name fett, rechts 2 Symbole der ersten Sachen und die Zahl. Keine
+ * abgeschnittenen Artikelnamen, keine Logos, keine Emojis.
+ */
+function ShopRows({ rows, rest, products, demo = false }: TileRows & { products: Record<string, string>; demo?: boolean }) {
   return (
-    <ul className="mt-0.5 flex flex-col gap-1" aria-label="Nach Laden">
-      {groups.map((g) => (
-        <li key={g.shop ?? "egal"} className="flex min-w-0 items-center gap-1.5 text-[13.5px] leading-snug">
-          <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: g.shop ? `var(--app-shop-${shopTone(g.shop)})` : "var(--app-line)" }} aria-hidden />
-          <span className="shrink-0 font-bold">{g.shop ?? "Egal wo"}</span>
-          <span className="min-w-0 truncate text-muted">{g.names.join(", ")}</span>
-        </li>
-      ))}
-    </ul>
+    <>
+      <ul className="mt-1 flex flex-col gap-1" aria-label="Nach Laden">
+        {rows.map((r) => {
+          const tone = r.shop ? `var(--app-shop-${shopTone(r.shop)})` : "var(--app-faint)";
+          const name = r.shop ?? "Egal wo";
+          return (
+            <li key={r.shop ?? "egal"}>
+              <Link
+                href="/einkaufsliste"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShopChip(chipFor(r.shop));
+                }}
+                className="relative flex min-h-[30px] min-w-0 items-center gap-1.5 overflow-hidden rounded-field py-1 pl-3 pr-2"
+                style={{ background: r.shop ? `var(--app-shop-${shopTone(r.shop)}-soft)` : "var(--app-fill)" }}
+                aria-label={`${name}: ${r.count} ${r.count === 1 ? "Sache" : "Sachen"}${demo ? " · Beispiel" : ""}`}
+                data-zeile
+                data-laden-zeile
+              >
+                <span className="absolute inset-y-0 left-0 w-1" style={{ background: tone }} aria-hidden />
+                <span className="min-w-0 flex-1 truncate text-[14px] font-bold">{name}</span>
+                {r.names.slice(0, 2).map((n, i) => (
+                  <ItemSymbol key={`${n}-${i}`} id={symbolFor(n, products)} name={n} className="h-5 w-5 shrink-0 text-[12px]" />
+                ))}
+                <span className={`min-w-[1.25rem] shrink-0 text-right text-[14px] font-extrabold ${r.shop ? "" : "text-muted"}`} style={r.shop ? { color: tone } : undefined}>
+                  {r.count}
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+      {rest && (
+        <Link href="/einkaufsliste" onClick={() => setShopChip("alle")} className="flex min-h-[30px] items-center truncate text-[12.5px] font-semibold text-muted" data-zeile>
+          {rest}
+        </Link>
+      )}
+    </>
   );
 }
 
-/** EINKAUF – S: bis zu 3 Läden (bzw. 3 Sachen + „und N weitere“); M: bis zu 6 zum Abhaken; L: bis zu 10. "+" = Schnell-Eintrag */
+/** Kopf der Einkauf-Kachel; die übrige Fläche öffnet die ganze Liste („Alle“) */
+function ShoppingHead() {
+  return (
+    <Link href="/einkaufsliste" onClick={() => setShopChip("alle")} className="flex min-h-11 items-start" aria-label="Einkaufsliste öffnen">
+      <span className={`${HALF_LABEL} pr-6`}>
+        <ShoppingCart className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
+        <span className="truncate">Einkauf</span>
+      </span>
+    </Link>
+  );
+}
+
+/** Beispiel-Einkauf als Artikel (nur für die Kachel, nie im echten Speicher) */
+const DEMO_ITEMS = DEMO_SHOPS.flatMap((g) => g.names.map((name) => ({ name, shop: g.shop })));
+const DEMO_ORDER = DEMO_SHOPS.map((g) => g.shop);
+
+/** EINKAUF – je Laden eine Zeile (S/M: höchstens 3 + Rest-Zeile, L: alle). „+“ = Schnell-Eintrag */
 export function ShoppingTile({ size = "S", demo = false }: { half: boolean; size?: TileSize; demo?: boolean }) {
   const shopping = useWeekShoppingList("planning");
+  const laeden = useMeineLaeden();
   // "Jetzt mitnehmen" und selbst Eingetragenes zuerst, dann Zutaten aus Gerichten
   const open = (shopping?.list.items ?? [])
     .filter((i) => !i.checked && !i.hidden)
@@ -168,63 +228,16 @@ export function ShoppingTile({ size = "S", demo = false }: { half: boolean; size
     if (demo && hasOwn) clearDemoTile("einkauf");
   }, [demo, hasOwn]);
   if (!shopping) return <section className={`${HALF} animate-pulse`} aria-label="Einkauf" />;
-  if (demo && !hasOwn)
-    return (
-      <section className={HALF} aria-label="Einkauf · Beispiel">
-        <Link href="/einkaufsliste" className="flex flex-col gap-1">
-          <span className={`${HALF_LABEL} pr-6`}>
-            <ShoppingCart className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-            <span className="truncate">Einkauf</span>
-          </span>
-          <ShopRows groups={DEMO_SHOPS} />
-        </Link>
-        <QuickAddButton weekStart={shopping.weekStart} settings={shopping.settings} quick className="absolute right-0.5 top-0.5" />
-      </section>
-    );
-  // M: 4 kleine Kacheln, L: 8 (Einkauf wie Bring)
-  const max = size === "L" ? 8 : 4;
+  const showDemo = demo && !hasOwn;
+  const rows = showDemo ? tileRows(DEMO_ITEMS, DEMO_ORDER, size) : tileRows(open, laeden?.myShops ?? [], size);
   return (
-    <section className={HALF} aria-label="Einkauf">
-      <Link href="/einkaufsliste" className="flex flex-col gap-1">
-        <span className={`${HALF_LABEL} pr-6`}>
-          <ShoppingCart className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-          <span className="truncate">Einkauf</span>
-        </span>
-        {!open.length && <span className="text-[14px] font-semibold text-muted">+ eintragen</span>}
-        {open.length > 0 && size === "S" && (open.some((i) => i.shop) ? <ShopRows groups={shopGroups(open)} /> : (
-          <ul className="mt-0.5 flex flex-col text-[14px] font-semibold leading-snug">
-            {open.slice(0, 3).map((i) => (
-              <li key={i.key} className="truncate">
-                {i.name}
-              </li>
-            ))}
-            {open.length > 3 && <li className="text-[12.5px] font-semibold text-muted">und {open.length - 3} weitere</li>}
-          </ul>
-        ))}
-      </Link>
-      {open.length > 0 && size !== "S" && (
-        <div className={`${TILE_GRID.mini} mt-1`} aria-label="Zum Abhaken">
-          {open.slice(0, max).map((item) => (
-            <ItemTile
-              key={item.key}
-              name={item.name}
-              section={item.section}
-              products={shopping.settings.products}
-              checked={false}
-              size="mini"
-              label={`${item.name} abhaken`}
-              onTap={() => {
-                buzz();
-                toggleChecked(shopping.weekStart, item, todayIso());
-                showToast({ text: "Gekauft", undo: () => toggleChecked(shopping.weekStart, { ...item, checked: true }, todayIso()), undoneText: "Wieder auf der Liste", seconds: 4, small: true });
-              }}
-            />
-          ))}
-        </div>
-      )}
-      {open.length > max && size !== "S" && (
-        <Link href="/einkaufsliste" className="mt-1 text-xs font-bold text-tile-accent">
-          und {open.length - max} weitere
+    <section className={HALF} aria-label={showDemo ? "Einkauf · Beispiel" : "Einkauf"}>
+      <ShoppingHead />
+      {rows.rows.length ? (
+        <ShopRows {...rows} products={shopping.settings.products} demo={showDemo} />
+      ) : (
+        <Link href="/einkaufsliste" onClick={() => setShopChip("alle")} className="-mt-3 flex-1 text-[14px] font-semibold leading-snug text-muted">
+          Liste ist leer. Sag mir einfach, was ihr braucht.
         </Link>
       )}
       <QuickAddButton weekStart={shopping.weekStart} settings={shopping.settings} quick className="absolute right-0.5 top-0.5" />

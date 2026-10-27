@@ -125,6 +125,6 @@ describe("Beispiel-Tag: Tagesplan", () => {
     expect(late.entries.filter((e) => e.typ === "termin")).toHaveLength(6);
     // Wochen-Aufgaben am Montag dieser Woche
     expect(late.entries.find((e) => e.id === "beispiel:a4")!.data).toMatchObject({ week: "2026-10-19" });
-    expect(demo.DEMO_SHOPS.map((s) => s.shop)).toEqual(["REWE", "EDEKA", "Lidl"]);
+    expect(demo.DEMO_SHOPS.map((s) => s.shop)).toEqual(["Edeka", "Rewe", "Lidl", "Rossmann"]);
   });
 });
