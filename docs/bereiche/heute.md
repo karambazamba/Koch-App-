@@ -84,9 +84,10 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   (`lonelySToM`): eine einzelne S, die bisher breit war, wird einmal M.
 - Notizen-Kachel (`heute/notizenKachel.ts`): S = neueste Notiz (2 Zeilen)
   oder „Schnell was aufschreiben …“, M = 3 Zeilen, L = bis 5, Angeheftete
-  zuerst; Listen als „x von y erledigt“. Stift = Schnellnotiz. Essen + Einkauf sind
-  ein Paar: immer direkt hintereinander, Essen zuerst (`keepPair`), und
-  wandern zusammen. Als eine Einheit im Raster zählen sie nur, wenn beide S sind.
+  zuerst; Listen als „x von y erledigt“. Stift = Schnellnotiz.
+- Essen + Einkauf sind ein Paar: immer direkt hintereinander, Essen zuerst
+  (`keepPair`), und wandern zusammen. Als eine Einheit im Raster zählen sie
+  nur, wenn beide S sind.
 - Die Anordnung ändert sich nie von selbst. „zeigen“ setzt eine Kachel in
   Standard-Größe hinter die nächste sichtbare, die laut Standard davor steht
   (Paar: neben den Partner). `standardLayout`: Reihenfolge und Größen wie am Anfang.
