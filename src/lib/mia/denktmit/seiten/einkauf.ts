@@ -2,6 +2,6 @@
 
 export const EINKAUF = {
   kachel: "Das ist eure Einkaufsliste. Sag mir einfach „Milch“, ich trag’s ein.",
-  seite: "Wähl deine Läden. Dann merk ich mir, dass es die Tomaten bei Rewe gibt.",
+  seite: "Sag mir, wo du einkaufst. Dann merk ich mir, was es wo gibt.",
   href: "/einkaufsliste",
 } as const;

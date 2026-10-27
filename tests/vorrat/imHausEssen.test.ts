@@ -136,7 +136,7 @@ describe("Kachel „Im Haus“", () => {
 
 describe("Mia stellt es einmal vor", () => {
   it("erster Besuch der Essen-Seite – auch für alle, die Essen schon kannten", () => {
-    const text = "Sag mir, was im Kühlschrank ist, dann koch ich mit dir spontan.";
+    const text = "Sag mir, was im Kühlschrank ist. Dann koch ich spontan was mit dir.";
     expect(seiteFuerTab("essen")).toBe(ESSEN_SEITE);
     expect(seiteFuerTab("kalender")).toBe("seite:kalender");
     expect(ersterBesuch({ ...EMPTY_DENKT }, ESSEN_SEITE)).toBe(text);

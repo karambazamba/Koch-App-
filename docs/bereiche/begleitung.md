@@ -720,18 +720,32 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   `muster`, `mitdenken`, `sprueche`, `merken`, Texte je Seite in `seiten/`),
   Speicher `store.ts` (`wasgibts.miadenkt` v1, in der Sicherung).
   Oberfläche `components/begleitung/denktmit/` (`useMiaDenkt`, `MiaKarte`,
-  `ErsterBesuch`), Einstellungen → Mia „Wie gesprächig?“ und
+  `SeitenTipp`, `ErsterBesuch`), Einstellungen → Mia „Wie gesprächig?“ und
   `/profil/mia-merkt` („Was ich mir merke“, einzeln löschbar).
 - Regeln: höchstens EINE ungefragte Karte am Tag (Gesprächig zwei), nie
   22–7 Uhr, nie in Pause oder Ruhe nach Feierabend, nur wenn kein anderer
   Hinweis unter der Jetzt-Karte steht. Ruhig = nur Muster-Fragen. Beispiel-Tag
   = nur der Spruch. Jede Frage nur einmal; Nein/Später gemerkt.
+- Seiten-Tipp (Tafel 101, `SeitenTipp`): EINE Karte für alle Tipps von Mia
+  im Seitenfluss, schiebt den Inhalt nach unten, schwebt nie. Warmer Verlauf
+  wie die Jetzt-Karte (`from-jetzt-from to-jetzt-to`), feiner orange Rand,
+  links das kleine Mia-Gesicht (`BegleitungAvatar` 36 px, ohne Ring, nicht
+  antippbar), darüber „MIA“ klein in Orange, dann 1–2 Sätze (`tidyMiaText`).
+  „Alles klar“ (orange) gleitet weich nach oben weg (0,8 s, transform/opacity,
+  bei weniger Bewegung nur Überblenden), „Zeig mal“ (weiß) nur, wo die Seite
+  schon etwas zu zeigen hat (Einkauf → „Meine Läden“).
 - Vorstellen ab Tag 2: eine Kachel am Tag (Termine, Aufgaben, Einkauf, Essen,
   Pinnwand, Wetter, Notizen, Timer; nur sichtbare, nie benutzte), Ring um die
-  Kachel, Karte unter der Jetzt-Karte mit „Zeig mal“ / „Später“; 2× Später
-  oder benutzt = nie wieder.
-- Erster Besuch einer Seite: Karte über dem Mia-Knopf mit „Alles klar“,
-  zählt beim Verlassen; danach nie wieder.
+  Kachel, Seiten-Tipp direkt unter der Reihe der Kachel mit Pfeil zur Kachel
+  (`pfeilZu` in `core/homeUnits`; links/rechts bei halben Kacheln), nicht im
+  Bearbeiten. „Alles klar“ oder „Zeig mal“ (öffnet die Seite; Timer ohne)
+  oder benutzt = nie wieder. Alte „Später“-Zähler zählen weiter.
+- Erster Besuch einer Seite: Seiten-Tipp direkt unter dem Seitentitel –
+  Unterseiten automatisch über `PageHeader` (hinter dem festen Kopf, nach
+  Adresse; „Zeig mal“ über `tippZeigMal`), Kalender und Essen unter ihrem
+  großen Titel (`HomePager`). Zählt mit „Alles klar“ oder beim Verlassen;
+  danach nie wieder. Ton: zwei kurze, gesprochene Sätze, kein Fachwort, kein
+  Druck (Test `tests/mia/seitenTipp.test.ts`).
 - Muster: gleicher Titel 3× am selben Wochentag ± 1 Std (8 Wochen) → „Soll
   ich das jede Woche eintragen?“, Ja = wöchentliche Serie ab dem nächsten
   Mal. Essen: 3× dasselbe Gericht am selben Wochentag → Ritual, wird still
@@ -742,4 +756,5 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   anderes. Regen zu Draußen-Terminen bleibt auf der Jetzt-Karte.
 - Spruch des Tages: 200 feste Sprüche nach Anlass, steht statt „Alles ruhig“
   auf der Jetzt-Karte, nur ohne Karte heute, nie derselbe in 30 Tagen.
-- Tests: `tests/mia/denktMit.test.ts`.
+- Tests: `tests/mia/denktMit.test.ts`, `tests/mia/seitenTipp.test.ts`,
+  Durchklick `ersterBesuchKarte` (startseite-heim), `imHausEssen` (essen).

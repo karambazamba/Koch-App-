@@ -147,8 +147,8 @@ export const oeffnenStartseite = async (page, check) => {
   check(page.url().includes("/kochbuch/kochen"), "Kochmodus bleibt");
 };
 
-// Mia denkt mit (Tafel 90): beim ersten Besuch einer Seite einmal eine Karte,
-// „Alles klar“ = nie wieder auf dieser Seite.
+// Mia denkt mit (Tafel 90/101): beim ersten Besuch einer Seite einmal Mias
+// Tipp unter dem Seitentitel, „Alles klar“ = nie wieder auf dieser Seite.
 export const ersterBesuchKarte = async (page, check) => {
   await hello(page);
   await seedFamily(page, { "wasgibts.miadenkt": { version: 1, level: "normal", vorgestellt: {}, besucht: [], antworten: {}, rituale: [], eingeplant: [], tage: {}, sprueche: [] } });
@@ -156,8 +156,16 @@ export const ersterBesuchKarte = async (page, check) => {
   await page.waitForTimeout(1500);
   const klar = page.getByRole("button", { name: "Alles klar" });
   check(await klar.isVisible(), "erster Besuch: Mias Karte");
+  // Tafel 101: direkt unter dem Seitentitel im Seitenfluss (nicht fixed), über dem ersten Inhalt
+  const lage = await page.locator('[data-tipp="/aufgaben"]').evaluate((el) => {
+    const h1 = document.querySelector("h1").getBoundingClientRect();
+    const main = document.querySelector("main")?.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    return { fixed: getComputedStyle(el).position === "fixed", unterTitel: r.top >= h1.bottom - 1, ueberInhalt: !main || r.bottom <= main.top + 1, gesicht: Boolean(el.querySelector(".begleitung-avatar")) && !el.querySelector("button .begleitung-avatar") };
+  });
+  check(!lage.fixed && lage.unterTitel && lage.ueberInhalt && lage.gesicht, `Tipp unter dem Titel, mit Mia-Gesicht (${JSON.stringify(lage)})`);
   await klar.tap();
-  await page.waitForTimeout(600);
+  await page.waitForTimeout(1200);
   check(!(await klar.count()), "„Alles klar“: Karte weg");
   await page.reload();
   await page.waitForTimeout(1500);

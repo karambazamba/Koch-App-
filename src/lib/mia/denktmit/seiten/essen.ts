@@ -4,7 +4,7 @@
 
 export const ESSEN = {
   kachel: "Hier geht’s ums Essen. Sag mir, worauf ihr Lust habt, ich hab Ideen.",
-  seite: "Sag mir, was im Kühlschrank ist, dann koch ich mit dir spontan.",
+  seite: "Sag mir, was im Kühlschrank ist. Dann koch ich spontan was mit dir.",
   href: "/?seite=essen",
 } as const;
 

@@ -82,15 +82,8 @@ export function useDenkt(): DenktState | undefined {
 
 export const setGespraechig = (level: Gespraechig) => change((s) => ({ ...s, level }));
 
-/** „Zeig mal“ oder benutzt: diese Kachel nie wieder vorstellen */
+/** „Alles klar“, „Zeig mal“ oder benutzt: diese Kachel nie wieder vorstellen */
 export const vorstellungFertig = (tile: string) => change((s) => ({ ...s, vorgestellt: { ...s.vorgestellt, [tile]: { ...(s.vorgestellt[tile] ?? { spaeter: 0 }), fertig: true } } }));
-
-/** „Später“: zählt mit, nach dem 2. Mal nie wieder; heute nicht mehr */
-export const vorstellungSpaeter = (tile: string, today: string) =>
-  change((s) => {
-    const v = s.vorgestellt[tile] ?? { spaeter: 0, fertig: false };
-    return { ...s, vorgestellt: { ...s.vorgestellt, [tile]: { ...v, spaeter: v.spaeter + 1, zuletzt: today } } };
-  });
 
 /** Erster Besuch einer Seite: Karte stand da (nie wieder) */
 export const seiteBesucht = (seite: string) => change((s) => (s.besucht.includes(seite) ? s : { ...s, besucht: [...s.besucht, seite] }));

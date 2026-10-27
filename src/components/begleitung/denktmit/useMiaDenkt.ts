@@ -28,7 +28,7 @@ import { heutigeKarte, spruchHeute, type DenktKarte, type Umfeld } from "@/lib/m
 import { mitdenkTipps } from "@/lib/mia/denktmit/mitdenken";
 import { findeEssenMuster, findeMuster, ritualTag, serieAus } from "@/lib/mia/denktmit/muster";
 import { anlaesse } from "@/lib/mia/denktmit/sprueche";
-import { antworten, hinweisGezaehlt, ritualEingeplant, ritualMerken, spruchGezeigt, useDenkt, vorstellungFertig, vorstellungSpaeter } from "@/lib/mia/denktmit/store";
+import { antworten, hinweisGezaehlt, ritualEingeplant, ritualMerken, spruchGezeigt, useDenkt, vorstellungFertig } from "@/lib/mia/denktmit/store";
 import { naechsteVorstellung } from "@/lib/mia/denktmit/vorstellen";
 import type { HomeTileId } from "@/lib/core/homeLayout";
 
@@ -48,8 +48,10 @@ type Input = {
 };
 
 export type DenktAnzeige = { satz: string; label: string; knoepfe: KartenKnopf[] };
+/** Mia stellt eine Kachel vor: Tipp direkt unter der Kachel (Tafel 101) */
+export type VorstellAnzeige = { tile: HomeTileId; text: string; ok: () => void; zeigMal?: () => void };
 
-export function useMiaDenkt(o: Input): { karte: DenktAnzeige | null; glow: HomeTileId | null; spruch: string | null; spruchGesehen: () => void } {
+export function useMiaDenkt(o: Input): { karte: DenktAnzeige | null; vorstellung: VorstellAnzeige | null; glow: HomeTileId | null; spruch: string | null; spruchGesehen: () => void } {
   const router = useRouter();
   const s = useDenkt();
   const cooked = useCookedDays();
@@ -160,24 +162,30 @@ export function useMiaDenkt(o: Input): { karte: DenktAnzeige | null; glow: HomeT
           },
         }));
       case "vorstellen":
-        return [
-          {
-            label: "Zeig mal",
-            onClick: () => {
-              vorstellungFertig(k.v.tile);
-              if (k.v.href.startsWith("/?seite=essen")) return o.onOpenFood();
-              if (k.v.href) return router.push(k.v.href);
-              document.querySelector(`[data-tile~="${k.v.tile}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-            },
-          },
-          { label: "Später", onClick: () => vorstellungSpaeter(k.v.tile, today) },
-        ];
+        return [];
     }
   };
 
+  // Vorstellen: „Alles klar“ = nie wieder für diese Kachel, „Zeig mal“ öffnet ihre Seite
+  const vorstellen = karte?.art === "vorstellen" ? karte.v : null;
+  const vorstellung: VorstellAnzeige | null = vorstellen && {
+    tile: vorstellen.tile as HomeTileId,
+    text: vorstellen.text,
+    ok: () => vorstellungFertig(vorstellen.tile),
+    // Ohne eigene Seite (Timer) gibt es nichts zu zeigen – die Kachel steht ja direkt darüber
+    zeigMal: vorstellen.href
+      ? () => {
+          vorstellungFertig(vorstellen.tile);
+          if (vorstellen.href.startsWith("/?seite=essen")) o.onOpenFood();
+          else router.push(vorstellen.href);
+        }
+      : undefined,
+  };
+
   return {
-    karte: karte ? { satz: karte.satz, label: karte.art === "vorstellen" ? "Kurz vorgestellt" : "Mitgedacht", knoepfe: knoepfe(karte) } : null,
-    glow: karte?.art === "vorstellen" ? (karte.v.tile as HomeTileId) : null,
+    karte: karte && karte.art !== "vorstellen" ? { satz: karte.satz, label: "Mitgedacht", knoepfe: knoepfe(karte) } : null,
+    vorstellung,
+    glow: vorstellung?.tile ?? null,
     spruch,
     spruchGesehen: () => spruch && spruchGezeigt(spruch, today),
   };

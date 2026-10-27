@@ -1,6 +1,7 @@
 // Mia denkt mit (Tafel 90): höchstens ein Hinweis am Tag, Nachtruhe, Muster
-// nach 3×, Nein = nie wieder, Regler-Stufen, Vorstellen (Später 2× = nie
-// wieder), erster Besuch, Spruch (30 Tage, nur ohne Karte), Ton.
+// nach 3×, Nein = nie wieder, Regler-Stufen, Vorstellen („Alles klar“ = nie
+// wieder; alte „Später“-Daten zählen weiter), erster Besuch, Spruch (30 Tage,
+// nur ohne Karte), Ton.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { darf, nachtruhe, type Lage } from "@/lib/mia/denktmit/regeln";
 import { heutigeKarte, spruchHeute, type DenktKarte, type Umfeld } from "@/lib/mia/denktmit/auswahl";
@@ -129,7 +130,7 @@ describe("Vorstellen und erster Besuch", () => {
     expect(naechsteVorstellung(state(), ["einkauf", "wetter"], { today: "2026-10-24", since: "2026-10-23" })?.text).toBe("Das ist eure Einkaufsliste. Sag mir einfach „Milch“, ich trag’s ein.");
   });
 
-  it("Später 2× oder benutzt = nie wieder; heute Später = heute nichts mehr", () => {
+  it("alte Daten: Später 2× oder benutzt = nie wieder; heute Später = heute nichts mehr", () => {
     const o = { today: "2026-10-25", since: "2026-10-23" };
     expect(naechsteVorstellung(state({ vorgestellt: { termine: { spaeter: 1, fertig: false, zuletzt: "2026-10-25" } } }), visible, o)).toBeNull();
     expect(naechsteVorstellung(state({ vorgestellt: { termine: { spaeter: 1, fertig: false, zuletzt: "2026-10-24" } } }), visible, o)?.tile).toBe("termine");
@@ -138,7 +139,7 @@ describe("Vorstellen und erster Besuch", () => {
   });
 
   it("erster Besuch: Einkauf-Text einmal, danach nie wieder", () => {
-    expect(ersterBesuch(state(), "/einkaufsliste")).toBe("Wähl deine Läden. Dann merk ich mir, dass es die Tomaten bei Rewe gibt.");
+    expect(ersterBesuch(state(), "/einkaufsliste")).toBe("Sag mir, wo du einkaufst. Dann merk ich mir, was es wo gibt.");
     expect(ersterBesuch(state({ besucht: ["/einkaufsliste"] }), "/einkaufsliste")).toBeNull();
     expect(ersterBesuch(state(), "/profil")).toBeNull();
   });
@@ -197,16 +198,15 @@ describe("Speicher und „Was Mia sich merkt“", () => {
     expect(migrateDenkt(null)).toBeNull();
   });
 
-  it("Später zählt, Antwort gemerkt, Hinweis je Tag nur einmal gezählt", async () => {
+  it("Vorstellung fertig, Antwort gemerkt, Hinweis je Tag nur einmal gezählt", async () => {
     fakeWindow();
     const st = await import("@/lib/mia/denktmit/store");
-    st.vorstellungSpaeter("termine", "2026-10-23");
-    st.vorstellungSpaeter("termine", "2026-10-24");
+    st.vorstellungFertig("termine");
     st.hinweisGezaehlt("a", "2026-10-23");
     st.hinweisGezaehlt("a", "2026-10-23");
     st.antworten("muster:sport:4", "nein", "Freitags ist bei dir immer Sport um 18 Uhr. Soll ich?", "2026-10-23");
     const s = st.loadDenkt();
-    expect(s.vorgestellt.termine.spaeter).toBe(2);
+    expect(s.vorgestellt.termine).toMatchObject({ spaeter: 0, fertig: true });
     expect(s.tage["2026-10-23"]).toEqual(["a"]);
     expect(merkListe(s, { tomaten: "Rewe" }).map((e) => [e.titel, e.wert])).toEqual([
       ["Freitags ist bei dir immer Sport um 18 Uhr", "Frag ich nicht mehr"],

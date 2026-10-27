@@ -21,7 +21,9 @@ import { applyHomeChange, reorderVisible, saveHomeTiles, standardLayout, tileMet
 import { Plus } from "lucide-react";
 import { showDeleted } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
-import { glowTile, rowsOf, unitsOf, type Unit } from "@/lib/core/homeUnits";
+import { glowTile, pfeilZu, rowsOf, unitsOf, type Unit } from "@/lib/core/homeUnits";
+import { SeitenTipp } from "@/components/begleitung/denktmit/SeitenTipp";
+import type { VorstellAnzeige } from "@/components/begleitung/denktmit/useMiaDenkt";
 import { EditFrame } from "@/components/heute/EditFrame";
 import { buzz } from "@/components/heute/actions";
 import type { TilePicker } from "@/components/heute/TilePicker";
@@ -45,6 +47,7 @@ export function HomeBoard({
   onPicking,
   hrefFor,
   glow,
+  vorstellen = null,
 }: {
   tiles: HomeTile[];
   all: HomeTile[];
@@ -57,6 +60,8 @@ export function HomeBoard({
   hrefFor?: (id: HomeTile["id"]) => string | null;
   /** Mia stellt diese Kachel gerade vor: leichter Ring */
   glow?: HomeTile["id"] | null;
+  /** Mia stellt diese Kachel vor: ihr Tipp direkt unter der Reihe, Pfeil zur Kachel */
+  vorstellen?: VorstellAnzeige | null;
 }) {
   const units = unitsOf(tiles);
   const board = useRef<HTMLDivElement>(null);
@@ -360,6 +365,24 @@ export function HomeBoard({
     );
   };
 
+  /** Eine Reihe: zwei S nebeneinander, M/L bzw. das Paar volle Breite, eine einzelne S halb (daneben frei) */
+  const unitRow = (row: Unit[], r: number): ReactNode[] => {
+    const lone = row.length === 1 && row[0].tiles.length === 1 && row[0].tiles[0].size === "S";
+    if (!lone) return row.map((u, i) => renderUnit(u, r * 2 + i, row.length === 2, false, row.length !== 2));
+    const id = row[0].tiles[0].id;
+    return [
+      renderUnit(row[0], r * 2, true, false, false),
+      editing && !drag ? (
+        <button key={`frei-${id}`} type="button" onClick={() => setBeside(id)} aria-label="Kachel daneben stellen" className="col-span-1 flex min-h-[92px] items-center justify-center gap-1.5 rounded-card border-2 border-dashed border-line-strong text-[15px] font-semibold text-muted active:scale-[0.98]" data-freie-haelfte>
+          <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+          Kachel
+        </button>
+      ) : (
+        <div key={`frei-${id}`} className="col-span-1" aria-hidden data-freie-haelfte />
+      ),
+    ];
+  };
+
   return (
     // Flaches Raster (2 Spalten): jede Einheit liegt direkt im Board – so behält sie
     // beim Umsortieren ihr Element (React verschiebt es nur). Jede S ist halb breit
@@ -367,20 +390,13 @@ export function HomeBoard({
     // gestrichelt „＋ Kachel“ (nur S-fähige), sonst ruhig leer. M/L und das Paar volle Breite.
     <div ref={board} className="grid grid-cols-2 gap-2" data-no-swipe={editing ? true : undefined}>
       {rowsOf(preview).flatMap((row, r) => {
-        const lone = row.length === 1 && row[0].tiles.length === 1 && row[0].tiles[0].size === "S";
-        if (!lone) return row.map((u, i) => renderUnit(u, r * 2 + i, row.length === 2, false, row.length !== 2));
-        const id = row[0].tiles[0].id;
-        return [
-          renderUnit(row[0], r * 2, true, false, false),
-          editing && !drag ? (
-            <button key={`frei-${id}`} type="button" onClick={() => setBeside(id)} aria-label="Kachel daneben stellen" className="col-span-1 flex min-h-[92px] items-center justify-center gap-1.5 rounded-card border-2 border-dashed border-line-strong text-[15px] font-semibold text-muted active:scale-[0.98]" data-freie-haelfte>
-              <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-              Kachel
-            </button>
-          ) : (
-            <div key={`frei-${id}`} className="col-span-1" aria-hidden data-freie-haelfte />
-          ),
-        ];
+        const pfeil = vorstellen && !editing ? pfeilZu(row, vorstellen.tile) : null;
+        const tipp = pfeil && vorstellen && (
+          <div key={`vorstellen-${vorstellen.tile}`} className="col-span-2">
+            <SeitenTipp text={vorstellen.text} pfeil={pfeil} label="Kurz vorgestellt" id={`vorstellen:${vorstellen.tile}`} onOk={vorstellen.ok} zeigMal={vorstellen.zeigMal} />
+          </div>
+        );
+        return [...unitRow(row, r), tipp];
       })}
       {editing && (
         <div className="col-span-2 flex flex-col gap-3">

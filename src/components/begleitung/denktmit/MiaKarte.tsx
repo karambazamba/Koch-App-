@@ -1,8 +1,8 @@
 "use client";
 
-// Mia denkt mit: eine Karte mit 1–2 Sätzen und 1–3 Knöpfen (Vorstellen,
-// Muster-Frage, Mitdenken, Erster Besuch). Ohne Mia-Gesicht – auf der
-// Startseite gibt es genau zwei Mias (Logo und Knopf).
+// Mia denkt mit: eine Karte mit 1–2 Sätzen und 1–3 Knöpfen (Muster-Frage,
+// Mitdenken) unter der Jetzt-Karte. Ohne Mia-Gesicht. Vorstellen und erster
+// Besuch einer Seite zeigt `SeitenTipp`.
 
 import { CARD, buttonClass } from "@/components/ui/styles";
 import { tidyMiaText } from "@/lib/begleitung/tidy";

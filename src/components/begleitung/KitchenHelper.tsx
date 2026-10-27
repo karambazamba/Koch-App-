@@ -24,7 +24,6 @@ import { useHomeTiles } from "@/lib/core/homeLayout";
 import { Leiste } from "@/components/ui/Leiste";
 import { RandZurueck } from "@/components/core/RandZurueck";
 import { UEBER_LEISTE } from "@/components/ui/styles";
-import { ErsterBesuch } from "@/components/begleitung/denktmit/ErsterBesuch";
 import { leisteVersteckt } from "@/lib/core/leiste";
 import { helperName, type HelperVoice } from "@/lib/einstellungen/profile";
 import { removeRetiredKeys } from "@/lib/core/storage";
@@ -247,8 +246,6 @@ export function KitchenHelper() {
         </Suspense>
       )}
       {!hidden && !open && <RandZurueck />}
-      {/* Mia denkt mit: erster Besuch einer Seite (Startseiten-Reiter zeigt HomePager) */}
-      {!open && !typing && !hidden && profile && <ErsterBesuch seite={pathname} />}
 
       {open && (
         <HelperPanel
