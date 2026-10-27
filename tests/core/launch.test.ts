@@ -9,12 +9,14 @@ beforeEach(() => vi.resetModules());
 afterEach(() => noBrowser());
 
 describe("Launch-Schnitt", () => {
-  it("ausgeblendet: Mails, Tipps aus der Region, Im Haus, Wochenplan, Sport, Spendentopf – Notizen gehören zu 1.0", async () => {
+  it("ausgeblendet: Mails, Tipps aus der Region, Im Haus, Spendentopf – Notizen, Sport und Wochenplan gehören zu 1.0", async () => {
     const { LAUNCH_AUS, launchSichtbar } = await import("@/lib/core/features");
-    expect([...LAUNCH_AUS].sort()).toEqual(["mails", "regiontipps", "spendentopf", "sport", "vorrat", "wochenplan"]);
+    expect([...LAUNCH_AUS].sort()).toEqual(["mails", "regiontipps", "spendentopf", "vorrat"]);
     expect(launchSichtbar("notizen", [])).toBe(true);
-    expect(launchSichtbar("sport", [])).toBe(false);
-    expect(launchSichtbar("sport", ["sport"])).toBe(true);
+    expect(launchSichtbar("sport", [])).toBe(true);
+    expect(launchSichtbar("wochenplan", [])).toBe(true);
+    expect(launchSichtbar("vorrat", [])).toBe(false);
+    expect(launchSichtbar("vorrat", ["vorrat"])).toBe(true);
     expect(launchSichtbar("rezepte", [])).toBe(true);
   });
 
@@ -78,22 +80,24 @@ describe("Launch-Schnitt", () => {
   it("Mias Änderungen an Ausgeblendetem werden weggelassen („Kann ich noch nicht.“)", async () => {
     const { launchFilter } = await import("@/lib/begleitung/client");
     const ops = [
-      { id: "1", type: "add_training", training: { sport: "laufen", minutes: 30, date: "2026-10-21" } },
+      { id: "1", type: "add_pantry", items: [] },
       { id: "2", type: "add_shopping", items: [] },
-      { id: "3", type: "set_feature", feature: "sport", on: true },
-      { id: "4", type: "set_feature", feature: "sport", on: false },
+      { id: "3", type: "set_feature", feature: "vorrat", on: true },
+      { id: "4", type: "set_feature", feature: "vorrat", on: false },
+      { id: "5", type: "set_feature", feature: "sport", on: true },
+      { id: "6", type: "add_training", training: { sport: "laufen", minutes: 30, date: "2026-10-21" } },
     ] as unknown as ChangeOp[];
     const aus = launchFilter(ops, () => false);
-    expect(aus.ops.map((o) => o.id)).toEqual(["2", "4"]);
+    expect(aus.ops.map((o) => o.id)).toEqual(["2", "4", "5", "6"]);
     expect(aus.gesperrt).toBe(true);
     expect(launchFilter(ops, () => true).gesperrt).toBe(false);
   });
 
   it("Prompt: Ausgeblendetes nicht anbieten", async () => {
     const { launchLine } = await import("@/lib/begleitung/prompt");
-    expect(launchLine([])).toMatch(/noch nicht.*Sport.*Spendentopf/);
-    expect(launchLine([])).not.toMatch(/Notizen/);
-    expect(launchLine(["sport"])).not.toMatch(/Sport,/);
+    expect(launchLine([])).toMatch(/noch nicht.*Im Haus.*Spendentopf/);
+    expect(launchLine([])).not.toMatch(/Notizen|Sport|Wochenplan/);
+    expect(launchLine(["vorrat"])).not.toMatch(/Im Haus,/);
   });
 
   it("Anmelden für 1.0 nur per E-Mail-Code", async () => {

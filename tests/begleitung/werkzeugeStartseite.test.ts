@@ -24,7 +24,7 @@ describe("Bausteine", () => {
 
 describe("Launch 1.0: „später“-Bausteine", () => {
   it("Mia schaltet sie nie ein – „Kommt bald.“, Wunsch anonym gezählt", () => {
-    for (const baustein of ["vorrat", "wochenplan", "sport", "mails", "spendentopf"]) {
+    for (const baustein of ["vorrat", "mails", "spendentopf"]) {
       const ctx = kontext();
       const res = rufe(ctx, "baustein_an", { baustein });
       expect(res.content).toMatch(/Kommt bald\./);
@@ -33,16 +33,19 @@ describe("Launch 1.0: „später“-Bausteine", () => {
     }
   });
 
-  it("Notizen darf Mia einschalten (gehören zu 1.0)", () => {
+  it("Notizen, Sport und Wochenplan darf Mia einschalten (gehören zu 1.0)", () => {
     expect(rufe(kontext(), "baustein_an", { baustein: "notizen" }).content).toMatch(/^Vorgemerkt: Notizen einschalten\./);
+    expect(rufe(kontext(), "baustein_an", { baustein: "sport" }).content).toMatch(/^Vorgemerkt: Sport einschalten\./);
+    expect(rufe(kontext(), "baustein_an", { baustein: "wochenplan" }).content).toMatch(/^Vorgemerkt: Wochenplan einschalten\./);
   });
 
-  it("Unsere Rezepte darf Mia einschalten; Wochenplan löschen und Im Haus sind gesperrt", () => {
+  it("Unsere Rezepte darf Mia einschalten; Wochenplan leeren geht als Vorschau, Im Haus ist gesperrt", () => {
     expect(rufe(kontext(), "baustein_an", { baustein: "rezepte" }).content).toMatch(/^Vorgemerkt: Rezepte einschalten\./);
     const ctx = kontext();
-    expect(rufe(ctx, "wochenplan_loeschen", {}).content).toMatch(/Kommt bald\./);
+    expect(rufe(ctx, "wochenplan_loeschen", {}).content).toMatch(/^Vorgemerkt: Wochenplan/);
+    expect(ctx.ops.map((o) => o.type)).toEqual(["clear_week"]);
     expect(rufe(ctx, "vorrat_hinzufuegen", { sachen: [{ name: "Joghurt" }] }).content).toMatch(/Kommt bald\./);
-    expect(ctx.ops).toHaveLength(0);
+    expect(ctx.ops).toHaveLength(1);
   });
 
   it("wer den Baustein schon nutzt, behält ihn", () => {

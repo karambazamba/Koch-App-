@@ -56,7 +56,7 @@ export const BAUSTEINE: Baustein[] = [
  * „Mehr Funktionen“ oder „＋ Kachel“, Mia schaltet sie nicht frei. Wer einen
  * schon nutzt, behält ihn (`launchUebernahme`). Daten bleiben immer.
  */
-export const LAUNCH_AUS: Feature[] = ["wochenplan", "vorrat", "regiontipps", "mails", "sport", "spendentopf"];
+export const LAUNCH_AUS: Feature[] = ["vorrat", "regiontipps", "mails", "spendentopf"];
 
 /** Darf der Baustein gezeigt bzw. angeboten werden? (nicht für 1.0 ausgeblendet oder schon an) */
 export const launchSichtbar = (feature: Feature, on: Feature[]) => !LAUNCH_AUS.includes(feature) || on.includes(feature);

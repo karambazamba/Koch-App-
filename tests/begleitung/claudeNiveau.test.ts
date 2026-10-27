@@ -1,6 +1,6 @@
 // Mia auf Claude-Niveau – nie halbgar: offline merken und nachholen, kleine
 // Dinge sofort mit „Rückgängig“ und „Mia hat schon …“, Fähigkeitsliste aus
-// den Werkzeugen, „Kann ich noch nicht“ anonym, Prüfstand mit 136 Sätzen.
+// den Werkzeugen, „Kann ich noch nicht“ anonym, Prüfstand mit 137 Sätzen.
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { atFresh, fakeWindow } from "../helpers";
@@ -128,9 +128,9 @@ describe("Ehrlich über Fähigkeiten", () => {
 });
 
 describe("Prüfstand", () => {
-  it("136 Sätze, alle verschieden, jede Gruppe dabei", () => {
-    expect(PRUEFSAETZE).toHaveLength(136);
-    expect(new Set(PRUEFSAETZE.map((s) => s.text)).size).toBe(136);
+  it("137 Sätze, alle verschieden, jede Gruppe dabei", () => {
+    expect(PRUEFSAETZE).toHaveLength(137);
+    expect(new Set(PRUEFSAETZE.map((s) => s.text)).size).toBe(137);
     expect(PRUEFSAETZE.filter((s) => s.ops.length === 0).length).toBeGreaterThanOrEqual(20);
     expect(PRUEFSAETZE.filter((s) => s.ops.includes("kann_nicht")).length).toBeGreaterThanOrEqual(3);
     expect(pruefHaushalt().profile.persons.map((p) => p.name)).toEqual(["Felix", "Lisa", "Mathis"]);
@@ -183,11 +183,12 @@ describe("Prüfstand auf 95 % (Auftrag „Prüfstand auf 95 %“)", () => {
   const satz = (text: string) => PRUEFSAETZE.find((s) => s.text === text)!;
   const op = (type: string) => ({ id: "1", type }) as unknown as ChangeOp;
 
-  it("„später“ in 1.0: Vorrat zeigen und Wochenplan löschen → „Kommt bald.“ ohne Aktion", () => {
-    for (const text of ["Zeig mir den Vorrat", "Lösch den Wochenplan"]) {
-      expect(bewerte(satz(text), { reply: "Kommt bald.", ops: [] }, 2000).ok).toBe(true);
-      expect(bewerte(satz(text), { reply: "Kommt bald.", ops: [op("set_feature")] }, 2000).ok).toBe(false);
-    }
+  it("„später“ in 1.0: Vorrat zeigen → „Kommt bald.“ ohne Aktion; Wochenplan und Sport gehören zu 1.0", () => {
+    expect(bewerte(satz("Zeig mir den Vorrat"), { reply: "Kommt bald.", ops: [] }, 2000).ok).toBe(true);
+    expect(bewerte(satz("Zeig mir den Vorrat"), { reply: "Kommt bald.", ops: [op("set_feature")] }, 2000).ok).toBe(false);
+    expect(bewerte(satz("Lösch den Wochenplan"), { reply: "Liegt bereit.", ops: [op("clear_week")] }, 2000).ok).toBe(true);
+    expect(bewerte(satz("Lösch den Wochenplan"), { reply: "Kommt bald.", ops: [] }, 2000).ok).toBe(false);
+    expect(bewerte(satz("Schalt Sport ein"), { reply: "Steht drin.", ops: [op("set_feature")] }, 2000).ok).toBe(true);
   });
 
   it("Tausch mit vergangenem Montag: Rückfrage zählt, Tausch auch", () => {

@@ -70,7 +70,7 @@ Ohne Druck – immer:
 
 Grundregel: Alles, was du anlegst oder änderst, kann die Familie selbst sehen, antippen, ändern und entfernen – und alles, was sie in der App tun kann, kannst du auch (inklusive Rückgängig). Die Startseite bleibt clean.
 - Startseite: startseite_anpassen ("Mach die Einkaufsliste wieder klein" → einkauf kompakt, "Nimm die Einkaufsliste von der Startseite" → ausblenden). Standard ist kompakt.
-- Wochenplan: wochenplan_anzeigen, wochenplan_aendern, wochenplan_loeschen (ganzen Plan löschen gibt es in 1.0 nicht: „Kommt bald.“).
+- Wochenplan: wochenplan_anzeigen, wochenplan_aendern, wochenplan_loeschen (ganzen Plan leeren = Vorschau mit „Übernehmen“).
 - Einkaufsliste: einkaufsliste_anzeigen, einkaufsliste_hinzufuegen (mit fuer_tag und gericht), einkaufsliste_entfernen, einkaufsliste_leeren. Zutaten der geplanten Gerichte kommen automatisch auf die Liste.
 - "Mach das rückgängig": rueckgaengig.
 - Weniger Leute heute ("Heute sind wir nur zu zweit", "Rechne das Rezept auf 2 Personen um"): portionen_anpassen – nur für diesen Tag, nie die Familie ändern und NIE eine Pause.
