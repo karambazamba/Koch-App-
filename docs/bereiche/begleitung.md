@@ -703,3 +703,33 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 - Tests `tests/begleitung/spracherkennung.test.ts` (Fake-Erkennung, nach 3
   Starts stumm, 10 Runden, Mia spricht noch), Durchklick `sprechenhaengt.mjs`.
 
+
+## Mia denkt mit (v0.121.0, Tafel 90)
+
+- Code: `lib/mia/denktmit/` (rein: `regeln`, `auswahl`, `vorstellen`,
+  `muster`, `mitdenken`, `sprueche`, `merken`, Texte je Seite in `seiten/`),
+  Speicher `store.ts` (`wasgibts.miadenkt` v1, in der Sicherung).
+  Oberfläche `components/begleitung/denktmit/` (`useMiaDenkt`, `MiaKarte`,
+  `ErsterBesuch`), Einstellungen → Mia „Wie gesprächig?“ und
+  `/profil/mia-merkt` („Was ich mir merke“, einzeln löschbar).
+- Regeln: höchstens EINE ungefragte Karte am Tag (Gesprächig zwei), nie
+  22–7 Uhr, nie in Pause oder Ruhe nach Feierabend, nur wenn kein anderer
+  Hinweis unter der Jetzt-Karte steht. Ruhig = nur Muster-Fragen. Beispiel-Tag
+  = nur der Spruch. Jede Frage nur einmal; Nein/Später gemerkt.
+- Vorstellen ab Tag 2: eine Kachel am Tag (Termine, Aufgaben, Einkauf, Essen,
+  Pinnwand, Wetter, Notizen, Timer; nur sichtbare, nie benutzte), Ring um die
+  Kachel, Karte unter der Jetzt-Karte mit „Zeig mal“ / „Später“; 2× Später
+  oder benutzt = nie wieder.
+- Erster Besuch einer Seite: Karte über dem Mia-Knopf mit „Alles klar“,
+  zählt beim Verlassen; danach nie wieder.
+- Muster: gleicher Titel 3× am selben Wochentag ± 1 Std (8 Wochen) → „Soll
+  ich das jede Woche eintragen?“, Ja = wöchentliche Serie ab dem nächsten
+  Mal. Essen: 3× dasselbe Gericht am selben Wochentag → Ritual, wird still
+  für heute/morgen eingeplant, wenn dort nichts steht. Läden lernt der Einkauf.
+- Mitdenken (ohne KI): früher Termin an Kita-/Schultag → „Wer bringt Ole?“
+  (Partner → Pinnwand, Ich → Aufgabe); Regen × Wäsche-Aufgabe; voller Tag
+  (≥ 3 Termine) ohne Gericht → schnelles Rezept (≤ 20 Min) mit Nehmen / Was
+  anderes. Regen zu Draußen-Terminen bleibt auf der Jetzt-Karte.
+- Spruch des Tages: 200 feste Sprüche nach Anlass, steht statt „Alles ruhig“
+  auf der Jetzt-Karte, nur ohne Karte heute, nie derselbe in 30 Tagen.
+- Tests: `tests/mia/denktMit.test.ts`.

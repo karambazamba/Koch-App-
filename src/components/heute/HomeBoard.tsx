@@ -44,6 +44,7 @@ export function HomeBoard({
   picking,
   onPicking,
   hrefFor,
+  glow,
 }: {
   tiles: HomeTile[];
   all: HomeTile[];
@@ -54,6 +55,8 @@ export function HomeBoard({
   onPicking: (open: boolean) => void;
   /** Ganze Kachel = Seite: wohin ein Tipp auf freie Fläche führt */
   hrefFor?: (id: HomeTile["id"]) => string | null;
+  /** Mia stellt diese Kachel gerade vor: leichter Ring */
+  glow?: HomeTile["id"] | null;
 }) {
   const units = unitsOf(tiles);
   const board = useRef<HTMLDivElement>(null);
@@ -311,6 +314,7 @@ export function HomeBoard({
         key={unit.key}
         data-unit={floating ? undefined : unit.key}
         data-tile={floating ? undefined : unit.tiles.map((t) => t.id).join(" ")}
+        data-vorstellen={!floating && glow && unit.tiles.some((t) => t.id === glow) ? true : undefined}
         onPointerDown={floating ? undefined : onDown(unit.key)}
         onTouchStart={floating || !editing ? undefined : onTouchStart(unit.key)}
         onContextMenu={editing ? (e) => e.preventDefault() : undefined}

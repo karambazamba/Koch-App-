@@ -45,6 +45,8 @@ export type JetztSource = {
   dinnerFree: boolean;
   leisure: JetztInput["leisure"];
   tip: string | null;
+  /** Spruch des Tages (Mia denkt mit) */
+  spruch?: string | null;
   /** Tipps aus der Region (nur wenn an), mit Kindern im Haushalt, am Wochenende schon weggewischt */
   regionTips: TipView[] | null;
   potInvite?: { title: string; detail: string } | null;
@@ -129,6 +131,7 @@ export function useJetztTopics(src: JetztSource) {
     dinnerFree: src.dinnerFree,
     leisure: src.leisure,
     tip: src.tip,
+    spruch: src.spruch ?? null,
     potInvite: src.potInvite ?? null,
     mail: mailTitle ? { id: `${mails[0].id}:${mails.length}`, title: mailTitle, detail: mails[0].subject || mails[0].senderDomain || "Weitergeleitet" } : null,
     // Morgen-Info: Wetter nur mit Planbezug (Regen zur Zeit eines Draußen-Termins)

@@ -973,6 +973,9 @@ body {
 .tile-glow { border-radius: 20px; animation: tile-glow 1.6s ease-out; }
 @media (prefers-reduced-motion: reduce) { .tile-glow { animation: none; } }
 
+/* Mia stellt eine Kachel vor: leichter Ring, solange die Karte steht */
+[data-vorstellen] > div { border-radius: 20px; box-shadow: 0 0 0 4px var(--app-accent-soft), 0 0 0 5px var(--app-accent); }
+
 /* Spendentopf: eine Münze fällt in den Topf */
 @keyframes pot-coin { 0% { transform: translateY(-14px); opacity: 0; } 30% { opacity: 1; } 80% { transform: translateY(22px); opacity: 1; } 100% { transform: translateY(24px); opacity: 0; } }
 .pot-coin { animation: pot-coin 1.1s ease-in forwards; }

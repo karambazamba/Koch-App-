@@ -93,6 +93,8 @@ import { MiaNameHint, useMiaHomeHint } from "@/components/heute/MiaNameHint";
 import { InviteHintCard, useInviteHint } from "@/components/konten/InviteHintCard";
 import { termineTile } from "@/lib/heute/termineKachel";
 import { haushaltOf } from "@/lib/core/haushalt";
+import { useMiaDenkt } from "@/components/begleitung/denktmit/useMiaDenkt";
+import { MiaKarte } from "@/components/begleitung/denktmit/MiaKarte";
 
 
 /** Name für die Begrüßung: die erste Person im Haushalt (meist man selbst) */
@@ -301,6 +303,8 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const leisure = evening && notes ? leisureIdea(notes, data.todayIso) : null;
   const regionTips = useTipsWindow(data.todayIso, regionOn && !demoDay.tiles.length);
   const potState = usePotState();
+  // Mia denkt mit: höchstens eine Karte am Tag (nur, wenn kein anderer Hinweis steht), sonst vielleicht ein Spruch
+  const denkt = useMiaDenkt({ data, entries, items: allItems, minutes, visible: visible.map((t) => t.id), demo: demoOn, pause: Boolean(paused), ruhe: evening && routine.ruhe, besetzt: Boolean(hinweis), me: name || "Ich", onOpenFood });
   const mia = useMiaRoutinen({ today: data.todayIso, minutes, entries, termine: allItems, tomorrow: tomorrowAll, profile: data.profile, me: name || "Ich", regen: null, demo: Boolean(demoDay.termine) || demoDay.tiles.length > 0 });
   const jetzt = useJetztTopics({
     routinen: mia.routinen,
@@ -333,6 +337,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     pause: paused && data.profile.pause ? pauseLabel(data.profile.pause) : null,
     leisure: leisure ? { text: leisure.item.text, href: `/notizen/bearbeiten?id=${leisure.note.id}` } : null,
     tip: tip?.text ?? null,
+    spruch: denkt.spruch,
     regionTips: regionTips?.tips ?? null,
     potInvite: potState ? liveInvite(POT_STATUS, potState.pledge, potState.liveAsked) : null,
     kids: hasKids(data.profile),
@@ -346,6 +351,11 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
       ...(view.weatherTomorrow && visible.some((t) => t.id === "wetter") ? (["wetter"] as HomeTileId[]) : []),
     ],
   });
+  const spruchSteht = jetzt.topics[0]?.kind === "spruch";
+  useEffect(() => {
+    if (spruchSteht) denkt.spruchGesehen();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- einmal, wenn er steht
+  }, [spruchSteht]);
   // Antippen der Jetzt-Karte = „Dein Tag“ mit dem Thema hervorgehoben (Tafel 66 B); läuft ein Timer: der Timer.
   // Wochencheck und Pause bleiben Handlungen, kein Tagesinhalt.
   const openTopic = (t: JetztTopic) => {
@@ -454,6 +464,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
               {hinweis === "mia-name-neu" && <MiaNameHint />}
               {hinweis === "einladen" && inviteHint && <InviteHintCard text={inviteHint} today={data.todayIso} />}
               {hinweis === "spendentopf" && potHint && <PotHintCard hint={potHint} />}
+              {denkt.karte && <MiaKarte {...denkt.karte} />}
               <DarkTip profile={data.profile} today={data.todayIso} quiet={hinweis !== "lieber-schlicht" && hinweis !== "abends-dunkel"} />
               {hinweis === "startseite-halten" && (
                 <div className="flex items-start gap-3 rounded-card bg-accent-soft px-4 py-3" role="status">
@@ -469,7 +480,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
           {!editing.on && demoDay.tiles.length > 0 && <DemoRow ask={demoDay.ask} />}
 
           <div className={arrive ? "tiles-arrive" : undefined}>
-            <HomeBoard tiles={visible} all={all} editing={editing.on} render={renderTile} hrefFor={tileHref} picking={picking} onPicking={setPicking} />
+            <HomeBoard tiles={visible} all={all} editing={editing.on} render={renderTile} hrefFor={tileHref} picking={picking} onPicking={setPicking} glow={editing.on ? null : denkt.glow} />
           </div>
 
           {demoItem && <DemoItemSheet item={demoItem} today={data.todayIso} onClose={() => setDemoItem(null)} />}

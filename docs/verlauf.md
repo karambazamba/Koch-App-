@@ -2613,3 +2613,12 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Beispiel-Tag und Startseite an (allein ohne Pinnwand).
 - Wörter je Art zentral in `core/haushalt.ts`: Bereich Privat/Wir/Familie,
   Einladen-Knopf, „Seid ihr zu zweit?“ einmal beim zweiten Mitglied.
+
+## Mia denkt mit (v0.121.0, Tafel 90)
+
+- Mia stellt ab Tag 2 eine Kachel am Tag vor (Ring + Karte „Zeig mal“ /
+  „Später“), begleitet den ersten Besuch jeder Seite („Alles klar“), erkennt
+  Muster (3× gleicher Wochentag → Serie; Essens-Rituale), denkt mit (Wer
+  bringt?, Regen × Wäsche, voller Tag → schnelles Gericht) und hat einen
+  Spruch des Tages statt „Alles ruhig“. Höchstens eine Karte am Tag, Regler
+  „Wie gesprächig?“, Liste „Was ich mir merke“. Ersetzt Phase-0-Auftrag 8.

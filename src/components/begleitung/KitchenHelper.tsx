@@ -22,6 +22,7 @@ import { useCalendarEntries } from "@/lib/kalender/useCalendarEntries";
 import { aboRefreshDue } from "@/lib/kalender/abo/store";
 import { useHomeTiles } from "@/lib/core/homeLayout";
 import { MiaButton } from "@/components/begleitung/MiaButton";
+import { ErsterBesuch } from "@/components/begleitung/denktmit/ErsterBesuch";
 import { knopfVersteckt } from "@/lib/mia/knopf";
 import { helperName, type HelperVoice } from "@/lib/einstellungen/profile";
 import { removeRetiredKeys } from "@/lib/core/storage";
@@ -237,6 +238,8 @@ export function KitchenHelper() {
       <NotifyHost />
       {/* Auf allen Seiten derselbe runde Mia-Knopf wie auf der Startseite (dort zeichnet ihn HomePager) */}
       {!open && !typing && !hidden && <MiaButton name={helperName(profile)} />}
+      {/* Mia denkt mit: erster Besuch einer Seite (Startseiten-Reiter zeigt HomePager) */}
+      {!open && !typing && !hidden && profile && <ErsterBesuch seite={pathname} />}
 
       {open && (
         <HelperPanel

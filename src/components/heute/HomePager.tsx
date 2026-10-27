@@ -13,6 +13,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { House, Settings } from "lucide-react";
 import { MiaButton } from "@/components/begleitung/MiaButton";
+import { ErsterBesuch } from "@/components/begleitung/denktmit/ErsterBesuch";
 import { CARD, FAB_CLEARANCE } from "@/components/ui/styles";
 import { useCalendarEntries } from "@/lib/kalender/useCalendarEntries";
 import { useMinutes } from "@/lib/core/now";
@@ -232,6 +233,7 @@ export function HomePager({ data }: { data: HomeData }) {
         })}
       </main>
       <MiaButton name={helperName(data.profile)} />
+      {tab !== "heute" && <ErsterBesuch seite={`seite:${tab}`} />}
     </>
   );
 }

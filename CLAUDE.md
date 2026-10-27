@@ -271,6 +271,11 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   speichern (Domain, Betreff, Auszug ≤ 300), 7 Tage; nur Weitergeleitetes von
   Mitgliedern, Webhook-Signatur (`RESEND_WEBHOOK_SECRET`) immer prüfen.
   → `docs/bereiche/mails.md`
+- **Mia denkt mit:** höchstens EINE ungefragte Karte am Tag (Regler „Wie
+  gesprächig?“: Ruhig nur Muster, Gesprächig zwei), nie 22–7 Uhr, Pause oder
+  Ruhe, nur wenn kein anderer Hinweis steht; jede Frage nur einmal, alles in
+  „Was ich mir merke“ löschbar. Spruch nur statt „Alles ruhig“. Texte je
+  Seite in `mia/denktmit/seiten/`. → `docs/bereiche/begleitung.md`
 - **Mias Stimme und Ohr (ElevenLabs):** `ELEVENLABS_API_KEY` nur in Vercel
   (Sensitive), nie im Repo, Client, Log oder Chat; fehlt er, alles wie bisher
   über den Browser. Nur mit KI-Einwilligung, gleiche Grenzen wie die KI,
