@@ -62,12 +62,13 @@ import { usePotState } from "@/lib/spendentopf/store";
 import { liveInvite } from "@/lib/spendentopf/model";
 import { POT_STATUS } from "@/lib/spendentopf/regions";
 import { SpendentopfTile } from "@/components/spendentopf/SpendentopfTile";
-import { hideDemoItem, toggleDemoDone } from "@/lib/core/demo";
+import { clearDemoTile, hideDemoItem, toggleDemoDone } from "@/lib/core/demo";
 import { showDone, showToast } from "@/lib/core/toast";
 import { dueReminder } from "@/lib/kalender/reminders";
 import { markReminderSeen, useSeenReminders } from "@/lib/kalender/store";
 import { greeting } from "@/lib/kalender/summary";
 import { addDays } from "@/lib/core/now";
+import { takeDish } from "@/components/heute/takeDish";
 import { hasKids, helperName, mealClockFor, pausedOn } from "@/lib/einstellungen/profile";
 import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { useFeature } from "@/lib/core/features";
@@ -388,7 +389,16 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
         if (demoDay.tasks) return <AufgabenSection items={demoDay.tasks} today={data.todayIso} size={tile.size} half={half} demo={demoProps} />;
         return <AufgabenSection items={tasks} total={view.tasksRest ? 0 : openTaskCount(entries, data.todayIso)} today={data.todayIso} size={tile.size} half={half} />;
       case "essen":
-        if (demoDish) return <DemoFoodTile half={half} today={data.todayIso} minutes={minutes} hat={hat && !edit ? helperName(data.profile) : undefined} />;
+        if (demoDish)
+          return (
+            <DemoFoodTile
+              half={half}
+              today={data.todayIso}
+              minutes={minutes}
+              hat={hat && !edit ? helperName(data.profile) : undefined}
+              onTake={edit ? undefined : (d, tomorrow) => takeDish(data, d, tomorrow ? addDays(data.todayIso, 1) : data.todayIso) && clearDemoTile("essen")}
+            />
+          );
         if (cookingNow && dish && !edit) return <CookingTile dish={dish} clock={dishClock} persons={data.day?.persons ?? null} recipe={recipe} today={data.todayIso} onEaten={eaten} />;
         return <FoodTile data={data} dish={dish} over={over} dishClock={dishClock} onOpen={onOpenFood} size={tile.size} onCook={dish && !over && !edit ? cookNow : undefined} hat={hat && !edit ? { quiet: cookingNow } : null} />;
       case "einkauf":
