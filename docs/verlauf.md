@@ -2691,7 +2691,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
   planen“ übergibt an Mia. Mia verschiebt rollend, auch über den Namen des
   Gerichts.
 
-## „Im Haus“ gehört zu 1.0 – mit Spontan kochen (vX)
+## „Im Haus“ gehört zu 1.0 – mit Spontan kochen (v0.127.0)
 
 - Baustein `vorrat` nicht mehr in `LAUNCH_AUS`: für neue Nutzer an, bisherige
   einmal beim Start (`wasgibts.funktionen` v5, `imHaus`); die Kachel kommt
