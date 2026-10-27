@@ -34,6 +34,7 @@ import { HELLO_JUMP_MS, HELLO_READY, HELLO_T, helloElapsed, helloJump, helloTapT
 import { helperMessage, helperName } from "@/lib/einstellungen/profile";
 import { buzz } from "@/components/heute/actions";
 import type { AvatarZustand } from "@/lib/core/avatarState";
+import type { Haushalt } from "@/lib/core/haushalt";
 
 const T = HELLO_T;
 type Schritt = "hallo" | "zustimmung" | "zeigmal";
@@ -191,10 +192,10 @@ export function HelloScreen() {
     setSchritt(s);
   };
   const losGehts = () => weiterZu(einwilligungErteilt("bedingungen") ? "zeigmal" : "zustimmung");
-  const start = (r: DOMRect | null) => {
+  const start = (r: DOMRect | null, haushalt: Haushalt) => {
     setHelloFlight(r && r.width ? { x: r.left, y: r.top, size: r.width } : null);
     // Standard „Farbig“ (die Look-Frage entfällt; „Lieber schlicht?“ kommt nach 3 Tagen einmal als Hinweis)
-    startFresh("farbig");
+    startFresh("farbig", haushalt);
     markErsterStart();
     // Die Hallo-Schritte aus dem Verlauf nehmen: Zurück auf der Startseite führt nicht in den Hallo-Ablauf
     const t = tiefe.current;

@@ -75,21 +75,21 @@ export async function newPage(browser, device, { dark = false, time = TIME, perm
   return page;
 }
 
-/** „Los geht’s“ → (ohne Zustimmung „Bevor’s losgeht“: Häkchen, „Weiter“) → „Zeig mal“ */
+/** „Los geht’s“ → (ohne Zustimmung „Bevor’s losgeht“: Häkchen, „Weiter“) → „Für wen soll ich sortieren?“ */
 export async function losGehts(page) {
   await page.getByRole("button", { name: "Los geht’s" }).click();
   const next = await Promise.race([
-    page.getByRole("button", { name: "Zeig mal" }).waitFor().then(() => "zeigmal"),
+    page.getByRole("button", { name: "Für die Familie" }).waitFor().then(() => "zeigmal"),
     page.getByRole("heading", { name: "Bevor’s losgeht" }).waitFor().then(() => "zustimmung"),
   ]);
   if (next === "zustimmung") {
     await page.getByText(/^Ich akzeptiere die/).click();
     await page.getByRole("button", { name: "Weiter" }).click();
   }
-  await page.getByRole("button", { name: "Zeig mal" }).click();
+  await page.getByRole("button", { name: "Für die Familie" }).click();
 }
 
-/** Erster Start wie im echten Leben: Hallo → „Los geht’s“ → „Zeig mal“ → Startseite mit Beispiel-Tag */
+/** Erster Start wie im echten Leben: Hallo → „Los geht’s“ → „Für wen soll ich sortieren?“ → Startseite mit Beispiel-Tag */
 export async function hello(page) {
   await page.goto(BASE);
   await losGehts(page);

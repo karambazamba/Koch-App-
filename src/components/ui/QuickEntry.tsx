@@ -27,6 +27,7 @@ import { WHEN_CHOICES } from "@/lib/kalender/quick";
 import { saveQuick } from "@/components/ui/quickSave";
 import { looksLikeList, openListe } from "@/lib/kalender/liste/einfuegen";
 import { EinkaufLaden } from "@/components/einkauf/EinkaufLaden";
+import { useRaumName } from "@/lib/einstellungen/useHaushalt";
 
 const TILE: Record<QuickRequest["kind"], string> = { termin: "termine", aufgabe: "aufgaben", einkauf: "einkauf", notiz: "notizen", pinnwand: "pinnwand", imhaus: "vorrat" };
 
@@ -43,9 +44,10 @@ export function QuickEntry({ request, onClose }: { request: QuickRequest; onClos
   const [shop, setShop] = useState<{ shop: string; picked: boolean }>({ shop: request.shopping?.shop ?? "", picked: false });
   const inset = useKeyboardInset();
   const work = useWorkRoom();
+  const raum = useRaumName();
   const notify = useNotify();
   const read = readQuick(request.kind, text, today, { date: request.date, pick });
-  const chips = text.trim() || request.date ? quickChips(read, today) : [];
+  const chips = text.trim() || request.date ? quickChips(read, today, raum) : [];
   const ready = Boolean(read.title);
   const bell = (read.kind === "termin" || read.kind === "aufgabe") && chips.length ? quickReminderLabel(read.kind, read.time, notify?.defaultReminder ?? "30", remind) : null;
   const color = `var(--app-tile-${TILE[request.kind]}-ac)`;

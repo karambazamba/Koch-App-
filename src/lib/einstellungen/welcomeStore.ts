@@ -9,7 +9,8 @@ import { useExternalStore } from "@/lib/core/useExternalStore";
 import { DEFAULT_HOME, saveHomeTiles } from "@/lib/core/homeLayout";
 import { setFeature } from "@/lib/core/features";
 import { clearDemoStore, startDemo } from "@/lib/core/demo";
-import { saveProfile } from "@/lib/einstellungen/profileStore";
+import { loadProfile, saveProfile } from "@/lib/einstellungen/profileStore";
+import { HOUSEHOLD_FOR, type Haushalt } from "@/lib/core/haushalt";
 import type { AppLook } from "@/lib/einstellungen/profile";
 import { homeTilesFor, profileFrom, startState, type HelpId, type WelcomeState } from "@/lib/einstellungen/welcome";
 
@@ -37,9 +38,12 @@ function finishWelcome(state: WelcomeState, look: AppLook = "farbig") {
  * eine Frage nach dem Look – Standard „Farbig“): sonst Standardwerte, die Standard-Startseite (Pinnwand + Wetter klein
  * nebeneinander, Termine, Aufgaben, Essen + Einkauf) und die Beispiele darin.
  */
-export function startFresh(look: AppLook = "farbig") {
+export function startFresh(look: AppLook = "farbig", haushalt: Haushalt = "familie") {
   finishWelcome(startState(), look);
-  saveHomeTiles(DEFAULT_HOME);
+  const profile = loadProfile();
+  if (profile) saveProfile({ ...profile, householdType: HOUSEHOLD_FOR[haushalt] });
+  // Allein: Pinnwand-Kachel aus (zuschaltbar), zu zweit und Familie wie bisher
+  saveHomeTiles(haushalt === "allein" ? DEFAULT_HOME.map((t) => (t.id === "pinnwand" ? { ...t, visible: false } : t)) : DEFAULT_HOME);
   startDemo();
 }
 

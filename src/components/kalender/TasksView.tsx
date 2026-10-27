@@ -32,6 +32,7 @@ import { changeEntries } from "@/lib/kalender/store";
 import { showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
 import { openListe } from "@/lib/kalender/liste/einfuegen";
+import { useRaumName } from "@/lib/einstellungen/useHaushalt";
 
 type Filter = "alles" | "familie" | "arbeit";
 
@@ -51,6 +52,7 @@ function TaskRow({ item, today, onOpen }: { item: DayItem; today: string; onOpen
 }
 
 export function TasksView() {
+  const raum = useRaumName();
   const all = useEntries();
   const household = useCachedAccount().household;
   const me = household?.me.userId ?? null;
@@ -111,7 +113,7 @@ export function TasksView() {
             onChange={setFilter}
             options={[
               { value: "alles", label: "Alle" },
-              { value: "familie", label: "Familie" },
+              { value: "familie", label: raum },
               { value: "arbeit", label: "Arbeit" },
             ]}
           />

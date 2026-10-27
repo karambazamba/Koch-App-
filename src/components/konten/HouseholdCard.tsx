@@ -14,8 +14,13 @@ import { CARD, CARD_LIST, INPUT, NOTE, buttonClass, chipClass } from "@/componen
 import { showToast } from "@/lib/core/toast";
 import { inviteLinkShareText, inviteLinkUrl, tokenFromLink, type HouseholdInfo, type InviteLink, type Role } from "@/lib/konten/model";
 import { createInviteLink, listInviteLinks, revokeInviteLink, signOut } from "@/lib/konten/account";
+import { useEinladenKnopf, useHaushalt } from "@/lib/einstellungen/useHaushalt";
+import { zuZweitVorschlag } from "@/lib/core/haushalt";
+import { markHintSeen, useHintSeen } from "@/lib/core/hints";
+import { loadProfile, saveProfile } from "@/lib/einstellungen/profileStore";
 
 export function InviteSheet({ onClose }: { onClose: () => void }) {
+  const einladen = useEinladenKnopf();
   const [role, setRole] = useState<Role>("erwachsener");
   const [token, setToken] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -40,7 +45,7 @@ export function InviteSheet({ onClose }: { onClose: () => void }) {
     showToast({ text: "Kopiert – jetzt einfach in eine Nachricht einfügen.", small: true, seconds: 3 });
   };
   return (
-    <Sheet title="Familie einladen" onClose={onClose}>
+    <Sheet title={einladen} onClose={onClose}>
       {!token ? (
         <div className="mb-2 flex flex-col gap-3">
           <p className="text-[15px]">Wer kommt dazu?</p>
@@ -161,7 +166,34 @@ function SignOutSheet({ onClose, onDone }: { onClose: () => void; onDone: () => 
   );
 }
 
+/** Aus „allein“ werden zwei: einmal fragen, ob der Bereich „Wir“ heißen soll */
+function ZuZweitKarte({ members }: { members: number }) {
+  const haushalt = useHaushalt();
+  const seen = useHintSeen("zu-zweit");
+  const text = seen === false ? zuZweitVorschlag(haushalt, members, false) : null;
+  if (!text) return null;
+  const done = (paar: boolean) => {
+    const profile = loadProfile();
+    if (paar && profile) saveProfile({ ...profile, householdType: "paar" });
+    markHintSeen("zu-zweit");
+  };
+  return (
+    <section className={`${CARD} flex flex-col gap-3 p-4`} role="note" aria-label="Zu zweit?" data-zu-zweit>
+      <p className="text-[15px] font-bold leading-snug">{text}</p>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" onClick={() => done(true)} className={buttonClass("primary", "sm")}>
+          Ja, wir sind zu zweit
+        </button>
+        <button type="button" onClick={() => done(false)} className={`${buttonClass("ghost", "sm")} text-muted`}>
+          Passt so
+        </button>
+      </div>
+    </section>
+  );
+}
+
 export function HouseholdCard({ household, email, onSignedOut }: { household: HouseholdInfo; email: string; onSignedOut: () => void }) {
+  const einladen = useEinladenKnopf();
   const [inviting, setInviting] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [invited, setInvited] = useState(false);
@@ -173,6 +205,7 @@ export function HouseholdCard({ household, email, onSignedOut }: { household: Ho
         <p className="text-[22px] font-extrabold leading-tight">{household.name || "Unsere Familie"}</p>
         <p className="text-sm text-muted">Angemeldet als {email}</p>
       </section>
+      <ZuZweitKarte members={household.members.length} />
       <ul className={CARD_LIST} aria-label="Wer dazugehört">
         {household.members.map((m) => (
           <li key={m.userId} className="flex min-h-14 items-center gap-3 px-4 py-2">
@@ -188,7 +221,7 @@ export function HouseholdCard({ household, email, onSignedOut }: { household: Ho
       {adult && (
         <button type="button" onClick={() => setInviting(true)} className={`${buttonClass("primary")} w-full`}>
           <UserPlus className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-          Familie einladen
+          {einladen}
         </button>
       )}
       {adult && <OpenInvites refresh={inviting ? 0 : 1} />}

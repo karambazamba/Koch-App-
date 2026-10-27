@@ -11,6 +11,7 @@ import { useCloudMode } from "@/lib/konten/backend";
 import { useCachedAccount } from "@/lib/konten/cache";
 import { einladenText, laterEinladen, useEinladenState } from "@/lib/konten/einladenHinweis";
 import type { HouseholdProfile } from "@/lib/einstellungen/profileModel";
+import { useEinladenKnopf } from "@/lib/einstellungen/useHaushalt";
 
 export function useInviteHint(profile: HouseholdProfile, today: string, quiet: boolean): string | null {
   const cloud = useCloudMode();
@@ -22,13 +23,14 @@ export function useInviteHint(profile: HouseholdProfile, today: string, quiet: b
 }
 
 export function InviteHintCard({ text, today }: { text: string; today: string }) {
+  const einladen = useEinladenKnopf();
   return (
-    <div className={`${CARD} flex items-center gap-3 px-4 py-3`} role="note" aria-label="Familie einladen">
+    <div className={`${CARD} flex items-center gap-3 px-4 py-3`} role="note" aria-label={einladen}>
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <p className="text-[15px] font-bold leading-snug">{text}</p>
         <div className="flex flex-wrap gap-2">
           <Link href="/konto?einladen=1" className={buttonClass("primary", "sm")}>
-            Familie einladen
+            {einladen}
           </Link>
           <button type="button" onClick={() => laterEinladen(today)} className={`${buttonClass("ghost", "sm")} text-muted`}>
             Später

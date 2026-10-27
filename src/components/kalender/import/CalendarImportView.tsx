@@ -21,6 +21,7 @@ import { parseIcs, type IcsCalendar } from "@/lib/kalender/import/ics";
 import { mergeImport, planImport, summarize, type ImportRange } from "@/lib/kalender/import/plan";
 import { AboSection } from "@/components/kalender/import/AboSection";
 import { MitbringenHost } from "@/components/kalender/mitbringen/KalenderMitbringen";
+import { useRaumName } from "@/lib/einstellungen/useHaushalt";
 
 const SOURCE: Record<IcsCalendar["source"], string> = { google: "Google", apple: "Apple", ics: "Kalender" };
 /** Kalender, die nach Arbeit klingen, starten in „Arbeit“ */
@@ -29,6 +30,7 @@ const workish = (name: string) => /arbeit|work|büro|job|dienst/i.test(name);
 type Loaded = { cals: IcsCalendar[]; rooms: Room[] };
 
 export function CalendarImportView() {
+  const raum = useRaumName();
   const file = useRef<HTMLInputElement>(null);
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [range, setRange] = useState<ImportRange>("ab-heute");
@@ -125,7 +127,7 @@ export function CalendarImportView() {
                         onClick={() => setLoaded({ ...loaded, rooms: loaded.rooms.map((x, j) => (j === i ? r : x)) })}
                         className={chipClass(loaded.rooms[i] === r)}
                       >
-                        {r === "familie" ? "Familie" : "Arbeit"}
+                        {r === "familie" ? raum : "Arbeit"}
                       </button>
                     ))}
                   </div>

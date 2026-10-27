@@ -18,6 +18,7 @@ import { AVATAR_COLORS, avatarHex } from "@/lib/einstellungen/profileHelper";
 import { removeAbo, updateAbo, useAbos } from "@/lib/kalender/abo/store";
 import { addAbo, refreshAbos } from "@/lib/kalender/abo/sync";
 import type { Abo } from "@/lib/kalender/abo/model";
+import { useRaumName } from "@/lib/einstellungen/useHaushalt";
 
 const STEPS = {
   google: [
@@ -33,11 +34,12 @@ const STEPS = {
 };
 
 function RoomChips({ value, onChange, label }: { value: Room; onChange: (r: Room) => void; label: string }) {
+  const raum = useRaumName();
   return (
     <div className="flex gap-2" role="group" aria-label={label}>
       {(["familie", "arbeit"] as const).map((r) => (
         <button key={r} type="button" aria-pressed={value === r} onClick={() => onChange(r)} className={chipClass(value === r)}>
-          {r === "familie" ? "Familie" : "Arbeit"}
+          {r === "familie" ? raum : "Arbeit"}
         </button>
       ))}
     </div>

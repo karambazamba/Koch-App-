@@ -244,9 +244,10 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Erster Start ohne Profil: Hallo-Bildschirm („Moin!“, früher „Hallo, ich bin Mia.“ aus
   `DEFAULT_HELPER`, „Ich behalte euren Alltag im Blick.“, Mikrofon-Hinweis,
   „Los geht’s“, „Ich habe eine Sicherung“). Seit v0.94: „Los geht’s“ →
-  („Bevor’s losgeht“) → „Zeig mal“ (Mia 110 px zwinkert einmal, Sprechblase
-  „Kein Stress. Ich zeig dir alles Stück für Stück.“ mit drei Zeilen, Texte
-  `ERSTER_START` in `mia/persona.ts`) → `startFresh("farbig")`: Standardwerte,
+  („Bevor’s losgeht“) → „Für wen soll ich sortieren?“ (Mia 110 px zwinkert
+  einmal, Sprechblase „Kein Stress. Ich sortier deinen Alltag, Stück für
+  Stück.“, drei Knöpfe, Texte `ERSTER_START` in `mia/persona.ts`, seit
+  v0.120) → `startFresh("farbig", haushalt)`: Standardwerte,
   `DEFAULT_HOME`, `startDemo()`; Mia fliegt von „Zeig mal“ zum Mia-Knopf, der
   beim ersten Erscheinen einmal zwinkert; „Schreiben & sprechen“ erst nach 4 s.
   Jeder Schritt ist ein Verlaufseintrag (Zurück = ein Schritt), nach „Zeig
