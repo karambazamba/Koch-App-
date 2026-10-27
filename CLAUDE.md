@@ -215,7 +215,9 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Zeit immer über `now()` aus `src/lib/core/now.ts` (Europe/Berlin, in Tests
   überschreibbar), nie `new Date()` für „jetzt“.
 - Zurück = eine Ebene zurück, Pfeil und Geste gleich, Scrollposition bleibt.
-  Kalender und Essen zählen als eine Ebene unter Heute.
+  Kalender und Essen zählen als eine Ebene unter Heute. Tiefer als eine Ebene:
+  Haus neben „‹ …“ (`HomeButton`) direkt zur Startseite. Öffnen nach mehr als
+  5 Minuten weg = Startseite, Kochmodus bleibt (`core/heimkehr.ts`).
 - Eingabefelder mindestens 16 px Schrift, Safe-Areas beachten, Tippflächen
   mindestens 44 × 44 px (`hit`). Listenzeilen auf der Startseite dürfen 30 px
   hoch sein, wenn die ganze Zeile tippbar ist (`data-zeile`). Weiter/Zurück am

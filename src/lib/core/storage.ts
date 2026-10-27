@@ -89,6 +89,7 @@ export const STORAGE = [
   { key: "wasgibts.mia.erledigt", what: "Was die Begleitung heute still erledigt hat (nur Text und Ort)", version: 1, migration: "begleitung/miaDone.ts", area: "local", backup: false },
   { key: "wasgibts.lotte.nachholen", what: "Offline Gesagtes an die Begleitung, wird nachgeholt, sobald wieder Netz da ist", version: 1, migration: "begleitung/nachholen.ts", area: "local", backup: false },
   { key: "wasgibts.geraet", what: "Zufällige Geräte-Kennung (Tageslimit)", area: "local", backup: false },
+  { key: "wasgibts.zuletztweg", what: "Wann die App zuletzt in den Hintergrund ging (nach 5 Minuten öffnet sie wieder auf der Startseite)", area: "local", backup: false },
   { key: "wasgibts.verlauf", what: "Zurück-Verlauf und Scrollhöhen", area: "session", backup: false },
   { key: "wasgibts.spontan.filter", what: "Spontan-Filter dieser Sitzung", area: "session", backup: false },
   { key: "wasgibts.zeitvorschau", what: "Zeit-Vorschau der Startseite", area: "session", backup: false },

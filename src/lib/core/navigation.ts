@@ -104,7 +104,9 @@ export function onRouteChange(url: string) {
     // Zurück (Pfeil oder Geste) – auch erkannt, wenn das popstate-Ereignis
     // erst nach dem Rendern bei uns ankommt
     popPending = false;
-    if (stack.length > 1 && stack[stack.length - 2] === url) stack.pop();
+    // Auch mehrere Ebenen auf einmal (Haus-Knopf: history.go(-n))
+    const at = stack.lastIndexOf(url, stack.length - 2);
+    if (at >= 0) stack.length = at + 1;
     else if (stack[stack.length - 1] !== url) stack.push(url);
     restoreScroll(state.scroll[topKey()] ?? 0);
   } else if (lastHistoryCall === "replace") {
@@ -166,6 +168,22 @@ export function expectReplace() {
 /** Die nächste Navigation ist ein Reiter-Wechsel (Kalender · Heute · Essen): nicht nach oben springen */
 export function expectTabSwitch() {
   keepScroll = true;
+}
+
+/**
+ * Haus-Knopf: wie viele Schritte zurück bis zur Startseite „Heute“ im
+ * Verlauf (dort bleibt die Scrollhöhe), `null` = nicht im Verlauf
+ */
+export function stepsToHome(isHome: (url: string) => boolean): number | null {
+  for (let i = state.stack.length - 2; i >= 0; i--) if (isHome(state.stack[i])) return state.stack.length - 1 - i;
+  return null;
+}
+
+/** Neu anfangen (Öffnen = Startseite): der Verlauf beginnt bei der nächsten Seite */
+export function resetNavigation() {
+  state = { stack: [], scroll: {} };
+  lastHistoryCall = null;
+  persist();
 }
 
 /** Gibt es in der App eine Ebene, zu der man zurückkann? */

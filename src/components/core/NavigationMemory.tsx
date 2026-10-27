@@ -1,16 +1,40 @@
 "use client";
 
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
-import { installNavigationMemory, onRouteChange } from "@/lib/core/navigation";
+import { expectReplace, installNavigationMemory, onRouteChange, resetNavigation } from "@/lib/core/navigation";
+import { merkeWeg, vergissWeg, wegSeit, zurStartseite } from "@/lib/core/heimkehr";
+import { now } from "@/lib/core/now";
 
-/** Merkt sich den Verlauf und die Scrollhöhe je Ebene (siehe lib/core/navigation.ts) */
+/**
+ * Merkt sich den Verlauf und die Scrollhöhe je Ebene (siehe lib/core/navigation.ts).
+ * Öffnen = Startseite: nach mehr als 5 Minuten weg (Kaltstart oder aus dem
+ * Hintergrund) geht es zurück auf Heute (`core/heimkehr.ts`).
+ */
 export function NavigationMemory() {
   const pathname = usePathname();
   const search = useSearchParams().toString();
+  const router = useRouter();
   useEffect(() => {
     installNavigationMemory();
-  }, []);
+    const heim = () => {
+      const url = `${window.location.pathname}${window.location.search}`;
+      const weg = wegSeit();
+      vergissWeg();
+      if (!zurStartseite(url, weg, now().getTime())) return;
+      resetNavigation();
+      expectReplace();
+      router.replace("/");
+    };
+    const onVisibility = () => (document.visibilityState === "hidden" ? merkeWeg() : heim());
+    heim();
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", merkeWeg);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", merkeWeg);
+    };
+  }, [router]);
   useEffect(() => {
     installNavigationMemory();
     onRouteChange(`${pathname}${search ? `?${search}` : ""}`);
