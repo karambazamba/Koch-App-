@@ -33,7 +33,8 @@ export const wischenKalenderHeute = async (page, check) => {
     // über dem Monatsraster bzw. dem Inhalt nach rechts
     const grid = await page.locator("[role=tabpanel]:not([inert]) [role=grid]").first().boundingBox().catch(() => null);
     const y = grid ? grid.y + grid.height / 2 : vp.height * 0.55;
-    await wisch(page, vp.width * 0.2, y, vp.width * 0.6);
+    // Kalender liegt links: nach links wischen = Heute, nochmal = Essen, nach rechts = Heute
+    await wisch(page, vp.width * 0.8, y, -vp.width * 0.6);
     const a = await selected(page);
     await wisch(page, vp.width * 0.8, vp.height * 0.55, -vp.width * 0.6);
     const b = await selected(page);
@@ -64,7 +65,8 @@ export const leisteReiter = async (page, check) => {
   await page.waitForTimeout(400);
   const y0 = await page.evaluate(() => window.scrollY);
   // „···“ → Einstellungen (das Fenster blendet die Leiste aus)
-  await page.getByRole("button", { name: "Mehr" }).first().tap();
+  // ohne Hinscrollen (sonst scrollt Playwright selbst nach oben und die Scrollhöhe ist weg)
+  await page.getByRole("button", { name: "Mehr" }).first().dispatchEvent("click");
   await page.waitForTimeout(1100);
   check(!(await leisteSichtbar(page)), "Fenster offen: Leiste weg");
   await page.getByRole("button", { name: "Einstellungen" }).tap();

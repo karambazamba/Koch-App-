@@ -3,6 +3,7 @@
 // Reiter = Hauptseite bzw. nach oben, Brücke zum Pager, ohne Leiste,
 // Wischen vom linken Rand, Ausblenden per CSS, Hinweis einmal.
 import { existsSync, readFileSync } from "node:fs";
+import { fakeWindow } from "../helpers";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { bereichVon, bereichWaehlen, hauptseite, istHauptseite, leisteVersteckt, pagerAnmelden, randZurueck, tabSchritt } from "@/lib/core/leiste";
 import { naechsterHinweis } from "@/lib/core/hinweise";
@@ -56,6 +57,24 @@ describe("Reiter antippen", () => {
     const off2 = pagerAnmelden((b, gemerkt) => calls.push([b, gemerkt]));
     off2();
     expect(calls.at(-1)).toEqual(["heute", true]);
+  });
+
+  it("Reiter-Wunsch überlebt ein neues Dokument (Rücksprung mit Neuladen landete auf Heute statt Kalender)", async () => {
+    const win = fakeWindow();
+    vi.stubGlobal("window", win);
+    try {
+      vi.resetModules();
+      (await import("@/lib/core/leiste")).bereichWaehlen("kalender");
+      vi.resetModules();
+      const frisch = await import("@/lib/core/leiste");
+      const calls: [string, boolean][] = [];
+      frisch.pagerAnmelden((b, gemerkt) => calls.push([b, gemerkt]))();
+      expect(calls).toEqual([["kalender", true]]);
+      expect(win.sessionStorage.getItem("wasgibts.reiterwunsch")).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+      vi.resetModules();
+    }
   });
 
   it("Pager: gleicher Reiter = weich nach oben, gemerkt = bleiben (Scrollhöhe)", () => {

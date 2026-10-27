@@ -41,10 +41,13 @@ function load(): NavState | null {
   return null;
 }
 
+/** Ein Fenster ist offen (Sheet sperrt die Seite): die Höhe dahinter ist dann nicht echt (springt auf 0) */
+const pageLocked = () => typeof document !== "undefined" && document.body?.style.overflow === "hidden";
+
 /** Scrollhöhe der aktuellen Seite merken (bevor die nächste kommt) */
 function saveScroll() {
   const key = topKey();
-  if (!key) return;
+  if (!key || pageLocked()) return;
   state.scroll[key] = window.scrollY;
   persist();
 }

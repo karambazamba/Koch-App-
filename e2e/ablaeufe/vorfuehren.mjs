@@ -42,7 +42,8 @@ export const fertigTippen = async (page, check) => {
   // Launch 1.0: genau ein „＋ Kachel“ und ein „Fertig“ (oben), keine Leiste unten
   const kopf = page.locator("[data-edit-leiste]");
   check((await page.getByRole("button", { name: "Fertig" }).count()) === 1 && (await page.getByRole("button", { name: "Kachel", exact: true }).count()) === 1, "ein „＋ Kachel“ und ein „Fertig“");
-  check(!(await page.locator("[data-begleitung-leiste]").isVisible().catch(() => false)), "Mia-Knopf ruht im Bearbeiten");
+  // Leiste (mit Mia) blendet im Bearbeiten weich aus: unsichtbar und nicht antippbar
+  check(await page.locator("[data-leiste]").evaluate((el) => getComputedStyle(el).opacity === "0" && getComputedStyle(el).pointerEvents === "none").catch(() => true), "Mia-Knopf ruht im Bearbeiten");
 
   // Tipp auf eine Kachel beendet NICHT
   await page.mouse.wheel(0, 400);

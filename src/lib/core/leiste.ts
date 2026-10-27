@@ -5,6 +5,9 @@
 // (im Verlauf, dort bleibt die Scrollhöhe); aktiver Reiter auf der Hauptseite
 // = weich nach oben. Rein bis auf die kleine Brücke zum Pager.
 
+import { readRaw, writeRaw } from "@/lib/core/localStore";
+import type { StorageKey } from "@/lib/core/storage";
+
 export type Bereich = "kalender" | "heute" | "essen";
 
 export const BEREICHE: { value: Bereich; label: string }[] = [
@@ -64,15 +67,18 @@ export const leisteVersteckt = (pathname: string, hatProfil: boolean) => !hatPro
 type PagerFn = (b: Bereich, gemerkt: boolean) => void;
 let pager: PagerFn | null = null;
 let wunsch: Bereich | null = null;
+// Auch im Sitzungsspeicher: führt der Weg zurück über ein neues Dokument (Neuladen dazwischen), ginge der Wunsch sonst verloren
+const WUNSCH_KEY: StorageKey = "wasgibts.reiterwunsch";
+const istBereich = (v: string | null): v is Bereich => BEREICHE.some((b) => b.value === v);
 
 /** Der Pager meldet sich an (und bekommt einen gemerkten Wunsch sofort) */
 export function pagerAnmelden(fn: PagerFn): () => void {
   pager = fn;
-  if (wunsch) {
-    const w = wunsch;
-    wunsch = null;
-    fn(w, true);
-  }
+  const gespeichert = readRaw(WUNSCH_KEY, "session");
+  const w = wunsch ?? (istBereich(gespeichert) ? gespeichert : null);
+  wunsch = null;
+  writeRaw(WUNSCH_KEY, null, "session");
+  if (w) fn(w, true);
   return () => {
     if (pager === fn) pager = null;
   };
@@ -80,6 +86,7 @@ export function pagerAnmelden(fn: PagerFn): () => void {
 
 /** Reiter gewählt: der Pager wechselt (bzw. scrollt nach oben); ohne Pager merken, bis er da ist */
 export function bereichWaehlen(b: Bereich) {
-  if (pager) pager(b, false);
-  else wunsch = b;
+  if (pager) return pager(b, false);
+  wunsch = b;
+  writeRaw(WUNSCH_KEY, b, "session");
 }

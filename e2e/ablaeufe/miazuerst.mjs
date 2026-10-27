@@ -12,7 +12,8 @@ export const miaZuerst = async (page, check) => {
   check(await knopf.isVisible(), "runder Mia-Knopf unten");
   const box0 = await knopf.boundingBox();
   const vp = page.viewportSize();
-  check(box0.x + box0.width > vp.width - 40 && box0.width >= 70, "rechts unten, ca. 72 px");
+  // Seit „Navigation neu“ (Tafel 96) sitzt Mia rechts in der Leiste (60 px)
+  check(box0.x + box0.width > vp.width - 40 && box0.width >= 56, "rechts unten in der Leiste, ca. 60 px");
   check(!(await page.getByRole("textbox", { name: "Nachricht schreiben" }).count()), "keine Schreib-Leiste");
 
   // Tippen → Mia in der Mitte, erzählen (hier getippt)

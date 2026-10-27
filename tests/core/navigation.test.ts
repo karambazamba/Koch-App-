@@ -74,6 +74,24 @@ describe("Zurück-Navigation: Verlauf", () => {
     expect(win.scrollY).toBe(0);
   });
 
+  it("offenes Fenster (Seite gesperrt, Höhe springt auf 0): gemerkte Höhe bleibt (Startseite landete oben)", async () => {
+    const nav = await load();
+    nav.onRouteChange("/");
+    win.scrollY = 300;
+    win.dispatchEvent({ type: "scroll" });
+    runFrames();
+    // „···“ öffnet ein Fenster: Seite gesperrt, Höhe 0 – und von dort weiter
+    vi.stubGlobal("document", { documentElement: { scrollHeight: 3000 }, body: { style: { overflow: "hidden" } } });
+    win.scrollY = 0;
+    win.dispatchEvent({ type: "scroll" });
+    runFrames();
+    push(nav, "/profil");
+    vi.stubGlobal("document", { documentElement: { scrollHeight: 3000 }, body: { style: { overflow: "" } } });
+    back(nav, "/");
+    runFrames();
+    expect(win.scrollY).toBe(300);
+  });
+
   it("erkennt Zurück auch ohne popstate (Router war schneller)", async () => {
     const nav = await load();
     nav.onRouteChange("/");

@@ -93,6 +93,7 @@ export const STORAGE = [
   { key: "wasgibts.geraet", what: "Zufällige Geräte-Kennung (Tageslimit)", area: "local", backup: false },
   { key: "wasgibts.zuletztweg", what: "Wann die App zuletzt in den Hintergrund ging (nach 5 Minuten öffnet sie wieder auf der Startseite)", area: "local", backup: false },
   { key: "wasgibts.verlauf", what: "Zurück-Verlauf und Scrollhöhen", area: "session", backup: false },
+  { key: "wasgibts.reiterwunsch", what: "Leiste: gewählter Bereich, bis die Startseite ihn zeigt", area: "session", backup: false },
   { key: "wasgibts.spontan.filter", what: "Spontan-Filter dieser Sitzung", area: "session", backup: false },
   { key: "wasgibts.zeitvorschau", what: "Zeit-Vorschau der Startseite", area: "session", backup: false },
   { key: "wasgibts.wetterszenario", what: "Wetter-Testmodus", area: "session", backup: false },
