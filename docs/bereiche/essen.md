@@ -354,3 +354,18 @@ Ideen“. Verschwindet mit dem ersten eigenen Gericht oder dem Beispiel-Tag.
   Werkzeuge: `tests/begleitung/werkzeugeEssen.test.ts`.
 - Durchklick `e2e/ablaeufe/essen.mjs`: `essen`, `rezept`; `start.mjs`
   `umleitungen` (`/ideen`, `/schnellkueche`).
+
+## Essen-Kachel – immer Bild, gezeigtes Gericht immer wählbar (v0.116.0)
+
+- Jedes gezeigte Gericht (heute geplant, morgen geplant, Vorschlag) ist eine
+  Bild-Kachel (`DishTile`, eigene Zeichnungen, sonst Kategorie-Bild).
+  Entscheidung rein in `lib/heute/essenKachel.ts` (`foodTileView`).
+- Geplant: „Essen · 18:30“ bzw. „Morgen · Mo“, kein Zusatz. Nur Vorschlag:
+  leise „Vorschlag“. „Ideen ansehen“ nur, wenn gar kein Gericht gezeigt wird.
+- Antippen öffnet genau dieses Gericht: geplant mit Rezept → Rezept;
+  Vorschlag → Fenster `GerichtSheet` mit „Für heute nehmen“ (nach dem Essen
+  „Für morgen nehmen“, `takeForDay`) und „Rezept ansehen ›“. ⇄ wechselt wie
+  bisher, die neue Idee ist genauso wählbar.
+- Beispiel-Tag: Antippen öffnet das Beispielgericht im selben Fenster, erst
+  „Nehmen“ übernimmt es in den echten Plan (Beispiel verschwindet).
+- Tests `tests/heute/essenKachel.test.ts`, Durchklick `essenkachel.mjs`.

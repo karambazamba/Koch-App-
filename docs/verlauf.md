@@ -2568,3 +2568,9 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Wischen Kalender → Heute: das Monatsraster war als „kein Wischen“ markiert,
   obwohl es kein eigenes Wischen hat – jetzt führt Wischen auch dort zu Heute.
   Durchklick: Kalender → Heute → Essen → Heute je 5 Mal.
+
+## Essen-Kachel – immer Bild, gezeigtes Gericht immer wählbar (v0.116.0)
+
+- Fehler: „MORGEN · MO – Bibimbap – 3 Ideen ansehen“ ohne Bild, auf der
+  Essen-Seite nicht auswählbar. Jetzt Bild in jedem Zustand, Antippen öffnet
+  das Gericht, Vorschläge mit „Für heute/morgen nehmen“, auch im Beispiel-Tag.
