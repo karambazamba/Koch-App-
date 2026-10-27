@@ -82,7 +82,7 @@ Alle Schlüssel aus `src/lib/core/storage.ts`:
 
 ## So verhält es sich
 
-- **Die nächsten 7 Tage (v0.124.0, Tafel 97)** ersetzen die Wochenkarte:
+- **Die nächsten 7 Tage (v0.126.0, Tafel 97)** ersetzen die Wochenkarte:
   immer ab heute, über die Wochengrenze (gespeichert bleibt je Woche ab dem
   Einkaufstag; `lib/essen/sieben`, Oberfläche `components/essen/sieben`).
   Kopf „Die nächsten 7 Tage“, Umschalter Liste/Reihe (gemerkt in
@@ -370,7 +370,7 @@ Ideen“. Verschwindet mit dem ersten eigenen Gericht oder dem Beispiel-Tag.
   `wochenplan_anzeigen/_aendern/_loeschen`, `portionen_anpassen` (Op
   `set_persons`, nur dieser Tag) in `homeTools.ts`; sofort ohne Übernehmen:
   `kochen_starten`, `kochschritt`, `timer_stellen` (`dayTools.ts`).
-- `gericht_verschieben` rollend (v0.124.0): ohne `woche` zählen die nächsten
+- `gericht_verschieben` rollend (v0.126.0): ohne `woche` zählen die nächsten
   7 Tage ab heute, das Gericht auch über den Namen (`gericht`): „Schieb das Pad
   Thai auf Mittwoch“, „Tausch Freitag und Samstag“; `move_meal` klappt über die
   Wochengrenze (`ops.ts`, `preview.ts`). Testmodus: „Schieb die/das/den … auf

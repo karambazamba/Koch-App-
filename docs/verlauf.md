@@ -2680,7 +2680,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Rechtsseiten. Wischen vom linken Rand = eine Ebene zurück. Nach > 5 Min:
   Startseite, Bühne zu, Kochmodus bleibt. Mia erklärt es einmal.
 
-## Essen – die nächsten 7 Tage (v0.124.0, Tafel 97)
+## Essen – die nächsten 7 Tage (v0.126.0, Tafel 97)
 
 - Ersetzt die Wochenkarte (Diese/Nächste Woche) und den Nachtrag „150
   beliebteste Gerichte“. Essen zeigt immer die nächsten 7 Tage ab heute, als
