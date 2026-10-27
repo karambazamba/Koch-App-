@@ -204,7 +204,7 @@ function ShoppingHead() {
     <Link href="/einkaufsliste" onClick={() => setShopChip("alle")} className="flex min-h-11 items-start" aria-label="Einkaufsliste öffnen">
       <span className={`${HALF_LABEL} pr-6`}>
         <ShoppingCart className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-        <span className="truncate">Einkauf</span>
+        <span className="truncate">Einkaufsliste</span>
       </span>
     </Link>
   );
@@ -227,11 +227,11 @@ export function ShoppingTile({ size = "S", demo = false }: { half: boolean; size
   useEffect(() => {
     if (demo && hasOwn) clearDemoTile("einkauf");
   }, [demo, hasOwn]);
-  if (!shopping) return <section className={`${HALF} animate-pulse`} aria-label="Einkauf" />;
+  if (!shopping) return <section className={`${HALF} animate-pulse`} aria-label="Einkaufsliste" />;
   const showDemo = demo && !hasOwn;
   const rows = showDemo ? tileRows(DEMO_ITEMS, DEMO_ORDER, size) : tileRows(open, laeden?.myShops ?? [], size);
   return (
-    <section className={HALF} aria-label={showDemo ? "Einkauf · Beispiel" : "Einkauf"}>
+    <section className={HALF} aria-label={showDemo ? "Einkaufsliste · Beispiel" : "Einkaufsliste"}>
       <ShoppingHead />
       {rows.rows.length ? (
         <ShopRows {...rows} products={shopping.settings.products} demo={showDemo} />

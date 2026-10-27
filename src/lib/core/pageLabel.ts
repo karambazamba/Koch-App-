@@ -3,7 +3,7 @@
 
 const PAGES: Record<string, string> = {
   "/aufgaben": "Aufgaben",
-  "/einkaufsliste": "Einkauf",
+  "/einkaufsliste": "Einkaufsliste",
   "/einkaufsliste/laden": "Einkaufen",
   "/kochbuch": "Rezepte",
   "/kochbuch/rezept": "Rezept",

@@ -9,7 +9,7 @@
 // · zugeklappt „Zuletzt gekauft“ und „Gerichte ohne Zutaten“ · leise „Liste
 // teilen · Stammliste“. Die einmalige Läden-Frage steht nach der Liste (nach
 // dem Beispiel, nicht darüber). Tippen = gekauft, lange drücken = bearbeiten.
-// Unten der große Knopf „Mehr hinzufügen“ bzw. „Zu Edeka hinzufügen“.
+// Ein Weg zum Eintragen: ＋ oben (Schnelleingabe), dort „Mehr Details“ = Katalog.
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -41,7 +41,7 @@ import { filterByChip, recentBought, resolveChip, shopChips } from "@/lib/einkau
 import { abteilungsGruppen, grundsachen, ladenGruppen } from "@/lib/einkauf/kacheln/gruppen";
 import { GruppenListe, GrundsachenKarte, KlappZeile, WochenZeile } from "@/components/einkauf/ListeTeile";
 import { useEinkaufBeispiel } from "@/components/einkauf/EinkaufBeispiel";
-import { addLabel, chipIn, shopModeLabel, shopRow, useMeineLaeden, vorauswahl } from "@/lib/einkauf/meineLaeden";
+import { chipIn, shopModeLabel, shopRow, useMeineLaeden, vorauswahl } from "@/lib/einkauf/meineLaeden";
 import { LadenFrage, MeineLaedenSheet, ShopDot } from "@/components/einkauf/MeineLaeden";
 import { ItemTile, TILE_GRID, type TileSize } from "@/components/einkauf/kacheln/ItemTile";
 import { CatalogSheet } from "@/components/einkauf/kacheln/CatalogSheet";
@@ -72,7 +72,7 @@ export function ShoppingListView() {
   const [leaving, setLeaving] = useState<string[]>([]);
   const [editing, setEditing] = useState<ListItem | null>(null);
   const [staplesOpen, setStaplesOpen] = useState(false);
-  const [catalogOpen, setCatalogOpen] = useState(false);
+  const [catalogOpen, setCatalogOpen] = useState<string | null>(null);
   const [shopsOpen, setShopsOpen] = useState(false);
   const meine = useMeineLaeden();
   const beispiel = useEinkaufBeispiel();
@@ -184,7 +184,7 @@ export function ShoppingListView() {
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
-      <PageHeader title="Einkaufsliste" action={<QuickAddButton weekStart={data.weekStart} settings={data.settings} shop={selectedShop} className="-mr-1.5" />} />
+      <PageHeader title="Einkaufsliste" action={<QuickAddButton weekStart={data.weekStart} settings={data.settings} shop={selectedShop} onMore={setCatalogOpen} className="-mr-1.5" />} />
       <main className={PAGE_MAIN}>
         {data.planning && <WochenZeile isNext={isNext} range={range} onPrev={() => setChoice("current")} onNext={() => setChoice("next")} />}
 
@@ -195,7 +195,6 @@ export function ShoppingListView() {
                 <button key={c.id} type="button" role="radio" aria-checked={c.id === chip} onClick={() => setShopChip(c.id)} className={`${chipClass(c.id === chip)} shrink-0`}>
                   {c.shop && <ShopDot shop={c.shop} />}
                   {c.label}
-                  <span className={`text-[13px] tabular-nums ${c.count ? "text-muted" : "text-muted/50"}`}>{c.count}</span>
                 </button>
               ))}
               <button type="button" onClick={() => setShopsOpen(true)} aria-label="Meine Läden" className={`${chipClass(false)} shrink-0`}>
@@ -218,7 +217,7 @@ export function ShoppingListView() {
           <div className={`${CARD} flex flex-col items-center gap-2 px-6 py-8 text-center`}>
             <ShoppingBasket className="h-8 w-8 text-accent" strokeWidth={1.75} aria-hidden />
             <p className="text-base font-semibold">Die Liste ist leer.</p>
-            <p className="text-sm text-muted">Sag {helperName(profile)} einfach, was ihr braucht. Oder such es unten aus.</p>
+            <p className="text-sm text-muted">Sag {helperName(profile)} einfach, was ihr braucht. Oder tipp oben auf ＋.</p>
           </div>
         ) : null}
 
@@ -252,7 +251,7 @@ export function ShoppingListView() {
 
         {data.planning && list.missing.length > 0 && (
           <KlappZeile name="Gerichte ohne Zutaten" label={`${list.missing.length} ${list.missing.length === 1 ? "Gericht" : "Gerichte"} ohne Zutaten`}>
-            <p className="px-1 text-sm text-muted">{list.missing.join(", ")}. Selbst ergänzen geht unten über ＋.</p>
+            <p className="px-1 text-sm text-muted">{list.missing.join(", ")}. Selbst ergänzen geht oben über ＋.</p>
           </KlappZeile>
         )}
 
@@ -291,19 +290,7 @@ export function ShoppingListView() {
         </p>
       </main>
 
-      {/* Großer Knopf unten, rechts bleibt Platz für Mia */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-10 pb-[max(1rem,env(safe-area-inset-bottom))] pl-4 pr-28" data-einkauf-knopf>
-        <button
-          type="button"
-          onClick={() => setCatalogOpen(true)}
-          className={`${buttonClass("primary", "lg")} pointer-events-auto mb-2 w-full max-w-sm whitespace-nowrap px-4 shadow-float`}
-        >
-          <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-          {addLabel(selectedShop)}
-        </button>
-      </div>
-
-      {catalogOpen && <CatalogSheet weekStart={weekStart} settings={settings} open={open} recent={recent} myShops={myShops} tab={selectedShop} onClose={() => setCatalogOpen(false)} />}
+      {catalogOpen !== null && <CatalogSheet weekStart={weekStart} settings={settings} open={open} recent={recent} myShops={myShops} tab={selectedShop} initialQuery={catalogOpen} onClose={() => setCatalogOpen(null)} />}
       {shopsOpen && <MeineLaedenSheet shops={settings.shops} myShops={myShops} rules={settings.shopRules} onClose={() => setShopsOpen(false)} />}
       {editing && (
         <EditItemSheet

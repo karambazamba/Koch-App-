@@ -1,24 +1,23 @@
 "use client";
 
-// Einkauf wie Bring (Tafel 35): „Mehr hinzufügen“ – Suche (tippen oder
-// sprechen, mehrere mit Komma), „Oft gekauft“ zuerst, dann alles nach
-// Abteilung. Antippen wählt aus bzw. ab; „Fertig“ übernimmt alles auf einmal.
+// Einkauf wie Bring (Tafel 35): „Mehr hinzufügen“ (über ＋ → „Mehr Details“)
+// – Suche (tippen, mehrere mit Komma; sprechen geht über den Mia-Knopf),
+// „Oft gekauft“ zuerst, dann alles nach Abteilung. Antippen wählt aus bzw. ab;
+// Schließen (✕, Wischen, Zurück, „Fertig“) übernimmt alles auf einmal.
 // Mit „Meine Läden“: „Kommt auf die Liste für“ (gemerkter Laden → offener
 // Reiter → „Egal wo“); Vorschläge zeigen ihren gemerkten Laden leise.
 
 import { rezeptLinkIn } from "@/lib/essen/rezeptLink/lesen";
 import { openHelper } from "@/lib/begleitung/open";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Mic, MicOff, Search, Square } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Search } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { INPUT_BASE, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
-import { MIC_BLOCKED, MicStrip } from "@/components/ui/MicPermission";
 import { ItemTile, TILE_GRID } from "@/components/einkauf/kacheln/ItemTile";
 import { BASICS } from "@/lib/einkauf/kacheln/basics";
 import { catalog } from "@/lib/einkauf/kacheln/view";
 import { parseQuickAdd } from "@/lib/einkauf/quickAdd";
 import { addManualItem, removeManualItems, sectionFor, setHave, setItemShop, type ListItem, type Section, type ShoppingSettings } from "@/lib/einkauf/shoppingList";
-import { useSpeechInput } from "@/lib/begleitung/useSpeechInput";
 import { useKeyboardInset } from "@/lib/core/useMobileKeyboard";
 import { pushUndo } from "@/lib/core/undo";
 import { LadenWahl } from "@/components/einkauf/MeineLaeden";
@@ -36,6 +35,7 @@ export function CatalogSheet({
   recent,
   myShops = [],
   tab,
+  initialQuery = "",
   onClose,
 }: {
   weekStart: string;
@@ -48,10 +48,12 @@ export function CatalogSheet({
   myShops?: string[];
   /** Offener Laden-Reiter */
   tab?: string;
+  /** Aus der Schnelleingabe mitgebrachter Text („Mehr Details“) */
+  initialQuery?: string;
   onClose: () => void;
 }) {
   const inset = useKeyboardInset();
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [hint, setHint] = useState("");
   // Auswahl als Namen (klein); Start = was schon auf der Liste steht
   const initial = useMemo(() => new Set(open.map((i) => lower(i.name))), [open]);
@@ -85,7 +87,6 @@ export function CatalogSheet({
 
   const submit = (text: string) => {
     if (!text.trim()) return;
-    speech.reset();
     const result = parseQuickAdd(text, settings);
     const found: Extra[] = [
       ...result.items.map((i) => ({ name: i.name, amount: i.amount, shop: i.shop, section: sectionFor(i.name) })),
@@ -98,7 +99,11 @@ export function CatalogSheet({
     setHint("");
   };
 
+  // Schließen übernimmt die Auswahl – genau einmal (✕, Wischen, Zurück, „Fertig“)
+  const done = useRef(false);
   const finish = () => {
+    if (done.current) return;
+    done.current = true;
     const ids: string[] = [];
     const all = [...extras, ...full];
     const staple = (n: string) => settings.staples.find((s) => lower(s.name) === n);
@@ -120,29 +125,6 @@ export function CatalogSheet({
     onClose();
   };
 
-  const mounted = useRef(true);
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
-  const speech = useSpeechInput({
-    onTranscript: (t) => setQuery(t),
-    onEnd: (t) => {
-      setQuery("");
-      if (t && mounted.current) submit(t);
-    },
-  });
-  const toggleMic = () => {
-    if (speech.supported === false) return setHint("Spracheingabe gibt es hier nicht – tipp aufs Mikrofon deiner Tastatur und diktiere einfach.");
-    if (speech.listening) speech.stop();
-    else {
-      setQuery("");
-      speech.start();
-    }
-  };
-
   const often = entries.filter((e) => e.often);
   const rest = entries.filter((e) => !e.often);
   const shownExtras = extras.filter((e) => !query || lower(e.name).includes(lower(query)));
@@ -162,11 +144,10 @@ export function CatalogSheet({
   return (
     <Sheet
       title="Mehr hinzufügen"
-      onClose={onClose}
+      onClose={finish}
       tall
       inset={inset}
     >
-      <MicStrip />
       <form
         className="flex items-center gap-2"
         onSubmit={(e) => {
@@ -189,25 +170,10 @@ export function CatalogSheet({
             onChange={(e) => setQuery(e.target.value)}
             enterKeyHint="done"
             aria-label="Suchen oder eintragen"
-            placeholder={speech.listening ? speech.interim || "Ich höre zu …" : "Suchen oder sagen"}
+            placeholder="Suchen oder eintragen"
             className={`${INPUT_BASE} h-12 w-full pl-11 pr-4`}
           />
         </label>
-        <button
-          type="button"
-          onClick={toggleMic}
-          aria-pressed={speech.listening}
-          aria-label={speech.blocked ? "Mikro aus – so machst du es an" : speech.listening ? "Zuhören beenden" : "Einsprechen"}
-          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${speech.blocked ? MIC_BLOCKED : "bg-accent text-on-accent shadow-md"} active:scale-95 ${speech.listening ? "animate-pulse ring-4 ring-accent/25" : ""}`}
-        >
-          {speech.blocked || speech.supported === false ? (
-            <MicOff className="h-6 w-6" strokeWidth={2} aria-hidden />
-          ) : speech.listening ? (
-            <Square className="h-5 w-5 fill-current" strokeWidth={2} aria-hidden />
-          ) : (
-            <Mic className="h-6 w-6" strokeWidth={2} aria-hidden />
-          )}
-        </button>
       </form>
       <LadenWahl myShops={myShops} value={shopValue} onChange={setPicked} hint={picked === null && lastShop ? vorwahlHinweis(lastOn, lastShop) : undefined} />
       {hint && (
@@ -237,9 +203,11 @@ export function CatalogSheet({
         <span className="min-w-0 flex-1 text-sm font-semibold text-muted" role="status">
           {added > 0 ? `${added} ausgewählt` : removed > 0 ? `${removed} abgewählt` : "Antippen zum Auswählen"}
         </span>
-        <button type="button" onClick={finish} className={buttonClass("primary", "md")}>
-          {changes ? "Fertig" : "Schließen"}
-        </button>
+        {changes > 0 && (
+          <button type="button" onClick={finish} className={buttonClass("primary", "md")}>
+            Fertig
+          </button>
+        )}
       </div>
     </Sheet>
   );

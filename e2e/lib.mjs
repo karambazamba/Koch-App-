@@ -348,6 +348,15 @@ export async function mehrDetails(page) {
   await page.waitForTimeout(500);
 }
 
+/** Einkaufsliste: ＋ oben → „Mehr Details“ = Katalog „Mehr hinzufügen“ */
+export async function katalog(page) {
+  await page.getByRole("button", { name: "Etwas auf die Einkaufsliste setzen" }).first().tap();
+  await mehrDetails(page);
+  const sheet = page.getByRole("dialog", { name: "Mehr hinzufügen" });
+  await sheet.waitFor({ timeout: 5000 });
+  return sheet;
+}
+
 /** Schnelleingabe: Satz tippen, ➤ (Return; mehrzeilig bei Notiz/Pinnwand nur ➤), Fenster zu */
 export async function schnell(page, text, { close = true } = {}) {
   const sheet = page.getByRole("dialog", { name: "Schnelleingabe" });
