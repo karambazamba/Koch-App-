@@ -146,7 +146,7 @@ function MonthView({ today, entries, pick, selected, onSelect, filter }: ViewPro
             <span key={w}>{w}</span>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-y-0.5" role="grid" aria-label="Tage" data-no-swipe data-no-longpress>
+        <div className="grid grid-cols-7 gap-y-0.5" role="grid" aria-label="Tage" data-no-longpress>
           {days.slice(0, rows * 7).map((date) => {
             const inMonth = date.slice(0, 7) === month;
             const isToday = date === today;

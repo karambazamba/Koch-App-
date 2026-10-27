@@ -94,6 +94,14 @@ Sortier-Regeln, Design-System, Service Worker, App-Icons und Manifest.
 - `useGoBack`: mit Verlauf `router.back()`, sonst `router.replace(fallback)`.
   `router.replace` immer mit `expectReplace()`. Reiter-Wechsel der
   Startseite mit `expectTabSwitch()` (kein Sprung nach oben).
+- Haus-Knopf (`ui/HomeButton.tsx`): nur tiefer als eine Ebene unter Heute;
+  `stepsToHome(istHeute)` → `history.go(-n)` (Zurück über mehrere Ebenen räumt
+  den Verlauf auf), ohne Heute im Verlauf `resetNavigation()` + `replace("/")`.
+- Öffnen = Startseite (`heimkehr.ts`, `wasgibts.zuletztweg`, nicht in der
+  Sicherung): beim Verstecken/Schließen gemerkt, beim Öffnen bzw. Zurückkommen
+  geprüft und vergessen; mehr als 5 Minuten → Heute. Bleibt: Heute selbst,
+  Kochmodus, `/e/`, Einladung, Anmelden, Konto, Rechtliches, Adressen mit
+  Angaben (außer den Reitern Kalender/Essen).
 - `BackButton` zeigt „‹ <vorherige Seite>“ über `previousUrl()` und
   `pageLabel()`.
 - Fenster (`Sheet`, `ConfirmDialog`, Chat) schließen auch mit Zurück

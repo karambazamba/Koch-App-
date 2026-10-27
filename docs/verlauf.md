@@ -2556,3 +2556,15 @@ Fehler in `docs/aufraeumen-nachher.md`.
   leeren geht als Vorschau. Notizen waren schon mit v0.110 drin.
 - Prüfstand: „Lösch den Wochenplan“ erwartet jetzt `clear_week`, neu „Schalt
   Sport ein“ (137 Sätze).
+
+## Navigation: immer zur Startseite (v0.115.0)
+
+- Haus-Knopf (lucide House, 44 px) links neben „‹ …“ auf Seiten tiefer als
+  eine Ebene unter Heute: geht im Verlauf mehrere Schritte zurück (Scrollhöhe
+  der Startseite bleibt), ohne Verlauf neu auf Heute.
+- Öffnen = Startseite: Kaltstart oder Rückkehr nach mehr als 5 Minuten →
+  Heute (`core/heimkehr.ts`, `wasgibts.zuletztweg`); Kochmodus, Einladung,
+  Anmelden, Rechtliches und Links mit Angaben bleiben.
+- Wischen Kalender → Heute: das Monatsraster war als „kein Wischen“ markiert,
+  obwohl es kein eigenes Wischen hat – jetzt führt Wischen auch dort zu Heute.
+  Durchklick: Kalender → Heute → Essen → Heute je 5 Mal.

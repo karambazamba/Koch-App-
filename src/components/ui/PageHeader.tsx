@@ -1,4 +1,5 @@
 import { BackButton } from "@/components/ui/BackButton";
+import { HomeButton } from "@/components/ui/HomeButton";
 
 type Props = {
   title: string;
@@ -11,14 +12,18 @@ type Props = {
 };
 
 /**
- * Einheitlicher Kopf aller Unterseiten: oben "‹ <vorherige Seite>" und rechts
- * höchstens ein Knopf, darunter der große Titel (30/800).
+ * Einheitlicher Kopf aller Unterseiten: oben "‹ <vorherige Seite>" (tiefer als
+ * eine Ebene unter Heute daneben das Haus zur Startseite) und rechts höchstens
+ * ein Knopf, darunter der große Titel (30/800).
  */
 export function PageHeader({ title, backHref = "/", action, subtitle }: Props) {
   return (
     <header data-sticky-header className="sticky top-0 z-10 flex flex-col bg-background/90 px-4 pb-2 pt-[env(safe-area-inset-top)] backdrop-blur">
       <div className="flex h-12 items-center justify-between gap-3">
-        <BackButton fallback={backHref} />
+        <span className="flex min-w-0 items-center">
+          <BackButton fallback={backHref} />
+          <HomeButton fallback={backHref} />
+        </span>
         {action}
       </div>
       <h1 className="truncate text-[30px] font-extrabold leading-tight tracking-tight">{title}</h1>
