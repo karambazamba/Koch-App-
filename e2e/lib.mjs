@@ -140,7 +140,7 @@ const FAMILY = {
     // Mias Frage nach Erinnerungen ist schon beantwortet (eigener Ablauf `erinnerungFrage`)
     "wasgibts.mitteilungen": { version: 1, defaultReminder: "30", kinds: { erinnerungen: true, pinnwand: true, abgeben: true, morgen: false }, answer: "nein", askedAt: "2026-10-21T08:00:00.000Z", asks: 2, sent: [] },
     // Mias Karte beim ersten Besuch jeder Seite stand schon (eigener Ablauf `ersterBesuchKarte`)
-    "wasgibts.miadenkt": { version: 1, level: "normal", vorgestellt: {}, besucht: ["seite:kalender", "/aufgaben", "/einkaufsliste", "seite:essen", "/pinnwand", "/wetter", "/notizen"], antworten: {}, rituale: [], eingeplant: [], tage: {}, sprueche: [] },
+    "wasgibts.miadenkt": { version: 1, level: "normal", vorgestellt: {}, besucht: ["seite:kalender", "/aufgaben", "/einkaufsliste", "seite:essen", "seite:essen-imhaus", "/pinnwand", "/wetter", "/notizen"], antworten: {}, rituale: [], eingeplant: [], tage: {}, sprueche: [] },
   },
 };
 

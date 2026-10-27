@@ -94,6 +94,14 @@ export const imHaus = async (page, check) => {
 // „Was koch ich daraus?“ = Spontan kochen mit genau diesen Sachen.
 export const imHausEssen = async (page, check) => {
   await family(page, "/?seite=essen");
+  // Die Vorstellung „Im Haus“ stand noch nie (die Test-Familie hat alle anderen Seiten schon gesehen)
+  await page.evaluate(() => {
+    const d = JSON.parse(localStorage.getItem("wasgibts.miadenkt"));
+    d.besucht = d.besucht.filter((s) => s !== "seite:essen-imhaus");
+    localStorage.setItem("wasgibts.miadenkt", JSON.stringify(d));
+  });
+  await page.reload();
+  await page.waitForTimeout(1200);
   const panel = page.locator("[role=tabpanel]:not([inert])");
   const besuch = page.locator('[data-erster-besuch="seite:essen-imhaus"]');
   check(await besuch.getByText("Sag mir, was im Kühlschrank ist, dann koch ich mit dir spontan.").isVisible(), "Mia stellt „Im Haus“ beim ersten Besuch vor");
