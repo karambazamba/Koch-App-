@@ -22,6 +22,7 @@ export function DishTile({
   half,
   label,
   corner,
+  week,
 }: {
   when: string;
   title: string;
@@ -34,6 +35,8 @@ export function DishTile({
   half: boolean;
   label: string;
   corner?: ReactNode;
+  /** Kleiner Link „Woche“ unten rechts (Wochenkarte auf der Essen-Seite) */
+  week?: string;
 }) {
   const body = (
     <>
@@ -69,6 +72,11 @@ export function DishTile({
             Ich koche jetzt ›
           </button>
         ))}
+      {week && (
+        <Link href={week} className="absolute bottom-0 right-0 flex h-11 items-center px-3 text-[13px] font-bold text-on-color" data-woche>
+          Woche ›
+        </Link>
+      )}
       {corner}
     </section>
   );

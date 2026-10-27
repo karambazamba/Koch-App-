@@ -19,6 +19,8 @@ import { weekStartFor } from "@/lib/essen/weekPlan";
 import { openHelper } from "@/lib/begleitung/open";
 import type { HomeData } from "@/components/heute/useHomeData";
 import { dishOf } from "@/components/essen/useMeals";
+import { useEffect } from "react";
+import { merkeGezeigt } from "@/lib/essen/ideenGezeigt";
 
 /** Was das Fenster braucht – die Startseite gibt HomeData, der Wochenplan baut es selbst */
 export type SwapContext = Pick<HomeData, "today" | "todayIso" | "profile" | "recipes" | "weekPlans" | "planStyle">;
@@ -26,6 +28,12 @@ export type SwapContext = Pick<HomeData, "today" | "todayIso" | "profile" | "rec
 export function SwapSheet({ data, day, onClose }: { data: SwapContext; day: PlanDay; onClose: () => void }) {
   const ideas = useTodayIdeas();
   const current = dishOf(day);
+  const shown = (ideas?.ideas ?? []).filter((i) => i.title !== current).slice(0, 3);
+  const shownKey = shown.map((i) => i.title).join("|");
+  // Gezeigte Ideen merken: nicht genommen → an den nächsten Tagen weiter hinten
+  useEffect(() => {
+    if (shownKey && ideas) merkeGezeigt(shownKey.split("|"), ideas.todayIso);
+  }, [shownKey, ideas]);
   const label = day.date === data.todayIso ? "heute" : `am ${weekdayLong(day.date)}`;
   const choose = (idea: { title: string; recipeId?: string; category: PlanDay["slot"]["hint"] }) => {
     const before = loadMealPlans();
@@ -45,10 +53,7 @@ export function SwapSheet({ data, day, onClose }: { data: SwapContext; day: Plan
   return (
     <Sheet title={current ? `Statt ${current}` : `Was gibt’s ${label}?`} onClose={onClose}>
       <div className="flex flex-col gap-2 pb-2">
-        {(ideas?.ideas ?? [])
-          .filter((i) => i.title !== current)
-          .slice(0, 3)
-          .map((idea) => (
+        {shown.map((idea) => (
             <button key={idea.id} type="button" onClick={() => choose(idea)} className={`${CARD} flex items-center gap-3 p-3 text-left active:scale-[0.99]`}>
               <DishPicture title={idea.title} category={idea.category} tone={dishTone(idea.title, idea.category)} alt="" small className="h-12 w-12 shrink-0 rounded-full" />
               <span className="min-w-0 flex-1">

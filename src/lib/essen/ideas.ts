@@ -1,9 +1,12 @@
 // "Was gibt's heute?" – Ideen ganz ohne KI, über einfache Regeln:
 // Wünsche ganz oben, dann vor allem, was zum AKTUELLEN Bestand passt (Vorrat,
 // Gekauftes; Reste und bald Ablaufendes zuerst), danach Lieblinge und
-// Gerichte, die ihr kennt, Jahreszeit, nicht dasselbe wie in den letzten Tagen
-// und unter der Woche eher Schnelles. Rein, damit es testbar ist – gerechnet
-// wird immer frisch aus dem übergebenen Bestand, nichts wird zwischengespeichert.
+// Gerichte, die ihr kennt, Jahreszeit, nicht dasselbe wie in den letzten
+// 14 Tagen und unter der Woche eher Schnelles. Mehr Abwechslung: fester
+// Tages-Zufall bei Gleichstand, an früheren Tagen Gezeigtes (aber nicht
+// Genommenes) rückt 7 Tage nach hinten, unter den ersten drei höchstens eine
+// je Grundlage (nicht 3× Nudeln). Rein, damit es testbar ist – gerechnet wird
+// immer frisch aus dem übergebenen Bestand, nichts wird zwischengespeichert.
 
 import type { Recipe, RecipeCategory } from "@/lib/essen/cookbook";
 import { guessDishCategory } from "@/lib/essen/dishCategory";
@@ -16,6 +19,7 @@ import { isNeverAgain } from "@/lib/essen/neverAgain";
 import { addDays, weekStartFor, type WeekPlan } from "@/lib/essen/weekPlan";
 import { IDEAS, sortBy, via } from "@/lib/core/sort";
 import { wishLabel, type WishIdea } from "@/lib/essen/wishes";
+import { baseFromText } from "@/lib/essen/bases";
 
 export type IdeaFilter = "schnell" | "veggie" | "vorrat";
 
@@ -61,7 +65,32 @@ type IdeaContext = {
   /** Heute schon weggewischt ("nicht jetzt") */
   dismissed: string[];
   filters?: IdeaFilter[];
+  /** Wann eine Idee (Titel, klein) zuletzt gezeigt wurde ("YYYY-MM-DD") */
+  shown?: Record<string, string>;
 };
+
+/** So lange rückt eine gezeigte, nicht genommene Idee nach hinten */
+const SHOWN_DAYS = 7;
+/** So lange kommt ein gegessenes Gericht nicht wieder */
+export const RECENT_DAYS = 14;
+const SHOWN_PENALTY = 12;
+
+/** Grundlage für die Mischung: Nudeln, Reis, Kartoffeln …, sonst die Kategorie */
+const mixKey = (i: Pick<Idea, "title" | "needs" | "uses" | "category">) => baseFromText([i.title, ...i.uses, ...i.needs].join(" ")) ?? i.category ?? "sonst";
+
+/** Unter den ersten `n` höchstens eine je Grundlage (stabil, der Rest folgt in alter Reihenfolge) @public */
+export function mixFirst<T extends Pick<Idea, "title" | "needs" | "uses" | "category">>(items: T[], n = 3): T[] {
+  const first: T[] = [];
+  const seen = new Set<string>();
+  for (const i of items) {
+    if (first.length >= n) break;
+    const k = mixKey(i);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    first.push(i);
+  }
+  return [...first, ...items.filter((i) => !first.includes(i))];
+}
 
 const isWeekday = (date: string) => {
   const d = new Date(`${date}T12:00:00Z`).getUTCDay();
@@ -83,6 +112,12 @@ export function ideasFor(ctx: IdeaContext): Idea[] {
   const weekday = isWeekday(date);
   const season = seasonOf(date);
   const recent = new Set(ctx.recent.map((t) => t.trim().toLowerCase()));
+  const from = addDays(date, -SHOWN_DAYS);
+  /** An einem früheren Tag gezeigt, aber nicht genommen → nach hinten */
+  const shownBefore = (title: string) => {
+    const at = ctx.shown?.[title.trim().toLowerCase()];
+    return Boolean(at && at < date && at >= from);
+  };
   const stock = realStock(pantry);
   const hasStock = stock.length > 0;
   // Reste und bald Ablaufendes (Kühlschrank seit 2+ Tagen) zuerst
@@ -130,6 +165,7 @@ export function ideasFor(ctx: IdeaContext): Idea[] {
     score += stockScore(uses, needs, rest.length);
     if (SEASON_WORDS[season].test(r.title)) score += 1;
     if (weekday && r.prepMinutes !== null) score += r.prepMinutes <= 30 ? 2 : r.prepMinutes > 45 ? -2 : 0;
+    if (shownBefore(r.title)) score -= SHOWN_PENALTY;
     const reason = rest.length
       ? `Reste zuerst: ${list(rest.slice(0, 2).map((p) => p.name))}`
       : uses.length
@@ -152,6 +188,7 @@ export function ideasFor(ctx: IdeaContext): Idea[] {
     if (!hasStock && c.usual) score += 1.5;
     score += stockScore(uses, needs, leftovers.filter((p) => uses.includes(p.name)).length);
     if (weekday) score += c.minutes <= 25 ? 1 : c.minutes > 30 ? -1 : 0;
+    if (shownBefore(c.title)) score -= SHOWN_PENALTY;
     const rest = leftovers.filter((p) => uses.includes(p.name));
     const reason = rest.length
       ? `Reste zuerst: ${list(rest.slice(0, 2).map((p) => p.name))}`
@@ -164,7 +201,7 @@ export function ideasFor(ctx: IdeaContext): Idea[] {
   }
   // Regel `IDEAS`: Punkte (mit festem Tages-Zufall) → bei Gleichstand die schnellere
   const ranked = sortBy(scored, ...via((s: (typeof scored)[number]) => ({ score: s.score + dayHash(date, s.id), minutes: s.minutes }), IDEAS));
-  const all: Idea[] = [...wishes, ...ranked.map(({ score: _s, ...i }) => (void _s, i))];
+  const all: Idea[] = [...wishes, ...mixFirst(ranked.map(({ score: _s, ...i }) => (void _s, i)), Math.max(0, 3 - wishes.length))];
   return all.filter(
     (i) =>
       !ctx.dismissed.includes(i.id) &&
@@ -174,7 +211,7 @@ export function ideasFor(ctx: IdeaContext): Idea[] {
   );
 }
 
-/** Gerichte der letzten 5 Tage aus dem Plan (auch ausgeblendeter Plan zählt) */
+/** Gerichte der letzten 14 Tage aus dem Plan (auch ausgeblendeter Plan zählt) */
 export function recentDishes(
   date: string,
   profile: HouseholdProfile,
@@ -183,8 +220,10 @@ export function recentDishes(
   recipes: Record<string, Recipe>,
 ): string[] {
   const shoppingDay = profile.shoppingDay || "Montag";
-  const from = addDays(date, -5);
-  const starts = new Set([weekStartFor(new Date(`${from}T12:00:00`), shoppingDay), weekStartFor(new Date(`${date}T12:00:00`), shoppingDay)]);
+  const from = addDays(date, -RECENT_DAYS);
+  const starts = new Set<string>();
+  for (let d = from; d <= date; d = addDays(d, 7)) starts.add(weekStartFor(new Date(`${d}T12:00:00`), shoppingDay));
+  starts.add(weekStartFor(new Date(`${date}T12:00:00`), shoppingDay));
   const titles: string[] = [];
   for (const start of starts) {
     for (const d of composeWeek(start, profile, weekPlans, mealPlans, recipes).days) {

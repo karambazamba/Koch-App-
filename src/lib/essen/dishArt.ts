@@ -107,26 +107,32 @@ function dishSeed(title: string): number {
 // Reihenfolge zählt: die erste passende Regel gewinnt (erst im Titel, dann in den Zutaten)
 const FORM_RULES: [DishForm, RegExp][] = [
   ["suppe", /suppe|eintopf|bruhe|minestrone/],
-  ["auflauf", /auflauf|gratin|lasagne|crumble|gefullte|moussaka|uberbacken|quiche/],
+  ["auflauf", /auflauf|gratin|lasagne|crumble|gefullte|moussaka|uberbacken|quiche|cannelloni/],
   ["wrap", /wrap|tortilla|burrito|fajita|taco|quesadilla/],
   ["pizza", /pizza|flammkuchen/],
   ["muffins", /muffin|cupcake/],
   ["kekse", /keks|cookie|platzchen/],
   ["waffeln", /waffel/],
   ["schnecken", /schnecke/],
-  ["pfannkuchen", /pfannkuchen|reibekuchen|kartoffelpuffer/],
+  ["pfannkuchen", /pfannkuchen|reibekuchen|kartoffelpuffer|kaiserschmarrn/],
+  // „Tortellini“ enthält „torte“
+  ["nudeln-kurz", /tortellini/],
   ["kuchen", /kuchen|torte|brownie|bananenbrot|tarte|streusel/],
   ["suess", /milchreis|griessbrei|griesbrei|pudding|porridge|haferbrei|kaiserschmarrn/],
+  // Fleisch mit Kartoffelsalat als Beilage: das Fleisch ist die Hauptsache
+  ["fleisch", /(schnitzel|wurstchen|bratwurst) mit kartoffelsalat/],
   ["salat", /salat|caprese|tomate\w*-mozzarella/],
+  ["fleisch", /currywurst/],
   ["bowl", /curry|chili|bowl|gulasch|dal\b|ragout|stew/],
-  ["pfanne", /pfanne|geschnetzelt|wok|gebraten|shakshuka/],
+  ["pfanne", /pfanne|geschnetzelt|wok|gebraten|shakshuka|ratatouille/],
   ["nudeln-lang", /spaghetti|tagliatelle|linguine|bandnudel|bolognese|carbonara/],
   ["nudeln-kurz", /nudel|pasta|penne|fusilli|maccheroni|makkaroni|gnocchi|tortellini|ravioli|spatzle|farfalle/],
-  ["pfannkuchen", /pfannkuchen|crepe|puffer|reibekuchen|rosti|omelett|pancake/],
+  ["pfannkuchen", /pfannkuchen|crepe|puffer|reibekuchen|rosti|omelett|pancake|frittata/],
   ["fisch", /lachs|fisch|forelle|kabeljau|seelachs|scholle|garnele/],
-  ["fleisch", /frikadelle|bulette|schnitzel|steak|braten|wurstchen|bratwurst|hackballchen|kottbullar|hahnchenkeule|cordon/],
-  ["brot", /brot|toast|baguette|stulle|sandwich|bruschetta|zopf|semmel/],
+  ["fleisch", /frikadelle|bulette|schnitzel|steak|braten|wurstchen|bratwurst|hackballchen|kottbullar|hahnchenkeule|cordon|klopse|nuggets/],
+  ["brot", /brot|toast|baguette|stulle|sandwich|bruschetta|zopf|semmel|arme ritter|burger/],
   ["blech", /ofengemuse|blech|ofenkartoffel|ofen-/],
+  ["reis", /risotto/],
   ["kartoffeln", /kartoffel|puree|pommes|wedges|spargel/],
   ["reis", /reis|risotto|paella/],
 ];
@@ -143,8 +149,8 @@ const TOPPING_RULES: [Topping, RegExp][] = [
   ["speck", /speck|schinken|bacon/],
   ["spiegelei", /spiegelei/],
   ["ruehrei", /ruhrei/],
-  ["ei", /\beier?\b|\bei\b|eigelb/],
-  ["tomate", /tomate|passata/],
+  ["ei", /\beier?\b|\bei\b|eigelb|senfeier/],
+  ["tomate", /tomate|passata|currywurst/],
   ["paprika", /paprika(?!pulver)/],
   ["zucchini", /zucchini/],
   ["moehre", /mohre|karotte|rohkost/],
@@ -153,7 +159,7 @@ const TOPPING_RULES: [Topping, RegExp][] = [
   ["bohnen", /bohne/],
   ["kuerbis", /kurbis/],
   ["pilze", /pilz|champignon/],
-  ["spinat", /spinat/],
+  ["spinat", /spinat|grunkohl/],
   ["brokkoli", /brokkoli|broccoli/],
   ["gurke", /gurke/],
   ["avocado", /avocado/],
@@ -255,19 +261,19 @@ function formFor(text: string): DishForm | null {
 function variantFor(form: DishForm, t: string, all: string): string | undefined {
   switch (form) {
     case "kartoffeln":
-      return /puree|stampf/.test(t) ? "pueree" : /pell/.test(t) ? "pell" : /brat|rosti/.test(t) ? "brat" : /spargel/.test(t) ? "pell" : /pommes|wedges|ofen/.test(t) ? "wedges" : "brat";
+      return /puree|stampf/.test(t) ? "pueree" : /pell|senfei/.test(t) ? "pell" : /brat|rosti/.test(t) ? "brat" : /spargel/.test(t) ? "pell" : /pommes|wedges|ofen|ecken/.test(t) ? "wedges" : "brat";
     case "kuchen":
       return /brownie/.test(t) ? "brownie" : /marmor/.test(t) ? "marmor" : /zitrone/.test(t) ? "zitrone" : /kase/.test(t) ? "kaese" : /mohre|karotte|rubli/.test(t) ? "moehre" : /streusel/.test(t) ? "streusel" : /banane/.test(t) ? "banane" : /schoko/.test(t) ? "schoko" : /apfel/.test(t) ? "apfel" : "apfel";
     case "auflauf":
-      return /crumble/.test(t) ? "crumble" : /gefullte/.test(t) ? "gefuellt" : /lasagne/.test(t) ? "lasagne" : "nudel";
+      return /crumble/.test(t) ? "crumble" : /gefullte/.test(t) ? "gefuellt" : /lasagne|cannelloni/.test(t) ? "lasagne" : "nudel";
     case "suppe":
       return /tomate/.test(t) ? "tomate" : /kurbis/.test(t) ? "kuerbis" : /linse/.test(t) ? "linsen" : /kartoffel/.test(t) ? "kartoffel" : /erbse/.test(t) ? "erbsen" : "gemuese";
     case "salat":
       return /nudel/.test(t) ? "nudel" : /mozzarella|caprese/.test(t) ? "caprese" : /kartoffel/.test(t) ? "kartoffel" : "gruen";
     case "pfannkuchen":
-      return /puffer|reibekuchen|rosti/.test(t) ? "puffer" : /omelett/.test(t) ? "omelett" : "stapel";
+      return /puffer|reibekuchen|rosti/.test(t) ? "puffer" : /omelett|frittata/.test(t) ? "omelett" : "stapel";
     case "brot":
-      return /baguette/.test(t) ? "baguette" : /toast/.test(t) ? "toast" : /zopf/.test(t) ? "zopf" : /brotchen|semmel/.test(t) ? "broetchen" : /ruhrei/.test(t) ? "ruehrei" : "scheiben";
+      return /baguette/.test(t) ? "baguette" : /toast|arme ritter/.test(t) ? "toast" : /zopf/.test(t) ? "zopf" : /brotchen|semmel|burger/.test(t) ? "broetchen" : /ruhrei/.test(t) ? "ruehrei" : "scheiben";
     case "pizza":
       return /flammkuchen/.test(t) ? "flammkuchen" : "pizza";
     case "fisch":

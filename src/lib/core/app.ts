@@ -15,7 +15,7 @@ export const APP_FULL_NAME = `${APP_NAME} – Familienplaner`;
 export const APP_DESCRIPTION = "Erzähl einfach, was ansteht – Termine, Aufgaben, Essen und Einkauf für die ganze Familie.";
 
 /** Versionsnummer (wie in package.json) – in den Einstellungen unter "Daten & App" */
-export const APP_VERSION = "0.116.0";
+export const APP_VERSION = "0.117.0";
 
 /** Tag der Auslieferung (beim Bauen gesetzt, next.config.ts) */
 const APP_BUILD_DATE = process.env.BUILD_DATE ?? "";

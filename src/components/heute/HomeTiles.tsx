@@ -26,7 +26,8 @@ import { symbolFor } from "@/lib/einkauf/kacheln/symbols";
 import type { PlanDay } from "@/lib/essen/mealPlan";
 import { usePantry } from "@/lib/vorrat/pantry";
 import { takeDish } from "@/components/heute/takeDish";
-import { foodTileView, takeLabel } from "@/lib/heute/essenKachel";
+import { foodTileView, naechsteIdee, takeLabel } from "@/lib/heute/essenKachel";
+import { merkeGezeigt } from "@/lib/essen/ideenGezeigt";
 import type { Idea } from "@/lib/essen/ideas";
 import { GerichtSheet } from "@/components/essen/GerichtSheet";
 import { useTodayIdeas } from "@/lib/essen/useIdeas";
@@ -45,6 +46,8 @@ import { DishTile } from "@/components/essen/DishTile";
 import { helperName } from "@/lib/einstellungen/profile";
 
 const HALF = `${TILE} flex min-h-[92px] flex-col p-3.5`;
+/** Wochenkarte (Essen-Seite) */
+const WEEK_HREF = "/?seite=essen";
 const HALF_LABEL = `flex min-w-0 items-center gap-1.5 ${TILE_LABEL}`;
 
 /** ESSEN – geplantes Gericht als Bild-Kachel (`DishTile`); sonst S: „Noch frei“ + Ideen; M: breit; L: + Ideen für morgen */
@@ -57,6 +60,11 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCo
   const [chosen, setChosen] = useState<Idea | null>(null);
   const list = ideas?.ideas ?? [];
   const idea = alt !== null && list.length ? list[alt % list.length] : null;
+  // Gezeigte Idee merken (rückt an den nächsten Tagen nach hinten, wenn sie nicht genommen wird)
+  const ideaTitle = idea?.title ?? null;
+  useEffect(() => {
+    if (ideaTitle) merkeGezeigt([ideaTitle], todayIso());
+  }, [ideaTitle]);
   const day: PlanDay | undefined = over ? data.tomorrow : data.day;
   const away = day?.away ? (day.paused ? "Pause" : "Kein Kochtag") : null;
   const view = foodTileView({ over, today: dish, tomorrow: dishOf(data.tomorrow), idea: idea?.title ?? null, away, ideas: list.length });
@@ -76,7 +84,7 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCo
   // ⇄ wechselt die Idee (nicht bei einem heute geplanten Gericht und nicht neben dem Kochidee-Knopf)
   const swap = list.length > 0 && !hat && !(view.kind === "geplant" && view.when === "heute") && (
     <span className="absolute right-3.5 top-3 z-10">
-      <QuickButton icon={ArrowLeftRight} label="Andere Idee" onClick={() => setAlt((a) => (a === null ? 0 : a + 1))} />
+      <QuickButton icon={ArrowLeftRight} label="Andere Idee" onClick={() => setAlt((a) => naechsteIdee(list.map((i) => i.title), a, view.title) ?? a)} />
     </span>
   );
   // Jedes gezeigte Gericht als Bild-Kachel – Antippen öffnet genau dieses Gericht
@@ -95,6 +103,7 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCo
           half={size === "S"}
           label={`${label} · ${view.title}${view.kind === "vorschlag" ? " · Vorschlag" : ""}`}
           corner={corner || swap}
+          week={WEEK_HREF}
         />
         {chosen && <GerichtSheet dish={chosen} take={takeLabel(over ? "morgen" : "heute")} onTake={() => take(chosen)} onClose={() => setChosen(null)} recipeHref={chosen.recipeId ? `/kochbuch/rezept?id=${encodeURIComponent(chosen.recipeId)}` : undefined} />}
       </>
@@ -112,6 +121,9 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCo
       </button>
       {swap}
       {corner}
+      <Link href={WEEK_HREF} className="hit -mb-1 self-end text-[13px] font-bold text-tile-accent" data-woche>
+        Woche ›
+      </Link>
       {size === "L" && !over && (tomorrowIdeas?.ideas.length ?? 0) > 0 && (
         <div className="mt-2 flex flex-col gap-1 border-t border-line pt-2">
           <span className={TILE_LABEL}>Ideen für morgen</span>

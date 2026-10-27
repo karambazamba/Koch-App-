@@ -2574,3 +2574,16 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Fehler: „MORGEN · MO – Bibimbap – 3 Ideen ansehen“ ohne Bild, auf der
   Essen-Seite nicht auswählbar. Jetzt Bild in jedem Zustand, Antippen öffnet
   das Gericht, Vorschläge mit „Für heute/morgen nehmen“, auch im Beispiel-Tag.
+
+## Essen: Wochenkarte und mehr Abwechslung (v0.117.0)
+
+- Wochenkarte auf der Essen-Seite: „Diese Woche“ / „Nächste Woche“ mit ‹ ›,
+  jeder Tag mit Gericht-Bild, Antippen = das Gericht (Rezept bzw. Fenster),
+  freier Tag = „Was gibt’s am …?“ mit Vorschlägen. Essen-Kachel: „Woche ›“.
+  Mia: „Was gibt's Mittwoch?“, „Plan mir nächste Woche“ (Prüfstand 136).
+- Abwechslung (`ideas.ts`): Gegessenes 14 Tage nicht wieder, an früheren
+  Tagen Gezeigtes und nicht Genommenes 7 Tage weiter hinten
+  (`wasgibts.ideengezeigt`), unter den ersten drei höchstens eine je
+  Grundlage, ⇄ nie dieselbe zweimal hintereinander (`naechsteIdee`).
+- 123 eingebaute Gerichte (vorher 39, `dishList.ts`), jedes mit eigener
+  Zeichnung (`npm run gerichte-bilder`, neue Formregeln in `dishArt.ts`).
