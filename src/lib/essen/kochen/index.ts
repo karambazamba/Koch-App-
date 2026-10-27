@@ -1,10 +1,12 @@
-// Eingebaute Kochrezepte („Aus unserer Küche“, ID "k:<id>"): lesbar und
+// Eingebaute Kochrezepte („Aus unserer Küche“, ID "k:<id>"), dazu die Rezepte
+// aller 150 Alltagsgerichte (gerichte/*.ts): lesbar und
 // kochbar wie Kochbuch-Rezepte, landen erst mit „In unsere Rezepte“ im
 // Kochbuch der Familie. Jedes hat Aufwand und Art – für „Mehr Ideen“.
 
 import { createIngredient, createRecipe, type Recipe } from "@/lib/essen/cookbook";
 import { KLASSISCH } from "@/lib/essen/kochen/dataKlassisch";
 import { BESONDERS } from "@/lib/essen/kochen/dataBesonders";
+import { GERICHT_REZEPTE } from "@/lib/essen/gerichte";
 import type { Art, Aufwand, BuiltinCookRecipe } from "@/lib/essen/kochen/types";
 
 const PREFIX = "k:";
@@ -23,7 +25,7 @@ const toRecipe = (b: BuiltinCookRecipe): Recipe => ({
   updatedAt: "",
 });
 
-const ALL = [...KLASSISCH, ...BESONDERS];
+const ALL = [...KLASSISCH, ...BESONDERS, ...GERICHT_REZEPTE];
 
 /** Alle eingebauten Kochrezepte (stabil, einmal erzeugt) */
 export const BUILTIN_COOK: Recipe[] = ALL.map(toRecipe);
@@ -32,6 +34,11 @@ const META: Record<string, { aufwand: Aufwand; art: Art }> = Object.fromEntries(
 
 export const isBuiltinCook = (id: string) => id.startsWith(PREFIX);
 export const cookRecipe = (id: string): Recipe | undefined => BY_ID[id];
+
+const BY_TITLE: Record<string, string> = Object.fromEntries(BUILTIN_COOK.map((r) => [r.title.trim().toLowerCase(), r.id]));
+
+/** Eingebautes Rezept zu einem Gericht (Titel, Groß/klein egal) – „k:…“ oder null */
+export const rezeptIdFuer = (title: string): string | null => BY_TITLE[title.trim().toLowerCase()] ?? null;
 
 /** Aufwand und Art – eingebaut fest, eigene Rezepte aus Zeit, Zutaten und Ofen geschätzt */
 export function recipeKind(r: Recipe): { aufwand: Aufwand; art: Art } {

@@ -102,8 +102,21 @@ Alle Schlüssel aus `src/lib/core/storage.ts`:
   genommen → 7 Tage weiter hinten (`ideenGezeigt.ts`, Speicher
   `wasgibts.ideengezeigt`, 30 Tage, nicht in der Sicherung); unter den ersten
   drei höchstens eine je Grundlage (`mixFirst`); fester Tages-Zufall bei
-  Gleichstand; ⇄ nie zweimal dieselbe (`naechsteIdee`). 123 eingebaute
-  Gerichte in `dishList.ts`, jedes mit Bild. Tests `tests/essen/abwechslung.test.ts`.
+  Gleichstand; ⇄ nie zweimal dieselbe (`naechsteIdee`). Tests
+  `tests/essen/abwechslung.test.ts`.
+- **150 Alltagsgerichte**: `gerichte/<gruppe>.ts` (deutsch 30, nudeln 25,
+  asiatisch 20, vegetarisch 20, fisch 15, fleisch 14, suppen 11,
+  international 10, suess 5), zusammen `GERICHTE` = `DISHES` (`dishList.ts`).
+  Jedes mit `gruppe`, `beliebt` (1–5), `kind`, Zeit, Hauptzutaten, Bild und
+  Rezept für 4: entweder in `kochen/data*.ts` (gleicher Titel) oder als
+  `zutaten`/`schritte` im Eintrag (→ `GERICHT_REZEPTE`, ID `k:<slug>`).
+  `rezeptIdFuer(titel)` (`kochen/index.ts`) findet das Rezept zu jedem Titel;
+  Ideen aus der Liste tragen es als `recipeId`. Mischung der 8 Ideen
+  (`ideasFor`): ≈ 3 Lieblinge (Favorit, 👍, kennt ihr), ≈ 3 Klassiker
+  (`beliebt` ≥ 4), ≈ 2 Neue, höchstens 2 je Gruppe, Tages-Zufall stark
+  genug für täglich neue Mischung; mit Bestand steht die beste passende Idee
+  vorn. Allergien und „mag nicht“ der Familie (`persons`) strikt über Titel
+  und Rezept-Zutaten. Tests `tests/essen/pool150.test.ts` (30 Tage simuliert).
 
 **Essen-Reiter** (von oben):
 - Gericht von heute, nach dem Essen (Essenszeit + 90 Min oder gegessen) das

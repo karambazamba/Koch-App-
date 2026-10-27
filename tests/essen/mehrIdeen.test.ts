@@ -72,7 +72,7 @@ describe("Feste Grenzen", () => {
   it("vegetarisch: kein Fleisch, kein Fisch – strenge Profile bekommen weniger Karten", () => {
     const veg = moreIdeas(base({ avoid: ["Fleisch", "Fisch"] }));
     expect(veg.every((c) => c.recipe.category === "vegetarisch")).toBe(true);
-    const strict = moreIdeas(base({ avoid: ["Fleisch", "Fisch", "Eier", "Käse", "Milch", "Nudeln", "Reis", "Tomaten"] }));
+    const strict = moreIdeas(base({ avoid: ["Fleisch", "Fisch", "Eier", "Käse", "Milch", "Nudeln", "Reis", "Tomaten", "Kartoffeln", "Kürbis", "Erbsen"] }));
     expect(strict.length).toBeLessThan(8);
   });
 });

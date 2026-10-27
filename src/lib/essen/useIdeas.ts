@@ -78,6 +78,7 @@ export function useTodayIdeas(filters: IdeaFilter[] = [], opts: { tomorrow?: boo
     dismissed: day.dismissed,
     filters,
     shown,
+    persons: profile.persons,
   });
   return { ideas, index: ideas.length ? day.index % ideas.length : 0, profile, recipes, today, todayIso, stockKey: key, nearlyEmpty: stockNearlyEmpty(pantry) };
 }

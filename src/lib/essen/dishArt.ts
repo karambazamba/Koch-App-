@@ -119,8 +119,8 @@ const FORM_RULES: [DishForm, RegExp][] = [
   ["nudeln-kurz", /tortellini/],
   ["kuchen", /kuchen|torte|brownie|bananenbrot|tarte|streusel/],
   ["suess", /milchreis|griessbrei|griesbrei|pudding|porridge|haferbrei|kaiserschmarrn/],
-  // Fleisch mit Kartoffelsalat als Beilage: das Fleisch ist die Hauptsache
-  ["fleisch", /(schnitzel|wurstchen|bratwurst) mit kartoffelsalat/],
+  // Fleisch mit Kartoffelsalat oder Spätzle als Beilage: das Fleisch ist die Hauptsache
+  ["fleisch", /(schnitzel|wurstchen|bratwurst) mit (kartoffelsalat|spatzle)/],
   ["salat", /salat|caprese|tomate\w*-mozzarella/],
   ["fleisch", /currywurst/],
   ["bowl", /curry|chili|bowl|gulasch|dal\b|ragout|stew/],
@@ -129,7 +129,7 @@ const FORM_RULES: [DishForm, RegExp][] = [
   ["nudeln-kurz", /nudel|pasta|penne|fusilli|maccheroni|makkaroni|gnocchi|tortellini|ravioli|spatzle|farfalle/],
   ["pfannkuchen", /pfannkuchen|crepe|puffer|reibekuchen|rosti|omelett|pancake|frittata/],
   ["fisch", /lachs|fisch|forelle|kabeljau|seelachs|scholle|garnele/],
-  ["fleisch", /frikadelle|bulette|schnitzel|steak|braten|wurstchen|bratwurst|hackballchen|kottbullar|hahnchenkeule|cordon|klopse|nuggets/],
+  ["fleisch", /frikadelle|bulette|schnitzel|steak|braten|wurstchen|bratwurst|hackballchen|kottbullar|hahnchenkeule|cordon|klopse|nuggets|leberkase|roulade|kassler/],
   ["brot", /brot|toast|baguette|stulle|sandwich|bruschetta|zopf|semmel|arme ritter|burger/],
   ["blech", /ofengemuse|blech|ofenkartoffel|ofen-/],
   ["reis", /risotto/],
@@ -167,7 +167,7 @@ const TOPPING_RULES: [Topping, RegExp][] = [
   ["linsen", /linse/],
   ["zwiebel", /zwiebel|lauch/],
   ["quark", /quark|schmand|frischkase|joghurt|creme fraiche/],
-  ["kaese", /kase|parmesan|gouda|emmentaler|cheddar/],
+  ["kaese", /(?<!leber)kase|parmesan|gouda|emmentaler|cheddar/],
   ["zitrone", /zitrone|limette/],
   ["pesto", /pesto/],
   ["apfelmus", /apfelmus/],
@@ -279,7 +279,7 @@ function variantFor(form: DishForm, t: string, all: string): string | undefined 
     case "fisch":
       return /stabchen/.test(all) ? "staebchen" : /(?<!see)lachs/.test(all) ? "lachs" : "filet";
     case "fleisch":
-      return /hahnchen|huhn|pute/.test(t) ? "haehnchen" : /schnitzel|cordon/.test(t) ? "schnitzel" : /hackbraten|falscher hase/.test(t) ? "hackbraten" : /wurst/.test(t) ? "wurst" : "frikadellen";
+      return /hahnchen|huhn|pute/.test(t) ? "haehnchen" : /schnitzel|cordon/.test(t) ? "schnitzel" : /hackbraten|falscher hase/.test(t) ? "hackbraten" : /leberkase|kassler/.test(t) ? "scheibe" : /roulade/.test(t) ? "roulade" : /wurst/.test(t) ? "wurst" : "frikadellen";
     case "bowl":
       // Nur Eintöpfe sind „gulasch“; eine Bowl ohne Soße (Lachs-Bowl) wird „poke“
       return /chili/.test(t) ? "chili" : /curry|dal\b/.test(t) ? "curry" : /gulasch|ragout|stew/.test(t) ? "gulasch" : "poke";
