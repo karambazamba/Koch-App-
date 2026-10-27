@@ -2640,3 +2640,15 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Linien-Symbolen statt Emojis, Titel „Wetter“ mit Ort darunter.
 - Timer: laufender Timer auf der Jetzt-Karte ohne Timer-Kachel öffnet das
   Timer-Fenster (vorher die Fehlerseite /timer, mit Kachel sogar beides).
+
+## Koch-Kachel mit Bild, Essen-Kopf einzeilig, Einkauf ohne Buchstaben (v0.123.0)
+
+- Die Koch-Kachel zeigt dasselbe Gerichtsbild wie die Essen-Kachel: klein
+  „Koche gerade“, Name weiß auf Verlauf, „Schritt 3 von 6“ aus dem
+  Kochmodus, weiße Pille „Gegessen“; Antippen öffnet den Kochmodus. Jeder
+  Zustand der Essen-Kachel hat ein Bild („Noch frei“ und „Kein Kochtag“: leerer
+  Teller mit Besteck).
+- Kopf der Essen-Kachel einzeilig: „ESSEN · 18:30“, ab M „· für 4“.
+- Einkauf-Kachel: Sachen ohne eigene Zeichnung zeigen das Symbol ihrer
+  Abteilung statt eines Buchstabens; neue Zeichnung „Aufschnitt“; nur „Egal
+  wo“ = bis zu 6 Symbole + Anzahl, mit Läden die Zeilen je Laden.

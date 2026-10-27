@@ -1,6 +1,7 @@
 "use client";
 
 import { useWakeLock } from "@/lib/core/wakeLock";
+import { markStepsBefore } from "@/lib/essen/kochSession";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -44,6 +45,12 @@ function CookSteps({ id, persons }: { id: string; persons: number | null }) {
   useEffect(() => {
     if (reading && said) speak(said, { id: "kochen", gender: profile?.helper.voice });
   }, [said, reading, profile?.helper.voice]);
+  // Schritt für die Koch-Kachel merken („Schritt 3 von 6“; Maschinen-Schritte zählen anders)
+  useEffect(() => {
+    const r = lookup?.(id);
+    if (!r || step < 1 || (machine.on && r.machineSteps.length > 0)) return;
+    markStepsBefore(r.id, Math.min(step - 1, r.steps.length));
+  }, [step, id, lookup, machine.on]);
 
   if (lookup === undefined || profile === undefined) return <div className={`${CARD} m-4 h-64 animate-pulse`} />;
   const recipe = lookup(id);

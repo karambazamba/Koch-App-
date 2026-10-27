@@ -5,6 +5,8 @@
 // Teller-Zeichnung nur noch als Notlösung. Kleine Bilder (`small`) zeigen
 // einen Ausschnitt auf den Teller, damit man das Essen erkennt. Warme
 // Hintergrundfarbe (`tone`) als Platzhalter beim Laden, nie ein kaputtes Bild.
+// `leer`: kein Gericht („Noch frei“, „Kein Kochtag“) – gezeichneter leerer
+// Teller mit Besteck, damit die Essen-Kachel nie ohne Bild ist.
 
 import { useEffect, useState, type CSSProperties } from "react";
 import type { RecipeCategory } from "@/lib/essen/cookbook";
@@ -19,13 +21,15 @@ type Props = {
   alt: string;
   className?: string;
   small?: boolean;
+  /** Kein Gericht: leerer Teller mit Besteck */
+  leer?: boolean;
 };
 
-export function DishPicture({ title, ingredients, category, photo, tone, alt, className = "", small = false }: Props) {
+export function DishPicture({ title, ingredients, category, photo, tone, alt, className = "", small = false, leer = false }: Props) {
   const [broken, setBroken] = useState<string | null>(null);
   const [, setDrawn] = useState(0);
   const style = { "--dish": tone ?? "var(--app-accent)" } as CSSProperties;
-  const cached = photo ? photo : title ? cachedDishImage(title, ingredients, category) : null;
+  const cached = leer ? null : photo ? photo : title ? cachedDishImage(title, ingredients, category) : null;
   const drawing = cached === undefined;
   const ingredientKey = ingredients?.join(",") ?? "";
   // Kein eingebautes Bild: einmal zeichnen (das Zeichnen wird erst dann geladen)
@@ -53,10 +57,24 @@ export function DishPicture({ title, ingredients, category, photo, tone, alt, cl
         />
       ) : (
         <span className="absolute inset-0 flex items-center justify-center" role={alt ? "img" : undefined} aria-label={alt || undefined}>
-          {!drawing && <Plate small={small} />}
+          {leer ? <EmptyPlate /> : !drawing && <Plate small={small} />}
         </span>
       )}
     </span>
+  );
+}
+
+/** Kein Gericht: leerer Teller von oben, links Gabel, rechts Messer */
+function EmptyPlate() {
+  return (
+    <svg viewBox="0 0 140 100" className="h-[78%] max-h-36 w-auto -translate-y-[12%]" aria-hidden>
+      <circle cx="70" cy="52" r="38" fill="rgb(0 0 0 / 0.10)" />
+      <circle cx="70" cy="50" r="38" fill="#fffdf9" />
+      <circle cx="70" cy="50" r="28" fill="#f4eee6" />
+      <circle cx="70" cy="50" r="28" fill="none" stroke="#ffffff" strokeWidth="2" opacity="0.7" />
+      <path d="M17 18v14M21 18v14M25 18v14M17 32c0 4 8 4 8 0M21 34v48" stroke="#fffdf9" strokeWidth="3" strokeLinecap="round" fill="none" />
+      <path d="M119 18c-6 6-6 22 0 26v38" stroke="#fffdf9" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    </svg>
   );
 }
 

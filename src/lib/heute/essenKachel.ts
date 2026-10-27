@@ -4,6 +4,9 @@
 // gibt es nur, wenn gar kein Gericht gezeigt wird. Ein Vorschlag lässt sich
 // nehmen – tagsüber für heute, nach dem Essen für morgen.
 
+import type { RecipeCategory } from "@/lib/essen/cookbook";
+import { currentStep } from "@/lib/essen/kochSession";
+
 export type FoodView =
   /** Geplantes Gericht: „Essen · 18:30“ bzw. „Morgen · Mo“, kein Zusatz */
   | { kind: "geplant"; title: string; when: "heute" | "morgen" }
@@ -46,4 +49,33 @@ export function naechsteIdee(titles: string[], alt: number | null, shown: string
     if (titles[i].trim().toLowerCase() !== now) return i;
   }
   return null;
+}
+
+/** Kocht gerade (eigene Kachel `CookingTile`): dasselbe Bild wie das geplante Gericht */
+type KochView = { kind: "kocht"; title: string };
+
+/**
+ * Bild der Essen-Kachel – für JEDEN Zustand eins (Auftrag „Sofort-Kachel“):
+ * gezeigtes Gericht = Bild des Gerichts (mit Zutaten/Art, wenn bekannt),
+ * „Noch frei“ und „Kein Kochtag“ = gezeichneter leerer Teller. Nie ohne Bild.
+ */
+export type KachelBild = { title: string; ingredients?: string[]; category?: RecipeCategory | null; leer?: true };
+
+export function kachelBild(view: FoodView | KochView, dish?: { ingredients?: string[]; category?: RecipeCategory | null }): KachelBild {
+  if (view.kind === "frei") return { title: view.title, leer: true };
+  return { title: view.title, ingredients: dish?.ingredients, category: dish?.category ?? null };
+}
+
+/**
+ * Kopfzeile der Essen-Kachel, immer einzeilig: „Essen · 18:30“. Personen nur
+ * ab Größe M und dann kurz („für 4“), bei S nie.
+ */
+export function essenKopf(base: string, persons: number | null, size: "S" | "M" | "L"): string {
+  return size !== "S" && persons ? `${base} · für ${persons}` : base;
+}
+
+/** Kochmodus-Schritt als kleine Zeile – nur, wenn schon Schritte abgehakt sind und noch einer kommt */
+export function kochSchrittZeile(total: number, done: number[]): string | null {
+  const cur = done.length ? currentStep(total, done) : null;
+  return cur === null ? null : `Schritt ${cur + 1} von ${total}`;
 }

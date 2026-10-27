@@ -416,7 +416,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
               onTake={edit ? undefined : (d, tomorrow) => takeDish(data, d, tomorrow ? addDays(data.todayIso, 1) : data.todayIso) && clearDemoTile("essen")}
             />
           );
-        if (cookingNow && dish && !edit) return <CookingTile dish={dish} clock={dishClock} persons={data.day?.persons ?? null} recipe={recipe} today={data.todayIso} onEaten={eaten} />;
+        if (cookingNow && dish && !edit) return <CookingTile dish={dish} recipe={recipe} today={data.todayIso} half={tile.size === "S"} onOpen={onOpenFood} onEaten={eaten} />;
         return <FoodTile data={data} dish={dish} over={over} dishClock={dishClock} onOpen={onOpenFood} size={tile.size} onCook={dish && !over && !edit ? cookNow : undefined} hat={hat && !edit ? { quiet: cookingNow } : null} />;
       case "einkauf":
         return <ShoppingTile half={half} size={tile.size} demo={demoDay.tiles.includes("einkauf")} />;

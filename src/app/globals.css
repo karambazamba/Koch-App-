@@ -91,6 +91,8 @@
   --color-shop-8-soft: var(--app-shop-8-soft);
   /* Text auf Fotos und frei gewählten Farben (Begleitung): immer weiß */
   --color-on-color: #ffffff;
+  /* Schrift auf weißem Knopf über Fotos („Gegessen“ auf der Koch-Kachel): immer dunkles Orange */
+  --color-on-photo-ink: #8f3a0e;
   --color-foreground: var(--color-ink);
 
   /* Drei Radien: Karte 20, Feld/Knopf 14, Chip rund (rounded-full) */

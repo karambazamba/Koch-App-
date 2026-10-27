@@ -65,6 +65,15 @@ export function toggleStep(recipe: string, index: number): () => void {
   return () => save(before);
 }
 
+/** Kochmodus: alle Schritte vor `index` gelten als erledigt (die Koch-Kachel zeigt „Schritt 3 von 6“) */
+export function markStepsBefore(recipe: string, index: number): void {
+  const before = loadCooking();
+  const done = Array.from({ length: Math.max(0, index) }, (_, i) => i);
+  const old = before.steps[recipe] ?? [];
+  if (old.length === done.length && old.every((n, i) => n === done[i])) return;
+  save({ ...before, steps: { ...before.steps, [recipe]: done } });
+}
+
 /** Aktueller Schritt = der erste nicht abgehakte (null = alle fertig) */
 export function currentStep(total: number, done: number[]): number | null {
   for (let i = 0; i < total; i++) if (!done.includes(i)) return i;

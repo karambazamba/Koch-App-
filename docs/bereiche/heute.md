@@ -230,7 +230,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Sie ändern nur Inhalte, nie die Anordnung.
 - Kochen: von Hand („Ich koche jetzt“), Timer läuft (bis 15 Min nach dem
   letzten) oder automatisch `kochenMin` vor bis 45 Min nach der Essenszeit.
-  Dann zeigt die Essen-Kachel die Schritte (`CookingTile`), Bildschirm bleibt an.
+  Dann zeigt die Essen-Kachel „Koche gerade“ (`CookingTile`, siehe unten), Bildschirm bleibt an.
 - Sport: 60 Min vor einem Training bis zu seinem Ende (nur mit Sport-Kachel).
 - Feierabend: ab `feierabendAb`, mit `nachArbeit` frühestens nach dem letzten
   Arbeit-Termin, bis 5 Uhr. Mit Ruhe: Arbeit weg, Aufgaben pausieren, Termine
@@ -319,3 +319,30 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Home-Bildschirm → wiederherstellen (`miaHomeSteps`). Sichern zuerst, weil
   iOS beim Entfernen die Daten der Web-App löscht.
 
+
+## Essen-Kachel immer mit Bild, Koch-Kachel, Einkauf-Symbole (Sofort-Kachel)
+
+- Essen-Kachel: JEDER Zustand ist eine Bild-Kachel (`DishTile`) – geplant,
+  Vorschlag, morgen, kocht gerade, gegessen (zeigt dann morgen), „Noch frei“
+  und „Kein Kochtag“. Ohne Gericht ein gezeichneter leerer Teller mit Besteck
+  (`DishPicture leer`). Das Bild je Zustand kommt rein aus `kachelBild`
+  (`lib/heute/essenKachel.ts`). „3 Ideen ansehen“ steht bei „Noch frei“ als
+  Zeile unter dem Namen; die frühere L-Zeile „Ideen für morgen“ entfällt.
+- Kopfzeile einzeilig und nie umbrochen (`truncate whitespace-nowrap`,
+  `data-kopf`): „ESSEN · 18:30“. Personenzahl nur ab M und kurz („für 4“),
+  bei S nie (`essenKopf`).
+- Koch-Kachel (`CookingTile`): dasselbe Gerichtsbild, klein „Koche gerade“,
+  der Name weiß auf dem Verlauf, darunter „Schritt 3 von 6“, sobald im
+  Kochmodus Schritte erledigt sind (`kochSchrittZeile`; der Kochmodus merkt
+  den Schritt über `markStepsBefore` in `kochSession`). Unten links
+  „Kochmodus ›“, unten rechts der weiße Knopf „Gegessen“ (Schrift
+  `on-photo-ink`). Antippen öffnet den Kochmodus (ohne Rezept die Essen-Seite).
+  Die Schritte-Liste zum Abhaken gibt es nur noch im Kochmodus und bei Mia.
+- Einkauf-Kachel: Artikel ohne eigene Zeichnung zeigen das Linien-Symbol
+  ihrer Abteilung (`abteilungSymbol`, `lib/einkauf/kacheln/abteilung.ts`),
+  nie einen Buchstaben. Gibt es nur „Egal wo“, zeigt die Kachel bis zu 6
+  runde Symbole der ersten Sachen, „+N“ und die Zahl (Variante A,
+  `tileArt`/`symbolReihe`); sobald Läden da sind, die Zeilen je Laden (C2).
+- Tests: `tests/heute/essenKachel.test.ts` (sieben Zustände mit Bild,
+  Kopfzeile, Schritt-Zeile), `tests/einkauf/kachelSymbole.test.ts` (nie ein
+  Buchstabe, Variante A/C2, Kochmodus-Schritt).

@@ -60,6 +60,15 @@ export function tileRows(items: { name: string; shop: string }[], myShops: strin
   return { rows: all.slice(0, max), rest: rest.length ? `+ ${rest.map((r) => `${r.shop ?? "Egal wo"} ${r.count}`).join(", ")}` : null };
 }
 
+/**
+ * Wie zeigt die Kachel die Zeilen? Nur „Egal wo“ (noch keine Läden) = Reihe
+ * runder Symbole der ersten Sachen (Variante A), sonst Zeilen je Laden (C2).
+ */
+export function tileArt(r: TileRows): "leer" | "symbole" | "zeilen" {
+  if (!r.rows.length) return "leer";
+  return r.rows.length === 1 && r.rows[0].shop === null ? "symbole" : "zeilen";
+}
+
 const TONES = 8;
 /** Bekannte Läden: passender Farbton (rot, gelb, blau …) – sonst aus dem Namen */
 const KNOWN_TONES: Record<string, number> = { rewe: 1, edeka: 2, lidl: 4, aldi: 7, penny: 6, netto: 3, kaufland: 8, biomarkt: 3, dm: 5, rossmann: 6, "bäcker": 8, wochenmarkt: 3 };

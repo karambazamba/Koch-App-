@@ -7,7 +7,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Pin, PenLine, Refrigerator, ShoppingCart, StickyNote, UtensilsCrossed } from "lucide-react";
+import { Pin, PenLine, Refrigerator, ShoppingCart, StickyNote } from "lucide-react";
 import { TILE, TILE_LABEL, buttonClass } from "@/components/ui/styles";
 import { QuickButton } from "@/components/ui/QuickButton";
 import { QuickAddButton } from "@/components/einkauf/QuickAdd";
@@ -24,7 +24,7 @@ import { symbolFor } from "@/lib/einkauf/kacheln/symbols";
 import type { PlanDay } from "@/lib/essen/mealPlan";
 import { usePantry } from "@/lib/vorrat/pantry";
 import { takeDish } from "@/components/heute/takeDish";
-import { foodTileView, naechsteIdee, takeLabel } from "@/lib/heute/essenKachel";
+import { essenKopf, foodTileView, kachelBild, naechsteIdee, takeLabel } from "@/lib/heute/essenKachel";
 import { merkeGezeigt } from "@/lib/essen/ideenGezeigt";
 import type { Idea } from "@/lib/essen/ideas";
 import { GerichtSheet } from "@/components/essen/GerichtSheet";
@@ -32,7 +32,8 @@ import { useTodayIdeas } from "@/lib/essen/useIdeas";
 import { useStock } from "@/lib/essen/useStock";
 import { recipeHref } from "@/lib/essen/baking";
 import { DEMO_SHOPS, clearDemoTile } from "@/lib/core/demo";
-import { shopTone, tileRows, type TileRows } from "@/lib/einkauf/shopGroups";
+import { shopTone, tileArt, tileRows, type TileRows } from "@/lib/einkauf/shopGroups";
+import { symbolReihe } from "@/lib/einkauf/kacheln/abteilung";
 import { setShopChip } from "@/lib/einkauf/shopMode";
 import { useMeineLaeden } from "@/lib/einkauf/meineLaeden";
 import type { ShopChip } from "@/lib/einkauf/kacheln/view";
@@ -50,11 +51,10 @@ const HALF = `${TILE} flex min-h-[92px] flex-col p-3.5`;
 const WEEK_HREF = "/?seite=essen";
 const HALF_LABEL = `flex min-w-0 items-center gap-1.5 ${TILE_LABEL}`;
 
-/** ESSEN – geplantes Gericht als Bild-Kachel (`DishTile`); sonst S: „Noch frei“ + Ideen; M: breit; L: + Ideen für morgen */
+/** ESSEN – immer eine Bild-Kachel (`DishTile`): Gericht (geplant, morgen, Vorschlag) bzw. leerer Teller („Noch frei“, „Kein Kochtag“) */
 /** `hat`: Kochidee-Knopf oben rechts – `null` = keiner, sonst ob sein Hinweis gerade still sein soll */
 export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCook, hat = null }: { data: HomeData; dish: string | null; over: boolean; dishClock: string | null; onOpen: () => void; size?: TileSize; onCook?: () => void; hat?: { quiet: boolean } | null }) {
   const ideas = useTodayIdeas([], { tomorrow: over });
-  const tomorrowIdeas = useTodayIdeas([], { tomorrow: true });
   const stock = useStock();
   const [alt, setAlt] = useState<number | null>(null);
   const [chosen, setChosen] = useState<Idea | null>(null);
@@ -79,7 +79,9 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCo
     setAlt(null);
     setChosen(null);
   };
-  const label = over ? tomorrowLabel(addDays(todayIso(), 1)) : `Essen${dish && dishClock ? ` · ${clockLabel(dishClock)}` : ""}`;
+  const base = over ? tomorrowLabel(addDays(todayIso(), 1)) : `Essen${dish && dishClock ? ` · ${clockLabel(dishClock)}` : ""}`;
+  // Kopfzeile einzeilig: Personenzahl nur ab M und kurz („für 4“)
+  const label = essenKopf(base, view.kind === "frei" ? null : (day?.persons ?? null), size);
   const corner = hat && <KochideeKnopf name={helperName(data.profile)} planned={planned} quiet={hat.quiet} />;
   // „Was anderes?“ wechselt die Idee (nicht bei einem heute geplanten Gericht und nicht neben dem Kochidee-Knopf)
   const swap = list.length > 0 && !hat && !(view.kind === "geplant" && view.when === "heute") && (
@@ -95,56 +97,27 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCo
       <span className="flex h-[26px] items-center rounded-full bg-tile-inner px-2.5 text-[12.5px] font-bold text-tile-accent shadow-card">Was anderes?</span>
     </button>
   );
-  // Jedes gezeigte Gericht als Bild-Kachel – Antippen öffnet genau dieses Gericht
-  if (view.kind !== "frei") {
-    const facts = view.kind === "geplant" && view.when === "heute" ? [recipe?.prepMinutes ? `${recipe.prepMinutes} Min` : "", match ? stockLine(match).text : ""].filter(Boolean).join(" · ") : "";
-    const open = view.kind === "vorschlag" ? () => setChosen(idea) : recipe ? `/kochbuch/rezept?id=${encodeURIComponent(recipe.id)}` : onOpen;
-    return (
-      <>
-        <DishTile
-          when={label}
-          title={view.title}
-          sub={view.kind === "vorschlag" ? "Vorschlag" : facts || undefined}
-          picture={view.kind === "vorschlag" ? { title: view.title, category: idea?.category ?? undefined } : { title: view.title, ingredients: recipe?.ingredients.map((i) => i.name), category: recipe?.category ?? entry?.category }}
-          open={open}
-          cook={view.kind === "geplant" && view.when === "heute" ? onCook : undefined}
-          half={size === "S"}
-          label={`${label} · ${view.title}${view.kind === "vorschlag" ? " · Vorschlag" : ""}`}
-          corner={corner || swap}
-          week={WEEK_HREF}
-        />
-        {chosen && <GerichtSheet dish={chosen} take={takeLabel(over ? "morgen" : "heute")} onTake={() => take(chosen)} onClose={() => setChosen(null)} recipeHref={recipeHref(data.recipes, chosen.recipeId) ?? undefined} />}
-      </>
-    );
-  }
+  // Jeder Zustand als Bild-Kachel – Antippen öffnet genau dieses Gericht (frei: die Essen-Seite)
+  const facts = view.kind === "geplant" && view.when === "heute" ? [recipe?.prepMinutes ? `${recipe.prepMinutes} Min` : "", match ? stockLine(match).text : ""].filter(Boolean).join(" · ") : "";
+  const sub = view.kind === "vorschlag" ? "Vorschlag" : view.kind === "frei" ? (view.ideen && !away ? `${Math.min(3, list.length)} Ideen ansehen` : undefined) : facts || undefined;
+  const open = view.kind === "vorschlag" ? () => setChosen(idea) : recipe ? `/kochbuch/rezept?id=${encodeURIComponent(recipe.id)}` : onOpen;
+  const picture = kachelBild(view, view.kind === "vorschlag" ? { category: idea?.category } : { ingredients: recipe?.ingredients.map((i) => i.name), category: recipe?.category ?? entry?.category });
   return (
-    <section className={HALF} aria-label={over ? "Essen morgen" : label}>
-      <button type="button" onClick={onOpen} className="flex flex-1 flex-col items-start gap-1 text-left">
-        <span className={`${HALF_LABEL} ${hat ? (planned ? "pr-[124px]" : "pr-14") : list.length ? "pr-[108px]" : "pr-6"}`}>
-          <UtensilsCrossed className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-          <span className="truncate">{label}</span>
-        </span>
-        <span className={`line-clamp-2 font-bold leading-snug ${size === "S" ? "text-[15px]" : "text-[18px]"}`}>{view.title}</span>
-        {view.ideen && !away && <span className="text-xs text-muted">{`${Math.min(3, list.length)} Ideen ansehen`}</span>}
-      </button>
-      {swap}
-      {corner}
-      <Link href={WEEK_HREF} className="hit -mb-1 self-end text-[13px] font-bold text-tile-accent" data-woche>
-        Woche ›
-      </Link>
-      {size === "L" && !over && (tomorrowIdeas?.ideas.length ?? 0) > 0 && (
-        <div className="mt-2 flex flex-col gap-1 border-t border-line pt-2">
-          <span className={TILE_LABEL}>Ideen für morgen</span>
-          <div className="flex flex-wrap gap-1.5">
-            {tomorrowIdeas!.ideas.slice(0, 3).map((i) => (
-              <button key={i.title} type="button" onClick={onOpen} className="rounded-full bg-tile-inner px-3 py-1 text-[13px] font-semibold text-tile-accent">
-                {i.title}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </section>
+    <>
+      <DishTile
+        when={label}
+        title={view.title}
+        sub={sub}
+        picture={picture}
+        open={open}
+        cook={view.kind === "geplant" && view.when === "heute" ? onCook : undefined}
+        half={size === "S"}
+        label={`${label} · ${view.title}${view.kind === "vorschlag" ? " · Vorschlag" : ""}`}
+        corner={corner || swap}
+        week={WEEK_HREF}
+      />
+      {chosen && <GerichtSheet dish={chosen} take={takeLabel(over ? "morgen" : "heute")} onTake={() => take(chosen)} onClose={() => setChosen(null)} recipeHref={recipeHref(data.recipes, chosen.recipeId) ?? undefined} />}
+    </>
   );
 }
 
@@ -153,7 +126,8 @@ const chipFor = (shop: string | null): ShopChip => (shop ? `laden:${shop}` : "oh
 
 /**
  * Einkauf-Kachel (Variante C2): je Laden eine Zeile – helle Ladenfarbe, Strich
- * links, Name fett, rechts 2 Symbole der ersten Sachen und die Zahl. Keine
+ * links, Name fett, rechts 2 Symbole der ersten Sachen (ohne eigene Zeichnung
+ * das Symbol der Abteilung, nie ein Buchstabe) und die Zahl. Keine
  * abgeschnittenen Artikelnamen, keine Logos, keine Emojis.
  */
 function ShopRows({ rows, rest, products, demo = false }: TileRows & { products: Record<string, string>; demo?: boolean }) {
@@ -180,7 +154,7 @@ function ShopRows({ rows, rest, products, demo = false }: TileRows & { products:
                 <span className="absolute inset-y-0 left-0 w-1" style={{ background: tone }} aria-hidden />
                 <span className="min-w-0 flex-1 truncate text-[14px] font-bold">{name}</span>
                 {r.names.slice(0, 2).map((n, i) => (
-                  <ItemSymbol key={`${n}-${i}`} id={symbolFor(n, products)} name={n} className="h-5 w-5 shrink-0 text-[12px]" />
+                  <ItemSymbol key={`${n}-${i}`} id={symbolFor(n, products)} name={n} className="h-5 w-5 shrink-0" />
                 ))}
                 <span className={`min-w-[1.25rem] shrink-0 text-right text-[14px] font-extrabold ${r.shop ? "" : "text-muted"}`} style={r.shop ? { color: tone } : undefined}>
                   {r.count}
@@ -199,10 +173,43 @@ function ShopRows({ rows, rest, products, demo = false }: TileRows & { products:
   );
 }
 
+/**
+ * Einkauf-Kachel, solange es nur „Egal wo“ gibt (Variante A): bis zu 6 runde
+ * Symbole der ersten Sachen, dahinter „+N“ und die Zahl – die Kachel wirkt
+ * nicht leer. Antippen = Liste „Ohne Laden“.
+ */
+function SymbolRow({ row, products, demo = false }: { row: TileRows["rows"][number]; products: Record<string, string>; demo?: boolean }) {
+  const { names, more } = symbolReihe(row.names);
+  const count = `${row.count} ${row.count === 1 ? "Sache" : "Sachen"}`;
+  return (
+    <Link
+      href="/einkaufsliste"
+      onClick={(e) => {
+        e.stopPropagation();
+        setShopChip(chipFor(null));
+      }}
+      className="mt-1 flex min-w-0 flex-col gap-1.5"
+      aria-label={`${count} auf der Liste${demo ? " · Beispiel" : ""}`}
+      data-zeile
+      data-symbol-reihe
+    >
+      <span className="flex flex-wrap gap-1.5" aria-hidden>
+        {names.map((n, i) => (
+          <span key={`${n}-${i}`} className="flex h-9 w-9 items-center justify-center rounded-full bg-tile-inner">
+            <ItemSymbol id={symbolFor(n, products)} name={n} className="h-6 w-6" />
+          </span>
+        ))}
+        {more > 0 && <span className="flex h-9 min-w-9 items-center justify-center rounded-full bg-tile-inner px-1.5 text-[13px] font-extrabold text-tile-accent">+{more}</span>}
+      </span>
+      <span className="text-[12.5px] font-semibold text-muted">{count}</span>
+    </Link>
+  );
+}
+
 /** Kopf der Einkauf-Kachel; die übrige Fläche öffnet die ganze Liste („Alle“) */
 function ShoppingHead() {
   return (
-    <Link href="/einkaufsliste" onClick={() => setShopChip("alle")} className="flex min-h-11 items-start" aria-label="Einkaufsliste öffnen">
+    <Link href="/einkaufsliste" onClick={() => setShopChip("alle")} className="mr-9 flex min-h-11 items-start" aria-label="Einkaufsliste öffnen">
       <span className={`${HALF_LABEL} pr-6`}>
         <ShoppingCart className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
         <span className="truncate">Einkaufsliste</span>
@@ -231,10 +238,13 @@ export function ShoppingTile({ size = "S", demo = false }: { half: boolean; size
   if (!shopping) return <section className={`${HALF} animate-pulse`} aria-label="Einkaufsliste" />;
   const showDemo = demo && !hasOwn;
   const rows = showDemo ? tileRows(DEMO_ITEMS, DEMO_ORDER, size) : tileRows(open, laeden?.myShops ?? [], size);
+  const art = tileArt(rows);
   return (
     <section className={HALF} aria-label={showDemo ? "Einkaufsliste · Beispiel" : "Einkaufsliste"}>
       <ShoppingHead />
-      {rows.rows.length ? (
+      {art === "symbole" ? (
+        <SymbolRow row={rows.rows[0]} products={shopping.settings.products} demo={showDemo} />
+      ) : art === "zeilen" ? (
         <ShopRows {...rows} products={shopping.settings.products} demo={showDemo} />
       ) : (
         <Link href="/einkaufsliste" onClick={() => setShopChip("alle")} className="-mt-3 flex-1 text-[14px] font-semibold leading-snug text-muted">
