@@ -431,7 +431,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     setInput("");
   };
   // --- Die Bühne: Gespräch oben, Mia unten ------------------------------------
-  const heard = speech.listening ? `${input}${speech.interim ? ` ${speech.interim}` : ""}`.trim() : "";
+  // `input` ist schon der ganze Text der Aufnahme (fertig + unfertig) – nie den unfertigen Teil nochmal anhängen
+  const heard = speech.listening ? input.trim() : "";
   const state = stageState({ listening: speech.listening, thinking, speaking: speakingId !== null || (busy && streaming != null) });
   const mic = { blocked: speech.blocked, supported: speech.supported };
   // Tippen-Feld: auf Wunsch, ohne Mikro, beim Ändern eines Vorschlags und im geführten Gespräch

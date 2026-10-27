@@ -64,3 +64,45 @@ describe("withoutPrevious", () => {
     expect(withoutPrevious("Milch und Eier und Brot", "Milch und Eier", 60_000)).toBe("Milch und Eier und Brot");
   });
 });
+
+describe("Live-Text nie doppelt (iOS-Video 27.10.)", () => {
+  it("iOS: fertig + kumuliertes Unfertiges → einmal", async () => {
+    const { mitErgebnis, mitschriftText, neueMitschrift } = await import("@/lib/begleitung/mitschrift");
+    const m = mitErgebnis(neueMitschrift(), 0, [
+      { isFinal: true, text: "Bitte trag mir zwei Aufgaben" },
+      { isFinal: false, text: "Bitte trag mir zwei Aufgaben ein warum" },
+    ]);
+    expect(mitschriftText(m)).toBe("Bitte trag mir zwei Aufgaben ein warum");
+    expect(mitschriftText(m, false)).toBe("Bitte trag mir zwei Aufgaben");
+  });
+
+  it("Neustart nach Stille mit wiederholtem Anfang → nur der neue Rest", async () => {
+    const { mitErgebnis, mitNeustart, mitschriftText, neueMitschrift } = await import("@/lib/begleitung/mitschrift");
+    let m = mitErgebnis(neueMitschrift(), 0, [{ isFinal: true, text: "Morgen Zahnarzt um zehn" }]);
+    m = mitNeustart(m);
+    m = mitErgebnis(m, 0, [{ isFinal: false, text: "Zahnarzt um zehn und Milch kaufen" }]);
+    expect(mitschriftText(m)).toBe("Morgen Zahnarzt um zehn und Milch kaufen");
+  });
+
+  it("Android-Kumulierung und Satzzeichen/Groß-klein zählen nicht", async () => {
+    const { joinFinals, zusammen } = await import("@/lib/begleitung/mitschrift");
+    expect(joinFinals(["Milch", "Milch und", "milch und Eier."])).toBe("milch und Eier.");
+    expect(zusammen("Bitte trag mir, zwei Aufgaben", "bitte trag mir zwei Aufgaben ein")).toBe("bitte trag mir zwei Aufgaben ein");
+  });
+
+  it("echte Wiederholung bleibt", async () => {
+    const { zusammen, joinFinals } = await import("@/lib/begleitung/mitschrift");
+    expect(zusammen("Milch,", "Milch und Eier")).toBe("Milch und Eier");
+    expect(zusammen("Wir brauchen Milch", "Milch und Eier")).toBe("Wir brauchen Milch Milch und Eier");
+    expect(joinFinals(["Brot", "und noch Brot"])).toBe("Brot und noch Brot");
+  });
+});
+
+describe("Blase zeigt den Text nur einmal", () => {
+  it("Bühne und Wochencheck hängen den unfertigen Teil nicht nochmal an", async () => {
+    const { readFileSync } = await import("node:fs");
+    for (const f of ["src/components/begleitung/HelperPanel.tsx", "src/components/kalender/WochencheckSheet.tsx"]) {
+      expect(readFileSync(f, "utf8")).not.toMatch(/\$\{(input|text)\}\$\{[^}]*speech\.interim/);
+    }
+  });
+});

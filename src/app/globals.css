@@ -1092,9 +1092,11 @@ body {
 .mia-wellen.zwei.ruhig { animation-delay: 2.2s; }
 .mia-zwinkern .av-eyes rect:last-of-type { transform-box: fill-box; transform-origin: center; animation: mia-zwinker 5s ease-in-out 2s infinite; }
 /* Bühne: Stille nach dem letzten Wort – dünner Ring läuft ab (1,9 s), dann wird abgeschickt */
-@keyframes mia-pause-ring { from { stroke-dashoffset: 0; } to { stroke-dashoffset: 100; } }
-.mia-pause-ring { transform: rotate(-90deg); }
-.mia-pause-ring circle { stroke-dasharray: 100; animation: mia-pause-ring 1.9s linear both; }
+/* Ablauf-Ring: Größe/Lage am Element (konzentrisch), Start oben über das SVG selbst, Lücke wächst im Uhrzeigersinn */
+@keyframes mia-pause-ring { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -100; } }
+.mia-pause-ring { overflow: visible; }
+.mia-pause-ring circle { stroke-dasharray: 100 100; animation: mia-pause-ring 1.9s linear both; }
+@media (prefers-reduced-motion: reduce) { .mia-pause-ring circle { animation: none; } }
 /* Live-Blase: wächst mit, sehr lang = die letzten Zeilen, oben leicht ausgeblendet */
 .live-blase { display: flex; flex-direction: column; justify-content: flex-end; max-height: 28dvh; overflow: hidden; }
 .live-blase:has(.live-blase-text) { mask-image: linear-gradient(to bottom, transparent 0, #000 1.6em); }

@@ -7,6 +7,11 @@
 // - Startet die Erkennung nach einer Pause neu, wandern fertige UND
 //   vorläufige Teile in die Sicherung.
 // - Am Ende zählt immer alles: fertige Teile plus der letzte unfertige.
+// - Nie doppelt: iOS liefert Unfertiges kumuliert (samt dem schon Fertigen),
+//   Neustarts wiederholen den Anfang. `zusammen` legt nur den neuen Rest an,
+//   wenn der neue Teil mit dem ganzen vorigen Abschnitt (oder mit dessen Ende,
+//   ab 2 Wörtern) beginnt – echte Wiederholungen („Milch, Milch und Eier“)
+//   bleiben.
 
 export type Ergebnis = { isFinal: boolean; text: string };
 export type Mitschrift = { gesichert: string[]; finals: string[]; pending: string };
@@ -16,22 +21,36 @@ const lower = (s: string) => norm(s).toLowerCase();
 
 export const neueMitschrift = (): Mitschrift => ({ gesichert: [], finals: [], pending: "" });
 
+const words = (s: string) => norm(s).split(" ").filter(Boolean);
+/** Wort zum Vergleichen: ohne Groß/Klein und Satzzeichen */
+const key = (w: string) => w.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+const same = (a: string[], b: string[]) => a.length === b.length && a.every((w, i) => w === b[i]);
+
+/**
+ * Zwei Teile ohne Doppeltes zusammenfügen: Beginnt `neu` mit dem ganzen
+ * `alt`, zählt `neu`; ist `neu` nur der Anfang von `alt`, zählt `alt`;
+ * beginnt `neu` mit dem Ende von `alt` (mindestens 2 Wörter), kommt nur der
+ * Rest dazu. Sonst einfach hintereinander.
+ */
+export function zusammen(alt: string, neu: string): string {
+  const a = words(alt);
+  const b = words(neu);
+  if (!a.length || !b.length) return [...a, ...b].join(" ");
+  const ka = a.map(key);
+  const kb = b.map(key);
+  if (kb.length >= ka.length && same(kb.slice(0, ka.length), ka)) return b.join(" ");
+  if (ka.length > kb.length && same(ka.slice(0, kb.length), kb)) return a.join(" ");
+  for (let k = Math.min(ka.length, kb.length) - 1; k >= 2; k--) if (same(ka.slice(-k), kb.slice(0, k))) return [...a, ...b.slice(k)].join(" ");
+  return [...a, ...b].join(" ");
+}
+
 /**
  * Fertige Abschnitte zu einem Text zusammensetzen. Manche Geräte (Android
  * Chrome) liefern fertige Abschnitte kumuliert ("Milch", "Milch und Eier") –
- * dann zählt nur der längere.
+ * dann zählt nur der längere (`zusammen`).
  */
 export function joinFinals(finals: string[]): string {
-  const kept: string[] = [];
-  for (const raw of finals) {
-    const f = norm(raw);
-    if (!f) continue;
-    const last = kept[kept.length - 1];
-    if (last && lower(f).startsWith(lower(last))) kept[kept.length - 1] = f;
-    else if (last && lower(last).startsWith(lower(f))) continue;
-    else kept.push(f);
-  }
-  return kept.join(" ");
+  return finals.reduce((text, f) => zusammen(text, f ?? ""), "");
 }
 
 /** Neuer Text an Position 0 setzt den alten nicht fort? (Liste neu begonnen) */
@@ -62,14 +81,14 @@ export function mitErgebnis(m: Mitschrift, resultIndex: number, results: Ergebni
 
 /** Die Erkennung startet nach einer Pause neu: alles Bisherige (auch Unfertiges) sichern */
 export function mitNeustart(m: Mitschrift): Mitschrift {
-  const bisher = norm(`${joinFinals(m.finals.filter((f) => f !== undefined))} ${m.pending}`);
+  const bisher = zusammen(joinFinals(m.finals.filter((f) => f !== undefined)), m.pending);
   return { gesichert: bisher ? [...m.gesichert, bisher] : m.gesichert, finals: [], pending: "" };
 }
 
 /** Text der Mitschrift – `mitUnfertig`: auch der letzte, noch nicht fertige Teil */
 export function mitschriftText(m: Mitschrift, mitUnfertig = true): string {
   const fertig = joinFinals([...m.gesichert, ...m.finals.filter((f) => f !== undefined)]);
-  return norm(mitUnfertig ? `${fertig} ${m.pending}` : fertig);
+  return mitUnfertig ? zusammen(fertig, m.pending) : fertig;
 }
 
 /** Wurde in dieser Mitschrift schon etwas gesagt? */

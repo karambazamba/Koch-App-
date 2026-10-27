@@ -2540,4 +2540,10 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Ende, Notausgang, Mia verstummt vor dem Zuhören, Hintergrund setzt zurück.
 - Mikro-Protokoll mit 50 Zeilen unter „Für Entwickler“, mit Teilen.
 - „Lieber tippen“ → „Lieber schreiben“, „＋ = schreiben, Mia = sprechen“.
+- Live-Text nie doppelt: die Blase hängte den unfertigen Teil ein zweites Mal
+  an, und iOS liefert Unfertiges kumuliert. `zusammen` (mitschrift.ts) legt
+  Überlappungen wortweise zusammen, echte Wiederholungen bleiben.
+- Ablauf-Ring mittig: feste Größe (Mia + 2 × 8 px) statt `inset` (ein SVG
+  dehnt sich nicht), 2,5 px, Start oben, läuft im Uhrzeigersinn ab;
+  Durchklick misst die Mitte (± 1 px).
 

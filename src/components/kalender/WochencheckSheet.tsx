@@ -161,7 +161,8 @@ export function WochencheckSheet({ data, onClose }: { data: AssistantData; onClo
   }
 
   // Zuhören auf derselben Bühne wie jedes Gespräch: oben Mias Satz und das Gesagte, unten Mia
-  const spoken = `${text}${speech.listening && speech.interim ? ` ${speech.interim}` : ""}`.trim();
+  // `text` enthält beim Zuhören schon den unfertigen Teil
+  const spoken = text.trim();
   const state = stageState({ listening: speech.listening, thinking: stage === "sortieren", speaking: false });
   const mic = { blocked: speech.blocked, supported: speech.supported };
   const layout = stageLayout({ typing, ...mic });
