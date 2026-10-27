@@ -76,6 +76,17 @@ describe("Frei erzählen", () => {
     expect(ideaResult(out[0])).toBe(`Dann mach doch ${out[0].title}!`);
   });
 
+  it("kurz wie im Clip: „Hähnchen gekauft, was Cremiges?“ (früher: Grießbrei)", () => {
+    for (const satz of ["Hähnchen gekauft, was Cremiges?", "Hab Hähnchen gekauft. Was Cremiges?", "Grad Hähnchen geholt, was Cremiges"]) {
+      const t = parseIdeaTalk(satz);
+      expect(t.have).toEqual(["Hähnchen"]);
+      expect(t.moods).toEqual(["cremig"]);
+      const out = ideas(t);
+      expect(out).toHaveLength(3);
+      expect(out[0].title).toMatch(/Hähnchen/);
+    }
+  });
+
   it("„nicht schon wieder Hähnchen“ → kein Hähnchen mehr", () => {
     const t = mergeTalk(parseIdeaTalk(SATZ), parseIdeaTalk("nicht schon wieder Hähnchen"));
     expect(t.have).toEqual(["Paprika", "Sahne"]);

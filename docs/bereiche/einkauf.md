@@ -212,6 +212,18 @@ Einkaufsmodus für den Laden. Immer sichtbar (kein Baustein).
   (`boughtCount`). Nur 7–20 Uhr, nie in der Pause; zählt nicht als proaktive
   Mitteilung. Auf der Jetzt-Karte der anderen leise „Felix ist gleich bei
   REWE“ (`newsFromDocs`).
+- **Steh grad davor** (Clip „Einer sagt’s, alle wissen’s“): setzt jemand
+  während eines geteilten Einkaufs etwas drauf, schickt der Server der
+  Person im Laden „Lisa hat Milch auf die Liste gesetzt.“ mit Knopf „Steh
+  grad davor“ (Service Worker → `/einkaufsliste?davor=<konto>|<sache>`,
+  `davorFromLink`, `useDavorLink`); im Einkaufsmodus steht derselbe Knopf
+  unter der gelben Zeile. Die Antwort hängt am geteilten Einkauf
+  (`antworten`: an wen, welche Sache, wann; je Person und Sache einmal,
+  höchstens 20; `answerTrip`, `sendAnswer`) und kommt bei der Person, die es
+  draufsetzte, als Mitteilung „Felix zu Milch: Steh grad davor.“ und
+  30 Min. leise oben in der Einkaufsliste an (`AntwortZeile`,
+  `answersForMe`). Gleiche Grenzen wie oben (7–20 Uhr, nie in der Pause,
+  Schalter „Einkauf unterwegs“, nicht proaktiv).
 
 ## Begleitung (Mia)
 
@@ -256,7 +268,11 @@ Einkaufsmodus für den Laden. Immer sichtbar (kein Baustein).
   Jetzt-Karte „Auf dem Heimweg?“.
 - `tests/einkauf/unterwegs.test.ts` – Familie Bescheid sagen: Speicher,
   Schnellknöpfe, Gelb, Texte, Abgleich, Server-Mitteilungen (Ruhezeit,
-  Pause, nicht proaktiv).
+  Pause, nicht proaktiv), „Steh grad davor“ (Mitteilung an die Person im
+  Laden, Antwort an die Person, die es draufsetzte, Link aus der Mitteilung).
+- Durchklick: Ablauf `familieTeilen` (`e2e/ablaeufe/familieTeilen.mjs`):
+  Lisa sagt Mia „Milch auf die Liste“ → bei Felix im Laden gelb in
+  höchstens 5 s → „Steh grad davor“ kommt bei Lisa an.
 - Durchklick: Ablauf `einkaufUnterwegs` in `e2e/ablaeufe/konten.mjs` (zwei
   Geräte mit `KONTEN_TEST`: Bescheid sagen → Hinweis bei B, „+ Butter“ →
   gelb bei A, „Fertig eingekauft“ kommt an).

@@ -51,6 +51,7 @@ import { helperName } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { buzz } from "@/components/heute/actions";
 import { plusFromLink } from "@/lib/einkauf/unterwegs/unterwegs";
+import { AntwortZeile, useDavorLink } from "@/components/einkauf/unterwegs/Antwort";
 import { showToast } from "@/lib/core/toast";
 
 const SKELETON = <div className={`${CARD} m-4 h-64 animate-pulse`} />;
@@ -84,6 +85,8 @@ export function ShoppingListView() {
   useEffect(() => {
     if (carryWeek) carryOverManual(carryWeek);
   }, [carryWeek]);
+  // „Steh grad davor“ aus der Mitteilung (Einkauf unterwegs)
+  useDavorLink();
   // Schnellknopf „+ Butter“ aus der Mitteilung (Einkauf unterwegs): einmal draufsetzen
   const plusDone = useRef(false);
   const plusWeek = data?.weekStart;
@@ -208,6 +211,8 @@ export function ShoppingListView() {
               </Link>
             )}
           </div>
+
+        <AntwortZeile />
 
         {shareNote && <p className="rounded-field bg-accent-soft px-4 py-2 text-sm font-semibold text-accent-strong">{shareNote}</p>}
 

@@ -70,6 +70,13 @@ Nichts geht verloren.
   alle, Arbeit nur Besitzer, Aufgaben nur wer sie hat; Pinnwand und Abgeben
   proaktiv (1 am Tag, nicht 20–7 Uhr, nie Eigenes); nie doppelt
   (`push_gesendet`). Abgelaufene Abos (404/410) werden entfernt.
+- Einkauf unterwegs (Einkauf Teil 6): Start/Ende an die anderen; während
+  des eigenen geteilten Einkaufs „Lisa hat Milch auf die Liste gesetzt.“ mit
+  Knopf „Steh grad davor“ (`davor:<konto>|<sache>`), die Antwort „Felix zu
+  Milch: Steh grad davor.“ an die Person, die es draufsetzte. Vom Menschen
+  ausgelöst, also nicht proaktiv; nur 7–20 Uhr, nie in der Pause, Schalter
+  „Einkauf unterwegs“. Die Route liest dafür zusätzlich frische
+  Einkaufs-Einträge (15 Min.) und die Anzeigenamen des Haushalts.
 - Gleicher `tag` wie die Mitteilung auf dem Gerät – kommt beides, ersetzt die
   eine die andere.
 - Tabellen: `push_abos` (RLS: nur eigene, nur eigener Haushalt),

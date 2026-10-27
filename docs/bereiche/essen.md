@@ -330,7 +330,8 @@ Ideen“. Verschwindet mit dem ersten eigenen Gericht oder dem Beispiel-Tag.
 - Darunter die Mia-Karte „Ganz was anderes?“ (Mia pulsiert, atmet, zwinkert;
   kein Pfeil, kein Mikrofon) mit zwei Beispiel-Sätzen. Antippen = Mia hört
   zu (Mikro aus → Tippfeld).
-- Erzähltes (`parseIdeaTalk`): Zutaten („Ich hab Hähnchen gekauft“, „Paprika
+- Erzähltes (`parseIdeaTalk`): Zutaten („Ich hab Hähnchen gekauft“, auch kurz
+  „Hähnchen gekauft“ bzw. „Grad Hähnchen geholt“ wie im Clip, „Paprika
   und Sahne sind noch da“) → „im Haus“ (mit Vorrat-Baustein in den Vorrat,
   sonst `noteImHaus` für 3 Tage) und kurz „… merk ich mir als „im Haus“ ✓“;
   Wünsche („was Cremiges“, „schnell“, „ohne Fleisch“, „was mit Kürbis“),

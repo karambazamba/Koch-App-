@@ -3,13 +3,20 @@
 // zählt nicht als proaktiv.
 import { describe, expect, it } from "vitest";
 import {
+  addedText,
   addTrip,
+  answered,
+  answersForMe,
+  answerText,
+  answerTrip,
   boughtCount,
+  davorFromLink,
   endText,
   finishTrip,
   migrateBescheid,
   migrateTrips,
   newDuringTrip,
+  ownOpenTrip,
   plusFromLink,
   sameTrip,
   startText,
@@ -173,5 +180,96 @@ describe("Mitteilungen vom Server", () => {
   it("ohne Laden oder ohne Vorschläge: nur „Nichts, danke“", () => {
     expect(plan([abo("L", "lisa")], [row(trip({ shop: "" }))])).toEqual([]);
     expect(plan([abo("L", "lisa")], [row(trip({ vorschlaege: [] }))])[0].payload.actions).toEqual([{ action: "nichts", title: "Nichts, danke" }]);
+  });
+});
+
+// Clip „Einer sagt’s, alle wissen’s“: Lisa setzt Milch drauf, Felix ist im
+// Laden → Mitteilung mit „Steh grad davor“; die Antwort kommt bei Lisa an.
+describe("Steh grad davor", () => {
+  const HH = "hh-1";
+  const milch = (erstellt: string, besitzer = "lisa"): PushEntryRow => ({ household_id: HH, id: "ek:2026-10-19:m1", typ: "einkauf", raum: "familie", besitzer, erstellt, geaendert: erstellt, data: { week: "2026-10-19", item: { id: "m1", name: "Milch" } } });
+  const weg = (data: Trip): PushEntryRow => ({ household_id: HH, id: `uw:${data.id}`, typ: "unterwegs", raum: "familie", besitzer: "felix", erstellt: data.start, geaendert: data.start, data });
+  const abo = (id: string, user: string, settings: PushAbo["settings"] = {}): PushAbo => ({ id, user_id: user, household_id: HH, settings });
+  const names = { felix: "Felix", lisa: "Lisa" };
+  const plan = (abos: PushAbo[], rows: PushEntryRow[], clock: string, extra: Partial<Parameters<typeof planPushes>[0]> = {}) => {
+    const [h, m] = clock.split(":").map(Number);
+    return planPushes({ abos, rows, today: T, minute: h * 60 + m, nowMs: at(clock), sent: new Set(), proactiveToday: new Set(), names, ...extra });
+  };
+  const nurNeu = (out: ReturnType<typeof plan>) => out.filter((m) => !m.key.startsWith("unterwegs:"));
+
+  it("Antwort festhalten: je Person und Sache einmal, Speicher behält sie", () => {
+    const s = answerTrip({ version: 1, trips: [trip()] }, "w1", { an: "lisa", was: "Milch", at: iso("17:05") });
+    expect(s.trips[0].antworten).toEqual([{ an: "lisa", was: "Milch", at: iso("17:05") }]);
+    expect(answerTrip(s, "w1", { an: "lisa", was: "milch", at: iso("17:06") })).toEqual(s);
+    expect(answered(s.trips[0], "lisa", "MILCH")).toBe(true);
+    expect(answered(s.trips[0], "felix", "Milch")).toBe(false);
+    expect(answered(undefined, "lisa", "Milch")).toBe(false);
+    expect(migrateTrips({ version: 1, trips: [{ ...trip(), antworten: [{ an: "lisa", was: "Milch", at: iso("17:05") }, { an: 1 }] }] })?.trips[0].antworten).toEqual([{ an: "lisa", was: "Milch", at: iso("17:05") }]);
+  });
+
+  it("der eigene laufende Einkauf: erst die gemerkte Nummer, sonst der letzte eigene (3 Std.)", () => {
+    const trips = [trip({ id: "a", von: "lisa" }), trip({ id: "b", von: "felix" }), trip({ id: "c", end: iso("17:10") })];
+    expect(ownOpenTrip(trips, "b", "felix", at("17:20"))?.id).toBe("b");
+    expect(ownOpenTrip(trips, "c", "felix", at("17:20"))?.id).toBe("b");
+    expect(ownOpenTrip(trips, null, "felix", at("20:30"))).toBeUndefined();
+    expect(ownOpenTrip([trip({ id: "lokal" })], null, "felix", at("17:20"))?.id).toBe("lokal");
+  });
+
+  it("bei Lisa: nur Antworten an sie, frisch (30 Min.), neueste zuerst", () => {
+    const t = trip({ von: "felix", antworten: [{ an: "lisa", was: "Milch", at: iso("17:05") }, { an: "lisa", was: "Brot", at: iso("17:08") }, { an: "mathis", was: "Eis", at: iso("17:09") }] });
+    expect(answersForMe([t], "lisa", at("17:10"))).toEqual([
+      { by: "Felix", was: "Brot", at: iso("17:08") },
+      { by: "Felix", was: "Milch", at: iso("17:05") },
+    ]);
+    expect(answersForMe([t], "lisa", at("17:40"))).toEqual([]);
+    expect(answersForMe([t], "felix", at("17:10"))).toEqual([]);
+    expect(answersForMe([t], null, at("17:10"))).toEqual([]);
+    expect(answerText("Felix", "Milch")).toBe("Felix zu Milch: Steh grad davor.");
+    expect(addedText("Lisa", "Milch")).toBe("Lisa hat Milch auf die Liste gesetzt.");
+    expect(addedText("", "Milch")).toBe("Jemand hat Milch auf die Liste gesetzt.");
+  });
+
+  it("Knopf aus der Mitteilung: Konto und Sache, Kaputtes = nichts", () => {
+    expect(davorFromLink(`?davor=${encodeURIComponent("1b2c-3d|Milch")}`)).toEqual({ an: "1b2c-3d", was: "Milch" });
+    expect(davorFromLink("?davor=Milch")).toBeNull();
+    expect(davorFromLink(`?davor=${encodeURIComponent("a b|Milch")}`)).toBeNull();
+    expect(davorFromLink("")).toBeNull();
+  });
+
+  it("Felix im Laden bekommt „Lisa hat Milch auf die Liste gesetzt.“ mit „Steh grad davor“ – Lisa nicht", () => {
+    const out = nurNeu(plan([abo("F", "felix"), abo("L", "lisa")], [weg(trip()), milch(iso("17:04"))], "17:05"));
+    expect(out).toEqual([
+      {
+        aboId: "F",
+        key: "einkauf:ek:2026-10-19:m1",
+        payload: { title: "Mia", body: "Lisa hat Milch auf die Liste gesetzt.", href: "/einkaufsliste/laden?name=REWE", tag: "einkauf:ek:2026-10-19:m1", actions: [{ action: "davor:lisa|Milch", title: "Steh grad davor" }] },
+      },
+    ]);
+  });
+
+  it("nichts ohne geteilten Einkauf, nach „Fertig“, für Eigenes, für Älteres oder vor dem Start", () => {
+    expect(nurNeu(plan([abo("F", "felix")], [milch(iso("17:04"))], "17:05"))).toEqual([]);
+    expect(nurNeu(plan([abo("F", "felix")], [weg(trip({ end: iso("17:03") })), milch(iso("17:04"))], "17:05"))).toEqual([]);
+    expect(nurNeu(plan([abo("F", "felix")], [weg(trip()), milch(iso("17:04"), "felix")], "17:05"))).toEqual([]);
+    expect(nurNeu(plan([abo("F", "felix")], [weg(trip()), milch(iso("16:50"))], "17:05"))).toEqual([]);
+    expect(nurNeu(plan([abo("F", "felix")], [weg(trip()), milch(iso("17:04"))], "17:20"))).toEqual([]);
+    expect(nurNeu(plan([abo("F", "felix")], [weg(trip({ start: iso("13:00") })), milch(iso("17:04"))], "17:05"))).toEqual([]);
+  });
+
+  it("Antwort kommt bei Lisa an (nur bei ihr, einmal, frisch)", () => {
+    const t = trip({ antworten: [{ an: "lisa", was: "Milch", at: iso("17:06") }] });
+    const out = nurNeu(plan([abo("F", "felix"), abo("L", "lisa"), abo("M", "mathis")], [weg(t)], "17:07"));
+    expect(out).toEqual([{ aboId: "L", key: "antwort:uw:w1:milch", payload: { title: "Mia", body: "Felix zu Milch: Steh grad davor.", href: "/einkaufsliste", tag: "antwort:uw:w1:milch" } }]);
+    expect(nurNeu(plan([abo("L", "lisa")], [weg(t)], "17:08", { sent: sentKeys([{ abo_id: "L", key: "antwort:uw:w1:milch" }]) }))).toEqual([]);
+    expect(nurNeu(plan([abo("L", "lisa")], [weg(t)], "17:30"))).toEqual([]);
+  });
+
+  it("nur 7–20 Uhr, nie in der Pause, Schalter „Einkauf unterwegs“ aus = nichts; zählt nicht als proaktiv", () => {
+    const rows = [weg(trip({ start: iso("19:50") })), milch(iso("20:01"))];
+    expect(nurNeu(plan([abo("F", "felix")], rows, "20:02"))).toEqual([]);
+    const day = [weg(trip()), milch(iso("17:04"))];
+    expect(nurNeu(plan([abo("F", "felix", { pause: { from: "2026-10-20", until: null } })], day, "17:05"))).toEqual([]);
+    expect(nurNeu(plan([abo("F", "felix", { kinds: { einkauf: false } })], day, "17:05"))).toEqual([]);
+    expect(nurNeu(plan([abo("F", "felix")], day, "17:05", { proactiveToday: new Set(["F"]) }))).toHaveLength(1);
   });
 });

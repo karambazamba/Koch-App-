@@ -12,6 +12,7 @@ berechtigtes Interesse.
 |---|---|---|---|---|---|
 | Termine, Aufgaben (`wasgibts.eintraege`) | Gerät; mit Konto Server (`entries`) | Kalender, Heute | bis gelöscht; Löschen als Markierung, danach weg beim Abgleich | Familie (Raum „Familie“), nur Besitzer (Raum „Arbeit“), Aufgaben nur Besitzer + Empfänger | lit. b |
 | Einkauf, Im Haus, Rezepte, Wochenplan | Gerät; mit Konto Server (`entries`) | Essen, Einkauf | bis gelöscht | Familie | lit. b |
+| Einkauf unterwegs („Familie Bescheid sagen“, `wasgibts.einkaufswege`): Laden, Anzeigename, Start/Ende, Anzahl, 2 Schnellknöpfe, Antworten „Steh grad davor“ (an wen = Konto-ID, welche Sache, wann) | Gerät; mit Konto Server (`entries`, Typ `unterwegs`) | der Familie sagen, wer gerade einkauft; Antwort an die Person, die etwas draufsetzte | 2 Tage, Antworten höchstens 20 je Einkauf | Familie; Mitteilungstexte gehen verschlüsselt über die Push-Dienste der Browser | lit. b |
 | Notizen | Gerät (mit Konto: Familie bzw. Arbeit über `entries`) | festhalten | bis gelöscht | wie Raum | lit. b |
 | Pinnwand-Nachrichten | Gerät; mit Konto Server | Absprachen | 24 Std. sichtbar, dann aufgeräumt | Familie | lit. b |
 | Sprachnachrichten (Ton) | IndexedDB; mit Konto Supabase Storage „memos“ | Pinnwand | 24 Std.; Server räumt täglich auf (`/api/memos/aufraeumen`) | Familie | lit. b |

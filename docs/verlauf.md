@@ -2726,3 +2726,19 @@ Fehler in `docs/aufraeumen-nachher.md`.
   warm ab „Stürmisch“, Windsack rot ab „Sturm“.
 - Jetzt-Karte: Wind nur ab „Stürmisch“ und nur mit Planbezug („Stürmisch ab
   14 Uhr · Trampolin sichern?“). Der alte Kachel-Tipp `weatherTip` ist weg.
+
+## Werbeclip-Abgleich „Mia“ vom 23.10. (v0.129.0)
+
+- Clip-Szenen geprüft: „Einfach erzählen“ (ein Satz → Termin + Einkauf mit
+  Übersicht, über die KI; Prüfstand „Mehreres auf einmal“), „Einer sagt’s,
+  alle wissen’s“, „Gemeinsam/Privat“, Ideen „Mia hat drei“ (Kochidee).
+- Neu „Steh grad davor“: setzt jemand während eines geteilten Einkaufs etwas
+  drauf, bekommt die Person im Laden eine Mitteilung mit Knopf „Steh grad
+  davor“ (auch im Einkaufsmodus unter der gelben Zeile); die Antwort hängt am
+  geteilten Einkauf und kommt als Mitteilung und leise oben in der
+  Einkaufsliste bei der Person an, die es draufsetzte.
+- Kochidee versteht auch kurz „Hähnchen gekauft, was Cremiges?“ (vorher kam
+  Grießbrei); Testmodus versteht „Milch auf die Liste“.
+- Härtetest „Familie teilen“: `tests/konten/familieTeilen.test.ts` und
+  Durchklick `familieTeilen` (zwei Konten, Einkauf live ≤ 5 s, Termine
+  Familie/Arbeit, Pinnwand live, „Steh grad davor“).

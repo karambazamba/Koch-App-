@@ -128,7 +128,8 @@ function everyday(t: string) {
     gone: s.match(/^(?:die|der|das)?\s*(.+?)\s+(?:ist|sind)\s+(?:alle|aufgebraucht|leer)$/i)?.[1]?.trim() ?? null,
     // „Hab noch Hack“ → Im Haus
     still: s.match(/^(?:(?:ich|wir)\s+)?hab(?:e|en)?\s+noch\s+([a-zäöüß]+(?:\s*(?:,|und)\s*[a-zäöüß]+)*)$/i)?.[1] ?? null,
-    need: s.match(/^(?:wir|ich)\s+brauch(?:en|e)\s+(?:noch\s+)?(.+)$/i)?.[1] ?? null,
+    // „Wir brauchen Milch“ bzw. kurz wie im Clip: „Milch auf die Liste“
+    need: s.match(/^(?:wir|ich)\s+brauch(?:en|e)\s+(?:noch\s+)?(.+)$/i)?.[1] ?? s.match(/^(?!(?:pack|setz|schreib)\w*\s)([^,]+?)\s+auf\s+die\s+liste$/i)?.[1] ?? null,
     quick: /nur (noch )?schnelle/i.test(s),
   };
 }
