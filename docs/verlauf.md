@@ -2680,3 +2680,14 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Rechtsseiten. Wischen vom linken Rand = eine Ebene zurück. Nach > 5 Min:
   Startseite, Bühne zu, Kochmodus bleibt. Mia erklärt es einmal.
 
+## Essen – die nächsten 7 Tage (v0.124.0, Tafel 97)
+
+- Ersetzt die Wochenkarte (Diese/Nächste Woche) und den Nachtrag „150
+  beliebteste Gerichte“. Essen zeigt immer die nächsten 7 Tage ab heute, als
+  Liste oder Reihe (gemerkt); jeder Tag öffnet dasselbe Tag-Fenster mit großem
+  Bild, „Rezept ansehen“, Tauschen, Anderer Tag, Kein Kochtag und drei Ideen.
+- Halten & ziehen tauscht zwei Tage (auch über die Wochengrenze) mit
+  „Rückgängig“; „Zuletzt gegessen ›“ zeigt die letzten 14 Tage; „Woche
+  planen“ übergibt an Mia. Mia verschiebt rollend, auch über den Namen des
+  Gerichts.
+
