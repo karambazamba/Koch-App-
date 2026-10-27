@@ -21,7 +21,8 @@ export const beispielItems = (): ListItem[] =>
 /** Das Beispiel (oder null, wenn kein Beispiel-Tag ist) */
 export function useEinkaufBeispiel() {
   const demo = useDemo();
-  if (!demoTiles(demo, todayIso()).includes("einkauf")) return null;
+  // Ohne Beispiel (auch beim Vorrendern auf dem Server) gar nicht erst nach „heute“ fragen
+  if (!demo || !demoTiles(demo, todayIso()).includes("einkauf")) return null;
   const items = beispielItems();
   return (
     <div className="flex flex-col gap-4" data-beispiel-einkauf>

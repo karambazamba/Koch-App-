@@ -39,6 +39,10 @@ describe("Liste aufgeräumt", () => {
     expect(r.liste.map((i) => i.name)).toEqual(["Pfeffer", "Mehl", "Tomaten"]);
   });
 
+  it("Bug: Beispiel-Einkauf fragt beim Vorrendern nicht nach „heute“ (Build brach ab)", () => {
+    expect(readFileSync("src/components/einkauf/EinkaufBeispiel.tsx", "utf8")).toMatch(/if \(!demo \|\| !demoTiles\(demo, todayIso\(\)\)/);
+  });
+
   it("Kacheln: drei Spalten, Silbentrennung statt abgeschnittener Namen", () => {
     const tile = readFileSync("src/components/einkauf/kacheln/ItemTile.tsx", "utf8");
     expect(tile).toMatch(/hyphens-auto/);
