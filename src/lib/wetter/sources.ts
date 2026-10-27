@@ -1,6 +1,8 @@
 // Wetterdaten in unser Format bringen – rein, ohne Netz (Abruf in server.ts).
 // Hauptquelle: DWD MOSMIX über Bright Sky (api.brightsky.dev, /weather für
-// Stunden + /current_weather für die Messung der nächsten Station). Fallback:
+// Stunden + /current_weather für die Messung der nächsten Station, /radar für
+// „regnet es JETZT hier?“ – 5-Minuten-Werte des DWD-Regenradars, nur der
+// Punkt des Orts). Fallback:
 // Open-Meteo mit dem DWD-Modell ICON (models=icon_seamless). Beide liefern
 // dasselbe Forecast-Format; Tage werden immer selbst aus den Stunden gebaut.
 
@@ -34,12 +36,46 @@ const probability = (p: number | null, p6: number | null, mm: number) => p ?? p6
 /** "2026-10-21T15:00:00+02:00" → Datum + Stunde (Ortszeit, tz=Europe/Berlin angefragt) */
 const local = (ts: string) => ({ date: ts.slice(0, 10), hour: Number(ts.slice(11, 13)) });
 
-/** Messung älter als 90 Minuten oder Station weiter als 25 km → nicht nehmen */
-const STATION_MAX_AGE_MIN = 90;
-const STATION_MAX_KM = 25;
+/** Messung älter als 40 Minuten oder Station weiter als 10 km → nicht nehmen (dann die Vorhersage der Stunde) */
+const STATION_MAX_AGE_MIN = 40;
+const STATION_MAX_KM = 10;
+
+/** Radar am Ort: Regnet es jetzt? Hat es in der letzten halben Stunde geregnet? */
+export type RadarNow = { now: boolean; recent: boolean };
+
+/** Ab so viel Niederschlag je 5 Minuten (in 0,01 mm) zählt es als Regen */
+const RADAR_MIN = 2;
+const RAIN_CODES = [61, 67, 73, 95];
+
+/**
+ * Bright Sky /radar (format=plain): je 5 Minuten ein Raster `precipitation_5`
+ * (0,01 mm). Gelesen wird nur die Zelle des Orts (`latlon_position`, sonst
+ * die Mitte). Fehlt etwas → null (dann wie bisher). @public
+ */
+export function fromRadar(json: unknown, nowIso: string): RadarNow | null {
+  const frames = (json as Raw)?.radar;
+  if (!Array.isArray(frames) || !frames.length) return null;
+  const pos = (json as Raw)?.latlon_position as Raw | undefined;
+  const at = (grid: unknown): number | null => {
+    if (!Array.isArray(grid) || !grid.length || !Array.isArray(grid[0])) return null;
+    const y = num(pos?.y) !== null ? Math.min(grid.length - 1, Math.max(0, Math.floor(num(pos?.y)!))) : Math.floor(grid.length / 2);
+    const row = grid[y] as unknown[];
+    const x = num(pos?.x) !== null ? Math.min(row.length - 1, Math.max(0, Math.floor(num(pos?.x)!))) : Math.floor(row.length / 2);
+    return num(row[x]);
+  };
+  const nowMs = Date.parse(nowIso);
+  const seen = frames
+    .map((f: Raw) => ({ t: typeof f?.timestamp === "string" ? Date.parse(f.timestamp) : NaN, v: at(f?.precipitation_5) }))
+    .filter((f) => Number.isFinite(f.t) && f.v !== null && f.t <= nowMs + 60_000)
+    .sort((a, b) => a.t - b.t);
+  const current = seen[seen.length - 1];
+  if (!current || nowMs - current.t > 20 * 60_000) return null;
+  const wet = (v: number | null) => (v ?? 0) >= RADAR_MIN;
+  return { now: wet(current.v), recent: seen.some((f) => f !== current && nowMs - f.t <= 30 * 60_000 && wet(f.v)) };
+}
 
 /** Bright Sky (/weather + optional /current_weather) → Forecast @public */
-export function fromBrightSky(weather: unknown, current: unknown, place: string, nowIso: string): Forecast | null {
+export function fromBrightSky(weather: unknown, current: unknown, place: string, nowIso: string, radar: RadarNow | null = null): Forecast | null {
   const rows = (weather as Raw)?.weather;
   if (!Array.isArray(rows) || !rows.length) return null;
   const hours: ForecastHour[] = rows
@@ -62,7 +98,7 @@ export function fromBrightSky(weather: unknown, current: unknown, place: string,
   // Doppelte Stunden (Zeitumstellung) – die erste behalten
   const seen = new Set<string>();
   const unique = hours.filter((h) => !seen.has(`${h.date}:${h.hour}`) && Boolean(seen.add(`${h.date}:${h.hour}`)));
-  return { place, fetchedAt: nowIso, source: "dwd", current: currentFrom(current, unique, nowIso), hours: unique, days: buildDays(unique) };
+  return { place, fetchedAt: nowIso, source: "dwd", current: withRadar(currentFrom(current, unique, nowIso), unique, nowIso, radar), hours: unique, days: buildDays(unique) };
 }
 
 /** Jetzt: Messung der Station (frisch und nah) – sonst die Vorhersage der aktuellen Stunde */
@@ -81,6 +117,19 @@ function currentFrom(current: unknown, hours: ForecastHour[], nowIso: string): F
     return { temp: num(c.temperature) ?? 0, code, measured: true, raining };
   }
   return nowFromHours(hours, nowIso);
+}
+
+/**
+ * „Gerade Regen“ nur, wenn das Radar am Ort JETZT Niederschlag zeigt. Hört es
+ * auf: „Regen hat aufgehört“ und Sonne/Wolken laut aktueller Stunde (nie
+ * ein Regen-Symbol ohne Regen). Ohne Radar bleibt alles wie bisher.
+ */
+function withRadar(cur: Forecast["current"], hours: ForecastHour[], nowIso: string, radar: RadarNow | null): Forecast["current"] {
+  if (!radar) return cur;
+  if (radar.now) return { ...cur, raining: true, code: RAIN_CODES.includes(cur.code) ? cur.code : 61 };
+  const hourCode = nowFromHours(hours, nowIso).code;
+  const code = RAIN_CODES.includes(cur.code) ? (RAIN_CODES.includes(hourCode) ? 3 : hourCode) : cur.code;
+  return { ...cur, raining: false, code, ...(radar.recent ? { stopped: true } : {}) };
 }
 
 /** Vorhersage der aktuellen Stunde (Ortszeit Berlin) */

@@ -60,18 +60,24 @@ Server `/api/wetter`:
 - `?ort=Eutin` (höchstens 60 Zeichen, ohne `<>{}`) → Vorhersage.
   `?lat&lon` → nur `{ ort }` (Stadtname über Nominatim).
 - Ablauf: Ort → Koordinaten (Open-Meteo Geocoding, nur Deutschland) → DWD
-  MOSMIX über Bright Sky (`/weather` 7 Tage + `/current_weather`). Antwortet
+  MOSMIX über Bright Sky (`/weather` 7 Tage + `/current_weather` + `/radar`
+  mit `distance=1000`, Timeout 6 s, fällt es aus, geht es ohne). Antwortet
   Bright Sky nicht, Open-Meteo mit `models=icon_seamless`. Timeout je 8 s.
-- Server-Zwischenspeicher 30 Minuten je Ort. Antwort mit
+- Server-Zwischenspeicher 10 Minuten je Ort (App lädt beim Öffnen neu, wenn
+  älter als 15 Minuten). Antwort mit
   `Cache-Control: public, max-age=600`.
 - Limit pro IP über `allowRequest("wetter:<ip>", 3)` (30 pro Minute, 180 pro
   Stunde). Kein Zugangscode, weil Wetter auch ohne KI gehen muss.
 - `WETTER_MOCK=1` = Testmodus ohne Netz und ohne Limit. `?szenario=` regen
   (Standard, Regen heute 15–18 Uhr) · frost · heiss · klar · sturm · schnee ·
   gewitter · wolkig; `?heute=` setzt den Tag.
-- „Jetzt“: Messung der Station nur, wenn ≤ 25 km und ≤ 90 Min alt
-  (`measured`). `raining` nur bei gemessenem Regen. Sonst Vorhersage der
-  aktuellen Stunde.
+- „Jetzt“: Temperatur der Station nur, wenn ≤ 10 km und ≤ 40 Min alt
+  (`measured`), sonst Vorhersage der aktuellen Stunde. `raining` („Gerade
+  Regen“) nur, wenn das DWD-Regenradar am Ort JETZT Niederschlag zeigt
+  (`fromRadar`: Zelle des Orts aus `latlon_position`, ab 0,02 mm je 5 Min,
+  jüngster Wert höchstens 20 Min alt). Eben noch Regen, jetzt trocken →
+  `stopped` („Regen hat aufgehört“) und Sonne/Wolken laut aktueller Stunde.
+  Ohne Radar wie bisher (Station).
 
 Ehrliche Regel (`dayLook`, Stunden 7–21 Uhr):
 - Regenstunde = mindestens 0,2 mm UND Regenrisiko ab 50 % (`isRainy`).

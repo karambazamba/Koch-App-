@@ -86,8 +86,8 @@ describe("Letzte Vorhersage und Abruf", () => {
     expect(saved.fetchedAt).toBe(`${TODAY}T07:00:00.000Z`);
   });
 
-  it("frische Daten (unter 30 Min) für denselben Ort → kein Abruf; force holt neu", async () => {
-    local.setItem("wasgibts.wetterdaten", JSON.stringify({ version: 1, forecast: forecast("Eutin", `${TODAY}T06:45:00.000Z`) }));
+  it("frische Daten (unter 15 Min) für denselben Ort → kein Abruf; force holt neu", async () => {
+    local.setItem("wasgibts.wetterdaten", JSON.stringify({ version: 1, forecast: forecast("Eutin", `${TODAY}T06:50:00.000Z`) }));
     const fn = vi.fn(async () => json(forecast()));
     vi.stubGlobal("fetch", fn);
     expect((await client.refreshForecast("EUTIN"))?.place).toBe("Eutin");
@@ -96,8 +96,8 @@ describe("Letzte Vorhersage und Abruf", () => {
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
-  it("alte Daten (über 30 Min) oder anderer Ort → neu holen", async () => {
-    local.setItem("wasgibts.wetterdaten", JSON.stringify({ version: 1, forecast: forecast("Eutin", `${TODAY}T06:20:00.000Z`) }));
+  it("alte Daten (über 15 Min) oder anderer Ort → neu holen", async () => {
+    local.setItem("wasgibts.wetterdaten", JSON.stringify({ version: 1, forecast: forecast("Eutin", `${TODAY}T06:40:00.000Z`) }));
     const fn = vi.fn(async () => json(forecast()));
     vi.stubGlobal("fetch", fn);
     await client.refreshForecast("Eutin");

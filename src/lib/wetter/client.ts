@@ -13,7 +13,8 @@ import { sanitizeForecast, type Forecast } from "@/lib/wetter/forecast";
 import type { StorageKey } from "@/lib/core/storage";
 
 const DEFAULT_PLACE = "Eutin";
-const FRESH_MS = 30 * 60 * 1000;
+/** Beim Öffnen neu laden, wenn älter als 15 Minuten (Regen jetzt aus dem Radar) */
+const FRESH_MS = 15 * 60 * 1000;
 
 type PlaceStore = { version: 1; city: string };
 const placeStore = createLocalStore("wasgibts.wetterort", (raw: unknown): PlaceStore | null => {

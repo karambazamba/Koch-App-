@@ -2587,3 +2587,10 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Grundlage, ⇄ nie dieselbe zweimal hintereinander (`naechsteIdee`).
 - 123 eingebaute Gerichte (vorher 39, `dishList.ts`), jedes mit eigener
   Zeichnung (`npm run gerichte-bilder`, neue Formregeln in `dishArt.ts`).
+
+## Wetter genauer (v0.118.0)
+
+- Pinnwand-Absätze stecken schon in v0.112 (Notizen neu + Absätze überall).
+- Wetter: „Gerade Regen“ nur noch aus dem DWD-Regenradar über Bright Sky
+  (gleicher Anbieter); hört es auf, „Regen hat aufgehört“. Station nur
+  ≤ 10 km und ≤ 40 Min alt, App lädt nach 15 statt 30 Minuten neu.

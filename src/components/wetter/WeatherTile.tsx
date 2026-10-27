@@ -68,7 +68,7 @@ export function WeatherTile({
   const range = todayRange(forecast, today);
   // „Gerade Regen“ nur, wenn die Station gerade Regen misst; sonst die ehrliche Beschreibung des Tages
   const todayDay = forecast.days.find((d) => d.date === today);
-  const kind = { text: forecast.current.raining ? "Gerade Regen" : (todayDay?.text ?? weatherKind(forecast.current.code).text) };
+  const kind = { text: forecast.current.raining ? "Gerade Regen" : forecast.current.stopped ? "Regen hat aufgehört" : (todayDay?.text ?? weatherKind(forecast.current.code).text) };
   const sentence = tip ?? `${kind.text}${range ? `, bis ${range.max}°` : ""}`;
   const parts = size === "S" ? [] : dayParts(forecast, today);
   return (
