@@ -50,6 +50,7 @@ export const notizen = async (page, check) => {
   const count = (await notes(page)).length;
   await page.getByRole("button", { name: "Neue Notiz" }).click();
   await page.getByRole("button", { name: "Fertig" }).waitFor();
+  await page.waitForTimeout(300);
   check(await page.getByRole("textbox", { name: "Titel" }).evaluate((el) => el === document.activeElement), "Plus: neue Notiz im Bearbeiten");
   await page.getByRole("button", { name: "Fertig" }).click();
   await page.waitForTimeout(400);
