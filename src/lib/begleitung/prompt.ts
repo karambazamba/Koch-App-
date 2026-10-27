@@ -111,7 +111,7 @@ Termine, Aufgaben und Notizen (Werkzeuge vorhanden) – drei verschiedene Dinge:
 - "erinner mich 30 Minuten vorher" → erinnerung "30"; "am Abend vorher" → "vorabend". Ohne Angabe keine Erinnerung.
 - Datum immer als YYYY-MM-DD aus der Datumsliste im Kontext. Nur fragen, wenn wirklich unklar (z. B. keine Uhrzeit bei "Termin um …" oder zwei passende Einträge).
 - Ändern/Verschieben/Löschen/Abhaken ("Verschieb den Steuerberater auf Donnerstag"): den Eintrag in der Liste unten finden und die id nutzen (termin_aendern, termin_loeschen, aufgabe_aendern, aufgabe_verschieben, aufgabe_erledigen). Bei wiederkehrenden Einträgen nur das eine Vorkommen, außer es ist die ganze Serie gemeint.
-- Fragen ("Was steht diese Woche an?", "Hab ich morgen Nachmittag Zeit?") beantwortest du aus der Liste unten (für spätere Tage woche_anzeigen) – kurz, ohne Zähler, ohne IDs. Nie "offen" oder "überfällig": Unerledigtes rutscht still weiter ("von gestern").
+- Fragen ("Was steht diese Woche an?", "Hab ich morgen Nachmittag Zeit?") beantwortest du aus der Liste unten (für spätere Tage woche_anzeigen) – kurz, ohne Zähler, ohne IDs. Nie "offen" oder "überfällig": Unerledigtes rutscht still weiter ("von gestern"). Abends (steht im Kontext) wandert es schon mit auf morgen: "Was steht morgen an?" nennt diese Aufgaben kurz mit ("Dazu von heute: …").
 
 Essen und Einkauf (Werkzeuge vorhanden):
 - Geplant wird höchstens EIN Hauptgericht pro Tag. Planen ist freiwillig; spontan ist genauso gut.
@@ -243,7 +243,7 @@ export function contextText(
   todayIso: string,
   weeks: { aktuell: string; naechste: string },
   tipsThisWeek = 0,
-  extra: { clock?: string; shopping?: string[] } = {},
+  extra: { clock?: string; shopping?: string[]; abends?: boolean } = {},
 ): string {
   const today = new Date(`${todayIso}T00:00:00Z`);
   const shoppingDay = data.profile.shoppingDay || "Montag";
@@ -253,7 +253,7 @@ export function contextText(
     `Heute: ${WEEKDAY_FORMAT.format(today)} (${todayIso})${extra.clock ? `, jetzt ${extra.clock} Uhr` : ""} (Zeitzone Europe/Berlin)`,
     `Datumsliste: ${Array.from({ length: 14 }, (_, i) => addDays(todayIso, i)).map((iso) => `${SHORT_DAY.format(new Date(`${iso}T00:00:00Z`))} ${iso}`).join(", ")}`,
     "",
-    calendarContext(data.entries ?? [], todayIso),
+    calendarContext(data.entries ?? [], todayIso, extra.abends),
     notesContext(data.notes ?? []),
     `Läden: ${data.laeden?.meine.length ? data.laeden.meine.join(", ") : "keine gewählt"}; feste Regeln: ${data.laeden && Object.keys(data.laeden.regeln).length ? Object.entries(data.laeden.regeln).map(([item, shop]) => `${item} → ${shop}`).join(", ") : "keine"} (ändern mit laden_regel)`,
     `Pinnwand: ${data.pinnwand?.length ? data.pinnwand.map((p) => `${p.author}: ${JSON.stringify(p.text)}`).join(" · ") : "leer"}`,

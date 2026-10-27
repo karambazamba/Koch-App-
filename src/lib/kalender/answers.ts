@@ -5,6 +5,7 @@
 import { addDays } from "@/lib/core/now";
 import { itemsForDay, weekdayShort, type CalendarEntry, type DayItem } from "@/lib/kalender/model";
 import { isAboEntry } from "@/lib/kalender/abo/model";
+import { aufgabenFuerTag } from "@/lib/kalender/mitwandern";
 
 /** "9:00" statt "09:00" (zum Vorlesen und Anzeigen) */
 export const clockLabel = (time: string) => time.replace(/^0(\d)/, "$1");
@@ -18,12 +19,21 @@ export function itemText(item: DayItem): string {
 
 const joinList = (parts: string[]) => (parts.length <= 1 ? parts.join("") : `${parts.slice(0, -1).join(", ")} und ${parts[parts.length - 1]}`);
 
-/** Antwort auf "Was steht heute/morgen/diese Woche an?" */
-export function showAnswer(entries: CalendarEntry[], today: string, from: string, days: number, label: string): string {
+/** Abends für morgen: was von heute mitwandert („von heute“, `mitwandern.ts`) – kurz, ohne Zähler */
+export function mitgewandert(entries: CalendarEntry[], today: string, abends: boolean): DayItem[] {
+  if (!abends) return [];
+  const morgen = addDays(today, 1);
+  return aufgabenFuerTag(entries, morgen, { heute: today, abends }).filter((i) => i.carried);
+}
+
+/** Antwort auf "Was steht heute/morgen/diese Woche an?" – abends nennt „morgen“ das Mitgewanderte kurz mit */
+export function showAnswer(entries: CalendarEntry[], today: string, from: string, days: number, label: string, abends = false): string {
   if (days <= 1) {
     const items = itemsForDay(entries, from, today).filter((i) => !i.done);
-    if (!items.length) return `${capital(label)} steht nichts an – ein freier Tag.`;
-    return `${capital(label)}: ${joinList(items.map(itemText))}.`;
+    const mit = from === addDays(today, 1) ? mitgewandert(entries, today, abends) : [];
+    const von = mit.length ? `${joinList([...mit.slice(0, 3).map((i) => i.title), ...(mit.length > 3 ? ["ein paar mehr"] : [])])}.` : "";
+    if (!items.length) return mit.length ? `${capital(label)} kommt nichts Neues dazu. Von heute dabei: ${von}` : `${capital(label)} steht nichts an – ein freier Tag.`;
+    return `${capital(label)}: ${joinList(items.map(itemText))}.${mit.length ? ` Dazu von heute: ${von}` : ""}`;
   }
   const busy = Array.from({ length: days }, (_, i) => addDays(from, i))
     .map((date) => ({ date, items: itemsForDay(entries, date, today).filter((i) => !i.done) }))

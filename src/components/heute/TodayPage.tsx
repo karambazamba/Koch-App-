@@ -47,7 +47,8 @@ import { useNotes } from "@/lib/notizen";
 import { todaysTraining } from "@/lib/sport";
 import { weekdayIndex } from "@/lib/kalender/model";
 import { buzz } from "@/components/heute/actions";
-import { isUrgent, itemsForDay, openTaskCount, orderedTasks, taskOverview, upcomingTermine, type CalendarEntry, type DayItem } from "@/lib/kalender/model";
+import { isUrgent, itemsForDay, taskOverview, tomorrowLabel, upcomingTermine, type CalendarEntry, type DayItem } from "@/lib/kalender/model";
+import { aufgabenFuerTag, aufgabenReihe, aufgabenTag, aufMorgen, offeneAufgaben } from "@/lib/kalender/mitwandern";
 import { AufgabenSection, TermineSection, type DemoProps } from "@/components/heute/MiniCards";
 import { useDemoDay } from "@/components/heute/useDemoDay";
 import { DemoItemSheet, DemoRow } from "@/components/heute/DemoBits";
@@ -98,6 +99,7 @@ import { InviteHintCard, useInviteHint } from "@/components/konten/InviteHintCar
 import { termineTile } from "@/lib/heute/termineKachel";
 import { haushaltOf } from "@/lib/core/haushalt";
 import { kidsWay, vorlaufVon } from "@/lib/heute/abendDaten";
+import { abendLage } from "@/lib/heute/abendThema";
 import { useMiaDenkt } from "@/components/begleitung/denktmit/useMiaDenkt";
 import { MiaKarte } from "@/components/begleitung/denktmit/MiaKarte";
 
@@ -242,9 +244,6 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const demoProps: DemoProps = { label: demoDay.label, done: demoDay.done, onToggle: (i) => (buzz(), toggleDemoDone(i.entry.id)), onGone: (i) => showDone(hideDemoItem(i.entry.id)), onOpen: setDemoItem };
   const overview = taskOverview(entries, data.todayIso);
   const workless = (list: typeof overview.heute) => (view.hideWork ? list.filter((i) => i.room !== "arbeit") : list);
-  // EINE Reihenfolge: dringend → heute → Frist → diese Woche (Startseite zeigt bis diese Woche)
-  const tasksAll = workless(orderedTasks(entries, data.todayIso).filter((i) => isUrgent(i) || i.group === "heute" || i.group === "woche"));
-  const tasks = view.tasksRest ? [] : tasksAll;
 
   // Kacheln: genau die gespeicherte Reihenfolge und Größe – im Bearbeiten-Modus dieselbe
   const visible = all.filter((t) => t.visible && !tileMeta(t.id).soon && (t.id !== "vorrat" || pantryOn) && (t.id !== "tipps" || regionOn) && (t.id !== "sport" || sportOn) && (t.id !== "notizen" || notesOn) && (t.id !== "spendentopf" || potOn));
@@ -302,6 +301,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const runningTimer = timers ? sortTimers(timers.timers.filter((x) => isRunning(x, nowMs)), nowMs)[0] : undefined;
   const steps = recipe?.steps ?? [];
   const step = cookingNow && cooking ? currentStep(steps.length, cooking.steps[recipe?.id ?? dish ?? ""] ?? []) : null;
+  const cookingStep = step !== null && steps[step] ? steps[step] : null;
   const match = recipe && stock ? matchStock(recipe.ingredients.map((i) => i.name), stock, data.todayIso) : null;
   const needs = match?.needs ?? null;
   const dueToday = workless(overview.heute).filter((i) => !i.carried && i.entry.typ === "aufgabe" && (i.entry.data.due === data.todayIso || i.entry.data.date === data.todayIso));
@@ -310,6 +310,21 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const regionTips = useTipsWindow(data.todayIso, regionOn && !demoDay.tiles.length);
   const potState = usePotState();
   // Mia denkt mit: höchstens eine Karte am Tag (nur, wenn kein anderer Hinweis steht), sonst vielleicht ein Spruch
+  // Jetzt-Karte: Essen von heute (Beispielgericht nur, solange es heute noch dran ist – danach steht es für morgen da)
+  const jetztDish = demoDish
+    ? demoMeal.tomorrow
+      ? null
+      : { name: demoMeal.recipe.title, clock: demoMeal.clock, minutes: demoMeal.recipe.prepMinutes, ready: true, missing: [], demo: true }
+    : dish && !data.day?.away
+      ? { name: dish, clock: dishClock, minutes: recipe?.prepMinutes ?? null, ready: Boolean(needs && !needs.length), missing: needs ?? [], unsure: match?.unsure ?? [] }
+      : null;
+  const jetztUpcoming = demoDay.termine && !demoDay.label ? demoDay.termine : demoDay.termine ? [] : termine;
+  // Abends steht die Startseite auf morgen: offene Aufgaben wandern mit („von heute“, kalender/mitwandern.ts)
+  const mitwandern = { heute: data.todayIso, abends: aufMorgen(abendLage({ minutes, evening, cookingStep, upcoming: jetztUpcoming, dish: jetztDish })) };
+  // EINE Reihenfolge: dringend → heute → Frist → diese Woche (Startseite zeigt bis diese Woche); „Aufgaben machen Pause“ gilt abends nicht – dann steht ja morgen da
+  const tasksAll = workless(aufgabenReihe(entries, mitwandern).filter((i) => isUrgent(i) || i.group === "heute" || i.group === "woche"));
+  const tasks = view.tasksRest && !mitwandern.abends ? [] : tasksAll;
+  const tasksTomorrow = workless(aufgabenFuerTag(entries, tomorrowIso, mitwandern));
   const denkt = useMiaDenkt({ data, entries, items: allItems, minutes, visible: visible.map((t) => t.id), demo: demoOn, pause: Boolean(paused), ruhe: evening && routine.ruhe, besetzt: Boolean(hinweis), me: name || "Ich", onOpenFood });
   const mia = useMiaRoutinen({ today: data.todayIso, minutes, entries, termine: allItems, tomorrow: tomorrowAll, profile: data.profile, me: name || "Ich", regen: null, demo: Boolean(demoDay.termine) || demoDay.tiles.length > 0 });
   const jetzt = useJetztTopics({
@@ -319,26 +334,19 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     me: name || "Ich",
     calm: (evening && routine.ruhe) || weekday >= 5,
     // Beispiel-Tag mit weniger als 2 Terminen heute: die Beispiele gelten für morgen
-    upcoming: demoDay.termine && !demoDay.label ? demoDay.termine : demoDay.termine ? [] : termine,
-    tomorrow: demoDay.termine && demoDay.label ? demoDay.termine : tomorrowAll.filter((i) => !view.hideWork || i.room !== "arbeit"),
+    upcoming: jetztUpcoming,
+    tomorrow: demoDay.termine && demoDay.label ? demoDay.termine : [...tomorrowAll.filter((i) => i.entry.typ === "termin" && (!view.hideWork || i.room !== "arbeit")), ...tasksTomorrow],
     urgent: view.tasksRest ? [] : tasksAll.filter(isUrgent).filter((i) => !i.done),
     dueToday: view.tasksRest ? [] : dueToday.filter((i) => !i.done),
     pins: demoDay.tiles.includes("pinnwand") ? [] : pins,
     memos: demoDay.tiles.includes("pinnwand") ? [] : memos,
     nowMs,
-    // Beispielgericht nur, solange es heute noch dran ist (danach steht es für morgen da)
-    dish: demoDish
-      ? demoMeal.tomorrow
-        ? null
-        : { name: demoMeal.recipe.title, clock: demoMeal.clock, minutes: demoMeal.recipe.prepMinutes, ready: true, missing: [], demo: true }
-      : dish && !data.day?.away
-        ? { name: dish, clock: dishClock, minutes: recipe?.prepMinutes ?? null, ready: Boolean(needs && !needs.length), missing: needs ?? [], unsure: match?.unsure ?? [] }
-        : null,
+    dish: jetztDish,
     dinnerFree: !dish && !over && !data.day?.away && Boolean(dishClock && dishClock >= "15:00"),
     todayAll: allItems,
     training: training && !demoDay.tiles.length ? { key: `sport:${data.todayIso}`, title: training.title, time: `${String(Math.floor(training.start / 60)).padStart(2, "0")}:${String(training.start % 60).padStart(2, "0")}` } : null,
     timer: runningTimer ? { name: runningTimer.name, left: leftWords(runningTimer.endsAt - nowMs) } : null,
-    cookingStep: step !== null && steps[step] ? steps[step] : null,
+    cookingStep,
     reminder: reminder ? { key: reminder.key, text: reminder.text } : null,
     pause: paused && data.profile.pause ? pauseLabel(data.profile.pause) : null,
     leisure: leisure ? { text: leisure.item.text, href: `/notizen/bearbeiten?id=${leisure.note.id}` } : null,
@@ -410,7 +418,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
         return <TermineSection rows={terminTile.rows} label={terminTile.label} href={TILE_PAGE.termine!} today={data.todayIso} size={tile.size} half={half} />;
       case "aufgaben":
         if (demoDay.tasks) return <AufgabenSection items={demoDay.tasks} today={data.todayIso} size={tile.size} half={half} demo={demoProps} />;
-        return <AufgabenSection items={tasks} total={view.tasksRest ? 0 : openTaskCount(entries, data.todayIso)} today={data.todayIso} size={tile.size} half={half} />;
+        return <AufgabenSection items={tasks} total={view.tasksRest && !mitwandern.abends ? 0 : offeneAufgaben(entries, mitwandern)} today={data.todayIso} label={mitwandern.abends ? tomorrowLabel(tomorrowIso) : null} addOn={aufgabenTag(mitwandern)} size={tile.size} half={half} />;
       case "essen":
         if (demoDish)
           return (
@@ -519,6 +527,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
               termine={allItems.filter((i) => i.entry.typ === "termin")}
               tomorrow={tomorrowAll.filter((i) => i.entry.typ === "termin")}
               tasks={allItems.filter((i) => i.entry.typ === "aufgabe")}
+              tomorrowTasks={tasksTomorrow}
               dish={
                 dish && !data.day?.away
                   ? { name: dish, clock: dishClock, minutes: recipe?.prepMinutes ?? null, ready: Boolean(needs && !needs.length), missing: needs ?? [], unsure: match?.unsure ?? [], cookHref: recipe ? `/kochbuch/kochen?id=${encodeURIComponent(recipe.id)}` : null }

@@ -81,6 +81,26 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
 - Dringend: kleines rotes „!“ (`UrgentMark`), im Menü „Als dringend
   markieren“/„Nicht mehr dringend“.
 
+### Abends wandert Offenes mit auf morgen (vX)
+- EINE Stelle: `lib/kalender/mitwandern.ts`. `aufMorgen` sagt, ob die
+  Startseite abends schon auf morgen steht (ab Feierabend bzw. 19 Uhr bis
+  Mitternacht, solange heute kein Termin und kein Essen mehr kommt und nicht
+  gekocht wird). `abendsNachUhr` rechnet dasselbe für Aufgaben-Seite
+  (`components/kalender/useAbendsMorgen.ts`) und Mia (mit und ohne KI) aus
+  „Feierabend ab“, Terminen und der Essenszeit.
+- `aufgabenUebersicht(entries, { heute, abends })` gruppiert wie
+  `taskOverview`, abends für morgen: „Morgen dran“ mit zuerst dem
+  Mitgewanderten („von heute“, Älteres „von gestern“/„von Montag“, Sonntag
+  „diese Woche“ → „von dieser Woche“), dringend ganz vorn. Fristen zählen
+  vom echten Heute („bis morgen“), Erledigtes bleibt das von heute,
+  Abhaken trägt das echte Heute ein. `aufgabenFuerTag` liefert die Aufgaben
+  eines angezeigten Tages, `aufgabenReihe` die Reihenfolge der Kachel,
+  `offeneAufgaben` die Zahl für „+N weitere“.
+- Wiederkehrende Aufgaben wandern nicht mit (wie um Mitternacht kommt das
+  nächste Vorkommen, sonst stünde „täglich“ doppelt da).
+- Nur Anzeige: In den Daten wird nichts verschoben. Um Mitternacht rutscht
+  alles wie bisher still auf den neuen Tag („von gestern“).
+
 ### Wiederholungen
 - `repeatsOn`: täglich; wöchentlich im 7-Tage-Abstand zum ersten Tag;
   monatlich am gleichen Tag im Monat; bestimmte Wochentage.
@@ -155,7 +175,8 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
 - `/tag?datum=…`: Titel = Wochentag, darunter „22. Oktober · morgen“
   (`dayHeading`), dann der Tag (`DayPanel`, ohne eigenen Kopf). Plus =
   Schnelleingabe „NEUER TERMIN“ für diesen Tag.
-- `/aufgaben`: Filter, Gruppen, „Erledigte anzeigen“ eingeklappt; leer
+- `/aufgaben`: Filter, Gruppen (abends „Morgen dran“ statt „Heute dran“,
+  Sonntagabend „Nächste Woche“), „Erledigte anzeigen“ eingeklappt; leer
   „Gerade nichts.“ mit großer Begleitung („Fällt dir was ein? Mit ＋ eintragen oder mir einfach sagen.“).
 - Antippen eines Eintrags = Menü: Erledigt · Auf morgen · Erinnerung ändern ·
   Bearbeiten · Löschen; bei Serien „Nur diesen Tag“ / „Alle – die ganze Reihe“.
@@ -330,7 +351,9 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
 - In `noteTools.ts`: `termin_in_aufgabe_umwandeln`,
   `aufgabe_in_termin_umwandeln`, `aufgaben_anzeigen`.
 - Kontext je Anfrage: Datumsliste und Einträge der nächsten Tage mit ids
-  (`contextLines`).
+  (`contextLines`); abends (`abendsNachUhr` in `engine.ts`) eine Zeile „Mit
+  auf morgen gewandert“, `tag_anzeigen` für morgen nennt sie kurz mit
+  (`showAnswer` mit `abends`, ohne KI ebenso über `calendarChat`).
 - Ohne KI: `calendarChat` (aufgerufen in
   `src/components/begleitung/useChatRules.ts`) trägt sofort ein und meldet
   „Eingetragen ✓ …“ mit Rückgängig. `parseCalendar` erkennt Tag, Uhrzeit,

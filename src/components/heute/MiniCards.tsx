@@ -223,20 +223,20 @@ function TaskField({ item, today, leaving, entering, onOpen, onDone }: { item: D
   );
 }
 
-/** AUFGABEN – eine weiße Checkliste: S 2, M 4, L 6 Zeilen, „+N weitere“ im Kopf neben dem Plus */
-export function AufgabenSection({ items, total, today, href = "/aufgaben", size = "M", half = false, demo }: { items: DayItem[]; total?: number; today: string; href?: string; size?: TileSize; half?: boolean; demo?: DemoProps }) {
+/** AUFGABEN – eine weiße Checkliste: S 2, M 4, L 6 Zeilen, „+N weitere“ im Kopf neben dem Plus; abends „Morgen · Mi“ (`label`, Neues dann für `addOn`) */
+export function AufgabenSection({ items, total, today, label, addOn = today, href = "/aufgaben", size = "M", half = false, demo }: { items: DayItem[]; total?: number; today: string; label?: string | null; addOn?: string; href?: string; size?: TileSize; half?: boolean; demo?: DemoProps }) {
   const { setMenu, check, before, overlays } = useSection();
   const [adding, setAdding] = useState<string | null>(null);
   // Erledigtes steht nicht herum (auch nicht im Beispiel-Tag)
   const open = demo?.done ? items.filter((i) => !demo.done!.includes(i.entry.id)) : items;
   const shown = open.slice(0, ROW_COUNT[size]);
   const { leaving, start } = useLeaving((item) => (demo ? demo.onGone?.(item) : check(item, shown)));
-  const plus = <QuickButton icon={Plus} label="Neue Aufgabe" onClick={() => openQuick({ kind: "aufgabe", date: today, more: setAdding })} />;
+  const plus = <QuickButton icon={Plus} label="Neue Aufgabe" onClick={() => openQuick({ kind: "aufgabe", date: addOn, more: setAdding })} />;
   const rest = Math.max(0, Math.max(total ?? 0, open.length) - shown.length);
   return (
     <>
       <section className={`${TILE} flex flex-col gap-[7px] px-3 py-2.5`} aria-label="Aufgaben">
-        <TileHead title="Aufgaben" more={half ? 0 : rest} href={href} action={plus} />
+        <TileHead title={label ?? "Aufgaben"} more={half ? 0 : rest} href={href} action={plus} />
         {open.length > 0 ? (
           <ul className={LIST}>
             {shown.map((item) => (
@@ -244,7 +244,7 @@ export function AufgabenSection({ items, total, today, href = "/aufgaben", size 
             ))}
           </ul>
         ) : (
-          <AddLine label="Aufgabe eintragen" onClick={() => openQuick({ kind: "aufgabe", date: today, more: setAdding })} />
+          <AddLine label="Aufgabe eintragen" onClick={() => openQuick({ kind: "aufgabe", date: addOn, more: setAdding })} />
         )}
       </section>
       {overlays}

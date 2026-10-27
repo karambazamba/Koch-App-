@@ -2774,3 +2774,15 @@ Fehler in `docs/aufraeumen-nachher.md`.
   zugleich möglich).
 - Tests: `tests/begleitung/eineMia.test.ts`, `tests/essen/vorschlaege.test.ts`,
   Durchklick `eineMia()` in `kochtipp`, `wochencheck`, neu `eineMiaBuehnen`.
+
+## Offene Aufgaben wandern abends mit (v0.132.0)
+
+- Fehler (27.10., 21:11): Abends stand die Aufgaben-Kachel leer da („Aufgabe
+  eintragen“), obwohl zehn Aufgaben von heute offen waren.
+- Sobald die Startseite abends auf morgen steht, zeigt die Aufgaben-Kachel
+  „Morgen · Mi“ mit dem Offenen von heute zuerst („von heute“), dann den
+  Aufgaben für morgen. Aufgaben-Seite „Morgen dran“, „Dein Tag“ unter
+  „Morgen · Mi“, Jetzt-Karte und Mia („Was steht morgen an?“ → „Dazu von
+  heute: …“; die KI bekommt eine Zeile dazu) nutzen dieselbe Logik
+  (`kalender/mitwandern.ts`). Nichts wird verschoben, um Mitternacht rutscht
+  alles still wie bisher.

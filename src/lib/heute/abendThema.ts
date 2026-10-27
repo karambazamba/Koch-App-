@@ -11,6 +11,7 @@
 
 import { birthdayName, eigenerJahrestag } from "@/lib/kalender/anlass";
 import { weekdayIndex } from "@/lib/kalender/model";
+import { aufMorgen, type AbendLage } from "@/lib/kalender/mitwandern";
 import type { JetztInput, JetztTopic } from "@/lib/heute/jetztTopics";
 
 const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
@@ -21,13 +22,18 @@ const uhr = (m: number) => {
   return min ? `${h}:${String(min).padStart(2, "0")}` : `${h}`;
 };
 
+/** Wie die Startseite abends rechnet (eine Regel: `kalender/mitwandern.ts`) – auch für die Aufgaben-Kachel */
+export const abendLage = (x: Pick<JetztInput, "minutes" | "evening" | "cookingStep" | "dish"> & { upcoming: { time: string | null }[] }): AbendLage => ({
+  minutes: x.minutes,
+  feierabend: Boolean(x.evening),
+  kochen: Boolean(x.cookingStep),
+  nochTermin: x.upcoming.some((t) => t.time && toMin(t.time) > x.minutes),
+  nochEssen: Boolean(x.dish?.clock && toMin(x.dish.clock) > x.minutes),
+});
+
 /** Abends? Nicht nachts, ab Feierabend bzw. 19 Uhr, heute kommt kein Termin und kein Essen mehr */
 export function isAbend(x: JetztInput): boolean {
-  if (x.minutes >= 22 * 60 || x.minutes < 6 * 60) return false;
-  if (!x.evening && x.minutes < 19 * 60) return false;
-  if (x.cookingStep) return false;
-  if (x.upcoming.some((t) => t.time && toMin(t.time) > x.minutes)) return false;
-  return !(x.dish?.clock && toMin(x.dish.clock) > x.minutes);
+  return x.minutes < 22 * 60 && aufMorgen(abendLage(x));
 }
 
 /**

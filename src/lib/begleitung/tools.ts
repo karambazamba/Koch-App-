@@ -26,6 +26,8 @@ export type ToolContext = {
   counter: number;
   /** Heute auf dem Gerät, "YYYY-MM-DD" (für Termine) */
   today: string;
+  /** Abends steht die Startseite schon auf morgen (Aufgaben wandern mit, `kalender/mitwandern.ts`) */
+  abends?: boolean;
   /** Mail-Entwurf für die Karte im Chat (`mail_entwurf`) */
   mail?: MailDraft;
   /** Antwort-Knöpfe unter der Nachricht (`antwort_knoepfe`) */

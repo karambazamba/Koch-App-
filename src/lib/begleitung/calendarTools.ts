@@ -5,7 +5,7 @@
 
 import { createEntry, type Room } from "@/lib/core/entries";
 import { addDays } from "@/lib/core/now";
-import { contextLines, showAnswer } from "@/lib/kalender/answers";
+import { contextLines, mitgewandert, showAnswer } from "@/lib/kalender/answers";
 import { itemsForDay, REMINDERS, taskOverview, sanitizeEntry, sanitizeRepeat, weekdayIndex, type AufgabeData, type CalendarEntry, type Reminder, type Repeat, type TerminData } from "@/lib/kalender/model";
 import { findDate } from "@/lib/kalender/parse";
 import { isAboEntry } from "@/lib/kalender/abo/model";
@@ -293,7 +293,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
     run: (ctx, raw) => {
       const date = dateFrom(ctx, (raw as Input | null)?.datum);
       if (!date) return fail("datum nicht erkannt.");
-      return { content: contextLines(entriesOf(ctx), ctx.today, 1, date).replace(/^- /, "") + `\nKurz: ${showAnswer(entriesOf(ctx), ctx.today, date, 1, shortDate(date))}` };
+      return { content: contextLines(entriesOf(ctx), ctx.today, 1, date).replace(/^- /, "") + `\nKurz: ${showAnswer(entriesOf(ctx), ctx.today, date, 1, shortDate(date), ctx.abends)}` };
     },
   },
   {
@@ -387,12 +387,14 @@ function removeTool(ctx: ToolContext, input: Input, typ: "termin" | "aufgabe"): 
   return { content: `Vorgemerkt: ${entry.data.title}${only ? ` am ${shortDate(only)}` : ""} löschen.` };
 }
 
-/** Für den Kontext: Einträge der nächsten 7 Tage (heute zuerst) */
-export function calendarContext(entries: CalendarEntry[], today: string): string {
+/** Für den Kontext: Einträge der nächsten 7 Tage (heute zuerst); abends, was schon mit auf morgen wandert */
+export function calendarContext(entries: CalendarEntry[], today: string, abends = false): string {
   const upcoming = itemsForDay(entries, today, today);
   // Aufgaben ohne Tag in den nächsten 7 Tagen: diese Woche (Zeitraum), später, irgendwann
   const g = taskOverview(entries, today);
   const loose = [...g.woche.filter((i) => i.when === "diese Woche"), ...g.spaeter, ...g.irgendwann].slice(0, 40);
   const looseLines = loose.map((i) => `${i.title} [id=${i.entry.id}; aufgabe, ${i.room}${i.when ? `, ${i.when}` : ", irgendwann"}${i.label ? `, Etikett ${i.label}` : ""}]`);
-  return `Termine und Aufgaben der nächsten 7 Tage (ids nur für Werkzeuge, nie nennen)${upcoming.length || entries.length ? "" : " – noch nichts eingetragen"}:\n${contextLines(entries, today, 7)}${looseLines.length ? `\nAufgaben ohne festen Tag: ${looseLines.join(" | ")}` : ""}`;
+  const mit = mitgewandert(entries, today, abends);
+  const mitLine = mit.length ? `\nAbends: Die Startseite zeigt schon morgen. Mit auf morgen gewandert (still, nichts verschoben): ${mit.map((i) => `${i.title} (${i.carried})`).join(" | ")}` : "";
+  return `Termine und Aufgaben der nächsten 7 Tage (ids nur für Werkzeuge, nie nennen)${upcoming.length || entries.length ? "" : " – noch nichts eingetragen"}:\n${contextLines(entries, today, 7)}${looseLines.length ? `\nAufgaben ohne festen Tag: ${looseLines.join(" | ")}` : ""}${mitLine}`;
 }
