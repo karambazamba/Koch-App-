@@ -108,7 +108,7 @@ function DayTab({ forecast, date, today, minutes, termine }: { forecast: Forecas
   const sentence = daySentence(forecast, date, termine, isToday ? Math.floor(minutes / 60) : 0);
   const parts = dayParts(forecast, date);
   const clock = `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, "0")}`;
-  const state = isToday && forecast.current.raining ? "Gerade Regen" : (d?.text ?? weatherKind(code).text);
+  const state = isToday && forecast.current.raining ? "Gerade Regen" : isToday && forecast.current.stopped ? "Regen hat aufgehört" : (d?.text ?? weatherKind(code).text);
   return (
     <>
       {isToday ? (

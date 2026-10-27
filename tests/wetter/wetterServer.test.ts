@@ -238,7 +238,7 @@ describe("Echter Abruf (fetch ersetzt)", () => {
     expect(calls.some((u) => u.includes("brightsky"))).toBe(false);
   });
 
-  it("30 Minuten zwischengespeichert (Ort ohne Groß/Klein/Leerzeichen), danach frisch", async () => {
+  it("10 Minuten zwischengespeichert (Ort ohne Groß/Klein/Leerzeichen), danach frisch", async () => {
     let clock = 1_000_000;
     vi.spyOn(Date, "now").mockImplementation(() => clock);
     const calls = stubFetch({});
@@ -246,7 +246,7 @@ describe("Echter Abruf (fetch ersetzt)", () => {
     const n = calls.length;
     expect(await server.fetchForecast(" eutin ")).toBe(first);
     expect(calls.length).toBe(n);
-    clock += 29 * 60 * 1000;
+    clock += 9 * 60 * 1000;
     await server.fetchForecast("EUTIN");
     expect(calls.length).toBe(n);
     clock += 2 * 60 * 1000;

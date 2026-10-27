@@ -18,7 +18,8 @@ export type Forecast = {
   /** dwd = DWD über Bright Sky, icon = Open-Meteo (DWD ICON), mock = Testmodus */
   source?: "dwd" | "icon" | "mock";
   /** measured = Messung einer nahen Station, raining = misst gerade Regen */
-  current: { temp: number; code: number; measured?: boolean; raining?: boolean };
+  /** `raining`: Radar (sonst Station) zeigt JETZT Regen am Ort; `stopped`: eben noch Regen, jetzt nicht mehr */
+  current: { temp: number; code: number; measured?: boolean; raining?: boolean; stopped?: boolean };
   hours: ForecastHour[];
   days: ForecastDay[];
 };
@@ -185,7 +186,7 @@ export function sanitizeForecast(raw: unknown): Forecast | null {
     place: f.place.slice(0, 60),
     fetchedAt: typeof f.fetchedAt === "string" ? f.fetchedAt : new Date(0).toISOString(),
     ...(f.source === "dwd" || f.source === "icon" || f.source === "mock" ? { source: f.source } : {}),
-    current: { temp: num(f.current.temp), code: num(f.current.code), measured: f.current.measured === true, raining: f.current.raining === true },
+    current: { temp: num(f.current.temp), code: num(f.current.code), measured: f.current.measured === true, raining: f.current.raining === true, ...(f.current.stopped === true ? { stopped: true } : {}) },
     hours,
     days,
   };

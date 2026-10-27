@@ -7,9 +7,10 @@
 
 import { berlinTime, now } from "@/lib/core/now";
 import { buildDays, type Forecast } from "@/lib/wetter/forecast";
-import { fromBrightSky, fromOpenMeteo } from "@/lib/wetter/sources";
+import { fromBrightSky, fromOpenMeteo, fromRadar } from "@/lib/wetter/sources";
 
-const TTL = 30 * 60 * 1000;
+/** Radar ändert sich schnell: höchstens 10 Minuten zwischenspeichern */
+const TTL = 10 * 60 * 1000;
 const cache = new Map<string, { at: number; data: Forecast }>();
 
 export const weatherMock = () => process.env.WETTER_MOCK === "1";
@@ -91,13 +92,17 @@ const plusDays = (iso: string, n: number) => {
 async function fromDwd(geo: { name: string; lat: number; lon: number }): Promise<Forecast | null> {
   const today = berlinTime().iso;
   const at = `lat=${geo.lat}&lon=${geo.lon}&tz=Europe%2FBerlin`;
-  const [weather, current] = await Promise.all([
+  const [weather, current, radar] = await Promise.all([
     fetch(`https://api.brightsky.dev/weather?${at}&date=${today}&last_date=${plusDays(today, 7)}`, { cache: "no-store", signal: AbortSignal.timeout(8000) }),
     fetch(`https://api.brightsky.dev/current_weather?${at}`, { cache: "no-store", signal: AbortSignal.timeout(8000) }).catch(() => null),
+    // Regenradar, nur der Punkt des Orts (gleicher Anbieter); fällt es aus, geht es ohne
+    fetch(`https://api.brightsky.dev/radar?${at}&distance=1000&format=plain`, { cache: "no-store", signal: AbortSignal.timeout(6000) }).catch(() => null),
   ]);
   if (!weather.ok) return null;
   const currentJson = current?.ok ? await current.json().catch(() => null) : null;
-  return fromBrightSky(await weather.json(), currentJson, geo.name, now().toISOString());
+  const radarJson = radar?.ok ? await radar.json().catch(() => null) : null;
+  const nowIso = now().toISOString();
+  return fromBrightSky(await weather.json(), currentJson, geo.name, nowIso, fromRadar(radarJson, nowIso));
 }
 
 /** Ausweichen: Open-Meteo mit dem DWD-Modell ICON (gleiche Felder) */
