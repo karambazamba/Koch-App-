@@ -24,14 +24,16 @@ export function removeShop(name: string) {
   }));
 }
 
-/** Laden für einen Artikel merken (leer = keiner); ein neuer Laden kommt zu „Meine Läden“ */
+/**
+ * Laden für einen Artikel merken; leer = bewusst „Egal wo“ (gespeichert als
+ * leerer Laden – „noch ohne Laden“ heißt: gar kein Eintrag, `clearItemShop`).
+ * Ein neuer Laden kommt zu „Meine Läden“.
+ */
 export function setItemShop(itemName: string, shop: string) {
   const key = lower(itemName);
   if (!key) return;
   update((s) => {
-    const itemShops = { ...s.itemShops };
-    if (shop.trim()) itemShops[key] = shop.trim();
-    else delete itemShops[key];
+    const itemShops = { ...s.itemShops, [key]: shop.trim() };
     // Von Hand umgestellt: eine feste Regel zieht mit (sonst bliebe der Artikel im alten Laden)
     const shopRules = { ...(s.shopRules ?? {}) };
     if (shopRules[key]) {
@@ -41,6 +43,19 @@ export function setItemShop(itemName: string, shop: string) {
     const known = [...SHOP_SUGGESTIONS, ...s.shops].some((x) => lower(x) === lower(shop));
     const mine = !shop.trim() || s.myShops.some((x) => lower(x) === lower(shop));
     return { ...s, itemShops, shopRules, shops: shop.trim() && !known ? [...s.shops, shop.trim()] : s.shops, myShops: mine ? s.myShops : [...s.myShops, shop.trim()] };
+  });
+}
+
+/** Laden vergessen: der Artikel ist wieder „noch ohne Laden“ (feste Regel fällt mit) */
+export function clearItemShop(itemName: string) {
+  const key = lower(itemName);
+  if (!key) return;
+  update((s) => {
+    const itemShops = { ...s.itemShops };
+    const shopRules = { ...(s.shopRules ?? {}) };
+    delete itemShops[key];
+    delete shopRules[key];
+    return { ...s, itemShops, shopRules };
   });
 }
 

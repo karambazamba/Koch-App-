@@ -52,7 +52,7 @@ export type ShoppingListStore = {
   products: Record<string, string>;
   /** Selbst angelegte Läden */
   shops: string[];
-  /** Artikel (Anzeigename, klein) → Laden */
+  /** Artikel (Anzeigename, klein) → Laden; "" = bewusst „Egal wo“, kein Eintrag = noch ohne Laden */
   itemShops: Record<string, string>;
   staples: Staple[];
   /** „Meine Läden“ in gewählter Reihenfolge (leer = noch keine gewählt) */
@@ -69,7 +69,7 @@ export type ShoppingListStore = {
   alwaysList: string[];
 };
 
-export type ShoppingSettings = Pick<ShoppingListStore, "products" | "shops" | "itemShops" | "staples"> & Partial<Pick<ShoppingListStore, "shopRules" | "alwaysList">>;
+export type ShoppingSettings = Pick<ShoppingListStore, "products" | "shops" | "itemShops" | "staples"> & Partial<Pick<ShoppingListStore, "shopRules" | "alwaysList" | "learned">>;
 
 export type ListItem = {
   key: string;
@@ -83,8 +83,10 @@ export type ListItem = {
   dishes: string[];
   /** Wochentage der Gerichte */
   days: string[];
-  /** Laden, falls gemerkt */
+  /** Laden, falls gemerkt ("" = egal wo oder noch ohne Laden) */
   shop: string;
+  /** Bewusst „Egal wo“ gewählt (sonst ist ein Artikel ohne Laden „noch ohne Laden“) */
+  anywhere?: boolean;
   /** Nur für eine lockere Wochenend-Idee – optional, abwählbar */
   optional?: boolean;
   /** Nur bei eigenen Artikeln */

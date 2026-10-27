@@ -37,18 +37,24 @@ export const einkauf = async (page, check) => {
   check(await sheet.getByText("3 ausgewählt").isVisible(), "Katalog: „3 ausgewählt“");
   await sheet.getByRole("button", { name: "Fertig" }).tap();
   await page.waitForTimeout(600);
-  const milch = page.getByRole("checkbox", { name: "Milch abhaken" });
-  check((await milch.isVisible()) && (await page.getByRole("checkbox", { name: "Bananen abhaken" }).isVisible()), "Milch und Bananen als Kacheln");
-  // Tippen = gekauft → nach 2 s unter „Zuletzt gekauft“
+  const milch = page.getByRole("button", { name: "Milch: Laden wählen" });
+  check((await milch.isVisible()) && (await page.getByRole("button", { name: "Bananen: Laden wählen" }).isVisible()), "Milch und Bananen als Kacheln");
+  // Tippen = „Wo kaufst du das?“ (nie gekauft, Tafel 99); gekauft nur über „Schon gekauft“
   await milch.tap();
+  const wo = page.getByRole("dialog", { name: "Wo kaufst du das?" });
+  check(await wo.waitFor({ timeout: 3000 }).then(() => true, () => false), "Antippen → „Wo kaufst du das?“");
+  const done = async () => Object.values((await store(page, "wasgibts.einkaufsliste")).weeks).some((w) => w.manual.some((m) => m.name === "Milch" && m.done));
+  check(!(await done()), "Antippen ändert nicht „gekauft“");
+  await wo.getByRole("button", { name: "Schon gekauft" }).tap();
   await page.waitForTimeout(2600);
+  check(await done(), "„Schon gekauft“ hakt ab");
   // „Zuletzt gekauft“ ist zugeklappt (Einkauf aufgeräumt, v0.119): aufklappen
   const zuletzt = page.getByRole("region", { name: "Zuletzt gekauft" });
   await zuletzt.getByRole("button", { name: /^Zuletzt gekauft/ }).tap();
   await page.waitForTimeout(400);
-  check(await zuletzt.getByRole("checkbox", { name: /Milch/ }).isVisible(), "abgehakt → „Zuletzt gekauft“");
+  check(await zuletzt.getByRole("button", { name: /Milch/ }).isVisible(), "abgehakt → „Zuletzt gekauft“");
   // Lange drücken = ändern
-  const brot = page.getByRole("checkbox", { name: "Brot abhaken" });
+  const brot = page.getByRole("button", { name: "Brot: Laden wählen" });
   await brot.scrollIntoViewIfNeeded();
   await page.waitForTimeout(300);
   const box = await brot.boundingBox();
@@ -59,7 +65,7 @@ export const einkauf = async (page, check) => {
   check(await page.getByRole("dialog", { name: "Artikel bearbeiten" }).isVisible(), "lange drücken → „Artikel bearbeiten“");
 };
 
-// „Im Haus“ (Tafel 78/79): Brot im Einkauf abhaken → steht im Schrank, ohne
+// „Im Haus“ (Tafel 78/79): Brot im Einkauf abhaken („Schon gekauft“) → steht im Schrank, ohne
 // Menge → antippen = aufgebraucht → nochmal = wieder im Einkauf; „Was koch
 // ich daraus?“ → Spontan kochen (wie unter Essen).
 export const imHaus = async (page, check) => {
@@ -72,7 +78,9 @@ export const imHaus = async (page, check) => {
   await sheet.getByLabel("Suchen oder eintragen").fill("Brot");
   await sheet.getByLabel("Suchen oder eintragen").press("Enter");
   await sheet.getByRole("button", { name: "Fertig" }).tap();
-  await page.getByRole("checkbox", { name: "Brot abhaken" }).tap();
+  // Zu Hause abhaken nur über „Schon gekauft“ (Tafel 99)
+  await page.getByRole("button", { name: "Brot: Laden wählen" }).tap();
+  await page.getByRole("dialog", { name: "Wo kaufst du das?" }).getByRole("button", { name: "Schon gekauft" }).tap();
   check(await page.getByText("Im Haus: Brot").waitFor({ timeout: 5000 }).then(() => true, () => false), "Meldung „Im Haus: Brot“");
   await page.goto(BASE + "/vorrat");
   const schrank = page.getByRole("region", { name: "Schrank" });

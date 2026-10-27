@@ -119,7 +119,7 @@ describe("Wochenliste ändern", () => {
 
 describe("Läden", () => {
   it("anlegen, Laden je Artikel merken, entfernen, sortieren", async () => {
-    const { addShop, allShops, removeShop, setItemShop } = await import("@/lib/einkauf/shops");
+    const { addShop, allShops, clearItemShop, removeShop, setItemShop } = await import("@/lib/einkauf/shops");
     addShop("  ");
     addShop("rewe");
     addShop("Biomarkt Sonnenblume");
@@ -129,7 +129,10 @@ describe("Läden", () => {
     setItemShop("Tofu", "Asia Laden");
     expect(saved().itemShops).toEqual({ müsli: "Rossmann", tofu: "Asia Laden" });
     expect(saved().shops).toEqual(["Biomarkt Sonnenblume", "Asia Laden"]);
+    // Leer = bewusst „Egal wo“ (bleibt gemerkt); vergessen = wieder „noch ohne Laden“
     setItemShop("Müsli", "");
+    expect(saved().itemShops).toEqual({ müsli: "", tofu: "Asia Laden" });
+    clearItemShop("Müsli");
     expect(saved().itemShops).toEqual({ tofu: "Asia Laden" });
     removeShop("Asia Laden");
     expect(saved().shops).toEqual(["Biomarkt Sonnenblume"]);

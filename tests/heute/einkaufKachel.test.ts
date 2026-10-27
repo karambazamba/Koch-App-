@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { shopTone, tileRows } from "@/lib/einkauf/shopGroups";
+import { ohneLadenZeile, shopTone, tileRows } from "@/lib/einkauf/shopGroups";
 import { DEMO_SHOPS } from "@/lib/core/demo";
 
 const items = [
   { name: "Milch", shop: "REWE" },
-  { name: "Salz", shop: "" },
+  { name: "Salz", shop: "", anywhere: true },
+  { name: "Spinat", shop: "" },
   { name: "Zahnpasta", shop: "Rossmann" },
   { name: "Äpfel", shop: "Edeka" },
   { name: "Brot", shop: "rewe" },
@@ -15,17 +16,18 @@ const items = [
 const names = (r: ReturnType<typeof tileRows>) => r.rows.map((x) => `${x.shop ?? "Egal wo"} ${x.count}`);
 
 describe("Einkauf-Kachel (Variante C2)", () => {
-  it("Reihenfolge wie „Meine Läden“, andere danach (meiste zuerst), „Egal wo“ zuletzt", () => {
+  it("Reihenfolge wie „Meine Läden“ (deren Schreibweise), andere danach (meiste zuerst), bewusst „Egal wo“ zuletzt", () => {
     const r = tileRows(items, ["Lidl", "Rewe"], "L");
-    expect(names(r)).toEqual(["Lidl 1", "REWE 2", "Rossmann 3", "Edeka 1", "Egal wo 1"]);
+    expect(names(r)).toEqual(["Lidl 1", "Rewe 2", "Rossmann 3", "Edeka 1", "Egal wo 1"]);
     expect(r.rest).toBeNull();
     expect(r.rows[1].names).toEqual(["Milch", "Brot"]);
+    expect(r.ohne).toEqual(["Spinat"]);
   });
 
   it("S und M: höchstens 3 Zeilen plus leise Rest-Zeile mit Zahl", () => {
     for (const size of ["S", "M"] as const) {
       const r = tileRows(items, ["Lidl", "Rewe"], size);
-      expect(names(r)).toEqual(["Lidl 1", "REWE 2", "Rossmann 3"]);
+      expect(names(r)).toEqual(["Lidl 1", "Rewe 2", "Rossmann 3"]);
       expect(r.rest).toBe("+ Edeka 1, Egal wo 1");
     }
   });
@@ -34,11 +36,16 @@ describe("Einkauf-Kachel (Variante C2)", () => {
     expect(names(tileRows(items, [], "L"))).toEqual(["Rossmann 3", "REWE 2", "Edeka 1", "Lidl 1", "Egal wo 1"]);
   });
 
-  it("ohne Läden: eine Zeile „Egal wo“; leere Liste: keine Zeilen", () => {
-    const r = tileRows([{ name: "Milch", shop: "" }, { name: "Brot", shop: " " }], ["Rewe"], "S");
-    expect(r.rows).toEqual([{ shop: null, names: ["Milch", "Brot"], count: 2 }]);
+  it("Meine Läden stehen IMMER da, auch mit 0; noch ohne Laden zählt extra", () => {
+    const r = tileRows([{ name: "Milch", shop: "" }, { name: "Brot", shop: " " }], ["Edeka", "Rewe", "Lidl", "Rossmann"], "S");
+    expect(names(r)).toEqual(["Edeka 0", "Rewe 0", "Lidl 0"]);
     expect(r.rest).toBeNull();
-    expect(tileRows([], ["Rewe"], "M")).toEqual({ rows: [], rest: null });
+    expect(r.ohne).toEqual(["Milch", "Brot"]);
+    expect(ohneLadenZeile(r.ohne.length)).toBe("2 noch ohne Laden");
+    const l = tileRows([{ name: "Zahnpasta", shop: "Rossmann" }], ["Edeka", "Rewe", "Lidl", "Rossmann"], "M");
+    expect(l.rest).toBe("+ Rossmann 1");
+    expect(names(tileRows([], ["Edeka", "Rewe", "Lidl", "Rossmann"], "L"))).toEqual(["Edeka 0", "Rewe 0", "Lidl 0", "Rossmann 0"]);
+    expect(tileRows([], [], "M")).toEqual({ rows: [], rest: null, ohne: [] });
   });
 
   it("Beispiel-Einkauf: Edeka, Rewe, Lidl, Rossmann – S zeigt 3 + Rest, L alle", () => {
@@ -53,6 +60,7 @@ describe("Einkauf-Kachel (Variante C2)", () => {
     const s = tileRows(demo, order, "S");
     expect(names(s)).toEqual(["Edeka 3", "Rewe 3", "Lidl 2"]);
     expect(s.rest).toBe("+ Rossmann 2");
+    expect(s.ohne).toEqual([]);
     expect(names(tileRows(demo, order, "L"))).toEqual(["Edeka 3", "Rewe 3", "Lidl 2", "Rossmann 2"]);
   });
 

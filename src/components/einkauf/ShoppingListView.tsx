@@ -8,7 +8,10 @@
 // Läden) nach Abteilung im Laufweg · „Hast du bestimmt im Haus“ (Grundsachen)
 // · zugeklappt „Zuletzt gekauft“ und „Gerichte ohne Zutaten“ · leise „Liste
 // teilen · Stammliste“. Die einmalige Läden-Frage steht nach der Liste (nach
-// dem Beispiel, nicht darüber). Tippen = gekauft, lange drücken = bearbeiten.
+// dem Beispiel, nicht darüber). Erst einsortieren, dann einkaufen (Tafel 99):
+// ganz oben die Zone „Noch ohne Laden“ (+ „Mia sortiert“); Tippen = „Wo
+// kaufst du das?“ (nie gekauft), lange drücken = bearbeiten. Abgehakt wird
+// im Einkaufsmodus oder über „Schon gekauft“.
 // Ein Weg zum Eintragen: ＋ oben (Schnelleingabe), dort „Mehr Details“ = Katalog.
 
 import { useEffect, useRef, useState } from "react";
@@ -37,7 +40,8 @@ import { useWeekShoppingList, type WeekChoice } from "@/lib/einkauf/useWeekShopp
 import { addDays, formatWeekRange, toIsoDate, useToday } from "@/lib/essen/weekPlan";
 import { EditItemSheet, StaplesSheet } from "@/components/einkauf/ShoppingParts";
 import { setShopChip, shopModeHref, useShopChip } from "@/lib/einkauf/shopMode";
-import { filterByChip, recentBought, resolveChip, shopChips } from "@/lib/einkauf/kacheln/view";
+import { filterByChip, recentBought, resolveChip, shopChips, walkOrder } from "@/lib/einkauf/kacheln/view";
+import { gelernterLaden } from "@/lib/einkauf/shopRules";
 import { abteilungsGruppen, grundsachen, ladenGruppen } from "@/lib/einkauf/kacheln/gruppen";
 import { GruppenListe, GrundsachenKarte, KlappZeile, WochenZeile } from "@/components/einkauf/ListeTeile";
 import { useEinkaufBeispiel } from "@/components/einkauf/EinkaufBeispiel";
@@ -53,6 +57,8 @@ import { buzz } from "@/components/heute/actions";
 import { plusFromLink } from "@/lib/einkauf/unterwegs/unterwegs";
 import { AntwortZeile, useDavorLink } from "@/components/einkauf/unterwegs/Antwort";
 import { showToast } from "@/lib/core/toast";
+import { OhneLadenZone, WoKaufstDuSheet } from "@/components/einkauf/Einsortieren";
+import { einsortieren, einsortiertText, miaSortiert, ohneLaden, sortiertText, sortierVorschlaege } from "@/lib/einkauf/einsortieren";
 
 const SKELETON = <div className={`${CARD} m-4 h-64 animate-pulse`} />;
 
@@ -72,6 +78,9 @@ export function ShoppingListView() {
   const [shareNote, setShareNote] = useState("");
   const [leaving, setLeaving] = useState<string[]>([]);
   const [editing, setEditing] = useState<ListItem | null>(null);
+  // „Wo kaufst du das?“ (Antippen) und der eben einsortierte Artikel (kurz umrandet)
+  const [sorting, setSorting] = useState<{ item: ListItem; week: string } | null>(null);
+  const [marked, setMarked] = useState<string | null>(null);
   const [staplesOpen, setStaplesOpen] = useState(false);
   const [catalogOpen, setCatalogOpen] = useState<string | null>(null);
   const [shopsOpen, setShopsOpen] = useState(false);
@@ -100,6 +109,11 @@ export function ShoppingListView() {
     router.replace("/einkaufsliste");
     // eslint-disable-next-line react-hooks/exhaustive-deps -- nur einmal, sobald die Liste da ist
   }, [plusWeek]);
+  // „Sortieren ›“ auf der Startseite: oben an der Zone „Noch ohne Laden“ öffnen
+  const loaded = Boolean(data);
+  useEffect(() => {
+    if (loaded && window.location.hash === "#ohne-laden") document.getElementById("ohne-laden")?.scrollIntoView({ block: "start" });
+  }, [loaded]);
 
   if (!data || !today) return SKELETON;
   const { weekStart, isNext, list, weekList, settings } = data;
@@ -113,20 +127,26 @@ export function ShoppingListView() {
   const chip = myShops.length ? chipIn(chips, stored) : resolveChip(stored, open);
   const shown = (items: ListItem[]) => filterByChip(items, chip);
   const stays = (i: ListItem) => !i.checked || leaving.includes(i.key);
+  // Zone „Noch ohne Laden“ (nur unter „Alle“ mit eigenen Läden): steht oben, nicht noch einmal darunter
+  const zoneOn = chip === "alle" && myShops.length > 0;
+  const zone = zoneOn ? walkOrder(grundsachen(open, settings.alwaysList).liste.filter(ohneLaden)) : [];
+  const notInZone = (i: ListItem) => !zone.includes(i);
+  const vorschlaege = sortierVorschlaege(zone, { itemShops: settings.itemShops, learned: settings.learned });
 
   // "Für heute": offene Artikel für heute (aus Ideen, Twist oder Plan) – immer aus der laufenden Woche
   const inWeek = todayIso >= weekStart && todayIso <= addDays(weekStart, 6);
   const todayName = WEEKDAY.format(today);
   const forToday = (i: ListItem) => !i.hidden && i.days.includes(todayName) && stays(i);
   // "Jetzt mitnehmen" (aus dem Supermarkt-Gespräch): oben, bis abgehakt
-  const nowItems = shown(visible.filter((i) => i.now && stays(i)));
-  const todayItems = shown(inWeek ? visible.filter((i) => forToday(i) && !nowItems.includes(i)) : (current?.list.items.filter(forToday) ?? []));
+  const nowItems = shown(visible.filter((i) => i.now && stays(i) && notInZone(i)));
+  const todayItems = shown(inWeek ? visible.filter((i) => forToday(i) && !nowItems.includes(i) && notInZone(i)) : (current?.list.items.filter((i) => forToday(i) && !(zoneOn && ohneLaden(i))) ?? []));
   const todayWeek = inWeek ? weekStart : (current?.weekStart ?? weekStart);
   // Grundsachen aus Rezepten („hat man meist da“) in die Karte, nicht auf die Liste
   const basics = grundsachen(visible.filter((i) => !i.checked && !nowItems.includes(i)), settings.alwaysList);
-  const weekItems = shown(basics.liste.filter((i) => stays(i) && !nowItems.includes(i) && !(inWeek && todayItems.includes(i))));
+  const weekItems = shown(basics.liste.filter((i) => stays(i) && notInZone(i) && !nowItems.includes(i) && !(inWeek && todayItems.includes(i))));
   const recent = recentBought([visible.filter((i) => !leaving.includes(i.key))]);
 
+  /** „Schon gekauft“ bzw. „Doch kaufen“ – nur über das Fenster, nie durch bloßes Antippen */
   const toggle = (week: string, item: ListItem) => {
     if (!item.checked) {
       buzz();
@@ -135,6 +155,24 @@ export function ShoppingListView() {
     }
     toggleChecked(week, item, todayIso);
   };
+
+  /** Löschen (eigene Artikel) bzw. „Haben wir schon“ (Zutaten aus Gerichten) */
+  const removeFor = (item: ListItem, week: string, close: () => void) =>
+    item.manualId
+      ? {
+          label: "Löschen",
+          onClick: () => {
+            showDeleted(removeManualItem(week, item.manualId!), `${item.name} gelöscht`);
+            close();
+          },
+        }
+      : {
+          label: "Haben wir schon",
+          onClick: () => {
+            setHave(week, item.key, true);
+            close();
+          },
+        };
 
   const share = async (shop?: string) => {
     const text = shoppingListText(list, `🛒 Einkaufsliste ${range}${shop ? ` – ${shop}` : ""}`, shop);
@@ -151,6 +189,21 @@ export function ShoppingListView() {
     }
   };
 
+  /** Laden gewählt: Artikel wandert dorthin, kurze Meldung mit Rückgängig, kurz umrandet */
+  const pick = (item: ListItem, shop: string, immer: boolean) => {
+    const always = immer && Boolean(shop);
+    const undo = einsortieren(item.name, shop, always);
+    showToast({ text: einsortiertText(item.name, shop, always), undo, undoneText: "Wieder wie vorher", seconds: 4, small: true });
+    setSorting(null);
+    setMarked(item.key);
+    window.setTimeout(() => setMarked((k) => (k === item.key ? null : k)), 2000);
+  };
+
+  const sortAll = () => {
+    const { count, undo } = miaSortiert(zone);
+    if (count) showToast({ text: sortiertText(count), undo, undoneText: "Wieder wie vorher", seconds: 4, small: true });
+  };
+
   const tiles = (items: ListItem[], week: string, size: TileSize = "normal") => (
     <div className={TILE_GRID[size]}>
       {items.map((item) => (
@@ -160,10 +213,11 @@ export function ShoppingListView() {
           section={item.section}
           amount={item.amount}
           products={settings.products}
-          checked={item.checked}
+          faded={item.checked}
+          marked={marked === item.key}
           size={size}
-          label={`${item.name} ${item.checked ? "nicht mehr abhaken" : "abhaken"}`}
-          onTap={() => toggle(week, item)}
+          label={`${item.name}: Laden wählen`}
+          onTap={() => setSorting({ item, week })}
           onLongPress={week === weekStart ? () => setEditing(item) : undefined}
         />
       ))}
@@ -216,6 +270,10 @@ export function ShoppingListView() {
 
         {shareNote && <p className="rounded-field bg-accent-soft px-4 py-2 text-sm font-semibold text-accent-strong">{shareNote}</p>}
 
+        <OhneLadenZone count={zone.length} sortierbar={vorschlaege.length} helper={helperName(profile)} onSort={sortAll}>
+          {tiles(zone, weekStart)}
+        </OhneLadenZone>
+
         {nothing && beispiel ? (
           beispiel
         ) : nothing ? (
@@ -234,7 +292,7 @@ export function ShoppingListView() {
         <GruppenListe gruppen={gruppen} nachLaden={nachLaden} tiles={(items) => tiles(items, weekStart)} />
         {!nachLaden && selectedShop && gruppen.length > 0 && <p className="-mt-2 px-1 text-xs text-muted">Sortiert wie dein Weg durch den Laden</p>}
 
-        {open.length > 0 && <p className="px-1 text-xs text-muted">Antippen: gekauft. Lange drücken: ändern oder anderer Laden.</p>}
+        {open.length > 0 && <p className="px-1 text-xs text-muted">Antippen: Laden wählen. Abhaken im Laden.</p>}
 
         {chip === "alle" && (
           <GrundsachenKarte
@@ -297,28 +355,31 @@ export function ShoppingListView() {
 
       {catalogOpen !== null && <CatalogSheet weekStart={weekStart} settings={settings} open={open} recent={recent} myShops={myShops} tab={selectedShop} initialQuery={catalogOpen} onClose={() => setCatalogOpen(null)} />}
       {shopsOpen && <MeineLaedenSheet shops={settings.shops} myShops={myShops} rules={settings.shopRules} onClose={() => setShopsOpen(false)} />}
+      {sorting && (
+        <WoKaufstDuSheet
+          item={sorting.item}
+          myShops={myShops}
+          vorschlag={sorting.item.shop ? null : gelernterLaden(sorting.item.name, { itemShops: settings.itemShops, learned: settings.learned })}
+          products={settings.products}
+          onPick={(shop, immer) => pick(sorting.item, shop, immer)}
+          onBought={() => {
+            toggle(sorting.week, sorting.item);
+            setSorting(null);
+          }}
+          onEdit={() => {
+            setEditing(sorting.item);
+            setSorting(null);
+          }}
+          remove={removeFor(sorting.item, sorting.week, () => setSorting(null))}
+          onClose={() => setSorting(null)}
+        />
+      )}
       {editing && (
         <EditItemSheet
           item={editing}
           settings={settings}
           onClose={() => setEditing(null)}
-          remove={
-            editing.manualId
-              ? {
-                  label: "Löschen",
-                  onClick: () => {
-                    showDeleted(removeManualItem(weekStart, editing.manualId!), `${editing.name} gelöscht`);
-                    setEditing(null);
-                  },
-                }
-              : {
-                  label: "Haben wir schon",
-                  onClick: () => {
-                    setHave(weekStart, editing.key, true);
-                    setEditing(null);
-                  },
-                }
-          }
+          remove={removeFor(editing, weekStart, () => setEditing(null))}
           onSave={({ name, always, shop, amount }) => {
             if (name.trim() !== editing.name) renameItem(weekStart, editing, name, always);
             if (editing.manualId && amount !== editing.amount) updateManualItem(weekStart, editing.manualId, { amount });

@@ -13,7 +13,7 @@ import { quickTaskData } from "@/lib/kalender/quick";
 import { changeEntries } from "@/lib/kalender/store";
 import { parseQuickAdd } from "@/lib/einkauf/quickAdd";
 import { addManualItem, loadShoppingSettings, removeManualItems, sectionFor, setItemShop } from "@/lib/einkauf/shoppingList";
-import { rememberedShop } from "@/lib/einkauf/meineLaeden";
+import { ladenMerken, rememberedShop } from "@/lib/einkauf/meineLaeden";
 import { changeNotes, noteFromText, upsertNote } from "@/lib/notizen";
 import { addPin, changePins, createPin } from "@/lib/pinnwand";
 import { noteUserAction } from "@/lib/core/activity";
@@ -44,7 +44,7 @@ function saveEntry(read: Extract<QuickRead, { kind: "termin" | "aufgabe" }>, rem
   return { undo, title: entry.data.title };
 }
 
-/** Laden je Artikel: im Satz genannt → von Hand gewählt → gemerkt → offener Reiter („Egal wo“ = keiner) */
+/** Laden je Artikel: im Satz genannt → von Hand gewählt → gemerkt → offener Reiter; nichts = „noch ohne Laden“, „Egal wo“ nur bewusst */
 function saveShopping(text: string, weekStart: string, choice: { shop?: string; picked?: boolean } = {}): { undo: () => void; title: string } | null {
   const settings = loadShoppingSettings();
   const { items, unsure } = parseQuickAdd(text, settings);
@@ -56,7 +56,7 @@ function saveShopping(text: string, weekStart: string, choice: { shop?: string; 
     const name = settings.products[i.name.toLowerCase()] ?? i.name;
     const remembered = rememberedShop(i.name, settings.itemShops, settings.products);
     const shop = i.shop || (choice.picked ? (choice.shop ?? "") : remembered || (choice.shop ?? ""));
-    if (shop !== remembered && (shop || choice.picked)) setItemShop(name, shop);
+    if (ladenMerken({ name: i.name, shop, picked: Boolean(choice.picked) && !i.shop, itemShops: settings.itemShops, products: settings.products })) setItemShop(name, shop);
     return id;
   });
   return { undo: () => removeManualItems(weekStart, ids), title: all.map((i) => i.name).join(", ") };

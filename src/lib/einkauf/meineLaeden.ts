@@ -2,7 +2,8 @@
 // die einmalige Frage „Wo kaufst du meistens ein?“ (Fertig oder Später, nie
 // wieder), die Laden-Reihe der Einkaufsliste (Alle + meine Läden, auch ohne
 // Artikel, + andere mit offenen Sachen + „Ohne Laden“ nur wenn nötig) und die
-// Vorwahl beim Hinzufügen (gemerkter Laden → offener Reiter → „Egal wo“).
+// Vorwahl beim Hinzufügen (gemerkter Laden → offener Reiter → nichts =
+// „noch ohne Laden“; „Egal wo“ nur, wenn bewusst gewählt).
 // Reine Logik + Ändern im Speicher der Einkaufsliste.
 
 import { useExternalStore } from "@/lib/core/useExternalStore";
@@ -125,13 +126,25 @@ export function chipIn(row: ChipInfo[], stored: string): ShopChip {
 /** Knopf in den Einkaufsmodus */
 export const shopModeLabel = (shop: string) => `Bei ${shop} einkaufen`;
 
-/** Gemerkter Laden eines Artikels (auch über euer Produkt) */
+/** Gemerkter Laden eines Artikels (auch über euer Produkt); "" = egal wo oder noch ohne Laden */
 export function rememberedShop(name: string, itemShops: Record<string, string>, products: Record<string, string> = {}): string {
   const key = lower(name);
   return itemShops[key] ?? itemShops[lower(products[key] ?? "")] ?? "";
 }
 
-/** Vorwahl „Kommt auf die Liste für“: gemerkter Laden → offener Reiter → „Egal wo“ (leer) */
+/**
+ * Beim Hinzufügen den Laden merken? Ein genannter/gewählter Laden, der vom
+ * gemerkten abweicht – oder bewusst „Egal wo“ für einen Artikel, der noch
+ * ohne Laden ist. Nichts gewählt = bleibt, wie es ist.
+ */
+export function ladenMerken(o: { name: string; shop: string; picked: boolean; itemShops: Record<string, string>; products?: Record<string, string> }): boolean {
+  if (!o.shop && !o.picked) return false;
+  const key = lower(o.name);
+  const known = key in o.itemShops || lower(o.products?.[key] ?? "") in o.itemShops;
+  return o.shop !== rememberedShop(o.name, o.itemShops, o.products) || !known;
+}
+
+/** Vorwahl „Kommt auf die Liste für“: gemerkter Laden → offener Reiter → "" (nichts vorgewählt) */
 export function ladenVorwahl(o: { name: string; itemShops: Record<string, string>; products?: Record<string, string>; tab?: string }): { shop: string; remembered: boolean } {
   const remembered = o.name.trim() ? rememberedShop(o.name, o.itemShops, o.products) : "";
   if (remembered) return { shop: remembered, remembered: true };

@@ -24,7 +24,7 @@ import { effectivePlanStyle } from "@/lib/einstellungen/profile";
 import { householdTitle } from "@/lib/einstellungen/profileHousehold";
 import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { addPantryItems, consumePantry, loadPantry, loadPantryAll, replacePantry } from "@/lib/vorrat/pantry";
-import { loadShoppingSettings, replaceShoppingLists, setItemShop } from "@/lib/einkauf/shoppingList";
+import { clearItemShop, loadShoppingSettings, replaceShoppingLists, setItemShop } from "@/lib/einkauf/shoppingList";
 import { applyShopRule, shopRulesForMia } from "@/lib/einkauf/shopRules";
 import { recordUsage } from "@/lib/begleitung/usage";
 import { addWish, loadWishes, restoreWishes } from "@/lib/essen/wishes";
@@ -542,9 +542,9 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
   for (const op of chosen) {
     if (op.type === "add_shopping" && op.shop) {
       // Laden für den Artikel merken (Einkauf nach Läden)
-      const before = loadShoppingSettings().itemShops[op.name.trim().toLowerCase()] ?? "";
+      const before = loadShoppingSettings().itemShops[op.name.trim().toLowerCase()];
       setItemShop(op.name, op.shop);
-      undoDay.push(() => setItemShop(op.name, before));
+      undoDay.push(() => (before === undefined ? clearItemShop(op.name) : setItemShop(op.name, before)));
     }
     // „Tomaten kaufe ich immer bei Rewe“: feste Regel, Rückgängig stellt die alte wieder her
     if (op.type === "set_shop_rule") undoDay.push(applyShopRule(op.name, op.shop));

@@ -3,7 +3,8 @@
 // Einkauf wie Bring (Tafel 35): ein Artikel als quadratische Kachel in der
 // Farbe seiner Abteilung – Symbol, Name, Menge, oben links das Gericht.
 // Dieselbe Kachel zeigt „Im Haus“ (ohne Menge, mit Schild „morgen“/„bis Sa“).
-// Tippen = gekauft (bzw. auswählen), lange drücken = bearbeiten.
+// Tippen = je nach Ort (Liste: Laden wählen, Katalog: auswählen, Im Haus:
+// aufgebraucht), lange drücken = bearbeiten.
 
 import { useRef } from "react";
 import { Check } from "lucide-react";
@@ -37,6 +38,7 @@ export function ItemTile({
   size = "normal",
   badge,
   faded = false,
+  marked = false,
   onTap,
   onLongPress,
 }: {
@@ -57,6 +59,8 @@ export function ItemTile({
   badge?: { text: string; tone: "orange" | "gelb" } | null;
   /** Blass (Im Haus: aufgebraucht) */
   faded?: boolean;
+  /** Kurz umrandet: eben einsortiert */
+  marked?: boolean;
   onTap: () => void;
   onLongPress?: () => void;
 }) {
@@ -94,11 +98,12 @@ export function ItemTile({
         onTap();
       }}
       data-section={section}
+      data-eben-einsortiert={marked || undefined}
       className={`relative flex w-full min-w-0 select-none items-center rounded-field transition duration-300 active:scale-95 ${
         size === "mini" ? "h-11 flex-row gap-1.5 px-1.5 text-left" : "aspect-square flex-col justify-center gap-0.5 px-1 pb-1 pt-3 text-center"
       } ${
         dashed ? "border-2 border-dashed border-line-strong" : ""
-      } ${checked || faded ? "opacity-55" : ""} ${selected ? "ring-2 ring-accent" : ""}`}
+      } ${checked || faded ? "opacity-55" : ""} ${selected || marked ? "ring-2 ring-accent" : ""}`}
       style={{ background: dashed ? undefined : `var(--app-shop-section-${section})`, WebkitTouchCallout: "none" }}
     >
       {dish && size !== "mini" && <span className="absolute left-1.5 right-1.5 top-1 truncate text-left text-[10px] font-bold leading-tight text-muted">{dish}</span>}

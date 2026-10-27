@@ -26,8 +26,3 @@ export function abteilungSymbol(name: string): AbteilungSymbol {
   if (KUEHL.some((w) => n.includes(w))) return "kuehlregal";
   return "sonstiges";
 }
-
-/** Symbolreihe der Einkauf-Kachel (Variante A): die ersten 6 Sachen, Rest als „+N“ */
-export function symbolReihe(names: string[], max = 6): { names: string[]; more: number } {
-  return { names: names.slice(0, max), more: Math.max(0, names.length - max) };
-}
