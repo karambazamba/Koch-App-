@@ -1,7 +1,8 @@
-// Startseite (`wasgibts.startseite` v4): welche Kacheln auf "Heute" stehen,
+// Startseite (`wasgibts.startseite` v6): welche Kacheln auf "Heute" stehen,
 // in welcher Reihenfolge und wie groß (S/M/L). L und M = volle Breite; S =
-// halbe Breite – zwei S direkt hintereinander stehen nebeneinander, eine
-// einzelne S wird breit. Essen und Einkauf sind ein Paar (stehen immer
+// immer halbe Breite – zwei S direkt hintereinander stehen nebeneinander, eine
+// einzelne S bleibt halb (im Bearbeiten zeigt die freie Hälfte „＋ Kachel“).
+// Jede S lässt sich mit jeder anderen S kombinieren. Essen und Einkauf sind ein Paar (stehen immer
 // direkt hintereinander, wandern zusammen). Neue Kacheln landen an ihrem
 // Platz in der Standard-Reihenfolge. Rein + Speicher, damit Oberfläche und
 // Lotte (Werkzeug startseite_anpassen) gleich rechnen. Entfernen löscht nie
@@ -9,6 +10,7 @@
 
 import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
+import { rowsOf, unitsOf } from "@/lib/core/homeUnits";
 
 export type HomeTileId = "pinnwand" | "termine" | "aufgaben" | "wetter" | "essen" | "einkauf" | "timer" | "sport" | "notizen" | "vorrat" | "morgen" | "post" | "spendentopf" | "tipps";
 export type TileSize = "S" | "M" | "L";
@@ -226,7 +228,7 @@ export function describeHomeChange(change: HomeChange): string {
   }
 }
 
-type HomeStore = { version: 5; tiles: HomeTile[]; tipSeen: boolean };
+type HomeStore = { version: 6; tiles: HomeTile[]; tipSeen: boolean };
 
 type RawTile = { id?: string; visible?: boolean; size?: string };
 
@@ -238,9 +240,10 @@ type RawTile = { id?: string; visible?: boolean; size?: string };
 export function migrateHome(raw: unknown): HomeStore | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as { version?: number; tiles?: unknown; tipSeen?: unknown };
-  if (r.version === 5) return { version: 5, tiles: sanitizeHome(r.tiles), tipSeen: r.tipSeen === true };
-  if (r.version === 4) return { version: 5, tiles: showOnce(sanitizeHome(r.tiles), "notizen"), tipSeen: r.tipSeen === true };
-  if (r.version === 3) return { version: 5, tiles: showOnce(withPotTile(sanitizeHome(r.tiles)), "notizen"), tipSeen: r.tipSeen === true };
+  if (r.version === 6) return { version: 6, tiles: sanitizeHome(r.tiles), tipSeen: r.tipSeen === true };
+  if (r.version === 5) return { version: 6, tiles: lonelySToM(sanitizeHome(r.tiles)), tipSeen: r.tipSeen === true };
+  if (r.version === 4) return { version: 6, tiles: lonelySToM(showOnce(sanitizeHome(r.tiles), "notizen")), tipSeen: r.tipSeen === true };
+  if (r.version === 3) return { version: 6, tiles: lonelySToM(showOnce(withPotTile(sanitizeHome(r.tiles)), "notizen")), tipSeen: r.tipSeen === true };
   if (r.version !== 1 && r.version !== 2) return null;
   let old = (Array.isArray(r.tiles) ? r.tiles : []).filter((t): t is RawTile => Boolean(t) && typeof t === "object");
   if (r.version === 1) {
@@ -259,8 +262,34 @@ export function migrateHome(raw: unknown): HomeStore | null {
   }
   const tiles = old.map((t) => ({ id: t.id as HomeTileId, visible: t.visible !== false, size: IDS.includes(t.id as HomeTileId) ? tileMeta(t.id as HomeTileId).size : "M" }));
   // Bisherige Nutzer (v1) kennen die Startseite schon – kein Hinweis mehr
-  return { version: 5, tiles: showOnce(withPotTile(sanitizeHome(tiles)), "notizen"), tipSeen: r.version === 1 ? true : r.tipSeen === true };
+  return { version: 6, tiles: lonelySToM(showOnce(withPotTile(sanitizeHome(tiles)), "notizen")), tipSeen: r.version === 1 ? true : r.tipSeen === true };
 }
+
+/**
+ * v5 → v6: Eine einzelne S war bisher breit – jetzt ist jede S halb. Damit sich
+ * beim Update nichts sichtbar verschiebt, wird sie einmal zu M (Paar bleibt). @public
+ */
+export function lonelySToM(tiles: HomeTile[]): HomeTile[] {
+  const lonely = new Set(
+    rowsOf(unitsOf(tiles.filter((t) => t.visible)))
+      .filter((row) => row.length === 1 && row[0].tiles.length === 1 && row[0].tiles[0].size === "S")
+      .map((row) => row[0].tiles[0].id),
+  );
+  return tiles.map((t) => (lonely.has(t.id) ? { ...t, size: fitSize(t.id, "M") } : t));
+}
+
+/** S-Kachel neben eine andere S stellen („＋ Kachel“ in der freien Hälfte): sichtbar, klein, direkt dahinter */
+export function placeBeside(tiles: HomeTile[], anchor: HomeTileId, id: HomeTileId): HomeTile[] {
+  if (anchor === id || partnerOf(id) || !tileMeta(id).sizes.includes("S")) return tiles;
+  const rest = sanitizeHome(tiles).filter((t) => t.id !== id);
+  const at = rest.findIndex((t) => t.id === anchor);
+  if (at < 0) return tiles;
+  rest.splice(at + 1, 0, { id, visible: true, size: "S" });
+  return sanitizeHome(rest);
+}
+
+/** Kacheln, die neben eine einzelne S passen (S-fähig, nicht das Paar Essen + Einkauf) */
+export const smallPartners = (anchor: HomeTileId) => HOME_TILES.filter((m) => m.id !== anchor && !m.soon && m.sizes.includes("S") && !partnerOf(m.id)).map((m) => m.id);
 
 /**
  * v3 → v4: die Spendentopf-Kachel ist standardmäßig an – bei bisherigen
@@ -286,7 +315,7 @@ export function loadHomeTiles(): HomeTile[] {
 }
 
 export function saveHomeTiles(tiles: HomeTile[]) {
-  store.save({ version: 5, tiles: sanitizeHome(tiles), tipSeen: store.load()?.tipSeen ?? false });
+  store.save({ version: 6, tiles: sanitizeHome(tiles), tipSeen: store.load()?.tipSeen ?? false });
 }
 
 /** Einmaliger Hinweis "Halte die Startseite gedrückt …" */
@@ -296,7 +325,7 @@ export function useHomeTipSeen(): boolean | undefined {
 }
 
 export function markHomeTipSeen() {
-  store.save({ version: 5, tiles: loadHomeTiles(), tipSeen: true });
+  store.save({ version: 6, tiles: loadHomeTiles(), tipSeen: true });
 }
 
 /** Änderung speichern; liefert Rückgängig */

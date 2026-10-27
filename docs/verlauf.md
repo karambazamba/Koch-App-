@@ -2510,3 +2510,11 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Prüfstand erwartet bei „Merk dir …“/„Notier dir …“ jetzt eine Notiz
   (133 Sätze).
 
+
+## S-Kacheln frei kombinierbar, Notizen in S/M/L (v0.111.0)
+
+- Jede S ist halb breit, zwei S nebeneinander, jede S-fähige Kachel mit jeder
+  anderen. Eine einzelne S bleibt halb; im Bearbeiten „＋ Kachel“ in der
+  freien Hälfte (nur S-fähige Kacheln). Essen + Einkauf bleiben ein Paar.
+- Startseite v6: eine einzelne S, die bisher breit war, wird einmal M.
+- Notizen-Kachel S/M/L mit Stift (Schnellnotiz), Angeheftete zuerst.

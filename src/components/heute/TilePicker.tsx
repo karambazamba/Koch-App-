@@ -11,7 +11,7 @@ import { Box, HandCoins, MapPin, CalendarCheck, CalendarClock, CheckCircle2, Clo
 import { useRef } from "react";
 import { Sheet } from "@/components/ui/Sheet";
 import { TILE_PLUS_DOT } from "@/components/ui/styles";
-import { HOME_TILES, applyHomeChange, saveHomeTiles, tileMeta, useHomeTiles, type HomeTile, type HomeTileId } from "@/lib/core/homeLayout";
+import { HOME_TILES, applyHomeChange, placeBeside, saveHomeTiles, smallPartners, tileMeta, useHomeTiles, type HomeTile, type HomeTileId } from "@/lib/core/homeLayout";
 import { showDeleted } from "@/lib/core/toast";
 import { featureOn, launchSichtbar, setFeature, useBausteine } from "@/lib/core/features";
 import { pushUndo } from "@/lib/core/undo";
@@ -53,8 +53,11 @@ function setTile(all: HomeTile[], id: HomeTileId, show: boolean) {
 /** Sichtbar auf der Startseite (Bausteine nur, wenn sie an sind) */
 const isActive = (t: HomeTile) => t.visible && !tileMeta(t.id).soon && (!tileMeta(t.id).feature || featureOn(tileMeta(t.id).feature!));
 
-/** `onClosed(id)`: beim Schließen die zuletzt hinzugefügte Kachel (die Seite scrollt hin, sie leuchtet auf) */
-export function TilePicker({ onClose, onClosed }: { onClose: () => void; onClosed?: (lastAdded: HomeTileId) => void }) {
+/**
+ * `onClosed(id)`: beim Schließen die zuletzt hinzugefügte Kachel (die Seite scrollt hin, sie leuchtet auf).
+ * `neben`: „＋ Kachel“ in der freien Hälfte neben dieser S – nur S-fähige Kacheln, Antippen stellt sie klein daneben.
+ */
+export function TilePicker({ onClose, onClosed, neben }: { onClose: () => void; onClosed?: (lastAdded: HomeTileId) => void; neben?: HomeTileId }) {
   const all = useHomeTiles();
   const added = useRef<HomeTileId | null>(null);
   const tipsMode = useTipsMode();
@@ -65,9 +68,9 @@ export function TilePicker({ onClose, onClosed }: { onClose: () => void; onClose
     if (added.current) onClosed?.(added.current);
   };
   return (
-    <Sheet title="Kachel hinzufügen" onClose={close} above>
+    <Sheet title={neben ? `Neben ${tileMeta(neben).label}` : "Kachel hinzufügen"} onClose={close} above>
       <ul className="grid grid-cols-2 gap-2 pb-3" aria-label="Kacheln">
-        {sortBy(HOME_TILES.filter((meta) => !meta.soon && (meta.id !== "tipps" || (tipsMode && tipsMode !== "off")) && (!meta.feature || launchSichtbar(meta.feature, on ?? []))), ...TILE_PICKER).map((meta) => {
+        {sortBy(HOME_TILES.filter((meta) => !meta.soon && (!neben || smallPartners(neben).includes(meta.id)) && (meta.id !== "tipps" || (tipsMode && tipsMode !== "off")) && (!meta.feature || launchSichtbar(meta.feature, on ?? []))), ...TILE_PICKER).map((meta) => {
           const tile = all.find((t) => t.id === meta.id);
           const active = Boolean(tile && isActive(tile));
           const Icon = TILE_ICONS[meta.id] ?? Box;
@@ -76,8 +79,20 @@ export function TilePicker({ onClose, onClosed }: { onClose: () => void; onClose
               <button
                 type="button"
                 aria-pressed={active}
-                aria-label={`${meta.label}${active ? " – entfernen" : " – hinzufügen"}`}
-                onClick={() => (setTile(all, meta.id, !active), (added.current = active ? (added.current === meta.id ? null : added.current) : meta.id))}
+                aria-label={neben ? `${meta.label} – daneben stellen` : `${meta.label}${active ? " – entfernen" : " – hinzufügen"}`}
+                onClick={() => {
+                  if (neben) {
+                    // Klein daneben stellen (auch eine schon sichtbare Kachel wandert hierher)
+                    const f = tileMeta(meta.id).feature;
+                    if (f && !featureOn(f)) setFeature(f, true);
+                    saveHomeTiles(placeBeside(all, neben, meta.id));
+                    buzz();
+                    added.current = meta.id;
+                    return close();
+                  }
+                  setTile(all, meta.id, !active);
+                  added.current = active ? (added.current === meta.id ? null : added.current) : meta.id;
+                }}
                 className={`relative flex h-full w-full flex-col items-start gap-1 rounded-card border p-3 text-left transition active:scale-[0.98] ${active ? "border-line bg-surface shadow-card" : "border-transparent bg-segment"}`}
               >
                 <Icon className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />

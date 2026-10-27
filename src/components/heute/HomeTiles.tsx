@@ -32,7 +32,8 @@ import { useStock } from "@/lib/essen/useStock";
 import { showToast } from "@/lib/core/toast";
 import { DEMO_SHOPS, clearDemoTile } from "@/lib/core/demo";
 import { shopGroups, shopTone, type ShopGroup } from "@/lib/einkauf/shopGroups";
-import { sortNotes, useSchnellnotiz, useNotes } from "@/lib/notizen";
+import { useSchnellnotiz, useNotes } from "@/lib/notizen";
+import { notizZeilen } from "@/lib/heute/notizenKachel";
 import type { HomeData } from "@/components/heute/useHomeData";
 import { buzz } from "@/components/heute/actions";
 import { dishOf } from "@/components/essen/useMeals";
@@ -229,57 +230,56 @@ export function ShoppingTile({ size = "S", demo = false }: { half: boolean; size
 }
 
 /**
- * NOTIZEN (hellgelb, Stift oben rechts) – S: die ersten 2 Zeilen der Schnellnotiz; M: + angeheftete
- * als Chips; L: + die 3 neuesten Notizen. ✎ = Schnellnotiz-Fenster, Chip =
- * diese Notiz, Kachel = Notizen-Seite.
+ * NOTIZEN je Größe: S = die neueste bzw. angeheftete Notiz (Titel + Anfang,
+ * 2 Zeilen), M = 3 Notizen als Zeilen „Titel · Anfang“, L = bis 5
+ * (angeheftete zuerst). Ohne Notizen die Schnellnotiz bzw. „Schnell was
+ * aufschreiben …“. Kopf = Notizen-Seite, Zeile = genau diese Notiz, Stift =
+ * Schnellnotiz.
  */
 export function NotesTile({ name, size = "M" }: { name: string; size?: TileSize }) {
   const schnellnotiz = useSchnellnotiz();
   const notes = useNotes();
   const [open, setOpen] = useState(false);
-  const lines = (schnellnotiz?.text ?? "").split(/\n/).map((l) => l.trim()).filter(Boolean);
-  const sorted = notes ? sortNotes(notes) : [];
-  const pinned = sorted.filter((n) => n.data.pinned && !n.data.schnell);
-  const newest = [...(notes ?? [])].sort((a, b) => b.geaendert.localeCompare(a.geaendert)).filter((n) => !n.data.pinned && !n.data.schnell).slice(0, 3);
-  const shown = lines.slice(0, size === "S" ? 2 : 3);
+  const rows = notizZeilen(notes ?? [], size);
+  const quick = (schnellnotiz?.text ?? "").split(/\n/).map((l) => l.trim()).filter(Boolean);
+  const top = rows[0];
   return (
     <>
-      <section className={`${TILE} flex min-h-[92px] flex-col gap-1 p-3.5`} aria-label="Notizen">
+      <section className={`${TILE} flex min-h-[92px] flex-col gap-1 p-3.5`} aria-label="Notizen" data-notizen-groesse={size}>
         <Link href="/notizen" className="flex min-h-11 flex-col gap-0.5 pr-8" aria-label="Notizen öffnen">
           <span className={HALF_LABEL}>
             <StickyNote className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
             Notizen
           </span>
-          {shown.length ? (
-            shown.map((l, i) => (
-              <span key={i} className="block w-full truncate text-[13px] leading-[1.35]">
-                {l}
-              </span>
-            ))
-          ) : (
-            <span className="text-[13px] text-muted">Schnell was aufschreiben …</span>
-          )}
+          {!rows.length &&
+            (quick.length ? (
+              <span className="line-clamp-2 text-[13px] leading-[1.35]">{quick.slice(0, 2).join(" · ")}</span>
+            ) : (
+              <span className="text-[13px] text-muted">Schnell was aufschreiben …</span>
+            ))}
         </Link>
         <span className="absolute right-3.5 top-3">
           <QuickButton icon={PenLine} label="Schnellnotiz schreiben" onClick={() => setOpen(true)} />
         </span>
-        {size !== "S" && pinned.length > 0 && (
-          <div className="mt-0.5 flex flex-wrap gap-1.5" aria-label="Angeheftet">
-            {pinned.slice(0, 6).map((n) => (
-              <Link key={n.id} href={`/notizen/bearbeiten?id=${n.id}`} className="inline-flex min-h-[30px] max-w-full items-center gap-1 rounded-full bg-tile-inner px-2.5 py-1 text-[12.5px] font-semibold" data-zeile>
-                <Pin className="h-3 w-3 shrink-0 text-tile-accent" strokeWidth={2.25} aria-hidden />
-                <span className="truncate">{n.data.title}</span>
-              </Link>
-            ))}
-          </div>
+        {size === "S" && top && (
+          <Link href={`/notizen/bearbeiten?id=${top.id}`} className="-mt-1 flex min-h-[30px] flex-col text-[13px] leading-[1.35]" data-zeile data-notiz-zeile>
+            <span className="flex items-center gap-1 truncate font-bold">
+              {top.pinned && <Pin className="h-3 w-3 shrink-0 text-tile-accent" strokeWidth={2.25} aria-hidden />}
+              <span className="truncate">{top.title}</span>
+            </span>
+            {top.line && <span className="truncate text-muted">{top.line}</span>}
+          </Link>
         )}
-        {size === "L" && newest.length > 0 && (
-          <ul className="mt-1 flex flex-col gap-0.5 border-t border-line pt-1.5" aria-label="Neueste Notizen">
-            {newest.map((n) => (
-              <li key={n.id}>
-                <Link href={`/notizen/bearbeiten?id=${n.id}`} className="flex min-h-9 items-center gap-2 text-[13.5px]">
-                  <StickyNote className="h-4 w-4 shrink-0 text-tile-accent" strokeWidth={2} aria-hidden />
-                  <span className="min-w-0 flex-1 truncate font-semibold">{n.data.title}</span>
+        {size !== "S" && rows.length > 0 && (
+          <ul className="-mt-1 flex flex-col" aria-label="Notizen">
+            {rows.map((r) => (
+              <li key={r.id}>
+                <Link href={`/notizen/bearbeiten?id=${r.id}`} className="flex min-h-[30px] items-center gap-1.5 text-[13.5px]" data-zeile data-notiz-zeile>
+                  {r.pinned ? <Pin className="h-3.5 w-3.5 shrink-0 text-tile-accent" strokeWidth={2.25} aria-hidden /> : <StickyNote className="h-3.5 w-3.5 shrink-0 text-tile-accent" strokeWidth={2} aria-hidden />}
+                  <span className="min-w-0 flex-1 truncate">
+                    <span className="font-semibold">{r.title}</span>
+                    {r.line && <span className="text-muted"> · {r.line}</span>}
+                  </span>
                 </Link>
               </li>
             ))}

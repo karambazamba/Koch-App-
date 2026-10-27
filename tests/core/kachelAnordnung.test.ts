@@ -12,6 +12,7 @@ import {
   tileLabel,
   type HomeTile,
   type HomeTileId,
+  lonelySToM,
 } from "@/lib/core/homeLayout";
 import { rowsOf, unitsOf } from "@/lib/core/homeUnits";
 import { fakeWindow, noBrowser } from "../helpers";
@@ -171,7 +172,7 @@ describe("Startseite: Texte", () => {
 
 describe("Startseite: Migration", () => {
   it("v5 bleibt, v4 bekommt einmal Notizen ans Ende der sichtbaren, v3 zusätzlich den Spendentopf", () => {
-    expect(migrateHome({ version: 5, tiles: DEFAULT_HOME, tipSeen: true })).toEqual({ version: 5, tiles: DEFAULT_HOME, tipSeen: true });
+    expect(migrateHome({ version: 5, tiles: DEFAULT_HOME, tipSeen: true })).toEqual({ version: 6, tiles: lonelySToM(DEFAULT_HOME), tipSeen: true });
     const v4 = migrateHome({ version: 4, tiles: [{ id: "termine", visible: true, size: "M" }, { id: "notizen", visible: false, size: "M" }, { id: "wetter", visible: true, size: "S" }], tipSeen: true })!;
     expect(visible(v4.tiles)).toEqual(["termine", "wetter", "notizen"]);
     const v3 = migrateHome({ version: 3, tiles: [{ id: "termine", visible: true, size: "M" }, { id: "wetter", visible: true, size: "S" }, { id: "notizen", visible: false, size: "M" }] })!;
@@ -221,7 +222,7 @@ describe("Startseite: Speicher", () => {
     expect(home.loadHomeTiles()).toEqual(home.DEFAULT_HOME);
     const undo = home.changeHome({ tile: "wetter", action: "gross" });
     expect(sizeOf(home.loadHomeTiles(), "wetter")).toBe("L");
-    expect(JSON.parse(win.localStorage.getItem("wasgibts.startseite")!).version).toBe(5);
+    expect(JSON.parse(win.localStorage.getItem("wasgibts.startseite")!).version).toBe(6);
     undo();
     expect(sizeOf(home.loadHomeTiles(), "wetter")).toBe("S");
   });
