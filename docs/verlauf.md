@@ -2652,3 +2652,17 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Einkauf-Kachel: Sachen ohne eigene Zeichnung zeigen das Symbol ihrer
   Abteilung statt eines Buchstabens; neue Zeichnung „Aufschnitt“; nur „Egal
   wo“ = bis zu 6 Symbole + Anzahl, mit Läden die Zeilen je Laden.
+
+## Abends nichts doppelt (vX, Tafel 98)
+
+- Der gestrichelte Streifen „Ausblick morgen“ ist weg (Startseite und
+  Kachel-Auswahl); gespeicherte Anordnungen verlieren ihn still (Startseite
+  v7, `migrateHome`), auch aus alten Sicherungen. Abends zeigen Termine- und
+  Essen-Kachel wie bisher schon morgen.
+- Jetzt-Karte abends (ab Feierabend bzw. 19 Uhr, wenn heute nichts mehr
+  kommt): höchstens EIN Thema, nur was keine Kachel zeigt, fest in der
+  Reihenfolge Jahrestag/Geburtstag morgen, Regen morgen früh mit Plan,
+  Termin vor 9 Uhr mit Wecker, Essen mit Vorlauf, sonst „Morgen ist ruhig.
+  Schönen Abend.“ Das alte Thema „Ausblick“ entfällt. Nachts wie bisher.
+- Ganztägige Termine: „Ganztägig“ statt „Tag“, besondere Tage mit Herz bzw.
+  Geschenk in Rosé (neues Token `--app-rose`).

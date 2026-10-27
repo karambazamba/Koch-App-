@@ -18,7 +18,6 @@ describe("Themen-Symbol statt Mias Gesicht", () => {
   it.each<[JetztKind, string]>([
     ["wetter", "Umbrella"],
     ["gleich", "CalendarDays"],
-    ["geburtstag", "CalendarDays"],
     ["vorbereiten", "ListChecks"],
     ["packliste", "ListChecks"],
     ["aufgabe", "ListChecks"],
@@ -29,7 +28,12 @@ describe("Themen-Symbol statt Mias Gesicht", () => {
     ["pinnwand", "MessageCircle"],
     ["absprache", "MessageCircle"],
     ["timer", "Timer"],
-    ["ausblick", "Sunrise"],
+    ["geburtstag", "Gift"],
+    ["jahrestag", "Heart"],
+    ["morgenwetter", "Umbrella"],
+    ["frueh", "AlarmClock"],
+    ["vorlauf", "CookingPot"],
+    ["abend", "Sparkles"],
     ["tipp", "Sparkles"],
     ["ruhig", "Sparkles"],
   ])("%s → %s", (kind, icon) => {

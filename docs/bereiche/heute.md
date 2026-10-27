@@ -11,11 +11,12 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Seite Heute: `TodayPage.tsx`; Kacheln `HomeBoard.tsx`, `EditFrame.tsx`,
   `EditHeader.tsx`, `EditLook.tsx`, `TilePicker.tsx`, `useHomeEditing.ts`, `Pressable.tsx`.
 - Kachel-Inhalte: `MiniCards.tsx` (Termine, Aufgaben), `HomeTiles.tsx` (Essen,
-  Einkauf, Notizen, Vorrat, Ausblick morgen); andere Kacheln in ihren Bereichen
+  Einkauf, Notizen, Vorrat); andere Kacheln in ihren Bereichen
   (`wetter/WeatherTile`, `pinnwand/PinboardTile`, `timer/TimerTile`, …).
 - Layout (rein + Speicher): `src/lib/core/homeLayout.ts`; Einheiten/Reihen:
   `src/lib/core/homeUnits.ts` (`unitsOf`, `rowsOf`, `glowTile`).
-- Jetzt-Karte: `src/lib/heute/jetztTopics.ts` (Punkte), `jetztStore.ts`
+- Jetzt-Karte: `src/lib/heute/jetztTopics.ts` (Punkte), abends
+  `abendThema.ts` + `abendDaten.ts` (Tafel 98), `jetztStore.ts`
   (Speicher), `jetztCommand.ts` (Satz an/aus); Oberfläche
   `src/components/heute/JetztCard.tsx`, Daten `useJetztTopics.ts`.
 - „Dein Tag“: `src/lib/heute/deinTag.ts` (Symbole, Zeilen, Übersicht,
@@ -71,7 +72,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Strich links in Raumfarbe. Hell/Dunkel gilt für beide.
 - `HOME_TILES` in Standard-Reihenfolge: Pinnwand (S), Wetter (S), Termine (M),
   Aufgaben (M), Essen (S), Einkauf (S), Spendentopf (nur M), Tipps (M/L,
-  Baustein), Timer (S/M), Sport, Notizen, Vorrat (S/M, Baustein), Ausblick morgen (nur M, Kalender-Icon),
+  Baustein), Timer (S/M), Sport, Notizen, Vorrat (S/M, Baustein),
   Post („bald“, nie sichtbar).
 - `DEFAULT_HOME` zeigt Pinnwand, Wetter, Termine, Aufgaben, Essen, Einkauf,
   Spendentopf und Vorrat; Vorrat erscheint nur mit Baustein, Tipps nur mit
@@ -113,7 +114,9 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Kachel behalten ihr Ziel). Termine öffnet den Kalender (er steht auf
   „Heute“), Essen den Essen-Reiter; Timer bleibt ein Fenster. Auf dem iPhone 15 Pro (als App) sind
   Pinnwand/Wetter, Termine und Aufgaben ohne Scrollen ganz zu sehen, Essen +
-  Einkauf angeschnitten (`e2e/ablaeufe/startseite.mjs`). Die Kachel „Ausblick morgen“ (bis v0.51.0 „Morgen“, missverständlich wie „der Morgen“) füllt sich erst ab 16 Uhr; Titel in der Kachel „Ausblick morgen · Do“, Platzhalter im Bearbeiten-Modus „ab 16 Uhr“, in der Auswahl „Was morgen ansteht, ab 16 Uhr“.
+  Einkauf angeschnitten (`e2e/ablaeufe/startseite.mjs`). Den Streifen „Ausblick morgen“ gibt es seit vX nicht mehr (Tafel 98, siehe
+  „Abends: nichts doppelt“): Termine- und Essen-Kachel zeigen abends schon
+  morgen, gespeicherte Anordnungen verlieren den Eintrag still (Speicher v7).
 
 ### Bearbeiten-Modus (direkt auf der Startseite)
 - Öffnen: lange drücken, Link „Startseite bearbeiten“ unten, Einstellungen
@@ -176,9 +179,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   „Antworten“), Heimweg-Einkauf ohne Zahl („Auf dem Heimweg bei REWE?“, vor
   dem Kochen), Kochstart (≤ 30 Min vor dem Start; ohne Essen-Kachel früher),
   Absprache bei Abendterminen ab 18 Uhr mit Kindern („Wer bleibt bei den
-  Kindern?“, mit Notiz „Oma bleibt …“ ✓), Geburtstag, Ausblick ab 19 Uhr
-  (erster Termin morgen, mit Notiz als Packliste; ohne Notiz nur, wenn keine
-  Kachel „Morgen“ zeigt), Aufgaben/Ideen nur ohne ihre Kachel,
+  Kindern?“, mit Notiz „Oma bleibt …“ ✓), Geburtstag, Aufgaben/Ideen nur ohne ihre Kachel,
   Wochencheck. Selbst eingeschaltete Bausteine leise: Freizeit-Idee (Ruhe),
   Tipp aus der Region (nur ohne Tipps-Kachel; Weiterwischen = dieses
   Wochenende nicht mehr), kleiner Tipp. Beispiel-Tag erklärt sich.
@@ -187,16 +188,35 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Elternabend“ – „Hat Lisa eingetragen.“), sanft, 45 Punkte, höchstens eine
   am Tag, jede nur einmal, nur 6 Std. frisch (`newsForCard` in
   `src/lib/konten/wer.ts`, Speicher `wasgibts.neu`).
-- Weggefallen: „start“ (Grad · Termin), reines „morgen“, Wetter-Tipps ohne
+- Weggefallen: „start“ (Grad · Termin), reines „morgen“, „Ausblick“ (vX, Tafel 98), Wetter-Tipps ohne
   Plan, „Als Nächstes“-Termin, „Alles geschafft“, Sport-Info ohne Packliste.
 - Punkte aus Dringlichkeit und Interesse (`weights`, ±5 % je Punkt;
   Antippen +1, Weiterwischen −0,5). `calm` (Feierabend mit Ruhe oder
   Wochenende) = nur sanfte Themen. Nachts (22–6 Uhr) nur Erinnerung, Timer,
-  Kochen, Pause, Ausblick, Geburtstag, Beispiel. Arbeit-Termine sind nicht sanft.
+  Kochen, Pause, Geburtstag, Beispiel. Arbeit-Termine sind nicht sanft.
+- Abends: nichts doppelt (Tafel 98, vX). Ab Feierabend bzw. ab 19 Uhr, wenn
+  heute kein Termin und kein Essen mehr kommt (`isAbend`), zeigen die Kacheln
+  morgen (Termine „Morgen · Mi“, Essen „Morgen · Mi“ mit Bild) und die Karte
+  höchstens EIN Thema, nur was keine Kachel zeigt. Laufendes (Erinnerung,
+  Timer, Kochen, Pause) geht vor, sonst fest in dieser Reihenfolge
+  (`abendThemen`): a) Jahrestag/Geburtstag morgen („Morgen ist euer
+  Hochzeitstag.“ · „Was Schönes geplant?“, allein „dein“, nur beim eigenen
+  „Hochzeitstag“/„Jahrestag“; „Morgen hat Lisa Geburtstag.“; Herz bzw.
+  Geschenk in Rosé), b) Regen morgen 7–9 Uhr mit Plan (Kinder werktags:
+  „Jacken für die Kita raus.“ bzw. Schule; sonst Termin vor 10 Uhr: „Schirm
+  für … bereitlegen?“; Schirm), c) Termin vor 9 Uhr („Morgen 8 Uhr Zahnarzt.“
+  · „Wecker auf 7?“; Wecker), d) Essen mit Vorlauf (`essen/vorlauf.ts`:
+  Fleisch/Fisch aus dem Tiefkühler laut „Im Haus“ oder „TK-…“, Marinieren,
+  Teig über Nacht: „Morgen gibt’s Gulasch.“ · „Rindfleisch heute aus dem
+  Gefrierfach.“), e) sonst „Morgen ist ruhig.“ bzw. mit Einträgen „Für
+  morgen ist alles sortiert.“ · „Schönen Abend.“ „Erledigt“ legt ein Thema
+  weg, dann kommt das nächste. Antippen öffnet „Dein Tag“ gleich auf „Morgen
+  · Mi“. Nachts (22–6) bleibt alles wie bisher. Abends steht damit kein
+  Spruch und kein „Alles ruhig“. Tests `tests/heute/abends.test.ts`.
 - Die Reihenfolge bleibt stehen (`useStableOrder`), bis die App zurückkehrt,
   15 Min vergehen, ein Thema wegfällt oder eines mit ≥ 90 Punkten dazukommt.
 - Tests: `tests/heute/jetztThemen.test.ts` (Tag wie Tafel 60 um 7:00, 8:10,
-  10:20, 12:40, 16:45, 17:35, 19:00, 21:00; nie „°“; Regen nur mit
+  10:20, 12:40, 16:45, 17:35, 19:00, 21:00 (abends EIN Thema); nie „°“; Regen nur mit
   Draußen-Termin; „Erledigt“), Durchklick `jetztKarte`.
 
 ### Weniger Mia + „Dein Tag“ (Tafel 66 B, 67, 68, v0.74.0)

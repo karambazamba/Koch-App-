@@ -7,7 +7,7 @@
 // Seite zur zuletzt hinzugefügten Kachel, sie leuchtet kurz auf. Neue Kacheln
 // mit "NEU" stehen oben; Post („bald“) erscheint noch nicht.
 
-import { Box, HandCoins, MapPin, CalendarCheck, CalendarClock, CheckCircle2, CloudSun, Dumbbell, ListChecks, Timer, Mail, NotebookPen, Pin, Plus, Refrigerator, ShoppingCart, UtensilsCrossed, type LucideIcon } from "lucide-react";
+import { Box, HandCoins, MapPin, CalendarClock, CheckCircle2, CloudSun, Dumbbell, ListChecks, Timer, Mail, NotebookPen, Pin, Plus, Refrigerator, ShoppingCart, UtensilsCrossed, type LucideIcon } from "lucide-react";
 import { useRef } from "react";
 import { Sheet } from "@/components/ui/Sheet";
 import { TILE_PLUS_DOT } from "@/components/ui/styles";
@@ -30,7 +30,6 @@ const TILE_ICONS: Record<HomeTileId, LucideIcon> = {
   sport: Dumbbell,
   notizen: NotebookPen,
   vorrat: Refrigerator,
-  morgen: CalendarCheck,
   post: Mail,
   spendentopf: HandCoins,
   tipps: MapPin,

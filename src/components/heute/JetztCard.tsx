@@ -12,12 +12,13 @@
 // Später Geladenes (Wetter, Tipps) kommt hinten dazu, solange Platz ist.
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { CalendarDays, CookingPot, ListChecks, MessageCircle, ShoppingCart, Sparkles, Sunrise, Timer, Umbrella, type LucideIcon } from "lucide-react";
+import { AlarmClock, CalendarDays, CookingPot, Gift, Heart, ListChecks, MessageCircle, ShoppingCart, Sparkles, Sunrise, Timer, Umbrella, type LucideIcon } from "lucide-react";
 import type { JetztTopic } from "@/lib/heute/jetztTopics";
 import { topicIcon, type TopicIcon } from "@/lib/heute/deinTag";
 import { withoutEmoji } from "@/lib/core/text";
 
-const ICON: Record<TopicIcon, LucideIcon> = { Umbrella, CalendarDays, ListChecks, ShoppingCart, CookingPot, MessageCircle, Timer, Sunrise, Sparkles };
+const ROSE = new Set<TopicIcon>(["Heart", "Gift"]);
+const ICON: Record<TopicIcon, LucideIcon> = { Umbrella, CalendarDays, ListChecks, ShoppingCart, CookingPot, MessageCircle, Timer, Sunrise, Sparkles, Heart, Gift, AlarmClock };
 
 const REFRESH_MS = 15 * 60_000;
 const URGENT = 90;
@@ -153,7 +154,8 @@ export function JetztCard({
         className="flex h-full w-full items-center gap-3 pl-3 pr-8 text-left"
       >
         <span ref={face} className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-full bg-surface text-accent shadow-card" data-thema={topicIcon(topic.kind)}>
-          <Icon className="h-[22px] w-[22px]" strokeWidth={2} aria-hidden />
+          {/* Besondere Tage (Herz, Geschenk) in Rosé – sonst Orange */}
+          <Icon className={`h-[22px] w-[22px] ${ROSE.has(topicIcon(topic.kind)) ? "text-rosee" : ""}`} strokeWidth={2} aria-hidden />
         </span>
         <span key={topic.id} className="flex min-w-0 flex-1 flex-col" style={{ animation: "jetzt-in 0.35s ease-out" }} role="status">
           <span className="line-clamp-1 break-words text-[15.5px] font-extrabold leading-snug text-ink">{typed >= 0 ? fullTitle.slice(0, typed) || "\u00a0" : fullTitle}</span>

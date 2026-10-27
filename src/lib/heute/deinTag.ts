@@ -12,12 +12,16 @@ import type { DayItem } from "@/lib/kalender/model";
 import type { JetztKind, JetztTopic } from "@/lib/heute/jetztTopics";
 
 /** Linien-Symbol (lucide) je Thema – statt Mias Gesicht in der Jetzt-Karte */
-export type TopicIcon = "Umbrella" | "CalendarDays" | "ListChecks" | "ShoppingCart" | "CookingPot" | "MessageCircle" | "Timer" | "Sunrise" | "Sparkles";
+export type TopicIcon = "Umbrella" | "CalendarDays" | "ListChecks" | "ShoppingCart" | "CookingPot" | "MessageCircle" | "Timer" | "Sunrise" | "Sparkles" | "Heart" | "Gift" | "AlarmClock";
 
 const ICONS: Partial<Record<JetztKind, TopicIcon>> = {
   wetter: "Umbrella",
   gleich: "CalendarDays",
-  geburtstag: "CalendarDays",
+  geburtstag: "Gift",
+  jahrestag: "Heart",
+  morgenwetter: "Umbrella",
+  frueh: "AlarmClock",
+  vorlauf: "CookingPot",
   vorbereiten: "ListChecks",
   packliste: "ListChecks",
   aufgabe: "ListChecks",
@@ -28,7 +32,6 @@ const ICONS: Partial<Record<JetztKind, TopicIcon>> = {
   pinnwand: "MessageCircle",
   absprache: "MessageCircle",
   timer: "Timer",
-  ausblick: "Sunrise",
   morgen: "Sunrise",
   ueberschneidung: "CalendarDays",
   packen: "ListChecks",
@@ -48,6 +51,8 @@ export function topicSpot(topic: Pick<JetztTopic, "id" | "kind">): { section: Da
     case "absprache":
     case "packliste":
     case "geburtstag":
+    case "jahrestag":
+    case "frueh":
       return { section: "termine", key };
     case "kochstart":
     case "kochen":
@@ -63,6 +68,9 @@ export function topicSpot(topic: Pick<JetztTopic, "id" | "kind">): { section: Da
       return null;
   }
 }
+
+/** Abend-Thema über morgen (Tafel 98): „Dein Tag“ öffnet gleich auf „Morgen · Mi“ */
+export const zeigtMorgen = (topic: Pick<JetztTopic, "target"> | null, tomorrowIso: string) => Boolean(topic?.target && "href" in topic.target && topic.target.href === `/tag?datum=${tomorrowIso}`);
 
 const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
 

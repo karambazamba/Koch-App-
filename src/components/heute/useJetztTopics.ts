@@ -14,6 +14,7 @@ import { formatDauer, memoUnheard, pinMeta, visibleMemos, visiblePins, type Memo
 import { shortClock } from "@/components/notizen/Schnellnotiz";
 import { hiddenToday, useJetzt } from "@/lib/heute/jetztStore";
 import { isOutdoor, jetztTopics, type JetztInput, type JetztTermin } from "@/lib/heute/jetztTopics";
+import { anlassOf } from "@/lib/kalender/anlass";
 import type { HomeTileId } from "@/lib/core/homeLayout";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 import { shopGroups } from "@/lib/einkauf/shopGroups";
@@ -66,15 +67,19 @@ export type JetztSource = {
   demoShop: boolean;
   /** Sichtbare Kacheln */
   tiles: HomeTileId[];
-  /** Kacheln, die schon „Morgen“ zeigen (Termine bzw. Morgen-Kachel) */
-  tomorrowTiles?: HomeTileId[];
+  /** Abends (Tafel 98): Feierabend-Phase, Haushalt allein, Weg der Kinder, Gericht von morgen mit Vorlauf */
+  evening?: boolean;
+  solo?: boolean;
+  kidsWay?: JetztInput["kidsWay"];
+  tomorrowDish?: JetztInput["tomorrowDish"];
 };
 
 const termin = (i: DayItem): JetztTermin => {
   const data = i.entry.typ === "termin" ? (i.entry.data as { place?: string; note?: string }) : {};
   const place = data.place?.trim() || undefined;
   const sport = guessSport(i.title);
-  return { key: i.key, title: i.title, time: i.time ?? "", date: i.date, work: i.room === "arbeit", place, note: data.note?.trim() || undefined, outdoor: isOutdoor(i.title, place, sport ? sportById(sport).outdoor : false) };
+  const anlass = anlassOf(i.title, i.label);
+  return { key: i.key, title: i.title, time: i.time ?? "", date: i.date, work: i.room === "arbeit", place, note: data.note?.trim() || undefined, outdoor: isOutdoor(i.title, place, sport ? sportById(sport).outdoor : false), ...(anlass ? { anlass } : {}) };
 };
 
 export function useJetztTopics(src: JetztSource) {
@@ -105,6 +110,8 @@ export function useJetztTopics(src: JetztSource) {
       })
     : undefined;
   const todayDay = forecast?.days.find((d) => d.date === src.today);
+  // Regen morgen früh (7–9 Uhr) – nur mit Plan zählt er (abendThema.ts)
+  const tomorrowRain = Boolean(forecast?.hours.some((h) => h.date === tomorrowIso && h.hour >= 7 && h.hour <= 9 && isRainy(h)));
   const region = src.regionTips ? jetztTip(src.regionTips, { today: src.today, minutes: src.minutes, rainy: todayDay ? todayDay.wet > 0 : null, kids: src.kids, hiddenWeekend: src.regionHidden }) : null;
   const input: JetztInput = {
     minutes: src.minutes,
@@ -142,7 +149,11 @@ export function useJetztTopics(src: JetztSource) {
     weekCheck: src.weekCheck && state.weekOff !== src.weekCheck ? src.weekCheck : null,
     demo: src.demo,
     tiles: src.tiles,
-    tomorrowTiles: src.tomorrowTiles ?? [],
+    evening: src.evening,
+    solo: src.solo,
+    kidsWay: src.kidsWay ?? null,
+    tomorrowRain,
+    tomorrowDish: src.demo ? null : (src.tomorrowDish ?? null),
     weights: state.weights,
     hidden: hiddenToday(state, src.today),
   };

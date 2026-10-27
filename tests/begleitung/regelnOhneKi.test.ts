@@ -88,7 +88,8 @@ describe("Startseite, Wochenplan, Einkaufsliste per Satz", () => {
     expect(parseHomeCommand("Notizen mittel")).toEqual({ kind: "home", change: { tile: "notizen", action: "mittel" } });
     expect(parseHomeCommand("Vorrat ganz nach unten")).toEqual({ kind: "home", change: { tile: "vorrat", action: "nach_unten" } });
     expect(parseHomeCommand("Mach den Kalender groß")).toEqual({ kind: "home", change: { tile: "termine", action: "gross" } });
-    expect(parseHomeCommand("Vorschau klein")).toEqual({ kind: "home", change: { tile: "morgen", action: "klein" } });
+    // „Ausblick morgen“ gibt es nicht mehr (Tafel 98) – „Vorschau“ ist keine Kachel
+    expect(parseHomeCommand("Vorschau klein")).toBeNull();
     expect(parseHomeCommand("Essen klein")).toEqual({ kind: "home", change: { tile: "essen", action: "klein" } });
   });
 

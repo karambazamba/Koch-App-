@@ -16,7 +16,7 @@ import { PenLine } from "lucide-react";
 import { DEFAULT_HOME, markHomeTipSeen, tileMeta, useHomeTiles, useHomeTipSeen, type HomeTile, type HomeTileId } from "@/lib/core/homeLayout";
 import { useWelcomeFinished } from "@/lib/einstellungen/welcomeStore";
 import { HomeBoard } from "@/components/heute/HomeBoard";
-import { FoodTile, MorgenTile, NotesTile, PantryTile, ShoppingTile } from "@/components/heute/HomeTiles";
+import { FoodTile, NotesTile, PantryTile, ShoppingTile } from "@/components/heute/HomeTiles";
 import { WeatherTile } from "@/components/wetter/WeatherTile";
 import { PinboardTile } from "@/components/pinnwand/PinboardTile";
 import { TimerTile } from "@/components/timer/TimerTile";
@@ -94,6 +94,7 @@ import { MiaNameHint, useMiaHomeHint } from "@/components/heute/MiaNameHint";
 import { InviteHintCard, useInviteHint } from "@/components/konten/InviteHintCard";
 import { termineTile } from "@/lib/heute/termineKachel";
 import { haushaltOf } from "@/lib/core/haushalt";
+import { kidsWay, vorlaufVon } from "@/lib/heute/abendDaten";
 import { useMiaDenkt } from "@/components/begleitung/denktmit/useMiaDenkt";
 import { MiaKarte } from "@/components/begleitung/denktmit/MiaKarte";
 
@@ -129,8 +130,6 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const reminder = dueReminder(entries, data.todayIso, minutes, seen);
   const tomorrowIso = addDays(data.todayIso, 1);
   const tomorrowAll = itemsForDay(entries, tomorrowIso, data.todayIso).filter((i) => !i.done);
-  const tomorrowItems = minutes >= 16 * 60 ? tomorrowAll : [];
-  const tomorrowDish = minutes >= 16 * 60 ? dishOf(data.tomorrow) : null;
   // Bausteine Tipps / Wochenend-Ideen: als leises Thema der Jetzt-Karte an ruhigen Tagen
   const tipsOn = useFeature("tipps");
   const weekendOn = useFeature("wochenendIdeen");
@@ -267,6 +266,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   };
 
   // --- Jetzt-Karte ----------------------------------------------------------------------
+  const tomorrowPrep = vorlaufVon(data, stock);
   const demoDish = demoDay.tiles.includes("essen");
   const hat = Boolean(kochtipp && hatVisible(kochtipp, data.profile.display === "alles", demoDish));
   const demoMeal = demoDishAt(data.todayIso, minutes);
@@ -347,10 +347,11 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     demoShop: demoDay.tiles.includes("einkauf"),
     weekCheck: demoDay.tiles.length || paused || (evening && routine.ruhe) ? null : weekCheckKey(data.todayIso, minutes),
     tiles: visible.map((t) => t.id),
-    tomorrowTiles: [
-      ...((demoDay.termine && demoDay.label && visible.some((t) => t.id === "termine")) || visible.some((t) => t.id === "morgen") ? (["termine"] as HomeTileId[]) : []),
-      ...(view.weatherTomorrow && visible.some((t) => t.id === "wetter") ? (["wetter"] as HomeTileId[]) : []),
-    ],
+    // Abends (Tafel 98): EIN Thema über morgen – Haushalt, Kita/Schule, Essen mit Vorlauf
+    evening,
+    solo: haushaltOf(data.profile.householdType) === "allein",
+    kidsWay: kidsWay(data.profile.persons),
+    tomorrowDish: tomorrowPrep,
   });
   const spruchSteht = jetzt.topics[0]?.kind === "spruch";
   useEffect(() => {
@@ -436,8 +437,6 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
         return <SpendentopfTile />;
       case "tipps":
         return <TipsTile size={tile.size} today={data.todayIso} />;
-      case "morgen":
-        return <MorgenTile date={tomorrowIso} items={tomorrowItems} dish={tomorrowDish} href={`/tag?datum=${tomorrowIso}`} placeholder={edit} />;
       default:
         return null;
     }
