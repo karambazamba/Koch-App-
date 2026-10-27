@@ -17,6 +17,8 @@ describe("S-Kacheln", () => {
     const board = readFileSync("src/components/heute/HomeBoard.tsx", "utf8");
     expect(board).toMatch(/renderUnit\(row\[0\], r \* 2, true, false, false\)/);
     expect(board).toMatch(/data-freie-haelfte/);
+    // Bug: zwei Knöpfe „Kachel“ im Bearbeiten – die freie Hälfte heißt anders
+    expect(board).toMatch(/aria-label="Kachel daneben stellen"/);
   });
 
   it("Notizen + Wetter und Notizen + Timer nebeneinander", () => {

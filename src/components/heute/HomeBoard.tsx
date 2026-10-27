@@ -369,7 +369,7 @@ export function HomeBoard({
         return [
           renderUnit(row[0], r * 2, true, false, false),
           editing && !drag ? (
-            <button key={`frei-${id}`} type="button" onClick={() => setBeside(id)} className="col-span-1 flex min-h-[92px] items-center justify-center gap-1.5 rounded-card border-2 border-dashed border-line-strong text-[15px] font-semibold text-muted active:scale-[0.98]" data-freie-haelfte>
+            <button key={`frei-${id}`} type="button" onClick={() => setBeside(id)} aria-label="Kachel daneben stellen" className="col-span-1 flex min-h-[92px] items-center justify-center gap-1.5 rounded-card border-2 border-dashed border-line-strong text-[15px] font-semibold text-muted active:scale-[0.98]" data-freie-haelfte>
               <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
               Kachel
             </button>
