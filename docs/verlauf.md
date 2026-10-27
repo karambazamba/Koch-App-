@@ -2756,3 +2756,21 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Einkauf-Kachel: immer die Läden aus „Meine Läden“ (auch mit 0), darunter
   „6 noch ohne Laden · Sortieren ›“; die Symbolreihe (Variante A) entfällt.
 - Durchklick: neuer Ablauf `einsortieren`, `einkauf`/`imHaus` angepasst.
+
+## Auf der Bühne nur eine Mia (v0.131.0)
+
+- Fehler aus dem Video 27.10. 21:14: bei den Ideen standen zwei Mias mit
+  pulsierendem Ring (Karte „Ganz was anderes?“ und groß unten), Beispiel-
+  Sätze wirkten nicht wie Knöpfe.
+- Karte „Ganz was anderes?“ (und „Passt nicht?“) weg; stattdessen „Oder
+  worauf hast du Lust?“ mit 3–4 Vorschlags-Knöpfen (weiß, Rand und Text
+  Orange) nach Vorrat, Jahreszeit und Tageszeit (`kochtipp/vorschlaege.ts`).
+  Ein Tipp schickt den Satz ab; Mia antwortet kurz + drei neue Karten
+  („Kürbis geht immer im Herbst:“).
+- Genau eine antippbare Mia auf der Bühne; im Chat nur das kleine Gesicht;
+  „Noch was anderes?“ im Karussell mit Linien-Symbol statt Mia.
+- Ring um die große Mia nur beim Zuhören bzw. „Gleich schick ich’s ab“, nie
+  im Warten, nie zwei zugleich (`stageRing`; vorher Wellen und Ablauf-Ring
+  zugleich möglich).
+- Tests: `tests/begleitung/eineMia.test.ts`, `tests/essen/vorschlaege.test.ts`,
+  Durchklick `eineMia()` in `kochtipp`, `wochencheck`, neu `eineMiaBuehnen`.

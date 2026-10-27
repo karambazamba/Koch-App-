@@ -87,7 +87,7 @@ const cookTip = async (page, step) => {
   await page.getByRole("region", { name: /^Essen/ }).evaluate((el) => el.scrollIntoView({ block: "center" }));
   if (step === "knopf") return;
   await page.getByRole("button", { name: /^(Was anderes kochen\?|Kochidee –)/ }).click();
-  await page.getByText("Ganz was anderes?").waitFor({ timeout: 5000 });
+  await page.getByText("Oder worauf hast du Lust?").waitFor({ timeout: 5000 });
   if (step === "start") return settle(page);
   // Direkt tippen (die einmalige Mikro-Frage gehört nicht ins Bild)
   await page.getByRole("button", { name: "Lieber schreiben" }).click();

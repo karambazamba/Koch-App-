@@ -14,6 +14,16 @@ export function stageState({ listening, thinking, speaking }: { listening: boole
   return "warten";
 }
 
+/**
+ * Ring um die große Mia – höchstens einer, nie im Warten: Wellen nur beim
+ * Zuhören, in der Stille nach dem letzten Wort („Gleich schick ich’s ab“)
+ * nur der ablaufende Ring.
+ */
+export function stageRing(state: StageState, pause = false): "wellen" | "pause" | null {
+  if (pause) return "pause";
+  return state === "zuhoeren" ? "wellen" : null;
+}
+
 /** Kleiner Satz unter Mia (beim Überlegen und Sprechen keiner); `fresh` = noch nichts erzählt */
 export function stageHint(state: StageState, name: string, fresh = false): string {
   if (state === "zuhoeren") return `Fertig? Einfach ${name} antippen`;

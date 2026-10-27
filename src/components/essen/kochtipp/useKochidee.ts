@@ -1,8 +1,10 @@
 "use client";
 
 // Kochidee auf der Bühne (Tafel 64 C/65): beim Öffnen sofort drei Vorschläge
-// (keine Frage), Mia lädt ein, einfach zu erzählen. Erzähltes („Ich hab
-// Hähnchen gekauft …“) → „Dann mach doch …!“, Stichworte, Karussell mit drei
+// (keine Frage), darunter Vorschlags-Knöpfe („Oder worauf hast du Lust?“,
+// `vorschlaege.ts`). Erzähltes („Ich hab Hähnchen gekauft …“) bzw. ein
+// angetippter Vorschlag → kurzer Satz („Dann mach doch …!“, „Kürbis geht
+// immer im Herbst:“), Stichworte, Karussell mit drei
 // passenden Gerichten; Vorhandenes merkt sich Mia als „im Haus“. „Nehmen“:
 // frei → Abendessen heute (nach dem Abendessen: morgen), geplant → ersetzt
 // das Gericht von heute (das alte wandert zurück zu den Ideen), Fehlendes auf
@@ -14,6 +16,7 @@ import type { AssistantData } from "@/lib/begleitung/ops";
 import { soonToUse } from "@/lib/essen/dishIdeas";
 import { cookCandidates, scaleAmount, type CookCard } from "@/lib/essen/kochtipp/pick";
 import { EMPTY_TALK, ideaHello, ideaResult, ideaUnderstood, mergeTalk, parseIdeaTalk, rankIdeas, rememberedText, startIdeas, takeOutcome, talkKeywords, type IdeaTalk } from "@/lib/essen/kochtipp/idee";
+import { ideaReply, ideaSuggestions } from "@/lib/essen/kochtipp/vorschlaege";
 import { formatAmount } from "@/lib/essen/cookbook";
 import { BUILTIN_COOK } from "@/lib/essen/kochen";
 import { recentDishTitles } from "@/lib/essen/kochtipp/recent";
@@ -24,7 +27,7 @@ import { addManualItem, removeManualItems, sectionFor } from "@/lib/einkauf/shop
 import { addWish, removeWish } from "@/lib/essen/wishes";
 import { addPantryItems } from "@/lib/vorrat/pantry";
 import { featureOn } from "@/lib/core/features";
-import { addDays } from "@/lib/core/now";
+import { addDays, now } from "@/lib/core/now";
 import { DEFAULT_SHOPPING_DAY, planningWeekStart, toIsoDate } from "@/lib/essen/weekPlan";
 import { WEEKDAYS } from "@/lib/einstellungen/profile";
 import { showToast } from "@/lib/core/toast";
@@ -46,19 +49,31 @@ export function useKochidee({ data, today, pantry, mealOver, setChat, onClose }:
   const household = data ? Math.max(1, data.profile.persons.length || data.profile.adults + data.profile.kids || 2) : 2;
 
   /** Alle passenden Gerichte, das beste zuerst (eigene Rezepte, eingebaute, Gerichte-Liste) */
+  /** Vorrat „Im Haus“ plus eben Erzähltes der letzten zwei Tage */
+  const stockNow = (day: Date): PantryItem[] => {
+    const recent = addDays(toIsoDate(day), -2);
+    return [...(pantry ?? []), ...loadKochtipp().haus.filter((h) => h.day >= recent).map((h) => ({ id: `s:${h.name}`, name: h.name, addedAt: h.day, place: "kuehlschrank" as const }))];
+  };
+  const soonNow = (day: Date) => soonToUse(pantry ?? [], toIsoDate(day)).map((p) => p.name);
+
   const ranked = (talk: IdeaTalk, exclude: string[]): CookCard[] => {
     if (!data || !today) return [];
-    const recent = addDays(toIsoDate(today), -2);
-    const stock = [...(pantry ?? []), ...loadKochtipp().haus.filter((h) => h.day >= recent).map((h) => ({ id: `s:${h.name}`, name: h.name, addedAt: h.day, place: "kuehlschrank" as const }))];
     return rankIdeas({
       candidates: cookCandidates([...Object.values(data.recipes), ...BUILTIN_COOK]),
-      stock,
+      stock: stockNow(today),
       talk,
-      soon: soonToUse(pantry ?? [], toIsoDate(today)).map((p) => p.name),
+      soon: soonNow(today),
       exclude: [...exclude, ...recentDishTitles(data, today, 7)],
       avoid: data.profile.persons.flatMap((p) => [...(p.allergies ?? []), ...(p.dislikes ?? [])]),
       today: toIsoDate(today),
     });
+  };
+
+  /** „Oder worauf hast du Lust?“ – 3–4 Sätze, die zu Gerichten führen (Tageszeit, Jahreszeit, Vorrat) */
+  const suggest = (talk: IdeaTalk, exclude: string[]): string[] => {
+    if (!today) return [];
+    const at = now();
+    return ideaSuggestions({ hour: at.getHours(), month: at.getMonth(), stock: stockNow(today), soon: soonNow(today), talk, fits: (t) => ranked(t, exclude).length >= 3 });
   };
 
   const turn = (t: Omit<ChatTurnView, "role">): ChatTurnView => ({ role: "assistant", local: true, ...t });
@@ -72,10 +87,12 @@ export function useKochidee({ data, today, pantry, mealOver, setChat, onClose }:
     const mix = all.filter((_, i) => (i + day) % 5 === 0);
     const cards = startIdeas(all, mix);
     cards.forEach((c) => noteKochtippShown(c.title));
+    const next = [...exclude, ...cards.map((x) => x.title)];
+    const tips = suggest(EMPTY_TALK, next);
     setChat((c) => ({
       ...c,
-      kochtipp: { talk: EMPTY_TALK, exclude: [...exclude, ...cards.map((x) => x.title)], planned },
-      turns: [...c.turns, turn({ text: ideaHello(planned, cards[0]), idea: { kind: "start", cards, planned } })],
+      kochtipp: { talk: EMPTY_TALK, exclude: next, planned },
+      turns: [...c.turns, turn({ text: ideaHello(planned, cards[0]), idea: { kind: "start", cards, planned, suggest: tips } })],
     }));
   };
 
@@ -88,13 +105,17 @@ export function useKochidee({ data, today, pantry, mealOver, setChat, onClose }:
       if (featureOn("vorrat")) addPantryItems(fresh.map((name) => ({ name })), toIsoDate(today));
       else noteImHaus(fresh, toIsoDate(today));
     }
+    const exclude = [...session.exclude, ...cards.map((x) => x.title)];
+    // Kurzer Satz zum eben Gesagten („Kürbis geht immer im Herbst:“), „Noch was anderes?“ bleibt bei „Dann mach doch …!“
+    const tips = suggest(talk, exclude);
+    const text = said ? ideaReply(parseIdeaTalk(said), cards[0], now().getMonth()) : ideaResult(cards[0]);
     setChat((c) => ({
       ...c,
-      kochtipp: { ...session, talk, exclude: [...session.exclude, ...cards.map((x) => x.title)] },
+      kochtipp: { ...session, talk, exclude },
       turns: [
         ...c.turns,
         ...(said ? [{ role: "user" as const, text: said, local: true }] : []),
-        turn({ text: ideaResult(cards[0]), idea: { kind: "ergebnis", cards, planned: session.planned, keywords: talkKeywords(talk), remembered: rememberedText(fresh), persons: talk.persons ?? household } }),
+        turn({ text, idea: { kind: "ergebnis", cards, planned: session.planned, keywords: talkKeywords(talk), remembered: rememberedText(fresh), persons: talk.persons ?? household, suggest: tips } }),
       ],
     }));
   };

@@ -57,7 +57,7 @@ export type ChatTurnView = ChatTurn & {
   /** Kochidee: drei Vorschläge (beim Öffnen) bzw. das Ergebnis zum Durchwischen */
   /** Rezept-Link: Karte mit Zutaten, „auf die Liste“, „In den Wochenplan“ */
   rezept?: LinkRezept;
-  idea?: { kind: "start" | "ergebnis"; cards: CookCard[]; planned: string | null; keywords?: string[]; remembered?: string; persons?: number };
+  idea?: { kind: "start" | "ergebnis"; cards: CookCard[]; planned: string | null; keywords?: string[]; remembered?: string; persons?: number; /** „Oder worauf hast du Lust?“ – Vorschlags-Knöpfe */ suggest?: string[] };
 };
 
 export type Proposal = { ops: ChangeOp[]; selected: Set<string> };

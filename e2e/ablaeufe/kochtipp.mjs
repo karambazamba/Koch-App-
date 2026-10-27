@@ -1,9 +1,11 @@
 // Kochidee (Tafel 64 C/65): Knopf erst ab dem 3. Nutzungstag; geplantes
 // Gericht → „Was anderes?“ → Mia zeigt ohne Frage drei Vorschläge (nie das
-// geplante) → Mia in der Karte antippen → erzählen → „Dann mach doch …!“,
-// Karussell → zweimal wischen → „Nehmen“ → Kachel zeigt das Gericht, das
+// geplante), darunter „Oder worauf hast du Lust?“ mit Vorschlags-Knöpfen
+// (nur EINE Mia auf der Bühne) → erzählen → „Dann mach doch …!“, Karussell
+// → Vorschlag antippen → kurzer Satz + drei neue Karten → zweimal wischen → „Nehmen“ → Kachel zeigt das Gericht, das
 // alte steht bei den Ideen, der Plan von morgen bleibt. Zeit: Mi 21.10. 10:30.
-import { hello, seedFamily, store, swipe, tippenFeld } from "../lib.mjs";
+import { BASE, eineMia, hello, miaTippen, seedFamily, store, swipe, tippenFeld } from "../lib.mjs";
+import { RECIPE_DATA } from "./essen.mjs";
 
 const PASTA = "Pasta mit Tomaten & Burrata";
 const center = (page) => page.getByRole("region", { name: /^Essen/ }).evaluate((el) => el.scrollIntoView({ block: "center" }));
@@ -33,7 +35,7 @@ export const kochtipp = async (page, check) => {
   // Drei Vorschläge ohne Frage
   await pill.click();
   const stage = page.getByRole("dialog").last();
-  await stage.getByText("Ganz was anderes?").waitFor({ timeout: 5000 });
+  await stage.getByText("Oder worauf hast du Lust?").waitFor({ timeout: 5000 });
   check(await stage.getByText("KOCHIDEE", { exact: true }).isVisible(), "Bereichs-Kopf „KOCHIDEE“");
   check(await stage.getByText(`Lust auf was anderes als ${PASTA}?`).isVisible(), "„Lust auf was anderes als …?“");
   check(await stage.getByText(`${PASTA} – bleibt, wenn du nichts nimmst`).isVisible(), "geplantes Gericht bleibt (gestrichelt)");
@@ -43,18 +45,37 @@ export const kochtipp = async (page, check) => {
   check(!(await stage.getByRole("button", { name: /Vorrat|Neu einkaufen|Reste verwerten/ }).count()), "keine Auswahl-Knöpfe");
   check(!(await stage.getByRole("dialog", { name: /Zugangscode/ }).count()), "kein Zugangscode davor");
 
-  // Mia in der Karte antippen → erzählen (hier getippt)
-  await stage.getByText("Ganz was anderes?").click();
+  // Keine zweite Mia: Vorschlags-Knöpfe statt Karte „Ganz was anderes?“
+  check(!(await stage.getByText("Ganz was anderes?").count()), "keine Karte „Ganz was anderes?“ mehr");
+  const tips = stage.locator("[data-vorschlaege] button");
+  const tipTexts = await tips.allInnerTexts();
+  check(tipTexts.length >= 3 && tipTexts.length <= 4, `3–4 Vorschlags-Knöpfe (${tipTexts.join(" | ")})`);
+  await eineMia(page, check, "Ideen");
+
+  // Erzählen (hier getippt)
   const box = await tippenFeld(page);
   await box.fill("Ich hab Hähnchen gekauft, Paprika und Sahne sind noch da, was Cremiges");
   await box.press("Enter");
   check(await stage.getByText("Dann mach doch", { exact: false }).waitFor({ timeout: 5000 }).then(() => true, () => false), "„Dann mach doch …!“");
   check(await stage.getByText("merk ich mir als „im Haus“", { exact: false }).isVisible(), "„… merk ich mir als „im Haus“ ✓“");
-  const track = stage.getByLabel("Vorschläge zum Durchwischen");
+  const first = stage.getByLabel("Vorschläge zum Durchwischen").last();
+  check((await first.getByRole("article", { name: /^Vorschlag:/ }).count()) === 3, "Karussell mit drei Gerichten");
+  check(await first.getByRole("button", { name: /Noch was anderes\?/ }).count() === 1, "zuletzt „Noch was anderes?“");
+  check((await stage.locator("[data-vorschlaege]").count()) === 1, "darunter neue Vorschläge „Oder worauf hast du Lust?“ (nur an der neuesten Antwort)");
+  await eineMia(page, check, "Ideen-Ergebnis");
+
+  // Ein Tipp auf einen Vorschlag schickt den Satz ab → kurzer Satz + drei neue Karten
+  const tip = stage.locator("[data-vorschlaege] button").first();
+  const said = (await tip.innerText()).trim();
+  await tip.click();
+  await page.waitForTimeout(600);
+  check((await stage.getByText(said, { exact: true }).count()) >= 1 && !(await stage.getByRole("button", { name: said, exact: true }).count()), `„${said}“ steht als eigene Nachricht da`);
+  check(!(await stage.getByText("Dafür hab ich grad nichts Passendes", { exact: false }).count()), "Vorschlag führt immer zu Gerichten");
+  if (said === "Was mit Kürbis") check(await stage.getByText("Kürbis geht immer im Herbst:").isVisible(), "„Kürbis geht immer im Herbst:“");
+  const track = stage.getByLabel("Vorschläge zum Durchwischen").last();
   const cards = track.getByRole("article", { name: /^Vorschlag:/ });
-  check((await cards.count()) === 3, "Karussell mit drei Gerichten");
-  check(await track.getByRole("button", { name: /Noch was anderes\?/ }).count() === 1, "zuletzt „Noch was anderes?“");
-  check(await stage.getByText("Passt nicht?").isVisible(), "darunter „Passt nicht?“");
+  check((await cards.count()) === 3, "drei neue Karten");
+  await eineMia(page, check, "Ideen nach Vorschlag");
 
   // Zweimal wischen → dritte Karte nehmen
   // Karussell sichtbar mittig holen (das Gespräch scrollt sonst ans Ende, unter Mia)
@@ -79,4 +100,32 @@ export const kochtipp = async (page, check) => {
   check(JSON.stringify(wishes ?? {}).includes(PASTA), "Pasta wandert zurück zu den Ideen");
   const after = await store(page, "wasgibts.wochenplan");
   check(Object.values(after?.weeks ?? {}).some((w) => w?.Donnerstag?.title === "Linsensuppe"), "Plan für morgen unverändert");
+};
+
+// Nur EINE Mia auf jeder Bühne (Video 27.10.): Supermarkt, Rezept/Kochmodus –
+// höchstens ein Ring, genau eine antippbare Mia (im Kochmodus selbst keine).
+export const eineMiaBuehnen = async (page, check) => {
+  await hello(page);
+  await seedFamily(page, RECIPE_DATA);
+  await page.reload();
+  await page.waitForTimeout(900);
+
+  // Supermarkt: „Ich steh im Supermarkt …“ → Ideen zum Angebot
+  const box = await miaTippen(page);
+  await box.fill("Ich steh im Supermarkt, Lachs ist im Angebot");
+  await box.press("Enter");
+  await page.waitForTimeout(2500);
+  await eineMia(page, check, "Supermarkt");
+  await page.getByRole("dialog").last().getByRole("button", { name: "Schließen" }).first().click();
+  await page.waitForTimeout(1200);
+
+  // Rezept: Mia holen → eine Mia; Kochmodus: keine Mia, kein Ring
+  await page.goto(BASE + "/kochbuch/rezept?id=sp");
+  await page.waitForTimeout(1100);
+  await miaTippen(page);
+  await page.waitForTimeout(600);
+  await eineMia(page, check, "Rezept");
+  await page.goto(BASE + "/kochbuch/kochen?id=sp");
+  await page.waitForTimeout(1100);
+  await eineMia(page, check, "Kochmodus", { mias: 0 });
 };
