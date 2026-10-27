@@ -21,7 +21,9 @@ Einkaufsmodus für den Laden. Immer sichtbar (kein Baustein).
   (`symbolFor`: Stichwort → gezeichnetes Symbol, Sonderfälle zuerst, eigene
   Produkte nehmen das Symbol der Zutat), `view.ts` (`shopChips`,
   `filterByChip`, `resolveChip`, `walkOrder`, `isCompact` ab 24,
-  `recentBought`, `catalog`), `basics.ts` (Grundsortiment für den Katalog).
+  `recentBought`, `catalog`), `basics.ts` (Grundsortiment für den Katalog),
+  `abteilung.ts` (`abteilungSymbol`: Abteilung fürs Symbol, mit Drogerie;
+  `symbolReihe`: Variante A der Kachel).
 - Schnell-Eintrag/Sprache: `quickAdd.ts` (`parseQuickAdd`), `shoppingParse.ts`
   (`parseShoppingText`, `isShoppingRequest`, `parseProductStatement`).
 - Oberfläche `src/components/einkauf/`: `ShoppingListView.tsx` (Seite
@@ -102,6 +104,11 @@ Einkaufsmodus für den Laden. Immer sichtbar (kein Baustein).
   - Einkauf-Kachel C2: je Laden eine Zeile in Ladenfarbe (Streifen, 2
     Symbole, Zahl), S/M bis 3 + „+ Rossmann 3“, L alle; Zeile = Liste mit
     diesem Laden. Beispiel-Tag: Edeka, Rewe, Lidl, Rossmann (`DEMO_SHOPS`).
+  - Nur „Egal wo“ (noch keine Läden): bis zu 6 runde Symbole + „+N“ und die
+    Zahl (Variante A, `tileArt`). Artikel ohne Zeichnung zeigen überall das
+    Linien-Symbol ihrer Abteilung (Obst, Kühlregal, Drogerie …), nie einen
+    Buchstaben. Neue Zeichnung „Aufschnitt“ (Salami, Schinken, Mortadella);
+    Würstchen/Wiener = Wurst, Frischkäse/Cheddar … = Käse.
 
 - **Einfach wie Bring (v0.66)**: Jeder Artikel ist eine quadratische Kachel
   in der Farbe seiner Abteilung (Symbol, Name, Menge, oben links das

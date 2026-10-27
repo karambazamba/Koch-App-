@@ -3,14 +3,16 @@
 // ESSEN-Kachel mit Bild – EINE Komponente für den Beispiel-Tag und das echte
 // Gericht: Bild vollflächig, unten ein weicher Verlauf mit weißer Schrift
 // („ESSEN · 18:30“, Name, „alles im Haus · 25 Min“), darunter „Ich koche
-// jetzt ›“. Oben rechts der Kochidee-Knopf (eigenes Element).
+// jetzt ›“. Oben rechts der Kochidee-Knopf (eigenes Element). Kopfzeile
+// immer einzeilig (nie umbrechen). Auch „Noch frei“ (leerer Teller) und die
+// Koch-Kachel („Koche gerade“, Knopf „Gegessen“ unten rechts) nutzen sie.
 
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { DishPicture } from "@/components/essen/DishPicture";
 import type { RecipeCategory } from "@/lib/essen/cookbook";
 
-type Picture = { photo?: string; title: string; ingredients?: string[]; category?: RecipeCategory | null };
+type Picture = { photo?: string; title: string; ingredients?: string[]; category?: RecipeCategory | null; leer?: boolean };
 
 export function DishTile({
   when,
@@ -23,6 +25,8 @@ export function DishTile({
   label,
   corner,
   week,
+  cookLabel = "Ich koche jetzt ›",
+  action,
 }: {
   when: string;
   title: string;
@@ -37,13 +41,19 @@ export function DishTile({
   corner?: ReactNode;
   /** Kleiner Link „Woche“ unten rechts (Wochenkarte auf der Essen-Seite) */
   week?: string;
+  /** Text des Knopfs unten links (Standard „Ich koche jetzt ›“) */
+  cookLabel?: string;
+  /** Eigener Knopf unten rechts (statt „Woche ›“), z. B. „Gegessen“ */
+  action?: ReactNode;
 }) {
   const body = (
     <>
-      <DishPicture photo={picture.photo} title={picture.title} ingredients={picture.ingredients} category={picture.category} alt="" className="absolute inset-0" />
+      <DishPicture photo={picture.photo} title={picture.title} ingredients={picture.ingredients} category={picture.category} leer={picture.leer} alt="" className="absolute inset-0" />
       <span className="dish-shade absolute inset-0" aria-hidden />
-      <span className={`absolute inset-x-0 bottom-0 flex flex-col gap-0.5 p-3 text-on-color ${cook ? "pb-11" : ""}`}>
-        <span className="text-[10px] font-extrabold uppercase tracking-wider opacity-90">{when}</span>
+      <span className={`absolute inset-x-0 bottom-0 flex flex-col gap-0.5 p-3 text-on-color ${cook || action ? "pb-11" : ""}`}>
+        <span className="truncate whitespace-nowrap text-[10px] font-extrabold uppercase tracking-wider opacity-90" data-kopf>
+          {when}
+        </span>
         <span className={`line-clamp-2 font-extrabold leading-tight ${half ? "text-[16px]" : "text-[20px]"}`}>{title}</span>
         {sub && <span className="text-xs font-semibold opacity-90">{sub}</span>}
       </span>
@@ -65,14 +75,15 @@ export function DishTile({
       {cook &&
         (typeof cook === "string" ? (
           <Link href={cook} className={cookClass}>
-            Ich koche jetzt ›
+            {cookLabel}
           </Link>
         ) : (
           <button type="button" onClick={cook} className={cookClass}>
-            Ich koche jetzt ›
+            {cookLabel}
           </button>
         ))}
-      {week && (
+      {action}
+      {week && !action && (
         <Link href={week} className="absolute bottom-0 right-0 flex h-11 items-center px-3 text-[13px] font-bold text-on-color" data-woche>
           Woche ›
         </Link>

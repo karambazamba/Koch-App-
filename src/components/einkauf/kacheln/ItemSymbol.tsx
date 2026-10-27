@@ -1,11 +1,27 @@
 // Einkauf wie Bring (Tafel 35): eigene, gezeichnete Symbole für die
 // häufigsten Artikel – flache Formen in warmen Farben, im Code gezeichnet
 // (keine fremden Bilder, keine KI; docs/credits.md). Zuordnung:
-// lib/einkauf/kacheln/symbols.ts. Unbekannt → großer Anfangsbuchstabe in der
-// Abteilungsfarbe.
+// lib/einkauf/kacheln/symbols.ts. Ohne eigene Zeichnung → Linien-Symbol der
+// Abteilung (Kühlregal, Obst & Gemüse, Drogerie …), nie ein Buchstabe
+// (lib/einkauf/kacheln/abteilung.ts).
 
 import type { ReactNode } from "react";
+import { Apple, Beef, Croissant, CupSoda, Package, Refrigerator, ShoppingBasket, Snowflake, SprayCan, type LucideIcon } from "lucide-react";
 import type { SymbolId } from "@/lib/einkauf/kacheln/symbols";
+import { abteilungSymbol, type AbteilungSymbol } from "@/lib/einkauf/kacheln/abteilung";
+
+/** Linien-Symbol je Abteilung (für Artikel ohne eigene Zeichnung) */
+const ABTEILUNG: Record<AbteilungSymbol, LucideIcon> = {
+  "obst-gemuese": Apple,
+  brot: Croissant,
+  kuehlregal: Refrigerator,
+  "fleisch-fisch": Beef,
+  vorrat: Package,
+  getraenke: CupSoda,
+  tiefkuehl: Snowflake,
+  drogerie: SprayCan,
+  sonstiges: ShoppingBasket,
+};
 
 // Farben der Zeichnungen (wie bei den Gerichtsbildern fest, nicht Teil des Designs)
 const C = {
@@ -218,6 +234,17 @@ const S: Record<SymbolId, ReactNode> = {
       <path d="M14 31c4 3 14 3 19-4" stroke={C.rosa} strokeWidth="1.6" strokeLinecap="round" fill="none" />
     </>
   ),
+  aufschnitt: (
+    <>
+      <rect x="8" y="14" width="32" height="24" rx="4" fill={C.milch} />
+      <circle cx="19" cy="26" r="8" fill={C.rosa} />
+      <circle cx="19" cy="26" r="5" fill={C.weiss} opacity="0.35" />
+      <circle cx="30" cy="27" r="8" fill={C.rot} />
+      <circle cx="28" cy="25" r="1.3" fill={C.weiss} />
+      <circle cx="32" cy="29" r="1.3" fill={C.weiss} />
+      <circle cx="31" cy="24" r="1" fill={C.weiss} />
+    </>
+  ),
   fisch: (
     <>
       <path d="M8 24c6-8 18-10 26-2l6-5v14l-6-5c-8 8-20 6-26-2z" fill={C.blau} />
@@ -406,14 +433,16 @@ const S: Record<SymbolId, ReactNode> = {
   ),
 };
 
-/** Symbol eines Artikels; ohne Symbol der Anfangsbuchstabe */
+/** Symbol eines Artikels; ohne eigene Zeichnung das Symbol seiner Abteilung */
 export function ItemSymbol({ id, name, className = "" }: { id: SymbolId | null; name: string; className?: string }) {
-  if (!id)
+  if (!id) {
+    const Icon = ABTEILUNG[abteilungSymbol(name)];
     return (
-      <span className={`flex items-center justify-center font-extrabold text-muted ${className}`} aria-hidden>
-        {name.trim().charAt(0).toUpperCase() || "?"}
+      <span className={`flex items-center justify-center text-muted ${className}`} data-abteilung={abteilungSymbol(name)} aria-hidden>
+        <Icon className="h-[72%] w-[72%]" strokeWidth={2} />
       </span>
     );
+  }
   return (
     <svg viewBox="0 0 48 48" className={className} aria-hidden>
       {S[id]}
