@@ -7,6 +7,7 @@
 
 import { useForecast } from "@/lib/wetter/client";
 import { isRainy } from "@/lib/wetter/forecast";
+import { stormForPlan } from "@/lib/wetter/wind";
 import { guessSport, sportById } from "@/lib/sport/model";
 import { addDays, toIsoDate } from "@/lib/core/now";
 import { tomorrowLabel, type DayItem } from "@/lib/kalender/model";
@@ -109,6 +110,8 @@ export function useJetztTopics(src: JetztSource) {
         return h ? isRainy(h) : false;
       })
     : undefined;
+  // Wind nur ab „Stürmisch“ und nur mit Planbezug (Tafel 87)
+  const storm = forecast && !wet ? stormForPlan(forecast.hours, src.today, Math.floor(src.minutes / 60), outside) : null;
   const todayDay = forecast?.days.find((d) => d.date === src.today);
   // Regen morgen früh (7–9 Uhr) – nur mit Plan zählt er (abendThema.ts)
   const tomorrowRain = Boolean(forecast?.hours.some((h) => h.date === tomorrowIso && h.hour >= 7 && h.hour <= 9 && isRainy(h)));
@@ -126,7 +129,7 @@ export function useJetztTopics(src: JetztSource) {
     urgent: src.urgent.map((i) => ({ key: i.key, title: i.title, work: i.room === "arbeit" })),
     dueToday: src.dueToday.map((i) => ({ key: i.key, title: i.title, work: i.room === "arbeit" })),
     pin: unread ? { id: unread.id, author: unread.data.author, text: unread.data.text, when: pinMeta(unread, src.me, src.today, shortClock, (iso) => toIsoDate(new Date(iso))).split(" · ")[1] ?? "" } : null,
-    planWeather: wet ? { key: wet.key, title: wet.title, time: wet.time, word: "Regen" } : null,
+    planWeather: wet ? { key: wet.key, title: wet.title, time: wet.time, word: "Regen" } : storm ? { ...storm, word: "Wind" } : null,
     dish: src.dish,
     birthdays: [...birthday(src.todayAll.filter((i) => i.date === src.today), "heute"), ...birthday(src.tomorrow, "morgen")],
     sport: src.training && sportKind ? { ...src.training, pack: sportKind.pack } : null,

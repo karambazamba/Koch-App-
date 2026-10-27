@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildDays, dayAnswer, dayLook, sanitizeForecast, weatherTip, type Forecast, type ForecastDay, type ForecastHour } from "@/lib/wetter/forecast";
+import { buildDays, dayAnswer, dayLook, sanitizeForecast, type Forecast, type ForecastDay, type ForecastHour } from "@/lib/wetter/forecast";
 import { columnTone, dayExtras, dayParts, dayWords, isNight, skyFor, skyLine, sunTimes, weekSentence } from "@/lib/wetter/view";
 import { fromBrightSky, fromOpenMeteo } from "@/lib/wetter/sources";
+import { kachelZeile } from "@/lib/wetter/kachel";
 
 const DAY = "2026-10-24";
 
@@ -70,17 +71,17 @@ describe("Ehrliche Tagesbeschreibung (aus den Stunden 7–21 Uhr)", () => {
   });
 });
 
-describe("Wetter-Tipp und Mia nur bei echter Regenstunde", () => {
-  const fc = (hours: ForecastHour[], raining = false): Forecast => ({ place: "Eutin", fetchedAt: "", current: { temp: 10, code: 2, raining }, hours, days: buildDays(hours) });
+describe("Kachel-Zeile und Mia nur bei echter Regenstunde", () => {
+  const fc = (hours: ForecastHour[], raining = false): Forecast => ({ place: "Eutin", fetchedAt: "", current: { temp: 10, code: 2, raining, measured: true }, hours, days: buildDays(hours) });
 
-  it("„Ab 15 Uhr Regen“ nur mit echter Regenstunde", () => {
-    expect(weatherTip(fc(day({ wet: [15] })), DAY, 10 * 60)).toBe("☂️ Ab 15 Uhr Regen");
-    expect(weatherTip(fc(day({ showerCode: [15] })), DAY, 10 * 60)).toBeNull();
+  it("„ab 15 Uhr Regen“ nur mit echter Regenstunde", () => {
+    expect(kachelZeile(fc(day({ wet: [15] })), DAY, 10)).toEqual({ wort: "Sonnig", rest: "ab 15 Uhr Regen" });
+    expect(kachelZeile(fc(day({ showerCode: [15] })), DAY, 10)).toEqual({ wort: "Sonnig", rest: "bleibt trocken" });
   });
 
-  it("„Gerade Regen“ nur, wenn die Station gerade Regen misst", () => {
-    expect(weatherTip(fc(day({ wet: [10, 16] })), DAY, 10 * 60)).toBe("☂️ Ab 16 Uhr Regen");
-    expect(weatherTip(fc(day({ wet: [10, 16] }), true), DAY, 10 * 60)).toBe("☂️ Gerade Regen");
+  it("„Regen“ jetzt nur, wenn die Station gerade Regen misst", () => {
+    expect(kachelZeile(fc(day({ wet: [10, 16] })), DAY, 10).rest).toBe("ab 16 Uhr Regen");
+    expect(kachelZeile(fc(day({ wet: [10, 16] }), true), DAY, 10)).toEqual({ wort: "Regen", rest: "ab 11 Uhr trocken" });
   });
 
   it("Mia antwortet mit denselben Texten", () => {

@@ -4,7 +4,7 @@
 // Komponente für Wetter-Seite, Kachel und Sport – Farben über Tokens (`--wx-*`).
 
 import { weatherKind, type WeatherKind } from "@/lib/wetter/forecast";
-import type { WindLevel } from "@/lib/wetter/wind";
+import { windLook, type WindLevel } from "@/lib/wetter/wind";
 
 const Sun = ({ cx = 24, cy = 24, r = 10 }: { cx?: number; cy?: number; r?: number }) => (
   <g>
@@ -121,27 +121,33 @@ export function WeatherSymbol({ code, className = "h-6 w-6", night = false }: { 
   );
 }
 
-/** Neigung des Windsacks je Stufe (Grad nach unten): hängt · halb · gerade */
-const SOCK_TILT: Record<WindLevel, number> = { leicht: 68, windig: 28, stuermisch: 0 };
+/** Neigung des Windsacks je Stufe (Grad nach unten): je stärker, desto höher (Tafel 87) */
+const SOCK_TILT: Record<WindLevel, number> = { kaum: 72, leicht: 55, maessig: 38, frisch: 20, lebhaft: 6, stark: 2, stuermisch: 0, sturm: 0, orkan: 0 };
 
 /**
- * Windsack (Tafel 63 B): grauer Mast, Sack mit 4 Streifen in Blau-Grau und
- * Weiß wie die Regenbalken. Zeigt nur die STÄRKE (hängt / halb / gerade),
- * nie die Richtung – die steht als Buchstaben daneben.
+ * Windsack (Tafel 87): grauer Mast, Sack orange mit weißen Streifen (ab
+ * „Sturm“ rot), steht je Stufe höher; ab „Lebhaft“ Windstriche daneben. Zeigt
+ * nur die STÄRKE, nie die Richtung – die steht als Buchstaben daneben. Still,
+ * ohne Animation.
  */
 export function Windsock({ level, className = "h-5 w-5" }: { level: WindLevel; className?: string }) {
-  const tilt = SOCK_TILT[level];
+  const { striche, rot } = windLook(level);
   return (
     <svg viewBox="0 0 48 48" className={`shrink-0 ${className}`} aria-hidden data-windsack={level}>
-      <line x1="10" y1="44" x2="10" y2="6" stroke="var(--wx-cloud-dark-2)" strokeWidth="3" strokeLinecap="round" />
-      <g transform={`rotate(${tilt} 10 10)`}>
-        {[0, 1, 2, 3].map((i) => {
-          const x = 10 + i * 8.5;
-          const h0 = 7 - i * 1.1;
-          const h1 = 7 - (i + 1) * 1.1;
-          return <path key={i} d={`M${x} ${10 - h0}L${x + 8.5} ${10 - h1}L${x + 8.5} ${10 + h1}L${x} ${10 + h0}Z`} fill={i % 2 ? "var(--wx-cloud)" : "var(--wx-rain)"} stroke="var(--wx-cloud-2)" strokeWidth="1" strokeLinejoin="round" />;
+      <line x1="7" y1="45" x2="7" y2="5" stroke="var(--app-windsack-mast)" strokeWidth="2.6" strokeLinecap="round" />
+      <circle cx="7" cy="5" r="1.8" fill="var(--app-windsack-mast)" />
+      <g transform={`rotate(${SOCK_TILT[level]} 7 9)`}>
+        {[0, 1, 2, 3, 4].map((i) => {
+          const x = 7 + i * 7;
+          const h0 = 6.5 - i * 0.9;
+          const h1 = 6.5 - (i + 1) * 0.9;
+          return <path key={i} d={`M${x} ${9 - h0}L${x + 7} ${9 - h1}L${x + 7} ${9 + h1}L${x} ${9 + h0}Z`} fill={i % 2 ? "var(--app-windsack-streifen)" : rot ? "var(--app-windsack-rot)" : "var(--app-windsack)"} />;
         })}
       </g>
+      {Array.from({ length: striche }, (_, i) => {
+        const y = 44 - i * 5;
+        return <path key={i} d={`M${20 + i} ${y}H${42}q3 0 3-3`} fill="none" stroke="var(--app-windstrich)" strokeWidth="2" strokeLinecap="round" data-windstrich />;
+      })}
     </svg>
   );
 }

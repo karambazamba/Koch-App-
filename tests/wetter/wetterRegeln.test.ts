@@ -1,4 +1,4 @@
-// Wetter-Regeln ohne Netz: Wetterlage, ehrliche Tage, EIN Tipp, Antworten für
+// Wetter-Regeln ohne Netz: Wetterlage, ehrliche Tage, Kachel-Zeile, Antworten für
 // Mia, Prüfen der Server-Daten, Fragen erkennen, Seite (Tageszeiten, Satz,
 // bester Tag, Himmel, Wochensatz) und die beiden Quellen-Formate.
 import { describe, expect, it } from "vitest";
@@ -12,12 +12,12 @@ import {
   umbrellaAnswer,
   weatherKind,
   weatherQuestion,
-  weatherTip,
   type Forecast,
   type ForecastHour,
 } from "@/lib/wetter/forecast";
 import { bestOutdoorDay, columnTone, dayExtras, dayParts, daySentence, dayWords, isNight, skyFor, skyLine, sunTimes, weatherGroup, weatherStartTab, weekSentence } from "@/lib/wetter/view";
 import { fromBrightSky, fromOpenMeteo } from "@/lib/wetter/sources";
+import { kachelZeile } from "@/lib/wetter/kachel";
 
 const TODAY = "2026-10-22"; // Donnerstag
 
@@ -73,30 +73,17 @@ describe("Ehrliche Tage", () => {
   });
 });
 
-describe("EIN Tipp für heute", () => {
-  it("Regen zur Termin-Zeit mit gekürztem Titel; Termine vor jetzt zählen nicht", () => {
-    const fc = fcOf(day24((h) => (h >= 15 && h <= 17 ? WET : {})));
-    const long = "Elternabend in der Grundschule am See";
-    expect(weatherTip(fc, TODAY, 9 * 60, [{ title: "Früh", time: "08:00" }, { title: long, time: "16:00" }, { title: "ohne Zeit", time: "" }])).toBe(`☂️ Ab 15 Uhr Regen. Schirm für ${long.slice(0, 23)}…`);
-    expect(weatherTip(fc, TODAY, 9 * 60, [{ title: "Sport", time: "19:00" }])).toBe("☂️ Ab 15 Uhr Regen");
+describe("Kachel-Zeile (ehrliche Regel) und Tief/Hoch", () => {
+  it("Regen zur Termin-Zeit steht jetzt auf der Jetzt-Karte; die Kachel sagt nur „ab 15 Uhr Regen“", () => {
+    const fc = fcOf(day24((h) => (h >= 15 && h <= 17 ? WET : {})), { measured: true });
+    expect(kachelZeile(fc, TODAY, 9)).toEqual({ wort: "Bewölkt", rest: "ab 15 Uhr Regen" });
+    expect(kachelZeile(fc, TODAY, 9, true).rest).toBe("ab 15 Regen");
   });
 
-  it("„Gerade“ nur, wenn die Station Regen misst – auch ohne Regenstunde in der Vorhersage", () => {
+  it("„Regen“, wenn die Station Regen misst – auch ohne Regenstunde in der Vorhersage", () => {
     const fc = fcOf(day24(), { raining: true });
-    expect(weatherTip(fc, TODAY, 10 * 60, [{ title: "Bäcker", time: "10:30" }])).toBe("☂️ Gerade Regen. Schirm für Bäcker");
+    expect(kachelZeile(fc, TODAY, 10)).toEqual({ wort: "Regen", rest: "ab 11 Uhr trocken" });
     expect(umbrellaAnswer(fc, TODAY, 10 * 60)).toBe("Ja, gerade regnet es in Eutin – Schirm lohnt sich ☂️");
-  });
-
-  it("Frost morgens (nur vor 11 Uhr), Sturm, Hitze (vor 18 Uhr), Wind – sonst nichts", () => {
-    const frost = fcOf(day24((h) => ({ temp: h === 7 ? -1 : 4 })));
-    expect(weatherTip(frost, TODAY, 8 * 60)).toBe("Heute früh glatt ❄️");
-    expect(weatherTip(frost, TODAY, 12 * 60)).toBeNull();
-    expect(weatherTip(fcOf(day24(() => ({ gust: 83 }))), TODAY, 9 * 60)).toBe("Sturmböen bis 85 km/h 🌬️");
-    const hot = fcOf(day24((h) => ({ temp: h === 15 ? 27 : 20 })));
-    expect(weatherTip(hot, TODAY, 9 * 60)).toBe("Sonnencreme einpacken ☀️");
-    expect(weatherTip(hot, TODAY, 18 * 60)).toBeNull();
-    expect(weatherTip(fcOf(day24(() => ({ gust: 52 }))), TODAY, 9 * 60)).toBe("Windig, Böen bis 50 km/h 🌬️");
-    expect(weatherTip(fcOf(day24()), TODAY, 9 * 60)).toBeNull();
   });
 
   it("Tief/Hoch: aus dem Tag, sonst aus den Stunden, sonst nichts", () => {

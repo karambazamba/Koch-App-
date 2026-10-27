@@ -4,19 +4,19 @@
 // (Verlauf je Lage, nachts Nachtblau, weißer Text, großes Symbol oben rechts,
 // unten Morgens/Mittags/Abends), „Bester Tag für draußen“, das Wochen-Band
 // (7 Säulen mit Regenbalken, Sonnenstunden und Wind) und der eine Satz zur
-// Woche. Wind (Tafel 63 B): Windsack = Stärke, Buchstaben = Richtung.
+// Woche. Wind (Tafel 87): Wort + Windsack = Stärke, Buchstaben = Richtung.
 
 import { round, type ForecastDay } from "@/lib/wetter/forecast";
 import { dayExtras, dayWords, columnTone, type DayPart, type Sky } from "@/lib/wetter/view";
 import { WeatherSymbol, Windsock } from "@/components/wetter/WeatherSymbol";
-import { dirShort, windLevel, windLong, windShort, windSpoken, type Wind } from "@/lib/wetter/wind";
+import { dirShort, gustText, windLevel, windLong, windShort, windSpoken, windWord, type Wind } from "@/lib/wetter/wind";
 
-/** Wind als Chip: „[Windsack] 22 km/h aus West“ (lang) bzw. „22 km/h · W“ (kurz) */
+/** Wind als Chip: „[Windsack] Mäßiger Wind · 22 km/h aus West“ (lang, ab 60 mit „· Böen 85“) bzw. „22 km/h · W“ (kurz) */
 export function WindChip({ wind, long = false, className = "" }: { wind: Wind; long?: boolean; className?: string }) {
   return (
     <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[13px] font-bold tabular-nums ${className}`} role="img" aria-label={windSpoken(wind)}>
-      <Windsock level={windLevel(wind.speed, wind.gust)} className="h-5 w-5" />
-      {long ? windLong(wind) : windShort(wind)}
+      <Windsock level={windLevel(wind.speed)} className="h-5 w-5" />
+      {long ? [windWord(windLevel(wind.speed)), windLong(wind), gustText(wind)].filter(Boolean).join(" · ") : windShort(wind)}
     </span>
   );
 }
@@ -95,7 +95,7 @@ export function WeekBand({ days, today, best, label, short, onOpen }: { days: Fo
               <span className="h-3 text-[11px] font-semibold leading-none text-muted">{sun ? `☀ ${sun}` : ""}</span>
               {d.wind && (
                 <span className="mt-1 flex w-full flex-col items-center gap-0.5 border-t border-line pt-1.5" data-wind>
-                  <Windsock level={windLevel(d.wind.speed, d.wind.gust)} className="h-5 w-5" />
+                  <Windsock level={windLevel(d.wind.speed)} className="h-5 w-5" />
                   <span className="text-[12px] font-extrabold leading-none tabular-nums">{d.wind.speed}</span>
                   <span className="h-3 text-[10px] font-bold leading-none text-weather-ink">{d.wind.dir === null ? "" : dirShort(d.wind.dir)}</span>
                 </span>
@@ -108,7 +108,7 @@ export function WeekBand({ days, today, best, label, short, onOpen }: { days: Fo
         Balken = Regenrisiko · ☀ = Sonnenstunden
         {days.some((d) => d.wind) && (
           <span className="flex items-center justify-center gap-1">
-            <Windsock level="windig" className="h-4 w-4" /> = Wind km/h · W = Wind aus Westen
+            <Windsock level="maessig" className="h-4 w-4" /> = Wind km/h · W = Wind aus Westen
           </span>
         )}
       </p>

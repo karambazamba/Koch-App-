@@ -239,21 +239,27 @@
   --app-tile-notizen-ac: #6e5208;
   --app-tile-spendentopf: #f2e2c0;
   --app-tile-spendentopf-ac: #7a5306;
-  /* Wetter-Kachel als Himmel (Look „Farbig“): Verlauf je Wetterlage */
-  --app-sky-sonnig-a: #cfe6fb;
-  --app-sky-sonnig-b: #fde9b0;
-  --app-sky-bewoelkt-a: #d5dde8;
-  --app-sky-bewoelkt-b: #e9edf3;
-  --app-sky-regen-a: #b9c6d6;
-  --app-sky-regen-b: #d6dee8;
-  --app-sky-schnee-a: #eef3f9;
-  --app-sky-schnee-b: #ffffff;
-  --app-sky-gewitter-a: #c6c2dc;
-  --app-sky-gewitter-b: #dcd9ea;
-  --app-sky-nacht-a: #1d2a52;
-  --app-sky-nacht-b: #3a4a7a;
-  --app-sky-ink: #1f1b16;
-  --app-sky-nacht-ink: #ffffff;
+  /* Wetter-Kachel als Himmel (Look „Farbig“): je Lage und Tag/Nacht Verlauf a → b,
+     Schrift ink, leise Schrift soft, stilles Muster (motiv); Windsack (Tafel 87) */
+  --app-sky-sonnig-a: #ffeec4; --app-sky-sonnig-b: #fde2a3; --app-sky-sonnig-ink: #1f1b16; --app-sky-sonnig-soft: #594416; --app-sky-sonnig-motiv: #f2ad2e;
+  --app-sky-bewoelkt-a: #e2e8f0; --app-sky-bewoelkt-b: #d3dce7; --app-sky-bewoelkt-ink: #1f1b16; --app-sky-bewoelkt-soft: #44526a; --app-sky-bewoelkt-motiv: #ffffff;
+  --app-sky-regen-a: #48586f; --app-sky-regen-b: #53637b; --app-sky-regen-ink: #ffffff; --app-sky-regen-soft: #edf1f6; --app-sky-regen-motiv: #dfe7f2;
+  --app-sky-schnee-a: #eef3f9; --app-sky-schnee-b: #dde6f1; --app-sky-schnee-ink: #1f1b16; --app-sky-schnee-soft: #44526a; --app-sky-schnee-motiv: #9bb2cf;
+  --app-sky-gewitter-a: #3a3550; --app-sky-gewitter-b: #4a4463; --app-sky-gewitter-ink: #ffffff; --app-sky-gewitter-soft: #ebe8f3; --app-sky-gewitter-motiv: #ffc23d;
+  --app-sky-sonnig-nacht-a: #18234a; --app-sky-sonnig-nacht-b: #2a3868; --app-sky-sonnig-nacht-ink: #ffffff; --app-sky-sonnig-nacht-soft: #e3e8f6; --app-sky-sonnig-nacht-motiv: #f6e7a8;
+  --app-sky-bewoelkt-nacht-a: #283246; --app-sky-bewoelkt-nacht-b: #384358; --app-sky-bewoelkt-nacht-ink: #ffffff; --app-sky-bewoelkt-nacht-soft: #e3e8f0; --app-sky-bewoelkt-nacht-motiv: #c9d3e3;
+  --app-sky-regen-nacht-a: #212b3d; --app-sky-regen-nacht-b: #2f3b52; --app-sky-regen-nacht-ink: #ffffff; --app-sky-regen-nacht-soft: #e3e9f1; --app-sky-regen-nacht-motiv: #b9c8dc;
+  --app-sky-schnee-nacht-a: #2a3650; --app-sky-schnee-nacht-b: #3a4763; --app-sky-schnee-nacht-ink: #ffffff; --app-sky-schnee-nacht-soft: #e3e9f3; --app-sky-schnee-nacht-motiv: #ffffff;
+  --app-sky-gewitter-nacht-a: #1b1828; --app-sky-gewitter-nacht-b: #2a253c; --app-sky-gewitter-nacht-ink: #ffffff; --app-sky-gewitter-nacht-soft: #e6e3ef; --app-sky-gewitter-nacht-motiv: #ffc23d;
+ 
+  --app-sky-warm: #ff8a3d;
+  --app-sky-sturm: #e5483a;
+  --app-windsack: #f08a24;
+  --app-windsack-rot: #e0442e;
+  --app-windsack-mast: #8a7f74;
+  --app-windsack-streifen: #ffffff;
+  --app-windstrich: #7fa3bd;
+  --app-boeen-ink: #1f1b16;
   /* Look „Schlicht“: weiße Kacheln mit feinem Rand, Innen-Kärtchen sehr hell */
   --app-schlicht-inner: #f9f6f1;
   --app-karamba: #d6336c;
@@ -381,20 +387,12 @@
   --app-tipp: #b497f0;
   --app-tipp-soft: #2a2238;
   --app-tile-inner: rgb(255 255 255 / 0.06);
-  --app-sky-sonnig-a: #233a5c;
-  --app-sky-sonnig-b: #4a4528;
-  --app-sky-bewoelkt-a: #2a3140;
-  --app-sky-bewoelkt-b: #343c4c;
-  --app-sky-regen-a: #1f2a3a;
-  --app-sky-regen-b: #2c3a4e;
-  --app-sky-schnee-a: #2e3542;
-  --app-sky-schnee-b: #3a4252;
-  --app-sky-gewitter-a: #272338;
-  --app-sky-gewitter-b: #363049;
-  --app-sky-nacht-a: #121a33;
-  --app-sky-nacht-b: #23305a;
-  --app-sky-ink: #f2eee9;
-  --app-sky-nacht-ink: #ffffff;
+  --app-sky-sonnig-a: #3a3220; --app-sky-sonnig-b: #4a3f22; --app-sky-sonnig-ink: #f2eee9; --app-sky-sonnig-soft: #e0d6c4; --app-sky-sonnig-motiv: #e8b443;
+  --app-sky-bewoelkt-a: #2a3140; --app-sky-bewoelkt-b: #343c4c; --app-sky-bewoelkt-ink: #f2eee9; --app-sky-bewoelkt-soft: #d3d9e3; --app-sky-bewoelkt-motiv: #8e9ab0;
+  --app-sky-regen-a: #1f2a3a; --app-sky-regen-b: #2c3a4e; --app-sky-regen-ink: #f2eee9; --app-sky-regen-soft: #d3dbe6; --app-sky-regen-motiv: #9fb2cc;
+  --app-sky-schnee-a: #2e3542; --app-sky-schnee-b: #3a4252; --app-sky-schnee-ink: #f2eee9; --app-sky-schnee-soft: #d8dee8; --app-sky-schnee-motiv: #dfe7f2;
+  --app-sky-gewitter-a: #272338; --app-sky-gewitter-b: #363049; --app-sky-gewitter-ink: #f2eee9; --app-sky-gewitter-soft: #ddd9e8; --app-sky-gewitter-motiv: #e8b443;
+ 
   --app-schlicht-inner: #1d2024;
   --app-jetzt-from: #3b2a1f;
   --app-jetzt-to: #2b211b;
@@ -517,20 +515,12 @@
     --app-tipp: #b497f0;
     --app-tipp-soft: #2a2238;
     --app-tile-inner: rgb(255 255 255 / 0.06);
-    --app-sky-sonnig-a: #233a5c;
-    --app-sky-sonnig-b: #4a4528;
-    --app-sky-bewoelkt-a: #2a3140;
-    --app-sky-bewoelkt-b: #343c4c;
-    --app-sky-regen-a: #1f2a3a;
-    --app-sky-regen-b: #2c3a4e;
-    --app-sky-schnee-a: #2e3542;
-    --app-sky-schnee-b: #3a4252;
-    --app-sky-gewitter-a: #272338;
-    --app-sky-gewitter-b: #363049;
-    --app-sky-nacht-a: #121a33;
-    --app-sky-nacht-b: #23305a;
-    --app-sky-ink: #f2eee9;
-    --app-sky-nacht-ink: #ffffff;
+    --app-sky-sonnig-a: #3a3220; --app-sky-sonnig-b: #4a3f22; --app-sky-sonnig-ink: #f2eee9; --app-sky-sonnig-soft: #e0d6c4; --app-sky-sonnig-motiv: #e8b443;
+    --app-sky-bewoelkt-a: #2a3140; --app-sky-bewoelkt-b: #343c4c; --app-sky-bewoelkt-ink: #f2eee9; --app-sky-bewoelkt-soft: #d3d9e3; --app-sky-bewoelkt-motiv: #8e9ab0;
+    --app-sky-regen-a: #1f2a3a; --app-sky-regen-b: #2c3a4e; --app-sky-regen-ink: #f2eee9; --app-sky-regen-soft: #d3dbe6; --app-sky-regen-motiv: #9fb2cc;
+    --app-sky-schnee-a: #2e3542; --app-sky-schnee-b: #3a4252; --app-sky-schnee-ink: #f2eee9; --app-sky-schnee-soft: #d8dee8; --app-sky-schnee-motiv: #dfe7f2;
+    --app-sky-gewitter-a: #272338; --app-sky-gewitter-b: #363049; --app-sky-gewitter-ink: #f2eee9; --app-sky-gewitter-soft: #ddd9e8; --app-sky-gewitter-motiv: #e8b443;
+   
     --app-schlicht-inner: #1d2024;
     --app-jetzt-from: #3b2a1f;
     --app-jetzt-to: #2b211b;
@@ -952,17 +942,31 @@ body {
    „Farbig“ = Pastell-Flächen (oben), Wetter als Himmel;
    „Schlicht“ = weiße Kacheln mit feinem Rand, Farbe nur in Überschrift,
    Symbol, Uhrzeit und Termin-Strich; Wetter weiß, nur das Symbol farbig. */
-[data-look="farbig"] [data-tone="wetter"] [data-wx], [data-look="farbig"] [data-tone="wetter"][data-wx] {
-  background: linear-gradient(160deg, var(--sky-a, var(--app-sky-bewoelkt-a)), var(--sky-b, var(--app-sky-bewoelkt-b)));
-  color: var(--sky-ink, var(--app-sky-ink));
+/* Wetter-Kachel: Himmel je Lage (`kachelHimmel`), Schlicht = Kachel-Fläche; ab „Stürmisch“ leicht warm, ab „Sturm“ rötlich getönt (Tafel 87) */
+.wx-himmel {
+  --sky-tint: transparent;
+  background: linear-gradient(var(--sky-tint), var(--sky-tint)), linear-gradient(160deg, var(--sky-a, var(--tile-bg)), var(--sky-b, var(--tile-bg)));
+  color: var(--sky-ink, var(--app-ink));
 }
-[data-look="farbig"] [data-wx="sonnig"] { --sky-a: var(--app-sky-sonnig-a); --sky-b: var(--app-sky-sonnig-b); }
-[data-look="farbig"] [data-wx="bewoelkt"] { --sky-a: var(--app-sky-bewoelkt-a); --sky-b: var(--app-sky-bewoelkt-b); }
-[data-look="farbig"] [data-wx="regen"] { --sky-a: var(--app-sky-regen-a); --sky-b: var(--app-sky-regen-b); }
-[data-look="farbig"] [data-wx="schnee"] { --sky-a: var(--app-sky-schnee-a); --sky-b: var(--app-sky-schnee-b); }
-[data-look="farbig"] [data-wx="gewitter"] { --sky-a: var(--app-sky-gewitter-a); --sky-b: var(--app-sky-gewitter-b); }
-[data-look="farbig"] [data-wx][data-nacht] { --sky-a: var(--app-sky-nacht-a); --sky-b: var(--app-sky-nacht-b); --sky-ink: var(--app-sky-nacht-ink); }
-[data-look="farbig"] [data-wx][data-nacht] .text-muted, [data-look="farbig"] [data-wx][data-nacht] .text-tile-label { color: rgb(255 255 255 / 0.82); }
+.wx-himmel[data-ton="warm"] { --sky-tint: color-mix(in srgb, var(--app-sky-warm) 10%, transparent); }
+.wx-himmel[data-ton="sturm"] { --sky-tint: color-mix(in srgb, var(--app-sky-sturm) 12%, transparent); }
+.wx-himmel[data-himmel="sonnig"] { --sky-a: var(--app-sky-sonnig-a); --sky-b: var(--app-sky-sonnig-b); --sky-ink: var(--app-sky-sonnig-ink); --sky-soft: var(--app-sky-sonnig-soft); --sky-motiv: var(--app-sky-sonnig-motiv); }
+.wx-himmel[data-himmel="bewoelkt"] { --sky-a: var(--app-sky-bewoelkt-a); --sky-b: var(--app-sky-bewoelkt-b); --sky-ink: var(--app-sky-bewoelkt-ink); --sky-soft: var(--app-sky-bewoelkt-soft); --sky-motiv: var(--app-sky-bewoelkt-motiv); }
+.wx-himmel[data-himmel="regen"] { --sky-a: var(--app-sky-regen-a); --sky-b: var(--app-sky-regen-b); --sky-ink: var(--app-sky-regen-ink); --sky-soft: var(--app-sky-regen-soft); --sky-motiv: var(--app-sky-regen-motiv); }
+.wx-himmel[data-himmel="schnee"] { --sky-a: var(--app-sky-schnee-a); --sky-b: var(--app-sky-schnee-b); --sky-ink: var(--app-sky-schnee-ink); --sky-soft: var(--app-sky-schnee-soft); --sky-motiv: var(--app-sky-schnee-motiv); }
+.wx-himmel[data-himmel="gewitter"] { --sky-a: var(--app-sky-gewitter-a); --sky-b: var(--app-sky-gewitter-b); --sky-ink: var(--app-sky-gewitter-ink); --sky-soft: var(--app-sky-gewitter-soft); --sky-motiv: var(--app-sky-gewitter-motiv); }
+.wx-himmel[data-himmel="sonnig-nacht"] { --sky-a: var(--app-sky-sonnig-nacht-a); --sky-b: var(--app-sky-sonnig-nacht-b); --sky-ink: var(--app-sky-sonnig-nacht-ink); --sky-soft: var(--app-sky-sonnig-nacht-soft); --sky-motiv: var(--app-sky-sonnig-nacht-motiv); }
+.wx-himmel[data-himmel="bewoelkt-nacht"] { --sky-a: var(--app-sky-bewoelkt-nacht-a); --sky-b: var(--app-sky-bewoelkt-nacht-b); --sky-ink: var(--app-sky-bewoelkt-nacht-ink); --sky-soft: var(--app-sky-bewoelkt-nacht-soft); --sky-motiv: var(--app-sky-bewoelkt-nacht-motiv); }
+.wx-himmel[data-himmel="regen-nacht"] { --sky-a: var(--app-sky-regen-nacht-a); --sky-b: var(--app-sky-regen-nacht-b); --sky-ink: var(--app-sky-regen-nacht-ink); --sky-soft: var(--app-sky-regen-nacht-soft); --sky-motiv: var(--app-sky-regen-nacht-motiv); }
+.wx-himmel[data-himmel="schnee-nacht"] { --sky-a: var(--app-sky-schnee-nacht-a); --sky-b: var(--app-sky-schnee-nacht-b); --sky-ink: var(--app-sky-schnee-nacht-ink); --sky-soft: var(--app-sky-schnee-nacht-soft); --sky-motiv: var(--app-sky-schnee-nacht-motiv); }
+.wx-himmel[data-himmel="gewitter-nacht"] { --sky-a: var(--app-sky-gewitter-nacht-a); --sky-b: var(--app-sky-gewitter-nacht-b); --sky-ink: var(--app-sky-gewitter-nacht-ink); --sky-soft: var(--app-sky-gewitter-nacht-soft); --sky-motiv: var(--app-sky-gewitter-nacht-motiv); }
+.wx-himmel[data-himmel="schlicht"] { --sky-soft: var(--app-muted); }
+.wx-himmel:not([data-himmel="schlicht"]) .text-tile-label, .wx-himmel:not([data-himmel="schlicht"]) .text-muted { color: var(--sky-soft); }
+.wx-soft { color: var(--sky-soft); }
+/* Böen ab 60 km/h: kleines oranges Schild, dunkle Schrift – auf jedem Himmel gleich gut lesbar */
+.wx-boeen { background: var(--app-windsack); color: var(--app-boeen-ink); }
+.wx-motiv { color: var(--sky-motiv); }
+.wx-linie { border-color: color-mix(in srgb, currentColor 30%, transparent); }
 [data-look="schlicht"] [data-tone] {
   --tile-bg: var(--app-surface);
   --tile-inner: var(--app-schlicht-inner);

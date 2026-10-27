@@ -12,13 +12,17 @@ gerechnet, ohne Panik, mit höchstens EINEM Tipp.
 - Quellen umwandeln (rein): `src/lib/wetter/sources.ts` (`fromBrightSky`,
   `fromOpenMeteo`).
 - Regeln (rein): `src/lib/wetter/forecast.ts` (`isRainy`, `dayLook`,
-  `buildDays`, `weatherTip`, `dayAnswer`, `umbrellaAnswer`, `weatherQuestion`,
+  `buildDays`, `dayAnswer`, `umbrellaAnswer`, `weatherQuestion`,
   `sanitizeForecast`) und `src/lib/wetter/view.ts` (`dayParts`, `daySentence`,
   `bestOutdoorDay`, `weekSentence`, `skyFor`, `sunTimes`, `isNight`,
-  `skyLine`, `columnTone`, `weatherStartTab`).
+  `skyLine`, `columnTone`, `weatherStartTab`), `src/lib/wetter/kachel.ts`
+  (Kachel: `rainingNow`, `kachelLage`, `kachelZeile`, `kachelWind`,
+  `zweiStunden`, `kachelHimmel`) und `src/lib/wetter/wind.ts` (Windstufen,
+  Wörter, Windsack-Aussehen, `stormForPlan` für die Jetzt-Karte).
 - App: `src/lib/wetter/client.ts` (`useForecast`, `refreshForecast`,
   `usePlace`, `savePlace`, `placeFromLocation`).
-- Oberfläche: `src/components/wetter/WeatherTile.tsx`, `WeatherView.tsx`,
+- Oberfläche: `src/components/wetter/WeatherTile.tsx`, `HimmelMuster.tsx`
+  (stilles Muster im Kachel-Himmel), `WeatherView.tsx`,
   `WeatherParts.tsx` (`SkyCard`, `BestDayCard`, `WeekBand`, `WeekNote`),
   `WeatherSymbol.tsx` (eigenes Symbol-Set, `night` = Mond).
 - Einstellung: `src/components/einstellungen/WeatherPlaceForm.tsx`
@@ -42,13 +46,18 @@ gerechnet, ohne Panik, mit höchstens EINEM Tipp.
   (Windrichtung in Grad, woher; `wind_direction` bzw. `wind_direction_10m`).
   Ältere gespeicherte Vorhersagen haben beides nicht – dann zeigt die Seite
   keinen Wind (statt „0 km/h“).
-- Wind (`lib/wetter/wind.ts`, Tafel 63 B): Tageswert aus den Stunden 7–21 Uhr
-  (`windOf(…, true)`, am Tag als `wind`): höchste mittlere Windstärke, dazu
-  die stärkste Böe; Richtung als nach Stärke gewichteter Vektor-Mittelwert
-  (350° + 10° = Nord). Tageszeiten genauso je Abschnitt. 8 Kürzel N · NO · O ·
-  SO · S · SW · W · NW (Grenzen bei 22,5°), ausgeschrieben Nord … Nordwest,
-  im Satz „aus Westen“. Windsack-Stufen (`windLevel`): leicht < 20 km/h
-  (hängt), windig 20–39 (halb), stürmisch ab 40 oder Böen ab 60 (gerade).
+- Wind (`lib/wetter/wind.ts`, Tafel 87 – EINE Stelle für Kachel, Seite, Mia
+  und Jetzt-Karte): Tageswert aus den Stunden 7–21 Uhr (`windOf(…, true)`, am
+  Tag als `wind`): höchste mittlere Windstärke, dazu die stärkste Böe;
+  Richtung als nach Stärke gewichteter Vektor-Mittelwert (350° + 10° = Nord).
+  Tageszeiten genauso je Abschnitt. 8 Kürzel N · NO · O · SO · S · SW · W · NW
+  (Grenzen bei 22,5°), ausgeschrieben Nord … Nordwest, im Satz „aus Westen“.
+  Stufen nach Beaufort, nur der Mittelwind (gerundet) zählt (`windLevel`,
+  `WIND_STUFEN`, `windWord`): Kaum Wind < 12 km/h · Leichter Wind 12–19 ·
+  Mäßiger Wind 20–28 · Frischer Wind 29–38 · Lebhafter Wind 39–49 · Starker
+  Wind 50–61 · Stürmischer Wind 62–74 · Sturm 75–102 · Orkanartiger Wind ab
+  103. Böen nennen erst ab 60 km/h (`gustText`), auch wenn der Mittelwind
+  niedriger ist.
 - Tage baut immer `buildDays` aus den Stunden (nur Tage mit ≥ 12 Stunden).
   `sanitizeForecast` baut auch alte gespeicherte Daten so neu.
 - Der Ort im Profil `weather.postcode` gehört nicht hierher (nutzt der
@@ -89,21 +98,42 @@ Ehrliche Regel (`dayLook`, Stunden 7–21 Uhr):
 - Morgens (6–11) / Mittags (11–17) / Abends (17–23) nach derselben Regel,
   Sonnen-Grenzen anteilig (`dayParts`, je bis zu 2 Tipp-Chips).
 
-Kachel `wetter` (Standard S, Größen S/M/L, Pastell über `TILE`, Verlauf je
-Lage über `data-wx` = `weatherGroup`):
-- S: Symbol, Temperatur, EIN Satz (Tipp, sonst Lage + Höchstwert).
-- M: dazu Morgens · Mittags · Abends (drei Felder).
+Kachel `wetter` (Standard S, Größen S/M/L; Tafel „ruhig mit Regentropfen“,
+`WeatherTile`, Logik rein in `lib/wetter/kachel.ts`):
+- Lage jetzt ehrlich (`kachelLage`): nass nur, wenn Radar/Station Regen misst
+  (`raining`) bzw. ohne Messung die Stunde jetzt eine echte Regenstunde ist
+  (`rainingNow`); dann Regen, Schnee oder Gewitter, sonst Sonnig (klar/heiter)
+  oder Bewölkt.
+- EINE Zeile (`kachelZeile`, Stunden ab jetzt bis Mitternacht, `isRainy`):
+  nass → „Regen · ab 10 Uhr trocken“ (ohne trockene Stunde nur „Regen“;
+  Niesel heißt „Niesel“); trocken → „Bewölkt · ab 15 Uhr Regen“ (bzw.
+  „Schnee“), eben aufgehört → „Regen hat aufgehört“, sonst „bleibt trocken“.
+  S ohne „Uhr“ („ab 10 trocken“).
+- S: „WETTER · EUTIN“, Temperatur, Windsack der Stufe, die Zeile.
+- M: dazu rechts ↑ max / ↓ min, Wind in Worten (Stunde jetzt,
+  `kachelWind`): fett das Wort, leise die Zahl („Frischer Wind · 32 km/h aus
+  West“), ab Böen 60 ein oranges Schild „Böen 85“; unten feine Linie und 4
+  Spalten im 2-Stunden-Abstand ab jetzt (`zweiStunden`, auch über
+  Mitternacht, nachts Mond): Stunde, Symbol, Temperatur, Regen-% (Tropfen).
 - L: dazu die nächsten 5 Tage in Worten (`dayWords`).
-- Feierabend-Phase (`weatherTomorrow`): das Wetter von morgen, „Schirm
-  einpacken“ bei Regenstunden.
+- Hintergrund (`kachelHimmel(lage, nacht, look, wind)`, `data-himmel`):
+  Look „Farbig“ = Himmel je Lage, nachts (`isNight`) die dunklere Variante
+  (`<lage>-nacht`), Tokens `--app-sky-<key>-a/-b/-ink/-soft/-motiv` (hell und
+  dunkel in `globals.css`), dazu ein stilles inline-SVG-Muster
+  (`HimmelMuster`, keine Bilddateien, keine Animation): Regen/Niesel feine
+  Tropfen, Schnee helle Punkte, Bewölkt weiche Wolken, Sonne eine angedeutete
+  Sonne (nachts Mond und Sterne), Gewitter ein kleiner Blitz. Look
+  „Schlicht“ = Kachel-Fläche weiß, kein Muster, nur das Wetter-Symbol farbig.
+  Ab „Stürmisch“ leicht warm getönt, ab „Sturm“ rötlich (`data-ton`, beide
+  Looks). Kontrast jeder Variante (auch getönt, hell/dunkel/auto) rechnerisch
+  ≥ 4,5:1 (`tests/wetter/kachel.test.ts`).
+- Feierabend-Phase (`weatherTomorrow`): das Wetter von morgen auf dem Himmel
+  des Tages, „Schirm einpacken“ bei Regenstunden.
 - Offline: letzte Werte mit „Stand 8:10“. Nie geladen: „Gerade keine
   Wetterdaten – ich schau gleich nochmal.“ Antippen → `/wetter`.
-
-EIN Tipp (`weatherTip`): echte Regenstunde zur Termin-Zeit „☂️ Ab 15 Uhr
-Regen – Schirm für …“, sonst „☂️ Ab 15 Uhr Regen“ („Gerade“ nur bei gemessenem
-Regen) → vor 11 Uhr Frost 5–9 Uhr „Heute früh glatt ❄️“ → Böen ab 75
-„Sturmböen bis …“ → ab 25 °C vor 18 Uhr „Sonnencreme einpacken ☀️“ → Böen ab
-50 „Windig – …“ → sonst keiner. Auf der Kachel ohne Emojis (`withoutEmoji`).
+- Der frühere EINE Tipp (`weatherTip`: „☂️ Ab 15 Uhr Regen – Schirm für …“,
+  Frost, Hitze, Böen) ist weg: Regen zum Termin steht auf der Jetzt-Karte
+  bzw. im Satz der Wetter-Seite (`daySentence`).
 
 Seite `/wetter` (`WeatherView`):
 - Reiter Heute · Morgen · 7 Tage (tippen oder wischen, Punkte; ab 18 Uhr
@@ -126,19 +156,20 @@ Ort: Einstellungen → Wetter-Ort (`WeatherPlaceForm`): Stadt eintippen oder
 „Meinen Standort verwenden“ (Koordinaten auf 2 Stellen gerundet, gespeichert
 wird nur die Stadt). Die App holt höchstens alle 30 Minuten neu.
 
-### Wind auf der Seite (v0.69)
-- Windsack (`Windsock` in `WeatherSymbol.tsx`): grauer Mast, 4 Streifen
-  Blau-Grau/Weiß wie die Regenbalken; zeigt nur die Stärke, nie die Richtung
-  (keine Pfeile – die Richtung steht als Buchstaben daneben).
+### Wind auf der Seite (v0.69, Tafel 87)
+- Windsack (`Windsock` in `WeatherSymbol.tsx`, Tafel 87): grauer Mast, Sack
+  orange mit weißen Streifen (ab „Sturm“ rot), steht je Stufe höher (hängt
+  bei „Kaum Wind“, waagerecht ab „Lebhaft“); ab „Lebhaft“ Windstriche
+  daneben (1 · 1 · 2 · 3 · 4, `windLook`). Zeigt nur die Stärke, nie die
+  Richtung (keine Pfeile – die Richtung steht als Buchstaben daneben). Still.
 - 7 Tage: unten in jeder Spalte (feine Linie darüber) Windsack, Zahl („28“),
   Kürzel („NW“); Legende zweizeilig „Balken = Regenrisiko · ☀ =
   Sonnenstunden“ und „[Windsack] = Wind km/h · W = Wind aus Westen“.
-- Heute/Morgen: unter der Temperatur der Chip „[Windsack] 22 km/h aus West“.
-- Tageszeiten: rechts „[Windsack] 22 km/h · W“, Böen nur ab 50 km/h („35 · W
-  · Böen 60“). Der frühere Tipp „🌬️ Windig“ ist weg (sonst doppelt); die
-  Text-Hinweise bei Sturm bleiben.
-- VoiceOver: „Wind 22 Kilometer pro Stunde aus Westen, windig“.
-- Die Startseiten-Kachel bleibt ohne Wind (ruhig).
+- Heute/Morgen: unter der Temperatur der Chip „[Windsack] Mäßiger Wind ·
+  22 km/h aus West“ (ab Böen 60 „· Böen 85“).
+- Tageszeiten: rechts „[Windsack] 22 km/h · W“, Böen nur ab 60 km/h („35 · W
+  · Böen 60“).
+- VoiceOver: „Mäßiger Wind, 22 Kilometer pro Stunde aus Westen“.
 
 ## Begleitung (Mia)
 
@@ -146,12 +177,13 @@ wird nur die Stadt). Die App holt höchstens alle 30 Minuten neu.
   holt `engine.ts` vorab, wenn die letzte Nachricht nach Wetter oder
   Trainingsplanung klingt (`WEATHER_QUESTION`, `TRAINING_PLAN`). Ergebnis:
   Beschreibung, Tief/Hoch, Regenrisiko, Regenstunden, mm, Sonnenstunden, Wind
-  („Tagsüber wird es windig – 28 km/h aus Westen, Böen bis 55 km/h.“); für
-  heute die Regen-Uhrzeiten.
+  mit denselben Wörtern wie Kachel und Seite („Wind tagsüber: Frischer Wind,
+  32 km/h aus Westen, Böen bis 85 km/h.“, `windWords`); für heute die
+  Regen-Uhrzeiten.
 - Ohne KI: `weatherQuestion` erkennt „Wie wird das Wetter morgen?“, „Brauch
   ich heute einen Schirm?“, „… am Samstag?“, „übermorgen“, „Ist es windig?“,
   „Woher kommt der Wind morgen?“; Antwort über `dayAnswer`, `umbrellaAnswer`
-  bzw. `windAnswer`.
+  bzw. `windAnswer` („Morgen: Mäßiger Wind, 28 km/h aus Westen.“).
 - Kontext: Wetter-Ort (`wetterOrt`). `trainings_planen` nutzt dieselbe
   Vorhersage für trockene Zeiten.
 
@@ -159,9 +191,13 @@ wird nur die Stadt). Die App holt höchstens alle 30 Minuten neu.
 
 - `tests/wetter/tagesbeschreibung.test.ts` – ehrliche Tage, Tipp nur bei
   echter Regenstunde, beide Quellen im gleichen Format, Himmel und Wochensatz.
-- `tests/wetter/wind.test.ts` – Stufen-Grenzen 19/20/39/40, Böen 59/60,
-  Richtung (350° + 10° → N, 8 Kürzel, 22,5°), Tageswert nur 7–21 Uhr, alte
-  Daten ohne Wind, Sätze und Mia.
+- `tests/wetter/wind.test.ts` – jede der neun Stufen an ihren Grenzen,
+  Windsack-Aussehen, Böen 59/60, Richtung (350° + 10° → N, 8 Kürzel,
+  22,5°), Tageswert nur 7–21 Uhr, alte Daten ohne Wind, Sätze und Mia,
+  Jetzt-Karte nur ab „Stürmisch“ mit Planbezug.
+- `tests/wetter/kachel.test.ts` – ehrliche Lage und Zeile, Wind jetzt,
+  2-Stunden-Überblick, Hintergrund je Wetter/Tag/Nacht/Look, Kontrast jeder
+  Variante (WCAG, auch getönt), S/M/L als echte Ausgabe.
 - `tests/wetter/wetterRegeln.test.ts` – WMO-Code, Tage, EIN Tipp, Antworten,
   Server-Daten prüfen, Seite, Quellen-Formate.
 - `tests/wetter/wetterServer.test.ts` – Testmodus, echter Abruf (fetch
@@ -169,7 +205,8 @@ wird nur die Stadt). Die App holt höchstens alle 30 Minuten neu.
 - `tests/wetter/wetterSpeicher.test.ts` – Ort, letzte Vorhersage, Standort,
   `useForecast`.
 - `tests/wetter/seite.test.ts` – Wetter-Seite.
-- Durchklick `e2e/ablaeufe/alltag.mjs` → `wetter` (Himmel-Karte, 7 Säulen).
+- Durchklick `e2e/ablaeufe/alltag.mjs` → `wetter` (Kachel mit Himmel,
+  Windsack und Zeile; Himmel-Karte, 7 Säulen).
 
 ## Stundenleiste (v0.122.0)
 

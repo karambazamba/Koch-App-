@@ -1,8 +1,7 @@
 // Wetter: Vorhersage-Format, Wetterlage (WMO-Code), ehrliche Tagesbeschreibung
-// aus den Stunden (`dayLook`, `buildDays`) und EIN Tipp für heute –
-// rein, damit Kachel, Lotte, Server und Tests gleich rechnen. Der Tipp bezieht
-// sich wenn möglich auf heutige Termine ("☂️ Ab 15 Uhr Regen – Schirm für
-// Kinderarzt"), sonst Frost, Hitze, Wind – oder nichts.
+// aus den Stunden (`dayLook`, `buildDays`) und Antworten für Mia – rein,
+// damit Kachel, Mia, Server und Tests gleich rechnen. Die Zeile der Kachel
+// („Regen · ab 10 Uhr trocken“) steht in `lib/wetter/kachel.ts`.
 
 import { windOf, type Wind } from "@/lib/wetter/wind";
 
@@ -102,39 +101,6 @@ export function todayRange(fc: Forecast, today: string): { min: number; max: num
 }
 
 export type TipTermin = { title: string; time: string };
-
-/**
- * EIN Tipp für heute (oder null): Regen zur Zeit eines Termins → "☂️ Ab 15 Uhr
- * Regen – Schirm für Kinderarzt"; sonst Regen später → "☂️ Ab 15 Uhr Regen";
- * Frost morgens → "Heute früh glatt ❄️"; ab 25 °C → Sonnencreme; Sturm/Wind.
- */
-export function weatherTip(fc: Forecast, today: string, nowMinutes: number, termine: TipTermin[] = []): string | null {
-  const hs = hoursToday(fc, today);
-  const nowHour = Math.floor(nowMinutes / 60);
-  const ahead = hs.filter((h) => h.hour >= nowHour);
-  // „Gerade“ nur, wenn die Station wirklich Regen misst – sonst die nächste echte Regenstunde
-  const raining = Boolean(fc.current.raining);
-  const firstRain = raining ? (ahead.find(isRainy) ?? { hour: nowHour }) : ahead.find((h) => isRainy(h) && h.hour > nowHour);
-  if (firstRain) {
-    const rainHours = new Set(ahead.filter(isRainy).map((h) => h.hour));
-    if (raining) rainHours.add(nowHour);
-    const hit = termine
-      .filter((t) => /^\d{2}:\d{2}$/.test(t.time) && Number(t.time.slice(0, 2)) >= nowHour)
-      .sort((a, b) => a.time.localeCompare(b.time))
-      .find((t) => rainHours.has(Number(t.time.slice(0, 2))));
-    const start = raining ? "Gerade" : `Ab ${firstRain.hour} Uhr`;
-    if (hit) return `☂️ ${start} Regen. Schirm für ${hit.title.length > 24 ? `${hit.title.slice(0, 23)}…` : hit.title}`;
-    return `☂️ ${start} Regen`;
-  }
-  const early = hs.filter((h) => h.hour >= 5 && h.hour <= 9);
-  if (nowHour < 11 && early.length && Math.min(...early.map((h) => h.temp)) <= 0) return "Heute früh glatt ❄️";
-  const gust = Math.max(0, ...ahead.map((h) => h.gust));
-  if (gust >= 75) return `Sturmböen bis ${Math.round(gust / 5) * 5} km/h 🌬️`;
-  const range = todayRange(fc, today);
-  if (range && range.max >= 25 && nowHour < 18) return "Sonnencreme einpacken ☀️";
-  if (gust >= 50) return `Windig, Böen bis ${Math.round(gust / 5) * 5} km/h 🌬️`;
-  return null;
-}
 
 /** Kurze Antwort für Lotte: "Morgen in Eutin: Regen, 9 bis 14 °C." */
 export function dayAnswer(fc: Forecast, date: string, label: string): string | null {
