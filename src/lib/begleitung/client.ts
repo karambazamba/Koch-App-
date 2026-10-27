@@ -500,6 +500,11 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
   // Nutzt Lotte einen ausgeschalteten Baustein, wird er eingeschaltet – und sie sagt, wo er steht
   if (chosen.some((op) => op.type === "add_pantry" || op.type === "use_pantry") && unlockFeature("vorrat")) notes.push(bausteinOf("vorrat")!.where);
   if (chosen.some((op) => op.type === "add_recipe") && unlockFeature("rezepte")) notes.push(bausteinOf("rezepte")!.where);
+  if (chosen.some((op) => op.type === "upsert_note" || op.type === "set_schnellnotiz") && unlockFeature("notizen")) {
+    const tiles = data.home ?? loadHomeTiles();
+    if (!tiles.find((t) => t.id === "notizen")?.visible) data = { ...data, home: applyHomeChange(tiles, { tile: "notizen", action: "zeigen" }) };
+    notes.push(bausteinOf("notizen")!.where);
+  }
   if (chosen.some((op) => op.type === "add_pin")) {
     const tiles = data.home ?? loadHomeTiles();
     if (!tiles.find((t) => t.id === "pinnwand")?.visible) {

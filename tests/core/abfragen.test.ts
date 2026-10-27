@@ -97,10 +97,10 @@ describe("Gespeicherte Merker, wie die Oberfläche sie sieht", () => {
     fakeWindow();
     const f = await import("@/lib/core/features");
     const home = await import("@/lib/core/homeLayout");
-    expect(f.useBausteine()).toEqual([]);
+    expect(f.useBausteine()).toEqual(["notizen"]);
     expect(f.useFeature("ideen")).toBe(false);
     f.setFeature("spontan", true);
-    expect(f.useBausteine()).toEqual(["spontan"]);
+    expect(f.useBausteine()).toEqual(["notizen", "spontan"]);
     expect(f.useFeature("ideen")).toBe(true);
     expect(home.useHomeTiles()).toEqual(home.DEFAULT_HOME);
     expect(home.useHomeTipSeen()).toBe(false);

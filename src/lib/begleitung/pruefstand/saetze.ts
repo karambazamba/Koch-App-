@@ -94,14 +94,15 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Ich muss am Mittwoch nächste Woche um 9 zum Arzt", TERMIN, { datum: "2026-10-28", zeit: "09:00" }),
   S("Fußballtraining Mathis immer dienstags 16 Uhr", TERMIN, { zeit: "16:00", person: "Mathis" }),
   S("Geburtstag Oma am 30. Oktober", TERMIN, { datum: "2026-10-30" }),
-  // Aufgaben und Notizen (16)
+  // Aufgaben und Notizen (17)
   S("Ich muss noch die Steuer machen", TERMIN, { lage: ["ohne-steuer"] }),
   S("Kita-Formular bis Freitag abgeben", TERMIN, { datum: "2026-10-23" }),
   S("Erinner mich morgen an den Müll", TERMIN, { datum: "2026-10-22" }),
   S("Lisa soll die Geschenke besorgen", TERMIN, { person: "Lisa" }),
-  // 1.0: Notizen sind aus – nie in ausgeblendete Bausteine schreiben
-  S("Merk dir das WLAN-Passwort: Sonnenblume42", ["kann_nicht"]),
-  S("Notier dir, Mathis' Schuhgröße ist 33", ["kann_nicht"]),
+  // Notizen gehören zu 1.0
+  S("Merk dir das WLAN-Passwort: Sonnenblume42", ["upsert_note"]),
+  S("Notier dir, Mathis' Schuhgröße ist 33", ["upsert_note"]),
+  S("Schreib dir auf: Handwerker Müller 0176 1234", ["upsert_note", "set_schnellnotiz"]),
   S("Dringend: Versicherung anrufen", TERMIN),
   S("Steuer ist erledigt", ["done_entry"]),
   S("Irgendwann mal den Keller aufräumen", TERMIN),

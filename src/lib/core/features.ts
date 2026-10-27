@@ -56,7 +56,7 @@ export const BAUSTEINE: Baustein[] = [
  * „Mehr Funktionen“ oder „＋ Kachel“, Mia schaltet sie nicht frei. Wer einen
  * schon nutzt, behält ihn (`launchUebernahme`). Daten bleiben immer.
  */
-export const LAUNCH_AUS: Feature[] = ["wochenplan", "vorrat", "regiontipps", "mails", "sport", "notizen", "spendentopf"];
+export const LAUNCH_AUS: Feature[] = ["wochenplan", "vorrat", "regiontipps", "mails", "sport", "spendentopf"];
 
 /** Darf der Baustein gezeigt bzw. angeboten werden? (nicht für 1.0 ausgeblendet oder schon an) */
 export const launchSichtbar = (feature: Feature, on: Feature[]) => !LAUNCH_AUS.includes(feature) || on.includes(feature);
@@ -80,10 +80,14 @@ export const bausteinOf = (feature: Feature) => BAUSTEINE.find((b) => b.feature 
 const ENABLED: Partial<Record<Feature, true>> = {};
 
 /**
- * v3: eingeschaltete Bausteine + `launch` (Übernahme für 1.0 erledigt).
- * v2 ohne `launch`, v1 hatte `legacy` (alter Test-Schalter) und `unlocked`.
+ * v4: Notizen gehören zu 1.0 – beim Update einmal eingeschaltet (danach
+ * selbst abschaltbar). v3: eingeschaltete Bausteine + `launch` (Übernahme
+ * für 1.0 erledigt). v2 ohne `launch`, v1 hatte `legacy` und `unlocked`.
  */
-type FeatureStore = { version: 3; on: Feature[]; launch: boolean };
+type FeatureStore = { version: 4; on: Feature[]; launch: boolean };
+
+/** Standard für neue Nutzer (und beim Update auf v4 einmal dazu) */
+const DEFAULT_ON: Feature[] = ["notizen"];
 
 const isFeature = (f: unknown): f is Feature => typeof f === "string" && f in FEATURES;
 
@@ -116,20 +120,21 @@ function usedFeatures(): Feature[] {
 function migrate(raw: unknown): FeatureStore | null {
   if (!raw || typeof raw !== "object") return null;
   const d = raw as { version?: number; legacy?: unknown; unlocked?: unknown; on?: unknown };
-  if (d.version === 3 || d.version === 2) return { version: 3, on: (Array.isArray(d.on) ? d.on : []).filter(isFeature), launch: d.version === 3 && (d as { launch?: unknown }).launch === true };
+  const list = (Array.isArray(d.on) ? d.on : []).filter(isFeature);
+  if (d.version === 4) return { version: 4, on: list, launch: (d as { launch?: unknown }).launch === true };
+  if (d.version === 3 || d.version === 2) return { version: 4, on: [...new Set([...list, ...DEFAULT_ON])], launch: d.version === 3 && (d as { launch?: unknown }).launch === true };
   if (d.version !== 1) return null;
   // Alter Test-Schalter: wird zurückgesetzt; was genutzt wurde, wird als Baustein übernommen
   const unlocked = (Array.isArray(d.unlocked) ? d.unlocked : []).filter(isFeature);
   const used = d.legacy === true && typeof localStorage !== "undefined" ? usedFeatures() : [];
-  return { version: 3, on: [...new Set([...unlocked, ...used])], launch: false };
+  return { version: 4, on: [...new Set([...unlocked, ...used, ...DEFAULT_ON])], launch: false };
 }
 
 const store = createLocalStore("wasgibts.funktionen", migrate);
-const EMPTY: Feature[] = [];
 
 // --- Abfragen ------------------------------------------------------------------------
 
-const onList = () => store.load()?.on ?? EMPTY;
+const onList = () => store.load()?.on ?? DEFAULT_ON;
 
 const isOn = (feature: Feature, on: Feature[]) =>
   ENABLED[feature] === true || on.includes(feature) || (feature === "ideen" && on.includes("spontan"));
@@ -143,7 +148,7 @@ export function featureOn(feature: Feature): boolean {
 export function setFeature(feature: Feature, on: boolean): boolean {
   const list = onList();
   if (list.includes(feature) === on) return false;
-  store.save({ version: 3, on: on ? [...list, feature] : list.filter((f) => f !== feature), launch: store.load()?.launch ?? false });
+  store.save({ version: 4, on: on ? [...list, feature] : list.filter((f) => f !== feature), launch: store.load()?.launch ?? false });
   return true;
 }
 
@@ -160,7 +165,7 @@ export function unlockFeature(feature: Feature): boolean {
 /** Eingeschaltete Bausteine (`undefined` = lädt) */
 export function useBausteine(): Feature[] | undefined {
   const data = useExternalStore(store.subscribe, store.load, () => undefined);
-  return data === undefined ? undefined : (data?.on ?? EMPTY);
+  return data === undefined ? undefined : (data?.on ?? DEFAULT_ON);
 }
 
 /** Ist eine Funktion an? (`undefined` = lädt) */
@@ -172,9 +177,9 @@ export function useFeature(feature: Feature): boolean | undefined {
 }
 
 /**
- * Einmal beim Start nach dem Update auf 1.0: Wer Sport, Notizen oder den
- * Spendentopf schon nutzt (Kachel sichtbar oder Daten da), behält sie als
- * Baustein. Neue Nutzer starten ohne. @public für Tests
+ * Einmal beim Start nach dem Update auf 1.0: Wer Sport oder den Spendentopf
+ * schon nutzt (Kachel sichtbar oder Daten da), behält sie als Baustein. Neue
+ * Nutzer starten ohne – Notizen sind für alle an. @public für Tests
  */
 export function launchUebernahme(read: (key: StorageKey) => string | null = readRaw) {
   const s = store.load();
@@ -192,9 +197,7 @@ export function launchUebernahme(read: (key: StorageKey) => string | null = read
   const used: Feature[] = [];
   const sport = json("wasgibts.sport") as { trainings?: unknown[] } | null;
   if (shown("sport") || (sport?.trainings?.length ?? 0) > 0) used.push("sport");
-  const notes = json("wasgibts.notizen") as { notes?: unknown[] } | null;
-  if (shown("notizen") || (notes?.notes?.length ?? 0) > 0) used.push("notizen");
   if (shown("spendentopf")) used.push("spendentopf");
-  const on = s?.on ?? EMPTY;
-  store.save({ version: 3, on: [...new Set([...on, ...used])], launch: true });
+  const on = s?.on ?? DEFAULT_ON;
+  store.save({ version: 4, on: [...new Set([...on, ...used])], launch: true });
 }

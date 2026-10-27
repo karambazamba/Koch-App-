@@ -22,7 +22,7 @@ describe("Bausteine an und aus", () => {
     expect(setFeature("vorrat", true)).toBe(true);
     expect(setFeature("vorrat", true)).toBe(false);
     expect(featureOn("vorrat")).toBe(true);
-    expect(JSON.parse(win.localStorage.getItem(KEY)!)).toEqual({ version: 3, on: ["vorrat"], launch: false });
+    expect(JSON.parse(win.localStorage.getItem(KEY)!)).toEqual({ version: 4, on: ["notizen", "vorrat"], launch: false });
     expect(setFeature("vorrat", false)).toBe(true);
     expect(featureOn("vorrat")).toBe(false);
     expect(setFeature("vorrat", false)).toBe(false);
@@ -68,10 +68,10 @@ describe("Bausteine: Migration", () => {
     expect((await load({ [KEY]: "{kaputt" })).featureOn("vorrat")).toBe(false);
   });
 
-  it("v1 ohne alten Test-Schalter: freigeschaltete bleiben, wird als v3 zurückgeschrieben", async () => {
+  it("v1 ohne alten Test-Schalter: freigeschaltete bleiben (+ Notizen), wird als v4 zurückgeschrieben", async () => {
     const { win, featureOn } = await load({ [KEY]: JSON.stringify({ version: 1, legacy: false, unlocked: ["wochenplan", "nix"] }) });
     expect(featureOn("wochenplan")).toBe(true);
-    expect(JSON.parse(win.localStorage.getItem(KEY)!)).toEqual({ version: 3, on: ["wochenplan"], launch: false });
+    expect(JSON.parse(win.localStorage.getItem(KEY)!)).toEqual({ version: 4, on: ["wochenplan", "notizen"], launch: false });
     const { featureOn: on2 } = await load({ [KEY]: JSON.stringify({ version: 1 }) });
     expect(on2("wochenplan")).toBe(false);
   });

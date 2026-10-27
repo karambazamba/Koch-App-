@@ -24,13 +24,17 @@ describe("Bausteine", () => {
 
 describe("Launch 1.0: „später“-Bausteine", () => {
   it("Mia schaltet sie nie ein – „Kommt bald.“, Wunsch anonym gezählt", () => {
-    for (const baustein of ["vorrat", "wochenplan", "notizen", "sport", "mails", "spendentopf"]) {
+    for (const baustein of ["vorrat", "wochenplan", "sport", "mails", "spendentopf"]) {
       const ctx = kontext();
       const res = rufe(ctx, "baustein_an", { baustein });
       expect(res.content).toMatch(/Kommt bald\./);
       expect(ctx.ops).toHaveLength(0);
       expect(ctx.wishes?.length).toBe(1);
     }
+  });
+
+  it("Notizen darf Mia einschalten (gehören zu 1.0)", () => {
+    expect(rufe(kontext(), "baustein_an", { baustein: "notizen" }).content).toMatch(/^Vorgemerkt: Notizen einschalten\./);
   });
 
   it("Unsere Rezepte darf Mia einschalten; Wochenplan löschen und Im Haus sind gesperrt", () => {

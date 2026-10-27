@@ -245,7 +245,7 @@ export function NotesTile({ name, size = "M" }: { name: string; size?: TileSize 
   return (
     <>
       <section className={`${TILE} flex min-h-[92px] flex-col gap-1 p-3.5`} aria-label="Notizen">
-        <Link href="/notizen" className="flex flex-col gap-0.5 pr-8" aria-label="Notizen öffnen">
+        <Link href="/notizen" className="flex min-h-11 flex-col gap-0.5 pr-8" aria-label="Notizen öffnen">
           <span className={HALF_LABEL}>
             <StickyNote className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
             Notizen
@@ -266,7 +266,7 @@ export function NotesTile({ name, size = "M" }: { name: string; size?: TileSize 
         {size !== "S" && pinned.length > 0 && (
           <div className="mt-0.5 flex flex-wrap gap-1.5" aria-label="Angeheftet">
             {pinned.slice(0, 6).map((n) => (
-              <Link key={n.id} href={`/notizen/bearbeiten?id=${n.id}`} className="inline-flex max-w-full items-center gap-1 rounded-full bg-tile-inner px-2.5 py-1 text-[12.5px] font-semibold">
+              <Link key={n.id} href={`/notizen/bearbeiten?id=${n.id}`} className="inline-flex min-h-[30px] max-w-full items-center gap-1 rounded-full bg-tile-inner px-2.5 py-1 text-[12.5px] font-semibold" data-zeile>
                 <Pin className="h-3 w-3 shrink-0 text-tile-accent" strokeWidth={2.25} aria-hidden />
                 <span className="truncate">{n.data.title}</span>
               </Link>

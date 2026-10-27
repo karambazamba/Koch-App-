@@ -4,6 +4,14 @@ Kurz: Notizen sind nur zum Festhalten – kein Termin, keine Aufgabe. Eine
 Notiz ist Text oder Liste. Die Schnellnotiz (früher „Kladde“) ist eine
 angeheftete Text-Notiz für schnelle Gedanken.
 
+**Launch 1.0 (seit v0.110.0):** Notizen gehören zu 1.0. Der Baustein ist
+standardmäßig an (`DEFAULT_ON` in `core/features.ts`, Speicher v4 schaltet
+ihn beim Update einmal ein, danach selbst abschaltbar), die Kachel steht für
+alle auf der Startseite (Startseite v5 setzt sie einmal ans Ende der
+sichtbaren). Mia legt mit „Schreib dir auf …“ / „Notiz: …“ wieder Notizen an;
+ist der Baustein aus, schaltet ihn das Anlegen wieder ein und Mia sagt, wo
+die Kachel steht.
+
 ## Wo im Code
 
 - Modell (rein): `src/lib/notizen/model.ts` (`createNote`, `upsertNote`,

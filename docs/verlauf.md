@@ -2502,3 +2502,11 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - „Testcode ändern“ unter Einstellungen → Mia. Schutz gegen Durchprobieren:
   5 Fehlversuche, dann 15 Minuten Pause (vorher 10 pro Stunde).
 
+## Notizen gehören zu Launch 1.0 (v0.110.0)
+
+- „notizen“ raus aus `LAUNCH_AUS`; Baustein standardmäßig an (Bausteine v4,
+  beim Update einmal an), Kachel für alle (Startseite v5, einmal ans Ende).
+- Mia: Notiz-Werkzeuge schreiben wieder, `baustein_an` „notizen“ geht; der
+  Prüfstand erwartet bei „Merk dir …“/„Notier dir …“ jetzt eine Notiz
+  (133 Sätze).
+
