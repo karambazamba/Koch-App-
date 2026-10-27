@@ -512,7 +512,6 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           spontan={spontan}
           market={market}
           kochidee={kochidee}
-          onTalk={() => (state === "zuhoeren" ? undefined : tapMia())}
           rules={rules}
           onSubmit={submit}
           onAsk={(text) => void ask(text)}

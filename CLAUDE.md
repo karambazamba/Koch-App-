@@ -196,6 +196,11 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   Leiste (`UEBER_LEISTE`). Jedes Gespräch auf EINER Bühne (`MiaStage`): Seite verschwommen
   dahinter, Gespräch oben, Mia groß im unteren Drittel (antippen = zuhören ↔
   fertig, „Lieber schreiben“), fliegt vom Knopf ein und dorthin zurück.
+  Auf der Bühne GENAU EINE antippbare Mia (die große); neben Mias Sätzen nur
+  das kleine Gesicht ohne Ring, ohne Pulsieren, nicht antippbar. Ring nur
+  beim Zuhören bzw. „Gleich schick ich’s ab“, nie im Warten, nie zwei
+  zugleich (`stageRing`, Test `begleitung/eineMia`). Vorschläge als Knöpfe
+  (weiß, Rand und Text Orange), nie als zweite Mia-Karte.
 - Bewegung sehr weich: 0,8–1,2 s, `cubic-bezier(.16,1,.3,1)`, nur
   transform/opacity, `prefers-reduced-motion` = nur Überblenden.
 - Knöpfe nie schwarz. Standard für neue Nutzer = Hell; Dunkel/Automatisch nur

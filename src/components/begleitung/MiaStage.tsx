@@ -13,7 +13,7 @@ import { CalendarDays, ChefHat, History, ListChecks, Pin, ShoppingCart, StickyNo
 import { StageSheet } from "@/components/ui/Sheet";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import type { AvatarZustand } from "@/lib/core/avatarState";
-import { STAGE_CENTER, STAGE_SIZE, type StageState } from "@/lib/begleitung/stage";
+import { STAGE_CENTER, STAGE_SIZE, stageRing, type StageState } from "@/lib/begleitung/stage";
 
 /** So lange fliegt Mia beim Schließen zurück an ihren Knopf */
 const CLOSE_MS = 800;
@@ -56,7 +56,7 @@ function flyBack() {
   window.setTimeout(() => (veil.remove(), ghost.remove()), CLOSE_MS);
 }
 
-/** Große Mia: Zustand, Wellen, Tonwelle, Satz darunter – ein Knopf (zuhören ↔ fertig) */
+/** Große Mia: Zustand, Ring (`stageRing`), Tonwelle, Satz darunter – die einzige antippbare Mia auf der Bühne (zuhören ↔ fertig) */
 export function StageMia({ state, size = STAGE_SIZE.big, hint, label, done = false, pause = false, onTap }: { state: StageState; size?: number; hint?: string; label: string; done?: boolean; /** Stille nach dem letzten Wort: Mia blinzelt, ein dünner Ring läuft ab, dann wird abgeschickt */ pause?: boolean; onTap: () => void }) {
   const ref = useRef<HTMLButtonElement>(null);
   const [flight, setFlight] = useState<string | undefined>(undefined);
@@ -70,6 +70,8 @@ export function StageMia({ state, size = STAGE_SIZE.big, hint, label, done = fal
     return () => cancelAnimationFrame(raf);
   }, []);
   const zustand = done ? "freuen" : AVATAR[state];
+  // Höchstens EIN Ring: Wellen beim Zuhören, beim Abschicken der ablaufende Ring, im Warten keiner
+  const ring = stageRing(state, pause);
   return (
     <div className="flex flex-col items-center gap-2" data-daneben>
       {state === "zuhoeren" && (
@@ -89,14 +91,14 @@ export function StageMia({ state, size = STAGE_SIZE.big, hint, label, done = fal
         className={`mia-flug relative rounded-full ${(state === "warten" || pause) && !done ? "mia-zwinkern" : ""} ${done ? "mia-huepfer" : ""}`}
         style={{ transform: flight, width: size, height: size }}
       >
-        {(state === "zuhoeren" || state === "warten") && (
+        {ring === "wellen" && (
           <>
-            <span className={`mia-wellen ${state === "warten" ? "ruhig" : ""}`} aria-hidden />
-            <span className={`mia-wellen zwei ${state === "warten" ? "ruhig" : ""}`} aria-hidden />
+            <span className="mia-wellen" aria-hidden data-ring />
+            <span className="mia-wellen zwei" aria-hidden />
           </>
         )}
         <BegleitungAvatar size={size} groesse="gross" zustand={zustand} />
-        {pause && (
+        {ring === "pause" && (
           // Ring konzentrisch: feste Größe (Mia + 2 × 8 px), Mitte = Mitte des Knopfs; Start oben, läuft im Uhrzeigersinn ab
           <svg
             className="mia-pause-ring pointer-events-none absolute"
@@ -104,6 +106,7 @@ export function StageMia({ state, size = STAGE_SIZE.big, hint, label, done = fal
             viewBox="0 0 100 100"
             aria-hidden
             data-pause-ring
+            data-ring
           >
             <circle cx="50" cy="50" r="48.5" fill="none" stroke="var(--app-accent)" strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinecap="round" pathLength="100" transform="rotate(-90 50 50)" />
           </svg>
@@ -143,7 +146,7 @@ export function StageTopic({ topic }: { topic?: string }) {
   );
 }
 
-/** Mias Blase mit kleiner Mia daneben (nur bei der ersten Blase einer Folge) */
+/** Mias Blase mit kleinem Gesicht daneben (nur bei der ersten Blase einer Folge) – ohne Ring, ohne Pulsieren, nicht antippbar */
 export function MiaBubble({ lead, children }: { lead: boolean; children: ReactNode }) {
   return (
     <div className="flex max-w-[92%] items-end gap-2 self-start">

@@ -1,17 +1,16 @@
 "use client";
 
 // Kochidee im Gespräch (Tafel 65): drei Vorschläge als Zeilen (Bild, Titel,
-// Minuten, Zutaten-Zeile, „Nehmen“), die einladende Mia-Karte („Ganz was
-// anderes?“ / „Passt nicht?“ – Mia selbst ist der Knopf, kein Pfeil, kein
-// Mikrofon) und das Ergebnis als Karussell zum Durchwischen (nächste Karte
-// schaut hervor, Punkte darunter, zuletzt „Noch was anderes?“).
+// Minuten, Zutaten-Zeile, „Nehmen“), darunter Vorschlags-Knöpfe („Oder
+// worauf hast du Lust?“ – keine zweite Mia, die große unten bleibt die
+// einzige antippbare) und das Ergebnis als Karussell zum Durchwischen
+// (nächste Karte schaut hervor, Punkte darunter, zuletzt „Noch was anderes?“).
 
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { Check } from "lucide-react";
-import { buttonClass, chipClass } from "@/components/ui/styles";
+import { Check, RefreshCw } from "lucide-react";
+import { SECTION_TITLE, buttonClass, chipClass } from "@/components/ui/styles";
 import { DishPicture } from "@/components/essen/DishPicture";
-import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { dishTone } from "@/lib/essen/dishLook";
 import { ingredientLine } from "@/lib/essen/kochtipp/idee";
 import type { CookCard } from "@/lib/essen/kochtipp/pick";
@@ -42,33 +41,24 @@ export function IdeaRow({ card, live, onTake }: { card: CookCard; live: boolean;
   );
 }
 
-/** Mia lädt ein: ganze Karte antippbar, Mia pulsiert und zwinkert */
-export function MiaInvite({ title, text, examples, onTalk, onExample }: { title: string; text: string; examples?: string[]; onTalk: () => void; onExample?: (text: string) => void }) {
+/**
+ * „Oder worauf hast du Lust?“ – Vorschlags-Knöpfe (weiß, Rand und Text
+ * Orange); ein Tipp schickt den Satz als eigene Nachricht ab. Keine zweite
+ * Mia: auf der Bühne ist nur die große Mia unten antippbar.
+ */
+export function IdeaSuggestions({ suggestions, onPick }: { suggestions: string[]; onPick: (text: string) => void }) {
+  if (!suggestions.length) return null;
   return (
-    <div className="flex flex-col gap-2">
-      <button type="button" onClick={onTalk} className="mia-einladen flex w-full items-center gap-3.5 rounded-card border border-accent/25 bg-accent-soft/60 p-3 text-left active:scale-[0.99]">
-        <span className="relative shrink-0 rounded-full shadow-float" aria-hidden>
-          <span className="mia-wellen" />
-          <span className="mia-wellen zwei" />
-          <span className="mia-zwinkern mia-atmet block">
-            <BegleitungAvatar size={60} groesse="gross" />
-          </span>
-        </span>
-        <span className="flex min-w-0 flex-col gap-0.5">
-          <span className="text-[16px] font-extrabold text-ink">{title}</span>
-          <span className="text-[14px] leading-snug text-muted">{text}</span>
-        </span>
-      </button>
-      {examples && onExample && (
-        <div className="flex flex-wrap gap-2">
-          {examples.map((e) => (
-            <button key={e} type="button" onClick={() => onExample(e)} className={chipClass(false)}>
-              „{e}“
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+    <section aria-label="Oder worauf hast du Lust?" className="flex flex-col gap-2 pt-1" data-vorschlaege>
+      <h3 className={SECTION_TITLE}>Oder worauf hast du Lust?</h3>
+      <div className="flex flex-wrap gap-2">
+        {suggestions.map((s) => (
+          <button key={s} type="button" onClick={() => onPick(s)} className={chipClass(false, "vorschlag")}>
+            {s}
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -137,7 +127,7 @@ export function IdeaCarousel({ cards, persons, live, onTake, onMore, onNavigate 
           <ResultCard key={c.title} card={c} persons={persons} onTake={() => live && onTake(c)} onNavigate={onNavigate} />
         ))}
         <button type="button" onClick={onMore} disabled={!live} className="flex w-[82%] shrink-0 snap-start flex-col items-center justify-center gap-3 rounded-card border border-dashed border-line-strong bg-surface p-6 text-center">
-          <BegleitungAvatar size={64} groesse="gross" />
+          <RefreshCw className="h-9 w-9 text-accent-strong" strokeWidth={2} aria-hidden />
           <span className="text-[17px] font-extrabold">Noch was anderes?</span>
           <span className="text-[14px] text-muted">Drei neue zu denselben Wünschen</span>
         </button>

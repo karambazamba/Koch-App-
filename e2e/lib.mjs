@@ -193,6 +193,30 @@ export function checker(prefix) {
   return { check, failed };
 }
 
+/**
+ * Auf der Bühne nur EINE Mia (Video 27.10.): höchstens ein sichtbarer Ring
+ * (Wellen beim Zuhören bzw. Ablauf-Ring beim Abschicken) und genau `mias`
+ * antippbare Mias (Knopf mit Mia-Gesicht, sichtbar, nicht abgeschaltet).
+ */
+export async function eineMia(page, check, wo, { mias = 1 } = {}) {
+  const r = await page.evaluate(() => {
+    const shown = (el) => {
+      const b = el.getBoundingClientRect();
+      if (!b.width || !b.height) return false;
+      for (let e = el; e; e = e.parentElement) {
+        const s = getComputedStyle(e);
+        if (s.visibility === "hidden" || s.display === "none" || Number(s.opacity) === 0 || s.pointerEvents === "none") return false;
+      }
+      return true;
+    };
+    const rings = [...document.querySelectorAll("[data-ring]")].filter(shown).length;
+    const tappable = [...document.querySelectorAll("button, a, [role=button]")].filter((b) => b.querySelector(".begleitung-avatar") && !b.disabled && shown(b)).length;
+    return { rings, tappable };
+  });
+  check(r.rings <= 1, `${wo}: höchstens ein Ring um Mia (${r.rings})`);
+  check(r.tappable === mias, `${wo}: ${mias === 1 ? "genau eine antippbare Mia" : `${mias} antippbare Mias`} (${r.tappable})`);
+}
+
 /** Schein-Mikrofon: jeder Versuch scheitert mit `window.__micError` */
 export const FAKE_MIC = () => {
   window.__micError = window.__micError || "not-allowed";

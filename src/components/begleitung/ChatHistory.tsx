@@ -19,9 +19,8 @@ import { ChatTurnItem } from "@/components/begleitung/ChatTurnItem";
 import { MiaBubble, OwnBubble, StageTopic } from "@/components/begleitung/MiaStage";
 import { useStickToBottom } from "@/components/begleitung/useStickToBottom";
 import { firstOfRun } from "@/lib/begleitung/stage";
-import { IdeaCarousel, IdeaRow, MiaInvite, StaysLine } from "@/components/essen/kochtipp/KochideeViews";
+import { IdeaCarousel, IdeaRow, IdeaSuggestions, StaysLine } from "@/components/essen/kochtipp/KochideeViews";
 import type { Kochidee } from "@/components/essen/kochtipp/useKochidee";
-import { IDEA_EXAMPLES } from "@/lib/essen/kochtipp/idee";
 import type { ChatState, ChatTurnView } from "@/components/begleitung/chatTypes";
 import { ProposalCard } from "@/components/begleitung/ProposalCard";
 import { AdjustSheet, EarlierIdeas, SpontanAnswer } from "@/components/begleitung/SpontanBoard";
@@ -54,8 +53,6 @@ type Props = {
   setAdjusting: (on: boolean) => void;
   spontan: SpontanChat;
   kochidee: Kochidee;
-  /** Mia-Karte in der Kochidee angetippt: Mia hört zu (bzw. Tippfeld bei Mikro aus) */
-  onTalk: () => void;
   market: ReturnType<typeof useMarketChat>;
   rules: (t: string) => boolean;
   onSubmit: (text: string) => void;
@@ -81,7 +78,7 @@ type Props = {
 /** Mia stellt sich nie vor: „Was steht an?“, morgens (5–11 Uhr) „Moin! Was steht an?“ */
 export const greetingText = (hour: number, minute = 0) => (hour >= 22 || hour < 6 ? miaSatz("nachtWach", null, () => (minute % 4) / 4) : hour >= 5 && hour < 11 ? "Moin! Was steht an?" : "Was steht an?");
 
-export function ChatHistory({ scrollRef, inputRef, status, data, voice, codeLater, onCodeLater, chat, setChat, busy, streaming, speakingId, tipsOn, adjusting, setAdjusting, spontan, kochidee, onTalk, market, rules, onSubmit, onAsk, onApply, onClose, from = 0, showGreeting = true, topic, heard, heardWaits = false, waiting = "", children }: Props) {
+export function ChatHistory({ scrollRef, inputRef, status, data, voice, codeLater, onCodeLater, chat, setChat, busy, streaming, speakingId, tipsOn, adjusting, setAdjusting, spontan, kochidee, market, rules, onSubmit, onAsk, onApply, onClose, from = 0, showGreeting = true, topic, heard, heardWaits = false, waiting = "", children }: Props) {
   const { ideasFor, stockFor, headingFor, speechFor, takeIdea, moreIdeas, adjusting2, setAdjusting2, applyFilters, acceptUnsure } = spontan;
   // Offene Ideen-Antwort (die letzte, solange Spontan kochen läuft) und eingeklappte frühere
   const spontanIndexes = chat.turns.flatMap((t, i) => (t.spontan ? [i] : []));
@@ -154,7 +151,7 @@ export function ChatHistory({ scrollRef, inputRef, status, data, voice, codeLate
             }
             if (turn.idea) {
               const idea = turn.idea;
-              // Nur die neueste Kochidee ist lebendig (Knöpfe, Mia-Karte)
+              // Nur die neueste Kochidee ist lebendig (Knöpfe, Vorschläge)
               const live = chat.kochtipp != null && i === chat.turns.map((t) => Boolean(t.idea)).lastIndexOf(true);
               const session = chat.kochtipp;
               return (
@@ -166,14 +163,14 @@ export function ChatHistory({ scrollRef, inputRef, status, data, voice, codeLate
                       {idea.cards.map((c) => (
                         <IdeaRow key={c.title} card={c} live={live} onTake={() => kochidee.take(c, session)} />
                       ))}
-                      {live && <MiaInvite title="Ganz was anderes?" text="Sag mir, was du hast oder worauf du Lust hast." examples={IDEA_EXAMPLES} onTalk={onTalk} onExample={onSubmit} />}
+                      {live && <IdeaSuggestions suggestions={idea.suggest ?? []} onPick={onSubmit} />}
                     </>
                   ) : (
                     <>
                       {idea.keywords && idea.keywords.length > 0 && <p className="ml-11 self-start rounded-full bg-fill px-3 py-1 text-[13px] font-semibold text-muted">{idea.keywords.join(" · ")}</p>}
                       {idea.cards.length > 0 && <IdeaCarousel cards={idea.cards} persons={idea.persons ?? 2} live={live} onTake={(c) => kochidee.take(c, session, idea.persons)} onMore={() => session && kochidee.more(session)} onNavigate={onClose} />}
                       {idea.remembered && <p className="text-[13px] font-semibold text-good-ink">{idea.remembered}</p>}
-                      {live && <MiaInvite title="Passt nicht?" text="Sag’s mir einfach oder wisch weiter." onTalk={onTalk} />}
+                      {live && <IdeaSuggestions suggestions={idea.suggest ?? []} onPick={onSubmit} />}
                     </>
                   )}
                 </div>

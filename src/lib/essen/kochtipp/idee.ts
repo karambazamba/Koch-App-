@@ -228,9 +228,6 @@ export const rememberedText = (have: string[]) => (have.length ? `${list(have.sl
 
 const list = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} und ${xs[xs.length - 1]}`);
 
-/** Beispiel-Sätze unter der Mia-Karte */
-export const IDEA_EXAMPLES = ["Ich hab Hähnchen gekauft", "Was mit Kürbis"];
-
 /**
  * „Nehmen“ – überall gleich: frei → Abendessen heute (nach dem Abendessen:
  * morgen); geplant → ersetzt das Gericht von heute, das alte wandert zurück

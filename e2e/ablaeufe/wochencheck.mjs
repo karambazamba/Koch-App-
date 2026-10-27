@@ -2,7 +2,7 @@
 // eigenes Fenster → erzählen (hier getippt) → „Fertig“ → „Deine Woche“ →
 // Frage beantworten, Raum ändern, einen Punkt weglassen → „Alles übernehmen“
 // → Kalender; ein Rückgängig nimmt alles zurück. Zeit: Mi 21.10. 10:30.
-import { hello, miaTippen, seedFamily, store } from "../lib.mjs";
+import { eineMia, hello, miaTippen, seedFamily, store } from "../lib.mjs";
 
 const TAFEL = "Also, ähm, diese Woche … Dienstag haben wir Elternabend, halb acht glaub ich. Mittwoch muss ich das Paket zur Post bringen. Donnerstag 10 Uhr Meeting mit dem Lieferanten. Samstag hat Mathis noch ein Spiel, äh, keine Ahnung wann.";
 const entries = async (page) => (await store(page, "wasgibts.eintraege")).entries;
@@ -25,6 +25,7 @@ export const wochencheck = async (page, check) => {
   // Dieselbe Bühne wie jedes Gespräch: Mia unten, „Lieber schreiben“
   check(await sheet.getByRole("button", { name: "Frage einsprechen" }).isVisible(), "Mia unten auf der Bühne");
   check(await sheet.getByText("WOCHENCHECK", { exact: true }).isVisible(), "Bereichs-Kopf „WOCHENCHECK“");
+  await eineMia(page, check, "Wochencheck");
   await sheet.getByRole("button", { name: "Lieber schreiben" }).click();
 
   // Erzählen (getippt) → „Ich hab schon“

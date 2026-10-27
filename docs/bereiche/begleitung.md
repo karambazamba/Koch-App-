@@ -489,8 +489,18 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 - Zustände (`stageState`, automatisch): hört zu (Mund offen, zwei Kreise,
   Tonwelle darüber, „Fertig? Einfach Mia antippen“) · überlegt (Augen nach
   oben, drei Punkte) · spricht (Mund beim Vorlesen bzw. beim Erscheinen der
-  Antwort) · wartet (atmet, zwinkert alle ~5 s, ruhige Einlade-Kreise, „Tipp
-  mich an, wenn du noch was hast“). Mia antippen = zuhören ↔ fertig
+  Antwort) · wartet (zwinkert alle ~5 s, kein Ring, „Tipp mich an, wenn du
+  noch was hast“). Ring höchstens EINER (`stageRing`): Wellen nur beim
+  Zuhören, in der Stille vor dem Abschicken („Gleich schick ich’s ab“) nur
+  der ablaufende Ring, sonst keiner.
+- Nur EINE Mia auf der Bühne (Video 27.10.): antippbar ist nur die große Mia
+  unten (`StageMia`, `data-buehne-mia`). Neben Mias Sätzen nur das kleine
+  Gesicht (36 px) ohne Ring, ohne Pulsieren, nicht antippbar; keine
+  Karte mit zweiter Mia (Kochidee: Vorschlags-Knöpfe „Oder worauf hast du
+  Lust?“). Tests `tests/begleitung/eineMia.test.ts` (Quelltext: Ringe nur in
+  `MiaStage`, kein Mia-Gesicht in einem Knopf der Bühnen-Teile), Durchklick
+  `eineMia()` in `kochtipp`, `eineMiaBuehnen` (Supermarkt, Rezept,
+  Kochmodus) und `wochencheck`. Mia antippen = zuhören ↔ fertig
   (`stageTap`). Nach Mias Antwort wartet sie; nur bei einer Rückfrage mit
   Knöpfen hört sie nach dem Vorlesen kurz mit (8 s).
 - „Lieber schreiben“ unter Mia: das Feld kommt, Mia wird klein (64 px) und

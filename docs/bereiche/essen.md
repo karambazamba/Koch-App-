@@ -327,9 +327,17 @@ Ideen“. Verschwindet mit dem ersten eigenen Gericht oder dem Beispiel-Tag.
   damit? … hast du noch.“; bei geplantem Gericht gestrichelt „… – bleibt,
   wenn du nichts nimmst“. Zeilen mit Bild, Minuten, „alles im Haus“ (grün)
   bzw. „auf die Liste: …“ und „Nehmen“ (`KochideeViews.tsx`).
-- Darunter die Mia-Karte „Ganz was anderes?“ (Mia pulsiert, atmet, zwinkert;
-  kein Pfeil, kein Mikrofon) mit zwei Beispiel-Sätzen. Antippen = Mia hört
-  zu (Mikro aus → Tippfeld).
+- Darunter „Oder worauf hast du Lust?“ mit 3–4 Vorschlags-Knöpfen (weiß,
+  Rand und Text Orange, `chipClass(false, "vorschlag")`; `IdeaSuggestions`):
+  passend zu Vorrat (bald Verbrauchendes bzw. Neuestes „Was mit …“, sonst
+  „Ich hab Hähnchen gekauft“), Jahreszeit („Was mit Kürbis“ im Herbst,
+  Spargel/Zucchini/Grünkohl …), Tageszeit (mittags/abends „Was Schnelles“,
+  sonst deftig bzw. leicht) und „Ohne Fleisch“ – nur, was etwas Neues bringt
+  und mindestens drei Gerichte findet (`ideaSuggestions` in
+  `kochtipp/vorschlaege.ts`, beim Erzeugen der Antwort in `idea.suggest`
+  gespeichert). Ein Tipp schickt den Satz als eigene Nachricht ab. Die
+  frühere Karte „Ganz was anderes?“ mit zweiter pulsierender Mia ist weg
+  (Video 27.10.): auf der Bühne ist nur die große Mia unten antippbar.
 - Erzähltes (`parseIdeaTalk`): Zutaten („Ich hab Hähnchen gekauft“, auch kurz
   „Hähnchen gekauft“ bzw. „Grad Hähnchen geholt“ wie im Clip, „Paprika
   und Sahne sind noch da“) → „im Haus“ (mit Vorrat-Baustein in den Vorrat,
@@ -338,15 +346,20 @@ Ideen“. Verschwindet mit dem ersten eigenen Gericht oder dem Beispiel-Tag.
   „lieber ohne Sahne“, „nicht schon wieder Hähnchen“, „für 3“. Ergebnis:
   „Dann mach doch …!“, Stichworte, Karussell mit drei Gerichten (nächste
   Karte schaut hervor, Punkte, Zutaten-Chips mit ✓, „Rezept ansehen“,
-  „Nehmen“), zuletzt „Noch was anderes?“, darunter „Passt nicht?“. Neues
-  Erzähltes ergänzt das Alte (`mergeTalk`). Alles ohne KI.
+  „Nehmen“), zuletzt „Noch was anderes?“ (Linien-Symbol, keine Mia),
+  darunter wieder „Oder worauf hast du Lust?“. Neues
+  Erzähltes ergänzt das Alte (`mergeTalk`). Auf einen Vorschlag antwortet
+  Mia mit kurzem Satz + drei neuen Karten (`ideaReply`: „Kürbis geht immer
+  im Herbst:“, „Geht fix:“, „Ganz ohne Fleisch:“, „Schön deftig:“; wer
+  erzählt, was da ist, bekommt weiter „Dann mach doch …!“). Alles ohne KI.
 - „Nehmen“ (`takeOutcome`): frei → Abendessen heute (nach dem Abendessen:
   morgen); geplant → ersetzt das heutige, das alte steht wieder bei den
   Ideen (als Wunsch); Fehlendes auf die Liste; Meldung „Eingetragen. …
   steht auf der Liste.“ mit Rückgängig.
 - Nichts davor: kein Mikro beim Öffnen, kein Hilfefenster, kein Zugangscode.
 - Tests: `tests/essen/kochidee.test.ts`, `tests/essen/kochtipp.test.ts`,
-  Durchklick `kochtipp` und `muetzeBeispielTag`.
+  `tests/essen/vorschlaege.test.ts`, `tests/begleitung/eineMia.test.ts`,
+  Durchklick `kochtipp`, `eineMiaBuehnen` und `muetzeBeispielTag`.
 
 ### Rezept-Links an Mia (Einkauf Teil B, v0.86.0)
 - Ein Link im Gespräch (fast nur der Link, kein Kalender-Link,

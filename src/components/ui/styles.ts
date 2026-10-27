@@ -41,9 +41,10 @@ export const ICON_BUTTON =
  * Antippbarer Chip; ausgewählt in der Akzentfarbe ("danger" nur für Allergien).
  * "muted" = unsicherer Eintrag (grau, gestrichelt), z. B. "Meintest du …?".
  */
-export function chipClass(selected = false, tone: "accent" | "danger" | "muted" = "accent"): string {
+export function chipClass(selected = false, tone: "accent" | "danger" | "muted" | "vorschlag" = "accent"): string {
   const active = tone === "danger" ? "border-danger-line bg-danger-soft text-danger" : "border-accent bg-accent-soft text-accent-strong";
-  const idle = tone === "muted" ? "border-dashed border-line-strong bg-fill text-muted" : "border-line bg-surface text-ink";
+  // „vorschlag“: Satz zum Antippen (weiß, Rand und Text Orange) – klar als Knopf erkennbar
+  const idle = tone === "muted" ? "border-dashed border-line-strong bg-fill text-muted" : tone === "vorschlag" ? "border-accent bg-surface text-accent-strong" : "border-line bg-surface text-ink";
   return `hit inline-flex min-h-10 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[15px] font-semibold transition active:scale-95 ${
     selected ? active : idle
   }`;
