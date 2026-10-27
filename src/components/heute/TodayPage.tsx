@@ -508,7 +508,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
           {!editing.on && demoDay.tiles.length > 0 && <DemoRow ask={demoDay.ask} />}
 
           <div className={arrive ? "tiles-arrive" : undefined}>
-            <HomeBoard tiles={visible} all={all} editing={editing.on} render={renderTile} hrefFor={tileHref} picking={picking} onPicking={setPicking} glow={editing.on ? null : denkt.glow} />
+            <HomeBoard tiles={visible} all={all} editing={editing.on} render={renderTile} hrefFor={tileHref} picking={picking} onPicking={setPicking} glow={editing.on ? null : denkt.glow} vorstellen={denkt.vorstellung} />
           </div>
 
           {timerOpen && (

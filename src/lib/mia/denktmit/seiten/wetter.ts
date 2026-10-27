@@ -2,6 +2,6 @@
 
 export const WETTER = {
   kachel: "Das ist das Wetter für deinen Ort. Ich sag Bescheid, wenn’s zu deinen Plänen passt.",
-  seite: "Hier siehst du das Wetter der nächsten Tage. Regen zu einem Termin sag ich dir vorher.",
+  seite: "Hier siehst du das Wetter für die nächsten Tage. Regnet’s zu einem Termin, sag ich vorher Bescheid.",
   href: "/wetter",
 } as const;

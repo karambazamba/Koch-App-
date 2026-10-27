@@ -111,8 +111,15 @@ export const imHausEssen = async (page, check) => {
   await page.reload();
   await page.waitForTimeout(1200);
   const panel = page.locator("[role=tabpanel]:not([inert])");
-  const besuch = page.locator('[data-erster-besuch="seite:essen-imhaus"]');
-  check(await besuch.getByText("Sag mir, was im Kühlschrank ist, dann koch ich mit dir spontan.").isVisible(), "Mia stellt „Im Haus“ beim ersten Besuch vor");
+  const besuch = page.locator('[data-tipp="seite:essen-imhaus"]');
+  check(await besuch.getByText("Sag mir, was im Kühlschrank ist. Dann koch ich spontan was mit dir.").isVisible(), "Mia stellt „Im Haus“ beim ersten Besuch vor");
+  // Tafel 101: direkt unter dem Titel „Essen“ im Seitenfluss, nicht schwebend
+  const lage = await besuch.evaluate((el) => {
+    const h1 = el.closest("[role=tabpanel]").querySelector("h1").getBoundingClientRect();
+    const naechstes = el.nextElementSibling?.getBoundingClientRect();
+    return { fixed: getComputedStyle(el).position === "fixed", unterTitel: el.getBoundingClientRect().top >= h1.bottom - 1, ueberInhalt: !naechstes || el.getBoundingClientRect().bottom <= naechstes.top + 1, direkt: el.previousElementSibling?.tagName === "H1" };
+  });
+  check(!lage.fixed && lage.unterTitel && lage.ueberInhalt && lage.direkt, `Tipp unter dem Titel, über dem Inhalt (${JSON.stringify(lage)})`);
   await besuch.getByRole("button", { name: "Alles klar" }).tap();
   const bereich = panel.getByRole("region", { name: "Im Haus" });
   await bereich.evaluate((el) => el.scrollIntoView({ block: "center" }));

@@ -33,6 +33,20 @@ export function rowsOf(units: Unit[]): Unit[][] {
   return rows;
 }
 
+/**
+ * Mia stellt eine Kachel vor (Tafel 101): steht sie in dieser Reihe, kommt der
+ * Tipp direkt unter die Reihe, der Pfeil zeigt auf die Kachel – links/rechts
+ * bei halben Kacheln (zwei S, Essen + Einkauf, eine einzelne S), sonst mittig.
+ */
+export function pfeilZu(row: Unit[], id: HomeTileId): "links" | "mitte" | "rechts" | null {
+  const at = row.findIndex((u) => u.tiles.some((t) => t.id === id));
+  if (at < 0) return null;
+  if (row.length === 2) return at === 0 ? "links" : "rechts";
+  const unit = row[0];
+  if (unit.tiles.length === 2) return unit.tiles[0].id === id ? "links" : "rechts";
+  return unit.tiles[0].size === "S" ? "links" : "mitte";
+}
+
 /** Nach dem Hinzufügen: zur neuen Kachel scrollen und sie kurz sanft aufleuchten lassen */
 export function glowTile(id: HomeTileId) {
   let tries = 0;

@@ -165,10 +165,11 @@ export function HomePager({ data }: { data: HomeData }) {
   const content = (t: HomeTab) => {
     if (!ready) return t === tab ? <div className={`${CARD} h-48 animate-pulse`} /> : null;
     if (t === "heute") return <TodayPage data={data} entries={entries} minutes={minutes} realMinutes={realMinutes} onOpenFood={() => go("essen")} />;
-    // Kalender und Essen: großer Titel oben, kein Zurück (Hauptseiten)
+    // Kalender und Essen: großer Titel oben, kein Zurück (Hauptseiten); darunter beim ersten Besuch Mias Tipp
     return (
       <>
         <h1 className="pt-1 text-[30px] font-extrabold leading-tight tracking-tight">{t === "kalender" ? "Kalender" : "Essen"}</h1>
+        {t === tab && <ErsterBesuch seite={seiteFuerTab(t)} />}
         {t === "kalender" ? <CalendarPage today={data.todayIso} entries={entries} /> : <FoodPage data={data} minutes={minutes} />}
       </>
     );
@@ -202,7 +203,6 @@ export function HomePager({ data }: { data: HomeData }) {
           );
         })}
       </main>
-      {tab !== "heute" && <ErsterBesuch seite={seiteFuerTab(tab)} />}
     </>
   );
 }

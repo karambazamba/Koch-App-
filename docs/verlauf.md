@@ -2786,3 +2786,24 @@ Fehler in `docs/aufraeumen-nachher.md`.
   heute: …“; die KI bekommt eine Zeile dazu) nutzen dieselbe Logik
   (`kalender/mitwandern.ts`). Nichts wird verschoben, um Mitternacht rutscht
   alles still wie bisher.
+
+## Seiten-Tipps oben statt unten (v0.133.0)
+
+- Fehler (Screenshot 27.10. 21:22): der Erster-Besuch-Tipp von „Mia denkt
+  mit“ schwebte als weiße Karte unten rechts über der Liste, ohne Mia-Gesicht,
+  wurde übersehen und verdeckte Inhalt.
+- Alle Seiten-Tipps stehen jetzt direkt unter dem Seitentitel im normalen
+  Seitenfluss (EINE Karte `begleitung/denktmit/SeitenTipp.tsx`): warmer
+  Verlauf wie die Jetzt-Karte, feiner orange Rand, kleines Mia-Gesicht ohne
+  Ring, „MIA“ in Orange, 1–2 Sätze; „Alles klar“ gleitet weich nach oben weg,
+  „Zeig mal“ nur mit echter Aktion (Einkauf → „Meine Läden“). Unterseiten
+  über `PageHeader`, Kalender/Essen unter ihrem Titel; die schwebende Karte
+  aus `KitchenHelper` ist weg.
+- „Mia stellt vor“ auf der Startseite steht direkt unter der vorgestellten
+  Kachel mit Pfeil zur Kachel (statt unter der Jetzt-Karte); „Alles klar“
+  statt „Später“.
+- Texte: Aufgaben „Hier steht, was ansteht. Was heute nicht klappt, nehm ich
+  mit auf morgen.“; Einkauf, Essen, Notizen, Termine, Wetter auf zwei kurze,
+  gesprochene Sätze ohne Fachwort gebracht.
+- Tests: `tests/mia/seitenTipp.test.ts`; Durchklick `ersterBesuchKarte` und
+  `imHausEssen` prüfen die Lage unter dem Titel.

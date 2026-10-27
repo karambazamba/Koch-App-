@@ -241,7 +241,7 @@ export function ShoppingListView() {
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
-      <PageHeader title="Einkaufsliste" action={<QuickAddButton weekStart={data.weekStart} settings={data.settings} shop={selectedShop} onMore={setCatalogOpen} className="-mr-1.5" />} />
+      <PageHeader title="Einkaufsliste" tippZeigMal={() => setShopsOpen(true)} action={<QuickAddButton weekStart={data.weekStart} settings={data.settings} shop={selectedShop} onMore={setCatalogOpen} className="-mr-1.5" />} />
       <main className={PAGE_MAIN}>
         {data.planning && <WochenZeile isNext={isNext} range={range} onPrev={() => setChoice("current")} onNext={() => setChoice("next")} />}
 
