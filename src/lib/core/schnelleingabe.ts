@@ -92,18 +92,18 @@ export function whenChip(when: When | null, today: string): string | null {
 export type QuickChip = { id: "tag" | "raum"; label: string; room?: Room };
 
 /** Live-Chips unter dem Feld (leer bei Einkauf, Notiz, Pinnwand) */
-export function quickChips(read: QuickRead, today: string): QuickChip[] {
+export function quickChips(read: QuickRead, today: string, familie = "Familie"): QuickChip[] {
   if (read.kind === "termin") {
     const day = dayWord(read.date, today);
     return [
       { id: "tag", label: read.time ? `${day} · ${timeLabel(read.time)}` : `${day} · ganztägig` },
-      { id: "raum", label: read.room === "arbeit" ? "Arbeit" : "Familie", room: read.room },
+      { id: "raum", label: read.room === "arbeit" ? "Arbeit" : familie, room: read.room },
     ];
   }
   if (read.kind === "aufgabe") {
     const day = whenChip(read.when, today);
     const time = read.time ? ` · ${timeLabel(read.time)}` : "";
-    return [...(day ? [{ id: "tag" as const, label: `${day}${time}` }] : []), { id: "raum", label: read.room === "arbeit" ? "Arbeit" : "Familie", room: read.room }];
+    return [...(day ? [{ id: "tag" as const, label: `${day}${time}` }] : []), { id: "raum", label: read.room === "arbeit" ? "Arbeit" : familie, room: read.room }];
   }
   return [];
 }

@@ -1,24 +1,21 @@
 "use client";
 
-// Erster Start, Bildschirm 3 (nach „Bevor’s losgeht“): Mia sagt kurz, wie’s
-// losgeht. Mia (110 px) oben, zwinkert einmal beim Erscheinen; darunter eine
-// weiße Sprechblase (Spitze zu Mia) mit Überschrift und drei Zeilen (Linien-
-// Icons in runden hellorangen Kreisen, „erzählen“ = Mia als Umriss), unten „Zeig mal“ und leise der Satz
-// zu den Beispielen. Nur beim allerersten Start (Hallo → „Los geht’s“), wer
-// über Anmelden oder eine Einladung kommt, sieht ihn nicht.
+// Erster Start, Bildschirm 3 (nach „Bevor’s losgeht“): Mia für alle. Mia
+// (110 px) oben, zwinkert einmal beim Erscheinen; darunter eine weiße
+// Sprechblase (Spitze zu Mia) mit „Kein Stress. Ich sortier deinen Alltag,
+// Stück für Stück.“ und der Frage „Für wen soll ich sortieren?“: drei
+// gleichwertige Knöpfe, nichts vorausgewählt, ein Tipp = weiter zum
+// Beispiel-Tag (passend zur Antwort). Nur beim allerersten Start (Hallo →
+// „Los geht’s“), wer über Anmelden oder eine Einladung kommt, sieht ihn nicht.
 
-import { useRef, type ComponentType } from "react";
-import { Eye, Plus } from "lucide-react";
-import { MiaLineIcon } from "@/components/ui/MiaLineIcon";
+import { useRef } from "react";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { ERSTER_START } from "@/lib/mia/persona";
+import { HAUSHALT_WAHL, type Haushalt } from "@/lib/core/haushalt";
 import { helperName } from "@/lib/einstellungen/profile";
 
-/** Linien-Icons im hellorangen Kreis; „erzählen“ = Mia selbst als Umriss */
-const ICONS: Record<(typeof ERSTER_START.zeilen)[number]["id"], ComponentType<{ className?: string; strokeWidth?: number }>> = { ansehen: Eye, eintragen: Plus, erzaehlen: MiaLineIcon };
-
-/** `onDone(rect)`: Mias Platz, damit sie von hier zum Mia-Knopf fliegt */
-export function ZeigMalStep({ onDone }: { onDone: (mia: DOMRect | null) => void }) {
+/** `onDone(rect, haushalt)`: Mias Platz, damit sie von hier zum Mia-Knopf fliegt */
+export function ZeigMalStep({ onDone }: { onDone: (mia: DOMRect | null, haushalt: Haushalt) => void }) {
   const mia = useRef<HTMLSpanElement>(null);
   return (
     <section className="erster-start-in fixed inset-0 z-50 overflow-y-auto bg-background" aria-labelledby="zeigmal-titel" data-zeigmal>
@@ -33,29 +30,17 @@ export function ZeigMalStep({ onDone }: { onDone: (mia: DOMRect | null) => void 
             <h1 id="zeigmal-titel" className="relative text-[20px] font-extrabold leading-snug tracking-tight">
               {ERSTER_START.titel}
             </h1>
-            <ul className="relative mt-4 flex flex-col gap-3">
-              {ERSTER_START.zeilen.map((z) => {
-                const Icon = ICONS[z.id];
-                return (
-                  <li key={z.id} className="flex items-center gap-3 text-[16px] font-semibold leading-snug">
-                    <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent-strong">
-                      <Icon className="h-5 w-5" strokeWidth={2} />
-                    </span>
-                    <span>
-                      {z.vor}
-                      {z.hervor && <span className="whitespace-nowrap text-accent-strong">{z.hervor}</span>}
-                      {z.nach}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
+            <p id="zeigmal-frage" className="relative mt-3 text-[16px] font-semibold text-muted">
+              {ERSTER_START.frage}
+            </p>
           </div>
         </div>
-        <div className="mt-6 flex w-full flex-col items-center gap-2">
-          <button type="button" onClick={() => onDone(mia.current?.getBoundingClientRect() ?? null)} className="h-14 w-full rounded-field bg-accent text-[17px] font-bold text-on-accent active:scale-[0.98]">
-            {ERSTER_START.knopf}
-          </button>
+        <div className="mt-6 flex w-full flex-col items-center gap-2" role="group" aria-labelledby="zeigmal-frage" data-haushalt-wahl>
+          {HAUSHALT_WAHL.map((w) => (
+            <button key={w.value} type="button" onClick={() => onDone(mia.current?.getBoundingClientRect() ?? null, w.value)} className="h-14 w-full rounded-field border-2 border-accent bg-surface text-[17px] font-bold text-accent-strong active:scale-[0.98]">
+              {w.label}
+            </button>
+          ))}
           <p className="text-center text-[13px] text-muted">{ERSTER_START.leise}</p>
         </div>
       </div>

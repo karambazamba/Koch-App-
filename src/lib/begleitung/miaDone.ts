@@ -2,7 +2,7 @@
 // erledigt hat (Einkauf, Termin, Aufgabe, Pinnwand, Notiz, Im Haus). Steht
 // oben in „Dein Tag“, jeder Punkt antippbar; „Rückgängig“ geht, solange die
 // App offen ist (die Rücknahme lebt nur im Arbeitsspeicher). Ältere Tage
-// fallen still weg. Auch Grundlage für Platz 12 („Familienmanagerin“).
+// fallen still weg. Auch Grundlage für Platz 12 („persönliche Assistentin“).
 
 import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";

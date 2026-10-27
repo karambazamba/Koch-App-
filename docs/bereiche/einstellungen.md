@@ -191,9 +191,29 @@ anfangen).
 ### Erster Start
 
 - Seit v0.94 keine Look-Frage mehr: „Los geht’s“ → („Bevor’s losgeht“) →
-  „Zeig mal“ (`ZeigMalStep`) → `startFresh("farbig")`: `startState()` (Mia,
-  Termine/Essen/Einkauf, „mal so, mal so“), Profil daraus, `DEFAULT_HOME`,
-  `startDemo()`. Sonst keine Fragen.
+  „Für wen soll ich sortieren?“ (`ZeigMalStep`, seit v0.120) →
+  `startFresh("farbig", haushalt)`: `startState()` (Mia,
+  Termine/Essen/Einkauf, „mal so, mal so“), Profil daraus mit
+  `householdType` (single/paar/familie), `DEFAULT_HOME` (allein: Pinnwand
+  aus), `startDemo()`. Sonst keine Fragen.
+
+### Mia für alle (v0.120)
+
+- Haushaltsart = Profil `householdType` (gab es schon, keine Migration):
+  `core/haushalt.ts` (`haushaltOf`, `raumName`, `einladenKnopf`,
+  `teilenSatz`, `zuZweitVorschlag`), Hooks `useHaushalt`, `useRaumName`,
+  `useEinladenKnopf` (`einstellungen/useHaushalt.ts`).
+- Bereich: allein „Privat“, zu zweit/WG „Wir“, Familie „Familie“ (intern
+  „familie“, Arbeit bleibt „Arbeit“). Einladen: „Jemanden dazuholen“ /
+  „Partner einladen“ / „Familie einladen“.
+- Voreinstellungen: allein ohne Pinnwand-Kachel (zuschaltbar), zu zweit und
+  Familie wie bisher. Beispiel-Tag je Art und Wochentag (`demoDay(date,
+  haushalt)`).
+- Aus „allein“ werden zwei (Konto mit zwei Mitgliedern): einmal die Karte
+  „Seid ihr zu zweit? Dann heißt der Bereich ‚Wir‘.“ (Einmal-Hinweis
+  `zu-zweit`). Ändern jederzeit unter Einstellungen → Haushalt.
+- Mia ist „deine persönliche Assistentin“ (Leitsatz „Ich sortier deinen
+  Alltag.“), Store-Text in `docs/app/store-angaben.md`.
 - „Lieber schlicht?“ (Farbig · Schlicht): einmal ab dem 3. Tag, nur im Look
   Farbig, im Platz der Hinweise unter der Jetzt-Karte (`DarkTip`, Merker
   `look` in `wasgibts.dunkeltipp`); erst danach der Dunkel-Tipp, nie beide.

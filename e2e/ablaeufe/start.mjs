@@ -5,13 +5,13 @@ export const hallo = async (page, check) => {
   await page.goto(BASE);
   const hi = await page.getByRole("heading", { name: "Moin, ich bin Mia." }).waitFor({ timeout: 5000 }).then(() => true, () => false);
   check(hi, "Hallo-Bildschirm „Moin, ich bin Mia.“");
-  // Zustimmung ist hier schon erteilt (Testseite) → direkt Bildschirm 3: Mia sagt, wie’s losgeht
+  // Zustimmung ist hier schon erteilt (Testseite) → direkt Bildschirm 3: „Für wen soll ich sortieren?“
   await page.getByRole("button", { name: "Los geht’s" }).click();
-  const zeig = page.getByRole("button", { name: "Zeig mal" });
-  check(await zeig.waitFor({ timeout: 4000 }).then(() => true, () => false), "nach „Los geht’s“: „Zeig mal“");
-  check(await page.getByRole("heading", { name: "Kein Stress. Ich zeig dir alles Stück für Stück." }).isVisible(), "Überschrift in der Sprechblase");
-  for (const t of ["Beispiel-Tag", "Eigenes mit ＋ eintragen", "Oder mich antippen und erzählen", "Die Beispiele verschwinden, sobald du Eigenes einträgst."]) check(await page.getByText(t, { exact: false }).first().isVisible(), `„${t}“`);
-  check((await page.locator("[data-zeigmal] li > span:not([aria-hidden]) .text-accent-strong").first().innerText()) === "Beispiel-Tag", "„Beispiel-Tag“ in Orange");
+  const zeig = page.getByRole("button", { name: "Für die Familie" });
+  check(await zeig.waitFor({ timeout: 4000 }).then(() => true, () => false), "nach „Los geht’s“: „Für wen soll ich sortieren?“");
+  check(await page.getByRole("heading", { name: "Kein Stress. Ich sortier deinen Alltag, Stück für Stück." }).isVisible(), "Überschrift in der Sprechblase");
+  for (const t of ["Für wen soll ich sortieren?", "Nur für mich", "Für uns zwei", "Für die Familie", "Passt den Beispiel-Tag an. Später jederzeit änderbar."]) check(await page.getByText(t, { exact: true }).first().isVisible(), `„${t}“`);
+  check((await page.locator("[data-haushalt-wahl] button[aria-pressed=true]").count()) === 0, "nichts vorausgewählt");
   check((await page.locator("[data-zeigmal] .mia-zwinkern-einmal").count()) === 1, "Mia zwinkert einmal");
   check(!(await page.getByRole("heading", { name: "Wie magst du’s?" }).count()), "keine Look-Frage mehr");
   // Zurück-Geste geht einen Schritt zurück, dann wieder vor
@@ -33,7 +33,7 @@ export const hallo = async (page, check) => {
   check(!(await page.locator("[data-zeigmal], [data-zustimmung]").count()) && !(await page.getByRole("button", { name: "Los geht’s" }).count()), "Zurück auf der Startseite: kein Hallo-Schritt");
 };
 
-/** Erster Start ganz neu (ohne Zustimmung): genau 3 Bildschirme mit je 1 Knopf, dann Beispiel-Tag; auf dem iPhone SE passt die Sprechblase ohne Scrollen */
+/** Erster Start ganz neu (ohne Zustimmung): genau 3 Bildschirme (der dritte mit der Frage „Für wen?“), dann Beispiel-Tag; auf dem iPhone SE passt die Sprechblase ohne Scrollen */
 export const ersterStart = async (page, check, device) => {
   for (const name of [device, "iPhone SE"]) {
     const p = await newPage(page.context().browser(), name, { consent: false });
@@ -43,20 +43,20 @@ export const ersterStart = async (page, check, device) => {
       await p.getByRole("heading", { name: "Bevor’s losgeht" }).waitFor();
       await p.getByText(/^Ich akzeptiere die/).click();
       await p.getByRole("button", { name: "Weiter" }).click();
-      await p.getByRole("button", { name: "Zeig mal" }).waitFor();
+      await p.getByRole("button", { name: "Für die Familie" }).waitFor();
       await p.waitForTimeout(1200);
       const fit = await p.locator("[data-zeigmal]").evaluate((el) => ({ fits: el.scrollHeight <= el.clientHeight + 1, buttons: el.querySelectorAll("button").length }));
       check(fit.fits, `${name}: Bildschirm 3 passt ohne Scrollen`);
-      check(fit.buttons === 1, `${name}: genau ein Knopf`);
+      check(fit.buttons === 3, `${name}: drei gleichwertige Knöpfe (allein, zu zweit, Familie)`);
       // Zurück: ein Schritt zurück zu „Bevor’s losgeht“
       await p.goBack();
       check(await p.getByRole("heading", { name: "Bevor’s losgeht" }).waitFor({ timeout: 3000 }).then(() => true, () => false), `${name}: Zurück führt zu „Bevor’s losgeht“`);
       await p.goForward().catch(() => {});
-      if (!(await p.getByRole("button", { name: "Zeig mal" }).isVisible())) {
+      if (!(await p.getByRole("button", { name: "Für die Familie" }).isVisible())) {
         await p.getByText(/^Ich akzeptiere die/).click().catch(() => {});
         await p.getByRole("button", { name: "Weiter" }).click();
       }
-      await p.getByRole("button", { name: "Zeig mal" }).click();
+      await p.getByRole("button", { name: "Für die Familie" }).click();
       check(await p.getByRole("tab", { name: "Heute", selected: true }).waitFor({ timeout: 5000 }).then(() => true, () => false), `${name}: danach die Startseite`);
       check(await p.getByText("So sieht ein Tag aus").waitFor({ timeout: 3000 }).then(() => true, () => false), `${name}: mit Beispiel-Tag`);
     } finally {
@@ -70,7 +70,7 @@ export const ersterStart = async (page, check, device) => {
     await login.getByRole("link", { name: /Schon ein Konto\? Anmelden/ }).click();
     await login.waitForURL(/\/anmelden/, { timeout: 5000 });
     await login.waitForTimeout(800);
-    check(!(await login.locator("[data-zeigmal]").count()), "Anmelden: kein „Zeig mal“");
+    check(!(await login.locator("[data-zeigmal]").count()), "Anmelden: kein „Für wen soll ich sortieren?“");
   } finally {
     await login.context().close();
   }
@@ -116,11 +116,11 @@ export const hallo2 = async (page, check) => {
   await page.waitForURL(/\/anmelden/, { timeout: 5000 }).catch(() => {});
   check(page.url().includes("/anmelden"), "„Schon ein Konto? Anmelden“ öffnet /anmelden");
 
-  // „Los geht’s“ → „Zeig mal“ → Startseite (Farbig) mit Marke und Datum im Kopf
+  // „Los geht’s“ → „Für wen soll ich sortieren?“ → Startseite (Farbig) mit Marke und Datum im Kopf
   await page.goto(BASE);
   await losGehts(page);
   await page.waitForTimeout(900);
-  check(await page.getByRole("tab", { name: "Heute", selected: true }).isVisible(), "„Los geht’s“ → „Zeig mal“ → Startseite");
+  check(await page.getByRole("tab", { name: "Heute", selected: true }).isVisible(), "„Los geht’s“ → „Für wen soll ich sortieren?“ → Startseite");
   check((await page.evaluate(() => document.documentElement.dataset.look)) === "farbig", "Standard Farbig");
   const head = page.locator("main header").first();
   check((await head.locator("[data-brand=lockup]").isVisible()) && /^\w{2}, \d{1,2}\. \w{3,4}$/.test((await head.locator("p").innerText()).trim()), "Kopf: Marke links, kurzes Datum rechts");
@@ -317,4 +317,16 @@ export const umleitungen = async (page, check) => {
     const url = new URL(page.url());
     check(url.pathname + url.search === to, `${from} → ${to} (${url.pathname + url.search})`);
   }
+};
+
+/** Mia für alle: „Nur für mich“ → Profil „single“, Pinnwand-Kachel aus, Beispiel-Tag allein (Laufen, Yoga …) */
+export const nurFuerMich = async (page, check) => {
+  await page.goto(BASE);
+  await page.getByRole("button", { name: "Los geht’s" }).click();
+  await page.getByRole("button", { name: "Nur für mich" }).click();
+  await page.getByRole("tab", { name: "Heute", selected: true }).waitFor({ timeout: 5000 });
+  await page.waitForTimeout(900);
+  check((await page.evaluate(() => JSON.parse(localStorage.getItem("familienkueche.haushaltsprofil") || "{}").householdType)) === "single", "Profil: nur für mich");
+  check(!(await page.locator('section[aria-label^="Pinnwand"]').count()), "Pinnwand-Kachel aus");
+  check(!(await page.getByText(/Kita bringen|Mathis/).count()), "Beispiel-Tag ohne Familie");
 };

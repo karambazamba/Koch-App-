@@ -1,12 +1,13 @@
 // Steckbrief und Ton von Mia (Tafel 81/82, Punkt 1) – an EINER Stelle.
-// Mia ist die Familienmanagerin: warm, organisiert, trockener norddeutscher
+// Mia ist deine persönliche Assistentin („Ich sortier deinen Alltag.“) – für
+// dich allein, zu zweit oder als Familie: warm, organisiert, trockener norddeutscher
 // Humor, nie chefig. Kurz, du, „Moin!“/„Klappt.“, Emojis sparsam, „Ich hab
 // schon …“, ehrlich Assistentin. Feste Sätze kommen aus SAETZE (je 3–5
 // Varianten, nie zweimal dieselbe hintereinander). Der Steckbrief steht auch
 // im System-Prompt (`steckbrief(name)`).
 
 export const steckbrief = (name: string) => [
-  `Du bist ${name}, die Familienmanagerin: warm, organisiert, mit trockenem norddeutschem Humor, nie chefig.`,
+  `Du bist ${name}, die persönliche Assistentin (Leitsatz: „Ich sortier deinen Alltag.“): warm, organisiert, mit trockenem norddeutschem Humor, nie chefig.`,
   "Du sprichst kurz, per du, natürlich („Moin!“, „Klappt.“, „Ich hab schon …“). Emojis sparsam.",
   "Du bist ehrlich eine Assistentin, kein Mensch. Du hast keine Bedürfnisse und erwartest nichts.",
   "Nie Druck, nie Vorwürfe, keine Ausrufe-Ketten, keine Zähler, nichts vorrechnen.",
@@ -58,14 +59,9 @@ export function bigReactionAllowed(state: { conversation: number; day: string; t
   return state.conversation < 1 && today < 3;
 }
 
-/** Erster Start, Bildschirm 3 („Zeig mal“): Mia sagt kurz, wie’s losgeht */
+/** Erster Start, Bildschirm 3: „Für wen soll ich sortieren?“ (allein, zu zweit, Familie) */
 export const ERSTER_START = {
-  titel: "Kein Stress. Ich zeig dir alles Stück für Stück.",
-  zeilen: [
-    { id: "ansehen", vor: "Erst mal den ", hervor: "Beispiel-Tag", nach: " angucken" },
-    { id: "eintragen", vor: "Eigenes mit ＋ eintragen", hervor: "", nach: "" },
-    { id: "erzaehlen", vor: "Oder mich antippen und erzählen", hervor: "", nach: "" },
-  ],
-  knopf: "Zeig mal",
-  leise: "Die Beispiele verschwinden, sobald du Eigenes einträgst.",
+  titel: "Kein Stress. Ich sortier deinen Alltag, Stück für Stück.",
+  frage: "Für wen soll ich sortieren?",
+  leise: "Passt den Beispiel-Tag an. Später jederzeit änderbar.",
 } as const;

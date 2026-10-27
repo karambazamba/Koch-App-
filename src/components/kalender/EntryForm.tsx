@@ -23,6 +23,7 @@ import { quickTaskData, readQuickText, readTerminText, type When } from "@/lib/k
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { PERSONS, sortBy } from "@/lib/core/sort";
 import { act } from "@/components/heute/actions";
+import { useRaumName } from "@/lib/einstellungen/useHaushalt";
 
 const LABEL_SUGGESTIONS = ["Kita", "Schule", "Arzt", "Sport", "Café", "Geburtstag"];
 const DAYS = WEEKDAYS_SHORT_MO;
@@ -84,6 +85,7 @@ function vorbelegt(kind: "termin" | "aufgabe", text: string, date: string | unde
 }
 
 export function EntryForm({ entry, date, kind, initialText = "", when = "heute", onClose }: { entry?: CalendarEntry; date?: string; kind?: "termin" | "aufgabe"; initialText?: string; when?: When; onClose: () => void }) {
+  const raum = useRaumName();
   const [pre] = useState(() => (entry ? undefined : vorbelegt(kind ?? "termin", initialText, date, when)));
   const d = entry?.data ?? pre?.data;
   const profile = useProfile();
@@ -189,11 +191,11 @@ export function EntryForm({ entry, date, kind, initialText = "", when = "heute",
               <span className="shrink-0 text-base">Für</span>
               <div className="ml-auto w-48">
                 <Segmented
-                  label="Familie oder Arbeit"
+                  label={`${raum} oder Arbeit`}
                   value={room}
                   onChange={setRoom}
                   options={[
-                    { value: "familie", label: "Familie" },
+                    { value: "familie", label: raum },
                     { value: "arbeit", label: "Arbeit" },
                   ]}
                 />

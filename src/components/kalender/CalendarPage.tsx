@@ -30,6 +30,7 @@ import dynamic from "next/dynamic";
 import { openQuick } from "@/lib/core/schnelleingabe";
 import { isAboEntry } from "@/lib/kalender/abo/model";
 import { MitbringenKarte } from "@/components/kalender/mitbringen/KalenderMitbringen";
+import { useRaumName } from "@/lib/einstellungen/useHaushalt";
 
 // Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
 const EntryForm = dynamic(() => import("@/components/kalender/EntryForm").then((m) => m.EntryForm), { ssr: false });
@@ -66,6 +67,7 @@ export function relativeDay(date: string, today: string): string | null {
 }
 
 export function CalendarPage({ today, entries }: { today: string; entries: CalendarEntry[] }) {
+  const raum = useRaumName();
   const [view, setView] = useState<View>("monat");
   const [filter, setFilter] = useState<RoomFilter>("alles");
   const [selected, setSelected] = useState(today);
@@ -98,7 +100,7 @@ export function CalendarPage({ today, entries }: { today: string; entries: Calen
           onChange={setFilter}
           options={[
             { value: "alles", label: "Alle" },
-            { value: "familie", label: "Familie" },
+            { value: "familie", label: raum },
             { value: "arbeit", label: "Arbeit" },
           ]}
         />

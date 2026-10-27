@@ -148,7 +148,7 @@ for (const device of DEVICES) {
     await first.screenshot({ path: `${dir}/hallo-${tag}.png` });
     // Bildschirm 3 nach „Los geht’s“: Mia sagt, wie’s losgeht
     await first.getByRole("button", { name: "Los geht’s" }).click();
-    await first.getByRole("button", { name: "Zeig mal" }).waitFor();
+    await first.getByRole("button", { name: "Für die Familie" }).waitFor();
     await first.waitForTimeout(1500);
     await first.screenshot({ path: `${dir}/zeig-mal-${tag}.png` });
     n++;

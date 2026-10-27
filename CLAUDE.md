@@ -10,7 +10,8 @@ Familie und zugleich die Assistentin für Termine, Aufgaben, Essen und Einkauf
 natürlich spricht. Sie legt an und räumt wieder weg.
 
 Die Begleitung heißt fest Mia (Orange, rund, Assistentin; nur die Stimme ist
-wählbar). Steckbrief: Familienmanagerin, warm, organisiert, trockener
+wählbar). Steckbrief: deine persönliche Assistentin („Ich sortier deinen
+Alltag.“) für Singles, Paare und Familien, warm, organisiert, trockener
 norddeutscher Humor, nie chefig (`src/lib/mia/persona.ts`). Lebendig ohne
 Ansprüche: EIN Zubehör je Anlass/Wetter/Tageszeit, nachts schläft sie, nie
 Bedürfnisse, nie traurig (`src/lib/mia/zubehoer.ts`). „Was gibt’s?“ ist nur noch der Essen-Bereich („Was gibt’s heute?“).
@@ -65,11 +66,12 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   die Anordnung; Ruhe nach Feierabend ist ein eigener Schalter.
 - Gesten: Tippen = Eintrag öffnen, lange Drücken = Startseite bearbeiten,
   Wischen = Seite wechseln.
-- Erster Start = höchstens 3 Bildschirme vor der App, jeder mit genau 1
-  Knopf: Hallo („Moin, ich bin Mia.“ → „Los geht’s“), „Bevor’s losgeht“
-  (Zustimmung, Pflicht für alle, `ZustimmungGate`) und „Zeig mal“ (Mia sagt,
-  wie’s losgeht, `ZeigMalStep`, nur beim allerersten Start), dann die
-  Startseite mit Beispiel-Tag. Zurück-Geste = ein Schritt zurück. Keine
+- Erster Start = höchstens 3 Bildschirme vor der App: Hallo („Moin, ich bin
+  Mia.“ → „Los geht’s“), „Bevor’s losgeht“ (Zustimmung, Pflicht für alle,
+  `ZustimmungGate`) und „Für wen soll ich sortieren?“ (`ZeigMalStep`, nur
+  beim allerersten Start: drei gleichwertige Knöpfe „Nur für mich“ / „Für uns
+  zwei“ / „Für die Familie“, nichts vorausgewählt), dann die Startseite mit
+  Beispiel-Tag passend zur Antwort. Zurück-Geste = ein Schritt zurück. Keine
   Look-Frage: Standard „Farbig“, nach 3 Tagen einmal „Lieber schlicht?“ als
   Hinweis, sonst Einstellungen → Aussehen.
 - Rückgängig nur bei echtem Löschen („Gelöscht · Rückgängig“, 3 s) und in der
@@ -118,8 +120,10 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - „Familie“ ist gemeinsam, „Arbeit“ ist persönlich. Ohne Angabe gehört etwas
   zur Familie. Familie = Orange (`bg-accent`), Arbeit = Blau (`bg-work`).
 - Mit Konto teilt der Haushalt „Familie“; „Arbeit“ sieht nur der Besitzer.
-  Konto erst, wenn man teilen will; eingeladen wird per Link (/e/…), in der
-  Oberfläche heißt es immer „Familie“, nie „Haushalt“.
+  Konto erst, wenn man teilen will; eingeladen wird per Link (/e/…). In der
+  Oberfläche heißt der gemeinsame Bereich je Haushaltsart „Privat“ (allein),
+  „Wir“ (zu zweit) oder „Familie“ (`core/haushalt.ts`, `useRaumName`), nie
+  „Haushalt“; intern bleibt der Schlüssel „familie“.
   Ohne Konto bleibt alles auf dem Gerät – die App geht immer auch ohne.
 - Aufgaben gehören standardmäßig der Person, die sie anlegt; geteilt wird nur
   durch Abgeben („An … geben“, beim Empfänger „von Felix“, zurück mit „Passt

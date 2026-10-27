@@ -2603,3 +2603,13 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Feste Laden-Regeln per Mia und ohne KI, gelten überall; Lernen nach 2×
   Abhaken mit einmaliger Frage; „Was kauf ich wo?“. Speicher v6.
 - Einkauf-Kachel C2 (Tafel 92) und Beispiel-Einkauf nach Läden.
+
+## Mia für alle – allein, zu zweit, Familie (v0.120.0)
+
+- Mia ist „deine persönliche Assistentin“ („Ich sortier deinen Alltag.“),
+  Startbildschirm „Kein Stress. Ich sortier deinen Alltag, Stück für Stück.“
+- Bildschirm 3 fragt „Für wen soll ich sortieren?“ (Nur für mich / Für uns
+  zwei / Für die Familie), speichert die Haushaltsart im Profil und passt
+  Beispiel-Tag und Startseite an (allein ohne Pinnwand).
+- Wörter je Art zentral in `core/haushalt.ts`: Bereich Privat/Wir/Familie,
+  Einladen-Knopf, „Seid ihr zu zweit?“ einmal beim zweiten Mitglied.

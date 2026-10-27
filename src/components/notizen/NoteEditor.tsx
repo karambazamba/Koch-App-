@@ -22,6 +22,7 @@ import { pushUndo } from "@/lib/core/undo";
 import { useGoBack } from "@/lib/core/useGoBack";
 import { useKeyboardInset } from "@/lib/core/useMobileKeyboard";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
+import { useRaumName } from "@/lib/einstellungen/useHaushalt";
 
 export function NoteEditor() {
   const params = useSearchParams();
@@ -46,6 +47,7 @@ export function NoteEditor() {
 const TOOL = "hit flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-field py-1 text-[11px] font-semibold text-muted active:bg-fill";
 
 function Editor({ initial, isNew }: { initial: Note; isNew: boolean }) {
+  const raum = useRaumName();
   const [note, setNote] = useState(initial);
   const [focusItem, setFocusItem] = useState<string | null>(null);
   const work = useWorkRoom() || note.raum === "arbeit";
@@ -199,9 +201,9 @@ function Editor({ initial, isNew }: { initial: Note; isNew: boolean }) {
             {note.data.pinned ? "Angeheftet" : "Anheften"}
           </button>
           {work && (
-            <button type="button" onPointerDown={(e) => e.preventDefault()} onClick={() => change({ ...note, raum: note.raum === "arbeit" ? "familie" : "arbeit" })} aria-label={`Raum: ${note.raum === "arbeit" ? "Arbeit" : "Familie"} – wechseln`} className={TOOL}>
+            <button type="button" onPointerDown={(e) => e.preventDefault()} onClick={() => change({ ...note, raum: note.raum === "arbeit" ? "familie" : "arbeit" })} aria-label={`Raum: ${note.raum === "arbeit" ? "Arbeit" : raum} – wechseln`} className={TOOL}>
               <span className={`mt-1 h-3 w-3 rounded-full ${note.raum === "arbeit" ? "bg-work" : "bg-accent"}`} aria-hidden />
-              {note.raum === "arbeit" ? "Arbeit" : "Familie"}
+              {note.raum === "arbeit" ? "Arbeit" : raum}
             </button>
           )}
           <button type="button" onClick={share} className={TOOL}>

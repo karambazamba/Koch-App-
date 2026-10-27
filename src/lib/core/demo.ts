@@ -13,6 +13,7 @@ import { useExternalStore } from "@/lib/core/useExternalStore";
 import { addDays, todayIso } from "@/lib/core/now";
 import { weekdayIndex, type CalendarEntry } from "@/lib/kalender/model";
 import { istFeiertag } from "@/lib/core/feiertage";
+import type { Haushalt } from "@/lib/core/haushalt";
 
 export type DemoTile = "termine" | "aufgaben" | "pinnwand" | "einkauf" | "essen";
 const TILES: DemoTile[] = ["termine", "aufgaben", "pinnwand", "einkauf", "essen"];
@@ -145,10 +146,53 @@ const DEMO_DAYS: Record<DemoArt, DemoTermin[]> = {
   ],
 };
 
-/** Beispiel-Termine eines Tages (Elternabend nur Di bis Do) */
-export function demoDay(date: string): DemoTermin[] {
+/** Mia für alle: Beispiel-Tage für allein und zu zweit (Familie = DEMO_DAYS) */
+const DEMO_DAYS_FOR: Record<Exclude<Haushalt, "familie">, Record<DemoArt, DemoTermin[]>> = {
+  allein: {
+    werktag: [
+      { id: "t2", title: "Laufen", at: h(7, 30) },
+      { id: "t3", title: "Meeting", at: h(10) },
+      { id: "t5", title: "Mittag mit Jana", at: h(12, 30) },
+      { id: "t6", title: "Yoga", at: h(18) },
+      { id: "t9", title: "Serie", at: h(20, 15) },
+    ],
+    samstag: [
+      { id: "s1", title: "Brunch", at: h(10, 30) },
+      { id: "s2", title: "Freunde treffen", at: h(15) },
+      { id: "s3", title: "Kino", at: h(20) },
+    ],
+    sonntag: [
+      { id: "o1", title: "Ausschlafen", at: h(9, 30) },
+      { id: "o2", title: "Brunch mit Freunden", at: h(11) },
+      { id: "o3", title: "Kino", at: h(19, 30) },
+    ],
+  },
+  paar: {
+    werktag: [
+      { id: "t2", title: "Arbeit", at: h(8, 30) },
+      { id: "t3", title: "Telefonat Vermieter", at: h(12) },
+      { id: "t5", title: "Wocheneinkauf", at: h(17, 30) },
+      { id: "t6", title: "Zusammen kochen", at: h(19) },
+      { id: "t9", title: "Kino", at: h(20, 30) },
+    ],
+    samstag: [
+      { id: "s1", title: "Frühstück", at: h(9, 30) },
+      { id: "s2", title: "Ausflug an die Ostsee", at: h(11) },
+      { id: "s3", title: "Essen gehen", at: h(19) },
+    ],
+    sonntag: [
+      { id: "o1", title: "Langes Frühstück", at: h(10) },
+      { id: "o2", title: "Spaziergang am See", at: h(14) },
+      { id: "o3", title: "Tatort", at: h(20, 15) },
+    ],
+  },
+};
+
+/** Beispiel-Termine eines Tages je Haushaltsart (Elternabend nur Di bis Do) */
+export function demoDay(date: string, haushalt: Haushalt = "familie"): DemoTermin[] {
   const art = demoArt(date);
   const w = weekdayIndex(date);
+  if (haushalt !== "familie") return DEMO_DAYS_FOR[haushalt][art];
   return DEMO_DAYS[art].filter((t) => t.id !== "t8" || (w >= 1 && w <= 3));
 }
 
@@ -160,10 +204,10 @@ export function demoDay(date: string): DemoTermin[] {
  * Am Wochenende und an Feiertagen kein „heute dran“: alle Aufgaben für die
  * Woche, keine dringend.
  */
-export function demoEntries(today: string, minutes: number, helper: string): { date: string; tomorrow: boolean; entries: CalendarEntry[] } {
-  const tomorrow = demoDay(today).filter((t) => t.at > minutes).length < 2;
+export function demoEntries(today: string, minutes: number, helper: string, haushalt: Haushalt = "familie"): { date: string; tomorrow: boolean; entries: CalendarEntry[] } {
+  const tomorrow = demoDay(today, haushalt).filter((t) => t.at > minutes).length < 2;
   const date = tomorrow ? addDays(today, 1) : today;
-  const termine = demoDay(date)
+  const termine = demoDay(date, haushalt)
     .filter((t) => tomorrow || t.at > minutes)
     .map((t) => entry(t.id, "termin", { title: t.title, date, start: clock(t.at) }));
   const monday = addDays(date, -weekdayIndex(date));
@@ -174,7 +218,7 @@ export function demoEntries(today: string, minutes: number, helper: string): { d
     entry("a2", "aufgabe", { title: `${helper} etwas fragen`, ...wann, ...(frei ? {} : { dringend: true }) }),
     entry("a3", "aufgabe", { title: "Ersten Termin eintragen", ...wann }),
     entry("a4", "aufgabe", { title: "Kachel verschieben", week: monday }),
-    entry("a5", "aufgabe", { title: "Pinnwand ausprobieren", week: monday }),
+    ...(haushalt === "allein" ? [] : [entry("a5", "aufgabe", { title: "Pinnwand ausprobieren", week: monday })]),
   ];
   return { date, tomorrow, entries: [...termine, ...aufgaben] };
 }

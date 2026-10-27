@@ -92,6 +92,7 @@ import { headerDate } from "@/lib/heute/kopfDatum";
 import { MiaNameHint, useMiaHomeHint } from "@/components/heute/MiaNameHint";
 import { InviteHintCard, useInviteHint } from "@/components/konten/InviteHintCard";
 import { termineTile } from "@/lib/heute/termineKachel";
+import { haushaltOf } from "@/lib/core/haushalt";
 
 
 /** Name für die Begrüßung: die erste Person im Haushalt (meist man selbst) */
@@ -231,7 +232,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     minutes,
   );
   // Beispiel-Tag (erster Start): Beispiele in denselben Kacheln, auch im Bearbeiten-Modus als Vorschau
-  const demoDay = useDemoDay(entries, data.todayIso, minutes, helperName(data.profile), Boolean(dish));
+  const demoDay = useDemoDay(entries, data.todayIso, minutes, helperName(data.profile), Boolean(dish), haushaltOf(data.profile.householdType));
   const [demoItem, setDemoItem] = useState<DayItem | null>(null);
   const demoProps: DemoProps = { label: demoDay.label, done: demoDay.done, onToggle: (i) => (buzz(), toggleDemoDone(i.entry.id)), onGone: (i) => showDone(hideDemoItem(i.entry.id)), onOpen: setDemoItem };
   const overview = taskOverview(entries, data.todayIso);
