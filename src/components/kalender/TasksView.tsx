@@ -3,7 +3,9 @@
 // Seite "Aufgaben" (/aufgaben): zu erledigen, flexibel. Filter Alles ·
 // Familie · Arbeit, Gruppen Heute dran · Diese Woche · Später · Irgendwann
 // und eingeklappt "✓ N erledigt". Unerledigtes von gestern rutscht still in
-// "Heute dran" ("von gestern" – nie "überfällig"). Aufgaben sind persönlich
+// "Heute dran" ("von gestern" – nie "überfällig"). Abends, sobald die
+// Startseite auf morgen steht, heißt es "Morgen dran" – mit dem Offenen von
+// heute ("von heute", kalender/mitwandern.ts). Aufgaben sind persönlich
 // (Tafel 52 B): nur meine und die mir gegebenen; was ich abgegeben habe,
 // steht leise eingeklappt unter „Abgegeben“.
 
@@ -15,6 +17,8 @@ import { Segmented } from "@/components/ui/Segmented";
 import { CARD, PAGE_MAIN, buttonClass } from "@/components/ui/styles";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { setDone, taskOverview, TASK_GROUPS, type DayItem } from "@/lib/kalender/model";
+import { aufgabenUebersicht, gruppenName } from "@/lib/kalender/mitwandern";
+import { useAbendsMorgen } from "@/components/kalender/useAbendsMorgen";
 import { useEntries } from "@/lib/kalender/store";
 import { useAboEntries } from "@/lib/kalender/abo/store";
 import { useCachedAccount } from "@/lib/konten/cache";
@@ -69,7 +73,8 @@ export function TasksView() {
   const today = now ? toIsoDate(now) : undefined;
   // Aufgaben aus verbundenen Listen (Todoist, nur lesen) stehen mit dabei
   const aboTasks = useAboEntries().filter((e) => e.typ === "aufgabe");
-  const groups = entries && today ? taskOverview(aboTasks.length ? [...entries, ...aboTasks] : entries, today) : null;
+  const abends = useAbendsMorgen(all, today);
+  const groups = entries && today ? aufgabenUebersicht(aboTasks.length ? [...entries, ...aboTasks] : entries, { heute: today, abends }) : null;
   const givenItems = today && given.length ? Object.values(taskOverview(given, today)).flat() : [];
   const pick = (list: DayItem[]) => list.filter((i) => filter === "alles" || i.room === filter);
   const hasWork = work || Boolean(entries?.some((e) => e.raum === "arbeit"));
@@ -84,7 +89,7 @@ export function TasksView() {
         { id: "irgendwann", label: "Irgendwann", items: ansicht.irgendwann },
       ]
     : groups
-      ? TASK_GROUPS.filter((g) => g.id !== "erledigt").map((g) => ({ id: g.id as string, label: g.label, items: groups[g.id] }))
+      ? TASK_GROUPS.filter((g) => g.id !== "erledigt").map((g) => ({ id: g.id as string, label: gruppenName(g.id, g.label, { heute: today!, abends }), items: groups[g.id] }))
       : [];
   // Höchstens einmal pro Woche: drei Aufgaben ohne Datum für diese Woche vorschlagen
   const vorschlagState = useVorschlagState();

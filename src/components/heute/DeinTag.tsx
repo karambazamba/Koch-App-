@@ -45,6 +45,8 @@ type Props = {
   termine: DayItem[];
   tomorrow: DayItem[];
   tasks: DayItem[];
+  /** Aufgaben für morgen – abends mit dem Mitgewanderten („von heute“, kalender/mitwandern.ts) */
+  tomorrowTasks?: DayItem[];
   dish: DayDish | null;
   shop: { shop: string; names: string[] } | null;
   pins: PinMessage[];
@@ -89,7 +91,7 @@ function Section({ id, title, children, highlight }: { id: DaySection; title: st
   );
 }
 
-export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, dish, shop, pins, topic, fragen = [], onTopicDone, onClose }: Props) {
+export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, tomorrowTasks = [], dish, shop, pins, topic, fragen = [], onTopicDone, onClose }: Props) {
   const night = minutes >= 22 * 60;
   // Abend-Thema über morgen (Tafel 98): gleich „Morgen · Mi“ zeigen, mit Umschalter
   const [showTomorrow, setShowTomorrow] = useState(() => zeigtMorgen(topic, addDays(today, 1)));
@@ -99,7 +101,7 @@ export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, d
   const spot = topic ? topicSpot(topic) : null;
   // Abhaken wie überall: durchgestrichen, 1,5 s, weg, „Erledigt · Rückgängig“
   const { leaving, start } = useLeaving((t) => act((all, stamp) => setDone(all, t, true, stamp), t.title, { done: true }));
-  const openTasks = tasks.filter((t) => !t.done || leaving === t.key);
+  const openTasks = (showTomorrow ? tomorrowTasks : tasks).filter((t) => !t.done || leaving === t.key);
   // Der Hinweis der Karte: meist Zeile 1 („Versichertenkarte einpacken?“), bei „gleich“ der Zusatz
   const hint = (topic?.kind === "gleich" ? topic.detail : topic?.title) || topic?.detail || "";
   const list = showTomorrow ? tomorrow : termine;
@@ -229,36 +231,35 @@ export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, d
                     ))}
                   </Section>
                 )}
-
-                {openTasks.length > 0 && (
-                  <Section id="aufgaben" title="Aufgaben" highlight={spot?.section === "aufgaben" && !openTasks.some((t) => marked(t.entry.id) || marked(t.key))}>
-                    <ul className="flex flex-col">
-                      {openTasks.map((t) => {
-                        const checked = leaving === t.key;
-                        return (
-                        <li key={t.key} data-key={t.key} className={`flex min-h-12 items-center gap-3 px-1 ${marked(t.key) || marked(t.entry.id) ? HL : ""}`}>
-                          <button
-                            type="button"
-                            role="checkbox"
-                            aria-checked={checked}
-                            aria-label={`${t.title} erledigt`}
-                            onClick={() => readOnlyDone(t) || start(t)}
-                            className="-ml-1.5 flex h-11 w-11 shrink-0 items-center justify-center"
-                          >
-                            <span className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${checked ? "border-accent bg-accent text-on-accent" : "border-line-strong"}`}>{checked && <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />}</span>
-                          </button>
-                          <button type="button" onClick={() => setMenu(t)} className="flex min-w-0 flex-1 flex-col text-left">
-                            <span className={`truncate text-base font-semibold ${checked ? "text-muted line-through" : ""}`}>{t.title}</span>
-                            {(t.carried || t.time) && <span className="text-[13px] text-muted">{[t.time ? clock(t.time) : "", t.carried ?? ""].filter(Boolean).join(" · ")}</span>}
-                          </button>
-                        </li>
-                        );
-                      })}
-                    </ul>
-                    {spot?.section === "aufgaben" && topicHint}
-                  </Section>
-                )}
               </>
+            )}
+            {openTasks.length > 0 && (
+              <Section id="aufgaben" title="Aufgaben" highlight={spot?.section === "aufgaben" && !openTasks.some((t) => marked(t.entry.id) || marked(t.key))}>
+                <ul className="flex flex-col">
+                  {openTasks.map((t) => {
+                    const checked = leaving === t.key;
+                    return (
+                    <li key={t.key} data-key={t.key} className={`flex min-h-12 items-center gap-3 px-1 ${marked(t.key) || marked(t.entry.id) ? HL : ""}`}>
+                      <button
+                        type="button"
+                        role="checkbox"
+                        aria-checked={checked}
+                        aria-label={`${t.title} erledigt`}
+                        onClick={() => readOnlyDone(t) || start(t)}
+                        className="-ml-1.5 flex h-11 w-11 shrink-0 items-center justify-center"
+                      >
+                        <span className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${checked ? "border-accent bg-accent text-on-accent" : "border-line-strong"}`}>{checked && <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />}</span>
+                      </button>
+                      <button type="button" onClick={() => setMenu(t)} className="flex min-w-0 flex-1 flex-col text-left">
+                        <span className={`truncate text-base font-semibold ${checked ? "text-muted line-through" : ""}`}>{t.title}</span>
+                        {(t.carried || t.time) && <span className="text-[13px] text-muted">{[t.time ? clock(t.time) : "", t.carried ?? ""].filter(Boolean).join(" · ")}</span>}
+                      </button>
+                    </li>
+                    );
+                  })}
+                </ul>
+                {spot?.section === "aufgaben" && topicHint}
+              </Section>
             )}
           </>
         )}

@@ -21,6 +21,9 @@ import { isAddPersonRequest } from "@/lib/einstellungen/onboarding/recognize";
 import { householdIntroReply, parseHouseholdIntro } from "@/lib/einstellungen/householdIntro";
 import { calendarChat, changeEntries } from "@/lib/kalender";
 import { loadCalendarEntries } from "@/lib/kalender/useCalendarEntries";
+import { abendsNachUhr } from "@/lib/kalender/mitwandern";
+import { now } from "@/lib/core/now";
+import { loadRoutine } from "@/lib/heute/tagesablauf";
 import { pushUndo } from "@/lib/core/undo";
 import { loadSpeechSettings, saveSpeechSettings, stopSpeaking, unlockSpeech, type SpeechSettings } from "@/lib/begleitung/speech";
 import { readingChange } from "@/lib/begleitung/speechChat";
@@ -127,7 +130,10 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
   /** Termine und Aufgaben ohne KI: "Morgen um 9 Steuerberater", "Was steht diese Woche an?" – sofort, mit Rückgängig */
   const calendarReply = (t: string): { text: string; undo?: () => void } | null => {
     if (!data || !today) return null;
-    const reply = calendarChat(t, loadCalendarEntries(), toIsoDate(today), data.profile.persons);
+    const entries = loadCalendarEntries();
+    const iso = toIsoDate(today);
+    const abends = abendsNachUhr({ entries, heute: iso, minutes: now().getHours() * 60 + now().getMinutes(), feierabendAb: loadRoutine().feierabendAb });
+    const reply = calendarChat(t, entries, iso, data.profile.persons, abends);
     if (!reply) return null;
     if (!reply.change) return { text: reply.text };
     const undo = pushUndo(reply.text, changeEntries(reply.change));

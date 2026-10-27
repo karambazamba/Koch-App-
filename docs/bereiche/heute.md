@@ -217,6 +217,19 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   weg, dann kommt das nächste. Antippen öffnet „Dein Tag“ gleich auf „Morgen
   · Mi“. Nachts (22–6) bleibt alles wie bisher. Abends steht damit kein
   Spruch und kein „Alles ruhig“. Tests `tests/heute/abends.test.ts`.
+- Offene Aufgaben wandern abends mit (vX). Die Regel, wann die Startseite auf
+  morgen steht, liegt an EINER Stelle: `aufMorgen` in
+  `kalender/mitwandern.ts` (6–24 Uhr; `isAbend` = dieselbe Regel ohne 22–24
+  Uhr, Eingaben über `abendLage`). Steht sie auf morgen, zeigt auch die
+  Aufgaben-Kachel „Morgen · Mi“: zuerst das Offene von heute (und Älteres)
+  mit leisem „von heute“ bzw. „von gestern“, dann die Aufgaben für morgen
+  (`aufgabenReihe`, dringend bleibt vorn, S/M/L-Mengen und „+N weitere“ wie
+  bisher). Nie leer, solange etwas offen ist; „Aufgaben machen Pause“ (Ruhe
+  nach Feierabend) gilt dann nicht, morgen steht ja da. Das ＋ der Kachel
+  trägt abends für morgen ein. „Dein Tag“ zeigt unter „Morgen · Mi“ dieselben
+  Aufgaben, die Jetzt-Karte zählt sie für „Für morgen ist alles sortiert.“
+  mit. In den Daten wird nichts verschoben; um Mitternacht rutscht alles wie
+  bisher still („von gestern“). Tests `tests/kalender/mitwandern.test.ts`.
 - Die Reihenfolge bleibt stehen (`useStableOrder`), bis die App zurückkehrt,
   15 Min vergehen, ein Thema wegfällt oder eines mit ≥ 90 Punkten dazukommt.
 - Tests: `tests/heute/jetztThemen.test.ts` (Tag wie Tafel 60 um 7:00, 8:10,

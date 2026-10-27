@@ -433,8 +433,7 @@ type OrderedTask = DayItem & { group: Exclude<TaskGroup, "erledigt"> };
  * (früheste zuerst) · 4) diese Woche · 5) später · 6) irgendwann – innerhalb
  * nach Uhrzeit bzw. Anlegen (älteste zuerst), nie nach Alphabet.
  */
-export function orderedTasks(entries: CalendarEntry[], today: string): OrderedTask[] {
-  const g = taskOverview(entries, today);
+export function orderedTasks(entries: CalendarEntry[], today: string, g = taskOverview(entries, today)): OrderedTask[] {
   const tag = (group: OrderedTask["group"]) => (i: DayItem): OrderedTask => ({ ...i, group });
   const all = [...g.heute.map(tag("heute")), ...g.woche.map(tag("woche")), ...g.spaeter.map(tag("spaeter")), ...g.irgendwann.map(tag("irgendwann"))];
   const dueOf = (i: OrderedTask) => (i.entry.typ === "aufgabe" ? i.entry.data.due : undefined);
