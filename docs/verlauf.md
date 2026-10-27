@@ -2707,7 +2707,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Mia denkt mit: beim ersten Besuch der Essen-Seite einmal „Sag mir, was im
   Kühlschrank ist, dann koch ich mit dir spontan.“
 
-## Wetter-Kachel neu: stiller Himmel, Wind in Worten, 2-Stunden-Überblick (vX)
+## Wetter-Kachel neu: stiller Himmel, Wind in Worten, 2-Stunden-Überblick (v0.128.0)
 
 - Kachel nach der Vorlage „ruhig mit Regentropfen“: Hintergrund je Wetter
   (Regen/Niesel grau-blau mit feinen Tropfen, Bewölkt weiches Grau-Blau mit
