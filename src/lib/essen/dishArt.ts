@@ -279,7 +279,7 @@ function variantFor(form: DishForm, t: string, all: string): string | undefined 
     case "fisch":
       return /stabchen/.test(all) ? "staebchen" : /(?<!see)lachs/.test(all) ? "lachs" : "filet";
     case "fleisch":
-      return /hahnchen|huhn|pute/.test(t) ? "haehnchen" : /schnitzel|cordon/.test(t) ? "schnitzel" : /wurst/.test(t) ? "wurst" : "frikadellen";
+      return /hahnchen|huhn|pute/.test(t) ? "haehnchen" : /schnitzel|cordon/.test(t) ? "schnitzel" : /hackbraten|falscher hase/.test(t) ? "hackbraten" : /wurst/.test(t) ? "wurst" : "frikadellen";
     case "bowl":
       // Nur Eintöpfe sind „gulasch“; eine Bowl ohne Soße (Lachs-Bowl) wird „poke“
       return /chili/.test(t) ? "chili" : /curry|dal\b/.test(t) ? "curry" : /gulasch|ragout|stew/.test(t) ? "gulasch" : "poke";

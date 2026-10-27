@@ -255,3 +255,7 @@ Einkaufsmodus für den Laden. Immer sichtbar (kein Baustein).
   gelb bei A, „Fertig eingekauft“ kommt an).
 - Durchklick: Ablauf `einkauf` in `e2e/ablaeufe/essen.mjs` (Milch, Brot
   eintragen, abhaken → „Erledigte anzeigen“).
+
+## Ein Weg (v0.122.0)
+
+- ＋ → „Mehr Details“ öffnet den Katalog (`CatalogSheet`, Suchtext wird übernommen); kein fester Knopf unten. Schließen übernimmt die Auswahl, kein eigenes Mikro. Laden-Chips ohne Zahl. Sichtbarer Name „Einkaufsliste“ (Kachel, Zurück). Tests `tests/einkauf/einWeg.test.ts`.

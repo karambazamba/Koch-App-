@@ -142,6 +142,18 @@ export function formatAmount(amount: number | null): string {
   return amount === null ? "" : String(amount).replace(".", ",");
 }
 
+/** Personen aus „?personen=…“ (1–20, sonst null) */
+export function personsParam(raw: string | null): number | null {
+  const n = Math.round(Number(raw));
+  return raw && Number.isFinite(n) && n >= 1 && n <= 20 ? n : null;
+}
+
+/** Menge für eine andere Personenzahl (eine Nachkommastelle) – Rezept und Kochmodus gleich */
+export function scaledAmount(amount: number | null, servings: number, persons: number | null): number | null {
+  if (amount === null || !persons || servings <= 0 || persons === servings) return amount;
+  return Math.round((amount * persons * 10) / servings) / 10;
+}
+
 // --- Speicherung ------------------------------------------------------------
 
 const CATEGORY_VALUES = RECIPE_CATEGORIES.map((c) => c.value);

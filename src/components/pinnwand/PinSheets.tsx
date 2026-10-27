@@ -1,7 +1,7 @@
 "use client";
 
 // Pinnwand: „wer · wann“-Zeile und das Text-Fenster (bis 140 Zeichen,
-// „Anheften“) – nur noch als „Mehr Details“ hinter der Schnelleingabe (Tafel 76).
+// „Senden“, danach still „Gesendet“) – nur noch als „Mehr Details“ hinter der Schnelleingabe (Tafel 76).
 
 import { useState } from "react";
 import { Sheet } from "@/components/ui/Sheet";
@@ -10,10 +10,11 @@ import { todayIso, toIsoDate } from "@/lib/core/now";
 import { PIN_MAX, addPin, changePins, createPin, pinMeta, type PinQuote } from "@/lib/pinnwand";
 import { shortClock } from "@/components/notizen/Schnellnotiz";
 import { buzz } from "@/components/heute/actions";
+import { showToast } from "@/lib/core/toast";
 
 export const pinMetaLine = (m: { erstellt: string; data: { author: string } }, me: string) => pinMeta(m, me, todayIso(), shortClock, (iso) => toIsoDate(new Date(iso)));
 
-/** „Mehr Details“ der Schnelleingabe: Textfeld (max. 140, mehrzeilig), "Anheften" */
+/** „Mehr Details“ der Schnelleingabe: Textfeld (max. 140, mehrzeilig), „Senden“ → „Gesendet“ */
 export function PinWriteSheet({ me, onClose, initialText = "", quote = null }: { me: string; onClose: () => void; initialText?: string; quote?: PinQuote | null }) {
   const [text, setText] = useState(initialText.slice(0, PIN_MAX));
   const save = () => {
@@ -21,6 +22,7 @@ export function PinWriteSheet({ me, onClose, initialText = "", quote = null }: {
     if (!pin) return;
     changePins((all) => addPin(all, pin));
     buzz();
+    showToast({ text: "Gesendet", small: true, seconds: 1.5 });
     onClose();
   };
   return (
@@ -48,7 +50,7 @@ export function PinWriteSheet({ me, onClose, initialText = "", quote = null }: {
           {text.length}/{PIN_MAX}
         </span>
         <button type="submit" disabled={!text.trim()} className={buttonClass("primary")}>
-          Anheften
+          Senden
         </button>
       </form>
     </Sheet>

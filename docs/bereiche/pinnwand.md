@@ -213,3 +213,7 @@ verschwinden nach 24 Stunden“ (`pinnwand-24h`).
 - Durchklick `e2e/ablaeufe/alltag.mjs`: `pinnwand`; `pinnwandgesten.mjs`;
   `aufnahmeLeiste` (`sprachnachricht.mjs`, auch iPhone SE);
   `tests/pinnwand/aufnahmeleiste.test.ts`.
+
+## Senden (v0.122.0)
+
+- Text-Fenster: Knopf „Senden“, danach „Gesendet“. Kopfzeile immer „Nachrichten und Sprachnachrichten verschwinden nach 24 Stunden.“ Tests `tests/pinnwand/senden.test.ts`.

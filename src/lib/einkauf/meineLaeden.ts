@@ -122,9 +122,6 @@ export function chipIn(row: ChipInfo[], stored: string): ShopChip {
   return row.find((c) => lower(c.id) === lower(stored))?.id ?? "alle";
 }
 
-/** Großer Knopf unten */
-export const addLabel = (shop?: string) => (shop ? `Zu ${shop} hinzufügen` : "Mehr hinzufügen");
-
 /** Knopf in den Einkaufsmodus */
 export const shopModeLabel = (shop: string) => `Bei ${shop} einkaufen`;
 

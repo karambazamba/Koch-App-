@@ -29,6 +29,9 @@ import { ReactionMenu } from "@/components/pinnwand/ReactionMenu";
 import { deleteItem, mayDelete, replyTo } from "@/components/pinnwand/boardActions";
 import { MicStrip } from "@/components/ui/MicPermission";
 
+/** Immer im Kopf (früher nur einmal, Hinweis „pinnwand-24h“) */
+const PIN_SUBLINE = "Nachrichten und Sprachnachrichten verschwinden nach 24 Stunden.";
+
 function PinBody({ pin, me }: { pin: PinMessage; me: string }) {
   const reacted = reactionLine(pin.data.reactions);
   return (
@@ -72,11 +75,6 @@ export function PinboardView() {
   const [held, setHeld] = useState<string | null>(null);
   const [focus, setFocus] = useState<string | null>(null);
   const gesturesSeen = useHintSeen("pinnwand-gesten");
-  // Einmal im Kopf: „Nachrichten verschwinden nach 24 Stunden“ – gesehen beim Verlassen der Seite
-  const dayHint = useHintSeen("pinnwand-24h") === false;
-  useEffect(() => {
-    if (dayHint) return () => markHintSeen("pinnwand-24h");
-  }, [dayHint]);
   const list = board.items;
   const heldItem = list?.find((i) => i.id === held) ?? null;
   const write = () => openQuick({ kind: "pinnwand", me, more: (text) => setWriting({ text, quote: null }) });
@@ -104,7 +102,7 @@ export function PinboardView() {
     <>
       <PageHeader
         title="Pinnwand"
-        subtitle={dayHint ? "Nachrichten verschwinden nach 24 Stunden" : undefined}
+        subtitle={PIN_SUBLINE}
         backHref="/"
         action={
           <button type="button" onClick={write} aria-label="Nachricht an die Pinnwand" className={PAGE_PLUS}>

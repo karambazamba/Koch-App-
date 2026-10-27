@@ -1,7 +1,7 @@
 // Läden bewusst wählen (Tafel 88): Frage beim ersten Besuch, Laden-Reihe mit
-// 0 Artikeln, Knopftexte, „Bei Lidl einkaufen ›“, Vorwahl beim Hinzufügen,
+// 0 Artikeln, ＋ → „Mehr Details“, „Bei Lidl einkaufen ›“, Vorwahl beim Hinzufügen,
 // „Später“ fragt nie wieder.
-import { BASE, hello, seedFamily, store } from "../lib.mjs";
+import { BASE, hello, katalog, seedFamily, store } from "../lib.mjs";
 
 const open = async (page) => {
   await hello(page);
@@ -25,11 +25,10 @@ export const laedenWaehlen = async (page, check) => {
   const row = page.locator("[data-laden-reihe]");
   check(await row.getByRole("radio", { name: /^Rossmann/ }).isVisible(), "Rossmann in der Reihe, auch mit 0");
   await row.getByRole("radio", { name: /^Lidl/ }).tap();
-  check(await page.getByRole("button", { name: "Zu Lidl hinzufügen" }).isVisible(), "Knopf „Zu Lidl hinzufügen“");
+  check(!(await page.locator("[data-einkauf-knopf]").count()), "kein fester Knopf unten (＋ ist der eine Weg)");
   check(!(await page.locator("[data-einkaufsmodus]").count()), "ohne Artikel kein Einkaufsmodus-Knopf");
-  // Hinzufügen: Lidl vorgewählt
-  await page.getByRole("button", { name: "Zu Lidl hinzufügen" }).tap();
-  const sheet = page.getByRole("dialog", { name: "Mehr hinzufügen" });
+  // Hinzufügen über ＋ → „Mehr Details“: Lidl vorgewählt
+  const sheet = await katalog(page);
   check((await sheet.getByRole("radio", { name: /Lidl/ }).getAttribute("aria-checked")) === "true", "Laden-Wahl: Lidl vorgewählt");
   await sheet.getByLabel("Suchen oder eintragen").fill("Joghurt");
   await sheet.getByLabel("Suchen oder eintragen").press("Enter");
@@ -69,5 +68,5 @@ export const laedenSpaeter = async (page, check) => {
   await page.reload();
   await page.waitForTimeout(1100);
   check(!(await page.locator("[data-laden-frage]").count()), "Später: nie wieder gefragt");
-  check(await page.getByRole("button", { name: "Mehr hinzufügen" }).isVisible(), "Liste wie bisher");
+  check(await page.getByRole("button", { name: "Etwas auf die Einkaufsliste setzen" }).isVisible(), "Liste wie bisher");
 };

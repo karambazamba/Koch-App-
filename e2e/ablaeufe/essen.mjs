@@ -1,5 +1,5 @@
 // Essen, Rezept, Einkauf, Im Haus
-import { BASE, hello, seedFamily, store } from "../lib.mjs";
+import { BASE, hello, katalog, seedFamily, store } from "../lib.mjs";
 
 const RECIPE = { id: "sp", title: "Spaghetti Bolognese", category: "fleisch", servings: 4, prepMinutes: 30, ingredients: [{ id: "a", amount: 500, unit: "g", name: "Spaghetti" }, { id: "b", amount: 400, unit: "g", name: "Hackfleisch" }], steps: ["Zwiebeln schneiden.", "Anbraten.", "Köcheln lassen."], note: "", source: "eigenes", ai: null, favorite: true, thumbsUp: 0, thumbsDown: 0, cookedCount: 3, lastCookedAt: null, known: true, createdAt: "2026-10-01", updatedAt: "2026-10-01" };
 export const RECIPE_DATA = { "wasgibts.kochbuch": { version: 2, recipes: { sp: RECIPE } } };
@@ -27,9 +27,8 @@ export const rezept = async (page, check) => {
 
 export const einkauf = async (page, check) => {
   await family(page, "/einkaufsliste");
-  // „Mehr hinzufügen“: tippen (mehrere mit Komma), Fertig
-  await page.getByRole("button", { name: "Mehr hinzufügen" }).tap();
-  const sheet = page.getByRole("dialog", { name: "Mehr hinzufügen" });
+  // ＋ → „Mehr Details“ = „Mehr hinzufügen“: tippen (mehrere mit Komma), Fertig
+  const sheet = await katalog(page);
   await sheet.getByLabel("Suchen oder eintragen").fill("Milch, Brot");
   await sheet.getByLabel("Suchen oder eintragen").press("Enter");
   await sheet.getByText("2 ausgewählt").waitFor();
@@ -62,8 +61,7 @@ export const imHaus = async (page, check) => {
   check(await page.getByRole("region", { name: "Bald aufbrauchen" }).getByText("Joghurt").isVisible(), "„Bald aufbrauchen“: Joghurt");
   check(!(await page.getByText(/500 g|2 Stück/).count()), "keine Mengen");
   await page.goto(BASE + "/einkaufsliste");
-  await page.getByRole("button", { name: "Mehr hinzufügen" }).tap();
-  const sheet = page.getByRole("dialog", { name: "Mehr hinzufügen" });
+  const sheet = await katalog(page);
   await sheet.getByLabel("Suchen oder eintragen").fill("Brot");
   await sheet.getByLabel("Suchen oder eintragen").press("Enter");
   await sheet.getByRole("button", { name: "Fertig" }).tap();

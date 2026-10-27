@@ -39,9 +39,9 @@ describe("Wetter (B9)", () => {
   it("Morgens/Mittags/Abends mit Schirm-Tipp bei Regen", () => {
     const parts = dayParts(forecast(15), TODAY);
     expect(parts.map((p) => p.id)).toEqual(["morgens", "mittags", "abends"]);
-    expect(parts[0].tips).not.toContain("☂️ Schirm");
-    expect(parts[1].tips).toContain("☂️ Schirm");
-    expect(parts[2].tips).toContain("☂️ Schirm");
+    expect(parts[0].tips.map((t) => t.text)).not.toContain("Schirm");
+    expect(parts[1].tips.map((t) => t.text)).toContain("Schirm");
+    expect(parts[2].tips.map((t) => t.text)).toContain("Schirm");
   });
 
   it("Satz mit Bezug auf Termine", () => {

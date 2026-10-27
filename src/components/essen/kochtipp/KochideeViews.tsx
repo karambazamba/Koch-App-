@@ -15,6 +15,8 @@ import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { dishTone } from "@/lib/essen/dishLook";
 import { ingredientLine } from "@/lib/essen/kochtipp/idee";
 import type { CookCard } from "@/lib/essen/kochtipp/pick";
+import { useRecipes } from "@/lib/essen/cookbook";
+import { recipeHref } from "@/lib/essen/baking";
 
 /** Grün „alles im Haus“, grau „vermutlich im Haus: …“ bzw. orange „auf die Liste: …“ */
 function Line({ card }: { card: CookCard }) {
@@ -72,6 +74,8 @@ export function MiaInvite({ title, text, examples, onTalk, onExample }: { title:
 
 /** Ergebnis-Karte im Karussell */
 function ResultCard({ card, persons, onTake, onNavigate }: { card: CookCard; persons: number; onTake: () => void; onNavigate: () => void }) {
+  // Link nur, wenn es das Rezept (noch) gibt
+  const href = recipeHref(useRecipes(), card.recipeId);
   const chips = card.ingredients.slice(0, 6);
   return (
     <article className="flex w-[82%] shrink-0 snap-start flex-col overflow-hidden rounded-card border border-line bg-surface" aria-label={`Vorschlag: ${card.title}`}>
@@ -94,8 +98,8 @@ function ResultCard({ card, persons, onTake, onNavigate }: { card: CookCard; per
         </div>
         <Line card={card} />
         <div className="mt-auto grid grid-cols-2 gap-2 pt-1">
-          {card.recipeId ? (
-            <Link href={`/kochbuch/rezept?id=${encodeURIComponent(card.recipeId)}`} onClick={onNavigate} className={buttonClass("secondary", "md")}>
+          {href ? (
+            <Link href={href} onClick={onNavigate} className={buttonClass("secondary", "md")}>
               Rezept ansehen
             </Link>
           ) : (

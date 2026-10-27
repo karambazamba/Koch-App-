@@ -16,7 +16,8 @@ const sachen = (n: number) => `${n} ${n === 1 ? "Sache" : "Sachen"}`;
 /**
  * Rundes "+" (Trefferfläche 44×44): öffnet die Schnelleingabe „AUF DIE LISTE“.
  * „Mehr Details“ = das Einkauf-Fenster: Unsicheres als grauer Chip zum
- * Bestätigen, „Oft gekauft“ zum Antippen.
+ * Bestätigen, „Oft gekauft“ zum Antippen. Auf der Einkaufsliste öffnet
+ * „Mehr Details“ stattdessen den Katalog (`onMore`).
  */
 export function QuickAddButton({
   weekStart,
@@ -24,6 +25,7 @@ export function QuickAddButton({
   small = false,
   quick = false,
   shop,
+  onMore,
   className = "",
 }: {
   weekStart: string;
@@ -34,6 +36,8 @@ export function QuickAddButton({
   quick?: boolean;
   /** Offener Laden-Reiter: vorgewählt bei „Kommt auf die Liste für“ */
   shop?: string;
+  /** „Mehr Details“ selbst öffnen (Einkaufsliste: Katalog) statt des Einkauf-Fensters */
+  onMore?: (text: string) => void;
   className?: string;
 }) {
   const [open, setOpen] = useState<string | null>(null);
@@ -42,7 +46,7 @@ export function QuickAddButton({
     <>
       <button
         type="button"
-        onClick={() => openQuick({ kind: "einkauf", shopping: { weekStart, ...(shop ? { shop } : {}) }, more: setOpen })}
+        onClick={() => openQuick({ kind: "einkauf", shopping: { weekStart, ...(shop ? { shop } : {}) }, more: onMore ?? setOpen })}
         aria-label="Etwas auf die Einkaufsliste setzen"
         className={`flex h-11 w-11 items-center justify-center ${className}`}
       >

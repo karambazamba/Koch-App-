@@ -1184,11 +1184,6 @@ body:has([data-edit-leiste]) [data-begleitung-leiste] {
   visibility: hidden;
 }
 
-/* Einkaufsliste: Mias Hinweis neben dem Knopf würde „Mehr hinzufügen“ verdecken */
-body:has([data-einkauf-knopf]) [data-begleitung-leiste] .mia-einblenden {
-  display: none;
-}
-
 /* Mia lebt (Tafel 81/82): verschlafen = Augen halb, ruhig ab 19 Uhr = langsamer atmen; Zubehör still */
 [data-stimmung="verschlafen"] .av-eyes{transform:scaleY(.55);transform-origin:40px 34px}
 [data-stimmung="ruhig"] .av-body{animation-duration:5s}

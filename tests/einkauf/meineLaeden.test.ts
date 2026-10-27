@@ -83,10 +83,8 @@ describe("Laden-Reihe", () => {
     expect(chipIn(shopRow([item("Milch", "Lidl")], ["Rossmann"]), "meist")).toBe("laden:Lidl");
   });
 
-  it("Knopftexte je Reiter und Einkaufsmodus", async () => {
-    const { addLabel, shopModeLabel } = await ml();
-    expect(addLabel("Lidl")).toBe("Zu Lidl hinzufügen");
-    expect(addLabel()).toBe("Mehr hinzufügen");
+  it("Knopftext Einkaufsmodus", async () => {
+    const { shopModeLabel } = await ml();
     expect(shopModeLabel("Lidl")).toBe("Bei Lidl einkaufen");
   });
 

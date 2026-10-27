@@ -67,10 +67,10 @@ describe("Beim Start aufräumen (Übergang von der 3-Tage-Regel)", () => {
 });
 
 describe("Oberfläche", () => {
-  it("einmal im Kopf „Nachrichten verschwinden nach 24 Stunden“, kein Countdown; Menü „Dauerhaft anheften“; kleine Nadel", () => {
+  it("immer im Kopf „Nachrichten und Sprachnachrichten verschwinden nach 24 Stunden.“, kein Countdown; Menü „Dauerhaft anheften“; kleine Nadel", () => {
     const view = readFileSync("src/components/pinnwand/PinboardView.tsx", "utf8");
-    expect(view).toContain("Nachrichten verschwinden nach 24 Stunden");
-    expect(view).toMatch(/markHintSeen\("pinnwand-24h"\)/);
+    expect(view).toContain("Nachrichten und Sprachnachrichten verschwinden nach 24 Stunden.");
+    expect(view).not.toContain("pinnwand-24h\")");
     expect(view).not.toMatch(/noch \d|verbleibend|läuft ab/);
     expect(view).toMatch(/<Pin className="h-\[13px\] w-\[13px\]/);
     expect(readFileSync("src/components/pinnwand/ReactionMenu.tsx", "utf8")).toContain('"Dauerhaft anheften"');

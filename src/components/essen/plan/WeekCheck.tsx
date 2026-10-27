@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Repeat, Sparkles, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { WeekRulesEditor, tooManyDays } from "@/components/einstellungen/Editors";
 import { CARD, INPUT_BASE, PAGE_MAIN, buttonClass, chipClass } from "@/components/ui/styles";
 import { FixedMealsSection } from "@/components/essen/plan/FixedMealsSection";
@@ -117,6 +118,8 @@ function WeekCheckForm({
   const [plan, setPlan] = useState(initial);
   const [step, setStep] = useState(0);
   const [details, setDetails] = useState(false);
+  // Ausflugstag mit festem Gericht: erst kurz fragen (statt window.confirm)
+  const [askAway, setAskAway] = useState<string | null>(null);
   const available = availableDays(plan);
   const wishKid = plan.wish ? profile?.persons.find((p) => p.id === plan.wish!.kidId) : undefined;
   const canSwapKid = profile ? wishDayKids(profile).length > 1 : false;
@@ -134,18 +137,10 @@ function WeekCheckForm({
     if (key) (fixedByCategory[key] ??= []).push(`${m.title} (${m.weekday.slice(0, 2)})`);
   }
 
-  const toggleAway = (day: string) => {
+  const fixedOn = (day: string) => plan.fixedMeals.filter((m) => m.weekday === day);
+  const toggleAway = (day: string, confirmed = false) => {
     const becomesAway = !plan.awayDays.includes(day);
-    const fixedThatDay = plan.fixedMeals.filter((m) => m.weekday === day);
-    if (
-      becomesAway &&
-      fixedThatDay.length > 0 &&
-      !window.confirm(
-        `Am ${day} ist schon ${fixedThatDay.map((m) => `„${m.title}“`).join(" und ")} geplant. Trotzdem als Ausflugstag markieren? Das Gericht wird dann entfernt.`,
-      )
-    ) {
-      return;
-    }
+    if (becomesAway && !confirmed && fixedOn(day).length > 0) return setAskAway(day);
     setPlan((p) => {
       const away = p.awayDays.includes(day)
         ? p.awayDays.filter((d) => d !== day)
@@ -361,6 +356,18 @@ function WeekCheckForm({
           )}
         </div>
       </main>
+      {askAway && (
+        <ConfirmDialog
+          title={`Am ${askAway} unterwegs?`}
+          text={`Dann nehme ich ${fixedOn(askAway).map((m) => `„${m.title}“`).join(" und ")} raus.`}
+          confirmLabel="Unterwegs"
+          onConfirm={() => {
+            toggleAway(askAway, true);
+            setAskAway(null);
+          }}
+          onCancel={() => setAskAway(null)}
+        />
+      )}
     </div>
   );
 }

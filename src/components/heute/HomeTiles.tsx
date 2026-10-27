@@ -30,6 +30,7 @@ import type { Idea } from "@/lib/essen/ideas";
 import { GerichtSheet } from "@/components/essen/GerichtSheet";
 import { useTodayIdeas } from "@/lib/essen/useIdeas";
 import { useStock } from "@/lib/essen/useStock";
+import { recipeHref } from "@/lib/essen/baking";
 import { DEMO_SHOPS, clearDemoTile } from "@/lib/core/demo";
 import { shopTone, tileRows, type TileRows } from "@/lib/einkauf/shopGroups";
 import { setShopChip } from "@/lib/einkauf/shopMode";
@@ -112,7 +113,7 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCo
           corner={corner || swap}
           week={WEEK_HREF}
         />
-        {chosen && <GerichtSheet dish={chosen} take={takeLabel(over ? "morgen" : "heute")} onTake={() => take(chosen)} onClose={() => setChosen(null)} recipeHref={chosen.recipeId ? `/kochbuch/rezept?id=${encodeURIComponent(chosen.recipeId)}` : undefined} />}
+        {chosen && <GerichtSheet dish={chosen} take={takeLabel(over ? "morgen" : "heute")} onTake={() => take(chosen)} onClose={() => setChosen(null)} recipeHref={recipeHref(data.recipes, chosen.recipeId) ?? undefined} />}
       </>
     );
   }
@@ -204,7 +205,7 @@ function ShoppingHead() {
     <Link href="/einkaufsliste" onClick={() => setShopChip("alle")} className="flex min-h-11 items-start" aria-label="Einkaufsliste öffnen">
       <span className={`${HALF_LABEL} pr-6`}>
         <ShoppingCart className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-        <span className="truncate">Einkauf</span>
+        <span className="truncate">Einkaufsliste</span>
       </span>
     </Link>
   );
@@ -227,11 +228,11 @@ export function ShoppingTile({ size = "S", demo = false }: { half: boolean; size
   useEffect(() => {
     if (demo && hasOwn) clearDemoTile("einkauf");
   }, [demo, hasOwn]);
-  if (!shopping) return <section className={`${HALF} animate-pulse`} aria-label="Einkauf" />;
+  if (!shopping) return <section className={`${HALF} animate-pulse`} aria-label="Einkaufsliste" />;
   const showDemo = demo && !hasOwn;
   const rows = showDemo ? tileRows(DEMO_ITEMS, DEMO_ORDER, size) : tileRows(open, laeden?.myShops ?? [], size);
   return (
-    <section className={HALF} aria-label={showDemo ? "Einkauf · Beispiel" : "Einkauf"}>
+    <section className={HALF} aria-label={showDemo ? "Einkaufsliste · Beispiel" : "Einkaufsliste"}>
       <ShoppingHead />
       {rows.rows.length ? (
         <ShopRows {...rows} products={shopping.settings.products} demo={showDemo} />

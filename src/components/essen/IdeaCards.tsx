@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { buttonClass } from "@/components/ui/styles";
-import type { RecipeCategory } from "@/lib/essen/cookbook";
+import { useRecipes, type RecipeCategory } from "@/lib/essen/cookbook";
+import { recipeHref } from "@/lib/essen/baking";
 import { dishTone } from "@/lib/essen/dishLook";
 import { stockLine } from "@/lib/essen/dishIdeas";
 import { DishPicture } from "@/components/essen/DishPicture";
@@ -58,10 +59,13 @@ export function IdeaCards({
   /** Knopf rechts ("Heute" bzw. nach dem Essen "Morgen") */
   action?: "Heute" | "Morgen";
 }) {
+  const recipes = useRecipes();
   return (
     <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-card" aria-label={label}>
       {ideas.map((idea) => {
         const meta = ideaMeta(idea);
+        // Link nur, wenn es das Rezept (noch) gibt
+        const href = recipeHref(recipes, idea.recipeId);
         const body = (
           <>
             <DishPicture title={idea.title} category={idea.category} tone={dishTone(idea.title, idea.category)} alt="" small className={`shrink-0 rounded-full ${dense ? "h-9 w-9" : "h-12 w-12"}`} />
@@ -73,14 +77,14 @@ export function IdeaCards({
                 <span className={`truncate ${meta.ready ? "font-semibold text-good-ink" : ""}`}>{meta.stock}</span>
               </span>
             </span>
-            {(idea.recipeId || onOpen) && <ChevronRight className="h-4 w-4 shrink-0 text-faint" strokeWidth={2.25} aria-hidden />}
+            {(href || onOpen) && <ChevronRight className="h-4 w-4 shrink-0 text-faint" strokeWidth={2.25} aria-hidden />}
           </>
         );
         const area = `flex min-w-0 flex-1 items-center gap-3 text-left ${dense ? "py-1" : "py-2.5"}`;
         return (
           <li key={idea.id} className="flex items-center gap-2 pl-3 pr-3">
-            {idea.recipeId ? (
-              <Link href={`/kochbuch/rezept?id=${encodeURIComponent(idea.recipeId)}`} onClick={onNavigate} className={area} aria-label={`${idea.title} – Rezept`}>
+            {href ? (
+              <Link href={href} onClick={onNavigate} className={area} aria-label={`${idea.title} – Rezept`}>
                 {body}
               </Link>
             ) : onOpen ? (

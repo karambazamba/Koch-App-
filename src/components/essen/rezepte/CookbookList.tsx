@@ -97,7 +97,7 @@ export function CookbookList() {
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
-      <PageHeader title="Rezepte" action={<PagePlus label="Neues Rezept" onClick={() => setAdding(true)} />} />
+      <PageHeader title="Unsere Rezepte" action={<PagePlus label="Neues Rezept" onClick={() => setAdding(true)} />} />
       <main className={PAGE_MAIN}>
         <div className="flex items-center gap-3">
           <div className="relative flex min-w-0 flex-1 items-center">

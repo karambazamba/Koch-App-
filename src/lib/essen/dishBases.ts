@@ -319,7 +319,7 @@ export function fish(art: DishArt, rng: Rng, reg: Region): string {
   return out + scatter(art.toppings.filter((t) => t !== "zitrone"), rng, ellipse(fx, fy, 140, 70), { s: 0.9, density: 0.6 });
 }
 
-/** Fleisch + Beilage (Frikadellen, Hähnchen, Schnitzel, Würstchen) */
+/** Fleisch + Beilage (Frikadellen, Hähnchen, Schnitzel, Hackbraten, Würstchen) */
 export function meat(art: DishArt, rng: Rng, reg: Region): string {
   const [cx, cy] = center(reg);
   const r = size(reg);
@@ -333,6 +333,16 @@ export function meat(art: DishArt, rng: Rng, reg: Region): string {
     case "schnitzel":
       out += `${blob(rng, mx + 6, my + 10, r * 0.55, "#000", 0.3, ' opacity="0.14"')}${blob(rng, mx, my, r * 0.55, "#C9822E", 0.3)}${blob(rng, mx - 4, my - 4, r * 0.48, "#E0A548", 0.32)}${lemonSlice(mx + r * 0.3, my + r * 0.4, 28, 10)}`;
       break;
+    case "hackbraten":
+      // Drei Scheiben vom Laib: rosig innen, nur ein schmaler Krusten-Rand braun,
+      // frische Tomatensoße sparsam darunter, Ei in der Mitte (Falscher Hase)
+      out += blob(rng, mx + 4, my + 22, r * 0.5, "#D9483B", 0.18, ' opacity="0.8"');
+      for (let i = 0; i < 3; i++) {
+        const x = mx - 70 + i * 62;
+        const y = my - 14 + i * 14;
+        out += `<g transform="rotate(${-14 + i * 4} ${f(x)} ${f(y)})">${drop(x, y + 6, 58, 70, 0.15)}<rect x="${f(x - 56)}" y="${f(y - 72)}" width="112" height="144" rx="30" fill="#B8703F"/><rect x="${f(x - 49)}" y="${f(y - 65)}" width="98" height="130" rx="25" fill="#E9A386"/>${Array.from({ length: 9 }, () => `<circle cx="${f(x + between(rng, -38, 38))}" cy="${f(y + between(rng, -54, 54))}" r="${f(between(rng, 2, 3.5))}" fill="${rng() < 0.5 ? "#C97A5E" : "#5FA348"}" opacity="0.8"/>`).join("")}<ellipse cx="${f(x)}" cy="${f(y)}" rx="24" ry="30" fill="#FFFDF6"/><circle cx="${f(x)}" cy="${f(y + 2)}" r="13" fill="#F2B632"/></g>`;
+      }
+      break;
     case "wurst":
       for (let i = 0; i < 3; i++) out += `<g transform="rotate(${-30 + i * 8} ${f(mx)} ${f(my)})">${drop(mx, my - 50 + i * 50, 100, 22, 0.15)}<rect x="${f(mx - 100)}" y="${f(my - 72 + i * 50)}" width="200" height="44" rx="22" fill="#9A4E2A"/><path d="M${f(mx - 60)} ${f(my - 60 + i * 50)} l14 18 M${f(mx - 10)} ${f(my - 60 + i * 50)} l14 18 M${f(mx + 40)} ${f(my - 60 + i * 50)} l14 18" stroke="#6A3018" stroke-width="4"/></g>`;
       break;
@@ -343,7 +353,7 @@ export function meat(art: DishArt, rng: Rng, reg: Region): string {
         out += `${drop(x, y, 54, 50, 0.18)}<circle cx="${f(x)}" cy="${f(y)}" r="54" fill="#7E4A2A"/><circle cx="${f(x - 4)}" cy="${f(y - 4)}" r="46" fill="#9A5E36"/>${Array.from({ length: 10 }, () => `<circle cx="${f(x + between(rng, -36, 36))}" cy="${f(y + between(rng, -36, 36))}" r="${f(between(rng, 2, 4))}" fill="#6A3A20" opacity="0.7"/>`).join("")}<ellipse cx="${f(x - 18)}" cy="${f(y - 20)}" rx="16" ry="8" fill="#fff" opacity="0.18"/>`;
       }
   }
-  out += `<path d="M${f(mx - 80)} ${f(my + 110)} C ${f(mx - 20)} ${f(my + 140)}, ${f(mx + 60)} ${f(my + 130)}, ${f(mx + 100)} ${f(my + 100)}" stroke="#7A3E1E" stroke-width="12" fill="none" opacity="0.6" stroke-linecap="round"/>`;
+  if (art.variant !== "hackbraten") out += `<path d="M${f(mx - 80)} ${f(my + 110)} C ${f(mx - 20)} ${f(my + 140)}, ${f(mx + 60)} ${f(my + 130)}, ${f(mx + 100)} ${f(my + 100)}" stroke="#7A3E1E" stroke-width="12" fill="none" opacity="0.6" stroke-linecap="round"/>`;
   return out + scatter(art.toppings.filter((t) => !["hack", "haehnchen"].includes(t)), rng, ellipse(cx, cy, r * 0.85), { s: 0.9, density: 0.5 });
 }
 
