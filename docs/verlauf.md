@@ -2653,7 +2653,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Abteilung statt eines Buchstabens; neue Zeichnung „Aufschnitt“; nur „Egal
   wo“ = bis zu 6 Symbole + Anzahl, mit Läden die Zeilen je Laden.
 
-## Abends nichts doppelt (vX, Tafel 98)
+## Abends nichts doppelt (v0.124.0, Tafel 98)
 
 - Der gestrichelte Streifen „Ausblick morgen“ ist weg (Startseite und
   Kachel-Auswahl); gespeicherte Anordnungen verlieren ihn still (Startseite
