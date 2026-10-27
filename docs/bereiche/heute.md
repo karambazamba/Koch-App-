@@ -76,10 +76,18 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - `DEFAULT_HOME` zeigt Pinnwand, Wetter, Termine, Aufgaben, Essen, Einkauf,
   Spendentopf und Vorrat; Vorrat erscheint nur mit Baustein, Tipps nur mit
   Quelle und Baustein (Filter in `TodayPage`).
-- M und L = volle Breite, S = halbe. Zwei S hintereinander stehen
-  nebeneinander, eine einzelne S wird breit (`rowsOf`). Essen + Einkauf sind
-  ein Paar: immer direkt hintereinander, Essen zuerst (`keepPair`), und
-  wandern zusammen. Als eine Einheit im Raster zählen sie nur, wenn beide S sind.
+- M und L = volle Breite, S = immer halbe. Zwei S hintereinander stehen
+  nebeneinander, jede S-fähige Kachel mit jeder anderen (`rowsOf`). Eine
+  einzelne S bleibt halb; im Bearbeiten zeigt die freie Hälfte „＋ Kachel“
+  (`data-freie-haelfte`, Auswahl nur S-fähiger Kacheln, `placeBeside`),
+  sonst bleibt sie leer. Ziehen tauscht die Partner. Startseite v6
+  (`lonelySToM`): eine einzelne S, die bisher breit war, wird einmal M.
+- Notizen-Kachel (`heute/notizenKachel.ts`): S = neueste Notiz (2 Zeilen)
+  oder „Schnell was aufschreiben …“, M = 3 Zeilen, L = bis 5, Angeheftete
+  zuerst; Listen als „x von y erledigt“. Stift = Schnellnotiz.
+- Essen + Einkauf sind ein Paar: immer direkt hintereinander, Essen zuerst
+  (`keepPair`), und wandern zusammen. Als eine Einheit im Raster zählen sie
+  nur, wenn beide S sind.
 - Die Anordnung ändert sich nie von selbst. „zeigen“ setzt eine Kachel in
   Standard-Größe hinter die nächste sichtbare, die laut Standard davor steht
   (Paar: neben den Partner). `standardLayout`: Reihenfolge und Größen wie am Anfang.

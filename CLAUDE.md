@@ -47,8 +47,9 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   Leerer Kalender = Angebot „Kalender mitbringen“ (Apple/Google/Outlook).
 - Startseite = Kacheln in EINER gespeicherten Anordnung, die sich nie von
   selbst ändert. Bearbeiten direkt auf der Startseite (lange drücken: wackeln,
-  ziehen, „–“, S/M/L); zwei S nebeneinander, eine einzelne S wird breit; Essen
-  + Einkauf sind ein Paar. Größe ändert nur die Menge (S ≤ M ≤ L). Standard für
+  ziehen, „–“, S/M/L); jede S ist halb breit, zwei S nebeneinander, jede
+  S-fähige Kachel mit jeder anderen (eine einzelne S bleibt halb, im Bearbeiten
+  zeigt die freie Hälfte „＋ Kachel“); Essen + Einkauf sind ein festes Paar. Größe ändert nur die Menge (S ≤ M ≤ L). Standard für
   neue Nutzer: Pinnwand + Wetter (S), Termine, Aufgaben, Essen + Einkauf,
   Notizen („Im Haus“ nur mit Baustein). Jede Kachel öffnet ihre Seite.
 - Auf der Startseite gibt es genau zwei Mias: das eckige Logo (BrandMark,
