@@ -21,7 +21,6 @@ function tileIn(t: string): HomeTileId | null {
   if (/\baufgaben?\b/.test(t)) return "aufgaben";
   if (/\b(einkauf\w*|liste)\b/.test(t)) return "einkauf";
   if (/\b(termine?|kalender)\b/.test(t)) return "termine";
-  if (/\b(vorschau|morgen-?karte)\b/.test(t)) return "morgen";
   if (/\b(essen|gericht|essens-?kachel)\b/.test(t)) return "essen";
   return null;
 }

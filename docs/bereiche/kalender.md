@@ -59,6 +59,14 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
 - Fristen zeigen „bis heute“, „bis morgen“, „bis Mi“ oder „bis 24.10.“.
 - Ein Tag sortiert: Erledigtes ans Ende, dringende Aufgaben vorn, ganztägige
   Termine, dann Uhrzeit bzw. Erstellungszeit (`sortItems`).
+- Ganztägige Termine (vX, Tafel 98) zeigen in der Uhrzeit-Spalte „Ganztägig“
+  (früher „Tag“ bzw. „ganzt.“) – Termine-Kachel, „Dein Tag“ und Kalender-Tag
+  (`components/kalender/GanztagMarke.tsx`, Spaltenbreite `zeitSpalte`: breiter,
+  sobald ein ganztägiger dabei ist, nie umbrochen). Geburtstag, Jahrestag,
+  Hochzeitstag (Stichwort im Titel oder Etikett, `lib/kalender/anlass.ts`
+  `anlassOf`) bekommen davor ein kleines Linien-Symbol in Rosé (Geschenk bzw.
+  Herz, Token `--app-rose`, Klasse `text-rosee`). In halben Kacheln steht nur
+  das Symbol (ohne Anlass das Kalender-Symbol). Tests `tests/heute/abends.test.ts`.
 - „Heute“ zählt nur Termine, die noch laufen oder kommen; ohne Ende gilt
   1 Stunde (`upcomingTermine`).
 - Der nächste Tag heißt immer mit Wochentag: „Morgen · Mi“ (`tomorrowLabel`).

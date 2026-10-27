@@ -1,7 +1,6 @@
 "use client";
 
-// Kacheln auf "Heute" je Größe (S/M/L): Essen, Einkauf, Notizen, Vorrat,
-// Morgen. S = halbe Breite (allein: breit, gleicher Inhalt), M/L = volle
+// Kacheln auf "Heute" je Größe (S/M/L): Essen, Einkauf, Notizen, Vorrat. S = halbe Breite (allein: breit, gleicher Inhalt), M/L = volle
 // Breite mit mehr Inhalt. Antippen öffnet die Seite, der kleine Knopf oben
 // rechts legt schnell Neues an.
 
@@ -11,8 +10,8 @@ import { Pin, PenLine, Refrigerator, ShoppingCart, StickyNote } from "lucide-rea
 import { TILE, TILE_LABEL, buttonClass } from "@/components/ui/styles";
 import { QuickButton } from "@/components/ui/QuickButton";
 import { QuickAddButton } from "@/components/einkauf/QuickAdd";
-import { clockLabel, itemText } from "@/lib/kalender/answers";
-import { tomorrowLabel, weekdayShort, type DayItem } from "@/lib/kalender/model";
+import { clockLabel } from "@/lib/kalender/answers";
+import { tomorrowLabel } from "@/lib/kalender/model";
 import type { TileSize } from "@/lib/core/homeLayout";
 import { addDays, todayIso } from "@/lib/core/now";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
@@ -345,24 +344,6 @@ export function PantryTile({ size = "S" }: { size?: TileSize }) {
           Daraus kochen
         </button>
       )}
-    </section>
-  );
-}
-
-/** AUSBLICK MORGEN (ab 16 Uhr, gestrichelt, eine Zeile). Im Bearbeiten-Modus immer sichtbar. */
-export function MorgenTile({ date, items, dish, href, placeholder }: { date: string; items: DayItem[]; dish: string | null; href: string; placeholder?: boolean }) {
-  if (!items.length && !dish && !placeholder) return null;
-  return (
-    <section className="rounded-card border-2 border-dashed border-line" aria-label="Ausblick morgen">
-      <Link href={href} className="flex items-center gap-2 px-4 py-3">
-        <span className="shrink-0 whitespace-nowrap text-[10px] font-extrabold uppercase tracking-wider text-muted">Ausblick morgen · {weekdayShort(date)}</span>
-        {items.length || dish ? (
-          <span className="min-w-0 flex-1 truncate text-base">{[...items.map(itemText), dish ? `Essen: ${dish}` : ""].filter(Boolean).join(" · ")}</span>
-        ) : (
-          // Platzhalter (nur im Bearbeiten-Modus): kurz, damit er auch auf schmalen iPhones in eine Zeile passt
-          <span className="min-w-0 flex-1 truncate text-base text-muted">ab 16 Uhr</span>
-        )}
-      </Link>
     </section>
   );
 }

@@ -8,7 +8,8 @@
 // „Liste“), neue PINNWAND-Nachrichten von heute, ganz unten AUFGABEN zum
 // Abhaken („von gestern“ leise). Das Thema der Karte ist zart orange
 // hervorgehoben, trägt ihren Hinweis und steht in Sicht. Nach 22 Uhr: „Morgen
-// · Sa“ zum Umschalten. Leerer Tag: „Heute ist nichts geplant. Genieß es.“
+// · Sa“ zum Umschalten; ein Abend-Thema über morgen (Tafel 98) öffnet gleich
+// dort. Leerer Tag: „Heute ist nichts geplant. Genieß es.“
 
 import { helperName } from "@/lib/einstellungen/profile";
 import { miaDoneUndo, useMiaDone } from "@/lib/begleitung/miaDone";
@@ -25,7 +26,8 @@ import { clockLabel } from "@/lib/kalender/answers";
 import { addDays } from "@/lib/core/now";
 import { stockLine } from "@/lib/essen/dishIdeas";
 import { setDone, tomorrowLabel, type DayItem } from "@/lib/kalender/model";
-import { terminRows, topicSpot, type DaySection } from "@/lib/heute/deinTag";
+import { terminRows, topicSpot, zeigtMorgen, type DaySection } from "@/lib/heute/deinTag";
+import { GanztagMarke, zeitSpalte } from "@/components/kalender/GanztagMarke";
 import type { JetztTopic } from "@/lib/heute/jetztTopics";
 import type { MiaFrage } from "@/components/heute/useMiaRoutinen";
 import type { PinMessage } from "@/lib/pinnwand";
@@ -89,7 +91,9 @@ function Section({ id, title, children, highlight }: { id: DaySection; title: st
 
 export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, dish, shop, pins, topic, fragen = [], onTopicDone, onClose }: Props) {
   const night = minutes >= 22 * 60;
-  const [showTomorrow, setShowTomorrow] = useState(false);
+  // Abend-Thema über morgen (Tafel 98): gleich „Morgen · Mi“ zeigen, mit Umschalter
+  const [showTomorrow, setShowTomorrow] = useState(() => zeigtMorgen(topic, addDays(today, 1)));
+  const [tomorrowChip] = useState(showTomorrow);
   const [menu, setMenu] = useState<DayItem | null>(null);
   const [editing, setEditing] = useState<DayItem | null>(null);
   const spot = topic ? topicSpot(topic) : null;
@@ -100,6 +104,9 @@ export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, d
   const hint = (topic?.kind === "gleich" ? topic.detail : topic?.title) || topic?.detail || "";
   const list = showTomorrow ? tomorrow : termine;
   const { rows, nowAt } = terminRows(list, showTomorrow ? -1 : minutes);
+  // „Ganztägig“ ohne Umbruch: Spalte breiter, sobald ein ganztägiger Termin dabei ist
+  const wide = rows.some((r) => !r.item.time);
+  const spalte = zeitSpalte(wide, "gross");
   const body = useRef<HTMLDivElement>(null);
   // Das Thema der Karte in Sicht bringen
   useEffect(() => {
@@ -110,7 +117,7 @@ export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, d
   }, []);
   const empty = !termine.length && !dish && !shop && !openTasks.length && !pins.length;
   const marked = (key: string) => Boolean(spot && spot.key && key === spot.key);
-  const doneButton = topic && ["vorbereiten", "packliste", "geburtstag", "erinnerung"].includes(topic.kind);
+  const doneButton = topic && ["vorbereiten", "packliste", "geburtstag", "erinnerung", "jahrestag", "morgenwetter", "frueh", "vorlauf"].includes(topic.kind);
   const topicHint =
     hint ? (
       <span className="flex items-center justify-between gap-2 pt-0.5">
@@ -135,7 +142,7 @@ export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, d
             <h2 className="text-[30px] font-extrabold leading-tight tracking-tight">Dein Tag</h2>
           </div>
           <div className="flex items-center gap-2">
-            {night && (
+            {(night || tomorrowChip) && (
               <button type="button" onClick={() => setShowTomorrow((v) => !v)} aria-pressed={showTomorrow} className={chipClass(showTomorrow)}>
                 {tomorrowLabel(addDays(today, 1))}
               </button>
@@ -163,14 +170,14 @@ export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, d
                     <div className={marked(r.item.key) ? `${HL} pb-2` : ""}>
                     <button type="button" onClick={() => setMenu(r.item)} className="flex min-h-12 w-full flex-col justify-center px-1 text-left">
                       <span className={`flex items-center gap-3 ${r.past ? "text-muted" : ""}`}>
-                        <span className={`w-12 shrink-0 text-[15px] font-bold tabular-nums ${r.past ? "" : r.item.room === "arbeit" ? "text-work" : "text-accent-strong"}`}>{r.item.time ? clock(r.item.time) : "ganzt."}</span>
+                        <span className={`${spalte} shrink-0 whitespace-nowrap text-[15px] font-bold tabular-nums ${r.past ? "" : r.item.room === "arbeit" ? "text-work" : "text-accent-strong"}`}>{r.item.time ? clock(r.item.time) : <GanztagMarke title={r.item.title} label={r.item.label} />}</span>
                         <span className={`min-w-0 flex-1 truncate text-base font-semibold ${r.past ? "line-through decoration-1" : ""}`}>{r.item.title}</span>
                         {r.past && <Check className="h-4 w-4 shrink-0" strokeWidth={2.5} aria-label="vorbei" />}
                         {r.item.room === "arbeit" && !r.past && <span className="shrink-0 text-[12px] font-semibold text-work">Nur für dich</span>}
                       </span>
-                      {r.item.entry.typ === "termin" && r.item.entry.data.place && <span className="pl-[60px] text-[13px] text-muted">{r.item.entry.data.place}</span>}
+                      {r.item.entry.typ === "termin" && r.item.entry.data.place && <span className={`${wide ? "pl-[112px]" : "pl-[60px]"} text-[13px] text-muted`}>{r.item.entry.data.place}</span>}
                     </button>
-                    {marked(r.item.key) && <div className="pl-[64px] pr-1">{topicHint}</div>}
+                    {marked(r.item.key) && <div className={`${wide ? "pl-[116px]" : "pl-[64px]"} pr-1`}>{topicHint}</div>}
                     </div>
                   </li>
                 ))}

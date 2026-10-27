@@ -146,7 +146,6 @@ export function jetztInput(minutes: number, extra: Partial<JetztInput> = {}): Je
     weekCheck: null,
     demo: false,
     tiles: ["pinnwand", "wetter", "termine", "aufgaben", "essen", "einkauf", "spendentopf"],
-    tomorrowTiles: [],
     weights: {},
     hidden: [],
     ...extra,

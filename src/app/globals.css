@@ -42,6 +42,8 @@
   --color-danger: var(--app-danger);
   --color-danger-soft: var(--app-danger-soft);
   --color-danger-line: var(--app-danger-line);
+  /* Rosé: nur das kleine Herz/Geschenk an besonderen Tagen (Tafel 98) */
+  --color-rosee: var(--app-rose);
   --color-scrim: var(--app-scrim);
   --color-tip-scrim: var(--app-tip-scrim);
   --color-tip-ring: var(--app-tip-ring);
@@ -150,6 +152,7 @@
   --app-danger: #c8372d;
   --app-danger-soft: #fdecea;
   --app-danger-line: #f2c3bd;
+  --app-rose: #c2416b;
   --app-scrim: rgb(31 27 22 / 0.4);
   /* Einmal-Tipp (Abdunklung, betontes Wort) */
   --app-tip-scrim: rgb(24 18 14 / 0.7);
@@ -289,6 +292,7 @@
   --app-danger: #ff8f86;
   --app-danger-soft: #3a2022;
   --app-danger-line: #6e2f33;
+  --app-rose: #f28fae;
   --app-scrim: rgb(0 0 0 / 0.6);
   --app-tip-scrim: rgb(0 0 0 / 0.72);
   --app-tip-ring: #ffffff;
@@ -424,6 +428,7 @@
     --app-danger: #ff8f86;
     --app-danger-soft: #3a2022;
     --app-danger-line: #6e2f33;
+    --app-rose: #f28fae;
     --app-scrim: rgb(0 0 0 / 0.6);
     --app-tip-scrim: rgb(0 0 0 / 0.72);
     --app-tip-ring: #ffffff;

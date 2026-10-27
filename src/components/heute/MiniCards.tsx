@@ -10,6 +10,7 @@
 // lib/heute/termineKachel.ts. Erledigte Aufgaben: ca. 1,5 s durchgestrichen,
 // dann weich weg.
 
+import { GanztagMarke, zeitSpalte } from "@/components/kalender/GanztagMarke";
 import { TaskFrom } from "@/components/kalender/abgeben/TaskFrom";
 import Link from "next/link";
 import { useRef, useState } from "react";
@@ -134,14 +135,14 @@ const LIST = `${TILE_INNER} flex flex-col divide-y divide-line overflow-hidden`;
 const STATE_LABEL: Record<Exclude<TerminState, null | "naechster">, string> = { laeuft: "läuft", gleich: "gleich" };
 
 /** Termin-Zeile (30 px): Strich in Raumfarbe, Uhrzeit (feste Breite), Titel einzeilig, rechts „läuft“/„gleich“ */
-function TerminLine({ row, entering, onOpen }: { row: TerminRow; entering?: React.CSSProperties; onOpen: () => void }) {
+function TerminLine({ row, entering, onOpen, spalte, half }: { row: TerminRow; entering?: React.CSSProperties; onOpen: () => void; spalte: string; half: boolean }) {
   const { item, state } = row;
   const next = state === "gleich" || state === "naechster";
   return (
     <li className={next ? "bg-accent-soft/60" : undefined} style={entering} data-item={item.key} data-state={state ?? undefined} data-zeile>
       <button type="button" onClick={onOpen} className="flex h-[30px] w-full items-center gap-2 pl-2.5 pr-3 text-left" aria-label={`${item.time ? clockLabel(item.time) : "ganztägig"} ${item.title}${state === "laeuft" ? " – läuft" : state === "gleich" ? " – gleich" : ""} – Möglichkeiten`}>
         <span className={`h-3.5 w-[3px] shrink-0 rounded-full ${roomBarProps(item).className}`} style={roomBarProps(item).style} aria-hidden />
-        <span className="w-[38px] shrink-0 text-[13.5px] font-extrabold tabular-nums text-tile-accent">{item.time ? clockLabel(item.time) : "Tag"}</span>
+        <span className={`${spalte} shrink-0 whitespace-nowrap text-[13.5px] font-extrabold tabular-nums text-tile-accent`}>{item.time ? clockLabel(item.time) : <GanztagMarke title={item.title} label={item.label} kurz={half} />}</span>
         <span className={`min-w-0 flex-1 truncate text-[13.5px] leading-tight ${next ? "font-bold" : "font-semibold"}`}>{withoutEmoji(item.title)}</span>
         {reminderFor(item) && <Bell className="h-[13px] w-[13px] shrink-0 text-muted" strokeWidth={2.25} aria-label="mit Erinnerung" />}
         {(state === "laeuft" || state === "gleich") && <span className={`shrink-0 text-[11px] font-bold ${state === "gleich" ? "text-accent-strong" : "text-muted"}`}>{STATE_LABEL[state]}</span>}
@@ -161,13 +162,15 @@ export function TermineSection({ rows, label, href, today, size = "M", half = fa
   const sheet = adding !== null && <EntryForm kind="termin" onClose={() => setAdding(null)} date={today} initialText={adding} />;
   const plus = <QuickButton icon={Plus} label="Neuer Termin" onClick={() => openQuick({ kind: "termin", date: today, more: setAdding })} />;
   const rest = rows.length - shown.length;
+  // „Ganztägig“ passt ohne Umbruch: Spalte breiter, sobald ein ganztägiger Termin dabei ist (halbe Kachel: nur Symbol)
+  const spalte = zeitSpalte(!half && shown.some((r) => !r.item.time), "klein");
   return (
     <section className={`${TILE} flex flex-col gap-[7px] px-3 py-2.5`} aria-label="Termine">
       <TileHead title={demo?.label ?? label ?? "Termine"} more={half ? 0 : rest} href={href} action={plus} />
       {rows.length ? (
         <ul className={LIST}>
           {shown.map((row) => (
-            <TerminLine key={row.item.key} row={row} entering={entersAnim(before, row.item.key)} onOpen={() => (demo ? demo.onOpen(row.item) : setMenu(row.item))} />
+            <TerminLine key={row.item.key} row={row} spalte={spalte} half={half} entering={entersAnim(before, row.item.key)} onOpen={() => (demo ? demo.onOpen(row.item) : setMenu(row.item))} />
           ))}
         </ul>
       ) : (

@@ -32,11 +32,11 @@ describe("Startseite: Prüfen", () => {
   });
 
   it("wirft Unbekanntes und Doppeltes weg, ergänzt Fehlendes unsichtbar, korrigiert Größen", () => {
-    const tiles = sanitizeHome([null, "x", { id: "kladde" }, { id: "wetter", size: "L" }, { id: "wetter", visible: false }, { id: "spendentopf", size: "S" }, { id: "morgen", visible: false }]);
+    const tiles = sanitizeHome([null, "x", { id: "kladde" }, { id: "wetter", size: "L" }, { id: "wetter", visible: false }, { id: "spendentopf", size: "S" }, { id: "timer", visible: false }]);
     expect(tiles.slice(0, 3)).toEqual([
       { id: "wetter", visible: true, size: "L" },
       { id: "spendentopf", visible: true, size: "M" },
-      { id: "morgen", visible: false, size: "M" },
+      { id: "timer", visible: false, size: "M" },
     ]);
     expect(tiles).toHaveLength(HOME_TILES.length);
     expect(tiles.slice(3).every((t) => !t.visible)).toBe(true);
@@ -172,7 +172,7 @@ describe("Startseite: Texte", () => {
 
 describe("Startseite: Migration", () => {
   it("v5 bleibt, v4 bekommt einmal Notizen ans Ende der sichtbaren, v3 zusätzlich den Spendentopf", () => {
-    expect(migrateHome({ version: 5, tiles: DEFAULT_HOME, tipSeen: true })).toEqual({ version: 6, tiles: lonelySToM(DEFAULT_HOME), tipSeen: true });
+    expect(migrateHome({ version: 5, tiles: DEFAULT_HOME, tipSeen: true })).toEqual({ version: 7, tiles: lonelySToM(DEFAULT_HOME), tipSeen: true });
     const v4 = migrateHome({ version: 4, tiles: [{ id: "termine", visible: true, size: "M" }, { id: "notizen", visible: false, size: "M" }, { id: "wetter", visible: true, size: "S" }], tipSeen: true })!;
     expect(visible(v4.tiles)).toEqual(["termine", "wetter", "notizen"]);
     const v3 = migrateHome({ version: 3, tiles: [{ id: "termine", visible: true, size: "M" }, { id: "wetter", visible: true, size: "S" }, { id: "notizen", visible: false, size: "M" }] })!;
@@ -207,9 +207,36 @@ describe("Startseite: Migration", () => {
     expect(visible(off.tiles).at(-1)).toBe("notizen");
   });
 
+  it("v6 → v7 (Tafel 98): „Ausblick morgen“ fällt still weg, die übrige Anordnung bleibt", () => {
+    const v6 = [
+      { id: "pinnwand", visible: true, size: "S" },
+      { id: "wetter", visible: true, size: "S" },
+      { id: "termine", visible: true, size: "M" },
+      { id: "morgen", visible: true, size: "M" },
+      { id: "aufgaben", visible: true, size: "L" },
+      { id: "essen", visible: true, size: "S" },
+      { id: "einkauf", visible: true, size: "S" },
+    ];
+    const m = migrateHome({ version: 6, tiles: v6, tipSeen: true })!;
+    expect(m.version).toBe(7);
+    expect(m.tipSeen).toBe(true);
+    expect(m.tiles.some((t) => (t.id as string) === "morgen")).toBe(false);
+    expect(m.tiles.filter((t) => t.visible).map((t) => [t.id, t.size])).toEqual([
+      ["pinnwand", "S"],
+      ["wetter", "S"],
+      ["termine", "M"],
+      ["aufgaben", "L"],
+      ["essen", "S"],
+      ["einkauf", "S"],
+    ]);
+    // Auch aus alten Sicherungen (v1–v5) nie mehr
+    for (const version of [1, 2, 3, 4, 5]) expect(migrateHome({ version, tiles: [{ id: "morgen", visible: true }, { id: "termine" }] })!.tiles.some((t) => (t.id as string) === "morgen")).toBe(false);
+    expect(HOME_TILES.some((t) => (t.id as string) === "morgen")).toBe(false);
+  });
+
   it("Unbekanntes → null", () => {
     expect(migrateHome(null)).toBeNull();
-    expect(migrateHome({ version: 7 })).toBeNull();
+    expect(migrateHome({ version: 8 })).toBeNull();
     expect(migrateHome({ version: 2, tiles: "x" })!.tiles).toHaveLength(HOME_TILES.length);
   });
 });
@@ -222,7 +249,7 @@ describe("Startseite: Speicher", () => {
     expect(home.loadHomeTiles()).toEqual(home.DEFAULT_HOME);
     const undo = home.changeHome({ tile: "wetter", action: "gross" });
     expect(sizeOf(home.loadHomeTiles(), "wetter")).toBe("L");
-    expect(JSON.parse(win.localStorage.getItem("wasgibts.startseite")!).version).toBe(6);
+    expect(JSON.parse(win.localStorage.getItem("wasgibts.startseite")!).version).toBe(7);
     undo();
     expect(sizeOf(home.loadHomeTiles(), "wetter")).toBe("S");
   });

@@ -55,13 +55,12 @@ describe("Mia: ruhiger ↔ farbig", () => {
 describe("Jetzt-Karte ohne Doppelung", () => {
   const evening = (over: Partial<JetztInput> = {}) =>
     jetztInput(20 * 60, { tomorrow: { label: "Morgen · Do", date: "2026-10-22", items: [jetztTermin("Kita bringen", "08:00", {}, "2026-10-22")] }, ...over });
-  it("ohne Morgen-Kacheln: Ausblick kommt vor; Wetter nie ohne Plan", () => {
-    const kinds = jetztTopics(evening()).map((t) => t.kind);
-    expect(kinds).toContain("ausblick");
-    expect(kinds).not.toContain("wetter");
-  });
-  it("Termine-Kachel zeigt schon „Morgen“ → kein Ausblick ohne Zusatz", () => {
-    expect(jetztTopics(evening({ tomorrowTiles: ["termine"] })).map((t) => t.kind)).not.toContain("ausblick");
+  it("abends EIN Thema: früher Termin morgen mit Wecker, nie die Kachel-Zeile „Morgen · Do: …“; Wetter nie ohne Plan", () => {
+    const list = jetztTopics(evening());
+    expect(list).toHaveLength(1);
+    expect(list[0]).toMatchObject({ kind: "frueh", title: "Morgen 8 Uhr Kita bringen.", detail: "Wecker auf 7?" });
+    expect(list.map((t) => t.kind)).not.toContain("wetter");
+    expect(list.some((t) => t.title.startsWith("Morgen · "))).toBe(false);
   });
   it("Regen zum Draußen-Termin bleibt – auch wenn die Wetter-Kachel da ist", () => {
     const planWeather = { key: "f", title: "Fußball", time: "17:00", word: "Regen" };

@@ -7,6 +7,7 @@
 // 1.0: keine eigene Zeile „Termin am …“). „Schnell eintragen“ nur bei
 // Wiederkehrendem. Kein Essen, keine Aufgaben.
 
+import { GanztagMarke, zeitSpalte } from "@/components/kalender/GanztagMarke";
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Bell } from "lucide-react";
@@ -64,7 +65,7 @@ export function DayPanel({ date, today, entries, filter = "alles", heading = tru
             return (
               <li key={i.key}>
                 <button type="button" onClick={() => setMenu(i)} className={`flex min-h-12 w-full items-center gap-3 text-left ${i.done ? "opacity-50" : ""}`} aria-label={`${i.title} – Möglichkeiten${i.time ? ` (${clockLabel(i.time)})` : ""}`}>
-                  <span className="w-12 shrink-0 text-[15px] font-bold tabular-nums text-work">{i.time ? clockLabel(i.time) : "ganzt."}</span>
+                  <span className={`${zeitSpalte(items.some((x) => !x.time), "gross")} shrink-0 whitespace-nowrap text-[15px] font-bold tabular-nums text-work`}>{i.time ? clockLabel(i.time) : <GanztagMarke title={i.title} label={i.label} />}</span>
                   <span className="min-w-0 flex-1 truncate text-base font-semibold">{i.title}</span>
                   {reminderFor(i) && <Bell className="h-[13px] w-[13px] shrink-0 text-muted" strokeWidth={2.25} aria-label="mit Erinnerung" />}
                   <AddedBy owner={i.entry.besitzer} />

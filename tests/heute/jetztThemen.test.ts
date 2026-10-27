@@ -3,7 +3,8 @@
 // Beispieldaten; nie „°“, nie Wetter ohne Plan, keine Zähler, keine
 // Druck-Wörter, Zeile 1 höchstens 32 Zeichen.
 import { describe, expect, it } from "vitest";
-import { QUIET_TEXT, TITLE_MAX, birthdayName, isOutdoor, jetztTopics, type JetztInput } from "@/lib/heute/jetztTopics";
+import { QUIET_TEXT, TITLE_MAX, isOutdoor, jetztTopics, type JetztInput } from "@/lib/heute/jetztTopics";
+import { birthdayName } from "@/lib/kalender/anlass";
 import { jetztCommand } from "@/lib/heute/jetztCommand";
 import { jetztInput as base, jetztTermin as termin } from "../helpers";
 
@@ -71,8 +72,8 @@ describe("Jetzt-Karte: ein Tag wie auf Tafel 60", () => {
     expect(jetztTopics({ ...noted, kids: false }).some((x) => x.kind === "absprache")).toBe(false);
   });
 
-  it("21:00 – Ausblick: erster Termin morgen mit Packliste", () => {
-    expect(first(tafelTag(H(21)))).toMatchObject({ kind: "ausblick", title: "Morgen · Do: 10:00 Mathis Spiel", detail: "Trikot gewaschen?", button: "Packliste" });
+  it("21:00 – abends nur noch EIN Thema (Tafel 98): morgen steht schon in den Kacheln", () => {
+    expect(jetztTopics(tafelTag(H(21)))).toEqual([{ id: "abend:2026-10-21", kind: "abend", title: "Für morgen ist alles sortiert.", detail: "Schönen Abend.", score: 1, target: { href: "/tag?datum=2026-10-22" }, button: null }]);
   });
 
   it("den ganzen Tag: nie „°“, Zeile 1 ≤ 32 Zeichen, höchstens drei, ein Knopf aus der Liste", () => {
@@ -127,10 +128,9 @@ describe("Jetzt-Karte: nichts doppelt", () => {
     expect(kinds(base(H(10), { urgent: [{ key: "a", title: "Formular" }], tiles: [] }))).toContain("aufgabe");
   });
 
-  it("Ausblick ohne Notiz nur, wenn keine Kachel „Morgen“ zeigt", () => {
+  it("abends nie die Kachel-Zeile „Morgen · Do: 9:00 Arzt“ (die Termine-Kachel zeigt sie schon)", () => {
     const x = base(H(20), { tomorrow: { label: "Morgen · Do", date: "2026-10-22", items: [termin("Arzt", "09:00", {}, "2026-10-22")] } });
-    expect(first(x)).toMatchObject({ kind: "ausblick", detail: "Den Tag ansehen", button: "Öffnen" });
-    expect(kinds({ ...x, tomorrowTiles: ["termine"] })).not.toContain("ausblick");
+    expect(jetztTopics(x).every((t) => !t.title.startsWith("Morgen · "))).toBe(true);
   });
 
   it("Einkauf zuerst, wenn der Kochstart noch > 30 Min weg ist – mit Zutaten fürs Essen", () => {
@@ -162,7 +162,7 @@ describe("Jetzt-Karte: Knöpfe und Ruhe", () => {
     expect(t).toEqual([{ id: "ruhig:2026-10-21", kind: "ruhig", title: QUIET_TEXT, detail: "", score: 1, target: null, button: null }]);
   });
 
-  it("nachts nur Erinnerung/Timer/Ausblick/Geburtstag; Feierabend nur Sanftes", () => {
+  it("nachts nur Erinnerung/Timer/Geburtstag; Feierabend nur Sanftes", () => {
     const x = base(H(23), { pin: { id: "p", author: "Lisa", text: "Hi", when: "22:50" }, reminder: { key: "r", text: "Morgen um 8:00: Arzt." } });
     expect(kinds(x)).toEqual(["erinnerung"]);
     expect(kinds(base(H(10), { calm: true, upcoming: [termin("Meeting", "10:05", { work: true, note: "Folien" })] }))).not.toContain("gleich");

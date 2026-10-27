@@ -5,8 +5,12 @@
 // Interesse (oft angetippt = mehr, weggewischt/erledigt = weniger) wird
 // langsam gelernt. Höchstens drei Themen zum Wischen; nichts Passendes =
 // „Alles ruhig. Ich sag Bescheid.“ Die Kachel-Anordnung bleibt unberührt.
+// Abends (Tafel 98, `abendThema.ts`) höchstens EIN Thema in fester Reihenfolge.
 
 import type { HomeTileId } from "@/lib/core/homeLayout";
+import type { Anlass } from "@/lib/kalender/anlass";
+import { birthdayName } from "@/lib/kalender/anlass";
+import { abendThemen, isAbend } from "@/lib/heute/abendThema";
 
 export type JetztKind =
   | "erinnerung"
@@ -21,7 +25,11 @@ export type JetztKind =
   | "kochstart"
   | "absprache"
   | "geburtstag"
-  | "ausblick"
+  | "jahrestag"
+  | "morgenwetter"
+  | "frueh"
+  | "vorlauf"
+  | "abend"
   | "wochencheck"
   | "wetter"
   | "aufgabe"
@@ -68,6 +76,8 @@ export type JetztTermin = {
   work?: boolean;
   /** Draußen (Fußball, Spielplatz, Laufen …) – nur dann zählt Wetter */
   outdoor?: boolean;
+  /** Geburtstag bzw. Jahrestag/Hochzeitstag (Stichwort oder Etikett) */
+  anlass?: Anlass;
 };
 
 export type JetztInput = {
@@ -75,6 +85,16 @@ export type JetztInput = {
   today: string;
   /** Feierabend oder Wochenende: nur sanfte Themen */
   calm: boolean;
+  /** Tagesphase Feierabend (abends gilt Tafel 98 schon vor 19 Uhr, wenn heute nichts mehr kommt) */
+  evening?: boolean;
+  /** Allein im Haushalt: „dein“ statt „euer“ */
+  solo?: boolean;
+  /** Kinder mit Weg zu Kita bzw. Schule (für „Jacken für die Kita raus.“) */
+  kidsWay?: "Kita" | "Schule" | null;
+  /** Regen morgen früh (7–9 Uhr, ehrliche Regel) */
+  tomorrowRain?: boolean;
+  /** Gericht von morgen, das heute schon einen Handgriff braucht (`essen/vorlauf.ts`) */
+  tomorrowDish?: { name: string; prep: string } | null;
   /** Termine heute, die noch kommen (mit Uhrzeit, sortiert) */
   upcoming: JetztTermin[];
   /** "Morgen · Mi" und die Termine von morgen (mit Uhrzeit zuerst) */
@@ -117,8 +137,6 @@ export type JetztInput = {
   demo: boolean;
   /** Sichtbare Kacheln – was sie zeigen, wiederholt die Karte nicht */
   tiles: HomeTileId[];
-  /** Kacheln, die schon „Morgen“ zeigen (Termine bzw. Morgen-Kachel) */
-  tomorrowTiles?: HomeTileId[];
   /** Spruch des Tages (Mia denkt mit) – steht nur, wenn sonst nichts dran ist */
   spruch?: string | null;
   /** Interesse je Art (lokal gezählt), heute erledigte/ausgeblendete Themen */
@@ -153,22 +171,7 @@ export function isOutdoor(title: string, place = "", sportOutdoor = false): bool
   return /fu(ß|ss)ball|training|spielplatz|park\b|garten|wander|ausflug|drau(ß|ss)en|zoo|grill|turnier|laufen|joggen|radtour|fahrrad|spaziergang|flohmarkt|wochenmarkt|schwimmbad|freibad|see\b|strand/i.test(`${title} ${place}`);
 }
 
-/** Wer Geburtstag hat ("Geburtstag Oma", "Omas Geburtstag") – oder null */
-export function birthdayName(title: string): string | null {
-  const clean = title.replace(/\p{Extended_Pictographic}/gu, "").trim();
-  const before = clean.match(/^(.+?)\s+geburtstag\b/i);
-  if (before) {
-    const n = before[1].trim();
-    // Genitiv: "Oma's"/"Omas" → Oma, "Klaus" bleibt Klaus
-    if (/['’]s$/u.test(n)) return n.slice(0, -2);
-    return /[aeioy]s$/i.test(n) ? n.slice(0, -1) : n;
-  }
-  const after = clean.match(/geburtstag(?:\s+von)?[\s:·-]+(.+)$/i);
-  return after ? after[1].trim() || null : null;
-}
-
 const MAX = 3;
-/** Nachts (22–6) nur Erinnerung, Timer, Kochen, Pause, Ausblick, Geburtstag */
 /** Spruch auf zwei Zeilen: Zeile 1 bis 32 Zeichen, nur am Wortende umbrochen */
 export function spruchZeilen(s: string): [string, string] {
   if (s.length <= TITLE_MAX) return [s, ""];
@@ -176,7 +179,10 @@ export function spruchZeilen(s: string): [string, string] {
   return [s.slice(0, space), s.slice(space + 1)];
 }
 
-const NIGHT_KINDS: JetztKind[] = ["erinnerung", "timer", "kochen", "pause", "ausblick", "geburtstag", "beispiel"];
+/** Nachts (22–6) nur Erinnerung, Timer, Kochen, Pause, Geburtstag */
+const NIGHT_KINDS: JetztKind[] = ["erinnerung", "timer", "kochen", "pause", "geburtstag", "beispiel"];
+/** Abends geht nur das Laufende vor (Erinnerung, Timer, Kochen, Pause) – sonst das EINE Abend-Thema */
+const ABEND_LIVE: JetztKind[] = ["erinnerung", "timer", "kochen", "pause"];
 
 /** Die Themen für jetzt – höchstens drei, das Wichtigste zuerst (nie leer) */
 export function jetztTopics(x: JetztInput): JetztTopic[] {
@@ -265,13 +271,6 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
     add({ id: `geburtstag:${b.date}:${b.title}`, kind: "geburtstag", title: name ? `${when} hat ${name} Geburtstag` : `${when}: ${b.title}`, detail: b.when === "heute" ? "Vielleicht kurz anrufen?" : "Noch Zeit für eine Kleinigkeit", score: b.when === "heute" ? 82 : 58, target: { href: `/tag?datum=${b.date}` }, button: "Erledigt", gentle: true, night: true });
   }
 
-  // Ausblick abends (ab 19 Uhr): erster Termin morgen – mit Notiz als Packliste; ohne Notiz nur, wenn keine Kachel „Morgen“ zeigt
-  if (x.minutes >= 19 * 60 || x.minutes < 6 * 60) {
-    const first = x.tomorrow.items.find((i) => i.note) ?? x.tomorrow.items[0];
-    if (first && (first.note || !(x.tomorrowTiles ?? []).length))
-      add({ id: `ausblick:${first.key}`, kind: "ausblick", title: `${x.tomorrow.label}: ${first.time ? `${clock(first.time)} ` : ""}${first.title}`, detail: first.note ? ask(first.note) : "Den Tag ansehen", score: night ? 60 : 50, target: { href: `/tag?datum=${x.tomorrow.date}` }, button: first.note ? "Packliste" : "Öffnen", gentle: true });
-  }
-
   // Aufgaben nur, wenn die Aufgaben-Kachel fehlt
   if (!shows("aufgaben"))
     for (const t of [...x.urgent, ...x.dueToday].slice(0, 1)) add({ id: `aufgabe:${t.key}`, kind: "aufgabe", title: t.title, detail: "Heute dran", score: 54, target: { href: "/aufgaben" }, button: "Öffnen", gentle: !t.work });
@@ -291,6 +290,14 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
 
   if (x.weekCheck && !night) add({ id: `wochencheck:${x.weekCheck}`, kind: "wochencheck", title: "Kurzer Wochencheck?", detail: "Sag einfach alles, ich sortiere.", score: 50, target: { action: "wochencheck" }, button: "Öffnen", gentle: true });
   if (x.demo) add({ id: "beispiel", kind: "beispiel", title: "Das ist ein Beispiel-Tag", detail: "Probier alles aus: tippen, abhaken, verschieben", score: 24, target: null, button: null, gentle: true, night: true });
+
+  // Abends (Tafel 98): höchstens EIN Thema, nur was keine Kachel zeigt
+  if (isAbend(x)) {
+    const live = c.filter((t) => ABEND_LIVE.includes(t.kind) && !x.hidden.includes(t.id)).sort((a, b) => b.score - a.score)[0];
+    const pick = live ?? abendThemen(x).find((t) => !x.hidden.includes(t.id))!;
+    const { id, kind, title, detail, score, target, button } = pick;
+    return [{ id, kind, title: short(title), detail, score, target, button }];
+  }
 
   const ranked = c
     .filter((t) => !x.hidden.includes(t.id))
