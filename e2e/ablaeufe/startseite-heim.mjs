@@ -89,3 +89,20 @@ export const oeffnenStartseite = async (page, check) => {
   await page.waitForTimeout(1200);
   check(page.url().includes("/kochbuch/kochen"), "Kochmodus bleibt");
 };
+
+// Mia denkt mit (Tafel 90): beim ersten Besuch einer Seite einmal eine Karte,
+// „Alles klar“ = nie wieder auf dieser Seite.
+export const ersterBesuchKarte = async (page, check) => {
+  await hello(page);
+  await seedFamily(page, { "wasgibts.miadenkt": { version: 1, level: "normal", vorgestellt: {}, besucht: [], antworten: {}, rituale: [], eingeplant: [], tage: {}, sprueche: [] } });
+  await page.goto(BASE + "/aufgaben");
+  await page.waitForTimeout(1500);
+  const klar = page.getByRole("button", { name: "Alles klar" });
+  check(await klar.isVisible(), "erster Besuch: Mias Karte");
+  await klar.tap();
+  await page.waitForTimeout(600);
+  check(!(await klar.count()), "„Alles klar“: Karte weg");
+  await page.reload();
+  await page.waitForTimeout(1500);
+  check(!(await page.getByRole("button", { name: "Alles klar" }).count()), "zweiter Besuch: keine Karte");
+};

@@ -54,7 +54,7 @@ export const laedenWaehlen = async (page, check) => {
   await meine.getByRole("button", { name: "Laden dazu" }).tap();
   await page.waitForTimeout(300);
   check((await store(page, "wasgibts.einkaufsliste")).myShops.includes("Hofladen"), "eigener Laden dazu");
-  await meine.getByRole("button", { name: "Hofladen" }).tap();
+  await meine.getByRole("button", { name: "Hofladen", exact: true }).tap();
   await page.waitForTimeout(300);
   await meine.getByRole("button", { name: "Entfernen" }).tap();
   await page.waitForTimeout(300);
