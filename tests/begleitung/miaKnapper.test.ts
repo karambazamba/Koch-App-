@@ -8,31 +8,21 @@ import { at } from "../helpers";
 import { applyOps, type ChangeOp } from "@/lib/begleitung/ops";
 import { isSafeOp } from "@/lib/begleitung/miaDone";
 import { needsLargeModel } from "@/lib/begleitung/engine";
-import { NOTIZEN_AUS } from "@/lib/begleitung/noteTools";
 import { tidyMiaText } from "@/lib/begleitung/tidy";
 import { kontext, letzte, rufe } from "./werkzeugKontext";
 
 beforeEach(() => at("2026-10-21T09:00"));
 
-describe("Notizen aus (Launch 1.0)", () => {
-  it("schreibende Notiz-Werkzeuge lehnen ab und verweisen auf eine Aufgabe", () => {
+describe("Notizen gehören zu 1.0", () => {
+  it("Notiz-Werkzeuge schreiben wieder – auch ohne eingeschalteten Baustein", () => {
     const ctx = kontext();
     for (const [name, input] of [
       ["notiz_anlegen", { titel: "Tierpark" }],
       ["liste_eintrag_hinzufuegen", { liste: "Ideen", eintraege: ["Tierpark"] }],
       ["schnellnotiz_schreiben", { text: "Tierpark" }],
     ] as const) {
-      const res = rufe(ctx, name, input);
-      expect(res.isError).toBe(true);
-      expect(res.content).toBe(NOTIZEN_AUS);
+      expect(rufe(ctx, name, input).isError).toBeFalsy();
     }
-    expect(NOTIZEN_AUS).toMatch(/aufgabe_anlegen/);
-    expect(ctx.data.notes ?? []).toHaveLength(0);
-  });
-
-  it("wer Notizen schon nutzt, behält sie", () => {
-    const ctx = kontext({ features: ["notizen"] });
-    expect(rufe(ctx, "notiz_anlegen", { titel: "Tierpark" }).isError).toBeFalsy();
   });
 });
 

@@ -96,9 +96,9 @@ describe("Startseite: Spendentopf-Kachel standardmäßig an", () => {
     const v3 = { version: 3, tipSeen: true, tiles: [{ id: "termine", visible: true, size: "M" }, { id: "essen", visible: true, size: "S" }, { id: "einkauf", visible: true, size: "S" }] };
     const m = migrateHome(v3)!;
     const shown = m.tiles.filter((t) => t.visible).map((t) => t.id);
-    expect(m.version).toBe(4);
-    expect(shown).toEqual(["termine", "essen", "einkauf", "spendentopf"]);
-    // Wer sie entfernt hat (v4), behält das
+    expect(m.version).toBe(5);
+    expect(shown).toEqual(["termine", "essen", "einkauf", "spendentopf", "notizen"]);
+    // Wer sie entfernt hat (v5), behält das
     const v4 = migrateHome({ ...m, tiles: m.tiles.map((t) => (t.id === "spendentopf" ? { ...t, visible: false } : t)) })!;
     expect(v4.tiles.find((t) => t.id === "spendentopf")?.visible).toBe(false);
   });

@@ -30,8 +30,8 @@ export const HOME_TILES: { id: HomeTileId; label: string; hint: string; sizes: T
   { id: "tipps", label: "Tipps fürs Wochenende", hint: "Was in eurer Nähe los ist", sizes: ["M", "L"], size: "M", feature: "regiontipps", fresh: true },
   { id: "timer", label: "Timer", hint: "Bis zu 5 Timer und eine Stoppuhr", sizes: ["S", "M"], size: "M", fresh: true },
   { id: "sport", label: "Sport", hint: "Wochenziel und Trainings", sizes: ["S", "M", "L"], size: "M", feature: "sport", fresh: true },
-  { id: "notizen", label: "Notizen", hint: "Schnellnotiz + Angeheftetes", sizes: ["S", "M", "L"], size: "M", feature: "notizen" },
   { id: "vorrat", label: "Im Haus", hint: "Füllt sich von selbst beim Einkaufen", sizes: ["S", "M"], size: "S", feature: "vorrat" },
+  { id: "notizen", label: "Notizen", hint: "Schnellnotiz + Angeheftetes", sizes: ["S", "M", "L"], size: "M", feature: "notizen" },
   { id: "morgen", label: "Ausblick morgen", hint: "Was morgen ansteht, ab 16 Uhr", sizes: ["M"], size: "M" },
   { id: "post", label: "Post", hint: "Briefe und Rechnungen", sizes: ["S", "M"], size: "M", soon: true },
 ];
@@ -43,12 +43,12 @@ export const tileMeta = (id: HomeTileId) => HOME_TILES.find((t) => t.id === id)!
 
 export const tileLabel = (id: HomeTileId) => HOME_TILES.find((t) => t.id === id)?.label ?? id;
 
-/** Launch 1.0: ohne Spendentopf (Baustein, ausgeblendet); Im Haus nur mit Baustein */
-const ON_BY_DEFAULT: HomeTileId[] = ["pinnwand", "wetter", "termine", "aufgaben", "essen", "einkauf", "vorrat"];
+/** Launch 1.0: mit Notizen, ohne Spendentopf (Baustein, ausgeblendet); Im Haus nur mit Baustein */
+const ON_BY_DEFAULT: HomeTileId[] = ["pinnwand", "wetter", "termine", "aufgaben", "essen", "einkauf", "vorrat", "notizen"];
 
 /**
  * Standard: Pinnwand + Wetter (klein nebeneinander), Termine, Aufgaben, Essen +
- * Einkauf (Vorrat nur mit Baustein). Die Reihenfolge ist die gespeicherte –
+ * Einkauf, Notizen (Vorrat nur mit Baustein). Die Reihenfolge ist die gespeicherte –
  * sie ändert sich nie von selbst.
  */
 export const DEFAULT_HOME: HomeTile[] = HOME_TILES.map((t) => ({ id: t.id, visible: ON_BY_DEFAULT.includes(t.id), size: t.size }));
@@ -226,7 +226,7 @@ export function describeHomeChange(change: HomeChange): string {
   }
 }
 
-type HomeStore = { version: 4; tiles: HomeTile[]; tipSeen: boolean };
+type HomeStore = { version: 5; tiles: HomeTile[]; tipSeen: boolean };
 
 type RawTile = { id?: string; visible?: boolean; size?: string };
 
@@ -238,8 +238,9 @@ type RawTile = { id?: string; visible?: boolean; size?: string };
 export function migrateHome(raw: unknown): HomeStore | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as { version?: number; tiles?: unknown; tipSeen?: unknown };
-  if (r.version === 4) return { version: 4, tiles: sanitizeHome(r.tiles), tipSeen: r.tipSeen === true };
-  if (r.version === 3) return { version: 4, tiles: withPotTile(sanitizeHome(r.tiles)), tipSeen: r.tipSeen === true };
+  if (r.version === 5) return { version: 5, tiles: sanitizeHome(r.tiles), tipSeen: r.tipSeen === true };
+  if (r.version === 4) return { version: 5, tiles: showOnce(sanitizeHome(r.tiles), "notizen"), tipSeen: r.tipSeen === true };
+  if (r.version === 3) return { version: 5, tiles: showOnce(withPotTile(sanitizeHome(r.tiles)), "notizen"), tipSeen: r.tipSeen === true };
   if (r.version !== 1 && r.version !== 2) return null;
   let old = (Array.isArray(r.tiles) ? r.tiles : []).filter((t): t is RawTile => Boolean(t) && typeof t === "object");
   if (r.version === 1) {
@@ -258,7 +259,7 @@ export function migrateHome(raw: unknown): HomeStore | null {
   }
   const tiles = old.map((t) => ({ id: t.id as HomeTileId, visible: t.visible !== false, size: IDS.includes(t.id as HomeTileId) ? tileMeta(t.id as HomeTileId).size : "M" }));
   // Bisherige Nutzer (v1) kennen die Startseite schon – kein Hinweis mehr
-  return { version: 4, tiles: withPotTile(sanitizeHome(tiles)), tipSeen: r.version === 1 ? true : r.tipSeen === true };
+  return { version: 5, tiles: showOnce(withPotTile(sanitizeHome(tiles)), "notizen"), tipSeen: r.version === 1 ? true : r.tipSeen === true };
 }
 
 /**
@@ -266,12 +267,15 @@ export function migrateHome(raw: unknown): HomeStore | null {
  * Nutzern einmal ans Ende der sichtbaren Kacheln (die übrige Anordnung bleibt
  * genau, wie sie ist; entfernen geht wie bei jeder Kachel).
  */
-function withPotTile(tiles: HomeTile[]): HomeTile[] {
-  const pot = tiles.find((t) => t.id === "spendentopf");
-  if (!pot || pot.visible) return tiles;
-  const rest = tiles.filter((t) => t.id !== "spendentopf");
+const withPotTile = (tiles: HomeTile[]) => showOnce(tiles, "spendentopf");
+
+/** Eine Kachel einmal ans Ende der sichtbaren setzen (v4 → v5: Notizen gehören zu 1.0) */
+function showOnce(tiles: HomeTile[], id: HomeTileId): HomeTile[] {
+  const tile = tiles.find((t) => t.id === id);
+  if (!tile || tile.visible) return tiles;
+  const rest = tiles.filter((t) => t.id !== id);
   const lastVisible = rest.map((t) => t.visible).lastIndexOf(true);
-  rest.splice(lastVisible + 1, 0, { ...pot, visible: true });
+  rest.splice(lastVisible + 1, 0, { ...tile, visible: true });
   return rest;
 }
 
@@ -282,7 +286,7 @@ export function loadHomeTiles(): HomeTile[] {
 }
 
 export function saveHomeTiles(tiles: HomeTile[]) {
-  store.save({ version: 4, tiles: sanitizeHome(tiles), tipSeen: store.load()?.tipSeen ?? false });
+  store.save({ version: 5, tiles: sanitizeHome(tiles), tipSeen: store.load()?.tipSeen ?? false });
 }
 
 /** Einmaliger Hinweis "Halte die Startseite gedrückt …" */
@@ -292,7 +296,7 @@ export function useHomeTipSeen(): boolean | undefined {
 }
 
 export function markHomeTipSeen() {
-  store.save({ version: 4, tiles: loadHomeTiles(), tipSeen: true });
+  store.save({ version: 5, tiles: loadHomeTiles(), tipSeen: true });
 }
 
 /** Änderung speichern; liefert Rückgängig */

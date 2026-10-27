@@ -15,9 +15,9 @@ describe("Jetzt-Karte per Sprache (ohne KI)", () => {
 });
 
 describe("Eine feste Kachel-Anordnung", () => {
-  it("Standard: Pinnwand + Wetter klein nebeneinander, Termine, Aufgaben, Essen + Einkauf – ohne Morgen (Spendentopf für 1.0 ausgeblendet)", () => {
+  it("Standard: Pinnwand + Wetter klein nebeneinander, Termine, Aufgaben, Essen + Einkauf, Notizen – ohne Morgen (Spendentopf für 1.0 ausgeblendet)", () => {
     const shown = DEFAULT_HOME.filter((t) => t.visible && t.id !== "vorrat");
-    expect(shown.map((t) => `${t.id}:${t.size}`)).toEqual(["pinnwand:S", "wetter:S", "termine:M", "aufgaben:M", "essen:S", "einkauf:S"]);
+    expect(shown.map((t) => `${t.id}:${t.size}`)).toEqual(["pinnwand:S", "wetter:S", "termine:M", "aufgaben:M", "essen:S", "einkauf:S", "notizen:M"]);
   });
 });
 
