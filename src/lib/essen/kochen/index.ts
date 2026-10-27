@@ -48,9 +48,3 @@ export function recipeKind(r: Recipe): { aufwand: Aufwand; art: Art } {
   const aufwand: Aufwand = minutes >= 50 || r.oven ? "aufwendig" : minutes <= 25 && r.ingredients.length <= 6 ? "einfach" : "normal";
   return { aufwand, art: "klassisch" };
 }
-
-/** Eingebautes Rezept zu einem Gerichte-Titel (Groß/klein egal), sonst null */
-export function rezeptIdFuer(title: string): string | null {
-  const t = title.trim().toLowerCase();
-  return BUILTIN_COOK.find((r) => r.title.toLowerCase() === t)?.id ?? null;
-}
