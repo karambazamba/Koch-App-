@@ -57,7 +57,7 @@ export const hausKnopf = async (page, check) => {
   await page.locator('a[href="/profil/daten"]').first().tap();
   await page.waitForURL(/profil\/daten/);
   await page.waitForTimeout(600);
-  const haus = page.locator("[data-haus]");
+  const haus = page.locator("[data-haus]:visible");
   check(await haus.isVisible(), "tiefere Seite: Haus neben „‹ …“");
   const box = await haus.boundingBox();
   check(box && box.width >= 44 && box.height >= 44, "Haus: 44 px Tippfläche");
@@ -67,26 +67,38 @@ export const hausKnopf = async (page, check) => {
   check(Math.abs((await page.evaluate(() => window.scrollY)) - y0) <= 2, "Scrollhöhe der Startseite bleibt");
 };
 
+/**
+ * „So lange weg“ für das nächste Laden setzen. Beim Neuladen schreibt `pagehide`
+ * die (feste) Testzeit als Weggang – deshalb erst im neuen Dokument eintragen.
+ */
+async function wegVor(page, ms) {
+  await page.evaluate((m) => sessionStorage.setItem("e2e-weg", String(Date.now() - m)), ms);
+  await page.reload();
+  await page.waitForTimeout(1500);
+}
+
 export const oeffnenStartseite = async (page, check) => {
   await hello(page);
   await seedFamily(page);
+  await page.addInitScript(() => {
+    const v = sessionStorage.getItem("e2e-weg");
+    if (v) {
+      localStorage.setItem("wasgibts.zuletztweg", v);
+      sessionStorage.removeItem("e2e-weg");
+    }
+  });
   await page.goto(BASE + "/einkaufsliste");
   await page.waitForTimeout(800);
   // unter 5 Minuten weg: bleibt
-  await page.evaluate(() => localStorage.setItem("wasgibts.zuletztweg", String(Date.now() - 60_000)));
-  await page.reload();
-  await page.waitForTimeout(1200);
+  await wegVor(page, 60_000);
   check(page.url().includes("/einkaufsliste"), "1 Minute weg: bleibt auf der Seite");
   // länger als 5 Minuten weg: Startseite
-  await page.evaluate(() => localStorage.setItem("wasgibts.zuletztweg", String(Date.now() - 10 * 60_000)));
-  await page.reload();
-  await page.waitForTimeout(1500);
+  await wegVor(page, 10 * 60_000);
   check(new URL(page.url()).pathname === "/", "10 Minuten weg: Startseite");
   // Kochmodus bleibt
   await page.goto(BASE + "/kochbuch/kochen?id=x");
-  await page.evaluate(() => localStorage.setItem("wasgibts.zuletztweg", String(Date.now() - 10 * 60_000)));
-  await page.reload();
-  await page.waitForTimeout(1200);
+  await page.waitForTimeout(800);
+  await wegVor(page, 10 * 60_000);
   check(page.url().includes("/kochbuch/kochen"), "Kochmodus bleibt");
 };
 

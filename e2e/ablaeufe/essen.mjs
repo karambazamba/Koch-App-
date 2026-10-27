@@ -41,9 +41,15 @@ export const einkauf = async (page, check) => {
   // Tippen = gekauft → nach 2 s unter „Zuletzt gekauft“
   await milch.tap();
   await page.waitForTimeout(2600);
-  check(await page.getByRole("region", { name: "Zuletzt gekauft" }).getByRole("checkbox", { name: /Milch/ }).isVisible(), "abgehakt → „Zuletzt gekauft“");
+  // „Zuletzt gekauft“ ist zugeklappt (Einkauf aufgeräumt, v0.119): aufklappen
+  const zuletzt = page.getByRole("region", { name: "Zuletzt gekauft" });
+  await zuletzt.getByRole("button", { name: /^Zuletzt gekauft/ }).tap();
+  await page.waitForTimeout(400);
+  check(await zuletzt.getByRole("checkbox", { name: /Milch/ }).isVisible(), "abgehakt → „Zuletzt gekauft“");
   // Lange drücken = ändern
   const brot = page.getByRole("checkbox", { name: "Brot abhaken" });
+  await brot.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(300);
   const box = await brot.boundingBox();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();

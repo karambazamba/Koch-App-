@@ -345,12 +345,13 @@ export const stammartikel = async (page, check) => {
   await page.goto(BASE + "/einkaufsliste");
   await page.waitForTimeout(1000);
   const items = () => page.evaluate(() => Object.values(JSON.parse(localStorage.getItem("wasgibts.einkaufsliste") ?? "{}").weeks ?? {}).flatMap((w) => w.manual.map((i) => i.name)));
-  await page.getByRole("button", { name: "Brot übernehmen" }).tap();
+  // Seit „Einkaufsliste aufgeräumt“ (v0.119): EINE leise Zeile „Bald wieder fällig: …“ mit „Dazu“
+  const bald = page.locator("[data-bald-faellig]");
+  check((await bald.innerText()).includes("Brot"), "„Bald wieder fällig: Brot …“");
+  await bald.getByRole("button", { name: "Dazu" }).tap();
   await page.waitForTimeout(600);
-  check((await items()).includes("Brot"), "„+ Brot“ antippen setzt Brot auf die Liste");
-  await page.getByRole("button", { name: "Käse diesmal nicht" }).tap();
-  await page.waitForTimeout(600);
-  check(!(await page.getByRole("button", { name: "Käse übernehmen" }).isVisible()), "„×“ beim Käse: diesmal nicht");
+  check((await items()).includes("Brot"), "„Dazu“ setzt Brot auf die Liste");
+  check(!(await bald.count()), "danach ist die Zeile weg");
 };
 
 /** Sport-Kachel (Tafel 25): Do antippen → eigene Zeit 18:30 → Kachel zeigt „18:30“ und „Als Nächstes“; ändern; absagen + Rückgängig */

@@ -209,7 +209,7 @@ function SymbolRow({ row, products, demo = false }: { row: TileRows["rows"][numb
 /** Kopf der Einkauf-Kachel; die übrige Fläche öffnet die ganze Liste („Alle“) */
 function ShoppingHead() {
   return (
-    <Link href="/einkaufsliste" onClick={() => setShopChip("alle")} className="flex min-h-11 items-start" aria-label="Einkaufsliste öffnen">
+    <Link href="/einkaufsliste" onClick={() => setShopChip("alle")} className="mr-9 flex min-h-11 items-start" aria-label="Einkaufsliste öffnen">
       <span className={`${HALF_LABEL} pr-6`}>
         <ShoppingCart className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
         <span className="truncate">Einkaufsliste</span>

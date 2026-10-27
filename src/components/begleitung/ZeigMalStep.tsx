@@ -35,7 +35,7 @@ export function ZeigMalStep({ onDone }: { onDone: (mia: DOMRect | null, haushalt
             </p>
           </div>
         </div>
-        <div className="mt-6 flex w-full flex-col items-center gap-2" role="group" aria-labelledby="zeigmal-frage" data-haushalt-wahl>
+        <div className="mt-4 flex w-full flex-col items-center gap-2" role="group" aria-labelledby="zeigmal-frage" data-haushalt-wahl>
           {HAUSHALT_WAHL.map((w) => (
             <button key={w.value} type="button" onClick={() => onDone(mia.current?.getBoundingClientRect() ?? null, w.value)} className="h-14 w-full rounded-field border-2 border-accent bg-surface text-[17px] font-bold text-accent-strong active:scale-[0.98]">
               {w.label}
