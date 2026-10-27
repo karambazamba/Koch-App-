@@ -116,7 +116,7 @@ export const PLAN_TOOLS = {
     definition: {
       name: "gericht_setzen",
       description:
-        "Schlägt das Hauptgericht für einen Tag vor (ersetzt, was dort steht). Genau eine Quelle angeben: rezept_id (aus dem Kochbuch), neues_rezept (ref aus rezept_erstellen) oder gericht (freier Text, z. B. 'Pizza vom Italiener'). doppelt_kochen=true: doppelte Menge, am nächsten Tag gibt es die Reste.",
+        "Schlägt das Hauptgericht für einen Tag vor (ersetzt, was dort steht). Genau eine Quelle angeben: rezept_id (aus dem Kochbuch), neues_rezept (ref aus rezept_erstellen) oder gericht (freier Text, z. B. 'Pizza vom Italiener'). doppelt_kochen=true: doppelte Menge, am nächsten Tag gibt es die Reste. 'Morgen gibt’s Lachs' → passendes Rezept aus dem Kochbuch, sonst freier Text; vorher woche_lesen, ohne Angabe ist die Planungswoche aus dem Kontext gemeint.",
       input_schema: {
         type: "object",
         properties: {

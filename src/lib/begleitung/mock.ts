@@ -17,6 +17,7 @@ import { parseWeekTalk } from "@/lib/kalender/wochencheck";
 import { isKochtippRequest } from "@/lib/essen/kochtipp/start";
 import { todayIso } from "@/lib/core/now";
 import { isShopOverviewQuestion, parseShopRule } from "@/lib/einkauf/shopRules";
+import { PLAUDER_ANTWORT, plauderArt } from "@/lib/mia/plaudern";
 
 const STOCK_LINE = "Im Haus (vermutlich da, ohne Mengen): ";
 
@@ -244,7 +245,7 @@ function mockModel(): CreateMessage {
     if (typeof last.content === "string" && last.content.startsWith("[Wochencheck]")) return weekCheckUses(last.content, system);
     // „Kochtipp“, „Was soll ich kochen?“ → eigener Kochtipp in der App
     if (typeof last.content === "string" && isKochtippRequest(last.content)) return tools([{ name: "app_befehl", input: { text: "Kochidee" } }]);
-    if (resultFor("woche_eintragen") !== undefined) return text("Hab alles sortiert. Schau kurz drüber und tipp „Alles übernehmen“.");
+    if (resultFor("woche_eintragen") !== undefined) return text("Hab alles sortiert. Schau kurz drüber.");
 
     // 1. Neue Frage: unklar → nachfragen, sonst Woche und Kochbuch lesen
     if (typeof last.content === "string") {
@@ -268,6 +269,10 @@ function mockModel(): CreateMessage {
       if (leftovers) return text(leftovers);
       const everydayUse = everydayUses(last.content, system);
       if (everydayUse) return everydayUse;
+      // Plaudern (Danke, Lob, Moin, „Bin platt“) – kurz und locker wie im Prompt
+      const vorher = [...msgs].reverse().find((x, i) => i > 0 && x.role === "assistant" && typeof x.content === "string")?.content;
+      const plauder = plauderArt(last.content, typeof vorher === "string" ? vorher : "");
+      if (plauder) return text(`${PLAUDER_ANTWORT[plauder]} (Testmodus)`);
       const latest = last.content;
       const day = everyday(latest);
       // Essens-Sätze ("Donnerstag gibt es meine Rezepte", "Mattis wünscht sich Sonntag …") nicht als Termin/Aufgabe lesen
@@ -323,18 +328,18 @@ function mockModel(): CreateMessage {
         return text("Klappt. Was soll die Basis sein: Kartoffeln, Reis oder Nudeln?");
       }
       if (typeof prevAssistant?.content === "string" && /basis/i.test(prevAssistant.content)) {
-        return text(`Mit ${latest} – wie wär’s mit einer cremigen Gemüsepfanne dazu? Sag Bescheid, für welchen Tag (Testmodus).`);
+        return text(`Mit ${latest} passt ne cremige Gemüsepfanne. Für welchen Tag? (Testmodus)`);
       }
       if (intent.myDays.length > 0 && intent.named.length < intent.myDays.length) {
         const choice = intent.titles.slice(0, 6).join(", ");
         return text(
-          `Gern! Welche deiner Rezepte soll es am ${intent.myDays.join(" und am ")} geben?${choice ? ` Zur Auswahl hast du zum Beispiel: ${choice}.` : " Im Kochbuch ist noch nichts. Sag mir einfach die Gerichte."}`,
+          `Welche Rezepte am ${intent.myDays.join(" und ")}?${choice ? ` Zur Auswahl: ${choice}.` : " Im Kochbuch is noch nix, sag mir einfach die Gerichte."}`,
         );
       }
       const actionable =
         intent.myDays.length || intent.wish || intent.restVeggie || intent.planWeek || intent.clear.length || intent.double.length || intent.swap.length >= 2 || intent.moveDish || intent.shopping;
       if (!actionable) {
-        return text(`Sag einfach, was ansteht (Testmodus). Zum Beispiel: „Donnerstag und Freitag gibt es meine Rezepte, Mattis wünscht sich Sonntag Milchreis, der Rest vegetarische KI-Rezepte.“`);
+        return text("Sag einfach, was ansteht (Testmodus). Zum Beispiel: „Milch auf die Liste“ oder „Freitag gibt’s Pizza“.");
       }
       return tools([
         { name: "woche_lesen", input: { woche: intent.week } },
@@ -346,7 +351,7 @@ function mockModel(): CreateMessage {
     if (prevUses.some((u) => u.name === "woche_lesen")) {
       const week = parse<WeekResult>(resultFor("woche_lesen"));
       const book = parse<CookbookResult>(resultFor("kochbuch_durchsuchen"));
-      if (!week) return text("Ich konnte die Woche gerade nicht lesen.");
+      if (!week) return text("Die Woche krieg ich grad nicht gelesen.");
       const day = everyday(intentText(msgs));
       if (day.dish) {
         // Tag über das Datum in einer der beiden gelesenen Wochen finden
@@ -499,7 +504,7 @@ function mockModel(): CreateMessage {
     if (day) {
       const content = String(resultFor(day.name) ?? "");
       if (/^(timer_stellen|timer_stoppen|stoppuhr|kochen_starten|kochschritt|timer_status|sport_statistik)$/.test(day.name)) return text(`${content.replace(/^Läuft gleich \(die App startet ihn sofort\): /, "Läuft: ")} (Testmodus)`);
-      if (day.name === "haushalt_vorstellen") return text(`Schön, euch kennenzulernen! ${content.replace(/^Vorgemerkt[^:]*: /, "").replace(/\. Antworte.*$/, "")} – tipp unten auf Übernehmen. (Testmodus)`);
+      if (day.name === "haushalt_vorstellen") return text(`Moin zusammen! ${content.replace(/^Vorgemerkt[^:]*: /, "").replace(/\. Antworte.*$/, "")}. Passt das? (Testmodus)`);
       if (day.name === "assistent_anpassen") return text(`${content.replace(/^Vorgemerkt[^:]*: /, "")} (Testmodus)`);
       return text(`${content.replace(/^Vorgemerkt[^:]*: /, "Klar: ")} (Testmodus)`);
     }
@@ -507,13 +512,14 @@ function mockModel(): CreateMessage {
     // Tipps gelesen → kurz, ehrlich, mit Frage
     if (prevUses.some((u) => u.name === "tipps_suchen")) {
       const found = String(resultFor("tipps_suchen") ?? "");
-      return text(found.startsWith("Treffer") ? "Da wär was in eurer Nähe. Soll ich einen davon eintragen? (Testmodus)" : "Dafür habe ich in eurer Nähe gerade nichts gefunden. (Testmodus)");
+      return text(found.startsWith("Treffer") ? "Da wär was in eurer Nähe. Soll ich einen davon eintragen? (Testmodus)" : "Hab in eurer Nähe grad nix gefunden. (Testmodus)");
     }
 
     // Wetter gelesen → ein, zwei Sätze
     if (prevUses.some((u) => u.name === "wetter_abfragen")) {
       const lines = String(resultFor("wetter_abfragen") ?? "").split("\n");
-      return text(`${(lines.find((l) => l.startsWith("Kurz: "))?.slice(6) ?? lines[1] ?? lines[0]).trim()} (${lines[0]}) (Testmodus)`);
+      // Kurz: Ort und Tag in Klammern, ohne die ganze Messreihe
+      return text(`${(lines.find((l) => l.startsWith("Kurz: "))?.slice(6) ?? lines[1] ?? lines[0]).trim()} (${lines[0].split(":")[0]}) (Testmodus)`);
     }
 
     // Notizen/Aufgaben gelesen → Inhalt kurz wiedergeben (ohne ids)
@@ -540,8 +546,8 @@ function mockModel(): CreateMessage {
     if (ok > 0 && prevUses.some((u) => CALENDAR_WRITE.has(u.name))) return text("Steht unten bereit. (Testmodus)");
     return text(
       ok > 0
-        ? "Steht unten als Vorschlag. Einzelnes kannst du abwählen. (Testmodus)"
-        : "Das hat leider nicht geklappt. Magst du es anders formulieren?",
+        ? "Steht unten als Vorschlag. (Testmodus)"
+        : "Hat grad nicht geklappt. Nochmal?",
     );
   };
 }

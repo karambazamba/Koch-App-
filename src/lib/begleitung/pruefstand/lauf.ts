@@ -4,9 +4,11 @@
 // nochmal; antwortet der Server dann mit einem Fehler, zählen diese Sätze als
 // „Fehler beim Aufruf“ und es geht weiter. Bricht die Verbindung ab (kein
 // Netz, Bildschirm aus), hält der Lauf an und kann ab dort weitermachen.
+// Gleich für den Prüfstand und den Prüfstand „Ton“ (`ton.ts`).
 
 import type { PruefErgebnis } from "@/lib/begleitung/pruefstand/bewerten";
 import type { PruefSatz } from "@/lib/begleitung/pruefstand/saetze";
+import { tonLimit, type TonSatz } from "@/lib/begleitung/pruefstand/ton";
 
 export const PRUEF_BATCH = 3;
 
@@ -23,10 +25,10 @@ export type LaufStand = {
   zugang: boolean;
 };
 
-const fehler = (s: PruefSatz): PruefErgebnis => ({ text: s.text, ok: false, gruende: ["Fehler beim Aufruf"], ms: 0, antwort: "", ops: [] });
+const fehler = (s: { text: string }): PruefErgebnis => ({ text: s.text, ok: false, gruende: ["Fehler beim Aufruf"], ms: 0, antwort: "", ops: [] });
 
 /** Prüfstand laufen lassen – ab `start.von` mit den schon vorhandenen Ergebnissen */
-export async function pruefLauf(saetze: PruefSatz[], abruf: Abruf, start: { von: number; results: PruefErgebnis[] } = { von: 0, results: [] }, onStand?: (s: LaufStand) => void, batch = PRUEF_BATCH): Promise<LaufStand> {
+export async function pruefLauf(saetze: { text: string }[], abruf: Abruf, start: { von: number; results: PruefErgebnis[] } = { von: 0, results: [] }, onStand?: (s: LaufStand) => void, batch = PRUEF_BATCH): Promise<LaufStand> {
   let results = start.results.slice(0, start.von);
   let von = start.von;
   while (von < saetze.length) {
@@ -60,14 +62,23 @@ export async function pruefLauf(saetze: PruefSatz[], abruf: Abruf, start: { von:
 /** Quote in Prozent (gerundet) */
 export const laufQuote = (results: PruefErgebnis[]) => (results.length ? Math.round((results.filter((r) => r.ok).length / results.length) * 100) : 0);
 
+/** Was erwartet war: Aktion und Daten bzw. beim Ton die Länge */
+function erwartetText(s: PruefSatz | TonSatz | undefined): string {
+  if (!s) return "?";
+  if ("art" in s) {
+    const limit = tonLimit(s);
+    return `locker, ${limit === null ? "ohne Längengrenze" : `höchstens ${limit} Zeichen`}, eine Frage, ohne Floskel`;
+  }
+  return [s.ops.length ? s.ops.join(" oder ") : "nur antworten", s.datum, s.zeit, s.person].filter(Boolean).join(", ");
+}
+
 /** Fehlschläge zum Kopieren: Satz, erwartet, bekommen, Gründe */
-export function fehlerText(results: PruefErgebnis[], saetze: PruefSatz[]): string {
+export function fehlerText(results: PruefErgebnis[], saetze: (PruefSatz | TonSatz)[], name = "Prüfstand"): string {
   const bad = results.filter((r) => !r.ok);
   const lines = bad.map((r) => {
-    const s = saetze.find((x) => x.text === r.text);
-    const erwartet = s ? [s.ops.length ? s.ops.join(" oder ") : "nur antworten", s.datum, s.zeit, s.person].filter(Boolean).join(", ") : "?";
+    const erwartet = erwartetText(saetze.find((x) => x.text === r.text));
     const bekommen = [r.ops.length ? r.ops.join(", ") : "keine Aktion", r.antwort ? `„${r.antwort}“` : ""].filter(Boolean).join(" · ");
     return `✗ ${r.text}\n  erwartet: ${erwartet}\n  bekommen: ${bekommen}\n  ${r.gruende.join("; ")}`;
   });
-  return [`Prüfstand: ${results.length - bad.length} von ${results.length} richtig (${laufQuote(results)} %)`, ...lines].join("\n");
+  return [`${name}: ${results.length - bad.length} von ${results.length} richtig (${laufQuote(results)} %)`, ...lines].join("\n");
 }

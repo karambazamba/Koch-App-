@@ -33,7 +33,7 @@ const TOOLS: BegleitungTool[] = [
     area: "alltag",
     definition: {
       name: "termin_in_aufgabe_umwandeln",
-      description: "'Das ist kein Termin, sondern eine Aufgabe': Termin (id) wird zur Aufgabe – Tag bleibt als Wunschtag (oder frist angeben), ohne Uhrzeit.",
+      description: "'Das ist kein Termin, sondern eine Aufgabe': Termin (id) wird zur Aufgabe – Tag bleibt als Wunschtag (oder frist angeben), ohne Uhrzeit. Gemeint ist meist der zuletzt besprochene Eintrag.",
       input_schema: { type: "object", properties: { id: { type: "string" }, frist: { type: "string", description: "Optional YYYY-MM-DD" } }, required: ["id"], additionalProperties: false },
     },
     run: (ctx, raw) => {
@@ -69,7 +69,7 @@ const TOOLS: BegleitungTool[] = [
     definition: {
       name: "notiz_anlegen",
       description:
-        "Neue Notiz (nur festhalten – kein Termin, keine Aufgabe): 'Merk dir das WLAN-Passwort: …', 'Notier dir …', 'Schreib auf …', 'Schreib in die Schnellnotiz …', 'Idee: …'. Jede Notiz ist eigen; bei mehreren Zeilen ist die erste der Titel. Text ODER Liste, Absätze im text mit \\n. Kein Emoji im Titel. Passt es in eine vorhandene Liste (z. B. Geschenkideen, Packliste), stattdessen liste_eintrag_hinzufuegen.",
+        "Neue Notiz (nur festhalten – kein Termin, keine Aufgabe): 'Merk dir das WLAN-Passwort: …', 'Notier dir …', 'Schreib auf …', 'Schreib in die Schnellnotiz …', 'Idee: …'. Jede Notiz ist eigen; bei mehreren Zeilen ist die erste der Titel. Text ODER Liste, Absätze im text mit \\n. Kein Emoji im Titel. Passt es in eine vorhandene Liste (z. B. Geschenkideen, Packliste), stattdessen liste_eintrag_hinzufuegen. Auch 'Schreib in die Kladde …'. Notizen gehören zu 1.0: ist der Baustein aus, schaltet das Anlegen ihn wieder ein. Essenswünsche ('Mathis wünscht sich Pfannkuchen') sind wunsch_merken.",
       input_schema: {
         type: "object",
         properties: {
@@ -205,7 +205,7 @@ const TOOLS: BegleitungTool[] = [
     area: "alltag",
     definition: {
       name: "aufgaben_anzeigen",
-      description: "Aufgaben-Übersicht lesen ('Was muss ich heute noch erledigen?', 'Zeig mir meine Aufgaben'): Heute dran, Diese Woche, Später, Irgendwann. Antworte ruhig – nie 'offen', 'überfällig' oder 'noch zu erledigen'.",
+      description: "Aufgaben-Übersicht lesen ('Was muss ich heute noch erledigen?', 'Was steht diese Woche an Aufgaben an?'): Heute dran, Diese Woche, Später, Irgendwann. Antworte ruhig – nie 'offen', 'überfällig' oder 'noch zu erledigen'. Danach kurz zusammenfassen. 'Zeig mir meine Aufgaben' öffnet stattdessen die Seite (app_befehl).",
       input_schema: { type: "object", properties: { gruppe: { type: "string", enum: ["heute", "woche", "alle"] } }, additionalProperties: false },
     },
     run: (ctx, raw) => {
@@ -223,7 +223,7 @@ const TOOLS: BegleitungTool[] = [
     area: "alltag",
     definition: {
       name: "pinnwand_schreiben",
-      description: "Kurze Nachricht an die Familien-Pinnwand (Zettel am Kühlschrank, bis 140 Zeichen, verschwindet nach 24 Stunden): 'Schreib an die Pinnwand: Bin um 20 Uhr da' → text 'Bin um 20 Uhr da'.",
+      description: "Kurze Nachricht an die Familien-Pinnwand (Zettel am Kühlschrank, bis 140 Zeichen, verschwindet nach 24 Stunden): 'Schreib an die Pinnwand: Bin um 20 Uhr da' → text 'Bin um 20 Uhr da'. Sprachnachrichten ([Sprachnachricht 0:12]) nimmt die Familie selbst auf; ihren Inhalt kennst du nicht und du schreibst nie welche ('Spiel das Memo von Lisa ab' → app_befehl).",
       input_schema: { type: "object", properties: { text: { type: "string", description: "Die Nachricht, kurz, ohne Anführungszeichen" } }, required: ["text"], additionalProperties: false },
     },
     run: (ctx, raw) => {
@@ -237,7 +237,7 @@ const TOOLS: BegleitungTool[] = [
     area: "alltag",
     definition: {
       name: "wetter_abfragen",
-      description: "Wetter am Wetter-Ort für einen Tag (Standard heute): Beschreibung, Tief/Hoch, Regenrisiko, Wind (Stärke km/h, Richtung, Böen), bei heute auch ab wann Regen. Für 'Wie wird das Wetter morgen?', 'Brauch ich heute einen Schirm?', 'Ist es windig?', 'Woher kommt der Wind morgen?'. Windstärke mit genau dem Wort aus dem Ergebnis sagen (Kaum Wind, Leichter, Mäßiger, Frischer, Lebhafter, Starker, Stürmischer Wind, Sturm, Orkanartiger Wind), Richtung immer ausgeschrieben („aus Westen“), Böen nur ab 60 km/h nennen.",
+      description: "Wetter am Wetter-Ort für einen Tag (Standard heute): Beschreibung, Tief/Hoch, Regenrisiko, Wind (Stärke km/h, Richtung, Böen), bei heute auch ab wann Regen. Für 'Wie wird das Wetter morgen?', 'Brauch ich heute einen Schirm?', 'Ist es windig?', 'Woher kommt der Wind morgen?'. Windstärke mit genau dem Wort aus dem Ergebnis sagen (Kaum Wind, Leichter, Mäßiger, Frischer, Lebhafter, Starker, Stürmischer Wind, Sturm, Orkanartiger Wind), Richtung immer ausgeschrieben („aus Westen“), Böen nur ab 60 km/h nennen. Antwort ein kurzer Satz, ggf. mit Schirm oder Sonnencreme.",
       input_schema: { type: "object", properties: { tag: { type: "string", description: "YYYY-MM-DD (aus der Datumsliste), Standard heute" } }, additionalProperties: false },
     },
     run: (ctx, raw) => {

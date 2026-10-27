@@ -171,7 +171,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
     definition: {
       name: "termin_anlegen",
       description:
-        "Legt einen Termin an (feste Uhrzeit an einem Tag, optional wiederkehrend): 'Morgen um 9 Steuerberater, erinner mich 30 Minuten vorher'. Mehrtägig ('Klassenfahrt vom 9. bis 13. November'): datum + bis_datum ohne start = EIN ganztägiger Eintrag. Ohne feste Uhrzeit (und nicht mehrtägig) ist es eine Aufgabe (aufgabe_anlegen).",
+        "Legt einen Termin an (feste Uhrzeit an einem Tag, optional wiederkehrend): 'Morgen um 9 Steuerberater, erinner mich 30 Minuten vorher'. Mehrtägig ('Klassenfahrt vom 9. bis 13. November'): datum + bis_datum ohne start = EIN ganztägiger Eintrag. Ohne feste Uhrzeit (und nicht mehrtägig) ist es eine Aufgabe (aufgabe_anlegen). Erinnerung nur, wenn gesagt: 'erinner mich 30 Minuten vorher' → erinnerung '30', 'am Abend vorher' → 'vorabend'.",
       input_schema: { type: "object", properties: TERMIN_FIELDS, required: ["titel", "datum"], additionalProperties: false },
     },
     run: (ctx, raw) => {
@@ -186,7 +186,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
     definition: {
       name: "termin_aendern",
       description:
-        "Ändert einen Termin (nur angegebene Felder), z. B. 'Verschieb den Steuerberater auf Donnerstag' → datum. Bei wiederkehrenden Terminen mit nur_am nur dieses eine Vorkommen verschieben (datum/start = neuer Tag/neue Zeit).",
+        "Ändert einen Termin (nur angegebene Felder), z. B. 'Verschieb den Steuerberater auf Donnerstag' → datum. Bei wiederkehrenden Terminen mit nur_am nur dieses eine Vorkommen verschieben (datum/start = neuer Tag/neue Zeit). Die id steht in der Liste im Kontext; Ändern ist ein Vorschlag mit „Übernehmen“.",
       input_schema: { type: "object", properties: { id: ID_PROP, nur_am: ON_PROP, ...TERMIN_FIELDS }, required: ["id"], additionalProperties: false },
     },
     run: (ctx, raw) => {
@@ -219,7 +219,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
     definition: {
       name: "aufgabe_anlegen",
       description:
-        "Legt eine Aufgabe an (irgendwann, an einem Wunschtag oder bis zu einer Frist, optional wiederkehrend): 'Bis Mittwoch Kita-Formular' (frist), 'Jeden Dienstag Müll rausbringen' (wiederholung wochentage [1]).",
+        "Legt eine Aufgabe an (irgendwann, an einem Wunschtag oder bis zu einer Frist, optional wiederkehrend): 'Bis Mittwoch Kita-Formular' (frist), 'Jeden Dienstag Müll rausbringen' (wiederholung wochentage [1]). 'Ich muss diese Woche noch die Reifen machen' → zeitraum diese_woche; ohne Tag und Frist = Irgendwann.",
       input_schema: { type: "object", properties: AUFGABE_FIELDS, required: ["titel"], additionalProperties: false },
     },
     run: (ctx, raw) => {
@@ -315,7 +315,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
     definition: {
       name: "woche_eintragen",
       description:
-        "Wochencheck: trägt ALLE Punkte aus einem frei gesprochenen Wochenüberblick auf einmal ein (statt vieler Einzelaufrufe). Füllwörter ignorieren, Korrekturen übernehmen ('Dienstag … nee, Mittwoch' → Mittwoch), Nachträge als eigene Punkte. Unklare Uhrzeit nie raten: ohne start (ganztägig) eintragen – die App fragt mit Knöpfen nach. Sport-Wunsch ('dreimal Sport'): Genanntes eintragen, den Rest als Vorschlag in freie Lücken (vorschlag: kurze Begründung wie 'trocken').",
+        "Wochencheck: trägt ALLE Punkte aus einem frei gesprochenen Wochenüberblick auf einmal ein (statt vieler Einzelaufrufe). Füllwörter ignorieren, Korrekturen übernehmen ('Dienstag … nee, Mittwoch' → Mittwoch), Nachträge als eigene Punkte. Unklare Uhrzeit nie raten: ohne start (ganztägig) eintragen – die App fragt mit Knöpfen nach. Sport-Wunsch ('dreimal Sport'): Genanntes eintragen, den Rest als Vorschlag in freie Lücken (vorschlag: kurze Begründung wie 'trocken'). Nachricht beginnt mit '[Wochencheck]' → genau EINMAL aufrufen, alle Punkte (Termin/Aufgabe/Sport, Raum familie/arbeit/privat, Personen aus dem Haushalt, Standarddauer). 'Dienstag' = der nächste Dienstag ab heute, 'nächste Woche Dienstag' = Woche danach, schon vorbei = nächste Woche; 'halb acht' bei Abendterminen = 19:30, 'nach der Arbeit' = nach dem Feierabend im Tagesablauf. Sport-Vorschläge nicht neben Arbeit, Tage verteilt, trocken. Danach nur 1 Satz.",
       input_schema: {
         type: "object",
         properties: {

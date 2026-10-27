@@ -2807,3 +2807,18 @@ Fehler in `docs/aufraeumen-nachher.md`.
   gesprochene Sätze ohne Fachwort gebracht.
 - Tests: `tests/mia/seitenTipp.test.ts`; Durchklick `ersterBesuchKarte` und
   `imHausEssen` prüfen die Lage unter dem Titel.
+
+## Locker und kurz im Chat (v0.134.0)
+
+- Problem: Mia antwortete im Chat oft steif und zu lang („Ich habe … für
+  dich …“, „Möchtest du …?“, Anschlussangebote), obwohl der Prompt 2 Sätze
+  vorgab.
+- Prompt entschlackt: Ton vorn (`TON_PROMPT`, 13 statt vorher 17 + 6 Zeilen
+  „So bist du“/„Ohne Druck“), 20 neue ✓/✗-Beispiele aus dem Alltag;
+  Werkzeug-Regeln wandern in die Werkzeug-Beschreibungen.
+- Gesprochenes Deutsch erwünscht („hab“, „is“, „passt“, „jo“, „na klar“,
+  „Moin“), Liste `STEIF` in `mia/persona.ts`; `tidyMiaText` kürzt steife
+  Anhängsel am Ende und einen steifen Einstieg, nie Inhalt.
+- Längen: Alltag ≤ 120 Zeichen, Rat/Wissen ≤ 240, außer „erklär mal genau“.
+  Kurzes Plaudern (Danke, Gruß, „Bin platt“) geht an Haiku.
+- Prüfstand „Ton“: 30 Sätze, Ziel ≥ 90 %, unter „Für Entwickler“.

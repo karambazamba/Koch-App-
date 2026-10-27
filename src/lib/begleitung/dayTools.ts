@@ -159,7 +159,7 @@ function sportTools(): BegleitungTool[] {
       area: "alltag",
       definition: {
         name: "sport_eintragen",
-        description: `Training eintragen (persönlich): 'War heute 5 km laufen' → sportart laufen, km 5; '45 Minuten Fitnessstudio gestern'. Sportarten: ${SPORT_IDS.join(", ")} oder eigener Name. Ohne Dauer schätzen (Laufen ca. 6 Min/km). Danach konkret loben, wenn passend ('Das ist dein 3. Lauf im Oktober'), nie übertreiben.`,
+        description: `Training eintragen (persönlich): 'War heute 5 km laufen' → sportart laufen, km 5; '45 Minuten Fitnessstudio gestern'. Sportarten: ${SPORT_IDS.join(", ")} oder eigener Name. Ohne Dauer schätzen (Laufen ca. 6 Min/km). Danach konkret loben, wenn passend ('Das ist dein 3. Lauf im Oktober'), nie übertreiben. Keine Ausrufezeichen-Ketten, Serien nur in Wochen, Versäumnisse nie. Apple Health oder die Watch kann die App nicht lesen, eingetragen wird nur so.`,
         input_schema: {
           type: "object",
           properties: { sportart: { type: "string" }, minuten: { type: "number" }, km: { type: "number" }, datum: { type: "string", description: "YYYY-MM-DD, Standard heute" } },

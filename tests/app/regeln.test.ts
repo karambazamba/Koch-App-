@@ -8,7 +8,7 @@ import { SOURCES, stripComments, texts } from "../textQuellen";
 const hits = (test: (code: string, file: string) => string[]) => SOURCES.flatMap(({ file, code }) => test(code, file).map((h) => `${file}: ${h}`));
 
 /** Texte, die an die KI gehen oder Regeln beschreiben – keine sichtbaren Texte */
-const NOT_VISIBLE = /^lib\/begleitung\/(prompt|engine|mock\w*|\w*Tools|tools|toolset|registry|ops|protocol|guard)\.ts$|^lib\/begleitung\/pruefstand\/saetze\.ts$|^app\/api\//;
+const NOT_VISIBLE = /^lib\/begleitung\/(prompt|engine|mock\w*|\w*Tools|tools|toolset|registry|ops|protocol|guard)\.ts$|^lib\/begleitung\/pruefstand\/(saetze|ton)\.ts$|^app\/api\//;
 
 describe("Regeln für den Code", () => {
   it("Speicher nur über localStore.ts (createLocalStore, readRaw/writeRaw)", () => {
