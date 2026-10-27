@@ -62,6 +62,8 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   Notizen („Im Haus“ nur über die Kachel-Auswahl). Jede Kachel öffnet ihre Seite.
 - Auf der Startseite gibt es genau zwei Mias: das eckige Logo (BrandMark,
   nicht antippbar) und den runden Mia-Knopf rechts in der Leiste (= reden).
+  Einzige Ausnahme: das kleine Gesicht in Mias Tipp-Karte („Mia stellt vor“,
+  Seiten-Tipps) – nicht antippbar, ohne Ring, verschwindet nach „Alles klar“.
 - Die Jetzt-Karte zeigt höchstens 3 Themen zum Wischen und öffnet wie jede
   Kachel per Antippen – ohne eigenen Knopf – die Seite „Dein Tag“ (Ausnahme:
   laufender Timer öffnet den Timer). Feste Höhe, 2 Zeilen (Zeile 1 ≤ 32

@@ -2787,7 +2787,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
   (`kalender/mitwandern.ts`). Nichts wird verschoben, um Mitternacht rutscht
   alles still wie bisher.
 
-## Seiten-Tipps oben statt unten (vX)
+## Seiten-Tipps oben statt unten (v0.133.0)
 
 - Fehler (Screenshot 27.10. 21:22): der Erster-Besuch-Tipp von „Mia denkt
   mit“ schwebte als weiße Karte unten rechts über der Liste, ohne Mia-Gesicht,
