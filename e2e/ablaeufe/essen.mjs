@@ -15,7 +15,7 @@ const family = async (page, path) => {
 export const essen = async (page, check) => {
   await family(page, "/?seite=essen");
   const panel = page.locator("[role=tabpanel]:not([inert])");
-  check(await panel.getByText("Diese Woche").first().isVisible(), "„Diese Woche“");
+  check(await panel.getByRole("heading", { name: "Die nächsten 7 Tage" }).isVisible(), "„Die nächsten 7 Tage“");
   check(await panel.getByRole("region", { name: "Das ist da" }).getByText("Joghurt").isVisible(), "„Das ist da“ mit Joghurt");
 };
 
