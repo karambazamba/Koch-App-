@@ -216,7 +216,7 @@ export function WochencheckSheet({ data, onClose }: { data: AssistantData; onClo
           {mia}
           <div className="mia-gespraech flex items-center gap-5">
             <button type="button" onClick={() => setTyping(true)} className="hit min-h-11 text-[15px] font-semibold text-muted active:text-ink">
-              Lieber tippen
+              Lieber schreiben
             </button>
             {text.trim() && !speech.listening && done}
           </div>

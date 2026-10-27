@@ -1,6 +1,6 @@
 // Eine Bühne für jedes Gespräch mit Mia: Mia unten (groß, ~64 % der Höhe),
 // das Gespräch oben, die Seite dahinter verschwommen. Zustände setzt die App,
-// Antippen = zuhören ↔ fertig, „Lieber tippen“ macht Mia klein über dem Feld,
+// Antippen = zuhören ↔ fertig, „Lieber schreiben“ macht Mia klein über dem Feld,
 // Mikro aus → direkt das Tippfeld (kein Hilfefenster davor).
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
@@ -37,7 +37,7 @@ describe("Antippen", () => {
   it("Mikro aus oder nicht vorhanden → Tippfeld statt Hilfefenster", () => {
     expect(stageTap("warten", { blocked: true, supported: true })).toBe("tippen");
     expect(stageTap("warten", { blocked: false, supported: false })).toBe("tippen");
-    expect(stageLabel("warten", { blocked: true, supported: true })).toBe("Tippen statt sprechen");
+    expect(stageLabel("warten", { blocked: true, supported: true })).toBe("Schreiben statt sprechen");
   });
 });
 
@@ -87,7 +87,7 @@ describe("Eine Bühne für alles", () => {
       const src = read(f);
       expect(src, f).toContain("<MiaLayer");
       expect(src, f).toContain("<StageMia");
-      expect(src, f).toContain("Lieber tippen");
+      expect(src, f).toContain("Lieber schreiben");
     }
   });
 

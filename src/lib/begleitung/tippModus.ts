@@ -1,4 +1,4 @@
-// „Lieber tippen“ auf der Bühne (rein, getestet): Der Tippen-Modus schließt
+// „Lieber schreiben“ auf der Bühne (rein, getestet): Der Tippen-Modus schließt
 // nur, wenn das Feld den Fokus verloren hat, leer ist und auch nach kurzer
 // Zeit kein Feld fokussiert ist – nie wegen eines Layout-Sprungs (Safari
 // schiebt beim Öffnen der Tastatur die Seite hoch, die gemessene

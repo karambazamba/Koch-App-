@@ -110,7 +110,7 @@ Sortier-Regeln, Design-System, Service Worker, App-Icons und Manifest.
   Sitzung). Das gelieferte Zurücknehmen wirkt nur einmal. `undoLast` = „Mach
   das rückgängig“ (letzte noch gültige).
 
-### Schnelleingabe („＋ = tippen, Mia = sprechen“, Tafel 76)
+### Schnelleingabe („＋ = schreiben, Mia = sprechen“, Tafel 76)
 
 - Jedes ＋ ruft `openQuick({ kind, date?, more?, me?, quote?, shopping? })`
   (`core/schnelleingabe.ts`); `QuickEntryHost` (im KitchenHelper, überall)

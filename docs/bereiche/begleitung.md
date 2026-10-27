@@ -310,7 +310,7 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   neue Nachrichten und die Live-Blase bleiben im Bild; wer hochscrollt,
   bleibt dort und bekommt „↓ Neu“. Die Live-Blase wächst mit und zeigt bei
   sehr langem Text die letzten Zeilen (oben ausgeblendet).
-- „Lieber tippen“ (seit v0.97): Ob getippt wird, entscheidet der Fokus des
+- „Lieber schreiben“ (seit v0.97): Ob getippt wird, entscheidet der Fokus des
   Felds, nicht die gemessene Tastaturhöhe (Safari schiebt beim Öffnen der
   Tastatur die Seite hoch, die Höhe sprang kurz auf 0 und der Tippen-Modus
   ging zu). Er schließt nur bei echtem Fokusverlust, leerem Feld und nach
@@ -328,7 +328,7 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   `MicSheets.tsx` (bei Bedarf geladen):
   - Allererster Tipp (Freigabe unbekannt, Einmal-Hinweis `mikro-gefragt` nicht
     gesehen): „Darf ich zuhören?“ mit nachgebautem System-Dialog; erst „Okay,
-    frag mich“ startet Erkennung bzw. `getUserMedia`. „Lieber tippen“ = Fokus
+    frag mich“ startet Erkennung bzw. `getUserMedia`. „Lieber schreiben“ = Fokus
     ins Feld neben dem Mikro. iPhone: „dein iPhone“/„Erlauben“, sonst „dein
     Handy“/„Zulassen“.
   - Seit v0.95 (Tafel 86) statt des Hilfe-Fensters der **Mikro-Check**
@@ -356,7 +356,7 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
     am Ende „Nochmal testen“. „Details“ zeigt das Mikro-Protokoll mit
     „Kopieren“. „Darf ich zuhören?“ hat auf dem iPhone den Zusatz „Falls
     danach nichts passiert: Ich zeig dir, woran’s liegt.“
-  - Danach: gelber Streifen „Mikro aus – tippen geht immer. Anmachen ›“,
+  - Danach: gelber Streifen „Mikro aus – schreiben geht immer. Anmachen ›“,
     Mikro-Knopf grau + durchgestrichen (nie der Stopp-Knopf), Tipp darauf =
     Hilfe. Zurück in der App (`visibilitychange`) wird `navigator.permissions`
     neu gefragt; erlaubt → Streifen weg, kurz „✓ Mikro ist an“.
@@ -457,7 +457,7 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 - Mia-Knopf unten rechts (`MiaButton`, seit v0.62, statt der Schreib-Leiste):
   72 px, atmet leicht (1,00–1,025 über 4 s) mit weichem Schein; Tippen holt
   Mia auf die Bühne, lange drücken = sofort sprechen, Loslassen = absenden;
-  einmal der Hinweis „Tippen & sprechen“ (`mia-knopf`). Auf der Startseite
+  einmal der Hinweis „Schreiben & sprechen“ (`mia-knopf`). Auf der Startseite
   zeichnet ihn der Pager.
 
 ### Eine Bühne für jedes Gespräch (seit v0.70, ersetzt „Mia in der Mitte“)
@@ -493,20 +493,20 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   mich an, wenn du noch was hast“). Mia antippen = zuhören ↔ fertig
   (`stageTap`). Nach Mias Antwort wartet sie; nur bei einer Rückfrage mit
   Knöpfen hört sie nach dem Vorlesen kurz mit (8 s).
-- „Lieber tippen“ unter Mia: das Feld kommt, Mia wird klein (64 px) und
+- „Lieber schreiben“ unter Mia: das Feld kommt, Mia wird klein (64 px) und
   steht direkt darüber (`stageLayout`); Tastatur zu (nichts getippt) → Mia
   wieder groß. Mikro aus/gesperrt: direkt das Tippfeld mit dem Streifen
-  „Mikro aus – tippen geht immer · Anmachen ›“ – Mia antippen öffnet nie das
+  „Mikro aus – schreiben geht immer · Anmachen ›“ – Mia antippen öffnet nie das
   große Hilfefenster. Der Testcode wird nie im Gespräch abgefragt, sondern
   auf dem eigenen Bildschirm (siehe „Testcode gleich am Anfang“).
 - „Passt“ (Knopf) oder „ja/passt/mach“ übernimmt; Mia freut sich, unter ihr
   „Erledigt“, nach ~1 s zu, Meldung „Übernommen“.
-- „＋“ holt nie Mia (seit v0.72.0, Tafel 76): „＋ = tippen, Mia = sprechen“ –
+- „＋“ holt nie Mia (seit v0.72.0, Tafel 76): „＋ = schreiben, Mia = sprechen“ –
   jedes ＋ öffnet die Schnelleingabe (`docs/bereiche/core.md`). Der frühere
   Modus „eintragen“ und „Lieber Formular“ sind weg.
 - Wochencheck auf der Bühne: Mias Satz oben, das Gesagte als eigene Blase
   (Kernwörter fett), „Ich hab schon“; Mia antippen beim Zuhören = fertig
-  (sortieren), „Lieber tippen“ = Feld + „Fertig“.
+  (sortieren), „Lieber schreiben“ = Feld + „Fertig“.
 - Bewegung (globals.css „Mia zuerst“ und „Eine Bühne“): 0,8–1,2 s,
   `cubic-bezier(.16,1,.3,1)`, nur transform/opacity.
 - Tests: `tests/begleitung/buehne.test.ts`, Durchklick `buehne`
@@ -661,7 +661,7 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Layout → `CodeScreen`, erst bei Bedarf geladen): „Fast geschafft.“, „Gib
   deinen Testcode ein, dann kann ich zuhören und mitdenken.“, ein
   Passwortfeld ohne Autofill, „Los geht’s“, leise „Ohne Code geht’s auch:
-  Tippen mit ＋ funktioniert immer.“ + „Später“.
+  Schreiben mit ＋ funktioniert immer.“ + „Später“.
 - Wann: neue Nutzer nach Hallo, Zustimmung und „Zeig mal“ (vorher kein
   Profil), Bestandsnutzer beim nächsten Öffnen. Nie auf Rechtsseiten,
   Anmelden, Einladungen.
@@ -678,3 +678,28 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 - Logik rein in `lib/begleitung/codeAbfrage.ts` (`codeScreenNoetig`). Tests
   `tests/begleitung/codeAbfrage.test.ts`, Durchklick `testcode.mjs` (Server
   nur nachgestellt, nie der echte Code), Bild `testcode`.
+
+## Sprechen hängt nicht mehr (v0.111.0)
+
+- Felix (iPhone, Web-App): nach 3–4 Runden startete Mia antippen kein
+  Zuhören mehr. Die Browser-Erkennung steckt jetzt in
+  `lib/begleitung/spracherkennung.ts` (ohne React, getestet); der Hook
+  `useSpeechInput` verdrahtet nur die Anzeige.
+- Wachhund: nach start() muss in 1,5 s onstart/onaudiostart (oder ein
+  Ergebnis) kommen, sonst hart abbrechen, Mikro frei, EINMAL still mit neuer
+  Erkennung; klappt auch das nicht: „Hat grad nicht geklappt. Nochmal?“, der
+  Knopf ist wieder bereit.
+- Kein onend nach „Fertig“: nach 2 s selbst abschließen; länger als erlaubt
+  (Bühne 2 Min., lang 5 Min., sonst 1 Min.) + 5 s: beenden und abschicken.
+- Vor jedem Zuhören verstummt Mia (`vorDemZuhoeren`: Stimme stoppen, 250 ms
+  bzw. so lange das Mikro gerade abgegeben wurde warten).
+- Jede Erkennung nur einmal, alte immer mit abort() und ohne Rückrufe weg.
+- Notausgang: Antippen bei hängendem Zustand setzt alles zurück und hört neu
+  zu. Geht die App in den Hintergrund, wird das Zuhören beendet.
+- Mikro-Protokoll (50 Zeilen, nur Technik) unter Einstellungen → Daten & App
+  → Für Entwickler, mit „Teilen“.
+- „Lieber tippen“ heißt jetzt „Lieber schreiben“; „tippen“ für Text eingeben
+  heißt überall „schreiben“ (Antippen für Knöpfe bleibt).
+- Tests `tests/begleitung/spracherkennung.test.ts` (Fake-Erkennung, nach 3
+  Starts stumm, 10 Runden, Mia spricht noch), Durchklick `sprechenhaengt.mjs`.
+

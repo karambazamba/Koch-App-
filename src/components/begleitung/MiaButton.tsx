@@ -3,7 +3,7 @@
 // Der runde Mia-Knopf unten rechts – auf allen Seiten gleich (statt der
 // früheren Schreib-Leiste). Tippen holt die Begleitung in die Mitte (sie hört
 // gleich zu, wenn das Mikro erlaubt ist); lange drücken = sofort sprechen,
-// Loslassen = absenden. Beim ersten Mal einmal der Hinweis „Tippen & sprechen“.
+// Loslassen = absenden. Beim ersten Mal einmal der Hinweis „Schreiben & sprechen“.
 // Beim Runterscrollen gleitet er weg und kommt beim Hochscrollen bzw. nach
 // kurzer Ruhe zurück (nur transform/opacity).
 // Eigene Datei, damit das Layout nicht die ganze Startseite mitlädt.
@@ -102,7 +102,7 @@ export function MiaButton({ name }: { name: string }) {
       <div className={`mia-knopf-gleiten relative flex items-center ${away ? "pointer-events-none" : "pointer-events-auto"}`} data-weg={away || undefined}>
         {hint && (
           <span role="note" className={`mia-einblenden absolute ${links ? "left-full ml-3" : "right-full mr-3"} whitespace-nowrap rounded-full bg-surface px-3.5 py-2 text-[14px] font-bold shadow-float`}>
-            Tippen &amp; sprechen
+            Schreiben &amp; sprechen
           </span>
         )}
         <button

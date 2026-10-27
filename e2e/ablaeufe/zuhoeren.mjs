@@ -108,7 +108,7 @@ export const zuhoeren = async (page, check) => {
   check(Boolean(pos) && pos.bottom <= pos.miaTop + 1 && pos.top >= 0, "lange Live-Blase: ganz sichtbar und über Mia");
 };
 
-/** „Lieber tippen“ schließt sich nicht von selbst: Layout-Sprung lässt es offen, echter Fokusverlust (leer) führt zurück zu Mia */
+/** „Lieber schreiben“ schließt sich nicht von selbst: Layout-Sprung lässt es offen, echter Fokusverlust (leer) führt zurück zu Mia */
 export const lieberTippen = async (page, check) => {
   await page.addInitScript(FAKE_HOEREN);
   await hello(page);
@@ -117,7 +117,7 @@ export const lieberTippen = async (page, check) => {
   await page.waitForTimeout(900);
   await page.getByRole("button", { name: /^Sag .*was ansteht/ }).first().click();
   await page.getByRole("dialog").last().waitFor({ timeout: 5000 });
-  await page.getByRole("button", { name: "Lieber tippen", exact: true }).click();
+  await page.getByRole("button", { name: "Lieber schreiben", exact: true }).click();
   const box = page.getByRole("textbox", { name: "Nachricht schreiben" });
   await box.waitFor({ timeout: 5000 });
   await box.focus();
@@ -140,7 +140,7 @@ export const lieberTippen = async (page, check) => {
   await page.waitForTimeout(400);
   check(!(await box.isVisible().catch(() => false)), "leer + Fokus weg → zurück zu Mia");
   // „Lieber sprechen“ als klarer Weg zurück
-  await page.getByRole("button", { name: "Lieber tippen", exact: true }).click();
+  await page.getByRole("button", { name: "Lieber schreiben", exact: true }).click();
   await box.waitFor({ timeout: 5000 });
   await page.getByRole("button", { name: "Lieber sprechen" }).click();
   await page.waitForTimeout(500);

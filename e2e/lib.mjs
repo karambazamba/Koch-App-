@@ -269,9 +269,12 @@ export const FAKE_HOEREN = () => {
       window.__starts++;
       window.__rec = this;
       this.running = true;
+      // `__haengt` = diese Start-Nummern bleiben stumm (iPhone-Hänger: start() wirft nicht, es kommt nie etwas)
+      this.stumm = (window.__haengt ?? []).includes(window.__starts);
+      if (!this.stumm) setTimeout(() => this.running && this.onstart?.(), 20);
     }
     stop() {
-      if (!this.running) return;
+      if (!this.running || this.stumm) return;
       this.running = false;
       setTimeout(() => this.onend?.(), 30);
     }
@@ -329,7 +332,7 @@ export async function tippenFeld(page) {
   await page.getByRole("dialog").last().waitFor({ timeout: 5000 });
   const box = page.getByRole("textbox", { name: "Nachricht schreiben" });
   if (!(await box.isVisible().catch(() => false))) {
-    const tippen = page.getByRole("button", { name: "Lieber tippen", exact: true });
+    const tippen = page.getByRole("button", { name: "Lieber schreiben", exact: true });
     await tippen.waitFor({ timeout: 5000 });
     await tippen.click();
   }

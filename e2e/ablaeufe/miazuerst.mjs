@@ -83,14 +83,14 @@ export const buehne = async (page, check) => {
   check(/blur\(14px\)/.test(veil.blur) && veil.home, "Startseite verschwommen dahinter");
   check(!(await stage.getByRole("textbox", { name: "Nachricht schreiben" }).count()), "keine Schreib-Leiste");
 
-  await stage.getByRole("button", { name: "Lieber tippen" }).click();
+  await stage.getByRole("button", { name: "Lieber schreiben" }).click();
   const field = stage.getByRole("textbox", { name: "Nachricht schreiben" });
   await field.fill("Morgen um 9 Steuerberater");
   await field.press("Enter");
   const undo = stage.getByRole("button", { name: "Rückgängig" });
   check(await undo.waitFor({ timeout: 8000 }).then(() => true, () => false), "sofort erledigt mit „Rückgängig“ im Gespräch");
   const own = stage.getByText("Morgen um 9 Steuerberater", { exact: true }).first();
-  const small = stage.getByRole("button", { name: /^(Frage einsprechen|Zuhören beenden|Tippen statt sprechen)$/ });
+  const small = stage.getByRole("button", { name: /^(Frage einsprechen|Zuhören beenden|Schreiben statt sprechen)$/ });
   const [o, m] = [await own.boundingBox(), await small.boundingBox()];
   check(o && m && o.y + o.height <= m.y, "eigene Blase oben, nie hinter Mia");
   const list = await page.evaluate(() => document.querySelector("[role=dialog] .mia-gespraech[aria-live]")?.getBoundingClientRect().bottom ?? 0);

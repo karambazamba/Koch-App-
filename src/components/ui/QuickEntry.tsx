@@ -1,6 +1,6 @@
 "use client";
 
-// Schnelleingabe (Tafel 76): „＋ = tippen, Mia = sprechen“. Kleines Fenster
+// Schnelleingabe (Tafel 76): „＋ = schreiben, Mia = sprechen“. Kleines Fenster
 // unten über der Tastatur: Kopf in der Farbe des Bereichs („NEUER TERMIN“),
 // EIN Feld (16 px, Tastatur sofort offen), rechts das orange ➤ (leer = blass,
 // tut nichts). Darunter erkennt die App ohne KI Tag, Uhrzeit, Raum als Chips

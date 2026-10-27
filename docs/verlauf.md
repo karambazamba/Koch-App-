@@ -1340,7 +1340,7 @@ Neue Arbeit baut auf dem Fundament oben auf.
   "Neues Rezept" (`NewRecipeSheet`): "<Name> erzählen" (Sprache oder Tippen →
   `parseSpokenRecipe()` in `src/lib/essen/recipeSpeech.ts`, regelbasiert, später KI:
   Titel, Zutaten mit Mengen, Schritte, Minuten → Vorschau "Speichern"/"Noch
-  ändern"), "Selbst eintippen" (`/kochbuch/bearbeiten`), "Link einfügen" und
+  ändern"), "Selbst schreiben" (`/kochbuch/bearbeiten`), "Link einfügen" und
   "Foto vom Rezeptzettel" (Label "mit KI", bis dahin deaktiviert).
 - Kochbuch-Daten (`src/lib/essen/cookbook.ts`): Rezepte mit Kategorie
   Fleisch/Vegetarisch/Fisch/Cheat Day, Herkunft "eigenes" oder "ki".
@@ -2116,7 +2116,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
 
 ## Schnelleingabe + Pinnwand (Tafel 69–72, 76, v0.72.0)
 
-- Felix: „＋ = tippen, Mia = sprechen.“ Jedes ＋ öffnet jetzt eine
+- Felix: „＋ = schreiben, Mia = sprechen.“ Jedes ＋ öffnet jetzt eine
   Schnelleingabe (ein Feld, Tastatur sofort, ➤ speichert, „Eingetragen: … ·
   Rückgängig“, Feld bleibt offen) mit Live-Chips ohne KI (Tag · Uhrzeit,
   Familie/Arbeit, „bis …“, „Für mich“). Kein eigenes Mikro mehr in
@@ -2336,7 +2336,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Look-Frage entfällt: Standard „Farbig“, nach 3 Tagen einmal „Lieber
   schlicht?“ als Hinweis (nie zusammen mit dem Dunkel-Tipp).
 - Zurück-Geste geht im Hallo-Ablauf einen Schritt zurück; der Mia-Knopf
-  zwinkert beim ersten Erscheinen einmal, „Tippen & sprechen“ erst nach 4 s.
+  zwinkert beim ersten Erscheinen einmal, „Schreiben & sprechen“ erst nach 4 s.
 
 ## Mikrofon und Stimme – richtig einfach (v0.95.0, Tafel 86)
 - Mikro-Check: Häkchen-Liste (Mikrofon · Diktierfunktion/Spracherkennung ·
@@ -2359,7 +2359,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Gespräch scrollt mit, „↓ Neu“ beim Hochscrollen, lange Live-Blase zeigt die
   letzten Zeilen über Mia.
 
-## „Lieber tippen“ bleibt offen (v0.97.0)
+## „Lieber schreiben“ bleibt offen (v0.97.0)
 - Der Tippen-Modus schloss sich auf dem iPhone von selbst (Safari schob die
   Seite hoch, die gemessene Tastaturhöhe sprang kurz auf 0). Jetzt zählt der
   Fokus des Felds; schließen nur bei echtem Fokusverlust, leerem Feld und nach
@@ -2413,14 +2413,14 @@ Fehler in `docs/aufraeumen-nachher.md`.
   und „7:30“ bleiben morgens, nur „um 3“ meint nachmittags.
 - Prüfstand: 124 Sätze; Fehler in der Bewertung behoben (Frist einer Aufgabe
   zählte nicht als Datum). Der echte Lauf braucht die KI in Vercel.
-- Durchklick „Mia sprechen“: Pausen, Rückgängig, Lieber tippen, Danebentippen.
+- Durchklick „Mia sprechen“: Pausen, Rückgängig, Lieber schreiben, Danebentippen.
 
 ## Startseite aus einem Guss (v0.102.0)
 - Ganze Kachel = Seite: ein Tipp auf freie Fläche öffnet die Seite der
   Kachel; Termine öffnet den Kalender (steht auf „Heute“).
 - Hinweis-Warteschlange `core/hinweise.ts`: höchstens ein Hinweis unter der
   Jetzt-Karte, jeder nur einmal (ab dem nächsten Tag weg), in den ersten 3
-  Tagen nur Beispiel-Tag und „Tippen & sprechen“. Einladen ohne Mia-Gesicht.
+  Tagen nur Beispiel-Tag und „Schreiben & sprechen“. Einladen ohne Mia-Gesicht.
 - Statusleiste weich verschwommen statt deckend.
 - Essen-Kachel mit Bild für das geplante Gericht: dieselbe Komponente wie im
   Beispiel-Tag (`DishTile`), mit „Ich koche jetzt ›“.
@@ -2534,3 +2534,10 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Mia: „Schreib auf …“ und „Schreib in die Schnellnotiz …“ = eigene Notiz,
   „Setz Laufrad auf die Geschenkideen“ = Listen-Eintrag; Werkzeuge
   `schnellnotiz_schreiben`/`_aufraeumen` entfallen. Prüfstand 136 Sätze.
+## Sprechen hängt nicht mehr + „Lieber schreiben“ (v0.111.0)
+
+- Wachhund für die Spracherkennung (iPhone hing nach 3–4 Runden), erzwungenes
+  Ende, Notausgang, Mia verstummt vor dem Zuhören, Hintergrund setzt zurück.
+- Mikro-Protokoll mit 50 Zeilen unter „Für Entwickler“, mit Teilen.
+- „Lieber tippen“ → „Lieber schreiben“, „＋ = schreiben, Mia = sprechen“.
+

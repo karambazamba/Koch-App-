@@ -1,4 +1,4 @@
-// Schnelleingabe (Tafel 76): „＋ = tippen, Mia = sprechen“. Aufgaben-＋ →
+// Schnelleingabe (Tafel 76): „＋ = schreiben, Mia = sprechen“. Aufgaben-＋ →
 // Feld hat sofort den Fokus → Satz → ➤ → „Eingetragen: … · Rückgängig“, Feld
 // leer und offen → Aufgabe in der Kachel. Leeres ➤ tut nichts. Termin-＋
 // „Zahnarzt Jonne Fr 16 Uhr“ → Chip „Fr, 23. Okt · 16:00“ → im Kalender am

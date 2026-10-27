@@ -17,7 +17,7 @@ import { APP_NAME } from "@/lib/core/app";
 
 const platform = (): MicPlatform => (typeof navigator === "undefined" ? "andere" : micPlatform(navigator.userAgent));
 
-/** „Lieber tippen“: Fenster zu, Fokus ins Textfeld neben dem Mikro */
+/** „Lieber schreiben“: Fenster zu, Fokus ins Textfeld neben dem Mikro */
 function preferTyping() {
   const origin = micState().origin;
   closeMicSheet();
@@ -63,7 +63,7 @@ function PreAsk({ then }: { then: () => void }) {
           Okay, frag mich
         </button>
         <button type="button" onClick={preferTyping} className="hit min-h-11 text-[15px] font-semibold text-muted">
-          Lieber tippen
+          Lieber schreiben
         </button>
       </div>
     </Sheet>

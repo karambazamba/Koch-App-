@@ -1,19 +1,20 @@
-// Mikro-Protokoll zum Nachschauen (Einstellungen → Daten & App, versteckt:
-// 5× auf die Version tippen): die letzten 20 Ereignisse rund um Mikrofon und
-// Sprachnachrichten mit Uhrzeit – Tipp, getUserMedia ok/Fehlername,
-// Recorder-Start, Bytes, Speichern ok/Fehlername, Notlösung ja/nein. Nur auf
-// dem Gerät, nicht in der Sicherung und nie an die KI.
+// Mikro-Protokoll zum Nachschauen (Einstellungen → Daten & App → Für
+// Entwickler, mit Teilen-Knopf; außerdem 5× auf die Version tippen): die
+// letzten 50 Ereignisse rund um Mikrofon, Zuhören und Sprachnachrichten mit
+// Uhrzeit – Tipp, Start, Wachhund, Neustart, Stimme abgebrochen,
+// getUserMedia ok/Fehlername, Bytes, Speichern ok/Fehlername. Nur Technik,
+// nie Gesprochenes; nur auf dem Gerät, nicht in der Sicherung, nie an die KI.
 
 import { createLocalStore } from "@/lib/core/localStore";
 import { now } from "@/lib/core/now";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 
-const MAX = 20;
+const MAX = 50;
 
 export type MicLogEntry = { at: number; text: string };
 type MicLogState = { version: 1; entries: MicLogEntry[] };
 
-/** Nur gültige Einträge, höchstens die letzten 20 */
+/** Nur gültige Einträge, höchstens die letzten 50 */
 export function migrateMicLog(raw: unknown): MicLogState | null {
   if (!raw || typeof raw !== "object" || (raw as MicLogState).version !== 1) return null;
   const list = Array.isArray((raw as MicLogState).entries) ? (raw as MicLogState).entries : [];
@@ -38,4 +39,10 @@ export function useMicLog(): MicLogEntry[] {
 
 export function clearMicLog() {
   store.save({ version: 1, entries: [] });
+}
+
+/** Zum Teilen: eine Zeile je Ereignis, „14:03:22 Zuhören: Start“ (älteste zuerst) */
+export function micLogText(entries: MicLogEntry[]): string {
+  const clock = (ms: number) => new Date(ms).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "Europe/Berlin" });
+  return entries.map((e) => `${clock(e.at)} ${e.text}`).join("\n");
 }

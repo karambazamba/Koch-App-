@@ -1,4 +1,4 @@
-// „Lieber tippen“ schließt sich nicht von selbst (Video Felix, iPhone Safari).
+// „Lieber schreiben“ schließt sich nicht von selbst (Video Felix, iPhone Safari).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { TIPPEN_ZU_MS, tippenSchliessen } from "@/lib/begleitung/tippModus";

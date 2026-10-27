@@ -354,6 +354,16 @@ function say(chunks: string[], options: { id?: string; gender?: HelperVoice; voi
   }
 }
 
+/** Spricht Mia gerade (eigene Stimme oder Stimme des Handys)? */
+export function miaSprichtGerade(): boolean {
+  if (speakingId !== null || talking) return true;
+  try {
+    return speechSupported() && window.speechSynthesis.speaking;
+  } catch {
+    return false;
+  }
+}
+
 export function stopSpeaking() {
   token++;
   setTalking(false);

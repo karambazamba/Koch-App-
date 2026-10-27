@@ -1,15 +1,15 @@
 "use client";
 
-// Mikro-Protokoll (versteckt, 5× auf die Version tippen): die letzten 20
-// Ereignisse rund um Mikrofon und Sprachnachrichten – für einen Screenshot,
-// falls es hakt. Nur auf dem Gerät.
+// Mikro-Protokoll: unter „Für Entwickler“ und versteckt (5× auf die Version
+// tippen) – die letzten 50 Ereignisse rund um Mikrofon, Zuhören und
+// Sprachnachrichten, mit Teilen-Knopf. Nur Technik, nur auf dem Gerät.
 
 import { useRef, useState } from "react";
 import { Info } from "lucide-react";
 import { IconBadge } from "@/components/ui/IconBadge";
 import { CARD_LIST, SECTION_TITLE } from "@/components/ui/styles";
 import { versionLabel } from "@/lib/core/app";
-import { clearMicLog, useMicLog } from "@/lib/core/micLog";
+import { clearMicLog, micLogText, useMicLog } from "@/lib/core/micLog";
 
 /** So oft auf die Version tippen, dann erscheint das Protokoll */
 const TAPS = 5;
@@ -43,18 +43,40 @@ export function VersionRow() {
   );
 }
 
-function MicLogList() {
+/** Teilen (Teilen-Menü bzw. kopieren) – nur Technik, nie Gesprochenes */
+async function shareLog(text: string): Promise<string> {
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: "Mikro-Protokoll", text });
+      return "";
+    }
+    await navigator.clipboard.writeText(text);
+    return "Kopiert.";
+  } catch {
+    return "";
+  }
+}
+
+export function MicLogList({ as = "li" }: { as?: "li" | "section" }) {
   const entries = useMicLog();
+  const [hint, setHint] = useState("");
+  const Box = as;
   return (
-    <li className="flex flex-col gap-2 px-4 py-3" aria-label="Mikro-Protokoll">
+    <Box className="flex flex-col gap-2 px-4 py-3" aria-label="Mikro-Protokoll" data-mikro-protokoll>
       <span className="flex items-center justify-between gap-3">
         <span className={SECTION_TITLE}>Mikro-Protokoll</span>
         {entries.length > 0 && (
-          <button type="button" onClick={clearMicLog} className="hit text-sm font-bold text-muted">
-            Leeren
-          </button>
+          <span className="flex items-center gap-3">
+            <button type="button" onClick={() => void shareLog(micLogText(entries)).then(setHint)} className="hit text-sm font-bold text-accent-strong">
+              Teilen
+            </button>
+            <button type="button" onClick={clearMicLog} className="hit text-sm font-bold text-muted">
+              Leeren
+            </button>
+          </span>
         )}
       </span>
+      {hint && <span className="text-sm text-muted">{hint}</span>}
       {entries.length ? (
         <ol className={`${CARD_LIST} text-[13px] leading-snug`}>
           {[...entries].reverse().map((e, i) => (
@@ -67,6 +89,6 @@ function MicLogList() {
       ) : (
         <span className="text-sm text-muted">Noch nichts aufgezeichnet.</span>
       )}
-    </li>
+    </Box>
   );
 }

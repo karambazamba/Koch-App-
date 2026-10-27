@@ -26,7 +26,7 @@ export const hallo = async (page, check) => {
   check(await page.getByText("So sieht ein Tag aus").isVisible(), "danach die Startseite mit Beispiel-Tag");
   check((await page.locator("[data-jetzt]").count()) > 0, "Jetzt-Karte oben");
   check((await page.locator("[data-mia-knopf].mia-zwinkern-einmal").count()) === 1, "Mia-Knopf zwinkert beim ersten Erscheinen");
-  check(!(await page.getByText("Tippen & sprechen").isVisible()), "in den ersten Sekunden kein weiterer Hinweis");
+  check(!(await page.getByText("Schreiben & sprechen").isVisible()), "in den ersten Sekunden kein weiterer Hinweis");
   // Zurück auf der Startseite führt nicht in den Hallo-Ablauf
   await page.goBack().catch(() => {});
   await page.waitForTimeout(600);

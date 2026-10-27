@@ -149,7 +149,7 @@ Alle Schlüssel aus `src/lib/core/storage.ts`:
   gekocht → oft gekocht → Name). Bei „Backen“ darunter „Aus unserer
   Backstube“ (20 eingebaute Rezepte, ohne die schon übernommenen).
 - „+“: „<Name> erzählen“ (Sprache/Tippen → `parseSpokenRecipe`, regelbasiert,
-  Vorschau) oder „Selbst eintippen“ (`/kochbuch/bearbeiten`).
+  Vorschau) oder „Selbst schreiben“ (`/kochbuch/bearbeiten`).
 - Rezeptseite: Bild voll, runde Knöpfe (Zurück, Herz, „…“ mit Bearbeiten,
   Teilen, Löschen bzw. „In unsere Rezepte“ = `adoptBuiltin`), Personen-Zähler
   rechnet Zutaten um (`?personen=` = nur heute), „Jetzt kochen“/„Zusammen

@@ -1,6 +1,6 @@
 "use client";
 
-// Schnelleingabe (Tafel 76): „＋ = tippen, Mia = sprechen“. Jedes „＋“ öffnet
+// Schnelleingabe (Tafel 76): „＋ = schreiben, Mia = sprechen“. Jedes „＋“ öffnet
 // ein kleines Fenster mit EINEM Feld; der Satz wird ohne KI gelesen (Tag,
 // Uhrzeit, Raum) und darunter als kleine Chips gezeigt – antippen ändert,
 // nötig sind sie nie. ➤ speichert, das Feld bleibt für die nächste offen.

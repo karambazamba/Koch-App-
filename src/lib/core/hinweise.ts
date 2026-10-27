@@ -2,7 +2,7 @@
 // unter der Jetzt-Karte und höchstens EINE schwebende Blase je Öffnen. Jeder
 // Hinweis nur einmal: an dem Tag, an dem er zuerst steht, bleibt er; ab dem
 // nächsten Tag ist er weg (auch ohne Antippen). In den ersten 3 Tagen nur der
-// Beispiel-Tag und die Blase „Tippen & sprechen“ – Ausnahme „Ich heiße jetzt
+// Beispiel-Tag und die Blase „Schreiben & sprechen“ – Ausnahme „Ich heiße jetzt
 // Mia“ (alte Installationen, sichern vor dem Neu-Hinzufügen; bis „✕“).
 
 import { addDays } from "@/lib/core/now";
@@ -13,7 +13,7 @@ import { useExternalStore } from "@/lib/core/useExternalStore";
 const HINWEISE = ["mia-name-neu", "einladen", "spendentopf", "startseite-halten", "lieber-schlicht", "abends-dunkel"] as const;
 export type HinweisId = (typeof HINWEISE)[number];
 
-/** Erst ab dem 4. Tag (Tag 0–2 = Beispiel-Tag und „Tippen & sprechen“) */
+/** Erst ab dem 4. Tag (Tag 0–2 = Beispiel-Tag und „Schreiben & sprechen“) */
 export const RUHE_TAGE = 3;
 
 type State = { version: 1; gezeigt: Partial<Record<HinweisId, string>> };

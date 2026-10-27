@@ -24,7 +24,7 @@ export function stageHint(state: StageState, name: string, fresh = false): strin
 /** VoiceOver-Name der großen Mia */
 export function stageLabel(state: StageState, mic: { blocked: boolean; supported: boolean | null }): string {
   const tap = stageTap(state, mic);
-  return tap === "fertig" ? "Zuhören beenden" : tap === "tippen" ? "Tippen statt sprechen" : "Frage einsprechen";
+  return tap === "fertig" ? "Zuhören beenden" : tap === "tippen" ? "Schreiben statt sprechen" : "Frage einsprechen";
 }
 
 /**

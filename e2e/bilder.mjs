@@ -38,8 +38,8 @@ const micTap = async (page) => {
   await page.getByRole("button", { name: /^Sag .*was ansteht/ }).first().click();
   await page.getByRole("dialog").last().waitFor({ timeout: 5000 });
   // Mia antippen; ist das Mikro schon als aus bekannt, öffnet sie das Tippfeld – dann „Anmachen ›“
-  const tap = page.getByRole("button", { name: /^(Frage einsprechen|Tippen statt sprechen)$/ }).last();
-  const blocked = (await tap.getAttribute("aria-label")) === "Tippen statt sprechen";
+  const tap = page.getByRole("button", { name: /^(Frage einsprechen|Schreiben statt sprechen)$/ }).last();
+  const blocked = (await tap.getAttribute("aria-label")) === "Schreiben statt sprechen";
   await tap.click();
   if (blocked) await page.getByRole("button", { name: "Anmachen ›" }).click();
 };
@@ -74,7 +74,7 @@ const weekCheck = async (page, done) => {
   await box.press("Enter");
   const sheet = page.getByRole("dialog", { name: "Wochencheck" });
   await sheet.waitFor({ timeout: 10000 });
-  await sheet.getByRole("button", { name: "Lieber tippen" }).click();
+  await sheet.getByRole("button", { name: "Lieber schreiben" }).click();
   await sheet.getByRole("textbox", { name: "Was steht an?" }).fill(WOCHE);
   if (!done) return page.waitForTimeout(400);
   await sheet.getByRole("button", { name: "Fertig" }).click();
@@ -90,7 +90,7 @@ const cookTip = async (page, step) => {
   await page.getByText("Ganz was anderes?").waitFor({ timeout: 5000 });
   if (step === "start") return settle(page);
   // Direkt tippen (die einmalige Mikro-Frage gehört nicht ins Bild)
-  await page.getByRole("button", { name: "Lieber tippen" }).click();
+  await page.getByRole("button", { name: "Lieber schreiben" }).click();
   const box = await tippenFeld(page);
   await box.fill("Ich hab Hähnchen gekauft, Paprika und Sahne sind noch da, was Cremiges");
   await box.press("Enter");

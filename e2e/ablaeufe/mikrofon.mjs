@@ -9,8 +9,8 @@ async function micTap(page) {
   await page.getByRole("button", { name: /^Sag .*was ansteht/ }).first().click();
   await page.getByRole("dialog").last().waitFor({ timeout: 5000 });
   // Mia antippen; ist das Mikro schon als aus bekannt, öffnet sie das Tippfeld – dann „Anmachen ›“
-  const tap = page.getByRole("button", { name: /^(Frage einsprechen|Tippen statt sprechen)$/ }).last();
-  const blocked = (await tap.getAttribute("aria-label")) === "Tippen statt sprechen";
+  const tap = page.getByRole("button", { name: /^(Frage einsprechen|Schreiben statt sprechen)$/ }).last();
+  const blocked = (await tap.getAttribute("aria-label")) === "Schreiben statt sprechen";
   await tap.click();
   if (blocked) await page.getByRole("button", { name: "Anmachen ›" }).click();
 }
@@ -62,13 +62,13 @@ export const mikrofon = async (page, check, device) => {
   const again = page.getByRole("dialog", { name: "Mikrofon prüfen" });
   await again.getByText(android ? "Das Mikrofon ist für" : "Safari darf das Mikrofon nicht benutzen", { exact: false }).waitFor({ timeout: 8000 });
   check((await again.locator("[data-pruef=mikro]").getAttribute("data-stand")) === "fehler", "„Nochmal testen“ prüft neu: noch gesperrt");
-  await again.getByRole("button", { name: "Lieber tippen" }).click();
+  await again.getByRole("button", { name: "Lieber schreiben" }).click();
   await page.waitForTimeout(400);
 
   // 4. Auf der Bühne: Tippfeld mit gelbem Streifen, Mia klein darüber; kein Fenster davor
   const chat = mia(page);
-  check(await chat.getByText("Mikro aus – tippen geht immer.").isVisible(), "gelber Streifen");
-  const small = chat.getByRole("button", { name: "Tippen statt sprechen" });
+  check(await chat.getByText("Mikro aus – schreiben geht immer.").isVisible(), "gelber Streifen");
+  const small = chat.getByRole("button", { name: "Schreiben statt sprechen" });
   check(await small.isVisible(), "Mia klein über dem Feld (kein Stopp-Knopf)");
   await small.click();
   await page.waitForTimeout(400);

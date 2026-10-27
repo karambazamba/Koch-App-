@@ -1,4 +1,4 @@
-// Schnelleingabe (Tafel 76): „＋ = tippen, Mia = sprechen“. Satz → Chips ohne
+// Schnelleingabe (Tafel 76): „＋ = schreiben, Mia = sprechen“. Satz → Chips ohne
 // KI (Termin: Tag · Uhrzeit + Familie/Arbeit; Aufgabe: „bis …“/„heute“/kein
 // Tag + „Familie“); ➤ speichert sofort mit „Eingetragen: … · Rückgängig“,
 // das Feld bleibt offen; leer = nichts; jedes „＋“ ohne Mia und ohne Mikro.
@@ -136,7 +136,7 @@ describe("Speichern: sofort, mit Rückgängig, Feld bleibt offen", () => {
   });
 });
 
-describe("Regel „＋ = tippen, Mia = sprechen“", () => {
+describe("Regel „＋ = schreiben, Mia = sprechen“", () => {
   const PLUS = [
     "src/components/heute/MiniCards.tsx",
     "src/components/kalender/CalendarPage.tsx",
@@ -172,7 +172,7 @@ describe("Regel „＋ = tippen, Mia = sprechen“", () => {
     expect(src).toMatch(/ready \? "" : "opacity-35"/);
     expect(src).toContain("Mehr Details");
     expect(src).toMatch(/<Sheet/);
-    expect(readFileSync("CLAUDE.md", "utf8")).toContain("＋ = tippen, Mia = sprechen");
+    expect(readFileSync("CLAUDE.md", "utf8")).toContain("＋ = schreiben, Mia = sprechen");
   });
 });
 
