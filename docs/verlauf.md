@@ -2556,7 +2556,6 @@ Fehler in `docs/aufraeumen-nachher.md`.
   leeren geht als Vorschau. Notizen waren schon mit v0.110 drin.
 - Prüfstand: „Lösch den Wochenplan“ erwartet jetzt `clear_week`, neu „Schalt
   Sport ein“ (137 Sätze).
-  Sport ein“ (134 Sätze).
 
 ## Navigation: immer zur Startseite (v0.115.0)
 
