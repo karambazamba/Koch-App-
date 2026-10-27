@@ -48,5 +48,7 @@ export const sprechenHaengt = async (page, check) => {
   check(log.some((l) => l.startsWith("Wachhund: kein Start")) && log.some((l) => l.startsWith("Hintergrund")), "Mikro-Protokoll: Wachhund und Hintergrund");
   check(!log.join(" ").includes("Runde"), "Protokoll ohne Gesprochenes");
   await page.goto(BASE + "/profil/admin");
-  check(await page.locator("[data-mikro-protokoll]").getByRole("button", { name: "Teilen" }).isVisible(), "Für Entwickler: Mikro-Protokoll mit Teilen");
+  // Die Einträge kommen erst nach dem Laden aus dem Speicher – kurz warten
+  const teilen = page.locator("[data-mikro-protokoll]").getByRole("button", { name: "Teilen" });
+  check(await teilen.waitFor({ timeout: 5000 }).then(() => true, () => false), "Für Entwickler: Mikro-Protokoll mit Teilen");
 };
