@@ -52,10 +52,15 @@ function Editor({ initial, isNew }: { initial: Note; isNew: boolean }) {
   const goBack = useGoBack();
   const inset = useKeyboardInset();
   const textRef = useRef<HTMLTextAreaElement>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
   const deleted = useRef(false);
   const autosave = useMemo(() => createAutosave<Note>((n) => replaceNotes(persistNote(loadNotes(), n))), []);
   // Beim Verlassen (Fertig, Zurück, Geste) sofort sichern bzw. Leeres verwerfen
   useEffect(() => () => void (deleted.current || autosave.flush()), [autosave]);
+  // Neue Notiz: Tastatur gleich im Titel (autoFocus allein greift nach dem Seitenwechsel nicht immer)
+  useEffect(() => {
+    if (isNew) titleRef.current?.focus();
+  }, [isNew]);
   useEffect(() => {
     if (!focusItem) return;
     document.querySelector<HTMLInputElement>(`[data-eintrag="${focusItem}"]`)?.focus();
@@ -105,6 +110,7 @@ function Editor({ initial, isNew }: { initial: Note; isNew: boolean }) {
       </header>
       <main className="flex flex-1 flex-col gap-3 px-4 pb-28 pt-2">
         <input
+          ref={titleRef}
           value={note.data.title}
           onChange={(e) => update({ title: e.target.value.slice(0, 80) })}
           onKeyDown={(e) => {
