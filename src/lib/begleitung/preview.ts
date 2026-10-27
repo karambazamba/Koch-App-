@@ -127,7 +127,7 @@ function describe(
     case "move_meal": {
       const p = place(op.from.weekStart, op.from.weekday);
       const from = findSlot(p.week, op.from.weekday)?.entry;
-      const to = findSlot(p.week, op.to.weekday)?.entry;
+      const to = findSlot(weekOf(state, op.to.weekStart), op.to.weekday)?.entry;
       if (!from) return null;
       return {
         opId: op.id,

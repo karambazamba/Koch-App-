@@ -82,16 +82,41 @@ Alle Schlüssel aus `src/lib/core/storage.ts`:
 
 ## So verhält es sich
 
-- **Wochenkarte und Abwechslung (v0.117)**: Essen-Seite mit „Diese Woche“ /
-  „Nächste Woche“ (‹ ›), Tag antippen = Gericht (mit Rezept die Rezeptseite,
-  sonst das Tausch-Fenster), freier Tag = „Was gibt’s am …?“. Essen-Kachel mit
-  „Woche ›“. Ideen: 14 Tage nach dem Essen nicht wieder; gezeigt und nicht
+- **Die nächsten 7 Tage (v0.126.0, Tafel 97)** ersetzen die Wochenkarte:
+  immer ab heute, über die Wochengrenze (gespeichert bleibt je Woche ab dem
+  Einkaufstag; `lib/essen/sieben`, Oberfläche `components/essen/sieben`).
+  Kopf „Die nächsten 7 Tage“, Umschalter Liste/Reihe (gemerkt in
+  `wasgibts.essenansicht`, nicht in der Sicherung), „Woche planen“ (Mia plant
+  die freien Tage) und „···“ (Feste Gerichte und Vorlagen, nur mit Baustein
+  Wochenplan). Jeder Tag öffnet in beiden Ansichten EIN Tag-Fenster
+  (`TagFenster`): großes Bild, „DONNERSTAG · 29.10. · 18:30“, Name, Minuten ·
+  Personen · Vorrat, „Rezept ansehen“ (jedes Gericht hat ein Rezept: eigenes
+  oder eingebautes über `rezeptIdFuer`), „Tauschen“, „Anderer Tag“, „Kein
+  Kochtag“/„Doch kochen“ und „Oder lieber“ mit drei Ideen; freier Tag = „Noch
+  frei“ + Ideen. Liste: Halten (300 ms) & ziehen tauscht bzw. verschiebt
+  (`verschiebe`, auch zwischen zwei Wochen) mit „Rückgängig“; Hinweis „Halten &
+  ziehen“, bis einmal gezogen (`essen-ziehen`). „Zuletzt gegessen ›“ zeigt die
+  letzten 14 Tage. Der Einkauf wird aus dem Plan berechnet, Zutaten wandern
+  also mit. Tests `tests/essen/siebenTage.test.ts`, Durchklick `wochenkarte`.
+- **Abwechslung (v0.117)**: Essen-Kachel mit „Woche ›“. Ideen: 14 Tage nach dem Essen nicht wieder; gezeigt und nicht
   genommen → 7 Tage weiter hinten (`ideenGezeigt.ts`, Speicher
   `wasgibts.ideengezeigt`, 30 Tage, nicht in der Sicherung); unter den ersten
   drei höchstens eine je Grundlage (`mixFirst`); fester Tages-Zufall bei
-  Gleichstand; ⇄ nie zweimal dieselbe (`naechsteIdee`). 123 eingebaute
-  Gerichte in `dishList.ts`, jedes mit Bild. Tests `tests/essen/abwechslung.test.ts`,
-  Durchklick `wochenkarte`.
+  Gleichstand; ⇄ nie zweimal dieselbe (`naechsteIdee`). Tests
+  `tests/essen/abwechslung.test.ts`.
+- **150 Alltagsgerichte**: `gerichte/<gruppe>.ts` (deutsch 30, nudeln 25,
+  asiatisch 20, vegetarisch 20, fisch 15, fleisch 14, suppen 11,
+  international 10, suess 5), zusammen `GERICHTE` = `DISHES` (`dishList.ts`).
+  Jedes mit `gruppe`, `beliebt` (1–5), `kind`, Zeit, Hauptzutaten, Bild und
+  Rezept für 4: entweder in `kochen/data*.ts` (gleicher Titel) oder als
+  `zutaten`/`schritte` im Eintrag (→ `GERICHT_REZEPTE`, ID `k:<slug>`).
+  `rezeptIdFuer(titel)` (`kochen/index.ts`) findet das Rezept zu jedem Titel;
+  Ideen aus der Liste tragen es als `recipeId`. Mischung der 8 Ideen
+  (`ideasFor`): ≈ 3 Lieblinge (Favorit, 👍, kennt ihr), ≈ 3 Klassiker
+  (`beliebt` ≥ 4), ≈ 2 Neue, höchstens 2 je Gruppe, Tages-Zufall stark
+  genug für täglich neue Mischung; mit Bestand steht die beste passende Idee
+  vorn. Allergien und „mag nicht“ der Familie (`persons`) strikt über Titel
+  und Rezept-Zutaten. Tests `tests/essen/pool150.test.ts` (30 Tage simuliert).
 
 **Essen-Reiter** (von oben):
 - Gericht von heute, nach dem Essen (Essenszeit + 90 Min oder gegessen) das
@@ -345,6 +370,12 @@ Ideen“. Verschwindet mit dem ersten eigenen Gericht oder dem Beispiel-Tag.
   `wochenplan_anzeigen/_aendern/_loeschen`, `portionen_anpassen` (Op
   `set_persons`, nur dieser Tag) in `homeTools.ts`; sofort ohne Übernehmen:
   `kochen_starten`, `kochschritt`, `timer_stellen` (`dayTools.ts`).
+- `gericht_verschieben` rollend (v0.126.0): ohne `woche` zählen die nächsten
+  7 Tage ab heute, das Gericht auch über den Namen (`gericht`): „Schieb das Pad
+  Thai auf Mittwoch“, „Tausch Freitag und Samstag“; `move_meal` klappt über die
+  Wochengrenze (`ops.ts`, `preview.ts`). Testmodus: „Schieb die/das/den … auf
+  <Tag>“. Prüfstand-Sätze „Schieb die Pizza auf Samstag“, „Schieb das Curry auf
+  Montag“, „Tausch Freitag und Samstag“, „Was gibt’s Samstag?“ (152 Sätze).
 - Beim Übernehmen eines Plans wird der Baustein Wochenplan eingeschaltet, die
   Essen-Kachel gezeigt und gesagt, wo er steht; ein neues Rezept schaltet
   Rezepte frei (`client.ts`). Bei „spontan“ gelten neue Gerichte als gewählt.

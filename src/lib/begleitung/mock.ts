@@ -155,6 +155,11 @@ function plan(intent: string, system: string) {
     clear: /(leer|lösch|streich)/i.test(intent) ? daysIn(intent) : [],
     double: /(doppelt|reste für morgen)/i.test(intent) ? daysIn(intent) : [],
     swap: /(tausch|verschieb)/i.test(intent) ? daysIn(intent) : [],
+    // „Schieb das Pad Thai auf Mittwoch“: Gericht über den Namen, die nächsten 7 Tage
+    moveDish: (() => {
+      const m = intent.match(new RegExp(`(?:ver)?schieb\\w*\\s+(?:die|das|den)\\s+(.+?)\\s+auf\\s+(?:den\\s+)?(${WEEKDAYS.join("|")})`, "i"));
+      return m && !daysIn(m[1]).length ? { gericht: m[1].trim(), tag: cap(m[2]) } : null;
+    })(),
     shopping:
       intent.match(/(?:setz|pack|schreib)\w*\s+(.+?)\s+auf die einkaufsliste/i)?.[1] ??
       intent.match(/einkaufsliste\s*:\s*(.+)$/i)?.[1] ??
@@ -323,7 +328,7 @@ function mockModel(): CreateMessage {
         );
       }
       const actionable =
-        intent.myDays.length || intent.wish || intent.restVeggie || intent.planWeek || intent.clear.length || intent.double.length || intent.swap.length >= 2 || intent.shopping;
+        intent.myDays.length || intent.wish || intent.restVeggie || intent.planWeek || intent.clear.length || intent.double.length || intent.swap.length >= 2 || intent.moveDish || intent.shopping;
       if (!actionable) {
         return text(`Sag einfach, was ansteht (Testmodus). Zum Beispiel: „Donnerstag und Freitag gibt es meine Rezepte, Mattis wünscht sich Sonntag Milchreis, der Rest vegetarische KI-Rezepte.“`);
       }
@@ -404,7 +409,8 @@ function mockModel(): CreateMessage {
       for (const tag of intent.double) {
         if (main(tag)?.gericht) uses.push({ name: "doppelt_kochen", input: { woche: intent.week, tag, an: true } });
       }
-      if (intent.swap.length >= 2) {
+      if (intent.moveDish) uses.push({ name: "gericht_verschieben", input: { gericht: intent.moveDish.gericht, nach_tag: intent.moveDish.tag } });
+      else if (intent.swap.length >= 2) {
         const [a, b] = intent.swap;
         const from = main(a);
         const to = main(b);

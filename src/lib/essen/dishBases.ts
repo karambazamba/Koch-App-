@@ -343,6 +343,23 @@ export function meat(art: DishArt, rng: Rng, reg: Region): string {
         out += `<g transform="rotate(${-14 + i * 4} ${f(x)} ${f(y)})">${drop(x, y + 6, 58, 70, 0.15)}<rect x="${f(x - 56)}" y="${f(y - 72)}" width="112" height="144" rx="30" fill="#B8703F"/><rect x="${f(x - 49)}" y="${f(y - 65)}" width="98" height="130" rx="25" fill="#E9A386"/>${Array.from({ length: 9 }, () => `<circle cx="${f(x + between(rng, -38, 38))}" cy="${f(y + between(rng, -54, 54))}" r="${f(between(rng, 2, 3.5))}" fill="${rng() < 0.5 ? "#C97A5E" : "#5FA348"}" opacity="0.8"/>`).join("")}<ellipse cx="${f(x)}" cy="${f(y)}" rx="24" ry="30" fill="#FFFDF6"/><circle cx="${f(x)}" cy="${f(y + 2)}" r="13" fill="#F2B632"/></g>`;
       }
       break;
+    case "scheibe":
+      // Leberkäse, Kassler: zwei rosige Scheiben mit schmalem Rand, kein Braun als Fläche
+      for (let i = 0; i < 2; i++) {
+        const x = mx - 40 + i * 80;
+        const y = my - 20 + i * 30;
+        out += `<g transform="rotate(${-10 + i * 14} ${f(x)} ${f(y)})">${drop(x, y + 6, 70, 56, 0.15)}<rect x="${f(x - 70)}" y="${f(y - 56)}" width="140" height="112" rx="22" fill="#C98A5A"/><rect x="${f(x - 63)}" y="${f(y - 49)}" width="126" height="98" rx="18" fill="#EFB29A"/><ellipse cx="${f(x - 22)}" cy="${f(y - 20)}" rx="20" ry="9" fill="#fff" opacity="0.22"/></g>`;
+      }
+      break;
+    case "roulade":
+      // Rouladen im Anschnitt: rosige Spirale mit Gurke, frische Tomatensoße sparsam darunter
+      out += blob(rng, mx + 4, my + 18, r * 0.52, "#D9483B", 0.18, ' opacity="0.75"');
+      for (const [dx, dy] of [[-50, -40], [55, 10]]) {
+        const x = mx + dx;
+        const y = my + dy;
+        out += `${drop(x, y, 62, 62, 0.16)}<circle cx="${f(x)}" cy="${f(y)}" r="62" fill="#B8703F"/><circle cx="${f(x)}" cy="${f(y)}" r="54" fill="#E9A386"/><path d="M${f(x)} ${f(y)} m-6 0 a6 6 0 1 1 12 0 a14 14 0 1 1 -28 0 a22 22 0 1 1 44 0 a30 30 0 1 1 -60 0" stroke="#C97A5E" stroke-width="5" fill="none"/><circle cx="${f(x + 18)}" cy="${f(y - 14)}" r="7" fill="#5FA348"/>`;
+      }
+      break;
     case "wurst":
       for (let i = 0; i < 3; i++) out += `<g transform="rotate(${-30 + i * 8} ${f(mx)} ${f(my)})">${drop(mx, my - 50 + i * 50, 100, 22, 0.15)}<rect x="${f(mx - 100)}" y="${f(my - 72 + i * 50)}" width="200" height="44" rx="22" fill="#9A4E2A"/><path d="M${f(mx - 60)} ${f(my - 60 + i * 50)} l14 18 M${f(mx - 10)} ${f(my - 60 + i * 50)} l14 18 M${f(mx + 40)} ${f(my - 60 + i * 50)} l14 18" stroke="#6A3018" stroke-width="4"/></g>`;
       break;

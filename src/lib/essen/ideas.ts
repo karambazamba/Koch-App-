@@ -1,12 +1,14 @@
 // "Was gibt's heute?" – Ideen ganz ohne KI, über einfache Regeln:
-// Wünsche ganz oben, dann vor allem, was zum AKTUELLEN Bestand passt (Vorrat,
-// Gekauftes; Reste und bald Ablaufendes zuerst), danach Lieblinge und
-// Gerichte, die ihr kennt, Jahreszeit, nicht dasselbe wie in den letzten
-// 14 Tagen und unter der Woche eher Schnelles. Mehr Abwechslung: fester
-// Tages-Zufall bei Gleichstand, an früheren Tagen Gezeigtes (aber nicht
-// Genommenes) rückt 7 Tage nach hinten, unter den ersten drei höchstens eine
-// je Grundlage (nicht 3× Nudeln). Rein, damit es testbar ist – gerechnet wird
-// immer frisch aus dem übergebenen Bestand, nichts wird zwischengespeichert.
+// Wünsche ganz oben, dann 8 gemischte Ideen: ≈ 3 Lieblinge (Favoriten, 👍,
+// schon gekocht), ≈ 3 beliebte Klassiker (`beliebt` ≥ 4), ≈ 2 Neue; höchstens
+// 2 je Gruppe, unter den ersten drei höchstens eine je Grundlage (nicht 3×
+// Nudeln). Was zum AKTUELLEN Bestand passt (Vorrat, Gekauftes; Reste zuerst),
+// zählt am meisten, dazu Jahreszeit und unter der Woche eher Schnelles. Nie:
+// Gegessenes der letzten 14 Tage, „nie wieder“, Allergien und „mag nicht“.
+// Jeden Tag neu gemischt (fester Tages-Zufall, stabil am selben Tag), an
+// früheren Tagen Gezeigtes (aber nicht Genommenes) rückt 7 Tage nach hinten.
+// Rein, damit es testbar ist – gerechnet wird immer frisch aus dem
+// übergebenen Bestand, nichts wird zwischengespeichert.
 
 import type { Recipe, RecipeCategory } from "@/lib/essen/cookbook";
 import { guessDishCategory } from "@/lib/essen/dishCategory";
@@ -14,7 +16,9 @@ import { recipeIsKnown } from "@/lib/essen/dishStatus";
 import { composeWeek, type StoredEntry } from "@/lib/essen/mealPlan";
 import type { PantryItem } from "@/lib/vorrat/pantry";
 import { DISHES, matchStock, realStock, soonToUse, type Season } from "@/lib/essen/dishIdeas";
-import type { HouseholdProfile, NeverAgainEntry } from "@/lib/einstellungen/profile";
+import type { HouseholdProfile, NeverAgainEntry, Person } from "@/lib/einstellungen/profile";
+import { dietConflicts } from "@/lib/begleitung/diet";
+import { cookRecipe, rezeptIdFuer } from "@/lib/essen/kochen";
 import { isNeverAgain } from "@/lib/essen/neverAgain";
 import { addDays, weekStartFor, type WeekPlan } from "@/lib/essen/weekPlan";
 import { IDEAS, sortBy, via } from "@/lib/core/sort";
@@ -67,6 +71,8 @@ type IdeaContext = {
   filters?: IdeaFilter[];
   /** Wann eine Idee (Titel, klein) zuletzt gezeigt wurde ("YYYY-MM-DD") */
   shown?: Record<string, string>;
+  /** Familie: Allergien und „mag nicht“ gelten strikt, mit Kindern lieber Kindergerechtes */
+  persons?: Person[];
 };
 
 /** So lange rückt eine gezeigte, nicht genommene Idee nach hinten */
@@ -99,16 +105,59 @@ const isWeekday = (date: string) => {
 
 /** Kleine, stabile Zahl je Tag und Idee – ändert die Reihenfolge täglich, nicht beim Neuladen */
 function dayHash(date: string, id: string): number {
-  let h = 0;
-  for (const c of `${date}|${id}`) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  return (h % 1000) / 1000;
+  // FNV-1a mit Nachmischen: benachbarte Tage geben ganz andere Zahlen
+  let h = 2166136261;
+  for (const c of `${date}|${id}`) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
+  h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0;
+  h = Math.imul(h ^ (h >>> 13), 3266489909) >>> 0;
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
 
 const list = (items: string[]) => (items.length <= 1 ? items.join("") : `${items.slice(0, -1).join(", ")} und ${items[items.length - 1]}`);
 
-/** Alle Ideen für heute, beste zuerst (Wünsche ganz oben) */
+/** Woher eine Idee für die Mischung kommt: Lieblinge, beliebte Klassiker, mal was Neues */
+type Topf = "liebling" | "klassiker" | "neu";
+
+/** So viele Ideen werden gemischt gezeigt */
+export const SHOWN_IDEAS = 8;
+/** Mischung der 8: ≈ 3 Lieblinge, ≈ 3 Klassiker, ≈ 2 Neue (leere Töpfe füllt die beste übrige Idee) */
+const PATTERN: Topf[] = ["liebling", "klassiker", "neu", "liebling", "klassiker", "neu", "liebling", "klassiker"];
+/** Höchstens so viele je Gruppe (Nudeln, Asiatisch, Suppen …) unter den 8 */
+const MAX_PER_GROUP = 2;
+/** So stark mischt der feste Tages-Zufall die Reihenfolge innerhalb eines Topfs */
+const DAY_MIX = 6;
+
+type Scored = Idea & { score: number; topf: Topf; group: string };
+
+/**
+ * Die ersten `slots` Ideen nach dem Muster mischen: je Platz die beste aus dem
+ * passenden Topf, höchstens 2 je Gruppe, unter den ersten `distinct`
+ * höchstens eine je Grundlage. `best` = erster Platz für die beste Idee
+ * insgesamt (Bestand überwiegt). Der Rest folgt nach Punkten.
+ */
+function mixShown(ranked: Scored[], slots: number, distinct: number, best: boolean): Scored[] {
+  const picked: Scored[] = [];
+  const groups = new Map<string, number>();
+  const bases = new Set<string>();
+  const free = (s: Scored, strict: boolean) =>
+    !picked.includes(s) && (!strict || ((groups.get(s.group) ?? 0) < MAX_PER_GROUP && (picked.length >= distinct || !bases.has(mixKey(s)))));
+  for (let i = 0; i < Math.min(slots, ranked.length); i++) {
+    const topf = best && i === 0 ? null : PATTERN[i % PATTERN.length];
+    const next =
+      ranked.find((s) => (topf === null || s.topf === topf) && free(s, true)) ?? ranked.find((s) => free(s, true)) ?? ranked.find((s) => free(s, false))!;
+    picked.push(next);
+    groups.set(next.group, (groups.get(next.group) ?? 0) + 1);
+    bases.add(mixKey(next));
+  }
+  return [...picked, ...ranked.filter((s) => !picked.includes(s))];
+}
+
+/**
+ * Alle Ideen für heute, beste zuerst: Wünsche ganz oben, dann 8 gemischte
+ * (Lieblinge, beliebte Klassiker, Neues; jeden Tag neu gemischt), dann der Rest.
+ */
 export function ideasFor(ctx: IdeaContext): Idea[] {
-  const { date, pantry, filters = [] } = ctx;
+  const { date, pantry, filters = [], persons = [] } = ctx;
   const weekday = isWeekday(date);
   const season = seasonOf(date);
   const recent = new Set(ctx.recent.map((t) => t.trim().toLowerCase()));
@@ -118,6 +167,9 @@ export function ideasFor(ctx: IdeaContext): Idea[] {
     const at = ctx.shown?.[title.trim().toLowerCase()];
     return Boolean(at && at < date && at >= from);
   };
+  /** Allergien und „mag nicht“ – strikt, mit Titel und allen Zutaten */
+  const blocked = (title: string, ingredients: string[]) => persons.length > 0 && dietConflicts(title, ingredients, persons).length > 0;
+  const kids = persons.some((p) => p.role === "kind");
   const stock = realStock(pantry);
   const hasStock = stock.length > 0;
   // Reste und bald Ablaufendes (Kühlschrank seit 2+ Tagen) zuerst
@@ -151,10 +203,10 @@ export function ideasFor(ctx: IdeaContext): Idea[] {
     };
   });
 
-  type Scored = Idea & { score: number };
   const scored: Scored[] = [];
   for (const r of Object.values(ctx.recipes)) {
     if (r.kind === "backen" || isNeverAgain(r.title, ctx.neverAgain) || recent.has(r.title.trim().toLowerCase())) continue;
+    if (blocked(r.title, r.ingredients.map((i) => i.name))) continue;
     const { uses, needs, unsure } = check(r.ingredients.map((i) => i.name));
     const known = recipeIsKnown(r);
     const rest = leftovers.filter((p) => uses.includes(p.name));
@@ -175,17 +227,23 @@ export function ideasFor(ctx: IdeaContext): Idea[] {
           : known
             ? "kennt ihr"
             : "mal was Neues";
-    scored.push({ id: r.id, title: r.title, recipeId: r.id, category: r.category, minutes: r.prepMinutes, reason, needs, uses, unsure, known, score });
+    const topf: Topf = r.favorite || r.thumbsUp > 0 || known ? "liebling" : "neu";
+    const group = DISHES.find((d) => d.title.toLowerCase() === r.title.trim().toLowerCase())?.gruppe ?? `eigen:${r.category}`;
+    scored.push({ id: r.id, title: r.title, recipeId: r.id, category: r.category, minutes: r.prepMinutes, reason, needs, uses, unsure, known, score, topf, group });
   }
   const own = new Set(Object.values(ctx.recipes).map((r) => r.title.trim().toLowerCase()));
   for (const c of DISHES) {
     const key = c.title.toLowerCase();
     if (own.has(key) || recent.has(key) || isNeverAgain(c.title, ctx.neverAgain)) continue;
     if (c.season && c.season !== season) continue;
+    const recipeId = rezeptIdFuer(c.title) ?? undefined;
+    const recipe = recipeId ? cookRecipe(recipeId) : undefined;
+    if (blocked(c.title, [...c.needs, ...(recipe?.ingredients.map((i) => i.name) ?? [])])) continue;
     const { uses, needs, unsure } = check(c.needs);
-    let score = 0;
+    let score = (c.beliebt - 3) * 0.8;
     if (c.season === season) score += 1.5;
     if (!hasStock && c.usual) score += 1.5;
+    if (kids && !c.kind) score -= 1;
     score += stockScore(uses, needs, leftovers.filter((p) => uses.includes(p.name)).length);
     if (weekday) score += c.minutes <= 25 ? 1 : c.minutes > 30 ? -1 : 0;
     if (shownBefore(c.title)) score -= SHOWN_PENALTY;
@@ -197,11 +255,13 @@ export function ideasFor(ctx: IdeaContext): Idea[] {
         : c.season === season
           ? "passt zur Jahreszeit"
           : "geht fast immer";
-    scored.push({ id: `k:${c.title}`, title: c.title, category: c.category, minutes: c.minutes, reason, needs, uses, unsure, known: true, score });
+    const topf: Topf = c.beliebt >= 4 ? "klassiker" : "neu";
+    scored.push({ id: `k:${c.title}`, title: c.title, recipeId, category: c.category, minutes: c.minutes, reason, needs, uses, unsure, known: true, score, topf, group: c.gruppe });
   }
   // Regel `IDEAS`: Punkte (mit festem Tages-Zufall) → bei Gleichstand die schnellere
-  const ranked = sortBy(scored, ...via((s: (typeof scored)[number]) => ({ score: s.score + dayHash(date, s.id), minutes: s.minutes }), IDEAS));
-  const all: Idea[] = [...wishes, ...mixFirst(ranked.map(({ score: _s, ...i }) => (void _s, i)), Math.max(0, 3 - wishes.length))];
+  const ranked = sortBy(scored, ...via((s: Scored) => ({ score: s.score + dayHash(date, s.id) * DAY_MIX, minutes: s.minutes }), IDEAS));
+  const mixed = mixShown(ranked, Math.max(0, SHOWN_IDEAS - wishes.length), Math.max(0, 3 - wishes.length), hasStock);
+  const all: Idea[] = [...wishes, ...mixed.map(({ score: _s, topf: _t, group: _g, ...i }) => (void _s, void _t, void _g, i))];
   return all.filter(
     (i) =>
       !ctx.dismissed.includes(i.id) &&
