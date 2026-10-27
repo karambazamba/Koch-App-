@@ -41,9 +41,9 @@ describe("Bewegung", () => {
     expect(reduced).toMatch(/\.mia-flug\s*\{\s*transition:\s*none/);
   });
 
-  it("keine Schreib-Leiste mehr – nur der runde Mia-Knopf", () => {
+  it("keine Schreib-Leiste mehr – der runde Mia-Knopf sitzt in der Leiste unten", () => {
     expect(existsSync("src/components/begleitung/BegleitungBar.tsx")).toBe(false);
-    expect(readFileSync("src/components/heute/HomePager.tsx", "utf8")).toContain("<MiaButton");
+    expect(readFileSync("src/components/ui/Leiste.tsx", "utf8")).toContain("<MiaButton");
   });
 });
 

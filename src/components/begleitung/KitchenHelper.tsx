@@ -4,7 +4,7 @@ import { useNotes } from "@/lib/notizen";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Check } from "lucide-react";
-import { onOpenHelper, openHelper } from "@/lib/begleitung/open";
+import { onCloseHelper, onOpenHelper, openHelper } from "@/lib/begleitung/open";
 import { takeQueued } from "@/lib/begleitung/nachholen";
 import { geteiltAnMia } from "@/lib/essen/rezeptLink/lesen";
 import { learnLikes, likesFromIngredients, LIKE_WEIGHTS } from "@/lib/essen/likes";
@@ -21,9 +21,11 @@ import { migrateOldTermine } from "@/lib/kalender/store";
 import { useCalendarEntries } from "@/lib/kalender/useCalendarEntries";
 import { aboRefreshDue } from "@/lib/kalender/abo/store";
 import { useHomeTiles } from "@/lib/core/homeLayout";
-import { MiaButton } from "@/components/begleitung/MiaButton";
+import { Leiste } from "@/components/ui/Leiste";
+import { RandZurueck } from "@/components/core/RandZurueck";
+import { UEBER_LEISTE } from "@/components/ui/styles";
 import { ErsterBesuch } from "@/components/begleitung/denktmit/ErsterBesuch";
-import { knopfVersteckt } from "@/lib/mia/knopf";
+import { leisteVersteckt } from "@/lib/core/leiste";
 import { helperName, type HelperVoice } from "@/lib/einstellungen/profile";
 import { removeRetiredKeys } from "@/lib/core/storage";
 import { launchUebernahme } from "@/lib/core/features";
@@ -155,6 +157,9 @@ export function KitchenHelper() {
     return () => window.removeEventListener("online", replay);
   }, []);
 
+  // Nach langer Pause (Öffnen = Startseite) schließt eine offene Bühne
+  useEffect(() => onCloseHelper(() => setOpen(false)), []);
+
   // Von außen öffnen, z. B. "Spontan kochen" → Spontan-Modus (Filter der Sitzung)
   useEffect(
     () =>
@@ -224,11 +229,9 @@ export function KitchenHelper() {
     setUndone(false);
   };
 
-  // Kein schwebender Knopf beim ersten Kennenlernen (Vollbild-Gespräch) und
-  // auf der Startseite (dort gibt es die Eingabeleiste)
-  const hidden = knopfVersteckt(pathname, profile !== null);
+  // Keine Leiste beim ersten Start, im Notiz-Editor, Kochmodus, Anmelden und auf Rechtsseiten
+  const hidden = leisteVersteckt(pathname, profile !== null);
 
-  const bottom = "max(1rem, env(safe-area-inset-bottom))";
 
   return (
     <>
@@ -236,8 +239,9 @@ export function KitchenHelper() {
       <QuickEntryHost />
       {liste !== null && <ListeEinfuegen initial={liste} onClose={() => setListe(null)} />}
       <NotifyHost />
-      {/* Auf allen Seiten derselbe runde Mia-Knopf wie auf der Startseite (dort zeichnet ihn HomePager) */}
-      {!open && !typing && !hidden && <MiaButton name={helperName(profile)} />}
+      {/* Auf allen Seiten dieselbe Leiste unten mit Mia rechts (Tafel 96); bei Tastatur und Bühne weich weg */}
+      {!hidden && <Leiste name={helperName(profile)} weg={typing} buehne={open} />}
+      {!hidden && !open && <RandZurueck />}
       {/* Mia denkt mit: erster Besuch einer Seite (Startseiten-Reiter zeigt HomePager) */}
       {!open && !typing && !hidden && profile && <ErsterBesuch seite={pathname} />}
 
@@ -266,7 +270,7 @@ export function KitchenHelper() {
         <div
           role="status"
           className="fixed inset-x-0 z-50 mx-auto flex w-[calc(100%-2rem)] max-w-md items-center gap-3 overflow-hidden rounded-card border border-line bg-surface px-4 py-3 text-ink shadow-sheet"
-          style={{ bottom: `calc(${bottom} + 4.5rem)` }}
+          style={{ bottom: UEBER_LEISTE }}
         >
           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-good-soft text-good-ink" aria-hidden>
             <Check className="h-4 w-4" strokeWidth={3} />

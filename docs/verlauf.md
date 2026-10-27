@@ -2666,3 +2666,17 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Schönen Abend.“ Das alte Thema „Ausblick“ entfällt. Nachts wie bisher.
 - Ganztägige Termine: „Ganztägig“ statt „Tag“, besondere Tage mit Herz bzw.
   Geschenk in Rosé (neues Token `--app-rose`).
+
+## Navigation neu – Leiste unten (v0.125.0, Tafel 96)
+
+- Ersetzt „Navigation: immer zur Startseite“ (v0.115) samt Haus-Knopf. Unten
+  eine schwebende Leiste mit Kalender · Heute · Essen und Mia rechts darin;
+  der Segment-Umschalter oben und das Zahnrad sind weg (Startseite: „···“ mit
+  Einstellungen und Startseite bearbeiten), Kalender und Essen tragen einen
+  großen Titel.
+- Reiter: anderer Bereich = Hauptseite, aktiver Reiter auf Unterseite = zurück
+  (Scrollhöhe bleibt), auf der Hauptseite = nach oben. Leiste weich weg bei
+  Tastatur, Fenstern, Bühne, Kochmodus, Notiz-Editor, erstem Start,
+  Rechtsseiten. Wischen vom linken Rand = eine Ebene zurück. Nach > 5 Min:
+  Startseite, Bühne zu, Kochmodus bleibt. Mia erklärt es einmal.
+

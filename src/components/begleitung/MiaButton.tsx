@@ -1,12 +1,10 @@
 "use client";
 
-// Der runde Mia-Knopf unten rechts – auf allen Seiten gleich (statt der
-// früheren Schreib-Leiste). Tippen holt die Begleitung in die Mitte (sie hört
-// gleich zu, wenn das Mikro erlaubt ist); lange drücken = sofort sprechen,
-// Loslassen = absenden. Beim ersten Mal einmal der Hinweis „Schreiben & sprechen“.
-// Beim Runterscrollen gleitet er weg und kommt beim Hochscrollen bzw. nach
-// kurzer Ruhe zurück (nur transform/opacity).
-// Eigene Datei, damit das Layout nicht die ganze Startseite mitlädt.
+// Der runde Mia-Knopf – sitzt rechts IN der Leiste unten (Tafel 96, `ui/Leiste`)
+// und ragt etwas über sie hinaus, auf allen Seiten gleich. Tippen holt die
+// Begleitung auf die Bühne (sie hört gleich zu, wenn das Mikro erlaubt ist);
+// lange drücken = sofort sprechen, Loslassen = absenden. Beim ersten Mal
+// einmal der Hinweis „Schreiben & sprechen“. Von hier fliegt Mia ein und zurück.
 
 import { useEffect, useRef, useState } from "react";
 import { wakeAvatar } from "@/lib/core/avatarState";
@@ -14,35 +12,11 @@ import { markHintSeen, useHintSeen } from "@/lib/core/hints";
 import { seitErsterStart } from "@/lib/core/hello";
 import { openHelper, releaseHelperVoice } from "@/lib/begleitung/open";
 import { serverStimme } from "@/lib/begleitung/zugang";
-import { knopfAway, REST_MS } from "@/lib/begleitung/knopfScroll";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { useMiaLook, useMiaMoment } from "@/components/begleitung/useMiaLook";
-import { useKnopfLinks } from "@/lib/mia/knopf";
 
 const LONG_MS = 450;
 const HINT_MS = 7000;
-
-/** Weg beim Runterscrollen, zurück beim Hochscrollen oder nach REST_MS Ruhe */
-function useScrollAway(): boolean {
-  const [away, setAway] = useState(false);
-  useEffect(() => {
-    let last = window.scrollY;
-    let rest: ReturnType<typeof setTimeout> | undefined;
-    const onScroll = () => {
-      const y = window.scrollY;
-      setAway((a) => knopfAway(a, last, y));
-      last = y;
-      clearTimeout(rest);
-      rest = setTimeout(() => setAway(false), REST_MS);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      clearTimeout(rest);
-    };
-  }, []);
-  return away;
-}
 
 /** Nach „Zeig mal“: einmal zwinkern beim ersten Erscheinen, den Hinweis erst nach ein paar ruhigen Sekunden */
 const ERSTER_START_RUHE_MS = 4000;
@@ -61,14 +35,15 @@ function useErsterStart() {
   return { zwinkern: state.zwinkern, ruhig };
 }
 
-export function MiaButton({ name }: { name: string }) {
+/** Größe in der Leiste (ragt ca. 30 px über sie hinaus) */
+const MIA_PX = 60;
+
+export function MiaButton({ name, links = false }: { name: string; links?: boolean }) {
   const erster = useErsterStart();
   const hint = useHintSeen("mia-knopf") === false && !erster.ruhig;
   const press = useRef<{ timer: ReturnType<typeof setTimeout>; long: boolean } | null>(null);
-  const away = useScrollAway();
   const look = useMiaLook();
   const moment = useMiaMoment();
-  const links = useKnopfLinks();
   // Früh wissen, ob Mia über den Server hört und spricht (nur mit KI-Einwilligung) – sonst nähme das erste Zuhören den Browser
   useEffect(() => {
     void serverStimme();
@@ -98,34 +73,33 @@ export function MiaButton({ name }: { name: string }) {
   };
 
   return (
-    <div className={`pointer-events-none fixed bottom-0 z-20 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] ${links ? "left-0 pl-4" : "right-0 pr-4"}`} data-begleitung-leiste data-links={links || undefined}>
-      <div className={`mia-knopf-gleiten relative flex items-center ${away ? "pointer-events-none" : "pointer-events-auto"}`} data-weg={away || undefined}>
-        {hint && (
-          <span role="note" className={`mia-einblenden absolute ${links ? "left-full ml-3" : "right-full mr-3"} whitespace-nowrap rounded-full bg-surface px-3.5 py-2 text-[14px] font-bold shadow-float`}>
-            Schreiben &amp; sprechen
-          </span>
-        )}
-        <button
-          type="button"
-          onPointerDown={down}
-          onPointerUp={up}
-          onPointerLeave={() => press.current && !press.current.long && (clearTimeout(press.current.timer), (press.current = null))}
-          onContextMenu={(e) => e.preventDefault()}
-          onClick={() => {
-            markHintSeen("mia-knopf");
-            if (press.current?.long) return;
-            wakeAvatar();
-            openHelper();
-          }}
-          aria-label={`Sag ${name}, was ansteht … (${name} holen)`}
-          className={`mia-knopf flex h-[72px] w-[72px] items-center justify-center rounded-full select-none ${erster.zwinkern ? "mia-zwinkern-einmal" : ""}`}
-          data-mia-knopf
-          data-moment={moment ?? undefined}
-        >
-          {moment === "blatt" && <span className="mia-blatt" aria-hidden />}
-          <BegleitungAvatar size={72} groesse="gross" zubehoer={look.zubehoer} stimmung={look.verschlafen ? "verschlafen" : look.ruhig ? "ruhig" : undefined} />
-        </button>
-      </div>
+    <div className="relative flex items-center" data-mia-platz>
+      {hint && (
+        <span role="note" className={`mia-einblenden absolute bottom-full mb-3 ${links ? "left-0" : "right-0"} whitespace-nowrap rounded-full bg-surface px-3.5 py-2 text-[14px] font-bold shadow-float`}>
+          Schreiben &amp; sprechen
+        </span>
+      )}
+      <button
+        type="button"
+        onPointerDown={down}
+        onPointerUp={up}
+        onPointerLeave={() => press.current && !press.current.long && (clearTimeout(press.current.timer), (press.current = null))}
+        onContextMenu={(e) => e.preventDefault()}
+        onClick={() => {
+          markHintSeen("mia-knopf");
+          if (press.current?.long) return;
+          wakeAvatar();
+          openHelper();
+        }}
+        aria-label={`Sag ${name}, was ansteht … (${name} holen)`}
+        className={`mia-knopf flex items-center justify-center rounded-full select-none ${erster.zwinkern ? "mia-zwinkern-einmal" : ""}`}
+        style={{ width: MIA_PX, height: MIA_PX }}
+        data-mia-knopf
+        data-moment={moment ?? undefined}
+      >
+        {moment === "blatt" && <span className="mia-blatt" aria-hidden />}
+        <BegleitungAvatar size={MIA_PX} groesse="gross" zubehoer={look.zubehoer} stimmung={look.verschlafen ? "verschlafen" : look.ruhig ? "ruhig" : undefined} />
+      </button>
     </div>
   );
 }

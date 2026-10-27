@@ -139,13 +139,13 @@ function blocked() {
   return out;
 }
 
-/** Ganz nach unten scrollen: liegt Inhalt unter der Leiste der Begleitung bzw. unter dem Mia-Knopf? */
+/** Ganz nach unten scrollen: liegt Inhalt unter der Leiste unten (Tafel 96) bzw. unter dem herausragenden Mia-Knopf? */
 async function bottomCheck(page) {
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   await page.waitForTimeout(350);
   const knopf = await page.evaluate(miaKnopfUeberText);
   return [...knopf, ...(await page.evaluate(() => {
-    const bar = document.querySelector("[data-begleitung-leiste] > div");
+    const bar = document.querySelector("[data-leiste-flaeche]");
     if (!bar) return [];
     const top = bar.getBoundingClientRect().top;
     const hidden = [...document.querySelectorAll("main button, main a, main p, main h2, main h3, main li, main img, main input")]

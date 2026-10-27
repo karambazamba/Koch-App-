@@ -112,11 +112,14 @@ export const WARNING =
   "flex items-start gap-2 rounded-field border border-danger-line bg-danger-soft px-4 py-3 text-sm font-semibold text-danger";
 
 /**
- * Unterer Abstand: so viel wie der Mia-Knopf braucht (Home-Leiste/Safe-Area
- * + 1,5rem Rand + 72px Knopf + 1rem Luft), damit am Seitenende nichts unter
- * dem Knopf liegt. Auf allen Seiten ans <main>, auch auf der Startseite.
+ * Unterer Abstand: so viel wie die Leiste unten braucht (Safe-Area bzw.
+ * 0,75rem Rand + 66px Leiste + 30px herausragende Mia + 1rem Luft), damit am
+ * Seitenende nichts unter der Leiste liegt. Auf allen Seiten ans <main>.
  */
-export const FAB_CLEARANCE = "pb-[calc(env(safe-area-inset-bottom)+1.5rem+72px+1rem)]";
+export const FAB_CLEARANCE = "pb-[calc(max(0.75rem,env(safe-area-inset-bottom))+66px+30px+1rem)]";
+
+/** Unterkante für Schwebendes über der Leiste (Knöpfe, Karten, Hinweise) */
+export const UEBER_LEISTE = "calc(max(0.75rem, env(safe-area-inset-bottom)) + 66px + 12px)";
 
 /**
  * Inhaltsbereich einer Unterseite: 16px Rand, 16px Abstand zwischen Karten,

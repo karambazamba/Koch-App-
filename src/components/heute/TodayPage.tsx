@@ -12,7 +12,8 @@ import { useMiaRoutinen } from "@/components/heute/useMiaRoutinen";
 import { greetOncePerDay } from "@/lib/core/avatarState";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { PenLine } from "lucide-react";
+import { PenLine, Settings } from "lucide-react";
+import { MoreMenu } from "@/components/ui/MoreMenu";
 import { DEFAULT_HOME, markHomeTipSeen, tileMeta, useHomeTiles, useHomeTipSeen, type HomeTile, type HomeTileId } from "@/lib/core/homeLayout";
 import { useWelcomeFinished } from "@/lib/einstellungen/welcomeStore";
 import { HomeBoard } from "@/components/heute/HomeBoard";
@@ -91,6 +92,8 @@ import { weekendKey } from "@/lib/tipps/model";
 import { BrandMark } from "@/components/ui/BrandMark";
 import { headerDate } from "@/lib/heute/kopfDatum";
 import { MiaNameHint, useMiaHomeHint } from "@/components/heute/MiaNameHint";
+import { LEISTE_NEU } from "@/lib/heute/miaName";
+import { markHintSeen, useHintSeen } from "@/lib/core/hints";
 import { InviteHintCard, useInviteHint } from "@/components/konten/InviteHintCard";
 import { termineTile } from "@/lib/heute/termineKachel";
 import { haushaltOf } from "@/lib/core/haushalt";
@@ -278,10 +281,12 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const darkState = useDarkTip();
   const lookOn = showLookTip(darkState, data.todayIso, data.profile.look);
   const gezeigt = useHinweiseGezeigt();
+  const leisteNeu = useHintSeen("leiste-neu");
   const hinweis = gezeigt
     ? naechsterHinweis(
         {
           "mia-name-neu": miaHint,
+          "leiste-neu": leisteNeu === false,
           einladen: Boolean(inviteHint),
           spendentopf: Boolean(potHint),
           "startseite-halten": tipSeen === false && welcomed,
@@ -450,14 +455,23 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
           {editing.on ? (
             <EditHeader onAdd={() => setPicking(true)} onDone={editing.close} />
           ) : (
-            // Kopf (Tafel 55): links die Marke, rechts das Datum – die Begrüßung bleibt für VoiceOver
+            // Kopf (Tafel 55/96): links die Marke, rechts das Datum und „···“ (Einstellungen, Startseite bearbeiten) – die Begrüßung bleibt für VoiceOver
             <header className="flex h-9 items-center justify-between gap-3 pt-1">
               <h1 className="sr-only">
                 {greeting(minutes)}
                 {name ? `, ${name}.` : "!"}
               </h1>
               <BrandMark height={30} />
-              <p className="text-[15px] font-semibold text-muted">{headerDate(data.today)}</p>
+              <span className="flex items-center gap-2">
+                <p className="text-[15px] font-semibold text-muted">{headerDate(data.today)}</p>
+                <MoreMenu
+                  title="Startseite"
+                  items={[
+                    { label: "Einstellungen", icon: Settings, onClick: () => router.push("/profil") },
+                    { label: "Startseite bearbeiten", icon: PenLine, onClick: editing.open },
+                  ]}
+                />
+              </span>
             </header>
           )}
 
@@ -467,6 +481,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
             <>
               {/* Höchstens ein Hinweis, Reihenfolge und „nur einmal“ in core/hinweise.ts */}
               {hinweis === "mia-name-neu" && <MiaNameHint />}
+              {hinweis === "leiste-neu" && <MiaKarte satz={LEISTE_NEU} label="Neu" knoepfe={[{ label: "Alles klar", onClick: () => markHintSeen("leiste-neu") }]} />}
               {hinweis === "einladen" && inviteHint && <InviteHintCard text={inviteHint} today={data.todayIso} />}
               {hinweis === "spendentopf" && potHint && <PotHintCard hint={potHint} />}
               {denkt.karte && <MiaKarte {...denkt.karte} />}

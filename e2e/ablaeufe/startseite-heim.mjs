@@ -1,6 +1,8 @@
-// Navigation: immer zur Startseite. Wischen Kalender → Heute → Essen → Heute
-// je 5 Mal (auch über dem Monatsraster), Haus-Knopf auf tieferen Seiten (zurück
-// auf Heute an derselben Scrollhöhe), Öffnen nach mehr als 5 Minuten = Heute.
+// Navigation neu (Tafel 96): Leiste unten mit Kalender · Heute · Essen und
+// Mia. Wischen Kalender → Heute → Essen → Heute je 5 Mal (auch über dem
+// Monatsraster), Reiter von Unterseiten (zurück an dieselbe Scrollhöhe),
+// aktiver Reiter = nach oben, Leiste weg bei Fenster/Tastatur/Kochmodus,
+// Wischen vom linken Rand = eine Ebene zurück, Öffnen nach > 5 Min = Heute.
 import { BASE, hello, seedFamily } from "../lib.mjs";
 
 const selected = (page) => page.getByRole("tab", { selected: true }).innerText();
@@ -42,29 +44,70 @@ export const wischenKalenderHeute = async (page, check) => {
   check(ok === 5, `Kalender → Heute → Essen → Heute: ${ok} von 5`);
 };
 
-export const hausKnopf = async (page, check) => {
+const leisteSichtbar = (page) =>
+  page.evaluate(() => {
+    const el = document.querySelector("[data-leiste-flaeche]");
+    if (!el) return false;
+    const r = el.getBoundingClientRect();
+    return Number(getComputedStyle(el.closest("[data-leiste]")).opacity) > 0.5 && r.bottom <= innerHeight + 1 && r.top < innerHeight;
+  });
+
+export const leisteReiter = async (page, check) => {
   await hello(page);
   await seedFamily(page);
   await page.goto(BASE + "/");
   await page.waitForTimeout(1200);
+  check(await leisteSichtbar(page), "Startseite: Leiste unten sichtbar");
+  check((await page.locator("[data-leiste] [data-mia-knopf]").count()) === 1, "Mia sitzt in der Leiste");
+  check((await page.locator("main [role=radiogroup][aria-label='Kalender, Heute, Essen'], nav[aria-label=Seiten]").count()) === 0, "kein Segment-Umschalter oben");
   await page.evaluate(() => window.scrollTo(0, 300));
   await page.waitForTimeout(400);
   const y0 = await page.evaluate(() => window.scrollY);
-  await page.getByRole("link", { name: "Einstellungen" }).tap();
+  // „···“ → Einstellungen (das Fenster blendet die Leiste aus)
+  await page.getByRole("button", { name: "Mehr" }).first().tap();
+  await page.waitForTimeout(1100);
+  check(!(await leisteSichtbar(page)), "Fenster offen: Leiste weg");
+  await page.getByRole("button", { name: "Einstellungen" }).tap();
   await page.waitForURL(/\/profil$/);
-  await page.waitForTimeout(600);
-  check(!(await page.locator("[data-haus]").count()), "eine Ebene unter Heute: kein Haus, „‹ Heute“ reicht");
+  await page.waitForTimeout(1100);
+  check(/Heute/.test(await page.getByRole("tab", { selected: true }).innerText()), "Einstellungen gehören zu Heute");
   await page.locator('a[href="/profil/daten"]').first().tap();
   await page.waitForURL(/profil\/daten/);
-  await page.waitForTimeout(600);
-  const haus = page.locator("[data-haus]:visible");
-  check(await haus.isVisible(), "tiefere Seite: Haus neben „‹ …“");
-  const box = await haus.boundingBox();
-  check(box && box.width >= 44 && box.height >= 44, "Haus: 44 px Tippfläche");
-  await haus.tap();
-  await page.waitForTimeout(1200);
-  check(new URL(page.url()).pathname === "/" && /Heute/.test(await selected(page)), "Haus → Startseite");
+  await page.waitForTimeout(800);
+  // Wischen vom linken Rand = eine Ebene zurück
+  await wisch(page, 6, page.viewportSize().height * 0.5, page.viewportSize().width * 0.5);
+  check(/\/profil$/.test(page.url()), "vom linken Rand wischen: eine Ebene zurück");
+  await page.locator('a[href="/profil/daten"]').first().tap();
+  await page.waitForURL(/profil\/daten/);
+  await page.waitForTimeout(800);
+  // Aktiver Reiter auf der Unterseite = zurück zur Hauptseite, Scrollhöhe bleibt
+  await page.getByRole("tab", { name: "Heute" }).tap();
+  await page.waitForTimeout(1300);
+  check(new URL(page.url()).pathname === "/" && /Heute/.test(await selected(page)), "Reiter Heute von tieferer Seite → Startseite");
   check(Math.abs((await page.evaluate(() => window.scrollY)) - y0) <= 2, "Scrollhöhe der Startseite bleibt");
+  // Aktiver Reiter auf der Hauptseite = nach oben
+  await page.getByRole("tab", { name: "Heute" }).tap();
+  await page.waitForTimeout(1300);
+  check((await page.evaluate(() => window.scrollY)) <= 2, "aktiver Reiter auf der Hauptseite: nach oben");
+  // Von einer Unterseite in einen anderen Bereich
+  await page.goto(BASE + "/einkaufsliste");
+  await page.waitForTimeout(900);
+  await page.getByRole("tab", { name: "Kalender" }).tap();
+  await page.waitForTimeout(1300);
+  check(new URL(page.url()).pathname === "/" && /Kalender/.test(await selected(page)), "Einkaufsliste → Reiter Kalender → Kalender");
+  await page.getByRole("tab", { name: "Essen" }).tap();
+  await page.waitForTimeout(1300);
+  check(/Essen/.test(await selected(page)), "Reiter Essen");
+  // Tastatur (Feld im Fokus): Leiste weg; Kochmodus: keine Leiste
+  await page.goto(BASE + "/einkaufsliste");
+  await page.waitForTimeout(900);
+  await page.locator("input, textarea").first().focus().catch(() => {});
+  await page.waitForTimeout(1100);
+  const feld = await page.locator("input, textarea").count();
+  if (feld) check(!(await leisteSichtbar(page)), "Tastatur offen: Leiste weg");
+  await page.goto(BASE + "/kochbuch/kochen?id=x");
+  await page.waitForTimeout(900);
+  check((await page.locator("[data-leiste]").count()) === 0, "Kochmodus ohne Leiste");
 };
 
 /**
