@@ -26,11 +26,13 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   Einheitlichkeit.
 - Drin: Mia (sprechen, tippen, erledigen), Startseite, Termine (inkl.
   Kalender mitbringen per Link), Aufgaben, Einkauf, Essen (heute, Ideen,
-  Rezept, Kochmodus), Pinnwand + Sprachnachrichten, Notizen (Kachel standardmäßig
-  an), Wetter, Timer (Baustein), Familie teilen per E-Mail-Code, Datenschutz.
+  Rezept, Kochmodus, Wochenkarte), Pinnwand + Sprachnachrichten, Notizen
+  (Kachel standardmäßig an), Sport (Baustein, nur Wochen zählen), Wochenplan
+  (Baustein), Wetter, Timer (Baustein), Familie teilen per E-Mail-Code,
+  Datenschutz.
 - Ausgeblendet (Baustein aus, nicht gelöscht, Daten bleiben; wer ihn schon
   nutzt, behält ihn): Mails an Mia, Tipps aus der Region, Im Haus,
-  Wochenplan, Sport, Spendentopf (ein Satz unter „Über Mia“
+  Spendentopf (ein Satz unter „Über Mia“
   bleibt), Anmelden mit Apple/Google (nur E-Mail-Code), ElevenLabs (aus,
   solange kein Schlüssel). Liste `LAUNCH_AUS` in `core/features.ts`,
   `LAUNCH_NUR_EMAIL` in `konten/oauth.ts`; Mia schaltet nichts davon frei.

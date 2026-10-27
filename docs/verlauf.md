@@ -2547,3 +2547,12 @@ Fehler in `docs/aufraeumen-nachher.md`.
   dehnt sich nicht), 2,5 px, Start oben, läuft im Uhrzeigersinn ab;
   Durchklick misst die Mitte (± 1 px).
 
+
+## Launch-Schnitt angepasst: Sport und Wochenplan gehören zu 1.0 (v0.114.0)
+
+- `LAUNCH_AUS` nur noch Mails an Mia, Tipps aus der Region, Im Haus,
+  Spendentopf. Sport (nur Wochen zählen) und Wochenplan sind wieder als
+  Baustein in „Mehr Funktionen“, Mia darf sie einschalten; den ganzen Plan
+  leeren geht als Vorschau. Notizen waren schon mit v0.110 drin.
+- Prüfstand: „Lösch den Wochenplan“ erwartet jetzt `clear_week`, neu „Schalt
+  Sport ein“ (137 Sätze).

@@ -157,10 +157,11 @@ describe("Alltag: Portionen, Pause, Bausteine, Startseite, App-Bedienung", () =>
 
   it("Urlaub ohne Zeit: nachfragen; Baustein schon an: nichts schalten", async () => {
     expect((await one("Wir fahren bald in den Urlaub")).text).toBe("Schön! Von wann bis wann seid ihr weg? (Testmodus)");
-    const all = context([], { on: ["wochenplan", "vorrat", "rezepte", "backen", "spontan", "tipps", "wochenendIdeen", "kochstil", "kalender", "mails", "notizen"] });
+    const all = context([], { on: ["wochenplan", "vorrat", "rezepte", "backen", "spontan", "tipps", "wochenendIdeen", "kochstil", "kalender", "mails", "notizen", "sport"] });
     expect((await one("Was kannst du noch?", all)).text).toBe("Gerade ist alles an, was ich kann. (Testmodus)");
     expect((await one("Was kannst du noch?")).text).toMatch(/^Außerdem kann ich: Rezepte – /);
-    expect((await one("Was kannst du noch?")).text).not.toMatch(/Im Haus|Sport|Spendentopf|Wochenplan/);
+    expect((await one("Was kannst du noch?")).text).not.toMatch(/Im Haus|Spendentopf/);
+    expect((await one("Was kannst du noch?")).text).toMatch(/Sport – Trainings/);
     expect((await one("Zeig mir den Vorrat", all)).names).not.toContain("baustein_an");
   });
 });

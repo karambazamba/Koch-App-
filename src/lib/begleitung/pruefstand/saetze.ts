@@ -1,4 +1,4 @@
-// Prüfstand (Auftrag „Mia auf Claude-Niveau“): 129 echte Alltagssätze einer
+// Prüfstand (Auftrag „Mia auf Claude-Niveau“): 134 echte Alltagssätze einer
 // Familie mit erwarteter Aktion – Einkauf, Termine, Aufgaben, Kochen, Fragen,
 // Durcheinander, Dialekt, Tippfehler. Bezug: Mittwoch, 21.10.2026, 10:30,
 // Familie Müller (Felix, Lisa, Mathis 8). `ops` = welche Vorschlags-Arten
@@ -129,8 +129,9 @@ export const PRUEFSAETZE: PruefSatz[] = [
   // Montag ist am Prüftag (Mi) schon vorbei – eine Rückfrage ist richtig
   S("Tausch Montag und Mittwoch", ["move_meal", "set_meal", "rueckfrage"], { lage: ["plan"] }),
   S("Donnerstag doppelt kochen, Reste für Freitag", ["set_double"], { lage: ["plan"] }),
-  // 1.0: Wochenplan ist „später“
-  S("Lösch den Wochenplan", ["kommt_bald"]),
+  // Wochenplan gehört zu 1.0: leeren = Vorschau mit „Übernehmen“
+  S("Lösch den Wochenplan", ["clear_week"]),
+  S("Schalt Sport ein", ["set_feature"]),
   S("Wir sind ab Montag eine Woche im Urlaub", ["set_pause"]),
   S("Ich koche jetzt", ["start_cooking"]),
   S("Nächster Schritt", ["cook_step"], { lage: ["kochmodus"] }),
