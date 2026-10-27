@@ -40,7 +40,7 @@ function PinBody({ pin, me }: { pin: PinMessage; me: string }) {
             <span className="font-bold text-ink">{pin.data.replyTo.author}</span> {pin.data.replyTo.text}
           </span>
         )}
-        <span className="text-[16px] font-semibold leading-snug">{pin.data.text}</span>
+        <span className="whitespace-pre-line text-[16px] font-semibold leading-snug">{pin.data.text}</span>
         <span className="flex items-center gap-1 text-sm text-muted">
           {pin.data.pinned && <Pin className="h-[13px] w-[13px] shrink-0 text-accent" strokeWidth={2.25} aria-label="Dauerhaft angeheftet" />}
           {pinMetaLine(pin, me)}

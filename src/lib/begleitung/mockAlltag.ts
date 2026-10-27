@@ -8,7 +8,8 @@ import { isCalendarImportRequest } from "@/lib/kalender/import/chat";
 import { isWeekCheckRequest } from "@/lib/kalender/wochencheck";
 import { parseSportCommand } from "@/lib/sport/model";
 import { parseNoteCommand } from "@/lib/notizen/chat";
-import { isSchnellnotizTidyRequest, schnellnotizCommand, tidySchnellnotiz } from "@/lib/notizen/schnellnotiz";
+import { schnellnotizCommand } from "@/lib/notizen/schnellnotiz";
+import { noteFromText } from "@/lib/notizen/model";
 import { isPinboardQuery, pinWriteCommand } from "@/lib/pinnwand/model";
 import { eventsIn, greetingCommand, localNewMail, localReply, looksLikeMail, parseHistoryDraft, REPLY_CHOICES, reviseDraft, revisionOf, splitInstruction, styleFromContext, type MailDraft } from "@/lib/begleitung/mail";
 import type Anthropic from "@anthropic-ai/sdk";
@@ -19,7 +20,7 @@ import { parseBausteinCommand } from "@/lib/begleitung/bausteinChat";
 import { BAUSTEINE, LAUNCH_AUS } from "@/lib/core/features";
 import { parsePauseRequest } from "@/lib/essen/spontan";
 import { findByTitle, sanitizeEntry, type CalendarEntry } from "@/lib/kalender/model";
-import { text, tools, type ToolUse } from "@/lib/begleitung/mockShared";
+import { text, tools } from "@/lib/begleitung/mockShared";
 import { jetztCommand } from "@/lib/heute/jetztCommand";
 import { tipsMode } from "@/lib/tipps/server";
 import { tipQuestion } from "@/lib/tipps/question";
@@ -159,23 +160,9 @@ export function pinWeatherUses(latest: string, system: string): Anthropic.Beta.B
 
 /** Schnellnotiz und Umwandeln im Testmodus */
 export function schnellnotizUses(latest: string, msgs: Anthropic.Beta.BetaMessageParam[], system: string): Anthropic.Beta.BetaMessage | null {
-  const today = system.match(/^Heute: .*\((\d{4}-\d{2}-\d{2})\)/m)?.[1] ?? "";
   const write = schnellnotizCommand(latest);
-  if (write) return tools([{ name: "schnellnotiz_schreiben", input: { text: write } }]);
-  if (isSchnellnotizTidyRequest(latest)) {
-    const raw = system.match(/^Schnellnotiz \(Schmierzettel\): (.*)$/m)?.[1] ?? "leer";
-    const schnellnotizText = raw === "leer" ? "" : (JSON.parse(raw) as string);
-    const lines = today ? tidySchnellnotiz(schnellnotizText, today).filter((l) => l.kind) : [];
-    if (!lines.length) return text("In deiner Schnellnotiz finde ich gerade nichts, was ein Termin, eine Aufgabe oder eine Notiz wird. (Testmodus)");
-    const uses: ToolUse[] = lines.map((l) =>
-      l.draft
-        ? draftInput(l.draft, today)
-        : l.note?.kind === "add"
-          ? { name: "liste_eintrag_hinzufuegen", input: { liste: l.note.list, eintraege: l.note.items } }
-          : { name: "notiz_anlegen", input: { titel: l.note && l.note.kind === "create" ? l.note.title : l.line, text: l.note && l.note.kind === "create" ? (l.note.text ?? "") : l.line } },
-    );
-    return tools([...uses, { name: "schnellnotiz_aufraeumen", input: { zeilen: lines.map((l) => l.line) } }]);
-  }
+  const note = write ? noteFromText(write) : null;
+  if (note) return tools([{ name: "notiz_anlegen", input: { titel: note.data.title, text: note.data.text ?? "" } }]);
   const toTask = /\bkein(?:en)?\s+termin\b.*\baufgabe\b/i.test(latest);
   const toTermin = latest.match(/\bkeine\s+aufgabe\b.*\btermin\b.*?\b(?:um\s+)?(\d{1,2})(?::(\d{2}))?\s*uhr\b/i);
   if (toTask || toTermin) {
@@ -211,7 +198,7 @@ export function noteUses(latest: string): Anthropic.Beta.BetaMessage | null {
   }
 }
 
-export const CALENDAR_WRITE = new Set(["pinnwand_schreiben", "schnellnotiz_schreiben", "schnellnotiz_aufraeumen", "termin_in_aufgabe_umwandeln", "aufgabe_in_termin_umwandeln", "notiz_anlegen", "notiz_aendern", "notiz_loeschen", "liste_eintrag_hinzufuegen", "notiz_anheften", "baustein_an", "baustein_aus", "portionen_anpassen", "pause_setzen", "pause_beenden", "startseite_anpassen", "wochenplan_loeschen", "einkaufsliste_leeren", "einkaufsliste_entfernen", "rueckgaengig", "termin_anlegen", "termin_aendern", "termin_loeschen", "aufgabe_anlegen", "aufgabe_aendern", "aufgabe_erledigen", "aufgabe_verschieben"]);
+export const CALENDAR_WRITE = new Set(["pinnwand_schreiben", "termin_in_aufgabe_umwandeln", "aufgabe_in_termin_umwandeln", "notiz_anlegen", "notiz_aendern", "notiz_loeschen", "liste_eintrag_hinzufuegen", "notiz_anheften", "baustein_an", "baustein_aus", "portionen_anpassen", "pause_setzen", "pause_beenden", "startseite_anpassen", "wochenplan_loeschen", "einkaufsliste_leeren", "einkaufsliste_entfernen", "rueckgaengig", "termin_anlegen", "termin_aendern", "termin_loeschen", "aufgabe_anlegen", "aufgabe_aendern", "aufgabe_erledigen", "aufgabe_verschieben"]);
 
 /** Einträge aus der Kontext-Liste "- Mo 2026-10-19: 09:00 Titel [id=…; termin, familie] | …" */
 function contextEntries(system: string): { date: string; time: string | null; title: string; id: string; typ: string; repeat: boolean }[] {

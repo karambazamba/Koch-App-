@@ -20,7 +20,7 @@ export function useKnopfLinks(): boolean {
 /** Rechtsseiten: in Ruhe lesen, kein Knopf über dem Text */
 const RECHT = ["/datenschutz", "/impressum", "/nutzungsbedingungen"];
 
-/** Seiten ohne den Mia-Knopf der Unterseiten (Startseite hat ihren eigenen, Anmelden/Beitreten und Rechtstexte keinen) */
+/** Seiten ohne den Mia-Knopf der Unterseiten (Startseite hat ihren eigenen, Anmelden/Beitreten und Rechtstexte keinen, Notiz bearbeiten hat unten seine Werkzeugleiste) */
 export function knopfVersteckt(pathname: string, hatProfil: boolean): boolean {
-  return (!hatProfil && pathname === "/profil") || pathname === "/" || pathname === "/anmelden" || pathname === "/beitreten" || RECHT.includes(pathname);
+  return (!hatProfil && pathname === "/profil") || pathname === "/" || pathname === "/anmelden" || pathname === "/beitreten" || pathname === "/notizen/bearbeiten" || RECHT.includes(pathname);
 }

@@ -58,6 +58,13 @@ verschwinden nach 24 Stunden“ (`pinnwand-24h`).
 
 ## So verhält es sich
 
+- **Absätze (v0.112)**: Die Schnelleingabe der Pinnwand ist mehrzeilig
+  (`ui/MehrzeilenFeld`, wächst bis 6 Zeilen, dann scrollt sie), Return = neue
+  Zeile, gespeichert wird nur mit ➤. `cleanPinText` behält Zeilen (höchstens
+  eine Leerzeile), Anzeige mit `whitespace-pre-line`; Kachel-Zeilen bleiben
+  einzeilig gekürzt. Push nennt nie den Text (nur „… hat etwas an die
+  Pinnwand gehängt“). Alte Nachrichten bleiben unverändert.
+
 ### Nachrichten
 - Sichtbar: dauerhaft angeheftet oder jünger als 24 Std. ab `erstellt`
   (`visiblePins`, `withinDay`, `PIN_HOURS`). Ältere verschwinden leise.
@@ -194,6 +201,7 @@ verschwinden nach 24 Stunden“ (`pinnwand-24h`).
 
 ## Tests
 
+- `tests/notizen/notizenNeu.test.ts` („Absätze überall“: Zeilen bleiben, alte Nachrichten gleich, Feld mehrzeilig); Durchklick `e2e/ablaeufe/notizen.mjs`.
 - `tests/pinnwand/vierundzwanzig.test.ts` (24 Std., Angeheftetes bleibt,
   Aufräumen beim Start samt Ton), `tests/pinnwand/gesten.test.ts` (Kachel,
   Reaktionen, Antworten, Pixel-Fehler).

@@ -78,7 +78,10 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Die Begleitung (Sprache/Chat) ist der Hauptweg; jede Funktion ist auch per
   Gespräch erreichbar. Bildschirme dienen zum Nachschauen und Feinjustieren.
 - ＋ = tippen, Mia = sprechen. Jedes ＋ öffnet eine Schnelleingabe (ein Feld,
-  Tastatur sofort, Satz rein, ➤ speichert; `ui/QuickEntry`, `core/schnelleingabe`).
+  Tastatur sofort, Satz rein, ➤ speichert; `ui/QuickEntry`, `core/schnelleingabe`;
+  Ausnahme: das Seiten-Plus der Notizen öffnet eine leere Notiz). Absätze:
+  Notiz und Pinnwand mehrzeilig (`ui/MehrzeilenFeld`, Return = neue Zeile,
+  gespeichert nur per Knopf), angezeigt mit `whitespace-pre-line`.
   Sprechen geht immer über den Mia-Knopf. Kein eigenes Mikro in Eingabefeldern
   (die iPhone-Tastatur hat ihres). Formular nur über „Mehr Details“. Mia ist
   ein runder Knopf unten rechts; Tippen holt sie auf die Bühne, sie hört
@@ -327,7 +330,7 @@ Gleiche Bereichsnamen in `src/lib/<bereich>` (Logik, rein wo möglich),
 | `einkauf` | Einkaufsliste, Läden, Stammartikel |
 | `vorrat` | „Im Haus“: was da ist (ohne Mengen), Orte, vergisst von selbst |
 | `pinnwand` | Nachrichten und Sprachnachrichten |
-| `notizen` | Notizen, Schnellnotiz |
+| `notizen` | Notizen (jede Schnellnotiz eine eigene), Bearbeiten im Vollbild |
 | `wetter` | Wetter-Server, Kachel, Seite |
 | `sport` | Trainings, Wochenziel |
 | `timer` | Timer, Stoppuhr |

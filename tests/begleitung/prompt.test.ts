@@ -35,7 +35,7 @@ describe("Kontext je Anfrage", () => {
     expect(text).toContain("Heute: Mittwoch, 21. Oktober 2026 (2026-10-21) (Zeitzone Europe/Berlin)");
     expect(text).toContain("Datumsliste: Mi 2026-10-21, Do 2026-10-22");
     expect(text).toContain("Notizen: noch keine.");
-    expect(text).toContain("Schnellnotiz (Schmierzettel): leer");
+    expect(text).not.toContain("Schnellnotiz");
     expect(text).toContain("Pinnwand: leer");
     expect(text).toContain("Wetter-Ort: Eutin");
     expect(text).toContain('Mail-Stil: Gruß "Viele Grüße", Name "Felix"');
@@ -56,7 +56,6 @@ describe("Kontext je Anfrage", () => {
     const base = daten({
       entries: [termin({ title: "Elternabend", date: HEUTE, start: "19:30" }), aufgabe({ title: "Reifen", week: WOCHEN.aktuell })],
       notes: [createNote({ title: "Packliste", items: ["Zelt"], pinned: true }), createNote({ title: "WLAN", text: "x" })],
-      schnellnotiz: "Oma anrufen",
       pinnwand: [{ author: "Lisa", text: "Bin um 8 da", at: "" }],
       wetterOrt: "Malente",
       features: ["vorrat"],
@@ -95,7 +94,6 @@ describe("Kontext je Anfrage", () => {
     expect(text).toContain("Elternabend");
     expect(text).toMatch(/Aufgaben ohne festen Tag: Reifen/);
     expect(text).toMatch(/Packliste \[id=.*Liste, 1 Einträge, angeheftet, familie\]/);
-    expect(text).toContain('Schnellnotiz (Schmierzettel): "Oma anrufen"');
     expect(text).toContain('Pinnwand: Lisa: "Bin um 8 da"');
     expect(text).toContain("Wetter-Ort: Malente");
     expect(text).toMatch(/Timer: Nudeln 2:00 übrig/);

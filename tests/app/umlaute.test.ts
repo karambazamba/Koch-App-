@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { guessLabel } from "@/lib/kalender/parse";
 import { sectionFor } from "@/lib/einkauf/sections";
 import { placeFor } from "@/lib/vorrat/pantry";
-import { tidySchnellnotiz } from "@/lib/notizen/schnellnotiz";
 import { extractDietItems } from "@/lib/einstellungen/onboarding/recognize";
 import { GERICHT_TIPS } from "@/lib/essen/tips/data/gericht";
 import { dishArt } from "@/lib/essen/dishArt";
@@ -14,10 +13,6 @@ describe("Fehler: Wortgrenzen an Umlauten", () => {
   it("„Ärztin“ bekommt das Etikett Arzt", () => {
     expect(guessLabel("Ärztin Dr. Meier")).toBe("Arzt");
     expect(guessLabel("Zahnärztin")).toBe("Arzt");
-  });
-
-  it("„Miete überweisen“ wird beim Aufräumen der Schnellnotiz eine Aufgabe", () => {
-    expect(tidySchnellnotiz("Miete überweisen", "2026-10-22")[0].kind).toBe("aufgabe");
   });
 
   it("„überhaupt“ wird aus „mag nicht“ herausgenommen", () => {

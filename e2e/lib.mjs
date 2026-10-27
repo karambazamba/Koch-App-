@@ -345,13 +345,14 @@ export async function mehrDetails(page) {
   await page.waitForTimeout(500);
 }
 
-/** Schnelleingabe: Satz tippen, ➤ (Return), Fenster zu */
+/** Schnelleingabe: Satz tippen, ➤ (Return; mehrzeilig bei Notiz/Pinnwand nur ➤), Fenster zu */
 export async function schnell(page, text, { close = true } = {}) {
   const sheet = page.getByRole("dialog", { name: "Schnelleingabe" });
   await sheet.waitFor({ timeout: 5000 });
   const box = sheet.getByRole("textbox");
   await box.fill(text);
-  await box.press("Enter");
+  if (await box.evaluate((el) => el.tagName === "TEXTAREA")) await sheet.getByRole("button", { name: "Speichern" }).click();
+  else await box.press("Enter");
   await page.waitForTimeout(300);
   if (close) {
     await sheet.getByRole("button", { name: "Schließen" }).last().click();

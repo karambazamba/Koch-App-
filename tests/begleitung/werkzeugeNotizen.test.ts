@@ -7,20 +7,11 @@ import { aufgabe, HEUTE, kontext, letzte, rufe } from "./werkzeugKontext";
 beforeEach(() => at("2026-10-21T09:00"));
 
 describe("Schnellnotiz", () => {
-  it("anhängen, ersetzen und aufräumen", () => {
-    const ctx = kontext({ features: ["notizen"], schnellnotiz: "Handwerker Müller 0176\nMilch kaufen" });
-    expect(rufe(ctx, "schnellnotiz_schreiben", { text: "" }).isError).toBe(true);
-    expect(rufe(ctx, "schnellnotiz_schreiben", { text: "Oma anrufen" }).content).toMatch(/Schnellnotiz/);
-    expect(ctx.data.schnellnotiz).toBe("Handwerker Müller 0176\nMilch kaufen\nOma anrufen");
-    expect(letzte(ctx)).toMatchObject({ type: "set_schnellnotiz", change: "+ Oma anrufen" });
-    expect(rufe(ctx, "schnellnotiz_aufraeumen", { zeilen: ["gibt es nicht"] }).isError).toBe(true);
-    expect(rufe(ctx, "schnellnotiz_aufraeumen", { zeilen: ["Milch kaufen", "Oma anrufen"] }).content).toBe("Vorgemerkt: 2 Zeilen aus der Schnellnotiz nehmen.");
-    expect(ctx.data.schnellnotiz).toBe("Handwerker Müller 0176");
-    expect(letzte(ctx)).toMatchObject({ change: "2 Zeilen übernommen – der Rest bleibt" });
-    rufe(ctx, "schnellnotiz_aufraeumen", { zeilen: ["Handwerker Müller 0176"] });
-    expect(letzte(ctx)).toMatchObject({ text: "", change: "1 Zeile übernommen, Schnellnotiz ist leer" });
-    rufe(ctx, "schnellnotiz_schreiben", { text: "Ganz neu und sehr lang, damit er abgeschnitten wird beim Anzeigen", ersetzen: true });
-    expect(letzte(ctx)).toMatchObject({ text: "Ganz neu und sehr lang, damit er abgeschnitten wird beim Anzeigen", change: "neu: Ganz neu und sehr lang, damit er abges…" });
+  it("gibt es nicht mehr als Sammel-Notiz: jede Schnellnotiz ist eine eigene Notiz", () => {
+    const ctx = kontext({ features: ["notizen"] });
+    expect(rufe(ctx, "schnellnotiz_schreiben", { text: "Oma anrufen" }).isError).toBe(true);
+    expect(rufe(ctx, "notiz_anlegen", { titel: "Oma anrufen", text: "Sonntag\nnach dem Essen" }).isError).toBeFalsy();
+    expect(letzte(ctx)).toMatchObject({ type: "upsert_note", note: { data: { title: "Oma anrufen", text: "Sonntag\nnach dem Essen" } } });
   });
 });
 

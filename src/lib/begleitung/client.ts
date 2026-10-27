@@ -8,7 +8,6 @@ import { resolveGiving } from "@/lib/kalender/abgeben/model";
 import { accountCache } from "@/lib/konten/cache";
 import { readRaw, writeRaw } from "@/lib/core/localStore";
 import { replaceNotes } from "@/lib/notizen/store";
-import { loadSchnellnotiz, saveSchnellnotiz } from "@/lib/notizen/schnellnotiz";
 import { addPin, changePins, createPin, formatDauer, loadMemos, loadPins, removePin, visibleMemos, visiblePins } from "@/lib/pinnwand";
 import { loadPlace } from "@/lib/wetter/client";
 import { tipContext } from "@/lib/tipps/client";
@@ -177,7 +176,6 @@ function trimmed(data: AssistantData, currentWeekStart: string, pantry: Assistan
     home: data.home,
     features: BAUSTEINE.filter((b) => featureOn(b.feature)).map((b) => b.feature),
     mail: loadMailStyle(),
-    schnellnotiz: loadSchnellnotiz().text.slice(0, 4000),
     // Sprachnachrichten nur als „[Sprachnachricht 0:12]“ – den Inhalt kennt Mia nicht
     pinnwand: [
       ...visiblePins(loadPins(), now().getTime()).map((m) => ({ author: m.data.author, text: m.data.text, at: m.erstellt })),
@@ -385,7 +383,6 @@ function save(data: AssistantData, before: AssistantData) {
   if (data.shopping !== before.shopping) replaceShoppingLists(data.shopping);
   if (data.entries !== before.entries && data.entries) replaceEntries(data.entries);
   if (data.notes !== before.notes && data.notes) replaceNotes(data.notes);
-  if (data.schnellnotiz !== before.schnellnotiz && data.schnellnotiz !== undefined) saveSchnellnotiz(data.schnellnotiz);
   if (data.home !== before.home && data.home) saveHomeTiles(data.home);
   if (data.profile !== before.profile) saveProfile(data.profile);
 }
@@ -453,7 +450,6 @@ export const LAUNCH_OPS: Partial<Record<ChangeOp["type"], Feature>> = {
   set_sport_goal: "sport",
   upsert_note: "notizen",
   remove_note: "notizen",
-  set_schnellnotiz: "notizen",
   add_pantry: "vorrat",
   use_pantry: "vorrat",
 };
@@ -500,7 +496,7 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
   // Nutzt Lotte einen ausgeschalteten Baustein, wird er eingeschaltet – und sie sagt, wo er steht
   if (chosen.some((op) => op.type === "add_pantry" || op.type === "use_pantry") && unlockFeature("vorrat")) notes.push(bausteinOf("vorrat")!.where);
   if (chosen.some((op) => op.type === "add_recipe") && unlockFeature("rezepte")) notes.push(bausteinOf("rezepte")!.where);
-  if (chosen.some((op) => op.type === "upsert_note" || op.type === "set_schnellnotiz") && unlockFeature("notizen")) {
+  if (chosen.some((op) => op.type === "upsert_note") && unlockFeature("notizen")) {
     const tiles = data.home ?? loadHomeTiles();
     if (!tiles.find((t) => t.id === "notizen")?.visible) data = { ...data, home: applyHomeChange(tiles, { tile: "notizen", action: "zeigen" }) };
     notes.push(bausteinOf("notizen")!.where);

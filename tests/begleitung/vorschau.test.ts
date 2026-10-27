@@ -62,7 +62,6 @@ describe("applyOps: Wochenplan", () => {
       { id: "9", type: "set_jetzt", on: false },
       { id: "10", type: "add_training", training: { sport: "laufen", minutes: 30, date: HEUTE } },
       { id: "11", type: "set_sport_goal", goal: 5 },
-      { id: "12", type: "set_schnellnotiz", text: "Neu", change: "neu" },
       { id: "13", type: "undo_last" },
       { id: "14", type: "add_pin", text: "Hallo" },
     ];
@@ -75,7 +74,6 @@ describe("applyOps: Wochenplan", () => {
     expect(data.profile.helper).toMatchObject({ name: "Mia", art: "assistentin" });
     expect(data.tagesablauf?.jetzt).toBe(false);
     expect(data.sport).toMatchObject({ goal: 5, trainings: [{ id: "10-training" }] });
-    expect(data.schnellnotiz).toBe("Neu");
     const cleared = applyOps(data, [{ id: "15", type: "clear_week", weekStart: ws }, { id: "16", type: "clear_shopping", weekStart: ws }]).data;
     expect(findSlot(weekOf(cleared, ws), "Montag")?.entry).toBeFalsy();
     expect(cleared.shopping[ws].manual).toEqual([]);
@@ -202,7 +200,6 @@ describe("previewRows", () => {
     rufe(ctx, "notiz_anlegen", { titel: "Leer" });
     rufe(ctx, "notiz_aendern", { id: wlan.id, text: "" });
     rufe(ctx, "notiz_loeschen", { id: wlan.id });
-    rufe(ctx, "schnellnotiz_schreiben", { text: "Oma anrufen" });
     rufe(ctx, "pinnwand_schreiben", { text: "Bin um 20 Uhr da" });
     rufe(ctx, "jetzt_karte", { an: true });
     rufe(ctx, "sport_eintragen", { sportart: "laufen", minuten: 30, km: 5 });
@@ -232,7 +229,6 @@ describe("previewRows", () => {
         "In der App|ausführen|-|„Mach die Ansicht dunkel“",
         "Notizen|🧳 Packliste|-|neue Liste: Zelt, Lampe",
         "Notizen|löschen|WLAN|gelöscht",
-        "Schnellnotiz|✎ Schnellnotiz|-|+ Oma anrufen",
         "Pinnwand|📌 Pinnwand|-|Bin um 20 Uhr da",
         "Startseite|Jetzt-Karte|-|✨ an",
         "Sport|🏃 eintragen|-|Laufen · 30 Min · 5 km · heute",

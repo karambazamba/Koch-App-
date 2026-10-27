@@ -12,7 +12,6 @@ import { TILE, TILE_LABEL, buttonClass } from "@/components/ui/styles";
 import { QuickButton } from "@/components/ui/QuickButton";
 import { QuickAddButton } from "@/components/einkauf/QuickAdd";
 import { ItemTile, TILE_GRID } from "@/components/einkauf/kacheln/ItemTile";
-import { SchnellnotizSheet } from "@/components/notizen/Schnellnotiz";
 import { clockLabel, itemText } from "@/lib/kalender/answers";
 import { tomorrowLabel, weekdayShort, type DayItem } from "@/lib/kalender/model";
 import type { TileSize } from "@/lib/core/homeLayout";
@@ -32,7 +31,8 @@ import { useStock } from "@/lib/essen/useStock";
 import { showToast } from "@/lib/core/toast";
 import { DEMO_SHOPS, clearDemoTile } from "@/lib/core/demo";
 import { shopGroups, shopTone, type ShopGroup } from "@/lib/einkauf/shopGroups";
-import { useSchnellnotiz, useNotes } from "@/lib/notizen";
+import { useNotes } from "@/lib/notizen";
+import { openQuick } from "@/lib/core/schnelleingabe";
 import { notizZeilen } from "@/lib/heute/notizenKachel";
 import type { HomeData } from "@/components/heute/useHomeData";
 import { buzz } from "@/components/heute/actions";
@@ -236,12 +236,9 @@ export function ShoppingTile({ size = "S", demo = false }: { half: boolean; size
  * aufschreiben …“. Kopf = Notizen-Seite, Zeile = genau diese Notiz, Stift =
  * Schnellnotiz.
  */
-export function NotesTile({ name, size = "M" }: { name: string; size?: TileSize }) {
-  const schnellnotiz = useSchnellnotiz();
+export function NotesTile({ size = "M" }: { size?: TileSize }) {
   const notes = useNotes();
-  const [open, setOpen] = useState(false);
   const rows = notizZeilen(notes ?? [], size);
-  const quick = (schnellnotiz?.text ?? "").split(/\n/).map((l) => l.trim()).filter(Boolean);
   const top = rows[0];
   return (
     <>
@@ -251,15 +248,10 @@ export function NotesTile({ name, size = "M" }: { name: string; size?: TileSize 
             <StickyNote className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
             Notizen
           </span>
-          {!rows.length &&
-            (quick.length ? (
-              <span className="line-clamp-2 text-[13px] leading-[1.35]">{quick.slice(0, 2).join(" · ")}</span>
-            ) : (
-              <span className="text-[13px] text-muted">Schnell was aufschreiben …</span>
-            ))}
+          {!rows.length && <span className="text-[13px] text-muted">Schnell was aufschreiben …</span>}
         </Link>
         <span className="absolute right-3.5 top-3">
-          <QuickButton icon={PenLine} label="Schnellnotiz schreiben" onClick={() => setOpen(true)} />
+          <QuickButton icon={PenLine} label="Schnellnotiz schreiben" onClick={() => openQuick({ kind: "notiz" })} />
         </span>
         {size === "S" && top && (
           <Link href={`/notizen/bearbeiten?id=${top.id}`} className="-mt-1 flex min-h-[30px] flex-col text-[13px] leading-[1.35]" data-zeile data-notiz-zeile>
@@ -286,7 +278,6 @@ export function NotesTile({ name, size = "M" }: { name: string; size?: TileSize 
           </ul>
         )}
       </section>
-      {open && <SchnellnotizSheet name={name} onClose={() => setOpen(false)} />}
     </>
   );
 }

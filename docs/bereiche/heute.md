@@ -82,9 +82,10 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   (`data-freie-haelfte`, Auswahl nur S-fähiger Kacheln, `placeBeside`),
   sonst bleibt sie leer. Ziehen tauscht die Partner. Startseite v6
   (`lonelySToM`): eine einzelne S, die bisher breit war, wird einmal M.
-- Notizen-Kachel (`heute/notizenKachel.ts`): S = neueste Notiz (2 Zeilen)
-  oder „Schnell was aufschreiben …“, M = 3 Zeilen, L = bis 5, Angeheftete
-  zuerst; Listen als „x von y erledigt“. Stift = Schnellnotiz.
+- Notizen-Kachel (`heute/notizenKachel.ts`): S = neueste bzw. angeheftete
+  Notiz (Titel + 1 Zeile) oder „Schnell was aufschreiben …“, M = 3 Zeilen
+  „Titel · Anfang“, L = bis 5, Angeheftete zuerst; Listen als „x von y
+  erledigt“. Zeile = diese Notiz, Stift = Schnelleingabe „Neue Notiz“.
 - Essen + Einkauf sind ein Paar: immer direkt hintereinander, Essen zuerst
   (`keepPair`), und wandern zusammen. Als eine Einheit im Raster zählen sie
   nur, wenn beide S sind.

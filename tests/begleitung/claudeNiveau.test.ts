@@ -1,6 +1,6 @@
 // Mia auf Claude-Niveau – nie halbgar: offline merken und nachholen, kleine
 // Dinge sofort mit „Rückgängig“ und „Mia hat schon …“, Fähigkeitsliste aus
-// den Werkzeugen, „Kann ich noch nicht“ anonym, Prüfstand mit 133 Sätzen.
+// den Werkzeugen, „Kann ich noch nicht“ anonym, Prüfstand mit 136 Sätzen.
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { atFresh, fakeWindow } from "../helpers";
@@ -128,9 +128,9 @@ describe("Ehrlich über Fähigkeiten", () => {
 });
 
 describe("Prüfstand", () => {
-  it("133 Sätze, alle verschieden, jede Gruppe dabei", () => {
-    expect(PRUEFSAETZE).toHaveLength(133);
-    expect(new Set(PRUEFSAETZE.map((s) => s.text)).size).toBe(133);
+  it("136 Sätze, alle verschieden, jede Gruppe dabei", () => {
+    expect(PRUEFSAETZE).toHaveLength(136);
+    expect(new Set(PRUEFSAETZE.map((s) => s.text)).size).toBe(136);
     expect(PRUEFSAETZE.filter((s) => s.ops.length === 0).length).toBeGreaterThanOrEqual(20);
     expect(PRUEFSAETZE.filter((s) => s.ops.includes("kann_nicht")).length).toBeGreaterThanOrEqual(3);
     expect(pruefHaushalt().profile.persons.map((p) => p.name)).toEqual(["Felix", "Lisa", "Mathis"]);
