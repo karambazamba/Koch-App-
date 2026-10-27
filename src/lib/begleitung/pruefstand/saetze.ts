@@ -1,4 +1,4 @@
-// Prüfstand (Auftrag „Mia auf Claude-Niveau“): 136 echte Alltagssätze einer
+// Prüfstand (Auftrag „Mia auf Claude-Niveau“): 138 echte Alltagssätze einer
 // Familie mit erwarteter Aktion – Einkauf, Termine, Aufgaben, Kochen, Fragen,
 // Durcheinander, Dialekt, Tippfehler. Bezug: Mittwoch, 21.10.2026, 10:30,
 // Familie Müller (Felix, Lisa, Mathis 8). `ops` = welche Vorschlags-Arten
@@ -31,6 +31,8 @@ export type PruefSatz = {
   alle?: boolean;
   /** Höchstens so viele Wörter (Mehrfach-Aktion: „Erledigt.“) */
   woerter?: number;
+  /** Jeder Einkaufs-Vorschlag gehört in diesen Laden (Läden bewusst wählen) */
+  laden?: string;
 };
 
 const S = (text: string, ops: string[], extra: Omit<PruefSatz, "text" | "ops"> = {}): PruefSatz => ({ text, ops, ...extra });
@@ -55,6 +57,16 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Äpfel, Birnen und Trauben brauchen wir", EINKAUF),
   S("Tomaten für die Soße am Samstag", EINKAUF),
   S("Bei REWE noch Joghurt holen", EINKAUF),
+  S("Shampoo bei Rossmann", EINKAUF, { laden: "Rossmann" }),
+  S("Für Lidl: Milch, Eier", EINKAUF, { laden: "Lidl" }),
+  // Feste Laden-Regeln („Mia merkt sich den Laden“)
+  S("Tomaten kaufe ich immer bei Rewe", ["set_shop_rule"], { laden: "Rewe" }),
+  S("Butter immer bei Lidl", ["set_shop_rule"], { laden: "Lidl" }),
+  S("Shampoo nur bei Rossmann", ["set_shop_rule"], { laden: "Rossmann" }),
+  S("Kaffee kaufen wir ab jetzt bei Edeka", ["set_shop_rule"], { laden: "Edeka" }),
+  S("Tomaten nicht mehr bei Rewe", ["set_shop_rule"]),
+  S("Milch egal wo", ["set_shop_rule"]),
+  S("Was kauf ich wo?", []),
   S("Katzenfutter nicht vergessen", EINKAUF),
   S("Moin, Brötchen für morgen früh", EINKAUF),
   S("Haferflocken sind fast leer", EINKAUF),

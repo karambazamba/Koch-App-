@@ -32,6 +32,7 @@ import { parsePauseRequest, pauseLabel } from "@/lib/essen/spontan";
 import { composeWeek } from "@/lib/essen/mealPlan";
 import { taskOverview, terminToAufgabe } from "@/lib/kalender";
 import { addListItems, changeNotes, createNote, noteFromText, schnellnotizCommand, loadNotes, noteAnswer, noteFor, parseNoteCommand, setPinned, upsertNote } from "@/lib/notizen";
+import { applyShopRule, isShopOverviewQuestion, parseShopRule, shopOverview, shopRuleReply, shopRulesForMia } from "@/lib/einkauf/shopRules";
 import { berlinTime, now } from "@/lib/core/now";
 
 import type { ChatState, ChatTurnView } from "@/components/begleitung/chatTypes";
@@ -326,6 +327,20 @@ export function bausteinRule(ctx: RuleContext, t: string): boolean {
   setInput("");
   setFeature(cmd.feature, cmd.on);
   localTurn(t, cmd.on ? `Erledigt ✓ ${b.where}` : `Erledigt ✓ ${b.name} ist aus. Die Daten bleiben.`, () => setFeature(cmd.feature, !cmd.on));
+  return true;
+}
+
+/** Ohne KI: „Tomaten kaufe ich immer bei Rewe“ → feste Regel (mit Rückgängig), „Was kauf ich wo?“ → Übersicht */
+export function shopRuleRule(ctx: RuleContext, t: string): boolean {
+  const rule = parseShopRule(t);
+  if (rule) {
+    const undo = applyShopRule(rule.item, rule.shop);
+    localTurnOf(ctx)(t, shopRuleReply(rule.item, rule.shop), undo);
+    return true;
+  }
+  if (!isShopOverviewQuestion(t)) return false;
+  const { regeln, meine } = shopRulesForMia();
+  localReplyOf(ctx)(t, shopOverview(regeln, meine));
   return true;
 }
 

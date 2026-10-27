@@ -138,7 +138,7 @@ describe("Läden", () => {
     expect(order.slice(0, 2)).toEqual(["Lidl", "dm"]);
     expect(order).toContain("Biomarkt");
     expect(order.filter((s) => s.toLowerCase() === "lidl")).toHaveLength(1);
-    expect(allShops({ shops: [] })).toHaveLength(8);
+    expect(allShops({ shops: [] })).toHaveLength(11);
   });
 
   it("Einstellungen ohne Hook: Standard ohne Speicher, sonst aus dem Speicher (gleiches Objekt)", async () => {
@@ -176,7 +176,7 @@ describe("Migration – nie Daten verlieren", () => {
         kaputt: null,
       },
     })!;
-    expect(v3.version).toBe(4);
+    expect(v3.version).toBe(6);
     expect(v3.staples).toEqual([{ id: "b1", name: "Hafermilch", amount: "2", section: "kuehlregal", purchases: [], intervalDays: 7, active: false }]);
     const wk = v3.weeks[W];
     expect(wk.checked).toEqual(["nudeln|g"]);
@@ -220,6 +220,6 @@ describe("Migration – nie Daten verlieren", () => {
     w = fakeWindow({ [KEY]: JSON.stringify({ version: 2, weeks: { [W]: { manual: [{ id: "m", name: "Brot", amount: "", section: "brot", done: false }], checked: [], have: [] } } }) });
     const { store } = await import("@/lib/einkauf/listStore");
     expect(store.load()?.weeks[W].manual[0].name).toBe("Brot");
-    expect(saved().version).toBe(4);
+    expect(saved().version).toBe(6);
   });
 });

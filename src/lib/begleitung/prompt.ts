@@ -254,6 +254,7 @@ export function contextText(
     "",
     calendarContext(data.entries ?? [], todayIso),
     notesContext(data.notes ?? []),
+    `Läden: ${data.laeden?.meine.length ? data.laeden.meine.join(", ") : "keine gewählt"}; feste Regeln: ${data.laeden && Object.keys(data.laeden.regeln).length ? Object.entries(data.laeden.regeln).map(([item, shop]) => `${item} → ${shop}`).join(", ") : "keine"} (ändern mit laden_regel)`,
     `Pinnwand: ${data.pinnwand?.length ? data.pinnwand.map((p) => `${p.author}: ${JSON.stringify(p.text)}`).join(" · ") : "leer"}`,
     `Wetter-Ort: ${data.wetterOrt ?? "Eutin"}`,
     ...dayContextLines({ data, today: todayIso }),

@@ -3,6 +3,8 @@
 // Einkauf wie Bring (Tafel 35): „Mehr hinzufügen“ – Suche (tippen oder
 // sprechen, mehrere mit Komma), „Oft gekauft“ zuerst, dann alles nach
 // Abteilung. Antippen wählt aus bzw. ab; „Fertig“ übernimmt alles auf einmal.
+// Mit „Meine Läden“: „Kommt auf die Liste für“ (gemerkter Laden → offener
+// Reiter → „Egal wo“); Vorschläge zeigen ihren gemerkten Laden leise.
 
 import { rezeptLinkIn } from "@/lib/essen/rezeptLink/lesen";
 import { openHelper } from "@/lib/begleitung/open";
@@ -19,6 +21,8 @@ import { addManualItem, removeManualItems, sectionFor, setHave, setItemShop, typ
 import { useSpeechInput } from "@/lib/begleitung/useSpeechInput";
 import { useKeyboardInset } from "@/lib/core/useMobileKeyboard";
 import { pushUndo } from "@/lib/core/undo";
+import { LadenWahl } from "@/components/einkauf/MeineLaeden";
+import { rememberedShop, vorwahlHinweis } from "@/lib/einkauf/meineLaeden";
 
 const lower = (s: string) => s.trim().toLowerCase();
 const sachen = (n: number) => `${n} ${n === 1 ? "Sache" : "Sachen"}`;
@@ -30,6 +34,8 @@ export function CatalogSheet({
   settings,
   open,
   recent,
+  myShops = [],
+  tab,
   onClose,
 }: {
   weekStart: string;
@@ -38,6 +44,10 @@ export function CatalogSheet({
   open: ListItem[];
   /** Zuletzt gekauft (für „Oft gekauft“) */
   recent: ListItem[];
+  /** „Meine Läden“ (leer = keine Laden-Wahl) */
+  myShops?: string[];
+  /** Offener Laden-Reiter */
+  tab?: string;
   onClose: () => void;
 }) {
   const inset = useKeyboardInset();
@@ -48,6 +58,13 @@ export function CatalogSheet({
   const [chosen, setChosen] = useState<Set<string>>(() => new Set(initial));
   // Frei Getipptes/Gesprochenes, das es im Katalog nicht gibt
   const [extras, setExtras] = useState<Extra[]>([]);
+  // Laden: von Hand gewählt geht vor, sonst der gemerkte des zuletzt gewählten Artikels, sonst der Reiter
+  const [picked, setPicked] = useState<string | null>(null);
+  const [lastOn, setLastOn] = useState("");
+  const remembered = (name: string) => rememberedShop(name, settings.itemShops, settings.products);
+  const lastShop = lastOn ? remembered(lastOn) : "";
+  const shopValue = picked ?? (lastShop || tab || "");
+  const shopFor = (name: string) => (picked !== null ? picked : remembered(name) || tab || "");
   const full = catalog({ staples: settings.staples, recent, open, basics: BASICS });
   const entries = catalog({ staples: settings.staples, recent, open, basics: BASICS, query });
   const known = new Set(full.map((e) => lower(e.name)));
@@ -59,7 +76,10 @@ export function CatalogSheet({
     setChosen((c) => {
       const next = new Set(c);
       if (next.has(lower(name))) next.delete(lower(name));
-      else next.add(lower(name));
+      else {
+        next.add(lower(name));
+        setLastOn(name);
+      }
       return next;
     });
 
@@ -88,7 +108,8 @@ export function CatalogSheet({
       const entry = all.find((e) => lower(e.name) === n);
       if (!entry) continue;
       ids.push(addManualItem(weekStart, { name: entry.name, amount: extra?.amount ?? staple(n)?.amount ?? "", section: entry.section }));
-      if (extra?.shop) setItemShop(settings.products[n] ?? entry.name, extra.shop);
+      const shop = extra?.shop || (myShops.length ? shopFor(entry.name) : "");
+      if (shop !== remembered(entry.name) && (shop || picked !== null)) setItemShop(settings.products[n] ?? entry.name, shop);
     }
     // Abgewählt: Eigenes fällt weg, Zutaten aus Gerichten → „Haben wir schon“
     const manual = open.filter((i) => !chosen.has(lower(i.name)) && i.manualId).map((i) => i.manualId!);
@@ -132,6 +153,7 @@ export function CatalogSheet({
       section={e.section}
       products={settings.products}
       selected={chosen.has(lower(e.name))}
+      dish={myShops.length ? remembered(e.name) : ""}
       label={e.name}
       onTap={() => toggle(e.name)}
     />
@@ -187,6 +209,7 @@ export function CatalogSheet({
           )}
         </button>
       </form>
+      <LadenWahl myShops={myShops} value={shopValue} onChange={setPicked} hint={picked === null && lastShop ? vorwahlHinweis(lastOn, lastShop) : undefined} />
       {hint && (
         <p className="text-sm text-muted" role="note">
           {hint}

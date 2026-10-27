@@ -5,6 +5,7 @@
 
 import { WEEKDAYS } from "@/lib/einstellungen/profile";
 import { SECTIONS, sectionFor, type Section } from "@/lib/einkauf/shoppingList";
+import { rulesByShop, shopRuleReply } from "@/lib/einkauf/shopRules";
 import type { BegleitungTool } from "@/lib/begleitung/registry";
 import { dateForDay, fail, nextId, propose, str, toolInput, WEEK_PROP, weekStartOf, type Input } from "@/lib/begleitung/tools";
 
@@ -58,6 +59,45 @@ export const SHOPPING_TOOLS = {
         names.push(itemName);
       }
       return { content: input.nur_vorschlag === true ? `Als Vorschlag mit "Übernehmen": ${names.join(", ")}. Antworte nur kurz, z. B. "Mein Vorschlag fürs Frühstück:"` : `Vorgemerkt für die Einkaufsliste: ${names.join(", ")}.` };
+    },
+  },
+  laden_regel: {
+    area: "einkauf",
+    definition: {
+      name: "laden_regel",
+      description:
+        "Feste Laden-Regel für einen Artikel: 'Tomaten kaufe ich immer bei Rewe', 'Butter immer bei Lidl', 'Shampoo nur bei Rossmann' → laden setzen. 'Tomaten nicht mehr bei Rewe', 'Milch egal wo' → laden leer = Regel weg. Gilt danach überall (Liste, Wochenplan, Rezepte). Antwort knapp: 'Merk ich mir. Tomaten → Rewe.'",
+      input_schema: {
+        type: "object",
+        properties: {
+          artikel: { type: "string", description: "Der Artikel, z. B. 'Tomaten'" },
+          laden: { type: "string", description: "Der Laden, z. B. 'Rewe'; leer = Regel entfernen" },
+        },
+        required: ["artikel", "laden"],
+        additionalProperties: false,
+      },
+    },
+    run: (ctx, raw) => {
+      const input = toolInput(raw);
+      const name = str(input.artikel).slice(0, 60);
+      const shop = str(input.laden).slice(0, 30);
+      if (!name) return fail("artikel angeben.");
+      propose(ctx, { id: nextId(ctx), type: "set_shop_rule", name, shop });
+      return { content: `Erledigt. Antworte genau: "${shopRuleReply(name, shop)}"` };
+    },
+  },
+  laeden_anzeigen: {
+    area: "einkauf",
+    definition: {
+      name: "laeden_anzeigen",
+      description: "'Was kauf ich wo?', 'Welche Läden hab ich?': Meine Läden und die festen Regeln (Artikel je Laden). Danach kurz zusammenfassen, je Laden eine Zeile.",
+      input_schema: { type: "object", properties: {}, additionalProperties: false },
+    },
+    run: (ctx) => {
+      const l = ctx.data.laeden ?? { regeln: {}, meine: [] };
+      const byShop = rulesByShop(l.regeln);
+      const lines = Object.entries(byShop).map(([shop, items]) => `${shop}: ${items.join(", ")}`);
+      return { content: [`Meine Läden: ${l.meine.length ? l.meine.join(", ") : "noch keine"}.`, lines.length ? `Feste Regeln: ${lines.join(" · ")}.` : "Noch keine festen Regeln."].join(" ") };
     },
   },
 } satisfies Record<string, BegleitungTool>;

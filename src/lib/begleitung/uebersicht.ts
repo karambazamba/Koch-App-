@@ -35,6 +35,8 @@ function place(op: ChangeOp): { id: DoneGroupId; text: string } | null {
       return { id: "aufgaben", text: `${op.title} abgehakt` };
     case "add_shopping":
       return { id: "einkauf", text: op.name };
+    case "set_shop_rule":
+      return { id: "einkauf", text: op.shop ? `${op.name} → ${op.shop}` : `${op.name} egal wo` };
     case "add_pin":
       return { id: "pinnwand", text: "Nachricht" };
     case "upsert_note":

@@ -95,7 +95,7 @@ describe("Einkauf", () => {
     expect(sortBy([{ name: "Lidl", uses: 0 }, { name: "Bäcker", uses: 0 }, { name: "dm", uses: 2 }], ...SHOPS).map((s) => s.name)).toEqual(["dm", "Bäcker", "Lidl"]);
     const shops = allShops({ shops: ["Ökomarkt"], itemShops: { müsli: "Rossmann", windeln: "rossmann", brot: "Bäcker" } });
     expect(shops.slice(0, 2)).toEqual(["Rossmann", "Bäcker"]);
-    expect(shops.slice(2)).toEqual(["Aldi", "dm", "Edeka", "Lidl", "Ökomarkt", "Rewe", "Wochenmarkt"]);
+    expect(shops.slice(2)).toEqual(["Aldi", "dm", "Edeka", "Kaufland", "Lidl", "Netto", "Ökomarkt", "Penny", "Rewe", "Wochenmarkt"]);
   });
 });
 

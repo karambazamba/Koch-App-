@@ -11,7 +11,13 @@ export const store = createLocalStore("wasgibts.einkaufsliste", migrateStore);
 const EMPTY_WEEKS: Record<string, WeekList> = {};
 
 const emptyStore = (): ShoppingListStore => ({
-  version: 4,
+  version: 6,
+  myShops: [],
+  shopsAsked: false,
+  shopRules: {},
+  learned: {},
+  learnAsked: [],
+  alwaysList: [],
   weeks: {},
   products: {},
   shops: [],
@@ -43,7 +49,7 @@ let cachedSettings: { source: ShoppingListStore | null; value: ShoppingSettings 
 function settingsOf(data: ShoppingListStore | null): ShoppingSettings {
   if (!data) return DEFAULT_SETTINGS;
   if (cachedSettings?.source === data) return cachedSettings.value;
-  const value = { products: data.products, shops: data.shops, itemShops: data.itemShops, staples: data.staples };
+  const value = { products: data.products, shops: data.shops, itemShops: data.itemShops, staples: data.staples, shopRules: data.shopRules, alwaysList: data.alwaysList };
   cachedSettings = { source: data, value };
   return value;
 }

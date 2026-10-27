@@ -13,6 +13,7 @@ import { quickTaskData } from "@/lib/kalender/quick";
 import { changeEntries } from "@/lib/kalender/store";
 import { parseQuickAdd } from "@/lib/einkauf/quickAdd";
 import { addManualItem, loadShoppingSettings, removeManualItems, sectionFor, setItemShop } from "@/lib/einkauf/shoppingList";
+import { rememberedShop } from "@/lib/einkauf/meineLaeden";
 import { changeNotes, noteFromText, upsertNote } from "@/lib/notizen";
 import { addPin, changePins, createPin } from "@/lib/pinnwand";
 import { noteUserAction } from "@/lib/core/activity";
@@ -43,7 +44,8 @@ function saveEntry(read: Extract<QuickRead, { kind: "termin" | "aufgabe" }>, rem
   return { undo, title: entry.data.title };
 }
 
-function saveShopping(text: string, weekStart: string): { undo: () => void; title: string } | null {
+/** Laden je Artikel: im Satz genannt → von Hand gewählt → gemerkt → offener Reiter („Egal wo“ = keiner) */
+function saveShopping(text: string, weekStart: string, choice: { shop?: string; picked?: boolean } = {}): { undo: () => void; title: string } | null {
   const settings = loadShoppingSettings();
   const { items, unsure } = parseQuickAdd(text, settings);
   // Unsicheres kommt so auf die Liste, wie es getippt wurde – ändern geht dort
@@ -51,7 +53,10 @@ function saveShopping(text: string, weekStart: string): { undo: () => void; titl
   if (!all.length) return null;
   const ids = all.map((i) => {
     const id = addManualItem(weekStart, { name: i.name, amount: i.amount, section: sectionFor(i.name) });
-    if (i.shop) setItemShop(settings.products[i.name.toLowerCase()] ?? i.name, i.shop);
+    const name = settings.products[i.name.toLowerCase()] ?? i.name;
+    const remembered = rememberedShop(i.name, settings.itemShops, settings.products);
+    const shop = i.shop || (choice.picked ? (choice.shop ?? "") : remembered || (choice.shop ?? ""));
+    if (shop !== remembered && (shop || choice.picked)) setItemShop(name, shop);
     return id;
   });
   return { undo: () => removeManualItems(weekStart, ids), title: all.map((i) => i.name).join(", ") };
@@ -76,7 +81,7 @@ export function saveQuick(read: QuickRead, text: string, request: QuickRequest, 
     const all = teile.map((t) => readQuick("termin", t, todayIso())).flatMap((r) => (r.kind === "termin" && r.title ? [saveEntry(r, remind)] : [])).filter((x): x is NonNullable<typeof x> => x !== null);
     saved = all.length ? { undo: () => all.forEach((x) => x.undo()), title: all.map((x) => x.title).join(", ") } : null;
   } else if (read.kind === "termin" || read.kind === "aufgabe") saved = saveEntry(read, remind);
-  else if (read.kind === "einkauf") saved = request.shopping ? saveShopping(text, request.shopping.weekStart) : null;
+  else if (read.kind === "einkauf") saved = request.shopping ? saveShopping(text, request.shopping.weekStart, request.shopping) : null;
   else if (read.kind === "imhaus") saved = saveImHaus(text);
   else if (read.kind === "notiz") {
     // Eigene Notiz: erste Zeile = Titel, der Rest = Text (mit Absätzen)

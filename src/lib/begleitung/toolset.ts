@@ -33,6 +33,6 @@ const FOOD_TOOLS: BegleitungTool[] = [
   PLAN_TOOLS.wunsch_merken,
 ];
 
-for (const tool of [...FOOD_TOOLS, ...CALENDAR_TOOLS, ...NOTE_TOOLS, ...HOME_TOOLS, ...MAIL_TOOLS, ...DAY_TOOLS, ...HOUSEHOLD_TOOLS, ...TIP_TOOLS, WISH_TOOL]) registerTool(tool);
+for (const tool of [...FOOD_TOOLS, ...CALENDAR_TOOLS, ...NOTE_TOOLS, ...HOME_TOOLS, ...MAIL_TOOLS, ...DAY_TOOLS, ...HOUSEHOLD_TOOLS, ...TIP_TOOLS, WISH_TOOL, SHOPPING_TOOLS.laden_regel, SHOPPING_TOOLS.laeden_anzeigen]) registerTool(tool);
 
 export { toolDefinitions, runRegisteredTool } from "@/lib/begleitung/registry";

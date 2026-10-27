@@ -33,7 +33,7 @@ import { filtersFromText, isIdeaFilterRequest, isQuickRequest, isSnackRequest, s
 import { extractLikeStatements, learnLikes, LIKE_WEIGHTS } from "@/lib/essen/likes";
 import { saveSpontanFilters } from "@/lib/essen/spontanFilters";
 import type { ChatState, ChatTurnView } from "@/components/begleitung/chatTypes";
-import { pauseRule, dayRule, boardRule, schnellnotizRule, noteRule, bausteinRule, calendarImportRule, inviteRule, homeCommand, shopModeRule, memoPlayRule, type RuleContext } from "@/components/begleitung/localRules";
+import { pauseRule, dayRule, boardRule, schnellnotizRule, shopRuleRule, noteRule, bausteinRule, calendarImportRule, inviteRule, homeCommand, shopModeRule, memoPlayRule, type RuleContext } from "@/components/begleitung/localRules";
 import { mailRule } from "@/components/begleitung/mailRules";
 import { openHelper } from "@/lib/begleitung/open";
 import { isWeekCheckRequest } from "@/lib/kalender/wochencheck";
@@ -174,6 +174,7 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
     if (boardRule(ruleCtx, t)) return true;
     if (dayRule(ruleCtx, t)) return true;
     if (schnellnotizRule(ruleCtx, t)) return true;
+    if (shopRuleRule(ruleCtx, t)) return true;
     if (noteRule(ruleCtx, t)) return true;
     // „Ich bin Felix, wir sind Lisa und drei Kinder“ → Vorschlag mit „Übernehmen“
     const intro = parseHouseholdIntro(t);

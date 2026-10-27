@@ -13,18 +13,16 @@ import type { Section } from "@/lib/einkauf/shoppingList";
 
 export type TileSize = "normal" | "compact" | "mini";
 
-/** Raster je Größe: 3 bzw. 4 Spalten (ab 390 px), kompakt eine Spalte mehr; mini = Zeilen auf der Startseite */
+/** Raster je Größe (Tafel 89): 3 Spalten, damit der Name ganz passt; kompakt 4; mini = Zeilen auf der Startseite */
 export const TILE_GRID: Record<TileSize, string> = {
-  normal: "grid grid-cols-3 gap-2 min-[390px]:grid-cols-4",
-  compact: "grid grid-cols-4 gap-1.5 min-[390px]:grid-cols-5",
+  normal: "grid grid-cols-3 gap-2",
+  compact: "grid grid-cols-4 gap-1.5",
   mini: "grid grid-cols-2 gap-1.5",
 };
 
 const SYMBOL_SIZE: Record<TileSize, string> = { normal: "h-9 w-9 text-2xl", compact: "h-7 w-7 text-xl", mini: "h-7 w-7 shrink-0 text-lg" };
 const NAME_SIZE: Record<TileSize, string> = { normal: "text-[12.5px]", compact: "text-[11.5px]", mini: "text-[13px]" };
 
-/** Gericht ohne Klammer-Zusatz („Lasagne (Mo)“ → „Lasagne“) */
-export const dishLabel = (dishes: string[] = []) => dishes[0]?.replace(/\s*\([^)]*\)\s*$/, "") ?? "";
 
 export function ItemTile({
   name,
@@ -105,7 +103,7 @@ export function ItemTile({
     >
       {dish && size !== "mini" && <span className="absolute left-1.5 right-1.5 top-1 truncate text-left text-[10px] font-bold leading-tight text-muted">{dish}</span>}
       <ItemSymbol id={symbolFor(name, products)} name={name} className={SYMBOL_SIZE[size]} />
-      <span className={`${size === "mini" ? "min-w-0 flex-1 truncate" : "line-clamp-2 w-full break-words"} font-bold leading-tight text-ink ${NAME_SIZE[size]} ${checked ? "line-through" : ""}`}>{name}</span>
+      <span className={`${size === "mini" ? "min-w-0 flex-1 truncate" : "line-clamp-3 w-full hyphens-auto [overflow-wrap:normal]"} font-bold leading-tight text-ink ${NAME_SIZE[size]} ${checked ? "line-through" : ""}`}>{name}</span>
       {amount && size !== "mini" && <span className="w-full truncate text-[11px] tabular-nums leading-tight text-muted">{amount}</span>}
       {badge && !done && (
         <span className={`absolute right-1 top-1 rounded-full px-1.5 py-px text-[10px] font-bold leading-tight ${badge.tone === "orange" ? "bg-accent-soft text-accent-strong" : "bg-warn-soft text-warn-ink"}`}>{badge.text}</span>

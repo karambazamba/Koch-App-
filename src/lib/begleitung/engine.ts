@@ -48,7 +48,21 @@ type EngineEvents = { onText?: (delta: string) => void; onRound?: () => void };
 
 export class AssistantInputError extends Error {}
 
-const OP_TYPES = new Set(["add_timer", "stop_timer", "stopwatch", "cook_step", "start_cooking", "set_jetzt", "set_household", "set_dislike", "add_training", "set_sport_goal", "add_pin", "upsert_note", "remove_note", "set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last", "set_persons", "set_pause", "app_command", "set_feature"]);
+const OP_TYPES = new Set(["add_timer", "stop_timer", "stopwatch", "cook_step", "start_cooking", "set_jetzt", "set_household", "set_dislike", "add_training", "set_sport_goal", "add_pin", "upsert_note", "remove_note", "set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "set_shop_rule", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last", "set_persons", "set_pause", "app_command", "set_feature"]);
+
+/** Läden aus der App: feste Regeln (höchstens 200) und „Meine Läden“ (höchstens 20), nur Texte */
+function sanitizeLaeden(raw: unknown): AssistantData["laeden"] {
+  if (!raw || typeof raw !== "object") return undefined;
+  const r = raw as { regeln?: unknown; meine?: unknown };
+  const regeln = Object.fromEntries(
+    Object.entries(r.regeln && typeof r.regeln === "object" ? (r.regeln as Record<string, unknown>) : {})
+      .filter((e): e is [string, string] => typeof e[1] === "string" && Boolean(e[0].trim()) && Boolean(e[1].trim()))
+      .slice(0, 200)
+      .map(([k, v]) => [k.slice(0, 60), v.slice(0, 30)]),
+  );
+  const meine = (Array.isArray(r.meine) ? r.meine : []).filter((x): x is string => typeof x === "string").slice(0, 20).map((x) => x.slice(0, 30));
+  return { regeln, meine };
+}
 
 /** Anfrage prüfen und auf das Nötige kürzen */
 export function parseRequest(body: unknown): AssistantRequest {
@@ -103,6 +117,7 @@ export function parseRequest(body: unknown): AssistantRequest {
     sport: sanitizeSport(b.data?.sport),
     tagesablauf: b.data?.tagesablauf && typeof b.data.tagesablauf === "object" ? { jetzt: b.data.tagesablauf.jetzt !== false, feierabendAb: String(b.data.tagesablauf.feierabendAb ?? "20:00").slice(0, 5), morgenBis: String(b.data.tagesablauf.morgenBis ?? "10:00").slice(0, 5) } : undefined,
     me: typeof b.data?.me === "string" ? b.data.me.slice(0, 60) : null,
+    laeden: sanitizeLaeden(b.data?.laeden),
   };
   const pending = (Array.isArray(b.pending) ? b.pending : []).filter(
     (op): op is ChangeOp => Boolean(op) && typeof op === "object" && typeof op.id === "string" && OP_TYPES.has(op.type),
@@ -140,6 +155,8 @@ function pendingSummary(ops: ChangeOp[]): string {
         return `Neues Rezept: ${op.recipe.title}`;
       case "add_shopping":
         return `Einkaufsliste: ${op.name}`;
+      case "set_shop_rule":
+        return `Laden merken: ${op.name} → ${op.shop || "egal wo"}`;
       case "add_pantry":
         return `Vorrat: ${op.name}`;
       case "add_wish":

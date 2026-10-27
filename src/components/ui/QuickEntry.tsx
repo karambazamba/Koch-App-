@@ -26,6 +26,7 @@ import { QUICK_HEADER, QUICK_LABEL, QUICK_PLACEHOLDER, dayChoices, quickChips, r
 import { WHEN_CHOICES } from "@/lib/kalender/quick";
 import { saveQuick } from "@/components/ui/quickSave";
 import { looksLikeList, openListe } from "@/lib/kalender/liste/einfuegen";
+import { EinkaufLaden } from "@/components/einkauf/EinkaufLaden";
 
 const TILE: Record<QuickRequest["kind"], string> = { termin: "termine", aufgabe: "aufgaben", einkauf: "einkauf", notiz: "notizen", pinnwand: "pinnwand", imhaus: "vorrat" };
 
@@ -38,6 +39,8 @@ export function QuickEntry({ request, onClose }: { request: QuickRequest; onClos
   const field = useRef<HTMLInputElement>(null);
   const area = useRef<HTMLTextAreaElement>(null);
   const multi = request.kind === "notiz" || request.kind === "pinnwand";
+  /** Einkauf: von Hand gewählter Laden (sonst Vorwahl) */
+  const [shop, setShop] = useState<{ shop: string; picked: boolean }>({ shop: request.shopping?.shop ?? "", picked: false });
   const inset = useKeyboardInset();
   const work = useWorkRoom();
   const notify = useNotify();
@@ -48,7 +51,8 @@ export function QuickEntry({ request, onClose }: { request: QuickRequest; onClos
   const color = `var(--app-tile-${TILE[request.kind]}-ac)`;
 
   const send = () => {
-    if (!ready || !saveQuick(read, text, request, remind)) return;
+    const req = request.shopping ? { ...request, shopping: { ...request.shopping, ...shop } } : request;
+    if (!ready || !saveQuick(read, text, req, remind)) return;
     setText("");
     setPick({});
     setRemind(true);
@@ -158,6 +162,8 @@ export function QuickEntry({ request, onClose }: { request: QuickRequest; onClos
             )}
           </div>
         )}
+
+        {request.kind === "einkauf" && <EinkaufLaden text={text} tab={request.shopping?.shop} choice={shop} onChoice={setShop} />}
 
         {editing === "tag" && (
           <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" role="radiogroup" aria-label="Tag">

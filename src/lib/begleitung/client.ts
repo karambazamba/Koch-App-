@@ -25,6 +25,7 @@ import { householdTitle } from "@/lib/einstellungen/profileHousehold";
 import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { addPantryItems, consumePantry, loadPantry, loadPantryAll, replacePantry } from "@/lib/vorrat/pantry";
 import { loadShoppingSettings, replaceShoppingLists, setItemShop } from "@/lib/einkauf/shoppingList";
+import { applyShopRule, shopRulesForMia } from "@/lib/einkauf/shopRules";
 import { recordUsage } from "@/lib/begleitung/usage";
 import { addWish, loadWishes, restoreWishes } from "@/lib/essen/wishes";
 import { replaceWeekPlans, toIsoDate, weekStartFor } from "@/lib/essen/weekPlan";
@@ -184,6 +185,8 @@ function trimmed(data: AssistantData, currentWeekStart: string, pantry: Assistan
       .sort((a, b) => b.at.localeCompare(a.at))
       .slice(0, 8),
     wetterOrt: loadPlace(),
+    // Feste Laden-Regeln und „Meine Läden“ (für „Was kauf ich wo?“)
+    laeden: shopRulesForMia(),
     tippOrt: tipContext().ort,
     tippKm: tipContext().km,
     ...dayData(data),
@@ -545,6 +548,8 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
       setItemShop(op.name, op.shop);
       undoDay.push(() => setItemShop(op.name, before));
     }
+    // „Tomaten kaufe ich immer bei Rewe“: feste Regel, Rückgängig stellt die alte wieder her
+    if (op.type === "set_shop_rule") undoDay.push(applyShopRule(op.name, op.shop));
     if (op.type === "add_training") undoDay.push(addTraining(op.training).undo);
     else if (op.type === "set_sport_goal") undoDay.push(setSportGoal(op.goal));
   }

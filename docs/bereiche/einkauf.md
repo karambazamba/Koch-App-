@@ -39,8 +39,14 @@ Einkaufsmodus für den Laden. Immer sichtbar (kein Baustein).
 
 ## Daten und Speicher
 
-- `wasgibts.einkaufsliste` v4 (in der Sicherung): `{ version: 4, weeks,
-  products, shops, itemShops, staples }`.
+- `wasgibts.einkaufsliste` v6 (in der Sicherung, Abgleich `einkauf` v6):
+  `{ version: 6, weeks, products, shops, itemShops, staples, myShops,
+  shopsAsked, shopRules, learned, learnAsked, alwaysList }`. `myShops` =
+  „Meine Läden“ in gewählter Reihenfolge, `shopsAsked` = Läden-Frage
+  beantwortet, `shopRules` = feste Regeln (Artikel klein → Laden),
+  `learned` = Zähler fürs Lernen im Einkaufsmodus, `learnAsked` = schon
+  gefragt, `alwaysList` = Grundsachen, die trotzdem auf die Liste sollen
+  (v4 → v5 → v6: leer, einmal fragen; nichts geht verloren).
   - `weeks[<Wochenbeginn>]` = `WeekList`: `manual` (eigene Artikel: `id`,
     `name`, `amount` als Text, `section`, `done`, optional `day` = Wochentag,
     `now` = „Jetzt mitnehmen“, `dish`), `checked` (Schlüssel abgehakter
@@ -67,14 +73,44 @@ Einkaufsmodus für den Laden. Immer sichtbar (kein Baustein).
 
 ## So verhält es sich
 
+- **Einkaufsliste aufgeräumt + Läden (v0.119, Tafel 88/89/91/92,
+  `meineLaeden.ts`, `kacheln/gruppen.ts`, `shopRules.ts`,
+  `components/einkauf/MeineLaeden.tsx`, `ListeTeile.tsx`)**:
+  - Läden-Frage einmal nach der Liste bzw. dem Beispiel: „In welchen Läden
+    kaufst du ein?“, Chips mit Häkchen (`FRAGE_LAEDEN`), Feld „Anderer Laden,
+    z. B. Famila“ + ＋ („Selbst eingetragen“, max. 30 Zeichen, eigene Farbe),
+    „Fertig“, leise „Später …“. Läden an Artikeln sind vorgewählt.
+  - Laden-Reihe immer sichtbar: Alle · meine Läden · „Ohne Laden“ nur wenn
+    nötig · ＋ (Sheet „Meine Läden“: wählen, anlegen, entfernen, sortieren, je
+    Laden „Immer hier: …“ mit Entfernen). Antippen filtert; „Bei Lidl
+    einkaufen ›“ öffnet den Einkaufsmodus, großer Knopf „＋ Zu Lidl
+    hinzufügen“. Beim Hinzufügen „Kommt auf die Liste für“ mit Vorwahl.
+  - „Alle“ nach Laden in der Reihenfolge von „Meine Läden“ (Kopf „● Edeka 7 ·
+    Einkaufen ›“, „Egal wo“ zuletzt), ohne eigene Läden nach Abteilung;
+    Laden gewählt = Laufweg (Obst & Gemüse … Drogerie).
+  - Kacheln in 3 Spalten, Name mit Silbentrennung, kein Gericht-Schild mehr
+    („für …“ im Bearbeiten-Sheet). Grundsachen aus Rezepten (Salz, Pfeffer,
+    Mehl …) in die Karte „Hast du bestimmt im Haus“, antippen = auf die Liste,
+    „Immer auf die Liste“ wird gemerkt. „Bald wieder fällig“ als schmale
+    Zeile, „Zuletzt gekauft“ und „Gerichte ohne Zutaten“ zugeklappt,
+    Wochenwechsel in einer Zeile.
+  - Feste Regeln („Tomaten kaufe ich immer bei Rewe“) gelten überall (Hand,
+    Mia, Wochenplan, Rezept, Stammliste; ähnliche Namen nur eindeutig). Von
+    Hand umgestellt zieht die Regel mit. Lernen: zweimal hintereinander im
+    Einkaufsmodus desselben Ladens abgehakt → still gemerkt, einmal je Artikel
+    „Butter kaufst du meist bei Lidl. Soll ich mir das merken?“.
+  - Einkauf-Kachel C2: je Laden eine Zeile in Ladenfarbe (Streifen, 2
+    Symbole, Zahl), S/M bis 3 + „+ Rossmann 3“, L alle; Zeile = Liste mit
+    diesem Laden. Beispiel-Tag: Edeka, Rewe, Lidl, Rossmann (`DEMO_SHOPS`).
+
 - **Einfach wie Bring (v0.66)**: Jeder Artikel ist eine quadratische Kachel
   in der Farbe seiner Abteilung (Symbol, Name, Menge, oben links das
   Gericht); 3 Spalten, ab 390 px 4, ab 24 Artikeln eine Stufe kleiner.
   Tippen = gekauft (bleibt 2 s stehen, dann „Zuletzt gekauft“, ab 8
   eingeklappt; dort Tippen = wieder auf die Liste). Lange drücken =
   „Artikel bearbeiten“ (mit Löschen bzw. „Haben wir schon“). Oben Chips
-  „Alle“ + Läden (meiste zuerst) + „Ohne Laden“; den gewählten Laden nochmal
-  tippen = Einkaufsmodus. Abschnitte: Jetzt mitnehmen · Für heute · Bald
+  „Alle“ + Läden (meiste zuerst) + „Ohne Laden“ (seit v0.113 die Laden-Reihe
+  mit „Meine Läden“, s. o.). Abschnitte: Jetzt mitnehmen · Für heute · Bald
   wieder fällig · Für die Woche (bzw. „Auf der Liste“) · Zuletzt gekauft.
   Unten groß „Mehr hinzufügen“ (rechts bleibt Platz für Mia): Katalog mit
   Suche + Mikro (mehrere mit Komma, `parseQuickAdd`), „Oft gekauft“ zuerst,
@@ -175,6 +211,11 @@ Einkaufsmodus für den Laden. Immer sichtbar (kein Baustein).
 - `einkaufsliste_hinzufuegen` (`src/lib/begleitung/shoppingTools.ts`): Artikel
   mit Menge, Abteilung, `fuer_tag`, `gericht`, `laden` → Op `add_shopping`
   (Vorschau „Übernehmen“; der Laden wird beim Übernehmen gemerkt).
+- `laden_regel` (Op `set_shop_rule`, sofort mit Rückgängig: „Merk ich mir.
+  Tomaten → Rewe.“, leerer Laden = Regel weg) und `laeden_anzeigen` („Was
+  kauf ich wo?“) in `shoppingTools.ts`; Mia sieht Läden und Regeln im
+  Kontext. Ohne KI dasselbe über `parseShopRule` bzw.
+  `isShopOverviewQuestion` (`shopRuleRule` in `localRules.ts`).
 - `einkaufsliste_anzeigen`, `einkaufsliste_leeren` (Op `clear_shopping`:
   eigene weg, Rezept-Zutaten „haben wir“), `einkaufsliste_entfernen` (Op
   `remove_shopping`) in `homeTools.ts`. „Ich bin bei REWE“ mit KI über
@@ -192,7 +233,15 @@ Einkaufsmodus für den Laden. Immer sichtbar (kein Baustein).
 ## Tests
 
 - `tests/einkauf/listeBauen.test.ts` – Mengen, Liste aus dem Plan, Teilen.
-- `tests/einkauf/listeBearbeiten.test.ts` – Ändern, Läden, Migration v1–v4.
+- `tests/einkauf/listeBearbeiten.test.ts` – Ändern, Läden, Migration v1–v5.
+- `tests/einkauf/meineLaeden.test.ts` – Läden bewusst wählen: Frage
+  (Fertig/Später), bestehende Nutzer, Reihe mit 0, Knopftexte, Vorwahl,
+  eigener Laden, Sätze mit Laden, Farben, Prüfstand. Durchklick
+  `laedenWaehlen`, `laedenSpaeter`.
+- `tests/einkauf/laedenRegeln.test.ts` – Gruppen Alle/Laden, Grundsachen,
+  Silbentrennung, Regeln setzen/löschen/ähnlich/von Hand, Regel im
+  Wochenplan, Lernen nach 2×, „Was kauf ich wo?“, Werkzeug, Prüfstand.
+- `tests/heute/einkaufKachel.test.ts` – Kachel C2, Beispiel-Reihenfolge.
 - `tests/einkauf/schnellEintrag.test.ts` – Sätze, Schnell-Plus,
   Einkaufsmodus, Läden-Gruppen.
 - `tests/einkauf/stammartikel.test.ts` – Rhythmus, fällig, ändern.

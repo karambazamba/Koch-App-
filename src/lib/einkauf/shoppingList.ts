@@ -14,7 +14,8 @@
 // Diese Datei ist der öffentliche Einstieg; die Teile liegen daneben:
 // sections.ts (Abteilungen), amounts.ts (Mengen/Einheiten), listModel.ts
 // (Datenmodell), listMigration.ts + listStore.ts (Speichern), listEdits.ts
-// (Ändern, eigene Produkte), shops.ts (Läden), staples.ts (Stammliste) und
+// (Ändern, eigene Produkte), shops.ts (Läden), shopRules.ts (feste
+// Laden-Regeln, Lernen im Einkaufsmodus), staples.ts (Stammliste) und
 // buildList.ts (Berechnung aus dem Wochenplan).
 
 export { SECTIONS, sectionFor, type Section } from "@/lib/einkauf/sections";
@@ -36,5 +37,6 @@ export {
   updateManualItem,
 } from "@/lib/einkauf/listEdits";
 export { SHOP_SUGGESTIONS, addShop, allShops, removeShop, setItemShop } from "@/lib/einkauf/shops";
+export { learnQuestion, noteShopCheck, removeShopRule, rulesByShop, setShopRule, shopForItem } from "@/lib/einkauf/shopRules";
 export { addStaple, dueStaples, isStaple, removeStaple, rhythmLabel, stapleInterval } from "@/lib/einkauf/staples";
 export { buildShoppingList, shoppingListText } from "@/lib/einkauf/buildList";

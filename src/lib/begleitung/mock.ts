@@ -16,6 +16,7 @@ import { CALENDAR_WRITE, DAY_TOOL_NAMES, calendarAnswer, calendarUses, dayUses, 
 import { parseWeekTalk } from "@/lib/kalender/wochencheck";
 import { isKochtippRequest } from "@/lib/essen/kochtipp/start";
 import { todayIso } from "@/lib/core/now";
+import { isShopOverviewQuestion, parseShopRule } from "@/lib/einkauf/shopRules";
 
 const STOCK_LINE = "Im Haus (vermutlich da, ohne Mengen): ";
 
@@ -248,6 +249,9 @@ function mockModel(): CreateMessage {
       if (dayUse) return dayUse;
       const board = pinWeatherUses(last.content, system);
       if (board) return board;
+      const regel = parseShopRule(last.content);
+      if (regel) return tools([{ name: "laden_regel", input: { artikel: regel.item, laden: regel.shop } }]);
+      if (isShopOverviewQuestion(last.content)) return tools([{ name: "laeden_anzeigen", input: {} }]);
       const found = schnellnotizUses(last.content, msgs, system);
       if (found) return found;
       const note = noteUses(last.content);
