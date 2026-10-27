@@ -2,7 +2,7 @@
 
 import { useNotes } from "@/lib/notizen";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Check } from "lucide-react";
 import { onCloseHelper, onOpenHelper, openHelper } from "@/lib/begleitung/open";
 import { takeQueued } from "@/lib/begleitung/nachholen";
@@ -240,7 +240,12 @@ export function KitchenHelper() {
       {liste !== null && <ListeEinfuegen initial={liste} onClose={() => setListe(null)} />}
       <NotifyHost />
       {/* Auf allen Seiten dieselbe Leiste unten mit Mia rechts (Tafel 96); bei Tastatur und Bühne weich weg */}
-      {!hidden && <Leiste name={helperName(profile)} weg={typing} buehne={open} />}
+      {/* Leiste liest die Adresse (useSearchParams) – Suspense, sonst bricht das Vorrendern ab */}
+      {!hidden && (
+        <Suspense fallback={null}>
+          <Leiste name={helperName(profile)} weg={typing} buehne={open} />
+        </Suspense>
+      )}
       {!hidden && !open && <RandZurueck />}
       {/* Mia denkt mit: erster Besuch einer Seite (Startseiten-Reiter zeigt HomePager) */}
       {!open && !typing && !hidden && profile && <ErsterBesuch seite={pathname} />}

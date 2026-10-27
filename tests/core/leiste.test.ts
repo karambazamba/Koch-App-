@@ -92,6 +92,10 @@ describe("Leiste und Kopf", () => {
     expect(readFileSync("src/components/begleitung/KitchenHelper.tsx", "utf8")).toMatch(/<Leiste name=\{helperName\(profile\)\} weg=\{typing\} buehne=\{open\} \/>/);
   });
 
+  it("Leiste liest die Adresse nur innerhalb von Suspense (sonst bricht der Build beim Vorrendern ab)", () => {
+    expect(readFileSync("src/components/begleitung/KitchenHelper.tsx", "utf8")).toMatch(/<Suspense fallback=\{null\}>\s*<Leiste /);
+  });
+
   it("Platz unten: Leiste + Mia + Luft; Schwebendes sitzt über der Leiste", () => {
     const st = readFileSync("src/components/ui/styles.ts", "utf8");
     expect(st).toMatch(/FAB_CLEARANCE = "pb-\[calc\(max\(0\.75rem,env\(safe-area-inset-bottom\)\)\+66px\+30px\+1rem\)\]"/);
