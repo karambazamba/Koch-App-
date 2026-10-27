@@ -270,6 +270,16 @@ E-Mail bleibt immer der sichere Weg. Bitte am echten iPhone prüfen.
 - Durchklick `konten` – zwei bzw. drei Browser: anmelden (Code über die
   Test-Schnittstelle), Haushalt, Einladen, Beitreten, Kind ohne Einladen,
   Abmelden (Daten bleiben), Konto löschen.
+- Härtetest „Familie teilen“ (Clip „Mia“): `tests/konten/familieTeilen.test.ts`
+  (echter Abgleich `engine.ts` gegen das Test-Backend mit den Regeln der
+  Datenbank, zwei Konten: Familie-Termin bei beiden, Arbeit nie beim anderen –
+  auch nicht nach weiteren Runden, nicht überschreib- oder löschbar, auch
+  nicht als „Familie“ getarnt –, Einkauf mit „von“ und Gelb im Laden,
+  Pinnwand, „Steh grad davor“) und Durchklick `familieTeilen`
+  (`e2e/ablaeufe/familieTeilen.mjs`, zwei Browser mit `KONTEN_TEST`: Termine
+  Familie/Arbeit in beide Richtungen inkl. Tag-Seite, Felix „Bei REWE“, Lisa
+  sagt Mia „Milch auf die Liste“ → bei Felix gelb in höchstens 5 s, „Steh
+  grad davor“ kommt bei Lisa an, Pinnwand live in beide Richtungen ≤ 5 s).
 
 ## Sichtbar machen (3d, seit v0.80)
 

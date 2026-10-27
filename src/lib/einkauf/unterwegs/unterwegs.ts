@@ -7,8 +7,13 @@
 // Pro Gerät (`wasgibts.einkaufbescheid`): die Antwort und der laufende
 // Einkauf (was schon auf der Liste bzw. im Korb war) – daraus wird gelb, was
 // andere während des Einkaufs dazusetzen. Logik rein, Speicher klein.
+// Antwort (Clip „Einer sagt’s, alle wissen’s“): setzt jemand während des
+// Einkaufs etwas drauf, bekommt die Person im Laden eine Mitteilung mit
+// „Steh grad davor“; die Antwort hängt am geteilten Einkauf (`antworten`)
+// und kommt bei der Person an, die es draufgesetzt hat.
 
 import { createLocalStore } from "@/lib/core/localStore";
+import { now, nowIso } from "@/lib/core/now";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 import { stapleInterval } from "@/lib/einkauf/staples";
 import type { ListItem, Staple } from "@/lib/einkauf/listModel";
@@ -27,7 +32,12 @@ export type Trip = {
   vorschlaege: string[];
   /** Konto der Person (kommt vom Abgleich, nicht hochgeladen) */
   von?: string;
+  /** Antworten der Person im Laden („Steh grad davor“) – höchstens 20 */
+  antworten?: Antwort[];
 };
+
+/** „Steh grad davor“: an wen (Konto), zu welcher Sache, wann */
+export type Antwort = { an: string; was: string; at: string };
 
 export type TripsState = { version: 1; trips: Trip[] };
 
@@ -44,6 +54,13 @@ const TRIP_MS = 3 * 3_600_000;
 const isObj = (v: unknown): v is Record<string, unknown> => Boolean(v) && typeof v === "object" && !Array.isArray(v);
 const strings = (v: unknown, max = 500) => (Array.isArray(v) ? v.filter((s): s is string => typeof s === "string").slice(-max) : []);
 
+const MAX_ANSWERS = 20;
+const cleanAnswers = (list: unknown[]): Antwort[] =>
+  list
+    .filter(isObj)
+    .flatMap((a) => (typeof a.an === "string" && typeof a.was === "string" && typeof a.at === "string" ? [{ an: a.an, was: a.was.slice(0, 40), at: a.at }] : []))
+    .slice(-MAX_ANSWERS);
+
 export function migrateTrips(raw: unknown): TripsState | null {
   if (!isObj(raw) || raw.version !== 1) return null;
   const trips = (Array.isArray(raw.trips) ? raw.trips : []).filter(isObj).flatMap((t): Trip[] =>
@@ -58,6 +75,7 @@ export function migrateTrips(raw: unknown): TripsState | null {
             count: typeof t.count === "number" ? t.count : null,
             vorschlaege: strings(t.vorschlaege, 2),
             ...(typeof t.von === "string" ? { von: t.von } : {}),
+            ...(Array.isArray(t.antworten) ? { antworten: cleanAnswers(t.antworten) } : {}),
           },
         ]
       : [],
@@ -83,6 +101,54 @@ export function addTrip(state: TripsState, trip: Trip, nowMs: number): TripsStat
 /** Einkauf beenden (nur einmal) */
 export function finishTrip(state: TripsState, id: string, end: string, count: number): TripsState {
   return { version: 1, trips: state.trips.map((t) => (t.id === id && !t.end ? { ...t, end, count } : t)) };
+}
+
+/** „Steh grad davor“ am Einkauf festhalten (je Person und Sache nur einmal) */
+export function answerTrip(state: TripsState, id: string, antwort: Antwort): TripsState {
+  const same = (a: Antwort) => a.an === antwort.an && a.was.toLowerCase() === antwort.was.toLowerCase();
+  return {
+    version: 1,
+    trips: state.trips.map((t) => (t.id === id && !(t.antworten ?? []).some(same) ? { ...t, antworten: [...(t.antworten ?? []), antwort].slice(-MAX_ANSWERS) } : t)),
+  };
+}
+
+/** Schon geantwortet? */
+export const answered = (trip: Trip | undefined, an: string | undefined, was: string) =>
+  Boolean(trip && an && (trip.antworten ?? []).some((a) => a.an === an && a.was.toLowerCase() === was.toLowerCase()));
+
+/** Der eigene laufende Einkauf (für die Antwort aus der Mitteilung) */
+export function ownOpenTrip(trips: Trip[], tripId: string | null | undefined, me: string | null, nowMs: number): Trip | undefined {
+  const byId = tripId ? trips.find((t) => t.id === tripId && !t.end) : undefined;
+  if (byId) return byId;
+  return [...trips].reverse().find((t) => !t.end && (!t.von || t.von === me) && nowMs - Date.parse(t.start) < TRIP_MS);
+}
+
+/** Antworten bleiben 30 Min. sichtbar */
+const ANSWER_FRESH_MS = 30 * 60_000;
+
+/** Antworten an mich, frisch (30 Min.), neueste zuerst */
+export function answersForMe(trips: Trip[], me: string | null, nowMs: number): { by: string; was: string; at: string }[] {
+  if (!me) return [];
+  return trips
+    .filter((t) => t.von !== me)
+    .flatMap((t) => (t.antworten ?? []).filter((a) => a.an === me && nowMs - Date.parse(a.at) < ANSWER_FRESH_MS).map((a) => ({ by: t.by, was: a.was, at: a.at })))
+    .sort((a, b) => b.at.localeCompare(a.at));
+}
+
+/** Was in der Antwort steht */
+const ANSWER = "Steh grad davor.";
+
+/** Text bei der Person, die es draufgesetzt hat */
+export const answerText = (by: string, was: string) => `${by.trim() || "Jemand"} zu ${was}: ${ANSWER}`;
+
+/** Text bei der Person im Laden */
+export const addedText = (name: string, was: string) => `${name.trim() || "Jemand"} hat ${was} auf die Liste gesetzt.`;
+
+/** Knopf in der Mitteilung → `/einkaufsliste?davor=<konto>|<sache>`: an wen, zu was – null, wenn kaputt */
+export function davorFromLink(search: string): { an: string; was: string } | null {
+  const raw = new URLSearchParams(search).get("davor") ?? "";
+  const m = /^([0-9a-zA-Z-]{1,64})\|(.{1,40})$/.exec(raw.trim());
+  return m ? { an: m[1], was: m[2].trim() } : null;
 }
 
 /** Die 2 häufigsten fälligen Stammartikel (meiste Käufe, dann kürzester Rhythmus) */
@@ -137,4 +203,17 @@ export function useBescheid(): BescheidState | undefined {
   return s === undefined ? undefined : (s ?? EMPTY);
 }
 
-export const changeTrips = (change: (s: TripsState) => TripsState) => tripsStore.save(change(tripsStore.load() ?? { version: 1, trips: [] }));
+const loadTrips = (): TripsState => tripsStore.load() ?? { version: 1, trips: [] };
+export const changeTrips = (change: (s: TripsState) => TripsState) => tripsStore.save(change(loadTrips()));
+
+/** „Steh grad davor“ an `an` zu `was` – am eigenen laufenden Einkauf; false, wenn keiner läuft */
+export function sendAnswer(an: string, was: string, me: string | null): boolean {
+  const trip = ownOpenTrip(loadTrips().trips, loadBescheid().active?.tripId, me, now().getTime());
+  if (!trip) return false;
+  changeTrips((s) => answerTrip(s, trip.id, { an, was: was.trim().slice(0, 40), at: nowIso() }));
+  return true;
+}
+
+export function useTrips(): Trip[] {
+  return useExternalStore(tripsStore.subscribe, tripsStore.load, () => null)?.trips ?? [];
+}

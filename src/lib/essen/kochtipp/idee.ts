@@ -84,6 +84,10 @@ export function parseIdeaTalk(text: string): IdeaTalk {
     } else if ((m = c.match(/^(?:ich|wir)\s+(?:hab(?:e|en)?|hätte[n]?)\s+(?:noch\s+|schon\s+)?(.+?)(?:\s+(?:gekauft|geholt|mitgebracht|da|übrig|im\s+kühlschrank))?$/i))) {
       out.have.push(...items(m[1]));
       last = out.have;
+    } else if ((m = c.match(/^(?:hab(?:e|en)?\s+)?(?:noch\s+|eben\s+|gerade\s+|grad\s+)?(.+?)\s+(?:gekauft|geholt|mitgebracht)$/i))) {
+      // Kurz gesagt wie im Clip: „Hähnchen gekauft, was Cremiges?“
+      out.have.push(...items(m[1]));
+      last = out.have;
     } else if ((m = c.match(/^(.+?)\s+(?:ist|sind|wäre[n]?)\s+(?:auch\s+)?(?:noch\s+)?(?:da|übrig|im\s+haus|im\s+kühlschrank)$/i))) {
       out.have.push(...items(m[1]));
       last = out.have;

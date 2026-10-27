@@ -213,6 +213,8 @@ describe("Essen ohne Wochenplan", () => {
     ["Die Milch ist alle", "vorrat_aufgebraucht", { namen: ["Milch"] }],
     ["Mattis wünscht sich Pfannkuchen", "wunsch_merken", { person: "Mattis", gericht: "Pfannkuchen" }],
     ["Wir brauchen Milch und Brot", "einkaufsliste_hinzufuegen", { woche: "aktuell", artikel: [{ name: "Milch" }, { name: "Brot" }] }],
+    // Clip „Einer sagt’s, alle wissen’s“
+    ["Milch auf die Liste", "einkaufsliste_hinzufuegen", { woche: "aktuell", artikel: [{ name: "Milch" }] }],
   ])("%s → %s", async (sentence, name, input) => {
     expect((await one(sentence)).first).toMatchObject({ name, input });
   });

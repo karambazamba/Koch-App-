@@ -3,7 +3,7 @@
 // CACHE_VERSION bei jeder Auslieferung erhöhen. Eine neue Version wartet, bis
 // man den Hinweis "Neue Version da" antippt (Nachricht "SKIP_WAITING") – nie
 // ein Zwangs-Neuladen mitten im Tippen. Beim allerersten Mal sofort aktiv.
-const CACHE_VERSION = "v177";
+const CACHE_VERSION = "v178";
 // Interner Name (alter Arbeitsname) bleibt, damit alte Caches sauber aufgeräumt werden.
 const CACHE_NAME = `familienkueche-${CACHE_VERSION}`;
 
@@ -168,7 +168,9 @@ self.addEventListener("notificationclick", (event) => {
   const raw = event.notification.data && event.notification.data.href;
   const base = typeof raw === "string" && raw.startsWith("/") ? raw : "/";
   const plus = typeof event.action === "string" && event.action.startsWith("plus:") ? event.action.slice(5).trim().slice(0, 40) : "";
-  const href = plus ? `/einkaufsliste?plus=${encodeURIComponent(plus)}` : base;
+  // „Steh grad davor“ (Einkauf unterwegs): die Liste schickt die Antwort still
+  const davor = typeof event.action === "string" && event.action.startsWith("davor:") ? event.action.slice(6).trim().slice(0, 120) : "";
+  const href = plus ? `/einkaufsliste?plus=${encodeURIComponent(plus)}` : davor ? `/einkaufsliste?davor=${encodeURIComponent(davor)}` : base;
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
       for (const client of list) {

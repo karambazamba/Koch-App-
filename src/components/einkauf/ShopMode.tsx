@@ -8,7 +8,8 @@
 // (Ja = feste Regel, `einkauf/shopRules`). Fertig = eine Ebene zurück.
 // Mit Konto (Einkauf Teil 6): einmal fragen „Familie Bescheid sagen?“; bei
 // „Ja, immer“ wird der Einkauf geteilt, Neues von anderen erscheint gelb,
-// „Fertig eingekauft“ meldet „Eingekauft ✓“ an den Haushalt.
+// „Fertig eingekauft“ meldet „Eingekauft ✓“ an den Haushalt. Unter Neuem
+// von anderen: „Steh grad davor“ (Antwort an die Person, die es draufsetzte).
 
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -27,7 +28,7 @@ import { BescheidAsk } from "@/components/einkauf/unterwegs/BescheidAsk";
 import { now, nowIso } from "@/lib/core/now";
 import { dueStaples } from "@/lib/einkauf/staples";
 import { newId } from "@/lib/einkauf/listModel";
-import { addTrip, boughtCount, changeBescheid, changeTrips, finishTrip, loadBescheid, newDuringTrip, sameTrip, tripSuggestions, useBescheid } from "@/lib/einkauf/unterwegs/unterwegs";
+import { addTrip, answered, boughtCount, changeBescheid, changeTrips, finishTrip, loadBescheid, newDuringTrip, sameTrip, sendAnswer, tripSuggestions, useBescheid, useTrips } from "@/lib/einkauf/unterwegs/unterwegs";
 import { cloudSync, useCachedAccount } from "@/lib/konten/cache";
 import { refreshAccount } from "@/lib/konten/account";
 import { addedBy } from "@/lib/konten/wer";
@@ -46,6 +47,7 @@ export function ShopMode() {
   useWakeLock(Boolean(shop));
   const { household } = useCachedAccount();
   const bescheid = useBescheid();
+  const trips = useTrips();
   const started = useRef(false);
   // Nur mit Konto; Mitglieder frisch holen (für „Neu von Lisa“)
   const family = household;
@@ -80,6 +82,7 @@ export function ShopMode() {
   // Die eine Frage – bis sie beantwortet ist (dann merkt das Gerät die Antwort)
   const ask = Boolean(family && active && bescheid?.answer === null);
   const fresh = newDuringTrip(data.list.items, active, family?.me.userId ?? null);
+  const trip = active?.tripId ? trips.find((t) => t.id === active.tripId) : undefined;
   const finish = () => {
     if (active?.tripId) {
       const id = active.tripId;
@@ -106,6 +109,17 @@ export function ShopMode() {
     return (
       <li key={item.key} className={neu !== undefined ? "bg-warn-soft" : undefined} data-neu={neu !== undefined ? "" : undefined}>
         <ItemContent item={item} onToggle={() => tick(item)} onInfo={() => setInfo(info === item.key ? null : item.key)} infoOpen={info === item.key} neuVon={neu} />
+        {neu !== undefined && trip && item.von && !item.checked && (
+          <div className="flex items-center pb-2 pl-14 pr-3">
+            {answered(trip, item.von, item.name) ? (
+              <span className="text-sm text-muted">Gesagt: Steh grad davor.</span>
+            ) : (
+              <button type="button" onClick={() => sendAnswer(item.von!, item.name, family?.me.userId ?? null)} className={`${buttonClass("secondary", "sm")} hit`}>
+                Steh grad davor
+              </button>
+            )}
+          </div>
+        )}
       </li>
     );
   };

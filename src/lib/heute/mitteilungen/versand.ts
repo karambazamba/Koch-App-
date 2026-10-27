@@ -10,7 +10,9 @@
 //   nie in der Pause, nie für eigene Einträge.
 // - Einkauf unterwegs (Einkauf Teil 6): „Felix ist gleich bei REWE“ mit
 //   Schnellknöpfen und „Eingekauft ✓“ – vom Menschen ausgelöst, zählt also
-//   nicht als proaktiv, aber nur 7–20 Uhr und nie in der Pause.
+//   nicht als proaktiv, aber nur 7–20 Uhr und nie in der Pause. Ebenso:
+//   „Lisa hat Milch auf die Liste gesetzt.“ an die Person im Laden (mit
+//   Knopf „Steh grad davor“) und deren Antwort an Lisa.
 // - Nie doppelt (Schlüssel je Abo, `push_gesendet`).
 
 import { pushAllowed } from "@/lib/heute/push";
@@ -19,7 +21,7 @@ import { dueNow, pauseOn, type ReminderMoment } from "@/lib/heute/mitteilungen/e
 import type { CalendarEntry } from "@/lib/kalender/model";
 import type { NotifyKind } from "@/lib/heute/mitteilungen/einstellungen";
 import { helperName } from "@/lib/einstellungen/profile";
-import { endText, startText } from "@/lib/einkauf/unterwegs/unterwegs";
+import { addedText, answerText, endText, startText } from "@/lib/einkauf/unterwegs/unterwegs";
 
 /** Eine Zeile aus `entries` (so wie der Server sie liest) */
 export type PushEntryRow = { household_id: string; id: string; typ: string; raum: string; besitzer: string; erstellt: string; geaendert: string; data: unknown };
@@ -102,6 +104,37 @@ function tripMessages(rows: PushEntryRow[], userId: string, nowMs: number): { ke
   return out;
 }
 
+/** Ein Einkauf gilt 3 Stunden lang als „gerade“ (wie auf dem Gerät) */
+const TRIP_MS = 3 * 3_600_000;
+
+/**
+ * Während ich einkaufe: was andere frisch auf die Liste setzen (mit „Steh grad
+ * davor“); und Antworten aus dem Laden an mich.
+ */
+function shopTalk(rows: PushEntryRow[], userId: string, nowMs: number, names: Record<string, string>): { key: string; body: string; href: string; actions?: PushAction[] }[] {
+  const out: { key: string; body: string; href: string; actions?: PushAction[] }[] = [];
+  const mine = rows.filter((r) => r.typ === "unterwegs" && r.besitzer === userId && isObj(r.data) && typeof r.data.end !== "string" && typeof r.data.start === "string" && nowMs - Date.parse(r.data.start) < TRIP_MS);
+  const since = Math.min(...mine.map((r) => Date.parse((r.data as Record<string, unknown>).start as string)));
+  const shop = mine.length ? String((mine[mine.length - 1].data as Record<string, unknown>).shop ?? "") : "";
+  for (const r of rows) {
+    if (!mine.length || r.typ !== "einkauf" || r.besitzer === userId || !isObj(r.data) || !isObj(r.data.item)) continue;
+    const name = typeof r.data.item.name === "string" ? r.data.item.name.trim().slice(0, 40) : "";
+    const added = Date.parse(r.erstellt);
+    if (!name || added < since || nowMs - added > TRIP_FRESH_MS) continue;
+    const href = shop ? `/einkaufsliste/laden?name=${encodeURIComponent(shop)}` : "/einkaufsliste";
+    out.push({ key: `einkauf:${r.id}`, body: addedText(names[r.besitzer] ?? "", name), href, actions: [{ action: `davor:${r.besitzer}|${name}`, title: "Steh grad davor" }] });
+  }
+  for (const r of rows) {
+    if (r.typ !== "unterwegs" || r.besitzer === userId || !isObj(r.data)) continue;
+    const by = typeof r.data.by === "string" ? r.data.by : "";
+    for (const a of Array.isArray(r.data.antworten) ? r.data.antworten.filter(isObj) : []) {
+      if (a.an !== userId || typeof a.was !== "string" || typeof a.at !== "string" || nowMs - Date.parse(a.at) > TRIP_FRESH_MS) continue;
+      out.push({ key: `antwort:${r.id}:${a.was.toLowerCase()}`, body: answerText(by, a.was), href: "/einkaufsliste" });
+    }
+  }
+  return out;
+}
+
 /**
  * Was jetzt rausgeht. `sent` = schon gesendete Schlüssel je Abo; `proactiveToday`
  * = Abos, die heute schon eine proaktive Mitteilung hatten.
@@ -114,6 +147,8 @@ export function planPushes(input: {
   nowMs: number;
   sent: Set<string>;
   proactiveToday: Set<string>;
+  /** Anzeigenamen je Konto (für „Lisa hat Milch …“) */
+  names?: Record<string, string>;
 }): PushMessage[] {
   const out: PushMessage[] = [];
   for (const abo of input.abos) {
@@ -136,6 +171,10 @@ export function planPushes(input: {
       for (const t of tripMessages(rows, abo.user_id, input.nowMs)) {
         if (input.sent.has(`${abo.id}|${t.key}`)) continue;
         out.push({ aboId: abo.id, key: t.key, payload: { title, body: t.body, href: t.href, tag: t.key.replace(/:(start|ende)$/, ""), ...(t.actions ? { actions: t.actions } : {}) } });
+      }
+      for (const t of shopTalk(rows, abo.user_id, input.nowMs, input.names ?? {})) {
+        if (input.sent.has(`${abo.id}|${t.key}`)) continue;
+        out.push({ aboId: abo.id, key: t.key, payload: { title, body: t.body, href: t.href, tag: t.key, ...(t.actions ? { actions: t.actions } : {}) } });
       }
     }
     if (input.proactiveToday.has(abo.id)) continue;
