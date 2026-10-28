@@ -1,5 +1,13 @@
 # Mails an Mia (seit v0.89)
 
+## Feste Regeln (aus CLAUDE.md umgezogen)
+
+- **Mails an Mia:** nur Vorschläge mit „Übernehmen“, nie die Rohmail
+  speichern (Domain, Betreff, Auszug ≤ 300), 7 Tage; nur Weitergeleitetes von
+  Mitgliedern, Webhook-Signatur (`RESEND_WEBHOOK_SECRET`) immer prüfen.
+  → `docs/bereiche/mails.md`
+
+
 Mails von Kita, Schule oder Verein an Mia weiterleiten – Mia macht daraus
 Vorschläge (Termin, Aufgabe, Einkauf), die man mit „Übernehmen“ einträgt.
 Mia sieht nie ein Postfach, nur was jemand selbst weiterleitet. Baustein

@@ -1,5 +1,17 @@
 # Konten und gemeinsamer Haushalt
 
+## Feste Regeln (aus CLAUDE.md umgezogen)
+
+- **Konten (Supabase):** Anmelden nur per E-Mail-Code (`signInWithOtp` +
+  `verifyOtp`), nie per Link. Geheimer Schlüssel nur auf dem Server, nie im
+  Client/Repo/Log. Jede Tabelle mit RLS (nur eigener Haushalt, „Arbeit“ nur
+  Besitzer). Migrationen nur in `supabase/migrations/`, laufen beim Merge;
+  nie SQL von Hand. Lokale Daten bleiben, bis die Übernahme bestätigt ist.
+  Abgleich: neueste Änderung je Eintrag gewinnt, Löschen nur als Markierung;
+  neue geteilte Daten = Übersetzer in `src/lib/konten/sync/docs.ts`.
+  → `docs/bereiche/konten.md`
+
+
 Kurz: Mit einem Konto (Supabase) teilt sich eine Familie einen Haushalt.
 Anmelden immer per E-Mail-Code (6 Ziffern), nie per Link. Ohne Konto – und
 ohne Supabase-Variablen – läuft die App wie bisher komplett auf dem Gerät.
