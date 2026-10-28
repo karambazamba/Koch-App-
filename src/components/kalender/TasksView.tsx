@@ -4,10 +4,11 @@
 // Liste – keine Abschnitte nach Raum oder Datum. Kopf „Aufgaben“, darunter
 // leise „Heute · Mi 28. Okt“ (nach Feierabend „Heute Abend · Feierabend“).
 // Reihenfolge dringend → neu → Erstellungszeit; Schilder nur „neu“ und
-// „Geschäftlich“, abgegebene „von Lisa“. Chips „Alle · Familie · Geschäftlich“
-// nur, wenn es geschäftliche Aufgaben gibt (gemerkt, A-021); nach
+// Schloss „Ich“ bzw. „Arbeit“, abgegebene und fremde Familien-Aufgaben „von
+// Lisa“. Chips „Alle · Familie · Ich · Arbeit“ nur, wenn mindestens zwei Räume
+// vorkommen (gemerkt, A-034); lange drücken = Raum ändern; nach
 // Feierabend ruht die Arbeit
-// („Geschäftlich · 5 für morgen ›“ blendet sie kurz ein). Unten leise „Geplant · 1 ›“
+// („Arbeit · 5 für morgen ›“ blendet sie kurz ein). Unten leise „Geplant · 1 ›“
 // (ab einem genannten Tag), eingeklappte Listen, „Abgegeben“ und „Erledigt ⌄“
 // (A-043: zugeklappt, ohne Anzahl, nur die letzten 12 Stunden, neueste oben;
 // Häkchen antippen = wieder offen; Regel in kalender/erledigt.ts). Logik in
@@ -44,7 +45,7 @@ import { useHaushalt } from "@/lib/einstellungen/useHaushalt";
 
 const LEISE = "flex h-11 items-center gap-1 self-start px-1 text-[15px] font-semibold text-muted";
 
-function TaskRow({ item, today, onOpen }: { item: DayItem; today: string; onOpen: (item: DayItem) => void }) {
+function TaskRow({ item, today, onOpen, onLang }: { item: DayItem; today: string; onOpen: (item: DayItem) => void; onLang: (item: DayItem) => void }) {
   // Abhaken: kurz durchgestrichen, dann weich nach „Erledigt“ (nochmal tippen = doch nicht); dort Häkchen antippen = wieder offen
   const { leaving, start } = useLeaving((it) => act((list, stamp) => setDone(list, it, true, stamp), it.title, { done: true }));
   const toggle = (it: DayItem) => {
@@ -55,14 +56,14 @@ function TaskRow({ item, today, onOpen }: { item: DayItem; today: string; onOpen
     }
     start(it);
   };
-  return <TaskLine item={item} today={today} onOpen={onOpen} onDone={toggle} leaving={leaving === item.key} />;
+  return <TaskLine item={item} today={today} onOpen={onOpen} onLang={onLang} onDone={toggle} leaving={leaving === item.key} />;
 }
 
-function Liste({ items, today, onOpen }: { items: DayItem[]; today: string; onOpen: (item: DayItem) => void }) {
+function Liste({ items, today, onOpen, onLang }: { items: DayItem[]; today: string; onOpen: (item: DayItem) => void; onLang: (item: DayItem) => void }) {
   return (
     <ul className={`${CARD} divide-y divide-line overflow-hidden`}>
       {items.map((item) => (
-        <TaskRow key={item.key} item={item} today={today} onOpen={onOpen} />
+        <TaskRow key={item.key} item={item} today={today} onOpen={onOpen} onLang={onLang} />
       ))}
     </ul>
   );
@@ -92,7 +93,10 @@ export function TasksView() {
   const [arbeitZeigen, setArbeitZeigen] = useState(false);
   const [open, setOpen] = useState<string[]>([]);
   const toggle = (id: string) => setOpen((v) => (v.includes(id) ? v.filter((x) => x !== id) : [...v, id]));
-  const [menu, setMenu] = useState<DayItem | null>(null);
+  // Antippen = Menü, lange drücken = gleich „Für Familie / Nur ich / Arbeit“ (A-034)
+  const [menu, setMenuState] = useState<{ item: DayItem; start: "menu" | "raum" } | null>(null);
+  const setMenu = (item: DayItem) => setMenuState({ item, start: "menu" });
+  const raumMenu = (item: DayItem) => setMenuState({ item, start: "raum" });
   // Aufgaben aus verbundenen Listen (Todoist, nur lesen) stehen mit dabei
   const aboTasks = useAboEntries().filter((e) => e.typ === "aufgabe");
   const groups = entries && today ? taskOverview(aboTasks.length ? [...entries, ...aboTasks] : entries, today) : null;
@@ -154,7 +158,7 @@ export function TasksView() {
             )}
             {ansicht.items.length > 0 && (
               <section aria-label="Heute" data-aufgaben-liste>
-                <Liste items={ansicht.items} today={today!} onOpen={setMenu} />
+                <Liste items={ansicht.items} today={today!} onOpen={setMenu} onLang={raumMenu} />
               </section>
             )}
             {ansicht.ausgeblendet > 0 && (
@@ -170,13 +174,13 @@ export function TasksView() {
             {geplant.length > 0 && (
               <section className="flex flex-col gap-1.5" aria-label="Geplant" data-geplant>
                 <Klapp label={geplantText(geplant.length)} open={open.includes("geplant")} onClick={() => toggle("geplant")} />
-                {open.includes("geplant") && <Liste items={geplant} today={today!} onOpen={setMenu} />}
+                {open.includes("geplant") && <Liste items={geplant} today={today!} onOpen={setMenu} onLang={raumMenu} />}
               </section>
             )}
             {lists.map((l) => (
               <section key={l.name} className="flex flex-col gap-1.5" aria-label={`Liste ${l.name}`} data-liste={l.name}>
                 <Klapp label={`${l.name} · ${l.items.length}`} open={open.includes(`liste:${l.name}`)} onClick={() => toggle(`liste:${l.name}`)} />
-                {open.includes(`liste:${l.name}`) && <Liste items={l.items} today={today!} onOpen={setMenu} />}
+                {open.includes(`liste:${l.name}`) && <Liste items={l.items} today={today!} onOpen={setMenu} onLang={raumMenu} />}
               </section>
             ))}
             {givenItems.length > 0 && (
@@ -199,13 +203,13 @@ export function TasksView() {
             {done.length > 0 && (
               <section className="flex flex-col gap-1.5" aria-label="Erledigt" data-erledigt>
                 <Klapp label="Erledigt" runter open={open.includes("erledigt")} onClick={() => toggle("erledigt")} />
-                {open.includes("erledigt") && <Liste items={done} today={today!} onOpen={setMenu} />}
+                {open.includes("erledigt") && <Liste items={done} today={today!} onOpen={setMenu} onLang={raumMenu} />}
               </section>
             )}
           </>
         )}
       </main>
-      {menu && <ItemMenu item={menu} onClose={() => setMenu(null)} />}
+      {menu && <ItemMenu item={menu.item} start={menu.start} onClose={() => setMenuState(null)} />}
     </>
   );
 }

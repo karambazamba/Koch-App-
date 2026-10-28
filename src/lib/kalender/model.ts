@@ -16,7 +16,7 @@
 //   verschwinden leise.
 
 import { WEEKDAYS_MO, WEEKDAYS_SHORT_MO } from "@/lib/core/days";
-import { createEntry, LOCAL_OWNER, roomOf, type Entry, type Room } from "@/lib/core/entries";
+import { createEntry, roomOf, type Entry, type Room } from "@/lib/core/entries";
 import { addDays, berlinTime, fromIsoDate, now } from "@/lib/core/now";
 import { first, sortBy, TASKS, TASKS_DONE, TERMINE, timeThenCreated, via } from "@/lib/core/sort";
 import { abgehaktUm, erledigtFelder, nochErledigt, serienZeiten } from "@/lib/kalender/erledigt";
@@ -122,6 +122,8 @@ export type AufgabeData = {
   doneDates?: string[];
   /** Serie: abgehakt um (ISO) je Runde „YYYY-MM-DD“ – nur die letzten 12 h */
   doneTimes?: Record<string, string>;
+  /** Wer zuletzt abgehakt hat (Konto-ID, Familien-Aufgaben: „erledigt von Lisa“, A-034) */
+  doneBy?: string;
   skipDates?: string[];
   /** Dringend: steht immer ganz vorne (kleines oranges "!") */
   dringend?: boolean;
@@ -547,6 +549,8 @@ export function sanitizeEntry(raw: unknown): CalendarEntry | null {
       ...(typeof d.fuer === "string" && d.fuer ? { fuer: d.fuer } : {}),
       ...(typeof d.zurueck === "string" && d.zurueck ? { zurueck: d.zurueck } : {}),
       ...(typeof d.an === "string" && d.an.trim() ? { an: d.an.trim().slice(0, 40) } : {}),
+      // Wer abgehakt hat (Familien-Aufgaben, A-034)
+      ...(typeof d.doneBy === "string" && d.doneBy ? { doneBy: d.doneBy.slice(0, 60) } : {}),
     },
   };
 }
@@ -588,16 +592,32 @@ export function aufgabeToTermin(e: Aufgabe, stamp: string, start: string, date?:
   return { ...e, typ: "termin", geaendert: stamp, data: { title: a.title, date: date ?? a.date ?? a.due ?? stamp.slice(0, 10), start, label: a.label, repeat: a.repeat ?? null, reminder: a.reminder, doneDates: [], skipDates: a.skipDates ?? [] } };
 }
 
-/** Altes Etikett „Privat“ (Wochencheck bis A-020): bleibt gespeichert, wird nie gezeigt (A-021) */
+/** Altes Etikett „Privat“ (Wochencheck bis A-020): bleibt gespeichert, wird nie gezeigt. @public für Tests */
 export const etikettZeigen = (label: string | undefined): string | null => (label && label !== "Privat" ? label : null);
 
 /**
- * v3 → v4 (A-021): Einen Raum „Privat“ gibt es nicht mehr. „Privat“ aus dem
- * Wochencheck lag als Arbeit (nur ich) mit Etikett „Privat“. Nur auf dem Gerät
- * (nie geteilt, Besitzer „lokal“) wird es Familie – mit Konto bleibt es nur für
- * den Besitzer sichtbar (Datenschutz: nie ungefragt für andere sichtbar
- * machen), umstellen geht per Antippen. Das Etikett bleibt gespeichert.
+ * v3 → v4 (A-021, mit A-034 angepasst): „Privat“ aus dem Wochencheck lag als
+ * Arbeit (nur ich) mit Etikett „Privat“ – gemeint war „nur für mich“. Das ist
+ * jetzt der Raum „Ich“ (auch nur für den Besitzer, also nie ungefragt
+ * geteilt). Auch ein Zwischenstand von A-021 (Familie mit Etikett „Privat“,
+ * nie ausgeliefert) kommt so zurück. Das Etikett bleibt gespeichert und wird
+ * nie gezeigt.
  */
 export function ohnePrivat(e: CalendarEntry): CalendarEntry {
-  return e.data.label === "Privat" && e.raum === "arbeit" && e.besitzer === LOCAL_OWNER ? { ...e, raum: "familie" } : e;
+  return e.data.label === "Privat" && e.raum !== "ich" ? { ...e, raum: "ich" } : e;
+}
+
+/**
+ * v4 → v5 (A-034): Familien-Aufgaben sehen jetzt alle im Haushalt. Bisher
+ * gehörte jede Aufgabe ihrem Ersteller (nur er und wer sie bekam) – damit
+ * nichts plötzlich geteilt ist, werden bestehende Aufgaben „Ich“. Termine
+ * bleiben Familie bzw. Arbeit. Nichts geht verloren, „geändert“ bleibt.
+ */
+export function aufgabeIch(e: CalendarEntry): CalendarEntry {
+  return e.typ === "aufgabe" && e.raum === "familie" ? { ...e, raum: "ich" } : e;
+}
+
+/** Raum ändern (A-034: Detail-Fenster, lange drücken, Mias Bestätigung, Mia) */
+export function setRoom(entries: CalendarEntry[], entryId: string, raum: Room, stamp: string): CalendarEntry[] {
+  return entries.map((e) => (e.id === entryId && e.raum !== raum ? ({ ...e, raum, geaendert: stamp } as CalendarEntry) : e));
 }

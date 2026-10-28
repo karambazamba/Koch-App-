@@ -76,16 +76,16 @@ describe("Fenster „Neue Aufgabe“ (Bild 1–3)", () => {
     expect(src("src/components/kalender/eintragen/speichern.ts")).toMatch(/text: "Steht drin"/);
   });
 
-  it("EINE Zeile: Schalter (genau einer, aktiv weiß mit Raumfarbe), Glocke 42 px, leise „Mehr ›“; Hinweis", () => {
-    expect(teile).toMatch(/role="radiogroup" aria-label="Wer sieht es\?"/);
-    expect(teile).toMatch(/familie: "text-accent-strong", arbeit: "text-work"/);
-    expect(teile).toMatch(/familie: "bg-accent", arbeit: "bg-work"/);
-    expect(teile).toMatch(/bg-surface shadow-card \$\{AKTIV\[r\]\}/);
+  it("EINE Zeile: Raum-Chips (ui/RaumChips, A-034), Glocke 42 px, leise „Mehr ›“; Hinweis", () => {
+    const chips = readFileSync("src/components/ui/RaumChips.tsx", "utf8");
+    expect(chips).toMatch(/role="radiogroup" aria-label=\{label\}/);
+    expect(chips).toMatch(/label = "Wer sieht es\?"/);
+    expect(teile).toMatch(/<RaumChips value=\{p\.raum\}/);
     expect(teile).toMatch(/h-\[42px\] w-\[42px\]/);
     expect(teile).toMatch(/border-accent text-accent-strong/);
     expect(teile).toMatch(/Mehr <ChevronRight/);
-    expect(f).toMatch(/raumMerken\(raum\)/);
-    expect(f).toMatch(/startRaum\(\{ letzte: letzterRaum\(\), feierabend: feierabend \|\| ruht \}\)/);
+    expect(f).toMatch(/useRaumWahl\("aufgabe", entry\?\.raum \?\? null, text\)/);
+    expect(f).toMatch(/wahl\.speichern\(title\)/);
   });
 
   it("„Mehr“: genau drei Zeilen – Ab wann, Wiederholen, An jemanden geben – und „Speichern“", () => {

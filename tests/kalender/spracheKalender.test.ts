@@ -1,7 +1,8 @@
 // Termine und Aufgaben aus normalen Sätzen (parse.ts) und Schnell-Eintrag
 // (quick.ts). Heute = Di 2026-10-20.
 import { beforeEach, describe, expect, it } from "vitest";
-import { findDate, guessLabel, guessRoom, parseCalendar, urgentFrom } from "@/lib/kalender/parse";
+import { findDate, guessLabel, parseCalendar, urgentFrom } from "@/lib/kalender/parse";
+import { guessRoom } from "@/lib/kalender/raum/raten";
 import { dayChipLabel, frequentTimes, quickTaskData, readQuickText, readTerminText, terminDay, whenLabel } from "@/lib/kalender/quick";
 import { at } from "../helpers";
 
@@ -158,8 +159,8 @@ describe("Hilfen", () => {
     expect(guessLabel("Eisdiele mit Kindern")).toBe("Eisladen");
     expect(guessLabel("Geburtstag Oma")).toBe("Geburtstag");
     expect(guessLabel("Nichts")).toBeUndefined();
-    expect(guessRoom("Call mit Kunde")).toBe("arbeit");
-    expect(guessRoom("Spielplatz")).toBe("familie");
+    expect(guessRoom("Call mit Kunde", "termin")).toBe("arbeit");
+    expect(guessRoom("Spielplatz", "aufgabe")).toBe("familie");
   });
 });
 

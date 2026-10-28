@@ -14,7 +14,8 @@
 import { newMiaConversation, reactToUser } from "@/lib/mia/reaktion";
 import { useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { askAssistant, BegleitungUnavailable, commitOps, runInstantOps, unavailableText } from "@/lib/begleitung/client";
-import { isSafeOp, noteMiaDone } from "@/lib/begleitung/miaDone";
+import { eingetragenMitRaum, isSafeOp, noteMiaDone } from "@/lib/begleitung/miaDone";
+import { gelernteRaeume } from "@/lib/kalender/raum/gedaechtnis";
 import { isImHausFrage } from "@/lib/vorrat/reinsprechen";
 import { isEinkaufFrage } from "@/lib/einkauf/einsprechen";
 import { doneCount, doneGroups, doneSummary, shortDoneReply, type DoneGroup } from "@/lib/begleitung/uebersicht";
@@ -86,12 +87,15 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
     let done: (() => void) | null = instant.undo ?? null;
     // Mehreres auf einmal: nur „Erledigt.“ + kompakte Übersicht (die KI bekommt die Liste im Verlauf)
     let overview: DoneGroup[] | null = null;
+    // Ein neuer Termin bzw. eine neue Aufgabe: Raum-Chip „Familie ⌄“ unter der Bestätigung (A-034)
+    let raum: ChatTurnView["raum"] | null = null;
     // „Was ist da?“ (Tafel 102) und „Einsprechen“ (Tafel 110): erst als Vorschau, nie sofort
     if (result.ops.length && !chat.proposal && !isEinkaufFrage(question) && !isImHausFrage(question) && result.ops.every(isSafeOp)) {
       const committed = commitOps(d, result.ops, new Set(result.ops.map((op) => op.id)), question);
       noteMiaDone(result.ops, committed.undo);
       const timerUndo = done;
       done = timerUndo ? () => (committed.undo(), timerUndo()) : committed.undo;
+      raum = eingetragenMitRaum(result.ops);
       const groups = doneGroups(result.ops);
       if (doneCount(groups) >= 2) {
         overview = groups;
@@ -106,6 +110,7 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
       ...(result.chips?.length ? { chips: result.chips } : {}),
       ...(result.tips?.length ? { tips: result.tips } : {}),
       ...(done ? { undo: done, quick: true } : {}),
+      ...(raum && !overview ? { raum } : {}),
       ...(overview ? { overview, send: `${result.reply} (${doneSummary(overview)})` } : {}),
     };
     setChat((c) => {
@@ -133,7 +138,8 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
       undo = committed.undo;
       notes = [...notes, ...committed.notes];
     }
-    const turn: ChatTurnView = { role: "assistant", text: notes.length ? `${s.reply}\n${notes.join(" ")}` : s.reply, undo, quick: true };
+    const raum = eingetragenMitRaum(instant.rest);
+    const turn: ChatTurnView = { role: "assistant", text: notes.length ? `${s.reply}\n${notes.join(" ")}` : s.reply, undo, quick: true, ...(raum ? { raum } : {}) };
     setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: display ?? question, send: display ? question : undefined }, turn] }));
     tempoMarke("fertig");
     const abbrechen = new AbortController();
@@ -186,6 +192,7 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
           weekStart: planningWeekStart(today, shoppingDay).weekStart,
           aufDerListe: listNames() ?? [],
           entries: loadCalendarEntries(),
+          gelernt: gelernteRaeume(),
         });
     if (sofort) return sofortWeg(sofort, question, display, history, d, weekStart);
     setSofortAktiv(false);

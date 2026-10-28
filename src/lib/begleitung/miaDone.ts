@@ -8,6 +8,7 @@ import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 import { now, todayIso } from "@/lib/core/now";
 import type { ChangeOp } from "@/lib/begleitung/ops";
+import type { Room } from "@/lib/core/entries";
 
 export type MiaDone = { id: string; text: string; href: string | null; day: string; at: number };
 type DoneState = { version: 1; items: MiaDone[] };
@@ -85,4 +86,15 @@ export const miaDoneOn = (today: string): MiaDone[] => (store.load()?.items ?? [
 export function useMiaDone(today: string | undefined): MiaDone[] {
   const s = useExternalStore(store.subscribe, store.load, () => null);
   return today ? (s?.items ?? []).filter((i) => i.day === today) : [];
+}
+
+/**
+ * Genau EIN neuer Termin bzw. EINE neue Aufgabe? Dann steht unter Mias
+ * Bestätigung der Raum-Chip „Familie ⌄“ zum Ändern (A-034).
+ */
+export function eingetragenMitRaum(ops: ChangeOp[]): { id: string; title: string; raum: Room; typ: "termin" | "aufgabe" } | null {
+  const neu = ops.flatMap((op) => (op.type === "upsert_entry" && op.isNew ? [op.entry] : []));
+  if (neu.length !== 1) return null;
+  const e = neu[0];
+  return { id: e.id, title: e.data.title, raum: e.raum, typ: e.typ };
 }

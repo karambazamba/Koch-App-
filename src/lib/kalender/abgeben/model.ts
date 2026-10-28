@@ -5,15 +5,18 @@
 // „lokal“), data.fuer = Konto-ID der Person, die sie gerade hält, data.zurueck
 // = wer sie zuletzt zurückgegeben hat (nur, damit die Datenbank das Zurückgeben
 // erlaubt – die App blendet sie dort aus). Ohne Konto ist alles „meins“.
+// Familien-Aufgaben (A-034, Raum „familie“) sehen alle im Haushalt, jeder darf
+// abhaken („erledigt von Lisa“, `data.doneBy`); „Ich“ und „Arbeit“ bleiben
+// beim Besitzer (und bei wem er sie abgegeben hat).
 
 import { LOCAL_OWNER } from "@/lib/core/entries";
 import type { Member } from "@/lib/konten/model";
 import { mitgliedName, personName } from "@/lib/konten/namen";
 
-type TaskLike = { typ: string; besitzer: string; data: { fuer?: string; zurueck?: string; doneOn?: string | null; title?: string } };
+type TaskLike = { typ: string; besitzer: string; raum?: string; data: { fuer?: string; zurueck?: string; doneOn?: string | null; doneBy?: string; title?: string } };
 
-/** Wie ich eine Aufgabe sehe: meine, bekommen (von jemand anderem), abgegeben (meine bei jemand anderem), fremd (ausblenden) */
-export type TaskRole = "meine" | "bekommen" | "abgegeben" | "fremd";
+/** Wie ich eine Aufgabe sehe: meine, bekommen (von jemand anderem), abgegeben (meine bei jemand anderem), familie (von jemand anderem, für alle), fremd (ausblenden) */
+export type TaskRole = "meine" | "bekommen" | "abgegeben" | "familie" | "fremd";
 
 const mineOwner = (besitzer: string, me: string | null) => besitzer === LOCAL_OWNER || (me !== null && besitzer === me);
 
@@ -21,23 +24,58 @@ export function taskRole(entry: TaskLike, me: string | null): TaskRole {
   if (entry.typ !== "aufgabe" || me === null) return "meine";
   const fuer = entry.data.fuer;
   if (mineOwner(entry.besitzer, me)) return fuer && fuer !== me ? "abgegeben" : "meine";
-  return fuer === me ? "bekommen" : "fremd";
+  if (fuer === me) return "bekommen";
+  return entry.raum === "familie" ? "familie" : "fremd";
 }
 
-/** Sichtbar in Listen und Kacheln (abgegebene nur unter „Abgegeben“) */
+/** Sichtbar in Listen und Kacheln: meine, bekommene und Familien-Aufgaben (abgegebene nur unter „Abgegeben“) */
 export const isMyTask = (entry: TaskLike, me: string | null) => {
   const r = taskRole(entry, me);
-  return r === "meine" || r === "bekommen";
+  return r === "meine" || r === "bekommen" || r === "familie";
 };
+
+/** Darf ich den Raum ändern? Nur der Besitzer (eine fremde Familien-Aufgabe würde sonst verschwinden) */
+export const darfRaumAendern = (entry: Pick<TaskLike, "besitzer">, me: string | null) => mineOwner(entry.besitzer, me);
 
 /** Anzeigename eines Kontos im Haushalt */
 export const memberName = (members: Member[], userId: string | undefined) => personName(members.find((m) => m.userId === userId)?.displayName) || null;
 
-/** „von Felix“ bei bekommenen Aufgaben, sonst null */
+/** „von Felix“ bei bekommenen und fremden Familien-Aufgaben; erledigt von jemand anderem: „erledigt von Lisa“; sonst null */
 export function fromLabel(entry: TaskLike, me: string | null, members: Member[]): string | null {
-  if (taskRole(entry, me) !== "bekommen") return null;
+  const done = entry.data.doneBy;
+  if (entry.data.doneOn && done && done !== me) {
+    const wer = memberName(members, done);
+    if (wer) return `erledigt von ${wer}`;
+  }
+  const role = taskRole(entry, me);
+  if (role !== "bekommen" && role !== "familie") return null;
   const name = memberName(members, entry.besitzer);
   return name ? `von ${name}` : null;
+}
+
+/**
+ * Wer hat abgehakt (A-034): neu erledigte Aufgaben bekommen `doneBy` = Konto,
+ * wieder geöffnete verlieren es. Ohne Konto (`wer` null) bleibt alles, wie es ist.
+ */
+export function mitErledigtVon<E extends { id: string; typ: string; data: unknown }>(before: readonly E[], after: E[], wer: string | null): E[] {
+  if (!wer) return after;
+  const vorher = new Map(before.map((e) => [e.id, e]));
+  const fertig = (e: E | undefined) => {
+    const d = (e?.data ?? {}) as { doneOn?: string | null; doneDates?: string[] };
+    return `${d.doneOn ?? ""}|${(d.doneDates ?? []).length}`;
+  };
+  return after.map((e) => {
+    if (e.typ !== "aufgabe") return e;
+    const alt = vorher.get(e.id);
+    if (fertig(alt) === fertig(e)) return e;
+    const d = e.data as { doneOn?: string | null; doneDates?: string[]; doneBy?: string };
+    const altD = (alt?.data ?? {}) as { doneDates?: string[] };
+    const jetztErledigt = Boolean(d.doneOn) || (d.doneDates ?? []).length > (altD.doneDates ?? []).length;
+    if (jetztErledigt) return { ...e, data: { ...d, doneBy: wer } };
+    const { doneBy: _weg, ...rest } = d;
+    void _weg;
+    return { ...e, data: rest };
+  });
 }
 
 /** Wer im Haushalt eine Aufgabe bekommen kann (alle außer mir) */

@@ -44,7 +44,7 @@ function NoteCard({ note }: { note: Note }) {
           text && <span className="line-clamp-4 whitespace-pre-line text-[13px] leading-snug text-ink/80">{text}</span>
         )}
         <span className="mt-auto flex items-center gap-1.5 pt-1 text-xs text-muted">
-          <span className={`h-2 w-2 shrink-0 rounded-full ${note.raum === "arbeit" ? "bg-work" : "bg-accent"}`} aria-label={note.raum === "arbeit" ? "Geschäftlich" : raum} />
+          <span className={`h-2 w-2 shrink-0 rounded-full ${note.raum === "arbeit" ? "bg-work" : "bg-accent"}`} aria-label={note.raum === "arbeit" ? "Arbeit" : raum} />
           {SHORT.format(new Date(note.geaendert))}
         </span>
       </Link>
@@ -87,7 +87,7 @@ export function NotesView() {
             options={[
               { value: "alles", label: "Alle" },
               { value: "familie", label: raum },
-              { value: "arbeit", label: "Geschäftlich" },
+              { value: "arbeit", label: "Arbeit" },
             ]}
           />
         )}

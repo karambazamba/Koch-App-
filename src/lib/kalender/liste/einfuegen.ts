@@ -6,6 +6,7 @@
 // („Haus:“ oder „KINDER“) werden zum Listennamen der folgenden Zeilen.
 // Importiert wird alles, angezeigt nur, was jetzt dran ist. Rein.
 
+import { guessRoom } from "@/lib/kalender/raum/raten";
 import { createEntry, type Room } from "@/lib/core/entries";
 import { genannterTag, parseCalendar } from "@/lib/kalender/parse";
 import type { Aufgabe, AufgabeData, CalendarEntry } from "@/lib/kalender/model";
@@ -76,7 +77,8 @@ const WORK_LIST = /(?<![a-zäöüß])(arbeit|büro|job|firma|projekt)/i;
 /** Eine Aufgabe aus einer Zeile – mit Tag/Frist, wenn erkannt */
 function readZeile(text: string, liste: string | undefined, today: string): ListZeile {
   const cmd = parseCalendar(text, today);
-  const raum: Room = liste && WORK_LIST.test(liste) ? "arbeit" : "familie";
+  // Raum wie überall (A-034): eine Liste „Arbeit/Büro …“ ist Arbeit, sonst raten aus Überschrift und Zeile (Standard Ich)
+  const raum: Room = liste && WORK_LIST.test(liste) ? "arbeit" : guessRoom(`${liste ?? ""} ${text}`, "aufgabe");
   if (cmd?.kind === "create") {
     const d = cmd.draft;
     const data: Partial<AufgabeData> =
@@ -98,7 +100,7 @@ function readZeile(text: string, liste: string | undefined, today: string): List
     return {
       title: d.data.title,
       ...(liste ? { liste } : {}),
-      raum: raum === "arbeit" ? raum : d.raum,
+      raum,
       data: clean,
     };
   }

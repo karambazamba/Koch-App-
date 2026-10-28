@@ -3,31 +3,26 @@
 // Das EINE Fenster „Neue Aufgabe“ (Tafel 114, Bild 1–3) – auch zum Ändern
 // („Aufgabe“). EIN Feld („Was steht an?“, Tastatur sofort auf), Knopf ↑.
 // Return = speichern für heute, Feld leer und auf für die nächste („Steht
-// drin · Rückgängig“). Darunter EINE Zeile: Schalter „Familie | Geschäftlich“
-// (Start = letzte Wahl, nach Feierabend Familie), Glocke (In 1 Std · 16:00 ·
+// drin · Rückgängig“). Darunter EINE Zeile: Raum-Chips „Familie · Ich ·
+// Arbeit“ (A-034, Mia wählt vor, Standard Ich), Glocke (In 1 Std · 16:00 ·
 // 18:00 · Morgen früh → Zeile „Erinnern heute 16:00 ✕“) und leise „Mehr ›“
 // mit genau drei Zeilen: Ab wann, Wiederholen, An jemanden geben. „Freitag …“
 // im Feld wird automatisch „Ab Freitag“ (korrigierbar). Logik rein in
 // `lib/kalender/eintragen/`.
 
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Sheet } from "@/components/ui/Sheet";
 import { CARD_LIST, buttonClass } from "@/components/ui/styles";
-import { createEntry, type Room } from "@/lib/core/entries";
+import { createEntry } from "@/lib/core/entries";
 import { berlinTime, todayIso, useMinutes } from "@/lib/core/now";
 import { useKeyboardInset } from "@/lib/core/useMobileKeyboard";
-import { useHaushalt } from "@/lib/einstellungen/useHaushalt";
 import { useCachedAccount } from "@/lib/konten/cache";
 import { giveTargets, giveTo, memberName } from "@/lib/kalender/abgeben/model";
-import { loadEntries } from "@/lib/kalender/store";
-import { arbeitsWorte } from "@/lib/kalender/parse";
 import type { Aufgabe } from "@/lib/kalender/model";
 import { looksLikeList, openListe } from "@/lib/kalender/liste/einfuegen";
 import { aufgabeDaten, aufgabeHinweis, aufgabeLesen, erinnernText, erinnernVon, glockeVorschlaege, serie, WIEDERHOLEN, wiederholenLabel, wiederholenVon, type Erinnern, type Wiederholen } from "@/lib/kalender/eintragen/aufgabe";
-import { schalterRaum, startRaum } from "@/lib/kalender/eintragen/raum";
-import { letzterRaum, raumMerken } from "@/lib/kalender/eintragen/raumStore";
 import { tagWahl, tagWort } from "@/lib/kalender/eintragen/tage";
-import { useArbeitRuht } from "@/components/kalender/useArbeitRuht";
+import { useRaumWahl } from "@/components/kalender/eintragen/useRaumWahl";
 import { EintragFeld, EintragZeile, ErinnernZeile, HINWEIS, MehrZeile, Wahl } from "@/components/kalender/eintragen/EintragTeile";
 import { eintragSpeichern } from "@/components/kalender/eintragen/speichern";
 
@@ -36,18 +31,13 @@ type Auf = "glocke" | null;
 export function AufgabeFenster({ entry, date, onClose }: { entry?: Aufgabe; date?: string; onClose: () => void }) {
   const today = todayIso();
   const minutes = useMinutes() ?? berlinTime().minutes;
-  const haushalt = useHaushalt();
   const household = useCachedAccount().household;
   const me = household?.me.userId ?? null;
   const targets = household ? giveTargets(household.members, me) : [];
-  const [all] = useState(() => loadEntries());
-  const worte = useMemo(() => arbeitsWorte(all), [all]);
-  const { ruht, feierabend } = useArbeitRuht(all, today);
   const inset = useKeyboardInset();
   const field = useRef<HTMLInputElement>(null);
 
   const [text, setText] = useState(entry?.data.title ?? "");
-  const [hand, setHand] = useState<Room | null>(entry ? entry.raum : null);
   // Von Hand gewählt (null = was der Satz sagt bzw. der Standard)
   const [ab, setAb] = useState<string | null>(entry ? (entry.data.date ?? today) : (date ?? null));
   const [erinnern, setErinnern] = useState<Erinnern | null | undefined>(entry ? erinnernVon(entry.data, today) : undefined);
@@ -57,17 +47,16 @@ export function AufgabeFenster({ entry, date, onClose }: { entry?: Aufgabe; date
   const [mehr, setMehr] = useState(false);
   const [mehrZeile, setMehrZeile] = useState<"ab" | "wieder" | "an" | null>(null);
 
-  const gelesen = entry ? null : aufgabeLesen(text, today, worte);
+  const wahl = useRaumWahl("aufgabe", entry?.raum ?? null, text);
+  const gelesen = entry ? null : aufgabeLesen(text, today, wahl.hilfen);
   const title = entry ? text.trim() : (gelesen?.title ?? "");
   const tag = ab ?? gelesen?.ab ?? null;
   const glocke = erinnern === undefined ? (gelesen?.erinnern ?? null) : erinnern;
-  const start = startRaum({ letzte: letzterRaum(), feierabend: feierabend || ruht });
-  const raum = schalterRaum({ hand, ausText: gelesen?.raum ?? null, start });
   const bereit = Boolean(title);
 
   const reset = () => {
     setText("");
-    setHand(null);
+    wahl.zuruecksetzen();
     setAb(date ?? null);
     setErinnern(undefined);
     setWieder("nie");
@@ -81,11 +70,10 @@ export function AufgabeFenster({ entry, date, onClose }: { entry?: Aufgabe; date
   const save = (schliessen: boolean) => {
     if (!bereit) return;
     const data = aufgabeDaten({ title, ab: tag, erinnern: glocke, repeat: serie(wieder, entry?.data.repeat), today, dringend: gelesen?.dringend, label: gelesen?.label, due: gelesen?.due, vorher: entry?.data });
-    const gespeichert = raum;
+    const gespeichert = wahl.speichern(title);
     const mitAn = an ? giveTo(data, an) : data;
     const next = entry ? { ...entry, raum: gespeichert, data: mitAn } : createEntry("aufgabe", mitAn, { raum: gespeichert });
     if (!eintragSpeichern([next as Aufgabe], !entry)) return;
-    if (!entry) raumMerken(raum);
     if (schliessen || entry) onClose();
     else reset();
   };
@@ -112,9 +100,10 @@ export function AufgabeFenster({ entry, date, onClose }: { entry?: Aufgabe; date
           bereit={bereit}
         />
         <EintragZeile
-          raum={raum}
-          haushalt={haushalt}
-          onRaum={setHand}
+          raum={wahl.raum}
+          haushalt={wahl.haushalt}
+          onRaum={wahl.waehlen}
+          hinweis={wahl.hinweis}
           glockeAn={Boolean(glocke)}
           glockeAuf={auf === "glocke"}
           onGlocke={() => setAuf(auf === "glocke" ? null : "glocke")}

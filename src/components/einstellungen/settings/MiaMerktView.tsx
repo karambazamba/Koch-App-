@@ -1,8 +1,9 @@
 "use client";
 
-// Einstellungen → Mia → „Was ich mir merke“: alle gemerkten Muster und
-// Antworten (Ja/Nein), Essens-Rituale und feste Läden – einzeln löschbar.
-// Vergessen heißt: Mia darf wieder fragen bzw. plant nichts mehr fest ein.
+// Einstellungen → Mia → „Was ich mir gemerkt hab“: alle gemerkten Muster und
+// Antworten (Ja/Nein), Essens-Rituale, feste Läden und gelernte Räume
+// („Zahnarzt“ → Nur ich, A-034) – einzeln löschbar. Vergessen heißt: Mia darf
+// wieder fragen, plant nichts mehr fest ein bzw. rät den Raum wieder neu.
 
 import { X } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -11,19 +12,21 @@ import { useShoppingSettings } from "@/lib/einkauf/listStore";
 import { removeShopRule } from "@/lib/einkauf/shopRules";
 import { merkListe, type MerkEintrag } from "@/lib/mia/denktmit/merken";
 import { useDenkt, vergessen } from "@/lib/mia/denktmit/store";
+import { raumVergessen, useRaumGedaechtnis } from "@/lib/kalender/raum/gedaechtnis";
 
 export function MiaMerktView() {
   const s = useDenkt();
   const shop = useShoppingSettings();
-  const liste = s && shop ? merkListe(s, shop.shopRules ?? {}) : null;
-  const weg = (e: MerkEintrag) => (e.art === "laden" ? removeShopRule(e.key) : vergessen(e.art, e.key));
+  const raeume = useRaumGedaechtnis();
+  const liste = s && shop ? merkListe(s, shop.shopRules ?? {}, raeume.worte) : null;
+  const weg = (e: MerkEintrag) => (e.art === "laden" ? removeShopRule(e.key) : e.art === "raum" ? raumVergessen(e.key) : vergessen(e.art, e.key));
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
-      <PageHeader title="Was ich mir merke" backHref="/profil/kuechenhelfer" />
+      <PageHeader title="Was ich mir gemerkt hab" backHref="/profil/kuechenhelfer" />
       <main className={PAGE_MAIN}>
         {liste && !liste.length && <p className={`px-1 ${SUBTLE}`}>Noch nichts. Ich merk mir nur, was du mir sagst oder was sich oft wiederholt.</p>}
         {liste &&
-          (["Gewohnheiten", "Läden"] as const).map((gruppe) => {
+          (["Gewohnheiten", "Läden", "Wer was sieht"] as const).map((gruppe) => {
             const rows = liste.filter((e) => e.gruppe === gruppe);
             if (!rows.length) return null;
             return (

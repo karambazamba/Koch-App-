@@ -7,12 +7,14 @@ import { createLocalStore, readRaw, writeRaw } from "@/lib/core/localStore";
 import { createEntry } from "@/lib/core/entries";
 import { now, nowIso, todayIso } from "@/lib/core/now";
 import { ohneAbgelaufene } from "@/lib/kalender/erledigt";
-import { ohnePrivat, ohneZeitraum, sanitizeEntry, type CalendarEntry, type TerminData } from "@/lib/kalender/model";
+import { aufgabeIch, ohnePrivat, ohneZeitraum, sanitizeEntry, type CalendarEntry, type TerminData } from "@/lib/kalender/model";
 import { OLD_TERMINE_KEY } from "@/lib/core/storage";
 import { isAboEntry } from "@/lib/kalender/abo/model";
+import { mitErledigtVon } from "@/lib/kalender/abgeben/model";
+import { myUserId } from "@/lib/konten/cache";
 
 type EntryStore = {
-  version: 4;
+  version: 5;
   entries: CalendarEntry[];
   /** Alte Termine (`wasgibts.termine`) schon übernommen? */
   migratedTermine: boolean;
@@ -34,13 +36,13 @@ function asTermin(e: CalendarEntry): CalendarEntry {
 function migrate(raw: unknown): EntryStore | null {
   if (!raw || typeof raw !== "object") return null;
   const d = raw as Partial<Omit<EntryStore, "version">> & { version?: number };
-  if (d.version !== 1 && d.version !== 2 && d.version !== 3 && d.version !== 4) return null;
+  if (d.version !== 1 && d.version !== 2 && d.version !== 3 && d.version !== 4 && d.version !== 5) return null;
   const entries = (Array.isArray(d.entries) ? d.entries : []).map(sanitizeEntry).filter((e): e is CalendarEntry => e !== null);
   const today = todayIso();
   return {
-    version: 4,
-    // v4 (A-021): „Privat“ nur auf dem Gerät → Familie (`ohnePrivat`)
-    entries: (d.version === 1 ? entries.map(asTermin) : entries).map((e) => ohneZeitraum(e, today)).map((e) => (d.version === 4 ? e : ohnePrivat(e))),
+    version: 5,
+    // v4/v5 (A-021, A-034): Etikett „Privat“ → Raum Ich (`ohnePrivat`), bestehende Aufgaben → „Ich“ (`aufgabeIch`)
+    entries: (d.version === 1 ? entries.map(asTermin) : entries).map((e) => ohneZeitraum(e, today)).map((e) => (d.version === 5 ? e : aufgabeIch(ohnePrivat(e)))),
     migratedTermine: d.migratedTermine === true,
     seenReminders: Array.isArray(d.seenReminders) ? d.seenReminders.filter((x): x is string => typeof x === "string").slice(-200) : [],
   };
@@ -51,7 +53,7 @@ const EMPTY: CalendarEntry[] = [];
 const EMPTY_SEEN: string[] = [];
 
 function current(): EntryStore {
-  return store.load() ?? { version: 4, entries: [], migratedTermine: false, seenReminders: [] };
+  return store.load() ?? { version: 5, entries: [], migratedTermine: false, seenReminders: [] };
 }
 
 export function loadEntries(): CalendarEntry[] {
@@ -66,7 +68,8 @@ export function replaceEntries(entries: CalendarEntry[]) {
 /** Änderung anwenden; liefert "Rückgängig" */
 export function changeEntries(change: (entries: CalendarEntry[], stamp: string) => CalendarEntry[]): () => void {
   const before = loadEntries();
-  replaceEntries(change(before, nowIso()));
+  // Familien-Aufgaben: wer abgehakt hat („erledigt von Lisa“, A-034)
+  replaceEntries(mitErledigtVon(before, change(before, nowIso()), myUserId()));
   return () => replaceEntries(before);
 }
 

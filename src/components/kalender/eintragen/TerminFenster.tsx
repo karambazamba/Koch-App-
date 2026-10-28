@@ -8,29 +8,24 @@
 // Raum | Glocke (Erinnern vorher) | „Mehr ›“ (Ort, Wiederholen, ganztägig,
 // Personen). Return = speichern, Feld leer und auf für den nächsten.
 
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Sheet } from "@/components/ui/Sheet";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { CARD_LIST, INPUT_INLINE, buttonClass } from "@/components/ui/styles";
-import { createEntry, type Room } from "@/lib/core/entries";
+import { createEntry } from "@/lib/core/entries";
 import { berlinTime, todayIso, useMinutes } from "@/lib/core/now";
 import { PERSONS, sortBy } from "@/lib/core/sort";
 import { useKeyboardInset } from "@/lib/core/useMobileKeyboard";
-import { useHaushalt } from "@/lib/einstellungen/useHaushalt";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { useNotify } from "@/lib/heute/mitteilungen/einstellungen";
 import { askForNotifications } from "@/lib/heute/mitteilungen/geraet";
-import { loadEntries } from "@/lib/kalender/store";
-import { arbeitsWorte } from "@/lib/kalender/parse";
 import { isPast, splitTermine } from "@/lib/kalender/sentence";
 import type { Reminder, Termin } from "@/lib/kalender/model";
 import { serie, WIEDERHOLEN, wiederholenLabel, wiederholenVon, type Wiederholen } from "@/lib/kalender/eintragen/aufgabe";
 import { DAUER_WAHL, STANDARD_DAUER, UHR_WAHL, VORHER_WAHL, dauerLabel, dauerVon, terminBereit, terminDaten, terminLesen, vorherText } from "@/lib/kalender/eintragen/termin";
-import { schalterRaum, startRaum } from "@/lib/kalender/eintragen/raum";
-import { letzterRaum, raumMerken } from "@/lib/kalender/eintragen/raumStore";
 import { tagKurz, tagWahl, uhr } from "@/lib/kalender/eintragen/tage";
 import { REMINDERS, sourceLabel } from "@/lib/kalender/model";
-import { useArbeitRuht } from "@/components/kalender/useArbeitRuht";
+import { useRaumWahl } from "@/components/kalender/eintragen/useRaumWahl";
 import { EintragFeld, EintragZeile, ErinnernZeile, HINWEIS, MehrZeile, Wahl, halten } from "@/components/kalender/eintragen/EintragTeile";
 import { eintragSpeichern } from "@/components/kalender/eintragen/speichern";
 
@@ -40,19 +35,14 @@ const CHIP = "hit inline-flex min-h-10 items-center rounded-full px-3.5 text-[15
 export function TerminFenster({ entry, date, onClose }: { entry?: Termin; date?: string; onClose: () => void }) {
   const today = todayIso();
   const minutes = useMinutes() ?? berlinTime().minutes;
-  const haushalt = useHaushalt();
   const notify = useNotify();
   const profile = useProfile();
   const persons = sortBy((profile?.persons ?? []).filter((p) => p.name.trim()), ...PERSONS);
-  const [all] = useState(() => loadEntries());
-  const worte = useMemo(() => arbeitsWorte(all), [all]);
-  const { ruht, feierabend } = useArbeitRuht(all, today);
   const inset = useKeyboardInset();
   const field = useRef<HTMLInputElement>(null);
   const d = entry?.data;
 
   const [text, setText] = useState(d?.title ?? "");
-  const [hand, setHand] = useState<Room | null>(entry ? entry.raum : null);
   // Von Hand gewählt (undefined = was der Satz sagt bzw. der gespeicherte Wert)
   const [tag, setTag] = useState<string | undefined>(d?.date);
   const [zeit, setZeit] = useState<string | null | undefined>(d ? d.start || null : undefined);
@@ -67,21 +57,20 @@ export function TerminFenster({ entry, date, onClose }: { entry?: Termin; date?:
   const [mehrZeile, setMehrZeile] = useState<"ort" | "wieder" | "personen" | null>(null);
   const [hint, setHint] = useState("");
 
-  const gelesen = entry ? null : terminLesen(text, today, worte);
+  const wahl = useRaumWahl("termin", entry?.raum ?? null, text);
+  const gelesen = entry ? null : terminLesen(text, today, wahl.hilfen);
   const title = entry ? text.trim() : (gelesen?.title ?? "");
   const datum = tag ?? gelesen?.date ?? date ?? today;
   const time = ganztaegig ? null : zeit !== undefined ? zeit : (gelesen?.time ?? null);
   const minuten = dauer !== undefined ? dauer : (gelesen?.dauer ?? null);
   const standard = notify?.defaultReminder ?? "30";
   const erinnern: Reminder = reminder ?? (time ? standard : "aus");
-  const start = startRaum({ letzte: letzterRaum(), feierabend: feierabend || ruht });
-  const raum = schalterRaum({ hand, ausText: gelesen?.raum ?? null, start });
   const bereit = terminBereit({ title, time, ganztaegig });
   const zeigeChips = Boolean(entry || text.trim() || date);
 
   const reset = () => {
     setText("");
-    setHand(null);
+    wahl.zuruecksetzen();
     setTag(undefined);
     setZeit(undefined);
     setDauer(undefined);
@@ -101,17 +90,16 @@ export function TerminFenster({ entry, date, onClose }: { entry?: Termin; date?:
     if (!title) return;
     if (!bereit) return void (setAuf("uhr"), setHint("Wann geht’s los? Uhrzeit antippen."));
     if (!entry && isPast(datum, time, today, minutes)) return void setHint(`${uhr(time!)} ist heute schon vorbei.`);
-    const gespeichert = raum;
+    const gespeichert = wahl.speichern(title);
     const daten = (t: string, dt: string, tm: string | null) => terminDaten({ title: t, date: dt, time: tm, ganztaegig, dauer: minuten, reminder: erinnern, repeat: serie(wieder, d?.repeat), place: ort, who, label: gelesen?.label, vorher: d });
     // Mehrere Termine in einem Satz („Montag Zahnarzt um 9 und Dienstag Friseur um 14 Uhr“): jeder wird ein eigener
-    const teile = entry ? [] : splitTermine(text, today).map((t) => terminLesen(t, today, worte)).filter((t) => t.title && t.date);
+    const teile = entry ? [] : splitTermine(text, today).map((t) => terminLesen(t, today, wahl.hilfen)).filter((t) => t.title && t.date);
     const neue = entry
       ? [{ ...entry, raum: gespeichert, data: daten(title, datum, time) }]
       : teile.length > 1
         ? teile.map((t) => createEntry("termin", daten(t.title, t.date!, t.time), { raum: gespeichert }))
         : [createEntry("termin", daten(title, datum, time), { raum: gespeichert })];
     if (!eintragSpeichern(neue as Termin[], !entry)) return void setHint("Das hat nicht geklappt. Schau bitte nochmal auf Tag und Uhrzeit.");
-    if (!entry) raumMerken(raum);
     // Termin mit Uhrzeit: der passende Moment für Mias Frage nach Erinnerungen
     if (!entry && time && erinnern !== "aus") askForNotifications("erster-termin");
     if (schliessen || entry) onClose();
@@ -145,9 +133,10 @@ export function TerminFenster({ entry, date, onClose }: { entry?: Termin; date?:
       >
         <EintragFeld ref={field} value={text} onChange={(v) => (setText(v), setHint(""))} placeholder="Zahnarzt Freitag 13 Uhr" label={entry ? "Termin" : "Neuer Termin"} bereit={bereit} />
         <EintragZeile
-          raum={raum}
-          haushalt={haushalt}
-          onRaum={setHand}
+          raum={wahl.raum}
+          haushalt={wahl.haushalt}
+          onRaum={wahl.waehlen}
+          hinweis={wahl.hinweis}
           glockeAn={erinnern !== "aus"}
           glockeAuf={auf === "glocke"}
           onGlocke={() => setAuf(auf === "glocke" ? null : "glocke")}

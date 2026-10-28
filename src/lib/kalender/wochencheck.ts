@@ -2,19 +2,19 @@
 // Woche … Dienstag haben wir Elternabend, halb acht glaub ich …“) in einzelne
 // Punkte zerlegen – Füllwörter weg, Korrekturen übernehmen („Dienstag … nee,
 // Mittwoch“), Nachträge als eigene Punkte, Tag/Uhrzeit über `readSentence`,
-// Raum (Familie/Geschäftlich aus dem Inhalt), Personen aus dem Haushalt, Standarddauer.
+// Raum (Familie · Ich · Arbeit aus dem Inhalt, `raum/raten.ts`), Personen aus dem Haushalt, Standarddauer.
 // Unklares wird nie geraten: ohne Uhrzeit ein ganztägiger Termin mit Frage.
 // Ohne KI ist das die ganze Erkennung; mit KI liefert das Werkzeug
 // `woche_eintragen` dieselben Punkte (Mock nutzt diesen Parser).
 
 import { readSentence } from "@/lib/kalender/sentence";
-import { guessRoom } from "@/lib/kalender/parse";
+import { guessRoom } from "@/lib/kalender/raum/raten";
 import type { Room } from "@/lib/core/entries";
 import { itemsForDay, type CalendarEntry } from "@/lib/kalender/model";
 import { addDays } from "@/lib/core/now";
 import { guessSport } from "@/lib/sport/model";
 
-/** Familie · Geschäftlich (intern „arbeit“); „privat“ von früher ist Familie (A-021) */
+/** Familie · Ich · Arbeit (A-034) */
 export type WeekRoom = Room;
 export type WeekItem = {
   id: string;
@@ -107,7 +107,7 @@ export function parseWeekTalk(text: string, today: string, persons: Person[] = [
     let title = cleanTitle(s.title, who);
     if (!title) continue;
     if (who.length === 1 && art !== "aufgabe") title = `${who[0].name}: ${title}`;
-    const raum: WeekRoom = guessRoom(raw);
+    const raum: WeekRoom = guessRoom(raw, task ? "aufgabe" : "termin");
     const due = task && /bis\s/i.test(raw) ? s.date : undefined;
     const item: WeekItem = {
       id: `w${i}`,
@@ -162,7 +162,7 @@ const plus = (start: string, minutes: number) => {
   return `${pad2(Math.floor(m / 60))}:${pad2(m % 60)}`;
 };
 
-/** Punkte → Einträge (Raum Familie oder Geschäftlich; Sport = Etikett „Sport“) */
+/** Punkte → Einträge (Raum Familie, Ich oder Arbeit; Sport = Etikett „Sport“) */
 export function weekEntries(items: WeekItem[], today: string, make: (typ: "termin" | "aufgabe", data: Record<string, unknown>, raum: Room) => CalendarEntry | null): CalendarEntry[] {
   return items.flatMap((i) => {
     if (i.already) return [];
@@ -180,8 +180,8 @@ export function weekEntries(items: WeekItem[], today: string, make: (typ: "termi
 /** Einträge aus der KI (Werkzeug woche_eintragen) → Punkte für „Deine Woche“ */
 export function itemFromEntry(e: CalendarEntry, id: string, hint?: string): WeekItem {
   const label = e.data.label;
-  // Früher: „Privat“ = Arbeit mit Etikett – jetzt Familie (A-021)
-  const raum: WeekRoom = label === "Privat" ? "familie" : e.raum;
+  // Früher: „Privat“ = Arbeit mit Etikett – gemeint war „nur für mich“ (Raum Ich)
+  const raum: WeekRoom = label === "Privat" ? "ich" : e.raum;
   if (e.typ === "aufgabe") return { id, art: "aufgabe", raum, title: e.data.title, ...(e.data.due ? { due: e.data.due } : e.data.date ? { date: e.data.date } : {}), who: [] };
   const d = e.data;
   const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));

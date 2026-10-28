@@ -2,6 +2,7 @@
 
 import type { ParsedLeftover } from "@/lib/essen/leftovers/parser";
 import type { ChangeOp } from "@/lib/begleitung/ops";
+import type { Room } from "@/lib/core/entries";
 import type { ChatTurn } from "@/lib/begleitung/protocol";
 import type { MarketAnswer } from "@/lib/essen/market";
 import type { Recipe } from "@/lib/essen/cookbook";
@@ -39,6 +40,8 @@ export type ChatTurnView = ChatTurn & {
   deleted?: boolean;
   /** Mia hat es sofort erledigt: „Rückgängig“ steht 10 Sekunden da */
   quick?: boolean;
+  /** Eben eingetragener Termin bzw. eingetragene Aufgabe: Raum-Chip „Familie ⌄“ zum Ändern (A-034) */
+  raum?: { id: string; title: string; raum: Room; typ: "termin" | "aufgabe" };
   /** Mehreres auf einmal erledigt: kompakte Übersicht statt Aufzählung (mit „Alles rückgängig“) */
   overview?: DoneGroup[];
   /** Im Supermarkt: Ideen zum Produkt, darunter Liste und "Statt <Tag>" */

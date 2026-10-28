@@ -19,7 +19,7 @@ export type SofortSatz = {
   /** So viele Änderungen (Aufzählung) */
   anzahl?: number;
   laden?: string;
-  /** Raum des Termins bzw. der Aufgabe (Familie oder arbeit = Geschäftlich, A-021) */
+  /** Raum des Termins bzw. der Aufgabe (Familie · Ich · Arbeit, A-034) */
   raum?: Room;
 };
 
@@ -59,7 +59,7 @@ export const SOFORT_SAETZE: SofortSatz[] = [
   S("Lieferant Tohuus Freitag 9 Uhr", "termin", { datum: "2026-10-23", zeit: "09:00", raum: "arbeit" }),
   S("Personalgespräch Montag 14 Uhr", "termin", { datum: "2026-10-26", zeit: "14:00", raum: "arbeit" }),
   S("Elternabend Kita Dienstag 19 Uhr", "termin", { datum: "2026-10-27", zeit: "19:00", raum: "familie" }),
-  S("Kinder Tohuus Freitag 15 Uhr", null), // Familie und Geschäftlich zugleich → KI fragt
+  S("Kinder Tohuus Freitag 15 Uhr", null), // Familie und Arbeit zugleich → KI fragt
   // Termin, aber unklar → KI
   S("Zahnarzt Donnerstag 16 Uhr", null), // steht schon drin
   S("9 Uhr Bäcker", null), // heute schon vorbei

@@ -11,7 +11,7 @@
 import type { Room } from "@/lib/core/entries";
 import { addDays } from "@/lib/core/now";
 import type { AufgabeData, Repeat } from "@/lib/kalender/model";
-import { ohneRaumWorte, raumAusText } from "@/lib/kalender/parse";
+import { ohneRaumWorte, raumRaten, type RaumGrund, type RaumHilfen } from "@/lib/kalender/raum/raten";
 import { readQuickText } from "@/lib/kalender/quick";
 import { minutenVon, tagWort, uhr, uhrVon } from "@/lib/kalender/eintragen/tage";
 
@@ -22,8 +22,9 @@ export type AufgabeGelesen = {
   title: string;
   /** Genannter Tag (sonst null = heute) */
   ab: string | null;
-  /** Raum, wenn der Satz ihn sagt */
-  raum: Room | null;
+  /** Mias Vorschlag (A-034): aus dem Satz, gelernt oder Standard (Aufgaben „Ich“) */
+  raum: Room;
+  raumGrund: RaumGrund;
   /** Genannte Uhrzeit → Erinnerung (korrigierbar) */
   erinnern: Erinnern | null;
   dringend: boolean;
@@ -32,7 +33,7 @@ export type AufgabeGelesen = {
 };
 
 /** Den Satz lesen (ohne KI) */
-export function aufgabeLesen(text: string, today: string, arbeitWorte: readonly string[] = []): AufgabeGelesen {
+export function aufgabeLesen(text: string, today: string, hilfen: RaumHilfen = {}): AufgabeGelesen {
   const r = readQuickText(text, today);
   const when = r.when;
   const ab = when === "morgen" ? addDays(today, 1) : when && when !== "heute" && when.date && when.date !== today ? when.date : null;
@@ -40,7 +41,7 @@ export function aufgabeLesen(text: string, today: string, arbeitWorte: readonly 
   return {
     title: ohneRaumWorte(r.title),
     ab,
-    raum: raumAusText(text, arbeitWorte),
+    ...vorschlag(raumRaten(text, "aufgabe", hilfen)),
     erinnern: r.time ? { date: ab ?? today, time: r.time } : null,
     dringend: r.urgent,
     ...(r.label ? { label: r.label } : {}),
@@ -112,3 +113,5 @@ export function aufgabeDaten(o: { title: string; ab: string | null; erinnern: Er
 
 /** Beim Bearbeiten: die Erinnerung, wie sie gespeichert ist */
 export const erinnernVon = (d: Pick<AufgabeData, "date" | "time" | "reminder">, today: string): Erinnern | null => (d.time && d.reminder !== "aus" ? { date: d.date ?? today, time: d.time } : null);
+
+const vorschlag = (r: { raum: Room; grund: RaumGrund }) => ({ raum: r.raum, raumGrund: r.grund });

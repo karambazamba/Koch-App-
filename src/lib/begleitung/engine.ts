@@ -17,6 +17,7 @@ import { sanitizeNote, type Note } from "@/lib/notizen/model";
 import type Anthropic from "@anthropic-ai/sdk";
 import { migrateProfile } from "@/lib/einstellungen/profileStore";
 import { nextWeekStartFor, weekStartFor } from "@/lib/essen/weekPlan";
+import { roomOf, type Room } from "@/lib/core/entries";
 import { applyOps, compactOps, type AssistantData, type ChangeOp } from "@/lib/begleitung/ops";
 import { contextText, identityPrompt, SYSTEM_PROMPT } from "@/lib/begleitung/prompt";
 import { LIMITS, type AssistantReply, type AssistantRequest, type ChatTurn } from "@/lib/begleitung/protocol";
@@ -124,6 +125,10 @@ export function parseRequest(body: unknown): AssistantRequest {
     tagesablauf: b.data?.tagesablauf && typeof b.data.tagesablauf === "object" ? { jetzt: b.data.tagesablauf.jetzt !== false, feierabendAb: String(b.data.tagesablauf.feierabendAb ?? "20:00").slice(0, 5), morgenBis: String(b.data.tagesablauf.morgenBis ?? "10:00").slice(0, 5) } : undefined,
     me: typeof b.data?.me === "string" ? b.data.me.slice(0, 60) : null,
     laeden: sanitizeLaeden(b.data?.laeden),
+    raumWorte: (Array.isArray(b.data?.raumWorte) ? b.data.raumWorte : [])
+      .filter((w): w is { wort: string; raum: Room } => Boolean(w) && typeof w === "object" && typeof w.wort === "string" && w.wort.trim().length >= 2)
+      .slice(0, 60)
+      .map((w) => ({ wort: w.wort.trim().toLowerCase().slice(0, 40), raum: roomOf(w.raum) })),
   };
   const pending = (Array.isArray(b.pending) ? b.pending : []).filter(
     (op): op is ChangeOp => Boolean(op) && typeof op === "object" && typeof op.id === "string" && OP_TYPES.has(op.type),

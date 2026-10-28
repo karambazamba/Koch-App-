@@ -3,8 +3,8 @@
 // Eigene Termine und Aufgaben plus die Termine der Kalender-Links (nur lesen)
 // – für alles, was anzeigt oder beantwortet (Heute, Kalender, Wetter-Tipp,
 // Jetzt-Karte, Begleitung). Ändern geht nur über die eigenen (`store.ts`).
-// Aufgaben sind persönlich (Tafel 52 B): nur meine und die mir gegebenen;
-// abgegebene stehen leise unter „Abgegeben“ (Aufgaben-Seite).
+// Aufgaben: meine, die mir gegebenen und die Familien-Aufgaben der anderen
+// (A-034); abgegebene stehen leise unter „Abgegeben“ (Aufgaben-Seite).
 
 import { useMemo } from "react";
 import { loadEntries, useEntries } from "@/lib/kalender/store";

@@ -243,7 +243,7 @@ describe("previewRows", () => {
         "Termine & Aufgaben|verschieben|Steuer · Mi 21.10.|Sa 24.10. · 10:00",
       ]),
     );
-    expect(lines).toContain("Termine|Fr 23.10. · 19:00–20:30|-|Chor · jeden Freitag · Erinnerung 30 Min vorher · Geschäftlich");
+    expect(lines).toContain("Termine|Fr 23.10. · 19:00–20:30|-|Chor · jeden Freitag · Erinnerung 30 Min vorher · Arbeit");
     expect(lines).toEqual(expect.arrayContaining(["Notizen|💡 Idee|-|neu: Kürbis", "Notizen|📝 Leer|-|neu", "Notizen|🔑 WLAN|-|geändert"]));
     // Timer stehen nie in der Vorschau
     expect(rows.some((r) => r.opId === ctx.ops.find((o) => o.type === "add_timer")?.id)).toBe(false);

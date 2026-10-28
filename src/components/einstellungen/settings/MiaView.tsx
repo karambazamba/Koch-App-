@@ -65,7 +65,7 @@ export function MiaView() {
             <h2 className={`mt-2 px-1 ${SECTION_TITLE}`}>Wie gesprächig?</h2>
             <ChoiceCards label="Wie gesprächig?" value={denkt?.level ?? "normal"} onChange={setGespraechig} options={GESPRAECHIG.map((g) => ({ value: g.value, label: g.label, hint: g.detail }))} />
             <Group title="">
-              <Row href="/profil/mia-merkt" icon={Brain} title="Was ich mir merke">
+              <Row href="/profil/mia-merkt" icon={Brain} title="Was ich mir gemerkt hab">
                 Gewohnheiten und Läden, einzeln löschbar
               </Row>
             </Group>

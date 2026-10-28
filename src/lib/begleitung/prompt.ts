@@ -15,11 +15,11 @@ import { BAUSTEINE, LAUNCH_AUS } from "@/lib/core/features";
 import { addDays, berlinInstant } from "@/lib/core/now";
 import { APP_NAME } from "@/lib/core/app";
 import { LOCKER, steckbrief, TON_LAENGE } from "@/lib/mia/persona";
-import { haushaltOf, RAUM_WAHL, raumLabel, type Haushalt } from "@/lib/core/haushalt";
+import { haushaltOf, raumLabel, raumWahl, type Haushalt } from "@/lib/core/haushalt";
 import type { Thema, Themen } from "@/lib/begleitung/kontextThemen";
 
-/** „Familie | Geschäftlich“ (zu zweit „Wir | Geschäftlich“) */
-const raeumeText = (h: Haushalt) => RAUM_WAHL.map((r) => raumLabel(r, h)).join(" | ");
+/** „Familie | Ich | Arbeit“ (zu zweit „Wir | Ich | Arbeit“, allein „Privat | Arbeit“) */
+const raeumeText = (h: Haushalt) => raumWahl(h).map((r) => raumLabel(r, h)).join(" | ");
 
 /** "Familie Müller" (ohne doppeltes "Familie"), ohne Namen "der Familie"; ohne Kinder "des Haushalts" */
 function familyLabel(profile: HouseholdProfile): string {
@@ -83,7 +83,7 @@ export const SYSTEM_PROMPT = `${TON_PROMPT}
 Beispiele (Nutzer → gut ✓ / schlecht ✗):
 ${TON_BEISPIELE.map((b) => `  „${b.sagt}“ ✓ „${b.gut}“ ✗ „${b.schlecht}“`).join("\n")}
 
-Räume (nur zwei, für Termine und Aufgaben gleich): "familie" = alle im Haushalt sehen es (Kinder, Kita, Schule, Arzt; auch "privat"), "arbeit" = Geschäftlich, sieht nur die Person selbst, nach Feierabend weg (Tohuus, KARAMBA Eis, Lieferant, Personal, Großhandel, Büro, Kunde, Meeting; dazu "Arbeits-Stichworte"). Raum aus dem Inhalt erkennen, nur bei echter Unklarheit fragen. Ohne Angabe gehört etwas zur Familie. Geschäftliches anderer gibt es für dich nicht. Etikett nur, wenn naheliegend (Kita, Schule, Arzt, Sport, Steuern, Geburtstag).
+Räume (drei, für Termine und Aufgaben gleich): "familie" = alle im Haushalt sehen es (Schule, Kinder, Kita, Oma, Geburtstag, "für alle"), "ich" = nur die Person selbst (Arzt, Friseur, Physio, "nur für mich", "privat"), "arbeit" = nur die Person selbst, nach Feierabend weg (Meeting, Kunde, Lieferant, Büro, Tohuus, KARAMBA Eis, Personal; dazu "Arbeits-Stichworte"). "Gelernte Räume" im Kontext gehen vor. Ohne Hinweis: Termine "familie", Aufgaben "ich". Raum aus dem Inhalt raten, nicht fragen; nur bei echter Unklarheit (Arbeit und Familie zugleich) kurz fragen. Raum ändern ("Mach das nur für mich", "Zahnarzt ist Arbeit") über termin_aendern/aufgabe_aendern mit raum. Ich- und Arbeitssachen anderer gibt es für dich nicht. Etikett nur, wenn naheliegend (Kita, Schule, Arzt, Sport, Steuern, Geburtstag).
 
 So arbeitest du:
 - Du legst Dinge auf Zuruf an und räumst sie wieder weg. Kleine, sichere Dinge (Einkauf, neuer Termin, Aufgabe, Notiz, Pinnwand, Im Haus, Timer) erledigt die App sofort mit „Rückgängig“, bestätige nur kurz. Große Dinge (Wochenplan, Rezept, Mail, Ändern, Löschen) sind ein Vorschlag mit "Übernehmen", sag in einem halben Satz, was bereitliegt.
@@ -242,7 +242,7 @@ export function contextText(
     `Heute: ${WEEKDAY_FORMAT.format(today)} (${todayIso})${extra.clock ? `, jetzt ${extra.clock} Uhr` : ""} (Zeitzone Europe/Berlin)`,
     `Datumsliste: ${Array.from({ length: 14 }, (_, i) => addDays(todayIso, i)).map((iso) => `${SHORT_DAY.format(new Date(`${iso}T00:00:00Z`))} ${iso}`).join(", ")}`,
     "",
-    hat("kalender") && calendarContext(data.entries ?? [], todayIso, extra.abends, extra.feierabend, extra.clock ? berlinInstant(todayIso, extra.clock) : undefined),
+    hat("kalender") && calendarContext(data.entries ?? [], todayIso, extra.abends, extra.feierabend, extra.clock ? berlinInstant(todayIso, extra.clock) : undefined, data.raumWorte ?? []),
     hat("notizen") && notesContext(data.notes ?? []),
     hat("einkauf") && `Läden: ${data.laeden?.meine.length ? data.laeden.meine.join(", ") : "keine gewählt"}; feste Regeln: ${data.laeden && Object.keys(data.laeden.regeln).length ? Object.entries(data.laeden.regeln).map(([item, shop]) => `${item} → ${shop}`).join(", ") : "keine"} (ändern mit laden_regel)`,
     hat("pinnwand") && `Pinnwand: ${data.pinnwand?.length ? data.pinnwand.map((p) => `${p.author}: ${JSON.stringify(p.text)}`).join(" · ") : "leer"}`,

@@ -204,7 +204,7 @@ export function MailsAnMiaView() {
         ) : (
           <>
             {adult && <AddressCard room="familie" title="Für die Familie" />}
-            <AddressCard room="arbeit" title="Nur für dich (Geschäftlich)" />
+            <AddressCard room="arbeit" title="Nur für dich (Arbeit)" />
             <Anleitung guess={postfachVon(account.user?.email ?? "")} />
             <Absender forward={forward} name={name} />
             <p className={NOTE}>Ich sehe nur, was ihr weiterleitet – nie euer Postfach. Die Mail selbst speichere ich nicht, nur den Vorschlag. Nach 7 Tagen ist er weg.</p>

@@ -2,7 +2,7 @@
 // wer bekommt jetzt welche Mitteilung. Läuft jede Minute (pg_cron →
 // /api/push/senden); Netz, Datenbank und Web Push kommen von außen.
 // Regeln:
-// - Erinnerungen: Familien-Termine erinnern jede:n im Haushalt, „Geschäftlich“ (arbeit) nur
+// - Erinnerungen: Familien-Termine erinnern jede:n im Haushalt, „Ich“ und „Arbeit“ nur
 //   den Besitzer, Aufgaben nur, wer sie gerade hat (Besitzer bzw. „fuer“).
 // - Selbst gestellte Erinnerungen zählen nicht als proaktiv und dürfen auch
 //   in der Ruhezeit (außer Pause und „Ruhe nach Feierabend“ für Arbeit).

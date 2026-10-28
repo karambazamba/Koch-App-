@@ -8,21 +8,17 @@ import { nowIso } from "@/lib/core/now";
 export type EntryType = "termin" | "aufgabe" | "notiz" | "gericht" | "einkauf" | "pinnwand" | "memo" | "training";
 
 /**
- * Zwei Räume (A-021): Familie = alle im Haushalt (geteilt), Arbeit = nur der
- * Besitzer (sichtbar „Geschäftlich“, nach Feierabend ausgeblendet). Einen Raum
- * für „privat“ oder „nur ich“ gibt es nicht.
+ * Drei Räume (A-034), für Termine und Aufgaben gleich: Familie = alle im
+ * Haushalt sehen es, Ich = nur der Besitzer (grau, kleines Schloss), Arbeit =
+ * nur der Besitzer (blau, nach Feierabend ausgeblendet).
  */
-export type Room = "familie" | "arbeit";
+export type Room = "familie" | "ich" | "arbeit";
 
-/**
- * Unbekanntes → Raum (ohne Angabe Familie). „ich“ (nur aus nie
- * ausgelieferten Testständen von A-020, hieß „nur ich“) wird Arbeit, damit es
- * nie ungefragt für den Haushalt sichtbar wird; umstellen geht per Antippen.
- */
-export const roomOf = (v: unknown): Room => (v === "arbeit" || v === "ich" ? "arbeit" : "familie");
+/** Unbekanntes → Raum (ohne Angabe Familie; „ich“ und „arbeit“ gehen nie verloren) */
+export const roomOf = (v: unknown): Room => (v === "arbeit" || v === "ich" ? v : "familie");
 
-/** Sieht nur der Besitzer (Arbeit; altes „ich“ zählt mit) */
-export const nurBesitzer = (r: unknown): boolean => roomOf(r) === "arbeit";
+/** Sieht nur der Besitzer (Ich und Arbeit) */
+export const nurBesitzer = (r: unknown): boolean => r === "ich" || r === "arbeit";
 
 /** Ohne Konto gehört alles diesem Gerät */
 export const LOCAL_OWNER = "lokal";

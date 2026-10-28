@@ -7,13 +7,14 @@
 // bisher. Der Prüfstand `pruefstand/sofort.ts` verlangt ≥ 98 % richtig.
 // Erkannt: Einkauf (nur Katalog), Termin mit Uhrzeit, Aufgabe (Ding +
 // Tätigkeit, „Erinner mich …“), Notiz, Pinnwand, Timer. Termine und Aufgaben
-// bekommen den Raum aus dem Inhalt wie bei Mia (Tohuus → Geschäftlich, Kita →
-// Familie, gelernte Arbeits-Stichworte); ist er unklar, macht es die KI (A-021).
+// bekommen den Raum wie überall (`raum/raten.ts`: gesagt › gelernt › Inhalt ›
+// Standard Termine Familie, Aufgaben Ich); ist er unklar, macht es die KI.
 
 import { createEntry } from "@/lib/core/entries";
 import type { ChangeOp } from "@/lib/begleitung/ops";
 import type { CalendarEntry } from "@/lib/kalender/model";
-import { arbeitsWorte, guessRoom, parseCalendar, raumUnklar } from "@/lib/kalender/parse";
+import { parseCalendar } from "@/lib/kalender/parse";
+import { arbeitsWorte, guessRoom, raumUnklar, type RaumHilfen, type RaumWort } from "@/lib/kalender/raum/raten";
 import { quickTaskData, readQuickText } from "@/lib/kalender/quick";
 import { readSentence, splitTermine } from "@/lib/kalender/sentence";
 import { createNote } from "@/lib/notizen/model";
@@ -35,7 +36,11 @@ export type SofortKontext = {
   /** Was schon auf der Einkaufsliste steht (dann nicht sofort: „steht schon drauf“ sagt die KI) */
   aufDerListe: string[];
   entries: CalendarEntry[];
+  /** Gelernte Räume (A-034) */
+  gelernt?: readonly RaumWort[];
 };
+
+const hilfen = (ctx: SofortKontext): RaumHilfen => ({ gelernt: ctx.gelernt ?? [], arbeitWorte: arbeitsWorte(ctx.entries) });
 
 export type Sofort = { art: SofortArt; ops: ChangeOp[]; reply: string; /** Für die Prüfung der KI: was die App gemacht hat */ was: string };
 
@@ -115,7 +120,7 @@ function termin(t: string, ctx: SofortKontext): ChangeOp[] | null {
   // Mehrere Dinge („Brot alle und Mathis hat Freitag 15 Uhr Fußball“) oder Spannen: die KI
   if (!UHRZEIT.test(t) || re("erinner\\w*|bis|vom|ab|und|alle|leer|sowie|plus").test(t) || splitTermine(t, ctx.today).length > 1) return null;
   const cmd = parseCalendar(t, ctx.today, ctx.persons);
-  if (cmd?.kind !== "create" || cmd.draft.typ !== "termin" || raumUnklar(t)) return null;
+  if (cmd?.kind !== "create" || cmd.draft.typ !== "termin" || raumUnklar(t, hilfen(ctx))) return null;
   const d = cmd.draft.data;
   const satz = readSentence(t, ctx.today);
   // Ohne Tag = heute, aber nicht, wenn die Uhrzeit schon vorbei ist (morgen gemeint?)
@@ -123,7 +128,7 @@ function termin(t: string, ctx: SofortKontext): ChangeOp[] | null {
   // Tageszeit-Wörter gehören nicht in den Titel („heute abend 20 uhr kino“ → „Kino“)
   const title = cap(clean(d.title.replace(re("abends?|morgens|früh|vormittags?|nachmittags?|mittags?", "gi"), " ").replace(/^(?:zum|zur|zu|beim|bei|den|die|das)\s+/i, "")));
   if (title.length < 2 || title.split(" ").length > 5 || schonDa(ctx, d.date, title)) return null;
-  return [{ id: "sofort-1", type: "upsert_entry", isNew: true, entry: createEntry("termin", { ...d, title }, { raum: guessRoom(t, arbeitsWorte(ctx.entries)) }) as CalendarEntry }];
+  return [{ id: "sofort-1", type: "upsert_entry", isNew: true, entry: createEntry("termin", { ...d, title }, { raum: guessRoom(t, "termin", hilfen(ctx)) }) as CalendarEntry }];
 }
 
 /** Tätigkeiten am Ende („Tim antworten“, „Rechnung bezahlen“, „Kita-Formular abgeben“) */
@@ -150,12 +155,12 @@ function aufgabe(t: string, ctx: SofortKontext): ChangeOp[] | null {
         .replace(/^(den|die|das)\s+/i, ""),
     ),
   );
-  if (title.length < 2 || title.split(" ").length > 6 || raumUnklar(t)) return null;
+  if (title.length < 2 || title.split(" ").length > 6 || raumUnklar(t, hilfen(ctx))) return null;
   const time = read.time;
   // Uhrzeit nur beim „Erinner mich …“ (sonst ist es ein Termin)
   if (time && !erinnern) return null;
   const data = quickTaskData(title, read.when ?? "heute", ctx.today, { ...(time ? { time, reminder: "15" as const } : {}), ...(read.label ? { label: read.label } : {}), ...(read.urgent ? { dringend: true } : {}) });
-  return [{ id: "sofort-1", type: "upsert_entry", isNew: true, entry: createEntry("aufgabe", data, { raum: guessRoom(t, arbeitsWorte(ctx.entries)) }) as CalendarEntry }];
+  return [{ id: "sofort-1", type: "upsert_entry", isNew: true, entry: createEntry("aufgabe", data, { raum: guessRoom(t, "aufgabe", hilfen(ctx)) }) as CalendarEntry }];
 }
 
 /** Was hat die App gemacht? (für die Prüfung durch die KI, kurz) */

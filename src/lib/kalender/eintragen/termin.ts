@@ -6,7 +6,7 @@
 
 import type { Room } from "@/lib/core/entries";
 import { REMINDERS, type Reminder, type Repeat, type TerminData } from "@/lib/kalender/model";
-import { ohneRaumWorte, raumAusText } from "@/lib/kalender/parse";
+import { ohneRaumWorte, raumRaten, type RaumGrund, type RaumHilfen } from "@/lib/kalender/raum/raten";
 import { readTerminText } from "@/lib/kalender/quick";
 import { readSentence } from "@/lib/kalender/sentence";
 import { minutenVon, uhrVon } from "@/lib/kalender/eintragen/tage";
@@ -18,7 +18,9 @@ export type TerminGelesen = {
   time: string | null;
   /** Genannte Dauer in Minuten (sonst null) */
   dauer: number | null;
-  raum: Room | null;
+  /** Mias Vorschlag (A-034): aus dem Satz, gelernt oder Standard (Termine „Familie“) */
+  raum: Room;
+  raumGrund: RaumGrund;
   repeat: Repeat | null;
   label?: string;
 };
@@ -38,7 +40,7 @@ export function dauerAusText(text: string): { min: number; match: string } | nul
 }
 
 /** Den Satz lesen (ohne KI) – Dauer zuerst heraus, damit „1 Std“ keine Uhrzeit wird */
-export function terminLesen(text: string, today: string, arbeitWorte: readonly string[] = []): TerminGelesen {
+export function terminLesen(text: string, today: string, hilfen: RaumHilfen = {}): TerminGelesen {
   const dauer = dauerAusText(text);
   const rest = dauer ? text.replace(dauer.match, " ").replace(/\s+/g, " ").trim() : text;
   const sentence = readSentence(rest, today);
@@ -48,7 +50,7 @@ export function terminLesen(text: string, today: string, arbeitWorte: readonly s
     date: sentence.date ?? null,
     time: sentence.time ?? null,
     dauer: dauer?.min ?? null,
-    raum: raumAusText(text, arbeitWorte),
+    ...vorschlag(raumRaten(text, "termin", hilfen)),
     repeat: extra.repeat ?? null,
     ...(extra.label ? { label: extra.label } : {}),
   };
@@ -98,3 +100,5 @@ export function terminDaten(o: { title: string; date: string; time: string | nul
   for (const k of ["end", "place", "who"] as const) if (data[k] === undefined) delete data[k];
   return data;
 }
+
+const vorschlag = (r: { raum: Room; grund: RaumGrund }) => ({ raum: r.raum, raumGrund: r.grund });

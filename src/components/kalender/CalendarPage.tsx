@@ -30,6 +30,7 @@ import { isAboEntry } from "@/lib/kalender/abo/model";
 import { MitbringenKarte } from "@/components/kalender/mitbringen/KalenderMitbringen";
 import { useHaushalt } from "@/lib/einstellungen/useHaushalt";
 import { filterLabel, raumChips } from "@/lib/kalender/aufgaben";
+import { sichtRaum } from "@/lib/core/haushalt";
 
 
 type View = "monat" | "woche" | "liste";
@@ -48,10 +49,10 @@ const monthStart = (iso: string, offset: number) => {
 
 const TONES = ["bg-accent", "bg-work", "bg-person-3", "bg-person-4"];
 
-/** Punkt unter einem Tag: Person, Familie (Orange), Geschäftlich (Blau), ich = „Meine Farbe im Kalender“ */
+/** Punkt unter einem Tag: Person, Familie (Orange), Raum Ich (Grau), Arbeit (Blau), ich = „Meine Farbe im Kalender“ */
 function DotMark({ dot, myHex }: { dot: Dot; myHex: string }) {
   if (dot.kind === "ich") return <span className="h-[5px] w-[5px] rounded-full" style={{ backgroundColor: myHex }} />;
-  const cls = dot.kind === "person" ? TONES[dot.tone] : dot.kind === "arbeit" ? "bg-work" : "bg-accent";
+  const cls = dot.kind === "person" ? TONES[dot.tone] : dot.kind === "arbeit" ? "bg-work" : dot.kind === "nurIch" ? "bg-ich" : "bg-accent";
   return <span className={`h-[5px] w-[5px] rounded-full ${cls}`} />;
 }
 
@@ -69,10 +70,10 @@ export function CalendarPage({ today, entries }: { today: string; entries: Calen
   const [filter, setFilter] = useState<RoomFilter>("alles");
   const [selected, setSelected] = useState(today);
   const day = selected;
-  // Filter „Alle · Familie · Geschäftlich“ nur, wenn es geschäftliche Termine gibt (A-021, wie bei Aufgaben)
-  const chips = raumChips(entries.filter((e) => e.typ === "termin").map((e) => e.raum));
+  // Filter „Alle · Familie · Ich · Arbeit“ nur, wenn es Ich- oder Arbeit-Termine gibt (A-034, wie bei Aufgaben)
+  const chips = raumChips(entries.filter((e) => e.typ === "termin").map((e) => e.raum), haushalt);
   const wirksam: RoomFilter = filter !== "alles" && chips.includes(filter) ? filter : "alles";
-  const pick = (list: DayItem[]) => list.filter((i) => wirksam === "alles" || i.room === wirksam);
+  const pick = (list: DayItem[]) => list.filter((i) => wirksam === "alles" || sichtRaum(i.room, haushalt) === wirksam);
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">

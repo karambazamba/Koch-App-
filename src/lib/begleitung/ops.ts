@@ -28,6 +28,7 @@ import { applyHomeChange, DEFAULT_HOME, type HomeChange, type HomeTile } from "@
 import { buildShoppingList } from "@/lib/einkauf/shoppingList";
 import { aufnehmen, zielFuer } from "@/lib/einkauf/zusammen/zusammen";
 import { moveItem, removeItem, setDone, upsertEntry, type CalendarEntry } from "@/lib/kalender/model";
+import type { Room } from "@/lib/core/entries";
 import { createTraining, sanitizeSport, type SportState, type TrainingData } from "@/lib/sport/model";
 
 /** Alle Daten, auf die sich Änderungen beziehen */
@@ -69,6 +70,8 @@ export type AssistantData = {
   laeden?: { regeln: Record<string, string>; meine: string[] };
   /** Personen-ID von mir (für Sport-Termine) */
   me?: string | null;
+  /** Gelernte Räume (A-034, nur zum Lesen): Stichwort → Raum, neueste zuerst */
+  raumWorte?: { wort: string; raum: Room }[];
 };
 
 /** Ein Tag einer Planungswoche – es gibt genau ein Hauptgericht pro Tag */

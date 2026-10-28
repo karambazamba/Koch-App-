@@ -33,7 +33,7 @@ export function TakeoverCard() {
       <p className="text-[15px]" data-testid="uebernahme-vorschau">
         {status.summary}
       </p>
-      <p className="text-sm text-muted">„Geschäftlich“ bleibt nur für dich sichtbar. Auf dem Handy bleibt alles, wie es ist.</p>
+      <p className="text-sm text-muted">„Ich“ und „Arbeit“ bleiben nur für dich sichtbar. Auf dem Handy bleibt alles, wie es ist.</p>
       {error && <p className={NOTE}>{error}</p>}
       <button type="button" onClick={() => void take()} disabled={busy} className={`${buttonClass("primary")} w-full disabled:opacity-50`}>
         {busy ? "Einen Moment …" : "Mitnehmen"}

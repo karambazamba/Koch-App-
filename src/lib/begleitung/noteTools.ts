@@ -208,17 +208,17 @@ const TOOLS: BegleitungTool[] = [
     definition: {
       name: "aufgaben_anzeigen",
       description: "Aufgaben lesen ('Was muss ich heute noch erledigen?', 'Was ist noch bei der Arbeit?' → raum arbeit). Alles ist heute: EINE Liste, dazu Geplantes ab einem genannten Tag. Erste Zeile ist die fertige kurze Antwort (Zahl und die ersten drei) – so übernehmen. Nach Feierabend ohne Arbeit, außer raum arbeit. Nie 'offen', 'überfällig' oder 'noch zu erledigen'. 'Zeig mir meine Aufgaben' öffnet stattdessen die Seite (app_befehl).",
-      input_schema: { type: "object", properties: { raum: { type: "string", enum: ["familie", "arbeit"], description: "Nur ein Raum: familie oder arbeit (= Geschäftlich)" } }, additionalProperties: false },
+      input_schema: { type: "object", properties: { raum: { type: "string", enum: ["familie", "ich", "arbeit"], description: "Nur ein Raum: familie, ich ('Was steht nur für mich an?') oder arbeit" } }, additionalProperties: false },
     },
     run: (ctx, raw) => {
       const raum = str((raw as Input | null)?.raum);
       const g = taskOverview(ctx.data.entries ?? [], ctx.today);
       const alle = listenAnsicht(g.heute).jetzt;
-      const items = raum === "arbeit" || raum === "familie" ? alle.filter((i) => i.room === raum) : ctx.feierabend ? alle.filter((i) => i.room !== "arbeit") : alle;
+      const items = raum === "arbeit" || raum === "familie" || raum === "ich" ? alle.filter((i) => i.room === raum) : ctx.feierabend ? alle.filter((i) => i.room !== "arbeit") : alle;
       const ruht = !raum && ctx.feierabend ? alle.length - items.length : 0;
       const lines = [
-        aufgabenSatz(items, raum === "arbeit" ? "bei der Arbeit" : ""),
-        items.length ? `Liste: ${items.slice(0, 10).map((i) => `${i.title}${i.room === "arbeit" ? " (Geschäftlich)" : ""} [id=${i.entry.id}]`).join(", ")}` : "",
+        aufgabenSatz(items, raum === "arbeit" ? "bei der Arbeit" : raum === "ich" ? "nur für dich" : ""),
+        items.length ? `Liste: ${items.slice(0, 10).map((i) => `${i.title}${i.room === "arbeit" ? " (Arbeit)" : i.room === "ich" ? " (Ich)" : ""} [id=${i.entry.id}]`).join(", ")}` : "",
         ruht ? `Feierabend: ${ruht} Arbeitsaufgaben ruhen bis morgen – nur nennen, wenn gefragt.` : "",
         g.geplant.length ? `Geplant: ${g.geplant.slice(0, 5).map((i) => `${i.title} (ab ${i.when}) [id=${i.entry.id}]`).join(", ")}` : "",
       ];

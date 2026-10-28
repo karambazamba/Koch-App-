@@ -37,8 +37,8 @@ describe("Werkzeug woche_eintragen", () => {
     expect(ops).toHaveLength(6);
     const [eltern, steuer, lauf, spiel, paket, fenster] = ops;
     expect(eltern.entry.data).toMatchObject({ start: "19:30", end: "21:30", reminder: "30" });
-    // „privat“ (ältere Antwort) = Familie, ohne Etikett (A-021)
-    expect(steuer.entry).toMatchObject({ raum: "familie" });
+    // „privat“ = Ich, ohne Etikett (A-034)
+    expect(steuer.entry).toMatchObject({ raum: "ich" });
     expect(steuer.entry.data.label).toBeUndefined();
     expect(lauf.entry.data).toMatchObject({ label: "Sport", end: "18:45" });
     expect(lauf.hint).toBe("trocken");
@@ -50,7 +50,7 @@ describe("Werkzeug woche_eintragen", () => {
 
     // zurück in „Deine Woche“
     const items = ops.map((o, i) => itemFromEntry(o.entry, `k${i}`, o.hint));
-    expect(items.map((i) => [i.art, i.raum])).toEqual([["termin", "familie"], ["termin", "familie"], ["sport", "familie"], ["termin", "familie"], ["aufgabe", "familie"], ["aufgabe", "familie"]]);
+    expect(items.map((i) => [i.art, i.raum])).toEqual([["termin", "familie"], ["termin", "ich"], ["sport", "familie"], ["termin", "familie"], ["aufgabe", "ich"], ["aufgabe", "ich"]]);
     expect(items[0].minutes).toBe(120);
     expect(items[2].suggestion).toBe("trocken");
     expect(items[3].question).toEqual(["10:00", "14:00", "weiß noch nicht"]);
@@ -73,7 +73,7 @@ describe("Testmodus: Beispiel von Tafel 36", () => {
     const punkte = r.uses[0].input.punkte as { titel: string; raum: string; start?: string; personen?: string[] }[];
     expect(punkte.map((p) => [p.titel, p.raum, p.start ?? null])).toEqual([
       ["Elternabend", "familie", "19:30"],
-      ["Paket Post bringen", "familie", null],
+      ["Paket Post bringen", "ich", null],
       ["Meeting mit Lieferanten", "arbeit", "10:00"],
       ["Jonne: Spiel", "familie", null],
     ]);

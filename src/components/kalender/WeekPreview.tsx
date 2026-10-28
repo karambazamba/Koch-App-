@@ -3,7 +3,7 @@
 // „Deine Woche“ (Tafel 36, Bild 2/3): eine ruhige Zeile pro Sache (Punkt in
 // Raumfarbe · Tag · Uhrzeit · Titel · Etikett nur bei Vorschlägen · Haken),
 // Fragen als kleine Chip-Reihe darunter, Zeile antippen = kleine Karte zum
-// Ändern (Tag, Uhrzeit, Dauer, Familie | Geschäftlich, Weglassen).
+// Ändern (Tag, Uhrzeit, Dauer, Familie · Ich · Arbeit, Weglassen).
 
 import { useState } from "react";
 import { Check } from "lucide-react";
@@ -12,16 +12,17 @@ import { INPUT, INPUT_INLINE, buttonClass, chipClass } from "@/components/ui/sty
 import { addDays } from "@/lib/core/now";
 import { timeLabel } from "@/lib/kalender/sentence";
 import { weekDayLabel, type WeekItem, type WeekRoom } from "@/lib/kalender/wochencheck";
-import { GESCHAEFTLICH } from "@/lib/core/haushalt";
+import { ARBEIT, ICH } from "@/lib/core/haushalt";
 
-const DOT: Record<WeekRoom | "sport" | "aufgabe", string> = { familie: "bg-accent", arbeit: "bg-work", sport: "bg-good", aufgabe: "bg-line-strong" };
+const DOT: Record<WeekRoom | "sport" | "aufgabe", string> = { familie: "bg-accent", ich: "bg-ich", arbeit: "bg-work", sport: "bg-good", aufgabe: "bg-line-strong" };
 const dotOf = (i: WeekItem) => (i.art === "sport" ? DOT.sport : i.art === "aufgabe" ? DOT.aufgabe : DOT[i.raum]);
 
 /** Kleine Legende über der Liste */
 export function WeekLegend() {
   const items: [string, string][] = [
     [DOT.familie, "Familie"],
-    [DOT.arbeit, GESCHAEFTLICH],
+    [DOT.ich, ICH],
+    [DOT.arbeit, ARBEIT],
     [DOT.sport, "Sport"],
     [DOT.aufgabe, "Aufgabe"],
   ];
@@ -70,7 +71,8 @@ export function WeekRow({ item, today, on, onToggle, onOpen, onAnswer }: { item:
 
 const ROOMS: [WeekRoom, string][] = [
   ["familie", "Familie"],
-  ["arbeit", GESCHAEFTLICH],
+  ["ich", ICH],
+  ["arbeit", ARBEIT],
 ];
 
 /** Kleine Karte zum Ändern einer Zeile */

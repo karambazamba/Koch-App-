@@ -27,6 +27,7 @@ import { saveProfile } from "@/lib/einstellungen/profileStore";
 import { addPantryItems, consumePantry, loadPantry, loadPantryAll, replacePantry } from "@/lib/vorrat/pantry";
 import { clearItemShop, loadShoppingSettings, replaceShoppingLists, setItemShop } from "@/lib/einkauf/shoppingList";
 import { applyShopRule, shopRulesForMia } from "@/lib/einkauf/shopRules";
+import { gelernteRaeume } from "@/lib/kalender/raum/gedaechtnis";
 import { recordUsage } from "@/lib/begleitung/usage";
 import { addWish, loadWishes, restoreWishes } from "@/lib/essen/wishes";
 import { replaceWeekPlans, toIsoDate, weekStartFor } from "@/lib/essen/weekPlan";
@@ -189,6 +190,8 @@ function trimmed(data: AssistantData, currentWeekStart: string, pantry: Assistan
     wetterOrt: loadPlace(),
     // Feste Laden-Regeln und „Meine Läden“ (für „Was kauf ich wo?“)
     laeden: shopRulesForMia(),
+    // Gelernte Räume (A-034): Stichworte aus eigenen Korrekturen
+    raumWorte: gelernteRaeume(),
     tippOrt: tipContext().ort,
     tippKm: tipContext().km,
     ...dayData(data),

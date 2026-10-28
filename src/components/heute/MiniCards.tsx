@@ -29,6 +29,7 @@ import { LEAVE_MS, act, buzz, readOnlyDone } from "@/components/heute/actions";
 import { ItemMenu, roomBarProps } from "@/components/kalender/Items";
 import { withoutEmoji } from "@/lib/core/text";
 import { neuEintragen } from "@/lib/kalender/eintragen/oeffnen";
+import { useLangDruecken } from "@/components/ui/useLangDruecken";
 
 /** Beispiel-Tag: Beispiele statt echter Einträge (Antippen erklärt, Abhaken nur hier) */
 export type DemoProps = { label?: string | null; done?: string[]; onToggle?: (item: DayItem) => void; onGone?: (item: DayItem) => void; onOpen: (item: DayItem) => void };
@@ -173,15 +174,17 @@ export function TermineSection({ rows, label, href, today, size = "M", half = fa
 
 /**
  * Aufgaben-Zeile der Seite: Kreis zum Abhaken, Titel bis 2 Zeilen (dann „…“),
- * darunter „von Lisa“; rechts nur „neu“ und das Schild „Geschäftlich“ (blau) –
- * kein „von gestern“, kein „heute“, kein Punkt. Geplantes zeigt seinen Tag.
+ * darunter „von Lisa“ bzw. „erledigt von Lisa“; rechts nur „neu“, das graue
+ * Schloss („Ich“) bzw. das Schild „Arbeit“ – kein „von gestern“, kein
+ * „heute“, kein Punkt. Geplantes zeigt seinen Tag. Lange drücken = Raum (A-034).
  */
-export function TaskLine({ item, today, onOpen, onDone, leaving, entering }: { item: DayItem; today: string; onOpen: (i: DayItem) => void; onDone: (i: DayItem) => void; leaving?: boolean; entering?: boolean }) {
+export function TaskLine({ item, today, onOpen, onLang, onDone, leaving, entering }: { item: DayItem; today: string; onOpen: (i: DayItem) => void; onLang?: (i: DayItem) => void; onDone: (i: DayItem) => void; leaving?: boolean; entering?: boolean }) {
   const checked = Boolean(item.done || leaving);
+  const lang = useLangDruecken(onLang ? () => onLang(item) : null);
   return (
     <li className="flex items-center gap-1 py-1 pr-3" style={entering ? { animation: "card-in 0.32s ease-out" } : undefined} data-item={item.key}>
       <CheckBox item={item} checked={checked} onClick={() => onDone(item)} round />
-      <button type="button" onClick={() => onOpen(item)} className="flex min-h-11 min-w-0 flex-1 items-center gap-2 py-1 text-left" aria-label={`${item.title} – Möglichkeiten`}>
+      <button type="button" {...lang.griffe} onClick={() => lang.geklickt() && onOpen(item)} className="flex min-h-11 min-w-0 flex-1 items-center gap-2 py-1 text-left" aria-label={`${item.title} – Möglichkeiten`}>
         {isUrgent(item) && !checked && <UrgentMark />}
         <span className="flex min-w-0 flex-1 flex-col">
           <span className={`line-clamp-2 min-w-0 break-words text-[15px] font-semibold leading-snug ${checked ? "text-muted line-through" : ""}`} data-titel>
@@ -197,7 +200,7 @@ export function TaskLine({ item, today, onOpen, onDone, leaving, entering }: { i
   );
 }
 
-/** Aufgaben-Zeile der Kachel (30 px): Kreis 20 px (Tippfläche 44 × 30), Titel, „!“ bei dringend, rechts nur „von Lisa“ und „Geschäftlich“ */
+/** Aufgaben-Zeile der Kachel (30 px): Kreis 20 px (Tippfläche 44 × 30), Titel, „!“ bei dringend, rechts nur „von Lisa“, Schloss („Ich“) bzw. „Arbeit“ */
 function TaskField({ item, leaving, entering, onOpen, onDone }: { item: DayItem; leaving: boolean; entering?: React.CSSProperties; onOpen: () => void; onDone: () => void }) {
   return (
     <li className="flex min-w-0 items-center" style={leaving ? TASK_FADE : entering} data-item={item.key} data-zeile>
@@ -220,7 +223,7 @@ function TaskField({ item, leaving, entering, onOpen, onDone }: { item: DayItem;
 /**
  * AUFGABEN – eine weiße Checkliste: S 2, M 4, L 6 Zeilen, „+N weitere“ im Kopf
  * neben dem Plus; abends „Morgen · Mi“ (`label`, Neues dann für `addOn`).
- * Nach Feierabend ohne Arbeit, dafür unten leise „Geschäftlich · 5 für morgen“.
+ * Nach Feierabend ohne Arbeit, dafür unten leise „Arbeit · 5 für morgen“.
  */
 export function AufgabenSection({ items, total, today, label, addOn = today, href = "/aufgaben", size = "M", half = false, arbeitMorgen = 0, demo }: { items: DayItem[]; total?: number; today: string; label?: string | null; addOn?: string; href?: string; size?: TileSize; half?: boolean; arbeitMorgen?: number; demo?: DemoProps }) {
   const { setMenu, check, before, overlays } = useSection();

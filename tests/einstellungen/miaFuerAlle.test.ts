@@ -15,7 +15,7 @@ beforeEach(() => {
 
 describe("Wörter je Haushaltsart", () => {
   it("Bereich, Einladen, Teilen-Satz", () => {
-    expect([raumName("allein"), raumName("paar"), raumName("familie")]).toEqual(["Familie", "Wir", "Familie"]);
+    expect([raumName("allein"), raumName("paar"), raumName("familie")]).toEqual(["Privat", "Wir", "Familie"]);
     expect([einladenKnopf("allein"), einladenKnopf("paar"), einladenKnopf("familie")]).toEqual(["Jemanden dazuholen", "Partner einladen", "Familie einladen"]);
     expect(teilenSatz("allein")).toBeNull();
     expect(teilenSatz("paar")).toBe("Ihr beide seht dasselbe.");
@@ -47,7 +47,7 @@ describe("Wörter je Haushaltsart", () => {
   it("Oberfläche nimmt den Namen aus `useRaumName` bzw. `useHaushalt` statt fest „Familie“", () => {
     for (const f of ["src/components/kalender/TasksView.tsx", "src/components/kalender/CalendarPage.tsx", "src/components/notizen/NotesView.tsx", "src/components/kalender/eintragen/AufgabeFenster.tsx", "src/components/kalender/eintragen/TerminFenster.tsx"]) {
       const src = readFileSync(f, "utf8");
-      expect(src, f).toMatch(/useRaumName\(\)|useHaushalt\(\)/);
+      expect(src, f).toMatch(/useRaumName\(\)|useHaushalt\(\)|useRaumWahl\(/);
       expect(src, f).not.toMatch(/label: "Familie"/);
     }
   });

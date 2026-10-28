@@ -118,7 +118,7 @@ describe("Termine nach Uhrzeit mit „Jetzt“-Linie", () => {
     const src = readFileSync("src/components/heute/DeinTag.tsx", "utf8");
     expect(src).toMatch(/<RaumSchild room=\{r\.item\.room\} \/>/);
     const server = readFileSync("src/lib/konten/testServer.ts", "utf8");
-    expect(server).toMatch(/nurBesitzer\(raum\) && old\.besitzer !== user\.id/);
+    expect(server).toMatch(/!visible\(\{ typ: d\.typ, raum, besitzer: old\.besitzer, data: d\.data \}, user\.id\)/);
   });
 });
 

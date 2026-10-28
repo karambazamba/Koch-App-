@@ -5,14 +5,25 @@
 import { addDays } from "@/lib/core/now";
 import { createEntry } from "@/lib/core/entries";
 import { clockLabel, freeAnswer, showAnswer } from "@/lib/kalender/answers";
-import { findByTitle, itemsForDay, moveItem, removeItem, REMINDERS, repeatLabel, setDone, upsertEntry, weekdayShort, type CalendarEntry, type DayItem } from "@/lib/kalender/model";
+import { findByTitle, itemsForDay, moveItem, removeItem, REMINDERS, repeatLabel, setDone, setRoom, upsertEntry, weekdayShort, type CalendarEntry, type DayItem } from "@/lib/kalender/model";
 import { parseCalendar, type Draft } from "@/lib/kalender/parse";
+import type { Room } from "@/lib/core/entries";
+import type { RaumHilfen } from "@/lib/kalender/raum/raten";
+import { isAboEntry } from "@/lib/kalender/abo/model";
+import { darfRaumAendern } from "@/lib/kalender/abgeben/model";
 
 type CalendarChatReply = {
   text: string;
   /** Änderung (rein), falls etwas eingetragen/geändert wird */
   change?: (entries: CalendarEntry[], stamp: string) => CalendarEntry[];
+  /** Neu eingetragen: Raum zum Ändern unter Mias Bestätigung („Steht drin. Familie ⌄“, A-034) */
+  neu?: { id: string; title: string; raum: Room; typ: "termin" | "aufgabe" };
+  /** Raum per Satz geändert: Mia lernt das Stichwort */
+  gelernt?: { title: string; raum: Room };
 };
+
+/** Kurz nach dem Raum-Wechsel per Satz */
+const RAUM_SATZ: Record<Room, string> = { familie: "Sehen jetzt alle.", ich: "Nur für dich.", arbeit: "Steht bei Arbeit." };
 
 const shortDate = (iso: string) => {
   const [, m, d] = iso.split("-");
@@ -30,7 +41,7 @@ export function draftSummary(draft: Draft): string {
         : draft.data.date
           ? shortDate(draft.data.date)
           : "für heute";
-  const extra = [repeatLabel(d.repeat, draft.typ === "termin" ? draft.data.date : draft.data.date), d.reminder !== "aus" ? `Erinnerung ${REMINDERS.find((r) => r.value === d.reminder)?.short}` : "", draft.raum === "arbeit" ? "Geschäftlich" : ""].filter(Boolean);
+  const extra = [repeatLabel(d.repeat, draft.typ === "termin" ? draft.data.date : draft.data.date), d.reminder !== "aus" ? `Erinnerung ${REMINDERS.find((r) => r.value === d.reminder)?.short}` : ""].filter(Boolean);
   return [when, d.title, ...extra].join(" · ");
 }
 
@@ -45,8 +56,8 @@ function nextItem(entries: CalendarEntry[], entry: CalendarEntry, today: string)
 }
 
 /** `abends`: die Startseite steht schon auf morgen – „Was steht morgen an?“ nennt das Mitgewanderte mit; `ohneArbeit`: Feierabend, „Was steht heute an?“ ohne Arbeit */
-export function calendarChat(text: string, entries: CalendarEntry[], today: string, persons: { id: string; name: string }[], abends = false, ohneArbeit = false): CalendarChatReply | null {
-  const cmd = parseCalendar(text, today, persons);
+export function calendarChat(text: string, entries: CalendarEntry[], today: string, persons: { id: string; name: string }[], abends = false, ohneArbeit = false, hilfen: RaumHilfen = {}, me: string | null = null): CalendarChatReply | null {
+  const cmd = parseCalendar(text, today, persons, hilfen);
   if (!cmd) return null;
   switch (cmd.kind) {
     case "show":
@@ -56,7 +67,16 @@ export function calendarChat(text: string, entries: CalendarEntry[], today: stri
     case "create": {
       const draft = cmd.draft;
       const entry = createEntry(draft.typ, draft.data, { raum: draft.raum }) as CalendarEntry;
-      return { text: `Eingetragen ✓ ${draftSummary(draft)}`, change: (list) => upsertEntry(list, entry) };
+      return { text: `Eingetragen ✓ ${draftSummary(draft)}`, change: (list) => upsertEntry(list, entry), neu: { id: entry.id, title: entry.data.title, raum: entry.raum, typ: entry.typ } };
+    }
+    case "raum": {
+      // „das“ = das zuletzt Eingetragene; nicht gefunden: kein Raum-Befehl (andere Regeln oder die KI)
+      // Nur eigene (nie Kalender-Links, nie fremde Familien-Aufgaben)
+      const eigene = entries.filter((e) => !isAboEntry(e) && darfRaumAendern(e, me));
+      const zuletzt = [...eigene].sort((a, b) => b.erstellt.localeCompare(a.erstellt))[0];
+      const entry = /^(das|den|die|es|ihn|sie)$/i.test(cmd.query) ? zuletzt : findByTitle(eigene, cmd.query)[0];
+      if (!entry) return null;
+      return { text: RAUM_SATZ[cmd.raum], change: (list, stamp) => setRoom(list, entry.id, cmd.raum, stamp), gelernt: { title: entry.data.title, raum: cmd.raum } };
     }
     default: {
       const found = findByTitle(entries, cmd.query);

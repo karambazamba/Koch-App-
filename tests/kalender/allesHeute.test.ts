@@ -86,17 +86,18 @@ describe("Migration: „Irgendwann“/„Diese Woche“ still auf heute, nichts 
     expect(list[1].data).toMatchObject({ date: "2026-11-02" });
     changeEntries((l) => l);
     const saved = JSON.parse(w.localStorage.getItem("wasgibts.eintraege")!);
-    expect(saved).toMatchObject({ version: 4, migratedTermine: true, seenReminders: ["x@y"] });
+    expect(saved).toMatchObject({ version: 5, migratedTermine: true, seenReminders: ["x@y"] });
   });
 
-  it("Abgleich hebt v2/v3 auf v4 (sonst bliebe der Stand liegen)", () => {
+  it("Abgleich hebt v2/v3/v4 auf v5 (sonst bliebe der Stand liegen)", () => {
     const kal = ADAPTERS.find((a) => a.name === "kalender")!;
-    expect(kal.version).toBe(4);
+    expect(kal.version).toBe(5);
     const up = kal.upgrade!({ version: 2, entries: [aufgabe({ title: "Reifen", week: "2026-10-26" })], migratedTermine: true, seenReminders: [] })!;
-    expect(up.version).toBe(4);
+    expect(up.version).toBe(5);
     expect((up.entries as CalendarEntry[])[0].data).not.toHaveProperty("week");
-    expect(kal.upgrade!({ version: 3, entries: [] })?.version).toBe(4);
-    expect(kal.upgrade!({ version: 4, entries: [] })).toBeNull();
+    expect(kal.upgrade!({ version: 3, entries: [] })?.version).toBe(5);
+    expect(kal.upgrade!({ version: 4, entries: [] })?.version).toBe(5);
+    expect(kal.upgrade!({ version: 5, entries: [] })).toBeNull();
   });
 
   it("alte Sicherung (v0.47): „Geschenk für Oma“ (früher Irgendwann) steht heute in der Liste", async () => {
@@ -158,7 +159,7 @@ describe("Liste: eine weiße Liste, Arbeit nur als Schild", () => {
     expect(BACKUP_KEYS).not.toContain("wasgibts.aufgabenfilter");
   });
 
-  it("Seite: keine Etiketten pro Zeile (kein „von gestern“, kein „heute“, kein Punkt), Schild Geschäftlich, Namen bis 2 Zeilen", () => {
+  it("Seite: keine Etiketten pro Zeile (kein „von gestern“, kein „heute“, kein Punkt), Schloss „Ich“, Schild „Arbeit“, Namen bis 2 Zeilen", () => {
     const zeile = src("src/components/heute/MiniCards.tsx");
     const taskLine = zeile.slice(zeile.indexOf("export function TaskLine"), zeile.indexOf("export function AufgabenSection"));
     expect(taskLine).toMatch(/line-clamp-2/);
@@ -166,7 +167,7 @@ describe("Liste: eine weiße Liste, Arbeit nur als Schild", () => {
     expect(taskLine).toMatch(/<RaumSchild room=\{item\.room\} \/>/);
     expect(taskLine).toMatch(/<NeuSchild/);
     expect(src("src/components/kalender/AufgabeSchild.tsx")).toMatch(/bg-work-soft text-work/);
-    expect(src("src/components/kalender/AufgabeSchild.tsx")).not.toMatch(/bg-ich|text-ich/);
+    expect(src("src/components/kalender/AufgabeSchild.tsx")).toMatch(/<Lock[^>]*text-ich/);
     const seite = src("src/components/kalender/TasksView.tsx");
     expect(seite).not.toMatch(/Irgendwann|Diese Woche|Heute dran|von gestern/);
     // A-043: „Erledigt ⌄“ statt „Erledigte anzeigen“
@@ -203,12 +204,12 @@ describe("Nach Feierabend: Arbeit ruht", () => {
     expect(feierabendNachUhr(12 * 60)).toBe(false);
   });
 
-  it("blendet Arbeit aus, ohne Chips, leise „Geschäftlich · n für morgen“ – antippen blendet kurz ein", () => {
+  it("blendet Arbeit aus, ohne Chips, leise „Arbeit · n für morgen“ – antippen blendet kurz ein", () => {
     const list = taskOverview([aufgabe({ title: "Müll" }), aufgabe({ title: "Bericht" }, "arbeit"), aufgabe({ title: "Angebot" }, "arbeit")], HEUTE).heute;
     const abends = aufgabenAnsicht(list, { filter: "arbeit", arbeitRuht: true });
     expect(abends).toMatchObject({ chips: [], arbeitMorgen: 2, ausgeblendet: 0 });
     expect(abends.items.map((i) => i.title)).toEqual(["Müll"]);
-    expect(arbeitMorgenText(abends.arbeitMorgen)).toBe("Geschäftlich · 2 für morgen");
+    expect(arbeitMorgenText(abends.arbeitMorgen)).toBe("Arbeit · 2 für morgen");
     expect(aufgabenAnsicht(list, { filter: "alle", arbeitRuht: true, arbeitZeigen: true }).items).toHaveLength(3);
   });
 });

@@ -3,11 +3,12 @@
 // "Donnerstag", "am 24.10."), Uhrzeit ("um 9", "14:30 Uhr", "nachmittags"),
 // Frist ("bis Mittwoch"), Wiederholung ("jeden Dienstag", "täglich"),
 // Erinnerung ("erinner mich 30 Minuten vorher", "am Vorabend"), Raum
-// (Arbeit/Familie) und Etikett (Kita, Arzt, Café …). Termin = feste
+// (Familie/Ich/Arbeit, `raum/raten.ts`) und Etikett (Kita, Arzt, Café …). Termin = feste
 // Uhrzeit, sonst Aufgabe. Dazu Befehle: verschieben, löschen, erledigt,
 // anzeigen, "Hab ich … Zeit?". Rein, damit App und Server gleich rechnen.
 
 import type { Room } from "@/lib/core/entries";
+import { guessRoom, ohneRaumWorte, raumBefehl, type RaumHilfen } from "@/lib/kalender/raum/raten";
 import { addDays } from "@/lib/core/now";
 import { nextDayOfMonth } from "@/lib/kalender/sentence";
 import { weekdayIndex, type AufgabeData, type Reminder, type Repeat, type TerminData } from "@/lib/kalender/model";
@@ -26,6 +27,7 @@ type CalendarCommand =
   | { kind: "move"; query: string; to: string; time?: string }
   | { kind: "delete"; query: string }
   | { kind: "done"; query: string }
+  | { kind: "raum"; query: string; raum: Room }
   | { kind: "show"; from: string; days: number; label: string }
   | { kind: "free"; date: string; from: string; to: string; label: string };
 
@@ -162,14 +164,6 @@ function findReminder(text: string): { reminder: Reminder; match: string } | nul
   return null;
 }
 
-/**
- * Geschäftlich aus dem Inhalt (A-021): Job-Wörter und Felix’ Betriebe
- * (Tohuus, KARAMBA Eis, Eisladen), Lieferanten, Personal, Großhandel. Café
- * zählt erst, wenn es schon an Arbeits-Einträgen steht (`arbeitsWorte`).
- * „karamba“ ist hier nur Stichwort – in Texten heißt es immer „KARAMBA Eis“.
- */
-const ARBEIT = /(?<![a-zäöüß])(meeting|büro|kunden?|kundin\w*|präsentation|call|projekt\w*|chef\w*|kolleg\w*|arbeit|dienstreise|abgabe|teams|zoom|besprechung|bewerbung|team|tohuus|karamba|lieferant\w*|personal|personalgespräch\w*|personalplan\w*|schulung\w*|mitarbeiter\w*|großhandel\w*|grosshandel\w*|eisladen|eisdiele|geschäftlich\w*|firma|betrieb|schichtplan|vorstellungsgespräch\w*)(?![a-zäöüß])/i;
-
 const LABELS: [RegExp, string][] = [
   [/\bkita\b/i, "Kita"],
   [/\bschul\w*/i, "Schule"],
@@ -185,59 +179,6 @@ const LABELS: [RegExp, string][] = [
 export function guessLabel(title: string): string | undefined {
   return LABELS.find(([re]) => re.test(title))?.[1];
 }
-
-/** „für alle“, „Familie“ → Familie (sagt der Satz ausdrücklich) */
-const FUER_ALLE = /(?<![a-zäöüß])(für alle|für uns alle|alle zusammen|familie|gemeinsam)(?![a-zäöüß])/i;
-/**
- * Familie aus dem Inhalt (A-021): Kinder, Arzt, Kita, Schule … – und
- * „privat“/„nur für mich“ (dafür gibt es keinen eigenen Raum).
- */
-const FAMILIE = /(?<![a-zäöüß])(kind|kinder\w*|kita|krippe|schul\w*|elternabend|elterngespräch|hort|(?:kinder|zahn|haus|augen|frauen)?arzt\w*|(?:zahn)?ärzt\w*|kinderarzt\w*|oma|opa|geburtstag\w*|privat|nur für mich|für mich allein|nur ich|persönlich)(?![a-zäöüß])/i;
-
-const gelernt = (text: string, arbeitWorte: readonly string[]) => {
-  const t = text.toLowerCase();
-  return arbeitWorte.some((w) => new RegExp(`(?<![a-zäöüß])${w}(?![a-zäöüß])`).test(t));
-};
-
-/**
- * Raum nur, wenn der Satz ihn sagt oder der Inhalt ihn klar macht (sonst
- * null): ausdrücklich „für alle/Familie“ › Geschäftlich-Wörter ›
- * Familie-Wörter › gelernte Arbeits-Stichworte (`arbeitsWorte`, Laden …).
- * Stehen Geschäftlich- und Familie-Wörter zugleich drin, ist es unklar
- * (`raumUnklar`) – Mia fragt dann mit zwei Knöpfen, hier gilt Geschäftlich.
- */
-export function raumAusText(text: string, arbeitWorte: readonly string[] = []): Room | null {
-  if (FUER_ALLE.test(text)) return "familie";
-  if (ARBEIT.test(text)) return "arbeit";
-  if (FAMILIE.test(text)) return "familie";
-  return gelernt(text, arbeitWorte) ? "arbeit" : null;
-}
-
-/** Wirklich unklar: Geschäftliches und Familiäres zugleich, ohne „für alle/Familie“ („Kinder zum Tohuus bringen“) */
-export const raumUnklar = (text: string): boolean => !FUER_ALLE.test(text) && ARBEIT.test(text) && FAMILIE.test(text) && !/(?<![a-zäöüß])(privat|nur für mich|für mich allein|nur ich|persönlich)(?![a-zäöüß])/i.test(text);
-
-export function guessRoom(text: string, arbeitWorte: readonly string[] = []): Room {
-  return raumAusText(text, arbeitWorte) ?? "familie";
-}
-
-/** Wörter, die je nach Mensch Arbeit sind (Eisladen, Café …) */
-const VIELLEICHT_ARBEIT = ["laden", "café", "cafe", "werkstatt", "praxis", "schicht", "dienst", "baustelle", "küche", "lager", "kasse", "inventur"];
-
-/** Gelernt aus früheren Entscheidungen: Stichworte, die schon an Arbeits-Einträgen stehen */
-export function arbeitsWorte(entries: readonly { raum: Room; data: { title: string; label?: string } }[]): string[] {
-  const text = entries
-    .filter((e) => e.raum === "arbeit")
-    .map((e) => `${e.data.title} ${e.data.label ?? ""}`.toLowerCase())
-    .join(" ");
-  return VIELLEICHT_ARBEIT.filter((w) => new RegExp(`(?<![a-zäöüß])${w}(?![a-zäöüß])`).test(text));
-}
-
-/** Raum-Wörter aus dem Titel nehmen („Tim antworten nur für mich“ → „Tim antworten“, „Privat: Geschenk“ → „Geschenk“) */
-export const ohneRaumWorte = (title: string) =>
-  title
-    .replace(/[,\s]*(?<![a-zäöüß])(?:nur für mich|für mich allein|nur ich|privat|geschäftlich|für alle|für uns alle|alle zusammen)(?![a-zäöüß])[,.:]*/gi, " ")
-    .replace(/\s+/g, " ")
-    .trim();
 
 const capitalize = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
@@ -282,7 +223,7 @@ export function genannterTag(date: string | undefined, text: string, today: stri
   return date && (date !== today || /(?<![a-zäöüß])heute(?![a-zäöüß])/i.test(text)) ? date : null;
 }
 
-export function parseCalendar(text: string, today: string, persons: Person[] = []): CalendarCommand | null {
+export function parseCalendar(text: string, today: string, persons: Person[] = [], hilfen: RaumHilfen = {}): CalendarCommand | null {
   const raw = text.trim();
   if (!raw) return null;
   const t = raw.toLowerCase();
@@ -323,6 +264,9 @@ export function parseCalendar(text: string, today: string, persons: Person[] = [
     const time = findTime(m[2]);
     if (target || time) return { kind: "move", query: m[1], to: target?.date ?? today, time: time && !time.vague ? time.time : undefined };
   }
+  // „Mach den Zahnarzt nur für mich“, „Das gehört zur Familie“ (A-034)
+  const raumNeu = raumBefehl(raw);
+  if (raumNeu) return { kind: "raum", ...raumNeu };
   // "Lösch den Zahnarzt" / "Der Zahnarzt fällt aus"
   m = raw.match(/^(?:bitte\s+)?(?:lösch|streich|entfern)\w*\s+(?:bitte\s+)?(.+?)[.!]?$/i) ?? raw.match(/^(.+?)\s+fällt\s+aus[.!]?$/i);
   if (m) return { kind: "delete", query: m[1] };
@@ -362,21 +306,20 @@ export function parseCalendar(text: string, today: string, persons: Person[] = [
   // „nur für mich“, „für alle“ sagen den Raum – nicht den Titel
   const { title, who } = cleanTitle(ohneRaumWorte(rest), persons);
   if (title.length < 2) return null;
-  const raum = guessRoom(raw);
   const label = guessLabel(raw);
   const start = date?.date ?? (repeat?.repeat.kind === "wochentage" ? nextWeekday(today, repeat.repeat.days[0]) : period && period.week > today ? period.week : today);
   // Termin = feste Uhrzeit (nicht nur "abends") und keine Frist
   if (time && !time.vague && !deadline) {
     return {
       kind: "create",
-      draft: { typ: "termin", raum, data: { title, date: start, start: time.time, label, repeat: repeat?.repeat ?? null, reminder: reminder?.reminder ?? "aus", ...(who.length ? { who } : {}) } },
+      draft: { typ: "termin", raum: guessRoom(raw, "termin", hilfen), data: { title, date: start, start: time.time, label, repeat: repeat?.repeat ?? null, reminder: reminder?.reminder ?? "aus", ...(who.length ? { who } : {}) } },
     };
   }
   return {
     kind: "create",
     draft: {
       typ: "aufgabe",
-      raum,
+      raum: guessRoom(raw, "aufgabe", hilfen),
       data: {
         title,
         // Ohne genannten Tag gehört jede Aufgabe zu heute

@@ -55,7 +55,7 @@ export function DayRoutineView() {
         </ul>
 
         <ul className={CARD_LIST}>
-          <SwitchRow icon={BellOff} title="Ruhe nach Feierabend" hint="Im Feierabend machen Geschäftliches und Aufgaben Pause – auch bei Mitteilungen" checked={r.ruhe} onChange={(ruhe) => changeRoutine({ ruhe })} />
+          <SwitchRow icon={BellOff} title="Ruhe nach Feierabend" hint="Im Feierabend machen Arbeit und Aufgaben Pause – auch bei Mitteilungen" checked={r.ruhe} onChange={(ruhe) => changeRoutine({ ruhe })} />
         </ul>
 
         <section className={`${CARD} flex flex-col gap-3 p-4`} aria-label="Tageszeiten">
@@ -83,7 +83,7 @@ export function DayRoutineView() {
               </button>
             ))}
           </div>
-          <p className="text-sm text-muted">An freien Tagen ist Geschäftliches den ganzen Tag ausgeblendet.</p>
+          <p className="text-sm text-muted">An freien Tagen ist Arbeit den ganzen Tag ausgeblendet.</p>
         </section>
 
         <ul className={CARD_LIST}>

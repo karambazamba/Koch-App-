@@ -24,7 +24,7 @@ import { MitbringenHost } from "@/components/kalender/mitbringen/KalenderMitbrin
 import { useRaumName } from "@/lib/einstellungen/useHaushalt";
 
 const SOURCE: Record<IcsCalendar["source"], string> = { google: "Google", apple: "Apple", ics: "Kalender" };
-/** Kalender, die nach Arbeit klingen, starten in „Geschäftlich“ */
+/** Kalender, die nach Arbeit klingen, starten in „Arbeit“ */
 const workish = (name: string) => /arbeit|work|büro|job|dienst/i.test(name);
 
 type Loaded = { cals: IcsCalendar[]; rooms: Room[] };
@@ -127,7 +127,7 @@ export function CalendarImportView() {
                         onClick={() => setLoaded({ ...loaded, rooms: loaded.rooms.map((x, j) => (j === i ? r : x)) })}
                         className={chipClass(loaded.rooms[i] === r)}
                       >
-                        {r === "familie" ? raum : "Geschäftlich"}
+                        {r === "familie" ? raum : "Arbeit"}
                       </button>
                     ))}
                   </div>
