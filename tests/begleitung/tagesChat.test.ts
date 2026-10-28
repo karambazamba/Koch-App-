@@ -9,6 +9,7 @@ import { noteChatMessage } from "@/lib/begleitung/chatSuggestions";
 import { loadHomeTiles } from "@/lib/core/homeLayout";
 import { loadEntries } from "@/lib/kalender/store";
 import { loadTimers } from "@/lib/timer/store";
+import { loadSport } from "@/lib/sport/store";
 import { createEmptyProfile, createPerson } from "@/lib/einstellungen/profile";
 import type { AssistantData } from "@/lib/begleitung/ops";
 import type { Recipe } from "@/lib/essen/cookbook";
@@ -97,19 +98,27 @@ describe("Kochen Schritt für Schritt", () => {
 });
 
 describe("Sport", () => {
-  it("Ziel, Eintragen, Woche und Monat – ohne Druck", () => {
-    expect(say("Wie oft war ich diese Woche beim Sport?")!.text).toBe("Die Woche ist noch frisch. Bereit, wenn du’s bist.");
+  it("Ziel, Eintragen (gestempelt), Woche als Lage und Monat – ohne Druck", () => {
+    expect(say("Wie oft war ich diese Woche beim Sport?")!.text).toBe("Diese Woche ist noch frei.");
     expect(say("Ich will 2× pro Woche Sport machen")!.text).toBe("Wochenziel: 2× pro Woche ✓ Die Sport-Kachel steht jetzt auf der Startseite.");
     expect(say("Ich will 3× pro Woche Sport machen")!.text).toBe("Wochenziel: 3× pro Woche ✓");
-    const run = say("War heute 5 km laufen")!;
-    expect(run.text).toMatch(/^Eingetragen 🏃 Laufen, 30 Min, 5 km\. /);
-    expect(say("War gestern 45 Minuten schwimmen")!.text).toMatch(/^Eingetragen 🏊 Schwimmen, 45 Min\. /);
-    expect(say("Wie oft war ich diese Woche beim Sport?")!.text).toBe("Diese Woche 2× – Ziel sind 3.");
+    expect(say("War heute 5 km laufen")!.text).toBe("Laufen · heute · gestempelt");
+    expect(say("War gestern 45 Minuten schwimmen")!.text).toBe("Schwimmen · gestern · gestempelt");
+    expect(say("Wie oft war ich diese Woche beim Sport?")!.text).toBe("Heute war Laufen.");
     expect(say("Wie viele km bin ich diesen Monat gelaufen?")!.text).toBe("Oktober: 2 Einheiten, 1 h 15 min, 5 km.");
-    expect(say("War heute 20 Minuten Yoga")!.text).toMatch(/Wochenziel geschafft\.$/);
-    expect(say("Wie oft war ich diese Woche beim Sport?")!.text).toBe("Diese Woche 3× – Wochenziel geschafft 🎉");
-    expect(say("War heute 30 Minuten Rad fahren")!.text).toMatch(/Bonusrunde! 🔥$/);
-    expect(say("Wie oft war ich diese Woche beim Sport?")!.text).toBe("Diese Woche 4× – Bonusrunde! 🔥");
+    expect(say("War heute 20 Minuten Yoga")!.text).toBe("Yoga · heute · gestempelt. Woche geschafft.");
+    expect(say("Wie läuft’s mit Sport?")!.text).toBe("Woche geschafft.");
+    expect(say("War heute 30 Minuten Rad fahren")!.text).toBe("Rad · heute · gestempelt");
+    expect(say("Wie oft war ich diese Woche beim Sport?")!.text).toBe("Woche geschafft.");
+  });
+
+  it("„War heute Volleyball“ → Stempel, Bestätigung „Volleyball · heute · gestempelt“, Rückgängig", () => {
+    const r = say("War heute Volleyball")!;
+    expect(r.text).toBe("Volleyball · heute · gestempelt. Die Sport-Kachel steht jetzt auf der Startseite.");
+    expect(loadSport().trainings.map((t) => t.data.sport)).toEqual(["volleyball"]);
+    r.undo!();
+    expect(loadSport().trainings).toEqual([]);
+    expect(say("Wie läuft’s mit Sport?")!.text).toBe("Diese Woche ist noch frei.");
   });
 
   it("plant Trainings in freie Lücken, mit Erinnerung", () => {

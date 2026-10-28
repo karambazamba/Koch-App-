@@ -1,7 +1,7 @@
 // Wasserzeichen für alle Kacheln ohne eigenes Bild (A-036, Tafel 124 A/125):
 // EINE Komponente, Zuordnung als Tabelle über ALLE Kacheln des Katalogs (neue
 // Kachel ohne Eintrag = rot), Ausnahmen mit Grund (Wetter, Essen, Pinnwand,
-// Spendentopf; die Jetzt-Karte ist keine Kachel), XS ohne, Schlicht ohne.
+// Spendentopf, Sport mit Stempeln; die Jetzt-Karte ist keine Kachel), XS ohne, Schlicht ohne.
 // Kontrast-Regel: freier Text ohne weißes Kärtchen → leise Deckkraft (9 %).
 import { readFileSync, readdirSync } from "node:fs";
 import { createElement } from "react";
@@ -25,8 +25,8 @@ describe("Zuordnung: jede Kachel ohne eigenes Bild hat ein Wasserzeichen", () =>
     expect(OHNE.includes(id) !== MIT.includes(id as WasserzeichenKachel), id).toBe(true);
   });
 
-  it("Ausnahmen genau: Wetter (Himmel), Essen (Foto), Pinnwand (Zettel), Spendentopf (eigenes Bild)", () => {
-    expect(OHNE_WASSERZEICHEN).toEqual({ wetter: "Himmel", essen: "Foto des Gerichts", pinnwand: "Zettel", spendentopf: "eigenes Bild (Topf)" });
+  it("Ausnahmen genau: Wetter (Himmel), Essen (Foto), Pinnwand (Zettel), Spendentopf (eigenes Bild), Sport (Stempel, A-044)", () => {
+    expect(OHNE_WASSERZEICHEN).toEqual({ wetter: "Himmel", essen: "Foto des Gerichts", pinnwand: "Zettel", spendentopf: "eigenes Bild (Topf)", sport: "Stempel sind das Bild" });
     // Keine Altlasten: nur Kacheln, die es gibt
     for (const id of [...OHNE, ...MIT]) expect(HOME_TILES.map((t) => t.id)).toContain(id);
   });
@@ -37,7 +37,6 @@ describe("Zuordnung: jede Kachel ohne eigenes Bild hat ein Wasserzeichen", () =>
       termine: "calendar",
       aufgaben: "circle-check",
       einkauf: "shopping-cart",
-      sport: "sport-shoe",
       vorrat: "refrigerator",
       notizen: "sticky-note",
       timer: "timer",
@@ -60,8 +59,8 @@ describe("Kacheln im Code", () => {
     expect([...gesetzt].sort()).toEqual([...erwartet].sort());
   });
 
-  it("Wetter, Essen, Pinnwand, Spendentopf und die Jetzt-Karte ohne Wasserzeichen", () => {
-    for (const f of ["wetter/WeatherTile.tsx", "essen/DishTile.tsx", "pinnwand/PinboardTile.tsx", "spendentopf/SpendentopfTile.tsx", "heute/JetztCard.tsx"]) {
+  it("Wetter, Essen, Pinnwand, Spendentopf, Sport und die Jetzt-Karte ohne Wasserzeichen", () => {
+    for (const f of ["wetter/WeatherTile.tsx", "essen/DishTile.tsx", "pinnwand/PinboardTile.tsx", "spendentopf/SpendentopfTile.tsx", "sport/SportTile.tsx", "heute/JetztCard.tsx"]) {
       expect(readFileSync(`src/components/${f}`, "utf8"), f).not.toContain("KachelWasserzeichen");
     }
   });

@@ -26,21 +26,46 @@ async function load(local: Record<string, string> = {}) {
 afterEach(() => noBrowser());
 
 describe("Sport-Speicher", () => {
-  it("ohne Daten: Ziel 3, nichts eingetragen", async () => {
+  it("ohne Daten: ohne Ziel, nicht gefragt, Erinnerung aus, nichts eingetragen", async () => {
     const { store, index } = await load();
     expect(store.loadSport()).toEqual(index.EMPTY_SPORT);
     expect(store.useSport()).toEqual(index.EMPTY_SPORT);
     expect(index.loadSport).toBe(store.loadSport);
+    expect(store.loadSport()).toMatchObject({ goal: null, zielGefragt: false, erinnerung: false });
   });
 
   it("speichert geprüft mit Version; fremde Version = leer", async () => {
     const { store } = await load();
-    store.saveSport({ goal: 12, trainings: [], packs: {}, celebrated: [], hidden: [], custom: [] });
-    expect(JSON.parse(win.localStorage.getItem("wasgibts.sport")!)).toMatchObject({ version: 1, goal: 3 });
-    const other = await load({ "wasgibts.sport": JSON.stringify({ version: 2, goal: 5 }) });
-    expect(other.store.loadSport().goal).toBe(3);
-    const kept = await load({ "wasgibts.sport": JSON.stringify({ version: 1, goal: 5 }) });
-    expect(kept.store.useSport()?.goal).toBe(5);
+    store.saveSport({ goal: 12, zielGefragt: false, erinnerung: false, trainings: [], packs: {}, celebrated: [], hidden: [], custom: [] });
+    expect(JSON.parse(win.localStorage.getItem("wasgibts.sport")!)).toMatchObject({ version: 2, goal: null });
+    const other = await load({ "wasgibts.sport": JSON.stringify({ version: 3, goal: 5 }) });
+    expect(other.store.loadSport().goal).toBeNull();
+    const kept = await load({ "wasgibts.sport": JSON.stringify({ version: 2, goal: 5, erinnerung: true }) });
+    expect(kept.store.useSport()).toMatchObject({ goal: 5, erinnerung: true });
+  });
+
+  it("v1 → v2: Ziel bleibt (früherer Standard 3), nie mehr gefragt, Erinnerung aus", async () => {
+    const v1 = await load({ "wasgibts.sport": JSON.stringify({ version: 1, goal: 5, trainings: [], packs: { laufen: ["Schuhe"] } }) });
+    expect(v1.store.loadSport()).toMatchObject({ goal: 5, zielGefragt: true, erinnerung: false, packs: { laufen: ["Schuhe"] } });
+    const ohne = await load({ "wasgibts.sport": JSON.stringify({ version: 1 }) });
+    expect(ohne.store.loadSport()).toMatchObject({ goal: 3, zielGefragt: true });
+  });
+
+  it("Ziel setzen (auch „Ohne Ziel“) beantwortet die Ziel-Frage; Erinnerung an und zurück", async () => {
+    const { store, actions } = await load();
+    const back = actions.setSportGoal(null);
+    expect(store.loadSport()).toMatchObject({ goal: null, zielGefragt: true });
+    back();
+    expect(store.loadSport().zielGefragt).toBe(false);
+    actions.setSportGoal(2);
+    expect(store.loadSport().goal).toBe(2);
+    const aus = actions.setSportErinnerung(true);
+    expect(store.loadSport().erinnerung).toBe(true);
+    aus();
+    expect(store.loadSport().erinnerung).toBe(false);
+    actions.rememberSport("Tennis");
+    actions.forgetSport("Tennis");
+    expect(store.loadSport().custom).toEqual([]);
   });
 });
 
@@ -96,7 +121,7 @@ describe("Sport-Aktionen", () => {
     actions.setSportGoal(4.4);
     expect(store.loadSport().goal).toBe(4);
     back();
-    expect(store.loadSport().goal).toBe(3);
+    expect(store.loadSport().goal).toBeNull();
   });
 
   it("Packliste: aufgeräumt, höchstens 12", async () => {

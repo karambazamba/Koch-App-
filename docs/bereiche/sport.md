@@ -1,22 +1,33 @@
 # Sport
 
-Kurz: Persönliche Trainings und ein Wochenziel – ohne Druck. Die Woche Mo–So
-als Kreise, ein freundlicher Satz, Packlisten, und die Begleitung (Standard
-Mia) plant Trainings in freie Kalender-Lücken.
+Kurz: Persönliche Trainings als Stempelkarte der Woche (A-044, Tafel 132) –
+ohne Druck. Diese Woche, das Nächste, ein Knopf; alles andere im „•••“. Die
+Begleitung (Mia) stempelt, sagt, wie die Woche läuft, und plant Trainings in
+freie Kalender-Lücken.
 
 ## Wo im Code
 
 - Logik (rein): `src/lib/sport/model.ts` (`SPORTS`, `trainingsBetween`,
-  `weekStatus`, `weekStreak`, `weekDots`, `statusLine`, `celebrationText`,
-  `praiseFor`, `monthStats`, `nextTraining`, `todaysTraining`,
-  `parseSportCommand`, `guessMinutes`, `freeStarts`, `plannedOn`,
-  `lastTraining`, `planTrainings`).
-- Speicher: `src/lib/sport/store.ts` (`loadSport`, `saveSport`,
-  `changeSport`, `useSport`); `src/lib/sport/index.ts` bündelt beides.
+  `weekStatus`, `weekStreak`, `celebrationText`, `monthStats`,
+  `nextTraining`, `todaysTraining`, `parseSportCommand`, `guessMinutes`,
+  `freeStarts`, `plannedOn`, `lastTraining`, `planTrainings`, `validGoal`).
+- Stempelkarte (rein): `src/lib/sport/stempel.ts` (`stempelkarte`,
+  `stempelDrehung`, `letzteWochen`, `wochenLabel`, `gestempeltText`,
+  `sportLage`, `zielFrageFaellig`, `ZIEL_FRAGE`).
+- Erinnerung am Vorabend (rein): `src/lib/sport/erinnerung.ts`
+  (`sportVorabend`, `SPORT_VORABEND_MINUTE`, `proaktivHeute`); läuft in
+  `components/heute/mitteilungen/NotifyHost.tsx`.
+- Speicher: `src/lib/sport/store.ts` (`migrateSport`, `loadSport`,
+  `saveSport`, `changeSport`, `useSport`); `src/lib/sport/index.ts` bündelt
+  Modell, Speicher und Planen.
 - Aktionen: `src/lib/sport/actions.ts` (`addTraining`, `updateTraining`,
-  `removeTraining`, `setSportGoal`, `setPack`).
+  `removeTraining`, `setSportGoal` (auch `null` = ohne Ziel),
+  `markZielGefragt`, `setSportErinnerung`, `setPack`, `rememberSport`,
+  `forgetSport`).
 - Oberfläche: `src/components/sport/SportTile.tsx`, `SportView.tsx`
-  (`/sport`), `SportWeekRow.tsx`, `SportDaySheet.tsx`, `SportAddSheet.tsx`,
+  (`/sport`), `Stempel.tsx` (Feld, Stempel, `useNeueStempel`),
+  `SportMenu.tsx` („•••“), `SportEintragen.tsx` (Eintragen + Ziel-Frage),
+  `SportDaySheet.tsx`, `SportAddSheet.tsx`, `SportPlanForm.tsx`,
   `SportCelebration.tsx` (im Layout); Feier-Zustand `src/lib/core/celebrate.ts`.
 - Begleitung: `src/lib/begleitung/dayTools.ts` (Werkzeuge),
   `src/lib/begleitung/dayChat.ts` (Regeln ohne KI).
@@ -27,17 +38,22 @@ Mia) plant Trainings in freie Kalender-Lücken.
 
 | Schlüssel | Version | Inhalt | Sicherung |
 |---|---|---|---|
-| `wasgibts.sport` | v1 | `SportState` | ja |
+| `wasgibts.sport` | v2 | `SportState` | ja |
 
-- `SportState`: `goal` (1–7, Standard 3), `trainings`, `packs` (eigene
+- `SportState`: `goal` (1–7 oder `null` = „Ohne Ziel“, Standard ohne Ziel),
+  `zielGefragt` (Ziel-Frage schon gestellt), `erinnerung` (am Vorabend,
+  Standard aus), `trainings`, `packs` (eigene
   Packlisten je Sportart, bis 12 Sachen), `celebrated` (Montage gefeierter
   Wochen), `hidden` (abgehakte Sport-Termine, die nicht zählen sollen),
   `custom` (eigene Sportarten aus „Andere“, bis 12; fehlt in alten
-  Speicherständen und Sicherungen → leer, Version bleibt v1).
+  Speicherständen und Sicherungen → leer).
+- v1 → v2 (A-044, `migrateSport`): Ziel bleibt (fehlt es: früherer Standard
+  3), `zielGefragt` = ja (wer v1 hatte, wird nie gefragt), `erinnerung` = aus.
+  Alte Sicherungen laufen beim Laden durch dieselbe Migration.
 - Training = Eintrag `typ: "training"` im einheitlichen Modell mit `sport`,
   `minutes` (1–600), optional `km`, `date`, `time`, `note`, `terminKey`.
-- Sportarten: laufen, fitness, rad, schwimmen, yoga, fussball, spazieren –
-  oder ein eigener Name.
+- Sportarten: laufen, fitness, rad, schwimmen, yoga, fussball, spazieren,
+  volleyball – oder ein eigener Name.
 - Persönlich: Sport-Termine zählen nur ohne „wer“ oder mit mir
   (`persons[0]`).
 
@@ -52,42 +68,74 @@ Trainings und Woche:
 - Serie nur in Wochen (`weekStreak`), nie in Tagen. Angezeigt wird sie nur
   in Antworten der Begleitung.
 
-Ohne Zähler in der Oberfläche:
-- Kreise Mo–So (`SportWeekRow`, 34 px, Tafel 25): grün gefüllt mit Haken =
-  trainiert, gestrichelter grüner Ring mit Sport-Icon = geplant
-  (`DayDot.sport`; eigene Sportart = ihr Name), heute frei = oranger Ring mit
-  „+“, sonst weiß halbtransparent. Uhrzeit vollständig unter dem Kreis
-  („18:00“, 10 px grün) – nie nur die Stunde im Kreis (früher „18“).
-- Sportarten zeigen Linien-Icons (`SportIcon`: Footprints, Dumbbell, Bike,
-  WavesLadder, Flower2, Volleyball, Trees; sonst Activity; Laufschuh `SportShoe` nur als Wasserzeichen ohne Training), nie Emojis in
-  Chips oder Knöpfen. `emoji` bleibt im Modell nur für Chat-Texte.
-- EIN Satz (`statusLine`, ohne Zahlen): „Wochenziel geschafft – schön.“,
-  „Mehr als geplant – richtig schöne Woche.“, „Ein Training noch, dann ist die
-  Woche rund.“, montags „Neue Woche, neues Glück.“ bzw. „Letzte Woche lief
-  richtig gut – auf ein Neues.“, sonst „Die Woche ist bereit für dich.“
+Stempelkarte (A-044, Tafel 132; ersetzt die Kreise Mo–So, den Wochensatz
+`statusLine` und das Wasserzeichen):
+- Felder = Wochenziel (ohne Ziel 3). Jedes Training dieser Woche (Mo–So,
+  `now()`) = Stempel: doppelter Ring im Sport-Akzent (`--tile-ac`, folgt der
+  Kachel-Farbe der Sport-Kachel), Linien-Symbol der Sportart, Tag in
+  Großbuchstaben („MO“), fest gedreht −10° bis +10° (`stempelDrehung` aus der
+  ID). Geplantes (ab jetzt bis Sonntag, schon vorbei = leise weg) =
+  gestrichelter Kreis mit „Do 8:00“, frei = gestrichelt leer. Mehr Trainings
+  als Felder = kleine Bonus-Stempel daneben.
+- Zwei Sätze: groß „Mo war Laufen.“ (heute: „Heute war …“; leer: „Diese
+  Woche ist noch frei.“), klein „Do 8:00 ist geplant.“. Ziel erreicht: Karte
+  und Stempel grün (`data-geschafft`, Tokens `--app-good-soft`/`-ink`;
+  Schlicht: Fläche weiß), „Woche geschafft.“ / „Mehr ist Bonus.“ Ohne Ziel nie
+  „geschafft“.
+- Neuer Stempel (seit dem Öffnen dazugekommen, `useNeueStempel`) setzt weich
+  auf: kurz größer, dann aufsetzen (`.stempel-neu`, 1 s,
+  `cubic-bezier(.16,1,.3,1)`, nur transform/opacity); reduced-motion = nur
+  Überblenden.
+- „Letzte Wochen“: die 3 Wochen davor („20.–26. Okt“, über den Monat „27.
+  Okt–2. Nov“), gefüllte Punkte je Training, gestrichelte bis zum Ziel, rechts
+  grün „geschafft“. Keine Serien, keine Summen; ohne jedes Training dort fehlt
+  der Abschnitt ganz. Antippen = die Trainings der Woche (ändern/löschen).
+- Sportarten zeigen Linien-Icons (`SportIcon`: Laufen = Laufschuh
+  `SportShoe`, Dumbbell, Bike, WavesLadder, Flower2, Volleyball (auch
+  Fußball), Trees; sonst Activity), nie Emojis in Chips oder Knöpfen.
+  `emoji` bleibt im Modell nur für Chat-Texte.
 
-Kachel `sport` (Größen XS/S im festen Raster, Tafel 118, Standard XS,
-Pastell-Grün; Standard nur bei „allein“, Tafel 119):
-- XS: EINE Zeile („Heute 18:00 · Yoga“, ohne Plan „Diese Woche frei“). S: „Als
-  Nächstes“ (Icon, „Fr 17:00“, Titel; antippen = Tag-Fenster des Trainings).
-  Ohne geplantes Training: „Diese Woche ist noch frei. Plus tippen.“ (ohne
-  Gedankenstrich). Die Woche als Kreise und der Wochensatz stehen auf `/sport`.
-  Beispiel-Tag: „2 von 3 diese Woche“ (bis zum ersten eigenen Training).
-- „+“ = „Training planen“ (`SportPlanForm` mit Tag-Chips für 7 Tage, Start
-  = erster freier Tag) und darunter „Schon trainiert? Eintragen“ →
-  `SportAddSheet`. Kachel-Label → `/sport`. Jeder Kreis → `SportDaySheet`.
-- Wasserzeichen (Tafel 124 A, nur in S): großes Linien-Symbol (150 px, Strich
-  1,3) unten rechts, rechts/unten 30 px angeschnitten, hinter dem Inhalt
-  (`ui/KachelWasserzeichen`, Kachel `isolate`, Zeichen z −1), nicht
-  antippbar, `aria-hidden`, ohne Bewegung. Symbol = Sportart des nächsten
-  Trainings, sonst des letzten, sonst Laufschuh (`SportShoe`;
-  `lib/sport/wasserzeichen.ts`, `wasserzeichenSport`); eigene Sportarten
-  `Activity`. Farbe = Kachel-Akzent (`--tile-ac`, folgt der gewählten Farbe),
-  Deckkraft `--app-wasserzeichen` (hell 12,5 %, dunkel 10 %), mit freiem
-  Text (Beispiel, „noch frei“) `--app-wasserzeichen-frei` (9 %/8 %);
-  Schlicht: keins (A-036). XS ohne
-  Wasserzeichen (eine Zeile, zu eng, ruhiger). Die Kachel trägt
-  `data-wasserzeichen="<sportart>"`.
+Seite `/sport` (`SportView`): Kopf „‹ Heute“, rechts „•••“ (kein Plus),
+Titel „Sport“. Karte „Diese Woche“ (weiß, feiner gestrichelter Rand, rechts
+„Ziel: 2×“ bzw. „Ohne Ziel“), darunter der große Knopf „Training eintragen“
+(Sportart, Dauer, heute/gestern; `SportAddSheet`) und der Link „Planen“
+(`SportPlanForm` mit Tag-Chips für 7 Tage), dann „Letzte Wochen“. Ein Stempel
+öffnet Ändern/Löschen (Gelöscht · Rückgängig), ein geplantes Feld sein
+Tag-Fenster, ein freies „Training eintragen“.
+
+Menü „•••“ (`SportMenu`, ein Fenster): Wochenziel (Auswahl 1×–7× oder „Ohne
+Ziel“, Wert rechts „2× ⌄“), Packlisten (Wert: die ersten zwei Sportarten;
+antippen = Liste je Sportart), Meine Sportarten (zuletzt genutzte und eigene;
+eigene entfernen, neue dazu), Erinnerung am Vorabend (Schalter, Standard
+aus).
+
+Ziel-Frage (einmalig, `SportEintragen`/`SportZielFrage`): beim ersten
+Training ohne Ziel „Wie oft willst du Sport machen? Pro Woche. Dann sag ich
+dir, wenn die Woche geschafft ist.“ mit „2×“, „3×“, „Ohne Ziel“. Wegwischen
+zählt als beantwortet; stempelt Mia das erste Training, kommt die Frage beim
+nächsten Öffnen von `/sport`.
+
+Erinnerung am Vorabend: an + morgen ein geplantes Training → um 19:00
+(5 Min Fenster) „Morgen (Do): Laufen · 8:00“, antippen = `/sport`. Zählt als
+proaktiv (`pushAllowed` Art „proaktiv“): höchstens 1 am Tag (Schlüssel
+`proaktiv:<tag>:sport-vorabend` in `wasgibts.mitteilungen`), Ruhe 20–7 Uhr
+(19:00 liegt davor), Pause = nichts. Hat das Training selbst „Am Vorabend“,
+kommt nur jene. Nur auf dem Gerät, solange die App offen ist (Sport liegt
+nicht beim Server; Server-Push sieht ihn nicht).
+
+Kachel `sport` (Größen XS/S/M im festen Raster, Standard XS, Pastell-Flieder;
+Standard nur bei „allein“, Tafel 119), Plus = „Training eintragen“, die
+ganze Kachel = `/sport`, kein Wasserzeichen (die Stempel sind das Bild):
+- XS: EINE Zeile („Morgen · Do 8:00 · Laufen“, geschafft „Woche geschafft“,
+  sonst „Diese Woche frei“).
+- S: „SPORT“ + Plus, die Felder der Woche nebeneinander (54 px; ab 3 Feldern
+  34 px), darunter groß „Do · 8:00“, klein der Titel. Geschafft: Kachel grün,
+  „Geschafft.“ / „Diese Woche“. Leer: gestrichelte Felder + „Diese Woche ist
+  noch frei.“ Ohne Plan, aber mit Training: der große Satz („Mo war Laufen.“).
+- M: Felder links (68 px; ab 4 Feldern 34 px), rechts „ALS NÄCHSTES“, „Do ·
+  8:00“, „Laufen · ☀ 9°“ (Wetter zur Trainingszeit).
+- Beispiel-Tag: „2 von 3 diese Woche“ (bis zum ersten eigenen Training).
+- Die Kachel trägt `data-sport-zustand` (beispiel/leer/normal/geschafft).
 
 Tag-Fenster (`SportDaySheet`), vier Arten:
 - leer, heute/vergangen: „Wie letztes Mal: Laufen · 45 Min“ oder Sportart +
@@ -109,10 +157,6 @@ Tag-Fenster (`SportDaySheet`), vier Arten:
   Termin mit Etikett Sport (`plannedEntry`), Ende über `endOf` (nie über
   Mitternacht), Erinnerung 30 Min vorher.
 
-Seite `/sport` (`SportView`): Woche mit Satz, „Zuletzt“ (60 Tage, antippen =
-ändern/löschen, mit `PersonAvatar`), „Packlisten“, „Wie oft pro Woche?“
-(Wochenziel). Plus oben = eintragen.
-
 `planTrainings`:
 - Tage der gewählten Woche nach heute, möglichst verteilt (nicht zwei Tage
   hintereinander im ersten Durchgang).
@@ -121,7 +165,7 @@ Seite `/sport` (`SportView`): Woche mit Satz, „Zuletzt“ (60 Tage, antippen =
 - Draußen-Sport bei Regen: andere trockene Zeit am Tag, sonst Fitnessstudio
   („Regen angesagt – lieber drinnen“). Höchstens 3 kurze Erklärungen.
 
-Feier (`SportCelebration` im Layout): genau EINMAL je Woche, wenn ein neues
+Feier (`SportCelebration` im Layout, nur mit Ziel): genau EINMAL je Woche, wenn ein neues
 Training die Zahl genau auf das Ziel bringt. Pokal-Karte „Stark, <Name>! Dein
 Wochenziel ist geschafft.“, 2 Sekunden, Antippen schließt, Avatar „freuen“.
 Beim Öffnen der App wird nicht nachgefeiert.
@@ -133,28 +177,51 @@ Training (sanft).
 ## Begleitung (Mia)
 
 - Mit KI (Vorschau + „Übernehmen“): `sport_eintragen` (Op `add_training`,
-  Dauer geschätzt über `guessMinutes`), `sport_ziel_setzen`
-  (`set_sport_goal`), `trainings_planen` (Termine über `upsert_entry`,
-  Etikett Sport, Erinnerung 30), `sport_statistik` (nur lesen).
-- Kontext: „Sport: Wochenziel 3×, diese Woche 2“.
+  Dauer geschätzt über `guessMinutes`; das Werkzeug gibt die Bestätigung vor:
+  „Volleyball · heute · gestempelt“, beim Erreichen des Ziels dazu „Woche
+  geschafft.“, keine Zahlen), `sport_ziel_setzen` (`set_sport_goal`, setzt
+  auch `zielGefragt`), `trainings_planen` (Termine über `upsert_entry`,
+  Etikett Sport, Erinnerung 30), `sport_statistik` (nur lesen; erste Zeile
+  „Lage diese Woche (so antworten): …“ aus `sportLage`).
+- Kontext: „Sport: Wochenziel 2×, diese Woche 1“ bzw. „Sport: ohne
+  Wochenziel, …“.
 - Ohne KI sofort (`dayChat` + `parseSportCommand`, mit „Mach das
-  rückgängig“): „War heute 5 km laufen“, „Ich will 4× pro Woche Sport
-  machen“, „Wie oft war ich diese Woche beim Sport?“, „Plan mir 3 Trainings
+  rückgängig“): „War heute Volleyball“ → Stempel + „Volleyball · heute ·
+  gestempelt“ (gestern: „· gestern ·“, sonst Wochentag); „Wie läuft’s mit
+  Sport?“ (Art `lage`) und „Wie oft war ich diese Woche beim Sport?“ → „Mo war
+  Laufen, Do ist geplant.“ bzw. „Woche geschafft.“ (ohne Zähler); Monat/km
+  wie bisher; „Ich will 4× pro Woche Sport machen“, „Plan mir 3 Trainings
   nächste Woche, am liebsten morgens“. Sätze über andere Personen zählen
   nicht.
+- Ergebnis-Karten (A-037) gibt es auf diesem Stand noch nicht: die Texte
+  liegen als Bausteine in `lib/sport/stempel.ts` (`gestempeltText`,
+  `sportLage`), die Karte übernimmt sie später unverändert.
+- Prüfstand: „War heute Volleyball“ (`add_training`), „Wie läuft’s mit
+  Sport?“ (Antwort ohne Aktion).
 - Nutzt sie Sport, wird die Sport-Kachel eingeblendet und sie sagt es.
 
 ## Tests
 
+- `tests/sport/stempel.test.ts` – Stempelkarte (Ziel 2: ein Training = 1
+  Stempel + 1 Feld, zwei = geschafft, drittes = Bonus, Montag neue Karte,
+  ohne Ziel 3 Felder, Drehung fest), Letzte Wochen, Ziel-Frage, Mias Texte,
+  Erinnerung am Vorabend (Standard aus, 19:00, 1 am Tag, Pause), Kachel
+  S/M/leer/geschafft/XS ohne Wasserzeichen, Stempel-Animation.
 - `tests/sport/sportModell.test.ts` – Training anlegen, Sport-Termine zählen
-  mit, Woche/Monat/Sätze ohne Druck, nächstes Training, Sätze ohne KI.
-- `tests/sport/sportSpeicher.test.ts` – Speicher und Aktionen.
+  mit, Woche/Monat, nächstes Training, Sätze ohne KI.
+- `tests/sport/sportSpeicher.test.ts` – Speicher v2, Migration v1 → v2 und
+  Aktionen (Ziel, ohne Ziel, Erinnerung, eigene Sportarten).
 - `tests/sport/tage.test.ts` – Tag-Fenster.
 - `tests/sport/trainingsPlanen.test.ts` – `planTrainings`, `freeStarts`.
 - `tests/sport/wochen.test.ts` – Wochen zählen.
-- `tests/sport/sportPlanen.test.ts` – eigene Zeit, „Jede Woche“, Kreis-
-  Zustände, Überschneidung, zuletzt genutzte Zeit, „Als Nächstes“, Ändern
+- `tests/sport/sportPlanen.test.ts` – eigene Zeit, „Jede Woche“, geplante
+  Felder, Überschneidung, zuletzt genutzte Zeit, „Als Nächstes“, Ändern
   (einzeln/Serie), eigene Sportarten, „Samstag 18:30 laufen gehen“.
-- Durchklick `sportKachel` (`e2e/ablaeufe/vorfuehren.mjs`): Do antippen →
-  eigene Zeit 18:30 → „Planen · Do 18:30“ → Kachel zeigt „18:30“ und „Als
-  Nächstes“; ändern auf 19:00/60 Min; absagen + Rückgängig.
+- `tests/begleitung/tagesChat.test.ts`, `werkzeugeTag.test.ts` – Mia ohne
+  und mit KI.
+- Durchklick `sportStempel` und `sportPlanen` (`e2e/ablaeufe/sport.mjs`):
+  leere Karte → eintragen → Ziel-Frage „2×“ → Stempel → geschafft → Bonus →
+  Menü (Erinnerung Standard aus) → löschen + Rückgängig → Kachel (Plus,
+  antippen = Seite); Planen 18:30 → gestricheltes Feld → absagen + Rückgängig.
+- Bilder (`e2e/bilder.mjs`): `sport-kachel-<leer|normal|geschafft>-<S|M>-<look>`,
+  `sport-seite-<normal|geschafft>`, `sport-menue`.

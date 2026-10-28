@@ -33,11 +33,9 @@ import {
   monthStats,
   parseSportCommand,
   planTrainings,
-  praiseFor,
-  sportById,
-  weekStatus,
   weekStreak,
 } from "@/lib/sport";
+import { gestempeltText, sportLage, stempelkarte } from "@/lib/sport/stempel";
 import { addTraining, setSportGoal } from "@/lib/sport/actions";
 
 type DayChatContext = {
@@ -57,6 +55,8 @@ const NEXT_STEP = /^(nächster|naechster)\s+schritt\b|^weiter\b.*\b(schritt|koch
 const WHAT_NOW = /^was\s+kommt\s+(jetzt|als\s+nächstes)\b|^welcher\s+schritt\b/i;
 
 /** Sport-Kachel einblenden, wenn Lotte Sport nutzt (true = neu) */
+const minuteNow = () => now().getHours() * 60 + now().getMinutes();
+
 function showSportTile(): boolean {
   const tiles = loadHomeTiles();
   if (tiles.find((t) => t.id === "sport")?.visible) return false;
@@ -135,21 +135,21 @@ export function dayChat(text: string, ctx: DayChatContext): DayChatReply | null 
     if (sport.kind === "add") {
       const minutes = sport.minutes ?? guessMinutes(sport.sport, sport.km);
       const data = { sport: sport.sport, minutes, date: sport.date, ...(sport.km ? { km: sport.km } : {}) };
+      const vorher = stempelkarte(state, entries, ctx.today, minuteNow(), ctx.me).geschafft;
       const { undo } = addTraining(data);
-      const after = loadSport();
-      const week = weekStatus(after, entries, ctx.today, ctx.me);
+      const jetzt = stempelkarte(loadSport(), entries, ctx.today, minuteNow(), ctx.me).geschafft;
       const shown = showSportTile();
-      const kind = sportById(sport.sport);
-      const status = week.count > week.goal ? " Bonusrunde! 🔥" : week.count === week.goal ? " Wochenziel geschafft." : "";
-      return { text: `Eingetragen ${kind.emoji} ${kind.label}, ${minutes} Min${sport.km ? `, ${sport.km} km` : ""}. ${praiseFor(after, entries, data, ctx.today, ctx.me)}${status}${shown ? " Die Sport-Kachel steht jetzt auf der Startseite." : ""}`, undo };
+      // Text-Baustein der Bestätigung (die spätere Ergebnis-Karte übernimmt ihn): „Volleyball · heute · gestempelt“
+      return { text: `${gestempeltText(sport.sport, sport.date, ctx.today)}${jetzt && !vorher ? ". Woche geschafft." : ""}${shown ? `${jetzt && !vorher ? "" : "."} Die Sport-Kachel steht jetzt auf der Startseite.` : ""}`, undo };
     }
+    if (sport.kind === "lage") return { text: sportLage(stempelkarte(state, entries, ctx.today, minuteNow(), ctx.me), ctx.today) };
     if (sport.kind === "stats") {
-      const week = weekStatus(state, entries, ctx.today, ctx.me);
       const m = monthStats(state, entries, ctx.today, ctx.me);
       const streak = weekStreak(state, entries, ctx.today, ctx.me);
       if (sport.what === "monat" || sport.km)
-        return { text: `${monthName(ctx.today)}: ${m.count} ${m.count === 1 ? "Einheit" : "Einheiten"}, ${hoursLabel(m.minutes)}${m.km ? `, ${m.km} km` : ""}.${streak >= 2 ? ` ${streak} Wochen in Folge geschafft 🔥` : ""}` };
-      return { text: week.count ? `Diese Woche ${week.count}× – ${week.count >= week.goal ? (week.count > week.goal ? "Bonusrunde! 🔥" : "Wochenziel geschafft 🎉") : `Ziel sind ${week.goal}.`}` : "Die Woche ist noch frisch. Bereit, wenn du’s bist." };
+        return { text: `${monthName(ctx.today)}: ${m.count} ${m.count === 1 ? "Einheit" : "Einheiten"}, ${hoursLabel(m.minutes)}${m.km ? `, ${m.km} km` : ""}.${streak >= 2 ? ` ${streak} Wochen in Folge geschafft.` : ""}` };
+      // Die Woche ohne Zähler: wie die Stempelkarte
+      return { text: sportLage(stempelkarte(state, entries, ctx.today, minuteNow(), ctx.me), ctx.today) };
     }
     // Trainings planen: freie Lücken, Wunsch-Tageszeit, Wetter (falls bekannt)
     const fc = loadForecast();

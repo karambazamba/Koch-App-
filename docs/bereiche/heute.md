@@ -116,7 +116,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - `wasgibts.startseite` v9 `{version, tiles: {id, visible, size, farbe?}[], tipSeen}`
   (`migrateHome`). v8 → v9 (Tafel 118): Reihenfolge, Sichtbarkeit, Farben und
   Größen bleiben, L → M, nicht mehr erlaubte Größen die nächste erlaubte
-  (`fitSize`: Timer/Sport/Im Haus M → S); keine Kachel verschwindet. v1 →
+  (`fitSize`: Timer/Im Haus M → S; Sport darf seit A-044 M); keine Kachel verschwindet. v1 →
   Aufgaben hinter Termine; v1/v2 → Größen S/M/L,
   Kachel „kladde“ wird „notizen“ an derselben Stelle; v3 → v4 hängt die
   Spendentopf-Kachel einmal hinter die letzte sichtbare (`withPotTile`);
@@ -184,9 +184,9 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   trägt in S/M ein großes, stilles Linien-Symbol unten rechts im
   Kachel-Akzent (`ui/KachelWasserzeichen`, `.kachel-wasserzeichen`, Tokens
   `--app-wasserzeichen*`): Termine Calendar, Aufgaben CircleCheck, Einkauf
-  ShoppingCart, Sport Sportart des nächsten Trainings, Im Haus Refrigerator,
-  Notizen StickyNote, Timer Timer, Tipps MapPin, Post (bald) Mail. Keins bei
-  Wetter (Himmel), Essen (Foto), Pinnwand (Zettel), Spendentopf (Topf), der
+  ShoppingCart, Im Haus Refrigerator, Notizen StickyNote, Timer Timer, Tipps
+  MapPin, Post (bald) Mail. Keins bei Wetter (Himmel), Essen (Foto), Pinnwand
+  (Zettel), Spendentopf (Topf), Sport (die Stempel sind das Bild, A-044), der
   Jetzt-Karte, in XS und im Look „Schlicht“. Tabelle `WASSERZEICHEN_SYMBOL`
   (`Record` über alle Kachel-IDs, neue Kachel = Eintrag oder Grund in
   `OHNE_WASSERZEICHEN`, Test `tests/app/wasserzeichen.test.ts`). Freier Text
@@ -196,7 +196,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - `HOME_TILES` in Standard-Reihenfolge (erlaubte Größen, Standard fett im
   Code): Pinnwand S/M, Wetter XS/S/M, Notizen XS/S/M, Termine S/M, Aufgaben
   S/M, Essen S/M, Einkauf S/M, Spendentopf nur M, Tipps nur M (Baustein),
-  Timer XS/S, Sport XS/S, Im Haus XS/S (Baustein), Post („bald“, nie
+  Timer XS/S, Sport XS/S/M (Stempelkarte, A-044), Im Haus XS/S (Baustein), Post („bald“, nie
   sichtbar). Der Größen-Umschalter zeigt nur die erlaubten.
 - Pinnwand ist ein Baustein (Kühlschranktür): Kachel nur mit Baustein
   (Filter in `TodayPage`); „Nur für mich“ startet ohne, sonst an. Kachel

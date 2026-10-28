@@ -1,95 +1,25 @@
-// Sport-Kachel mit Wasserzeichen (Tafel 124 A): Symbol = Sportart des
-// nächsten Trainings, sonst des letzten, sonst Laufschuh; nur in S, hinter dem
-// Inhalt, nicht antippbar, aria-hidden; Deckkraft als Tokens (hell/dunkel,
-// Schlicht ohne); Schrift bleibt ≥ 4,5:1 auch über dem Wasserzeichen. Im Haus
-// (S) mit Kühlschrank, Namen nie abgeschnitten. Alle Kacheln: A-036.
+// Wasserzeichen (Tafel 124 A): Deckkraft als Tokens (hell/dunkel, Schlicht
+// ohne); Schrift bleibt ≥ 4,5:1 auch über dem Wasserzeichen. Im Haus (S) mit
+// Kühlschrank, Namen nie abgeschnitten. Alle Kacheln: A-036. Sport hat seit
+// A-044 keins mehr (die Stempel sind das Bild, `tests/sport/stempel.test.ts`).
 import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { LAUFSCHUH, wasserzeichenSport } from "@/lib/sport/wasserzeichen";
-import { EMPTY_SPORT, nextTraining, type SportState } from "@/lib/sport";
-import type { CalendarEntry } from "@/lib/kalender/model";
 import type { PantryItem } from "@/lib/vorrat/pantry";
 import { KACHEL_FARBEN } from "@/lib/heute/kachelFarben";
-import { at, termin } from "../helpers";
+import { at } from "../helpers";
 
 const TODAY = "2026-10-21";
-const sportTermin = (title: string, date: string, start = "18:00") => termin({ title, date, start, end: "19:00", label: "Sport" });
 
 beforeEach(() => at(`${TODAY}T09:00`));
 
-describe("Welches Symbol?", () => {
-  it("nächstes Training zuerst, sonst das letzte, sonst Laufschuh", () => {
-    expect(wasserzeichenSport("Schwimmen im Freibad", ["rad"])).toBe("schwimmen");
-    expect(wasserzeichenSport(null, ["rad", "laufen"])).toBe("rad");
-    expect(wasserzeichenSport(null, [])).toBe(LAUFSCHUH);
-    // Eigene Sportart bleibt ihr Name (SportIcon zeigt dann das allgemeine Symbol)
-    expect(wasserzeichenSport("Tennis", [])).toBe("Tennis");
-  });
-
-  it("wechselt mit der Sportart des nächsten Trainings", () => {
-    const yoga = [sportTermin("Yoga", "2026-10-22")];
-    expect(wasserzeichenSport(nextTraining(yoga, TODAY, 9 * 60)?.title ?? null, [])).toBe("yoga");
-    const rad = [sportTermin("Radtour", "2026-10-21", "11:00"), ...yoga];
-    expect(wasserzeichenSport(nextTraining(rad, TODAY, 9 * 60)?.title ?? null, [])).toBe("rad");
-  });
-});
-
 // --- Kachel als echte Ausgabe (ohne Browser) ---------------------------------
-const store = vi.hoisted(() => ({ sport: null as SportState | null, pantry: null as PantryItem[] | null }));
-vi.mock("@/lib/sport/store", async (orig) => ({ ...(await orig<object>()), useSport: () => store.sport ?? undefined }));
+const store = vi.hoisted(() => ({ pantry: null as PantryItem[] | null }));
 vi.mock("@/lib/vorrat/pantry", async (orig) => ({ ...(await orig<object>()), usePantry: () => store.pantry ?? undefined }));
 vi.mock("@/lib/wetter/client", () => ({ useForecast: () => ({ forecast: null, stale: false, failed: false, place: "Eutin" }) }));
 vi.mock("next/dynamic", () => ({ default: () => () => null }));
 vi.mock("next/link", () => ({ default: ({ href, children, ...rest }: { href: string; children: unknown }) => createElement("a", { href, ...rest }, children as never) }));
-
-async function sportTile(entries: CalendarEntry[], size: "XS" | "S" = "S", sport: SportState = EMPTY_SPORT) {
-  store.sport = sport;
-  const { SportTile } = await import("@/components/sport/SportTile");
-  return renderToStaticMarkup(createElement(SportTile, { size, entries, today: TODAY, minutes: 9 * 60, me: null }));
-}
-
-describe("Sport-Kachel", () => {
-  it("S: Wasserzeichen hinter dem Inhalt, still, nicht antippbar, Symbol der nächsten Sportart", async () => {
-    const html = await sportTile([sportTermin("Schwimmen", "2026-10-23")]);
-    expect(html).toContain('data-wasserzeichen="schwimmen"');
-    const mark = html.match(/<span class="kachel-wasserzeichen[^"]*"[^>]*>/)?.[0] ?? "";
-    expect(mark).toContain("pointer-events-none");
-    expect(mark).toContain("-z-10");
-    expect(mark).toContain("-bottom-[30px]");
-    expect(mark).toContain("-right-[30px]");
-    expect(mark).toContain("h-[150px]");
-    expect(mark).toContain("-rotate-[8deg]");
-    expect(mark).toContain('data-kachel="sport"');
-    // Kärtchen „Als Nächstes“ deckt ab: volle Deckkraft
-    expect(mark).not.toContain("data-art");
-    expect(mark).toContain('aria-hidden="true"');
-    expect(html).toMatch(/kachel-wasserzeichen[\s\S]*?stroke-width="1.3"[^>]*data-sport-symbol="schwimmen"/);
-    expect(html).toContain("isolate");
-    expect(html).not.toMatch(/animate-|transition/);
-  });
-
-  it("Symbol wechselt mit dem nächsten Training; ohne Plan das letzte, sonst Laufschuh", async () => {
-    expect(await sportTile([sportTermin("Yoga", "2026-10-22")])).toContain('data-sport-symbol="yoga"');
-    expect(await sportTile([sportTermin("Radeln", "2026-10-22")])).toContain('data-wasserzeichen="rad"');
-    const done = termin({ title: "Laufen", date: "2026-10-19", start: "07:00", end: "08:00", label: "Sport", doneDates: ["2026-10-19"] });
-    expect(await sportTile([done])).toContain('data-wasserzeichen="laufen"');
-    expect(await sportTile([])).toContain(`data-wasserzeichen="${LAUFSCHUH}"`);
-  });
-
-  it("leer: freundlicher Satz ohne Gedankenstrich", async () => {
-    const html = await sportTile([]);
-    expect(html).toContain("Diese Woche ist noch frei. Plus tippen.");
-    expect(html).not.toContain(" – ");
-  });
-
-  it("XS: kein Wasserzeichen (eine Zeile, zu eng)", async () => {
-    const html = await sportTile([sportTermin("Yoga", "2026-10-22")], "XS");
-    expect(html).not.toContain("kachel-wasserzeichen");
-    expect(html).not.toContain("data-wasserzeichen");
-  });
-});
 
 async function pantryTile(items: PantryItem[], size: "XS" | "S" = "S") {
   store.pantry = items;
@@ -176,7 +106,6 @@ describe("Tokens (Tafel 124 A)", () => {
 
   it("leiser Text über dem Zeichen trägt die Freistellung (Kontrast genau wie ohne Wasserzeichen)", async () => {
     expect(css).toMatch(/\.kachel-frei \{ background: var\(--tile-bg\);/);
-    expect(await sportTile([])).toMatch(/text-muted"><span class="kachel-frei">Diese Woche ist noch frei/);
     expect(await pantryTile([])).toMatch(/text-muted"><span class="kachel-frei">Sag mir, was da ist/);
     expect(await pantryTile([sache("Milch", 1)])).toMatch(/class="hit kachel-frei[^"]*text-accent-strong"/);
   });

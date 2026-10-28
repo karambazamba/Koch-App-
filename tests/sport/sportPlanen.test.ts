@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { at, termin } from "../helpers";
-import { EMPTY_SPORT, freeStarts, sanitizeSport, weekDots } from "@/lib/sport/model";
+import { EMPTY_SPORT, freeStarts, sanitizeSport } from "@/lib/sport/model";
+import { stempelkarte } from "@/lib/sport/stempel";
 import { changePlanned, clashText, clashWith, lastTimeFor, nextLine, plannedEntry, sportOfTitle } from "@/lib/sport/plan";
 import { itemsForDay, type CalendarEntry, type Termin } from "@/lib/kalender/model";
 
@@ -23,11 +24,12 @@ describe("Training planen (Tafel 25)", () => {
     expect(itemsForDay([e], "2026-10-28", TODAY)).toHaveLength(0);
   });
 
-  it("Kreis-Zustände: geplant mit Uhrzeit und Sportart, eigene Sportart bleibt ihr Name", () => {
+  it("Felder: geplant mit Uhrzeit und Sportart, eigene Sportart bleibt ihr Name", () => {
     const entries = [plannedEntry(plan(), null)!, plannedEntry(plan({ sport: "Tennis", date: "2026-10-24", start: "10:00" }), null)!];
-    const dots = weekDots(EMPTY_SPORT, entries, TODAY);
-    expect(dots[3]).toMatchObject({ state: "geplant", time: "18:30", sport: "laufen" });
-    expect(dots[5]).toMatchObject({ state: "geplant", time: "10:00", sport: "Tennis" });
+    const felder = stempelkarte(EMPTY_SPORT, entries, TODAY, 10 * 60 + 30).felder;
+    expect(felder[0]).toMatchObject({ art: "geplant", label: "Do 18:30", sport: "laufen" });
+    expect(felder[1]).toMatchObject({ art: "geplant", label: "Sa 10:00", sport: "Tennis" });
+    expect(felder[2]).toEqual({ art: "frei" });
     expect(sportOfTitle("Tennis")).toBe("Tennis");
   });
 

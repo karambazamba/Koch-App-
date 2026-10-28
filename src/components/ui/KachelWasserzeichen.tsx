@@ -8,8 +8,7 @@
 // Look „Schlicht“ keins. XS (eine Zeile) bleibt ohne. Still, nie antippbar,
 // für VoiceOver unsichtbar.
 
-import type { ReactNode } from "react";
-import { Calendar, CircleCheck, Mail, MapPin, Refrigerator, ShoppingCart, SportShoe, StickyNote, Timer, type LucideIcon } from "lucide-react";
+import { Calendar, CircleCheck, Mail, MapPin, Refrigerator, ShoppingCart, StickyNote, Timer, type LucideIcon } from "lucide-react";
 import type { HomeTileId, TileSize } from "@/lib/core/homeLayout";
 
 /** Kacheln mit eigenem Bild: kein Wasserzeichen, mit Grund (die Jetzt-Karte ist keine Kachel und hat auch keins) */
@@ -18,6 +17,7 @@ export const OHNE_WASSERZEICHEN = {
   essen: "Foto des Gerichts",
   pinnwand: "Zettel",
   spendentopf: "eigenes Bild (Topf)",
+  sport: "Stempel sind das Bild",
 } as const satisfies Partial<Record<HomeTileId, string>>;
 
 export type WasserzeichenKachel = Exclude<HomeTileId, keyof typeof OHNE_WASSERZEICHEN>;
@@ -25,14 +25,12 @@ export type WasserzeichenKachel = Exclude<HomeTileId, keyof typeof OHNE_WASSERZE
 /**
  * Symbol je Kachel. Neue Kachel = neuer Eintrag hier (sonst meckert
  * TypeScript und `tests/app/wasserzeichen.test.ts`) oder ein Grund oben.
- * Sport: Grundsymbol Laufschuh, die Kachel zeigt die Sportart des nächsten
- * Trainings (`sport/wasserzeichen.ts`).
+ * Sport hat keins: die Stempel der Woche sind das Bild (A-044).
  */
 export const WASSERZEICHEN_SYMBOL: Record<WasserzeichenKachel, LucideIcon> = {
   termine: Calendar,
   aufgaben: CircleCheck,
   einkauf: ShoppingCart,
-  sport: SportShoe,
   vorrat: Refrigerator,
   notizen: StickyNote,
   timer: Timer,
@@ -46,9 +44,8 @@ export const WASSERZEICHEN_STRICH = 1.3;
 /**
  * `frei`: auf der Kachel steht Text ohne weißes Kärtchen (Notizen, Im Haus,
  * leere Liste …) – dann die leise Deckkraft (`--app-wasserzeichen-frei`, 9 %).
- * `children` ersetzt das Symbol (Sport: Sportart).
  */
-export function KachelWasserzeichen({ kachel, size, frei = false, children }: { kachel: WasserzeichenKachel; size: TileSize; frei?: boolean; children?: ReactNode }) {
+export function KachelWasserzeichen({ kachel, size, frei = false }: { kachel: WasserzeichenKachel; size: TileSize; frei?: boolean }) {
   if (size === "XS") return null;
   const Symbol = WASSERZEICHEN_SYMBOL[kachel];
   return (
@@ -58,7 +55,7 @@ export function KachelWasserzeichen({ kachel, size, frei = false, children }: { 
       data-art={frei ? "frei" : undefined}
       aria-hidden
     >
-      {children ?? <Symbol strokeWidth={WASSERZEICHEN_STRICH} aria-hidden />}
+      <Symbol strokeWidth={WASSERZEICHEN_STRICH} aria-hidden />
     </span>
   );
 }

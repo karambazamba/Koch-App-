@@ -38,9 +38,20 @@ export function removeTraining(training: Training): () => void {
   );
 }
 
-export function setSportGoal(goal: number): () => void {
-  const g = Math.min(7, Math.max(1, Math.round(goal)));
-  return pushUndo("das Ändern des Wochenziels", changeSport((s) => ({ ...s, goal: g })));
+/** Wochenziel 1–7 oder null = „Ohne Ziel“ (Stempelkarte mit 3 Feldern); danach wird nie mehr gefragt */
+export function setSportGoal(goal: number | null): () => void {
+  const g = goal === null ? null : Math.min(7, Math.max(1, Math.round(goal)));
+  return pushUndo("das Ändern des Wochenziels", changeSport((s) => ({ ...s, goal: g, zielGefragt: true })));
+}
+
+/** Ziel-Frage beantwortet oder weggewischt: nie zweimal fragen */
+export function markZielGefragt() {
+  changeSport((s) => ({ ...s, zielGefragt: true }));
+}
+
+/** Erinnerung am Vorabend eines geplanten Trainings (Standard aus) */
+export function setSportErinnerung(on: boolean): () => void {
+  return pushUndo("das Ändern der Sport-Erinnerung", changeSport((s) => ({ ...s, erinnerung: on })));
 }
 
 export function setPack(sport: string, items: string[]): () => void {
@@ -52,4 +63,9 @@ export function rememberSport(name: string) {
   const n = name.trim().slice(0, 30);
   if (!n) return;
   changeSport((s) => ({ ...s, custom: [...s.custom.filter((c) => c.toLowerCase() !== n.toLowerCase()), n].slice(-12) }));
+}
+
+/** Eigene Sportart wieder entfernen (Trainings damit bleiben) */
+export function forgetSport(name: string): () => void {
+  return pushUndo("das Entfernen der Sportart", changeSport((s) => ({ ...s, custom: s.custom.filter((c) => c !== name) })));
 }

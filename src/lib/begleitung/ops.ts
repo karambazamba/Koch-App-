@@ -363,7 +363,7 @@ export function applyOps(
         break;
       }
       case "set_sport_goal":
-        next = { ...next, sport: { ...sanitizeSport(next.sport), goal: op.goal } };
+        next = { ...next, sport: { ...sanitizeSport(next.sport), goal: op.goal, zielGefragt: true } };
         break;
       case "set_shop_rule":
       case "add_pantry":

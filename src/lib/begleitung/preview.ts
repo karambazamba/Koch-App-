@@ -288,7 +288,7 @@ function describe(
       return { opId: op.id, group: "Sport", order: 25_800, label: `${s.emoji} eintragen`, before: null, after: `${s.label} · ${op.training.minutes} Min${op.training.km ? ` · ${op.training.km} km` : ""} · ${when}` };
     }
     case "set_sport_goal":
-      return { opId: op.id, group: "Sport", order: 25_810, label: "Wochenziel", before: state.sport ? `${state.sport.goal}×` : null, after: `${op.goal}× pro Woche` };
+      return { opId: op.id, group: "Sport", order: 25_810, label: "Wochenziel", before: state.sport ? (state.sport.goal === null ? "Ohne Ziel" : `${state.sport.goal}×`) : null, after: `${op.goal}× pro Woche` };
     case "add_timer":
     case "stop_timer":
     case "stopwatch":

@@ -51,6 +51,11 @@ Nichts geht verloren.
 - Mia: „Erinnere mich um 17 Uhr an die Wäsche“ → Aufgabe mit Uhrzeit und
   Erinnerung.
 - Mitteilungs-Arten: Erinnerungen, Pinnwand, Abgeben, Morgen-Überblick (aus).
+- Sport „Erinnerung am Vorabend“ (A-044, Schalter im Sport-Menü, Standard
+  aus): 19:00, wenn morgen ein Training geplant ist („Morgen (Do): Laufen ·
+  8:00“). Proaktiv: höchstens 1 am Tag (Schlüssel `proaktiv:<tag>:…` in
+  `sent`), nie 20–7 Uhr, nie in der Pause; nur auf dem Gerät
+  (`lib/sport/erinnerung.ts`, `NotifyHost`).
 
 ## Server-Push (Teil 2, seit v0.82)
 

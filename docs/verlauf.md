@@ -3563,3 +3563,42 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Kacheln liegen. Leiser Text über dem Zeichen mit `kachel-frei`.
 - Bildvergleich: Familie-Beispiel auch in „Schlicht“, alle Wasserzeichen-
   Kacheln in den 8 Farben × Farbig/Schlicht × hell/dunkel (`e2e/bilder.mjs`).
+
+## Sport als Stempelkarte (A-044, Tafel 132)
+
+- Auftrag A-044 mit Tafel 132 (ersetzt die nie angekommenen Tafeln 129/130
+  und den Wochen-Kreis-Teil von Tafel 124). Leitsatz: nur was rein muss,
+  diese Woche, das Nächste, ein Knopf; alles andere im „•••“.
+- Sport-Seite: Karte „Diese Woche“ mit so vielen Feldern wie das Wochenziel
+  (ohne Ziel 3). Training = Stempel (doppelter Ring im Kachel-Akzent, Symbol,
+  „MO“, fest gedreht je Training aus der ID), geplant = gestrichelt mit „Do
+  8:00“, mehr als Ziel = kleine Bonus-Stempel. Zwei Sätze („Mo war Laufen.“ /
+  „Do 8:00 ist geplant.“), geschafft grün („Woche geschafft.“ / „Mehr ist
+  Bonus.“), neuer Stempel setzt weich auf (1 s, reduced-motion Überblenden).
+  Großer Knopf „Training eintragen“, Link „Planen“, „Letzte Wochen“ (3
+  Zeilen, Punkte, „geschafft“; keine Serien, keine Summen). Weg: Kreise Mo–So
+  (`SportWeekRow`, `weekDots`), Wochensatz (`statusLine`), Ziel-Chips,
+  Packlisten-Block, „Zuletzt“-Liste (Ändern/Löschen jetzt über den Stempel
+  bzw. die Woche), Lob-Satz `praiseFor`.
+- Menü „•••“: Wochenziel (1×–7×, Ohne Ziel), Packlisten, Meine Sportarten
+  (eigene entfernen/dazu), Erinnerung am Vorabend (Schalter, Standard aus;
+  19:00, wenn morgen ein Training geplant ist, proaktiv höchstens 1 am Tag,
+  Ruhe 20–7, Pause; nur auf dem Gerät).
+- Ziel-Frage einmalig beim ersten Training: „Wie oft willst du Sport machen?
+  Pro Woche. Dann sag ich dir, wenn die Woche geschafft ist.“ (2× · 3× ·
+  Ohne Ziel).
+- Kachel XS/S/M (M neu erlaubt): Stempel + das Nächste, M mit Wetter zur
+  Trainingszeit, geschafft grün, leer „Diese Woche ist noch frei.“, Plus =
+  „Training eintragen“, ganze Kachel = Sport-Seite. Kein Wasserzeichen mehr
+  (`OHNE_WASSERZEICHEN.sport = "Stempel sind das Bild"`,
+  `lib/sport/wasserzeichen.ts` entfernt). Laufen zeigt den Laufschuh.
+- Speicher `wasgibts.sport` v2: Ziel darf leer sein, `zielGefragt`,
+  `erinnerung`; v1 behält sein Ziel (sonst 3) und wird nicht gefragt.
+- Mia: „War heute Volleyball“ → Stempel, „Volleyball · heute · gestempelt“;
+  „Wie läuft’s mit Sport?“ (auch „Wie oft …?“ für die Woche) → „Mo war
+  Laufen, Do ist geplant.“ bzw. „Woche geschafft.“. Ergebnis-Karten (A-037)
+  gibt es auf diesem Stand noch nicht; die Texte liegen als Bausteine in
+  `lib/sport/stempel.ts`. Prüfstand +2 Sätze (184).
+- Neu: Sportart Volleyball. Durchklick `sportStempel`, `sportPlanen`
+  (ersetzt `sportKachel`); Bilder Kachel S/M × leer/normal/geschafft ×
+  Farbig/Schlicht, Sport-Seite, Menü.

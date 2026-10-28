@@ -14,13 +14,10 @@ import {
   nextTraining,
   packFor,
   parseSportCommand,
-  praiseFor,
   sanitizeSport,
   sportById,
-  statusLine,
   todaysTraining,
   trainingsBetween,
-  weekDots,
   weekStatus,
   type SportState,
   type TrainingData,
@@ -51,12 +48,16 @@ describe("Training anlegen und prüfen", () => {
       celebrated: ["2026-10-12", 4],
       hidden: "nein",
     });
-    expect(s.goal).toBe(3);
+    // ungültiges Ziel = ohne Ziel (Stempelkarte mit 3 Feldern)
+    expect(s.goal).toBeNull();
+    expect(s.zielGefragt).toBe(false);
+    expect(s.erinnerung).toBe(false);
     expect(s.trainings).toHaveLength(1);
     expect(s.packs).toEqual({ laufen: ["Schuhe", "3", ...Array(10).fill("x")] });
     expect(s.celebrated).toEqual(["2026-10-12"]);
     expect(s.hidden).toEqual([]);
     expect(sanitizeSport({ goal: 5, packs: null }).goal).toBe(5);
+    expect(sanitizeSport({ goal: null, zielGefragt: true, erinnerung: true })).toMatchObject({ goal: null, zielGefragt: true, erinnerung: true });
   });
 
   it("Sportarten, eigene Packlisten, Unbekanntes als eigener Name", () => {
@@ -104,19 +105,9 @@ describe("Sport-Termine zählen mit", () => {
 
 describe("Woche, Monat, Sätze ohne Druck", () => {
   it("Wochenstatus mit Ziel und Bonus", () => {
-    expect(weekStatus(withRuns([run("2026-10-19"), run("2026-10-20")]), [], TODAY)).toEqual({ monday: "2026-10-19", count: 2, goal: 3, reached: false, bonus: false });
-  });
-
-  it("ein Satz – Erfolge zeigen, Versäumnisse nicht", () => {
-    const w = (count: number, goal = 3) => ({ monday: "2026-10-19", count, goal, reached: count >= goal, bonus: count > goal });
-    expect(statusLine(w(4), 2, false)).toBe("Mehr als geplant – richtig schöne Woche.");
-    expect(statusLine(w(3), 2, false)).toBe("Wochenziel geschafft – schön.");
-    expect(statusLine(w(0), 0, true)).toBe("Letzte Woche lief richtig gut – auf ein Neues.");
-    expect(statusLine(w(0), 0, false)).toBe("Neue Woche, neues Glück.");
-    expect(statusLine(w(0), 3, false)).toBe("Die Woche ist bereit für dich.");
-    expect(statusLine(w(2), 3, false)).toBe("Ein Training noch, dann ist die Woche rund.");
-    expect(statusLine(w(1, 4), 3, false)).toBe("Schön dabei diese Woche.");
-    for (const n of [0, 1, 2, 3, 4]) expect(statusLine(w(n), 3, false)).not.toMatch(/\d|nicht|fehlt|musst/);
+    expect(weekStatus(withRuns([run("2026-10-19"), run("2026-10-20")]), [], TODAY)).toEqual({ monday: "2026-10-19", count: 2, goal: 3, felder: 3, reached: false, bonus: false });
+    // ohne Ziel: 3 Felder, nie „geschafft“
+    expect(weekStatus({ ...withRuns([run("2026-10-19"), run("2026-10-20"), run("2026-10-21"), run("2026-10-21")]), goal: null }, [], TODAY)).toMatchObject({ goal: null, felder: 3, reached: false, bonus: true });
   });
 
   it("Monat: Anzahl, Minuten, km – laufender Monat bis heute", () => {
@@ -127,29 +118,12 @@ describe("Woche, Monat, Sätze ohne Druck", () => {
     expect(monthName("2026-03-01")).toBe("März");
   });
 
-  it("Stunden-Text, Feier, konkretes Lob", () => {
+  it("Stunden-Text, Feier", () => {
     expect(hoursLabel(560)).toBe("9 h 20 min");
     expect(hoursLabel(120)).toBe("2 h");
     expect(hoursLabel(45)).toBe("45 min");
     expect(celebrationText("Felix")).toBe("Stark, Felix! Dein Wochenziel ist geschafft.");
     expect(celebrationText("")).toBe("Stark! Dein Wochenziel ist geschafft.");
-    const s = withRuns([run("2026-10-02"), run("2026-10-10")]);
-    expect(praiseFor(s, [], { sport: "laufen", minutes: 30, date: "2026-10-10" }, TODAY)).toBe("Das ist dein 2. Lauf im Oktober.");
-    expect(praiseFor(s, [], { sport: "yoga", minutes: 30, date: "2026-10-10" }, TODAY)).toBe("Dein erstes Mal Yoga im Oktober.");
-  });
-
-  it("Punkte Mo–So: trainiert, geplant (ab heute), frei", () => {
-    const entries = [sportTermin("2026-10-23", "18:00"), sportTermin("2026-10-19", "07:00")];
-    const dots = weekDots(withRuns([run("2026-10-20")]), entries, TODAY);
-    expect(dots.map((d) => d.state)).toEqual(["frei", "trainiert", "frei", "frei", "geplant", "frei", "frei"]);
-    expect(dots[4]).toMatchObject({ label: "Fr", time: "18:00", today: false });
-    expect(dots[2].today).toBe(true);
-  });
-
-  it("Punkte kennen die Sportart (Kachel zeigt ein Icon statt nur „18“)", () => {
-    const entries = [sportTermin("2026-10-22", "18:00"), termin({ title: "Kurs", date: "2026-10-24", start: "10:00", label: "Sport" })];
-    const dots = weekDots(withRuns([run("2026-10-20", { sport: "yoga" })]), entries, TODAY);
-    expect(dots.map((d) => d.sport)).toEqual([null, "yoga", null, "laufen", null, "Kurs", null]);
   });
 
   it("Ende eines geplanten Trainings bleibt am selben Tag", () => {

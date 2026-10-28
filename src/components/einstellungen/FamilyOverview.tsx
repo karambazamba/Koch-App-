@@ -113,7 +113,7 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
             </Row>
           )}
           {sportOn && home?.find((t) => t.id === "sport")?.visible && (
-            <Row href="/sport" icon={Dumbbell} title="Sport" value={sport ? `${sport.goal}× pro Woche` : undefined}>
+            <Row href="/sport" icon={Dumbbell} title="Sport" value={sport ? (sport.goal === null ? "Ohne Ziel" : `${sport.goal}× pro Woche`) : undefined}>
               Wochenziel, Trainings, Packliste
             </Row>
           )}

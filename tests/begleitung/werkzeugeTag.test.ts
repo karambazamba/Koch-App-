@@ -64,7 +64,7 @@ describe("Sport", () => {
   it("sport_eintragen schätzt Dauer und zählt die Woche", () => {
     const ctx = kontext();
     const r = rufe(ctx, "sport_eintragen", { sportart: "Laufen", km: "5" });
-    expect(r.content).toMatch(/^Vorgemerkt: Laufen, \d+ Min, 5 km \(2026-10-21\)\. Mit Übernehmen: diese Woche 1 von 3; 1\. Mal Laufen im Oktober\.$/);
+    expect(r.content).toMatch(/^Vorgemerkt: Laufen, \d+ Min, 5 km \(2026-10-21\); 1\. Mal Laufen im Oktober\. Bestätige genau so: „Laufen · heute · gestempelt“\. Keine Zahlen von Trainings nennen\.$/);
     expect(letzte(ctx)).toMatchObject({ type: "add_training", training: { sport: "laufen", km: 5, date: HEUTE } });
     // Zukunft wird heute, unbekannte Sportart bleibt als Name
     rufe(ctx, "sport_eintragen", { sportart: "Klettern", minuten: 90, datum: "2026-12-01" });
@@ -73,11 +73,12 @@ describe("Sport", () => {
     expect(letzte(ctx)).toMatchObject({ training: { sport: "fitness" } });
   });
 
-  it("Wochenziel geschafft bzw. Bonusrunde", () => {
+  it("Woche geschafft (Stempelkarte), Bonus ohne Zähler", () => {
     const ctx = kontext({ sport: { goal: 1, trainings: [], packs: {}, celebrated: [], skipped: [] } as never });
-    expect(rufe(ctx, "sport_eintragen", { sportart: "yoga", minuten: 30 }).content).toContain("1 von 1 – Wochenziel geschafft");
-    rufe(ctx, "sport_eintragen", { sportart: "yoga", minuten: 30 });
-    expect(rufe(ctx, "sport_eintragen", { sportart: "yoga", minuten: 30 }).content).toContain("(Bonusrunde)");
+    expect(rufe(ctx, "sport_eintragen", { sportart: "yoga", minuten: 30 }).content).toContain("„Yoga · heute · gestempelt“ und „Woche geschafft.“");
+    // ohne Übernehmen bleibt die Woche gleich; schon geschafft = kein zweites „geschafft“
+    const geschafft = kontext({ sport: { goal: 1, trainings: [{ id: "t1", typ: "training", raum: "familie", erstellt: "", geaendert: "", data: { sport: "yoga", minutes: 30, date: HEUTE } }], packs: {}, celebrated: [] } as never });
+    expect(rufe(geschafft, "sport_eintragen", { sportart: "yoga", minuten: 30 }).content).not.toContain("Woche geschafft");
   });
 
   it("sport_ziel_setzen, sport_statistik", () => {
@@ -86,7 +87,7 @@ describe("Sport", () => {
     expect(rufe(ctx, "sport_ziel_setzen", { ziel: 4 }).content).toBe("Vorgemerkt: Wochenziel 4× pro Woche.");
     rufe(ctx, "sport_eintragen", { sportart: "laufen", minuten: 40, km: 7 });
     const stat = rufe(ctx, "sport_statistik", { monat: "2026-10" }).content;
-    expect(stat).toMatch(/^Diese Woche: 1 von 4\./);
+    expect(stat).toMatch(/^Lage diese Woche \(so antworten\): Heute war Laufen\.\nDiese Woche: 1 von 4\./);
     expect(stat).toContain("Oktober: 1 Einheiten");
     expect(stat).toContain("7 km");
     expect(stat).toMatch(/Zuletzt: 2026-10-21 Laufen 40 Min 7 km/);

@@ -39,7 +39,7 @@ export const HOME_TILES: { id: HomeTileId; label: string; hint: string; sizes: T
   { id: "spendentopf", label: "Spendentopf", hint: "Jeder Euro geht in eure Region", sizes: ["M"], size: "M", feature: "spendentopf", fresh: true },
   { id: "tipps", label: "Tipps fürs Wochenende", hint: "Was in eurer Nähe los ist", sizes: ["M"], size: "M", feature: "regiontipps", fresh: true },
   { id: "timer", label: "Timer", hint: "Bis zu 5 Timer und eine Stoppuhr", sizes: ["XS", "S"], size: "XS", fresh: true },
-  { id: "sport", label: "Sport", hint: "Wochenziel und Trainings", sizes: ["XS", "S"], size: "XS", feature: "sport", fresh: true },
+  { id: "sport", label: "Sport", hint: "Stempelkarte der Woche", sizes: ["XS", "S", "M"], size: "XS", feature: "sport", fresh: true },
   { id: "vorrat", label: "Im Haus", hint: "Bald aufbrauchen und spontan daraus kochen", sizes: ["XS", "S"], size: "XS", feature: "vorrat" },
   { id: "post", label: "Post", hint: "Briefe und Rechnungen", sizes: ["S", "M"], size: "M", soon: true },
 ];

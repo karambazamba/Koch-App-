@@ -25,7 +25,7 @@ describe("Raster: Größen (Tafel 118)", () => {
 
   it("erlaubte Größen je Kachel wie in der Tafel; Umschalter zeigt nur diese", () => {
     const sizes = Object.fromEntries(HOME_TILES.map((t) => [t.id, t.sizes.join("/")]));
-    expect(sizes).toMatchObject({ wetter: "XS/S/M", timer: "XS/S", notizen: "XS/S/M", vorrat: "XS/S", sport: "XS/S", pinnwand: "S/M", essen: "S/M", einkauf: "S/M", termine: "S/M", aufgaben: "S/M", spendentopf: "M", tipps: "M" });
+    expect(sizes).toMatchObject({ wetter: "XS/S/M", timer: "XS/S", notizen: "XS/S/M", vorrat: "XS/S", sport: "XS/S/M", pinnwand: "S/M", essen: "S/M", einkauf: "S/M", termine: "S/M", aufgaben: "S/M", spendentopf: "M", tipps: "M" });
     for (const t of HOME_TILES) {
       expect(t.sizes).toContain(t.size);
       expect([...t.sizes].sort((a, b) => TILE_SIZES.indexOf(a) - TILE_SIZES.indexOf(b))).toEqual(t.sizes);
@@ -235,7 +235,7 @@ describe("Migration v8 → v9 (Tafel 118)", () => {
     ];
     const m = migrateHome({ version: 8, tiles: v8, tipSeen: true })!;
     expect(m.version).toBe(9);
-    expect(m.tiles.slice(0, 8).map((t) => `${t.id}:${t.size}:${t.visible}`)).toEqual(["pinnwand:M:true", "wetter:S:true", "timer:S:true", "sport:S:true", "termine:M:true", "notizen:M:false", "vorrat:S:true", "tipps:M:false"]);
+    expect(m.tiles.slice(0, 8).map((t) => `${t.id}:${t.size}:${t.visible}`)).toEqual(["pinnwand:M:true", "wetter:S:true", "timer:S:true", "sport:M:true", "termine:M:true", "notizen:M:false", "vorrat:S:true", "tipps:M:false"]);
     expect(m.tiles.find((t) => t.id === "termine")?.farbe).toBe("mint");
     expect(m.tiles).toHaveLength(HOME_TILES.length);
   });

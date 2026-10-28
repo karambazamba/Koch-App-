@@ -21,6 +21,7 @@ export const SPORTS: SportKind[] = [
   { id: "yoga", label: "Yoga", emoji: "🧘", outdoor: false, noun: ["Yoga-Einheit", "Yoga-Einheiten"], pack: ["Matte", "Trinkflasche"] },
   { id: "fussball", label: "Fußball", emoji: "⚽", outdoor: true, noun: ["Fußball-Training", "Fußball-Trainings"], pack: ["Fußballschuhe", "Schienbeinschoner", "Trinkflasche"] },
   { id: "spazieren", label: "Spaziergang", emoji: "🚶", outdoor: true, noun: ["Spaziergang", "Spaziergänge"], pack: ["Bequeme Schuhe"] },
+  { id: "volleyball", label: "Volleyball", emoji: "🏐", outdoor: false, noun: ["Volleyball-Training", "Volleyball-Trainings"], pack: ["Hallenschuhe", "Knieschoner", "Trinkflasche"] },
 ];
 
 const OTHER: Omit<SportKind, "id" | "label"> = { emoji: "💪", outdoor: false, noun: ["Training", "Trainings"], pack: ["Trinkflasche", "Handtuch"] };
@@ -44,8 +45,12 @@ export type TrainingData = {
 export type Training = Entry<TrainingData> & { typ: "training" };
 
 export type SportState = {
-  /** Wochenziel: Trainings pro Woche (1–7) */
-  goal: number;
+  /** Wochenziel: Trainings pro Woche (1–7), null = ohne Ziel (Stempelkarte mit 3 Feldern) */
+  goal: number | null;
+  /** Ziel-Frage beim ersten Training schon gestellt (nie zweimal fragen) */
+  zielGefragt: boolean;
+  /** Erinnerung am Vorabend eines geplanten Trainings (Standard aus) */
+  erinnerung: boolean;
   trainings: Training[];
   /** Eigene Packlisten je Sportart */
   packs: Record<string, string[]>;
@@ -57,8 +62,9 @@ export type SportState = {
   custom: string[];
 };
 
-const DEFAULT_GOAL = 3;
-export const EMPTY_SPORT: SportState = { goal: DEFAULT_GOAL, trainings: [], packs: {}, celebrated: [], hidden: [], custom: [] };
+/** Ohne Ziel: so viele Felder hat die Stempelkarte (A-044) */
+export const OHNE_ZIEL_FELDER = 3;
+export const EMPTY_SPORT: SportState = { goal: null, zielGefragt: false, erinnerung: false, trainings: [], packs: {}, celebrated: [], hidden: [], custom: [] };
 
 const SPORT_WORDS: [RegExp, string][] = [
   // auch das Partizip („gelaufen“, „gejoggt“, „geradelt“, „geschwommen“, „gewandert“)
@@ -69,6 +75,7 @@ const SPORT_WORDS: [RegExp, string][] = [
   [/\byoga\b/i, "yoga"],
   [/\b(fußball|fussball|kicken|kick)\b/i, "fussball"],
   [/\b(spazier\w*|wander\w*|gewandert|gassi)\b/i, "spazieren"],
+  [/\bvolleyball\w*\b/i, "volleyball"],
 ];
 
 /** Sportart aus einem Satz/Titel ("War 5 km laufen" → laufen) */
@@ -92,17 +99,21 @@ function cleanTraining(d: TrainingData): TrainingData {
   };
 }
 
+/** Gültiges Wochenziel (1–7) oder null */
+export const validGoal = (g: unknown): number | null => (g !== null && Number.isInteger(Number(g)) && Number(g) >= 1 && Number(g) <= 7 ? Number(g) : null);
+
 export function sanitizeSport(raw: unknown): SportState {
   if (!raw || typeof raw !== "object") return EMPTY_SPORT;
   const r = raw as Partial<SportState>;
-  const goal = Number(r.goal);
   const trainings = (Array.isArray(r.trainings) ? r.trainings : []).filter(
     (t): t is Training => Boolean(t) && typeof t === "object" && typeof t.id === "string" && t.typ === "training" && Boolean(t.data) && typeof t.data.date === "string",
   );
   const packs: Record<string, string[]> = {};
   for (const [k, v] of Object.entries(r.packs && typeof r.packs === "object" ? r.packs : {})) if (Array.isArray(v)) packs[k] = v.map(String).filter(Boolean).slice(0, 12);
   return {
-    goal: Number.isInteger(goal) && goal >= 1 && goal <= 7 ? goal : DEFAULT_GOAL,
+    goal: validGoal(r.goal),
+    zielGefragt: r.zielGefragt === true,
+    erinnerung: r.erinnerung === true,
     trainings: trainings.map((t) => ({ ...t, data: cleanTraining(t.data) })),
     packs,
     celebrated: Array.isArray(r.celebrated) ? r.celebrated.filter((x) => typeof x === "string").slice(-60) : [],
@@ -158,11 +169,13 @@ export function trainingsBetween(state: SportState, entries: CalendarEntry[], fr
   return [...own, ...derived].sort((a, b) => a.data.date.localeCompare(b.data.date) || (a.data.time ?? "").localeCompare(b.data.time ?? ""));
 }
 
-type WeekStatus = { monday: string; count: number; goal: number; reached: boolean; bonus: boolean };
+/** Eine Woche: `felder` = Ziel (ohne Ziel 3); geschafft nur mit Ziel; Bonus = mehr als Felder */
+type WeekStatus = { monday: string; count: number; goal: number | null; felder: number; reached: boolean; bonus: boolean };
 
 export function weekStatus(state: SportState, entries: CalendarEntry[], today: string, me?: string | null, monday = mondayOf(today)): WeekStatus {
   const count = trainingsBetween(state, entries, monday, addDays(monday, 6), today, me).length;
-  return { monday, count, goal: state.goal, reached: count >= state.goal, bonus: count > state.goal };
+  const felder = state.goal ?? OHNE_ZIEL_FELDER;
+  return { monday, count, goal: state.goal, felder, reached: state.goal !== null && count >= state.goal, bonus: count > felder };
 }
 
 /** Serie in WOCHEN: geschaffte Wochen hintereinander bis letzte Woche (+ diese, wenn schon geschafft). Nie in Tagen. */
@@ -197,47 +210,9 @@ export function hoursLabel(minutes: number): string {
   return h ? `${h} h${m ? ` ${m} min` : ""}` : `${m} min`;
 }
 
-/** Ein Satz unter den Punkten – Erfolge zeigen, Versäumnisse nicht */
-export function statusLine(week: WeekStatus, weekday: number, lastWeekReached: boolean): string {
-  // Ohne Zahlen und Serien: ein freundlicher Satz (Leitbild 4)
-  const { count, goal } = week;
-  if (count > goal) return "Mehr als geplant – richtig schöne Woche.";
-  if (count === goal) return "Wochenziel geschafft – schön.";
-  if (count === 0) return weekday === 0 ? (lastWeekReached ? "Letzte Woche lief richtig gut – auf ein Neues." : "Neue Woche, neues Glück.") : "Die Woche ist bereit für dich.";
-  if (goal - count === 1) return "Ein Training noch, dann ist die Woche rund.";
-  return "Schön dabei diese Woche.";
-}
-
 /** Feier-Text, wenn das Wochenziel erreicht ist (selten, ohne Zähler) */
 export function celebrationText(name: string): string {
   return `Stark${name ? `, ${name}` : ""}! Dein Wochenziel ist geschafft.`;
-}
-
-/** Konkret loben: "Das ist dein 10. Lauf im Oktober." */
-export function praiseFor(state: SportState, entries: CalendarEntry[], training: TrainingData, today: string, me?: string | null): string {
-  const month = training.date.slice(0, 7);
-  const list = trainingsBetween(state, entries, `${month}-01`, addDays(`${month}-01`, 30), today, me).filter((t) => t.data.date.startsWith(month));
-  const same = list.filter((t) => t.data.sport === training.sport).length;
-  const kind = sportById(training.sport);
-  if (same >= 2) return `Das ist dein ${same}. ${kind.noun[0]} im ${monthName(training.date)}.`;
-  return `Dein erstes Mal ${kind.label} im ${monthName(training.date)}.`;
-}
-
-/** Die 7 Punkte Mo–So der laufenden Woche */
-export type DayDot = { date: string; label: string; state: "trainiert" | "geplant" | "frei"; time: string | null; today: boolean; sport: string | null };
-
-const SHORT = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
-
-export function weekDots(state: SportState, entries: CalendarEntry[], today: string, me?: string | null): DayDot[] {
-  const monday = mondayOf(today);
-  const done = trainingsBetween(state, entries, monday, addDays(monday, 6), today, me);
-  return SHORT.map((label, i) => {
-    const date = addDays(monday, i);
-    const trained = done.find((t) => t.data.date === date);
-    const planned = !trained ? sportItems(entries, date, today, me).find((x) => !x.done && date >= today) : undefined;
-    const sport = trained ? trained.data.sport : planned ? (guessSport(planned.title) ?? planned.title) : null;
-    return { date, label, state: trained ? "trainiert" : planned ? "geplant" : "frei", time: planned?.time ?? null, today: date === today, sport };
-  });
 }
 
 /** Nächstes geplantes Training (heute noch oder in den nächsten 7 Tagen) */
@@ -264,6 +239,7 @@ type SportCommand =
   | { kind: "add"; sport: string; minutes: number | null; km: number | null; date: string }
   | { kind: "goal"; goal: number }
   | { kind: "stats"; what: "woche" | "monat"; km: boolean }
+  | { kind: "lage" }
   | { kind: "plan"; count: number; part: DayPart | null; week: "diese" | "naechste" };
 
 export type DayPart = "morgens" | "mittags" | "abends";
@@ -294,6 +270,8 @@ export function parseSportCommand(text: string, today: string, others: string[] 
   }
   const wochenziel = low.match(/\bwochenziel\b.*?\b(\d)\b/);
   if (wochenziel) return { kind: "goal", goal: Math.min(7, Math.max(1, Number(wochenziel[1]))) };
+  // Wie läuft’s? (Stempelkarte: „Mo war Laufen, Do ist geplant.“)
+  if (/(?<![a-zäöüß])wie\s+(läuft|laeuft|steht|sieht)\S*\s.*(?<![a-zäöüß])(sport|training)/.test(low)) return { kind: "lage" };
   // Statistik
   if (/\bwie\s+(oft|viele?)\b/.test(low) && /\b(sport|training|trainiert|gelaufen|laufen|kilometer|km|läufe)\b/.test(low)) {
     return { kind: "stats", what: /\b(monat|januar|februar|märz|april|mai|juni|juli|august|september|oktober|november|dezember)\b/.test(low) ? "monat" : "woche", km: /\b(kilometer|km)\b/.test(low) };
