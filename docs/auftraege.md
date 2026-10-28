@@ -15,7 +15,8 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
   Zugangscode nachsichtig (v0.141), Einkauf neu mit Nachtrag (v0.142), Mia schneller + Live-Zuhören + Stimme bleibt
   (v0.143), Fenster-Zurück ohne Wettlauf (v0.144, Fehler hinter dem
   schwankenden Ablauf `erinnerungFrage`), Pinnwand-Nachtrag (v0.145), Essen-Kachel „Rezept“ + Vorschau vor „Nehmen“ (v0.146), Erledigte Aufgaben nur
-  12 Stunden (v0.147), Familie verbinden + Namen statt Mail (v0.148).
+  12 Stunden (v0.147), Familie verbinden + Namen statt Mail (v0.148), Einladungsseite ohne Leiste (v0.149,
+  Ursache des roten Konto-Durchklicks).
 - **Merge-Reihenfolge (Sortier-Auftrag 28.10., je bauen → testen → PR → mergen,
   dann der nächste auf dem neuesten `main`):**
   1. A-027 Erster Start rund (mit A-031 Zugangscode nachsichtig, 10 Versuche)
