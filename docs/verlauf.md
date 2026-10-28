@@ -3495,3 +3495,10 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Pinnwand-Einträge in „ich“/„arbeit“. Abhaken bleibt wie seit v0.145 (1 s
   stehen, Kachel zeigt das Häkchen kurz mit). Prüfstand 226 Sätze.
   Tafel 123 in neuer, schärferer Fassung (gleicher Inhalt).
+- Abgleich mit Tafel 123 (neue Fassung): Die Meta-Zeile ließ rechts 32 px
+  für den Haken-Kreis frei, gebraucht werden 24 – dadurch fiel auf dem
+  iPhone 15 Pro „Mathis“ bei „Mathis · 12:08“ und bei privaten Zetteln „Du“
+  vor dem Schloss weg. Jetzt `pr-6`, Name und Zeit passen wie auf der Tafel
+  (Durchklick `pinnwandOrdnen` prüft es ab 390 px). Durchklick-Helfer
+  `halten` rollt den Zettel vorher in die Mitte (vorher drückte er unter Mias
+  Hinweis-Blase bzw. außerhalb des Bildschirms).

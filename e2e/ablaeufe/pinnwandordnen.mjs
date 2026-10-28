@@ -40,6 +40,11 @@ export const pinnwandOrdnen = async (page, check) => {
   );
   check(metas.length > 0 && metas.every((m) => m.sichtbar), `Zeit in jeder Meta-Zeile ganz sichtbar (${metas.length})`);
   check(metas.every((m) => !m.text.includes("…")), "keine Meta-Zeile mit „…“");
+  // Tafel 123: ab 390 px Breite passen Name und Zeit („Mathis · 12:08“, privat „Du · 11:02“ mit Schloss)
+  if (page.viewportSize().width >= 390) {
+    const nameDa = async (text) => zettel(page, text).locator("[data-meta-zeile]").evaluate((el) => el.children[1].getBoundingClientRect().top < el.getBoundingClientRect().bottom - 2);
+    check((await nameDa("Hallo")) && (await nameDa("Geschenk Lisa")), "Name und Zeit passen in die Meta-Zeile (auch privat)");
+  }
   check(await zettel(page, "Samstag Omas").locator("[data-oben]").isVisible(), "„OBEN“ am Zettel, der hängen bleibt");
   const gross = await zettel(page, "Samstag Omas").boundingBox();
   check(gross.width > d.width * 0.8, "großer Zettel über die volle Breite");

@@ -174,8 +174,8 @@ export function Zettel({ item, me, household, highlight = false, onOpen, onDone,
           </>
         )}
         {reacted && <span className="text-[13px] text-fridge-soft">{reacted}</span>}
-        {/* Name · Zeit in einer Zeile, nie abgeschnitten: bei Platzmangel nur die Zeit; rechts bleibt Platz für den Haken-Kreis */}
-        <span className={`flex min-h-[30px] items-center gap-1.5 pr-8 text-[12px] font-semibold leading-tight text-fridge-soft ${papier === "foto" ? "px-1" : ""}`} data-meta>
+        {/* Name · Zeit in einer Zeile, nie abgeschnitten: bei Platzmangel nur die Zeit; rechts bleibt Platz für den Haken-Kreis (pr-6 reicht bis knapp davor, Tafel 123: „Mathis · 12:08“ passt) */}
+        <span className={`flex min-h-[30px] items-center gap-1.5 pr-6 text-[12px] font-semibold leading-tight text-fridge-soft ${papier === "foto" ? "px-1" : ""}`} data-meta>
           <ZettelAvatar name={entry.data.author} color={tone.mag} />
           {demo || done ? <span className="min-w-0 break-words">{meta}</span> : <MetaZeile wer={parts.wer} wann={parts.wann} />}
           {privat && <Lock className="h-3 w-3 shrink-0" strokeWidth={2.5} aria-hidden />}

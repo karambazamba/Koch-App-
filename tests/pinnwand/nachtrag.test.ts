@@ -221,6 +221,7 @@ describe("Behoben (Bildschirmfoto v0.138, iPhone 15 Pro)", () => {
     expect(meta).toMatch(/flex-row-reverse flex-wrap/);
     expect(meta).toMatch(/overflow-hidden/);
     expect(meta.indexOf("{wann}")).toBeLessThan(meta.indexOf("{wer}"));
-    expect(zettel).toMatch(/pr-8 text-\[12px\]/);
+    // rechts genau Platz für den Haken-Kreis (Tafel 123: Name und Zeit passen, pr-8 schnitt „Mathis“ und privat „Du“ weg)
+    expect(zettel).toMatch(/pr-6 text-\[12px\]/);
   });
 });

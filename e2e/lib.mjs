@@ -520,8 +520,15 @@ export async function ziehen(page, von, nach, { halten = 450, steps = 14, ms = 4
 /** Das EINE Fenster „Neue Aufgabe“ bzw. „Neuer Termin“ (Tafel 114) – auch zum Ändern („Aufgabe“/„Termin“) */
 export const eintragFenster = (page, art) => page.locator(art ? `[role=dialog]:has([data-fenster="${art}"])` : "[role=dialog]:has([data-fenster])");
 
-/** Lange drücken (echter Touch) mitten auf `loc` und ohne Bewegung loslassen */
+/**
+ * Lange drücken (echter Touch) mitten auf `loc` und ohne Bewegung loslassen.
+ * Vorher in die Bildschirmmitte rollen – ein echter Finger drückt nie unter
+ * die Leiste oder Mias Hinweis-Blase („Schreiben & sprechen“) und nie auf
+ * etwas außerhalb des Bildschirms.
+ */
 export async function halten(page, loc, ms = 650) {
+  await loc.evaluate((el) => el.scrollIntoView({ block: "center", behavior: "instant" }));
+  await page.waitForTimeout(150);
   const b = await loc.boundingBox();
   const cdp = await page.context().newCDPSession(page);
   const p = [{ x: Math.round(b.x + b.width / 2), y: Math.round(b.y + Math.min(24, b.height / 2)), id: 1 }];
