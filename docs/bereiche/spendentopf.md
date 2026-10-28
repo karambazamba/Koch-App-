@@ -1,5 +1,18 @@
 # Spendentopf
 
+## Feste Regeln (aus CLAUDE.md umgezogen)
+
+- **Name KARAMBA:** immer „KARAMBA Eis“, nie nur „KARAMBA“ (Verwechslung
+  mit einem Online-Casino) – in allen Texten (Tipps „von KARAMBA Eis“,
+  Spendentopf, Mails, „Über Mia“, Hallo-Bildschirm „Gemacht in Eutin von
+  KARAMBA Eis“). Test in `tests/app/regeln.test.ts`.
+- **Spendentopf:** keine Zahlung in der App. Solange `POT_STATUS` „vorschau“
+  ist: Band „Vorschau“, Summe/Projekte als „Beispiel“, Beiträge nur
+  „vorgemerkt“ (kein Geld, kein Partner-Link); „live“ = „zugesagt“. Texte nur
+  aus `POT_TEXTS`, nie „an KARAMBA Eis“ – das Geld geht in die Region. Die App
+  bleibt ohne Beitrag kostenlos. → `docs/bereiche/spendentopf.md`
+
+
 Kurz: Die App ist kostenlos. Wer mag, sagt einen kleinen Beitrag für einen
 Topf in seiner Region zu; die Familie stimmt im November ab, wohin das Geld
 geht. Eine Zahlung gibt es (noch) nicht.

@@ -1,5 +1,15 @@
 # Essen
 
+## Feste Regeln (aus CLAUDE.md umgezogen)
+
+- **Bilder der Gerichte:** eigene Zeichnungen im Code, keine fremden Fotos,
+  keine KI (`docs/credits.md`); neues eingebautes Gericht → `npm run
+  gerichte-bilder`. Kein Braun und kein Dunkelgrau als große Fläche. Soßen
+  frisch: Rot, Gelb, Grün, Creme, und sparsam (Fläche unter dem Essen, Rand
+  bleibt frei). Braun nur für Kleinteile (Kruste, Brot, Gewürz).
+  → `docs/bereiche/essen.md`
+
+
 Kurz: Was gibt’s heute – und was kann man mit dem kochen, was da ist? Der
 Essen-Reiter zeigt das Gericht von heute, die Woche und Ideen aus dem Bestand.
 Dahinter liegen Wochenplan, Rezepte, Backstube, Spontan-Ideen und Tipps –

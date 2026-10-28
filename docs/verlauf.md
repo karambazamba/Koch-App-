@@ -2870,3 +2870,13 @@ Fehler in `docs/aufraeumen-nachher.md`.
   „Arbeit · 5 für morgen“, antippen blendet sie kurz ein.
 - Mia: „Was steht heute an?“ nennt Zahl und die ersten drei, abends ohne
   Arbeit; „Was ist noch bei der Arbeit?“ fragt eigens. Prüfstand +3 Sätze.
+
+## Arbeitsweise: Warteschlange, Tafeln, Pakete (28.10.)
+
+- `docs/auftraege.md` als Warteschlange (A-001 …, Vorlage, Status, oben eine
+  Zusammenfassung je Paket); `docs/tafeln/` für Vorlagen-Bilder.
+- CLAUDE.md verschlankt (unter 300 Zeilen), Details wörtlich umgezogen nach
+  `docs/bereiche/*.md` (feste Regeln je Bereich, Startseite/Jetzt-Karte, Erster
+  Start, Ton, Spracheingabe), `docs/design.md`, `docs/testen.md`,
+  `docs/ordner.md`, `docs/roadmap.md`. Neu unter „Arbeitsweise“: parallel wo
+  getrennt, Überschneidendes nacheinander auf neuestem `main`, gestaffelte Tests.

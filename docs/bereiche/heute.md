@@ -1,5 +1,41 @@
 # Heute
 
+## Startseite und Jetzt-Karte (aus CLAUDE.md umgezogen)
+
+- Startseite = Kacheln in EINER gespeicherten Anordnung, die sich nie von
+  selbst ändert. Bearbeiten direkt auf der Startseite (lange drücken: wackeln,
+  ziehen, „–“, S/M/L); jede S ist halb breit, zwei S nebeneinander, jede
+  S-fähige Kachel mit jeder anderen (eine einzelne S bleibt halb, im Bearbeiten
+  zeigt die freie Hälfte „＋ Kachel“); Essen + Einkauf sind ein festes Paar. Größe ändert nur die Menge (S ≤ M ≤ L). Standard für
+  neue Nutzer: Pinnwand + Wetter (S), Termine, Aufgaben, Essen + Einkauf,
+  Notizen („Im Haus“ nur über die Kachel-Auswahl). Jede Kachel öffnet ihre Seite.
+- Die Jetzt-Karte zeigt höchstens 3 Themen zum Wischen und öffnet wie jede
+  Kachel per Antippen – ohne eigenen Knopf – die Seite „Dein Tag“ (Ausnahme:
+  laufender Timer öffnet den Timer). Feste Höhe, 2 Zeilen (Zeile 1 ≤ 32
+  Zeichen, nie mitten im Wort abgeschnitten), Themen-Symbol statt Gesicht,
+  Punktesystem, nur was die Kacheln nicht zeigen. Nie
+  Temperatur, Wetter nur mit Planbezug (Tafel 60). Tagesphasen ändern nur Inhalte, nie
+  die Anordnung; Ruhe nach Feierabend ist ein eigener Schalter.
+
+
+## Erster Start (aus CLAUDE.md umgezogen)
+
+- Erster Start = höchstens 3 Bildschirme vor der App: Hallo („Moin, ich bin
+  Mia.“ → „Los geht’s“), „Bevor’s losgeht“ (Zustimmung, Pflicht für alle,
+  `ZustimmungGate`) und „Für wen soll ich sortieren?“ (`ZeigMalStep`, nur
+  beim allerersten Start: drei gleichwertige Knöpfe „Nur für mich“ / „Für uns
+  zwei“ / „Für die Familie“, nichts vorausgewählt), dann die Startseite mit
+  Beispiel-Tag passend zur Antwort. Zurück-Geste = ein Schritt zurück. Keine
+  Look-Frage: Standard „Farbig“, nach 3 Tagen einmal „Lieber schlicht?“ als
+  Hinweis, sonst Einstellungen → Aussehen.
+
+
+## Feste Regeln (aus CLAUDE.md umgezogen)
+
+- **Beispiel-Tag:** Beispiele liegen nie in den echten Speichern, nicht in
+  Sicherung, Push oder KI. → `docs/bereiche/heute.md`
+
+
 Kurz: Die Startseite der App. Oben Begrüßung und die Jetzt-Karte (EIN Thema
 für den Moment), darunter die Kacheln in der einen gespeicherten Anordnung.
 Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen.

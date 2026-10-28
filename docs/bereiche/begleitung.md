@@ -1,5 +1,39 @@
 # Begleitung
 
+## Ton im Detail (aus CLAUDE.md umgezogen)
+
+- Gesprochenes Deutsch erwünscht („hab“, „is“, „nehm“, „passt“, „jo“, „na
+  klar“, „Moin“); nie steif („Ich habe … für dich …“, „Selbstverständlich“,
+  „Gerne helfe ich“, „Möchtest du, dass ich …“, „Wenn du noch etwas brauchst
+  …“; Liste `STEIF` in `mia/persona.ts`, `tidyMiaText` kürzt solche Anhängsel
+  am Ende). Länge: Alltagsantwort ≤ 120 Zeichen, Rat/Wissen ≤ 240, außer
+  jemand will ausdrücklich Details („erklär mal genau“). Ton im Prompt vorn
+  (≤ 15 Zeilen), Werkzeug-Regeln in den Werkzeug-Beschreibungen; Prüfstand
+  „Ton“ (`pruefstand/ton.ts`, Ziel ≥ 90 %).
+
+
+## Spracheingabe (aus CLAUDE.md umgezogen)
+
+- Spracheingabe nur über `useSpeechInput`; beim Absenden immer `reset()`.
+  Mikro-Freigabe/Sperre nur über `core/mic` (Vorab-Frage, Mikro-Check `core/micCheck`, Streifen):
+  scheitert Zuhören, sagt der Mikro-Check, welcher Schalter fehlt – nur dessen Schritte.
+
+
+## Feste Regeln (aus CLAUDE.md umgezogen)
+
+- **Mia denkt mit:** höchstens EINE ungefragte Karte am Tag (Regler „Wie
+  gesprächig?“: Ruhig nur Muster, Gesprächig zwei), nie 22–7 Uhr, Pause oder
+  Ruhe, nur wenn kein anderer Hinweis steht; jede Frage nur einmal, alles in
+  „Was ich mir merke“ löschbar. Spruch nur statt „Alles ruhig“. Texte je
+  Seite in `mia/denktmit/seiten/`. → `docs/bereiche/begleitung.md`
+- **Mias Stimme und Ohr (ElevenLabs):** `ELEVENLABS_API_KEY` nur in Vercel
+  (Sensitive), nie im Repo, Client, Log oder Chat; fehlt er, alles wie bisher
+  über den Browser. Nur mit KI-Einwilligung, gleiche Grenzen wie die KI,
+  Aufnahmen nie speichern oder protokollieren, Pinnwand-Sprachnachrichten nie
+  dorthin. Einstellung „Wer spricht?“ (Mias Stimme / Stimme des Handys).
+  → `docs/bereiche/begleitung.md`
+
+
 Kurz: Die Begleitung heißt fest Mia – wie die App (seit v0.67, `APP_NAME`;
 nur die Stimme ist wählbar) – und ist der Hauptweg in die App. Man spricht oder tippt, sie legt an, ändert und
 räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.

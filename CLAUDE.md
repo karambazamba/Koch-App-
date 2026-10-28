@@ -55,34 +55,18 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   genanntem Tag ab dem Tag, bis dahin „Geplant“), Notiz = nur festhalten.
   Leerer Kalender = Angebot „Kalender mitbringen“ (Apple/Google/Outlook).
 - Startseite = Kacheln in EINER gespeicherten Anordnung, die sich nie von
-  selbst ändert. Bearbeiten direkt auf der Startseite (lange drücken: wackeln,
-  ziehen, „–“, S/M/L); jede S ist halb breit, zwei S nebeneinander, jede
-  S-fähige Kachel mit jeder anderen (eine einzelne S bleibt halb, im Bearbeiten
-  zeigt die freie Hälfte „＋ Kachel“); Essen + Einkauf sind ein festes Paar. Größe ändert nur die Menge (S ≤ M ≤ L). Standard für
-  neue Nutzer: Pinnwand + Wetter (S), Termine, Aufgaben, Essen + Einkauf,
-  Notizen („Im Haus“ nur über die Kachel-Auswahl). Jede Kachel öffnet ihre Seite.
+  selbst ändert; Bearbeiten direkt dort (Details in `docs/bereiche/heute.md`).
 - Auf der Startseite gibt es genau zwei Mias: das eckige Logo (BrandMark,
   nicht antippbar) und den runden Mia-Knopf rechts in der Leiste (= reden).
   Einzige Ausnahme: das kleine Gesicht in Mias Tipp-Karte („Mia stellt vor“,
   Seiten-Tipps) – nicht antippbar, ohne Ring, verschwindet nach „Alles klar“.
-- Die Jetzt-Karte zeigt höchstens 3 Themen zum Wischen und öffnet wie jede
-  Kachel per Antippen – ohne eigenen Knopf – die Seite „Dein Tag“ (Ausnahme:
-  laufender Timer öffnet den Timer). Feste Höhe, 2 Zeilen (Zeile 1 ≤ 32
-  Zeichen, nie mitten im Wort abgeschnitten), Themen-Symbol statt Gesicht,
-  Punktesystem, nur was die Kacheln nicht zeigen. Nie
-  Temperatur, Wetter nur mit Planbezug (Tafel 60). Tagesphasen ändern nur Inhalte, nie
-  die Anordnung; Ruhe nach Feierabend ist ein eigener Schalter.
+- Jetzt-Karte: höchstens 3 Themen, nur was die Kacheln nicht zeigen, nie
+  Temperatur (Tafel 60; Details in `docs/bereiche/heute.md`).
 - Gesten: Tippen = Eintrag öffnen, lange Drücken = Startseite bearbeiten,
   Wischen = Seite wechseln (Kalender · Heute · Essen), Wischen vom linken Rand
   auf Unterseiten = eine Ebene zurück.
-- Erster Start = höchstens 3 Bildschirme vor der App: Hallo („Moin, ich bin
-  Mia.“ → „Los geht’s“), „Bevor’s losgeht“ (Zustimmung, Pflicht für alle,
-  `ZustimmungGate`) und „Für wen soll ich sortieren?“ (`ZeigMalStep`, nur
-  beim allerersten Start: drei gleichwertige Knöpfe „Nur für mich“ / „Für uns
-  zwei“ / „Für die Familie“, nichts vorausgewählt), dann die Startseite mit
-  Beispiel-Tag passend zur Antwort. Zurück-Geste = ein Schritt zurück. Keine
-  Look-Frage: Standard „Farbig“, nach 3 Tagen einmal „Lieber schlicht?“ als
-  Hinweis, sonst Einstellungen → Aussehen.
+- Erster Start: höchstens 3 Bildschirme vor der App (Hallo, Zustimmung, „Für
+  wen soll ich sortieren?“), Details in `docs/bereiche/heute.md`.
 - Rückgängig nur bei echtem Löschen („Gelöscht · Rückgängig“, 3 s) und in der
   Schnelleingabe („Eingetragen: … · Rückgängig“); sonst meldet sich
   Hinzufügen still. Typografischer Apostroph überall („Was gibt’s?“).
@@ -165,14 +149,8 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   Anzeige, Vorlesen und Push durch `tidyMiaText()` (`begleitung/tidy.ts`).
 - Kurz, warm, mitdenkend, natürlich, Deutsch, etwas Humor, kein Formularton,
   keine Fachbegriffe.
-- Gesprochenes Deutsch erwünscht („hab“, „is“, „nehm“, „passt“, „jo“, „na
-  klar“, „Moin“); nie steif („Ich habe … für dich …“, „Selbstverständlich“,
-  „Gerne helfe ich“, „Möchtest du, dass ich …“, „Wenn du noch etwas brauchst
-  …“; Liste `STEIF` in `mia/persona.ts`, `tidyMiaText` kürzt solche Anhängsel
-  am Ende). Länge: Alltagsantwort ≤ 120 Zeichen, Rat/Wissen ≤ 240, außer
-  jemand will ausdrücklich Details („erklär mal genau“). Ton im Prompt vorn
-  (≤ 15 Zeilen), Werkzeug-Regeln in den Werkzeug-Beschreibungen; Prüfstand
-  „Ton“ (`pruefstand/ton.ts`, Ziel ≥ 90 %).
+- Gesprochenes Deutsch erwünscht, nie steif; Längen und Prüfstand „Ton“ in
+  `docs/bereiche/begleitung.md`.
 - Erleichterung statt Leistung: nicht übertrieben loben, nichts vorrechnen;
   Erfolge zeigen, Versäumnisse nicht, selten feiern.
 - Gesundheit: keine Diagnosen, nie Aussagen über Körper/Gewicht/Kalorien; bei
@@ -203,39 +181,16 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Seitenkopf: „‹ <vorherige Seite>“, rechts höchstens ein Knopf (Seiten-Plus
   34 px orange oder „…“), darunter der große Titel. Kalender und Essen: großer
   Titel, kein Zurück. Kachel-Plus 26 px hellorange.
-- Leiste unten (Stil B1): schwebend, weiß (dunkel: Kartenfarbe), 12 px Rand,
-  rounded-card, ca. 66 px, Reiter mit Linien-Icon + 12 px Text (aktiv Orange),
-  Mia rechts IN der Leiste (60 px, ragt 30 px heraus, atmet leicht), auf allen
-  Seiten gleich. Weg bei Tastatur, Fenstern, Kochmodus, Notiz-Editor, erstem
-  Start/Zustimmung/Testcode, Rechtsseiten (nur transform/opacity; bei der Bühne
-  nur unsichtbar). Unten genug Platz (`FAB_CLEARANCE`), Schwebendes über der
-  Leiste (`UEBER_LEISTE`). Jedes Gespräch auf EINER Bühne (`MiaStage`): Seite verschwommen
-  dahinter, Gespräch oben, Mia groß im unteren Drittel (antippen = zuhören ↔
-  fertig, „Lieber schreiben“), fliegt vom Knopf ein und dorthin zurück.
-  Auf der Bühne GENAU EINE antippbare Mia (die große); neben Mias Sätzen nur
-  das kleine Gesicht ohne Ring, ohne Pulsieren, nicht antippbar. Ring nur
-  beim Zuhören bzw. „Gleich schick ich’s ab“, nie im Warten, nie zwei
-  zugleich (`stageRing`, Test `begleitung/eineMia`). Vorschläge als Knöpfe
-  (weiß, Rand und Text Orange), nie als zweite Mia-Karte.
+- Leiste unten (Stil B1) und die EINE Bühne (`MiaStage`): auf allen Seiten
+  gleich; auf der Bühne GENAU EINE antippbare Mia. Details in `docs/design.md`.
 - Bewegung sehr weich: 0,8–1,2 s, `cubic-bezier(.16,1,.3,1)`, nur
   transform/opacity, `prefers-reduced-motion` = nur Überblenden.
 - Knöpfe nie schwarz. Standard für neue Nutzer = Hell; Dunkel/Automatisch nur
   nach eigener Wahl (intern `warm`/`nacht`/`auto`).
 - Ein Fenster für alles (`ui/Sheet.tsx`); jedes Fenster schließt per ✕,
   Danebentippen, Runterwischen und Zurück.
-- Avatar: EINE Komponente `BegleitungAvatar` (Sprechblase mit mittiger Spitze,
-  senkrechte Augen, dezentes Lächeln) immer in Orange; Zustände setzt die
-  App automatisch. App-Icon: einzige Quelle `scripts/generate-icons.mjs`
-  (`npm run icons`; angeboten wird nur Orange, die übrigen Farbsätze bleiben
-  nur für ältere Installationen); Dateien tragen `ICON_VERSION` im Namen
-  (Pfade nur über `icon()`/`iconFor()`); neues Icon = Version erhöhen, Liste in
-  `public/sw.js` und `CACHE_VERSION` anpassen. Manifest-Farbe `BRAND_COLOR`.
-- Marke Mia: Logo nur über `BrandMark` (`ui/`) bzw. die Dateien in
-  `public/brand/` (Quelle `src/lib/core/brand.ts`, `npm run brand`), Farben
-  `--app-brand*`; Regeln (Schutzzone, Mindestgröße, nie Orange auf Orange)
-  in `docs/brand.md`. Startseiten-Kopf: links BrandMark (30 px), rechts das
-  Datum („Fr, 23. Okt“) und „···“ (Einstellungen, Startseite bearbeiten), kein
-  Zahnrad; die Begrüßung steht nur noch für VoiceOver da.
+- Avatar (`BegleitungAvatar`, immer Orange), App-Icon (`scripts/generate-icons.mjs`)
+  und Marke (`BrandMark`, `docs/brand.md`): Details in `docs/design.md`.
 
 ## 8. Technik-Regeln
 - Nach jeder Änderung testen (siehe „Testen“), PR nach `main` und mergen –
@@ -265,9 +220,8 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Einstellungen nach Nutzungshäufigkeit sortieren, aktueller Wert rechts.
 - Version bei jeder Auslieferung erhöhen: `package.json` (+ `package-lock.json`),
   `APP_VERSION` in `src/lib/core/app.ts`, `CACHE_VERSION` in `public/sw.js`.
-- Spracheingabe nur über `useSpeechInput`; beim Absenden immer `reset()`.
-  Mikro-Freigabe/Sperre nur über `core/mic` (Vorab-Frage, Mikro-Check `core/micCheck`, Streifen):
-  scheitert Zuhören, sagt der Mikro-Check, welcher Schalter fehlt – nur dessen Schritte.
+- Spracheingabe nur über `useSpeechInput`, Mikro nur über `core/mic` (Details
+  in `docs/bereiche/begleitung.md`).
 - Reihenfolgen nur über `src/lib/core/sort.ts` (deutsche Sortierung, stabil).
   Aufgaben: dringend → neu (heute angelegt, Schild „neu“) → Erstellungszeit,
   nie alphabetisch.
@@ -279,54 +233,10 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Jeder behobene Fehler bekommt einen Test. Dateien möglichst unter 600 Zeilen.
 
 ## Feste Regeln einzelner Bereiche
-- **Tipps aus der Region:** keine Termine, eigene lila Ebene, bis jemand
-  „Übernehmen“ tippt. Kein GPS. KARAMBA nie bevorzugt (nur bei gleicher
-  Uhrzeit zuerst, höchstens eine pro Woche in der Kachel), sichtbar „von
-  KARAMBA Eis“. Nur offene Lizenzen (CC0/CC BY/CC BY-SA). `TIPS_SOURCE` off/demo/
-  tldb, Zugang nie im Code. → `docs/bereiche/tipps.md`
-- **Spendentopf:** keine Zahlung in der App. Solange `POT_STATUS` „vorschau“
-  ist: Band „Vorschau“, Summe/Projekte als „Beispiel“, Beiträge nur
-  „vorgemerkt“ (kein Geld, kein Partner-Link); „live“ = „zugesagt“. Texte nur
-  aus `POT_TEXTS`, nie „an KARAMBA Eis“ – das Geld geht in die Region. Die App
-  bleibt ohne Beitrag kostenlos. → `docs/bereiche/spendentopf.md`
-- **Wetter:** ehrliche Regel – Regenstunde = ≥ 0,2 mm UND ≥ 50 %, Tage immer
-  aus den Stunden 7–21 Uhr. → `docs/bereiche/wetter.md`
-- **Beispiel-Tag:** Beispiele liegen nie in den echten Speichern, nicht in
-  Sicherung, Push oder KI. → `docs/bereiche/heute.md`
-- **Konten (Supabase):** Anmelden nur per E-Mail-Code (`signInWithOtp` +
-  `verifyOtp`), nie per Link. Geheimer Schlüssel nur auf dem Server, nie im
-  Client/Repo/Log. Jede Tabelle mit RLS (nur eigener Haushalt, „Arbeit“ nur
-  Besitzer). Migrationen nur in `supabase/migrations/`, laufen beim Merge;
-  nie SQL von Hand. Lokale Daten bleiben, bis die Übernahme bestätigt ist.
-  Abgleich: neueste Änderung je Eintrag gewinnt, Löschen nur als Markierung;
-  neue geteilte Daten = Übersetzer in `src/lib/konten/sync/docs.ts`.
-  → `docs/bereiche/konten.md`
-- **Mails an Mia:** nur Vorschläge mit „Übernehmen“, nie die Rohmail
-  speichern (Domain, Betreff, Auszug ≤ 300), 7 Tage; nur Weitergeleitetes von
-  Mitgliedern, Webhook-Signatur (`RESEND_WEBHOOK_SECRET`) immer prüfen.
-  → `docs/bereiche/mails.md`
-- **Mia denkt mit:** höchstens EINE ungefragte Karte am Tag (Regler „Wie
-  gesprächig?“: Ruhig nur Muster, Gesprächig zwei), nie 22–7 Uhr, Pause oder
-  Ruhe, nur wenn kein anderer Hinweis steht; jede Frage nur einmal, alles in
-  „Was ich mir merke“ löschbar. Spruch nur statt „Alles ruhig“. Texte je
-  Seite in `mia/denktmit/seiten/`. → `docs/bereiche/begleitung.md`
-- **Mias Stimme und Ohr (ElevenLabs):** `ELEVENLABS_API_KEY` nur in Vercel
-  (Sensitive), nie im Repo, Client, Log oder Chat; fehlt er, alles wie bisher
-  über den Browser. Nur mit KI-Einwilligung, gleiche Grenzen wie die KI,
-  Aufnahmen nie speichern oder protokollieren, Pinnwand-Sprachnachrichten nie
-  dorthin. Einstellung „Wer spricht?“ (Mias Stimme / Stimme des Handys).
-  → `docs/bereiche/begleitung.md`
-- **Bilder der Gerichte:** eigene Zeichnungen im Code, keine fremden Fotos,
-  keine KI (`docs/credits.md`); neues eingebautes Gericht → `npm run
-  gerichte-bilder`. Kein Braun und kein Dunkelgrau als große Fläche. Soßen
-  frisch: Rot, Gelb, Grün, Creme, und sparsam (Fläche unter dem Essen, Rand
-  bleibt frei). Braun nur für Kleinteile (Kruste, Brot, Gewürz).
-  → `docs/bereiche/essen.md`
-
-- **Name KARAMBA:** immer „KARAMBA Eis“, nie nur „KARAMBA“ (Verwechslung
-  mit einem Online-Casino) – in allen Texten (Tipps „von KARAMBA Eis“,
-  Spendentopf, Mails, „Über Mia“, Hallo-Bildschirm „Gemacht in Eutin von
-  KARAMBA Eis“). Test in `tests/app/regeln.test.ts`.
+Stehen jeweils oben in `docs/bereiche/<bereich>.md`: Tipps aus der Region
+und Name „KARAMBA Eis“ (`tipps`), Spendentopf, Wetter, Beispiel-Tag
+(`heute`), Konten (Supabase), Mails an Mia, Mia denkt mit und Mias Stimme
+(`begleitung`), Bilder der Gerichte (`essen`). Vor Änderungen dort lesen.
 
 ## Datenschutz
 - So wenig Daten wie möglich, so lange wie nötig, nie verkauft, keine Tracker,
@@ -342,14 +252,6 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Falls je Werbung kommt: nur nicht personalisiert und ohne Tracking, sonst
   braucht es eine Einwilligung.
 
-## Roadmap
-- Phase 1: Konten + Haushalt (Supabase) – Anmeldung, Haushalt mit Mitgliedern,
-  gemeinsame Daten (Pinnwand teilen, Push, Guthaben auf dem Server).
-- Phase 2: Heute/Woche mit Push.
-- Phase 3: Essen + Einkauf neu.
-- Phase 4: Post (Briefe, Rechnungen erfassen).
-- Phase 5: Foto → Termin/Aufgabe.
-
 # Hinweise für Claude
 
 @AGENTS.md
@@ -364,65 +266,25 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Neue Funktion = neuer Baustein (aus), eigener Ordner im passenden Bereich,
   Abschnitt in `docs/bereiche/<bereich>.md` aktualisieren, Eintrag in
   `docs/verlauf.md`.
+- Mehrere Aufträge auf einmal: parallel arbeiten (eigene Zweige/Helfer), wo sie
+  sich nicht überschneiden. Überschneidende Bereiche nacheinander, immer auf
+  dem neuesten `main`. Nach jedem Merge: `npm test`, Durchklick,
+  `bilder:vergleich`. Bei Konflikten gilt der neuere Auftrag.
+- Warteschlange `docs/auftraege.md`: bei jedem Sitzungsstart zuerst lesen;
+  neue Aufträge dort eintragen (A-…, Titel, Tafel, Status), bevor die Arbeit
+  beginnt; nach jedem Merge den Status aktualisieren; am Ende jedes Pakets
+  oben eine kurze Zusammenfassung (fertig, offen, was ausprobieren).
+- Tafeln (Vorlagen-Bilder) als `docs/tafeln/tafel-<nr>.png` speichern und im
+  Auftrag darauf verweisen.
+- Tests gestaffelt: pro Auftrag `npm test`, tsc, lint, knip und die
+  betroffenen Durchklick-Abläufe; volle Prüfung (bilder, bilder:vergleich,
+  pruefen, kompletter Durchklick, Prüfstand) einmal am Ende jedes Pakets,
+  Ergebnis in `docs/auftraege.md`. Alle Befehle: `docs/testen.md`.
 
 ## Ordner
-Gleiche Bereichsnamen in `src/lib/<bereich>` (Logik, rein wo möglich),
-`src/components/<bereich>` (Oberfläche) und `tests/<bereich>`:
-
-| Bereich | Inhalt |
-|---|---|
-| `heute` | Startseite, Kacheln, Bearbeiten, Jetzt-Karte, Tagesphasen |
-| `kalender` | Termine, Aufgaben, Kalender- und Tag-Seite, Eintragen |
-| `essen` | Essen-Reiter, Wochenplan (`essen/plan`), Rezepte (`essen/rezepte`), Ideen, Bilder, Kochmodus |
-| `einkauf` | Einkaufsliste, Läden, Stammartikel |
-| `vorrat` | „Im Haus“: was da ist (ohne Mengen), Orte, vergisst von selbst |
-| `pinnwand` | Nachrichten und Sprachnachrichten |
-| `notizen` | Notizen (jede Schnellnotiz eine eigene), Bearbeiten im Vollbild |
-| `wetter` | Wetter-Server, Kachel, Seite |
-| `sport` | Trainings, Wochenziel |
-| `timer` | Timer, Stoppuhr |
-| `tipps` | Tipps aus der Region |
-| `spendentopf` | Spendentopf |
-| `begleitung` | Chat, KI-Route, Werkzeuge, Sprache, Avatar, Hallo-Bildschirm |
-| `einstellungen` | Profil, Einstellungen, Mehr Funktionen |
-| `konten` | Konto, Haushalt, Einladen (Supabase), Datenbank-Tests (`tests/datenbank`) |
-| `mails` | Mails an Mia: Eingang (Webhook), Vorschläge, Absender lernen |
-| `core` | Speicher, Sicherung, Zeit, Navigation, Toast/Rückgängig, Sortieren, Bausteine |
-| `ui` | Bausteine der Oberfläche (`styles.ts`, `Sheet`, `PageHeader` …) |
-
-Importe nur über `@/…`. Die Begleitung heißt im Code neutral
-(`BegleitungAvatar`, `BegleitungBar`, `BegleitungTool`, `begleitungPush`);
-`/api/lotte`, Speicher-Schlüssel, Op- und Werkzeugnamen und die Umgebungs-
-variablen `LOTTE_*` bleiben. Alte Adressen leiten in `next.config.ts`
-(`OLD_PAGES`) weiter.
-
-## Testen
-Vor jedem PR alles grün:
-- `npm test` – Vitest, `tests/<bereich>/*.test.ts`, `tests/app/` für Code- und
-  Textregeln (Stilblatt, Ohne-Druck-Wörter, Speicher, Service Worker).
-  Gemeinsame Hilfen in `tests/helpers.ts`: `at()`/`atFresh()` (feste Zeit),
-  `memoryStorage()`, `fakeWindow()`/`noBrowser()`, `termin()`/`aufgabe()`.
-- `npm run test:abdeckung` – Abdeckung `src/lib` (ohne `use*.ts` und reine
-  Browser-Schnittstellen), Untergrenze 80 % Zeilen.
-- `npx tsc --noEmit`, `npm run lint`, `npx knip` (ungenutzter Code muss 0
-  sein; `@public` im Kommentar = bewusst für Tests/Push).
-- `npm run build`, danach `.next/static` nach `sk-ant` und Supabase-
-  Geheimnissen (`service_role`, `SUPABASE_SECRET`) durchsuchen.
-- `npm run test:datenbank` – Migrationen und RLS gegen echtes Postgres
-  (bei Änderungen in `supabase/`).
-- `npm run durchklick` – Playwright mit echten Touch-Gesten, iPhone 15 Pro und
-  Pixel 7 (Abläufe in `e2e/ablaeufe/`, eigener Testserver mit Testmodus).
-- Bei Oberflächen-Änderungen: `npm run bilder` (96 Bildschirmfotos) und
-  `npm run bilder:vergleich` (Abweichung > 0,1 %); gewollte Änderungen
-  ansehen, dann `npm run bilder -- --basis`. Bilder liegen in `.bilder/`.
-- `npm run messen` – JavaScript je Seite.
-- Vor dem Vorführen bzw. bei großen Änderungen: `npm run pruefen` (jede Seite
-  auf SE/15 Pro/Pixel 7, hell/dunkel, Browser/App, Startseite zu 5 Uhrzeiten:
-  seitlich verrutscht, unter der Leiste, Tippflächen, Knopf über Text, Knopf
-  fängt keinen Tipp, 16 px, Konsole, 404, Texte; `-- --schnell` = ein Gerät)
-  und `npm run knoepfe` (jeden Knopf antippen: passiert etwas?).
-- Testmodus ohne KI: `KUECHENHELFER_MOCK=1`, `WETTER_MOCK=1`,
-  `TIPS_SOURCE=demo`, `KONTEN_TEST=1` (Test-Backend für Konten).
+Gleiche Bereichsnamen in `src/lib/<bereich>`, `src/components/<bereich>` und
+`tests/<bereich>` (Tabelle und Namensregeln in `docs/ordner.md`). Importe nur
+über `@/…`.
 
 ## Mehr dazu
 - `docs/bereiche/<bereich>.md` – aktueller Stand je Bereich (Code, Speicher,
@@ -430,5 +292,8 @@ Vor jedem PR alles grün:
 - `docs/verlauf.md` – wie alles entstanden ist (frühere Abschnitte je Version).
 - `docs/aufraeumen-vorher.md` / `docs/aufraeumen-nachher.md` – Zahlen vom
   großen Aufräumen.
+- `docs/testen.md`, `docs/ordner.md`, `docs/design.md`, `docs/roadmap.md` –
+  aus CLAUDE.md umgezogene Details.
+- `docs/auftraege.md` – Warteschlange, `docs/tafeln/` – Vorlagen-Bilder.
 - `docs/credits.md` – Quellen und Lizenzen. `docs/vorlagen/` – Vorlagen
   (Avatar-Animation, Beispiel-Startseite).

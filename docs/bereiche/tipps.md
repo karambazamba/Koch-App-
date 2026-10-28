@@ -1,5 +1,18 @@
 # Tipps aus der Region
 
+## Feste Regeln (aus CLAUDE.md umgezogen)
+
+- **Tipps aus der Region:** keine Termine, eigene lila Ebene, bis jemand
+  „Übernehmen“ tippt. Kein GPS. KARAMBA nie bevorzugt (nur bei gleicher
+  Uhrzeit zuerst, höchstens eine pro Woche in der Kachel), sichtbar „von
+  KARAMBA Eis“. Nur offene Lizenzen (CC0/CC BY/CC BY-SA). `TIPS_SOURCE` off/demo/
+  tldb, Zugang nie im Code. → `docs/bereiche/tipps.md`
+- **Name KARAMBA:** immer „KARAMBA Eis“, nie nur „KARAMBA“ (Verwechslung
+  mit einem Online-Casino) – in allen Texten (Tipps „von KARAMBA Eis“,
+  Spendentopf, Mails, „Über Mia“, Hallo-Bildschirm „Gemacht in Eutin von
+  KARAMBA Eis“). Test in `tests/app/regeln.test.ts`.
+
+
 Kurz: Veranstaltungen in der Nähe (Märkte, Kinderkino, Konzerte …) als eigene
 lila Ebene – Kachel, Seite `/tipps`, Kalender, Jetzt-Karte und Antworten der
 Begleitung (Standard Mia). Ein Tipp wird erst durch Antippen zum Termin.

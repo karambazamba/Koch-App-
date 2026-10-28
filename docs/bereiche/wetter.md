@@ -1,5 +1,11 @@
 # Wetter
 
+## Feste Regeln (aus CLAUDE.md umgezogen)
+
+- **Wetter:** ehrliche Regel – Regenstunde = ≥ 0,2 mm UND ≥ 50 %, Tage immer
+  aus den Stunden 7–21 Uhr. → `docs/bereiche/wetter.md`
+
+
 Kurz: Das Wetter am Wohnort – als Kachel auf Heute, als eigene Seite `/wetter`
 und als Antwort der Begleitung (Standard Mia). Ehrlich aus den Stunden
 gerechnet, ohne Panik, mit höchstens EINEM Tipp.
