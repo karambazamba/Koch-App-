@@ -119,7 +119,7 @@ describe("Schnelleingabe ＋ (Fehler 28.10.)", () => {
     const { saveQuick } = await import("@/components/ui/quickSave");
     p.addPantryItems([{ name: "Zucchini" }], T);
     const text = "Milch, Eier, Zucchini gar nicht im Haus";
-    expect(saveQuick({ kind: "imhaus", title: text }, text, {})).toBe(true);
+    expect(saveQuick({ kind: "imhaus", title: text }, text, { kind: "imhaus" })).toBe(true);
     expect(p.loadPantry().map((i) => i.name)).toEqual(["Milch", "Eier"]);
     expect(p.loadPantryAll().some((i) => /haus/i.test(i.name))).toBe(false);
     expect(p.usedPantry(p.loadPantryAll(), T).map((i) => i.name)).toEqual(["Zucchini"]);

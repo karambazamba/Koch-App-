@@ -35,13 +35,17 @@ weiter Vorrat (`src/lib/vorrat/`, `/vorrat`, `wasgibts.vorrat`).
 
 ## Daten und Speicher
 
-- `wasgibts.vorrat` v3 (in der Sicherung, im Haushalt geteilt):
-  `{ version: 3, items: PantryItem[], places: { <name klein>: Ort } }`.
-  `PantryItem` = `id`, `name`, `addedAt` („YYYY-MM-DD“), `place`
-  (`kuehlschrank` | `schrank` | `tiefkuehler`), `usedAt` (aufgebraucht).
-- Migration v1/v2 → v3 (`migratePantry`): Mengen und Einheiten fallen weg,
+- `wasgibts.vorrat` v4 (in der Sicherung, im Haushalt geteilt):
+  `{ version: 4, items: PantryItem[], places: { <name klein>: Ort } }`.
+  `PantryItem` = `id`, `name`, `addedAt` („YYYY-MM-DD“), `place` = Gruppe
+  (`kuehlschrank` | `schrank` = Vorrat | `obstgemuese` | `brot` |
+  `tiefkuehler`), `usedAt` (aufgebraucht).
+- Migration v1/v2/v3 → v4 (`migratePantry`): Mengen und Einheiten fallen weg,
   Namen ohne Zahl („3 Karotten“ → „Karotten“), v1 ohne Ort bekommt den
-  naheliegenden Ort; nichts Gültiges geht verloren.
+  naheliegenden Ort; bis v3 lagen Obst, Gemüse und Brot im Kühlschrank oder
+  Schrank – sie wandern in „Obst & Gemüse“ bzw. „Brot“, außer der Ort wurde
+  für die Sorte selbst gewählt (`places`). Nichts Gültiges geht verloren. Der
+  Abgleich liest ältere Geräte genauso (`fromDocs` → `migratePantry`).
 - Abgleich (`docs.ts`): je Sache `vr:<id>`, dazu einmal `vr:orte`. Ältere
   Geräte mit Mengen werden sauber gelesen (`cleanPantryItem`).
 - `wasgibts.eingeraeumt` ist ausgemustert (`RETIRED_KEYS`).
@@ -52,10 +56,11 @@ weiter Vorrat (`src/lib/vorrat/`, `/vorrat`, `wasgibts.vorrat`).
 
 ## So verhält es sich
 
-- **Orte automatisch**: Milch, Käse, Sahne, Fleisch, Gemüse → Kühlschrank;
-  Kartoffeln, Nudeln, Reis, Zwiebeln, Konserven, Brot, Tomaten, Äpfel →
-  Schrank; TK-Ware, Fischstäbchen, Eis → Tiefkühler. Lange drücken = Ort
-  ändern; gilt ab dann für diese Sorte (`places`).
+- **Gruppen automatisch** (Tafel 102): Milch, Käse, Sahne, Fleisch →
+  Kühlschrank; Nudeln, Reis, Konserven, Honig, Getränke → Vorrat; Obst und
+  Gemüse (auch Kartoffeln, Zwiebeln, Tomaten, Äpfel) → Obst & Gemüse; Brot,
+  Brötchen, Kuchen → Brot; TK-Ware, Fischstäbchen, Eis → Tiefkühl. Chip
+  antippen → Gruppe ändern; gilt ab dann für diese Sorte (`places`).
 - **Vergisst von selbst** (still, keine Nachfrage): Fleisch/Fisch 3 Tage,
   Milchprodukte/Obst/Gemüse/Brot 7, Kartoffeln/Zwiebeln 21, Trockenes 42,
   Tiefkühler 90. Danach verschwindet der Eintrag. Grundsachen (Salz, Pfeffer,
@@ -70,10 +75,27 @@ weiter Vorrat (`src/lib/vorrat/`, `/vorrat`, `wasgibts.vorrat`).
   Regel, „Ist alle · auf die Liste“ im Fenster) → raus und auf die
   Einkaufsliste der laufenden Woche, was dort schon steht, nicht doppelt.
   ＋ = Schnelleingabe „IM HAUS“, mehrere auf einmal („Eier, Milch, Hack“).
-- **Seite**: Hinweis „Füllt sich von selbst …“, Chips Alle · Kühlschrank ·
-  Schrank · TK, Abschnitte Bald aufbrauchen → Kühlschrank → Schrank →
-  Tiefkühler → Aufgebraucht, unten „Was koch ich daraus?“ → Spontan kochen.
-  Lange drücken = Sache ändern (`SacheSheet`).
+- **Seite** (Tafel 102, `houseGroups`): oben Karte „Was ist da?“ / „Kurz
+  reinsprechen, ich sortier’s ein.“ mit rundem Knopf → Mia-Bühne, hört gleich
+  zu, Modus „Im Haus“ (kein eigenes Mikro-Feld). Darunter die Sachen als Chips
+  (Symbol + Name) in den Gruppen mit Inhalt; oranger Punkt = bald
+  aufbrauchen, Legende einmal unten. Aufgebrauchtes nur als EINE Zeile
+  „Aufgebraucht: Thunfisch, Kuchen“ + „Auf die Liste“ (`aufDieListe`: alles
+  auf die Liste, nichts doppelt, raus aus Im Haus, Rückgängig). Chip antippen
+  = kleines Fenster (`SacheSheet`: Gruppe, „Aufgebraucht“, Löschen). ＋ =
+  Schnelleingabe für mehrere Sachen. „Was koch ich daraus?“ schwebt über der
+  Leiste (`UEBER_LEISTE`, Seite mit `PAGE_MAIN_KNOPF`), nichts liegt darunter.
+- **Reinsprechen** (`src/lib/vorrat/reinsprechen.ts`): ein Satz, mehrere
+  Sachen – „ist da“, „haben wir noch“, „gekauft“ = rein; „ist alle“, „haben
+  wir nicht mehr“, „gar nicht im Haus“, „kein … mehr“ = raus. Satzteile
+  werden nie zu Sachen. Mit KI geht der Satz als „[Im Haus] …“ an die KI
+  (Werkzeuge `vorrat_hinzufuegen`/`vorrat_aufgebraucht`, Regel in der
+  Beschreibung), ohne KI versteht die App ihn selbst (`imHausVerstehen`).
+  Beides erscheint als „Hab ich so verstanden:“ (`ImHausKarte`): + rein, −
+  raus mit „auf die Liste“ (abwählbar), Zeile antippen = weglassen, „Ändern“
+  = Mia hört nochmal zu (neu Gesagtes ersetzt dieselbe Sache), „Passt“ =
+  einräumen. Nie sofort; Schließen beendet den Modus. Dieselbe Erkennung
+  nutzt die Schnelleingabe ＋.
 - **Unter Essen** (EIN Bereich statt „Spontan kochen“ und „Das ist da“):
   Überschrift „Im Haus“ mit ＋ und „Alle ›“; Chips (`imHausReihe`): „bald
   aufbrauchen“ zuerst (leicht orange, Sanduhr), dann das zuletzt
@@ -154,5 +176,9 @@ Einmal pro Woche statt Pflegen: Sonntag ab 17 Uhr steht in der Jetzt-Karte
   Samstag, Baustein, leer, einmal pro Woche, Nacht/Pause/Ruhe/Beispiel,
   „Ruhig“, zählt als der eine Hinweis, Jetzt-Karte (auch abends), Seite
   (Kacheln, „Fertig · 3 weg“, genau die markierten, Rückgängig), Speicher.
+- `tests/vorrat/reinsprechen.test.ts` – Satz → rein/raus (auch „gar nicht
+  im Haus“, „kein … mehr“), nie Satzteile als Sache, Vorschlag und „Ändern“,
+  Testmodus, Prüfstand (≥ 8 Sätze, `nieName`), Schnelleingabe (Fehler 28.10.),
+  Seite (über der Leiste), Vergessen in den neuen Gruppen.
 - Gekocht: `tests/essen/nachDemEssen.test.ts`.
 - Durchklick: Abläufe `imHaus`, `kuehlcheck` und `imHausEssen` in `e2e/ablaeufe/essen.mjs`.

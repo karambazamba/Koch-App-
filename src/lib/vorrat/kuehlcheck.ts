@@ -13,7 +13,7 @@ import { createLocalStore } from "@/lib/core/localStore";
 import { addDays } from "@/lib/core/now";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 import { weekdayIndex } from "@/lib/kalender/model";
-import { houseSections } from "@/lib/vorrat/imHaus";
+import { houseGroups } from "@/lib/vorrat/imHaus";
 import { loadPantryAll, replacePantry, type PantryItem } from "@/lib/vorrat/pantry";
 import type { JetztTopic } from "@/lib/heute/jetztTopics";
 
@@ -73,11 +73,11 @@ export const kuehlCheckErledigt = (woche: string) => store.save({ version: 1, wo
 
 // --- Seite ------------------------------------------------------------------------
 
-/** Alle Sachen, die gerade da sind – „Bald aufbrauchen“ zuerst, dann Kühlschrank → Schrank → Tiefkühler */
-export const checkSachen = (items: PantryItem[], today: string): PantryItem[] =>
-  houseSections(items, today)
-    .filter((s) => s.id !== "aufgebraucht")
-    .flatMap((s) => s.items);
+/** Alle Sachen, die gerade da sind – „Bald aufbrauchen“ zuerst, dann die Gruppen (Kühlschrank → Vorrat → Obst & Gemüse → Brot → Tiefkühl) */
+export function checkSachen(items: PantryItem[], today: string): PantryItem[] {
+  const all = houseGroups(items, today).groups.flatMap((g) => g.items);
+  return [...all.filter((x) => x.soon), ...all.filter((x) => !x.soon)].map((x) => x.item);
+}
 
 /** Antippen: weg ↔ wieder da */
 export const wegUmschalten = (weg: readonly string[], id: string): string[] => (weg.includes(id) ? weg.filter((x) => x !== id) : [...weg, id]);
