@@ -59,7 +59,7 @@ Ohne Zähler in der Oberfläche:
   „+“, sonst weiß halbtransparent. Uhrzeit vollständig unter dem Kreis
   („18:00“, 10 px grün) – nie nur die Stunde im Kreis (früher „18“).
 - Sportarten zeigen Linien-Icons (`SportIcon`: Footprints, Dumbbell, Bike,
-  WavesLadder, Flower2, Volleyball, Trees; sonst Activity), nie Emojis in
+  WavesLadder, Flower2, Volleyball, Trees; sonst Activity; Laufschuh `SportShoe` nur als Wasserzeichen ohne Training), nie Emojis in
   Chips oder Knöpfen. `emoji` bleibt im Modell nur für Chat-Texte.
 - EIN Satz (`statusLine`, ohne Zahlen): „Wochenziel geschafft – schön.“,
   „Mehr als geplant – richtig schöne Woche.“, „Ein Training noch, dann ist die
@@ -70,12 +70,23 @@ Kachel `sport` (Größen XS/S im festen Raster, Tafel 118, Standard XS,
 Pastell-Grün; Standard nur bei „allein“, Tafel 119):
 - XS: EINE Zeile („Heute 18:00 · Yoga“, ohne Plan „Diese Woche frei“). S: „Als
   Nächstes“ (Icon, „Fr 17:00“, Titel; antippen = Tag-Fenster des Trainings).
-  Ohne geplantes Training: „Diese Woche noch nichts geplant – einfach Plus
-  tippen.“ Die Woche als Kreise und der Wochensatz stehen auf `/sport`.
+  Ohne geplantes Training: „Diese Woche ist noch frei. Plus tippen.“ (ohne
+  Gedankenstrich). Die Woche als Kreise und der Wochensatz stehen auf `/sport`.
   Beispiel-Tag: „2 von 3 diese Woche“ (bis zum ersten eigenen Training).
 - „+“ = „Training planen“ (`SportPlanForm` mit Tag-Chips für 7 Tage, Start
   = erster freier Tag) und darunter „Schon trainiert? Eintragen“ →
   `SportAddSheet`. Kachel-Label → `/sport`. Jeder Kreis → `SportDaySheet`.
+- Wasserzeichen (Tafel 124 A, nur in S): großes Linien-Symbol (150 px, Strich
+  1,3) unten rechts, rechts/unten 30 px angeschnitten, hinter dem Inhalt
+  (`ui/KachelWasserzeichen`, Kachel `isolate`, Zeichen z −1), nicht
+  antippbar, `aria-hidden`, ohne Bewegung. Symbol = Sportart des nächsten
+  Trainings, sonst des letzten, sonst Laufschuh (`SportShoe`;
+  `lib/sport/wasserzeichen.ts`, `wasserzeichenSport`); eigene Sportarten
+  `Activity`. Farbe = Kachel-Akzent (`--tile-ac`, folgt der gewählten Farbe),
+  Deckkraft `--app-wasserzeichen` (hell 12,5 %, dunkel 10 %); Schlicht: Grau
+  (`--app-muted`) mit `--app-wasserzeichen-schlicht` (6 %). XS ohne
+  Wasserzeichen (eine Zeile, zu eng, ruhiger). Die Kachel trägt
+  `data-wasserzeichen="<sportart>"`.
 
 Tag-Fenster (`SportDaySheet`), vier Arten:
 - leer, heute/vergangen: „Wie letztes Mal: Laufen · 45 Min“ oder Sportart +

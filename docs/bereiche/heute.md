@@ -180,6 +180,10 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Schrift der Kachel, deren Standard der Ton ist. „Schlicht“: weiß, der Ton
   nur in Überschrift/Symbol. „Wie am Anfang“ setzt auch die Farben zurück.
   Beispiel-Tag nutzt dieselbe Anordnung, also dieselben Farben.
+- Wasserzeichen (Tafel 124 A): Sport und Im Haus tragen in S ein großes,
+  stilles Linien-Symbol unten rechts im Kachel-Akzent (`ui/KachelWasserzeichen`,
+  `.kachel-wasserzeichen`, Tokens `--app-wasserzeichen*`; Schlicht Grau 6 %,
+  XS keins). Kachel-Texte ohne „ – “ (Test `tests/app/kachelTexte.test.ts`).
 - `HOME_TILES` in Standard-Reihenfolge (erlaubte Größen, Standard fett im
   Code): Pinnwand S/M, Wetter XS/S/M, Notizen XS/S/M, Termine S/M, Aufgaben
   S/M, Essen S/M, Einkauf S/M, Spendentopf nur M, Tipps nur M (Baustein),
@@ -306,7 +310,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Termine-Kachel), Vorbereiten (Termin heute mit Notiz → „Versichertenkarte
   einpacken?“), Packliste fürs Training heute, Wetter NUR mit Planbezug
   (Regen zur Stunde eines Draußen-Termins/-Trainings, `isOutdoor`: „Regen um
-  17 Uhr · Fußball – lieber drinnen?“; ohne Regen Wind erst ab „Stürmisch“
+  17 Uhr · Fußball · lieber drinnen?“; ohne Regen Wind erst ab „Stürmisch“
   zur Stunde des Plans, `stormForPlan` in `lib/wetter/wind.ts`: „Stürmisch ab
   14 Uhr · Trampolin sichern?“; draußen sind jetzt auch Trampolin, Wäsche,
   Balkon, Terrasse), Neu von der Familie (Pinnwand,

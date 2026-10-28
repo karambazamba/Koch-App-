@@ -115,7 +115,11 @@ weiter Vorrat (`src/lib/vorrat/`, `/vorrat`, `wasgibts.vorrat`).
   Auswahl): XS = EINE Zeile („Hähnchen · heute“), S = „Bald aufbrauchen“
   (2 Zeilen à 30 px), sonst „Zuletzt eingekauft“; unten
   „Was koch ich daraus?“ → Spontan kochen; leer „Sag mir, was da ist, dann
-  schlag ich was vor.“
+  schlag ich was vor.“ Zeilen in S (`HausZeile`, Tafel 124 A): Symbol 20 px,
+  Name 14 px immer ganz (nie „Würstc…“), Schild 10,5 px rechts; passt beides
+  nicht in eine Zeile, rutscht nur das Schild darunter. In S hinten still
+  ein Kühlschrank als Wasserzeichen wie bei Sport (`--app-wasserzeichen-haus`:
+  hell 9 %, dunkel 7 %, Schlicht Grau 6 %); XS ohne.
 - **Mia denkt mit**: beim ersten Besuch der Essen-Seite einmal „Sag mir, was
   im Kühlschrank ist, dann koch ich mit dir spontan.“ (eigener Schlüssel
   `seite:essen-imhaus`, also auch für alle, die Essen schon kannten).

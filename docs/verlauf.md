@@ -3525,3 +3525,22 @@ Fehler in `docs/aufraeumen-nachher.md`.
   oben (ersetzt Muster und Windsack auf der Kachel), kurzer Satz ≤ 22 Zeichen.
 - Speicher: Startseite v9 (Migration L → M, nicht erlaubte Größen auf die
   nächste erlaubte, keine Kachel verschwindet).
+
+## Sport-Kachel mit Wasserzeichen (vX, Tafel 124 A)
+
+- Auftrag A-029, Tafel 124 A nur als Text. Sport-Kachel (S) mit großem,
+  stillem Linien-Symbol unten rechts (150 px, Strich 1,3, 30 px angeschnitten,
+  hinter dem Inhalt, `aria-hidden`, nicht antippbar): Sportart des nächsten
+  Trainings, sonst des letzten, sonst Laufschuh (lucide `SportShoe`). Farbe
+  = Kachel-Akzent der gewählten Farbe, Deckkraft als Tokens
+  `--app-wasserzeichen` (hell 12,5 %, dunkel 10 %), Schlicht Grau 6 %. Im Haus
+  (S) mit Kühlschrank (9 %, dunkel 7 %). XS ohne Wasserzeichen.
+- Im Haus: Namen nie abgeschnitten (Symbol 20 px, Name 14 px, Schild 10,5 px
+  rechts, nur wenn nötig darunter).
+- Sport leer: „Diese Woche ist noch frei. Plus tippen.“ Kachel-Texte ohne
+  Gedankenstrich (Spendentopf „<Region> · noch kein Topf“, Tipps „Gerade
+  nichts in eurer Nähe. Umkreis ansehen“, Jetzt-Karte „… · lieber
+  drinnen?“); Code-Regel `tests/app/kachelTexte.test.ts`.
+- Bildvergleich: Szenen Sport/Im Haus in 8 Farben × hell/dunkel ×
+  Farbig/Schlicht (`e2e/bilder.mjs`).
+
