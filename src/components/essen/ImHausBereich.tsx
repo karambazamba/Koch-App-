@@ -17,7 +17,6 @@ import { SacheSheet } from "@/components/vorrat/SacheSheet";
 import { openHelper } from "@/lib/begleitung/open";
 import { useFeature } from "@/lib/core/features";
 import { openQuick } from "@/lib/core/schnelleingabe";
-import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 import { IM_HAUS_CHIPS, imHausReihe } from "@/lib/vorrat/imHaus";
 import { usePantry, type PantryItem } from "@/lib/vorrat/pantry";
 
@@ -29,7 +28,6 @@ const SOON_CHIP = chipClass(true).replace("border-accent ", "border-accent-soft 
 export function ImHausBereich({ today }: { today: string }) {
   const on = useFeature("vorrat");
   const pantry = usePantry();
-  const shopping = useWeekShoppingList("current");
   const [open, setOpen] = useState<PantryItem | null>(null);
   if (!on || !pantry) return null;
   const reihe = imHausReihe(pantry, today).slice(0, IM_HAUS_CHIPS);
@@ -66,7 +64,7 @@ export function ImHausBereich({ today }: { today: string }) {
           </button>
         </div>
       )}
-      {open && <SacheSheet item={open} today={today} weekStart={shopping?.weekStart ?? null} onClose={() => setOpen(null)} />}
+      {open && <SacheSheet item={open} today={today} onClose={() => setOpen(null)} />}
     </section>
   );
 }

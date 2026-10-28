@@ -124,8 +124,8 @@ export const SHOPS: Cmp<{ name: string; uses: number }>[] = [descNum((s) => s.us
 
 // --- Vorrat -----------------------------------------------------------------------
 
-/** Im Haus: Bald aufbrauchen → Ort (Kühlschrank, Schrank, Tiefkühler) → Name */
-const PLACE_ORDER = ["kuehlschrank", "schrank", "tiefkuehler"];
+/** Im Haus: Bald aufbrauchen → Gruppe (Kühlschrank, Vorrat, Obst & Gemüse, Brot, Tiefkühl) → Name */
+const PLACE_ORDER = ["kuehlschrank", "schrank", "obstgemuese", "brot", "tiefkuehler"];
 export const PANTRY: Cmp<{ name: string; place?: string; soon?: boolean }>[] = [
   first((p) => p.soon),
   ascNum((p) => {

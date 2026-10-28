@@ -3,7 +3,7 @@
 //   Drogerie/Haushalt nicht). Meldung „Im Haus: Brot, Äpfel · Rückgängig“ –
 //   kurz hintereinander Abgehaktes kommt in EINE Meldung.
 // - Zurückgenommen (Haken weg) = heute Reingelegtes wieder raus.
-// - Im Haus aufgebraucht und nochmal angetippt = wieder auf die Liste.
+// - Aufgebrauchtes: „Auf die Liste“ in der Zeile „Aufgebraucht: …“ (`aufDieListe`).
 // - „Eier sind alle“ (Mia, Regel, „Ist alle“ im Fenster) = raus und auf die
 //   Liste (`istAlle`, was schon draufsteht, nicht doppelt).
 // Schaltet den Baustein frei, sobald etwas reinkommt.
@@ -44,17 +44,25 @@ export function unboughtFromHouse(name: string, today: string) {
   if (next.length !== all.length) replacePantry(next);
 }
 
-/** Aufgebraucht nochmal angetippt → wieder auf die Einkaufsliste (raus aus Im Haus) */
-export function backToList(item: PantryItem, weekStart: string) {
+/**
+ * „Aufgebraucht: Thunfisch, Kuchen · Auf die Liste“: alles Aufgebrauchte auf
+ * die Einkaufsliste der Woche (was dort schon offen steht, nicht doppelt) und
+ * raus aus Im Haus – eine Meldung mit Rückgängig.
+ */
+export function aufDieListe(items: PantryItem[], weekStart: string) {
   const before = loadPantryAll();
-  const id = newId();
-  updateList(weekStart, (l) => ({ ...l, manual: [...l.manual, { id, name: item.name, amount: "", section: sectionFor(item.name), done: false }] }));
-  replacePantry(before.filter((p) => p.id !== item.id));
-  const text = "Steht wieder auf der Liste";
+  const list = listStore.load()?.weeks[weekStart] ?? EMPTY_LIST;
+  const fresh = items
+    .filter((it, i) => items.findIndex((x) => sameIngredient(x.name, it.name)) === i)
+    .filter((it) => !list.manual.some((m) => !m.done && sameIngredient(m.name, it.name)))
+    .map((it) => ({ id: newId(), name: it.name, amount: "", section: sectionFor(it.name), done: false }));
+  if (fresh.length) updateList(weekStart, (l) => ({ ...l, manual: [...l.manual, ...fresh] }));
+  replacePantry(before.filter((p) => !items.some((it) => it.id === p.id)));
+  const text = items.length === 1 ? `${items[0].name} steht auf der Liste` : "Steht auf der Liste";
   showToast({
     text,
     undo: pushUndo(text, () => {
-      updateList(weekStart, (l) => ({ ...l, manual: l.manual.filter((m) => m.id !== id) }));
+      if (fresh.length) updateList(weekStart, (l) => ({ ...l, manual: l.manual.filter((m) => !fresh.some((f) => f.id === m.id)) }));
       replacePantry(before);
     }),
     undoneText: "Wieder weg",

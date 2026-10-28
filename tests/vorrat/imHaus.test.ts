@@ -4,7 +4,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GRUNDSACHEN, HALTBAR_TAGE, cleanPantryItem, isFood, isGone, isGrundsache, isSoon, isUnsure, placeFor, soonBadge, sorteFor } from "@/lib/vorrat/haltbar";
 import { ingredientStem, sameIngredient, type PantryItem } from "@/lib/vorrat/pantry";
-import { houseSections, houseTile } from "@/lib/vorrat/imHaus";
+import { aufgebrauchtZeile, houseGroups, houseTile } from "@/lib/vorrat/imHaus";
 import { pantrySentence } from "@/lib/vorrat/kreislauf";
 import { matchStock, soonToUse, stockLine } from "@/lib/essen/dishIdeas";
 import { ADAPTERS, stableJson } from "@/lib/konten/sync/docs";
@@ -23,9 +23,11 @@ beforeEach(async () => {
 });
 
 describe("Orte und Sorten (an einer Stelle)", () => {
-  it("Kühlschrank / Schrank / Tiefkühler, Unbekanntes in den Schrank-Regeln", () => {
-    expect(["Milch", "Käse", "Sahne", "Hähnchen", "Paprika"].map((n) => placeFor(n))).toEqual(["kuehlschrank", "kuehlschrank", "kuehlschrank", "kuehlschrank", "kuehlschrank"]);
-    expect(["Kartoffeln", "Nudeln", "Reis", "Zwiebeln", "Brot", "Kidneybohnen aus der Dose"].map((n) => placeFor(n))).toEqual(["schrank", "schrank", "schrank", "schrank", "schrank", "schrank"]);
+  it("Gruppen Kühlschrank / Vorrat / Obst & Gemüse / Brot / Tiefkühl (Tafel 102)", () => {
+    expect(["Milch", "Käse", "Sahne", "Hähnchen"].map((n) => placeFor(n))).toEqual(["kuehlschrank", "kuehlschrank", "kuehlschrank", "kuehlschrank"]);
+    expect(["Nudeln", "Reis", "Kidneybohnen aus der Dose", "Honig", "Apfelsaft"].map((n) => placeFor(n))).toEqual(["schrank", "schrank", "schrank", "schrank", "schrank"]);
+    expect(["Paprika", "Zucchini", "Kartoffeln", "Zwiebeln", "Äpfel", "Tomaten"].map((n) => placeFor(n))).toEqual(["obstgemuese", "obstgemuese", "obstgemuese", "obstgemuese", "obstgemuese", "obstgemuese"]);
+    expect(["Brot", "Brötchen", "Kuchen", "Toast"].map((n) => placeFor(n))).toEqual(["brot", "brot", "brot", "brot"]);
     expect(["TK-Erbsen", "Fischstäbchen", "Eis"].map((n) => placeFor(n))).toEqual(["tiefkuehler", "tiefkuehler", "tiefkuehler"]);
     expect(placeFor("Milch", { milch: "schrank" })).toBe("schrank");
   });
@@ -77,7 +79,7 @@ describe("Orte und Sorten (an einer Stelle)", () => {
 });
 
 describe("Speicher", () => {
-  it("v1/v2 → v3: Mengen fallen weg, Namen ohne Zahl, nichts Gültiges geht verloren", async () => {
+  it("v1/v2 → v4: Mengen fallen weg, Namen ohne Zahl, Obst/Brot in ihre Gruppen, nichts Gültiges geht verloren", async () => {
     w = fakeWindow({
       "wasgibts.vorrat": JSON.stringify({
         version: 2,
@@ -92,11 +94,11 @@ describe("Speicher", () => {
     });
     const { loadPantryAll } = await import("@/lib/vorrat/pantry");
     expect(loadPantryAll()).toEqual([
-      { id: "1", name: "Karotten", addedAt: T, place: "kuehlschrank", usedAt: null },
+      { id: "1", name: "Karotten", addedAt: T, place: "obstgemuese", usedAt: null },
       { id: "2", name: "Reis", addedAt: "2026-10-01", place: "schrank", usedAt: null },
-      { id: "3", name: "Brot", addedAt: T, place: "schrank", usedAt: null },
+      { id: "3", name: "Brot", addedAt: T, place: "brot", usedAt: null },
     ]);
-    expect(JSON.parse(w.localStorage.getItem("wasgibts.vorrat")!).version).toBe(3);
+    expect(JSON.parse(w.localStorage.getItem("wasgibts.vorrat")!).version).toBe(4);
     expect(cleanPantryItem({ id: "x", name: "  " })).toBeNull();
   });
 
@@ -116,7 +118,7 @@ describe("Speicher", () => {
   it("Ort ändern merkt es sich für die Sorte", async () => {
     const p = await import("@/lib/vorrat/pantry");
     p.addPantryItems([{ name: "Tomaten" }], T);
-    expect(p.loadPantry()[0].place).toBe("schrank");
+    expect(p.loadPantry()[0].place).toBe("obstgemuese");
     p.setPantryPlace(p.loadPantry()[0].id, "kuehlschrank");
     expect(p.loadPantry()[0].place).toBe("kuehlschrank");
     p.removePantryItem(p.loadPantry()[0].id);
@@ -139,16 +141,18 @@ describe("Speicher", () => {
 describe("Seite und Kachel", () => {
   const all = [item("Joghurt", 5), item("Milch"), item("Nudeln"), item("Fischstäbchen"), item("Brot", 1, { usedAt: T }), item("Hack", 9)];
 
-  it("Bald aufbrauchen → Kühlschrank → Schrank → Tiefkühler → Aufgebraucht", () => {
-    expect(houseSections(all, T).map((s) => [s.id, s.items.map((i) => i.name)])).toEqual([
-      ["bald", ["Joghurt"]],
-      ["kuehlschrank", ["Milch"]],
-      ["schrank", ["Nudeln"]],
-      ["tiefkuehler", ["Fischstäbchen"]],
-      ["aufgebraucht", ["Brot"]],
+  it("Gruppen nur mit Inhalt, „bald“ als Punkt, Aufgebrauchtes als eine Zeile (Tafel 102)", () => {
+    const { groups, used } = houseGroups(all, T);
+    expect(groups.map((g) => [g.title, g.items.map((i) => `${i.item.name}${i.soon ? " •" : ""}`)])).toEqual([
+      ["Kühlschrank", ["Joghurt •", "Milch"]],
+      ["Vorrat", ["Nudeln"]],
+      ["Tiefkühl", ["Fischstäbchen"]],
     ]);
-    expect(houseSections(all, T, "schrank").map((s) => s.id)).toEqual(["schrank", "aufgebraucht"]);
-    expect(houseSections([], T)).toEqual([]);
+    expect(used.map((u) => u.name)).toEqual(["Brot"]);
+    expect(aufgebrauchtZeile(used)).toBe("Aufgebraucht: Brot");
+    expect(aufgebrauchtZeile([item("Thunfisch"), item("Kuchen")])).toBe("Aufgebraucht: Thunfisch, Kuchen");
+    expect(aufgebrauchtZeile([])).toBeNull();
+    expect(houseGroups([], T)).toEqual({ groups: [], used: [] });
   });
 
   it("Kachel: bald zuerst mit Schild, sonst zuletzt eingekauft", () => {
@@ -186,19 +190,20 @@ describe("Kreislauf Einkauf ↔ Im Haus", () => {
     vi.doUnmock("@/lib/core/toast");
   });
 
-  it("aufgebraucht nochmal = wieder auf die Liste (mit Rückgängig)", async () => {
-    const { backToList } = await import("@/lib/vorrat/kreislauf");
+  it("„Aufgebraucht: … · Auf die Liste“: alles auf die Liste, nichts doppelt, raus aus Im Haus (mit Rückgängig)", async () => {
+    const { aufDieListe } = await import("@/lib/vorrat/kreislauf");
     const p = await import("@/lib/vorrat/pantry");
     const s = await import("@/lib/einkauf/listStore");
-    p.addPantryItems([{ name: "Milch" }], T);
-    const milk = p.loadPantryAll()[0];
-    backToList(milk, "2026-10-19");
+    p.addPantryItems([{ name: "Milch" }, { name: "Thunfisch" }], T);
+    p.consumePantry(["Milch", "Thunfisch"], T);
+    s.updateList("2026-10-19", (l) => ({ ...l, manual: [{ id: "t", name: "Thunfisch", amount: "", section: "vorrat", done: false }] }));
+    aufDieListe(p.usedPantry(p.loadPantryAll(), T), "2026-10-19");
     expect(p.loadPantryAll()).toEqual([]);
-    expect(s.store.load()?.weeks["2026-10-19"].manual.map((m) => m.name)).toEqual(["Milch"]);
+    expect(s.store.load()?.weeks["2026-10-19"].manual.map((m) => m.name)).toEqual(["Thunfisch", "Milch"]);
     const { undoLast } = await import("@/lib/core/undo");
     undoLast();
-    expect(p.loadPantryAll().map((i) => i.name)).toEqual(["Milch"]);
-    expect(s.store.load()?.weeks["2026-10-19"].manual).toEqual([]);
+    expect(p.loadPantryAll().map((i) => i.name)).toEqual(["Milch", "Thunfisch"]);
+    expect(s.store.load()?.weeks["2026-10-19"].manual.map((m) => m.name)).toEqual(["Thunfisch"]);
   });
 
   it("Mia ohne KI: „Hab Hähnchen gekauft“ rein, „Die Milch ist alle“ raus", () => {
@@ -225,12 +230,12 @@ describe("Ehrlich in Kochidee, Rezepten, Essen", () => {
 describe("Abgleich", () => {
   it("ohne Mengen, gemerkte Orte als eigener Eintrag; alte Geräte mit Mengen werden sauber gelesen", () => {
     const a = ADAPTERS.find((x) => x.name === "vorrat")!;
-    const value = { version: 3, items: [item("Milch")], places: { milch: "schrank" } };
+    const value = { version: 4, items: [item("Milch")], places: { milch: "schrank" } };
     const docs = a.toDocs(value);
     expect(docs.map((d) => d.id)).toEqual(["vr:Milch", "vr:orte"]);
     expect(stableJson(a.fromDocs(docs, null))).toBe(stableJson(value));
     expect(a.fromDocs([{ ...docs[0], data: { id: "Milch", name: "2 Milch", amount: 2, unit: "", addedAt: T, place: "kuehlschrank" } }], null)).toEqual({
-      version: 3,
+      version: 4,
       items: [{ id: "Milch", name: "Milch", addedAt: T, place: "kuehlschrank", usedAt: null }],
       places: {},
     });
@@ -244,6 +249,6 @@ describe("Abgleich mit altem Stand", () => {
     const io = { read: (k: string) => data.get(k) ?? null, write: (k: string, v: Record<string, unknown>) => void data.set(k, v), now: () => `${T}T08:00:00.000Z` };
     const s = detectChanges({ ...emptyState("hh"), takeover: "fertig" }, io);
     const doc = s.queue.find((d) => d.id === "vr:p1");
-    expect(doc?.data).toEqual({ id: "p1", name: "Karotten", addedAt: T, place: "kuehlschrank", usedAt: null });
+    expect(doc?.data).toEqual({ id: "p1", name: "Karotten", addedAt: T, place: "obstgemuese", usedAt: null });
   });
 });

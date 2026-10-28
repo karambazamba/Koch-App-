@@ -172,9 +172,9 @@ export function KitchenHelper() {
         }
         setOpen(true);
         // Neues Gespräch ab hier (Früheres steht im „Verlauf“)
-        setChat((c) => ({ ...c, since: c.turns.length, topic: stageTopic(mode) }));
+        setChat((c) => ({ ...c, since: c.turns.length, topic: stageTopic(mode), imHaus: mode === "imhaus", proposal: mode === "imhaus" ? null : c.proposal }));
         // Mia holen: sie hört gleich zu, wenn das Mikro erlaubt ist (sonst ist das Tippen-Feld dran)
-        if (mode === "voice" || ask) setStart({ listen: mode === "voice", ask });
+        if (mode === "voice" || mode === "imhaus" || ask) setStart({ listen: mode === "voice" || mode === "imhaus", ask });
         else if (!mode && micState().granted) setStart({ listen: true });
         // Kochidee (Knopf in der Essen-Kachel oder Nachfrage): Mia fragt nicht, sie schlägt
         // gleich drei Gerichte vor (das Gespräch füllt sie, sobald es offen ist) – kein Mikro davor
@@ -258,8 +258,8 @@ export function KitchenHelper() {
           onClose={() => {
             setOpen(false);
             setStart(null);
-            // Spontan-Modus endet mit dem Schließen
-            setChat((c) => (c.spontan ? { ...c, spontan: null } : c));
+            // Spontan-Modus und „Was ist da?“ enden mit dem Schließen (nichts fängt danach Nachrichten ab)
+            setChat((c) => (c.spontan || c.imHaus ? { ...c, spontan: null, imHaus: false } : c));
             // Fokus zurück auf den Knopf
             setTimeout(() => fabRef.current?.focus(), 0);
           }}

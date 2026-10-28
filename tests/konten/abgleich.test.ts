@@ -41,7 +41,7 @@ const FULL = {
     alwaysList: ["salz"],
   },
   "wasgibts.wochenplan": { version: 3, weeks: { "2026-10-19": { mo: { kind: "text", title: "Nudeln", category: null }, "mo:notiz": { kind: "note", text: "Oma kommt" } } } },
-  "wasgibts.vorrat": { version: 3, items: [{ id: "v1", name: "Reis", addedAt: "2026-10-21", place: "schrank", usedAt: null }], places: { reis: "schrank" } },
+  "wasgibts.vorrat": { version: 4, items: [{ id: "v1", name: "Reis", addedAt: "2026-10-21", place: "schrank", usedAt: null }], places: { reis: "schrank" } },
   "wasgibts.einkaufswege": { version: 1, trips: [{ id: "w1", shop: "REWE", by: "Felix", start: T0, end: null, count: null, vorschlaege: ["Butter"] }] },
   "wasgibts.spendentopf": { version: 2, region: "ostholstein", support: null, interest: ["kiel"], votes: { "2026": "spielplatz" }, pledge: { betrag: 6, art: "monatlich", monat: "2026-10", status: "vorgemerkt" }, ask: { since: "2026-10-01", asked: 1, next: null, done: false }, voteCardHidden: [], liveAsked: false },
 };
@@ -233,11 +233,11 @@ describe("Abgleich zwischen zwei Handys", () => {
     const { a } = ctx;
     let { sa } = ctx;
     a.tick();
-    a.write("wasgibts.vorrat", { version: 3, items: [{ id: "v1", name: "Reis", addedAt: "2026-10-21", place: "schrank", usedAt: null }], places: {} });
+    a.write("wasgibts.vorrat", { version: 4, items: [{ id: "v1", name: "Reis", addedAt: "2026-10-21", place: "schrank", usedAt: null }], places: {} });
     sa = detectChanges(sa, a);
     const sending = sa.queue;
     a.tick();
-    a.write("wasgibts.vorrat", { version: 3, items: [{ id: "v1", name: "Reis", addedAt: "2026-10-21", place: "schrank", usedAt: "2026-10-21" }], places: {} });
+    a.write("wasgibts.vorrat", { version: 4, items: [{ id: "v1", name: "Reis", addedAt: "2026-10-21", place: "schrank", usedAt: "2026-10-21" }], places: {} });
     sa = detectChanges(sa, a);
     sa = markSent(sa, sending);
     expect(sa.queue).toHaveLength(1);

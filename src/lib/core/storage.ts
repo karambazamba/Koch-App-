@@ -36,7 +36,7 @@ export const STORAGE = [
   { key: "wasgibts.wochenvorgaben", what: "Wochen-Vorgaben (Wochen-Check)", version: 4, migration: "essen/weekPlan.ts", area: "local", backup: true },
   { key: "wasgibts.vorlagen", what: "Lieblingswochen (Vorlagen)", version: 1, migration: "essen/templates.ts", area: "local", backup: true },
   { key: "wasgibts.kochbuch", what: "Rezepte", version: 3, migration: "essen/cookbook.ts", area: "local", backup: true },
-  { key: "wasgibts.vorrat", what: "Im Haus: was da ist (ohne Mengen), Orte Kühlschrank/Schrank/Tiefkühler, aufgebraucht, gemerkte Orte je Sorte", version: 3, migration: "vorrat/pantry.ts migratePantry", area: "local", backup: true },
+  { key: "wasgibts.vorrat", what: "Im Haus: was da ist (ohne Mengen), Gruppen Kühlschrank/Vorrat/Obst & Gemüse/Brot/Tiefkühl, aufgebraucht, gemerkte Orte je Sorte", version: 4, migration: "vorrat/pantry.ts migratePantry", area: "local", backup: true },
   { key: "wasgibts.einkaufsliste", what: "Einkaufsliste, Produkte, Läden, Meine Läden, feste Laden-Regeln, Gelerntes, Stammliste", version: 6, migration: "einkauf/listMigration.ts migrateStore", area: "local", backup: true },
   { key: "wasgibts.essenansicht", what: "Essen: die nächsten 7 Tage als Liste oder Reihe (pro Gerät)", version: 1, migration: "essen/sieben/ansicht.ts", area: "local", backup: false },
   { key: "wasgibts.einkaufsansicht", what: "Einkaufsliste: gewählter Chip – Alle oder ein Laden (pro Gerät)", version: 2, migration: "einkauf/shopMode.ts", area: "local", backup: false },

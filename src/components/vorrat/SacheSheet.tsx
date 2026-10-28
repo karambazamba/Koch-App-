@@ -1,39 +1,37 @@
 "use client";
 
-// Eine Sache aus „Im Haus“ ansehen und ändern – auf der Seite „Im Haus“ (lange
-// drücken) und unter Essen (Chip antippen): Ort (gilt ab jetzt für diese
-// Sorte), „Ist alle“ (raus und auf die Einkaufsliste) und Entfernen.
+// Eine Sache aus „Im Haus“ (Tafel 102) – kleines Fenster beim Antippen eines
+// Chips (Seite „Im Haus“ und unter Essen): Gruppe ändern (gilt ab jetzt für
+// diese Sorte), „Aufgebraucht“ (steht dann in der Zeile „Aufgebraucht: …“ mit
+// „Auf die Liste“) und Löschen.
 
-import { ShoppingCart, Trash2 } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { buttonClass, chipClass } from "@/components/ui/styles";
 import { showDeleted, showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
-import { istAlle } from "@/lib/vorrat/kreislauf";
-import { PANTRY_PLACES, loadPantryAll, removePantryItem, replacePantry, setPantryPlace, type PantryItem } from "@/lib/vorrat/pantry";
+import { PANTRY_PLACES, loadPantryAll, markPantryUsed, removePantryItem, replacePantry, setPantryPlace, type PantryItem } from "@/lib/vorrat/pantry";
 
-export function SacheSheet({ item, today, weekStart, onClose }: { item: PantryItem; today: string; weekStart: string | null; onClose: () => void }) {
+export function SacheSheet({ item, today, onClose }: { item: PantryItem; today: string; onClose: () => void }) {
   const remove = () => {
     const before = loadPantryAll();
     removePantryItem(item.id);
     onClose();
     showDeleted(() => replacePantry(before));
   };
-  const alle = () => {
-    if (!weekStart) return;
-    const done = istAlle([item.name], today, weekStart);
-    const text = done.toList.length ? `Auf die Liste: ${item.name}` : `${item.name} ist raus`;
-    // Still melden; Rückgängig geht über Mia („Mach das rückgängig“)
-    pushUndo(text, done.undo);
+  const used = () => {
+    const before = loadPantryAll();
+    markPantryUsed(item.id, today);
+    const text = `${item.name} aufgebraucht`;
     onClose();
-    showToast({ text, small: true });
+    showToast({ text, undo: pushUndo(text, () => replacePantry(before)), undoneText: "Wieder da", seconds: 4, small: true });
   };
   return (
     <Sheet title={item.name} onClose={onClose}>
       <div className="flex flex-col gap-4 pb-3">
         <div className="flex flex-col gap-2">
-          <p className="text-sm text-muted">Wo liegt das? Merk ich mir für {item.name}.</p>
-          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Ort">
+          <p className="text-sm text-muted">Wohin gehört das? Merk ich mir für {item.name}.</p>
+          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Gruppe">
             {PANTRY_PLACES.map((p) => (
               <button
                 key={p.value}
@@ -51,15 +49,15 @@ export function SacheSheet({ item, today, weekStart, onClose }: { item: PantryIt
             ))}
           </div>
         </div>
-        {!item.usedAt && weekStart && (
-          <button type="button" onClick={alle} className={buttonClass("secondary", "md")}>
-            <ShoppingCart className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-            Ist alle · auf die Liste
+        {!item.usedAt && (
+          <button type="button" onClick={used} className={buttonClass("secondary", "md")}>
+            <Check className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+            Aufgebraucht
           </button>
         )}
         <button type="button" onClick={remove} className={`${buttonClass("ghost", "md")} text-danger`}>
           <Trash2 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-          Entfernen
+          Löschen
         </button>
       </div>
     </Sheet>

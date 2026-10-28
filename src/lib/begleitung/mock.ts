@@ -18,6 +18,7 @@ import { isKochtippRequest } from "@/lib/essen/kochtipp/start";
 import { todayIso } from "@/lib/core/now";
 import { isShopOverviewQuestion, parseShopRule } from "@/lib/einkauf/shopRules";
 import { PLAUDER_ANTWORT, plauderArt } from "@/lib/mia/plaudern";
+import { imHausVerstehen, isImHausFrage } from "@/lib/vorrat/reinsprechen";
 
 const STOCK_LINE = "Im Haus (vermutlich da, ohne Mengen): ";
 
@@ -241,6 +242,16 @@ function mockModel(): CreateMessage {
       return use ? results.find((r) => r.tool_use_id === use.id)?.content : undefined;
     };
 
+    // „Was ist da?“ (Tafel 102): rein/raus mit dem Versteher der App, danach nur „Passt so?“
+    if (typeof last.content === "string" && isImHausFrage(last.content)) {
+      const v = imHausVerstehen(last.content);
+      const uses = [
+        ...(v.rein.length ? [{ name: "vorrat_hinzufuegen", input: { sachen: v.rein.map((name) => ({ name })) } }] : []),
+        ...(v.raus.length ? [{ name: "vorrat_aufgebraucht", input: { namen: v.raus } }] : []),
+      ];
+      return uses.length ? tools(uses) : text("Hab nichts zum Einräumen gehört. Sag einfach: Milch ist da, Thunfisch ist alle. (Testmodus)");
+    }
+    if (isImHausFrage(intentText(msgs)) && prevUses.some((u) => u.name === "vorrat_hinzufuegen" || u.name === "vorrat_aufgebraucht")) return text("Passt so? (Testmodus)");
     // Wochencheck: alles in einem Rutsch über woche_eintragen (gleiche Erkennung wie ohne KI)
     if (typeof last.content === "string" && last.content.startsWith("[Wochencheck]")) return weekCheckUses(last.content, system);
     // „Kochtipp“, „Was soll ich kochen?“ → eigener Kochtipp in der App

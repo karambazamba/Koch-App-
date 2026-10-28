@@ -62,6 +62,7 @@ export const STAGE_CENTER = 0.64;
 export function stageTopic(mode: string | undefined): string | undefined {
   if (mode === "wochencheck") return "WOCHENCHECK";
   if (mode === "kochtipp") return "KOCHIDEE";
+  if (mode === "imhaus") return "IM HAUS";
   return undefined;
 }
 
