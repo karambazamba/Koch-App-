@@ -39,6 +39,10 @@ export type PruefSatz = {
   anzahl?: number;
   /** Eine Einkaufs-Sache trägt diese Menge („zwei Milch“ → „2“) */
   menge?: string;
+  /** Die Antwort nennt das (z. B. Erledigtes der letzten 12 Stunden) */
+  nennt?: string;
+  /** Die Antwort nennt das nie (z. B. Erledigtes von vor mehr als 12 Stunden) */
+  nenntNie?: string;
 };
 
 const S = (text: string, ops: string[], extra: Omit<PruefSatz, "text" | "ops"> = {}): PruefSatz => ({ text, ops, ...extra });
@@ -112,7 +116,7 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Ich muss am Mittwoch nächste Woche um 9 zum Arzt", TERMIN, { datum: "2026-10-28", zeit: "09:00" }),
   S("Fußballtraining Mathis immer dienstags 16 Uhr", TERMIN, { zeit: "16:00", person: "Mathis" }),
   S("Geburtstag Oma am 30. Oktober", TERMIN, { datum: "2026-10-30" }),
-  // Aufgaben und Notizen (22)
+  // Aufgaben und Notizen (23)
   S("Ich muss noch die Steuer machen", TERMIN, { lage: ["ohne-steuer"] }),
   S("Kita-Formular bis Freitag abgeben", TERMIN, { datum: "2026-10-23" }),
   S("Erinner mich morgen an den Müll", TERMIN, { datum: "2026-10-22" }),
@@ -126,6 +130,8 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Setz Laufrad auf die Geschenkideen", ["upsert_note"]),
   S("Dringend: Versicherung anrufen", TERMIN),
   S("Steuer ist erledigt", ["done_entry"]),
+  // A-043: „Was hab ich heute geschafft?“ nur aus den letzten 12 Stunden
+  S("Was hab ich heute geschafft?", ANTWORT, { lage: ["geschafft"], nennt: "Müll", nenntNie: "Fenster" }),
   // Alles ist heute (Tafel 103): ohne genannten Tag für heute, mit Tag ab dem Tag
   S("Irgendwann mal den Keller aufräumen", TERMIN, { datum: "2026-10-21" }),
   S("Diese Woche noch Reifen wechseln", TERMIN, { datum: "2026-10-21" }),

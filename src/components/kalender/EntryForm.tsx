@@ -121,7 +121,7 @@ export function EntryForm({ entry, date, kind, initialText = "", when = "heute",
     const data =
       typ === "termin"
         ? { title, date: day, start: time, end: end || undefined, place: place || undefined, label: label || undefined, repeat: rep, reminder, who: who.length ? who : undefined, ...terminExtras(entry?.typ === "termin" ? entry.data : undefined), ...keep }
-        : { title, date: day || undefined, due: due || undefined, time: time || undefined, label: label || undefined, repeat: rep, reminder, doneOn: entry?.typ === "aufgabe" ? entry.data.doneOn : null, ...aufgabeExtras(src?.typ === "aufgabe" ? src.data : undefined), liste: liste.trim() || undefined, ...keep };
+        : { title, date: day || undefined, due: due || undefined, time: time || undefined, label: label || undefined, repeat: rep, reminder, doneOn: entry?.typ === "aufgabe" ? entry.data.doneOn : null, ...(entry?.typ === "aufgabe" ? { doneAt: entry.data.doneAt, doneTimes: entry.data.doneTimes } : {}), ...aufgabeExtras(src?.typ === "aufgabe" ? src.data : undefined), liste: liste.trim() || undefined, ...keep };
     const base = entry ? { ...entry, typ, raum: room, data } : createEntry(typ, data, { raum: room });
     const clean = sanitizeEntry({ ...base, geaendert: nowIso() });
     if (!clean) return setHint("Das hat nicht geklappt – schau bitte nochmal auf Datum und Uhrzeit.");

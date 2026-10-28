@@ -44,6 +44,18 @@ export function berlinTime(date: Date = now()): { iso: string; minutes: number; 
   return { iso: `${p.year}-${p.month}-${p.day}`, minutes: hour * 60 + Number(p.minute), clock: `${String(hour).padStart(2, "0")}:${p.minute}` };
 }
 
+/** Zeitpunkt (ms) zu Datum und Uhrzeit in Berlin – z. B. „jetzt“ auf dem Server aus `today` + `clock` des Geräts */
+export function berlinInstant(iso: string, clock: string): number {
+  const want = Date.parse(`${iso}T${clock}:00Z`);
+  let t = want;
+  // Zweimal angleichen (Sommer-/Winterzeit)
+  for (let i = 0; i < 2; i++) {
+    const b = berlinTime(new Date(t));
+    t -= Date.parse(`${b.iso}T${b.clock}:00Z`) - want;
+  }
+  return t;
+}
+
 /** Lokales Kalenderdatum als "YYYY-MM-DD" (das Gerät steht in Berlin) */
 export function toIsoDate(date: Date): string {
   const y = date.getFullYear();

@@ -95,6 +95,9 @@ export const timeThenCreated: Cmp<Timed> = (a, b) => asc<Timed>((x) => x.time)(a
  */
 export const TASKS: Cmp<{ urgent: boolean; neu: boolean; stamp: string }>[] = [first((t) => t.urgent), first((t) => t.neu), asc((t) => t.stamp)];
 
+/** Erledigte Aufgaben (A-043): zuletzt abgehakt oben */
+export const TASKS_DONE: Cmp<{ um: string | null }>[] = [desc((t) => t.um)];
+
 type TerminLike = { date: string; time: string | null; stamp: string };
 
 /** Termine: Tag → ganztägig zuerst → Uhrzeit → Erstellungszeit */

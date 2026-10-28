@@ -18,6 +18,7 @@ import { recordOpen } from "@/lib/core/activity";
 import type { SpontanFilter } from "@/lib/essen/spontan";
 import type { AssistantData } from "@/lib/begleitung/ops";
 import { migrateOldTermine } from "@/lib/kalender/store";
+import { useErledigtAufraeumen } from "@/components/kalender/useErledigtAufraeumen";
 import { useCalendarEntries } from "@/lib/kalender/useCalendarEntries";
 import { aboRefreshDue } from "@/lib/kalender/abo/store";
 import { useHomeTiles } from "@/lib/core/homeLayout";
@@ -81,6 +82,8 @@ export function KitchenHelper() {
   useEffect(() => {
     voiceRef.current = profile?.helper.voice ?? "weiblich";
   });
+  // Erledigte Aufgaben nach 12 Stunden still weg (A-043)
+  useErledigtAufraeumen();
   // Aus dem Teilen-Menü (Rezept-Link, Text): einmal an Mia, dann die Adresse aufräumen
   useEffect(() => {
     const shared = geteiltAnMia(window.location.search);

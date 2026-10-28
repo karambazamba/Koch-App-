@@ -12,7 +12,7 @@ import { formatWeekRange, planningWeekStart, weekStartFor } from "@/lib/essen/we
 import { weekOf, type AssistantData } from "@/lib/begleitung/ops";
 import { calendarContext } from "@/lib/begleitung/calendarTools";
 import { BAUSTEINE, LAUNCH_AUS } from "@/lib/core/features";
-import { addDays } from "@/lib/core/now";
+import { addDays, berlinInstant } from "@/lib/core/now";
 import { APP_NAME } from "@/lib/core/app";
 import { LOCKER, steckbrief, TON_LAENGE } from "@/lib/mia/persona";
 import { haushaltOf, raumName } from "@/lib/core/haushalt";
@@ -239,7 +239,7 @@ export function contextText(
     `Heute: ${WEEKDAY_FORMAT.format(today)} (${todayIso})${extra.clock ? `, jetzt ${extra.clock} Uhr` : ""} (Zeitzone Europe/Berlin)`,
     `Datumsliste: ${Array.from({ length: 14 }, (_, i) => addDays(todayIso, i)).map((iso) => `${SHORT_DAY.format(new Date(`${iso}T00:00:00Z`))} ${iso}`).join(", ")}`,
     "",
-    hat("kalender") && calendarContext(data.entries ?? [], todayIso, extra.abends, extra.feierabend),
+    hat("kalender") && calendarContext(data.entries ?? [], todayIso, extra.abends, extra.feierabend, extra.clock ? berlinInstant(todayIso, extra.clock) : undefined),
     hat("notizen") && notesContext(data.notes ?? []),
     hat("einkauf") && `Läden: ${data.laeden?.meine.length ? data.laeden.meine.join(", ") : "keine gewählt"}; feste Regeln: ${data.laeden && Object.keys(data.laeden.regeln).length ? Object.entries(data.laeden.regeln).map(([item, shop]) => `${item} → ${shop}`).join(", ") : "keine"} (ändern mit laden_regel)`,
     hat("pinnwand") && `Pinnwand: ${data.pinnwand?.length ? data.pinnwand.map((p) => `${p.author}: ${JSON.stringify(p.text)}`).join(" · ") : "leer"}`,

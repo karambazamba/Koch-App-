@@ -43,6 +43,9 @@ Etappen: **3a Anmeldung und Haushalt** · **3b Synchronisieren** ·
   Markierung (`geloescht`), nie hart. Geteilt werden Termine, Aufgaben,
   Notizen, Pinnwand (mit Sprachnachrichten, 3c), Einkaufsliste,
   Wochenplan und Vorrat – Einstellungen, Startseite und Beispiel-Tag nie.
+- Erledigte Aufgaben gehen nach 12 Stunden still (A-043, `kalender/erledigt.ts`):
+  das Gerät löscht sie lokal, der Abgleich schickt wie beim Löschen die
+  Markierung – alle Geräte gleich, mehrfaches Aufräumen ändert nichts mehr.
 - Übernahme: Beim ersten Mal mit einem Haushalt bleibt alles nur auf dem
   Gerät, bis „Mitnehmen“ getippt ist (Vorschau „3 Termine, 2 Aufgaben …
   werden mitgenommen.“). Ohne eigene Daten geht es ohne Frage los.

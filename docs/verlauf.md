@@ -3277,3 +3277,28 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Gleich an allen Stellen über `useVorschau`: Kochidee, Spontan kochen, „Was
   koche ich?“, Wochenkarte, Mias Wochenplan-Vorschlag. Einmal „Antippen zum
   Reinschauen.“.
+
+## Erledigte Aufgaben nur 12 Stunden (A-043)
+- Wunsch (28.10.): Erledigtes stand bisher 14 Tage unter „Erledigte
+  anzeigen“. Jetzt höchstens 12 Stunden nach dem Abhaken, danach still weg.
+  Kein Archiv, keine Zahl.
+- „Erledigt ⌄“ statt „Erledigte anzeigen/ausblenden“: standardmäßig
+  zugeklappt, ohne Anzahl, aufgeklappt neueste oben (Regel `TASKS_DONE` in
+  `core/sort.ts`); Häkchen antippen = wieder offen. Abhaken in der Liste wie
+  bisher (kurz durchgestrichen, dann weich weg, „Erledigt · Rückgängig“).
+- Abhaken merkt den Zeitpunkt: `doneAt` (einmalig), `doneTimes[datum]`
+  (Serie, je Runde). Ohne Zeitpunkt (vor dem Update) gilt Erledigtes als alt
+  und geht beim ersten Start einmal still – keine neue Speicher-Version, die
+  Felder sind optional; alte Sicherungen laden unverändert
+  (`tests/fixtures/sicherung-v0.144-erledigt.json`).
+- Eine reine Regel für jede Aufgabe, unabhängig vom Raum
+  (`lib/kalender/erledigt.ts`) – greift später auch für Familien-Aufgaben mit
+  „erledigt von …“ (A-034). Verschwinden = löschen über den vorhandenen
+  Abgleich-Weg (Lösch-Markierung wie beim echten Löschen, nur ohne Meldung),
+  damit alle Geräte gleich sind; idempotent, wenn mehrere Geräte aufräumen.
+- Serien: nur die erledigte Runde fällt aus „Erledigt“, die Reihe bleibt.
+- Mia: „Was hab ich heute geschafft?“ nennt nur, was in den letzten 12
+  Stunden abgehakt wurde (Kontextzeile, Werkzeug-Ausgaben gefiltert, die App
+  schickt Älteres gar nicht mit). Prüfstand +1 Satz (182), Bewertung kennt
+  `nennt`/`nenntNie`. Tests `tests/kalender/erledigt12.test.ts`, Durchklicks
+  `erledigtZwoelf`, `erledigtAbgleich`.

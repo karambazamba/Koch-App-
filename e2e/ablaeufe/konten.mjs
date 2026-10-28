@@ -175,6 +175,47 @@ export const abgleich = async (page, check, device) => {
   }
 };
 
+// A-043: Erledigte Aufgaben nur 12 Stunden – auf allen Geräten gleich. A hakt
+// ab → B sieht sie erledigt; 13 Stunden später räumt A still auf → die
+// Lösch-Markierung kommt bei B an (dessen Uhr steht noch auf 10:30, B räumt
+// also nicht selbst auf).
+const eintrag = (page, id) => page.evaluate((i) => (JSON.parse(localStorage.getItem("wasgibts.eintraege") ?? "null")?.entries ?? []).find((e) => e.id === i) ?? null, id);
+
+export const erledigtAbgleich = async (page, check, device) => {
+  const tag = device.replace(/\W/g, "").toLowerCase() + Date.now();
+  await hello(page);
+  await seedFamily(page);
+  await login(page, `felix-erledigt-${tag}@example.com`);
+  const preview = page.getByTestId("uebernahme-vorschau");
+  await preview.waitFor();
+  await page.getByRole("button", { name: "Mitnehmen" }).click();
+  await preview.waitFor({ state: "detached" });
+  const link = await invite(page);
+
+  const pageB = await newPage(page.context().browser(), device);
+  try {
+    await hello(pageB);
+    await joinViaLink(pageB, link, `lisa-erledigt-${tag}@example.com`);
+    check(await waitFor(pageB, () => (localStorage.getItem("wasgibts.eintraege") ?? "").includes("Kita-Formular")), "Aufgabe von A ist bei B");
+
+    await page.goto(BASE + "/aufgaben");
+    await page.getByRole("checkbox", { name: "Kita-Formular abgeben erledigt" }).first().click();
+    await page.waitForTimeout(2500);
+    check(Boolean((await eintrag(page, "a1"))?.data.doneAt), "A: Abhak-Zeitpunkt gespeichert");
+    check(await waitFor(pageB, () => Boolean((JSON.parse(localStorage.getItem("wasgibts.eintraege") ?? "null")?.entries ?? []).find((e) => e.id === "a1")?.data.doneAt)), "B sieht sie erledigt (mit Zeitpunkt)");
+
+    // 13 Stunden später auf A: still aufgeräumt, B bekommt die Lösch-Markierung
+    await page.clock.setFixedTime(new Date(Date.parse("2026-10-21T08:30:00.000Z") + 13 * 3_600_000));
+    await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+    check(await waitFor(page, () => !(localStorage.getItem("wasgibts.eintraege") ?? "").includes("Kita-Formular")), "A: nach 12 h still weg");
+    check(!(await page.getByText("Gelöscht").count()), "A: ohne „Gelöscht · Rückgängig“");
+    check(await waitFor(pageB, () => !(localStorage.getItem("wasgibts.eintraege") ?? "").includes("Kita-Formular"), undefined, 30000), "B: per Abgleich ebenfalls weg");
+    check((await eintrag(pageB, "a2"))?.data.title === "Geschenk für Oma", "B: Offenes bleibt");
+  } finally {
+    await pageB.context().close();
+  }
+};
+
 // Tafel 22: „Schon ein Konto? Anmelden“ auf der Begrüßung, danach ohne Frage
 // weiter; Einladen per Link (/e/…); ohne Konten-Variablen kein Anmelden.
 async function codeFromHello(page, email) {

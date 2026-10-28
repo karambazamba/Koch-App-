@@ -55,7 +55,14 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
 - `AufgabeData`: `title`, `date?` (ab diesem Tag; neue Aufgaben immer mit
   Tag, ohne genannten = heute), `due?` (Frist), `week?` (nur noch alt, wird
   migriert), `time?`, `label?`, `repeat`, `reminder`,
-  `doneOn?`, `doneDates?`, `skipDates?`, `dringend?`, `seit?`.
+  `doneOn?`, `doneAt?` (Abhak-Zeitpunkt, ISO), `doneDates?`, `doneTimes?`
+  (Serie: Abhak-Zeitpunkt je Runde, nur die letzten 12 h), `skipDates?`,
+  `dringend?`, `seit?`.
+- Erledigtes nur 12 Stunden (A-043): keine neue Speicher-Version – die
+  Felder sind optional. Erledigtes ohne Zeitpunkt (vor dem Update, alte
+  Sicherung `tests/fixtures/sicherung-v0.144-erledigt.json`) gilt als alt und
+  wird beim ersten Start einmal still entfernt; das ist dieselbe Regel wie
+  sonst (`ohneAbgelaufene`), deshalb idempotent.
 - `Repeat`: taeglich · woechentlich · monatlich · wochentage (0 = Mo … 6 = So).
   `Reminder`: aus · 15 · 30 · 60 · vorabend.
 
@@ -90,7 +97,8 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
 ### Die eine Liste (Tafel 103/104, v0.137)
 - `taskOverview` liefert `{heute, geplant, erledigt}`: Heute = EINE Liste
   (ohne Tag, von früher, mit Frist), Geplant = ab einem genannten Tag (mit
-  `when` „Fr 30.10.“), Erledigt = letzte 14 Tage.
+  `when` „Fr 30.10.“), Erledigt = höchstens 12 Stunden nach dem Abhaken,
+  neueste oben (`jetzt`, siehe unten).
 - Reihenfolge (Regel `TASKS` in `core/sort.ts`): dringend → heute angelegt
   (`isNeu`, Schild „neu“, am nächsten Tag weg) → Rest nach Erstellungszeit;
   „Auf morgen“ setzt `seit` neu (dann hinten). Nie alphabetisch.
@@ -194,6 +202,33 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
   Etiketten „heute“/„bis Fr“/„von gestern“); S 2, M 4, L 6 Zeilen, „+ N
   weitere“. Nach Feierabend ohne Arbeit, unten leise „Arbeit · 5 für morgen“.
 
+### Erledigte Aufgaben nur 12 Stunden (A-043)
+- EINE Regel für jede Aufgabe, egal welcher Raum, wem sie gehört oder wer
+  sie abgehakt hat (`lib/kalender/erledigt.ts`, rein): Aufgaben-Seite,
+  Aufgabe-Kachel, „Abgegeben“ und Mia rechnen dort. Familien-Aufgaben mit
+  „erledigt von Lisa“ (A-034) bekommen sie damit automatisch.
+- Abhaken (`setDone`) merkt den Zeitpunkt (`doneAt` bzw. `doneTimes[datum]`),
+  wieder öffnen löscht ihn – dann bleibt die Aufgabe.
+- Höchstens 12 Stunden steht sie unter „Erledigt ⌄“ (`nochErledigt`), dann
+  ist sie still weg. Kein Archiv, keine Zahl.
+- Einmalige: danach gelöscht (`ohneAbgelaufene`, Speicher
+  `erledigteAufraeumen` in `store.ts`, Hook `components/kalender/
+  useErledigtAufraeumen.ts` im Layout: 5 s nach dem Start, beim
+  Zurückkommen, jede Minute). Ohne „Gelöscht · Rückgängig“. Der Abgleich
+  macht daraus wie beim Löschen die Lösch-Markierung (`geloescht`), damit
+  alle Geräte gleich sind; räumt ein zweites Gerät dasselbe auf, ist nichts
+  mehr zu tun (idempotent).
+- Serien: nur die erledigte Runde fällt aus „Erledigt“, die Reihe bleibt
+  (nächste Runde unter Heute bzw. Geplant).
+- Mia: Die App schickt nur Erledigtes der letzten 12 h (`client.ts`), der
+  Kontext nennt es eigens („Geschafft in den letzten 12 Stunden …“, jetzt aus
+  Datum + Uhrzeit des Geräts, `berlinInstant`), `tag_anzeigen` und
+  `woche_anzeigen` lassen Älteres weg. Prüfstand-Satz „Was hab ich heute
+  geschafft?“ (Lage `geschafft`, `nennt`/`nenntNie`).
+- Bekannte Grenze: Räumt ein Gerät offline mit altem Stand auf, während ein
+  anderes die Aufgabe gerade wieder geöffnet hat, gewinnt die neuere
+  Änderung – meist das Löschen.
+
 ### Tag-Seite und Aufgaben-Seite
 - `/tag?datum=…`: Titel = Wochentag, darunter „22. Oktober · morgen“
   (`dayHeading`), dann der Tag (`DayPanel`, ohne eigenen Kopf). Plus =
@@ -202,8 +237,9 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
   28. Okt“ (nach Feierabend „Heute Abend · Feierabend“); Chips nur mit
   Arbeitsaufgaben; EINE weiße Liste (Titel bis 2 Zeilen, dann „…“); darunter
   leise „Familie · 5 ausgeblendet“ bzw. „Arbeit · 5 für morgen ›“, „Geplant ·
-  1 ›“ (nur wenn vorhanden), eingeklappte Listen, „Abgegeben“ und „Erledigte
-  anzeigen ›“; leer „Gerade nichts.“ mit großer Begleitung („Fällt dir was ein? Mit ＋ eintragen oder mir einfach sagen.“).
+  1 ›“ (nur wenn vorhanden), eingeklappte Listen, „Abgegeben“ und „Erledigt ⌄“
+  (zugeklappt, ohne Zahl, nur die letzten 12 Stunden, neueste oben; Häkchen
+  antippen = wieder offen); leer „Gerade nichts.“ mit großer Begleitung („Fällt dir was ein? Mit ＋ eintragen oder mir einfach sagen.“).
 - Antippen eines Eintrags = Menü: Erledigt · Auf morgen · Erinnerung ändern ·
   Bearbeiten · Löschen; bei Serien „Nur diesen Tag“ / „Alle – die ganze Reihe“.
   Abhaken überall gleich (Kachel, Aufgaben-Seite, Dein Tag): 1,5 s durchgestrichen (`LEAVE_MS`), dann „Erledigt · Rückgängig“;
@@ -447,6 +483,14 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
   Erstellungszeit, Filter nur mit Arbeitsaufgaben und gemerkt, Feierabend
   („Arbeit · n für morgen“), Startseiten-Kachel, 2-zeilige Namen. Durchklick
   `listeEinfuegen` (eine Liste, „Geplant · 2“, Filter gemerkt, Arbeit-Schild).
+- `tests/kalender/erledigt12.test.ts` (A-043): abgehakt vor 11 h sichtbar,
+  vor 13 h weg, über Mitternacht, neueste oben, wieder öffnen, jeder Raum
+  gleich, Serien nur die Runde, Laden/Prüfen, Migration (idempotent), alte
+  Sicherung v0.144, Abgleich zwischen zwei Geräten (Lösch-Markierung, beide
+  räumen gleichzeitig auf, wieder geöffnet), „Erledigt ⌄“ zugeklappt, Mia
+  (Kontext, Prüfstand-Satz). Durchklick `erledigtZwoelf`
+  (`e2e/ablaeufe/erledigt.mjs`) und `erledigtAbgleich` (zwei Geräte,
+  `e2e/ablaeufe/konten.mjs`).
 - `tests/core/sortierung.test.ts` („Termine und Aufgaben“),
   `tests/begleitung/werkzeugeKalender.test.ts`.
 - Durchklick `e2e/ablaeufe/alltag.mjs`: `eintragen`, `kalender`.

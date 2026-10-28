@@ -7,12 +7,14 @@
 // „Arbeit“, abgegebene „von Lisa“. Chips „Alle · Familie · Arbeit“ nur, wenn
 // es Arbeitsaufgaben gibt (gemerkt); nach Feierabend ruht die Arbeit
 // („Arbeit · 5 für morgen ›“ blendet sie kurz ein). Unten leise „Geplant · 1 ›“
-// (ab einem genannten Tag), eingeklappte Listen, „Abgegeben“ und „Erledigte
-// anzeigen“. Logik in kalender/aufgaben.ts. Aufgaben sind persönlich (Tafel
+// (ab einem genannten Tag), eingeklappte Listen, „Abgegeben“ und „Erledigt ⌄“
+// (A-043: zugeklappt, ohne Anzahl, nur die letzten 12 Stunden, neueste oben;
+// Häkchen antippen = wieder offen; Regel in kalender/erledigt.ts). Logik in
+// kalender/aufgaben.ts. Aufgaben sind persönlich (Tafel
 // 52 B): nur meine und die mir gegebenen.
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp } from "lucide-react";
 import { PagePlus } from "@/components/ui/QuickButton";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Segmented } from "@/components/ui/Segmented";
@@ -43,7 +45,7 @@ import { useRaumName } from "@/lib/einstellungen/useHaushalt";
 const LEISE = "flex h-11 items-center gap-1 self-start px-1 text-[15px] font-semibold text-muted";
 
 function TaskRow({ item, today, onOpen }: { item: DayItem; today: string; onOpen: (item: DayItem) => void }) {
-  // Abhaken: ca. 2 s durchgestrichen (nochmal tippen = doch nicht); Erledigtes unter „Erledigte anzeigen“ zurückholen
+  // Abhaken: kurz durchgestrichen, dann weich nach „Erledigt“ (nochmal tippen = doch nicht); dort Häkchen antippen = wieder offen
   const { leaving, start } = useLeaving((it) => act((list, stamp) => setDone(list, it, true, stamp), it.title, { done: true }));
   const toggle = (it: DayItem) => {
     if (readOnlyDone(it)) return;
@@ -66,9 +68,9 @@ function Liste({ items, today, onOpen }: { items: DayItem[]; today: string; onOp
   );
 }
 
-/** Leise Zeile zum Auf- und Zuklappen („Geplant · 1 ›“, „Erledigte anzeigen ›“) */
-function Klapp({ label, open, onClick }: { label: string; open: boolean; onClick: () => void }) {
-  const Icon = open ? ChevronDown : ChevronRight;
+/** Leise Zeile zum Auf- und Zuklappen („Geplant · 1 ›“, mit `runter` „Erledigt ⌄“) */
+function Klapp({ label, open, onClick, runter = false }: { label: string; open: boolean; onClick: () => void; runter?: boolean }) {
+  const Icon = runter ? (open ? ChevronUp : ChevronDown) : open ? ChevronDown : ChevronRight;
   return (
     <button type="button" onClick={onClick} aria-expanded={open} className={LEISE}>
       {label} <Icon className="h-4 w-4" strokeWidth={2.5} aria-hidden />
@@ -205,8 +207,8 @@ export function TasksView() {
               </section>
             )}
             {done.length > 0 && (
-              <section className="flex flex-col gap-1.5" aria-label="Erledigt">
-                <Klapp label={open.includes("erledigt") ? "Erledigte ausblenden" : "Erledigte anzeigen"} open={open.includes("erledigt")} onClick={() => toggle("erledigt")} />
+              <section className="flex flex-col gap-1.5" aria-label="Erledigt" data-erledigt>
+                <Klapp label="Erledigt" runter open={open.includes("erledigt")} onClick={() => toggle("erledigt")} />
                 {open.includes("erledigt") && <Liste items={done} today={today!} onOpen={setMenu} />}
               </section>
             )}

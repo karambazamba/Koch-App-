@@ -17,8 +17,9 @@
 
 import { WEEKDAYS_MO, WEEKDAYS_SHORT_MO } from "@/lib/core/days";
 import { createEntry, type Entry, type Room } from "@/lib/core/entries";
-import { addDays, berlinTime, fromIsoDate } from "@/lib/core/now";
-import { first, sortBy, TASKS, TERMINE, timeThenCreated, via } from "@/lib/core/sort";
+import { addDays, berlinTime, fromIsoDate, now } from "@/lib/core/now";
+import { first, sortBy, TASKS, TASKS_DONE, TERMINE, timeThenCreated, via } from "@/lib/core/sort";
+import { abgehaktUm, erledigtFelder, nochErledigt, serienZeiten } from "@/lib/kalender/erledigt";
 
 /** Wiederholung: täglich, wöchentlich (wie der erste Tag, `every` = alle N Wochen), monatlich (gleicher Tag im Monat) oder bestimmte Wochentage (0 = Mo … 6 = So) */
 export type Repeat = { kind: "taeglich" } | { kind: "woechentlich"; every?: number } | { kind: "monatlich" } | { kind: "wochentage"; days: number[] };
@@ -115,8 +116,12 @@ export type AufgabeData = {
   reminder: Reminder;
   /** Erledigt am (einmalige Aufgabe) */
   doneOn?: string | null;
+  /** Abgehakt um (ISO, einmalige Aufgabe) – 12 h unter „Erledigt“, dann still weg (kalender/erledigt.ts) */
+  doneAt?: string;
   /** Erledigt an diesen Tagen (wiederkehrende Aufgabe) */
   doneDates?: string[];
+  /** Serie: abgehakt um (ISO) je Runde „YYYY-MM-DD“ – nur die letzten 12 h */
+  doneTimes?: Record<string, string>;
   skipDates?: string[];
   /** Dringend: steht immer ganz vorne (kleines oranges "!") */
   dringend?: boolean;
@@ -310,7 +315,7 @@ export function sortItems(items: DayItem[]): DayItem[] {
 
 // --- Aufgaben: alles ist heute, eine Liste (Tafel 103/104) -----------------------
 
-/** Heute (eine Liste), Geplant (ab einem genannten Tag), Erledigt (letzte 14 Tage) */
+/** Heute (eine Liste), Geplant (ab einem genannten Tag), Erledigt (letzte 12 Stunden, neueste oben) */
 export type TaskGroups = { heute: DayItem[]; geplant: DayItem[]; erledigt: DayItem[] };
 
 const shortDay = (iso: string) => {
@@ -356,18 +361,19 @@ function sortTasks(items: DayItem[], neuAm: string): DayItem[] {
 /**
  * Alle Aufgaben: Heute = alles, was ab heute ansteht (ohne Tag, von früher,
  * Frist egal wann) – EINE Liste; Geplant = erst ab einem genannten Tag;
- * Erledigt = letzte 14 Tage. `neuAm`: Tag, an dem Angelegtes „neu“ ist
- * (abends für morgen bleibt es das echte Heute).
+ * Erledigt = höchstens 12 Stunden nach dem Abhaken (A-043, `jetzt`).
+ * `neuAm`: Tag, an dem Angelegtes „neu“ ist (abends für morgen bleibt es das
+ * echte Heute).
  */
-export function taskOverview(entries: CalendarEntry[], today: string, neuAm = today): TaskGroups {
+export function taskOverview(entries: CalendarEntry[], today: string, neuAm = today, jetzt = now().getTime()): TaskGroups {
   const groups: TaskGroups = { heute: [], geplant: [], erledigt: [] };
-  const recent = addDays(today, -14);
   for (const entry of entries) {
     if (entry.typ !== "aufgabe") continue;
     const a = entry.data;
     if (a.repeat) {
       const start = taskStart(a, entry.erstellt);
-      if (a.doneDates?.includes(today) && repeatsOn(a.repeat, start, today)) groups.erledigt.push(taskItem(entry, today, { done: true }));
+      // Nur die erledigte Runde (12 h), die Reihe bleibt
+      for (const [d, um] of Object.entries(a.doneTimes ?? {})) if (a.doneDates?.includes(d) && nochErledigt(um, jetzt)) groups.erledigt.push(taskItem(entry, d, { done: true }));
       const next = nextOccurrence(a, start, today);
       if (!next) continue;
       if (next === today) groups.heute.push(taskItem(entry, today, {}));
@@ -375,7 +381,7 @@ export function taskOverview(entries: CalendarEntry[], today: string, neuAm = to
       continue;
     }
     if (a.doneOn) {
-      if (a.doneOn >= recent) groups.erledigt.push(taskItem(entry, a.doneOn, { done: true }));
+      if (nochErledigt(a.doneAt, jetzt)) groups.erledigt.push(taskItem(entry, a.doneOn, { done: true }));
       continue;
     }
     const from = taskFrom(a, entry.erstellt);
@@ -385,7 +391,7 @@ export function taskOverview(entries: CalendarEntry[], today: string, neuAm = to
   return {
     heute: sortTasks(groups.heute, neuAm),
     geplant: sortBy(groups.geplant, ...via((i: DayItem) => ({ date: i.date, time: i.time, stamp: sortStamp(i) }), TERMINE)),
-    erledigt: groups.erledigt.sort((x, y) => y.date.localeCompare(x.date)),
+    erledigt: sortBy(groups.erledigt, ...via((i: DayItem) => ({ um: i.entry.typ === "aufgabe" ? abgehaktUm(i.entry.data, i.date) : null }), TASKS_DONE)),
   };
 }
 
@@ -406,15 +412,16 @@ export function setUrgent(entries: CalendarEntry[], entryId: string, on: boolean
   return entries.map((e) => (e.id === entryId && e.typ === "aufgabe" ? touch(e, { dringend: on || undefined }, stamp) : e));
 }
 
-/** Abhaken (bzw. wieder öffnen) an einem Tag */
+/** Abhaken (bzw. wieder öffnen) an einem Tag – mit Zeitpunkt (12 h unter „Erledigt“, kalender/erledigt.ts) */
 export function setDone(entries: CalendarEntry[], item: Pick<DayItem, "entry" | "date">, done: boolean, stamp: string): CalendarEntry[] {
   const e = entries.find((x) => x.id === item.entry.id);
   if (!e) return entries;
   if (e.typ === "aufgabe" && !e.data.repeat) {
-    return replace(entries, touch(e, { doneOn: done ? item.date : null }, stamp));
+    return replace(entries, touch(e, { doneOn: done ? item.date : null, doneAt: done ? stamp : undefined }, stamp));
   }
   const doneDates = done ? addUnique(e.data.doneDates, item.date) : (e.data.doneDates ?? []).filter((d) => d !== item.date);
-  return replace(entries, touch(e, { doneDates } as Partial<typeof e.data>, stamp));
+  if (e.typ === "aufgabe") return replace(entries, touch(e, { doneDates, doneTimes: serienZeiten(e.data.doneTimes, item.date, done, stamp) }, stamp));
+  return replace(entries, touch(e, { doneDates }, stamp));
 }
 
 /**
@@ -434,7 +441,7 @@ export function moveItem(entries: CalendarEntry[], item: Pick<DayItem, "entry" |
   const copy =
     e.typ === "termin"
       ? createEntry("termin", { ...e.data, date: to, start: time ?? e.data.start, repeat: null, doneDates: [], skipDates: [] }, { raum: e.raum, besitzer: e.besitzer })
-      : createEntry("aufgabe", { ...e.data, date: to, seit: stamp, ...(time ? { time } : {}), repeat: null, doneDates: [], skipDates: [], doneOn: null }, { raum: e.raum, besitzer: e.besitzer });
+      : createEntry("aufgabe", { ...e.data, date: to, seit: stamp, ...(time ? { time } : {}), repeat: null, doneDates: [], skipDates: [], doneOn: null, doneAt: undefined, doneTimes: undefined }, { raum: e.raum, besitzer: e.besitzer });
   return [...withSkip, copy as CalendarEntry];
 }
 
@@ -530,6 +537,7 @@ export function sanitizeEntry(raw: unknown): CalendarEntry | null {
       repeat,
       reminder,
       doneOn: typeof d.doneOn === "string" && DATE.test(d.doneOn) ? d.doneOn : null,
+      ...erledigtFelder({ ...d, repeat }),
       doneDates: dates(d.doneDates),
       skipDates: dates(d.skipDates),
       ...(d.dringend === true ? { dringend: true } : {}),
