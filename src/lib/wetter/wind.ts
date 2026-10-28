@@ -42,6 +42,13 @@ const windRank = (level: WindLevel) => WIND_STUFEN.findIndex((x) => x.id === lev
 /** Das Wort der Stufe: „Frischer Wind“ */
 export const windWord = (level: WindLevel) => WIND_STUFEN[windRank(level)].wort;
 
+/**
+ * Fällt der Wind auf? Erst ab „Frischer Wind“ (Mittelwind ≥ 29 km/h) oder
+ * Böen ≥ 60 km/h zeigen Kachel und Wetter-Seite Windsack und Wind-Zeile;
+ * darunter nichts (Seite: nur klein die Zahl in den Details).
+ */
+export const windZeigen = (w: Wind | null | undefined): w is Wind => !!w && (windRank(windLevel(w.speed)) >= windRank("frisch") || w.gust >= GUST_SHOW);
+
 /** Windsack (Tafel 87): Windstriche ab „Lebhaft“, Karte warm ab „Stürmisch“, Windsack rot ab „Sturm“ */
 export function windLook(level: WindLevel): { striche: number; ton: "warm" | "sturm" | null; rot: boolean } {
   const r = windRank(level);

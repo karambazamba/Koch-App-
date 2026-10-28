@@ -34,11 +34,11 @@ export const pinnwand = async (page, check) => {
 };
 
 export const wetter = async (page, check) => {
-  // Kachel (Tafel 87): Himmel je Wetter, Windsack, EINE Zeile – still, ohne Animation
+  // Kachel (Tafel 87): Himmel je Wetter, Windsack nur bei Wind, EINE Zeile – still, ohne Animation
   await family(page, "/");
   const tile = page.locator('a[href="/wetter"][data-himmel]').first();
   check(await tile.isVisible(), "Wetter-Kachel mit Himmel");
-  check((await tile.locator("[data-windsack]").count()) === 1, "Windsack neben der Temperatur");
+  check((await tile.locator("[data-windsack]").count()) === 0, "kein Windsack bei leichtem Wind (erst ab Frischer Wind)");
   check(/ · /.test((await tile.locator("[data-wetter-zeile]").textContent()) ?? ""), "Zeile „Lage · …“");
   await page.goto(BASE + "/wetter");
   await page.waitForTimeout(800);
