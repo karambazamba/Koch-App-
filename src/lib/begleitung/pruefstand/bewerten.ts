@@ -1,5 +1,5 @@
 // Prüfstand bewerten (rein): richtige Aktion, richtige Daten (Datum/Uhrzeit/
-// Person), Länge (Aktion 2 Sätze, Ratgeber/Zusammenfassung 3), höchstens
+// Person, Raum), Länge (Aktion 2 Sätze, Ratgeber/Zusammenfassung 3), höchstens
 // eine Rückfrage, keine Floskeln, Striche, Bedienungs-Erklärungen oder
 // vorgegebenen Gefühle, Antwortzeit (Warnung ab 6 s, Fehler ab 10 s). Ziel:
 // ≥ 95 % richtig, bevor eine neue Mia-Version rausgeht.
@@ -37,7 +37,7 @@ export function sentenceCount(text: string): number {
 const DOPPELT = /schon (drin|eingetragen|im kalender)|steht schon|hast du schon|ist schon da|gibt('?s| es) schon/i;
 
 /** Datum/Uhrzeit/Person aus den Termin- bzw. Aufgaben-Vorschlägen */
-function entryFacts(reply: AssistantReply): { dates: string[]; ends: string[]; times: string[]; text: string } {
+function entryFacts(reply: AssistantReply): { dates: string[]; ends: string[]; times: string[]; rooms: string[]; text: string } {
   const entries = reply.ops.flatMap((op) => (op.type === "upsert_entry" ? [op.entry] : []));
   const dates = entries.flatMap((e) => {
     // Aufgaben speichern die Frist als `due` (Fehler: „bis Freitag“ zählte nie)
@@ -52,7 +52,7 @@ function entryFacts(reply: AssistantReply): { dates: string[]; ends: string[]; t
     const d = e.data as { start?: string; time?: string };
     return [d.start, d.time].filter((x): x is string => typeof x === "string");
   });
-  return { dates, ends, times, text: JSON.stringify(entries) };
+  return { dates, ends, times, rooms: entries.map((e) => e.raum), text: JSON.stringify(entries) };
 }
 
 export function bewerte(satz: PruefSatz, reply: AssistantReply, ms: number): PruefErgebnis {
@@ -77,11 +77,12 @@ export function bewerte(satz: PruefSatz, reply: AssistantReply, ms: number): Pru
     if (!reply.reply.trim()) gruende.push("keine Antwort");
   } else if (satz.alle ? !satz.ops.every(has) : !satz.ops.some(has)) gruende.push(`Aktion nicht getroffen (erwartet ${satz.ops.join(satz.alle ? " und " : " oder ")}, bekommen ${types.join(", ") || "keine"})`);
   if (satz.woerter && reply.reply.trim().split(/\s+/).filter(Boolean).length > satz.woerter) gruende.push(`mehr als ${satz.woerter} Wörter`);
-  if (satz.datum || satz.zeit || satz.person || satz.bis) {
+  if (satz.datum || satz.zeit || satz.person || satz.bis || satz.raum) {
     const facts = entryFacts(reply);
     if (satz.datum && !facts.dates.includes(satz.datum)) gruende.push(`Datum ${satz.datum} nicht getroffen (${facts.dates.join(", ") || "keins"})`);
     if (satz.bis && !facts.ends.includes(satz.bis)) gruende.push(`bis ${satz.bis} nicht getroffen (${facts.ends.join(", ") || "eintägig"})`);
     if (satz.zeit && !facts.times.includes(satz.zeit)) gruende.push(`Uhrzeit ${satz.zeit} nicht getroffen (${facts.times.join(", ") || "keine"})`);
+    if (satz.raum && !facts.rooms.includes(satz.raum)) gruende.push(`Raum ${satz.raum} nicht getroffen (${facts.rooms.join(", ") || "keiner"})`);
     if (satz.person && !facts.text.includes(satz.person) && !reply.reply.includes(satz.person)) gruende.push(`Person ${satz.person} nicht erkannt`);
   }
   if (satz.laden) {

@@ -12,7 +12,7 @@
 import type { HouseholdInfo, Member, Role } from "@/lib/konten/model";
 import { LINK_TAGE, normalizeInviteCode } from "@/lib/konten/model";
 import type { CloudDoc } from "@/lib/konten/sync/docs";
-import type { Room } from "@/lib/core/entries";
+import { nurBesitzer, roomOf, type Room } from "@/lib/core/entries";
 import type { InboundMail } from "@/lib/mails/eingang";
 import { localPart } from "@/lib/mails/adresse";
 import { verarbeite, type MailItem } from "@/lib/mails/verarbeiten";
@@ -70,7 +70,7 @@ function visible(d: { typ: string; raum: string; besitzer: string; data: unknown
     const data = (d.data ?? {}) as { fuer?: unknown; zurueck?: unknown };
     return d.besitzer === uid || data.fuer === uid || data.zurueck === uid;
   }
-  return d.raum === "familie" || d.besitzer === uid;
+  return !nurBesitzer(d.raum) || d.besitzer === uid;
 }
 
 /** Wie `memo_household` in der Datenbank: Haushalt aus dem Pfad, sonst null */
@@ -92,9 +92,9 @@ function householdOf(s: State, userId: string): HouseholdInfo | null {
 function removeMember(s: State, userId: string) {
   const mine = s.members.find((m) => m.userId === userId);
   s.members = s.members.filter((m) => m.userId !== userId);
-  // „Arbeit“ geht mit, Familie bleibt
+  // „Ich“ und „Arbeit“ gehen mit, Familie bleibt
   const rows = mine && s.entries.get(mine.householdId);
-  if (rows) for (const [k, d] of rows) if (d.raum === "arbeit" && d.besitzer === userId) rows.delete(k);
+  if (rows) for (const [k, d] of rows) if (nurBesitzer(d.raum) && d.besitzer === userId) rows.delete(k);
   if (mine && !s.members.some((m) => m.householdId === mine.householdId)) {
     s.households.delete(mine.householdId);
     s.entries.delete(mine.householdId);
@@ -260,8 +260,8 @@ export function testKonten(body: Record<string, unknown>, nowMs = Date.now()): R
       const skipped: string[] = [];
       for (const d of Array.isArray(body.docs) ? (body.docs as CloudDoc[]).slice(0, 500) : []) {
         const old = rows.get(d.id);
-        const raum = d.raum === "arbeit" ? "arbeit" : "familie";
-        if (old && (!visible(old, user.id) || (old.typ !== "aufgabe" && raum === "arbeit" && old.besitzer !== user.id))) {
+        const raum = roomOf(d.raum);
+        if (old && (!visible(old, user.id) || (old.typ !== "aufgabe" && nurBesitzer(raum) && old.besitzer !== user.id))) {
           skipped.push(d.id);
           continue;
         }

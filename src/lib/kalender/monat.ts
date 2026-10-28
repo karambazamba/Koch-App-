@@ -9,8 +9,8 @@ import { itemsForDay, weekdayIndex, type CalendarEntry, type DayItem } from "@/l
 /** Nur Termine eines Tages (Aufgaben und Essen stehen nie im Kalender) */
 export const termineOn = (entries: CalendarEntry[], date: string, today: string): DayItem[] => itemsForDay(entries, date, today).filter((i) => i.entry.typ === "termin");
 
-/** Ein Punkt: Person (feste Farbe bzw. „Meine Farbe im Kalender“), Familie ohne Person (Orange), Arbeit (Blau) */
-export type Dot = { key: string; kind: "ich" } | { key: string; kind: "person"; tone: 0 | 1 | 2 | 3 } | { key: string; kind: "familie" | "arbeit" };
+/** Ein Punkt: Person (feste Farbe bzw. „Meine Farbe im Kalender“), Familie ohne Person (Orange), Raum Ich (Grün), Arbeit (Blau) */
+export type Dot = { key: string; kind: "ich" } | { key: string; kind: "person"; tone: 0 | 1 | 2 | 3 } | { key: string; kind: "familie" | "nurIch" | "arbeit" };
 
 /** Höchstens 3 Punkte je Tag – je Person bzw. Raum einer */
 export function calendarDots(items: DayItem[], persons: { id: string; name: string }[], meId: string | null): Dot[] {
@@ -18,8 +18,8 @@ export function calendarDots(items: DayItem[], persons: { id: string; name: stri
   const add = (d: Dot) => !dots.some((x) => x.key === d.key) && dots.push(d);
   for (const i of items) {
     if (i.entry.typ !== "termin") continue;
-    if (i.room === "arbeit") {
-      add({ key: "arbeit", kind: "arbeit" });
+    if (i.room === "arbeit" || i.room === "ich") {
+      add(i.room === "arbeit" ? { key: "arbeit", kind: "arbeit" } : { key: "nurIch", kind: "nurIch" });
       continue;
     }
     const who = (i.entry.data.who ?? []).map((id) => persons.find((p) => p.id === id)).filter((p): p is { id: string; name: string } => Boolean(p));

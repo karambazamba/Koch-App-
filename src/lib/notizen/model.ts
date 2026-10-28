@@ -3,7 +3,7 @@
 // Eintrags-Modell (typ "notiz"). Rein, damit App, Vorschau und Server
 // (Lotte) gleich rechnen.
 
-import { createEntry, type Entry, type Room } from "@/lib/core/entries";
+import { createEntry, roomOf, type Entry, type Room } from "@/lib/core/entries";
 import { nowIso } from "@/lib/core/now";
 import { NOTES, sortBy, via } from "@/lib/core/sort";
 
@@ -173,7 +173,7 @@ export function sanitizeNote(raw: unknown): Note | null {
   return {
     id: e.id,
     typ: "notiz",
-    raum: e.raum === "arbeit" ? "arbeit" : "familie",
+    raum: roomOf(e.raum),
     besitzer: typeof e.besitzer === "string" ? e.besitzer : "lokal",
     erstellt: typeof e.erstellt === "string" ? e.erstellt : new Date(0).toISOString(),
     geaendert: typeof e.geaendert === "string" ? e.geaendert : new Date(0).toISOString(),

@@ -133,9 +133,9 @@ describe("Liste: eine weiße Liste, Arbeit nur als Schild", () => {
 
   it("Filter-Chips nur, wenn es Arbeitsaufgaben gibt; gefiltert leise „Familie · n ausgeblendet“", () => {
     const familie = items().filter((i) => i.room === "familie");
-    expect(aufgabenAnsicht(familie, { filter: "arbeit", arbeitRuht: false })).toMatchObject({ chips: false, filter: "alle", ausgeblendet: 0 });
+    expect(aufgabenAnsicht(familie, { filter: "arbeit", arbeitRuht: false })).toMatchObject({ chips: [], filter: "alle", ausgeblendet: 0 });
     const alle = aufgabenAnsicht(items(), { filter: "alle", arbeitRuht: false });
-    expect(alle).toMatchObject({ chips: true, filter: "alle", ausgeblendet: 0 });
+    expect(alle).toMatchObject({ chips: ["alle", "familie", "arbeit"], filter: "alle", ausgeblendet: 0 });
     expect(alle.items).toHaveLength(5);
     const nurFamilie = aufgabenAnsicht(items(), { filter: "familie", arbeitRuht: false });
     expect(nurFamilie.items.map((i) => i.title)).toEqual(["Tierarzt", "Müll", "Alt"]);
@@ -157,14 +157,15 @@ describe("Liste: eine weiße Liste, Arbeit nur als Schild", () => {
     expect(BACKUP_KEYS).not.toContain("wasgibts.aufgabenfilter");
   });
 
-  it("Seite: keine Etiketten pro Zeile (kein „von gestern“, kein „heute“, kein Punkt), Arbeit-Schild bg-work, Namen bis 2 Zeilen", () => {
+  it("Seite: keine Etiketten pro Zeile (kein „von gestern“, kein „heute“, kein Punkt), Schilder Ich/Arbeit, Namen bis 2 Zeilen", () => {
     const zeile = src("src/components/heute/MiniCards.tsx");
     const taskLine = zeile.slice(zeile.indexOf("export function TaskLine"), zeile.indexOf("export function AufgabenSection"));
     expect(taskLine).toMatch(/line-clamp-2/);
     expect(taskLine).not.toMatch(/taskBadge|carried|roomBarProps|rounded-full \$\{roomBar/);
-    expect(taskLine).toMatch(/<ArbeitSchild/);
+    expect(taskLine).toMatch(/<RaumSchild room=\{item\.room\} \/>/);
     expect(taskLine).toMatch(/<NeuSchild/);
-    expect(src("src/components/kalender/AufgabeSchild.tsx")).toMatch(/bg-work/);
+    expect(src("src/components/kalender/AufgabeSchild.tsx")).toMatch(/bg-work-soft text-work/);
+    expect(src("src/components/kalender/AufgabeSchild.tsx")).toMatch(/bg-ich-soft text-ich/);
     const seite = src("src/components/kalender/TasksView.tsx");
     expect(seite).not.toMatch(/Irgendwann|Diese Woche|Heute dran|von gestern/);
     // A-043: „Erledigt ⌄“ statt „Erledigte anzeigen“
@@ -204,7 +205,7 @@ describe("Nach Feierabend: Arbeit ruht", () => {
   it("blendet Arbeit aus, ohne Chips, leise „Arbeit · n für morgen“ – antippen blendet kurz ein", () => {
     const list = taskOverview([aufgabe({ title: "Müll" }), aufgabe({ title: "Bericht" }, "arbeit"), aufgabe({ title: "Angebot" }, "arbeit")], HEUTE).heute;
     const abends = aufgabenAnsicht(list, { filter: "arbeit", arbeitRuht: true });
-    expect(abends).toMatchObject({ chips: false, arbeitMorgen: 2, ausgeblendet: 0 });
+    expect(abends).toMatchObject({ chips: [], arbeitMorgen: 2, ausgeblendet: 0 });
     expect(abends.items.map((i) => i.title)).toEqual(["Müll"]);
     expect(arbeitMorgenText(abends.arbeitMorgen)).toBe("Arbeit · 2 für morgen");
     expect(aufgabenAnsicht(list, { filter: "alle", arbeitRuht: true, arbeitZeigen: true }).items).toHaveLength(3);
@@ -216,7 +217,7 @@ describe("Startseite: gleiche Regeln in der Aufgaben-Kachel", () => {
     const kachel = src("src/components/heute/MiniCards.tsx");
     const field = kachel.slice(kachel.indexOf("function TaskField"), kachel.indexOf("export function AufgabenSection"));
     expect(field).not.toMatch(/taskBadge|badge|carried/);
-    expect(field).toMatch(/<ArbeitSchild klein/);
+    expect(field).toMatch(/<RaumSchild room=\{item\.room\} klein \/>/);
     expect(kachel).toMatch(/arbeitMorgenText\(arbeitMorgen\)/);
     const seite = src("src/components/heute/TodayPage.tsx");
     expect(seite).toMatch(/arbeitMorgen=\{arbeitMorgen\}/);

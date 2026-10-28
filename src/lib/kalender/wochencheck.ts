@@ -9,11 +9,13 @@
 
 import { readSentence } from "@/lib/kalender/sentence";
 import { guessRoom } from "@/lib/kalender/parse";
+import type { Room } from "@/lib/core/entries";
 import { itemsForDay, type CalendarEntry } from "@/lib/kalender/model";
 import { addDays } from "@/lib/core/now";
 import { guessSport } from "@/lib/sport/model";
 
-export type WeekRoom = "familie" | "arbeit" | "privat";
+/** Familie · Ich (nur für mich, früher „Privat“) · Arbeit */
+export type WeekRoom = Room;
 export type WeekItem = {
   id: string;
   art: "termin" | "aufgabe" | "sport";
@@ -106,7 +108,7 @@ export function parseWeekTalk(text: string, today: string, persons: Person[] = [
     let title = cleanTitle(s.title, who);
     if (!title) continue;
     if (who.length === 1 && art !== "aufgabe") title = `${who[0].name}: ${title}`;
-    const raum: WeekRoom = PRIVATE.test(raw) ? "privat" : guessRoom(raw) === "arbeit" ? "arbeit" : "familie";
+    const raum: WeekRoom = PRIVATE.test(raw) ? "ich" : guessRoom(raw);
     const due = task && /bis\s/i.test(raw) ? s.date : undefined;
     const item: WeekItem = {
       id: `w${i}`,
@@ -161,12 +163,12 @@ const plus = (start: string, minutes: number) => {
   return `${pad2(Math.floor(m / 60))}:${pad2(m % 60)}`;
 };
 
-/** Punkte → Einträge (Privat = nur für mich wie Arbeit, mit Etikett „Privat“; Sport = Etikett „Sport“) */
-export function weekEntries(items: WeekItem[], today: string, make: (typ: "termin" | "aufgabe", data: Record<string, unknown>, raum: "familie" | "arbeit") => CalendarEntry | null): CalendarEntry[] {
+/** Punkte → Einträge (Ich = nur für mich, Raum „ich“; Sport = Etikett „Sport“) */
+export function weekEntries(items: WeekItem[], today: string, make: (typ: "termin" | "aufgabe", data: Record<string, unknown>, raum: Room) => CalendarEntry | null): CalendarEntry[] {
   return items.flatMap((i) => {
     if (i.already) return [];
-    const raum = i.raum === "familie" ? "familie" : "arbeit";
-    const label = i.art === "sport" ? "Sport" : i.raum === "privat" ? "Privat" : undefined;
+    const raum = i.raum;
+    const label = i.art === "sport" ? "Sport" : undefined;
     const base = { title: i.title.slice(0, 120), repeat: null, ...(label ? { label } : {}), ...(i.who.length ? { who: i.who } : {}) };
     const e =
       i.art === "aufgabe"
@@ -179,7 +181,8 @@ export function weekEntries(items: WeekItem[], today: string, make: (typ: "termi
 /** Einträge aus der KI (Werkzeug woche_eintragen) → Punkte für „Deine Woche“ */
 export function itemFromEntry(e: CalendarEntry, id: string, hint?: string): WeekItem {
   const label = e.data.label;
-  const raum: WeekRoom = label === "Privat" ? "privat" : e.raum === "arbeit" ? "arbeit" : "familie";
+  // Früher: „Privat“ = Arbeit mit Etikett – zeigt sich jetzt als „Ich“
+  const raum: WeekRoom = label === "Privat" ? "ich" : e.raum;
   if (e.typ === "aufgabe") return { id, art: "aufgabe", raum, title: e.data.title, ...(e.data.due ? { due: e.data.due } : e.data.date ? { date: e.data.date } : {}), who: [] };
   const d = e.data;
   const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));

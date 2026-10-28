@@ -180,9 +180,45 @@ export function guessLabel(title: string): string | undefined {
   return LABELS.find(([re]) => re.test(title))?.[1];
 }
 
-export function guessRoom(text: string): Room {
-  return ARBEIT.test(text) ? "arbeit" : "familie";
+/** „nur für mich“, „privat“ → Ich (Tafel 114) */
+const ICH = /(?<![a-zäöüß])(nur für mich|für mich allein|nur ich|privat|persönlich)(?![a-zäöüß])/i;
+/** „für alle“, „Familie“ → Familie */
+const FUER_ALLE = /(?<![a-zäöüß])(für alle|für uns alle|alle zusammen|familie|gemeinsam)(?![a-zäöüß])/i;
+
+/**
+ * Raum nur, wenn der Satz ihn sagt (sonst null): Ich vor Familie vor Arbeit.
+ * `arbeitWorte` = gelernte Arbeits-Stichworte (Laden, Café …, `arbeitsWorte`).
+ */
+export function raumAusText(text: string, arbeitWorte: readonly string[] = []): Room | null {
+  if (ICH.test(text)) return "ich";
+  if (FUER_ALLE.test(text)) return "familie";
+  if (ARBEIT.test(text)) return "arbeit";
+  const t = text.toLowerCase();
+  return arbeitWorte.some((w) => new RegExp(`(?<![a-zäöüß])${w}(?![a-zäöüß])`).test(t)) ? "arbeit" : null;
 }
+
+export function guessRoom(text: string, arbeitWorte: readonly string[] = []): Room {
+  return raumAusText(text, arbeitWorte) ?? "familie";
+}
+
+/** Wörter, die je nach Mensch Arbeit sind (Eisladen, Café …) */
+const VIELLEICHT_ARBEIT = ["laden", "eisladen", "eisdiele", "café", "cafe", "werkstatt", "praxis", "schicht", "dienst", "baustelle"];
+
+/** Gelernt aus früheren Entscheidungen: Stichworte, die schon an Arbeits-Einträgen stehen */
+export function arbeitsWorte(entries: readonly { raum: Room; data: { title: string; label?: string } }[]): string[] {
+  const text = entries
+    .filter((e) => e.raum === "arbeit")
+    .map((e) => `${e.data.title} ${e.data.label ?? ""}`.toLowerCase())
+    .join(" ");
+  return VIELLEICHT_ARBEIT.filter((w) => new RegExp(`(?<![a-zäöüß])${w}(?![a-zäöüß])`).test(text));
+}
+
+/** Raum-Wörter aus dem Titel nehmen („Tim antworten nur für mich“ → „Tim antworten“) */
+export const ohneRaumWorte = (title: string) =>
+  title
+    .replace(/[,\s]*(?<![a-zäöüß])(?:nur für mich|für mich allein|nur ich|privat|für alle|für uns alle|alle zusammen)(?![a-zäöüß])[,.]*/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
 const capitalize = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
@@ -304,7 +340,8 @@ export function parseCalendar(text: string, today: string, persons: Person[] = [
   const time = findTime(rest);
   if (time) strip(time.match);
   if (!reminder && !repeat && !deadline && !period && !date && !time && !urgent.urgent && !TODO_WORDS.test(t)) return null;
-  const { title, who } = cleanTitle(rest, persons);
+  // „nur für mich“, „für alle“ sagen den Raum – nicht den Titel
+  const { title, who } = cleanTitle(ohneRaumWorte(rest), persons);
   if (title.length < 2) return null;
   const raum = guessRoom(raw);
   const label = guessLabel(raw);

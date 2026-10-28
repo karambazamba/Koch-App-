@@ -4,8 +4,9 @@
 // Liste – keine Abschnitte nach Raum oder Datum. Kopf „Aufgaben“, darunter
 // leise „Heute · Mi 28. Okt“ (nach Feierabend „Heute Abend · Feierabend“).
 // Reihenfolge dringend → neu → Erstellungszeit; Schilder nur „neu“ und
-// „Arbeit“, abgegebene „von Lisa“. Chips „Alle · Familie · Arbeit“ nur, wenn
-// es Arbeitsaufgaben gibt (gemerkt); nach Feierabend ruht die Arbeit
+// „Ich“/„Arbeit“, abgegebene „von Lisa“. Chips „Alle · Familie · Ich · Arbeit“
+// nur, wenn es Ich- oder Arbeitsaufgaben gibt (gemerkt, Tafel 114); nach
+// Feierabend ruht die Arbeit („Ich“ bleibt)
 // („Arbeit · 5 für morgen ›“ blendet sie kurz ein). Unten leise „Geplant · 1 ›“
 // (ab einem genannten Tag), eingeklappte Listen, „Abgegeben“ und „Erledigt ⌄“
 // (A-043: zugeklappt, ohne Anzahl, nur die letzten 12 Stunden, neueste oben;
@@ -21,7 +22,7 @@ import { Segmented } from "@/components/ui/Segmented";
 import { CARD, PAGE_MAIN, buttonClass } from "@/components/ui/styles";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { setDone, taskOverview, type DayItem } from "@/lib/kalender/model";
-import { aufgabenAnsicht, aufgabenKopf, arbeitMorgenText, ausgeblendetText, geplantText, type AufgabenFilter } from "@/lib/kalender/aufgaben";
+import { aufgabenAnsicht, aufgabenKopf, arbeitMorgenText, ausgeblendetText, filterLabel, geplantText, passtZurAnsicht, type AufgabenFilter } from "@/lib/kalender/aufgaben";
 import { setAufgabenFilter, useAufgabenFilter } from "@/lib/kalender/aufgabenFilter";
 import { useArbeitRuht } from "@/components/kalender/useArbeitRuht";
 import { useEntries } from "@/lib/kalender/store";
@@ -31,16 +32,15 @@ import { isMyTask, memberName, taskRole } from "@/lib/kalender/abgeben/model";
 import { toIsoDate, useToday } from "@/lib/core/now";
 import { act, buzz, readOnlyDone } from "@/components/heute/actions";
 import { ItemMenu } from "@/components/kalender/Items";
-import { EntryForm } from "@/components/kalender/EntryForm";
 import { TaskLine, useLeaving } from "@/components/heute/MiniCards";
-import { openQuick } from "@/lib/core/schnelleingabe";
+import { neuEintragen } from "@/lib/kalender/eintragen/oeffnen";
 import { listenAnsicht } from "@/lib/kalender/liste/ordnung";
 import { fuerHeute, useVorschlagState, vorschlagRuhe, wochenVorschlag } from "@/lib/kalender/liste/vorschlag";
 import { changeEntries } from "@/lib/kalender/store";
 import { showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
 import { openListe } from "@/lib/kalender/liste/einfuegen";
-import { useRaumName } from "@/lib/einstellungen/useHaushalt";
+import { useHaushalt } from "@/lib/einstellungen/useHaushalt";
 
 const LEISE = "flex h-11 items-center gap-1 self-start px-1 text-[15px] font-semibold text-muted";
 
@@ -79,7 +79,7 @@ function Klapp({ label, open, onClick, runter = false }: { label: string; open: 
 }
 
 export function TasksView() {
-  const raum = useRaumName();
+  const haushalt = useHaushalt();
   const all = useEntries();
   const household = useCachedAccount().household;
   const me = household?.me.userId ?? null;
@@ -93,16 +93,15 @@ export function TasksView() {
   const [open, setOpen] = useState<string[]>([]);
   const toggle = (id: string) => setOpen((v) => (v.includes(id) ? v.filter((x) => x !== id) : [...v, id]));
   const [menu, setMenu] = useState<DayItem | null>(null);
-  const [editing, setEditing] = useState<DayItem | null>(null);
-  const [adding, setAdding] = useState<string | null>(null);
   // Aufgaben aus verbundenen Listen (Todoist, nur lesen) stehen mit dabei
   const aboTasks = useAboEntries().filter((e) => e.typ === "aufgabe");
   const groups = entries && today ? taskOverview(aboTasks.length ? [...entries, ...aboTasks] : entries, today) : null;
   const givenItems = today && given.length ? Object.values(taskOverview(given, today)).flat() : [];
   // Die eine Liste; was in eingefügten Listen geparkt ist, steht darunter eingeklappt
   const listen = groups ? listenAnsicht(groups.heute) : null;
-  const ansicht = listen ? aufgabenAnsicht(listen.jetzt, { filter: stored, arbeitRuht: ruht, arbeitZeigen }) : null;
-  const pick = (list: DayItem[]) => list.filter((i) => (ruht ? arbeitZeigen || i.room !== "arbeit" : !ansicht || ansicht.filter === "alle" || i.room === ansicht.filter));
+  const sicht = { arbeitRuht: ruht, arbeitZeigen, haushalt };
+  const ansicht = listen ? aufgabenAnsicht(listen.jetzt, { filter: stored, ...sicht }) : null;
+  const pick = (list: DayItem[]) => list.filter((i) => !ansicht || passtZurAnsicht(i, ansicht, sicht));
   const lists = listen ? listen.listen.map((l) => ({ ...l, items: pick(l.items) })).filter((l) => l.items.length) : [];
   const geplant = groups ? pick(groups.geplant) : [];
   const done = groups ? pick(groups.erledigt) : [];
@@ -117,19 +116,10 @@ export function TasksView() {
   const leer = ansicht && ansicht.items.length === 0 && lists.length === 0;
   return (
     <>
-      <PageHeader title="Aufgaben" backHref="/" subtitle={today ? aufgabenKopf(today, feierabend) : undefined} action={<PagePlus label="Neue Aufgabe" onClick={() => openQuick({ kind: "aufgabe", more: setAdding })} />} />
+      <PageHeader title="Aufgaben" backHref="/" subtitle={today ? aufgabenKopf(today, feierabend) : undefined} action={<PagePlus label="Neue Aufgabe" onClick={() => neuEintragen("aufgabe")} />} />
       <main className={PAGE_MAIN}>
-        {ansicht?.chips && (
-          <Segmented<AufgabenFilter>
-            label="Filter"
-            value={ansicht.filter}
-            onChange={setAufgabenFilter}
-            options={[
-              { value: "alle", label: "Alle" },
-              { value: "familie", label: raum },
-              { value: "arbeit", label: "Arbeit" },
-            ]}
-          />
+        {ansicht && ansicht.chips.length > 0 && (
+          <Segmented<AufgabenFilter> label="Filter" value={ansicht.filter} onChange={setAufgabenFilter} options={ansicht.chips.map((c) => ({ value: c, label: filterLabel(c, haushalt) }))} />
         )}
         {!groups || !ansicht ? (
           <div className={`${CARD} h-40 animate-pulse`} />
@@ -154,7 +144,7 @@ export function TasksView() {
                 <BegleitungAvatar size={88} />
                 <h2 className="text-[22px] font-extrabold">Gerade nichts.</h2>
                 <p className="max-w-xs text-base text-muted">Fällt dir was ein? Mit ＋ eintragen oder mir einfach sagen.</p>
-                <button type="button" onClick={() => openQuick({ kind: "aufgabe", more: setAdding })} className={`${buttonClass("primary", "md")} mt-1`}>
+                <button type="button" onClick={() => neuEintragen("aufgabe")} className={`${buttonClass("primary", "md")} mt-1`}>
                   Neue Aufgabe
                 </button>
                 <button type="button" onClick={() => openListe()} className="hit text-[15px] font-semibold text-muted">
@@ -169,7 +159,7 @@ export function TasksView() {
             )}
             {ansicht.ausgeblendet > 0 && (
               <p className="px-1 text-[15px] font-semibold text-muted" data-ausgeblendet>
-                {ausgeblendetText(ansicht.filter === "arbeit" ? "Arbeit" : raum, ansicht.ausgeblendet)}
+                {ausgeblendetText(filterLabel(ansicht.filter, haushalt), ansicht.ausgeblendet)}
               </p>
             )}
             {ansicht.arbeitMorgen > 0 && (
@@ -215,9 +205,7 @@ export function TasksView() {
           </>
         )}
       </main>
-      {menu && <ItemMenu item={menu} onClose={() => setMenu(null)} onEdit={() => (setEditing(menu), setMenu(null))} />}
-      {editing && <EntryForm entry={editing.entry} onClose={() => setEditing(null)} />}
-      {adding !== null && <EntryForm kind="aufgabe" initialText={adding} onClose={() => setAdding(null)} />}
+      {menu && <ItemMenu item={menu} onClose={() => setMenu(null)} />}
     </>
   );
 }

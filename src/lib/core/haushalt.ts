@@ -1,8 +1,11 @@
 // Mia für alle (allein, zu zweit, Familie): die Wörter je Haushaltsart an
-// EINER Stelle. Der Raum heißt intern immer „familie“; sichtbar heißt er
-// „Privat“ (allein), „Wir“ (zu zweit, WG) bzw. „Familie“. „Arbeit“ bleibt
-// überall „Arbeit“. Die Haushaltsart steht im Profil (`householdType`).
+// EINER Stelle. Drei Räume, benannt nach „wer sieht es“ (Tafel 114): der
+// gemeinsame heißt intern immer „familie“, sichtbar „Familie“ bzw. „Wir“ (zu
+// zweit, WG); „Ich“ (nur ich) und „Arbeit“ (nur ich, nach Feierabend weg)
+// heißen überall so. Allein gibt es nur „Ich | Arbeit“ – Gemeinsames von
+// früher zählt dort wie „Ich“. Die Haushaltsart steht im Profil (`householdType`).
 
+import type { Room } from "@/lib/core/entries";
 import type { HouseholdType } from "@/lib/einstellungen/profileHousehold";
 
 export type Haushalt = "allein" | "paar" | "familie";
@@ -13,8 +16,17 @@ export const haushaltOf = (type: HouseholdType | null | undefined): Haushalt => 
 /** Haushaltsart → Profil-Wert (Startfrage „Für wen soll ich sortieren?“) */
 export const HOUSEHOLD_FOR: Record<Haushalt, HouseholdType> = { allein: "single", paar: "paar", familie: "familie" };
 
-/** Sichtbarer Name des gemeinsamen Bereichs */
-export const raumName = (h: Haushalt) => (h === "allein" ? "Privat" : h === "paar" ? "Wir" : "Familie");
+/** Sichtbarer Name des gemeinsamen Bereichs (allein: „Ich“ – es sieht ja nur einer) */
+export const raumName = (h: Haushalt) => (h === "allein" ? "Ich" : h === "paar" ? "Wir" : "Familie");
+
+/** Sichtbarer Name eines Raums: „Familie“/„Wir“, „Ich“, „Arbeit“ */
+export const raumLabel = (r: Room, h: Haushalt) => (r === "arbeit" ? "Arbeit" : r === "ich" ? "Ich" : raumName(h));
+
+/** Die Räume im Schalter „Familie | Ich | Arbeit“ (allein nur „Ich | Arbeit“) */
+export const raumWahl = (h: Haushalt): Room[] => (h === "allein" ? ["ich", "arbeit"] : ["familie", "ich", "arbeit"]);
+
+/** Wie ein Eintrag in Listen zählt: allein ist Gemeinsames von früher dasselbe wie „Ich“ */
+export const sichtRaum = (r: Room, h: Haushalt): Room => (h === "allein" && r === "familie" ? "ich" : r);
 
 /** Knopf zum Einladen */
 export const einladenKnopf = (h: Haushalt) => (h === "allein" ? "Jemanden dazuholen" : h === "paar" ? "Partner einladen" : "Familie einladen");

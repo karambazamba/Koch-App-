@@ -9,7 +9,6 @@
 
 import { GanztagMarke, zeitSpalte } from "@/components/kalender/GanztagMarke";
 import { useState } from "react";
-import dynamic from "next/dynamic";
 import { Bell } from "lucide-react";
 import { reminderFor } from "@/lib/heute/mitteilungen/erinnerungen";
 import { CARD } from "@/components/ui/styles";
@@ -26,10 +25,16 @@ import { showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
 import { changeEntries } from "@/lib/kalender/store";
 import { useProfile } from "@/lib/einstellungen/useProfile";
+import { useHaushalt } from "@/lib/einstellungen/useHaushalt";
+import { sichtRaum } from "@/lib/core/haushalt";
+import type { Room } from "@/lib/core/entries";
 
-const EntryForm = dynamic(() => import("@/components/kalender/EntryForm").then((m) => m.EntryForm), { ssr: false });
 
-export type RoomFilter = "alles" | "familie" | "arbeit";
+/** Filter im Kalender: Alle · Familie · Ich · Arbeit (Tafel 114) */
+export type RoomFilter = "alles" | Room;
+
+/** Tipps aus der Region gehören zum gemeinsamen Teil – nicht bei „Ich“ oder „Arbeit“ */
+export const mitTipps = (f: RoomFilter) => f !== "arbeit" && f !== "ich";
 
 const LONG = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
 
@@ -44,11 +49,11 @@ function addSuggestion(s: Suggestion, date: string) {
 export function DayPanel({ date, today, entries, filter = "alles", heading = true }: { date: string; today: string; entries: CalendarEntry[]; filter?: RoomFilter; heading?: boolean }) {
   const profile = useProfile();
   const persons = profile?.persons ?? [];
-  const items = termineOn(entries, date, today).filter((i) => filter === "alles" || i.room === filter);
+  const haushalt = useHaushalt();
+  const items = termineOn(entries, date, today).filter((i) => filter === "alles" || sichtRaum(i.room, haushalt) === filter);
   const tips = useCalendarTips(today).byDay.get(date) ?? [];
   const chips = date >= today ? recurringSuggestions(entries, date, today) : [];
   const [menu, setMenu] = useState<DayItem | null>(null);
-  const [editing, setEditing] = useState<DayItem | null>(null);
   return (
     <section className="flex flex-col gap-2.5" aria-label="Gewählter Tag">
       {heading && (
@@ -76,7 +81,7 @@ export function DayPanel({ date, today, entries, filter = "alles", heading = tru
           })}
         </ul>
       )}
-      {filter !== "arbeit" && <TipsDayList tips={tips} />}
+      {mitTipps(filter) && <TipsDayList tips={tips} />}
       {chips.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 px-1" aria-label="Schnell eintragen">
           <span className="text-sm font-semibold text-muted">Schnell eintragen</span>
@@ -87,8 +92,7 @@ export function DayPanel({ date, today, entries, filter = "alles", heading = tru
           ))}
         </div>
       )}
-      {menu && <ItemMenu item={menu} onClose={() => setMenu(null)} onEdit={() => (setEditing(menu), setMenu(null))} />}
-      {editing && <EntryForm entry={editing.entry} onClose={() => setEditing(null)} />}
+      {menu && <ItemMenu item={menu} onClose={() => setMenu(null)} />}
     </section>
   );
 }

@@ -16,12 +16,13 @@ import dynamic from "next/dynamic";
 import { aboOf } from "@/lib/kalender/abo/store";
 import { isAboEntry } from "@/lib/kalender/abo/model";
 import { avatarHex } from "@/lib/einstellungen/profileHelper";
+import { eintragAendern } from "@/lib/kalender/eintragen/oeffnen";
 
 const AboItemSheet = dynamic(() => import("@/components/kalender/AboItemSheet").then((m) => m.AboItemSheet), { ssr: false });
 
 
-/** Farbe des Strichs: Orange = Familie, Blau = Arbeit */
-const roomBar = (room: DayItem["room"]) => (room === "arbeit" ? "bg-work" : "bg-accent");
+/** Farbe des Strichs: Orange = Familie, Grün = Ich, Blau = Arbeit */
+const roomBar = (room: DayItem["room"]) => (room === "arbeit" ? "bg-work" : room === "ich" ? "bg-ich" : "bg-accent");
 
 /** Strich bzw. Punkt: Raum-Farbe, bei Terminen aus verbundenen Kalendern deren Farbe */
 export function roomBarProps(item: Pick<DayItem, "room" | "entry">): { className: string; style?: CSSProperties } {
@@ -32,7 +33,7 @@ export function roomBarProps(item: Pick<DayItem, "room" | "entry">): { className
 const MENU_ROW = "flex h-14 w-full items-center gap-3 px-4 text-left text-base font-semibold active:bg-fill";
 
 /** Antippen eines Eintrags: Erledigt (nur Aufgaben – ein Termin ist einfach vorbei) · Auf morgen · Erinnerung ändern · Bearbeiten · Löschen */
-export function ItemMenu({ item, onClose, onEdit }: { item: DayItem; onClose: () => void; onEdit: () => void }) {
+export function ItemMenu({ item, onClose }: { item: DayItem; onClose: () => void }) {
   const [step, setStep] = useState<"menu" | "erinnerung" | "loeschen">("menu");
   const series = Boolean(item.repeat);
   const close = (fn: () => void) => () => {
@@ -69,7 +70,7 @@ export function ItemMenu({ item, onClose, onEdit }: { item: DayItem; onClose: ()
             <span className="flex-1">Erinnerung ändern</span>
             <span className="text-sm font-semibold text-accent-strong">{REMINDERS.find((r) => r.value === item.reminder)?.short}</span>
           </button>
-          <button type="button" className={MENU_ROW} onClick={onEdit}>
+          <button type="button" className={MENU_ROW} onClick={close(() => eintragAendern(item.entry))}>
             <Pencil className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
             Bearbeiten
           </button>

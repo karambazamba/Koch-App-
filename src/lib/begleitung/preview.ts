@@ -242,7 +242,7 @@ function describe(
       const before = state.entries?.find((x) => x.id === e.id);
       const whenOf = (e: CalendarEntry) => e.typ === "termin" ? `${weekdayShort(e.data.date)} ${dayDate(e.data.date)} · ${clockLabel(e.data.start)}${e.data.end ? `–${clockLabel(e.data.end)}` : ""}` : e.data.due ? `bis ${weekdayShort(e.data.due)} ${dayDate(e.data.due)}` : e.data.date && (e.data.date !== dayToday() || e.data.time) ? `${weekdayShort(e.data.date)} ${dayDate(e.data.date)}${e.data.time ? ` · ${clockLabel(e.data.time)}` : ""}` : "heute";
       const when = whenOf(e);
-      const extra = [repeatLabel(e.data.repeat, e.typ === "termin" ? e.data.date : e.data.date), e.data.reminder !== "aus" ? `Erinnerung ${REMINDERS.find((r) => r.value === e.data.reminder)?.short ?? ""}` : "", e.raum === "arbeit" ? "Arbeit" : ""].filter(Boolean);
+      const extra = [repeatLabel(e.data.repeat, e.typ === "termin" ? e.data.date : e.data.date), e.data.reminder !== "aus" ? `Erinnerung ${REMINDERS.find((r) => r.value === e.data.reminder)?.short ?? ""}` : "", e.raum === "arbeit" ? "Arbeit" : e.raum === "ich" ? "Ich" : ""].filter(Boolean);
       return {
         opId: op.id,
         group: e.typ === "termin" ? "Termine" : "Aufgaben",

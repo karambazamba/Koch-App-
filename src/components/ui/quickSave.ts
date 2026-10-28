@@ -1,16 +1,13 @@
 "use client";
 
 // Schnelleingabe speichern (Tafel 76): ein Satz → Eintrag, sofort. Meldet
-// sich mit „Eingetragen: … · Rückgängig“ (auch „Mach das rückgängig“ bei Mia).
+// sich mit „Notiert: … · Rückgängig“ (auch „Mach das rückgängig“ bei Mia).
+// Termine und Aufgaben speichert ihr eigenes Fenster (`kalender/eintragen`).
 
-import { createEntry } from "@/lib/core/entries";
 import { todayIso } from "@/lib/core/now";
 import { showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
 import type { QuickRead, QuickRequest } from "@/lib/core/schnelleingabe";
-import { sanitizeEntry, upsertEntry, type CalendarEntry } from "@/lib/kalender/model";
-import { quickTaskData } from "@/lib/kalender/quick";
-import { changeEntries } from "@/lib/kalender/store";
 import { parseQuickAdd } from "@/lib/einkauf/quickAdd";
 import { addManualItem, loadShoppingSettings, removeManualItems, sectionFor, setItemShop } from "@/lib/einkauf/shoppingList";
 import { ladenMerken, rememberedShop } from "@/lib/einkauf/meineLaeden";
@@ -18,31 +15,13 @@ import { changeNotes, noteFromText, upsertNote } from "@/lib/notizen";
 import { addPin, changePins, createPin } from "@/lib/pinnwand";
 import { noteUserAction } from "@/lib/core/activity";
 import { buzz } from "@/components/heute/actions";
-import { loadNotify } from "@/lib/heute/mitteilungen/einstellungen";
 import { askForNotifications } from "@/lib/heute/mitteilungen/geraet";
 import { cloudSync } from "@/lib/konten/cache";
 import { addPantryItems, consumePantry, loadPantryAll, replacePantry } from "@/lib/vorrat/pantry";
 import { imHausVerstehen } from "@/lib/vorrat/reinsprechen";
 import { unlockFeature } from "@/lib/core/features";
-import { readQuick } from "@/lib/core/schnelleingabe";
-import { splitTermine } from "@/lib/kalender/sentence";
 
-const VERB: Record<QuickRead["kind"], string> = { termin: "Eingetragen", aufgabe: "Eingetragen", einkauf: "Auf der Liste", notiz: "Notiert", pinnwand: "Hängt", imhaus: "Im Haus" };
-
-function saveEntry(read: Extract<QuickRead, { kind: "termin" | "aufgabe" }>, remind: boolean): { undo: () => void; title: string } | null {
-  const today = todayIso();
-  const standard = loadNotify().defaultReminder;
-  const data =
-    read.kind === "termin"
-      ? { title: read.title.slice(0, 120), date: read.date, start: read.time ?? "", reminder: read.time && remind ? standard : "aus", repeat: read.repeat, ...(read.label ? { label: read.label } : {}) }
-      : quickTaskData(read.title, read.when ?? "heute", today, { time: read.time, label: read.label, dringend: read.urgent, reminder: read.time && remind && standard !== "aus" ? "30" : "aus" });
-  const entry = sanitizeEntry(createEntry(read.kind, data, { raum: read.room }) as CalendarEntry);
-  if (!entry) return null;
-  const undo = changeEntries((list) => upsertEntry(list, entry));
-  // Termin mit Uhrzeit: der passende Moment für Mias Frage nach Erinnerungen
-  if (read.kind === "termin" && read.time && remind) askForNotifications("erster-termin");
-  return { undo, title: entry.data.title };
-}
+const VERB: Record<QuickRead["kind"], string> = { einkauf: "Auf der Liste", notiz: "Notiert", pinnwand: "Hängt", imhaus: "Im Haus" };
 
 /** Laden je Artikel: im Satz genannt → von Hand gewählt → gemerkt → offener Reiter; nichts = „noch ohne Laden“, „Egal wo“ nur bewusst */
 function saveShopping(text: string, weekStart: string, choice: { shop?: string; picked?: boolean } = {}): { undo: () => void; title: string } | null {
@@ -79,16 +58,10 @@ function saveImHaus(text: string): { undo: () => void; title: string } | null {
 }
 
 /** Speichert, was gelesen wurde; `false` = nichts zu speichern (leer/unverständlich) */
-export function saveQuick(read: QuickRead, text: string, request: QuickRequest, remind = true): boolean {
+export function saveQuick(read: QuickRead, text: string, request: QuickRequest): boolean {
   if (!read.title) return false;
   let saved: { undo: () => void; title: string } | null = null;
-  // Mehrere Termine in einem Satz: jeder wird ein eigener Termin (ein Rückgängig für alle)
-  const teile = read.kind === "termin" ? splitTermine(text, todayIso()) : [];
-  if (teile.length > 1) {
-    const all = teile.map((t) => readQuick("termin", t, todayIso())).flatMap((r) => (r.kind === "termin" && r.title ? [saveEntry(r, remind)] : [])).filter((x): x is NonNullable<typeof x> => x !== null);
-    saved = all.length ? { undo: () => all.forEach((x) => x.undo()), title: all.map((x) => x.title).join(", ") } : null;
-  } else if (read.kind === "termin" || read.kind === "aufgabe") saved = saveEntry(read, remind);
-  else if (read.kind === "einkauf") saved = request.shopping ? saveShopping(text, request.shopping.weekStart, request.shopping) : null;
+  if (read.kind === "einkauf") saved = request.shopping ? saveShopping(text, request.shopping.weekStart, request.shopping) : null;
   else if (read.kind === "imhaus") saved = saveImHaus(text);
   else if (read.kind === "notiz") {
     // Eigene Notiz: erste Zeile = Titel, der Rest = Text (mit Absätzen)

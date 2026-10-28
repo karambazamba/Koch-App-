@@ -13,7 +13,7 @@ import { genannterTag, guessLabel, guessRoom, parseCalendar, urgentFrom } from "
 
 export type When = "heute" | "morgen" | { date?: string; due?: string };
 
-export const WHEN_CHOICES: { id: "heute" | "morgen"; label: string }[] = [
+const WHEN_CHOICES: { id: "heute" | "morgen"; label: string }[] = [
   { id: "heute", label: "Heute" },
   { id: "morgen", label: "Morgen" },
 ];

@@ -20,20 +20,18 @@ import { clockLabel } from "@/lib/kalender/answers";
 import { weekdayShort, type CalendarEntry, type DayItem } from "@/lib/kalender/model";
 import { calendarDots, termineOn, type Dot } from "@/lib/kalender/monat";
 import { addDays } from "@/lib/core/now";
-import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { avatarHex } from "@/lib/einstellungen/profileHelper";
 import { roomBarProps } from "@/components/kalender/Items";
-import { DayPanel, type RoomFilter } from "@/components/kalender/DayPanel";
+import { DayPanel, mitTipps, type RoomFilter } from "@/components/kalender/DayPanel";
 import { TipDot, TipsChip, useCalendarTips } from "@/components/tipps/CalendarTips";
-import dynamic from "next/dynamic";
-import { openQuick } from "@/lib/core/schnelleingabe";
+import { neuEintragen } from "@/lib/kalender/eintragen/oeffnen";
 import { isAboEntry } from "@/lib/kalender/abo/model";
 import { MitbringenKarte } from "@/components/kalender/mitbringen/KalenderMitbringen";
-import { useRaumName } from "@/lib/einstellungen/useHaushalt";
+import { useHaushalt } from "@/lib/einstellungen/useHaushalt";
+import { sichtRaum } from "@/lib/core/haushalt";
+import { filterLabel, raumChips } from "@/lib/kalender/aufgaben";
 
-// Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
-const EntryForm = dynamic(() => import("@/components/kalender/EntryForm").then((m) => m.EntryForm), { ssr: false });
 
 type View = "monat" | "woche" | "liste";
 const STEP = 14;
@@ -51,10 +49,10 @@ const monthStart = (iso: string, offset: number) => {
 
 const TONES = ["bg-accent", "bg-work", "bg-person-3", "bg-person-4"];
 
-/** Punkt unter einem Tag: Person, Familie (Orange), Arbeit (Blau), ich = „Meine Farbe im Kalender“ */
+/** Punkt unter einem Tag: Person, Familie (Orange), Raum Ich (Grün), Arbeit (Blau), ich = „Meine Farbe im Kalender“ */
 function DotMark({ dot, myHex }: { dot: Dot; myHex: string }) {
   if (dot.kind === "ich") return <span className="h-[5px] w-[5px] rounded-full" style={{ backgroundColor: myHex }} />;
-  const cls = dot.kind === "person" ? TONES[dot.tone] : dot.kind === "arbeit" ? "bg-work" : "bg-accent";
+  const cls = dot.kind === "person" ? TONES[dot.tone] : dot.kind === "arbeit" ? "bg-work" : dot.kind === "nurIch" ? "bg-ich" : "bg-accent";
   return <span className={`h-[5px] w-[5px] rounded-full ${cls}`} />;
 }
 
@@ -67,15 +65,15 @@ export function relativeDay(date: string, today: string): string | null {
 }
 
 export function CalendarPage({ today, entries }: { today: string; entries: CalendarEntry[] }) {
-  const raum = useRaumName();
+  const haushalt = useHaushalt();
   const [view, setView] = useState<View>("monat");
   const [filter, setFilter] = useState<RoomFilter>("alles");
   const [selected, setSelected] = useState(today);
-  const [adding, setAdding] = useState<string | null>(null);
   const day = selected;
-  // Filter nur, wenn es "Arbeit" gibt (im Kennenlernen gewählt oder schon Einträge)
-  const work = useWorkRoom() || entries.some((e) => e.raum === "arbeit");
-  const pick = (list: DayItem[]) => list.filter((i) => filter === "alles" || i.room === filter);
+  // Filter „Alle · Familie · Ich · Arbeit“ nur, wenn es Ich- oder Arbeit-Termine gibt (Tafel 114)
+  const chips = raumChips(entries.filter((e) => e.typ === "termin").map((e) => e.raum), haushalt);
+  const wirksam: RoomFilter = filter !== "alles" && chips.includes(filter) ? filter : "alles";
+  const pick = (list: DayItem[]) => list.filter((i) => wirksam === "alles" || sichtRaum(i.room, haushalt) === wirksam);
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
@@ -91,25 +89,20 @@ export function CalendarPage({ today, entries }: { today: string; entries: Calen
             ]}
           />
         </div>
-        <PagePlus label="Neuer Termin" onClick={() => openQuick({ kind: "termin", date: day, more: setAdding })} />
+        <PagePlus label="Neuer Termin" onClick={() => neuEintragen("termin", day)} />
       </div>
-      {work && (
-        <Segmented
+      {chips.length > 0 && (
+        <Segmented<RoomFilter>
           label="Filter"
-          value={filter}
+          value={wirksam}
           onChange={setFilter}
-          options={[
-            { value: "alles", label: "Alle" },
-            { value: "familie", label: raum },
-            { value: "arbeit", label: "Arbeit" },
-          ]}
+          options={chips.map((c) => ({ value: c === "alle" ? "alles" : c, label: filterLabel(c, haushalt) }))}
         />
       )}
       <MitbringenKarte today={today} ownTermine={entries.filter((e) => e.typ === "termin" && !isAboEntry(e)).length} />
-      {view === "monat" && <MonthView today={today} entries={entries} pick={pick} selected={selected} onSelect={setSelected} filter={filter} />}
-      {view === "woche" && <WeekView today={today} entries={entries} pick={pick} selected={selected} onSelect={setSelected} filter={filter} />}
-      {view === "liste" && <ListView today={today} entries={entries} pick={pick} filter={filter} selected={selected} onSelect={setSelected} />}
-      {adding !== null && <EntryForm kind="termin" date={day} initialText={adding} onClose={() => setAdding(null)} />}
+      {view === "monat" && <MonthView today={today} entries={entries} pick={pick} selected={selected} onSelect={setSelected} filter={wirksam} />}
+      {view === "woche" && <WeekView today={today} entries={entries} pick={pick} selected={selected} onSelect={setSelected} filter={wirksam} />}
+      {view === "liste" && <ListView today={today} entries={entries} pick={pick} filter={wirksam} selected={selected} onSelect={setSelected} />}
     </div>
   );
 }
@@ -134,7 +127,7 @@ function MonthView({ today, entries, pick, selected, onSelect, filter }: ViewPro
         <div className="flex items-center justify-between">
           <h2 className="pl-1 text-[18px] font-extrabold capitalize">{MONTH.format(utc(first))}</h2>
           <span className="flex items-center gap-1">
-            {tipLayer.available && filter !== "arbeit" && <TipsChip shown={tipLayer.shown} />}
+            {tipLayer.available && mitTipps(filter) && <TipsChip shown={tipLayer.shown} />}
             <button type="button" onClick={() => setOffset((o) => o - 1)} aria-label="Voriger Monat" className={`${ICON_BUTTON} h-9 w-9 border-0`}>
               <ChevronLeft className="h-5 w-5" strokeWidth={2.25} aria-hidden />
             </button>
@@ -176,7 +169,7 @@ function MonthView({ today, entries, pick, selected, onSelect, filter }: ViewPro
                   {dots.map((d) => (
                     <DotMark key={d.key} dot={d} myHex={myHex} />
                   ))}
-                  {inMonth && filter !== "arbeit" && tipLayer.byDay.has(date) && <TipDot />}
+                  {inMonth && mitTipps(filter) && tipLayer.byDay.has(date) && <TipDot />}
                 </span>
               </button>
             );

@@ -1,12 +1,13 @@
-// Prüfstand (Auftrag „Mia auf Claude-Niveau“): 138 echte Alltagssätze einer
+// Prüfstand (Auftrag „Mia auf Claude-Niveau“): echte Alltagssätze einer
 // Familie mit erwarteter Aktion – Einkauf, Termine, Aufgaben, Kochen, Fragen,
 // Durcheinander, Dialekt, Tippfehler. Bezug: Mittwoch, 21.10.2026, 10:30,
 // Familie Müller (Felix, Lisa, Mathis 8). `ops` = welche Vorschlags-Arten
 // richtig sind (eine genügt), leer = reine Antwort ohne Aktion; `datum`/`zeit`
 // prüfen die Daten des Termins bzw. der Aufgabe, `person` den Namen im Titel
-// oder bei „wer“. `lage` = passende Ausgangslage (haushalt.ts), `max` =
+// oder bei „wer“, `raum` den Raum (Familie · Ich · Arbeit, Tafel 114). `lage` = passende Ausgangslage (haushalt.ts), `max` =
 // erlaubte Sätze (Aktion 2, Ratgeber/Zusammenfassung 3).
 
+import type { Room } from "@/lib/core/entries";
 import type { Lage } from "@/lib/begleitung/pruefstand/haushalt";
 
 export type PruefSatz = {
@@ -24,6 +25,8 @@ export type PruefSatz = {
   bis?: string;
   zeit?: string;
   person?: string;
+  /** Raum des Termins bzw. der Aufgabe (Tafel 114) */
+  raum?: Room;
   lage?: Lage[];
   /** Höchstens so viele Sätze (Standard 2) */
   max?: number;
@@ -149,6 +152,14 @@ export const PRUEFSAETZE: PruefSatz[] = [
   // „Bleibt hängen“ (A-024): geht nie von selbst ins Archiv
   S("Häng dauerhaft an die Pinnwand: Müll ist immer dienstags", ["add_pin"]),
   S("Merk dir für mich die PIN vom Fahrradschloss: 4711", ["upsert_note"]),
+  // Familie · Ich · Arbeit (Tafel 114): wer sieht es
+  S("Tim antworten, nur für mich", TERMIN, { raum: "ich" }),
+  S("Privat: Geschenk für Lisa besorgen", TERMIN, { raum: "ich" }),
+  S("Therapie Donnerstag 17 Uhr, nur für mich", TERMIN, { raum: "ich", datum: "2026-10-22", zeit: "17:00" }),
+  S("Für alle: Sonntag 15 Uhr Kaffee bei Oma", TERMIN, { raum: "familie", datum: "2026-10-25", zeit: "15:00" }),
+  S("Familie: Müll rausbringen", TERMIN, { raum: "familie" }),
+  S("Rechnung Steuerberater fürs Büro bezahlen", TERMIN, { raum: "arbeit" }),
+  S("Meeting mit dem Team Freitag 10 Uhr", TERMIN, { raum: "arbeit", datum: "2026-10-23", zeit: "10:00" }),
   // Kochen und Essen (20)
   S("Was soll ich heute kochen?", ["app_command", "set_meal"]),
   S("Plan mir die Woche, vegetarisch bitte", ["set_meal", "add_recipe", "update_week"], { max: 3 }),

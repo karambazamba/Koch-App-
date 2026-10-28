@@ -3,15 +3,11 @@
 // Beispiel-Tag: die Zeile oben („So sieht ein Tag aus · Eigenen starten“)
 // und das Fenster beim Antippen eines Beispiels.
 
-import { useState } from "react";
 import { Sheet } from "@/components/ui/Sheet";
 import type { DayItem } from "@/lib/kalender/model";
 import { CARD, buttonClass } from "@/components/ui/styles";
 import { clearDemo, markDemoAsked } from "@/lib/core/demo";
-import dynamic from "next/dynamic";
-
-// Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
-const EntryForm = dynamic(() => import("@/components/kalender/EntryForm").then((m) => m.EntryForm), { ssr: false });
+import { neuEintragen } from "@/lib/kalender/eintragen/oeffnen";
 
 export function DemoBadge() {
   return <span className="rounded-md bg-demo px-1.5 py-0.5 text-[9.5px] font-extrabold tracking-wider text-demo-ink">BEISPIEL</span>;
@@ -67,8 +63,6 @@ function DemoSheet({ title, addLabel, onAdd, onClose }: { title: string; addLabe
 
 /** Beispiel-Termin bzw. -Aufgabe angetippt: erklären, dann gleich Eigenes eintragen */
 export function DemoItemSheet({ item, today, onClose }: { item: DayItem; today: string; onClose: () => void }) {
-  const [adding, setAdding] = useState(false);
   const termin = item.entry.typ === "termin";
-  if (adding) return <EntryForm kind={termin ? "termin" : "aufgabe"} date={termin ? today : undefined} onClose={onClose} />;
-  return <DemoSheet title={item.title} addLabel={termin ? "Eigenen Termin eintragen" : "Eigene Aufgabe eintragen"} onAdd={() => setAdding(true)} onClose={onClose} />;
+  return <DemoSheet title={item.title} addLabel={termin ? "Eigenen Termin eintragen" : "Eigene Aufgabe eintragen"} onAdd={() => (onClose(), neuEintragen(termin ? "termin" : "aufgabe", termin ? today : undefined))} onClose={onClose} />;
 }

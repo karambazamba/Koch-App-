@@ -3,12 +3,12 @@
 // die Vorschau vor ("Übernehmen"). Lese-Werkzeuge antworten aus den
 // mitgeschickten Einträgen.
 
-import { createEntry, type Room } from "@/lib/core/entries";
+import { createEntry, roomOf, type Room } from "@/lib/core/entries";
 import { addDays, now } from "@/lib/core/now";
 import { ohneAbgelaufene } from "@/lib/kalender/erledigt";
 import { contextLines, mitgewandert, showAnswer } from "@/lib/kalender/answers";
 import { itemsForDay, REMINDERS, taskOverview, sanitizeEntry, sanitizeRepeat, weekdayIndex, type AufgabeData, type CalendarEntry, type Reminder, type Repeat, type TerminData } from "@/lib/kalender/model";
-import { findDate } from "@/lib/kalender/parse";
+import { arbeitsWorte, findDate } from "@/lib/kalender/parse";
 import { isAboEntry } from "@/lib/kalender/abo/model";
 import type { BegleitungTool } from "@/lib/begleitung/registry";
 import { findPersons, nextId, propose, type ToolContext, type ToolResult } from "@/lib/begleitung/tools";
@@ -19,7 +19,11 @@ const fail = (content: string): ToolResult => ({ content, isError: true });
 
 const DATE_PROP = { type: "string", description: "Datum YYYY-MM-DD (aus der Datumsliste im Kontext) oder heute/morgen/Wochentag" } as const;
 const TIME_PROP = { type: "string", description: "Uhrzeit HH:MM (24 h)" } as const;
-const ROOM_PROP = { type: "string", enum: ["familie", "arbeit"], description: "familie = gemeinsam (Standard), arbeit = persönlich (Job, Büro, Kunden)" } as const;
+const ROOM_PROP = {
+  type: "string",
+  enum: ["familie", "ich", "arbeit"],
+  description: "Wer sieht es: familie = alle im Haushalt (Standard; 'für alle', 'Familie'), ich = nur ich, abends sichtbar ('nur für mich', 'privat'), arbeit = nur ich, nach Feierabend weg (Job, Büro, Kunden; Laden/Café nur, wenn sie unter 'Arbeits-Stichworte' im Kontext stehen)",
+} as const;
 const LABEL_PROP = { type: "string", description: "Kurzes Etikett, z. B. Kita, Schule, Arzt, Café, Sport, Steuern – nur wenn naheliegend" } as const;
 const REMINDER_PROP = { type: "string", enum: REMINDERS.map((r) => r.value), description: "Erinnerung: aus, 15/30/60 Minuten vorher oder vorabend (19 Uhr am Tag davor)" } as const;
 const REPEAT_PROP = {
@@ -42,7 +46,7 @@ function timeFrom(v: unknown): string | undefined {
   if (!m || Number(m[1]) > 23 || Number(m[2] ?? 0) > 59) return undefined;
   return `${m[1].padStart(2, "0")}:${m[2] ?? "00"}`;
 }
-const roomFrom = (v: unknown): Room => (v === "arbeit" ? "arbeit" : "familie");
+const roomFrom = (v: unknown): Room => (v === "privat" ? "ich" : roomOf(v));
 const reminderFrom = (v: unknown, fallback: Reminder = "aus"): Reminder => (REMINDERS.some((r) => r.value === v) ? (v as Reminder) : fallback);
 function repeatFrom(v: unknown, start: string): Repeat | null {
   if (!v || typeof v !== "object") return null;
@@ -315,7 +319,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
     definition: {
       name: "woche_eintragen",
       description:
-        "Wochencheck: trägt ALLE Punkte aus einem frei gesprochenen Wochenüberblick auf einmal ein (statt vieler Einzelaufrufe). Füllwörter ignorieren, Korrekturen übernehmen ('Dienstag … nee, Mittwoch' → Mittwoch), Nachträge als eigene Punkte. Unklare Uhrzeit nie raten: ohne start (ganztägig) eintragen – die App fragt mit Knöpfen nach. Sport-Wunsch ('dreimal Sport'): Genanntes eintragen, den Rest als Vorschlag in freie Lücken (vorschlag: kurze Begründung wie 'trocken'). Nachricht beginnt mit '[Wochencheck]' → genau EINMAL aufrufen, alle Punkte (Termin/Aufgabe/Sport, Raum familie/arbeit/privat, Personen aus dem Haushalt, Standarddauer). 'Dienstag' = der nächste Dienstag ab heute, 'nächste Woche Dienstag' = Woche danach, schon vorbei = nächste Woche; 'halb acht' bei Abendterminen = 19:30, 'nach der Arbeit' = nach dem Feierabend im Tagesablauf. Sport-Vorschläge nicht neben Arbeit, Tage verteilt, trocken. Danach nur 1 Satz.",
+        "Wochencheck: trägt ALLE Punkte aus einem frei gesprochenen Wochenüberblick auf einmal ein (statt vieler Einzelaufrufe). Füllwörter ignorieren, Korrekturen übernehmen ('Dienstag … nee, Mittwoch' → Mittwoch), Nachträge als eigene Punkte. Unklare Uhrzeit nie raten: ohne start (ganztägig) eintragen – die App fragt mit Knöpfen nach. Sport-Wunsch ('dreimal Sport'): Genanntes eintragen, den Rest als Vorschlag in freie Lücken (vorschlag: kurze Begründung wie 'trocken'). Nachricht beginnt mit '[Wochencheck]' → genau EINMAL aufrufen, alle Punkte (Termin/Aufgabe/Sport, Raum familie/ich/arbeit, Personen aus dem Haushalt, Standarddauer). 'Dienstag' = der nächste Dienstag ab heute, 'nächste Woche Dienstag' = Woche danach, schon vorbei = nächste Woche; 'halb acht' bei Abendterminen = 19:30, 'nach der Arbeit' = nach dem Feierabend im Tagesablauf. Sport-Vorschläge nicht neben Arbeit, Tage verteilt, trocken. Danach nur 1 Satz.",
       input_schema: {
         type: "object",
         properties: {
@@ -329,7 +333,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
                 datum: DATE_PROP,
                 start: { ...TIME_PROP, description: "Uhrzeit HH:MM – weglassen, wenn unklar" },
                 dauer_min: { type: "integer", minimum: 5, maximum: 600, description: "Standard: Termin 60, Elternabend 120, Sport 60" },
-                raum: { type: "string", enum: ["familie", "arbeit", "privat"], description: "familie (Standard), arbeit (Job, Meeting, Kunde), privat (nur für mich, Arzt, Steuerberater)" },
+                raum: { type: "string", enum: ["familie", "ich", "arbeit"], description: "familie (Standard), ich (nur für mich, privat, Arzt, Steuerberater), arbeit (Job, Meeting, Kunde)" },
                 personen: { type: "array", items: { type: "string" }, description: "Namen aus dem Haushalt" },
                 ort: { type: "string" },
                 frist: { ...DATE_PROP, description: "Nur Aufgaben: 'bis Freitag'" },
@@ -350,8 +354,8 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
       for (const p of punkte.slice(0, 40)) {
         const title = str(p.titel).slice(0, 120);
         if (!title) continue;
-        const privat = p.raum === "privat";
-        const raum: Room = p.raum === "arbeit" || privat ? "arbeit" : "familie";
+        // „privat“ (alte Antworten) = Ich
+        const raum: Room = roomFrom(p.raum);
         const who = whoFrom(ctx, p.personen);
         const hint = str(p.vorschlag) || undefined;
         let entry: CalendarEntry;
@@ -359,13 +363,13 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
           const due = dateFrom(ctx, p.frist) ?? undefined;
           // Alles ist heute: ohne genannten Tag ab heute (auch mit Frist)
           const date = dateFrom(ctx, p.datum) ?? ctx.today;
-          entry = createEntry("aufgabe", { title, reminder: "aus" as Reminder, repeat: null, date: due && date > due ? ctx.today : date, ...(due ? { due } : {}), ...(privat ? { label: "Privat" } : {}) }, { raum }) as CalendarEntry;
+          entry = createEntry("aufgabe", { title, reminder: "aus" as Reminder, repeat: null, date: due && date > due ? ctx.today : date, ...(due ? { due } : {}) }, { raum }) as CalendarEntry;
         } else {
           const date = dateFrom(ctx, p.datum) ?? ctx.today;
           const start = timeFrom(p.start) ?? "";
           const minutes = typeof p.dauer_min === "number" ? Math.max(5, Math.min(600, Math.round(p.dauer_min))) : /elternabend/i.test(title) ? 120 : 60;
           const end = start ? `${String(Math.min(23, Math.floor((Number(start.slice(0, 2)) * 60 + Number(start.slice(3)) + minutes) / 60))).padStart(2, "0")}:${String((Number(start.slice(3)) + minutes) % 60).padStart(2, "0")}` : undefined;
-          const label = p.art === "sport" ? "Sport" : privat ? "Privat" : undefined;
+          const label = p.art === "sport" ? "Sport" : undefined;
           entry = createEntry("termin", { title, date, start, ...(end && end > start ? { end } : {}), reminder: start ? ("30" as Reminder) : ("aus" as Reminder), repeat: null, ...(label ? { label } : {}), ...(who ? { who } : {}), ...(str(p.ort) ? { place: str(p.ort) } : {}) }, { raum }) as CalendarEntry;
         }
         const clean = sanitizeEntry(entry);
@@ -398,6 +402,9 @@ export function calendarContext(all: CalendarEntry[], today: string, abends = fa
   const laterLines = later.map((i) => `${i.title} [id=${i.entry.id}; aufgabe, ${i.room}, ab ${i.when}${i.label ? `, Etikett ${i.label}` : ""}]`);
   const mit = mitgewandert(entries, today, abends);
   const mitLine = mit.length ? `\nAbends: Die Startseite zeigt schon morgen. Still mit auf morgen gewandert (nichts verschoben): ${mit.map((i) => i.title).join(" | ")}` : "";
-  const ruhe = feierabend ? "\nFeierabend: Arbeitsaufgaben ruhen bis morgen – nur nennen, wenn jemand nach der Arbeit fragt." : "";
-  return `Termine und Aufgaben der nächsten 7 Tage (ids nur für Werkzeuge, nie nennen; alle Aufgaben ohne genannten Tag stehen heute in EINER Liste)${upcoming.length || entries.length ? "" : " – noch nichts eingetragen"}:\n${contextLines(entries, today, 7)}${laterLines.length ? `\nSpäter geplant: ${laterLines.join(" | ")}` : ""}${geschafftLine}${mitLine}${ruhe}`;
+  const ruhe = feierabend ? "\nFeierabend: Arbeitsaufgaben ruhen bis morgen – nur nennen, wenn jemand nach der Arbeit fragt. Ich-Aufgaben bleiben." : "";
+  // Gelernt aus früheren Entscheidungen: Wörter, die hier Arbeit meinen (Laden, Café …)
+  const worte = arbeitsWorte(entries);
+  const arbeit = worte.length ? `\nArbeits-Stichworte (→ raum arbeit): ${worte.join(", ")}` : "";
+  return `Termine und Aufgaben der nächsten 7 Tage (ids nur für Werkzeuge, nie nennen; alle Aufgaben ohne genannten Tag stehen heute in EINER Liste)${upcoming.length || entries.length ? "" : " – noch nichts eingetragen"}:\n${contextLines(entries, today, 7)}${laterLines.length ? `\nSpäter geplant: ${laterLines.join(" | ")}` : ""}${geschafftLine}${mitLine}${ruhe}${arbeit}`;
 }

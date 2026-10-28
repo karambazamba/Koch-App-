@@ -21,18 +21,14 @@ import { QuickButton } from "@/components/ui/QuickButton";
 import { clockLabel } from "@/lib/kalender/answers";
 import { isNeu, isUrgent, setDone, type DayItem } from "@/lib/kalender/model";
 import { arbeitMorgenText } from "@/lib/kalender/aufgaben";
-import { ArbeitSchild, NeuSchild } from "@/components/kalender/AufgabeSchild";
+import { NeuSchild, RaumSchild } from "@/components/kalender/AufgabeSchild";
 import type { TerminRow, TerminState } from "@/lib/heute/termineKachel";
 import { UrgentMark } from "@/components/kalender/UrgentMark";
 import type { TileSize } from "@/lib/core/homeLayout";
 import { LEAVE_MS, act, buzz, readOnlyDone } from "@/components/heute/actions";
 import { ItemMenu, roomBarProps } from "@/components/kalender/Items";
 import { withoutEmoji } from "@/lib/core/text";
-import dynamic from "next/dynamic";
-import { openQuick } from "@/lib/core/schnelleingabe";
-
-// Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
-const EntryForm = dynamic(() => import("@/components/kalender/EntryForm").then((m) => m.EntryForm), { ssr: false });
+import { neuEintragen } from "@/lib/kalender/eintragen/oeffnen";
 
 /** Beispiel-Tag: Beispiele statt echter Einträge (Antippen erklärt, Abhaken nur hier) */
 export type DemoProps = { label?: string | null; done?: string[]; onToggle?: (item: DayItem) => void; onGone?: (item: DayItem) => void; onOpen: (item: DayItem) => void };
@@ -41,7 +37,6 @@ export type DemoProps = { label?: string | null; done?: string[]; onToggle?: (it
 
 function useSection() {
   const [menu, setMenu] = useState<DayItem | null>(null);
-  const [editing, setEditing] = useState<DayItem | null>(null);
   // Nach dem Abhaken: welche Einträge vorher da waren – neue gleiten herein
   const [before, setBefore] = useState<string[] | null>(null);
   const check = (item: DayItem, shown: DayItem[]) => {
@@ -50,12 +45,7 @@ function useSection() {
     act((list, stamp) => setDone(list, item, true, stamp), item.title, { done: true });
     setTimeout(() => setBefore(null), 700);
   };
-  const overlays = (
-    <>
-      {menu && <ItemMenu item={menu} onClose={() => setMenu(null)} onEdit={() => (setEditing(menu), setMenu(null))} />}
-      {editing && <EntryForm entry={editing.entry} onClose={() => setEditing(null)} />}
-    </>
-  );
+  const overlays = menu && <ItemMenu item={menu} onClose={() => setMenu(null)} />;
   return { setMenu, check, before, overlays };
 }
 
@@ -159,10 +149,8 @@ function TerminLine({ row, entering, onOpen, spalte, half }: { row: TerminRow; e
  */
 export function TermineSection({ rows, label, href, today, size = "M", half = false, demo }: { rows: TerminRow[]; label?: string | null; href: string; today?: string; size?: TileSize; half?: boolean; demo?: DemoProps }) {
   const { setMenu, before, overlays } = useSection();
-  const [adding, setAdding] = useState<string | null>(null);
   const shown = rows.slice(0, ROW_COUNT[size]);
-  const sheet = adding !== null && <EntryForm kind="termin" onClose={() => setAdding(null)} date={today} initialText={adding} />;
-  const plus = <QuickButton icon={Plus} label="Neuer Termin" onClick={() => openQuick({ kind: "termin", date: today, more: setAdding })} />;
+  const plus = <QuickButton icon={Plus} label="Neuer Termin" onClick={() => neuEintragen("termin", today)} />;
   const rest = rows.length - shown.length;
   // „Ganztägig“ passt ohne Umbruch: Spalte breiter, sobald ein ganztägiger Termin dabei ist (halbe Kachel: nur Symbol)
   const spalte = zeitSpalte(!half && shown.some((r) => !r.item.time), "klein");
@@ -176,17 +164,16 @@ export function TermineSection({ rows, label, href, today, size = "M", half = fa
           ))}
         </ul>
       ) : (
-        <AddLine label="Termin eintragen" onClick={() => openQuick({ kind: "termin", date: today, more: setAdding })} />
+        <AddLine label="Termin eintragen" onClick={() => neuEintragen("termin", today)} />
       )}
       {overlays}
-      {sheet}
     </section>
   );
 }
 
 /**
  * Aufgaben-Zeile der Seite: Kreis zum Abhaken, Titel bis 2 Zeilen (dann „…“),
- * darunter „von Lisa“; rechts nur „neu“ und das blaue Schild „Arbeit“ –
+ * darunter „von Lisa“; rechts nur „neu“ und die Schilder „Ich“ (grün) bzw. „Arbeit“ (blau) –
  * kein „von gestern“, kein „heute“, kein Punkt. Geplantes zeigt seinen Tag.
  */
 export function TaskLine({ item, today, onOpen, onDone, leaving, entering }: { item: DayItem; today: string; onOpen: (i: DayItem) => void; onDone: (i: DayItem) => void; leaving?: boolean; entering?: boolean }) {
@@ -204,7 +191,7 @@ export function TaskLine({ item, today, onOpen, onDone, leaving, entering }: { i
         </span>
         {item.when && <span className="shrink-0 text-xs text-muted">{item.when}</span>}
         {!checked && !item.when && isNeu(item, today) && <NeuSchild />}
-        {item.room === "arbeit" && <ArbeitSchild />}
+        <RaumSchild room={item.room} />
       </button>
     </li>
   );
@@ -224,7 +211,7 @@ function TaskField({ item, leaving, entering, onOpen, onDone }: { item: DayItem;
         <span className={`min-w-0 flex-1 truncate text-[13.5px] font-semibold leading-tight ${leaving ? "text-muted line-through" : ""}`} data-freitext>{withoutEmoji(item.title)}</span>
         <TaskFrom item={item} className="shrink-0 text-[11px] text-muted" />
         {reminderFor(item) && !leaving && <Bell className="h-[13px] w-[13px] shrink-0 text-muted" strokeWidth={2.25} aria-label="mit Erinnerung" />}
-        {item.room === "arbeit" && <ArbeitSchild klein />}
+        <RaumSchild room={item.room} klein />
       </button>
     </li>
   );
@@ -237,12 +224,11 @@ function TaskField({ item, leaving, entering, onOpen, onDone }: { item: DayItem;
  */
 export function AufgabenSection({ items, total, today, label, addOn = today, href = "/aufgaben", size = "M", half = false, arbeitMorgen = 0, demo }: { items: DayItem[]; total?: number; today: string; label?: string | null; addOn?: string; href?: string; size?: TileSize; half?: boolean; arbeitMorgen?: number; demo?: DemoProps }) {
   const { setMenu, check, before, overlays } = useSection();
-  const [adding, setAdding] = useState<string | null>(null);
   // Erledigtes steht nicht herum (auch nicht im Beispiel-Tag)
   const open = demo?.done ? items.filter((i) => !demo.done!.includes(i.entry.id)) : items;
   const shown = open.slice(0, ROW_COUNT[size]);
   const { leaving, start } = useLeaving((item) => (demo ? demo.onGone?.(item) : check(item, shown)));
-  const plus = <QuickButton icon={Plus} label="Neue Aufgabe" onClick={() => openQuick({ kind: "aufgabe", date: addOn, more: setAdding })} />;
+  const plus = <QuickButton icon={Plus} label="Neue Aufgabe" onClick={() => neuEintragen("aufgabe", addOn)} />;
   const rest = Math.max(0, Math.max(total ?? 0, open.length) - shown.length);
   return (
     <>
@@ -255,7 +241,7 @@ export function AufgabenSection({ items, total, today, label, addOn = today, hre
             ))}
           </ul>
         ) : (
-          <AddLine label="Aufgabe eintragen" onClick={() => openQuick({ kind: "aufgabe", date: addOn, more: setAdding })} />
+          <AddLine label="Aufgabe eintragen" onClick={() => neuEintragen("aufgabe", addOn)} />
         )}
         {arbeitMorgen > 0 && (
           <Link href={href} className="flex h-[22px] items-center px-1 text-[12px] font-semibold text-muted" data-arbeit-morgen>
@@ -264,7 +250,6 @@ export function AufgabenSection({ items, total, today, label, addOn = today, hre
         )}
       </section>
       {overlays}
-      {adding !== null && <EntryForm kind="aufgabe" initialText={adding} onClose={() => setAdding(null)} />}
     </>
   );
 }

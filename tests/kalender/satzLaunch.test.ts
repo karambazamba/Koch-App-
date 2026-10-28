@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { at } from "../helpers";
 import { nextDayOfMonth, readSentence, splitTermine } from "@/lib/kalender/sentence";
 import { findDate, parseCalendar } from "@/lib/kalender/parse";
-import { readQuick } from "@/lib/core/schnelleingabe";
+import { terminLesen } from "@/lib/kalender/eintragen/termin";
 import { ask, context } from "../begleitung/testmodusHilfen";
 
 const TODAY = "2026-10-21"; // Mittwoch
@@ -59,7 +59,7 @@ describe("Mehrere Termine in einem Satz", () => {
   });
 
   it("Schnelleingabe liest jeden Teil richtig", () => {
-    const [a, b] = splitTermine("Montag Zahnarzt um 9 und Dienstag Friseur um 14 Uhr", TODAY).map((t) => readQuick("termin", t, TODAY));
+    const [a, b] = splitTermine("Montag Zahnarzt um 9 und Dienstag Friseur um 14 Uhr", TODAY).map((t) => terminLesen(t, TODAY));
     expect(a).toMatchObject({ title: "Zahnarzt", date: "2026-10-26", time: "09:00" });
     expect(b).toMatchObject({ title: "Friseur", date: "2026-10-27", time: "14:00" });
   });

@@ -13,11 +13,13 @@ import { ohneZeitraum, type CalendarEntry } from "@/lib/kalender/model";
 import { todayIso } from "@/lib/core/now";
 import { migrateStore } from "@/lib/einkauf/listMigration";
 
+import { roomOf, type Room } from "@/lib/core/entries";
+
 /** Ein Eintrag, wie er in der Tabelle liegt (ohne Haushalt) */
 export type CloudDoc = {
   id: string;
   typ: string;
-  raum: "familie" | "arbeit";
+  raum: Room;
   /** Konto-ID; null = noch nie hochgeladen (dann das eigene Konto) */
   besitzer: string | null;
   erstellt: string;
@@ -48,7 +50,8 @@ export type Adapter = {
 
 const isObj = (v: unknown): v is Value => Boolean(v) && typeof v === "object" && !Array.isArray(v);
 const list = (v: unknown): Value[] => (Array.isArray(v) ? v.filter(isObj) : []);
-const room = (v: unknown): "familie" | "arbeit" => (v === "arbeit" ? "arbeit" : "familie");
+// „ich“ und „arbeit“ sieht nur der Besitzer – nie als Familie hochladen
+const room = roomOf;
 const ownerOf = (v: unknown): string | null => (typeof v === "string" && v !== "lokal" ? v : null);
 
 /** Speicher, deren Einträge schon das einheitliche Modell haben (id, typ, raum, besitzer …) */

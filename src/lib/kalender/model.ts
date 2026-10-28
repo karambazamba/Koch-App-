@@ -16,7 +16,7 @@
 //   verschwinden leise.
 
 import { WEEKDAYS_MO, WEEKDAYS_SHORT_MO } from "@/lib/core/days";
-import { createEntry, type Entry, type Room } from "@/lib/core/entries";
+import { createEntry, roomOf, type Entry, type Room } from "@/lib/core/entries";
 import { addDays, berlinTime, fromIsoDate, now } from "@/lib/core/now";
 import { first, sortBy, TASKS, TASKS_DONE, TERMINE, timeThenCreated, via } from "@/lib/core/sort";
 import { abgehaktUm, erledigtFelder, nochErledigt, serienZeiten } from "@/lib/kalender/erledigt";
@@ -491,7 +491,7 @@ export function sanitizeEntry(raw: unknown): CalendarEntry | null {
   const dates = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && DATE.test(x)) : []);
   const base = {
     id: e.id,
-    raum: e.raum === "arbeit" ? ("arbeit" as const) : ("familie" as const),
+    raum: roomOf(e.raum),
     besitzer: typeof e.besitzer === "string" ? e.besitzer : "lokal",
     erstellt: typeof e.erstellt === "string" ? e.erstellt : new Date(0).toISOString(),
     geaendert: typeof e.geaendert === "string" ? e.geaendert : new Date(0).toISOString(),

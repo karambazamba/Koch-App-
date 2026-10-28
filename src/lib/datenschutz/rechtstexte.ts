@@ -42,7 +42,7 @@ export type Abschnitt = { titel: string; absaetze: string[] };
 export const KURZ_GESAGT: { titel: string; text: string }[] = [
   { titel: "Wo eure Daten liegen", text: "Ohne Konto nur auf diesem Gerät. Mit Konto zusätzlich in unserer Datenbank, damit die Familie sie teilen kann. Unsere Server-Funktionen laufen in Frankfurt." },
   { titel: "Was ich sehe", text: "Nur, was ihr mir sagt oder weiterleitet. Für eine Antwort geht der Satz mit dem nötigen Ausschnitt an unseren KI-Anbieter. Sprachnachrichten nie." },
-  { titel: "Wer sie sonst sieht", text: "Eure Familie, was ihr teilt. „Arbeit“ nur du. Niemand sonst." },
+  { titel: "Wer sie sonst sieht", text: "Eure Familie, was ihr teilt. „Ich“ und „Arbeit“ nur du. Niemand sonst." },
   { titel: "Wie lange", text: "Bis ihr es löscht. Pinnwand-Zettel gehen abgehakt oder nach 7 Tagen ins Archiv und werden dort nach 30 Tagen gelöscht. Vorschläge aus Mails 7 Tage. Den Chat speichere ich gar nicht." },
   { titel: "Nie verkauft", text: "Keine Tracker, keine Werbe-Profile. Eure Daten werden nie verkauft." },
   { titel: "Eure Rechte", text: "Ansehen, mitnehmen, löschen: alles in den Einstellungen unter „Daten & App“. Fragen gern an " + BETREIBER.mail + "." },
@@ -104,7 +104,7 @@ export const NUTZUNGSBEDINGUNGEN: Abschnitt[] = [
   { titel: "Kostenlos", absaetze: [`${APP_NAME} ist kostenlos. Der Spendentopf ist freiwillig, Zahlungen laufen nie über die App.`] },
   { titel: "Eine KI hilft mit", absaetze: [`${APP_NAME} ist eine KI. Antworten und Vorschläge können Fehler enthalten. Bitte prüfe Wichtiges selbst, besonders Termine, Allergien und Gesundheitsfragen. Wir übernehmen keine Gewähr für KI-Antworten.`] },
   { titel: "Faire Nutzung", absaetze: ["Bitte nutze die App nur für deinen Alltag und den deiner Familie. Für die KI gilt ein Tageslimit. Missbrauch (zum Beispiel automatisierte Anfragen) kann zur Sperre führen."] },
-  { titel: "Familie und Einladungen", absaetze: ["Wer eine Familie anlegt oder einlädt, entscheidet, wer dazugehört. Erwachsene können einladen, Einladungen zurückziehen und die Familie verlassen. Was ihr unter „Familie“ teilt, sehen alle Mitglieder; „Arbeit“ nur du."] },
+  { titel: "Familie und Einladungen", absaetze: ["Wer eine Familie anlegt oder einlädt, entscheidet, wer dazugehört. Erwachsene können einladen, Einladungen zurückziehen und die Familie verlassen. Was ihr unter „Familie“ teilt, sehen alle Mitglieder; „Ich“ und „Arbeit“ nur du."] },
   { titel: "Kündigen und löschen", absaetze: ["Du kannst jederzeit aufhören: Konto löschen in den Einstellungen unter „Daten & App“. Ohne Konto löschst du alles, indem du die App bzw. die Website-Daten im Browser entfernst."] },
   { titel: "Änderungen", absaetze: ["Ändern sich diese Bedingungen wesentlich, fragen wir dich in der App einmal neu."] },
 ];

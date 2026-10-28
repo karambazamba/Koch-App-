@@ -129,8 +129,8 @@ describe("Ehrlich über Fähigkeiten", () => {
 
 describe("Prüfstand", () => {
   it("152 Sätze, alle verschieden, jede Gruppe dabei", () => {
-    expect(PRUEFSAETZE).toHaveLength(186);
-    expect(new Set(PRUEFSAETZE.map((s) => s.text)).size).toBe(186);
+    expect(PRUEFSAETZE).toHaveLength(193);
+    expect(new Set(PRUEFSAETZE.map((s) => s.text)).size).toBe(193);
     expect(PRUEFSAETZE.filter((s) => s.ops.length === 0).length).toBeGreaterThanOrEqual(20);
     expect(PRUEFSAETZE.filter((s) => s.ops.includes("kann_nicht")).length).toBeGreaterThanOrEqual(3);
     expect(pruefHaushalt().profile.persons.map((p) => p.name)).toEqual(["Felix", "Lisa", "Mathis"]);

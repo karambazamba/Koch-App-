@@ -5,6 +5,7 @@ import { at, fakeWindow, jetztInput, noBrowser } from "../helpers";
 import { createEntry } from "@/lib/core/entries";
 import { sanitizeEntry, type CalendarEntry } from "@/lib/kalender/model";
 import { isWeekCheckRequest, itemFromEntry, weekCheckKey, weekEntries, type WeekItem } from "@/lib/kalender/wochencheck";
+import type { Room } from "@/lib/core/entries";
 import { stripStopWord } from "@/lib/begleitung/useSpeechInput";
 import { isWeekCheck } from "@/lib/begleitung/modellwahl";
 import { jetztTopics } from "@/lib/heute/jetztTopics";
@@ -14,7 +15,7 @@ import { ask, context } from "../begleitung/testmodusHilfen";
 
 beforeEach(() => at("2026-10-21T09:00"));
 
-const make = (typ: "termin" | "aufgabe", d: Record<string, unknown>, raum: "familie" | "arbeit") => sanitizeEntry(createEntry(typ, d, { raum }) as CalendarEntry);
+const make = (typ: "termin" | "aufgabe", d: Record<string, unknown>, raum: Room) => sanitizeEntry(createEntry(typ, d, { raum }) as CalendarEntry);
 const item = (over: Partial<WeekItem>): WeekItem => ({ id: "x", art: "termin", raum: "familie", title: "Kino", who: [], ...over });
 
 describe("Werkzeug woche_eintragen", () => {
@@ -36,7 +37,9 @@ describe("Werkzeug woche_eintragen", () => {
     expect(ops).toHaveLength(6);
     const [eltern, steuer, lauf, spiel, paket, fenster] = ops;
     expect(eltern.entry.data).toMatchObject({ start: "19:30", end: "21:30", reminder: "30" });
-    expect(steuer.entry).toMatchObject({ raum: "arbeit", data: { label: "Privat" } });
+    // „privat“ (ältere Antwort) = Raum Ich, ohne Etikett (Tafel 114)
+    expect(steuer.entry).toMatchObject({ raum: "ich" });
+    expect(steuer.entry.data.label).toBeUndefined();
     expect(lauf.entry.data).toMatchObject({ label: "Sport", end: "18:45" });
     expect(lauf.hint).toBe("trocken");
     expect(spiel.entry.data).toMatchObject({ start: "", reminder: "aus", who: ["p-mathis"] });
@@ -47,7 +50,7 @@ describe("Werkzeug woche_eintragen", () => {
 
     // zurück in „Deine Woche“
     const items = ops.map((o, i) => itemFromEntry(o.entry, `k${i}`, o.hint));
-    expect(items.map((i) => [i.art, i.raum])).toEqual([["termin", "familie"], ["termin", "privat"], ["sport", "familie"], ["termin", "familie"], ["aufgabe", "familie"], ["aufgabe", "familie"]]);
+    expect(items.map((i) => [i.art, i.raum])).toEqual([["termin", "familie"], ["termin", "ich"], ["sport", "familie"], ["termin", "familie"], ["aufgabe", "familie"], ["aufgabe", "familie"]]);
     expect(items[0].minutes).toBe(120);
     expect(items[2].suggestion).toBe("trocken");
     expect(items[3].question).toEqual(["10:00", "14:00", "weiß noch nicht"]);
@@ -79,10 +82,10 @@ describe("Testmodus: Beispiel von Tafel 36", () => {
 });
 
 describe("Übernehmen: Punkte → Einträge", () => {
-  it("Privat = nur für mich mit Etikett, schon Eingetragenes bleibt weg, Aufgabe ohne Tag = Woche", () => {
+  it("Ich = nur für mich (Raum „ich“), schon Eingetragenes bleibt weg, Aufgabe ohne Tag = Woche", () => {
     const out = weekEntries(
       [
-        item({ title: "Arzt", raum: "privat", date: "2026-10-22", time: "08:30", minutes: 30 }),
+        item({ title: "Arzt", raum: "ich", date: "2026-10-22", time: "08:30", minutes: 30 }),
         item({ title: "Doppelt", already: true, date: "2026-10-22" }),
         item({ title: "Spiel", date: "2026-10-24", who: ["p-mathis"] }),
         item({ art: "aufgabe", title: "Fenster" }),
@@ -92,7 +95,7 @@ describe("Übernehmen: Punkte → Einträge", () => {
       make,
     );
     expect(out.map((e) => [e.typ, e.raum, e.data.title, e.data.label ?? null])).toEqual([
-      ["termin", "arbeit", "Arzt", "Privat"],
+      ["termin", "ich", "Arzt", null],
       ["termin", "familie", "Spiel", null],
       ["aufgabe", "familie", "Fenster", null],
       ["termin", "familie", "Laufen", "Sport"],
