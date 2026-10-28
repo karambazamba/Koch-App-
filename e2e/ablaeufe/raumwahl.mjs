@@ -290,7 +290,8 @@ export const raeumeZweiKonten = async (page, check, device) => {
       .then(() => true, () => false);
     check(erledigt, "Felix: Aufgabe ist erledigt, mit „erledigt von“");
     await page.goto(BASE + "/aufgaben");
-    await page.getByRole("button", { name: /Erledigte anzeigen/ }).click();
+    // „Erledigt ⌄“ (A-043, zugeklappt) aufklappen
+    await page.locator("[data-erledigt]").getByRole("button").first().click();
     check(await page.getByText("erledigt von Lisa").first().waitFor({ timeout: 8000 }).then(() => true, () => false), "Felix: „erledigt von Lisa“");
 
     check((await hat(page, "Zahnarzt Felix")) && (await hat(page, "Angebot schreiben")), "Ich und Arbeit bleiben bei Felix");

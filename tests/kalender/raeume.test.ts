@@ -241,7 +241,7 @@ describe("Mias Werkzeuge: Raum setzen, raten und ändern", () => {
   });
 
   it("Kontext nennt die gelernten Räume", () => {
-    expect(calendarContext([], HEUTE, false, false, [{ wort: "peter", raum: "arbeit" }])).toContain("Gelernte Räume: peter → arbeit");
+    expect(calendarContext([], HEUTE, false, false, undefined, [{ wort: "peter", raum: "arbeit" }])).toContain("Gelernte Räume: peter → arbeit");
   });
 
   it("Wochencheck: Raum je Punkt aus dem Inhalt, Aufgaben sonst Ich", () => {
