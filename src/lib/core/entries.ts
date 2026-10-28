@@ -7,8 +7,18 @@ import { nowIso } from "@/lib/core/now";
 
 export type EntryType = "termin" | "aufgabe" | "notiz" | "gericht" | "einkauf" | "pinnwand" | "memo" | "training";
 
-/** Familie = gemeinsam, Arbeit = persönlich */
-export type Room = "familie" | "arbeit";
+/**
+ * Drei Räume (A-034), für Termine und Aufgaben gleich: Familie = alle im
+ * Haushalt sehen es, Ich = nur der Besitzer (grau, kleines Schloss), Arbeit =
+ * nur der Besitzer (blau, nach Feierabend ausgeblendet).
+ */
+export type Room = "familie" | "ich" | "arbeit";
+
+/** Unbekanntes → Raum (ohne Angabe Familie; „ich“ und „arbeit“ gehen nie verloren) */
+export const roomOf = (v: unknown): Room => (v === "arbeit" || v === "ich" ? v : "familie");
+
+/** Sieht nur der Besitzer (Ich und Arbeit) */
+export const nurBesitzer = (r: unknown): boolean => r === "ich" || r === "arbeit";
 
 /** Ohne Konto gehört alles diesem Gerät */
 export const LOCAL_OWNER = "lokal";

@@ -4,7 +4,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { aufgabe, termin } from "../helpers";
-import { dueNow, pauseOn, quickReminderLabel, reminderFor, remindersBetween, remindersToSend } from "@/lib/heute/mitteilungen/erinnerungen";
+import { dueNow, pauseOn, reminderFor, remindersBetween, remindersToSend } from "@/lib/heute/mitteilungen/erinnerungen";
 import { askDecision, askText, DEFAULT_NOTIFY, migrateNotify, notifyStatusLabel } from "@/lib/heute/mitteilungen/einstellungen";
 import { itemsForDay } from "@/lib/kalender/model";
 import { pushAllowed } from "@/lib/heute/push";
@@ -107,18 +107,9 @@ describe("Mitteilungen erlauben – zur richtigen Zeit", () => {
   });
 });
 
-describe("Schnelleingabe: Chip „17:00 erinnern“", () => {
-  it("Termin: Standard vor Beginn, Aufgabe: genau dann, aus = „Nicht erinnern“", () => {
-    expect(quickReminderLabel("termin", "17:30", "30", true)).toBe("17:00 erinnern");
-    expect(quickReminderLabel("termin", "00:15", "30", true)).toBe("23:45 erinnern");
-    expect(quickReminderLabel("termin", "17:30", "vorabend", true)).toBe("Am Vorabend erinnern");
-    expect(quickReminderLabel("aufgabe", "17:00", "30", true)).toBe("17:00 erinnern");
-    expect(quickReminderLabel("termin", "17:30", "30", false)).toBe("Nicht erinnern");
-    expect(quickReminderLabel("termin", null, "30", true)).toBeNull();
-  });
-
+describe("Fenster Aufgabe/Termin: Glocke (Tafel 114)", () => {
   it("kein Emoji im Chip, Glocke als Linien-Icon", () => {
-    const src = readFileSync("src/components/ui/QuickEntry.tsx", "utf8");
+    const src = readFileSync("src/components/kalender/eintragen/EintragTeile.tsx", "utf8");
     expect(src).toContain("<Bell ");
     expect(src).not.toContain("🔔");
   });

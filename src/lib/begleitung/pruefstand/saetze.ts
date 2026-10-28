@@ -1,13 +1,15 @@
-// Prüfstand (Auftrag „Mia auf Claude-Niveau“): 138 echte Alltagssätze einer
+// Prüfstand (Auftrag „Mia auf Claude-Niveau“): echte Alltagssätze einer
 // Familie mit erwarteter Aktion – Einkauf, Termine, Aufgaben, Kochen, Fragen,
 // Durcheinander, Dialekt, Tippfehler. Bezug: Mittwoch, 21.10.2026, 10:30,
 // Familie Müller (Felix, Lisa, Mathis 8). `ops` = welche Vorschlags-Arten
 // richtig sind (eine genügt), leer = reine Antwort ohne Aktion; `datum`/`zeit`
 // prüfen die Daten des Termins bzw. der Aufgabe, `person` den Namen im Titel
-// oder bei „wer“. `lage` = passende Ausgangslage (haushalt.ts), `max` =
+// oder bei „wer“, `raum` den Raum (Familie · Ich · Arbeit, A-034). `lage` = passende Ausgangslage (haushalt.ts), `max` =
 // erlaubte Sätze (Aktion 2, Ratgeber/Zusammenfassung 3).
 
+import type { Room } from "@/lib/core/entries";
 import type { Lage } from "@/lib/begleitung/pruefstand/haushalt";
+import { RAUM_SAETZE } from "@/lib/begleitung/pruefstand/raeume";
 
 export type PruefSatz = {
   text: string;
@@ -24,12 +26,14 @@ export type PruefSatz = {
   bis?: string;
   zeit?: string;
   person?: string;
+  /** Raum des Termins bzw. der Aufgabe (familie, ich oder arbeit, A-034) */
+  raum?: Room;
   lage?: Lage[];
   /** Höchstens so viele Sätze (Standard 2) */
   max?: number;
   /** Alle erwarteten Aktionen müssen kommen (Mehrfach-Aktion) */
   alle?: boolean;
-  /** Höchstens so viele Wörter (Mehrfach-Aktion: „Erledigt.“) */
+  /** Höchstens so viele Wörter (Mehrfach-Aktion: „Steht drin.“) */
   woerter?: number;
   /** Jeder Einkaufs-Vorschlag gehört in diesen Laden (Läden bewusst wählen) */
   laden?: string;
@@ -149,6 +153,8 @@ export const PRUEFSAETZE: PruefSatz[] = [
   // „Bleibt hängen“ (A-024): geht nie von selbst ins Archiv
   S("Häng dauerhaft an die Pinnwand: Müll ist immer dienstags", ["add_pin"]),
   S("Merk dir für mich die PIN vom Fahrradschloss: 4711", ["upsert_note"]),
+  // Raum-Wahl Familie · Ich · Arbeit (A-034, `raeume.ts`): Termine und Aufgaben, Raum geprüft
+  ...RAUM_SAETZE.map(({ text, raum, datum, zeit, person }) => S(text, TERMIN, { raum, ...(datum ? { datum } : {}), ...(zeit ? { zeit } : {}), ...(person ? { person } : {}) })),
   // Kochen und Essen (20)
   S("Was soll ich heute kochen?", ["app_command", "set_meal"]),
   S("Plan mir die Woche, vegetarisch bitte", ["set_meal", "add_recipe", "update_week"], { max: 3 }),
@@ -259,7 +265,7 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Ich bin müde", ANTWORT),
   S("äh ja also nee doch nicht", ANTWORT),
 
-  // Mehreres auf einmal: alle Aktionen, Text nur „Erledigt.“ (3)
+  // Mehreres auf einmal: alle Aktionen, Text nur „Steht drin.“ (3)
   S("Pack Milch, Brot und Eier auf die Liste und Kita-Formular und Geschenk für Oma in die Aufgaben", ["add_shopping", "upsert_entry"], { alle: true, woerter: 2 }),
   S("Zahnarzt Montag 10 Uhr, Turnen Freitag 16 Uhr und Butter auf die Liste", ["upsert_entry", "add_shopping"], { alle: true, woerter: 2, lage: ["ohne-zahnarzt"] }),
   S("Kaffee und Klopapier auf die Liste, Mathis Freitag 15 Uhr Fußball und Steuer bis Mittwoch als Aufgabe", ["add_shopping", "upsert_entry"], { alle: true, woerter: 2, lage: ["ohne-steuer"] }),

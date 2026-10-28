@@ -195,7 +195,7 @@ export function WochencheckSheet({ data, onClose }: { data: AssistantData; onClo
             <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
               {rough.slice(0, 12).map((i) => (
                 <span key={i.id} className="inline-flex shrink-0 items-center whitespace-nowrap gap-1.5 rounded-full bg-surface px-3 py-1.5 text-[13px] font-semibold">
-                  <span className={`h-2 w-2 rounded-full ${i.raum === "arbeit" ? "bg-work" : i.raum === "privat" ? "bg-muted" : "bg-accent"}`} aria-hidden />
+                  <span className={`h-2 w-2 rounded-full ${i.raum === "arbeit" ? "bg-work" : i.raum === "ich" ? "bg-ich" : "bg-accent"}`} aria-hidden />
                   {weekDayLabel(i, today)} {i.title}
                 </span>
               ))}

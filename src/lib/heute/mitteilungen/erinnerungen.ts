@@ -6,7 +6,7 @@
 // Tag davor. Aufgaben mit Uhrzeit: genau dann.
 
 import { addDays } from "@/lib/core/now";
-import { itemsForDay, weekdayShort, type CalendarEntry, type DayItem, type Reminder } from "@/lib/kalender/model";
+import { itemsForDay, weekdayShort, type CalendarEntry, type DayItem } from "@/lib/kalender/model";
 
 export type ReminderMoment = {
   /** "<eintrag>@<tag>" – je Termin und Tag einmal */
@@ -84,13 +84,3 @@ export function remindersToSend(
 
 /** Pause aktiv an diesem Tag? */
 export const pauseOn = (pause: { from: string; until: string | null } | null | undefined, today: string) => Boolean(pause && pause.from <= today && (!pause.until || today <= pause.until));
-
-/** Chip in der Schnelleingabe: „17:00 erinnern“ (Termin: Standard vor Beginn, Aufgabe: genau dann) */
-export function quickReminderLabel(kind: "termin" | "aufgabe", time: string | null | undefined, reminder: Reminder, on: boolean): string | null {
-  if (!time) return null;
-  if (!on || reminder === "aus") return "Nicht erinnern";
-  if (kind === "aufgabe") return `${clockLabel(time)} erinnern`;
-  if (reminder === "vorabend") return "Am Vorabend erinnern";
-  const at = (toMin(time) - Number(reminder) + 24 * 60) % (24 * 60);
-  return `${Math.floor(at / 60)}:${String(at % 60).padStart(2, "0")} erinnern`;
-}

@@ -11,7 +11,7 @@ const family = async (page, path = "/") => {
 export const eintragen = async (page, check) => {
   await family(page, "/?seite=kalender");
   await page.locator("[role=tabpanel]:not([inert])").getByRole("button", { name: "Neuer Termin" }).click();
-  check(await page.getByText("NEUER TERMIN", { exact: true }).waitFor({ timeout: 5000 }).then(() => true, () => false), "Schnelleingabe „NEUER TERMIN“");
+  check(await page.getByRole("dialog", { name: "Neuer Termin" }).waitFor({ timeout: 5000 }).then(() => true, () => false), "Fenster „Neuer Termin“");
   await schnell(page, "Friseur 14:00");
   const entries = (await store(page, "wasgibts.eintraege")).entries;
   check(entries.some((e) => e.data.title === "Friseur" && e.typ === "termin"), "Termin „Friseur“ gespeichert");
@@ -198,11 +198,22 @@ export const listeEinfuegen = async (page, check) => {
   await page.waitForTimeout(1000);
   check(await page.getByText(/^Heute · /).isVisible(), "Kopf: leise „Heute · …“ unter „Aufgaben“");
   const text = ["Haus:", ...Array.from({ length: 14 }, (_, i) => `☐ Haus-Sache ${i + 1}`), "☑ Fenster putzen", "KINDER", "- [ ] Turnbeutel morgen waschen", ...Array.from({ length: 12 }, (_, i) => `• Kinder-Sache ${i + 1}`), "Arbeit:", "* Angebot bis Freitag", "* Präsentation nächste Woche", "1. Ablage machen"].join("\n");
+  // Ganze Liste ins Feld „Neue Aufgabe“ einfügen → „Liste einfügen“ mit Vorschau
   await page.getByRole("button", { name: "Neue Aufgabe" }).first().click();
-  await page.getByRole("button", { name: "Liste einfügen" }).click();
+  const feld = page.getByRole("dialog", { name: "Neue Aufgabe" }).getByRole("textbox", { name: "Neue Aufgabe" });
+  await feld.waitFor({ timeout: 5000 });
+  await feld.evaluate((el, t) => {
+    const data = new DataTransfer();
+    data.setData("text", t);
+    el.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }));
+  }, text);
   const sheet = page.getByRole("dialog", { name: "Liste einfügen" });
-  await sheet.getByLabel("Liste hier einfügen").fill(text);
-  await sheet.getByRole("button", { name: "Weiter" }).click();
+  await sheet.waitFor({ timeout: 5000 });
+  // Eingefügt = gleich die Vorschau (sonst: Text rein, „Weiter“)
+  if (await sheet.getByLabel("Liste hier einfügen").isVisible().catch(() => false)) {
+    await sheet.getByLabel("Liste hier einfügen").fill(text);
+    await sheet.getByRole("button", { name: "Weiter" }).click();
+  }
   check(await sheet.getByText("30 Aufgaben gefunden · 3 mit Datum · 3 Listen (Haus, Kinder, Arbeit)").isVisible(), "Vorschau: 30 Aufgaben · 3 mit Datum · 3 Listen");
   check(await sheet.getByText("1 schon abgehakt").isVisible(), "Abgehaktes weggelassen");
   await sheet.getByRole("checkbox", { name: /Ablage machen/ }).click();
@@ -217,7 +228,7 @@ export const listeEinfuegen = async (page, check) => {
   check(await geplant.isVisible(), "unten leise „Geplant · 2“");
   await geplant.click();
   check(await page.getByRole("region", { name: "Geplant" }).getByText("Turnbeutel waschen").isVisible(), "„Geplant“ zeigt den Turnbeutel");
-  // Arbeitsaufgaben da → Chips „Alle · Familie · Arbeit“, die Wahl wird gemerkt
+  // Mehrere Räume da → Chips „Alle · … · Arbeit“, die Wahl wird gemerkt
   const filter = page.getByRole("radiogroup", { name: "Filter" });
   check(await filter.isVisible(), "Filter-Chips, weil es Arbeitsaufgaben gibt");
   await filter.getByRole("radio", { name: "Arbeit" }).click();

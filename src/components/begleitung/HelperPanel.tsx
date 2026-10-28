@@ -71,6 +71,8 @@ type Props = {
   setChat: Dispatch<SetStateAction<ChatState>>;
   /** Übernehmen; liefert das Zurücknehmen */
   onApply: (selected: Set<string>) => Promise<(() => void) | undefined>;
+  /** Karten-Vorschau: eine Karte übernehmen (Bühne bleibt offen, A-037) */
+  onApplyOne?: (opId: string) => void;
   onClose: () => void;
   /** Mikrofon beim Öffnen direkt starten */
   startListening?: boolean;
@@ -79,7 +81,7 @@ type Props = {
 };
 
 /** Panel von unten: Chatverlauf, Vorschlag, großes Mikrofon und Textfeld */
-export function HelperPanel({ data, chat, setChat, onApply, onClose, startListening, initialAsk }: Props) {
+export function HelperPanel({ data, chat, setChat, onApply, onApplyOne, onClose, startListening, initialAsk }: Props) {
   const router = useRouter();
   const status = useAssistantStatus(true);
   // Zurück (Pfeil/Geste) schließt den Chat – eine Ebene
@@ -561,6 +563,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           onListen={() => !speech.listening && toggleMic()}
           onAsk={(text) => void ask(text)}
           onApply={applyAndClose}
+          onApplyOne={onApplyOne}
           onClose={onClose}
           from={history ? 0 : since}
           showGreeting={history || chat.turns.length <= since}

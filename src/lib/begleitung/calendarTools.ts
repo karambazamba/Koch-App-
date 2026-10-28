@@ -3,12 +3,13 @@
 // die Vorschau vor ("Übernehmen"). Lese-Werkzeuge antworten aus den
 // mitgeschickten Einträgen.
 
-import { createEntry, type Room } from "@/lib/core/entries";
+import { createEntry, roomOf, type Room } from "@/lib/core/entries";
 import { addDays, now } from "@/lib/core/now";
 import { ohneAbgelaufene } from "@/lib/kalender/erledigt";
 import { contextLines, mitgewandert, showAnswer } from "@/lib/kalender/answers";
 import { itemsForDay, REMINDERS, taskOverview, sanitizeEntry, sanitizeRepeat, weekdayIndex, type AufgabeData, type CalendarEntry, type Reminder, type Repeat, type TerminData } from "@/lib/kalender/model";
 import { findDate } from "@/lib/kalender/parse";
+import { arbeitsWorte, raumRaten, type RaumArt, type RaumHilfen, type RaumWort } from "@/lib/kalender/raum/raten";
 import { isAboEntry } from "@/lib/kalender/abo/model";
 import type { BegleitungTool } from "@/lib/begleitung/registry";
 import { findPersons, nextId, propose, type ToolContext, type ToolResult } from "@/lib/begleitung/tools";
@@ -19,7 +20,12 @@ const fail = (content: string): ToolResult => ({ content, isError: true });
 
 const DATE_PROP = { type: "string", description: "Datum YYYY-MM-DD (aus der Datumsliste im Kontext) oder heute/morgen/Wochentag" } as const;
 const TIME_PROP = { type: "string", description: "Uhrzeit HH:MM (24 h)" } as const;
-const ROOM_PROP = { type: "string", enum: ["familie", "arbeit"], description: "familie = gemeinsam (Standard), arbeit = persönlich (Job, Büro, Kunden)" } as const;
+const ROOM_PROP = {
+  type: "string",
+  enum: ["familie", "ich", "arbeit"],
+  description:
+    "Drei Räume, für Termine und Aufgaben gleich. familie = alle im Haushalt sehen es (Schule, Kinder, Kita, Oma, Geburtstag, 'für alle'). ich = nur die Person selbst (Arzt, Friseur, Physio, 'nur für mich', 'privat'). arbeit = nur die Person selbst, nach Feierabend weg (Meeting, Kunde, Lieferant, Büro, Tohuus, KARAMBA Eis, Personal, Großhandel; dazu die 'Arbeits-Stichworte' im Kontext). 'Gelernte Räume' im Kontext gehen vor. Weglassen = die App rät (Termine Familie, Aufgaben Ich). Nur wenn wirklich unklar (Arbeit und Familie zugleich, z. B. 'Kinder zum Tohuus bringen'): kurz 'Familie oder Arbeit?' mit antwort_knoepfe ['Familie', 'Arbeit'], noch nichts anlegen.",
+} as const;
 const LABEL_PROP = { type: "string", description: "Kurzes Etikett, z. B. Kita, Schule, Arzt, Café, Sport, Steuern – nur wenn naheliegend" } as const;
 const REMINDER_PROP = { type: "string", enum: REMINDERS.map((r) => r.value), description: "Erinnerung: aus, 15/30/60 Minuten vorher oder vorabend (19 Uhr am Tag davor)" } as const;
 const REPEAT_PROP = {
@@ -42,7 +48,15 @@ function timeFrom(v: unknown): string | undefined {
   if (!m || Number(m[1]) > 23 || Number(m[2] ?? 0) > 59) return undefined;
   return `${m[1].padStart(2, "0")}:${m[2] ?? "00"}`;
 }
-const roomFrom = (v: unknown): Room => (v === "arbeit" ? "arbeit" : "familie");
+/** Hilfen fürs Raten: gelernte Stichworte (vom Gerät mitgeschickt) und Arbeits-Stichworte */
+const raumHilfen = (ctx: ToolContext): RaumHilfen => ({ gelernt: ctx.data.raumWorte ?? [], arbeitWorte: arbeitsWorte(ctx.data.entries ?? []) });
+/** Raum aus dem Werkzeug („privat“ = Ich, „geschäftlich“ = Arbeit); fehlt er, rät die App wie überall (A-034) */
+function roomFrom(ctx: ToolContext, v: unknown, art: RaumArt, titel: string): Room {
+  if (v === "privat") return "ich";
+  if (v === "geschaeftlich" || v === "geschäftlich") return "arbeit";
+  if (v === "familie" || v === "ich" || v === "arbeit") return roomOf(v);
+  return raumRaten(titel, art, raumHilfen(ctx)).raum;
+}
 const reminderFrom = (v: unknown, fallback: Reminder = "aus"): Reminder => (REMINDERS.some((r) => r.value === v) ? (v as Reminder) : fallback);
 function repeatFrom(v: unknown, start: string): Repeat | null {
   if (!v || typeof v !== "object") return null;
@@ -178,7 +192,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
       const input = (raw ?? {}) as Input;
       const data = terminInput(ctx, input);
       if (typeof data === "string") return fail(data);
-      return proposeEntry(ctx, createEntry("termin", data, { raum: roomFrom(input.raum) }) as CalendarEntry, true);
+      return proposeEntry(ctx, createEntry("termin", data, { raum: roomFrom(ctx, input.raum, "termin", data.title) }) as CalendarEntry, true);
     },
   },
   {
@@ -202,7 +216,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
       }
       const data = terminInput(ctx, input, entry.data);
       if (typeof data === "string") return fail(data);
-      return proposeEntry(ctx, { ...entry, raum: input.raum !== undefined ? roomFrom(input.raum) : entry.raum, data }, false);
+      return proposeEntry(ctx, { ...entry, raum: input.raum !== undefined ? roomFrom(ctx, input.raum, entry.typ, data.title) : entry.raum, data }, false);
     },
   },
   {
@@ -226,7 +240,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
       const input = (raw ?? {}) as Input;
       const data = aufgabeInput(ctx, input);
       if (typeof data === "string") return fail(data);
-      return proposeEntry(ctx, createEntry("aufgabe", data, { raum: roomFrom(input.raum) }) as CalendarEntry, true);
+      return proposeEntry(ctx, createEntry("aufgabe", data, { raum: roomFrom(ctx, input.raum, "aufgabe", data.title) }) as CalendarEntry, true);
     },
   },
   {
@@ -244,7 +258,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
       if (!entry || entry.typ !== "aufgabe") return fail("Aufgabe mit dieser id nicht gefunden.");
       const data = aufgabeInput(ctx, input, entry.data);
       if (typeof data === "string") return fail(data);
-      return proposeEntry(ctx, { ...entry, raum: input.raum !== undefined ? roomFrom(input.raum) : entry.raum, data }, false);
+      return proposeEntry(ctx, { ...entry, raum: input.raum !== undefined ? roomFrom(ctx, input.raum, entry.typ, data.title) : entry.raum, data }, false);
     },
   },
   {
@@ -315,7 +329,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
     definition: {
       name: "woche_eintragen",
       description:
-        "Wochencheck: trägt ALLE Punkte aus einem frei gesprochenen Wochenüberblick auf einmal ein (statt vieler Einzelaufrufe). Füllwörter ignorieren, Korrekturen übernehmen ('Dienstag … nee, Mittwoch' → Mittwoch), Nachträge als eigene Punkte. Unklare Uhrzeit nie raten: ohne start (ganztägig) eintragen – die App fragt mit Knöpfen nach. Sport-Wunsch ('dreimal Sport'): Genanntes eintragen, den Rest als Vorschlag in freie Lücken (vorschlag: kurze Begründung wie 'trocken'). Nachricht beginnt mit '[Wochencheck]' → genau EINMAL aufrufen, alle Punkte (Termin/Aufgabe/Sport, Raum familie/arbeit/privat, Personen aus dem Haushalt, Standarddauer). 'Dienstag' = der nächste Dienstag ab heute, 'nächste Woche Dienstag' = Woche danach, schon vorbei = nächste Woche; 'halb acht' bei Abendterminen = 19:30, 'nach der Arbeit' = nach dem Feierabend im Tagesablauf. Sport-Vorschläge nicht neben Arbeit, Tage verteilt, trocken. Danach nur 1 Satz.",
+        "Wochencheck: trägt ALLE Punkte aus einem frei gesprochenen Wochenüberblick auf einmal ein (statt vieler Einzelaufrufe). Füllwörter ignorieren, Korrekturen übernehmen ('Dienstag … nee, Mittwoch' → Mittwoch), Nachträge als eigene Punkte. Unklare Uhrzeit nie raten: ohne start (ganztägig) eintragen – die App fragt mit Knöpfen nach. Sport-Wunsch ('dreimal Sport'): Genanntes eintragen, den Rest als Vorschlag in freie Lücken (vorschlag: kurze Begründung wie 'trocken'). Nachricht beginnt mit '[Wochencheck]' → genau EINMAL aufrufen, alle Punkte (Termin/Aufgabe/Sport, Raum familie/ich/arbeit, Personen aus dem Haushalt, Standarddauer). 'Dienstag' = der nächste Dienstag ab heute, 'nächste Woche Dienstag' = Woche danach, schon vorbei = nächste Woche; 'halb acht' bei Abendterminen = 19:30, 'nach der Arbeit' = nach dem Feierabend im Tagesablauf. Sport-Vorschläge nicht neben Arbeit, Tage verteilt, trocken. Danach nur 1 Satz.",
       input_schema: {
         type: "object",
         properties: {
@@ -329,7 +343,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
                 datum: DATE_PROP,
                 start: { ...TIME_PROP, description: "Uhrzeit HH:MM – weglassen, wenn unklar" },
                 dauer_min: { type: "integer", minimum: 5, maximum: 600, description: "Standard: Termin 60, Elternabend 120, Sport 60" },
-                raum: { type: "string", enum: ["familie", "arbeit", "privat"], description: "familie (Standard), arbeit (Job, Meeting, Kunde), privat (nur für mich, Arzt, Steuerberater)" },
+                raum: { type: "string", enum: ["familie", "ich", "arbeit"], description: "familie (Kinder, Kita, Schule, Oma, Geburtstag), ich (Arzt, Friseur, nur für mich, privat) oder arbeit (Meeting, Kunde, Lieferant, Büro, Tohuus, KARAMBA Eis). Weglassen = Termine familie, Aufgaben ich" },
                 personen: { type: "array", items: { type: "string" }, description: "Namen aus dem Haushalt" },
                 ort: { type: "string" },
                 frist: { ...DATE_PROP, description: "Nur Aufgaben: 'bis Freitag'" },
@@ -350,8 +364,8 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
       for (const p of punkte.slice(0, 40)) {
         const title = str(p.titel).slice(0, 120);
         if (!title) continue;
-        const privat = p.raum === "privat";
-        const raum: Room = p.raum === "arbeit" || privat ? "arbeit" : "familie";
+        // „privat“ = Ich; ohne Angabe rät die App (Termine Familie, Aufgaben Ich)
+        const raum: Room = roomFrom(ctx, p.raum, str(p.art) === "aufgabe" ? "aufgabe" : "termin", title);
         const who = whoFrom(ctx, p.personen);
         const hint = str(p.vorschlag) || undefined;
         let entry: CalendarEntry;
@@ -359,13 +373,13 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
           const due = dateFrom(ctx, p.frist) ?? undefined;
           // Alles ist heute: ohne genannten Tag ab heute (auch mit Frist)
           const date = dateFrom(ctx, p.datum) ?? ctx.today;
-          entry = createEntry("aufgabe", { title, reminder: "aus" as Reminder, repeat: null, date: due && date > due ? ctx.today : date, ...(due ? { due } : {}), ...(privat ? { label: "Privat" } : {}) }, { raum }) as CalendarEntry;
+          entry = createEntry("aufgabe", { title, reminder: "aus" as Reminder, repeat: null, date: due && date > due ? ctx.today : date, ...(due ? { due } : {}) }, { raum }) as CalendarEntry;
         } else {
           const date = dateFrom(ctx, p.datum) ?? ctx.today;
           const start = timeFrom(p.start) ?? "";
           const minutes = typeof p.dauer_min === "number" ? Math.max(5, Math.min(600, Math.round(p.dauer_min))) : /elternabend/i.test(title) ? 120 : 60;
           const end = start ? `${String(Math.min(23, Math.floor((Number(start.slice(0, 2)) * 60 + Number(start.slice(3)) + minutes) / 60))).padStart(2, "0")}:${String((Number(start.slice(3)) + minutes) % 60).padStart(2, "0")}` : undefined;
-          const label = p.art === "sport" ? "Sport" : privat ? "Privat" : undefined;
+          const label = p.art === "sport" ? "Sport" : undefined;
           entry = createEntry("termin", { title, date, start, ...(end && end > start ? { end } : {}), reminder: start ? ("30" as Reminder) : ("aus" as Reminder), repeat: null, ...(label ? { label } : {}), ...(who ? { who } : {}), ...(str(p.ort) ? { place: str(p.ort) } : {}) }, { raum }) as CalendarEntry;
         }
         const clean = sanitizeEntry(entry);
@@ -388,7 +402,7 @@ function removeTool(ctx: ToolContext, input: Input, typ: "termin" | "aufgabe"): 
 }
 
 /** Für den Kontext: Einträge der nächsten 7 Tage (heute zuerst, alle Aufgaben stehen heute); abends, was still mit auf morgen wandert; Geschafftes nur die letzten 12 Stunden (A-043) */
-export function calendarContext(all: CalendarEntry[], today: string, abends = false, feierabend = false, jetzt = now().getTime()): string {
+export function calendarContext(all: CalendarEntry[], today: string, abends = false, feierabend = false, jetzt = now().getTime(), raumWorte: readonly RaumWort[] = []): string {
   const entries = ohneAbgelaufene(all, jetzt);
   const upcoming = itemsForDay(entries, today, today);
   const geschafft = taskOverview(entries, today, today, jetzt).erledigt.map((i) => i.title);
@@ -399,5 +413,10 @@ export function calendarContext(all: CalendarEntry[], today: string, abends = fa
   const mit = mitgewandert(entries, today, abends);
   const mitLine = mit.length ? `\nAbends: Die Startseite zeigt schon morgen. Still mit auf morgen gewandert (nichts verschoben): ${mit.map((i) => i.title).join(" | ")}` : "";
   const ruhe = feierabend ? "\nFeierabend: Arbeitsaufgaben ruhen bis morgen – nur nennen, wenn jemand nach der Arbeit fragt." : "";
-  return `Termine und Aufgaben der nächsten 7 Tage (ids nur für Werkzeuge, nie nennen; alle Aufgaben ohne genannten Tag stehen heute in EINER Liste)${upcoming.length || entries.length ? "" : " – noch nichts eingetragen"}:\n${contextLines(entries, today, 7)}${laterLines.length ? `\nSpäter geplant: ${laterLines.join(" | ")}` : ""}${geschafftLine}${mitLine}${ruhe}`;
+  // Gelernt aus früheren Entscheidungen: Wörter, die hier Arbeit meinen (Laden, Café …)
+  const worte = arbeitsWorte(entries);
+  const arbeit = worte.length ? `\nArbeits-Stichworte (→ raum arbeit): ${worte.join(", ")}` : "";
+  // Selbst korrigiert (Mia lernt, A-034): gehen vor
+  const gelernt = raumWorte.length ? `\nGelernte Räume: ${raumWorte.slice(0, 30).map((w) => `${w.wort} → ${w.raum}`).join(", ")}` : "";
+  return `Termine und Aufgaben der nächsten 7 Tage (ids nur für Werkzeuge, nie nennen; alle Aufgaben ohne genannten Tag stehen heute in EINER Liste)${upcoming.length || entries.length ? "" : " – noch nichts eingetragen"}:\n${contextLines(entries, today, 7)}${laterLines.length ? `\nSpäter geplant: ${laterLines.join(" | ")}` : ""}${geschafftLine}${mitLine}${ruhe}${arbeit}${gelernt}`;
 }

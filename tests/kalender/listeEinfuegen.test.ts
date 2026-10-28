@@ -59,8 +59,8 @@ describe("Liste lesen", () => {
   const r = readPastedList(text, T);
   it("Listen aus Überschriften, Arbeit wird Arbeit", () => {
     expect(r.zeilen.map((z) => [z.title, z.liste, z.raum])).toEqual([
-      ["Dachrinne sauber machen", "Haus", "familie"],
-      ["Steuer", "Haus", "familie"],
+      ["Dachrinne sauber machen", "Haus", "ich"],
+      ["Steuer", "Haus", "ich"],
       ["Angebot schreiben", "Arbeit", "arbeit"],
       ["Präsentation", "Arbeit", "arbeit"],
       ["Turnbeutel waschen", "Kinder", "familie"],
@@ -104,7 +104,7 @@ describe("Doppelte und Anlegen", () => {
   });
   it("als Aufgaben mit Liste und Frist", () => {
     const [a] = toAufgaben(readPastedList("Haus:\nSteuer bis Freitag", T).zeilen, "u-felix");
-    expect(a).toMatchObject({ typ: "aufgabe", raum: "familie", besitzer: "u-felix", data: { title: "Steuer", due: "2026-10-23", liste: "Haus", reminder: "aus" } });
+    expect(a).toMatchObject({ typ: "aufgabe", raum: "ich", besitzer: "u-felix", data: { title: "Steuer", due: "2026-10-23", liste: "Haus", reminder: "aus" } });
   });
 });
 

@@ -28,12 +28,11 @@ import { stockLine } from "@/lib/essen/dishIdeas";
 import { setDone, tomorrowLabel, type DayItem } from "@/lib/kalender/model";
 import { terminRows, topicSpot, zeigtMorgen, type DaySection } from "@/lib/heute/deinTag";
 import { GanztagMarke, zeitSpalte } from "@/components/kalender/GanztagMarke";
+import { RaumSchild } from "@/components/kalender/AufgabeSchild";
 import type { JetztTopic } from "@/lib/heute/jetztTopics";
 import type { MiaFrage } from "@/components/heute/useMiaRoutinen";
 import type { PinMessage } from "@/lib/pinnwand";
-import dynamic from "next/dynamic";
 
-const EntryForm = dynamic(() => import("@/components/kalender/EntryForm").then((m) => m.EntryForm), { ssr: false });
 
 type DayDish = { name: string; clock: string | null; minutes: number | null; ready: boolean; missing: string[]; unsure?: string[]; cookHref: string | null };
 
@@ -97,7 +96,6 @@ export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, t
   const [showTomorrow, setShowTomorrow] = useState(() => zeigtMorgen(topic, addDays(today, 1)));
   const [tomorrowChip] = useState(showTomorrow);
   const [menu, setMenu] = useState<DayItem | null>(null);
-  const [editing, setEditing] = useState<DayItem | null>(null);
   const spot = topic ? topicSpot(topic) : null;
   // Abhaken wie überall: durchgestrichen, 1,5 s, weg, „Erledigt · Rückgängig“
   const { leaving, start } = useLeaving((t) => act((all, stamp) => setDone(all, t, true, stamp), t.title, { done: true }));
@@ -175,7 +173,7 @@ export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, t
                         <span className={`${spalte} shrink-0 whitespace-nowrap text-[15px] font-bold tabular-nums ${r.past ? "" : r.item.room === "arbeit" ? "text-work" : "text-accent-strong"}`}>{r.item.time ? clock(r.item.time) : <GanztagMarke title={r.item.title} label={r.item.label} />}</span>
                         <span className={`min-w-0 flex-1 truncate text-base font-semibold ${r.past ? "line-through decoration-1" : ""}`}>{r.item.title}</span>
                         {r.past && <Check className="h-4 w-4 shrink-0" strokeWidth={2.5} aria-label="vorbei" />}
-                        {r.item.room === "arbeit" && !r.past && <span className="shrink-0 text-[12px] font-semibold text-work">Nur für dich</span>}
+                        {!r.past && <RaumSchild room={r.item.room} />}
                       </span>
                       {r.item.entry.typ === "termin" && r.item.entry.data.place && <span className={`${wide ? "pl-[112px]" : "pl-[60px]"} text-[13px] text-muted`}>{r.item.entry.data.place}</span>}
                     </button>
@@ -264,8 +262,7 @@ export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, t
           </>
         )}
       </div>
-      {menu && <ItemMenu item={menu} onClose={() => setMenu(null)} onEdit={() => (setEditing(menu), setMenu(null))} />}
-      {editing && <EntryForm entry={editing.entry} onClose={() => setEditing(null)} />}
+      {menu && <ItemMenu item={menu} onClose={() => setMenu(null)} />}
     </Sheet>
   );
 }

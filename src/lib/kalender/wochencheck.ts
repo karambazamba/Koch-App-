@@ -2,18 +2,20 @@
 // Woche … Dienstag haben wir Elternabend, halb acht glaub ich …“) in einzelne
 // Punkte zerlegen – Füllwörter weg, Korrekturen übernehmen („Dienstag … nee,
 // Mittwoch“), Nachträge als eigene Punkte, Tag/Uhrzeit über `readSentence`,
-// Raum (Familie/Arbeit/Privat), Personen aus dem Haushalt, Standarddauer.
+// Raum (Familie · Ich · Arbeit aus dem Inhalt, `raum/raten.ts`), Personen aus dem Haushalt, Standarddauer.
 // Unklares wird nie geraten: ohne Uhrzeit ein ganztägiger Termin mit Frage.
 // Ohne KI ist das die ganze Erkennung; mit KI liefert das Werkzeug
 // `woche_eintragen` dieselben Punkte (Mock nutzt diesen Parser).
 
 import { readSentence } from "@/lib/kalender/sentence";
-import { guessRoom } from "@/lib/kalender/parse";
+import { guessRoom } from "@/lib/kalender/raum/raten";
+import type { Room } from "@/lib/core/entries";
 import { itemsForDay, type CalendarEntry } from "@/lib/kalender/model";
 import { addDays } from "@/lib/core/now";
 import { guessSport } from "@/lib/sport/model";
 
-export type WeekRoom = "familie" | "arbeit" | "privat";
+/** Familie · Ich · Arbeit (A-034) */
+export type WeekRoom = Room;
 export type WeekItem = {
   id: string;
   art: "termin" | "aufgabe" | "sport";
@@ -43,7 +45,6 @@ const FILLER_RE = new RegExp(`(?<![a-zäöüß])(${FILLERS.map((f) => f.replace(
 const UNKNOWN_TIME = /keine\s+ahnung(\s+wann)?|weiß\s+(ich\s+)?(noch\s+)?nicht(\s+wann)?|wann\s+genau\s+weiß\s+ich\s+nicht/i;
 const WEEKDAYS = "montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag";
 const TASK = /(?<![a-zäöüß])(muss|müssen|erledigen|besorgen|kaufen|anrufen|abgeben|bezahlen|überweisen|kündigen|beantragen|zurückschicken|abholen|bringen|ausfüllen|bis\s+(?:zum\s+)?(?:montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|ende))(?![a-zäöüß])/i;
-const PRIVATE = /(?<![a-zäöüß])(privat|nur\s+für\s+mich|arzt|ärztin|zahnarzt|physio\w*|therapie|steuerberater\w*|bank)(?![a-zäöüß])/i;
 const SPORT_WISH = /(?<![a-zäöüß])(\d|ein|zwei|drei|vier|fünf)\s*(?:mal|×|x)\s+sport/i;
 
 /** Wörter, die live orange markiert werden (Tage, Uhrzeiten, Tätigkeiten erkennt `readSentence`) */
@@ -106,7 +107,7 @@ export function parseWeekTalk(text: string, today: string, persons: Person[] = [
     let title = cleanTitle(s.title, who);
     if (!title) continue;
     if (who.length === 1 && art !== "aufgabe") title = `${who[0].name}: ${title}`;
-    const raum: WeekRoom = PRIVATE.test(raw) ? "privat" : guessRoom(raw) === "arbeit" ? "arbeit" : "familie";
+    const raum: WeekRoom = guessRoom(raw, task ? "aufgabe" : "termin");
     const due = task && /bis\s/i.test(raw) ? s.date : undefined;
     const item: WeekItem = {
       id: `w${i}`,
@@ -161,12 +162,12 @@ const plus = (start: string, minutes: number) => {
   return `${pad2(Math.floor(m / 60))}:${pad2(m % 60)}`;
 };
 
-/** Punkte → Einträge (Privat = nur für mich wie Arbeit, mit Etikett „Privat“; Sport = Etikett „Sport“) */
-export function weekEntries(items: WeekItem[], today: string, make: (typ: "termin" | "aufgabe", data: Record<string, unknown>, raum: "familie" | "arbeit") => CalendarEntry | null): CalendarEntry[] {
+/** Punkte → Einträge (Raum Familie, Ich oder Arbeit; Sport = Etikett „Sport“) */
+export function weekEntries(items: WeekItem[], today: string, make: (typ: "termin" | "aufgabe", data: Record<string, unknown>, raum: Room) => CalendarEntry | null): CalendarEntry[] {
   return items.flatMap((i) => {
     if (i.already) return [];
-    const raum = i.raum === "familie" ? "familie" : "arbeit";
-    const label = i.art === "sport" ? "Sport" : i.raum === "privat" ? "Privat" : undefined;
+    const raum = i.raum;
+    const label = i.art === "sport" ? "Sport" : undefined;
     const base = { title: i.title.slice(0, 120), repeat: null, ...(label ? { label } : {}), ...(i.who.length ? { who: i.who } : {}) };
     const e =
       i.art === "aufgabe"
@@ -179,7 +180,8 @@ export function weekEntries(items: WeekItem[], today: string, make: (typ: "termi
 /** Einträge aus der KI (Werkzeug woche_eintragen) → Punkte für „Deine Woche“ */
 export function itemFromEntry(e: CalendarEntry, id: string, hint?: string): WeekItem {
   const label = e.data.label;
-  const raum: WeekRoom = label === "Privat" ? "privat" : e.raum === "arbeit" ? "arbeit" : "familie";
+  // Früher: „Privat“ = Arbeit mit Etikett – gemeint war „nur für mich“ (Raum Ich)
+  const raum: WeekRoom = label === "Privat" ? "ich" : e.raum;
   if (e.typ === "aufgabe") return { id, art: "aufgabe", raum, title: e.data.title, ...(e.data.due ? { due: e.data.due } : e.data.date ? { date: e.data.date } : {}), who: [] };
   const d = e.data;
   const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));

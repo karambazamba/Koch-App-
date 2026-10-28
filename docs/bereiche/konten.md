@@ -4,8 +4,8 @@
 
 - **Konten (Supabase):** Anmelden nur per E-Mail-Code (`signInWithOtp` +
   `verifyOtp`), nie per Link. Geheimer Schlüssel nur auf dem Server, nie im
-  Client/Repo/Log. Jede Tabelle mit RLS (nur eigener Haushalt, „Arbeit“ nur
-  Besitzer). Migrationen nur in `supabase/migrations/`, laufen beim Merge;
+  Client/Repo/Log. Jede Tabelle mit RLS (nur eigener Haushalt, „Ich“ und
+  „Arbeit“ nur Besitzer). Migrationen nur in `supabase/migrations/`, laufen beim Merge;
   nie SQL von Hand. Lokale Daten bleiben, bis die Übernahme bestätigt ist.
   Abgleich: neueste Änderung je Eintrag gewinnt, Löschen nur als Markierung;
   neue geteilte Daten = Übersetzer in `src/lib/konten/sync/docs.ts`.
@@ -29,16 +29,23 @@ Etappen: **3a Anmeldung und Haushalt** · **3b Synchronisieren** ·
   (`serverEnv.ts`, `app/api/…`) – Test `tests/app/regeln.test.ts`; nach dem
   Bauen `.next/static` durchsuchen. Nie loggen.
 - Jede Tabelle mit Row Level Security; Zugriff nur für Mitglieder des eigenen
-  Haushalts. „Arbeit“ nur für den Besitzer (ab 3b, Tabelle `entries`).
-- Aufgaben sind persönlich (seit v0.65, Migration
-  `20261024120000_aufgaben_persoenlich.sql`, Funktion `entry_visible`): eine
-  Aufgabe sehen und ändern nur der Besitzer, wer sie bekommen hat
-  (`data.fuer` = Konto-ID) und wer sie zuletzt zurückgegeben hat
-  (`data.zurueck` – nötig, weil Postgres keine Änderung erlaubt, nach der man
-  die Zeile nicht mehr sieht; die App blendet sie dort aus). Seit 3b geteilte
-  Aufgaben bleiben beim Ersteller und sind jetzt nur für ihn – nichts wird
-  gelöscht. Der Test-Server (`testServer.ts`) spiegelt dieselbe Regel.
-  Test: `tests/datenbank/aufgaben.test.sql`.
+  Haushalts. Drei Räume (A-034, Migration `20261101120000_raeume_ich.sql`):
+  „familie“ sehen alle im Haushalt (Termine und Aufgaben), „ich“ und
+  „arbeit“ nur der Besitzer (Termine und Aufgaben).
+- Aufgaben in „ich“/„arbeit“ (Funktion `entry_visible`): sehen und ändern
+  nur der Besitzer, wer sie bekommen hat (`fuer` = Konto-ID) und wer sie
+  zuletzt zurückgegeben hat (`zurueck` – nötig, weil Postgres keine Änderung
+  erlaubt, nach der man die Zeile nicht mehr sieht; die App blendet sie dort
+  aus). `fuer`/`zurueck` liest `entry_holder` aus `data.data` (so lädt die App
+  hoch) und, für alte Zeilen, aus `data` – vorher suchte die Regel nur oben,
+  abgegebene Aufgaben kamen nie an (Fehler aus A-028, behoben mit A-034).
+  Ändern nur, wenn der Eintrag danach weiter sichtbar ist (niemand stellt
+  eine fremde Familien-Aufgabe auf „ich“). Bestehende Aufgaben wurden
+  einmalig „ich“ (sie waren seit v0.65 nur für den Ersteller; Merker
+  „raeume-ich“ im Kommentar der Tabelle, ein zweites Einspielen verschiebt
+  nichts). Der Test-Server (`testServer.ts`) spiegelt dieselben Regeln.
+  Tests: `tests/datenbank/sicherheit.test.sql` (Abschnitt 5/6),
+  `tests/datenbank/aufgaben.test.sql`.
 - Abgleich (3b): neueste Änderung je Eintrag gewinnt; Löschen nur als
   Markierung (`geloescht`), nie hart. Geteilt werden Termine, Aufgaben,
   Notizen, Pinnwand (mit Sprachnachrichten, 3c), Einkaufsliste,
@@ -118,10 +125,14 @@ Etappen: **3a Anmeldung und Haushalt** · **3b Synchronisieren** ·
   `notifyStore` (Anzeigen neu laden, wenn der Abgleich geschrieben hat).
 - Datenbank 3b: `supabase/migrations/20261023120000_eintraege_abgleich.sql` –
   `entries` (household_id, id, typ, raum, besitzer, erstellt, geaendert,
-  geloescht, data jsonb, rev), RLS (Familie für alle im Haushalt, Arbeit nur
+  geloescht, data jsonb, rev; raum familie/arbeit), RLS (Familie für alle im Haushalt, Arbeit nur
   Besitzer, kein hartes Löschen, Besitzer/rev nicht änderbar),
   `sync_entries` (je Eintrag „neueste gewinnt“, Abgelehntes hält den Rest
-  nicht auf), Realtime-Veröffentlichung; wer geht, nimmt seine „Arbeit“ mit.
+  nicht auf), Realtime-Veröffentlichung; wer geht, nimmt „ich“ und „arbeit“ mit
+  (`drop_work_entries`). Der Übersetzer (`sync/docs.ts`, `roomOf`) lädt Ich
+  und Arbeit nie als Familie hoch; Test-Backend (`testServer.ts`) und Push
+  (`versand.ts`) prüfen `nurBesitzer`. Kalender-Übersetzer v5 (A-034):
+  bestehende Aufgaben → „ich“, Etikett „Privat“ → „ich“.
 
 ## Verhalten
 
@@ -139,8 +150,10 @@ Etappen: **3a Anmeldung und Haushalt** · **3b Synchronisieren** ·
 - Abmelden/Konto löschen vergisst den Stand des Abgleichs (die Daten bleiben);
   beim nächsten Anmelden fragt die Übernahme wieder – gleiche Einträge werden
   dabei nicht doppelt angelegt (gleiche Kennung).
-- Bekannte Grenzen: Wird ein Familien-Eintrag zu „Arbeit“, behalten die
-  anderen ihre letzte Familien-Fassung. Gleichzeitiges Abhaken von
+- Bekannte Grenzen: Wird ein Familien-Eintrag zu „Ich“ oder „Arbeit“,
+  behalten die anderen ihre letzte Familien-Fassung. Ältere App-Stände
+  (vor A-034) kennen „ich“ nicht und zeigen solche Einträge als Familie, bis
+  sie sich aktualisieren. Gleichzeitiges Abhaken von
   Rezept-Zutaten derselben Woche: die spätere Änderung gewinnt (eigene
   Zeilen der Liste sind einzeln und kommen sich nicht in die Quere).
 
@@ -294,6 +307,12 @@ E-Mail bleibt immer der sichere Weg. Bitte am echten iPhone prüfen.
   Löschen, offline → online, keine doppelte Übernahme, Zusammenführen.
 - `tests/datenbank/eintraege.test.sql` – Arbeit nur Besitzer, Fremde sehen
   nichts, neueste gewinnt, Löschen nur Markierung, Verlassen nimmt Arbeit mit.
+- App-Seite Sichtbarkeit (A-034): `tests/kalender/raeume.test.ts` – zwei
+  Konten im Test-Backend: Lisa bekommt Familie-Termin, Familie-Aufgabe und
+  die ihr gegebene Ich-Aufgabe, nie Felix’ Ich oder Arbeit; sie darf die
+  Familien-Aufgabe abhaken, aber nicht auf „ich“ stellen; Push nur Besitzer.
+- Durchklick `raeumeZweiKonten` (`e2e/ablaeufe/raumwahl.mjs`, zwei Browser):
+  Familie kommt beim Partner an, Ich/Arbeit nicht, „erledigt von Lisa“.
 - Durchklick `abgleich` – A nimmt seine Daten mit (Vorschau), B tritt bei und
   sieht Termin und Pinnwand, B schreibt → A sieht es, B offline → online.
 - Durchklick `begruessung` – Begrüßung → Anmelden → Code (falsch, Zurück,

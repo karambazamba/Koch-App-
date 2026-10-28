@@ -70,10 +70,10 @@ describe("Eine Runde: kleine, sichere Werkzeuge ohne zweite Modell-Runde", () =>
     expect(await zwei([tool("pinnwand_schreiben", { text: "Neu" })], { pending })).toBe(2);
   });
 
-  it("Bestätigung: mehrere Arten = „Erledigt.“, mehrere Artikel, Termin weit weg", () => {
+  it("Bestätigung: mehrere Arten = „Steht drin.“, mehrere Artikel, Termin weit weg", () => {
     const shop = (name: string): ChangeOp => ({ id: name, type: "add_shopping", weekStart: WOCHEN.aktuell, name, amount: "", section: "sonstiges" });
     expect(kurzeBestaetigung([shop("Milch"), shop("Brot")], HEUTE)).toBe("Steht alles drauf.");
-    expect(kurzeBestaetigung([shop("Milch"), { id: "p", type: "add_pin", text: "x" }], HEUTE)).toBe("Erledigt.");
+    expect(kurzeBestaetigung([shop("Milch"), { id: "p", type: "add_pin", text: "x" }], HEUTE)).toBe("Steht drin.");
     expect(kurzeBestaetigung([{ id: "t", type: "upsert_entry", isNew: true, entry: termin({ title: "Kur", date: "2026-11-30", start: "09:00" }) }], HEUTE)).toBe("30.11. 9 Uhr Kur, steht drin.");
     expect(kurzeBestaetigung([{ id: "t", type: "upsert_entry", isNew: true, entry: termin({ title: "Kino", date: HEUTE, start: "20:15" }) }], HEUTE)).toBe("Heute 20:15 Kino, steht drin.");
     expect(kurzBestaetigbar([{ id: "x", type: "remove_entry", entryId: "e", title: "Kino" }])).toBe(false);

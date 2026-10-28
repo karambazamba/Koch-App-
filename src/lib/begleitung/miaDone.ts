@@ -8,6 +8,9 @@ import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 import { now, todayIso } from "@/lib/core/now";
 import type { ChangeOp } from "@/lib/begleitung/ops";
+import type { Room } from "@/lib/core/entries";
+import { ergebnisse, leuchtZiele } from "@/lib/begleitung/ergebnis";
+import { leuchtenMerken } from "@/lib/heute/aufleuchten";
 
 export type MiaDone = { id: string; text: string; href: string | null; day: string; at: number };
 type DoneState = { version: 1; items: MiaDone[] };
@@ -31,7 +34,7 @@ const SAFE_OP_TYPES = new Set<ChangeOp["type"]>(["add_shopping", "set_shop_rule"
 export const isSafeOp = (op: ChangeOp) => (SAFE_OP_TYPES.has(op.type) && !(op.type === "add_shopping" && op.vorschlag)) || ((op.type === "upsert_entry" || op.type === "upsert_note") && op.isNew);
 
 /** Kurz, was passiert ist – und wo es steht */
-export function doneLine(op: ChangeOp): { text: string; href: string | null } | null {
+function doneLine(op: ChangeOp): { text: string; href: string | null } | null {
   switch (op.type) {
     case "add_shopping":
       return { text: `${op.name} auf die Liste`, href: "/einkaufsliste" };
@@ -58,9 +61,10 @@ export function doneLine(op: ChangeOp): { text: string; href: string | null } | 
   }
 }
 
-/** Erledigtes merken (mit Rücknahme für diese Sitzung) */
+/** Erledigtes merken (mit Rücknahme für diese Sitzung); nach dem Schließen der Bühne leuchtet es in der Kachel (A-037) */
 export function noteMiaDone(ops: ChangeOp[], undo: () => void) {
   const day = todayIso();
+  leuchtenMerken(leuchtZiele(ergebnisse(ops)));
   const lines = ops.map(doneLine).filter((l): l is { text: string; href: string | null } => l !== null);
   if (!lines.length) return;
   const at = now().getTime();
@@ -85,4 +89,15 @@ export const miaDoneOn = (today: string): MiaDone[] => (store.load()?.items ?? [
 export function useMiaDone(today: string | undefined): MiaDone[] {
   const s = useExternalStore(store.subscribe, store.load, () => null);
   return today ? (s?.items ?? []).filter((i) => i.day === today) : [];
+}
+
+/**
+ * Genau EIN neuer Termin bzw. EINE neue Aufgabe? Dann steht unter Mias
+ * Bestätigung der Raum-Chip „Familie ⌄“ zum Ändern (A-034).
+ */
+export function eingetragenMitRaum(ops: ChangeOp[]): { id: string; title: string; raum: Room; typ: "termin" | "aufgabe" } | null {
+  const neu = ops.flatMap((op) => (op.type === "upsert_entry" && op.isNew ? [op.entry] : []));
+  if (neu.length !== 1) return null;
+  const e = neu[0];
+  return { id: e.id, title: e.data.title, raum: e.raum, typ: e.typ };
 }

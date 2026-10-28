@@ -1,11 +1,28 @@
-// Die einzigen Schilder an einer Aufgabe (Tafel 103/104): „Arbeit“ (klein,
-// blau, Token bg-work) und auf der Aufgaben-Seite „neu“ (heute angelegt, am
-// nächsten Tag weg). Familie hat kein Kennzeichen, kein Punkt pro Zeile.
+"use client";
+
+// Die einzigen Kennzeichen an einer Aufgabe bzw. einem Termin – in allen
+// Listen und im Kalender gleich (A-034): Familie ohne Kennzeichen, „Ich“ mit
+// kleinem grauem Schloss, „Arbeit“ mit blauem Schild; auf der Aufgaben-Seite
+// dazu „neu“ (heute angelegt, am nächsten Tag weg). Allein ist „Ich“ der
+// Normalfall („Privat“) – dort ohne Schloss. Kein Punkt pro Zeile.
+
+import { Lock } from "lucide-react";
+import type { Room } from "@/lib/core/entries";
+import { ARBEIT } from "@/lib/core/haushalt";
+import { useHaushalt } from "@/lib/einstellungen/useHaushalt";
 
 const SCHILD = "shrink-0 rounded-full px-1.5 py-px font-bold leading-snug";
 
-export function ArbeitSchild({ klein = false }: { klein?: boolean }) {
-  return <span className={`${SCHILD} bg-work text-on-accent ${klein ? "text-[10.5px]" : "text-[11px]"}`}>Arbeit</span>;
+/** Kennzeichen je Raum: Ich = graues Schloss, Arbeit = blaues Schild, Familie nichts */
+export function RaumSchild({ room, klein = false }: { room: Room; klein?: boolean }) {
+  const haushalt = useHaushalt();
+  if (room === "ich" && haushalt !== "allein") return <Lock className={`${klein ? "h-3 w-3" : "h-3.5 w-3.5"} shrink-0 text-ich`} strokeWidth={2.5} aria-label="Nur ich" data-schild="ich" />;
+  if (room !== "arbeit") return null;
+  return (
+    <span className={`${SCHILD} bg-work-soft text-work ${klein ? "text-[10.5px]" : "text-[11px]"}`} data-schild="arbeit">
+      {ARBEIT}
+    </span>
+  );
 }
 
 export function NeuSchild() {

@@ -22,7 +22,7 @@ import { BakingBoard } from "@/components/begleitung/BakingBoard";
 import { TipCards } from "@/components/tipps/TipCards";
 import { RezeptLinkKarte } from "@/components/essen/rezeptLink/RezeptLinkKarte";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
-import { MiaDoneCard } from "@/components/begleitung/MiaDoneCard";
+import { EintragErgebnis, ErgebnisKarten } from "@/components/begleitung/ErgebnisKarten";
 
 const BUBBLE = "max-w-[85%] whitespace-pre-line rounded-card px-4 py-2.5 text-base leading-snug";
 
@@ -122,7 +122,14 @@ export function ChatTurnItem({ turn, lead = false, last, data, showBases, mailAc
             Rückgängig
           </button>
         )}
-        {turn.overview?.length ? <MiaDoneCard groups={turn.overview} undo={turn.undo} onOpen={onClose} /> : turn.undo && turn.quick && !turn.deleted && <QuickUndo undo={turn.undo} />}
+        {/* Was Mia eingetragen hat: Ergebnis-Karten mit EINEM „Rückgängig“ (A-037); sonst nur „Rückgängig“ */}
+        {turn.ergebnisse?.length ? (
+          <ErgebnisKarten karten={turn.ergebnisse} undo={turn.deleted ? undefined : turn.undo} onClose={onClose} />
+        ) : turn.raum ? (
+          <EintragErgebnis eintrag={turn.raum} undo={turn.deleted ? undefined : turn.undo} onClose={onClose} />
+        ) : (
+          turn.undo && turn.quick && !turn.deleted && <QuickUndo undo={turn.undo} />
+        )}
         {turn.market && (
           <MarketBoard
             answer={turn.market}

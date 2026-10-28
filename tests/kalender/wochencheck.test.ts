@@ -14,7 +14,7 @@ describe("Wochencheck: verstehen", () => {
     const { items } = talk(TAFEL);
     expect(items.map((i) => [i.art, i.raum, i.title, i.date ?? i.due ?? null, i.time ?? null])).toEqual([
       ["termin", "familie", "Elternabend", "2026-10-27", "19:30"],
-      ["aufgabe", "familie", "Paket Post bringen", "2026-10-28", null],
+      ["aufgabe", "ich", "Paket Post bringen", "2026-10-28", null],
       ["termin", "arbeit", "Meeting mit Lieferanten", "2026-10-29", "10:00"],
       ["termin", "familie", "Mathis: Spiel", "2026-10-31", null],
     ]);
@@ -39,9 +39,11 @@ describe("Wochencheck: verstehen", () => {
     expect(parseWeekTalk("nächste Woche Dienstag Kino 20 Uhr", "2026-10-26").items[0].date).toBe("2026-11-03");
   });
 
-  it("Raum: Arbeit, Privat, Familie (Standard)", () => {
+  it("Raum: Arbeit aus dem Inhalt, „nur für mich“/Arzt = Ich, Kinder = Familie (A-034)", () => {
     expect(talk("Mittwoch 9 Uhr Kunde anrufen Termin").items[0].raum).toBe("arbeit");
-    expect(talk("Donnerstag 8 Uhr Arzt, nur für mich").items[0].raum).toBe("privat");
+    expect(talk("Donnerstag 8 Uhr Arzt, nur für mich").items[0].raum).toBe("ich");
+    expect(talk("Donnerstag 8 Uhr Zahnarzt").items[0].raum).toBe("ich");
+    expect(talk("Freitag 9 Uhr Lieferant im Tohuus").items[0].raum).toBe("arbeit");
     expect(talk("Freitag 15 Uhr Kindergeburtstag").items[0].raum).toBe("familie");
   });
 

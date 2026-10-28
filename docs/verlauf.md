@@ -3211,33 +3211,6 @@ Fehler in `docs/aufraeumen-nachher.md`.
   „Felix · gest…“ wurde abgeschnitten – Name · Zeit bricht jetzt lieber
   um, der Haken-Kreis behält seinen Platz.
 
-## Termine – Raum Familie / Geschäftlich (vX, A-021)
-- Problem: Beim Anlegen eines Termins zeigte der Chip nur „Privat“ (so hieß
-  der gemeinsame Raum allein), bei Aufgaben gab es eine andere Auswahl. Es
-  gibt aber nur zwei Räume: „Familie“ (gemeinsam, Lisa sieht alles) und
-  „Geschäftlich“ (nur Felix). Gilt vor A-020: der Raum „Ich“ ist wieder raus.
-- Termine und Aufgaben: derselbe Schalter „Familie | Geschäftlich“
-  (`EintragZeile`, `RAUM_WAHL`, Punkt in Raumfarbe), Start = zuletzt gewählter
-  Raum, nach Feierabend Familie; auch allein (dort heißt der Raum jetzt
-  „Familie“ statt „Privat“, zu zweit weiter „Wir“). „Arbeit“ heißt in der
-  Oberfläche überall „Geschäftlich“ (Schild, Filter, „Geschäftlich · 5 für
-  morgen“, Notizen, Kalender-Links, Übernahme-Karte, Tagesablauf, Rechtstexte).
-- Kalender: Filter „Alle · Familie · Geschäftlich“ nur mit geschäftlichen
-  Terminen; im Tag Strich, Uhrzeit und Schild in Raumfarbe, in Woche/Liste
-  Punkt und Uhrzeit. Raum ändern: Termin öffnen → Schalter antippen.
-- Mia und Sofort-Weg erkennen den Raum aus dem Inhalt (Tohuus, KARAMBA Eis,
-  Lieferant, Personal, Großhandel … → Geschäftlich; Kinder, Arzt, Kita,
-  Schule … → Familie; gelernte Arbeits-Stichworte). Nur wenn beides drin ist,
-  fragt Mia mit zwei Knöpfen. Prüfstand +6 Termin-Sätze mit Raum, die 7
-  Raum-Sätze aus A-020 auf Familie/Geschäftlich umgestellt; Sofort-Prüfstand
-  mit Raum-Prüfung.
-- Migration: Speicher v4 – Etikett „Privat“ (Wochencheck, lag als Arbeit) wird
-  Familie, wenn es nur auf dem Gerät liegt; mit Konto bleibt es beim Besitzer
-  (nie ungefragt sichtbar machen). Etikett bleibt gespeichert, wird nie gezeigt.
-- Sichtbarkeit mit Tests festgehalten: Felix’ Geschäftliches erreicht Lisa
-  weder im Abgleich noch in Push, Neuigkeiten/Pinnwand, Heute, Kalender oder
-  Mias Kontext.
-
 ## Essen-Kachel „Rezept“ und Kochmodus (v0.146.0, Tafel 122, A-025)
 - Problem: Die Essen-Kachel hatte zu viele Wege („Ich koche jetzt ›“, „Woche
   ›“, Antippen = Rezept, eigene Koch-Kachel mit „Gegessen“). Ersetzt den
@@ -3350,3 +3323,124 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Pixel 7, jede Kachel in S/M/L; Abläufe `essenkachel`/`kochmodus` für
   Antippen je Zustand, Pillen, „Zurück zu den Ideen“, „Nehmen“.
 - Kein neuer Speicher, keine Migration.
+
+## Neue Aufgabe & Termin: ein Feld, Familie · Ich · Arbeit (v0.151.0, A-020, Tafel 114)
+- Problem (Screenshot 28.10. 09:11): ＋ bei Aufgaben zeigte erst „privat“ +
+  „Mehr Details“, dann ein Formular mit 9 Bausteinen; für Persönliches, das
+  nicht Arbeit ist, gab es keinen Platz.
+- Drei Räume nach „wer sieht es“: Familie (zu zweit „Wir“) = alle im
+  Haushalt, NEU „Ich“ = nur ich (nicht geteilt, abends sichtbar), Arbeit =
+  nur ich (nach Feierabend weg). Allein nur „Ich | Arbeit“. Raum `ich` in
+  Speicher, Abgleich (`roomOf`, nie als Familie hochladen), Test-Backend,
+  Push und Datenbank (Migration `20261101120000_raum_ich.sql`, RLS wie
+  Arbeit, beim Verlassen weg). Bestehende Einträge bleiben unverändert.
+  Farben: Ich Grün (`--app-ich*`), „Privat“ heißt nirgends mehr so.
+  Raum „Ich“ vor dem Ausliefern durch A-021 ersetzt (zwei Räume Familie /
+  Geschäftlich, Migration und RLS-Test gelöscht).
+- EIN Fenster „Neue Aufgabe“ und EIN Fenster „Neuer Termin“
+  (`components/kalender/eintragen/`), für jeden Einstieg (Kacheln, Seiten,
+  Kalender, Tag, Beispiel-Tag) und zum Ändern („Bearbeiten“). Das alte
+  Formular `EntryForm` (Umschalter, Uhrzeit bei Aufgaben, Bis spätestens,
+  Etikett-Chips, „Mehr Details“) ist weg; Etiketten bleiben gespeichert.
+- Aufgabe: ein Feld „Was steht an?“, Return = speichern für heute, Feld
+  bleibt offen („Steht drin · Rückgängig“); Zeile Familie | Ich | Arbeit
+  (Start = letzte Wahl, nach Feierabend Familie) · Glocke (In 1 Std, 16:00,
+  18:00, Morgen früh → „Erinnern heute 16:00 ✕“) · „Mehr ›“ (Ab wann,
+  Wiederholen, An jemanden geben). „Freitag …“ → „Ab Freitag“.
+- Termin: ein Feld, blaue Chips Tag · Uhrzeit · Dauer; ohne Uhrzeit
+  „Uhrzeit?“, gespeichert wird erst danach; „Mehr ›“: Ort, Wiederholen,
+  ganztägig, Personen; Glocke = Erinnern vorher.
+- Listen: „Ich“ grünes, „Arbeit“ blaues Schild (Aufgaben, Kachel, Dein Tag),
+  Filter „Alle · Familie · Ich · Arbeit“ nur mit Ich/Arbeit (auch im Kalender).
+- Mia: „nur für mich“/„privat“ → Ich, „für alle“/„Familie“ → Familie,
+  Arbeit/Büro und gelernte Arbeits-Stichworte (Laden, Café …, aus früheren
+  Arbeits-Einträgen) → Arbeit. Prüfstand +7 Sätze mit Raum-Prüfung.
+
+## Termine – Raum Familie / Geschäftlich (v0.151.0, A-021)
+- Problem: Beim Anlegen eines Termins zeigte der Chip nur „Privat“ (so hieß
+  der gemeinsame Raum allein), bei Aufgaben gab es eine andere Auswahl. Es
+  gibt aber nur zwei Räume: „Familie“ (gemeinsam, Lisa sieht alles) und
+  „Geschäftlich“ (nur Felix). Gilt vor A-020: der Raum „Ich“ ist wieder raus.
+- Termine und Aufgaben: derselbe Schalter „Familie | Geschäftlich“
+  (`EintragZeile`, `RAUM_WAHL`, Punkt in Raumfarbe), Start = zuletzt gewählter
+  Raum, nach Feierabend Familie; auch allein (dort heißt der Raum jetzt
+  „Familie“ statt „Privat“, zu zweit weiter „Wir“). „Arbeit“ heißt in der
+  Oberfläche überall „Geschäftlich“ (Schild, Filter, „Geschäftlich · 5 für
+  morgen“, Notizen, Kalender-Links, Übernahme-Karte, Tagesablauf, Rechtstexte).
+- Kalender: Filter „Alle · Familie · Geschäftlich“ nur mit geschäftlichen
+  Terminen; im Tag Strich, Uhrzeit und Schild in Raumfarbe, in Woche/Liste
+  Punkt und Uhrzeit. Raum ändern: Termin öffnen → Schalter antippen.
+- Mia und Sofort-Weg erkennen den Raum aus dem Inhalt (Tohuus, KARAMBA Eis,
+  Lieferant, Personal, Großhandel … → Geschäftlich; Kinder, Arzt, Kita,
+  Schule … → Familie; gelernte Arbeits-Stichworte). Nur wenn beides drin ist,
+  fragt Mia mit zwei Knöpfen. Prüfstand +6 Termin-Sätze mit Raum, die 7
+  Raum-Sätze aus A-020 auf Familie/Geschäftlich umgestellt; Sofort-Prüfstand
+  mit Raum-Prüfung.
+- Migration: Speicher v4 – Etikett „Privat“ (Wochencheck, lag als Arbeit) wird
+  Familie, wenn es nur auf dem Gerät liegt; mit Konto bleibt es beim Besitzer
+  (nie ungefragt sichtbar machen). Etikett bleibt gespeichert, wird nie gezeigt.
+- Sichtbarkeit mit Tests festgehalten: Felix’ Geschäftliches erreicht Lisa
+  weder im Abgleich noch in Push, Neuigkeiten/Pinnwand, Heute, Kalender oder
+  Mias Kontext.
+
+## Räume Familie · Ich · Arbeit für Termine und Aufgaben (v0.151.0, A-034)
+- Nachtrag zu A-020, gilt vor A-021: „Ich“ ist zurück, „Geschäftlich“ heißt
+  wieder „Arbeit“. Drei Räume, für Termine und Aufgaben gleich: Familie (alle
+  im Haushalt, Orange; zu zweit „Wir“, allein „Privat“), Ich (nur ich, Grau,
+  kleines Schloss), Arbeit (nur ich, Blau, Schild). Allein entfällt „Ich“.
+- Vorauswahl: Termine Familie, Aufgaben Ich; Mia rät aus dem Satz
+  (`kalender/raum/raten.ts`: Schule/Kinder/Oma/Geburtstag → Familie,
+  Meeting/Kunde/Lieferant/Büro → Arbeit, Arzt/Friseur → Ich), der Chip ist
+  schon aktiv. Beim allerersten Mal „Hab Familie gewählt. Tippen zum Ändern.“
+- EINE Raum-Wahl `ui/RaumChips` statt des Schalters: Schnelleingabe,
+  Detail-Fenster (Menü beim Antippen), Bearbeiten, Wochencheck-Karte und als
+  Chip „Familie ⌄“ unter Mias Bestätigung (mit und ohne KI). Lange drücken
+  auf eine Zeile (Aufgaben-Seite, Kalender) → „Für Familie / Nur ich /
+  Arbeit“. Ändern immer mit Rückgängig. Die „letzte Wahl“ (`wasgibts.eintragraum`)
+  und der Feierabend-Start sind weg.
+- Mia lernt: Korrektur → Stichwort des Titels → Raum
+  (`wasgibts.raumgedaechtnis`, nur Gerät, in der Sicherung), geht als
+  „Gelernte Räume“ in Mias Kontext, löschbar unter „Was ich mir gemerkt hab“
+  (früher „Was ich mir merke“). Raum per Satz ändern auch ohne KI („Mach den
+  Zahnarzt nur für mich“, `raumBefehl`); Werkzeuge mit `raum: familie|ich|arbeit`.
+- Familien-Aufgaben sehen alle, jeder darf abhaken („erledigt von Lisa“,
+  `doneBy`); „An … geben“ bleibt.
+- Datenbank: Migration `raeume_ich` (Raum „ich“, Ich/Arbeit nur Besitzer,
+  Familien-Aufgaben für alle, Ändern nur wenn danach sichtbar, bestehende
+  Aufgaben einmalig „ich“). Dabei behoben (Verdacht aus A-028):
+  `entry_visible` suchte `fuer`/`zurueck` oben in `data`, die App lädt sie
+  unter `data.data` – abgegebene Aufgaben kamen beim Empfänger nie an
+  (`entry_holder`, auch im Test-Backend).
+- Speicher v5: bestehende Aufgaben → „Ich“, Etikett „Privat“ → „Ich“,
+  Termine bleiben; Abgleich hebt v2–v4 auf v5.
+- Prüfstand: 35 Raum-Sätze (Termin und Aufgabe, alle drei Räume) im großen
+  Prüfstand; ohne KI 35/35.
+
+## Ergebnis-Karten wie im Clip + Aufleuchten (v0.151.0, A-037, Tafel 126)
+- Vorlage: Clip-Bild „Einfach erzählen. Mia sortiert.“ (`docs/tafeln/tafel-126.png`).
+- Die Text-Übersicht `MiaDoneCard` (Gruppen mit „·“) ist weg. Nach jedem
+  Satz, mit dem Mia etwas anlegt, steht pro Eintrag eine weiße Karte unter
+  ihrem kurzen Satz: Symbol in der Kachelfarbe, fett der Inhalt, klein
+  „Termin · Familie ⌄“ bzw. „Einkauf · für alle“, rechts die grüne Pille
+  („Eingetragen“, „Steht drauf“, „Hängt dran“, „Notiert“). Nacheinander weich
+  eingeblendet (0,15 s versetzt). Nie abgeschnitten, die Pille schrumpft
+  notfalls aufs Häkchen; mehr als 4 → „und N weitere ⌄“.
+- Der Raum-Chip „Familie ⌄“ unter Mias Bestätigung (A-034) wohnt jetzt in der
+  Karte (`RaumZeile`, dieselben `ui/RaumChips`); auch die Regeln ohne KI
+  zeigen die Karte.
+- EIN „Rückgängig“ (10 s) für alle Karten einer Antwort, danach „Mia hat
+  schon …“. Karte antippen = Eintrag öffnen.
+- Große Dinge aus einfachen neuen Sachen: dieselbe Karte mit orangem
+  „Übernehmen“ → grün; Wochenplan, Rezept, Ändern, Löschen bleiben Vorschau.
+- Aufleuchten: nach dem Schließen der Bühne bzw. bei der Rückkehr zur
+  Startseite leuchtet der neue Eintrag einmal 1,5 s weich orange in seiner
+  Kachel (Zeile oder Kachel als Ganzes), Merker nur im Arbeitsspeicher.
+- Mias Satz dazu ist bei 1 oder mehr Karten nur „Steht drin.“ (wie im Clip;
+  früher „Erledigt.“ bei Mehrerem), auch in `kurzeBestaetigung`, Prompt und
+  Prüfstand. Abhaken und Sonstiges behalten „Erledigt.“.
+- Neue Tokens `--app-good-pill`/`--app-on-good-pill`, `--app-leuchten`,
+  `--app-leuchten-flaeche` (hell und dunkel).
+- Testmodus: mehrere Sätze werden einzeln gelesen, wenn das Ganze nicht
+  verstanden wird und jeder Satz etwas einträgt; Termin mit Kind aus dem
+  Haushalt = Familie. Prüfstand im Testmodus unverändert (Raum- und
+  Sofort-Prüfstand weiter ≥ 95 %).

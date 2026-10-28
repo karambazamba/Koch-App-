@@ -114,11 +114,11 @@ describe("Termine nach Uhrzeit mit „Jetzt“-Linie", () => {
     expect(nowAt).toBe(3);
   });
 
-  it("„Arbeit“ sieht nur der Besitzer: fremde Arbeit kommt nie aufs Gerät (RLS), eigene trägt „Nur für dich“", () => {
+  it("„Ich“ und „Arbeit“ sieht nur der Besitzer: fremde kommen nie aufs Gerät (RLS), eigene tragen ihr Schild (Tafel 114)", () => {
     const src = readFileSync("src/components/heute/DeinTag.tsx", "utf8");
-    expect(src).toMatch(/r\.item\.room === "arbeit"[^\n]*Nur für dich/);
+    expect(src).toMatch(/<RaumSchild room=\{r\.item\.room\} \/>/);
     const server = readFileSync("src/lib/konten/testServer.ts", "utf8");
-    expect(server).toMatch(/raum === "arbeit" && old\.besitzer !== user\.id/);
+    expect(server).toMatch(/!visible\(\{ typ: d\.typ, raum, besitzer: old\.besitzer, data: d\.data \}, user\.id\)/);
   });
 });
 

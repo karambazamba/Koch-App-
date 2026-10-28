@@ -1,45 +1,18 @@
 // Härtetest „Familie teilen“ (Clip „Mia“, Szenen „Einer sagt’s, alle
 // wissen’s“ und „Gemeinsam/Privat“) im Test-Backend (KONTEN_TEST=1): zwei
 // Browser, zwei Konten, eine Familie.
-// - Termine: Familie sehen beide, „Arbeit“ nur der Besitzer (in beide Richtungen).
+// - Termine: Familie sehen beide, „Arbeit“ nur der Besitzer (in beide Richtungen,
+//   auch nicht im Kalender-Filter, in Heute oder bei Mia). „Ich“ und
+//   Familien-Aufgaben prüft `raeumeZweiKonten` (raumwahl.mjs, A-034).
 // - Einkauf live: Felix ist „Bei REWE“ (Familie weiß Bescheid), Lisa sagt Mia
 //   „Milch auf die Liste“ → bei Felix gelb „Neu von …“ in höchstens 5 s.
 // - Antwort: Felix tippt „Steh grad davor“ → kommt bei Lisa in der Liste an.
 // - Pinnwand live in beide Richtungen (höchstens 5 s).
 // Die Mitteilung selbst (Web Push) plant der Server – geprüft in
 // tests/einkauf/unterwegs.test.ts („Steh grad davor“).
-import { BASE, hello, miaTippen, nameFrageOderStart, newPage, pinnwandSchreiben, seedFamily, store } from "../lib.mjs";
+import { BASE, familieEinladen, hello, kontoAnmelden, miaTippen, newPage, perLinkBeitreten, pinnwandSchreiben, seedFamily, store } from "../lib.mjs";
 
 const LIVE_MS = 5000;
-
-const adminCode = (page, email) => page.evaluate(async (e) => (await (await fetch("/api/test-konten", { method: "POST", body: JSON.stringify({ action: "admin_code", email: e }) })).json()).code, email);
-
-async function login(page, email) {
-  await page.goto(BASE + "/konto");
-  await page.getByLabel("Deine E-Mail-Adresse").fill(email);
-  await page.getByRole("button", { name: "Code schicken" }).click();
-  await page.getByLabel("6-stelliger Code").waitFor();
-  await page.getByLabel("6-stelliger Code").fill(await adminCode(page, email));
-}
-
-async function invite(page) {
-  await page.getByRole("button", { name: "Familie einladen" }).click();
-  await page.getByRole("button", { name: "Einladungs-Link erstellen" }).click();
-  const link = (await page.getByTestId("einladungs-link").textContent()).trim();
-  await page.getByRole("dialog", { name: "Familie einladen" }).getByRole("button", { name: "Schließen" }).last().click();
-  await page.getByRole("dialog", { name: "Familie einladen" }).waitFor({ state: "detached" });
-  return link;
-}
-
-async function joinViaLink(page, link, email) {
-  await page.goto(link);
-  await page.getByRole("heading", { name: /lädt dich ein\./ }).waitFor();
-  await page.getByLabel("Deine E-Mail-Adresse").fill(email);
-  await page.getByRole("button", { name: "Code senden" }).click();
-  await page.getByLabel("6-stelliger Code").waitFor();
-  await page.getByLabel("6-stelliger Code").fill(await adminCode(page, email));
-  await nameFrageOderStart(page, "Lisa");
-}
 
 const waitFor = (page, fn, arg, ms = 20000) => page.waitForFunction(fn, arg, { timeout: ms, polling: 250 }).then(() => true, () => false);
 
@@ -69,9 +42,9 @@ export const familieTeilen = async (page, check, device) => {
   await seedFamily(page);
   // Felix hat schon einen Arbeit-Termin auf dem Handy
   await terminRein(page, "e2e-arbeit-felix", "Kundentermin Felix", "arbeit", "14:00");
-  await login(page, `felix-teilen-${tag}@example.com`);
+  await kontoAnmelden(page, `felix-teilen-${tag}@example.com`);
   await page.getByRole("button", { name: "Mitnehmen" }).click();
-  const link = await invite(page);
+  const link = await familieEinladen(page);
   const profile = await page.evaluate(() => localStorage.getItem("familienkueche.haushaltsprofil"));
   // Mias Karte beim ersten Besuch einer Seite stand bei Lisa auch schon (deckt sonst Knöpfe ab)
   const besucht = await page.evaluate(() => localStorage.getItem("wasgibts.miadenkt"));
@@ -84,7 +57,7 @@ export const familieTeilen = async (page, check, device) => {
       localStorage.setItem("familienkueche.haushaltsprofil", p);
       if (m) localStorage.setItem("wasgibts.miadenkt", m);
     }, [profile, besucht]);
-    await joinViaLink(pageB, link, `lisa-teilen-${tag}@example.com`);
+    await perLinkBeitreten(pageB, link, `lisa-teilen-${tag}@example.com`);
 
     // --- Termine: Familie bei beiden, Arbeit nur beim Besitzer -----------------
     check(await waitFor(pageB, () => (localStorage.getItem("wasgibts.eintraege") ?? "").includes("Elternabend")), "Lisa: Familien-Termin von Felix ist da");
@@ -105,6 +78,18 @@ export const familieTeilen = async (page, check, device) => {
     check(await page.getByText("Kundentermin Felix").first().waitFor({ timeout: 8000 }).then(() => true, () => false), "Felix: Tag zeigt seine Arbeit");
     check(await page.getByText("Kinderarzt Mathis").first().isVisible(), "Felix: Tag zeigt Lisas Familien-Termin");
     check(!(await page.getByText("Meeting Lisa").count()), "Felix: Tag ohne Lisas Arbeit");
+    check(await page.getByRole("button", { name: /Kundentermin Felix – Möglichkeiten/ }).first().locator('[data-schild="arbeit"]').getByText("Arbeit").isVisible(), "Felix: Schild „Arbeit“ an seinem Termin");
+    // Lisas Startseite und Kalender: Felix’ Arbeit nirgends
+    await pageB.goto(BASE + "/");
+    await pageB.waitForTimeout(900);
+    check(!(await pageB.getByText("Kundentermin Felix").count()), "Lisa: Heute ohne Felix’ Arbeit");
+    await pageB.goto(BASE + "/?seite=kalender");
+    await pageB.waitForTimeout(900);
+    const kal = pageB.locator("[role=tabpanel]:not([inert])");
+    await kal.getByRole("radio", { name: "Liste" }).click();
+    const filterB = kal.getByRole("radiogroup", { name: "Filter" });
+    if (await filterB.getByRole("radio", { name: "Arbeit" }).count()) await filterB.getByRole("radio", { name: "Arbeit" }).click();
+    check(!(await kal.getByText("Kundentermin Felix").count()), "Lisa: Kalender (auch Filter Arbeit) ohne Felix’ Termin");
 
     // --- Einkauf live: Felix im Laden, Lisa sagt’s Mia --------------------------
     await page.goto(BASE + "/einkaufsliste/laden?name=REWE&unterwegs=1");

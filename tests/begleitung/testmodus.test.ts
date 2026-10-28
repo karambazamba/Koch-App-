@@ -170,7 +170,7 @@ describe("Alltag: Portionen, Pause, Bausteine, Startseite, App-Bedienung", () =>
 
 describe("Termine und Aufgaben", () => {
   it.each([
-    ["Morgen um 15 Uhr Zahnarzt", "termin_anlegen", { titel: "Zahnarzt", datum: "2026-10-23", start: "15:00", raum: "familie" }],
+    ["Morgen um 15 Uhr Zahnarzt", "termin_anlegen", { titel: "Zahnarzt", datum: "2026-10-23", start: "15:00", raum: "ich" }],
     ["Was steht morgen an?", "tag_anzeigen", { datum: "2026-10-23", label: "morgen" }],
     ["Was steht diese Woche an?", "woche_anzeigen", { ab: "2026-10-22", tage: 7 }],
     ["Hab ich morgen um 15 Uhr Zeit?", "tag_anzeigen", { datum: "2026-10-23" }],

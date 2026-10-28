@@ -14,7 +14,7 @@
 import { ADAPTERS, adapterFor, countDocs, docHash, type Adapter, type CloudDoc, type LocalDoc } from "@/lib/konten/sync/docs";
 
 /** Zuletzt abgeglichen: Speicher, Fingerabdruck, Zeit, Art, Raum (für das Löschen) */
-type Known = { a: Adapter["name"]; h: string; g: string; t?: string; r?: "arbeit"; del?: true };
+type Known = { a: Adapter["name"]; h: string; g: string; t?: string; r?: "arbeit" | "ich"; del?: true };
 
 export type SyncState = {
   version: 1;
@@ -67,7 +67,7 @@ function stampAfter(io: Io, before?: string): string {
   return before && ms(before) >= ms(t) ? new Date(ms(before) + 1).toISOString() : t;
 }
 
-const known = (a: Adapter, h: string, g: string, d: Pick<LocalDoc, "typ" | "raum">): Known => ({ a: a.name, h, g, t: d.typ, ...(d.raum === "arbeit" ? { r: "arbeit" as const } : {}) });
+const known = (a: Adapter, h: string, g: string, d: Pick<LocalDoc, "typ" | "raum">): Known => ({ a: a.name, h, g, t: d.typ, ...(d.raum === "arbeit" || d.raum === "ich" ? { r: d.raum } : {}) });
 
 function enqueue(state: SyncState, doc: CloudDoc): SyncState {
   return { ...state, queue: [...state.queue.filter((q) => q.id !== doc.id), doc] };

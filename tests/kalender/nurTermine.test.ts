@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { aufgabe, termin } from "../helpers";
 import { calendarDots, dayDistance, recurringSuggestions, termineOn } from "@/lib/kalender/monat";
-import { readQuick } from "@/lib/core/schnelleingabe";
+import { terminLesen } from "@/lib/kalender/eintragen/termin";
 import { isCookIdeasRequest } from "@/lib/essen/dishIdeas";
 
 const TODAY = "2026-10-21"; // Mittwoch
@@ -75,14 +75,15 @@ describe("Schnell eintragen – nur Wiederkehrendes", () => {
 
 describe("Eintragen am gewählten Tag (Schnelleingabe)", () => {
   it("Satz ohne Tag → 16:00 am gewählten Tag; anderes Datum im Satz gewinnt", () => {
-    expect(readQuick("termin", "Zahnarzt mit Jonne um 16 Uhr", TODAY, { date: "2026-10-30" })).toMatchObject({ date: "2026-10-30", time: "16:00", title: "Zahnarzt mit Jonne" });
-    expect(readQuick("termin", "Zahnarzt am 2.11. um 16 Uhr", TODAY, { date: "2026-10-30" })).toMatchObject({ date: "2026-11-02", time: "16:00" });
+    // ohne genannten Tag nimmt das Fenster den gewählten Tag (`date`)
+    expect(terminLesen("Zahnarzt mit Jonne um 16 Uhr", TODAY)).toMatchObject({ date: null, time: "16:00", title: "Zahnarzt mit Jonne" });
+    expect(terminLesen("Zahnarzt am 2.11. um 16 Uhr", TODAY)).toMatchObject({ date: "2026-11-02", time: "16:00" });
   });
 
   it("Launch 1.0: nur ＋ oben öffnet die Schnelleingabe mit dem gewählten Tag (kein langes Drücken, keine Zeile „Termin am …“)", () => {
     const page = readFileSync("src/components/kalender/CalendarPage.tsx", "utf8");
     const panel = readFileSync("src/components/kalender/DayPanel.tsx", "utf8");
-    expect(page).toMatch(/openQuick\(\{ kind: "termin", date: day, more: setAdding \}\)/);
+    expect(page).toMatch(/neuEintragen\("termin", day\)/);
     expect(page).not.toMatch(/HOLD_MS|useDayHold/);
     expect(page).toMatch(/onClick=\{\(\) => onSelect\(date\)\}/);
     expect(panel).not.toMatch(/openQuick|Antippen und eintragen/);

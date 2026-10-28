@@ -3,11 +3,12 @@
 // "Donnerstag", "am 24.10."), Uhrzeit ("um 9", "14:30 Uhr", "nachmittags"),
 // Frist ("bis Mittwoch"), Wiederholung ("jeden Dienstag", "täglich"),
 // Erinnerung ("erinner mich 30 Minuten vorher", "am Vorabend"), Raum
-// (Arbeit/Familie) und Etikett (Kita, Arzt, Café …). Termin = feste
+// (Familie/Ich/Arbeit, `raum/raten.ts`) und Etikett (Kita, Arzt, Café …). Termin = feste
 // Uhrzeit, sonst Aufgabe. Dazu Befehle: verschieben, löschen, erledigt,
 // anzeigen, "Hab ich … Zeit?". Rein, damit App und Server gleich rechnen.
 
 import type { Room } from "@/lib/core/entries";
+import { guessRoom, ohneRaumWorte, raumBefehl, type RaumHilfen } from "@/lib/kalender/raum/raten";
 import { addDays } from "@/lib/core/now";
 import { nextDayOfMonth } from "@/lib/kalender/sentence";
 import { weekdayIndex, type AufgabeData, type Reminder, type Repeat, type TerminData } from "@/lib/kalender/model";
@@ -26,6 +27,7 @@ type CalendarCommand =
   | { kind: "move"; query: string; to: string; time?: string }
   | { kind: "delete"; query: string }
   | { kind: "done"; query: string }
+  | { kind: "raum"; query: string; raum: Room }
   | { kind: "show"; from: string; days: number; label: string }
   | { kind: "free"; date: string; from: string; to: string; label: string };
 
@@ -162,8 +164,6 @@ function findReminder(text: string): { reminder: Reminder; match: string } | nul
   return null;
 }
 
-const ARBEIT = /\b(meeting|büro|kunden?|präsentation|call|projekt\w*|chef\w*|kolleg\w*|arbeit|dienstreise|abgabe|teams|zoom|besprechung|bewerbung|team)\b/i;
-
 const LABELS: [RegExp, string][] = [
   [/\bkita\b/i, "Kita"],
   [/\bschul\w*/i, "Schule"],
@@ -178,10 +178,6 @@ const LABELS: [RegExp, string][] = [
 /** Etikett aus dem Titel (Kita, Arzt, Café …) */
 export function guessLabel(title: string): string | undefined {
   return LABELS.find(([re]) => re.test(title))?.[1];
-}
-
-export function guessRoom(text: string): Room {
-  return ARBEIT.test(text) ? "arbeit" : "familie";
 }
 
 const capitalize = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
@@ -227,7 +223,7 @@ export function genannterTag(date: string | undefined, text: string, today: stri
   return date && (date !== today || /(?<![a-zäöüß])heute(?![a-zäöüß])/i.test(text)) ? date : null;
 }
 
-export function parseCalendar(text: string, today: string, persons: Person[] = []): CalendarCommand | null {
+export function parseCalendar(text: string, today: string, persons: Person[] = [], hilfen: RaumHilfen = {}): CalendarCommand | null {
   const raw = text.trim();
   if (!raw) return null;
   const t = raw.toLowerCase();
@@ -268,6 +264,9 @@ export function parseCalendar(text: string, today: string, persons: Person[] = [
     const time = findTime(m[2]);
     if (target || time) return { kind: "move", query: m[1], to: target?.date ?? today, time: time && !time.vague ? time.time : undefined };
   }
+  // „Mach den Zahnarzt nur für mich“, „Das gehört zur Familie“ (A-034)
+  const raumNeu = raumBefehl(raw);
+  if (raumNeu) return { kind: "raum", ...raumNeu };
   // "Lösch den Zahnarzt" / "Der Zahnarzt fällt aus"
   m = raw.match(/^(?:bitte\s+)?(?:lösch|streich|entfern)\w*\s+(?:bitte\s+)?(.+?)[.!]?$/i) ?? raw.match(/^(.+?)\s+fällt\s+aus[.!]?$/i);
   if (m) return { kind: "delete", query: m[1] };
@@ -304,23 +303,23 @@ export function parseCalendar(text: string, today: string, persons: Person[] = [
   const time = findTime(rest);
   if (time) strip(time.match);
   if (!reminder && !repeat && !deadline && !period && !date && !time && !urgent.urgent && !TODO_WORDS.test(t)) return null;
-  const { title, who } = cleanTitle(rest, persons);
+  // „nur für mich“, „für alle“ sagen den Raum – nicht den Titel
+  const { title, who } = cleanTitle(ohneRaumWorte(rest), persons);
   if (title.length < 2) return null;
-  const raum = guessRoom(raw);
   const label = guessLabel(raw);
   const start = date?.date ?? (repeat?.repeat.kind === "wochentage" ? nextWeekday(today, repeat.repeat.days[0]) : period && period.week > today ? period.week : today);
   // Termin = feste Uhrzeit (nicht nur "abends") und keine Frist
   if (time && !time.vague && !deadline) {
     return {
       kind: "create",
-      draft: { typ: "termin", raum, data: { title, date: start, start: time.time, label, repeat: repeat?.repeat ?? null, reminder: reminder?.reminder ?? "aus", ...(who.length ? { who } : {}) } },
+      draft: { typ: "termin", raum: guessRoom(raw, "termin", hilfen), data: { title, date: start, start: time.time, label, repeat: repeat?.repeat ?? null, reminder: reminder?.reminder ?? "aus", ...(who.length ? { who } : {}) } },
     };
   }
   return {
     kind: "create",
     draft: {
       typ: "aufgabe",
-      raum,
+      raum: guessRoom(raw, "aufgabe", hilfen),
       data: {
         title,
         // Ohne genannten Tag gehört jede Aufgabe zu heute

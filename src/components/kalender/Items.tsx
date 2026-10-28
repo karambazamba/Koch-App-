@@ -1,11 +1,13 @@
 "use client";
 
 // Termine und Aufgaben: Farbe des Strichs (Raum bzw. verbundener Kalender)
-// und das Menü beim Antippen eines Eintrags. Ruhig: keine Zähler, nichts "Offenes".
+// und das Menü beim Antippen eines Eintrags (oben die Raum-Chips „Familie ·
+// Ich · Arbeit“, A-034); lange drücken auf eine Zeile öffnet es gleich bei
+// „Für Familie / Nur ich / Arbeit“. Ruhig: keine Zähler, nichts "Offenes".
 
 import { GiveRows } from "@/components/kalender/abgeben/GiveRows";
 import { useState, type CSSProperties } from "react";
-import { Bell, Pencil, Repeat2, Trash2, CalendarArrowUp, CheckCircle2, Circle } from "lucide-react";
+import { Bell, Pencil, Repeat2, Trash2, CalendarArrowUp, CheckCircle2, Circle, Lock } from "lucide-react";
 import { CARD, chipClass } from "@/components/ui/styles";
 import { Sheet } from "@/components/ui/Sheet";
 import { isUrgent, moveItem, REMINDERS, removeItem, repeatLabel, setDone, setReminder, setUrgent, type DayItem } from "@/lib/kalender/model";
@@ -16,12 +18,20 @@ import dynamic from "next/dynamic";
 import { aboOf } from "@/lib/kalender/abo/store";
 import { isAboEntry } from "@/lib/kalender/abo/model";
 import { avatarHex } from "@/lib/einstellungen/profileHelper";
+import { eintragAendern } from "@/lib/kalender/eintragen/oeffnen";
+import { raumAktion, raumWahl, sichtRaum } from "@/lib/core/haushalt";
+import { useHaushalt } from "@/lib/einstellungen/useHaushalt";
+import { RaumChips } from "@/components/ui/RaumChips";
+import { raumAenderbar, raumAendern } from "@/components/kalender/raum/raumAendern";
 
 const AboItemSheet = dynamic(() => import("@/components/kalender/AboItemSheet").then((m) => m.AboItemSheet), { ssr: false });
 
 
-/** Farbe des Strichs: Orange = Familie, Blau = Arbeit */
-const roomBar = (room: DayItem["room"]) => (room === "arbeit" ? "bg-work" : "bg-accent");
+/** Farbe des Strichs: Orange = Familie, Grau = Ich, Blau = Arbeit */
+const roomBar = (room: DayItem["room"]) => (room === "arbeit" ? "bg-work" : room === "ich" ? "bg-ich" : "bg-accent");
+
+/** Uhrzeit in Raumfarbe: Familie Orange, Ich Grau, Arbeit Blau */
+export const zeitFarbe = (room: DayItem["room"]) => (room === "arbeit" ? "text-work" : room === "ich" ? "text-ich" : "text-accent-strong");
 
 /** Strich bzw. Punkt: Raum-Farbe, bei Terminen aus verbundenen Kalendern deren Farbe */
 export function roomBarProps(item: Pick<DayItem, "room" | "entry">): { className: string; style?: CSSProperties } {
@@ -32,8 +42,10 @@ export function roomBarProps(item: Pick<DayItem, "room" | "entry">): { className
 const MENU_ROW = "flex h-14 w-full items-center gap-3 px-4 text-left text-base font-semibold active:bg-fill";
 
 /** Antippen eines Eintrags: Erledigt (nur Aufgaben – ein Termin ist einfach vorbei) · Auf morgen · Erinnerung ändern · Bearbeiten · Löschen */
-export function ItemMenu({ item, onClose, onEdit }: { item: DayItem; onClose: () => void; onEdit: () => void }) {
-  const [step, setStep] = useState<"menu" | "erinnerung" | "loeschen">("menu");
+export function ItemMenu({ item, onClose, start = "menu" }: { item: DayItem; onClose: () => void; start?: "menu" | "raum" }) {
+  const haushalt = useHaushalt();
+  const aenderbar = raumAenderbar(item.entry);
+  const [step, setStep] = useState<"menu" | "erinnerung" | "loeschen" | "raum">(start === "raum" && aenderbar ? "raum" : "menu");
   const series = Boolean(item.repeat);
   const close = (fn: () => void) => () => {
     fn();
@@ -43,6 +55,22 @@ export function ItemMenu({ item, onClose, onEdit }: { item: DayItem; onClose: ()
   if (isAboEntry(item.entry)) return <AboItemSheet item={item} onClose={onClose} />;
   return (
     <Sheet title={item.title} onClose={onClose}>
+      {step === "menu" && aenderbar && (
+        <div className="mb-3">
+          <RaumChips value={sichtRaum(item.room, haushalt)} haushalt={haushalt} onChange={(r) => r !== sichtRaum(item.room, haushalt) && close(() => raumAendern(item.entry, r, haushalt))()} />
+        </div>
+      )}
+      {step === "raum" && (
+        <div className={`${CARD} mb-2 flex flex-col divide-y divide-line overflow-hidden`} role="radiogroup" aria-label="Wer sieht es?" data-raum-menue>
+          {raumWahl(haushalt).map((r) => (
+            <button key={r} type="button" role="radio" aria-checked={sichtRaum(item.room, haushalt) === r} className={MENU_ROW} onClick={close(() => raumAendern(item.entry, r, haushalt))}>
+              {r === "ich" ? <Lock className="h-5 w-5 text-ich" strokeWidth={2} aria-hidden /> : <span className={`mx-1.5 h-3 w-3 rounded-full ${roomBar(r)}`} aria-hidden />}
+              <span className="flex-1">{raumAktion(r, haushalt)}</span>
+              {sichtRaum(item.room, haushalt) === r && <CheckCircle2 className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />}
+            </button>
+          ))}
+        </div>
+      )}
       {step === "menu" && (
         <div className={`${CARD} mb-2 flex flex-col divide-y divide-line overflow-hidden`}>
           {item.entry.typ === "aufgabe" && (
@@ -69,7 +97,7 @@ export function ItemMenu({ item, onClose, onEdit }: { item: DayItem; onClose: ()
             <span className="flex-1">Erinnerung ändern</span>
             <span className="text-sm font-semibold text-accent-strong">{REMINDERS.find((r) => r.value === item.reminder)?.short}</span>
           </button>
-          <button type="button" className={MENU_ROW} onClick={onEdit}>
+          <button type="button" className={MENU_ROW} onClick={close(() => eintragAendern(item.entry))}>
             <Pencil className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
             Bearbeiten
           </button>

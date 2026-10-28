@@ -108,7 +108,7 @@ describe("Chat ohne KI", () => {
   });
 
   it("Zusammenfassung des Entwurfs", () => {
-    expect(draftSummary({ typ: "aufgabe", raum: "arbeit", data: { title: "Bericht", due: "2026-10-23", reminder: "aus" } })).toBe("bis Fr 23.10. · Bericht · Arbeit");
+    expect(draftSummary({ typ: "aufgabe", raum: "arbeit", data: { title: "Bericht", due: "2026-10-23", reminder: "aus" } })).toBe("bis Fr 23.10. · Bericht");
     expect(draftSummary({ typ: "aufgabe", raum: "familie", data: { title: "Müll", date: "2026-10-21", repeat: { kind: "woechentlich" }, reminder: "vorabend" } })).toBe("Mi 21.10. · Müll · jeden Mittwoch · Erinnerung am Vorabend");
     expect(draftSummary({ typ: "aufgabe", raum: "familie", data: { title: "Irgendwas", reminder: "aus" } })).toBe("für heute · Irgendwas");
   });
@@ -158,7 +158,7 @@ describe("Speicher", () => {
     const list = loadEntries();
     expect(list.map((e) => [e.id, e.typ])).toEqual([["x", "termin"], ["y", "aufgabe"]]);
     expect((list[0] as Termin).data.start).toBe("09:00");
-    expect(JSON.parse(w.localStorage.getItem("wasgibts.eintraege")!).version).toBe(3);
+    expect(JSON.parse(w.localStorage.getItem("wasgibts.eintraege")!).version).toBe(5);
     markReminderSeen("a@b");
     markReminderSeen("c@d");
     expect(JSON.parse(w.localStorage.getItem("wasgibts.eintraege")!).seenReminders).toEqual(["a@b", "c@d"]);

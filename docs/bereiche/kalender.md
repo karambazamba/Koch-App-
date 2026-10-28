@@ -24,8 +24,19 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
 - Oberfläche `src/components/kalender/`: `CalendarPage.tsx` (Monat, Woche,
   Liste – Tag antippen überall gleich, `dayHeading`), `DayPanel.tsx` (der
   gewählte Tag), `DayView.tsx` (/tag), `TasksView.tsx` (/aufgaben),
-  `EntryForm.tsx` (das EINE Formular, auch „Mehr Details“ der
-  Schnelleingabe), `Items.tsx` (Strich-Farbe, Menü), `UrgentMark.tsx`.
+  `Items.tsx` (Strich-Farbe, Menü), `UrgentMark.tsx`.
+- Eintragen (Tafel 114): EIN Fenster je Art – `components/kalender/eintragen/`
+  `AufgabeFenster.tsx`, `TerminFenster.tsx`, gemeinsame Teile
+  `EintragTeile.tsx`, Speichern `speichern.ts`; Logik rein in
+  `lib/kalender/eintragen/` (`aufgabe.ts`, `termin.ts`, `tage.ts`), Raum-Wahl
+  `components/kalender/eintragen/useRaumWahl.ts`, Öffnen NUR über `oeffnen.ts`
+  (`neuEintragen`, `eintragAendern`).
+- Räume (A-034): rein in `lib/kalender/raum/` – `raten.ts` (`raumRaten`,
+  `guessRoom`, `raumUnklar`, `arbeitsWorte`, `stichwort`, `raumBefehl`),
+  `wahl.ts` (`chipRaum`, `raumZumSpeichern`, `istKorrektur`,
+  `vorgewaehltText`), Gedächtnis `gedaechtnis.ts`; Oberfläche `ui/RaumChips`,
+  `components/kalender/raum/` (`raumAendern.ts`, `RaumBestaetigung.tsx`),
+  lange drücken `ui/LangKnopf` bzw. `ui/useLangDruecken`.
 - Aufgaben-Liste (rein): `aufgaben.ts` (`aufgabenKopf`, `aufgabenAnsicht`,
   leise Zeilen, `aufgabenSatz` für Mia, `feierabendNachUhr`), gemerkter Filter
   `aufgabenFilter.ts`, Schilder `components/kalender/AufgabeSchild.tsx`,
@@ -36,9 +47,9 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
 
 ## Daten und Speicher
 
-- `wasgibts.eintraege` v3 `{entries, migratedTermine, seenReminders}`
+- `wasgibts.eintraege` v5 `{entries, migratedTermine, seenReminders}`
   (`migrate` in `store.ts`). Jeder Eintrag hat `id`, `typ` (termin/aufgabe),
-  `raum` (familie/arbeit), `besitzer`, `erstellt`, `geaendert`, `data`.
+  `raum` (familie/ich/arbeit), `besitzer`, `erstellt`, `geaendert`, `data`.
   In der Sicherung.
 - v1 → v2: einmalige, offene „Aufgaben“ mit Tag und Uhrzeit (ohne Frist)
   werden zu Terminen (`asTermin`).
@@ -46,8 +57,19 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
   Aufgabe steht heute; ein Zeitraum in der Zukunft („nächste Woche“) wird
   zum Tag, ab dem sie erscheint (`ohneZeitraum`, auch im Abgleich
   `konten/sync/docs.ts` und für alte Sicherungen). Nichts geht verloren.
-- `wasgibts.aufgabenfilter` v1 `{filter: alle|familie|arbeit}` – pro Gerät,
+- v3/v4 → v5 (A-034): bestehende Aufgaben im Raum „familie“ werden „ich“
+  (`aufgabeIch` – sie gehörten bisher nur dem Ersteller), Etikett „Privat“
+  wird Raum „ich“ (`ohnePrivat`, Etikett bleibt gespeichert, wird nie gezeigt),
+  Termine bleiben Familie bzw. Arbeit. Auch im Abgleich (`konten/sync/docs.ts`)
+  und für alte Sicherungen; nichts geht verloren.
+- `wasgibts.aufgabenfilter` v1 `{filter: alle|familie|ich|arbeit}` – pro Gerät,
   nicht in der Sicherung.
+- `wasgibts.raumgedaechtnis` v1 `{worte: [{wort, raum, seit}], hinweisGesehen}`
+  – gelernte Räume (höchstens 60, neueste vorn) und ob der Satz „Hab …
+  gewählt“ schon kam; in der Sicherung (`migrateRaumGedaechtnis`). Den
+  früheren `wasgibts.eintragraum` (letzte Wahl, nie ausgeliefert) gibt es
+  nicht mehr.
+- Räume: `familie` · `ich` · `arbeit`; Unbekanntes wird „familie“ (`roomOf`).
 - Alte Termine aus `wasgibts.termine` übernimmt `migrateOldTermine` einmal,
   danach wird der alte Schlüssel gelöscht. `seenReminders` hält höchstens 200.
 - `TerminData`: `title`, `date`, `start`, `end?`, `place?`, `label?`,
@@ -56,7 +78,8 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
   Tag, ohne genannten = heute), `due?` (Frist), `week?` (nur noch alt, wird
   migriert), `time?`, `label?`, `repeat`, `reminder`,
   `doneOn?`, `doneAt?` (Abhak-Zeitpunkt, ISO), `doneDates?`, `doneTimes?`
-  (Serie: Abhak-Zeitpunkt je Runde, nur die letzten 12 h), `skipDates?`,
+  (Serie: Abhak-Zeitpunkt je Runde, nur die letzten 12 h), `doneBy?` (Konto-ID,
+  wer abgehakt hat), `skipDates?`,
   `dringend?`, `seit?`.
 - Erledigtes nur 12 Stunden (A-043): keine neue Speicher-Version – die
   Felder sind optional. Erledigtes ohne Zeitpunkt (vor dem Update, alte
@@ -104,15 +127,17 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
   „Auf morgen“ setzt `seit` neu (dann hinten). Nie alphabetisch.
 - Dringend: kleines rotes „!“ (`UrgentMark`), im Menü „Als dringend
   markieren“/„Nicht mehr dringend“.
-- Schilder nur „neu“ (Seite) und „Arbeit“ (klein, `bg-work`); Familie ohne
-  Kennzeichen, kein Punkt pro Zeile; Abgegebene „von Lisa“.
-- Filter „Alle · Familie · Arbeit“ (`aufgabenAnsicht`) nur, wenn es
-  Arbeitsaufgaben gibt; die Wahl merkt sich das Gerät. Gefiltert unten leise
-  „Familie · 5 ausgeblendet“ bzw. „Arbeit · 5 ausgeblendet“.
+- Kennzeichen nur „neu“ (Seite), das graue Schloss „Ich“ (`text-ich`) und
+  das Schild „Arbeit“ (klein, blau, `bg-work-soft text-work`) – `RaumSchild`;
+  Familie ohne Kennzeichen, kein Punkt pro Zeile; Abgegebene und fremde
+  Familien-Aufgaben „von Lisa“, von anderen Erledigtes „erledigt von Lisa“.
+- Filter „Alle · Familie · Ich · Arbeit“ (`aufgabenAnsicht`, `raumChips`) nur,
+  wenn mindestens zwei Räume vorkommen, und nur die vorhandenen; die Wahl
+  merkt sich das Gerät. Gefiltert unten leise „Familie · 5 ausgeblendet“.
 - Nach Feierabend (Tagesablauf: „Feierabend ab“, frühestens nach dem letzten
   Arbeit-Termin, mit „Ruhe nach Feierabend“; freie Tage laut Arbeitstagen)
-  ruht die Arbeit (`arbeitRuht`): keine Chips, unten leise „Arbeit · 5 für
-  morgen ›“ – antippen blendet sie kurz ein. Ab 5 Uhr (Morgens) wieder
+  ruht die Arbeit (`arbeitRuht`): ohne Arbeit, unten leise „Arbeit · 5 für
+  morgen ›“ („Ich“ bleibt sichtbar) – antippen blendet es kurz ein. Ab 5 Uhr (Morgens) wieder
   normal; ein Arbeitsbeginn ist im Tagesablauf nicht eingestellt.
 
 ### Abends wandert Offenes mit auf morgen
@@ -148,27 +173,26 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
 
 ### Kalender-Seite
 - Reiter Kalender auf der Startseite (`?seite=kalender`, alt `?seite=woche`):
-  Monat | Woche | Liste, Filter Alle | Familie | Arbeit nur, wenn es Arbeit
-  gibt (`useWorkRoom` oder Einträge mit Arbeit).
+  Monat | Woche | Liste, Filter „Alle · Familie · Ich · Arbeit“ nur, wenn
+  mindestens zwei Räume vorkommen (`raumChips`, wie bei Aufgaben).
 - Monat: Raster Mo–So, unter jedem Tag höchstens 3 Punkte (5 px,
   `calendarDots`) in der Farbe der Person (`who` am Termin, feste Farbe je
   Person wie bei der Pinnwand; ich = „Meine Farbe im Kalender“), Familie ohne
-  Person = Orange, Arbeit = Blau (sieht ohnehin nur der Besitzer). Heute =
+  Person = Orange, Ich = Grau, Arbeit = Blau (sieht nur der Besitzer). Im Tag und in
+  Woche/Liste Strich bzw. Punkt und Uhrzeit in Raumfarbe (`zeitFarbe`), dazu
+  Schloss bzw. Schild wie in den Listen; lange drücken auf einen Termin →
+  „Für Familie / Nur ich / Arbeit“. Heute =
   Zahl in Orange mit feinem Ring, gewählter Tag = gefüllter oranger Kreis.
   Mit Tipps aus der Region: Chip „Tipps“ und lila Punkt
   (`components/tipps/CalendarTips`), nie als Termin.
 - Tag antippen → darunter der Tag (`DayPanel`, kein neuer Bildschirm): Kopf
   „Freitag, 30. Oktober“ + rechts „heute / morgen / in 7 Tagen“
   (`dayDistance`), Termine als ruhige Zeilen (Uhrzeit Blau, Titel, rechts der
-  Kreis der Person; antippen = Menü), dann die Zeile „Termin am Fr, 30. Okt“ /
-  „Antippen und eintragen“ (zart Orange, gestrichelt) → Schnelleingabe
-  „NEUER TERMIN“ mit diesem Tag. „Schnell eintragen“ nur bei Wiederkehrendem
+  Kreis der Person; antippen = Menü). Das ＋ oben öffnet das Fenster „Neuer
+  Termin“ mit diesem Tag (Tafel 114). „Schnell eintragen“ nur bei Wiederkehrendem
   (`recurringSuggestions`: ≥ 3× am selben Wochentag in 8 Wochen, gleiche
   Uhrzeit ±30 Min, keine Serie, an dem Tag noch nicht da; höchstens 3 Chips,
   „Eingetragen · Rückgängig“).
-- Lange drücken auf einen Tag (0,4 s, Vibrieren) und das ＋ oben = dieselbe
-  Schnelleingabe für den Tag. Das Fenster kommt erst beim Loslassen (bzw. bei
-  Android über „contextmenu“), sonst schlösse der Klick des Loslassens es.
 - Woche: sieben Tageskarten mit ‹ ›. Liste: die nächsten 14 Tage und
   „Weitere Wochen“. Beide nur mit Terminen („frei“ wenn leer), kein Essen.
 - Leiste „Kalender · Heute · Essen“ bleibt auf Kalender und Essen oben
@@ -176,15 +200,22 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
   feinem Schatten. „Heute“ trägt dort ein kleines Haus (orange, VoiceOver „Zur
   Startseite“) – antippen = Startseite (Tafel 73).
 
-### Aufgaben sind persönlich – abgeben geht (Tafel 52 B, seit v0.65)
+### Aufgaben: Familie für alle, Ich und Arbeit persönlich – abgeben geht (Tafel 52 B, A-034)
+
+- Seit A-034 sehen alle im Haushalt die Familien-Aufgaben, jeder darf
+  abhaken („erledigt von Lisa“, `doneBy`, gesetzt in `changeEntries` über
+  `mitErledigtVon`); „Ich“ und „Arbeit“ bleiben beim Besitzer. Rolle
+  `familie` in `taskRole`; den Raum ändern darf nur der Besitzer
+  (`darfRaumAendern`). Erinnerungen per Push bekommt bei Aufgaben weiter nur,
+  wer sie hält.
 
 - Logik rein in `lib/kalender/abgeben/model.ts`: `taskRole` (meine ·
   bekommen · abgegeben · fremd), `isMyTask`, `fromLabel` („von Felix“),
   `giveTo` / `giveBack` („Passt gerade nicht“) / `takeBack`, `changeTask`,
   `doneNotes`, `memberByName`, `resolveGiving`. Ohne Konto ist jede Aufgabe
   meine.
-- Anzeige: `useCalendarEntries`/`loadCalendarEntries` zeigen nur meine und
-  bekommene Aufgaben; die Aufgaben-Seite hat unten eingeklappt „Abgegeben“
+- Anzeige: `useCalendarEntries`/`loadCalendarEntries` zeigen meine, bekommene
+  und die Familien-Aufgaben der anderen; die Aufgaben-Seite hat unten eingeklappt „Abgegeben“
   (bei wem bzw. „erledigt ✓“). Im Menü einer Aufgabe (`abgeben/GiveRows`):
   „An … geben“ mit den Leuten aus dem Haushalt, bei bekommenen „Passt gerade
   nicht“, bei abgegebenen „Zurückholen“.
@@ -198,7 +229,7 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
   Haushalt – ich hab’s erstmal bei dir notiert.“). „Gib das an Lisa“ geht
   über `aufgabe_aendern` mit `an`.
 - Kachel „Aufgaben“ als Checkliste in EINEM hellen Feld: Kreis, Titel, „!“
-  bei dringend, „von Lisa“ klein, rechts nur das Schild „Arbeit“ (keine
+  bei dringend, „von Lisa“ klein, rechts nur Schloss bzw. Schild „Arbeit“ (keine
   Etiketten „heute“/„bis Fr“/„von gestern“); S 2, M 4, L 6 Zeilen, „+ N
   weitere“. Nach Feierabend ohne Arbeit, unten leise „Arbeit · 5 für morgen“.
 
@@ -232,26 +263,27 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
 ### Tag-Seite und Aufgaben-Seite
 - `/tag?datum=…`: Titel = Wochentag, darunter „22. Oktober · morgen“
   (`dayHeading`), dann der Tag (`DayPanel`, ohne eigenen Kopf). Plus =
-  Schnelleingabe „NEUER TERMIN“ für diesen Tag.
+  Fenster „Neuer Termin“ für diesen Tag.
 - `/aufgaben` (Tafel 103/104): Kopf „Aufgaben“, darunter leise „Heute · Mi
   28. Okt“ (nach Feierabend „Heute Abend · Feierabend“); Chips nur mit
-  Arbeitsaufgaben; EINE weiße Liste (Titel bis 2 Zeilen, dann „…“); darunter
+  mindestens zwei Räumen; EINE weiße Liste (Titel bis 2 Zeilen, dann „…“); darunter
   leise „Familie · 5 ausgeblendet“ bzw. „Arbeit · 5 für morgen ›“, „Geplant ·
   1 ›“ (nur wenn vorhanden), eingeklappte Listen, „Abgegeben“ und „Erledigt ⌄“
   (zugeklappt, ohne Zahl, nur die letzten 12 Stunden, neueste oben; Häkchen
   antippen = wieder offen); leer „Gerade nichts.“ mit großer Begleitung („Fällt dir was ein? Mit ＋ eintragen oder mir einfach sagen.“).
-- Antippen eines Eintrags = Menü: Erledigt · Auf morgen · Erinnerung ändern ·
-  Bearbeiten · Löschen; bei Serien „Nur diesen Tag“ / „Alle – die ganze Reihe“.
+- Antippen eines Eintrags = Menü, oben die Raum-Chips (nur eigene Einträge),
+  darunter: Erledigt · Auf morgen · Erinnerung ändern ·
+  Bearbeiten (= dasselbe Fenster „Aufgabe“/„Termin“) · Löschen; bei Serien „Nur diesen Tag“ / „Alle – die ganze Reihe“.
   Abhaken überall gleich (Kachel, Aufgaben-Seite, Dein Tag): 1,5 s durchgestrichen (`LEAVE_MS`), dann „Erledigt · Rückgängig“;
-  Löschen „Gelöscht · Rückgängig“.
+  Löschen „Gelöscht · Rückgängig“. Lange drücken auf eine Zeile (Aufgaben-Seite,
+  Kalender-Tag) = gleich „Für Familie / Nur ich / Arbeit“.
 
 ### Aufgaben übernehmen – große Listen ohne Chaos (seit v0.86)
 
 - Regel: importiert wird alles, angezeigt wird nur, was jetzt dran ist.
 - „Liste einfügen“ (`kalender/liste/ListeEinfuegen.tsx`, Logik
-  `lib/kalender/liste/einfuegen.ts`): in der Schnelleingabe jeder Aufgabe
-  („＋“ → „Liste einfügen“), automatisch beim Einfügen von mehreren Zeilen
-  ins Feld, im leeren Zustand der Aufgaben-Seite und per Mia („Ich hab hier
+  `lib/kalender/liste/einfuegen.ts`): automatisch beim Einfügen von mehreren
+  Zeilen ins Feld „Neue Aufgabe“, im leeren Zustand der Aufgaben-Seite und per Mia („Ich hab hier
   meine To-do-Liste:“ + Zeilen – ein App-Befehl vor der KI, wie Rezept-Links).
 - Jede Zeile = eine Aufgabe; Kästchen/Aufzählungen (☐ - [ ] * • 1. 2) –)
   und Leerzeilen fallen weg, Abgehaktes (☑ [x] ✓ ~~durchgestrichen~~) wird
@@ -276,30 +308,97 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
   höchstens einmal pro Woche (`wasgibts.aufgabenvorschlag`).
 - Todoist verbinden (Teil 3) folgt mit den Verbindungen (🔑).
 
-### Eintragen
-- Jedes ＋ öffnet die Schnelleingabe (`docs/bereiche/core.md`); das frühere
-  Fenster „Was möchtest du eintragen?“ gibt es nicht mehr.
-- Launch 1.0: EIN Weg. ＋ öffnet die Schnelleingabe (ein Satz genügt, ➤
-  speichert; Parser `src/lib/kalender/sentence.ts` bzw. `parse.ts`: Zeiten
-  „12:30“, „12.30“, „12 Uhr 30“, „um 4“ (→ 16:00), „6 Uhr“ (bleibt 6:00),
-  „halb eins“, „viertel nach/vor“; Tage „28.10.“, „28. Oktober“, „am 29.“,
-  heute/morgen/übermorgen, Wochentage, „do“, „nächsten Mittwoch“, „Mittwoch
-  nächste Woche“, „Donnerstag in einer Woche“, „in 3 Tagen“; mehrere Termine
-  in einem Satz; Selbstkorrektur „nicht … sondern …“, „…, nee …“).
-- „Mehr Details“ = das EINE Formular (`EntryForm`) für Termine und
-  Aufgaben, vorbefüllt aus dem Satz (Titel, Tag, Uhrzeit, Raum, Etikett,
-  dringend): oben Titel + ✕, gruppierte Zeilen (Für, Wer ist dabei,
-  Etikett, Wiederholen, Erinnerung „Keine Erinnerung“ … „Am Vorabend“), am
-  Ende oranges „Speichern“, bei Bestehendem rot „Löschen“. Ohne Uhrzeit =
-  ganztägig; Neues heute in der Vergangenheit → „9:00 ist heute schon
-  vorbei.“ (nie still speichern). Die früheren Fenster `TerminQuickAdd` /
-  `TaskQuickAdd` und das Zeit-Rad sind weg.
+### Eintragen – ein Feld, Familie · Ich · Arbeit (Tafel 114, A-034)
+- EIN Fenster „Neue Aufgabe“ und EIN Fenster „Neuer Termin“ für jeden
+  Einstieg: ＋ auf den Startseiten-Kacheln, ＋ oben auf Aufgaben-, Kalender-
+  und Tag-Seite, Beispiel-Tag, „Bearbeiten“ im Menü eines Eintrags (dann
+  „Aufgabe“/„Termin“, vorbefüllt). Geöffnet wird nur über
+  `neuEintragen(art, tag?)`/`eintragAendern(entry)`; die Schnelleingabe zeigt
+  dafür `AufgabeFenster`/`TerminFenster`. Kein anderes Formular (das frühere
+  `EntryForm` mit Umschalter, Uhrzeit bei Aufgaben, „Bis spätestens“,
+  Etikett-Chips und „Mehr Details“ ist weg; Etiketten, Fristen, Listen
+  bleiben gespeichert und beim Ändern erhalten).
+- Neue Aufgabe: EIN Feld („Was steht an?“, Tastatur sofort offen), Knopf ↑.
+  Return = speichern für heute, Feld leer und offen für die nächste, Toast
+  „Steht drin · Rückgängig“. Darunter EINE Zeile: Raum-Chips „Familie · Ich ·
+  Arbeit“ (`ui/RaumChips`, Mia wählt vor, siehe unten), Glocke (42 px) → In 1 Std · 16:00 ·
+  18:00 · Morgen früh (Vorbeies fällt weg) → Zeile „Erinnern heute 16:00 ✕“
+  (Glocke orange; „Morgen früh“ legt die Aufgabe auf morgen), rechts leise
+  „Mehr ›“. Hinweis „Für heute. Return = speichern.“. „Mehr“ = genau drei
+  Zeilen: Ab wann (Standard Heute), Wiederholen (Nie · Täglich · Wöchentlich ·
+  Monatlich), An jemanden geben (nur mit Haushalt) + „Speichern“ (schließt).
+  „Freitag …“ im Feld → „Ab Freitag“ (korrigierbar über „Ab wann“), eine
+  genannte Uhrzeit wird zur Erinnerung, „Tohuus“/„Kita“/„Zahnarzt“
+  stellt den Chip. Eine eingefügte Liste öffnet „Liste einfügen“.
+- Neuer Termin: EIN Feld („Zahnarzt Freitag 13 Uhr“). Tag, Uhrzeit, Dauer
+  werden gelesen (`terminLesen`, Dauer „1 Std“, „90 Minuten“ zuerst, damit sie
+  keine Uhrzeit wird) und stehen als blaue Chips darunter (antippen = ändern:
+  Tage, Uhrzeiten, Dauer 30 Min … 3 Std). Ohne Uhrzeit ist der Chip
+  „Uhrzeit?“ hervorgehoben, Speichern erst danach (oder ganztägig). Gleiche
+  Zeile Raum | Glocke (Erinnern vorher: 15/30 Min, 1 Std, Vorabend; Standard
+  aus den Mitteilungen) | „Mehr ›“ (Ort, Wiederholen, Ganztägig, Personen).
+  Mehrere Termine in einem Satz werden mehrere Einträge; „9:00 ist heute
+  schon vorbei.“ (nie still in der Vergangenheit speichern). Ohne genannten
+  Tag gilt der vorgewählte (Kalender, Tag-Seite) bzw. heute.
+- Termine und Aufgaben haben dieselben Chips (`EintragZeile`, `RaumChips`).
+  Raum nachträglich ändern: Chip im Detail-Fenster, lange drücken auf die
+  Zeile oder Bearbeiten.
 - Kalender: kein langes Drücken auf einen Tag, keine Zeile „Termin am …“;
-  die Vorschlags-Chips „Schnell eintragen“ bleiben. Tag antippen in Monat,
-  Woche und Liste gleich: der Tag steht direkt darunter (`DayPanel`).
+  die Vorschlags-Chips „Schnell eintragen“ bleiben.
 - Termine haben kein „Erledigt“ (ein Termin ist einfach vorbei); Aufgaben
-  schon.
-- Ohne Angabe gehört alles zur Familie.
+  schon. Ohne Angabe gehört alles zur Familie.
+- Parser für Tag und Uhrzeit: `src/lib/kalender/sentence.ts` bzw. `parse.ts`
+  (Zeiten „12:30“, „12.30“, „12 Uhr 30“, „um 4“ (→ 16:00), „halb eins“,
+  „viertel nach/vor“; Tage „28.10.“, „am 29.“, heute/morgen/übermorgen,
+  Wochentage, „nächsten Mittwoch“, „in 3 Tagen“; Selbstkorrektur).
+
+### Räume Familie · Ich · Arbeit (A-034, Nachtrag zu A-020)
+- Drei Räume, für Termine und Aufgaben gleich: Familie (Orange, zu zweit
+  „Wir“, allein „Privat“) = alle im Haushalt, Ich (Grau, Schloss) = nur ich,
+  Arbeit (Blau, Schild) = nur ich, nach Feierabend ausgeblendet. Allein
+  entfällt „Ich“: eine Ich-Aufgabe zeigt sich als „Privat“ und bleibt
+  gespeichert „ich“ (`sichtRaum`, `raumZumSpeichern`), damit sie auch später
+  mit Partner nur für einen bleibt. „Geschäftlich“ (A-021) heißt wieder „Arbeit“.
+- EINE Raum-Wahl `ui/RaumChips` (Reihenfolge Familie · Ich · Arbeit, Farben
+  Orange · Grau · Blau): Schnelleingabe (＋), Detail-Fenster (Menü beim
+  Antippen), Bearbeiten, Wochencheck-Karte und unter Mias Bestätigung als
+  kleiner Chip „Familie ⌄“ (`RaumBestaetigung`, `ChatTurnView.raum`,
+  `eingetragenMitRaum`; auch ohne KI über `calendarChat` → `neu`). Lange
+  drücken auf eine Zeile → „Für Familie / Nur ich / Arbeit“ (`ItemMenu` mit
+  `start="raum"`). Ändern immer über `raumAendern` (Meldung mit Rückgängig,
+  Mia lernt, nur eigene Einträge).
+- Vorauswahl (`raumRaten`): ausdrücklich gesagt („geschäftlich“, „nur für
+  mich“/„privat“, „für alle“/„Familie“) › gelernt › Inhalt (Meeting, Kunde,
+  Lieferant, Büro, Tohuus, KARAMBA Eis, Personal … → Arbeit; Schule, Kinder,
+  Kita, Oma, Geburtstag, Elternabend … → Familie; Arzt, Zahnarzt, Friseur,
+  Physio, Therapie … → Ich; Familie geht vor Ich: „mit den Kindern zum Arzt“)
+  › Arbeits-Stichworte früherer Arbeits-Einträge (`arbeitsWorte`: Laden,
+  Café …) › Standard: Termine Familie, Aufgaben Ich. Personen aus dem
+  Haushalt machen nichts zu Familie („Geschenk für Lisa“). Arbeit und
+  Familie zugleich ohne Hinweis ist unklar (`raumUnklar`): der Sofort-Weg
+  überlässt es der KI, die kurz fragt.
+- Beim allerersten Vorwählen steht einmal darunter „Hab Familie gewählt.
+  Tippen zum Ändern.“ (bei Ich „Nur für dich gewählt. …“), danach nie wieder
+  (`raumHinweisOffen`).
+- Mia lernt: Korrigiert man den Raum (Chips, Detail, lange drücken, Satz
+  „Mach den Zahnarzt nur für mich“), merkt sie sich ein Stichwort des Titels
+  (`stichwort`: letztes großgeschriebenes Wort, z. B. „Peter“, „Zahnarzt“) →
+  Raum und wählt beim nächsten Mal richtig. Lokal (`wasgibts.raumgedaechtnis`),
+  geht als „Gelernte Räume“ in Mias Kontext (`AssistantData.raumWorte`), löschbar
+  unter Einstellungen → Mia → „Was ich mir gemerkt hab“ (Gruppe „Wer was sieht“).
+- Ohne KI: `raumBefehl` in `parseCalendar` (Art `raum`): „Mach den Zahnarzt
+  nur für mich“, „Stell X auf Arbeit“, „Der X ist privat“, „Das gehört zur
+  Familie“ (= zuletzt eingetragen). Nicht gefunden = keine Regel.
+- Mia: Werkzeuge `raum: familie|ich|arbeit` („privat“ = ich, ohne Angabe rät
+  die App); Ändern über `termin_aendern`/`aufgabe_aendern` mit `raum`.
+- Sichtbarkeit: Ich und Arbeit anderer kommen nie an – RLS (Migration
+  `raeume_ich`), Test-Backend, Push (`versand.ts`), Neuigkeiten, Heute,
+  Kalender und Mias Kontext arbeiten nur mit dem, was ankommt.
+- Tests: `tests/kalender/raeume.test.ts`, `neueAufgabeTermin.test.ts`,
+  `einFenster.test.ts`, Prüfstand (35 Raum-Sätze, `pruefstand/raeume.ts`),
+  Sofort-Prüfstand; `tests/datenbank/sicherheit.test.sql`; Durchklick
+  `raumChipsPlus`, `raumAendern`, `raumSprache`, `raumMigration`,
+  `raeumeZweiKonten` (`e2e/ablaeufe/raumwahl.mjs`), `schnelleingabe`.
 
 ### Kalender übernehmen (Baustein „kalender“, seit v0.50)
 
@@ -456,16 +555,16 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
   (alle Punkte in einem Rutsch); ohne KI `parseWeekTalk`
   (`src/lib/kalender/wochencheck.ts`: Füllwörter, Korrekturen „nee,
   Mittwoch“, Nachträge, Wochentage ab heute, „nächste Woche Dienstag“,
-  „halb acht“ abends, Raum Familie/Arbeit/Privat, Personen „Mathis: Spiel“,
+  „halb acht“ abends, Raum Familie · Ich · Arbeit (`raumRaten`), Personen „Mathis: Spiel“,
   Dauer Termin 60 / Elternabend 120 Minuten, Aufgaben ohne Tag = heute,
   „bis Freitag“ = Frist, ohne Uhrzeit Frage mit Knöpfen, schon Eingetragenes
   grau „schon drin“). Ohne KI keine Sport-Vorschläge.
 - „Deine Woche“ (`WeekPreview.tsx`): Legende, eine Zeile je Punkt, Fragen als
   Chips („weiß noch nicht“ = ganztägig), Zeile antippen = Karte (Tag,
-  Uhrzeit, Dauer, Familie | Arbeit | Privat, Weglassen), Haken zum
+  Uhrzeit, Dauer, Raum-Chips, Weglassen), Haken zum
   Abwählen, „Nochmal“ / „Alles übernehmen“ → „N Sachen eingetragen ✓“, ein
-  Rückgängig für alles, danach der Kalender. Privat = nur für mich (Raum
-  Arbeit) mit Etikett „Privat“.
+  Rückgängig für alles, danach der Kalender. „Privat“ von früher ist „Ich“
+  (A-034).
 
 ## Tests
 

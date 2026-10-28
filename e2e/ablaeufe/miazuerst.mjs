@@ -38,7 +38,7 @@ export const miaZuerst = async (page, check) => {
   const plus = page.getByRole("button", { name: "Neuer Termin" }).first();
   await plus.evaluate((el) => el.scrollIntoView({ block: "center" }));
   await plus.click();
-  check(await page.getByRole("dialog", { name: "Schnelleingabe" }).waitFor({ timeout: 4000 }).then(() => true, () => false), "„＋“ → Schnelleingabe (nicht Mia)");
+  check(await page.getByRole("dialog", { name: "Neuer Termin" }).waitFor({ timeout: 4000 }).then(() => true, () => false), "„＋“ → Fenster „Neuer Termin“ (nicht Mia)");
   check(!(await page.getByRole("button", { name: "Verlauf" }).count()), "keine Mia-Bühne");
   await page.keyboard.press("Escape");
   await page.waitForTimeout(500);

@@ -9,7 +9,7 @@ import { useMemo } from "react";
 import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 import { featureOn, useFeature } from "@/lib/core/features";
-import type { Room } from "@/lib/core/entries";
+import { roomOf, type Room } from "@/lib/core/entries";
 import { sanitizeEntry, type CalendarEntry } from "@/lib/kalender/model";
 import { aboIdOf, isDue, withoutDoubles, type Abo } from "@/lib/kalender/abo/model";
 import { now } from "@/lib/core/now";
@@ -31,7 +31,7 @@ const abos = createLocalStore("wasgibts.kalenderabos", (raw: unknown): AboState 
         name: str(a.name, 40) || "Kalender",
         url: str(a.url, 2000),
         color: a.color,
-        raum: a.raum === "arbeit" ? "arbeit" : "familie",
+        raum: roomOf(a.raum),
         on: a.on !== false,
         fetchedAt: typeof a.fetchedAt === "string" ? a.fetchedAt : null,
         error: typeof a.error === "string" ? a.error : null,

@@ -21,6 +21,9 @@ import { isAddPersonRequest } from "@/lib/einstellungen/onboarding/recognize";
 import { householdIntroReply, parseHouseholdIntro } from "@/lib/einstellungen/householdIntro";
 import { calendarChat, changeEntries } from "@/lib/kalender";
 import { loadCalendarEntries } from "@/lib/kalender/useCalendarEntries";
+import { arbeitsWorte } from "@/lib/kalender/raum/raten";
+import { gelernteRaeume, raumLernen } from "@/lib/kalender/raum/gedaechtnis";
+import { myUserId } from "@/lib/konten/cache";
 import { abendsNachUhr } from "@/lib/kalender/mitwandern";
 import { now } from "@/lib/core/now";
 import { loadRoutine } from "@/lib/heute/tagesablauf";
@@ -129,7 +132,7 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
   };
 
   /** Termine und Aufgaben ohne KI: "Morgen um 9 Steuerberater", "Was steht diese Woche an?" – sofort, mit Rückgängig */
-  const calendarReply = (t: string): { text: string; undo?: () => void } | null => {
+  const calendarReply = (t: string): { text: string; undo?: () => void; raum?: ChatTurnView["raum"] } | null => {
     if (!data || !today) return null;
     const entries = loadCalendarEntries();
     const iso = toIsoDate(today);
@@ -138,12 +141,15 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
     const abends = abendsNachUhr({ entries, heute: iso, minutes, feierabendAb: routine.feierabendAb });
     // Nach Feierabend: „Was steht heute an?“ ohne Arbeit (Tafel 103)
     const ruht = arbeitRuht({ minutes, weekday: weekdayIndex(iso), routine, workEnd: arbeitsEnde(itemsForDay(entries, iso, iso)) });
-    const reply = calendarChat(t, entries, iso, data.profile.persons, abends, ruht);
+    const reply = calendarChat(t, entries, iso, data.profile.persons, abends, ruht, { gelernt: gelernteRaeume(), arbeitWorte: arbeitsWorte(entries) }, myUserId());
     if (!reply) return null;
     if (!reply.change) return { text: reply.text };
     const undo = pushUndo(reply.text, changeEntries(reply.change));
+    // Raum per Satz geändert: Mia merkt sich das Stichwort (A-034)
+    if (reply.gelernt) raumLernen(reply.gelernt.title, reply.gelernt.raum);
     return {
       text: reply.text,
+      ...(reply.neu ? { raum: reply.neu } : {}),
       undo: () => {
         undo();
         setChat((x) => ({ ...x, turns: [...x.turns, { role: "assistant", text: "Rückgängig gemacht.", local: true }] }));
@@ -266,7 +272,7 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
     const reply = shoppingReply(t) ?? pantryReply(t) ?? calendarReply(t) ?? (quick ? { text: quick, undo: undefined } : null);
     if (reply) {
       setInput("");
-      setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text: reply.text, local: true, undo: reply.undo }] }));
+      setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text: reply.text, local: true, undo: reply.undo, ...("raum" in reply && reply.raum ? { raum: reply.raum } : {}) }] }));
       return true;
     }
     // "Mathis wünscht sich Pfannkuchen" → Wunsch-Idee

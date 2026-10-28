@@ -2,7 +2,7 @@
 // wer bekommt jetzt welche Mitteilung. Läuft jede Minute (pg_cron →
 // /api/push/senden); Netz, Datenbank und Web Push kommen von außen.
 // Regeln:
-// - Erinnerungen: Familien-Termine erinnern jede:n im Haushalt, „Arbeit“ nur
+// - Erinnerungen: Familien-Termine erinnern jede:n im Haushalt, „Ich“ und „Arbeit“ nur
 //   den Besitzer, Aufgaben nur, wer sie gerade hat (Besitzer bzw. „fuer“).
 // - Selbst gestellte Erinnerungen zählen nicht als proaktiv und dürfen auch
 //   in der Ruhezeit (außer Pause und „Ruhe nach Feierabend“ für Arbeit).
@@ -16,6 +16,7 @@
 // - Nie doppelt (Schlüssel je Abo, `push_gesendet`).
 
 import { pushAllowed } from "@/lib/heute/push";
+import { nurBesitzer, roomOf } from "@/lib/core/entries";
 import { DEFAULT_ROUTINE, type DayRoutine } from "@/lib/heute/tagesablauf";
 import { dueNow, pauseOn, type ReminderMoment } from "@/lib/heute/mitteilungen/erinnerungen";
 import type { CalendarEntry } from "@/lib/kalender/model";
@@ -56,8 +57,8 @@ function visibleEntries(rows: PushEntryRow[], userId: string): CalendarEntry[] {
     if (r.typ === "aufgabe") {
       const holder = typeof data.fuer === "string" && data.fuer ? data.fuer : r.besitzer;
       if (holder !== userId) continue;
-    } else if (r.raum === "arbeit" && r.besitzer !== userId) continue;
-    out.push({ ...(e as object), id: r.id, typ: r.typ, raum: r.raum === "arbeit" ? "arbeit" : "familie", besitzer: r.besitzer, data } as CalendarEntry);
+    } else if (nurBesitzer(r.raum) && r.besitzer !== userId) continue;
+    out.push({ ...(e as object), id: r.id, typ: r.typ, raum: roomOf(r.raum), besitzer: r.besitzer, data } as CalendarEntry);
   }
   return out;
 }

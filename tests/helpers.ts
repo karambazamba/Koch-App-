@@ -1,7 +1,7 @@
 // Gemeinsame Hilfen für alle Tests: feste Zeit, Speicher im Speicher, ein
 // kleiner Browser-Ersatz und Termine/Aufgaben zum Anlegen.
 import { setNowForTests } from "@/lib/core/now";
-import { createEntry } from "@/lib/core/entries";
+import { createEntry, type Room } from "@/lib/core/entries";
 import type { AufgabeData, CalendarEntry, TerminData } from "@/lib/kalender/model";
 import type { JetztInput, JetztTermin } from "@/lib/heute/jetztTopics";
 
@@ -107,7 +107,7 @@ export function noBrowser() {
   delete g.sessionStorage;
 }
 
-type EntryOpts = "familie" | "arbeit" | { raum?: "familie" | "arbeit"; id?: string };
+type EntryOpts = Room | { raum?: Room; id?: string };
 const entryOpts = (o: EntryOpts) => (typeof o === "string" ? { raum: o } : { raum: o.raum ?? "familie", ...(o.id ? { id: o.id } : {}) });
 
 /** Termin im Kalender (Familie, ohne Erinnerung) */

@@ -9,11 +9,12 @@ import type { Room } from "@/lib/core/entries";
 import { addDays } from "@/lib/core/now";
 import type { AufgabeData, Reminder, Repeat } from "@/lib/kalender/model";
 import { compareText } from "@/lib/core/sort";
-import { genannterTag, guessLabel, guessRoom, parseCalendar, urgentFrom } from "@/lib/kalender/parse";
+import { genannterTag, guessLabel, parseCalendar, urgentFrom } from "@/lib/kalender/parse";
+import { guessRoom } from "@/lib/kalender/raum/raten";
 
 export type When = "heute" | "morgen" | { date?: string; due?: string };
 
-export const WHEN_CHOICES: { id: "heute" | "morgen"; label: string }[] = [
+const WHEN_CHOICES: { id: "heute" | "morgen"; label: string }[] = [
   { id: "heute", label: "Heute" },
   { id: "morgen", label: "Morgen" },
 ];
@@ -28,7 +29,7 @@ export function readQuickText(text: string, today: string): { title: string; whe
 function readPlainQuickText(text: string, today: string): { title: string; when: When | null; time?: string; room: Room; label?: string } {
   const raw = text.trim();
   const cmd = parseCalendar(raw, today);
-  const room = guessRoom(raw);
+  const room = guessRoom(raw, "aufgabe");
   if (cmd?.kind !== "create") return { title: raw, when: null, room, label: guessLabel(raw) };
   const d = cmd.draft;
   const title = d.data.title || raw;
@@ -84,7 +85,7 @@ export function frequentTimes(starts: string[], count = 4): string[] {
 /** Was der Text über einen Termin sagt: Tag, Uhrzeit, Raum, Etikett – und der Titel ohne diese Angaben */
 export function readTerminText(text: string, today: string): { title: string; date?: string; time?: string; room: Room; label?: string; repeat?: Repeat | null } {
   const raw = text.trim();
-  const room = guessRoom(raw);
+  const room = guessRoom(raw, "termin");
   const cmd = parseCalendar(raw, today);
   if (cmd?.kind !== "create") return { title: raw, room, label: guessLabel(raw) };
   const d = cmd.draft;

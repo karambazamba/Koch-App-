@@ -44,10 +44,10 @@ describe("Wörter je Haushaltsart", () => {
     expect(readFileSync("src/lib/begleitung/prompt.ts", "utf8")).not.toContain("Familienmanagerin");
   });
 
-  it("Oberfläche nimmt den Namen aus `useRaumName` statt fest „Familie“", () => {
-    for (const f of ["src/components/kalender/EntryForm.tsx", "src/components/kalender/TasksView.tsx", "src/components/kalender/CalendarPage.tsx", "src/components/notizen/NotesView.tsx", "src/components/ui/QuickEntry.tsx"]) {
+  it("Oberfläche nimmt den Namen aus `useRaumName` bzw. `useHaushalt` statt fest „Familie“", () => {
+    for (const f of ["src/components/kalender/TasksView.tsx", "src/components/kalender/CalendarPage.tsx", "src/components/notizen/NotesView.tsx", "src/components/kalender/eintragen/AufgabeFenster.tsx", "src/components/kalender/eintragen/TerminFenster.tsx"]) {
       const src = readFileSync(f, "utf8");
-      expect(src, f).toContain("useRaumName()");
+      expect(src, f).toMatch(/useRaumName\(\)|useHaushalt\(\)|useRaumWahl\(/);
       expect(src, f).not.toMatch(/label: "Familie"/);
     }
   });

@@ -9,15 +9,17 @@ import type { StorageKey } from "@/lib/core/storage";
 import { cleanPantryItem, migratePantry } from "@/lib/vorrat/haltbar";
 import { migrateNotes } from "@/lib/notizen/model";
 import { migratePinStore } from "@/lib/pinnwand/migration";
-import { ohneZeitraum, type CalendarEntry } from "@/lib/kalender/model";
+import { aufgabeIch, ohnePrivat, ohneZeitraum, type CalendarEntry } from "@/lib/kalender/model";
 import { todayIso } from "@/lib/core/now";
 import { migrateStore } from "@/lib/einkauf/listMigration";
+
+import { roomOf, type Room } from "@/lib/core/entries";
 
 /** Ein Eintrag, wie er in der Tabelle liegt (ohne Haushalt) */
 export type CloudDoc = {
   id: string;
   typ: string;
-  raum: "familie" | "arbeit";
+  raum: Room;
   /** Konto-ID; null = noch nie hochgeladen (dann das eigene Konto) */
   besitzer: string | null;
   erstellt: string;
@@ -48,7 +50,8 @@ export type Adapter = {
 
 const isObj = (v: unknown): v is Value => Boolean(v) && typeof v === "object" && !Array.isArray(v);
 const list = (v: unknown): Value[] => (Array.isArray(v) ? v.filter(isObj) : []);
-const room = (v: unknown): "familie" | "arbeit" => (v === "arbeit" ? "arbeit" : "familie");
+// „ich“ und „arbeit“ sieht nur der Besitzer – nie als Familie hochladen
+const room = roomOf;
 const ownerOf = (v: unknown): string | null => (typeof v === "string" && v !== "lokal" ? v : null);
 
 /** Speicher, deren Einträge schon das einheitliche Modell haben (id, typ, raum, besitzer …) */
@@ -69,14 +72,23 @@ function entryAdapter(name: Adapter["name"], key: StorageKey, version: number, f
   };
 }
 
-// v2 → v3: „Diese Woche“ still auf heute bzw. den genannten Tag (kalender/store.ts)
+// v2 → v3: „Diese Woche“ still auf heute bzw. den genannten Tag; v3 → v4:
+// Etikett „Privat“ → Raum Ich; v4 → v5: bestehende Aufgaben → „Ich“ (A-034,
+// kalender/store.ts)
+const kalenderHeben = (e: CalendarEntry, von: number): CalendarEntry => {
+  const v3 = von === 2 ? ohneZeitraum(e, todayIso()) : e;
+  return aufgabeIch(ohnePrivat(v3));
+};
 const kalender = {
-  ...entryAdapter("kalender", "wasgibts.eintraege", 3, "entries", ["termin", "aufgabe"], (v) => ({
-    version: 3,
+  ...entryAdapter("kalender", "wasgibts.eintraege", 5, "entries", ["termin", "aufgabe"], (v) => ({
+    version: 5,
     migratedTermine: v?.migratedTermine === true,
     seenReminders: Array.isArray(v?.seenReminders) ? v.seenReminders : [],
   })),
-  upgrade: (v: Value): Value | null => (v.version === 2 ? { ...v, version: 3, entries: list(v.entries).map((e) => ohneZeitraum(e as unknown as CalendarEntry, todayIso())) } : null),
+  upgrade: (v: Value): Value | null =>
+    v.version === 2 || v.version === 3 || v.version === 4
+      ? { ...v, version: 5, entries: list(v.entries).map((e) => kalenderHeben(e as unknown as CalendarEntry, v.version as number) as unknown as Value) }
+      : null,
 };
 
 // v1 → v2: die alte Sammel-Schnellnotiz kommt als einzelne Notizen an

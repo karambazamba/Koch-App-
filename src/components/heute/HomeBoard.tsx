@@ -27,6 +27,7 @@ import type { VorstellAnzeige } from "@/components/begleitung/denktmit/useMiaDen
 import { EditFrame } from "@/components/heute/EditFrame";
 import type { KachelFarbe } from "@/lib/heute/kachelFarben";
 import { buzz } from "@/components/heute/actions";
+import { useAufleuchten } from "@/components/heute/useAufleuchten";
 import type { TilePicker } from "@/components/heute/TilePicker";
 
 // Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
@@ -66,6 +67,8 @@ export function HomeBoard({
 }) {
   const units = unitsOf(tiles);
   const board = useRef<HTMLDivElement>(null);
+  // Was Mia eben eingetragen hat, leuchtet einmal in seiner Kachel (A-037)
+  useAufleuchten(board, editing);
   const [drag, setDragState] = useState<Drag | null>(null);
   const dragRef = useRef<Drag | null>(null);
   const setDrag = (d: Drag | null) => {

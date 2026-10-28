@@ -124,27 +124,23 @@ Sortier-Regeln, Design-System, Service Worker, App-Icons und Manifest.
 - Jedes ＋ ruft `openQuick({ kind, date?, more?, me?, quote?, shopping? })`
   (`core/schnelleingabe.ts`); `QuickEntryHost` (im KitchenHelper, überall)
   zeigt dann `ui/QuickEntry.tsx` – geladen erst beim ersten ＋.
+- Termine und Aufgaben (Tafel 114): `kind: "termin"|"aufgabe"` (nur über
+  `kalender/eintragen/oeffnen.ts`) zeigt das EINE Fenster `TerminFenster`
+  bzw. `AufgabeFenster` – siehe `docs/bereiche/kalender.md`, „Eintragen“.
 - Fenster über `Sheet` (✕, Danebentippen, Runterwischen, Zurück), unten über
-  der Tastatur: Kopf in der Farbe des Bereichs („NEUER TERMIN“, „NEUE
-  AUFGABE“, „AUF DIE LISTE“, „NEUE NOTIZ“, „NACHRICHT AN ALLE“, Token
+  der Tastatur: Kopf in der Farbe des Bereichs („AUF DIE LISTE“, „NEUE
+  NOTIZ“, „NACHRICHT AN ALLE“, „IM HAUS“, Token
   `--app-tile-<id>-ac`), EIN Feld (16 px, `autoFocus`), rechts das orange ➤
   (leer blass, tut nichts). Kein Mikro – sprechen geht über den Mia-Knopf.
-- Live-Chips ohne KI (`readQuick`, `quickChips`; dahinter `kalender/sentence`
-  und `kalender/quick`): Termin „Fr, 23. Okt · 16:00“ (ohne Uhrzeit
-  „ganztägig“) + „Familie“/„Arbeit“; Aufgabe „bis Mi, 28. Okt“/„heute“/kein
-  Tag + „Familie“. Antippen ändert (Tag-Leiste, Familie ↔ Arbeit, nur wenn
-  es Arbeit gibt); nötig sind sie nie. Kurze Wochentage („Fr 16 Uhr“, „am
-  Sa“) erkennt `readSentence` seit v0.72.0.
-- ➤ oder Return speichert sofort (`ui/quickSave.ts`): Termin (mit Uhrzeit 30
-  Min Erinnerung), Aufgabe (Startseite: heute; Aufgaben-Seite: ohne Tag),
-  Einkauf (alles auf die Liste, Unsicheres so wie getippt), Notiz, Pinnwand
-  (mit Zitat bei Antworten). Meldung „Eingetragen: …“ / „Auf der Liste: …“ /
+- ➤ oder Return speichert sofort (`ui/quickSave.ts`): Einkauf (alles auf die
+  Liste, Unsicheres so wie getippt), Im Haus, Notiz, Pinnwand (mit Zitat bei
+  Antworten). Meldung „Auf der Liste: …“ /
   „Notiert: …“ / „Hängt: …“ mit Rückgängig (auch `undoLast`). Das Feld
   bleibt leer und offen für die nächste.
 - „Mehr Details“ schließt und öffnet das volle Formular mit dem Getippten
-  (`EntryForm` für Termine und Aufgaben, Einkauf-Fenster, `PinWriteSheet`,
-  Notiz-Auswahl). Auch dort kein eigenes Mikro mehr.
-- Kalender-＋ und Tag-＋ = „NEUER TERMIN“ mit dem gewählten Tag; das frühere
+  (Einkauf-Fenster, `PinWriteSheet`, Notiz-Auswahl). Auch dort kein eigenes
+  Mikro mehr.
+- Kalender-＋ und Tag-＋ = Fenster „Neuer Termin“ mit dem gewählten Tag; das frühere
   Fenster „Was möchtest du eintragen?“ (`AddSheet`) ist weg. Kalender
   übernehmen: Einstellungen → Kalender.
 

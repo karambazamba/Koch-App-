@@ -221,8 +221,8 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Aufgaben (Tafel 103/104): gleiche Regeln wie die Aufgaben-Seite – alles
   heute, EINE Reihenfolge (dringend → neu → Erstellungszeit, ohne in Listen
   Geparktes), keine Etiketten pro Zeile; Kreis (Tippfläche 44 × 30), Titel,
-  „!“ bei dringend, rechts nur „von Lisa“ und das kleine blaue Schild
-  „Arbeit“. Ruht die Arbeit (`view.hideWork`: Feierabend mit Ruhe, freie
+  „!“ bei dringend, rechts nur „von Lisa“, das kleine graue Schloss („Ich“)
+  bzw. das blaue Schild „Arbeit“ (A-034). Ruht die Arbeit (`view.hideWork`: Feierabend mit Ruhe, freie
   Tage), fehlt sie und unten steht leise „Arbeit · 5 für morgen“ (Link zur
   Seite). Abhaken:
   1,5 s durchgestrichen (`LEAVE_MS`, überall gleich), dann weich weg – auch am
@@ -379,8 +379,9 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   hervorgehoben und in Sicht gescrollt (`topicSpot`), mit dem Hinweis der
   Karte; „Erledigt“ nur bei Vorbereiten/Packliste/Geburtstag/Erinnerung.
   Leerer Tag: „Heute ist nichts geplant. Genieß es.“ Ab 22 Uhr Umschalter
-  „Morgen · Do“. Eintrag antippen = öffnen. „Arbeit“ trägt „Nur für dich“
-  (fremde Arbeit kommt per RLS nie aufs Gerät). Ausnahme: laufender Timer
+  „Morgen · Do“. Eintrag antippen = öffnen. „Ich“ trägt ein graues
+  Schloss, „Arbeit“ ein blaues Schild, Uhrzeit und Strich in Raumfarbe (A-034;
+  fremdes Ich und Arbeit kommt per RLS nie aufs Gerät, also auch nie zu Lisa). Ausnahme: laufender Timer
   öffnet den Timer.
 - Mia: „Was steht heute an?“ / „Wie sieht mein Tag aus?“ (`isDayQuestion`)
   → 2 Sätze (`daySummary`), dann öffnet sich „Dein Tag“ (`openDeinTag`).
@@ -472,6 +473,20 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   `dayChat.ts` („Blende die Jetzt-Karte aus“, auch „Lass die Startseite immer
   gleich“).
 - Nutzt die Begleitung eine Kachel, die fehlt, kommt sie dazu (`unlockHomeTile`).
+- Aufleuchten in der Kachel (A-037, Tafel 126): Was Mia eingetragen hat
+  (sofort oder per „Übernehmen“), leuchtet nach dem Schließen der Bühne bzw.
+  bei der Rückkehr zur Startseite EINMAL 1,5 s weich orange – die Zeile, wenn
+  sie in der Kachel steht (`data-leuchte`: Termine/Aufgaben `eintrag:<id>`,
+  Einkauf `einkauf:<name>` an der Laden- bzw. „ohne Laden“-Zeile, Notizen
+  `notiz:<id>`), sonst die Kachel als Ganzes (z. B. Termin nächste Woche,
+  Pinnwand, Im Haus). Merker nur im Arbeitsspeicher (`lib/heute/aufleuchten.ts`:
+  `leuchtenMerken` in `noteMiaDone`/Übernehmen, `buehneGeoeffnet` aus
+  KitchenHelper, `geleuchtet` = nie wieder; Rückgängig vergisst es), nichts
+  gespeichert. Auslösen in `components/heute/useAufleuchten.ts` (HomeBoard,
+  nie im Bearbeiten): setzt nur `data-leuchtet`, das Leuchten ist CSS
+  (`::after` mit Ring `--app-leuchten` und Fläche `--app-leuchten-flaeche`,
+  nur opacity, `cubic-bezier(.16,1,.3,1)`); reduzierte Bewegung = nur kurz
+  hervorgehoben (`leuchten-still`). Durchklick `ergebniskarten.mjs` (`miaAufleuchten`).
 
 ## Tests
 

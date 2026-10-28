@@ -44,10 +44,10 @@ export const wochencheck = async (page, check) => {
   await week.getByRole("group", { name: "Mathis: Spiel: Uhrzeit" }).getByRole("button", { name: "14:00" }).click();
   check(!(await week.getByRole("group", { name: "Mathis: Spiel: Uhrzeit" }).count()), "Frage beantwortet → Chips weg");
 
-  // Zeile antippen → Raum Arbeit
+  // Zeile antippen → Raum Arbeit (dieselben Raum-Chips wie überall)
   await week.getByRole("button", { name: "Paket Post bringen ändern" }).click();
   const card = page.getByRole("dialog", { name: "Ändern" });
-  await card.getByRole("radio", { name: "Arbeit" }).click();
+  await card.getByRole("radiogroup", { name: "Wer sieht es?" }).getByRole("radio", { name: "Arbeit" }).click();
   await card.getByRole("button", { name: "Fertig" }).click();
   await page.waitForTimeout(300);
 

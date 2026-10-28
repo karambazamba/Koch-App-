@@ -477,14 +477,6 @@ export async function tippenFeld(page) {
   return box;
 }
 
-/** „＋“ öffnet die Schnelleingabe – „Mehr Details“ öffnet das volle Fenster */
-export async function mehrDetails(page) {
-  const link = page.getByRole("dialog", { name: "Schnelleingabe" }).getByRole("button", { name: "Mehr Details" });
-  await link.waitFor({ timeout: 5000 });
-  await link.click();
-  await page.waitForTimeout(500);
-}
-
 /** Einkauf „Aussuchen“ öffnen (optional einen Laden wählen) */
 export async function aussuchen(page, laden) {
   await page.goto(BASE + "/einkaufsliste/aussuchen");
@@ -525,9 +517,12 @@ export async function ziehen(page, von, nach, { halten = 450, steps = 14, ms = 4
   await cdp.detach();
 }
 
-/** Schnelleingabe: Satz tippen, ➤ (Return; mehrzeilig bei Notiz/Pinnwand nur ➤), Fenster zu */
+/** Das EINE Fenster „Neue Aufgabe“ bzw. „Neuer Termin“ (Tafel 114) – auch zum Ändern („Aufgabe“/„Termin“) */
+export const eintragFenster = (page, art) => page.locator(art ? `[role=dialog]:has([data-fenster="${art}"])` : "[role=dialog]:has([data-fenster])");
+
+/** Schnelleingabe bzw. Fenster Aufgabe/Termin: Satz tippen, ➤ (Return; mehrzeilig bei Notiz/Pinnwand nur ➤), Fenster zu */
 export async function schnell(page, text, { close = true } = {}) {
-  const sheet = page.getByRole("dialog", { name: "Schnelleingabe" });
+  const sheet = page.getByRole("dialog", { name: "Schnelleingabe" }).or(eintragFenster(page));
   await sheet.waitFor({ timeout: 5000 });
   const box = sheet.getByRole("textbox");
   await box.fill(text);
@@ -595,4 +590,37 @@ export async function nameFrageOderStart(page, name, { ziel = "start", ms = 3000
   await frage.getByRole("button", { name: "Weiter" }).click();
   await warten(false);
   return vorschlag;
+}
+
+// --- Zwei Konten im Test-Backend (KONTEN_TEST=1): anmelden, einladen, beitreten ---
+const adminCode = (page, email) => page.evaluate(async (e) => (await (await fetch("/api/test-konten", { method: "POST", body: JSON.stringify({ action: "admin_code", email: e }) })).json()).code, email);
+
+/** Auf /konto per E-Mail-Code anmelden (Code über die Test-Schnittstelle) */
+export async function kontoAnmelden(page, email) {
+  await page.goto(BASE + "/konto");
+  await page.getByLabel("Deine E-Mail-Adresse").fill(email);
+  await page.getByRole("button", { name: "Code schicken" }).click();
+  await page.getByLabel("6-stelliger Code").waitFor();
+  await page.getByLabel("6-stelliger Code").fill(await adminCode(page, email));
+}
+
+/** „Familie einladen“ → Link erstellen; liefert den Einladungs-Link */
+export async function familieEinladen(page) {
+  await page.getByRole("button", { name: "Familie einladen" }).click();
+  await page.getByRole("button", { name: "Einladungs-Link erstellen" }).click();
+  const link = (await page.getByTestId("einladungs-link").textContent()).trim();
+  await page.getByRole("dialog", { name: "Familie einladen" }).getByRole("button", { name: "Schließen" }).last().click();
+  await page.getByRole("dialog", { name: "Familie einladen" }).waitFor({ state: "detached" });
+  return link;
+}
+
+/** Einladungs-Link öffnen, anmelden, beitreten – bis die Startseite da ist */
+export async function perLinkBeitreten(page, link, email, name = "Lisa") {
+  await page.goto(link);
+  await page.getByRole("heading", { name: /lädt dich ein\./ }).waitFor();
+  await page.getByLabel("Deine E-Mail-Adresse").fill(email);
+  await page.getByRole("button", { name: "Code senden" }).click();
+  await page.getByLabel("6-stelliger Code").waitFor();
+  await page.getByLabel("6-stelliger Code").fill(await adminCode(page, email));
+  await nameFrageOderStart(page, name);
 }

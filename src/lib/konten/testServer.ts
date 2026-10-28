@@ -12,7 +12,7 @@
 import type { HouseholdInfo, Member, Role } from "@/lib/konten/model";
 import { LINK_TAGE, normalizeInviteCode } from "@/lib/konten/model";
 import type { CloudDoc } from "@/lib/konten/sync/docs";
-import type { Room } from "@/lib/core/entries";
+import { nurBesitzer, roomOf, type Room } from "@/lib/core/entries";
 import type { InboundMail } from "@/lib/mails/eingang";
 import { localPart } from "@/lib/mails/adresse";
 import { verarbeite, type MailItem } from "@/lib/mails/verarbeiten";
@@ -64,13 +64,18 @@ const rand = (n: number, chars: string) => Array.from({ length: n }, () => chars
 const id = () => `${rand(8, "0123456789abcdef")}-${rand(4, "0123456789abcdef")}-4${rand(3, "0123456789abcdef")}-a${rand(3, "0123456789abcdef")}-${rand(12, "0123456789abcdef")}`;
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max) : "");
 
-/** Sichtbar wie in der Datenbank: Aufgaben nur für Besitzer, Empfänger und wer sie zurückgab; sonst Familie oder eigene Arbeit */
+/** Wie `entry_holder`: erst im Eintrag (data.data.…, so lädt die App hoch), sonst oben */
+function holder(data: unknown, key: "fuer" | "zurueck"): unknown {
+  const d = (data ?? {}) as Record<string, unknown>;
+  const inner = (d.data ?? {}) as Record<string, unknown>;
+  return inner[key] || d[key] || "";
+}
+
+/** Sichtbar wie in der Datenbank (`entry_visible`, A-034): Familie alle; Ich/Arbeit nur der Besitzer, bei Aufgaben auch Empfänger und wer sie zurückgab */
 function visible(d: { typ: string; raum: string; besitzer: string; data: unknown }, uid: string): boolean {
-  if (d.typ === "aufgabe") {
-    const data = (d.data ?? {}) as { fuer?: unknown; zurueck?: unknown };
-    return d.besitzer === uid || data.fuer === uid || data.zurueck === uid;
-  }
-  return d.raum === "familie" || d.besitzer === uid;
+  if (!nurBesitzer(d.raum)) return true;
+  if (d.besitzer === uid) return true;
+  return d.typ === "aufgabe" && (holder(d.data, "fuer") === uid || holder(d.data, "zurueck") === uid);
 }
 
 /** Wie `memo_household` in der Datenbank: Haushalt aus dem Pfad, sonst null */
@@ -92,9 +97,9 @@ function householdOf(s: State, userId: string): HouseholdInfo | null {
 function removeMember(s: State, userId: string) {
   const mine = s.members.find((m) => m.userId === userId);
   s.members = s.members.filter((m) => m.userId !== userId);
-  // „Arbeit“ geht mit, Familie bleibt
+  // „Ich“ und „Arbeit“ gehen mit, Familie bleibt
   const rows = mine && s.entries.get(mine.householdId);
-  if (rows) for (const [k, d] of rows) if (d.raum === "arbeit" && d.besitzer === userId) rows.delete(k);
+  if (rows) for (const [k, d] of rows) if (nurBesitzer(d.raum) && d.besitzer === userId) rows.delete(k);
   if (mine && !s.members.some((m) => m.householdId === mine.householdId)) {
     s.households.delete(mine.householdId);
     s.entries.delete(mine.householdId);
@@ -252,7 +257,7 @@ export function testKonten(body: Record<string, unknown>, nowMs = Date.now()): R
       for (const [t, u] of s.sessions) if (u === user.id) s.sessions.delete(t);
       return { ok: true };
     case "push_entries": {
-      // wie die RLS-Regel entry_visible (Migration aufgaben_persoenlich)
+      // wie die RLS-Regeln entry_visible / entries_update (Migration raeume_ich)
       const hh = s.members.find((m) => m.userId === user.id)?.householdId;
       if (!hh) return { error: "kein_haushalt" };
       const rows = s.entries.get(hh) ?? new Map();
@@ -260,8 +265,9 @@ export function testKonten(body: Record<string, unknown>, nowMs = Date.now()): R
       const skipped: string[] = [];
       for (const d of Array.isArray(body.docs) ? (body.docs as CloudDoc[]).slice(0, 500) : []) {
         const old = rows.get(d.id);
-        const raum = d.raum === "arbeit" ? "arbeit" : "familie";
-        if (old && (!visible(old, user.id) || (old.typ !== "aufgabe" && raum === "arbeit" && old.besitzer !== user.id))) {
+        const raum = roomOf(d.raum);
+        // Vorher sichtbar, und danach weiter: so nimmt niemand dem Besitzer etwas weg
+        if (old && (!visible(old, user.id) || !visible({ typ: d.typ, raum, besitzer: old.besitzer, data: d.data }, user.id))) {
           skipped.push(d.id);
           continue;
         }

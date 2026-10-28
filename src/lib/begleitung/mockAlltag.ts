@@ -14,6 +14,8 @@ import { isPinboardQuery, pinStays, pinWriteCommand } from "@/lib/pinnwand/model
 import { eventsIn, greetingCommand, localNewMail, localReply, looksLikeMail, parseHistoryDraft, REPLY_CHOICES, reviseDraft, revisionOf, splitInstruction, styleFromContext, type MailDraft } from "@/lib/begleitung/mail";
 import type Anthropic from "@anthropic-ai/sdk";
 import { parseCalendar, type Draft } from "@/lib/kalender/parse";
+import type { RaumHilfen } from "@/lib/kalender/raum/raten";
+import { roomOf } from "@/lib/core/entries";
 import { splitTermine } from "@/lib/kalender/sentence";
 import { parseHomeCommand } from "@/lib/begleitung/homeChat";
 import { parseBausteinCommand } from "@/lib/begleitung/bausteinChat";
@@ -237,23 +239,47 @@ export function parseGiveTask(text: string): { name: string; title: string } | n
   return { name: m[1], title };
 }
 
+/** Raten wie in der App (A-034): gelernte Räume und Arbeits-Stichworte stehen im Kontext */
+function raumHilfenAusKontext(system: string): RaumHilfen {
+  const gelernt = (system.match(/^Gelernte Räume: (.+)$/m)?.[1] ?? "")
+    .split(", ")
+    .map((x) => x.split(" → "))
+    .filter((x) => x.length === 2 && x[0].trim())
+    .map(([wort, raum]) => ({ wort: wort.trim(), raum: roomOf(raum.trim()) }));
+  const arbeitWorte = (system.match(/^Arbeits-Stichworte \(→ raum arbeit\): (.+)$/m)?.[1] ?? "").split(", ").filter(Boolean);
+  return { gelernt, arbeitWorte };
+}
+
+/**
+ * Wie die echte KI (Werkzeug: „familie (Kinder …)“): ein Termin MIT einem
+ * Kind aus dem Haushalt („Zahnarzt mit Jonne“) ist Familie, außer der Satz
+ * sagt „nur für mich“/„privat“ (Tafel 126).
+ */
+function mitKind(use: { name: string; input: Record<string, unknown> }, kinder: string[], latest: string) {
+  const who = Array.isArray(use.input.personen) ? (use.input.personen as string[]) : [];
+  const kind = use.name === "termin_anlegen" && use.input.raum === "ich" && who.some((p) => kinder.includes(p));
+  return kind && !/nur für mich|nur ich|privat|persönlich/i.test(latest) ? { ...use, input: { ...use.input, raum: "familie" } } : use;
+}
+
 export function calendarUses(latest: string, system: string): Anthropic.Beta.BetaMessage | null {
   const today = system.match(/^Heute: .*\((\d{4}-\d{2}-\d{2})\)/m)?.[1];
   if (!today) return null;
+  const hilfen = raumHilfenAusKontext(system);
   // Personen aus dem Profil ("- Jonne; Kind, 6 J.") – Name als Kennung
   const persons = [...system.matchAll(/^- ([^;\n]+); (?:Kind|erwachsen)/gm)].map((m) => ({ id: m[1].trim(), name: m[1].trim() }));
+  const kinder = [...system.matchAll(/^- ([^;\n]+); Kind/gm)].map((m) => m[1].trim());
   // „Sag Lisa, sie soll den Turnbeutel waschen“ → Aufgabe für Lisa (Tafel 52 B)
   const give = parseGiveTask(latest);
   if (give) return tools([{ name: "aufgabe_anlegen", input: { titel: give.title, an: give.name } }]);
   // Mehrere Termine in einem Satz: je einer
   const teile = splitTermine(latest, today);
   if (teile.length > 1) {
-    const drafts = teile.map((t) => parseCalendar(t, today, persons)).flatMap((c) => (c?.kind === "create" ? [draftInput(c.draft, today)] : []));
+    const drafts = teile.map((t) => parseCalendar(t, today, persons, hilfen)).flatMap((c) => (c?.kind === "create" ? [mitKind(draftInput(c.draft, today), kinder, latest)] : []));
     if (drafts.length === teile.length) return tools(drafts);
   }
-  const cmd = parseCalendar(latest, today, persons);
+  const cmd = parseCalendar(latest, today, persons, hilfen);
   if (!cmd) return null;
-  if (cmd.kind === "create") return tools([draftInput(cmd.draft, today)]);
+  if (cmd.kind === "create") return tools([mitKind(draftInput(cmd.draft, today), kinder, latest)]);
   if (cmd.kind === "show") return tools([cmd.days > 1 ? { name: "woche_anzeigen", input: { ab: cmd.from, tage: cmd.days, label: cmd.label } } : { name: "tag_anzeigen", input: { datum: cmd.from, label: cmd.label } }]);
   if (cmd.kind === "free") return tools([{ name: "tag_anzeigen", input: { datum: cmd.date, frei: [cmd.from, cmd.to], label: cmd.label } }]);
   // Ändern: Eintrag über den Titel finden (ungefähr)
@@ -261,7 +287,8 @@ export function calendarUses(latest: string, system: string): Anthropic.Beta.Bet
   const asEntries = known
     .map((k) => sanitizeEntry({ id: k.id, typ: k.typ, data: { title: k.title, date: k.date, start: k.time ?? "08:00", reminder: "aus" } }))
     .filter((e): e is CalendarEntry => e !== null);
-  const hit = findByTitle(asEntries, cmd.query)[0];
+  // „Das gehört zur Familie“: das zuletzt Eingetragene (im Kontext das letzte)
+  const hit = cmd.kind === "raum" && /^(das|den|die|es)$/i.test(cmd.query) ? asEntries[asEntries.length - 1] : findByTitle(asEntries, cmd.query)[0];
   const found = hit ? known.find((k) => k.id === hit.id)! : null;
   if (!found) return text("Den Eintrag find ich grad nicht. Wie heißt er genau? (Testmodus)");
   if (cmd.kind === "move") {
@@ -269,6 +296,7 @@ export function calendarUses(latest: string, system: string): Anthropic.Beta.Bet
     return tools([{ name: "aufgabe_verschieben", input: { id: found.id, auf: cmd.to, ...(found.repeat ? { am: found.date } : {}) } }]);
   }
   if (cmd.kind === "delete") return tools([found.typ === "termin" ? { name: "termin_loeschen", input: { id: found.id } } : { name: "aufgabe_aendern", input: { id: found.id, loeschen: true } }]);
+  if (cmd.kind === "raum") return tools([{ name: found.typ === "termin" ? "termin_aendern" : "aufgabe_aendern", input: { id: found.id, raum: cmd.raum } }]);
   return tools([{ name: "aufgabe_erledigen", input: { id: found.id, am: found.date } }]);
 }
 
