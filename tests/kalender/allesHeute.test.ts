@@ -167,7 +167,9 @@ describe("Liste: eine weiße Liste, Arbeit nur als Schild", () => {
     expect(src("src/components/kalender/AufgabeSchild.tsx")).toMatch(/bg-work/);
     const seite = src("src/components/kalender/TasksView.tsx");
     expect(seite).not.toMatch(/Irgendwann|Diese Woche|Heute dran|von gestern/);
-    expect(seite).toMatch(/Erledigte anzeigen/);
+    // A-043: „Erledigt ⌄“ statt „Erledigte anzeigen“
+    expect(seite).toMatch(/label="Erledigt" runter/);
+    expect(seite).not.toMatch(/Erledigte anzeigen|Erledigte ausblenden/);
   });
 });
 

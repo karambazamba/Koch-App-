@@ -4,7 +4,8 @@
 // Je Satz eine passende Ausgangslage (`Lage`), damit kein Satz mit dem
 // Haushalt kollidiert („Zahnarzt Do 16 Uhr“ ohne schon eingetragenen
 // Zahnarzt, „Turnen fällt aus“ mit Turnen, „Tausch Montag und Mittwoch“ mit
-// Gerichten im Plan, „Nächster Schritt“ mit laufendem Kochmodus). Wetter:
+// Gerichten im Plan, „Nächster Schritt“ mit laufendem Kochmodus, „Was hab
+// ich geschafft?“ mit Abgehaktem von vor 2 und vor 16 Stunden). Wetter:
 // feste Test-Vorhersage statt Abruf.
 
 import { createEntry } from "@/lib/core/entries";
@@ -19,7 +20,7 @@ export const PRUEF_HEUTE = "2026-10-21";
 export const PRUEF_UHR = "10:30";
 
 /** Ausgangslage je Satz */
-export type Lage = "ohne-zahnarzt" | "ohne-steuer" | "turnen" | "plan" | "kochmodus";
+export type Lage = "ohne-zahnarzt" | "ohne-steuer" | "turnen" | "plan" | "kochmodus" | "geschafft";
 
 const PLAN: [string, string][] = [
   ["Montag", "Spaghetti Bolognese"],
@@ -40,6 +41,13 @@ export function pruefHaushalt(lage: Lage[] = []): AssistantData {
     ...(lage.includes("ohne-zahnarzt") ? [] : [createEntry("termin", { title: "Zahnarzt", date: "2026-10-22", start: "16:00", reminder: "aus" }, { raum: "familie", id: "t-zahnarzt" })]),
     ...(lage.includes("ohne-steuer") ? [] : [createEntry("aufgabe", { title: "Steuer machen", reminder: "aus" }, { raum: "familie", id: "a-steuer" })]),
     ...(lage.includes("turnen") ? [createEntry("termin", { title: "Turnen", date: "2026-10-23", start: "16:00", reminder: "aus", who: ["p-mathis"] }, { raum: "familie", id: "t-turnen" })] : []),
+    // A-043: Erledigtes nur 12 Stunden – Müll (heute 8:15) zählt, Fenster (gestern 18 Uhr) nicht mehr
+    ...(lage.includes("geschafft")
+      ? [
+          createEntry("aufgabe", { title: "Müll rausbringen", reminder: "aus", doneOn: PRUEF_HEUTE, doneAt: "2026-10-21T06:15:00.000Z" }, { raum: "familie", id: "a-muell" }),
+          createEntry("aufgabe", { title: "Fenster putzen", reminder: "aus", doneOn: "2026-10-20", doneAt: "2026-10-20T16:00:00.000Z" }, { raum: "familie", id: "a-fenster" }),
+        ]
+      : []),
   ] as CalendarEntry[];
   let data: AssistantData = { profile: { ...base, householdName: "Müller", persons, adults: 2, kids: 1 }, weekPlans: {}, mealPlans: {}, recipes: {}, shopping: {}, entries };
   if (lage.includes("plan")) {

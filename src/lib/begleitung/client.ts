@@ -14,6 +14,7 @@ import { tipContext } from "@/lib/tipps/client";
 import { loadMailStyle } from "@/lib/begleitung/mailSettings";
 import { useEffect, useState } from "react";
 import { replaceEntries } from "@/lib/kalender/store";
+import { istAbgelaufen } from "@/lib/kalender/erledigt";
 import { applyHomeChange, loadHomeTiles, saveHomeTiles } from "@/lib/core/homeLayout";
 import { BAUSTEINE, LAUNCH_AUS, bausteinOf, featureOn, setFeature, unlockFeature, type Feature } from "@/lib/core/features";
 import { pushUndo, undoLast } from "@/lib/core/undo";
@@ -195,11 +196,10 @@ function trimmed(data: AssistantData, currentWeekStart: string, pantry: Assistan
     notes: (data.notes ?? []).slice(0, 60).map((n) => ({ ...n, data: { ...n.data, text: n.data.text?.slice(0, 1500), items: n.data.items?.slice(0, 60) } })),
     // Kompakt: Name, Menge, Ort, seit wann; Gekauftes ("b:") als "gekauft" markiert
     pantry: (pantry ?? []).slice(0, 80).map(({ id, name, place, addedAt }) => ({ id: id.startsWith("b:") ? "gekauft" : "", name, place, addedAt })),
-    // Termine/Aufgaben: ohne Vergangenes (erledigte Aufgaben älter als 2 Wochen, einmalige Termine vor gestern)
+    // Termine/Aufgaben: ohne Vergangenes (Erledigtes nur die letzten 12 Stunden, A-043; einmalige Termine älter als 2 Wochen)
     entries: (data.entries ?? []).filter((e) => {
-      const old = toIsoDate(new Date(now().getTime() - 14 * 86_400_000));
-      if (e.typ === "termin") return Boolean(e.data.repeat) || e.data.date >= old;
-      return !e.data.doneOn || e.data.doneOn >= old;
+      if (e.typ === "termin") return Boolean(e.data.repeat) || e.data.date >= toIsoDate(new Date(now().getTime() - 14 * 86_400_000));
+      return !istAbgelaufen(e, now().getTime());
     }),
   };
 }

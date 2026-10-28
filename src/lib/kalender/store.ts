@@ -5,7 +5,8 @@
 import { useExternalStore } from "@/lib/core/useExternalStore";
 import { createLocalStore, readRaw, writeRaw } from "@/lib/core/localStore";
 import { createEntry } from "@/lib/core/entries";
-import { nowIso, todayIso } from "@/lib/core/now";
+import { now, nowIso, todayIso } from "@/lib/core/now";
+import { ohneAbgelaufene } from "@/lib/kalender/erledigt";
 import { ohneZeitraum, sanitizeEntry, type CalendarEntry, type TerminData } from "@/lib/kalender/model";
 import { OLD_TERMINE_KEY } from "@/lib/core/storage";
 import { isAboEntry } from "@/lib/kalender/abo/model";
@@ -73,6 +74,22 @@ export function useEntries(): CalendarEntry[] | undefined {
   const data = useExternalStore(store.subscribe, store.load, () => undefined);
   if (data === undefined) return undefined;
   return data?.entries ?? EMPTY;
+}
+
+/**
+ * Erledigte Aufgaben nach 12 Stunden still entfernen (A-043, Regel in
+ * kalender/erledigt.ts) – ohne „Gelöscht · Rückgängig“. Der Abgleich macht
+ * daraus die Lösch-Markierung für alle Geräte. Idempotent: nichts zu tun =
+ * nichts gespeichert. Liefert, wie viele weg sind. Läuft beim Start, beim
+ * Zurückkommen und jede Minute (KitchenHelper im Layout).
+ */
+export function erledigteAufraeumen(jetzt = now().getTime()): number {
+  const s = store.load();
+  if (!s) return 0;
+  const next = ohneAbgelaufene(s.entries, jetzt);
+  if (next === s.entries) return 0;
+  store.save({ ...s, entries: next });
+  return s.entries.length - next.length;
 }
 
 export function useSeenReminders(): string[] {

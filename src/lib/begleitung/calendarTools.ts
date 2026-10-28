@@ -4,7 +4,8 @@
 // mitgeschickten Einträgen.
 
 import { createEntry, type Room } from "@/lib/core/entries";
-import { addDays } from "@/lib/core/now";
+import { addDays, now } from "@/lib/core/now";
+import { ohneAbgelaufene } from "@/lib/kalender/erledigt";
 import { contextLines, mitgewandert, showAnswer } from "@/lib/kalender/answers";
 import { itemsForDay, REMINDERS, taskOverview, sanitizeEntry, sanitizeRepeat, weekdayIndex, type AufgabeData, type CalendarEntry, type Reminder, type Repeat, type TerminData } from "@/lib/kalender/model";
 import { findDate } from "@/lib/kalender/parse";
@@ -51,6 +52,8 @@ function repeatFrom(v: unknown, start: string): Repeat | null {
 }
 
 const entriesOf = (ctx: ToolContext) => ctx.data.entries ?? [];
+/** Zum Vorlesen: Erledigtes nur die letzten 12 Stunden (A-043) */
+const sichtbar = (ctx: ToolContext) => ohneAbgelaufene(entriesOf(ctx), ctx.jetzt ?? now().getTime());
 const findEntry = (ctx: ToolContext, id: unknown) => entriesOf(ctx).find((e) => e.id === str(id));
 /** Termine aus verbundenen Kalendern sind nur zum Lesen */
 const READ_ONLY = "Dieser Termin kommt aus einem verbundenen Kalender und ist nur zum Lesen – ändern geht im Original. Antippen → „In unseren Kalender kopieren“ macht einen eigenen daraus.";
@@ -290,7 +293,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
     run: (ctx, raw) => {
       const date = dateFrom(ctx, (raw as Input | null)?.datum);
       if (!date) return fail("datum nicht erkannt.");
-      return { content: contextLines(entriesOf(ctx), ctx.today, 1, date).replace(/^- /, "") + `\nKurz: ${showAnswer(entriesOf(ctx), ctx.today, date, 1, date === ctx.today ? "heute" : shortDate(date), ctx.abends, ctx.feierabend)}` };
+      return { content: contextLines(sichtbar(ctx), ctx.today, 1, date).replace(/^- /, "") + `\nKurz: ${showAnswer(sichtbar(ctx), ctx.today, date, 1, date === ctx.today ? "heute" : shortDate(date), ctx.abends, ctx.feierabend)}` };
     },
   },
   {
@@ -304,7 +307,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
       const input = (raw ?? {}) as Input;
       const from = dateFrom(ctx, input.ab) ?? ctx.today;
       const days = typeof input.tage === "number" ? Math.max(1, Math.min(31, Math.round(input.tage))) : 7;
-      return { content: contextLines(entriesOf(ctx), ctx.today, days, from) };
+      return { content: contextLines(sichtbar(ctx), ctx.today, days, from) };
     },
   },
   {
@@ -384,14 +387,17 @@ function removeTool(ctx: ToolContext, input: Input, typ: "termin" | "aufgabe"): 
   return { content: `Vorgemerkt: ${entry.data.title}${only ? ` am ${shortDate(only)}` : ""} löschen.` };
 }
 
-/** Für den Kontext: Einträge der nächsten 7 Tage (heute zuerst, alle Aufgaben stehen heute); abends, was still mit auf morgen wandert */
-export function calendarContext(entries: CalendarEntry[], today: string, abends = false, feierabend = false): string {
+/** Für den Kontext: Einträge der nächsten 7 Tage (heute zuerst, alle Aufgaben stehen heute); abends, was still mit auf morgen wandert; Geschafftes nur die letzten 12 Stunden (A-043) */
+export function calendarContext(all: CalendarEntry[], today: string, abends = false, feierabend = false, jetzt = now().getTime()): string {
+  const entries = ohneAbgelaufene(all, jetzt);
   const upcoming = itemsForDay(entries, today, today);
+  const geschafft = taskOverview(entries, today, today, jetzt).erledigt.map((i) => i.title);
+  const geschafftLine = `\nGeschafft in den letzten 12 Stunden (nur das nennen, wenn jemand fragt, was er geschafft hat; Älteres gibt es nicht mehr): ${geschafft.length ? geschafft.join(" | ") : "noch nichts abgehakt"}`;
   // Geplant (ab einem genannten Tag) jenseits der 7 Tage
   const later = taskOverview(entries, today).geplant.filter((i) => i.date >= addDays(today, 7)).slice(0, 20);
   const laterLines = later.map((i) => `${i.title} [id=${i.entry.id}; aufgabe, ${i.room}, ab ${i.when}${i.label ? `, Etikett ${i.label}` : ""}]`);
   const mit = mitgewandert(entries, today, abends);
   const mitLine = mit.length ? `\nAbends: Die Startseite zeigt schon morgen. Still mit auf morgen gewandert (nichts verschoben): ${mit.map((i) => i.title).join(" | ")}` : "";
   const ruhe = feierabend ? "\nFeierabend: Arbeitsaufgaben ruhen bis morgen – nur nennen, wenn jemand nach der Arbeit fragt." : "";
-  return `Termine und Aufgaben der nächsten 7 Tage (ids nur für Werkzeuge, nie nennen; alle Aufgaben ohne genannten Tag stehen heute in EINER Liste)${upcoming.length || entries.length ? "" : " – noch nichts eingetragen"}:\n${contextLines(entries, today, 7)}${laterLines.length ? `\nSpäter geplant: ${laterLines.join(" | ")}` : ""}${mitLine}${ruhe}`;
+  return `Termine und Aufgaben der nächsten 7 Tage (ids nur für Werkzeuge, nie nennen; alle Aufgaben ohne genannten Tag stehen heute in EINER Liste)${upcoming.length || entries.length ? "" : " – noch nichts eingetragen"}:\n${contextLines(entries, today, 7)}${laterLines.length ? `\nSpäter geplant: ${laterLines.join(" | ")}` : ""}${geschafftLine}${mitLine}${ruhe}`;
 }

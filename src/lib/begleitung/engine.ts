@@ -22,7 +22,7 @@ import { contextText, identityPrompt, SYSTEM_PROMPT } from "@/lib/begleitung/pro
 import { LIMITS, type AssistantReply, type AssistantRequest, type ChatTurn } from "@/lib/begleitung/protocol";
 import type { ToolContext } from "@/lib/begleitung/tools";
 import { runRegisteredTool, toolDefinitions } from "@/lib/begleitung/toolset";
-import { berlinTime } from "@/lib/core/now";
+import { berlinInstant, berlinTime } from "@/lib/core/now";
 import { sanitizeEntry, type CalendarEntry } from "@/lib/kalender/model";
 import { abendsNachUhr } from "@/lib/kalender/mitwandern";
 import { feierabendNachUhr } from "@/lib/kalender/aufgaben";
@@ -262,7 +262,7 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
     // Arbeitskopie mit dem bisherigen Vorschlag (bei jedem Durchlauf frisch)
     const start = applyOps(req.data, req.pending);
     const numbers = req.pending.flatMap((op) => [op.id, op.type === "add_recipe" ? op.recipe.ref : ""].map((s) => Number(s.match(/(\d+)$/)?.[1] ?? 0)));
-    const ctx: ToolContext = { data: start.data, weeks, ops: [...req.pending], refs: start.refs, counter: Math.max(0, ...numbers), today: req.today, abends, feierabend, ...(forecast !== undefined ? { forecast } : {}), ...(regionTips !== undefined ? { regionTips } : {}) };
+    const ctx: ToolContext = { data: start.data, weeks, ops: [...req.pending], refs: start.refs, counter: Math.max(0, ...numbers), today: req.today, jetzt: berlinInstant(req.today, req.clock ?? berlinTime().clock), abends, feierabend, ...(forecast !== undefined ? { forecast } : {}), ...(regionTips !== undefined ? { regionTips } : {}) };
     const messages: Anthropic.Beta.BetaMessageParam[] = req.messages.map((m) => ({ role: m.role, content: m.text }));
     if (messages[0].role !== "user") messages.shift();
     const usage: Usage = { in: 0, out: 0, write: 0, read: 0, rounds: 0 };

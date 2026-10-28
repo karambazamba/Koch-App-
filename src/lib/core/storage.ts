@@ -21,7 +21,7 @@ type StorageDef = {
 
 export const STORAGE = [
   { key: "familienkueche.haushaltsprofil", what: "Profil: Familie, Begleitung, Vorlieben, Einstellungen", version: 22, migration: "einstellungen/profileStore.ts migrateProfile", area: "local", backup: true },
-  { key: "wasgibts.eintraege", what: "Termine und Aufgaben (v3: „Irgendwann“/„Diese Woche“ still auf heute bzw. den Tag)", version: 3, migration: "kalender/store.ts migrate", area: "local", backup: true },
+  { key: "wasgibts.eintraege", what: "Termine und Aufgaben (v3: „Irgendwann“/„Diese Woche“ still auf heute bzw. den Tag; Abhak-Zeitpunkt `doneAt`/`doneTimes`, Erledigtes nach 12 h still weg)", version: 3, migration: "kalender/store.ts migrate", area: "local", backup: true },
   { key: "wasgibts.notizen", what: "Notizen", version: 2, migration: "notizen/store.ts", area: "local", backup: true },
   { key: "wasgibts.kladde", what: "Schnellnotiz (Schlüssel heißt noch Kladde)", version: 1, migration: "notizen/schnellnotiz.ts", area: "local", backup: true },
   { key: "wasgibts.pinnwand", what: "Pinnwand (Kühlschranktür): Zettel, Fotos (nur der Eintrag) und Sprachnachrichten (Einträge; Memos nicht in der Sicherung), Farbe, Papier, Erledigt, Archiv, Reaktionen je Person, Antworten mit Zitat", version: 4, migration: "pinnwand/store.ts migratePinStore", area: "local", backup: true },

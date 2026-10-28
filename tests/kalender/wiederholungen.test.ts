@@ -131,19 +131,20 @@ describe("Reihenfolge (nie alphabetisch)", () => {
     expect(g.heute.every((i) => !i.when)).toBe(true);
   });
 
-  it("Übersicht: Serien, Erledigtes (14 Tage), alte Zeiträume, von früher", () => {
+  it("Übersicht: Serien, Erledigtes (12 Stunden, A-043), alte Zeiträume, von früher", () => {
     const entries = [
-      aufgabe({ title: "Serie heute", date: "2026-10-19", repeat: { kind: "taeglich" }, doneDates: ["2026-10-20"] }),
+      aufgabe({ title: "Serie heute", date: "2026-10-19", repeat: { kind: "taeglich" }, doneDates: ["2026-10-20"], doneTimes: { "2026-10-20": "2026-10-20T07:00:00.000Z" } }),
       aufgabe({ title: "Serie Di", date: "2026-10-13", repeat: { kind: "woechentlich" } }),
       aufgabe({ title: "Serie Fr", date: "2026-10-23", repeat: { kind: "woechentlich" } }),
       aufgabe({ title: "Serie leer", date: "2026-10-19", repeat: { kind: "wochentage", days: [6] }, skipDates: Array.from({ length: 10 }, (_, i) => addDays("2026-10-25", i * 7)) }),
-      aufgabe({ title: "Alt erledigt", doneOn: "2026-09-01" }),
-      aufgabe({ title: "Neu erledigt", doneOn: "2026-10-19" }),
+      aufgabe({ title: "Alt erledigt", doneOn: "2026-10-19", doneAt: "2026-10-19T20:00:00.000Z" }),
+      aufgabe({ title: "Neu erledigt", doneOn: "2026-10-19", doneAt: "2026-10-19T23:00:00.000Z" }),
       aufgabe({ title: "Nächste Woche", week: "2026-10-26" }),
       aufgabe({ title: "Woche alt", week: "2026-10-05" }),
       aufgabe({ title: "Gestern", date: "2026-10-19", due: "2026-10-21" }),
     ];
-    const g = taskOverview(entries, "2026-10-20");
+    const g = taskOverview(entries, "2026-10-20", "2026-10-20", Date.parse("2026-10-20T10:00:00.000Z"));
+    // neueste oben; „Alt erledigt“ ist 14 Stunden her
     expect(titles(g.erledigt)).toEqual(["Serie heute", "Neu erledigt"]);
     expect(titles(g.heute)).toEqual(["Serie Di", "Woche alt", "Gestern"]);
     // heute schon abgehakt → nächstes Vorkommen morgen

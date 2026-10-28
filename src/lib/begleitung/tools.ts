@@ -26,6 +26,8 @@ export type ToolContext = {
   counter: number;
   /** Heute auf dem Gerät, "YYYY-MM-DD" (für Termine) */
   today: string;
+  /** Jetzt auf dem Gerät (ms, aus `today` + Uhrzeit) – Erledigtes nur 12 h (A-043) */
+  jetzt?: number;
   /** Abends steht die Startseite schon auf morgen (Aufgaben wandern mit, `kalender/mitwandern.ts`) */
   abends?: boolean;
   /** Feierabend nach „Feierabend ab“: Arbeitsaufgaben ruhen (Tafel 103) – „Was steht heute an?“ ohne Arbeit */
