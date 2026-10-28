@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { at } from "../helpers";
 import { applyOps, type ChangeOp } from "@/lib/begleitung/ops";
 import { isSafeOp } from "@/lib/begleitung/miaDone";
-import { needsLargeModel } from "@/lib/begleitung/engine";
+import { needsLargeModel } from "@/lib/begleitung/modellwahl";
 import { tidyMiaText } from "@/lib/begleitung/tidy";
 import { kontext, letzte, rufe } from "./werkzeugKontext";
 

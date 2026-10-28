@@ -7,7 +7,8 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { connection } from "next/server";
-import { AssistantInputError, parseRequest, runAssistant, type CreateMessage, type ModelChoice } from "@/lib/begleitung/engine";
+import { AssistantInputError, parseRequest, runAssistant, type CreateMessage } from "@/lib/begleitung/engine";
+import type { ModelChoice } from "@/lib/begleitung/modellwahl";
 import { aiSetup, checkAccess, clientIp, takeDailySlot } from "@/lib/begleitung/guard";
 import { createMockModel } from "@/lib/begleitung/mock";
 import { ACCESS_HEADER, LIMITS, type AssistantErrorCode, type AssistantStatus, type StreamEvent } from "@/lib/begleitung/protocol";
@@ -40,6 +41,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  // Tempo: Zeiten ab Eingang (nur Zahlen, gehen mit der Antwort an die App)
+  const eingang = performance.now();
   const { configured, mock } = aiSetup();
   if (!configured) return fail("aus", 503);
   const denied = checkAccess(request);
@@ -89,10 +92,16 @@ export async function POST(request: Request) {
   const body = new ReadableStream<Uint8Array>({
     async start(controller) {
       const send = (event: StreamEvent) => controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+      let token: number | null = null;
+      const onText = (d: string) => {
+        token ??= Math.round(performance.now() - eingang);
+        send({ t: "text", d });
+      };
       try {
-        const result = await runAssistant(req, create, model, { onText: (d) => send({ t: "text", d }), onRound: () => send({ t: "round" }) });
+        const result = await runAssistant(req, create, model, { onText, onRound: () => send({ t: "round" }) });
         void recordWishes(result.wishes, req.today);
-        send({ t: "done", reply: result.reply, ops: result.ops, mail: result.mail, chips: result.chips, tips: result.tips, usage: result.usage });
+        const zeit = { token, gesamt: Math.round(performance.now() - eingang) };
+        send({ t: "done", reply: result.reply, ops: result.ops, mail: result.mail, chips: result.chips, tips: result.tips, usage: result.usage, zeit });
       } catch (e) {
         send({ t: "error", error: errorCode(e) });
       } finally {

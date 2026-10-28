@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { needsLargeModel, parseRequest, runAssistant, type CreateMessage } from "@/lib/begleitung/engine";
+import { parseRequest, runAssistant, type CreateMessage } from "@/lib/begleitung/engine";
+import { needsLargeModel } from "@/lib/begleitung/modellwahl";
 import { addUsage } from "@/lib/begleitung/usage";
 import { profileFrom, startState } from "@/lib/einstellungen/welcome";
 
@@ -38,14 +39,18 @@ describe("Hochschalten", () => {
   const choice = { small: "claude-haiku-5-5", large: "claude-sonnet-5-5" };
   vi.spyOn(console, "info").mockImplementation(() => {});
 
-  it("Haiku will ein Rezept erstellen → Sonnet übernimmt, die App setzt den Text zurück", async () => {
-    const { create, models } = fake({ "claude-haiku-5-5": { tool: "rezept_erstellen" }, "claude-sonnet-5-5": { text: "Hier dein Rezept." } });
-    const onRound = vi.fn();
-    const r = await runAssistant(req("Linsensuppe am Freitag"), create, choice, { onRound });
-    expect(models).toEqual(["claude-haiku-5-5", "claude-sonnet-5-5"]);
-    expect(onRound).toHaveBeenCalled();
-    expect(r.reply).toBe("Hier dein Rezept.");
-    expect(r.usage).toMatchObject({ size: "gross", upgraded: true });
+  // Auftrag „Mia schneller und flüssiger“: kein „erst Haiku, dann Sonnet“ mehr
+  it("kein Doppelaufruf: Haiku nutzt ein großes Werkzeug selbst, ohne Sonnet", async () => {
+    const { create, models } = fake({ "claude-haiku-5-5": { tool: "rezept_erstellen", text: "Steht bereit." }, "claude-sonnet-5-5": { text: "-" } });
+    const r = await runAssistant(req("Linsensuppe am Freitag"), create, choice);
+    expect(models).toEqual(["claude-haiku-5-5", "claude-haiku-5-5"]);
+    expect(r.usage).toMatchObject({ size: "klein", upgraded: false });
+  });
+
+  it("kein Doppelaufruf: unsichere Haiku-Antwort bleibt (keine zweite Chance mehr)", async () => {
+    const { create, models } = fake({ "claude-haiku-5-5": { text: "Meinst du heute oder morgen?" }, "claude-sonnet-5-5": { text: "-" } });
+    await runAssistant(req("Zahnarzt Do"), create, choice);
+    expect(models).toEqual(["claude-haiku-5-5"]);
   });
 
   it("Klarer Kurzbefehl bleibt bei Haiku", async () => {
@@ -56,8 +61,16 @@ describe("Hochschalten", () => {
     expect(r.usage?.micro).toBe(150); // 1000 × 0,1 + 100 × 0,5
   });
 
-  it("Fragen und offene Bitten gehen gleich an Sonnet", async () => {
-    for (const q of ["Hast du was mit Linsen?", "Hey, was koche ich heute?", "Wie lange muss ein Ei kochen", "Plan mir die Woche"]) {
+  it("Haiku ist Standard für Alltagsfragen", async () => {
+    for (const q of ["Hab ich morgen Nachmittag Zeit?", "Wie wird das Wetter morgen?", "Was steht auf der Einkaufsliste?", "Wie lange muss ein Ei kochen"]) {
+      const { create, models } = fake({ "claude-haiku-5-5": { text: "Ok." }, "claude-sonnet-5-5": { text: "-" } });
+      await runAssistant(req(q), create, choice);
+      expect(models, q).toEqual(["claude-haiku-5-5"]);
+    }
+  });
+
+  it("Planen, Rezepte, Ideen, Ratschläge gehen gleich an Sonnet", async () => {
+    for (const q of ["Hey, was koche ich heute?", "Hast du Ideen mit Linsen?", "Plan mir die Woche", "Warum wird mein Brot nicht fluffig?"]) {
       const { create, models } = fake({ "claude-haiku-5-5": { text: "x" }, "claude-sonnet-5-5": { text: "Ok." } });
       await runAssistant(req(q), create, choice);
       expect(models, q).toEqual(["claude-sonnet-5-5"]);
@@ -73,18 +86,30 @@ describe("Hochschalten", () => {
     }
   });
 
-  it("„Passt“ nach einer Rückfrage von Mia ist eine Antwort, kein Plaudern → Sonnet", async () => {
-    const { create, models } = fake({ "claude-haiku-5-5": { text: "x" }, "claude-sonnet-5-5": { text: "Steht drin." } });
-    const r = parseRequest({ deviceId: "testgeraet-1", today: "2026-10-21", messages: [{ role: "user", text: "Zahnarzt Donnerstag" }, { role: "assistant", text: "Um wie viel Uhr?" }, { role: "user", text: "Passt" }], pending: [], data: { profile: profileFrom(startState()) } });
-    await runAssistant(r, create, choice);
-    expect(models).toEqual(["claude-sonnet-5-5"]);
+  it("Kontext: „Passt“ im laufenden Planen → Sonnet; nach einer Termin-Rückfrage → Haiku", async () => {
+    const turns = (first: string, ask: string) => parseRequest({ deviceId: "testgeraet-1", today: "2026-10-21", messages: [{ role: "user", text: first }, { role: "assistant", text: ask }, { role: "user", text: "Passt" }], pending: [], data: { profile: profileFrom(startState()) } });
+    const plan = fake({ "claude-haiku-5-5": { text: "x" }, "claude-sonnet-5-5": { text: "Steht bereit." } });
+    await runAssistant(turns("Plan mir die Woche", "Vegetarisch?"), plan.create, choice);
+    expect(plan.models).toEqual(["claude-sonnet-5-5"]);
+    const termin = fake({ "claude-haiku-5-5": { text: "Steht drin." }, "claude-sonnet-5-5": { text: "-" } });
+    await runAssistant(turns("Zahnarzt Donnerstag", "Um wie viel Uhr?"), termin.create, choice);
+    expect(termin.models).toEqual(["claude-haiku-5-5"]);
   });
 
-  it("zweite Chance: Haiku antwortet ohne Aktion unsicher → Sonnet", async () => {
-    const { create, models } = fake({ "claude-haiku-5-5": { text: "Leider weiß ich nicht, was du meinst." }, "claude-sonnet-5-5": { text: "Steht drin." } });
-    const r = await runAssistant(req("Zahnarzt Do 16 Uhr"), create, choice);
+  it("echter Fehler beim kleinen Modell (KI-Fehler) → einmal das große; Tageslimit nicht", async () => {
+    const models: string[] = [];
+    const create: CreateMessage = async (params) => {
+      models.push(params.model as string);
+      if (/haiku/.test(params.model as string)) throw Object.assign(new Error("überlastet"), { status: 529 });
+      return { content: [{ type: "text", text: "Steht drin." }], stop_reason: "end_turn", usage: { input_tokens: 1, output_tokens: 1 } } as never;
+    };
+    const r = await runAssistant(req("Milch auf die Liste"), create, choice);
     expect(models).toEqual(["claude-haiku-5-5", "claude-sonnet-5-5"]);
-    expect(r.reply).toBe("Steht drin.");
+    expect(r.usage).toMatchObject({ size: "gross", upgraded: true });
+    const limit: CreateMessage = async () => {
+      throw Object.assign(new Error("limit"), { status: 429 });
+    };
+    await expect(runAssistant(req("Milch auf die Liste"), limit, choice)).rejects.toThrow("limit");
   });
 
   it("fest eingestelltes Modell (LOTTE_MODEL) schaltet nie", async () => {

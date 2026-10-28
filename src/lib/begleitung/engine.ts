@@ -28,8 +28,10 @@ import { abendsNachUhr } from "@/lib/kalender/mitwandern";
 import { feierabendNachUhr } from "@/lib/kalender/aufgaben";
 import { sanitizeHome } from "@/lib/core/homeLayout";
 import { sanitizeSport } from "@/lib/sport/model";
-import { looksLikeMail, sanitizeMailStyle } from "@/lib/begleitung/mail";
-import { plauderArt } from "@/lib/mia/plaudern";
+import { sanitizeMailStyle } from "@/lib/begleitung/mail";
+import { kontextThemen } from "@/lib/begleitung/kontextThemen";
+import { chooseModel, effortFor, isWeekCheck, type ModelChoice } from "@/lib/begleitung/modellwahl";
+import { EINE_RUNDE_WERKZEUGE, kurzBestaetigbar, kurzeBestaetigung } from "@/lib/begleitung/bestaetigung";
 
 /** Eine Modell-Anfrage; `onText` bekommt den Antworttext Stück für Stück */
 export type CreateMessage = (params: Anthropic.Beta.MessageCreateParamsNonStreaming, onText?: (delta: string) => void) => Promise<Anthropic.Beta.BetaMessage>;
@@ -128,7 +130,8 @@ export function parseRequest(body: unknown): AssistantRequest {
   const tipsThisWeek = typeof b.tipsThisWeek === "number" && b.tipsThisWeek >= 0 ? Math.min(10, Math.round(b.tipsThisWeek)) : 0;
   const clock = typeof b.clock === "string" && /^\d{2}:\d{2}$/.test(b.clock) ? b.clock : berlinTime().clock;
   const shoppingNames = (Array.isArray(b.shoppingNames) ? b.shoppingNames : []).filter((n): n is string => typeof n === "string").map((n) => n.slice(0, 60)).slice(0, 80);
-  return { deviceId: b.deviceId, today: b.today, messages, pending, data, tipsThisWeek, clock, shoppingNames, stream: b.stream === true };
+  const sofort = typeof b.sofort === "string" && b.sofort.trim() ? b.sofort.trim().slice(0, 300) : undefined;
+  return { deviceId: b.deviceId, today: b.today, messages, pending, data, tipsThisWeek, clock, shoppingNames, stream: b.stream === true, ...(sofort ? { sofort } : {}) };
 }
 
 /** Nach einer Ausweich-Antwort (fallback) nur den Teil ab dem letzten Wechsel weitergeben */
@@ -201,6 +204,13 @@ function pendingSummary(ops: ChangeOp[]): string {
   return `\n\nNoch nicht übernommener Vorschlag (in den Daten schon enthalten; auf Wunsch anpassen):\n${lines.join("\n")}`;
 }
 
+/** Sofort-Weg: die App hat schon gehandelt – die KI prüft nur (Antwort „OK“) oder korrigiert mit Werkzeugen */
+export const SOFORT_OK = "OK";
+function sofortHinweis(sofort: string | undefined): string {
+  if (!sofort) return "";
+  return `\n\nDie App hat die letzte Nachricht schon selbst erledigt (ohne dich): ${sofort}. Prüf nur, ob das passt. Passt es, antworte genau „${SOFORT_OK}“, ohne Werkzeug. Verstehst du etwas anderes, mach es mit Werkzeugen richtig (die App nimmt ihres dann zurück) und sag in höchstens einem Satz, was du gemacht hast.`;
+}
+
 type Usage = { in: number; out: number; write: number; read: number; rounds: number };
 
 /** Kosten in Millionstel US-Dollar (fürs Guthaben später; null = Preis unbekannt) */
@@ -215,61 +225,6 @@ function logUsage(model: string, u: Usage, upgraded: boolean) {
   const micro = costMicro(model, u);
   console.info("Lotte Tokens", { modell: model, hochgeschaltet: upgraded, runden: u.rounds, ein: u.in, aus: u.out, cache_gelesen: u.read, cache_geschrieben: u.write, kosten_usd: micro === null ? "?" : (micro / 1_000_000).toFixed(5) });
 }
-
-/** Klein (Haiku) für Alltägliches, groß (Sonnet) für Planen, Rezepte, Mails – oder ein fest eingestelltes Modell */
-export type ModelChoice = string | { small: string; large: string };
-
-/** Braucht diese Anfrage gleich das große Modell? (rein, ohne KI) */
-export function needsLargeModel(req: Pick<AssistantRequest, "messages" | "pending">): boolean {
-  if (req.pending.length > 0) return true; // ein offener Vorschlag wird verfeinert
-  const last = req.messages[req.messages.length - 1]?.text ?? "";
-  if (last.length > 280 || looksLikeMail(last)) return true;
-  return LARGE_TOPICS.test(last);
-}
-
-/**
- * Klarer Kurzbefehl mit eindeutiger Aktion („Milch auf die Liste“, „Timer 10
- * Minuten“, „Zahnarzt Do 16 Uhr“) – nur dafür das kleine Modell (rein, ohne KI).
- * Fragen, offene Bitten, mehrere Dinge, Ratschläge → großes Modell.
- */
-export function isShortCommand(text: string): boolean {
-  const t = text.trim().toLowerCase();
-  if (!t || t.length > 90 || t.includes("?")) return false;
-  if (/(^|\s)(wie|was|warum|wieso|weshalb|welche[rsmn]?|wer|wo|wann|kannst du|könntest|soll ich|sollen wir|hast du|gibt es|meinst du|empfiehl|idee)(\s|$)/.test(t)) return false;
-  // mehrere Dinge auf einmal („… und dann …“, Aufzählung mit Komma und „und“)
-  if (/\bund dann\b|,.*\bund\b.*,/.test(t)) return false;
-  return /auf die (einkaufs)?liste|auf den zettel|\bkaufen\b|einkauf|\btimer\b|\bwecker\b|\bstoppuhr\b|\bminuten?\b|erinner|\bpinnwand\b|\bnotier|merk dir|abhaken|erledigt|\bum \d{1,2}([:.]\d{2})?\b|\b\d{1,2}([:.]\d{2})? ?uhr\b|\b(mo|di|mi|do|fr|sa|so)\b|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|morgen|übermorgen|im haus|vorrat/.test(t);
-}
-
-/**
- * Kurze Alltagsantwort (Ton-Feinschliff): Danke, Lob, Gruß, „Bin platt“,
- * „Wie geht’s?“ – das kleine Modell antwortet schnell und knapp. Nach einer
- * Rückfrage von Mia zählt „Passt“ als Antwort darauf (dann nicht).
- */
-function isSmallTalk(req: Pick<AssistantRequest, "messages">): boolean {
-  const last = req.messages[req.messages.length - 1]?.text ?? "";
-  const before = [...req.messages].reverse().find((m, i) => i > 0 && m.role === "assistant")?.text ?? "";
-  return plauderArt(last, before) !== null;
-}
-
-/** Frage oder Ratschlag (dann denkt das große Modell etwas gründlicher: effort „medium“) */
-export const isQuestion = (text: string) => /\?|^(wie|was|warum|wieso|welche|wer|wo|wann|kannst du|soll ich|hast du|gibt es)\b/i.test(text.trim());
-
-/** Unsichere Antwort des kleinen Modells ohne passende Aktion → das große übernimmt (zweite Chance) */
-const HEDGE = /(nicht sicher|weiß ich nicht|kann ich (leider )?nicht|leider|keine ahnung|verstehe? (ich )?nicht|unklar|meinst du|was genau)/i;
-
-/** Wochencheck (App schickt „[Wochencheck] …“): großes Modell, mehr Ausgabe */
-export const isWeekCheck = (req: Pick<AssistantRequest, "messages">) => (req.messages[req.messages.length - 1]?.text ?? "").startsWith("[Wochencheck]");
-
-/**
- * Planen, Rezepte, Mails, mehrere Dinge auf einmal → gleich das große Modell.
- * „Woche“ allein nicht (Fehler: „Mittwoch nächste Woche um 14 Uhr …“ ging
- * immer zum großen Modell) – nur Wochenplan/Wochencheck/planen.
- */
-const LARGE_TOPICS = /\b(wochenplan\w*|wochencheck|planen?|plan\b|rezept\w*|mail\w*|e-mail|antworte|schreib (eine|dem|der|den|an)|vorschl\w*|ideen für|kochen wir|was koche|essensplan|trainings?\s*plan|trainings planen|räum\w* .*auf|aufräumen)\b/i;
-
-/** Ruft das kleine Modell eines dieser Werkzeuge auf, übernimmt das große */
-const LARGE_TOOLS = new Set(["rezept_erstellen", "mail_entwurf", "wochenplan_aendern", "vorgaben_aendern", "trainings_planen", "kochbuch_durchsuchen", "antwort_knoepfe"]);
 
 /** Klingt nach Wetter? ("Wie wird das Wetter morgen?", "Brauch ich einen Schirm?") */
 const WEATHER_QUESTION = /\b(wetter|schirm|regn\w*|regen|sonnig|sonne|warm|kalt|grad|temperatur|frost|glatt|schnee|wind\w*|sturm|stürm\w*|böen|gewitter)\b/i;
@@ -297,11 +252,12 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
   const feierabend = minutesNow !== null ? feierabendNachUhr(minutesNow, req.data.tagesablauf?.feierabendAb) : false;
   const system: Anthropic.Beta.BetaTextBlockParam[] = [
     // Name/Ton und Arbeitsweise ändern sich selten → gecacht; Kontext pro Anfrage
-    { type: "text", text: `${identityPrompt(req.data.profile)}\n\n${SYSTEM_PROMPT}\n\n${capabilities(toolDefinitions())}`, cache_control: { type: "ephemeral" } },
-    { type: "text", text: contextText(req.data, req.today, weeks, req.tipsThisWeek, { clock: req.clock, shopping: req.shoppingNames, abends, feierabend }) + pendingSummary(req.pending) },
+    // 1 Stunde statt 5 Minuten: auch wer nur ab und zu fragt, trifft den Zwischenspeicher (schneller, günstiger)
+    { type: "text", text: `${identityPrompt(req.data.profile)}\n\n${SYSTEM_PROMPT}\n\n${capabilities(toolDefinitions())}`, cache_control: { type: "ephemeral", ttl: "1h" } },
+    { type: "text", text: contextText(req.data, req.today, weeks, req.tipsThisWeek, { clock: req.clock, shopping: req.shoppingNames, abends, feierabend, themen: kontextThemen(req) }) + pendingSummary(req.pending) + sofortHinweis(req.sofort) },
   ];
 
-  /** Ein Durchlauf mit einem Modell; `small` = darf hochschalten statt große Aufgaben selbst zu machen */
+  /** Ein Durchlauf mit einem Modell; `small` = darf bei einem echten Fehler (Ablehnung, abgeschnitten) hochschalten */
   const attempt = async (model: string, small: boolean) => {
     // Arbeitskopie mit dem bisherigen Vorschlag (bei jedem Durchlauf frisch)
     const start = applyOps(req.data, req.pending);
@@ -311,7 +267,6 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
     if (messages[0].role !== "user") messages.shift();
     const usage: Usage = { in: 0, out: 0, write: 0, read: 0, rounds: 0 };
     let reply = "";
-    let usedTool = false;
     for (let round = 0; round < ENGINE_LIMITS.maxRounds; round++) {
       if (round > 0) events.onRound?.();
       const params: Anthropic.Beta.MessageCreateParamsNonStreaming = {
@@ -321,8 +276,8 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
         system,
         tools: toolDefinitions(),
         messages,
-        // Fragen/Ratschläge etwas gründlicher (medium), reine Aktionen schnell (low); Haiku ohne
-        ...(/haiku/.test(model) ? {} : { output_config: { effort: isQuestion(lastText) && !isShortCommand(lastText) ? ("medium" as const) : ("low" as const) } }),
+        // Haiku und Aktionen: wenig Aufwand (schnell); Fragen/Ratschläge beim großen Modell etwas gründlicher
+        output_config: { effort: effortFor(model, lastText) },
         // Lehnt das Modell ab, springt serverseitig ein Ersatzmodell ein (nur Claude API)
         ...(FALLBACK_MODELS.test(model) ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const } : {}),
       };
@@ -341,13 +296,10 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
         reply = "Dabei kann ich leider nicht helfen. Frag mich gern etwas anderes.";
         break;
       }
+      // Echter Fehler beim kleinen Modell: abgeschnitten → das große übernimmt
+      if (small && response.stop_reason === "max_tokens") return { escalate: true as const, usage };
       const content = cleanContent(response.content);
-      // Zu groß für das kleine Modell (Planen, Rezepte, Mails …) oder abgeschnitten → das große übernimmt
-      if (small && (response.stop_reason === "max_tokens" || content.some((b) => b.type === "tool_use" && LARGE_TOOLS.has(b.name)))) return { escalate: true as const, usage };
       const text = content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("\n").trim();
-      // Zweite Chance: das kleine Modell antwortet ohne Aktion unsicher oder gar nicht → das große
-      if (small && response.stop_reason !== "tool_use" && !usedTool && (!text || HEDGE.test(text))) return { escalate: true as const, usage };
-      if (content.some((b) => b.type === "tool_use")) usedTool = true;
       if (text) reply = text;
       messages.push({ role: "assistant", content });
 
@@ -357,25 +309,44 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
         if (response.stop_reason === "max_tokens") reply = `${reply} …`.trim();
         break;
       }
+      const before = ctx.ops.length;
+      let sauber = req.pending.length === 0;
       const results: Anthropic.Beta.BetaToolResultBlockParam[] = content.flatMap((block) => {
         if (block.type !== "tool_use") return [];
+        const opsVorher = ctx.ops.length;
         const result = runRegisteredTool(ctx, block.name, block.input);
+        // Eine Runde nur, wenn jedes Werkzeug klein ist und sauber genau etwas vorgemerkt hat
+        if (!EINE_RUNDE_WERKZEUGE.has(block.name) || result.isError || ctx.ops.length === opsVorher) sauber = false;
         return [{ type: "tool_result" as const, tool_use_id: block.id, content: result.content, is_error: result.isError }];
       });
+      const neu = ctx.ops.slice(before);
+      // Eine Runde (kleine, sichere Werkzeuge): Bestätigung aus dem Ergebnis, keine zweite Modell-Runde nur für den Text
+      if (sauber && kurzBestaetigbar(neu)) {
+        reply = text || kurzeBestaetigung(neu, req.today);
+        break;
+      }
       messages.push({ role: "user", content: results });
       if (round === ENGINE_LIMITS.maxRounds - 1) reply ||= "Das war mehr, als ich auf einmal schaffe. Hier ist, was ich bisher hab.";
     }
     return { escalate: false as const, usage, reply, ctx };
   };
 
-  // Modell wählen: fest eingestellt, sonst klein – oder gleich groß, wenn die Anfrage danach klingt
+  // Modell wählen: einmal, vor dem Aufruf (Regeln + große Themen + Gesprächskontext)
   const fixed = typeof choice === "string";
-  // Kleines Modell nur für klare Kurzbefehle und kurze Alltagsantworten (Danke, Gruß, „Bin platt“) – alles andere gleich groß
-  const firstModel = fixed ? choice : needsLargeModel(req) || !(isShortCommand(lastText) || isSmallTalk(req)) ? choice.large : choice.small;
+  // Prüfung nach dem Sofort-Weg: immer das kleine Modell (kurz, eindeutig)
+  const firstModel = req.sofort && !fixed ? choice.small : chooseModel(req, choice);
   const canUpgrade = !fixed && firstModel === choice.small && choice.small !== choice.large;
-  let run = await attempt(firstModel, canUpgrade);
+  let run: Awaited<ReturnType<typeof attempt>>;
   let model = firstModel;
-  let spent: { model: string; usage: Usage }[] = [{ model, usage: run.usage }];
+  let spent: { model: string; usage: Usage }[] = [];
+  try {
+    run = await attempt(firstModel, canUpgrade);
+    spent = [{ model, usage: run.usage }];
+  } catch (e) {
+    // Echter Fehler beim kleinen Modell (nicht das Tageslimit): einmal das große
+    if (!canUpgrade || (e as { status?: number }).status === 429) throw e;
+    run = { escalate: true as const, usage: { in: 0, out: 0, write: 0, read: 0, rounds: 0 } };
+  }
   if (run.escalate && !fixed) {
     // Bisher Gezeigtes war nur ein Anlauf – die App ersetzt es durch die neue Antwort
     events.onRound?.();
@@ -383,7 +354,7 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
     run = await attempt(model, false);
     spent = [...spent, { model, usage: run.usage }];
   }
-  for (const s of spent) logUsage(s.model, s.usage, spent.length > 1);
+  for (const s of spent) logUsage(s.model, s.usage, model !== firstModel);
   if (run.escalate) throw new Error("Hochschalten ohne großes Modell");
   const { ctx, reply } = run;
   const costs = spent.map((s) => costMicro(s.model, s.usage));
@@ -393,6 +364,6 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
     reply: reply || (ctx.mail ? "Hier mein Vorschlag:" : "Steht unten als Vorschlag."),
     ops: compactOps(ctx.ops),
     ...extras,
-    ...(model !== "mock" ? { usage: { size: /haiku/.test(model) ? ("klein" as const) : ("gross" as const), upgraded: spent.length > 1, micro } } : {}),
+    ...(model !== "mock" ? { usage: { size: /haiku/.test(model) ? ("klein" as const) : ("gross" as const), upgraded: model !== firstModel, micro } } : {}),
   };
 }

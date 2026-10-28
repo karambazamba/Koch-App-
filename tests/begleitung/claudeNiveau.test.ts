@@ -9,7 +9,7 @@ import { PRUEFSAETZE } from "@/lib/begleitung/pruefstand/saetze";
 import { bewerte, quote, sentenceCount } from "@/lib/begleitung/pruefstand/bewerten";
 import { pruefHaushalt, pruefWetter } from "@/lib/begleitung/pruefstand/haushalt";
 import { costSummary } from "@/lib/begleitung/usage";
-import { isQuestion, isShortCommand } from "@/lib/begleitung/engine";
+import { isQuestion, isShortCommand } from "@/lib/begleitung/modellwahl";
 import { toolDefinitions } from "@/lib/begleitung/toolset";
 import type { AssistantReply } from "@/lib/begleitung/protocol";
 import type { ChangeOp } from "@/lib/begleitung/ops";

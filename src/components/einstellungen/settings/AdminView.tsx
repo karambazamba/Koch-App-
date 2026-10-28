@@ -1,7 +1,7 @@
 "use client";
 
 // Für Entwickler (Auftrag „Mia auf Claude-Niveau“): KI-Kosten der letzten 7
-// Tage auf diesem Gerät, der Prüfstand (Alltagssätze durch die echte Mia,
+// Tage auf diesem Gerät, das Tempo der Gespräche (Median der letzten 20), der Prüfstand (Alltagssätze durch die echte Mia,
 // Ziel ≥ 95 %) und der Prüfstand „Ton“ (30 Sätze, nur der Klang, Ziel
 // ≥ 90 %). Beide brauchen das Prüfstand-Geheimnis aus Vercel
 // (PRUEFSTAND_SECRET) – es wird nur für diesen Aufruf eingetippt, nie
@@ -17,6 +17,7 @@ import { PRUEFSAETZE } from "@/lib/begleitung/pruefstand/saetze";
 import { TON_SAETZE, TON_ZIEL } from "@/lib/begleitung/pruefstand/ton";
 import { MicLogList } from "@/components/einstellungen/settings/MicLogSection";
 import { PruefstandLauf } from "@/components/einstellungen/settings/PruefstandLauf";
+import { TempoSection } from "@/components/einstellungen/settings/TempoSection";
 
 export function AdminView() {
   // Erst im Browser (beim Vorrendern gibt es kein „heute“ und keinen Speicher)
@@ -46,6 +47,7 @@ export function AdminView() {
             <span className="text-right font-bold tabular-nums">{cost.usd.toFixed(2)} $</span>
           </div>
         </section>
+        <TempoSection />
         <div className={`${CARD} overflow-hidden`}>
           <MicLogList as="section" />
         </div>

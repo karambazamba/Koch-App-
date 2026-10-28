@@ -169,19 +169,19 @@ describe("runAssistant: Werkzeug-Schleife", () => {
 
   it("nach einem Ausweich-Wechsel zählen nur Werkzeuge ab dem Wechsel", async () => {
     const { create, calls } = modell([
-      { content: [{ type: "thinking", thinking: "x", signature: "s" }, tool("pinnwand_schreiben", { text: "alt" }, "a"), { type: "fallback" }, tool("pinnwand_schreiben", { text: "neu" }, "b")], stop: "tool_use" },
+      { content: [{ type: "thinking", thinking: "x", signature: "s" }, tool("pinnwand_schreiben", { text: "alt" }, "a"), { type: "fallback" }, tool("pinnwand_schreiben", { text: "neu" }, "b"), tool("tag_anzeigen", {}, "c")], stop: "tool_use" },
       { content: [text("Ok.")] },
     ]);
     const r = await runAssistant(anfrage("Hallo"), create, "claude-sonnet-5-5");
     expect(r.ops).toMatchObject([{ type: "add_pin", text: "neu" }]);
     const assistant = calls[1].messages[1] as { content: Block[] };
-    expect(assistant.content.map((b) => b.type)).toEqual(["fallback", "tool_use"]);
+    expect(assistant.content.map((b) => b.type)).toEqual(["fallback", "tool_use", "tool_use"]);
   });
 
-  it("Haiku: ohne Aufwand-Einstellung; unbekanntes Modell = Kosten unbekannt", async () => {
+  it("Haiku: wenig Aufwand (schnell); unbekanntes Modell = Kosten unbekannt", async () => {
     const { create, calls } = modell([{ content: [text("Ok.")] }]);
     const r = await runAssistant(anfrage("Danke"), create, "claude-haiku-5-5");
-    expect(calls[0].extra).not.toHaveProperty("output_config");
+    expect(calls[0].extra).toMatchObject({ output_config: { effort: "low" } });
     expect(r.usage).toMatchObject({ size: "klein" });
     const anders = await runAssistant(anfrage("Danke"), modell([{ content: [text("Ok.")] }]).create, "irgendein-modell");
     expect(anders.usage?.micro).toBeNull();
