@@ -3303,9 +3303,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
   `nennt`/`nenntNie`. Tests `tests/kalender/erledigt12.test.ts`, Durchklicks
   `erledigtZwoelf`, `erledigtAbgleich`.
 
-## Familie verbinden klarer + Namen statt Mail-Adresse (A-042)
-
-## Familie verbinden klarer + Namen statt Mail-Adresse (v0.147.0, A-042)
+## Familie verbinden klarer + Namen statt Mail-Adresse (v0.148.0, A-042)
 
 - Vorher stand ohne Profilnamen der Teil vor dem @ als Anzeigename und
   „Familie <mail>“ als Haushaltsname im Konto. Jetzt: Name aus dem Profil,
