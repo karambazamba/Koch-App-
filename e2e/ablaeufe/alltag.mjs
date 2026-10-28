@@ -260,5 +260,8 @@ export const todoistAufgaben = async (page, check) => {
   await done.getByRole("button", { name: "Fertig" }).click();
   await page.goto(BASE + "/aufgaben");
   await page.waitForTimeout(1000);
-  check(await page.getByText("Oma anrufen").isVisible(), "Todoist-Aufgabe auf der Aufgaben-Seite");
+  // Todoist-Aufgaben mit Tag (nach dem Testtag) warten unter „Geplant“ (Tafel 103/104)
+  check(!(await page.getByText("Oma anrufen").isVisible()), "Todoist-Aufgabe mit Tag erst ab dem Tag");
+  await page.getByRole("button", { name: /^Geplant · 2/ }).click();
+  check(await page.getByText("Oma anrufen").isVisible(), "Todoist-Aufgabe unter „Geplant“ auf der Aufgaben-Seite");
 };
