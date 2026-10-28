@@ -15,10 +15,10 @@ describe("Codes und Texte", () => {
 
   it("Einladen per Link: Teilen-Text, Token aus dem Link, Familienname", () => {
     const t = "0123456789abcdef0123456789abcdef";
-    expect(inviteLinkShareText("https://koch-app-two.vercel.app/", t)).toBe(`Komm zu uns in „Mia“ 🧡 https://koch-app-two.vercel.app/e/${t}`);
-    expect(tokenFromLink(`Schau mal https://koch-app-two.vercel.app/e/${t.toUpperCase()}`)).toBe(t);
+    expect(inviteLinkShareText("https://mia.karamba-eis.de/", t)).toBe(`Komm zu uns in „Mia“ 🧡 https://mia.karamba-eis.de/e/${t}`);
+    expect(tokenFromLink(`Schau mal https://mia.karamba-eis.de/e/${t.toUpperCase()}`)).toBe(t);
     expect(tokenFromLink(t)).toBe(t);
-    expect(tokenFromLink("https://koch-app-two.vercel.app/e/123")).toBeNull();
+    expect(tokenFromLink("https://mia.karamba-eis.de/e/123")).toBeNull();
     expect(familyNameFor("Felix Berg")).toBe("Familie Felix");
     expect(familyNameFor("Felix", "Berg")).toBe("Familie Berg");
     expect(familyNameFor("")).toBe("Unsere Familie");
@@ -165,5 +165,16 @@ describe("Zur Laufzeit: eingerichtet und angemeldet?", () => {
     const me = { userId: "u", displayName: "Felix", role: "erwachsener" as const, personId: null };
     accountCache.save({ version: 1, user: { userId: "u", email: "a@b.de" }, household: { id: "h", name: "Müller", region: null, members: [me], me } });
     expect(cloudSync()).toBe(true);
+  });
+});
+
+describe("feste Adresse für Einladungslinks", () => {
+  it("nimmt mia.karamba-eis.de, außer auf dem eigenen Rechner", async () => {
+    const { appOrigin, APP_URL } = await import("@/lib/core/app");
+    expect(APP_URL).toBe("https://mia.karamba-eis.de");
+    expect(appOrigin("https://koch-app-two.vercel.app")).toBe(APP_URL);
+    expect(appOrigin("https://koch-app-abc-karamba1.vercel.app/")).toBe(APP_URL);
+    expect(appOrigin("http://localhost:3220")).toBe("http://localhost:3220");
+    expect(appOrigin("http://127.0.0.1:3000/")).toBe("http://127.0.0.1:3000");
   });
 });

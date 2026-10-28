@@ -4,7 +4,7 @@
 // dem Zwischenspeicher, nie ein eigener Abruf), laufendem Timer und
 // Geburtstagen heute. Rechnet jede halbe Minute neu; die Regeln stehen in
 // `src/lib/mia/zubehoer.ts`. Dazu die kurzen Momente am Knopf (Sturm wackelt,
-// Herbstblatt) – nur bei sichtbarer Seite, nie als Dauerschleife.
+// Herbstblatt, Sonnenstrahlen drehen sich einmal) – nur bei sichtbarer Seite, nie als Dauerschleife.
 
 import { useEffect, useState } from "react";
 import { berlinTime, now, useMinutes } from "@/lib/core/now";
@@ -41,7 +41,7 @@ export function useMiaLook(): MiaLook {
 }
 
 const last: Partial<Record<MiaMoment, number>> = {};
-const MOMENT_MS: Record<MiaMoment, number> = { wackeln: 1400, blatt: 2400 };
+const MOMENT_MS: Record<MiaMoment, number> = { wackeln: 1400, blatt: 2400, sonne: 8000 };
 
 /** Kurzer Moment beim Öffnen bzw. Zurückkommen (sichtbare Seite), danach wieder still */
 export function useMiaMoment(): MiaMoment | null {

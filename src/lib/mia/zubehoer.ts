@@ -6,7 +6,9 @@
 // Zubehör darf den ganzen Tag bleiben; Bewegung (Blatt, Wackeln) ist nur ein
 // kurzer Moment (`miaMoment`).
 
-export type Zubehoer = "partyhut" | "kuerbis" | "weihnachtsmuetze" | "konfetti" | "osterei" | "kochmuetze" | "schirm" | "sonnenbrille" | "schal";
+import { isNight } from "@/lib/wetter/view";
+
+export type Zubehoer = "partyhut" | "kuerbis" | "weihnachtsmuetze" | "konfetti" | "osterei" | "kochmuetze" | "schirm" | "sonnenbrille" | "sonne" | "schal";
 
 export type MiaWetter = {
   /** Regen JETZT oder in der nächsten Stunde */
@@ -71,18 +73,23 @@ function anlass(date: string, minutes: number): Zubehoer | null {
   return null;
 }
 
-function wetter(w: MiaWetter | null, month: number): Zubehoer | null {
+/**
+ * Wetter (A-033): Regen bald → Schirm (Vorrang). Sonnig nur tagsüber
+ * (Sonnenauf- bis -untergang, `sunTimes`): ab 18 °C Sonnenbrille, sonst die
+ * kleine Sonne – ganzjährig. Nachts nie Sonne oder Sonnenbrille.
+ */
+function wetter(w: MiaWetter | null, date: string, minutes: number): Zubehoer | null {
   if (!w) return null;
   if (w.regenBald) return "schirm";
-  if (w.sonnig && (w.grad ?? 0) > 22 && month >= 6 && month <= 8) return "sonnenbrille";
-  return null;
+  if (!w.sonnig || isNight(date, minutes)) return null;
+  return w.grad !== null && w.grad >= 18 ? "sonnenbrille" : "sonne";
 }
 
 /** Wie Mia gerade aussieht */
 export function miaLook(l: MiaLage): MiaLook {
   const month = Number(l.date.slice(5, 7));
   const night = (l.minutes >= 22 * 60 || l.minutes < 6 * 60) && !isNewYear(l.date, l.minutes);
-  const zubehoer = (l.geburtstag ? "partyhut" : null) ?? anlass(l.date, l.minutes) ?? (l.kochen ? "kochmuetze" : null) ?? wetter(l.wetter, month) ?? (month === 12 || month <= 2 ? "schal" : null);
+  const zubehoer = (l.geburtstag ? "partyhut" : null) ?? anlass(l.date, l.minutes) ?? (l.kochen ? "kochmuetze" : null) ?? wetter(l.wetter, l.date, l.minutes) ?? (month === 12 || month <= 2 ? "schal" : null);
   return {
     zubehoer,
     schlaeft: night,
@@ -91,12 +98,13 @@ export function miaLook(l: MiaLage): MiaLook {
   };
 }
 
-export type MiaMoment = "blatt" | "wackeln";
+export type MiaMoment = "blatt" | "wackeln" | "sonne";
 
-/** Kurze Momente: Sturm (Böen ≥ 60 km/h jetzt) wackelt höchstens alle 30 Min, Herbstblatt höchstens 1×/h */
+/** Kurze Momente: Sturm (Böen ≥ 60 km/h jetzt) wackelt höchstens alle 30 Min, Sonnenstrahlen drehen sich einmal (höchstens 1×/h, nur wenn Mia die Sonne trägt), Herbstblatt höchstens 1×/h */
 export function miaMoment(l: MiaLage, last: Partial<Record<MiaMoment, number>>, nowMs: number): MiaMoment | null {
   const month = Number(l.date.slice(5, 7));
   if ((l.wetter?.boeen ?? 0) >= 60 && nowMs - (last.wackeln ?? -Infinity) >= 30 * 60_000) return "wackeln";
+  if (miaLook(l).zubehoer === "sonne" && nowMs - (last.sonne ?? -Infinity) >= 60 * 60_000) return "sonne";
   if (month >= 9 && month <= 11 && nowMs - (last.blatt ?? -Infinity) >= 60 * 60_000) return "blatt";
   return null;
 }

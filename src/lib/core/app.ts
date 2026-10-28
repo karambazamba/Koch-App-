@@ -14,8 +14,19 @@ export const APP_FULL_NAME = `${APP_NAME} – Familienplaner`;
 /** Beschreibung (Manifest, Suchmaschinen) */
 export const APP_DESCRIPTION = "Erzähl einfach, was ansteht – Termine, Aufgaben, Essen und Einkauf für die ganze Familie.";
 
+/** Feste Adresse der App (eigene Domain, keine Weiterleitung) – für Links, die man weitergibt */
+export const APP_URL = "https://mia.karamba-eis.de";
+
+/**
+ * Adresse für weitergegebene Links (Einladungen): immer die feste Adresse –
+ * außer auf dem eigenen Rechner bzw. im Testserver (dort bleibt die Herkunft).
+ */
+export function appOrigin(origin: string): string {
+  return /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?\/?$/.test(origin) ? origin.replace(/\/$/, "") : APP_URL;
+}
+
 /** Versionsnummer (wie in package.json) – in den Einstellungen unter "Daten & App" */
-export const APP_VERSION = "0.139.0";
+export const APP_VERSION = "0.140.0";
 
 /** Tag der Auslieferung (beim Bauen gesetzt, next.config.ts) */
 const APP_BUILD_DATE = process.env.BUILD_DATE ?? "";

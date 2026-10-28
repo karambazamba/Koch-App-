@@ -1,7 +1,8 @@
 // Zubehör für Mias Gesicht (Tafel 81/82, Punkt 8) – als SVG-Gruppe im
 // 80er-Raster des Avatars (Kreis Mitte 40/40, Radius 40). Immer nur EINS;
 // welches, rechnet `miaLook` (src/lib/mia/zubehoer.ts). Farben sind Inhalt
-// (wie die Gerichte-Bilder), keine Knöpfe.
+// (wie die Gerichte-Bilder), keine Knöpfe. Die Sonne liegt halb HINTER Mia
+// (BegleitungAvatar zeichnet sie vor dem Körper), Gelb über `--app-sonne`.
 
 import type { Zubehoer } from "@/lib/mia/zubehoer";
 
@@ -62,6 +63,19 @@ export function MiaZubehoer({ was }: { was: Zubehoer }) {
           <rect x="41" y="32" width="13" height="9" rx="3.5" fill="#2E2A27" />
           <path d="M38.5 35h3" stroke="#2E2A27" strokeWidth="2" />
           <path d="M29 34.5h4" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" opacity=".6" />
+        </g>
+      );
+    case "sonne":
+      return (
+        <g className="av-zubehoer av-sonne" data-zubehoer="sonne">
+          <g className="av-sonne-strahlen" stroke="var(--app-sonne)" strokeWidth="2.6" strokeLinecap="round">
+            {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => {
+              const r = (a * Math.PI) / 180;
+              const p = (d: number) => `${(68 + Math.cos(r) * d).toFixed(1)} ${(12 + Math.sin(r) * d).toFixed(1)}`;
+              return <path key={a} d={`M${p(13)}L${p(18)}`} />;
+            })}
+          </g>
+          <circle cx="68" cy="12" r="9.5" fill="var(--app-sonne)" stroke="#fff" strokeWidth="1.6" />
         </g>
       );
     case "osterei":

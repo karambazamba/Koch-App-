@@ -32,6 +32,8 @@ export function BegleitungAvatar({ size, color, zustand, groesse: fest, stabil =
   return (
     <span key={key} className={`avatar ${groesse} inline-flex shrink-0`} data-zustand={z} data-stimmung={stimmung} style={{ "--c": c, width: size, height: size } as CSSProperties} aria-hidden>
       <svg width={size} height={size} viewBox="0 0 80 80" overflow="visible" className="begleitung-avatar" data-farbe={c} data-dunkel={DARK_COLORS.has(c.toUpperCase()) || undefined}>
+        {/* Sonne halb hinter Mia (oben rechts) */}
+        {zubehoer === "sonne" && <MiaZubehoer was="sonne" />}
         <circle className="av-ring" cx="40" cy="40" r="40" fill="none" stroke="var(--c)" strokeWidth="3" />
         <g className="av-body">
           <circle cx="40" cy="40" r="40" fill="var(--c)" />
@@ -60,7 +62,7 @@ export function BegleitungAvatar({ size, color, zustand, groesse: fest, stabil =
             </g>
           </g>
         </g>
-        {zubehoer && <MiaZubehoer was={zubehoer} />}
+        {zubehoer && zubehoer !== "sonne" && <MiaZubehoer was={zubehoer} />}
         {/* Zwei kleine "z" – als Linien gezeichnet (kein Text, damit sie nicht im Seitentext/Vorlesen auftauchen) */}
         <g className="av-zzz" fill="none" stroke="var(--c)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
           <path d="M64.5 4.5h6l-6 7h6" />

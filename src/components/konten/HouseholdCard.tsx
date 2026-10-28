@@ -12,6 +12,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { CARD, CARD_LIST, INPUT, NOTE, buttonClass, chipClass } from "@/components/ui/styles";
 import { showToast } from "@/lib/core/toast";
+import { appOrigin } from "@/lib/core/app";
 import { inviteLinkShareText, inviteLinkUrl, tokenFromLink, type HouseholdInfo, type InviteLink, type Role } from "@/lib/konten/model";
 import { createInviteLink, listInviteLinks, revokeInviteLink, signOut } from "@/lib/konten/account";
 import { useEinladenKnopf, useHaushalt } from "@/lib/einstellungen/useHaushalt";
@@ -35,7 +36,7 @@ export function InviteSheet({ onClose }: { onClose: () => void }) {
   };
   const share = async () => {
     if (!token) return;
-    const text = inviteLinkShareText(window.location.origin, token);
+    const text = inviteLinkShareText(appOrigin(window.location.origin), token);
     try {
       if (navigator.share) return await navigator.share({ text });
     } catch (e) {
@@ -66,7 +67,7 @@ export function InviteSheet({ onClose }: { onClose: () => void }) {
         <div className="mb-2 flex flex-col items-center gap-3 text-center">
           <p className="text-[15px] text-muted">Link für {role === "kind" ? "ein Kind" : "Erwachsene"} – 14 Tage gültig, für alle aus der Familie</p>
           <p className="select-all break-all rounded-field bg-fill px-3 py-2 text-sm" data-testid="einladungs-link">
-            {inviteLinkUrl(window.location.origin, token)}
+            {inviteLinkUrl(appOrigin(window.location.origin), token)}
           </p>
           <button type="button" onClick={() => void share()} className={`${buttonClass("primary")} w-full`}>
             <Share2 className="h-5 w-5" strokeWidth={2.25} aria-hidden />
@@ -75,7 +76,7 @@ export function InviteSheet({ onClose }: { onClose: () => void }) {
           <button
             type="button"
             onClick={() => {
-              void navigator.clipboard?.writeText(inviteLinkUrl(window.location.origin, token)).catch(() => {});
+              void navigator.clipboard?.writeText(inviteLinkUrl(appOrigin(window.location.origin), token)).catch(() => {});
               showToast({ text: "Link kopiert", small: true, seconds: 2 });
             }}
             className="hit inline-flex h-11 items-center gap-2 text-sm font-semibold text-accent-strong"

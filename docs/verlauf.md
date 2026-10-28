@@ -2937,3 +2937,23 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Mia: `startseite_anpassen` mit aktion `farbe` („Mach die Notizen blau“ →
   Lavendel, „Pinnwand wieder in Standardfarbe“ → A), auch ohne KI.
   Prüfstand +2 Sätze.
+
+
+## Neue Adresse mia.karamba-eis.de (v0.140.0, A-030)
+- Feste Adresse `APP_URL` (keine Weiterleitung); Einladungslinks zeigen immer dorthin, Mail-Vorlage lädt das Logo von dort. Supabase-Redirects werden von Hand angepasst (siehe `docs/bereiche/konten.md`).
+
+## Mia-Zubehör: Sonne das ganze Jahr (v0.140.0, A-033)
+- `wetter()` in `src/lib/mia/zubehoer.ts`: Regen bald → Schirm (Vorrang);
+  jetzt sonnig ab 18 °C → Sonnenbrille, ganzjährig (vorher nur > 22 °C im
+  Sommer); sonnig unter 18 °C → neues Zubehör „sonne“. Sonne und Sonnenbrille
+  nur tagsüber (Sonnenauf- bis -untergang über `isNight` aus
+  `wetter/view.ts`), nachts nie. Rangfolge Geburtstag > Anlass > Kochen >
+  Wetter > Jahreszeit unverändert, immer genau EIN Zubehör.
+- Sonne: Kreis mit acht kurzen Strahlen in `--app-sonne` (#F5B82E), halb
+  hinter Mia oben rechts; am Mia-Knopf und auf der Bühne (dort als einziges
+  Zubehör). Neuer Moment `sonne` in `miaMoment`: Strahlen drehen sich einmal
+  in 8 s, höchstens 1×/h, nur transform; reduzierte Bewegung = still.
+- Das eckige Logo (`BrandMark`) bleibt ohne Zubehör (Test).
+- Tests: `tests/mia/familienmanagerin.test.ts` (Oktober 13 °C mittags Sonne,
+  April 19 °C Sonnenbrille, nachts nichts, Regen schlägt Sonne, Moment,
+  Logo, Token und reduzierte Bewegung).
