@@ -40,6 +40,22 @@ export const datenschutz = async (page, check, device) => {
     const card = fresh.getByRole("region", { name: "Darf ich mitdenken?" });
     check(await card.waitFor({ timeout: 8000 }).then(() => true, () => false), "Bühne: „… braucht kurz dein OK“");
     check(kiCalls === 0, "ohne OK keine Anfrage an die KI");
+    // A-027: Anbieter nur, wenn gebraucht – Anthropic immer, ElevenLabs nur mit Server-Stimme
+    const stimme = await fresh.evaluate(async () => {
+      const s = await (await fetch("/api/lotte", { cache: "no-store" })).json();
+      return Boolean(s.stimme?.sprechen || s.stimme?.hoeren);
+    });
+    const text = (await card.textContent()) ?? "";
+    check(text.includes("Anthropic") && text.includes("ElevenLabs") === stimme, `OK-Karte nennt ElevenLabs nur mit Server-Stimme (${stimme ? "an" : "aus"})`);
+    // „Nicht jetzt“ schließt nur die Karte: keine Einwilligung, kein „Später“ beim Zugangscode, kein Code-Bildschirm
+    await card.getByRole("button", { name: "Nicht jetzt" }).click();
+    check(await card.waitFor({ state: "detached", timeout: 5000 }).then(() => true, () => false), "„Nicht jetzt“: Karte weg");
+    const nachher = await fresh.evaluate(() => ({ ki: JSON.parse(localStorage.getItem("wasgibts.einwilligungen") ?? "null")?.arten?.ki?.ja === true, spaeter: localStorage.getItem("wasgibts.zugangscode.spaeter") }));
+    check(!nachher.ki && nachher.spaeter === null && !(await fresh.locator("[data-code-screen]").count()), "„Nicht jetzt“: KI nicht erlaubt, Zugangscode unberührt");
+    await fresh.reload();
+    await fresh.getByRole("tab", { name: "Heute", selected: true }).waitFor();
+    await fresh.getByRole("button", { name: /^Sag .*was ansteht/ }).first().click();
+    check(await card.waitFor({ timeout: 8000 }).then(() => true, () => false), "nächstes Gespräch: Karte wieder da");
     await card.getByRole("button", { name: "Erlauben" }).click();
     check(await card.waitFor({ state: "detached", timeout: 5000 }).then(() => true, () => false), "„Erlauben“ – Karte weg");
 
@@ -105,25 +121,27 @@ export const miaKnopfPlatz = async (page, check) => {
   check(caught.some((m) => m.includes("Dieser Text liegt")), "Regel „Knopf über Text“ findet Text unter dem Mia-Knopf");
 };
 
-/** „Bevor’s losgeht“: neue Nutzer kommen ohne Häkchen nicht weiter, bestehende sehen es genau einmal, Rechtstexte bleiben lesbar */
+/** Zustimmung (A-027): neue Nutzer haken im Hallo an – ohne Häkchen kein „Los geht’s“; bestehende sehen „Bevor’s losgeht“ genau einmal, Rechtstexte bleiben lesbar */
 export const vorDemStart = async (page, check, device) => {
   const fresh = await newPage(page.context().browser(), device, { consent: false });
   try {
     await fresh.goto(BASE);
-    await fresh.getByRole("button", { name: "Los geht’s" }).click();
-    const titel = fresh.getByRole("heading", { name: "Bevor’s losgeht" });
-    check(await titel.waitFor({ timeout: 5000 }).then(() => true, () => false), "neu: nach „Los geht’s“ kommt „Bevor’s losgeht“");
-    const weiter = fresh.getByRole("button", { name: "Weiter" });
-    check(await weiter.isDisabled(), "ohne Häkchen ist „Weiter“ aus");
-    await weiter.click({ force: true }).catch(() => {});
-    check(await titel.isVisible(), "ohne Häkchen kein Weiterkommen");
-    check(await fresh.locator("[data-zustimmung]").getByRole("link", { name: "Datenschutz" }).isVisible(), "Link Datenschutz sichtbar");
-    check(await fresh.locator("[data-zustimmung]").getByRole("link", { name: "Nutzungsbedingungen" }).isVisible(), "Link Nutzungsbedingungen sichtbar");
+    const los = fresh.getByRole("button", { name: "Los geht’s" });
+    await los.waitFor();
+    await fresh.waitForTimeout(1200);
+    check(await los.isDisabled(), "neu: ohne Häkchen ist „Los geht’s“ aus");
+    await los.click({ force: true }).catch(() => {});
+    check(!(await fresh.locator("[data-zeigmal]").count()), "ohne Häkchen kein Weiterkommen");
+    check(!(await fresh.getByRole("heading", { name: "Bevor’s losgeht" }).count()), "kein eigener Schritt „Bevor’s losgeht“");
+    const recht = fresh.locator("[data-hello-marke] nav");
+    check(await recht.getByRole("link", { name: "Datenschutz" }).isVisible(), "Link Datenschutz sichtbar");
+    check(await recht.getByRole("link", { name: "Nutzungsbedingungen" }).isVisible(), "Link Nutzungsbedingungen sichtbar");
+    check(await fresh.getByText("Ich akzeptiere die Nutzungsbedingungen und hab die Datenschutzerklärung gelesen.").isVisible(), "Häkchen-Satz");
     await fresh.getByText(/^Ich akzeptiere die/).click();
-    await weiter.click();
-    check(await fresh.getByRole("button", { name: "Für die Familie" }).waitFor({ timeout: 5000 }).then(() => true, () => false), "mit Häkchen weiter zu „Für wen soll ich sortieren?“");
     const stand = await fresh.evaluate(() => JSON.parse(localStorage.getItem("wasgibts.einwilligungen") ?? "null")?.arten?.bedingungen);
-    check(stand?.ja === true && stand.version >= 1 && typeof stand.at === "string", "Fassung und Zeit gespeichert");
+    check(stand?.ja === true && stand.version >= 1 && typeof stand.at === "string", "Fassung und Zeit gleich gespeichert");
+    await los.click();
+    check(await fresh.getByRole("button", { name: "Für die Familie" }).waitFor({ timeout: 5000 }).then(() => true, () => false), "mit Häkchen weiter zu „Für wen soll ich sortieren?“");
   } finally {
     await fresh.context().close();
   }

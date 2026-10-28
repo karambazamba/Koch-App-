@@ -60,9 +60,35 @@ const CONSENT = () => {
   }
 };
 
+/** Karte „Mia auf den Home-Bildschirm“ (A-027) gilt als erledigt – sonst stünde sie im Browser auf jeder Startseite; eigener Ablauf `homeKarte` */
+const HOMESCREEN_DONE = () => {
+  try {
+    if (!localStorage.getItem("wasgibts.homebildschirm")) localStorage.setItem("wasgibts.homebildschirm", JSON.stringify({ version: 1, spaeter: 0, am: null, fertig: true }));
+  } catch {
+    // ohne Speicher (about:blank) nichts zu tun
+  }
+};
+
+/** /api/lotte nachgestellt: „braucht Zugangscode“ mit ausgedachtem Prüfcode (nie der echte, der liegt nur in Vercel) */
+export const PRUEF_CODE = "nur-im-test";
+export async function serverMitCode(page, seen = { urls: [] }) {
+  await page.route("**/api/lotte**", async (route) => {
+    const req = route.request();
+    seen.urls.push(req.url());
+    const code = req.headers()["x-lotte-code"];
+    if (req.method() === "GET") {
+      const status = { configured: true, mock: false, needsCode: true, ...(code ? { access: code === PRUEF_CODE ? "ok" : "falsch" } : {}) };
+      return route.fulfill({ json: status });
+    }
+    if (code !== PRUEF_CODE) return route.fulfill({ status: 401, json: { error: "zugangscode" } });
+    return route.continue();
+  });
+  return seen;
+}
+
 /** Neue Seite auf einem Gerät: feste Zeit, Zeitzone Berlin, Bewegung reduziert, hell/dunkel */
 /** Mikrofon erlaubt wie bei jemandem, der „Erlauben“ getippt hat (Sperre stellt `FAKE_MIC` nach) */
-export async function newPage(browser, device, { dark = false, time = TIME, permissions = ["microphone"], consent = true } = {}) {
+export async function newPage(browser, device, { dark = false, time = TIME, permissions = ["microphone"], consent = true, homeKarte = false } = {}) {
   const ctx = await browser.newContext({ ...devices[device], timezoneId: "Europe/Berlin", locale: "de-DE", colorScheme: dark ? "dark" : "light", reducedMotion: "reduce", permissions });
   const page = await ctx.newPage();
   page.errors = [];
@@ -72,21 +98,18 @@ export async function newPage(browser, device, { dark = false, time = TIME, perm
   await page.addInitScript(SEEDED_RANDOM);
   // Datenschutz (Platz 23): Einwilligungen für KI und Bedingungen schon gegeben – nur wenn noch keine da sind
   if (consent) await page.addInitScript(CONSENT);
+  if (!homeKarte) await page.addInitScript(HOMESCREEN_DONE);
   return page;
 }
 
-/** „Los geht’s“ → (ohne Zustimmung „Bevor’s losgeht“: Häkchen, „Weiter“) → „Für wen soll ich sortieren?“ */
-export async function losGehts(page) {
-  await page.getByRole("button", { name: "Los geht’s" }).click();
-  const next = await Promise.race([
-    page.getByRole("button", { name: "Für die Familie" }).waitFor().then(() => "zeigmal"),
-    page.getByRole("heading", { name: "Bevor’s losgeht" }).waitFor().then(() => "zustimmung"),
-  ]);
-  if (next === "zustimmung") {
-    await page.getByText(/^Ich akzeptiere die/).click();
-    await page.getByRole("button", { name: "Weiter" }).click();
-  }
-  await page.getByRole("button", { name: "Für die Familie" }).click();
+/** Hallo (A-027: Zustimmung als Häkchen im Hallo – ohne Zustimmung erst anhaken) → „Los geht’s“ → „Für wen soll ich sortieren?“ */
+export async function losGehts(page, wahl = "Für die Familie") {
+  const los = page.getByRole("button", { name: "Los geht’s" });
+  await los.waitFor();
+  const haken = page.getByRole("checkbox", { name: /^Ich akzeptiere die/ });
+  if (!(await haken.isChecked())) await page.getByText(/^Ich akzeptiere die/).click();
+  await los.click();
+  await page.getByRole("button", { name: wahl }).click();
 }
 
 /** Erster Start wie im echten Leben: Hallo → „Los geht’s“ → „Für wen soll ich sortieren?“ → Startseite mit Beispiel-Tag */

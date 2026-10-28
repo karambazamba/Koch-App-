@@ -2957,3 +2957,36 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Tests: `tests/mia/familienmanagerin.test.ts` (Oktober 13 °C mittags Sonne,
   April 19 °C Sonnenbrille, nachts nichts, Regen schlägt Sonne, Moment,
   Logo, Token und reduzierte Bewegung).
+
+## Erster Start rund für Testfreunde (vX, A-027)
+- Problem: Vor der App standen bis zu vier Bildschirme (Hallo, „Bevor’s
+  losgeht“, „Für wen“, Testcode), der Code-Bildschirm hatte ein zweites „Los
+  geht’s“, „Testcode“ klang nach Baustelle, und wer Mia im Browser nutzte,
+  erfuhr nie, wie sie auf den Home-Bildschirm kommt.
+- Höchstens 3 Bildschirme: Die Zustimmung steht jetzt im Hallo – die drei
+  Sätze klein (ohne „ihr“: „Deine Sachen bleiben auf diesem Handy. Mit Konto
+  teilst du sie mit deinen Leuten.“ · „Ich bin eine KI und kann mich auch mal
+  irren.“ · „Deine Daten werden nie verkauft.“), darunter das Häkchen „Ich
+  akzeptiere die Nutzungsbedingungen und hab die Datenschutzerklärung
+  gelesen.“ (speichert sofort, gleiche Fassung wie bisher, alte Profile
+  unverändert); „Los geht’s“ erst mit Häkchen. Danach „Für wen soll ich
+  sortieren?“, danach der Zugangscode nur, wenn nötig. „Bevor’s losgeht“
+  bleibt nur für bestehende Nutzer ohne gültige Zustimmung.
+- Zugangscode statt Testcode (Bildschirm, Einstellungen „Zugangscode
+  ändern“, Mias Satz): „Fast geschafft.“, „Gib deinen Zugangscode ein, dann
+  kann ich zuhören und mitdenken.“, darunter „Groß/klein und Leerzeichen sind
+  egal.“, Knopf „Fertig“. Prüfung nachsichtig in App und Server
+  (`normalisiereZugangscode`: Leerzeichen raus, klein; weiter Hash-Vergleich
+  in konstanter Zeit und 5 Fehlversuche je Adresse).
+- Einladung (/e/…): E-Mail-Code → Startseite; der Zugangscode erst beim
+  ersten KI-Versuch (`codeErstBeimKiVersuch`).
+- „Mia auf den Home-Bildschirm“: einmal eine ruhige Karte oben auf der
+  Startseite, nur im Browser (iPhone/Safari mit Skizze und „Zeig’s mir“,
+  iPhone in anderem Browser „Öffne mich in Safari …“, Android
+  `beforeinstallprompt` → „Mia installieren“ bzw. „Menü ⋮ → App
+  installieren“); „Später“ = nach 2 Tagen einmal wieder, dann nie mehr;
+  dauerhaft unter Einstellungen → Daten & App. Speicher
+  `wasgibts.homebildschirm` (nur Gerät).
+- KI-OK aufgeräumt: „Mia braucht kurz dein OK“ nennt ElevenLabs nur, wenn
+  Mias Stimme bzw. Ohr vom Server aktiv ist; „Nicht jetzt“ schließt nur die
+  Karte (Einwilligung bleibt unerteilt, Zugangscode unberührt).

@@ -1,11 +1,12 @@
 // Hallo → Startseite, Bearbeiten-Modus, Wischen zwischen den Seiten
-import { BASE, hello, losGehts, newPage, seedFamily, setDark, swipe } from "../lib.mjs";
+import { BASE, hello, losGehts, newPage, seedFamily, serverMitCode, setDark, swipe } from "../lib.mjs";
 
 export const hallo = async (page, check) => {
   await page.goto(BASE);
   const hi = await page.getByRole("heading", { name: "Moin, ich bin Mia." }).waitFor({ timeout: 5000 }).then(() => true, () => false);
   check(hi, "Hallo-Bildschirm „Moin, ich bin Mia.“");
-  // Zustimmung ist hier schon erteilt (Testseite) → direkt Bildschirm 3: „Für wen soll ich sortieren?“
+  // Zustimmung ist hier schon erteilt (Testseite): das Häkchen im Hallo steht schon → Bildschirm 2: „Für wen soll ich sortieren?“
+  check(await page.getByRole("checkbox", { name: /^Ich akzeptiere die/ }).isChecked(), "Häkchen steht schon (Zustimmung erteilt)");
   await page.getByRole("button", { name: "Los geht’s" }).click();
   const zeig = page.getByRole("button", { name: "Für die Familie" });
   check(await zeig.waitFor({ timeout: 4000 }).then(() => true, () => false), "nach „Los geht’s“: „Für wen soll ich sortieren?“");
@@ -17,7 +18,7 @@ export const hallo = async (page, check) => {
   // Zurück-Geste geht einen Schritt zurück, dann wieder vor
   await page.goBack();
   check(await page.getByRole("button", { name: "Los geht’s" }).isVisible(), "Zurück: wieder der Hallo-Bildschirm");
-  check(!(await page.locator("[data-zeigmal]").count()), "Zurück: Bildschirm 3 weg");
+  check(!(await page.locator("[data-zeigmal]").count()), "Zurück: Bildschirm 2 weg");
   await page.getByRole("button", { name: "Los geht’s" }).click();
   await zeig.click();
   await page.getByRole("tab", { name: "Heute", selected: true }).waitFor({ timeout: 5000 });
@@ -42,29 +43,39 @@ export const hallo = async (page, check) => {
   check(!(await page.locator("[data-zeigmal], [data-zustimmung]").count()) && !(await page.getByRole("button", { name: "Los geht’s" }).count()), "Zurück auf der Startseite: kein Hallo-Schritt");
 };
 
-/** Erster Start ganz neu (ohne Zustimmung): genau 3 Bildschirme (der dritte mit der Frage „Für wen?“), dann Beispiel-Tag; auf dem iPhone SE passt die Sprechblase ohne Scrollen */
+/** Erster Start ganz neu (ohne Zustimmung, A-027): Hallo mit Häkchen → „Für wen?“ → Beispiel-Tag; „Los geht’s“ erst mit Häkchen; auf dem iPhone SE passt beides ohne Scrollen */
 export const ersterStart = async (page, check, device) => {
   for (const name of [device, "iPhone SE"]) {
     const p = await newPage(page.context().browser(), name, { consent: false });
     try {
       await p.goto(BASE);
-      await p.getByRole("button", { name: "Los geht’s" }).click();
-      await p.getByRole("heading", { name: "Bevor’s losgeht" }).waitFor();
+      const los = p.getByRole("button", { name: "Los geht’s" });
+      await los.waitFor();
+      await p.waitForTimeout(1200);
+      for (const t of ["Deine Sachen bleiben auf diesem Handy. Mit Konto teilst du sie mit deinen Leuten.", "Ich bin eine KI und kann mich auch mal irren.", "Deine Daten werden nie verkauft."]) check(await p.getByText(t, { exact: true }).isVisible(), `${name}: „${t}“`);
+      check(await los.isDisabled(), `${name}: ohne Häkchen ist „Los geht’s“ aus`);
+      const fitHallo = await p.evaluate(() => {
+        const main = document.querySelector("main[aria-label=Willkommen]");
+        return main.scrollHeight <= main.clientHeight + 1;
+      });
+      check(fitHallo, `${name}: Hallo mit Zustimmung passt ohne Scrollen`);
       await p.getByText(/^Ich akzeptiere die/).click();
-      await p.getByRole("button", { name: "Weiter" }).click();
+      check(await los.isEnabled(), `${name}: mit Häkchen geht’s`);
+      const stand = await p.evaluate(() => JSON.parse(localStorage.getItem("wasgibts.einwilligungen") ?? "null")?.arten?.bedingungen);
+      check(stand?.ja === true && typeof stand.at === "string", `${name}: Zustimmung gleich gespeichert`);
+      await los.click();
+      check(!(await p.getByRole("heading", { name: "Bevor’s losgeht" }).count()), `${name}: kein eigener Schritt „Bevor’s losgeht“`);
       await p.getByRole("button", { name: "Für die Familie" }).waitFor();
       await p.waitForTimeout(1200);
       const fit = await p.locator("[data-zeigmal]").evaluate((el) => ({ fits: el.scrollHeight <= el.clientHeight + 1, buttons: el.querySelectorAll("button").length }));
-      check(fit.fits, `${name}: Bildschirm 3 passt ohne Scrollen`);
+      check(fit.fits, `${name}: Bildschirm 2 passt ohne Scrollen`);
       check(fit.buttons === 3, `${name}: drei gleichwertige Knöpfe (allein, zu zweit, Familie)`);
-      // Zurück: ein Schritt zurück zu „Bevor’s losgeht“
+      // Zurück: ein Schritt zurück zum Hallo (Häkchen bleibt)
       await p.goBack();
-      check(await p.getByRole("heading", { name: "Bevor’s losgeht" }).waitFor({ timeout: 3000 }).then(() => true, () => false), `${name}: Zurück führt zu „Bevor’s losgeht“`);
+      check(await los.waitFor({ timeout: 3000 }).then(() => true, () => false), `${name}: Zurück führt zum Hallo`);
+      check(await los.isEnabled(), `${name}: Häkchen bleibt nach Zurück`);
       await p.goForward().catch(() => {});
-      if (!(await p.getByRole("button", { name: "Für die Familie" }).isVisible())) {
-        await p.getByText(/^Ich akzeptiere die/).click().catch(() => {});
-        await p.getByRole("button", { name: "Weiter" }).click();
-      }
+      if (!(await p.getByRole("button", { name: "Für die Familie" }).isVisible())) await los.click();
       await p.getByRole("button", { name: "Für die Familie" }).click();
       check(await p.getByRole("tab", { name: "Heute", selected: true }).waitFor({ timeout: 5000 }).then(() => true, () => false), `${name}: danach die Startseite`);
       check(await p.getByText("So sieht ein Tag aus").waitFor({ timeout: 3000 }).then(() => true, () => false), `${name}: mit Beispiel-Tag`);
@@ -72,7 +83,7 @@ export const ersterStart = async (page, check, device) => {
       await p.context().close();
     }
   }
-  // Wer über Anmelden kommt, sieht Bildschirm 3 nie
+  // Wer über Anmelden kommt, sieht Bildschirm 2 nie
   const login = await newPage(page.context().browser(), device);
   try {
     await login.goto(BASE);
@@ -82,6 +93,142 @@ export const ersterStart = async (page, check, device) => {
     check(!(await login.locator("[data-zeigmal]").count()), "Anmelden: kein „Für wen soll ich sortieren?“");
   } finally {
     await login.context().close();
+  }
+};
+
+/** Bildschirme bis zur Startseite zählen (Hallo, „Für wen“, Zugangscode) */
+async function bildschirmeBisStart(p, wahl) {
+  const gesehen = new Set();
+  const merken = async () => {
+    if (await p.locator("main[aria-label=Willkommen]").isVisible().catch(() => false)) gesehen.add("hallo");
+    if (await p.locator("[data-zeigmal]").isVisible().catch(() => false)) gesehen.add("fuerwen");
+    if (await p.locator("[data-code-screen]").isVisible().catch(() => false)) gesehen.add("code");
+    if (await p.locator("[data-zustimmung]").isVisible().catch(() => false)) gesehen.add("zustimmung");
+  };
+  await p.goto(BASE);
+  await p.getByRole("button", { name: "Los geht’s" }).waitFor();
+  await merken();
+  await p.getByText(/^Ich akzeptiere die/).click();
+  await p.getByRole("button", { name: "Los geht’s" }).click();
+  await p.getByRole("button", { name: wahl }).waitFor();
+  await merken();
+  await p.getByRole("button", { name: wahl }).click();
+  await p.getByRole("tab", { name: "Heute", selected: true }).waitFor({ timeout: 5000 });
+  await p.waitForTimeout(1500);
+  await merken();
+  return gesehen;
+}
+
+/** A-027: höchstens 3 Bildschirme bis zur Startseite – allein, zu zweit, Familie; ohne Code-Pflicht 2, mit 3 (Zugangscode zuletzt) */
+export const dreiBildschirme = async (page, check, device) => {
+  const browser = page.context().browser();
+  for (const wahl of ["Nur für mich", "Für uns zwei", "Für die Familie"]) {
+    for (const mitCode of [false, true]) {
+      const p = await newPage(browser, device, { consent: false });
+      try {
+        if (mitCode) await serverMitCode(p);
+        const gesehen = await bildschirmeBisStart(p, wahl);
+        const n = gesehen.size;
+        check(n <= 3 && !gesehen.has("zustimmung"), `${wahl}${mitCode ? " (mit Zugangscode)" : ""}: ${n} Bildschirme (${[...gesehen].join(" → ")})`);
+        check(mitCode ? gesehen.has("code") : !gesehen.has("code"), `${wahl}: Zugangscode ${mitCode ? "als 3. Bildschirm" : "nur wenn nötig (hier nicht)"}`);
+        if (mitCode) {
+          await p.getByRole("button", { name: "Später" }).click();
+          check(await p.locator("[data-code-screen]").waitFor({ state: "detached", timeout: 5000 }).then(() => true, () => false), `${wahl}: „Später“ führt zur Startseite`);
+        }
+      } finally {
+        await p.context().close();
+      }
+    }
+  }
+};
+
+/** A-027: Karte „Mia auf den Home-Bildschirm“ – nur im Browser, nie als App; „Später“ = nach 2 Tagen einmal wieder; Android mit Installier-Angebot */
+export const homeKarte = async (page, check, device) => {
+  const browser = page.context().browser();
+  const ios = /iPhone/.test(device);
+  const karte = (p) => p.locator("[data-home-karte]");
+  const p = await newPage(browser, device, { homeKarte: true });
+  // Ein echtes Installier-Angebot des Test-Browsers hier ausblenden (das Angebot prüft der Android-Teil unten)
+  await p.addInitScript(() => window.addEventListener("beforeinstallprompt", (e) => e.stopImmediatePropagation(), { capture: true }));
+  try {
+    await hello(p);
+    check(await karte(p).waitFor({ timeout: 6000 }).then(() => true, () => false), "im Browser: Karte oben auf der Startseite (ab dem ersten Öffnen nach „Für wen“)");
+    check((await karte(p).getAttribute("data-home-karte")) === (ios ? "ios-safari" : "android-menue"), ios ? "iPhone/Safari: Teilen → Zum Home-Bildschirm" : "Android ohne Angebot: „Menü ⋮ → App installieren“");
+    check((await karte(p).count()) === 1 && (await p.locator("[data-tipp=leiste-neu], [data-tipp=startseite-halten]").count()) === 0, "höchstens EIN Hinweis unter der Jetzt-Karte");
+    check((await karte(p).locator("[data-home-skizze] svg").count()) >= 2, "kleine Skizze mit Linien-Icons");
+    await karte(p).getByRole("button", { name: "Zeig’s mir" }).click();
+    const fenster = p.getByRole("dialog", { name: "Mia auf den Home-Bildschirm" });
+    check(await fenster.waitFor({ timeout: 4000 }).then(() => true, () => false), "„Zeig’s mir“ öffnet das Fenster");
+    check((await fenster.locator("[data-home-anleitung] li").count()) === 3, "drei Schritte mit Skizzen");
+    await p.keyboard.press("Escape");
+    await fenster.waitFor({ state: "detached", timeout: 4000 }).catch(() => {});
+    await karte(p).getByRole("button", { name: "Später" }).click();
+    check(await karte(p).waitFor({ state: "detached", timeout: 4000 }).then(() => true, () => false), "„Später“: Karte weg");
+    await p.reload();
+    await p.getByRole("tab", { name: "Heute", selected: true }).waitFor();
+    await p.waitForTimeout(1000);
+    check(!(await karte(p).count()), "nach „Später“: heute nicht wieder");
+    // 2 Tage später: einmal wieder, nach dem zweiten „Später“ nie mehr
+    await p.evaluate(() => {
+      const s = JSON.parse(localStorage.getItem("wasgibts.homebildschirm"));
+      localStorage.setItem("wasgibts.homebildschirm", JSON.stringify({ ...s, am: "2026-10-01" }));
+    });
+    await p.reload();
+    check(await karte(p).waitFor({ timeout: 6000 }).then(() => true, () => false), "nach 2 Tagen: einmal wieder");
+    await karte(p).getByRole("button", { name: "Später" }).click();
+    await p.evaluate(() => {
+      const s = JSON.parse(localStorage.getItem("wasgibts.homebildschirm"));
+      localStorage.setItem("wasgibts.homebildschirm", JSON.stringify({ ...s, am: "2026-09-01" }));
+    });
+    await p.reload();
+    await p.getByRole("tab", { name: "Heute", selected: true }).waitFor();
+    await p.waitForTimeout(1000);
+    check(!(await karte(p).count()), "zweites „Später“: nie mehr");
+    // Dauerhaft in Einstellungen → Daten & App
+    await p.goto(BASE + "/profil/daten");
+    check(await p.getByRole("button", { name: /Mia auf den Home-Bildschirm/ }).waitFor({ timeout: 5000 }).then(() => true, () => false), "Daten & App: „Mia auf den Home-Bildschirm“");
+  } finally {
+    await p.context().close();
+  }
+
+  // Als App (standalone): nie
+  const app = await newPage(browser, device, { homeKarte: true });
+  try {
+    await app.addInitScript(() => {
+      const mm = window.matchMedia.bind(window);
+      window.matchMedia = (q) => (q.includes("display-mode: standalone") ? { matches: true, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false } : mm(q));
+    });
+    await hello(app);
+    await app.waitForTimeout(1200);
+    check(!(await karte(app).count()), "als Home-Bildschirm-App: keine Karte");
+  } finally {
+    await app.context().close();
+  }
+
+  // Android: Installier-Angebot abgefangen → „Mia installieren“
+  if (!ios) {
+    const a = await newPage(browser, device, { homeKarte: true });
+    try {
+      await hello(a);
+      await a.evaluate(() => {
+        const e = new Event("beforeinstallprompt", { cancelable: true });
+        window.__angebot = { gezeigt: 0 };
+        e.prompt = async () => {
+          window.__angebot.gezeigt++;
+        };
+        e.userChoice = Promise.resolve({ outcome: "accepted" });
+        window.dispatchEvent(e);
+        window.__angebot.abgefangen = e.defaultPrevented;
+      });
+      check(await a.evaluate(() => window.__angebot.abgefangen), "beforeinstallprompt abgefangen (aufgehoben)");
+      const knopf = karte(a).getByRole("button", { name: "Mia installieren" });
+      check(await knopf.waitFor({ timeout: 4000 }).then(() => true, () => false), "Android mit Angebot: „Mia installieren“");
+      await knopf.click();
+      check(await karte(a).waitFor({ state: "detached", timeout: 4000 }).then(() => true, () => false), "installiert: Karte weg");
+      check((await a.evaluate(() => window.__angebot.gezeigt)) === 1, "Angebot genau einmal gezeigt");
+    } finally {
+      await a.context().close();
+    }
   }
 };
 
@@ -114,7 +261,7 @@ export const hallo2 = async (page, check) => {
   const zeile = page.getByText("Gemacht in Eutin von KARAMBA Eis");
   check((await zeile.evaluate((el) => el.getClientRects().length)) === 1, "Zeile 1 bricht nicht um");
   const rechtlich = page.locator("[data-hello-marke] nav");
-  check((await rechtlich.getByRole("link", { name: "Datenschutz" }).isVisible()) && (await rechtlich.getByRole("link", { name: "Impressum" }).isVisible()), "darunter „Datenschutz · Impressum“");
+  check((await rechtlich.getByRole("link", { name: "Nutzungsbedingungen" }).isVisible()) && (await rechtlich.getByRole("link", { name: "Datenschutz" }).isVisible()) && (await rechtlich.getByRole("link", { name: "Impressum" }).isVisible()), "darunter „Nutzungsbedingungen · Datenschutz · Impressum“");
   const nb = await rechtlich.boundingBox();
   const unten = page.viewportSize().height - (nb.y + nb.height);
   check(unten >= 30 && unten <= 60, `Zeile 2 sitzt ca. 40 px über der Unterkante (${Math.round(unten)} px)`); // große Handys; auf dem SE (≤ 620 px hoch) etwas weniger, damit alles ins Bild passt

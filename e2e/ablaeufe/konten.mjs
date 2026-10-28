@@ -1,9 +1,9 @@
 // Konten im Test-Backend (KONTEN_TEST=1): zwei Browser, zwei Konten, eine
 // Familie – Anmelden per Code (Code über die Test-Schnittstelle, nur im
 // Testserver), Familie still angelegt, Einladen per Link, Beitreten über den
-// Link, Kind darf nicht einladen, Zurückziehen, Abmelden (Daten bleiben),
-// Konto löschen.
-import { BASE, hello, newPage, seedFamily, pinnwandSchreiben } from "../lib.mjs";
+// Link (Zugangscode erst beim ersten KI-Versuch, A-027), Kind darf nicht
+// einladen, Zurückziehen, Abmelden (Daten bleiben), Konto löschen.
+import { BASE, hello, miaTippen, newPage, seedFamily, pinnwandSchreiben, serverMitCode } from "../lib.mjs";
 
 const adminCode = (page, email) => page.evaluate(async (e) => (await (await fetch("/api/test-konten", { method: "POST", body: JSON.stringify({ action: "admin_code", email: e }) })).json()).code, email);
 
@@ -219,12 +219,20 @@ export const begruessung = async (page, check, device) => {
   const link = await invite(page);
   const pageB = await newPage(page.context().browser(), device);
   try {
+    // A-027: Einladungs-Weg Mail-Code → Startseite → Zugangscode erst beim ersten KI-Versuch (Server nur nachgestellt)
+    await serverMitCode(pageB);
     await pageB.goto(link);
     check(await pageB.getByRole("heading", { name: /lädt dich ein\./ }).waitFor({ timeout: 8000 }).then(() => true, () => false), "Einladungsseite: „… lädt dich ein.“");
     check(await pageB.getByText("Termine, Einkauf und Pinnwand – gemeinsam.").isVisible(), "„Termine, Einkauf und Pinnwand – gemeinsam.“");
     await codeFromHello(pageB, `lisa-hallo-${tag}@example.com`);
     await pageB.getByRole("tab", { name: "Heute", selected: true }).waitFor();
     check((await pageB.evaluate(() => JSON.parse(localStorage.getItem("wasgibts.haushalt") ?? "null")?.household?.id ?? null)) === familyId, "B ist per Link in derselben Familie");
+    await pageB.waitForTimeout(1500);
+    check(!(await pageB.locator("[data-code-screen]").count()), "Einladung: nach dem Mail-Code die Startseite, noch kein Zugangscode");
+    const box = await miaTippen(pageB);
+    await box.fill("Erzähl mir einen Witz");
+    await box.press("Enter");
+    check(await pageB.locator("[data-code-screen]").waitFor({ timeout: 6000 }).then(() => true, () => false), "Einladung: Zugangscode beim ersten KI-Versuch");
   } finally {
     await pageB.context().close();
   }
