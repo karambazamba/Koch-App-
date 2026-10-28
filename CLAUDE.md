@@ -166,11 +166,11 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 
 ## 7. Design
 - Warmes Off-White, Kacheln auf der Startseite im Look „Farbig“ (Pastell,
-  feste Palette je Kachel, gleiche Sättigung, Tokens `--app-tile-<id>`/`-ac`,
-  Innen-Kärtchen weiß, Wetter als Himmel `--app-sky-*`) oder „Schlicht“
-  (weiß mit feinem Rand, Farbe nur in Überschrift, Symbol, Uhrzeit,
-  Termin-Strich; `data-look` am `<html>`), weiße Karten auf Unterseiten, EINE
-  Akzentfarbe (Orange) nur für Knöpfe und die Begleitung, Pastell nie für
+  gleich hell und kräftig, Tokens `--app-tile-<id>`/`-ac`, Schrift ≥ 4,5:1,
+  Innen-Kärtchen weiß, Wetter als Himmel `--app-sky-*`, Essen mit Bild) oder
+  „Schlicht“ (weiß mit feinem Rand, Farbe nur in Überschrift, Symbol, Uhrzeit,
+  Termin-Strich; `data-look` am `<html>`); Kachel-Farbe aus 8 festen Tönen (Tafel 108,
+  `docs/design.md`). Weiße Karten auf Unterseiten, EINE Akzentfarbe (Orange) nur für Knöpfe und die Begleitung, Pastell nie für
   Knöpfe. Linien-Icons (lucide), Emojis nur als Inhalt (Gerichte, Notizen,
   Pinnwand-Reaktionen 👍 ❤️ 😂 😮 🙏 – die sind Inhalt), nie in Knöpfen,
   Chips, Kacheln oder Termin-Titeln.

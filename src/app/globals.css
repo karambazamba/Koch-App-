@@ -218,8 +218,8 @@
   --app-shadow-bar: 0 8px 24px rgb(60 40 20 / 0.14);
   /* Pastell-Kacheln (Look „Farbig“, v0.64: eine Stufe kräftiger, alle mit
      gleicher Sättigung): Fläche + dunkle Tonfarbe (Label, Icon, Uhrzeit, Plus) */
-  --app-tile-pinnwand: #f4d9e0;
-  --app-tile-pinnwand-ac: #8e2f4f;
+  --app-tile-pinnwand: #f8dde6;
+  --app-tile-pinnwand-ac: #9b3c5a;
   /* Pinnwand als Kühlschranktür (Tafel 106): helle Tür mit Verlauf, feinem Rand
      und Griff; Papier, Karo-Linien, roter Pin, Schrift auf Papier (immer dunkel).
      Zettel-Farben = Personen (5 Pastell-Töne + Mia-Orange im Beispiel), dazu der
@@ -242,24 +242,24 @@
   --app-zettel-mia: #fddcc4; --app-zettel-mia-mag: #f26b21;
   --app-tile-wetter: #f4e8c4;
   --app-tile-wetter-ac: #6e5208;
-  --app-tile-termine: #dce2f7;
-  --app-tile-termine-ac: #2b4596;
-  --app-tile-aufgaben: #d6ebdd;
-  --app-tile-aufgaben-ac: #1d6340;
+  --app-tile-termine: #dce2f8;
+  --app-tile-termine-ac: #2c4a9a;
+  --app-tile-aufgaben: #d6eedf;
+  --app-tile-aufgaben-ac: #2f6b45;
   --app-tile-essen: #f6dccb;
   --app-tile-essen-ac: #8f3a0e;
-  --app-tile-einkauf: #e0ebd2;
-  --app-tile-einkauf-ac: #3f5a1a;
+  --app-tile-einkauf: #e8f0d0;
+  --app-tile-einkauf-ac: #4f6b1f;
   --app-tile-tipps: #e4dcf5;
   --app-tile-tipps-ac: #52309a;
-  --app-tile-sport: #d4eadf;
-  --app-tile-sport-ac: #1c6342;
-  --app-tile-vorrat: #d3e8e8;
-  --app-tile-vorrat-ac: #1c5f61;
-  --app-tile-timer: #e9e1d5;
-  --app-tile-timer-ac: #5a4c3c;
-  --app-tile-notizen: #f4e9c6;
-  --app-tile-notizen-ac: #6e5208;
+  --app-tile-sport: #e9def6;
+  --app-tile-sport-ac: #6a4a9a;
+  --app-tile-vorrat: #d3ecee;
+  --app-tile-vorrat-ac: #1f6b70;
+  --app-tile-timer: #ece5dc;
+  --app-tile-timer-ac: #6a5a48;
+  --app-tile-notizen: #f5eacb;
+  --app-tile-notizen-ac: #7a5a12;
   --app-tile-spendentopf: #f2e2c0;
   --app-tile-spendentopf-ac: #7a5306;
   /* Wetter-Kachel als Himmel (Look „Farbig“): je Lage und Tag/Nacht Verlauf a → b,
@@ -409,12 +409,12 @@
   --app-tile-aufgaben-ac: #86d0ac;
   --app-tile-essen: #2b1f18;
   --app-tile-essen-ac: #f2a57a;
-  --app-tile-einkauf: #1f2618;
-  --app-tile-einkauf-ac: #b2cf85;
+  --app-tile-einkauf: #20261a;
+  --app-tile-einkauf-ac: #bfd38a;
   --app-tile-tipps: #231e2e;
   --app-tile-tipps-ac: #bba2ee;
-  --app-tile-sport: #16251d;
-  --app-tile-sport-ac: #7fcfa6;
+  --app-tile-sport: #241e2e;
+  --app-tile-sport-ac: #c3a9ee;
   --app-tile-vorrat: #152526;
   --app-tile-vorrat-ac: #82cbcd;
   --app-tile-timer: #25211b;
@@ -554,12 +554,12 @@
     --app-tile-aufgaben-ac: #86d0ac;
     --app-tile-essen: #2b1f18;
     --app-tile-essen-ac: #f2a57a;
-    --app-tile-einkauf: #1f2618;
-    --app-tile-einkauf-ac: #b2cf85;
+    --app-tile-einkauf: #20261a;
+    --app-tile-einkauf-ac: #bfd38a;
     --app-tile-tipps: #231e2e;
     --app-tile-tipps-ac: #bba2ee;
-    --app-tile-sport: #16251d;
-    --app-tile-sport-ac: #7fcfa6;
+    --app-tile-sport: #241e2e;
+    --app-tile-sport-ac: #c3a9ee;
     --app-tile-vorrat: #152526;
     --app-tile-vorrat-ac: #82cbcd;
     --app-tile-timer: #25211b;
@@ -994,6 +994,19 @@ body {
 [data-tone="timer"] { --tile-bg: var(--app-tile-timer); --tile-ac: var(--app-tile-timer-ac); }
 [data-tone="notizen"] { --tile-bg: var(--app-tile-notizen); --tile-ac: var(--app-tile-notizen-ac); }
 [data-tone="spendentopf"] { --tile-bg: var(--app-tile-spendentopf); --tile-ac: var(--app-tile-spendentopf-ac); }
+/* Gewählte Kachel-Farbe (Tafel 108, `heute/kachelFarben.ts`): data-farbe neben
+   data-tone; jeder der 8 Töne ist die Standardfarbe einer Kachel, Schrift (-ac)
+   kommt mit. Steht nach data-tone (gewinnt), vor „Schlicht“ (dort nur Schrift). */
+[data-farbe="lavendel"] { --tile-bg: var(--app-tile-termine); --tile-ac: var(--app-tile-termine-ac); }
+[data-farbe="mint"] { --tile-bg: var(--app-tile-aufgaben); --tile-ac: var(--app-tile-aufgaben-ac); }
+[data-farbe="salbei"] { --tile-bg: var(--app-tile-einkauf); --tile-ac: var(--app-tile-einkauf-ac); }
+[data-farbe="rose"] { --tile-bg: var(--app-tile-pinnwand); --tile-ac: var(--app-tile-pinnwand-ac); }
+[data-farbe="vanille"] { --tile-bg: var(--app-tile-notizen); --tile-ac: var(--app-tile-notizen-ac); }
+[data-farbe="aqua"] { --tile-bg: var(--app-tile-vorrat); --tile-ac: var(--app-tile-vorrat-ac); }
+[data-farbe="flieder"] { --tile-bg: var(--app-tile-sport); --tile-ac: var(--app-tile-sport-ac); }
+[data-farbe="sand"] { --tile-bg: var(--app-tile-timer); --tile-ac: var(--app-tile-timer-ac); }
+/* Farbpunkte der Auswahl: immer die Fläche im Look „Farbig“ (auch bei Schlicht) */
+.farb-punkt { background: var(--punkt-bg); }
 
 /* Zwei Looks der Startseite (Profil `look`, data-look am <html>):
    „Farbig“ = Pastell-Flächen (oben), Wetter als Himmel;
