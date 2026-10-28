@@ -1,17 +1,23 @@
 // Die Kühlschranktür (Tafel 106/107) – Regeln für Zettel und
 // Sprachnachrichten gleichermaßen:
-// - Nichts verschwindet ungefragt. Erledigt = 24 Std. blass und
-//   durchgestrichen an der Tür, dann ins Archiv „Ältere“. Sonst nach 7 Tagen
-//   leise ins Archiv. Angeheftete bleiben dauerhaft oben links (bis Erledigt).
-//   Gelöscht wird nur von Hand.
+// - Abgehakt wie Aufgaben und Einkauf: Häkchen orange, 1 s stehen (nochmal
+//   tippen = doch nicht), dann gleitet der Zettel 0,8 s weich ins Archiv
+//   „Ältere“ (nie durchgestrichen; Rückgängig holt ihn zurück). Nicht Erledigtes geht nach 7 Tagen
+//   leise ins Archiv. „Bleibt hängen“ (intern `pinned`) geht nie von selbst,
+//   nur durch Abhaken. Im Archiv wird nach 30 Tagen still gelöscht (als
+//   Lösch-Markierung über den Abgleich, die Dateien räumt dann der Server
+//   weg); sonst wird nur von Hand gelöscht.
 // - Farbe = Person: fünf Pastell-Töne (Tokens `--app-zettel-<n>`), je
 //   Mitglied fest (Reihenfolge im Haushalt, sonst aus dem Namen); beim
 //   Schreiben wählbar, dann am Zettel gespeichert.
 // - Jeder Zettel hängt fest leicht schief (−3° bis +3°, aus der ID) an
 //   einem Magneten je Papier: Punkt (Zettel), Stern (Karoblatt), Apfel
-//   (Polaroid), Herz (Kassenbon); Angeheftetes am roten Pin.
-// - Kachel „Fächer“: die neuesten nicht erledigten, Angeheftetes nur zum
+//   (Polaroid), Herz (Kassenbon); „Bleibt hängen“ am roten Pin.
+// - Kachel „Fächer“: die neuesten an der Tür (gerade Abgehaktes steht dort
+//   genauso 1 s mit Häkchen und gleitet dann weg), „Bleibt hängen“ nur zum
 //   Auffüllen. Rein.
+
+import { GLEITEN_MS, STEHEN_MS } from "@/lib/core/abhaken";
 
 export const ZETTEL_FARBEN = 5;
 export type ZettelFarbe = 0 | 1 | 2 | 3 | 4;
@@ -20,10 +26,14 @@ export const FARB_NAMEN = ["Gelb", "Rosa", "Grün", "Blau", "Lila"] as const;
 
 export type Done = { von: string; am: string };
 
-/** So lange bleibt Erledigtes blass an der Tür */
-export const ERLEDIGT_MS = 24 * 3_600_000;
+/** So lange bleibt Abgehaktes an der Tür: 1 s mit Häkchen stehen, 0,8 s weich hinaus – dann liegt es im Archiv */
+export const ABHAK_MS = STEHEN_MS + GLEITEN_MS;
+/** Das Hinausgleiten (nach der 1 s Stehen) */
+export const GLEIT_MS = GLEITEN_MS;
 /** So lange hängt ein Zettel, bevor er leise ins Archiv geht */
 export const ARCHIV_MS = 7 * 86_400_000;
+/** So lange liegt ein Zettel im Archiv, bevor er still gelöscht wird */
+export const VERGESSEN_MS = 30 * 86_400_000;
 
 /** Was alle Einträge an der Tür gemeinsam haben (Zettel und Sprachnachrichten) */
 export type DoorEntry = { id: string; erstellt: string; data: { author: string; pinned?: boolean; erledigt: Done | null; archiv: string | null; farbe: ZettelFarbe | null } };
@@ -37,16 +47,39 @@ export function readDone(v: unknown): Done | null {
 
 const ms = (iso: string) => Date.parse(iso) || 0;
 
-/** Im Archiv: von Hand hineingelegt, seit 24 Std. erledigt oder (nicht angeheftet) 7 Tage alt */
+/**
+ * Seit wann ein Eintrag im Archiv liegt (ms): von Hand hineingelegt, 1,8 s nach
+ * dem Abhaken oder (ohne „Bleibt hängen“) 7 Tage nach dem Schreiben; null =
+ * gehört an die Tür, solange niemand abhakt.
+ */
+function archivedSince(e: DoorEntry): number | null {
+  if (e.data.archiv) return ms(e.data.archiv);
+  if (e.data.erledigt) return ms(e.data.erledigt.am) + ABHAK_MS;
+  return e.data.pinned ? null : ms(e.erstellt) + ARCHIV_MS;
+}
+
+/** Im Archiv „Ältere“ (und noch nicht vergessen) */
 export function isArchived(e: DoorEntry, nowMs: number): boolean {
-  if (e.data.archiv) return true;
-  if (e.data.erledigt) return nowMs - ms(e.data.erledigt.am) >= ERLEDIGT_MS;
-  return !e.data.pinned && nowMs - ms(e.erstellt) >= ARCHIV_MS;
+  const since = archivedSince(e);
+  return since !== null && nowMs >= since;
+}
+
+/** 30 Tage im Archiv – wird beim nächsten Start still gelöscht */
+export function isForgotten(e: DoorEntry, nowMs: number): boolean {
+  const since = archivedSince(e);
+  return since !== null && nowMs - since >= VERGESSEN_MS;
 }
 
 export const onDoor = (e: DoorEntry, nowMs: number) => !isArchived(e, nowMs);
 
-/** Erledigt an/aus (zurücknehmen geht, solange er an der Tür hängt) */
+/** Abgehakt und noch an der Tür: so viele ms, bis er hinausgleitet (sonst null) */
+export function leavesIn(e: DoorEntry, nowMs: number): number | null {
+  if (!e.data.erledigt || e.data.archiv) return null;
+  const left = ms(e.data.erledigt.am) + ABHAK_MS - nowMs;
+  return left > 0 ? left : null;
+}
+
+/** Erledigt an/aus (zurücknehmen geht über „Rückgängig“ – auch, wenn er schon im Archiv liegt) */
 export const doneValue = (e: DoorEntry, me: string, stamp: string): Done | null => (e.data.erledigt ? null : { von: me, am: stamp });
 
 /** „erledigt von Lisa“ bzw. „erledigt von dir“ */
@@ -72,7 +105,7 @@ export const tiltOf = (id: string) => Math.round(((hash(id) % 61) / 10 - 3) * 10
 
 export type MagnetForm = "punkt" | "stern" | "apfel" | "herz" | "pin";
 
-/** Magnet je Papier; Angeheftetes hängt am roten Pin */
+/** Magnet je Papier; „Bleibt hängen“ hängt am roten Pin */
 export function magnetOf(papier: "zettel" | "karo" | "foto" | "memo", pinned = false): MagnetForm {
   if (pinned) return "pin";
   return papier === "karo" ? "stern" : papier === "foto" ? "apfel" : papier === "memo" ? "herz" : "punkt";
@@ -85,11 +118,12 @@ export const FAECHER = { S: 3, M: 3, L: 6 } as const;
 export const FAECHER_WINKEL = [-10, -2, 7] as const;
 
 /**
- * Kachel: die neuesten nicht erledigten Einträge an der Tür (neueste zuerst);
- * Angeheftete zählen nur mit, wenn weniger als `count` neue da sind.
+ * Kachel: die neuesten Einträge an der Tür (neueste zuerst) – gerade
+ * Abgehaktes bleibt wie an der Tür 1 s mit Häkchen und gleitet dann weg;
+ * „Bleibt hängen“ zählt nur mit, wenn weniger als `count` neue da sind.
  */
 export function faecherOf<T extends DoorEntry>(items: T[], nowMs: number, count: number): T[] {
-  const live = items.filter((e) => onDoor(e, nowMs) && !e.data.erledigt).sort((a, b) => b.erstellt.localeCompare(a.erstellt));
+  const live = items.filter((e) => onDoor(e, nowMs)).sort((a, b) => b.erstellt.localeCompare(a.erstellt));
   const fresh = live.filter((e) => !e.data.pinned);
   const pinned = live.filter((e) => e.data.pinned);
   return [...fresh, ...pinned].slice(0, count);

@@ -23,7 +23,7 @@ describe("Sprachnachrichten: bleiben (Kühlschranktür)", () => {
     expect(archivedMemos([m], t0 + 7 * 24 * H).map((x) => x.id)).toEqual([m.id]);
   });
 
-  it("angehört + Erledigt: 24 Std. blass, dann ins Archiv; „alle gehört“ allein räumt nichts weg", () => {
+  it("angehört + Erledigt: 1 s Häkchen + 0,8 s Weggleiten, dann ins Archiv; „alle gehört“ allein räumt nichts weg", () => {
     const m = memoAt("2026-10-20T09:00");
     let list = setMemoHeard(setMemoHeard([m], m.id, "Felix", true, household, "2026-10-20T10:00:00.000Z"), m.id, "Jonne", true, household, "2026-10-20T10:00:00.000Z");
     expect(list[0].data.alleGehoertAm).toBe("2026-10-20T10:00:00.000Z");
@@ -31,8 +31,9 @@ describe("Sprachnachrichten: bleiben (Kühlschranktür)", () => {
     expect(visibleMemos(list, t0 + 48 * H)).toHaveLength(1);
     list = updateMemo(list, m.id, { erledigt: { von: "Felix", am: "2026-10-20T11:00:00.000Z" } }, "2026-10-20T11:00:00.000Z");
     const done = Date.parse("2026-10-20T11:00:00.000Z");
-    expect(visibleMemos(list, done + 23 * H)).toHaveLength(1);
-    expect(visibleMemos(list, done + 24 * H)).toHaveLength(0);
+    expect(visibleMemos(list, done + 1_799)).toHaveLength(1);
+    expect(visibleMemos(list, done + 1_800)).toHaveLength(0);
+    expect(archivedMemos(list, done + 1_800)).toHaveLength(1);
     expect(list).toHaveLength(1);
   });
 

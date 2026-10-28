@@ -104,10 +104,10 @@ describe("Speichern: sofort, mit Rückgängig, Feld bleibt offen", () => {
     expect(s.toast()).toBeNull();
   });
 
-  it("Pinnwand: „Angepinnt: …“ mit Zitat; Notiz: „Notiert: …“", async () => {
+  it("Pinnwand: „Hängt: …“ mit Zitat; Notiz: „Notiert: …“", async () => {
     const s = await setup();
     s.saveQuick(s.readQuick("pinnwand", "Bin um 6 zurück", TODAY), "", { kind: "pinnwand", me: "Felix", quote: { id: "x", author: "Lisa", text: "Wann kommst du?" } });
-    expect(s.toast()?.text).toBe("Angepinnt: Bin um 6 zurück");
+    expect(s.toast()?.text).toBe("Hängt: Bin um 6 zurück");
     const { loadPins } = await import("@/lib/pinnwand");
     expect(loadPins()[0].data).toMatchObject({ author: "Felix", text: "Bin um 6 zurück", replyTo: { author: "Lisa" } });
     s.saveQuick(s.readQuick("notiz", "WLAN: Sonnenblume42", TODAY), "", { kind: "notiz" });

@@ -43,7 +43,7 @@ export const KURZ_GESAGT: { titel: string; text: string }[] = [
   { titel: "Wo eure Daten liegen", text: "Ohne Konto nur auf diesem Gerät. Mit Konto zusätzlich in unserer Datenbank, damit die Familie sie teilen kann. Unsere Server-Funktionen laufen in Frankfurt." },
   { titel: "Was ich sehe", text: "Nur, was ihr mir sagt oder weiterleitet. Für eine Antwort geht der Satz mit dem nötigen Ausschnitt an unseren KI-Anbieter. Sprachnachrichten nie." },
   { titel: "Wer sie sonst sieht", text: "Eure Familie, was ihr teilt. „Arbeit“ nur du. Niemand sonst." },
-  { titel: "Wie lange", text: "Bis ihr es löscht. Pinnwand-Zettel gehen nach 7 Tagen ins Archiv und bleiben dort, bis ihr sie löscht. Vorschläge aus Mails 7 Tage. Den Chat speichere ich gar nicht." },
+  { titel: "Wie lange", text: "Bis ihr es löscht. Pinnwand-Zettel gehen abgehakt oder nach 7 Tagen ins Archiv und werden dort nach 30 Tagen gelöscht. Vorschläge aus Mails 7 Tage. Den Chat speichere ich gar nicht." },
   { titel: "Nie verkauft", text: "Keine Tracker, keine Werbe-Profile. Eure Daten werden nie verkauft." },
   { titel: "Eure Rechte", text: "Ansehen, mitnehmen, löschen: alles in den Einstellungen unter „Daten & App“. Fragen gern an " + BETREIBER.mail + "." },
 ];
@@ -78,7 +78,7 @@ export const DATENSCHUTZ: Abschnitt[] = [
   {
     titel: "Wie lange",
     absaetze: [
-      "Einträge bleiben, bis ihr sie löscht. Pinnwand-Zettel, Fotos und Sprachnachrichten gehen nach 7 Tagen (oder 24 Stunden nach „Erledigt“) ins Archiv und bleiben dort, bis ihr sie löscht; Ton und Bilder gelöschter Zettel räumt der Server täglich weg. Vorschläge aus Mails nach 7 Tagen, die Mail selbst speichern wir nie. Der Chat wird nicht gespeichert. Einladungs-Links gelten 14 Tage.",
+      "Einträge bleiben, bis ihr sie löscht. Pinnwand-Zettel, Fotos und Sprachnachrichten gehen kurz nach „Erledigt“ oder nach 7 Tagen ins Archiv (außer „Bleibt hängen“) und werden dort nach 30 Tagen gelöscht, früher, wenn ihr sie löscht; Ton und Bilder gelöschter Zettel räumt der Server täglich weg. Vorschläge aus Mails nach 7 Tagen, die Mail selbst speichern wir nie. Der Chat wird nicht gespeichert. Einladungs-Links gelten 14 Tage.",
       "„Konto löschen“ entfernt deine Daten auf dem Server sofort; verlässt die letzte Person die Familie, wird auch die Familie gelöscht. Sicherungskopien unserer Anbieter laufen nach spätestens 30 Tagen aus [bitte bestätigen].",
     ],
   },

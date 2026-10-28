@@ -3,8 +3,9 @@
 // Seite /pinnwand als Kühlschranktür (Tafel 106/1): Kopf „‹ Heute“, rechts
 // das orange ＋ (= „Neuer Zettel“), großer Titel. Darunter die Tür (heller
 // Verlauf, feiner Rand, Griff rechts) mit den Zetteln in zwei Spalten –
-// Angeheftetes oben links, sonst neueste zuerst. Antippen oder lange drücken
-// = Menü, Haken-Kreis = Erledigt. Unter der Tür „Ältere · n ›“ (Archiv).
+// „Bleibt hängen“ oben links, sonst neueste zuerst. Antippen oder lange
+// drücken = Menü, Haken-Kreis = Erledigt (Häkchen orange, 1 s stehen, dann
+// weich ins Archiv). Unter der Tür „Ältere · n ›“ (Archiv, nach 30 Tagen still weg).
 // Sieht ein eigener Zettel nach Notiz aus, fragt Mia einmal. Aus der Kachel
 // geöffnet (`?n=<id>`) springt die Seite zum Zettel und hebt ihn kurz hervor.
 
@@ -14,7 +15,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD, PAGE_MAIN, PAGE_PLUS, buttonClass } from "@/components/ui/styles";
 import { Sheet } from "@/components/ui/Sheet";
 import { useProfile } from "@/lib/einstellungen/useProfile";
-import { changePins, guessHeight, markPinsRead, papierFor, twoColumns, usePins } from "@/lib/pinnwand";
+import { PINNWAND_TIPP, changePins, guessHeight, markPinsRead, papierFor, twoColumns, usePins } from "@/lib/pinnwand";
 import { NOTIZ_FRAGE, markNoteAsked, noteQuestionFor } from "@/lib/pinnwand/notizBruecke";
 import { quoteOf } from "@/lib/pinnwand/schreiben";
 import { now, todayIso } from "@/lib/core/now";
@@ -120,7 +121,7 @@ export function PinboardView() {
             </div>
           </section>
         )}
-        <section className="kuehlschrank min-h-[420px] py-3 pl-3 pr-5" aria-label="Kühlschranktür">
+        <section className="kuehlschrank min-h-[220px] py-3 pl-3 pr-5" aria-label="Kühlschranktür">
           {!list ? (
             <div className="h-40 animate-pulse" />
           ) : demo ? (
@@ -136,8 +137,8 @@ export function PinboardView() {
               />
             </>
           ) : list.length === 0 ? (
-            <div className="flex min-h-[380px] flex-col items-center justify-center gap-3 px-4 text-center">
-              <p className="text-[16px] font-semibold text-muted">Hier hängen eure Zettel. Bleiben, bis jemand „Erledigt“ tippt.</p>
+            <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 px-4 text-center">
+              <p className="text-[16px] font-semibold text-muted">{PINNWAND_TIPP}</p>
               <button type="button" onClick={() => setWriting({ quote: null, art: "zettel" })} className={buttonClass("soft", "sm")}>
                 Erster Zettel
               </button>

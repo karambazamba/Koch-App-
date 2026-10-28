@@ -1,5 +1,5 @@
 // Pinnwand als Kühlschranktür (Tafel 106/107): nichts verschwindet nach
-// 24 Std.; Erledigt → blass → Archiv; 7 Tage → Archiv; Anheften bleibt;
+// 24 Std.; Erledigt → 1 s Häkchen, 0,8 s weich weg → Archiv; 7 Tage → Archiv; „Bleibt hängen“ bleibt;
 // Personenfarben; Papierarten; Mia-Frage einmal; Fächer; Beispiel; allein =
 // Pinnwand aus; Migration v3 → v4 behält alles.
 import { readFileSync } from "node:fs";
@@ -8,7 +8,7 @@ import { at, fakeWindow, noBrowser } from "../helpers";
 import { now } from "@/lib/core/now";
 import {
   ARCHIV_MS,
-  ERLEDIGT_MS,
+  ABHAK_MS,
   FAECHER,
   FAECHER_WINKEL,
   FARB_NAMEN,
@@ -60,7 +60,7 @@ describe("Nichts verschwindet ungefragt", () => {
     expect(ARCHIV_MS).toBe(7 * DAY);
   });
 
-  it("Erledigt: blass an der Tür (24 Std.), „erledigt von Lisa“, dann ins Archiv; zurücknehmen geht", () => {
+  it("Erledigt: 1 s mit Häkchen an der Tür, 0,8 s weich weg, „erledigt von Lisa“, dann ins Archiv; zurücknehmen geht", () => {
     at("2026-10-20T09:00");
     const p = pin("Brötchen holen?", "Lisa");
     const stamp = now().toISOString();
@@ -68,9 +68,10 @@ describe("Nichts verschwindet ungefragt", () => {
     expect(done[0].data.erledigt).toEqual({ von: "Lisa", am: stamp });
     expect(doneLine(done[0].data.erledigt!, "Felix")).toBe("erledigt von Lisa");
     expect(doneLine(done[0].data.erledigt!, "Lisa")).toBe("erledigt von dir");
-    expect(visiblePins(done, ms() + ERLEDIGT_MS - 1)).toHaveLength(1);
+    expect(ABHAK_MS).toBe(1_800);
+    expect(visiblePins(done, ms() + ABHAK_MS - 1)).toHaveLength(1);
     expect(activePins(done, ms())).toHaveLength(0);
-    expect(isArchived(done[0], ms() + ERLEDIGT_MS)).toBe(true);
+    expect(isArchived(done[0], ms() + ABHAK_MS)).toBe(true);
     // zweimal = zurück
     expect(doneValue(done[0], "Lisa", stamp)).toBeNull();
     // Erledigtes zählt nie als ungelesen
@@ -78,7 +79,7 @@ describe("Nichts verschwindet ungefragt", () => {
     expect(hasUnread([p], "Felix", ms())).toBe(true);
   });
 
-  it("Angeheftete bleiben dauerhaft (oben links), auch nach 30 Tagen", () => {
+  it("„Bleibt hängen“ bleibt dauerhaft (oben links), auch nach 30 Tagen", () => {
     at("2026-10-01T09:00");
     const wlan = setPinPinned([pin("WLAN Gast: Tohuus2026", "Lisa")], "x", true, "s")[0];
     const kept = setPinPinned([wlan], wlan.id, true, "s")[0];
@@ -87,7 +88,7 @@ describe("Nichts verschwindet ungefragt", () => {
     expect(visiblePins([fresh, kept], ms()).map((m) => m.data.text)).toEqual(["WLAN Gast: Tohuus2026", "Neu"]);
   });
 
-  it("Code: keine 24-Stunden-Regel mehr, Speichern räumt nichts weg, gelöscht wird nur von Hand", () => {
+  it("Code: keine 24-Stunden-Regel mehr, Speichern räumt nichts weg, Löschen von Hand mit Rückgängig", () => {
     const model = readFileSync("src/lib/pinnwand/model.ts", "utf8");
     expect(model).not.toMatch(/withinDay|prunePins|PIN_HOURS/);
     expect(readFileSync("src/lib/pinnwand/store.ts", "utf8")).not.toMatch(/prune/);

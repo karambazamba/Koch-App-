@@ -1,7 +1,9 @@
 // Mia denkt mit: Texte für „Pinnwand“ (Kachel vorstellen, erster Besuch der Seite).
 
+import { PINNWAND_TIPP } from "@/lib/pinnwand/woerter";
+
 export const PINNWAND = {
   kachel: "Das ist die Pinnwand. Zettel für alle, wie am Kühlschrank.",
-  seite: "Kurze Zettel für alle. Bleiben, bis jemand ‚Erledigt‘ tippt.",
+  seite: PINNWAND_TIPP,
   href: "/pinnwand",
 } as const;

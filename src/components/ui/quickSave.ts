@@ -27,7 +27,7 @@ import { unlockFeature } from "@/lib/core/features";
 import { readQuick } from "@/lib/core/schnelleingabe";
 import { splitTermine } from "@/lib/kalender/sentence";
 
-const VERB: Record<QuickRead["kind"], string> = { termin: "Eingetragen", aufgabe: "Eingetragen", einkauf: "Auf der Liste", notiz: "Notiert", pinnwand: "Angepinnt", imhaus: "Im Haus" };
+const VERB: Record<QuickRead["kind"], string> = { termin: "Eingetragen", aufgabe: "Eingetragen", einkauf: "Auf der Liste", notiz: "Notiert", pinnwand: "Hängt", imhaus: "Im Haus" };
 
 function saveEntry(read: Extract<QuickRead, { kind: "termin" | "aufgabe" }>, remind: boolean): { undo: () => void; title: string } | null {
   const today = todayIso();

@@ -1,10 +1,12 @@
 // Pinnwand „Neuer Zettel“ (Tafel 106/3): Vorschau als echter Zettel, Art
-// Zettel/Sprachnachricht/Foto, 5 Farben (eigene vorgewählt), „Anheften“ mit
-// Pin (kein Emoji), großer Knopf „Anpinnen“, danach „Angepinnt · Rückgängig“.
+// Zettel/Sprachnachricht/Foto, 5 Farben (eigene vorgewählt), Schalter
+// „Bleibt hängen“ mit Pin (kein Emoji) und leisem Hinweis, großer Knopf
+// „Aufhängen“, danach „Hängt. · Rückgängig“.
 // Kein Satz mehr über „verschwinden nach 24 Stunden“.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { PINNWAND } from "@/lib/mia/denktmit/seiten/pinnwand";
+import { AUFHAENGEN, BLEIBT_HAENGEN, BLEIBT_HAENGEN_HINWEIS, HAENGT, PINNWAND_TIPP, magnetOf } from "@/lib/pinnwand";
 
 const read = (p: string) => readFileSync(p, "utf8");
 const sheet = read("src/components/pinnwand/NeuerZettel.tsx");
@@ -24,11 +26,18 @@ describe("Neuer Zettel", () => {
     expect(sheet).toMatch(/Array\.from\(\{ length: ZETTEL_FARBEN \}/);
   });
 
-  it("„Anheften“ mit lucide-Pin, großer Knopf „Anpinnen“, Toast mit Rückgängig; kein „Für alle“-Schalter", () => {
-    expect(sheet).toMatch(/<Pin className="h-5 w-5"[^>]*\/> \{pinned \? "Wird angeheftet" : "Anheften"\}/);
+  it("Schalter „Bleibt hängen“ (lucide-Pin, Hinweis darunter, an = roter Pin), großer Knopf „Aufhängen“, Toast „Hängt.“; kein „Für alle“-Schalter", () => {
+    expect(BLEIBT_HAENGEN).toBe("Bleibt hängen");
+    expect(BLEIBT_HAENGEN_HINWEIS).toBe("Verschwindet nicht von selbst, z. B. fürs WLAN.");
+    expect(AUFHAENGEN).toBe("Aufhängen");
+    expect(HAENGT).toBe("Hängt.");
+    expect(sheet).toMatch(/role="switch" aria-checked=\{pinned\}/);
+    expect(sheet).toMatch(/<Pin className=\{`h-5 w-5/);
+    expect(sheet).toMatch(/\{BLEIBT_HAENGEN\}<\/span>\s*<span className="text-\[13px\] leading-snug text-muted">\{BLEIBT_HAENGEN_HINWEIS\}/);
+    expect(sheet).toMatch(/>\s*\{AUFHAENGEN\}\s*</);
+    expect(sheet).toMatch(/showToast\(\{ text: HAENGT, undo/);
+    expect(magnetOf("zettel", true)).toBe("pin");
     expect(sheet).not.toContain("📌");
-    expect(sheet).toMatch(/>\s*Anpinnen\s*</);
-    expect(sheet).toMatch(/showToast\(\{ text: "Angepinnt", undo/);
     expect(sheet).not.toMatch(/Für alle"/);
   });
 
@@ -45,8 +54,9 @@ describe("Neuer Zettel", () => {
     expect(view).not.toContain("PIN_SUBLINE");
   });
 
-  it("Seiten-Tipp: „Kurze Zettel für alle. Bleiben, bis jemand ‚Erledigt‘ tippt.“ (2 Sätze, ohne Gedankenstrich)", () => {
-    expect(PINNWAND.seite).toBe("Kurze Zettel für alle. Bleiben, bis jemand ‚Erledigt‘ tippt.");
+  it("Seiten-Tipp mit den gleichen Wörtern wie die leere Tür (2 Sätze, ohne Gedankenstrich)", () => {
+    expect(PINNWAND.seite).toBe("Kurze Zettel für alle. Abhaken räumt auf, ‚Bleibt hängen‘ bleibt.");
+    expect(PINNWAND.seite).toBe(PINNWAND_TIPP);
     expect(PINNWAND.seite.split(/[.!?](\s|$)/).filter((s) => s && s.trim()).length).toBeLessThanOrEqual(2);
     expect(PINNWAND.seite).not.toMatch(/[–—]/);
     expect(PINNWAND.kachel).not.toMatch(/verschwinden/);

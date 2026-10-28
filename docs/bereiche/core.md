@@ -19,6 +19,7 @@ Sortier-Regeln, Design-System, Service Worker, App-Icons und Manifest.
     `useBackCloses.ts`, `pageLabel.ts`.
   - `toast.ts` – `showToast`, `showDeleted`, `showDone`, `useToast`.
   - `undo.ts` – `pushUndo`, `undoLast`, `isRegisteredUndo`.
+  - `abhaken.ts` – `STEHEN_MS` (1 s), `GLEITEN_MS` (0,8 s): Abhaken mit Bedenkzeit, gleich für Einkauf und Pinnwand.
   - `sort.ts` – alle festen Reihenfolgen.
   - `app.ts` – `APP_NAME`, `APP_VERSION`, `versionLabel`, `icon`, `iconFor`,
     `FARBE_COOKIE`, `CLOUD_SYNC`, `BEGLEITUNG_PUSH_ICON`, `BRAND_COLOR`.
@@ -138,7 +139,7 @@ Sortier-Regeln, Design-System, Service Worker, App-Icons und Manifest.
   Min Erinnerung), Aufgabe (Startseite: heute; Aufgaben-Seite: ohne Tag),
   Einkauf (alles auf die Liste, Unsicheres so wie getippt), Notiz, Pinnwand
   (mit Zitat bei Antworten). Meldung „Eingetragen: …“ / „Auf der Liste: …“ /
-  „Notiert: …“ / „Angepinnt: …“ mit Rückgängig (auch `undoLast`). Das Feld
+  „Notiert: …“ / „Hängt: …“ mit Rückgängig (auch `undoLast`). Das Feld
   bleibt leer und offen für die nächste.
 - „Mehr Details“ schließt und öffnet das volle Formular mit dem Getippten
   (`EntryForm` für Termine und Aufgaben, Einkauf-Fenster, `PinWriteSheet`,

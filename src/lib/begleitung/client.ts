@@ -433,7 +433,7 @@ function commitSideOps(ops: ChangeOp[], author = "Ich"): () => void {
   }
   for (const op of ops) {
     if (op.type !== "add_pin") continue;
-    const pin = createPin(op.text, author);
+    const pin = createPin(op.text, author, null, { pinned: op.pinned === true });
     if (!pin) continue;
     changePins((all) => addPin(all, pin));
     undo.push(() => changePins((all) => removePin(all, pin.id)));

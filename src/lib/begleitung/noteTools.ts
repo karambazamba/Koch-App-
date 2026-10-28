@@ -229,14 +229,21 @@ const TOOLS: BegleitungTool[] = [
     area: "alltag",
     definition: {
       name: "pinnwand_schreiben",
-      description: "Zettel an die Pinnwand (Kühlschranktür für alle im Haushalt, bis 140 Zeichen, in der Farbe der Person; bleibt, bis jemand 'Erledigt' tippt, nach 7 Tagen leise ins Archiv): 'Schreib an die Pinnwand: Bin um 20 Uhr da' → text 'Bin um 20 Uhr da'. Was nur für mich ist (Passwort, WLAN, Liste zum Merken) gehört in die Notizen (notiz_anlegen). Erledigte Zettel stehen nicht im Kontext. Sprachnachrichten ([Sprachnachricht 0:12]) nimmt die Familie selbst auf; ihren Inhalt kennst du nicht und du schreibst nie welche ('Spiel das Memo von Lisa ab' → app_befehl).",
-      input_schema: { type: "object", properties: { text: { type: "string", description: "Die Nachricht, kurz, ohne Anführungszeichen" } }, required: ["text"], additionalProperties: false },
+      description: "Zettel an die Pinnwand hängen (Kühlschranktür für alle im Haushalt, bis 140 Zeichen, in der Farbe der Person; abgehakt geht er gleich ins Archiv „Ältere“, sonst nach 7 Tagen; im Archiv nach 30 Tagen weg): 'Schreib an die Pinnwand: Bin um 20 Uhr da' → text 'Bin um 20 Uhr da'. bleibt_haengen nur, wenn er dauerhaft hängen soll ('…, das soll hängen bleiben', Gäste-WLAN) – dann heißt es in der App „Bleibt hängen“ und er geht nie von selbst. Was nur für mich ist (Passwort, WLAN, Liste zum Merken) gehört in die Notizen (notiz_anlegen). Erledigte Zettel stehen nicht im Kontext. Sprachnachrichten ([Sprachnachricht 0:12]) nimmt die Familie selbst auf; ihren Inhalt kennst du nicht und du schreibst nie welche ('Spiel das Memo von Lisa ab' → app_befehl).",
+      input_schema: {
+        type: "object",
+        properties: { text: { type: "string", description: "Die Nachricht, kurz, ohne Anführungszeichen" }, bleibt_haengen: { type: "boolean", description: "„Bleibt hängen“: nie von selbst ins Archiv (nur wenn gewünscht)" } },
+        required: ["text"],
+        additionalProperties: false,
+      },
     },
     run: (ctx, raw) => {
-      const text = str((raw as Input | null)?.text).slice(0, PIN_MAX);
+      const input = raw as Input | null;
+      const text = str(input?.text).slice(0, PIN_MAX);
       if (!text) return fail("text angeben.");
-      propose(ctx, { id: nextId(ctx), type: "add_pin", text });
-      return { content: "Vorgemerkt: steht dann auf der Pinnwand (Startseite, Kachel Pinnwand)." };
+      const pinned = input?.bleibt_haengen === true;
+      propose(ctx, { id: nextId(ctx), type: "add_pin", text, ...(pinned ? { pinned } : {}) });
+      return { content: `Vorgemerkt: hängt dann an der Pinnwand${pinned ? " und bleibt hängen" : ""} (Startseite, Kachel Pinnwand).` };
     },
   },
   {

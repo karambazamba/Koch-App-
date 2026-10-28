@@ -12,7 +12,7 @@ import { CALENDAR_IMPORT_REPLY, isCalendarImportRequest } from "@/lib/kalender/i
 import { anbieterIn, openMitbringen } from "@/lib/kalender/mitbringen/angebot";
 import { einladenWunsch } from "@/lib/konten/einladenHinweis";
 import { changeHome, describeHomeChange, requestHomeEdit, unlockHomeTile } from "@/lib/core/homeLayout";
-import { addPin, changeMemos, changePins, createPin, formatDauer, householdNames, isPinboardQuery, loadMemos, loadPins, memoPlayRequest, memoToPlay, pinWriteCommand, setMemoHeard, activeMemos, activePins } from "@/lib/pinnwand";
+import { addPin, changeMemos, changePins, createPin, formatDauer, householdNames, isPinboardQuery, loadMemos, loadPins, memoPlayRequest, memoToPlay, pinStays, pinWriteCommand, setMemoHeard, activeMemos, activePins } from "@/lib/pinnwand";
 import { playMemo } from "@/lib/pinnwand/memoPlayer";
 import { dayAnswer, umbrellaAnswer, weatherQuestion } from "@/lib/wetter/forecast";
 import { windAnswer, type Wind } from "@/lib/wetter/wind";
@@ -160,12 +160,12 @@ export function boardRule(ctx: RuleContext, t: string): boolean {
   const write = pinWriteCommand(t);
   if (write) {
     setInput("");
-    const pin = createPin(write, me);
+    const pin = createPin(write, me, null, { pinned: pinStays(t) });
     if (!pin) return false;
     pushUndo("die Pinnwand-Nachricht", changePins((all) => addPin(all, pin)));
     setFeature("pinnwand", true);
     const shown = unlockHomeTile("pinnwand");
-    say(`Hängt an der Pinnwand ✓ „${pin.data.text}“${shown ? " Die Pinnwand steht jetzt oben auf der Startseite." : ""}`);
+    say(`Hängt an der Pinnwand ✓ „${pin.data.text}“${pin.data.pinned ? " Bleibt hängen." : ""}${shown ? " Die Pinnwand steht jetzt oben auf der Startseite." : ""}`);
     return true;
   }
   if (isPinboardQuery(t)) {

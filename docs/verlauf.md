@@ -3176,3 +3176,37 @@ Fehler in `docs/aufraeumen-nachher.md`.
   gar keinen an (`src/lib/core/fensterVerlauf.ts`, `useBackCloses.ts` nur
   noch Hülle). Test `tests/core/fensterVerlauf.test.ts` mit asynchronem
   Verlauf; Durchklick `erinnerungFrage` war vorher schwankend.
+
+## Pinnwand: Wörter klarer, Erledigtes geht sofort von der Tür (v0.145.0, A-024)
+
+- Wörter überall gleich (`pinnwand/woerter.ts`): großer Knopf „Aufhängen“
+  (statt „Anpinnen“), Toast „Hängt.“ (statt „Angepinnt“), Schalter „Bleibt
+  hängen“ mit lucide Pin und leisem „Verschwindet nicht von selbst, z. B.
+  fürs WLAN.“ (statt „Anheften“; an = roter Pin in der Vorschau), Menü
+  „Nicht mehr festhalten“ (statt „Nicht mehr anheften“), Zeile „Lisa ·
+  bleibt hängen“, Schnelleingabe „Hängt: …“, Seiten-Tipp und leere Tür
+  „Kurze Zettel für alle. Abhaken räumt auf, ‚Bleibt hängen‘ bleibt.“
+  Notizen behalten ihr „Anheften“ (eigener Bereich). Intern bleibt `pinned`.
+- Abhaken wie Aufgaben und Einkauf (Nachtrag): Häkchen orange, 1 s stehen
+  (nochmal tippen = zurück), dann gleitet der Zettel 0,8 s weich ins Archiv
+  „Ältere“ (nur transform/opacity, reduziert nur Überblenden), nicht mehr
+  blass und nie durchgestrichen. Dieselben Zeiten wie im Laden, jetzt an
+  einer Stelle (`core/abhaken.ts`: `STEHEN_MS`, `GLEITEN_MS`; `ABHAK_MS` =
+  1,8 s). Liegt er im Archiv, kommt „Erledigt · Rückgängig“ (5 s) und holt
+  ihn zurück an die Tür. Gilt auch in der Kachel: gerade Abgehaktes steht
+  1 s mit Häkchen im Fächer und gleitet dann weg. Die 24-Stunden-Wartezeit ist weg. Nicht
+  Erledigtes wie bisher nach 7 Tagen ins Archiv, „Bleibt hängen“ nie.
+- Archiv: nach 30 Tagen still gelöscht (`isForgotten`, `forgetOldArchive`
+  beim Start über `tidyPinboard`), als Lösch-Markierung über den Abgleich;
+  der Server räumt die Dateien wie bisher nur für gelöschte Einträge weg.
+  Speicherformat unverändert (v4). Datenschutzerklärung und Datenkarte
+  angepasst. Leitbild: Rückgängig auch beim Abhaken.
+- Mia: `pinnwand_schreiben` kennt `bleibt_haengen` („Häng dauerhaft an die
+  Pinnwand: …“, ohne KI `pinStays`), Beschreibung mit den neuen Regeln,
+  Prüfstand +1 Satz (195).
+- Behoben (Bildschirmfoto v0.138, iPhone 15 Pro): Die Tür war mit einem
+  Zettel fast bildschirmhoch (Mindesthöhe 420 → 220 px, wächst mit dem
+  Inhalt), und der schmale lange Griff rechts sah wie ein innerer
+  Scrollbalken aus (jetzt kurzer, kräftiger Bügel mit Rand und Schatten).
+  „Felix · gest…“ wurde abgeschnitten – Name · Zeit bricht jetzt lieber
+  um, der Haken-Kreis behält seinen Platz.

@@ -14,7 +14,7 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
   mia.karamba-eis.de (v0.140), Mia-Zubehör Sonne (v0.140), Erster Start rund +
   Zugangscode nachsichtig (v0.141), Einkauf neu mit Nachtrag (v0.142), Mia schneller + Live-Zuhören + Stimme bleibt
   (v0.143), Fenster-Zurück ohne Wettlauf (v0.144, Fehler hinter dem
-  schwankenden Ablauf `erinnerungFrage`).
+  schwankenden Ablauf `erinnerungFrage`), Pinnwand-Nachtrag (v0.145).
 - **Merge-Reihenfolge (Sortier-Auftrag 28.10., je bauen → testen → PR → mergen,
   dann der nächste auf dem neuesten `main`):**
   1. A-027 Erster Start rund (mit A-031 Zugangscode nachsichtig, 10 Versuche)
@@ -43,6 +43,7 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
   Lasagne einplanen (Packungen statt 250 ml), „Zucchini“ zweimal = eine Zeile. Mia: kurze Befehle („Milch auf die Liste“)
   kommen sofort, beim Sprechen erscheint der Text live, Mias Stimme bleibt im
   Gespräch (bei wackeligem Netz erst nach 2 Fehlern die Handy-Stimme).
+  Pinnwand: Zettel abhaken → 1 s stehen, dann ins Archiv.
 
 ## Liste
 
@@ -71,7 +72,7 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 | A-021 | Termine – Raumauswahl Familie / Geschäftlich wie bei Aufgaben (ersetzt Raum „Ich“ aus A-020; selbst wieder ersetzt durch A-034: „Ich“ kommt zurück, „Arbeit“ statt „Geschäftlich“) | – | gebaut, wird mit A-034 umgebaut |
 | A-022 | Mias Wundertüte – eine Kachel, die jeden Tag anders heißt (ersetzt „Kachel Angeberwissen“; Wortlaut in `docs/auftraege/A-022-wundertuete.md`) | `tafel-116.png` | gebaut, wartet (Punkt 9a; Pool 459 Einträge) |
 | A-023 | Startseite im festen Raster XS · S · M + Standard-Anordnung je Haushalt + Wetter mit Himmel (ersetzt „Raster S/M/L“, „… XS · S · M“ und Nachträge) | `tafel-118.png`, `tafel-119.png`, `tafel-120.png` | gebaut, wartet |
-| A-024 | Pinnwand-Nachtrag: Wörter klarer („Aufhängen“, „Bleibt hängen“), Erledigtes nach 3 s ins Archiv, Archiv 30 Tage | – | gebaut, wartet |
+| A-024 | Pinnwand-Nachtrag: Wörter klarer („Aufhängen“, „Bleibt hängen“), abhaken wie Aufgaben/Einkauf (Häkchen, 1 s stehen, dann weich ins Archiv), Archiv 30 Tage | – | fertig v0.145 |
 | A-025 | Essen-Kachel „Rezept“ / „Wochenplan“, Rezeptseite, Kochmodus + Nachtrag Schnellanleitung „Kurz \| Ausführlich“ (ersetzt Tafel-121-Nachtrag „Ich koche jetzt“) | `tafel-122-essen-rezept.png` | gebaut, wartet |
 | A-026 | Nachtrag zu A-019 (VORRANG): Mia hört live über ElevenLabs (Scribe Realtime) – Text beim Sprechen, Ende von selbst | – | fertig v0.143 |
 | A-027 | Erster Start rund für Testfreunde (höchstens 3 Bildschirme, „Zugangscode“, Karte „Auf den Home-Bildschirm“, KI-OK aufräumen) | – | fertig v0.141 |

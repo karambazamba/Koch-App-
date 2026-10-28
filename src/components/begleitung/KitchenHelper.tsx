@@ -125,9 +125,11 @@ export function KitchenHelper() {
     adoptLegacySpeech();
     adoptSchnellnotiz();
     removeRetiredKeys(localStorage, sessionStorage);
-    // Ton und Bilder von Hand gelöschter Zettel aufräumen (IndexedDB) – erst bei Bedarf geladen
-    void import("@/lib/pinnwand/memoAudio").then((m) => m.tidyPinboard());
-    void import("@/lib/pinnwand/fotoStore").then((m) => m.sweepFotos());
+    // Pinnwand: 30 Tage im Archiv still löschen, dann Ton und Bilder gelöschter Zettel aufräumen (IndexedDB) – erst bei Bedarf geladen
+    void import("@/lib/pinnwand/memoAudio")
+      .then((m) => m.tidyPinboard())
+      .then(() => import("@/lib/pinnwand/fotoStore"))
+      .then((m) => m.sweepFotos());
   }, []);
 
   // Kalender-Links: beim Öffnen und beim Zurückkommen abrufen, wenn fällig (höchstens alle 30 Min)

@@ -1,7 +1,7 @@
 // Notizen neu + Absätze (Tafel 93): Schnellfeld oben – Return = neue Zeile,
 // „Sichern“ erst mit Text, erste Zeile = Titel → Karte unter „Zuletzt“.
 // Notiz öffnen = Vollbild mit „Fertig“ und Werkzeugleiste, Liste: Return =
-// neuer Eintrag. Pinnwand: Return = neue Zeile, angepinnt nur per „Anpinnen“.
+// neuer Eintrag. Pinnwand: Return = neue Zeile, aufgehängt nur per „Aufhängen“.
 import { BASE, hello, pinnwandSchreiben, seedFamily, store } from "../lib.mjs";
 
 const notes = async (page) => (await store(page, "wasgibts.notizen"))?.notes ?? [];
@@ -56,7 +56,7 @@ export const notizen = async (page, check) => {
   await page.waitForTimeout(400);
   check((await notes(page)).length === count, "leere Notiz fällt weg");
 
-  // Pinnwand („Neuer Zettel“, Tafel 106): Return = neue Zeile, angepinnt nur per „Anpinnen“
+  // Pinnwand („Neuer Zettel“, Tafel 106): Return = neue Zeile, aufgehängt nur per „Aufhängen“
   await page.goto(BASE + "/pinnwand");
   await page.getByRole("button", { name: "Neuer Zettel" }).first().click();
   const sheet = page.getByRole("dialog", { name: "Neuer Zettel" });
@@ -66,7 +66,7 @@ export const notizen = async (page, check) => {
   await page.keyboard.press("Enter");
   await page.keyboard.type("Milch und Brot");
   check((await box.inputValue()) === "Einkaufen:\nMilch und Brot" && (await sheet.isVisible()), "Pinnwand: Return = neue Zeile");
-  await sheet.getByRole("button", { name: "Anpinnen" }).click();
+  await sheet.getByRole("button", { name: "Aufhängen" }).click();
   await page.waitForTimeout(500);
   const pin = page.locator(".zettel-text", { hasText: "Einkaufen:" }).first();
   check(await pin.evaluate((el) => getComputedStyle(el).whiteSpace === "pre-line" && el.textContent.includes("\n")), "Pinnwand zeigt die Zeilen");

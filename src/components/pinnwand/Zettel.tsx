@@ -3,19 +3,21 @@
 // Ein Zettel an der Kühlschranktür (Tafel 106): Papier je Inhalt –
 // Haftnotiz in der Farbe der Person, Karoblatt (Kinder), Polaroid (Foto),
 // Kassenbon (Sprachnachricht: gezackte Oberkante, „SPRACHNACHRICHT“, ▶,
-// Tonwelle, Dauer). Fest leicht schief, oben ein Magnet (Angeheftetes: roter
-// Pin), unten Avatar-Kreis mit Initiale, Name und Zeit, rechts der
-// Haken-Kreis für „Erledigt“ (blass + durchgestrichen, „erledigt von Lisa“).
-// Antippen oder lange drücken öffnet das Menü.
+// Tonwelle, Dauer). Fest leicht schief, oben ein Magnet („Bleibt hängen“:
+// roter Pin), unten Avatar-Kreis mit Initiale, Name und Zeit, rechts der
+// Haken-Kreis für „Erledigt“ – wie Aufgaben und Einkauf: Häkchen orange,
+// „erledigt von Lisa“, 1 s stehen (nochmal tippen = doch nicht), dann gleitet
+// er 0,8 s weich ins Archiv; nie durchgestrichen. Antippen oder lange drücken öffnet das Menü.
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, ImageIcon, Play } from "lucide-react";
-import { formatDauer, doneLine, magnetOf, memoUnheard, reactionLine, tiltOf, zettelTon, type PinMessage, type ZettelFarbe } from "@/lib/pinnwand";
+import { GLEIT_MS, formatDauer, doneLine, leavesIn, magnetOf, memoUnheard, reactionLine, tiltOf, zettelTon, type DoorEntry, type PinMessage, type ZettelFarbe } from "@/lib/pinnwand";
 import { fotoStore } from "@/lib/pinnwand/fotoStore";
 import { pinMetaLine } from "@/components/pinnwand/PinSheets";
 import { MemoWave } from "@/components/pinnwand/MemoParts";
 import { PlayButton, useMemoPlayer } from "@/components/pinnwand/MemoRow";
 import { Magnet } from "@/components/pinnwand/Magnet";
+import { now } from "@/lib/core/now";
 import { entryOf, toneOf, type BoardItem } from "@/components/pinnwand/useBoard";
 
 /** Avatar-Kreis mit Initiale in der Farbe der Person */
@@ -56,6 +58,20 @@ export function FotoBild({ pin, className = "" }: { pin: Pick<PinMessage, "id" |
   );
 }
 
+/**
+ * Abgehakt und noch an der Tür: nach wie vielen ms er hinausgleitet (1 s
+ * stehen, dann 0,8 s weich weg), sonst null. Einmal je Abhaken gerechnet,
+ * sonst springt die Bewegung neu an. Seite und Kachel gleich.
+ */
+export function useGehtIn(entry: DoorEntry, aktiv = true): number | null {
+  const doneAt = aktiv ? entry.data.erledigt?.am : undefined;
+  return useMemo(() => {
+    const left = doneAt ? leavesIn(entry, now().getTime()) : null;
+    return left === null ? null : Math.max(0, left - GLEIT_MS);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- nur je Abhaken neu
+  }, [doneAt]);
+}
+
 type Props = { item: BoardItem; me: string; household: string[]; highlight?: boolean; onOpen: () => void; onDone?: () => void; tone?: ZettelFarbe | "mia"; demo?: boolean };
 
 export function Zettel({ item, me, household, highlight = false, onOpen, onDone, tone: forced, demo = false }: Props) {
@@ -64,7 +80,9 @@ export function Zettel({ item, me, household, highlight = false, onOpen, onDone,
   const done = entry.data.erledigt;
   const pinned = item.kind === "pin" && item.pin.data.pinned;
   const papier = item.kind === "memo" ? "memo" : item.pin.data.papier;
-  const meta = demo ? entry.data.author : done ? doneLine(done, me) : pinned ? `${entry.data.author === me ? "Du" : entry.data.author} · angeheftet` : pinMetaLine(entry, me);
+  const meta = demo ? entry.data.author : done ? doneLine(done, me) : pinned ? `${entry.data.author === me ? "Du" : entry.data.author} · bleibt hängen` : pinMetaLine(entry, me);
+  // Abgehakt an der Tür: 1 s stehen, dann weich hinaus
+  const gehtIn = useGehtIn(entry, Boolean(onDone));
   const reacted = reactionLine(entry.data.reactions);
   const player = useMemoPlayer();
   const paperClass = papier === "karo" ? "zettel-karo" : papier === "foto" ? "zettel-papier p-2 pb-2.5" : papier === "memo" ? "zettel-papier zettel-bon" : "";
@@ -73,8 +91,8 @@ export function Zettel({ item, me, household, highlight = false, onOpen, onDone,
   return (
     <div
       id={onDone ? `n-${item.id}` : undefined}
-      className={`zettel relative select-none [-webkit-touch-callout:none] ${paperClass} ${highlight ? "zettel-hervor" : ""}`}
-      style={{ ["--kippen" as string]: `${tiltOf(item.id)}deg`, ...(papier === "zettel" ? { background: tone.bg } : {}) }}
+      className={`zettel relative select-none [-webkit-touch-callout:none] ${paperClass} ${highlight ? "zettel-hervor" : ""} ${gehtIn !== null ? "zettel-geht" : ""}`}
+      style={{ ["--kippen" as string]: `${tiltOf(item.id)}deg`, ...(gehtIn !== null ? { ["--geht-in" as string]: `${gehtIn}ms` } : {}), ...(papier === "zettel" ? { background: tone.bg } : {}) }}
       data-erledigt={done ? "" : undefined}
       data-papier={papier}
     >
@@ -117,9 +135,10 @@ export function Zettel({ item, me, household, highlight = false, onOpen, onDone,
           </>
         )}
         {reacted && <span className="text-[13px] text-fridge-soft">{reacted}</span>}
-        <span className={`flex min-h-[30px] items-center gap-1.5 pr-9 text-[12px] font-semibold text-fridge-soft ${papier === "foto" ? "px-1" : ""}`}>
+        {/* Name · Zeit immer ganz lesbar: lieber zweizeilig als abgeschnitten; rechts bleibt Platz für den Haken-Kreis */}
+        <span className={`flex min-h-[30px] items-center gap-1.5 pr-8 text-[12px] font-semibold leading-tight text-fridge-soft ${papier === "foto" ? "px-1" : ""}`} data-meta>
           <ZettelAvatar name={entry.data.author} color={tone.mag} />
-          <span className="min-w-0 truncate">{meta}</span>
+          <span className="min-w-0 break-words">{meta}</span>
           {item.kind === "memo" && memoUnheard(item.memo, me) && !done && <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: tone.mag }} aria-label="Noch nicht gehört" />}
         </span>
       </div>
@@ -131,7 +150,11 @@ export function Zettel({ item, me, household, highlight = false, onOpen, onDone,
         aria-label={done ? "Doch nicht erledigt" : "Erledigt"}
         className="hit absolute bottom-1 right-1 z-10 flex h-[30px] w-[30px] items-center justify-center rounded-full"
       >
-        <span className={`flex h-[22px] w-[22px] items-center justify-center rounded-full ${done ? "bg-good text-on-accent" : "border-2 border-fridge-soft opacity-40"}`}>
+        <span
+          className={`flex h-[22px] w-[22px] items-center justify-center rounded-full ${done ? "bg-accent text-on-accent" : "border-2 border-fridge-soft opacity-40"}`}
+          style={done ? { animation: "check-pop 0.4s ease-out" } : undefined}
+          data-haken
+        >
           {done && <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />}
         </span>
       </button>

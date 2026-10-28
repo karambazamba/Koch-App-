@@ -1,11 +1,14 @@
 // Pinnwand als Kühlschranktür (Tafel 106/107) mit echten Touch-Gesten: Kachel
 // „Fächer“ so hoch wie Wetter, ＋ → „Neuer Zettel“ (Text direkt auf dem
-// Zettel, Return = neue Zeile) → „Anpinnen“ → „Angepinnt · Rückgängig“, der
-// neue Zettel liegt vorn im Fächer; Tipp auf den Zettel = Pinnwand mit ihm
-// hervorgehoben; Wischen über der Kachel wechselt die Seite. Seite: Tür mit
-// zwei Spalten, Antippen bzw. lange drücken = Menü (Erledigt, Antworten, In
-// Notizen, Anheften, Löschen nur eigene), ❤️ → „❤️ Lisa“, Haken-Kreis =
-// erledigt (blass, „erledigt von dir“), „Antworten“ = „Antwort an …“.
+// Zettel, Return = neue Zeile, Schalter „Bleibt hängen“) → „Aufhängen“ →
+// „Hängt. · Rückgängig“, der neue Zettel liegt vorn im Fächer; Tipp auf den
+// Zettel = Pinnwand mit ihm hervorgehoben; Wischen über der Kachel wechselt
+// die Seite. Seite: Tür mit zwei Spalten, Antippen bzw. lange drücken = Menü
+// (Erledigt, Antworten, In Notizen, Bleibt hängen, Löschen nur eigene), ❤️ →
+// „❤️ Lisa“, Haken-Kreis = erledigt wie Aufgaben/Einkauf (Häkchen orange,
+// „erledigt von dir“, nie durchgestrichen, nochmal tippen innerhalb 1 s =
+// zurück, sonst 1 s stehen und weich ins Archiv „Ältere“, „Erledigt ·
+// Rückgängig“ holt ihn zurück), „Antworten“ = „Antwort an …“. (A-024, v0.145)
 import { BASE, hello, seedFamily, swipe } from "../lib.mjs";
 
 async function hold(page, x, y, ms = 650) {
@@ -35,7 +38,7 @@ export const pinnwandGesten = async (page, check) => {
   check(await tile.locator(".zettel").first().isVisible(), "Kachel zeigt echte kleine Zettel");
   check(!(await tile.getByLabel("Neue Nachricht").count()), "kein roter Punkt");
 
-  // ＋ → „Neuer Zettel“: Text direkt auf dem Zettel, Return = neue Zeile, „Anpinnen“
+  // ＋ → „Neuer Zettel“: Text direkt auf dem Zettel, Return = neue Zeile, „Aufhängen“
   await tile.getByRole("button", { name: "Neuer Zettel" }).click();
   const sheet = page.getByRole("dialog", { name: "Neuer Zettel" });
   check(await sheet.waitFor({ timeout: 5000 }).then(() => true, () => false), "＋ → „Neuer Zettel“");
@@ -46,10 +49,13 @@ export const pinnwandGesten = async (page, check) => {
   await page.keyboard.type("zurück");
   check((await box.inputValue()) === "Ich bin um 6\nzurück" && (await sheet.isVisible()), "Return = neue Zeile, Fenster bleibt");
   check((await sheet.getByRole("radio", { checked: true }).count()) === 2, "Art „Zettel“ und eigene Farbe vorgewählt");
-  check(!(await sheet.getByText("📌").count()), "„Anheften“ ohne Emoji");
-  await sheet.getByRole("button", { name: "Anpinnen" }).click();
+  check(!(await sheet.getByText("📌").count()), "„Bleibt hängen“ ohne Emoji");
+  const bleibt = sheet.getByRole("switch", { name: /Bleibt hängen/ });
+  check((await bleibt.getAttribute("aria-checked")) === "false", "„Bleibt hängen“ aus");
+  check(await sheet.getByText("Verschwindet nicht von selbst, z. B. fürs WLAN.").isVisible(), "leiser Hinweis unter „Bleibt hängen“");
+  await sheet.getByRole("button", { name: "Aufhängen" }).click();
   await page.waitForTimeout(400);
-  check(await page.getByText("Angepinnt").isVisible(), "„Angepinnt“");
+  check(await page.getByText("Hängt.").isVisible(), "„Hängt.“");
   check(await page.getByRole("button", { name: "Rückgängig" }).isVisible(), "mit „Rückgängig“");
   const front = tile.getByRole("link", { name: /Ich bin um 6/ }).first();
   check(await front.isVisible(), "neuer Zettel vorn im Fächer");
@@ -95,7 +101,7 @@ export const pinnwandGesten = async (page, check) => {
   // fremder Zettel antippen → Menü ohne Löschen; ❤️ → „❤️ Lisa“
   await other.click();
   check(await menu(page).waitFor({ timeout: 3000 }).then(() => true, () => false), "Antippen → Menü");
-  for (const m of ["Erledigt", "Antworten", "In Notizen", "Anheften"]) check(await menu(page).getByRole("menuitem", { name: m }).isVisible(), `Menü „${m}“`);
+  for (const m of ["Erledigt", "Antworten", "In Notizen", "Bleibt hängen"]) check(await menu(page).getByRole("menuitem", { name: m }).isVisible(), `Menü „${m}“`);
   check(!(await menu(page).getByRole("menuitem", { name: "Löschen" }).count()), "fremd: kein „Löschen“");
   await menu(page).getByRole("button", { name: "Mit ❤️ reagieren" }).click();
   await page.waitForTimeout(400);
@@ -110,10 +116,31 @@ export const pinnwandGesten = async (page, check) => {
   await page.getByRole("dialog", { name: /^Antwort an / }).getByRole("button", { name: "Schließen" }).last().click();
   await page.waitForTimeout(500);
 
-  // Haken-Kreis: erledigt (blass, „erledigt von dir“), bleibt an der Tür
-  await page.locator("[id^='n-']", { has: other }).getByRole("button", { name: "Erledigt" }).click();
-  await page.waitForTimeout(400);
-  check(await page.getByText("erledigt von dir").first().isVisible(), "Haken → „erledigt von dir“, Zettel bleibt (blass)");
+  // Haken-Kreis wie Aufgaben/Einkauf: Häkchen orange, „erledigt von dir“, nicht durchgestrichen; nochmal tippen (innerhalb 1 s) = zurück
+  const karte = page.locator("[id^='n-']", { has: other });
+  await karte.getByRole("button", { name: "Erledigt" }).click();
+  await page.waitForTimeout(300);
+  check(await page.getByText("erledigt von dir").first().isVisible(), "Haken → „erledigt von dir“");
+  check(await karte.locator("[data-haken]").evaluate((el) => el.className.includes("bg-accent")), "Häkchen orange");
+  check(await karte.locator(".zettel-text").evaluate((el) => !getComputedStyle(el).textDecorationLine.includes("line-through")), "nicht durchgestrichen");
+  await karte.getByRole("button", { name: "Doch nicht erledigt" }).click();
+  await page.waitForTimeout(300);
+  check((await other.isVisible()) && !(await page.getByText("erledigt von dir").count()), "nochmal tippen (innerhalb 1 s) → zurück, hängt weiter");
+  await page.waitForTimeout(2000);
+  check(!(await page.getByText("Erledigt", { exact: true }).count()), "zurückgenommen: kein „Erledigt · Rückgängig“");
+
+  // Nochmal abhaken: 1 s stehen, 0,8 s weich weg → Archiv „Ältere“, dann „Erledigt · Rückgängig“ holt ihn zurück
+  await karte.getByRole("button", { name: "Erledigt" }).click();
+  // Die Uhr der Seite steht fest – 4 s weiterstellen, die Tür rechnet nach 1,8 s neu
+  const jetzt = await page.evaluate(() => Date.now());
+  await page.clock.setFixedTime(new Date(jetzt + 4000));
+  await page.waitForTimeout(2300);
+  check(!(await zettel(page, "Bin um 20 Uhr da").count()), "nach 1 s + Weggleiten von der Tür");
+  check(await page.getByRole("button", { name: /^Ältere · \d+/ }).isVisible(), "liegt im Archiv „Ältere“");
+  check(await page.getByRole("button", { name: "Rückgängig" }).isVisible(), "dann „Erledigt · Rückgängig“");
+  await page.getByRole("button", { name: "Rückgängig" }).click();
+  await page.waitForTimeout(500);
+  check(await zettel(page, "Bin um 20 Uhr da").isVisible(), "Rückgängig → wieder an der Tür");
 
   // eigener Zettel → Menü → Löschen → „Gelöscht · Rückgängig“
   await own.click();

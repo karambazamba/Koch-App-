@@ -4,13 +4,14 @@
 // IndexedDB); v1 bekommt eine leere Liste. v3: Reaktionen je Person
 // (Person → Emoji statt Emoji → Personen) und Antworten mit Zitat.
 // v4 (Kühlschranktür, Tafel 106): Farbe, Papier, Foto, Erledigt, Archiv –
-// alle vorhandenen Zettel bleiben, ihre Farbe ist die der Person. Nichts
-// wird mehr von selbst weggeräumt: Altes liegt im Archiv „Ältere“.
+// alle vorhandenen Zettel bleiben, ihre Farbe ist die der Person. Altes
+// liegt im Archiv „Ältere“; nach 30 Tagen dort räumt `forgetOldArchive`
+// (beim Start) es still weg – das Format bleibt gleich.
 
 import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
-import type { PinMessage } from "@/lib/pinnwand/model";
-import type { MemoMessage } from "@/lib/pinnwand/memo";
+import { forgetPins, type PinMessage } from "@/lib/pinnwand/model";
+import { forgetMemos, type MemoMessage } from "@/lib/pinnwand/memo";
 import { migratePinStore } from "@/lib/pinnwand/migration";
 
 export { migratePinStore } from "@/lib/pinnwand/migration";
@@ -44,6 +45,17 @@ export function changeMemos(change: (list: MemoMessage[]) => MemoMessage[]): () 
   const before = loadMemos();
   save(loadPins(), change(before));
   return () => store.save({ version: 4, messages: loadPins(), memos: before });
+}
+
+/** Beim Start: was 30 Tage im Archiv lag, still löschen (nur speichern, wenn sich etwas ändert) */
+export function forgetOldArchive(nowMs: number): number {
+  const pins = loadPins();
+  const memos = loadMemos();
+  const keptPins = forgetPins(pins, nowMs);
+  const keptMemos = forgetMemos(memos, nowMs);
+  const gone = pins.length - keptPins.length + memos.length - keptMemos.length;
+  if (gone) save(keptPins, keptMemos);
+  return gone;
 }
 
 export function usePins(): PinMessage[] | undefined {
