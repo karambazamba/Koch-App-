@@ -2923,7 +2923,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
   „Weiterleiten an Mia“ und die Wisch-Gesten an Zetteln entfallen (Tippen
   und lange Drücken öffnen das Menü); Archiv ohne „Wieder aufhängen“.
 
-## Kachel-Farben neu + wählbar (vX, Tafel 108)
+## Kachel-Farben neu + wählbar (v0.139.0, Tafel 108)
 - Palette neu, alle gleich hell und kräftig: Termine Lavendel, Aufgaben Mint,
   Einkauf Salbei (gelblicher, nicht mehr wie Aufgaben), Pinnwand Rosé,
   Notizen Vanille, Im Haus Aqua, Sport Flieder (vorher grün), Timer Sand;

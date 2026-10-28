@@ -10,9 +10,8 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 
 - **Fertig:** Im Haus reinsprechen (v0.135), Windsack/Hinweis-Stil/Jetzt-Karte
   morgens (v0.136), Aufgaben „alles ist heute“ (v0.137), Arbeitsweise,
-  Pinnwand als Kühlschranktür (v0.138).
-- **In Arbeit:** Kachel-Farben (A-017),
-  Einkauf neu (A-018), Mia schneller (A-019), Neue Aufgabe & Termin (A-020) – werden nacheinander auf dem neuesten `main` gemergt.
+  Pinnwand als Kühlschranktür (v0.138), Kachel-Farben (v0.139).
+- **In Arbeit:** Einkauf neu (A-018), Mia schneller (A-019), Neue Aufgabe & Termin (A-020) – werden nacheinander auf dem neuesten `main` gemergt.
 - **Ausprobieren:** „Im Haus“ → „Was ist da?“ einen Satz sagen („Milch ist da,
   Thunfisch ist alle“); Aufgaben-Seite abends (Arbeit ausgeblendet, „Arbeit ·
   n für morgen“); Wetter bei wenig Wind ohne Windsack.
@@ -38,7 +37,7 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 | A-014 | Aufgaben – alles ist heute, eine Liste, Arbeit als Schild | Tafel 103/104 (kein Bild) | fertig v0.137 |
 | A-015 | Arbeitsweise: Warteschlange, Tafeln, Pakete, gestaffelte Tests, CLAUDE.md schlank | – | fertig (dieser PR) |
 | A-016 | Pinnwand als Kühlschranktür – Zettel, die bleiben, Kachel als Fächer (ersetzt „Pinnwand – nichts verschwindet ungefragt“; nebenbei Einkauf-Kachel-Kopf) | `tafel-106.png`, `tafel-107.png` | fertig v0.138 |
-| A-017 | Kachel-Farben neu + einfach wählbar | `tafel-108.png` | in Arbeit (gebaut, wartet auf A-016) |
+| A-017 | Kachel-Farben neu + einfach wählbar | `tafel-108.png` | fertig v0.139 |
 | A-018 | Einkauf neu – einsprechen oder aussuchen, Läden wie die Kachel, Ohne-Laden reinziehen (+ Nachtrag Aussuchen in Abschnitten; ersetzt „Einkauf so einfach wie die Kachel“ und „Einkaufs-Diktat“) | `tafel-111.png`, Tafel 110 (kein Bild) | in Arbeit (gebaut, wartet) |
 | A-019 | Mia im Gespräch deutlich schneller und flüssiger (Messen, Stille 1,2 s, Sofort-Weg, eine Runde, sofort sprechen, „Mhm“, schlanker Kontext, ElevenLabs schnell; Nachtrag: Sofort-Regeln für Kurzsätze ≥ 40 Prüfstand-Sätze/98 %, Mikro-Wachhund höchstens ein Neustart + „Mikro ist gerade belegt“) | – | in Arbeit |
 | A-020 | Neue Aufgabe & Termin – ein Feld, Familie · Ich · Arbeit (neuer Raum „Ich“; ersetzt „Neue Aufgabe / neuer Termin – ein Feld, fertig“ und beide Nachträge) | `tafel-114.png` | in Arbeit |
