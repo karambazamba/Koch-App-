@@ -160,9 +160,11 @@ export const einsprechen = async (page, check) => {
 // drauf.“, „Oft bei Edeka“, Antippen landet direkt bei Edeka („Steht drin.“)
 export const ladenLeer = async (page, check) => {
   await laeden(page);
+  // „Oft bei Edeka“ = dort Abgehaktes (A-041), mit Datum
   await page.evaluate((key) => {
     const s = JSON.parse(localStorage.getItem(key));
-    localStorage.setItem(key, JSON.stringify({ ...s, shopRules: { butter: "Edeka" }, learned: { quark: { shop: "Edeka", n: 2, am: new Date().toISOString().slice(0, 10) } } }));
+    const heute = new Date().toISOString().slice(0, 10);
+    localStorage.setItem(key, JSON.stringify({ ...s, shopRules: { butter: "Edeka" }, learned: { butter: { shop: "Edeka", n: 3, am: heute }, quark: { shop: "Edeka", n: 2, am: heute } } }));
   }, KEY);
   await page.goto(BASE + "/einkaufsliste/laden?name=Edeka");
   const leer = page.locator("[data-laden-leer]");
