@@ -124,6 +124,8 @@
   /* Funken beim Freudensprung (Hallo-Bildschirm) – gleich in hell und dunkel */
   --app-spark-orange: #f26b21;
   --app-spark-yellow: #ffc23d;
+  /* Mias kleine Sonne (Zubehör, A-033) – gleich in hell und dunkel */
+  --app-sonne: #f5b82e;
   --app-background: #f7f4ef;
   --app-surface: #ffffff;
   --app-line: #ece6de;
@@ -1276,7 +1278,11 @@ body:has(.mia-buehne-hintergrund, .mia-geist-schleier) [data-mia-knopf] { opacit
 @keyframes av-wackeln{0%,100%{transform:rotate(0)}20%{transform:rotate(-6deg)}40%{transform:rotate(5deg)}60%{transform:rotate(-3deg)}80%{transform:rotate(2deg)}}
 .mia-blatt{position:absolute;top:-6px;left:10px;width:12px;height:12px;border-radius:0 70% 0 70%;background:var(--app-tile-essen-ac);opacity:0;animation:mia-blatt 2.4s cubic-bezier(.16,1,.3,1) both;pointer-events:none}
 @keyframes mia-blatt{0%{opacity:0;transform:translate(0,0) rotate(0)}15%{opacity:.9}100%{opacity:0;transform:translate(-18px,64px) rotate(160deg)}}
-@media (prefers-reduced-motion:reduce){[data-moment] .av-body{animation:none!important}.mia-blatt{display:none}}
+/* Sonne (A-033): Strahlen drehen sich beim Öffnen einmal sehr langsam, sonst still */
+.av-sonne-strahlen{transform-origin:68px 12px}
+[data-moment="sonne"] .av-sonne-strahlen{animation:av-sonne 8s cubic-bezier(.16,1,.3,1) both}
+@keyframes av-sonne{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){[data-moment] .av-body{animation:none!important}.mia-blatt{display:none}[data-moment] .av-sonne-strahlen{animation:none!important}}
 
 /*
  * Pinnwand als Kühlschranktür (Tafel 106/107): Tür, Zettel, Papiere. Farben nur

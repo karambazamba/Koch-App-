@@ -39,11 +39,34 @@ describe("Zubehör", () => {
     expect(miaLook(lage("2027-01-10", "12:00", { wetter: dry })).zubehoer).toBe("schal");
   });
 
-  it("Sonnenbrille nur jetzt sonnig, > 22 °C, im Sommer", () => {
+  it("Sonnenbrille: jetzt sonnig und ab 18 °C – ganzjährig", () => {
     expect(miaLook(lage("2027-07-10", "14:00", { wetter: { ...dry, sonnig: true, grad: 25 } })).zubehoer).toBe("sonnenbrille");
-    expect(miaLook(lage("2027-07-10", "14:00", { wetter: { ...dry, sonnig: true, grad: 21 } })).zubehoer).toBeNull();
+    expect(miaLook(lage("2027-04-10", "14:00", { wetter: { ...dry, sonnig: true, grad: 19 } })).zubehoer).toBe("sonnenbrille");
+    expect(miaLook(lage("2027-04-10", "14:00", { wetter: { ...dry, sonnig: true, grad: 18 } })).zubehoer).toBe("sonnenbrille");
     expect(miaLook(lage("2027-07-10", "14:00", { wetter: { ...dry, sonnig: false, grad: 25 } })).zubehoer).toBeNull();
-    expect(miaLook(lage("2027-04-10", "14:00", { wetter: { ...dry, sonnig: true, grad: 25 } })).zubehoer).toBeNull();
+  });
+
+  it("Sonne: sonnig unter 18 °C tagsüber (A-033)", () => {
+    expect(miaLook(lage("2026-10-15", "12:00", { wetter: { ...dry, sonnig: true, grad: 13 } })).zubehoer).toBe("sonne");
+    expect(miaLook(lage("2027-04-10", "14:00", { wetter: { ...dry, sonnig: true, grad: 17.9 } })).zubehoer).toBe("sonne");
+    // Winter: Schal nur, wenn keine Sonne scheint
+    expect(miaLook(lage("2027-01-10", "12:00", { wetter: { ...dry, sonnig: true, grad: 2 } })).zubehoer).toBe("sonne");
+  });
+
+  it("nachts nie Sonne oder Sonnenbrille – auch nach Sonnenuntergang vor 22 Uhr", () => {
+    const sonnig = (grad: number) => ({ wetter: { ...dry, sonnig: true, grad } });
+    expect(miaLook(lage("2026-10-15", "23:00", sonnig(13))).zubehoer).toBeNull();
+    expect(miaLook(lage("2026-10-15", "19:30", sonnig(13))).zubehoer).toBeNull();
+    expect(miaLook(lage("2026-10-15", "06:30", sonnig(13))).zubehoer).toBeNull();
+    expect(miaLook(lage("2027-07-10", "23:00", sonnig(25))).zubehoer).toBeNull();
+    expect(miaLook(lage("2027-01-10", "17:30", sonnig(2))).zubehoer).toBe("schal");
+  });
+
+  it("Regen schlägt Sonne, Kochen und Anlass schlagen Wetter", () => {
+    expect(miaLook(lage("2026-10-15", "12:00", { wetter: { ...dry, sonnig: true, grad: 13, regenBald: true } })).zubehoer).toBe("schirm");
+    expect(miaLook(lage("2027-07-10", "14:00", { wetter: { ...dry, sonnig: true, grad: 25, regenBald: true } })).zubehoer).toBe("schirm");
+    expect(miaLook(lage("2026-10-15", "12:00", { kochen: true, wetter: { ...dry, sonnig: true, grad: 13 } })).zubehoer).toBe("kochmuetze");
+    expect(miaLook(lage("2026-10-31", "12:00", { wetter: { ...dry, sonnig: true, grad: 13 } })).zubehoer).toBe("kuerbis");
   });
 
   it("Schirm nur bei Regen jetzt oder in der nächsten Stunde", () => {
@@ -87,6 +110,13 @@ describe("Kurze Momente", () => {
     expect(miaMoment(lage("2026-10-23"), { blatt: nowMs - 59 * 60_000 }, nowMs)).toBeNull();
     expect(miaMoment(lage("2027-03-23"), {}, nowMs)).toBeNull();
   });
+
+  it("Sonnenstrahlen drehen sich einmal, nur mit Sonne, höchstens 1×/h, vor dem Herbstblatt", () => {
+    const sonne = lage("2026-10-15", "12:00", { wetter: { ...dry, sonnig: true, grad: 13 } });
+    expect(miaMoment(sonne, {}, nowMs)).toBe("sonne");
+    expect(miaMoment(sonne, { sonne: nowMs - 59 * 60_000 }, nowMs)).toBe("blatt");
+    expect(miaMoment(lage("2027-04-10", "12:00", { wetter: { ...dry, sonnig: true, grad: 19 } }), {}, nowMs)).toBeNull();
+  });
 });
 
 describe("Ton", () => {
@@ -117,6 +147,43 @@ describe("Ton", () => {
     expect(bigReactionAllowed({ conversation: 1, day: "2026-10-23", today: 0 }, "2026-10-23")).toBe(false);
     expect(bigReactionAllowed({ conversation: 0, day: "2026-10-23", today: 3 }, "2026-10-23")).toBe(false);
     expect(bigReactionAllowed({ conversation: 0, day: "2026-10-22", today: 3 }, "2026-10-23")).toBe(true);
+  });
+});
+
+describe("Sonne am Knopf, nie am Logo (A-033)", () => {
+  it("Sonne halb hinter Mia (vor dem Körper gezeichnet), Gelb nur als Token", async () => {
+    const { createElement } = await import("react");
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const { BegleitungAvatar } = await import("@/components/begleitung/BegleitungAvatar");
+    const html = renderToStaticMarkup(createElement(BegleitungAvatar, { size: 60, zubehoer: "sonne" }));
+    expect(html).toContain('data-zubehoer="sonne"');
+    expect(html.indexOf('data-zubehoer="sonne"')).toBeLessThan(html.indexOf("av-body"));
+    expect(html).toContain("var(--app-sonne)");
+    expect(html.toLowerCase()).not.toContain("#f5b82e");
+    const brille = renderToStaticMarkup(createElement(BegleitungAvatar, { size: 60, zubehoer: "sonnenbrille" }));
+    expect(brille.indexOf('data-zubehoer="sonnenbrille"')).toBeGreaterThan(brille.indexOf("av-body"));
+  });
+
+  it("das eckige Logo (BrandMark) trägt nie Zubehör", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { createElement } = await import("react");
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const { BrandMark } = await import("@/components/ui/BrandMark");
+    for (const variant of ["lockup", "icon", "wort"] as const) {
+      const html = renderToStaticMarkup(createElement(BrandMark, { variant }));
+      expect(html).not.toMatch(/zubehoer|av-sonne/);
+    }
+    const src = readFileSync("src/components/ui/BrandMark.tsx", "utf8");
+    expect(src).not.toMatch(/MiaZubehoer|useMiaLook|zubehoer/i);
+  });
+
+  it("Token --app-sonne in globals.css, reduzierte Bewegung = Strahlen still", async () => {
+    const { readFileSync } = await import("node:fs");
+    const css = readFileSync("src/app/globals.css", "utf8");
+    expect(css).toMatch(/--app-sonne:\s*#f5b82e/i);
+    const rule = css.match(/@media \(prefers-reduced-motion:reduce\)\{\[data-moment\][^\n]*/)?.[0] ?? "";
+    expect(rule).toMatch(/\.av-sonne-strahlen\{animation:none/);
+    expect(css).toMatch(/@keyframes av-sonne\{from\{transform:rotate\(0\)\}to\{transform:rotate\(360deg\)\}\}/);
   });
 });
 

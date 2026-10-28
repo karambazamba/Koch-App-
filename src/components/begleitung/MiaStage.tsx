@@ -12,6 +12,7 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { CalendarDays, ChefHat, History, ListChecks, Pin, ShoppingCart, StickyNote, X, type LucideIcon } from "lucide-react";
 import { StageSheet } from "@/components/ui/Sheet";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
+import { useMiaLook } from "@/components/begleitung/useMiaLook";
 import type { AvatarZustand } from "@/lib/core/avatarState";
 import { STAGE_CENTER, STAGE_SIZE, stageRing, type StageState } from "@/lib/begleitung/stage";
 
@@ -70,6 +71,8 @@ export function StageMia({ state, size = STAGE_SIZE.big, hint, label, done = fal
     return () => cancelAnimationFrame(raf);
   }, []);
   const zustand = done ? "freuen" : AVATAR[state];
+  // Auf der Bühne nur die kleine Sonne (A-033), das übrige Zubehör bleibt am Knopf
+  const sonne = useMiaLook().zubehoer === "sonne";
   // Höchstens EIN Ring: Wellen beim Zuhören, beim Abschicken der ablaufende Ring, im Warten keiner
   const ring = stageRing(state, pause);
   return (
@@ -97,7 +100,7 @@ export function StageMia({ state, size = STAGE_SIZE.big, hint, label, done = fal
             <span className="mia-wellen zwei" aria-hidden />
           </>
         )}
-        <BegleitungAvatar size={size} groesse="gross" zustand={zustand} />
+        <BegleitungAvatar size={size} groesse="gross" zustand={zustand} zubehoer={sonne ? "sonne" : null} />
         {ring === "pause" && (
           // Ring konzentrisch: feste Größe (Mia + 2 × 8 px), Mitte = Mitte des Knopfs; Start oben, läuft im Uhrzeigersinn ab
           <svg

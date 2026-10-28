@@ -705,13 +705,20 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Datum/Uhrzeit/Wetter/Familie als Parameter) – EIN Zubehör, Rangfolge
   Familien-Geburtstag (Partyhut) > Anlass (Halloween Kürbis, 1.–24.12. Mütze,
   Silvester 23:55–1:00 Konfetti und wach, Ostern Ei) > Kochen (Timer läuft:
-  Kochmütze) > Wetter (Schirm nur bei Regen jetzt/nächste Stunde,
-  Sonnenbrille nur jetzt sonnig > 22 °C im Sommer) > Jahreszeit (Schal
+  Kochmütze) > Wetter (Schirm bei Regen jetzt/nächste Stunde, hat Vorrang;
+  jetzt sonnig und tagsüber zwischen Sonnenauf- und -untergang
+  (`sunTimes`/`isNight` aus `wetter/view.ts`): ab 18 °C Sonnenbrille, darunter
+  die kleine Sonne, beides ganzjährig, nachts nie) > Jahreszeit (Schal
   Dez–Feb). Nachts 22–6 schläft Mia, 6–8 verschlafen, ab 19 Uhr ruhiger.
   Gezeichnet in `MiaZubehoer.tsx`, angewendet über `useMiaLook` am Knopf.
+  Die Sonne (A-033: Kreis mit kurzen Strahlen, Gelb `--app-sonne`) liegt halb
+  hinter Mia oben rechts, am Knopf und als einziges Zubehör auch auf der
+  Bühne. Das eckige Logo (`BrandMark`) trägt nie Zubehör (Test).
 - Kurze Momente (`miaMoment`, nur sichtbare Seite, nie Dauerschleife): Sturm
-  (Böen ≥ 60 km/h jetzt) einmal wackeln, höchstens alle 30 Min; Herbst
-  (Sep–Nov) ein fallendes Blatt, höchstens 1×/h. Reduzierte Bewegung = still.
+  (Böen ≥ 60 km/h jetzt) einmal wackeln, höchstens alle 30 Min; Sonne: die
+  Strahlen drehen sich am Knopf einmal sehr langsam (8 s), höchstens 1×/h;
+  Herbst (Sep–Nov) ein fallendes Blatt, höchstens 1×/h. Reduzierte Bewegung
+  = still.
 - Bühne: „Danke“ → Herzchen-Augen und Herzen, Lob → Freudensprung
   (`src/lib/mia/reaktion.ts`), höchstens 1× je Gespräch und 3× am Tag.
   Nachts begrüßt Mia mit „Moin … äh, Nacht! Was liegt an?“ (Varianten).
