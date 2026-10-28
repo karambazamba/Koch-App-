@@ -420,10 +420,17 @@ describe("„Nehmen“ bietet die Zutaten an (Wochenplan-Angebot, A-040/A-046)",
     const manual = saved().weeks[W].manual;
     expect(manual.map((m) => m.name)).toEqual(["Spinat", "Mozzarella", "Lasagneplatten"]);
     expect(manual.every((m) => m.amount === "" && m.dish === "Gemüselasagne")).toBe(true);
-    // Spontan: kein Plan, nichts anbieten (still)
+    // Steht schon drauf bzw. nichts genannt: still
     showToast.mockClear();
+    expect(zutatenAnbieten({ profile, weekPlans: {}, recipes: RECIPES }, "Gemüselasagne", "2026-10-23", ["Spinat"])).toBe(false);
     expect(zutatenAnbieten({ profile: { ...(profile as object), planStyle: "spontan" } as never, weekPlans: {}, recipes: RECIPES }, "Curry", "2026-10-24")).toBe(false);
     expect(showToast).not.toHaveBeenCalled();
+    // Rezept kennt die Liste nicht (eingebautes Rezept) bzw. spontan: was die Vorschau „auf die Liste“ nannte, ohne Grundsachen
+    expect(zutatenAnbieten({ profile: { ...(profile as object), planStyle: "spontan" } as never, weekPlans: {}, recipes: RECIPES }, "Wok-Nudeln", "2026-10-21", ["Mie-Nudeln", "Salz", "Spinat"])).toBe(true);
+    const t2 = showToast.mock.calls[0][0] as typeof t;
+    expect(t2.text).toBe("Auf die Liste: Mie-Nudeln?");
+    t2.action.run();
+    expect(saved().weeks[W].manual.find((m) => m.name === "Mie-Nudeln")).toMatchObject({ amount: "", dish: "Wok-Nudeln", day: "Mittwoch" });
     vi.doUnmock("@/lib/essen/mealPlan");
     vi.doUnmock("@/lib/core/toast");
   });

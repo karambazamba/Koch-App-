@@ -3644,7 +3644,9 @@ Fehler in `docs/aufraeumen-nachher.md`.
   einmal klein „Auf die Liste: Eier, Limette +2?“ mit „Alle dazu“ (Grundsachen
   nie, nur was die Vorschau „auf die Liste“ nannte; `einkauf/angebot/nachNehmen`).
   Ohne Antippen bleiben die Zutaten im Wochenplan-Angebot der Laden-Seite.
-  Nichts anzubieten (alles im Haus, spontan, Woche im alten Stand) = still.
+  Kennt die Liste das Rezept nicht (eingebautes Rezept) oder kocht man
+  spontan, gilt, was die Vorschau „auf die Liste“ nannte. Nichts anzubieten
+  (alles im Haus, steht schon drauf) = still.
   Die Meldung kann dafür statt „Rückgängig“ einen Angebots-Knopf tragen
   (`showToast({ action })`). Der Beispiel-Tag bietet nichts an.
 - **Zeile antippen** = ein Fenster (`ui/Sheet`): Name, darunter erst hier

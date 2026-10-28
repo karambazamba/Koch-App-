@@ -1,7 +1,8 @@
 // Essen-Kachel final (A-046, Tafel 134): ohne Plan zeigt sie gleich einen
 // Vorschlag („KOCHIDEE · HEUTE“), „Was anderes?“ blättert weiter (öffnet
 // nicht das Rezept), Kachel antippen = Rezept-Vorschau, „Zurück zu den
-// Ideen“ lässt denselben Vorschlag stehen, „Nehmen“ trägt ein. Beispiel-Tag:
+// Ideen“ lässt denselben Vorschlag stehen, „Nehmen“ trägt ein und bietet die
+// Zutaten an („Alle dazu“, Wochenplan-Angebot A-040). Beispiel-Tag:
 // Antippen öffnet die Vorschau des Beispielgerichts, erst „Nehmen“ übernimmt es.
 import { hello, seedFamily, store } from "../lib.mjs";
 
@@ -40,6 +41,14 @@ export const essenKachelVorschlag = async (page, check) => {
   await page.getByRole("button", { name: "Nehmen", exact: true }).click();
   await page.waitForTimeout(700);
   check((await planTitles(page)).includes(name), `„Nehmen“: „${name}“ steht im Plan`);
+  // A-040: danach bietet eine kleine Meldung die Zutaten an („Auf die Liste: … ?“ · „Alle dazu“)
+  const angebot = page.locator("[data-toast-action]");
+  check(await angebot.waitFor({ timeout: 3000 }).then(() => true, () => false), "„Nehmen“ bietet die Zutaten an („Alle dazu“)");
+  check(/^Auf die Liste: .+\?$/.test((await page.getByRole("status").innerText().catch(() => "")).split("\n")[0].trim()), "Meldung „Auf die Liste: …?“");
+  await angebot.click().catch(() => {});
+  await page.waitForTimeout(400);
+  const manual = Object.values((await store(page, "wasgibts.einkaufsliste"))?.weeks ?? {}).flatMap((w) => w.manual ?? []);
+  check(manual.length > 0 && manual.every((m) => !m.amount), "„Alle dazu“: Zutaten stehen drauf, nur mit Namen");
   check(/^Essen/i.test((await kachel(page).locator("[data-kopf]").innerText()).trim()) && (await titel(page)) === name, "danach fest geplant („ESSEN …“)");
 };
 

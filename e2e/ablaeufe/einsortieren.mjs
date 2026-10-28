@@ -1,7 +1,7 @@
 // Einkauf neu (Tafel 110, Bild 4): „Noch ohne Laden“ einsortieren. Drei
 // Sachen über das ＋ der Kachel (ohne Laden) → Seite „Einkauf“: Chip antippen
-// = „Wo kaufst du das?“ → Rewe (Meldung + Rückgängig); „Mia sortiert“ ordnet
-// Gelerntes ein; Chip halten und per echtem Touch (CDP) auf die Edeka-Karte
+// = „Wo kaufst du das?“ → Rewe (Meldung + Rückgängig); Gelerntes (Milch bei
+// Edeka) landet seit A-041 gleich dort, ohne „Mia sortiert“; Chip halten und per echtem Touch (CDP) auf die Edeka-Karte
 // ziehen → Karte leuchtet, „Kürbiskerne → Edeka. Merk ich mir.“, Rückgängig
 // nimmt die Regel wieder weg; Ziehen scrollt die Seite nicht. Laden-Seite:
 // der Kreis hakt ab. Läuft auf iPhone 15 Pro und Pixel 7.
@@ -12,27 +12,23 @@ const KEY = "wasgibts.einkaufsliste";
 export const einsortieren = async (page, check) => {
   await hello(page);
   await seedFamily(page);
-  // Meine Läden Edeka + Rewe
+  // Meine Läden Edeka + Rewe; Milch wurde einmal bei Edeka abgehakt (Gelerntes)
   await page.evaluate((key) => {
     const s = JSON.parse(localStorage.getItem(key) ?? "null") ?? { version: 6, weeks: {}, products: {}, shops: [], itemShops: {}, staples: [], shopRules: {}, learnAsked: [], alwaysList: [] };
-    localStorage.setItem(key, JSON.stringify({ ...s, version: 6, myShops: ["Edeka", "Rewe"], shopsAsked: true }));
+    localStorage.setItem(key, JSON.stringify({ ...s, version: 6, myShops: ["Edeka", "Rewe"], shopsAsked: true, learned: { milch: { shop: "Edeka", n: 1 } } }));
   }, KEY);
   await page.goto(BASE + "/");
   await page.waitForTimeout(1100);
   // ＋ in der Einkauf-Kachel: nichts vorgewählt = noch ohne Laden
   await page.getByRole("button", { name: "Etwas auf die Einkaufsliste setzen" }).first().tap();
   await schnell(page, "Spinat, Milch, Kürbiskerne");
-  // Erst danach einmal Milch bei Edeka abgehakt (Gelerntes) – sonst landet sie seit A-041 gleich dort
-  await page.evaluate((key) => {
-    const s = JSON.parse(localStorage.getItem(key));
-    localStorage.setItem(key, JSON.stringify({ ...s, learned: { ...s.learned, milch: { shop: "Edeka", n: 1, am: new Date().toISOString().slice(0, 10) } } }));
-  }, KEY);
   await page.goto(BASE + "/einkaufsliste");
   await page.waitForTimeout(900);
 
   const zone = page.locator("[data-ohne-laden]");
   check(await zone.isVisible(), "„Noch ohne Laden“ da");
-  check(/Noch ohne Laden\s*·\s*3/.test(await zone.innerText()), "Kopf „Noch ohne Laden · 3“");
+  check(/Noch ohne Laden\s*·\s*2/.test(await zone.innerText()), "Kopf „Noch ohne Laden · 2“ (Milch gleich bei Edeka, A-041)");
+  check(/Milch/.test(await page.locator('[data-laden-karte="Edeka"]').innerText()), "Milch steht gleich auf der Edeka-Karte (gelernt)");
   check(await zone.getByText("oder auf einen Laden ziehen").isVisible(), "leise „oder auf einen Laden ziehen“");
   check(await page.locator('[data-laden-karte="Edeka"]').isVisible() && (await page.locator('[data-laden-karte="Rewe"]').isVisible()), "Laden-Karten Edeka und Rewe (auch mit 0)");
 
@@ -45,13 +41,8 @@ export const einsortieren = async (page, check) => {
   check((await store(page, KEY)).shopRules.spinat === "Rewe", "Spinat bei Rewe, feste Regel");
   check(/Spinat/.test(await page.locator('[data-laden-karte="Rewe"]').innerText()), "Spinat steht auf der Rewe-Karte");
 
-  // „Mia sortiert“: Milch → Edeka (gelernt), Kürbiskerne bleiben; Rückgängig
-  await page.locator("[data-mia-sortiert]").tap();
-  check(await page.getByText("1 einsortiert").waitFor({ timeout: 3000 }).then(() => true, () => false), "„Mia sortiert“ → „1 einsortiert“");
-  check((await store(page, KEY)).itemShops.milch === "Edeka", "Milch → Edeka");
-  await page.getByRole("button", { name: "Rückgängig" }).tap();
-  await page.waitForTimeout(300);
-  check((await store(page, KEY)).itemShops.milch === undefined, "Rückgängig: Milch wieder ohne Laden");
+  // Gelerntes ist schon einsortiert (A-041): nichts mehr für „Mia sortiert“
+  check(!(await page.locator("[data-mia-sortiert]").count()), "kein „Mia sortiert“ nötig");
 
   // Ziehen: Kürbiskerne halten und auf die Edeka-Karte ziehen
   const chip = zone.locator('[data-ohne-chip="Kürbiskerne"]');
