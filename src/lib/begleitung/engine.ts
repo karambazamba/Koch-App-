@@ -199,7 +199,7 @@ function pendingSummary(ops: ChangeOp[]): string {
       case "remove_note":
         return `Notiz löschen: ${op.title}`;
       case "add_pin":
-        return `Pinnwand: ${op.text}`;
+        return `Pinnwand: ${op.text}${op.pinned ? " (bleibt hängen)" : ""}`;
     }
   });
   return `\n\nNoch nicht übernommener Vorschlag (in den Daten schon enthalten; auf Wunsch anpassen):\n${lines.join("\n")}`;

@@ -226,7 +226,7 @@ export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, t
                       <Link key={p.id} href={`/pinnwand?n=${p.id}`} onClick={onClose} data-key={p.id} className="flex min-h-11 items-center gap-2.5 px-1">
                         <PersonAvatar name={p.data.author} size={24} />
                         <span className="min-w-0 flex-1 truncate text-[15px]">{p.data.text}</span>
-                        {p.data.pinned && <Pin className="h-[13px] w-[13px] shrink-0 text-accent" strokeWidth={2.25} aria-label="angeheftet" />}
+                        {p.data.pinned && <Pin className="h-[13px] w-[13px] shrink-0 text-accent" strokeWidth={2.25} aria-label="bleibt hängen" />}
                       </Link>
                     ))}
                   </Section>

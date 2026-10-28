@@ -2,14 +2,15 @@
 
 // Was man mit einem Zettel an der Kühlschranktür tun kann – überall gleich
 // (Menü nach langem Drücken bzw. Antippen, Haken-Kreis, VoiceOver): Erledigt
-// (an/aus), Antworten (neuer Zettel mit Bezug), In Notizen (eigene Notiz,
-// Zettel ins Archiv), Anheften, Löschen
-// (nur eigene, „Gelöscht · Rückgängig“), reagieren (eine je Person).
+// (blass mit Haken, nach 3 s ins Archiv, „Erledigt · Rückgängig“ 5 s),
+// Antworten (neuer Zettel mit Bezug), In Notizen (eigene Notiz, Zettel ins
+// Archiv), Bleibt hängen / Nicht mehr festhalten, Löschen (nur eigene,
+// „Gelöscht · Rückgängig“), reagieren (eine je Person).
 
 import { now } from "@/lib/core/now";
 import { showDeleted, showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
-import { canDelete, changeMemos, changePins, doneValue, removeMemo, removePin, setPinPinned, toggleMemoReaction, toggleReaction, updateMemo, updatePin, type Reaction } from "@/lib/pinnwand";
+import { canDelete, changeMemos, changePins, doneValue, removeMemo, removePin, setPinPinned, toggleMemoReaction, toggleReaction, updateMemo, updatePin, type Done, type Reaction } from "@/lib/pinnwand";
 import { archivePin, noteOfPin } from "@/lib/pinnwand/notizBruecke";
 import { changeNotes, upsertNote } from "@/lib/notizen";
 import { forgetMemo, stopMemo } from "@/lib/pinnwand/memoPlayer";
@@ -36,13 +37,28 @@ export function deleteItem(item: BoardItem, me: string): boolean {
   return true;
 }
 
-/** Erledigt an/aus: blass und durchgestrichen, nach 24 Std. ins Archiv */
-export function toggleDone(item: BoardItem, me: string) {
-  buzz();
+/** Erledigt an/aus (nur dieser Eintrag – Änderungen anderer bleiben) */
+function setDone(item: BoardItem, erledigt: Done | null) {
   const s = stamp();
-  const erledigt = doneValue(entryOf(item), me, s);
   if (item.kind === "memo") changeMemos((all) => updateMemo(all, item.id, { erledigt }, s));
   else changePins((all) => updatePin(all, item.id, { erledigt }, s));
+}
+
+/** So lange steht „Erledigt · Rückgängig“ (der Zettel gleitet nach 3 s ins Archiv) */
+const ERLEDIGT_TOAST_S = 5;
+
+/**
+ * Abhaken: blass mit Haken, nach 3 s gleitet der Zettel ins Archiv „Ältere“;
+ * „Erledigt · Rückgängig“ (5 s) holt ihn zurück an die Tür – auch aus dem
+ * Archiv. Nochmal tippen, solange er hängt, nimmt es still zurück.
+ */
+export function toggleDone(item: BoardItem, me: string) {
+  buzz();
+  const erledigt = doneValue(entryOf(item), me, stamp());
+  setDone(item, erledigt);
+  if (!erledigt) return;
+  const undo = pushUndo("Erledigt", () => setDone(item, null));
+  showToast({ text: "Erledigt", undo, undoneText: "Hängt wieder", seconds: ERLEDIGT_TOAST_S, small: true });
 }
 
 /** Reaktion setzen, tauschen oder entfernen */
@@ -52,6 +68,7 @@ export function reactTo(item: BoardItem, reaction: Reaction, me: string) {
   else changePins((all) => toggleReaction(all, item.id, reaction, me, stamp()));
 }
 
+/** „Bleibt hängen“ an/aus (Menü: „Nicht mehr festhalten“) */
 export function togglePinned(item: BoardItem) {
   if (item.kind === "pin") changePins((all) => setPinPinned(all, item.id, !item.pin.data.pinned, stamp()));
 }

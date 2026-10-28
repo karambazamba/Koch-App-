@@ -1304,16 +1304,20 @@ body:has(.mia-buehne-hintergrund, .mia-geist-schleier) [data-mia-knopf] { opacit
   border: 1px solid var(--app-fridge-edge);
   border-radius: var(--radius-card);
 }
-/* Griff rechts: schmale senkrechte Leiste */
+/* Griff rechts: kurzer, kräftiger Bügel mit Rand und Schatten – nie so schmal
+   und lang wie ein Scrollbalken (sah auf dem iPhone wie einer aus). Die Tür
+   wächst mit dem Inhalt, die Seite scrollt (kein innerer Scrollbereich). */
 .kuehlschrank::after {
   content: "";
   position: absolute;
-  top: 28px;
-  right: 6px;
-  width: 5px;
-  height: 120px;
-  border-radius: 9999px;
+  top: 36px;
+  right: 4px;
+  width: 9px;
+  height: 64px;
+  border-radius: 5px;
   background: var(--app-fridge-handle);
+  border: 1px solid var(--app-fridge-edge);
+  box-shadow: var(--app-fridge-shadow);
   pointer-events: none;
 }
 /* Ohne eigene position: die Klassen am Element (relative/absolute) entscheiden */
@@ -1345,6 +1349,16 @@ body:has(.mia-buehne-hintergrund, .mia-geist-schleier) [data-mia-knopf] { opacit
 .zettel-leer { border: 2px dashed var(--tile-ac); background: var(--app-tile-inner); box-shadow: none; opacity: 0.85; }
 .zettel[data-erledigt] { opacity: 0.55; }
 .zettel[data-erledigt] .zettel-text { text-decoration: line-through; }
+/* Abgehakt: blass mit Haken, im letzten Teil der 3 s gleitet er weich von der Tür (Richtung „Ältere“) */
+.zettel-geht { animation: zettel-geht 0.9s cubic-bezier(.16, 1, .3, 1) var(--geht-in, 0ms) both; }
+@keyframes zettel-geht {
+  from { opacity: 0.55; transform: rotate(var(--kippen, 0deg)); }
+  to { opacity: 0; transform: rotate(var(--kippen, 0deg)) translateY(48px) scale(0.92); }
+}
+@keyframes zettel-blende {
+  from { opacity: 0.55; }
+  to { opacity: 0; }
+}
 .zettel-hervor { animation: zettel-hervor 2.4s cubic-bezier(.16, 1, .3, 1); }
 @keyframes zettel-hervor {
   0%, 60% { box-shadow: 0 0 0 4px var(--app-accent-soft), var(--app-fridge-shadow); }
@@ -1352,4 +1366,5 @@ body:has(.mia-buehne-hintergrund, .mia-geist-schleier) [data-mia-knopf] { opacit
 }
 @media (prefers-reduced-motion: reduce) {
   .zettel-hervor { animation: none; }
+  .zettel-geht { animation-name: zettel-blende; }
 }

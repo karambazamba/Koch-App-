@@ -2,15 +2,15 @@
 // bis 140 Zeichen, Karoblatt für Kinder, Foto als Polaroid), Autor, Zeit,
 // Farbe der Person, Reaktionen je Person, gelesen von, Antwort mit Zitat.
 // Im einheitlichen Eintrags-Modell (typ "pinnwand", Raum Familie), geteilt
-// über die Konten. Nichts verschwindet ungefragt: ein Zettel bleibt an der
-// Tür, bis jemand „Erledigt“ tippt (dann 24 Std. blass, danach ins Archiv)
-// oder bis er 7 Tage alt ist (leise ins Archiv „Ältere“). Angeheftete bleiben
-// dauerhaft oben. Gelöscht wird nur von Hand. Die Regeln der Tür stehen in
+// über die Konten. Ein Zettel bleibt an der Tür, bis jemand ihn abhakt (dann
+// nach 3 s ins Archiv „Ältere“) oder bis er 7 Tage alt ist (leise ins
+// Archiv). „Bleibt hängen“ (`pinned`) bleibt dauerhaft oben. Im Archiv nach
+// 30 Tagen still gelöscht, sonst nur von Hand. Die Regeln der Tür stehen in
 // `tuer.ts`. Rein, damit Oberfläche, Mia und Tests gleich rechnen.
 
 import { createEntry, type Entry } from "@/lib/core/entries";
 import { applyReaction, readReactions, type Reaction, type Reactions } from "@/lib/pinnwand/reactions";
-import { isArchived, onDoor, readDone, readFarbe, type Done, type ZettelFarbe } from "@/lib/pinnwand/tuer";
+import { isArchived, isForgotten, onDoor, readDone, readFarbe, type Done, type ZettelFarbe } from "@/lib/pinnwand/tuer";
 
 export const PIN_MAX = 140;
 
@@ -31,13 +31,13 @@ type PinData = {
   reactions: Reactions;
   replyTo: PinQuote | null;
   readBy: string[];
-  /** Dauerhaft angeheftet (oben links, geht nie von selbst ins Archiv) */
+  /** „Bleibt hängen“ (oben links, geht nie von selbst ins Archiv) */
   pinned: boolean;
   /** Gewählte Farbe; null = Farbe der Person */
   farbe: ZettelFarbe | null;
   papier: Papier;
   foto: PinFoto | null;
-  /** Erledigt von … am … (24 Std. blass, dann ins Archiv) */
+  /** Erledigt von … am … (3 s blass mit Haken, dann ins Archiv) */
   erledigt: Done | null;
   /** Von Hand ins Archiv (z. B. „In Notizen“) */
   archiv: string | null;
@@ -112,7 +112,7 @@ export function sanitizePin(raw: unknown): PinMessage | null {
   };
 }
 
-/** An der Tür (nicht im Archiv): Angeheftetes zuerst, sonst neueste zuerst */
+/** An der Tür (nicht im Archiv): „Bleibt hängen“ zuerst, sonst neueste zuerst */
 export function visiblePins(list: PinMessage[], nowMs: number): PinMessage[] {
   return list.filter((m) => onDoor(m, nowMs)).sort((a, b) => Number(b.data.pinned) - Number(a.data.pinned) || b.erstellt.localeCompare(a.erstellt));
 }
@@ -120,8 +120,11 @@ export function visiblePins(list: PinMessage[], nowMs: number): PinMessage[] {
 /** An der Tür und nicht erledigt – das, was Mia vorliest und die Jetzt-Karte kennt */
 export const activePins = (list: PinMessage[], nowMs: number) => visiblePins(list, nowMs).filter((m) => !m.data.erledigt);
 
-/** Im Archiv „Ältere“, neueste zuerst */
-export const archivedPins = (list: PinMessage[], nowMs: number) => list.filter((m) => isArchived(m, nowMs)).sort((a, b) => b.erstellt.localeCompare(a.erstellt));
+/** Im Archiv „Ältere“ (ohne Vergessenes), neueste zuerst */
+export const archivedPins = (list: PinMessage[], nowMs: number) => list.filter((m) => isArchived(m, nowMs) && !isForgotten(m, nowMs)).sort((a, b) => b.erstellt.localeCompare(a.erstellt));
+
+/** 30 Tage im Archiv → still weg (der Abgleich macht daraus eine Lösch-Markierung) */
+export const forgetPins = (list: PinMessage[], nowMs: number) => (list.some((m) => isForgotten(m, nowMs)) ? list.filter((m) => !isForgotten(m, nowMs)) : list);
 
 export const addPin = (list: PinMessage[], pin: PinMessage) => [...list.filter((m) => m.id !== pin.id), pin];
 
@@ -129,7 +132,7 @@ export const removePin = (list: PinMessage[], id: string) => list.filter((m) => 
 
 const touch = (m: PinMessage, data: Partial<PinData>, stamp: string): PinMessage => ({ ...m, data: { ...m.data, ...data }, geaendert: stamp });
 
-/** Einen Zettel ändern (Erledigt, Archiv, Anheften, Mia-Frage …) */
+/** Einen Zettel ändern (Erledigt, Archiv, Bleibt hängen, Mia-Frage …) */
 export const updatePin = (list: PinMessage[], id: string, data: Partial<PinData>, stamp: string) => list.map((m) => (m.id === id ? touch(m, data, stamp) : m));
 
 /** Reaktion setzen, tauschen oder (gleiche nochmal) entfernen – eine je Person */
@@ -169,11 +172,14 @@ export function personTone(name: string): 0 | 1 | 2 | 3 {
 
 /** "Schreib an die Pinnwand: Bin um 20 Uhr da" → der Text (oder null) */
 export function pinWriteCommand(text: string): string | null {
-  const m = text.trim().match(/^(?:bitte\s+)?(?:schreib\w*|häng\w*|pinn\w*|setz\w*|pack\w*)?\s*(?:(?:das|bitte)\s+)?(?:an|auf)\s+(?:die\s+)?pinnwand(?:\s+(?:dran|an|bitte))?\s*[:,–-]?\s*(.+)$/i);
+  const m = text.trim().match(/^(?:bitte\s+)?(?:schreib\w*|häng\w*|pinn\w*|setz\w*|pack\w*)?\s*(?:(?:das|bitte)\s+)?(?:(?:dauerhaft|fest)\s+)?(?:an|auf)\s+(?:die\s+)?pinnwand(?:\s+(?:dran|an|bitte))?\s*[:,–-]?\s*(.+)$/i);
   if (!m) return null;
   const body = m[1].replace(/^["„“]|["“”]$/g, "").trim();
   return body.length > 1 ? body : null;
 }
+
+/** Soll der Zettel hängen bleiben („Häng dauerhaft an die Pinnwand …“, „… soll hängen bleiben“)? */
+export const pinStays = (text: string) => /(?<![a-zäöüß])(dauerhaft|fest\s+an|hängen\s+bleib\w*|bleib\w*\s+hängen)(?![a-zäöüß])/i.test(text);
 
 /** "Was steht auf der Pinnwand?" */
 export const isPinboardQuery = (text: string) => /\b(was steht|was gibt['’]?s|zeig\w*|lies\w*)\b.*\bpinnwand\b/i.test(text) || /^pinnwand\??$/i.test(text.trim());

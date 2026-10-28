@@ -2,14 +2,15 @@
 // Kein Mia, keine KI, keine Abschrift: nur Aufnahme, Abspielen, Verschwinden.
 // Der Eintrag (typ "memo") liegt in `wasgibts.pinnwand`, der Ton selbst in
 // IndexedDB (`memoAudio.ts`), mit Konto in Supabase Storage (`storagePath`).
-// An der Tür als „Kassenbon“ (Tafel 106): bleibt, bis jemand „Erledigt“
-// tippt, sonst nach 7 Tagen leise ins Archiv (`tuer.ts`); gelöscht wird nur
-// von Hand, der Ton gleich mit. Anheften geht bei Memos nicht. Rein, damit
-// Oberfläche, Mia und Tests gleich rechnen.
+// An der Tür als „Kassenbon“ (Tafel 106): bleibt, bis jemand abhakt (dann
+// nach 3 s ins Archiv), sonst nach 7 Tagen leise ins Archiv (`tuer.ts`); im
+// Archiv nach 30 Tagen still gelöscht, sonst nur von Hand, der Ton gleich
+// mit. „Bleibt hängen“ gibt es bei Memos nicht. Rein, damit Oberfläche, Mia
+// und Tests gleich rechnen.
 
 import { createEntry, type Entry } from "@/lib/core/entries";
 import { applyReaction, readReactions, type Reaction, type Reactions } from "@/lib/pinnwand/reactions";
-import { isArchived, onDoor, readDone, readFarbe, type Done, type ZettelFarbe } from "@/lib/pinnwand/tuer";
+import { isArchived, isForgotten, onDoor, readDone, readFarbe, type Done, type ZettelFarbe } from "@/lib/pinnwand/tuer";
 
 /** Höchstens 60 s, danach wird automatisch gesendet */
 export const MEMO_MAX_S = 60;
@@ -36,7 +37,7 @@ type MemoData = {
   storagePath: string | null;
   /** Gewählte Farbe; null = Farbe der Person */
   farbe: ZettelFarbe | null;
-  /** Erledigt von … am … (24 Std. blass, dann ins Archiv) */
+  /** Erledigt von … am … (3 s blass mit Haken, dann ins Archiv) */
   erledigt: Done | null;
   /** Von Hand ins Archiv */
   archiv: string | null;
@@ -114,7 +115,10 @@ export const visibleMemos = (list: MemoMessage[], nowMs: number) => list.filter(
 export const activeMemos = (list: MemoMessage[], nowMs: number) => visibleMemos(list, nowMs).filter((m) => !m.data.erledigt);
 
 /** Memos im Archiv „Ältere“, neueste zuerst */
-export const archivedMemos = (list: MemoMessage[], nowMs: number) => list.filter((m) => isArchived(m, nowMs)).sort((a, b) => b.erstellt.localeCompare(a.erstellt));
+export const archivedMemos = (list: MemoMessage[], nowMs: number) => list.filter((m) => isArchived(m, nowMs) && !isForgotten(m, nowMs)).sort((a, b) => b.erstellt.localeCompare(a.erstellt));
+
+/** 30 Tage im Archiv → still weg (wie die Zettel) */
+export const forgetMemos = (list: MemoMessage[], nowMs: number) => (list.some((m) => isForgotten(m, nowMs)) ? list.filter((m) => !isForgotten(m, nowMs)) : list);
 
 /** Ein Memo ändern (Erledigt, Archiv) */
 export const updateMemo = (list: MemoMessage[], id: string, data: Partial<MemoData>, stamp: string) => list.map((m) => (m.id === id ? { ...m, geaendert: stamp, data: { ...m.data, ...data } } : m));

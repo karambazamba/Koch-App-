@@ -136,7 +136,7 @@ export type ChangeOp =
   | { id: string; type: "upsert_note"; note: Note; isNew: boolean; change?: string }
   | { id: string; type: "remove_note"; noteId: string; title: string }
   // Pinnwand: neue Nachricht (landet beim Übernehmen im eigenen Speicher)
-  | { id: string; type: "add_pin"; text: string }
+  | { id: string; type: "add_pin"; text: string; /** „Bleibt hängen“ (geht nie von selbst ins Archiv) */ pinned?: boolean }
   // Sofort (kleine Dinge, mit Meldung): Timer, Stoppuhr, Kochschritt, Kochen starten
   | { id: string; type: "add_timer"; name: string; minutes: number }
   | { id: string; type: "stop_timer"; name: string }

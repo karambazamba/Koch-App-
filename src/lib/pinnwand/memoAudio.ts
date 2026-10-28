@@ -9,7 +9,7 @@
 
 import { micLog } from "@/lib/core/micLog";
 import { now } from "@/lib/core/now";
-import { loadMemos } from "@/lib/pinnwand/store";
+import { forgetOldArchive, loadMemos } from "@/lib/pinnwand/store";
 
 /** Wo der Ton liegt: auf dem Gerät (IndexedDB) oder nur, bis die App geschlossen wird */
 export type MemoAudioPlace = "geraet" | "sitzung";
@@ -172,7 +172,8 @@ async function sweepMemoAudio(liveIds: string[], nowMs = now().getTime()): Promi
   }
 }
 
-/** Beim Start: nur den Ton von Hand gelöschter Memos wegräumen – nichts verschwindet ungefragt */
+/** Beim Start: was 30 Tage im Archiv lag, still löschen, dann den Ton gelöschter Memos wegräumen */
 export async function tidyPinboard(): Promise<void> {
+  forgetOldArchive(now().getTime());
   await sweepMemoAudio(loadMemos().map((m) => m.id));
 }

@@ -4,7 +4,8 @@
 // (Personenfarbe, Magnet), der Text wird direkt darauf geschrieben
 // (mehrzeilig, Return = neue Zeile). Darunter die Art „Zettel /
 // Sprachnachricht / Foto“, die Farbe (5 Kreise, die eigene vorgewählt),
-// „Anheften“ (Pin) und der große Knopf „Anpinnen“. Foto: Kamera oder Galerie,
+// der Schalter „Bleibt hängen“ (Pin; an = roter Pin in der Vorschau) und der
+// große Knopf „Aufhängen“ → „Hängt.“. Foto: Kamera oder Galerie,
 // vor dem Speichern verkleinert (1600 px, JPEG). Sprachnachricht: Mikro
 // antippen, sprechen, ➤ sendet (dann schließt das Fenster). Antworten tragen
 // den Bezug „↪ Lisa“. Der Zettel ist immer für alle im Haushalt – darum
@@ -15,10 +16,10 @@ import { Camera, Check, Images, Pin } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { Segmented } from "@/components/ui/Segmented";
 import { MehrzeilenFeld } from "@/components/ui/MehrzeilenFeld";
-import { buttonClass } from "@/components/ui/styles";
+import { CARD_LIST, buttonClass } from "@/components/ui/styles";
 import { showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
-import { PIN_MAX, FARB_NAMEN, formatDauer, ZETTEL_FARBEN, addPin, changePins, createPin, magnetOf, personFarbe, zettelTon, type PinQuote, type ZettelFarbe } from "@/lib/pinnwand";
+import { AUFHAENGEN, BLEIBT_HAENGEN, BLEIBT_HAENGEN_HINWEIS, HAENGT, PIN_MAX, FARB_NAMEN, formatDauer, ZETTEL_FARBEN, addPin, changePins, createPin, magnetOf, personFarbe, zettelTon, type PinQuote, type ZettelFarbe } from "@/lib/pinnwand";
 import { fotoStore } from "@/lib/pinnwand/fotoStore";
 import { cloudSync } from "@/lib/konten/cache";
 import { askForNotifications } from "@/lib/heute/mitteilungen/geraet";
@@ -64,7 +65,7 @@ export function NeuerZettel({ me, household, karo, onClose, quote = null, art: s
     if (art === "foto" && foto) await fotoStore.save(pin.id, foto.blob);
     const undo = pushUndo("den Zettel", changePins((all) => addPin(all, pin)));
     buzz();
-    showToast({ text: "Angepinnt", undo, undoneText: "Abgenommen", seconds: 4, small: true });
+    showToast({ text: HAENGT, undo, undoneText: "Abgenommen", seconds: 4, small: true });
     if (cloudSync()) askForNotifications("pinnwand");
     onClose();
   };
@@ -163,11 +164,16 @@ export function NeuerZettel({ me, household, karo, onClose, quote = null, art: s
 
         {art !== "memo" && (
           <>
-            <button type="button" aria-pressed={pinned} onClick={() => setPinned((p) => !p)} className={`${buttonClass("secondary")} ${pinned ? "border-accent text-accent-strong" : ""}`}>
-              <Pin className="h-5 w-5" strokeWidth={2} aria-hidden /> {pinned ? "Wird angeheftet" : "Anheften"}
+            <button type="button" role="switch" aria-checked={pinned} onClick={() => setPinned((p) => !p)} className={`${CARD_LIST} flex min-h-14 w-full items-center gap-3 px-4 py-2.5 text-left`}>
+              <Pin className={`h-5 w-5 shrink-0 ${pinned ? "text-accent-strong" : "text-muted"}`} strokeWidth={2} aria-hidden />
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="text-base font-semibold">{BLEIBT_HAENGEN}</span>
+                <span className="text-[13px] leading-snug text-muted">{BLEIBT_HAENGEN_HINWEIS}</span>
+              </span>
+              <span className={`shrink-0 text-base font-semibold ${pinned ? "text-accent-strong" : "text-muted"}`}>{pinned ? "Ja" : "Nein"}</span>
             </button>
             <button type="button" disabled={!ready} onClick={() => void save()} className={buttonClass("primary")}>
-              Anpinnen
+              {AUFHAENGEN}
             </button>
           </>
         )}

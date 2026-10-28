@@ -140,6 +140,8 @@ export const PRUEFSAETZE: PruefSatz[] = [
   // Kühlschranktür (Tafel 106): Zettel für die anderen, Notiz für mich, nur nicht Erledigtes vorlesen
   S("Häng an die Pinnwand: Ole braucht Gummistiefel", ["add_pin"]),
   S("Was steht auf der Pinnwand?", ["antwort"]),
+  // „Bleibt hängen“ (A-024): geht nie von selbst ins Archiv
+  S("Häng dauerhaft an die Pinnwand: Müll ist immer dienstags", ["add_pin"]),
   S("Merk dir für mich die PIN vom Fahrradschloss: 4711", ["upsert_note"]),
   // Kochen und Essen (20)
   S("Was soll ich heute kochen?", ["app_command", "set_meal"]),

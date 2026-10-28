@@ -1,6 +1,6 @@
 // Magnete der Kühlschranktür (Tafel 106): Punkt (Zettel), Stern (Karoblatt),
 // Apfel (Polaroid), Herz (Kassenbon) – eigene kleine Zeichnungen in der Farbe
-// der Person; Angeheftetes hängt am roten Pin. Nur Schmuck (aria-hidden).
+// der Person; „Bleibt hängen“ hängt am roten Pin. Nur Schmuck (aria-hidden).
 
 import type { MagnetForm } from "@/lib/pinnwand/tuer";
 

@@ -3,8 +3,9 @@
 // Zettel angetippt oder lange gedrückt (Tafel 106, E): der Zettel hebt sich
 // leicht an, der Rest wird abgedunkelt; darüber die Reaktionsleiste 👍 ❤️ 😂
 // 😮 🙏 (Reaktionen sind Inhalt), darunter das Menü „Erledigt“, „Antworten“,
-// „In Notizen“ (nur Text), „Anheften“ (nur Zettel), „Löschen“ (nur eigene);
-// im Archiv nur Antworten, In Notizen und Löschen. Bei der eigenen
+// „In Notizen“ (nur Text), „Bleibt hängen“ bzw. „Nicht mehr festhalten“ (nur
+// Zettel), „Löschen“ (nur eigene, sofort ganz weg mit Rückgängig); im Archiv
+// nur Antworten, In Notizen und Löschen. Bei der eigenen
 // Sprachnachricht „Gehört von“. Schließt per Danebentippen, Escape und Zurück.
 
 import { useEffect, useRef, type ReactNode } from "react";
@@ -12,7 +13,7 @@ import { Check, CircleCheck, NotebookPen, Pin, Reply, Trash2 } from "lucide-reac
 import { useBackCloses } from "@/lib/core/useBackCloses";
 import { now } from "@/lib/core/now";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
-import { REACTIONS, changeMemos, setMemoHeard } from "@/lib/pinnwand";
+import { BLEIBT_HAENGEN, NICHT_MEHR_FESTHALTEN, REACTIONS, changeMemos, setMemoHeard } from "@/lib/pinnwand";
 import { deleteItem, mayDelete, moveToNotes, reactTo, reactionsOf, toggleDone, togglePinned } from "@/components/pinnwand/boardActions";
 import { entryOf } from "@/components/pinnwand/useBoard";
 import type { BoardItem } from "@/components/pinnwand/useBoard";
@@ -71,7 +72,7 @@ export function ReactionMenu({ item, me, household, archived = false, onReply, o
           {!archived && <MenuRow icon={CircleCheck} label={entryOf(item).data.erledigt ? "Doch nicht erledigt" : "Erledigt"} onClick={run(() => toggleDone(item, me))} />}
           <MenuRow icon={Reply} label="Antworten" onClick={run(onReply)} />
           {item.kind === "pin" && item.pin.data.text && <MenuRow icon={NotebookPen} label="In Notizen" onClick={run(() => moveToNotes(item))} />}
-          {item.kind === "pin" && !archived && <MenuRow icon={Pin} label={item.pin.data.pinned ? "Nicht mehr anheften" : "Anheften"} onClick={run(() => togglePinned(item))} />}
+          {item.kind === "pin" && !archived && <MenuRow icon={Pin} label={item.pin.data.pinned ? NICHT_MEHR_FESTHALTEN : BLEIBT_HAENGEN} onClick={run(() => togglePinned(item))} />}
           {mayDelete(item, me) && <MenuRow icon={Trash2} label="Löschen" danger onClick={run(() => deleteItem(item, me))} />}
         </div>
       </div>
