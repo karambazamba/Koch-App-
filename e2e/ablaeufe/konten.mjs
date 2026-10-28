@@ -175,43 +175,63 @@ export const abgleich = async (page, check, device) => {
   }
 };
 
-// A-043: Erledigte Aufgaben nur 12 Stunden – auf allen Geräten gleich. A hakt
-// ab → B sieht sie erledigt; 13 Stunden später räumt A still auf → die
-// Lösch-Markierung kommt bei B an (dessen Uhr steht noch auf 10:30, B räumt
-// also nicht selbst auf).
+// A-043: Erledigte Aufgaben nur 12 Stunden – auf allen Geräten gleich.
+// Aufgaben sind persönlich (Tafel 52 B): dieselbe Person auf zwei Geräten
+// (Handy A, Tablet A2). A hakt ab → A2 sieht sie erledigt; 13 Stunden später
+// räumt A still auf → die Lösch-Markierung kommt bei A2 an (dessen Uhr steht
+// noch auf 10:30, A2 räumt also nicht selbst auf). Lisa (B) sieht Felix’
+// Aufgaben nie.
 const eintrag = (page, id) => page.evaluate((i) => (JSON.parse(localStorage.getItem("wasgibts.eintraege") ?? "null")?.entries ?? []).find((e) => e.id === i) ?? null, id);
+const hatEintrag = (page, id) => waitFor(page, (i) => (JSON.parse(localStorage.getItem("wasgibts.eintraege") ?? "null")?.entries ?? []).some((e) => e.id === i), id);
+const ohneEintrag = (page, id, ms) => waitFor(page, (i) => !(JSON.parse(localStorage.getItem("wasgibts.eintraege") ?? "null")?.entries ?? []).some((e) => e.id === i), id, ms);
 
 export const erledigtAbgleich = async (page, check, device) => {
   const tag = device.replace(/\W/g, "").toLowerCase() + Date.now();
+  const felix = `felix-erledigt-${tag}@example.com`;
   await hello(page);
   await seedFamily(page);
-  await login(page, `felix-erledigt-${tag}@example.com`);
+  await login(page, felix);
   const preview = page.getByTestId("uebernahme-vorschau");
   await preview.waitFor();
   await page.getByRole("button", { name: "Mitnehmen" }).click();
   await preview.waitFor({ state: "detached" });
   const link = await invite(page);
 
+  const pageA2 = await newPage(page.context().browser(), device);
   const pageB = await newPage(page.context().browser(), device);
   try {
+    // Zweites Gerät, gleiches Konto: ohne eigene Daten ohne Frage dabei
+    await hello(pageA2);
+    await login(pageA2, felix);
+    await familyReady(pageA2);
+    check(!(await pageA2.getByTestId("uebernahme-vorschau").isVisible()), "A2 ohne eigene Daten: keine Frage");
+    check(await hatEintrag(pageA2, "a1"), "Felix’ Aufgabe ist auf seinem zweiten Gerät");
+    // Lisa: Aufgaben sind persönlich
     await hello(pageB);
     await joinViaLink(pageB, link, `lisa-erledigt-${tag}@example.com`);
-    check(await waitFor(pageB, () => (localStorage.getItem("wasgibts.eintraege") ?? "").includes("Kita-Formular")), "Aufgabe von A ist bei B");
+    check(await hatEintrag(pageB, "t1"), "Lisa hat die Termine der Familie");
+    check(!(await eintrag(pageB, "a1")), "Lisa sieht Felix’ Aufgabe nicht (persönlich)");
 
     await page.goto(BASE + "/aufgaben");
     await page.getByRole("checkbox", { name: "Kita-Formular abgeben erledigt" }).first().click();
     await page.waitForTimeout(2500);
     check(Boolean((await eintrag(page, "a1"))?.data.doneAt), "A: Abhak-Zeitpunkt gespeichert");
-    check(await waitFor(pageB, () => Boolean((JSON.parse(localStorage.getItem("wasgibts.eintraege") ?? "null")?.entries ?? []).find((e) => e.id === "a1")?.data.doneAt)), "B sieht sie erledigt (mit Zeitpunkt)");
+    check(await waitFor(pageA2, () => Boolean((JSON.parse(localStorage.getItem("wasgibts.eintraege") ?? "null")?.entries ?? []).find((e) => e.id === "a1")?.data.doneAt)), "A2 sieht sie erledigt (mit Zeitpunkt)");
+    await pageA2.goto(BASE + "/aufgaben");
+    const knopf = pageA2.locator("[data-erledigt]").getByRole("button");
+    await knopf.click();
+    check(await pageA2.locator("[data-erledigt] ul").getByText("Kita-Formular abgeben").isVisible(), "A2: unter „Erledigt ⌄“");
 
-    // 13 Stunden später auf A: still aufgeräumt, B bekommt die Lösch-Markierung
+    // 13 Stunden später auf A: still aufgeräumt, A2 bekommt die Lösch-Markierung
     await page.clock.setFixedTime(new Date(Date.parse("2026-10-21T08:30:00.000Z") + 13 * 3_600_000));
     await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
-    check(await waitFor(page, () => !(localStorage.getItem("wasgibts.eintraege") ?? "").includes("Kita-Formular")), "A: nach 12 h still weg");
+    check(await ohneEintrag(page, "a1"), "A: nach 12 h still weg");
     check(!(await page.getByText("Gelöscht").count()), "A: ohne „Gelöscht · Rückgängig“");
-    check(await waitFor(pageB, () => !(localStorage.getItem("wasgibts.eintraege") ?? "").includes("Kita-Formular"), undefined, 30000), "B: per Abgleich ebenfalls weg");
-    check((await eintrag(pageB, "a2"))?.data.title === "Geschenk für Oma", "B: Offenes bleibt");
+    check(await ohneEintrag(pageA2, "a1", 30000), "A2: per Abgleich ebenfalls weg");
+    check((await eintrag(pageA2, "a2"))?.data.title === "Geschenk für Oma", "A2: Offenes bleibt");
+    check(await waitFor(pageA2, () => !document.querySelector("[data-erledigt]")), "A2: „Erledigt“ ist leer und verschwindet");
   } finally {
+    await pageA2.context().close();
     await pageB.context().close();
   }
 };

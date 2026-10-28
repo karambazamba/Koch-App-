@@ -14,7 +14,8 @@ async function abhaken(page, scope, check, where) {
   check(await scope.locator(".line-through", { hasText: TITLE }).first().isVisible(), `${where}: durchgestrichen`);
   await page.waitForTimeout(1500);
   check(!(await scope.getByRole("checkbox", { name: `${TITLE} erledigt` }).count()), `${where}: nach 1,5 s weg`);
-  const toast = page.getByText("Erledigt", { exact: true });
+  // Die Meldung (role=status) – nicht der Bereich „Erledigt ⌄“ auf der Aufgaben-Seite (A-043)
+  const toast = page.getByRole("status").getByText("Erledigt", { exact: true });
   check(await toast.isVisible(), `${where}: „Erledigt · Rückgängig“`);
   await page.getByRole("button", { name: "Rückgängig" }).click();
   await page.waitForTimeout(600);
