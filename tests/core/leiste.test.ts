@@ -99,6 +99,9 @@ describe("Leiste und Kopf", () => {
   it("ohne Leiste: erster Start, Notiz-Editor, Kochmodus, Anmelden, Rechtsseiten", () => {
     for (const p of ["/notizen/bearbeiten", "/kochbuch/kochen", "/anmelden", "/beitreten", "/datenschutz", "/impressum", "/nutzungsbedingungen"]) expect(leisteVersteckt(p, true), p).toBe(true);
     expect(leisteVersteckt("/", false)).toBe(true);
+    // Einladungs-Link: Anmelden ohne Leiste – sonst wirkte „Heute“ schon gewählt, bevor das Beitreten fertig ist
+    for (const p of ["/e/0123456789abcdef0123456789abcdef", "/einladung"]) expect(leisteVersteckt(p, true), p).toBe(true);
+    for (const p of ["/einkaufsliste", "/essen"]) expect(leisteVersteckt(p, true), p).toBe(false);
     for (const p of ["/", "/pinnwand", "/kochbuch/rezept", "/tag"]) expect(leisteVersteckt(p, true), p).toBe(false);
   });
 

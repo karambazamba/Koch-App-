@@ -55,11 +55,15 @@ export function tabSchritt(tab: Bereich, url: string, schritteZurHauptseite: num
 export const RAND_PX = 24;
 export const randZurueck = (startX: number, dx: number, dy: number) => startX <= RAND_PX && dx >= 70 && Math.abs(dy) < Math.max(50, dx * 0.6);
 
-/** Rechtsseiten, Anmelden, Notiz-Editor, Kochmodus: ohne Leiste */
-const OHNE = ["/anmelden", "/beitreten", "/notizen/bearbeiten", "/kochbuch/kochen", "/datenschutz", "/impressum", "/nutzungsbedingungen"];
+/** Rechtsseiten, Anmelden (auch die Einladung), Notiz-Editor, Kochmodus: ohne Leiste */
+const OHNE = ["/anmelden", "/beitreten", "/einladung", "/notizen/bearbeiten", "/kochbuch/kochen", "/datenschutz", "/impressum", "/nutzungsbedingungen"];
 
-/** Ohne Profil (erster Start, Zustimmung) und auf den Seiten oben gibt es keine Leiste */
-export const leisteVersteckt = (pathname: string, hatProfil: boolean) => !hatProfil || OHNE.includes(pathname);
+/**
+ * Ohne Profil (erster Start, Zustimmung) und auf den Seiten oben gibt es keine
+ * Leiste. Einladungs-Links heißen /e/<token> (Rewrite auf /einladung) – auch
+ * dort keine Leiste, sonst stünde „Heute“ schon vor dem Beitreten da.
+ */
+export const leisteVersteckt = (pathname: string, hatProfil: boolean) => !hatProfil || OHNE.includes(pathname) || pathname.startsWith("/e/");
 
 // --- Brücke zum Pager auf „/“ (Kalender · Heute · Essen) --------------------
 
