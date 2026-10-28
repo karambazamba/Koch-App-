@@ -33,8 +33,9 @@ describe("Zwei klare Momente (seit „Einkauf neu“: Laden-Seite statt Einkaufs
   it("Laden-Seite: der Kreis = gekauft, zu Hause wie im Laden", () => {
     const src = readFileSync("src/components/einkauf/LadenSeite.tsx", "utf8");
     expect(src).toMatch(/onTick=\{\(\) => tick\(item\)\}/);
-    expect(src).toMatch(/toggleChecked\(weekStart, item, todayIso\)/);
-    expect(src).toMatch(/role="checkbox"/);
+    // Im Laden: erst „Einkauf fertig“ legt es nach „Im Haus“
+    expect(src).toMatch(/toggleChecked\(weekStart, item, todayIso, \{ imHaus: false \}\)/);
+    expect(readFileSync("src/components/einkauf/seite/LadenZeile.tsx", "utf8")).toMatch(/role="checkbox"/);
   });
 });
 

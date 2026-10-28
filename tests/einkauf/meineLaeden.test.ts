@@ -46,7 +46,7 @@ describe("Erster Besuch", () => {
   it("alter Speicher (v4) bekommt leere Läden und wird einmal gefragt", async () => {
     const { migrateStore } = await import("@/lib/einkauf/listMigration");
     const v4 = { version: 4, weeks: {}, products: {}, shops: [], itemShops: { milch: "Lidl" }, staples: [] };
-    expect(migrateStore(v4)).toMatchObject({ version: 6, myShops: [], shopsAsked: false, shopRules: {}, alwaysList: [], itemShops: { milch: "Lidl" } });
+    expect(migrateStore(v4)).toMatchObject({ version: 7, myShops: [], shopsAsked: false, shopRules: {}, alwaysList: [], itemShops: { milch: "Lidl" } });
   });
 });
 

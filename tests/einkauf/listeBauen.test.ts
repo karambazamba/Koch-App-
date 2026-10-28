@@ -56,10 +56,11 @@ describe("Liste aus dem Wochenplan", () => {
   it("addiert gleiche Zutaten derselben Einheiten-Familie, doppelt kochen ×2", () => {
     const plan = week([day("Montag", entry("Pasta", "pasta")), day("Dienstag", entry("Gulasch", "gulasch", { double: true }))]);
     const list = buildShoppingList(plan, RECIPES);
-    expect(find(list, "Sahne")).toMatchObject({ amount: "1,2 l", dishes: ["Pasta (Mo)", "Gulasch (Di) ×2"], days: ["Montag", "Dienstag"], section: "kuehlregal" });
+    // Nachtrag A-018: Packung statt Rezeptmenge, die Rezeptmenge steht klein als Hinweis
+    expect(find(list, "Sahne")).toMatchObject({ amount: "6 Becher", hinweis: "1,2 l für Pasta, Gulasch", dishes: ["Pasta (Mo)", "Gulasch (Di) ×2"], days: ["Montag", "Dienstag"], section: "kuehlregal" });
     expect(find(list, "Rindfleisch")?.amount).toBe("1,6 kg");
     expect(find(list, "Salz")?.amount).toBe("");
-    expect(find(list, "Paprikapulver")?.amount).toBe("4 EL");
+    expect(find(list, "Paprikapulver")).toMatchObject({ amount: "", hinweis: "4 EL für Gulasch" });
     expect(list.items.some((i) => !i.name.trim())).toBe(false);
     expect(list.openCount).toBe(6);
     expect(list.doneCount).toBe(0);
@@ -78,20 +79,21 @@ describe("Liste aus dem Wochenplan", () => {
   it("kleiner Haushalt: auf die Personen umgerechnet und aufgerundet, Backen bleibt ganz", () => {
     const plan = week([day("Montag", entry("Pasta", "pasta"), { persons: 1 }), day("Dienstag", entry("Kuchen", "kuchen"), { persons: 1 })]);
     const list = buildShoppingList(plan, RECIPES, undefined, undefined, { small: true });
-    expect(find(list, "Nudeln")?.amount).toBe("150 g");
+    // Packung als Einkaufsmenge, umgerechnete Rezeptmenge als Hinweis
+    expect(find(list, "Nudeln")).toMatchObject({ amount: "1 Packung", hinweis: "150 g für Pasta" });
     expect(find(list, "Tomaten")?.amount).toBe("250 g");
-    expect(find(list, "Mehl")?.amount).toBe("250 g");
-    expect(find(list, "Eier")?.amount).toBe("3");
-    // ohne „klein“ bleiben die Rezeptmengen
-    expect(find(buildShoppingList(plan, RECIPES), "Nudeln")?.amount).toBe("500 g");
+    expect(find(list, "Mehl")).toMatchObject({ amount: "", hinweis: "250 g für Kuchen" });
+    expect(find(list, "Eier")).toMatchObject({ amount: "6 Stück", hinweis: "3 Stück für Kuchen" });
+    // ohne „klein“ bleiben die Rezeptmengen (im Hinweis)
+    expect(find(buildShoppingList(plan, RECIPES), "Nudeln")?.hinweis).toBe("500 g für Pasta");
   });
 
   it("nur heute umgerechnet (persons am Gericht)", () => {
     const e = entry("Pasta", "pasta", { stored: { kind: "recipe", recipeId: "pasta", title: "Pasta", category: "vegetarisch", persons: 2 } });
     const list = buildShoppingList(week([day("Montag", e, { persons: 2 })]), RECIPES);
-    expect(find(list, "Nudeln")?.amount).toBe("250 g");
+    expect(find(list, "Nudeln")?.hinweis).toBe("250 g für Pasta");
     const gleich = entry("Pasta", "pasta", { stored: { kind: "recipe", recipeId: "pasta", title: "Pasta", category: "vegetarisch", persons: 4 } });
-    expect(find(buildShoppingList(week([day("Montag", gleich)]), RECIPES), "Nudeln")?.amount).toBe("500 g");
+    expect(find(buildShoppingList(week([day("Montag", gleich)]), RECIPES), "Nudeln")?.hinweis).toBe("500 g für Pasta");
   });
 
   it("lockeres Wochenende: Zutaten nur optional", () => {

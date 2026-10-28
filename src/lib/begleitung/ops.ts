@@ -26,6 +26,7 @@ import { createWeekPlan, planForWeek, type WeekPlan, type WeekWish } from "@/lib
 import { now } from "@/lib/core/now";
 import { applyHomeChange, DEFAULT_HOME, type HomeChange, type HomeTile } from "@/lib/core/homeLayout";
 import { buildShoppingList } from "@/lib/einkauf/shoppingList";
+import { aufnehmen, zielFuer } from "@/lib/einkauf/zusammen/zusammen";
 import { moveItem, removeItem, setDone, upsertEntry, type CalendarEntry } from "@/lib/kalender/model";
 import { createTraining, sanitizeSport, type SportState, type TrainingData } from "@/lib/sport/model";
 
@@ -263,7 +264,10 @@ export function applyOps(
       case "add_shopping": {
         const list = next.shopping[op.weekStart] ?? { manual: [], checked: [], have: [] };
         const item = { id: `${op.id}-item`, name: op.name, amount: op.amount, section: op.section, done: false, ...(op.day ? { day: op.day } : {}), ...(op.dish ? { dish: op.dish } : {}) };
-        next = { ...next, shopping: { ...next.shopping, [op.weekStart]: { ...list, manual: [...list.manual, item] } } };
+        // Steht dieselbe Sache schon offen drauf: dort dazu (Mengen addiert; der Laden hängt am Namen)
+        const ziel = zielFuer(list.manual, op.name, () => null);
+        const manual = ziel ? list.manual.map((m) => (m.id === ziel.id ? aufnehmen(m, item) : m)) : [...list.manual, item];
+        next = { ...next, shopping: { ...next.shopping, [op.weekStart]: { ...list, manual } } };
         break;
       }
       case "remove_shopping":

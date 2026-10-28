@@ -11,6 +11,7 @@ import { migrateNotes } from "@/lib/notizen/model";
 import { migratePinStore } from "@/lib/pinnwand/migration";
 import { ohneZeitraum, type CalendarEntry } from "@/lib/kalender/model";
 import { todayIso } from "@/lib/core/now";
+import { migrateStore } from "@/lib/einkauf/listMigration";
 
 /** Ein Eintrag, wie er in der Tabelle liegt (ohne Haushalt) */
 export type CloudDoc = {
@@ -136,7 +137,7 @@ const vorrat: Adapter = {
 // Einkaufsliste: jede eigene Zeile einzeln (gleichzeitig abhaken geht gut),
 // je Woche der Rest (abgehakte Rezept-Zutaten, „haben wir“ …), dazu einmal
 // die Einstellungen (Produkte, Läden, Stammliste).
-const WEEK_FIELDS = ["checked", "have", "renamed", "skippedStaples"] as const;
+const WEEK_FIELDS = ["checked", "have", "renamed", "skippedStaples", "fertig"] as const;
 const SETTINGS = "ek:einstellungen";
 
 /** Läden der Familie (v5/v6): Meine Läden, feste Regeln, Gelerntes, Ausnahmen */
@@ -152,13 +153,11 @@ const shopSettings = (value: Value | null) => ({
 const einkauf: Adapter = {
   name: "einkauf",
   key: "wasgibts.einkaufsliste",
-  version: 6,
+  version: 7,
   typs: ["einkauf", "einkauf-woche", "einkauf-einstellungen"],
-  // v4/v5 (noch nicht neu gespeichert): „Meine Läden“ leer bzw. wie da, keine festen Regeln
-  upgrade: (value) =>
-    value.version === 4 || value.version === 5
-      ? { myShops: [], shopsAsked: false, ...value, version: 6, shopRules: {}, learned: {}, learnAsked: [], alwaysList: [] }
-      : null,
+  // v4–v6 (noch nicht neu gespeichert): wie beim Laden der App (`migrateStore`: „Meine Läden“,
+  // feste Regeln, v6 → v7 Doppeltes zusammen – der weggefallene Eintrag wird als gelöscht markiert)
+  upgrade: (value) => (value.version === 7 ? null : (migrateStore(value) as unknown as Value | null)),
   toDocs: (value) => {
     const docs: LocalDoc[] = [];
     const weeks = isObj(value.weeks) ? value.weeks : {};
@@ -190,7 +189,7 @@ const einkauf: Adapter = {
         Object.assign(week(w as string), rest);
       } else if (d.typ === "einkauf" && isObj(data.item)) (week(data.week).manual as Value[]).push(d.besitzer ? { ...data.item, von: d.besitzer } : data.item);
     }
-    return { version: 6, weeks, ...settings };
+    return { version: 7, weeks, ...settings };
   },
 };
 

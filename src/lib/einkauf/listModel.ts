@@ -17,6 +17,8 @@ export type ManualItem = {
   dish?: string;
   /** Konto, das es auf die Liste gesetzt hat (nur im Haushalt, kommt vom Abgleich) */
   von?: string;
+  /** Aus einem Rezept: die Rezeptmenge („250 ml“) – nur als kleiner Hinweis, die Menge ist schon auf die Packung gerundet */
+  rezeptMenge?: string;
 };
 
 export type WeekList = {
@@ -29,6 +31,8 @@ export type WeekList = {
   renamed?: Record<string, string>;
   /** Stammartikel, die diese Woche nicht vorgeschlagen werden ("diesmal nicht") */
   skippedStaples?: string[];
+  /** „Einkauf fertig“: Schlüssel abgehakter Artikel, die nicht mehr in „Schon im Wagen“ stehen */
+  fertig?: string[];
 };
 
 /** Stammartikel: häufig gekauft, mit Kaufrhythmus */
@@ -45,8 +49,8 @@ export type Staple = {
 };
 
 export type ShoppingListStore = {
-  /** v6: feste Laden-Regeln, Gelerntes, „hat man da“-Ausnahmen; v5: „Meine Läden“ + schon gefragt; v4: eigene Produkte, Läden, Stammliste */
-  version: 6;
+  /** v7: Doppeltes zusammengefasst (Nachtrag A-018); v6: feste Laden-Regeln, Gelerntes, „hat man da“-Ausnahmen; v5: „Meine Läden“ + schon gefragt; v4: eigene Produkte, Läden, Stammliste */
+  version: 7;
   weeks: Record<string, WeekList>;
   /** Zutat (klein) → euer Produkt */
   products: Record<string, string>;
@@ -98,6 +102,12 @@ export type ListItem = {
   checked: boolean;
   /** "Haben wir schon" – für diese Woche ausgeblendet */
   hidden: boolean;
+  /** Mit diesem zusammengefasste eigene Artikel (gleiche Sache, gleicher Laden) – abhaken/löschen gilt für alle */
+  teile?: string[];
+  /** Kleiner Hinweis unter dem Namen: Rezeptmenge und Gericht („250 ml für Lasagne“) */
+  hinweis?: string;
+  /** „Einkauf fertig“ schon gedrückt (abgehakt, nicht mehr im Wagen) */
+  fertig?: boolean;
 };
 
 export type ShoppingList = {

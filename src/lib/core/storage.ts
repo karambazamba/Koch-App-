@@ -38,7 +38,7 @@ export const STORAGE = [
   { key: "wasgibts.vorlagen", what: "Lieblingswochen (Vorlagen)", version: 1, migration: "essen/templates.ts", area: "local", backup: true },
   { key: "wasgibts.kochbuch", what: "Rezepte", version: 3, migration: "essen/cookbook.ts", area: "local", backup: true },
   { key: "wasgibts.vorrat", what: "Im Haus: was da ist (ohne Mengen), Gruppen Kühlschrank/Vorrat/Obst & Gemüse/Brot/Tiefkühl, aufgebraucht, gemerkte Orte je Sorte", version: 4, migration: "vorrat/pantry.ts migratePantry", area: "local", backup: true },
-  { key: "wasgibts.einkaufsliste", what: "Einkaufsliste, Produkte, Läden, Meine Läden, feste Laden-Regeln, Gelerntes, Stammliste", version: 6, migration: "einkauf/listMigration.ts migrateStore", area: "local", backup: true },
+  { key: "wasgibts.einkaufsliste", what: "Einkaufsliste (Doppeltes zusammengefasst, „Einkauf fertig“), Produkte, Läden, Meine Läden, feste Laden-Regeln, Gelerntes, Stammliste", version: 7, migration: "einkauf/listMigration.ts migrateStore", area: "local", backup: true },
   { key: "wasgibts.essenansicht", what: "Essen: die nächsten 7 Tage als Liste oder Reihe (pro Gerät)", version: 1, migration: "essen/sieben/ansicht.ts", area: "local", backup: false },
   { key: "wasgibts.einkaufsansicht", what: "Einkauf: zuletzt gewählter Laden in „Aussuchen“ (pro Gerät; früher der Chip der Liste, gleiches Format)", version: 2, migration: "einkauf/shopMode.ts", area: "local", backup: false },
   { key: "wasgibts.einkaufswege", what: "Einkauf unterwegs: wer gerade wo einkauft (im Haushalt geteilt, 2 Tage)", version: 1, migration: "einkauf/unterwegs/unterwegs.ts migrateTrips", area: "local", backup: false },

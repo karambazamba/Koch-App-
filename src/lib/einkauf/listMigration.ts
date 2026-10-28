@@ -1,8 +1,11 @@
-// Einkaufsliste: Migration des gespeicherten Stands (v1–v5 → v6). Die frühere
+// Einkaufsliste: Migration des gespeicherten Stands (v1–v6 → v7). Die frühere
 // "Immer da"-Liste wird dabei zu Stammartikeln mit festem Wochenrhythmus; v5 → v6
-// bekommt leere feste Laden-Regeln, nichts Gelerntes, keine „hat man da“-Ausnahmen.
+// bekommt leere feste Laden-Regeln, nichts Gelerntes, keine „hat man da“-Ausnahmen;
+// v6 → v7 fasst doppelte offene eigene Artikel zusammen (gleiche Sache im selben
+// Laden, Mengen addiert – nichts geht verloren, `einkauf/zusammen`).
 
 import { SECTION_VALUES, sectionFor } from "@/lib/einkauf/sections";
+import { wocheZusammenfassen } from "@/lib/einkauf/zusammen/zusammen";
 import { newId, type ManualItem, type ShoppingListStore, type Staple, type WeekList } from "@/lib/einkauf/listModel";
 
 /** Früher "Immer da" – wird bei der Migration zu Stammartikeln (wöchentlich) */
@@ -27,17 +30,18 @@ function migrateManual(raw: unknown): ManualItem[] {
       ...(m.now === true ? { now: true } : {}),
       ...(typeof m.dish === "string" && m.dish ? { dish: m.dish } : {}),
       ...(typeof m.von === "string" && m.von ? { von: m.von } : {}),
+      ...(typeof m.rezeptMenge === "string" && m.rezeptMenge ? { rezeptMenge: m.rezeptMenge } : {}),
     }));
 }
 
 export function migrateStore(raw: unknown): ShoppingListStore | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as { version?: number; weeks?: Record<string, unknown> };
-  const empty: ShoppingListStore = { version: 6, weeks: {}, products: {}, shops: [], itemShops: {}, staples: [], myShops: [], shopsAsked: false, shopRules: {}, learned: {}, learnAsked: [], alwaysList: [] };
+  const empty: ShoppingListStore = { version: 7, weeks: {}, products: {}, shops: [], itemShops: {}, staples: [], myShops: [], shopsAsked: false, shopRules: {}, learned: {}, learnAsked: [], alwaysList: [] };
   // v1 war nur ein Datenmodell ohne Seite – es gibt dort keine echten Daten.
   if (data.version === 1) return { ...empty, staples: basicsToStaples(null) };
-  if (![2, 3, 4, 5, 6].includes(data.version as number) || !data.weeks || typeof data.weeks !== "object") return null;
-  const modern = data.version === 4 || data.version === 5 || data.version === 6;
+  if (![2, 3, 4, 5, 6, 7].includes(data.version as number) || !data.weeks || typeof data.weeks !== "object") return null;
+  const modern = (data.version as number) >= 4;
 
   // v2/v3: "Immer da"-Basics (null = Standardliste)
   const rawBasics = (raw as { basics?: unknown }).basics;
@@ -72,18 +76,19 @@ export function migrateStore(raw: unknown): ShoppingListStore | null {
       have,
       renamed: stringMap(w.renamed),
       skippedStaples: strings(w.skippedStaples),
+      ...(Array.isArray(w.fertig) ? { fertig: strings(w.fertig) } : {}),
     };
   }
 
-  if (!modern) return { ...empty, weeks, staples: basicsToStaples(basics) };
+  if (!modern) return zusammenfassen({ ...empty, weeks, staples: basicsToStaples(basics) });
 
   // v4 → v5: „Meine Läden“ leer, Frage noch offen (die Karte zeigt sich einmal, Läden an Artikeln vorausgewählt)
   // v5 → v6: keine festen Regeln, nichts gelernt, keine Ausnahmen
   const v4 = raw as Partial<ShoppingListStore>;
-  const v5 = data.version === 5 || data.version === 6;
-  const v6 = data.version === 6;
-  return {
-    version: 6,
+  const v5 = (data.version as number) >= 5;
+  const v6 = (data.version as number) >= 6;
+  const next: ShoppingListStore = {
+    version: 7,
     myShops: v5 ? strings(v4.myShops) : [],
     shopsAsked: v5 && v4.shopsAsked === true,
     shopRules: v6 ? stringMap(v4.shopRules) : {},
@@ -106,6 +111,19 @@ export function migrateStore(raw: unknown): ShoppingListStore | null {
         active: st.active !== false,
       })),
   };
+  return data.version === 7 ? next : zusammenfassen(next);
+}
+
+/** v6 → v7: doppelte offene eigene Artikel je Woche zusammen (Laden wie auf der Liste) */
+function zusammenfassen(s: ShoppingListStore): ShoppingListStore {
+  // Laden wie auf der Liste: feste Regel, sonst gemerkt (eigenes Produkt zählt mit)
+  const laden = (name: string) => {
+    const k = name.trim().toLowerCase();
+    const p = s.products[k]?.trim().toLowerCase();
+    return s.shopRules[k] ?? (p ? s.shopRules[p] : undefined) ?? s.itemShops[k] ?? (p ? s.itemShops[p] : undefined) ?? null;
+  };
+  const weeks = Object.fromEntries(Object.entries(s.weeks).map(([k, w]) => [k, { ...w, manual: wocheZusammenfassen(w.manual, laden) }]));
+  return { ...s, weeks };
 }
 
 function learnedMap(v: unknown): ShoppingListStore["learned"] {

@@ -17,13 +17,13 @@ import { soonToUse } from "@/lib/essen/dishIdeas";
 import { cookCandidates, scaleAmount, type CookCard } from "@/lib/essen/kochtipp/pick";
 import { EMPTY_TALK, ideaHello, ideaResult, ideaUnderstood, mergeTalk, parseIdeaTalk, rankIdeas, rememberedText, startIdeas, takeOutcome, talkKeywords, type IdeaTalk } from "@/lib/essen/kochtipp/idee";
 import { ideaReply, ideaSuggestions } from "@/lib/essen/kochtipp/vorschlaege";
-import { formatAmount } from "@/lib/essen/cookbook";
 import { BUILTIN_COOK } from "@/lib/essen/kochen";
 import { recentDishTitles } from "@/lib/essen/kochtipp/recent";
 import { loadKochtipp, noteKochtippShown, noteImHaus } from "@/lib/essen/kochtipp/store";
 import { takeForDay } from "@/lib/essen/spontanTake";
 import { loadMealPlans, replaceMealPlans } from "@/lib/essen/mealPlan";
 import { addManualItem, removeManualItems, sectionFor } from "@/lib/einkauf/shoppingList";
+import { alsEinkauf } from "@/lib/einkauf/zusammen/packung";
 import { addWish, removeWish } from "@/lib/essen/wishes";
 import { addPantryItems } from "@/lib/vorrat/pantry";
 import { featureOn } from "@/lib/core/features";
@@ -146,7 +146,8 @@ export function useKochidee({ data, today, pantry, mealOver, setChat, onClose }:
     const added = toList.map((name) => {
       const ing = recipe?.ingredients.find((i) => i.name === name);
       const amount = ing ? scaleAmount(ing.amount, recipe!.servings, persons) : null;
-      return addManualItem(weekStart, { name, amount: amount !== null && ing ? `${formatAmount(amount)} ${ing.unit}`.trim() : "", section: sectionFor(name), day: WEEKDAYS[new Date(`${date}T12:00:00`).getDay()], dish: card.title });
+      // Rezeptmenge als Einkaufsmenge (Packung), die Rezeptmenge nur als Hinweis
+      return addManualItem(weekStart, { name, ...alsEinkauf(name, ing ? amount : null, ing?.unit ?? ""), section: sectionFor(name), day: WEEKDAYS[new Date(`${date}T12:00:00`).getDay()], dish: card.title });
     });
     setChat((c) => ({ ...c, kochtipp: null }));
     onClose();

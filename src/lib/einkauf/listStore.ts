@@ -11,7 +11,7 @@ export const store = createLocalStore("wasgibts.einkaufsliste", migrateStore);
 const EMPTY_WEEKS: Record<string, WeekList> = {};
 
 const emptyStore = (): ShoppingListStore => ({
-  version: 6,
+  version: 7,
   myShops: [],
   shopsAsked: false,
   shopRules: {},
