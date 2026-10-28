@@ -16,7 +16,7 @@
 
 import { useCallback, useEffect, useReducer, useRef, useState, useSyncExternalStore } from "react";
 import { MEMO_MIN_MS, WAVE_BARS, addMemo, changeMemos, createMemo, pickMemoMime, resample, type MemoMessage, type ZettelFarbe } from "@/lib/pinnwand";
-import { MEMO_IDLE, discardNeedsUndo, memoReducer, timeAnnouncement, type MemoMode } from "@/lib/pinnwand/recorderState";
+import { MEMO_IDLE, discardNeedsUndo, holdsMic, memoReducer, timeAnnouncement, type MemoMode } from "@/lib/pinnwand/recorderState";
 import { memoAudio } from "@/lib/pinnwand/memoAudio";
 import { showToast } from "@/lib/core/toast";
 import { useWakeLock } from "@/lib/core/wakeLock";
@@ -436,6 +436,8 @@ export function useMemoRecorder({ me, onSent, farbe = null }: { me: string; onSe
   return {
     phase,
     mode: state.mode,
+    /** Finger liegt noch auf dem Mikro (Halten): Mikro stehen lassen, sonst kommt das Loslassen nicht an */
+    holding: holdsMic(state),
     elapsed: state.ms,
     levels,
     note,

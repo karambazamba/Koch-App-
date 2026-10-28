@@ -109,10 +109,14 @@ export const mikroHaengt = async (_page, check, device) => {
     check(!(await page.getByText("Das Mikrofon hängt gerade – nochmal antippen?").count()), "nach 4 s: still ein zweiter Versuch");
     await page.waitForTimeout(4200);
     check(await page.getByText("Das Mikrofon hängt gerade – nochmal antippen?").isVisible(), "nach 8 s: „Das Mikrofon hängt gerade …“");
-    check(await scope.getByRole("button", { name: "Aufnahme starten" }).isVisible(), "danach wieder bereit");
-    // Mikro wieder da → klappt sofort (Fenster zu, dann wie immer)
+    // dasselbe Mikro wie vorher (leere Kachel: „Sprachnachricht aufnehmen“, sonst im Fenster „Aufnahme starten“)
+    check(await mic.isVisible(), "danach wieder bereit");
+    // Mikro wieder da → klappt sofort (ein offenes „Neuer Zettel“-Fenster erst zu, dann wie immer)
     await page.evaluate(() => (window.__micHang = false));
-    await scope.getByRole("button", { name: "Schließen" }).last().click();
+    if ((await scope.getAttribute("role")) === "dialog") {
+      await scope.getByRole("button", { name: "Schließen" }).last().click();
+      await scope.waitFor({ state: "detached", timeout: 4000 }).catch(() => {});
+    }
     await page.waitForTimeout(500);
     const time = await recordOnce(page);
     check(time !== "0:00" && (await memoCount(page)) === 1, `danach aufnehmen: Zeit ${time}, gesendet`);

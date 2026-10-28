@@ -28,7 +28,9 @@ export const hallo = async (page, check) => {
   const pinTile = page.getByRole("region", { name: "Pinnwand" });
   if (await pinTile.count()) {
     check(await pinTile.getByText("Moin! Hier hängen eure Zettel.").isVisible(), "Pinnwand-Beispiel: Mias Zettel vorn");
-    check((await pinTile.getByRole("link", { name: /^Beispiel: / }).count()) === 3, "Pinnwand-Beispiel: drei Zettel im Fächer");
+    // der Fächer ist EIN Link (verdeckte Zettel sind keine eigenen Knöpfe), darin drei Zettel
+    const fan = pinTile.getByRole("link", { name: /^Beispiel: / });
+    check((await fan.count()) === 1 && (await fan.locator(".zettel").count()) === 3, "Pinnwand-Beispiel: drei Zettel im Fächer");
     check(await pinTile.getByText("Beispiel", { exact: true }).isVisible(), "Pinnwand-Beispiel klein markiert");
   }
   check((await page.locator("[data-jetzt]").count()) > 0, "Jetzt-Karte oben");

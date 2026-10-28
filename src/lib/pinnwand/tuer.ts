@@ -95,6 +95,25 @@ export function faecherOf<T extends DoorEntry>(items: T[], nowMs: number, count:
   return [...fresh, ...pinned].slice(0, count);
 }
 
+/**
+ * Fächer (S) als EIN Link: die Zettel liegen übereinander, darum wäre jeder
+ * hintere Zettel ein Knopf, den der vordere verdeckt (Tipp landet daneben).
+ * Der Name nennt den vordersten zuerst, dann die dahinter.
+ */
+export function faecherLabel(texts: string[], demo: boolean): string {
+  const [front = "", ...rest] = texts;
+  const behind = rest.length ? `; dahinter ${rest.join("; ")}` : "";
+  return demo ? `Beispiel: ${front}${behind}` : `${front}${behind} – auf der Pinnwand öffnen`;
+}
+
+/**
+ * Wohin ein Tipp in den Fächer führt: zum Zettel unter dem Finger (der oberste
+ * sichtbare bekommt ihn), sonst zum vordersten.
+ */
+export function faecherZiel(tapped: string | null | undefined, front: string, ids: string[]): string {
+  return tapped && ids.includes(tapped) ? tapped : front;
+}
+
 /** Zwei Spalten (Masonry): der Reihe nach immer in die kürzere Spalte – das Erste oben links */
 export function twoColumns<T>(items: T[], heightOf: (item: T) => number): [T[], T[]] {
   const cols: [T[], T[]] = [[], []];

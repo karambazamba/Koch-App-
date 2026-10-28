@@ -18,7 +18,9 @@ import {
   createPin,
   doneLine,
   doneValue,
+  faecherLabel,
   faecherOf,
+  faecherZiel,
   farbeOf,
   guessHeight,
   hasUnread,
@@ -124,6 +126,28 @@ describe("Farbe = Person", () => {
     expect(rule).not.toMatch(/position/);
     expect(readFileSync("src/components/pinnwand/Zettel.tsx", "utf8")).toMatch(/zettel relative/);
     expect(readFileSync("src/components/pinnwand/Faecher.tsx", "utf8")).toMatch(/className\.includes\("absolute"\) \? "" : "relative"/);
+  });
+});
+
+describe("Fächer: verdeckte Zettel sind keine Knöpfe", () => {
+  it("Fehler (pruefen, Beispiel-Tag): der vordere Zettel lag über dem Knopf der Sprachnachricht – der Fächer ist EIN Link", () => {
+    const src = readFileSync("src/components/pinnwand/Faecher.tsx", "utf8");
+    const faecher = src.slice(src.indexOf("export function Faecher("), src.indexOf("export function ZettelReihe("));
+    // die Zettel im Fächer sind nur Papier (kein eigener Link unter dem vorderen)
+    expect(faecher).toMatch(/link=\{false\}/);
+    expect(faecher.match(/<Link/g)).toHaveLength(1);
+  });
+
+  it("Name: der vorderste zuerst, dann die dahinter", () => {
+    expect(faecherLabel(["Mia: Moin!", "Sprachnachricht von Lisa, 0:08", "Ole: Fußball"], true)).toBe("Beispiel: Mia: Moin!; dahinter Sprachnachricht von Lisa, 0:08; Ole: Fußball");
+    expect(faecherLabel(["Sprachnachricht von Lisa, 0:03"], false)).toBe("Sprachnachricht von Lisa, 0:03 – auf der Pinnwand öffnen");
+    expect(faecherLabel(["Felix: Milch", "Lisa: Brot"], false)).toMatch(/^Felix: Milch; dahinter Lisa: Brot – auf/);
+  });
+
+  it("Ziel: der Zettel unter dem Finger, sonst der vorderste", () => {
+    expect(faecherZiel("b", "a", ["a", "b", "c"])).toBe("b");
+    expect(faecherZiel(null, "a", ["a", "b"])).toBe("a");
+    expect(faecherZiel("fremd", "a", ["a", "b"])).toBe("a");
   });
 });
 

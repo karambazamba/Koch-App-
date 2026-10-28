@@ -72,6 +72,13 @@ export function memoReducer(s: MemoState, e: MemoEvent): MemoState {
   }
 }
 
+/**
+ * Finger liegt noch auf dem Mikro (Halten, bis zum Loslassen): Das Mikro muss
+ * dann stehen bleiben – verschwindet es unter dem Finger, kommt das Loslassen
+ * nie an und nichts wird gesendet („Neuer Zettel“, v0.138.0).
+ */
+export const holdsMic = (s: Pick<MemoState, "phase" | "mode">) => s.mode === "halten" && (s.phase === "fragt" || s.phase === "nimmt_auf");
+
 /** Zeit in Akzentfarbe (bald ist Schluss) */
 export const timeWarns = (ms: number) => ms >= WARN_MS;
 

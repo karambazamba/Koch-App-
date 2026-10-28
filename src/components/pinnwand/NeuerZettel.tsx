@@ -18,7 +18,7 @@ import { MehrzeilenFeld } from "@/components/ui/MehrzeilenFeld";
 import { buttonClass } from "@/components/ui/styles";
 import { showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
-import { PIN_MAX, FARB_NAMEN, ZETTEL_FARBEN, addPin, changePins, createPin, magnetOf, personFarbe, zettelTon, type PinQuote, type ZettelFarbe } from "@/lib/pinnwand";
+import { PIN_MAX, FARB_NAMEN, formatDauer, ZETTEL_FARBEN, addPin, changePins, createPin, magnetOf, personFarbe, zettelTon, type PinQuote, type ZettelFarbe } from "@/lib/pinnwand";
 import { fotoStore } from "@/lib/pinnwand/fotoStore";
 import { cloudSync } from "@/lib/konten/cache";
 import { askForNotifications } from "@/lib/heute/mitteilungen/geraet";
@@ -85,10 +85,13 @@ export function NeuerZettel({ me, household, karo, onClose, quote = null, art: s
                   <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-fridge-soft">Sprachnachricht</span>
                   {!canRecord ? (
                     <p className="text-[15px] text-fridge-soft">Auf diesem Gerät geht keine Aufnahme.</p>
-                  ) : recorder.phase === "idle" ? (
+                  ) : recorder.phase === "idle" || recorder.holding ? (
+                    // Beim Halten bleibt das Mikro unter dem Finger stehen (sonst kommt das Loslassen nie an)
                     <div className="flex flex-1 flex-col items-center justify-center gap-2">
                       <MemoMic recorder={recorder} size={56} />
-                      <span className="text-[14px] font-semibold text-fridge-soft">Antippen und sprechen</span>
+                      <span className="text-center text-[14px] font-semibold text-fridge-soft" role="status">
+                        {recorder.holding ? `${formatDauer(recorder.elapsed / 1000)} · Loslassen = senden · nach oben schieben = frei sprechen` : "Antippen und sprechen"}
+                      </span>
                     </div>
                   ) : (
                     <RecordingRow recorder={recorder} />

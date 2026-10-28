@@ -4,25 +4,36 @@
 // S = die drei neuesten aufgefächert (−10°, −2°, +7°), der vorderste
 // (neueste) gut lesbar (bis 3 Zeilen), darunter klein der Name; M = drei
 // nebeneinander; L = bis 6 im Raster. Sprachnachricht als „▶ 0:12“, Foto als
-// Mini-Polaroid. Jeder Zettel ist ein Link zur Pinnwand an genau diesem
-// Zettel. Leer (Variante 4): gestrichelter Zettel mit Magnet und ＋.
+// Mini-Polaroid. Jeder Zettel führt zur Pinnwand an genau diesem Zettel; im
+// Fächer (S) liegen sie übereinander, darum ist der ganze Fächer EIN Link und
+// der Zettel unter dem Finger (der oberste sichtbare) bestimmt das Ziel –
+// sonst wären die hinteren Zettel Knöpfe unter dem vorderen.
+// Leer (Variante 4): gestrichelter Zettel mit Magnet und ＋.
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
 import { Mic, Plus } from "lucide-react";
-import { FAECHER_WINKEL, formatDauer, magnetOf, tiltOf, zettelTon, type ZettelFarbe } from "@/lib/pinnwand";
+import { FAECHER_WINKEL, faecherLabel, faecherZiel, formatDauer, magnetOf, tiltOf, zettelTon, type ZettelFarbe } from "@/lib/pinnwand";
 import { Magnet } from "@/components/pinnwand/Magnet";
 import { FotoBild } from "@/components/pinnwand/Zettel";
 import { entryOf, toneOf, type BoardItem } from "@/components/pinnwand/useBoard";
 
 type Mini = { item: BoardItem; tone?: ZettelFarbe | "mia" };
 
-function MiniZettel({ item, tone: forced, household, lines, demo, className = "", style }: Mini & { household: string[]; lines: number; demo: boolean; className?: string; style?: CSSProperties }) {
+/** Was der Zettel für VoiceOver sagt */
+function miniText(item: BoardItem): string {
+  const e = entryOf(item);
+  return item.kind === "memo" ? `Sprachnachricht von ${e.data.author}, ${formatDauer(item.memo.data.dauer)}` : `${e.data.author}: ${item.pin.data.text || "Foto"}`;
+}
+
+/** `link: false` = nur Papier (im Fächer ist der ganze Fächer der Link) */
+function MiniZettel({ item, tone: forced, household, lines, demo, link = true, className = "", style }: Mini & { household: string[]; lines: number; demo: boolean; link?: boolean; className?: string; style?: CSSProperties }) {
   const e = entryOf(item);
   const tone = zettelTon(forced ?? toneOf(item, household));
   const papier = item.kind === "memo" ? "memo" : item.pin.data.papier;
   const foto = item.kind === "pin" && item.pin.data.papier === "foto";
-  const text = item.kind === "memo" ? `Sprachnachricht von ${e.data.author}, ${formatDauer(item.memo.data.dauer)}` : `${e.data.author}: ${item.pin.data.text || "Foto"}`;
+  const text = miniText(item);
   const body = (
     <>
       <span className="pointer-events-none absolute -top-2 left-1/2 z-10 -translate-x-1/2">
@@ -45,6 +56,12 @@ function MiniZettel({ item, tone: forced, household, lines, demo, className = ""
   );
   const cls = `zettel ${className.includes("absolute") ? "" : "relative"} block ${papier === "karo" ? "zettel-karo" : papier === "zettel" ? "" : "zettel-papier"} ${className}`;
   const st = { ...style, ...(papier === "zettel" ? { background: tone.bg } : {}) };
+  if (!link)
+    return (
+      <span data-zettel={item.id} className={cls} style={st}>
+        {body}
+      </span>
+    );
   return demo ? (
     <Link href="/pinnwand" className={cls} style={st} aria-label={`Beispiel: ${text}`}>
       {body}
@@ -56,15 +73,30 @@ function MiniZettel({ item, tone: forced, household, lines, demo, className = ""
   );
 }
 
-/** S: aufgefächert, der neueste vorn (rechts) */
+/** S: aufgefächert, der neueste vorn (rechts) – EIN Link, der Zettel unter dem Finger bestimmt das Ziel */
 export function Faecher({ minis, household, demo }: { minis: Mini[]; household: string[]; demo: boolean }) {
+  const router = useRouter();
   // hinten → vorn: der älteste der drei zuerst
   const back = [...minis].reverse();
   const off = FAECHER_WINKEL.length - back.length;
+  const ids = minis.map((m) => m.item.id);
+  const front = ids[0] ?? "";
   return (
-    <div className="relative mx-auto h-full w-full max-w-[220px]">
+    <Link
+      href={demo ? "/pinnwand" : `/pinnwand?n=${front}`}
+      aria-label={faecherLabel(minis.map((m) => miniText(m.item)), demo)}
+      onClick={(e) => {
+        if (demo) return;
+        const tapped = (e.target as HTMLElement).closest<HTMLElement>("[data-zettel]")?.dataset.zettel;
+        const ziel = faecherZiel(tapped, front, ids);
+        if (ziel === front) return;
+        e.preventDefault();
+        router.push(`/pinnwand?n=${ziel}`);
+      }}
+      className="relative mx-auto block h-full w-full max-w-[220px]"
+    >
       {back.map((m, i) => {
-        const front = i === back.length - 1;
+        const isFront = i === back.length - 1;
         const slot = i + off;
         return (
           <MiniZettel
@@ -72,13 +104,14 @@ export function Faecher({ minis, household, demo }: { minis: Mini[]; household: 
             {...m}
             household={household}
             demo={demo}
-            lines={front ? 3 : 1}
+            link={false}
+            lines={isFront ? 3 : 1}
             className="absolute top-2 h-[92px] w-[64%]"
             style={{ ["--kippen" as string]: `${FAECHER_WINKEL[slot]}deg`, left: `${slot * 15}%`, zIndex: i + 1 }}
           />
         );
       })}
-    </div>
+    </Link>
   );
 }
 
