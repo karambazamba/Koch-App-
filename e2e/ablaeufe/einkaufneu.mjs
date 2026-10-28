@@ -155,3 +155,107 @@ export const einsprechen = async (page, check) => {
   check(/Milch/.test(await page.locator('[data-laden-karte="Edeka"]').innerText()), "Milch direkt bei Edeka (gemerkt)");
   check(await page.locator("[data-ohne-laden]").getByText("Joghurt").isVisible(), "Joghurt in „Noch ohne Laden“");
 };
+
+// Nachtrag A-018, Punkt 1: Laden ohne Einträge – „Für Edeka steht nichts
+// drauf.“, „Oft bei Edeka“, Antippen landet direkt bei Edeka („Steht drin.“)
+export const ladenLeer = async (page, check) => {
+  await laeden(page);
+  await page.evaluate((key) => {
+    const s = JSON.parse(localStorage.getItem(key));
+    localStorage.setItem(key, JSON.stringify({ ...s, shopRules: { butter: "Edeka" }, learned: { quark: { shop: "Edeka", n: 2 } } }));
+  }, KEY);
+  await page.goto(BASE + "/einkaufsliste/laden?name=Edeka");
+  const leer = page.locator("[data-laden-leer]");
+  check(await leer.waitFor({ timeout: 5000 }).then(() => true, () => false), "leerer Laden zeigt einen Satz");
+  check((await leer.innerText()).trim() === "Für Edeka steht nichts drauf.", "„Für Edeka steht nichts drauf.“");
+  check(!(await page.getByText(/Antippen: Laden wählen|Abhaken im Laden/).count()), "kein „Antippen: Laden wählen. Abhaken im Laden.“");
+  const oft = page.locator("[data-oft-bei]");
+  check(await oft.getByRole("heading", { name: "Oft bei Edeka" }).isVisible(), "„Oft bei Edeka“");
+  check((await oft.locator("[data-vorschlag]").count()) >= 2, "Vorschläge zum Antippen");
+  const chip = await oft.locator('[data-vorschlag="Butter"]').boundingBox();
+  check(chip && chip.height >= 44, `Tippfläche ≥ 44 px (${Math.round(chip?.height ?? 0)})`);
+  await oft.locator('[data-vorschlag="Butter"]').tap();
+  check(await page.getByText("Steht drin.").waitFor({ timeout: 3000 }).then(() => true, () => false), "kurz „Steht drin.“");
+  check(!(await page.getByRole("dialog", { name: "Wo kaufst du das?" }).count()), "kein Laden-Wählen");
+  check(await page.getByRole("checkbox", { name: "Butter abhaken" }).isVisible(), "Butter steht auf der Edeka-Seite");
+  check(!(await page.locator("[data-laden-leer]").count()), "der Leer-Satz ist weg");
+  const s = await store(page, KEY);
+  check(s.shopRules.butter === "Edeka" && Object.values(s.weeks).some((w) => w.manual.some((m) => m.name === "Butter" && !m.done)), "Butter bei Edeka auf der Liste");
+  await page.goto(BASE + "/einkaufsliste");
+  await page.waitForTimeout(800);
+  check(/Butter/.test(await page.locator('[data-laden-karte="Edeka"]').innerText()), "Edeka-Karte zeigt Butter");
+};
+
+// Nachtrag A-018, Punkt 2: Abhaken im Laden – Häkchen orange, 1 s stehen,
+// nochmal tippen = doch nicht, dann „Schon im Wagen“ (zugeklappt, ohne Zahl),
+// „Einkauf fertig“ → Im Haus, zurück zur Übersicht, Rückgängig
+export const imWagen = async (page, check) => {
+  await laeden(page);
+  await page.goto(BASE + "/einkaufsliste/laden?name=Rewe");
+  for (const n of ["Milch", "Brot"]) {
+    await page.locator("[data-was-noch]").fill(n);
+    await page.locator("[data-was-noch]").press("Enter");
+  }
+  const hinweis = page.locator("[data-wagen-hinweis]");
+  check(await hinweis.waitFor({ timeout: 3000 }).then(() => true, () => false), "einmal oben: „Abhaken, was im Wagen liegt.“");
+  const milch = page.getByRole("checkbox", { name: /^Milch/ });
+  await milch.tap();
+  await page.waitForTimeout(300);
+  check((await milch.getAttribute("aria-checked")) === "true" && (await page.getByRole("list", { name: "Rewe" }).getByText("Milch").isVisible()), "abgehakt: bleibt kurz oben stehen");
+  const deko = await page.locator('[data-laden-zeile="Milch"] span').first().evaluate((el) => getComputedStyle(el).textDecorationLine);
+  check(deko !== "line-through", "nicht durchgestrichen");
+  await milch.tap();
+  await page.waitForTimeout(1800);
+  check((await milch.getAttribute("aria-checked")) === "false" && !(await page.locator("[data-wagen]").count()), "nochmal tippen = doch nicht (Rückgängig)");
+  await milch.tap();
+  await page.waitForTimeout(2100);
+  const wagen = page.locator("[data-wagen]");
+  check(await wagen.isVisible(), "nach 1 s gleitet Milch in „Schon im Wagen“");
+  check((await wagen.innerText()).trim() === "Schon im Wagen", "zugeklappt, ohne Zahl");
+  check(!(await hinweis.count()), "der Satz oben kommt nur einmal");
+  await wagen.getByRole("button", { name: "Schon im Wagen" }).tap();
+  check(await wagen.getByText("Milch").isVisible(), "antippen = aufklappen");
+  await page.locator("[data-einkauf-fertig]").tap();
+  check(await page.getByText("Fertig. Liegt jetzt bei Im Haus.").waitFor({ timeout: 4000 }).then(() => true, () => false), "„Fertig. Liegt jetzt bei Im Haus.“");
+  await page.waitForURL(/\/einkaufsliste$/, { timeout: 5000 }).catch(() => {});
+  check(/\/einkaufsliste$/.test(page.url()), "zurück zur Übersicht");
+  const imHaus = async () => ((await store(page, "wasgibts.vorrat"))?.items ?? []).some((i) => i.name === "Milch" && !i.usedAt);
+  check(await imHaus(), "Milch liegt bei Im Haus");
+  await page.getByRole("button", { name: "Rückgängig" }).tap();
+  await page.waitForTimeout(300);
+  check(!(await imHaus()), "Rückgängig: wieder raus aus Im Haus");
+  await page.goto(BASE + "/einkaufsliste/laden?name=Rewe");
+  check(await page.locator("[data-wagen]").waitFor({ timeout: 4000 }).then(() => true, () => false), "Rückgängig: wieder im Wagen");
+  await page.locator("[data-einkauf-fertig]").tap();
+  await page.waitForURL(/\/einkaufsliste$/, { timeout: 5000 }).catch(() => {});
+  await page.goto(BASE + "/einkaufsliste/laden?name=Rewe");
+  await page.getByRole("checkbox", { name: /^Brot/ }).waitFor({ timeout: 4000 });
+  check(!(await page.locator("[data-wagen]").count()), "nach „Einkauf fertig“ ist der Wagen leer");
+};
+
+// Nachtrag A-018, Punkt 3: gleiche Sache im selben Laden = ein Eintrag –
+// beim Hinzufügen und rückwirkend für ältere Listen (Speicher v6 → v7)
+export const doppeltEins = async (page, check) => {
+  await laeden(page);
+  await page.goto(BASE + "/einkaufsliste/laden?name=Rewe");
+  for (const n of ["Zucchini", "zucchinis"]) {
+    await page.locator("[data-was-noch]").fill(n);
+    await page.locator("[data-was-noch]").press("Enter");
+    await page.waitForTimeout(200);
+  }
+  check((await page.locator("[data-laden-zeile]").count()) === 1, "„Zucchini“ zweimal = ein Eintrag");
+  // Älterer Stand mit Doppelten (v6): beim Laden zusammengefasst, Mengen addiert
+  await page.evaluate((key) => {
+    const s = JSON.parse(localStorage.getItem(key));
+    const [week] = Object.keys(s.weeks);
+    const w = s.weeks[week];
+    w.manual = [{ id: "a1", name: "Zucchini", amount: "2", section: "obst-gemuese", done: false }, { id: "b2", name: "Zucchini", amount: "1", section: "obst-gemuese", done: false }];
+    localStorage.setItem(key, JSON.stringify({ ...s, version: 6 }));
+  }, KEY);
+  await page.reload();
+  const zeile = page.locator('[data-laden-zeile="Zucchini"]');
+  await zeile.first().waitFor({ timeout: 5000 });
+  check((await zeile.count()) === 1 && /3/.test(await zeile.innerText()), "alte Liste: Zucchini 2 + 1 = eine Zeile „3“");
+  const s = await store(page, KEY);
+  check(s.version === 7 && Object.values(s.weeks).every((w) => w.manual.filter((m) => m.name === "Zucchini").length === 1), "Speicher v7, ein Eintrag (nichts verloren)");
+};

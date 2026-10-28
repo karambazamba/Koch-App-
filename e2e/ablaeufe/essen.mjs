@@ -45,9 +45,12 @@ export const einkauf = async (page, check) => {
   check((await sichtbar(milch)) && (await sichtbar(page.getByRole("checkbox", { name: "Bananen abhaken" }))), "Milch und Bananen auf der Rewe-Seite");
   const done = async () => Object.values((await store(page, "wasgibts.einkaufsliste")).weeks).some((w) => w.manual.some((m) => m.name === "Milch" && m.done));
   await milch.tap();
-  await page.waitForTimeout(2600);
+  await page.waitForTimeout(2200);
   check(await done(), "Kreis hakt ab");
-  check(await page.getByRole("region", { name: "Im Korb" }).getByText("Milch").isVisible(), "abgehakt → „Im Korb“");
+  const wagen = page.getByRole("region", { name: "Schon im Wagen" });
+  check((await wagen.isVisible()) && !(await wagen.getByText("Milch").isVisible()), "abgehakt → „Schon im Wagen“ (zugeklappt)");
+  await wagen.getByRole("button", { name: "Schon im Wagen" }).tap();
+  check(await wagen.getByText("Milch").isVisible(), "aufklappen: Milch im Wagen");
   // Lange drücken = „Wo kaufst du das?“ (anderer Laden, Ändern, Löschen)
   const brot = page.locator('[data-laden-zeile="Brot"]');
   const box = await brot.boundingBox();
@@ -68,7 +71,7 @@ export const einkauf = async (page, check) => {
 };
 
 // „Im Haus“ (Tafel 102): Chips in Gruppen, oranger Punkt = bald; Brot auf der
-// Laden-Seite abhaken (Kreis) → steht unter „Brot“ → Chip = Fenster →
+// Laden-Seite abhaken (Kreis) und „Einkauf fertig“ → steht unter „Brot“ → Chip = Fenster →
 // „Aufgebraucht“ → Zeile „Aufgebraucht: Brot“ → „Auf die Liste“; „Was koch
 // ich daraus?“ schwebt über der Leiste und öffnet Spontan kochen.
 export const imHaus = async (page, check) => {
@@ -87,7 +90,10 @@ export const imHaus = async (page, check) => {
   await page.locator("[data-was-noch]").fill("Brot");
   await page.locator("[data-was-noch]").press("Enter");
   await page.getByRole("checkbox", { name: "Brot abhaken" }).tap();
-  check(await page.getByText("Im Haus: Brot").waitFor({ timeout: 5000 }).then(() => true, () => false), "Meldung „Im Haus: Brot“");
+  await page.locator("[data-einkauf-fertig]").tap();
+  check(await page.getByText("Fertig. Liegt jetzt bei Im Haus.").waitFor({ timeout: 5000 }).then(() => true, () => false), "„Einkauf fertig“ → „Fertig. Liegt jetzt bei Im Haus.“");
+  await page.waitForURL(/\/einkaufsliste$/, { timeout: 5000 }).catch(() => {});
+  check(/\/einkaufsliste$/.test(page.url()), "zurück zur Übersicht");
   await page.goto(BASE + "/vorrat");
   const brot = page.getByRole("region", { name: "Brot" }).getByRole("button", { name: "Brot", exact: true });
   check(await brot.waitFor({ timeout: 5000 }).then(() => true, () => false), "Brot steht unter „Brot“");
