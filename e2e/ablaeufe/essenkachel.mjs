@@ -44,7 +44,7 @@ export const essenKachelVorschlag = async (page, check) => {
   // A-040: danach bietet eine kleine Meldung die Zutaten an („Auf die Liste: … ?“ · „Alle dazu“)
   const angebot = page.locator("[data-toast-action]");
   check(await angebot.waitFor({ timeout: 3000 }).then(() => true, () => false), "„Nehmen“ bietet die Zutaten an („Alle dazu“)");
-  check(/^Auf die Liste: .+\?$/.test((await page.getByRole("status").innerText().catch(() => "")).split("\n")[0].trim()), "Meldung „Auf die Liste: …?“");
+  check(/^Auf die Liste: .+\?$/.test((await page.locator("[role=status]:has([data-toast-action])").innerText().catch(() => "")).split("\n")[0].trim()), "Meldung „Auf die Liste: …?“");
   await angebot.click().catch(() => {});
   await page.waitForTimeout(400);
   const manual = Object.values((await store(page, "wasgibts.einkaufsliste"))?.weeks ?? {}).flatMap((w) => w.manual ?? []);

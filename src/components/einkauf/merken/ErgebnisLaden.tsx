@@ -18,17 +18,22 @@ import { hintSeen, markHintSeen } from "@/lib/core/hints";
 
 const ZEILE = "text-[13px] font-semibold leading-snug text-muted";
 const lower = (s: string) => s.trim().toLowerCase();
+/** Bei welcher Sache der Hinweis „Hab Rewe genommen …“ in dieser Sitzung steht (höchstens eine) */
+const HINWEIS_BEI = new Set<string>();
 
 export function ErgebnisLaden({ sache, gesagt, art, aus = false }: { sache: string; gesagt: string | null; art: string; aus?: boolean }) {
   const settings = useShoppingSettings();
   const meine = useMeineLaeden();
   const [auf, setAuf] = useState(false);
   const laden = settings ? kartenLaden(ladenHerkunft(sache, settings), gesagt) : null;
-  // Einmal: Mia hat zum ersten Mal selbst einen Laden ausgesucht (gemerkt beim ersten Zeigen)
-  const [hinweis] = useState(() => Boolean(laden?.wieImmer) && !hintSeen("einkauf-laden-gewaehlt"));
+  // Einmal: Mia hat zum ersten Mal selbst einen Laden ausgesucht (gemerkt beim ersten Zeigen;
+  // dieselbe Karte behält ihn, auch wenn sie neu aufgebaut wird oder die Einstellungen später laden)
+  const hinweis = Boolean(laden?.wieImmer) && (HINWEIS_BEI.has(lower(sache)) || (!HINWEIS_BEI.size && !hintSeen("einkauf-laden-gewaehlt")));
   useEffect(() => {
-    if (hinweis) markHintSeen("einkauf-laden-gewaehlt");
-  }, [hinweis]);
+    if (!hinweis) return;
+    HINWEIS_BEI.add(lower(sache));
+    markHintSeen("einkauf-laden-gewaehlt");
+  }, [hinweis, sache]);
   const laeden = meine?.myShops ?? [];
   if (!laden && !laeden.length) return <span className={ZEILE}>{`${art} · für alle`}</span>;
   if (aus) return <span className={ZEILE}>{laden ? kartenLadenText(laden) : `${art} · für alle`}</span>;

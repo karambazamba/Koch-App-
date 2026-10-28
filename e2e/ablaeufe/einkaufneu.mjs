@@ -162,7 +162,7 @@ export const ladenLeer = async (page, check) => {
   await laeden(page);
   await page.evaluate((key) => {
     const s = JSON.parse(localStorage.getItem(key));
-    localStorage.setItem(key, JSON.stringify({ ...s, shopRules: { butter: "Edeka" }, learned: { quark: { shop: "Edeka", n: 2 } } }));
+    localStorage.setItem(key, JSON.stringify({ ...s, shopRules: { butter: "Edeka" }, learned: { quark: { shop: "Edeka", n: 2, am: new Date().toISOString().slice(0, 10) } } }));
   }, KEY);
   await page.goto(BASE + "/einkaufsliste/laden?name=Edeka");
   const leer = page.locator("[data-laden-leer]");
@@ -262,5 +262,5 @@ export const doppeltEins = async (page, check) => {
   await zeile.first().waitFor({ timeout: 5000 });
   check((await zeile.count()) === 1 && /3/.test(await zeile.innerText()), "alte Liste: Zucchini 2 + 1 = eine Zeile „3“");
   const s = await store(page, KEY);
-  check(s.version === 7 && Object.values(s.weeks).every((w) => w.manual.filter((m) => m.name === "Zucchini").length === 1), "Speicher v7, ein Eintrag (nichts verloren)");
+  check(s.version === 8 && Object.values(s.weeks).every((w) => w.manual.filter((m) => m.name === "Zucchini").length === 1), "Speicher v8 (A-040/A-041), ein Eintrag (nichts verloren)");
 };
