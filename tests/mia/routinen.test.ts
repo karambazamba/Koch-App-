@@ -49,8 +49,10 @@ describe("Packliste am Vorabend", () => {
 describe("Jetzt-Karte", () => {
   it("Themen erscheinen sanft, nachts nicht; Texte ohne Druck", () => {
     const routinen = { morgen: { title: "Moin! Fußball 15", detail: "Rest vom Tag ist ruhig." }, ueber: { key: "ueber:a+b", title: "Fußball und Zahnarzt", detail: "15 und 16 Uhr. Das wird knapp. Wer fährt?" }, pack: null };
-    const day = jetztTopics(jetztInput(8 * 60, { routinen }));
+    // Morgen-Info nennt Termine – nur ohne Termine-Kachel (sonst Wiederholung)
+    const day = jetztTopics(jetztInput(8 * 60, { routinen, tiles: ["pinnwand", "wetter"] }));
     expect(day.map((x) => x.kind)).toEqual(expect.arrayContaining(["ueberschneidung", "morgen"]));
+    expect(jetztTopics(jetztInput(8 * 60, { routinen })).map((x) => x.kind)).not.toContain("morgen");
     expect(jetztTopics(jetztInput(23 * 60, { routinen })).some((x) => x.kind === "ueberschneidung")).toBe(false);
     for (const x of day) for (const re of VERBOTEN) expect(re.test(`${x.title} ${x.detail}`)).toBe(false);
   });

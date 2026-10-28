@@ -176,7 +176,8 @@ describe("Jetzt-Karte: Knöpfe und Ruhe", () => {
   });
 
   it("Geburtstag heute mit „Erledigt“, Wochencheck mit „Öffnen“, Beispiel-Tag ohne Knopf", () => {
-    expect(first(base(H(9), { birthdays: [{ title: "Omas Geburtstag", date: "2026-10-21", when: "heute" }] }))).toMatchObject({ title: "Heute hat Oma Geburtstag", button: "Erledigt" });
+    expect(first(base(H(11), { birthdays: [{ title: "Omas Geburtstag", date: "2026-10-21", when: "heute" }] }))).toMatchObject({ title: "Heute hat Oma Geburtstag", button: "Erledigt" });
+    expect(first(base(H(9), { birthdays: [{ title: "Omas Geburtstag", date: "2026-10-21", when: "heute" }] }))).toMatchObject({ title: "Moin! Heute hat Oma Geburtstag.", button: "Erledigt" });
     expect(first(base(H(18), { weekCheck: "2026-10-19" }))).toMatchObject({ kind: "wochencheck", button: "Öffnen" });
     expect(first(base(H(11), { demo: true }))).toMatchObject({ kind: "beispiel", button: null });
   });

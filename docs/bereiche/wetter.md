@@ -109,7 +109,11 @@ Kachel `wetter` (Standard S, Größen S/M/L; Tafel „ruhig mit Regentropfen“,
   Niesel heißt „Niesel“); trocken → „Bewölkt · ab 15 Uhr Regen“ (bzw.
   „Schnee“), eben aufgehört → „Regen hat aufgehört“, sonst „bleibt trocken“.
   S ohne „Uhr“ („ab 10 trocken“).
-- S: „WETTER · EUTIN“, Temperatur, Windsack der Stufe, die Zeile.
+- Wind nur, wenn er auffällt (v0.136, `windZeigen` in `wind.ts`, EINE Regel
+  für Kachel S/M/L und Seite): Windsack und Wind-Zeile erst ab „Frischer
+  Wind“ (Mittelwind ≥ 29 km/h) oder Böen ≥ 60 km/h; darunter auf der Kachel
+  weder Windsack noch Wind-Text.
+- S: „WETTER · EUTIN“, Temperatur, Windsack der Stufe (nur bei Wind), die Zeile.
 - M: dazu rechts ↑ max / ↓ min, Wind in Worten (Stunde jetzt,
   `kachelWind`): fett das Wort, leise die Zahl („Frischer Wind · 32 km/h aus
   West“), ab Böen 60 ein oranges Schild „Böen 85“; unten feine Linie und 4
@@ -170,6 +174,9 @@ wird nur die Stadt). Die App holt höchstens alle 30 Minuten neu.
 - Tageszeiten: rechts „[Windsack] 22 km/h · W“, Böen nur ab 60 km/h („35 · W
   · Böen 60“).
 - VoiceOver: „Mäßiger Wind, 22 Kilometer pro Stunde aus Westen“.
+- Seit v0.136 unter „Frischer Wind“ und Böen unter 60: kein Chip in der
+  Himmel-Karte, in den Tageszeiten nur klein die Zahl („12 km/h · W“,
+  `WindZahl`), im 7-Tage-Band Zahl und Kürzel ohne Windsack.
 
 ## Begleitung (Mia)
 

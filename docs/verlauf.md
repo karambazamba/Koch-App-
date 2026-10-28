@@ -2843,3 +2843,13 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Kühlschrank-Check? 20 Sekunden.“), Seite `/vorrat/check`.
 - Symbole: Zucchini, Kuchen, Honig gezeichnet; ohne Zeichnung nie Korb oder
   Kiste (Vorrat = Ähre, Sonstiges = Besteck, Gemüse = Möhre, Obst = Apfel).
+
+## Windsack nur bei Wind, ein Hinweis-Stil, Jetzt-Karte morgens (v0.136.0)
+- Wetter-Kachel und -Seite: Windsack und Wind-Zeile erst ab „Frischer Wind“
+  (Mittelwind ≥ 29 km/h) oder Böen ≥ 60 km/h (`windZeigen`); darunter auf
+  der Seite nur klein die Zahl.
+- Alle einmaligen Hinweise der Startseite („Unten findest du jetzt …“,
+  „Lieber schlicht?“, Einladen, Startseite halten …) im Stil der
+  Seiten-Tipps (`SeitenTipp`, Tafel 101) mit „Alles klar“.
+- Jetzt-Karte morgens: besonderer Tag zuerst („Moin! Heute hat Lisa
+  Geburtstag.“), Morgen-Info mit Terminen nur ohne Termine-Kachel.

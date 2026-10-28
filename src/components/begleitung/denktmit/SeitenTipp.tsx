@@ -25,7 +25,7 @@ type TippPfeil = "links" | "mitte" | "rechts";
 const PFEIL_X: Record<TippPfeil, string> = { links: "left-[22%]", mitte: "left-1/2", rechts: "left-[78%]" };
 
 /** Zweiter Knopf (weiß): tut etwas bzw. führt hin; `bleibt` = der Tipp schließt danach nicht von selbst */
-export type TippAktion = { label: string; onClick?: () => void; href?: string; bleibt?: boolean };
+type TippAktion = { label: string; onClick?: () => void; href?: string; bleibt?: boolean };
 
 type Props = {
   text: string;

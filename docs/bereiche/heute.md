@@ -53,13 +53,20 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 ### Hinweise (Launch 1.0, `core/hinweise.ts`)
 - Höchstens EIN Hinweis unter der Jetzt-Karte und höchstens EINE schwebende
   Blase je Öffnen („Schreiben & sprechen“ am Mia-Knopf). Reihenfolge: „Ich heiße
-  jetzt Mia“ → Familie einladen (ohne Mia-Gesicht) → Spendentopf → „Halte die
+  jetzt Mia“ → „Unten findest du jetzt …“ → Familie einladen → Spendentopf → „Halte die
   Startseite gedrückt“ → „Lieber schlicht?“ → „Abends lieber dunkel?“.
 - Jeder Hinweis nur einmal: am ersten Tag bleibt er, ab dem nächsten ist er
   weg (auch ohne Antippen). In den ersten 3 Tagen nur Beispiel-Tag und
   „Schreiben & sprechen“; „Lieber schlicht?“ kommt damit frühestens am 4. Tag.
   Ausnahme „Ich heiße jetzt Mia“ (nur alte Installationen, schützt vor
-  Datenverlust): steht immer zuerst, bis ✕.
+  Datenverlust): steht immer zuerst, bis „Alles klar“.
+- EIN Stil (v0.136, Tafel 101): jeder dieser Hinweise (auch „Unten findest
+  du jetzt …“) ist ein `SeitenTipp` – warmer Verlauf, feiner oranger Rand,
+  kleines Mia-Gesicht ohne Ring, „MIA“, 1–2 Sätze, „Alles klar“ und
+  höchstens ein eigener zweiter Knopf (`aktion`: „Schlicht ansehen“,
+  „Automatisch“, „Familie einladen“, „Zeig mir wie“, „Abstimmen“). Test
+  `tests/heute/hinweisStil.test.ts`. „Mia denkt mit“ (`MiaKarte`) bleibt
+  eine Frage-Karte ohne Gesicht.
 
 ### Kacheln
 - Zwei Looks (Profil `look`, `data-look` am `<html>`, Regeln in
@@ -192,6 +199,15 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Elternabend“ – „Hat Lisa eingetragen.“), sanft, 45 Punkte, höchstens eine
   am Tag, jede nur einmal, nur 6 Std. frisch (`newsForCard` in
   `src/lib/konten/wer.ts`, Speicher `wasgibts.neu`).
+- Morgens (6–10 Uhr, v0.136): ein besonderer Tag heute kommt zuerst
+  (`first`, auch gegen gelernte Gewichte): „Moin! Heute hat Lisa
+  Geburtstag.“ bzw. beim eigenen Jahrestag „Moin! Heute ist euer
+  Jahrestag.“ (allein „dein“; passt Zeile 1 nicht in 32 Zeichen, gesprochen
+  kürzer „Moin! Heut is euer Hochzeitstag.“, `moinZeile`). Jahrestag heute
+  kommt aus `jahrestagHeute` (ganztägiger Termin, `anlassOf`). Die
+  Morgen-Info („Moin! Zahnarzt 9:15“) nur ohne Termine-Kachel und ohne
+  besonderen Tag – sonst ein Thema, das keine Kachel zeigt, bzw. Spruch/„Alles
+  ruhig“. Test `tests/heute/jetztMorgens.test.ts`.
 - Weggefallen: „start“ (Grad · Termin), reines „morgen“, „Ausblick“ (vX, Tafel 98), Wetter-Tipps ohne
   Plan, „Als Nächstes“-Termin, „Alles geschafft“, Sport-Info ohne Packliste.
 - Punkte aus Dringlichkeit und Interesse (`weights`, ±5 % je Punkt;

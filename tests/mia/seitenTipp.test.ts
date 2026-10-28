@@ -71,13 +71,14 @@ describe("Tipp im Seitenfluss unter dem Titel", () => {
 
   it("„Alles klar“ orange, „Zeig mal“ weiß und nur mit Aktion; weich nach oben (transform/opacity, 0,8 s, Mia-Kurve)", () => {
     expect(tipp).toMatch(/buttonClass\("primary", "sm"\)[^\n]*\n\s*Alles klar/);
-    expect(tipp).toMatch(/\{zeigMal && \(/);
-    expect(tipp).toMatch(/buttonClass\("secondary", "sm"\)[^\n]*\n\s*>\n\s*Zeig mal/);
+    expect(tipp).toMatch(/aktion \?\? \(zeigMal \? \{ label: "Zeig mal", onClick: zeigMal \} : null\)/);
+    expect(tipp).toMatch(/\{knopf &&/);
+    expect(tipp).toMatch(/buttonClass\("secondary", "sm"\)[^\n]*\n\s*>\n\s*\{knopf\.label\}/);
     expect(tipp).toMatch(/transition-\[transform,opacity\] duration-\[800ms\] ease-\(--mia-ease\)/);
     expect(tipp).toMatch(/-translate-y-3 opacity-0 motion-reduce:translate-y-0/);
     expect(tipp).toMatch(/TIPP_ZU_MS = 800;/);
     // Tippflächen ≥ 44 px
-    expect(tipp.match(/min-h-11/g)).toHaveLength(2);
+    expect(tipp.match(/min-h-11/g)).toHaveLength(3);
   });
 
   it("„Zeig mal“ nur, wo es schon etwas zu zeigen gibt: Einkauf öffnet „Meine Läden“", () => {
