@@ -76,13 +76,14 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   Gespräch erreichbar. Bildschirme dienen zum Nachschauen und Feinjustieren.
 - ＋ = schreiben, Mia = sprechen. Jedes ＋ öffnet eine Schnelleingabe (ein Feld,
   Tastatur sofort, Satz rein, ➤ speichert; `ui/QuickEntry`, `core/schnelleingabe`;
-  Ausnahmen: Notizen-Plus = leere Notiz, Pinnwand-Plus = „Neuer Zettel“). Absätze:
-  Notiz und Pinnwand mehrzeilig (`ui/MehrzeilenFeld`, Return = neue Zeile,
-  gespeichert nur per Knopf), angezeigt mit `whitespace-pre-line`.
+  Ausnahmen: Notizen-Plus = leere Notiz, Pinnwand-Plus = „Neuer Zettel“).
+  Aufgabe/Termin: je EIN Fenster für jeden Einstieg und zum Ändern (Tafel 114,
+  nur über `neuEintragen`/`eintragAendern`), Weiteres nur über „Mehr ›“.
+  Absätze: Notiz und Pinnwand mehrzeilig (`ui/MehrzeilenFeld`, Return = neue
+  Zeile, gespeichert nur per Knopf), angezeigt mit `whitespace-pre-line`.
   Sprechen geht immer über den Mia-Knopf. Kein eigenes Mikro in Eingabefeldern
-  (die iPhone-Tastatur hat ihres). Formular nur über „Mehr Details“. Mia ist
-  ein runder Knopf rechts in der Leiste unten; Tippen holt sie auf die Bühne, sie hört
-  sofort zu. Keine Schreib-Leiste.
+  (die iPhone-Tastatur hat ihres). Mia ist ein runder Knopf rechts in der
+  Leiste unten; Tippen holt sie auf die Bühne, sie hört sofort zu. Keine Schreib-Leiste.
 - Lieber eine Frage mit 2–3 Knöpfen als ein Formular.
 - Machen statt fragen: Kleines selbst erledigen und kurz melden. Rückfragen nur
   bei echten Entscheidungen. Kleine, sichere Dinge (Einkauf, neue Termine,
@@ -110,21 +111,20 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   korrigiert nur, wenn sie etwas anderes versteht. Keine Regel darf einen Zustand hinterlassen, der weitere Nachrichten abfängt.
 
 ## 3. Räume
-- „Familie“ ist gemeinsam, „Arbeit“ ist persönlich. Ohne Angabe gehört etwas
-  zur Familie. Familie = Orange (`bg-accent`), Arbeit = Blau (`bg-work`).
-- Mit Konto teilt der Haushalt „Familie“; „Arbeit“ sieht nur der Besitzer.
-  Konto erst, wenn man teilen will; eingeladen wird per Link (/e/…). In der
-  Oberfläche heißt der gemeinsame Bereich je Haushaltsart „Privat“ (allein),
-  „Wir“ (zu zweit) oder „Familie“ (`core/haushalt.ts`, `useRaumName`), nie
-  „Haushalt“; intern bleibt der Schlüssel „familie“.
+- Genau zwei Räume (A-021): „Familie“ = alle im Haushalt (Orange `bg-accent`,
+  zu zweit „Wir“), „Geschäftlich“ = nur ich, nach Feierabend aus (Blau
+  `bg-work`); kein „Ich“, kein „Privat“, nie „Haushalt“; intern familie/arbeit
+  (`core/haushalt.ts`). Ohne Angabe Familie; Mia erkennt ihn aus dem Inhalt.
+- Mit Konto teilt der Haushalt „Familie“; „Geschäftlich“ sieht nur der Besitzer,
+  nie andere (Abgleich/RLS, Push, Pinnwand, Heute, Mia; `nurBesitzer`). Konto
+  erst, wenn man teilen will; Einladen per Link (/e/…).
   Ohne Konto bleibt alles auf dem Gerät – die App geht immer auch ohne.
 - Aufgaben gehören standardmäßig der Person, die sie anlegt; geteilt wird nur
   durch Abgeben („An … geben“, beim Empfänger „von Felix“, zurück mit „Passt
   gerade nicht“; `kalender/abgeben`). Für Absprachen ist die Pinnwand da.
-- Aufgaben: EINE Liste, Familie ohne Kennzeichen, Arbeit nur als kleines
-  blaues Schild; Chips „Alle · Familie · Arbeit“ nur mit Arbeitsaufgaben.
-  Nach Feierabend (Tagesablauf) ist Arbeit ausgeblendet: „Arbeit · 5 für
-  morgen“ (`kalender/aufgaben.ts`).
+- Aufgaben und Termine: derselbe Schalter „Familie | Geschäftlich“ (letzte
+  Wahl), nur „Geschäftlich“ als blaues Schild, Chips „Alle · Familie ·
+  Geschäftlich“ nur damit; abends „Geschäftlich · 5 für morgen“ (`kalender/aufgaben.ts`).
 
 ## 4. Ohne Druck
 - Keine Streaks, keine Zähler, keine roten Badges, keine Aufgaben-Stapel.

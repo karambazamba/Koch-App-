@@ -1,7 +1,8 @@
 // Härtetest „Familie teilen“ (Clip „Mia“, Szenen „Einer sagt’s, alle
 // wissen’s“ und „Gemeinsam/Privat“) im Test-Backend (KONTEN_TEST=1): zwei
 // Browser, zwei Konten, eine Familie.
-// - Termine: Familie sehen beide, „Arbeit“ nur der Besitzer (in beide Richtungen).
+// - Termine: Familie sehen beide, „Geschäftlich“ (arbeit) nur der Besitzer (in beide Richtungen,
+//   A-021: auch nicht im Kalender-Filter, in Heute oder bei Mia).
 // - Einkauf live: Felix ist „Bei REWE“ (Familie weiß Bescheid), Lisa sagt Mia
 //   „Milch auf die Liste“ → bei Felix gelb „Neu von …“ in höchstens 5 s.
 // - Antwort: Felix tippt „Steh grad davor“ → kommt bei Lisa in der Liste an.
@@ -105,6 +106,18 @@ export const familieTeilen = async (page, check, device) => {
     check(await page.getByText("Kundentermin Felix").first().waitFor({ timeout: 8000 }).then(() => true, () => false), "Felix: Tag zeigt seine Arbeit");
     check(await page.getByText("Kinderarzt Mathis").first().isVisible(), "Felix: Tag zeigt Lisas Familien-Termin");
     check(!(await page.getByText("Meeting Lisa").count()), "Felix: Tag ohne Lisas Arbeit");
+    check(await page.getByRole("button", { name: /Kundentermin Felix – Möglichkeiten/ }).first().locator('[data-schild="arbeit"]').getByText("Geschäftlich").isVisible(), "Felix: Schild „Geschäftlich“ an seinem Termin");
+    // Lisas Startseite und Kalender: Felix’ Geschäftliches nirgends (A-021)
+    await pageB.goto(BASE + "/");
+    await pageB.waitForTimeout(900);
+    check(!(await pageB.getByText("Kundentermin Felix").count()), "Lisa: Heute ohne Felix’ Geschäftliches");
+    await pageB.goto(BASE + "/?seite=kalender");
+    await pageB.waitForTimeout(900);
+    const kal = pageB.locator("[role=tabpanel]:not([inert])");
+    await kal.getByRole("radio", { name: "Liste" }).click();
+    const filterB = kal.getByRole("radiogroup", { name: "Filter" });
+    if (await filterB.count()) await filterB.getByRole("radio", { name: "Geschäftlich" }).click();
+    check(!(await kal.getByText("Kundentermin Felix").count()), "Lisa: Kalender (auch Filter Geschäftlich) ohne Felix’ Termin");
 
     // --- Einkauf live: Felix im Laden, Lisa sagt’s Mia --------------------------
     await page.goto(BASE + "/einkaufsliste/laden?name=REWE&unterwegs=1");

@@ -222,8 +222,8 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   heute, EINE Reihenfolge (dringend → neu → Erstellungszeit, ohne in Listen
   Geparktes), keine Etiketten pro Zeile; Kreis (Tippfläche 44 × 30), Titel,
   „!“ bei dringend, rechts nur „von Lisa“ und das kleine blaue Schild
-  „Arbeit“. Ruht die Arbeit (`view.hideWork`: Feierabend mit Ruhe, freie
-  Tage), fehlt sie und unten steht leise „Arbeit · 5 für morgen“ (Link zur
+  „Geschäftlich“. Ruht die Arbeit (`view.hideWork`: Feierabend mit Ruhe, freie
+  Tage), fehlt sie und unten steht leise „Geschäftlich · 5 für morgen“ (Link zur
   Seite). Abhaken:
   1,5 s durchgestrichen (`LEAVE_MS`, überall gleich), dann weich weg – auch am
   Beispiel-Tag.
@@ -379,8 +379,9 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   hervorgehoben und in Sicht gescrollt (`topicSpot`), mit dem Hinweis der
   Karte; „Erledigt“ nur bei Vorbereiten/Packliste/Geburtstag/Erinnerung.
   Leerer Tag: „Heute ist nichts geplant. Genieß es.“ Ab 22 Uhr Umschalter
-  „Morgen · Do“. Eintrag antippen = öffnen. „Arbeit“ trägt „Nur für dich“
-  (fremde Arbeit kommt per RLS nie aufs Gerät). Ausnahme: laufender Timer
+  „Morgen · Do“. Eintrag antippen = öffnen. „Geschäftlich“
+  trägt ein blaues Schild, Uhrzeit und Strich in Raumfarbe (A-021; fremdes
+  Geschäftliches kommt per RLS nie aufs Gerät, also auch nie zu Lisa). Ausnahme: laufender Timer
   öffnet den Timer.
 - Mia: „Was steht heute an?“ / „Wie sieht mein Tag aus?“ (`isDayQuestion`)
   → 2 Sätze (`daySummary`), dann öffnet sich „Dein Tag“ (`openDeinTag`).

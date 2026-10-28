@@ -4,8 +4,8 @@
 
 - **Konten (Supabase):** Anmelden nur per E-Mail-Code (`signInWithOtp` +
   `verifyOtp`), nie per Link. Geheimer Schlüssel nur auf dem Server, nie im
-  Client/Repo/Log. Jede Tabelle mit RLS (nur eigener Haushalt, „Arbeit“ nur
-  Besitzer). Migrationen nur in `supabase/migrations/`, laufen beim Merge;
+  Client/Repo/Log. Jede Tabelle mit RLS (nur eigener Haushalt, „Geschäftlich“
+  (intern arbeit) nur Besitzer). Migrationen nur in `supabase/migrations/`, laufen beim Merge;
   nie SQL von Hand. Lokale Daten bleiben, bis die Übernahme bestätigt ist.
   Abgleich: neueste Änderung je Eintrag gewinnt, Löschen nur als Markierung;
   neue geteilte Daten = Übersetzer in `src/lib/konten/sync/docs.ts`.
@@ -29,7 +29,9 @@ Etappen: **3a Anmeldung und Haushalt** · **3b Synchronisieren** ·
   (`serverEnv.ts`, `app/api/…`) – Test `tests/app/regeln.test.ts`; nach dem
   Bauen `.next/static` durchsuchen. Nie loggen.
 - Jede Tabelle mit Row Level Security; Zugriff nur für Mitglieder des eigenen
-  Haushalts. „Arbeit“ nur für den Besitzer (ab 3b, Tabelle `entries`).
+  Haushalts. „Geschäftlich“ (intern `arbeit`) nur für den Besitzer (ab 3b,
+  Tabelle `entries`). Es gibt genau zwei Räume (A-021); den Raum „ich“ aus
+  A-020 gab es nur vor dem Ausliefern, seine Migration ist gelöscht.
 - Aufgaben sind persönlich (seit v0.65, Migration
   `20261024120000_aufgaben_persoenlich.sql`, Funktion `entry_visible`): eine
   Aufgabe sehen und ändern nur der Besitzer, wer sie bekommen hat
@@ -118,10 +120,14 @@ Etappen: **3a Anmeldung und Haushalt** · **3b Synchronisieren** ·
   `notifyStore` (Anzeigen neu laden, wenn der Abgleich geschrieben hat).
 - Datenbank 3b: `supabase/migrations/20261023120000_eintraege_abgleich.sql` –
   `entries` (household_id, id, typ, raum, besitzer, erstellt, geaendert,
-  geloescht, data jsonb, rev), RLS (Familie für alle im Haushalt, Arbeit nur
+  geloescht, data jsonb, rev; raum familie/arbeit), RLS (Familie für alle im Haushalt, Arbeit nur
   Besitzer, kein hartes Löschen, Besitzer/rev nicht änderbar),
   `sync_entries` (je Eintrag „neueste gewinnt“, Abgelehntes hält den Rest
-  nicht auf), Realtime-Veröffentlichung; wer geht, nimmt seine „Arbeit“ mit.
+  nicht auf), Realtime-Veröffentlichung; wer geht, nimmt seine „Arbeit“ mit
+  (`drop_work_entries`). Der Übersetzer (`sync/docs.ts`, `roomOf`) lädt Arbeit nie
+  als Familie hoch (ein „ich“ aus Testständen wird Arbeit, nie Familie);
+  Test-Backend (`testServer.ts`) und Push (`versand.ts`) prüfen `nurBesitzer`.
+  Kalender-Übersetzer v4 (A-021): Etikett „Privat“ nur von „lokal“ wird Familie.
 
 ## Verhalten
 
@@ -294,6 +300,9 @@ E-Mail bleibt immer der sichere Weg. Bitte am echten iPhone prüfen.
   Löschen, offline → online, keine doppelte Übernahme, Zusammenführen.
 - `tests/datenbank/eintraege.test.sql` – Arbeit nur Besitzer, Fremde sehen
   nichts, neueste gewinnt, Löschen nur Markierung, Verlassen nimmt Arbeit mit.
+- App-Seite Sichtbarkeit (A-021): `tests/kalender/raumGeschaeftlich.test.ts` –
+  zwei Konten im Test-Backend: Lisa bekommt Felix’ Geschäftliches nie (Abgleich,
+  Heute/Kalender, Mias Kontext, Neuigkeiten, Push).
 - Durchklick `abgleich` – A nimmt seine Daten mit (Vorschau), B tritt bei und
   sieht Termin und Pinnwand, B schreibt → A sieht es, B offline → online.
 - Durchklick `begruessung` – Begrüßung → Anmelden → Code (falsch, Zurück,

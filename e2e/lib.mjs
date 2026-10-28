@@ -477,14 +477,6 @@ export async function tippenFeld(page) {
   return box;
 }
 
-/** „＋“ öffnet die Schnelleingabe – „Mehr Details“ öffnet das volle Fenster */
-export async function mehrDetails(page) {
-  const link = page.getByRole("dialog", { name: "Schnelleingabe" }).getByRole("button", { name: "Mehr Details" });
-  await link.waitFor({ timeout: 5000 });
-  await link.click();
-  await page.waitForTimeout(500);
-}
-
 /** Einkauf „Aussuchen“ öffnen (optional einen Laden wählen) */
 export async function aussuchen(page, laden) {
   await page.goto(BASE + "/einkaufsliste/aussuchen");
@@ -525,9 +517,12 @@ export async function ziehen(page, von, nach, { halten = 450, steps = 14, ms = 4
   await cdp.detach();
 }
 
-/** Schnelleingabe: Satz tippen, ➤ (Return; mehrzeilig bei Notiz/Pinnwand nur ➤), Fenster zu */
+/** Das EINE Fenster „Neue Aufgabe“ bzw. „Neuer Termin“ (Tafel 114) – auch zum Ändern („Aufgabe“/„Termin“) */
+export const eintragFenster = (page, art) => page.locator(art ? `[role=dialog]:has([data-fenster="${art}"])` : "[role=dialog]:has([data-fenster])");
+
+/** Schnelleingabe bzw. Fenster Aufgabe/Termin: Satz tippen, ➤ (Return; mehrzeilig bei Notiz/Pinnwand nur ➤), Fenster zu */
 export async function schnell(page, text, { close = true } = {}) {
-  const sheet = page.getByRole("dialog", { name: "Schnelleingabe" });
+  const sheet = page.getByRole("dialog", { name: "Schnelleingabe" }).or(eintragFenster(page));
   await sheet.waitFor({ timeout: 5000 });
   const box = sheet.getByRole("textbox");
   await box.fill(text);

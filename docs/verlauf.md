@@ -3350,3 +3350,34 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Pixel 7, jede Kachel in S/M/L; Abläufe `essenkachel`/`kochmodus` für
   Antippen je Zustand, Pillen, „Zurück zu den Ideen“, „Nehmen“.
 - Kein neuer Speicher, keine Migration.
+## Neue Aufgabe & Termin: ein Feld, Familie · Ich · Arbeit (vX, Tafel 114)
+- Problem (Screenshot 28.10. 09:11): ＋ bei Aufgaben zeigte erst „privat“ +
+  „Mehr Details“, dann ein Formular mit 9 Bausteinen; für Persönliches, das
+  nicht Arbeit ist, gab es keinen Platz.
+- Drei Räume nach „wer sieht es“: Familie (zu zweit „Wir“) = alle im
+  Haushalt, NEU „Ich“ = nur ich (nicht geteilt, abends sichtbar), Arbeit =
+  nur ich (nach Feierabend weg). Allein nur „Ich | Arbeit“. Raum `ich` in
+  Speicher, Abgleich (`roomOf`, nie als Familie hochladen), Test-Backend,
+  Push und Datenbank (Migration `20261101120000_raum_ich.sql`, RLS wie
+  Arbeit, beim Verlassen weg). Bestehende Einträge bleiben unverändert.
+  Farben: Ich Grün (`--app-ich*`), „Privat“ heißt nirgends mehr so.
+  Raum „Ich“ vor dem Ausliefern durch A-021 ersetzt (zwei Räume Familie /
+  Geschäftlich, Migration und RLS-Test gelöscht).
+- EIN Fenster „Neue Aufgabe“ und EIN Fenster „Neuer Termin“
+  (`components/kalender/eintragen/`), für jeden Einstieg (Kacheln, Seiten,
+  Kalender, Tag, Beispiel-Tag) und zum Ändern („Bearbeiten“). Das alte
+  Formular `EntryForm` (Umschalter, Uhrzeit bei Aufgaben, Bis spätestens,
+  Etikett-Chips, „Mehr Details“) ist weg; Etiketten bleiben gespeichert.
+- Aufgabe: ein Feld „Was steht an?“, Return = speichern für heute, Feld
+  bleibt offen („Steht drin · Rückgängig“); Zeile Familie | Ich | Arbeit
+  (Start = letzte Wahl, nach Feierabend Familie) · Glocke (In 1 Std, 16:00,
+  18:00, Morgen früh → „Erinnern heute 16:00 ✕“) · „Mehr ›“ (Ab wann,
+  Wiederholen, An jemanden geben). „Freitag …“ → „Ab Freitag“.
+- Termin: ein Feld, blaue Chips Tag · Uhrzeit · Dauer; ohne Uhrzeit
+  „Uhrzeit?“, gespeichert wird erst danach; „Mehr ›“: Ort, Wiederholen,
+  ganztägig, Personen; Glocke = Erinnern vorher.
+- Listen: „Ich“ grünes, „Arbeit“ blaues Schild (Aufgaben, Kachel, Dein Tag),
+  Filter „Alle · Familie · Ich · Arbeit“ nur mit Ich/Arbeit (auch im Kalender).
+- Mia: „nur für mich“/„privat“ → Ich, „für alle“/„Familie“ → Familie,
+  Arbeit/Büro und gelernte Arbeits-Stichworte (Laden, Café …, aus früheren
+  Arbeits-Einträgen) → Arbeit. Prüfstand +7 Sätze mit Raum-Prüfung.

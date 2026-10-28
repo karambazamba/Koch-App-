@@ -49,8 +49,9 @@ import * as kochmodus from "./ablaeufe/kochmodus.mjs";
 import * as vorschau from "./ablaeufe/vorschau.mjs";
 import * as erledigt from "./ablaeufe/erledigt.mjs";
 import * as abgeschnitten from "./ablaeufe/abgeschnitten.mjs";
+import * as raumwahl from "./ablaeufe/raumwahl.mjs";
 
-const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen, ...miazuerst, ...pinnwandgesten, ...sprachnachricht, ...mianame, ...startseite, ...schnelleingabe, ...kalendertag, ...mails, ...datenschutz, ...mikrocheck, ...zuhoeren, ...serverstimme, ...ohrlive, ...miasprechen, ...wischen, ...abhaken, ...uebersicht, ...testcode, ...notizen, ...sprechenhaengt, ...heim, ...essenkachel, ...wochenkarte, ...laeden, ...familieTeilen, ...einsortieren, ...einkaufneu, ...kochmodus, ...vorschau, ...erledigt, ...abgeschnitten };
+const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen, ...miazuerst, ...pinnwandgesten, ...sprachnachricht, ...mianame, ...startseite, ...schnelleingabe, ...kalendertag, ...mails, ...datenschutz, ...mikrocheck, ...zuhoeren, ...serverstimme, ...ohrlive, ...miasprechen, ...wischen, ...abhaken, ...uebersicht, ...testcode, ...notizen, ...sprechenhaengt, ...heim, ...essenkachel, ...wochenkarte, ...laeden, ...familieTeilen, ...einsortieren, ...einkaufneu, ...kochmodus, ...vorschau, ...erledigt, ...abgeschnitten, ...raumwahl };
 const pick = process.argv.slice(2);
 const flows = Object.entries(ALL).filter(([name, run]) => typeof run === "function" && (!pick.length || pick.includes(name)));
 const stop = await startServer();

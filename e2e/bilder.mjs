@@ -4,7 +4,7 @@
 // npm run bilder:vergleich – vergleicht aktuell mit basis (Abweichung > 0,1 %
 // wird gemeldet, Unterschiedsbild in .bilder/unterschied).
 import { mkdirSync } from "node:fs";
-import { BASE, DEVICES, FAKE_MIC, FAKE_VOICES, hello, launch, mehrDetails, miaTippen, newPage, seedFamily, setDark, startServer, tippenFeld } from "./lib.mjs";
+import { BASE, DEVICES, FAKE_MIC, FAKE_VOICES, hello, launch, miaTippen, newPage, seedFamily, setDark, startServer, tippenFeld } from "./lib.mjs";
 import { RECIPE_DATA } from "./ablaeufe/essen.mjs";
 
 /** Warten, bis Netz ruhig und alle Bilder (auch live gezeichnete Gerichte) fertig sind */
@@ -46,16 +46,17 @@ const micTap = async (page) => {
 const openTermin = async (page, text, speichern = false) => {
   await page.goto(BASE + "/?seite=kalender");
   await page.waitForTimeout(900);
-  // Satz in die Schnelleingabe, dann „Mehr Details“ = das Formular, vorbefüllt – einmal wiederholen, falls das Fenster zu langsam kam
+  // Satz ins Fenster „Neuer Termin“ (Tafel 114): Chips darunter, „Mehr ›“ offen – einmal wiederholen, falls das Fenster zu langsam kam
+  const fenster = page.getByRole("dialog", { name: "Neuer Termin" });
   for (let i = 0; i < 2; i++) {
     await page.locator("[role=tabpanel]:not([inert])").getByRole("button", { name: "Neuer Termin" }).click();
-    await page.getByRole("dialog", { name: "Schnelleingabe" }).getByRole("textbox").fill(text);
-    await mehrDetails(page);
-    if (await page.getByRole("dialog", { name: "Neuer Termin" }).waitFor({ timeout: 6000 }).then(() => true, () => false)) break;
+    if (await fenster.waitFor({ timeout: 6000 }).then(() => true, () => false)) break;
     await page.keyboard.press("Escape");
     await page.waitForTimeout(800);
   }
-  if (speichern) await page.getByRole("dialog", { name: "Neuer Termin" }).getByRole("button", { name: "Speichern" }).click();
+  await fenster.getByRole("textbox").fill(text);
+  if (speichern) await fenster.getByRole("textbox").press("Enter");
+  else await fenster.getByRole("button", { name: /^Mehr/ }).click();
   await page.waitForTimeout(500);
 };
 const voiceOffer = async (page) => {

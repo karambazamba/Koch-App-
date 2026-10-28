@@ -1,9 +1,9 @@
-// Termin eintragen – ein Weg (Launch 1.0): ＋ → Schnelleingabe (ein Satz
-// genügt) → ➤ speichert; „Mehr Details“ öffnet das EINE Formular (Titel + ✕,
-// oranges „Speichern“), vorbefüllt aus dem Satz. Kein langes Drücken auf
-// einen Tag, keine Zeile „Termin am …“, Tag antippen ist in Monat/Woche/Liste
-// gleich (der Tag steht darunter). Termine ohne „Erledigt“. Zeit: Mi 21.10. 10:30.
-import { BASE, hello, mehrDetails, seedFamily, store } from "../lib.mjs";
+// Termin eintragen – ein Weg (Tafel 114): ＋ → das EINE Fenster „Neuer
+// Termin“ (ein Satz genügt) → Return speichert; „Mehr ›“ = Ort, Wiederholen,
+// ganztägig, Personen (kein Formular mehr). Kein langes Drücken auf einen Tag,
+// keine Zeile „Termin am …“, Tag antippen ist in Monat/Woche/Liste gleich (der
+// Tag steht darunter). Termine ohne „Erledigt“. Zeit: Mi 21.10. 10:30.
+import { BASE, hello, seedFamily, store } from "../lib.mjs";
 
 const panel = (page) => page.locator("[role=tabpanel]:not([inert])");
 
@@ -11,7 +11,7 @@ async function plus(page) {
   await page.goto(BASE + "/?seite=kalender");
   await page.waitForTimeout(900);
   await panel(page).getByRole("button", { name: "Neuer Termin" }).click();
-  const quick = page.getByRole("dialog", { name: "Schnelleingabe" });
+  const quick = page.getByRole("dialog", { name: "Neuer Termin" });
   await quick.waitFor({ timeout: 5000 });
   return quick;
 }
@@ -22,40 +22,38 @@ export const terminSatz = async (page, check) => {
   await hello(page);
   await seedFamily(page);
 
-  // Ein Satz genügt: „Mittwoch 12.30 Physio“ → ➤ → Mi 12:30 „Physio“
+  // Ein Satz genügt: „Mittwoch 12.30 Physio“ → Return → Mi 12:30 „Physio“
   let quick = await plus(page);
   await quick.getByRole("textbox").fill("Mittwoch 12.30 Physio");
   await quick.getByRole("textbox").press("Enter");
   await page.waitForTimeout(500);
   let saved = (await termine(page)).find((e) => e.data.title === "Physio");
-  check(saved?.data.date === "2026-10-21" && saved?.data.start === "12:30", `➤ speichert Mi 12:30 „Physio“ (${saved?.data.date} ${saved?.data.start})`);
+  check(saved?.data.date === "2026-10-21" && saved?.data.start === "12:30", `Return speichert Mi 12:30 „Physio“ (${saved?.data.date} ${saved?.data.start})`);
   await quick.getByRole("button", { name: "Schließen" }).last().click();
   await page.waitForTimeout(400);
 
-  // „Mehr Details“ = das eine Formular, vorbefüllt; Titel + ✕, oranges „Speichern“
+  // „Mehr ›“: Ort, Wiederholen, ganztägig, Personen – dann „Speichern“ (schließt)
   quick = await plus(page);
   await quick.getByRole("textbox").fill("28.10. um 15 Uhr Kieferorthopäde");
-  await mehrDetails(page);
-  const form = page.getByRole("dialog", { name: "Neuer Termin" });
-  await form.waitFor({ timeout: 5000 });
-  check((await form.getByRole("textbox", { name: "Titel" }).inputValue()) === "Kieferorthopäde", "Titel aus dem Satz");
-  check((await form.locator('input[type="date"]').first().inputValue()) === "2026-10-28", "Tag aus dem Satz");
-  check((await form.locator('input[type="time"]').first().inputValue()) === "15:00", "Uhrzeit aus dem Satz");
+  await quick.getByRole("button", { name: /^Mehr/ }).click();
+  const zeilen = (await quick.locator("[data-mehr-zeilen] button[aria-expanded], [data-mehr-zeilen] button[role=switch]").allInnerTexts()).map((t) => t.split("\n")[0]);
+  check(zeilen.join("|") === "Ort|Wiederholen|Ganztägig|Personen", `„Mehr“: Ort · Wiederholen · Ganztägig · Personen (${zeilen.join(" · ")})`);
+  await quick.getByRole("button", { name: /^Ort/ }).click();
+  await quick.getByRole("textbox", { name: "Ort" }).fill("Praxis Dr. Krüger");
   // [0] = dunkle Fläche dahinter (Danebentippen), [1] = ✕ oben im Kopf
-  check(await form.getByRole("button", { name: "Schließen" }).nth(1).isVisible(), "oben ✕");
-  check(!(await form.getByRole("button", { name: /^(Abbrechen|Sichern)$/ }).count()), "kein „Abbrechen | Sichern“ mehr");
-  await form.getByRole("button", { name: "Speichern" }).click();
+  check(await quick.getByRole("button", { name: "Schließen" }).nth(1).isVisible(), "oben ✕");
+  check(!(await quick.getByRole("button", { name: /^(Abbrechen|Sichern)$/ }).count()), "kein „Abbrechen | Sichern“");
+  await quick.getByRole("button", { name: "Speichern", exact: true }).last().click();
   await page.waitForTimeout(500);
   saved = (await termine(page)).find((e) => e.data.title === "Kieferorthopäde");
-  check(saved?.data.date === "2026-10-28" && saved?.data.start === "15:00", `Speichern: 28.10. 15:00 (${saved?.data.date} ${saved?.data.start})`);
+  check(saved?.data.date === "2026-10-28" && saved?.data.start === "15:00" && saved?.data.place === "Praxis Dr. Krüger", `Speichern: 28.10. 15:00, Ort (${saved?.data.date} ${saved?.data.start} ${saved?.data.place})`);
 
   // Zeit schon vorbei → Hinweis, nichts gespeichert
   quick = await plus(page);
   await quick.getByRole("textbox").fill("Bäcker heute 9:00");
-  await mehrDetails(page);
-  await form.getByRole("button", { name: "Speichern" }).click();
+  await quick.getByRole("textbox").press("Enter");
   await page.waitForTimeout(300);
-  check(await form.getByText("9:00 ist heute schon vorbei.").isVisible(), "Hinweis „schon vorbei“");
+  check(await quick.getByText("9:00 ist heute schon vorbei.").isVisible(), "Hinweis „schon vorbei“");
   check(!(await termine(page)).some((e) => e.data.title === "Bäcker"), "nie still in der Vergangenheit speichern");
   await page.keyboard.press("Escape");
   await page.waitForTimeout(400);
