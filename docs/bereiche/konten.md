@@ -337,3 +337,56 @@ E-Mail bleibt immer der sichere Weg. Bitte am echten iPhone prüfen.
 - Feste Adresse der App: `https://mia.karamba-eis.de` (`APP_URL` in `src/lib/core/app.ts`), keine Weiterleitung von der alten Vercel-Adresse.
 - Einladungslinks (`/e/…`) nutzen immer die feste Adresse (`appOrigin`), nur auf dem eigenen Rechner bzw. im Testserver die Herkunft.
 - Supabase (von Hand im Dashboard, nicht im Code): Authentication → URL Configuration → Site URL `https://mia.karamba-eis.de`; Redirect URLs: `https://mia.karamba-eis.de/**` und statt `https://*.vercel.app/**` nur die eigenen Vorschau-Adressen `https://koch-app-*-karamba1.vercel.app/**`.
+
+## Namen statt Mail-Adresse (A-042)
+
+- Überschrift je Haushaltsart (`verbindenTitel` in `core/haushalt.ts`,
+  `useVerbindenTitel`): allein „Mit jemandem teilen“, Paar „Zu zweit
+  verbinden“, Familie „Familie verbinden“ (Einstellungen-Karte und `/konto`).
+- Anmelden auf `/konto`: „Teil Termine, Einkauf und Pinnwand mit deinen
+  Leuten.“, darunter klein „Ohne Konto bleibt alles auf diesem Handy.“; unter
+  dem Knopf „Du bekommst einen Code per Mail. Ein Passwort brauchst du nicht.“
+- EINE Stelle für Namen: `src/lib/konten/namen.ts` – `personName` (nie eine
+  Mail), `mitgliedName`, `nameAusMail` (Teil vor dem @ ohne Punkte, Zahlen,
+  Unterstriche, großgeschrieben), `standardHaushaltsname`, `haushaltAnzeige`,
+  `namensKorrektur`, `ohneMail`. Genutzt in Familie/Mitglieder
+  (`HouseholdCard`), „von …“ (`wer.ts`), Abgeben (`abgeben/model.ts`,
+  `GiveRows`), Einkauf unterwegs, Einladungsseite („<Name> lädt dich ein.“),
+  Push-Texte und Pinnwand-Absender (alte Absender mit @ werden beim Lesen
+  bereinigt). Die Mail steht nur klein unter „Angemeldet als“.
+- Anzeigename = Name aus dem Profil. Nur ohne Profilnamen fragt Mia beim
+  Anlegen bzw. Beitreten einmal „Wie sollen dich die anderen sehen?“
+  (`NameFrage`, ein Feld, vorausgefüllt aus der Mail); die Antwort kommt auch
+  ins Profil, damit nie zweimal gefragt wird.
+- Haushaltsname: Standard je Haushaltsart „Familie“ / „Wir zwei“ / „Privat“,
+  mit Nachname „Familie Gabriel“ (Nachname = Name des Haushalts im Profil,
+  sonst das letzte Wort des eigenen Namens; nur bei Familie). Ein eigener
+  Name aus dem Profil („Villa Kunterbunt“) gilt vor dem Standard. Antippen des
+  Namens auf `/konto` = umbenennen (nur Erwachsene, `renameHousehold`).
+- Avatar-Kreis der Mitglieder: Anfangsbuchstabe in der Personenfarbe
+  (`PersonAvatar`, Tokens `bg-accent`/`bg-work`/`bg-person-*`).
+- Einladungs-Link: „Link gilt 14 Tage, bis Mi, 11. Nov.“ (Laufzeit aus dem
+  Ablaufdatum des Servers, nur ohne Antwort `LINK_TAGE` = 14 wie
+  `interval '14 days'`), darunter klein „Wer ihn öffnet, gehört zur Familie.
+  Danach einfach neu holen.“ (allein/Paar: „gehört dazu“, `linkWerSatz`). „Eure
+  Einladungen“: je Link eine Zeile „Link für Erwachsene · gilt bis Mi, 11. Nov.
+  · 1× benutzt“ (ohne Nutzung ohne den letzten Teil) mit „Zurückziehen“
+  (`einladenText.ts`, `InviteRows`).
+- Alte Konten (einmalig): Migration
+  `supabase/migrations/20261101143000_namen_ohne_mail.sql` (Funktion
+  `namen_ohne_mail`, nur für die Migration, nicht für die App): Anzeigename
+  mit @ oder gleich dem Teil vor dem @ → bereinigter Teil vor dem @
+  (`members`, `profiles`, `invite_links.inviter_name`), Haushaltsname
+  „Familie <mail…>“ → leer. Beim nächsten Anmelden (`refreshAccount` →
+  `namensKorrektur`) setzt die App über die vorhandenen Rechte (eigener
+  Name; Haushalt nur Erwachsene) den Profilnamen und den Standard-Namen.
+  Danach passt beides, es gibt nichts mehr zu tun. Der Stand im Gerät
+  (`wasgibts.haushalt`) wird beim Lesen bereinigt (`ohneMail` in `cache.ts`).
+  Neue Backend-Wege: `setMyName`, `renameHousehold` (Supabase und
+  Test-Backend `set_display_name`/`rename_household` mit denselben Regeln).
+- Tests: `tests/konten/namen.test.ts` (Profilname, Nachfrage, Vorschlag aus der
+  Mail, Korrektur, Haushaltsname, Link-Texte, Zeilen, Zurückziehen, Familie-
+  Ansicht ohne „@“ außer „Angemeldet als“), `tests/datenbank/namen.test.sql`
+  (Bereinigung, wiederholbar, App kommt nicht an die Funktion, Rechte),
+  Durchklick `konten` (kein „@“, Umbenennen, Link-Text, Zeilen, Vorschlag beim
+  Beitreten). Bild 1/2 des Auftrags kamen nicht an: nach Text gebaut.

@@ -10,6 +10,8 @@ import { act } from "@/components/heute/actions";
 import { useCachedAccount } from "@/lib/konten/cache";
 import { changeTask, giveBack, giveTargets, giveTo, memberName, takeBack, taskRole } from "@/lib/kalender/abgeben/model";
 import type { DayItem } from "@/lib/kalender/model";
+import { mitgliedName } from "@/lib/konten/namen";
+import { PersonAvatar } from "@/components/ui/PersonAvatar";
 
 export function GiveRows({ item, row, onDone }: { item: DayItem; row: string; onDone: () => void }) {
   const household = useCachedAccount().household;
@@ -49,14 +51,12 @@ export function GiveRows({ item, row, onDone }: { item: DayItem; row: string; on
           <button
             key={m.userId}
             type="button"
-            onClick={done(() => act((l, s) => changeTask(l, id, (d) => giveTo(d, m.userId), s), `${item.title} an ${m.displayName}`))}
+            onClick={done(() => act((l, s) => changeTask(l, id, (d) => giveTo(d, m.userId), s), `${item.title} an ${mitgliedName(m)}`))}
             className="flex h-11 items-center gap-2 rounded-full bg-fill pl-1 pr-4 text-[15px] font-bold active:scale-95"
-            aria-label={`An ${m.displayName} geben`}
+            aria-label={`An ${mitgliedName(m)} geben`}
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-soft text-[15px] font-extrabold text-accent-strong" aria-hidden>
-              {m.displayName.slice(0, 1).toUpperCase()}
-            </span>
-            {m.displayName}
+            <PersonAvatar name={mitgliedName(m)} size={36} />
+            {mitgliedName(m)}
           </button>
         ))}
       </div>

@@ -11,6 +11,7 @@
 import { createEntry, type Entry } from "@/lib/core/entries";
 import { applyReaction, readReactions, type Reaction, type Reactions } from "@/lib/pinnwand/reactions";
 import { isArchived, isForgotten, onDoor, readDone, readFarbe, type Done, type ZettelFarbe } from "@/lib/pinnwand/tuer";
+import { personName } from "@/lib/konten/namen";
 
 export const PIN_MAX = 140;
 
@@ -97,7 +98,7 @@ export function sanitizePin(raw: unknown): PinMessage | null {
     raum: "familie",
     data: {
       text,
-      author: typeof d.author === "string" && d.author.trim() ? d.author : "Ich",
+      author: typeof d.author === "string" && d.author.trim() ? (d.author.includes("@") ? personName(d.author) || "Ich" : d.author) : "Ich",
       reactions: readReactions(d.reactions),
       replyTo: readQuote(d.replyTo),
       readBy: list(d.readBy),

@@ -75,7 +75,7 @@ export function LoginSteps({ onDone }: { onDone?: () => void }) {
           <Mail className="h-5 w-5" strokeWidth={2.25} aria-hidden />
           {busy ? "Schicke …" : "Code schicken"}
         </button>
-        <p className="text-sm text-muted">Du bekommst einen 6-stelligen Code per Mail – kein Passwort nötig.</p>
+        <p className="text-sm text-muted">Du bekommst einen Code per Mail. Ein Passwort brauchst du nicht.</p>
       </form>
     );
 

@@ -31,6 +31,10 @@ export interface CloudBackend {
   myHousehold(): Promise<Result<HouseholdInfo | null>>;
   createHousehold(name: string, displayName: string, personId: string | null): Promise<Result<string>>;
   createInvite(role: Role): Promise<Result<string>>;
+  /** Eigenen Anzeigenamen ändern (Namen statt Mail, A-042) */
+  setMyName(displayName: string): Promise<Result>;
+  /** Haushalt umbenennen (nur Erwachsene) */
+  renameHousehold(name: string): Promise<Result>;
   joinHousehold(code: string, displayName: string, personId: string | null): Promise<Result<string>>;
   /** Mit Apple/Google anmelden (verlässt die Seite); Rückkehr: finishOAuth mit dem Code aus /auth/callback */
   startOAuth(provider: OAuthProvider): Promise<Result>;
@@ -184,6 +188,14 @@ function testBackend(): CloudBackend {
     createInvite: async (role) => {
       const r = await call("create_invite", { role });
       return err(r) ? fail(err(r) as string) : ok(r.code as string);
+    },
+    setMyName: async (displayName) => {
+      const r = await call("set_display_name", { displayName });
+      return err(r) ? fail(err(r) as string) : ok(true);
+    },
+    renameHousehold: async (name) => {
+      const r = await call("rename_household", { name });
+      return err(r) ? fail(err(r) as string) : ok(true);
     },
     joinHousehold: async (code, displayName, personId) => {
       const r = await call("join_household", { code, displayName, personId });

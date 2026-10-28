@@ -83,6 +83,20 @@ export function supabaseBackend(url: string, key: string): CloudBackend {
       const { data, error } = await sb.rpc("create_invite", { p_role: role });
       return error ? fail(friendlyError(error.message)) : ok(data as string);
     },
+    setMyName: async (displayName) => {
+      const me = await user();
+      if (!me) return fail(friendlyError("nicht_angemeldet"));
+      const { error } = await sb.from("members").update({ display_name: displayName.slice(0, 40) }).eq("user_id", me.userId);
+      return error ? fail(friendlyError(error.message)) : ok(true);
+    },
+    renameHousehold: async (name) => {
+      const me = await user();
+      if (!me) return fail(friendlyError("nicht_angemeldet"));
+      const { data: mine, error } = await sb.from("members").select("household_id").eq("user_id", me.userId).maybeSingle();
+      if (error || !mine) return fail(friendlyError(error?.message ?? "keine_familie"));
+      const { error: e2 } = await sb.from("households").update({ name: name.slice(0, 60) }).eq("id", mine.household_id as string);
+      return e2 ? fail(friendlyError(e2.message)) : ok(true);
+    },
     joinHousehold: async (code, displayName, personId) => {
       const { data, error } = await sb.rpc("join_household", { p_code: code, p_display_name: displayName, p_person_id: personId });
       if (error) return fail(friendlyError(error.message));

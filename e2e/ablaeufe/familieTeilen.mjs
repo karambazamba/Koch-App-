@@ -8,7 +8,7 @@
 // - Pinnwand live in beide Richtungen (höchstens 5 s).
 // Die Mitteilung selbst (Web Push) plant der Server – geprüft in
 // tests/einkauf/unterwegs.test.ts („Steh grad davor“).
-import { BASE, hello, miaTippen, newPage, pinnwandSchreiben, seedFamily, store } from "../lib.mjs";
+import { BASE, hello, miaTippen, nameFrageOderStart, newPage, pinnwandSchreiben, seedFamily, store } from "../lib.mjs";
 
 const LIVE_MS = 5000;
 
@@ -38,7 +38,7 @@ async function joinViaLink(page, link, email) {
   await page.getByRole("button", { name: "Code senden" }).click();
   await page.getByLabel("6-stelliger Code").waitFor();
   await page.getByLabel("6-stelliger Code").fill(await adminCode(page, email));
-  await page.getByRole("tab", { name: "Heute", selected: true }).waitFor();
+  await nameFrageOderStart(page, "Lisa");
 }
 
 const waitFor = (page, fn, arg, ms = 20000) => page.waitForFunction(fn, arg, { timeout: ms, polling: 250 }).then(() => true, () => false);

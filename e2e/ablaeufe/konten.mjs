@@ -3,7 +3,7 @@
 // Testserver), Familie still angelegt, Einladen per Link, Beitreten über den
 // Link (Zugangscode erst beim ersten KI-Versuch, A-027), Kind darf nicht
 // einladen, Zurückziehen, Abmelden (Daten bleiben), Konto löschen.
-import { BASE, hello, miaTippen, newPage, seedFamily, pinnwandSchreiben, serverMitCode } from "../lib.mjs";
+import { BASE, hello, miaTippen, nameFrageOderStart, newPage, seedFamily, pinnwandSchreiben, serverMitCode } from "../lib.mjs";
 
 const adminCode = (page, email) => page.evaluate(async (e) => (await (await fetch("/api/test-konten", { method: "POST", body: JSON.stringify({ action: "admin_code", email: e }) })).json()).code, email);
 
@@ -21,20 +21,22 @@ async function invite(page, kind = false) {
   if (kind) await page.getByRole("button", { name: "Kind", exact: true }).click();
   await page.getByRole("button", { name: "Einladungs-Link erstellen" }).click();
   const link = (await page.getByTestId("einladungs-link").textContent()).trim();
+  const gilt = (await page.getByTestId("link-gilt").textContent()) ?? "";
+  if (!/Link gilt \d+ Tage?, bis (Mo|Di|Mi|Do|Fr|Sa|So), \d{1,2}\. \S+/.test(gilt) || !/Wer ihn öffnet, gehört zur Familie\. Danach einfach neu holen\./.test(gilt)) throw new Error(`Link-Text: ${gilt}`);
   await page.getByRole("dialog", { name: "Familie einladen" }).getByRole("button", { name: "Schließen" }).last().click();
   await page.getByRole("dialog", { name: "Familie einladen" }).waitFor({ state: "detached" });
   return link;
 }
 
 /** Eingeladene Person: Link öffnen, mit E-Mail anmelden – sofort Mitglied, danach Startseite */
-async function joinViaLink(page, link, email) {
+async function joinViaLink(page, link, email, name) {
   await page.goto(link);
   await page.getByRole("heading", { name: /lädt dich ein\./ }).waitFor();
   await page.getByLabel("Deine E-Mail-Adresse").fill(email);
   await page.getByRole("button", { name: "Code senden" }).click();
   await page.getByLabel("6-stelliger Code").waitFor();
   await page.getByLabel("6-stelliger Code").fill(await adminCode(page, email));
-  await page.getByRole("tab", { name: "Heute", selected: true }).waitFor();
+  return nameFrageOderStart(page, name);
 }
 
 /** Nach der Anmeldung auf /konto: Familie wird still angelegt */
@@ -60,6 +62,19 @@ export const konten = async (page, check, device) => {
   const family = (await page.getByRole("region", { name: "Familie" }).textContent()) ?? "";
   check(/Familie \S+/.test(family), "Familie ohne Frage angelegt");
   check(!(await page.getByText(/Haushalt/).count()), "kein „Haushalt“ in der Oberfläche");
+  // A-042: nirgends die Mail als Name – nur klein unter „Angemeldet als“
+  const ohneAngemeldet = await page.evaluate(() => {
+    const main = document.querySelector("main")?.cloneNode(true);
+    main?.querySelectorAll("[data-angemeldet-als]").forEach((n) => n.remove());
+    return main?.textContent ?? "";
+  });
+  check(!ohneAngemeldet.includes("@"), "kein „@“ außer unter „Angemeldet als“");
+  check(await page.locator("[data-angemeldet-als]").filter({ hasText: "@example.com" }).isVisible(), "Mail klein unter „Angemeldet als“");
+  // Haushaltsname antippen = umbenennen
+  await page.getByRole("button", { name: /umbenennen$/ }).click();
+  await page.getByRole("dialog", { name: "Name ändern" }).getByLabel("Name").fill("Familie Gabriel");
+  await page.getByRole("button", { name: "Speichern" }).click();
+  check(await page.getByRole("region", { name: "Familie" }).getByText("Familie Gabriel").waitFor({ timeout: 5000 }).then(() => true, () => false), "Haushalt umbenannt");
   const link = await invite(page);
   check(/\/e\/[0-9a-f]{32}$/.test(link), "Einladungs-Link /e/…");
 
@@ -67,7 +82,8 @@ export const konten = async (page, check, device) => {
   const pageB = await newPage(page.context().browser(), device);
   try {
     await hello(pageB);
-    await joinViaLink(pageB, link, `lisa-${tag}@example.com`);
+    const vorschlag = await joinViaLink(pageB, link, `lisa-${tag}@example.com`, "Lisa");
+    check(vorschlag === null || (!vorschlag.includes("@") && !/\d/.test(vorschlag) && /^[A-ZÄÖÜ]/.test(vorschlag)), `Name vorausgefüllt aus der Mail: ${vorschlag}`);
     await pageB.goto(BASE + "/konto");
     await familyReady(pageB);
     check(await pageB.getByRole("listitem").filter({ hasText: "(du)" }).isVisible(), "B ist per Link in der Familie");
@@ -96,6 +112,8 @@ export const konten = async (page, check, device) => {
     // Einladungen zurückziehen: danach geht der Link nicht mehr
     const open = page.getByRole("region", { name: "Eure Einladungen" });
     check(await open.waitFor({ timeout: 8000 }).then(() => true, () => false), "„Eure Einladungen“ mit Zurückziehen");
+    const zeilen = await open.locator("[data-einladung]").allTextContents();
+    check(zeilen.length >= 1 && zeilen.every((z) => /^Link für (Erwachsene|ein Kind) · gilt bis \S+, \d{1,2}\. \S+( · \d+× benutzt)?Zurückziehen$/.test(z)), `Einladungen als Zeilen: ${zeilen.join(" | ")}`);
     while (await open.getByRole("button", { name: "Zurückziehen" }).count()) {
       await open.getByRole("button", { name: "Zurückziehen" }).first().click();
       await page.waitForTimeout(600);

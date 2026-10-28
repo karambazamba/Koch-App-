@@ -6,6 +6,7 @@
 import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 import type { CloudUser, HouseholdInfo } from "@/lib/konten/model";
+import { ohneMail } from "@/lib/konten/namen";
 
 type Cached = { version: 1; user: CloudUser | null; household: HouseholdInfo | null };
 
@@ -14,7 +15,8 @@ export const accountCache = createLocalStore("wasgibts.haushalt", (raw: unknown)
   const r = raw as Cached;
   const user = r.user && typeof r.user.userId === "string" ? { userId: r.user.userId, email: String(r.user.email ?? "") } : null;
   const h = r.household;
-  const household = h && typeof h.id === "string" && Array.isArray(h.members) && h.me ? h : null;
+  // Alte Stände (vor A-042) mit Mail als Name: beim Lesen bereinigen
+  const household = h && typeof h.id === "string" && Array.isArray(h.members) && h.me ? ohneMail(h) : null;
   return { version: 1, user, household };
 });
 

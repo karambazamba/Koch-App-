@@ -8,6 +8,7 @@
 
 import { LOCAL_OWNER } from "@/lib/core/entries";
 import type { Member } from "@/lib/konten/model";
+import { mitgliedName, personName } from "@/lib/konten/namen";
 
 type TaskLike = { typ: string; besitzer: string; data: { fuer?: string; zurueck?: string; doneOn?: string | null; title?: string } };
 
@@ -30,7 +31,7 @@ export const isMyTask = (entry: TaskLike, me: string | null) => {
 };
 
 /** Anzeigename eines Kontos im Haushalt */
-export const memberName = (members: Member[], userId: string | undefined) => members.find((m) => m.userId === userId)?.displayName ?? null;
+export const memberName = (members: Member[], userId: string | undefined) => personName(members.find((m) => m.userId === userId)?.displayName) || null;
 
 /** „von Felix“ bei bekommenen Aufgaben, sonst null */
 export function fromLabel(entry: TaskLike, me: string | null, members: Member[]): string | null {
@@ -68,7 +69,7 @@ export function takeBack<T extends TaskLike["data"]>(data: T): T {
 export function memberByName(members: Member[], name: string): Member | null {
   const n = name.trim().toLowerCase();
   if (!n) return null;
-  return members.find((m) => m.displayName.trim().toLowerCase() === n) ?? members.find((m) => m.displayName.trim().toLowerCase().split(/\s+/)[0] === n) ?? null;
+  return members.find((m) => personName(m.displayName).toLowerCase() === n) ?? members.find((m) => personName(m.displayName).toLowerCase().split(/\s+/)[0] === n) ?? null;
 }
 
 /**
@@ -104,7 +105,7 @@ export function resolveGiving<E extends { typ: string; data: unknown }>(entries:
     const { an, ...rest } = data;
     const member = me ? memberByName(members.filter((m) => m.userId !== me), an) : null;
     if (member) {
-      notes.push(`„${rest.title ?? "Aufgabe"}“ ist jetzt bei ${member.displayName}.`);
+      notes.push(`„${rest.title ?? "Aufgabe"}“ ist jetzt bei ${mitgliedName(member)}.`);
       return { ...e, data: giveTo(rest, member.userId) };
     }
     notes.push(`${an} ist noch nicht im Haushalt – ich hab’s erstmal bei dir notiert.`);

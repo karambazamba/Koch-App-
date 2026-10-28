@@ -10,7 +10,7 @@
 // (erster Ordner), nur harmlose Pfade, höchstens 2 MB.
 
 import type { HouseholdInfo, Member, Role } from "@/lib/konten/model";
-import { normalizeInviteCode } from "@/lib/konten/model";
+import { LINK_TAGE, normalizeInviteCode } from "@/lib/konten/model";
 import type { CloudDoc } from "@/lib/konten/sync/docs";
 import type { Room } from "@/lib/core/entries";
 import type { InboundMail } from "@/lib/mails/eingang";
@@ -48,7 +48,7 @@ type State = {
 
 const OTP_MS = 900_000;
 const INVITE_MS = 7 * 86_400_000;
-const LINK_MS = 14 * 86_400_000;
+const LINK_MS = LINK_TAGE * 86_400_000;
 const ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 
 const g = globalThis as unknown as { __wasgibtsKonten?: State };
@@ -162,6 +162,22 @@ export function testKonten(body: Record<string, unknown>, nowMs = Date.now()): R
       s.households.set(h.id, h);
       s.members.push({ householdId: h.id, userId: user.id, displayName: str(body.displayName, 40), role: "erwachsener", personId: str(body.personId, 80) || null });
       return { householdId: h.id };
+    }
+    case "set_display_name": {
+      // wie die Spalten-Rechte: nur die eigene Mitgliedschaft
+      const mine = s.members.find((m) => m.userId === user.id);
+      if (!mine) return { error: "keine_familie" };
+      mine.displayName = str(body.displayName, 40);
+      return { ok: true };
+    }
+    case "rename_household": {
+      // wie die Regel „Haushalt ändern (Erwachsene)“
+      const mine = s.members.find((m) => m.userId === user.id);
+      if (!mine) return { error: "keine_familie" };
+      if (mine.role !== "erwachsener") return { error: "darf_nicht_einladen" };
+      const h = s.households.get(mine.householdId);
+      if (h) h.name = str(body.name, 60);
+      return { ok: true };
     }
     case "create_invite": {
       const mine = s.members.find((m) => m.userId === user.id && m.role === "erwachsener");

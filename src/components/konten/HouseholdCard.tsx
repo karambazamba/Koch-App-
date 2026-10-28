@@ -3,7 +3,9 @@
 // Verbunden: Familie mit Mitgliedern, „Familie einladen“ (nur Erwachsene;
 // Link 14 Tage gültig, mehrfach nutzbar, Teilen-Menü), offene Einladungen mit
 // „Zurückziehen“, „Abmelden“ mit der Frage, ob die Daten auf dem Handy
-// bleiben sollen (zwei Knöpfe).
+// bleiben sollen (zwei Knöpfe). Namen statt Mail (A-042): Personen und
+// Haushalt nur über `konten/namen.ts`, die Mail nur klein unter „Angemeldet
+// als“; Haushaltsname antippen = umbenennen (nur Erwachsene).
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -13,26 +15,36 @@ import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { CARD, CARD_LIST, INPUT, NOTE, buttonClass, chipClass } from "@/components/ui/styles";
 import { showToast } from "@/lib/core/toast";
 import { appOrigin } from "@/lib/core/app";
-import { inviteLinkShareText, inviteLinkUrl, tokenFromLink, type HouseholdInfo, type InviteLink, type Role } from "@/lib/konten/model";
-import { createInviteLink, listInviteLinks, revokeInviteLink, signOut } from "@/lib/konten/account";
+import { LINK_TAGE, inviteLinkShareText, inviteLinkUrl, tokenFromLink, type HouseholdInfo, type InviteLink, type Role } from "@/lib/konten/model";
+import { createInviteLink, listInviteLinks, renameHousehold, revokeInviteLink, signOut } from "@/lib/konten/account";
 import { useEinladenKnopf, useHaushalt } from "@/lib/einstellungen/useHaushalt";
-import { zuZweitVorschlag } from "@/lib/core/haushalt";
+import { useProfile } from "@/lib/einstellungen/useProfile";
+import { linkWerSatz, zuZweitVorschlag } from "@/lib/core/haushalt";
+import { haushaltAnzeige, mitgliedName, standardHaushaltsname } from "@/lib/konten/namen";
+import { linkGilt, linkZeile, neuesterLink } from "@/lib/konten/einladenText";
+import { now } from "@/lib/core/now";
 import { markHintSeen, useHintSeen } from "@/lib/core/hints";
 import { loadProfile, saveProfile } from "@/lib/einstellungen/profileStore";
 
 export function InviteSheet({ onClose }: { onClose: () => void }) {
   const einladen = useEinladenKnopf();
+  const haushalt = useHaushalt();
   const [role, setRole] = useState<Role>("erwachsener");
   const [token, setToken] = useState<string | null>(null);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const make = async () => {
     setBusy(true);
     setError("");
     const r = await createInviteLink(role);
+    // Laufzeit aus dem Ablaufdatum des Servers (ohne Antwort: LINK_TAGE)
+    const list = r.ok ? await listInviteLinks() : null;
+    const newest = list?.ok ? neuesterLink(list.value) : null;
     setBusy(false);
-    if (r.ok) setToken(r.value);
-    else setError(r.error);
+    if (!r.ok) return setError(r.error);
+    setExpiresAt(newest?.expiresAt ?? new Date(now().getTime() + LINK_TAGE * 86_400_000).toISOString());
+    setToken(r.value);
   };
   const share = async () => {
     if (!token) return;
@@ -43,7 +55,7 @@ export function InviteSheet({ onClose }: { onClose: () => void }) {
       if ((e as Error)?.name === "AbortError") return;
     }
     await navigator.clipboard?.writeText(text).catch(() => {});
-    showToast({ text: "Kopiert – jetzt einfach in eine Nachricht einfügen.", small: true, seconds: 3 });
+    showToast({ text: "Kopiert. Jetzt einfach in eine Nachricht einfügen.", small: true, seconds: 3 });
   };
   return (
     <Sheet title={einladen} onClose={onClose}>
@@ -65,7 +77,10 @@ export function InviteSheet({ onClose }: { onClose: () => void }) {
         </div>
       ) : (
         <div className="mb-2 flex flex-col items-center gap-3 text-center">
-          <p className="text-[15px] text-muted">Link für {role === "kind" ? "ein Kind" : "Erwachsene"} – 14 Tage gültig, für alle aus der Familie</p>
+          <div className="flex flex-col gap-0.5" data-testid="link-gilt">
+            <p className="text-[15px] font-semibold">{linkGilt(expiresAt ?? now().toISOString(), now().getTime())}</p>
+            <p className="text-sm text-muted">{linkWerSatz(haushalt)}</p>
+          </div>
           <p className="select-all break-all rounded-field bg-fill px-3 py-2 text-sm" data-testid="einladungs-link">
             {inviteLinkUrl(appOrigin(window.location.origin), token)}
           </p>
@@ -90,7 +105,7 @@ export function InviteSheet({ onClose }: { onClose: () => void }) {
   );
 }
 
-/** Eure Einladungen mit „Zurückziehen“ (nur Erwachsene sehen sie) */
+/** Eure Einladungen: je Link eine Zeile mit „Zurückziehen“ (nur Erwachsene sehen sie) */
 function OpenInvites({ refresh }: { refresh: number }) {
   const [links, setLinks] = useState<InviteLink[] | null>(null);
   const [again, setAgain] = useState(0);
@@ -101,24 +116,49 @@ function OpenInvites({ refresh }: { refresh: number }) {
       live = false;
     };
   }, [refresh, again]);
-  if (!links?.length) return null;
+  return <InviteRows links={links ?? []} onRevoke={(ref) => void revokeInviteLink(ref).then(() => setAgain((n) => n + 1))} />;
+}
+
+/** Zeilen „Link für Erwachsene · gilt bis Mi, 11. Nov. · 1× benutzt“ + „Zurückziehen“ */
+export function InviteRows({ links, onRevoke }: { links: InviteLink[]; onRevoke: (ref: string) => void }) {
+  if (!links.length) return null;
   return (
     <section className="flex flex-col gap-1.5" aria-label="Eure Einladungen">
       <h2 className="px-1 text-[15px] font-extrabold text-muted">Eure Einladungen</h2>
       <ul className={CARD_LIST}>
         {links.map((l) => (
-          <li key={l.ref} className="flex min-h-12 items-center gap-3 px-4 py-2">
-            <span className="min-w-0 flex-1 text-[15px]">
-              {l.role === "kind" ? "Für ein Kind" : "Für Erwachsene"}
-              <span className="block text-sm text-muted">bis {new Date(l.expiresAt).toLocaleDateString("de-DE", { day: "numeric", month: "numeric" })}</span>
-            </span>
-            <button type="button" onClick={() => void revokeInviteLink(l.ref).then(() => setAgain((n) => n + 1))} className="hit text-sm font-semibold text-accent-strong">
+          <li key={l.ref} className="flex min-h-12 items-center gap-3 px-4 py-2" data-einladung>
+            <span className="min-w-0 flex-1 text-[15px]">{linkZeile(l)}</span>
+            <button type="button" onClick={() => onRevoke(l.ref)} className="hit min-h-11 min-w-11 shrink-0 text-sm font-semibold text-accent-strong">
               Zurückziehen
             </button>
           </li>
         ))}
       </ul>
     </section>
+  );
+}
+
+/** Haushalt umbenennen (Antippen des Namens) */
+function RenameSheet({ name, onClose }: { name: string; onClose: () => void }) {
+  const [text, setText] = useState(name);
+  const [error, setError] = useState("");
+  return (
+    <Sheet title="Name ändern" onClose={onClose}>
+      <form
+        className="mb-2 flex flex-col gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void renameHousehold(text).then((r) => (r.ok ? onClose() : setError(r.error)));
+        }}
+      >
+        <input value={text} onChange={(e) => setText(e.target.value)} maxLength={60} enterKeyHint="done" aria-label="Name" className={INPUT} />
+        {error && <p className={NOTE}>{error}</p>}
+        <button type="submit" className={`${buttonClass("primary")} w-full`}>
+          Speichern
+        </button>
+      </form>
+    </Sheet>
   );
 }
 
@@ -198,21 +238,33 @@ export function HouseholdCard({ household, email, onSignedOut }: { household: Ho
   const [inviting, setInviting] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [invited, setInvited] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const haushalt = useHaushalt();
+  const profile = useProfile();
   const adult = household.me.role === "erwachsener";
+  const name = haushaltAnzeige(household.name, standardHaushaltsname(haushalt, profile));
   return (
     <div className="flex flex-col gap-4">
       <section className={`${CARD} flex flex-col gap-1 p-4`} aria-label="Familie">
         <p className="text-sm font-semibold text-muted">Verbunden</p>
-        <p className="text-[22px] font-extrabold leading-tight">{household.name || "Unsere Familie"}</p>
-        <p className="text-sm text-muted">Angemeldet als {email}</p>
+        {adult ? (
+          <button type="button" onClick={() => setRenaming(true)} className="-mx-1 min-h-11 self-start rounded-field px-1 text-left text-[22px] font-extrabold leading-tight active:opacity-70" aria-label={`${name}, umbenennen`}>
+            {name}
+          </button>
+        ) : (
+          <p className="text-[22px] font-extrabold leading-tight">{name}</p>
+        )}
+        <p className="text-xs text-muted" data-angemeldet-als>
+          Angemeldet als {email}
+        </p>
       </section>
       <ZuZweitKarte members={household.members.length} />
       <ul className={CARD_LIST} aria-label="Wer dazugehört">
         {household.members.map((m) => (
           <li key={m.userId} className="flex min-h-14 items-center gap-3 px-4 py-2">
-            <PersonAvatar name={m.displayName || "?"} size={32} soft />
+            <PersonAvatar name={mitgliedName(m)} size={32} />
             <span className="min-w-0 flex-1 truncate text-base font-semibold">
-              {m.displayName || "Ohne Namen"}
+              {mitgliedName(m)}
               {m.userId === household.me.userId && <span className="font-normal text-muted"> (du)</span>}
             </span>
             {m.role === "kind" && <span className="text-sm text-muted">Kind</span>}
@@ -236,6 +288,7 @@ export function HouseholdCard({ household, email, onSignedOut }: { household: Ho
       {inviting && <InviteSheet onClose={() => setInviting(false)} />}
       {leaving && <SignOutSheet onClose={() => setLeaving(false)} onDone={onSignedOut} />}
       {invited && <InvitedSheet onClose={() => setInvited(false)} />}
+      {renaming && <RenameSheet name={name} onClose={() => setRenaming(false)} />}
     </div>
   );
 }

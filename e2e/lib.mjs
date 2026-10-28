@@ -563,3 +563,20 @@ export async function pinnwandMikro(page) {
   await sheet.getByRole("radio", { name: "Sprachnachricht" }).click();
   return { mic: sheet.getByRole("button", { name: "Aufnahme starten" }), scope: sheet };
 }
+
+/**
+ * Ohne Namen im Profil fragt Mia beim Beitreten/Anlegen einmal „Wie sollen
+ * dich die anderen sehen?“ (A-042) – vorausgefüllt aus der Mail, nie mit @.
+ * Wartet auf die Startseite bzw. die Frage; liefert den Vorschlag (oder null).
+ */
+export async function nameFrageOderStart(page, name) {
+  const frage = page.getByRole("form", { name: "Wie sollen dich die anderen sehen?" });
+  const start = page.getByRole("tab", { name: "Heute", selected: true });
+  await Promise.race([frage.waitFor().catch(() => {}), start.waitFor().catch(() => {})]);
+  if (!(await frage.isVisible().catch(() => false))) return null;
+  const vorschlag = await frage.getByLabel("Dein Name").inputValue();
+  if (name) await frage.getByLabel("Dein Name").fill(name);
+  await frage.getByRole("button", { name: "Weiter" }).click();
+  await start.waitFor();
+  return vorschlag;
+}

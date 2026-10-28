@@ -5,6 +5,7 @@
 // eine am Tag, jede nur einmal. Rein: Werte rein, Werte raus.
 
 import type { Member } from "@/lib/konten/model";
+import { personName } from "@/lib/konten/namen";
 import type { CloudDoc } from "@/lib/konten/sync/docs";
 
 export type Who = { name: string };
@@ -13,7 +14,7 @@ export type Who = { name: string };
 export function addedBy(besitzer: unknown, members: Member[], me: string | null): Who | null {
   if (typeof besitzer !== "string" || !besitzer || besitzer === me || members.length < 2) return null;
   const m = members.find((x) => x.userId === besitzer);
-  const name = m?.displayName.trim();
+  const name = personName(m?.displayName);
   return name ? { name } : null;
 }
 

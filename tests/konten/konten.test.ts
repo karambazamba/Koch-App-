@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { familyNameFor, formatInviteCode, friendlyError, inviteLinkShareText, isEmail, normalizeInviteCode, otpDigits, tokenFromLink } from "@/lib/konten/model";
+import { formatInviteCode, friendlyError, inviteLinkShareText, isEmail, normalizeInviteCode, otpDigits, tokenFromLink } from "@/lib/konten/model";
 import { resetTestKonten, testKonten } from "@/lib/konten/testServer";
+import { standardHaushaltsname } from "@/lib/konten/namen";
 import { fakeWindow, noBrowser } from "../helpers";
 
 describe("Codes und Texte", () => {
@@ -19,9 +20,9 @@ describe("Codes und Texte", () => {
     expect(tokenFromLink(`Schau mal https://mia.karamba-eis.de/e/${t.toUpperCase()}`)).toBe(t);
     expect(tokenFromLink(t)).toBe(t);
     expect(tokenFromLink("https://mia.karamba-eis.de/e/123")).toBeNull();
-    expect(familyNameFor("Felix Berg")).toBe("Familie Felix");
-    expect(familyNameFor("Felix", "Berg")).toBe("Familie Berg");
-    expect(familyNameFor("")).toBe("Unsere Familie");
+    expect(standardHaushaltsname("familie", { householdName: "", persons: [{ name: "Felix Berg" }] })).toBe("Familie Berg");
+    expect(standardHaushaltsname("familie", { householdName: "Berg", persons: [{ name: "Felix" }] })).toBe("Familie Berg");
+    expect(standardHaushaltsname("familie", { householdName: "", persons: [{ name: "" }] })).toBe("Familie");
     expect(friendlyError("link_abgelaufen")).toMatch(/abgelaufen/);
     expect(friendlyError("link_unbekannt")).toMatch(/neuen Link/);
   });

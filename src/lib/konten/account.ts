@@ -10,9 +10,12 @@ import { useExternalStore } from "@/lib/core/useExternalStore";
 import { STORAGE } from "@/lib/core/storage";
 import { readRaw, writeRaw } from "@/lib/core/localStore";
 import { RETURN_KEY, safeReturn, type OAuthProvider } from "@/lib/konten/oauth";
-import { getBackend, type CloudMode, type JoinOutcome } from "@/lib/konten/backend";
+import { getBackend, type CloudBackend, type CloudMode, type JoinOutcome } from "@/lib/konten/backend";
 import { accountCache } from "@/lib/konten/cache";
 import { alleEinwilligungen, onEinwilligung } from "@/lib/datenschutz/einwilligung";
+import { loadProfile, saveProfile } from "@/lib/einstellungen/profileStore";
+import { haushaltOf } from "@/lib/core/haushalt";
+import { namensKorrektur, ohneMail, standardHaushaltsname } from "@/lib/konten/namen";
 import { fail, friendlyError, normalizeInviteCode, type CloudUser, type HouseholdInfo, type InviteInfo, type InviteLink, type Result, type Role } from "@/lib/konten/model";
 
 export type AccountState = { mode: CloudMode | "laedt"; user: CloudUser | null; household: HouseholdInfo | null };
@@ -41,11 +44,51 @@ export function refreshAccount(): Promise<void> {
     const user = await backend.user();
     if (!user) return set({ mode: backend.mode, user: null, household: null });
     const h = await backend.myHousehold();
-    set({ mode: backend.mode, user, household: h.ok ? h.value : state.household });
+    const household = h.ok ? (h.value && (await korrigiereNamen(backend, h.value, user))) : state.household;
+    set({ mode: backend.mode, user, household: household ? ohneMail(household) : null });
   })().finally(() => {
     refreshing = null;
   });
   return refreshing;
+}
+
+/** Standard-Name für einen neuen Haushalt aus dem Profil („Familie Gabriel“, „Wir zwei“, „Privat“) */
+function haushaltsnameAusProfil(): string {
+  const profile = loadProfile();
+  return standardHaushaltsname(haushaltOf(profile?.householdType), profile);
+}
+
+/**
+ * Einmal beim Anmelden (A-042): alter Anzeigename aus der Mail → Name aus dem
+ * Profil, Haushaltsname „Familie <mail>“ → Standard. Danach passt beides und
+ * es gibt nichts mehr zu tun. Offline/Fehler: beim nächsten Mal.
+ */
+async function korrigiereNamen(backend: CloudBackend, household: HouseholdInfo, user: CloudUser): Promise<HouseholdInfo> {
+  const fix = namensKorrektur(household, user, { name: loadProfile()?.persons[0]?.name ?? "", standard: haushaltsnameAusProfil() });
+  let next = household;
+  if (fix.displayName && (await backend.setMyName(fix.displayName)).ok) {
+    const me = { ...next.me, displayName: fix.displayName };
+    next = { ...next, me, members: next.members.map((m) => (m.userId === me.userId ? me : m)) };
+  }
+  if (fix.householdName && (await backend.renameHousehold(fix.householdName)).ok) next = { ...next, name: fix.householdName };
+  return next;
+}
+
+/** Antwort auf „Wie sollen dich die anderen sehen?“ auch ins Profil (nie zweimal fragen) – nur, wenn dort noch kein Name steht */
+export function nameInsProfil(name: string) {
+  const profile = loadProfile();
+  const me = profile?.persons[0];
+  if (!profile || !me || me.name.trim() || !name.trim()) return;
+  saveProfile({ ...profile, persons: profile.persons.map((p, i) => (i === 0 ? { ...p, name: name.trim().slice(0, 40) } : p)) });
+}
+
+/** Haushalt umbenennen (nur Erwachsene); leer = Standard */
+export async function renameHousehold(name: string): Promise<Result> {
+  const b = await getBackend();
+  if (!b) return notReady();
+  const r = await b.renameHousehold(name.trim() || haushaltsnameAusProfil());
+  if (r.ok) await refreshAccount();
+  return r;
 }
 
 /** Konto-Zustand; fragt beim ersten Anzeigen nach */
@@ -67,7 +110,7 @@ if (typeof window !== "undefined")
     if (state.user) void getBackend().then((b) => b?.saveConsent(art, e.version, e.ja));
   });
 
-const notReady = () => fail<never>("Konten sind gerade nicht erreichbar – gleich nochmal?");
+const notReady = () => fail<never>("Konten sind gerade nicht erreichbar. Gleich nochmal?");
 
 export async function sendLoginCode(email: string): Promise<Result> {
   const b = await getBackend();
@@ -85,7 +128,7 @@ export async function verifyLoginCode(email: string, code: string): Promise<Resu
 async function createHousehold(name: string, displayName: string, personId: string | null): Promise<Result<string>> {
   const b = await getBackend();
   if (!b) return notReady();
-  const r = await b.createHousehold(name.trim() || "Unser Haushalt", displayName, personId);
+  const r = await b.createHousehold(name.trim() || haushaltsnameAusProfil(), displayName, personId);
   if (r.ok) await refreshAccount();
   return r;
 }
