@@ -90,7 +90,7 @@ describe("Gespeicherte Merker, wie die Oberfläche sie sieht", () => {
     expect(dark.useDarkTip()).toEqual({ version: 1, since: "2026-10-20", done: false, look: false });
     expect(demo.useDemo()).toBeNull();
     demo.startDemo();
-    expect(demo.useDemo()?.done).toEqual(["beispiel:a1"]);
+    expect(demo.useDemo()?.done).toEqual([]);
   });
 
   it("Bausteine und Startseite", async () => {

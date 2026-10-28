@@ -25,10 +25,10 @@ export const hallo = async (page, check) => {
   await page.waitForTimeout(900);
   check((await page.evaluate(() => JSON.parse(localStorage.getItem("familienkueche.haushaltsprofil") || "{}").look)) === "farbig", "Standard bleibt Farbig");
   check(await page.getByText("So sieht ein Tag aus").isVisible(), "danach die Startseite mit Beispiel-Tag");
-  // Pinnwand im Beispiel (Tafel 107): Mias oranger Zettel vorn, Ole, Sprachnachricht, „Beispiel“
+  // Pinnwand im Beispiel (Tafel 107/119): Felix vorn, Mathis’ Sprachnachricht, Lisa „Ole: Gummistiefel!“, „Beispiel“
   const pinTile = page.getByRole("region", { name: "Pinnwand" });
   if (await pinTile.count()) {
-    check(await pinTile.getByText("Moin! Hier hängen eure Zettel.").isVisible(), "Pinnwand-Beispiel: Mias Zettel vorn");
+    check(await pinTile.getByText("Bin um 18 Uhr da").isVisible(), "Pinnwand-Beispiel: Felix’ Zettel vorn");
     // der Fächer ist EIN Link (verdeckte Zettel sind keine eigenen Knöpfe), darin drei Zettel
     const fan = pinTile.getByRole("link", { name: /^Beispiel: / });
     check((await fan.count()) === 1 && (await fan.locator(".zettel").count()) === 3, "Pinnwand-Beispiel: drei Zettel im Fächer");
@@ -509,5 +509,11 @@ export const nurFuerMich = async (page, check) => {
   await page.waitForTimeout(900);
   check((await page.evaluate(() => JSON.parse(localStorage.getItem("familienkueche.haushaltsprofil") || "{}").householdType)) === "single", "Profil: nur für mich");
   check(!(await page.locator('section[aria-label^="Pinnwand"]').count()), "Pinnwand-Kachel aus");
-  check(!(await page.getByText(/Kita bringen|Mathis/).count()), "Beispiel-Tag ohne Familie");
+  check(!(await page.getByText(/Kita, Jonne|Laternelaufen|Mathis/).count()), "Beispiel-Tag ohne Familie");
+  // Tafel 119: Wetter, Sport, Notizen, Im Haus als XS oben; Beispiel-Inhalte allein
+  for (const id of ["wetter", "sport", "notizen", "vorrat"]) check((await page.locator(`[data-unit="${id}"][data-groesse="XS"]`).count()) === 1, `${id} als XS`);
+  check(await page.getByText("2 von 3 diese Woche").isVisible(), "Sport-Beispiel „2 von 3 diese Woche“");
+  // Name vor Schild (Tafel 133): „Hähnchen“ und das Schild „heute“ (10,5 px)
+  const haus = (await page.locator('[data-unit="vorrat"]').innerText()).replace(/\s+/g, " ");
+  check(/Hähnchen heute/.test(haus), `Im-Haus-Beispiel „Hähnchen“ + Schild „heute“ (${haus})`);
 };

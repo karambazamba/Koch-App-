@@ -21,7 +21,11 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
   Familie · Ich · Arbeit und Ergebnis-Karten (A-020, A-021, A-034, A-037, v0.151),
   Pinnwand aufgeräumt, Größe, Ordnen, Ecke „Nur für mich“ (A-028 Teil 1 und 2,
   Tafel 123, v0.152; ausprobieren: Zettel lange drücken → Groß / Nach oben /
-  Nur für mich, halten und ziehen).
+  Nur für mich, halten und ziehen), Startseite im festen Raster XS · S · M
+  mit Standard je Haushalt und Wetter mit Himmel, Wasserzeichen für alle
+  Kacheln, Sport als Stempelkarte (A-023, A-029, A-036, A-044, v0.153;
+  ausprobieren: Startseite bearbeiten → Größen XS · S · M, Sport-Kachel
+  „Training eintragen“).
 - **Merge-Reihenfolge (Sortier-Auftrag 28.10., je bauen → testen → PR → mergen,
   dann der nächste auf dem neuesten `main`):**
   1. A-027 Erster Start rund (mit A-031 Zugangscode nachsichtig, 10 Versuche)
@@ -81,20 +85,20 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 | A-020 | Neue Aufgabe & Termin – ein Feld, ein Fenster je Art (Raum „Ich“ durch A-021 ersetzt; ersetzt „Neue Aufgabe / neuer Termin – ein Feld, fertig“ und beide Nachträge) | `tafel-114.png` | fertig v0.151 |
 | A-021 | Termine – Raumauswahl Familie / Geschäftlich wie bei Aufgaben (ersetzt Raum „Ich“ aus A-020; selbst wieder ersetzt durch A-034: „Ich“ kommt zurück, „Arbeit“ statt „Geschäftlich“) | – | fertig v0.151 (Räume durch A-034 ersetzt) |
 | A-022 | Mias Wundertüte – eine Kachel, die jeden Tag anders heißt (ersetzt „Kachel Angeberwissen“; Wortlaut in `docs/auftraege/A-022-wundertuete.md`) | `tafel-116.png` | gebaut, wartet (Punkt 9a; Pool 459 Einträge) |
-| A-023 | Startseite im festen Raster XS · S · M + Standard-Anordnung je Haushalt + Wetter mit Himmel (ersetzt „Raster S/M/L“, „… XS · S · M“ und Nachträge) | `tafel-118.png`, `tafel-119.png`, `tafel-120.png` | gebaut, wartet |
+| A-023 | Startseite im festen Raster XS · S · M + Standard-Anordnung je Haushalt + Wetter mit Himmel (ersetzt „Raster S/M/L“, „… XS · S · M“ und Nachträge) | `tafel-118.png`, `tafel-119.png`, `tafel-120.png` | fertig v0.153 |
 | A-024 | Pinnwand-Nachtrag: Wörter klarer („Aufhängen“, „Bleibt hängen“), abhaken wie Aufgaben/Einkauf (Häkchen, 1 s stehen, dann weich ins Archiv), Archiv 30 Tage | – | fertig v0.145 |
 | A-025 | Essen-Kachel „Rezept“ / „Wochenplan“, Rezeptseite, Kochmodus + Nachtrag Schnellanleitung „Kurz \| Ausführlich“ (ersetzt Tafel-121-Nachtrag „Ich koche jetzt“) | `tafel-122-essen-rezept.png` | fertig v0.146 |
 | A-026 | Nachtrag zu A-019 (VORRANG): Mia hört live über ElevenLabs (Scribe Realtime) – Text beim Sprechen, Ende von selbst | – | fertig v0.143 |
 | A-027 | Erster Start rund für Testfreunde (höchstens 3 Bildschirme, „Zugangscode“, Karte „Auf den Home-Bildschirm“, KI-OK aufräumen) | – | fertig v0.141 |
 | A-028 | Pinnwand: aufgeräumt, Größe, Ordnen, Ecke „Nur für mich“ (+ 7a einklappbar) – Teil 1 und Teil 2 | `tafel-123.png` | fertig v0.152 |
-| A-029 | Sport-Kachel mit Wasserzeichen + kleine Reparaturen (Im-Haus-Namen, Sport leer, Gedankenstriche) | Tafel 124 A (kein Bild) | gebaut, wartet |
+| A-029 | Sport-Kachel mit Wasserzeichen + kleine Reparaturen (Im-Haus-Namen, Sport leer, Gedankenstriche) | Tafel 124 A (kein Bild) | fertig v0.153 (Sport-Teil ersetzt durch A-044) |
 | A-030 | Neue Adresse mia.karamba-eis.de (keine Weiterleitung, feste Adressen ersetzen; Supabase-Redirects von Hand) | – | fertig v0.140 |
 | A-031 | SOFORT: Zugangscode nachsichtig prüfen (Groß/klein, Leerzeichen egal; 10 Versuche je Adresse) | – | fertig v0.141 (mit A-027) |
 | A-032 | Im-Haus-Kachel / Essen-Kachel – Entscheidung | – | zurückgestellt (offen bei Felix, nach Launch) |
 | A-033 | Mia-Zubehör: Sonne das ganze Jahr (Sonnenbrille ab 18 °C, sonst kleine Sonne tagsüber; nie nachts; nicht am Logo; Wortlaut `docs/auftraege/A-033-zubehoer-sonne.md`) | – | fertig v0.140 |
 | A-034 | Nachtrag A-020: gleiche Räume Familie · Ich · Arbeit für Termine und Aufgaben, Vorauswahl (Termin = Familie, Aufgabe = Ich), Familien-Aufgaben für alle („erledigt von …“), RLS Ich/Arbeit nur Besitzer, `ui/RaumChips` überall, Mia rät und lernt, Raum per Lang-Drücken ändern, Prüfstand ≥ 30 Sätze (ersetzt A-021 teilweise; Wortlaut `docs/auftraege/A-034-raeume.md`) | – | fertig v0.151 |
 | A-035 | Nachtrag A-019: Mias Stimme bleibt Mias Stimme (Status einmal holen und merken, erste Silbe 2,5 s mit „Mhm“, nie im Gespräch springen, erst nach 2 Fehlern Handy-Stimme mit Hinweis, Vorwärmen, Ersatz mit Grund im Mikro-Protokoll) | – | fertig v0.143 |
-| A-036 | Wasserzeichen für alle Kacheln ohne eigenes Bild (eine Komponente, Zuordnung je Kachel, nicht bei Wetter/Essen/Pinnwand/Jetzt-Karte, nicht im Look „Schlicht“) | Tafel 124 A (kein Bild), Tafel 125 (kein Bild) | gebaut, wartet (mit A-029) |
+| A-036 | Wasserzeichen für alle Kacheln ohne eigenes Bild (eine Komponente, Zuordnung je Kachel, nicht bei Wetter/Essen/Pinnwand/Jetzt-Karte, nicht im Look „Schlicht“) | Tafel 124 A (kein Bild), `tafel-125.png` | fertig v0.153 |
 | A-037 | Mias Ergebnis-Karten wie im Clip + Aufleuchten in der Kachel (Wortlaut `docs/auftraege/A-037-ergebniskarten.md`) | `tafel-126.png` | fertig v0.151 |
 | A-038 | SOFORT: Vorschläge erst anschauen, dann nehmen (Rezept-Vorschau als Fenster, überall wo Gerichte zur Auswahl stehen; Wortlaut `docs/auftraege/A-038-vorschau.md`) | `tafel-122-essen-rezept.png` | fertig v0.146 |
 | A-039 | Monatlich: Mias Wundertüte nachfüllen (Pool von 459 Richtung ~845, nur geprüfte Fakten, Quellen gegenprüfen) | – | offen (nach A-022) |
@@ -102,6 +106,7 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 | A-041 | Abhaken wie Aufgaben, Mia merkt sich den Laden („wie immer ⌄“, „Oft bei …“, „Was ich mir gemerkt hab“) + Ergänzung „Einkaufsliste stellt sich vor“ | `tafel-128.png` | gebaut, wartet (mit A-040) |
 | A-042 | SOFORT: „Familie verbinden“ klarer + Namen statt Mail-Adresse + Einladungslink verständlich (Bilder 1/2 nicht angekommen) | – | fertig v0.148 |
 | A-043 | SOFORT: Erledigte Aufgaben nur 12 Stunden („Erledigt ⌄“ zugeklappt ohne Zahl, danach still weg per Lösch-Markierung auf allen Geräten, Serien nur die Runde, Mia nur die letzten 12 h; Wortlaut `docs/auftraege/A-043-erledigt-12h.md`) | – | fertig v0.147 |
+| A-044 | Sport als Stempelkarte: Sport-Seite (Diese Woche, zwei Sätze, „Training eintragen“, „Planen“, Letzte Wochen), Menü „•••“ (Wochenziel, Packlisten, Meine Sportarten, Erinnerung am Vorabend), Kachel ohne Wasserzeichen, Mia „gestempelt“ und „Wie läuft’s?“ (ersetzt Tafel 129/130 und den Wochen-Kreis-Teil von 124; Wortlaut `docs/auftraege/A-044-sport-stempel.md`) | `tafel-132.png` | fertig v0.153 |
 | A-045 | SOFORT: Essen-Kachel S – nichts abgeschnitten (Knöpfe ohne „…“, Stufen Symbol → 13 px → Kurzform, „Idee“ als Pille, Im-Haus-Namen ganz, Zutaten 2 + „+N“, Prüf-Ablauf `nichtsAbgeschnitten`; Wortlaut `docs/auftraege/A-045-kachel-ganz.md`) | `tafel-133.png` | fertig v0.150 (Essen-Teil durch A-046 ersetzt, Grundregel bleibt) |
 | A-046 | Essen-Kachel final – Bild antippen = Rezept (keine großen Knöpfe, „Was anderes?“ oben, „Wochenplan ›“ unten, Statuszeile, Antippen je Zustand; Wortlaut `docs/auftraege/A-046-essen-kachel-final.md`) | `tafel-134.png` | fertig v0.150 (mit A-045; „Nehmen“ ohne Wochenplan-Angebot aus Tafel 127, das kommt mit A-040) |
 

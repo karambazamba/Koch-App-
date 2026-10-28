@@ -28,7 +28,7 @@ import { quoteOf } from "@/lib/pinnwand/schreiben";
 import { now, todayIso } from "@/lib/core/now";
 import { clearDemoTile, demoTiles, useDemo } from "@/lib/core/demo";
 import { demoBoard } from "@/lib/pinnwand/beispiel";
-import { helperName } from "@/lib/einstellungen/profile";
+import { haushaltOf } from "@/lib/core/haushalt";
 import { useBoard, type BoardItem } from "@/components/pinnwand/useBoard";
 import { Zettel } from "@/components/pinnwand/Zettel";
 import { NeuerZettel, type ZettelArt } from "@/components/pinnwand/NeuerZettel";
@@ -67,7 +67,7 @@ export function PinboardView() {
   useEffect(() => {
     if (demoOn && hasOwn) clearDemoTile("pinnwand");
   }, [demoOn, hasOwn]);
-  const demo = demoOn && !hasOwn ? demoBoard(helperName(profile)) : null;
+  const demo = demoOn && !hasOwn ? demoBoard(haushaltOf(profile?.householdType)) : null;
 
   // Gelesen, sobald die Seite offen ist
   const hasList = Boolean(list?.length);
@@ -142,7 +142,7 @@ export function PinboardView() {
                   { kind: "memo", id: demo.memos[0].id, at: demo.memos[0].erstellt, memo: demo.memos[0] },
                   { kind: "pin", id: demo.pins[1].id, at: demo.pins[1].erstellt, pinned: false, pin: demo.pins[1] },
                 ]}
-                render={(item) => <Zettel item={item} me={me} household={board.household} demo tone={item.id === demo.mia ? "mia" : undefined} onOpen={() => setWriting({ quote: null, art: "zettel" })} />}
+                render={(item) => <Zettel item={item} me={me} household={board.household} demo onOpen={() => setWriting({ quote: null, art: "zettel" })} />}
               />
             </>
           ) : list.length === 0 || bereiche.alle.length === 0 ? (

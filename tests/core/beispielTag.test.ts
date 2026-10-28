@@ -17,7 +17,7 @@ describe("Beispiel-Tag (erster Start)", () => {
   const demoAt = (clock: string) => {
     at(`${TODAY}T${clock}`);
     const t = berlinTime();
-    const d = demoEntries(TODAY, t.minutes, "Mia");
+    const d = demoEntries(TODAY, t.minutes);
     const termine = d.entries.filter((e) => e.typ === "termin").map((e) => e.data as { date: string; start: string; title: string });
     return { ...d, minutes: t.minutes, termine };
   };
@@ -38,18 +38,18 @@ describe("Beispiel-Tag (erster Start)", () => {
     if (!dish.tomorrow) expect(d.minutes).toBeLessThan(18 * 60 + 30 + 90);
   });
 
-  it("19:00 → nur, was noch kommt: Elternabend 19:30, Lieblingsserie 20:15 (Fehler: Kaffeepause 21:00)", () => {
-    const d = demoAt("19:00");
+  it("15:30 → nur, was noch kommt: Fußball 16:00, Laternelaufen 17:00", () => {
+    const d = demoAt("15:30");
     expect(d.tomorrow).toBe(false);
     expect(d.termine.map((t) => [t.start, t.title])).toEqual([
-      ["19:30", "Elternabend"],
-      ["20:15", "Lieblingsserie"],
+      ["16:00", "Mathis Fußball"],
+      ["17:00", "Laternelaufen"],
     ]);
   });
 
-  it("echte Termine statt Mahlzeiten (Tafel 51)", () => {
+  it("echte Termine statt Mahlzeiten (Tafel 51), werktags wie Tafel 119", () => {
     const titles = demoAt("06:00").termine.map((t) => t.title);
-    expect(titles).toEqual(["Kita bringen", "Telefonat Versicherung", "Mathis Fußball", "Zahnarzt Jonne", "Elternabend", "Lieblingsserie"]);
+    expect(titles).toEqual(["Kita, Jonne bringt Lisa", "Mathis Fußball", "Laternelaufen"]);
     expect(titles.some((t) => /frühstück|mittag|abendessen|kochen|essen/i.test(t))).toBe(false);
   });
 
@@ -57,8 +57,8 @@ describe("Beispiel-Tag (erster Start)", () => {
     const late = demoAt("21:00");
     expect(late.tomorrow).toBe(true);
     expect(late.date).toBe("2026-10-22");
-    expect(late.termine[0]).toMatchObject({ start: "08:00", title: "Kita bringen" });
-    expect(demoAt("06:00").termine.slice(0, 3).map((t) => t.title)).toEqual(["Kita bringen", "Telefonat Versicherung", "Mathis Fußball"]);
+    expect(late.termine[0]).toMatchObject({ start: "08:00", title: "Kita, Jonne bringt Lisa" });
+    expect(demoAt("16:30").tomorrow).toBe(true);
   });
 
   it("Essen: bis 18:30 + 90 Min Pasta heute, danach Ofengemüse für morgen", () => {
@@ -71,19 +71,23 @@ describe("Beispiel-Tag (erster Start)", () => {
   });
 
   it("ab 21 Uhr Beispiele für morgen", () => {
-    const d = demoEntries(TODAY, 21 * 60 + 5, "Mia");
+    const d = demoEntries(TODAY, 21 * 60 + 5);
     expect(d.tomorrow).toBe(true);
     expect(d.date).toBe("2026-10-22");
   });
 
-  it("Name der Begleitung nie fest: „Theo etwas fragen“", () => {
-    const titles = demoEntries(TODAY, 600, "Theo").entries.map((e) => (e.data as { title: string }).title);
-    expect(titles).toContain("Theo etwas fragen");
+  it("Aufgaben wie Tafel 119: Elternbrief, Steuerberater (Arbeit), Geschenk für Oma – nichts abgehakt", () => {
+    const tasks = demoEntries(TODAY, 600).entries.filter((e) => e.typ === "aufgabe");
+    expect(tasks.map((e) => [(e.data as { title: string }).title, e.raum])).toEqual([
+      ["Elternbrief unterschreiben", "familie"],
+      ["Steuerberater anrufen", "arbeit"],
+      ["Geschenk für Oma", "familie"],
+    ]);
   });
 
   it("verschwindet nach 3 Tagen, je Kachel beim ersten Eigenen und mit „Jetzt leeren“", () => {
     const state = { version: 1 as const, since: TODAY, cleared: [] as DemoTile[], done: [], gone: [], asked: false };
-    expect(demoTiles(state, TODAY)).toEqual(["termine", "aufgaben", "pinnwand", "einkauf", "essen"]);
+    expect(demoTiles(state, TODAY)).toEqual(["termine", "aufgaben", "pinnwand", "einkauf", "essen", "notizen", "sport", "vorrat"]);
     expect(demoTiles(state, "2026-10-24")).toEqual([]);
     expect(demoTiles({ ...state, cleared: ["termine"] }, TODAY)).not.toContain("termine");
     expect(demoTiles(null, TODAY)).toEqual([]);

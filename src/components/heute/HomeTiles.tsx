@@ -1,8 +1,10 @@
 "use client";
 
-// Kacheln auf "Heute" je Größe (S/M/L): Essen, Einkauf, Notizen, Vorrat. S = halbe Breite (allein: breit, gleicher Inhalt), M/L = volle
-// Breite mit mehr Inhalt. Antippen öffnet die Seite, der kleine Knopf oben
-// rechts legt schnell Neues an.
+// Kacheln auf "Heute" je Größe im festen Raster (Tafel 118): Essen, Einkauf,
+// Notizen, Im Haus. XS = halb breit und halb hoch (Kopf + EINE Zeile), S =
+// halb breit und quadratisch, M = ganz breit und so hoch wie S. Jede Kachel
+// füllt genau ihre Fläche, der Rest steht als „+N“ im Kopf. Antippen öffnet
+// die Seite, der kleine Knopf oben rechts legt schnell Neues an.
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -47,9 +49,14 @@ import { KochideeKnopf } from "@/components/essen/kochtipp/KochideeKnopf";
 import { DishTile } from "@/components/essen/DishTile";
 import { KachelPille } from "@/components/ui/KachelPille";
 import { helperName } from "@/lib/einstellungen/profile";
+import { KachelWasserzeichen } from "@/components/ui/KachelWasserzeichen";
 import { leuchtSchluessel } from "@/lib/heute/aufleuchten";
 
-const HALF = `${TILE} flex min-h-[92px] flex-col p-3.5`;
+const HALF = `${TILE} flex h-full flex-col overflow-hidden p-3`;
+/** XS: Kopf oben, EINE Zeile unten */
+const XS_BOX = `${TILE} flex h-full flex-col justify-between overflow-hidden px-3 py-2.5`;
+/** XS: EINE Zeile; frei Eingegebenes darin kürzt sich selbst (`truncate` + `data-freitext`), alles andere ist so kurz, dass es passt (A-045) */
+const XS_LINE = "block min-w-0 overflow-hidden whitespace-nowrap text-[15px] font-bold leading-tight";
 const HALF_LABEL = `flex min-w-0 items-center gap-1.5 ${TILE_LABEL}`;
 
 /**
@@ -162,8 +169,9 @@ function ShopRow({ shop, label, names, count, href, products, demo }: { shop: st
       >
         <span className="absolute inset-y-0 left-0 w-1" style={{ background: tone }} aria-hidden />
         <span className="min-w-0 flex-1 break-words text-[14px] font-bold leading-tight">{label}</span>
+        {/* Ganz schmal (Board unter 320 px, iPhone SE 1): ohne Symbole, damit der Laden-Name ganz in eine Zeile passt (A-045) */}
         {names.slice(0, 2).map((n, i) => (
-          <ItemSymbol key={`${n}-${i}`} id={symbolFor(n, products)} name={n} className="h-5 w-5 shrink-0" />
+          <ItemSymbol key={`${n}-${i}`} id={symbolFor(n, products)} name={n} className="h-5 w-5 shrink-0 @max-[320px]:hidden" />
         ))}
         <span className={`min-w-[1.25rem] shrink-0 text-right text-[14px] font-extrabold ${shop ? "" : "text-muted"}`} style={shop ? { color: tone } : undefined}>
           {count}
@@ -181,7 +189,7 @@ function ShopRow({ shop, label, names, count, href, products, demo }: { shop: st
  * Sortieren ›“ (öffnet „Einkauf“ bei „Noch ohne Laden“). Ohne „Meine Läden“: eine
  * neutrale Zeile „Liste“ mit allem ohne Laden. Keine Logos, keine Emojis.
  */
-function ShopRows({ rows, rest, ohne, mine, products, demo = false }: TileRows & { mine: boolean; products: Record<string, string>; demo?: boolean }) {
+function ShopRows({ rows, ohne, mine, products, demo = false }: TileRows & { mine: boolean; products: Record<string, string>; demo?: boolean }) {
   return (
     <>
       <ul className="mt-1 flex flex-col gap-1" aria-label="Nach Laden">
@@ -190,29 +198,32 @@ function ShopRows({ rows, rest, ohne, mine, products, demo = false }: TileRows &
         ))}
         {!mine && ohne.length > 0 && <ShopRow shop={null} label="Liste" names={ohne} count={ohne.length} href="/einkaufsliste" products={products} demo={demo} />}
       </ul>
-      {rest && (
-        <Link href="/einkaufsliste" className="flex min-h-[30px] items-center text-[12.5px] font-semibold leading-tight text-muted" data-zeile>
-          {rest}
-        </Link>
-      )}
       {mine && ohne.length > 0 && (
         <Link href="/einkaufsliste#ohne-laden" className="flex min-h-[30px] flex-wrap items-center gap-x-1 py-0.5 text-[12.5px] font-semibold leading-tight text-muted" data-zeile data-ohne-laden-zeile data-leuchte={ohne.map((n) => leuchtSchluessel("einkauf", n)).join(" ")}>
-          <span className="whitespace-nowrap">{ohneLadenZeile(ohne.length)} ·</span> <span className="whitespace-nowrap font-bold text-accent-strong">Sortieren ›</span>
+          <span className="kachel-frei whitespace-nowrap">{ohneLadenZeile(ohne.length)} ·</span> <span className="kachel-frei whitespace-nowrap font-bold text-accent-strong">Sortieren ›</span>
         </Link>
       )}
     </>
   );
 }
 
-/** Kopf der Einkauf-Kachel „EINKAUF“ – kurz, damit er auch halb breit nie abgeschnitten wird; die übrige Fläche öffnet die ganze Liste („Alle“) */
-function ShoppingHead() {
+/** Kopf der Einkauf-Kachel „EINKAUF“ (26 px) – kurz, damit er auch halb breit nie abgeschnitten wird; „+N“ = weitere Läden; die übrige Fläche öffnet die ganze Liste */
+function ShoppingHead({ more }: { more: number }) {
   return (
-    <Link href="/einkaufsliste" className="mr-8 flex min-h-11 items-start" aria-label="Einkaufsliste öffnen">
-      <span className={HALF_LABEL}>
-        <ShoppingCart className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-        <span className="whitespace-nowrap">Einkauf</span>
-      </span>
-    </Link>
+    <div className="mr-8 flex h-[26px] items-center gap-2">
+      <Link href="/einkaufsliste" className="hit flex h-[26px] items-center" aria-label="Einkaufsliste öffnen">
+        <span className={HALF_LABEL}>
+          <ShoppingCart className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
+          <span className="whitespace-nowrap">Einkauf</span>
+        </span>
+      </Link>
+      <span className="flex-1" />
+      {more > 0 && (
+        <Link href="/einkaufsliste" className="hit flex h-[26px] items-center text-[12.5px] font-bold text-tile-accent" data-weitere>
+          +{more}
+        </Link>
+      )}
+    </div>
   );
 }
 
@@ -220,7 +231,7 @@ function ShoppingHead() {
 const DEMO_ITEMS = DEMO_SHOPS.flatMap((g) => g.names.map((name) => ({ name, shop: g.shop })));
 const DEMO_ORDER = DEMO_SHOPS.map((g) => g.shop);
 
-/** EINKAUF – je Laden eine Zeile (S/M: höchstens 3 + Rest-Zeile, L: alle). „+“ = Schnell-Eintrag */
+/** EINKAUF – je Laden eine Zeile (S/M: höchstens 3, mit „ohne Laden“-Zeile 2; der Rest als „+N“ im Kopf). „+“ = Schnell-Eintrag */
 export function ShoppingTile({ size = "S", demo = false }: { half: boolean; size?: TileSize; demo?: boolean }) {
   const shopping = useWeekShoppingList("planning");
   const laeden = useMeineLaeden();
@@ -236,118 +247,200 @@ export function ShoppingTile({ size = "S", demo = false }: { half: boolean; size
   if (!shopping) return <section className={`${HALF} animate-pulse`} aria-label="Einkaufsliste" />;
   const showDemo = demo && !hasOwn;
   const myShops = laeden?.myShops ?? [];
-  const rows = showDemo ? tileRows(DEMO_ITEMS, DEMO_ORDER, size) : tileRows(open, myShops, size);
+  // Feste Fläche: drei Laden-Zeilen – kommt die Zeile „ohne Laden“ bzw. „Liste“ dazu, zwei
+  const ohneDa = !showDemo && open.some((i) => !i.shop.trim() && !i.anywhere);
+  const rows = showDemo ? tileRows(DEMO_ITEMS, DEMO_ORDER, 3) : tileRows(open, myShops, ohneDa ? 2 : 3);
   // Nichts zu kaufen: freundlicher Satz statt lauter Nullen
   const empty = !showDemo && open.length === 0;
+  // Wasserzeichen: leiser, sobald Text ohne eigene Fläche dasteht (leere Liste, „ohne Laden“)
+  const frei = empty || rows.ohne.length > 0;
+  // Der Plus-Knopf steht neben der <section>: sein Fenster („Mehr Details“) darf nicht in der Ebene der Kachel (isolate) gefangen sein
   return (
-    <section className={HALF} aria-label={showDemo ? "Einkaufsliste · Beispiel" : "Einkaufsliste"}>
-      <ShoppingHead />
-      {empty ? (
-        <Link href="/einkaufsliste" className="-mt-3 flex-1 text-[14px] font-semibold leading-snug text-muted">
-          Liste ist leer. Sag mir einfach, was ihr braucht.
-        </Link>
-      ) : (
-        <ShopRows {...rows} mine={showDemo || myShops.length > 0} products={shopping.settings.products} demo={showDemo} />
-      )}
+    <div className="relative h-full min-h-0 min-w-0" data-einkauf-kachel>
+      <section className={`${HALF} isolate`} aria-label={showDemo ? "Einkaufsliste · Beispiel" : "Einkaufsliste"} data-groesse={size}>
+        <KachelWasserzeichen kachel="einkauf" size={size} frei={frei} />
+        <ShoppingHead more={rows.restZahl} />
+        {empty ? (
+          <Link href="/einkaufsliste" className="mt-1 flex-1 text-[14px] font-semibold leading-snug text-muted">
+            <span className="kachel-frei">Liste ist leer. Sag mir einfach, was ihr braucht.</span>
+          </Link>
+        ) : (
+          <ShopRows {...rows} mine={showDemo || myShops.length > 0} products={shopping.settings.products} demo={showDemo} />
+        )}
+      </section>
       <QuickAddButton weekStart={shopping.weekStart} settings={shopping.settings} quick className="absolute right-0.5 top-0.5" />
+    </div>
+  );
+}
+
+/** Beispiel-Tag: eine Notiz und „Im Haus“ (Tafel 119) – nur zum Anzeigen, nie in echten Speichern */
+const DEMO_NOTIZ = { title: "WLAN: Tohuus2026", line: "Router im Flur" };
+const DEMO_HAUS = { name: "Hähnchen", badge: "heute" };
+
+/** Kopf einer kleinen Kachel (26 px): Symbol + Label (öffnet die Seite), „+N“, rechts Platz für den Knopf */
+function KleinKopf({ icon: Icon, label, href, more = 0, knopf }: { icon: typeof StickyNote; label: string; href: string; more?: number; knopf?: React.ReactNode }) {
+  return (
+    <div className="flex h-[26px] items-center gap-2">
+      <Link href={href} className={`hit flex h-[26px] min-w-0 items-center ${HALF_LABEL}`} aria-label={`${label} öffnen`}>
+        <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
+        <span className="whitespace-nowrap">{label}</span>
+      </Link>
+      <span className="flex-1" />
+      {more > 0 && (
+        <Link href={href} className="hit flex h-[26px] shrink-0 items-center text-[12.5px] font-bold text-tile-accent" data-weitere>
+          +{more}
+        </Link>
+      )}
+      {knopf}
+    </div>
+  );
+}
+
+/**
+ * NOTIZEN je Größe (Raster): XS = EINE Zeile (neueste bzw. angeheftete Notiz,
+ * sonst „Schnell notieren.“), S und M = bis 3 Zeilen „Titel · Anfang“
+ * (angeheftete zuerst), der Rest als „+N“. Kopf = Notizen-Seite, Zeile =
+ * genau diese Notiz, Stift = Schnellnotiz. Beispiel-Tag: „WLAN: Tohuus2026“.
+ */
+export function NotesTile({ size = "XS", demo = false }: { size?: TileSize; demo?: boolean }) {
+  const notes = useNotes();
+  const own = (notes ?? []).filter((n) => !n.data.schnell);
+  // Beispiel-Tag: erste eigene Notiz → Beispiel verschwindet für immer
+  const hasOwn = own.length > 0;
+  useEffect(() => {
+    if (demo && hasOwn) clearDemoTile("notizen");
+  }, [demo, hasOwn]);
+  const showDemo = demo && !hasOwn;
+  const rows = showDemo ? [{ id: "", title: DEMO_NOTIZ.title, line: DEMO_NOTIZ.line, pinned: false }] : notizZeilen(own, size);
+  const more = showDemo ? 0 : Math.max(0, own.length - rows.length);
+  const href = (id: string) => (id ? `/notizen/bearbeiten?id=${id}` : "/notizen");
+  const pen = <QuickButton icon={PenLine} label="Schnellnotiz schreiben" onClick={() => openQuick({ kind: "notiz" })} />;
+  if (size === "XS") {
+    const top = rows[0];
+    return (
+      <section className={XS_BOX} aria-label={showDemo ? "Notizen · Beispiel" : "Notizen"} data-notizen-groesse={size} data-groesse={size}>
+        <KleinKopf icon={StickyNote} label="Notizen" href="/notizen" knopf={pen} />
+        {top ? (
+          <Link href={href(top.id)} className={`${XS_LINE} flex items-center gap-1`} data-zeile data-notiz-zeile>
+            {top.pinned && <Pin className="h-3 w-3 shrink-0 text-tile-accent" strokeWidth={2.25} aria-hidden />}
+            <span className="truncate" data-freitext>{top.title}</span>
+          </Link>
+        ) : (
+          <button type="button" onClick={() => openQuick({ kind: "notiz" })} className={`${XS_LINE} flex items-center gap-1 text-left text-muted`} data-zeile>
+            <PenLine className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
+            <span className="whitespace-nowrap">Schnell notieren.</span>
+          </button>
+        )}
+      </section>
+    );
+  }
+  return (
+    <section className={`${HALF} isolate gap-1`} aria-label={showDemo ? "Notizen · Beispiel" : "Notizen"} data-notizen-groesse={size} data-groesse={size}>
+      <KachelWasserzeichen kachel="notizen" size={size} frei />
+      <KleinKopf icon={StickyNote} label="Notizen" href="/notizen" more={more} knopf={pen} />
+      {rows.length ? (
+        <ul className="flex flex-col" aria-label="Notizen">
+          {rows.map((r) => (
+            <li key={r.id || "beispiel"}>
+              <Link href={href(r.id)} className="flex min-h-[30px] items-center gap-1.5 text-[13.5px]" data-zeile data-notiz-zeile>
+                {r.pinned ? <Pin className="h-3.5 w-3.5 shrink-0 text-tile-accent" strokeWidth={2.25} aria-hidden /> : <StickyNote className="h-3.5 w-3.5 shrink-0 text-tile-accent" strokeWidth={2} aria-hidden />}
+                <span className="min-w-0 flex-1 truncate" data-freitext>
+                  <span className="font-semibold">{r.title}</span>
+                  {r.line && <span className="kachel-frei text-muted"> · {r.line}</span>}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <button type="button" onClick={() => openQuick({ kind: "notiz" })} className="flex min-h-11 items-center text-left text-[13.5px] text-muted">
+          <span className="kachel-frei">Schnell was aufschreiben.</span>
+        </button>
+      )}
     </section>
   );
 }
 
 /**
- * NOTIZEN je Größe: S = die neueste bzw. angeheftete Notiz (Titel + Anfang,
- * 2 Zeilen), M = 3 Notizen als Zeilen „Titel · Anfang“, L = bis 5
- * (angeheftete zuerst). Ohne Notizen die Schnellnotiz bzw. „Schnell was
- * aufschreiben.“ (A-045: Kachel ohne „…“). Kopf = Notizen-Seite, Zeile = genau diese Notiz, Stift =
- * Schnellnotiz.
+ * IM HAUS (Baustein): XS = EINE Zeile („Hähnchen · heute“: das Erste aus
+ * „Bald aufbrauchen“, sonst das zuletzt Eingekaufte); S = bis 3 Zeilen à
+ * 30 px (Symbol, Name, Schild) und unten „Was koch ich daraus?“ = Spontan
+ * kochen (wie unter Essen). Leer: ein freundlicher Satz. In S hinten still
+ * ein Kühlschrank als Wasserzeichen (freier Text: 9 %, Tafel 124 A/125).
  */
-export function NotesTile({ size = "M" }: { size?: TileSize }) {
-  const notes = useNotes();
-  const rows = notizZeilen(notes ?? [], size);
-  const top = rows[0];
-  return (
-    <>
-      <section className={`${TILE} flex min-h-[92px] flex-col gap-1 p-3.5`} aria-label="Notizen" data-notizen-groesse={size}>
-        <Link href="/notizen" className="flex min-h-11 flex-col gap-0.5 pr-8" aria-label="Notizen öffnen">
-          <span className={HALF_LABEL}>
-            <StickyNote className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-            Notizen
-          </span>
-          {!rows.length && <span className="text-[13px] text-muted">Schnell was aufschreiben.</span>}
-        </Link>
-        <span className="absolute right-3.5 top-3">
-          <QuickButton icon={PenLine} label="Schnellnotiz schreiben" onClick={() => openQuick({ kind: "notiz" })} />
-        </span>
-        {size === "S" && top && (
-          <Link href={`/notizen/bearbeiten?id=${top.id}`} className="-mt-1 flex min-h-[30px] flex-col text-[13px] leading-[1.35]" data-zeile data-notiz-zeile data-leuchte={leuchtSchluessel("notiz", top.id)}>
-            <span className="flex items-center gap-1 font-bold">
-              {top.pinned && <Pin className="h-3 w-3 shrink-0 text-tile-accent" strokeWidth={2.25} aria-hidden />}
-              <span className="truncate" data-freitext>{top.title}</span>
-            </span>
-            {top.line && <span className="truncate text-muted" data-freitext>{top.line}</span>}
-          </Link>
-        )}
-        {size !== "S" && rows.length > 0 && (
-          <ul className="-mt-1 flex flex-col" aria-label="Notizen">
-            {rows.map((r) => (
-              <li key={r.id}>
-                <Link href={`/notizen/bearbeiten?id=${r.id}`} className="flex min-h-[30px] items-center gap-1.5 text-[13.5px]" data-zeile data-notiz-zeile data-leuchte={leuchtSchluessel("notiz", r.id)}>
-                  {r.pinned ? <Pin className="h-3.5 w-3.5 shrink-0 text-tile-accent" strokeWidth={2.25} aria-hidden /> : <StickyNote className="h-3.5 w-3.5 shrink-0 text-tile-accent" strokeWidth={2} aria-hidden />}
-                  <span className="min-w-0 flex-1 truncate" data-freitext>
-                    <span className="font-semibold">{r.title}</span>
-                    {r.line && <span className="text-muted"> · {r.line}</span>}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </>
-  );
-}
-
-/**
- * IM HAUS (Baustein, nur über die Kachel-Auswahl): „Bald aufbrauchen“ (S: 3,
- * M: 6 Zeilen à 30 px: Symbol, Name, Schild), sonst die zuletzt eingekauften;
- * unten „Was koch ich daraus?“ = Spontan kochen (wie unter Essen). Leer: ein
- * freundlicher Satz.
- */
-export function PantryTile({ size = "S" }: { size?: TileSize }) {
+export function PantryTile({ size = "XS", demo = false }: { size?: TileSize; demo?: boolean }) {
   const pantry = usePantry();
-  if (!pantry) return <section className={`${HALF} animate-pulse`} aria-label="Im Haus" />;
-  const tile = houseTile(pantry, todayIso(), HOUSE_TILE_MAX[size === "S" ? "S" : "M"]);
+  const hasOwn = (pantry?.length ?? 0) > 0;
+  useEffect(() => {
+    if (demo && hasOwn) clearDemoTile("vorrat");
+  }, [demo, hasOwn]);
+  if (!pantry) return <section className={`${size === "XS" ? XS_BOX : HALF} animate-pulse`} aria-label="Im Haus" />;
+  const showDemo = demo && !hasOwn;
+  // S: zwei Zeilen + „Was koch ich daraus?“ passen auch auf dem iPhone SE in die feste Fläche
+  const tile = houseTile(pantry, todayIso(), HOUSE_TILE_MAX[size === "XS" ? "XS" : "S"]);
+  if (size === "XS") {
+    const first = tile.items[0];
+    // Name vor Schild (wie in S): der Name steht ganz, das Schild rutscht notfalls weg in die zweite Zeile
+    const name = showDemo ? DEMO_HAUS.name : first?.item.name;
+    const schild = showDemo ? DEMO_HAUS.badge : first?.badge?.text;
+    const warm = showDemo || first?.badge?.tone === "orange";
+    return (
+      <section className={XS_BOX} aria-label={showDemo ? "Im Haus · Beispiel" : "Im Haus"} data-groesse={size}>
+        <KleinKopf icon={Refrigerator} label="Im Haus" href="/vorrat" />
+        <Link href="/vorrat" className={`block min-w-0 overflow-hidden text-[15px] font-bold leading-tight ${name ? "flex flex-wrap items-center gap-x-1.5" : "text-muted"}`} data-zeile>
+          {name ? (
+            <>
+              <span className="min-w-0 break-words">{name}</span>
+              {/* Schild wie in S (10,5 px, Tafel 133) – braucht kaum Platz neben dem Namen */}
+              {schild && <span className={`whitespace-nowrap rounded-full px-1.5 text-[10.5px] font-bold leading-[16px] ${warm ? "bg-accent-soft text-accent-strong" : "bg-warn-soft text-warn-ink"}`}>{schild}</span>}
+            </>
+          ) : (
+            "Was ist da?"
+          )}
+        </Link>
+      </section>
+    );
+  }
   return (
-    <section className={`${HALF} gap-1`} aria-label="Im Haus">
-      <Link href="/vorrat" className="flex min-w-0 flex-col gap-1" data-zeile>
-        <span className={HALF_LABEL}>
-          <Refrigerator className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-          <span>Im Haus</span>
-        </span>
-        {tile.items.length ? (
-          <>
-            <span className="text-[13px] font-semibold text-muted">{tile.soon ? "Bald aufbrauchen" : "Zuletzt eingekauft"}</span>
-            {tile.items.map(({ item, badge }) => (
-              <span key={item.id} className="flex min-h-[30px] min-w-0 items-center gap-1.5" data-im-haus-zeile>
-                <ItemSymbol id={symbolFor(item.name)} name={item.name} className="h-6 w-6 shrink-0 text-base" />
-                {/* Name vor Schild (Tafel 133): der Name steht immer ganz, passt das Schild nicht daneben, rutscht es in die nächste Zeile */}
-                <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5">
-                  <span className="min-w-0 hyphens-auto break-words text-[14.5px] font-bold leading-tight">{item.name}</span>
-                  {badge && <span className={`ml-auto whitespace-nowrap rounded-full px-1.5 text-[10.5px] font-bold leading-[16px] ${badge.tone === "orange" ? "bg-accent-soft text-accent-strong" : "bg-warn-soft text-warn-ink"}`}>{badge.text}</span>}
-                </span>
-              </span>
-            ))}
-          </>
+    <section className={`${HALF} isolate gap-1`} aria-label="Im Haus" data-groesse={size}>
+      <KachelWasserzeichen kachel="vorrat" size={size} frei />
+      <KleinKopf icon={Refrigerator} label="Im Haus" href="/vorrat" />
+      <Link href="/vorrat" className="flex min-w-0 flex-col" data-zeile>
+        {showDemo ? (
+          <HausZeile name={DEMO_HAUS.name} badge={{ text: DEMO_HAUS.badge, tone: "orange" }} />
+        ) : tile.items.length ? (
+          tile.items.map(({ item, badge }) => (
+            <HausZeile key={item.id} name={item.name} badge={badge} />
+          ))
         ) : (
-          <span className="mt-1 text-[14px] font-semibold text-muted">Sag mir, was da ist, dann schlag ich was vor.</span>
+          <span className="mt-1 text-[14px] font-semibold leading-snug text-muted">
+            <span className="kachel-frei">Sag mir, was da ist, dann schlag ich was vor.</span>
+          </span>
         )}
       </Link>
-      {tile.items.length > 0 && (
-        <button type="button" onClick={() => openHelper("spontan")} className="hit mt-auto flex min-h-[30px] items-center gap-1 self-start text-left text-[13px] font-bold leading-tight text-accent-strong">
+      {(tile.items.length > 0 || showDemo) && (
+        <button type="button" onClick={() => openHelper("spontan")} className="hit kachel-frei -ml-1 mt-auto flex min-h-[30px] items-center gap-1 self-start rounded-full px-1 text-left text-[13px] font-bold leading-tight text-accent-strong">
           <ChefHat className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} aria-hidden />
           Was koch ich daraus?
         </button>
       )}
     </section>
+  );
+}
+
+/**
+ * Eine Zeile „Im Haus“ (S): Symbol 20 px, Name 14 px in voller Länge (nie
+ * „Würstc…“), Schild 10,5 px rechts daneben; passt beides nicht in eine
+ * Zeile, rutscht nur das Schild in die Zeile darunter.
+ */
+function HausZeile({ name, badge }: { name: string; badge: { text: string; tone: string } | null | undefined }) {
+  return (
+    <span className="flex min-h-[30px] min-w-0 items-center gap-1.5" data-haus-zeile>
+      <ItemSymbol id={symbolFor(name)} name={name} className="h-5 w-5 shrink-0 text-[15px]" />
+      <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5">
+        <span className="min-w-0 break-words text-[14px] font-bold leading-tight" data-haus-name>{name}</span>
+        {badge && <span className={`ml-auto shrink-0 rounded-full px-1.5 text-[10.5px] font-bold leading-[1.5] ${badge.tone === "orange" ? "bg-accent-soft text-accent-strong" : "bg-warn-soft text-warn-ink"}`}>{badge.text}</span>}
+      </span>
+    </span>
   );
 }

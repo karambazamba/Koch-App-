@@ -36,7 +36,7 @@ describe("Abends: kein Streifen „Ausblick morgen“", () => {
   });
 
   it("Speicher-Verzeichnis kennt die neue Version der Startseite", () => {
-    expect(STORAGE.find((k) => k.key === "wasgibts.startseite")?.version).toBe(8);
+    expect(STORAGE.find((k) => k.key === "wasgibts.startseite")?.version).toBe(9);
   });
 
   it("die Kacheln zeigen abends schon morgen (Termine „Morgen · Do“, Essen morgen)", () => {

@@ -4,7 +4,8 @@
 // (Feinschliff nach Handy-Test, Tafel 58/59): je Kachel EIN weißes Feld mit
 // feinen Trennlinien, Zeilen 30 px (die ganze Zeile tippbar, der Abhak-Kreis
 // mit unsichtbar größerer Fläche), Kopf 26 px mit „+N weitere“ neben dem
-// Plus, unten nichts. Menge je Größe S 2, M 4, L 6. Termine chronologisch mit
+// Plus, unten nichts. Feste Fläche im Raster (S und M gleich hoch): je drei
+// Zeilen, der Rest als „+N weitere“ (halb breit „+N“). Termine chronologisch mit
 // Strich in Raumfarbe, Uhrzeit, Titel; der laufende bleibt 30 Min („läuft“),
 // der nächste ist zart hervorgehoben („gleich“) – Logik in
 // lib/heute/termineKachel.ts. Erledigte Aufgaben: ca. 1,5 s durchgestrichen,
@@ -31,6 +32,7 @@ import { withoutEmoji } from "@/lib/core/text";
 import { neuEintragen } from "@/lib/kalender/eintragen/oeffnen";
 import { useLangDruecken } from "@/components/ui/useLangDruecken";
 import { leuchtSchluessel } from "@/lib/heute/aufleuchten";
+import { KachelWasserzeichen } from "@/components/ui/KachelWasserzeichen";
 
 /** Beispiel-Tag: Beispiele statt echter Einträge (Antippen erklärt, Abhaken nur hier) */
 export type DemoProps = { label?: string | null; done?: string[]; onToggle?: (item: DayItem) => void; onGone?: (item: DayItem) => void; onOpen: (item: DayItem) => void };
@@ -63,8 +65,9 @@ function TileHead({ title, more, href, action, moreLabel }: { title: string; mor
       </h2>
       <span className="flex-1" />
       {more > 0 && (
-        <Link href={href} className="hit flex h-[26px] items-center text-[12.5px] font-bold text-tile-accent">
-          +{more} {moreLabel ?? "weitere"}
+        <Link href={href} className="hit flex h-[26px] shrink-0 items-center whitespace-nowrap text-[12.5px] font-bold text-tile-accent" data-weitere>
+          +{more}
+          {moreLabel !== "" && ` ${moreLabel ?? "weitere"}`}
         </Link>
       )}
       {action && <span className="ml-1 flex items-center">{action}</span>}
@@ -100,7 +103,7 @@ function AddLine({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button type="button" onClick={onClick} className="flex h-11 items-center gap-1.5 self-start text-sm font-semibold text-muted" aria-label={label}>
       <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-      {label}
+      <span className="kachel-frei">{label}</span>
     </button>
   );
 }
@@ -120,8 +123,12 @@ function CheckBox({ item, checked, onClick, round = false }: { item: DayItem; ch
 
 const entersAnim = (before: string[] | null, key: string) => (before && !before.includes(key) ? { animation: "card-in 0.32s ease-out" } : undefined);
 
-/** Wie viele Zeilen je Größe – Termine und Aufgaben gleich: S 2, M 4, L 6 */
-const ROW_COUNT = { S: 2, M: 4, L: 6 } as const;
+/**
+ * Wie viele Zeilen je Größe – Termine und Aufgaben gleich (Tafel 119): S und M
+ * sind gleich hoch, also je 3 (passt auch auf dem iPhone SE in die feste
+ * Fläche: Kopf 26 + 3 × 30 + Ränder); XS gibt es für diese Kacheln nicht.
+ */
+const ROW_COUNT: Record<TileSize, number> = { XS: 1, S: 3, M: 3 };
 /** Erledigte Aufgabe: so lange durchgestrichen, dann weich weg */
 const TASK_FADE = { animation: `card-out 0.4s ease-in ${LEAVE_MS - 400}ms forwards` };
 const LIST = `${TILE_INNER} flex flex-col divide-y divide-line overflow-hidden`;
@@ -156,20 +163,24 @@ export function TermineSection({ rows, label, href, today, size = "M", half = fa
   const rest = rows.length - shown.length;
   // „Ganztägig“ passt ohne Umbruch: Spalte breiter, sobald ein ganztägiger Termin dabei ist (halbe Kachel: nur Symbol)
   const spalte = zeitSpalte(!half && shown.some((r) => !r.item.time), "klein");
+  // Fenster (Möglichkeiten) neben der <section>: nie in der Ebene der Kachel (isolate) gefangen
   return (
-    <section className={`${TILE} flex flex-col gap-[7px] px-3 py-2.5`} aria-label="Termine">
-      <TileHead title={demo?.label ?? label ?? "Termine"} more={half ? 0 : rest} href={href} action={plus} />
-      {rows.length ? (
-        <ul className={LIST}>
-          {shown.map((row) => (
-            <TerminLine key={row.item.key} row={row} spalte={spalte} half={half} entering={entersAnim(before, row.item.key)} onOpen={() => (demo ? demo.onOpen(row.item) : setMenu(row.item))} />
-          ))}
-        </ul>
-      ) : (
-        <AddLine label="Termin eintragen" onClick={() => neuEintragen("termin", today)} />
-      )}
+    <>
+      <section className={`${TILE} isolate flex h-full flex-col gap-[7px] overflow-hidden px-3 py-2.5`} aria-label="Termine" data-groesse={size}>
+        <KachelWasserzeichen kachel="termine" size={size} frei={rows.length === 0} />
+        <TileHead title={demo?.label ?? label ?? "Termine"} more={rest} moreLabel={half ? "" : undefined} href={href} action={plus} />
+        {rows.length ? (
+          <ul className={LIST}>
+            {shown.map((row) => (
+              <TerminLine key={row.item.key} row={row} spalte={spalte} half={half} entering={entersAnim(before, row.item.key)} onOpen={() => (demo ? demo.onOpen(row.item) : setMenu(row.item))} />
+            ))}
+          </ul>
+        ) : (
+          <AddLine label="Termin eintragen" onClick={() => neuEintragen("termin", today)} />
+        )}
+      </section>
       {overlays}
-    </section>
+    </>
   );
 }
 
@@ -230,14 +241,16 @@ export function AufgabenSection({ items, total, today, label, addOn = today, hre
   const { setMenu, check, before, overlays } = useSection();
   // Erledigtes steht nicht herum (auch nicht im Beispiel-Tag)
   const open = demo?.done ? items.filter((i) => !demo.done!.includes(i.entry.id)) : items;
-  const shown = open.slice(0, ROW_COUNT[size]);
+  // Mit der leisen Zeile „Arbeit · 5 für morgen“ eine Zeile weniger (feste Fläche)
+  const shown = open.slice(0, ROW_COUNT[size] - (arbeitMorgen > 0 ? 1 : 0));
   const { leaving, start } = useLeaving((item) => (demo ? demo.onGone?.(item) : check(item, shown)));
   const plus = <QuickButton icon={Plus} label="Neue Aufgabe" onClick={() => neuEintragen("aufgabe", addOn)} />;
   const rest = Math.max(0, Math.max(total ?? 0, open.length) - shown.length);
   return (
     <>
-      <section className={`${TILE} flex flex-col gap-[7px] px-3 py-2.5`} aria-label="Aufgaben">
-        <TileHead title={label ?? "Aufgaben"} more={half ? 0 : rest} href={href} action={plus} />
+      <section className={`${TILE} isolate flex h-full flex-col gap-[7px] overflow-hidden px-3 py-2.5`} aria-label="Aufgaben" data-groesse={size}>
+        <KachelWasserzeichen kachel="aufgaben" size={size} frei={open.length === 0 || arbeitMorgen > 0} />
+        <TileHead title={label ?? "Aufgaben"} more={rest} moreLabel={half ? "" : undefined} href={href} action={plus} />
         {open.length > 0 ? (
           <ul className={LIST}>
             {shown.map((item) => (
@@ -249,7 +262,7 @@ export function AufgabenSection({ items, total, today, label, addOn = today, hre
         )}
         {arbeitMorgen > 0 && (
           <Link href={href} className="flex h-[22px] items-center px-1 text-[12px] font-semibold text-muted" data-arbeit-morgen>
-            {arbeitMorgenText(arbeitMorgen)}
+            <span className="kachel-frei">{arbeitMorgenText(arbeitMorgen)}</span>
           </Link>
         )}
       </section>

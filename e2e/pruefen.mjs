@@ -4,7 +4,9 @@
 // 7:10 / 12:30 / 17:45 / 21:30 / 23:30 (Beispiel-Tag und eigene Familie).
 // Je Seite: kein seitliches Verrutschen, ganz unten nichts unter der Leiste,
 // Tippflächen ≥ 44 px, Eingabefelder ≥ 16 px, keine Konsolen-Fehler, keine
-// 404, keine Platzhalter/englischen Reste/geraden Apostrophe im Text.
+// 404, keine Platzhalter/englischen Reste/geraden Apostrophe im Text; auf der
+// Startseite das feste Raster (Tafel 118: jede Kachel genau XS/S/M groß, S
+// quadratisch, nichts quillt über die feste Fläche).
 // Nur Teile: `npm run pruefen -- --schnell` (nur 15 Pro hell, Browser).
 import { BASE, hello, launch, newPage, seedFamily, setDark, startServer } from "./lib.mjs";
 import { RECIPE_DATA } from "./ablaeufe/essen.mjs";
@@ -115,6 +117,23 @@ function inspect() {
   return out;
 }
 
+/** Startseite im festen Raster: Fläche je Größe aus der Breite, Inhalt passt hinein */
+function raster() {
+  const out = [];
+  const board = document.querySelector("[data-raster]");
+  if (!board) return out;
+  const width = board.getBoundingClientRect().width;
+  const s = (width - 8) / 2;
+  const want = { XS: [s, (s - 8) / 2], S: [s, s], M: [width, s], "S+S": [width, s] };
+  for (const el of board.querySelectorAll(":scope > [data-unit]")) {
+    const r = el.getBoundingClientRect();
+    const [w, h] = want[el.dataset.groesse] ?? [r.width, r.height];
+    if (Math.abs(r.width - w) > 1.5 || Math.abs(r.height - h) > 1.5) out.push(`Kachel nicht im Raster: ${el.dataset.unit} ${el.dataset.groesse} ${Math.round(r.width)}×${Math.round(r.height)} statt ${Math.round(w)}×${Math.round(h)}`);
+    for (const sec of el.querySelectorAll("section, a.wx-himmel")) if (!sec.closest("[role=dialog]") && sec.scrollHeight > sec.clientHeight + 2) out.push(`Kachel quillt über: ${el.dataset.unit} (${sec.getAttribute("aria-label") || sec.tagName})`);
+  }
+  return out;
+}
+
 /** Fängt etwas anderes den Tipp ab? (Mitte jedes sichtbaren Knopfs muss der Knopf sein) */
 function blocked() {
   const out = [];
@@ -193,7 +212,7 @@ for (const device of DEVICES)
           }
           await p.waitForTimeout(1500);
           const where = `${tag} · ${time} · ${own ? "Familie" : "Beispiel"} · /`;
-          for (const m of [...(await p.evaluate(inspect)), ...(await p.evaluate(blocked)), ...(await bottomCheck(p)), ...(await p.evaluate(blocked)), ...bad, ...p.errors.map((e) => `Konsole: ${e.slice(0, 120)}`)]) note(where, m);
+          for (const m of [...(await p.evaluate(inspect)), ...(await p.evaluate(raster)), ...(await p.evaluate(blocked)), ...(await bottomCheck(p)), ...(await p.evaluate(blocked)), ...bad, ...p.errors.map((e) => `Konsole: ${e.slice(0, 120)}`)]) note(where, m);
           pages++;
           await p.context().close();
         }

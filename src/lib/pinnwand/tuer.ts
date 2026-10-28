@@ -123,10 +123,10 @@ export function magnetOf(papier: "zettel" | "karo" | "foto" | "memo", pinned = f
   return papier === "karo" ? "stern" : papier === "foto" ? "apfel" : papier === "memo" ? "herz" : "punkt";
 }
 
-/** Fächer je Größe: S und M drei, L bis sechs */
-export const FAECHER = { S: 3, M: 3, L: 6 } as const;
+/** Fächer je Größe: S und M je drei (L gibt es seit dem festen Raster nicht mehr) */
+export const FAECHER = { S: 3, M: 3 } as const;
 
-/** Winkel im Fächer (hinten → vorn); L als Raster mit kleinen Winkeln */
+/** Winkel im Fächer (hinten → vorn) */
 export const FAECHER_WINKEL = [-10, -2, 7] as const;
 
 /**

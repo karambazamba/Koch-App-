@@ -18,6 +18,8 @@ import { helperName } from "@/lib/einstellungen/profile";
 import { askDecision, changeNotify, loadNotify, useNotify, type AskMoment } from "@/lib/heute/mitteilungen/einstellungen";
 import { syncPushSubscription } from "@/lib/heute/mitteilungen/serverPush";
 import { pauseOn, remindersToSend } from "@/lib/heute/mitteilungen/erinnerungen";
+import { loadSport } from "@/lib/sport/store";
+import { proaktivHeute, sportVorabend } from "@/lib/sport/erinnerung";
 import { iosTab, notifyPermission, onAskForNotifications, showNotify } from "@/lib/heute/mitteilungen/geraet";
 
 const NotifyAsk = dynamic(() => import("@/components/heute/mitteilungen/NotifyAsk").then((m) => m.NotifyAsk), { ssr: false });
@@ -40,10 +42,20 @@ async function tick() {
     paused: pauseOn(profile?.pause, today),
     allowed: (m) => pushAllowed({ kind: m.kind, minutes: minute, routine, workEnd: null, paused: false, proactiveSentToday: false }),
   });
-  if (!due.length) return;
+  // Sport: Erinnerung am Vorabend (Schalter im Sport-Menü, Standard aus) – proaktiv, höchstens 1 am Tag
+  const paused = pauseOn(profile?.pause, today);
+  const sport = sportVorabend(loadSport(), loadEntries(), {
+    today,
+    minute,
+    me: profile?.persons[0]?.id ?? null,
+    sent: s.sent,
+    allowed: () => pushAllowed({ kind: "proaktiv", minutes: minute, routine, workEnd: null, paused, proactiveSentToday: proaktivHeute(s.sent, today) }),
+  });
+  if (!due.length && !sport) return;
   const name = helperName(profile ?? null);
   const sent: string[] = [];
   for (const m of due) if (await showNotify(name, m.body, m.href, `erinnerung:${m.key}`)) sent.push(`${m.key}#${m.date}`);
+  if (sport && (await showNotify(name, sport.body, sport.href, sport.key))) sent.push(sport.key);
   if (sent.length) changeNotify((x) => ({ ...x, sent: [...x.sent, ...sent].slice(-200) }));
 }
 

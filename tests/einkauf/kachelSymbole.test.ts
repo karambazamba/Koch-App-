@@ -53,7 +53,7 @@ describe("Symbol der Abteilung statt Buchstabe", () => {
 
 describe("Kein Symbol-Haufen mehr (Tafel 99)", () => {
   it("nur „Egal wo“ ist eine normale Zeile, nichts ohne Ordnung", () => {
-    const r = tileRows([{ name: "Milch", shop: "", anywhere: true }, { name: "Brot", shop: "" }], [], "S");
+    const r = tileRows([{ name: "Milch", shop: "", anywhere: true }, { name: "Brot", shop: "" }], []);
     expect(r.rows).toEqual([{ shop: null, names: ["Milch"], count: 1 }]);
     expect(r.ohne).toEqual(["Brot"]);
   });

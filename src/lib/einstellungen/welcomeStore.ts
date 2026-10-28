@@ -6,7 +6,7 @@
 import { loadSport, saveSport } from "@/lib/sport/store";
 import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
-import { DEFAULT_HOME, saveHomeTiles } from "@/lib/core/homeLayout";
+import { defaultHome, saveHomeTiles } from "@/lib/core/homeLayout";
 import { setFeature } from "@/lib/core/features";
 import { clearDemoStore, startDemo } from "@/lib/core/demo";
 import { loadProfile, saveProfile } from "@/lib/einstellungen/profileStore";
@@ -34,9 +34,11 @@ function finishWelcome(state: WelcomeState, look: AppLook = "farbig") {
 }
 
 /**
- * Erster Start ("Los geht's" auf dem Hallo-Bildschirm, danach höchstens die
- * eine Frage nach dem Look – Standard „Farbig“): sonst Standardwerte, die Standard-Startseite (Pinnwand + Wetter klein
- * nebeneinander, Termine, Aufgaben, Essen + Einkauf) und die Beispiele darin.
+ * Erster Start ("Los geht's" auf dem Hallo-Bildschirm, „Für wen soll ich
+ * sortieren?“): sonst Standardwerte, die Standard-Startseite des Haushalts
+ * (Tafel 119: Familie / zu zweit Pinnwand S | Wetter XS über Notizen XS,
+ * allein Wetter, Sport, Notizen, Im Haus als XS; dann Termine, Aufgaben,
+ * Essen + Einkauf) und die Beispiele darin.
  */
 export function startFresh(look: AppLook = "farbig", haushalt: Haushalt = "familie", name = "") {
   finishWelcome(startState(), look);
@@ -44,9 +46,10 @@ export function startFresh(look: AppLook = "farbig", haushalt: Haushalt = "famil
   // Name aus „Wie sollen dich die anderen sehen?“ (Anmelden ohne Profil, A-042): gleich ins neue Profil, nie zweimal fragen
   const eigener = name.trim().slice(0, 40);
   if (profile) saveProfile({ ...profile, householdType: HOUSEHOLD_FOR[haushalt], persons: eigener ? profile.persons.map((p, i) => (i === 0 ? { ...p, name: eigener } : p)) : profile.persons });
-  // Allein: Pinnwand aus (Baustein und Kachel, zuschaltbar), zu zweit und Familie an
-  saveHomeTiles(haushalt === "allein" ? DEFAULT_HOME.map((t) => (t.id === "pinnwand" ? { ...t, visible: false } : t)) : DEFAULT_HOME);
+  // Allein: Pinnwand aus (Baustein und Kachel, zuschaltbar), dafür Sport; zu zweit und Familie mit Pinnwand
+  saveHomeTiles(defaultHome(haushalt));
   setFeature("pinnwand", haushalt !== "allein");
+  if (haushalt === "allein") setFeature("sport", true);
   startDemo();
 }
 

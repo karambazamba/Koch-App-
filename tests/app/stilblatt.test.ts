@@ -1,7 +1,9 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { celebrationText, statusLine } from "@/lib/sport/model";
+import { celebrationText } from "@/lib/sport/model";
+import { stempelkarte } from "@/lib/sport/stempel";
+import { EMPTY_SPORT, createTraining } from "@/lib/sport/model";
 import { pageLabel } from "@/lib/core/pageLabel";
 import { jetztTopics } from "@/lib/heute/jetztTopics";
 import { jetztInput } from "../helpers";
@@ -66,11 +68,11 @@ describe("Stilblatt: Farben und Radien nur über Tokens", () => {
 });
 
 describe("Ohne Druck: Sport ohne Zähler und Serien", () => {
-  const week = (count: number, goal = 3) => ({ monday: "2026-10-19", count, goal, reached: count >= goal, bonus: count > goal });
-  it("der Satz zur Woche enthält keine Zahlen und kein 🔥", () => {
-    for (const n of [0, 1, 2, 3, 5]) for (const wd of [0, 3]) {
-      const line = statusLine(week(n) as never, wd, true);
-      expect(line).not.toMatch(/\d|🔥/);
+  it("die Sätze der Stempelkarte enthalten keine Zahlen und kein 🔥", () => {
+    for (const n of [0, 1, 2, 3, 5]) for (const goal of [null, 2, 3]) {
+      const trainings = Array.from({ length: n }, () => createTraining({ sport: "laufen", minutes: 30, date: "2026-10-20" }));
+      const k = stempelkarte({ ...EMPTY_SPORT, goal, trainings }, [], "2026-10-21", 12 * 60);
+      expect(`${k.satz} ${k.klein ?? ""}`).not.toMatch(/\d|🔥|fehlt|offen|musst/);
     }
     expect(celebrationText("Felix")).toBe("Stark, Felix! Dein Wochenziel ist geschafft.");
   });

@@ -192,6 +192,9 @@ export const PRUEFSAETZE: PruefSatz[] = [
   // Wochenplan gehört zu 1.0: leeren = Vorschau mit „Übernehmen“
   S("Lösch den Wochenplan", ["clear_week"]),
   S("Schalt Sport ein", ["set_feature"]),
+  // Sport als Stempelkarte (A-044): eintragen = Stempel, Lage ohne Zähler
+  S("War heute Volleyball", ["add_training"]),
+  S("Wie läuft’s mit Sport?", ANTWORT),
   S("Wir sind ab Montag eine Woche im Urlaub", ["set_pause"]),
   S("Ich koche jetzt", ["start_cooking"]),
   S("Nächster Schritt", ["cook_step"], { lage: ["kochmodus"] }),
@@ -262,6 +265,7 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Mach das rückgängig", ["undo_last"]),
   S("Nimm die Einkaufsliste von der Startseite", ["home"]),
   S("Mach die Notizen blau", ["home"]),
+  S("Mach das Wetter ganz klein", ["home"]),
   S("Pinnwand wieder in Standardfarbe", ["home"]),
   S("Zeig mir den Vorrat", ["app_command", "set_feature", "antwort"]),
   S("Schreib der Kita, dass Mathis morgen krank ist", ["mail_draft", "app_command"]),

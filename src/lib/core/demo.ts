@@ -1,5 +1,6 @@
-// Beispiel-Tag beim ersten Start: neutrale Beispiele auf der Startseite
-// (Termine, Aufgaben, Pinnwand, Einkauf, Essen mit Beispielgericht), damit nichts leer aussieht. Die
+// Beispiel-Tag beim ersten Start: Beispiele je Haushalt auf der Startseite
+// (Tafel 119: Termine, Aufgaben, Pinnwand, Einkauf, Essen mit Beispielgericht,
+// Notizen, Sport, Im Haus), damit nichts leer aussieht. Die
 // Beispiele liegen NICHT in den echten Speichern – nur die Startseite zeigt
 // sie, nie Sicherung, Kalender, Push oder KI. Uhrzeiten werden beim Öffnen
 // aus einem festen Tagesplan passend zum Wochentag (`demoDay`: Werktag,
@@ -14,9 +15,10 @@ import { addDays, todayIso } from "@/lib/core/now";
 import { weekdayIndex, type CalendarEntry } from "@/lib/kalender/model";
 import { istFeiertag } from "@/lib/core/feiertage";
 import type { Haushalt } from "@/lib/core/haushalt";
+import type { Room } from "@/lib/core/entries";
 
-export type DemoTile = "termine" | "aufgaben" | "pinnwand" | "einkauf" | "essen";
-const TILES: DemoTile[] = ["termine", "aufgaben", "pinnwand", "einkauf", "essen"];
+export type DemoTile = "termine" | "aufgaben" | "pinnwand" | "einkauf" | "essen" | "notizen" | "sport" | "vorrat";
+const TILES: DemoTile[] = ["termine", "aufgaben", "pinnwand", "einkauf", "essen", "notizen", "sport", "vorrat"];
 const DAYS = 3;
 
 export type DemoState = {
@@ -47,7 +49,7 @@ const store = createLocalStore("wasgibts.beispiel", (raw: unknown): DemoState | 
 
 /** Beim allerersten Start (nach "Los geht's") */
 export function startDemo() {
-  store.save({ version: 1, since: todayIso(), cleared: [], done: ["beispiel:a1"], gone: [], asked: false });
+  store.save({ version: 1, since: todayIso(), cleared: [], done: [], gone: [], asked: false });
 }
 
 /** Welche Kacheln gerade Beispiele zeigen (leer = keine) */
@@ -104,8 +106,8 @@ export function useDemo(): DemoState | null {
 
 const clock = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 
-const entry = (id: string, typ: "termin" | "aufgabe", data: Record<string, unknown>): CalendarEntry =>
-  ({ id: `beispiel:${id}`, typ, raum: "familie", besitzer: "lokal", erstellt: `2000-01-01T00:0${id.slice(-1)}:00.000Z`, geaendert: "2000-01-01T00:00:00.000Z", data: { reminder: "aus", repeat: null, ...data } }) as CalendarEntry;
+const entry = (id: string, typ: "termin" | "aufgabe", data: Record<string, unknown>, raum: Room = "familie"): CalendarEntry =>
+  ({ id: `beispiel:${id}`, typ, raum, besitzer: "lokal", erstellt: `2000-01-01T00:0${id.slice(-1)}:00.000Z`, geaendert: "2000-01-01T00:00:00.000Z", data: { reminder: "aus", repeat: null, ...data } }) as CalendarEntry;
 
 /** Art des Beispiel-Tags: Werktag, Samstag oder Sonntag (Feiertage wie Sonntag) */
 export type DemoArt = "werktag" | "samstag" | "sonntag";
@@ -122,13 +124,11 @@ const h = (std: number, min = 0) => std * 60 + min;
 /** Feste Beispiel-Tagespläne einer Familie (Minuten ab Mitternacht) – echte
  *  Termine, keine Mahlzeiten (v0.64, Tafel 51); passend zum Wochentag (v0.100) */
 const DEMO_DAYS: Record<DemoArt, DemoTermin[]> = {
+  // Tafel 119: werktags genau drei, der Laternenumzug ist das Thema der Jetzt-Karte
   werktag: [
-    { id: "t2", title: "Kita bringen", at: h(8) },
-    { id: "t3", title: "Telefonat Versicherung", at: h(10, 30) },
-    { id: "t5", title: "Mathis Fußball", at: h(15) },
-    { id: "t6", title: "Zahnarzt Jonne", at: h(16) },
-    { id: "t8", title: "Elternabend", at: h(19, 30) },
-    { id: "t9", title: "Lieblingsserie", at: h(20, 15) },
+    { id: "t2", title: "Kita, Jonne bringt Lisa", at: h(8) },
+    { id: "t5", title: "Mathis Fußball", at: h(16) },
+    { id: "t8", title: "Laternelaufen", at: h(17) },
   ],
   samstag: [
     { id: "s1", title: "Brötchen holen", at: h(9) },
@@ -152,9 +152,7 @@ const DEMO_DAYS_FOR: Record<Exclude<Haushalt, "familie">, Record<DemoArt, DemoTe
     werktag: [
       { id: "t2", title: "Laufen", at: h(7, 30) },
       { id: "t3", title: "Meeting", at: h(10) },
-      { id: "t5", title: "Mittag mit Jana", at: h(12, 30) },
       { id: "t6", title: "Yoga", at: h(18) },
-      { id: "t9", title: "Serie", at: h(20, 15) },
     ],
     samstag: [
       { id: "s1", title: "Brunch", at: h(10, 30) },
@@ -169,11 +167,9 @@ const DEMO_DAYS_FOR: Record<Exclude<Haushalt, "familie">, Record<DemoArt, DemoTe
   },
   paar: {
     werktag: [
-      { id: "t2", title: "Arbeit", at: h(8, 30) },
-      { id: "t3", title: "Telefonat Vermieter", at: h(12) },
-      { id: "t5", title: "Wocheneinkauf", at: h(17, 30) },
-      { id: "t6", title: "Zusammen kochen", at: h(19) },
-      { id: "t9", title: "Kino", at: h(20, 30) },
+      { id: "t2", title: "Zahnarzt", at: h(9, 30) },
+      { id: "t5", title: "Wocheneinkauf", at: h(18) },
+      { id: "t9", title: "Kino zu zweit", at: h(20, 15) },
     ],
     samstag: [
       { id: "s1", title: "Frühstück", at: h(9, 30) },
@@ -188,12 +184,30 @@ const DEMO_DAYS_FOR: Record<Exclude<Haushalt, "familie">, Record<DemoArt, DemoTe
   },
 };
 
-/** Beispiel-Termine eines Tages je Haushaltsart (Elternabend nur Di bis Do) */
+/** Beispiel-Termine eines Tages je Haushaltsart */
 export function demoDay(date: string, haushalt: Haushalt = "familie"): DemoTermin[] {
   const art = demoArt(date);
-  const w = weekdayIndex(date);
-  if (haushalt !== "familie") return DEMO_DAYS_FOR[haushalt][art];
-  return DEMO_DAYS[art].filter((t) => t.id !== "t8" || (w >= 1 && w <= 3));
+  return haushalt === "familie" ? DEMO_DAYS[art] : DEMO_DAYS_FOR[haushalt][art];
+}
+
+/** Beispiel-Aufgaben je Haushalt (Tafel 119): die mittlere ist geschäftlich (Schild „Arbeit“) */
+const DEMO_AUFGABEN: Record<Haushalt, [string, string, string]> = {
+  familie: ["Elternbrief unterschreiben", "Steuerberater anrufen", "Geschenk für Oma"],
+  paar: ["Urlaub buchen", "Präsentation fertig", "Mama anrufen"],
+  allein: ["Steuererklärung", "Bericht schicken", "Jana zurückrufen"],
+};
+
+/**
+ * Thema der Jetzt-Karte am Beispiel-Tag (Tafel 119, werktags): der eine
+ * Termin, um den sich der Tag dreht – Zeile 1 ≤ 32 Zeichen, vorbereitend
+ * statt „vergiss nicht“. Am Wochenende (anderer Plan) kein eigenes Thema.
+ */
+export function demoJetzt(date: string, tomorrow: boolean, haushalt: Haushalt = "familie"): { title: string; detail: string } | null {
+  if (demoArt(date) !== "werktag") return null;
+  const tag = tomorrow ? "Morgen" : "Heute";
+  if (haushalt === "paar") return { title: tomorrow ? "Morgen Kino um 20:15." : "Moin! Kino heute um 20:15.", detail: "Vorher was Schnelles essen?" };
+  if (haushalt === "allein") return { title: tomorrow ? "Morgen um 18 Uhr Yoga." : "Moin! Heute um 18 Uhr Yoga.", detail: "Sporttasche schon gepackt?" };
+  return { title: tomorrow ? `${tag} ist Laternelaufen.` : `Moin! ${tag} ist Laternelaufen.`, detail: "17 Uhr. Laterne schon bereit?" };
 }
 
 /**
@@ -204,7 +218,7 @@ export function demoDay(date: string, haushalt: Haushalt = "familie"): DemoTermi
  * Am Wochenende und an Feiertagen kein „heute dran“: alle Aufgaben für die
  * Woche, keine dringend.
  */
-export function demoEntries(today: string, minutes: number, helper: string, haushalt: Haushalt = "familie"): { date: string; tomorrow: boolean; entries: CalendarEntry[] } {
+export function demoEntries(today: string, minutes: number, haushalt: Haushalt = "familie"): { date: string; tomorrow: boolean; entries: CalendarEntry[] } {
   const tomorrow = demoDay(today, haushalt).filter((t) => t.at > minutes).length < 2;
   const date = tomorrow ? addDays(today, 1) : today;
   const termine = demoDay(date, haushalt)
@@ -213,13 +227,9 @@ export function demoEntries(today: string, minutes: number, helper: string, haus
   const monday = addDays(date, -weekdayIndex(date));
   const frei = demoArt(date) !== "werktag";
   const wann = frei ? { week: monday } : { date };
-  const aufgaben = [
-    entry("a1", "aufgabe", { title: "App kennenlernen", ...wann }),
-    entry("a2", "aufgabe", { title: `${helper} etwas fragen`, ...wann, ...(frei ? {} : { dringend: true }) }),
-    entry("a3", "aufgabe", { title: "Ersten Termin eintragen", ...wann }),
-    entry("a4", "aufgabe", { title: "Kachel verschieben", week: monday }),
-    ...(haushalt === "allein" ? [] : [entry("a5", "aufgabe", { title: "Pinnwand ausprobieren", week: monday })]),
-  ];
+  const [a1, a2, a3] = DEMO_AUFGABEN[haushalt];
+  // Tafel 119: eine Arbeit-Aufgabe, zu zweit dazu „Mama anrufen“ als „Ich“ (allein gibt es den Raum nicht)
+  const aufgaben = [entry("a1", "aufgabe", { title: a1, ...wann }), entry("a2", "aufgabe", { title: a2, ...wann }, "arbeit"), entry("a3", "aufgabe", { title: a3, ...wann }, haushalt === "paar" ? "ich" : "familie")];
   return { date, tomorrow, entries: [...termine, ...aufgaben] };
 }
 

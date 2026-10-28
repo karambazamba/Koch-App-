@@ -3502,3 +3502,121 @@ Fehler in `docs/aufraeumen-nachher.md`.
   (Durchklick `pinnwandOrdnen` prüft es ab 390 px). Durchklick-Helfer
   `halten` rollt den Zettel vorher in die Mitte (vorher drückte er unter Mias
   Hinweis-Blase bzw. außerhalb des Bildschirms).
+
+## Startseite XS · S · M, Standard je Haushalt, Wetter mit Himmel (v0.153.0, Tafel 118–120, A-023)
+
+- Problem (Video 28.10. 11:49): Kacheln waren je Inhalt unterschiedlich hoch,
+  Pinnwand S neben Wetter S passte nicht, Wetter in M hatte eine andere Höhe,
+  und nach „Fertig“ schrumpfte die Pinnwand-S auf einen Streifen (feste
+  `h-[156px]` gegen das Strecken der Zeile, im Bearbeiten Einzug + Knöpfe
+  unter der Kachel = andere Flächen).
+- Festes Raster (`lib/heute/raster.ts`): 2 Spalten, Grund-Zeile = halbe
+  S-Höhe aus der Breite; XS 1 × 1, S 1 × 2 (quadratisch), M 2 × 2; L entfällt
+  (alte L → M). Dicht und stabil in der gespeicherten Reihenfolge, zwei XS als
+  Paar (übereinander bzw. nebeneinander vor etwas Breitem), Lücken nur ohne
+  Partner (im Bearbeiten „＋ Kachel“, statt „freie Hälfte“). Bearbeiten =
+  Fertig-Ansicht (Knöpfe in der Kachel). Erlaubte Größen je Kachel wie Tafel
+  118; jede Kachel füllt ihre Fläche, Rest als „+n“.
+- Standard je Haushalt (Tafel 119) für neue Nutzer und Beispiel-Tag; Timer
+  ohne festen Platz (XS oben, solange er läuft); Haushaltswechsel überschreibt
+  keine eigene Anordnung. Beispiel-Inhalte wie Tafel 119 („Arbeit“ = blaues
+  Schild, „Ich“ = Familie ohne Schild).
+- Wetter mit Himmel (Tafel 120): kleine stille Szene je Wetterlage rechts
+  oben (ersetzt Muster und Windsack auf der Kachel), kurzer Satz ≤ 22 Zeichen.
+- Speicher: Startseite v9 (Migration L → M, nicht erlaubte Größen auf die
+  nächste erlaubte, keine Kachel verschwindet).
+
+## Sport-Kachel mit Wasserzeichen (v0.153.0, Tafel 124 A)
+
+- Auftrag A-029, Tafel 124 A nur als Text. Sport-Kachel (S) mit großem,
+  stillem Linien-Symbol unten rechts (150 px, Strich 1,3, 30 px angeschnitten,
+  hinter dem Inhalt, `aria-hidden`, nicht antippbar): Sportart des nächsten
+  Trainings, sonst des letzten, sonst Laufschuh (lucide `SportShoe`). Farbe
+  = Kachel-Akzent der gewählten Farbe, Deckkraft als Tokens
+  `--app-wasserzeichen` (hell 12,5 %, dunkel 10 %), Schlicht Grau 6 %. Im Haus
+  (S) mit Kühlschrank (9 %, dunkel 7 %). XS ohne Wasserzeichen.
+- Im Haus: Namen nie abgeschnitten (Symbol 20 px, Name 14 px, Schild 10,5 px
+  rechts, nur wenn nötig darunter).
+- Sport leer: „Diese Woche ist noch frei. Plus tippen.“ Kachel-Texte ohne
+  Gedankenstrich (Spendentopf „<Region> · noch kein Topf“, Tipps „Gerade
+  nichts in eurer Nähe. Umkreis ansehen“, Jetzt-Karte „… · lieber
+  drinnen?“); Code-Regel `tests/app/kachelTexte.test.ts`.
+- Bildvergleich: Szenen Sport/Im Haus in 8 Farben × hell/dunkel ×
+  Farbig/Schlicht (`e2e/bilder.mjs`).
+
+## Wasserzeichen für alle Kacheln ohne Bild (v0.153.0, A-036, Tafel 124 A/125)
+
+- Auftrag A-036, Tafel 125 nur als Text. EINE Komponente
+  `ui/KachelWasserzeichen` für alle: Termine Calendar, Aufgaben CircleCheck,
+  Einkauf ShoppingCart, Sport Sportart des nächsten Trainings, Im Haus
+  Refrigerator, Notizen StickyNote, Timer Timer; dazu Tipps MapPin und Post
+  (bald) Mail. Ohne: Wetter, Essen, Pinnwand, Spendentopf (eigenes Bild),
+  Jetzt-Karte. Zuordnung als `Record` über alle Kachel-IDs plus Test: eine
+  neue Kachel ohne Symbol oder Grund scheitert. Eine Wochenplan-Kachel gibt es
+  nicht (CalendarDays bleibt für später).
+- 150 px, Strich 1,3, unten rechts 30 px angeschnitten, −8° gedreht, Farbe =
+  Akzent der gewählten Kachel-Farbe. Deckkraft hell 12,5 % / dunkel 10 %, mit
+  freiem Text (`frei`) 9 % / 8 % (`--app-wasserzeichen-frei` ersetzt
+  `-haus`). Look „Schlicht“: keine Wasserzeichen (vorher Grau 6 %). XS ohne.
+- Kachel `isolate`; Fenster (Termin-Möglichkeiten, Tipp, Einkauf „Mehr
+  Details“) stehen neben der `<section>`, damit sie nicht unter späteren
+  Kacheln liegen. Leiser Text über dem Zeichen mit `kachel-frei`.
+- Bildvergleich: Familie-Beispiel auch in „Schlicht“, alle Wasserzeichen-
+  Kacheln in den 8 Farben × Farbig/Schlicht × hell/dunkel (`e2e/bilder.mjs`).
+
+## Sport als Stempelkarte (v0.153.0, A-044, Tafel 132)
+
+- Auftrag A-044 mit Tafel 132 (ersetzt die nie angekommenen Tafeln 129/130
+  und den Wochen-Kreis-Teil von Tafel 124). Leitsatz: nur was rein muss,
+  diese Woche, das Nächste, ein Knopf; alles andere im „•••“.
+- Sport-Seite: Karte „Diese Woche“ mit so vielen Feldern wie das Wochenziel
+  (ohne Ziel 3). Training = Stempel (doppelter Ring im Kachel-Akzent, Symbol,
+  „MO“, fest gedreht je Training aus der ID), geplant = gestrichelt mit „Do
+  8:00“, mehr als Ziel = kleine Bonus-Stempel. Zwei Sätze („Mo war Laufen.“ /
+  „Do 8:00 ist geplant.“), geschafft grün („Woche geschafft.“ / „Mehr ist
+  Bonus.“), neuer Stempel setzt weich auf (1 s, reduced-motion Überblenden).
+  Großer Knopf „Training eintragen“, Link „Planen“, „Letzte Wochen“ (3
+  Zeilen, Punkte, „geschafft“; keine Serien, keine Summen). Weg: Kreise Mo–So
+  (`SportWeekRow`, `weekDots`), Wochensatz (`statusLine`), Ziel-Chips,
+  Packlisten-Block, „Zuletzt“-Liste (Ändern/Löschen jetzt über den Stempel
+  bzw. die Woche), Lob-Satz `praiseFor`.
+- Menü „•••“: Wochenziel (1×–7×, Ohne Ziel), Packlisten, Meine Sportarten
+  (eigene entfernen/dazu), Erinnerung am Vorabend (Schalter, Standard aus;
+  19:00, wenn morgen ein Training geplant ist, proaktiv höchstens 1 am Tag,
+  Ruhe 20–7, Pause; nur auf dem Gerät).
+- Ziel-Frage einmalig beim ersten Training: „Wie oft willst du Sport machen?
+  Pro Woche. Dann sag ich dir, wenn die Woche geschafft ist.“ (2× · 3× ·
+  Ohne Ziel).
+- Kachel XS/S/M (M neu erlaubt): Stempel + das Nächste, M mit Wetter zur
+  Trainingszeit, geschafft grün, leer „Diese Woche ist noch frei.“, Plus =
+  „Training eintragen“, ganze Kachel = Sport-Seite. Kein Wasserzeichen mehr
+  (`OHNE_WASSERZEICHEN.sport = "Stempel sind das Bild"`,
+  `lib/sport/wasserzeichen.ts` entfernt). Laufen zeigt den Laufschuh.
+- Speicher `wasgibts.sport` v2: Ziel darf leer sein, `zielGefragt`,
+  `erinnerung`; v1 behält sein Ziel (sonst 3) und wird nicht gefragt.
+- Mia: „War heute Volleyball“ → Stempel, „Volleyball · heute · gestempelt“;
+  „Wie läuft’s mit Sport?“ (auch „Wie oft …?“ für die Woche) → „Mo war
+  Laufen, Do ist geplant.“ bzw. „Woche geschafft.“. Die Texte liegen als
+  Bausteine in `lib/sport/stempel.ts` (eine eigene Ergebnis-Karte aus A-037
+  für Stempel gibt es noch nicht). Prüfstand +2 Sätze.
+- Neu: Sportart Volleyball. Durchklick `sportStempel`, `sportPlanen`
+  (ersetzt `sportKachel`); Bilder Kachel S/M × leer/normal/geschafft ×
+  Farbig/Schlicht, Sport-Seite, Menü.
+
+## Raster, Wasserzeichen und Stempel auf dem neuen Stand (v0.153.0)
+- Zusammengeführt mit Essen-Kachel final und „nichts abgeschnitten“
+  (A-045/A-046), Räumen Familie · Ich · Arbeit mit Aufleuchten (A-020/021/
+  034/037) und Pinnwand A-028: Essen-Kachel ohne große Knöpfe in der festen
+  Fläche, kein „…“ in XS · S · M (Wetter-Ort und -Satz brechen um, Notizen
+  leer „Schnell notieren.“, Im Haus XS Name vor Schild), frei Eingegebenes
+  mit `data-freitext`; Beispiel-Tag zu zweit „Mama anrufen“ im Raum Ich.
+- iPhone SE 1 (320 px): Grund-Zeile mindestens 80 px (S 168 hoch), Einkauf
+  ohne Symbole unter 320 px Board-Breite.
+- Wetter S: Temperatur nur so breit wie die Zahl (nie unter der Szene), M
+  4 px enger (passt auf dem SE ohne Überquellen).
+- Tafel 125 als Bild abgelegt und abgeglichen (ein Symbol je Kachel unten
+  rechts angeschnitten, hinter weißen Kärtchen, nicht bei Wetter/Essen/
+  Pinnwand, Schlicht ganz aus; Sport mit Stempeln statt Zeichen).
+- Durchklick an das Raster angepasst (Pinnwand S neben Wetter XS über
+  Notizen XS, Wasserzeichen zählen beim Überquellen nicht, Größen-Knopf im
+  Wackeln getippt, `nichtsAbgeschnitten` auf XS · S · M).

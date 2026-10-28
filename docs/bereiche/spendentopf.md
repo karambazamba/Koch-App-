@@ -110,7 +110,7 @@ Zusage, zeigt `thanks` und eine fallende Münze. Der Betrag im Topf =
 Kachel `spendentopf` (nur M, Gold, standardmäßig an, entfernbar): Topf,
 Region (mit „· Beispiel“), Betrag, Statuszeile – in der Abstimmzeit
 „Abstimmen: noch X Tage“ und Knopf „Abstimmen“, sonst „Euer Beitrag: 4 € im
-Monat · zugesagt“ bzw. „Gemeinsam für <Region>“; ohne Topf „<Region> –
+Monat · zugesagt“ bzw. „Gemeinsam für <Region>“; ohne Topf „<Region> ·
 noch kein Topf“. Antippen → Seite.
 
 Hinweis unter der Jetzt-Karte (`usePotHint`, höchstens einer, vor dem

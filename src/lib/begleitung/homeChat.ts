@@ -41,6 +41,7 @@ function farbeIn(t: string): KachelFarbe | "auto" | null {
 
 function actionIn(t: string): HomeAction | null {
   if (/\b(von der startseite|ausblenden|verstecken|blend\w* \w+ aus|weg von der startseite)\b/.test(t) || (/\b(nimm|mach|tu)\w*\b.*\bweg\b/.test(t) && !/\b(von|aus) der (einkaufs)?liste\b/.test(t))) return "ausblenden";
+  if (/\b(ganz klein\w*|winzig\w*|mini)\b/.test(t)) return "mini";
   if (/\b(klein\w*|kompakt\w*|kürzer)\b/.test(t)) return "klein";
   if (/\b(mittel\w*|normal\w*)\b/.test(t)) return "mittel";
   if (/\b(gro(ß|ss)\w*|ausführlich|länger)/.test(t)) return "gross";
@@ -71,7 +72,7 @@ export function parseHomeCommand(text: string): HomeCommand | null {
   // Kurz: "Aufgaben ganz nach oben", "Aufgaben groß", "Wetter klein"
   const tile = tileIn(t);
   const action = actionIn(t);
-  if (tile && action && ["nach_oben", "nach_unten", "klein", "mittel", "gross"].includes(action) && t.split(/\s+/).length <= 6) return { kind: "home", change: { tile, action } };
+  if (tile && action && ["nach_oben", "nach_unten", "mini", "klein", "mittel", "gross"].includes(action) && t.split(/\s+/).length <= 6) return { kind: "home", change: { tile, action } };
   if (/(?<![a-zäöüß])(zeig\w*|öffne\w*|wo ist|wo finde ich)\b.*\bwochenplan\b/.test(t)) return { kind: "show", target: "wochenplan" };
   if (/(?<![a-zäöüß])(zeig\w*|öffne\w*|wo ist|wo finde ich)\b.*\beinkaufsliste\b/.test(t)) return { kind: "show", target: "einkaufsliste" };
   const remove = t.match(/^(?:bitte\s+)?(?:nimm|streich|lösch)\w*\s+(?:bitte\s+)?(.+?)\s+(?:wieder\s+)?(?:von|aus)\s+der\s+(?:einkaufs)?liste(?:\s+runter)?$/);

@@ -121,6 +121,7 @@ export function dayUses(latest: string, system: string): Anthropic.Beta.BetaMess
   const sport = today ? parseSportCommand(latest, today) : null;
   if (sport?.kind === "add") return tools([{ name: "sport_eintragen", input: { sportart: sport.sport, ...(sport.minutes ? { minuten: sport.minutes } : {}), ...(sport.km ? { km: sport.km } : {}), datum: sport.date } }]);
   if (sport?.kind === "goal") return tools([{ name: "sport_ziel_setzen", input: { ziel: sport.goal } }]);
+  if (sport?.kind === "lage") return tools([{ name: "sport_statistik", input: { zeitraum: "woche" } }]);
   if (sport?.kind === "stats") return tools([{ name: "sport_statistik", input: { zeitraum: sport.what } }]);
   if (sport?.kind === "plan") return tools([{ name: "trainings_planen", input: { anzahl: sport.count, tageszeit: sport.part ?? "egal", woche: sport.week } }]);
   return null;

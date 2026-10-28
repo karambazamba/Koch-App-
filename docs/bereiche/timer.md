@@ -51,8 +51,11 @@ Regeln:
   Pausiertes zuletzt (`sortTimers`).
 - Auf der Kachel steht ein abgelaufener Timer noch 1 Minute (`shownOnTile`).
 
-Kachel `timer` (Größen S/M, Standard M, standardmäßig aus):
-- M: Kopf „Timer“ (ohne Zähler), der wichtigste Timer mit
+Kachel `timer` (Größen XS/S im festen Raster, Tafel 118; kein fester Platz:
+solange ein Timer läuft und die Kachel nicht selbst auf der Startseite steht,
+erscheint sie als XS ganz oben, danach wieder weg – `mitLaufendemTimer`):
+- XS: EINE Zeile „Nudeln · 7:42“ (sonst „Timer starten“).
+- Fenster (früher „M“, `TimerTile size="M"` im Sheet): Kopf „Timer“ (ohne Zähler), der wichtigste Timer mit
   Ring (Timer-Symbol), Restzeit groß, Name, Knöpfe +1 · Pause/Weiter · ✕; weitere als
   Zeilen; die Stoppuhr (anhalten/weiter, zurücksetzen); „Bereit, wenn du ihn
   brauchst.“; Schnellknöpfe 5 · 10 · 15 Min · Stoppuhr. Lange drücken

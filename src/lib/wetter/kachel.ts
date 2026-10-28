@@ -1,11 +1,13 @@
-// Wetter-Kachel (Tafel „ruhig mit Regentropfen“, Tafel 87) – rein und testbar:
-// die ehrliche Lage jetzt, die eine Zeile („Regen · ab 10 Uhr trocken“), der
-// Wind jetzt, die nächsten Stunden im 2-Stunden-Abstand und der Hintergrund
-// je Wetter, Tag/Nacht und Look. Nichts bewegt sich: Muster sind still.
+// Wetter-Kachel (Tafel 87, Tafel 120 „mit Himmel“) – rein und testbar: die
+// ehrliche Lage jetzt, die eine Zeile („Regen · ab 10 Uhr trocken“), der
+// kurze Satz der Kachel (≤ 22 Zeichen, „ab 15 Uhr Regen“), die kleine Szene
+// rechts oben (Sonne, leicht bewölkt, bewölkt, Regen, Gewitter, Schnee, Wind,
+// Nacht), der Wind jetzt, die nächsten Stunden im 2-Stunden-Abstand und der
+// Hintergrund je Wetter, Tag/Nacht und Look. Nichts bewegt sich.
 
 import { isRainy, round, weatherKind, type Forecast, type ForecastHour } from "@/lib/wetter/forecast";
 import { isNight, type WeatherGroup } from "@/lib/wetter/view";
-import { windLevel, windLook, windOf, type Wind } from "@/lib/wetter/wind";
+import { windLevel, windLook, windOf, windWord, windZeigen, type Wind } from "@/lib/wetter/wind";
 import type { AppLook } from "@/lib/einstellungen/profileModel";
 
 /** Die Stunde jetzt (bzw. die nächste vorhandene heute) */
@@ -78,30 +80,74 @@ export function zweiStunden(fc: Forecast, today: string, nowHour: number, count 
     .map((h) => ({ key: `${h.date}-${h.hour}`, hour: h.hour, code: h.code, temp: round(h.temp), rain: h.rain, night: isNight(h.date, h.hour * 60 + 30) }));
 }
 
-/** Stilles Muster im Hintergrund (inline-SVG, keine Bilder) */
-export type HimmelMuster = "sonne" | "mond" | "wolken" | "tropfen" | "punkte" | "blitz";
-export type HimmelKey = `${WeatherGroup}` | `${WeatherGroup}-nacht` | "schlicht";
+/** Kleine, ruhige Szene rechts oben (eigene Zeichnung, `WetterSzene`) */
+export type WetterSzene = "sonne" | "leicht" | "wolken" | "regen" | "gewitter" | "schnee" | "wind" | "nacht";
 
-const MUSTER: Record<WeatherGroup, [HimmelMuster, HimmelMuster]> = {
-  sonnig: ["sonne", "mond"],
-  bewoelkt: ["wolken", "wolken"],
-  regen: ["tropfen", "tropfen"],
-  schnee: ["punkte", "punkte"],
-  gewitter: ["blitz", "blitz"],
-};
+/** Alle Szenen (für Tests, Bildschirmfotos und das Stilblatt) */
+export const SZENEN: WetterSzene[] = ["sonne", "leicht", "wolken", "regen", "gewitter", "schnee", "wind", "nacht"];
+
+/**
+ * Szene aus Lage, Wetter-Art, Tag/Nacht und Wind: nass geht vor (Gewitter,
+ * Schnee, Regen – auch nachts), dann Wind (nur wenn er auffällt,
+ * `windZeigen`: ab „Frischer Wind“ oder Böen ≥ 60), nachts Mond + Sterne,
+ * sonst bewölkt, leicht bewölkt (heiter) oder Sonne.
+ */
+export function szeneAus(lage: WeatherGroup, code: number, nacht: boolean, wind: Wind | null): WetterSzene {
+  if (lage === "gewitter" || lage === "schnee" || lage === "regen") return lage;
+  if (windZeigen(wind)) return "wind";
+  if (nacht) return "nacht";
+  if (lage === "bewoelkt") return "wolken";
+  return weatherKind(code).kind === "heiter" ? "leicht" : "sonne";
+}
+
+/** Szene der Kachel jetzt */
+export const kachelSzene = (fc: Forecast, today: string, nowHour: number, nacht: boolean): WetterSzene => szeneAus(kachelLage(fc, today, nowHour), fc.current.code, nacht, kachelWind(fc, today, nowHour));
+
+/** Höchstlänge des kurzen Satzes (passt auch in XS neben die Szene) */
+export const SATZ_MAX = 22;
+
+/**
+ * Der EINE kurze Satz unter der Temperatur (Tafel 120, ≤ 22 Zeichen, ehrliche
+ * Regel `isRainy`): nass jetzt → „Regen bis 15 Uhr“ (ohne trockene Stunde nur
+ * „Regen“); später nass → „ab 15 Uhr Regen“ (Schnee, Gewitter); eben
+ * aufgehört → „Regen hat aufgehört“; auffälliger Wind → „Frischer Wind“;
+ * nachts „klar“ bzw. „bewölkt“; sonst „bleibt sonnig“, „bleibt trocken“
+ * (leicht bewölkt) oder „bewölkt“.
+ */
+export function kachelSatz(fc: Forecast, today: string, nowHour: number, nacht: boolean): string {
+  const lage = kachelLage(fc, today, nowHour);
+  const ahead = fc.hours.filter((h) => h.date === today && h.hour > nowHour);
+  if (lage === "regen" || lage === "schnee" || lage === "gewitter") {
+    const wort = lage === "regen" && weatherKind(fc.current.code).kind === "niesel" ? "Niesel" : WORT[lage];
+    const dry = ahead.find((h) => !isRainy(h));
+    return dry ? `${wort} bis ${dry.hour} Uhr` : wort;
+  }
+  const wet = ahead.find(isRainy);
+  if (wet) {
+    const kind = weatherKind(wet.code).kind;
+    return `ab ${wet.hour} Uhr ${kind === "schnee" ? "Schnee" : kind === "gewitter" ? "Gewitter" : "Regen"}`;
+  }
+  if (fc.current.stopped) return "Regen hat aufgehört";
+  const wind = kachelWind(fc, today, nowHour);
+  if (windZeigen(wind)) return windWord(windLevel(wind.speed));
+  if (nacht) return lage === "sonnig" ? "klar" : "bewölkt";
+  if (lage === "bewoelkt") return "bewölkt";
+  return weatherKind(fc.current.code).kind === "heiter" ? "bleibt trocken" : "bleibt sonnig";
+}
+
+export type HimmelKey = `${WeatherGroup}` | `${WeatherGroup}-nacht` | "schlicht";
 
 /** Alle Himmel-Varianten (für Tests und Stilblatt) */
 export const HIMMEL_KEYS: HimmelKey[] = (["sonnig", "bewoelkt", "regen", "schnee", "gewitter"] as WeatherGroup[]).flatMap((g) => [g, `${g}-nacht`] as HimmelKey[]);
 
 /**
  * Hintergrund der Kachel: Look „Farbig“ = Himmel je Wetter (Tokens
- * `--app-sky-<key>-a/-b/-ink/-soft/-boeen/-motiv`), nachts die dunklere
- * Variante, dazu ein stilles Muster; Look „Schlicht“ = weiß, kein Muster, nur
- * das Wetter-Symbol farbig. `ton`: ab „Stürmisch“ leicht warm, ab „Sturm“
- * rötlich (beide Looks).
+ * `--app-sky-<key>-a/-b/-ink/-soft/-motiv`), nachts die dunklere Variante;
+ * Look „Schlicht“ = weiß (die Szene kleiner und blasser). `ton`: ab
+ * „Stürmisch“ leicht warm, ab „Sturm“ rötlich (beide Looks).
  */
-export function kachelHimmel(lage: WeatherGroup, nacht: boolean, look: AppLook, wind: Wind | null = null): { key: HimmelKey; muster: HimmelMuster | null; symbol: boolean; ton: "warm" | "sturm" | null } {
+export function kachelHimmel(lage: WeatherGroup, nacht: boolean, look: AppLook, wind: Wind | null = null): { key: HimmelKey; ton: "warm" | "sturm" | null } {
   const ton = wind ? windLook(windLevel(wind.speed)).ton : null;
-  if (look === "schlicht") return { key: "schlicht", muster: null, symbol: true, ton };
-  return { key: nacht ? `${lage}-nacht` : lage, muster: MUSTER[lage][nacht ? 1 : 0], symbol: false, ton };
+  if (look === "schlicht") return { key: "schlicht", ton };
+  return { key: nacht ? `${lage}-nacht` : lage, ton };
 }

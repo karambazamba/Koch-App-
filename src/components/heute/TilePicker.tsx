@@ -11,7 +11,8 @@ import { Box, HandCoins, MapPin, CalendarClock, CheckCircle2, CloudSun, Dumbbell
 import { useRef } from "react";
 import { Sheet } from "@/components/ui/Sheet";
 import { TILE_PLUS_DOT } from "@/components/ui/styles";
-import { HOME_TILES, applyHomeChange, placeBeside, saveHomeTiles, smallPartners, tileMeta, useHomeTiles, type HomeTile, type HomeTileId } from "@/lib/core/homeLayout";
+import { HOME_TILES, applyHomeChange, saveHomeTiles, tileMeta, useHomeTiles, type HomeTile, type HomeTileId } from "@/lib/core/homeLayout";
+import { fuelleLuecke, passtInLuecke, type Luecke } from "@/lib/heute/raster";
 import { showDeleted } from "@/lib/core/toast";
 import { featureOn, launchSichtbar, setFeature, useBausteine } from "@/lib/core/features";
 import { pushUndo } from "@/lib/core/undo";
@@ -54,9 +55,9 @@ const isActive = (t: HomeTile) => t.visible && !tileMeta(t.id).soon && (!tileMet
 
 /**
  * `onClosed(id)`: beim Schließen die zuletzt hinzugefügte Kachel (die Seite scrollt hin, sie leuchtet auf).
- * `neben`: „＋ Kachel“ in der freien Hälfte neben dieser S – nur S-fähige Kacheln, Antippen stellt sie klein daneben.
+ * `luecke`: „＋ Kachel“ in einer Lücke des Rasters – nur Kacheln, die hineinpassen (XS bzw. S), Antippen stellt sie genau dorthin.
  */
-export function TilePicker({ onClose, onClosed, neben }: { onClose: () => void; onClosed?: (lastAdded: HomeTileId) => void; neben?: HomeTileId }) {
+export function TilePicker({ onClose, onClosed, luecke }: { onClose: () => void; onClosed?: (lastAdded: HomeTileId) => void; luecke?: { luecke: Luecke; shown: HomeTile[] } }) {
   const all = useHomeTiles();
   const added = useRef<HomeTileId | null>(null);
   const tipsMode = useTipsMode();
@@ -67,9 +68,9 @@ export function TilePicker({ onClose, onClosed, neben }: { onClose: () => void; 
     if (added.current) onClosed?.(added.current);
   };
   return (
-    <Sheet title={neben ? `Neben ${tileMeta(neben).label}` : "Kachel hinzufügen"} onClose={close} above>
+    <Sheet title={luecke ? "Kachel hierhin" : "Kachel hinzufügen"} onClose={close} above>
       <ul className="grid grid-cols-2 gap-2 pb-3" aria-label="Kacheln">
-        {sortBy(HOME_TILES.filter((meta) => !meta.soon && (!neben || smallPartners(neben).includes(meta.id)) && (meta.id !== "tipps" || (tipsMode && tipsMode !== "off")) && (!meta.feature || launchSichtbar(meta.feature, on ?? []))), ...TILE_PICKER).map((meta) => {
+        {sortBy(HOME_TILES.filter((meta) => !meta.soon && (!luecke || passtInLuecke(meta.id, luecke.luecke)) && (meta.id !== "tipps" || (tipsMode && tipsMode !== "off")) && (!meta.feature || launchSichtbar(meta.feature, on ?? []))), ...TILE_PICKER).map((meta) => {
           const tile = all.find((t) => t.id === meta.id);
           const active = Boolean(tile && isActive(tile));
           const Icon = TILE_ICONS[meta.id] ?? Box;
@@ -78,13 +79,13 @@ export function TilePicker({ onClose, onClosed, neben }: { onClose: () => void; 
               <button
                 type="button"
                 aria-pressed={active}
-                aria-label={neben ? `${meta.label} – daneben stellen` : `${meta.label}${active ? " – entfernen" : " – hinzufügen"}`}
+                aria-label={luecke ? `${meta.label} – hierhin stellen` : `${meta.label}${active ? " – entfernen" : " – hinzufügen"}`}
                 onClick={() => {
-                  if (neben) {
-                    // Klein daneben stellen (auch eine schon sichtbare Kachel wandert hierher)
+                  if (luecke) {
+                    // In die Lücke stellen (auch eine schon sichtbare Kachel wandert hierher)
                     const f = tileMeta(meta.id).feature;
                     if (f && !featureOn(f)) setFeature(f, true);
-                    saveHomeTiles(placeBeside(all, neben, meta.id));
+                    saveHomeTiles(fuelleLuecke(all, luecke.shown, luecke.luecke, meta.id));
                     buzz();
                     added.current = meta.id;
                     return close();

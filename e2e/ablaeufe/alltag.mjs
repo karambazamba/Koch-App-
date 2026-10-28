@@ -47,12 +47,14 @@ export const pinnwand = async (page, check) => {
 };
 
 export const wetter = async (page, check) => {
-  // Kachel (Tafel 87): Himmel je Wetter, Windsack nur bei Wind, EINE Zeile – still, ohne Animation
+  // Kachel (Tafel 120): Himmel je Wetter, kleine stille Szene rechts oben, EIN kurzer Satz
   await family(page, "/");
   const tile = page.locator('a[href="/wetter"][data-himmel]').first();
   check(await tile.isVisible(), "Wetter-Kachel mit Himmel");
-  check((await tile.locator("[data-windsack]").count()) === 0, "kein Windsack bei leichtem Wind (erst ab Frischer Wind)");
-  check(/ · /.test((await tile.locator("[data-wetter-zeile]").textContent()) ?? ""), "Zeile „Lage · …“");
+  check((await tile.locator("[data-windsack]").count()) === 0 && (await tile.getAttribute("data-szene")) !== "wind", "keine Wind-Szene bei leichtem Wind (erst ab Frischer Wind)");
+  check((await tile.locator("svg.wx-szene").count()) === 1, "kleine Szene rechts oben");
+  const satz = (await tile.locator("[data-wetter-zeile]").textContent()) ?? "";
+  check(satz.length > 0 && satz.length <= 22, `kurzer Satz (${satz})`);
   await page.goto(BASE + "/wetter");
   await page.waitForTimeout(800);
   check(await page.locator(".wx-sky").isVisible(), "Himmel-Karte");

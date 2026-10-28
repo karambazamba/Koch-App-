@@ -33,6 +33,16 @@ const PAGES = [
   ["begleitung", "/profil/kuechenhelfer"],
 ];
 
+/** Sport-Stempelkarte (A-044): feste Daten je Zustand (Mi 21.10.2026, Woche ab Mo 19.10.) */
+const training = (id, sport, date) => ({ id, typ: "training", raum: "familie", besitzer: "lokal", erstellt: `${date}T08:00:00.000Z`, geaendert: `${date}T08:00:00.000Z`, data: { sport, minutes: 45, date } });
+const sportState = (trainings, goal = 2) => ({ version: 2, goal, zielGefragt: true, erinnerung: false, trainings, packs: {}, celebrated: [], hidden: [], custom: [] });
+const SPORT_STEMPEL = {
+  leer: sportState([]),
+  normal: sportState([training("st-mo", "laufen", "2026-10-19"), training("st-alt1", "laufen", "2026-10-13"), training("st-alt2", "volleyball", "2026-10-15"), training("st-alt3", "laufen", "2026-10-07")]),
+  geschafft: sportState([training("st-mo", "laufen", "2026-10-19"), training("st-di", "volleyball", "2026-10-20"), training("st-alt1", "laufen", "2026-10-13")]),
+  plan: { id: "st-plan", typ: "termin", raum: "familie", besitzer: "lokal", erstellt: "2026-10-19T08:00:00.000Z", geaendert: "2026-10-19T08:00:00.000Z", data: { title: "Laufen", date: "2026-10-22", start: "08:00", end: "09:00", label: "Sport", reminder: "aus", doneDates: [], skipDates: [] } },
+};
+
 /** Szenen: Fenster, die erst nach einer Handlung da sind (Mikrofon aus mit Schein-Fehler) */
 const micTap = async (page) => {
   await page.getByRole("button", { name: /^Sag .*was ansteht/ }).first().click();
@@ -190,7 +200,28 @@ for (const device of DEVICES) {
     await hello(first);
     await settle(first);
     await first.screenshot({ path: `${dir}/beispieltag-${tag}.png`, fullPage: true });
+    // Familie-Beispiel im Look „Schlicht“ (A-036: Wasserzeichen nur in „Farbig“)
+    await first.evaluate(() => {
+      const key = "familienkueche.haushaltsprofil";
+      localStorage.setItem(key, JSON.stringify({ ...JSON.parse(localStorage.getItem(key) || "{}"), look: "schlicht" }));
+    });
+    await first.reload();
+    await settle(first);
+    await first.screenshot({ path: `${dir}/beispieltag-schlicht-${tag}.png`, fullPage: true });
+    n++;
     await first.context().close();
+    // Beispiel-Tag je Haushalt (Tafel 119): zu zweit und allein
+    for (const [name, wahl] of [["zuzweit", "Für uns zwei"], ["allein", "Nur für mich"]]) {
+      const hp = await newPage(browser, device, { dark });
+      await hp.goto(BASE);
+      await hp.getByRole("button", { name: "Los geht’s" }).click();
+      await hp.getByRole("button", { name: wahl }).click();
+      await hp.getByRole("tab", { name: "Heute", selected: true }).waitFor();
+      await settle(hp);
+      await hp.screenshot({ path: `${dir}/beispieltag-${name}-${tag}.png`, fullPage: true });
+      n++;
+      await hp.context().close();
+    }
     // Eigene Familie
     const page = await newPage(browser, device, { dark });
     await hello(page);
@@ -214,6 +245,97 @@ for (const device of DEVICES) {
     await settle(page);
     await page.screenshot({ path: `${dir}/heute-schlicht-${tag}.png`, fullPage: true });
     n++;
+    // Wetter mit Himmel (Tafel 120): je Testmodus-Wetter eine Größe, Farbig und Schlicht
+    for (const [sz, size] of [["regen", "XS"], ["klar", "S"], ["wolkig", "M"], ["sturm", "XS"], ["schnee", "S"], ["gewitter", "M"]]) {
+      for (const look of ["farbig", "schlicht"]) {
+        await page.evaluate(({ sz, size, look }) => {
+          sessionStorage.setItem("wasgibts.wetterszenario", sz);
+          localStorage.removeItem("wasgibts.wetterdaten");
+          const key = "familienkueche.haushaltsprofil";
+          localStorage.setItem(key, JSON.stringify({ ...JSON.parse(localStorage.getItem(key) || "{}"), look }));
+          localStorage.setItem("wasgibts.startseite", JSON.stringify({ version: 9, tiles: [{ id: "pinnwand", visible: true, size: "S" }, { id: "wetter", visible: true, size }, { id: "notizen", visible: true, size: "XS" }], tipSeen: true }));
+        }, { sz, size, look });
+        await page.goto(BASE);
+        await page.locator("[data-szene]").first().waitFor({ timeout: 6000 }).catch(() => {});
+        await settle(page);
+        await page.locator("[data-raster]").screenshot({ path: `${dir}/wetter-${sz}-${size}-${look}-${tag}.png` });
+        n++;
+      }
+    }
+    // Im Haus mit Wasserzeichen (Tafel 124 A): erlaubte Größen S + XS, in allen 8 Kachel-Farben,
+    // Farbig und Schlicht (hell/dunkel über die äußere Schleife). Sport hat seit A-044 keins (Stempel).
+    for (const farbe of ["lavendel", "mint", "salbei", "rose", "vanille", "aqua", "flieder", "sand"]) {
+      for (const look of ["farbig", "schlicht"]) {
+        for (const size of ["S", "XS"]) {
+          await page.evaluate(({ farbe, look, size }) => {
+            const key = "familienkueche.haushaltsprofil";
+            localStorage.setItem(key, JSON.stringify({ ...JSON.parse(localStorage.getItem(key) || "{}"), look }));
+            const fn = JSON.parse(localStorage.getItem("wasgibts.funktionen") || '{"version":2,"on":[]}');
+            localStorage.setItem("wasgibts.funktionen", JSON.stringify({ ...fn, on: [...new Set([...(fn.on || []), "vorrat"])] }));
+            localStorage.setItem("wasgibts.startseite", JSON.stringify({ version: 9, tiles: [{ id: "vorrat", visible: true, size, farbe }], tipSeen: true }));
+          }, { farbe, look, size });
+          await page.goto(BASE);
+          await page.locator('[aria-label^="Im Haus"]').first().waitFor({ timeout: 6000 }).catch(() => {});
+          await settle(page);
+          await page.locator("[data-raster]").screenshot({ path: `${dir}/wasserzeichen-${farbe}-${size}-${look}-${tag}.png` });
+          n++;
+        }
+      }
+    }
+    // Sport als Stempelkarte (A-044, Tafel 132): Kachel S und M je leer · normal · geschafft,
+    // Farbig und Schlicht; dazu die Sport-Seite (normal, geschafft) und ihr Menü „•••“
+    for (const zustand of ["leer", "normal", "geschafft"]) {
+      for (const look of ["farbig", "schlicht"]) {
+        for (const size of ["S", "M"]) {
+          await page.evaluate(({ zustand, look, size, sport }) => {
+            const key = "familienkueche.haushaltsprofil";
+            localStorage.setItem(key, JSON.stringify({ ...JSON.parse(localStorage.getItem(key) || "{}"), look }));
+            const fn = JSON.parse(localStorage.getItem("wasgibts.funktionen") || '{"version":2,"on":[]}');
+            localStorage.setItem("wasgibts.funktionen", JSON.stringify({ ...fn, on: [...new Set([...(fn.on || []), "sport"])] }));
+            localStorage.setItem("wasgibts.startseite", JSON.stringify({ version: 9, tiles: [{ id: "sport", visible: true, size }], tipSeen: true }));
+            localStorage.setItem("wasgibts.sport", JSON.stringify(sport[zustand]));
+            const e = JSON.parse(localStorage.getItem("wasgibts.eintraege"));
+            e.entries = e.entries.filter((x) => x.data.label !== "Sport");
+            if (zustand === "normal") e.entries.push(sport.plan);
+            localStorage.setItem("wasgibts.eintraege", JSON.stringify(e));
+          }, { zustand, look, size, sport: SPORT_STEMPEL });
+          await page.goto(BASE);
+          await page.locator('[aria-label="Sport"]').first().waitFor({ timeout: 6000 }).catch(() => {});
+          await settle(page);
+          await page.locator("[data-raster]").screenshot({ path: `${dir}/sport-kachel-${zustand}-${size}-${look}-${tag}.png` });
+          n++;
+        }
+      }
+      if (zustand === "leer") continue;
+      await page.goto(BASE + "/sport");
+      await page.getByRole("region", { name: "Diese Woche" }).waitFor({ timeout: 6000 }).catch(() => {});
+      await settle(page);
+      await page.screenshot({ path: `${dir}/sport-seite-${zustand}-${tag}.png`, fullPage: true });
+      n++;
+      if (zustand !== "normal") continue;
+      await page.getByRole("button", { name: "Mehr" }).click();
+      await page.getByRole("dialog", { name: "Sport" }).waitFor({ timeout: 4000 }).catch(() => {});
+      await page.waitForTimeout(900);
+      await page.screenshot({ path: `${dir}/sport-menue-${tag}.png` });
+      n++;
+    }
+    // Wasserzeichen aller Kacheln ohne Bild (A-036, Tafel 125): Termine, Aufgaben, Notizen, Timer
+    // und Einkauf in S, alle in derselben der 8 Farben, Farbig und Schlicht
+    for (const farbe of ["lavendel", "mint", "salbei", "rose", "vanille", "aqua", "flieder", "sand"]) {
+      for (const look of ["farbig", "schlicht"]) {
+        await page.evaluate(({ farbe, look }) => {
+          const key = "familienkueche.haushaltsprofil";
+          localStorage.setItem(key, JSON.stringify({ ...JSON.parse(localStorage.getItem(key) || "{}"), look }));
+          const tiles = ["termine", "aufgaben", "notizen", "timer", "essen", "einkauf"].map((id) => ({ id, visible: true, size: "S", ...(id === "essen" ? {} : { farbe }) }));
+          localStorage.setItem("wasgibts.startseite", JSON.stringify({ version: 9, tiles, tipSeen: true }));
+        }, { farbe, look });
+        await page.goto(BASE);
+        await page.locator('[aria-label="Termine"]').first().waitFor({ timeout: 6000 }).catch(() => {});
+        await settle(page);
+        await page.locator("[data-raster]").screenshot({ path: `${dir}/wasserzeichen-alle-${farbe}-${look}-${tag}.png` });
+        n++;
+      }
+    }
     await page.context().close();
     // Fenster, die nur nach einer Handlung erscheinen (Szenen)
     for (const [name, run] of SCENES) {

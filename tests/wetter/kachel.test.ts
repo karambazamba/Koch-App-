@@ -1,12 +1,13 @@
-// Wetter-Kachel (Tafel „ruhig mit Regentropfen“, Tafel 87): ehrliche Lage und
-// Zeile, Wind jetzt, 2-Stunden-Überblick, Hintergrund je Wetter/Tag/Nacht/Look,
-// Kontrast jeder Himmel-Variante (WCAG ≥ 4,5:1), S/M/L als echte Ausgabe.
+// Wetter-Kachel (Tafel 87, Tafel 120 „mit Himmel“): ehrliche Lage und Zeile,
+// kurzer Satz (≤ 22 Zeichen), Szene je Wetterlage, Wind jetzt,
+// 2-Stunden-Überblick, Hintergrund je Wetter/Tag/Nacht/Look, Kontrast jeder
+// Himmel-Variante (WCAG ≥ 4,5:1), XS/S/M als echte Ausgabe.
 import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { buildDays, type Forecast, type ForecastHour } from "@/lib/wetter/forecast";
-import { HIMMEL_KEYS, kachelHimmel, kachelLage, kachelWind, kachelZeile, rainingNow, zweiStunden } from "@/lib/wetter/kachel";
+import { HIMMEL_KEYS, SATZ_MAX, SZENEN, kachelHimmel, kachelLage, kachelSatz, kachelSzene, kachelWind, kachelZeile, rainingNow, szeneAus, zweiStunden, type WetterSzene } from "@/lib/wetter/kachel";
 
 const TODAY = "2026-10-22";
 const NEXT = "2026-10-23";
@@ -80,20 +81,13 @@ describe("Wind jetzt und 2-Stunden-Überblick", () => {
 });
 
 describe("Hintergrund je Wetter, Tag/Nacht und Look", () => {
-  it.each([
-    ["regen", "tropfen"],
-    ["bewoelkt", "wolken"],
-    ["sonnig", "sonne"],
-    ["schnee", "punkte"],
-    ["gewitter", "blitz"],
-  ] as const)("%s: Tag mit Muster %s, nachts dunklere Variante", (lage, muster) => {
-    expect(kachelHimmel(lage, false, "farbig")).toEqual({ key: lage, muster, symbol: false, ton: null });
+  it.each(["regen", "bewoelkt", "sonnig", "schnee", "gewitter"] as const)("%s: Tag und nachts die dunklere Variante", (lage) => {
+    expect(kachelHimmel(lage, false, "farbig")).toEqual({ key: lage, ton: null });
     expect(kachelHimmel(lage, true, "farbig").key).toBe(`${lage}-nacht`);
-    expect(kachelHimmel(lage, true, "farbig").muster).toBe(lage === "sonnig" ? "mond" : muster);
   });
 
-  it("Schlicht: weiß, kein Muster, nur das Symbol farbig – Tag wie Nacht", () => {
-    for (const nacht of [false, true]) expect(kachelHimmel("regen", nacht, "schlicht")).toEqual({ key: "schlicht", muster: null, symbol: true, ton: null });
+  it("Schlicht: weiß – Tag wie Nacht", () => {
+    for (const nacht of [false, true]) expect(kachelHimmel("regen", nacht, "schlicht")).toEqual({ key: "schlicht", ton: null });
   });
 
   it("ab „Stürmisch“ leicht warm, ab „Sturm“ rötlich (beide Looks)", () => {
@@ -102,12 +96,67 @@ describe("Hintergrund je Wetter, Tag/Nacht und Look", () => {
     expect(kachelHimmel("bewoelkt", false, "schlicht", { speed: 75, gust: 0, dir: null }).ton).toBe("sturm");
   });
 
-  it("zehn Varianten, jede mit eigener Regel im Stilblatt", () => {
+  it("zehn Varianten, jede mit eigener Regel im Stilblatt; Kachel und Szene still", () => {
     expect(HIMMEL_KEYS).toHaveLength(10);
     const css = readFileSync("src/app/globals.css", "utf8");
     for (const k of [...HIMMEL_KEYS, "schlicht"]) expect(css, k).toContain(`.wx-himmel[data-himmel="${k}"]`);
-    // still: keine Animation in der Kachel und im Muster
-    for (const f of ["WeatherTile", "HimmelMuster"]) expect(readFileSync(`src/components/wetter/${f}.tsx`, "utf8"), f).not.toMatch(/animate|animation|<animate/);
+    for (const f of ["WeatherTile", "WetterSzene"]) expect(readFileSync(`src/components/wetter/${f}.tsx`, "utf8"), f).not.toMatch(/animate|animation|<animate/);
+  });
+});
+
+describe("Szene je Wetterlage (Tafel 120)", () => {
+  const W = (speed: number, gust = 0) => ({ speed, gust, dir: 270 });
+  it("acht Szenen: Sonne, leicht bewölkt, bewölkt, Regen, Gewitter, Schnee, Wind, Nacht", () => {
+    expect(SZENEN).toEqual(["sonne", "leicht", "wolken", "regen", "gewitter", "schnee", "wind", "nacht"]);
+    expect(szeneAus("sonnig", 0, false, null)).toBe("sonne");
+    expect(szeneAus("sonnig", 2, false, null)).toBe("leicht");
+    expect(szeneAus("bewoelkt", 3, false, null)).toBe("wolken");
+    expect(szeneAus("regen", 61, false, null)).toBe("regen");
+    expect(szeneAus("gewitter", 95, false, null)).toBe("gewitter");
+    expect(szeneAus("schnee", 73, false, null)).toBe("schnee");
+    expect(szeneAus("sonnig", 0, true, null)).toBe("nacht");
+    expect(szeneAus("bewoelkt", 3, true, null)).toBe("nacht");
+  });
+  it("nass geht vor (auch nachts), Wind nur ab „Frischer Wind“ oder Böen ≥ 60 (`windZeigen`)", () => {
+    expect(szeneAus("regen", 61, true, W(80))).toBe("regen");
+    expect(szeneAus("bewoelkt", 3, false, W(28, 59))).toBe("wolken");
+    expect(szeneAus("bewoelkt", 3, false, W(29))).toBe("wind");
+    expect(szeneAus("sonnig", 0, false, W(20, 60))).toBe("wind");
+    expect(szeneAus("sonnig", 0, true, W(40))).toBe("wind");
+    expect(kachelSzene(rainy(), TODAY, 8, false)).toBe("regen");
+  });
+  it("jede Szene hat eigene Formen, Farben nur über Tokens (hell, dunkel, auto)", () => {
+    const src = readFileSync("src/components/wetter/WetterSzene.tsx", "utf8");
+    for (const sz of SZENEN) expect(src, sz).toContain(`case "${sz}":`);
+    expect(src).not.toMatch(/#[0-9a-f]{3,6}/i);
+    const css = readFileSync("src/app/globals.css", "utf8");
+    for (const t of ["wolke", "wolke-2", "wind", "stern", "sonne", "tropfen", "mond", "wolke-schlicht"]) expect(css.match(new RegExp(`--app-szene-${t}:`, "g")) ?? [], t).toHaveLength(3);
+    expect(css).toMatch(/\.wx-himmel\[data-himmel="schlicht"\] \.wx-szene \{\s*opacity: 0\.6/);
+  });
+});
+
+describe("Der kurze Satz (≤ 22 Zeichen)", () => {
+  it("später nass, jetzt nass, eben aufgehört, Wind, nachts, sonst trocken", () => {
+    expect(kachelSatz(fcOf(day24((h) => (h === 15 ? WET : { wind: 10 })), { code: 3, measured: true }), TODAY, 8, false)).toBe("ab 15 Uhr Regen");
+    expect(kachelSatz(fcOf(day24((h) => (h === 18 ? { ...WET, code: 95 } : { wind: 10 })), { code: 3, measured: true }), TODAY, 8, false)).toBe("ab 18 Uhr Gewitter");
+    expect(kachelSatz(fcOf(day24((h) => (h === 15 ? { ...WET, code: 73 } : { wind: 10 })), { code: 3, measured: true }), TODAY, 8, false)).toBe("ab 15 Uhr Schnee");
+    expect(kachelSatz(rainy(), TODAY, 8, false)).toBe("Regen bis 10 Uhr");
+    expect(kachelSatz(fcOf(day24(() => WET), { raining: true }), TODAY, 8, false)).toBe("Regen");
+    expect(kachelSatz(fcOf(day24(() => ({ wind: 10 })), { code: 3, stopped: true }), TODAY, 8, false)).toBe("Regen hat aufgehört");
+    expect(kachelSatz(fcOf(day24(() => ({ wind: 30 }))), TODAY, 8, false)).toBe("Frischer Wind");
+    expect(kachelSatz(fcOf(day24(() => ({ wind: 10 })), { code: 0 }), TODAY, 23, true)).toBe("klar");
+    expect(kachelSatz(fcOf(day24(() => ({ wind: 10 })), { code: 3 }), TODAY, 23, true)).toBe("bewölkt");
+    expect(kachelSatz(fcOf(day24(() => ({ wind: 10 })), { code: 0 }), TODAY, 8, false)).toBe("bleibt sonnig");
+    expect(kachelSatz(fcOf(day24(() => ({ wind: 10 })), { code: 2 }), TODAY, 8, false)).toBe("bleibt trocken");
+    expect(kachelSatz(fcOf(day24(() => ({ wind: 10 })), { code: 3 }), TODAY, 8, false)).toBe("bewölkt");
+  });
+  it("nie länger als 22 Zeichen – für jede Stunde, jedes Wetter, jeden Wind", () => {
+    for (const code of [0, 2, 3, 45, 53, 61, 73, 95])
+      for (const wind of [5, 30, 70, 110])
+        for (const h of [0, 8, 15, 23]) {
+          const fc = fcOf(day24((x) => ({ wind, code, ...(x % 5 === 0 ? WET : {}) })), { code, raining: code >= 61 });
+          expect(kachelSatz(fc, TODAY, h, h > 20).length).toBeLessThanOrEqual(SATZ_MAX);
+        }
   });
 });
 
@@ -163,86 +212,107 @@ const store = vi.hoisted(() => ({ forecast: null as Forecast | null }));
 vi.mock("@/lib/wetter/client", () => ({ useForecast: () => ({ forecast: store.forecast, stale: false, failed: false, place: "Eutin" }) }));
 vi.mock("next/link", () => ({ default: ({ href, children, ...rest }: { href: string; children: unknown }) => createElement("a", { href, ...rest }, children as never) }));
 
-async function tile(size: "S" | "M" | "L", fc: Forecast, minutes = 8 * 60, look: "farbig" | "schlicht" = "farbig") {
+async function tile(size: "XS" | "S" | "M", fc: Forecast, minutes = 8 * 60, look: "farbig" | "schlicht" = "farbig") {
   store.forecast = fc;
   const { WeatherTile } = await import("@/components/wetter/WeatherTile");
-  return renderToStaticMarkup(createElement(WeatherTile, { size, today: TODAY, minutes, look, half: size === "S" }));
+  return renderToStaticMarkup(createElement(WeatherTile, { size, today: TODAY, minutes, look }));
 }
 const stormy = () => fcOf([...day24((h) => (h <= 9 ? { ...WET, wind: 32, gust: 85 } : {})), ...day24(() => ({}), NEXT)], { code: 61, raining: true });
 
-describe("Kachel S/M/L", () => {
-  it("M wie Vorlage: Ort, Temperatur, Windsack, ↑/↓, Zeile, Wind in Worten mit Böen, 4 Stunden", async () => {
+describe("Kachel XS/S/M (Tafel 120)", () => {
+  it("M: Ort, Temperatur, ↑/↓, Satz, Szene rechts oben, 4 Stunden – Text links mit Platz für die Szene", async () => {
     const html = await tile("M", stormy(), 9 * 60);
     expect(html).toContain("Wetter · Eutin");
     expect(html).toContain('data-himmel="regen"');
-    expect(html).toContain('data-muster="tropfen"');
-    expect(html).toContain('data-windsack="frisch"');
-    expect(html).toMatch(/↑ \d+°/);
-    expect(html).toContain('Regen</span><span class="wx-soft"> · ab 10 Uhr trocken');
-    expect(html).toContain('Frischer Wind</span><span class="wx-soft font-semibold"> · 32 km/h aus West</span><span class="wx-soft font-semibold"> · </span><span class="wx-boeen rounded-full px-1.5 py-px font-extrabold tabular-nums">Böen 85');
+    expect(html).toContain('data-szene="regen"');
+    expect(html).toMatch(/↑ \d+° ↓ \d+°/);
+    expect(html).toContain(">Regen bis 10 Uhr<");
+    expect(html).toContain("pr-24");
     expect((html.match(/data-stunden/g) ?? []).length).toBe(1);
-    expect([...html.matchAll(/tabular-nums">(\d+)<\/span>/g)].map((m) => m[1])).toEqual(["9", "11", "13", "15"]);
-    expect(html).not.toContain("Nächste Tage");
-  });
-
-  it("S: Temperatur, Windsack und EINE Zeile – kein Stunden-Überblick, kein Wind-Satz", async () => {
-    const html = await tile("S", stormy(), 9 * 60);
-    expect(html).toContain('data-windsack="frisch"');
-    expect(html).toContain("ab 10 trocken");
-    expect(html).not.toContain("data-stunden");
-    expect(html).not.toContain("data-wind-zeile");
-    expect(html).not.toContain("↑");
-  });
-
-  it("L: dazu die nächsten Tage", async () => {
-    const html = await tile("L", stormy());
-    expect(html).toContain("data-stunden");
-    expect(html).toContain("Nächste Tage");
-  });
-
-  it("Böen unter 60, Mittelwind unter 29: kein Windsack, keine Wind-Zeile; nachts dunkler; Schlicht ohne Muster mit Symbol", async () => {
-    const calm = fcOf(day24((h) => ({ wind: 22, gust: 40, code: h > 20 ? 0 : 3 })), { code: 0 });
-    const night = await tile("M", calm, 22 * 60);
-    expect(night).toContain('data-himmel="sonnig-nacht"');
-    expect(night).toContain('data-muster="mond"');
-    expect(night).not.toContain("Böen");
-    expect(night).not.toContain("Mäßiger Wind");
-    expect(night).not.toContain("data-windsack");
-    expect(night).not.toContain("data-wind-zeile");
-    expect(night).not.toContain("Kilometer pro Stunde");
-    const plain = await tile("M", calm, 12 * 60, "schlicht");
-    expect(plain).toContain('data-himmel="schlicht"');
-    expect(plain).not.toContain("data-muster");
-    expect(plain).toMatch(/<svg viewBox="0 0 48 48" class="shrink-0 h-11 w-11"/);
-  });
-
-  it.each(["S", "M", "L"] as const)("%s: 10 km/h → kein Windsack, kein Wind-Text", async (size) => {
-    const html = await tile(size, fcOf(day24(() => ({ wind: 10, gust: 18 }))));
+    expect([...html.matchAll(/leading-tight">(\d+)<\/span>/g)].map((m) => m[1])).toEqual(["9", "11", "13", "15"]);
     expect(html).not.toContain("data-windsack");
-    expect(html).not.toContain("data-wind-zeile");
-    expect(html).not.toContain("Wind");
   });
 
-  it("30 km/h → Windsack und „Frischer Wind“ (M)", async () => {
-    const html = await tile("M", fcOf(day24(() => ({ wind: 30, gust: 45 }))));
-    expect(html).toContain('data-windsack="frisch"');
-    expect(html).toContain("Frischer Wind");
-    expect(html).not.toContain("Böen");
+  it("S: Temperatur, Satz und ↑/↓ – kein Stunden-Überblick", async () => {
+    const html = await tile("S", stormy(), 9 * 60);
+    expect(html).toContain('data-groesse="S"');
+    expect(html).toContain(">Regen bis 10 Uhr<");
+    expect(html).toMatch(/↑ \d+° ↓ \d+°/);
+    expect(html).not.toContain("data-stunden");
   });
 
-  it("Böen 65 bei 20 km/h Mittelwind → Windsack und „Böen 65“", async () => {
-    const fc = fcOf(day24(() => ({ wind: 20, gust: 65 })));
-    const m = await tile("M", fc);
-    expect(m).toContain('data-windsack="maessig"');
-    expect(m).toContain("Böen 65");
-    expect(await tile("S", fc)).toContain('data-windsack="maessig"');
+  it("XS: Temperatur groß, darunter EIN kurzer Satz – sonst nichts", async () => {
+    const html = await tile("XS", stormy(), 9 * 60);
+    expect(html).toContain('data-groesse="XS"');
+    expect(html).toContain("text-[26px]");
+    expect(html).toContain(">Regen bis 10 Uhr<");
+    expect(html).not.toContain("↑");
+    expect(html).not.toContain("data-stunden");
   });
 
-  it("Sturm: Karte getönt, Windsack rot, Windstriche", async () => {
+  it("Wind: unter „Frischer Wind“ keine Wind-Szene und kein Wind-Text; ab da die Szene statt des Windsacks", async () => {
+    const still = await tile("M", fcOf(day24(() => ({ wind: 22, gust: 40 }))));
+    expect(still).not.toContain('data-szene="wind"');
+    expect(still).not.toContain("Wind");
+    const frisch = await tile("M", fcOf(day24(() => ({ wind: 30, gust: 45 }))));
+    expect(frisch).toContain('data-szene="wind"');
+    expect(frisch).toContain(">Frischer Wind<");
+    expect(frisch).not.toContain("data-windsack");
+    const boeen = await tile("S", fcOf(day24(() => ({ wind: 20, gust: 65 }))));
+    expect(boeen).toContain('data-szene="wind"');
+    expect(boeen).toContain("Böen bis 65 Kilometer pro Stunde");
+  });
+
+  it("Sturm: Karte getönt", async () => {
     const html = await tile("M", fcOf(day24(() => ({ wind: 80, gust: 110 }))));
     expect(html).toContain('data-ton="sturm"');
-    expect(html).toContain('data-windsack="sturm"');
-    expect(html).toContain("var(--app-windsack-rot)");
-    expect((html.match(/data-windstrich/g) ?? []).length).toBe(3);
+    expect(html).toContain(">Sturm<");
+  });
+
+  it("Schlicht: weiß, Szene kleiner (und über das Stilblatt blasser)", async () => {
+    const calm = fcOf(day24(() => ({ wind: 10, gust: 20 })), { code: 0 });
+    const plain = await tile("M", calm, 12 * 60, "schlicht");
+    expect(plain).toContain('data-himmel="schlicht"');
+    expect(plain).toMatch(/wx-szene[^"]*scale-75/);
+    expect(await tile("M", calm, 12 * 60)).not.toMatch(/wx-szene[^"]*scale-75/);
+  });
+
+  // Jede Wetterlage × XS/S/M × Tag/Nacht × Farbig/Schlicht (hell/dunkel über die Tokens oben)
+  const LAGEN: [string, Forecast][] = [
+    ["sonne", fcOf(day24(() => ({ wind: 8, code: 0 })), { code: 0 })],
+    ["leicht", fcOf(day24(() => ({ wind: 8, code: 2 })), { code: 2 })],
+    ["wolken", fcOf(day24(() => ({ wind: 8 })), { code: 3 })],
+    ["regen", fcOf(day24(() => ({ ...WET, wind: 8 })), { code: 61, raining: true })],
+    ["gewitter", fcOf(day24(() => ({ ...WET, code: 95, wind: 8 })), { code: 95, raining: true })],
+    ["schnee", fcOf(day24(() => ({ ...WET, code: 73, wind: 8 })), { code: 73, raining: true })],
+    ["wind", fcOf(day24(() => ({ wind: 35 })), { code: 3 })],
+  ];
+  it.each(LAGEN.flatMap(([n, fc]) => (["XS", "S", "M"] as const).flatMap((size) => [false, true].flatMap((nacht) => (["farbig", "schlicht"] as const).map((look) => [n, fc, size, nacht, look] as const)))))(
+    "%s · %s · Nacht %s · %s",
+    async (name, fc, size, nacht, look) => {
+      const html = await tile(size, fc, nacht ? 23 * 60 : 12 * 60, look);
+      const szene = (nacht && ["sonne", "leicht", "wolken"].includes(name) ? "nacht" : name) as WetterSzene;
+      expect(html).toContain(`data-szene="${szene}"`);
+      expect(html).toContain(`data-groesse="${size}"`);
+      expect(html).toContain(look === "schlicht" ? 'data-himmel="schlicht"' : `data-himmel="${kachelLage(fc, TODAY, nacht ? 23 : 12)}${nacht ? "-nacht" : ""}"`);
+      const satz = html.match(/data-wetter-zeile="true">([^<]+)</)![1];
+      expect(satz.length).toBeLessThanOrEqual(SATZ_MAX);
+      // Text nie unter der Zeichnung: Satz und Temperatur stehen links in eigenem Block, nie absolut
+      expect(html.indexOf("wx-szene")).toBeLessThan(html.indexOf("data-wetter-zeile"));
+    },
+  );
+});
+
+// Durchklick wetterSzenen/rasterHoehen (nach Rebase): S-Temperatur lag mit voller
+// Breite unter der Szene, M quoll auf dem iPhone SE 3 px über
+describe("Feste Fläche: S und M passen", () => {
+  it("S: Temperatur nur so breit wie die Zahl (nie unter der Szene)", async () => {
+    const html = await tile("S", stormy(), 9 * 60);
+    expect(html).toMatch(/class="relative mt-1 self-start text-\[40px\][^"]*">-?\d+°</);
+  });
+  it("M: Satz und Stunden eng genug für 168 px (iPhone SE)", async () => {
+    const html = await tile("M", stormy(), 9 * 60);
+    expect(html).toMatch(/class="mt-0\.5 text-\[13px\][^"]*" data-wetter-zeile/);
+    expect(html).toMatch(/wx-linie relative mt-auto grid grid-cols-4 border-t pt-1"/);
   });
 });

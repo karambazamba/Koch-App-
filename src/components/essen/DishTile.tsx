@@ -71,7 +71,8 @@ export function DishTile({
       </span>
     </>
   );
-  const frame = `relative flex h-full w-full flex-col overflow-hidden rounded-card text-left shadow-card ${half ? "min-h-[184px]" : "min-h-[180px]"}`;
+  // Feste Fläche im Raster der Startseite: das Bild füllt genau die Kachel (S quadratisch, M breit)
+  const frame = "relative flex h-full w-full flex-col overflow-hidden rounded-card text-left shadow-card";
   return (
     <section className="relative h-full" aria-label={bereich} data-essen-kachel>
       {typeof open === "string" ? (

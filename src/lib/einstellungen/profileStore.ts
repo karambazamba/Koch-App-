@@ -4,6 +4,9 @@
 import { migrateBases } from "@/lib/essen/bases";
 import { createLocalStore, readRaw } from "@/lib/core/localStore";
 import { now } from "@/lib/core/now";
+import { haushaltOf, type Haushalt } from "@/lib/core/haushalt";
+import { homeForHaushalt, loadHomeTiles, saveHomeTiles } from "@/lib/core/homeLayout";
+import { setFeature } from "@/lib/core/features";
 import type { StorageKey } from "@/lib/core/storage";
 import { AVATAR_COLORS, DEFAULT_HELPER, HOUSEHOLD_TYPES, deriveHouseholdType, PLAN_STYLES, APP_THEMES, HELPER_MODES, WEEKDAYS, LIMITS, newId, createEmptyProfile, wishDayOrder, syncPersons, type PersonRole, type KidAgeGroup, type WeekdayLunch, type Person, type MealTime, type WarmMealSchedule, type WeekRules, type WishDaySettings, type AvatarColor, type HelperSettings, type NeverAgainEntry, type LikedIngredient, type HouseholdType, type MealClock, type PauseSettings, type WeatherSettings, type HouseholdProfile, type PlanStyle, type AppTheme, type HelperMode, DEFAULT_MEAL_CLOCK } from "@/lib/einstellungen/profile";
 
@@ -280,6 +283,7 @@ export const clearProfile = store.clear;
 export const subscribeProfile = store.subscribe;
 
 export function saveProfile(profile: HouseholdProfile): HouseholdProfile {
+  const before = store.load();
   const persons = syncPersons(profile.persons, profile.adults, profile.kids);
   const toSave: HouseholdProfile = {
     ...profile,
@@ -292,5 +296,17 @@ export function saveProfile(profile: HouseholdProfile): HouseholdProfile {
     updatedAt: now().toISOString(),
   };
   store.save(toSave);
+  if (before) haushaltGewechselt(haushaltOf(before.householdType), haushaltOf(toSave.householdType));
   return toSave;
+}
+
+/**
+ * Haushaltsart gewechselt: die Startseite passt sich an, ohne eine selbst
+ * geänderte Anordnung zu überschreiben (`homeForHaushalt`); aus „allein“
+ * heraus kommt die Pinnwand (Baustein) dazu.
+ */
+function haushaltGewechselt(from: Haushalt, to: Haushalt) {
+  if (from === to) return;
+  saveHomeTiles(homeForHaushalt(loadHomeTiles(), from, to));
+  if (to !== "allein") setFeature("pinnwand", true);
 }

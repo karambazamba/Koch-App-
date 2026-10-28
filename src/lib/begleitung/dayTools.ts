@@ -5,7 +5,7 @@
 // Startseiten-Modus kommen als Vorschau mit "Übernehmen".
 
 import { createEntry } from "@/lib/core/entries";
-import { addDays } from "@/lib/core/now";
+import { addDays, now } from "@/lib/core/now";
 import { sanitizeEntry, type CalendarEntry, type TerminData } from "@/lib/kalender/model";
 import { isRainy } from "@/lib/wetter/forecast";
 import {
@@ -24,6 +24,7 @@ import {
   type DayPart,
 } from "@/lib/sport/model";
 import { formatLeft } from "@/lib/timer/model";
+import { gestempeltText, sportLage, stempelkarte } from "@/lib/sport/stempel";
 import type { BegleitungTool } from "@/lib/begleitung/registry";
 import { nextId, propose, type ToolContext, type ToolResult } from "@/lib/begleitung/tools";
 
@@ -46,7 +47,7 @@ export function dayContextLines(ctx: { data: ToolContext["data"]; today: string 
   }
   if (d.sport) {
     const week = weekStatus(sanitizeSport(d.sport), d.entries ?? [], ctx.today, d.me);
-    lines.push(`Sport: Wochenziel ${week.goal}×, diese Woche ${week.count}`);
+    lines.push(`Sport: ${week.goal === null ? "ohne Wochenziel" : `Wochenziel ${week.goal}×`}, diese Woche ${week.count}`);
   }
   return lines;
 }
@@ -178,9 +179,10 @@ function sportTools(): BegleitungTool[] {
         const week = weekStatus(s, ctx.data.entries ?? [], ctx.today, ctx.data.me);
         const month = trainingsBetween(s, ctx.data.entries ?? [], `${date.slice(0, 7)}-01`, ctx.today, ctx.today, ctx.data.me).filter((t) => t.data.sport === sport).length + 1;
         const after = week.count + (date >= week.monday ? 1 : 0);
+        const geschafft = week.goal !== null && after >= week.goal && week.count < week.goal;
         propose(ctx, { id: nextId(ctx), type: "add_training", training: { sport, minutes: Math.round(minutes), date, ...(km ? { km } : {}) } });
         return {
-          content: `Vorgemerkt: ${sportById(sport).label}, ${Math.round(minutes)} Min${km ? `, ${km} km` : ""} (${date}). Mit Übernehmen: diese Woche ${after} von ${week.goal}${after > week.goal ? " (Bonusrunde)" : after === week.goal ? " – Wochenziel geschafft" : ""}; ${month}. Mal ${sportById(sport).label} im ${monthName(date)}.`,
+          content: `Vorgemerkt: ${sportById(sport).label}, ${Math.round(minutes)} Min${km ? `, ${km} km` : ""} (${date}); ${month}. Mal ${sportById(sport).label} im ${monthName(date)}. Bestätige genau so: „${gestempeltText(sport, date, ctx.today)}“${geschafft ? " und „Woche geschafft.“" : ""}. Keine Zahlen von Trainings nennen.`,
         };
       },
     },
@@ -251,7 +253,7 @@ function sportTools(): BegleitungTool[] {
       area: "alltag",
       definition: {
         name: "sport_statistik",
-        description: "Sport-Statistik lesen ('Wie oft war ich diese Woche beim Sport?', 'Wie viele Kilometer im Oktober?'). Antworte konkret, Erfolge zeigen, nie Versäumnisse.",
+        description: "Sport lesen ('Wie läuft’s mit Sport?', 'Wie oft war ich diese Woche beim Sport?', 'Wie viele Kilometer im Oktober?'). Für die Woche antworte mit der Lage, ohne Zähler ('Mo war Laufen, Do ist geplant.' bzw. 'Woche geschafft.'). Erfolge zeigen, nie Versäumnisse.",
         input_schema: { type: "object", properties: { zeitraum: { type: "string", enum: ["woche", "monat"] }, monat: { type: "string", description: "YYYY-MM, Standard aktueller Monat" } }, additionalProperties: false },
       },
       run: (ctx, raw) => {
@@ -262,7 +264,8 @@ function sportTools(): BegleitungTool[] {
         const streak = weekStreak(s, entries, ctx.today, ctx.data.me);
         const month = /^\d{4}-\d{2}$/.test(str(input.monat)) ? str(input.monat) : ctx.today.slice(0, 7);
         const m = monthStats(s, entries, ctx.today, ctx.data.me, month);
-        const lines = [`Diese Woche: ${week.count} von ${week.goal}${week.bonus ? " (Bonusrunde)" : ""}.`, `${monthName(`${month}-01`)}: ${m.count} Einheiten, ${hoursLabel(m.minutes)}${m.km ? `, ${m.km} km` : ""}.`];
+        const lage = sportLage(stempelkarte(s, entries, ctx.today, now().getHours() * 60 + now().getMinutes(), ctx.data.me), ctx.today);
+        const lines = [`Lage diese Woche (so antworten): ${lage}`, `Diese Woche: ${week.count}${week.goal === null ? " (ohne Ziel)" : ` von ${week.goal}`}${week.bonus ? " (Bonus)" : ""}.`, `${monthName(`${month}-01`)}: ${m.count} Einheiten, ${hoursLabel(m.minutes)}${m.km ? `, ${m.km} km` : ""}.`];
         if (streak >= 2) lines.push(`${streak} Wochen in Folge geschafft.`);
         const last = trainingsBetween(s, entries, addDays(ctx.today, -14), ctx.today, ctx.today, ctx.data.me).slice(-3);
         if (last.length) lines.push(`Zuletzt: ${last.map((t) => `${t.data.date} ${sportById(t.data.sport).label} ${t.data.minutes} Min${t.data.km ? ` ${t.data.km} km` : ""}`).join("; ")}.`);

@@ -22,13 +22,13 @@ gerechnet, ohne Panik, mit höchstens EINEM Tipp.
   `sanitizeForecast`) und `src/lib/wetter/view.ts` (`dayParts`, `daySentence`,
   `bestOutdoorDay`, `weekSentence`, `skyFor`, `sunTimes`, `isNight`,
   `skyLine`, `columnTone`, `weatherStartTab`), `src/lib/wetter/kachel.ts`
-  (Kachel: `rainingNow`, `kachelLage`, `kachelZeile`, `kachelWind`,
-  `zweiStunden`, `kachelHimmel`) und `src/lib/wetter/wind.ts` (Windstufen,
+  (Kachel: `rainingNow`, `kachelLage`, `kachelZeile`, `kachelSatz`,
+  `kachelSzene`/`szeneAus`, `kachelWind`, `zweiStunden`, `kachelHimmel`) und `src/lib/wetter/wind.ts` (Windstufen,
   Wörter, Windsack-Aussehen, `stormForPlan` für die Jetzt-Karte).
 - App: `src/lib/wetter/client.ts` (`useForecast`, `refreshForecast`,
   `usePlace`, `savePlace`, `placeFromLocation`).
-- Oberfläche: `src/components/wetter/WeatherTile.tsx`, `HimmelMuster.tsx`
-  (stilles Muster im Kachel-Himmel), `WeatherView.tsx`,
+- Oberfläche: `src/components/wetter/WeatherTile.tsx`, `WetterSzene.tsx`
+  (kleine stille Szene rechts oben, Tafel 120), `WeatherView.tsx`,
   `WeatherParts.tsx` (`SkyCard`, `BestDayCard`, `WeekBand`, `WeekNote`),
   `WeatherSymbol.tsx` (eigenes Symbol-Set, `night` = Mond).
 - Einstellung: `src/components/einstellungen/WeatherPlaceForm.tsx`
@@ -104,46 +104,50 @@ Ehrliche Regel (`dayLook`, Stunden 7–21 Uhr):
 - Morgens (6–11) / Mittags (11–17) / Abends (17–23) nach derselben Regel,
   Sonnen-Grenzen anteilig (`dayParts`, je bis zu 2 Tipp-Chips).
 
-Kachel `wetter` (Standard S, Größen S/M/L; Tafel „ruhig mit Regentropfen“,
+Kachel `wetter` (Standard XS, Größen XS/S/M im festen Raster, Tafel 118/120;
 `WeatherTile`, Logik rein in `lib/wetter/kachel.ts`):
 - Lage jetzt ehrlich (`kachelLage`): nass nur, wenn Radar/Station Regen misst
   (`raining`) bzw. ohne Messung die Stunde jetzt eine echte Regenstunde ist
   (`rainingNow`); dann Regen, Schnee oder Gewitter, sonst Sonnig (klar/heiter)
   oder Bewölkt.
-- EINE Zeile (`kachelZeile`, Stunden ab jetzt bis Mitternacht, `isRainy`):
-  nass → „Regen · ab 10 Uhr trocken“ (ohne trockene Stunde nur „Regen“;
-  Niesel heißt „Niesel“); trocken → „Bewölkt · ab 15 Uhr Regen“ (bzw.
-  „Schnee“), eben aufgehört → „Regen hat aufgehört“, sonst „bleibt trocken“.
-  S ohne „Uhr“ („ab 10 trocken“).
-- Wind nur, wenn er auffällt (v0.136, `windZeigen` in `wind.ts`, EINE Regel
-  für Kachel S/M/L und Seite): Windsack und Wind-Zeile erst ab „Frischer
-  Wind“ (Mittelwind ≥ 29 km/h) oder Böen ≥ 60 km/h; darunter auf der Kachel
-  weder Windsack noch Wind-Text.
-- S: „WETTER · EUTIN“, Temperatur, Windsack der Stufe (nur bei Wind), die Zeile.
-- M: dazu rechts ↑ max / ↓ min, Wind in Worten (Stunde jetzt,
-  `kachelWind`): fett das Wort, leise die Zahl („Frischer Wind · 32 km/h aus
-  West“), ab Böen 60 ein oranges Schild „Böen 85“; unten feine Linie und 4
-  Spalten im 2-Stunden-Abstand ab jetzt (`zweiStunden`, auch über
-  Mitternacht, nachts Mond): Stunde, Symbol, Temperatur, Regen-% (Tropfen).
-- L: dazu die nächsten 5 Tage in Worten (`dayWords`).
+- EIN kurzer Satz (`kachelSatz`, ≤ 22 Zeichen `SATZ_MAX`, Stunden ab jetzt
+  bis Mitternacht, `isRainy`): nass jetzt → „Regen bis 15 Uhr“ (ohne trockene
+  Stunde nur „Regen“; „Niesel“, „Schnee“, „Gewitter“); später nass → „ab 15
+  Uhr Regen“ („Schnee“, „Gewitter“); eben aufgehört → „Regen hat aufgehört“;
+  Wind, der auffällt (`windZeigen`) → das Wort der Stufe („Frischer Wind“);
+  nachts „klar“ bzw. „bewölkt“; sonst „bleibt sonnig“, „bleibt trocken“
+  (leicht bewölkt) bzw. „bewölkt“. Für VoiceOver bleibt die längere Zeile
+  (`kachelZeile`, „Regen · ab 10 Uhr trocken“) samt Wind in Worten.
+- Szene rechts oben (`kachelSzene`/`szeneAus`, `WetterSzene`, eigene
+  inline-SVG-Zeichnungen, leicht angeschnitten, nicht animiert): nass geht vor
+  (Gewitter, Schnee, Regen – auch nachts), dann Wind (nur mit `windZeigen`:
+  ab „Frischer Wind“ oder Böen ≥ 60; ersetzt den früheren Windsack auf der
+  Kachel), nachts Mond + Sterne, sonst bewölkt, leicht bewölkt (heiter) oder
+  Sonne. Hauptmotiv in der Motiv-Farbe des Himmels (`--sky-motiv`), Wolken,
+  Wind und Sterne als Tokens `--app-szene-*` (hell/dunkel/auto).
+- Größen, Text immer links und nie unter der Zeichnung (Platz rechts frei):
+  XS = „WETTER“, Temperatur groß, darunter der Satz; S = dazu ↑ max / ↓ min
+  (Satz und ↑/↓ unten, unter der Szene ist Platz); M = „WETTER · EUTIN“,
+  Temperatur mit ↑/↓, Satz, unten feine Linie und 4 Spalten im
+  2-Stunden-Abstand ab jetzt (`zweiStunden`, auch über Mitternacht, nachts
+  Mond): Stunde, Symbol, Temperatur.
 - Hintergrund (`kachelHimmel(lage, nacht, look, wind)`, `data-himmel`):
   Look „Farbig“ = Himmel je Lage, nachts (`isNight`) die dunklere Variante
   (`<lage>-nacht`), Tokens `--app-sky-<key>-a/-b/-ink/-soft/-motiv` (hell und
-  dunkel in `globals.css`), dazu ein stilles inline-SVG-Muster
-  (`HimmelMuster`, keine Bilddateien, keine Animation): Regen/Niesel feine
-  Tropfen, Schnee helle Punkte, Bewölkt weiche Wolken, Sonne eine angedeutete
-  Sonne (nachts Mond und Sterne), Gewitter ein kleiner Blitz. Look
-  „Schlicht“ = Kachel-Fläche weiß, kein Muster, nur das Wetter-Symbol farbig.
-  Ab „Stürmisch“ leicht warm getönt, ab „Sturm“ rötlich (`data-ton`, beide
-  Looks). Kontrast jeder Variante (auch getönt, hell/dunkel/auto) rechnerisch
-  ≥ 4,5:1 (`tests/wetter/kachel.test.ts`).
-- Feierabend-Phase (`weatherTomorrow`): das Wetter von morgen auf dem Himmel
-  des Tages, „Schirm einpacken“ bei Regenstunden.
-- Offline: letzte Werte mit „Stand 8:10“. Nie geladen: „Gerade keine
-  Wetterdaten – ich schau gleich nochmal.“ Antippen → `/wetter`.
-- Der frühere EINE Tipp (`weatherTip`: „☂️ Ab 15 Uhr Regen – Schirm für …“,
-  Frost, Hitze, Böen) ist weg: Regen zum Termin steht auf der Jetzt-Karte
-  bzw. im Satz der Wetter-Seite (`daySentence`).
+  dunkel in `globals.css`). Look „Schlicht“ = Kachel-Fläche weiß, Szene
+  kleiner (`scale-75`) und blasser (Deckkraft 0,6). Ab „Stürmisch“ leicht
+  warm getönt, ab „Sturm“ rötlich (`data-ton`, beide Looks). Kontrast jeder
+  Variante (auch getönt, hell/dunkel/auto) rechnerisch ≥ 4,5:1
+  (`tests/wetter/kachel.test.ts`).
+- Feierabend-Phase (`weatherTomorrow`): das Wetter von morgen (Höchstwert,
+  ab S mit Tiefstwert) mit der Szene von morgen, Satz „Schirm einpacken“ bei
+  Regenstunden, sonst der Tagestext.
+- Offline: letzte Werte mit „· 8:10“ im Kopf. Nie geladen: „Gerade keine
+  Wetterdaten.“ Antippen → `/wetter`.
+- Der frühere EINE Tipp (`weatherTip`) ist weg: Regen zum Termin steht auf der
+  Jetzt-Karte bzw. im Satz der Wetter-Seite (`daySentence`). Die L-Größe
+  (nächste Tage) gibt es seit dem festen Raster nicht mehr – die stehen auf
+  der Wetter-Seite.
 
 Seite `/wetter` (`WeatherView`):
 - Reiter Heute · Morgen · 7 Tage (tippen oder wischen, Punkte; ab 18 Uhr
@@ -208,9 +212,10 @@ wird nur die Stadt). Die App holt höchstens alle 30 Minuten neu.
   Windsack-Aussehen, Böen 59/60, Richtung (350° + 10° → N, 8 Kürzel,
   22,5°), Tageswert nur 7–21 Uhr, alte Daten ohne Wind, Sätze und Mia,
   Jetzt-Karte nur ab „Stürmisch“ mit Planbezug.
-- `tests/wetter/kachel.test.ts` – ehrliche Lage und Zeile, Wind jetzt,
-  2-Stunden-Überblick, Hintergrund je Wetter/Tag/Nacht/Look, Kontrast jeder
-  Variante (WCAG, auch getönt), S/M/L als echte Ausgabe.
+- `tests/wetter/kachel.test.ts` – ehrliche Lage und Zeile, kurzer Satz
+  (≤ 22 Zeichen), Szene je Lage, Wind jetzt, 2-Stunden-Überblick,
+  Hintergrund je Wetter/Tag/Nacht/Look, Kontrast jeder Variante (WCAG, auch
+  getönt), jede Lage × XS/S/M × Tag/Nacht × Farbig/Schlicht als echte Ausgabe.
 - `tests/wetter/wetterRegeln.test.ts` – WMO-Code, Tage, EIN Tipp, Antworten,
   Server-Daten prüfen, Seite, Quellen-Formate.
 - `tests/wetter/wetterServer.test.ts` – Testmodus, echter Abruf (fetch
@@ -219,7 +224,8 @@ wird nur die Stadt). Die App holt höchstens alle 30 Minuten neu.
   `useForecast`.
 - `tests/wetter/seite.test.ts` – Wetter-Seite.
 - Durchklick `e2e/ablaeufe/alltag.mjs` → `wetter` (Kachel mit Himmel,
-  Windsack und Zeile; Himmel-Karte, 7 Säulen).
+  Szene und Satz; Himmel-Karte, 7 Säulen), `e2e/ablaeufe/raster.mjs` →
+  `wetterSzenen` (jede Lage × XS/S/M, Text nie unter der Zeichnung).
 
 ## Stundenleiste (v0.122.0)
 

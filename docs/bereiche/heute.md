@@ -3,12 +3,17 @@
 ## Startseite und Jetzt-Karte (aus CLAUDE.md umgezogen)
 
 - Startseite = Kacheln in EINER gespeicherten Anordnung, die sich nie von
-  selbst ändert. Bearbeiten direkt auf der Startseite (lange drücken: wackeln,
-  ziehen, „–“, S/M/L, darunter die Farbe); jede S ist halb breit, zwei S nebeneinander, jede
-  S-fähige Kachel mit jeder anderen (eine einzelne S bleibt halb, im Bearbeiten
-  zeigt die freie Hälfte „＋ Kachel“); Essen + Einkauf sind ein festes Paar. Größe ändert nur die Menge (S ≤ M ≤ L). Standard für
-  neue Nutzer: Pinnwand + Wetter (S; allein ohne Pinnwand), Termine, Aufgaben, Essen + Einkauf,
-  Notizen („Im Haus“ nur über die Kachel-Auswahl). Jede Kachel öffnet ihre Seite.
+  selbst ändert, im festen Raster XS · S · M (Tafel 118, siehe „Festes Raster“
+  unten): 2 Spalten, XS = halb breit + halb hoch, S = halb breit +
+  quadratisch, M = ganz breit + so hoch wie S; die Höhe hängt nie vom Inhalt
+  ab, der Rest steht als „+n“ im Kopf. Bearbeiten direkt auf der Startseite
+  (lange drücken: wackeln, ziehen, „–“, XS · S · M, darunter die Farbe) –
+  dasselbe Raster wie fertig. Lücke ohne Partner: ruhig leer, im Bearbeiten
+  „＋ Kachel“; Essen + Einkauf sind ein festes Paar. Standard je Haushalt
+  (Tafel 119): Familie / zu zweit Pinnwand S | Wetter XS über Notizen XS,
+  allein Wetter über Sport | Notizen über Im Haus (alle XS); dann Termine M,
+  Aufgaben M, Essen S | Einkauf S. Timer nur, solange einer läuft (XS ganz
+  oben). Jede Kachel öffnet ihre Seite.
 - Die Jetzt-Karte zeigt höchstens 3 Themen zum Wischen und öffnet wie jede
   Kachel per Antippen – ohne eigenen Knopf – die Seite „Dein Tag“ (Ausnahme:
   laufender Timer öffnet den Timer). Feste Höhe, 2 Zeilen (Zeile 1 ≤ 32
@@ -81,13 +86,15 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 
 - Seiten-Pager: `src/components/heute/HomePager.tsx` (Kalender · Heute · Essen),
   Wischen in `usePagerSwipe.ts` (`swipeDecision`); Einstieg `HomeView.tsx`.
-- Seite Heute: `TodayPage.tsx`; Kacheln `HomeBoard.tsx`, `EditFrame.tsx`,
+- Seite Heute: `TodayPage.tsx`; Kacheln `HomeBoard.tsx` (Raster), `EditFrame.tsx`,
   `EditHeader.tsx`, `EditLook.tsx`, `TilePicker.tsx`, `useHomeEditing.ts`, `Pressable.tsx`.
 - Kachel-Inhalte: `MiniCards.tsx` (Termine, Aufgaben), `HomeTiles.tsx` (Essen,
   Einkauf, Notizen, Vorrat); andere Kacheln in ihren Bereichen
   (`wetter/WeatherTile`, `pinnwand/PinboardTile`, `timer/TimerTile`, …).
-- Layout (rein + Speicher): `src/lib/core/homeLayout.ts`; Einheiten/Reihen:
-  `src/lib/core/homeUnits.ts` (`unitsOf`, `rowsOf`, `glowTile`).
+- Layout (rein + Speicher): `src/lib/core/homeLayout.ts` (`defaultHome` je
+  Haushalt, `homeForHaushalt`, `fitSize`); Einheiten: `src/lib/core/homeUnits.ts`
+  (`unitsOf`, `glowTile`); Raster (rein): `src/lib/heute/raster.ts` (`packe`,
+  `rasterOf`, `fuelleLuecke`, `trennZeile`, `pfeilZu`, `mitLaufendemTimer`).
 - Jetzt-Karte: `src/lib/heute/jetztTopics.ts` (Punkte), abends
   `abendThema.ts` + `abendDaten.ts` (Tafel 98), `jetztStore.ts`
   (Speicher), `jetztCommand.ts` (Satz an/aus); Oberfläche
@@ -106,8 +113,11 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 
 ## Daten und Speicher
 
-- `wasgibts.startseite` v8 `{version, tiles: {id, visible, size, farbe?}[], tipSeen}`
-  (`migrateHome`). v1 → Aufgaben hinter Termine; v1/v2 → Größen S/M/L,
+- `wasgibts.startseite` v9 `{version, tiles: {id, visible, size, farbe?}[], tipSeen}`
+  (`migrateHome`). v8 → v9 (Tafel 118): Reihenfolge, Sichtbarkeit, Farben und
+  Größen bleiben, L → M, nicht mehr erlaubte Größen die nächste erlaubte
+  (`fitSize`: Timer/Im Haus M → S; Sport darf seit A-044 M); keine Kachel verschwindet. v1 →
+  Aufgaben hinter Termine; v1/v2 → Größen S/M/L,
   Kachel „kladde“ wird „notizen“ an derselben Stelle; v3 → v4 hängt die
   Spendentopf-Kachel einmal hinter die letzte sichtbare (`withPotTile`);
   v7 → v8 (Tafel 108): `farbe` je Kachel, fehlt = automatisch (alle alten
@@ -163,43 +173,54 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Lavendel, Aufgaben Mint, Einkauf Salbei, Pinnwand Rosé, Notizen Vanille,
   Im Haus Aqua, Sport Flieder, Timer Sand (alle gleich hell, Schrift ≥ 4,5:1,
   dunkle Töne für Dunkel); Wetter = Himmel, Essen = Bild. Im Bearbeiten-Modus
-  unter S · M · L die Reihe `FarbWahl` („A“ gestrichelt + 8 Punkte, Ring in
+  unter XS · S · M die Reihe `FarbWahl` („A“ gestrichelt + 8 Punkte, Ring in
   der Tonfarbe, ein Tipp = gespeichert); Wetter und Essen ohne Reihe. Die
   Wahl steht als `farbe` in der Startseiten-Anordnung (pro Person/Gerät, in
   der Sicherung), die Kachel trägt `data-farbe="<ton>"` – CSS nimmt Fläche und
   Schrift der Kachel, deren Standard der Ton ist. „Schlicht“: weiß, der Ton
   nur in Überschrift/Symbol. „Wie am Anfang“ setzt auch die Farben zurück.
   Beispiel-Tag nutzt dieselbe Anordnung, also dieselben Farben.
-- `HOME_TILES` in Standard-Reihenfolge: Pinnwand (S), Wetter (S), Termine (M),
-  Aufgaben (M), Essen (S), Einkauf (S), Spendentopf (nur M), Tipps (M/L,
-  Baustein), Timer (S/M), Sport, Notizen, Vorrat (S/M, Baustein),
-  Post („bald“, nie sichtbar).
+- Wasserzeichen (Tafel 124 A/125, A-036): jede Kachel ohne eigenes Bild
+  trägt in S/M ein großes, stilles Linien-Symbol unten rechts im
+  Kachel-Akzent (`ui/KachelWasserzeichen`, `.kachel-wasserzeichen`, Tokens
+  `--app-wasserzeichen*`): Termine Calendar, Aufgaben CircleCheck, Einkauf
+  ShoppingCart, Im Haus Refrigerator, Notizen StickyNote, Timer Timer, Tipps
+  MapPin, Post (bald) Mail. Keins bei Wetter (Himmel), Essen (Foto), Pinnwand
+  (Zettel), Spendentopf (Topf), Sport (die Stempel sind das Bild, A-044), der
+  Jetzt-Karte, in XS und im Look „Schlicht“. Tabelle `WASSERZEICHEN_SYMBOL`
+  (`Record` über alle Kachel-IDs, neue Kachel = Eintrag oder Grund in
+  `OHNE_WASSERZEICHEN`, Test `tests/app/wasserzeichen.test.ts`). Freier Text
+  ohne weißes Kärtchen → `frei` (9 %, dunkel 8 %), leiser Text dort mit
+  `kachel-frei`. Kachel = `isolate`, ihre Fenster stehen neben der
+  `<section>`. Kachel-Texte ohne „ – “ (Test `tests/app/kachelTexte.test.ts`).
+- `HOME_TILES` in Standard-Reihenfolge (erlaubte Größen, Standard fett im
+  Code): Pinnwand S/M, Wetter XS/S/M, Notizen XS/S/M, Termine S/M, Aufgaben
+  S/M, Essen S/M, Einkauf S/M, Spendentopf nur M, Tipps nur M (Baustein),
+  Timer XS/S, Sport XS/S/M (Stempelkarte, A-044), Im Haus XS/S (Baustein), Post („bald“, nie
+  sichtbar). Der Größen-Umschalter zeigt nur die erlaubten.
 - Pinnwand ist ein Baustein (Kühlschranktür): Kachel nur mit Baustein
   (Filter in `TodayPage`); „Nur für mich“ startet ohne, sonst an. Kachel
   „Fächer“ siehe `pinnwand.md`.
-- `DEFAULT_HOME` zeigt Pinnwand, Wetter, Termine, Aufgaben, Essen, Einkauf,
-  Spendentopf und Vorrat; Vorrat erscheint nur mit Baustein, Tipps nur mit
-  Quelle und Baustein (Filter in `TodayPage`).
-- M und L = volle Breite, S = immer halbe. Zwei S hintereinander stehen
-  nebeneinander, jede S-fähige Kachel mit jeder anderen (`rowsOf`). Eine
-  einzelne S bleibt halb; im Bearbeiten zeigt die freie Hälfte „＋ Kachel“
-  (`data-freie-haelfte`, Auswahl nur S-fähiger Kacheln, `placeBeside`),
-  sonst bleibt sie leer. Ziehen tauscht die Partner. Startseite v6
-  (`lonelySToM`): eine einzelne S, die bisher breit war, wird einmal M.
-- Notizen-Kachel (`heute/notizenKachel.ts`): S = neueste bzw. angeheftete
-  Notiz (Titel + 1 Zeile) oder „Schnell was aufschreiben.“ (A-045: in
-  Kacheln kein „…“), M = 3 Zeilen
-  „Titel · Anfang“, L = bis 5, Angeheftete zuerst; Listen als „x von y
-  erledigt“. Zeile = diese Notiz, Stift = Schnelleingabe „Neue Notiz“.
+- `DEFAULT_HOME` = `defaultHome("familie")` (Tafel 119, s. o.); Im Haus
+  erscheint nur mit Baustein, Tipps nur mit Quelle und Baustein (Filter in
+  `TodayPage`).
+- Raster siehe „Festes Raster“. Startseite v6 (`lonelySToM`): eine einzelne
+  S, die bisher breit war, wird einmal M.
+- Notizen-Kachel (`heute/notizenKachel.ts`): XS = neueste bzw. angeheftete
+  Notiz (eine Zeile) oder „Schnell notieren.“, S und M = bis 3 Zeilen „Titel ·
+  Anfang“ oder „Schnell was aufschreiben.“, Rest „+n“, Angeheftete zuerst;
+  Listen als „x von y erledigt“. Zeile = diese Notiz, Stift = Schnelleingabe
+  „Neue Notiz“.
 - Nichts abgeschnitten (A-045/A-046, Tafel 133/134): kein sichtbarer Text in
-  einer Kachel endet auf „…“ oder wird weggeschnitten – Texte brechen um,
-  die Kachel wächst mit. Ausnahme nur frei Eingegebenes (Notiz, Aufgabe,
-  Termin, Zettel, Timer- und Trainingsname), markiert mit `data-freitext`.
-  Im Haus: Name vor Schild, Schild 10,5 px, passt es nicht daneben, rutscht
-  es in die nächste Zeile. Essen-Kachel siehe `essen.md` („Essen-Kachel
-  final“). Prüfung: Durchklick `nichtsAbgeschnitten` (Beispiel-Tag und
-  Familie, iPhone SE/15 Pro/Pixel 7, jede Kachel in S/M/L,
-  `abgeschnitteneTexte` in `e2e/regeln.mjs`).
+  einer Kachel endet auf „…“ oder wird weggeschnitten – Texte brechen um
+  bzw. sind so kurz, dass sie in die feste Fläche des Rasters passen; was
+  nicht mehr passt, steht als „+n“ im Kopf. Ausnahme nur frei Eingegebenes
+  (Notiz, Aufgabe, Termin, Zettel, Timer- und Trainingsname, Sachen im
+  Haus), markiert mit `data-freitext`. Im Haus: Name vor Schild, Schild
+  10,5 px. Essen-Kachel siehe `essen.md` („Essen-Kachel final“). Prüfung:
+  Durchklick `nichtsAbgeschnitten` (Beispiel-Tag und Familie, iPhone SE/15
+  Pro/Pixel 7, jede Kachel in XS/S/M, `abgeschnitteneTexte` in
+  `e2e/regeln.mjs`).
 - Essen + Einkauf sind ein Paar: immer direkt hintereinander, Essen zuerst
   (`keepPair`), und wandern zusammen. Als eine Einheit im Raster zählen sie
   nur, wenn beide S sind.
@@ -209,8 +230,9 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Termine und Aufgaben im gleichen Listenstil (v0.67.1, Tafel 58/59): ein
   weißes Feld je Kachel, feine Trennlinien, Zeilen 30 px (`data-zeile`, die
   ganze Zeile ist tippbar), Titel 13,5 px, Uhrzeit 13,5 px fett in fester
-  Breite (tabular-nums), Nebeninfo 11 px. Größe ändert nur die Menge: S 2 /
-  M 4 / L 6 (`ROW_COUNT`). Kopf auf allen Kacheln gleich (26 px, Titel 11 px,
+  Breite (tabular-nums), Nebeninfo 11 px. S und M sind gleich hoch: je 3
+  Zeilen (`ROW_COUNT`), mit „Arbeit · 5 für morgen“ 2; Rest „+N weitere“
+  (halb breit „+N“). Kopf auf allen Kacheln gleich (26 px, Titel 11 px,
   „+N weitere“ 12,5 px neben dem Plus), unten nichts; Abstand der Kacheln 8 px.
 - Termine (`lib/heute/termineKachel.ts`, `termineTile`): ganztägige oben, dann
   nach Uhrzeit; ein laufender Termin bleibt 30 Min nach Beginn („läuft“) bzw.
@@ -230,9 +252,9 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Jede Kachel öffnet ihre Seite – die ganze Kachel, nicht nur der Titel
   (`EditFrame` mit `TILE_PAGE` in `TodayPage`; Zeilen, Knöpfe und Links in der
   Kachel behalten ihr Ziel). Termine öffnet den Kalender (er steht auf
-  „Heute“), Essen den Essen-Reiter; Timer bleibt ein Fenster. Auf dem iPhone 15 Pro (als App) sind
-  Pinnwand/Wetter, Termine und Aufgaben ohne Scrollen ganz zu sehen, Essen +
-  Einkauf angeschnitten (`e2e/ablaeufe/startseite.mjs`). Den Streifen „Ausblick morgen“ gibt es seit vX nicht mehr (Tafel 98, siehe
+  „Heute“), Essen den Essen-Reiter; Timer bleibt ein Fenster. Auf dem iPhone 15 Pro (als App) ist
+  bis einschließlich Essen + Einkauf alles ohne Scrollen ganz zu sehen
+  (Tafel 119, `e2e/ablaeufe/raster.mjs`). Den Streifen „Ausblick morgen“ gibt es seit vX nicht mehr (Tafel 98, siehe
   „Abends: nichts doppelt“): Termine- und Essen-Kachel zeigen abends schon
   morgen, gespeicherte Anordnungen verlieren den Eintrag still (Speicher v7).
 
@@ -263,14 +285,18 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   getrennt von der alten Sprechblase „kachel-hinzufuegen“), gespeichert beim
   Schließen; Daten & App → „Einmal-Hinweise zurücksetzen“ (nur Testmodus).
 - Kacheln wackeln, Inhalte sind gesperrt; „–“ entfernt mit „Gelöscht ·
-  Rückgängig“, „S · M · L“ ändert die Größe (beides beendet NICHT). Das
+  Rückgängig“, „XS · S · M“ (nur die erlaubten) ändert die Größe sofort, die
+  Nachbarn rücken weich nach (beides beendet NICHT). Umschalter und Farbe
+  liegen IN der Kachel (unten rechts), die Kachel behält genau ihren Platz;
+  bei XS öffnet ein Farb-Knopf die Farbreihe über der Kachel. Das
   frühere Kachel-Menü ist weg; Verschieben ohne Ziehen per Pfeiltasten auf der
   Kachel bzw. die Screenreader-Knöpfe „Nach oben/unten“ und über die
   Begleitung („Schieb das Wetter nach oben“).
 - Ziehen per Touch-Events: Wischen scrollt (`touch-action: pan-y`), erst
   ruhiges Festhalten (`HOLD_MS` 350, Toleranz 8 px) hebt an. Antippen kurz nach
   dem Scrollen (`FLING_MS` 120) hält nur den Schwung an. Schwebende Kopie,
-  gestrichelter Platzhalter, Auto-Scroll am Rand.
+  gestrichelter Platzhalter an der Zielstelle im Raster (die Nachbarn rasten
+  sofort ein), Auto-Scroll am Rand.
 - Unten „Aussehen“ und „Standard-Anordnung wiederherstellen“ (mit
   Nachfrage). Hinzufügen ist still (kein Rückgängig); nach dem Schließen der
   Auswahl leuchtet die neue Kachel kurz auf. Kacheln eines Bausteins schalten
@@ -293,7 +319,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Termine-Kachel), Vorbereiten (Termin heute mit Notiz → „Versichertenkarte
   einpacken?“), Packliste fürs Training heute, Wetter NUR mit Planbezug
   (Regen zur Stunde eines Draußen-Termins/-Trainings, `isOutdoor`: „Regen um
-  17 Uhr · Fußball – lieber drinnen?“; ohne Regen Wind erst ab „Stürmisch“
+  17 Uhr · Fußball · lieber drinnen?“; ohne Regen Wind erst ab „Stürmisch“
   zur Stunde des Plans, `stormForPlan` in `lib/wetter/wind.ts`: „Stürmisch ab
   14 Uhr · Trampolin sichern?“; draußen sind jetzt auch Trampolin, Wäsche,
   Balkon, Terrasse), Neu von der Familie (Pinnwand,
@@ -349,7 +375,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Uhr, Eingaben über `abendLage`). Steht sie auf morgen, zeigt auch die
   Aufgaben-Kachel „Morgen · Mi“: das Offene von heute still in derselben
   Liste (ohne „von heute“/„von gestern“), dazu, was für morgen geplant ist
-  (`aufgabenUebersicht`, dringend bleibt vorn, S/M/L-Mengen und „+N weitere“
+  (`aufgabenUebersicht`, dringend bleibt vorn, S/M-Mengen und „+N weitere“
   wie bisher). Familien-Aufgaben stehen auch im Feierabend da (früher
   „Aufgaben machen Pause“), nur Arbeit ruht. Das ＋ der Kachel
   trägt abends für morgen ein. „Dein Tag“ zeigt unter „Morgen · Mi“ dieselben
@@ -423,19 +449,27 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Beispiele liegen nie in echten Speichern. Termine aus `demoDay(datum)`,
   passend zum Wochentag (seit v0.99, `demoArt`; Feiertage bundesweit + SH aus
   `core/feiertage.ts` wie Sonntag), echte Termine statt Mahlzeiten:
-  - Mo–Fr: 8:00 Kita bringen, 10:30 Telefonat Versicherung, 15:00 Mathis
-    Fußball, 16:00 Zahnarzt Jonne, 19:30 Elternabend (nur Di–Do), 20:15
-    Lieblingsserie
+  - Mo–Fr (Tafel 119): 8:00 Kita, Jonne bringt Lisa · 16:00 Mathis Fußball ·
+    17:00 Laternelaufen (zu zweit: 9:30 Zahnarzt · 18:00 Wocheneinkauf · 20:15
+    Kino zu zweit; allein: 7:30 Laufen · 10:00 Meeting · 18:00 Yoga)
   - Samstag: 9:00 Brötchen holen, 10:00 Wochenmarkt, 11:30 Fußballspiel
     Mathis, 15:00 Kindergeburtstag Ben, 18:30 Grillen mit Nachbarn
   - Sonntag/Feiertag: 9:30 Familienfrühstück, 11:00 Spaziergang am See, 15:00
     Kaffee bei Oma, 18:00 Pizza backen, 20:15 Tatort
 
   Nur was heute noch kommt; weniger als 2 → Beispiele für morgen mit dem Plan
-  von morgen („Morgen · Sa“). Fünf Beispiel-Aufgaben (am Wochenende/Feiertag
-  alle „diese Woche“, keine dringend), Pinnwand (Kachel und Seite: Mias
-  oranger Zettel „Moin! Hier hängen eure Zettel.“, Ole „Gummistiefel!“,
-  Sprachnachricht 0:08, klein „Beispiel“; `pinnwand/beispiel.ts`), Einkauf `DEMO_SHOPS`,
+  von morgen („Morgen · Sa“). Drei Beispiel-Aufgaben je Haushalt (Tafel 119;
+  die mittlere mit Schild „Arbeit“: Elternbrief unterschreiben ·
+  Steuerberater anrufen · Geschenk für Oma; zu zweit Urlaub buchen ·
+  Präsentation fertig · Mama anrufen; allein Steuererklärung · Bericht
+  schicken · Jana zurückrufen; am Wochenende/Feiertag „diese Woche“, nie
+  dringend, nichts vorab abgehakt), Pinnwand (Kachel und Seite: Felix „Bin
+  um 18 Uhr da“, Mathis’ Sprachnachricht 0:08, Lisa „Ole: Gummistiefel!“; zu
+  zweit Anna/Tom; klein „Beispiel“; `pinnwand/beispiel.ts`), Notizen „WLAN:
+  Tohuus2026“, Sport „2 von 3 diese Woche“, Im Haus „Hähnchen · heute“,
+  Jetzt-Karte werktags „Moin! Heute ist Laternelaufen.“ · „17 Uhr. Laterne
+  schon bereit?“ (zu zweit „Moin! Kino heute um 20:15.“, allein „Moin! Heute
+  um 18 Uhr Yoga.“; `demoJetzt`), Einkauf `DEMO_SHOPS`,
   Beispielgericht je Tag (`demoDishAt(heute, minuten)`: werktags Pasta 18:30,
   samstags Lasagne 18:30, sonntags Ofen-Hähnchen 12:30; danach das von morgen).
   Wechselt der Tag, wechselt der Plan von selbst (alles aus Datum und Uhrzeit).
@@ -540,3 +574,48 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Tests: `tests/heute/essenKachel.test.ts` (sieben Zustände mit Bild,
   Kopfzeile, Schritt-Zeile), `tests/einkauf/kachelSymbole.test.ts` (nie ein
   Buchstabe, Variante A/C2, Kochmodus-Schritt).
+
+
+## Festes Raster XS · S · M, Standard je Haushalt, Wetter mit Himmel (Tafel 118–120, A-023)
+
+- Raster (`lib/heute/raster.ts`, rein): 2 Spalten, Grund-Zeile = halbe
+  S-Höhe aus der Board-Breite (`ZEILE_CSS` = `max(80px, (100cqw − 24px) / 4)`,
+  Board mit `container-type: inline-size`, Abstand 8 px) – S ist ab 375 px
+  quadratisch; ganz schmal (iPhone SE 1, 320 px) mindestens 168 px hoch,
+  damit nichts abgeschnitten wird (A-045), die Einkauf-Kachel lässt dort die
+  Symbole weg. XS = 1 × 1, S = 1 × 2, M = 2 × 2, Essen + Einkauf (beide S) =
+  EINE Einheit 2 × 2. `packe`: jede Einheit an den ersten freien Platz, an den
+  sie passt (oben vor unten, links vor rechts). Zwei XS hintereinander sind
+  ein Paar: übereinander (= ein S-Platz) – nebeneinander als halbe Zeile nur,
+  wenn danach etwas Breites kommt (sonst bliebe eine Lücke). Einzelne S/XS
+  ziehen die nächste passende Kachel nach oben. Freie Zellen = Lücken
+  (`luecken`, 1 × 1 oder 1 × 2): ruhig leer, im Bearbeiten „＋ Kachel“
+  (`data-luecke`, Auswahl nur passender Kacheln, `fuelleLuecke` stellt sie
+  genau in die Lücke, möglichst ohne dass eine andere rückt).
+- `HomeBoard` setzt jede Einheit mit `grid-column`/`grid-row` an ihren
+  Platz; jede Kachel füllt genau ihre Fläche (`h-full`), die Höhe hängt nie
+  vom Inhalt ab. Bearbeiten nutzt dasselbe Raster (Knöpfe IN der Kachel, kein
+  Einzug, das Paar ohne Innenabstand) – nach „Fertig“ exakt dieselbe Ansicht
+  (Fehler „Pinnwand-S schrumpft nach Fertig auf einen Streifen“, Video 28.10.,
+  behoben: feste Höhe statt `h-[156px]`/`min-h` und Nachbar-Strecken).
+- Mias Tipp zu einer Kachel bekommt eine eigene Zeile (`auto`) an der ersten
+  Grenze unter ihr, über die keine Kachel reicht (`trennZeile`), Pfeil
+  links/rechts/mittig nach Platz (`pfeilZu`).
+- Inhalt je Größe: XS = Kopf + EINE Zeile (Wetter: Temperatur + kurzer
+  Satz), S/M = feste Mengen (Termine/Aufgaben 3, Einkauf 3 Läden bzw. 2 mit
+  „ohne Laden“, Notizen 3, Im Haus 2 + „Was koch ich daraus?“), Rest als „+n“
+  im Kopf; nichts gestaucht. Pinnwand S = Fächer, M = drei nebeneinander.
+- Timer ohne festen Platz (`mitLaufendemTimer`): läuft einer und steht die
+  Timer-Kachel nicht selbst auf der Startseite, erscheint sie als XS ganz
+  oben (im Bearbeiten nicht verschieb-/änderbar), danach wieder weg.
+- Standard je Haushalt (`defaultHome`, für neue Nutzer und den Beispiel-Tag;
+  `startFresh` schaltet bei „allein“ Sport ein, Pinnwand aus). Haushalt
+  wechseln (`homeForHaushalt`, aus `saveProfile`): steht noch genau der
+  Standard des alten Haushalts da, kommt der neue; sonst bleibt die eigene
+  Anordnung, nur fehlende Standard-Kacheln kommen dazu, bei „allein“ wird die
+  Pinnwand ausgeblendet (nie gelöscht).
+- Mia: „Mach das Wetter ganz klein“ → `mini` (XS); „groß“ = M.
+- Tests: `tests/heute/raster.test.ts` (Größen, dichtes Füllen, Paare,
+  Lücken, Bearbeiten = Fertig, Timer, Standard je Haushalt, Haushaltswechsel,
+  Migration v9), `tests/wetter/kachel.test.ts` (Szenen, Satz, XS/S/M ×
+  Tag/Nacht × Farbig/Schlicht), Durchklick `e2e/ablaeufe/raster.mjs`.

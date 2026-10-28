@@ -144,6 +144,8 @@ export type JetztInput = {
   kuehlCheck?: string | null;
   /** Beispiel-Tag: ein Thema, das ihn kurz erklärt */
   demo: boolean;
+  /** Beispiel-Tag je Haushalt (Tafel 119): das Thema des Tages („Moin! Heute ist Laternelaufen.“) – steht vorn */
+  demoThema?: { title: string; detail: string } | null;
   /** Sichtbare Kacheln – was sie zeigen, wiederholt die Karte nicht */
   tiles: HomeTileId[];
   /** Spruch des Tages (Mia denkt mit) – steht nur, wenn sonst nichts dran ist */
@@ -247,7 +249,7 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
   // Wetter NUR mit Planbezug: Regen/Sturm/Glätte zur Zeit eines Draußen-Termins
   if (x.planWeather && !night) {
     const h = Number(x.planWeather.time.slice(0, 2));
-    add({ id: `wetter:${x.planWeather.key}`, kind: "wetter", title: x.planWeather.head ?? `${x.planWeather.word} um ${h} Uhr`, detail: x.planWeather.detail ?? `${x.planWeather.title} – lieber drinnen?`, score: 74, target: { href: dayHref }, button: "Öffnen", gentle: true });
+    add({ id: `wetter:${x.planWeather.key}`, kind: "wetter", title: x.planWeather.head ?? `${x.planWeather.word} um ${h} Uhr`, detail: x.planWeather.detail ?? `${x.planWeather.title} · lieber drinnen?`, score: 74, target: { href: dayHref }, button: "Öffnen", gentle: true });
   }
 
   // Neu von der Familie
@@ -325,7 +327,8 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
 
   if (x.weekCheck && !night) add({ id: `wochencheck:${x.weekCheck}`, kind: "wochencheck", title: "Kurzer Wochencheck?", detail: "Sag einfach alles, ich sortiere.", score: 50, target: { action: "wochencheck" }, button: "Öffnen", gentle: true });
   if (x.kuehlCheck && !night) add({ ...kuehlThema(x.kuehlCheck), gentle: true });
-  if (x.demo) add({ id: "beispiel", kind: "beispiel", title: "Das ist ein Beispiel-Tag", detail: "Probier alles aus: tippen, abhaken, verschieben", score: 24, target: null, button: null, gentle: true, night: true });
+  if (x.demo && x.demoThema) add({ id: "beispiel", kind: "beispiel", title: x.demoThema.title, detail: x.demoThema.detail, score: 96, target: null, button: null, gentle: true, first: true });
+  else if (x.demo) add({ id: "beispiel", kind: "beispiel", title: "Das ist ein Beispiel-Tag", detail: "Probier alles aus: tippen, abhaken, verschieben", score: 24, target: null, button: null, gentle: true, night: true });
 
   // Abends (Tafel 98): höchstens EIN Thema, nur was keine Kachel zeigt
   if (isAbend(x)) {

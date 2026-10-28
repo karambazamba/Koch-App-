@@ -1,5 +1,5 @@
-// Beispiel-Tag passt zum Wochentag (v0.100): Werktag wie bisher (Elternabend
-// nur Di bis Do), Samstag und Sonntag eigene Pläne, Feiertage (bundesweit +
+// Beispiel-Tag passt zum Wochentag (v0.100): Werktag wie Tafel 119 (Kita,
+// Fußball, Laternelaufen), Samstag und Sonntag eigene Pläne, Feiertage (bundesweit +
 // Schleswig-Holstein) wie Sonntag; am Wochenende kein „heute dran“ und Zeit
 // zum Kochen.
 import { describe, expect, it } from "vitest";
@@ -10,8 +10,8 @@ import { feiertage, istFeiertag, ostersonntag } from "@/lib/core/feiertage";
 // Oktober 2026: Mo 19. · Di 20. · Mi 21. · Do 22. · Fr 23. · Sa 24. · So 25.
 const titel = (date: string) => demoDay(date).map((t) => t.title);
 const termine = (today: string, minutes: number) =>
-  demoEntries(today, minutes, "Mia").entries.filter((e) => e.typ === "termin").map((e) => (e.data as { title: string; start: string }).title);
-const aufgaben = (today: string) => demoEntries(today, 6 * 60, "Mia").entries.filter((e) => e.typ === "aufgabe").map((e) => e.data as { date?: string; week?: string; dringend?: boolean });
+  demoEntries(today, minutes).entries.filter((e) => e.typ === "termin").map((e) => (e.data as { title: string; start: string }).title);
+const aufgaben = (today: string) => demoEntries(today, 6 * 60).entries.filter((e) => e.typ === "aufgabe").map((e) => e.data as { date?: string; week?: string; dringend?: boolean });
 
 describe("Feiertage (bundesweit + Schleswig-Holstein)", () => {
   it("Ostern und die beweglichen Tage", () => {
@@ -32,13 +32,8 @@ describe("Feiertage (bundesweit + Schleswig-Holstein)", () => {
 });
 
 describe("Beispiel-Termine je Wochentag", () => {
-  it("Mo bis Fr wie bisher, Elternabend nur Di bis Do", () => {
-    expect(titel("2026-10-21")).toEqual(["Kita bringen", "Telefonat Versicherung", "Mathis Fußball", "Zahnarzt Jonne", "Elternabend", "Lieblingsserie"]);
-    for (const d of ["2026-10-20", "2026-10-22"]) expect(titel(d)).toContain("Elternabend");
-    for (const d of ["2026-10-19", "2026-10-23"]) {
-      expect(titel(d)).toContain("Kita bringen");
-      expect(titel(d)).not.toContain("Elternabend");
-    }
+  it("Mo bis Fr wie Tafel 119: Kita, Fußball, Laternelaufen", () => {
+    for (const d of ["2026-10-19", "2026-10-21", "2026-10-23"]) expect(titel(d)).toEqual(["Kita, Jonne bringt Lisa", "Mathis Fußball", "Laternelaufen"]);
   });
 
   it("Samstag", () => {
@@ -59,26 +54,25 @@ describe("Beispiel-Termine je Wochentag", () => {
     }
   });
 
-  it("Sa/So/Feiertag: kein Elternabend, keine Kita", () => {
+  it("Sa/So/Feiertag: keine Kita, kein Laternelaufen", () => {
     for (const d of ["2026-10-24", "2026-10-25", "2026-10-31", "2026-12-25"]) {
-      expect(titel(d), d).not.toContain("Elternabend");
-      expect(titel(d), d).not.toContain("Kita bringen");
-      expect(termine(d, 6 * 60), d).not.toContain("Kita bringen");
+      expect(titel(d), d).not.toContain("Laternelaufen");
+      expect(termine(d, 6 * 60), d).not.toContain("Kita, Jonne bringt Lisa");
     }
   });
 
   it("spät am Freitag: Beispiele für Samstag (der Plan wechselt mit dem Tag)", () => {
-    const d = demoEntries("2026-10-23", 21 * 60, "Mia");
+    const d = demoEntries("2026-10-23", 21 * 60);
     expect(d).toMatchObject({ tomorrow: true, date: "2026-10-24" });
     expect(termine("2026-10-23", 21 * 60)[0]).toBe("Brötchen holen");
-    expect(termine("2026-10-25", 21 * 60)[0]).toBe("Kita bringen");
+    expect(termine("2026-10-25", 21 * 60)[0]).toBe("Kita, Jonne bringt Lisa");
   });
 });
 
 describe("Aufgaben und Essen am Wochenende", () => {
-  it("werktags „heute“ und eine dringend, am Wochenende/Feiertag alles für die Woche, nichts dringend", () => {
-    expect(aufgaben("2026-10-21").some((a) => a.date === "2026-10-21")).toBe(true);
-    expect(aufgaben("2026-10-21").some((a) => a.dringend)).toBe(true);
+  it("werktags „heute“, am Wochenende/Feiertag alles für die Woche, nie dringend (kein Druck im Beispiel)", () => {
+    expect(aufgaben("2026-10-21").every((a) => a.date === "2026-10-21")).toBe(true);
+    expect(aufgaben("2026-10-21").some((a) => a.dringend)).toBe(false);
     for (const d of ["2026-10-24", "2026-10-25", "2026-10-31"]) {
       expect(aufgaben(d).every((a) => !a.date && a.week), d).toBe(true);
       expect(aufgaben(d).some((a) => a.dringend), d).toBe(false);

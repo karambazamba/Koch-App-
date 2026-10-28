@@ -4,7 +4,9 @@
 // Fortschrittsring, Restzeit groß, Name "Nudeln · 10 Min", Knöpfe
 // +1 · Pause/Weiter · ✕; weitere Timer als schmale Zeilen, die Stoppuhr; unten
 // Schnellknöpfe 5 · 10 · 15 Min · Stoppuhr (lange drücken = eigene Dauer +
-// Name). S: nächster Timer klein, sonst "Timer starten". Alles rechnet mit
+// Name) – so steht es im Timer-Fenster. Auf der Startseite (Raster, Tafel
+// 118): S = nächster Timer, sonst "Timer starten"; XS = EINE Zeile „Nudeln ·
+// 7:42“ (erscheint von selbst, solange ein Timer läuft). Alles rechnet mit
 // der Endzeit (stimmt nach Hintergrund, Sperre, Neustart sofort).
 
 import { useRef, useState } from "react";
@@ -33,6 +35,7 @@ import {
 import { changeTimers, useTimers } from "@/lib/timer/store";
 import { startTimer, stopwatch } from "@/lib/timer/actions";
 import { buzz } from "@/components/heute/actions";
+import { KachelWasserzeichen } from "@/components/ui/KachelWasserzeichen";
 
 const QUICK = [5, 10, 15];
 
@@ -51,10 +54,39 @@ export function TimerTile({ size = "M" }: { size?: TileSize }) {
   };
   const sheet = custom !== null && <CustomTimerSheet minutes={custom} onClose={() => setCustom(null)} onStart={(m, n) => (start(m, n), setCustom(null))} />;
 
+  if (size === "XS") {
+    const left = main ? (isExpired(main, nowMs) ? "fertig" : formatLeft(leftMs(main, nowMs))) : sw ? formatLeft(stopwatchMs(sw, nowMs)) : null;
+    return (
+      <>
+        <section className={`${TILE} flex h-full flex-col justify-between overflow-hidden px-3 py-2.5`} aria-label="Timer" data-groesse="XS">
+          <button type="button" onClick={() => (main || sw ? setOpen(true) : setCustom(10))} className="flex min-w-0 flex-1 flex-col items-start justify-between text-left">
+            <span className={`flex items-center gap-1.5 ${TILE_LABEL}`}>
+              <TimerIcon className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+              Timer
+            </span>
+            <span className="flex w-full min-w-0 items-baseline gap-1.5 text-[15px] font-bold leading-tight" role={main ? "timer" : undefined}>
+              {main && <span className="min-w-0 truncate" data-freitext>{main.name} ·</span>}
+              <span className="shrink-0 tabular-nums">{left ?? "Timer starten"}</span>
+            </span>
+          </button>
+        </section>
+        {sheet}
+        {open && (
+          <Sheet title="Timer" onClose={() => setOpen(false)}>
+            <div className="pb-3">
+              <TimerTile size="M" />
+            </div>
+          </Sheet>
+        )}
+      </>
+    );
+  }
+
   if (size === "S") {
     return (
       <>
-        <section className={`${TILE} flex min-h-[92px] flex-col p-3.5`} aria-label="Timer">
+        <section className={`${TILE} isolate flex h-full flex-col overflow-hidden p-3.5`} aria-label="Timer" data-groesse="S">
+          <KachelWasserzeichen kachel="timer" size="S" frei />
           <button type="button" onClick={() => (main || sw ? setOpen(true) : setCustom(10))} className="flex flex-1 flex-col items-start gap-1 text-left">
             <span className={`flex items-center gap-1.5 ${TILE_LABEL}`}>
               <TimerIcon className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
@@ -65,7 +97,7 @@ export function TimerTile({ size = "M" }: { size?: TileSize }) {
                 <span className="text-[22px] font-extrabold tabular-nums leading-none" role="timer" aria-label={`${main.name}: ${isExpired(main, nowMs) ? "fertig" : formatLeft(leftMs(main, nowMs))}`}>
                   {isExpired(main, nowMs) ? "fertig" : formatLeft(leftMs(main, nowMs))}
                 </span>
-                <span className="truncate text-[13px] text-muted" data-freitext>{main.name}</span>
+                <span className="kachel-frei truncate text-[13px] text-muted" data-freitext>{main.name}</span>
               </span>
             ) : sw ? (
               <span className="text-[20px] font-extrabold tabular-nums">{formatLeft(stopwatchMs(sw, nowMs))}</span>
