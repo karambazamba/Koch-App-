@@ -5,7 +5,7 @@
 // ihre Beispiele für immer (auch wenn man das Eigene später löscht).
 
 import { useEffect } from "react";
-import { itemsForDay, orderedTasks, tomorrowLabel, type CalendarEntry, type DayItem } from "@/lib/kalender/model";
+import { itemsForDay, taskOverview, tomorrowLabel, type CalendarEntry, type DayItem } from "@/lib/kalender/model";
 import type { Haushalt } from "@/lib/core/haushalt";
 import { askRemoveAll, clearDemoTile, demoEntries, demoTiles, useDemo, type DemoTile } from "@/lib/core/demo";
 
@@ -40,7 +40,7 @@ export function useDemoDay(entries: CalendarEntry[], today: string, minutes: num
   return {
     tiles: tiles.filter((t) => (t === "termine" ? showTermine : t === "aufgaben" ? showTasks : t === "essen" ? !ownDish : true)),
     termine: showTermine && demoData ? itemsForDay(demoData.entries, demoData.date, today).filter((i) => i.entry.typ === "termin" && !gone.has(i.entry.id)) : null,
-    tasks: showTasks && demoData ? orderedTasks(demoData.entries, demoData.date).filter((i) => !gone.has(i.entry.id)) : null,
+    tasks: showTasks && demoData ? taskOverview(demoData.entries, demoData.date).heute.filter((i) => !gone.has(i.entry.id)) : null,
     done: demo?.done ?? [],
     label: demoData?.tomorrow ? tomorrowLabel(demoData.date) : null,
     ask: askRemoveAll(demo, tiles),

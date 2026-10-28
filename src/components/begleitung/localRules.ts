@@ -31,6 +31,8 @@ import { DEFAULT_SHOPPING_DAY, planningWeekStart, toIsoDate, weekStartFor } from
 import { parsePauseRequest, pauseLabel } from "@/lib/essen/spontan";
 import { composeWeek } from "@/lib/essen/mealPlan";
 import { taskOverview, terminToAufgabe } from "@/lib/kalender";
+import { aufgabenSatz } from "@/lib/kalender/aufgaben";
+import { listenAnsicht } from "@/lib/kalender/liste/ordnung";
 import { addListItems, changeNotes, createNote, noteFromText, schnellnotizCommand, loadNotes, noteAnswer, noteFor, parseNoteCommand, setPinned, upsertNote } from "@/lib/notizen";
 import { applyShopRule, isShopOverviewQuestion, parseShopRule, shopOverview, shopRuleReply, shopRulesForMia } from "@/lib/einkauf/shopRules";
 import { berlinTime, now } from "@/lib/core/now";
@@ -253,9 +255,9 @@ export function noteRule(ctx: RuleContext, t: string): boolean {
   const notes = loadNotes();
   switch (cmd.kind) {
     case "tasks": {
-      const g = taskOverview(loadEntries(), toIsoDate(today));
-      const part = (label: string, list: typeof g.heute) => (list.length ? `${label}: ${list.slice(0, 5).map((i) => `${i.title}${i.carried ? ` (${i.carried})` : i.dueLabel ? ` (${i.dueLabel})` : ""}`).join(", ")}.` : "");
-      const text = [part("Heute dran", g.heute), part("Diese Woche", g.woche)].filter(Boolean).join(" ") || "Heute liegt nichts an. Schön ruhig.";
+      // Alles ist heute: kurz die Zahl und die ersten drei; „bei der Arbeit“ nur diese
+      const alle = listenAnsicht(taskOverview(loadEntries(), toIsoDate(today)).heute).jetzt;
+      const text = cmd.raum ? aufgabenSatz(alle.filter((i) => i.room === cmd.raum), "bei der Arbeit") : alle.length ? aufgabenSatz(alle) : "Heute liegt nichts an. Schön ruhig.";
       say(cmd.open ? `${text} Ich hab dir die Aufgaben aufgemacht.` : text);
       if (cmd.open) {
         router.push("/aufgaben");

@@ -16,7 +16,7 @@ import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { CARD_LIST, buttonClass, chipClass } from "@/components/ui/styles";
 import { createEntry, type Room } from "@/lib/core/entries";
 import { ExternalLink } from "lucide-react";
-import { aufgabeExtras, mondayOf, REMINDERS, removeItem, sanitizeEntry, sourceLabel, terminExtras, upsertEntry, weekdayIndex, type CalendarEntry, type Reminder, type Repeat } from "@/lib/kalender/model";
+import { aufgabeExtras, REMINDERS, removeItem, sanitizeEntry, sourceLabel, terminExtras, upsertEntry, weekdayIndex, type CalendarEntry, type Reminder, type Repeat } from "@/lib/kalender/model";
 import { berlinTime, nowIso, todayIso } from "@/lib/core/now";
 import { isPast, timeLabel } from "@/lib/kalender/sentence";
 import { quickTaskData, readQuickText, readTerminText, type When } from "@/lib/kalender/quick";
@@ -93,9 +93,8 @@ export function EntryForm({ entry, date, kind, initialText = "", when = "heute",
   const src = entry ?? pre;
   const [typ, setTyp] = useState<"termin" | "aufgabe">(entry?.typ ?? kind ?? "termin");
   const [title, setTitle] = useState(d?.title ?? "");
-  // Neue Aufgabe von der Aufgaben-Seite: ohne Tag ("Irgendwann")
-  const [day, setDay] = useState(d?.date ?? date ?? (kind === "aufgabe" ? "" : todayIso()));
-  const [week, setWeek] = useState(src?.typ === "aufgabe" ? (src.data.week ?? "") : "");
+  // Alles ist heute (Tafel 103): neue Aufgaben ohne genannten Tag gehören zu heute
+  const [day, setDay] = useState(d?.date ?? date ?? (entry ? "" : todayIso()));
   const [time, setTime] = useState(src?.typ === "termin" ? src.data.start : src?.typ === "aufgabe" ? (src.data.time ?? "") : "");
   const [end, setEnd] = useState(entry?.typ === "termin" ? (entry.data.end ?? "") : "");
   const [due, setDue] = useState(src?.typ === "aufgabe" ? (src.data.due ?? "") : "");
@@ -122,7 +121,7 @@ export function EntryForm({ entry, date, kind, initialText = "", when = "heute",
     const data =
       typ === "termin"
         ? { title, date: day, start: time, end: end || undefined, place: place || undefined, label: label || undefined, repeat: rep, reminder, who: who.length ? who : undefined, ...terminExtras(entry?.typ === "termin" ? entry.data : undefined), ...keep }
-        : { title, date: day || undefined, due: due || undefined, week: !day && !due && week ? week : undefined, time: time || undefined, label: label || undefined, repeat: rep, reminder, doneOn: entry?.typ === "aufgabe" ? entry.data.doneOn : null, ...aufgabeExtras(src?.typ === "aufgabe" ? src.data : undefined), liste: liste.trim() || undefined, ...keep };
+        : { title, date: day || undefined, due: due || undefined, time: time || undefined, label: label || undefined, repeat: rep, reminder, doneOn: entry?.typ === "aufgabe" ? entry.data.doneOn : null, ...aufgabeExtras(src?.typ === "aufgabe" ? src.data : undefined), liste: liste.trim() || undefined, ...keep };
     const base = entry ? { ...entry, typ, raum: room, data } : createEntry(typ, data, { raum: room });
     const clean = sanitizeEntry({ ...base, geaendert: nowIso() });
     if (!clean) return setHint("Das hat nicht geklappt – schau bitte nochmal auf Datum und Uhrzeit.");
@@ -170,18 +169,6 @@ export function EntryForm({ entry, date, kind, initialText = "", when = "heute",
             <Row label="Bis spätestens">
               <input type="date" value={due} onChange={(e) => setDue(e.target.value)} className={FIELD} />
             </Row>
-          )}
-          {typ === "aufgabe" && !day && !due && (
-            <div className="flex flex-wrap gap-2 px-4 py-2.5" role="radiogroup" aria-label="Wann ungefähr?">
-              {[
-                { value: "", label: "Irgendwann" },
-                { value: mondayOf(todayIso()), label: "Diese Woche" },
-              ].map((o) => (
-                <button key={o.label} type="button" role="radio" aria-checked={week === o.value} onClick={() => setWeek(o.value)} className={chipClass(week === o.value)}>
-                  {o.label}
-                </button>
-              ))}
-            </div>
           )}
         </div>
 

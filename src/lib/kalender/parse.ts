@@ -219,6 +219,14 @@ export function urgentFrom(text: string): { text: string; urgent: boolean } {
   return { text: t, urgent: false };
 }
 
+/**
+ * Wurde der Tag wirklich genannt? Die Erkennung setzt ohne Tagesangabe
+ * „heute“ ein – das zählt nur, wenn „heute“ im Text steht (sonst null).
+ */
+export function genannterTag(date: string | undefined, text: string, today: string): string | null {
+  return date && (date !== today || /(?<![a-zäöüß])heute(?![a-zäöüß])/i.test(text)) ? date : null;
+}
+
 export function parseCalendar(text: string, today: string, persons: Person[] = []): CalendarCommand | null {
   const raw = text.trim();
   if (!raw) return null;
@@ -286,8 +294,8 @@ export function parseCalendar(text: string, today: string, persons: Person[] = [
   if (repeat) strip(repeat.match);
   const deadline = findDeadline(rest, today);
   if (deadline) strip(deadline.match);
-  // "Ich muss diese Woche noch die Reifen machen" → Aufgabe für diese Woche (ohne festen Tag)
-  // "Mittwoch nächste Woche" ist ein Tag, "nächste Woche" allein ein Zeitraum
+  // Alles ist heute (Tafel 103): "Ich muss diese Woche noch die Reifen machen" → heute,
+  // "nächste Woche" allein → ab Montag; "Mittwoch nächste Woche" ist ein Tag
   const day = findDate(rest, today);
   const period = !deadline && (!day || day.match === "nächste woche") ? findPeriod(rest, today) : null;
   if (period) strip(period.match);
@@ -315,9 +323,9 @@ export function parseCalendar(text: string, today: string, persons: Person[] = [
       raum,
       data: {
         title,
-        ...(date || repeat ? { date: start } : {}),
+        // Ohne genannten Tag gehört jede Aufgabe zu heute
+        date: start,
         ...(deadline ? { due: deadline.due } : {}),
-        ...(period && !date && !repeat ? { week: period.week } : {}),
         ...(time ? { time: time.time } : {}),
         label,
         repeat: repeat?.repeat ?? null,

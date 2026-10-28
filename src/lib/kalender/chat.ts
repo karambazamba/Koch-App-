@@ -44,13 +44,13 @@ function nextItem(entries: CalendarEntry[], entry: CalendarEntry, today: string)
   return null;
 }
 
-/** `abends`: die Startseite steht schon auf morgen – „Was steht morgen an?“ nennt das Mitgewanderte mit */
-export function calendarChat(text: string, entries: CalendarEntry[], today: string, persons: { id: string; name: string }[], abends = false): CalendarChatReply | null {
+/** `abends`: die Startseite steht schon auf morgen – „Was steht morgen an?“ nennt das Mitgewanderte mit; `ohneArbeit`: Feierabend, „Was steht heute an?“ ohne Arbeit */
+export function calendarChat(text: string, entries: CalendarEntry[], today: string, persons: { id: string; name: string }[], abends = false, ohneArbeit = false): CalendarChatReply | null {
   const cmd = parseCalendar(text, today, persons);
   if (!cmd) return null;
   switch (cmd.kind) {
     case "show":
-      return { text: showAnswer(entries, today, cmd.from, cmd.days, cmd.label, abends) };
+      return { text: showAnswer(entries, today, cmd.from, cmd.days, cmd.label, abends, ohneArbeit) };
     case "free":
       return { text: freeAnswer(entries, today, cmd.date, cmd.from, cmd.to, cmd.label) };
     case "create": {

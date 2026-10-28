@@ -113,8 +113,13 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   mit kräftigerem Titel, in der nächsten Stunde dazu „gleich“. Alles vorbei →
   „Morgen · Sa“ mit den Terminen von morgen. Neu gerechnet jede halbe Minute
   und sofort beim Zurückkommen in die App (`useMinutes`, `visibilitychange`).
-- Aufgaben: Kreis (Tippfläche 44 × 30), Titel, „heute“ / „bis Fr“ / „diese
-  Woche“, „!“ bei dringend; dringend, heute dran und diese Woche. Abhaken:
+- Aufgaben (Tafel 103/104): gleiche Regeln wie die Aufgaben-Seite – alles
+  heute, EINE Reihenfolge (dringend → neu → Erstellungszeit, ohne in Listen
+  Geparktes), keine Etiketten pro Zeile; Kreis (Tippfläche 44 × 30), Titel,
+  „!“ bei dringend, rechts nur „von Lisa“ und das kleine blaue Schild
+  „Arbeit“. Ruht die Arbeit (`view.hideWork`: Feierabend mit Ruhe, freie
+  Tage), fehlt sie und unten steht leise „Arbeit · 5 für morgen“ (Link zur
+  Seite). Abhaken:
   1,5 s durchgestrichen (`LEAVE_MS`, überall gleich), dann weich weg – auch am
   Beispiel-Tag.
 - Jede Kachel öffnet ihre Seite – die ganze Kachel, nicht nur der Titel
@@ -237,15 +242,16 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   morgen steht, liegt an EINER Stelle: `aufMorgen` in
   `kalender/mitwandern.ts` (6–24 Uhr; `isAbend` = dieselbe Regel ohne 22–24
   Uhr, Eingaben über `abendLage`). Steht sie auf morgen, zeigt auch die
-  Aufgaben-Kachel „Morgen · Mi“: zuerst das Offene von heute (und Älteres)
-  mit leisem „von heute“ bzw. „von gestern“, dann die Aufgaben für morgen
-  (`aufgabenReihe`, dringend bleibt vorn, S/M/L-Mengen und „+N weitere“ wie
-  bisher). Nie leer, solange etwas offen ist; „Aufgaben machen Pause“ (Ruhe
-  nach Feierabend) gilt dann nicht, morgen steht ja da. Das ＋ der Kachel
+  Aufgaben-Kachel „Morgen · Mi“: das Offene von heute still in derselben
+  Liste (ohne „von heute“/„von gestern“), dazu, was für morgen geplant ist
+  (`aufgabenUebersicht`, dringend bleibt vorn, S/M/L-Mengen und „+N weitere“
+  wie bisher). Familien-Aufgaben stehen auch im Feierabend da (früher
+  „Aufgaben machen Pause“), nur Arbeit ruht. Das ＋ der Kachel
   trägt abends für morgen ein. „Dein Tag“ zeigt unter „Morgen · Mi“ dieselben
   Aufgaben, die Jetzt-Karte zählt sie für „Für morgen ist alles sortiert.“
   mit. In den Daten wird nichts verschoben; um Mitternacht rutscht alles wie
-  bisher still („von gestern“). Tests `tests/kalender/mitwandern.test.ts`.
+  bisher still. Tests `tests/kalender/mitwandern.test.ts`,
+  `tests/kalender/allesHeute.test.ts`.
 - Die Reihenfolge bleibt stehen (`useStableOrder`), bis die App zurückkehrt,
   15 Min vergehen, ein Thema wegfällt oder eines mit ≥ 90 Punkten dazukommt.
 - Tests: `tests/heute/jetztThemen.test.ts` (Tag wie Tafel 60 um 7:00, 8:10,
@@ -285,9 +291,11 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   letzten) oder automatisch `kochenMin` vor bis 45 Min nach der Essenszeit.
   Dann zeigt die Essen-Kachel „Koche gerade“ (`CookingTile`, siehe unten), Bildschirm bleibt an.
 - Sport: 60 Min vor einem Training bis zu seinem Ende (nur mit Sport-Kachel).
-- Feierabend: ab `feierabendAb`, mit `nachArbeit` frühestens nach dem letzten
-  Arbeit-Termin, bis 5 Uhr. Mit Ruhe: Arbeit weg, Aufgaben pausieren, Termine
-  nur Familie; Wetter zeigt morgen; der Avatar schläft.
+- Feierabend (`istFeierabend`): ab `feierabendAb`, mit `nachArbeit` frühestens
+  nach dem letzten Arbeit-Termin (`arbeitsEnde`), bis 5 Uhr. Mit Ruhe: Arbeit
+  weg (`arbeitRuht` – gilt seit v0.137 auch beim Kochen und Sport am Abend und
+  auf der Aufgaben-Seite), Termine nur Familie, die Jetzt-Karte nennt keine
+  Aufgaben; Wetter zeigt morgen; der Avatar schläft.
 - Nicht-Arbeitstag: Arbeit ganztags weg. Wechsel nur beim Öffnen/Zurückkehren
   oder nach 30 s ohne Berührung, nie beim Bearbeiten; `nudgePhase` wirkt sofort.
 - `pushAllowed`: Timer immer, Pause nie, proaktiv höchstens 1×/Tag außerhalb

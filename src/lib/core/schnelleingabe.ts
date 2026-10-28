@@ -79,12 +79,10 @@ export function dayWord(iso: string, today: string): string {
   return shortDay(iso);
 }
 
-/** Tag einer Aufgabe für den Chip: „heute“, „Morgen · Sa“, „Mi, 28. Okt“, „bis Mi, 28. Okt“, „diese Woche“; ohne Tag keiner */
+/** Tag einer Aufgabe für den Chip: „heute“, „Morgen · Sa“, „Mi, 28. Okt“, „bis Mi, 28. Okt“; ohne Tag „heute“ (alles ist heute) */
 export function whenChip(when: When | null, today: string): string | null {
-  if (!when || when === "irgendwann") return null;
-  if (when === "heute") return "heute";
+  if (!when || when === "heute") return "heute";
   if (when === "morgen") return tomorrowLabel(addDays(today, 1));
-  if (when === "woche") return "diese Woche";
   if (when.due) return `bis ${shortDay(when.due)}`;
   return when.date ? (when.date === today ? "heute" : dayWord(when.date, today)) : null;
 }

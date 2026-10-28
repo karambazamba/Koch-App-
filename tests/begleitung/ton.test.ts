@@ -144,7 +144,7 @@ describe("Keine Kernregel verloren (Prompt oder Werkzeug-Beschreibungen)", () =>
     expect(desc("vorliebe_merken")).toContain("Gemerkt.");
     expect(desc("gericht_setzen")).toContain("Planungswoche");
     expect(desc("vorrat_hinzufuegen")).toContain("Kommt bald.");
-    expect(desc("aufgabe_anlegen")).toContain("diese_woche");
+    expect(desc("aufgabe_anlegen")).toContain("Alles ist heute");
     // Kein Widerspruch zu „Erklär keine Oberfläche“
     expect(desc("wochenplan_anzeigen")).not.toMatch(/unter Essen/);
   });

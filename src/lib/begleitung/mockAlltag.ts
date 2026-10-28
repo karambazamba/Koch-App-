@@ -184,7 +184,7 @@ export function noteUses(latest: string): Anthropic.Beta.BetaMessage | null {
     case "tasks":
       // "Zeig mir meine Aufgaben" öffnet die Seite, sonst kurz antworten
       if (cmd.open) return tools([{ name: "app_befehl", input: { text: latest } }]);
-      return tools([{ name: "aufgaben_anzeigen", input: { gruppe: /\bheute\b/i.test(latest) ? "heute" : "alle" } }]);
+      return tools([{ name: "aufgaben_anzeigen", input: cmd.raum ? { raum: cmd.raum } : {} }]);
     case "show_all":
       return tools([{ name: "app_befehl", input: { text: latest } }]);
     case "show":
@@ -224,8 +224,8 @@ function draftInput(draft: Draft, today?: string): { name: string; input: Record
   const common = { titel: d.title, raum: draft.raum, erinnerung: d.reminder, ...(d.label ? { etikett: d.label } : {}), ...(wiederholung ? { wiederholung } : {}) };
   if (draft.typ === "termin") return { name: "termin_anlegen", input: { ...common, datum: draft.data.date, start: draft.data.start, ...(draft.data.who ? { personen: draft.data.who } : {}) } };
   const a = draft.data;
-  const zeitraum = a.week && today ? (a.week <= today ? "diese_woche" : "naechste_woche") : undefined;
-  return { name: "aufgabe_anlegen", input: { ...common, ...(a.date ? { tag: a.date } : {}), ...(a.due ? { frist: a.due } : {}), ...(a.time ? { uhrzeit: a.time } : {}), ...(zeitraum ? { zeitraum } : {}) } };
+  // Alles ist heute: nur ein genannter Tag kommt als tag mit (Tafel 103)
+  return { name: "aufgabe_anlegen", input: { ...common, ...(a.date && a.date !== today ? { tag: a.date } : {}), ...(a.due ? { frist: a.due } : {}), ...(a.time ? { uhrzeit: a.time } : {}) } };
 }
 
 /** „Sag Lisa, sie soll den Turnbeutel waschen“ / „Lisa soll …“ → Name und Aufgabe */

@@ -11,6 +11,7 @@
 // rechnen.
 
 import { clockMinutes, type DayRoutine } from "@/lib/heute/tagesablauf";
+import type { DayItem } from "@/lib/kalender/model";
 
 export type PhaseId = "morgen" | "tagsueber" | "kochen" | "sport" | "feierabend";
 
@@ -92,28 +93,46 @@ export function eveningStart(ctx: Pick<PhaseContext, "routine" | "workEnd">): nu
 
 const MORNING_FROM = 5 * 60;
 
+type ArbeitCtx = Pick<PhaseContext, "minutes" | "weekday" | "routine" | "workEnd">;
+
+/** Feierabend nach Uhr: ab „Feierabend ab“ (frühestens nach dem letzten Arbeit-Termin) bis 5 Uhr */
+export const istFeierabend = (ctx: Pick<PhaseContext, "minutes" | "routine" | "workEnd">) => ctx.minutes < MORNING_FROM || ctx.minutes >= eveningStart(ctx);
+
+/**
+ * Ruht die Arbeit? An freien Tagen immer, sonst im Feierabend mit „Ruhe nach
+ * Feierabend“ – morgens (Phase Morgens) ist sie wieder da. EINE Regel für
+ * Startseite, Aufgaben-Seite und Kachel (Tafel 103/104).
+ */
+export const arbeitRuht = (ctx: ArbeitCtx) => !isWorkday(ctx) || (ctx.routine.ruhe && istFeierabend(ctx));
+
+/** Ende des letzten Arbeit-Termins (Minuten; ohne Ende zählt 1 Stunde) – null ohne */
+export function arbeitsEnde(items: Pick<DayItem, "entry" | "room" | "time" | "end">[]): number | null {
+  const work = items.filter((i) => i.entry.typ === "termin" && i.room === "arbeit" && i.time);
+  return work.length ? Math.max(...work.map((i) => (i.end ? clockMinutes(i.end) : clockMinutes(i.time!) + 60))) : null;
+}
+
 export const PHASES: PhaseDef[] = [
   {
     id: "kochen",
     label: "Kochen",
     rank: 50,
     active: (ctx) => cookingStart(ctx) !== null,
-    view: (ctx) => ({ hideWork: !isWorkday(ctx), cooking: true, wakeLock: true }),
+    view: (ctx) => ({ hideWork: arbeitRuht(ctx), cooking: true, wakeLock: true }),
   },
   {
     id: "sport",
     label: "Sport",
     rank: 40,
     active: (ctx) => Boolean(ctx.sport.on && ctx.sport.training && ctx.minutes >= ctx.sport.training.start - 60 && ctx.minutes < ctx.sport.training.end),
-    view: (ctx) => ({ hideWork: !isWorkday(ctx) }),
+    view: (ctx) => ({ hideWork: arbeitRuht(ctx) }),
   },
   {
     id: "feierabend",
     label: "Feierabend",
     rank: 30,
-    active: (ctx) => ctx.minutes < MORNING_FROM || ctx.minutes >= eveningStart(ctx),
+    active: istFeierabend,
     // Mit "Ruhe nach Feierabend": Arbeit und Aufgaben machen Pause, Termine nur Familie; Wetter zeigt morgen
-    view: (ctx) => ({ hideWork: ctx.routine.ruhe || !isWorkday(ctx), familyUpcomingOnly: ctx.routine.ruhe, tasksRest: ctx.routine.ruhe, weatherTomorrow: true }),
+    view: (ctx) => ({ hideWork: arbeitRuht(ctx), familyUpcomingOnly: ctx.routine.ruhe, tasksRest: ctx.routine.ruhe, weatherTomorrow: true }),
   },
   {
     id: "morgen",

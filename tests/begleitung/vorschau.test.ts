@@ -236,7 +236,7 @@ describe("previewRows", () => {
         "Sport|Wochenziel|3×|4× pro Woche",
         "Termine|Zahnarzt|Do 22.10. · 15:00|Do 22.10. · 16:00",
         "Aufgaben|Fr 23.10. · 8:00|-|Blumen",
-        "Aufgaben|ohne Tag|-|Fotos",
+        "Aufgaben|heute|-|Fotos",
         "Aufgaben|bis Mi 28.10.|-|Formular",
         "Termine & Aufgaben|löschen|Zahnarzt|gelöscht",
         "Termine & Aufgaben|abhaken|-|Steuer ✓ erledigt",

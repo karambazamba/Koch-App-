@@ -6,8 +6,6 @@ import {
   findByTitle,
   itemsForDay,
   moveItem,
-  openTaskCount,
-  orderedTasks,
   removeItem,
   repeatLabel,
   sanitizeEntry,
@@ -15,7 +13,6 @@ import {
   setDone,
   setReminder,
   setUrgent,
-  taskBadge,
   taskOverview,
   terminExtras,
   terminToAufgabe,
@@ -23,7 +20,6 @@ import {
   upcomingTermine,
   upsertEntry,
   weekdayLong,
-  carriedLabel,
   dueLabel,
   type Aufgabe,
   type Termin,
@@ -82,33 +78,26 @@ describe("Wiederholungen", () => {
   });
 });
 
-describe("Ohne Druck: von früher, Fristen", () => {
-  it("nennt ältere Aufgaben leise", () => {
-    expect(carriedLabel("2026-10-12", "2026-10-26")).toBe("von früher");
-    expect(carriedLabel("2026-10-18", "2026-10-21")).toBe("von letzter Woche");
+describe("Ohne Druck: alles ist heute, keine Etiketten (Tafel 103)", () => {
+  it("Fristen kurz, ohne Druck", () => {
     expect(dueLabel("2026-10-15", "2026-10-20")).toBe("bis 15.10.");
+    for (const l of [dueLabel("2026-10-19", "2026-10-20"), dueLabel("2026-10-30", "2026-10-20")]) expect(l).not.toMatch(/überfällig|verpasst|offen|fehlt/i);
   });
 
-  it("Aufgabe mit Frist steht an der Frist, Erledigtes am Tag des Abhakens", () => {
+  it("Aufgabe mit Frist steht ab heute in der Liste, Erledigtes am Tag des Abhakens", () => {
     const frist = aufgabe({ title: "Formular", due: "2026-10-22" });
-    expect(itemsForDay([frist], "2026-10-22", "2026-10-20")[0].dueLabel).toBe("bis heute");
-    expect(itemsForDay([frist], "2026-10-21", "2026-10-20")).toEqual([]);
+    expect(itemsForDay([frist], "2026-10-20", "2026-10-20")[0].dueLabel).toBe("bis Do");
+    expect(itemsForDay([frist], "2026-10-22", "2026-10-20")).toEqual([]);
     const erledigt = aufgabe({ title: "Fertig", date: "2026-10-18", doneOn: "2026-10-19" });
     expect(itemsForDay([erledigt], "2026-10-19", "2026-10-20")[0].done).toBe(true);
     expect(itemsForDay([erledigt], "2026-10-20", "2026-10-20")).toEqual([]);
   });
 
-  it("‚diese Woche‘ von letzter Woche rutscht still auf heute, an vergangenen Tagen nichts", () => {
+  it("alt „diese Woche“ steht still heute, an vergangenen Tagen nichts", () => {
     const alt = aufgabe({ title: "Reifen", week: "2026-10-12" });
-    const heute = itemsForDay([alt], "2026-10-20", "2026-10-20");
-    expect(heute.map((i) => i.carried)).toEqual(["von letzter Woche"]);
+    expect(titles(itemsForDay([alt], "2026-10-20", "2026-10-20"))).toEqual(["Reifen"]);
     expect(itemsForDay([alt], "2026-10-19", "2026-10-20")).toEqual([]);
-    expect(itemsForDay([aufgabe({ title: "Diese", week: "2026-10-19" })], "2026-10-20", "2026-10-20")).toEqual([]);
-  });
-
-  it("keine Druck-Wörter in den Beschriftungen", () => {
-    const labels = [carriedLabel("2026-10-01", "2026-10-20"), dueLabel("2026-10-19", "2026-10-20"), dueLabel("2026-10-30", "2026-10-20")];
-    for (const l of labels) expect(l).not.toMatch(/überfällig|verpasst|offen|fehlt/i);
+    expect(titles(itemsForDay([aufgabe({ title: "Diese", week: "2026-10-19" })], "2026-10-20", "2026-10-20"))).toEqual(["Diese"]);
   });
 });
 
@@ -125,9 +114,9 @@ describe("Reihenfolge (nie alphabetisch)", () => {
     expect(titles(itemsForDay([done, a, um9, z, ganz, dringend], "2026-10-20", "2026-10-20"))).toEqual(["Dringend", "Ganztag", "Neun", "Zebra", "Apfel", "Aaa erledigt"]);
   });
 
-  it("Übersicht: dringend → heute → Frist → Woche → später → irgendwann", () => {
+  it("Übersicht: eine Liste dringend → Erstellungszeit; Geplant nach Tag", () => {
     const entries = [
-      aufgabe({ title: "A irgendwann" }),
+      aufgabe({ title: "A ohne Tag" }),
       aufgabe({ title: "B später", date: "2026-11-10" }),
       aufgabe({ title: "C woche", week: "2026-10-19" }),
       aufgabe({ title: "D frist spät", due: "2026-10-30" }),
@@ -136,50 +125,34 @@ describe("Reihenfolge (nie alphabetisch)", () => {
       aufgabe({ title: "G dringend", dringend: true }),
       aufgabe({ title: "H Do", date: "2026-10-22" }),
     ];
-    const order = orderedTasks(entries, "2026-10-20");
-    expect(titles(order)).toEqual(["G dringend", "F heute", "E frist früh", "D frist spät", "C woche", "H Do", "B später", "A irgendwann"]);
-    expect(order.map((o) => o.group)).toEqual(["irgendwann", "heute", "woche", "spaeter", "woche", "woche", "spaeter", "irgendwann"]);
-    expect(openTaskCount(entries, "2026-10-20")).toBe(8);
+    const g = taskOverview(entries, "2026-10-20");
+    expect(titles(g.heute)).toEqual(["G dringend", "A ohne Tag", "C woche", "D frist spät", "E frist früh", "F heute"]);
+    expect(titles(g.geplant)).toEqual(["H Do", "B später"]);
+    expect(g.heute.every((i) => !i.when)).toBe(true);
   });
 
-  it("Übersicht: Serien, Erledigtes (14 Tage), nächste Woche, von früher", () => {
+  it("Übersicht: Serien, Erledigtes (14 Tage), alte Zeiträume, von früher", () => {
     const entries = [
       aufgabe({ title: "Serie heute", date: "2026-10-19", repeat: { kind: "taeglich" }, doneDates: ["2026-10-20"] }),
+      aufgabe({ title: "Serie Di", date: "2026-10-13", repeat: { kind: "woechentlich" } }),
       aufgabe({ title: "Serie Fr", date: "2026-10-23", repeat: { kind: "woechentlich" } }),
-      aufgabe({ title: "Serie später", date: "2026-11-02", repeat: { kind: "woechentlich" } }),
       aufgabe({ title: "Serie leer", date: "2026-10-19", repeat: { kind: "wochentage", days: [6] }, skipDates: Array.from({ length: 10 }, (_, i) => addDays("2026-10-25", i * 7)) }),
       aufgabe({ title: "Alt erledigt", doneOn: "2026-09-01" }),
       aufgabe({ title: "Neu erledigt", doneOn: "2026-10-19" }),
       aufgabe({ title: "Nächste Woche", week: "2026-10-26" }),
-      aufgabe({ title: "Übernächste", week: "2026-11-02" }),
       aufgabe({ title: "Woche alt", week: "2026-10-05" }),
       aufgabe({ title: "Gestern", date: "2026-10-19", due: "2026-10-21" }),
     ];
     const g = taskOverview(entries, "2026-10-20");
     expect(titles(g.erledigt)).toEqual(["Serie heute", "Neu erledigt"]);
+    expect(titles(g.heute)).toEqual(["Serie Di", "Woche alt", "Gestern"]);
     // heute schon abgehakt → nächstes Vorkommen morgen
-    expect(g.woche.find((i) => i.title === "Serie heute")?.when).toBe("Mi 21.10.");
-    expect(g.woche.find((i) => i.title === "Serie Fr")?.when).toBe("Fr 23.10.");
-    expect(titles(g.spaeter)).toEqual(["Nächste Woche", "Serie später", "Übernächste"]);
-    expect(titles([...g.heute, ...g.woche, ...g.spaeter])).not.toContain("Serie leer");
-    expect(g.spaeter.find((i) => i.title === "Nächste Woche")?.when).toBe("nächste Woche");
-    expect(g.spaeter.find((i) => i.title === "Übernächste")?.when).toBe("ab Mo 2.11.");
-    const alt = g.heute.find((i) => i.title === "Woche alt");
-    expect(alt?.carried).toBe("von früher");
-    const gestern = g.heute.find((i) => i.title === "Gestern")!;
-    expect(gestern.carried).toBe("von gestern");
-    expect(gestern.dueLabel).toBe("bis morgen");
-  });
-
-  it("Kurzlabel rechts in der Zeile", () => {
-    const g = taskOverview([aufgabe({ title: "F", due: "2026-10-20" }), aufgabe({ title: "W", week: "2026-10-19" }), aufgabe({ title: "I" }), aufgabe({ title: "D", date: "2026-10-23" })], "2026-10-20");
-    expect(taskBadge(g.heute[0], "2026-10-20")).toBe("heute");
-    expect(taskBadge(g.woche.find((i) => i.title === "W")!, "2026-10-20")).toBe("diese Woche");
-    expect(taskBadge(g.woche.find((i) => i.title === "D")!, "2026-10-20")).toBe("Fr 23.10.");
-    expect(taskBadge(g.irgendwann[0], "2026-10-20")).toBe("heute");
-    expect(taskBadge({ ...g.irgendwann[0], date: "2026-10-21" }, "2026-10-20")).toBe("");
-    expect(taskBadge({ ...g.irgendwann[0], dueLabel: "bis Fr" }, "2026-10-20")).toBe("bis Fr");
-    expect(taskBadge({ ...g.irgendwann[0], carried: "von gestern" }, "2026-10-20")).toBe("von gestern");
+    expect(g.geplant.map((i) => [i.title, i.when])).toEqual([
+      ["Serie heute", "Mi 21.10."],
+      ["Serie Fr", "Fr 23.10."],
+      ["Nächste Woche", "Mo 26.10."],
+    ]);
+    expect(g.heute.find((i) => i.title === "Gestern")!.dueLabel).toBe("bis morgen");
   });
 });
 

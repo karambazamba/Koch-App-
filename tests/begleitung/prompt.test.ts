@@ -92,7 +92,7 @@ describe("Kontext je Anfrage", () => {
     const text = contextText(data, HEUTE, WOCHEN, 2, { clock: "08:15", shopping: ["Milch", "Eier"] });
     expect(text).toContain(", jetzt 08:15 Uhr");
     expect(text).toContain("Elternabend");
-    expect(text).toMatch(/Aufgaben ohne festen Tag: Reifen/);
+    expect(text).toMatch(/Mi 2026-10-21: .*Reifen \[id=/);
     expect(text).toMatch(/Packliste \[id=.*Liste, 1 Einträge, angeheftet, familie\]/);
     expect(text).toContain('Pinnwand: Lisa: "Bin um 8 da"');
     expect(text).toContain("Wetter-Ort: Malente");

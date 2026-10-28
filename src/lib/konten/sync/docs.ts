@@ -8,6 +8,8 @@
 import type { StorageKey } from "@/lib/core/storage";
 import { cleanPantryItem, migratePantry } from "@/lib/vorrat/haltbar";
 import { migrateNotes } from "@/lib/notizen/model";
+import { ohneZeitraum, type CalendarEntry } from "@/lib/kalender/model";
+import { todayIso } from "@/lib/core/now";
 
 /** Ein Eintrag, wie er in der Tabelle liegt (ohne Haushalt) */
 export type CloudDoc = {
@@ -65,11 +67,15 @@ function entryAdapter(name: Adapter["name"], key: StorageKey, version: number, f
   };
 }
 
-const kalender = entryAdapter("kalender", "wasgibts.eintraege", 2, "entries", ["termin", "aufgabe"], (v) => ({
-  version: 2,
-  migratedTermine: v?.migratedTermine === true,
-  seenReminders: Array.isArray(v?.seenReminders) ? v.seenReminders : [],
-}));
+// v2 → v3: „Diese Woche“ still auf heute bzw. den genannten Tag (kalender/store.ts)
+const kalender = {
+  ...entryAdapter("kalender", "wasgibts.eintraege", 3, "entries", ["termin", "aufgabe"], (v) => ({
+    version: 3,
+    migratedTermine: v?.migratedTermine === true,
+    seenReminders: Array.isArray(v?.seenReminders) ? v.seenReminders : [],
+  })),
+  upgrade: (v: Value): Value | null => (v.version === 2 ? { ...v, version: 3, entries: list(v.entries).map((e) => ohneZeitraum(e as unknown as CalendarEntry, todayIso())) } : null),
+};
 
 // v1 → v2: die alte Sammel-Schnellnotiz kommt als einzelne Notizen an
 const notizen = { ...entryAdapter("notizen", "wasgibts.notizen", 2, "notes", ["notiz"], () => ({ version: 2 })), upgrade: (v: Value) => migrateNotes(v) as Value | null };

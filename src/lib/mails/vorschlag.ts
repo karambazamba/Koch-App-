@@ -4,7 +4,7 @@
 // (`parseCalendar`) Satz für Satz; die KI kann das später verfeinern.
 // Rein.
 
-import { parseCalendar } from "@/lib/kalender/parse";
+import { genannterTag, parseCalendar } from "@/lib/kalender/parse";
 import type { Room } from "@/lib/core/entries";
 
 export type MailVorschlag =
@@ -68,8 +68,10 @@ export function vorschlaegeAus(text: string, today: string): MailVorschlag[] {
     if (title.length < 3) continue;
     if (d.typ === "termin") {
       add({ kind: "termin", title, date: d.data.date, start: d.data.start, ...(place ? { place: place[1] } : {}) });
-    } else if (d.data.due || d.data.date) {
-      add({ kind: "aufgabe", title, ...(d.data.due ? { due: d.data.due } : {}), ...(d.data.date && !d.data.due ? { date: d.data.date } : {}) });
+    } else {
+      // Nur mit Frist oder genanntem Tag ein Vorschlag; übernommen gehört sie ab heute bzw. ab dem Tag in die Liste
+      const tag = genannterTag(d.data.date, s, today);
+      if (d.data.due || tag) add({ kind: "aufgabe", title, ...(d.data.due ? { due: d.data.due } : {}), ...(tag && !d.data.due ? { date: tag } : {}) });
     }
   }
   return out;

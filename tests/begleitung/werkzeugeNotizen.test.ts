@@ -63,16 +63,24 @@ describe("Notizen", () => {
 });
 
 describe("Aufgaben-Übersicht und Pinnwand", () => {
-  it("aufgaben_anzeigen gruppiert ruhig", () => {
+  it("aufgaben_anzeigen: eine Liste, kurz Zahl und die ersten drei; abends ohne Arbeit, außer gefragt", () => {
     expect(rufe(kontext(), "aufgaben_anzeigen").content).toBe("Gerade liegt keine Aufgabe an.");
-    const ctx = kontext({ entries: [aufgabe({ title: "Kita-Formular", date: HEUTE }), aufgabe({ title: "Keller aufräumen" })] });
+    const ctx = kontext({
+      entries: [
+        aufgabe({ title: "Kita-Formular", date: HEUTE }),
+        aufgabe({ title: "Keller aufräumen" }),
+        { ...aufgabe({ title: "Bericht" }), raum: "arbeit" as const },
+        aufgabe({ title: "KFZ-Steuer", date: "2026-10-23" }),
+      ],
+    });
     const alle = rufe(ctx, "aufgaben_anzeigen").content;
-    expect(alle).toMatch(/Kita-Formular/);
-    expect(alle).toMatch(/Keller aufräumen/);
-    expect(alle).toContain("Die ganze Liste steht unter „Aufgaben“.");
-    const heute = rufe(ctx, "aufgaben_anzeigen", { gruppe: "heute" }).content;
-    expect(heute).toContain("Kita-Formular");
-    expect(heute).not.toContain("Keller");
+    expect(alle.split("\n")[0]).toBe("3 Aufgaben, zuerst Kita-Formular, Keller aufräumen und Bericht.");
+    expect(alle).toMatch(/Geplant: KFZ-Steuer \(ab Fr 23\.10\.\)/);
+    expect(alle).not.toMatch(/offen|überfällig|noch zu erledigen|irgendwann/i);
+    const abends = rufe({ ...ctx, feierabend: true }, "aufgaben_anzeigen").content;
+    expect(abends.split("\n")[0]).toBe("2 Aufgaben, zuerst Kita-Formular und Keller aufräumen.");
+    expect(abends).toMatch(/Feierabend: 1 Arbeitsaufgaben ruhen bis morgen/);
+    expect(rufe({ ...ctx, feierabend: true }, "aufgaben_anzeigen", { raum: "arbeit" }).content.split("\n")[0]).toBe("Eine Aufgabe bei der Arbeit: Bericht.");
   });
 
   it("pinnwand_schreiben kürzt auf 140 Zeichen", () => {

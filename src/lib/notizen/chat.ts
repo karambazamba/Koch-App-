@@ -11,7 +11,7 @@ type NoteCommand =
   | { kind: "show"; query: string }
   | { kind: "show_all" }
   | { kind: "pin"; query: string; on: boolean }
-  | { kind: "tasks"; open: boolean };
+  | { kind: "tasks"; open: boolean; raum?: "arbeit" };
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const clean = (s: string) => s.trim().replace(/^[„"']|[“"'.!]+$/g, "").trim();
@@ -38,6 +38,8 @@ function listFor(content: string): { list: string; item: string } | null {
 export function parseNoteCommand(text: string): NoteCommand | null {
   const t = text.trim().replace(/\s+/g, " ");
   // "Was muss ich heute noch erledigen?" / "Zeig mir meine Aufgaben"
+  // „Was ist noch bei der Arbeit?“ – abends ruht die Arbeit, auf Nachfrage nennt Mia sie
+  if (/\bwas (ist|steht|liegt|gibt'?s) (heute |noch |heute noch )*(bei der|auf der|für die) arbeit\b|\barbeitsaufgaben\b/i.test(t)) return { kind: "tasks", open: false, raum: "arbeit" };
   if (/\b(was muss ich|was müssen wir|meine aufgaben|unsere aufgaben|was (ist|steht) (heute |diese woche )?(noch )?zu (tun|erledigen))\b/i.test(t)) return { kind: "tasks", open: /\bzeig\w*\b/i.test(t) };
   if (/^(zeig|öffne)\w*( mir)? (meine|unsere|die) notizen\b/i.test(t)) return { kind: "show_all" };
   // "Häng das WLAN oben an" / "Lös die Packliste ab"

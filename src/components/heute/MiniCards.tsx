@@ -19,7 +19,9 @@ import { reminderFor } from "@/lib/heute/mitteilungen/erinnerungen";
 import { TILE, TILE_INNER, TILE_LABEL } from "@/components/ui/styles";
 import { QuickButton } from "@/components/ui/QuickButton";
 import { clockLabel } from "@/lib/kalender/answers";
-import { isUrgent, setDone, taskBadge, type DayItem } from "@/lib/kalender/model";
+import { isNeu, isUrgent, setDone, type DayItem } from "@/lib/kalender/model";
+import { arbeitMorgenText } from "@/lib/kalender/aufgaben";
+import { ArbeitSchild, NeuSchild } from "@/components/kalender/AufgabeSchild";
 import type { TerminRow, TerminState } from "@/lib/heute/termineKachel";
 import { UrgentMark } from "@/components/kalender/UrgentMark";
 import type { TileSize } from "@/lib/core/homeLayout";
@@ -182,9 +184,12 @@ export function TermineSection({ rows, label, href, today, size = "M", half = fa
   );
 }
 
-/** Eine schlanke Aufgaben-Zeile: Kreis zum Abhaken, Titel einzeilig ("…"), rechts klein die Frist ("heute" orange) und der Punkt */
+/**
+ * Aufgaben-Zeile der Seite: Kreis zum Abhaken, Titel bis 2 Zeilen (dann „…“),
+ * darunter „von Lisa“; rechts nur „neu“ und das blaue Schild „Arbeit“ –
+ * kein „von gestern“, kein „heute“, kein Punkt. Geplantes zeigt seinen Tag.
+ */
 export function TaskLine({ item, today, onOpen, onDone, leaving, entering }: { item: DayItem; today: string; onOpen: (i: DayItem) => void; onDone: (i: DayItem) => void; leaving?: boolean; entering?: boolean }) {
-  const badge = taskBadge(item, today);
   const checked = Boolean(item.done || leaving);
   return (
     <li className="flex items-center gap-1 py-1 pr-3" style={entering ? { animation: "card-in 0.32s ease-out" } : undefined} data-item={item.key}>
@@ -192,19 +197,21 @@ export function TaskLine({ item, today, onOpen, onDone, leaving, entering }: { i
       <button type="button" onClick={() => onOpen(item)} className="flex min-h-11 min-w-0 flex-1 items-center gap-2 py-1 text-left" aria-label={`${item.title} – Möglichkeiten`}>
         {isUrgent(item) && !checked && <UrgentMark />}
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className={`min-w-0 truncate text-[15px] font-semibold leading-snug ${checked ? "text-muted line-through" : ""}`}>{item.title}</span>
+          <span className={`line-clamp-2 min-w-0 break-words text-[15px] font-semibold leading-snug ${checked ? "text-muted line-through" : ""}`} data-titel>
+            {item.title}
+          </span>
           <TaskFrom item={item} className="text-xs text-muted" />
         </span>
-        {badge && <span className={`shrink-0 text-xs ${badge === "heute" ? "font-semibold text-accent-strong" : "text-muted"}`}>{badge}</span>}
-        <span className={`h-2 w-2 shrink-0 rounded-full ${roomBarProps(item).className}`} style={roomBarProps(item).style} aria-hidden />
+        {item.when && <span className="shrink-0 text-xs text-muted">{item.when}</span>}
+        {!checked && !item.when && isNeu(item, today) && <NeuSchild />}
+        {item.room === "arbeit" && <ArbeitSchild />}
       </button>
     </li>
   );
 }
 
-/** Aufgaben-Zeile (30 px): Kreis 20 px (Tippfläche 44 × 30), Titel, rechts „heute“/„bis Fr“/„diese Woche“, „!“ bei dringend */
-function TaskField({ item, today, leaving, entering, onOpen, onDone }: { item: DayItem; today: string; leaving: boolean; entering?: React.CSSProperties; onOpen: () => void; onDone: () => void }) {
-  const badge = taskBadge(item, today);
+/** Aufgaben-Zeile der Kachel (30 px): Kreis 20 px (Tippfläche 44 × 30), Titel, „!“ bei dringend, rechts nur „von Lisa“ und „Arbeit“ */
+function TaskField({ item, leaving, entering, onOpen, onDone }: { item: DayItem; leaving: boolean; entering?: React.CSSProperties; onOpen: () => void; onDone: () => void }) {
   return (
     <li className="flex min-w-0 items-center" style={leaving ? TASK_FADE : entering} data-item={item.key} data-zeile>
       <button type="button" role="checkbox" aria-checked={leaving} aria-label={`${item.title} erledigt`} onClick={onDone} className="flex h-[30px] w-11 shrink-0 items-center justify-center">
@@ -217,14 +224,18 @@ function TaskField({ item, today, leaving, entering, onOpen, onDone }: { item: D
         <span className={`min-w-0 flex-1 truncate text-[13.5px] font-semibold leading-tight ${leaving ? "text-muted line-through" : ""}`}>{withoutEmoji(item.title)}</span>
         <TaskFrom item={item} className="shrink-0 text-[11px] text-muted" />
         {reminderFor(item) && !leaving && <Bell className="h-[13px] w-[13px] shrink-0 text-muted" strokeWidth={2.25} aria-label="mit Erinnerung" />}
-        {badge && <span className={`shrink-0 text-[11px] ${badge === "heute" ? "font-bold text-accent-strong" : "text-muted"}`}>{badge}</span>}
+        {item.room === "arbeit" && <ArbeitSchild klein />}
       </button>
     </li>
   );
 }
 
-/** AUFGABEN – eine weiße Checkliste: S 2, M 4, L 6 Zeilen, „+N weitere“ im Kopf neben dem Plus; abends „Morgen · Mi“ (`label`, Neues dann für `addOn`) */
-export function AufgabenSection({ items, total, today, label, addOn = today, href = "/aufgaben", size = "M", half = false, demo }: { items: DayItem[]; total?: number; today: string; label?: string | null; addOn?: string; href?: string; size?: TileSize; half?: boolean; demo?: DemoProps }) {
+/**
+ * AUFGABEN – eine weiße Checkliste: S 2, M 4, L 6 Zeilen, „+N weitere“ im Kopf
+ * neben dem Plus; abends „Morgen · Mi“ (`label`, Neues dann für `addOn`).
+ * Nach Feierabend ohne Arbeit, dafür unten leise „Arbeit · 5 für morgen“.
+ */
+export function AufgabenSection({ items, total, today, label, addOn = today, href = "/aufgaben", size = "M", half = false, arbeitMorgen = 0, demo }: { items: DayItem[]; total?: number; today: string; label?: string | null; addOn?: string; href?: string; size?: TileSize; half?: boolean; arbeitMorgen?: number; demo?: DemoProps }) {
   const { setMenu, check, before, overlays } = useSection();
   const [adding, setAdding] = useState<string | null>(null);
   // Erledigtes steht nicht herum (auch nicht im Beispiel-Tag)
@@ -240,11 +251,16 @@ export function AufgabenSection({ items, total, today, label, addOn = today, hre
         {open.length > 0 ? (
           <ul className={LIST}>
             {shown.map((item) => (
-              <TaskField key={item.key} item={item} today={today} leaving={leaving === item.key} entering={entersAnim(before, item.key)} onOpen={() => (demo ? demo.onOpen(item) : setMenu(item))} onDone={() => start(item)} />
+              <TaskField key={item.key} item={item} leaving={leaving === item.key} entering={entersAnim(before, item.key)} onOpen={() => (demo ? demo.onOpen(item) : setMenu(item))} onDone={() => start(item)} />
             ))}
           </ul>
         ) : (
           <AddLine label="Aufgabe eintragen" onClick={() => openQuick({ kind: "aufgabe", date: addOn, more: setAdding })} />
+        )}
+        {arbeitMorgen > 0 && (
+          <Link href={href} className="flex h-[22px] items-center px-1 text-[12px] font-semibold text-muted" data-arbeit-morgen>
+            {arbeitMorgenText(arbeitMorgen)}
+          </Link>
         )}
       </section>
       {overlays}

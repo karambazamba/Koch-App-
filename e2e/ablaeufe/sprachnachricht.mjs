@@ -206,7 +206,7 @@ export const kachelKnoepfe = async (page, check) => {
       };
       const rects = [...tile.querySelectorAll("button, a[href]")]
         .filter((el) => el.offsetParent !== null && el.getAttribute("aria-hidden") !== "true" && !tileLink(el) && !el.closest("[role=grid]"))
-        .map((el) => ({ name: el.getAttribute("aria-label") || el.textContent.trim().slice(0, 20), r: el.getBoundingClientRect() }))
+        .map((el) => ({ name: el.getAttribute("aria-label") || el.textContent.trim().slice(0, 20), r: el.getBoundingClientRect(), zeile: el.closest("[data-zeile]") }))
         .filter(({ r }) => r.width > 0 && r.height > 0);
       for (let i = 0; i < rects.length; i++)
         for (let j = i + 1; j < rects.length; j++) {
@@ -219,6 +219,8 @@ export const kachelKnoepfe = async (page, check) => {
           const gapY = Math.max(b.top - a.bottom, a.top - b.bottom);
           // nie überlappen; zwei kleine Knöpfe nebeneinander (Plus, Mikro …) mit mind. 8 px Abstand
           const gap = Math.max(gapX, gapY);
+          // Listenzeilen (30 px, ganze Zeile tippbar, `data-zeile`) liegen bewusst dicht untereinander – nur Überlappen zählt
+          if (rects[i].zeile && rects[j].zeile && rects[i].zeile !== rects[j].zeile && gap >= 0) continue;
           if (gap < 0 || (gap < 8 && Math.max(a.width, b.width) <= 48))
             out.push(`${tile.getAttribute("aria-label")}: „${rects[i].name}“ ↔ „${rects[j].name}“ (${Math.round(Math.max(gapX, gapY))} px)`);
         }

@@ -224,7 +224,7 @@ export function contextText(
   todayIso: string,
   weeks: { aktuell: string; naechste: string },
   tipsThisWeek = 0,
-  extra: { clock?: string; shopping?: string[]; abends?: boolean } = {},
+  extra: { clock?: string; shopping?: string[]; abends?: boolean; feierabend?: boolean } = {},
 ): string {
   const today = new Date(`${todayIso}T00:00:00Z`);
   const shoppingDay = data.profile.shoppingDay || "Montag";
@@ -234,7 +234,7 @@ export function contextText(
     `Heute: ${WEEKDAY_FORMAT.format(today)} (${todayIso})${extra.clock ? `, jetzt ${extra.clock} Uhr` : ""} (Zeitzone Europe/Berlin)`,
     `Datumsliste: ${Array.from({ length: 14 }, (_, i) => addDays(todayIso, i)).map((iso) => `${SHORT_DAY.format(new Date(`${iso}T00:00:00Z`))} ${iso}`).join(", ")}`,
     "",
-    calendarContext(data.entries ?? [], todayIso, extra.abends),
+    calendarContext(data.entries ?? [], todayIso, extra.abends, extra.feierabend),
     notesContext(data.notes ?? []),
     `Läden: ${data.laeden?.meine.length ? data.laeden.meine.join(", ") : "keine gewählt"}; feste Regeln: ${data.laeden && Object.keys(data.laeden.regeln).length ? Object.entries(data.laeden.regeln).map(([item, shop]) => `${item} → ${shop}`).join(", ") : "keine"} (ändern mit laden_regel)`,
     `Pinnwand: ${data.pinnwand?.length ? data.pinnwand.map((p) => `${p.author}: ${JSON.stringify(p.text)}`).join(" · ") : "leer"}`,

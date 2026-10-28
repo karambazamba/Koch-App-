@@ -51,7 +51,8 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   als ausgeschalteter Baustein und erscheint nur bei Bedarf.
 - Pro Bildschirm eine große Hauptsache, wenig Text, viel Weißraum. Leere
   Zustände freundlich und einladend, nie als Fehler.
-- Termin = feste Uhrzeit, Aufgabe = zu erledigen, Notiz = nur festhalten.
+- Termin = feste Uhrzeit, Aufgabe = steht jetzt an (ohne Tag heute, mit
+  genanntem Tag ab dem Tag, bis dahin „Geplant“), Notiz = nur festhalten.
   Leerer Kalender = Angebot „Kalender mitbringen“ (Apple/Google/Outlook).
 - Startseite = Kacheln in EINER gespeicherten Anordnung, die sich nie von
   selbst ändert. Bearbeiten direkt auf der Startseite (lange drücken: wackeln,
@@ -136,12 +137,17 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Aufgaben gehören standardmäßig der Person, die sie anlegt; geteilt wird nur
   durch Abgeben („An … geben“, beim Empfänger „von Felix“, zurück mit „Passt
   gerade nicht“; `kalender/abgeben`). Für Absprachen ist die Pinnwand da.
+- Aufgaben: EINE Liste, Familie ohne Kennzeichen, Arbeit nur als kleines
+  blaues Schild; Chips „Alle · Familie · Arbeit“ nur mit Arbeitsaufgaben.
+  Nach Feierabend (Tagesablauf) ist Arbeit ausgeblendet: „Arbeit · 5 für
+  morgen“ (`kalender/aufgaben.ts`).
 
 ## 4. Ohne Druck
 - Keine Streaks, keine Zähler, keine roten Badges, keine Aufgaben-Stapel.
   Sport zählt nur Wochen, nie Tage.
-- Nicht Erledigtes verschwindet leise (Aufgaben mit Tag rutschen still auf
-  heute: „von gestern“). Nie „Du hast … nicht gemacht“, nie „du musst / du
+- Nicht Erledigtes verschwindet leise (Aufgaben rutschen still auf den
+  nächsten Tag, ohne Etikett – kein „von gestern“, kein „heute“, kein Punkt
+  pro Zeile). Nie „Du hast … nicht gemacht“, nie „du musst / du
   solltest / vergiss nicht“, nie „Ich vermisse dich“.
 - Nie Wörter wie „fehlt“, „offen“, „überfällig“, „noch zu erledigen“,
   „verpasst“, „Alles da“. Stattdessen vorbereitend („Für Montag“, „Ich hab
@@ -263,8 +269,8 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   Mikro-Freigabe/Sperre nur über `core/mic` (Vorab-Frage, Mikro-Check `core/micCheck`, Streifen):
   scheitert Zuhören, sagt der Mikro-Check, welcher Schalter fehlt – nur dessen Schritte.
 - Reihenfolgen nur über `src/lib/core/sort.ts` (deutsche Sortierung, stabil).
-  Aufgaben: dringend → heute → Frist → Woche → irgendwann, innerhalb Uhrzeit
-  bzw. Erstellungszeit, nie alphabetisch.
+  Aufgaben: dringend → neu (heute angelegt, Schild „neu“) → Erstellungszeit,
+  nie alphabetisch.
 - Phase heißt „Morgens“, der nächste Tag immer mit Wochentag („Morgen · Mi“).
 - Regex: nie `\b` direkt an ä/ö/ü/ß (dort gibt es in JS keine Wortgrenze) –
   stattdessen `(?<![a-zäöüß])` bzw. `(?![a-zäöüß])`.

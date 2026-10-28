@@ -21,7 +21,7 @@ type StorageDef = {
 
 export const STORAGE = [
   { key: "familienkueche.haushaltsprofil", what: "Profil: Familie, Begleitung, Vorlieben, Einstellungen", version: 22, migration: "einstellungen/profileStore.ts migrateProfile", area: "local", backup: true },
-  { key: "wasgibts.eintraege", what: "Termine und Aufgaben", version: 2, migration: "kalender/store.ts migrate", area: "local", backup: true },
+  { key: "wasgibts.eintraege", what: "Termine und Aufgaben (v3: „Irgendwann“/„Diese Woche“ still auf heute bzw. den Tag)", version: 3, migration: "kalender/store.ts migrate", area: "local", backup: true },
   { key: "wasgibts.notizen", what: "Notizen", version: 2, migration: "notizen/store.ts", area: "local", backup: true },
   { key: "wasgibts.kladde", what: "Schnellnotiz (Schlüssel heißt noch Kladde)", version: 1, migration: "notizen/schnellnotiz.ts", area: "local", backup: true },
   { key: "wasgibts.pinnwand", what: "Pinnwand: Nachrichten und Sprachnachrichten (Einträge; Memos nicht in der Sicherung), Reaktionen je Person, Antworten mit Zitat", version: 3, migration: "pinnwand/store.ts migratePinStore", area: "local", backup: true },
@@ -68,7 +68,8 @@ export const STORAGE = [
   { key: "wasgibts.miafragen", what: "Beantwortete Fragen der Begleitung (Überschneidung, Packliste) – nie zweimal fragen", version: 1, migration: "mia/fragen.ts", area: "local", backup: false },
   { key: "wasgibts.neu", what: "Leise Neuigkeiten aus dem Haushalt für die Jetzt-Karte (wer was eingetragen hat, jede nur einmal)", version: 1, migration: "konten/wer.ts migrateNews", area: "local", backup: false },
   { key: "wasgibts.kuehlcheck", what: "Kurz-Check „Im Haus“: Woche (Sonntag), in der er erledigt bzw. „Heute nicht“ ist – pro Gerät", version: 1, migration: "vorrat/kuehlcheck.ts migrateKuehlCheck", area: "local", backup: false },
-  { key: "wasgibts.aufgabenvorschlag", what: "Aufgaben-Vorschlag „3 für diese Woche“: Woche, in der er nicht mehr kommt – pro Gerät", version: 1, migration: "kalender/liste/vorschlag.ts migrateVorschlag", area: "local", backup: false },
+  { key: "wasgibts.aufgabenvorschlag", what: "Aufgaben-Vorschlag „Drei für heute?“ aus den Listen: Woche, in der er nicht mehr kommt – pro Gerät", version: 1, migration: "kalender/liste/vorschlag.ts migrateVorschlag", area: "local", backup: false },
+  { key: "wasgibts.aufgabenfilter", what: "Aufgaben: gewählter Filter Alle · Familie · Arbeit – pro Gerät", version: 1, migration: "kalender/aufgabenFilter.ts migrateAufgabenFilter", area: "local", backup: false },
   { key: "wasgibts.einladenhinweis", what: "Karte „Familie einladen“ auf der Startseite: wann „Später“ getippt – pro Gerät", version: 1, migration: "konten/einladenHinweis.ts migrateEinladen", area: "local", backup: false },
   { key: "wasgibts.kalenderangebot", what: "„Kalender mitbringen“: später gesagt (Tage), erledigt – pro Gerät", version: 1, migration: "kalender/mitbringen/angebot.ts migrateAngebot", area: "local", backup: false },
   { key: "wasgibts.kalenderabos", what: "Kalender-Links (Abos): Name, geheimer Link, Farbe, Familie/Arbeit, an/aus – nur auf dem Gerät, in der Sicherung nur auf Wunsch", version: 1, migration: "kalender/abo/store.ts", area: "local", backup: false },

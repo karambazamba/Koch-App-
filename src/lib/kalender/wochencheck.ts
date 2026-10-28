@@ -9,7 +9,7 @@
 
 import { readSentence } from "@/lib/kalender/sentence";
 import { guessRoom } from "@/lib/kalender/parse";
-import { itemsForDay, mondayOf, type CalendarEntry } from "@/lib/kalender/model";
+import { itemsForDay, type CalendarEntry } from "@/lib/kalender/model";
 import { addDays } from "@/lib/core/now";
 import { guessSport } from "@/lib/sport/model";
 
@@ -155,11 +155,6 @@ export function weekCheckKey(today: string, minutes: number): string | null {
   return null;
 }
 
-const talkWeekStart = (today: string) => {
-  const wd = (new Date(`${today}T12:00:00Z`).getUTCDay() + 6) % 7;
-  return wd === 6 ? addDays(today, 1) : mondayOf(today);
-};
-
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const plus = (start: string, minutes: number) => {
   const m = Math.min(23 * 60 + 59, Number(start.slice(0, 2)) * 60 + Number(start.slice(3, 5)) + minutes);
@@ -175,7 +170,7 @@ export function weekEntries(items: WeekItem[], today: string, make: (typ: "termi
     const base = { title: i.title.slice(0, 120), repeat: null, ...(label ? { label } : {}), ...(i.who.length ? { who: i.who } : {}) };
     const e =
       i.art === "aufgabe"
-        ? make("aufgabe", { ...base, reminder: "aus", ...(i.due ? { due: i.due } : i.date ? { date: i.date } : { week: talkWeekStart(today) }) }, raum)
+        ? make("aufgabe", { ...base, reminder: "aus", date: i.date ?? today, ...(i.due ? { due: i.due } : {}) }, raum)
         : make("termin", { ...base, date: i.date ?? today, start: i.time ?? "", ...(i.time ? { end: plus(i.time, i.minutes ?? 60), reminder: "30" } : { reminder: "aus" }) }, raum);
     return e ? [e] : [];
   });

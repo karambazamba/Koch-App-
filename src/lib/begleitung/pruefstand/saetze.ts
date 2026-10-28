@@ -108,7 +108,7 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Ich muss am Mittwoch nächste Woche um 9 zum Arzt", TERMIN, { datum: "2026-10-28", zeit: "09:00" }),
   S("Fußballtraining Mathis immer dienstags 16 Uhr", TERMIN, { zeit: "16:00", person: "Mathis" }),
   S("Geburtstag Oma am 30. Oktober", TERMIN, { datum: "2026-10-30" }),
-  // Aufgaben und Notizen (20)
+  // Aufgaben und Notizen (22)
   S("Ich muss noch die Steuer machen", TERMIN, { lage: ["ohne-steuer"] }),
   S("Kita-Formular bis Freitag abgeben", TERMIN, { datum: "2026-10-23" }),
   S("Erinner mich morgen an den Müll", TERMIN, { datum: "2026-10-22" }),
@@ -122,8 +122,11 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Setz Laufrad auf die Geschenkideen", ["upsert_note"]),
   S("Dringend: Versicherung anrufen", TERMIN),
   S("Steuer ist erledigt", ["done_entry"]),
-  S("Irgendwann mal den Keller aufräumen", TERMIN),
-  S("Diese Woche noch Reifen wechseln", TERMIN),
+  // Alles ist heute (Tafel 103): ohne genannten Tag für heute, mit Tag ab dem Tag
+  S("Irgendwann mal den Keller aufräumen", TERMIN, { datum: "2026-10-21" }),
+  S("Diese Woche noch Reifen wechseln", TERMIN, { datum: "2026-10-21" }),
+  S("Aufgabe: Fahrrad zur Werkstatt bringen", TERMIN, { datum: "2026-10-21" }),
+  S("Freitag KFZ-Steuer überweisen", TERMIN, { datum: "2026-10-23" }),
   S("Idee fürs Wochenende: Tierpark", TERMIN),
   S("Mathis braucht bis Montag Bastelsachen für die Schule", TERMIN, { datum: "2026-10-26", person: "Mathis" }),
   S("Ruf mal Opa wegen Sonntag an", ["upsert_entry", "kann_nicht"]),
@@ -191,6 +194,7 @@ export const PRUEFSAETZE: PruefSatz[] = [
   R("Muss man Zucchini schälen?"),
   R("Wie lange Spaghetti al dente?"),
   S("Was steht heute an?", ANTWORT, { max: 3 }),
+  S("Was ist noch bei der Arbeit?", ANTWORT, { max: 3 }),
   S("Wie wird das Wetter morgen?", ANTWORT),
   S("Wer bist du?", ANTWORT),
   S("Danke dir!", ANTWORT),

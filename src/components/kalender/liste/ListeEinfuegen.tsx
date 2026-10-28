@@ -11,18 +11,16 @@ import { Sheet } from "@/components/ui/Sheet";
 import { INPUT_BASE, NOTE, SUBTLE, buttonClass } from "@/components/ui/styles";
 import { showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
-import { addDays, todayIso } from "@/lib/core/now";
+import { todayIso } from "@/lib/core/now";
 import { dayWord, shortDay } from "@/lib/core/schnelleingabe";
 import { changeEntries, loadEntries } from "@/lib/kalender/store";
-import { mondayOf } from "@/lib/kalender/model";
 import { hatDatum, listSummary, readPastedList, splitDuplicates, toAufgaben, type ListZeile } from "@/lib/kalender/liste/einfuegen";
 
-/** „bis Fr, 23. Okt“, „Morgen · Do“, „nächste Woche“ – leer ohne Datum */
+/** „bis Fr, 23. Okt“, „Morgen · Do“ – leer ohne Datum */
 function wann(z: ListZeile, today: string): string {
   const d = z.data;
   if (d.due) return `bis ${shortDay(d.due)}`;
   if (d.date) return dayWord(d.date, today);
-  if (d.week) return d.week === mondayOf(today) ? "diese Woche" : d.week === addDays(mondayOf(today), 7) ? "nächste Woche" : `ab ${shortDay(d.week)}`;
   return d.repeat ? "regelmäßig" : "";
 }
 
