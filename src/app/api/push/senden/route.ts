@@ -10,6 +10,7 @@ import { berlinTime, now } from "@/lib/core/now";
 import { supabasePublic, supabaseSecret } from "@/lib/konten/serverEnv";
 import { restClient } from "@/lib/heute/mitteilungen/serverRest";
 import { planPushes, proactiveAbos, sentKeys, type PushAbo, type PushEntryRow } from "@/lib/heute/mitteilungen/versand";
+import { personName } from "@/lib/konten/namen";
 
 export const maxDuration = 60;
 
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
     // Einkauf unterwegs: nur, was gerade frisch auf die Liste kam (für die Person im Laden)
     const fresh = new Date(now().getTime() - 15 * 60_000).toISOString();
     const added = (await rest<PushEntryRow[]>(`${select}&typ=eq.einkauf&raum=eq.familie&erstellt=gte.${fresh}&household_id=in.(${households})`)).data ?? [];
-    const names = Object.fromEntries(((await rest<{ user_id: string; display_name: string }[]>(`members?select=user_id,display_name&household_id=in.(${households})`)).data ?? []).map((m) => [m.user_id, m.display_name]));
+    const names = Object.fromEntries(((await rest<{ user_id: string; display_name: string }[]>(`members?select=user_id,display_name&household_id=in.(${households})`)).data ?? []).map((m) => [m.user_id, personName(m.display_name)]));
     const since = new Date(now().getTime() - 2 * 86_400_000).toISOString();
     const sentRows = (await rest<{ abo_id: string; key: string }[]>(`push_gesendet?select=abo_id,key&sent_at=gte.${since}`)).data ?? [];
     const t = berlinTime();

@@ -29,7 +29,7 @@ berechtigtes Interesse.
 | Kalender-Links (Abos) | nur Gerät (`wasgibts.kalenderabos`); Abruf über `/api/kalender/abo` | fremde Termine anzeigen | bis entfernt | nur Gerät; der Link geht pro Abruf durch unseren Server, wird nicht gespeichert oder protokolliert | lit. b |
 | Profil, Namen, Allergien, Vorlieben | Gerät (`familienkueche.haushaltsprofil`) | Vorschläge passend zur Familie | bis gelöscht | nur Gerät; Ausschnitte gehen bei KI-Anfragen an Anthropic | lit. b; Allergien = Gesundheitsdaten → Art. 9 Abs. 2 lit. a (Einwilligung) – **bitte prüfen** |
 | Wetter-Ort | Gerät | Wetter | bis geändert | Ortsname geht an Bright Sky/Open-Meteo; bei „Meinen Standort verwenden“ gerundete Koordinaten (≈1 km) an Nominatim | lit. b |
-| Konto: E-Mail, Anzeigename, Rolle | Server (Supabase Auth, `members`) | Anmelden, Familie | bis Konto gelöscht | E-Mail: nur die Person (und Supabase); Anzeigename/Rolle: Familie | lit. b |
+| Konto: E-Mail, Anzeigename (Name aus dem Profil bzw. selbst gewählt, nie die Mail), Rolle | Server (Supabase Auth, `members`) | Anmelden, Familie | bis Konto gelöscht | E-Mail: nur die Person (und Supabase); Anzeigename/Rolle: Familie | lit. b |
 | Familie: Name, Region | Server (`households`) | Familie, Spendentopf-Region | bis die letzte Person austritt | Familie | lit. b |
 | Einladungs-Links | Server (`invite_links`) | Einladen | 14 Tage | Erwachsene der Familie | lit. b |
 | Push-Abos | Server (`push_abos`) | Erinnerungen | bis abbestellt | nur Server | lit. a (Browser-Erlaubnis) |

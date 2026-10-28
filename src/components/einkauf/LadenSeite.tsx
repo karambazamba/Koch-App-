@@ -48,6 +48,7 @@ import { EditItemSheet } from "@/components/einkauf/ShoppingParts";
 import { WoKaufstDuSheet } from "@/components/einkauf/Einsortieren";
 import { BescheidAsk } from "@/components/einkauf/unterwegs/BescheidAsk";
 import { ladenFarbe } from "@/components/einkauf/seite/LadenKarten";
+import { mitgliedName } from "@/lib/konten/namen";
 
 const lower = (s: string) => s.trim().toLowerCase();
 
@@ -90,7 +91,7 @@ export function LadenSeite() {
     if (!data || !family) return;
     const id = newId();
     const due = dueStaples(data.settings.staples, data.weekStart, data.list, data.weekList);
-    changeTrips((t) => addTrip(t, { id, shop, by: family.me.displayName, start: nowIso(), end: null, count: null, vorschlaege: tripSuggestions(due) }, now().getTime()));
+    changeTrips((t) => addTrip(t, { id, shop, by: mitgliedName(family.me), start: nowIso(), end: null, count: null, vorschlaege: tripSuggestions(due) }, now().getTime()));
     changeBescheid((b) => (b.active ? { ...b, active: { ...b.active, tripId: id } } : b));
   };
   /** Einkauf beginnt: beim ersten Abhaken bzw. unterwegs geöffnet */

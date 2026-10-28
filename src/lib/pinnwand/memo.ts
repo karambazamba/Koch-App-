@@ -11,6 +11,7 @@
 import { createEntry, type Entry } from "@/lib/core/entries";
 import { applyReaction, readReactions, type Reaction, type Reactions } from "@/lib/pinnwand/reactions";
 import { isArchived, isForgotten, onDoor, readDone, readFarbe, type Done, type ZettelFarbe } from "@/lib/pinnwand/tuer";
+import { personName } from "@/lib/konten/namen";
 
 /** Höchstens 60 s, danach wird automatisch gesendet */
 export const MEMO_MAX_S = 60;
@@ -90,7 +91,7 @@ export function sanitizeMemo(raw: unknown): MemoMessage | null {
     ...e,
     raum: "familie",
     data: {
-      author: typeof d.author === "string" && d.author.trim() ? d.author : "Ich",
+      author: typeof d.author === "string" && d.author.trim() ? (d.author.includes("@") ? personName(d.author) || "Ich" : d.author) : "Ich",
       dauer: Math.min(MEMO_MAX_S, Math.max(0, d.dauer)),
       mime: typeof d.mime === "string" ? d.mime : "audio/webm",
       wave: clampWave(Array.isArray(d.wave) ? d.wave.filter((v): v is number => typeof v === "number") : []),

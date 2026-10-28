@@ -563,3 +563,36 @@ export async function pinnwandMikro(page) {
   await sheet.getByRole("radio", { name: "Sprachnachricht" }).click();
   return { mic: sheet.getByRole("button", { name: "Aufnahme starten" }), scope: sheet };
 }
+
+/**
+ * Ohne Namen im Profil fragt Mia beim Beitreten/Anlegen einmal „Wie sollen
+ * dich die anderen sehen?“ (A-042) – vorausgefüllt aus der Mail, nie mit @.
+ * Wartet auf das Ziel (Startseite ohne Anmelde-Fenster bzw. auf /konto die
+ * Mitgliederliste) oder die Frage; liefert den Vorschlag (oder null).
+ * Die Leiste liegt auch unter dem Anmelde-Fenster – deshalb reicht der
+ * „Heute“-Reiter allein nicht als Zeichen für „angekommen“. Next 16 hält
+ * die verlassene Anmelde-Seite versteckt im DOM (Activity) – es zählt nur
+ * ein sichtbares Anmelde-Fenster.
+ */
+export async function nameFrageOderStart(page, name, { ziel = "start", ms = 30000 } = {}) {
+  const frage = page.getByRole("form", { name: "Wie sollen dich die anderen sehen?" });
+  const angekommen = async () =>
+    ziel === "konto"
+      ? page.getByRole("list", { name: "Wer dazugehört" }).isVisible()
+      : new URL(page.url()).pathname === "/" && !(await page.locator("main[aria-label='Anmelden']").filter({ visible: true }).count()) && (await page.getByRole("tab", { name: "Heute", selected: true }).isVisible());
+  const warten = async (alsFrage) => {
+    const ende = Date.now() + ms;
+    for (;;) {
+      if (alsFrage && (await frage.isVisible().catch(() => false))) return true;
+      if (await angekommen().catch(() => false)) return false;
+      if (Date.now() > ende) throw new Error(`nameFrageOderStart: weder Namensfrage noch ${ziel === "konto" ? "Familie" : "Startseite"}`);
+      await page.waitForTimeout(200);
+    }
+  };
+  if (!(await warten(true))) return null;
+  const vorschlag = await frage.getByLabel("Dein Name").inputValue();
+  if (name) await frage.getByLabel("Dein Name").fill(name);
+  await frage.getByRole("button", { name: "Weiter" }).click();
+  await warten(false);
+  return vorschlag;
+}

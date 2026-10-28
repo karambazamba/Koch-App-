@@ -34,3 +34,12 @@ export const HAUSHALT_WAHL: { value: Haushalt; label: string }[] = [
  * angenommen): „Seid ihr zu zweit? Dann heißt der Bereich ‚Wir‘.“
  */
 export const zuZweitVorschlag = (h: Haushalt, persons: number, asked: boolean): string | null => (h === "allein" && persons >= 2 && !asked ? "Seid ihr zu zweit? Dann heißt der Bereich ‚Wir‘." : null);
+
+/** Überschrift „Familie verbinden“ je Haushaltsart (Einstellungen, /konto) */
+export const verbindenTitel = (h: Haushalt) => (h === "allein" ? "Mit jemandem teilen" : h === "paar" ? "Zu zweit verbinden" : "Familie verbinden");
+
+/** Standard-Name des gemeinsamen Haushalts im Konto (mit Nachname: „Familie Gabriel“, `konten/namen.ts`) */
+export const haushaltName = (h: Haushalt) => (h === "allein" ? "Privat" : h === "paar" ? "Wir zwei" : "Familie");
+
+/** Unter dem Einladungs-Link: wer ihn öffnet, gehört dazu */
+export const linkWerSatz = (h: Haushalt) => `Wer ihn öffnet, ${h === "familie" ? "gehört zur Familie" : "gehört dazu"}. Danach einfach neu holen.`;

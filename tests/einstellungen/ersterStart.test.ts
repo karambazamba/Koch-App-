@@ -70,4 +70,11 @@ describe("„Los geht’s“ und „Neu anfangen“", () => {
     expect(localStorage.getItem("wasgibts.willkommen")).toBeNull();
     expect(localStorage.getItem("wasgibts.beispiel")).toBeNull();
   });
+
+  it("Anmelden ohne Profil: der Name aus der Namensfrage landet im neuen Profil (A-042, nie zweimal fragen)", async () => {
+    const { welcome, profile } = await load();
+    welcome.startFresh("farbig", "familie", "  Felix ");
+    expect(profile.loadProfile()!.persons[0].name).toBe("Felix");
+    welcome.clearWelcome();
+  });
 });

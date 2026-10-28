@@ -3302,3 +3302,20 @@ Fehler in `docs/aufraeumen-nachher.md`.
   schickt Älteres gar nicht mit). Prüfstand +1 Satz (182), Bewertung kennt
   `nennt`/`nenntNie`. Tests `tests/kalender/erledigt12.test.ts`, Durchklicks
   `erledigtZwoelf`, `erledigtAbgleich`.
+
+## Familie verbinden klarer + Namen statt Mail-Adresse (v0.148.0, A-042)
+
+- Vorher stand ohne Profilnamen der Teil vor dem @ als Anzeigename und
+  „Familie <mail>“ als Haushaltsname im Konto. Jetzt: Name aus dem Profil,
+  sonst einmal „Wie sollen dich die anderen sehen?“ (vorausgefüllt aus der
+  Mail, bereinigt); Haushaltsname je Haushaltsart „Familie“ / „Wir zwei“ /
+  „Privat“ bzw. „Familie <Nachname>“, antippen = umbenennen.
+- Überschrift je Haushaltsart, neue Texte beim Anmelden ohne
+  Gedankenstriche, Mail nur klein unter „Angemeldet als“, Avatar in der
+  Personenfarbe.
+- Einladungs-Link mit „Link gilt 14 Tage, bis Mi, 11. Nov.“ und Zeilen je
+  offenem Link mit Nutzung und „Zurückziehen“.
+- Alte Konten: Supabase-Migration `20261101143000_namen_ohne_mail.sql` plus
+  einmalige Korrektur beim nächsten Anmelden. Details: `docs/bereiche/konten.md`.
+- Bild 1/2 des Auftrags kamen nicht an, gebaut nach Text
+  (`docs/auftraege/A-042-familie-namen.md`).

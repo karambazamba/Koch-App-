@@ -61,7 +61,7 @@ export const STORAGE = [
   { key: "wasgibts.konto", what: "Anmeldung (Sitzung) – nur auf dem Gerät, nie in der Sicherung", area: "local", backup: false },
   { key: "wasgibts.konto-pkce", what: "Anmelden mit Apple/Google: Prüfwert bis zur Rückkehr (PKCE) – nur kurz auf dem Gerät", area: "local", backup: false },
   { key: "wasgibts.anmelden-zurueck", what: "Anmelden mit Apple/Google: wohin nach der Rückkehr (z. B. Einladung)", area: "session", backup: false },
-  { key: "wasgibts.haushalt", what: "Zuletzt bekannter Haushalt (Name, Mitglieder, eigene Rolle) für offline", version: 1, migration: "konten/account.ts", area: "local", backup: false },
+  { key: "wasgibts.haushalt", what: "Zuletzt bekannter Haushalt (Name, Mitglieder, eigene Rolle) für offline", version: 1, migration: "konten/cache.ts (Namen ohne Mail, A-042)", area: "local", backup: false },
   { key: "wasgibts.abgleich", what: "Abgleich mit dem Haushalt: zuletzt abgeglichener Stand je Eintrag (nur Fingerabdrücke), Warteschlange, Übernahme erledigt", version: 1, migration: "konten/sync/engine.ts migrateSyncState", area: "local", backup: false },
   { key: "wasgibts.mitteilungen", what: "Mitteilungen auf diesem Gerät: Standard-Erinnerung, Schalter je Art, Mias Frage (ja/nein, wann), schon gemeldete Erinnerungen", version: 1, migration: "heute/mitteilungen/einstellungen.ts migrateNotify", area: "local", backup: false },
   { key: "wasgibts.miaknopf", what: "Runder Knopf der Begleitung links (Linkshänder) – pro Gerät", version: 1, migration: "mia/knopf.ts migrateKnopf", area: "local", backup: false },

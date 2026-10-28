@@ -39,6 +39,9 @@ export type InviteLink = { ref: string; role: Role; inviterName: string; expires
 /** Was die Einladungsseite vor dem Anmelden sehen darf */
 export type InviteInfo = { status: "gueltig" | "abgelaufen" | "unbekannt"; inviter: string; family: string };
 
+/** Laufzeit eines Einladungs-Links (wie `interval '14 days'` in der Datenbank); angezeigt wird das Ablaufdatum des Servers */
+export const LINK_TAGE = 14;
+
 /** https://<app>/e/<token> */
 export const inviteLinkUrl = (origin: string, token: string) => `${origin.replace(/\/$/, "")}/e/${token}`;
 
@@ -49,14 +52,6 @@ export const inviteLinkShareText = (origin: string, token: string) => `Komm zu u
 export function tokenFromLink(text: string): string | null {
   const m = text.trim().match(/(?:\/e\/|^)([0-9a-f]{32})(?![0-9a-f])/i);
   return m ? m[1].toLowerCase() : null;
-}
-
-/** Nach dem Anmelden ohne Familie: „Familie <Nachname>“, sonst „Familie <Vorname>“ */
-export function familyNameFor(name: string, lastName?: string | null): string {
-  const last = (lastName ?? "").trim();
-  if (last) return `Familie ${last}`.slice(0, 60);
-  const first = name.trim().split(/\s+/)[0] ?? "";
-  return first ? `Familie ${first}`.slice(0, 60) : "Unsere Familie";
 }
 
 export const isEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());

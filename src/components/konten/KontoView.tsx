@@ -1,19 +1,24 @@
 "use client";
 
-// /konto: Familie verbinden. Nicht angemeldet → Anmelden per Code; ohne
-// Familie → still „Familie <Name>“ anlegen; verbunden → Familie,
+// /konto: Familie verbinden (Überschrift je Haushaltsart: „Mit jemandem
+// teilen“, „Zu zweit verbinden“, „Familie verbinden“). Nicht angemeldet →
+// Anmelden per Code; ohne Familie → ohne Profilnamen einmal „Wie sollen dich
+// die anderen sehen?“, dann still „Familie <Nachname>“ bzw. „Wir zwei“ /
+// „Privat“ anlegen; verbunden → Familie,
 // Mitglieder, Einladen per Link, Abmelden. `?einladen=1` öffnet gleich das Einladen,
 // `?von=hallo` startet danach die App (erster Start ohne Profil).
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { CARD, PAGE_MAIN, SECTION_TITLE } from "@/components/ui/styles";
+import { CARD, PAGE_MAIN } from "@/components/ui/styles";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { startFresh } from "@/lib/einstellungen/welcomeStore";
 import { expectReplace } from "@/lib/core/navigation";
 import { useAccount } from "@/lib/konten/account";
-import { familyNameFor } from "@/lib/konten/model";
+import { brauchtNamensfrage, profilName, standardHaushaltsname } from "@/lib/konten/namen";
+import { useHaushalt, useVerbindenTitel } from "@/lib/einstellungen/useHaushalt";
+import { NameFrage } from "@/components/konten/NameFrage";
 import { LoginSteps } from "@/components/konten/LoginSteps";
 import { AutoFamily } from "@/components/konten/AutoFamily";
 import { HouseholdCard, InviteSheet } from "@/components/konten/HouseholdCard";
@@ -26,9 +31,12 @@ export function KontoView() {
   const params = useSearchParams();
   const fromHello = params.get("von") === "hallo";
   const [invite, setInvite] = useState(params.get("einladen") === "1");
+  const titel = useVerbindenTitel();
+  const haushalt = useHaushalt();
   const me = profile?.persons[0];
-  const displayName = me?.name.trim() || account.user?.email.split("@")[0] || "";
-  const suggested = profile?.householdName ? `Familie ${profile.householdName}` : familyNameFor(displayName);
+  const [asked, setAsked] = useState("");
+  const displayName = profilName(me?.name) || asked;
+  const suggested = standardHaushaltsname(haushalt, profile);
 
   const finished = () => {
     if (!fromHello) return;
@@ -39,18 +47,25 @@ export function KontoView() {
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
-      <PageHeader title="Familie verbinden" backHref={fromHello ? "/" : "/profil"} />
+      <PageHeader title={titel} backHref={fromHello ? "/" : "/profil"} />
       <main className={`${PAGE_MAIN} gap-4`}>
         {account.mode === "laedt" && !account.user && <div className={`${CARD} h-40 animate-pulse`} />}
-        {account.mode === "aus" && <p className="text-[15px] text-muted">Konten sind hier noch nicht eingerichtet – die App läuft wie gewohnt auf diesem Gerät.</p>}
+        {account.mode === "aus" && <p className="text-[15px] text-muted">Konten sind hier noch nicht eingerichtet. Die App läuft wie gewohnt auf diesem Gerät.</p>}
         {(account.mode === "supabase" || account.mode === "test") && !account.user && (
           <section className="flex flex-col gap-3" aria-label="Anmelden">
-            <h2 className={SECTION_TITLE}>Gemeinsam statt jeder für sich</h2>
-            <p className="text-[15px] text-muted">Mit einem Konto seht ihr Termine, Einkauf und Pinnwand gemeinsam. Ohne Konto geht alles wie bisher – nur auf diesem Handy.</p>
+            <div className="flex flex-col gap-1">
+              <p className="text-[17px] font-semibold leading-snug">Teil Termine, Einkauf und Pinnwand mit deinen Leuten.</p>
+              <p className="text-sm text-muted">Ohne Konto bleibt alles auf diesem Handy.</p>
+            </div>
             <LoginSteps />
           </section>
         )}
-        {account.user && !account.household && account.mode !== "laedt" && (
+        {account.user && !account.household && account.mode !== "laedt" && brauchtNamensfrage(displayName) && (
+          <section className={`${CARD} p-4`}>
+            <NameFrage email={account.user.email} onDone={setAsked} />
+          </section>
+        )}
+        {account.user && !account.household && account.mode !== "laedt" && !brauchtNamensfrage(displayName) && (
           <AutoFamily name={suggested} displayName={displayName} personId={me?.id ?? null} onDone={finished} />
         )}
         {account.user && account.household && (

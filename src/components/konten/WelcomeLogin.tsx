@@ -12,7 +12,9 @@
 // NEXT_PUBLIC_AUTH_APPLE/…_GOOGLE, und erst ohne Launch-Sperre).
 // E-Mail → 6-stelliger Code (prüft selbst, „Neuen Code senden in 0:60“).
 // Danach keine Frage: per Einladung beitreten (schon in einer anderen
-// Familie: „Wechseln?“), sonst still „Familie <Name>“ anlegen. Was schon auf
+// Familie: „Wechseln?“), sonst still „Familie <Nachname>“ bzw. „Wir zwei“ /
+// „Privat“ anlegen. Ohne Namen im Profil vorher einmal „Wie sollen dich die
+// anderen sehen?“ (A-042, nie die Mail als Name). Was schon auf
 // dem Handy ist, kommt mit. Startseite; die Begleitung fliegt in die
 // Jetzt-Karte. Per Einladung fragt der Zugangscode erst beim ersten
 // KI-Versuch (A-027, `codeErstBeimKiVersuch`), nicht gleich danach.
@@ -31,13 +33,16 @@ import { expectReplace } from "@/lib/core/navigation";
 import { setHelloFlight } from "@/lib/core/hello";
 import { codeErstBeimKiVersuch } from "@/lib/begleitung/codeAbfrage";
 import { ensureFamily, joinByLink, joinHousehold, sendLoginCode, startOAuth, useAccount, verifyLoginCode } from "@/lib/konten/account";
-import { familyNameFor, isEmail, otpDigits } from "@/lib/konten/model";
+import { isEmail, otpDigits } from "@/lib/konten/model";
+import { haushaltAnzeige, personName, profilName, standardHaushaltsname } from "@/lib/konten/namen";
+import { useHaushalt } from "@/lib/einstellungen/useHaushalt";
+import { NAME_FRAGE, NameFrage } from "@/components/konten/NameFrage";
 import { oauthProviders } from "@/lib/konten/oauth";
 import { AnbieterLogo } from "@/components/konten/AnbieterLogo";
 
-type Step = "knoepfe" | "email" | "code" | "weiter" | "wechseln";
+type Step = "knoepfe" | "email" | "code" | "name" | "weiter" | "wechseln";
 const RESEND_S = 60;
-const BACK: Record<Step, Step | null> = { knoepfe: null, email: "knoepfe", code: "email", weiter: null, wechseln: null };
+const BACK: Record<Step, Step | null> = { knoepfe: null, email: "knoepfe", code: "email", name: null, weiter: null, wechseln: null };
 
 export function WelcomeLogin({ code: linkCode = "", einladung = "", inviter = "" }: { code?: string; einladung?: string; inviter?: string }) {
   const router = useRouter();
@@ -57,17 +62,20 @@ export function WelcomeLogin({ code: linkCode = "", einladung = "", inviter = ""
   const field = useRef<HTMLInputElement>(null);
   const finishing = useRef(false);
   const continuing = useRef(false);
+  const askedName = useRef("");
 
   const signedIn = Boolean(account.user);
-  const step: Step = signedIn && chosen !== "wechseln" ? "weiter" : chosen;
+  const step: Step = signedIn && chosen !== "wechseln" && chosen !== "name" ? "weiter" : chosen;
   const setStep = (next: Step) => {
     setError("");
     setChosen(next);
   };
 
+  const haushalt = useHaushalt();
   const me = profile?.persons[0];
-  const displayName = me?.name.trim() || account.user?.email.split("@")[0] || "";
-  const familyName = profile?.householdName ? `Familie ${profile.householdName}` : familyNameFor(displayName);
+  // Schon im Haushalt: der Name dort; sonst der aus dem Profil; ohne beides einmal fragen
+  const known = profilName(me?.name) || personName(account.household?.me.displayName);
+  const familyName = standardHaushaltsname(haushalt, profile);
 
   // Angemeldet: ohne Frage weiter (Einladung annehmen bzw. Familie anlegen)
   useEffect(() => {
@@ -95,7 +103,11 @@ export function WelcomeLogin({ code: linkCode = "", einladung = "", inviter = ""
     router.back();
   };
 
-  async function proceed(switchFamily: boolean) {
+  async function proceed(switchFamily: boolean, asked = "") {
+    if (asked) askedName.current = asked;
+    const displayName = known || askedName.current;
+    // Nur wer neu dazukommt, braucht einen Namen (wer schon drin ist, hat einen)
+    if (!displayName && (einladung || !account.household)) return setStep("name");
     setBusy(true);
     setError("");
     if (einladung) {
@@ -155,7 +167,8 @@ export function WelcomeLogin({ code: linkCode = "", einladung = "", inviter = ""
     const r = face.current?.getBoundingClientRect();
     if (!profile) {
       setHelloFlight(r ? { x: r.left, y: r.top, size: r.width } : null);
-      startFresh();
+      // Profil entsteht erst hier: die Antwort auf die Namensfrage gleich mit hinein
+      startFresh("farbig", "familie", askedName.current);
     }
     // Einladungs-Weg: Mail-Code → Startseite; der Zugangscode erst beim ersten KI-Versuch
     if (einladung) codeErstBeimKiVersuch();
@@ -163,8 +176,8 @@ export function WelcomeLogin({ code: linkCode = "", einladung = "", inviter = ""
     router.replace("/");
   }
 
-  const title = einladung ? `${inviter || "Jemand"} lädt dich ein.` : linkCode ? "Schön, dass ihr dabei seid." : "Willkommen zurück";
-  const sub = einladung ? "Termine, Einkauf und Pinnwand – gemeinsam." : linkCode ? "Melde dich an, der Code ist schon eingetragen." : "Melde dich an wie beim letzten Mal.";
+  const title = einladung ? `${personName(inviter) || "Jemand"} lädt dich ein.` : linkCode ? "Schön, dass ihr dabei seid." : "Willkommen zurück";
+  const sub = einladung ? "Termine, Einkauf und Pinnwand gemeinsam." : linkCode ? "Melde dich an, der Code ist schon eingetragen." : "Melde dich an wie beim letzten Mal.";
 
   return (
     <main className="fixed inset-0 z-40 overflow-y-auto bg-background" aria-label="Anmelden">
@@ -179,7 +192,7 @@ export function WelcomeLogin({ code: linkCode = "", einladung = "", inviter = ""
           </div>
 
           {account.mode === "aus" && (
-            <Screen title="Hier geht’s erstmal ohne Konto." sub="Konten sind noch nicht eingerichtet – die App läuft wie gewohnt auf diesem Handy.">
+            <Screen title="Hier geht’s erstmal ohne Konto." sub="Konten sind noch nicht eingerichtet. Die App läuft wie gewohnt auf diesem Handy.">
               <span />
             </Screen>
           )}
@@ -258,6 +271,19 @@ export function WelcomeLogin({ code: linkCode = "", einladung = "", inviter = ""
             </Screen>
           )}
 
+          {step === "name" && account.user && (
+            <Screen title={NAME_FRAGE}>
+              <NameFrage
+                email={account.user.email}
+                gross
+                onDone={(name) => {
+                  setStep("weiter");
+                  void proceed(false, name);
+                }}
+              />
+            </Screen>
+          )}
+
           {step === "weiter" && (
             <Screen title={einladung ? "Einen Moment …" : "Angemeldet"} sub="Was schon auf diesem Handy ist, nehmen wir mit.">
               <div className="flex w-full flex-col gap-3">
@@ -272,7 +298,7 @@ export function WelcomeLogin({ code: linkCode = "", einladung = "", inviter = ""
           )}
 
           {step === "wechseln" && (
-            <Screen title={`Du bist schon in ${otherFamily || "einer anderen Familie"}.`} sub="Wechseln? Deine Einträge auf diesem Handy bleiben.">
+            <Screen title={`Du bist schon in ${haushaltAnzeige(otherFamily, "einer anderen Familie")}.`} sub="Wechseln? Deine Einträge auf diesem Handy bleiben.">
               <div className="flex w-full flex-col gap-3">
                 <ErrorLine text={error} />
                 <button type="button" disabled={busy} onClick={() => void proceed(true)} className={`${buttonClass("primary", "lg")} w-full`}>
