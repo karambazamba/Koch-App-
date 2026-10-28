@@ -84,6 +84,11 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 | A-038 | SOFORT: Vorschläge erst anschauen, dann nehmen (Rezept-Vorschau als Fenster, überall wo Gerichte zur Auswahl stehen; Wortlaut `docs/auftraege/A-038-vorschau.md`) | `tafel-122-essen-rezept.png` | in Arbeit (mit A-025) |
 | A-039 | Monatlich: Mias Wundertüte nachfüllen (Pool von 459 Richtung ~845, nur geprüfte Fakten, Quellen gegenprüfen) | – | offen (nach A-022) |
 
+| A-018 | Einkauf neu – einsprechen oder aussuchen, Läden wie die Kachel, Ohne-Laden reinziehen (+ Nachtrag Aussuchen in Abschnitten; ersetzt „Einkauf so einfach wie die Kachel“ und „Einkaufs-Diktat“) | `tafel-111.png`, Tafel 110 (kein Bild) | fertig v0.140 |
+| A-019 | Mia im Gespräch deutlich schneller und flüssiger (Messen, Stille 1,2 s, Sofort-Weg, eine Runde, sofort sprechen, „Mhm“, schlanker Kontext, ElevenLabs schnell; Nachtrag: Sofort-Regeln für Kurzsätze ≥ 40 Prüfstand-Sätze/98 %, Mikro-Wachhund höchstens ein Neustart + „Mikro ist gerade belegt“) | – | in Arbeit |
+| A-020 | Neue Aufgabe & Termin – ein Feld, Familie · Ich · Arbeit (neuer Raum „Ich“; ersetzt „Neue Aufgabe / neuer Termin – ein Feld, fertig“ und beide Nachträge) | `tafel-114.png` | in Arbeit |
+| A-026 | Nachtrag zu A-019 (VORRANG): Mia hört live über ElevenLabs – Text beim Sprechen, Ende von selbst | – | in Arbeit |
+
 ## Offene Punkte (ohne eigenen Auftrag)
 
 - Jetzt-Karte nennt tagsüber einen neuen Pinnwand-Zettel, den auch die

@@ -2,9 +2,9 @@
 // nachgestellt (Status, Ton, erkannter Text), der echte Anbieter nie gerufen:
 // „Wer spricht?“ in den Einstellungen, Probe hören über den Server, Stimme des
 // Handys ohne Server, Antwort vorlesen mit stillem Rückfall aufs Handy,
-// Zuhören mit eigener Aufnahme (Satzende an der Stille, keine Spracherkennung
-// des Browsers).
-import { BASE, FAKE_HOEREN, FAKE_VOICES, hello, miaTippen, seedFamily, tippenFeld } from "../lib.mjs";
+// Zuhören mit eigener Aufnahme (letzter Ersatz seit A-026: ohne Live und ohne
+// Spracherkennung im Browser; Satzende an der Stille).
+import { BASE, FAKE_VOICES, MIKRO_REGLER, OHNE_ERKENNUNG, hello, miaTippen, seedFamily, tippenFeld } from "../lib.mjs";
 
 /** 0,1 s Stille als WAV (für die nachgestellte Stimme) */
 function stilleWav() {
@@ -25,7 +25,7 @@ function stilleWav() {
   return buf;
 }
 
-/** Server nachstellen: Status mit Stimme, /api/stimme (Ton oder Fehler), /api/hoeren (Text) */
+/** Server nachstellen: Status mit Stimme (ohne Live), /api/stimme (Ton oder Fehler), /api/hoeren (Text) */
 async function serverMitStimme(page, { stimmeKaputt = false, gehoert = "Was steht heute an", antwortMs = 0 } = {}) {
   const log = { stimme: [], hoeren: [] };
   await page.route("**/api/lotte", async (route) => {
@@ -57,23 +57,6 @@ const HANDY_MITSCHRIFT = () => {
   const synth = window.speechSynthesis;
   const speak = synth.speak;
   synth.speak = (u) => (u.text.trim() && window.__gesagt.push(u.text), speak(u));
-};
-
-/** Mikrofon mit regelbarer Lautstärke: `__laut(0.6)` = sprechen, `__laut(0)` = still */
-const MIKRO_REGLER = () => {
-  window.__gumAufrufe = 0;
-  navigator.mediaDevices.getUserMedia = () => {
-    window.__gumAufrufe++;
-    const ctx = new AudioContext();
-    const dest = ctx.createMediaStreamDestination();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    gain.gain.value = 0;
-    osc.connect(gain).connect(dest);
-    osc.start();
-    window.__laut = (v) => (gain.gain.value = v);
-    return Promise.resolve(dest.stream);
-  };
 };
 
 export const stimmeServer = async (page, check) => {
@@ -125,7 +108,8 @@ export const stimmeServer = async (page, check) => {
 };
 
 export const ohrServer = async (page, check) => {
-  await page.addInitScript(FAKE_HOEREN);
+  // Letzter Ersatz: kein Live (Status ohne `live`) und keine Spracherkennung im Browser
+  await page.addInitScript(OHNE_ERKENNUNG);
   await page.addInitScript(MIKRO_REGLER);
   // Mia antwortet langsam: währenddessen hört sie weiter zu (Vorlesen aus)
   const log = await serverMitStimme(page, { antwortMs: 3000, gehoert: "Was gibt es morgen bei uns zum Essen" });
@@ -136,7 +120,7 @@ export const ohrServer = async (page, check) => {
   await page.getByRole("button", { name: /^Sag .*was ansteht/ }).first().click();
   await page.getByRole("dialog").last().waitFor({ timeout: 5000 });
   await page.waitForFunction(() => window.__gumAufrufe > 0 && window.__laut, null, { timeout: 5000 });
-  check((await page.evaluate(() => window.__starts)) === 0, "eigene Aufnahme statt Spracherkennung des Browsers");
+  check((await page.evaluate(() => window.__starts)) === 0, "ohne Live und Spracherkennung: eigene Aufnahme");
 
   // Sprechen, kurze Pause (0,9 s), weitersprechen, dann still → nach 1,2 s Stille verstanden
   await page.evaluate(() => window.__laut(0.6));

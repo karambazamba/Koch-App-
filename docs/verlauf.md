@@ -3123,3 +3123,29 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Fehler Mikro belegt (Video 28.10. 09:09): keine Neustart-Schleife mehr –
   höchstens ein stiller Neustart ohne Ton, dann „Mikro ist gerade belegt.
   Lieber schreiben?“.
+
+## Mia hört live über ElevenLabs (vX)
+- Auftrag A-026 (Nachtrag zu A-019, Video 28.10. im Café): Seit ElevenLabs
+  aktiv war, nahm Mia per MediaRecorder auf und schickte die Datei am Ende an
+  scribe_v1 – kein Live-Text mehr, Satzende nur über den Pegel (im Café nie
+  still, man musste Mia antippen), danach 1–3 s Warten auf die Mitschrift.
+- Jetzt live über ElevenLabs Realtime (`scribe_v2_realtime`): `/api/stimme/ohr-token`
+  holt einen Einmal-Schlüssel (`realtime_scribe`, Zugangscode und Grenzen wie
+  das Ohr, echter Schlüssel bleibt auf dem Server), die App streamt PCM 16 kHz
+  direkt an den Websocket (Deutsch fest). Vorläufiger Text live auf der Bühne,
+  Satzende per VAD von ElevenLabs (1,2 s Stille) – der fertige Satz geht sofort
+  an Mia; Antippen = Commit von Hand; Ring nach 0,6 s ohne neue Wörter;
+  höchstens 20 s ohne neue Wörter; Mikro-Wachhund für alle Wege.
+- Protokoll an einer Stelle (`begleitung/echtzeitProtokoll.ts`), Runde ohne
+  React (`ohrLive.ts`, getestet mit nachgestelltem Websocket), Browser-Teil
+  `ohrLiveBrowser.ts`, Reihenfolge `ohrWeg.ts`: live → Spracherkennung des
+  Browsers → eigene Aufnahme (scribe_v1). Zweimal hintereinander keine
+  Verbindung = bis zum Neuladen Browser.
+- Pegel-Ende (`lauschen.ts`, letzter Ersatz) robuster: Grundrauschen läuft
+  auch beim Sprechen langsam mit, Ende relativ zum Sprech-Pegel, Dauer-Laut
+  höchstens 20 s (Test mit Café-Rauschen 0,05).
+- Messen: Tempo merkt den Weg (live/Browser/Aufnahme), neu „Erstes Wort → Ton“
+  und „Ende Sprechen → Antwort zu hören“ (Ziel unter 2 s); jede gesprochene
+  Runde als Zahlen-Zeile im Mikro-Protokoll.
+- Datenschutz: Datenkarte, Anbieter und Datenschutzerklärung um das
+  Streaming ergänzt (gestreamt, nicht gespeichert, nur mit KI-Einwilligung).

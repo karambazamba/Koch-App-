@@ -76,7 +76,10 @@ type Options = {
 export { stripStopWord };
 
 export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = false }: Options) {
-  const supported = useSpeechSupported();
+  const browserKann = useSpeechSupported();
+  /** Bühne: Mias Ohr vom Server (live oder Aufnahme) geht auch ohne Spracherkennung im Browser */
+  const [serverKann, setServerKann] = useState(false);
+  const supported = browserKann || (buehne && serverKann) ? true : browserKann;
   /** Mikro gesperrt (geräteweit) – Knopf grau, Tipp öffnet die Hilfe */
   const blocked = useSyncExternalStore(micSubscribe, () => micState().block !== null, () => false);
   const [listening, setListening] = useState(false);
@@ -151,7 +154,12 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
 
   // Bühne: früh nachfragen, ob Mias Ohr vom Server da ist
   useEffect(() => {
-    if (buehne) void serverStimme();
+    if (!buehne) return;
+    let aktiv = true;
+    void serverStimme().then((s) => aktiv && setServerKann(liveOhr(s) || serverOhr(s)));
+    return () => {
+      aktiv = false;
+    };
   }, [buehne]);
 
   /** Bühne mit Mias Ohr vom Server: selbst aufnehmen, Satzende am Pegel, Text vom Server */

@@ -352,6 +352,87 @@ export const FAKE_HOEREN = () => {
   };
 };
 
+/**
+ * Schein-Realtime von ElevenLabs (Test-Doppel für den Websocket, A-026): nur
+ * Adressen mit „/v1/speech-to-text/realtime“ werden nachgestellt, alles andere
+ * (z. B. der Entwicklungs-Server) bleibt echt. `__live.teil(text)` = vorläufiger
+ * Text, `__live.satz(text)` = fertiger Satz (VAD), Antippen schickt einen Commit
+ * – den beantwortet die Schein-Verbindung mit dem letzten vorläufigen Text.
+ * `__live.kaputt = true` = Verbindung bricht sofort ab. `__live.adressen`,
+ * `__live.stuecke` (Ton-Stücke), `__live.commits` zum Prüfen.
+ */
+export const FAKE_ECHTZEIT = () => {
+  const Echt = window.WebSocket;
+  const live = (window.__live = { adressen: [], stuecke: 0, commits: 0, kaputt: false, offen: null, letzterTeil: "" });
+  class FakeLive {
+    constructor(url) {
+      this.url = String(url);
+      this.readyState = 0;
+      live.adressen.push(this.url);
+      live.offen = this;
+      live.letzterTeil = "";
+      setTimeout(() => {
+        if (live.kaputt) {
+          this.readyState = 3;
+          this.onerror?.();
+          this.onclose?.();
+          return;
+        }
+        this.readyState = 1;
+        this.onopen?.();
+        this.melde({ message_type: "session_started", session_id: "test" });
+      }, 60);
+    }
+    melde(m) {
+      if (this.readyState === 1) this.onmessage?.({ data: JSON.stringify(m) });
+    }
+    send(d) {
+      const m = JSON.parse(d);
+      if (m.commit) {
+        live.commits++;
+        setTimeout(() => this.melde({ message_type: "committed_transcript", text: live.letzterTeil }), 80);
+      } else live.stuecke++;
+    }
+    close() {
+      this.readyState = 3;
+      if (live.offen === this) live.offen = null;
+    }
+  }
+  live.teil = (text) => {
+    live.letzterTeil = text;
+    live.offen?.melde({ message_type: "partial_transcript", text });
+  };
+  live.satz = (text) => live.offen?.melde({ message_type: "committed_transcript", text });
+  window.WebSocket = function (url, protocols) {
+    return String(url).includes("/v1/speech-to-text/realtime") ? new FakeLive(url) : new Echt(url, protocols);
+  };
+  Object.assign(window.WebSocket, { CONNECTING: 0, OPEN: 1, CLOSING: 2, CLOSED: 3, prototype: Echt.prototype });
+};
+
+/** Mikrofon mit regelbarer Lautstärke: `__laut(0.6)` = sprechen, `__laut(0)` = still; `__gumAufrufe` zählt */
+export const MIKRO_REGLER = () => {
+  window.__gumAufrufe = 0;
+  navigator.mediaDevices.getUserMedia = () => {
+    window.__gumAufrufe++;
+    const ctx = new AudioContext();
+    const dest = ctx.createMediaStreamDestination();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    gain.gain.value = 0;
+    osc.connect(gain).connect(dest);
+    osc.start();
+    window.__laut = (v) => (gain.gain.value = v);
+    return Promise.resolve(dest.stream);
+  };
+};
+
+/** Keine Spracherkennung im Browser (z. B. Firefox, oder auf dem iPhone abgeschaltet) */
+export const OHNE_ERKENNUNG = () => {
+  delete window.SpeechRecognition;
+  delete window.webkitSpeechRecognition;
+  window.__starts = 0;
+};
+
 /** Schein-Sprachausgabe: Stimmen aus `window.__voices`, Sprechen endet sofort */
 export const FAKE_VOICES = () => {
   const mk = (name) => ({ name, voiceURI: `com.apple.voice.${name}`, lang: "de-DE", localService: true, default: false });

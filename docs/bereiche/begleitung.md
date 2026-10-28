@@ -502,13 +502,38 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Stücken (~300 Zeichen) holen, nacheinander über EINEN beim ersten Tippen
   freigeschalteten Abspieler (iPhone). Erste Silbe nach höchstens 1 s, sonst
   bzw. bei Fehlern liest die Stimme des Handys den Rest (`ersatz`).
-- Hören (nur Bühne, `useSpeechInput` → `aufnahme.ts`): getUserMedia +
-  MediaRecorder, Pegel alle 50 ms (`lauschen.ts`, rein): Sprechen ab ~150 ms
-  am Stück über dem Grundrauschen, Ring nach 0,4 s Stille, abgeschickt nach
-  1,2 s, nichts gesagt → nach 8 s leise aus, höchstens 60 s. Danach „denkt“
+- Hören live (seit A-026, nur Bühne, `useSpeechInput` → `ohrLive.ts`):
+  `POST /api/stimme/ohr-token` (Zugangscode, Grenzen wie `/api/hoeren`) holt
+  einen Einmal-Schlüssel `realtime_scribe` (gilt 15 Min., eine Verbindung);
+  Modell `ELEVENLABS_LIVE_MODEL` (`scribe_v2_realtime`, „aus“ = abgeschaltet),
+  im Status `stimme.live`, nie im Testmodus. Mikrofon (`core/mic`) und
+  Schlüssel gleichzeitig, Ton wird bis zur Verbindung gepuffert, dann als PCM
+  16 kHz an den Websocket (Deutsch fest, `commit_strategy=vad`, 1,2 s Stille,
+  `vad_threshold` 0,5). Protokoll nur in `echtzeitProtokoll.ts`, Browser-Teil
+  `ohrLiveBrowser.ts` (ScriptProcessor, Umrechnung auf 16 kHz). Vorläufiger
+  Text live in der Blase, Ring „Gleich schick ich’s ab“ nach 0,6 s ohne neue
+  Wörter, fertiger Satz (VAD) geht sofort an Mia, Antippen = Commit von Hand
+  (höchstens 1,5 s Warten, sonst zählt der vorläufige Text), höchstens 20 s
+  ohne neue Wörter, nichts gesagt → nach 8 s leise aus, 2 Min. am Stück.
+  Mikro-Wachhund: kommt 1,5 s kein Ton (stumme Spur), „Mikro ist gerade belegt“.
+- Reihenfolge (`ohrWeg.ts`): live → Spracherkennung des Browsers (Schlüssel
+  oder Verbindung gehen nicht; zweimal hintereinander = bis zum Neuladen) →
+  eigene Aufnahme (`aufnahme.ts`, nur ohne Browser-Erkennung oder wenn sie auf
+  dem iPhone aus ist): getUserMedia + MediaRecorder, Pegel alle 50 ms
+  (`lauschen.ts`, rein): Grundrauschen läuft immer mit (beim Sprechen
+  langsam), Sprechen ab ~150 ms deutlich darüber, Ende relativ zum
+  Sprech-Pegel, Ring nach 0,4 s, abgeschickt nach 1,2 s, Dauer-Laut höchstens
+  20 s, nichts gesagt → nach 8 s leise aus, höchstens 60 s. Danach „denkt“
   Mia, `aufnahmeVerstehen` schickt den Ton; Fehler einmal still nochmal,
   dann „Hat grad nicht geklappt. Nochmal?“; 503 → bis zum Neuladen Browser.
-- Mikro-Check mit Server-Ohr: nur „Mikrofon erlaubt“ und „Ton kommt an“.
+- Vorlesen bleibt `eleven_flash_v2_5`; zugehört wird erst nach dem Vorlesen
+  (kein Selbst-Hören), Antippen während Mia spricht = sie verstummt und hört zu.
+- Tempo (`tempo.ts`): Weg des Zuhörens (`ohr`), „Erstes Wort → Ton“ und
+  „Ende Sprechen → Antwort zu hören“ (Ziel unter 2 s); jede gesprochene Runde
+  als Zahlen-Zeile im Mikro-Protokoll („Tempo (live): Ende→Commit … ·
+  Commit→Wort … · Wort→Ton …“). Tests `tests/begleitung/ohrLive.test.ts`,
+  Durchklick `e2e/ablaeufe/ohrlive.mjs` (Websocket nachgestellt, `FAKE_ECHTZEIT`).
+- Mikro-Check mit Server-Ohr (live oder Aufnahme): nur „Mikrofon erlaubt“ und „Ton kommt an“.
 - Kosten: `recordStimme` (Zeichen, Sekunden, geschätzte Dollar) in
   `wasgibts.verbrauch`, sichtbar unter „Für Entwickler“.
 - Pinnwand-Sprachnachrichten gehen nie an ElevenLabs (Test).
