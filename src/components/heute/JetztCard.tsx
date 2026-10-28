@@ -12,13 +12,13 @@
 // Später Geladenes (Wetter, Tipps) kommt hinten dazu, solange Platz ist.
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { AlarmClock, CalendarDays, CookingPot, Gift, Heart, ListChecks, MessageCircle, ShoppingCart, Sparkles, Sunrise, Timer, Umbrella, type LucideIcon } from "lucide-react";
+import { AlarmClock, CalendarDays, CookingPot, Gift, Heart, ListChecks, MessageCircle, Refrigerator, ShoppingCart, Sparkles, Sunrise, Timer, Umbrella, type LucideIcon } from "lucide-react";
 import type { JetztTopic } from "@/lib/heute/jetztTopics";
 import { topicIcon, type TopicIcon } from "@/lib/heute/deinTag";
 import { withoutEmoji } from "@/lib/core/text";
 
 const ROSE = new Set<TopicIcon>(["Heart", "Gift"]);
-const ICON: Record<TopicIcon, LucideIcon> = { Umbrella, CalendarDays, ListChecks, ShoppingCart, CookingPot, MessageCircle, Timer, Sunrise, Sparkles, Heart, Gift, AlarmClock };
+const ICON: Record<TopicIcon, LucideIcon> = { Umbrella, CalendarDays, ListChecks, ShoppingCart, CookingPot, MessageCircle, Timer, Sunrise, Sparkles, Heart, Gift, AlarmClock, Refrigerator };
 
 const REFRESH_MS = 15 * 60_000;
 const URGENT = 90;

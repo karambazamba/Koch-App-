@@ -359,6 +359,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     demo: demoDay.tiles.length > 0,
     demoShop: demoDay.tiles.includes("einkauf"),
     weekCheck: demoDay.tiles.length || paused || (evening && routine.ruhe) ? null : weekCheckKey(data.todayIso, minutes),
+    kuehlCheck: denkt.kuehlcheck,
     tiles: visible.map((t) => t.id),
     // Abends (Tafel 98): EIN Thema über morgen – Haushalt, Kita/Schule, Essen mit Vorlauf
     evening,
@@ -367,10 +368,13 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     tomorrowDish: tomorrowPrep,
   });
   const spruchSteht = jetzt.topics[0]?.kind === "spruch";
+  // Kurz-Check „Im Haus“ zählt als der eine Hinweis des Tages – sobald er in der Jetzt-Karte steht
+  const kuehlSteht = jetzt.topics.some((t) => t.kind === "kuehlcheck");
   useEffect(() => {
     if (spruchSteht) denkt.spruchGesehen();
+    if (kuehlSteht) denkt.kuehlcheckGesehen();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- einmal, wenn er steht
-  }, [spruchSteht]);
+  }, [spruchSteht, kuehlSteht]);
   // Antippen der Jetzt-Karte = „Dein Tag“ mit dem Thema hervorgehoben (Tafel 66 B); läuft ein Timer: der Timer.
   // Wochencheck und Pause bleiben Handlungen, kein Tagesinhalt.
   const openTopic = (t: JetztTopic) => {
@@ -388,8 +392,8 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
         return openHelper("wochencheck");
       }
     }
-    // Region-Tipp und Spendentopf haben keinen Platz in „Dein Tag“ – sie öffnen ihre Seite
-    if ((t.kind === "spendentopf" || t.kind === "region") && t.target && "href" in t.target) return router.push(t.target.href);
+    // Region-Tipp, Spendentopf und Kurz-Check haben keinen Platz in „Dein Tag“ – sie öffnen ihre Seite
+    if ((t.kind === "spendentopf" || t.kind === "region" || t.kind === "kuehlcheck") && t.target && "href" in t.target) return router.push(t.target.href);
     setDayTopic({ topic: t });
   };
   const [timerOpen, setTimerOpen] = useState(false);

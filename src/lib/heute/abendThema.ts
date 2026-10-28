@@ -6,6 +6,7 @@
 //   b) Regen morgen früh mit Plan    („Morgen früh Regen.“)
 //   c) früher Termin vor 9 Uhr       („Morgen 8 Uhr Zahnarzt.“ · „Wecker auf 7?“)
 //   d) Essen mit Vorlauf             („Morgen gibt’s Gulasch.“ · „Fleisch heute …“)
+//   Sonntags: Kurz-Check „Im Haus“  („Kurzer Kühlschrank-Check?“, `vorrat/kuehlcheck.ts`)
 //   e) sonst                         („Morgen ist ruhig.“ · „Schönen Abend.“)
 // Nachts (22–6) gilt das nicht – da bleibt es bei Erinnerung/Timer. Rein.
 
@@ -13,6 +14,7 @@ import { birthdayName, eigenerJahrestag } from "@/lib/kalender/anlass";
 import { weekdayIndex } from "@/lib/kalender/model";
 import { aufMorgen, type AbendLage } from "@/lib/kalender/mitwandern";
 import type { JetztInput, JetztTopic } from "@/lib/heute/jetztTopics";
+import { kuehlThema } from "@/lib/vorrat/kuehlcheck";
 
 const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
 /** „8:00“ → „8 Uhr“, „7:30“ → „7:30“ */
@@ -77,6 +79,9 @@ export function abendThemen(x: JetztInput): JetztTopic[] {
 
   // Beispiel-Tag: kurz erklären, bevor es „ruhig“ heißt
   if (x.demo) out.push({ id: "beispiel", kind: "beispiel", title: "Das ist ein Beispiel-Tag", detail: "Probier alles aus: tippen, abhaken, verschieben", score: 24, target: null, button: null });
+
+  // Sonntags der Kurz-Check „Im Haus“ (zählt erst, wenn er wirklich steht)
+  if (x.kuehlCheck) out.push(kuehlThema(x.kuehlCheck));
 
   // e) sonst
   out.push({ id: `abend:${x.today}`, kind: "abend", title: morgen.items.length ? "Für morgen ist alles sortiert." : "Morgen ist ruhig.", detail: "Schönen Abend.", score: 1, target: href, button: null });

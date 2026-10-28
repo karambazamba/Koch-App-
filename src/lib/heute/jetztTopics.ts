@@ -11,6 +11,7 @@ import type { HomeTileId } from "@/lib/core/homeLayout";
 import type { Anlass } from "@/lib/kalender/anlass";
 import { birthdayName } from "@/lib/kalender/anlass";
 import { abendThemen, isAbend } from "@/lib/heute/abendThema";
+import { kuehlThema } from "@/lib/vorrat/kuehlcheck";
 
 export type JetztKind =
   | "erinnerung"
@@ -31,6 +32,7 @@ export type JetztKind =
   | "vorlauf"
   | "abend"
   | "wochencheck"
+  | "kuehlcheck"
   | "wetter"
   | "aufgabe"
   | "ideen"
@@ -133,6 +135,8 @@ export type JetztInput = {
   kids: boolean;
   /** „Kurzer Wochencheck?“ für diese Woche (Montag bzw. Sonntag ab 17 Uhr, nicht in Ruhe/Pause) – sonst null */
   weekCheck: string | null;
+  /** „Kurzer Kühlschrank-Check?“ (Woche = Sonntag; schon nach den Regeln von „Mia denkt mit“) – sonst null */
+  kuehlCheck?: string | null;
   /** Beispiel-Tag: ein Thema, das ihn kurz erklärt */
   demo: boolean;
   /** Sichtbare Kacheln – was sie zeigen, wiederholt die Karte nicht */
@@ -289,6 +293,7 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
   if (x.tip) add({ id: `tipp:${x.today}`, kind: "tipp", title: x.tip, detail: "Kleiner Tipp", score: 18, target: null, button: null, gentle: true });
 
   if (x.weekCheck && !night) add({ id: `wochencheck:${x.weekCheck}`, kind: "wochencheck", title: "Kurzer Wochencheck?", detail: "Sag einfach alles, ich sortiere.", score: 50, target: { action: "wochencheck" }, button: "Öffnen", gentle: true });
+  if (x.kuehlCheck && !night) add({ ...kuehlThema(x.kuehlCheck), gentle: true });
   if (x.demo) add({ id: "beispiel", kind: "beispiel", title: "Das ist ein Beispiel-Tag", detail: "Probier alles aus: tippen, abhaken, verschieben", score: 24, target: null, button: null, gentle: true, night: true });
 
   // Abends (Tafel 98): höchstens EIN Thema, nur was keine Kachel zeigt

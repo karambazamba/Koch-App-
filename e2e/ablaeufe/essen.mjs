@@ -96,6 +96,33 @@ export const imHaus = async (page, check) => {
   check(await page.getByRole("dialog").last().getByText(/^Noch da:/).waitFor({ timeout: 5000 }).then(() => true, () => false), "„Was koch ich daraus?“ öffnet Spontan kochen");
 };
 
+// Kurz-Check „Im Haus“ (Tafel 102): alle Sachen als Kacheln, antippen = weg
+// (durchgestrichen), „Fertig · 2 weg“ = aufgebraucht, Woche erledigt.
+export const kuehlcheck = async (page, check) => {
+  await family(page, "/vorrat/check");
+  check(await page.getByRole("heading", { name: "Kurz-Check", level: 1 }).isVisible(), "Seite heißt „Kurz-Check“");
+  const tiles = page.locator("[data-kuehlcheck] button");
+  check((await tiles.count()) >= 2, `Sachen als Kacheln (${await tiles.count()})`);
+  check(await page.getByRole("button", { name: "Fertig", exact: true }).isVisible(), "„Fertig“ ohne Zahl");
+  const names = [];
+  for (const i of [0, 1]) {
+    const label = await tiles.nth(i).getAttribute("aria-label");
+    names.push(label.replace(/ ist weg$/, ""));
+    await tiles.nth(i).tap();
+  }
+  check((await tiles.nth(0).getAttribute("aria-pressed")) === "true", "angetippt = weg");
+  const fertig = page.getByRole("button", { name: "Fertig · 2 weg" });
+  check(await fertig.isVisible(), "Knopf „Fertig · 2 weg“");
+  check(await page.getByRole("button", { name: "Heute nicht" }).isVisible(), "„Heute nicht“");
+  await fertig.tap();
+  await page.waitForTimeout(600);
+  const vorrat = await store(page, "wasgibts.vorrat");
+  const weg = vorrat.items.filter((p) => p.usedAt).map((p) => p.name);
+  check(names.every((n) => weg.includes(n)) && weg.length === 2, `genau die zwei sind aufgebraucht (${weg.join(", ")})`);
+  const erledigt = await store(page, "wasgibts.kuehlcheck");
+  check(Boolean(erledigt?.woche), "Woche erledigt");
+};
+
 // Essen-Seite: EIN Bereich „Im Haus“ (gehört zu 1.0). Mia stellt ihn beim
 // ersten Besuch vor; Chips (bald aufbrauchen zuerst, leicht orange), Chip
 // antippen = Sache öffnen; ＋ = mehrere auf einmal („Eier, Milch, Hack“);

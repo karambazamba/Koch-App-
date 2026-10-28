@@ -64,6 +64,7 @@ const PRECACHE_URLS = [
   "/tag",
   "/tipps",
   "/vorrat",
+  "/vorrat/check",
   "/wetter",
   "/woche/check",
   "/wochenplan",

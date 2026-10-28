@@ -12,7 +12,7 @@ import type { DayItem } from "@/lib/kalender/model";
 import type { JetztKind, JetztTopic } from "@/lib/heute/jetztTopics";
 
 /** Linien-Symbol (lucide) je Thema – statt Mias Gesicht in der Jetzt-Karte */
-export type TopicIcon = "Umbrella" | "CalendarDays" | "ListChecks" | "ShoppingCart" | "CookingPot" | "MessageCircle" | "Timer" | "Sunrise" | "Sparkles" | "Heart" | "Gift" | "AlarmClock";
+export type TopicIcon = "Umbrella" | "CalendarDays" | "ListChecks" | "ShoppingCart" | "CookingPot" | "MessageCircle" | "Timer" | "Sunrise" | "Sparkles" | "Heart" | "Gift" | "AlarmClock" | "Refrigerator";
 
 const ICONS: Partial<Record<JetztKind, TopicIcon>> = {
   wetter: "Umbrella",
@@ -35,6 +35,7 @@ const ICONS: Partial<Record<JetztKind, TopicIcon>> = {
   morgen: "Sunrise",
   ueberschneidung: "CalendarDays",
   packen: "ListChecks",
+  kuehlcheck: "Refrigerator",
 };
 
 export const topicIcon = (kind: JetztKind): TopicIcon => ICONS[kind] ?? "Sparkles";
