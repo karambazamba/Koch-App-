@@ -209,7 +209,7 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   und wird beim nächsten „online“ auf der Bühne nachgeholt (KitchenHelper).
   Tageslimit: „Für heute hab ich genug geredet. Listen und Termine gehen
   natürlich weiter.“ (`UNAVAILABLE_TEXT` in `client.ts`).
-- Modell (`modellwahl.ts`, seit vX „Mia schneller“): einmal vor dem Aufruf.
+- Modell (`modellwahl.ts`, seit v0.143 „Mia schneller“): einmal vor dem Aufruf.
   Haiku ist Standard für den Alltag (effort „low“); Sonnet für Planen,
   Rezepte, Mails, Ideen, Rat, offene Vorschläge, lange Texte, mehrere Dinge,
   den Wochencheck und kurze Antworten im laufenden großen Thema. Keine zweite
@@ -267,7 +267,7 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 
 - `HelperPanel.route`: Ist die KI bereit (`status.ready`), geht JEDE
   Nachricht an `ask` – die festen Regeln (`rules`) sind nur der Ersatz,
-  falls die KI-Anfrage scheitert. Ausnahme Sofort-Weg (seit vX): eindeutige
+  falls die KI-Anfrage scheitert. Ausnahme Sofort-Weg (seit v0.143): eindeutige
   Kurzbefehle erledigt `ask` selbst, die KI prüft im Hintergrund. Ohne KI greifen sofort die Regeln, sonst
   „Hm, das hab ich nicht verstanden.“ bzw. offline „Ich bin gerade offline –
   was du einträgst, speichere ich trotzdem.“ (`unavailableText`).
@@ -373,12 +373,16 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Stille, hört Mia still weiter (`continuous`, Neustart nur nach echtem
   Ende – auf dem iPhone also höchstens ein Systemton je Pause; im Test 1
   Neustart je Atempause). Abgeschickt wird nach 1,2 s Stille nach dem letzten
-  Wort (`STILLE_MS`, seit vX; vorher 2,5 s), beim Antippen von Mia oder bei
+  Wort (`STILLE_MS`, seit v0.143; vorher 2,5 s), beim Antippen von Mia oder bei
   „fertig“/„das war’s“, höchstens 2 Minuten. Ab 0,4 s Stille blinzelt Mia und
   ein dünner Ring läuft 0,8 s ab (`PAUSE_RING_MS`, „Gleich schick ich’s ab“).
   Spricht man innerhalb 1,5 s nach dem Abschicken weiter, hängt es an
-  (`nachklapp.ts`, siehe unten). Sagt niemand etwas, hört sie nach 8 s auf.
-- Mikro belegt (seit vX, Video 28.10.): endet eine Sitzung schneller als
+  (`nachklapp.ts`, siehe unten) – nur nach Stille; von Hand beendet oder
+  neu angefangen ist es eine neue Frage (`fuerNachklapp`). Ohne
+  Browser-Erkennung wartet die Bühne beim Öffnen kurz (höchstens 1,5 s) auf
+  den Status von Mias Ohr, statt „Spracheingabe gibt’s nicht“ zu zeigen
+  (`spracheMoeglich`). Sagt niemand etwas, hört sie nach 8 s auf.
+- Mikro belegt (seit v0.143, Video 28.10.): endet eine Sitzung schneller als
   1,5 s ohne Ton (kein onaudiostart, kein Ergebnis), startet Mia höchstens
   EINMAL still neu; danach ruhig „Mikro ist gerade belegt. Lieber
   schreiben?“ unter Mia, Knopf bereit. Mikro-Protokoll: „kein Ton, einmal
@@ -900,7 +904,7 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 - Tests: `tests/mia/denktMit.test.ts`, `tests/mia/seitenTipp.test.ts`,
   Durchklick `ersterBesuchKarte` (startseite-heim), `imHausEssen` (essen).
 
-## Mia schneller und flüssiger (vX)
+## Mia schneller und flüssiger (v0.143)
 
 Ziel: einfache Sachen in unter 1,5 s nach dem letzten Wort, bei großen
 Sachen sofort eine Reaktion.

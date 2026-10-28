@@ -9,7 +9,7 @@ import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LIVE_COMMIT_WARTEN_MS, LIVE_RATE, LIVE_RING_MS, LIVE_VERBINDEN_MS, Umrechner, liesNachricht, liveAdresse, tonNachricht, zuBase64 } from "@/lib/begleitung/echtzeitProtokoll";
 import { LIVE_WACHE_MS, ohrLiveStarten, type LiveDeps, type LiveRueck, type LiveSocket } from "@/lib/begleitung/ohrLive";
-import { ohrWeg } from "@/lib/begleitung/ohrWeg";
+import { ohrWeg, spracheMoeglich } from "@/lib/begleitung/ohrWeg";
 import { LAUT_MAX_MS, lauschSchritt, neuesLauschen, type LauschAktion } from "@/lib/begleitung/lauschen";
 import { ohrTokenHolen, stimmeStatus } from "@/lib/begleitung/stimmeServer";
 import { ACCESS_HEADER } from "@/lib/begleitung/protocol";
@@ -503,5 +503,20 @@ describe("Tempo im Mikro-Protokoll", () => {
     const u = tempoUebersicht([m, { ...m, stille: 1150, token: 400, satz: 500 }]);
     expect(u).toMatchObject({ ton: 200, bisTon: 1875 });
     expect(migrateTempo({ version: 1, messungen: [{ ...m }, { weg: "ki", sprache: true, ohr: "quatsch" }] })?.messungen.map((x) => x.ohr)).toEqual(["live", undefined]);
+  });
+});
+
+describe("Spracheingabe auf der Bühne ohne Browser-Erkennung (Fehler: „gibt’s nicht“ beim Öffnen)", () => {
+  it("Status noch unterwegs: unbekannt statt „gibt’s nicht“", () => {
+    expect(spracheMoeglich(false, true, null)).toBeNull();
+  });
+  it("Server-Ohr da: ja; Server sagt nein: nein", () => {
+    expect(spracheMoeglich(false, true, true)).toBe(true);
+    expect(spracheMoeglich(false, true, false)).toBe(false);
+  });
+  it("Browser kann es: immer ja; außerhalb der Bühne zählt nur der Browser", () => {
+    expect(spracheMoeglich(true, true, null)).toBe(true);
+    expect(spracheMoeglich(false, false, true)).toBe(false);
+    expect(spracheMoeglich(null, true, true)).toBeNull();
   });
 });

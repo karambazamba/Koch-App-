@@ -12,3 +12,12 @@ export function ohrWeg(o: { buehne: boolean; live: boolean; browser: boolean; au
   if (o.buehne && o.aufnahme) return "aufnahme";
   return "nichts";
 }
+
+/**
+ * Gibt es Spracheingabe? Browser-Erkennung reicht; auf der Bühne auch Mias Ohr
+ * vom Server. null = noch unbekannt (Status unterwegs) – dann nie vorschnell
+ * „gibt’s nicht“, sonst landet das Zuhören beim Öffnen im Tipp-Hinweis.
+ */
+export function spracheMoeglich(browser: boolean | null, buehne: boolean, server: boolean | null): boolean | null {
+  return browser !== false || !buehne ? browser : server;
+}

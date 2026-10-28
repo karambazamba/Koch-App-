@@ -54,7 +54,7 @@ import { SuggestionChips } from "@/components/begleitung/SuggestionChips";
 import { useAskAssistant } from "@/components/begleitung/useAskAssistant";
 import { useMiaSprechen } from "@/components/begleitung/useMiaSprechen";
 import { tempoBeginn } from "@/lib/begleitung/tempo";
-import { ERKENNER_VERZUG_MS, istNachklapp, jetztMs, NACHKLAPP_MS, zusammen } from "@/lib/begleitung/nachklapp";
+import { ERKENNER_VERZUG_MS, fuerNachklapp, istNachklapp, jetztMs, NACHKLAPP_MS, zusammen } from "@/lib/begleitung/nachklapp";
 import { useChatRules } from "@/components/begleitung/useChatRules";
 import { useMarketChat } from "@/components/begleitung/useMarketChat";
 import { useSpontanChat } from "@/components/begleitung/useSpontanChat";
@@ -308,10 +308,12 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   // danach weiter, wird die eben gesendete Frage zurückgezogen und beides zusammen geschickt
   const gesendet = useRef<{ text: string; am: number } | null>(null);
   const nachklapp = useRef<boolean | null>(null);
+  /** Von Hand beendet (Mia angetippt): die Frage ist fertig, nichts hängt mehr an */
+  const vonHand = useRef(false);
   /** Direkt nach einer gesprochenen Frage hört Mia kurz weiter (Vorlesen an: so lange wartet das Vorlesen) */
   const [nachhoeren, setNachhoeren] = useState(false);
-  const sprachSenden = (t: string) => {
-    gesendet.current = { text: t, am: jetztMs() };
+  const sprachSenden = (t: string, fertig = false) => {
+    gesendet.current = fuerNachklapp(t, jetztMs(), fertig);
     submit(t, true);
     weiterHoeren.current = true;
     setNachhoeren(true);
@@ -325,6 +327,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     },
     onEnd: (t) => {
       setInput("");
+      const fertig = vonHand.current;
+      vonHand.current = false;
       const fortsetzung = nachklapp.current === true ? gesendet.current : null;
       nachklapp.current = null;
       if (!t || !mounted.current) return;
@@ -338,7 +342,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
         setWartend((w) => `${w} ${t}`.trim());
         return;
       }
-      sprachSenden(t);
+      sprachSenden(t, fertig);
     },
   });
 
@@ -353,8 +357,13 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       return;
     }
     if (speech.listening) {
+      vonHand.current = true;
       speech.stop();
     } else {
+      // Von Hand neu angefangen = neue Frage, keine Fortsetzung der letzten
+      gesendet.current = null;
+      nachklapp.current = null;
+      vonHand.current = false;
       // Wer spricht, braucht keine Beispiele mehr
       setSuggestionsGone(true);
       stopSpeaking();

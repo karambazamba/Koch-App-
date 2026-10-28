@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 import { STILLE_MS, WARTEN_AB_MS } from "@/lib/begleitung/mitschrift";
 import { PAUSE_RING_MS } from "@/lib/begleitung/stage";
-import { ERKENNER_VERZUG_MS, istNachklapp, NACHKLAPP_MS, zusammen } from "@/lib/begleitung/nachklapp";
+import { ERKENNER_VERZUG_MS, fuerNachklapp, istNachklapp, NACHKLAPP_MS, zusammen } from "@/lib/begleitung/nachklapp";
 import { ersterSatz, MHM, MHM_AB_MS, mhmFaellig, nochZuSagen } from "@/lib/begleitung/satzweise";
 import { stueckeFuerStimme } from "@/lib/begleitung/vorlesText";
 import { FESTE_SAETZE, festerSatz } from "@/lib/begleitung/stimmeProtokoll";
@@ -108,5 +108,18 @@ describe("Mias Stimme satzweise", () => {
     expect(stueckeFuerStimme("Jo. Morgen ab 14 Uhr frei. Soll ich den Friseur eintragen?")).toEqual(["Jo.", "Morgen ab 14 Uhr frei. Soll ich den Friseur eintragen?"]);
     expect(stueckeFuerStimme("")).toEqual([]);
     expect(stueckeFuerStimme("Nur ein Satz")).toEqual(["Nur ein Satz"]);
+  });
+});
+
+describe("Denkpause nur nach Stille, nicht nach Antippen (Fehler: 5 Runden wurden zu einer)", () => {
+  it("von Hand beendet: nichts gemerkt, die nächste Aufnahme ist eine neue Frage", () => {
+    const g = fuerNachklapp("Notier dir Runde 1", 10_000, true);
+    expect(g).toBeNull();
+    expect(istNachklapp(g?.am, 10_300)).toBe(false);
+  });
+  it("nach Stille abgeschickt: gemerkt, kurz danach hängt es an", () => {
+    const g = fuerNachklapp("Was gibt es", 10_000, false);
+    expect(g).toEqual({ text: "Was gibt es", am: 10_000 });
+    expect(istNachklapp(g?.am, 10_300)).toBe(true);
   });
 });

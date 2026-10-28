@@ -1,7 +1,7 @@
 // Mias Stimme und Ohr über den Server (ElevenLabs) – der Server wird hier
 // nachgestellt (Status, Ton, erkannter Text), der echte Anbieter nie gerufen:
 // „Wer spricht?“ in den Einstellungen, Probe hören über den Server, Stimme des
-// Handys ohne Server, Antwort vorlesen mit stillem Rückfall aufs Handy,
+// Handys ohne Server, Antwort vorlesen (Fehler: still nochmal, erst nach dem 2. das Handy),
 // Zuhören mit eigener Aufnahme (letzter Ersatz seit A-026: ohne Live und ohne
 // Spracherkennung im Browser; Satzende an der Stille).
 import { BASE, FAKE_VOICES, MIKRO_REGLER, OHNE_ERKENNUNG, hello, miaTippen, seedFamily, tippenFeld } from "../lib.mjs";
@@ -71,9 +71,11 @@ export const stimmeServer = async (page, check) => {
   check(!(await page.getByRole("radiogroup", { name: "Stimme" }).count()), "bei Mias Stimme keine Handy-Stimmenliste");
   await page.getByRole("button", { name: "Probe hören" }).click();
   await page.waitForTimeout(800);
-  const probe = log.stimme.find((s) => s.method === "POST");
-  check(Boolean(probe), "Probe hören: Ton vom Server");
-  check(probe && JSON.parse(probe.body).text.includes("18 Uhr 30"), "Text bereinigt (18:30 → 18 Uhr 30)");
+  // Satzweise (seit A-019): erster Satz als eigenes Stück, der Rest danach – zusammen die ganze Probe
+  const probe = log.stimme.filter((s) => s.method === "POST").map((s) => JSON.parse(s.body).text);
+  check(probe.length > 0, "Probe hören: Ton vom Server");
+  const probeText = probe.join(" ");
+  check(probeText.includes("18 Uhr 30") && !probeText.includes("18:30"), "Text bereinigt (18:30 → 18 Uhr 30)");
   check((await page.evaluate(() => window.__gesagt.length)) === 0, "Handy-Stimme schweigt, solange Mias Stimme kommt");
 
   // Stimme des Handys: Liste wie bisher, Probe ohne Server
@@ -97,14 +99,19 @@ export const stimmeServer = async (page, check) => {
   await page.waitForTimeout(3500);
   check(log.stimme.length > vorAntwort, "Antwort mit Mias Stimme vorgelesen");
 
+  // Server-Stimme kaputt (A-035): erst still einmal nachladen, nach dem 2. Fehler
+  // spricht das Handy bis Gesprächsende – mit kleinem Hinweis unter Mia
   await page.unrouteAll({ behavior: "ignoreErrors" });
-  await serverMitStimme(page, { stimmeKaputt: true });
+  const kaputt = await serverMitStimme(page, { stimmeKaputt: true });
   await page.evaluate(() => (window.__gesagt.length = 0));
   const feld = await tippenFeld(page);
   await feld.fill("Und morgen?");
   await feld.press("Enter");
   await page.waitForTimeout(4000);
-  check((await page.evaluate(() => window.__gesagt.length)) > 0, "Server-Stimme kaputt: still mit der Stimme des Handys");
+  check(kaputt.stimme.filter((s) => s.method === "POST").length >= 2, "Server-Stimme kaputt: erst still nochmal geladen");
+  check((await page.evaluate(() => window.__gesagt.length)) > 0, "nach dem 2. Fehler: Stimme des Handys");
+  const protokoll = await page.evaluate(() => JSON.parse(localStorage.getItem("wasgibts.mikroprotokoll") ?? "{}").entries?.map((e) => e.text) ?? []);
+  check(protokoll.some((l) => l.startsWith("Stimme: still nochmal")) && protokoll.some((l) => l.startsWith("Stimme: Ersatz Handy-Stimme bis Gesprächsende")), "Mikro-Protokoll: still nochmal, dann Handy mit Grund");
 };
 
 export const ohrServer = async (page, check) => {

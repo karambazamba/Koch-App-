@@ -31,9 +31,10 @@ import { aufnahmeStarten, type Aufnahme } from "@/lib/begleitung/aufnahme";
 import { aufnahmeVerstehen, liveGeklappt, liveGescheitert, liveOhr, serverOhr } from "@/lib/begleitung/stimmeClient";
 import { ohrLiveStarten } from "@/lib/begleitung/ohrLive";
 import { liveDeps } from "@/lib/begleitung/ohrLiveBrowser";
-import { ohrWeg } from "@/lib/begleitung/ohrWeg";
+import { ohrWeg, spracheMoeglich } from "@/lib/begleitung/ohrWeg";
 import { tempoOhr } from "@/lib/begleitung/tempo";
 import { serverStimme, serverStimmeJetzt } from "@/lib/begleitung/zugang";
+import type { StimmeStatus } from "@/lib/begleitung/stimmeProtokoll";
 import { WARTEN_AB_MS } from "@/lib/begleitung/mitschrift";
 import { BELEGT, NICHT_GEKLAPPT, NOCHMAL, Spracherkennung, remember, stripStopWord, vorDemZuhoeren, type Anzeige, type RecognitionClass } from "@/lib/begleitung/spracherkennung";
 
@@ -42,6 +43,9 @@ function speechRecognitionClass(): RecognitionClass | null {
   const w = window as unknown as { SpeechRecognition?: RecognitionClass; webkitSpeechRecognition?: RecognitionClass };
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
+
+/** Bühne: so lange höchstens auf den Stand von Mias Ohr warten, bevor sie zuhört (sonst der Browser) */
+const STATUS_WARTEN_MS = 1500;
 
 const noopSubscribe = () => () => {};
 
@@ -77,9 +81,10 @@ export { stripStopWord };
 
 export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = false }: Options) {
   const browserKann = useSpeechSupported();
-  /** Bühne: Mias Ohr vom Server (live oder Aufnahme) geht auch ohne Spracherkennung im Browser */
-  const [serverKann, setServerKann] = useState(false);
-  const supported = browserKann || (buehne && serverKann) ? true : browserKann;
+  /** Bühne: Mias Ohr vom Server (live oder Aufnahme) geht auch ohne Spracherkennung im Browser (null = noch unbekannt) */
+  const [serverKann, setServerKann] = useState<boolean | null>(null);
+  // Ohne Browser-Erkennung auf der Bühne: unbekannt, bis der Status da ist – nie vorschnell „gibt’s nicht“
+  const supported = spracheMoeglich(browserKann, buehne, serverKann);
   /** Mikro gesperrt (geräteweit) – Knopf grau, Tipp öffnet die Hilfe */
   const blocked = useSyncExternalStore(micSubscribe, () => micState().block !== null, () => false);
   const [listening, setListening] = useState(false);
@@ -305,13 +310,37 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
     };
   }, [buehne, beginOhr]);
 
+  const waehlen = useCallback(
+    (stand: StimmeStatus | null) => {
+      const weg = ohrWeg({ buehne, live: liveOhr(stand), browser: Boolean(speechRecognitionClass()), aufnahme: serverOhr(stand) });
+      if (weg === "live") return beginLive();
+      if (weg === "aufnahme") return beginOhr();
+      erk().begin();
+    },
+    [buehne, beginLive, beginOhr, erk],
+  );
+
   const begin = useCallback(() => {
-    const stand = buehne ? serverStimmeJetzt() : null;
-    const weg = ohrWeg({ buehne, live: liveOhr(stand), browser: Boolean(speechRecognitionClass()), aufnahme: serverOhr(stand) });
-    if (weg === "live") return beginLive();
-    if (weg === "aufnahme") return beginOhr();
-    erk().begin();
-  }, [buehne, beginLive, beginOhr, erk]);
+    if (!buehne) return erk().begin();
+    const bekannt = serverStimmeJetzt();
+    if (bekannt) return waehlen(bekannt);
+    // Bühne eben erst auf, Stand noch nicht gemerkt: kurz auf den Status warten –
+    // sonst ginge es am Ohr vom Server vorbei (ohne Browser-Erkennung: gar nicht)
+    let offen = true;
+    const weiter = (s: StimmeStatus | null) => {
+      if (!offen) return;
+      offen = false;
+      clearTimeout(t);
+      warteRef.current = () => {};
+      waehlen(s);
+    };
+    const t = setTimeout(() => weiter(serverStimmeJetzt()), STATUS_WARTEN_MS);
+    warteRef.current = () => {
+      offen = false;
+      clearTimeout(t);
+    };
+    void serverStimme().then(weiter, () => weiter(null));
+  }, [buehne, erk, waehlen]);
 
   /** Zuhören starten – gesperrt: Hilfe; allererstes Mal: erst „Darf ich zuhören?“ (im Tipp aufrufen) */
   const start = useCallback(

@@ -29,3 +29,12 @@ export function zusammen(vorher: string, nachher: string): string {
   if (n.toLowerCase().startsWith(v.toLowerCase())) return n;
   return `${v.replace(/[.!?]+$/, "")} ${n}`;
 }
+
+/**
+ * Abgeschickte Frage für eine mögliche Fortsetzung merken. Von Hand beendet
+ * (Mia angetippt) ist sie fertig: nichts hängt mehr an, die nächste Aufnahme
+ * ist eine neue Frage.
+ */
+export function fuerNachklapp(text: string, am: number, vonHand: boolean): { text: string; am: number } | null {
+  return vonHand ? null : { text, am };
+}
