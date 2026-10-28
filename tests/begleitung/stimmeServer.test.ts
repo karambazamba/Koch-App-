@@ -5,7 +5,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { aufnahmeHoeren, festenSatzSprechen, stimmeSetup, stimmeStatus, textSprechen } from "@/lib/begleitung/stimmeServer";
+import { aufnahmeHoeren, festenSatzSprechen, stimmeSetup, stimmeStatus, textSprechen, vorwaermen } from "@/lib/begleitung/stimmeServer";
 import { FESTE_SAETZE, GERAET_HEADER, STIMME_GRENZEN, ZEICHEN_HEADER, festerSatz } from "@/lib/begleitung/stimmeProtokoll";
 import { lauschSchritt, neuesLauschen, pegelVon, type LauschAktion } from "@/lib/begleitung/lauschen";
 import { addStimme, costSummary } from "@/lib/begleitung/usage";
@@ -298,5 +298,34 @@ describe("Kosten, Mikro-Check, Pinnwand", () => {
     const dateien = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? dateien(join(dir, e.name)) : [join(dir, e.name)]));
     const treffer = [...dateien("src/lib"), ...dateien("src/components"), ...dateien("src/app")].filter((f) => /process\.env\.ELEVENLABS/.test(readFileSync(f, "utf8")));
     expect(treffer).toEqual(["src/lib/begleitung/stimmeServer.ts"]);
+  });
+});
+
+describe("Vorwärmen (A-035): kein Sprechen, kein Schlüssel nach draußen", () => {
+  const warm = (headers: Record<string, string> = { [ACCESS_HEADER]: "sonne" }) => new Request("http://localhost/api/stimme?warm=1", { headers });
+
+  it("öffnet nur die Verbindung (HEAD ohne Schlüssel), kein Ton, 204", async () => {
+    echt();
+    const { abruf, calls } = anbieter();
+    const r = await vorwaermen(warm(), abruf);
+    expect(r.status).toBe(204);
+    expect(calls).toHaveLength(1);
+    expect(calls[0].url).toBe("https://api.elevenlabs.io/");
+    expect(calls[0].init.method).toBe("HEAD");
+    expect(JSON.stringify(calls[0].init)).not.toContain("test-stimme");
+    expect(calls[0].url).not.toContain("text-to-speech");
+  });
+
+  it("Zugangscode gilt, ohne Schlüssel „aus“, Anbieter weg = trotzdem 204", async () => {
+    echt();
+    const { abruf, calls } = anbieter();
+    expect((await vorwaermen(warm({}), abruf)).status).toBe(401);
+    expect(calls).toHaveLength(0);
+    const kaputt = vi.fn(async () => {
+      throw new Error("weg");
+    }) as unknown as typeof fetch;
+    expect((await vorwaermen(warm(), kaputt)).status).toBe(204);
+    vi.stubEnv("ELEVENLABS_API_KEY", "");
+    expect((await vorwaermen(warm(), abruf)).status).toBe(503);
   });
 });

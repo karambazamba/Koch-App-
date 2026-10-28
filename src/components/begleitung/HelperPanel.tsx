@@ -24,6 +24,7 @@ import { isRegisteredUndo, pushUndo } from "@/lib/core/undo";
 import { useAssistantStatus } from "@/lib/begleitung/client";
 import { setAvatarFlag, triggerAvatar } from "@/lib/core/avatarState";
 import { shouldRead, stopSpeaking, unlockSpeech, useSpeakingId, useSpeechSettings } from "@/lib/begleitung/speech";
+import { useStimmeGespraech, useStimmeHinweis, useStimmeWartet } from "@/lib/begleitung/stimmeClient";
 import type { AssistantData } from "@/lib/begleitung/ops";
 import { textFieldFocused, useKeyboardInset } from "@/lib/core/useMobileKeyboard";
 import { TIPPEN_ZU_MS, tippenSchliessen } from "@/lib/begleitung/tippModus";
@@ -135,8 +136,12 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
 
   const { busy, streaming, ask, notUnderstood, zurueckziehen, sofortAktiv } = useAskAssistant({ data, today, ready, chat, setChat, setInput, setAdjusting, pantry, shopping, tipStore });
 
-  // Avatar der Begleitung: denkt, solange die Antwort lädt (noch kein Text da) …
-  const thinking = busy && !streaming;
+  // Ein Gespräch = Bühne auf bis zu: eine Stimme, Status gemerkt, Verbindung vorgewärmt (A-035)
+  useStimmeGespraech(shouldRead(speechSettings.mode, true) && speechSettings.quelle !== "handy");
+  const stimmeWartet = useStimmeWartet();
+  const stimmeHinweis = useStimmeHinweis();
+  // Avatar der Begleitung: denkt, solange die Antwort lädt (noch kein Text da) oder Mias erste Silbe noch unterwegs ist …
+  const thinking = (busy && !streaming) || stimmeWartet;
   useEffect(() => {
     if (!thinking) return;
     setAvatarFlag("denken", true);
@@ -491,7 +496,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     if (!speech.listening) toggleMic();
   };
   // Mikro belegt bzw. hat nicht geklappt: der ruhige Satz statt des Hinweises, „Lieber schreiben“ steht darunter
-  const hint = done ? "Erledigt" : state === "warten" && speech.error ? speech.error : stageHint(state, name, userTurns === 0);
+  const hint = done ? "Erledigt" : state === "warten" && speech.error ? speech.error : (stimmeHinweis ?? stageHint(state, name, userTurns === 0));
   const mia = <StageMia state={state} size={layout.size} hint={layout.field && !done ? undefined : speech.wartet ? "Gleich schick ich’s ab" : hint} label={stageLabel(state, mic)} done={done} pause={speech.wartet} onTap={tapMia} />;
 
   return (

@@ -500,8 +500,29 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 - App `stimmeClient.ts`: `speak()` (speech.ts) nimmt bei „Mias Stimme“
   (`wasgibts.vorlesen.quelle`, Standard `mia`) den Server: Antwort in
   Stücken (~300 Zeichen) holen, nacheinander über EINEN beim ersten Tippen
-  freigeschalteten Abspieler (iPhone). Erste Silbe nach höchstens 1 s, sonst
-  bzw. bei Fehlern liest die Stimme des Handys den Rest (`ersatz`).
+  freigeschalteten Abspieler (iPhone).
+- Eine Stimme je Gespräch (seit A-035; Gespräch = Bühne auf bis zu,
+  `stimmeGespraech`/`useStimmeGespraech` in `HelperPanel`): Der Status
+  (`stimme.sprechen`) wird beim Öffnen der App (`MiaButton`) und der Bühne
+  einmal geholt und gemerkt (`serverStimmeJetzt`); ist „sprechen“ bekannt,
+  geht es ohne Warten zu ElevenLabs, sonst höchstens 2,5 s auf den Status.
+  Erste Silbe bis `ersteSilbeMs` = 2,5 s; solange zeigt die Bühne das
+  Denk-Zeichen (`useStimmeWartet` → Zustand „überlegen“). Klappt es nicht
+  (Status/erste Silbe zu spät, Fehler-Code, Abspielen), bleibt die Antwort als
+  Text stehen und Mia lädt still einmal nach; erst nach 2 Fehlern in Folge
+  spricht für den Rest des Gesprächs die Stimme des Handys, mit kleinem
+  Hinweis unter Mia „Netz wackelt, ich sprech kurz mit Handy-Stimme.“ (6 s,
+  `useStimmeHinweis`). Bühne zu = Fehler vergessen, nächstes Mal wieder Mias
+  Stimme. Mikro-Protokoll: „Stimme: still nochmal (<Grund>)“, „Stimme: Ersatz
+  Handy-Stimme bis Gesprächsende (<Grund>)“, ohne Fehler (nicht eingerichtet,
+  Ton nicht freigeschaltet) einmal je Gespräch; Gründe nur Technik („Status zu
+  spät“, „erste Silbe zu spät“, „Fehler 502“, „Fehler Netz“, „Abspielen“).
+- Vorwärmen (A-035): Bühne auf (mit Vorlesen über Mias Stimme) → `GET
+  /api/stimme?warm=1` beim eigenen Server (höchstens einmal je Minute). Der
+  Server (`vorwaermen`) prüft Zugangscode und eine kleine Grenze je Adresse,
+  weckt die Funktion und öffnet mit einem HEAD-Abruf OHNE Schlüssel die
+  Verbindung zu ElevenLabs (Namensauflösung, TLS) – kein Sprechen, kein
+  Kontingent, zählt nicht zum Tageslimit; Antwort 204.
 - Hören live (seit A-026, nur Bühne, `useSpeechInput` → `ohrLive.ts`):
   `POST /api/stimme/ohr-token` (Zugangscode, Grenzen wie `/api/hoeren`) holt
   einen Einmal-Schlüssel `realtime_scribe` (gilt 15 Min., eine Verbindung);
@@ -934,7 +955,8 @@ Sachen sofort eine Reaktion.
   Uhrzeiten, Abkürzungen trennen nicht), der Rest nahtlos angehängt
   (`speak({ anhaengen })`, `nochZuSagen`). Mias Stimme vom Server: erster
   Satz als eigenes Stück (`stueckeFuerStimme`).
-- **Sofort reagieren**: nach dem Abschicken „denkt“ Mia (Augen, Punkte); bei
+- **Sofort reagieren**: nach dem Abschicken „denkt“ Mia (Augen, Punkte), auch
+  solange Mias erste Silbe unterwegs ist (bis 2,5 s, A-035); bei
   > 1,2 s ohne Antwort einmal „Mhm.“ (`mhmFaellig`; nie beim Sofort-Weg, nie
   während sie zuhört, nur wenn vorgelesen wird). „Mhm.“ und die
   Bestätigungen sind feste Sätze (`FESTE_SAETZE`, zwischengespeichert).
@@ -949,7 +971,11 @@ Sachen sofort eine Reaktion.
   Modell), gestreamt, satzweise; Standard „Mias Stimme“, wenn eingerichtet,
   sonst wie bisher die Stimme des Handys; „Probe hören“ unter Einstellungen →
   Mia (Stimme).
-- Tests: `tests/begleitung/schneller.test.ts` (eine Runde, Prüfung nach dem
+- Tests: `tests/begleitung/stimmeGespraech.test.ts` (A-035: langsamer
+  Status 800 ms, erste Silbe 2 s, ein Fehler still nachgeladen, zwei Fehler →
+  Handy mit Hinweis bis Gesprächsende, Gründe im Mikro-Protokoll,
+  Vorwärmen), `stimmeServer.test.ts` (Vorwärmen ohne Schlüssel/Sprechen),
+  `tests/begleitung/schneller.test.ts` (eine Runde, Prüfung nach dem
   Sofort-Weg, Kontext −40 %, Tempo), `fluessig.test.ts` (Stille, Denkpause,
   erster Satz vor dem Ende, „Mhm“ einmal, satzweise), `sofortPruefstand.test.ts`,
   `modellwahl.test.ts` (kein Doppelaufruf), `spracherkennung.test.ts`

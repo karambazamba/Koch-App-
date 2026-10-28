@@ -21,8 +21,8 @@ export const STIMME_GRENZEN = {
   aufnahmeMs: 60_000,
   /** Größte Aufnahme in Bytes (60 s Sprache sind weit darunter) */
   audioBytes: 3_000_000,
-  /** So lange darf die erste Silbe dauern, sonst spricht die Stimme des Handys */
-  ersteSilbeMs: 1000,
+  /** So lange darf die erste Silbe (und ein unbekannter Status) dauern; solange zeigt die Bühne das Denk-Zeichen */
+  ersteSilbeMs: 2500,
 };
 
 /** Was die App über die Server-Stimme wissen muss (Teil des KI-Status) */

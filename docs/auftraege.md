@@ -88,6 +88,7 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 | A-019 | Mia im Gespräch deutlich schneller und flüssiger (Messen, Stille 1,2 s, Sofort-Weg, eine Runde, sofort sprechen, „Mhm“, schlanker Kontext, ElevenLabs schnell; Nachtrag: Sofort-Regeln für Kurzsätze ≥ 40 Prüfstand-Sätze/98 %, Mikro-Wachhund höchstens ein Neustart + „Mikro ist gerade belegt“) | – | in Arbeit |
 | A-020 | Neue Aufgabe & Termin – ein Feld, Familie · Ich · Arbeit (neuer Raum „Ich“; ersetzt „Neue Aufgabe / neuer Termin – ein Feld, fertig“ und beide Nachträge) | `tafel-114.png` | in Arbeit |
 | A-026 | Nachtrag zu A-019 (VORRANG): Mia hört live über ElevenLabs – Text beim Sprechen, Ende von selbst | – | in Arbeit |
+| A-035 | Nachtrag zu A-019: Mias Stimme bleibt Mias Stimme (Status gemerkt, erste Silbe 2,5 s mit Denk-Zeichen, kein Wechsel zur Handy-Stimme vor 2 Fehlern in Folge, Vorwärmen, Gründe im Mikro-Protokoll) | – | in Arbeit |
 
 ## Offene Punkte (ohne eigenen Auftrag)
 

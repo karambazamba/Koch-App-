@@ -2,8 +2,9 @@
 
 // Mias Stimme und Ohr vom Server (ElevenLabs) in der App. Vorlesen: Antwort in
 // Stücken holen und nacheinander abspielen; feste Sätze kommen aus dem
-// Zwischenspeicher. Kommt die erste Silbe nicht in ~1 s (oder ist nichts
-// eingerichtet), liest still die Stimme des Handys weiter (`ersatz`).
+// Zwischenspeicher. Innerhalb eines Gesprächs bleibt es Mias Stimme: erste
+// Silbe bis 2,5 s (Denk-Zeichen), Fehler still einmal nachladen, erst nach
+// zwei Fehlern in Folge das Handy bis die Bühne zugeht (`ersatz`, A-035).
 // Zuhören live (`ohrLive.ts`): hier nur der Einmal-Schlüssel vom eigenen Server
 // und ob es geht. Ersatz ganz hinten: die eigene Aufnahme (`aufnahme.ts`) geht
 // an `/api/hoeren`, Text kommt zurück. Klappt es nicht, einmal still nochmal,
@@ -14,8 +15,10 @@ import { now, toIsoDate } from "@/lib/core/now";
 import { useEinwilligungen } from "@/lib/datenschutz/einwilligung";
 import { recordStimme } from "@/lib/begleitung/usage";
 import { stueckeFuerStimme } from "@/lib/begleitung/vorlesText";
-import { accessHeaders, deviceId, serverStimme } from "@/lib/begleitung/zugang";
-import { GERAET_HEADER, HOEREN_ENDPOINT, OHR_TOKEN_ENDPOINT, STIMME_ENDPOINT, STIMME_GRENZEN, ZEICHEN_HEADER, festerSatz } from "@/lib/begleitung/stimmeProtokoll";
+import { accessHeaders, deviceId, serverStimme, serverStimmeJetzt } from "@/lib/begleitung/zugang";
+import { micLog } from "@/lib/core/micLog";
+import { useExternalStore } from "@/lib/core/useExternalStore";
+import { GERAET_HEADER, HOEREN_ENDPOINT, OHR_TOKEN_ENDPOINT, STIMME_ENDPOINT, STIMME_GRENZEN, ZEICHEN_HEADER, festerSatz, type StimmeStatus } from "@/lib/begleitung/stimmeProtokoll";
 
 /** Kleinste stille WAV-Datei – zum Freischalten der Wiedergabe beim ersten Tippen */
 const STILL = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
@@ -44,6 +47,7 @@ let abbrechen: (() => void) | null = null;
 /** Vorlesen vom Server sofort beenden */
 export function serverStimmeStoppen() {
   lauf++;
+  setWartet(false);
   abbrechen?.();
   abbrechen = null;
   try {
@@ -55,29 +59,168 @@ export function serverStimmeStoppen() {
 
 const heute = () => toIsoDate(now());
 
+// --- Ein Gespräch, eine Stimme (A-035) ---------------------------------------
+// Gespräch = Bühne auf bis zu. Klappt Mias Stimme einmal nicht, bleibt die
+// Antwort als Text stehen und Mia lädt still einmal nach (Denk-Zeichen auf der
+// Bühne). Erst nach zwei Fehlern in Folge spricht für den Rest des Gesprächs
+// das Handy, mit kleinem Hinweis. Jeder Ersatz steht mit Grund im Mikro-Protokoll.
+
+/** Nach so vielen Fehlern in Folge spricht das Handy bis zum Ende des Gesprächs */
+const FEHLER_BIS_HANDY = 2;
+/** Kleiner Hinweis unter Mia, wenn das Handy übernimmt (so lange sichtbar) */
+export const HANDY_HINWEIS = "Netz wackelt, ich sprech kurz mit Handy-Stimme.";
+const HINWEIS_MS = 6000;
+/** Vorwärmen höchstens so oft (Bühne mehrmals kurz hintereinander auf) */
+const WARM_ABSTAND_MS = 60_000;
+
+let fehlerInFolge = 0;
+let handyBisEnde = false;
+let hinweis: string | null = null;
+let hinweisTimer: ReturnType<typeof setTimeout> | null = null;
+/** Mia wartet auf ihre erste Silbe (Denk-Zeichen statt Stille) */
+let wartet = false;
+/** Gründe ohne Fehler (nicht eingerichtet …) nur einmal je Gespräch ins Protokoll */
+const gemeldet = new Set<string>();
+let warmAm = -Infinity;
+const lageListeners = new Set<() => void>();
+const lageGeaendert = () => lageListeners.forEach((l) => l());
+
+function setWartet(on: boolean) {
+  if (wartet === on) return;
+  wartet = on;
+  lageGeaendert();
+}
+
+function setHinweis(text: string | null) {
+  if (hinweisTimer) clearTimeout(hinweisTimer);
+  hinweisTimer = text ? setTimeout(() => setHinweis(null), HINWEIS_MS) : null;
+  hinweis = text;
+  lageGeaendert();
+}
+
+/** Neues bzw. beendetes Gespräch: wieder Mias Stimme, Fehler vergessen */
+function gespraechZuruecksetzen() {
+  fehlerInFolge = 0;
+  handyBisEnde = false;
+  gemeldet.clear();
+  setHinweis(null);
+}
+
+/**
+ * Ein Versuch ist gescheitert. true = still einmal nachladen; false = ab jetzt
+ * (bis die Bühne zugeht) die Stimme des Handys, mit Hinweis.
+ */
+function fehlschlag(grund: string): boolean {
+  fehlerInFolge++;
+  if (fehlerInFolge < FEHLER_BIS_HANDY) {
+    micLog(`Stimme: still nochmal (${grund})`);
+    return true;
+  }
+  handyBisEnde = true;
+  micLog(`Stimme: Ersatz Handy-Stimme bis Gesprächsende (${grund})`);
+  setHinweis(HANDY_HINWEIS);
+  return false;
+}
+
+/** Ersatz ohne Fehler (nichts eingerichtet, Ton nicht freigeschaltet) – einmal je Gespräch melden */
+function ohneFehler(grund: string) {
+  if (gemeldet.has(grund)) return;
+  gemeldet.add(grund);
+  micLog(`Stimme: Ersatz Handy-Stimme (${grund})`);
+}
+
+/**
+ * Verbindung vorwärmen: kleiner Abruf beim eigenen Server (`?warm=1`), der
+ * nur die Verbindung zum Anbieter öffnet – kein Sprechen, kein Kontingent.
+ */
+async function vorwaermen() {
+  const s = await serverStimme().catch(() => null);
+  if (!s?.sprechen || now().getTime() - warmAm < WARM_ABSTAND_MS) return;
+  warmAm = now().getTime();
+  try {
+    await fetch(`${STIMME_ENDPOINT}?warm=1`, { cache: "no-store", headers: accessHeaders() });
+  } catch {
+    // nur Tempo – ohne geht es auch
+  }
+}
+
+/**
+ * Bühne geht auf: Gespräch beginnt (Mias Stimme, Fehler vergessen), Status
+ * holen und merken, Verbindung vorwärmen. Zurück: Gespräch zu Ende.
+ */
+export function stimmeGespraech(vorlesen: boolean): () => void {
+  gespraechZuruecksetzen();
+  if (vorlesen) void vorwaermen();
+  else void serverStimme().catch(() => null);
+  return gespraechZuruecksetzen;
+}
+
+/** Für die Bühne: Gespräch an Auf/Zu der Bühne binden */
+export function useStimmeGespraech(vorlesen: boolean) {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => stimmeGespraech(vorlesen), []);
+}
+
+const lageAbo = (l: () => void) => {
+  lageListeners.add(l);
+  return () => {
+    lageListeners.delete(l);
+  };
+};
+
+/** Wartet Mia auf ihre erste Silbe? (Bühne zeigt dann das Denk-Zeichen) */
+export function useStimmeWartet(): boolean {
+  return useExternalStore(lageAbo, () => wartet, () => false);
+}
+
+/** Hinweis von eben (Handy übernimmt), sonst null */
+export const stimmeHinweisJetzt = () => hinweis;
+
+/** Kleiner Hinweis unter Mia (Handy übernimmt), sonst null */
+export function useStimmeHinweis(): string | null {
+  return useExternalStore(lageAbo, stimmeHinweisJetzt, () => null);
+}
+
 type Stueck = { blob: Blob; zeichen: number };
+
+/** Fehler mit Grund fürs Mikro-Protokoll (nur Technik: Zeit, Status-Code) */
+class StimmeFehler extends Error {}
+const grundVon = (e: unknown) => (e instanceof StimmeFehler ? e.message : "Fehler");
 
 /** Ein Stück Ton holen: fester Satz aus dem Zwischenspeicher, sonst frisch */
 async function holen(text: string, v: string, signal: AbortSignal): Promise<Stueck> {
   const nr = festerSatz(text);
-  const r =
-    nr >= 0
-      ? await fetch(`${STIMME_ENDPOINT}?satz=${nr}&v=${encodeURIComponent(v)}`, { signal })
-      : await fetch(STIMME_ENDPOINT, {
-          method: "POST",
-          signal,
-          cache: "no-store",
-          headers: { "content-type": "application/json", ...accessHeaders() },
-          body: JSON.stringify({ text, geraet: deviceId() }),
-        });
-  if (!r.ok) throw new Error("stimme");
-  return {
-    blob: await r.blob(),
-    zeichen: Number(r.headers.get(ZEICHEN_HEADER)) || 0,
-  };
+  let r: Response;
+  try {
+    r =
+      nr >= 0
+        ? await fetch(`${STIMME_ENDPOINT}?satz=${nr}&v=${encodeURIComponent(v)}`, { signal })
+        : await fetch(STIMME_ENDPOINT, {
+            method: "POST",
+            signal,
+            cache: "no-store",
+            headers: { "content-type": "application/json", ...accessHeaders() },
+            body: JSON.stringify({ text, geraet: deviceId() }),
+          });
+  } catch {
+    throw new StimmeFehler("Fehler Netz");
+  }
+  if (!r.ok) throw new StimmeFehler(`Fehler ${r.status}`);
+  try {
+    return { blob: await r.blob(), zeichen: Number(r.headers.get(ZEICHEN_HEADER)) || 0 };
+  } catch {
+    throw new StimmeFehler("Fehler Netz");
+  }
 }
 
-const bisSpaetestens = <T>(p: Promise<T>, ms: number) => Promise.race([p, new Promise<never>((_, reject) => setTimeout(() => reject(new Error("zeit")), ms))]);
+/** Höchstens `ms` warten; sonst Fehler mit Grund */
+function bisSpaetestens<T>(p: Promise<T>, ms: number, grund: string): Promise<T> {
+  let t: ReturnType<typeof setTimeout> | undefined;
+  const zeit = new Promise<never>((_, reject) => {
+    t = setTimeout(() => reject(new StimmeFehler(grund)), ms);
+  });
+  return Promise.race([p, zeit]).finally(() => clearTimeout(t));
+}
 
 /** Ein Stück abspielen; true = ganz gespielt, false = abgebrochen/Fehler */
 function abspielen(a: HTMLAudioElement, blob: Blob, anfang: () => void): Promise<boolean> {
@@ -111,36 +254,83 @@ type Rueckmeldung = {
 };
 
 /**
- * Bereinigten Text mit Mias Stimme vorlesen. Nichts eingerichtet, erste Silbe
- * zu spät oder ein Fehler: still mit der Stimme des Handys weiter.
+ * Bereinigten Text mit Mias Stimme vorlesen. Gemerkter Status „sprechen“ →
+ * sofort los; sonst höchstens `ersteSilbeMs` auf den Status warten. Erste
+ * Silbe bis `ersteSilbeMs`, solange zeigt die Bühne das Denk-Zeichen. Fehler:
+ * still einmal nachladen, beim zweiten in Folge das Handy bis Gesprächsende.
  */
 export async function mitMiasStimme(text: string, cb: Rueckmeldung): Promise<void> {
   const mine = ++lauf;
-  const status = await bisSpaetestens(serverStimme(), 400).catch(() => null);
-  if (mine !== lauf) return;
-  if (!status?.sprechen || !audio) return cb.ersatz(text);
+  if (handyBisEnde) return cb.ersatz(text);
+  setWartet(true);
+  try {
+    await vorlesen(text, cb, () => mine === lauf);
+  } finally {
+    if (mine === lauf) setWartet(false);
+  }
+}
+
+async function vorlesen(text: string, cb: Rueckmeldung, aktuell: () => boolean): Promise<void> {
+  const ms = STIMME_GRENZEN.ersteSilbeMs;
+  // Status: gemerkt (beim Öffnen von App/Bühne geholt) oder kurz darauf warten
+  let status: StimmeStatus | null | undefined = serverStimmeJetzt() ?? undefined;
+  while (status === undefined) {
+    try {
+      status = await bisSpaetestens(serverStimme(), ms, "Status zu spät");
+    } catch (e) {
+      if (!aktuell()) return;
+      if (!fehlschlag(grundVon(e))) return cb.ersatz(text);
+    }
+  }
+  if (!aktuell()) return;
   const a = audio;
+  if (!status?.sprechen || !a) {
+    ohneFehler(status?.sprechen ? "Ton nicht freigeschaltet" : "nicht eingerichtet");
+    return cb.ersatz(text);
+  }
+  const v = status.v;
+  const anfang = () => {
+    if (!aktuell()) return;
+    setWartet(false);
+    cb.anfang();
+  };
   // Erster Satz allein (schneller erster Ton), danach längere Stücke: weniger Abrufe, natürlicher Satzfluss
   const stuecke = stueckeFuerStimme(text);
   const ctrl = new AbortController();
-  const geholt = stuecke.map((s) => holen(s, status.v, ctrl.signal));
-  geholt.forEach((p) => p.catch(() => {}));
+  const frisch = (s: string) => {
+    const p = holen(s, v, ctrl.signal);
+    p.catch(() => {});
+    return p;
+  };
+  const geholt = stuecke.map(frisch);
+  const handyAb = (i: number) => {
+    ctrl.abort();
+    cb.ersatz(stuecke.slice(i).join(" "));
+  };
   for (let i = 0; i < stuecke.length; i++) {
-    let stueck: Stueck;
-    try {
-      stueck = i === 0 ? await bisSpaetestens(geholt[0], STIMME_GRENZEN.ersteSilbeMs) : await geholt[i];
-    } catch {
-      ctrl.abort();
-      if (mine === lauf) cb.ersatz(stuecke.slice(i).join(" "));
-      return;
-    }
-    if (mine !== lauf) return ctrl.abort();
-    const ok = await abspielen(a, stueck.blob, cb.anfang);
-    if (stueck.zeichen) recordStimme(heute(), { zeichen: stueck.zeichen });
-    if (mine !== lauf) return ctrl.abort();
-    if (!ok) {
-      ctrl.abort();
-      return cb.ersatz(stuecke.slice(i).join(" "));
+    let versuch = geholt[i];
+    let gezaehlt = false;
+    for (;;) {
+      let stueck: Stueck;
+      try {
+        stueck = i === 0 ? await bisSpaetestens(versuch, ms, "erste Silbe zu spät") : await versuch;
+      } catch (e) {
+        if (!aktuell()) return ctrl.abort();
+        if (!fehlschlag(grundVon(e))) return handyAb(i);
+        versuch = frisch(stuecke[i]);
+        continue;
+      }
+      if (!aktuell()) return ctrl.abort();
+      const ok = await abspielen(a, stueck.blob, anfang);
+      if (stueck.zeichen && !gezaehlt) recordStimme(heute(), { zeichen: stueck.zeichen });
+      gezaehlt = true;
+      if (!aktuell()) return ctrl.abort();
+      if (ok) {
+        fehlerInFolge = 0;
+        break;
+      }
+      if (!fehlschlag("Abspielen")) return handyAb(i);
+      versuch = Promise.resolve(stueck);
     }
   }
   cb.ende();

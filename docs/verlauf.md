@@ -3149,3 +3149,19 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Runde als Zahlen-Zeile im Mikro-Protokoll.
 - Datenschutz: Datenkarte, Anbieter und Datenschutzerklärung um das
   Streaming ergänzt (gestreamt, nicht gespeichert, nur mit KI-Einwilligung).
+
+## Mias Stimme bleibt Mias Stimme (A-035)
+- Nachtrag zu A-019: Mia sprang mitten im Gespräch still auf die Stimme des
+  Handys, weil der Server-Status bei jeder Antwort neu abgewartet wurde
+  (Grenze 400 ms) und die erste Silbe nach 1 s als zu spät galt.
+- Status einmal beim Öffnen von App und Bühne holen und merken; bekannt
+  „sprechen“ = sofort ElevenLabs. Erste Silbe darf 2,5 s dauern, solange
+  zeigt die Bühne das Denk-Zeichen.
+- Eine Stimme je Gespräch (Bühne auf bis zu): ein Fehler = Antwort bleibt als
+  Text, still einmal nachladen; erst zwei Fehler in Folge = Handy-Stimme bis
+  zum Schließen, mit kleinem Hinweis „Netz wackelt, ich sprech kurz mit
+  Handy-Stimme.“
+- Vorwärmen beim Öffnen der Bühne über den eigenen Server (`/api/stimme?warm=1`):
+  HEAD zu ElevenLabs ohne Schlüssel, kein Sprechen, kein Kontingent.
+- Mikro-Protokoll: jeder Ersatz mit Grund (Status zu spät, erste Silbe zu
+  spät, Fehler-Code). Tests `tests/begleitung/stimmeGespraech.test.ts`.

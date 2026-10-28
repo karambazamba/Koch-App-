@@ -227,6 +227,23 @@ export async function ohrTokenHolen(request: Request, abruf: Abruf = fetch): Pro
   return Response.json({ token: antwort.token, modell: liveModell(), giltMs: TOKEN_GILT_MS }, { headers: { "Cache-Control": "no-store" } });
 }
 
+/**
+ * GET ?warm=1 (Bühne geht auf): Verbindung vorwärmen. Weckt diese
+ * Server-Funktion und öffnet die Verbindung zum Anbieter (Namensauflösung,
+ * TLS) mit einem HEAD-Abruf OHNE Schlüssel – kein Sprechen, kein Kontingent.
+ * Gleicher Zugangscode wie die KI, eigene kleine Grenze je Adresse; zählt
+ * nicht zum Tageslimit (kostet nichts).
+ */
+export async function vorwaermen(request: Request, abruf: Abruf = fetch): Promise<Response> {
+  const s = stimmeSetup();
+  if (!s.sprechen) return fail("aus", 503);
+  const denied = checkAccess(request);
+  if (denied) return fail(denied, denied === "limit" ? 429 : 401);
+  if (!allowRequest(`warm-ip:${clientIp(request)}`, 2)) return fail("limit", 429);
+  if (!s.mock) await abruf(`${ANBIETER}/`, { method: "HEAD", signal: AbortSignal.timeout(2000) }).catch(() => null);
+  return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
+}
+
 /** Anbieter-Fehler: ins Log nur der Status, nie Inhalte */
 function anbieterFehler(r: Response | null): Response {
   console.error("Stimme: Anbieter-Fehler", r?.status ?? "ohne Antwort");
