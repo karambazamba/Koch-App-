@@ -3621,8 +3621,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Notizen XS, Wasserzeichen zählen beim Überquellen nicht, Größen-Knopf im
   Wackeln getippt, `nichtsAbgeschnitten` auf XS · S · M).
 
-## Einkaufsliste nur mit Namen + Abhaken und Merken (A-040/A-041, Tafel 127/128)
-<!-- Version beim Ausliefern eintragen: (v0.154.0, A-040/A-041, Tafel 127/128) -->
+## Einkaufsliste nur mit Namen + Abhaken und Merken (v0.154.0, A-040/A-041, Tafel 127/128)
 - Vorlagen: `docs/tafeln/tafel-127.png` (A-040, Auftragstext nicht angekommen,
   umgesetzt nach Tafel und Bildunterschriften) und `tafel-128.png` (A-041),
   Wortlaut `docs/auftraege/A-040-041-einkauf-namen.md`.
