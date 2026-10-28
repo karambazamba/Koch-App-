@@ -3620,3 +3620,65 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Durchklick an das Raster angepasst (Pinnwand S neben Wetter XS über
   Notizen XS, Wasserzeichen zählen beim Überquellen nicht, Größen-Knopf im
   Wackeln getippt, `nichtsAbgeschnitten` auf XS · S · M).
+
+## Einkaufsliste nur mit Namen + Abhaken und Merken (A-040/A-041, Tafel 127/128)
+- Vorlagen: `docs/tafeln/tafel-127.png` (A-040, Auftragstext nicht angekommen,
+  umgesetzt nach Tafel und Bildunterschriften) und `tafel-128.png` (A-041),
+  Wortlaut `docs/auftraege/A-040-041-einkauf-namen.md`.
+- **Nur Namen:** die Liste zeigt Symbol und Name; eine Menge nur, wenn man sie
+  selbst gesagt hat („2 Liter“). Rezeptmengen sind nie mehr eine Menge auf der
+  Liste (auch nicht die Packungen aus A-018): Zutaten aus dem Plan haben
+  `amount: ""`, die übliche Packung steht nur als Vorschlag im Mengenfeld
+  („z. B. 1 Packung“, `packung`), die Rezeptmenge als Hinweis im Fenster.
+  Rezept-Link und Kochidee legen nur den Namen an (`alsEinkauf`). Teilen per
+  Text ebenso nur Namen.
+- **Wochenplan als Angebot:** oben auf der Laden-Seite „Für deinen
+  Wochenplan“ („Lasagne · Fr · Curry · Sa“, einklappbar), Zutaten als Chips –
+  einzeln oder „Alle dazu“ („Steht drauf.“); Grundsachen (Salz …) blass, nie
+  bei „Alle dazu“. Übernommen steht die Zutat ganz normal da (eigener Eintrag
+  mit `dish`, `day`, `rezeptMenge`). Ohne eigene Läden steht die Karte auf der
+  Übersicht; „Aussuchen · Für eure Woche“ nimmt das Angebot vom Öffnen.
+- **Zeile antippen** = ein Fenster (`ui/Sheet`): Name, darunter erst hier
+  „für Gemüselasagne · Fr“ und die Rezeptmenge, dann Menge, Laden („● Rewe
+  ⌄“, ändern = gemerkt) und „Von der Liste nehmen“. Lange drücken bleibt „Wo
+  kaufst du das?“. Die Laden-Seite trägt statt der großen Karte den Titel mit
+  Strich in Ladenfarbe, darunter immer „Abhaken, was im Wagen liegt.“.
+- **Abhaken wie bei Aufgaben** (ein Ablauf `useAbhaken`/`abhakenAblauf`): 1 s
+  stehen (nochmal tippen = zurück, auch das Gemerkte), 0,8 s weich weg in „Im
+  Wagen ⌄“ (vorher „Schon im Wagen“; zugeklappt, ohne Zahl, jetzt direkt unter
+  der Liste). Übersicht und Kachel haben keine Haken – dort zählt Abgehaktes
+  sofort nicht mehr mit.
+- **Mia merkt sich den Laden** (`einkauf/merken`): jedes Abhaken auf einer
+  Laden-Seite → `learned[sache] = { shop, n, am }` (gefunden über die
+  Normalform). Neue Sachen ohne Laden (Mia, Plus, Angebot) landen im gelernten
+  Laden (`ladenHerkunft`: Regel → gewählt → gelernt → ähnlicher Name). Das
+  frühere „zweimal hintereinander, dann einmal fragen“ ist damit abgelöst.
+  90-Tage-Regel: nur einmal und vor über 90 Tagen gekauft = verblasst still.
+  „Oft bei Rewe“ auf der Laden-Seite: am häufigsten dort abgehakt, nicht was
+  draufsteht, höchstens 8, Gleichstand neueste zuerst; einmal klein „Merk ich
+  mir, wenn du bei Rewe abhakst.“ (bis zum ersten Abhaken).
+- **Ergebnis-Karte:** „Tomaten · ● Rewe · wie immer ⌄“ – antippen = andere
+  Läden als Chips, die Korrektur gilt sofort und wird gemerkt
+  (`ladenKorrigieren`). Beim ersten Mal einmal „Hab Rewe genommen, wie letztes
+  Mal.“.
+- **Einstellungen → Mia → „Was ich mir gemerkt hab“:** eigene Gruppe „Wo du
+  was kaufst“ mit „Tomaten → Rewe“ und Löschen (feste Regeln bleiben unter
+  „Läden“).
+- **Stellt sich beim ersten Mal vor** (Ergänzung): Seiten-Tipp auf der
+  Einkaufsliste (drei Zeilen, neuer Schlüssel `seite:einkaufsliste`, damit auch
+  Bisherige ihn einmal sehen) und einmal auf der Laden-Seite überhaupt
+  („Abhaken, was im Wagen liegt. Ich merk mir das für Rewe.“). Neu in
+  Einstellungen → Mia: „Tipps nochmal zeigen“ (Seiten-Tipps, Hinweise der
+  Startseite, Einkauf-Tipps; Fragen wie das Mikrofon bleiben beantwortet).
+- **Speicher v8** (`wasgibts.einkaufsliste`, Abgleich `einkauf` v8): Gelerntes
+  mit Datum (alt: Datum der Umstellung), `angebotAb` (diese und die nächste
+  Planungswoche rechnen wie bisher, damit nichts von der Liste verschwindet;
+  neu angelegt = immer Angebot), unsere gerundeten Packungsmengen an
+  Rezept-Zutaten fallen weg (selbst geänderte bleiben). Datenkarte und
+  Datenschutzerklärung ergänzt (gelernte Läden, nur Gerät/Haushalt).
+- Tests: `tests/einkauf/merken.test.ts` (Abhaken 1 s/zurück/Im Wagen, Tomaten
+  2× bei Rewe → „wie immer“, Korrektur, 90 Tage, „Oft bei“, Löschen, „Alle
+  dazu“, Migration, Tipps je Stelle einmal und zurückholen); Durchklick
+  `wochenplanAngebot`, `ladenMerken`, `einkaufTipps`
+  (`e2e/ablaeufe/einkaufnamen.mjs`), „Im Wagen“ in `imWagen`, `einsortieren`,
+  `einkauf`.
