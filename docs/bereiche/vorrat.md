@@ -65,9 +65,12 @@ weiter Vorrat (`src/lib/vorrat/`, `/vorrat`, `wasgibts.vorrat`).
   Milchprodukte/Obst/Gemüse/Brot 7, Kartoffeln/Zwiebeln 21, Trockenes 42,
   Tiefkühler 90. Danach verschwindet der Eintrag. Grundsachen (Salz, Pfeffer,
   Öl, Zucker, Mehl, Essig, Gewürze) gelten immer als da und stehen nicht da.
-- **Kreislauf**: Im Einkauf abhaken → rein (nur Lebensmittel, Drogerie nicht),
-  Meldung „Im Haus: Brot, Äpfel · Rückgängig“ (kurz Nacheinanderes in EINER
-  Meldung); Haken weg → wieder raus. Antippen im Haus = aufgebraucht (blass
+- **Kreislauf**: Im Einkauf gekauft → rein (nur Lebensmittel, Drogerie nicht).
+  Auf der Laden-Seite erst mit „Einkauf fertig“: alles aus „Schon im Wagen“
+  auf einmal, „Fertig. Liegt jetzt bei Im Haus.“ mit Rückgängig (nur mit
+  Baustein, `einkauf/wagen`). `toggleChecked` mit Datum ohne `imHaus: false`
+  legt wie bisher sofort rein („Im Haus: Brot, Äpfel · Rückgängig“, kurz
+  Nacheinanderes in EINER Meldung); Haken weg → wieder raus. Antippen im Haus = aufgebraucht (blass
   unter „Aufgebraucht“, 3 Tage), nochmal = wieder auf die Liste („Steht
   wieder auf der Liste · Rückgängig“). Gekocht/„Gegessen“ (`markCooked`, auch
   automatisch nach der Essenszeit) → Zutaten raus (Rezept oder Klassiker aus

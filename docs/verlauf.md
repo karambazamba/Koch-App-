@@ -3060,3 +3060,43 @@ Fehler in `docs/aufraeumen-nachher.md`.
   mehr als Extra-Zeilen auf der Seite (Grundsachen unter „Aussuchen · Für
   eure Woche“, Stammliste im „···“); „Tomaten und Gurke bei Rewe“ gilt auch
   ohne KI für beide (nur ohne Komma).
+- Nachtrag (vor dem Merge): **Laden leer, Wagen, Mengen**.
+  - Laden ohne Einträge: „Für Edeka steht nichts drauf.“, darunter „Oft bei
+    Edeka“ (Regel, Gelerntes, Gemerktes, hier Gekauftes; sonst „Zuletzt
+    gekauft“, sonst „Beliebt“). Antippen = direkt bei Edeka (feste Regel),
+    kurz „Steht drin.“ – kein Laden-Wählen. Der alte Satz „Antippen: Laden
+    wählen. Abhaken im Laden.“ ist weg.
+  - Abhaken im Laden: Häkchen orange, Zeile blasser (nie durchgestrichen),
+    1 s stehen (nochmal tippen = doch nicht), dann gleitet sie 0,8 s nach
+    unten in „Schon im Wagen“ (zugeklappt, ohne Zahl, antippen = aufklappen;
+    ersetzt „Im Korb“). Einmal oben „Abhaken, was im Wagen liegt.“ (bis zum
+    ersten Abhaken, Einmal-Hinweis `einkauf-wagen`). Großer Knopf „Einkauf
+    fertig“: Wagen → Im Haus (nur mit Baustein), „Fertig. Liegt jetzt bei Im
+    Haus.“ bzw. „Fertig.“ mit Rückgängig, zurück zur Übersicht „Einkauf“;
+    meldet wie bisher der Familie „Eingekauft ✓“ (ersetzt „Fertig
+    eingekauft“).
+  - Doppeltes zusammen (`einkauf/zusammen`): gleiche Sache (Groß/klein,
+    Einzahl/Mehrzahl, Umlaute) im selben Laden = ein Eintrag, Mengen addiert,
+    wenn die Einheiten passen („500 g“ + „250 g“ = „750 g“), sonst beide
+    („500 g + 1 Packung“). Beim Hinzufügen (Tippen, Rezept, Mia), in der
+    Anzeige (auch Rezept-Zutat + eigener Artikel) und rückwirkend:
+    `wasgibts.einkaufsliste` v7 fasst beim Laden zusammen.
+  - Rezeptmengen als Einkaufsmengen (`zusammen/packung.ts`): auf übliche
+    Packungen gerundet (Milch 250 ml → „Milch“, Lasagneplatten 2 Stück →
+    „1 Packung“, Parmesan 20 g → „Parmesan“, Löffel/Prisen/unter 50 g weg),
+    die Rezeptmenge klein darunter („250 ml für Lasagne“). Eigene Mengen
+    bleiben, wie sie eingegeben wurden.
+  - Entschieden ohne Rückfrage: Abhaken auf der Laden-Seite legt noch nichts
+    nach Im Haus, erst „Einkauf fertig“ (sonst stünde die Meldung doppelt);
+    „Einkauf fertig“ erscheint, sobald etwas im Wagen liegt (nicht nur beim
+    geteilten Einkauf) und hat Rückgängig (4 s: wieder im Wagen, wieder raus
+    aus Im Haus); was fertig ist, merkt die Woche (`fertig`, im Abgleich
+    `einkauf-woche`), Haken weg = wieder offen. Ein eigener Knopf „Bei Edeka
+    einkaufen ›“ kommt nicht: die Laden-Seite ist seit Einkauf neu schon der
+    Laden-Modus, jede Laden-Karte (auch mit 0) öffnet sie gleich.
+    Zusammenfassen behält beim Speichern die kleinste Kennung (alle Geräte im
+    Haushalt entscheiden gleich, der andere Eintrag wird beim Abgleich als
+    gelöscht markiert, neueste Änderung gewinnt); Rückgängig nach einem
+    zusammengefassten Hinzufügen nimmt nur die dazugekommene Menge heraus.
+    Laden-Vergleich beim Zusammenfassen über den gemerkten Laden des Namens;
+    bei Mia-Vorschlägen hängt der Laden ohnehin am Namen. Eier als 6er/10er.
