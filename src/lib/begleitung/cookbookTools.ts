@@ -6,6 +6,7 @@ import { recipeBase } from "@/lib/essen/bases";
 import { isNeverAgain } from "@/lib/essen/neverAgain";
 import { recipeIsKnown } from "@/lib/essen/dishStatus";
 import { dietConflicts } from "@/lib/begleitung/diet";
+import { kurzVonMia } from "@/lib/essen/kurz/mia";
 import { PLAN_RECIPE_PREFIX, type NewRecipe } from "@/lib/begleitung/ops";
 import type { BegleitungTool } from "@/lib/begleitung/registry";
 import { category, CATEGORY_PROP, fail, nextId, propose, str, toolInput, type Input } from "@/lib/begleitung/tools";
@@ -56,7 +57,7 @@ export const COOKBOOK_TOOLS = {
     definition: {
       name: "rezept_erstellen",
       description:
-        "Erstellt ein neues, vollständiges Rezept (KI-Rezept) – Zutaten mit Mengen für die angegebene Personenzahl (siehe 'personen' des Tages in woche_lesen) und Zubereitungsschritte. Allergien und 'mag nicht' aller Personen werden geprüft; bei Treffern wird abgelehnt. Gibt eine ref zurück, die du bei gericht_setzen als neues_rezept nutzt. fuer_plan=false nur, wenn das Rezept ohne Platz ins Kochbuch soll.",
+        "Erstellt ein neues, vollständiges Rezept (KI-Rezept) – Zutaten mit Mengen für die angegebene Personenzahl (siehe 'personen' des Tages in woche_lesen) und Zubereitungsschritte, dazu die Schnellanleitung (kurz). Allergien und 'mag nicht' aller Personen werden geprüft; bei Treffern wird abgelehnt. Gibt eine ref zurück, die du bei gericht_setzen als neues_rezept nutzt. fuer_plan=false nur, wenn das Rezept ohne Platz ins Kochbuch soll ('Nur das Rezept, ohne Tag' = Vorschau in der App: genau einmal, fuer_plan=false, nichts eintragen).",
       input_schema: {
         type: "object",
         properties: {
@@ -79,10 +80,16 @@ export const COOKBOOK_TOOLS = {
             },
           },
           schritte: { type: "array", minItems: 1, items: { type: "string" } },
+          kurz: {
+            type: "array",
+            minItems: 1,
+            items: { type: "string" },
+            description: "Schnellanleitung: genauso viele Einträge wie schritte, je Schritt eine Zeile mit höchstens 8 Wörtern, ohne Punkt, Zeiten als „10 Min“ (z. B. „Tomaten dazu, 10 Min köcheln“).",
+          },
           notiz: { type: "string" },
           fuer_plan: { type: "boolean" },
         },
-        required: ["titel", "kategorie", "portionen", "zubereitungszeit_min", "zutaten", "schritte", "fuer_plan"],
+        required: ["titel", "kategorie", "portionen", "zubereitungszeit_min", "zutaten", "schritte", "kurz", "fuer_plan"],
         additionalProperties: false,
       },
     },
@@ -113,6 +120,7 @@ export const COOKBOOK_TOOLS = {
         );
       }
       const forPlan = input.fuer_plan !== false;
+      const kurz = kurzVonMia(input.kurz, schritte.length);
       const recipe: NewRecipe = {
         ref: `${forPlan ? PLAN_RECIPE_PREFIX : "rezept-"}${++ctx.counter}`,
         title,
@@ -121,6 +129,7 @@ export const COOKBOOK_TOOLS = {
         prepMinutes: typeof input.zubereitungszeit_min === "number" ? Math.round(input.zubereitungszeit_min) : null,
         ingredients,
         steps: schritte,
+        ...(kurz ? { shortSteps: kurz } : {}),
         note: str(input.notiz),
       };
       propose(ctx, { id: nextId(ctx), type: "add_recipe", recipe });

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
 import { buttonClass } from "@/components/ui/styles";
 import { useRecipes, type RecipeCategory } from "@/lib/essen/cookbook";
@@ -36,13 +37,16 @@ function ideaMeta(idea: CardIdea): { time: string; stock: string; ready: boolean
 
 /**
  * Kompakte Ideen-Karten: Emoji links, Name fett, darunter Zeit und was es
- * noch braucht, rechts "Heute". Tippen öffnet das Rezept (bzw. `onOpen`).
+ * noch braucht, rechts "Heute". Tippen öffnet die Rezept-Vorschau (`onPreview`,
+ * A-038; Fertigprodukte „f:…“ haben kein Rezept), sonst das Rezept bzw. `onOpen`.
  */
 export function IdeaCards({
   ideas,
   label = "Ideen",
   onToday,
   onOpen,
+  onPreview,
+  hinweis,
   onNavigate,
   dense = false,
   action = "Heute",
@@ -52,6 +56,10 @@ export function IdeaCards({
   onToday: (idea: CardIdea) => void;
   /** Ohne Rezept (Klassiker, Wunsch): Details zeigen */
   onOpen?: (idea: CardIdea) => void;
+  /** Antippen = Rezept-Vorschau (geht vor Link und `onOpen`) */
+  onPreview?: (idea: CardIdea) => void;
+  /** Einmal-Hinweis unter einer Karte („Antippen zum Reinschauen.“) */
+  hinweis?: (index: number) => ReactNode;
   /** Vor dem Wechsel zur Rezeptseite (z. B. Panel schließen) */
   onNavigate?: () => void;
   /** Etwas flacher (Startseite) */
@@ -62,7 +70,7 @@ export function IdeaCards({
   const recipes = useRecipes();
   return (
     <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-card" aria-label={label}>
-      {ideas.map((idea) => {
+      {ideas.map((idea, index) => {
         const meta = ideaMeta(idea);
         // Link nur, wenn es das Rezept (noch) gibt
         const href = recipeHref(recipes, idea.recipeId);
@@ -77,13 +85,19 @@ export function IdeaCards({
                 <span className={`truncate ${meta.ready ? "font-semibold text-good-ink" : ""}`}>{meta.stock}</span>
               </span>
             </span>
-            {(href || onOpen) && <ChevronRight className="h-4 w-4 shrink-0 text-faint" strokeWidth={2.25} aria-hidden />}
+            {(href || onOpen || onPreview) && <ChevronRight className="h-4 w-4 shrink-0 text-faint" strokeWidth={2.25} aria-hidden />}
           </>
         );
         const area = `flex min-w-0 flex-1 items-center gap-3 text-left ${dense ? "py-1" : "py-2.5"}`;
+        const preview = onPreview && !idea.id.startsWith("f:");
+        const note = hinweis?.(index);
         return (
-          <li key={idea.id} className="flex items-center gap-2 pl-3 pr-3">
-            {href ? (
+          <li key={idea.id} className="flex flex-wrap items-center gap-x-2 pl-3 pr-3">
+            {preview ? (
+              <button type="button" onClick={() => onPreview?.(idea)} className={area} aria-label={`${idea.title} – reinschauen`} data-vorschau-oeffnen>
+                {body}
+              </button>
+            ) : href ? (
               <Link href={href} onClick={onNavigate} className={area} aria-label={`${idea.title} – Rezept`}>
                 {body}
               </Link>
@@ -97,6 +111,7 @@ export function IdeaCards({
             <button type="button" onClick={() => onToday(idea)} aria-label={`${idea.title} ${action.toLowerCase()}`} className={`${buttonClass("soft", "sm")} shrink-0 ${dense ? "my-1" : ""}`}>
               {action}
             </button>
+            {note && <div className="w-full pb-2">{note}</div>}
           </li>
         );
       })}

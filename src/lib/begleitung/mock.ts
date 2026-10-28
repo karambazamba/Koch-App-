@@ -19,6 +19,7 @@ import { todayIso } from "@/lib/core/now";
 import { isShopOverviewQuestion, parseShopRule } from "@/lib/einkauf/shopRules";
 import { PLAUDER_ANTWORT, plauderArt } from "@/lib/mia/plaudern";
 import { modusAntwort } from "@/lib/begleitung/mockModus";
+import { vorschauUses } from "@/lib/begleitung/mockVorschau";
 
 const STOCK_LINE = "Im Haus (vermutlich da, ohne Mengen): ";
 
@@ -40,13 +41,13 @@ const DAY_RE = new RegExp(`\\b(${WEEKDAYS.join("|")})\\b`, "gi");
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 const daysIn = (text: string) => [...text.matchAll(DAY_RE)].map((m) => cap(m[1]));
 
-const VEGGIE: { titel: string; zeit: number; zutaten: [number | null, string, string][]; schritte: string[] }[] = [
-  { titel: "Gemüse-Curry mit Kichererbsen", zeit: 30, zutaten: [[1, "Dose", "Kichererbsen"], [400, "ml", "Kokosmilch"], [2, "Stück", "Paprika"], [1, "Stück", "Zwiebel"], [2, "TL", "Currypulver"], [250, "g", "Reis"]], schritte: ["Reis nach Packung kochen.", "Zwiebel und Paprika würfeln und in etwas Öl anbraten.", "Currypulver kurz mitrösten, Kokosmilch und Kichererbsen dazugeben.", "10 Minuten köcheln lassen, mit Salz abschmecken und mit Reis servieren."] },
-  { titel: "Gefüllte Paprika mit Reis", zeit: 50, zutaten: [[4, "Stück", "Paprika"], [150, "g", "Reis"], [1, "Dose", "Tomaten"], [1, "Stück", "Zucchini"], [1, "Stück", "Zwiebel"]], schritte: ["Reis vorkochen, Ofen auf 180 °C vorheizen.", "Zwiebel und Zucchini würfeln, anbraten und mit dem Reis mischen.", "Paprika aushöhlen, füllen und in eine Form mit den Tomaten setzen.", "30 Minuten backen."] },
-  { titel: "Kartoffel-Lauch-Suppe", zeit: 35, zutaten: [[800, "g", "Kartoffeln"], [2, "Stück", "Lauch"], [1, "l", "Gemüsebrühe"], [1, "Stück", "Zwiebel"], [null, "", "Muskat"]], schritte: ["Kartoffeln schälen und würfeln, Lauch in Ringe schneiden.", "Zwiebel anschwitzen, Gemüse dazugeben und mit Brühe auffüllen.", "20 Minuten köcheln, fein pürieren und mit Muskat abschmecken."] },
-  { titel: "Linsen-Bolognese", zeit: 35, zutaten: [[150, "g", "rote Linsen"], [1, "Stück", "Möhre"], [1, "Dose", "passierte Tomaten"], [1, "Stück", "Zwiebel"], [400, "g", "Spaghetti"]], schritte: ["Zwiebel und Möhre fein würfeln und anbraten.", "Linsen und passierte Tomaten dazugeben, 15 Minuten köcheln.", "Spaghetti kochen und mit der Soße servieren."] },
-  { titel: "Ofengemüse mit Rosmarinkartoffeln", zeit: 45, zutaten: [[800, "g", "Kartoffeln"], [2, "Stück", "Paprika"], [1, "Stück", "Zucchini"], [1, "Stück", "rote Zwiebel"], [2, "Zweig", "Rosmarin"]], schritte: ["Ofen auf 200 °C vorheizen.", "Kartoffeln und Gemüse in Stücke schneiden, mit Öl, Salz und Rosmarin mischen.", "Auf einem Blech 35 Minuten rösten."] },
-  { titel: "Spinat-Risotto", zeit: 35, zutaten: [[300, "g", "Risottoreis"], [1, "l", "Gemüsebrühe"], [200, "g", "Blattspinat"], [1, "Stück", "Zwiebel"]], schritte: ["Zwiebel anschwitzen, Reis kurz mitrösten.", "Nach und nach heiße Brühe zugeben und rühren, bis der Reis cremig ist.", "Spinat unterheben und abschmecken."] },
+const VEGGIE: { titel: string; zeit: number; zutaten: [number | null, string, string][]; schritte: string[]; kurz: string[] }[] = [
+  { titel: "Gemüse-Curry mit Kichererbsen", zeit: 30, zutaten: [[1, "Dose", "Kichererbsen"], [400, "ml", "Kokosmilch"], [2, "Stück", "Paprika"], [1, "Stück", "Zwiebel"], [2, "TL", "Currypulver"], [250, "g", "Reis"]], schritte: ["Reis nach Packung kochen.", "Zwiebel und Paprika würfeln und in etwas Öl anbraten.", "Currypulver kurz mitrösten, Kokosmilch und Kichererbsen dazugeben.", "10 Minuten köcheln lassen, mit Salz abschmecken und mit Reis servieren."], kurz: ["Reis kochen", "Zwiebel und Paprika anbraten", "Curry rösten, Kokosmilch dazu", "10 Min köcheln, abschmecken"] },
+  { titel: "Gefüllte Paprika mit Reis", zeit: 50, zutaten: [[4, "Stück", "Paprika"], [150, "g", "Reis"], [1, "Dose", "Tomaten"], [1, "Stück", "Zucchini"], [1, "Stück", "Zwiebel"]], schritte: ["Reis vorkochen, Ofen auf 180 °C vorheizen.", "Zwiebel und Zucchini würfeln, anbraten und mit dem Reis mischen.", "Paprika aushöhlen, füllen und in eine Form mit den Tomaten setzen.", "30 Minuten backen."], kurz: ["Reis vorkochen, Ofen vorheizen", "Gemüse anbraten, mit Reis mischen", "Paprika füllen, auf Tomaten setzen", "30 Min backen"] },
+  { titel: "Kartoffel-Lauch-Suppe", zeit: 35, zutaten: [[800, "g", "Kartoffeln"], [2, "Stück", "Lauch"], [1, "l", "Gemüsebrühe"], [1, "Stück", "Zwiebel"], [null, "", "Muskat"]], schritte: ["Kartoffeln schälen und würfeln, Lauch in Ringe schneiden.", "Zwiebel anschwitzen, Gemüse dazugeben und mit Brühe auffüllen.", "20 Minuten köcheln, fein pürieren und mit Muskat abschmecken."], kurz: ["Kartoffeln und Lauch schneiden", "Andünsten, Brühe dazu", "20 Min köcheln, pürieren"] },
+  { titel: "Linsen-Bolognese", zeit: 35, zutaten: [[150, "g", "rote Linsen"], [1, "Stück", "Möhre"], [1, "Dose", "passierte Tomaten"], [1, "Stück", "Zwiebel"], [400, "g", "Spaghetti"]], schritte: ["Zwiebel und Möhre fein würfeln und anbraten.", "Linsen und passierte Tomaten dazugeben, 15 Minuten köcheln.", "Spaghetti kochen und mit der Soße servieren."], kurz: ["Zwiebel und Möhre anbraten", "Linsen, Tomaten, 15 Min köcheln", "Spaghetti kochen"] },
+  { titel: "Ofengemüse mit Rosmarinkartoffeln", zeit: 45, zutaten: [[800, "g", "Kartoffeln"], [2, "Stück", "Paprika"], [1, "Stück", "Zucchini"], [1, "Stück", "rote Zwiebel"], [2, "Zweig", "Rosmarin"]], schritte: ["Ofen auf 200 °C vorheizen.", "Kartoffeln und Gemüse in Stücke schneiden, mit Öl, Salz und Rosmarin mischen.", "Auf einem Blech 35 Minuten rösten."], kurz: ["Ofen auf 200 °C vorheizen", "Gemüse mit Öl und Rosmarin mischen", "35 Min rösten"] },
+  { titel: "Spinat-Risotto", zeit: 35, zutaten: [[300, "g", "Risottoreis"], [1, "l", "Gemüsebrühe"], [200, "g", "Blattspinat"], [1, "Stück", "Zwiebel"]], schritte: ["Zwiebel anschwitzen, Reis kurz mitrösten.", "Nach und nach heiße Brühe zugeben und rühren, bis der Reis cremig ist.", "Spinat unterheben und abschmecken."], kurz: ["Zwiebel und Reis anschwitzen", "Brühe angießen, cremig rühren", "Spinat unterheben"] },
 ];
 
 /** Beispielrezepte sind für 4 Personen – umrechnen, Stückzahlen ganz */
@@ -247,6 +248,9 @@ function mockModel(): CreateMessage {
     if (modus) return modus;
     // Wochencheck: alles in einem Rutsch über woche_eintragen (gleiche Erkennung wie ohne KI)
     if (typeof last.content === "string" && last.content.startsWith("[Wochencheck]")) return weekCheckUses(last.content, system);
+    // Vorschau (A-038): nur das Rezept schreiben, nichts eintragen
+    const vorschau = typeof last.content === "string" ? vorschauUses(last.content, system) : null;
+    if (vorschau) return vorschau;
     // „Kochtipp“, „Was soll ich kochen?“ → eigener Kochtipp in der App
     if (typeof last.content === "string" && isKochtippRequest(last.content)) return tools([{ name: "app_befehl", input: { text: "Kochidee" } }]);
     if (resultFor("woche_eintragen") !== undefined) return text("Hab alles sortiert. Schau kurz drüber.");
@@ -450,6 +454,7 @@ function mockModel(): CreateMessage {
               zubereitungszeit_min: r.zeit,
               zutaten: r.zutaten.map(([menge, einheit, name]) => ({ menge: scale(menge, einheit, persons), einheit, name })),
               schritte: r.schritte,
+              kurz: r.kurz,
               fuer_plan: true,
             },
           });
@@ -477,6 +482,7 @@ function mockModel(): CreateMessage {
               zubereitungszeit_min: r.zeit,
               zutaten: r.zutaten.map(([menge, einheit, name]) => ({ menge: scale(menge, einheit, persons), einheit, name })),
               schritte: r.schritte,
+              kurz: r.kurz,
               fuer_plan: true,
             },
           });
@@ -536,7 +542,7 @@ function mockModel(): CreateMessage {
     if (shown) return text(calendarAnswer(String(resultFor(shown.name) ?? ""), shown.input as Record<string, unknown>));
 
     // 3. Neue Rezepte angelegt → eintragen
-    const created = prevUses.filter((u) => u.name === "rezept_erstellen");
+    const created = prevUses.filter((u) => u.name === "rezept_erstellen" && u.id.startsWith("mock_rezept_"));
     if (created.length > 0) {
       const uses: ToolUse[] = created.flatMap((u) => {
         const ref = String(results.find((r) => r.tool_use_id === u.id)?.content ?? "").match(/ref: (\S+)/)?.[1];

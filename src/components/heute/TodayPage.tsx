@@ -22,7 +22,6 @@ import { WeatherTile } from "@/components/wetter/WeatherTile";
 import { PinboardTile } from "@/components/pinnwand/PinboardTile";
 import { TimerTile } from "@/components/timer/TimerTile";
 import { Sheet } from "@/components/ui/Sheet";
-import { CookingTile } from "@/components/essen/CookingTile";
 import { DemoFoodTile } from "@/components/essen/DemoFoodTile";
 import { JetztCard, JetztPlaceholder } from "@/components/heute/JetztCard";
 import { DeinTag } from "@/components/heute/DeinTag";
@@ -33,14 +32,13 @@ import { SportTile } from "@/components/sport/SportTile";
 import { useHomePhase } from "@/components/heute/useHomePhase";
 import { arbeitsEnde, type PhaseContext } from "@/lib/heute/phases";
 import { DEFAULT_ROUTINE, usePreview, useRoutine } from "@/lib/heute/tagesablauf";
-import { nudgePhase } from "@/lib/heute/nudge";
 import { berlinTime, now, toIsoDate } from "@/lib/core/now";
 import { useWakeLock } from "@/lib/core/wakeLock";
 import { useNowMs } from "@/lib/core/useNowMs";
 import { isExpired, isRunning, leftWords, sortTimers } from "@/lib/timer/model";
 import { useTimers } from "@/lib/timer/store";
-import { currentStep, startCooking, stopCooking, useCooking } from "@/lib/essen/kochSession";
-import { cookableEntry, markCooked, unmarkCooked } from "@/lib/essen/mealDone";
+import { currentStep, useCooking } from "@/lib/essen/kochSession";
+import { cookableEntry } from "@/lib/essen/mealDone";
 import { useMemos, usePins } from "@/lib/pinnwand";
 import { leisureIdea } from "@/lib/notizen/model";
 import { useNotes } from "@/lib/notizen";
@@ -81,7 +79,7 @@ import { pushUndo } from "@/lib/core/undo";
 import { mealIsOver, useCookedDays } from "@/lib/essen/mealDone";
 import { matchStock } from "@/lib/essen/dishIdeas";
 import { useStock } from "@/lib/essen/useStock";
-import { demoDishAt } from "@/lib/essen/demoDish";
+import { beispielPersonen, demoDishAt } from "@/lib/essen/demoDish";
 import { openHelper } from "@/lib/begleitung/open";
 import { doneJetztTopic, noteJetztSkip, noteJetztTap, weekCheckDone } from "@/lib/heute/jetztStore";
 import { weekCheckKey } from "@/lib/kalender/wochencheck";
@@ -253,22 +251,6 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
 
   const entry = cookableEntry(data.day);
   const recipe = entry?.recipeId ? data.recipes[entry.recipeId] : undefined;
-  const eaten = () => {
-    if (!entry || !data.day) return;
-    markCooked(data.day.date, entry, data.recipes, { how: "marked" });
-    const undoCook = stopCooking();
-    pushUndo("„Gegessen“", () => {
-      unmarkCooked(data.day!.date);
-      undoCook();
-    });
-    buzz();
-    nudgePhase();
-  };
-  const cookNow = () => {
-    pushUndo("„Ich koche jetzt“", startCooking());
-    buzz();
-    nudgePhase();
-  };
 
   // --- Jetzt-Karte ----------------------------------------------------------------------
   const tomorrowPrep = vorlaufVon(data, stock);
@@ -441,11 +423,11 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
               today={data.todayIso}
               minutes={minutes}
               hat={hat && !edit ? helperName(data.profile) : undefined}
+              persons={beispielPersonen(haushaltOf(data.profile.householdType), data.profile.persons.length)}
               onTake={edit ? undefined : (d, tomorrow) => takeDish(data, d, tomorrow ? addDays(data.todayIso, 1) : data.todayIso) && clearDemoTile("essen")}
             />
           );
-        if (cookingNow && dish && !edit) return <CookingTile dish={dish} recipe={recipe} today={data.todayIso} half={tile.size === "S"} onOpen={onOpenFood} onEaten={eaten} />;
-        return <FoodTile data={data} dish={dish} over={over} dishClock={dishClock} onOpen={onOpenFood} size={tile.size} onCook={dish && !over && !edit ? cookNow : undefined} hat={hat && !edit ? { quiet: cookingNow } : null} />;
+        return <FoodTile data={data} dish={dish} over={over} dishClock={dishClock} onOpen={onOpenFood} size={tile.size} hat={hat && !edit ? { quiet: cookingNow } : null} />;
       case "einkauf":
         return <ShoppingTile half={half} size={tile.size} demo={demoDay.tiles.includes("einkauf")} />;
       case "notizen":

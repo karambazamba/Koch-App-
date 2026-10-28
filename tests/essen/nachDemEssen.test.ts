@@ -150,7 +150,7 @@ describe("Doch nicht gekocht – auf morgen", () => {
 
 describe("Kochsitzung", () => {
   it("starten, Schritte abhaken, nächster Schritt, stoppen – alles mit Zurücknehmen", () => {
-    expect(loadCooking()).toEqual({ date: "2026-10-22", manualAt: null, steps: {} });
+    expect(loadCooking()).toEqual({ date: "2026-10-22", manualAt: null, steps: {}, at: {}, zutaten: {} });
     const undoStart = startCooking();
     expect(loadCooking().manualAt).toBe(new Date("2026-10-22T20:00:00+02:00").getTime());
     const undoToggle = toggleStep("r", 1);
@@ -178,10 +178,13 @@ describe("Kochsitzung", () => {
 
   it("von gestern Gebliebenes zählt nicht; Kaputtes wird bereinigt", () => {
     storage.setItem("wasgibts.kochen", JSON.stringify({ version: 1, date: "2026-10-21", manualAt: 5, steps: { r: [1] } }));
-    expect(loadCooking()).toEqual({ date: "2026-10-22", manualAt: null, steps: {} });
+    expect(loadCooking()).toEqual({ date: "2026-10-22", manualAt: null, steps: {}, at: {}, zutaten: {} });
+    // v1 → v2: Schritte bleiben, Kochmodus-Stand und Zutaten kommen leer dazu
     storage.setItem("wasgibts.kochen", JSON.stringify({ version: 1, date: "2026-10-22", manualAt: "x", steps: { r: [1, -1, 1.5, "a"], s: "kaputt" } }));
-    expect(loadCooking()).toEqual({ date: "2026-10-22", manualAt: null, steps: { r: [1] } });
-    storage.setItem("wasgibts.kochen", JSON.stringify({ version: 2 }));
+    expect(loadCooking()).toEqual({ date: "2026-10-22", manualAt: null, steps: { r: [1] }, at: {}, zutaten: {} });
+    storage.setItem("wasgibts.kochen", JSON.stringify({ version: 2, date: "2026-10-22", at: { r: 3, s: -1, t: "x" }, zutaten: { r: ["a", 1], s: "x" } }));
+    expect(loadCooking()).toMatchObject({ steps: {}, at: { r: 3 }, zutaten: { r: ["a"] } });
+    storage.setItem("wasgibts.kochen", JSON.stringify({ version: 3 }));
     expect(loadCooking().steps).toEqual({});
   });
 

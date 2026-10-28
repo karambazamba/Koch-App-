@@ -1,6 +1,6 @@
 "use client";
 
-// Kochidee-Knopf oben rechts in der Essen-Kachel (Tafel 64 C): Gericht für
+// Kochidee-Knopf oben links in der Essen-Kachel (Tafel 64 C, seit Tafel 122 links): Gericht für
 // heute geplant → weiße Pille „⇄ Was anderes?“, noch frei → rundes orangenes
 // Abzeichen mit Mütze und „Idee“. Beim ersten Mal nach dem Freischalten wippt
 // er einmal sanft, dazu EINMAL die kleine Blase „Neu: Kochidee“ (weg bei
@@ -43,7 +43,7 @@ export function KochideeKnopf({ name, planned, quiet = false, demo = false }: { 
           type="button"
           onClick={() => openHelper("kochtipp", undefined, planned ? [planned] : undefined)}
           aria-label={b.aria}
-          className={`hit absolute right-2.5 top-2.5 z-10 inline-flex h-[30px] items-center gap-1.5 rounded-full bg-surface px-3 text-[12.5px] font-extrabold text-accent-strong shadow-float ${wobble ? "kochidee-wippen" : ""}`}
+          className={`hit absolute left-2.5 top-2.5 z-10 inline-flex h-[30px] items-center gap-1.5 rounded-full bg-on-color px-3 text-[12.5px] font-extrabold text-on-photo-ink shadow-float ${wobble ? "kochidee-wippen" : ""}`}
         >
           <Shuffle className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
           {b.label}
@@ -53,14 +53,14 @@ export function KochideeKnopf({ name, planned, quiet = false, demo = false }: { 
           type="button"
           onClick={() => openHelper("kochtipp")}
           aria-label={b.aria}
-          className={`hit absolute right-2 top-2 z-10 flex h-[47px] w-[47px] flex-col items-center justify-center rounded-full border-[2.5px] border-surface bg-accent text-on-accent shadow-float ${wobble ? "kochidee-wippen" : ""}`}
+          className={`hit absolute left-2 top-2 z-10 flex h-[47px] w-[47px] flex-col items-center justify-center rounded-full border-[2.5px] border-surface bg-accent text-on-accent shadow-float ${wobble ? "kochidee-wippen" : ""}`}
         >
           <ChefHat className="h-4 w-4" strokeWidth={2.25} aria-hidden />
           <span className="-mt-0.5 text-[10.5px] font-extrabold leading-none">{b.label}</span>
         </button>
       )}
       {hint && (
-        <span role="note" className="mia-text absolute right-2 top-[52px] z-20 whitespace-nowrap rounded-full bg-surface px-3 py-1.5 text-[13px] font-bold text-accent-strong shadow-float">
+        <span role="note" className="mia-text absolute left-2 top-[52px] z-20 whitespace-nowrap rounded-full bg-surface px-3 py-1.5 text-[13px] font-bold text-accent-strong shadow-float">
           Neu: Kochidee
         </span>
       )}

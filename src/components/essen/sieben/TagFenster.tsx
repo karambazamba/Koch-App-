@@ -4,7 +4,8 @@
 // beiden Ansichten: großes Bild, „DONNERSTAG · 29.10. · 18:30“, Name, Zeit ·
 // Personen · Vorrat-Satz, EIN großer Knopf „Rezept ansehen“, drei kleine
 // („⇄ Tauschen“, „Anderer Tag“, „Kein Kochtag“) und „Oder lieber“ mit drei
-// Ideen. Freier Tag: „Noch frei“ und die Ideen. Nichts darüber hinaus.
+// Ideen. Freier Tag: „Noch frei“ und die Ideen. Nichts darüber hinaus. Idee
+// antippen = Rezept-Vorschau (A-038), „Nehmen“ trägt ein.
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -33,6 +34,9 @@ import { loadWeekPlans, replaceWeekPlans } from "@/lib/essen/weekPlan";
 import { naechsteIdee } from "@/lib/heute/essenKachel";
 import { dochKochtag, fensterKopf, keinKochtag, tagLabel, verschiebe, verschiebeText } from "@/lib/essen/sieben";
 
+import { useVorschau } from "@/components/essen/vorschau/useVorschau";
+import { ideeVorschlag } from "@/components/essen/SwapSheet";
+
 type Idee = { title: string; recipeId?: string; category: PlanDay["slot"]["hint"]; minutes?: number | null };
 
 export function TagFenster({ data, day, tage, onClose }: { data: HomeData; day: PlanDay; tage: PlanDay[]; onClose: () => void }) {
@@ -40,6 +44,7 @@ export function TagFenster({ data, day, tage, onClose }: { data: HomeData; day: 
   const stock = useStock();
   const [andererTag, setAndererTag] = useState(false);
   const [alt, setAlt] = useState<number | null>(null);
+  const vorschau = useVorschau();
   const dish = dishOf(day);
   const entry = day.away ? null : day.slot.entry;
   const shoppingDay = data.profile.shoppingDay || "Montag";
@@ -152,18 +157,31 @@ export function TagFenster({ data, day, tage, onClose }: { data: HomeData; day: 
         {!day.away && oderLieber.length > 0 && (
           <section className="flex flex-col gap-2" aria-label={dish ? "Oder lieber" : "Ideen"}>
             <h3 className="text-[15px] font-extrabold">{dish ? "Oder lieber" : "Wie wär’s mit"}</h3>
-            {oderLieber.map((i) => (
-              <button key={i.title} type="button" onClick={() => nimm(i)} className={`${CARD} flex items-center gap-3 p-2.5 text-left active:scale-[0.99]`}>
-                <DishPicture title={i.title} category={i.category} tone={dishTone(i.title, i.category)} alt="" small className="h-12 w-12 shrink-0 rounded-full" />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-base font-bold">{i.title}</span>
-                  {i.minutes ? <span className="block text-sm text-muted">{i.minutes} Min</span> : null}
-                </span>
-              </button>
-            ))}
+            {oderLieber.map((i, n) => {
+              const v = ideeVorschlag(i, day.persons);
+              const tun = (id?: string) => nimm(id ? { ...i, recipeId: id } : i);
+              return (
+                <div key={i.title} className="flex flex-col gap-1">
+                  <article className={`${CARD} flex items-center gap-3 p-2.5`} aria-label={`Vorschlag: ${i.title}`}>
+                    <button type="button" onClick={() => vorschau.zeigen(v, tun)} aria-label={`${i.title} – reinschauen`} className="flex min-w-0 flex-1 items-center gap-3 text-left active:scale-[0.99]" data-vorschau-oeffnen>
+                      <DishPicture title={i.title} category={i.category} tone={dishTone(i.title, i.category)} alt="" small className="h-12 w-12 shrink-0 rounded-full" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-base font-bold">{i.title}</span>
+                        {i.minutes ? <span className="block text-sm text-muted">{i.minutes} Min</span> : null}
+                      </span>
+                    </button>
+                    <button type="button" onClick={() => vorschau.nehmen(v, tun)} className={`${buttonClass("soft", "sm")} shrink-0`}>
+                      Nehmen
+                    </button>
+                  </article>
+                  {vorschau.hinweis(n)}
+                </div>
+              );
+            })}
           </section>
         )}
       </div>
+      {vorschau.fenster}
     </Sheet>
   );
 }

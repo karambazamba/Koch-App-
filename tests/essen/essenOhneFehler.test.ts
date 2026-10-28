@@ -57,7 +57,7 @@ describe("Kochmodus mit der gewählten Personenzahl", () => {
     expect(read("src/components/essen/rezepte/RecipeView.tsx")).toContain("&personen=${servings}");
     const cook = read("src/components/essen/rezepte/CookMode.tsx");
     expect(cook).toContain('personsParam(params.get("personen"))');
-    expect(cook).toContain("Das brauchst du ({servings}");
+    expect(cook).toContain("Für {servings} {baking ?");
   });
 });
 
@@ -82,9 +82,9 @@ describe("Hackbraten als Scheiben vom Laib", () => {
 });
 
 describe("Wortwahl", () => {
-  it("Kachel „Kochmodus ›“ statt „Rezept groß öffnen“", () => {
-    const src = read("src/components/essen/CookingTile.tsx");
-    expect(src).toContain("Kochmodus ›");
+  it("Kachel beim Kochen „Weiter kochen“ (Tafel 122) statt „Rezept groß öffnen“", () => {
+    const src = read("src/components/heute/HomeTiles.tsx");
+    expect(src).toContain('label: "Weiter kochen"');
     expect(src).not.toMatch(/Rezept groß öffnen/);
   });
 
@@ -134,8 +134,9 @@ describe("Rezept-Links nur zu Rezepten, die es gibt", () => {
     expect(recipeHref({}, builtin, 2)).toBe(`/kochbuch/rezept?id=${encodeURIComponent(builtin)}&personen=2`);
   });
 
+  // Kochidee (KochideeViews) verlinkt seit A-038 nicht mehr: Antippen öffnet die Rezept-Vorschau
   it("die Stellen bauen Links über recipeHref", () => {
-    for (const f of ["src/components/essen/plan/PlanSheets.tsx", "src/components/essen/FoodPage.tsx", "src/components/essen/IdeaCards.tsx", "src/components/essen/kochtipp/KochideeViews.tsx", "src/components/heute/HomeTiles.tsx"]) {
+    for (const f of ["src/components/essen/plan/PlanSheets.tsx", "src/components/essen/FoodPage.tsx", "src/components/essen/IdeaCards.tsx", "src/components/heute/HomeTiles.tsx"]) {
       const src = read(f);
       expect(src, f).toMatch(/recipeHref|hrefFor/);
       expect(src, f).not.toMatch(/rezept\?id=\$\{encodeURIComponent\((entry|idea|card|chosen)\.recipeId\)\}/);

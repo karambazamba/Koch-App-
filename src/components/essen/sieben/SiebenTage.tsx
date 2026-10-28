@@ -9,7 +9,7 @@
 // Vergangenes fällt raus → „Zuletzt gegessen ›“.
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronRight, CircleDot, GripVertical, List, Plus, Sparkles } from "lucide-react";
 import { MoreMenu } from "@/components/ui/MoreMenu";
 import { Sheet } from "@/components/ui/Sheet";
@@ -43,9 +43,23 @@ export function SiebenTage({ data, tage }: { data: HomeData; tage: PlanDay[] }) 
   const [zuletzt, setZuletzt] = useState(false);
   const cooked = useCookedDays();
   const gegessen = cooked ? zuletztGegessen(cooked, data.todayIso) : [];
+  const ref = useRef<HTMLElement>(null);
+  const zu = useSearchParams().get("zu");
+  // „Wochenplan“ auf der Essen-Kachel (Tafel 122): `?seite=essen&zu=woche` → hierher scrollen
+  useEffect(() => {
+    if (zu !== "woche") return;
+    const t = window.setTimeout(() => {
+      ref.current?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      // Danach still aus der Adresse nehmen (Zurück/Neuladen springt nicht wieder)
+      const url = new URL(window.location.href);
+      url.searchParams.delete("zu");
+      window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    }, 150);
+    return () => window.clearTimeout(t);
+  }, [zu]);
 
   return (
-    <section className="flex flex-col gap-2" aria-label="Die nächsten 7 Tage" id="woche" data-wochenkarte>
+    <section ref={ref} className="scroll-mt-4 flex flex-col gap-2" aria-label="Die nächsten 7 Tage" id="woche" data-wochenkarte>
       <div className="flex flex-wrap items-center gap-2 px-1">
         <h2 className={`${SECTION_TITLE} flex-1 whitespace-nowrap`}>Die nächsten 7 Tage</h2>
         <div className="flex rounded-full bg-segment p-0.5" role="radiogroup" aria-label="Ansicht">

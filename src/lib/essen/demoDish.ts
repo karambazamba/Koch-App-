@@ -147,3 +147,9 @@ export function demoDishAt(today: string, minutes: number): { recipe: Recipe; cl
   if (art === "werktag" && demoArt(today) === "werktag") return pick("ofengemuese", morgen.at, true);
   return pick(morgen.id, morgen.at, true);
 }
+
+/** Personen fürs Beispielgericht (Tafel 122): eingetragene Personen, sonst nach Haushalt – allein 1, zu zweit 2, Familie 4 */
+export function beispielPersonen(haushalt: "allein" | "paar" | "familie", eingetragen: number): number {
+  if (eingetragen > 0) return eingetragen;
+  return haushalt === "allein" ? 1 : haushalt === "paar" ? 2 : 4;
+}

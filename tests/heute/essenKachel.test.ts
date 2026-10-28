@@ -2,7 +2,10 @@
 // „MORGEN · MO – Bibimbap – 3 Ideen ansehen“ ohne Bild, nicht auswählbar).
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { essenKopf, foodTileView, kachelBild, kochSchrittZeile, takeLabel } from "@/lib/heute/essenKachel";
+import { KACHEL_VERLAUF, TITEL_BREITE, essenKnoepfe, essenUnterzeile, foodTileView, kachelBild, kachelVerlaufCss, kochSchrittText, kontrastWeiss, rezeptVorratZeile, takeLabel, titelAnzeige, titelPx, titelZeilen, verlaufAlpha } from "@/lib/heute/essenKachel";
+import { GERICHTE } from "@/lib/essen/gerichte";
+import { BUILTIN_COOK } from "@/lib/essen/kochen";
+import { DEMO_RECIPES } from "@/lib/essen/demoDish";
 import { takeForDay } from "@/lib/essen/spontanTake";
 import { createEmptyProfile } from "@/lib/einstellungen/profile";
 
@@ -63,12 +66,16 @@ describe("Kachel und Beispiel-Tag", () => {
     expect(food.match(/return \(/g)).toHaveLength(1);
     expect(food).toMatch(/return \(\s*<>\s*<DishTile/);
     expect(food).toMatch(/picture=\{picture\}/);
-    expect(food).toMatch(/view\.kind === "frei" \? \(view\.ideen && !away \? `\$\{Math\.min\(3, list\.length\)\} Ideen ansehen`/);
+    expect(food).toMatch(/view\.kind === "frei" \? \(view\.ideen \? `\$\{Math\.min\(3, list\.length\)\} Ideen ansehen`/);
     expect(food).toMatch(/const sub = view\.kind === "vorschlag" \? "Vorschlag"/);
   });
 
-  it("Antippen öffnet genau dieses Gericht: Vorschlag → Fenster, geplant mit Rezept → Rezept", () => {
-    expect(tile).toMatch(/view\.kind === "vorschlag" \? \(\) => setChosen\(idea\) : recipe \? `\/kochbuch\/rezept\?id=/);
+  it("Antippen: Vorschlag → Fenster, geplant → Tagesansicht (TagFenster), „Rezept“ → Rezept bzw. Fenster ohne Rezept", () => {
+    expect(tile).toMatch(/view\.kind === "vorschlag" \? \(\) => setChosen\(idea\) : view\.kind === "geplant" && day \? \(\) => setTag\(true\) : onOpen/);
+    expect(tile).toMatch(/<TagFenster data=\{data\} day=\{day\}/);
+    expect(tile).toMatch(/label: "Rezept", icon: BookOpen, open: rezeptHref \?\? \(\(\) => setOhneRezept\(true\)\)/);
+    // Wochenkarten-Gerichte ohne recipeId finden ihr eingebautes Rezept über den Titel
+    expect(tile).toMatch(/entry\.recipeId \?\? rezeptIdFuer\(entry\.title\)/);
     expect(tile).toMatch(/<GerichtSheet dish=\{chosen\} take=\{takeLabel\(over \? "morgen" : "heute"\)\}/);
   });
 
@@ -111,37 +118,96 @@ describe("Sofort-Kachel: nie ohne Bild", () => {
     expect(kachelBild(zustaende.gegessen).leer).toBe(true);
   });
 
-  it("Kopfzeile einzeilig: bei S nie Personen, ab M kurz „für 4“", () => {
-    expect(essenKopf("Essen · 18:30", 4, "S")).toBe("Essen · 18:30");
-    expect(essenKopf("Essen · 18:30", 1, "M")).toBe("Essen · 18:30 · für 1");
-    expect(essenKopf("Essen · 18:30", 4, "L")).toBe("Essen · 18:30 · für 4");
-    expect(essenKopf("Essen", null, "L")).toBe("Essen");
-    expect(essenKopf("Essen · 18:30", 4, "S")).not.toMatch(/Person/);
-  });
-
-  it("Kopfzeile bricht nie um, keine „Personen“ mehr auf Essen- und Koch-Kachel", () => {
+  it("Kopfzeile bricht nie um, keine „Personen“ auf der Essen-Kachel", () => {
     const dishTile = readFileSync("src/components/essen/DishTile.tsx", "utf8");
     expect(dishTile).toMatch(/truncate whitespace-nowrap[^"]*" data-kopf/);
     expect(readFileSync("src/components/heute/HomeTiles.tsx", "utf8")).not.toMatch(/"Personen?"/);
-    expect(readFileSync("src/components/essen/CookingTile.tsx", "utf8")).not.toMatch(/"Personen?"/);
   });
 
-  it("Kochmodus-Schritt nur, wenn schon Schritte abgehakt sind und noch einer kommt", () => {
-    expect(kochSchrittZeile(6, [0, 1])).toBe("Schritt 3 von 6");
-    expect(kochSchrittZeile(6, [])).toBeNull();
-    expect(kochSchrittZeile(0, [])).toBeNull();
-    expect(kochSchrittZeile(3, [0, 1, 2])).toBeNull();
-    expect(kochSchrittZeile(4, [0, 2])).toBe("Schritt 2 von 4");
+  it("Kochmodus-Schritt: „Schritt 3 von 6“ (Zutaten zählen als Schritt 1, nie über das Ende)", () => {
+    expect(kochSchrittText(3, 6)).toBe("Schritt 3 von 6");
+    expect(kochSchrittText(0, 6)).toBe("Schritt 1 von 6");
+    expect(kochSchrittText(9, 6)).toBe("Schritt 6 von 6");
+    expect(kochSchrittText(1, 0)).toBeNull();
+  });
+});
+
+describe("Tafel 122: Name groß, zwei Knöpfe, Unterzeile", () => {
+  it("Unterzeile: Minuten · auf die Liste bzw. alles im Haus, ohne Vorrat-Daten nur Minuten, beim Kochen der Schritt", () => {
+    expect(essenUnterzeile({ minutes: 90, needs: ["Karotte"] })).toBe("90 Min · auf die Liste: Karotte");
+    expect(essenUnterzeile({ minutes: 90, needs: ["Karotte", "Lauch", "Sahne"] })).toBe("90 Min · auf die Liste: Karotte, Lauch …");
+    expect(essenUnterzeile({ minutes: 90, needs: [] })).toBe("90 Min · alles im Haus");
+    expect(essenUnterzeile({ minutes: 90, needs: null })).toBe("90 Min");
+    expect(essenUnterzeile({ minutes: null, needs: null })).toBe("");
+    expect(essenUnterzeile({ minutes: 90, needs: [], schritt: "Schritt 3 von 6" })).toBe("Schritt 3 von 6");
+    expect(rezeptVorratZeile(90, ["Karotte"])).toBe("90 Min · alles im Haus bis auf Karotte");
+    expect(rezeptVorratZeile(90, [])).toBe("90 Min · alles im Haus");
+    for (const t of [essenUnterzeile({ minutes: 9, needs: ["X"] }), rezeptVorratZeile(9, ["X"])]) expect(t).not.toMatch(/fehlt|offen|überfällig/i);
   });
 
-  it("Koch-Kachel: dasselbe Gerichtsbild (DishTile), „Koche gerade“, weißer Knopf „Gegessen“, Kochmodus erreichbar", () => {
-    const cooking = readFileSync("src/components/essen/CookingTile.tsx", "utf8");
-    expect(cooking).toMatch(/<DishTile/);
-    expect(cooking).toMatch(/when="Koche gerade"/);
-    expect(cooking).toMatch(/bg-on-color[^"]*text-on-photo-ink[^"]*">Gegessen</);
-    expect(cooking).toMatch(/\/kochbuch\/kochen\?id=/);
-    expect(cooking).toMatch(/cookLabel="Kochmodus ›"/);
-    // keine Schritte-Liste mehr auf der Kachel
-    expect(cooking).not.toMatch(/<ol|toggleStep/);
+  it("Knöpfe: Rezept bzw. Weiter kochen, Vorschlag ohne Gericht, nichts bei Kein Kochtag; rechts Wochenplan (S: Woche)", () => {
+    const geplant = foodTileView({ ...base, today: "Lasagne" });
+    expect(essenKnoepfe(geplant, { kocht: false, half: true })).toEqual({ links: "rezept", rechts: "Woche" });
+    expect(essenKnoepfe(geplant, { kocht: true, half: false })).toEqual({ links: "weiter", rechts: "Wochenplan" });
+    expect(essenKnoepfe(foodTileView({ ...base, over: true, tomorrow: "Curry" }), { kocht: true, half: false }).links).toBe("rezept");
+    expect(essenKnoepfe(foodTileView({ ...base }), { kocht: false, half: false }).links).toBe("vorschlag");
+    expect(essenKnoepfe(foodTileView({ ...base, idea: "Curry" }), { kocht: false, half: false }).links).toBe("vorschlag");
+    expect(essenKnoepfe(foodTileView({ ...base, away: "Kein Kochtag", ideas: 0 }), { kocht: false, half: true }).links).toBeNull();
+  });
+
+  it("Name: S 20 px, M 24 px – nur wenn er sonst nicht passt, kleiner; nie mitten im Wort", () => {
+    expect(titelPx("Lasagne", "S")).toBe(20);
+    expect(titelPx("Lasagne", "M")).toBe(24);
+    // „Gemüselasagne“ ist bei 20 px breiter als S auf dem SE → 18 px, zwei Zeilen
+    expect(titelZeilen("Gemüselasagne mit Béchamel", 20, TITEL_BREITE.S)).toBeNull();
+    expect(titelPx("Gemüselasagne mit Béchamel", "S")).toBe(18);
+    expect(titelPx("Gemüselasagne mit Béchamel", "M")).toBe(22);
+    // sehr lang: an einer Wortgrenze gekürzt, nie mitten im Wort
+    expect(titelAnzeige("Rahmspinat mit Spiegelei und Kartoffeln", "S").text).toMatch(/^Rahmspinat mit Spiegelei( und)? …$/);
+    expect(titelAnzeige("Rahmspinat mit Spiegelei und Kartoffeln", "M").text).toBe("Rahmspinat mit Spiegelei und Kartoffeln");
+    expect(titelZeilen("Donaudampfschifffahrtsgesellschaft", 20, 143)).toBeNull();
+  });
+
+  it("alle 150 Gerichte und alle eingebauten Rezepte passen auf dem iPhone SE in S und M (≤ 2 Zeilen, kein Wort geteilt)", () => {
+    const titel = [...new Set([...GERICHTE.map((g) => g.title), ...BUILTIN_COOK.map((r) => r.title), ...DEMO_RECIPES.map((r) => r.title)])];
+    for (const t of titel) {
+      for (const size of ["S", "M"] as const) {
+        const { px, text } = titelAnzeige(t, size);
+        const n = titelZeilen(text, px, TITEL_BREITE[size]);
+        // gekürzt nur an einer Wortgrenze: alles vor „ …“ ist ein Anfang des Namens aus ganzen Wörtern
+        if (text !== t) expect(`${t} `.startsWith(`${text.replace(/ …$/, "")} `), `${size}: ${t} → ${text}`).toBe(true);
+        if (size === "M") expect(text, "M zeigt den ganzen Namen").toBe(t);
+        expect(n, `${size}: ${t} (${px} px)`).not.toBeNull();
+        expect(n!, `${size}: ${t}`).toBeLessThanOrEqual(2);
+        expect(px, `${size}: ${t}`).toBeGreaterThanOrEqual(15);
+      }
+    }
+  });
+
+  it("Kontrast: weiße Schrift auf dem hellsten Bild unter dem Verlauf überall, wo Text steht, mind. 4,5:1", () => {
+    // Text beginnt unter der Pille (ab ca. 24 % der Höhe) und reicht bis unten
+    for (let pos = 0.24; pos <= 1; pos += 0.02) expect(kontrastWeiss(verlaufAlpha(pos)), `bei ${Math.round(pos * 100)} %`).toBeGreaterThanOrEqual(4.5);
+    // helle Gerichte (Creme, Gelb) erst recht
+    expect(kontrastWeiss(verlaufAlpha(0.24), [250, 236, 200])).toBeGreaterThanOrEqual(4.5);
+    // oben leicht, unten dunkel
+    expect(KACHEL_VERLAUF[0][1]).toBeLessThan(KACHEL_VERLAUF[KACHEL_VERLAUF.length - 1][1]);
+  });
+
+  it("Verlauf ist ein Token (globals.css = genau der geprüfte Verlauf), Kachel nutzt ihn", () => {
+    const css = readFileSync("src/app/globals.css", "utf8");
+    expect(css).toContain(`--app-dish-tile-shade: ${kachelVerlaufCss()};`);
+    expect(readFileSync("src/components/essen/DishTile.tsx", "utf8")).toMatch(/dish-tile-shade/);
+  });
+
+  it("Knöpfe unten: je 44 px hoch, gleich breit (zwei Spalten), Emojis nie in Knöpfen (Linien-Icons)", () => {
+    const dishTile = readFileSync("src/components/essen/DishTile.tsx", "utf8");
+    expect(dishTile).toMatch(/const KNOPF = "flex h-11 /);
+    expect(dishTile).toMatch(/grid-cols-2/);
+    const tile = readFileSync("src/components/heute/HomeTiles.tsx", "utf8");
+    expect(tile).toMatch(/label: "Weiter kochen", icon: ChefHat/);
+    expect(tile).toMatch(/label: "Vorschlag", icon: Lightbulb/);
+    expect(dishTile).not.toMatch(/⏱|⇄/);
+    const food = tile.slice(tile.indexOf("export function FoodTile"), tile.indexOf("/** Eine Zeile der Einkauf-Kachel"));
+    expect(food).not.toMatch(/⏱|⇄/);
   });
 });

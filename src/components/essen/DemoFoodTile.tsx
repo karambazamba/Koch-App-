@@ -1,8 +1,8 @@
 "use client";
 
 // ESSEN im Beispiel-Tag: das Beispielgericht in derselben Bild-Kachel wie das
-// echte Gericht (`DishTile`: "ESSEN · 18:30", sonntags 12:30, Name, "alles im
-// Haus · 25 Min", „Ich koche jetzt ›“). Nach dem Essen (18:30 + 90 Min) das zweite Beispielgericht
+// echte Gericht (`DishTile`, Tafel 122: "ESSEN · 18:30", sonntags 12:30, Name,
+// "25 Min · alles im Haus", Knöpfe „Rezept“ und „Wochenplan“). Nach dem Essen (18:30 + 90 Min) das zweite Beispielgericht
 // für morgen ("MORGEN · Do · 18:30"). Antippen = genau dieses Gericht (Fenster mit „Für heute
 // nehmen“ bzw. „Für morgen nehmen“ – erst dieser Knopf übernimmt es in den echten Plan; „Rezept
 // ansehen ›“ zeigt das Beispiel-Rezept). (Das Schild BEISPIEL steht nur einmal oben.)
@@ -10,12 +10,13 @@
 import Link from "next/link";
 import { useState } from "react";
 import { GerichtSheet } from "@/components/essen/GerichtSheet";
-import { takeLabel } from "@/lib/heute/essenKachel";
+import { essenUnterzeile, takeLabel } from "@/lib/heute/essenKachel";
 import type { RecipeCategory } from "@/lib/essen/cookbook";
 import { demoDishAt } from "@/lib/essen/demoDish";
 import { tomorrowLabel } from "@/lib/kalender/model";
 import { addDays } from "@/lib/core/now";
 import { DishPicture } from "@/components/essen/DishPicture";
+import { BookOpen } from "lucide-react";
 import { DishTile } from "@/components/essen/DishTile";
 import { KochideeKnopf } from "@/components/essen/kochtipp/KochideeKnopf";
 import { DemoBadge } from "@/components/heute/DemoBits";
@@ -37,11 +38,14 @@ export function DemoFoodTile({
   minutes,
   hat,
   onTake,
+  persons,
 }: {
   half: boolean;
   today: string;
   minutes: number;
   hat?: string;
+  /** Personen im (Beispiel-)Haushalt – das Rezept rechnet dafür um */
+  persons: number;
   /** „Nehmen“: das Beispielgericht in den echten Plan (heute bzw. morgen) */
   onTake?: (dish: { title: string; category: RecipeCategory | null }, tomorrow: boolean) => void;
 }) {
@@ -52,15 +56,16 @@ export function DemoFoodTile({
   return (
     <>
     <DishTile
-      when={d.when}
+      kopf={d.when}
       title={r.title}
-      sub={`alles im Haus · ${r.prepMinutes} Min`}
+      sub={essenUnterzeile({ minutes: r.prepMinutes, needs: [] })}
       picture={{ photo: d.photo, title: r.title }}
       open={onTake ? () => setOpen(true) : `/kochbuch/rezept?id=${id}`}
-      cook={d.tomorrow ? undefined : `/kochbuch/kochen?id=${id}`}
       half={half}
       label={`${d.when} · ${r.title} · Beispiel`}
       corner={hat && <KochideeKnopf name={hat} planned={r.title} demo />}
+      links={{ label: "Rezept", icon: BookOpen, open: `/kochbuch/rezept?id=${id}&personen=${persons}`, data: "rezept" }}
+      rechts={half ? "Woche" : "Wochenplan"}
     />
     {open && onTake && (
       <GerichtSheet

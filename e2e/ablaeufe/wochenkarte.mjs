@@ -1,4 +1,4 @@
-// Essen – die nächsten 7 Tage (Tafel 97): von der Essen-Kachel „Woche ›“,
+// Essen – die nächsten 7 Tage (Tafel 97): von der Essen-Kachel „Wochenplan“ (Tafel 122),
 // immer ab heute (Mi 21.10.) über die Wochengrenze, jeder Tag öffnet sein
 // Fenster (Gericht: „Rezept ansehen“, frei: Ideen), Liste/Reihe gemerkt,
 // Halten & ziehen tauscht zwei Tage mit „Rückgängig“.
@@ -29,7 +29,7 @@ export const wochenkarte = async (page, check) => {
   await page.goto(BASE + "/");
   await page.waitForTimeout(1200);
   const link = page.locator("[data-woche]").first();
-  check(await link.isVisible(), "Essen-Kachel: „Woche ›“");
+  check(await link.isVisible(), "Essen-Kachel: „Wochenplan“ bzw. „Woche“");
   await link.tap();
   await page.waitForTimeout(1200);
   const karte = page.locator("[role=tabpanel]:not([inert]) [data-wochenkarte]");
