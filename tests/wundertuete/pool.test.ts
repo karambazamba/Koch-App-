@@ -111,9 +111,14 @@ describe("Pool: Inhalt", () => {
       "Heute vor 100 Jahren:sand:calendar",
       "Tischrunde:pfirsich:message",
       "Schätz mal!:lavendel:scale",
-      "Wer zuerst …:rose:dice",
+      "Wer zuerst:rose:dice",
     ]);
     expect(SORTEN.find((s) => s.id === "raetsel")!.hinweis).toBe("Kinder raten zuerst");
+    // Nichts endet sichtbar auf „…“ (A-045), Kurzform im Kopf höchstens so lang wie der Name
+    for (const s of SORTEN) {
+      expect(`${s.name}|${s.kurz}|${s.hinweis}`).not.toMatch(/…|\.\.\./);
+      expect(s.kurz.length).toBeLessThanOrEqual(s.name.length);
+    }
     expect(SORTEN.find((s) => s.id === "platt")!.hinweis).toBe("„Plietsch“ = schlau");
   });
 

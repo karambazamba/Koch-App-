@@ -1,6 +1,7 @@
-// Wundertüte · Wer zuerst …: Mini-Spiele für den Tisch, eine Minute, ohne
+// Wundertüte · Wer zuerst: Mini-Spiele für den Tisch, eine Minute, ohne
 // Material (ab 17 Uhr, zu zweit/Familie). Vorne steht nur der Rest des
-// Satzes, der Kopf sagt „Wer zuerst …“. Keine Rückseite, keine Fakten.
+// Satzes, der Kopf sagt „Wer zuerst“ (ohne „…“:
+// nichts Sichtbares endet so, A-045). Keine Rückseite, keine Fakten.
 
 import type { Eintrag } from "@/lib/wundertuete/sorten";
 

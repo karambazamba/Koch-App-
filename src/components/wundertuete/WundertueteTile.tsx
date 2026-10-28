@@ -1,16 +1,16 @@
 "use client";
 
 // MIAS WUNDERTÜTE (A-022, Tafel 116): eine Kachel, die jeden Tag anders
-// heißt. Vorne: Kopf (Symbol + Sorte), die Frage groß und fett (höchstens 3
-// Zeilen), unten links der Hinweis der Sorte, unten rechts drei Punkte = wie
+// heißt. Vorne: Kopf (Symbol + Sorte), die Frage groß und fett (die Schrift
+// passt sich der Fläche an, nie „…“, `useEinpassen`), unten links der Hinweis der Sorte, unten rechts drei Punkte = wie
 // oft diese Karte schon da war. Antippen dreht sie um (sanfte 3D-Drehung,
 // reduced-motion = Überblenden): hinten weiß mit farbigem Rand, Antwort mit
 // EINEM fetten Wort, „Nochmal tippen = Neues“, oben rechts Teilen. Ohne
-// Rückseite (Tischrunde, Wer zuerst …) bringt Antippen gleich die nächste.
+// Rückseite (Tischrunde, Wer zuerst) bringt Antippen gleich die nächste.
 // S und M sind dieselbe Karte, M nur breiter mit größerer Frage. Beispiel-Tag:
 // eine feste Karte Angeberwissen mit leisem „Beispiel“ (nie gespeichert).
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Anchor, Calendar, Dice5, Lightbulb, MessageSquare, Puzzle, Scale, Share, type LucideIcon } from "lucide-react";
 import { TILE, TILE_LABEL } from "@/components/ui/styles";
 import { KachelWasserzeichen } from "@/components/ui/KachelWasserzeichen";
@@ -20,6 +20,7 @@ import { now } from "@/lib/core/now";
 import { clearDemoTile } from "@/lib/core/demo";
 import { showToast } from "@/lib/core/toast";
 import { buzz } from "@/components/heute/actions";
+import { useNameEinpassen, useSchriftEinpassen } from "@/components/wundertuete/useEinpassen";
 import { useWundertuete, wtAnzeigen, wtWeiter } from "@/lib/wundertuete/store";
 import { ANZEIGEN_MAX, hatRueckseite, istAbends, tippAktion } from "@/lib/wundertuete/auswahl";
 import { lageAus } from "@/lib/wundertuete/lage";
@@ -30,20 +31,37 @@ import { antwortTeile, hinweisFuer, sorteMeta, teilText, type Eintrag, type Sort
 
 const SYMBOL: Record<SorteMeta["symbol"], LucideIcon> = { lightbulb: Lightbulb, anchor: Anchor, puzzle: Puzzle, calendar: Calendar, message: MessageSquare, scale: Scale, dice: Dice5 };
 
-/** Schriftgröße der Frage: so groß wie möglich, höchstens 3 Zeilen (M breiter, also größer) */
-export function frageKlasse(text: string, size: TileSize): string {
-  const n = text.length;
-  if (size === "M") return n <= 52 ? "text-[21px]" : "text-[18px]";
-  return n <= 40 ? "text-[17px]" : n <= 52 ? "text-[15.5px]" : "text-[14px]";
+/** Schriftstufen (px), von groß nach klein: die erste, bei der alles ganz zu sehen ist (M breiter, also größer) */
+export const FRAGE_STUFEN: Record<"S" | "M", readonly number[]> = { S: [17, 15.5, 14, 13, 12], M: [21, 19, 17, 15.5, 14] };
+export const ANTWORT_STUFEN: Record<"S" | "M", readonly number[]> = { S: [14.5, 13.5, 12.5, 12, 11.5], M: [17, 15.5, 14, 13] };
+
+/** Text in fester Fläche: Schrift so groß wie möglich, nie abgeschnitten */
+function Eingepasst({ stufen, text, className, data, children }: { stufen: readonly number[]; text: string; className: string; data: "frage" | "antwort"; children: React.ReactNode }) {
+  const box = useRef<HTMLDivElement>(null);
+  const inhalt = useRef<HTMLParagraphElement>(null);
+  useSchriftEinpassen(box, inhalt, stufen, text);
+  return (
+    <div ref={box} className="mt-1 min-h-0 flex-1 overflow-hidden">
+      <p ref={inhalt} lang="de" className={`hyphens-auto break-words ${className}`} style={{ fontSize: stufen[0] }} {...{ [`data-${data}`]: true }}>
+        {children}
+      </p>
+    </div>
+  );
 }
 
 function Kopf({ meta, demo, knopf }: { meta: SorteMeta; demo: boolean; knopf?: React.ReactNode }) {
   const Icon = SYMBOL[meta.symbol];
+  const name = useRef<HTMLSpanElement>(null);
+  useNameEinpassen(name, `${meta.id}|${demo}|${Boolean(knopf)}`);
   return (
-    <div className="flex h-[26px] items-center gap-1.5">
+    <div className="flex h-[26px] shrink-0 items-center gap-1.5">
       <Icon className="h-3.5 w-3.5 shrink-0 text-tile-label" strokeWidth={2} aria-hidden />
-      <span className={`min-w-0 truncate ${TILE_LABEL}`}>{meta.name}</span>
-      <span className="flex-1" />
+      <span ref={name} className={`min-w-0 flex-1 overflow-hidden whitespace-nowrap ${TILE_LABEL}`}>
+        <span data-name="voll">{meta.name}</span>
+        <span data-name="kurz" hidden>
+          {meta.kurz}
+        </span>
+      </span>
       {demo && <span className="shrink-0 text-[11px] font-semibold text-muted">Beispiel</span>}
       {knopf}
     </div>
@@ -78,6 +96,7 @@ export function WundertueteTile({ size = "S", today, minutes, haushalt, gericht,
   const seite = karte && gedreht === karte.id ? "hinten" : "vorne";
   if (!karte) return <section className={`${TILE} h-full animate-pulse`} data-tone="sport" aria-label="Wundertüte" data-groesse={size} />;
   const meta = sorteMeta(karte.sorte);
+  const stufe = size === "M" ? "M" : "S";
   const hinten = hatRueckseite(karte);
   const weiter = () => {
     buzz();
@@ -111,6 +130,7 @@ export function WundertueteTile({ size = "S", today, minutes, haushalt, gericht,
       aria-label={seite === "vorne" ? `${label}${hinten ? " · Antippen = Antwort" : " · Antippen = Neues"}` : `Antwort: ${karte.hinten?.replace(/\*\*/g, "")} · Antippen = Neues`}
       className="wt-karte relative h-full min-h-0 select-none outline-none"
       data-seite={seite}
+      data-karte={karte.id}
       data-sorte={karte.sorte}
       data-groesse={size}
       data-wundertuete
@@ -119,10 +139,10 @@ export function WundertueteTile({ size = "S", today, minutes, haushalt, gericht,
         <section className={`wt-vorne isolate ${box}`} data-tone={meta.tone} inert={seite !== "vorne"} aria-hidden={seite !== "vorne"}>
           <KachelWasserzeichen kachel="wundertuete" size={size} frei />
           <Kopf meta={meta} demo={demo} />
-          <p className={`mt-1 line-clamp-3 font-extrabold leading-[1.22] ${frageKlasse(karte.vorne, size)}`} data-frage>
+          <Eingepasst stufen={FRAGE_STUFEN[stufe]} text={`${karte.id}|${size}`} className="font-extrabold leading-[1.22]" data="frage">
             {karte.vorne}
-          </p>
-          <span className="mt-auto flex items-end justify-between gap-2">
+          </Eingepasst>
+          <span className="mt-1 flex shrink-0 items-end justify-between gap-2">
             <span className="min-w-0 text-[12px] font-bold leading-tight text-tile-accent">
               <span className="kachel-frei">{hinweisFuer(karte.sorte, abends && lage.haushalt === "allein")}</span>
             </span>
@@ -132,10 +152,10 @@ export function WundertueteTile({ size = "S", today, minutes, haushalt, gericht,
         {hinten && (
           <section className={`wt-hinten ${box} border-2 border-tile-accent bg-surface`} data-tone={meta.tone} data-rueckseite inert={seite !== "hinten"} aria-hidden={seite !== "hinten"}>
             <Kopf meta={meta} demo={demo} knopf={<QuickButton icon={Share} label="Teilen" onClick={() => void teilen()} />} />
-            <p className={`mt-1 line-clamp-4 font-medium leading-snug ${size === "M" ? "text-[17px]" : "text-[14.5px]"}`} data-antwort>
+            <Eingepasst stufen={ANTWORT_STUFEN[stufe]} text={`${karte.id}|${size}|hinten`} className="font-medium leading-snug" data="antwort">
               {antwortTeile(karte.hinten ?? "").map((t, i) => (t.fett ? <strong key={i} className="font-extrabold">{t.text}</strong> : <span key={i}>{t.text}</span>))}
-            </p>
-            <span className="mt-auto text-[12px] font-bold text-tile-accent">Nochmal tippen = Neues</span>
+            </Eingepasst>
+            <span className="mt-1 shrink-0 text-[12px] font-bold leading-tight text-tile-accent">Nochmal tippen = Neues</span>
           </section>
         )}
       </div>

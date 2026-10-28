@@ -41,6 +41,8 @@ export type SorteMeta = {
   id: Sorte;
   /** Name im Kopf (Anzeige in Großbuchstaben über TILE_LABEL) */
   name: string;
+  /** Kurzform im Kopf, wenn der Name nicht ganz in die Zeile passt (S auf schmalen Handys; nie „…“) */
+  kurz: string;
   /** Symbol (lucide), aufgelöst in der Kachel */
   symbol: "lightbulb" | "anchor" | "puzzle" | "calendar" | "message" | "scale" | "dice";
   /** Farbton der Palette (Tafel 108) und wessen Tokens er trägt (`data-tone`) */
@@ -57,13 +59,13 @@ export type SorteMeta = {
 };
 
 export const SORTEN: SorteMeta[] = [
-  { id: "angeberwissen", name: "Angeberwissen", symbol: "lightbulb", farbe: "flieder", tone: "sport", hinweis: "Tagsüber", zeit: "tags", rueckseite: true, quellePflicht: true },
-  { id: "platt", name: "Platt för Plietsche", symbol: "anchor", farbe: "mint", tone: "aufgaben", hinweis: "„Plietsch“ = schlau", zeit: "tags", rueckseite: true, quellePflicht: true },
-  { id: "raetsel", name: "Rätselstunde", symbol: "puzzle", farbe: "vanille", tone: "notizen", hinweis: "Kinder raten zuerst", zeit: "tags", rueckseite: true, quellePflicht: false },
-  { id: "heute100", name: "Heute vor 100 Jahren", symbol: "calendar", farbe: "sand", tone: "timer", hinweis: "Zum Staunen", zeit: "immer", rueckseite: true, quellePflicht: true },
-  { id: "tischrunde", name: "Tischrunde", symbol: "message", farbe: "pfirsich", tone: "essen", hinweis: "Abends, zum Essen", zeit: "abends", rueckseite: false, quellePflicht: false },
-  { id: "schaetzmal", name: "Schätz mal!", symbol: "scale", farbe: "lavendel", tone: "termine", hinweis: "Wer am nächsten dran ist, gewinnt", zeit: "abends", rueckseite: true, quellePflicht: true },
-  { id: "werzuerst", name: "Wer zuerst …", symbol: "dice", farbe: "rose", tone: "pinnwand", hinweis: "Mini-Spiel, 1 Minute", zeit: "abends", rueckseite: false, quellePflicht: false },
+  { id: "angeberwissen", name: "Angeberwissen", kurz: "Wissen", symbol: "lightbulb", farbe: "flieder", tone: "sport", hinweis: "Tagsüber", zeit: "tags", rueckseite: true, quellePflicht: true },
+  { id: "platt", name: "Platt för Plietsche", kurz: "Platt", symbol: "anchor", farbe: "mint", tone: "aufgaben", hinweis: "„Plietsch“ = schlau", zeit: "tags", rueckseite: true, quellePflicht: true },
+  { id: "raetsel", name: "Rätselstunde", kurz: "Rätsel", symbol: "puzzle", farbe: "vanille", tone: "notizen", hinweis: "Kinder raten zuerst", zeit: "tags", rueckseite: true, quellePflicht: false },
+  { id: "heute100", name: "Heute vor 100 Jahren", kurz: "Vor 100 Jahren", symbol: "calendar", farbe: "sand", tone: "timer", hinweis: "Zum Staunen", zeit: "immer", rueckseite: true, quellePflicht: true },
+  { id: "tischrunde", name: "Tischrunde", kurz: "Tischrunde", symbol: "message", farbe: "pfirsich", tone: "essen", hinweis: "Abends, zum Essen", zeit: "abends", rueckseite: false, quellePflicht: false },
+  { id: "schaetzmal", name: "Schätz mal!", kurz: "Schätz mal!", symbol: "scale", farbe: "lavendel", tone: "termine", hinweis: "Wer am nächsten dran ist, gewinnt", zeit: "abends", rueckseite: true, quellePflicht: true },
+  { id: "werzuerst", name: "Wer zuerst", kurz: "Wer zuerst", symbol: "dice", farbe: "rose", tone: "pinnwand", hinweis: "Mini-Spiel, 1 Minute", zeit: "abends", rueckseite: false, quellePflicht: false },
 ];
 
 export const SORTE_IDS: Sorte[] = SORTEN.map((s) => s.id);

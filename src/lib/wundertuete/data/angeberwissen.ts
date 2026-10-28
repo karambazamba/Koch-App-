@@ -93,7 +93,7 @@ export const ANGEBERWISSEN: Eintrag[] = [
   e(80, "Wie groß ist Sylt?", "Rund **99** Quadratkilometer, die größte nordfriesische Insel.", "Statistisches Amt für Hamburg und Schleswig-Holstein"),
   e(81, "Wie viele Länder grenzen an Deutschland?", "**Neun**.", "Bundesamt für Kartographie und Geodäsie (BKG)"),
   e(82, "Welcher See liegt ganz in Deutschland und ist am größten?", "Die **Müritz** in Mecklenburg.", "Statistisches Bundesamt: Seen"),
-  e(83, "Wie viele Brücken hat Hamburg?", "Rund **2.500**, mehr als Venedig und Amsterdam zusammen.", "Hamburg Tourismus: Brücken in Hamburg"),
+  e(83, "Wie viele Brücken hat Hamburg?", "Rund **2.500**, je nachdem, was man mitzählt. Mehr als in Venedig oder Amsterdam.", "Freie und Hansestadt Hamburg, Landesbetrieb Straßen, Brücken und Gewässer (rund 2.500 Brücken); Venedig rund 400, Amsterdam rund 1.700"),
   e(84, "Seit wann ist die Speicherstadt Welterbe?", "Seit **2015**, zusammen mit dem Kontorhausviertel.", "UNESCO World Heritage: Speicherstadt and Kontorhaus District"),
   e(85, "Wann wurde die Elbphilharmonie eröffnet?", "Im Januar **2017**.", "Elbphilharmonie Hamburg: Chronik"),
   e(86, "Wie alt ist der alte Elbtunnel in Hamburg?", "Er wurde **1911** eröffnet.", "Hamburg Port Authority: St. Pauli Elbtunnel"),

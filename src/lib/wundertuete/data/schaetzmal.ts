@@ -7,7 +7,7 @@ import type { Anlass, Eintrag } from "@/lib/wundertuete/sorten";
 const e = (n: number, vorne: string, hinten: string, quelle: string, anlass?: Anlass): Eintrag => ({ id: `sm-${String(n).padStart(3, "0")}`, sorte: "schaetzmal", vorne, hinten, quelle, ...(anlass ? { anlass } : {}) });
 
 export const SCHAETZMAL: Eintrag[] = [
-  e(1, "Wie viele Nudeln sind in 500 g Spaghetti?", "Je nach Sorte grob **500**. Also etwa eine pro Gramm.", "Rechnung: Spaghetti Nr. 5 wiegt je Stück rund 1 g (Herstellerangaben)", { gericht: ["spaghetti", "nudel", "pasta"] }),
+  e(1, "Wie viele Nudeln sind in 500 g Spaghetti?", "Je nach Dicke grob **500**, also ungefähr eine pro Gramm.", "Rechnung: eine Spaghetti Nr. 5 (rund 25 cm, 1,8 mm dick) wiegt knapp 1 g; dünnere Sorten haben deutlich mehr Stück je Packung", { gericht: ["spaghetti", "nudel", "pasta"] }),
   e(2, "Wie viele Tasten hat ein Klavier?", "**88**: 52 weiße und 36 schwarze.", "Encyclopaedia Britannica: Piano"),
   e(3, "Wie viele Felder hat ein Schachbrett?", "**64**, acht mal acht.", "FIDE Laws of Chess"),
   e(4, "Wie viele Sekunden hat ein Tag?", "**86.400**.", "Rechnung: 24 × 60 × 60 (Physikalisch-Technische Bundesanstalt, Zeiteinheiten)"),

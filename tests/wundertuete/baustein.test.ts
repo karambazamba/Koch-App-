@@ -14,7 +14,7 @@ import { demoTiles } from "@/lib/core/demo";
 import { kontext, rufe } from "../begleitung/werkzeugKontext";
 import { PRUEFSAETZE } from "@/lib/begleitung/pruefstand/saetze";
 import { toolDefinitions } from "@/lib/begleitung/toolset";
-import { frageKlasse } from "@/components/wundertuete/WundertueteTile";
+import { ANTWORT_STUFEN, FRAGE_STUFEN } from "@/components/wundertuete/WundertueteTile";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -98,11 +98,13 @@ describe("Kachel: Oberfläche", () => {
   const code = readFileSync("src/components/wundertuete/WundertueteTile.tsx", "utf8");
   const css = readFileSync("src/app/globals.css", "utf8");
 
-  it("M = gleiche Karte, Frage größer; lange Fragen etwas kleiner (höchstens 3 Zeilen)", () => {
-    expect(frageKlasse("Wie viele Herzen hat ein Oktopus?", "S")).toBe("text-[17px]");
-    expect(frageKlasse("Wie viele Herzen hat ein Oktopus?", "M")).toBe("text-[21px]");
-    expect(frageKlasse("Einmal in der Minute, zweimal im Moment, nie im Jahr: was?", "S")).toBe("text-[14px]");
-    expect(code).toContain("line-clamp-3");
+  it("M = gleiche Karte, Frage größer; Schrift passt sich an, nie „…“ oder abgeschnitten (A-045)", () => {
+    expect(FRAGE_STUFEN.S[0]).toBe(17);
+    expect(FRAGE_STUFEN.M[0]).toBe(21);
+    for (const stufen of [...Object.values(FRAGE_STUFEN), ...Object.values(ANTWORT_STUFEN)]) expect([...stufen].sort((a, b) => b - a)).toEqual(stufen);
+    expect(code).not.toMatch(/line-clamp|truncate/);
+    expect(code).toContain("useSchriftEinpassen");
+    expect(code).toContain('data-name="kurz"');
   });
 
   it("Farben nur über Tokens (data-tone der Sorte, hell/dunkel und Schlicht kommen mit), kein Emoji", () => {
@@ -147,7 +149,7 @@ describe("Mia per Gespräch", () => {
 
   it("Tischrunde und Wer zuerst: nur die Frage; Heute vor 100 Jahren nur am belegten Tag", () => {
     expect(rufe(kontext(), "wundertuete_karte", { sorte: "tischrunde" }).content).toMatch(/^Tischrunde: .+\nNur das vorlesen/);
-    expect(rufe(kontext(), "wundertuete_karte", { sorte: "werzuerst" }).content).toMatch(/^Wer zuerst …: Wer zuerst /);
+    expect(rufe(kontext(), "wundertuete_karte", { sorte: "werzuerst" }).content).toMatch(/^Wer zuerst: Wer zuerst /);
     expect(rufe(kontext(), "wundertuete_karte", { sorte: "heute100" }).content).toMatch(/keine Karte/);
     expect(rufe(kontext({}, { today: "2026-10-14" }), "wundertuete_karte", { sorte: "heute100" }).content).toMatch(/Pu der Bär/);
   });
