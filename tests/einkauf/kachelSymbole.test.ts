@@ -9,7 +9,7 @@ import { tileRows } from "@/lib/einkauf/shopGroups";
 import { loadCooking, markStepsBefore } from "@/lib/essen/kochSession";
 import { fakeWindow } from "../helpers";
 
-const ABTEILUNGEN = ["obst-gemuese", "brot", "kuehlregal", "fleisch-fisch", "vorrat", "getraenke", "tiefkuehl", "drogerie", "sonstiges"];
+const ABTEILUNGEN = ["obst", "obst-gemuese", "brot", "kuehlregal", "fleisch-fisch", "vorrat", "getraenke", "tiefkuehl", "drogerie", "sonstiges"];
 
 describe("Symbol der Abteilung statt Buchstabe", () => {
   it("Artikel ohne Zeichnung bekommen immer eine Abteilung – auch Unbekanntes", () => {

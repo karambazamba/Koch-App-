@@ -6,11 +6,11 @@ import { sectionFor, type Section } from "@/lib/einkauf/shoppingList";
 
 const NAMES = [
   "Milch", "Käse", "Butter", "Joghurt", "Quark", "Eier", "Sahne",
-  "Brot", "Brötchen", "Toast",
+  "Brot", "Brötchen", "Toast", "Kuchen",
   "Äpfel", "Bananen", "Zitronen", "Orangen", "Trauben", "Beeren", "Avocado",
-  "Tomaten", "Gurke", "Paprika", "Karotten", "Zwiebeln", "Knoblauch", "Kartoffeln", "Salat", "Brokkoli", "Champignons", "Petersilie",
+  "Tomaten", "Gurke", "Zucchini", "Paprika", "Karotten", "Zwiebeln", "Knoblauch", "Kartoffeln", "Salat", "Brokkoli", "Champignons", "Petersilie",
   "Hähnchen", "Hackfleisch", "Wurst", "Aufschnitt", "Lachs",
-  "Nudeln", "Reis", "Mehl", "Zucker", "Öl", "Salz", "Pfeffer", "Dosentomaten", "Müsli", "Kaffee", "Tee", "Schokolade", "Kekse",
+  "Nudeln", "Reis", "Mehl", "Zucker", "Öl", "Salz", "Pfeffer", "Dosentomaten", "Müsli", "Kaffee", "Tee", "Schokolade", "Kekse", "Honig",
   "Wasser", "Saft", "Bier", "Wein",
   "Eis", "Pizza",
   "Klopapier", "Küchenrolle", "Windeln", "Spülmittel", "Waschmittel", "Zahnpasta", "Shampoo",

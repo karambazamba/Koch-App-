@@ -3,16 +3,17 @@
 // („Kokosmilch“ ist keine Milch, „Paprikapulver“ keine Paprika). Eigene
 // Produkte („Alsan statt Butter“) nehmen das Symbol der Zutat. Unbekannt →
 // null (die Kachel zeigt dann das Symbol der Abteilung, `abteilung.ts`).
+// Ein Stichwort mit null hält bewusst an („Honigmelone“ ist kein Honig).
 // Die Zeichnungen selbst: components/einkauf/kacheln/ItemSymbol.tsx.
 
 /** Alle gezeichneten Symbole @public */
 export const SYMBOLS = [
   "milch", "kaese", "butter", "joghurt", "eier", "sahne",
-  "brot", "broetchen", "toast",
+  "brot", "broetchen", "toast", "kuchen",
   "apfel", "banane", "zitrone", "orange", "trauben", "beeren", "avocado",
-  "tomate", "gurke", "paprika", "karotte", "zwiebel", "knoblauch", "kartoffel", "salat", "brokkoli", "pilz", "kraeuter",
+  "tomate", "gurke", "zucchini", "paprika", "karotte", "zwiebel", "knoblauch", "kartoffel", "salat", "brokkoli", "pilz", "kraeuter",
   "haehnchen", "fleisch", "wurst", "aufschnitt", "fisch",
-  "nudeln", "reis", "mehl", "zucker", "oel", "salz", "dose", "gewuerz", "muesli", "kaffee", "tee", "schokolade", "kekse",
+  "nudeln", "reis", "mehl", "zucker", "oel", "salz", "dose", "gewuerz", "muesli", "kaffee", "tee", "schokolade", "kekse", "honig",
   "wasser", "saft", "bier", "wein",
   "eis", "pizza",
   "klopapier", "windeln", "spuelmittel", "waschmittel", "zahnpasta", "shampoo",
@@ -20,11 +21,11 @@ export const SYMBOLS = [
 export type SymbolId = (typeof SYMBOLS)[number];
 
 /** Stichwort → Symbol; der erste Treffer zählt (Sonderfälle oben) */
-const KEYWORDS: [string, SymbolId][] = [
+const KEYWORDS: [string, SymbolId | null][] = [
   // Sonderfälle
   ["kokosmilch", "dose"], ["paprikapulver", "gewuerz"], ["currypulver", "gewuerz"], ["zitronensaft", "saft"], ["orangensaft", "saft"], ["apfelsaft", "saft"],
   ["tomatenmark", "dose"], ["passierte", "dose"], ["dosentomaten", "dose"], ["gehackte tomaten", "dose"], ["thunfisch", "dose"], ["mais", "dose"], ["bohnen", "dose"], ["kichererbsen", "dose"],
-  ["fischstäbchen", "fisch"], ["butterkeks", "kekse"], ["buttermilch", "milch"], ["erdnussbutter", "butter"], ["käsekuchen", "kekse"],
+  ["fischstäbchen", "fisch"], ["butterkeks", "kekse"], ["buttermilch", "milch"], ["erdnussbutter", "butter"], ["honigmelone", null], ["tortellini", "nudeln"], ["kuchen", "kuchen"], ["torte", "kuchen"],
   ["schlagsahne", "sahne"], ["sauerrahm", "sahne"], ["schmand", "sahne"], ["crème fraîche", "sahne"], ["creme fraiche", "sahne"],
   ["pizzateig", "pizza"], ["eis", "eis"], ["spülmittel", "spuelmittel"], ["spültabs", "spuelmittel"], ["waschmittel", "waschmittel"], ["weichspüler", "waschmittel"],
   ["klopapier", "klopapier"], ["toilettenpapier", "klopapier"], ["küchenrolle", "klopapier"], ["windel", "windeln"], ["zahnpasta", "zahnpasta"], ["zahncreme", "zahnpasta"],
@@ -39,7 +40,7 @@ const KEYWORDS: [string, SymbolId][] = [
   ["brötchen", "broetchen"], ["semmel", "broetchen"], ["croissant", "broetchen"], ["toast", "toast"], ["brot", "brot"], ["baguette", "brot"],
   // Obst & Gemüse
   ["apfel", "apfel"], ["äpfel", "apfel"], ["banane", "banane"], ["zitrone", "zitrone"], ["limette", "zitrone"], ["orange", "orange"], ["mandarine", "orange"], ["clementine", "orange"],
-  ["traube", "trauben"], ["beere", "beeren"], ["avocado", "avocado"], ["tomate", "tomate"], ["gurke", "gurke"], ["paprika", "paprika"], ["möhre", "karotte"], ["karotte", "karotte"],
+  ["traube", "trauben"], ["beere", "beeren"], ["avocado", "avocado"], ["tomate", "tomate"], ["gurke", "gurke"], ["zucchini", "zucchini"], ["paprika", "paprika"], ["möhre", "karotte"], ["karotte", "karotte"],
   ["zwiebel", "zwiebel"], ["knoblauch", "knoblauch"], ["kartoffel", "kartoffel"], ["salat", "salat"], ["rucola", "salat"], ["spinat", "salat"], ["brokkoli", "brokkoli"], ["blumenkohl", "brokkoli"],
   ["pilz", "pilz"], ["champignon", "pilz"], ["petersilie", "kraeuter"], ["basilikum", "kraeuter"], ["schnittlauch", "kraeuter"], ["kräuter", "kraeuter"], ["dill", "kraeuter"], ["koriander", "kraeuter"],
   // Fleisch & Fisch
@@ -47,7 +48,7 @@ const KEYWORDS: [string, SymbolId][] = [
   ["lachs", "fisch"], ["fisch", "fisch"], ["garnele", "fisch"],
   // Vorrat
   ["nudel", "nudeln"], ["spaghetti", "nudeln"], ["pasta", "nudeln"], ["penne", "nudeln"], ["reis", "reis"], ["mehl", "mehl"], ["zucker", "zucker"], ["öl", "oel"], ["essig", "oel"], ["salz", "salz"], ["pfeffer", "gewuerz"],
-  ["müsli", "muesli"], ["haferflocken", "muesli"], ["cornflakes", "muesli"], ["kaffee", "kaffee"], ["tee", "tee"], ["schokolade", "schokolade"], ["kekse", "kekse"], ["keks", "kekse"],
+  ["müsli", "muesli"], ["haferflocken", "muesli"], ["cornflakes", "muesli"], ["kaffee", "kaffee"], ["tee", "tee"], ["schokolade", "schokolade"], ["kekse", "kekse"], ["keks", "kekse"], ["honig", "honig"],
   ["dose", "dose"],
   // Getränke
   ["wasser", "wasser"], ["sprudel", "wasser"], ["saft", "saft"], ["bier", "bier"], ["wein", "wein"],

@@ -40,6 +40,7 @@ const KEYWORDS: [string, Section][] = [
   ["pizzateig", "kuehlregal"], ["blätterteig", "kuehlregal"], ["hefeteig", "kuehlregal"],
   ["thunfisch", "vorrat"], ["frühlingszwiebel", "obst-gemuese"], ["süßkartoffel", "obst-gemuese"],
   ["semmelbrösel", "vorrat"], ["paniermehl", "vorrat"], ["brühe", "vorrat"],
+  ["melone", "obst-gemuese"], ["tortellini", "vorrat"], ["kuchen", "brot"], ["torte", "brot"], ["gebäck", "brot"],
   // Obst & Gemüse
   ["zwiebel", "obst-gemuese"], ["knoblauch", "obst-gemuese"], ["kartoffel", "obst-gemuese"],
   ["tomate", "obst-gemuese"], ["gurke", "obst-gemuese"], ["paprika", "obst-gemuese"],
