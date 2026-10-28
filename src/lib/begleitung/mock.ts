@@ -535,7 +535,8 @@ function mockModel(): CreateMessage {
 
     // Notizen/Aufgaben gelesen → Inhalt kurz wiedergeben (ohne ids)
     const read = prevUses.find((u) => u.name === "notizen_anzeigen" || u.name === "aufgaben_anzeigen");
-    if (read) return text(`${String(resultFor(read.name) ?? "").replace(/ \[id=[^\]]+\]/g, "")} (Testmodus)`);
+    // Aufgaben: die erste Zeile ist schon die kurze Antwort (Zahl und die ersten drei)
+    if (read) return text(`${(read.name === "aufgaben_anzeigen" ? String(resultFor(read.name) ?? "").split("\n")[0] : String(resultFor(read.name) ?? "")).replace(/ \[id=[^\]]+\]/g, "")} (Testmodus)`);
 
     // Termine gelesen → kurz antworten
     const shown = prevUses.find((u) => u.name === "woche_anzeigen" || u.name === "tag_anzeigen");

@@ -18,14 +18,31 @@ describe("Antworten", () => {
   it("Tag und Woche – ruhig, ohne Zähler", () => {
     const entries = [termin({ title: "Arzt", date: TODAY, start: "09:00" }), aufgabe({ title: "Formular", due: "2026-10-22" }), termin({ title: "Kita", date: TODAY, start: "15:00" })];
     expect(clockLabel("09:05")).toBe("9:05");
-    expect(showAnswer(entries, TODAY, TODAY, 1, "heute")).toBe("Heute: 9:00 Arzt und 15:00 Kita.");
-    expect(showAnswer(entries, TODAY, "2026-10-22", 1, "am Donnerstag")).toBe("Am Donnerstag: Formular (bis heute).");
+    // Alles ist heute: die Aufgabe mit Frist steht heute, nicht am Donnerstag
+    expect(showAnswer(entries, TODAY, TODAY, 1, "heute")).toBe("Heute: 9:00 Arzt und 15:00 Kita. Dazu eine Aufgabe: Formular.");
+    expect(showAnswer(entries, TODAY, "2026-10-22", 1, "am Donnerstag")).toBe("Am Donnerstag steht nichts an – ein freier Tag.");
     expect(showAnswer(entries, TODAY, "2026-10-21", 1, "morgen")).toBe("Morgen steht nichts an – ein freier Tag.");
-    expect(showAnswer(entries, TODAY, TODAY, 7, "diese Woche")).toBe("Diese Woche: Di: 9:00 Arzt und 15:00 Kita. Do: Formular (bis heute).");
+    expect(showAnswer(entries, TODAY, TODAY, 7, "diese Woche")).toBe("Diese Woche: Di: 9:00 Arzt, 15:00 Kita und Formular (bis Do).");
     expect(showAnswer([], TODAY, TODAY, 7, "diese Woche")).toBe("Diese Woche ist noch alles frei.");
     const viele = Array.from({ length: 6 }, (_, i) => termin({ title: `T${i}`, date: `2026-10-2${i}`, start: "10:00" }));
     expect(showAnswer(viele, TODAY, TODAY, 7, "diese Woche")).toMatch(/ein paar Sachen mehr/);
     expect(showAnswer(entries, TODAY, TODAY, 7, "diese Woche")).not.toMatch(NOPRESSURE);
+  });
+
+  it("„Was steht heute an?“: Zahl und die ersten drei Aufgaben, nach Feierabend ohne Arbeit (Tafel 103)", () => {
+    const entries = [
+      termin({ title: "Arzt", date: TODAY, start: "09:00" }),
+      aufgabe({ title: "Müll" }),
+      aufgabe({ title: "Kita-Formular" }),
+      aufgabe({ title: "Rad flicken" }),
+      aufgabe({ title: "Bericht" }, { raum: "arbeit" }),
+      aufgabe({ title: "KFZ-Steuer", date: "2026-10-23" }),
+    ];
+    expect(showAnswer(entries, TODAY, TODAY, 1, "heute")).toBe("Heute: 9:00 Arzt. Dazu 4 Aufgaben, zuerst Müll, Kita-Formular und Rad flicken.");
+    expect(showAnswer(entries, TODAY, TODAY, 1, "heute", false, true)).toBe("Heute: 9:00 Arzt. Dazu 3 Aufgaben, zuerst Müll, Kita-Formular und Rad flicken.");
+    expect(showAnswer(entries.slice(1, 3), TODAY, TODAY, 1, "heute")).toBe("Heute: 2 Aufgaben, zuerst Müll und Kita-Formular.");
+    expect(calendarChat("Was steht heute an?", entries, TODAY, [], false, true)?.text).not.toMatch(/Bericht|4 Aufgaben/);
+    expect(showAnswer(entries, TODAY, TODAY, 1, "heute")).not.toMatch(NOPRESSURE);
   });
 
   it("Zeit frei?", () => {
@@ -41,7 +58,8 @@ describe("Antworten", () => {
     const d = aufgabe({ title: "Fertig", doneOn: TODAY }, { id: "d1" });
     const lines = contextLines([t, a, d], TODAY, 2);
     expect(lines).toContain("- Di 2026-10-20: 09:00 Meeting [id=t1; termin, arbeit, Etikett Büro, bis 10:00, Erinnerung 15, wiederkehrend]");
-    expect(lines).toContain("Steuer [id=a1; aufgabe, familie, von gestern, bis Fr]");
+    expect(lines).toContain("Steuer [id=a1; aufgabe, familie, bis Fr]");
+    expect(lines).not.toMatch(/von gestern/);
     expect(lines).toContain("Fertig [id=d1; aufgabe, familie, erledigt]");
     expect(contextLines([], TODAY, 1)).toBe("- Di 2026-10-20: frei");
     expect(itemText(itemsForDay([a], TODAY, TODAY)[0])).toBe("Steuer (bis Fr)");
@@ -140,7 +158,7 @@ describe("Speicher", () => {
     const list = loadEntries();
     expect(list.map((e) => [e.id, e.typ])).toEqual([["x", "termin"], ["y", "aufgabe"]]);
     expect((list[0] as Termin).data.start).toBe("09:00");
-    expect(JSON.parse(w.localStorage.getItem("wasgibts.eintraege")!).version).toBe(2);
+    expect(JSON.parse(w.localStorage.getItem("wasgibts.eintraege")!).version).toBe(3);
     markReminderSeen("a@b");
     markReminderSeen("c@d");
     expect(JSON.parse(w.localStorage.getItem("wasgibts.eintraege")!).seenReminders).toEqual(["a@b", "c@d"]);

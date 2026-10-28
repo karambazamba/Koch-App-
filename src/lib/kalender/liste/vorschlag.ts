@@ -1,7 +1,7 @@
-// „Mia nervt nie“: Liegen viele Aufgaben ohne Datum herum (meist nach dem
-// Einfügen einer großen Liste), schlägt die Aufgaben-Seite höchstens einmal
-// pro Woche drei davon für diese Woche vor – nicht in den ersten 3 Tagen nach
-// dem Einfügen. „Übernehmen“ legt sie in „diese Woche“, „Nicht jetzt“ =
+// „Mia nervt nie“: Liegen viele Aufgaben in den Listen (nach dem Einfügen
+// einer großen Liste, ohne Tag), schlägt die Aufgaben-Seite höchstens einmal
+// pro Woche drei davon für heute vor – nicht in den ersten 3 Tagen nach dem
+// Einfügen. „Übernehmen“ holt sie in die eine Liste von heute, „Nicht jetzt“ =
 // Ruhe bis nächste Woche. Kein Zähler, kein Druck.
 
 import { createLocalStore } from "@/lib/core/localStore";
@@ -9,8 +9,9 @@ import { useExternalStore } from "@/lib/core/useExternalStore";
 import { addDays } from "@/lib/core/now";
 import { sortBy, TASK_SUGGEST, via } from "@/lib/core/sort";
 import { isUrgent, mondayOf, taskOverview, type CalendarEntry, type DayItem } from "@/lib/kalender/model";
+import { inListe } from "@/lib/kalender/liste/ordnung";
 
-/** Ab so vielen Aufgaben ohne Datum lohnt ein Vorschlag */
+/** Ab so vielen Aufgaben in den Listen lohnt ein Vorschlag */
 const AB = 8;
 
 export type VorschlagState = { version: 1; weekOff?: string };
@@ -21,10 +22,10 @@ export function migrateVorschlag(raw: unknown): VorschlagState | null {
   return { version: 1, ...(typeof w === "string" && /^\d{4}-\d{2}-\d{2}$/.test(w) ? { weekOff: w } : {}) };
 }
 
-/** Drei Aufgaben ohne Datum (dringende, dann die ältesten) – oder null */
+/** Drei Aufgaben aus den Listen (dringende, dann die ältesten) – oder null */
 export function wochenVorschlag(entries: CalendarEntry[], today: string, state: VorschlagState): DayItem[] | null {
   if (state.weekOff === mondayOf(today)) return null;
-  const undated = taskOverview(entries, today).irgendwann;
+  const undated = taskOverview(entries, today).heute.filter(inListe);
   if (undated.length < AB) return null;
   // Nicht in den ersten 3 Tagen: erst, wenn genug davon schon 3 Tage liegen
   const settled = undated.filter((i) => i.entry.erstellt.slice(0, 10) <= addDays(today, -3));
@@ -32,10 +33,9 @@ export function wochenVorschlag(entries: CalendarEntry[], today: string, state: 
   return sortBy(settled, ...via((i: DayItem) => ({ urgent: isUrgent(i), erstellt: i.entry.erstellt }), TASK_SUGGEST)).slice(0, 3);
 }
 
-/** Gewählte Aufgaben in „diese Woche“ legen (rein) */
-export function inDieseWoche(entries: CalendarEntry[], ids: string[], today: string, stamp: string): CalendarEntry[] {
-  const week = mondayOf(today);
-  return entries.map((e) => (e.typ === "aufgabe" && ids.includes(e.id) ? { ...e, data: { ...e.data, week }, geaendert: stamp } : e));
+/** Gewählte Aufgaben für heute holen (rein): mit Tag stehen sie in der einen Liste */
+export function fuerHeute(entries: CalendarEntry[], ids: string[], today: string, stamp: string): CalendarEntry[] {
+  return entries.map((e) => (e.typ === "aufgabe" && ids.includes(e.id) ? { ...e, data: { ...e.data, date: today }, geaendert: stamp } : e));
 }
 
 const store = createLocalStore("wasgibts.aufgabenvorschlag", migrateVorschlag);

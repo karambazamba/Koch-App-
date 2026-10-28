@@ -42,7 +42,8 @@ import { openHelper } from "@/lib/begleitung/open";
 import { isWeekCheckRequest } from "@/lib/kalender/wochencheck";
 import { isKochtippRequest } from "@/lib/essen/kochtipp/start";
 import { daySummary, isDayQuestion, openDeinTag } from "@/lib/heute/deinTag";
-import { itemsForDay } from "@/lib/kalender/model";
+import { itemsForDay, weekdayIndex } from "@/lib/kalender/model";
+import { arbeitRuht, arbeitsEnde } from "@/lib/heute/phases";
 import type { SpontanChat } from "@/components/begleitung/useSpontanChat";
 
 type Options = {
@@ -132,8 +133,12 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
     if (!data || !today) return null;
     const entries = loadCalendarEntries();
     const iso = toIsoDate(today);
-    const abends = abendsNachUhr({ entries, heute: iso, minutes: now().getHours() * 60 + now().getMinutes(), feierabendAb: loadRoutine().feierabendAb });
-    const reply = calendarChat(t, entries, iso, data.profile.persons, abends);
+    const minutes = now().getHours() * 60 + now().getMinutes();
+    const routine = loadRoutine();
+    const abends = abendsNachUhr({ entries, heute: iso, minutes, feierabendAb: routine.feierabendAb });
+    // Nach Feierabend: „Was steht heute an?“ ohne Arbeit (Tafel 103)
+    const ruht = arbeitRuht({ minutes, weekday: weekdayIndex(iso), routine, workEnd: arbeitsEnde(itemsForDay(entries, iso, iso)) });
+    const reply = calendarChat(t, entries, iso, data.profile.persons, abends, ruht);
     if (!reply) return null;
     if (!reply.change) return { text: reply.text };
     const undo = pushUndo(reply.text, changeEntries(reply.change));

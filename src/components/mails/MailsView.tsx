@@ -25,7 +25,7 @@ function label(v: MailVorschlag, today: string): { what: string; title: string; 
   if (v.kind === "einkauf") return { what: "Einkauf", title: v.name, detail: "auf die Liste" };
   if (v.kind === "termin") return { what: "Termin", title: v.title, detail: [`${dayWord(v.date, today)}${v.start ? ` ${v.start.replace(/^0(\d)/, "$1").replace(/:00$/, "")} Uhr` : ""}`, v.place].filter(Boolean).join(" · ") };
   const day = v.due ?? v.date;
-  return { what: "Aufgabe", title: v.title, detail: day ? `${v.due ? "bis " : ""}${dayWord(day, today)}` : "irgendwann" };
+  return { what: "Aufgabe", title: v.title, detail: day ? `${v.due ? "bis " : ""}${dayWord(day, today)}` : "heute" };
 }
 
 function MailCard({ item, week }: { item: MailEintrag; week: string | null }) {

@@ -85,12 +85,15 @@ describe("Termine anlegen", () => {
 });
 
 describe("Aufgaben anlegen", () => {
-  it("Frist, Zeitraum, Tageszeit, dringend", () => {
-    expect(create("Kita-Formular bis Mittwoch abgeben").data).toMatchObject({ due: "2026-10-21" });
-    expect(create("Steuer bis Ende der Woche").data).toMatchObject({ due: "2026-10-25" });
-    expect(create("Ich muss diese Woche noch die Reifen machen").data).toMatchObject({ week: "2026-10-19" });
-    expect(create("Nächste Woche Fenster putzen").data).toMatchObject({ week: "2026-10-26" });
-    expect(create("In der kommenden Woche Keller aufräumen").data).toMatchObject({ week: "2026-10-26" });
+  it("Frist, Zeitraum, Tageszeit, dringend – alles ist heute, „nächste Woche“ ab Montag (Tafel 103)", () => {
+    expect(create("Kita-Formular bis Mittwoch abgeben").data).toMatchObject({ due: "2026-10-21", date: TODAY });
+    expect(create("Steuer bis Ende der Woche").data).toMatchObject({ due: "2026-10-25", date: TODAY });
+    expect(create("Ich muss diese Woche noch die Reifen machen").data).toMatchObject({ date: TODAY, title: "Reifen machen" });
+    expect(create("Nächste Woche Fenster putzen").data).toMatchObject({ date: "2026-10-26" });
+    expect(create("In der kommenden Woche Keller aufräumen").data).toMatchObject({ date: "2026-10-26" });
+    expect(create("Freitag KFZ-Steuer überweisen").data).toMatchObject({ date: "2026-10-23" });
+    expect(create("Ich muss noch die Steuer machen").data).toMatchObject({ date: TODAY });
+    expect(Object.keys(create("Ich muss diese Woche noch die Reifen machen").data)).not.toContain("week");
     const abends = create("Morgen abends Geschenk einpacken");
     expect(abends.typ).toBe("aufgabe");
     expect(abends.data).toMatchObject({ time: "19:00", date: "2026-10-21", reminder: "aus" });
@@ -169,7 +172,8 @@ describe("Schnell-Eintrag", () => {
     expect(readQuickText("Fenster putzen heute", TODAY).when).toBe("heute");
     expect(readQuickText("Fenster putzen morgen", TODAY).when).toBe("morgen");
     expect(readQuickText("Fenster putzen am Freitag", TODAY).when).toEqual({ date: "2026-10-23" });
-    expect(readQuickText("Diese Woche Reifen", TODAY).when).toBe("woche");
+    // Ohne genannten Tag: null = der vorgegebene Tag (sonst heute)
+    expect(readQuickText("Diese Woche Reifen", TODAY).when).toBeNull();
     expect(readQuickText("Kommende Woche Reifen", TODAY).when).toEqual({ date: "2026-10-26" });
     expect(readQuickText("Wichtig: Müll rausbringen", TODAY)).toMatchObject({ urgent: true, when: null, title: "Müll rausbringen" });
     expect(readQuickText("Präsentation", TODAY)).toMatchObject({ title: "Präsentation", when: null, room: "arbeit" });
@@ -178,14 +182,13 @@ describe("Schnell-Eintrag", () => {
   it("baut die Aufgabe aus der Auswahl", () => {
     expect(quickTaskData(" Müll ", "heute", TODAY, { time: "18:00", label: "Haus", dringend: true, reminder: "15" })).toEqual({ title: "Müll", reminder: "15", repeat: null, time: "18:00", label: "Haus", dringend: true, date: TODAY });
     expect(quickTaskData("A", "morgen", TODAY).date).toBe("2026-10-21");
-    expect(quickTaskData("A", "woche", TODAY).week).toBe("2026-10-19");
-    expect(quickTaskData("A", "irgendwann", TODAY)).toEqual({ title: "A", reminder: "aus", repeat: null });
-    expect(quickTaskData("A", { due: "2026-10-23" }, TODAY).due).toBe("2026-10-23");
+    expect(quickTaskData("A", { due: "2026-10-23" }, TODAY)).toMatchObject({ due: "2026-10-23", date: TODAY });
+    expect(quickTaskData("A", {}, TODAY).date).toBe(TODAY);
     expect(quickTaskData("A", { date: "2026-10-23" }, TODAY).date).toBe("2026-10-23");
   });
 
   it("Chips: Wann, Tag, häufige Uhrzeiten", () => {
-    expect(whenLabel("woche")).toBe("Diese Woche");
+    expect(whenLabel("morgen")).toBe("Morgen");
     expect(whenLabel({ date: "2026-10-23" })).toBe("Fr 23.10.");
     expect(whenLabel({ due: "2026-10-23" })).toBe("bis Fr 23.10.");
     expect(dayChipLabel("2026-10-23")).toBe("Fr 23.10.");

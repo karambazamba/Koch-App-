@@ -41,7 +41,9 @@ describe("Werkzeug woche_eintragen", () => {
     expect(lauf.hint).toBe("trocken");
     expect(spiel.entry.data).toMatchObject({ start: "", reminder: "aus", who: ["p-mathis"] });
     expect(paket.entry.data).toMatchObject({ due: "2026-10-30" });
-    expect(fenster.entry.data).toMatchObject({ week: "2026-10-19" });
+    // Alles ist heute (Tafel 103): ohne Tag für heute
+    expect(fenster.entry.data).toMatchObject({ date: "2026-10-21" });
+    expect((fenster.entry.data as { week?: string }).week).toBeUndefined();
 
     // zurück in „Deine Woche“
     const items = ops.map((o, i) => itemFromEntry(o.entry, `k${i}`, o.hint));
@@ -97,11 +99,11 @@ describe("Übernehmen: Punkte → Einträge", () => {
     ]);
     expect(out[0].data).toMatchObject({ start: "08:30", end: "09:00", reminder: "30" });
     expect(out[1].data).toMatchObject({ start: "", reminder: "aus", who: ["p-mathis"] });
-    expect(out[2].data).toMatchObject({ week: "2026-10-19" });
+    expect(out[2].data).toMatchObject({ date: "2026-10-21" });
   });
 
-  it("am Sonntag gehören Aufgaben ohne Tag schon zur neuen Woche", () => {
-    expect(weekEntries([item({ art: "aufgabe", title: "Fenster" })], "2026-10-25", make)[0].data).toMatchObject({ week: "2026-10-26" });
+  it("Aufgaben ohne Tag gehören zu heute – auch am Sonntag (wandern still mit)", () => {
+    expect(weekEntries([item({ art: "aufgabe", title: "Fenster" })], "2026-10-25", make)[0].data).toMatchObject({ date: "2026-10-25" });
   });
 });
 

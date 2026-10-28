@@ -3,9 +3,11 @@
 // "Offenes", nur was ansteht.
 
 import { addDays } from "@/lib/core/now";
-import { itemsForDay, weekdayShort, type CalendarEntry, type DayItem } from "@/lib/kalender/model";
+import { itemsForDay, taskOverview, weekdayShort, type CalendarEntry, type DayItem } from "@/lib/kalender/model";
 import { isAboEntry } from "@/lib/kalender/abo/model";
-import { aufgabenFuerTag } from "@/lib/kalender/mitwandern";
+import { aufgabenFuerTag, wandertMit } from "@/lib/kalender/mitwandern";
+import { aufgabenKurz } from "@/lib/kalender/aufgaben";
+import { listenAnsicht } from "@/lib/kalender/liste/ordnung";
 
 /** "9:00" statt "09:00" (zum Vorlesen und Anzeigen) */
 export const clockLabel = (time: string) => time.replace(/^0(\d)/, "$1");
@@ -19,15 +21,31 @@ export function itemText(item: DayItem): string {
 
 const joinList = (parts: string[]) => (parts.length <= 1 ? parts.join("") : `${parts.slice(0, -1).join(", ")} und ${parts[parts.length - 1]}`);
 
-/** Abends für morgen: was von heute mitwandert („von heute“, `mitwandern.ts`) – kurz, ohne Zähler */
+/** Abends für morgen: was von heute still mitwandert (`mitwandern.ts`) – kurz, ohne Zähler */
 export function mitgewandert(entries: CalendarEntry[], today: string, abends: boolean): DayItem[] {
   if (!abends) return [];
   const morgen = addDays(today, 1);
-  return aufgabenFuerTag(entries, morgen, { heute: today, abends }).filter((i) => i.carried);
+  return aufgabenFuerTag(entries, morgen, { heute: today, abends }).filter((i) => wandertMit(i, today));
 }
 
-/** Antwort auf "Was steht heute/morgen/diese Woche an?" – abends nennt „morgen“ das Mitgewanderte kurz mit */
-export function showAnswer(entries: CalendarEntry[], today: string, from: string, days: number, label: string, abends = false): string {
+/**
+ * „Was steht heute an?“: Termine, die noch kommen bzw. heute stehen, dazu kurz
+ * die Zahl der Aufgaben und die ersten drei (Tafel 103). Nach Feierabend ohne
+ * Arbeit – „Was ist noch bei der Arbeit?“ fragt eigens danach.
+ */
+function heuteAnswer(entries: CalendarEntry[], today: string, label: string, ohneArbeit: boolean): string {
+  const termine = itemsForDay(entries, today, today).filter((i) => i.entry.typ === "termin" && !i.done);
+  const alle = listenAnsicht(taskOverview(entries, today).heute).jetzt;
+  const aufgaben = ohneArbeit ? alle.filter((i) => i.room !== "arbeit") : alle;
+  if (!termine.length && !aufgaben.length) return `${capital(label)} steht nichts an – ein freier Tag.`;
+  const kurz = aufgabenKurz(aufgaben);
+  if (!termine.length) return `${capital(label)}: ${kurz}.`;
+  return `${capital(label)}: ${joinList(termine.map(itemText))}.${kurz ? ` Dazu ${kurz}.` : ""}`;
+}
+
+/** Antwort auf "Was steht heute/morgen/diese Woche an?" – abends nennt „morgen“ das Mitgewanderte kurz mit, `ohneArbeit` lässt Arbeitsaufgaben weg */
+export function showAnswer(entries: CalendarEntry[], today: string, from: string, days: number, label: string, abends = false, ohneArbeit = false): string {
+  if (days <= 1 && from === today) return heuteAnswer(entries, today, label, ohneArbeit);
   if (days <= 1) {
     const items = itemsForDay(entries, from, today).filter((i) => !i.done);
     const mit = from === addDays(today, 1) ? mitgewandert(entries, today, abends) : [];
@@ -76,7 +94,6 @@ export function contextLines(entries: CalendarEntry[], today: string, days = 7, 
         i.end ? `bis ${i.end}` : "",
         i.reminder !== "aus" ? `Erinnerung ${i.reminder}` : "",
         i.repeat ? "wiederkehrend" : "",
-        i.carried ? i.carried : "",
         i.dueLabel ?? "",
         i.done ? "erledigt" : "",
         isAboEntry(i.entry) ? "aus verbundenem Kalender, nur lesen" : "",

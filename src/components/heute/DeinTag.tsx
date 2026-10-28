@@ -45,7 +45,7 @@ type Props = {
   termine: DayItem[];
   tomorrow: DayItem[];
   tasks: DayItem[];
-  /** Aufgaben für morgen – abends mit dem Mitgewanderten („von heute“, kalender/mitwandern.ts) */
+  /** Aufgaben für morgen – abends still mit dem Mitgewanderten (kalender/mitwandern.ts) */
   tomorrowTasks?: DayItem[];
   dish: DayDish | null;
   shop: { shop: string; names: string[] } | null;
@@ -251,8 +251,8 @@ export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, t
                         <span className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${checked ? "border-accent bg-accent text-on-accent" : "border-line-strong"}`}>{checked && <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />}</span>
                       </button>
                       <button type="button" onClick={() => setMenu(t)} className="flex min-w-0 flex-1 flex-col text-left">
-                        <span className={`truncate text-base font-semibold ${checked ? "text-muted line-through" : ""}`}>{t.title}</span>
-                        {(t.carried || t.time) && <span className="text-[13px] text-muted">{[t.time ? clock(t.time) : "", t.carried ?? ""].filter(Boolean).join(" · ")}</span>}
+                        <span className={`line-clamp-2 break-words text-base font-semibold ${checked ? "text-muted line-through" : ""}`}>{t.title}</span>
+                        {t.time && <span className="text-[13px] text-muted">{clock(t.time)}</span>}
                       </button>
                     </li>
                     );

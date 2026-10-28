@@ -7,7 +7,7 @@
 // Importiert wird alles, angezeigt nur, was jetzt dran ist. Rein.
 
 import { createEntry, type Room } from "@/lib/core/entries";
-import { parseCalendar } from "@/lib/kalender/parse";
+import { genannterTag, parseCalendar } from "@/lib/kalender/parse";
 import type { Aufgabe, AufgabeData, CalendarEntry } from "@/lib/kalender/model";
 
 export type ListZeile = {
@@ -82,9 +82,9 @@ function readZeile(text: string, liste: string | undefined, today: string): List
     const data: Partial<AufgabeData> =
       d.typ === "aufgabe"
         ? {
-            date: d.data.date,
+            // Nur ein genannter Tag zählt – sonst bleibt die Zeile in ihrer Liste geparkt
+            date: d.data.repeat ? d.data.date : (genannterTag(d.data.date, text, today) ?? undefined),
             due: d.data.due,
-            week: d.data.week,
             time: d.data.time,
             dringend: d.data.dringend,
             repeat: d.data.repeat ?? null,
@@ -152,7 +152,7 @@ export function listeAusChat(text: string): string | null {
   return null;
 }
 
-export const hatDatum = (z: ListZeile) => Boolean(z.data.date || z.data.due || z.data.week || z.data.repeat);
+export const hatDatum = (z: ListZeile) => Boolean(z.data.date || z.data.due || z.data.repeat);
 
 const norm = (s: string) =>
   s

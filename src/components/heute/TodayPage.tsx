@@ -31,8 +31,8 @@ import { useJetztTopics } from "@/components/heute/useJetztTopics";
 import { takeHelloFlight } from "@/lib/core/hello";
 import { SportTile } from "@/components/sport/SportTile";
 import { useHomePhase } from "@/components/heute/useHomePhase";
-import type { PhaseContext } from "@/lib/heute/phases";
-import { clockMinutes, DEFAULT_ROUTINE, usePreview, useRoutine } from "@/lib/heute/tagesablauf";
+import { arbeitsEnde, type PhaseContext } from "@/lib/heute/phases";
+import { DEFAULT_ROUTINE, usePreview, useRoutine } from "@/lib/heute/tagesablauf";
 import { nudgePhase } from "@/lib/heute/nudge";
 import { berlinTime, now, toIsoDate } from "@/lib/core/now";
 import { useWakeLock } from "@/lib/core/wakeLock";
@@ -48,7 +48,8 @@ import { todaysTraining } from "@/lib/sport";
 import { weekdayIndex } from "@/lib/kalender/model";
 import { buzz } from "@/components/heute/actions";
 import { isUrgent, itemsForDay, taskOverview, tomorrowLabel, upcomingTermine, type CalendarEntry, type DayItem } from "@/lib/kalender/model";
-import { aufgabenFuerTag, aufgabenReihe, aufgabenTag, aufMorgen, offeneAufgaben } from "@/lib/kalender/mitwandern";
+import { aufgabenFuerTag, aufgabenTag, aufgabenUebersicht, aufMorgen } from "@/lib/kalender/mitwandern";
+import { listenAnsicht } from "@/lib/kalender/liste/ordnung";
 import { AufgabenSection, TermineSection, type DemoProps } from "@/components/heute/MiniCards";
 import { useDemoDay } from "@/components/heute/useDemoDay";
 import { DemoItemSheet, DemoRow } from "@/components/heute/DemoBits";
@@ -184,8 +185,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     return iso === data.todayIso ? d.getHours() * 60 + d.getMinutes() + offset : iso < data.todayIso ? -1 : 24 * 60;
   };
   const sportTile = all.find((t) => t.id === "sport");
-  const workToday = allItems.filter((i) => i.entry.typ === "termin" && i.room === "arbeit" && i.time);
-  const workEnd = workToday.length ? Math.max(...workToday.map((i) => (i.end ? clockMinutes(i.end) : clockMinutes(i.time!) + 60))) : null;
+  const workEnd = arbeitsEnde(allItems);
   const weekday = preview?.weekday ?? weekdayIndex(data.todayIso);
   const ctx: PhaseContext | null = timers && cooking
     ? {
@@ -305,7 +305,8 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const cookingStep = step !== null && steps[step] ? steps[step] : null;
   const match = recipe && stock ? matchStock(recipe.ingredients.map((i) => i.name), stock, data.todayIso) : null;
   const needs = match?.needs ?? null;
-  const dueToday = workless(overview.heute).filter((i) => !i.carried && i.entry.typ === "aufgabe" && (i.entry.data.due === data.todayIso || i.entry.data.date === data.todayIso));
+  // Alles ist heute (Tafel 103): eigens erwähnt wird nur eine Frist, die heute endet
+  const dueToday = workless(overview.heute).filter((i) => i.entry.typ === "aufgabe" && i.entry.data.due === data.todayIso);
   const training = ctx?.sport.training;
   const leisure = evening && notes ? leisureIdea(notes, data.todayIso) : null;
   const regionTips = useTipsWindow(data.todayIso, regionOn && !demoDay.tiles.length);
@@ -320,11 +321,13 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
       ? { name: dish, clock: dishClock, minutes: recipe?.prepMinutes ?? null, ready: Boolean(needs && !needs.length), missing: needs ?? [], unsure: match?.unsure ?? [] }
       : null;
   const jetztUpcoming = demoDay.termine && !demoDay.label ? demoDay.termine : demoDay.termine ? [] : termine;
-  // Abends steht die Startseite auf morgen: offene Aufgaben wandern mit („von heute“, kalender/mitwandern.ts)
+  // Abends steht die Startseite auf morgen: offene Aufgaben wandern still mit (kalender/mitwandern.ts)
   const mitwandern = { heute: data.todayIso, abends: aufMorgen(abendLage({ minutes, evening, cookingStep, upcoming: jetztUpcoming, dish: jetztDish })) };
-  // EINE Reihenfolge: dringend → heute → Frist → diese Woche (Startseite zeigt bis diese Woche); „Aufgaben machen Pause“ gilt abends nicht – dann steht ja morgen da
-  const tasksAll = workless(aufgabenReihe(entries, mitwandern).filter((i) => isUrgent(i) || i.group === "heute" || i.group === "woche"));
-  const tasks = view.tasksRest && !mitwandern.abends ? [] : tasksAll;
+  // Die eine Liste wie auf der Aufgaben-Seite (dringend → neu → Erstellungszeit, ohne Geparktes aus Listen); nach Feierabend ohne Arbeit, dafür „Arbeit · 5 für morgen“
+  const tasksJetzt = listenAnsicht(aufgabenUebersicht(entries, mitwandern).heute).jetzt;
+  const tasksAll = workless(tasksJetzt);
+  const tasks = tasksAll;
+  const arbeitMorgen = view.hideWork ? tasksJetzt.length - tasksAll.length : 0;
   const tasksTomorrow = workless(aufgabenFuerTag(entries, tomorrowIso, mitwandern));
   const denkt = useMiaDenkt({ data, entries, items: allItems, minutes, visible: visible.map((t) => t.id), demo: demoOn, pause: Boolean(paused), ruhe: evening && routine.ruhe, besetzt: Boolean(hinweis), me: name || "Ich", onOpenFood });
   const mia = useMiaRoutinen({ today: data.todayIso, minutes, entries, termine: allItems, tomorrow: tomorrowAll, profile: data.profile, me: name || "Ich", regen: null, demo: Boolean(demoDay.termine) || demoDay.tiles.length > 0 });
@@ -423,7 +426,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
         return <TermineSection rows={terminTile.rows} label={terminTile.label} href={TILE_PAGE.termine!} today={data.todayIso} size={tile.size} half={half} />;
       case "aufgaben":
         if (demoDay.tasks) return <AufgabenSection items={demoDay.tasks} today={data.todayIso} size={tile.size} half={half} demo={demoProps} />;
-        return <AufgabenSection items={tasks} total={view.tasksRest && !mitwandern.abends ? 0 : offeneAufgaben(entries, mitwandern)} today={data.todayIso} label={mitwandern.abends ? tomorrowLabel(tomorrowIso) : null} addOn={aufgabenTag(mitwandern)} size={tile.size} half={half} />;
+        return <AufgabenSection items={tasks} total={tasks.length} today={data.todayIso} label={mitwandern.abends ? tomorrowLabel(tomorrowIso) : null} addOn={aufgabenTag(mitwandern)} size={tile.size} half={half} arbeitMorgen={arbeitMorgen} />;
       case "essen":
         if (demoDish)
           return (

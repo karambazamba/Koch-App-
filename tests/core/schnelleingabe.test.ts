@@ -32,16 +32,16 @@ describe("Satz → Chips (ohne KI)", () => {
     expect(picked).toMatchObject({ date: "2026-10-26", time: null, room: "arbeit" });
   });
 
-  it("Aufgabe: „bis Mi, 28. Okt“ / „heute“ / ohne Tag + „Familie“", () => {
+  it("Aufgabe: „bis Mi, 28. Okt“ / „heute“ / ohne Tag = heute + „Familie“", () => {
     const due = readQuick("aufgabe", "Steuer abgeben bis Dienstag", TODAY);
     expect(quickChips(due, TODAY).map((c) => c.label)).toEqual(["bis Di, 27. Okt", "Familie"]);
     expect(quickChips(readQuick("aufgabe", "Blumen gießen heute", TODAY), TODAY)[0].label).toBe("heute");
-    expect(quickChips(readQuick("aufgabe", "Malersachen kaufen", TODAY), TODAY).map((c) => c.label)).toEqual(["Familie"]);
+    // Alles ist heute (Tafel 103): ohne Tag steht „heute“ da
+    expect(quickChips(readQuick("aufgabe", "Malersachen kaufen", TODAY), TODAY).map((c) => c.label)).toEqual(["heute", "Familie"]);
     // Startseiten-Kachel gibt „heute“ vor
     expect(quickChips(readQuick("aufgabe", "Malersachen kaufen", TODAY, { date: TODAY }), TODAY)[0].label).toBe("heute");
-    expect(whenChip("woche", TODAY)).toBe("diese Woche");
     expect(whenChip("morgen", TODAY)).toBe("Morgen · Do");
-    expect(whenChip("irgendwann", TODAY)).toBeNull();
+    expect(whenChip(null, TODAY)).toBe("heute");
   });
 
   it("Einkauf, Notiz, Pinnwand: Text 1:1, keine Chips", () => {

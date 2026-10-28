@@ -35,7 +35,7 @@ function saveEntry(read: Extract<QuickRead, { kind: "termin" | "aufgabe" }>, rem
   const data =
     read.kind === "termin"
       ? { title: read.title.slice(0, 120), date: read.date, start: read.time ?? "", reminder: read.time && remind ? standard : "aus", repeat: read.repeat, ...(read.label ? { label: read.label } : {}) }
-      : quickTaskData(read.title, read.when ?? "irgendwann", today, { time: read.time, label: read.label, dringend: read.urgent, reminder: read.time && remind && standard !== "aus" ? "30" : "aus" });
+      : quickTaskData(read.title, read.when ?? "heute", today, { time: read.time, label: read.label, dringend: read.urgent, reminder: read.time && remind && standard !== "aus" ? "30" : "aus" });
   const entry = sanitizeEntry(createEntry(read.kind, data, { raum: read.room }) as CalendarEntry);
   if (!entry) return null;
   const undo = changeEntries((list) => upsertEntry(list, entry));

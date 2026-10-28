@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { setDone, taskBadge, isUrgent, type CalendarEntry } from "@/lib/kalender/model";
-import { abendsNachUhr, aufgabenFuerTag, aufgabenReihe, aufgabenTag, aufgabenUebersicht, aufMorgen, gruppenName, offeneAufgaben } from "@/lib/kalender/mitwandern";
+import { setDone, isUrgent, type CalendarEntry } from "@/lib/kalender/model";
+import { abendsNachUhr, aufgabenFuerTag, aufgabenTag, aufgabenUebersicht, aufMorgen, wandertMit } from "@/lib/kalender/mitwandern";
 import { showAnswer } from "@/lib/kalender/answers";
 import { calendarChat } from "@/lib/kalender/chat";
 import { calendarContext } from "@/lib/begleitung/calendarTools";
@@ -18,50 +18,47 @@ function zehnVonHeute(): CalendarEntry[] {
   return Array.from({ length: 10 }, (_, i) => aufgabe({ title: `Aufgabe ${i + 1}`, date: HEUTE }));
 }
 
-describe("Abends: offene Aufgaben wandern mit auf morgen", () => {
-  it("21 Uhr mit 10 offenen Aufgaben von heute: morgen zeigt sie zuerst, leise „von heute“", () => {
+describe("Abends: offene Aufgaben wandern still mit auf morgen (ohne Etikett, Tafel 103)", () => {
+  it("21 Uhr mit 10 offenen Aufgaben von heute: morgen stehen sie in derselben einen Liste, ohne „von heute“", () => {
     const heute = zehnVonHeute();
+    at("2026-10-26T08:00");
     const morgenEcht = aufgabe({ title: "Kita-Formular", date: MORGEN });
     const entries = [...heute, morgenEcht];
     const list = aufgabenFuerTag(entries, MORGEN, ABENDS);
+    // Heute angelegt = „neu“ und vorne (bis Mitternacht), dann nach Erstellungszeit – das Kita-Formular ist vom Montag
     expect(list.map((i) => i.title)).toEqual([...heute.map((e) => (e.data as { title: string }).title), "Kita-Formular"]);
-    expect(list.slice(0, 10).every((i) => i.carried === "von heute")).toBe(true);
-    expect(list[10].carried).toBeNull();
-    // Kachel: gleiche Reihenfolge, Zusatz rechts „von heute“, morgen ohne „heute“
-    const reihe = aufgabenReihe(entries, ABENDS).filter((i) => i.group === "heute");
-    expect(reihe.map((i) => i.title)).toEqual(list.map((i) => i.title));
-    expect(taskBadge(reihe[0], HEUTE)).toBe("von heute");
-    expect(taskBadge(reihe[10], HEUTE)).toBe("");
+    expect(list.every((i) => !("carried" in i))).toBe(true);
+    // Abhaken am echten Tag: Mitgewandertes steht noch auf heute, das Echte auf morgen
+    expect(list.filter((i) => wandertMit(i, HEUTE)).map((i) => i.date)).toEqual(Array(10).fill(HEUTE));
+    expect(list[10].date).toBe(MORGEN);
     expect(aufgabenTag(ABENDS)).toBe(MORGEN);
-    expect(offeneAufgaben(entries, ABENDS)).toBe(11);
+    expect(aufgabenUebersicht(entries, ABENDS).heute).toHaveLength(11);
   });
 
-  it("tagsüber bleibt alles wie bisher (Heute dran, ohne Zusatz)", () => {
+  it("tagsüber: die eine Liste von heute", () => {
     const entries = zehnVonHeute();
     const list = aufgabenFuerTag(entries, HEUTE, { heute: HEUTE, abends: false });
     expect(list).toHaveLength(10);
-    expect(list.every((i) => i.carried === null)).toBe(true);
     // Für morgen steht tagsüber nichts davon
     expect(aufgabenFuerTag(entries, MORGEN, { heute: HEUTE, abends: false })).toHaveLength(0);
   });
 
-  it("Mitternacht: still auf den neuen Tag, „von gestern“ – keine Doppelungen", () => {
+  it("Mitternacht: still auf den neuen Tag – keine Doppelungen", () => {
     const entries = zehnVonHeute();
     const abends = aufgabenFuerTag(entries, MORGEN, ABENDS);
     const nachts = aufgabenFuerTag(entries, MORGEN, { heute: MORGEN, abends: false });
     expect(nachts.map((i) => i.entry.id)).toEqual(abends.map((i) => i.entry.id));
-    expect(nachts.every((i) => i.carried === "von gestern")).toBe(true);
     for (const list of [abends, nachts]) expect(new Set(list.map((i) => i.entry.id)).size).toBe(list.length);
   });
 
-  it("Älteres wandert mit „von gestern“ mit, Fristen zählen vom echten Heute", () => {
+  it("Älteres und Fristen wandern still mit; Geplantes erst ab seinem Tag", () => {
     at("2026-10-26T08:00");
     const gestern = aufgabe({ title: "Rad flicken", date: "2026-10-26" });
     const frist = aufgabe({ title: "Antrag", due: "2026-10-29" });
-    const list = aufgabenFuerTag([gestern, frist], MORGEN, ABENDS);
-    expect(list.map((i) => [i.title, i.carried])).toEqual([["Rad flicken", "von gestern"]]);
-    const g = aufgabenUebersicht([gestern, frist], ABENDS);
-    expect(g.woche.find((i) => i.title === "Antrag")?.dueLabel).toBe("bis Do");
+    const geplant = aufgabe({ title: "KFZ-Steuer", date: "2026-10-30" });
+    const list = aufgabenFuerTag([gestern, frist, geplant], MORGEN, ABENDS);
+    expect(list.map((i) => i.title)).toEqual(["Rad flicken", "Antrag"]);
+    expect(aufgabenUebersicht([gestern, frist, geplant], ABENDS).geplant.map((i) => i.title)).toEqual(["KFZ-Steuer"]);
   });
 
   it("erledigt abends: verschwindet und zählt für heute", () => {
@@ -79,7 +76,7 @@ describe("Abends: offene Aufgaben wandern mit auf morgen", () => {
     at("2026-10-27T08:00");
     const normal = aufgabe({ title: "Blumen", date: HEUTE });
     const dringend = aufgabe({ title: "Tierarzt anrufen", date: MORGEN, dringend: true });
-    const reihe = aufgabenReihe([normal, dringend], ABENDS);
+    const reihe = aufgabenUebersicht([normal, dringend], ABENDS).heute;
     expect(reihe.map((i) => i.title)).toEqual(["Tierarzt anrufen", "Blumen"]);
     expect(isUrgent(reihe[0])).toBe(true);
   });
@@ -90,19 +87,7 @@ describe("Abends: offene Aufgaben wandern mit auf morgen", () => {
     const list = aufgabenFuerTag([taeglich], MORGEN, ABENDS);
     expect(list).toHaveLength(1);
     expect(list[0].date).toBe(MORGEN);
-    expect(list[0].carried).toBeNull();
-  });
-
-  it("Sonntagabend: „diese Woche“ heißt dann „Nächste Woche“", () => {
-    at("2026-10-26T08:00");
-    const woche = aufgabe({ title: "Keller", week: "2026-10-26" });
-    const so = { heute: "2026-11-01", abends: true };
-    const [item] = aufgabenFuerTag([woche], "2026-11-02", so);
-    expect(item.carried).toBe("von dieser Woche");
-    expect(gruppenName("heute", "Heute dran", so)).toBe("Morgen dran");
-    expect(gruppenName("woche", "Diese Woche", so)).toBe("Nächste Woche");
-    expect(gruppenName("woche", "Diese Woche", ABENDS)).toBe("Diese Woche");
-    expect(gruppenName("heute", "Heute dran", { heute: HEUTE, abends: false })).toBe("Heute dran");
+    expect(wandertMit(list[0], HEUTE)).toBe(false);
   });
 });
 
@@ -152,9 +137,9 @@ describe("Mia abends: „Was steht morgen an?“", () => {
     expect(text).not.toMatch(/\d{2,}|10/);
   });
 
-  it("die KI bekommt abends eine Zeile mit dem Mitgewanderten", () => {
+  it("die KI bekommt abends eine Zeile mit dem Mitgewanderten (ohne „von heute“)", () => {
     const entries = zehnVonHeute().slice(0, 1);
-    expect(calendarContext(entries, HEUTE, true)).toMatch(/Mit auf morgen gewandert.*Aufgabe 1 \(von heute\)/);
+    expect(calendarContext(entries, HEUTE, true)).toMatch(/mit auf morgen gewandert \(nichts verschoben\): Aufgabe 1$/m);
     expect(calendarContext(entries, HEUTE)).not.toMatch(/gewandert/);
   });
 });

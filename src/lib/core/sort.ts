@@ -88,6 +88,13 @@ type Timed = { time: string | null; stamp: string };
  */
 export const timeThenCreated: Cmp<Timed> = (a, b) => asc<Timed>((x) => x.time)(a, b) || asc<Timed>((x) => x.stamp)(a, b);
 
+/**
+ * Aufgaben (EINE Liste, Tafel 103/104): dringend → heute neu angelegt →
+ * Rest nach Erstellungszeit (älteste zuerst; „Auf morgen“ setzt sie hinten
+ * neu ein) – nie nach Alphabet.
+ */
+export const TASKS: Cmp<{ urgent: boolean; neu: boolean; stamp: string }>[] = [first((t) => t.urgent), first((t) => t.neu), asc((t) => t.stamp)];
+
 type TerminLike = { date: string; time: string | null; stamp: string };
 
 /** Termine: Tag → ganztägig zuerst → Uhrzeit → Erstellungszeit */
@@ -168,7 +175,7 @@ export const IDEAS: Cmp<{ score: number; minutes: number | null }>[] = [descNum(
 /** Aufgaben-Listen („Haus · 14“): nach Name */
 export const TASK_LISTS: Cmp<{ name: string }>[] = [byName((l) => l.name)];
 
-/** Wochen-Vorschlag aus Aufgaben ohne Datum: dringende, dann die ältesten */
+/** Vorschlag aus den Listen (Aufgaben ohne Tag): dringende, dann die ältesten */
 export const TASK_SUGGEST: Cmp<{ urgent: boolean; erstellt: string }>[] = [first((t) => t.urgent), asc((t) => t.erstellt)];
 
 /** Notizen: angeheftet → zuletzt geändert */

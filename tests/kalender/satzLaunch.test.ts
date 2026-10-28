@@ -94,8 +94,8 @@ describe("Regeln ohne KI: Prüfstand-Sätze (Fehler: falscher Tag oder 18 statt 
     expect([s.date ?? TODAY, s.time]).toEqual([date, start]);
   });
 
-  it("„nächste Woche“ allein bleibt ein Zeitraum für Aufgaben", () => {
+  it("„nächste Woche“ allein: Aufgabe ab Montag (kein Zeitraum mehr, Tafel 103)", () => {
     const c = parseCalendar("Ich muss nächste Woche noch die Reifen machen", TODAY);
-    expect(c?.kind === "create" && c.draft.typ === "aufgabe" ? c.draft.data.week : null).toBe("2026-10-26");
+    expect(c?.kind === "create" && c.draft.typ === "aufgabe" ? c.draft.data.date : null).toBe("2026-10-26");
   });
 });

@@ -5,13 +5,13 @@
 import { useExternalStore } from "@/lib/core/useExternalStore";
 import { createLocalStore, readRaw, writeRaw } from "@/lib/core/localStore";
 import { createEntry } from "@/lib/core/entries";
-import { nowIso } from "@/lib/core/now";
-import { sanitizeEntry, type CalendarEntry, type TerminData } from "@/lib/kalender/model";
+import { nowIso, todayIso } from "@/lib/core/now";
+import { ohneZeitraum, sanitizeEntry, type CalendarEntry, type TerminData } from "@/lib/kalender/model";
 import { OLD_TERMINE_KEY } from "@/lib/core/storage";
 import { isAboEntry } from "@/lib/kalender/abo/model";
 
 type EntryStore = {
-  version: 2;
+  version: 3;
   entries: CalendarEntry[];
   /** Alte Termine (`wasgibts.termine`) schon übernommen? */
   migratedTermine: boolean;
@@ -33,11 +33,12 @@ function asTermin(e: CalendarEntry): CalendarEntry {
 function migrate(raw: unknown): EntryStore | null {
   if (!raw || typeof raw !== "object") return null;
   const d = raw as Partial<Omit<EntryStore, "version">> & { version?: number };
-  if (d.version !== 1 && d.version !== 2) return null;
+  if (d.version !== 1 && d.version !== 2 && d.version !== 3) return null;
   const entries = (Array.isArray(d.entries) ? d.entries : []).map(sanitizeEntry).filter((e): e is CalendarEntry => e !== null);
+  const today = todayIso();
   return {
-    version: 2,
-    entries: d.version === 1 ? entries.map(asTermin) : entries,
+    version: 3,
+    entries: (d.version === 1 ? entries.map(asTermin) : entries).map((e) => ohneZeitraum(e, today)),
     migratedTermine: d.migratedTermine === true,
     seenReminders: Array.isArray(d.seenReminders) ? d.seenReminders.filter((x): x is string => typeof x === "string").slice(-200) : [],
   };
@@ -48,7 +49,7 @@ const EMPTY: CalendarEntry[] = [];
 const EMPTY_SEEN: string[] = [];
 
 function current(): EntryStore {
-  return store.load() ?? { version: 2, entries: [], migratedTermine: false, seenReminders: [] };
+  return store.load() ?? { version: 3, entries: [], migratedTermine: false, seenReminders: [] };
 }
 
 export function loadEntries(): CalendarEntry[] {

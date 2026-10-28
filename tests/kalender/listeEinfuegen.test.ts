@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 import { listeAusChat, cleanLine, hatDatum, isHeading, listSummary, looksLikeList, readPastedList, splitDuplicates, toAufgaben } from "@/lib/kalender/liste/einfuegen";
 import { at, aufgabe } from "../helpers";
 import { listenAnsicht } from "@/lib/kalender/liste/ordnung";
-import { inDieseWoche, migrateVorschlag, wochenVorschlag } from "@/lib/kalender/liste/vorschlag";
-import { orderedTasks, taskOverview, type CalendarEntry } from "@/lib/kalender/model";
+import { fuerHeute, migrateVorschlag, wochenVorschlag } from "@/lib/kalender/liste/vorschlag";
+import { taskOverview, type CalendarEntry } from "@/lib/kalender/model";
 
 const T = "2026-10-21"; // Mittwoch
 
@@ -71,7 +71,8 @@ describe("Liste lesen", () => {
   it("Fristen und Tage wie beim Eintragen", () => {
     expect(r.zeilen[1].data).toEqual({ due: "2026-10-23" });
     expect(r.zeilen[2].data).toEqual({ due: "2026-10-28" });
-    expect(r.zeilen[3].data).toEqual({ week: "2026-10-26" });
+    // „nächste Woche“ = ab Montag (alles ist heute, Tafel 103)
+    expect(r.zeilen[3].data).toEqual({ date: "2026-10-26" });
     expect(r.zeilen[4].data).toEqual({ date: "2026-10-22" });
     expect(r.zeilen[0].data).toEqual({});
     expect(r.zeilen.filter(hatDatum)).toHaveLength(4);
@@ -120,40 +121,42 @@ describe("Im Gespräch", () => {
 describe("Ordnung: importiert wird alles, angezeigt, was jetzt dran ist", () => {
   const lang = ["Haus:", ...Array.from({ length: 14 }, (_, i) => `Haus-Sache ${i + 1}`), "Kinder:", "Turnbeutel morgen waschen", ...Array.from({ length: 12 }, (_, i) => `Kinder-Sache ${i + 1}`), "Arbeit:", "Angebot bis Freitag", "Präsentation nächste Woche"].join("\n");
   const entries = () => toAufgaben(readPastedList(lang, T).zeilen) as CalendarEntry[];
-  it("Startseite (dringend/heute/diese Woche) zeigt nur, was jetzt dran ist", () => {
+  it("die eine Liste zeigt nur, was einen Tag, eine Frist hat oder dringend ist; der Rest bleibt in den Listen", () => {
     at("2026-10-21T09:00");
-    const tile = orderedTasks(entries(), T).filter((i) => i.group === "heute" || i.group === "woche");
-    expect(tile.map((i) => i.title)).toEqual(["Angebot", "Turnbeutel waschen"]);
+    const a = listenAnsicht(taskOverview(entries(), T).heute);
+    expect(a.jetzt.map((i) => i.title)).toEqual(["Angebot"]);
+    expect(a.listen.map((l) => `${l.name} · ${l.items.length}`)).toEqual(["Haus · 14", "Kinder · 12"]);
+    // Ab morgen steht der Turnbeutel in der Liste, ab Montag die Präsentation
+    expect(listenAnsicht(taskOverview(entries(), "2026-10-22").heute).jetzt.map((i) => i.title)).toEqual(["Turnbeutel waschen", "Angebot"]);
+    expect(taskOverview(entries(), T).geplant.map((i) => i.title)).toEqual(["Turnbeutel waschen", "Präsentation"]);
   });
-  it("Seite: Jetzt dran oben, Listen eingeklappt mit Anzahl (nach Name)", () => {
-    at("2026-10-21T09:00");
-    const a = listenAnsicht(taskOverview(entries(), T))!;
-    expect(a.jetzt.map((i) => i.title)).toEqual(["Turnbeutel waschen", "Angebot"]);
-    expect(a.listen.map((l) => `${l.name} · ${l.items.length}`)).toEqual(["Arbeit · 1", "Haus · 14", "Kinder · 12"]);
-    expect(a.irgendwann).toEqual([]);
-  });
-  it("ohne Listen bleibt die Seite wie gehabt", () => {
-    expect(listenAnsicht(taskOverview([aufgabe({ title: "Müll" })], T))).toBeNull();
+  it("ohne Listen bleibt die eine Liste, wie sie ist", () => {
+    const a = listenAnsicht(taskOverview([aufgabe({ title: "Müll" })], T).heute);
+    expect(a.jetzt.map((i) => i.title)).toEqual(["Müll"]);
+    expect(a.listen).toEqual([]);
   });
 });
 
-describe("Vorschlag: höchstens einmal pro Woche, nicht in den ersten 3 Tagen", () => {
-  const viele = (stamp: string) => Array.from({ length: 9 }, (_, i) => ({ ...aufgabe({ title: `Sache ${i + 1}`, ...(i === 5 ? { dringend: true } : {}) }), erstellt: `${stamp}T08:0${i}:00.000Z` }) as CalendarEntry);
-  it("frisch eingefügt: noch nicht; nach 3 Tagen: dringend, dann die ältesten", () => {
+describe("Vorschlag „Drei für heute?“: höchstens einmal pro Woche, nicht in den ersten 3 Tagen", () => {
+  // Neun in der Liste „Haus“ geparkt; Sache 1 ist dringend und steht deshalb schon in der einen Liste
+  const viele = (stamp: string) => Array.from({ length: 10 }, (_, i) => ({ ...aufgabe({ title: `Sache ${i}`, liste: "Haus", ...(i === 1 ? { dringend: true } : {}) }), erstellt: `${stamp}T08:0${i}:00.000Z` }) as CalendarEntry);
+  it("frisch eingefügt: noch nicht; nach 3 Tagen: die ältesten aus den Listen", () => {
     expect(wochenVorschlag(viele("2026-10-20"), T, { version: 1 })).toBeNull();
-    expect(wochenVorschlag(viele("2026-10-18"), T, { version: 1 })?.map((i) => i.title)).toEqual(["Sache 6", "Sache 1", "Sache 2"]);
+    expect(wochenVorschlag(viele("2026-10-18"), T, { version: 1 })?.map((i) => i.title)).toEqual(["Sache 0", "Sache 2", "Sache 3"]);
   });
-  it("„Nicht jetzt“ = Ruhe bis nächste Woche; wenige ohne Datum = nie", () => {
+  it("„Nicht jetzt“ = Ruhe bis nächste Woche; wenige in den Listen = nie", () => {
     expect(wochenVorschlag(viele("2026-10-18"), T, { version: 1, weekOff: "2026-10-19" })).toBeNull();
     expect(wochenVorschlag(viele("2026-10-18"), "2026-10-26", { version: 1, weekOff: "2026-10-19" })).not.toBeNull();
     expect(wochenVorschlag(viele("2026-10-18").slice(0, 5), T, { version: 1 })).toBeNull();
     expect(migrateVorschlag({ version: 1, weekOff: "x" })).toEqual({ version: 1 });
     expect(migrateVorschlag(null)).toBeNull();
   });
-  it("Übernehmen legt sie in diese Woche", () => {
+  it("Übernehmen holt sie für heute in die eine Liste", () => {
+    at("2026-10-21T09:00");
     const list = viele("2026-10-18");
-    const next = inDieseWoche(list, [list[0].id], T, "2026-10-21T10:00:00.000Z");
-    expect(next[0].data).toMatchObject({ week: "2026-10-19" });
-    expect(next[1]).toBe(list[1]);
+    const next = fuerHeute(list, [list[0].id], T, "2026-10-21T10:00:00.000Z");
+    expect(next[0].data).toMatchObject({ date: T, liste: "Haus" });
+    expect(next[2]).toBe(list[2]);
+    expect(listenAnsicht(taskOverview(next, T).heute).jetzt.map((i) => i.title)).toEqual(["Sache 1", "Sache 0"]);
   });
 });

@@ -25,6 +25,7 @@ import { runRegisteredTool, toolDefinitions } from "@/lib/begleitung/toolset";
 import { berlinTime } from "@/lib/core/now";
 import { sanitizeEntry, type CalendarEntry } from "@/lib/kalender/model";
 import { abendsNachUhr } from "@/lib/kalender/mitwandern";
+import { feierabendNachUhr } from "@/lib/kalender/aufgaben";
 import { sanitizeHome } from "@/lib/core/homeLayout";
 import { sanitizeSport } from "@/lib/sport/model";
 import { looksLikeMail, sanitizeMailStyle } from "@/lib/begleitung/mail";
@@ -290,11 +291,14 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
   const regionTips = tipsMode() !== "off" && tipQuestion(lastText, req.today) ? await tipsNear({ ort: req.data.tippOrt || req.data.wetterOrt || "Eutin", km: req.data.tippKm ?? 20, von: req.today, bis: plusDays(req.today, 20), today: req.today }).then((r) => (r.ort ? r.tips : null)).catch(() => null) : undefined;
 
   // Abends (Startseite auf morgen): offene Aufgaben wandern mit – nach Uhr, „Feierabend ab“ und Terminen
-  const abends = req.clock ? abendsNachUhr({ entries: req.data.entries ?? [], heute: req.today, minutes: Number(req.clock.slice(0, 2)) * 60 + Number(req.clock.slice(3, 5)), feierabendAb: req.data.tagesablauf?.feierabendAb }) : false;
+  const minutesNow = req.clock ? Number(req.clock.slice(0, 2)) * 60 + Number(req.clock.slice(3, 5)) : null;
+  const abends = minutesNow !== null ? abendsNachUhr({ entries: req.data.entries ?? [], heute: req.today, minutes: minutesNow, feierabendAb: req.data.tagesablauf?.feierabendAb }) : false;
+  // Feierabend: Arbeitsaufgaben ruhen, Mia nennt sie nur auf Nachfrage (Tafel 103)
+  const feierabend = minutesNow !== null ? feierabendNachUhr(minutesNow, req.data.tagesablauf?.feierabendAb) : false;
   const system: Anthropic.Beta.BetaTextBlockParam[] = [
     // Name/Ton und Arbeitsweise ändern sich selten → gecacht; Kontext pro Anfrage
     { type: "text", text: `${identityPrompt(req.data.profile)}\n\n${SYSTEM_PROMPT}\n\n${capabilities(toolDefinitions())}`, cache_control: { type: "ephemeral" } },
-    { type: "text", text: contextText(req.data, req.today, weeks, req.tipsThisWeek, { clock: req.clock, shopping: req.shoppingNames, abends }) + pendingSummary(req.pending) },
+    { type: "text", text: contextText(req.data, req.today, weeks, req.tipsThisWeek, { clock: req.clock, shopping: req.shoppingNames, abends, feierabend }) + pendingSummary(req.pending) },
   ];
 
   /** Ein Durchlauf mit einem Modell; `small` = darf hochschalten statt große Aufgaben selbst zu machen */
@@ -302,7 +306,7 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
     // Arbeitskopie mit dem bisherigen Vorschlag (bei jedem Durchlauf frisch)
     const start = applyOps(req.data, req.pending);
     const numbers = req.pending.flatMap((op) => [op.id, op.type === "add_recipe" ? op.recipe.ref : ""].map((s) => Number(s.match(/(\d+)$/)?.[1] ?? 0)));
-    const ctx: ToolContext = { data: start.data, weeks, ops: [...req.pending], refs: start.refs, counter: Math.max(0, ...numbers), today: req.today, abends, ...(forecast !== undefined ? { forecast } : {}), ...(regionTips !== undefined ? { regionTips } : {}) };
+    const ctx: ToolContext = { data: start.data, weeks, ops: [...req.pending], refs: start.refs, counter: Math.max(0, ...numbers), today: req.today, abends, feierabend, ...(forecast !== undefined ? { forecast } : {}), ...(regionTips !== undefined ? { regionTips } : {}) };
     const messages: Anthropic.Beta.BetaMessageParam[] = req.messages.map((m) => ({ role: m.role, content: m.text }));
     if (messages[0].role !== "user") messages.shift();
     const usage: Usage = { in: 0, out: 0, write: 0, read: 0, rounds: 0 };

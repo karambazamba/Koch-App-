@@ -80,13 +80,16 @@ describe("termin_aendern / termin_loeschen", () => {
 });
 
 describe("Aufgaben", () => {
-  it("Frist, Zeitraum und Irgendwann", () => {
+  it("alles ist heute: ohne Tag für heute, mit Tag ab dem Tag, Frist ändert nichts (Tafel 103)", () => {
     const ctx = kontext();
     expect(rufe(ctx, "aufgabe_anlegen", { titel: "Kita-Formular", frist: "2026-10-28", dringend: true }).content).toBe("Vorgemerkt (aufgabe, neu): Kita-Formular, bis 28.10..");
-    expect(rufe(ctx, "aufgabe_anlegen", { titel: "Reifen", zeitraum: "diese_woche" }).content).toBe("Vorgemerkt (aufgabe, neu): Reifen, Woche ab 19.10..");
-    expect(rufe(ctx, "aufgabe_anlegen", { titel: "Keller", zeitraum: "naechste_woche" }).content).toContain("Woche ab 26.10.");
-    expect(rufe(ctx, "aufgabe_anlegen", { titel: "Fotos sortieren" }).content).toContain("irgendwann");
-    expect(rufe(ctx, "aufgabe_anlegen", { titel: "Blumen", tag: "2026-10-23", uhrzeit: "8" }).content).toContain("23.10.");
+    expect(rufe(ctx, "aufgabe_anlegen", { titel: "Reifen", zeitraum: "diese_woche" }).content).toBe("Vorgemerkt (aufgabe, neu): Reifen, heute.");
+    expect(rufe(ctx, "aufgabe_anlegen", { titel: "Keller", zeitraum: "naechste_woche" }).content).toContain("ab 26.10.");
+    expect(rufe(ctx, "aufgabe_anlegen", { titel: "Fotos sortieren" }).content).toBe("Vorgemerkt (aufgabe, neu): Fotos sortieren, heute.");
+    expect(rufe(ctx, "aufgabe_anlegen", { titel: "Blumen", tag: "2026-10-23", uhrzeit: "8" }).content).toContain("ab 23.10.");
+    const daten = ctx.ops.map((op) => (op.type === "upsert_entry" && op.entry.typ === "aufgabe" ? op.entry.data : null));
+    expect(daten.map((d) => d?.date)).toEqual([HEUTE, HEUTE, "2026-10-26", HEUTE, "2026-10-23"]);
+    expect(daten.every((d) => d && !d.week)).toBe(true);
     expect(rufe(ctx, "aufgabe_anlegen", { titel: "" })).toMatchObject({ isError: true });
     const first = ctx.ops[0];
     if (first.type !== "upsert_entry" || first.entry.typ !== "aufgabe") throw new Error();
@@ -143,12 +146,15 @@ describe("Lesen", () => {
     expect(rufe(ctx, "woche_anzeigen", { ab: "2026-11-01", tage: 99 }).content).not.toContain("Elternabend");
   });
 
-  it("calendarContext nennt Termine und Aufgaben ohne festen Tag", () => {
+  it("calendarContext: Aufgaben ohne Tag stehen heute, Geplantes später extra, Feierabend-Hinweis", () => {
     const leer = calendarContext([], HEUTE);
     expect(leer).toContain("noch nichts eingetragen");
-    const text = calendarContext([termin({ title: "Kita-Fest", date: HEUTE, start: "15:00" }), aufgabe({ title: "Fenster putzen", label: "Haus" })], HEUTE);
+    const text = calendarContext([termin({ title: "Kita-Fest", date: HEUTE, start: "15:00" }), aufgabe({ title: "Fenster putzen", label: "Haus" }), aufgabe({ title: "KFZ-Steuer", date: "2026-11-06" })], HEUTE);
     expect(text).toContain("Kita-Fest");
-    expect(text).toMatch(/Aufgaben ohne festen Tag: Fenster putzen \[id=.*irgendwann, Etikett Haus\]/);
+    expect(text).toMatch(/Mi 2026-10-21: .*Fenster putzen \[id=.*aufgabe, familie, Etikett Haus\]/);
+    expect(text).toMatch(/Später geplant: KFZ-Steuer \[id=.*ab Fr 6\.11\.\]/);
+    expect(text).not.toMatch(/irgendwann|Feierabend/);
+    expect(calendarContext([aufgabe({ title: "Bericht" })], HEUTE, false, true)).toMatch(/Feierabend: Arbeitsaufgaben ruhen/);
   });
 });
 

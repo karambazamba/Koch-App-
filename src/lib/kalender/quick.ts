@@ -1,22 +1,21 @@
 // Schnell-Eintrag einer Aufgabe ("+" bei Aufgaben): Text + WANN (Heute ·
-// Morgen · Diese Woche · Irgendwann) + WO (Familie · Arbeit). Steht im Text
-// schon ein Tag ("morgen", "Freitag", "bis 24.10."), wird er übernommen.
+// Morgen) + WO (Familie · Arbeit). Alles ist heute (Tafel 103): ohne Tag
+// gehört sie zu heute; steht im Text ein Tag ("morgen", "Freitag"), erscheint
+// sie ab diesem Tag. Eine Frist ("bis 24.10.") ändert daran nichts.
 // Rein, damit Oberfläche und Tests gleich rechnen.
 
 import { WEEKDAYS_SHORT_SO, WEEKDAYS_SO } from "@/lib/core/days";
 import type { Room } from "@/lib/core/entries";
 import { addDays } from "@/lib/core/now";
-import { mondayOf, type AufgabeData, type Reminder, type Repeat } from "@/lib/kalender/model";
+import type { AufgabeData, Reminder, Repeat } from "@/lib/kalender/model";
 import { compareText } from "@/lib/core/sort";
-import { guessLabel, guessRoom, parseCalendar, urgentFrom } from "@/lib/kalender/parse";
+import { genannterTag, guessLabel, guessRoom, parseCalendar, urgentFrom } from "@/lib/kalender/parse";
 
-export type When = "heute" | "morgen" | "woche" | "irgendwann" | { date?: string; due?: string };
+export type When = "heute" | "morgen" | { date?: string; due?: string };
 
-export const WHEN_CHOICES: { id: "heute" | "morgen" | "woche" | "irgendwann"; label: string }[] = [
+export const WHEN_CHOICES: { id: "heute" | "morgen"; label: string }[] = [
   { id: "heute", label: "Heute" },
   { id: "morgen", label: "Morgen" },
-  { id: "woche", label: "Diese Woche" },
-  { id: "irgendwann", label: "Irgendwann" },
 ];
 
 /** Was der Text über Tag/Frist sagt (oder null) – plus der bereinigte Titel */
@@ -39,30 +38,26 @@ function readPlainQuickText(text: string, today: string): { title: string; when:
     return { title, when, time: d.data.start, room: d.raum, label };
   }
   const a = d.data;
+  // Ohne genannten Tag gilt der vorgegebene (sonst heute)
+  const named = genannterTag(a.date, raw, today);
   const when: When | null = a.due
-    ? { due: a.due }
-    : a.date
-      ? a.date === today
+    ? { due: a.due, ...(named && named !== today ? { date: named } : {}) }
+    : !named
+      ? null
+      : named === today
         ? "heute"
-        : a.date === addDays(today, 1)
+        : named === addDays(today, 1)
           ? "morgen"
-          : { date: a.date }
-      : a.week
-        ? a.week <= today
-          ? "woche"
-          : { date: a.week }
-        : null;
+          : { date: named };
   return { title, when, time: a.time, room: d.raum, label };
 }
 
-/** Aufgabe aus Titel und Auswahl */
+/** Aufgabe aus Titel und Auswahl – ohne genannten Tag für heute (auch mit Frist) */
 export function quickTaskData(title: string, when: When, today: string, opts: { time?: string; reminder?: Reminder; label?: string; dringend?: boolean } = {}): AufgabeData {
   const base: AufgabeData = { title: title.trim().slice(0, 120), reminder: opts.reminder ?? "aus", repeat: null, ...(opts.time ? { time: opts.time } : {}), ...(opts.label ? { label: opts.label } : {}), ...(opts.dringend ? { dringend: true } : {}) };
   if (when === "heute") return { ...base, date: today };
   if (when === "morgen") return { ...base, date: addDays(today, 1) };
-  if (when === "woche") return { ...base, week: mondayOf(today) };
-  if (when === "irgendwann") return base;
-  return { ...base, ...(when.due ? { due: when.due } : {}), ...(when.date ? { date: when.date } : {}) };
+  return { ...base, date: when.date ?? today, ...(when.due ? { due: when.due } : {}) };
 }
 
 /** Kurz für einen Chip: "Fr 24.10." bzw. "bis Fr 24.10." */
@@ -94,7 +89,7 @@ export function readTerminText(text: string, today: string): { title: string; da
   if (cmd?.kind !== "create") return { title: raw, room, label: guessLabel(raw) };
   const d = cmd.draft;
   if (d.typ === "termin") return { title: d.data.title || raw, date: d.data.date, time: d.data.start, room: d.raum, label: d.data.label, repeat: d.data.repeat ?? null };
-  return { title: d.data.title || raw, date: d.data.date ?? d.data.due, time: d.data.time, room: d.raum, label: d.data.label };
+  return { title: d.data.title || raw, date: d.data.due ?? genannterTag(d.data.date, raw, today) ?? undefined, time: d.data.time, room: d.raum, label: d.data.label };
 }
 
 /**

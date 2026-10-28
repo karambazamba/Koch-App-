@@ -74,7 +74,7 @@ function proposeEntry(ctx: ToolContext, entry: CalendarEntry, isNew: boolean): T
   const clean = sanitizeEntry(entry);
   if (!clean) return fail("Eintrag unvollständig (Titel, Datum und bei Terminen die Startzeit angeben).");
   propose(ctx, { id: nextId(ctx), type: "upsert_entry", entry: clean, isNew });
-  const when = clean.typ === "termin" ? `${shortDate(clean.data.date)} ${clean.data.start}` : clean.data.due ? `bis ${shortDate(clean.data.due)}` : clean.data.date ? shortDate(clean.data.date) : clean.data.week ? `Woche ab ${shortDate(clean.data.week)}` : "irgendwann";
+  const when = clean.typ === "termin" ? `${shortDate(clean.data.date)} ${clean.data.start}` : clean.data.due ? `bis ${shortDate(clean.data.due)}` : clean.data.date && clean.data.date > ctx.today ? `ab ${shortDate(clean.data.date)}` : "heute";
   return { content: `Vorgemerkt (${clean.typ}, ${isNew ? "neu" : "geändert"}): ${clean.data.title}, ${when}.` };
 }
 
@@ -109,18 +109,16 @@ function aufgabeInput(ctx: ToolContext, input: Input, base?: AufgabeData): Aufga
   const date = input.tag !== undefined ? dateFrom(ctx, input.tag) ?? undefined : base?.date;
   const due = input.frist !== undefined ? dateFrom(ctx, input.frist) ?? undefined : base?.due;
   const repeatStart = date ?? ctx.today;
-  const monday = addDays(ctx.today, -weekdayIndex(ctx.today));
-  const week =
-    input.zeitraum === "diese_woche" ? monday : input.zeitraum === "naechste_woche" ? addDays(monday, 7) : input.zeitraum === "irgendwann" ? undefined : base?.week;
+  // Alt: „nächste Woche“ ohne Tag = ab Montag; sonst gibt es keinen Zeitraum mehr (Tafel 103)
+  const nextMonday = input.zeitraum === "naechste_woche" ? addDays(ctx.today, 7 - weekdayIndex(ctx.today)) : undefined;
   const repeat = input.wiederholung !== undefined ? repeatFrom(input.wiederholung, repeatStart) : (base?.repeat ?? null);
   return {
     ...(base ?? { reminder: "aus" as Reminder }),
     title,
-    // Wiederkehrend ohne Tag: ab dem nächsten passenden Tag
-    date: date ?? (repeat && !base ? firstOccurrence(repeat, ctx.today) : undefined),
+    // Alles ist heute: ohne genannten Tag ab heute; wiederkehrend ab dem nächsten passenden Tag
+    date: date ?? nextMonday ?? (base ? base.date : repeat ? firstOccurrence(repeat, ctx.today) : ctx.today),
     due,
-    // Zeitraum nur ohne Tag und Frist
-    week: date || due ? undefined : week,
+    week: undefined,
     time: input.uhrzeit !== undefined ? timeFrom(input.uhrzeit) : base?.time,
     label: input.etikett !== undefined ? str(input.etikett) || undefined : base?.label,
     repeat,
@@ -153,9 +151,8 @@ const TERMIN_FIELDS = {
 
 const AUFGABE_FIELDS = {
   titel: { type: "string" },
-  tag: { ...DATE_PROP, description: "Wunschtag (optional). Ohne Tag, Frist und Zeitraum steht die Aufgabe unter 'Irgendwann'." },
-  frist: { ...DATE_PROP, description: "Frist ('bis Mittwoch'), optional" },
-  zeitraum: { type: "string", enum: ["diese_woche", "naechste_woche", "irgendwann"], description: "Ohne festen Tag: 'diese Woche', 'nächste Woche' oder irgendwann" },
+  tag: { ...DATE_PROP, description: "Nur wenn ausdrücklich ein Tag genannt ist ('Freitag KFZ-Steuer') – dann erscheint sie ab diesem Tag. Sonst weglassen: ohne Tag gehört jede Aufgabe zu heute." },
+  frist: { ...DATE_PROP, description: "Frist ('bis Mittwoch'), optional – die Aufgabe steht trotzdem ab heute in der Liste" },
   uhrzeit: TIME_PROP,
   etikett: LABEL_PROP,
   raum: ROOM_PROP,
@@ -219,7 +216,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
     definition: {
       name: "aufgabe_anlegen",
       description:
-        "Legt eine Aufgabe an (irgendwann, an einem Wunschtag oder bis zu einer Frist, optional wiederkehrend): 'Bis Mittwoch Kita-Formular' (frist), 'Jeden Dienstag Müll rausbringen' (wiederholung wochentage [1]). 'Ich muss diese Woche noch die Reifen machen' → zeitraum diese_woche; ohne Tag und Frist = Irgendwann.",
+        "Legt eine Aufgabe an. Alles ist heute: ohne genannten Tag ('Irgendwann mal Keller', 'Diese Woche noch Reifen') immer für heute, tag weglassen. Nur bei ausdrücklich genanntem Tag tag setzen ('Freitag KFZ-Steuer' → ab Freitag, bis dahin unter 'Geplant'). 'Bis Mittwoch Kita-Formular' (frist), 'Jeden Dienstag Müll rausbringen' (wiederholung wochentage [1]).",
       input_schema: { type: "object", properties: AUFGABE_FIELDS, required: ["titel"], additionalProperties: false },
     },
     run: (ctx, raw) => {
@@ -293,7 +290,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
     run: (ctx, raw) => {
       const date = dateFrom(ctx, (raw as Input | null)?.datum);
       if (!date) return fail("datum nicht erkannt.");
-      return { content: contextLines(entriesOf(ctx), ctx.today, 1, date).replace(/^- /, "") + `\nKurz: ${showAnswer(entriesOf(ctx), ctx.today, date, 1, shortDate(date), ctx.abends)}` };
+      return { content: contextLines(entriesOf(ctx), ctx.today, 1, date).replace(/^- /, "") + `\nKurz: ${showAnswer(entriesOf(ctx), ctx.today, date, 1, date === ctx.today ? "heute" : shortDate(date), ctx.abends, ctx.feierabend)}` };
     },
   },
   {
@@ -357,9 +354,9 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
         let entry: CalendarEntry;
         if (p.art === "aufgabe") {
           const due = dateFrom(ctx, p.frist) ?? undefined;
-          const date = due ? undefined : (dateFrom(ctx, p.datum) ?? undefined);
-          const monday = addDays(ctx.today, -weekdayIndex(ctx.today));
-          entry = createEntry("aufgabe", { title, reminder: "aus" as Reminder, repeat: null, ...(due ? { due } : date ? { date } : { week: monday }), ...(privat ? { label: "Privat" } : {}) }, { raum }) as CalendarEntry;
+          // Alles ist heute: ohne genannten Tag ab heute (auch mit Frist)
+          const date = dateFrom(ctx, p.datum) ?? ctx.today;
+          entry = createEntry("aufgabe", { title, reminder: "aus" as Reminder, repeat: null, date: due && date > due ? ctx.today : date, ...(due ? { due } : {}), ...(privat ? { label: "Privat" } : {}) }, { raum }) as CalendarEntry;
         } else {
           const date = dateFrom(ctx, p.datum) ?? ctx.today;
           const start = timeFrom(p.start) ?? "";
@@ -387,14 +384,14 @@ function removeTool(ctx: ToolContext, input: Input, typ: "termin" | "aufgabe"): 
   return { content: `Vorgemerkt: ${entry.data.title}${only ? ` am ${shortDate(only)}` : ""} löschen.` };
 }
 
-/** Für den Kontext: Einträge der nächsten 7 Tage (heute zuerst); abends, was schon mit auf morgen wandert */
-export function calendarContext(entries: CalendarEntry[], today: string, abends = false): string {
+/** Für den Kontext: Einträge der nächsten 7 Tage (heute zuerst, alle Aufgaben stehen heute); abends, was still mit auf morgen wandert */
+export function calendarContext(entries: CalendarEntry[], today: string, abends = false, feierabend = false): string {
   const upcoming = itemsForDay(entries, today, today);
-  // Aufgaben ohne Tag in den nächsten 7 Tagen: diese Woche (Zeitraum), später, irgendwann
-  const g = taskOverview(entries, today);
-  const loose = [...g.woche.filter((i) => i.when === "diese Woche"), ...g.spaeter, ...g.irgendwann].slice(0, 40);
-  const looseLines = loose.map((i) => `${i.title} [id=${i.entry.id}; aufgabe, ${i.room}${i.when ? `, ${i.when}` : ", irgendwann"}${i.label ? `, Etikett ${i.label}` : ""}]`);
+  // Geplant (ab einem genannten Tag) jenseits der 7 Tage
+  const later = taskOverview(entries, today).geplant.filter((i) => i.date >= addDays(today, 7)).slice(0, 20);
+  const laterLines = later.map((i) => `${i.title} [id=${i.entry.id}; aufgabe, ${i.room}, ab ${i.when}${i.label ? `, Etikett ${i.label}` : ""}]`);
   const mit = mitgewandert(entries, today, abends);
-  const mitLine = mit.length ? `\nAbends: Die Startseite zeigt schon morgen. Mit auf morgen gewandert (still, nichts verschoben): ${mit.map((i) => `${i.title} (${i.carried})`).join(" | ")}` : "";
-  return `Termine und Aufgaben der nächsten 7 Tage (ids nur für Werkzeuge, nie nennen)${upcoming.length || entries.length ? "" : " – noch nichts eingetragen"}:\n${contextLines(entries, today, 7)}${looseLines.length ? `\nAufgaben ohne festen Tag: ${looseLines.join(" | ")}` : ""}${mitLine}`;
+  const mitLine = mit.length ? `\nAbends: Die Startseite zeigt schon morgen. Still mit auf morgen gewandert (nichts verschoben): ${mit.map((i) => i.title).join(" | ")}` : "";
+  const ruhe = feierabend ? "\nFeierabend: Arbeitsaufgaben ruhen bis morgen – nur nennen, wenn jemand nach der Arbeit fragt." : "";
+  return `Termine und Aufgaben der nächsten 7 Tage (ids nur für Werkzeuge, nie nennen; alle Aufgaben ohne genannten Tag stehen heute in EINER Liste)${upcoming.length || entries.length ? "" : " – noch nichts eingetragen"}:\n${contextLines(entries, today, 7)}${laterLines.length ? `\nSpäter geplant: ${laterLines.join(" | ")}` : ""}${mitLine}${ruhe}`;
 }

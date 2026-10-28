@@ -5,18 +5,20 @@
 //
 // Regeln:
 // - Termin = feste Uhrzeit an einem Tag (optional wiederkehrend).
-// - Aufgabe = zu erledigen: an einem Wunschtag, bis zu einer Frist, "diese
-//   Woche" oder ohne alles ("Irgendwann" – steht dann an keinem Tag).
+// - Aufgabe = steht JETZT an (Tafel 103/104): alles ist heute, eine Liste.
+//   Ohne genannten Tag gehört sie zum Tag, an dem sie angelegt wurde; mit
+//   ausdrücklich genanntem Tag ("Freitag KFZ-Steuer") erscheint sie ab diesem
+//   Tag (bis dahin "Geplant"). Eine Frist ("bis Mittwoch") ändert daran nichts.
 // - Notizen (nur festhalten) liegen getrennt in `../notizen`.
-// - Unerledigte (einmalige) Aufgaben mit Tag rutschen still auf heute – kein
-//   "überfällig", nur ein kleiner Hinweis "von gestern"/"von letzter Woche".
+// - Unerledigte (einmalige) Aufgaben rutschen still auf heute – ohne Etikett,
+//   kein "überfällig", kein "von gestern".
 // - Verpasste Vorkommen wiederkehrender Einträge und vergangene Termine
 //   verschwinden leise.
 
 import { WEEKDAYS_MO, WEEKDAYS_SHORT_MO } from "@/lib/core/days";
 import { createEntry, type Entry, type Room } from "@/lib/core/entries";
-import { addDays, fromIsoDate } from "@/lib/core/now";
-import { first, sortBy, timeThenCreated } from "@/lib/core/sort";
+import { addDays, berlinTime, fromIsoDate } from "@/lib/core/now";
+import { first, sortBy, TASKS, TERMINE, timeThenCreated, via } from "@/lib/core/sort";
 
 /** Wiederholung: täglich, wöchentlich (wie der erste Tag, `every` = alle N Wochen), monatlich (gleicher Tag im Monat) oder bestimmte Wochentage (0 = Mo … 6 = So) */
 export type Repeat = { kind: "taeglich" } | { kind: "woechentlich"; every?: number } | { kind: "monatlich" } | { kind: "wochentage"; days: number[] };
@@ -104,7 +106,7 @@ export type AufgabeData = {
   date?: string;
   /** Frist "YYYY-MM-DD" ("bis Mittwoch") */
   due?: string;
-  /** Zeitraum: Montag der Woche ("diese Woche") – ohne Tag und Frist */
+  /** Alt (bis v0.136): Montag der Woche ("diese Woche") – der Speicher setzt es still auf heute bzw. den Tag (kalender/store.ts) */
   week?: string;
   /** "HH:MM", optional */
   time?: string;
@@ -147,12 +149,10 @@ export type DayItem = {
   room: Room;
   reminder: Reminder;
   done: boolean;
-  /** Aufgabe von früher, still mitgenommen: "von gestern" */
-  carried: string | null;
   /** Frist: "bis Mi" */
   dueLabel: string | null;
   repeat: Repeat | null;
-  /** Nur in der Aufgaben-Übersicht: wann ("Do", "diese Woche", "nächste Woche") */
+  /** Nur bei „Geplant“: ab wann ("Fr 30.10.") */
   when?: string | null;
 };
 
@@ -201,15 +201,6 @@ export function repeatLabel(repeat: Repeat | null | undefined, start?: string): 
 
 const isTermin = (e: CalendarEntry): e is Termin => e.typ === "termin";
 
-/** Von wann eine mitgenommene Aufgabe ist: "von gestern", "von Montag", "von letzter Woche" */
-export function carriedLabel(from: string, today: string): string {
-  const days = dayDiff(today, from);
-  if (days <= 1) return "von gestern";
-  if (days < 7 && weekdayIndex(from) < weekdayIndex(today)) return `von ${WEEKDAYS_LONG[weekdayIndex(from)]}`;
-  if (days < 14) return "von letzter Woche";
-  return "von früher";
-}
-
 /** "bis Mi" (diese Woche), sonst "bis 24.10." */
 export function dueLabel(due: string, date: string): string {
   const days = dayDiff(due, date);
@@ -220,19 +211,23 @@ export function dueLabel(due: string, date: string): string {
   return `bis ${Number(d)}.${Number(m)}.`;
 }
 
-/** Anfangstag einer Aufgabe (Wunschtag, sonst Tag des Anlegens) */
-const taskStart = (a: AufgabeData, created: string) => a.date ?? created.slice(0, 10);
+/**
+ * Ab welchem Tag eine Aufgabe in der Liste steht: der genannte Tag, sonst
+ * (alt: „diese/nächste Woche“) der Montag, sonst der Tag des Anlegens.
+ */
+export const taskFrom = (a: Pick<AufgabeData, "date" | "week">, created: string) => a.date ?? a.week ?? created.slice(0, 10);
+const taskStart = taskFrom;
 
 /** Montag der Woche eines Tages */
 export const mondayOf = (iso: string) => addDays(iso, -weekdayIndex(iso));
 
-/** Tag, an dem eine einmalige Aufgabe steht: Wunschtag, sonst Frist (ohne beides: an keinem Tag) */
-const taskAnchor = (a: AufgabeData) => a.date ?? a.due ?? null;
+/** Heute angelegt? Dann trägt die Aufgabe heute das Schild „neu“ (am nächsten Tag weg) */
+export const isNeu = (i: Pick<DayItem, "entry">, today: string) => i.entry.typ === "aufgabe" && Boolean(i.entry.erstellt) && berlinTime(new Date(i.entry.erstellt)).iso === today;
 
 /**
  * Alle Einträge an einem Tag. `today` bestimmt, wo unerledigte Aufgaben
- * landen: einmalige Aufgaben von früher erscheinen heute (mit "von …"), an
- * vergangenen Tagen nicht mehr; ab heute stehen sie an ihrem Tag.
+ * landen: einmalige Aufgaben von früher erscheinen still heute, an
+ * vergangenen Tagen nicht mehr; geplante stehen ab ihrem Tag.
  */
 export function itemsForDay(entries: CalendarEntry[], date: string, today: string): DayItem[] {
   const items: DayItem[] = [];
@@ -255,7 +250,6 @@ export function itemsForDay(entries: CalendarEntry[], date: string, today: strin
         room: entry.raum,
         reminder: t.reminder,
         done: Boolean(t.doneDates?.includes(date)),
-        carried: null,
         dueLabel: null,
         repeat: t.repeat ?? null,
       });
@@ -264,7 +258,6 @@ export function itemsForDay(entries: CalendarEntry[], date: string, today: strin
     const a = entry.data;
     const start = taskStart(a, entry.erstellt);
     let on: boolean;
-    let carried: string | null = null;
     let done: boolean;
     if (a.repeat) {
       on = repeatsOn(a.repeat, start, date) && !a.skipDates?.includes(date);
@@ -274,15 +267,9 @@ export function itemsForDay(entries: CalendarEntry[], date: string, today: strin
       on = a.doneOn === date;
       done = true;
     } else {
-      // Ohne Tag und Frist ("Irgendwann", "diese Woche") steht eine Aufgabe an keinem Tag –
-      // nur "diese Woche" von letzter Woche rutscht still auf heute
-      const anchor = taskAnchor(a) ?? (a.week && a.week < mondayOf(today) ? a.week : null);
+      // Alles ist heute: ab ihrem Tag still auf heute, geplante an ihrem Tag
       done = false;
-      if (!anchor) on = false;
-      else if (date === today) {
-        on = anchor <= today;
-        if (on && anchor < today) carried = carriedLabel(anchor, today);
-      } else on = date > today && anchor === date;
+      on = date === today ? start <= today : date > today && start === date;
     }
     if (!on) continue;
     items.push({
@@ -296,7 +283,6 @@ export function itemsForDay(entries: CalendarEntry[], date: string, today: strin
       room: entry.raum,
       reminder: a.reminder,
       done,
-      carried,
       dueLabel: a.due && !done ? dueLabel(a.due, date) : null,
       repeat: a.repeat ?? null,
     });
@@ -322,17 +308,10 @@ export function sortItems(items: DayItem[]): DayItem[] {
   return sortBy(items, first((i) => !i.done), first(isUrgent), first(allDay), byTimeThenAge);
 }
 
-// --- Aufgaben-Übersicht und Startseite ------------------------------------------
+// --- Aufgaben: alles ist heute, eine Liste (Tafel 103/104) -----------------------
 
-type TaskGroup = "heute" | "woche" | "spaeter" | "irgendwann" | "erledigt";
-
-export const TASK_GROUPS: { id: TaskGroup; label: string }[] = [
-  { id: "heute", label: "Heute dran" },
-  { id: "woche", label: "Diese Woche" },
-  { id: "spaeter", label: "Später" },
-  { id: "irgendwann", label: "Irgendwann" },
-  { id: "erledigt", label: "Erledigt" },
-];
+/** Heute (eine Liste), Geplant (ab einem genannten Tag), Erledigt (letzte 14 Tage) */
+export type TaskGroups = { heute: DayItem[]; geplant: DayItem[]; erledigt: DayItem[] };
 
 const shortDay = (iso: string) => {
   const [, m, d] = iso.split("-");
@@ -362,7 +341,6 @@ function taskItem(entry: Aufgabe, date: string, extra: Partial<DayItem>): DayIte
     room: entry.raum,
     reminder: a.reminder,
     done: false,
-    carried: null,
     dueLabel: null,
     repeat: a.repeat ?? null,
     when: null,
@@ -370,15 +348,19 @@ function taskItem(entry: Aufgabe, date: string, extra: Partial<DayItem>): DayIte
   };
 }
 
+/** Reihenfolge der Liste (Regel `TASKS` aus core/sort): dringend → neu → nach Erstellungszeit */
+function sortTasks(items: DayItem[], neuAm: string): DayItem[] {
+  return sortBy(items, ...via((i: DayItem) => ({ urgent: isUrgent(i), neu: isNeu(i, neuAm), stamp: sortStamp(i) }), TASKS));
+}
+
 /**
- * Alle Aufgaben, gruppiert: Heute dran (heute, Frist heute, von früher
- * mitgenommen), Diese Woche (Tag/Frist bis Sonntag, Zeitraum "diese Woche"),
- * Später, Irgendwann (ohne Tag und Frist), Erledigt (letzte 14 Tage).
+ * Alle Aufgaben: Heute = alles, was ab heute ansteht (ohne Tag, von früher,
+ * Frist egal wann) – EINE Liste; Geplant = erst ab einem genannten Tag;
+ * Erledigt = letzte 14 Tage. `neuAm`: Tag, an dem Angelegtes „neu“ ist
+ * (abends für morgen bleibt es das echte Heute).
  */
-export function taskOverview(entries: CalendarEntry[], today: string): Record<TaskGroup, DayItem[]> {
-  const groups: Record<TaskGroup, DayItem[]> = { heute: [], woche: [], spaeter: [], irgendwann: [], erledigt: [] };
-  const sunday = addDays(mondayOf(today), 6);
-  const thisMonday = mondayOf(today);
+export function taskOverview(entries: CalendarEntry[], today: string, neuAm = today): TaskGroups {
+  const groups: TaskGroups = { heute: [], geplant: [], erledigt: [] };
   const recent = addDays(today, -14);
   for (const entry of entries) {
     if (entry.typ !== "aufgabe") continue;
@@ -388,71 +370,23 @@ export function taskOverview(entries: CalendarEntry[], today: string): Record<Ta
       if (a.doneDates?.includes(today) && repeatsOn(a.repeat, start, today)) groups.erledigt.push(taskItem(entry, today, { done: true }));
       const next = nextOccurrence(a, start, today);
       if (!next) continue;
-      const item = taskItem(entry, next, { when: next === today ? null : shortDay(next) });
-      groups[next === today ? "heute" : next <= sunday ? "woche" : "spaeter"].push(item);
+      if (next === today) groups.heute.push(taskItem(entry, today, {}));
+      else groups.geplant.push(taskItem(entry, next, { when: shortDay(next) }));
       continue;
     }
     if (a.doneOn) {
       if (a.doneOn >= recent) groups.erledigt.push(taskItem(entry, a.doneOn, { done: true }));
       continue;
     }
-    const anchor = taskAnchor(a);
-    if (anchor) {
-      if (anchor <= today) {
-        groups.heute.push(taskItem(entry, today, { carried: anchor < today ? carriedLabel(anchor, today) : null, dueLabel: a.due && a.due >= today ? dueLabel(a.due, today) : null }));
-      } else {
-        const item = taskItem(entry, anchor, { dueLabel: a.due ? dueLabel(a.due, today) : null, when: a.due ? null : shortDay(anchor) });
-        groups[anchor <= sunday ? "woche" : "spaeter"].push(item);
-      }
-      continue;
-    }
-    if (a.week) {
-      if (a.week < thisMonday) groups.heute.push(taskItem(entry, today, { carried: carriedLabel(a.week, today) }));
-      else if (a.week === thisMonday) groups.woche.push(taskItem(entry, today, { when: "diese Woche" }));
-      else groups.spaeter.push(taskItem(entry, a.week, { when: a.week === addDays(thisMonday, 7) ? "nächste Woche" : `ab ${shortDay(a.week)}` }));
-      continue;
-    }
-    groups.irgendwann.push(taskItem(entry, today, {}));
+    const from = taskFrom(a, entry.erstellt);
+    if (from <= today) groups.heute.push(taskItem(entry, today, { dueLabel: a.due && a.due >= today ? dueLabel(a.due, today) : null }));
+    else groups.geplant.push(taskItem(entry, from, { when: shortDay(from), dueLabel: a.due ? dueLabel(a.due, today) : null }));
   }
-  // Dringendes immer zuerst; mit Tag/Frist nach Datum ("diese Woche" ohne Tag danach); sonst Uhrzeit bzw. Anlegen
-  const urgentFirst = (x: DayItem, y: DayItem) => Number(isUrgent(y)) - Number(isUrgent(x));
-  const byDate = (x: DayItem, y: DayItem) => urgentFirst(x, y) || Number(x.when === "diese Woche") - Number(y.when === "diese Woche") || x.date.localeCompare(y.date) || byTimeThenAge(x, y);
-  groups.heute.sort((x, y) => urgentFirst(x, y) || byTimeThenAge(x, y));
-  groups.woche.sort(byDate);
-  groups.spaeter.sort(byDate);
-  groups.irgendwann.sort((x, y) => urgentFirst(x, y) || byTimeThenAge(x, y));
-  groups.erledigt.sort((x, y) => y.date.localeCompare(x.date));
-  return groups;
-}
-
-type OrderedTask = DayItem & { group: Exclude<TaskGroup, "erledigt"> };
-
-/**
- * EINE Reihenfolge für alle Ansichten (Startseite, Aufgaben-Seite, Woche):
- * 1) dringend · 2) heute dran (auch "von gestern") · 3) nächste Frist
- * (früheste zuerst) · 4) diese Woche · 5) später · 6) irgendwann – innerhalb
- * nach Uhrzeit bzw. Anlegen (älteste zuerst), nie nach Alphabet.
- */
-export function orderedTasks(entries: CalendarEntry[], today: string, g = taskOverview(entries, today)): OrderedTask[] {
-  const tag = (group: OrderedTask["group"]) => (i: DayItem): OrderedTask => ({ ...i, group });
-  const all = [...g.heute.map(tag("heute")), ...g.woche.map(tag("woche")), ...g.spaeter.map(tag("spaeter")), ...g.irgendwann.map(tag("irgendwann"))];
-  const dueOf = (i: OrderedTask) => (i.entry.typ === "aufgabe" ? i.entry.data.due : undefined);
-  const rank = (i: OrderedTask) => (isUrgent(i) ? 0 : i.group === "heute" ? 1 : dueOf(i) ? 2 : i.group === "woche" ? 3 : i.group === "spaeter" ? 4 : 5);
-  return all.sort((x, y) => rank(x) - rank(y) || (rank(x) === 2 ? dueOf(x)!.localeCompare(dueOf(y)!) : 0) || (rank(x) >= 3 ? x.date.localeCompare(y.date) : 0) || byTimeThenAge(x, y));
-}
-
-/** Kurz rechts in der Zeile: "heute", "bis Mi", "diese Woche", "von gestern" */
-export function taskBadge(item: DayItem, today: string): string {
-  if (item.carried) return item.carried;
-  if (item.dueLabel) return item.dueLabel === "bis heute" ? "heute" : item.dueLabel;
-  if (item.when) return item.when;
-  return item.date === today ? "heute" : "";
-}
-
-/** Alle noch nicht erledigten Aufgaben (Zahl für "+ N weitere") */
-export function openTaskCount(entries: CalendarEntry[], today: string): number {
-  const g = taskOverview(entries, today);
-  return g.heute.length + g.woche.length + g.spaeter.length + g.irgendwann.length;
+  return {
+    heute: sortTasks(groups.heute, neuAm),
+    geplant: sortBy(groups.geplant, ...via((i: DayItem) => ({ date: i.date, time: i.time, stamp: sortStamp(i) }), TERMINE)),
+    erledigt: groups.erledigt.sort((x, y) => y.date.localeCompare(x.date)),
+  };
 }
 
 /** Termine von heute, die noch anstehen (läuft gerade oder kommt noch; ohne Ende zählt 1 Stunde) */
@@ -607,6 +541,18 @@ export function sanitizeEntry(raw: unknown): CalendarEntry | null {
       ...(typeof d.an === "string" && d.an.trim() ? { an: d.an.trim().slice(0, 40) } : {}),
     },
   };
+}
+
+/**
+ * v2 → v3 (Tafel 103/104, alles ist heute): „Irgendwann“ war schon ohne Tag
+ * (= ab dem Anlegen, also heute). „Diese Woche“ (`week`) kommt still auf
+ * heute; ein Zeitraum in der Zukunft („nächste Woche“) wird zum Tag, ab dem
+ * die Aufgabe erscheint. Nichts geht verloren.
+ */
+export function ohneZeitraum(e: CalendarEntry, today: string): CalendarEntry {
+  if (e.typ !== "aufgabe" || !e.data?.week) return e;
+  const { week, ...data } = e.data;
+  return { ...e, data: !data.date && !data.repeat && !data.doneOn && week > today ? { ...data, date: week } : data };
 }
 
 export function sanitizeRepeat(raw: unknown): Repeat | null {

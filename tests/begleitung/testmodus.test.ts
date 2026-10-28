@@ -127,7 +127,8 @@ describe("Schnellnotiz und Notizen", () => {
     ["Merk dir das WLAN-Passwort: abc123", "notiz_anlegen", { titel: "WLAN-Passwort", text: "abc123" }],
     ["Was steht auf der Packliste?", "notizen_anzeigen", { suche: "Packliste" }],
     ["Häng das WLAN oben an", "notiz_anheften", { id: "WLAN", angeheftet: true }],
-    ["Was muss ich heute noch erledigen?", "aufgaben_anzeigen", { gruppe: "heute" }],
+    ["Was muss ich heute noch erledigen?", "aufgaben_anzeigen", {}],
+    ["Was ist noch bei der Arbeit?", "aufgaben_anzeigen", { raum: "arbeit" }],
     ["Zeig mir meine Aufgaben", "app_befehl", { text: "Zeig mir meine Aufgaben" }],
     ["Zeig mir meine Notizen", "app_befehl", { text: "Zeig mir meine Notizen" }],
   ])("%s → %s", async (sentence, name, input) => {
