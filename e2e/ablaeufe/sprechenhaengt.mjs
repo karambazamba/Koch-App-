@@ -52,3 +52,24 @@ export const sprechenHaengt = async (page, check) => {
   const teilen = page.locator("[data-mikro-protokoll]").getByRole("button", { name: "Teilen" });
   check(await teilen.waitFor({ timeout: 5000 }).then(() => true, () => false), "Für Entwickler: Mikro-Protokoll mit Teilen");
 };
+
+/** Mikro belegt (Video 28.10.): kein Ton, Sitzung endet sofort – höchstens ein stiller Neustart, dann ruhig „Mikro ist gerade belegt“ */
+export const mikroBelegt = async (page, check) => {
+  await page.addInitScript(FAKE_HOEREN);
+  await page.addInitScript(FAKE_VOICES);
+  await page.addInitScript(() => (window.__belegt = true));
+  await hello(page);
+  await seedFamily(page, { "wasgibts.einmalhinweise": { version: 1, seen: ["mikro-gefragt", "mia-knopf"] }, "wasgibts.vorlesen": { version: 1, mode: "aus", voice: "", rate: "normal" } });
+  await page.goto(BASE);
+  await page.waitForTimeout(900);
+  await page.getByRole("button", { name: /^Sag .*was ansteht/ }).first().click();
+  const mia = page.getByRole("dialog").last();
+  await page.waitForTimeout(3000);
+  check((await page.evaluate(() => window.__starts)) <= 2, `höchstens ein stiller Neustart (${await page.evaluate(() => window.__starts)} Starts)`);
+  check(await mia.getByText("Mikro ist gerade belegt. Lieber schreiben?").first().isVisible().catch(() => false), "ruhiger Satz statt Schleife");
+  check(await mia.getByRole("button", { name: "Lieber schreiben", exact: true }).isVisible().catch(() => false), "„Lieber schreiben“ bereit");
+  // Mikro wieder frei: Antippen hört zu
+  await page.evaluate(() => (window.__belegt = false));
+  await mia.getByRole("button", { name: "Frage einsprechen" }).last().click();
+  check(await hoert(page), "danach: Antippen hört wieder zu");
+};

@@ -1,7 +1,7 @@
 // Sprechen hängt nach 3–4 Runden (iPhone): Wachhund, Notausgang, erzwungenes
 // Ende, jede Erkennung nur einmal, Mia verstummt vor dem Zuhören.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ENDE_MS, NOCHMAL, STIMME_PAUSE_MS, Spracherkennung, WACHE_MS, forgetPreviousForTests, vorDemZuhoeren, type Anzeige, type Recognition } from "@/lib/begleitung/spracherkennung";
+import { BELEGT, ENDE_MS, LEER_MS, NOCHMAL, STIMME_PAUSE_MS, Spracherkennung, WACHE_MS, forgetPreviousForTests, vorDemZuhoeren, type Anzeige, type Recognition } from "@/lib/begleitung/spracherkennung";
 import { micOwner } from "@/lib/core/mic";
 
 /** Nachgebaute Erkennung: `stumm` = start() wirft nicht, aber es kommt nie ein Ereignis (iPhone-Hänger) */
@@ -134,6 +134,66 @@ describe("Wachhund", () => {
     expect(a.aborted).toBe(true);
     expect([a.onresult, a.onend, a.onerror, a.onstart]).toEqual([null, null, null, null]);
     expect(FakeRec.all.every((r) => r.started === 1)).toBe(true);
+  });
+});
+
+// Fehler (Video 28.10. 09:09): Mikro belegt (Bildschirmaufnahme, Telefonat) – onstart kommt,
+// onaudiostart nie, die Sitzung endet sofort. Früher: endloser Neustart (Mikro an/aus,
+// iOS „Audioaufnahme beenden?“). Jetzt: höchstens EIN stiller Neustart, dann ruhig aufhören.
+describe("Mikro belegt: keine Neustart-Schleife", () => {
+  it("Sitzungen ohne Ton enden sofort → ein stiller Neustart, dann „Mikro ist gerade belegt“", async () => {
+    const { e, log } = setup({ buehne: true });
+    e.begin();
+    for (let i = 0; i < 6; i++) {
+      await tick(50);
+      last().onend?.(); // endet sofort, ohne onaudiostart und ohne Ergebnis
+    }
+    await tick(WACHE_MS * 3);
+    expect(FakeRec.starts).toBe(2);
+    expect(log.error).toBe(BELEGT);
+    expect(log.listening).toBe(false);
+    expect(e.aktiv).toBe(false);
+    expect(micOwner()).toBeNull();
+    // Knopf bereit: nächstes Antippen hört wieder zu
+    e.begin();
+    await tick();
+    expect(log.error).toBe("");
+    expect(log.listening).toBe(true);
+  });
+
+  it("Pausen mit Ton (onaudiostart) oder lange stille Sitzungen sind kein „belegt“", async () => {
+    const { e, log } = setup({ buehne: true });
+    e.begin();
+    for (let i = 0; i < 4; i++) {
+      await tick(50);
+      last().onaudiostart?.();
+      last().onend?.();
+    }
+    for (let i = 0; i < 3; i++) {
+      await tick(LEER_MS + 100);
+      last().onend?.();
+    }
+    expect(log.error).toBe("");
+    expect(log.listening).toBe(true);
+    expect(FakeRec.starts).toBe(8);
+  });
+
+  it("steht im Mikro-Protokoll", async () => {
+    vi.useRealTimers();
+    const { fakeWindow } = await import("../helpers");
+    const win = fakeWindow();
+    vi.resetModules();
+    vi.useFakeTimers();
+    const se = await import("@/lib/begleitung/spracherkennung");
+    const e = new se.Spracherkennung({ micId: "b", buehne: true, klasse: () => FakeRec, anzeige: () => ({ listening: () => {}, interim: () => {}, error: () => {}, wartet: () => {}, transcript: () => {}, end: () => {} }) });
+    e.begin();
+    for (let i = 0; i < 3; i++) {
+      await tick(20);
+      last().onend?.();
+    }
+    const lines = (JSON.parse(win.localStorage.getItem("wasgibts.mikroprotokoll")!).entries as { text: string }[]).map((x) => x.text);
+    expect(lines).toContain("Zuhören: kein Ton, einmal neu");
+    expect(lines).toContain("Zuhören: Mikro belegt, kein Ton – aufgehört");
   });
 });
 

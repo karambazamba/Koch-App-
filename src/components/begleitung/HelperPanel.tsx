@@ -470,7 +470,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     setTyping(false);
     if (!speech.listening) toggleMic();
   };
-  const hint = done ? "Erledigt" : stageHint(state, name, userTurns === 0);
+  // Mikro belegt bzw. hat nicht geklappt: der ruhige Satz statt des Hinweises, „Lieber schreiben“ steht darunter
+  const hint = done ? "Erledigt" : state === "warten" && speech.error ? speech.error : stageHint(state, name, userTurns === 0);
   const mia = <StageMia state={state} size={layout.size} hint={layout.field && !done ? undefined : speech.wartet ? "Gleich schick ich’s ab" : hint} label={stageLabel(state, mic)} done={done} pause={speech.wartet} onTap={tapMia} />;
 
   return (

@@ -321,6 +321,13 @@ export const FAKE_HOEREN = () => {
       // `__haengt` = diese Start-Nummern bleiben stumm (iPhone-Hänger: start() wirft nicht, es kommt nie etwas)
       this.stumm = (window.__haengt ?? []).includes(window.__starts);
       if (!this.stumm) setTimeout(() => this.running && this.onstart?.(), 20);
+      // `__belegt` = Mikro belegt (Bildschirmaufnahme, Telefonat): Start ja, Ton nie, sofort Ende
+      if (window.__belegt && !this.stumm)
+        setTimeout(() => {
+          if (!this.running) return;
+          this.running = false;
+          this.onend?.();
+        }, 60);
     }
     stop() {
       if (!this.running || this.stumm) return;
