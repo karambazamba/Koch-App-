@@ -151,6 +151,20 @@ describe("Antippen = sofort in den aktiven Laden, gemerkt; nochmal = raus; Laden
     expect(saved().myShops).toEqual(["Rewe", "Rossmann"]);
   });
 
+  it("Abschnitte bleiben beim Antippen stehen: „Beliebt“ aus dem Stand beim Öffnen (Durchklick: Butter nach Milch weg)", () => {
+    // Stand beim Öffnen: kein Verlauf → „Beliebt“ mit 9 Grundsachen
+    const vorher = aussuchenAbschnitte({ shop: "Rewe", items: [], verlauf: LEER }).find((a) => a.id === "oft")!;
+    // Milch angetippt = feste Regel Milch → Rewe; frisch gerechnet bliebe nur Milch übrig
+    const frisch = aussuchenAbschnitte({ shop: "Rewe", items: [item("Milch", { manualId: "m", shop: "Rewe" })], verlauf: { ...LEER, shopRules: { milch: "Rewe" }, itemShops: { milch: "Rewe" } } }).find((a) => a.id === "oft")!;
+    expect(frisch.eintraege.map((e) => e.name)).toEqual(["Milch"]);
+    // die Seite rechnet mit dem Stand beim Öffnen weiter
+    const mitStand = aussuchenAbschnitte({ shop: "Rewe", items: [item("Milch", { manualId: "m", shop: "Rewe" })], verlauf: LEER }).find((a) => a.id === "oft")!;
+    expect(mitStand).toEqual(vorher);
+    expect(mitStand.eintraege.map((e) => e.name)).toContain("Butter");
+    expect(src).toMatch(/if \(s && !stand\) setStand\(/);
+    expect(src).toMatch(/aussuchenAbschnitte\(\{ shop: aktiv, items: visible, verlauf: stand \}\)/);
+  });
+
   it("Seite: aktiver Laden gemerkt, Wahl mit fester Regel, Zahl der heute gewählten Sachen am Knopf", () => {
     expect(src).toMatch(/onClick=\{\(\) => setShopChip\(`laden:\$\{l\}`\)\}/);
     expect(src).toMatch(/einsortieren\(e\.name, aktiv, true\)/);

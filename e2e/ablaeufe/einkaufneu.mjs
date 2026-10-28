@@ -36,18 +36,23 @@ export const einkaufSeite = async (page, check) => {
   await menue.getByRole("button", { name: "Meine Läden bearbeiten" }).tap();
   check(await page.locator("[data-meine-laeden]").waitFor({ timeout: 3000 }).then(() => true, () => false), "„Meine Läden“ bearbeiten");
   await page.keyboard.press("Escape");
-  // Kachel auf der Startseite: Laden-Zeile = Laden-Seite
-  await page.goto(BASE + "/");
-  await page.waitForTimeout(1000);
-  await page.locator("[data-laden-zeile]").first().tap();
-  await page.waitForURL(/\/einkaufsliste\/laden\?name=/, { timeout: 5000 }).catch(() => {});
-  check(page.url().includes("/einkaufsliste/laden?name=Edeka"), "Kachel-Zeile öffnet die Laden-Seite");
-  check(await page.locator("[data-laden-kopf]").isVisible(), "große Laden-Karte");
+  await page.waitForTimeout(300);
+  // Karte = Laden-Seite, „Was noch bei Edeka?“ landet bei Edeka
+  await page.locator('[data-laden-karte="Edeka"]').tap();
+  await page.waitForURL(/\/einkaufsliste\/laden\?name=Edeka/, { timeout: 5000 }).catch(() => {});
+  check(await page.locator("[data-laden-kopf]").isVisible(), "Karte öffnet die Laden-Seite (große Laden-Karte)");
   await page.locator("[data-was-noch]").fill("Quark");
   await page.locator("[data-was-noch]").press("Enter");
   await page.waitForTimeout(400);
   const s = await store(page, KEY);
   check(s.itemShops.quark === "Edeka" && Object.values(s.weeks).some((w) => w.manual.some((m) => m.name === "Quark")), "„Was noch bei Edeka?“ landet bei Edeka");
+  // Kachel auf der Startseite (mit Sachen; leer steht dort ein freundlicher Satz): Laden-Zeile = Laden-Seite
+  await page.goto(BASE + "/");
+  await page.waitForTimeout(1000);
+  await page.locator("[data-laden-zeile]").first().tap();
+  await page.waitForURL(/\/einkaufsliste\/laden\?name=/, { timeout: 5000 }).catch(() => {});
+  check(page.url().includes("/einkaufsliste/laden?name=Edeka"), "Kachel-Zeile öffnet die Laden-Seite");
+  check(await page.getByRole("checkbox", { name: "Quark abhaken" }).isVisible(), "Quark auf der Edeka-Seite");
 };
 
 // Aussuchen (Tafel 111): Laden oben, Antippen = sofort dort, Laden wechseln, Haken, Leiste unten, Abschnitte

@@ -15,6 +15,7 @@ import {
   finishTrip,
   migrateBescheid,
   migrateTrips,
+  aufLadenSeite,
   newDuringTrip,
   ownOpenTrip,
   plusFromLink,
@@ -82,6 +83,22 @@ describe("Logik", () => {
     expect(newDuringTrip(items, a, null).size).toBe(0);
     expect(boughtCount([item("x", { checked: true }), item("y", { checked: true }), item("z", { checked: true, hidden: true }), item("q")], a)).toBe(1);
     expect(boughtCount([item("x", { checked: true })], null)).toBe(1);
+  });
+
+  it("Laden-Seite unterwegs: Neues von anderen ohne Laden steht mit da (auch abgehakt im Korb), sonst nur dieser Laden", () => {
+    const a: ActiveTrip = { tripId: "w1", shop: "REWE", since: iso("17:00"), known: ["alt"], doneBefore: [] };
+    expect(aufLadenSeite(item("milch", { shop: "Rewe" }), "REWE", null, null)).toBe(true);
+    expect(aufLadenSeite(item("milch", { shop: "Lidl" }), "REWE", a, "felix")).toBe(false);
+    // Lisa setzt Butter ohne Laden drauf, während Felix bei REWE ist
+    expect(aufLadenSeite(item("butter", { von: "lisa" }), "REWE", a, "felix")).toBe(true);
+    expect(aufLadenSeite(item("butter", { von: "lisa", checked: true }), "REWE", a, "felix")).toBe(true);
+    // nicht: schon beim Start da, eigenes, ohne Einkauf, anderer Laden, mit anderem Laden
+    expect(aufLadenSeite(item("alt", { von: "lisa" }), "REWE", a, "felix")).toBe(false);
+    expect(aufLadenSeite(item("meins", { von: "felix" }), "REWE", a, "felix")).toBe(false);
+    expect(aufLadenSeite(item("butter", { von: "lisa" }), "REWE", null, "felix")).toBe(false);
+    expect(aufLadenSeite(item("butter", { von: "lisa" }), "Lidl", a, "felix")).toBe(false);
+    expect(aufLadenSeite(item("butter", { von: "lisa", shop: "Edeka" }), "REWE", a, "felix")).toBe(false);
+    expect(aufLadenSeite(item("butter", { von: "lisa" }), "", a, "felix")).toBe(false);
   });
 
   it("Texte ohne Druck", () => {

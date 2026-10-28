@@ -57,6 +57,18 @@ describe("Seite „Einkauf“", () => {
   });
 });
 
+describe("Fenster aus dem Seitenkopf („···“)", () => {
+  it("der Weichzeichner des Kopfs fängt Fenster nicht ein (Durchklick: Menü nur so hoch wie der Kopf, „Stammliste“ nicht antippbar)", () => {
+    const css = read("src/app/globals.css");
+    expect(read("src/components/ui/PageHeader.tsx")).toMatch(/data-sticky-header[^>]*backdrop-blur/);
+    const regel = /\[data-sticky-header\]:has\(\[role="dialog"\]\)\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
+    expect(regel).toMatch(/(^|[^-])backdrop-filter: none/);
+    expect(regel).toMatch(/-webkit-backdrop-filter: none/);
+    // über der dunklen Leiste von „Aussuchen“ (z-20)
+    expect(Number(/z-index: (\d+)/.exec(regel)?.[1])).toBeGreaterThan(20);
+  });
+});
+
 describe("Woche für alle Einkauf-Seiten", () => {
   beforeEach(() => vi.resetModules());
   it("Wechseln gilt für Einkauf, Laden-Seite und Aussuchen", async () => {

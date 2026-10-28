@@ -859,6 +859,13 @@ body {
   }
 }
 
+/* Fenster aus dem Seitenkopf („···“ → Menü, Stammliste, Meine Läden): der Weichzeichner des Kopfs macht ihn sonst zum Rahmen für position:fixed – das Fenster wäre nur so hoch wie der Kopf. Solange ein Fenster offen ist, ohne Weichzeichner und über allem Übrigen der Seite (die Fläche dahinter deckt das Fenster ab). */
+[data-sticky-header]:has([role="dialog"]) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  z-index: 30;
+}
+
 /* Statusleiste (Safe-Area oben): Seitenfarbe, leicht durchscheinend und weich verschwommen (Klassen am Element: bg-background/75 backdrop-blur) – beim Scrollen bleibt die Uhrzeit lesbar (hell und dunkel) */
 .status-veil {
   position: fixed;

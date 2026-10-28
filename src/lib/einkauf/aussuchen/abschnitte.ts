@@ -26,7 +26,7 @@ const eintrag = (name: string, tag?: string): Eintrag => ({ name, section: secti
 /** Drogerie-Laden (Rossmann, dm, Müller …)? */
 export const istDrogerieLaden = (shop: string) => shopType(shop) === "drogerie";
 
-type Verlauf = Pick<ShoppingListStore, "itemShops"> & Partial<Pick<ShoppingListStore, "shopRules" | "learned">> & { staples: Staple[]; /** zuletzt Gekauftes (mit Laden) */ gekauft: ListItem[] };
+export type Verlauf = Pick<ShoppingListStore, "itemShops"> & Partial<Pick<ShoppingListStore, "shopRules" | "learned">> & { staples: Staple[]; /** zuletzt Gekauftes (mit Laden) */ gekauft: ListItem[] };
 
 /** „Oft bei Rewe“: was ihr dort kauft (Regel > Gelerntes > Gemerktes > Gekauftes), höchstens 9 */
 export function oftBei(shop: string, v: Verlauf): string[] {

@@ -29,7 +29,7 @@ import { useMeineLaeden } from "@/lib/einkauf/meineLaeden";
 import { einsortieren, einsortiertText } from "@/lib/einkauf/einsortieren";
 import { sachenText, useEinkaufWoche } from "@/lib/einkauf/seite/karten";
 import { KATALOG_ALLE } from "@/lib/einkauf/aussuchen/katalog";
-import { addTrip, answered, boughtCount, changeBescheid, changeTrips, finishTrip, loadBescheid, newDuringTrip, sameTrip, sendAnswer, tripSuggestions, useBescheid, useTrips } from "@/lib/einkauf/unterwegs/unterwegs";
+import { addTrip, answered, aufLadenSeite, boughtCount, changeBescheid, changeTrips, finishTrip, loadBescheid, newDuringTrip, sameTrip, sendAnswer, tripSuggestions, useBescheid, useTrips } from "@/lib/einkauf/unterwegs/unterwegs";
 import { cloudSync, useCachedAccount } from "@/lib/konten/cache";
 import { refreshAccount } from "@/lib/konten/account";
 import { addedBy } from "@/lib/konten/wer";
@@ -95,12 +95,13 @@ export function LadenSeite() {
   if (!data || !today) return <div className={`${CARD} m-4 h-64 animate-pulse`} />;
   const { weekStart, settings } = data;
   const todayIso = toIsoDate(today);
-  const isHere = (i: ListItem) => (shop ? lower(i.shop) === lower(shop) : !i.shop.trim() && Boolean(i.anywhere));
+  const active = bescheid && sameTrip(bescheid.active, shop, now().getTime()) ? bescheid.active : null;
+  // Während eines Einkaufs steht hier auch, was andere ohne Laden dazusetzen („Neu von Lisa“)
+  const isHere = (i: ListItem) => (shop ? aufLadenSeite(i, shop, active, family?.me.userId ?? null) : !i.shop.trim() && Boolean(i.anywhere));
   const visible = data.list.items.filter((i) => !i.hidden && isHere(i));
   const hier = visible.filter((i) => !i.checked || leaving.includes(i.key));
   const korb = visible.filter((i) => i.checked && !leaving.includes(i.key));
   const anzahl = visible.filter((i) => !i.checked).length;
-  const active = bescheid && sameTrip(bescheid.active, shop, now().getTime()) ? bescheid.active : null;
   const ask = Boolean(family && active && bescheid?.answer === null);
   const fresh = newDuringTrip(data.list.items, active, family?.me.userId ?? null);
   const trip = active?.tripId ? trips.find((t) => t.id === active.tripId) : undefined;

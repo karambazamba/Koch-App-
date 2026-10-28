@@ -28,7 +28,7 @@ import { grundsachen } from "@/lib/einkauf/kacheln/gruppen";
 import { einsortieren } from "@/lib/einkauf/einsortieren";
 import { useEinkaufWoche } from "@/lib/einkauf/seite/karten";
 import { shopTone } from "@/lib/einkauf/shopGroups";
-import { aussuchenAbschnitte, aussuchenSuche, kennzeichen, mengeAus, mengeText, mengeZahl, tippAktion, zusammenfassung, type Abschnitt, type AbschnittId, type Eintrag } from "@/lib/einkauf/aussuchen/abschnitte";
+import { aussuchenAbschnitte, aussuchenSuche, kennzeichen, mengeAus, mengeText, mengeZahl, tippAktion, zusammenfassung, type Abschnitt, type AbschnittId, type Eintrag, type Verlauf } from "@/lib/einkauf/aussuchen/abschnitte";
 import { buzz } from "@/components/heute/actions";
 import { MeineLaedenSheet } from "@/components/einkauf/MeineLaeden";
 import { AussuchenKachel } from "@/components/einkauf/aussuchen/AussuchenKachel";
@@ -75,7 +75,10 @@ export function Aussuchen() {
 
   const visible = data?.list.items.filter((i) => !i.hidden) ?? [];
   const s = data?.settings;
-  const abschnitte: Abschnitt[] = s ? aussuchenAbschnitte({ shop: aktiv, items: visible, verlauf: { itemShops: s.itemShops, shopRules: s.shopRules, learned: s.learned, staples: s.staples, gekauft: recentBought([visible]) } }) : [];
+  // Feste Abschnitte: „Oft bei …“/„Beliebt“ aus dem Stand beim Öffnen – Antippen (= neue Regel) lässt nichts verschwinden
+  const [stand, setStand] = useState<Verlauf | null>(null);
+  if (s && !stand) setStand({ itemShops: s.itemShops, shopRules: s.shopRules, learned: s.learned, staples: s.staples, gekauft: recentBought([visible]) });
+  const abschnitte: Abschnitt[] = stand ? aussuchenAbschnitte({ shop: aktiv, items: visible, verlauf: stand }) : [];
   const abschnittIds = abschnitte.map((a) => a.id).join(",");
 
   // Aktiver Abschnitt beim Scrollen (für die Chip-Reihe)
