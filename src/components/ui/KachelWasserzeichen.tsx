@@ -8,7 +8,7 @@
 // Look „Schlicht“ keins. XS (eine Zeile) bleibt ohne. Still, nie antippbar,
 // für VoiceOver unsichtbar.
 
-import { Calendar, CircleCheck, Mail, MapPin, Refrigerator, ShoppingCart, StickyNote, Timer, type LucideIcon } from "lucide-react";
+import { Calendar, CircleCheck, Gift, Mail, MapPin, Refrigerator, ShoppingCart, StickyNote, Timer, type LucideIcon } from "lucide-react";
 import type { HomeTileId, TileSize } from "@/lib/core/homeLayout";
 
 /** Kacheln mit eigenem Bild: kein Wasserzeichen, mit Grund (die Jetzt-Karte ist keine Kachel und hat auch keins) */
@@ -26,6 +26,8 @@ export type WasserzeichenKachel = Exclude<HomeTileId, keyof typeof OHNE_WASSERZE
  * Symbol je Kachel. Neue Kachel = neuer Eintrag hier (sonst meckert
  * TypeScript und `tests/app/wasserzeichen.test.ts`) oder ein Grund oben.
  * Sport hat keins: die Stempel der Woche sind das Bild (A-044).
+ * Wundertüte: Geschenk, nur auf der Vorderseite (die Frage steht frei, also
+ * leise); die Rückseite ist weiß.
  */
 export const WASSERZEICHEN_SYMBOL: Record<WasserzeichenKachel, LucideIcon> = {
   termine: Calendar,
@@ -36,6 +38,7 @@ export const WASSERZEICHEN_SYMBOL: Record<WasserzeichenKachel, LucideIcon> = {
   timer: Timer,
   tipps: MapPin,
   post: Mail,
+  wundertuete: Gift,
 };
 
 /** Strichstärke der Wasserzeichen-Symbole (lucide, relativ zum 24er-Raster) */

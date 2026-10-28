@@ -76,6 +76,9 @@ Wissen, Platt, Rätsel (Angeberwissen dann mit Hinweis „Zum Weitererzählen“
   „Beispiel“, nie gespeichert; das erste „nochmal tippen“ leert das Beispiel.
 - S und M: dieselbe Karte, M nur breiter mit größerer Frage. Keine
   Farbwahl im Bearbeiten (die Farbe kommt mit der Sorte). XS gibt es nicht.
+- Wasserzeichen (A-036): Geschenk (`Gift`) nur auf der Vorderseite, leise
+  (`frei`, die Frage steht ohne weißes Kärtchen), Hinweis mit `kachel-frei`;
+  die weiße Rückseite bleibt ohne.
 
 ## Daten und Speicher
 

@@ -190,8 +190,8 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Kachel-Akzent (`ui/KachelWasserzeichen`, `.kachel-wasserzeichen`, Tokens
   `--app-wasserzeichen*`): Termine Calendar, Aufgaben CircleCheck, Einkauf
   ShoppingCart, Im Haus Refrigerator, Notizen StickyNote, Timer Timer, Tipps
-  MapPin, Post (bald) Mail. Keins bei Wetter (Himmel), Essen (Foto), Pinnwand
-  (Zettel), Spendentopf (Topf), Sport (die Stempel sind das Bild, A-044), der
+  MapPin, Post (bald) Mail, Wundertüte Gift (nur Vorderseite, leise). Keins
+  bei Wetter (Himmel), Essen (Foto), Pinnwand (Zettel), Spendentopf (Topf), Sport (die Stempel sind das Bild, A-044), der
   Jetzt-Karte, in XS und im Look „Schlicht“. Tabelle `WASSERZEICHEN_SYMBOL`
   (`Record` über alle Kachel-IDs, neue Kachel = Eintrag oder Grund in
   `OHNE_WASSERZEICHEN`, Test `tests/app/wasserzeichen.test.ts`). Freier Text

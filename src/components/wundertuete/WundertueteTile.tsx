@@ -13,6 +13,7 @@
 import { useEffect, useState } from "react";
 import { Anchor, Calendar, Dice5, Lightbulb, MessageSquare, Puzzle, Scale, Share, type LucideIcon } from "lucide-react";
 import { TILE, TILE_LABEL } from "@/components/ui/styles";
+import { KachelWasserzeichen } from "@/components/ui/KachelWasserzeichen";
 import { QuickButton } from "@/components/ui/QuickButton";
 import type { TileSize } from "@/lib/core/homeLayout";
 import { now } from "@/lib/core/now";
@@ -115,13 +116,16 @@ export function WundertueteTile({ size = "S", today, minutes, haushalt, gericht,
       data-wundertuete
     >
       <div key={karte.id} className="wt-dreh wt-neu relative h-full">
-        <section className={`wt-vorne ${box}`} data-tone={meta.tone} inert={seite !== "vorne"} aria-hidden={seite !== "vorne"}>
+        <section className={`wt-vorne isolate ${box}`} data-tone={meta.tone} inert={seite !== "vorne"} aria-hidden={seite !== "vorne"}>
+          <KachelWasserzeichen kachel="wundertuete" size={size} frei />
           <Kopf meta={meta} demo={demo} />
           <p className={`mt-1 line-clamp-3 font-extrabold leading-[1.22] ${frageKlasse(karte.vorne, size)}`} data-frage>
             {karte.vorne}
           </p>
           <span className="mt-auto flex items-end justify-between gap-2">
-            <span className="min-w-0 text-[12px] font-bold leading-tight text-tile-accent">{hinweisFuer(karte.sorte, abends && lage.haushalt === "allein")}</span>
+            <span className="min-w-0 text-[12px] font-bold leading-tight text-tile-accent">
+              <span className="kachel-frei">{hinweisFuer(karte.sorte, abends && lage.haushalt === "allein")}</span>
+            </span>
             <Punkte an={demo ? 1 : Math.max(1, stand?.anzeigen ?? 1)} />
           </span>
         </section>
