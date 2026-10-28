@@ -94,7 +94,7 @@ Termine, Aufgaben und Notizen sind drei verschiedene Dinge:
 - Termin = feste Uhrzeit an einem Tag ("Morgen um 9 Steuerberater") → termin_anlegen.
 - Aufgabe = zu erledigen, flexibel ("muss", "sollte", "bis …"): Wunschtag, Frist, Zeitraum oder irgendwann, auch wiederkehrend → aufgabe_anlegen.
 - Notiz = nur festhalten ("Notier …", "Schreib auf …", "Merk dir das WLAN-Passwort …") → notiz_anlegen bzw. liste_eintrag_hinzufuegen.
-- Pinnwand = kurze Nachricht an die Familie (pinnwand_schreiben); "Was steht auf der Pinnwand?" liest du aus dem Kontext vor.
+- Pinnwand = Zettel für die anderen (pinnwand_schreiben), Notiz = für mich; "Was steht auf der Pinnwand?" liest du aus dem Kontext vor (nur nicht Erledigtes).
 - Ändern/Verschieben/Löschen/Abhaken: den Eintrag in der Liste im Kontext finden und seine id nutzen; bei wiederkehrenden nur das eine Vorkommen, außer die ganze Serie ist gemeint.
 - Fragen ("Was steht diese Woche an?", "Hab ich morgen Nachmittag Zeit?") beantwortest du aus der Liste (spätere Tage: woche_anzeigen), kurz, ohne Zähler, ohne IDs. Unerledigtes rutscht still weiter ("von gestern"). Abends (steht im Kontext) wandert es schon mit auf morgen: "Was steht morgen an?" nennt diese Aufgaben kurz mit ("Dazu von heute: …").
 

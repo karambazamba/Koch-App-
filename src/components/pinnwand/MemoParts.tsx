@@ -17,14 +17,14 @@ import { micRanThisSession } from "@/lib/core/mic";
 import type { MemoRecorder } from "@/components/pinnwand/useMemoRecorder";
 
 /** Tonwelle: Balken, gespielt = Akzent, Rest blass. `fit`: Balken werden schmaler statt abgeschnitten (kleine Kachel) */
-export function MemoWave({ wave, progress = 0, className = "", fit = false }: { wave: number[]; progress?: number; className?: string; fit?: boolean }) {
+export function MemoWave({ wave, progress = 0, className = "", fit = false, color }: { wave: number[]; progress?: number; className?: string; fit?: boolean; color?: string }) {
   return (
     <span className={`flex h-6 items-center ${fit ? "gap-px" : "gap-[2px]"} ${className}`} aria-hidden>
       {wave.map((v, i) => (
         <span
           key={i}
-          className={`${fit ? "min-w-0 max-w-[3px] flex-1" : "w-[3px] shrink-0"} rounded-full bg-tile-accent transition-opacity duration-150 ${(i + 0.5) / wave.length <= progress ? "opacity-100" : "opacity-35"}`}
-          style={{ height: `${Math.round(18 + v * 82)}%` }}
+          className={`${fit ? "min-w-0 max-w-[3px] flex-1" : "w-[3px] shrink-0"} rounded-full ${color ? "" : "bg-tile-accent"} transition-opacity duration-150 ${(i + 0.5) / wave.length <= progress ? "opacity-100" : "opacity-35"}`}
+          style={{ height: `${Math.round(18 + v * 82)}%`, ...(color ? { background: color } : {}) }}
         />
       ))}
     </span>

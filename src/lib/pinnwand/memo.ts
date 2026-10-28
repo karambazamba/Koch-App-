@@ -1,14 +1,15 @@
 // Memos = kurze Sprachnachrichten an die Familie, direkt in der Pinnwand.
 // Kein Mia, keine KI, keine Abschrift: nur Aufnahme, Abspielen, Verschwinden.
 // Der Eintrag (typ "memo") liegt in `wasgibts.pinnwand`, der Ton selbst in
-// IndexedDB (`memoAudio.ts`) – später in Supabase Storage (`storagePath`).
-// Gelöscht wird 24 Std. nach der Aufnahme – gehört oder nicht, der Ton gleich
-// mit (Tafel 72); anheften geht bei Memos nicht. Rein, damit Oberfläche, Mia
-// und Tests gleich rechnen.
+// IndexedDB (`memoAudio.ts`), mit Konto in Supabase Storage (`storagePath`).
+// An der Tür als „Kassenbon“ (Tafel 106): bleibt, bis jemand „Erledigt“
+// tippt, sonst nach 7 Tagen leise ins Archiv (`tuer.ts`); gelöscht wird nur
+// von Hand, der Ton gleich mit. Anheften geht bei Memos nicht. Rein, damit
+// Oberfläche, Mia und Tests gleich rechnen.
 
 import { createEntry, type Entry } from "@/lib/core/entries";
 import { applyReaction, readReactions, type Reaction, type Reactions } from "@/lib/pinnwand/reactions";
-import { withinDay } from "@/lib/pinnwand/model";
+import { isArchived, onDoor, readDone, readFarbe, type Done, type ZettelFarbe } from "@/lib/pinnwand/tuer";
 
 /** Höchstens 60 s, danach wird automatisch gesendet */
 export const MEMO_MAX_S = 60;
@@ -27,12 +28,18 @@ type MemoData = {
   wave: number[];
   /** Wer es schon gehört hat (Autor zählt als gehört) */
   gehoertVon: string[];
-  /** Zeitpunkt, an dem alle im Haushalt es gehört hatten – ab da noch 24 Std. */
+  /** Zeitpunkt, an dem alle im Haushalt es gehört hatten (nur zur Info) */
   alleGehoertAm: string | null;
   /** Person → Emoji (eine Reaktion je Person) */
   reactions: Reactions;
   /** Pfad in Supabase Storage (später, mit Konten); bis dahin null = nur auf diesem Gerät */
   storagePath: string | null;
+  /** Gewählte Farbe; null = Farbe der Person */
+  farbe: ZettelFarbe | null;
+  /** Erledigt von … am … (24 Std. blass, dann ins Archiv) */
+  erledigt: Done | null;
+  /** Von Hand ins Archiv */
+  archiv: string | null;
 };
 export type MemoMessage = Entry<MemoData> & { typ: "memo" };
 
@@ -54,7 +61,7 @@ function normalize(levels: number[]): number[] {
   return max > 0.01 ? levels.map((v) => v / max) : levels;
 }
 
-export function createMemo(input: { author: string; dauer: number; mime: string; wave: number[] }): MemoMessage {
+export function createMemo(input: { author: string; dauer: number; mime: string; wave: number[]; farbe?: ZettelFarbe | null }): MemoMessage {
   const author = input.author.trim() || "Ich";
   const data: MemoData = {
     author,
@@ -65,6 +72,9 @@ export function createMemo(input: { author: string; dauer: number; mime: string;
     alleGehoertAm: null,
     reactions: {},
     storagePath: null,
+    farbe: input.farbe ?? null,
+    erledigt: null,
+    archiv: null,
   };
   return createEntry("memo", data, { raum: "familie" }) as MemoMessage;
 }
@@ -87,23 +97,32 @@ export function sanitizeMemo(raw: unknown): MemoMessage | null {
       alleGehoertAm: typeof d.alleGehoertAm === "string" ? d.alleGehoertAm : null,
       reactions: readReactions(d.reactions),
       storagePath: typeof d.storagePath === "string" ? d.storagePath : null,
+      farbe: readFarbe(d.farbe),
+      erledigt: readDone(d.erledigt),
+      archiv: typeof d.archiv === "string" ? d.archiv : null,
     },
   };
 }
 
-/** Noch da: jünger als 24 Std. (ab der Aufnahme, egal ob gehört) */
-export const memoAlive = (m: MemoMessage, nowMs: number) => withinDay(m.erstellt, nowMs);
+/** An der Tür (nicht im Archiv) */
+export const memoAlive = (m: MemoMessage, nowMs: number) => onDoor(m, nowMs);
 
-/** Sichtbare Memos, neueste zuerst */
+/** Memos an der Tür, neueste zuerst */
 export const visibleMemos = (list: MemoMessage[], nowMs: number) => list.filter((m) => memoAlive(m, nowMs)).sort((a, b) => b.erstellt.localeCompare(a.erstellt));
 
-/** Abgelaufene Memos wegräumen (beim Speichern, mit prunePins) */
-export const pruneMemos = (list: MemoMessage[], nowMs: number) => list.filter((m) => memoAlive(m, nowMs));
+/** An der Tür und nicht erledigt */
+export const activeMemos = (list: MemoMessage[], nowMs: number) => visibleMemos(list, nowMs).filter((m) => !m.data.erledigt);
+
+/** Memos im Archiv „Ältere“, neueste zuerst */
+export const archivedMemos = (list: MemoMessage[], nowMs: number) => list.filter((m) => isArchived(m, nowMs)).sort((a, b) => b.erstellt.localeCompare(a.erstellt));
+
+/** Ein Memo ändern (Erledigt, Archiv) */
+export const updateMemo = (list: MemoMessage[], id: string, data: Partial<MemoData>, stamp: string) => list.map((m) => (m.id === id ? { ...m, geaendert: stamp, data: { ...m.data, ...data } } : m));
 
 export const addMemo = (list: MemoMessage[], memo: MemoMessage) => [...list.filter((m) => m.id !== memo.id), memo];
 export const removeMemo = (list: MemoMessage[], id: string) => list.filter((m) => m.id !== id);
 
-/** Gehört von einer Person an/aus; sind alle aus dem Haushalt dabei, läuft ab da die 24-Std.-Frist */
+/** Gehört von einer Person an/aus; sind alle aus dem Haushalt dabei, steht der Zeitpunkt dabei */
 export function setMemoHeard(list: MemoMessage[], id: string, who: string, heard: boolean, household: string[], stamp: string): MemoMessage[] {
   return list.map((m) => {
     if (m.id !== id) return m;

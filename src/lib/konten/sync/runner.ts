@@ -9,8 +9,9 @@
 // der Warteschlange (`wasgibts.abgleich`) und geht beim nächsten Mal mit.
 // Sprachnachrichten (Etappe 3c): vor jedem Durchgang wird der Ton neuer Memos
 // hochgeladen; erst dann wird das Memo geteilt. Fremde Töne holt
-// `setMemoRemote` beim Abspielen. Abgelaufene Dateien räumt der Server
-// (Cron) weg – und, falls der nicht läuft, einmal je Start die App.
+// `setMemoRemote` beim Abspielen. Fotos der Pinnwand genauso (Bucket
+// „fotos“, `setFotoRemote`). Dateien gelöschter Einträge räumt der Server
+// (Cron) weg – nie nach Alter (an der Pinnwand verschwindet nichts ungefragt).
 
 import { createLocalStore, notifyStore, onLocalSave, readRaw, writeRaw } from "@/lib/core/localStore";
 import { now, nowIso } from "@/lib/core/now";
@@ -19,9 +20,11 @@ import { fail, ok, type Result } from "@/lib/konten/model";
 import { ADAPTERS, takeoverSummary, type CloudDoc } from "@/lib/konten/sync/docs";
 import { applyRemote, detectChanges, emptyState, localCounts, markSent, migrateSyncState, takeOver, type Io, type SyncState } from "@/lib/konten/sync/engine";
 import { resetSyncStatus, setSyncStatus } from "@/lib/konten/sync/status";
-import { expiredMemoFiles, uploadPendingMemos } from "@/lib/konten/memoShare";
+import { uploadPendingMemos } from "@/lib/konten/memoShare";
 import { memoAudio, setMemoRemote } from "@/lib/pinnwand/memoAudio";
-import { changeMemos, loadMemos } from "@/lib/pinnwand/store";
+import { changeMemos, changePins, loadMemos, loadPins } from "@/lib/pinnwand/store";
+import { uploadPendingFotos } from "@/lib/pinnwand/foto";
+import { fotoStore, setFotoRemote } from "@/lib/pinnwand/fotoStore";
 import { accountCache } from "@/lib/konten/cache";
 import { newsFromDocs } from "@/lib/konten/wer";
 import { noteFamilyNews } from "@/lib/konten/neuigkeiten";
@@ -94,6 +97,7 @@ async function cycle() {
   busy = true;
   try {
     await shareMemos(run);
+    await shareFotos(run);
     let s = detectChanges(load(run.householdId), io);
     save(s);
     let failed = false;
@@ -136,12 +140,16 @@ async function shareMemos(run: Run) {
   }).catch(() => 0);
 }
 
-/** Abgelaufene Ton-Dateien des Haushalts wegräumen (falls der Server-Cron nicht läuft) */
-async function tidyMemoFiles(run: Run) {
-  const files = await run.backend.listMemos(run.householdId).catch(() => null);
-  if (!files?.ok) return;
-  const old = expiredMemoFiles(files.value, now().getTime());
-  if (old.length) await run.backend.removeMemos(old).catch(() => null);
+/** Bilder neuer Foto-Zettel hochladen, dann den Pfad am Zettel vermerken (wird damit geteilt) */
+async function shareFotos(run: Run) {
+  await uploadPendingFotos({
+    householdId: run.householdId,
+    pins: loadPins,
+    load: (pin) => fotoStore.load(pin),
+    upload: (path, blob) => run.backend.uploadFoto(path, blob),
+    setPath: (id, path) =>
+      void changePins((list) => list.map((m) => (m.id === id && m.data.foto ? { ...m, geaendert: nowIso(), data: { ...m.data, foto: { ...m.data.foto, path } } } : m))),
+  }).catch(() => 0);
 }
 
 function schedule(ms: number) {
@@ -158,9 +166,10 @@ function startLoop(run: Run) {
   window.addEventListener("online", onOnline);
   document.addEventListener("visibilitychange", onVisible);
   setMemoRemote((path) => run.backend.downloadMemo(path));
-  void tidyMemoFiles(run);
+  setFotoRemote((path) => run.backend.downloadFoto(path));
   run.stop = () => {
     setMemoRemote(null);
+    setFotoRemote(null);
     offSave();
     offWatch();
     window.clearInterval(every);

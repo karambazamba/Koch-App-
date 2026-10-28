@@ -1,14 +1,16 @@
 // Sprachnachrichten teilen (Etappe 3c) – die reine Logik: wohin der Ton in
 // Supabase Storage kommt (Bucket „memos“, <haushalt>/<memo-id>.m4a|webm|ogg),
-// welche Memos noch hochgeladen werden und welche Dateien weg können. Der Ton
-// bleibt 24 Std. ab der Aufnahme (wie das Memo, Tafel 72); Dateien räumen wir
-// mit einer Stunde Luft weg. Netz und Speicher kommen von außen.
+// welche Memos noch hochgeladen werden und welche Dateien weg können. Nichts
+// verschwindet ungefragt (Kühlschranktür, Tafel 106): eine Datei geht erst,
+// wenn ihr Eintrag von Hand gelöscht ist (oder es ihn nie gab) – mit einem
+// Tag Luft, weil die Datei vor dem Eintrag hochgeladen wird. Gilt genauso für
+// die Fotos (Bucket „fotos“). Netz und Speicher kommen von außen.
 
 import type { MemoMessage } from "@/lib/pinnwand/memo";
 import type { Result } from "@/lib/konten/model";
 
-/** Ton-Dateien älter als 25 Std. dürfen weg (Memo lebt 24 Std.) */
-export const MEMO_FILE_MS = 25 * 3_600_000;
+/** Luft für Dateien ohne Eintrag (der Eintrag kommt erst nach dem Hochladen) */
+export const ORPHAN_GRACE_MS = 24 * 3_600_000;
 
 /** Dateiendung zum Aufnahme-Format (iPhone = m4a) */
 export function memoExt(mime: string): "m4a" | "webm" | "ogg" {
@@ -28,9 +30,13 @@ export const memoContentType = (mime: string) => mime.split(";")[0].trim() || "a
 
 export type MemoFile = { name: string; createdAt: string };
 
-/** Welche Dateien eines Haushalts weg können */
-export function expiredMemoFiles(files: MemoFile[], nowMs: number): string[] {
-  return files.filter((f) => nowMs - (Date.parse(f.createdAt) || nowMs) > MEMO_FILE_MS).map((f) => f.name);
+/** Eintrags-ID zu einem Dateinamen („<haushalt>/<id>.<endung>“) */
+const idOfFile = (name: string) => (name.split("/").pop() ?? "").replace(/\.[a-z0-9]+$/i, "");
+
+/** Welche Dateien weg können: ihr Eintrag ist gelöscht bzw. fehlt, und sie sind älter als einen Tag */
+export function orphanFiles(files: MemoFile[], liveIds: Iterable<string>, nowMs: number): string[] {
+  const live = new Set([...liveIds].map((id) => id.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 80)));
+  return files.filter((f) => !live.has(idOfFile(f.name)) && nowMs - (Date.parse(f.createdAt) || nowMs) > ORPHAN_GRACE_MS).map((f) => f.name);
 }
 
 export type UploadDeps = {

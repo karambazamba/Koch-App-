@@ -1,6 +1,6 @@
-// Pinnwand: Nachrichten (bis 140 Zeichen, Reaktionen, gelesen, angeheftet,
-// nach 24 Std. weg), Memos (24 Std. nach der Aufnahme, gehört oder nicht)
-// und der Speicher `wasgibts.pinnwand` v2 (Migration v1, Rückgängig).
+// Pinnwand: Zettel (bis 140 Zeichen, Reaktionen, gelesen, angeheftet, bleiben
+// bis Erledigt bzw. 7 Tage), Memos (gleich) und der Speicher
+// `wasgibts.pinnwand` v4 (Migration v1–v3, Rückgängig, nichts geht verloren).
 import { beforeEach, describe, expect, it } from "vitest";
 import { at, memoryStorage } from "../helpers";
 import { now } from "@/lib/core/now";
@@ -13,7 +13,6 @@ import {
   personTone,
   pinMeta,
   pinWriteCommand,
-  prunePins,
   removePin,
   sanitizePin,
   setPinPinned,
@@ -33,7 +32,6 @@ import {
   memoToPlay,
   memoUnheard,
   pickMemoMime,
-  pruneMemos,
   removeMemo,
   resample,
   sanitizeMemo,
@@ -75,10 +73,10 @@ describe("Nachrichten", () => {
     const raw = { ...pin("Hi"), raum: "arbeit", data: { text: " Hi  du ", author: " ", reactions: { "👍": ["Lisa", 3], "❤️": [], "🔥": ["x"] }, readBy: "Lisa", pinned: "ja" } };
     const p = sanitizePin(raw)!;
     expect(p.raum).toBe("familie");
-    expect(p.data).toEqual({ text: "Hi du", author: "Ich", reactions: { Lisa: "👍" }, replyTo: null, readBy: [], pinned: false });
+    expect(p.data).toEqual({ text: "Hi du", author: "Ich", reactions: { Lisa: "👍" }, replyTo: null, readBy: [], pinned: false, farbe: null, papier: "zettel", foto: null, erledigt: null, archiv: null, notizFrage: false });
   });
 
-  it("nach 24 Std. weg (ab dem Schreiben) – außer dauerhaft angeheftet; neueste zuerst", () => {
+  it("nach 24 Std. noch da (kein Verschwinden mehr) – Angeheftetes oben, sonst neueste zuerst", () => {
     const old = pin("alt");
     at("2026-10-22T20:00");
     const mid = pin("mitte");
@@ -86,9 +84,9 @@ describe("Nachrichten", () => {
     const fresh = pin("neu");
     const kept = setPinPinned([old], old.id, true, "s")[0];
     expect(visiblePins([old, mid, fresh], ms()).map((m) => m.data.text)).toEqual(["neu", "mitte", "alt"]);
-    at("2026-10-23T09:00");
-    expect(visiblePins([old, mid, fresh], ms()).map((m) => m.data.text)).toEqual(["neu", "mitte"]);
-    expect(prunePins([old, kept, mid], ms()).map((m) => m.data.text)).toEqual(["alt", "mitte"]);
+    at("2026-10-23T09:01");
+    expect(visiblePins([old, mid, fresh], ms()).map((m) => m.data.text)).toEqual(["neu", "mitte", "alt"]);
+    expect(visiblePins([kept, mid, fresh], ms()).map((m) => m.data.text)).toEqual(["alt", "neu", "mitte"]);
     expect(setPinPinned([old, mid], old.id, true, "s")[1]).toBe(mid);
   });
 
@@ -197,13 +195,12 @@ describe("Memos", () => {
     expect(setMemoHeard([m, other], m.id, "Felix", true, house, "t")[1]).toBe(other);
   });
 
-  it("verschwinden: 24 Std. nach der Aufnahme – gehört oder nicht", () => {
+  it("bleiben: nach 24 Std. noch da, gehört oder nicht – erst nach 7 Tagen ins Archiv", () => {
     const m = memo();
     const heard = { ...m, data: { ...m.data, alleGehoertAm: now().toISOString() } };
-    expect(memoAlive(heard, ms() + DAY - 1)).toBe(true);
-    expect(memoAlive(m, ms() + DAY - 1)).toBe(true);
-    expect(memoAlive(m, ms() + DAY)).toBe(false);
-    expect(pruneMemos([m, heard], ms() + DAY)).toEqual([]);
+    expect(memoAlive(heard, ms() + DAY)).toBe(true);
+    expect(memoAlive(m, ms() + DAY)).toBe(true);
+    expect(memoAlive(m, ms() + 7 * DAY)).toBe(false);
   });
 
   it("anzeigen, hinzufügen, entfernen, reagieren", () => {
@@ -261,23 +258,23 @@ describe("Memos", () => {
   });
 });
 
-describe("Speicher `wasgibts.pinnwand` v3", () => {
+describe("Speicher `wasgibts.pinnwand` v4", () => {
   const stored = () => JSON.parse(local.getItem("wasgibts.pinnwand")!);
 
-  it("v1 → v3: Nachrichten bleiben, Memos leer; Unsinn fällt raus", () => {
+  it("v1 → v4: Nachrichten bleiben, Memos leer; Unsinn fällt raus", () => {
     const p = pin("Hallo");
-    expect(migratePinStore({ version: 1, messages: [p, { typ: "x" }], memos: [memo()] })).toEqual({ version: 3, messages: [p], memos: [] });
+    expect(migratePinStore({ version: 1, messages: [p, { typ: "x" }], memos: [memo()] })).toEqual({ version: 4, messages: [p], memos: [] });
     expect(migratePinStore({ version: 2, messages: "x", memos: [memo(), null] })?.memos).toHaveLength(1);
-    expect(migratePinStore({ version: 4 })).toBeNull();
+    expect(migratePinStore({ version: 5 })).toBeNull();
     expect(migratePinStore(null)).toBeNull();
   });
 
-  it("beim Laden wird ein v1-Stand einmal als v3 zurückgeschrieben", () => {
+  it("beim Laden wird ein v1-Stand einmal als v4 zurückgeschrieben", () => {
     const p = pin("Hallo");
     local.setItem("wasgibts.pinnwand", JSON.stringify({ version: 1, messages: [p] }));
     expect(loadPins()).toEqual([p]);
     expect(loadMemos()).toEqual([]);
-    expect(stored().version).toBe(3);
+    expect(stored().version).toBe(4);
   });
 
   it("leer ohne Speicher", () => {
@@ -285,17 +282,17 @@ describe("Speicher `wasgibts.pinnwand` v3", () => {
     expect(loadMemos()).toEqual([]);
   });
 
-  it("ändern räumt Altes weg und liefert Rückgängig", () => {
+  it("ändern räumt nichts mehr weg (Altes bleibt im Speicher, Archiv) und liefert Rückgängig", () => {
     const old = pin("alt");
     const oldMemo = memo();
     at("2026-10-26T09:00");
     local.setItem("wasgibts.pinnwand", JSON.stringify({ version: 2, messages: [old], memos: [oldMemo] }));
     const p = pin("neu");
     const undo = changePins((list) => addPin(list, p));
-    expect(loadPins().map((m: PinMessage) => m.data.text)).toEqual(["neu"]);
-    expect(loadMemos()).toEqual([]);
+    expect(loadPins().map((m: PinMessage) => m.data.text)).toEqual(["alt", "neu"]);
+    expect(loadMemos().map((m) => m.id)).toEqual([oldMemo.id]);
     undo();
-    expect(loadPins()).toEqual([old]);
+    expect(loadPins().map((m: PinMessage) => m.data.text)).toEqual(["alt"]);
   });
 
   it("Memos ändern lässt Nachrichten stehen; Rückgängig stellt die Memos wieder her", () => {

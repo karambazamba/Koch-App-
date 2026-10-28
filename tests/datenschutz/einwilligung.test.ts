@@ -67,6 +67,6 @@ describe("Auf diesem Gerät löschen", () => {
     await wipeDevice();
     expect(win.localStorage.length).toBe(0);
     expect(win.sessionStorage.length).toBe(0);
-    expect(deleted).toEqual(["wasgibts-memos"]);
+    expect(deleted).toEqual(["wasgibts-fotos", "wasgibts-memos"]);
   });
 });

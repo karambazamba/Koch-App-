@@ -8,6 +8,7 @@
 import type { StorageKey } from "@/lib/core/storage";
 import { cleanPantryItem, migratePantry } from "@/lib/vorrat/haltbar";
 import { migrateNotes } from "@/lib/notizen/model";
+import { migratePinStore } from "@/lib/pinnwand/migration";
 import { ohneZeitraum, type CalendarEntry } from "@/lib/kalender/model";
 import { todayIso } from "@/lib/core/now";
 
@@ -80,22 +81,28 @@ const kalender = {
 // v1 → v2: die alte Sammel-Schnellnotiz kommt als einzelne Notizen an
 const notizen = { ...entryAdapter("notizen", "wasgibts.notizen", 2, "notes", ["notiz"], () => ({ version: 2 })), upgrade: (v: Value) => migrateNotes(v) as Value | null };
 
-// Pinnwand: Nachrichten und Sprachnachrichten (Etappe 3c). Ein Memo wird erst
-// geteilt, wenn sein Ton in Supabase Storage liegt (`storagePath`) – bis dahin
-// bleibt es nur auf dem Gerät (und beim Einspielen erhalten).
+// Pinnwand: Zettel und Sprachnachrichten (Etappe 3c, Kühlschranktür v4). Ein
+// Memo wird erst geteilt, wenn sein Ton in Supabase Storage liegt
+// (`storagePath`), ein Foto-Zettel erst mit Bild im Haushalt (`foto.path`) –
+// bis dahin bleiben sie nur auf dem Gerät (und beim Einspielen erhalten).
+// v3 → v4 hebt `migratePinStore` (Farbe = Person, nichts geht verloren).
 const isShared = (m: Value) => isObj(m.data) && typeof m.data.storagePath === "string" && m.data.storagePath !== "";
-const nachrichten = entryAdapter("pinnwand", "wasgibts.pinnwand", 3, "messages", ["pinnwand"], () => ({}));
-const memos = entryAdapter("pinnwand", "wasgibts.pinnwand", 3, "memos", ["memo"], () => ({}));
+const pinShared = (m: Value) => !isObj(m.data) || !isObj(m.data.foto) || (typeof m.data.foto.path === "string" && m.data.foto.path !== "");
+const nachrichten = entryAdapter("pinnwand", "wasgibts.pinnwand", 4, "messages", ["pinnwand"], () => ({}));
+const memos = entryAdapter("pinnwand", "wasgibts.pinnwand", 4, "memos", ["memo"], () => ({}));
 const pinnwand: Adapter = {
   name: "pinnwand",
   key: "wasgibts.pinnwand",
-  version: 3,
+  version: 4,
   typs: ["pinnwand", "memo"],
-  toDocs: (value) => [...nachrichten.toDocs(value), ...memos.toDocs({ memos: list(value.memos).filter(isShared) })],
+  upgrade: (value) => (value.version === 4 ? null : (migratePinStore(value) as unknown as Value | null)),
+  toDocs: (value) => [...nachrichten.toDocs({ messages: list(value.messages).filter(pinShared) }), ...memos.toDocs({ memos: list(value.memos).filter(isShared) })],
   fromDocs: (docs, value) => {
-    const onlyHere = list(value?.memos).filter((m) => !isShared(m) && !docs.some((d) => d.id === m.id));
+    const memosHere = list(value?.memos).filter((m) => !isShared(m) && !docs.some((d) => d.id === m.id));
+    const pinsHere = list(value?.messages).filter((m) => !pinShared(m) && !docs.some((d) => d.id === m.id));
     const shared = memos.fromDocs(docs.filter((d) => d.typ === "memo"), null).memos as Value[];
-    return { version: 3, messages: nachrichten.fromDocs(docs.filter((d) => d.typ === "pinnwand"), null).messages, memos: [...onlyHere, ...shared] };
+    const sharedPins = nachrichten.fromDocs(docs.filter((d) => d.typ === "pinnwand"), null).messages as Value[];
+    return { version: 4, messages: [...pinsHere, ...sharedPins], memos: [...memosHere, ...shared] };
   },
 };
 

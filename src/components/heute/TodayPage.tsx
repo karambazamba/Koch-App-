@@ -144,6 +144,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   // Launch 1.0: Sport, Notizen, Spendentopf nur als Baustein (wer sie nutzt, behält sie)
   const sportOn = useFeature("sport");
   const notesOn = useFeature("notizen");
+  const pinboardOn = useFeature("pinnwand");
   const potOn = useFeature("spendentopf");
   const regionOn = useTipsOn();
   const tipSettings = useTipSettings();
@@ -247,7 +248,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const workless = (list: typeof overview.heute) => (view.hideWork ? list.filter((i) => i.room !== "arbeit") : list);
 
   // Kacheln: genau die gespeicherte Reihenfolge und Größe – im Bearbeiten-Modus dieselbe
-  const visible = all.filter((t) => t.visible && !tileMeta(t.id).soon && (t.id !== "vorrat" || pantryOn) && (t.id !== "tipps" || regionOn) && (t.id !== "sport" || sportOn) && (t.id !== "notizen" || notesOn) && (t.id !== "spendentopf" || potOn));
+  const visible = all.filter((t) => t.visible && !tileMeta(t.id).soon && (t.id !== "vorrat" || pantryOn) && (t.id !== "tipps" || regionOn) && (t.id !== "sport" || sportOn) && (t.id !== "notizen" || notesOn) && (t.id !== "pinnwand" || pinboardOn) && (t.id !== "spendentopf" || potOn));
 
   const entry = cookableEntry(data.day);
   const recipe = entry?.recipeId ? data.recipes[entry.recipeId] : undefined;
@@ -535,7 +536,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
                   : null
               }
               shop={jetzt.shop}
-              pins={(pins ?? []).filter((p) => p.erstellt.slice(0, 10) === data.todayIso || toIsoDate(new Date(p.erstellt)) === data.todayIso)}
+              pins={(pins ?? []).filter((p) => !p.data.erledigt && !p.data.archiv).filter((p) => p.erstellt.slice(0, 10) === data.todayIso || toIsoDate(new Date(p.erstellt)) === data.todayIso)}
               topic={dayTopic.topic}
               fragen={mia.fragen}
               onTopicDone={doneTopic}

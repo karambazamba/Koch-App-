@@ -10,7 +10,7 @@ import { readRaw, writeRaw } from "@/lib/core/localStore";
 import { fail, friendlyError, ok, type CloudUser, type HouseholdInfo, type InviteInfo, type InviteLink, type Result, type Role } from "@/lib/konten/model";
 import type { CloudDoc } from "@/lib/konten/sync/docs";
 import type { OAuthProvider } from "@/lib/konten/oauth";
-import { memoContentType, type MemoFile } from "@/lib/konten/memoShare";
+import { memoContentType } from "@/lib/konten/memoShare";
 import type { Room } from "@/lib/core/entries";
 import type { MailEintrag } from "@/lib/mails/vorschlag";
 import type { Absender } from "@/lib/mails/lernen";
@@ -55,9 +55,10 @@ export interface CloudBackend {
   uploadMemo(path: string, blob: Blob): Promise<Result>;
   /** Ton holen; null = gerade nicht (offline, schon weggeräumt) */
   downloadMemo(path: string): Promise<Blob | null>;
-  /** Ton-Dateien des Haushalts (zum Aufräumen) */
-  listMemos(householdId: string): Promise<Result<MemoFile[]>>;
-  removeMemos(paths: string[]): Promise<Result>;
+  /** Bild eines Foto-Zettels ablegen (Bucket „fotos“, Pfad <haushalt>/<id>.jpg) */
+  uploadFoto(path: string, blob: Blob): Promise<Result>;
+  /** Bild holen; null = gerade nicht */
+  downloadFoto(path: string): Promise<Blob | null>;
   /** Mails an Mia: lokaler Teil der Adresse (Familie bzw. eigene Arbeit); `renew` = neue Adresse, alte nimmt nichts mehr an */
   mailAddress(room: Room, renew: boolean): Promise<Result<string>>;
   listMailItems(): Promise<Result<MailEintrag[]>>;
@@ -243,13 +244,13 @@ function testBackend(): CloudBackend {
       const r = await call("download_memo", { path });
       return typeof r.data === "string" ? fromBase64(r.data, String(r.mime ?? "audio/webm")) : null;
     },
-    listMemos: async (householdId) => {
-      const r = await call("list_memos", { householdId });
-      return err(r) ? fail(err(r) as string) : ok((r.files as MemoFile[]) ?? []);
-    },
-    removeMemos: async (paths) => {
-      const r = await call("remove_memos", { paths });
+    uploadFoto: async (path, blob) => {
+      const r = await call("upload_foto", { path, mime: "image/jpeg", data: await toBase64(blob) });
       return err(r) ? fail(err(r) as string) : ok(true);
+    },
+    downloadFoto: async (path) => {
+      const r = await call("download_foto", { path });
+      return typeof r.data === "string" ? fromBase64(r.data, "image/jpeg") : null;
     },
     mailAddress: async (room, renew) => {
       const r = await call("mail_address", { room, renew });

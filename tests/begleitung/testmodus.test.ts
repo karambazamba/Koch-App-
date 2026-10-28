@@ -158,7 +158,7 @@ describe("Alltag: Portionen, Pause, Bausteine, Startseite, App-Bedienung", () =>
 
   it("Urlaub ohne Zeit: nachfragen; Baustein schon an: nichts schalten", async () => {
     expect((await one("Wir fahren bald in den Urlaub")).text).toBe("Schön! Von wann bis wann seid ihr weg? (Testmodus)");
-    const all = context([], { on: ["wochenplan", "vorrat", "rezepte", "backen", "spontan", "tipps", "wochenendIdeen", "kochstil", "kalender", "mails", "notizen", "sport"] });
+    const all = context([], { on: ["wochenplan", "vorrat", "rezepte", "backen", "spontan", "tipps", "wochenendIdeen", "kochstil", "kalender", "mails", "notizen", "sport", "pinnwand"] });
     expect((await one("Was kannst du noch?", all)).text).toBe("Gerade ist alles an, was ich kann. (Testmodus)");
     // Im Haus gehört zu 1.0 (wer es abgeschaltet hat, bekommt es angeboten), Spendentopf nicht
     expect((await one("Was kannst du noch?")).text).toMatch(/^Außerdem kann ich: Im Haus – .*Rezepte – /);

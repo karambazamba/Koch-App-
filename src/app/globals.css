@@ -18,6 +18,9 @@
   --color-jetzt-from: var(--app-jetzt-from);
   --color-jetzt-to: var(--app-jetzt-to);
   --color-jetzt-hint: var(--app-jetzt-hint);
+  /* Schrift auf Zetteln der Kühlschranktür (Papier bleibt hell, auch dunkel) */
+  --color-fridge-ink: var(--app-fridge-ink);
+  --color-fridge-soft: var(--app-fridge-ink-soft);
   /* Werte kommen aus der gewählten Ansicht (siehe unten) – nie feste Farben verwenden */
   --color-background: var(--app-background);
   --color-surface: var(--app-surface);
@@ -217,6 +220,26 @@
      gleicher Sättigung): Fläche + dunkle Tonfarbe (Label, Icon, Uhrzeit, Plus) */
   --app-tile-pinnwand: #f4d9e0;
   --app-tile-pinnwand-ac: #8e2f4f;
+  /* Pinnwand als Kühlschranktür (Tafel 106): helle Tür mit Verlauf, feinem Rand
+     und Griff; Papier, Karo-Linien, roter Pin, Schrift auf Papier (immer dunkel).
+     Zettel-Farben = Personen (5 Pastell-Töne + Mia-Orange im Beispiel), dazu der
+     kräftigere Ton für Magnet, Avatar und Tonwelle. */
+  --app-fridge-door-a: #fcfbf8;
+  --app-fridge-door-b: #eeebe5;
+  --app-fridge-edge: #e0dad1;
+  --app-fridge-handle: #d6cfc4;
+  --app-fridge-pin: #e0442e;
+  --app-fridge-paper: #ffffff;
+  --app-fridge-grid: #dde5ee;
+  --app-fridge-ink: #2a241d;
+  --app-fridge-ink-soft: #6b6157;
+  --app-fridge-shadow: 0 6px 14px rgb(60 40 20 / 0.12), 0 1px 2px rgb(60 40 20 / 0.08);
+  --app-zettel-0: #fde9a6; --app-zettel-0-mag: #d9a521;
+  --app-zettel-1: #f9d3df; --app-zettel-1-mag: #d9547f;
+  --app-zettel-2: #cdeed9; --app-zettel-2-mag: #3f9e64;
+  --app-zettel-3: #d3e3fa; --app-zettel-3-mag: #4f7fd0;
+  --app-zettel-4: #e5dafa; --app-zettel-4-mag: #8a63d2;
+  --app-zettel-mia: #fddcc4; --app-zettel-mia-mag: #f26b21;
   --app-tile-wetter: #f4e8c4;
   --app-tile-wetter-ac: #6e5208;
   --app-tile-termine: #dce2f7;
@@ -361,6 +384,23 @@
   /* Pastell-Kacheln: Fläche + Akzent (Label, Icon, Plus) */
   --app-tile-pinnwand: #2b1f24;
   --app-tile-pinnwand-ac: #e59ab0;
+  /* Kühlschranktür dunkel: Edelstahl; das Papier bleibt Papier (etwas gedämpft) */
+  --app-fridge-door-a: #3b3e44;
+  --app-fridge-door-b: #2a2d32;
+  --app-fridge-edge: #4c5058;
+  --app-fridge-handle: #5d626b;
+  --app-fridge-pin: #e5574a;
+  --app-fridge-paper: #ecebe7;
+  --app-fridge-grid: #c6cfd9;
+  --app-fridge-ink: #2a241d;
+  --app-fridge-ink-soft: #5b524a;
+  --app-fridge-shadow: 0 6px 16px rgb(0 0 0 / 0.45), 0 1px 2px rgb(0 0 0 / 0.3);
+  --app-zettel-0: #eadb9a; --app-zettel-0-mag: #d9a521;
+  --app-zettel-1: #e8c2cf; --app-zettel-1-mag: #d9547f;
+  --app-zettel-2: #bcdcc7; --app-zettel-2-mag: #3f9e64;
+  --app-zettel-3: #c1d3ec; --app-zettel-3-mag: #5a88d6;
+  --app-zettel-4: #d3c8ec; --app-zettel-4-mag: #9370d6;
+  --app-zettel-mia: #efc8ab; --app-zettel-mia-mag: #f26b21;
   --app-tile-wetter: #2a2515;
   --app-tile-wetter-ac: #e8c66a;
   --app-tile-termine: #1b2130;
@@ -489,6 +529,23 @@
     /* Pastell-Kacheln: Fläche + Akzent (Label, Icon, Plus) */
     --app-tile-pinnwand: #2b1f24;
     --app-tile-pinnwand-ac: #e59ab0;
+    /* Kühlschranktür dunkel: Edelstahl; das Papier bleibt Papier (etwas gedämpft) */
+    --app-fridge-door-a: #3b3e44;
+    --app-fridge-door-b: #2a2d32;
+    --app-fridge-edge: #4c5058;
+    --app-fridge-handle: #5d626b;
+    --app-fridge-pin: #e5574a;
+    --app-fridge-paper: #ecebe7;
+    --app-fridge-grid: #c6cfd9;
+    --app-fridge-ink: #2a241d;
+    --app-fridge-ink-soft: #5b524a;
+    --app-fridge-shadow: 0 6px 16px rgb(0 0 0 / 0.45), 0 1px 2px rgb(0 0 0 / 0.3);
+    --app-zettel-0: #eadb9a; --app-zettel-0-mag: #d9a521;
+    --app-zettel-1: #e8c2cf; --app-zettel-1-mag: #d9547f;
+    --app-zettel-2: #bcdcc7; --app-zettel-2-mag: #3f9e64;
+    --app-zettel-3: #c1d3ec; --app-zettel-3-mag: #5a88d6;
+    --app-zettel-4: #d3c8ec; --app-zettel-4-mag: #9370d6;
+    --app-zettel-mia: #efc8ab; --app-zettel-mia-mag: #f26b21;
     --app-tile-wetter: #2a2515;
     --app-tile-wetter-ac: #e8c66a;
     --app-tile-termine: #1b2130;
@@ -1207,3 +1264,64 @@ body:has(.mia-buehne-hintergrund, .mia-geist-schleier) [data-mia-knopf] { opacit
 .mia-blatt{position:absolute;top:-6px;left:10px;width:12px;height:12px;border-radius:0 70% 0 70%;background:var(--app-tile-essen-ac);opacity:0;animation:mia-blatt 2.4s cubic-bezier(.16,1,.3,1) both;pointer-events:none}
 @keyframes mia-blatt{0%{opacity:0;transform:translate(0,0) rotate(0)}15%{opacity:.9}100%{opacity:0;transform:translate(-18px,64px) rotate(160deg)}}
 @media (prefers-reduced-motion:reduce){[data-moment] .av-body{animation:none!important}.mia-blatt{display:none}}
+
+/*
+ * Pinnwand als Kühlschranktür (Tafel 106/107): Tür, Zettel, Papiere. Farben nur
+ * über --app-fridge-* und --app-zettel-* (hell und dunkel). Zettel hängen fest
+ * schief (--kippen aus der ID), die Ecke unten rechts ist leicht gerundet.
+ */
+.kuehlschrank {
+  position: relative;
+  background: linear-gradient(180deg, var(--app-fridge-door-a), var(--app-fridge-door-b));
+  border: 1px solid var(--app-fridge-edge);
+  border-radius: var(--radius-card);
+}
+/* Griff rechts: schmale senkrechte Leiste */
+.kuehlschrank::after {
+  content: "";
+  position: absolute;
+  top: 28px;
+  right: 6px;
+  width: 5px;
+  height: 120px;
+  border-radius: 9999px;
+  background: var(--app-fridge-handle);
+  pointer-events: none;
+}
+.zettel {
+  position: relative;
+  color: var(--app-fridge-ink);
+  box-shadow: var(--app-fridge-shadow);
+  border-radius: 3px 3px 14px 3px;
+  transform: rotate(var(--kippen, 0deg));
+}
+.zettel-karo {
+  background-color: var(--app-fridge-paper);
+  background-image: linear-gradient(var(--app-fridge-grid) 1px, transparent 1px), linear-gradient(90deg, var(--app-fridge-grid) 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+.zettel-papier { background-color: var(--app-fridge-paper); }
+/* Kassenbon: gezackte Oberkante */
+.zettel-bon { border-radius: 0 0 14px 3px; }
+.zettel-bon::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -6px;
+  height: 6px;
+  background:
+    linear-gradient(to bottom right, transparent 50%, var(--app-fridge-paper) 50%) 0 0 / 10px 6px repeat-x,
+    linear-gradient(to bottom left, transparent 50%, var(--app-fridge-paper) 50%) 0 0 / 10px 6px repeat-x;
+}
+.zettel-leer { border: 2px dashed var(--tile-ac); background: var(--app-tile-inner); box-shadow: none; opacity: 0.85; }
+.zettel[data-erledigt] { opacity: 0.55; }
+.zettel[data-erledigt] .zettel-text { text-decoration: line-through; }
+.zettel-hervor { animation: zettel-hervor 2.4s cubic-bezier(.16, 1, .3, 1); }
+@keyframes zettel-hervor {
+  0%, 60% { box-shadow: 0 0 0 4px var(--app-accent-soft), var(--app-fridge-shadow); }
+  100% { box-shadow: var(--app-fridge-shadow); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .zettel-hervor { animation: none; }
+}

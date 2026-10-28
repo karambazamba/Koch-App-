@@ -1,22 +1,23 @@
 "use client";
 
-// Lange gedrückt (Tafel 70): die Nachricht hebt sich leicht an, der Rest wird
-// abgedunkelt; darüber die Reaktionsleiste 👍 ❤️ 😂 😮 🙏 (antippen setzt,
-// tauscht oder entfernt die eigene), darunter das Menü „Antworten“,
-// „Weiterleiten an Mia“ (nur Text), „Dauerhaft anheften“ (nur Text), „Löschen“ (nur
-// eigene); bei der eigenen Sprachnachricht „Gehört von“. Schließt per
-// Danebentippen, Escape und Zurück.
+// Zettel angetippt oder lange gedrückt (Tafel 106, E): der Zettel hebt sich
+// leicht an, der Rest wird abgedunkelt; darüber die Reaktionsleiste 👍 ❤️ 😂
+// 😮 🙏 (Reaktionen sind Inhalt), darunter das Menü „Erledigt“, „Antworten“,
+// „In Notizen“ (nur Text), „Anheften“ (nur Zettel), „Löschen“ (nur eigene);
+// im Archiv nur Antworten, In Notizen und Löschen. Bei der eigenen
+// Sprachnachricht „Gehört von“. Schließt per Danebentippen, Escape und Zurück.
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { Check, Forward, Pin, Reply, Trash2 } from "lucide-react";
+import { Check, CircleCheck, NotebookPen, Pin, Reply, Trash2 } from "lucide-react";
 import { useBackCloses } from "@/lib/core/useBackCloses";
 import { now } from "@/lib/core/now";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
-import { REACTIONS, changeMemos, changePins, setMemoHeard, setPinPinned, type PinQuote } from "@/lib/pinnwand";
-import { deleteItem, forwardToMia, mayDelete, reactTo, reactionsOf, replyTo } from "@/components/pinnwand/boardActions";
+import { REACTIONS, changeMemos, setMemoHeard } from "@/lib/pinnwand";
+import { deleteItem, mayDelete, moveToNotes, reactTo, reactionsOf, toggleDone, togglePinned } from "@/components/pinnwand/boardActions";
+import { entryOf } from "@/components/pinnwand/useBoard";
 import type { BoardItem } from "@/components/pinnwand/useBoard";
 
-type Props = { item: BoardItem; me: string; household: string[]; helper: string; onWrite: (text: string, quote: PinQuote) => void; onClose: () => void; children: ReactNode };
+type Props = { item: BoardItem; me: string; household: string[]; archived?: boolean; onReply: () => void; onClose: () => void; children: ReactNode };
 
 function MenuRow({ icon: Icon, label, danger = false, onClick }: { icon: typeof Reply; label: string; danger?: boolean; onClick: () => void }) {
   return (
@@ -27,7 +28,7 @@ function MenuRow({ icon: Icon, label, danger = false, onClick }: { icon: typeof 
   );
 }
 
-export function ReactionMenu({ item, me, household, helper, onWrite, onClose, children }: Props) {
+export function ReactionMenu({ item, me, household, archived = false, onReply, onClose, children }: Props) {
   useBackCloses(onClose);
   const armed = useRef(false);
   useEffect(() => {
@@ -67,11 +68,10 @@ export function ReactionMenu({ item, me, household, helper, onWrite, onClose, ch
       <div className="pin-angehoben relative">{children}</div>
       <div className="relative self-end overflow-hidden rounded-card bg-surface shadow-float" role="menu" style={{ minWidth: 240 }}>
         <div className="divide-y divide-line">
-          <MenuRow icon={Reply} label="Antworten" onClick={run(() => replyTo(item, me, onWrite))} />
-          {item.kind === "pin" && <MenuRow icon={Forward} label={`Weiterleiten an ${helper}`} onClick={run(() => forwardToMia(item))} />}
-          {item.kind === "pin" && (
-            <MenuRow icon={Pin} label={item.pin.data.pinned ? "Nicht mehr anheften" : "Dauerhaft anheften"} onClick={run(() => changePins((all) => setPinPinned(all, item.id, !item.pin.data.pinned, now().toISOString())))} />
-          )}
+          {!archived && <MenuRow icon={CircleCheck} label={entryOf(item).data.erledigt ? "Doch nicht erledigt" : "Erledigt"} onClick={run(() => toggleDone(item, me))} />}
+          <MenuRow icon={Reply} label="Antworten" onClick={run(onReply)} />
+          {item.kind === "pin" && item.pin.data.text && <MenuRow icon={NotebookPen} label="In Notizen" onClick={run(() => moveToNotes(item))} />}
+          {item.kind === "pin" && !archived && <MenuRow icon={Pin} label={item.pin.data.pinned ? "Nicht mehr anheften" : "Anheften"} onClick={run(() => togglePinned(item))} />}
           {mayDelete(item, me) && <MenuRow icon={Trash2} label="Löschen" danger onClick={run(() => deleteItem(item, me))} />}
         </div>
       </div>

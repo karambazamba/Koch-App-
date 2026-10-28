@@ -4,21 +4,19 @@
 // Gerät: IndexedDB `wasgibts-memos` (v1, Tabelle "audio", Schlüssel
 // = Memo-ID, Ton als ArrayBuffer + Typ) auf diesem Gerät, für alle Personen
 // des Haushalts; klappt IndexedDB nicht, im Arbeitsspeicher, bis die App
-// geschlossen wird. Nicht in „Daten sichern“. Verwaiste Töne (Memo abgelaufen oder gelöscht) räumt
-// `tidyPinboard` (über `sweepMemoAudio`) beim Start weg.
+// geschlossen wird. Nicht in „Daten sichern“. Verwaiste Töne (Memo von Hand gelöscht) räumt
+// `tidyPinboard` (über `sweepMemoAudio`) beim Start weg; Memos im Archiv behalten ihren Ton.
 
 import { micLog } from "@/lib/core/micLog";
 import { now } from "@/lib/core/now";
-import { pruneMemos, type MemoMessage } from "@/lib/pinnwand/memo";
-import { prunePins } from "@/lib/pinnwand/model";
-import { changeMemos, loadMemos, loadPins } from "@/lib/pinnwand/store";
+import { loadMemos } from "@/lib/pinnwand/store";
 
 /** Wo der Ton liegt: auf dem Gerät (IndexedDB) oder nur, bis die App geschlossen wird */
 export type MemoAudioPlace = "geraet" | "sitzung";
 
 export interface MemoAudioStore {
   save(id: string, blob: Blob): Promise<MemoAudioPlace>;
-  load(memo: Pick<MemoMessage, "id" | "data">): Promise<Blob | null>;
+  load(memo: { id: string; data: { storagePath: string | null } }): Promise<Blob | null>;
   remove(id: string): Promise<void>;
   /** Alle gespeicherten Töne mit Zeitpunkt (für das Aufräumen) */
   list(): Promise<{ id: string; at: number }[]>;
@@ -49,29 +47,31 @@ export function blobFromRow(row: Row | undefined): Blob | null {
   return null;
 }
 
-let opening: Promise<IDBDatabase> | null = null;
+const opening = new Map<string, Promise<IDBDatabase>>();
 
-function open(): Promise<IDBDatabase> {
-  if (!opening) {
-    opening = new Promise((resolve, reject) => {
-      const req = indexedDB.open(DB, 1);
+function open(db: string, table: string): Promise<IDBDatabase> {
+  let p = opening.get(db);
+  if (!p) {
+    p = new Promise((resolve, reject) => {
+      const req = indexedDB.open(db, 1);
       req.onupgradeneeded = () => {
-        if (!req.result.objectStoreNames.contains(TABLE)) req.result.createObjectStore(TABLE, { keyPath: "id" });
+        if (!req.result.objectStoreNames.contains(table)) req.result.createObjectStore(table, { keyPath: "id" });
       };
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
     });
-    opening.catch(() => (opening = null));
+    opening.set(db, p);
+    p.catch(() => opening.delete(db));
   }
-  return opening;
+  return p;
 }
 
-function run<T>(mode: IDBTransactionMode, work: (table: IDBObjectStore) => IDBRequest<T>): Promise<T> {
-  return open().then(
-    (db) =>
+function run<T>(db: string, table: string, mode: IDBTransactionMode, work: (table: IDBObjectStore) => IDBRequest<T>): Promise<T> {
+  return open(db, table).then(
+    (d) =>
       new Promise<T>((resolve, reject) => {
-        const tx = db.transaction(TABLE, mode);
-        const req = work(tx.objectStore(TABLE));
+        const tx = d.transaction(table, mode);
+        const req = work(tx.objectStore(table));
         req.onsuccess = () => resolve(req.result);
         req.onerror = () => reject(req.error);
         tx.onabort = () => reject(tx.error ?? new Error("abgebrochen"));
@@ -79,13 +79,13 @@ function run<T>(mode: IDBTransactionMode, work: (table: IDBObjectStore) => IDBRe
   );
 }
 
-/** IndexedDB des Geräts als Tabelle */
-const idbTable: MemoTable = {
-  put: (row) => run("readwrite", (t) => t.put(row)),
-  get: (id) => run("readonly", (t) => t.get(id)) as Promise<Row | undefined>,
-  delete: (id) => run("readwrite", (t) => t.delete(id)),
-  getAll: () => run("readonly", (t) => t.getAll()) as Promise<Row[]>,
-};
+/** Eine IndexedDB des Geräts als Tabelle (Ton: `wasgibts-memos`, Fotos: `wasgibts-fotos`) */
+export const idbTable = (db: string, table: string): MemoTable => ({
+  put: (row) => run(db, table, "readwrite", (t) => t.put(row)),
+  get: (id) => run(db, table, "readonly", (t) => t.get(id)) as Promise<Row | undefined>,
+  delete: (id) => run(db, table, "readwrite", (t) => t.delete(id)),
+  getAll: () => run(db, table, "readonly", (t) => t.getAll()) as Promise<Row[]>,
+});
 
 /**
  * Ton-Speicher: zuerst IndexedDB; klappt das nicht (kein IndexedDB, Fehler
@@ -150,9 +150,11 @@ export function setMemoRemote(loader: RemoteLoader | null) {
   remoteLoader = loader;
 }
 
+const memoTable = idbTable(DB, TABLE);
+
 /** Die eine Quelle für den Ton (Gerät, sonst Haushalt, wenn `storagePath` gesetzt ist) */
 export const memoAudio: MemoAudioStore = createMemoAudio(
-  () => (typeof indexedDB === "undefined" ? null : idbTable),
+  () => (typeof indexedDB === "undefined" ? null : memoTable),
   (text) => micLog(text),
   () => remoteLoader,
 );
@@ -170,12 +172,7 @@ async function sweepMemoAudio(liveIds: string[], nowMs = now().getTime()): Promi
   }
 }
 
-/** Beim Start: alles älter als 24 Std. austragen (außer Angeheftetem) und den Ton abgelaufener Memos löschen */
+/** Beim Start: nur den Ton von Hand gelöschter Memos wegräumen – nichts verschwindet ungefragt */
 export async function tidyPinboard(): Promise<void> {
-  const nowMs = now().getTime();
-  const stored = loadMemos();
-  const alive = pruneMemos(stored, nowMs);
-  // Speichern räumt beides weg (Nachrichten und Memos)
-  if (alive.length !== stored.length || prunePins(loadPins(), nowMs).length !== loadPins().length) changeMemos((all) => all);
-  await sweepMemoAudio(alive.map((m) => m.id));
+  await sweepMemoAudio(loadMemos().map((m) => m.id));
 }

@@ -133,6 +133,10 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Rechnung vom Klempner bezahlen", TERMIN),
   S("schreib an die pinnwand: bin um 18 uhr da", ["add_pin"]),
   S("Sag allen, dass es heute Pizza gibt", ["add_pin"]),
+  // Kühlschranktür (Tafel 106): Zettel für die anderen, Notiz für mich, nur nicht Erledigtes vorlesen
+  S("Häng an die Pinnwand: Ole braucht Gummistiefel", ["add_pin"]),
+  S("Was steht auf der Pinnwand?", ["antwort"]),
+  S("Merk dir für mich die PIN vom Fahrradschloss: 4711", ["upsert_note"]),
   // Kochen und Essen (20)
   S("Was soll ich heute kochen?", ["app_command", "set_meal"]),
   S("Plan mir die Woche, vegetarisch bitte", ["set_meal", "add_recipe", "update_week"], { max: 3 }),
