@@ -28,7 +28,20 @@ export function ToastHost() {
           Rückgängig
         </button>
       )}
-      {!toast.undo && (
+      {!toast.undo && toast.action && (
+        <button
+          type="button"
+          onClick={() => {
+            toast.action?.run();
+            showToast({ text: toast.action?.doneText ?? "", seconds: 2, small: true });
+          }}
+          className="hit inline-flex h-10 shrink-0 items-center px-2 font-extrabold text-accent-strong"
+          data-toast-action
+        >
+          {toast.action.label}
+        </button>
+      )}
+      {!toast.undo && !toast.action && (
         <button type="button" onClick={hideToast} className="sr-only">
           Schließen
         </button>

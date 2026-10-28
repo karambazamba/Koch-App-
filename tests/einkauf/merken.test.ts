@@ -388,3 +388,49 @@ describe("Die Einkaufsliste stellt sich beim ersten Mal vor", () => {
   });
 });
 
+
+// --- A-046 → A-040: „Nehmen“ in der Rezept-Vorschau bietet die Zutaten an -------
+
+describe("„Nehmen“ bietet die Zutaten an (Wochenplan-Angebot, A-040/A-046)", () => {
+  it("nur die Zutaten dieses Gerichts, ohne Grundsachen; `needs` der Vorschau grenzt ein; Frage ohne „…“", async () => {
+    const { buildShoppingList } = await import("@/lib/einkauf/buildList");
+    const { angebotFrage, angebotFuerGericht } = await import("@/lib/einkauf/angebot/angebot");
+    const list = buildShoppingList(PLAN, RECIPES, undefined, undefined, { angebot: true });
+    const items = angebotFuerGericht(list.angebot, "Gemüselasagne");
+    expect(items.map((i) => i.name)).toEqual(["Spinat", "Mozzarella", "Lasagneplatten"]);
+    expect(angebotFuerGericht(list.angebot, "Gemüselasagne", [], ["Spinat"]).map((i) => i.name)).toEqual(["Spinat"]);
+    expect(angebotFuerGericht(list.angebot, "Gemüselasagne", [], [])).toEqual([]);
+    expect(angebotFrage(items)).toBe("Auf die Liste: Spinat, Mozzarella +1?");
+    expect(angebotFrage(items.slice(0, 1))).toBe("Auf die Liste: Spinat?");
+    expect(angebotFrage(items)).not.toMatch(/…|fehlt|offen/);
+  });
+
+  it("nach „Nehmen“ fragt eine Meldung mit „Alle dazu“; antippen setzt nur Namen drauf (wofür im Fenster)", async () => {
+    vi.doMock("@/lib/essen/mealPlan", async (orig) => ({ ...(await orig<object>()), composeWeek: () => PLAN, loadMealPlans: () => ({}) }));
+    const showToast = vi.fn();
+    vi.doMock("@/lib/core/toast", async (orig) => ({ ...(await orig<object>()), showToast }));
+    const { zutatenAnbieten } = await import("@/lib/einkauf/angebot/nachNehmen");
+    const profile = { planStyle: "fest", shoppingDay: "Montag", householdType: "familie" } as never;
+    expect(zutatenAnbieten({ profile, weekPlans: {}, recipes: RECIPES }, "Gemüselasagne", "2026-10-23")).toBe(true);
+    const t = showToast.mock.calls[0][0] as { text: string; action: { label: string; run: () => void; doneText: string } };
+    expect(t.text).toBe("Auf die Liste: Spinat, Mozzarella +1?");
+    expect(t.action.label).toBe("Alle dazu");
+    expect(t.action.doneText).toBe("Steht drauf.");
+    t.action.run();
+    const manual = saved().weeks[W].manual;
+    expect(manual.map((m) => m.name)).toEqual(["Spinat", "Mozzarella", "Lasagneplatten"]);
+    expect(manual.every((m) => m.amount === "" && m.dish === "Gemüselasagne")).toBe(true);
+    // Spontan: kein Plan, nichts anbieten (still)
+    showToast.mockClear();
+    expect(zutatenAnbieten({ profile: { ...(profile as object), planStyle: "spontan" } as never, weekPlans: {}, recipes: RECIPES }, "Curry", "2026-10-24")).toBe(false);
+    expect(showToast).not.toHaveBeenCalled();
+    vi.doUnmock("@/lib/essen/mealPlan");
+    vi.doUnmock("@/lib/core/toast");
+  });
+
+  it("die Essen-Kachel ruft „Nehmen“ mit Angebot auf (Vorschau), der Beispiel-Tag nicht", () => {
+    expect(read("src/components/heute/HomeTiles.tsx")).toMatch(/\{ anbieten: true, needs: it\.needs \}/);
+    expect(read("src/components/heute/takeDish.ts")).toMatch(/if \(options\.anbieten\) zutatenAnbieten\(/);
+    expect(read("src/components/ui/ToastHost.tsx")).toMatch(/data-toast-action/);
+  });
+});

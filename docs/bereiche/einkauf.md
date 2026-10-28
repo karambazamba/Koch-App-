@@ -207,6 +207,13 @@ nur einmal da. Kennt Läden, feste Regeln und eure Produkte. Immer sichtbar
     hierher gelernt/gemerkt ist oder noch ohne Laden; übernommen landet es
     hier. Danach verschwindet die Karte von selbst. Ohne eigene Läden steht
     sie auf der Übersicht.
+  - **Nach „Nehmen“** (Rezept-Vorschau der Essen-Kachel, A-046): kleine
+    Meldung „Auf die Liste: Eier, Limette +2?“ mit „Alle dazu“ – nur die
+    Zutaten dieses Gerichts aus dem Angebot, ohne Grundsachen, eingegrenzt auf
+    das, was die Vorschau „auf die Liste“ nannte (`angebotFuerGericht`,
+    `angebotFrage`, `zutatenAnbieten` in `einkauf/angebot/nachNehmen.ts`).
+    „Alle dazu“ setzt sie wie auf der Laden-Seite drauf („Steht drauf.“);
+    sonst bleiben sie hier im Angebot. Nichts anzubieten = still.
   - Liste: großer Kreis, Symbol, Name, sonst nichts; Menge nur, wenn selbst
     gesagt („2 Liter“). Zeile antippen = Fenster (`SacheFenster`, `ui/Sheet`):
     Name, darunter erst hier „für Gemüselasagne · Fr“ und „200 g im Rezept“,

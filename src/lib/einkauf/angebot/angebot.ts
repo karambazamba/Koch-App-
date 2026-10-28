@@ -67,3 +67,23 @@ export function wofuer(i: Pick<ListItem, "dishes" | "days">): string {
   const tag = i.dishes.map(tagVon).find(Boolean) ?? (i.days[0] ? kurz(i.days[0]) : "");
   return [`für ${namen.join(", ")}`, tag].filter(Boolean).join(" · ");
 }
+
+/**
+ * Nach „Nehmen“ in der Rezept-Vorschau (A-046 → A-040): die Zutaten genau
+ * dieses Gerichts aus dem Wochenplan-Angebot, ohne Grundsachen. `needs` = was
+ * die Vorschau „auf die Liste“ nannte (ohne Vorrat); `null` = ohne Vorrat-Abgleich.
+ */
+export function angebotFuerGericht(angebot: readonly ListItem[], titel: string, alwaysList: readonly string[] = [], needs: readonly string[] | null = null): ListItem[] {
+  const t = lower(titel);
+  const brauch = needs ? new Set(needs.map(lower)) : null;
+  return alleDazu(angebotFuer(null, angebot, alwaysList)).filter(
+    (i) => i.dishes.some((d) => lower(gericht(d)) === t) && (!brauch || brauch.has(lower(i.name)) || brauch.has(lower(i.originalName))),
+  );
+}
+
+/** Frage nach „Nehmen“: „Auf die Liste: Eier, Limette +2?“ – nie mitten im Namen abgebrochen */
+export function angebotFrage(items: readonly Pick<ListItem, "name">[]): string {
+  const namen = items.map((i) => i.name);
+  const gezeigt = namen.slice(0, 2).join(", ");
+  return `Auf die Liste: ${namen.length > 2 ? `${gezeigt} +${namen.length - 2}` : gezeigt}?`;
+}

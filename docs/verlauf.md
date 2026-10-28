@@ -3622,6 +3622,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Wackeln getippt, `nichtsAbgeschnitten` auf XS · S · M).
 
 ## Einkaufsliste nur mit Namen + Abhaken und Merken (A-040/A-041, Tafel 127/128)
+<!-- Version beim Ausliefern eintragen: (v0.154.0, A-040/A-041, Tafel 127/128) -->
 - Vorlagen: `docs/tafeln/tafel-127.png` (A-040, Auftragstext nicht angekommen,
   umgesetzt nach Tafel und Bildunterschriften) und `tafel-128.png` (A-041),
   Wortlaut `docs/auftraege/A-040-041-einkauf-namen.md`.
@@ -3638,6 +3639,14 @@ Fehler in `docs/aufraeumen-nachher.md`.
   bei „Alle dazu“. Übernommen steht die Zutat ganz normal da (eigener Eintrag
   mit `dish`, `day`, `rezeptMenge`). Ohne eigene Läden steht die Karte auf der
   Übersicht; „Aussuchen · Für eure Woche“ nimmt das Angebot vom Öffnen.
+- **„Nehmen“ bietet die Zutaten an** (A-046 → A-040): „Nehmen“ in der
+  Rezept-Vorschau der Essen-Kachel trägt ein (`takeDish`) und fragt danach
+  einmal klein „Auf die Liste: Eier, Limette +2?“ mit „Alle dazu“ (Grundsachen
+  nie, nur was die Vorschau „auf die Liste“ nannte; `einkauf/angebot/nachNehmen`).
+  Ohne Antippen bleiben die Zutaten im Wochenplan-Angebot der Laden-Seite.
+  Nichts anzubieten (alles im Haus, spontan, Woche im alten Stand) = still.
+  Die Meldung kann dafür statt „Rückgängig“ einen Angebots-Knopf tragen
+  (`showToast({ action })`). Der Beispiel-Tag bietet nichts an.
 - **Zeile antippen** = ein Fenster (`ui/Sheet`): Name, darunter erst hier
   „für Gemüselasagne · Fr“ und die Rezeptmenge, dann Menge, Laden („● Rewe
   ⌄“, ändern = gemerkt) und „Von der Liste nehmen“. Lange drücken bleibt „Wo

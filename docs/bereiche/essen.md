@@ -628,9 +628,10 @@ Tafel 121/122/133.
 - Vorschlag → Rezept-Vorschau (A-038, `useVorschau`) mit Statuszeile im Bild,
   Zutaten, „So geht’s“ (Kurz | Ausführlich), unten „Zurück zu den Ideen“
   (derselbe Vorschlag bleibt stehen) und „Nehmen“ (trägt für heute bzw.
-  abends für morgen ein, `takeDish`; was fehlt, kommt wie bisher über den
-  Plan auf die Einkaufsliste – das Wochenplan-Angebot aus Tafel 127 gibt es
-  auf diesem Stand noch nicht).
+  abends für morgen ein, `takeDish`; danach bietet eine kleine Meldung die
+  Zutaten an: „Auf die Liste: Eier, Limette +2?“ mit „Alle dazu“ – das
+  Wochenplan-Angebot aus Tafel 127, A-040; ohne Antippen bleiben sie oben auf
+  der Laden-Seite im Angebot, `docs/bereiche/einkauf.md`).
 - Fest geplant → Rezeptseite mit „Los, Schritt für Schritt“ (ohne Rezept:
   `OhneRezeptSheet`).
 - Beim Kochen → Kochmodus am aktuellen Schritt.
