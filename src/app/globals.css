@@ -273,6 +273,7 @@
   --app-zettel-3: #d3e3fa; --app-zettel-3-mag: #4f7fd0;
   --app-zettel-4: #e5dafa; --app-zettel-4-mag: #8a63d2;
   --app-zettel-mia: #fddcc4; --app-zettel-mia-mag: #f26b21;
+  --app-zettel-privat: #f4f3f1; --app-zettel-privat-mag: #9a958e; --app-zettel-privat-line: #b9b3aa;
   --app-tile-wetter: #f4e8c4;
   --app-tile-wetter-ac: #6e5208;
   --app-tile-termine: #dce2f8;
@@ -441,6 +442,7 @@
   --app-zettel-3: #c1d3ec; --app-zettel-3-mag: #5a88d6;
   --app-zettel-4: #d3c8ec; --app-zettel-4-mag: #9370d6;
   --app-zettel-mia: #efc8ab; --app-zettel-mia-mag: #f26b21;
+  --app-zettel-privat: #dedcd8; --app-zettel-privat-mag: #8b8780; --app-zettel-privat-line: #7d828b;
   --app-tile-wetter: #2a2515;
   --app-tile-wetter-ac: #e8c66a;
   --app-tile-termine: #1b2130;
@@ -593,6 +595,7 @@
     --app-zettel-3: #c1d3ec; --app-zettel-3-mag: #5a88d6;
     --app-zettel-4: #d3c8ec; --app-zettel-4-mag: #9370d6;
     --app-zettel-mia: #efc8ab; --app-zettel-mia-mag: #f26b21;
+    --app-zettel-privat: #dedcd8; --app-zettel-privat-mag: #8b8780; --app-zettel-privat-line: #7d828b;
     --app-tile-wetter: #2a2515;
     --app-tile-wetter-ac: #e8c66a;
     --app-tile-termine: #1b2130;
@@ -1405,6 +1408,17 @@ body:has(.mia-buehne-hintergrund, .mia-geist-schleier) [data-mia-knopf] { opacit
     linear-gradient(to bottom right, transparent 50%, var(--app-fridge-paper) 50%) 0 0 / 10px 6px repeat-x,
     linear-gradient(to bottom left, transparent 50%, var(--app-fridge-paper) 50%) 0 0 / 10px 6px repeat-x;
 }
+/* „Nur für mich“ (Tafel 123): grau-weißes Papier, grauer Pin */
+.zettel-privat { background-color: var(--app-zettel-privat); }
+/* Gestrichelte Linie über der Ecke „Nur für mich“ */
+.wand-privat-linie { border-top: 2px dashed var(--app-zettel-privat-line); }
+/* Lange gedrückt (Tafel 123 C): der Zettel hebt sich an – Schatten und 1,06 */
+.zettel-hebt { transform: rotate(var(--kippen, 0deg)) scale(1.06); box-shadow: 0 18px 34px rgb(40 30 20 / 0.28), var(--app-fridge-shadow); transition: transform 0.8s cubic-bezier(.16, 1, .3, 1), box-shadow 0.8s cubic-bezier(.16, 1, .3, 1); }
+@media (prefers-reduced-motion: reduce) { .zettel-hebt { transition: none; } }
+/* Ecke „Nur für mich“ aufgeklappt: weich herein (nur opacity/transform) */
+.wand-privat-auf { animation: wand-privat-auf 0.8s cubic-bezier(.16, 1, .3, 1) both; }
+@keyframes wand-privat-auf { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .wand-privat-auf { animation: none; } }
 .zettel-leer { border: 2px dashed var(--tile-ac); background: var(--app-tile-inner); box-shadow: none; opacity: 0.85; }
 /* Abgehakt wie Aufgaben und Einkauf: Häkchen orange, 1 s stehen (nie durchgestrichen, nicht blass),
    dann gleitet er 0,8 s weich von der Tür (Richtung „Ältere“) – nur transform/opacity */

@@ -70,6 +70,8 @@ function freshFromOthers(rows: PushEntryRow[], userId: string, nowMs: number, si
     const e = isObj(r.data) ? r.data : {};
     const data = isObj(e.data) ? e.data : {};
     if (r.besitzer === userId) continue;
+    // „Nur für mich“ (Tafel 123): nie an andere – auch wenn der Server sie mitliest
+    if (data.privat === true || e.privat === true) continue;
     if ((r.typ === "pinnwand" || r.typ === "memo") && nowMs - Date.parse(r.erstellt) <= sinceMin * 60_000) {
       const author = typeof data.author === "string" && data.author.trim() ? data.author.trim() : "Jemand";
       out.push({ key: `pin:${r.id}`, body: r.typ === "memo" ? `${author} hat eine Sprachnachricht an die Pinnwand gehängt.` : `${author} hat etwas an die Pinnwand gehängt.`, href: "/pinnwand", kind: "pinnwand" });

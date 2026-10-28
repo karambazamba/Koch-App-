@@ -133,3 +133,75 @@ update public.entries set raum = 'familie' where id = 'r-alt';
 select pruefe((select raum from public.entries where id = 'r-alt') = 'familie', 'zweites Einspielen verschiebt keine neuen Familien-Aufgaben');
 delete from public.entries where id like 'r-%';
 delete from auth.users where id in ('d2222222-0000-0000-0000-000000000001', 'd2222222-0000-0000-0000-000000000002');
+
+-- 7) Pinnwand „Nur für mich“ (Tafel 123): private Zettel sieht und ändert nur
+--    der Besitzer – wie „ich“ und „arbeit“; niemand macht fremde Zettel privat;
+--    Bilder privater Zettel bleiben beim Besitzer. Abschnitt 6 hat die
+--    Raum-Migration noch einmal eingespielt, daher die Pinnwand-Regeln wieder
+--    darüber (so wie die Migrationen in der Reihenfolge laufen).
+\ir 20261101130000_pinnwand_nur_fuer_mich.sql
+create or replace function erwarte_fehler(stmt text, muster text, was text) returns void language plpgsql as $$
+begin
+  begin
+    execute stmt;
+  exception when others then
+    if sqlerrm like '%' || muster || '%' then return; end if;
+    raise exception 'FALSCHER FEHLER bei „%“: %', was, sqlerrm;
+  end;
+  raise exception 'KEIN FEHLER, obwohl erwartet: %', was;
+end $$;
+grant execute on function erwarte_fehler(text, text, text) to authenticated;
+
+insert into auth.users (id, email) values
+  ('d3333333-0000-0000-0000-000000000001', 'privat-mara@example.com'),
+  ('d3333333-0000-0000-0000-000000000002', 'privat-jan@example.com');
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', 'd3333333-0000-0000-0000-000000000001', false);
+select public.create_household('Mara und Jan', 'Mara') as hhp \gset
+select public.create_invite_link('erwachsener') as tokp \gset
+select public.sync_entries('[
+  {"id":"pz-alle","typ":"pinnwand","raum":"familie","geaendert":"2026-10-28T08:00:00Z","data":{"id":"pz-alle","typ":"pinnwand","data":{"text":"Milch ist alle","privat":false,"sort":-5,"groesse":"gross"}}},
+  {"id":"pz-privat","typ":"pinnwand","raum":"familie","geaendert":"2026-10-28T08:00:00Z","data":{"id":"pz-privat","typ":"pinnwand","data":{"text":"Geschenk für Jan","privat":true}}},
+  {"id":"pz-foto","typ":"pinnwand","raum":"familie","geaendert":"2026-10-28T08:00:00Z","data":{"id":"pz-foto","typ":"pinnwand","data":{"text":"","privat":true,"foto":{"path":"PFAD","w":1,"h":1}}}},
+  {"id":"pz-ich","typ":"pinnwand","raum":"ich","geaendert":"2026-10-28T08:00:00Z","data":{"id":"pz-ich","typ":"pinnwand","raum":"ich","data":{"text":"Nur in meinem Raum"}}},
+  {"id":"pz-arbeit","typ":"pinnwand","raum":"arbeit","geaendert":"2026-10-28T08:00:00Z","data":{"id":"pz-arbeit","typ":"pinnwand","raum":"arbeit","data":{"text":"Lieferant"}}}
+]');
+update public.entries set data = jsonb_set(data, '{data,foto,path}', to_jsonb((:'hhp' || '/pz-foto.jpg')::text)) where id = 'pz-foto';
+insert into storage.objects (bucket_id, name) values ('fotos', :'hhp' || '/pz-foto.jpg'), ('fotos', :'hhp' || '/pz-alle.jpg');
+select pruefe((select count(*) from public.entries where id like 'pz-%') = 5, 'Mara sieht alle ihre Zettel (auch die privaten, „ich“ und „arbeit“)');
+select pruefe((select count(*) from storage.objects where bucket_id = 'fotos' and name like :'hhp' || '/pz-%') = 2, 'Mara sieht beide Bilder');
+select pruefe((select data -> 'data' ->> 'sort' from public.entries where id = 'pz-alle') = '-5', 'Platz (sort) kommt im Haushalt an');
+
+select set_config('request.jwt.claim.sub', 'd3333333-0000-0000-0000-000000000002', false);
+select public.join_by_link(:'tokp', 'Jan');
+select pruefe((select count(*) from public.entries where id = 'pz-alle') = 1, 'Jan sieht den Zettel für alle');
+select pruefe((select data -> 'data' ->> 'groesse' from public.entries where id = 'pz-alle') = 'gross', 'Größe kommt beim Partner an');
+select pruefe((select count(*) from public.entries where id in ('pz-privat', 'pz-foto')) = 0, 'Jan sieht Maras „Nur für mich“-Zettel nicht');
+select pruefe((select count(*) from public.entries where id in ('pz-ich', 'pz-arbeit')) = 0, 'Jan sieht Maras Zettel in „ich“ und „arbeit“ nicht (nur der Besitzer)');
+-- Maras Zettel für alle auf „ich“ stellen (er wäre für Mara weg): übersprungen
+select pruefe((public.sync_entries('[{"id":"pz-alle","typ":"pinnwand","raum":"ich","geaendert":"2030-01-01T00:00:00Z","data":{"data":{"text":"weg"}}}]') -> 'skipped') ? 'pz-alle', 'Jan stellt Maras Zettel nicht auf „ich“');
+select pruefe((select count(*) from storage.objects where name = :'hhp' || '/pz-foto.jpg') = 0, 'Jan sieht das Bild des privaten Zettels nicht');
+select pruefe((select count(*) from storage.objects where name = :'hhp' || '/pz-alle.jpg') = 1, 'Jan sieht andere Bilder des Haushalts');
+delete from storage.objects where name = :'hhp' || '/pz-foto.jpg';
+-- ändern geht nicht (unsichtbar), überschreiben per Abgleich auch nicht
+update public.entries set data = '{"data":{"text":"weg","privat":false}}' where id = 'pz-privat';
+select public.sync_entries('[{"id":"pz-privat","typ":"pinnwand","raum":"familie","geaendert":"2030-01-01T00:00:00Z","data":{"data":{"text":"gekapert","privat":false}}}]');
+-- fremden Zettel privat machen (er wäre für Mara weg): abgelehnt
+select erwarte_fehler($$update public.entries set data = '{"data":{"text":"Milch ist alle","privat":true}}' where id = 'pz-alle'$$, 'row-level security', 'Jan macht Maras Zettel privat');
+-- eigener privater Zettel geht
+select public.sync_entries('[{"id":"pz-jan","typ":"pinnwand","raum":"familie","geaendert":"2026-10-28T09:00:00Z","data":{"data":{"text":"Nur meins","privat":true}}}]');
+select pruefe((select count(*) from public.entries where id = 'pz-jan') = 1, 'Jan sieht seinen eigenen privaten Zettel');
+
+select set_config('request.jwt.claim.sub', 'd3333333-0000-0000-0000-000000000001', false);
+select pruefe((select data -> 'data' ->> 'text' from public.entries where id = 'pz-privat') = 'Geschenk für Jan', 'Maras privater Zettel unverändert');
+select pruefe((select count(*) from storage.objects where name = :'hhp' || '/pz-foto.jpg') = 1, 'Bild des privaten Zettels nicht von Jan gelöscht');
+select pruefe((select data -> 'data' ->> 'privat' from public.entries where id = 'pz-alle') = 'false', 'Zettel für alle blieb für alle');
+select pruefe((select count(*) from public.entries where id = 'pz-jan') = 0, 'Mara sieht Jans privaten Zettel nicht');
+select pruefe((select raum from public.entries where id = 'pz-alle') = 'familie', 'Zettel für alle blieb Familie');
+-- Mara macht ihren Zettel für alle sichtbar → Jan sieht ihn
+select public.sync_entries('[{"id":"pz-privat","typ":"pinnwand","raum":"familie","geaendert":"2026-10-28T10:00:00Z","data":{"id":"pz-privat","typ":"pinnwand","data":{"text":"Geschenk für Jan","privat":false}}}]');
+select set_config('request.jwt.claim.sub', 'd3333333-0000-0000-0000-000000000002', false);
+select pruefe((select count(*) from public.entries where id = 'pz-privat') = 1, 'für alle sichtbar gemacht: Jan sieht ihn jetzt');
+
+reset role;

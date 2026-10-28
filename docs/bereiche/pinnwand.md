@@ -9,7 +9,11 @@ Archiv „Ältere“, nie durchgestrichen; „Erledigt · Rückgängig“ holt i
 zurück), oder bis
 er 7 Tage alt ist – dann liegt er leise im Archiv. „Bleibt hängen“ geht nie
 von selbst. Im Archiv nach 30 Tagen still gelöscht, sonst nur von Hand
-(A-024; die 24-Stunden-Wartezeit für Erledigtes ist weg).
+(A-024; die 24-Stunden-Wartezeit für Erledigtes ist weg). Tafel 123
+(A-028 Teil 1): Fotos als kleines Polaroid (antippen = groß), die Wand so
+hoch wie ihr Inhalt, Meta-Zeile kurz, „OBEN“ an Zetteln, die hängen bleiben.
+Teil 2: Zettel klein oder groß, Reihenfolge selbst bestimmen (lange drücken,
+ziehen) und unten die Ecke „Nur für mich“.
 
 ## Feste Regeln (aus CLAUDE.md)
 
@@ -37,6 +41,19 @@ von selbst. Im Archiv nach 30 Tagen still gelöscht, sonst nur von Hand
   M drei nebeneinander, L bis 6; gerade Abgehaktes 1 s mit Häkchen, dann
   weich weg; leer gestrichelter Zettel). Seiten-Tipp: „Kurze Zettel für alle. Abhaken räumt auf, ‚Bleibt
   hängen‘ bleibt.“
+- **Größe, Ordnen, „Nur für mich“ (Tafel 123):** klein = halbe Breite
+  (Standard, auch Fotos), groß = volle Breite. Lange drücken hebt an
+  (Schatten, 1,06), loslassen = Fenster (Titel = Zettel in „…“, Klein |
+  Groß, Nach oben, Nur für mich/Für alle, Erledigt, „Zum Verschieben: halten
+  und ziehen“); halten und ziehen = verschieben, die anderen gleiten nach
+  (0,8 s, nur transform, reduziert ohne Gleiten), `data-no-swipe` beim
+  Anheben. Reihenfolge = „Bleibt hängen“ („OBEN“) vorn, dann `sort`, ohne
+  `sort` die Zeit; geteilt mit der Familie. „Nur für mich“ (`privat`) unter
+  einer gestrichelten Linie ganz unten, grau-weiß mit grauem Pin und
+  Schloss, nur der Besitzer sieht sie (RLS wie „Ich“ und „Arbeit“, Bilder bleiben auf
+  dem Gerät), nie auf der Kachel, im Push oder als ungelesen; ohne private
+  Zettel und im Haushalt „allein“ keine Linie; einklappbar, pro Gerät
+  gemerkt (Standard auf, zu ohne Anzahl). Wörter in `woerter.ts`.
   → `docs/bereiche/pinnwand.md`
 
 ## Wo im Code
@@ -58,7 +75,16 @@ von selbst. Im Archiv nach 30 Tagen still gelöscht, sonst nur von Hand
   `hasUnread`, `pinMeta`, `pinWriteCommand`, `pinStays`, `isPinboardQuery`).
 - Wörter (rein): `src/lib/pinnwand/woerter.ts` (`AUFHAENGEN`, `HAENGT`,
   `BLEIBT_HAENGEN`, `BLEIBT_HAENGEN_HINWEIS`, `NICHT_MEHR_FESTHALTEN`,
-  `PINNWAND_TIPP`).
+  `PINNWAND_TIPP`; Tafel 123: `OBEN`, `NACH_OBEN`, `NUR_FUER_MICH`,
+  `FUER_ALLE`, `NUR_FUER_MICH_ZEILE`, `VERSCHIEBEN_HINWEIS`).
+- Ordnen (rein): `src/lib/pinnwand/ordnen.ts` (`doorOrder`/`doorOrderBy`
+  über `core/sort`, `sortForMove` – nur der gezogene Zettel bekommt einen
+  Platz zwischen den Nachbarn, `sortForTop` = „Nach oben“, `moveInList`
+  (Vorschau beim Ziehen), `wandBereiche` (für alle / „Nur für mich“, allein
+  ohne Linie), `wandBlocks` (zwei Spalten, groß quer), `GROESSEN`,
+  `zettelTitel` (Fenster-Titel in „…“, nur zwischen Wörtern gekürzt)).
+- Ansicht pro Gerät: `src/lib/pinnwand/ansicht.ts`
+  (`wasgibts.pinnwandansicht` v1: Ecke „Nur für mich“ zugeklappt).
 - Sprachnachrichten (rein): `src/lib/pinnwand/memo.ts` (gleiche Tür-Regeln:
   `memoAlive`, `visibleMemos`, `activeMemos`, `archivedMemos`, `forgetMemos`,
   `updateMemo`).
@@ -73,7 +99,9 @@ von selbst. Im Archiv nach 30 Tagen still gelöscht, sonst nur von Hand
   `forgetOldArchive` – beim Start über `tidyPinboard`),
   Migration rein in `migration.ts` (`migratePinStore`, auch für den Abgleich).
 - Oberfläche `src/components/pinnwand/`: `PinboardView.tsx` (Tür, Archiv,
-  Mia-Frage), `Zettel.tsx` (ein Zettel je Papier), `Magnet.tsx` (eigene
+  Mia-Frage, Ecke „Nur für mich“), `Wand.tsx` (Spalten und große Zettel),
+  `useWandGesten.ts` (lange drücken, ziehen, Nachrutschen), `ZettelFenster.tsx`
+  (Tafel 123 C), `FotoFenster.tsx` (Foto groß), `Zettel.tsx` (ein Zettel je Papier), `Magnet.tsx` (eigene
   SVGs), `NeuerZettel.tsx` (Sheet), `ReactionMenu.tsx` (Menü), `Faecher.tsx`
   + `PinboardTile.tsx` (Kachel), `boardActions.ts`, `useBoard.ts`,
   `MemoRow.tsx` (`PlayButton`), `MemoParts.tsx`, `useMemoRecorder.ts`.
@@ -85,7 +113,9 @@ von selbst. Im Archiv nach 30 Tagen still gelöscht, sonst nur von Hand
 
 ## Daten und Speicher
 
-- `wasgibts.pinnwand` v4 `{version: 4, messages, memos}`. v1 → v2 (Memos),
+- `wasgibts.pinnwand` v5 `{version: 5, messages, memos}`. v4 → v5 (Tafel
+  123): `groesse` „klein“, `sort` null (= nach der Zeit, also genau die
+  bisherige Reihenfolge), `privat` false (Memos: `groesse`, `sort`). v1 → v2 (Memos),
   v2 → v3 (Reaktionen Person → Emoji, Antworten), v3 → v4 (Kühlschranktür):
   jeder Zettel bekommt `farbe: null` (= Farbe der Person), `papier`,
   `foto: null`, `erledigt: null`, `archiv: null`, `notizFrage: false`;
@@ -119,8 +149,8 @@ von selbst. Im Archiv nach 30 Tagen still gelöscht, sonst nur von Hand
 - Zettel in zwei Spalten (`twoColumns`: das Erste oben links, dann in die
   kürzere Spalte), fest leicht schief, weicher Schatten, Ecke unten rechts
   gerundet. „Bleibt hängen“ steht oben links und hängt am roten Pin, Zeile
-  „Lisa · bleibt hängen“. Die Tür wächst mit dem Inhalt (Mindesthöhe
-  220 px, kein innerer Scrollbereich); der Griff ist ein kurzer, kräftiger
+  „Lisa · bleibt hängen“. Die Tür ist so hoch wie ihr Inhalt (Tafel 123: keine
+  Mindesthöhe, kein innerer Scrollbereich); der Griff ist ein kurzer, kräftiger
   Bügel (sah als schmale Leiste wie ein Scrollbalken aus).
 - Papiere: Haftnotiz in Personenfarbe (Magnet Punkt), Karoblatt für
   Kinder-Profile (Stern), Polaroid für Fotos (weißer Rahmen, Bild, Zeile
@@ -138,7 +168,20 @@ von selbst. Im Archiv nach 30 Tagen still gelöscht, sonst nur von Hand
   (5 s, nur wenn er noch so abgehakt ist); Rückgängig holt ihn zurück an
   die Tür. Erledigte zählen nie als ungelesen, Mia liest sie
   nicht vor.
-- Antippen oder lange drücken (Android: „contextmenu“) = Menü: Reaktionen
+- Tafel 123 (A-028 Teil 1): Foto-Zettel als Polaroid in Zettelgröße (halbe
+  Breite, quadratischer Ausschnitt, `object-fit: cover`, Zeile darunter
+  freiwillig); antippen = Foto groß im Fenster (`FotoFenster`: ganzes Bild,
+  Text, wer/wann, „Erledigt“, „Mehr“ = Menü). „Bleibt hängen“ zeigt rechts
+  oben „OBEN“ (klein, Großbuchstaben, Zettelfarbe dunkel; `OBEN` in
+  `woerter.ts`), der Text hat rechts Platz – nicht mehr „· bleibt hängen“ in
+  der Meta-Zeile. Meta-Zeile EINE Zeile (`MetaZeile`): Zeit zuerst im DOM,
+  rückwärts umbrechend – passt der Name nicht, bleibt nur die Zeit; heute die
+  Uhrzeit, die letzten sechs Tage der Wochentag („Lisa · Mo“, `pinMetaParts`
+  mit `kurz`), sonst das Datum. Nie mitten im Wort mit „…“.
+- Teil 2: lange drücken = Fenster „Größe und Platz“ (auch im Menü als
+  Zeile, für VoiceOver), halten und ziehen = verschieben (siehe Feste
+  Regeln); im Archiv öffnet lange drücken weiter das Menü.
+- Antippen (im Archiv auch lange drücken) = Menü: Reaktionen
   👍 ❤️ 😂 😮 🙏, „Erledigt“, „Antworten“ (neuer Zettel mit Bezug „↪ Lisa“),
   „In Notizen“ (Text wird eigene Notiz, Zettel ins Archiv, Rückgängig nimmt
   beides zurück), „Bleibt hängen“ bzw. „Nicht mehr festhalten“, „Löschen“
@@ -222,6 +265,11 @@ von selbst. Im Archiv nach 30 Tagen still gelöscht, sonst nur von Hand
   in der eigenen Farbe; die Beschreibung trennt Pinnwand (für die anderen)
   und Notiz (für mich). `bleibt_haengen` (Op `pinned`) = „Bleibt hängen“
   („Häng dauerhaft an die Pinnwand: …“, ohne KI `pinStays`).
+- „Nur für mich“ (Tafel 123): `nur_fuer_mich` (Op `add_pin` mit `privat`),
+  „Häng nur für mich an die Pinnwand: …“ (ohne KI `pinPrivate`), Bestätigung
+  „Hängt, sieht nur du.“; „Mach den Zettel mit dem Geschenk für alle
+  sichtbar“ → `app_befehl` → lokale Regel (`pinForAllCommand`, `pinToShare`;
+  ohne Treffer fragt Mia nach). Im Kontext steht „(nur für mich)“ dahinter.
 - Kontext „Pinnwand: …“ enthält nur nicht erledigte Zettel an der Tür (Fotos
   als „[Foto]“, Memos als „[Sprachnachricht 0:12]“) – „Was steht auf der
   Pinnwand?“ liest also nur nicht Erledigtes vor (mit und ohne KI).
@@ -236,6 +284,18 @@ von selbst. Im Archiv nach 30 Tagen still gelöscht, sonst nur von Hand
   zurück ohne Toast, nach 1,8 s im Archiv, dann „Erledigt · Rückgängig“,
   Archiv 30 Tage, Kachel gleich, Häkchen orange, nie durchgestrichen,
   gleiche Zeiten wie der Einkauf).
+- `tests/pinnwand/ordnen.test.ts` (A-028 Teil 2: alte Reihenfolge bleibt,
+  Ziehen ändert nur den gezogenen Zettel, „Bleibt hängen“ bleibt vorn, „Nach
+  oben“, nach Neuladen und im Abgleich gleich, klein/groß, Fenster-Titel,
+  Ecke mit/ohne Linie, allein ohne Linie, einklappbar und gemerkt,
+  Kachel/Push/ungelesen ohne private, neue ID beim Privatmachen, Bilder
+  privater Zettel nie hochgeladen, Mia-Sätze), `nurFuerMichTeilen.test.ts`
+  (zwei Konten: Platz/Größe kommen an, private nie, auch nicht nachträglich
+  privat gemachte; Partner kann nichts privat machen),
+  `tests/datenbank/sicherheit.test.sql` Abschnitt 7 (RLS, auch „ich“/„arbeit“).
+
+- `tests/pinnwand/aufgeraeumt.test.ts` (A-028 Teil 1: Polaroid quadratisch,
+  Foto groß im Fenster, Wand ohne Mindesthöhe, OBEN, Meta-Zeile kurz).
 - `tests/pinnwand/nachtrag.test.ts` (A-024: Abhaken → nach 1,8 s im Archiv,
   Rückgängig holt zurück, Archiv nach 30 Tagen leer, „Bleibt hängen“ nie im
   Archiv, Fächer wie die Tür, Wörter überall gleich, Tür wächst mit,

@@ -6,12 +6,17 @@
 // ins Archiv, danach „Erledigt · Rückgängig“ 5 s),
 // Antworten (neuer Zettel mit Bezug), In Notizen (eigene Notiz, Zettel ins
 // Archiv), Bleibt hängen / Nicht mehr festhalten, Löschen (nur eigene,
-// „Gelöscht · Rückgängig“), reagieren (eine je Person).
+// „Gelöscht · Rückgängig“), reagieren (eine je Person). Dazu Tafel 123:
+// Größe (klein/groß), Platz (Ziehen, „Nach oben“) und „Nur für mich“ bzw.
+// „Für alle“ – still, ohne Meldung (nichts wird gelöscht).
 
 import { now } from "@/lib/core/now";
 import { showDeleted, showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
-import { ABHAK_MS, canDelete, changeMemos, changePins, doneValue, loadMemos, loadPins, removeMemo, removePin, setPinPinned, toggleMemoReaction, toggleReaction, updateMemo, updatePin, type Done, type Reaction } from "@/lib/pinnwand";
+import { ABHAK_MS, canDelete, changeMemos, changePins, doneValue, loadMemos, loadPins, makePinPrivate, removeMemo, removePin, setPinPinned, toggleMemoReaction, toggleReaction, updateMemo, updatePin, type Done, type Groesse, type Reaction } from "@/lib/pinnwand";
+import { sortForMove, sortForTop } from "@/lib/pinnwand";
+import { fotoStore } from "@/lib/pinnwand/fotoStore";
+import { newId } from "@/lib/core/entries";
 import { archivePin, noteOfPin } from "@/lib/pinnwand/notizBruecke";
 import { changeNotes, upsertNote } from "@/lib/notizen";
 import { forgetMemo, stopMemo } from "@/lib/pinnwand/memoPlayer";
@@ -94,4 +99,51 @@ export function moveToNotes(item: BoardItem): boolean {
   const undo = pushUndo("In Notizen", () => (undoPin(), undoNote()));
   showToast({ text: "Liegt bei den Notizen", undo, undoneText: "Hängt wieder", seconds: 4, small: true });
   return true;
+}
+
+/** Nur dieses Feld dieses Eintrags ändern (Zettel oder Sprachnachricht) */
+function setField(item: BoardItem, data: { groesse?: Groesse; sort?: number }) {
+  const s = stamp();
+  if (item.kind === "memo") changeMemos((all) => updateMemo(all, item.id, data, s));
+  else changePins((all) => updatePin(all, item.id, data, s));
+}
+
+/** Klein (halbe Breite) oder groß (volle Breite) */
+export function setGroesse(item: BoardItem, groesse: Groesse) {
+  if (entryOf(item).data.groesse !== groesse) setField(item, { groesse });
+}
+
+/** „Nach oben“: vor alle anderen (Zettel, die hängen bleiben, stehen davor) */
+export function toTop(item: BoardItem, all: BoardItem[]) {
+  const sort = sortForTop(all.map(entryOf), item.id, now().getTime());
+  if (sort !== null) setField(item, { sort });
+}
+
+/** Gezogen: an Stelle `to` der Reihenfolge `ordered` (nur der gezogene Zettel bekommt einen neuen Platz) */
+export function moveItem(item: BoardItem, ordered: BoardItem[], to: number): boolean {
+  const sort = sortForMove(ordered.map(entryOf), item.id, to);
+  if (sort === null) return false;
+  buzz();
+  setField(item, { sort });
+  return true;
+}
+
+/**
+ * „Nur für mich“ an/aus (nur Zettel). An: neue ID (der alte Zettel geht als
+ * Lösch-Markierung an den Haushalt, so verschwindet er auch dort, wo er schon
+ * war); das Bild zieht auf dem Gerät mit um und wird nicht mehr geteilt.
+ * Aus: gleiche ID, für alle.
+ */
+export async function setPrivat(item: BoardItem, privat: boolean): Promise<void> {
+  if (item.kind !== "pin" || item.pin.data.privat === privat) return;
+  if (!privat) {
+    changePins((all) => updatePin(all, item.id, { privat: false }, stamp()));
+    return;
+  }
+  const id = newId();
+  if (item.pin.data.foto) {
+    const blob = await fotoStore.load(item.pin).catch(() => null);
+    if (blob) await fotoStore.save(id, blob).catch(() => undefined);
+  }
+  changePins((all) => makePinPrivate(all, item.id, id, stamp()));
 }

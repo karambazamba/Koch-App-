@@ -98,24 +98,28 @@ const notizen = { ...entryAdapter("notizen", "wasgibts.notizen", 2, "notes", ["n
 // Memo wird erst geteilt, wenn sein Ton in Supabase Storage liegt
 // (`storagePath`), ein Foto-Zettel erst mit Bild im Haushalt (`foto.path`) –
 // bis dahin bleiben sie nur auf dem Gerät (und beim Einspielen erhalten).
-// v3 → v4 hebt `migratePinStore` (Farbe = Person, nichts geht verloren).
+// v3 → v4 → v5 hebt `migratePinStore` (Farbe = Person; Größe, Platz, „Nur für
+// mich“ – nichts geht verloren). „Nur für mich“ (`privat`) geht mit in den
+// Haushalt, dort sieht ihn nur der Besitzer (RLS wie „Arbeit“, Migration
+// 20261101130000); Bilder privater Zettel lädt die App nicht hoch (`foto.ts`),
+// sie bleiben also auf dem Gerät.
 const isShared = (m: Value) => isObj(m.data) && typeof m.data.storagePath === "string" && m.data.storagePath !== "";
 const pinShared = (m: Value) => !isObj(m.data) || !isObj(m.data.foto) || (typeof m.data.foto.path === "string" && m.data.foto.path !== "");
-const nachrichten = entryAdapter("pinnwand", "wasgibts.pinnwand", 4, "messages", ["pinnwand"], () => ({}));
-const memos = entryAdapter("pinnwand", "wasgibts.pinnwand", 4, "memos", ["memo"], () => ({}));
+const nachrichten = entryAdapter("pinnwand", "wasgibts.pinnwand", 5, "messages", ["pinnwand"], () => ({}));
+const memos = entryAdapter("pinnwand", "wasgibts.pinnwand", 5, "memos", ["memo"], () => ({}));
 const pinnwand: Adapter = {
   name: "pinnwand",
   key: "wasgibts.pinnwand",
-  version: 4,
+  version: 5,
   typs: ["pinnwand", "memo"],
-  upgrade: (value) => (value.version === 4 ? null : (migratePinStore(value) as unknown as Value | null)),
+  upgrade: (value) => (value.version === 5 ? null : (migratePinStore(value) as unknown as Value | null)),
   toDocs: (value) => [...nachrichten.toDocs({ messages: list(value.messages).filter(pinShared) }), ...memos.toDocs({ memos: list(value.memos).filter(isShared) })],
   fromDocs: (docs, value) => {
     const memosHere = list(value?.memos).filter((m) => !isShared(m) && !docs.some((d) => d.id === m.id));
     const pinsHere = list(value?.messages).filter((m) => !pinShared(m) && !docs.some((d) => d.id === m.id));
     const shared = memos.fromDocs(docs.filter((d) => d.typ === "memo"), null).memos as Value[];
     const sharedPins = nachrichten.fromDocs(docs.filter((d) => d.typ === "pinnwand"), null).messages as Value[];
-    return { version: 4, messages: [...pinsHere, ...sharedPins], memos: [...memosHere, ...shared] };
+    return { version: 5, messages: [...pinsHere, ...sharedPins], memos: [...memosHere, ...shared] };
   },
 };
 

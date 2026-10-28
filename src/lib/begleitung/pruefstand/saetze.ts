@@ -47,6 +47,8 @@ export type PruefSatz = {
   nennt?: string;
   /** Die Antwort nennt das nie (z. B. Erledigtes von vor mehr als 12 Stunden) */
   nenntNie?: string;
+  /** Pinnwand (Tafel 123): der Zettel ist „Nur für mich“ (true) bzw. für alle (false) */
+  privat?: boolean;
 };
 
 const S = (text: string, ops: string[], extra: Omit<PruefSatz, "text" | "ops"> = {}): PruefSatz => ({ text, ops, ...extra });
@@ -155,6 +157,12 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Merk dir für mich die PIN vom Fahrradschloss: 4711", ["upsert_note"]),
   // Raum-Wahl Familie · Ich · Arbeit (A-034, `raeume.ts`): Termine und Aufgaben, Raum geprüft
   ...RAUM_SAETZE.map(({ text, raum, datum, zeit, person }) => S(text, TERMIN, { raum, ...(datum ? { datum } : {}), ...(zeit ? { zeit } : {}), ...(person ? { person } : {}) })),
+  // Ecke „Nur für mich“ (Tafel 123): ausdrücklich gesagt = privat, sonst für alle
+  S("Häng nur für mich an die Pinnwand: Geschenk für Lisa besorgen", ["add_pin"], { privat: true }),
+  S("Schreib an die Pinnwand, aber nur für mich: Zahnarzt anrufen", ["add_pin"], { privat: true }),
+  S("Häng an die Pinnwand: Oma kommt am Sonntag", ["add_pin"], { privat: false }),
+  S("Mach den Zettel mit dem Geschenk für alle sichtbar", ["app_command"]),
+  S("Zettel für alle sichtbar machen", ["app_command"]),
   // Kochen und Essen (20)
   S("Was soll ich heute kochen?", ["app_command", "set_meal"]),
   S("Plan mir die Woche, vegetarisch bitte", ["set_meal", "add_recipe", "update_week"], { max: 3 }),

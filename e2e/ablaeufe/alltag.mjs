@@ -32,6 +32,18 @@ export const pinnwand = async (page, check) => {
   check(await page.getByText("Bin um 20 Uhr da").isVisible(), "Zettel von Felix (von gestern – bleibt)");
   await pinnwandSchreiben(page, "Pizza ist im Ofen");
   check(await page.getByText("Pizza ist im Ofen", { exact: true }).first().isVisible(), "eigener Zettel hängt");
+  check(!(await page.locator("[data-privat-linie]").count()), "ohne private Zettel keine Linie");
+  // Mia: „nur für mich an die Pinnwand“ → Ecke „Nur für mich“ (A-028)
+  const box = await miaTippen(page);
+  await box.fill("Häng nur für mich an die Pinnwand: Geschenk für Oma");
+  await box.press("Enter");
+  await page.waitForTimeout(2500);
+  await page.goto(BASE + "/pinnwand");
+  await page.waitForTimeout(900);
+  const linie = page.locator("[data-privat-linie]");
+  check(await linie.isVisible(), "Mia „nur für mich“ → Linie „Nur für mich · sieht nur du“");
+  const z = await page.getByText("Geschenk für Oma", { exact: true }).first().boundingBox();
+  check(Boolean(z) && z.y > (await linie.boundingBox()).y, "der Zettel liegt unter der Linie");
 };
 
 export const wetter = async (page, check) => {

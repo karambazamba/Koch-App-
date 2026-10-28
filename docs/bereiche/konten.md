@@ -151,7 +151,8 @@ Etappen: **3a Anmeldung und Haushalt** · **3b Synchronisieren** ·
   beim nächsten Anmelden fragt die Übernahme wieder – gleiche Einträge werden
   dabei nicht doppelt angelegt (gleiche Kennung).
 - Bekannte Grenzen: Wird ein Familien-Eintrag zu „Ich“ oder „Arbeit“,
-  behalten die anderen ihre letzte Familien-Fassung. Ältere App-Stände
+  behalten die anderen ihre letzte Familien-Fassung (Pinnwand „Nur für mich“
+  umgeht das mit einer neuen ID, siehe unten). Ältere App-Stände
   (vor A-034) kennen „ich“ nicht und zeigen solche Einträge als Familie, bis
   sie sich aktualisieren. Gleichzeitiges Abhaken von
   Rezept-Zutaten derselben Woche: die spätere Änderung gewinnt (eigene
@@ -294,6 +295,30 @@ E-Mail bleibt immer der sichere Weg. Bitte am echten iPhone prüfen.
   `pinnwand`, v4). Andere Geräte holen das Bild beim Anzeigen
   (`setFotoRemote`, `downloadFoto`) und legen es in IndexedDB
   `wasgibts-fotos` ab. Ohne Konto bleibt das Bild nur auf dem Gerät.
+
+## Pinnwand „Nur für mich“ (A-028, Tafel 123)
+
+- Ein Zettel mit `privat = true` liegt wie jeder Zettel in `entries`, sieht
+  und ändert aber nur der Besitzer – wie „Arbeit“. Migration
+  `supabase/migrations/20261101130000_pinnwand_nur_fuer_mich.sql`:
+  `entry_privat(data)` (prüft `data.data.privat`, zur Sicherheit auch
+  `data.privat`), `entry_visible` nimmt es auf, `entries_update` verbietet,
+  einen fremden Zettel privat zu machen. Bilder: `foto_fremd_privat(name)`
+  (Besitzer-Rechte, nur ja/nein) – gehört ein Bild im Bucket `fotos` zu einem
+  privaten Zettel von jemand anderem, sehen und löschen es die anderen nicht.
+- Die App lädt Bilder privater Zettel gar nicht erst hoch
+  (`uploadPendingFotos`), sie bleiben auf dem Gerät. „Nur für mich“ an gibt
+  dem Zettel eine neue ID (`makePinPrivate`): die alte ID geht als
+  Lösch-Markierung an den Haushalt – so verschwindet er auch auf den Handys,
+  die ihn schon hatten (sonst bliebe dort die letzte Fassung, wie bei
+  „Arbeit“). „Für alle“ = gleiche ID, `privat` aus.
+- Reihenfolge (`sort`) und Größe (`groesse`) stehen nur in `data`, keine
+  Spalte. Push (`versand.ts`), Jetzt-Karte und „ungelesen“ lassen private
+  Zettel zusätzlich aus.
+- Tests: `tests/datenbank/sicherheit.test.sql` (Abschnitt 5: Partner sieht
+  den privaten Zettel und sein Bild nicht, kann ihn nicht ändern oder
+  überschreiben, kann fremde Zettel nicht privat machen; „für alle sichtbar“
+  → Partner sieht ihn), `tests/pinnwand/ordnen.test.ts`.
 
 ## Tests
 

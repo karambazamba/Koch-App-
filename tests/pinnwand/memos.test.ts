@@ -64,7 +64,7 @@ describe("Sprachnachrichten: Daten", () => {
     at("2026-10-20T09:00");
     const v1 = { version: 1, messages: [{ id: "a", typ: "pinnwand", raum: "familie", besitzer: "lokal", erstellt: "2026-10-20T07:00:00.000Z", geaendert: "2026-10-20T07:00:00.000Z", data: { text: "Bin um 20 Uhr da", author: "Lisa", reactions: {}, readBy: ["Lisa"], pinned: false } }] };
     const v2 = migratePinStore(v1);
-    expect(v2?.version).toBe(4);
+    expect(v2?.version).toBe(5);
     expect(v2?.messages.map((m) => m.data.text)).toEqual(["Bin um 20 Uhr da"]);
     expect(v2?.memos).toEqual([]);
     expect(migratePinStore({ version: 7 })).toBeNull();

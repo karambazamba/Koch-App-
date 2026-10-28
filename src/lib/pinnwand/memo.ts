@@ -10,7 +10,7 @@
 
 import { createEntry, type Entry } from "@/lib/core/entries";
 import { applyReaction, readReactions, type Reaction, type Reactions } from "@/lib/pinnwand/reactions";
-import { isArchived, isForgotten, onDoor, readDone, readFarbe, type Done, type ZettelFarbe } from "@/lib/pinnwand/tuer";
+import { isArchived, isForgotten, onDoor, readDone, readFarbe, readGroesse, readSort, type Done, type Groesse, type ZettelFarbe } from "@/lib/pinnwand/tuer";
 import { personName } from "@/lib/konten/namen";
 
 /** Höchstens 60 s, danach wird automatisch gesendet */
@@ -42,6 +42,10 @@ type MemoData = {
   erledigt: Done | null;
   /** Von Hand ins Archiv */
   archiv: string | null;
+  /** Klein (Standard) oder groß an der Tür (Tafel 123) */
+  groesse: Groesse;
+  /** Platz an der Tür; null = nach der Zeit (neueste vorn). „Nur für mich“ gibt es bei Sprachnachrichten nicht – die sind für die anderen. */
+  sort: number | null;
 };
 export type MemoMessage = Entry<MemoData> & { typ: "memo" };
 
@@ -77,6 +81,8 @@ export function createMemo(input: { author: string; dauer: number; mime: string;
     farbe: input.farbe ?? null,
     erledigt: null,
     archiv: null,
+    groesse: "klein",
+    sort: null,
   };
   return createEntry("memo", data, { raum: "familie" }) as MemoMessage;
 }
@@ -102,6 +108,8 @@ export function sanitizeMemo(raw: unknown): MemoMessage | null {
       farbe: readFarbe(d.farbe),
       erledigt: readDone(d.erledigt),
       archiv: typeof d.archiv === "string" ? d.archiv : null,
+      groesse: readGroesse(d.groesse),
+      sort: readSort(d.sort),
     },
   };
 }

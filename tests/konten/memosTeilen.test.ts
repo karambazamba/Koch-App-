@@ -20,7 +20,7 @@ const memo = (id: string, storagePath: string | null = null, mime = "audio/mp4")
   besitzer: "lokal",
   erstellt: T0,
   geaendert: T0,
-  data: { author: "Felix", dauer: 3, mime, wave: [], gehoertVon: ["Felix"], alleGehoertAm: null, reactions: {}, storagePath, farbe: null, erledigt: null, archiv: null },
+  data: { author: "Felix", dauer: 3, mime, wave: [], gehoertVon: ["Felix"], alleGehoertAm: null, reactions: {}, storagePath, farbe: null, erledigt: null, archiv: null, groesse: "klein", sort: null },
 });
 
 describe("Pfad und Format", () => {

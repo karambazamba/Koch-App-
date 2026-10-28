@@ -3444,3 +3444,61 @@ Fehler in `docs/aufraeumen-nachher.md`.
   verstanden wird und jeder Satz etwas einträgt; Termin mit Kind aus dem
   Haushalt = Familie. Prüfstand im Testmodus unverändert (Raum- und
   Sofort-Prüfstand weiter ≥ 95 %).
+
+## Pinnwand aufgeräumt (v0.152.0, A-028 Teil 1, Tafel 123)
+
+- Fotos als Polaroid in Zettelgröße (halbe Breite, quadratisch,
+  `object-fit: cover`), antippen = groß im Fenster (`FotoFenster`, Text,
+  Erledigt, Mehr). Wand so hoch wie der Inhalt (keine Mindesthöhe, leer mit
+  ruhigem Innenabstand). Meta-Zeile EINE Zeile: Zeit zuerst im DOM,
+  rückwärts umbrechend – passt der Name nicht, bleibt nur die Zeit; die
+  letzten sechs Tage als Wochentag („Lisa · Mo“). „Bleibt hängen“ zeigt
+  statt „· bleibt hängen“ die kleine Markierung „OBEN“ (Großbuchstaben,
+  Zettelfarbe dunkel), der Text hat rechts Platz.
+- Entschieden: „OBEN“ nur an „Bleibt hängen“-Zettel (die stehen vorn);
+  eigene Zettel heißen weiter „Du“ (Tafel: „Ich“).
+
+## Pinnwand: Größe, Ordnen, „Nur für mich“ (v0.152.0, A-028 Teil 2, Tafel 123)
+
+- Lange drücken hebt den Zettel an (Schatten, 1,06); loslassen = Fenster wie
+  Tafel 123 C (Titel = Zettel in „…“, Klein | Groß, Nach oben, Nur für mich
+  bzw. Für alle, Erledigt, „Zum Verschieben: halten und ziehen“); halten und
+  ziehen = verschieben, die anderen rutschen weich nach (FLIP, 0,8 s, nur
+  transform; reduziert ohne Gleiten). Gespeichert wird `sort` nur am
+  gezogenen Zettel (zwischen den Nachbarn); ohne `sort` zählt die Zeit – so
+  behalten alte Zettel ihre Reihenfolge ohne Umschreiben.
+  `wasgibts.pinnwand` v5 (Größe, Platz, privat; alte Zettel klein, nach der
+  Zeit, für alle). Im Menü „Größe und Platz“ für VoiceOver/Tastatur.
+- Ecke „Nur für mich“: private Zettel unter einer gestrichelten Linie ganz
+  unten („Nur für mich · sieht nur du“, grau-weiß, grauer Pin, Schloss in
+  der Meta-Zeile); ohne private Zettel und im Haushalt „allein“ keine Linie.
+  Einklappbar (Nachtrag 7a): Linie antippen = nur „Nur für mich ⌄“, ohne
+  Anzahl; pro Gerät gemerkt (`wasgibts.pinnwandansicht`, nicht in der
+  Sicherung), Standard auf. Kachel, Push, Jetzt-Karte, „ungelesen“ ohne
+  private Zettel. Supabase: owner-only wie „Arbeit“ (Migration
+  `20261101130000_pinnwand_nur_fuer_mich.sql`), Bilder privater Zettel
+  bleiben auf dem Gerät; „Nur für mich“ an = neue ID, damit der Zettel auch
+  bei den anderen verschwindet. Test-Backend mit denselben Regeln.
+- Mia: `pinnwand_schreiben` mit `nur_fuer_mich`, „Mach den Zettel mit dem
+  Geschenk für alle sichtbar“ über `app_befehl` (ohne KI: `pinForAllCommand`,
+  `pinToShare`), fünf neue Prüfstand-Sätze (mit Prüfung `privat`).
+- Entschieden: „Nach oben“ = vor alle anderen, „Bleibt hängen“ bleibt davor.
+  Sprachnachrichten haben Größe und Platz, aber kein „Nur für mich“ (sie
+  sind für die anderen). Kein „Nur für mich“-Schalter beim Schreiben (nur
+  im Fenster und per Mia).
+- Auf v0.151 (A-034) aufgesetzt: Die Pinnwand-Migration `20261101130000`
+  baut jetzt auf `20261101120000_raeume_ich.sql` auf – „Nur für mich“ kommt
+  als erste Regel vor die drei Räume, „ich“ und „arbeit“ bleiben nur für den
+  Besitzer (vorher hätte die Pinnwand-Migration `entry_visible` auf den
+  Stand vor A-034 zurückgesetzt). Test-Backend (`visible`, `fremdPrivat`)
+  genauso; RLS-Test Abschnitt 7 und `nurFuerMichTeilen.test.ts` prüfen auch
+  Pinnwand-Einträge in „ich“/„arbeit“. Abhaken bleibt wie seit v0.145 (1 s
+  stehen, Kachel zeigt das Häkchen kurz mit). Prüfstand 226 Sätze.
+  Tafel 123 in neuer, schärferer Fassung (gleicher Inhalt).
+- Abgleich mit Tafel 123 (neue Fassung): Die Meta-Zeile ließ rechts 32 px
+  für den Haken-Kreis frei, gebraucht werden 24 – dadurch fiel auf dem
+  iPhone 15 Pro „Mathis“ bei „Mathis · 12:08“ und bei privaten Zetteln „Du“
+  vor dem Schloss weg. Jetzt `pr-6`, Name und Zeit passen wie auf der Tafel
+  (Durchklick `pinnwandOrdnen` prüft es ab 390 px). Durchklick-Helfer
+  `halten` rollt den Zettel vorher in die Mitte (vorher drückte er unter Mias
+  Hinweis-Blase bzw. außerhalb des Bildschirms).

@@ -35,7 +35,7 @@ export type Entry<T = Record<string, unknown>> = {
   data: T;
 };
 
-const newId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`);
+export const newId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`);
 
 /** Neuer Eintrag mit Zeitstempeln (Familie, lokal, wenn nichts anderes gesagt) */
 export function createEntry<T>(typ: EntryType, data: T, opts: { raum?: Room; besitzer?: string; id?: string } = {}): Entry<T> {

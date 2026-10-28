@@ -7,10 +7,11 @@
 // - Einkauf live: Felix ist „Bei REWE“ (Familie weiß Bescheid), Lisa sagt Mia
 //   „Milch auf die Liste“ → bei Felix gelb „Neu von …“ in höchstens 5 s.
 // - Antwort: Felix tippt „Steh grad davor“ → kommt bei Lisa in der Liste an.
-// - Pinnwand live in beide Richtungen (höchstens 5 s).
+// - Pinnwand live in beide Richtungen (höchstens 5 s); „Nur für mich“ sieht
+//   Lisa nie (auch nicht im Speicher), „Nach oben“ kommt bei ihr an (A-028).
 // Die Mitteilung selbst (Web Push) plant der Server – geprüft in
 // tests/einkauf/unterwegs.test.ts („Steh grad davor“).
-import { BASE, familieEinladen, hello, kontoAnmelden, miaTippen, newPage, perLinkBeitreten, pinnwandSchreiben, seedFamily, store } from "../lib.mjs";
+import { BASE, familieEinladen, halten, hello, kontoAnmelden, miaTippen, newPage, perLinkBeitreten, pinnwandSchreiben, seedFamily, store } from "../lib.mjs";
 
 const LIVE_MS = 5000;
 
@@ -134,6 +135,25 @@ export const familieTeilen = async (page, check, device) => {
     await pinnwandSchreiben(page, "Mach ich, bis gleich");
     const pinB = await timed(() => waitFor(pageB, () => document.body.innerText.includes("Mach ich, bis gleich"), undefined, 15000));
     check(pinB !== null && pinB <= LIVE_MS, `Pinnwand: Felix → Lisa live (${liveText(pinB)})`);
+
+    // --- Pinnwand „Nur für mich“ (A-028, Tafel 123): Lisa sieht ihn nie; Reihenfolge geht mit ---
+    await pinnwandSchreiben(page, "Geschenk für Lisa");
+    await halten(page, page.locator("[data-flip]", { has: page.getByRole("button", { name: /^Zettel von .*: Geschenk für Lisa/ }) }).first());
+    await page.getByRole("dialog").getByRole("button", { name: "Nur für mich" }).click();
+    await page.waitForTimeout(400);
+    check(await page.locator("[data-privat-linie]").isVisible(), "Felix: Ecke „Nur für mich“ mit Linie");
+    // „Nach oben“ an Lisas Zettel – der Platz geht mit der Familie
+    await halten(page, page.locator("[data-flip]", { has: page.getByRole("button", { name: /^Zettel von .*: Bring bitte Brot mit/ }) }).first());
+    await page.getByRole("dialog").getByRole("button", { name: "Nach oben" }).click();
+    await pinnwandSchreiben(page, "Bin gleich da");
+    const neuDa = await timed(() => waitFor(pageB, () => document.body.innerText.includes("Bin gleich da"), undefined, 15000));
+    check(neuDa !== null, `Lisa: neuer Zettel für alle kommt an (${liveText(neuDa)})`);
+    await pageB.waitForTimeout(1500);
+    check(!(await pageB.evaluate(() => document.body.innerText.includes("Geschenk für Lisa"))), "Lisa sieht Felix’ „Nur für mich“-Zettel nicht");
+    check(!(await pageB.evaluate(() => (localStorage.getItem("wasgibts.pinnwand") ?? "").includes("Geschenk für Lisa"))), "… auch nicht in ihrem Speicher");
+    check(!(await pageB.locator("[data-privat-linie]").count()), "Lisa: keine Linie (sie hat keine privaten Zettel)");
+    const platz = await pageB.evaluate(() => JSON.parse(localStorage.getItem("wasgibts.pinnwand") ?? "{}").messages?.find((m) => m.data.text === "Bring bitte Brot mit")?.data.sort);
+    check(typeof platz === "number", "„Nach oben“ kommt bei Lisa an (Platz geteilt)");
 
     const listeA = await store(page, "wasgibts.einkaufsliste");
     check(JSON.stringify(listeA ?? {}).includes("Milch"), "Felix: Milch steht auch in seiner Einkaufsliste");
