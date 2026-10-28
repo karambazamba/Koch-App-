@@ -2881,7 +2881,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
   `docs/ordner.md`, `docs/roadmap.md`. Neu unter „Arbeitsweise“: parallel wo
   getrennt, Überschneidendes nacheinander auf neuestem `main`, gestaffelte Tests.
 
-## Pinnwand als Kühlschranktür (vX, Tafel 106/107)
+## Pinnwand als Kühlschranktür (v0.138.0, Tafel 106/107)
 - Ersetzt den Auftrag „Pinnwand – nichts verschwindet ungefragt“. Vorlagen
   `docs/tafeln/tafel-106.png` (Tür, Kachel S/M, neuer Zettel) und
   `tafel-107.png` (Kachel: Variante 1 „Fächer“, leer = Variante 4).
