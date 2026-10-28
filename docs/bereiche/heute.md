@@ -384,7 +384,8 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Sie ändern nur Inhalte, nie die Anordnung.
 - Kochen: von Hand („Ich koche jetzt“), Timer läuft (bis 15 Min nach dem
   letzten) oder automatisch `kochenMin` vor bis 45 Min nach der Essenszeit.
-  Dann zeigt die Essen-Kachel „Koche gerade“ (`CookingTile`, siehe unten), Bildschirm bleibt an.
+  Bildschirm bleibt an. Die Essen-Kachel zeigt „Weiter kochen“, sobald heute
+  gekocht wird (Kochmodus geöffnet bzw. „Ich koche jetzt“, Tafel 122 – siehe essen.md).
 - Sport: 60 Min vor einem Training bis zu seinem Ende (nur mit Sport-Kachel).
 - Feierabend (`istFeierabend`): ab `feierabendAb`, mit `nachArbeit` frühestens
   nach dem letzten Arbeit-Termin (`arbeitsEnde`), bis 5 Uhr. Mit Ruhe: Arbeit
@@ -494,14 +495,11 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   (`lib/heute/essenKachel.ts`). „3 Ideen ansehen“ steht bei „Noch frei“ als
   Zeile unter dem Namen; die frühere L-Zeile „Ideen für morgen“ entfällt.
 - Kopfzeile einzeilig und nie umbrochen (`truncate whitespace-nowrap`,
-  `data-kopf`): „ESSEN · 18:30“. Personenzahl nur ab M und kurz („für 4“),
-  bei S nie (`essenKopf`).
-- Koch-Kachel (`CookingTile`): dasselbe Gerichtsbild, klein „Koche gerade“,
-  der Name weiß auf dem Verlauf, darunter „Schritt 3 von 6“, sobald im
-  Kochmodus Schritte erledigt sind (`kochSchrittZeile`; der Kochmodus merkt
-  den Schritt über `markStepsBefore` in `kochSession`). Unten links
-  „Kochmodus ›“, unten rechts der weiße Knopf „Gegessen“ (Schrift
-  `on-photo-ink`). Antippen öffnet den Kochmodus (ohne Rezept die Essen-Seite).
+  `data-kopf`): „ESSEN · 18:30“, ohne Personen (Tafel 122).
+- Seit Tafel 122 (A-025): Name groß in der Mitte, unten „Rezept“ |
+  „Wochenplan“ (S: „Woche“), beim Kochen „Weiter kochen“ mit „Schritt 3 von 6“;
+  die eigene Koch-Kachel (`CookingTile`) ist weg. Einzelheiten in
+  `docs/bereiche/essen.md`.
   Die Schritte-Liste zum Abhaken gibt es nur noch im Kochmodus und bei Mia.
 - Einkauf-Kachel: Artikel ohne eigene Zeichnung zeigen das Linien-Symbol
   ihrer Abteilung (`abteilungSymbol`, `lib/einkauf/kacheln/abteilung.ts`),

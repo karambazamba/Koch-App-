@@ -35,6 +35,8 @@ export type Recipe = {
   prepMinutes: number | null;
   ingredients: Ingredient[];
   steps: string[];
+  /** Schnellanleitung je Schritt (Mia liefert sie mit; optional, sonst essen/kurz) */
+  shortSteps?: string[];
   note: string;
   source: RecipeSource;
   /** Nur bei KI-Rezepten: woher der Vorschlag stammt */
@@ -74,7 +76,7 @@ type RecipeDraft = Pick<Recipe, "title" | "category"> &
   Partial<Omit<Recipe, "id" | "createdAt" | "updatedAt">>;
 
 type CookbookStore = {
-  /** v2: `known` ("kennen wir"); v3: Typ, Backofen, Form, Kinder- und Maschinenschritte */
+  /** v2: `known` ("kennen wir"); v3: Typ, Backofen, Form, Kinder- und Maschinenschritte (+ optional `shortSteps`, additiv ohne neue Version) */
   version: 3;
   recipes: Record<string, Recipe>;
 };
@@ -183,6 +185,8 @@ function migrateRecipe(id: string, raw: unknown): Recipe | null {
           }))
       : [],
     steps: Array.isArray(r.steps) ? r.steps.filter((s): s is string => typeof s === "string") : [],
+    // Kurzfassung (Tafel 122, optional und additiv – ältere Stände haben keine)
+    ...(Array.isArray(r.shortSteps) && r.shortSteps.every((s) => typeof s === "string") ? { shortSteps: r.shortSteps } : {}),
     note: str(r.note),
     source: r.source === "ki" ? "ki" : "eigenes",
     ai: r.ai && typeof r.ai === "object" ? r.ai : null,

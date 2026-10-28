@@ -82,6 +82,19 @@ describe("Wochenplan-Werkzeuge", () => {
     expect(solo.content).toMatch(/ref: rezept-/);
   });
 
+  it("rezept_erstellen: Mia liefert die Schnellanleitung mit (Tafel 122) – nur mit passender Schrittzahl", () => {
+    const ctx = kontext();
+    const base = { titel: "Linsensuppe", kategorie: "vegetarisch", portionen: 4, zubereitungszeit_min: 35, zutaten: [{ menge: 200, einheit: "g", name: "Linsen" }], schritte: ["Gemüse würfeln.", "25 Minuten köcheln."], fuer_plan: false };
+    rufe(ctx, "rezept_erstellen", { ...base, kurz: ["Gemüse würfeln", " 25 Min  köcheln "] });
+    const add = letzte(ctx);
+    if (add.type !== "add_recipe") throw new Error();
+    expect(add.recipe.shortSteps).toEqual(["Gemüse würfeln", "25 Min köcheln"]);
+    rufe(ctx, "rezept_erstellen", { ...base, titel: "Linsensuppe 2", kurz: ["Nur eine Zeile"] });
+    const ohne = letzte(ctx);
+    if (ohne.type !== "add_recipe") throw new Error();
+    expect(ohne.recipe.shortSteps).toBeUndefined();
+  });
+
   it("rezept_erstellen lehnt Allergene und Nie-wieder ab", () => {
     const profile = { ...haushalt(), neverAgain: [{ id: "n1", title: "Spinatauflauf", ingredients: [], reason: "", addedAt: "2026-01-01" }] };
     const ctx = kontext({ profile });

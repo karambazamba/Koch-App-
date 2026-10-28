@@ -84,6 +84,8 @@ export type NewRecipe = {
   prepMinutes: number | null;
   ingredients: { amount: number | null; unit: string; name: string }[];
   steps: string[];
+  /** Schnellanleitung (je Schritt eine Zeile), wenn Mia sie mitliefert */
+  shortSteps?: string[];
   note: string;
 };
 

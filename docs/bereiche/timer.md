@@ -19,7 +19,8 @@ sofort.
 - Ton: `src/lib/timer/sound.ts` (`unlockTimerSound`, `chime`).
 - Oberfläche: `src/components/timer/TimerTile.tsx`,
   `src/components/timer/TimerAlarm.tsx` (im Layout `src/app/layout.tsx`).
-- Kochen: Schritt-Timer aus `src/components/essen/CookingTile.tsx`; Phase
+- Kochen: Schritt-Timer aus Kochmodus und Rezeptseite (`startStepTimer`,
+  Tafel 122; je Schritt nur einer, Leiste `KochTimerLeiste`); Phase
   „Kochen“ nutzt `firstAt`/`lastEnd` (`src/lib/heute/phases.ts`).
 - Begleitung: `src/lib/begleitung/dayTools.ts` (Werkzeuge),
   `runInstantOps` in `src/lib/begleitung/client.ts`,

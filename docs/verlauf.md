@@ -3210,3 +3210,55 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Scrollbalken aus (jetzt kurzer, kräftiger Bügel mit Rand und Schatten).
   „Felix · gest…“ wurde abgeschnitten – Name · Zeit bricht jetzt lieber
   um, der Haken-Kreis behält seinen Platz.
+
+## Termine – Raum Familie / Geschäftlich (vX, A-021)
+- Problem: Beim Anlegen eines Termins zeigte der Chip nur „Privat“ (so hieß
+  der gemeinsame Raum allein), bei Aufgaben gab es eine andere Auswahl. Es
+  gibt aber nur zwei Räume: „Familie“ (gemeinsam, Lisa sieht alles) und
+  „Geschäftlich“ (nur Felix). Gilt vor A-020: der Raum „Ich“ ist wieder raus.
+- Termine und Aufgaben: derselbe Schalter „Familie | Geschäftlich“
+  (`EintragZeile`, `RAUM_WAHL`, Punkt in Raumfarbe), Start = zuletzt gewählter
+  Raum, nach Feierabend Familie; auch allein (dort heißt der Raum jetzt
+  „Familie“ statt „Privat“, zu zweit weiter „Wir“). „Arbeit“ heißt in der
+  Oberfläche überall „Geschäftlich“ (Schild, Filter, „Geschäftlich · 5 für
+  morgen“, Notizen, Kalender-Links, Übernahme-Karte, Tagesablauf, Rechtstexte).
+- Kalender: Filter „Alle · Familie · Geschäftlich“ nur mit geschäftlichen
+  Terminen; im Tag Strich, Uhrzeit und Schild in Raumfarbe, in Woche/Liste
+  Punkt und Uhrzeit. Raum ändern: Termin öffnen → Schalter antippen.
+- Mia und Sofort-Weg erkennen den Raum aus dem Inhalt (Tohuus, KARAMBA Eis,
+  Lieferant, Personal, Großhandel … → Geschäftlich; Kinder, Arzt, Kita,
+  Schule … → Familie; gelernte Arbeits-Stichworte). Nur wenn beides drin ist,
+  fragt Mia mit zwei Knöpfen. Prüfstand +6 Termin-Sätze mit Raum, die 7
+  Raum-Sätze aus A-020 auf Familie/Geschäftlich umgestellt; Sofort-Prüfstand
+  mit Raum-Prüfung.
+- Migration: Speicher v4 – Etikett „Privat“ (Wochencheck, lag als Arbeit) wird
+  Familie, wenn es nur auf dem Gerät liegt; mit Konto bleibt es beim Besitzer
+  (nie ungefragt sichtbar machen). Etikett bleibt gespeichert, wird nie gezeigt.
+- Sichtbarkeit mit Tests festgehalten: Felix’ Geschäftliches erreicht Lisa
+  weder im Abgleich noch in Push, Neuigkeiten/Pinnwand, Heute, Kalender oder
+  Mias Kontext.
+
+## Essen-Kachel „Rezept“ und Kochmodus (vX, Tafel 122, A-025)
+- Problem: Die Essen-Kachel hatte zu viele Wege („Ich koche jetzt ›“, „Woche
+  ›“, Antippen = Rezept, eigene Koch-Kachel mit „Gegessen“). Ersetzt den
+  Nachtrag aus Tafel 121.
+- Kachel: Bild mit dunklem Verlauf (Token, Kontrast ≥ 4,5:1 geprüft), Pille
+  oben links, Name groß in der Mitte (S 20/M 24 px, nie mitten im Wort
+  abgeschnitten), Unterzeile „90 Min · auf die Liste: …“ bzw. „alles im
+  Haus“, unten „Rezept“ | „Wochenplan“ (S „Woche“); ohne Gericht „Vorschlag“,
+  beim Kochen „Weiter kochen“ mit „Schritt 3 von 6“. Rest = Tagesansicht.
+  Eigener Eintrag ohne Rezept: Fenster „Mia schreibt dir ein Rezept dazu“.
+- Rezeptseite: Bild mit „‹ Heute“, „HEUTE · 18:30 · FÜR 5“, Vorrat-Satz, dann
+  „Los, Schritt für Schritt“, Zutaten mit Kästchen und „+ Liste“, „So geht’s“.
+- Kochmodus dunkel, ein Schritt in 24 px, „Timer 10 Min“ (derselbe Timer wie
+  überall), Zurück/Weiter 56 px, Wischen, Wake Lock, ✕ merkt den Schritt (nur
+  heute), Mia hört auf „Weiter“, „Zurück“, „Nochmal“, „Timer X Minuten“,
+  „Fertig“; am Ende „Gegessen“ mit einem Satz („Lasst es euch schmecken.“).
+- Nachtrag Schnellanleitung: „So geht’s“ mit „Kurz | Ausführlich“ (Standard
+  Kurz, Wahl pro Gerät), Kurzfassungen für alle eingebauten Gerichte fest in
+  den Daten, Mia liefert sie beim Rezept-Schreiben mit, sonst erster Satz;
+  Zeit-Chips starten den Timer, Leiste „⏱ 7:42 · Tomatensoße“, Schritt
+  antippen = durchgestrichen, „Gegessen“ am Ende.
+- Speicher: `wasgibts.kochen` v2 (Kochmodus-Stand, abgehakte Zutaten; v1 →
+  v2 ergänzt leer), neu `wasgibts.rezeptansicht` v1 (Gerät, nicht in der
+  Sicherung), Rezept `shortSteps` optional (Kochbuch v3, additiv).

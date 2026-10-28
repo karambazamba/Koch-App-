@@ -1,7 +1,10 @@
-// Kochen (`wasgibts.kochen` v1, pro Gerät, gilt nur für heute): von Hand
-// gestartet ("Ich koche jetzt"), welche Rezept-Schritte abgehakt sind. Dazu
-// rein: Schritte mit Zeitangabe erkennen ("10 Minuten köcheln" → ⏱) und den
-// aktuellen Schritt bestimmen.
+// Kochen (`wasgibts.kochen` v2, pro Gerät, gilt nur für heute – von gestern
+// Gebliebenes verfällt still): von Hand gestartet ("Ich koche jetzt"), welche
+// Rezept-Schritte abgehakt bzw. auf der Rezeptseite durchgestrichen sind,
+// wo der Kochmodus steht (Tafel 122: ✕ merkt sich den Schritt) und welche
+// Zutaten abgehakt sind. Dazu rein: Schritte mit Zeitangabe erkennen
+// ("10 Minuten köcheln" → ⏱) und den aktuellen Schritt bestimmen.
+// v1 → v2: `at` und `zutaten` kommen leer dazu (nichts geht verloren).
 
 import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
@@ -11,36 +14,86 @@ type CookSession = {
   date: string;
   /** Von Hand gestartet (ms) */
   manualAt: number | null;
-  /** Abgehakte Schritte je Rezept */
+  /** Abgehakte (bzw. durchgestrichene) Schritte je Rezept */
   steps: Record<string, number[]>;
+  /** Kochmodus je Rezept: 0 = Zutaten, 1…n = Schritt (Tafel 122) */
+  at: Record<string, number>;
+  /** Abgehakte Zutaten je Rezept (Zutaten-IDs) */
+  zutaten: Record<string, string[]>;
 };
 
-type Stored = { version: 1 } & CookSession;
+type Stored = { version: 2 } & CookSession;
 
-const store = createLocalStore("wasgibts.kochen", (raw: unknown): Stored | null => {
-  if (!raw || typeof raw !== "object" || (raw as Stored).version !== 1) return null;
-  const r = raw as Stored;
-  const steps: Record<string, number[]> = {};
-  for (const [k, v] of Object.entries(r.steps && typeof r.steps === "object" ? r.steps : {})) if (Array.isArray(v)) steps[k] = v.filter((n) => Number.isInteger(n) && n >= 0);
-  return { version: 1, date: typeof r.date === "string" ? r.date : "", manualAt: typeof r.manualAt === "number" ? r.manualAt : null, steps };
-});
+const record = <T>(raw: unknown, ok: (v: unknown) => v is T): Record<string, T> => {
+  const out: Record<string, T> = {};
+  for (const [k, v] of Object.entries(raw && typeof raw === "object" ? raw : {})) if (ok(v)) out[k] = v;
+  return out;
+};
+const isStepList = (v: unknown): v is number[] => Array.isArray(v);
+const isIndex = (v: unknown): v is number => Number.isInteger(v) && (v as number) >= 0;
+const isIdList = (v: unknown): v is string[] => Array.isArray(v);
 
-const fresh = (date: string): CookSession => ({ date, manualAt: null, steps: {} });
+/** @public (Tests: Migration v1 → v2) */
+export function migrateCooking(raw: unknown): Stored | null {
+  const version = raw && typeof raw === "object" ? (raw as { version?: unknown }).version : null;
+  if (version !== 1 && version !== 2) return null;
+  const r = raw as Partial<Stored>;
+  const steps = record(r.steps, isStepList);
+  for (const k of Object.keys(steps)) steps[k] = steps[k].filter((n) => Number.isInteger(n) && n >= 0);
+  const zutaten = record(r.zutaten, isIdList);
+  for (const k of Object.keys(zutaten)) zutaten[k] = zutaten[k].filter((x) => typeof x === "string");
+  return {
+    version: 2,
+    date: typeof r.date === "string" ? r.date : "",
+    manualAt: typeof r.manualAt === "number" ? r.manualAt : null,
+    steps,
+    at: record(r.at, isIndex),
+    zutaten,
+  };
+}
+
+const store = createLocalStore("wasgibts.kochen", migrateCooking);
+
+const fresh = (date: string): CookSession => ({ date, manualAt: null, steps: {}, at: {}, zutaten: {} });
+const sessionOf = (s: Stored): CookSession => ({ date: s.date, manualAt: s.manualAt, steps: s.steps, at: s.at, zutaten: s.zutaten });
 
 /** Heutige Sitzung (von gestern Gebliebenes zählt nicht) */
 export function loadCooking(today = todayIso()): CookSession {
   const s = store.load();
-  return s && s.date === today ? { date: s.date, manualAt: s.manualAt, steps: s.steps } : fresh(today);
+  return s && s.date === today ? sessionOf(s) : fresh(today);
 }
 
 function save(s: CookSession) {
-  store.save({ version: 1, ...s });
+  store.save({ version: 2, ...s });
 }
 
 export function useCooking(today: string): CookSession | undefined {
   const raw = useExternalStore(store.subscribe, store.load, () => undefined);
   if (raw === undefined) return undefined;
-  return raw && raw.date === today ? { date: raw.date, manualAt: raw.manualAt, steps: raw.steps } : fresh(today);
+  return raw && raw.date === today ? sessionOf(raw) : fresh(today);
+}
+
+/** Kochmodus: wo er steht (✕ merkt sich den Schritt, nur heute) */
+export function setCookAt(recipe: string, step: number): void {
+  const before = loadCooking();
+  if (before.at[recipe] === step) return;
+  save({ ...before, at: { ...before.at, [recipe]: Math.max(0, Math.round(step)) } });
+}
+
+/** „Gegessen“: Kochen vorbei – Kochmodus-Stand und Start weg (Schritte bleiben bis morgen); liefert das Zurücknehmen */
+export function endCooking(recipe: string | null): () => void {
+  const before = loadCooking();
+  const at = { ...before.at };
+  if (recipe) delete at[recipe];
+  save({ ...before, manualAt: null, at });
+  return () => save(before);
+}
+
+/** Zutat abhaken bzw. wieder zurück (nur heute) */
+export function toggleZutat(recipe: string, id: string): void {
+  const before = loadCooking();
+  const list = before.zutaten[recipe] ?? [];
+  save({ ...before, zutaten: { ...before.zutaten, [recipe]: list.includes(id) ? list.filter((x) => x !== id) : [...list, id] } });
 }
 
 /** "Ich koche jetzt" – liefert das Zurücknehmen */

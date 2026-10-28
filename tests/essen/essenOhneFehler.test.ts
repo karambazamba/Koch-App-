@@ -57,7 +57,7 @@ describe("Kochmodus mit der gewählten Personenzahl", () => {
     expect(read("src/components/essen/rezepte/RecipeView.tsx")).toContain("&personen=${servings}");
     const cook = read("src/components/essen/rezepte/CookMode.tsx");
     expect(cook).toContain('personsParam(params.get("personen"))');
-    expect(cook).toContain("Das brauchst du ({servings}");
+    expect(cook).toContain("Für {servings} {baking ?");
   });
 });
 
@@ -82,9 +82,9 @@ describe("Hackbraten als Scheiben vom Laib", () => {
 });
 
 describe("Wortwahl", () => {
-  it("Kachel „Kochmodus ›“ statt „Rezept groß öffnen“", () => {
-    const src = read("src/components/essen/CookingTile.tsx");
-    expect(src).toContain("Kochmodus ›");
+  it("Kachel beim Kochen „Weiter kochen“ (Tafel 122) statt „Rezept groß öffnen“", () => {
+    const src = read("src/components/heute/HomeTiles.tsx");
+    expect(src).toContain('label: "Weiter kochen"');
     expect(src).not.toMatch(/Rezept groß öffnen/);
   });
 

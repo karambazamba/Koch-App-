@@ -100,6 +100,13 @@
   --color-on-color: #ffffff;
   /* Schrift auf weißem Knopf über Fotos („Gegessen“ auf der Koch-Kachel): immer dunkles Orange */
   --color-on-photo-ink: #8f3a0e;
+  /* Dunkle Schrift auf hellem Knopf über Fotos („Wochenplan“ auf der Essen-Kachel): immer fast schwarz */
+  --color-on-photo-dark: #1f1b16;
+  /* Kochmodus (Tafel 122): dunkler Bildschirm in hell und dunkel, gut lesbar aus einem Meter */
+  --color-cook: var(--app-cook);
+  --color-cook-ink: var(--app-cook-ink);
+  --color-cook-soft: var(--app-cook-soft);
+  --color-cook-muted: var(--app-cook-muted);
   --color-foreground: var(--color-ink);
 
   /* Drei Radien: Karte 20, Feld/Knopf 14, Chip rund (rounded-full) */
@@ -128,6 +135,12 @@
   --app-spark-yellow: #ffc23d;
   /* Mias kleine Sonne (Zubehör, A-033) – gleich in hell und dunkel */
   --app-sonne: #f5b82e;
+  /* Essen-Kachel (Tafel 122): oben leicht, unten dunkel – weiße Schrift überall ≥ 4,5:1 (lib/heute/essenKachel.ts) */
+  --app-cook: #1c1916;
+  --app-cook-ink: #ffffff;
+  --app-cook-soft: rgb(255 255 255 / 0.12);
+  --app-cook-muted: rgb(255 255 255 / 0.72);
+  --app-dish-tile-shade: linear-gradient(180deg, rgb(20 12 6 / 0.28) 0%, rgb(20 12 6 / 0.6) 22%, rgb(20 12 6 / 0.66) 60%, rgb(20 12 6 / 0.85) 100%);
   --app-background: #f7f4ef;
   --app-surface: #ffffff;
   --app-line: #ece6de;
@@ -974,6 +987,10 @@ body {
   }
 }
 /* Weicher dunkler Verlauf unten, damit weiße Schrift auf jedem Bild lesbar ist */
+.dish-tile-shade {
+  background: var(--app-dish-tile-shade);
+}
+
 .dish-shade {
   background: linear-gradient(to top, rgb(20 12 6 / 0.78) 0%, rgb(20 12 6 / 0.35) 45%, transparent 70%);
 }

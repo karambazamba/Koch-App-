@@ -156,6 +156,9 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Stell einen Timer für die Nudeln auf 8 Minuten", ["add_timer"]),
   S("Wir haben noch Paprika und Reis, was geht damit?", ["app_command", "set_meal", "add_recipe", "antwort"], { max: 3 }),
   S("Kannst du ein Rezept für Linsensuppe anlegen?", ["add_recipe"]),
+  // Tafel 122: „Rezept“ ohne Rezept → „Ja, gern“ schickt genau diese Bitte (Mia liefert Kurz und Ausführlich mit)
+  S("Schreib mir ein Rezept für Gemüselasagne.", ["add_recipe"]),
+  S("Timer 5 Minuten für die Béchamel", ["add_timer"]),
   // Montag ist am Prüftag (Mi) schon vorbei – eine Rückfrage ist richtig
   S("Tausch Montag und Mittwoch", ["move_meal", "set_meal", "rueckfrage"], { lage: ["plan"] }),
   S("Donnerstag doppelt kochen, Reste für Freitag", ["set_double"], { lage: ["plan"] }),

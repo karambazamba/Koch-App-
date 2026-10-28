@@ -22,9 +22,12 @@ jeweils als Baustein (`src/lib/core/features.ts`), alles Neue zuerst aus.
   Haus“ mit „Was koch ich daraus?“ = Spontan kochen, siehe `vorrat.md`),
   `BausteinSections.tsx`, `SwapSheet.tsx` (das eine Fenster „Was koche ich?“),
   `useMeals.ts`, `DemoFoodTile.tsx` (Beispielgericht), `DishPicture.tsx`.
-- Startseite: `FoodTile` in `src/components/heute/HomeTiles.tsx`,
-  `CookingTile.tsx` („Ich koche jetzt“, Schritte, „Gegessen“),
-  `AutoCooked.tsx` (im Layout: nach dem Essen als gekocht vermerken).
+- Startseite: `FoodTile` in `src/components/heute/HomeTiles.tsx` mit
+  `DishTile.tsx` (Tafel 122: Bild, Name groß, „Rezept“ | „Wochenplan“; beim
+  Kochen „Weiter kochen“), `OhneRezeptSheet.tsx` („Mia schreibt dir ein
+  Rezept dazu“), `AutoCooked.tsx` (im Layout: nach dem Essen als gekocht
+  vermerken). Reine Logik `lib/heute/essenKachel.ts` (Knöpfe, Unterzeile,
+  Namensgröße `titelAnzeige`, Verlauf/Kontrast).
 - Wochenplan: `src/lib/essen/mealPlan.ts` (Woche zusammensetzen, reine
   Änderungen, Speicher), `weekPlan.ts` (Planungswoche, Wochen-Vorgaben,
   Wunschtag), `templates.ts` (Lieblingswochen). Oberfläche
@@ -34,7 +37,10 @@ jeweils als Baustein (`src/lib/core/features.ts`), alles Neue zuerst aus.
 - Rezepte: `cookbook.ts`, `dishStatus.ts` („Kennt ihr“), `recipeSpeech.ts`,
   `baking/` (Backstube), `demoDish.ts`; Oberfläche
   `src/components/essen/rezepte/` (`CookbookList`, `RecipeView`,
-  `RecipeEditor`, `NewRecipeSheet`, `CookMode`, `MachineSteps`).
+  `RezeptZutaten`, `RezeptSchritte`, `RecipeEditor`, `NewRecipeSheet`,
+  `CookMode`, `KochOhr`, `heuteGericht`, `MachineSteps`). Schnellanleitung
+  `lib/essen/kurz/` (Kurzfassungen `daten1–3.ts`, `ansicht.ts`, `mia.ts`),
+  Kochmodus rein `lib/essen/kochModus.ts`.
 - Ideen/Spontan: `ideas.ts`, `useIdeas.ts`, `dishIdeas.ts` (`DISHES`,
   `matchStock`, `soonToUse`), `useStock.ts`, `spontan.ts`, `spontanTake.ts`,
   `spontanFilters.ts`, `leftovers/` (Gesagtes zerlegen), `wishes.ts`,
@@ -71,15 +77,18 @@ Alle Schlüssel aus `src/lib/core/storage.ts`:
 - `wasgibts.vorlagen` v1 (Sicherung): Lieblingswochen `{ templates }`, je
   Wochentag Rezept oder Freitext.
 - `wasgibts.kochbuch` v3 (Sicherung): `Recipe` mit Kategorie
-  (fleisch/vegetarisch/fisch/cheatday), Zutaten, Schritten, `favorite`,
+  (fleisch/vegetarisch/fisch/cheatday), Zutaten, Schritten, optional
+  `shortSteps` (Schnellanleitung von Mia, additiv ohne neue Version), `favorite`,
   `cookedCount`, `lastCookedAt`, `known`, `kind` (kochen/backen), `oven`,
   `pan`, `kidSteps`, `machineSteps`. Migration: bis v1 gelten eigene Rezepte
   als bekannt, bis v2 wird Backen am Namen erkannt.
 - `wasgibts.gekocht` v1 (Sicherung): je Kochtag Titel, `how` (auto/marked),
   Zähler-Stand davor, aus dem Vorrat Genommenes, verbrauchte Zutaten.
 - `wasgibts.wuensche` v1 (Sicherung): Wünsche (`who`, `personId`, `dish`).
-- Nur auf dem Gerät: `wasgibts.kochen` v1 (heute gestartetes Kochen,
-  abgehakte Schritte), `wasgibts.tipps` v1 (gezeigte Gesundheits-Tipps je
+- Nur auf dem Gerät: `wasgibts.kochen` v2 (nur heute: gestartetes Kochen,
+  abgehakte/durchgestrichene Schritte, Kochmodus-Stand `at`, abgehakte
+  Zutaten `zutaten`; v1 → v2 ergänzt leer), `wasgibts.rezeptansicht` v1
+  („So geht’s“ Kurz/Ausführlich, pro Gerät, nicht in der Sicherung), `wasgibts.tipps` v1 (gezeigte Gesundheits-Tipps je
   Woche, ausprobiert/abgelehnt), `wasgibts.ideen` v1 (Tagesstand der Ideen –
   wird derzeit nur gelesen, nie geschrieben), `wasgibts.spontan.filter`
   (Sitzung). `wasgibts.maschinenansicht` (Thermomix-Ansicht, in der Sicherung).
@@ -200,15 +209,15 @@ Alle Schlüssel aus `src/lib/core/storage.ts`:
   Backstube“ (20 eingebaute Rezepte, ohne die schon übernommenen).
 - „+“: „<Name> erzählen“ (Sprache/Tippen → `parseSpokenRecipe`, regelbasiert,
   Vorschau) oder „Selbst schreiben“ (`/kochbuch/bearbeiten`).
-- Rezeptseite: Bild voll, runde Knöpfe (Zurück, Herz, „…“ mit Bearbeiten,
-  Teilen, Löschen bzw. „In unsere Rezepte“ = `adoptBuiltin`), Personen-Zähler
-  rechnet Zutaten um (`?personen=` = nur heute), „Jetzt kochen“/„Zusammen
-  backen“, „Für einen Tag einplanen“ (nächste 7 Tage), Schalter „Kennen wir“.
-- Kochmodus `/kochbuch/kochen?id=` (`CookMode`): erst Zutaten (mit Backofen
-  und Form), dann ein Schritt je Seite, Weiter/Zurück am Inhaltsende,
-  Bildschirm bleibt an, „Vorlesen an/aus“ und „Nochmal“, Schritte mit Zeit
-  bieten „<n> Min – ich sag Bescheid“ (sichtbarer Timer, Ton), Kinder-Schritte
-  „🧒 <Kind> darf jetzt:“ reihum (nur mit Kindern).
+- Rezeptseite (Reihenfolge seit Tafel 122, siehe unten): Bild mit „‹ Heute“
+  und „…“ (Bearbeiten, Teilen, Löschen bzw. „In unsere Rezepte“ =
+  `adoptBuiltin`), „Los, Schritt für Schritt“/„Zusammen backen“, Zutaten
+  (Personen-Zähler rechnet um, `?personen=` = nur heute), „So geht’s“,
+  Infozeile mit Herz, „Für einen Tag einplanen“ (nächste 7 Tage), „Kennen wir“.
+- Kochmodus `/kochbuch/kochen?id=` (`CookMode`, seit Tafel 122 dunkel, siehe
+  unten): erst Zutaten (mit Backofen und Form), dann ein Schritt je
+  Bildschirm, Bildschirm bleibt an, Vorlesen an/aus oben rechts, Kinder-Schritte
+  „<Kind> darf jetzt:“ reihum (nur mit Kindern).
 - Thermomix: mit `kitchenMachine: "thermomix"` und `machineSteps` Umschalter
   „Mit Thermomix“/„Klassisch“ (`MachineSteps`), rein beschreibend.
 - „Kennt ihr“ (`recipeIsKnown`): von Hand markiert oder oft genug gekocht.
@@ -425,7 +434,7 @@ Ideen“. Verschwindet mit dem ersten eigenen Gericht oder dem Beispiel-Tag.
   `gerichtBilder`, `bildVarianten` (je `.test.ts`; Hilfen `hilfen.ts`).
   Werkzeuge: `tests/begleitung/werkzeugeEssen.test.ts`.
 - Durchklick `e2e/ablaeufe/essen.mjs`: `essen`, `rezept`; `start.mjs`
-  `umleitungen` (`/ideen`, `/schnellkueche`).
+  `umleitungen` (`/ideen`, `/schnellkueche`); `kochmodus.mjs` (Tafel 122).
 
 ## Essen-Kachel – immer Bild, gezeigtes Gericht immer wählbar (v0.116.0)
 
@@ -445,3 +454,82 @@ Ideen“. Verschwindet mit dem ersten eigenen Gericht oder dem Beispiel-Tag.
 ## Fehler raus (v0.122.0)
 
 - Löschen über `ConfirmDialog` + „Gelöscht · Rückgängig“ (kein `window.confirm`). Kochmodus mit `&personen=N` (`personsParam`, `scaledAmount`). Variante `hackbraten` (Scheiben vom Laib). Herz in der Infozeile. „Kochmodus ›“, „Unsere Rezepte“, Kochmodus ohne Emojis. „Rezept erzählen“ ohne eigenes Mikro. Rezept-Links nur über `recipeHref` (nur wenn es das Rezept gibt). Tests `tests/essen/essenOhneFehler.test.ts`.
+
+## Essen-Kachel „Rezept“ und Kochmodus (Tafel 122, A-025)
+
+Ersetzt den Kachel-Nachtrag „Ich koche jetzt“ (Tafel 121) und die eigene
+Koch-Kachel (`CookingTile` ist weg).
+
+**Essen-Kachel (S und M, `DishTile`)**
+- Bild füllt die Kachel, darüber der Verlauf `--app-dish-tile-shade` (oben
+  leicht, unten dunkel). `kontrastWeiss` prüft: weiße Schrift auf dem hellsten
+  Bild überall, wo Text steht, ≥ 4,5:1 (Test, Token = geprüfter Verlauf).
+- Oben links die Pille: Kochidee „Was anderes?“ (Linien-Icon Shuffle, wie
+  bisher) bzw. ohne Kochidee „Was anderes?“ = nächste Idee (`naechsteIdee`).
+- Mitte linksbündig: „ESSEN · 18:30“ (ohne Uhrzeit „ESSEN“, nach dem Essen
+  „MORGEN · DO“), Name groß – S 20 px, M 24 px; passt er nicht in 2 Zeilen,
+  etwas kleiner (bis 15 px), sehr lange Namen in S an einer Wortgrenze mit
+  „…“ gekürzt, nie mitten im Wort (`titelAnzeige`, Zeichenbreiten von Plus
+  Jakarta Sans 800 gemessen; Test: alle 150 Gerichte auf dem iPhone SE).
+  Darunter `essenUnterzeile`: „90 Min · auf die Liste: Karotte“, sonst „90
+  Min · alles im Haus“, ohne Vorrat-Daten nur „90 Min“, beim Kochen „Schritt 3
+  von 6“.
+- Unten zwei gleich breite Knöpfe (44 px): links weiß, Schrift dunkles Orange
+  (`on-photo-ink`) – „Rezept“ (Buch), beim Kochen „Weiter kochen“ (Mütze),
+  ohne Gericht „Vorschlag“ (Glühbirne, öffnet `GerichtSheet`); rechts weiß
+  85 % „Wochenplan“ bzw. bei S „Woche“ (Kalender) → `/?seite=essen&zu=woche`,
+  „Die nächsten 7 Tage“ scrollt in Sicht. Kein Kochtag: nur „Wochenplan“.
+- „Rezept“: Rezept des Eintrags, sonst eingebautes über den Titel
+  (`rezeptIdFuer`, Wochenkarten-Gerichte), mit `&personen=` des Tages. Eigener
+  Eintrag ohne Rezept: `OhneRezeptSheet` mit Name, „Mia schreibt dir ein
+  Rezept dazu.“ und „Ja, gern“ (Bitte „Schreib mir ein Rezept für …“ an Mia).
+- Rest der Kachel: geplant → Tagesansicht (`TagFenster`), Vorschlag →
+  `GerichtSheet`, frei → Essen-Seite. Beispiel-Tag gleich (Rezept = Beispiel-Rezept).
+- Kocht gerade = Kochmodus heute geöffnet (`at`) oder „Ich koche jetzt“ (Mia).
+  Nach „Gegessen“ zeigt die Kachel wie bisher das Gericht bzw. den Vorschlag für morgen.
+
+**Rezeptseite**: großes Bild, „‹ Heute“ als weiße Pille (`BackButton pill`,
+Name der vorigen Seite), im Bild unten „HEUTE · 18:30 · FÜR 5“ (Heute nur beim
+Gericht von heute, Personen aus dem Haushalt bzw. `?personen=`), Name, „90 Min
+· alles im Haus bis auf Karotte“ (`rezeptVorratZeile`). Direkt darunter „Los,
+Schritt für Schritt“ (50 px, volle Breite). Läuft ein Timer, steht oben
+„⏱ 7:42 · Tomatensoße“ (`KochTimerLeiste`, Linien-Icon). „Zutaten“
+(`RezeptZutaten`): Kästchen zum Abhaken (nur heute), Mengen für die
+Personenzahl; nicht im Haus → „+ Liste“ (eigener Artikel mit Gericht) bzw.
+„auf der Liste“. „So geht’s“ (`RezeptSchritte`) mit `Segmented` „Kurz |
+Ausführlich“: Standard Kurz, die Wahl merkt sich das Gerät
+(`wasgibts.rezeptansicht`). Kurz = `kurzSchritte`: eigene Kurzfassung (Mia),
+sonst fest hinterlegt (alle 159 eingebauten Kochrezepte inkl. der 150 Gerichte
+und die 6 Beispielgerichte, `lib/essen/kurz/daten*.ts`, je Zeile ≤ 8 Wörter,
+gleiche Schrittzahl, gleiche Zeiten), sonst erster Satz je Schritt. Zeiten
+stehen als Chip daneben (`schrittZeiten`, Text ohne Zeit `ohneZeit`) und
+starten `startStepTimer` – derselbe Timer wie im Kochmodus (je Schritt nur
+einer). Schritt antippen = durchgestrichen (nur heute, `toggleStep`). Am Ende
+„Gegessen“ beim Gericht von heute.
+
+**Kochmodus** (`CookMode`, Leiste weg): dunkel (`bg-cook`), oben ✕ (zurück zum
+Rezept, ohne Nachfrage), „Schritt 3 von 6“ (Zutaten-Bildschirm „Zutaten“) und
+Punkte, Vorlesen an/aus. Ein Schritt je Bildschirm in 24 px. Zeit im Schritt →
+„Timer 10 Min“ (orange); der Timer liegt in `timer/`, läuft beim Blättern und
+Verlassen weiter, `TimerAlarm` meldet sich mit Ton und Karte. Unten „Zurück“ |
+„Weiter“ (56 px), Wischen (nicht vom linken Rand). Wake Lock (`useWakeLock`,
+sonst still). Der Schritt wird für heute gemerkt (`setCookAt`) – wieder öffnen
+= dort weiter (`startSchritt`); erledigte Schritte erscheinen auf der
+Rezeptseite durchgestrichen. Letzter Schritt: „Gegessen“ (Gericht von heute:
+als gekocht vermerken, Kochen beenden, Startseite, Mia sagt nur „Lasst es euch
+schmecken.“ bzw. „Lass es dir schmecken.“, durch `tidyMiaText`), sonst
+„Fertig“ (zurück zum Rezept).
+- Mia hört mit (`KochOhr`): Zeile mit kleinem Gesicht (nicht antippbar) „Sag
+  einfach „Weiter“ oder „Timer 10 Minuten“.“ Einmal antippen = „Mikro an“
+  (gemerkt als Einmal-Hinweis `koch-ohr`); mit Mikro-Freigabe hört sie danach
+  still mit (`useSpeechInput` lang, nach jedem Befehl `reset()`), nie von selbst
+  fragen. `kochBefehl` versteht weiter, zurück, nochmal (liest den Schritt
+  vor), Timer X Minuten, fertig (letzter Schritt = Gegessen, sonst weiter);
+  nur die letzten Wörter, lange Sätze lösen nichts aus.
+- Mia schreibt Rezepte mit Kurzfassung: `rezept_erstellen` hat das Pflichtfeld
+  `kurz` (je Schritt eine Zeile ≤ 8 Wörter); passt die Zahl nicht, kürzt die
+  App selbst (`kurzVonMia`). Prüfstand +2 („Schreib mir ein Rezept für
+  Gemüselasagne.“, „Timer 5 Minuten für die Béchamel“).
+- Tests: `tests/heute/essenKachel.test.ts`, `tests/essen/schnellanleitung.test.ts`,
+  `tests/essen/kochmodus.test.ts` (Befehls-Prüfstand 30 Sätze ≥ 95 %),
+  `tests/begleitung/werkzeugeEssen.test.ts`; Durchklick `kochmodus.mjs`.

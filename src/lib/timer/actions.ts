@@ -58,3 +58,15 @@ export function stopwatch(action: "start" | "stop") {
   changeTimers((s, n) => (action === "start" ? startStopwatch(s, n) : pauseStopwatch(s, n)));
   nudgePhase();
 }
+
+/**
+ * Timer aus einem Rezept-Schritt (Kochmodus und Timer-Chip auf der
+ * Rezeptseite, Tafel 122): derselbe Timer wie überall, läuft beim Blättern
+ * weiter, meldet sich mit Ton und Karte (`TimerAlarm`). Läuft für diesen
+ * Schritt schon einer, kein zweiter. true = läuft (neu oder schon).
+ */
+export function startStepTimer(step: string, minutes: number, name: string): boolean {
+  const nowMs = now().getTime();
+  if (loadTimers().timers.some((t) => t.step === step && !isExpired(t, nowMs))) return true;
+  return startTimer({ name, minutes, step }) !== null;
+}
