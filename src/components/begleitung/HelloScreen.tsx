@@ -3,19 +3,23 @@
 // Erster Start (nur ganz am Anfang oder nach "Neu anfangen"): der
 // Hallo-Bildschirm nach Tafel 55 – Mia groß und rund, „Moin, ich bin Mia.“
 // (Name in Orange, eine Zeile; die einzige Stelle, an der sie sich vorstellt), „Erzähl einfach, was ansteht. / Ich sortier das.“ (zwei
-// Zeilen), „Los geht’s“, mit Konten „Schon ein Konto? Anmelden“ und unten nur
+// Zeilen), darunter klein die drei Sätze zur Zustimmung und das Pflicht-
+// Häkchen (A-027: „Bevor’s losgeht“ ist kein eigener Schritt mehr; das
+// Häkchen speichert die Einwilligung sofort, `BedingungenHaken`), „Los
+// geht’s“ erst mit Häkchen, mit Konten „Schon ein Konto? Anmelden“ und unten nur
 // ein ruhiger, mittiger Abschluss (Tafel 84, Variante A – kein kleines Logo,
 // die große Mia reicht): „Gemacht in Eutin von KARAMBA Eis“, darunter leiser
-// „Datenschutz · Impressum“ (Links mit 44-px-Tippfläche). Ablauf:
+// „Nutzungsbedingungen · Datenschutz · Impressum“ (Links mit 44-px-Tippfläche). Ablauf:
 //   0,0 s Mia ploppt auf, 0,95 s Überschrift tippt sich ein (sie spricht
 //   dabei), 1,8 s Zeile, 2,0 s Freudensprung (ducken, eine Drehung, Landung
 //   mit Funken, „Ich bin bereit!“, zwei kleine Hüpfer, „Los geht’s“
 //   pulsiert zweimal), 2,2 s „Los geht’s“, Link und Abschluss unten
 // Danach blinzelt sie, die Augen folgen dem Finger (max. ~3 px); antippen =
 // kitzelig: kichernd wackeln, Smiley-Augen, drei Herzen, kleiner Satz
-// (während des Sprungs erst danach). „Los geht’s“ fragt einmal
-// den Look und startet frisch (`startFresh`), Mia fliegt in die Jetzt-Karte
-// (`hello.ts`). Die Begrüßung läuft genau einmal: erst wenn die Seite fertig
+// (während des Sprungs erst danach). „Los geht’s“ führt zu „Für wen soll ich
+// sortieren?“ (Bildschirm 2), das startet frisch (`startFresh`), Mia fliegt in
+// die Jetzt-Karte (`hello.ts`). Braucht die KI einen Zugangscode, kommt danach
+// höchstens noch „Fast geschafft.“ (`CodeGate`) – zusammen höchstens 3. Die Begrüßung läuft genau einmal: erst wenn die Seite fertig
 // ist (nach dem Laden, Schrift da) – vorher ist alles unsichtbar; ein
 // Neuaufbau setzt sie fort statt neu. Bewegung reduzieren = alles sofort.
 
@@ -26,8 +30,8 @@ import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { DEFAULT_HELPER, avatarHex } from "@/lib/einstellungen/profile";
 import { startFresh } from "@/lib/einstellungen/welcomeStore";
 import { ZeigMalStep } from "@/components/begleitung/ZeigMalStep";
-import { ZustimmungStep } from "@/components/datenschutz/ZustimmungStep";
-import { einwilligungErteilt } from "@/lib/datenschutz/einwilligung";
+import { BedingungenHaken, useBedingungenOk } from "@/components/datenschutz/BedingungenHaken";
+import { VOR_DEM_START } from "@/lib/datenschutz/rechtstexte";
 import { expectReplace } from "@/lib/core/navigation";
 import { useCloudMode } from "@/lib/konten/backend";
 import { HELLO_JUMP_MS, HELLO_READY, HELLO_T, helloElapsed, helloJump, helloTapText, markErsterStart, markHelloShown, reducedMotion, setHelloElapsed, setHelloFlight } from "@/lib/core/hello";
@@ -37,7 +41,7 @@ import type { AvatarZustand } from "@/lib/core/avatarState";
 import type { Haushalt } from "@/lib/core/haushalt";
 
 const T = HELLO_T;
-type Schritt = "hallo" | "zustimmung" | "zeigmal";
+type Schritt = "hallo" | "zeigmal";
 const CHAR_MS = 45;
 const STEP = 30;
 /** So lange läuft der Takt (bis die Sprechblase nach dem Sprung weg ist) */
@@ -173,7 +177,7 @@ export function HelloScreen() {
   }, [still]);
   const show = (from: number) => (still ? "" : at >= from ? "hello-in" : "opacity-0");
 
-  // „Los geht’s“ → „Bevor’s losgeht“ (nur ohne Zustimmung) → „Zeig mal“ → Startseite mit Beispiel-Tag.
+  // Häkchen + „Los geht’s“ → „Für wen soll ich sortieren?“ → Startseite mit Beispiel-Tag.
   // Jeder Schritt ist ein Eintrag im Verlauf: die Zurück-Geste geht genau einen Schritt zurück.
   const [schritt, setSchritt] = useState<Schritt>("hallo");
   const tiefe = useRef(0);
@@ -181,7 +185,7 @@ export function HelloScreen() {
     const onPop = (e: PopStateEvent) => {
       const s = (e.state as { hallo?: Schritt } | null)?.hallo;
       tiefe.current = Math.max(0, tiefe.current - 1);
-      setSchritt(s === "zustimmung" || s === "zeigmal" ? s : "hallo");
+      setSchritt(s === "zeigmal" ? s : "hallo");
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -191,7 +195,11 @@ export function HelloScreen() {
     tiefe.current += 1;
     setSchritt(s);
   };
-  const losGehts = () => weiterZu(einwilligungErteilt("bedingungen") ? "zeigmal" : "zustimmung");
+  // Zustimmung ist Pflicht für alle: „Los geht’s“ erst mit Häkchen (gespeichert wird beim Antippen des Häkchens)
+  const zugestimmt = useBedingungenOk();
+  const losGehts = () => {
+    if (zugestimmt) weiterZu("zeigmal");
+  };
   const start = (r: DOMRect | null, haushalt: Haushalt) => {
     setHelloFlight(r && r.width ? { x: r.left, y: r.top, size: r.width } : null);
     // Standard „Farbig“ (die Look-Frage entfällt; „Lieber schlicht?“ kommt nach 3 Tagen einmal als Hinweis)
@@ -212,7 +220,8 @@ export function HelloScreen() {
     <main className="fixed inset-0 z-40 overflow-y-auto bg-background" aria-label="Willkommen">
       <div className="mx-auto flex min-h-full w-full max-w-lg flex-col items-center px-6 pb-[calc(env(safe-area-inset-bottom)+2.25rem)] [@media(max-height:620px)]:pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-[calc(env(safe-area-inset-top)+2.5rem)] text-center [@media(max-height:620px)]:pt-[calc(env(safe-area-inset-top)+0.75rem)]">
         <div className="flex w-full flex-1 flex-col items-center justify-center pb-4">
-          <div className="relative">
+          {/* Kleine Bildschirme (SE): Mia etwas kleiner, damit Zustimmung und „Los geht’s“ ohne Scrollen passen */}
+          <div className="relative [@media(max-height:700px)]:-my-3 [@media(max-height:700px)]:scale-[0.82]">
             <span className="hello-shadow" data-sprung={jump.on ? "an" : undefined} aria-hidden />
             <div className="hello-jump" data-sprung={jump.on ? "an" : undefined} data-kitzel={tap ? "an" : undefined} style={{ "--jump": `${jumpHeight}px` } as CSSProperties}>
               <div className="hello-spin">
@@ -250,7 +259,7 @@ export function HelloScreen() {
                 </span>
               ))}
           </div>
-          <h1 tabIndex={-1} className="mt-8 min-h-[38px] whitespace-nowrap text-[clamp(26px,9vw,38px)] font-extrabold leading-tight tracking-tight outline-none" aria-label={title}>
+          <h1 tabIndex={-1} className="mt-8 [@media(max-height:700px)]:mt-5 min-h-[38px] whitespace-nowrap text-[clamp(26px,9vw,38px)] font-extrabold leading-tight tracking-tight outline-none" aria-label={title}>
             <span aria-hidden>
               {shown.slice(0, lead.length)}
               <span className="text-accent">{shown.slice(lead.length, lead.length + name.length)}</span>
@@ -265,7 +274,25 @@ export function HelloScreen() {
           </p>
         </div>
         <div className={`flex w-full flex-col items-center gap-1 ${show(T.buttons)}`}>
-          <button key={`los${jump.nudge}`} type="button" onClick={losGehts} className={`h-14 w-full rounded-field text-[17px] font-bold text-on-color active:scale-[0.98] ${jump.nudge ? "hello-nudge" : ""}`} style={{ backgroundColor: color }}>
+          {/* Zustimmung (früher eigener Schritt „Bevor’s losgeht“): drei kurze Sätze klein, darunter das Häkchen */}
+          <div className="mb-2 flex w-full flex-col gap-1 text-left" data-hallo-zustimmung>
+            <p className="text-[13px] leading-snug text-muted">
+              {VOR_DEM_START.saetze.map((satz) => (
+                <span key={satz} className="block">
+                  {satz}
+                </span>
+              ))}
+            </p>
+            <BedingungenHaken links={false} />
+          </div>
+          <button
+            key={`los${jump.nudge}`}
+            type="button"
+            onClick={losGehts}
+            disabled={!zugestimmt}
+            className={`h-14 w-full rounded-field text-[17px] font-bold text-on-color active:scale-[0.98] disabled:opacity-40 ${jump.nudge && zugestimmt ? "hello-nudge" : ""}`}
+            style={{ backgroundColor: color }}
+          >
             Los geht’s
           </button>
           {/* Tafel 22: nur mit Konten „Schon ein Konto? Anmelden“ – „Daten wiederherstellen“ steht in Einstellungen → Daten & App */}
@@ -280,6 +307,10 @@ export function HelloScreen() {
           <div className="mt-4 flex flex-col items-center [@media(max-height:620px)]:mt-1" data-hello-marke>
             <span className="whitespace-nowrap text-[clamp(11.5px,3.9vw,13px)] font-semibold text-muted">Gemacht in Eutin von KARAMBA Eis</span>
             <nav aria-label="Rechtliches" className="mt-2 flex items-center gap-1.5 text-[12px] font-semibold text-faint">
+              <Link href="/nutzungsbedingungen" className="hit inline-flex h-4 items-center">
+                Nutzungsbedingungen
+              </Link>
+              <span aria-hidden>·</span>
               <Link href="/datenschutz" className="hit inline-flex h-4 items-center">
                 Datenschutz
               </Link>
@@ -291,7 +322,6 @@ export function HelloScreen() {
           </div>
         </div>
       </div>
-      {schritt === "zustimmung" && <ZustimmungStep onDone={() => weiterZu("zeigmal")} />}
       {schritt === "zeigmal" && <ZeigMalStep onDone={start} />}
     </main>
   );

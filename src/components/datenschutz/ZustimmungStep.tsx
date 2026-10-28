@@ -1,7 +1,8 @@
 "use client";
 
-// „Bevor’s losgeht“: vor der App für alle (neue Nutzer nach „Los geht’s“,
-// bestehende einmal beim nächsten Öffnen, wieder bei neuer Textfassung).
+// „Bevor’s losgeht“: für bestehende Nutzer ohne gültige Zustimmung (einmal
+// beim nächsten Öffnen, wieder bei neuer Textfassung). Neue Nutzer haken
+// dasselbe direkt im Hallo-Bildschirm an (A-027, kein eigener Schritt).
 // Drei kurze Sätze, Links zu Datenschutz und Nutzungsbedingungen, Häkchen,
 // „Weiter“ erst mit Häkchen. Ohne Schließen: ohne Zustimmung geht es nicht
 // weiter, die Daten bleiben unberührt. Gespeichert wird Fassung und Zeit

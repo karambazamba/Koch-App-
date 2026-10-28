@@ -1,15 +1,17 @@
 "use client";
 
-// Testcode für Mias KI – EIN ruhiger Bildschirm im Stil des Hallo-Bildschirms
-// („Fast geschafft.“), gleich am Anfang statt erst im Chat. Ein Feld
-// (Passwort, ohne Autofill), „Los geht’s“, darunter leise „Ohne Code geht’s
-// auch …“ mit „Später“. Der Code wird nur auf dem Server geprüft.
+// Zugangscode für Mias KI – EIN ruhiger Bildschirm im Stil des Hallo-Bildschirms
+// („Fast geschafft.“), gleich am Anfang statt erst im Chat (höchstens der 3.
+// Bildschirm vor der App). Ein Feld (Passwort, ohne Autofill), darunter leise
+// „Groß/klein und Leerzeichen sind egal.“ (Prüfung nachsichtig,
+// `normalisiereZugangscode`), „Fertig“, darunter „Ohne Code geht’s auch …“
+// mit „Später“. Der Code wird nur auf dem Server geprüft.
 
 import { useEffect, useRef, useState } from "react";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { INPUT_BASE, buttonClass } from "@/components/ui/styles";
 import { saveAccessCode } from "@/lib/begleitung/zugang";
-import { closeCodeScreen, setCodeLater } from "@/lib/begleitung/codeAbfrage";
+import { CODE_TEXTE, closeCodeScreen, setCodeLater } from "@/lib/begleitung/codeAbfrage";
 import { helperName } from "@/lib/einstellungen/profile";
 import { useBackCloses } from "@/lib/core/useBackCloses";
 
@@ -50,9 +52,9 @@ export function CodeScreen({ change = false }: { change?: boolean }) {
             <BegleitungAvatar size={96} zustand="ruhig" groesse="gross" stabil />
           </span>
           <h1 id="code-titel" className="text-[30px] font-extrabold leading-tight tracking-tight">
-            {change ? "Testcode ändern" : "Fast geschafft."}
+            {change ? CODE_TEXTE.aendern : CODE_TEXTE.titel}
           </h1>
-          <p className="max-w-xs text-[17px] leading-snug text-muted">Gib deinen Testcode ein, dann kann ich zuhören und mitdenken.</p>
+          <p className="max-w-xs text-[17px] leading-snug text-muted">{CODE_TEXTE.satz}</p>
           <input
             ref={input}
             type="password"
@@ -64,17 +66,21 @@ export function CodeScreen({ change = false }: { change?: boolean }) {
             spellCheck={false}
             data-1p-ignore
             data-lpignore="true"
-            aria-label="Testcode"
-            placeholder="Testcode"
+            aria-label={CODE_TEXTE.feld}
+            aria-describedby="code-hinweis"
+            placeholder={CODE_TEXTE.feld}
             className={`${INPUT_BASE} h-14 w-full max-w-xs px-4 text-center`}
           />
+          <p id="code-hinweis" className="-mt-3 text-[13px] text-muted">
+            {CODE_TEXTE.hinweis}
+          </p>
           <p className="min-h-6 text-[15px] font-semibold text-accent-strong" role="status">
             {state === "falsch" ? "Der Code passt nicht. Nochmal?" : state === "pause" ? "Kurz Pause. Gleich nochmal?" : state === "offline" ? "Komm grad nicht durch. Gleich nochmal?" : ""}
           </p>
         </div>
         <div className="flex w-full max-w-xs flex-col items-center gap-3">
           <button type="submit" disabled={!code.trim() || state === "busy"} className={`${buttonClass("primary", "lg")} w-full`}>
-            Los geht’s
+            {CODE_TEXTE.knopf}
           </button>
           <p className="text-center text-sm text-muted">
             Ohne Code geht’s auch: Schreiben mit ＋ funktioniert immer.{" "}

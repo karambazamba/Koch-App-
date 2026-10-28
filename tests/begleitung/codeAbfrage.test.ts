@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { KI_ERLAUBT, memoryStorage } from "../helpers";
 import { codeScreenNoetig } from "@/lib/begleitung/codeAbfrage";
@@ -34,7 +35,7 @@ afterEach(() => {
   delete (globalThis as { window?: unknown }).window;
 });
 
-describe("Testcode gleich am Anfang", () => {
+describe("Zugangscode gleich am Anfang", () => {
   it("rein: nie vor Hallo/Zustimmung; sonst wenn der Code fehlt und nicht „Später“ – oder angefordert", () => {
     expect(codeScreenNoetig({ askCode: true, later: false, requested: false, ready: false })).toBe(false);
     expect(codeScreenNoetig({ askCode: true, later: false, requested: true, ready: false })).toBe(false);
@@ -74,7 +75,7 @@ describe("Testcode gleich am Anfang", () => {
     expect(steht(true)).toBe(true);
   });
 
-  it("richtiger Code setzt „Später“ zurück; „Testcode ändern“ öffnet mit change", () => {
+  it("richtiger Code setzt „Später“ zurück; „Zugangscode ändern“ öffnet mit change", () => {
     abfrage.setCodeLater(true);
     abfrage.setCodeLater(false);
     expect(local.getItem("wasgibts.zugangscode.spaeter")).toBeNull();
@@ -84,6 +85,29 @@ describe("Testcode gleich am Anfang", () => {
     expect(abfrage.codeScreenState()).toBe(a);
     abfrage.resetCodeAbfrageForTests();
     expect(abfrage.codeScreenState().open).toBe(false);
+  });
+
+  it("Einladungs-Weg: nach dem Beitreten kein Bildschirm, erst beim ersten KI-Versuch", () => {
+    abfrage.codeErstBeimKiVersuch();
+    expect(steht(true)).toBe(false);
+    abfrage.onKiVersuchOhneCode();
+    expect(steht(true)).toBe(true);
+    const login = readFileSync("src/components/konten/WelcomeLogin.tsx", "utf8");
+    expect(login).toMatch(/if \(einladung\) codeErstBeimKiVersuch\(\);/);
+  });
+
+  it("Texte: überall Zugangscode, Knopf „Fertig“, Hinweis unter dem Feld", () => {
+    expect(abfrage.CODE_TEXTE).toEqual({
+      titel: "Fast geschafft.",
+      aendern: "Zugangscode ändern",
+      satz: "Gib deinen Zugangscode ein, dann kann ich zuhören und mitdenken.",
+      feld: "Zugangscode",
+      hinweis: "Groß/klein und Leerzeichen sind egal.",
+      knopf: "Fertig",
+    });
+    const screen = readFileSync("src/components/begleitung/CodeScreen.tsx", "utf8");
+    expect(screen).not.toContain("Los geht’s");
+    for (const f of ["src/components/begleitung/CodeScreen.tsx", "src/components/einstellungen/settings/MiaView.tsx", "src/lib/begleitung/client.ts", "src/lib/core/storage.ts"]) expect(readFileSync(f, "utf8")).not.toMatch(/Testcode/);
   });
 
   it("ohne Speicher gilt nichts als „Später“", async () => {

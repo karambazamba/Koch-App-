@@ -1,15 +1,27 @@
-// Testcode für Mias KI gleich am Anfang (SOFORT-Auftrag): EIN ruhiger
-// Bildschirm „Fast geschafft.“ nach Zustimmung und erstem Start bzw. beim
-// nächsten Öffnen für Bestandsnutzer ohne Code. „Später“ wird gemerkt; dann
-// kommt derselbe Bildschirm einmal beim ersten KI-Versuch (je Sitzung). Im
-// Chat gibt es keine eigene Abfrage mehr. Der Code selbst wird nur auf dem
-// Server geprüft (`zugang.ts` → `/api/lotte`, Header, nie URL).
+// Zugangscode für Mias KI gleich am Anfang (SOFORT-Auftrag, A-027): EIN ruhiger
+// Bildschirm „Fast geschafft.“ nach Hallo und „Für wen“ bzw. beim nächsten
+// Öffnen für Bestandsnutzer ohne Code. „Später“ wird gemerkt; dann kommt
+// derselbe Bildschirm einmal beim ersten KI-Versuch (je Sitzung). Wer per
+// Einladung kommt, startet mit „Später“ (`codeErstBeimKiVersuch`): Mail-Code →
+// Startseite → Zugangscode erst beim ersten KI-Versuch. Im Chat gibt es keine
+// eigene Abfrage mehr. Der Code selbst wird nur auf dem Server geprüft
+// (`zugang.ts` → `/api/lotte`, Header, nie URL; nachsichtig).
 
 import { readRaw, writeRaw } from "@/lib/core/localStore";
 import type { StorageKey } from "@/lib/core/storage";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 
 const LATER_KEY: StorageKey = "wasgibts.zugangscode.spaeter";
+
+/** Texte des Bildschirms (überall „Zugangscode“, nie „Testcode“) */
+export const CODE_TEXTE = {
+  titel: "Fast geschafft.",
+  aendern: "Zugangscode ändern",
+  satz: "Gib deinen Zugangscode ein, dann kann ich zuhören und mitdenken.",
+  feld: "Zugangscode",
+  hinweis: "Groß/klein und Leerzeichen sind egal.",
+  knopf: "Fertig",
+} as const;
 
 type Request = { open: boolean; change: boolean };
 let request: Request = { open: false, change: false };
@@ -36,7 +48,7 @@ export function setCodeLater(on: boolean) {
   emit();
 }
 
-/** Bildschirm öffnen – `change` = aus den Einstellungen („Testcode ändern“) */
+/** Bildschirm öffnen – `change` = aus den Einstellungen („Zugangscode ändern“) */
 export function requestCodeScreen(change = false) {
   request = { open: true, change };
   emit();
@@ -45,6 +57,14 @@ export function requestCodeScreen(change = false) {
 export function closeCodeScreen() {
   request = { open: false, change: false };
   emit();
+}
+
+/**
+ * Einladungs-Weg (/e/…): nicht gleich nach dem Beitreten fragen, sondern erst
+ * beim ersten KI-Versuch – wie nach „Später“.
+ */
+export function codeErstBeimKiVersuch() {
+  setCodeLater(true);
 }
 
 /** Ein KI-Versuch ohne Code (Mia, Chat, Sprechen …): einmal je Sitzung den Bildschirm zeigen */

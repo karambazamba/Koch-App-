@@ -1,4 +1,4 @@
-// Erster Start (v0.94, v0.120): Hallo → „Bevor’s losgeht“ → „Für wen soll ich sortieren?“ → Beispiel-Tag.
+// Erster Start (v0.94, v0.120, A-027): Hallo mit Häkchen → „Für wen soll ich sortieren?“ → (Zugangscode, nur wenn nötig) → Beispiel-Tag.
 // Keine Look-Frage mehr: Standard „Farbig“, nach 3 Tagen einmal „Lieber schlicht?“.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
@@ -8,7 +8,7 @@ import { showDarkTip, showLookTip } from "@/lib/core/darkTip";
 
 const state = (look = false, done = false) => ({ version: 1 as const, since: "2026-10-20", done, look });
 
-describe("Bildschirm 3 „Für wen soll ich sortieren?“ (Mia für alle)", () => {
+describe("Bildschirm 2 „Für wen soll ich sortieren?“ (Mia für alle)", () => {
   it("Texte aus persona.ts, ohne Gedankenstriche, drei gleichwertige Knöpfe", () => {
     expect(ERSTER_START.titel).toBe("Kein Stress. Ich sortier deinen Alltag, Stück für Stück.");
     expect(ERSTER_START.frage).toBe("Für wen soll ich sortieren?");
@@ -21,6 +21,16 @@ describe("Bildschirm 3 „Für wen soll ich sortieren?“ (Mia für alle)", () =
     expect(src).not.toMatch(/aria-pressed|defaultValue/);
     expect(src).toContain("size={110}");
     expect(src).toContain("mia-zwinkern-einmal");
+  });
+
+  it("höchstens 3 Bildschirme: Hallo (mit Zustimmung) → Für wen → Zugangscode nur wenn nötig", () => {
+    const src = readFileSync("src/components/begleitung/HelloScreen.tsx", "utf8");
+    expect(src).toContain('type Schritt = "hallo" | "zeigmal";');
+    expect(src).not.toMatch(/"zustimmung"/);
+    // Der Code-Bildschirm steht erst nach dem Hallo (Profil da) und nur, wenn die KI einen Code braucht
+    const gate = readFileSync("src/components/begleitung/CodeGate.tsx", "utf8");
+    expect(gate).toMatch(/const ready = Boolean\(profile\)/);
+    expect(gate).toMatch(/needs = Boolean\(status\?\.configured && status\.needsCode\)/);
   });
 
   it("Hallo-Ablauf ohne Look-Frage, Zurück geht einen Schritt", () => {

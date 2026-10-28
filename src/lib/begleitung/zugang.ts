@@ -6,7 +6,7 @@
 import { readRaw, writeRaw } from "@/lib/core/localStore";
 import type { StorageKey } from "@/lib/core/storage";
 import { einwilligungErteilt } from "@/lib/datenschutz/einwilligung";
-import { ACCESS_HEADER, ASSISTANT_ENDPOINT, type AssistantStatus } from "@/lib/begleitung/protocol";
+import { ACCESS_HEADER, ASSISTANT_ENDPOINT, normalisiereZugangscode, type AssistantStatus } from "@/lib/begleitung/protocol";
 import type { StimmeStatus } from "@/lib/begleitung/stimmeProtokoll";
 
 const DEVICE_KEY: StorageKey = "wasgibts.geraet";
@@ -35,7 +35,8 @@ function storeAccessCode(code: string) {
 
 /** Code einmal auf dem Server prüfen (Header, nie URL) und merken; „offline“ = keine Verbindung */
 export async function saveAccessCode(code: string): Promise<"ok" | "falsch" | "pause" | "offline"> {
-  const trimmed = code.trim();
+  // Nachsichtig: Groß/klein und Leerzeichen sind egal (der Server vergleicht genauso)
+  const trimmed = normalisiereZugangscode(code);
   if (!trimmed) return "falsch";
   try {
     const r = await fetch(ASSISTANT_ENDPOINT, {

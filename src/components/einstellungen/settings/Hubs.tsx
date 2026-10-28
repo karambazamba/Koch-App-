@@ -21,6 +21,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { clearProfile } from "@/lib/einstellungen/profileStore";
 import { PERSONS, sortBy } from "@/lib/core/sort";
 import { clearWelcome } from "@/lib/einstellungen/welcomeStore";
+import { HomeBildschirmRow } from "@/components/einstellungen/settings/HomeBildschirmRow";
 
 /** /profil/essen: Veggie-Tage, mag / mag nicht und was sonst zum Essen gehört */
 export function FoodHubView() {
@@ -138,6 +139,7 @@ export function DataView() {
       <PageHeader title="Daten & App" backHref="/profil" />
       <main className={`${PAGE_MAIN} gap-4`}>
         <DataSection onReset={() => setConfirmReset(true)} />
+        <HomeBildschirmRow />
         <AccountDataSection />
         <Link href="/profil/admin" className="hit self-center px-2 py-2 text-[13px] font-semibold text-muted">
           Für Entwickler

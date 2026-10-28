@@ -185,7 +185,7 @@ describe("askAssistant", () => {
     vi.stubGlobal("fetch", vi.fn(async () => ndjson([{ t: "error", error: "zugangscode" }])));
     await expect(ask()).rejects.toMatchObject({ reason: "zugangscode" });
     expect(local.getItem("wasgibts.zugangscode")).toBeNull();
-    // falscher Code beim KI-Versuch → der Testcode-Bildschirm kommt (nicht der Chat)
+    // falscher Code beim KI-Versuch → der Zugangscode-Bildschirm kommt (nicht der Chat)
     expect((await import("@/lib/begleitung/codeAbfrage")).codeScreenState().open).toBe(true);
     vi.stubGlobal("fetch", vi.fn(async () => ndjson([{ t: "error", error: "limit" }])));
     await expect(ask()).rejects.toMatchObject({ reason: "limit" });

@@ -81,6 +81,12 @@ export const ASSISTANT_ENDPOINT = "/api/lotte";
 /** Header mit dem Zugangscode der Familie */
 export const ACCESS_HEADER = "x-lotte-code";
 
+/**
+ * Zugangscode nachsichtig vergleichen: Groß/klein und Leerzeichen sind egal
+ * („Sonne 42“ = „sonne42“). Gilt in App und Server gleich.
+ */
+export const normalisiereZugangscode = (code: string) => code.normalize("NFC").replace(/\s+/g, "").toLocaleLowerCase("de-DE");
+
 /** Grenzen, damit Anfragen klein und günstig bleiben */
 export const LIMITS = {
   /** Zeichen pro Nachricht (eingefügte Mails dürfen länger sein) */

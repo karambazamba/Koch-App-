@@ -27,6 +27,7 @@ import { ImHausKarte } from "@/components/vorrat/ImHausKarte";
 import { isImHausVorschlag } from "@/lib/vorrat/reinsprechen";
 import { AdjustSheet, EarlierIdeas, SpontanAnswer } from "@/components/begleitung/SpontanBoard";
 import { TipBubble } from "@/components/begleitung/TipBubble";
+import { kiOkKarteZeigen, stimmeVomServer } from "@/lib/begleitung/kiOk";
 import type { useMarketChat } from "@/components/begleitung/useMarketChat";
 import type { SpontanChat } from "@/components/begleitung/useSpontanChat";
 
@@ -42,9 +43,9 @@ type Props = {
   data: AssistantData | null | undefined;
   name: string;
   voice: HelperVoice;
-  /** Zugangscode "Später" */
-  codeLater: boolean;
-  onCodeLater: () => void;
+  /** KI-OK-Karte mit „Nicht jetzt“ weggeklickt (nur die Karte, nicht der Zugangscode) */
+  consentLater: boolean;
+  onConsentLater: () => void;
   chat: ChatState;
   setChat: Dispatch<SetStateAction<ChatState>>;
   busy: boolean;
@@ -82,7 +83,7 @@ type Props = {
 /** Mia stellt sich nie vor: „Was steht an?“, morgens (5–11 Uhr) „Moin! Was steht an?“ */
 export const greetingText = (hour: number, minute = 0) => (hour >= 22 || hour < 6 ? miaSatz("nachtWach", null, () => (minute % 4) / 4) : hour >= 5 && hour < 11 ? "Moin! Was steht an?" : "Was steht an?");
 
-export function ChatHistory({ scrollRef, inputRef, status, data, voice, codeLater, onCodeLater, chat, setChat, busy, streaming, speakingId, tipsOn, adjusting, setAdjusting, spontan, kochidee, market, rules, onSubmit, onAsk, onApply, onClose, onListen, from = 0, showGreeting = true, topic, heard, heardWaits = false, waiting = "", children }: Props) {
+export function ChatHistory({ scrollRef, inputRef, status, data, voice, consentLater, onConsentLater, chat, setChat, busy, streaming, speakingId, tipsOn, adjusting, setAdjusting, spontan, kochidee, market, rules, onSubmit, onAsk, onApply, onClose, onListen, from = 0, showGreeting = true, topic, heard, heardWaits = false, waiting = "", children }: Props) {
   const { ideasFor, stockFor, headingFor, speechFor, takeIdea, moreIdeas, adjusting2, setAdjusting2, applyFilters, acceptUnsure } = spontan;
   /** Einen Punkt des offenen Vorschlags an- oder abwählen */
   const toggleOp = (id: string) =>
@@ -133,7 +134,9 @@ export function ChatHistory({ scrollRef, inputRef, status, data, voice, codeLate
             <MiaBubble lead>{greetingText(now().getHours(), now().getMinutes())}</MiaBubble>
           ) : null}
           {/* Kochidee geht ohne KI – der Zugangscode schiebt sich nicht davor */}
-          {status?.askConsent && data && !codeLater && !chat.kochtipp && <ConsentCard name={helperName(data.profile)} onLater={onCodeLater} />}
+          {data && status && kiOkKarteZeigen({ askConsent: status.askConsent, weggeklickt: consentLater, kochtipp: Boolean(chat.kochtipp) }) && (
+            <ConsentCard name={helperName(data.profile)} stimme={stimmeVomServer(status)} onLater={onConsentLater} />
+          )}
           {chat.turns.map((turn, i) => {
             if (i < from) return null;
             const last = i === chat.turns.length - 1;

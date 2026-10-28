@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { memoryStorage } from "../helpers";
 import { aiSetup, checkAccess, clientIp, takeDailySlot } from "@/lib/begleitung/guard";
 import { allowDaily, allowRequest, codeAttemptsLeft, noteWrongCode } from "@/lib/begleitung/rateLimit";
-import { ACCESS_HEADER, LIMITS } from "@/lib/begleitung/protocol";
+import { ACCESS_HEADER, LIMITS, normalisiereZugangscode } from "@/lib/begleitung/protocol";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -36,6 +36,16 @@ describe("KI nur mit Schlüssel UND Zugangscode", () => {
     expect(checkAccess(anfrage({ ...ip, [ACCESS_HEADER]: "sonne" }))).toBe("limit");
     expect(clientIp(anfrage(ip))).toBe("10.0.0.2");
     expect(clientIp(anfrage())).toBe("unbekannt");
+  });
+
+  it("Zugangscode nachsichtig: Groß/klein und Leerzeichen sind egal, Falsches bleibt falsch", () => {
+    vi.stubEnv("APP_ACCESS_CODE", "Sonne 42");
+    const ip = { "x-forwarded-for": "10.0.0.9" };
+    expect(checkAccess(anfrage({ ...ip, [ACCESS_HEADER]: "sonne42" }))).toBeNull();
+    expect(checkAccess(anfrage({ ...ip, [ACCESS_HEADER]: "  SONNE  42 " }))).toBeNull();
+    expect(checkAccess(anfrage({ ...ip, [ACCESS_HEADER]: "sonne4" }))).toBe("zugangscode");
+    expect(normalisiereZugangscode(" Mia\tSonne ")).toBe("miasonne");
+    expect(normalisiereZugangscode("   ")).toBe("");
   });
 
   it("takeDailySlot: Testmodus frei, sonst Tageslimit pro Gerät", () => {

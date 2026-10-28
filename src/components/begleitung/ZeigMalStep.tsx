@@ -1,6 +1,6 @@
 "use client";
 
-// Erster Start, Bildschirm 3 (nach „Bevor’s losgeht“): Mia für alle. Mia
+// Erster Start, Bildschirm 2 (nach dem Hallo mit Häkchen): Mia für alle. Mia
 // (110 px) oben, zwinkert einmal beim Erscheinen; darunter eine weiße
 // Sprechblase (Spitze zu Mia) mit „Kein Stress. Ich sortier deinen Alltag,
 // Stück für Stück.“ und der Frage „Für wen soll ich sortieren?“: drei

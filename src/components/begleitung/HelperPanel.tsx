@@ -93,8 +93,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   // Zuletzt per Mikrofon gefragt? Dann liest Lotte (Standard "automatisch") vor
   const [viaVoice, setViaVoice] = useState(Boolean(startListening));
   const [dictationHint, setDictationHint] = useState(false);
-  // Zugangscode "Später" – gilt, bis das Panel wieder geöffnet wird
-  const [codeLater, setCodeLater] = useState(false);
+  // KI-OK-Karte „Nicht jetzt“: schließt nur die Karte, bis das Panel wieder geöffnet wird (Einwilligung bleibt unerteilt, Zugangscode unberührt)
+  const [consentLater, setConsentLater] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -295,7 +295,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       void ask(t, undefined, rules);
       return;
     }
-    // KI eingerichtet, aber kein Testcode („Später“): einmal den Code-Bildschirm zeigen, die Regeln helfen trotzdem
+    // KI eingerichtet, aber kein Zugangscode („Später“): einmal den Code-Bildschirm zeigen, die Regeln helfen trotzdem
     if (status?.askCode) onKiVersuchOhneCode();
     if (rules(t)) return;
     setInput("");
@@ -520,8 +520,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           data={data}
           name={name}
           voice={voice}
-          codeLater={codeLater}
-          onCodeLater={() => setCodeLater(true)}
+          consentLater={consentLater}
+          onConsentLater={() => setConsentLater(true)}
           chat={chat}
           setChat={setChat}
           busy={busy}

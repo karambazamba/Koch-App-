@@ -93,9 +93,15 @@ describe("Seiten Datenschutz, Impressum, Nutzungsbedingungen", () => {
     expect(zustimmungNoetig("/", true)).toBe(false);
     expect(TEXT_VERSION.bedingungen).toBe(RECHTSTEXTE_STAND.version);
     expect(VOR_DEM_START.saetze).toHaveLength(3);
-    expect(VOR_DEM_START.haken).toBe("Ich akzeptiere die Nutzungsbedingungen und habe die Datenschutzerklärung gelesen.");
+    expect(VOR_DEM_START.haken).toBe("Ich akzeptiere die Nutzungsbedingungen und hab die Datenschutzerklärung gelesen.");
+    // A-027: ohne „ihr“ – und nie „keine Werbung“
+    expect(VOR_DEM_START.saetze).toEqual(["Deine Sachen bleiben auf diesem Handy. Mit Konto teilst du sie mit deinen Leuten.", "Ich bin eine KI und kann mich auch mal irren.", "Deine Daten werden nie verkauft."]);
     expect(readFileSync("src/app/layout.tsx", "utf8")).toContain("<ZustimmungGate />");
-    expect(readFileSync("src/components/begleitung/HelloScreen.tsx", "utf8")).toMatch(/weiterZu\(einwilligungErteilt\("bedingungen"\) \? "zeigmal" : "zustimmung"\)/);
+    // A-027: Zustimmung steht im Hallo-Bildschirm (Häkchen), „Los geht’s“ erst damit – kein eigener Schritt mehr
+    const hallo = readFileSync("src/components/begleitung/HelloScreen.tsx", "utf8");
+    expect(hallo).toContain("<BedingungenHaken links={false} />");
+    expect(hallo).toContain("disabled={!zugestimmt}");
+    expect(hallo).not.toContain("ZustimmungStep");
   });
 
   it("Seiten gibt es", () => {

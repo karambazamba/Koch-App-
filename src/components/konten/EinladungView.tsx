@@ -1,8 +1,10 @@
 "use client";
 
 // Einladungs-Link /e/<token> (Tafel 22, Rewrite auf /einladung): „<Name> lädt dich ein.“ – anmelden
-// (Apple/Google/E-Mail) und sofort Mitglied. Abgelaufen oder zurückgezogen:
-// eine freundliche Seite statt eines Fehlers.
+// per E-Mail-Code (Launch 1.0: nur E-Mail, Apple/Google kommen später) und
+// sofort Mitglied, dann die Startseite; der Zugangscode kommt erst beim
+// ersten KI-Versuch (A-027). Abgelaufen oder zurückgezogen: eine freundliche
+// Seite statt eines Fehlers.
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
