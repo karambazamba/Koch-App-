@@ -5,7 +5,8 @@
 // Schnellanleitung, jeder Schritt eine Zeile, alle sichtbar. Zeiten stehen
 // als Chip daneben und starten denselben Timer wie im Kochmodus. Schritt
 // antippen = durchgestrichen (nur heute). Am Ende „Gegessen“ beim Gericht von
-// heute – macht dasselbe wie im Kochmodus.
+// heute – macht dasselbe wie im Kochmodus. `vorschau` (A-038): nur lesen, der
+// Umschalter bleibt, kein Durchstreichen, keine Timer.
 
 import { Timer } from "lucide-react";
 import { CARD, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
@@ -22,7 +23,7 @@ const WAHL: { value: RezeptAnsicht; label: string }[] = [
   { value: "lang", label: "Ausführlich" },
 ];
 
-export function RezeptSchritte({ recipe, kids, onGegessen }: { recipe: Recipe; kids: boolean; onGegessen?: () => void }) {
+export function RezeptSchritte({ recipe, kids, onGegessen, vorschau = false }: { recipe: Recipe; kids: boolean; onGegessen?: () => void; vorschau?: boolean }) {
   const ansicht = useRezeptAnsicht();
   const session = useCooking(todayIso());
   const struck = session?.steps[recipe.id] ?? [];
@@ -39,6 +40,13 @@ export function RezeptSchritte({ recipe, kids, onGegessen }: { recipe: Recipe; k
         {lines.map((line, index) => {
           const done = struck.includes(index);
           const full = recipe.steps[index] ?? line;
+          if (vorschau)
+            return (
+              <li key={index} className="flex min-h-10 items-start gap-3 py-2 text-base" data-schritt>
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[13px] font-bold text-accent-strong">{index + 1}</span>
+                <span className="min-w-0 pt-px">{line}</span>
+              </li>
+            );
           return (
             <li key={index} className="flex min-h-11 items-center gap-2" data-schritt>
               <button type="button" role="checkbox" aria-checked={done} onClick={() => toggleStep(recipe.id, index)} className="flex min-h-11 min-w-0 flex-1 items-start gap-3 py-2 text-left text-base">

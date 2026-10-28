@@ -134,8 +134,9 @@ describe("Rezept-Links nur zu Rezepten, die es gibt", () => {
     expect(recipeHref({}, builtin, 2)).toBe(`/kochbuch/rezept?id=${encodeURIComponent(builtin)}&personen=2`);
   });
 
+  // Kochidee (KochideeViews) verlinkt seit A-038 nicht mehr: Antippen öffnet die Rezept-Vorschau
   it("die Stellen bauen Links über recipeHref", () => {
-    for (const f of ["src/components/essen/plan/PlanSheets.tsx", "src/components/essen/FoodPage.tsx", "src/components/essen/IdeaCards.tsx", "src/components/essen/kochtipp/KochideeViews.tsx", "src/components/heute/HomeTiles.tsx"]) {
+    for (const f of ["src/components/essen/plan/PlanSheets.tsx", "src/components/essen/FoodPage.tsx", "src/components/essen/IdeaCards.tsx", "src/components/heute/HomeTiles.tsx"]) {
       const src = read(f);
       expect(src, f).toMatch(/recipeHref|hrefFor/);
       expect(src, f).not.toMatch(/rezept\?id=\$\{encodeURIComponent\((entry|idea|card|chosen)\.recipeId\)\}/);

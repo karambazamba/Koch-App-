@@ -19,7 +19,8 @@ import { ChatTurnItem } from "@/components/begleitung/ChatTurnItem";
 import { MiaBubble, OwnBubble, StageTopic } from "@/components/begleitung/MiaStage";
 import { useStickToBottom } from "@/components/begleitung/useStickToBottom";
 import { firstOfRun } from "@/lib/begleitung/stage";
-import { IdeaCarousel, IdeaRow, IdeaSuggestions, StaysLine } from "@/components/essen/kochtipp/KochideeViews";
+import { IdeaCarousel, IdeaRow, IdeaSuggestions, StaysLine, cardVorschlag } from "@/components/essen/kochtipp/KochideeViews";
+import { useVorschau } from "@/components/essen/vorschau/useVorschau";
 import type { Kochidee } from "@/components/essen/kochtipp/useKochidee";
 import type { ChatState, ChatTurnView } from "@/components/begleitung/chatTypes";
 import { ProposalCard } from "@/components/begleitung/ProposalCard";
@@ -32,6 +33,13 @@ import { TipBubble } from "@/components/begleitung/TipBubble";
 import { kiOkKarteZeigen, stimmeVomServer } from "@/lib/begleitung/kiOk";
 import type { useMarketChat } from "@/components/begleitung/useMarketChat";
 import type { SpontanChat } from "@/components/begleitung/useSpontanChat";
+import type { SpontanIdea } from "@/lib/essen/spontan";
+import type { Recipe } from "@/lib/essen/cookbook";
+import type { Vorschlag } from "@/lib/essen/vorschau";
+import { rezeptInVorschlag } from "@/lib/essen/vorschau/wochenplan";
+
+/** Spontan-Idee → Vorschlag für die Vorschau */
+const spontanVorschlag = (i: SpontanIdea): Vorschlag => ({ title: i.title, category: i.category, minutes: i.minutes, recipeId: i.recipeId, needs: i.extra });
 
 /** Fragt die KI nach der Basis? Dann Basis-Chips anbieten */
 function asksForBase(turn: ChatTurnView | undefined): boolean {
@@ -115,6 +123,8 @@ export function ChatHistory({ scrollRef, inputRef, status, data, voice, consentL
   };
   const greeting = showGreeting && data;
   const stick = useStickToBottom(scrollRef);
+  // Vorschläge erst anschauen, dann nehmen (A-038): Karte antippen = Rezept-Vorschau
+  const vorschau = useVorschau();
 
   return (
       <div className="relative flex min-h-0 flex-1 flex-col" data-daneben>
@@ -156,7 +166,9 @@ export function ChatHistory({ scrollRef, inputRef, status, data, voice, consentL
                       stock={stock}
                       nearlyEmpty={stockNearlyEmpty(stock)}
                       speaker={speechSupported() ? <SpeakButton speaking={speakingId === `turn-${i}`} onClick={() => toggleSpeak(speechFor(turn), `turn-${i}`, voice)} /> : null}
-                      onToday={takeIdea}
+                      onToday={(idea) => vorschau.nehmen(spontanVorschlag(idea), (id) => takeIdea(id ? { ...idea, recipeId: id } : idea))}
+                      onPreview={(idea) => vorschau.zeigen(spontanVorschlag(idea), (id) => takeIdea(id ? { ...idea, recipeId: id } : idea))}
+                      hinweis={(n) => vorschau.hinweis(n, `t${i}`)}
                       onAdjust={() => setAdjusting2(turn)}
                       onMore={() => moreIdeas(turn)}
                       onNavigate={onClose}
@@ -178,15 +190,26 @@ export function ChatHistory({ scrollRef, inputRef, status, data, voice, consentL
                   {idea.kind === "start" ? (
                     <>
                       {idea.planned && <StaysLine dish={idea.planned} />}
-                      {idea.cards.map((c) => (
-                        <IdeaRow key={c.title} card={c} live={live} onTake={() => kochidee.take(c, session)} />
-                      ))}
+                      {idea.cards.map((c, n) => {
+                        const v = cardVorschlag(c);
+                        const tun = (id?: string, geladen?: { rezept: Recipe }) => kochidee.take(id ? { ...c, recipeId: id } : c, session, undefined, geladen?.rezept);
+                        return <IdeaRow key={c.title} card={c} live={live} onTake={() => vorschau.nehmen(v, tun)} onOpen={() => vorschau.zeigen(v, live ? tun : null)} hinweis={live ? vorschau.hinweis(n, `t${i}`) : null} />;
+                      })}
                       {live && <IdeaSuggestions suggestions={idea.suggest ?? []} onPick={onSubmit} />}
                     </>
                   ) : (
                     <>
                       {idea.keywords && idea.keywords.length > 0 && <p className="ml-11 self-start rounded-full bg-fill px-3 py-1 text-[13px] font-semibold text-muted">{idea.keywords.join(" · ")}</p>}
-                      {idea.cards.length > 0 && <IdeaCarousel cards={idea.cards} persons={idea.persons ?? 2} live={live} onTake={(c) => kochidee.take(c, session, idea.persons)} onMore={() => session && kochidee.more(session)} onNavigate={onClose} />}
+                      {idea.cards.length > 0 && (
+                        <IdeaCarousel
+                          cards={idea.cards}
+                          persons={idea.persons ?? 2}
+                          live={live}
+                          onTake={(c) => vorschau.nehmen(cardVorschlag(c, idea.persons), (id, geladen) => kochidee.take(id ? { ...c, recipeId: id } : c, session, idea.persons, geladen?.rezept))}
+                          onOpen={(c) => vorschau.zeigen(cardVorschlag(c, idea.persons), live ? (id, geladen) => kochidee.take(id ? { ...c, recipeId: id } : c, session, idea.persons, geladen?.rezept) : null)}
+                          onMore={() => session && kochidee.more(session)}
+                        />
+                      )}
                       {idea.remembered && <p className="text-[13px] font-semibold text-good-ink">{idea.remembered}</p>}
                       {live && <IdeaSuggestions suggestions={idea.suggest ?? []} onPick={onSubmit} />}
                     </>
@@ -248,6 +271,7 @@ export function ChatHistory({ scrollRef, inputRef, status, data, voice, consentL
             <ProposalCard
               data={data}
               proposal={chat.proposal}
+              onUseRecipe={(opId, neu) => setChat((c) => (c.proposal ? { ...c, proposal: { ops: rezeptInVorschlag(c.proposal.ops, opId, neu), selected: new Set([...c.proposal.selected, opId]) } } : c))}
               adjusting={adjusting}
               onToggle={toggleOp}
               onApply={() => {
@@ -271,6 +295,7 @@ export function ChatHistory({ scrollRef, inputRef, status, data, voice, consentL
           )}
           {children}
         </div>
+        {vorschau.fenster}
         {stick.neu && (
           <button type="button" onClick={stick.runter} className="hit absolute bottom-2 left-1/2 flex min-h-9 -translate-x-1/2 items-center gap-1 rounded-full bg-surface px-3.5 text-[14px] font-bold text-accent-strong shadow-float" data-neu>
             ↓ Neu

@@ -4,6 +4,7 @@
 // selbst steht in `idee.ts`. Rein, damit es testbar ist.
 
 import type { Recipe, RecipeCategory } from "@/lib/essen/cookbook";
+import { alsEinkauf } from "@/lib/einkauf/zusammen/packung";
 import { DISHES } from "@/lib/essen/dishIdeas";
 
 /** Frühere Kochtipp-Wahl (nur noch im Speicher, `store.ts` liest sie weiter) */
@@ -46,4 +47,15 @@ export function scaleAmount(amount: number | null, servings: number, persons: nu
   if (v >= 100) return Math.round(v / 10) * 10;
   if (v >= 10) return Math.round(v);
   return Math.round(v * 2) / 2 || 0.5;
+}
+
+/**
+ * Menge für die Einkaufsliste aus dem Rezept (umgerechnet, auf die Packung
+ * gerundet, Rezeptmenge als Hinweis), sonst leer – auch für Mias eben
+ * geschriebenes Rezept (A-038)
+ */
+export function listenMenge(name: string, recipe: Recipe | undefined, persons: number): { amount: string; rezeptMenge?: string } {
+  const ing = recipe?.ingredients.find((i) => i.name === name);
+  const amount = ing && recipe ? scaleAmount(ing.amount, recipe.servings, persons) : null;
+  return alsEinkauf(name, amount, ing?.unit ?? "");
 }

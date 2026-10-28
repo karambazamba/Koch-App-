@@ -3262,3 +3262,18 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Speicher: `wasgibts.kochen` v2 (Kochmodus-Stand, abgehakte Zutaten; v1 →
   v2 ergänzt leer), neu `wasgibts.rezeptansicht` v1 (Gerät, nicht in der
   Sicherung), Rezept `shortSteps` optional (Kochbuch v3, additiv).
+
+## Vorschläge erst anschauen, dann nehmen (A-038, Tafel 122)
+- Problem: Bei „Was anderes?“ und der Kochidee (drei Vorschläge mit „Nehmen“)
+  konnte man das Rezept nicht ansehen, nur nehmen.
+- Karte antippen öffnet überall die Rezept-Vorschau (ein Fenster über Bühne
+  bzw. Seite) mit den Bausteinen der Rezeptseite: Bild, Zeit, Personen,
+  „alles im Haus“ / „auf die Liste: …“, Zutaten für den Haushalt, „So geht’s“
+  mit „Kurz | Ausführlich“; unten „Zurück zu den Ideen“ und „Nehmen“. Zurück
+  zeigt dieselben Vorschläge an derselben Stelle.
+- Ohne Rezept (Vorschlag nur mit Name/Zeit) schreibt Mia es über den
+  normalen Server-Weg, genau einmal, gemerkt für „Nehmen“; Fehler „Hat grad
+  nicht geklappt. Nochmal?“ nach einem stillen zweiten Versuch.
+- Gleich an allen Stellen über `useVorschau`: Kochidee, Spontan kochen, „Was
+  koche ich?“, Wochenkarte, Mias Wochenplan-Vorschlag. Einmal „Antippen zum
+  Reinschauen.“.

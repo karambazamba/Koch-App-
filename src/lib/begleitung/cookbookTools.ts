@@ -57,7 +57,7 @@ export const COOKBOOK_TOOLS = {
     definition: {
       name: "rezept_erstellen",
       description:
-        "Erstellt ein neues, vollständiges Rezept (KI-Rezept) – Zutaten mit Mengen für die angegebene Personenzahl (siehe 'personen' des Tages in woche_lesen) und Zubereitungsschritte, dazu die Schnellanleitung (kurz). Allergien und 'mag nicht' aller Personen werden geprüft; bei Treffern wird abgelehnt. Gibt eine ref zurück, die du bei gericht_setzen als neues_rezept nutzt. fuer_plan=false nur, wenn das Rezept ohne Platz ins Kochbuch soll.",
+        "Erstellt ein neues, vollständiges Rezept (KI-Rezept) – Zutaten mit Mengen für die angegebene Personenzahl (siehe 'personen' des Tages in woche_lesen) und Zubereitungsschritte, dazu die Schnellanleitung (kurz). Allergien und 'mag nicht' aller Personen werden geprüft; bei Treffern wird abgelehnt. Gibt eine ref zurück, die du bei gericht_setzen als neues_rezept nutzt. fuer_plan=false nur, wenn das Rezept ohne Platz ins Kochbuch soll ('Nur das Rezept, ohne Tag' = Vorschau in der App: genau einmal, fuer_plan=false, nichts eintragen).",
       input_schema: {
         type: "object",
         properties: {

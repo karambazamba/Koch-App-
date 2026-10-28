@@ -3,6 +3,8 @@
 // Rezeptseite „Zutaten“ (Tafel 122): Liste mit Kästchen zum Abhaken (nur
 // heute gemerkt), Mengen passend zur Personenzahl. Was nicht im Haus ist,
 // bekommt rechts ein kleines „+ Liste“ (steht es schon drauf: „auf der Liste“).
+// `vorschau` (A-038, Vorschlag erst anschauen): dieselbe Liste nur zum Lesen –
+// keine Kästchen, kein „+ Liste“ (das macht „Nehmen“).
 
 import type { ReactNode } from "react";
 import { Check, Plus } from "lucide-react";
@@ -18,7 +20,7 @@ import { sectionFor } from "@/lib/einkauf/sections";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 import { sameIngredient } from "@/lib/vorrat/pantry";
 
-export function RezeptZutaten({ recipe, scaleTo, kopfRechts }: { recipe: Recipe; scaleTo: number | null; kopfRechts: ReactNode }) {
+export function RezeptZutaten({ recipe, scaleTo, kopfRechts, vorschau = false }: { recipe: Recipe; scaleTo: number | null; kopfRechts: ReactNode; vorschau?: boolean }) {
   const session = useCooking(todayIso());
   const stock = useStock();
   const shopping = useWeekShoppingList("planning");
@@ -44,6 +46,15 @@ export function RezeptZutaten({ recipe, scaleTo, kopfRechts }: { recipe: Recipe;
             const amount = [formatAmount(scaledAmount(i.amount, recipe.servings, scaleTo)), i.unit].filter(Boolean).join(" ");
             const checked = done.includes(i.id);
             const missing = !checked && needs.includes(i.name.trim());
+            if (vorschau)
+              return (
+                <li key={i.id} className="flex min-h-10 items-center py-1.5 text-base" data-zutat>
+                  <span className="min-w-0">
+                    {amount && <span className="font-semibold">{amount} </span>}
+                    {i.name}
+                  </span>
+                </li>
+              );
             return (
               <li key={i.id} className="flex min-h-11 items-center gap-2">
                 <button type="button" role="checkbox" aria-checked={checked} onClick={() => toggleZutat(recipe.id, i.id)} className="flex min-h-11 min-w-0 flex-1 items-center gap-3 py-1.5 text-left text-base" data-zutat>

@@ -25,7 +25,8 @@ export function spontanHeading(ideas: SpontanIdea[], filters: SpontanFilter[], e
 
 /**
  * "Spontan kochen" im Chat – auf einen Blick: EIN Satz, eine graue Zeile
- * "Noch da: … ändern", genau 3 kompakte Ideen mit "Heute", darunter
+ * "Noch da: … ändern", genau 3 kompakte Ideen mit "Heute" (antippen =
+ * Rezept-Vorschau), darunter
  * "⚙️ Anpassen" und "🔄 Andere Ideen". Rechnet live aus dem Bestand.
  */
 export function SpontanAnswer({
@@ -34,6 +35,8 @@ export function SpontanAnswer({
   stock,
   nearlyEmpty,
   onToday,
+  onPreview,
+  hinweis,
   onAdjust,
   onMore,
   onNavigate,
@@ -47,6 +50,9 @@ export function SpontanAnswer({
   stock: PantryItem[];
   nearlyEmpty: boolean;
   onToday: (idea: SpontanIdea) => void;
+  /** Antippen = Rezept-Vorschau (A-038) */
+  onPreview: (idea: SpontanIdea) => void;
+  hinweis?: (index: number) => ReactNode;
   onAdjust: () => void;
   onMore: () => void;
   onNavigate: () => void;
@@ -80,6 +86,11 @@ export function SpontanAnswer({
             const idea = ideas.find((i) => i.id === card.id);
             if (idea) onToday(idea);
           }}
+          onPreview={(card) => {
+            const idea = ideas.find((i) => i.id === card.id);
+            if (idea) onPreview(idea);
+          }}
+          hinweis={hinweis}
           onNavigate={onNavigate}
         />
       )}

@@ -158,6 +158,8 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Kannst du ein Rezept für Linsensuppe anlegen?", ["add_recipe"]),
   // Tafel 122: „Rezept“ ohne Rezept → „Ja, gern“ schickt genau diese Bitte (Mia liefert Kurz und Ausführlich mit)
   S("Schreib mir ein Rezept für Gemüselasagne.", ["add_recipe"]),
+  // A-038: Vorschau eines Vorschlags ohne Rezept – nur das Rezept, nichts eintragen
+  S("Schreib mir ein Rezept für Kürbisrisotto. Nur das Rezept, ohne Tag.", ["add_recipe"]),
   S("Timer 5 Minuten für die Béchamel", ["add_timer"]),
   // Montag ist am Prüftag (Mi) schon vorbei – eine Rückfrage ist richtig
   S("Tausch Montag und Mittwoch", ["move_meal", "set_meal", "rueckfrage"], { lage: ["plan"] }),

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { Check, ChevronDown, Pencil, Sparkles, Trash2 } from "lucide-react";
-import type { AssistantData } from "@/lib/begleitung/ops";
+import { Check, ChevronRight, Pencil, Sparkles, Trash2 } from "lucide-react";
+import type { AssistantData, ChangeOp, NewRecipe } from "@/lib/begleitung/ops";
 import { previewRows, type PreviewRow } from "@/lib/begleitung/preview";
-import { formatAmount } from "@/lib/essen/cookbook";
+import { alsRezept } from "@/lib/essen/vorschau/laden";
+import type { Vorschlag } from "@/lib/essen/vorschau";
+import { useVorschau, type Vorschau } from "@/components/essen/vorschau/useVorschau";
 import { CategoryDot } from "@/components/ui/Category";
 import { CARD, buttonClass } from "@/components/ui/styles";
 import type { Proposal } from "@/components/begleitung/chatTypes";
@@ -14,13 +15,25 @@ type Props = {
   proposal: Proposal;
   adjusting: boolean;
   onToggle: (opId: string) => void;
+  /** Vorschau (A-038): Mia hat das Rezept zu einem Gericht eben geschrieben – an den Vorschlag hängen */
+  onUseRecipe: (opId: string, recipe: NewRecipe) => void;
   onApply: () => void;
   onAdjust: () => void;
   onDiscard: () => void;
 };
 
 /** Vorschau des Vorschlags: pro Tag "vorher → nachher", einzeln abwählbar */
-export function ProposalCard({ data, proposal, adjusting, onToggle, onApply, onAdjust, onDiscard }: Props) {
+/** Gericht einer Zeile zum Reinschauen (neues KI-Rezept, Rezept oder nur der Name) */
+function rowVorschlag(op: ChangeOp | undefined, row: PreviewRow): Vorschlag | null {
+  if (op?.type === "set_meal")
+    return { title: op.dish.title, category: op.dish.category, minutes: row.newRecipe?.prepMinutes ?? null, recipeId: op.dish.kind === "recipe" ? op.dish.recipeId : undefined, rezept: row.newRecipe ? alsRezept(row.newRecipe) : undefined };
+  if (row.newRecipe) return { title: row.newRecipe.title, category: row.newRecipe.category, minutes: row.newRecipe.prepMinutes, rezept: alsRezept(row.newRecipe) };
+  return null;
+}
+
+export function ProposalCard({ data, proposal, adjusting, onToggle, onUseRecipe, onApply, onAdjust, onDiscard }: Props) {
+  // Gerichte erst anschauen (A-038): „Nehmen“ = diese Zeile wählen; Mias neues Rezept hängt am Vorschlag, nicht im Kochbuch
+  const vorschau = useVorschau({ insKochbuch: false });
   const rows = previewRows(data, proposal.ops, proposal.selected);
   const count = new Set(rows.filter((r) => proposal.selected.has(r.opId)).map((r) => r.opId)).size;
   const groups = rows.reduce<{ name: string; rows: PreviewRow[] }[]>((list, row) => {
@@ -48,7 +61,15 @@ export function ProposalCard({ data, proposal, adjusting, onToggle, onApply, onA
               <h4 className="text-sm font-bold text-muted">{group.name}</h4>
               <ul className="flex flex-col gap-1">
                 {group.rows.map((row) => (
-                  <Row key={`${row.opId}-${row.label}`} row={row} checked={proposal.selected.has(row.opId)} onToggle={() => onToggle(row.opId)} />
+                  <Row
+                    key={`${row.opId}-${row.label}`}
+                    row={row}
+                    vorschlag={rowVorschlag(proposal.ops.find((op) => op.id === row.opId), row)}
+                    vorschau={vorschau}
+                    checked={proposal.selected.has(row.opId)}
+                    onToggle={() => onToggle(row.opId)}
+                    onUseRecipe={(neu) => onUseRecipe(row.opId, neu)}
+                  />
                 ))}
               </ul>
             </div>
@@ -69,12 +90,12 @@ export function ProposalCard({ data, proposal, adjusting, onToggle, onApply, onA
           Passt{count > 0 ? ` (${count})` : ""}
         </button>
       </div>
+      {vorschau.fenster}
     </section>
   );
 }
 
-function Row({ row, checked, onToggle }: { row: PreviewRow; checked: boolean; onToggle: () => void }) {
-  const [details, setDetails] = useState(false);
+function Row({ row, vorschlag, vorschau, checked, onToggle, onUseRecipe }: { row: PreviewRow; vorschlag: Vorschlag | null; vorschau: Vorschau; checked: boolean; onToggle: () => void; onUseRecipe: (recipe: NewRecipe) => void }) {
   const recipe = row.newRecipe;
   return (
     <li className={`rounded-field border px-3 py-2 transition ${checked ? "border-line bg-surface" : "border-dashed border-line bg-background opacity-60"}`}>
@@ -112,33 +133,22 @@ function Row({ row, checked, onToggle }: { row: PreviewRow; checked: boolean; on
           )}
         </span>
       </label>
-      {recipe && (
+      {vorschlag && (
         <div className="pl-8">
           <button
             type="button"
-            onClick={() => setDetails((d) => !d)}
-            aria-expanded={details}
-            className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-accent-strong"
+            onClick={() =>
+              vorschau.zeigen(vorschlag, (_id, geladen) => {
+                if (geladen) onUseRecipe(geladen.neu);
+                else if (!checked) onToggle();
+              })
+            }
+            className="hit mt-1 inline-flex items-center gap-1 text-sm font-semibold text-accent-strong"
+            data-vorschau-oeffnen
           >
-            Rezept {details ? "ausblenden" : "ansehen"}
-            <ChevronDown className={`h-4 w-4 transition ${details ? "rotate-180" : ""}`} strokeWidth={2.25} aria-hidden />
+            Rezept ansehen
+            <ChevronRight className="h-4 w-4" strokeWidth={2.25} aria-hidden />
           </button>
-          {details && (
-            <div className="mt-2 flex flex-col gap-2 text-sm">
-              <ul className="flex flex-col gap-0.5">
-                {recipe.ingredients.map((i, n) => (
-                  <li key={n}>
-                    {[formatAmount(i.amount), i.unit, i.name].filter(Boolean).join(" ")}
-                  </li>
-                ))}
-              </ul>
-              <ol className="flex list-decimal flex-col gap-1 pl-5">
-                {recipe.steps.map((step, n) => (
-                  <li key={n}>{step}</li>
-                ))}
-              </ol>
-            </div>
-          )}
         </div>
       )}
     </li>

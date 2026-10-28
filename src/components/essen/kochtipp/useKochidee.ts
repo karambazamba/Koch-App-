@@ -14,16 +14,16 @@ import type { Dispatch, SetStateAction } from "react";
 import type { PantryItem } from "@/lib/vorrat/pantry";
 import type { AssistantData } from "@/lib/begleitung/ops";
 import { soonToUse } from "@/lib/essen/dishIdeas";
-import { cookCandidates, scaleAmount, type CookCard } from "@/lib/essen/kochtipp/pick";
+import { cookCandidates, listenMenge, type CookCard } from "@/lib/essen/kochtipp/pick";
 import { EMPTY_TALK, ideaHello, ideaResult, ideaUnderstood, mergeTalk, parseIdeaTalk, rankIdeas, rememberedText, startIdeas, takeOutcome, talkKeywords, type IdeaTalk } from "@/lib/essen/kochtipp/idee";
 import { ideaReply, ideaSuggestions } from "@/lib/essen/kochtipp/vorschlaege";
+import type { Recipe } from "@/lib/essen/cookbook";
 import { BUILTIN_COOK } from "@/lib/essen/kochen";
 import { recentDishTitles } from "@/lib/essen/kochtipp/recent";
 import { loadKochtipp, noteKochtippShown, noteImHaus } from "@/lib/essen/kochtipp/store";
 import { takeForDay } from "@/lib/essen/spontanTake";
 import { loadMealPlans, replaceMealPlans } from "@/lib/essen/mealPlan";
 import { addManualItem, removeManualItems, sectionFor } from "@/lib/einkauf/shoppingList";
-import { alsEinkauf } from "@/lib/einkauf/zusammen/packung";
 import { addWish, removeWish } from "@/lib/essen/wishes";
 import { addPantryItems } from "@/lib/vorrat/pantry";
 import { featureOn } from "@/lib/core/features";
@@ -132,7 +132,8 @@ export function useKochidee({ data, today, pantry, mealOver, setChat, onClose }:
   const more = (session: KochideeSession) => answer(session, session.talk);
 
   /** „Nehmen“: eintragen bzw. ersetzen, Fehlendes auf die Liste, Meldung mit Rückgängig */
-  const take = (card: CookCard, session: KochideeSession | null | undefined, persons = household) => {
+  /** `rezept`: eben von Mia geschrieben (Vorschau, A-038) – für die Mengen auf der Liste */
+  const take = (card: CookCard, session: KochideeSession | null | undefined, persons = household, rezept?: Recipe) => {
     if (!data || !today) return;
     const { date, backToIdeas, toList } = takeOutcome(card, session?.planned ?? null, mealOver, toIsoDate(today), addDays(toIsoDate(today), 1));
     const before = loadMealPlans();
@@ -142,13 +143,9 @@ export function useKochidee({ data, today, pantry, mealOver, setChat, onClose }:
     // Das ersetzte Gericht geht nicht verloren: zurück zu den Ideen
     const wish = backToIdeas ? addWish({ who: "", personId: null, dish: backToIdeas }, toIsoDate(today)) : null;
     const weekStart = planningWeekStart(today, data.profile.shoppingDay || DEFAULT_SHOPPING_DAY).weekStart;
-    const recipe = card.recipeId ? (data.recipes[card.recipeId] ?? BUILTIN_COOK.find((r) => r.id === card.recipeId)) : undefined;
-    const added = toList.map((name) => {
-      const ing = recipe?.ingredients.find((i) => i.name === name);
-      const amount = ing ? scaleAmount(ing.amount, recipe!.servings, persons) : null;
-      // Rezeptmenge als Einkaufsmenge (Packung), die Rezeptmenge nur als Hinweis
-      return addManualItem(weekStart, { name, ...alsEinkauf(name, ing ? amount : null, ing?.unit ?? ""), section: sectionFor(name), day: WEEKDAYS[new Date(`${date}T12:00:00`).getDay()], dish: card.title });
-    });
+    const recipe = rezept ?? (card.recipeId ? (data.recipes[card.recipeId] ?? BUILTIN_COOK.find((r) => r.id === card.recipeId)) : undefined);
+    // Rezeptmenge als Einkaufsmenge (Packung), die Rezeptmenge nur als Hinweis
+    const added = toList.map((name) => addManualItem(weekStart, { name, ...listenMenge(name, recipe, persons), section: sectionFor(name), day: WEEKDAYS[new Date(`${date}T12:00:00`).getDay()], dish: card.title }));
     setChat((c) => ({ ...c, kochtipp: null }));
     onClose();
     const list = card.needs.slice(0, 2).join(" und ");

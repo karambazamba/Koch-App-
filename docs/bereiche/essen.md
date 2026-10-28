@@ -535,3 +535,53 @@ schmecken.“ bzw. „Lass es dir schmecken.“, durch `tidyMiaText`), sonst
 - Tests: `tests/heute/essenKachel.test.ts`, `tests/essen/schnellanleitung.test.ts`,
   `tests/essen/kochmodus.test.ts` (Befehls-Prüfstand 30 Sätze ≥ 95 %),
   `tests/begleitung/werkzeugeEssen.test.ts`; Durchklick `kochmodus.mjs`.
+
+## Vorschläge erst anschauen, dann nehmen (Tafel 122, A-038)
+
+Wortlaut: `docs/auftraege/A-038-vorschau.md`. Überall, wo Gerichte zur Auswahl
+stehen, gilt dasselbe: Karte antippen (überall außer „Nehmen“) = Rezept-Vorschau,
+„Nehmen“ = eintragen wie bisher.
+
+- **Ein Hook für alle Stellen:** `useVorschau()` (`components/essen/vorschau/`)
+  mit `zeigen(vorschlag, nehmen)`, `nehmen(vorschlag, nehmen)`, `fenster` und
+  `hinweis(index, wo)`. Stellen: Kochidee auf der Bühne (Zeilen `IdeaRow` und
+  Karussell `IdeaCarousel`, auch „Was anderes?“), Spontan kochen / „Was koch
+  ich daraus?“ (`SpontanAnswer` → `IdeaCards` `onPreview`; Fertigprodukte
+  „f:…“ ohne Rezept bleiben ohne Vorschau), „Was koche ich?“ (`SwapSheet`, auch
+  im Wochenplan), Wochenkarte (`TagFenster` „Oder lieber“/„Wie wär’s mit“, mit
+  eigenem „Nehmen“) und Mias Wochenplan-Vorschlag (`ProposalCard`, „Rezept
+  ansehen“ statt der alten Klapp-Liste; „Nehmen“ = Zeile wählen).
+- **Vorschau** (`RezeptVorschau`, EIN Fenster über `ui/Sheet`, Ebene über der
+  Bühne): Bild, Name im Kopf, „35 Min · für 4 · alles im Haus“ (grün) bzw.
+  „auf die Liste: …“, dann `RezeptZutaten` und `RezeptSchritte` der
+  Rezeptseite mit `vorschau` (nur lesen: keine Kästchen, kein „+ Liste“, kein
+  Durchstreichen, keine Timer; „Kurz | Ausführlich“ bleibt). Mengen für den
+  Haushalt (`beispielPersonen`) bzw. die Personen der Stelle. Unten fest
+  „Zurück zu den Ideen“ und „Nehmen“ (orange). ✕, Danebentippen,
+  Runterwischen und Zurück schließen nur die Vorschau; die Vorschläge dahinter
+  bleiben stehen (nichts lädt neu, Scrollposition bleibt).
+- **Rezept finden** (`lib/essen/vorschau`): mitgeliefert (neues KI-Rezept im
+  Vorschlag) → eigenes/eingebautes über ID oder Titel (`rezeptIdFuer`) →
+  sonst schreibt Mia es (`ladeRezept`): Fenster öffnet sofort mit Bild und
+  Name, „Mia schreibt das Rezept …“ (atmet ruhig über die Deckkraft,
+  `vorschau-schreibt`, bei reduzierter Bewegung still). Weg: `askAssistant`
+  mit `vorschauBitte` („Schreib mir ein Rezept für … Nur das Rezept, ohne
+  Tag.“) – derselbe Server-Weg wie das Gespräch (Zugangscode, Tageslimit,
+  Testmodus `mockVorschau.ts`), `rezept_erstellen` mit `fuer_plan=false`.
+  Genau einmal je Gericht (läuft es schon, wird gewartet), gemerkt für die
+  Sitzung (nur im Arbeitsspeicher). Fehler: einmal still nochmal, dann „Hat
+  grad nicht geklappt. Nochmal?“ mit „Nochmal“.
+- **„Nehmen“** (`nehmenMitRezept`): Karte und Vorschau gehen durch dieselbe
+  Funktion. Gibt es das Rezept schon, läuft der Weg der Stelle unverändert
+  (Kochidee: eintragen/ersetzen, Fehlendes mit Mengen auf die Liste,
+  „Eingetragen. …“ mit Rückgängig; sonst `takeForDay`). Hat Mia es eben
+  geschrieben, kommt es ins Kochbuch und der Plan zeigt darauf (Mengen für
+  die Liste aus diesem Rezept, `listenMenge`); in Mias Wochenplan-Vorschlag
+  hängt es stattdessen als neues KI-Rezept am Gericht (`rezeptInVorschlag`)
+  und wird erst mit „Passt“ angelegt.
+- **Hinweis:** einmal unter der ersten Karte „Antippen zum Reinschauen.“
+  (Einmal-Hinweis `vorschau-antippen` in `wasgibts.einmalhinweise`), danach
+  nie wieder.
+- Tests: `tests/essen/vorschau.test.ts`; Durchklick `vorschau.mjs`
+  (`vorschauBuehne`, `vorschauEssen`). Prüfstand +1 („Schreib mir ein Rezept
+  für Kürbisrisotto. Nur das Rezept, ohne Tag.“).

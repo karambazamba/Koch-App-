@@ -1276,10 +1276,13 @@ body:has([role="dialog"][aria-modal], [role="alertdialog"], [data-code-screen], 
 /* Kochidee: der Knopf wippt beim ersten Mal sanft */
 @keyframes kochidee-wippen { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-8deg); } 45% { transform: rotate(6deg); } 70% { transform: rotate(-3deg); } }
 .kochidee-wippen { animation: kochidee-wippen 1s var(--mia-ease) .6s both; }
+/* Vorschau (A-038): „Mia schreibt das Rezept …“ atmet ruhig (nur Deckkraft) */
+@keyframes vorschau-schreibt { from { opacity: 1; } to { opacity: .45; } }
+.vorschau-schreibt { animation: vorschau-schreibt 1.2s var(--mia-ease) infinite alternate; }
 /* Mia ist auf der Bühne (oder fliegt zurück) – ihr Knopf unten rechts wartet unsichtbar */
 body:has(.mia-buehne-hintergrund, .mia-geist-schleier) [data-mia-knopf] { opacity: 0; }
 @media (prefers-reduced-motion: reduce) {
-  .mia-knopf, .mia-knopf::before, .mia-huepfer, .mia-wellen, .mia-tonwelle > span, .kochidee-wippen { animation: none; }
+  .mia-knopf, .mia-knopf::before, .mia-huepfer, .mia-wellen, .mia-tonwelle > span, .kochidee-wippen, .vorschau-schreibt { animation: none; }
   .mia-karte { animation: mia-blende .4s ease both; }
   .mia-flug { transition: none; }
   .leiste, .leiste[data-weg] { transition: opacity .4s ease; transform: none !important; }

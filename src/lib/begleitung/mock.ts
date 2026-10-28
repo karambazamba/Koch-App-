@@ -19,6 +19,7 @@ import { todayIso } from "@/lib/core/now";
 import { isShopOverviewQuestion, parseShopRule } from "@/lib/einkauf/shopRules";
 import { PLAUDER_ANTWORT, plauderArt } from "@/lib/mia/plaudern";
 import { modusAntwort } from "@/lib/begleitung/mockModus";
+import { vorschauUses } from "@/lib/begleitung/mockVorschau";
 
 const STOCK_LINE = "Im Haus (vermutlich da, ohne Mengen): ";
 
@@ -247,6 +248,9 @@ function mockModel(): CreateMessage {
     if (modus) return modus;
     // Wochencheck: alles in einem Rutsch über woche_eintragen (gleiche Erkennung wie ohne KI)
     if (typeof last.content === "string" && last.content.startsWith("[Wochencheck]")) return weekCheckUses(last.content, system);
+    // Vorschau (A-038): nur das Rezept schreiben, nichts eintragen
+    const vorschau = typeof last.content === "string" ? vorschauUses(last.content, system) : null;
+    if (vorschau) return vorschau;
     // „Kochtipp“, „Was soll ich kochen?“ → eigener Kochtipp in der App
     if (typeof last.content === "string" && isKochtippRequest(last.content)) return tools([{ name: "app_befehl", input: { text: "Kochidee" } }]);
     if (resultFor("woche_eintragen") !== undefined) return text("Hab alles sortiert. Schau kurz drüber.");
@@ -538,7 +542,7 @@ function mockModel(): CreateMessage {
     if (shown) return text(calendarAnswer(String(resultFor(shown.name) ?? ""), shown.input as Record<string, unknown>));
 
     // 3. Neue Rezepte angelegt → eintragen
-    const created = prevUses.filter((u) => u.name === "rezept_erstellen");
+    const created = prevUses.filter((u) => u.name === "rezept_erstellen" && u.id.startsWith("mock_rezept_"));
     if (created.length > 0) {
       const uses: ToolUse[] = created.flatMap((u) => {
         const ref = String(results.find((r) => r.tool_use_id === u.id)?.content ?? "").match(/ref: (\S+)/)?.[1];
