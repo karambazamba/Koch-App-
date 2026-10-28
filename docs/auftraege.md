@@ -13,7 +13,8 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
   Pinnwand als Kühlschranktür (v0.138), Kachel-Farben (v0.139), Adresse
   mia.karamba-eis.de (v0.140), Mia-Zubehör Sonne (v0.140), Erster Start rund +
   Zugangscode nachsichtig (v0.141), Einkauf neu mit Nachtrag (v0.142), Mia schneller + Live-Zuhören + Stimme bleibt
-  (v0.143).
+  (v0.143), Fenster-Zurück ohne Wettlauf (v0.144, Fehler hinter dem
+  schwankenden Ablauf `erinnerungFrage`).
 - **Merge-Reihenfolge (Sortier-Auftrag 28.10., je bauen → testen → PR → mergen,
   dann der nächste auf dem neuesten `main`):**
   1. A-027 Erster Start rund (mit A-031 Zugangscode nachsichtig, 10 Versuche)
