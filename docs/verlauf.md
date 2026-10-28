@@ -2959,6 +2959,8 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Logo, Token und reduzierte Bewegung).
 
 ## Erster Start rund für Testfreunde (vX, A-027)
+
+## Erster Start rund für Testfreunde (v0.140.0, A-027 + A-031)
 - Problem: Vor der App standen bis zu vier Bildschirme (Hallo, „Bevor’s
   losgeht“, „Für wen“, Testcode), der Code-Bildschirm hatte ein zweites „Los
   geht’s“, „Testcode“ klang nach Baustelle, und wer Mia im Browser nutzte,
@@ -2977,7 +2979,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
   kann ich zuhören und mitdenken.“, darunter „Groß/klein und Leerzeichen sind
   egal.“, Knopf „Fertig“. Prüfung nachsichtig in App und Server
   (`normalisiereZugangscode`: Leerzeichen raus, klein; weiter Hash-Vergleich
-  in konstanter Zeit und 5 Fehlversuche je Adresse).
+  in konstanter Zeit und 10 Fehlversuche je Adresse).
 - Einladung (/e/…): E-Mail-Code → Startseite; der Zugangscode erst beim
   ersten KI-Versuch (`codeErstBeimKiVersuch`).
 - „Mia auf den Home-Bildschirm“: einmal eine ruhige Karte oben auf der
