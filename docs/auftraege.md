@@ -11,7 +11,8 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 - **Fertig:** Im Haus reinsprechen (v0.135), Windsack/Hinweis-Stil/Jetzt-Karte
   morgens (v0.136), Aufgaben „alles ist heute“ (v0.137), Arbeitsweise,
   Pinnwand als Kühlschranktür (v0.138), Kachel-Farben (v0.139), Adresse
-  mia.karamba-eis.de (v0.140), Mia-Zubehör Sonne (v0.140).
+  mia.karamba-eis.de (v0.140), Mia-Zubehör Sonne (v0.140), Erster Start rund +
+  Zugangscode nachsichtig (v0.141).
 - **Merge-Reihenfolge (Sortier-Auftrag 28.10., je bauen → testen → PR → mergen,
   dann der nächste auf dem neuesten `main`):**
   1. A-027 Erster Start rund (mit A-031 Zugangscode nachsichtig, 10 Versuche)
@@ -33,7 +34,9 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
   (offen bei Felix).
 - **Ausprobieren:** Einladungslink teilen → zeigt auf mia.karamba-eis.de;
   Mia-Knopf an einem sonnigen, kühlen Tag mittags (kleine Sonne, dreht sich
-  einmal), ab 18 °C Sonnenbrille, abends nichts.
+  einmal), ab 18 °C Sonnenbrille, abends nichts. Erster Start auf einem
+  frischen Handy: Hallo mit Häkchen, „Für wen“, Zugangscode („Fast geschafft.“,
+  Groß/klein egal), danach die Karte „Mia auf den Home-Bildschirm“.
 
 ## Liste
 
@@ -65,11 +68,11 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 | A-024 | Pinnwand-Nachtrag: Wörter klarer („Aufhängen“, „Bleibt hängen“), Erledigtes nach 3 s ins Archiv, Archiv 30 Tage | – | gebaut, wartet |
 | A-025 | Essen-Kachel „Rezept“ / „Wochenplan“, Rezeptseite, Kochmodus + Nachtrag Schnellanleitung „Kurz \| Ausführlich“ (ersetzt Tafel-121-Nachtrag „Ich koche jetzt“) | `tafel-122-essen-rezept.png` | gebaut, wartet |
 | A-026 | Nachtrag zu A-019 (VORRANG): Mia hört live über ElevenLabs (Scribe Realtime) – Text beim Sprechen, Ende von selbst | – | gebaut, wartet (Durchklick Stimme/Ohr wird repariert) |
-| A-027 | Erster Start rund für Testfreunde (höchstens 3 Bildschirme, „Zugangscode“, Karte „Auf den Home-Bildschirm“, KI-OK aufräumen) | – | in Arbeit (gebaut; Durchklick-Fehler iPhone SE/Pixel 7 werden behoben) |
+| A-027 | Erster Start rund für Testfreunde (höchstens 3 Bildschirme, „Zugangscode“, Karte „Auf den Home-Bildschirm“, KI-OK aufräumen) | – | fertig v0.141 |
 | A-028 | Pinnwand: aufgeräumt, Größe, Ordnen, Ecke „Nur für mich“ (+ 7a einklappbar) – Teil 1 und Teil 2 | `tafel-123.png` | gebaut, wartet (Teil 1 und Teil 2) |
 | A-029 | Sport-Kachel mit Wasserzeichen + kleine Reparaturen (Im-Haus-Namen, Sport leer, Gedankenstriche) | Tafel 124 A (kein Bild) | gebaut, wartet |
 | A-030 | Neue Adresse mia.karamba-eis.de (keine Weiterleitung, feste Adressen ersetzen; Supabase-Redirects von Hand) | – | fertig v0.140 |
-| A-031 | SOFORT: Zugangscode nachsichtig prüfen (Groß/klein, Leerzeichen egal; 10 Versuche je Adresse) | – | in Arbeit (mit A-027) |
+| A-031 | SOFORT: Zugangscode nachsichtig prüfen (Groß/klein, Leerzeichen egal; 10 Versuche je Adresse) | – | fertig v0.141 (mit A-027) |
 | A-032 | Im-Haus-Kachel / Essen-Kachel – Entscheidung | – | zurückgestellt (offen bei Felix, nach Launch) |
 | A-033 | Mia-Zubehör: Sonne das ganze Jahr (Sonnenbrille ab 18 °C, sonst kleine Sonne tagsüber; nie nachts; nicht am Logo; Wortlaut `docs/auftraege/A-033-zubehoer-sonne.md`) | – | fertig v0.140 |
 | A-034 | Nachtrag A-020: gleiche Räume Familie · Ich · Arbeit für Termine und Aufgaben, Vorauswahl (Termin = Familie, Aufgabe = Ich), Familien-Aufgaben für alle („erledigt von …“), RLS Ich/Arbeit nur Besitzer, `ui/RaumChips` überall, Mia rät und lernt, Raum per Lang-Drücken ändern, Prüfstand ≥ 30 Sätze (ersetzt A-021 teilweise; Wortlaut `docs/auftraege/A-034-raeume.md`) | – | gebaut, wartet (Durchklick zwei Konten noch nicht gelaufen) |

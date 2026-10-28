@@ -2958,9 +2958,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
   April 19 °C Sonnenbrille, nachts nichts, Regen schlägt Sonne, Moment,
   Logo, Token und reduzierte Bewegung).
 
-## Erster Start rund für Testfreunde (vX, A-027)
-
-## Erster Start rund für Testfreunde (v0.140.0, A-027 + A-031)
+## Erster Start rund für Testfreunde (v0.141.0, A-027 + A-031)
 - Problem: Vor der App standen bis zu vier Bildschirme (Hallo, „Bevor’s
   losgeht“, „Für wen“, Testcode), der Code-Bildschirm hatte ein zweites „Los
   geht’s“, „Testcode“ klang nach Baustelle, und wer Mia im Browser nutzte,
