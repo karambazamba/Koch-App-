@@ -138,7 +138,7 @@ export const ohrServer = async (page, check) => {
   await page.waitForFunction(() => window.__gumAufrufe > 0 && window.__laut, null, { timeout: 5000 });
   check((await page.evaluate(() => window.__starts)) === 0, "eigene Aufnahme statt Spracherkennung des Browsers");
 
-  // Sprechen, kurze Pause, weitersprechen, dann still → nach 2,5 s Stille verstanden
+  // Sprechen, kurze Pause (0,9 s), weitersprechen, dann still → nach 1,2 s Stille verstanden
   await page.evaluate(() => window.__laut(0.6));
   await page.waitForTimeout(1200);
   await page.evaluate(() => window.__laut(0));
@@ -147,7 +147,7 @@ export const ohrServer = async (page, check) => {
   await page.waitForTimeout(800);
   check(log.hoeren.length === 0, "kurze Pause schickt nichts ab");
   await page.evaluate(() => window.__laut(0));
-  await page.waitForTimeout(1200);
+  await page.waitForTimeout(750);
   check((await page.locator("[data-pause-ring]").count()) === 1, "Stille: Ring läuft ab");
   await page.waitForFunction(() => [...document.querySelectorAll("[data-gespraech] .bg-accent.rounded-br-md")].some((e) => e.textContent.includes("Was gibt es morgen bei uns zum Essen")), null, { timeout: 8000 }).then(
     () => check(true, "nach der Stille: Ton an den Server, Text kommt als Nachricht"),

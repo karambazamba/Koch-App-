@@ -227,16 +227,16 @@ describe("Satzende am Pegel (eigene Aufnahme)", () => {
   }
   const ersteZeit = (o: { t: number; a: LauschAktion }[], a: LauschAktion) => o.find((x) => x.a === a)?.t;
 
-  it("sprechen bis 2 s, dann still: Ring nach 0,6 s, abgeschickt nach 2,5 s Stille", () => {
+  it("sprechen bis 2 s, dann still: Ring nach 0,4 s, abgeschickt nach 1,2 s Stille", () => {
     const o = lauf((t) => (t < 2000 ? 0.12 : 0.004), 10_000);
-    expect(ersteZeit(o, "wartet")).toBe(2550);
-    expect(ersteZeit(o, "fertig")).toBe(4450);
+    expect(ersteZeit(o, "wartet")).toBe(2350);
+    expect(ersteZeit(o, "fertig")).toBe(3150);
   });
 
-  it("kurze Atempause schickt nichts ab", () => {
-    const o = lauf((t) => (t < 1000 || (t >= 2500 && t < 3500) ? 0.1 : 0.004), 10_000);
-    expect(o.filter((x) => x.t < 3500).some((x) => x.a === "fertig")).toBe(false);
-    expect(ersteZeit(o, "fertig")).toBe(5950);
+  it("kurze Atempause (0,8 s) schickt nichts ab", () => {
+    const o = lauf((t) => (t < 1000 || (t >= 1800 && t < 3000) ? 0.1 : 0.004), 10_000);
+    expect(o.filter((x) => x.t < 3000).some((x) => x.a === "fertig")).toBe(false);
+    expect(ersteZeit(o, "fertig")).toBe(4150);
   });
 
   it("niemand spricht (oder nur ein Klacken): nach 8 s leise aufhören", () => {

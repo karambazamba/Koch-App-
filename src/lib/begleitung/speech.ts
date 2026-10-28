@@ -276,35 +276,85 @@ function wordSpoken() {
   talkTimer = setTimeout(() => setTalking(false), 600);
 }
 
+type SpeakOptions = {
+  id?: string;
+  gender?: HelperVoice;
+  voice?: string;
+  quelle?: VoiceSource;
+  /** Hinten anhängen, wenn gerade gesprochen wird (Rest einer gestreamten Antwort) – sonst ersetzen */
+  anhaengen?: boolean;
+  /** Erster Ton ist zu hören (Tempo: „erster Satz vorgelesen“) */
+  beginnt?: () => void;
+};
+
+/** Was noch vorgelesen wird: Stücke nacheinander, gemeinsam eine Kennung */
+let folge: Promise<void> = Promise.resolve();
+let offen = 0;
+
 /**
  * Text vorlesen (vorher bereinigt, in Sätzen). `id` kennzeichnet, was gerade
- * läuft (für den Lautsprecher-Knopf). Läuft schon etwas, wird es ersetzt.
+ * läuft (für den Lautsprecher-Knopf). Läuft schon etwas, wird es ersetzt –
+ * oder mit `anhaengen` nahtlos dahinter gesprochen.
  */
-export function speak(text: string, options: { id?: string; gender?: HelperVoice; voice?: string; quelle?: VoiceSource } = {}) {
+export function speak(text: string, options: SpeakOptions = {}) {
   const clean = cleanForSpeech(tidyMiaText(text));
+  if (options.anhaengen && speakingId !== null) {
+    if (!clean) return;
+    const mine = token;
+    offen++;
+    folge = folge.then(() => (mine === token ? sprich(clean, options, mine) : undefined)).then(() => fertig(mine));
+    return;
+  }
   stopSpeaking();
   if (!clean) return;
   const mine = ++token;
+  offen = 1;
   setSpeaking(options.id ?? "text");
-  /** Stimme des Handys – auch als stiller Ersatz, wenn Mias Stimme nicht kommt */
-  const handy = (rest: string) => {
+  folge = sprich(clean, options, mine).then(() => fertig(mine));
+}
+
+/** Ein Stück ist vorbei; war es das letzte, ist Mia still */
+function fertig(mine: number) {
+  if (mine !== token) return;
+  offen = Math.max(0, offen - 1);
+  if (offen > 0) return;
+  setTalking(false);
+  setSpeaking(null);
+}
+
+/** Ein Stück sprechen – Mias Stimme oder die des Handys; fertig, wenn alles gesagt ist */
+function sprich(clean: string, options: SpeakOptions, mine: number): Promise<void> {
+  let begonnen = false;
+  const anfang = () => {
     if (mine !== token) return;
-    const chunks = speechChunks(rest);
-    if (!chunks.length || !speechSupported()) return setSpeaking(null);
-    // Stimmen laden manchmal verzögert – kurz darauf warten, sonst Standardstimme
-    if (currentVoices().length) say(chunks, options, mine);
-    else whenVoicesReady(() => mine === token && say(chunks, options, mine));
+    setTalking(true);
+    if (!begonnen) {
+      begonnen = true;
+      options.beginnt?.();
+    }
   };
+  /** Stimme des Handys – auch als stiller Ersatz, wenn Mias Stimme nicht kommt */
+  const handy = (rest: string) =>
+    new Promise<void>((resolve) => {
+      if (mine !== token) return resolve();
+      const chunks = speechChunks(rest);
+      if (!chunks.length || !speechSupported()) return resolve();
+      // Stimmen laden manchmal verzögert – kurz darauf warten, sonst Standardstimme
+      if (currentVoices().length) say(chunks, options, mine, anfang, resolve);
+      else whenVoicesReady(() => (mine === token ? say(chunks, options, mine, anfang, resolve) : resolve()));
+    });
   // Probehören einer Handy-Stimme (`voice`) spricht immer mit dem Handy
   const quelle = options.quelle ?? (options.voice === undefined ? loadSpeechSettings().quelle : "handy");
   if (quelle === "handy") return handy(clean);
-  void mitMiasStimme(clean, {
-    anfang: () => mine === token && setTalking(true),
-    ende: () => {
-      setTalking(false);
-      if (mine === token) setSpeaking(null);
-    },
-    ersatz: handy,
+  return new Promise<void>((resolve) => {
+    void mitMiasStimme(clean, {
+      anfang,
+      ende: () => {
+        setTalking(false);
+        resolve();
+      },
+      ersatz: (rest) => void handy(rest).then(resolve),
+    });
   });
 }
 
@@ -320,7 +370,7 @@ function whenVoicesReady(run: () => void) {
   setTimeout(go, 800);
 }
 
-function say(chunks: string[], options: { id?: string; gender?: HelperVoice; voice?: string }, mine: number) {
+function say(chunks: string[], options: { id?: string; gender?: HelperVoice; voice?: string }, mine: number, anfang: () => void, done: () => void) {
   const settings = loadSpeechSettings();
   // `voice` (Probehören): genau diese Stimme, "" = automatisch
   const chosen = options.voice === undefined ? settings : { ...settings, voice: options.voice };
@@ -336,21 +386,21 @@ function say(chunks: string[], options: { id?: string; gender?: HelperVoice; voi
       } catch {
         // Stimme nicht setzbar → Standardstimme
       }
-      u.onstart = () => mine === token && setTalking(true);
+      u.onstart = anfang;
       u.onboundary = (e) => mine === token && e.name !== "sentence" && wordSpoken();
       u.onend = () => setTalking(false);
       if (i === chunks.length - 1) {
-        const done = () => {
+        const ende = () => {
           setTalking(false);
-          if (mine === token) setSpeaking(null);
+          done();
         };
-        u.onend = done;
-        u.onerror = done; // z. B. stumm geschaltet oder abgebrochen – einfach nichts tun
+        u.onend = ende;
+        u.onerror = ende; // z. B. stumm geschaltet oder abgebrochen – einfach nichts tun
       }
       window.speechSynthesis.speak(u);
     });
   } catch {
-    if (mine === token) setSpeaking(null);
+    done();
   }
 }
 

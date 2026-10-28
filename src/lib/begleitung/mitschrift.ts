@@ -110,10 +110,14 @@ export function withoutPrevious(text: string, previous: string, seitMs = 0): str
 
 /** So lange gilt der eben abgeschickte Text als „gerade eben“ */
 const FRISCH_MS = 8000;
-/** Abschicken erst nach so viel Stille nach dem letzten erkannten Wort */
-export const STILLE_MS = 2500;
-/** Ab dann zeigt Mia, dass sie gleich abschickt (Ring läuft ab) */
-export const WARTEN_AB_MS = 600;
+/**
+ * Abschicken nach so viel Stille nach dem letzten erkannten Wort (Auftrag
+ * „Mia schneller“: 1,2 s statt 2,5 s). Spricht man nach einer Denkpause
+ * innerhalb von `NACHKLAPP_MS` weiter, hängt die Fortsetzung an (`nachklapp.ts`).
+ */
+export const STILLE_MS = 1200;
+/** Ab dann zeigt Mia, dass sie gleich abschickt (Ring läuft ab, 0,8 s) */
+export const WARTEN_AB_MS = 400;
 /** Längstens so lange am Stück zuhören (Bühne) */
 export const BUEHNE_MAX_MS = 2 * 60_000;
 /** Hat bis dahin niemand etwas gesagt, hört Mia leise wieder auf */

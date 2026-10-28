@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
 import { now, toIsoDate } from "@/lib/core/now";
 import { useEinwilligungen } from "@/lib/datenschutz/einwilligung";
 import { recordStimme } from "@/lib/begleitung/usage";
-import { speechChunks } from "@/lib/begleitung/vorlesText";
+import { stueckeFuerStimme } from "@/lib/begleitung/vorlesText";
 import { accessHeaders, deviceId, serverStimme } from "@/lib/begleitung/zugang";
 import { GERAET_HEADER, HOEREN_ENDPOINT, STIMME_ENDPOINT, STIMME_GRENZEN, ZEICHEN_HEADER, festerSatz } from "@/lib/begleitung/stimmeProtokoll";
 
@@ -119,8 +119,8 @@ export async function mitMiasStimme(text: string, cb: Rueckmeldung): Promise<voi
   if (mine !== lauf) return;
   if (!status?.sprechen || !audio) return cb.ersatz(text);
   const a = audio;
-  // Längere Stücke als beim Handy: weniger Abrufe, natürlicher Satzfluss
-  const stuecke = speechChunks(text, 300);
+  // Erster Satz allein (schneller erster Ton), danach längere Stücke: weniger Abrufe, natürlicher Satzfluss
+  const stuecke = stueckeFuerStimme(text);
   const ctrl = new AbortController();
   const geholt = stuecke.map((s) => holen(s, status.v, ctrl.signal));
   geholt.forEach((p) => p.catch(() => {}));

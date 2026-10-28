@@ -48,6 +48,13 @@ export const FESTE_SAETZE = [
   "Moin! So klinge ich.",
   "Hat grad nicht geklappt. Nochmal?",
   "Bin grad offline. Ich mach’s, sobald wieder Netz da ist.",
+  // Auftrag „Mia schneller“: kurze Reaktion und Bestätigungen des Sofort-Wegs (nur hinten anhängen – die Nummern sind Adressen)
+  "Mhm.",
+  "Is drauf.",
+  "Steht alles drauf.",
+  "Läuft.",
+  "Notiert.",
+  "Hängt an der Pinnwand.",
 ] as const;
 
 const vergleich = (s: string) => vorlesText(s).toLowerCase();

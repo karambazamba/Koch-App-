@@ -9,7 +9,8 @@
 // Ergebnisliste werden angehängt, am Ende zählt auch der unfertige Teil.
 // Auf der Bühne (`buehne`) schickt eine kurze Atempause nichts ab: beendet
 // der Browser nach Stille, hört Mia still weiter; abgeschickt wird erst nach
-// 2,5 s Stille nach dem letzten Wort, beim Antippen oder bei „fertig“.
+// 1,2 s Stille nach dem letzten Wort, beim Antippen oder bei „fertig“
+// (eine Fortsetzung kurz danach hängt an, `nachklapp.ts`).
 // Ein gesperrtes Mikro meldet `core/mic` (Mikro-Check, grauer Knopf).
 // Ist Mias Ohr vom Server eingerichtet (`stimmeClient`), nimmt die Bühne
 // selbst auf (`aufnahme.ts`, nur Mikrofon-Freigabe nötig), erkennt das
@@ -27,6 +28,7 @@ import { micLog } from "@/lib/core/micLog";
 import { aufnahmeStarten, type Aufnahme } from "@/lib/begleitung/aufnahme";
 import { aufnahmeVerstehen, serverOhr } from "@/lib/begleitung/stimmeClient";
 import { serverStimme, serverStimmeJetzt } from "@/lib/begleitung/zugang";
+import { WARTEN_AB_MS } from "@/lib/begleitung/mitschrift";
 import { Spracherkennung, remember, stripStopWord, vorDemZuhoeren, type Anzeige, type RecognitionClass } from "@/lib/begleitung/spracherkennung";
 
 function speechRecognitionClass(): RecognitionClass | null {
@@ -58,7 +60,7 @@ type Options = {
   long?: boolean;
   /**
    * Auf der Bühne mit Mia: eine kurze Atempause schickt nichts ab. Beendet der
-   * Browser nach Stille, hört Mia still weiter; abgeschickt wird nach 2,5 s
+   * Browser nach Stille, hört Mia still weiter; abgeschickt wird nach 1,2 s
    * Stille nach dem letzten Wort, beim Antippen (stop) oder bei „fertig“
    * (höchstens 2 Minuten am Stück).
    */
@@ -91,6 +93,8 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
     callbacks.current = { onTranscript, onEnd };
   });
 
+  /** Wann zuletzt ein Wort kam (Tempo: Sprechende → Abschicken; Fortsetzung nach Denkpause) */
+  const letztesWort = useRef<number | null>(null);
   const anzeige = useRef<Anzeige>({
     listening: (on) => {
       setListening(on);
@@ -99,7 +103,10 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
     interim: setInterim,
     error: setError,
     wartet: setWartet,
-    transcript: (text) => callbacks.current.onTranscript(text),
+    transcript: (text) => {
+      if (text) letztesWort.current = performance.now();
+      callbacks.current.onTranscript(text);
+    },
     end: (text) => callbacks.current.onEnd?.(text),
   });
   // Die Erkennung entsteht beim ersten Gebrauch (nie beim Rendern)
@@ -151,7 +158,12 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
     };
     const ohr = aufnahmeStarten({
       laut: () => {},
-      wartet: (an) => aktuell() && setWartet(an),
+      wartet: (an) => {
+        if (!aktuell()) return;
+        // Eigene Aufnahme: Stille beginnt WARTEN_AB_MS vor dem Ring
+        if (an) letztesWort.current = performance.now() - WARTEN_AB_MS;
+        setWartet(an);
+      },
       fertig: (ton, ms) => {
         if (!aktuell()) return;
         zuEnde();
@@ -198,6 +210,7 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
   const start = useCallback(
     () =>
       guardMic(() => {
+        letztesWort.current = null;
         // Vor jedem Zuhören: Mia verstummt, kurz warten, bis das iPhone den Ton freigibt
         warteRef.current();
         warteRef.current = vorDemZuhoeren(() => {
@@ -254,5 +267,8 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
     setWartet(false);
   }, [detach, erk]);
 
-  return { supported, blocked, listening, interim, error, wartet, start, stop, cancel, reset };
+  /** Zeitpunkt (performance.now) des letzten erkannten Wortes dieser Aufnahme, sonst null */
+  const letztesWortAm = useCallback(() => letztesWort.current, []);
+
+  return { supported, blocked, listening, interim, error, wartet, start, stop, cancel, reset, letztesWortAm };
 }

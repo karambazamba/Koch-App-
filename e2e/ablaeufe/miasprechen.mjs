@@ -20,14 +20,15 @@ export const miaSprechen = async (page, check) => {
   const vorher = (await store(page, "wasgibts.eintraege"))?.entries.length ?? 0;
 
   // Lange Nachricht mit zwei Pausen: nichts geht vorher raus, am Ende ein Satz
+  // (abgeschickt wird nach 1,2 s Stille – die Pausen hier sind kürzer)
   await sag(page, [["Morgen um 9", true]]);
-  await page.waitForTimeout(1100);
+  await page.waitForTimeout(700);
   await page.evaluate(() => window.__ende());
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(300);
   await sag(page, [["Termin beim", true]]);
-  await page.waitForTimeout(1100);
+  await page.waitForTimeout(800);
   await sag(page, [["Termin beim", true], ["Steuerberater", true]]);
-  await page.waitForTimeout(1200);
+  await page.waitForTimeout(600);
   check((await eigene(page)).length === 0, "Pausen schicken nichts ab");
   await page.waitForFunction(() => [...document.querySelectorAll("[data-gespraech] .bg-accent.rounded-br-md")].some((e) => !e.closest("[data-eigene-blase]")), null, { timeout: 6000 }).catch(() => {});
   const gesagt = await eigene(page);

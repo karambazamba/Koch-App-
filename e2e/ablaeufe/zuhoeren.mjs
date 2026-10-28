@@ -1,7 +1,8 @@
 // Mia hört zuverlässig zu (simulierte Erkennungs-Ereignisse): kurze Pause
-// schickt nichts ab, nichts geht verloren (unfertiger Teil, neu begonnene
-// Ergebnisliste), „Okay“ wird nie abgeschnitten, Weiterreden während Mia
-// antwortet, lange Live-Blase bleibt über Mia sichtbar.
+// schickt nichts ab (abgeschickt wird nach 1,2 s Stille), Fortsetzung kurz
+// nach dem Abschicken hängt an, nichts geht verloren (unfertiger Teil, neu
+// begonnene Ergebnisliste), „Okay“ wird nie abgeschnitten, Weiterreden während
+// Mia antwortet, lange Live-Blase bleibt über Mia sichtbar.
 import { BASE, FAKE_HOEREN, FAKE_VOICES, hello, seedFamily } from "../lib.mjs";
 
 const sag = (page, list, ab = 0) => page.evaluate(([l, a]) => window.__sag(l, a), [list, ab]);
@@ -31,14 +32,14 @@ export const zuhoeren = async (page, check) => {
 
   // 1. Pause mitten im Satz: der Browser beendet, Mia hört still weiter, nichts geht raus
   await sag(page, [["Was gibt es", true]]);
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(600);
   await page.evaluate(() => window.__ende());
-  await page.waitForTimeout(400);
-  check((await eigene(page)).length === 0, "Pause 1 s: keine Nachricht");
+  await page.waitForTimeout(300);
+  check((await eigene(page)).length === 0, "Pause 0,9 s: keine Nachricht");
   check((await page.evaluate(() => window.__starts)) === 2, "nach dem Browser-Ende still neu gestartet (1 Neustart)");
   await sag(page, [["morgen bei uns zum Essen", true]]);
-  await page.waitForTimeout(1200);
-  check((await eigene(page)).length === 0, "1,2 s nach dem letzten Wort: noch nicht abgeschickt");
+  await page.waitForTimeout(650);
+  check((await eigene(page)).length === 0, "0,65 s nach dem letzten Wort: noch nicht abgeschickt");
   check((await page.locator("[data-pause-ring]").count()) === 1, "Ring läuft ab, Mia wartet");
   // Ring mittig um Mia (± 1 px), rundum 8 px Abstand
   const ring = await page.locator("[data-pause-ring]").boundingBox();
@@ -47,8 +48,8 @@ export const zuhoeren = async (page, check) => {
   const [rx, ry] = mitte(ring);
   const [mx, my] = mitte(mia);
   check(Math.abs(rx - mx) <= 1 && Math.abs(ry - my) <= 1 && Math.abs(ring.width - mia.width - 16) <= 1, `Ring mittig um Mia (${Math.round(rx - mx)}/${Math.round(ry - my)} px)`);
-  await page.waitForTimeout(2000);
-  check((await eigene(page)).includes("Was gibt es morgen bei uns zum Essen"), "nach 2,5 s Stille: der ganze Satz, angehängt");
+  await page.waitForTimeout(1000);
+  check((await eigene(page)).includes("Was gibt es morgen bei uns zum Essen"), "nach 1,2 s Stille: der ganze Satz, angehängt");
 
   // 2. Weiterreden, während Mia antwortet → „wartet“, danach abgeschickt
   await page.route("**/api/lotte", async (route) => {
@@ -57,15 +58,35 @@ export const zuhoeren = async (page, check) => {
   });
   await page.waitForFunction(() => window.__rec?.running, null, { timeout: 8000 }).catch(() => {});
   await sag(page, [["Was steht morgen an", true]]);
-  await page.waitForTimeout(2800);
+  // Abgeschickt nach 1,2 s; erst 2,3 s danach weiter (sonst wäre es eine Fortsetzung, siehe 2b)
+  await page.waitForTimeout(3500);
   await page.waitForFunction(() => window.__rec?.running, null, { timeout: 5000 }).catch(() => {});
   await sag(page, [["und übermorgen", true]]);
-  await page.waitForTimeout(2800);
+  await page.waitForTimeout(1800);
   check(await page.locator("[data-eigene-blase=wartet]").first().isVisible().catch(() => false), "während Mia antwortet: Blase „wartet“");
   await page.waitForFunction(() => [...document.querySelectorAll("[data-gespraech] .bg-accent.rounded-br-md")].some((e) => e.textContent.trim() === "und übermorgen" && !e.closest("[data-eigene-blase]")), null, { timeout: 15000 }).then(
     () => check(true, "nach Mias Antwort abgeschickt"),
     () => check(false, "nach Mias Antwort abgeschickt"),
   );
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+
+  // 2b. Denkpause: kurz nach dem Abschicken weitergesprochen → EINE Nachricht, die erste zurückgezogen
+  await page.goto(BASE);
+  await page.waitForTimeout(900);
+  await page.route("**/api/lotte", async (route) => {
+    await new Promise((r) => setTimeout(r, 3000));
+    await route.continue().catch(() => {});
+  });
+  await oeffnen(page);
+  await sag(page, [["Was gibt es", true]]);
+  await page.waitForTimeout(1400);
+  await page.waitForFunction(() => window.__rec?.running, null, { timeout: 3000 }).catch(() => {});
+  await sag(page, [["morgen zum Abendessen", true]]);
+  await page.waitForFunction(() => [...document.querySelectorAll("[data-gespraech] .bg-accent.rounded-br-md")].some((e) => e.textContent.trim() === "Was gibt es morgen zum Abendessen" && !e.closest("[data-eigene-blase]")), null, { timeout: 8000 }).then(
+    () => check(true, "Fortsetzung nach Denkpause: eine Nachricht"),
+    () => check(false, "Fortsetzung nach Denkpause: eine Nachricht"),
+  );
+  check(!(await eigene(page)).includes("Was gibt es"), "die halbe Frage ist zurückgezogen");
   await page.unrouteAll({ behavior: "ignoreErrors" });
 
   // 3. Ende ohne fertigen Abschnitt: der letzte Teil kommt mit (Mia antippen = fertig)
@@ -93,7 +114,8 @@ export const zuhoeren = async (page, check) => {
   await page.waitForTimeout(900);
   await oeffnen(page);
   await sag(page, [["Okay", true]]);
-  await page.waitForTimeout(3000);
+  // erst nach dem Fortsetzungs-Fenster weiter (abgeschickt 1,2 s + 1,9 s)
+  await page.waitForTimeout(3600);
   await page.waitForFunction(() => window.__rec?.running, null, { timeout: 8000 }).catch(() => {});
   await sag(page, [["Okay was steht morgen an", true]]);
   await page.waitForTimeout(3000);

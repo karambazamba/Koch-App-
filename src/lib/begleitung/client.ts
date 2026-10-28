@@ -230,7 +230,7 @@ function dayData(data: AssistantData): Partial<AssistantData> {
  * "Ich koche jetzt", den Wochencheck (eigenes Fenster) und den Kochtipp. Liefert die übrigen Änderungen (für die Vorschau) und
  * kurze Hinweise (z. B. wo der Timer steht).
  */
-export function runInstantOps(ops: ChangeOp[]): { rest: ChangeOp[]; notes: string[] } {
+export function runInstantOps(ops: ChangeOp[]): { rest: ChangeOp[]; notes: string[]; undo?: () => void } {
   const notes: string[] = [];
   const undo: (() => void)[] = [];
   let tileShown = false;
@@ -258,8 +258,8 @@ export function runInstantOps(ops: ChangeOp[]): { rest: ChangeOp[]; notes: strin
   // Timer-Kachel war ausgeblendet → startTimer hat sie eingeblendet; sagen, wo er steht
   if (tileShown) notes.push("Der Timer steht jetzt auf der Startseite.");
   // Rückwärts: jedes Zurücknehmen stellt den Stand vor seinem Schritt wieder her
-  if (undo.length) pushUndo("den Timer", () => [...undo].reverse().forEach((u) => u()));
-  return { rest: ops.filter((op) => !INSTANT_OP_TYPES.has(op.type) && !weekCheck(op) && !cookTip(op)), notes };
+  const back = undo.length ? pushUndo("den Timer", () => [...undo].reverse().forEach((u) => u())) : undefined;
+  return { rest: ops.filter((op) => !INSTANT_OP_TYPES.has(op.type) && !weekCheck(op) && !cookTip(op)), notes, ...(back ? { undo: back } : {}) };
 }
 
 type AskOptions = {
