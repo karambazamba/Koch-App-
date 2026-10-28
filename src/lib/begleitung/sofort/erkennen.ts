@@ -82,7 +82,8 @@ function notiz(t: string): ChangeOp[] | null {
 /** „Pinnwand: …“, „An alle: …“, „Sag Lisa, ich komm später“ (nicht „… sie soll …“ – das ist Abgeben) */
 function pinnwand(t: string, ctx: SofortKontext): ChangeOp[] | null {
   let text: string | null = null;
-  const pin = t.match(/^(?:schreib\w*\s+)?(?:(?:an|auf|in)\s+die\s+)?pinnwand\s*[:,]?\s+(.+)$/i) ?? t.match(/^(?:schreib\w*\s+)?an\s+alle\s*[:,]\s*(.+)$/i);
+  // „Pinnwand“ nur mit Doppelpunkt/Komma oder nach „Schreib …“ – „Pinnwand wieder in Standardfarbe“ ist kein Zettel
+  const pin = t.match(/^schreib\w*\s+(?:(?:an|auf|in)\s+die\s+)?pinnwand\s*[:,]?\s+(.+)$/i) ?? t.match(/^(?:(?:an|auf|in)\s+die\s+)?pinnwand\s*[:,]\s*(.+)$/i) ?? t.match(/^(?:schreib\w*\s+)?an\s+alle\s*[:,]\s*(.+)$/i);
   if (pin) text = clean(pin[1]);
   const sag = t.match(/^sag\s+(\p{L}+)\s*[,:]?\s+(?:dass\s+)?(.+)$/iu);
   if (!text && sag) {

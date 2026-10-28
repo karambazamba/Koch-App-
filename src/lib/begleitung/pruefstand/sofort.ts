@@ -93,6 +93,7 @@ export const SOFORT_SAETZE: SofortSatz[] = [
   S("An alle: Oma kommt heute", "pinnwand", { name: "Oma kommt heute" }),
   S("Sag Lisa, ich komm später", "pinnwand", { name: "Lisa" }),
   S("Schreib an die Pinnwand: Hund war schon draußen", "pinnwand", { name: "Hund" }),
+  S("Pinnwand wieder in Standardfarbe", null), // Kachel-Farbe, kein Zettel
   // Timer
   S("Timer 10 Minuten Nudeln", "timer", { name: "Nudeln" }),
   S("Stell einen Timer auf 5 Minuten", "timer"),
