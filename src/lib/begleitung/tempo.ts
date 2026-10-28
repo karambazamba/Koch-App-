@@ -140,13 +140,6 @@ export function tempoModell(ms: number | null | undefined) {
   if (lauf && typeof ms === "number") lauf.m.modell = Math.round(ms);
 }
 
-/** Wird diese Antwort vorgelesen? (dann wartet das Speichern auf den ersten Satz) */
-export function tempoLiest(on: boolean) {
-  if (!lauf) return;
-  lauf.liest = on;
-  vielleichtSpeichern(lauf);
-}
-
 export function useTempo(): TempoMessung[] {
   return useExternalStore(store.subscribe, () => store.load()?.messungen ?? null, () => null) ?? [];
 }

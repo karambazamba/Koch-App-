@@ -29,6 +29,7 @@ import { feierabendNachUhr } from "@/lib/kalender/aufgaben";
 import { sanitizeHome } from "@/lib/core/homeLayout";
 import { sanitizeSport } from "@/lib/sport/model";
 import { sanitizeMailStyle } from "@/lib/begleitung/mail";
+import { SOFORT_OK } from "@/lib/begleitung/sofortOk";
 import { kontextThemen } from "@/lib/begleitung/kontextThemen";
 import { chooseModel, effortFor, isWeekCheck, type ModelChoice } from "@/lib/begleitung/modellwahl";
 import { EINE_RUNDE_WERKZEUGE, kurzBestaetigbar, kurzeBestaetigung } from "@/lib/begleitung/bestaetigung";
@@ -205,7 +206,6 @@ function pendingSummary(ops: ChangeOp[]): string {
 }
 
 /** Sofort-Weg: die App hat schon gehandelt – die KI prüft nur (Antwort „OK“) oder korrigiert mit Werkzeugen */
-export const SOFORT_OK = "OK";
 function sofortHinweis(sofort: string | undefined): string {
   if (!sofort) return "";
   return `\n\nDie App hat die letzte Nachricht schon selbst erledigt (ohne dich): ${sofort}. Prüf nur, ob das passt. Passt es, antworte genau „${SOFORT_OK}“, ohne Werkzeug. Verstehst du etwas anderes, mach es mit Werkzeugen richtig (die App nimmt ihres dann zurück) und sag in höchstens einem Satz, was du gemacht hast.`;

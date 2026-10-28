@@ -3,11 +3,12 @@
 // Tempo-Messung (nur Zahlen, Median der letzten 20).
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { at, fakeWindow } from "../helpers";
-import { parseRequest, runAssistant, SOFORT_OK, type CreateMessage } from "@/lib/begleitung/engine";
+import { parseRequest, runAssistant, type CreateMessage } from "@/lib/begleitung/engine";
+import { SOFORT_OK } from "@/lib/begleitung/sofortOk";
 import { kurzBestaetigbar, kurzeBestaetigung } from "@/lib/begleitung/bestaetigung";
 import { contextText } from "@/lib/begleitung/prompt";
 import { kontextThemen } from "@/lib/begleitung/kontextThemen";
-import { clearTempo, migrateTempo, tempoBeginn, tempoLiest, tempoMarke, tempoModell, tempoSofort, tempoUebersicht, type TempoMessung } from "@/lib/begleitung/tempo";
+import { clearTempo, migrateTempo, tempoBeginn, tempoMarke, tempoModell, tempoSofort, tempoUebersicht, type TempoMessung } from "@/lib/begleitung/tempo";
 import type { ChangeOp } from "@/lib/begleitung/ops";
 import { alltagsHaushalt, ALLTAGSFRAGEN, EINKAUFSLISTE } from "./tempoHaushalt";
 import { haushalt, HEUTE, termin, WOCHEN } from "./werkzeugKontext";
@@ -157,12 +158,11 @@ describe("Tempo messen (nur Zahlen, nur Gerät)", () => {
     ]);
   });
 
-  it("ohne Vorlesen sofort gespeichert; tempoLiest(false) gibt frei", () => {
+  it("ohne Vorlesen sofort gespeichert", () => {
     clearTempo();
-    tempoBeginn({ sprache: true, letztesWortAm: 100, liest: true }, 1300);
+    tempoBeginn({ sprache: true, letztesWortAm: 100 }, 1300);
     tempoMarke("fertig", 1500);
-    tempoLiest(false);
-    expect(JSON.parse(window.localStorage.getItem("wasgibts.tempo")!).messungen).toHaveLength(1);
+    expect(JSON.parse(window.localStorage.getItem("wasgibts.tempo")!).messungen).toEqual([{ weg: "ki", sprache: true, stille: 1200, fertig: 200, token: 200 }]);
   });
 
   it("Median der letzten 20, Reaktion = Stille + erstes Wort bzw. erster Satz; kaputte Werte fallen weg", () => {

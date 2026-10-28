@@ -193,7 +193,7 @@ describe("Mikro belegt: keine Neustart-Schleife", () => {
     }
     const lines = (JSON.parse(win.localStorage.getItem("wasgibts.mikroprotokoll")!).entries as { text: string }[]).map((x) => x.text);
     expect(lines).toContain("Zuhören: kein Ton, einmal neu");
-    expect(lines).toContain("Zuhören: Mikro belegt, kein Ton – aufgehört");
+    expect(lines).toContain("Zuhören: Mikro belegt, kein Ton, aufgehört");
   });
 });
 

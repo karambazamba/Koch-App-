@@ -319,7 +319,7 @@ export class Spracherkennung {
       // (Mikro an/aus, iOS „Audioaufnahme beenden?“). Höchstens EIN stiller Neustart ohne Ton.
       const leer = !stoppedByUser && !tonDa && Date.now() - this.gestartetAm < LEER_MS;
       if (leer && ++this.leereNeustarts > 1) {
-        micLog("Zuhören: Mikro belegt, kein Ton – aufgehört");
+        micLog("Zuhören: Mikro belegt, kein Ton, aufgehört");
         this.clearTimers();
         this.clearFrist();
         this.detach();
