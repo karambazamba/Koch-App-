@@ -4,7 +4,7 @@
 // in einer festen Fläche (Raster, Tafel 118). Statt „…“ oder Abschneiden
 // wird die Schrift Stufe für Stufe kleiner, bis der Text ganz hineinpasst.
 // Der Kopf nimmt die Kurzform der Sorte, wenn der Name nicht in die Zeile
-// passt. Gemessen wird vor dem Zeichnen und wieder, wenn sich die Fläche
+// passt, und zeigt nur das Symbol, wenn auch die nicht passt. Gemessen wird vor dem Zeichnen und wieder, wenn sich die Fläche
 // ändert (Drehen, Schrift geladen).
 
 import { useLayoutEffect, type RefObject } from "react";
@@ -44,7 +44,8 @@ export function useSchriftEinpassen(box: RefObject<HTMLElement | null>, text: Re
 }
 
 /**
- * Kopf: der volle Name, wenn er in die Zeile passt, sonst die Kurzform. Beide
+ * Kopf: der volle Name, wenn er in die Zeile passt, sonst die Kurzform, sonst
+ * keiner (das Symbol davor bleibt, VoiceOver hört die Sorte am Kärtchen). Beide
  * stehen im DOM (`data-name="voll" | "kurz"`), die nicht passende ist versteckt.
  */
 export function useNameEinpassen(box: RefObject<HTMLElement | null>, key: string) {
@@ -60,6 +61,9 @@ export function useNameEinpassen(box: RefObject<HTMLElement | null>, key: string
       if (passt(b)) return;
       voll.hidden = true;
       kurz.hidden = false;
+      if (passt(b)) return;
+      // Auch die Kurzform passt nicht (Rückseite mit Teilen auf ganz schmalen Handys): nur das Symbol
+      kurz.hidden = true;
     });
   }, [box, key]);
 }

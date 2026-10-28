@@ -19,6 +19,13 @@
   Nutzer bekommen sie nie von selbst (Anordnung ändert sich nie von selbst),
   in der Kachel-Auswahl steht sie mit „NEU“, in „Mehr Funktionen“ zum
   Einschalten. Von Felix gewollte Ausnahme vom Feature-Stopp für 1.0.
+- **Nichts abgeschnitten (A-045):** kein sichtbarer Text endet auf „…“ oder
+  wird weggeschnitten. Frage und Antwort stehen in fester Fläche (Raster
+  XS · S · M, Tafel 118), die Schrift wird Stufe für Stufe kleiner, bis alles
+  ganz zu sehen ist (`useEinpassen`); der Kopf nimmt die Kurzform der Sorte
+  (`kurz`) und auf ganz schmalen Handys hinten neben „Teilen“ nur das
+  Symbol. Darum heißt die Sorte „Wer zuerst“ ohne „…“ (die Karte beginnt mit
+  „… fünf rote Dinge“). Durchklick `wundertueteAlle` prüft jede Karte.
 
 Kurz: Die Wundertüte versüßt den Tag. Tagsüber Angeberwissen, Platt und
 Rätsel, ab 17 Uhr (zu zweit/Familie) Tischrunde, Schätz mal und Wer zuerst.
@@ -33,7 +40,7 @@ Rätsel, ab 17 Uhr (zu zweit/Familie) Tischrunde, Schätz mal und Wer zuerst.
 | Heute vor 100 Jahren | `heute100` | Sand (`timer`) | Calendar | nur am belegten Tag | ja | Pflicht |
 | Tischrunde | `tischrunde` | Pfirsich (`essen`) | MessageSquare | ab 17 Uhr | nein | – |
 | Schätz mal! | `schaetzmal` | Lavendel (`termine`) | Scale | ab 17 Uhr | ja | Pflicht |
-| Wer zuerst … | `werzuerst` | Rosé (`pinnwand`) | Dice5 | ab 17 Uhr | nein | – |
+| Wer zuerst | `werzuerst` | Rosé (`pinnwand`) | Dice5 | ab 17 Uhr | nein | – |
 
 Pfirsich ist kein wählbarer Ton der Palette, aber die feste Essen-Fläche
 (`--app-tile-essen`) – so bleibt alles in den Tokens. Allein: abends weiter
@@ -49,7 +56,8 @@ Wissen, Platt, Rätsel (Angeberwissen dann mit Hinweis „Zum Weitererzählen“
 - Wechsel (rein): `auswahl.ts` (`erlaubteSorten`, `passt`, `naechste`,
   `anzeigen`, `karteGilt`, `tippAktion`, `migrateWt`); Lage aus Wetter,
   Gericht, Feiertag: `lage.ts`; Speicher: `store.ts`.
-- Kachel: `src/components/wundertuete/WundertueteTile.tsx`, CSS `.wt-karte`,
+- Kachel: `src/components/wundertuete/WundertueteTile.tsx` (Einpassen der
+  Schrift und des Kopfs: `useEinpassen.ts`), CSS `.wt-karte`,
   `.wt-dreh`, `.wt-neu` in `globals.css`.
 - Mia: Werkzeug `wundertuete_karte` (`src/lib/begleitung/wundertueteTools.ts`),
   Prüfstand-Sätze in `pruefstand/saetze.ts`.
@@ -74,7 +82,10 @@ Wissen, Platt, Rätsel (Angeberwissen dann mit Hinweis „Zum Weitererzählen“
   vorbei), kommt beim nächsten Anzeigen die passende nächste.
 - Beispiel-Tag: feste Karte Angeberwissen (Regentropfen) mit leisem
   „Beispiel“, nie gespeichert; das erste „nochmal tippen“ leert das Beispiel.
-- S und M: dieselbe Karte, M nur breiter mit größerer Frage. Keine
+- S und M: dieselbe Karte, M nur breiter mit größerer Frage (Stufen
+  `FRAGE_STUFEN`/`ANTWORT_STUFEN`: S 17 → 12 px, M 21 → 14 px; Antwort
+  S 14,5 → 11,5 px, M 17 → 13 px). Kopf: Name → Kurzform (Wissen, Platt,
+  Rätsel, Damals, Tischrunde, Schätz mal!, Wer zuerst) → nur Symbol. Keine
   Farbwahl im Bearbeiten (die Farbe kommt mit der Sorte). XS gibt es nicht.
 - Wasserzeichen (A-036): Geschenk (`Gift`) nur auf der Vorderseite, leise
   (`frei`, die Frage steht ohne weißes Kärtchen), Hinweis mit `kachel-frei`;
@@ -100,7 +111,7 @@ Wissen, Platt, Rätsel (Angeberwissen dann mit Hinweis „Zum Weitererzählen“
 | Heute vor 100 Jahren | 14 (Tage 1926) | jeder sicher belegte Tag |
 | Tischrunde | 80 | ~100 |
 | Schätz mal! | 35 | ~60 |
-| Wer zuerst … | 40 | ~40 |
+| Wer zuerst | 40 | ~40 |
 
 Tagsüber reichen die Karten für über 200 Karten am Stück ohne Wiederholung,
 abends für über 100 (Test `tests/wundertuete/wechsel.test.ts`), bei drei
@@ -116,8 +127,10 @@ bis fünf Karten am Tag also mehrere Wochen.
   Quelle ins Feld `quelle` schreiben (seriös: Behörden, Museen, Fachlexika,
   Fachzeitschriften). Im Zweifel weglassen. Platt nur mit echter Bedeutung
   aus einem Wörterbuch.
-- Vorne höchstens 64 Zeichen (3 Zeilen auf S), hinten 1–2 Sätze mit genau
-  einem `**fetten**` Wort.
+- Vorne höchstens 64 Zeichen, hinten 1–2 Sätze mit genau einem
+  `**fetten**` Wort. Danach Durchklick `wundertueteAlle` (jede Karte vorne
+  und hinten, S und M, auch iPhone SE): passt eine Karte selbst in der
+  kleinsten Stufe nicht, den Text kürzen.
 - Heute vor 100 Jahren: jedes Jahr die Tage des Jahres vor 100 Jahren
   ergänzen (nur Kindgerechtes, keine Politik, Kriege, Religion, Unglücke).
 - Nach dem Nachfüllen: `npm test` (Dubletten- und Ton-Prüfung in
@@ -144,4 +157,11 @@ bis fünf Karten am Tag also mehrere Wochen.
 - `tests/wundertuete/baustein.test.ts`: neu an / bestehend aus, erste
   Startseite, Migration, Haushaltswechsel, S/M, Farbwahl, Beispiel-Tag,
   Oberfläche (Tokens, reduced-motion), Werkzeug, Prüfstand.
-- Durchklick `e2e/ablaeufe/wundertuete.mjs`.
+- Durchklick `e2e/ablaeufe/wundertuete.mjs`: `wundertuete` (neu/bestehend,
+  Antippen, S/M, reduced-motion, Schlicht, Dunkel) und `wundertueteAlle`
+  (alle 459 Karten vorne/hinten in S und M ganz, auf dem iPhone SE mit);
+  dazu die Kachel in `nichtsAbgeschnitten` (`abgeschnitten.mjs`).
+- Fakten nachgeprüft beim Rebase auf v0.153 (Oktober 2026): Hamburgs
+  Brücken vorsichtig („rund 2.500, je nachdem, was man mitzählt“, mehr als
+  in Venedig oder Amsterdam, nicht „zusammen“), 500 g Spaghetti „je nach
+  Dicke grob 500“.

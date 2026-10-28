@@ -62,7 +62,7 @@ export const SORTEN: SorteMeta[] = [
   { id: "angeberwissen", name: "Angeberwissen", kurz: "Wissen", symbol: "lightbulb", farbe: "flieder", tone: "sport", hinweis: "Tagsüber", zeit: "tags", rueckseite: true, quellePflicht: true },
   { id: "platt", name: "Platt för Plietsche", kurz: "Platt", symbol: "anchor", farbe: "mint", tone: "aufgaben", hinweis: "„Plietsch“ = schlau", zeit: "tags", rueckseite: true, quellePflicht: true },
   { id: "raetsel", name: "Rätselstunde", kurz: "Rätsel", symbol: "puzzle", farbe: "vanille", tone: "notizen", hinweis: "Kinder raten zuerst", zeit: "tags", rueckseite: true, quellePflicht: false },
-  { id: "heute100", name: "Heute vor 100 Jahren", kurz: "Vor 100 Jahren", symbol: "calendar", farbe: "sand", tone: "timer", hinweis: "Zum Staunen", zeit: "immer", rueckseite: true, quellePflicht: true },
+  { id: "heute100", name: "Heute vor 100 Jahren", kurz: "Damals", symbol: "calendar", farbe: "sand", tone: "timer", hinweis: "Zum Staunen", zeit: "immer", rueckseite: true, quellePflicht: true },
   { id: "tischrunde", name: "Tischrunde", kurz: "Tischrunde", symbol: "message", farbe: "pfirsich", tone: "essen", hinweis: "Abends, zum Essen", zeit: "abends", rueckseite: false, quellePflicht: false },
   { id: "schaetzmal", name: "Schätz mal!", kurz: "Schätz mal!", symbol: "scale", farbe: "lavendel", tone: "termine", hinweis: "Wer am nächsten dran ist, gewinnt", zeit: "abends", rueckseite: true, quellePflicht: true },
   { id: "werzuerst", name: "Wer zuerst", kurz: "Wer zuerst", symbol: "dice", farbe: "rose", tone: "pinnwand", hinweis: "Mini-Spiel, 1 Minute", zeit: "abends", rueckseite: false, quellePflicht: false },

@@ -26,7 +26,8 @@ async function layout(page, tiles, features = FEATURES) {
 }
 
 const karte = (page) => page.locator(KACHEL).first();
-const info = (page) => karte(page).evaluate((el) => ({ sorte: el.dataset.sorte, seite: el.dataset.seite, w: el.getBoundingClientRect().width, over: [...el.querySelectorAll("section")].some((s) => s.scrollHeight > s.clientHeight + 2) }));
+const info = (page) => karte(page).evaluate((el) => ({ sorte: el.dataset.sorte, seite: el.dataset.seite, w: el.getBoundingClientRect().width, over: [...el.querySelectorAll("[data-frage], [data-antwort]")].some((t) => t.parentElement.scrollHeight > t.parentElement.clientHeight + 1 || t.parentElement.getBoundingClientRect().bottom > t.closest("section").getBoundingClientRect().bottom) }));
+// „Quillt über“ = Frage/Antwort passt nicht in ihre Fläche (das Wasserzeichen ragt absichtlich über den Rand, zählt nicht)
 
 export const wundertuete = async (page, check) => {
   // Neuer Nutzer: Kachel steht da, mit Beispiel-Karte

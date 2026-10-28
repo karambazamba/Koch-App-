@@ -191,8 +191,8 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   `--app-wasserzeichen*`): Termine Calendar, Aufgaben CircleCheck, Einkauf
   ShoppingCart, Im Haus Refrigerator, Notizen StickyNote, Timer Timer, Tipps
   MapPin, Post (bald) Mail, Wundertüte Gift (nur Vorderseite, leise). Keins
-  bei Wetter (Himmel), Essen (Foto), Pinnwand (Zettel), Spendentopf (Topf), Sport (die Stempel sind das Bild, A-044), der
-  Jetzt-Karte, in XS und im Look „Schlicht“. Tabelle `WASSERZEICHEN_SYMBOL`
+  bei Wetter (Himmel), Essen (Foto), Pinnwand (Zettel), Spendentopf (Topf),
+  Sport (die Stempel sind das Bild, A-044), der Jetzt-Karte, in XS und im Look „Schlicht“. Tabelle `WASSERZEICHEN_SYMBOL`
   (`Record` über alle Kachel-IDs, neue Kachel = Eintrag oder Grund in
   `OHNE_WASSERZEICHEN`, Test `tests/app/wasserzeichen.test.ts`). Freier Text
   ohne weißes Kärtchen → `frei` (9 %, dunkel 8 %), leiser Text dort mit
@@ -447,7 +447,8 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   einmal, Sprechblase „Kein Stress. Ich sortier deinen Alltag, Stück für
   Stück.“, drei Knöpfe, Texte `ERSTER_START` in `mia/persona.ts`, seit
   v0.120) → `startFresh("farbig", haushalt)`: Standardwerte,
-  `ersteStartseite(haushalt)` (Standard + Wundertüte), `startDemo()`; Mia fliegt von „Zeig mal“ zum Mia-Knopf, der
+  `ersteStartseite(haushalt)` (Standard + Wundertüte), `startDemo()`; Mia
+  fliegt von „Zeig mal“ zum Mia-Knopf, der
   beim ersten Erscheinen einmal zwinkert; „Schreiben & sprechen“ erst nach 4 s.
   Jeder Schritt ist ein Verlaufseintrag (Zurück = ein Schritt), nach „Zeig
   mal“ werden die Schritte aus dem Verlauf genommen.
@@ -639,6 +640,11 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Auswahl „NEU“; Einschalten in „Mehr Funktionen“ stellt die Kachel auf die
   Startseite. Ausnahme vom Feature-Stopp für 1.0, von Felix gewollt.
 - Beispiel-Tag: feste Karte Angeberwissen mit leisem „Beispiel“.
+- Raster (A-023): nur S und M, keine Standard-Position im Tafel-119-Standard
+  (`defaultHome`), nur beim allerersten Start dazu (`ersteStartseite`).
+  Nichts abgeschnitten: Schrift passt sich der Fläche an, Kopf mit
+  Kurzform (`useEinpassen`); geprüft in `nichtsAbgeschnitten` und
+  `wundertueteAlle`.
 - Alles Weitere (Sorten, Wechsel, Pool, Nachfüllen, Speicher, Tests):
   `docs/bereiche/wundertuete.md`; Oberfläche
   `src/components/wundertuete/WundertueteTile.tsx`, im Board über
