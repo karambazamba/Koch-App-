@@ -3,8 +3,10 @@
 Kurz: Die Kühlschranktür (Tafel 106/107, Vorlagen in `docs/tafeln/`). Zettel,
 Fotos und Sprachnachrichten FÜR DIE ANDEREN im Haushalt; Notizen sind für
 mich. Klar unterscheidbar von Notizen (die bleiben weiß und schlicht).
-Ein Zettel bleibt, bis jemand ihn abhakt (blass mit Haken, nach 3 s gleitet
-er ins Archiv „Ältere“, „Erledigt · Rückgängig“ holt ihn zurück), oder bis
+Ein Zettel bleibt, bis jemand ihn abhakt (wie Aufgaben und Einkauf: Häkchen
+orange, 1 s stehen – nochmal tippen = zurück –, dann gleitet er weich ins
+Archiv „Ältere“, nie durchgestrichen; „Erledigt · Rückgängig“ holt ihn
+zurück), oder bis
 er 7 Tage alt ist – dann liegt er leise im Archiv. „Bleibt hängen“ geht nie
 von selbst. Im Archiv nach 30 Tagen still gelöscht, sonst nur von Hand
 (A-024; die 24-Stunden-Wartezeit für Erledigtes ist weg).
@@ -13,9 +15,10 @@ von selbst. Im Archiv nach 30 Tagen still gelöscht, sonst nur von Hand
 
 - **Pinnwand (Kühlschranktür, Tafel 106/107):** Zettel und Sprachnachrichten
   FÜR DIE ANDEREN (geteilt im Haushalt); Notizen = für mich. Ein Zettel
-  bleibt, bis jemand abhakt (blass mit Haken, „erledigt von Lisa“, nach 3 s
-  weich ins Archiv „Ältere“, Toast „Erledigt · Rückgängig“ 5 s – Ausnahme
-  von der Rückgängig-Regel, ausdrücklich gewünscht) oder bis er 7 Tage alt
+  bleibt, bis jemand abhakt (wie Aufgaben und Einkauf: Häkchen orange,
+  „erledigt von Lisa“, 1 s stehen – nochmal tippen = zurück –, dann 0,8 s
+  weich ins Archiv „Ältere“, nie durchgestrichen; danach Toast „Erledigt ·
+  Rückgängig“ 5 s – ausdrücklich gewünscht; Seite und Kachel gleich) oder bis er 7 Tage alt
   ist (leise ins Archiv); „Bleibt hängen“ (intern `pinned`) bleibt oben links
   und geht nie von selbst; im Archiv nach 30 Tagen still gelöscht (als
   Lösch-Markierung über den Abgleich), sonst nur von Hand mit Rückgängig;
@@ -31,15 +34,17 @@ von selbst. Im Archiv nach 30 Tagen still gelöscht, sonst nur von Hand
   auf 1600 px, Bucket „fotos“ nur für den Haushalt). Antippen/lange drücken =
   Menü (Erledigt, Antworten, In Notizen, Bleibt hängen, Löschen nur eigene); Mia
   fragt EINMAL je Zettel „Klingt nach Notiz …“. Kachel = Fächer (S drei,
-  M drei nebeneinander, L bis 6, nur nicht Erledigtes; leer gestrichelter
-  Zettel). Seiten-Tipp: „Kurze Zettel für alle. Abhaken räumt auf, ‚Bleibt
+  M drei nebeneinander, L bis 6; gerade Abgehaktes 1 s mit Häkchen, dann
+  weich weg; leer gestrichelter Zettel). Seiten-Tipp: „Kurze Zettel für alle. Abhaken räumt auf, ‚Bleibt
   hängen‘ bleibt.“
   → `docs/bereiche/pinnwand.md`
 
 ## Wo im Code
 
 - Regeln der Tür (rein): `src/lib/pinnwand/tuer.ts` – `archivedSince`,
-  `isArchived`/`onDoor` (Erledigt 3 s blass = `ABHAK_MS`, dann Archiv; sonst
+  `isArchived`/`onDoor` (Erledigt 1 s stehen + 0,8 s gleiten = `ABHAK_MS`
+  aus `core/abhaken.ts` – `STEHEN_MS`/`GLEITEN_MS`, dieselben wie beim
+  Einkauf –, dann Archiv; sonst
   7 Tage; „Bleibt hängen“ nie von selbst), `isForgotten` (30 Tage im Archiv =
   `VERGESSEN_MS`), `leavesIn`/`GLEIT_MS` (wann er hinausgleitet), `doneValue`/`doneLine` („erledigt von Lisa“), `personFarbe`/
   `farbeOf`/`zettelTon` (5 Töne), `tiltOf` (−3° bis +3°, fest aus der ID),
@@ -123,13 +128,15 @@ von selbst. Im Archiv nach 30 Tagen still gelöscht, sonst nur von Hand
   „SPRACHNACHRICHT“, ▶, Tonwelle in Personenfarbe, Dauer; Herz). Unten
   Avatar-Kreis mit Initiale, Name, Zeit – nie abgeschnitten, lieber
   zweizeilig (rechts Platz für den Haken-Kreis).
-- Haken-Kreis unten rechts = Erledigt: Zettel blass mit Haken, Text
-  durchgestrichen, „erledigt von Lisa“, Toast „Erledigt · Rückgängig“ (5 s);
-  nach 3 s gleitet er weich von der Tür ins Archiv (0,9 s,
-  `cubic-bezier(.16,1,.3,1)`, nur transform/opacity, reduziert nur
-  Überblenden; `useBoard` rechnet genau dann neu). Rückgängig holt ihn
-  zurück an die Tür, auch aus dem Archiv; nochmal tippen, solange er hängt,
-  nimmt es still zurück. Erledigte zählen nie als ungelesen, Mia liest sie
+- Haken-Kreis unten rechts = Erledigt, wie Aufgaben und Einkauf (A-024,
+  v0.145): Häkchen orange (`bg-accent`, kurzes „check-pop“), „erledigt von
+  Lisa“, Zettel weder blass noch durchgestrichen. 1 s stehen – nochmal
+  tippen nimmt es still zurück –, dann gleitet er 0,8 s weich von der Tür
+  ins Archiv (`cubic-bezier(.16,1,.3,1)`, nur transform/opacity, reduziert
+  nur Überblenden; `useGehtIn` in `Zettel.tsx`, `useBoard` rechnet genau
+  dann neu). Liegt er im Archiv, kommt der Toast „Erledigt · Rückgängig“
+  (5 s, nur wenn er noch so abgehakt ist); Rückgängig holt ihn zurück an
+  die Tür. Erledigte zählen nie als ungelesen, Mia liest sie
   nicht vor.
 - Antippen oder lange drücken (Android: „contextmenu“) = Menü: Reaktionen
   👍 ❤️ 😂 😮 🙏, „Erledigt“, „Antworten“ (neuer Zettel mit Bezug „↪ Lisa“),
@@ -168,11 +175,12 @@ von selbst. Im Archiv nach 30 Tagen still gelöscht, sonst nur von Hand
 ### Kachel (Tafel 107, Variante 1 „Fächer“)
 - Bleibt rosa (`--app-tile-pinnwand`), Kopf „PINNWAND“ + ＋ (= „Neuer
   Zettel“); Look „Schlicht“: Kachel weiß, die Zettel behalten ihre Farbe.
-- S (156 px, so hoch wie das Wetter): die drei neuesten nicht erledigten
+- S (156 px, so hoch wie das Wetter): die drei neuesten
   Zettel aufgefächert (−10°, −2°, +7°), der neueste vorn gut lesbar (bis 3
   Zeilen), darunter klein der Name; Sprachnachricht als „▶ 0:12“, Foto als
   Mini-Polaroid. „Bleibt hängen“ zählt nur, wenn weniger als 3 neue da
-  sind. Abgehakte nie (auch nicht in den 3 s an der Tür).
+  sind. Gerade Abgehaktes (Seite, Mia, Familie) steht wie an der Tür 1 s
+  mit orangem Häkchen und gleitet dann weich weg, der nächste rückt nach.
   M: drei nebeneinander. L: bis 6 im Raster.
 - Leer (Variante 4): gestrichelter Zettel mit Magnet und ＋, darunter
   „Erster Zettel?“ und „Oder 🎙 Sprachnachricht“ (lucide Mikro: nimmt gleich
@@ -200,7 +208,7 @@ von selbst. Im Archiv nach 30 Tagen still gelöscht, sonst nur von Hand
   `recorderState.ts`, `core/mic`, `memoPlayer.ts`): antippen = frei sprechen,
   halten = loslassen sendet, höchstens 60 s, Wake Lock, Zurück fragt,
   Mikro-Protokoll. Kein KI-Anteil, keine Abschrift, nie an ElevenLabs.
-- An der Tür als Kassenbon; abgehakt nach 3 s ins Archiv, sonst nach 7
+- An der Tür als Kassenbon; abgehakt wie Zettel (1 s Häkchen, dann weich ins Archiv), sonst nach 7
   Tagen – der Ton bleibt dabei, bis sie nach 30 Tagen im Archiv gelöscht
   werden.
 
@@ -224,12 +232,16 @@ von selbst. Im Archiv nach 30 Tagen still gelöscht, sonst nur von Hand
 
 ## Tests
 
-- `tests/pinnwand/nachtrag.test.ts` (A-024: Abhaken → nach 3 s im Archiv,
+- `tests/pinnwand/abhaken.test.ts` (v0.145: 1 s stehen, nochmal tippen =
+  zurück ohne Toast, nach 1,8 s im Archiv, dann „Erledigt · Rückgängig“,
+  Archiv 30 Tage, Kachel gleich, Häkchen orange, nie durchgestrichen,
+  gleiche Zeiten wie der Einkauf).
+- `tests/pinnwand/nachtrag.test.ts` (A-024: Abhaken → nach 1,8 s im Archiv,
   Rückgängig holt zurück, Archiv nach 30 Tagen leer, „Bleibt hängen“ nie im
-  Archiv, Fächer ohne Erledigtes, Wörter überall gleich, Tür wächst mit,
+  Archiv, Fächer wie die Tür, Wörter überall gleich, Tür wächst mit,
   Name · Zeit nie abgeschnitten).
 - `tests/pinnwand/kuehlschrank.test.ts` (kein Verschwinden nach 24 Std.,
-  Erledigt → blass → Archiv, 7 Tage, Bleibt hängen, Personenfarben, Tokens hell/
+  Erledigt → Häkchen → Archiv, 7 Tage, Bleibt hängen, Personenfarben, Tokens hell/
   dunkel, Papiere, Schiefe, Spalten, In Notizen, Mia-Frage einmal, Fächer
   1/2/3+/leer, M/L, Schlicht, Beispiel, allein = aus, Migration v3 → v4).
 - `tests/pinnwand/fotos.test.ts` (verkleinern, Pfad = DB-Regel, Hochladen,
@@ -240,7 +252,8 @@ von selbst. Im Archiv nach 30 Tagen still gelöscht, sonst nur von Hand
   `pinnwandHooks.test.ts`, `tests/konten/memosTeilen.test.ts` (Aufräumen
   nur ohne Eintrag).
 - Durchklick: `e2e/ablaeufe/pinnwandgesten.mjs` (auch „Bleibt hängen“,
-  „Hängt.“, Abhaken → nach 3 s im Archiv, Rückgängig), `alltag.mjs` (`pinnwand`),
+  „Hängt.“, Abhaken: Häkchen orange, nicht durchgestrichen, nochmal tippen =
+  zurück, sonst ins Archiv, Rückgängig), `alltag.mjs` (`pinnwand`),
   `notizen.mjs` (Return, Notiz-Frage), `sprachnachricht.mjs`
   (`aufnahmeLeiste` in der leeren Kachel, Aufnahme über „Neuer Zettel“),
   `vorfuehren.mjs` (`memoAntippen`), `start.mjs` (Beispiel im Fächer).

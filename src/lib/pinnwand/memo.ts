@@ -3,7 +3,7 @@
 // Der Eintrag (typ "memo") liegt in `wasgibts.pinnwand`, der Ton selbst in
 // IndexedDB (`memoAudio.ts`), mit Konto in Supabase Storage (`storagePath`).
 // An der Tür als „Kassenbon“ (Tafel 106): bleibt, bis jemand abhakt (dann
-// nach 3 s ins Archiv), sonst nach 7 Tagen leise ins Archiv (`tuer.ts`); im
+// 1 s Häkchen, dann ins Archiv), sonst nach 7 Tagen leise ins Archiv (`tuer.ts`); im
 // Archiv nach 30 Tagen still gelöscht, sonst nur von Hand, der Ton gleich
 // mit. „Bleibt hängen“ gibt es bei Memos nicht. Rein, damit Oberfläche, Mia
 // und Tests gleich rechnen.
@@ -37,7 +37,7 @@ type MemoData = {
   storagePath: string | null;
   /** Gewählte Farbe; null = Farbe der Person */
   farbe: ZettelFarbe | null;
-  /** Erledigt von … am … (3 s blass mit Haken, dann ins Archiv) */
+  /** Erledigt von … am … (1 s mit Häkchen, dann weich ins Archiv) */
   erledigt: Done | null;
   /** Von Hand ins Archiv */
   archiv: string | null;

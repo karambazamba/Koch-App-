@@ -1,7 +1,8 @@
 // Die Kühlschranktür (Tafel 106/107) – Regeln für Zettel und
 // Sprachnachrichten gleichermaßen:
-// - Abgehakt = kurz blass mit Haken, nach 3 s gleitet der Zettel ins Archiv
-//   „Ältere“ (Rückgängig holt ihn zurück). Nicht Erledigtes geht nach 7 Tagen
+// - Abgehakt wie Aufgaben und Einkauf: Häkchen orange, 1 s stehen (nochmal
+//   tippen = doch nicht), dann gleitet der Zettel 0,8 s weich ins Archiv
+//   „Ältere“ (nie durchgestrichen; Rückgängig holt ihn zurück). Nicht Erledigtes geht nach 7 Tagen
 //   leise ins Archiv. „Bleibt hängen“ (intern `pinned`) geht nie von selbst,
 //   nur durch Abhaken. Im Archiv wird nach 30 Tagen still gelöscht (als
 //   Lösch-Markierung über den Abgleich, die Dateien räumt dann der Server
@@ -12,8 +13,11 @@
 // - Jeder Zettel hängt fest leicht schief (−3° bis +3°, aus der ID) an
 //   einem Magneten je Papier: Punkt (Zettel), Stern (Karoblatt), Apfel
 //   (Polaroid), Herz (Kassenbon); „Bleibt hängen“ am roten Pin.
-// - Kachel „Fächer“: die neuesten nicht erledigten, „Bleibt hängen“ nur zum
+// - Kachel „Fächer“: die neuesten an der Tür (gerade Abgehaktes steht dort
+//   genauso 1 s mit Häkchen und gleitet dann weg), „Bleibt hängen“ nur zum
 //   Auffüllen. Rein.
+
+import { GLEITEN_MS, STEHEN_MS } from "@/lib/core/abhaken";
 
 export const ZETTEL_FARBEN = 5;
 export type ZettelFarbe = 0 | 1 | 2 | 3 | 4;
@@ -22,10 +26,10 @@ export const FARB_NAMEN = ["Gelb", "Rosa", "Grün", "Blau", "Lila"] as const;
 
 export type Done = { von: string; am: string };
 
-/** So lange bleibt Abgehaktes blass mit Haken an der Tür, dann gleitet es ins Archiv */
-export const ABHAK_MS = 3_000;
-/** Das Hinausgleiten (letzter Teil der 3 s) */
-export const GLEIT_MS = 900;
+/** So lange bleibt Abgehaktes an der Tür: 1 s mit Häkchen stehen, 0,8 s weich hinaus – dann liegt es im Archiv */
+export const ABHAK_MS = STEHEN_MS + GLEITEN_MS;
+/** Das Hinausgleiten (nach der 1 s Stehen) */
+export const GLEIT_MS = GLEITEN_MS;
 /** So lange hängt ein Zettel, bevor er leise ins Archiv geht */
 export const ARCHIV_MS = 7 * 86_400_000;
 /** So lange liegt ein Zettel im Archiv, bevor er still gelöscht wird */
@@ -44,7 +48,7 @@ export function readDone(v: unknown): Done | null {
 const ms = (iso: string) => Date.parse(iso) || 0;
 
 /**
- * Seit wann ein Eintrag im Archiv liegt (ms): von Hand hineingelegt, 3 s nach
+ * Seit wann ein Eintrag im Archiv liegt (ms): von Hand hineingelegt, 1,8 s nach
  * dem Abhaken oder (ohne „Bleibt hängen“) 7 Tage nach dem Schreiben; null =
  * gehört an die Tür, solange niemand abhakt.
  */
@@ -114,11 +118,12 @@ export const FAECHER = { S: 3, M: 3, L: 6 } as const;
 export const FAECHER_WINKEL = [-10, -2, 7] as const;
 
 /**
- * Kachel: die neuesten nicht erledigten Einträge an der Tür (neueste zuerst);
+ * Kachel: die neuesten Einträge an der Tür (neueste zuerst) – gerade
+ * Abgehaktes bleibt wie an der Tür 1 s mit Häkchen und gleitet dann weg;
  * „Bleibt hängen“ zählt nur mit, wenn weniger als `count` neue da sind.
  */
 export function faecherOf<T extends DoorEntry>(items: T[], nowMs: number, count: number): T[] {
-  const live = items.filter((e) => onDoor(e, nowMs) && !e.data.erledigt).sort((a, b) => b.erstellt.localeCompare(a.erstellt));
+  const live = items.filter((e) => onDoor(e, nowMs)).sort((a, b) => b.erstellt.localeCompare(a.erstellt));
   const fresh = live.filter((e) => !e.data.pinned);
   const pinned = live.filter((e) => e.data.pinned);
   return [...fresh, ...pinned].slice(0, count);

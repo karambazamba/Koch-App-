@@ -3,8 +3,8 @@
 // PINNWAND auf der Startseite (Tafel 107, Variante 1 „Fächer“): die Kachel
 // bleibt rosa (Look „Schlicht“: weiß, die Zettel behalten ihre Farbe) und
 // zeigt echte kleine Zettel – so sieht man sofort: Pinnwand, nicht Notizen.
-// S = Fächer aus den drei neuesten nicht erledigten Zetteln („Bleibt hängen“
-// nur zum Auffüllen), M = drei nebeneinander, L = bis 6. Oben rechts ＋ =
+// S = Fächer aus den drei neuesten Zetteln an der Tür („Bleibt hängen“ nur
+// zum Auffüllen; gerade Abgehaktes 1 s mit Häkchen, dann weich weg), M = drei nebeneinander, L = bis 6. Oben rechts ＋ =
 // „Neuer Zettel“. Leer (Variante 4): gestrichelter Zettel „Erster Zettel?“
 // und „Oder 🎙 Sprachnachricht“ (Mikro = gleich aufnehmen; die Aufnahme ist
 // EINE Leiste, gesendet nur über ➤). Beispiel-Tag: Mias oranger Zettel, Ole

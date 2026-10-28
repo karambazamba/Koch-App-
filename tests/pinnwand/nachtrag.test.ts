@@ -1,8 +1,8 @@
 // Pinnwand-Nachtrag (A-024, Video 28.10. 12:10): Wörter klarer, Erledigtes
-// geht sofort von der Tür. Abhaken → 3 s blass mit Haken → Archiv „Ältere“,
-// „Erledigt · Rückgängig“ (5 s) holt zurück; Archiv nach 30 Tagen still leer
+// geht sofort von der Tür. Abhaken → Häkchen orange, 1 s stehen, 0,8 s weich
+// weg → Archiv „Ältere“ (v0.145), „Erledigt · Rückgängig“ (5 s) holt zurück; Archiv nach 30 Tagen still leer
 // (beim Start, als Lösch-Markierung über den Abgleich); „Bleibt hängen“ nie
-// im Archiv; Fächer nur Nicht-Erledigtes; Wörter überall gleich. Dazu zwei
+// im Archiv; Fächer genauso; Wörter überall gleich. Dazu zwei
 // Fehler vom Bildschirmfoto: Tür wächst mit dem Inhalt (Griff sah wie ein
 // Scrollbalken aus), Name · Zeit unter dem Zettel nie abgeschnitten.
 import { readFileSync, readdirSync, statSync } from "node:fs";
@@ -53,19 +53,19 @@ const abhaken = (list: PinMessage[], id: string) => {
   return updatePin(list, id, { erledigt: doneValue(list.find((p) => p.id === id)!, "Felix", s) }, s);
 };
 
-describe("Abhaken: 3 s blass mit Haken, dann ins Archiv", () => {
-  it("nach 3 s im Archiv „Ältere“, vorher blass an der Tür (keine 24 Std. mehr)", () => {
+describe("Abhaken: 1 s Häkchen, dann ins Archiv (Einzelheiten in abhaken.test.ts)", () => {
+  it("nach 1,8 s im Archiv „Ältere“, vorher an der Tür (keine 24 Std. mehr)", () => {
     at("2026-10-28T12:10");
     const p = pin("Brötchen holen?");
     const done = abhaken([p], p.id);
-    expect(ABHAK_MS).toBe(3_000);
-    expect(visiblePins(done, ms() + 2_999).map((x) => x.id)).toEqual([p.id]);
+    expect(ABHAK_MS).toBe(1_800);
+    expect(visiblePins(done, ms() + 1_799).map((x) => x.id)).toEqual([p.id]);
     expect(activePins(done, ms())).toHaveLength(0);
-    expect(leavesIn(done[0], ms())).toBe(3_000);
-    expect(leavesIn(done[0], ms() + 1_000)).toBe(2_000);
-    expect(visiblePins(done, ms() + 3_000)).toHaveLength(0);
-    expect(archivedPins(done, ms() + 3_000).map((x) => x.id)).toEqual([p.id]);
-    expect(leavesIn(done[0], ms() + 3_000)).toBeNull();
+    expect(leavesIn(done[0], ms())).toBe(1_800);
+    expect(leavesIn(done[0], ms() + 1_000)).toBe(800);
+    expect(visiblePins(done, ms() + 1_800)).toHaveLength(0);
+    expect(archivedPins(done, ms() + 1_800).map((x) => x.id)).toEqual([p.id]);
+    expect(leavesIn(done[0], ms() + 1_800)).toBeNull();
     expect(leavesIn(p, ms())).toBeNull();
   });
 
@@ -80,20 +80,12 @@ describe("Abhaken: 3 s blass mit Haken, dann ins Archiv", () => {
     expect(activePins(back, later)).toHaveLength(1);
   });
 
-  it("„Erledigt · Rückgängig“ für 5 s, nur dieser Zettel wird zurückgenommen", () => {
+  it("„Erledigt · Rückgängig“ für 5 s, erst wenn er im Archiv liegt, nur dieser Zettel wird zurückgenommen", () => {
     const actions = read("src/components/pinnwand/boardActions.ts");
     expect(actions).toMatch(/const ERLEDIGT_TOAST_S = 5;/);
     expect(actions).toMatch(/showToast\(\{ text: "Erledigt", undo, undoneText: "Hängt wieder", seconds: ERLEDIGT_TOAST_S/);
     expect(actions).toMatch(/pushUndo\("Erledigt", \(\) => setDone\(item, null\)\)/);
-  });
-
-  it("Bewegung: blass + Haken, im letzten Teil der 3 s weich hinaus (transform/opacity), reduziert nur Überblenden", () => {
-    const css = read("src/app/globals.css");
-    expect(css).toMatch(/\.zettel-geht \{ animation: zettel-geht 0\.9s cubic-bezier\(\.16, 1, \.3, 1\) var\(--geht-in, 0ms\) both; \}/);
-    const keyframes = css.slice(css.indexOf("@keyframes zettel-geht"), css.indexOf("@keyframes zettel-blende"));
-    expect(keyframes).not.toMatch(/(top|left|height|margin):/);
-    const reduced = css.slice(css.lastIndexOf("@media (prefers-reduced-motion: reduce)", css.indexOf(".zettel-geht { animation-name")));
-    expect(reduced.slice(0, 200)).toContain(".zettel-geht { animation-name: zettel-blende; }");
+    expect(actions).toMatch(/\}, ABHAK_MS\);/);
     expect(read("src/components/pinnwand/useBoard.ts")).toMatch(/setTimeout\(\(\) => tick/);
   });
 
@@ -102,8 +94,8 @@ describe("Abhaken: 3 s blass mit Haken, dann ins Archiv", () => {
     const m = createMemo({ author: "Lisa", dauer: 8, mime: "audio/mp4", wave: [0.4] });
     const s = now().toISOString();
     const done = updateMemo([m], m.id, { erledigt: { von: "Felix", am: s } }, s);
-    expect(archivedMemos(done, ms() + 2_999)).toHaveLength(0);
-    expect(archivedMemos(done, ms() + 3_000)).toHaveLength(1);
+    expect(archivedMemos(done, ms() + 1_799)).toHaveLength(0);
+    expect(archivedMemos(done, ms() + 1_800)).toHaveLength(1);
   });
 });
 
@@ -119,7 +111,7 @@ describe("Archiv: nach 30 Tagen still gelöscht", () => {
     expect(VERGESSEN_MS).toBe(30 * DAY);
     // Von Hand und abgehakt: 30 Tage ab heute; „Alt“: 7 + 30 Tage
     expect(archivedPins(list, t0 + 30 * DAY - 60_000)).toHaveLength(3);
-    expect(archivedPins(list, t0 + 30 * DAY + 3_000).map((p) => p.data.text)).toEqual(["Alt"]);
+    expect(archivedPins(list, t0 + 30 * DAY + 1_800).map((p) => p.data.text)).toEqual(["Alt"]);
     expect(isForgotten(alt, t0 + ARCHIV_MS + VERGESSEN_MS - 1)).toBe(false);
     expect(archivedPins(list, t0 + ARCHIV_MS + VERGESSEN_MS)).toHaveLength(0);
     expect(forgetPins(list, t0 + ARCHIV_MS + VERGESSEN_MS)).toEqual([]);
@@ -156,13 +148,14 @@ describe("Archiv: nach 30 Tagen still gelöscht", () => {
   });
 });
 
-describe("Kachel (Fächer): nur nicht Erledigtes", () => {
-  it("ein abgehakter Zettel verschwindet sofort aus dem Fächer, auch während er noch blass an der Tür hängt", () => {
+describe("Kachel (Fächer): Erledigtes geht wie an der Tür", () => {
+  it("ein abgehakter Zettel steht 1 s mit Häkchen im Fächer und ist nach 1,8 s weg", () => {
     at("2026-10-28T12:10");
     const a = pin("Eins");
     const b = pin("Zwei");
     const list = abhaken([a, b], a.id);
-    expect(faecherOf(list, ms(), 3).map((p) => p.data.text)).toEqual(["Zwei"]);
+    expect(faecherOf(list, ms(), 3).map((p) => p.data.text).sort()).toEqual(["Eins", "Zwei"]);
+    expect(faecherOf(list, ms() + 1_800, 3).map((p) => p.data.text)).toEqual(["Zwei"]);
     expect(visiblePins(list, ms())).toHaveLength(2);
   });
 });

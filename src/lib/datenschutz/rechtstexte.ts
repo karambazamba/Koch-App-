@@ -78,7 +78,7 @@ export const DATENSCHUTZ: Abschnitt[] = [
   {
     titel: "Wie lange",
     absaetze: [
-      "Einträge bleiben, bis ihr sie löscht. Pinnwand-Zettel, Fotos und Sprachnachrichten gehen 3 Sekunden nach „Erledigt“ oder nach 7 Tagen ins Archiv (außer „Bleibt hängen“) und werden dort nach 30 Tagen gelöscht, früher, wenn ihr sie löscht; Ton und Bilder gelöschter Zettel räumt der Server täglich weg. Vorschläge aus Mails nach 7 Tagen, die Mail selbst speichern wir nie. Der Chat wird nicht gespeichert. Einladungs-Links gelten 14 Tage.",
+      "Einträge bleiben, bis ihr sie löscht. Pinnwand-Zettel, Fotos und Sprachnachrichten gehen kurz nach „Erledigt“ oder nach 7 Tagen ins Archiv (außer „Bleibt hängen“) und werden dort nach 30 Tagen gelöscht, früher, wenn ihr sie löscht; Ton und Bilder gelöschter Zettel räumt der Server täglich weg. Vorschläge aus Mails nach 7 Tagen, die Mail selbst speichern wir nie. Der Chat wird nicht gespeichert. Einladungs-Links gelten 14 Tage.",
       "„Konto löschen“ entfernt deine Daten auf dem Server sofort; verlässt die letzte Person die Familie, wird auch die Familie gelöscht. Sicherungskopien unserer Anbieter laufen nach spätestens 30 Tagen aus [bitte bestätigen].",
     ],
   },

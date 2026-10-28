@@ -1,5 +1,5 @@
 // Pinnwand als Kühlschranktür (Tafel 106/107): nichts verschwindet nach
-// 24 Std.; Erledigt → 3 s blass → Archiv; 7 Tage → Archiv; „Bleibt hängen“ bleibt;
+// 24 Std.; Erledigt → 1 s Häkchen, 0,8 s weich weg → Archiv; 7 Tage → Archiv; „Bleibt hängen“ bleibt;
 // Personenfarben; Papierarten; Mia-Frage einmal; Fächer; Beispiel; allein =
 // Pinnwand aus; Migration v3 → v4 behält alles.
 import { readFileSync } from "node:fs";
@@ -60,7 +60,7 @@ describe("Nichts verschwindet ungefragt", () => {
     expect(ARCHIV_MS).toBe(7 * DAY);
   });
 
-  it("Erledigt: blass an der Tür (3 s), „erledigt von Lisa“, dann ins Archiv; zurücknehmen geht", () => {
+  it("Erledigt: 1 s mit Häkchen an der Tür, 0,8 s weich weg, „erledigt von Lisa“, dann ins Archiv; zurücknehmen geht", () => {
     at("2026-10-20T09:00");
     const p = pin("Brötchen holen?", "Lisa");
     const stamp = now().toISOString();
@@ -68,7 +68,7 @@ describe("Nichts verschwindet ungefragt", () => {
     expect(done[0].data.erledigt).toEqual({ von: "Lisa", am: stamp });
     expect(doneLine(done[0].data.erledigt!, "Felix")).toBe("erledigt von Lisa");
     expect(doneLine(done[0].data.erledigt!, "Lisa")).toBe("erledigt von dir");
-    expect(ABHAK_MS).toBe(3_000);
+    expect(ABHAK_MS).toBe(1_800);
     expect(visiblePins(done, ms() + ABHAK_MS - 1)).toHaveLength(1);
     expect(activePins(done, ms())).toHaveLength(0);
     expect(isArchived(done[0], ms() + ABHAK_MS)).toBe(true);

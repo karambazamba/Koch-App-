@@ -3177,7 +3177,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
   noch Hülle). Test `tests/core/fensterVerlauf.test.ts` mit asynchronem
   Verlauf; Durchklick `erinnerungFrage` war vorher schwankend.
 
-## Pinnwand: Wörter klarer, Erledigtes geht sofort von der Tür (A-024, Version folgt beim Mergen)
+## Pinnwand: Wörter klarer, Erledigtes geht sofort von der Tür (v0.145.0, A-024)
 
 - Wörter überall gleich (`pinnwand/woerter.ts`): großer Knopf „Aufhängen“
   (statt „Anpinnen“), Toast „Hängt.“ (statt „Angepinnt“), Schalter „Bleibt
@@ -3187,10 +3187,14 @@ Fehler in `docs/aufraeumen-nachher.md`.
   bleibt hängen“, Schnelleingabe „Hängt: …“, Seiten-Tipp und leere Tür
   „Kurze Zettel für alle. Abhaken räumt auf, ‚Bleibt hängen‘ bleibt.“
   Notizen behalten ihr „Anheften“ (eigener Bereich). Intern bleibt `pinned`.
-- Abhaken: blass mit Haken, Toast „Erledigt · Rückgängig“ (5 s), nach 3 s
-  gleitet der Zettel weich ins Archiv „Ältere“ (`ABHAK_MS`, Bewegung 0,9 s
-  im letzten Teil, reduziert nur Überblenden). Rückgängig holt ihn zurück an
-  die Tür, auch aus dem Archiv. Die 24-Stunden-Wartezeit ist weg. Nicht
+- Abhaken wie Aufgaben und Einkauf (Nachtrag): Häkchen orange, 1 s stehen
+  (nochmal tippen = zurück), dann gleitet der Zettel 0,8 s weich ins Archiv
+  „Ältere“ (nur transform/opacity, reduziert nur Überblenden), nicht mehr
+  blass und nie durchgestrichen. Dieselben Zeiten wie im Laden, jetzt an
+  einer Stelle (`core/abhaken.ts`: `STEHEN_MS`, `GLEITEN_MS`; `ABHAK_MS` =
+  1,8 s). Liegt er im Archiv, kommt „Erledigt · Rückgängig“ (5 s) und holt
+  ihn zurück an die Tür. Gilt auch in der Kachel: gerade Abgehaktes steht
+  1 s mit Häkchen im Fächer und gleitet dann weg. Die 24-Stunden-Wartezeit ist weg. Nicht
   Erledigtes wie bisher nach 7 Tagen ins Archiv, „Bleibt hängen“ nie.
 - Archiv: nach 30 Tagen still gelöscht (`isForgotten`, `forgetOldArchive`
   beim Start über `tidyPinboard`), als Lösch-Markierung über den Abgleich;

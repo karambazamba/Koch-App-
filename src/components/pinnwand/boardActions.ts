@@ -2,7 +2,8 @@
 
 // Was man mit einem Zettel an der Kühlschranktür tun kann – überall gleich
 // (Menü nach langem Drücken bzw. Antippen, Haken-Kreis, VoiceOver): Erledigt
-// (blass mit Haken, nach 3 s ins Archiv, „Erledigt · Rückgängig“ 5 s),
+// (Häkchen orange, 1 s stehen – nochmal tippen = doch nicht –, dann weich
+// ins Archiv, danach „Erledigt · Rückgängig“ 5 s),
 // Antworten (neuer Zettel mit Bezug), In Notizen (eigene Notiz, Zettel ins
 // Archiv), Bleibt hängen / Nicht mehr festhalten, Löschen (nur eigene,
 // „Gelöscht · Rückgängig“), reagieren (eine je Person).
@@ -10,7 +11,7 @@
 import { now } from "@/lib/core/now";
 import { showDeleted, showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
-import { canDelete, changeMemos, changePins, doneValue, removeMemo, removePin, setPinPinned, toggleMemoReaction, toggleReaction, updateMemo, updatePin, type Done, type Reaction } from "@/lib/pinnwand";
+import { ABHAK_MS, canDelete, changeMemos, changePins, doneValue, loadMemos, loadPins, removeMemo, removePin, setPinPinned, toggleMemoReaction, toggleReaction, updateMemo, updatePin, type Done, type Reaction } from "@/lib/pinnwand";
 import { archivePin, noteOfPin } from "@/lib/pinnwand/notizBruecke";
 import { changeNotes, upsertNote } from "@/lib/notizen";
 import { forgetMemo, stopMemo } from "@/lib/pinnwand/memoPlayer";
@@ -44,21 +45,31 @@ function setDone(item: BoardItem, erledigt: Done | null) {
   else changePins((all) => updatePin(all, item.id, { erledigt }, s));
 }
 
-/** So lange steht „Erledigt · Rückgängig“ (der Zettel gleitet nach 3 s ins Archiv) */
+/** So lange steht „Erledigt · Rückgängig“ (erst, wenn der Zettel im Archiv liegt) */
 const ERLEDIGT_TOAST_S = 5;
 
+/** Noch genau so abgehakt (nicht inzwischen zurückgenommen oder neu abgehakt)? */
+function stillDone(item: BoardItem, am: string): boolean {
+  const list = item.kind === "memo" ? loadMemos() : loadPins();
+  return list.find((e) => e.id === item.id)?.data.erledigt?.am === am;
+}
+
 /**
- * Abhaken: blass mit Haken, nach 3 s gleitet der Zettel ins Archiv „Ältere“;
- * „Erledigt · Rückgängig“ (5 s) holt ihn zurück an die Tür – auch aus dem
- * Archiv. Nochmal tippen, solange er hängt, nimmt es still zurück.
+ * Abhaken wie Aufgaben und Einkauf: Häkchen orange, 1 s stehen (nochmal
+ * tippen = doch nicht, still), dann gleitet der Zettel 0,8 s weich ins Archiv
+ * „Ältere“ – nie durchgestrichen. Liegt er dort, steht „Erledigt ·
+ * Rückgängig“ (5 s) und holt ihn zurück an die Tür.
  */
 export function toggleDone(item: BoardItem, me: string) {
   buzz();
   const erledigt = doneValue(entryOf(item), me, stamp());
   setDone(item, erledigt);
   if (!erledigt) return;
-  const undo = pushUndo("Erledigt", () => setDone(item, null));
-  showToast({ text: "Erledigt", undo, undoneText: "Hängt wieder", seconds: ERLEDIGT_TOAST_S, small: true });
+  window.setTimeout(() => {
+    if (!stillDone(item, erledigt.am)) return;
+    const undo = pushUndo("Erledigt", () => setDone(item, null));
+    showToast({ text: "Erledigt", undo, undoneText: "Hängt wieder", seconds: ERLEDIGT_TOAST_S, small: true });
+  }, ABHAK_MS);
 }
 
 /** Reaktion setzen, tauschen oder entfernen */

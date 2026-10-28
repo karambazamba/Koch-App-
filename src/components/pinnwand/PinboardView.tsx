@@ -4,8 +4,8 @@
 // das orange ＋ (= „Neuer Zettel“), großer Titel. Darunter die Tür (heller
 // Verlauf, feiner Rand, Griff rechts) mit den Zetteln in zwei Spalten –
 // „Bleibt hängen“ oben links, sonst neueste zuerst. Antippen oder lange
-// drücken = Menü, Haken-Kreis = Erledigt (blass mit Haken, nach 3 s ins
-// Archiv). Unter der Tür „Ältere · n ›“ (Archiv, nach 30 Tagen still weg).
+// drücken = Menü, Haken-Kreis = Erledigt (Häkchen orange, 1 s stehen, dann
+// weich ins Archiv). Unter der Tür „Ältere · n ›“ (Archiv, nach 30 Tagen still weg).
 // Sieht ein eigener Zettel nach Notiz aus, fragt Mia einmal. Aus der Kachel
 // geöffnet (`?n=<id>`) springt die Seite zum Zettel und hebt ihn kurz hervor.
 

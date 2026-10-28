@@ -5,12 +5,13 @@
 // Kassenbon (Sprachnachricht: gezackte Oberkante, „SPRACHNACHRICHT“, ▶,
 // Tonwelle, Dauer). Fest leicht schief, oben ein Magnet („Bleibt hängen“:
 // roter Pin), unten Avatar-Kreis mit Initiale, Name und Zeit, rechts der
-// Haken-Kreis für „Erledigt“ (blass mit Haken, „erledigt von Lisa“, nach 3 s
-// gleitet er weich ins Archiv). Antippen oder lange drücken öffnet das Menü.
+// Haken-Kreis für „Erledigt“ – wie Aufgaben und Einkauf: Häkchen orange,
+// „erledigt von Lisa“, 1 s stehen (nochmal tippen = doch nicht), dann gleitet
+// er 0,8 s weich ins Archiv; nie durchgestrichen. Antippen oder lange drücken öffnet das Menü.
 
 import { useEffect, useMemo, useState } from "react";
 import { Check, ImageIcon, Play } from "lucide-react";
-import { GLEIT_MS, formatDauer, doneLine, leavesIn, magnetOf, memoUnheard, reactionLine, tiltOf, zettelTon, type PinMessage, type ZettelFarbe } from "@/lib/pinnwand";
+import { GLEIT_MS, formatDauer, doneLine, leavesIn, magnetOf, memoUnheard, reactionLine, tiltOf, zettelTon, type DoorEntry, type PinMessage, type ZettelFarbe } from "@/lib/pinnwand";
 import { fotoStore } from "@/lib/pinnwand/fotoStore";
 import { pinMetaLine } from "@/components/pinnwand/PinSheets";
 import { MemoWave } from "@/components/pinnwand/MemoParts";
@@ -57,6 +58,20 @@ export function FotoBild({ pin, className = "" }: { pin: Pick<PinMessage, "id" |
   );
 }
 
+/**
+ * Abgehakt und noch an der Tür: nach wie vielen ms er hinausgleitet (1 s
+ * stehen, dann 0,8 s weich weg), sonst null. Einmal je Abhaken gerechnet,
+ * sonst springt die Bewegung neu an. Seite und Kachel gleich.
+ */
+export function useGehtIn(entry: DoorEntry, aktiv = true): number | null {
+  const doneAt = aktiv ? entry.data.erledigt?.am : undefined;
+  return useMemo(() => {
+    const left = doneAt ? leavesIn(entry, now().getTime()) : null;
+    return left === null ? null : Math.max(0, left - GLEIT_MS);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- nur je Abhaken neu
+  }, [doneAt]);
+}
+
 type Props = { item: BoardItem; me: string; household: string[]; highlight?: boolean; onOpen: () => void; onDone?: () => void; tone?: ZettelFarbe | "mia"; demo?: boolean };
 
 export function Zettel({ item, me, household, highlight = false, onOpen, onDone, tone: forced, demo = false }: Props) {
@@ -66,13 +81,8 @@ export function Zettel({ item, me, household, highlight = false, onOpen, onDone,
   const pinned = item.kind === "pin" && item.pin.data.pinned;
   const papier = item.kind === "memo" ? "memo" : item.pin.data.papier;
   const meta = demo ? entry.data.author : done ? doneLine(done, me) : pinned ? `${entry.data.author === me ? "Du" : entry.data.author} · bleibt hängen` : pinMetaLine(entry, me);
-  // Abgehakt an der Tür: einmal je Abhaken ausrechnen, wann er hinausgleitet (sonst springt die Bewegung neu an)
-  const doneAt = onDone ? done?.am : undefined;
-  const gehtIn = useMemo(() => {
-    const left = doneAt ? leavesIn(entry, now().getTime()) : null;
-    return left === null ? null : Math.max(0, left - GLEIT_MS);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- nur je Abhaken neu
-  }, [doneAt]);
+  // Abgehakt an der Tür: 1 s stehen, dann weich hinaus
+  const gehtIn = useGehtIn(entry, Boolean(onDone));
   const reacted = reactionLine(entry.data.reactions);
   const player = useMemoPlayer();
   const paperClass = papier === "karo" ? "zettel-karo" : papier === "foto" ? "zettel-papier p-2 pb-2.5" : papier === "memo" ? "zettel-papier zettel-bon" : "";
@@ -140,7 +150,11 @@ export function Zettel({ item, me, household, highlight = false, onOpen, onDone,
         aria-label={done ? "Doch nicht erledigt" : "Erledigt"}
         className="hit absolute bottom-1 right-1 z-10 flex h-[30px] w-[30px] items-center justify-center rounded-full"
       >
-        <span className={`flex h-[22px] w-[22px] items-center justify-center rounded-full ${done ? "bg-good text-on-accent" : "border-2 border-fridge-soft opacity-40"}`}>
+        <span
+          className={`flex h-[22px] w-[22px] items-center justify-center rounded-full ${done ? "bg-accent text-on-accent" : "border-2 border-fridge-soft opacity-40"}`}
+          style={done ? { animation: "check-pop 0.4s ease-out" } : undefined}
+          data-haken
+        >
           {done && <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />}
         </span>
       </button>

@@ -14,10 +14,8 @@ import type { ListItem } from "@/lib/einkauf/listModel";
 import { isFood, isGrundsache } from "@/lib/vorrat/haltbar";
 import { addPantryItems, loadPantryAll, replacePantry } from "@/lib/vorrat/pantry";
 
-/** Zeile bleibt nach dem Abhaken so lange stehen (nochmal tippen = doch nicht) */
-export const STEHEN_MS = 1000;
-/** Danach gleitet sie so lange nach unten */
-export const GLEITEN_MS = 800;
+/** Zeile bleibt nach dem Abhaken 1 s stehen, gleitet dann 0,8 s nach unten (überall gleich, `core/abhaken`) */
+export { GLEITEN_MS, STEHEN_MS } from "@/lib/core/abhaken";
 
 const lower = (s: string) => s.trim().toLowerCase();
 

@@ -8,15 +8,17 @@
 // Fächer (S) liegen sie übereinander, darum ist der ganze Fächer EIN Link und
 // der Zettel unter dem Finger (der oberste sichtbare) bestimmt das Ziel –
 // sonst wären die hinteren Zettel Knöpfe unter dem vorderen.
+// Gerade Abgehaktes (Seite, Mia, Familie) steht wie an der Tür 1 s mit
+// orangem Häkchen und gleitet dann weich weg.
 // Leer (Variante 4): gestrichelter Zettel mit Magnet und ＋.
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
-import { Mic, Plus } from "lucide-react";
+import { Check, Mic, Plus } from "lucide-react";
 import { FAECHER_WINKEL, faecherLabel, faecherZiel, formatDauer, magnetOf, tiltOf, zettelTon, type ZettelFarbe } from "@/lib/pinnwand";
 import { Magnet } from "@/components/pinnwand/Magnet";
-import { FotoBild } from "@/components/pinnwand/Zettel";
+import { FotoBild, useGehtIn } from "@/components/pinnwand/Zettel";
 import { entryOf, toneOf, type BoardItem } from "@/components/pinnwand/useBoard";
 
 type Mini = { item: BoardItem; tone?: ZettelFarbe | "mia" };
@@ -34,6 +36,7 @@ function MiniZettel({ item, tone: forced, household, lines, demo, link = true, c
   const papier = item.kind === "memo" ? "memo" : item.pin.data.papier;
   const foto = item.kind === "pin" && item.pin.data.papier === "foto";
   const text = miniText(item);
+  const gehtIn = useGehtIn(e, !demo);
   const body = (
     <>
       <span className="pointer-events-none absolute -top-2 left-1/2 z-10 -translate-x-1/2">
@@ -52,10 +55,15 @@ function MiniZettel({ item, tone: forced, household, lines, demo, link = true, c
         )}
         <span className="truncate text-[11px] font-bold text-fridge-soft">{e.data.author}</span>
       </span>
+      {e.data.erledigt && !demo && (
+        <span className="pointer-events-none absolute bottom-1 right-1 z-10 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-accent text-on-accent" style={{ animation: "check-pop 0.4s ease-out" }} data-haken aria-hidden>
+          <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
+        </span>
+      )}
     </>
   );
-  const cls = `zettel ${className.includes("absolute") ? "" : "relative"} block ${papier === "karo" ? "zettel-karo" : papier === "zettel" ? "" : "zettel-papier"} ${className}`;
-  const st = { ...style, ...(papier === "zettel" ? { background: tone.bg } : {}) };
+  const cls = `zettel ${className.includes("absolute") ? "" : "relative"} block ${papier === "karo" ? "zettel-karo" : papier === "zettel" ? "" : "zettel-papier"} ${gehtIn !== null ? "zettel-geht" : ""} ${className}`;
+  const st = { ...style, ...(gehtIn !== null ? { ["--geht-in" as string]: `${gehtIn}ms` } : {}), ...(papier === "zettel" ? { background: tone.bg } : {}) };
   if (!link)
     return (
       <span data-zettel={item.id} className={cls} style={st}>

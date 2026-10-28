@@ -5,9 +5,10 @@
 // Zettel = Pinnwand mit ihm hervorgehoben; Wischen über der Kachel wechselt
 // die Seite. Seite: Tür mit zwei Spalten, Antippen bzw. lange drücken = Menü
 // (Erledigt, Antworten, In Notizen, Bleibt hängen, Löschen nur eigene), ❤️ →
-// „❤️ Lisa“, Haken-Kreis = erledigt (blass, „erledigt von dir“, nach 3 s im
-// Archiv „Ältere“, „Erledigt · Rückgängig“ holt ihn zurück), „Antworten“ =
-// „Antwort an …“. (A-024)
+// „❤️ Lisa“, Haken-Kreis = erledigt wie Aufgaben/Einkauf (Häkchen orange,
+// „erledigt von dir“, nie durchgestrichen, nochmal tippen innerhalb 1 s =
+// zurück, sonst 1 s stehen und weich ins Archiv „Ältere“, „Erledigt ·
+// Rückgängig“ holt ihn zurück), „Antworten“ = „Antwort an …“. (A-024, v0.145)
 import { BASE, hello, seedFamily, swipe } from "../lib.mjs";
 
 async function hold(page, x, y, ms = 650) {
@@ -115,17 +116,28 @@ export const pinnwandGesten = async (page, check) => {
   await page.getByRole("dialog", { name: /^Antwort an / }).getByRole("button", { name: "Schließen" }).last().click();
   await page.waitForTimeout(500);
 
-  // Haken-Kreis: blass mit Haken („erledigt von dir“), nach 3 s im Archiv „Ältere“, „Erledigt · Rückgängig“ holt ihn zurück
-  await page.locator("[id^='n-']", { has: other }).getByRole("button", { name: "Erledigt" }).click();
-  await page.waitForTimeout(400);
-  check(await page.getByText("erledigt von dir").first().isVisible(), "Haken → blass, „erledigt von dir“");
-  check(await page.getByRole("button", { name: "Rückgängig" }).isVisible(), "„Erledigt · Rückgängig“");
-  // Die Uhr der Seite steht fest – 4 s weiterstellen, die Tür rechnet nach 3 s neu
+  // Haken-Kreis wie Aufgaben/Einkauf: Häkchen orange, „erledigt von dir“, nicht durchgestrichen; nochmal tippen (innerhalb 1 s) = zurück
+  const karte = page.locator("[id^='n-']", { has: other });
+  await karte.getByRole("button", { name: "Erledigt" }).click();
+  await page.waitForTimeout(300);
+  check(await page.getByText("erledigt von dir").first().isVisible(), "Haken → „erledigt von dir“");
+  check(await karte.locator("[data-haken]").evaluate((el) => el.className.includes("bg-accent")), "Häkchen orange");
+  check(await karte.locator(".zettel-text").evaluate((el) => !getComputedStyle(el).textDecorationLine.includes("line-through")), "nicht durchgestrichen");
+  await karte.getByRole("button", { name: "Doch nicht erledigt" }).click();
+  await page.waitForTimeout(300);
+  check((await other.isVisible()) && !(await page.getByText("erledigt von dir").count()), "nochmal tippen (innerhalb 1 s) → zurück, hängt weiter");
+  await page.waitForTimeout(2000);
+  check(!(await page.getByText("Erledigt", { exact: true }).count()), "zurückgenommen: kein „Erledigt · Rückgängig“");
+
+  // Nochmal abhaken: 1 s stehen, 0,8 s weich weg → Archiv „Ältere“, dann „Erledigt · Rückgängig“ holt ihn zurück
+  await karte.getByRole("button", { name: "Erledigt" }).click();
+  // Die Uhr der Seite steht fest – 4 s weiterstellen, die Tür rechnet nach 1,8 s neu
   const jetzt = await page.evaluate(() => Date.now());
   await page.clock.setFixedTime(new Date(jetzt + 4000));
-  await page.waitForTimeout(3300);
-  check(!(await zettel(page, "Bin um 20 Uhr da").count()), "nach 3 s von der Tür");
+  await page.waitForTimeout(2300);
+  check(!(await zettel(page, "Bin um 20 Uhr da").count()), "nach 1 s + Weggleiten von der Tür");
   check(await page.getByRole("button", { name: /^Ältere · \d+/ }).isVisible(), "liegt im Archiv „Ältere“");
+  check(await page.getByRole("button", { name: "Rückgängig" }).isVisible(), "dann „Erledigt · Rückgängig“");
   await page.getByRole("button", { name: "Rückgängig" }).click();
   await page.waitForTimeout(500);
   check(await zettel(page, "Bin um 20 Uhr da").isVisible(), "Rückgängig → wieder an der Tür");

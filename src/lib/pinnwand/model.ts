@@ -3,7 +3,7 @@
 // Farbe der Person, Reaktionen je Person, gelesen von, Antwort mit Zitat.
 // Im einheitlichen Eintrags-Modell (typ "pinnwand", Raum Familie), geteilt
 // über die Konten. Ein Zettel bleibt an der Tür, bis jemand ihn abhakt (dann
-// nach 3 s ins Archiv „Ältere“) oder bis er 7 Tage alt ist (leise ins
+// 1 s Häkchen, dann ins Archiv „Ältere“) oder bis er 7 Tage alt ist (leise ins
 // Archiv). „Bleibt hängen“ (`pinned`) bleibt dauerhaft oben. Im Archiv nach
 // 30 Tagen still gelöscht, sonst nur von Hand. Die Regeln der Tür stehen in
 // `tuer.ts`. Rein, damit Oberfläche, Mia und Tests gleich rechnen.
@@ -37,7 +37,7 @@ type PinData = {
   farbe: ZettelFarbe | null;
   papier: Papier;
   foto: PinFoto | null;
-  /** Erledigt von … am … (3 s blass mit Haken, dann ins Archiv) */
+  /** Erledigt von … am … (1 s mit Häkchen, dann weich ins Archiv) */
   erledigt: Done | null;
   /** Von Hand ins Archiv (z. B. „In Notizen“) */
   archiv: string | null;
