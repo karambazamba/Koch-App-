@@ -23,6 +23,8 @@ import { IdeaCarousel, IdeaRow, IdeaSuggestions, StaysLine } from "@/components/
 import type { Kochidee } from "@/components/essen/kochtipp/useKochidee";
 import type { ChatState, ChatTurnView } from "@/components/begleitung/chatTypes";
 import { ProposalCard } from "@/components/begleitung/ProposalCard";
+import { ImHausKarte } from "@/components/vorrat/ImHausKarte";
+import { isImHausVorschlag } from "@/lib/vorrat/reinsprechen";
 import { AdjustSheet, EarlierIdeas, SpontanAnswer } from "@/components/begleitung/SpontanBoard";
 import { TipBubble } from "@/components/begleitung/TipBubble";
 import type { useMarketChat } from "@/components/begleitung/useMarketChat";
@@ -59,6 +61,8 @@ type Props = {
   onAsk: (text: string) => void;
   onApply: (selected: Set<string>) => void;
   onClose: () => void;
+  /** Mia hört nochmal zu („Ändern“ in „Hab ich so verstanden:“) */
+  onListen?: () => void;
   /** Bühne: nur ab dieser Nachricht zeigen (sonst alles = „Verlauf“) */
   from?: number;
   /** Begrüßung als erste Blase („Was steht an?“, morgens „Moin! Was steht an?“) */
@@ -78,8 +82,17 @@ type Props = {
 /** Mia stellt sich nie vor: „Was steht an?“, morgens (5–11 Uhr) „Moin! Was steht an?“ */
 export const greetingText = (hour: number, minute = 0) => (hour >= 22 || hour < 6 ? miaSatz("nachtWach", null, () => (minute % 4) / 4) : hour >= 5 && hour < 11 ? "Moin! Was steht an?" : "Was steht an?");
 
-export function ChatHistory({ scrollRef, inputRef, status, data, voice, codeLater, onCodeLater, chat, setChat, busy, streaming, speakingId, tipsOn, adjusting, setAdjusting, spontan, kochidee, market, rules, onSubmit, onAsk, onApply, onClose, from = 0, showGreeting = true, topic, heard, heardWaits = false, waiting = "", children }: Props) {
+export function ChatHistory({ scrollRef, inputRef, status, data, voice, codeLater, onCodeLater, chat, setChat, busy, streaming, speakingId, tipsOn, adjusting, setAdjusting, spontan, kochidee, market, rules, onSubmit, onAsk, onApply, onClose, onListen, from = 0, showGreeting = true, topic, heard, heardWaits = false, waiting = "", children }: Props) {
   const { ideasFor, stockFor, headingFor, speechFor, takeIdea, moreIdeas, adjusting2, setAdjusting2, applyFilters, acceptUnsure } = spontan;
+  /** Einen Punkt des offenen Vorschlags an- oder abwählen */
+  const toggleOp = (id: string) =>
+    setChat((c) => {
+      if (!c.proposal) return c;
+      const selected = new Set(c.proposal.selected);
+      if (selected.has(id)) selected.delete(id);
+      else selected.add(id);
+      return { ...c, proposal: { ...c.proposal, selected } };
+    });
   // Offene Ideen-Antwort (die letzte, solange Spontan kochen läuft) und eingeklappte frühere
   const spontanIndexes = chat.turns.flatMap((t, i) => (t.spontan ? [i] : []));
   const liveSpontan = chat.spontan !== null && spontanIndexes.length ? spontanIndexes[spontanIndexes.length - 1] : -1;
@@ -214,20 +227,21 @@ export function ChatHistory({ scrollRef, inputRef, status, data, voice, codeLate
           {/* Antwort erscheint Wort für Wort; das Überlegen zeigt die große Mia unten */}
           {busy && streaming && <MiaBubble lead={roles[roles.length - 1] !== "assistant"}>{streaming}</MiaBubble>}
 
-          {chat.proposal && data && !busy && (
+          {chat.proposal && data && !busy && chat.imHaus && isImHausVorschlag(chat.proposal.ops) && (
+            <ImHausKarte
+              ops={chat.proposal.ops}
+              selected={chat.proposal.selected}
+              onToggle={toggleOp}
+              onApply={() => chat.proposal && onApply(chat.proposal.selected)}
+              onAdjust={() => onListen?.()}
+            />
+          )}
+          {chat.proposal && data && !busy && !(chat.imHaus && isImHausVorschlag(chat.proposal.ops)) && (
             <ProposalCard
               data={data}
               proposal={chat.proposal}
               adjusting={adjusting}
-              onToggle={(id) =>
-                setChat((c) => {
-                  if (!c.proposal) return c;
-                  const selected = new Set(c.proposal.selected);
-                  if (selected.has(id)) selected.delete(id);
-                  else selected.add(id);
-                  return { ...c, proposal: { ...c.proposal, selected } };
-                })
-              }
+              onToggle={toggleOp}
               onApply={() => {
                 if (!chat.proposal) return;
                 // App-Bedienung, die die KI vorgeschlagen hat: nach "Übernehmen" mit den eigenen Regeln ausführen

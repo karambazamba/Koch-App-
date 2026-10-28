@@ -4,6 +4,8 @@
 // (Logik rein in lib/mia/denktmit), wählt die EINE Karte des Tages und den
 // Spruch für die Jetzt-Karte und führt die Knöpfe aus. Kleines erledigt sie
 // sofort mit kurzer Bestätigung (Serie, Gericht, Pinnwand, Aufgabe).
+// Der Kurz-Check „Im Haus“ (Sonntag ab 17 Uhr) ist eine dieser Karten, steht
+// aber in der Jetzt-Karte; er zählt erst, wenn er dort wirklich steht.
 
 import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -31,6 +33,9 @@ import { anlaesse } from "@/lib/mia/denktmit/sprueche";
 import { antworten, hinweisGezaehlt, ritualEingeplant, ritualMerken, spruchGezeigt, useDenkt, vorstellungFertig } from "@/lib/mia/denktmit/store";
 import { naechsteVorstellung } from "@/lib/mia/denktmit/vorstellen";
 import type { HomeTileId } from "@/lib/core/homeLayout";
+import { useFeature } from "@/lib/core/features";
+import { usePantry } from "@/lib/vorrat/pantry";
+import { KUEHLCHECK_TITEL, kuehlCheckFaellig, useKuehlCheck } from "@/lib/vorrat/kuehlcheck";
 
 type Input = {
   data: HomeData;
@@ -47,11 +52,23 @@ type Input = {
   onOpenFood: () => void;
 };
 
-export type DenktAnzeige = { satz: string; label: string; knoepfe: KartenKnopf[] };
+type DenktAnzeige = { satz: string; label: string; knoepfe: KartenKnopf[] };
 /** Mia stellt eine Kachel vor: Tipp direkt unter der Kachel (Tafel 101) */
 export type VorstellAnzeige = { tile: HomeTileId; text: string; ok: () => void; zeigMal?: () => void };
 
-export function useMiaDenkt(o: Input): { karte: DenktAnzeige | null; vorstellung: VorstellAnzeige | null; glow: HomeTileId | null; spruch: string | null; spruchGesehen: () => void } {
+type DenktErgebnis = {
+  karte: DenktAnzeige | null;
+  vorstellung: VorstellAnzeige | null;
+  glow: HomeTileId | null;
+  spruch: string | null;
+  spruchGesehen: () => void;
+  /** Kurz-Check „Im Haus“ ist heute die Karte: Woche (Sonntag) für die Jetzt-Karte */
+  kuehlcheck: string | null;
+  /** Er steht in der Jetzt-Karte: als Hinweis des Tages zählen */
+  kuehlcheckGesehen: () => void;
+};
+
+export function useMiaDenkt(o: Input): DenktErgebnis {
   const router = useRouter();
   const s = useDenkt();
   const cooked = useCookedDays();
@@ -60,10 +77,15 @@ export function useMiaDenkt(o: Input): { karte: DenktAnzeige | null; vorstellung
   const profile = o.data.profile;
   const hour = Math.floor(o.minutes / 60);
   const umfeld: Umfeld = { today, hour, pause: o.pause, ruhe: o.ruhe, demo: o.demo };
+  const vorratOn = useFeature("vorrat");
+  const pantry = usePantry();
+  const kuehlErledigt = useKuehlCheck();
+  const kuehlWoche = kuehlErledigt === undefined || !pantry ? null : kuehlCheckFaellig({ today, minutes: o.minutes, vorratOn: vorratOn === true, sachen: pantry.length, erledigt: kuehlErledigt });
 
   const kandidaten = useMemo((): DenktKarte[] => {
     if (!s) return [];
     const out: DenktKarte[] = [];
+    if (kuehlWoche) out.push({ art: "kuehlcheck", key: `kuehlcheck:${kuehlWoche}`, satz: KUEHLCHECK_TITEL, woche: kuehlWoche });
     const m = findeMuster(o.entries, today, s.antworten);
     if (m) out.push({ art: "muster", key: m.key, satz: m.satz, muster: m });
     const e = cooked ? findeEssenMuster(cooked, today, s.antworten, s.rituale, haushaltOf(profile.householdType) === "allein") : null;
@@ -92,11 +114,11 @@ export function useMiaDenkt(o: Input): { karte: DenktAnzeige | null; vorstellung
     if (v) out.push({ art: "vorstellen", key: `vorstellen:${v.tile}`, satz: v.text, v });
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Stunde reicht als Takt
-  }, [s, cooked, forecast, o.entries, o.items, o.visible, today, hour, o.data.recipes, o.data.day, profile]);
+  }, [s, kuehlWoche, cooked, forecast, o.entries, o.items, o.visible, today, hour, o.data.recipes, o.data.day, profile]);
 
   const karte = s && !o.besetzt ? heutigeKarte(kandidaten, s, umfeld) : null;
   useEffect(() => {
-    if (karte) hinweisGezaehlt(karte.key, today);
+    if (karte && karte.art !== "kuehlcheck") hinweisGezaehlt(karte.key, today);
   }, [karte?.key, today]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Essens-Rituale still einplanen (heute oder morgen, wenn dort noch nichts steht; je Tag nur einmal)
@@ -162,6 +184,7 @@ export function useMiaDenkt(o: Input): { karte: DenktAnzeige | null; vorstellung
           },
         }));
       case "vorstellen":
+      case "kuehlcheck":
         return [];
     }
   };
@@ -183,11 +206,13 @@ export function useMiaDenkt(o: Input): { karte: DenktAnzeige | null; vorstellung
   };
 
   return {
-    karte: karte && karte.art !== "vorstellen" ? { satz: karte.satz, label: "Mitgedacht", knoepfe: knoepfe(karte) } : null,
+    karte: karte && karte.art !== "vorstellen" && karte.art !== "kuehlcheck" ? { satz: karte.satz, label: "Mitgedacht", knoepfe: knoepfe(karte) } : null,
     vorstellung,
     glow: vorstellung?.tile ?? null,
     spruch,
     spruchGesehen: () => spruch && spruchGezeigt(spruch, today),
+    kuehlcheck: karte?.art === "kuehlcheck" ? karte.woche : null,
+    kuehlcheckGesehen: () => karte?.art === "kuehlcheck" && hinweisGezaehlt(karte.key, today),
   };
 }
 

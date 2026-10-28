@@ -33,6 +33,8 @@ export type PruefSatz = {
   woerter?: number;
   /** Jeder Einkaufs-Vorschlag gehört in diesen Laden (Läden bewusst wählen) */
   laden?: string;
+  /** Kein Name einer Sache (Im Haus, Einkauf) darf das enthalten – Satzteile sind keine Sachen (Tafel 102) */
+  nieName?: string;
 };
 
 const S = (text: string, ops: string[], extra: Omit<PruefSatz, "text" | "ops"> = {}): PruefSatz => ({ text, ops, ...extra });
@@ -158,6 +160,16 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Kochidee", ["app_command"]),
   // „Im Haus“ gehört zu 1.0: „Hab noch …“ = rein
   S("Wir haben noch 4 Joghurt im Kühlschrank", ["add_pantry"]),
+  // „Was ist da?“ reinsprechen (Tafel 102): rein und raus in einem Satz, nie Satzteile als Sache
+  S("[Im Haus] Milch und Eier sind da, Thunfisch ist alle", ["add_pantry", "use_pantry"], { alle: true, nieName: "alle|nicht" }),
+  S("[Im Haus] Zucchini gar nicht im Haus", ["use_pantry"], { nieName: "im haus|nicht" }),
+  S("[Im Haus] Wir haben keine Butter mehr", ["use_pantry"], { nieName: "kein|mehr" }),
+  S("[Im Haus] Thunfisch haben wir nicht mehr", ["use_pantry"], { nieName: "nicht|haben" }),
+  S("[Im Haus] Hab Hack und Paprika gekauft", ["add_pantry"], { nieName: "gekauft|hab" }),
+  S("[Im Haus] Kuchen ist alle, Honig ist noch da", ["add_pantry", "use_pantry"], { alle: true, nieName: "alle|noch da" }),
+  S("[Im Haus] Gar nicht im Haus: Zucchini und Sahne", ["use_pantry"], { nieName: "im haus|nicht" }),
+  S("[Im Haus] Wir haben noch Joghurt im Kühlschrank, aber kein Brot mehr", ["add_pantry", "use_pantry"], { alle: true, nieName: "kein|kühlschrank" }),
+  S("[Im Haus] Äpfel, Bananen und zwei Gurken sind da", ["add_pantry"], { nieName: "sind da|zwei" }),
   S("Was anderes als Spaghetti bitte", ["app_command", "set_meal"]),
   S("Mach heute was Schnelles, wir haben wenig Zeit", ["set_meal", "app_command"]),
   S("Lisa mag keine Pilze mehr in Soßen, merk dir das", ["set_dislike", "antwort"]),

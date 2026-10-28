@@ -10,8 +10,11 @@
 
 import { sectionFor } from "@/lib/einkauf/sections";
 
-/** Wo es liegt */
-export type PantryPlace = "kuehlschrank" | "tiefkuehler" | "schrank";
+/**
+ * Wo es liegt – zugleich die Gruppe auf der Seite (Tafel 102): Kühlschrank,
+ * Vorrat (intern `schrank`), Obst & Gemüse, Brot, Tiefkühl. Seit v4.
+ */
+export type PantryPlace = "kuehlschrank" | "schrank" | "obstgemuese" | "brot" | "tiefkuehler";
 
 /** Sorte für die Haltbarkeit */
 export type Sorte = "fleisch" | "frisch" | "knolle" | "trocken" | "tk";
@@ -33,7 +36,9 @@ export const isGrundsache = (name: string) => GRUNDSACHEN.test(name.trim());
 const TK = /^(tk|tiefkühl)|(^|[\s-])tk([\s-]|$)|tiefgekühlt|gefroren|eiscreme|^eis$|fischstäbchen|tiefkühlpizza|tk-/i;
 const KNOLLE = /(kartoffel|zwiebel|knoblauch|kürbis|süßkartoffel|ingwer)/i;
 const TROCKEN = /(nudel|spaghetti|penne|fusilli|reis|linsen|bohnen aus der dose|konserve|dose|mehl|haferflocken|müsli|cornflakes|couscous|bulgur|quinoa|zucker|kaffee|tee|honig|marmelade|nutella|passata|tomatenmark|kokosmilch|brühe|chips|kekse|schokolade|knäckebrot|zwieback|nüsse|mandeln)/i;
-const SCHRANK_FRISCH = /(brot|brötchen|toast|baguette|apfel|äpfel|banane|tomate|zwiebel|kartoffel|knoblauch|kürbis)/i;
+const SCHRANK_FRISCH = /(apfel|äpfel|banane|tomate|zwiebel|kartoffel|knoblauch|kürbis)/i;
+/** Brot und Gebäck (eigene Gruppe „Brot“) */
+const BROT = /(brot|brötchen|toast|baguette|croissant|brezel|semmel|kuchen|torte|waffel)/i;
 
 /** Naheliegender Ort; gemerkte Orte (`gemerkt`, Name klein → Ort) gehen vor */
 export function placeFor(name: string, gemerkt: Record<string, PantryPlace> = {}): PantryPlace {
@@ -43,7 +48,11 @@ export function placeFor(name: string, gemerkt: Record<string, PantryPlace> = {}
   if (TK.test(n)) return "tiefkuehler";
   const section = sectionFor(n);
   if (section === "tiefkuehl") return "tiefkuehler";
-  if (section === "vorrat" || section === "getraenke" || section === "brot" || KNOLLE.test(n) || TROCKEN.test(n) || SCHRANK_FRISCH.test(n)) return "schrank";
+  if (section === "getraenke") return "schrank";
+  if (section === "brot" || BROT.test(n)) return "brot";
+  if (section === "vorrat") return "schrank";
+  if (section === "obst-gemuese" || KNOLLE.test(n) || SCHRANK_FRISCH.test(n)) return "obstgemuese";
+  if (TROCKEN.test(n)) return "schrank";
   return "kuehlschrank";
 }
 
@@ -104,7 +113,7 @@ export type PantryItem = {
   usedAt?: string | null;
 };
 
-const PLACES: PantryPlace[] = ["kuehlschrank", "schrank", "tiefkuehler"];
+const PLACES: PantryPlace[] = ["kuehlschrank", "schrank", "obstgemuese", "brot", "tiefkuehler"];
 const isDate = (v: unknown): v is string => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 /** „3 Karotten“ → „Karotten“, „½ Brot“ → „Brot“ (Mengen gibt es nur im Einkauf) */
 export const withoutAmount = (name: string) => name.replace(/^[\d½¼¾.,/\s]+(?=\S)/, "").trim() || name.trim();
@@ -125,16 +134,28 @@ export function cleanPantryItem(raw: unknown): PantryItem | null {
   };
 }
 
-/** v3: ohne Mengen, „aufgebraucht“, gemerkte Orte je Sorte (Name klein → Ort) */
-export type PantryStore = { version: 3; items: PantryItem[]; places: Record<string, PantryPlace> };
+/** v4: ohne Mengen, „aufgebraucht“, gemerkte Orte je Sorte (Name klein → Ort), Gruppen Obst & Gemüse und Brot */
+export type PantryStore = { version: 4; items: PantryItem[]; places: Record<string, PantryPlace> };
 
 const cleanPlaces = (raw: unknown): Record<string, PantryPlace> =>
   Object.fromEntries(Object.entries(raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {}).filter((e): e is [string, PantryPlace] => PLACES.includes(e[1] as PantryPlace)));
 
-/** v1 (ohne Ort) und v2 (mit Mengen) → v3 (ohne Mengen) @public */
+/**
+ * v1 (ohne Ort), v2 (mit Mengen), v3 (Kühlschrank/Schrank/Tiefkühler) → v4.
+ * Bis v3 lag Obst, Gemüse und Brot im Kühlschrank oder Schrank: es wandert in
+ * die neuen Gruppen – außer jemand hat den Ort für die Sorte selbst gewählt.
+ * @public
+ */
 export function migratePantry(raw: unknown): PantryStore | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as { version?: number; items?: unknown; places?: unknown };
-  if (![1, 2, 3].includes(data.version as number) || !Array.isArray(data.items)) return null;
-  return { version: 3, items: data.items.map(cleanPantryItem).filter((i): i is PantryItem => Boolean(i)), places: cleanPlaces(data.places) };
+  if (![1, 2, 3, 4].includes(data.version as number) || !Array.isArray(data.items)) return null;
+  const places = cleanPlaces(data.places);
+  const items = data.items.map(cleanPantryItem).filter((i): i is PantryItem => Boolean(i));
+  const regroup = (i: PantryItem): PantryItem => {
+    if (places[i.name.trim().toLowerCase()] || (i.place !== "kuehlschrank" && i.place !== "schrank")) return i;
+    const next = placeFor(i.name);
+    return next === "obstgemuese" || next === "brot" ? { ...i, place: next } : i;
+  };
+  return { version: 4, items: (data.version as number) < 4 ? items.map(regroup) : items, places };
 }

@@ -21,8 +21,8 @@ import { buzz } from "@/components/heute/actions";
 import { loadNotify } from "@/lib/heute/mitteilungen/einstellungen";
 import { askForNotifications } from "@/lib/heute/mitteilungen/geraet";
 import { cloudSync } from "@/lib/konten/cache";
-import { parseShoppingText } from "@/lib/einkauf/shoppingParse";
-import { addPantryItems, loadPantryAll, replacePantry } from "@/lib/vorrat/pantry";
+import { addPantryItems, consumePantry, loadPantryAll, replacePantry } from "@/lib/vorrat/pantry";
+import { imHausVerstehen } from "@/lib/vorrat/reinsprechen";
 import { unlockFeature } from "@/lib/core/features";
 import { readQuick } from "@/lib/core/schnelleingabe";
 import { splitTermine } from "@/lib/kalender/sentence";
@@ -62,11 +62,18 @@ function saveShopping(text: string, weekStart: string, choice: { shop?: string; 
   return { undo: () => removeManualItems(weekStart, ids), title: all.map((i) => i.name).join(", ") };
 }
 
-/** „Kartoffeln, Eier“ → Im Haus (ohne Mengen; Grundsachen und Nicht-Essen bleiben draußen) */
+/**
+ * „Kartoffeln, Eier“ → Im Haus (ohne Mengen; Grundsachen und Nicht-Essen
+ * bleiben draußen). Derselbe Versteher wie beim Reinsprechen: „Zucchini gar
+ * nicht im Haus“ nimmt Zucchini raus und wird nie selbst zur Sache (Tafel 102).
+ */
 function saveImHaus(text: string): { undo: () => void; title: string } | null {
   const before = loadPantryAll();
-  const added = addPantryItems(parseShoppingText(text).map((i) => ({ name: i.name })), todayIso());
-  if (!added.length) return null;
+  const v = imHausVerstehen(text);
+  const added = addPantryItems(v.rein.map((name) => ({ name })), todayIso());
+  const used = consumePantry(v.raus, todayIso());
+  if (!added.length && !used.length) return null;
+  if (!added.length) return { undo: () => replacePantry(before), title: `${used.join(", ")} raus` };
   unlockFeature("vorrat");
   return { undo: () => replacePantry(before), title: added.join(", ") };
 }

@@ -93,13 +93,15 @@ const pinnwand: Adapter = {
   },
 };
 
-// Im Haus (v3, ohne Mengen): je Sache ein Eintrag, dazu einmal die gemerkten
-// Orte je Sorte. Ältere Geräte schicken noch Mengen – die fallen beim Lesen weg.
+// Im Haus (v4, ohne Mengen, Gruppen seit Tafel 102): je Sache ein Eintrag,
+// dazu einmal die gemerkten Orte je Sorte. Ältere Geräte schicken noch Mengen
+// bzw. Obst/Brot im Kühlschrank – beides räumt `migratePantry` beim Lesen auf
+// (selbst gewählte Orte bleiben).
 const VR_ORTE = "vr:orte";
 const vorrat: Adapter = {
   name: "vorrat",
   key: "wasgibts.vorrat",
-  version: 3,
+  version: 4,
   typs: ["vorrat", "vorrat-orte"],
   upgrade: (value) => migratePantry(value),
   toDocs: (value) => [
@@ -110,11 +112,11 @@ const vorrat: Adapter = {
   ],
   fromDocs: (docs) => {
     const places = docs.find((d) => d.typ === "vorrat-orte");
-    return {
+    return migratePantry({
       version: 3,
       items: docs.filter((d) => d.typ === "vorrat").map((d) => cleanPantryItem(d.data)).filter(Boolean),
       places: places && isObj(places.data) ? places.data : {},
-    };
+    }) as Value;
   },
 };
 

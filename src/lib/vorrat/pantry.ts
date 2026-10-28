@@ -14,11 +14,13 @@ import { isFood, migratePantry, withoutAmount, type PantryStore, isGone, isGrund
 export type { PantryItem, PantryPlace } from "@/lib/vorrat/haltbar";
 export { cleanPantryItem, migratePantry, type PantryStore } from "@/lib/vorrat/haltbar";
 
-/** Reihenfolge der Orte auf der Seite: Kühlschrank → Schrank → Tiefkühler */
+/** Gruppen auf der Seite (Tafel 102): Kühlschrank → Vorrat → Obst & Gemüse → Brot → Tiefkühl */
 export const PANTRY_PLACES: { value: PantryPlace; label: string; short: string }[] = [
   { value: "kuehlschrank", label: "Kühlschrank", short: "Kühlschrank" },
-  { value: "schrank", label: "Schrank", short: "Schrank" },
-  { value: "tiefkuehler", label: "Tiefkühler", short: "TK" },
+  { value: "schrank", label: "Vorrat", short: "Vorrat" },
+  { value: "obstgemuese", label: "Obst & Gemüse", short: "Obst & Gemüse" },
+  { value: "brot", label: "Brot", short: "Brot" },
+  { value: "tiefkuehler", label: "Tiefkühl", short: "TK" },
 ];
 
 // --- Abgleich mit dem Kochbuch ------------------------------------------------
@@ -56,7 +58,7 @@ export function sameIngredient(a: string, b: string): boolean {
 
 const store = createLocalStore("wasgibts.vorrat", migratePantry);
 const EMPTY: PantryItem[] = [];
-const load = (): PantryStore => store.load() ?? { version: 3, items: [], places: {} };
+const load = (): PantryStore => store.load() ?? { version: 4, items: [], places: {} };
 
 /** „Aufgebraucht“ bleibt so viele Tage blass stehen */
 const USED_DAYS = 3;
@@ -68,7 +70,7 @@ export const tidyPantry = (items: PantryItem[], today: string) => items.filter((
 
 function update(change: (items: PantryItem[]) => PantryItem[], places?: (p: Record<string, PantryPlace>) => Record<string, PantryPlace>) {
   const current = load();
-  store.save({ version: 3, items: tidyPantry(change(current.items), todayIso()), places: places ? places(current.places) : current.places });
+  store.save({ version: 4, items: tidyPantry(change(current.items), todayIso()), places: places ? places(current.places) : current.places });
 }
 
 function newId(): string {

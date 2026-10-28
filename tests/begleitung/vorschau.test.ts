@@ -222,7 +222,7 @@ describe("previewRows", () => {
         "Einkaufsliste|Kühlregal|-|1 l Milch für Freitag (Kaffee) bei REWE",
         "Einkaufsliste|von der Liste|Brot, Eier|weg",
         "Einkaufsliste|Woche 26.10. – 1.11.|alles|Liste leer",
-        "Im Haus|Tiefkühler|-|Chili",
+        "Im Haus|Tiefkühl|-|Chili",
         "Wünsche|Wunsch von Mathis|-|Pfannkuchen 🎉 – ganz oben bei den Ideen",
         "Mehr Funktionen|Backen mit Timern|-|einschalten – Backen steht jetzt rechts unter Essen.",
         "Mehr Funktionen|Tipps|-|ausschalten (Daten bleiben)",

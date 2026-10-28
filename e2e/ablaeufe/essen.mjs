@@ -1,5 +1,5 @@
 // Essen, Rezept, Einkauf, Im Haus
-import { BASE, hello, katalog, seedFamily, store } from "../lib.mjs";
+import { BASE, FAKE_HOEREN, hello, katalog, seedFamily, store } from "../lib.mjs";
 
 const RECIPE = { id: "sp", title: "Spaghetti Bolognese", category: "fleisch", servings: 4, prepMinutes: 30, ingredients: [{ id: "a", amount: 500, unit: "g", name: "Spaghetti" }, { id: "b", amount: 400, unit: "g", name: "Hackfleisch" }], steps: ["Zwiebeln schneiden.", "Anbraten.", "Köcheln lassen."], note: "", source: "eigenes", ai: null, favorite: true, thumbsUp: 0, thumbsDown: 0, cookedCount: 3, lastCookedAt: null, known: true, createdAt: "2026-10-01", updatedAt: "2026-10-01" };
 export const RECIPE_DATA = { "wasgibts.kochbuch": { version: 2, recipes: { sp: RECIPE } } };
@@ -65,14 +65,21 @@ export const einkauf = async (page, check) => {
   check(await page.getByRole("dialog", { name: "Artikel bearbeiten" }).isVisible(), "lange drücken → „Artikel bearbeiten“");
 };
 
-// „Im Haus“ (Tafel 78/79): Brot im Einkauf abhaken („Schon gekauft“) → steht im Schrank, ohne
-// Menge → antippen = aufgebraucht → nochmal = wieder im Einkauf; „Was koch
-// ich daraus?“ → Spontan kochen (wie unter Essen).
+// „Im Haus“ (Tafel 102): Chips in Gruppen, oranger Punkt = bald; Brot im
+// Einkauf abhaken („Schon gekauft“) → steht unter „Brot“ → Chip = Fenster →
+// „Aufgebraucht“ → Zeile „Aufgebraucht: Brot“ → „Auf die Liste“; „Was koch
+// ich daraus?“ schwebt über der Leiste und öffnet Spontan kochen.
 export const imHaus = async (page, check) => {
   await family(page, "/vorrat");
   check(await page.getByRole("heading", { name: "Im Haus", level: 1 }).isVisible(), "Seite heißt „Im Haus“");
-  check(await page.getByRole("region", { name: "Bald aufbrauchen" }).getByText("Joghurt").isVisible(), "„Bald aufbrauchen“: Joghurt");
+  check(await page.getByRole("region", { name: "Was ist da?" }).getByRole("button", { name: "Reinsprechen" }).isVisible(), "„Was ist da?“ mit rundem Knopf");
+  check(await page.locator('[data-sache="Joghurt"] [data-bald]').isVisible(), "Joghurt mit orangem Punkt (bald aufbrauchen)");
+  check((await page.locator("[data-legende]").count()) === 1, "Legende einmal");
   check(!(await page.getByText(/500 g|2 Stück/).count()), "keine Mengen");
+  // „Was koch ich daraus?“ liegt über der Leiste
+  const koch = await page.locator("[data-was-koch-ich]").boundingBox();
+  const leiste = await page.locator("[data-leiste]").boundingBox();
+  check(koch && leiste && koch.y + koch.height <= leiste.y + 1, `„Was koch ich daraus?“ über der Leiste (${Math.round(koch?.y + koch?.height)} ≤ ${Math.round(leiste?.y)})`);
   await page.goto(BASE + "/einkaufsliste");
   const sheet = await katalog(page);
   await sheet.getByLabel("Suchen oder eintragen").fill("Brot");
@@ -83,17 +90,73 @@ export const imHaus = async (page, check) => {
   await page.getByRole("dialog", { name: "Wo kaufst du das?" }).getByRole("button", { name: "Schon gekauft" }).tap();
   check(await page.getByText("Im Haus: Brot").waitFor({ timeout: 5000 }).then(() => true, () => false), "Meldung „Im Haus: Brot“");
   await page.goto(BASE + "/vorrat");
-  const schrank = page.getByRole("region", { name: "Schrank" });
-  check(await schrank.getByRole("button", { name: "Brot aufgebraucht" }).waitFor({ timeout: 5000 }).then(() => true, () => false), "Brot steht im Schrank");
-  await schrank.getByRole("button", { name: "Brot aufgebraucht" }).tap();
-  const used = page.getByRole("region", { name: /^Aufgebraucht/ });
-  check(await used.getByRole("button", { name: "Brot wieder auf die Liste" }).waitFor({ timeout: 5000 }).then(() => true, () => false), "antippen → aufgebraucht");
-  await used.getByRole("button", { name: "Brot wieder auf die Liste" }).tap();
-  check(await page.getByText("Steht wieder auf der Liste").isVisible(), "nochmal → wieder auf der Liste");
+  const brot = page.getByRole("region", { name: "Brot" }).getByRole("button", { name: "Brot", exact: true });
+  check(await brot.waitFor({ timeout: 5000 }).then(() => true, () => false), "Brot steht unter „Brot“");
+  await brot.tap();
+  const fenster = page.getByRole("dialog", { name: "Brot" });
+  check(await fenster.getByRole("radiogroup", { name: "Gruppe" }).isVisible(), "Fenster: Gruppe ändern");
+  await fenster.getByRole("button", { name: "Aufgebraucht" }).tap();
+  const zeile = page.locator("[data-aufgebraucht]");
+  check(await zeile.getByText("Aufgebraucht: Brot").waitFor({ timeout: 5000 }).then(() => true, () => false), "Zeile „Aufgebraucht: Brot“");
+  await zeile.getByRole("button", { name: "Auf die Liste" }).tap();
+  check(await page.getByText("Brot steht auf der Liste").waitFor({ timeout: 4000 }).then(() => true, () => false), "„Auf die Liste“ meldet sich");
   const list = await store(page, "wasgibts.einkaufsliste");
   check(Object.values(list.weeks).some((w) => w.manual.some((m) => m.name === "Brot" && !m.done)), "Brot steht wieder im Einkauf");
   await page.getByRole("button", { name: "Was koch ich daraus?" }).tap();
   check(await page.getByRole("dialog").last().getByText(/^Noch da:/).waitFor({ timeout: 5000 }).then(() => true, () => false), "„Was koch ich daraus?“ öffnet Spontan kochen");
+};
+
+// „Was ist da?“ reinsprechen (Tafel 102): ein Satz, rein und raus →
+// „Hab ich so verstanden:“ → „Passt“; „gar nicht im Haus“ wird nie zur Sache.
+export const imHausReinsprechen = async (page, check) => {
+  await page.addInitScript(FAKE_HOEREN);
+  await family(page, "/vorrat");
+  await page.locator("[data-reinsprechen]").tap();
+  await page.waitForFunction(() => window.__rec?.running, null, { timeout: 8000 }).catch(() => {});
+  check(await page.evaluate(() => Boolean(window.__rec?.running)), "Mia hört gleich zu");
+  await page.evaluate(() => window.__sag([["Milch ist da, Joghurt gar nicht im Haus", true]]));
+  await page.evaluate(() => window.__ende());
+  const karte = page.locator("[data-im-haus-karte]");
+  check(await karte.waitFor({ timeout: 8000 }).then(() => true, () => false), "„Hab ich so verstanden:“");
+  check(await karte.locator('[data-zeile="rein"]').getByText("Milch").isVisible(), "+ Milch");
+  check(await karte.locator('[data-zeile="raus"]').getByText("Joghurt").isVisible(), "− Joghurt");
+  check(await karte.locator("[data-auf-die-liste]").isVisible(), "bei − „auf die Liste“");
+  check(!(await karte.getByText(/im Haus/i).count()), "kein Satzteil als Sache");
+  await karte.getByRole("button", { name: "Passt" }).tap();
+  await page.waitForTimeout(1500);
+  const v = await store(page, "wasgibts.vorrat");
+  check(v.items.some((i) => i.name === "Milch" && !i.usedAt), "Milch ist im Haus");
+  check(v.items.some((i) => i.name === "Joghurt" && i.usedAt), "Joghurt ist raus");
+  check(!v.items.some((i) => /haus/i.test(i.name)), "nie „Gar nicht im Haus“ als Sache");
+  const list = await store(page, "wasgibts.einkaufsliste");
+  check(Object.values(list.weeks).some((w) => w.manual.some((m) => m.name === "Joghurt")), "Joghurt steht auf der Liste");
+};
+
+// Kurz-Check „Im Haus“ (Tafel 102): alle Sachen als Kacheln, antippen = weg
+// (durchgestrichen), „Fertig · 2 weg“ = aufgebraucht, Woche erledigt.
+export const kuehlcheck = async (page, check) => {
+  await family(page, "/vorrat/check");
+  check(await page.getByRole("heading", { name: "Kurz-Check", level: 1 }).isVisible(), "Seite heißt „Kurz-Check“");
+  const tiles = page.locator("[data-kuehlcheck] button");
+  check((await tiles.count()) >= 2, `Sachen als Kacheln (${await tiles.count()})`);
+  check(await page.getByRole("button", { name: "Fertig", exact: true }).isVisible(), "„Fertig“ ohne Zahl");
+  const names = [];
+  for (const i of [0, 1]) {
+    const label = await tiles.nth(i).getAttribute("aria-label");
+    names.push(label.replace(/ ist weg$/, ""));
+    await tiles.nth(i).tap();
+  }
+  check((await tiles.nth(0).getAttribute("aria-pressed")) === "true", "angetippt = weg");
+  const fertig = page.getByRole("button", { name: "Fertig · 2 weg" });
+  check(await fertig.isVisible(), "Knopf „Fertig · 2 weg“");
+  check(await page.getByRole("button", { name: "Heute nicht" }).isVisible(), "„Heute nicht“");
+  await fertig.tap();
+  await page.waitForTimeout(600);
+  const vorrat = await store(page, "wasgibts.vorrat");
+  const weg = vorrat.items.filter((p) => p.usedAt).map((p) => p.name);
+  check(names.every((n) => weg.includes(n)) && weg.length === 2, `genau die zwei sind aufgebraucht (${weg.join(", ")})`);
+  const erledigt = await store(page, "wasgibts.kuehlcheck");
+  check(Boolean(erledigt?.woche), "Woche erledigt");
 };
 
 // Essen-Seite: EIN Bereich „Im Haus“ (gehört zu 1.0). Mia stellt ihn beim
@@ -132,7 +195,7 @@ export const imHausEssen = async (page, check) => {
   await chips.first().tap();
   const sache = page.getByRole("dialog", { name: "Joghurt" });
   check(await sache.waitFor({ timeout: 5000 }).then(() => true, () => false), "Chip → Fenster „Joghurt“");
-  check(await sache.getByRole("button", { name: "Ist alle · auf die Liste" }).isVisible(), "„Ist alle · auf die Liste“");
+  check(await sache.getByRole("button", { name: "Aufgebraucht" }).isVisible(), "„Aufgebraucht“");
   await sache.getByRole("button", { name: "Schließen" }).last().click();
   await page.waitForTimeout(500);
 

@@ -127,3 +127,5 @@ export const UEBER_LEISTE = "calc(max(0.75rem, env(safe-area-inset-bottom)) + 66
  * unten Platz für den schwebenden Küchenhelfer-Knopf
  */
 export const PAGE_MAIN = `flex flex-1 flex-col gap-4 px-4 pt-2 ${FAB_CLEARANCE}`;
+/** Seite mit einem schwebenden Knopf über der Leiste („Was koch ich daraus?“): unten Platz für beide */
+export const PAGE_MAIN_KNOPF = "flex flex-1 flex-col gap-4 px-4 pt-2 pb-[calc(max(0.75rem,env(safe-area-inset-bottom))+66px+12px+56px+1.5rem)]";

@@ -7,6 +7,7 @@
 // einmal der Hinweis „Schreiben & sprechen“. Von hier fliegt Mia ein und zurück.
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { wakeAvatar } from "@/lib/core/avatarState";
 import { markHintSeen, useHintSeen } from "@/lib/core/hints";
 import { seitErsterStart } from "@/lib/core/hello";
@@ -16,6 +17,8 @@ import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { useMiaLook, useMiaMoment } from "@/components/begleitung/useMiaLook";
 
 const LONG_MS = 450;
+/** Seiten, auf denen ein Knopf über der Leiste schwebt (Im Haus, Tafel 102) */
+const SEITEN_MIT_KNOPF_UEBER_LEISTE = ["/vorrat"];
 const HINT_MS = 7000;
 
 /** Nach „Zeig mal“: einmal zwinkern beim ersten Erscheinen, den Hinweis erst nach ein paar ruhigen Sekunden */
@@ -40,7 +43,9 @@ const MIA_PX = 60;
 
 export function MiaButton({ name, links = false }: { name: string; links?: boolean }) {
   const erster = useErsterStart();
-  const hint = useHintSeen("mia-knopf") === false && !erster.ruhig;
+  // Auf Seiten mit einem Knopf über der Leiste („Was koch ich daraus?“) wartet die Blase – sie läge darüber
+  const ueberLeiste = SEITEN_MIT_KNOPF_UEBER_LEISTE.includes(usePathname() ?? "");
+  const hint = useHintSeen("mia-knopf") === false && !erster.ruhig && !ueberLeiste;
   const press = useRef<{ timer: ReturnType<typeof setTimeout>; long: boolean } | null>(null);
   const look = useMiaLook();
   const moment = useMiaMoment();

@@ -1,46 +1,34 @@
-// Seite „Im Haus“ (Tafel 78/79, Punkt 7) – reine Aufteilung, dazu der
-// Bereich „Im Haus“ auf der Essen-Seite (`imHausReihe`) und die Kachel:
-// „Bald aufbrauchen“ (nur Frisches im letzten Drittel) → Kühlschrank →
-// Schrank → Tiefkühler → „Aufgebraucht“ (3 Tage, blass). Chips oben wie die
-// Läden im Einkauf: Alle · Kühlschrank · Schrank · TK.
+// Seite „Im Haus“ (Tafel 102) – reine Aufteilung, dazu der Bereich „Im
+// Haus“ auf der Essen-Seite (`imHausReihe`) und die Kachel. Gruppen
+// Kühlschrank → Vorrat → Obst & Gemüse → Brot → Tiefkühl (nur mit Inhalt),
+// jede Sache als Chip; „bald aufbrauchen“ ist nur ein oranger Punkt.
+// Aufgebrauchtes steht nicht als Kacheln da, sondern als EINE Zeile
+// („Aufgebraucht: Thunfisch, Kuchen“ + „Auf die Liste“).
 
 import { PANTRY, PANTRY_RECENT, sortBy, via } from "@/lib/core/sort";
 import { isGone, isGrundsache, isSoon, soonBadge } from "@/lib/vorrat/haltbar";
-import { activePantry, usedPantry, type PantryItem, type PantryPlace } from "@/lib/vorrat/pantry";
+import { PANTRY_PLACES, activePantry, usedPantry, type PantryItem, type PantryPlace } from "@/lib/vorrat/pantry";
 
-export type HouseChip = "alle" | PantryPlace;
-
-export const HOUSE_CHIPS: { id: HouseChip; label: string }[] = [
-  { id: "alle", label: "Alle" },
-  { id: "kuehlschrank", label: "Kühlschrank" },
-  { id: "schrank", label: "Schrank" },
-  { id: "tiefkuehler", label: "TK" },
-];
-
-export type HouseSection = { id: "bald" | PantryPlace | "aufgebraucht"; title: string; items: PantryItem[] };
-
-const TITLES: Record<HouseSection["id"], string> = {
-  bald: "Bald aufbrauchen",
-  kuehlschrank: "Kühlschrank",
-  schrank: "Schrank",
-  tiefkuehler: "Tiefkühler",
-  aufgebraucht: "Aufgebraucht · antippen = wieder auf die Liste",
-};
+export type HouseGroup = { id: PantryPlace; title: string; items: { item: PantryItem; soon: boolean }[] };
 
 const order = (items: PantryItem[]) => sortBy(items, ...via((p: PantryItem) => ({ name: p.name, place: p.place }), PANTRY));
 
-/** Abschnitte der Seite (leere fallen weg) */
-export function houseSections(items: PantryItem[], today: string, chip: HouseChip = "alle"): HouseSection[] {
-  const inChip = (p: PantryItem) => chip === "alle" || p.place === chip;
-  const active = activePantry(items, today).filter(inChip);
-  const soon = active.filter((p) => isSoon(p, today));
-  const rest = active.filter((p) => !soon.includes(p));
-  const sections: HouseSection[] = [
-    { id: "bald", title: TITLES.bald, items: order(soon) },
-    ...(["kuehlschrank", "schrank", "tiefkuehler"] as const).map((place) => ({ id: place, title: TITLES[place], items: order(rest.filter((p) => p.place === place)) })),
-    { id: "aufgebraucht", title: TITLES.aufgebraucht, items: order(usedPantry(items, today).filter(inChip)) },
-  ];
-  return sections.filter((s) => s.items.length);
+/** Gruppen der Seite (leere fallen weg), dazu das Aufgebrauchte der letzten Tage */
+export function houseGroups(items: PantryItem[], today: string): { groups: HouseGroup[]; used: PantryItem[] } {
+  const active = activePantry(items, today);
+  const groups = PANTRY_PLACES.map((p) => ({
+    id: p.value,
+    title: p.label,
+    items: order(active.filter((i) => i.place === p.value)).map((item) => ({ item, soon: isSoon(item, today) })),
+  })).filter((g) => g.items.length);
+  // Was inzwischen wieder da ist, steht nicht mehr als aufgebraucht da
+  const used = order(usedPantry(items, today)).filter((u, i, all) => all.findIndex((x) => x.name.toLowerCase() === u.name.toLowerCase()) === i);
+  return { groups, used };
+}
+
+/** „Aufgebraucht: Thunfisch“ bzw. „Aufgebraucht: Thunfisch, Kuchen“ (null = nichts) */
+export function aufgebrauchtZeile(used: PantryItem[]): string | null {
+  return used.length ? `Aufgebraucht: ${used.map((u) => u.name).join(", ")}` : null;
 }
 
 /** Kachel auf Heute: „Bald aufbrauchen“ (S: 3, M: 6), sonst die zuletzt eingekauften */

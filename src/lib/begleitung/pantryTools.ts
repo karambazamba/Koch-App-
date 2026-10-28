@@ -9,13 +9,21 @@ import { PANTRY_PLACES, placeFor, sameIngredient, type PantryPlace } from "@/lib
 import type { BegleitungTool } from "@/lib/begleitung/registry";
 import { fail, nextId, propose, str, toolInput, type Input } from "@/lib/begleitung/tools";
 
+/**
+ * „Was ist da?“ (Tafel 102): Die App schickt „[Im Haus] …“ und zeigt das
+ * Ergebnis als „Hab ich so verstanden:“ (Passt/Ändern) – beide Werkzeuge in
+ * EINER Antwort, Namen nur die Sachen selbst.
+ */
+const IM_HAUS_REGEL =
+  "Nachricht beginnt mit '[Im Haus]': jemand sagt, was da ist und was weg ist – in EINER Antwort alles, was da ist ('ist da', 'haben wir noch', 'gekauft') über vorrat_hinzufuegen und alles, was weg ist ('ist alle', 'haben wir nicht mehr', 'gar nicht im Haus', 'kein … mehr') über vorrat_aufgebraucht. Namen sind nur die Sachen selbst ('Zucchini'), nie Satzteile wie 'gar nicht im Haus' oder 'nicht mehr'. Die App zeigt es als Vorschau mit Passt/Ändern; antworte danach nur 'Passt so?'.";
+
 export const PANTRY_TOOLS = {
   vorrat_hinzufuegen: {
     area: "essen",
     definition: {
       name: "vorrat_hinzufuegen",
       description:
-        "Legt Sachen nach „Im Haus“ (gekauft, eingefroren, übrig): 'Hab Hähnchen gekauft' → Hähnchen; 'Hab noch Hack' → Hack; 'Ich hab Chili eingefroren' → Chili, tiefkuehler. Ohne Mengen. Ort: kuehlschrank, schrank oder tiefkuehler; ohne Angabe wählt die App den naheliegenden. Nur, wenn der Baustein „Im Haus“ an ist; sonst antworte nur 'Kommt bald.'.",
+        "Legt Sachen nach „Im Haus“ (gekauft, eingefroren, übrig): 'Hab Hähnchen gekauft' → Hähnchen; 'Hab noch Hack' → Hack; 'Ich hab Chili eingefroren' → Chili, tiefkuehler. Ohne Mengen. Ort: kuehlschrank, schrank (Vorrat), obstgemuese, brot oder tiefkuehler; ohne Angabe wählt die App den naheliegenden. Nur, wenn der Baustein „Im Haus“ an ist; sonst antworte nur 'Kommt bald.'. " + IM_HAUS_REGEL,
       input_schema: {
         type: "object",
         properties: {
@@ -54,7 +62,7 @@ export const PANTRY_TOOLS = {
     definition: {
       name: "vorrat_aufgebraucht",
       description:
-        "Nimmt Sachen aus „Im Haus“, weil sie alle sind, und setzt sie auf die Einkaufsliste der aktuellen Woche (nicht doppelt): 'Die Milch ist alle', 'Eier sind aufgebraucht' → namen ['Milch']. Nur, wenn jemand es so sagt – nie raten.",
+        "Nimmt Sachen aus „Im Haus“, weil sie alle sind, und setzt sie auf die Einkaufsliste der aktuellen Woche (nicht doppelt): 'Die Milch ist alle', 'Eier sind aufgebraucht' → namen ['Milch']. Nur, wenn jemand es so sagt – nie raten. " + IM_HAUS_REGEL,
       input_schema: {
         type: "object",
         properties: { namen: { type: "array", minItems: 1, items: { type: "string" } } },

@@ -38,6 +38,7 @@ export function ItemTile({
   size = "normal",
   badge,
   faded = false,
+  struck,
   marked = false,
   onTap,
   onLongPress,
@@ -59,6 +60,8 @@ export function ItemTile({
   badge?: { text: string; tone: "orange" | "gelb" } | null;
   /** Blass (Im Haus: aufgebraucht) */
   faded?: boolean;
+  /** Durchgestrichen und blass: weg (Kurz-Check „Im Haus“); gesetzt = aria-pressed */
+  struck?: boolean;
   /** Kurz umrandet: eben einsortiert */
   marked?: boolean;
   onTap: () => void;
@@ -73,7 +76,7 @@ export function ItemTile({
   return (
     <button
       type="button"
-      {...(checked !== undefined ? { role: "checkbox", "aria-checked": checked } : selected !== undefined ? { "aria-pressed": selected } : {})}
+      {...(checked !== undefined ? { role: "checkbox", "aria-checked": checked } : selected !== undefined ? { "aria-pressed": selected } : struck !== undefined ? { "aria-pressed": struck } : {})}
       aria-label={label}
       onPointerDown={(e) => {
         if (!onLongPress) return;
@@ -103,12 +106,12 @@ export function ItemTile({
         size === "mini" ? "h-11 flex-row gap-1.5 px-1.5 text-left" : "aspect-square flex-col justify-center gap-0.5 px-1 pb-1 pt-3 text-center"
       } ${
         dashed ? "border-2 border-dashed border-line-strong" : ""
-      } ${checked || faded ? "opacity-55" : ""} ${selected || marked ? "ring-2 ring-accent" : ""}`}
+      } ${checked || faded || struck ? "opacity-55" : ""} ${selected || marked ? "ring-2 ring-accent" : ""}`}
       style={{ background: dashed ? undefined : `var(--app-shop-section-${section})`, WebkitTouchCallout: "none" }}
     >
       {dish && size !== "mini" && <span className="absolute left-1.5 right-1.5 top-1 truncate text-left text-[10px] font-bold leading-tight text-muted">{dish}</span>}
       <ItemSymbol id={symbolFor(name, products)} name={name} className={SYMBOL_SIZE[size]} />
-      <span className={`${size === "mini" ? "min-w-0 flex-1 truncate" : "line-clamp-3 w-full hyphens-auto [overflow-wrap:normal]"} font-bold leading-tight text-ink ${NAME_SIZE[size]} ${checked ? "line-through" : ""}`}>{name}</span>
+      <span className={`${size === "mini" ? "min-w-0 flex-1 truncate" : "line-clamp-3 w-full hyphens-auto [overflow-wrap:normal]"} font-bold leading-tight text-ink ${NAME_SIZE[size]} ${checked || struck ? "line-through" : ""}`}>{name}</span>
       {amount && size !== "mini" && <span className="w-full truncate text-[11px] tabular-nums leading-tight text-muted">{amount}</span>}
       {badge && !done && (
         <span className={`absolute right-1 top-1 rounded-full px-1.5 py-px text-[10px] font-bold leading-tight ${badge.tone === "orange" ? "bg-accent-soft text-accent-strong" : "bg-warn-soft text-warn-ink"}`}>{badge.text}</span>

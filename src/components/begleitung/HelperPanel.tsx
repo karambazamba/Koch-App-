@@ -41,6 +41,8 @@ import { useFeature } from "@/lib/core/features";
 import { onReleaseHelperVoice } from "@/lib/begleitung/open";
 import { isDayQuestion } from "@/lib/heute/deinTag";
 import { showToast } from "@/lib/core/toast";
+import { IM_HAUS_PREFIX, imHausVorschlag } from "@/lib/vorrat/reinsprechen";
+import { sameIngredient } from "@/lib/vorrat/pantry";
 
 import type { ChatState } from "@/components/begleitung/chatTypes";
 import type { RuleContext } from "@/components/begleitung/localRules";
@@ -196,6 +198,20 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     );
   };
 
+  /** „Was ist da?“ ohne KI: selbst verstehen, als Vorschlag zeigen */
+  const imHausLokal = (t: string) => {
+    if (!data || !today) return false;
+    const weekStart = weekStartFor(today, data.profile.shoppingDay || "Montag");
+    const onList = (name: string) => Boolean(shopping?.list.items.some((i) => !i.checked && sameIngredient(i.name, name)));
+    const v = imHausVorschlag(t, chat.proposal?.ops ?? [], weekStart, onList);
+    setChat((c) => ({
+      ...c,
+      turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text: v.reply, local: true }],
+      proposal: v.ops.length ? { ops: v.ops, selected: new Set(v.ops.map((op) => op.id)) } : c.proposal,
+    }));
+    return true;
+  };
+
   /** Eingabe abschicken: neue Person, Reste-Modus oder Frage an die KI (`byVoice` = per Mikrofon) */
   const submit = (text: string, byVoice = false) => {
     const t = text.trim();
@@ -210,6 +226,13 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     if (chat.proposal && chat.proposal.selected.size > 0 && YES.test(t)) {
       setInput("");
       applyAndClose(chat.proposal.selected);
+      return;
+    }
+    // „Was ist da?“ (Tafel 102): Gesagtes wird einsortiert – erst als „Hab ich so verstanden:“ (KI zuerst)
+    if (chat.imHaus) {
+      setInput("");
+      if (ready) void ask(`${IM_HAUS_PREFIX} ${t}`, t, imHausLokal);
+      else imHausLokal(t);
       return;
     }
     // Ein Rezept-Link ist ein App-Befehl (wie ein geteilter Link): Seite lesen, Karte zeigen
@@ -515,6 +538,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
           kochidee={kochidee}
           rules={rules}
           onSubmit={submit}
+          onListen={() => !speech.listening && toggleMic()}
           onAsk={(text) => void ask(text)}
           onApply={applyAndClose}
           onClose={onClose}

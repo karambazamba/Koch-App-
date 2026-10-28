@@ -2,25 +2,26 @@
 // häufigsten Artikel – flache Formen in warmen Farben, im Code gezeichnet
 // (keine fremden Bilder, keine KI; docs/credits.md). Zuordnung:
 // lib/einkauf/kacheln/symbols.ts. Ohne eigene Zeichnung → Linien-Symbol der
-// Abteilung (Kühlregal, Obst & Gemüse, Drogerie …), nie ein Buchstabe
-// (lib/einkauf/kacheln/abteilung.ts).
+// Abteilung (Kühlregal, Obst, Gemüse, Drogerie …), nie ein Buchstabe und nie
+// Korb oder Karton (Tafel 102; lib/einkauf/kacheln/abteilung.ts).
 
 import type { ReactNode } from "react";
-import { Apple, Beef, Croissant, CupSoda, Package, Refrigerator, ShoppingBasket, Snowflake, SprayCan, type LucideIcon } from "lucide-react";
+import { Apple, Beef, Carrot, Croissant, CupSoda, Refrigerator, Snowflake, SprayCan, Utensils, Wheat, type LucideIcon } from "lucide-react";
 import type { SymbolId } from "@/lib/einkauf/kacheln/symbols";
 import { abteilungSymbol, type AbteilungSymbol } from "@/lib/einkauf/kacheln/abteilung";
 
 /** Linien-Symbol je Abteilung (für Artikel ohne eigene Zeichnung) */
 const ABTEILUNG: Record<AbteilungSymbol, LucideIcon> = {
-  "obst-gemuese": Apple,
+  obst: Apple,
+  "obst-gemuese": Carrot,
   brot: Croissant,
   kuehlregal: Refrigerator,
   "fleisch-fisch": Beef,
-  vorrat: Package,
+  vorrat: Wheat,
   getraenke: CupSoda,
   tiefkuehl: Snowflake,
   drogerie: SprayCan,
-  sonstiges: ShoppingBasket,
+  sonstiges: Utensils,
 };
 
 // Farben der Zeichnungen (wie bei den Gerichtsbildern fest, nicht Teil des Designs)
@@ -91,6 +92,16 @@ const S: Record<SymbolId, ReactNode> = {
       <path d="M17 24h14v11H17z" fill={C.creme} />
     </>
   ),
+  kuchen: (
+    <>
+      <path d="M8 25 36 13l4 7z" fill={C.rosa} />
+      <path d="M8 25l32-5v16L8 40z" fill={C.gelb} />
+      <path d="M8 25l32-5v3L8 28z" fill={C.rosa} />
+      <path d="M8 32l32-4v3L8 35z" fill={C.creme} />
+      <circle cx="29" cy="15" r="3.2" fill={C.rot} />
+      <path d="M27 12c1-2 3-2 4 0z" fill={C.gruen} />
+    </>
+  ),
   apfel: (
     <>
       <path d="M24 16c-4-3-12-2-12 8 0 9 6 16 12 14 6 2 12-5 12-14 0-10-8-11-12-8z" fill={C.rot} />
@@ -151,6 +162,14 @@ const S: Record<SymbolId, ReactNode> = {
       <rect x="7" y="19" width="34" height="11" rx="5.5" transform="rotate(-20 24 24)" fill={C.dunkelgruen} />
       <path d="M14 27l2-1M21 24l2-1M28 22l2-1" stroke={C.hellgruen} strokeWidth="1.6" strokeLinecap="round" />
     </>
+  ),
+  zucchini: (
+    <g transform="rotate(30 24 24)">
+      <path d="M10 19h24c3 0 5 2 5 5s-2 5-5 5H10c-2 0-3-2-3-5s1-5 3-5z" fill={C.gruen} />
+      <path d="M13 22h17M15 26.5h16" stroke={C.dunkelgruen} strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M3 23h5v2H3z" fill={C.hellgruen} />
+      <ellipse cx="38" cy="24" rx="1.8" ry="4" fill={C.hellgruen} />
+    </g>
   ),
   paprika: (
     <>
@@ -342,6 +361,15 @@ const S: Record<SymbolId, ReactNode> = {
       {[[19, 20], [28, 21], [22, 29], [30, 30], [17, 27]].map(([x, y]) => (
         <circle key={`${x}-${y}`} cx={x} cy={y} r="1.8" fill={C.dunkelbraun} />
       ))}
+    </>
+  ),
+  honig: (
+    <>
+      <path d="M14 18h20v20a3 3 0 0 1-3 3H17a3 3 0 0 1-3-3z" fill={C.gelb} />
+      <path d="M14 18h20v3c-2 0-2 3-4 3s-2-3-4-3-2 4-4 4-2-4-4-4-2 2-4 2z" fill={C.senf} />
+      <rect x="12" y="10" width="24" height="8" rx="2" fill={C.orange} />
+      <path d="M17 28h14v8H17z" fill={C.creme} />
+      <path d="M24 29l3 1.8v3.4L24 36l-3-1.8v-3.4z" fill={C.senf} />
     </>
   ),
   wasser: (

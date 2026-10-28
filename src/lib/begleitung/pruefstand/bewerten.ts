@@ -88,6 +88,11 @@ export function bewerte(satz: PruefSatz, reply: AssistantReply, ms: number): Pru
     const shops = reply.ops.filter((op) => op.type === "add_shopping" || op.type === "set_shop_rule").map((op) => ("shop" in op ? String(op.shop ?? "") : ""));
     if (!shops.length || shops.some((x) => x.trim().toLowerCase() !== satz.laden!.toLowerCase())) gruende.push(`Laden ${satz.laden} nicht getroffen (${shops.join(", ") || "keiner"})`);
   }
+  if (satz.nieName) {
+    const re = new RegExp(satz.nieName, "i");
+    const bad = reply.ops.map((op) => ("name" in op && typeof op.name === "string" ? op.name : "")).filter((n) => n && re.test(n));
+    if (bad.length) gruende.push(`Satzteil als Sache: ${bad.join(", ")}`);
+  }
   const max = satz.max ?? 2;
   if (sentenceCount(reply.reply) > max) gruende.push(`mehr als ${max} Sätze`);
   if ((reply.reply.match(/\?/g) ?? []).length > 1) gruende.push("mehr als eine Rückfrage");

@@ -12,6 +12,7 @@ const PAGES: Record<string, string> = {
   "/sport": "Sport",
   "/tag": "Tag",
   "/vorrat": "Im Haus",
+  "/vorrat/check": "Kurz-Check",
   "/wetter": "Wetter",
   "/wochenplan": "Wochenplan",
   "/woche/check": "Wochenplan",

@@ -2825,3 +2825,21 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Fehler gefunden (Durchklick „zuhoeren“): Antwortete Mia schneller als
   300 ms (jetzt oft bei „Passt.“), hörte sie danach nicht weiter zu. Jetzt
   hört sie auch nach einer sehr schnellen Antwort gleich wieder zu.
+
+## Im Haus – reinsprechen statt pflegen (v0.135.0, Tafel 102)
+
+- Fehler (Screenshot 28.10. 06:47): „Gar nicht im Haus“ stand als Artikel,
+  Zucchini mit Apfel-Symbol, Kuchen/Honig mit Korb/Kiste, große Kacheln,
+  „Was koch ich daraus?“ lag unter der Leiste.
+- Seite neu: „Was ist da?“ (Mia hört zu, Modus „Im Haus“), Chips in fünf
+  Gruppen (Kühlschrank, Vorrat, Obst & Gemüse, Brot, Tiefkühl; nur mit
+  Inhalt), oranger Punkt = bald aufbrauchen, „Aufgebraucht: …“ als eine Zeile
+  mit „Auf die Liste“, Chip = kleines Fenster, „Was koch ich daraus?“ über der
+  Leiste. Speicher `wasgibts.vorrat` v4 (Obst/Gemüse/Brot ziehen um).
+- Reinsprechen: ein Satz, rein und raus, „Hab ich so verstanden:“ mit Passt/
+  Ändern, nie Satzteile als Sache (auch in der Schnelleingabe); 9 neue
+  Prüfstand-Sätze mit `nieName`.
+- Kurz-Check Sonntag ab 17 Uhr in der Jetzt-Karte („Kurzer
+  Kühlschrank-Check? 20 Sekunden.“), Seite `/vorrat/check`.
+- Symbole: Zucchini, Kuchen, Honig gezeichnet; ohne Zeichnung nie Korb oder
+  Kiste (Vorrat = Ähre, Sonstiges = Besteck, Gemüse = Möhre, Obst = Apfel).
