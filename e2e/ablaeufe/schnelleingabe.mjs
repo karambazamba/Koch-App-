@@ -1,7 +1,7 @@
-// Neue Aufgabe & Termin – ein Feld, Familie · Geschäftlich (Tafel 114, A-021).
+// Neue Aufgabe & Termin – ein Feld, Familie · Ich · Arbeit (Tafel 114, A-034).
 // Aufgaben-＋ → EIN Fenster „Neue Aufgabe“: Feld hat sofort den Fokus →
-// Schalter „Geschäftlich“ → Satz → Return → „Steht drin · Rückgängig“, Feld leer und
-// offen → Raum gemerkt. Glocke → 16:00 → Zeile „Erinnern heute 16:00 ✕“.
+// Chip „Arbeit“ → Satz → Return → „Steht drin · Rückgängig“, Feld leer und
+// offen; nächstes ＋ wählt wieder Mias Vorschlag (Aufgaben „Ich“). Glocke → 16:00 → Zeile „Erinnern heute 16:00 ✕“.
 // „Mehr ›“ = genau drei Zeilen. „Freitag …“ → „Ab Freitag“. Termin-＋
 // „Zahnarzt Jonne Fr 16 Uhr“ → blaue Chips „Fr 23. Okt · 16:00 · 1 Std“;
 // ohne Uhrzeit „Uhrzeit?“ und erst danach gespeichert. Dazu: jeder Einstieg
@@ -38,9 +38,9 @@ export const schnelleingabe = async (page, check) => {
   check(fs >= 16, `Feld ≥ 16 px (${fs})`);
   check(await sheet.getByText("Für heute. Return = speichern.").isVisible(), "Hinweis „Für heute. Return = speichern.“");
 
-  // EINE Zeile: Familie | Geschäftlich (genau eins), Glocke, Mehr
+  // EINE Zeile: Familie · Ich · Arbeit (genau eins), Glocke, Mehr
   const schalter = sheet.getByRole("radiogroup", { name: "Wer sieht es?" });
-  check((await schalter.getByRole("radio").allInnerTexts()).join("|") === "Familie|Geschäftlich", "Schalter „Familie | Geschäftlich“");
+  check((await schalter.getByRole("radio").allInnerTexts()).map((t) => t.trim()).join("|") === "Familie|Ich|Arbeit", "Chips „Familie · Ich · Arbeit“");
   check((await schalter.getByRole("radio", { checked: true }).count()) === 1, "genau einer an");
   const glocke = sheet.getByRole("button", { name: "Erinnern" });
   const g = await glocke.boundingBox();
@@ -53,13 +53,13 @@ export const schnelleingabe = async (page, check) => {
   await page.waitForTimeout(300);
   check((await entries(page)).length === before && (await sheet.isVisible()), "leer speichern tut nichts");
 
-  // Geschäftlich + Return → gespeichert, „Steht drin · Rückgängig“, Feld leer und offen
-  await schalter.getByRole("radio", { name: "Geschäftlich" }).click();
+  // Arbeit + Return → gespeichert, „Steht drin · Rückgängig“, Feld leer und offen
+  await schalter.getByRole("radio", { name: "Arbeit" }).click();
   await box.fill("Tim antworten");
   await box.press("Enter");
   await page.waitForTimeout(400);
   const tim = (await entries(page)).find((e) => e.data.title === "Tim antworten");
-  check(tim?.raum === "arbeit" && tim?.data.date === "2026-10-21", `gespeichert für heute als Geschäftlich (${tim?.raum} ${tim?.data.date})`);
+  check(tim?.raum === "arbeit" && tim?.data.date === "2026-10-21", `gespeichert für heute als Arbeit (${tim?.raum} ${tim?.data.date})`);
   check(await page.getByText("Steht drin", { exact: true }).isVisible(), "„Steht drin“");
   check(await page.getByRole("button", { name: "Rückgängig" }).isVisible(), "mit „Rückgängig“");
   check((await box.inputValue()) === "" && (await sheet.isVisible()), "Feld leer, bleibt offen für die nächste");
@@ -93,19 +93,19 @@ export const schnelleingabe = async (page, check) => {
   check(geschenk?.data.date === "2026-10-23" && geschenk?.raum === "familie", `ab Freitag, Familie (${geschenk?.data.date})`);
   check(!(await sheet.isVisible().catch(() => false)), "„Speichern“ schließt");
 
-  // Raum gemerkt: nächstes ＋ startet mit der letzten Wahl
+  // Nächstes ＋: Mia wählt wieder vor (Aufgaben „Ich“), keine „letzte Wahl“ mehr
   const wieder = await oeffne(page, "Neue Aufgabe");
-  check((await wieder.getByRole("radio", { name: "Familie", checked: true }).count()) === 1, "Schalter startet mit der letzten Wahl");
+  check((await wieder.getByRole("radio", { name: "Ich", checked: true }).count()) === 1, "Aufgaben starten mit „Ich“");
   await page.keyboard.press("Escape");
   await page.waitForTimeout(400);
 
-  // Liste: „Geschäftlich“ blau, Familie ohne Schild; Filter „Alle · Familie · Geschäftlich“
+  // Liste: „Arbeit“ blau, Familie ohne Schild; Filter mit den vorhandenen Räumen
   await page.goto(BASE + "/aufgaben");
   await page.evaluate(() => localStorage.setItem("wasgibts.tagesablauf", JSON.stringify({ version: 1, routine: { ruhe: false } })));
   await page.reload();
   await page.waitForTimeout(900);
-  check((await page.getByRole("radiogroup", { name: "Filter" }).getByRole("radio").allInnerTexts()).join("|") === "Alle|Familie|Geschäftlich", "Filter „Alle · Familie · Geschäftlich“");
-  check(await page.locator('[data-item]:has-text("Tim antworten") [data-schild="arbeit"]').getByText("Geschäftlich").isVisible(), "„Geschäftlich“-Schild an „Tim antworten“");
+  check((await page.getByRole("radiogroup", { name: "Filter" }).getByRole("radio").allInnerTexts()).join("|") === "Alle|Familie|Arbeit", "Filter „Alle · Familie · Arbeit“");
+  check(await page.locator('[data-item]:has-text("Tim antworten") [data-schild="arbeit"]').getByText("Arbeit").isVisible(), "„Arbeit“-Schild an „Tim antworten“");
   check(!(await page.locator('[data-item]:has-text("Rechnung Steuerberater") [data-schild]').count()), "Familie ohne Schild");
 
   // Termin-＋: blaue Chips Tag · Uhrzeit · Dauer

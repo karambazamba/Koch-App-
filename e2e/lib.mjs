@@ -591,3 +591,36 @@ export async function nameFrageOderStart(page, name, { ziel = "start", ms = 3000
   await warten(false);
   return vorschlag;
 }
+
+// --- Zwei Konten im Test-Backend (KONTEN_TEST=1): anmelden, einladen, beitreten ---
+const adminCode = (page, email) => page.evaluate(async (e) => (await (await fetch("/api/test-konten", { method: "POST", body: JSON.stringify({ action: "admin_code", email: e }) })).json()).code, email);
+
+/** Auf /konto per E-Mail-Code anmelden (Code über die Test-Schnittstelle) */
+export async function kontoAnmelden(page, email) {
+  await page.goto(BASE + "/konto");
+  await page.getByLabel("Deine E-Mail-Adresse").fill(email);
+  await page.getByRole("button", { name: "Code schicken" }).click();
+  await page.getByLabel("6-stelliger Code").waitFor();
+  await page.getByLabel("6-stelliger Code").fill(await adminCode(page, email));
+}
+
+/** „Familie einladen“ → Link erstellen; liefert den Einladungs-Link */
+export async function familieEinladen(page) {
+  await page.getByRole("button", { name: "Familie einladen" }).click();
+  await page.getByRole("button", { name: "Einladungs-Link erstellen" }).click();
+  const link = (await page.getByTestId("einladungs-link").textContent()).trim();
+  await page.getByRole("dialog", { name: "Familie einladen" }).getByRole("button", { name: "Schließen" }).last().click();
+  await page.getByRole("dialog", { name: "Familie einladen" }).waitFor({ state: "detached" });
+  return link;
+}
+
+/** Einladungs-Link öffnen, anmelden, beitreten – bis die Startseite da ist */
+export async function perLinkBeitreten(page, link, email, name = "Lisa") {
+  await page.goto(link);
+  await page.getByRole("heading", { name: /lädt dich ein\./ }).waitFor();
+  await page.getByLabel("Deine E-Mail-Adresse").fill(email);
+  await page.getByRole("button", { name: "Code senden" }).click();
+  await page.getByLabel("6-stelliger Code").waitFor();
+  await page.getByLabel("6-stelliger Code").fill(await adminCode(page, email));
+  await nameFrageOderStart(page, name);
+}

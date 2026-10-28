@@ -44,10 +44,10 @@ export const wochencheck = async (page, check) => {
   await week.getByRole("group", { name: "Mathis: Spiel: Uhrzeit" }).getByRole("button", { name: "14:00" }).click();
   check(!(await week.getByRole("group", { name: "Mathis: Spiel: Uhrzeit" }).count()), "Frage beantwortet → Chips weg");
 
-  // Zeile antippen → Raum Geschäftlich
+  // Zeile antippen → Raum Arbeit (dieselben Raum-Chips wie überall)
   await week.getByRole("button", { name: "Paket Post bringen ändern" }).click();
   const card = page.getByRole("dialog", { name: "Ändern" });
-  await card.getByRole("radio", { name: "Geschäftlich" }).click();
+  await card.getByRole("radiogroup", { name: "Wer sieht es?" }).getByRole("radio", { name: "Arbeit" }).click();
   await card.getByRole("button", { name: "Fertig" }).click();
   await page.waitForTimeout(300);
 
@@ -60,7 +60,7 @@ export const wochencheck = async (page, check) => {
   const paket = after.find((e) => e.data.title === "Paket Post bringen");
   check(after.length === before + 3, `3 neue Einträge (${after.length - before})`);
   check(spiel?.data.start === "14:00" && spiel?.data.date === "2026-10-24" && spiel?.data.who?.includes("k1"), "Spiel Sa 14:00 mit Mathis");
-  check(paket?.raum === "arbeit", "Paket im Raum Geschäftlich");
+  check(paket?.raum === "arbeit", "Paket im Raum Arbeit");
   check(!after.some((e) => e.data.title === "Elternabend" && e.data.date === "2026-10-27"), "Elternabend weggelassen");
 
   // Ein Rückgängig für alles (Band 3 s)

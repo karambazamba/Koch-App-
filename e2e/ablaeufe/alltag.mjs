@@ -228,13 +228,13 @@ export const listeEinfuegen = async (page, check) => {
   check(await geplant.isVisible(), "unten leise „Geplant · 2“");
   await geplant.click();
   check(await page.getByRole("region", { name: "Geplant" }).getByText("Turnbeutel waschen").isVisible(), "„Geplant“ zeigt den Turnbeutel");
-  // Arbeitsaufgaben da → Chips „Alle · Familie · Geschäftlich“, die Wahl wird gemerkt
+  // Mehrere Räume da → Chips „Alle · … · Arbeit“, die Wahl wird gemerkt
   const filter = page.getByRole("radiogroup", { name: "Filter" });
   check(await filter.isVisible(), "Filter-Chips, weil es Arbeitsaufgaben gibt");
-  await filter.getByRole("radio", { name: "Geschäftlich" }).click();
+  await filter.getByRole("radio", { name: "Arbeit" }).click();
   await page.reload();
   await page.waitForTimeout(1000);
-  check((await page.getByRole("radiogroup", { name: "Filter" }).getByRole("radio", { name: "Geschäftlich" }).getAttribute("aria-checked")) === "true", "Filter „Geschäftlich“ bleibt nach dem Neuladen");
+  check((await page.getByRole("radiogroup", { name: "Filter" }).getByRole("radio", { name: "Arbeit" }).getAttribute("aria-checked")) === "true", "Filter „Arbeit“ bleibt nach dem Neuladen");
   await page.getByRole("radiogroup", { name: "Filter" }).getByRole("radio", { name: "Alle" }).click();
   const haus = page.getByRole("button", { name: /^Haus · 14/ });
   check(await haus.isVisible(), "Liste „Haus · 14“ eingeklappt");
@@ -245,7 +245,7 @@ export const listeEinfuegen = async (page, check) => {
   await page.waitForTimeout(1000);
   const tile = page.locator('[data-tile~="aufgaben"]').first();
   check(await tile.getByText("Angebot").isVisible(), "Kachel zeigt „Angebot“ (bis Freitag)");
-  check(await tile.getByText("Geschäftlich", { exact: true }).first().isVisible(), "Kachel: kleines Schild „Geschäftlich“");
+  check(await tile.getByText("Arbeit", { exact: true }).first().isVisible(), "Kachel: kleines Schild „Arbeit“");
   check(!(await tile.getByText("Haus-Sache 1").isVisible()), "Kachel zeigt keine Liste ohne Datum");
 };
 

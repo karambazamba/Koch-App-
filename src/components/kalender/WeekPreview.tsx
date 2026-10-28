@@ -3,7 +3,7 @@
 // „Deine Woche“ (Tafel 36, Bild 2/3): eine ruhige Zeile pro Sache (Punkt in
 // Raumfarbe · Tag · Uhrzeit · Titel · Etikett nur bei Vorschlägen · Haken),
 // Fragen als kleine Chip-Reihe darunter, Zeile antippen = kleine Karte zum
-// Ändern (Tag, Uhrzeit, Dauer, Familie · Ich · Arbeit, Weglassen).
+// Ändern (Tag, Uhrzeit, Dauer, Raum-Chips wie überall, Weglassen).
 
 import { useState } from "react";
 import { Check } from "lucide-react";
@@ -12,7 +12,10 @@ import { INPUT, INPUT_INLINE, buttonClass, chipClass } from "@/components/ui/sty
 import { addDays } from "@/lib/core/now";
 import { timeLabel } from "@/lib/kalender/sentence";
 import { weekDayLabel, type WeekItem, type WeekRoom } from "@/lib/kalender/wochencheck";
-import { ARBEIT, ICH } from "@/lib/core/haushalt";
+import { ARBEIT, ICH, sichtRaum } from "@/lib/core/haushalt";
+import { useHaushalt } from "@/lib/einstellungen/useHaushalt";
+import { raumZumSpeichern } from "@/lib/kalender/raum/wahl";
+import { RaumChips } from "@/components/ui/RaumChips";
 
 const DOT: Record<WeekRoom | "sport" | "aufgabe", string> = { familie: "bg-accent", ich: "bg-ich", arbeit: "bg-work", sport: "bg-good", aufgabe: "bg-line-strong" };
 const dotOf = (i: WeekItem) => (i.art === "sport" ? DOT.sport : i.art === "aufgabe" ? DOT.aufgabe : DOT[i.raum]);
@@ -69,15 +72,10 @@ export function WeekRow({ item, today, on, onToggle, onOpen, onAnswer }: { item:
   );
 }
 
-const ROOMS: [WeekRoom, string][] = [
-  ["familie", "Familie"],
-  ["ich", ICH],
-  ["arbeit", ARBEIT],
-];
-
 /** Kleine Karte zum Ändern einer Zeile */
 export function WeekItemCard({ item, today, onSave, onDrop, onClose }: { item: WeekItem; today: string; onSave: (i: WeekItem) => void; onDrop: () => void; onClose: () => void }) {
   const [draft, setDraft] = useState(item);
+  const haushalt = useHaushalt();
   const days = Array.from({ length: 8 }, (_, i) => addDays(today, i));
   const set = (patch: Partial<WeekItem>) => setDraft((d) => ({ ...d, ...patch }));
   return (
@@ -101,13 +99,7 @@ export function WeekItemCard({ item, today, onSave, onDrop, onClose }: { item: W
             ))}
           </div>
         )}
-        <div className="grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="Raum">
-          {ROOMS.map(([r, l]) => (
-            <button key={r} type="button" role="radio" aria-checked={draft.raum === r} onClick={() => set({ raum: r })} className={`${chipClass(draft.raum === r)} justify-center`}>
-              {l}
-            </button>
-          ))}
-        </div>
+        <RaumChips value={sichtRaum(draft.raum, haushalt)} haushalt={haushalt} onChange={(r) => set({ raum: raumZumSpeichern(r, { art: draft.art === "aufgabe" ? "aufgabe" : "termin", vorher: item.raum, vorschlag: item.raum, haushalt }) })} />
         <div className="grid grid-cols-2 gap-2">
           <button type="button" onClick={onDrop} className={buttonClass("ghost", "md")}>
             Weglassen
