@@ -1,5 +1,5 @@
 // Pinnwand als Kühlschranktür (Tafel 106/107) mit echten Touch-Gesten: Kachel
-// „Fächer“ so hoch wie Wetter, ＋ → „Neuer Zettel“ (Text direkt auf dem
+// „Fächer“ im Raster S (quadratisch, so hoch wie Wetter XS über Notizen XS), ＋ → „Neuer Zettel“ (Text direkt auf dem
 // Zettel, Return = neue Zeile, Schalter „Bleibt hängen“) → „Aufhängen“ →
 // „Hängt. · Rückgängig“, der neue Zettel liegt vorn im Fächer; Tipp auf den
 // Zettel = Pinnwand mit ihm hervorgehoben; Wischen über der Kachel wechselt
@@ -30,12 +30,14 @@ export const pinnwandGesten = async (page, check) => {
   await page.reload();
   await page.waitForTimeout(900);
 
-  // Kachel: Fächer, gleich hoch wie Wetter, ＋ oben rechts, kein roter Punkt
+  // Kachel: Fächer in S (Tafel 118/119: quadratisch, daneben Wetter XS über Notizen XS), ＋ oben rechts, kein roter Punkt
   const tile = page.getByRole("region", { name: "Pinnwand" });
   await tile.evaluate((el) => el.scrollIntoView({ block: "center" }));
   const t = await tile.boundingBox();
   const w = await page.locator('a[href^="/wetter"]').first().boundingBox();
-  check(Math.abs(t.height - w.height) <= 2, `Kachel so hoch wie Wetter (${Math.round(t.height)} / ${Math.round(w.height)} px)`);
+  const n = await page.getByRole("region", { name: /^Notizen/ }).first().boundingBox();
+  check(Math.abs(t.height - t.width) <= 2, `Kachel S quadratisch (${Math.round(t.width)} × ${Math.round(t.height)} px)`);
+  check(Math.abs(t.y - w.y) <= 2 && n && Math.abs(t.y + t.height - (n.y + n.height)) <= 2, `Kachel so hoch wie Wetter + Notizen daneben (${Math.round(t.height)} / ${Math.round(n ? n.y + n.height - w.y : 0)} px)`);
   check(await tile.locator(".zettel").first().isVisible(), "Kachel zeigt echte kleine Zettel");
   check(!(await tile.getByLabel("Neue Nachricht").count()), "kein roter Punkt");
 

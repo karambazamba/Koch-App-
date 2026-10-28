@@ -26,7 +26,9 @@ export const sportStempel = async (page, check) => {
   const karte = page.getByRole("region", { name: "Diese Woche" });
   check(await karte.getByText("Diese Woche ist noch frei.").isVisible(), "leer: „Diese Woche ist noch frei.“");
   check(await karte.getByText("Ohne Ziel").isVisible(), "ohne Ziel steht rechts „Ohne Ziel“");
-  check((await karte.locator('[data-feld="frei"]').count()) === 3, "ohne Ziel: 3 Felder");
+  // Beispiel-Familie: „Fußball Mathis“ (Fr 17:00, Sport) steht schon als geplantes Feld drin
+  const felder = await karte.locator("[data-feld]").evaluateAll((els) => els.map((e) => e.dataset.feld));
+  check(felder.length === 3 && felder.every((f) => f === "frei" || f === "geplant"), `ohne Ziel: 3 Felder (${felder.join(", ")})`);
   check(!(await page.getByText("Die Woche ist bereit für dich.").count()) && !(await page.getByText("Wie oft pro Woche?").count()), "kein Wochensatz alt, keine Ziel-Chips");
   check(!(await page.getByRole("button", { name: "Training eintragen" }).first().locator("svg").count()), "großer Knopf ohne Symbol");
 

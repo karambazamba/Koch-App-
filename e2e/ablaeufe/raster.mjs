@@ -30,7 +30,10 @@ async function layout(page, tiles) {
 const boxes = (page) =>
   page.evaluate(() => {
     const board = document.querySelector("[data-raster]").getBoundingClientRect();
-    return {
+    // Wasserzeichen (A-036) sind absichtlich angeschnitten – sie zählen nicht als Inhalt, der überquillt
+    const marks = [...document.querySelectorAll(".kachel-wasserzeichen")];
+    for (const m of marks) m.style.display = "none";
+    const out = {
       width: board.width,
       units: [...document.querySelectorAll("[data-raster] > [data-unit]")].map((el) => {
         const r = el.getBoundingClientRect();
@@ -46,6 +49,8 @@ const boxes = (page) =>
         };
       }),
     };
+    for (const m of marks) m.style.display = "";
+    return out;
   });
 
 const near = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
@@ -102,7 +107,9 @@ export const rasterBuendig = async (page, check) => {
   await page.getByRole("button", { name: "Startseite bearbeiten" }).last().click();
   await page.getByRole("button", { name: "Verstanden" }).click({ timeout: 2000 }).catch(() => {});
   await page.waitForTimeout(400);
-  await page.getByRole("radio", { name: "Wetter mittel" }).click();
+  // Im Bearbeiten wackeln die Kacheln (nie „stabil“) – tippen wie ein Finger auf die Mitte
+  const b = await page.getByRole("radio", { name: "Wetter mittel" }).boundingBox();
+  await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
   await page.waitForTimeout(600);
   const moved = Object.fromEntries((await boxes(page)).units.map((x) => [x.key, x]));
   check(near(moved.notizen.y, moved.pinnwand.y) && moved.wetter.y > moved.pinnwand.y && near(moved.wetter.w, moved.termine.w), "Wetter auf M: Notizen rücken nach, Wetter so breit wie Termine");
@@ -172,7 +179,8 @@ export const standardJeHaushalt = async (page, check, device) => {
       check(units.map((u) => u.key).slice(-3).join() === "termine,aufgaben,essen+einkauf", `${wahl}: dann Termine M, Aufgaben M, Essen | Einkauf`);
       check(wahl === "Nur für mich" ? !units.some((u) => u.key === "pinnwand") : units.some((u) => u.key === "pinnwand"), `${wahl}: Pinnwand ${wahl === "Nur für mich" ? "aus" : "an"}`);
       check(await p.locator("[data-jetzt]").getByText(jetzt[wahl]).first().isVisible().catch(() => false), `${wahl}: Jetzt-Karte „${jetzt[wahl]}“`);
-      check((await p.getByText("Beispiel", { exact: true }).count()) > 0, `${wahl}: leise „Beispiel“`);
+      // Familie/zu zweit: Schild „Beispiel“ unten rechts an der Pinnwand; allein (Tafel 119 ohne Pinnwand) kein Schild, die Beispiel-Kacheln sagen es VoiceOver
+      check(wahl === "Nur für mich" ? (await p.getByRole("region", { name: /· Beispiel$/ }).count()) >= 3 && !(await p.getByText("Beispiel", { exact: true }).count()) : (await p.getByText("Beispiel", { exact: true }).count()) > 0, `${wahl}: leise „Beispiel“`);
       if (device === "iPhone 15 Pro") {
         // Ohne Scrollen: alles bis Aufgaben ganz, Essen + Einkauf mindestens mit Kopf über der Leiste
         const seen = await p.evaluate(() => {

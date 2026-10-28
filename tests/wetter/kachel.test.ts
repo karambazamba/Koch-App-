@@ -302,3 +302,17 @@ describe("Kachel XS/S/M (Tafel 120)", () => {
     },
   );
 });
+
+// Durchklick wetterSzenen/rasterHoehen (nach Rebase): S-Temperatur lag mit voller
+// Breite unter der Szene, M quoll auf dem iPhone SE 3 px über
+describe("Feste Fläche: S und M passen", () => {
+  it("S: Temperatur nur so breit wie die Zahl (nie unter der Szene)", async () => {
+    const html = await tile("S", stormy(), 9 * 60);
+    expect(html).toMatch(/class="relative mt-1 self-start text-\[40px\][^"]*">-?\d+°</);
+  });
+  it("M: Satz und Stunden eng genug für 168 px (iPhone SE)", async () => {
+    const html = await tile("M", stormy(), 9 * 60);
+    expect(html).toMatch(/class="mt-0\.5 truncate[^"]*" data-wetter-zeile/);
+    expect(html).toMatch(/wx-linie relative mt-auto grid grid-cols-4 border-t pt-1"/);
+  });
+});

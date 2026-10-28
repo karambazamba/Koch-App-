@@ -99,9 +99,9 @@ export function WeatherTile({
         {stale && <span className="shrink-0 font-semibold normal-case tracking-normal">· {shortClock(forecast.fetchedAt)}</span>}
       </span>
       {size === "S" ? (
-        // S: Temperatur oben links neben der Szene, Satz und ↑/↓ unten (unter der Szene ist Platz)
+        // S: Temperatur oben links neben der Szene (nur so breit wie die Zahl), Satz und ↑/↓ unten (unter der Szene ist Platz)
         <>
-          <span className={`relative mt-1 ${TEMP.S} font-extrabold tabular-nums leading-none`}>{temp}°</span>
+          <span className={`relative mt-1 self-start ${TEMP.S} font-extrabold tabular-nums leading-none`}>{temp}°</span>
           <span className="relative mt-auto flex flex-col">
             <span className="truncate text-[13px] font-semibold leading-snug" data-wetter-zeile>
               {satz}
@@ -123,13 +123,13 @@ export function WeatherTile({
               </span>
             )}
           </span>
-          <span className={`${size === "XS" ? "mt-0.5" : "mt-1"} truncate text-[13px] font-semibold leading-snug`} data-wetter-zeile>
+          <span className="mt-0.5 truncate text-[13px] font-semibold leading-snug" data-wetter-zeile>
             {satz}
           </span>
         </span>
       )}
       {hours.length > 0 && (
-        <span className="wx-linie relative mt-auto grid grid-cols-4 border-t pt-1.5" aria-label="Nächste Stunden" data-stunden>
+        <span className="wx-linie relative mt-auto grid grid-cols-4 border-t pt-1" aria-label="Nächste Stunden" data-stunden>
           {hours.map((h) => (
             <span key={h.key} className="flex flex-col items-center">
               <span className="wx-soft text-[12px] font-semibold tabular-nums leading-tight">{h.hour}</span>
