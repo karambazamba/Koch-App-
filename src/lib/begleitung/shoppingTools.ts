@@ -15,7 +15,7 @@ export const SHOPPING_TOOLS = {
     definition: {
       name: "einkaufsliste_hinzufuegen",
       description:
-        "Schlägt Artikel für die Einkaufsliste einer Woche vor. Zutaten für Gerichte im Wochenplan kommen automatisch auf die Liste – hier nur Zusätzliches. fuer_tag (heute, morgen oder Wochentag) und gericht merken, wofür der Artikel ist; Artikel für heute stehen oben unter \"Für heute\". laden: wo es das gibt (wird für den Artikel gemerkt; 'Müsli von Rossmann'). Im Laden selbst (\"Ich bin bei REWE\") öffnet app_befehl mit genau diesem Satz den Einkaufsmodus.",
+        "Schlägt Artikel für die Einkaufsliste einer Woche vor. Zutaten für Gerichte im Wochenplan kommen automatisch auf die Liste – hier nur Zusätzliches. fuer_tag (heute, morgen oder Wochentag) und gericht merken, wofür der Artikel ist; Artikel für heute stehen oben unter \"Für heute\". laden: wo es das gibt (wird für den Artikel gemerkt; 'Müsli von Rossmann'). Im Laden selbst (\"Ich bin bei REWE\") öffnet app_befehl mit genau diesem Satz den Einkaufsmodus. Was schon auf der Liste steht, nicht doppelt. '… ist alle', 'Eier sind alle', 'Milch ist leer' → sofort hier, ohne Rückfrage, Antwort nur 'Eier sind drauf.'. Ungefähre Wünsche ('Sachen fürs Frühstück', 'was für den Grillabend') nicht nachfragen, sondern nur_vorschlag mit passenden Sachen aus Stammartikeln und Verlauf.",
       input_schema: {
         type: "object",
         properties: {

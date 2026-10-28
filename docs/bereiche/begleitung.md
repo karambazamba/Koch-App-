@@ -130,6 +130,43 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Spiegelstriche, höchstens ein „!“ – geprüft in `tests/begleitung/knapp.test.ts`
   (Werkzeug-Beschreibungen und Prompt liest nur die KI, sie zählen nicht).
 
+### Locker und kurz im Chat (seit vX, Ton-Feinschliff)
+- Prompt (`prompt.ts`): Der Ton steht ganz vorn als `TON_PROMPT` (höchstens
+  15 Zeilen, Test), danach 20 Beispiele `TON_BEISPIELE` (Nutzer → ✓/✗:
+  Einkauf, Termin, Essen, Danke, Müdigkeit, Smalltalk, Wetter, Lob). Regeln,
+  die nur ein Werkzeug betreffen (Wochencheck, Mails, Startseite, Pause,
+  Portionen, Bausteine, Sport, Wetter, Timer, Pinnwand-Memos, „ist alle“,
+  ungefährer Einkauf, Erinnerung, Kochidee …), stehen jetzt in der
+  `description` des Werkzeugs; der Prompt sagt nur noch „Jedes Werkzeug
+  beschreibt selbst, wann es passt“. Kernregeln (Allergien strikt, Termin/
+  Aufgabe/Notiz, Vorschau bei großen Dingen, „Kann ich noch nicht.“,
+  Gesundheit → Arzt, Versprechen) bleiben im Prompt (Test `ton.test.ts`).
+- Gesprochenes Deutsch erwünscht (`LOCKER` in `mia/persona.ts`: „hab“, „is“,
+  „nehm“, „passt“, „jo“, „na klar“, „Moin“, „heut“, „grad“). Nie steif
+  (`STEIF`): „Ich habe … für dich …“, Einstieg „Ich habe“, „Selbstverständlich“,
+  „Gerne helfe ich“, „Möchtest du, dass ich …“, „Wenn du noch etwas brauchst …“,
+  „Brauchst du sonst noch etwas?“, „Gern geschehen“, „Sag Bescheid“ u. a.
+- Längen (`TON_LAENGE`): Alltagsantwort ≤ 120 Zeichen, Rat/Wissen ≤ 240;
+  länger nur auf ausdrücklichen Wunsch („erklär mal genau“, `willDetails`).
+  Im Prompt verlangt; `tidyMiaText` schneidet nie Inhalt ab, sondern kürzt
+  nur steife Anhängsel am Ende („Wenn du noch etwas brauchst, sag Bescheid.“,
+  „Brauchst du sonst noch was?“, „Ich hoffe, das hilft.“) und einen steifen
+  Einstieg („Selbstverständlich!“, „Gerne helfe ich dir dabei.“). Besteht
+  alles nur aus Floskeln, bleibt der erste Satz.
+- Modell: kurzes Plaudern (Danke, Lob, Gruß, „Bin platt“, „Wie geht’s?“,
+  `plauderArt` in `mia/plaudern.ts`) geht wie klare Kurzbefehle an Haiku;
+  „Passt“/„Okay“ direkt nach einer Rückfrage von Mia zählt als Antwort und
+  geht an Sonnet. Der Testmodus antwortet darauf mit festen lockeren Sätzen
+  (`PLAUDER_ANTWORT`); steife Testmodus-Sätze sind gelockert („Hat grad nicht
+  geklappt. Nochmal?“, „Hab in eurer Nähe grad nix gefunden.“).
+- Prüfstand „Ton“ (`pruefstand/ton.ts`): 30 Alltagssätze, bestanden nur mit
+  Länge im Limit, keiner Floskel aus `STEIF`, höchstens einer Frage und ohne
+  „Ich habe …“-Einstieg (`tonGruende`, bewertet wird die Antwort der KI vor
+  `tidyMiaText`). Ziel ≥ 90 % (`TON_ZIEL`). Läuft über `/api/pruefstand` mit
+  `art: "ton"` (gleiches Geheimnis, gleiche Häppchen) und unter „Für
+  Entwickler“ als eigener Lauf „Prüfstand Ton“ (`PruefstandLauf.tsx`).
+  Testmodus: 28 von 30 (93 %). Tests: `tests/begleitung/ton.test.ts`.
+
 ### Mia auf Claude-Niveau – nie halbgar (seit v0.78)
 - Nie „nicht verstanden“: Ist die KI erreichbar, bekommt sie jede Eingabe.
   Fehler → einmal still nochmal, dann „Hat grad nicht geklappt. Nochmal?“.
@@ -139,8 +176,8 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Tageslimit: „Für heute hab ich genug geredet. Listen und Termine gehen
   natürlich weiter.“ (`UNAVAILABLE_TEXT` in `client.ts`).
 - Modell (`engine.ts`): Haiku nur für klare Kurzbefehle (`isShortCommand`:
-  kurz, keine Frage, eindeutige Aktion wie Liste/Timer/Termin mit Zeit),
-  sonst Sonnet. Zweite Chance: antwortet Haiku ohne Aktion unsicher oder gar
+  kurz, keine Frage, eindeutige Aktion wie Liste/Timer/Termin mit Zeit) und
+  seit vX für kurzes Plaudern (`isSmallTalk`), sonst Sonnet. Zweite Chance: antwortet Haiku ohne Aktion unsicher oder gar
   nicht (`HEDGE`), übernimmt Sonnet. Sonnet mit effort „medium“ bei Fragen,
   „low“ bei Aktionen. Kosten je Anfrage wie bisher; Übersicht „KI-Kosten
   letzte 7 Tage“ unter Einstellungen → Daten & App → „Für Entwickler“

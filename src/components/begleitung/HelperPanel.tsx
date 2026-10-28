@@ -378,9 +378,10 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   useEffect(() => {
     again.current = listenAgain;
   });
+  // Antwortet Mia schneller als 300 ms, fehlte sonst das Weiterhören (dann gleich danach)
   useEffect(() => {
-    if (readsVoice || !busy) return;
-    const t = window.setTimeout(() => again.current(), 300);
+    if (readsVoice) return;
+    const t = window.setTimeout(() => again.current(), busy ? 300 : 0);
     return () => window.clearTimeout(t);
   }, [busy, readsVoice]);
   useEffect(() => {

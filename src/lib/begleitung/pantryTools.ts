@@ -15,7 +15,7 @@ export const PANTRY_TOOLS = {
     definition: {
       name: "vorrat_hinzufuegen",
       description:
-        "Legt Sachen nach „Im Haus“ (gekauft, eingefroren, übrig): 'Hab Hähnchen gekauft' → Hähnchen; 'Hab noch Hack' → Hack; 'Ich hab Chili eingefroren' → Chili, tiefkuehler. Ohne Mengen. Ort: kuehlschrank, schrank oder tiefkuehler; ohne Angabe wählt die App den naheliegenden.",
+        "Legt Sachen nach „Im Haus“ (gekauft, eingefroren, übrig): 'Hab Hähnchen gekauft' → Hähnchen; 'Hab noch Hack' → Hack; 'Ich hab Chili eingefroren' → Chili, tiefkuehler. Ohne Mengen. Ort: kuehlschrank, schrank oder tiefkuehler; ohne Angabe wählt die App den naheliegenden. Nur, wenn der Baustein „Im Haus“ an ist; sonst antworte nur 'Kommt bald.'.",
       input_schema: {
         type: "object",
         properties: {

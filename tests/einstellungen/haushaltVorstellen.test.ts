@@ -89,6 +89,6 @@ describe("KI-Werkzeug haushalt_vorstellen", () => {
     const r = await ask(S, "Ich bin Felix, wir sind Lisa und drei Kinder");
     expect(r.uses[0]).toMatchObject({ name: "haushalt_vorstellen", input: { ich: "Felix", erwachsene: ["Lisa"], weitere_kinder: 3 } });
     const done = await afterTools(S, "Ich bin Felix", [{ name: "haushalt_vorstellen" }], { haushalt_vorstellen: "Vorgemerkt (mit \"Übernehmen\"): Felix · Lisa · 3 Kinder · Familie. Antworte kurz und herzlich." });
-    expect(done.text).toBe("Schön, euch kennenzulernen! Felix · Lisa · 3 Kinder · Familie – tipp unten auf Übernehmen. (Testmodus)");
+    expect(done.text).toBe("Moin zusammen! Felix · Lisa · 3 Kinder · Familie. Passt das? (Testmodus)");
   });
 });

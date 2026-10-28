@@ -56,12 +56,28 @@ describe("Hochschalten", () => {
     expect(r.usage?.micro).toBe(150); // 1000 × 0,1 + 100 × 0,5
   });
 
-  it("Fragen, offene Bitten und „Danke“ gehen gleich an Sonnet", async () => {
-    for (const q of ["Hast du was mit Linsen?", "Danke dir!", "Wie lange muss ein Ei kochen", "Plan mir die Woche"]) {
+  it("Fragen und offene Bitten gehen gleich an Sonnet", async () => {
+    for (const q of ["Hast du was mit Linsen?", "Hey, was koche ich heute?", "Wie lange muss ein Ei kochen", "Plan mir die Woche"]) {
       const { create, models } = fake({ "claude-haiku-5-5": { text: "x" }, "claude-sonnet-5-5": { text: "Ok." } });
       await runAssistant(req(q), create, choice);
       expect(models, q).toEqual(["claude-sonnet-5-5"]);
     }
+  });
+
+  // Ton-Feinschliff: kurze Alltagsantworten (Danke, Gruß, „Bin platt“) übernimmt das kleine Modell
+  it("Plaudern („Danke dir!“, „Moin“, „Bin total platt“) bleibt bei Haiku", async () => {
+    for (const q of ["Danke dir!", "Moin", "Bin total platt", "Wie geht’s dir?"]) {
+      const { create, models } = fake({ "claude-haiku-5-5": { text: "Gern." }, "claude-sonnet-5-5": { text: "-" } });
+      await runAssistant(req(q), create, choice);
+      expect(models, q).toEqual(["claude-haiku-5-5"]);
+    }
+  });
+
+  it("„Passt“ nach einer Rückfrage von Mia ist eine Antwort, kein Plaudern → Sonnet", async () => {
+    const { create, models } = fake({ "claude-haiku-5-5": { text: "x" }, "claude-sonnet-5-5": { text: "Steht drin." } });
+    const r = parseRequest({ deviceId: "testgeraet-1", today: "2026-10-21", messages: [{ role: "user", text: "Zahnarzt Donnerstag" }, { role: "assistant", text: "Um wie viel Uhr?" }, { role: "user", text: "Passt" }], pending: [], data: { profile: profileFrom(startState()) } });
+    await runAssistant(r, create, choice);
+    expect(models).toEqual(["claude-sonnet-5-5"]);
   });
 
   it("zweite Chance: Haiku antwortet ohne Aktion unsicher → Sonnet", async () => {

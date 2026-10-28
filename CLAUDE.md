@@ -108,7 +108,7 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Mia ist nie halbgar: lieber weniger, aber richtig. Keine Regel-Antwort
   „nicht verstanden“ (offline: merken und nachholen; Fehler: einmal still
   nochmal, dann „Hat grad nicht geklappt. Nochmal?“). Haiku nur für klare
-  Kurzbefehle, sonst Sonnet. Was Mia kann, steht im Prompt automatisch aus den
+  Kurzbefehle und kurzes Plaudern (Danke, Gruß, „Bin platt“), sonst Sonnet. Was Mia kann, steht im Prompt automatisch aus den
   Werkzeugen; sonst „Kann ich noch nicht.“ (anonym gezählt, `mia_wuensche`).
   Neue Mia-Funktion nur mit Prüfstand-Sätzen (`begleitung/pruefstand/`,
   Ziel ≥ 95 %, vor jeder neuen Mia-Version unter „Für Entwickler“ laufen lassen).
@@ -159,6 +159,14 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   Anzeige, Vorlesen und Push durch `tidyMiaText()` (`begleitung/tidy.ts`).
 - Kurz, warm, mitdenkend, natürlich, Deutsch, etwas Humor, kein Formularton,
   keine Fachbegriffe.
+- Gesprochenes Deutsch erwünscht („hab“, „is“, „nehm“, „passt“, „jo“, „na
+  klar“, „Moin“); nie steif („Ich habe … für dich …“, „Selbstverständlich“,
+  „Gerne helfe ich“, „Möchtest du, dass ich …“, „Wenn du noch etwas brauchst
+  …“; Liste `STEIF` in `mia/persona.ts`, `tidyMiaText` kürzt solche Anhängsel
+  am Ende). Länge: Alltagsantwort ≤ 120 Zeichen, Rat/Wissen ≤ 240, außer
+  jemand will ausdrücklich Details („erklär mal genau“). Ton im Prompt vorn
+  (≤ 15 Zeilen), Werkzeug-Regeln in den Werkzeug-Beschreibungen; Prüfstand
+  „Ton“ (`pruefstand/ton.ts`, Ziel ≥ 90 %).
 - Erleichterung statt Leistung: nicht übertrieben loben, nichts vorrechnen;
   Erfolge zeigen, Versäumnisse nicht, selten feiern.
 - Gesundheit: keine Diagnosen, nie Aussagen über Körper/Gewicht/Kalorien; bei

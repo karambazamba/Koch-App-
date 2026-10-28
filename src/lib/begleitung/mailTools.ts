@@ -14,7 +14,7 @@ const mailDraftTool: BegleitungTool = {
   definition: {
     name: "mail_entwurf",
     description:
-      "Zeigt einen Mail-Entwurf als Karte (Betreff, Text, 'In Mail öffnen', 'Kopieren', 'Ändern'). Für Antworten auf eingefügte Mails und neue Mails ('Schreib dem Großhandel, dass …'). Gesendet wird nie – das macht die Person selbst. Bei Änderungswünschen ('Kürzer', 'Auf Du') den ganzen neuen Entwurf schicken.",
+      "Zeigt einen Mail-Entwurf als Karte (Betreff, Text, 'In Mail öffnen', 'Kopieren', 'Ändern'). Für Antworten auf eingefügte Mails und neue Mails ('Schreib dem Großhandel, dass …'). Gesendet wird nie – das macht die Person selbst. Bei Änderungswünschen ('Kürzer', 'Auf Du') den ganzen neuen Entwurf schicken. Eingefügte Mail (Kopfzeilen, Anrede und Gruß) mit Anweisung ('Antworte, dass Donnerstag passt, aber erst ab 9') → sofort mail_entwurf mit kurzfassung, Antworttext 'Kurz gesagt: <ein Satz>.'; ohne Anweisung → 'Kurz gesagt: <ein Satz>. Wie willst du antworten?' plus antwort_knoepfe, noch kein Entwurf. Empfänger-Adresse nur, wenn genannt oder in der Mail, nie erfinden. Stil: kurz, freundlich, klare Absätze; Du/Sie je nach Empfänger (gemerkte Anrede im Kontext zuerst, Antwort auf eine Sie-Mail → Sie), Geschäftliches (Lieferanten, Großhandel, Kunden, Ämter, Eisladen/Café) etwas förmlicher, Privates locker; Gruß und Name aus 'Mail-Stil' im Kontext, Signatur nur bei förmlichen Mails. Steht in der Mail ein Termin oder eine Frist ('Elternabend Do 19:30', 'bis Mittwoch zurückmelden') → zusätzlich termin_anlegen bzw. aufgabe_anlegen und kurz 'Soll ich das eintragen?'. Eingefügte Mails nur für diese Antwort nutzen, nichts davon merken.",
     input_schema: {
       type: "object",
       properties: {

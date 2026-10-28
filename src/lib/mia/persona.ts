@@ -8,7 +8,7 @@
 
 export const steckbrief = (name: string) => [
   `Du bist ${name}, die persönliche Assistentin (Leitsatz: „Ich sortier deinen Alltag.“): warm, organisiert, mit trockenem norddeutschem Humor, nie chefig.`,
-  "Du sprichst kurz, per du, natürlich („Moin!“, „Klappt.“, „Ich hab schon …“). Emojis sparsam.",
+  "Du sprichst kurz, per du, wie man redet („Moin!“, „Is drauf.“, „Passt.“, „Ich hab schon …“). Emojis sparsam.",
   "Du bist ehrlich eine Assistentin, kein Mensch. Du hast keine Bedürfnisse und erwartest nichts.",
   "Nie Druck, nie Vorwürfe, keine Ausrufe-Ketten, keine Zähler, nichts vorrechnen.",
 ].join(" ");
@@ -24,6 +24,42 @@ export const VERBOTEN: RegExp[] = [
   /!{2,}/,
   /\d+ aufgaben (offen|überfällig)/i,
 ];
+
+/**
+ * Steif und förmlich (Ton-Feinschliff): so klingt Mia nie. Steht im Prompt,
+ * der Prüfstand „Ton“ zählt jeden Treffer als Fehler, und `tidyMiaText`
+ * kürzt die reinen Anhängsel am Ende weg (`FLOSKEL_ENDE` in tidy.ts).
+ */
+export const STEIF: RegExp[] = [
+  /(?<![a-zäöüß])ich habe (?:[^.!?]{0,80} )?für dich(?![a-zäöüß])/i,
+  /selbstverständlich/i,
+  /gerne? helfe ich/i,
+  /möchtest du,? dass ich/i,
+  /wenn du (?:noch |sonst noch |weitere )?(?:etwas|was|fragen|hilfe) (?:brauchst|hast|willst|möchtest)/i,
+  /brauchst du (?:sonst |noch )*(?:etwas|was)(?: anderes)?\?/i,
+  /kann ich (?:sonst |noch )*(?:etwas|was) (?:für dich )?tun/i,
+  /gern(?:e)? geschehen/i,
+  /lass es mich wissen/i,
+  /ich hoffe,? das hilft/i,
+  /gute frage/i,
+  /natürlich!/i,
+  /sag (?:einfach |gern |gerne )?bescheid/i,
+];
+
+/** Gesprochenes Deutsch, das Mia benutzen darf (Prompt und Doku) */
+export const LOCKER = ["hab", "is", "nehm", "passt", "jo", "na klar", "Moin", "heut", "grad"] as const;
+
+/**
+ * Längen im Chat (Zeichen): Alltagsantwort höchstens 120, Rat und Wissen
+ * höchstens 240. Länger nur, wenn jemand ausdrücklich Details will.
+ */
+export const TON_LAENGE = { alltag: 120, rat: 240 } as const;
+
+/** Will jemand ausdrücklich Details? („erklär mal genau“, „ausführlich“, „Schritt für Schritt“) */
+export const willDetails = (text: string) => /erklär\w* (?:mir |mal |es |das )*(?:genau|ausführlich|im detail)|ganz genau|ausführlich|im detail|schritt für schritt|alle details|genauer bitte/i.test(text);
+
+/** Beginnt steif mit „Ich habe …“ (statt „Hab …“ oder gleich zur Sache) */
+export const ICH_HABE_START = /^\s*ich habe(?![a-zäöüß])/i;
 
 export const SAETZE = {
   /** Nachts angetippt (nach dem Strecken) */

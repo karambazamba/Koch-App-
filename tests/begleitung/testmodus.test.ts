@@ -230,7 +230,7 @@ describe("Essen ohne Wochenplan", () => {
     expect((await one("Lass uns was neues ausprobieren", likes)).text).toBe("Neu, aber nicht fremd: Wie wär’s mit einer Shakshuka mit Feta und Paprika? (Testmodus)");
     expect((await one("Denk dir ein neues Rezept aus")).text).toMatch(/Was soll die Basis sein/);
     const basis = await one("Kartoffeln", S, [["user", "Denk dir ein neues Rezept aus"], ["assistant", "Was soll die Basis sein – Kartoffeln, Reis?"]]);
-    expect(basis.text).toMatch(/^Mit Kartoffeln – wie wär’s/);
+    expect(basis.text).toBe("Mit Kartoffeln passt ne cremige Gemüsepfanne. Für welchen Tag? (Testmodus)");
   });
 });
 
@@ -238,14 +238,14 @@ describe("Wochenplanung – erste Runde", () => {
   it("die Beispiel-Sätze des Testmodus landen nicht als Aufgabe (Fehler bis jetzt)", async () => {
     const example = await one("Donnerstag und Freitag gibt es meine Rezepte, Mattis wünscht sich Sonntag Milchreis, der Rest vegetarische KI-Rezepte.");
     expect(example.names).toEqual([]);
-    expect(example.text).toBe("Gern! Welche deiner Rezepte soll es am Donnerstag und am Freitag geben? Zur Auswahl hast du zum Beispiel: Spaghetti Bolognese, Kartoffelsuppe, Linsencurry.");
+    expect(example.text).toBe("Welche Rezepte am Donnerstag und Freitag? Zur Auswahl: Spaghetti Bolognese, Kartoffelsuppe, Linsencurry.");
     expect((await one("Mattis wünscht sich Sonntag Milchreis")).names).toEqual(["woche_lesen", "kochbuch_durchsuchen"]);
     expect((await one("Plan mir die nächste Woche")).first).toMatchObject({ name: "woche_lesen", input: { woche: "naechste" } });
   });
 
   it("ohne Kochbuch: Gerichte nennen lassen", async () => {
     const empty = context([], { kochbuch: "0 Rezepte" });
-    expect((await one("Freitag gibt es meine Rezepte", empty)).text).toMatch(/Im Kochbuch ist noch nichts/);
+    expect((await one("Freitag gibt es meine Rezepte", empty)).text).toMatch(/Im Kochbuch is noch nix/);
   });
 
   it("Gericht für einen Tag liest beide Wochen und das Kochbuch", async () => {
@@ -255,8 +255,17 @@ describe("Wochenplanung – erste Runde", () => {
   });
 
   it("nichts Erkennbares: kurze Vorstellung mit Beispiel", async () => {
-    expect((await one("Hallo")).text).toMatch(/^Sag einfach, was ansteht \(Testmodus\)\. Zum Beispiel:/);
+    expect((await one("Blubb")).text).toMatch(/^Sag einfach, was ansteht \(Testmodus\)\. Zum Beispiel:/);
     const noName = S.replace(/^Du heißt .*$/m, "Ohne Namen");
-    expect((await one("Hallo", noName)).text).toMatch(/^Sag einfach, was ansteht \(Testmodus\)/);
+    expect((await one("Blubb", noName)).text).toMatch(/^Sag einfach, was ansteht \(Testmodus\)/);
+  });
+
+  // Ton-Feinschliff: Plaudern antwortet kurz und locker statt mit der Testmodus-Erklärung
+  it("Plaudern: Gruß, Danke, Lob, Müdigkeit kurz und locker", async () => {
+    expect((await one("Hallo")).text).toBe("Moin. Was liegt an? (Testmodus)");
+    expect((await one("Danke dir")).text).toBe("Gern. (Testmodus)");
+    expect((await one("Super gemacht!")).text).toBe("Och. Danke dir! (Testmodus)");
+    expect((await one("Bin total platt")).text).toBe("Dann heut was Schnelles. Nudeln mit Pesto? (Testmodus)");
+    expect((await one("Wie geht’s dir?")).text).toBe("Läuft. Und bei dir? (Testmodus)");
   });
 });

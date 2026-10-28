@@ -47,7 +47,7 @@ const bausteinTool = (on: boolean): BegleitungTool => ({
   definition: {
     name: on ? "baustein_an" : "baustein_aus",
     description: on
-      ? "Schaltet einen Baustein ein (zusätzliche Funktion, z. B. 'Zeig mir den Vorrat' wenn der Vorrat aus ist). Sag danach kurz, wo er steht."
+      ? "Schaltet einen Baustein ein (zusätzliche Funktion, z. B. 'Zeig mir den Vorrat' wenn der Vorrat aus ist). Sag danach kurz, wo er steht. 'Was kannst du noch?' → die ausgeschalteten Bausteine aus dem Kontext kurz aufzählen (je ein halber Satz) und anbieten."
       : "Schaltet einen Baustein aus ('Ich brauche die Tipps nicht'). Daten bleiben erhalten.",
     input_schema: {
       type: "object",
@@ -115,7 +115,7 @@ export const HOME_TOOLS: BegleitungTool[] = [
     definition: {
       name: "pause_setzen",
       description:
-        "Trägt eine echte Abwesenheit ein (Urlaub, verreist, ganze Familie weg): an diesen Tagen wird nichts geplant und nichts eingekauft. NUR wenn klar ist, dass alle weg sind und ab wann – nie für 'heute sind wir weniger' (dafür portionen_anpassen). Ohne klares Ende: nachfragen.",
+        "Trägt eine echte Abwesenheit ein (Urlaub, verreist, ganze Familie weg): an diesen Tagen wird nichts geplant und nichts eingekauft. NUR wenn klar ist, dass alle weg sind und ab wann – nie für 'heute sind wir weniger' (dafür portionen_anpassen). Ohne klares Ende: nachfragen. Beispiel: 'Ab Montag sind wir eine Woche im Urlaub'. 'Wir sind wieder da' → pause_beenden.",
       input_schema: {
         type: "object",
         properties: { von: { type: "string", description: "YYYY-MM-DD" }, bis: { type: "string", description: "YYYY-MM-DD (letzter Tag)" } },
@@ -150,7 +150,7 @@ export const HOME_TOOLS: BegleitungTool[] = [
     definition: {
       name: "app_befehl",
       description:
-        "Für Bedienung der App, für die es kein eigenes Werkzeug gibt: Ansicht/Farben (hell/dunkel; Startseite 'Mach die Startseite schlichter' bzw. 'wieder farbig'), Vorlesen, Einstellungen (z. B. 'Jonne isst jetzt vegetarisch', 'Lisa mag keine Pilze', 'Melde dich seltener'), eine neue Person ('Oma wohnt jetzt bei uns'), eigene Produkte ('Wir nehmen immer Alsan statt Butter'), Termine aus Google/Apple übernehmen ('Kalender übernehmen' – öffnet die Seite dafür), Seiten öffnen. text = der Wunsch als kurzer, klarer Satz. Die App führt ihn nach 'Übernehmen' selbst aus.",
+        "Für Bedienung der App, für die es kein eigenes Werkzeug gibt: Ansicht/Farben (hell/dunkel; Startseite 'Mach die Startseite schlichter' bzw. 'wieder farbig'), Vorlesen, Einstellungen (z. B. 'Jonne isst jetzt vegetarisch', 'Lisa mag keine Pilze', 'Melde dich seltener'), eine neue Person ('Oma wohnt jetzt bei uns'), eigene Produkte ('Wir nehmen immer Alsan statt Butter'), Termine aus Google/Apple übernehmen ('Kalender übernehmen' – öffnet die Seite dafür), Seiten öffnen. text = der Wunsch als kurzer, klarer Satz. Die App führt ihn nach 'Übernehmen' selbst aus. Feste Sätze: 'Wochencheck', 'Lass uns die Woche durchgehen', 'Ich lese dir den Kalender vor' → text 'Wochencheck' (öffnet das Zuhören). 'Kochidee', 'Was soll ich kochen?', 'Was anderes als …?' → text 'Kochidee' (die App zeigt sofort drei passende Gerichte, ohne Frage). 'Zeig mir meine Aufgaben', 'Zeig mir meine Notizen', 'Startseite bearbeiten', 'Spiel das Memo von Lisa ab', 'Unterschreib meine Mails mit Liebe Grüße' → text mit genau diesem Satz.",
       input_schema: { type: "object", properties: { text: { type: "string" } }, required: ["text"], additionalProperties: false },
     },
     run: (ctx, raw) => {
@@ -165,7 +165,7 @@ export const HOME_TOOLS: BegleitungTool[] = [
     definition: {
       name: "startseite_anpassen",
       description:
-        "Passt die Startseite an: Kachel zeigen (landet an ihrem Standard-Platz), ausblenden, Größe klein/mittel/gross (S/M/L) oder verschieben (hoch, runter, nach_oben, nach_unten); 'standard' = Reihenfolge und Größen wie am Anfang (kachel egal). Z. B. 'Pinnwand ganz nach oben' → pinnwand, nach_oben; 'Wetter klein machen' → wetter, klein; 'Nimm das Wetter weg' → wetter, ausblenden; 'Startseite wie am Anfang' → standard. Zum Bearbeiten-Modus selbst: app_befehl 'Startseite bearbeiten'. Ausblenden löscht nichts.",
+        "Passt die Startseite an: Kachel zeigen (landet an ihrem Standard-Platz), ausblenden, Größe klein/mittel/gross (S/M/L) oder verschieben (hoch, runter, nach_oben, nach_unten); 'standard' = Reihenfolge und Größen wie am Anfang (kachel egal). Z. B. 'Pinnwand ganz nach oben' → pinnwand, nach_oben; 'Wetter klein machen' → wetter, klein; 'Nimm das Wetter weg' → wetter, ausblenden; 'Startseite wie am Anfang' → standard. Zum Bearbeiten-Modus selbst: app_befehl 'Startseite bearbeiten'. Ausblenden löscht nichts. 'Mach die Einkaufsliste wieder klein' → einkauf, klein (Standard ist kompakt); 'Nimm die Einkaufsliste von der Startseite' → einkauf, ausblenden.",
       input_schema: {
         type: "object",
         properties: {
@@ -189,7 +189,7 @@ export const HOME_TOOLS: BegleitungTool[] = [
     area: "essen",
     definition: {
       name: "wochenplan_anzeigen",
-      description: "Liest den Wochenplan (Gericht je Tag). Die Familie sieht ihn in der App unter Essen (rechte Seite) – das kurz sagen.",
+      description: "Liest den Wochenplan (Gericht je Tag). Antworte kurz mit den Gerichten, ohne die Oberfläche zu erklären.",
       input_schema: { type: "object", properties: { woche: WEEK_PROP }, additionalProperties: false },
     },
     run: (ctx, raw) => PLAN_TOOLS.woche_lesen.run(ctx, { woche: (raw as Input | null)?.woche === "naechste" ? "naechste" : "aktuell" }),
@@ -217,7 +217,7 @@ export const HOME_TOOLS: BegleitungTool[] = [
     area: "essen",
     definition: {
       name: "wochenplan_loeschen",
-      description: "Leert den ganzen Wochenplan einer Woche (alle Gerichte weg, Rezepte bleiben im Kochbuch). Z. B. 'Lösch den Wochenplan wieder'.",
+      description: "Leert den ganzen Wochenplan einer Woche (alle Gerichte weg, Rezepte bleiben im Kochbuch). Z. B. 'Lösch den Wochenplan wieder'. Ist ein Vorschlag mit „Übernehmen“: sag nur kurz, dass er bereitliegt.",
       input_schema: { type: "object", properties: { woche: WEEK_PROP }, additionalProperties: false },
     },
     run: (ctx, raw) => {

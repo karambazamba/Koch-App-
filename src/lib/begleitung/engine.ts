@@ -28,6 +28,7 @@ import { abendsNachUhr } from "@/lib/kalender/mitwandern";
 import { sanitizeHome } from "@/lib/core/homeLayout";
 import { sanitizeSport } from "@/lib/sport/model";
 import { looksLikeMail, sanitizeMailStyle } from "@/lib/begleitung/mail";
+import { plauderArt } from "@/lib/mia/plaudern";
 
 /** Eine Modell-Anfrage; `onText` bekommt den Antworttext Stück für Stück */
 export type CreateMessage = (params: Anthropic.Beta.MessageCreateParamsNonStreaming, onText?: (delta: string) => void) => Promise<Anthropic.Beta.BetaMessage>;
@@ -239,6 +240,17 @@ export function isShortCommand(text: string): boolean {
   return /auf die (einkaufs)?liste|auf den zettel|\bkaufen\b|einkauf|\btimer\b|\bwecker\b|\bstoppuhr\b|\bminuten?\b|erinner|\bpinnwand\b|\bnotier|merk dir|abhaken|erledigt|\bum \d{1,2}([:.]\d{2})?\b|\b\d{1,2}([:.]\d{2})? ?uhr\b|\b(mo|di|mi|do|fr|sa|so)\b|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|morgen|übermorgen|im haus|vorrat/.test(t);
 }
 
+/**
+ * Kurze Alltagsantwort (Ton-Feinschliff): Danke, Lob, Gruß, „Bin platt“,
+ * „Wie geht’s?“ – das kleine Modell antwortet schnell und knapp. Nach einer
+ * Rückfrage von Mia zählt „Passt“ als Antwort darauf (dann nicht).
+ */
+function isSmallTalk(req: Pick<AssistantRequest, "messages">): boolean {
+  const last = req.messages[req.messages.length - 1]?.text ?? "";
+  const before = [...req.messages].reverse().find((m, i) => i > 0 && m.role === "assistant")?.text ?? "";
+  return plauderArt(last, before) !== null;
+}
+
 /** Frage oder Ratschlag (dann denkt das große Modell etwas gründlicher: effort „medium“) */
 export const isQuestion = (text: string) => /\?|^(wie|was|warum|wieso|welche|wer|wo|wann|kannst du|soll ich|hast du|gibt es)\b/i.test(text.trim());
 
@@ -354,8 +366,8 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
 
   // Modell wählen: fest eingestellt, sonst klein – oder gleich groß, wenn die Anfrage danach klingt
   const fixed = typeof choice === "string";
-  // Kleines Modell nur für klare Kurzbefehle – alles andere gleich groß
-  const firstModel = fixed ? choice : needsLargeModel(req) || !isShortCommand(lastText) ? choice.large : choice.small;
+  // Kleines Modell nur für klare Kurzbefehle und kurze Alltagsantworten (Danke, Gruß, „Bin platt“) – alles andere gleich groß
+  const firstModel = fixed ? choice : needsLargeModel(req) || !(isShortCommand(lastText) || isSmallTalk(req)) ? choice.large : choice.small;
   const canUpgrade = !fixed && firstModel === choice.small && choice.small !== choice.large;
   let run = await attempt(firstModel, canUpgrade);
   let model = firstModel;

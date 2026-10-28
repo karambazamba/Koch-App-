@@ -32,7 +32,7 @@ const names = (r: { uses: { name: string }[] }) => r.uses.map((u) => u.name);
 
 describe("Woche gelesen → Vorschlag", () => {
   it("kaputtes Ergebnis: ehrlich sagen", async () => {
-    expect((await afterTools(S, "Plan mir die Woche", READ, { woche_lesen: "kaputt" })).text).toBe("Ich konnte die Woche gerade nicht lesen.");
+    expect((await afterTools(S, "Plan mir die Woche", READ, { woche_lesen: "kaputt" })).text).toBe("Die Woche krieg ich grad nicht gelesen.");
   });
 
   it("Gericht für morgen: Rezept aus dem Kochbuch oder freies Gericht", async () => {
@@ -138,7 +138,7 @@ describe("Nach den Werkzeugen kurz antworten", () => {
 
   it("Tipps aus der Region und Wetter", async () => {
     expect((await afterTools(S, "Was ist los?", [{ name: "tipps_suchen" }], { tipps_suchen: "Treffer: Kürbisfest" })).text).toMatch(/^Da wär was in eurer Nähe/);
-    expect((await afterTools(S, "Was ist los?", [{ name: "tipps_suchen" }], { tipps_suchen: "Keine Treffer" })).text).toBe("Dafür habe ich in eurer Nähe gerade nichts gefunden. (Testmodus)");
+    expect((await afterTools(S, "Was ist los?", [{ name: "tipps_suchen" }], { tipps_suchen: "Keine Treffer" })).text).toBe("Hab in eurer Nähe grad nix gefunden. (Testmodus)");
     expect((await afterTools(S, "Wetter?", [{ name: "wetter_abfragen" }], { wetter_abfragen: "Freitag, 23.10.\nRegnerisch, 8 bis 11°\nKurz: Ab 15 Uhr Regen." })).text).toBe("Ab 15 Uhr Regen. (Freitag, 23.10.) (Testmodus)");
     expect((await afterTools(S, "Wetter?", [{ name: "wetter_abfragen" }], { wetter_abfragen: "Freitag, 23.10.\nSonnig, 12°" })).text).toBe("Sonnig, 12° (Freitag, 23.10.) (Testmodus)");
   });
@@ -159,7 +159,7 @@ describe("Nach den Werkzeugen kurz antworten", () => {
   it("Abschluss: bereit zum Übernehmen bzw. ehrlich bei Fehlern", async () => {
     expect((await afterTools(S, "Morgen 15 Uhr Zahnarzt", [{ name: "termin_anlegen" }], { termin_anlegen: "ok" })).text).toBe("Steht unten bereit. (Testmodus)");
     expect((await afterTools(S, "Setz Pasta", [{ name: "gericht_setzen" }], { gericht_setzen: "ok" })).text).toMatch(/^Steht unten als Vorschlag\. .*\(Testmodus\)/);
-    expect((await afterTools(S, "Setz Pasta", [{ name: "gericht_setzen" }], { gericht_setzen: "Fehler" }, ["gericht_setzen"])).text).toBe("Das hat leider nicht geklappt. Magst du es anders formulieren?");
+    expect((await afterTools(S, "Setz Pasta", [{ name: "gericht_setzen" }], { gericht_setzen: "Fehler" }, ["gericht_setzen"])).text).toBe("Hat grad nicht geklappt. Nochmal?");
   });
 });
 

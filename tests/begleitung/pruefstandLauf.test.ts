@@ -75,10 +75,12 @@ describe("Ergebnis zum Kopieren", () => {
 
   it("Seite: Hinweis „Bildschirm anlassen“, Zahl aus den echten Sätzen, Server-Häppchen 3", () => {
     const view = readFileSync("src/components/einstellungen/settings/AdminView.tsx", "utf8");
+    const lauf = readFileSync("src/components/einstellungen/settings/PruefstandLauf.tsx", "utf8");
     expect(view).toContain("Bildschirm anlassen, dauert ca. 5 Minuten.");
-    expect(view).toContain("von ${PRUEFSAETZE.length}");
-    expect(view).not.toMatch(/von 120/);
-    expect(view).toContain("Verbindung abgebrochen bei Satz ${stand.abbruch + 1}. Nochmal ab hier?");
+    expect(view).toContain("${PRUEFSAETZE.length} Alltagssätze");
+    expect(lauf).toContain("von ${saetze.length}");
+    expect(view + lauf).not.toMatch(/von 120/);
+    expect(lauf).toContain("Verbindung abgebrochen bei Satz ${stand.abbruch + 1}. Nochmal ab hier?");
     expect(readFileSync("src/app/api/pruefstand/route.ts", "utf8")).toMatch(/const BATCH = 3;/);
   });
 });
