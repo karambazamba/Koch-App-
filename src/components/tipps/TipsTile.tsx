@@ -1,14 +1,13 @@
 "use client";
 
-// Kachel „Tipps fürs Wochenende“ (Mo–Do „Tipps diese Woche“): zwei Karten
-// nebeneinander (L: vier) mit Icon, Titel, Tag + Uhrzeit, Ort und einem
-// Etikett, rechts oben „Alle“. Höchstens ein KARAMBA-Eintrag pro Woche.
+// Kachel „Tipps fürs Wochenende“ (Mo–Do „Tipps diese Woche“), nur M im festen
+// Raster: zwei Karten nebeneinander mit Icon, Titel und Tag + Uhrzeit, rechts
+// oben „Alle“ (Ort und Etikett im Fenster). Höchstens ein KARAMBA-Eintrag pro Woche.
 
 import Link from "next/link";
 import { useState } from "react";
 import type { TileSize } from "@/lib/core/homeLayout";
 import { TILE, TILE_INNER, TILE_LABEL } from "@/components/ui/styles";
-import { tipTags } from "@/lib/tipps/categories";
 import { tileTips, tileTitle, type TipView } from "@/lib/tipps/model";
 import { useTipsWindow } from "@/lib/tipps/client";
 import { KarambaLine, TipIcon, tipWhen } from "@/components/tipps/TipBits";
@@ -17,10 +16,10 @@ import { TipSheet } from "@/components/tipps/TipSheet";
 export function TipsTile({ size, today }: { size: TileSize; today: string }) {
   const data = useTipsWindow(today);
   const [open, setOpen] = useState<TipView | null>(null);
-  const list = data ? tileTips(data.tips, today, size === "L" ? 4 : 2) : [];
+  const list = data ? tileTips(data.tips, today, 2) : [];
   const title = tileTitle(today);
   return (
-    <section className={`${TILE} flex flex-col gap-2.5 p-3.5`} aria-label={title}>
+    <section className={`${TILE} flex h-full flex-col gap-2 overflow-hidden p-3`} aria-label={title} data-groesse={size}>
       <div className="flex items-center justify-between">
         <Link href="/tipps" className={TILE_LABEL}>
           {title}
@@ -44,7 +43,7 @@ export function TipsTile({ size, today }: { size: TileSize; today: string }) {
           {list.map((t) => (
             <li key={t.id}>
               <button type="button" onClick={() => setOpen(t)} className={`${TILE_INNER} flex h-full w-full flex-col items-start gap-1 p-2.5 text-left`} aria-label={`${t.titel} – ${tipWhen(t)}, ${t.ort_name}`}>
-                <TipIcon tip={t} size={30} />
+                <TipIcon tip={t} size={24} />
                 {t.karamba && <KarambaLine />}
                 <span className="break-words text-[14px] font-bold leading-snug">{t.titel}</span>
                 <span className="text-[12px] font-semibold text-muted">{tipWhen(t)}</span>

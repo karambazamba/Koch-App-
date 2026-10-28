@@ -27,7 +27,7 @@ export const STORAGE = [
   { key: "wasgibts.pinnwand", what: "Pinnwand (Kühlschranktür): Zettel, Fotos (nur der Eintrag) und Sprachnachrichten (Einträge; Memos nicht in der Sicherung), Farbe, Papier, Erledigt, Archiv, Reaktionen je Person, Antworten mit Zitat; v5: Größe, Platz (sort), „Nur für mich“ (privat)", version: 5, migration: "pinnwand/store.ts migratePinStore", area: "local", backup: true },
   { key: "wasgibts-fotos", what: "Bilder der Foto-Zettel (IndexedDB, verkleinert auf 1600 px; mit Konto zusätzlich im Haushalt, Bucket „fotos“)", version: 1, migration: "pinnwand/fotoStore.ts", area: "indexeddb", backup: false },
   { key: "wasgibts-memos", what: "Ton der Sprachnachrichten (IndexedDB; mit Konto zusätzlich im Haushalt, Bucket „memos“)", version: 1, migration: "pinnwand/memoAudio.ts", area: "indexeddb", backup: false },
-  { key: "wasgibts.startseite", what: "Startseite: Kacheln, Reihenfolge, Größen, Farben", version: 8, migration: "core/homeLayout.ts migrateHome", area: "local", backup: true },
+  { key: "wasgibts.startseite", what: "Startseite: Kacheln, Reihenfolge, Größen (XS/S/M), Farben", version: 9, migration: "core/homeLayout.ts migrateHome", area: "local", backup: true },
   { key: "wasgibts.funktionen", what: "Eingeschaltete Bausteine (+ Übernahme Launch 1.0, Im Haus, Pinnwand)", version: 6, migration: "core/features.ts migrate", area: "local", backup: true },
   { key: "wasgibts.tagesablauf", what: "Tagesablauf: Morgens, Feierabend, Ruhe, Arbeitstage, Kochen", version: 1, migration: "heute/tagesablauf.ts", area: "local", backup: true },
   { key: "wasgibts.sport", what: "Sport: Trainings, Wochenziel, Packlisten", version: 1, migration: "sport/store.ts", area: "local", backup: true },

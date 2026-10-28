@@ -5,7 +5,8 @@
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { KACHEL_FARBEN, farbWaehlbar, farbeAusWort, gueltigeFarbe, standardFarbe } from "@/lib/heute/kachelFarben";
-import { DEFAULT_HOME, applyHomeChange, describeHomeChange, migrateHome, placeBeside, sanitizeHome, type HomeTile } from "@/lib/core/homeLayout";
+import { DEFAULT_HOME, applyHomeChange, describeHomeChange, migrateHome, sanitizeHome, type HomeTile } from "@/lib/core/homeLayout";
+import { fuelleLuecke, rasterOf } from "@/lib/heute/raster";
 import { parseHomeCommand } from "@/lib/begleitung/homeChat";
 import { settingsChange } from "@/lib/begleitung/settingsChat";
 import { createEmptyProfile } from "@/lib/einstellungen/profile";
@@ -101,14 +102,16 @@ describe("Palette (Look „Farbig“)", () => {
     const frame = readFileSync("src/components/heute/EditFrame.tsx", "utf8");
     const wahl = readFileSync("src/components/heute/FarbWahl.tsx", "utf8");
     expect(frame).toContain("data-farbe={tile.farbe}");
-    expect(frame).toMatch(/farbWaehlbar\(tile\.id\) && <FarbWahl/);
+    // unter dem Größen-Umschalter in der Kachel; bei XS hinter dem Farb-Knopf über der Kachel
+    expect(frame).toMatch(/farbe && !xs && <FarbWahl/);
+    expect(frame).toMatch(/farbe && xs && farbeOffen/);
     expect(wahl.indexOf("Farbe automatisch")).toBeLessThan(wahl.indexOf("KACHEL_FARBEN.map"));
     expect(wahl).toContain("border-dashed");
     expect(wahl).toContain("ring-tile-accent");
   });
 });
 
-describe("Speichern in der Startseiten-Anordnung (v8)", () => {
+describe("Speichern in der Startseiten-Anordnung (v8/v9)", () => {
   const farbe = (tiles: HomeTile[], id: string) => tiles.find((t) => t.id === id)?.farbe;
 
   it("Wahl übernimmt, „A“ geht zurück auf automatisch (Feld fehlt)", () => {
@@ -126,12 +129,16 @@ describe("Speichern in der Startseiten-Anordnung (v8)", () => {
     expect(farbe(sanitizeHome([{ id: "termine", visible: true, size: "M", farbe: "neonpink" }]), "termine")).toBeUndefined();
   });
 
-  it("Farbe bleibt beim Verschieben, Größe ändern, Ausblenden und Daneben-Stellen; „wie am Anfang“ setzt sie zurück", () => {
+  it("Farbe bleibt beim Verschieben, Größe ändern, Ausblenden und In-die-Lücke-Stellen; „wie am Anfang“ setzt sie zurück", () => {
     let tiles = applyHomeChange(DEFAULT_HOME, { tile: "pinnwand", action: "farbe", farbe: "aqua" });
     for (const action of ["gross", "nach_unten", "ausblenden", "zeigen"] as const) tiles = applyHomeChange(tiles, { tile: "pinnwand", action });
     expect(farbe(tiles, "pinnwand")).toBe("aqua");
     tiles = applyHomeChange(tiles, { tile: "vorrat", action: "farbe", farbe: "rose" });
-    expect(farbe(placeBeside(tiles, "wetter", "vorrat"), "vorrat")).toBe("rose");
+    // eine einzelne S hat daneben eine Lücke – Im Haus hineinstellen behält die Farbe
+    const shown: HomeTile[] = [{ id: "termine", visible: true, size: "M" }, { id: "pinnwand", visible: true, size: "S" }];
+    const luecke = rasterOf(shown).luecken[0];
+    expect(luecke).toEqual({ col: 1, row: 2, h: 2 });
+    expect(farbe(fuelleLuecke(tiles, shown, luecke, "vorrat"), "vorrat")).toBe("rose");
     expect(farbe(applyHomeChange(tiles, { tile: "termine", action: "standard" }), "pinnwand")).toBeUndefined();
   });
 
@@ -140,9 +147,9 @@ describe("Speichern in der Startseiten-Anordnung (v8)", () => {
     expect(describeHomeChange({ tile: "notizen", action: "farbe", farbe: "auto" })).toBe("Notizen hat wieder die eigene Farbe.");
   });
 
-  it("Migration: v7 → v8 ohne Farben (alles automatisch), v8 behält sie", () => {
+  it("Migration: v7 → v9 ohne Farben (alles automatisch), v8 behält sie", () => {
     const v7 = migrateHome({ version: 7, tiles: DEFAULT_HOME, tipSeen: true })!;
-    expect(v7.version).toBe(8);
+    expect(v7.version).toBe(9);
     expect(v7.tiles.every((t) => t.farbe === undefined)).toBe(true);
     const v8 = migrateHome({ version: 8, tiles: [{ id: "notizen", visible: true, size: "M", farbe: "sand" }], tipSeen: false })!;
     expect(farbe(v8.tiles, "notizen")).toBe("sand");
@@ -153,7 +160,7 @@ describe("Speichern in der Startseiten-Anordnung (v8)", () => {
     vi.resetModules();
     const home = await import("@/lib/core/homeLayout");
     home.changeHome({ tile: "termine", action: "farbe", farbe: "flieder" });
-    expect(JSON.parse(win.localStorage.getItem("wasgibts.startseite")!)).toMatchObject({ version: 8 });
+    expect(JSON.parse(win.localStorage.getItem("wasgibts.startseite")!)).toMatchObject({ version: 9 });
     const backup = createBackup(win.localStorage);
     const fresh = memoryStorage();
     restoreBackup(backup, fresh);

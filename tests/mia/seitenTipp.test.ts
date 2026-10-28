@@ -6,16 +6,16 @@
 // nur mit echter Aktion. „Mia stellt vor“ steht unter der Kachel, Pfeil hin.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { pfeilZu, type Unit } from "@/lib/core/homeUnits";
-import type { HomeTile } from "@/lib/core/homeLayout";
+import { unitsOf } from "@/lib/core/homeUnits";
+import { pfeilZu, rasterOf } from "@/lib/heute/raster";
+import type { HomeTile, HomeTileId } from "@/lib/core/homeLayout";
 import { tidyMiaText } from "@/lib/begleitung/tidy";
 import { EMPTY_DENKT } from "@/lib/mia/denktmit/store";
 import { ersterBesuch, naechsteVorstellung } from "@/lib/mia/denktmit/vorstellen";
 import { SEITE_FUER, VORSTELLEN } from "@/lib/mia/denktmit/seiten";
 
 const read = (f: string) => readFileSync(f, "utf8");
-const tile = (id: string, size: "S" | "M" | "L" = "M") => ({ id, size, visible: true }) as HomeTile;
-const unit = (...tiles: HomeTile[]): Unit => ({ key: tiles.map((t) => t.id).join("+"), tiles });
+const tile = (id: string, size: "XS" | "S" | "M" = "M") => ({ id, size, visible: true }) as HomeTile;
 
 describe("Texte der Seiten-Tipps", () => {
   it("Aufgaben: wie gewünscht", () => {
@@ -88,21 +88,22 @@ describe("Tipp im Seitenfluss unter dem Titel", () => {
 });
 
 describe("Mia stellt vor: unter der Kachel, Pfeil zur Kachel", () => {
-  it("Pfeil links/rechts bei halben Kacheln, mittig bei voller Breite, sonst kein Tipp in der Reihe", () => {
-    expect(pfeilZu([unit(tile("termine"))], "termine")).toBe("mitte");
-    expect(pfeilZu([unit(tile("pinnwand", "S")), unit(tile("wetter", "S"))], "wetter")).toBe("rechts");
-    expect(pfeilZu([unit(tile("pinnwand", "S")), unit(tile("wetter", "S"))], "pinnwand")).toBe("links");
-    expect(pfeilZu([unit(tile("essen", "S"), tile("einkauf", "S"))], "einkauf")).toBe("rechts");
-    expect(pfeilZu([unit(tile("essen", "S"), tile("einkauf", "S"))], "essen")).toBe("links");
-    expect(pfeilZu([unit(tile("notizen", "S"))], "notizen")).toBe("links");
-    expect(pfeilZu([unit(tile("termine"))], "aufgaben")).toBeNull();
+  it("Pfeil links/rechts bei halben Kacheln, mittig bei voller Breite, sonst kein Tipp", () => {
+    const p = (list: HomeTile[], id: HomeTileId) => pfeilZu(unitsOf(list), rasterOf(list), id);
+    expect(p([tile("termine")], "termine")).toBe("mitte");
+    expect(p([tile("pinnwand", "S"), tile("wetter", "S")], "wetter")).toBe("rechts");
+    expect(p([tile("pinnwand", "S"), tile("wetter", "S")], "pinnwand")).toBe("links");
+    expect(p([tile("essen", "S"), tile("einkauf", "S")], "einkauf")).toBe("rechts");
+    expect(p([tile("essen", "S"), tile("einkauf", "S")], "essen")).toBe("links");
+    expect(p([tile("notizen", "S")], "notizen")).toBe("links");
+    expect(p([tile("termine")], "aufgaben")).toBeNull();
   });
 
-  it("HomeBoard setzt den Tipp hinter die Reihe der Kachel, nicht im Bearbeiten; keine Karte mehr unter der Jetzt-Karte", () => {
+  it("HomeBoard setzt den Tipp in eine eigene Zeile unter die Kachel, nicht im Bearbeiten; keine Karte mehr unter der Jetzt-Karte", () => {
     const board = read("src/components/heute/HomeBoard.tsx");
-    expect(board).toMatch(/vorstellen && !editing \? pfeilZu\(row, vorstellen\.tile\)/);
+    expect(board).toMatch(/vorstellen && !editing \? preview\.find/);
+    expect(board).toMatch(/trennZeile\(raster, tippUnit\.key\)/);
     expect(board).toMatch(/<SeitenTipp [^\n]*pfeil=\{pfeil\}/);
-    expect(board).toMatch(/return \[\.\.\.unitRow\(row, r\), tipp\];/);
     const denkt = read("src/components/begleitung/denktmit/useMiaDenkt.ts");
     expect(denkt).toMatch(/karte && karte\.art !== "vorstellen"/);
     expect(denkt).not.toMatch(/vorstellungSpaeter|label: "Später"/);

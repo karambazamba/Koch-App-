@@ -243,13 +243,15 @@ describe("Kachel „Fächer“", () => {
     expect(faecherOf([old, n[0]], NOW, 3).map((x) => x.id)).toEqual(["1", "p"]);
   });
 
-  it("S und M zeigen drei, L bis sechs; Winkel −10°, −2°, +7°", () => {
-    expect(FAECHER).toEqual({ S: 3, M: 3, L: 6 });
+  it("S und M zeigen drei (L gibt es nicht mehr); Winkel −10°, −2°, +7°", () => {
+    expect(FAECHER).toEqual({ S: 3, M: 3 });
     expect(FAECHER_WINKEL).toEqual([-10, -2, 7]);
     const tile = readFileSync("src/components/pinnwand/PinboardTile.tsx", "utf8");
     expect(tile).toMatch(/size === "S" \? \(\s*<Faecher /);
     expect(tile).toMatch(/<ZettelReihe /);
-    expect(tile).toMatch(/size === "S" \? "h-\[156px\]"/);
+    // feste Fläche im Raster (Tafel 118): S wie M füllen ihren Platz – nach „Fertig“ nie ein Streifen
+    expect(tile).toMatch(/flex h-full flex-col overflow-hidden/);
+    expect(tile).not.toMatch(/h-\[156px\]/);
   });
 
   it("leer: gestrichelter Zettel mit Magnet und ＋, „Erster Zettel?“, „Oder 🎙 Sprachnachricht“ (lucide Mikro)", () => {
@@ -269,17 +271,19 @@ describe("Kachel „Fächer“", () => {
     expect(readFileSync("src/components/pinnwand/PinboardTile.tsx", "utf8")).toMatch(/\$\{TILE\}/);
   });
 
-  it("Beispiel: Mia orange vorn, Ole grün, Sprachnachricht rosa 0:08 – nie in echten Speichern", () => {
-    const d = demoBoard("Mia");
+  it("Beispiel je Haushalt (Tafel 119): Felix gelb vorn, Lisa „Ole: Gummistiefel!“ grün, Mathis’ Sprachnachricht rosa 0:08 – nie in echten Speichern", () => {
+    const d = demoBoard("familie");
     expect(d.pins.map((p) => [p.data.author, p.data.text])).toEqual([
-      ["Mia", "Moin! Hier hängen eure Zettel."],
-      ["Ole", "Gummistiefel!"],
+      ["Felix", "Bin um 18 Uhr da"],
+      ["Lisa", "Ole: Gummistiefel!"],
     ]);
-    expect(d.pins[1].data.farbe).toBe(2);
-    expect(d.memos[0].data).toMatchObject({ dauer: 8, farbe: 1 });
+    expect(d.pins.map((p) => p.data.farbe)).toEqual([0, 2]);
+    expect(d.memos[0].data).toMatchObject({ author: "Mathis", dauer: 8, farbe: 1 });
+    expect(demoBoard("paar").pins[0].data.text).toBe("Brot kaufen?");
+    expect(demoBoard()).toEqual(d);
     expect([...d.pins, ...d.memos].every((e) => e.id.startsWith("beispiel:"))).toBe(true);
     const tile = readFileSync("src/components/pinnwand/PinboardTile.tsx", "utf8");
-    expect(tile).toMatch(/tone: item\.id === d\.mia \? \("mia" as const\)/);
+    expect(tile).toMatch(/demoBoard\(haushalt\)/);
     expect(tile).toMatch(/>Beispiel</);
     expect(tile).toMatch(/if \(demo && hasOwn\) clearDemoTile\("pinnwand"\)/);
     for (const f of ["src/lib/pinnwand/beispiel.ts", "src/components/pinnwand/PinboardTile.tsx", "src/components/pinnwand/PinboardView.tsx"]) {

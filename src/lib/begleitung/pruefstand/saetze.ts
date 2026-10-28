@@ -262,6 +262,7 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Mach das rückgängig", ["undo_last"]),
   S("Nimm die Einkaufsliste von der Startseite", ["home"]),
   S("Mach die Notizen blau", ["home"]),
+  S("Mach das Wetter ganz klein", ["home"]),
   S("Pinnwand wieder in Standardfarbe", ["home"]),
   S("Zeig mir den Vorrat", ["app_command", "set_feature", "antwort"]),
   S("Schreib der Kita, dass Mathis morgen krank ist", ["mail_draft", "app_command"]),

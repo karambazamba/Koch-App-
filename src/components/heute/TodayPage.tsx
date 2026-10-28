@@ -2,11 +2,13 @@
 
 // Seite "Heute": Begrüßung, die Jetzt-Karte (Mias EIN Thema für den Moment –
 // feste Höhe, Pfirsich-Verlauf) und darunter die Kacheln in der EINEN
-// gespeicherten Reihenfolge und Größe (`HomeBoard`). Die Anordnung ändert
+// gespeicherten Reihenfolge und Größe im festen Raster XS · S · M
+// (`HomeBoard`, Tafel 118). Die Anordnung ändert
 // sich nie von selbst; Tagesphasen ändern nur Inhalte (Kochschritte in der
 // Essen-Kachel, Ruhe nach Feierabend). Lange drücken, der Link unten, die
 // Einstellungen oder Lotte öffnen den Bearbeiten-Modus direkt hier: Kopf
-// "Startseite bearbeiten" + "Fertig", Kacheln wackeln, ziehen, "–", S · M · L.
+// "Startseite bearbeiten" + "Fertig", Kacheln wackeln, ziehen, "–", XS · S · M.
+// Ein laufender Timer erscheint als XS ganz oben, solange er läuft.
 
 import { useMiaRoutinen } from "@/components/heute/useMiaRoutinen";
 import { greetOncePerDay } from "@/lib/core/avatarState";
@@ -27,6 +29,7 @@ import { JetztCard, JetztPlaceholder } from "@/components/heute/JetztCard";
 import { DeinTag } from "@/components/heute/DeinTag";
 import { onOpenDeinTag } from "@/lib/heute/deinTag";
 import { useJetztTopics } from "@/components/heute/useJetztTopics";
+import { mitLaufendemTimer } from "@/lib/heute/raster";
 import { takeHelloFlight } from "@/lib/core/hello";
 import { SportTile } from "@/components/sport/SportTile";
 import { useHomePhase } from "@/components/heute/useHomePhase";
@@ -64,7 +67,7 @@ import { usePotState } from "@/lib/spendentopf/store";
 import { liveInvite } from "@/lib/spendentopf/model";
 import { POT_STATUS } from "@/lib/spendentopf/regions";
 import { SpendentopfTile } from "@/components/spendentopf/SpendentopfTile";
-import { clearDemoTile, hideDemoItem, toggleDemoDone } from "@/lib/core/demo";
+import { clearDemoTile, demoJetzt, hideDemoItem, toggleDemoDone } from "@/lib/core/demo";
 import { showDone, showToast } from "@/lib/core/toast";
 import { dueReminder } from "@/lib/kalender/reminders";
 import { markReminderSeen, useSeenReminders } from "@/lib/kalender/store";
@@ -175,6 +178,8 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const notes = useNotes();
   const timerLive = Boolean(timers && timers.timers.some((t) => !isExpired(t, now().getTime())));
   const nowMs = useNowMs(timerLive, 15_000);
+  const timerLaeuft = Boolean(timers?.timers.some((t) => isRunning(t, nowMs)));
+  const haushalt = haushaltOf(data.profile.householdType);
   // Uhrzeiten aus echten Zeitstempeln (Timer, "Ich koche jetzt") – in der Vorschau mitverschoben
   const offset = realMinutes !== undefined ? minutes - realMinutes : 0;
   // Wie `useMinutes`: Uhrzeit des Geräts (steht in Europe/Berlin)
@@ -240,14 +245,17 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     minutes,
   );
   // Beispiel-Tag (erster Start): Beispiele in denselben Kacheln, auch im Bearbeiten-Modus als Vorschau
-  const demoDay = useDemoDay(entries, data.todayIso, minutes, helperName(data.profile), Boolean(dish), haushaltOf(data.profile.householdType));
+  const demoDay = useDemoDay(entries, data.todayIso, minutes, Boolean(dish), haushalt);
   const [demoItem, setDemoItem] = useState<DayItem | null>(null);
   const demoProps: DemoProps = { label: demoDay.label, done: demoDay.done, onToggle: (i) => (buzz(), toggleDemoDone(i.entry.id)), onGone: (i) => showDone(hideDemoItem(i.entry.id)), onOpen: setDemoItem };
   const overview = taskOverview(entries, data.todayIso);
   const workless = (list: typeof overview.heute) => (view.hideWork ? list.filter((i) => i.room !== "arbeit") : list);
 
   // Kacheln: genau die gespeicherte Reihenfolge und Größe – im Bearbeiten-Modus dieselbe
-  const visible = all.filter((t) => t.visible && !tileMeta(t.id).soon && (t.id !== "vorrat" || pantryOn) && (t.id !== "tipps" || regionOn) && (t.id !== "sport" || sportOn) && (t.id !== "notizen" || notesOn) && (t.id !== "pinnwand" || pinboardOn) && (t.id !== "spendentopf" || potOn));
+  const saved = all.filter((t) => t.visible && !tileMeta(t.id).soon && (t.id !== "vorrat" || pantryOn) && (t.id !== "tipps" || regionOn) && (t.id !== "sport" || sportOn) && (t.id !== "notizen" || notesOn) && (t.id !== "pinnwand" || pinboardOn) && (t.id !== "spendentopf" || potOn));
+  // Timer ohne festen Platz: solange einer läuft, als XS ganz oben im Raster (danach wieder weg)
+  const visible = mitLaufendemTimer(saved, timerLaeuft);
+  const laufend = visible.length > saved.length ? "timer" : null;
 
   const entry = cookableEntry(data.day);
   const recipe = entry?.recipeId ? data.recipes[entry.recipeId] : undefined;
@@ -349,13 +357,14 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     kids: hasKids(data.profile),
     regionHidden: tipSettings.jetztAus,
     demo: demoDay.tiles.length > 0,
+    demoThema: demoDay.termine ? demoJetzt(demoDay.label ? tomorrowIso : data.todayIso, Boolean(demoDay.label), haushalt) : null,
     demoShop: demoDay.tiles.includes("einkauf"),
     weekCheck: demoDay.tiles.length || paused || (evening && routine.ruhe) ? null : weekCheckKey(data.todayIso, minutes),
     kuehlCheck: denkt.kuehlcheck,
     tiles: visible.map((t) => t.id),
     // Abends (Tafel 98): EIN Thema über morgen – Haushalt, Kita/Schule, Essen mit Vorlauf
     evening,
-    solo: haushaltOf(data.profile.householdType) === "allein",
+    solo: haushalt === "allein",
     kidsWay: kidsWay(data.profile.persons),
     tomorrowDish: tomorrowPrep,
   });
@@ -431,17 +440,17 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
       case "einkauf":
         return <ShoppingTile half={half} size={tile.size} demo={demoDay.tiles.includes("einkauf")} />;
       case "notizen":
-        return <NotesTile size={tile.size} />;
+        return <NotesTile size={tile.size} demo={demoDay.tiles.includes("notizen")} />;
       case "vorrat":
-        return <PantryTile size={tile.size} />;
+        return <PantryTile size={tile.size} demo={demoDay.tiles.includes("vorrat")} />;
       case "wetter":
-        return <WeatherTile size={tile.size} half={half} today={data.todayIso} minutes={minutes} look={data.profile.look} tomorrow={Boolean(view.weatherTomorrow) && !edit} />;
+        return <WeatherTile size={tile.size} today={data.todayIso} minutes={minutes} look={data.profile.look} tomorrow={Boolean(view.weatherTomorrow) && !edit} />;
       case "pinnwand":
-        return <PinboardTile size={tile.size} me={name || "Ich"} demo={demoDay.tiles.includes("pinnwand")} />;
+        return <PinboardTile size={tile.size} me={name || "Ich"} demo={demoDay.tiles.includes("pinnwand")} haushalt={haushalt} />;
       case "timer":
         return <TimerTile size={tile.size} />;
       case "sport":
-        return <SportTile size={tile.size} entries={entries} today={data.todayIso} minutes={minutes} me={me} />;
+        return <SportTile size={tile.size} entries={entries} today={data.todayIso} minutes={minutes} me={me} demo={demoDay.tiles.includes("sport")} />;
       case "spendentopf":
         return <SpendentopfTile />;
       case "tipps":
@@ -498,7 +507,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
           {!editing.on && demoDay.tiles.length > 0 && <DemoRow ask={demoDay.ask} />}
 
           <div className={arrive ? "tiles-arrive" : undefined}>
-            <HomeBoard tiles={visible} all={all} editing={editing.on} render={renderTile} hrefFor={tileHref} picking={picking} onPicking={setPicking} glow={editing.on ? null : denkt.glow} vorstellen={denkt.vorstellung} />
+            <HomeBoard tiles={visible} all={all} editing={editing.on} render={renderTile} hrefFor={tileHref} picking={picking} onPicking={setPicking} glow={editing.on ? null : denkt.glow} vorstellen={denkt.vorstellung} haushalt={haushalt} laufend={laufend} />
           </div>
 
           {timerOpen && (

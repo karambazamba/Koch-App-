@@ -24,8 +24,8 @@ function forecast(rainFrom?: number): Forecast {
 }
 
 describe("Wetter (B9)", () => {
-  it("Standardgröße S", () => {
-    expect(HOME_TILES.find((t) => t.id === "wetter")!.size).toBe("S");
+  it("Standardgröße XS (Tafel 119: Wetter nur XS)", () => {
+    expect(HOME_TILES.find((t) => t.id === "wetter")!.size).toBe("XS");
   });
 
   it("Farbgruppen je Wetterlage", () => {

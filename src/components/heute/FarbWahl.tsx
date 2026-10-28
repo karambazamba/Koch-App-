@@ -1,6 +1,6 @@
 "use client";
 
-// Kachel-Farbe wählen (Tafel 108): im Bearbeiten-Modus unter S · M · L eine
+// Kachel-Farbe wählen (Tafel 108): im Bearbeiten-Modus unter XS · S · M eine
 // weiße Reihe – „A“ (automatisch, gestrichelt) und die 8 Pastelltöne. Ein Tipp
 // übernimmt sofort, die aktuelle Farbe trägt einen Ring in der Tonfarbe der
 // Kachel. Keine freie Farbwahl; Wetter und Essen zeigen die Reihe nicht.

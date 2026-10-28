@@ -22,7 +22,7 @@ export type DemoDay = {
   ask: boolean;
 };
 
-export function useDemoDay(entries: CalendarEntry[], today: string, minutes: number, helper: string, ownDish = false, haushalt: Haushalt = "familie"): DemoDay {
+export function useDemoDay(entries: CalendarEntry[], today: string, minutes: number, ownDish = false, haushalt: Haushalt = "familie"): DemoDay {
   const demo = useDemo();
   const tiles = demoTiles(demo, today);
   const ownTermine = entries.some((e) => e.typ === "termin");
@@ -35,7 +35,7 @@ export function useDemoDay(entries: CalendarEntry[], today: string, minutes: num
   }, [tiles, ownTermine, ownTasks, ownDish]);
   const showTermine = tiles.includes("termine") && !ownTermine;
   const showTasks = tiles.includes("aufgaben") && !ownTasks;
-  const demoData = showTermine || showTasks ? demoEntries(today, minutes, helper, haushalt) : null;
+  const demoData = showTermine || showTasks ? demoEntries(today, minutes, haushalt) : null;
   const gone = new Set(demo?.gone ?? []);
   return {
     tiles: tiles.filter((t) => (t === "termine" ? showTermine : t === "aufgaben" ? showTasks : t === "essen" ? !ownDish : true)),

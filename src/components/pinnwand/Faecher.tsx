@@ -3,7 +3,7 @@
 // Kleine Zettel für die Pinnwand-Kachel (Tafel 107, Variante 1 „Fächer“):
 // S = die drei neuesten aufgefächert (−10°, −2°, +7°), der vorderste
 // (neueste) gut lesbar (bis 3 Zeilen), darunter klein der Name; M = drei
-// nebeneinander; L = bis 6 im Raster. Sprachnachricht als „▶ 0:12“, Foto als
+// nebeneinander. Sprachnachricht als „▶ 0:12“, Foto als
 // Mini-Polaroid. Jeder Zettel führt zur Pinnwand an genau diesem Zettel; im
 // Fächer (S) liegen sie übereinander, darum ist der ganze Fächer EIN Link und
 // der Zettel unter dem Finger (der oberste sichtbare) bestimmt das Ziel –
@@ -123,7 +123,7 @@ export function Faecher({ minis, household, demo }: { minis: Mini[]; household: 
   );
 }
 
-/** M (drei nebeneinander) und L (bis 6 im Raster) */
+/** M: drei nebeneinander */
 export function ZettelReihe({ minis, household, demo }: { minis: Mini[]; household: string[]; demo: boolean }) {
   return (
     <div className="grid grid-cols-3 gap-3 pt-2">

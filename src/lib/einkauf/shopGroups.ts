@@ -26,16 +26,17 @@ export function shopGroups(items: { name: string; shop: string }[], max = 3): Sh
 
 type TileRow = ShopGroup & { count: number };
 /** Einkauf-Kachel: Zeilen je Laden, die leise Rest-Zeile („+ Rossmann 3“) und was noch ohne Laden ist */
-export type TileRows = { rows: TileRow[]; rest: string | null; ohne: string[] };
+export type TileRows = { rows: TileRow[]; rest: string | null; restZahl: number; ohne: string[] };
 
 /**
  * Einkauf-Kachel (Variante C2, Tafel 99): IMMER eine Zeile je Laden aus
  * „Meine Läden“ in ihrer Reihenfolge (auch mit 0), andere Läden mit Sachen
  * danach (meiste zuerst), bewusst „Egal wo“ zuletzt. Was noch ohne Laden ist,
- * zählt extra („6 noch ohne Laden · Sortieren ›“). S/M: höchstens 3 Zeilen
- * plus Rest-Zeile (nur Läden mit Sachen), L: alle.
+ * zählt extra („6 noch ohne Laden · Sortieren ›“). Höchstens `max` Zeilen
+ * (Kachel im festen Raster: 3, mit der Zeile „ohne Laden“ 2), der Rest (nur
+ * Läden mit Sachen) als `rest` bzw. `restZahl` („+2“ im Kopf).
  */
-export function tileRows(items: { name: string; shop: string; anywhere?: boolean }[], myShops: string[], size: "S" | "M" | "L"): TileRows {
+export function tileRows(items: { name: string; shop: string; anywhere?: boolean }[], myShops: string[], max = 3): TileRows {
   const map = new Map<string, { shop: string; names: string[] }>();
   for (const s of myShops) if (s.trim() && !map.has(s.trim().toLowerCase())) map.set(s.trim().toLowerCase(), { shop: s.trim(), names: [] });
   const egal: string[] = [];
@@ -59,9 +60,8 @@ export function tileRows(items: { name: string; shop: string; anywhere?: boolean
   const shops: TileRow[] = [...map.values()].map((g) => ({ ...g, count: g.names.length }));
   const ordered = sortBy(shops, ascNum((g) => rank(g.shop ?? "")), ...byCount);
   const all: TileRow[] = egal.length ? [...ordered, { shop: null, names: egal, count: egal.length }] : ordered;
-  const max = size === "L" ? all.length : 3;
   const rest = all.slice(max).filter((r) => r.count > 0);
-  return { rows: all.slice(0, max), rest: rest.length ? `+ ${rest.map((r) => `${r.shop ?? "Egal wo"} ${r.count}`).join(", ")}` : null, ohne };
+  return { rows: all.slice(0, max), rest: rest.length ? `+ ${rest.map((r) => `${r.shop ?? "Egal wo"} ${r.count}`).join(", ")}` : null, restZahl: rest.reduce((n, r) => n + r.count, 0), ohne };
 }
 
 /** Leise Zeile unter den Läden: „6 noch ohne Laden“ */

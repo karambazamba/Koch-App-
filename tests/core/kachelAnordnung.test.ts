@@ -14,7 +14,8 @@ import {
   type HomeTileId,
   lonelySToM,
 } from "@/lib/core/homeLayout";
-import { rowsOf, unitsOf } from "@/lib/core/homeUnits";
+import { unitsOf } from "@/lib/core/homeUnits";
+import { rasterOf } from "@/lib/heute/raster";
 import { fakeWindow, noBrowser } from "../helpers";
 
 const visible = (tiles: HomeTile[]) => tiles.filter((t) => t.visible).map((t) => t.id);
@@ -29,20 +30,21 @@ afterEach(() => {
 const MIT_HAUS = applyHomeChange(DEFAULT_HOME, { tile: "vorrat", action: "zeigen" });
 
 describe("Startseite: Prüfen", () => {
-  it("Standard: Pinnwand + Wetter, Termine, Aufgaben, Essen + Einkauf, Notizen (Launch 1.0: ohne Spendentopf; Im Haus nur über die Auswahl)", () => {
-    expect(visible(DEFAULT_HOME)).toEqual(["pinnwand", "wetter", "termine", "aufgaben", "essen", "einkauf", "notizen"]);
-    // Im Haus dazugewählt: an seinen Platz hinter Essen + Einkauf, klein
-    expect(visible(MIT_HAUS)).toEqual(["pinnwand", "wetter", "termine", "aufgaben", "essen", "einkauf", "vorrat", "notizen"]);
-    expect(MIT_HAUS.find((t) => t.id === "vorrat")?.size).toBe("S");
+  it("Standard (Tafel 119): Pinnwand S, Wetter + Notizen XS, Termine, Aufgaben, Essen + Einkauf (Launch 1.0: ohne Spendentopf; Im Haus nur über die Auswahl)", () => {
+    expect(visible(DEFAULT_HOME)).toEqual(["pinnwand", "wetter", "notizen", "termine", "aufgaben", "essen", "einkauf"]);
+    // Im Haus dazugewählt: an seinen Platz hinter Essen + Einkauf, ganz klein
+    expect(visible(MIT_HAUS)).toEqual(["pinnwand", "wetter", "notizen", "termine", "aufgaben", "essen", "einkauf", "vorrat"]);
+    expect(MIT_HAUS.find((t) => t.id === "vorrat")?.size).toBe("XS");
     expect(DEFAULT_HOME).toHaveLength(HOME_TILES.length);
   });
 
   it("wirft Unbekanntes und Doppeltes weg, ergänzt Fehlendes unsichtbar, korrigiert Größen", () => {
     const tiles = sanitizeHome([null, "x", { id: "kladde" }, { id: "wetter", size: "L" }, { id: "wetter", visible: false }, { id: "spendentopf", size: "S" }, { id: "timer", visible: false }]);
+    // altes L → M, Spendentopf nur M, Timer ohne Größe → Standard XS
     expect(tiles.slice(0, 3)).toEqual([
-      { id: "wetter", visible: true, size: "L" },
+      { id: "wetter", visible: true, size: "M" },
       { id: "spendentopf", visible: true, size: "M" },
-      { id: "timer", visible: false, size: "M" },
+      { id: "timer", visible: false, size: "XS" },
     ]);
     expect(tiles).toHaveLength(HOME_TILES.length);
     expect(tiles.slice(3).every((t) => !t.visible)).toBe(true);
@@ -61,7 +63,7 @@ describe("Startseite: Kachel zeigen", () => {
     const tiles = applyHomeChange(DEFAULT_HOME, { tile: "timer", action: "zeigen" });
     const v = visible(tiles);
     expect(v.indexOf("timer")).toBe(v.indexOf("einkauf") + 1);
-    expect(sizeOf(tiles, "timer")).toBe("M");
+    expect(sizeOf(tiles, "timer")).toBe("XS");
     // schon sichtbar: bleibt, wie es ist
     expect(applyHomeChange(tiles, { tile: "timer", action: "zeigen" })).toEqual(tiles);
   });
@@ -74,7 +76,7 @@ describe("Startseite: Kachel zeigen", () => {
   it("alles ausgeblendet: ganz an den Anfang", () => {
     const none = sanitizeHome([]);
     const tiles = applyHomeChange(none, { tile: "notizen", action: "zeigen" });
-    expect(tiles[0]).toEqual({ id: "notizen", visible: true, size: "M" });
+    expect(tiles[0]).toEqual({ id: "notizen", visible: true, size: "XS" });
   });
 
   it("Paar: Einkauf rechts neben Essen, Essen links neben Einkauf", () => {
@@ -92,17 +94,21 @@ describe("Startseite: Größe, Ausblenden, Standard", () => {
   it("Größe nur, wie die Kachel sie kennt; alte Namen kompakt/ausführlich gehen weiter", () => {
     expect(sizeOf(applyHomeChange(DEFAULT_HOME, { tile: "termine", action: "klein" }), "termine")).toBe("S");
     expect(sizeOf(applyHomeChange(DEFAULT_HOME, { tile: "termine", action: "kompakt" }), "termine")).toBe("S");
-    expect(sizeOf(applyHomeChange(DEFAULT_HOME, { tile: "termine", action: "gross" }), "termine")).toBe("L");
-    expect(sizeOf(applyHomeChange(DEFAULT_HOME, { tile: "termine", action: "ausfuehrlich" }), "termine")).toBe("L");
+    // L gibt es nicht mehr: groß/ausführlich = M
+    expect(sizeOf(applyHomeChange(DEFAULT_HOME, { tile: "termine", action: "gross" }), "termine")).toBe("M");
+    expect(sizeOf(applyHomeChange(DEFAULT_HOME, { tile: "termine", action: "ausfuehrlich" }), "termine")).toBe("M");
     expect(sizeOf(applyHomeChange(DEFAULT_HOME, { tile: "wetter", action: "mittel" }), "wetter")).toBe("M");
-    // Spendentopf gibt es nur in M, Vorrat nicht in L
+    expect(sizeOf(applyHomeChange(DEFAULT_HOME, { tile: "wetter", action: "klein" }), "wetter")).toBe("S");
+    expect(sizeOf(applyHomeChange(DEFAULT_HOME, { tile: "pinnwand", action: "mini" }), "pinnwand")).toBe("S");
+    expect(sizeOf(applyHomeChange(DEFAULT_HOME, { tile: "termine", action: "mini" }), "termine")).toBe("S");
+    // Spendentopf gibt es nur in M, Im Haus nur XS/S
     expect(sizeOf(applyHomeChange(DEFAULT_HOME, { tile: "spendentopf", action: "klein" }), "spendentopf")).toBe("M");
     expect(sizeOf(applyHomeChange(DEFAULT_HOME, { tile: "vorrat", action: "gross" }), "vorrat")).toBe("S");
   });
 
   it("Größe ändern holt eine ausgeblendete Kachel zurück", () => {
-    const tiles = applyHomeChange(DEFAULT_HOME, { tile: "sport", action: "gross" });
-    expect(tiles.find((t) => t.id === "sport")).toEqual({ id: "sport", visible: true, size: "L" });
+    const tiles = applyHomeChange(DEFAULT_HOME, { tile: "sport", action: "klein" });
+    expect(tiles.find((t) => t.id === "sport")).toEqual({ id: "sport", visible: true, size: "S" });
   });
 
   it("Ausblenden löscht nichts; Standard stellt Reihenfolge und Größen wieder her", () => {
@@ -125,11 +131,11 @@ describe("Startseite: Größe, Ausblenden, Standard", () => {
 
 describe("Startseite: Verschieben", () => {
   it("hoch/runter = eine sichtbare Kachel weiter", () => {
-    expect(visible(applyHomeChange(DEFAULT_HOME, { tile: "termine", action: "hoch" })).slice(0, 3)).toEqual(["pinnwand", "termine", "wetter"]);
-    expect(visible(applyHomeChange(DEFAULT_HOME, { tile: "pinnwand", action: "runter" })).slice(0, 3)).toEqual(["wetter", "pinnwand", "termine"]);
+    expect(visible(applyHomeChange(DEFAULT_HOME, { tile: "termine", action: "hoch" })).slice(0, 4)).toEqual(["pinnwand", "wetter", "termine", "notizen"]);
+    expect(visible(applyHomeChange(DEFAULT_HOME, { tile: "pinnwand", action: "runter" })).slice(0, 3)).toEqual(["wetter", "pinnwand", "notizen"]);
     // ganz oben bzw. ganz unten: bleibt
     expect(visible(applyHomeChange(DEFAULT_HOME, { tile: "pinnwand", action: "hoch" }))).toEqual(visible(DEFAULT_HOME));
-    expect(visible(applyHomeChange(DEFAULT_HOME, { tile: "notizen", action: "runter" }))).toEqual(visible(DEFAULT_HOME));
+    expect(visible(applyHomeChange(MIT_HAUS, { tile: "vorrat", action: "runter" }))).toEqual(visible(MIT_HAUS));
   });
 
   it("ganz nach oben / ganz nach unten", () => {
@@ -141,16 +147,16 @@ describe("Startseite: Verschieben", () => {
     const up = visible(applyHomeChange(DEFAULT_HOME, { tile: "einkauf", action: "nach_oben" }));
     expect(up.slice(0, 2)).toEqual(["essen", "einkauf"]);
     const down = visible(applyHomeChange(MIT_HAUS, { tile: "essen", action: "runter" }));
-    expect(down.slice(4, 7)).toEqual(["vorrat", "essen", "einkauf"]);
+    expect(down.slice(5, 8)).toEqual(["vorrat", "essen", "einkauf"]);
   });
 
   it("über das Paar hinweg: eine Kachel springt am ganzen Paar vorbei", () => {
     // Im Haus steht direkt hinter Essen + Einkauf → nach oben = vor das Paar
     const up = visible(applyHomeChange(MIT_HAUS, { tile: "vorrat", action: "hoch" }));
-    expect(up.slice(3, 7)).toEqual(["aufgaben", "vorrat", "essen", "einkauf"]);
+    expect(up.slice(4, 8)).toEqual(["aufgaben", "vorrat", "essen", "einkauf"]);
     // Aufgaben direkt davor → nach unten = hinter das Paar
     const down = visible(applyHomeChange(DEFAULT_HOME, { tile: "aufgaben", action: "runter" }));
-    expect(down.slice(2, 6)).toEqual(["termine", "essen", "einkauf", "aufgaben"]);
+    expect(down.slice(3, 7)).toEqual(["termine", "essen", "einkauf", "aufgaben"]);
   });
 
   it("Ziehen: sichtbare neu geordnet, ausgeblendete dahinter", () => {
@@ -162,6 +168,7 @@ describe("Startseite: Verschieben", () => {
 
 describe("Startseite: Texte", () => {
   it("beschreibt jede Aktion kurz", () => {
+    expect(describeHomeChange({ tile: "wetter", action: "mini" })).toBe("Wetter ist jetzt ganz klein.");
     expect(describeHomeChange({ tile: "wetter", action: "klein" })).toBe("Wetter ist jetzt klein.");
     expect(describeHomeChange({ tile: "wetter", action: "kompakt" })).toBe("Wetter ist jetzt klein.");
     expect(describeHomeChange({ tile: "wetter", action: "mittel" })).toBe("Wetter ist jetzt mittelgroß.");
@@ -178,7 +185,7 @@ describe("Startseite: Texte", () => {
 
 describe("Startseite: Migration", () => {
   it("v5 bleibt, v4 bekommt einmal Notizen ans Ende der sichtbaren, v3 zusätzlich den Spendentopf", () => {
-    expect(migrateHome({ version: 5, tiles: DEFAULT_HOME, tipSeen: true })).toEqual({ version: 8, tiles: lonelySToM(DEFAULT_HOME), tipSeen: true });
+    expect(migrateHome({ version: 5, tiles: DEFAULT_HOME, tipSeen: true })).toEqual({ version: 9, tiles: lonelySToM(DEFAULT_HOME), tipSeen: true });
     const v4 = migrateHome({ version: 4, tiles: [{ id: "termine", visible: true, size: "M" }, { id: "notizen", visible: false, size: "M" }, { id: "wetter", visible: true, size: "S" }], tipSeen: true })!;
     expect(visible(v4.tiles)).toEqual(["termine", "wetter", "notizen"]);
     const v3 = migrateHome({ version: 3, tiles: [{ id: "termine", visible: true, size: "M" }, { id: "wetter", visible: true, size: "S" }, { id: "notizen", visible: false, size: "M" }] })!;
@@ -224,14 +231,14 @@ describe("Startseite: Migration", () => {
       { id: "einkauf", visible: true, size: "S" },
     ];
     const m = migrateHome({ version: 6, tiles: v6, tipSeen: true })!;
-    expect(m.version).toBe(8);
+    expect(m.version).toBe(9);
     expect(m.tipSeen).toBe(true);
     expect(m.tiles.some((t) => (t.id as string) === "morgen")).toBe(false);
     expect(m.tiles.filter((t) => t.visible).map((t) => [t.id, t.size])).toEqual([
       ["pinnwand", "S"],
       ["wetter", "S"],
       ["termine", "M"],
-      ["aufgaben", "L"],
+      ["aufgaben", "M"],
       ["essen", "S"],
       ["einkauf", "S"],
     ]);
@@ -242,7 +249,7 @@ describe("Startseite: Migration", () => {
 
   it("Unbekanntes → null", () => {
     expect(migrateHome(null)).toBeNull();
-    expect(migrateHome({ version: 9 })).toBeNull();
+    expect(migrateHome({ version: 10 })).toBeNull();
     expect(migrateHome({ version: 2, tiles: "x" })!.tiles).toHaveLength(HOME_TILES.length);
   });
 });
@@ -254,10 +261,10 @@ describe("Startseite: Speicher", () => {
     const home = await import("@/lib/core/homeLayout");
     expect(home.loadHomeTiles()).toEqual(home.DEFAULT_HOME);
     const undo = home.changeHome({ tile: "wetter", action: "gross" });
-    expect(sizeOf(home.loadHomeTiles(), "wetter")).toBe("L");
-    expect(JSON.parse(win.localStorage.getItem("wasgibts.startseite")!).version).toBe(8);
+    expect(sizeOf(home.loadHomeTiles(), "wetter")).toBe("M");
+    expect(JSON.parse(win.localStorage.getItem("wasgibts.startseite")!).version).toBe(9);
     undo();
-    expect(sizeOf(home.loadHomeTiles(), "wetter")).toBe("S");
+    expect(sizeOf(home.loadHomeTiles(), "wetter")).toBe("XS");
   });
 
   it("Lotte nutzt eine Kachel → sie kommt dazu (einmal)", async () => {
@@ -294,12 +301,12 @@ describe("Startseite: Speicher", () => {
   });
 });
 
-describe("Startseite: Einheiten und Reihen", () => {
-  it("Essen + Einkauf (beide S) = eine Einheit; zwei einzelne S nebeneinander", () => {
+describe("Startseite: Einheiten und Raster", () => {
+  it("Essen + Einkauf (beide S) = eine Einheit; dicht gefüllt im Raster", () => {
     const units = unitsOf(MIT_HAUS.filter((t) => t.visible));
-    expect(units.map((u) => u.key)).toEqual(["pinnwand", "wetter", "termine", "aufgaben", "essen+einkauf", "vorrat", "notizen"]);
-    const rows = rowsOf(units).map((r) => r.map((u) => u.key));
-    expect(rows).toEqual([["pinnwand", "wetter"], ["termine"], ["aufgaben"], ["essen+einkauf"], ["vorrat"], ["notizen"]]);
+    expect(units.map((u) => u.key)).toEqual(["pinnwand", "wetter", "notizen", "termine", "aufgaben", "essen+einkauf", "vorrat"]);
+    const r = rasterOf(MIT_HAUS.filter((t) => t.visible));
+    expect(r.plaetze.map((p) => `${p.key}@${p.col},${p.row}`)).toEqual(["pinnwand@0,0", "wetter@1,0", "notizen@1,1", "termine@0,2", "aufgaben@0,4", "essen+einkauf@0,6", "vorrat@0,8"]);
   });
 
   it("Essen in M ist kein Paar mehr", () => {

@@ -4,7 +4,8 @@
 // (Feinschliff nach Handy-Test, Tafel 58/59): je Kachel EIN weißes Feld mit
 // feinen Trennlinien, Zeilen 30 px (die ganze Zeile tippbar, der Abhak-Kreis
 // mit unsichtbar größerer Fläche), Kopf 26 px mit „+N weitere“ neben dem
-// Plus, unten nichts. Menge je Größe S 2, M 4, L 6. Termine chronologisch mit
+// Plus, unten nichts. Feste Fläche im Raster (S und M gleich hoch): je drei
+// Zeilen, der Rest als „+N weitere“ (halb breit „+N“). Termine chronologisch mit
 // Strich in Raumfarbe, Uhrzeit, Titel; der laufende bleibt 30 Min („läuft“),
 // der nächste ist zart hervorgehoben („gleich“) – Logik in
 // lib/heute/termineKachel.ts. Erledigte Aufgaben: ca. 1,5 s durchgestrichen,
@@ -63,8 +64,9 @@ function TileHead({ title, more, href, action, moreLabel }: { title: string; mor
       </h2>
       <span className="flex-1" />
       {more > 0 && (
-        <Link href={href} className="hit flex h-[26px] items-center text-[12.5px] font-bold text-tile-accent">
-          +{more} {moreLabel ?? "weitere"}
+        <Link href={href} className="hit flex h-[26px] shrink-0 items-center whitespace-nowrap text-[12.5px] font-bold text-tile-accent" data-weitere>
+          +{more}
+          {moreLabel !== "" && ` ${moreLabel ?? "weitere"}`}
         </Link>
       )}
       {action && <span className="ml-1 flex items-center">{action}</span>}
@@ -120,8 +122,12 @@ function CheckBox({ item, checked, onClick, round = false }: { item: DayItem; ch
 
 const entersAnim = (before: string[] | null, key: string) => (before && !before.includes(key) ? { animation: "card-in 0.32s ease-out" } : undefined);
 
-/** Wie viele Zeilen je Größe – Termine und Aufgaben gleich: S 2, M 4, L 6 */
-const ROW_COUNT = { S: 2, M: 4, L: 6 } as const;
+/**
+ * Wie viele Zeilen je Größe – Termine und Aufgaben gleich (Tafel 119): S und M
+ * sind gleich hoch, also je 3 (passt auch auf dem iPhone SE in die feste
+ * Fläche: Kopf 26 + 3 × 30 + Ränder); XS gibt es für diese Kacheln nicht.
+ */
+const ROW_COUNT: Record<TileSize, number> = { XS: 1, S: 3, M: 3 };
 /** Erledigte Aufgabe: so lange durchgestrichen, dann weich weg */
 const TASK_FADE = { animation: `card-out 0.4s ease-in ${LEAVE_MS - 400}ms forwards` };
 const LIST = `${TILE_INNER} flex flex-col divide-y divide-line overflow-hidden`;
@@ -157,8 +163,8 @@ export function TermineSection({ rows, label, href, today, size = "M", half = fa
   // „Ganztägig“ passt ohne Umbruch: Spalte breiter, sobald ein ganztägiger Termin dabei ist (halbe Kachel: nur Symbol)
   const spalte = zeitSpalte(!half && shown.some((r) => !r.item.time), "klein");
   return (
-    <section className={`${TILE} flex flex-col gap-[7px] px-3 py-2.5`} aria-label="Termine">
-      <TileHead title={demo?.label ?? label ?? "Termine"} more={half ? 0 : rest} href={href} action={plus} />
+    <section className={`${TILE} flex h-full flex-col gap-[7px] overflow-hidden px-3 py-2.5`} aria-label="Termine" data-groesse={size}>
+      <TileHead title={demo?.label ?? label ?? "Termine"} more={rest} moreLabel={half ? "" : undefined} href={href} action={plus} />
       {rows.length ? (
         <ul className={LIST}>
           {shown.map((row) => (
@@ -230,14 +236,15 @@ export function AufgabenSection({ items, total, today, label, addOn = today, hre
   const { setMenu, check, before, overlays } = useSection();
   // Erledigtes steht nicht herum (auch nicht im Beispiel-Tag)
   const open = demo?.done ? items.filter((i) => !demo.done!.includes(i.entry.id)) : items;
-  const shown = open.slice(0, ROW_COUNT[size]);
+  // Mit der leisen Zeile „Geschäftlich · 5 für morgen“ eine Zeile weniger (feste Fläche)
+  const shown = open.slice(0, ROW_COUNT[size] - (arbeitMorgen > 0 ? 1 : 0));
   const { leaving, start } = useLeaving((item) => (demo ? demo.onGone?.(item) : check(item, shown)));
   const plus = <QuickButton icon={Plus} label="Neue Aufgabe" onClick={() => neuEintragen("aufgabe", addOn)} />;
   const rest = Math.max(0, Math.max(total ?? 0, open.length) - shown.length);
   return (
     <>
-      <section className={`${TILE} flex flex-col gap-[7px] px-3 py-2.5`} aria-label="Aufgaben">
-        <TileHead title={label ?? "Aufgaben"} more={half ? 0 : rest} href={href} action={plus} />
+      <section className={`${TILE} flex h-full flex-col gap-[7px] overflow-hidden px-3 py-2.5`} aria-label="Aufgaben" data-groesse={size}>
+        <TileHead title={label ?? "Aufgaben"} more={rest} moreLabel={half ? "" : undefined} href={href} action={plus} />
         {open.length > 0 ? (
           <ul className={LIST}>
             {shown.map((item) => (

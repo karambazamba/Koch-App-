@@ -113,24 +113,24 @@ describe("Bereich „Im Haus“ unter Essen", () => {
 });
 
 describe("Kachel „Im Haus“", () => {
-  it("S oder M, nur über die Auswahl (nicht im Standard)", () => {
+  it("XS oder S, nur über die Auswahl (nicht im Standard für Familie)", () => {
     const meta = HOME_TILES.find((t) => t.id === "vorrat")!;
-    expect(meta.sizes).toEqual(["S", "M"]);
-    expect(meta.size).toBe("S");
+    expect(meta.sizes).toEqual(["XS", "S"]);
+    expect(meta.size).toBe("XS");
     expect(DEFAULT_HOME.find((t) => t.id === "vorrat")?.visible).toBe(false);
     const shown = applyHomeChange(DEFAULT_HOME, { tile: "vorrat", action: "zeigen" });
-    expect(shown.find((t) => t.id === "vorrat")).toMatchObject({ visible: true, size: "S" });
-    expect(applyHomeChange(shown, { tile: "vorrat", action: "mittel" }).find((t) => t.id === "vorrat")?.size).toBe("M");
-    // L gibt es nicht → Standard S
-    expect(sanitizeHome([{ id: "vorrat", visible: true, size: "L" }]).find((t) => t.id === "vorrat")?.size).toBe("S");
+    expect(shown.find((t) => t.id === "vorrat")).toMatchObject({ visible: true, size: "XS" });
+    // M gibt es nicht → S (die nächste erlaubte), altes L ebenso
+    expect(applyHomeChange(shown, { tile: "vorrat", action: "mittel" }).find((t) => t.id === "vorrat")?.size).toBe("S");
+    expect(sanitizeHome([{ id: "vorrat", visible: true, size: "L" } as never]).find((t) => t.id === "vorrat")?.size).toBe("S");
   });
 
-  it("S = 3 Sachen „bald aufbrauchen“, M = 6", () => {
-    expect(HOUSE_TILE_MAX).toEqual({ S: 3, M: 6 });
+  it("XS = 1 Sache, S = 2 Sachen „bald aufbrauchen“ (darunter „Was koch ich daraus?“)", () => {
+    expect(HOUSE_TILE_MAX).toEqual({ XS: 1, S: 2 });
     const soon = ["Joghurt", "Sahne", "Quark", "Schmand", "Feta", "Mozzarella", "Frischkäse"].map((n) => item(n, 5));
     expect(houseTile(soon, T, HOUSE_TILE_MAX.S)).toMatchObject({ soon: true });
-    expect(houseTile(soon, T, HOUSE_TILE_MAX.S).items).toHaveLength(3);
-    expect(houseTile(soon, T, HOUSE_TILE_MAX.M).items).toHaveLength(6);
+    expect(houseTile(soon, T, HOUSE_TILE_MAX.S).items).toHaveLength(2);
+    expect(houseTile(soon, T, HOUSE_TILE_MAX.XS).items).toHaveLength(1);
   });
 });
 

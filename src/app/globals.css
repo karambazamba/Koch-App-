@@ -309,6 +309,9 @@
   --app-sky-schnee-nacht-a: #2a3650; --app-sky-schnee-nacht-b: #3a4763; --app-sky-schnee-nacht-ink: #ffffff; --app-sky-schnee-nacht-soft: #e3e9f3; --app-sky-schnee-nacht-motiv: #ffffff;
   --app-sky-gewitter-nacht-a: #1b1828; --app-sky-gewitter-nacht-b: #2a253c; --app-sky-gewitter-nacht-ink: #ffffff; --app-sky-gewitter-nacht-soft: #e6e3ef; --app-sky-gewitter-nacht-motiv: #ffc23d;
  
+  /* Wetter-Szene (Tafel 120): Wolken, Wind, Sterne; im Look „Schlicht“ eigene, blassere Töne */
+  --app-szene-wolke: #ffffff; --app-szene-wolke-2: #eef2f7; --app-szene-wind: #ffffff; --app-szene-stern: #ffffff;
+  --app-szene-sonne: #f5b83d; --app-szene-tropfen: #7d9fd0; --app-szene-mond: #e9d27a; --app-szene-wolke-schlicht: #d5dde9;
   --app-sky-warm: #ff8a3d;
   --app-sky-sturm: #e5483a;
   --app-windsack: #f08a24;
@@ -474,6 +477,8 @@
   --app-sky-regen-a: #1f2a3a; --app-sky-regen-b: #2c3a4e; --app-sky-regen-ink: #f2eee9; --app-sky-regen-soft: #d3dbe6; --app-sky-regen-motiv: #9fb2cc;
   --app-sky-schnee-a: #2e3542; --app-sky-schnee-b: #3a4252; --app-sky-schnee-ink: #f2eee9; --app-sky-schnee-soft: #d8dee8; --app-sky-schnee-motiv: #dfe7f2;
   --app-sky-gewitter-a: #272338; --app-sky-gewitter-b: #363049; --app-sky-gewitter-ink: #f2eee9; --app-sky-gewitter-soft: #ddd9e8; --app-sky-gewitter-motiv: #e8b443;
+  --app-szene-wolke: #7d889a; --app-szene-wolke-2: #626d80; --app-szene-wind: #8e9ab0; --app-szene-stern: #d3d9e3;
+  --app-szene-sonne: #e8b443; --app-szene-tropfen: #9fb2cc; --app-szene-mond: #e8d58f; --app-szene-wolke-schlicht: #454d5b;
  
   --app-schlicht-inner: #1d2024;
   --app-jetzt-from: #3b2a1f;
@@ -627,6 +632,8 @@
     --app-sky-regen-a: #1f2a3a; --app-sky-regen-b: #2c3a4e; --app-sky-regen-ink: #f2eee9; --app-sky-regen-soft: #d3dbe6; --app-sky-regen-motiv: #9fb2cc;
     --app-sky-schnee-a: #2e3542; --app-sky-schnee-b: #3a4252; --app-sky-schnee-ink: #f2eee9; --app-sky-schnee-soft: #d8dee8; --app-sky-schnee-motiv: #dfe7f2;
     --app-sky-gewitter-a: #272338; --app-sky-gewitter-b: #363049; --app-sky-gewitter-ink: #f2eee9; --app-sky-gewitter-soft: #ddd9e8; --app-sky-gewitter-motiv: #e8b443;
+    --app-szene-wolke: #7d889a; --app-szene-wolke-2: #626d80; --app-szene-wind: #8e9ab0; --app-szene-stern: #d3d9e3;
+    --app-szene-sonne: #e8b443; --app-szene-tropfen: #9fb2cc; --app-szene-mond: #e8d58f; --app-szene-wolke-schlicht: #454d5b;
    
     --app-schlicht-inner: #1d2024;
     --app-jetzt-from: #3b2a1f;
@@ -1089,7 +1096,22 @@ body {
 .wx-soft { color: var(--sky-soft); }
 /* Böen ab 60 km/h: kleines oranges Schild, dunkle Schrift – auf jedem Himmel gleich gut lesbar */
 .wx-boeen { background: var(--app-windsack); color: var(--app-boeen-ink); }
-.wx-motiv { color: var(--sky-motiv); }
+/* Wetter-Szene rechts oben (Tafel 120): Hauptmotiv in der Motiv-Farbe des Himmels, Wolken/Wind/Sterne als eigene Töne; still */
+.wx-szene .sz-sonne { fill: var(--sz-sonne, var(--sky-motiv)); }
+.wx-szene .sz-hof { fill: var(--sz-sonne, var(--sky-motiv)); opacity: 0.28; }
+.wx-szene .sz-tropfen { fill: none; stroke: var(--sz-tropfen, var(--sky-motiv)); stroke-width: 3.2; stroke-linecap: round; }
+.wx-szene .sz-flocke { fill: var(--sz-flocke, var(--sky-motiv)); }
+.wx-szene .sz-blitz { fill: var(--sz-blitz, var(--sky-motiv)); }
+.wx-szene .sz-mond { fill: var(--sz-mond, var(--sky-motiv)); }
+.wx-szene .sz-wolke { fill: var(--sz-wolke, var(--app-szene-wolke)); }
+.wx-szene .sz-wolke-2 { fill: var(--sz-wolke-2, var(--app-szene-wolke-2)); }
+.wx-szene .sz-wind { fill: none; stroke: var(--sz-wind, var(--app-szene-wind)); stroke-width: 3; stroke-linecap: round; }
+.wx-szene .sz-stern { fill: var(--sz-stern, var(--app-szene-stern)); }
+.wx-himmel[data-himmel="schlicht"] .wx-szene {
+  opacity: 0.6;
+  --sz-sonne: var(--app-szene-sonne); --sz-tropfen: var(--app-szene-tropfen); --sz-flocke: var(--app-szene-tropfen); --sz-blitz: var(--app-szene-sonne); --sz-mond: var(--app-szene-mond);
+  --sz-wolke: var(--app-szene-wolke-schlicht); --sz-wolke-2: var(--app-szene-wolke-schlicht); --sz-wind: var(--app-szene-wolke-schlicht); --sz-stern: var(--app-szene-wolke-schlicht);
+}
 .wx-linie { border-color: color-mix(in srgb, currentColor 30%, transparent); }
 [data-look="schlicht"] [data-tone] {
   --tile-bg: var(--app-surface);

@@ -4,7 +4,7 @@
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { einladenKnopf, haushaltOf, raumName, teilenSatz, zuZweitVorschlag } from "@/lib/core/haushalt";
-import { demoDay, demoEntries } from "@/lib/core/demo";
+import { demoDay, demoEntries, demoJetzt } from "@/lib/core/demo";
 import { ERSTER_START, steckbrief } from "@/lib/mia/persona";
 import { at, fakeWindow } from "../helpers";
 
@@ -55,21 +55,36 @@ describe("Wörter je Haushaltsart", () => {
 
 describe("Beispiel-Tag je Haushaltsart", () => {
   it("allein: Laufen, Meeting, Yoga; Wochenende Brunch, Freunde, Kino", () => {
-    expect(demoDay("2026-10-21", "allein").map((t) => t.title)).toEqual(["Laufen", "Meeting", "Mittag mit Jana", "Yoga", "Serie"]);
+    expect(demoDay("2026-10-21", "allein").map((t) => t.title)).toEqual(["Laufen", "Meeting", "Yoga"]);
     expect(demoDay("2026-10-24", "allein").map((t) => t.title)).toEqual(["Brunch", "Freunde treffen", "Kino"]);
   });
 
-  it("zu zweit: Wocheneinkauf, Kochen zusammen, Kino; Wochenende Frühstück, Ausflug, Essen gehen", () => {
-    expect(demoDay("2026-10-21", "paar").map((t) => t.title)).toContain("Zusammen kochen");
+  it("zu zweit: Zahnarzt, Wocheneinkauf, Kino zu zweit; Wochenende Frühstück, Ausflug, Essen gehen", () => {
+    expect(demoDay("2026-10-21", "paar").map((t) => t.title)).toEqual(["Zahnarzt", "Wocheneinkauf", "Kino zu zweit"]);
     expect(demoDay("2026-10-24", "paar").map((t) => t.title)).toEqual(["Frühstück", "Ausflug an die Ostsee", "Essen gehen"]);
   });
 
-  it("Familie wie bisher, ohne Angabe ebenso; allein ohne Pinnwand-Aufgabe", () => {
+  it("Familie ohne Angabe ebenso; Aufgaben je Haushalt wie Tafel 119 (Mitte = Geschäftlich)", () => {
     expect(demoDay("2026-10-21")).toEqual(demoDay("2026-10-21", "familie"));
-    expect(demoDay("2026-10-21").map((t) => t.title)).toContain("Kita bringen");
-    const titles = demoEntries("2026-10-21", 6 * 60, "Mia", "allein").entries.map((e) => (e.data as { title: string }).title);
-    expect(titles).not.toContain("Pinnwand ausprobieren");
+    expect(demoDay("2026-10-21").map((t) => t.title)).toContain("Laternelaufen");
+    const tasks = (h: "allein" | "paar") => demoEntries("2026-10-21", 6 * 60, h).entries.filter((e) => e.typ === "aufgabe").map((e) => `${(e.data as { title: string }).title}:${e.raum}`);
+    expect(tasks("allein")).toEqual(["Steuererklärung:familie", "Bericht schicken:arbeit", "Jana zurückrufen:familie"]);
+    expect(tasks("paar")).toEqual(["Urlaub buchen:familie", "Präsentation fertig:arbeit", "Mama anrufen:familie"]);
+    const titles = demoEntries("2026-10-21", 6 * 60, "allein").entries.map((e) => (e.data as { title: string }).title);
     expect(titles).toContain("Laufen");
+  });
+
+  it("Thema der Jetzt-Karte je Haushalt (≤ 32 Zeichen, nie „vergiss nicht“), am Wochenende keins", () => {
+    for (const h of ["familie", "paar", "allein"] as const)
+      for (const tomorrow of [false, true]) {
+        const t = demoJetzt("2026-10-21", tomorrow, h)!;
+        expect(t.title.length).toBeLessThanOrEqual(32);
+        expect(`${t.title} ${t.detail}`).not.toMatch(/vergiss|vergessen|musst|solltest/i);
+      }
+    expect(demoJetzt("2026-10-21", false, "familie")).toEqual({ title: "Moin! Heute ist Laternelaufen.", detail: "17 Uhr. Laterne schon bereit?" });
+    expect(demoJetzt("2026-10-21", false, "paar")?.title).toBe("Moin! Kino heute um 20:15.");
+    expect(demoJetzt("2026-10-21", false, "allein")?.title).toBe("Moin! Heute um 18 Uhr Yoga.");
+    expect(demoJetzt("2026-10-24", false, "familie")).toBeNull();
   });
 });
 

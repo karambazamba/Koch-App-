@@ -1,15 +1,18 @@
 "use client";
 
-// Die Kacheln auf "Heute" – normal in Reihen (zwei S nebeneinander, einzelne
-// S breit) und im Bearbeiten-Modus DIREKT auf der Startseite: alle Kacheln
-// wackeln dezent, Inhalte sind nicht antippbar, "–" oben links entfernt (mit
-// "Gelöscht · Rückgängig"), "S · M · L" unten rechts ändert die Größe.
+// Die Kacheln auf "Heute" im festen Raster (Tafel 118, `heute/raster.ts`):
+// 2 Spalten, Grund-Zeile = halbe S-Höhe aus der Breite (XS · S · M), dicht
+// gefüllt in der gespeicherten Reihenfolge – im Bearbeiten-Modus GENAU
+// dasselbe Raster: alle Kacheln wackeln dezent, Inhalte sind nicht antippbar,
+// "–" oben links entfernt (mit "Gelöscht · Rückgängig"), der Größen-Umschalter
+// (nur die erlaubten Größen) und die Farbe liegen IN der Kachel. Lücken ohne
+// Partner bleiben ruhig leer, im Bearbeiten „＋ Kachel“.
 // Wischen scrollt überall – auch auf den Kacheln (touch-action: pan-y, wie
 // der iPhone-Homescreen). Erst ruhiges Festhalten (ca. 0,35 s, < 8 px) hebt
 // die Kachel an; dann steht die Seite still, die anderen rutschen zur Seite,
 // ein gestrichelter Platzhalter zeigt den Platz, am Rand scrollt die Seite
 // mit. Kurz antippen (< 0,35 s, < 8 px) = fertig (Tafel 24) – auch auf einer
-// Kachel; „–“, S/M/L und „+ Kachel“ nicht. Tippen in eine noch rollende Seite
+// Kachel; „–“, XS · S · M und „+ Kachel“ nicht. Tippen in eine noch rollende Seite
 // hält nur an. Verschieben ohne Ziehen: Pfeiltasten bzw. die Screenreader-
 // Knöpfe „Nach oben/unten“ an jeder Kachel (und Mia: „Schieb das Wetter nach
 // oben“). Essen + Einkauf (beide S) wandern zusammen.
@@ -18,10 +21,12 @@ import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as Reac
 import { EditLook } from "@/components/heute/EditLook";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { applyHomeChange, reorderVisible, saveHomeTiles, standardLayout, tileMeta, type HomeTile, type HomeTileId, type TileSize } from "@/lib/core/homeLayout";
+import type { Haushalt } from "@/lib/core/haushalt";
+import { RASTER_GAP, ZEILE_CSS, packe, pfeilZu, trennZeile, type Luecke, type Platz } from "@/lib/heute/raster";
 import { Plus } from "lucide-react";
 import { showDeleted } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
-import { glowTile, pfeilZu, rowsOf, unitsOf, type Unit } from "@/lib/core/homeUnits";
+import { glowTile, unitsOf, type Unit } from "@/lib/core/homeUnits";
 import { SeitenTipp } from "@/components/begleitung/denktmit/SeitenTipp";
 import type { VorstellAnzeige } from "@/components/begleitung/denktmit/useMiaDenkt";
 import { EditFrame } from "@/components/heute/EditFrame";
@@ -50,6 +55,8 @@ export function HomeBoard({
   hrefFor,
   glow,
   vorstellen = null,
+  haushalt,
+  laufend = null,
 }: {
   tiles: HomeTile[];
   all: HomeTile[];
@@ -64,6 +71,10 @@ export function HomeBoard({
   glow?: HomeTile["id"] | null;
   /** Mia stellt diese Kachel vor: ihr Tipp direkt unter der Reihe, Pfeil zur Kachel */
   vorstellen?: VorstellAnzeige | null;
+  /** Für „Standard-Anordnung wiederherstellen“ */
+  haushalt?: Haushalt;
+  /** Kachel, die nur vorübergehend dasteht (laufender Timer): nicht verschieb- oder änderbar */
+  laufend?: HomeTileId | null;
 }) {
   const units = unitsOf(tiles);
   const board = useRef<HTMLDivElement>(null);
@@ -86,8 +97,8 @@ export function HomeBoard({
   // Verlaufseintrag nur innerhalb von 300 ms (`useBackCloses`) – `next/dynamic`
   // zeigte sie erst nach ~300 ms
   const [Picker, setPicker] = useState<PickerComponent | null>(null);
-  /** „＋ Kachel“ neben einer einzelnen S */
-  const [beside, setBeside] = useState<HomeTileId | null>(null);
+  /** „＋ Kachel“ in einer Lücke des Rasters */
+  const [luecke, setLuecke] = useState<Luecke | null>(null);
   useEffect(() => {
     if (Picker || !(editing || picking)) return;
     let on = true;
@@ -116,6 +127,7 @@ export function HomeBoard({
   };
 
   const startDrag = (key: string, el: HTMLElement, x: number, y: number) => {
+    if (laufend && key === laufend) return;
     const sy = window.scrollY;
     boxes.current = [...(board.current?.querySelectorAll<HTMLElement>("[data-unit]") ?? [])].map((n) => {
       const r = n.getBoundingClientRect();
@@ -168,8 +180,9 @@ export function HomeBoard({
     setDrag(null);
   };
   const saveOrder = (next: Unit[]) => {
-    const order = next.flatMap((u) => u.tiles.map((t) => t.id));
-    if (order.join() !== tiles.map((t) => t.id).join()) saveHomeTiles(reorderVisible(all, order));
+    // Die vorübergehende Kachel (laufender Timer) gehört nicht zur gespeicherten Anordnung
+    const order = next.flatMap((u) => u.tiles.map((t) => t.id)).filter((id) => id !== laufend);
+    if (order.join() !== tiles.map((t) => t.id).filter((id) => id !== laufend).join()) saveHomeTiles(reorderVisible(all, order));
   };
 
   // Maus/Stift über Pointer-Events; Finger über Touch-Events (auf dem iPhone bricht
@@ -285,7 +298,8 @@ export function HomeBoard({
 
   // Die anderen rutschen flüssig zur Seite (FLIP)
   const last = useRef(new Map<string, DOMRect>());
-  const orderKey = preview.map((u) => u.key).join("|");
+  const raster = packe(preview);
+  const orderKey = raster.plaetze.map((p) => `${p.key}@${p.col},${p.row},${p.w}${p.h}`).join("|");
   useLayoutEffect(() => {
     const nodes = [...(board.current?.querySelectorAll<HTMLElement>("[data-unit]") ?? [])];
     const next = new Map<string, DOMRect>();
@@ -294,14 +308,15 @@ export function HomeBoard({
       const r = n.getBoundingClientRect();
       next.set(key, r);
       const before = last.current.get(key);
-      if (!before || !dragging) continue;
+      // Ziehen und Größenwechsel im Bearbeiten: die Nachbarn rücken weich nach (nur transform)
+      if (!before || !(dragging || editing)) continue;
       const dx = before.left - r.left;
       const dy = before.top - r.top;
       if (!dx && !dy) continue;
       n.animate([{ translate: `${dx}px ${dy}px` }, { translate: "0 0" }], { duration: 200, easing: "ease-out" });
     }
     last.current = next;
-  }, [orderKey, dragging]);
+  }, [orderKey, dragging, editing]);
 
   const remove = (id: HomeTileId) => {
     const before = all;
@@ -310,35 +325,47 @@ export function HomeBoard({
   };
   const resize = (id: HomeTileId, size: TileSize) => {
     buzz();
-    saveHomeTiles(applyHomeChange(all, { tile: id, action: size === "S" ? "klein" : size === "M" ? "mittel" : "gross" }));
+    saveHomeTiles(applyHomeChange(all, { tile: id, action: size === "XS" ? "mini" : size === "S" ? "klein" : "mittel" }));
   };
   const recolor = (id: HomeTileId, farbe: KachelFarbe | undefined) => {
     buzz();
     saveHomeTiles(applyHomeChange(all, { tile: id, action: "farbe", farbe: farbe ?? "auto" }));
   };
 
-  const renderUnit = (unit: Unit, index: number, half: boolean, floating = false, wide = true) => {
+  // Mias Tipp zu einer Kachel: eine eigene Zeile direkt unter ihr (an einer Grenze, über die keine Kachel reicht)
+  const tippUnit = vorstellen && !editing ? preview.find((u) => u.tiles.some((t) => t.id === vorstellen.tile)) : undefined;
+  const tippAt = tippUnit ? trennZeile(raster, tippUnit.key) : null;
+  const pfeil = tippUnit && vorstellen ? pfeilZu(preview, raster, vorstellen.tile) : null;
+  const rowOf = (row: number) => (tippAt !== null && row >= tippAt ? row + 1 : row) + 1;
+  const rowsCss = Array.from({ length: raster.rows + (tippAt !== null ? 1 : 0) }, (_, i) => (tippAt !== null && i === tippAt ? "auto" : "var(--zeile)")).join(" ");
+  const area = (p: { col: number; row: number; w: number; h: number }) => ({ gridColumn: `${p.col + 1} / span ${p.w}`, gridRow: `${rowOf(p.row)} / span ${p.h}` });
+
+  const renderUnit = (unit: Unit, index: number, place: Platz | null, floating = false) => {
     const pair = unit.tiles.length === 2;
+    const half = pair || (place ? place.w === 1 : unit.tiles[0].size !== "M");
+    const fixed = laufend !== null && unit.key === laufend;
+    const edit = editing && !fixed;
     // Die gezogene Einheit bleibt im Raster – unsichtbar, als gestrichelter Platzhalter an der Zielstelle
     const ghost = !floating && drag?.key === unit.key;
     return (
-      // Außen: Ziehen (Position, Ereignisse); innen: Wackeln – nie beides auf demselben Element
+      // Außen: Platz im Raster und Ziehen (Ereignisse); innen: Wackeln – nie beides auf demselben Element
       <div
         key={unit.key}
         data-unit={floating ? undefined : unit.key}
         data-tile={floating ? undefined : unit.tiles.map((t) => t.id).join(" ")}
+        data-groesse={pair ? "S+S" : unit.tiles[0].size}
         data-vorstellen={!floating && glow && unit.tiles.some((t) => t.id === glow) ? true : undefined}
-        onPointerDown={floating ? undefined : onDown(unit.key)}
-        onTouchStart={floating || !editing ? undefined : onTouchStart(unit.key)}
+        onPointerDown={floating || fixed ? undefined : onDown(unit.key)}
+        onTouchStart={floating || !editing || fixed ? undefined : onTouchStart(unit.key)}
         onContextMenu={editing ? (e) => e.preventDefault() : undefined}
-        className={`relative min-w-0 ${floating ? "" : wide ? "col-span-2" : "col-span-1"} ${editing && !floating ? "touch-pan-y select-none [-webkit-touch-callout:none] [-webkit-user-select:none]" : ""}`}
-        style={ghost ? { height: drag.h } : undefined}
+        className={`relative min-h-0 min-w-0 ${floating ? "h-full" : ""} ${editing && !floating ? "touch-pan-y select-none [-webkit-touch-callout:none] [-webkit-user-select:none]" : ""}`}
+        style={place && !floating ? area(place) : undefined}
         aria-label={editing ? (pair ? "Essen und Einkauf" : tileMeta(unit.tiles[0].id).label) : undefined}
-        aria-roledescription={editing && !floating ? "Kachel – Pfeiltasten verschieben" : undefined}
+        aria-roledescription={edit && !floating ? "Kachel – Pfeiltasten verschieben" : undefined}
         role={editing ? "group" : undefined}
-        tabIndex={editing && !floating ? 0 : undefined}
+        tabIndex={edit && !floating ? 0 : undefined}
         onKeyDown={
-          editing && !floating
+          edit && !floating
             ? (e) => {
                 if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
                 e.preventDefault();
@@ -347,7 +374,7 @@ export function HomeBoard({
             : undefined
         }
       >
-        {editing && !floating && (
+        {edit && !floating && (
           <span className="sr-only">
             <button type="button" onClick={() => moveUnit(unit.key, "up")}>
               Nach oben
@@ -359,13 +386,13 @@ export function HomeBoard({
         )}
         {ghost && <div className="absolute inset-0 rounded-card border-2 border-dashed border-accent/50 bg-accent-soft/40" data-platzhalter aria-hidden />}
         <div
-          // Zwei kleine Kacheln nebeneinander sind gleich hoch (die Zeile streckt beide)
-          className={`${pair ? `grid grid-cols-2 gap-2 ${editing ? "rounded-pair p-1 outline-2 outline-dashed outline-line" : ""}` : half && !editing ? "h-full [&>div>*]:h-full" : ""} ${ghost ? "invisible h-0 overflow-hidden" : ""}`}
-          style={editing && !floating && !drag && !holding ? { animation: `${index % 2 ? "wiggle-b" : "wiggle"} 1.6s ease-in-out infinite` } : undefined}
+          // Feste Fläche: jede Kachel füllt genau ihren Platz (die Höhe hängt nie vom Inhalt ab)
+          className={`h-full ${pair ? `grid grid-cols-2 gap-2 ${editing ? "rounded-pair outline-2 outline-offset-2 outline-dashed outline-line" : ""}` : ""} ${edit ? "[&>div]:h-full" : "[&>div>*]:h-full [&>div>*]:min-h-0"} ${ghost ? "invisible" : ""}`}
+          style={edit && !floating && !drag && !holding ? { animation: `${index % 2 ? "wiggle-b" : "wiggle"} 1.6s ease-in-out infinite` } : undefined}
         >
           {unit.tiles.map((tile) => (
-            <EditFrame key={tile.id} tile={tile} editing={editing} href={hrefFor?.(tile.id)} onRemove={() => remove(tile.id)} onResize={(s) => resize(tile.id, s)} onFarbe={(f) => recolor(tile.id, f)}>
-              {render(tile, half || pair, editing)}
+            <EditFrame key={tile.id} tile={tile} editing={edit} href={hrefFor?.(tile.id)} onRemove={() => remove(tile.id)} onResize={(sz) => resize(tile.id, sz)} onFarbe={(f) => recolor(tile.id, f)}>
+              {render(tile, half, editing)}
             </EditFrame>
           ))}
         </div>
@@ -373,41 +400,44 @@ export function HomeBoard({
     );
   };
 
-  /** Eine Reihe: zwei S nebeneinander, M/L bzw. das Paar volle Breite, eine einzelne S halb (daneben frei) */
-  const unitRow = (row: Unit[], r: number): ReactNode[] => {
-    const lone = row.length === 1 && row[0].tiles.length === 1 && row[0].tiles[0].size === "S";
-    if (!lone) return row.map((u, i) => renderUnit(u, r * 2 + i, row.length === 2, false, row.length !== 2));
-    const id = row[0].tiles[0].id;
-    return [
-      renderUnit(row[0], r * 2, true, false, false),
-      editing && !drag ? (
-        <button key={`frei-${id}`} type="button" onClick={() => setBeside(id)} aria-label="Kachel daneben stellen" className="col-span-1 flex min-h-[92px] items-center justify-center gap-1.5 rounded-card border-2 border-dashed border-line-strong text-[15px] font-semibold text-muted active:scale-[0.98]" data-freie-haelfte>
-          <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-          Kachel
-        </button>
-      ) : (
-        <div key={`frei-${id}`} className="col-span-1" aria-hidden data-freie-haelfte />
-      ),
-    ];
-  };
-
+  const shown = tiles.filter((t) => t.id !== laufend);
   return (
-    // Flaches Raster (2 Spalten): jede Einheit liegt direkt im Board – so behält sie
-    // beim Umsortieren ihr Element (React verschiebt es nur). Jede S ist halb breit
-    // (zwei nebeneinander); eine einzelne S bleibt halb, daneben im Bearbeiten
-    // gestrichelt „＋ Kachel“ (nur S-fähige), sonst ruhig leer. M/L und das Paar volle Breite.
-    <div ref={board} className="grid grid-cols-2 gap-2" data-no-swipe={editing ? true : undefined}>
-      {rowsOf(preview).flatMap((row, r) => {
-        const pfeil = vorstellen && !editing ? pfeilZu(row, vorstellen.tile) : null;
-        const tipp = pfeil && vorstellen && (
-          <div key={`vorstellen-${vorstellen.tile}`} className="col-span-2">
+    // Festes Raster (2 Spalten, Grund-Zeile = halbe S-Höhe aus der Breite, `ZEILE_CSS`): jede Einheit
+    // liegt direkt im Board an ihrem Platz – so behält sie beim Umsortieren ihr Element (React
+    // verschiebt es nur). Lücken: ruhig leer, im Bearbeiten gestrichelt „＋ Kachel“.
+    <div className="[container-type:inline-size]">
+      <div
+        ref={board}
+        className="grid grid-cols-2"
+        style={{ gap: RASTER_GAP, gridTemplateRows: rowsCss, ["--zeile" as string]: ZEILE_CSS }}
+        data-no-swipe={editing ? true : undefined}
+        data-raster
+      >
+        {preview.map((u, i) => renderUnit(u, i, raster.plaetze.find((p) => p.key === u.key) ?? null))}
+        {editing &&
+          !drag &&
+          raster.luecken.map((l) => (
+            <button
+              key={`frei-${l.col}-${l.row}`}
+              type="button"
+              onClick={() => setLuecke(l)}
+              aria-label="Kachel hierhin stellen"
+              style={area({ ...l, w: 1 })}
+              className="flex min-h-0 items-center justify-center gap-1.5 rounded-card border-2 border-dashed border-line-strong text-[15px] font-semibold text-muted active:scale-[0.98]"
+              data-luecke={l.h === 2 ? "S" : "XS"}
+            >
+              <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+              Kachel
+            </button>
+          ))}
+        {tippAt !== null && pfeil && vorstellen && (
+          <div key={`vorstellen-${vorstellen.tile}`} className="col-span-2" style={{ gridRow: `${tippAt + 1}` }}>
             <SeitenTipp text={vorstellen.text} pfeil={pfeil} label="Kurz vorgestellt" id={`vorstellen:${vorstellen.tile}`} onOk={vorstellen.ok} zeigMal={vorstellen.zeigMal} />
           </div>
-        );
-        return [...unitRow(row, r), tipp];
-      })}
+        )}
+      </div>
       {editing && (
-        <div className="col-span-2 flex flex-col gap-3">
+        <div className="mt-3 flex flex-col gap-3">
           <EditLook />
           <button type="button" onClick={() => setConfirmReset(true)} className="hit self-center py-2 text-sm font-semibold text-muted underline">
             Standard-Anordnung wiederherstellen
@@ -417,21 +447,21 @@ export function HomeBoard({
       {drag && dragged && (
         <div
           className="pointer-events-none fixed z-40"
-          style={{ left: drag.x - drag.offX, top: drag.y - drag.offY, width: drag.w, transform: "scale(1.03) rotate(1.2deg)", filter: "drop-shadow(0 14px 22px rgb(0 0 0 / 0.18))" }}
+          style={{ left: drag.x - drag.offX, top: drag.y - drag.offY, width: drag.w, height: drag.h, transform: "scale(1.03) rotate(1.2deg)", filter: "drop-shadow(0 14px 22px rgb(0 0 0 / 0.18))" }}
           aria-hidden
         >
-          {renderUnit(dragged, 0, dragged.tiles.length === 1 && drag.w < window.innerWidth * 0.6, true)}
+          {renderUnit(dragged, 0, null, true)}
         </div>
       )}
       {picking && Picker && <Picker onClose={() => onPicking(false)} onClosed={glowTile} />}
-      {beside && Picker && <Picker neben={beside} onClose={() => setBeside(null)} onClosed={glowTile} />}
+      {luecke && Picker && <Picker luecke={{ luecke, shown }} onClose={() => setLuecke(null)} onClosed={glowTile} />}
       {confirmReset && (
         <ConfirmDialog
           title="Standard-Anordnung wiederherstellen?"
           text="Reihenfolge und Größen wie am Anfang. Welche Kacheln du hast, bleibt."
           confirmLabel="Wiederherstellen"
           onConfirm={() => {
-            saveHomeTiles(standardLayout(all));
+            saveHomeTiles(standardLayout(all, haushalt));
             setConfirmReset(false);
           }}
           onCancel={() => setConfirmReset(false)}

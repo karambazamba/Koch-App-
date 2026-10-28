@@ -31,11 +31,11 @@ export function aufgebrauchtZeile(used: PantryItem[]): string | null {
   return used.length ? `Aufgebraucht: ${used.map((u) => u.name).join(", ")}` : null;
 }
 
-/** Kachel auf Heute: „Bald aufbrauchen“ (S: 3, M: 6), sonst die zuletzt eingekauften */
-export const HOUSE_TILE_MAX: Record<"S" | "M", number> = { S: 3, M: 6 };
+/** Zeilen der Kachel im festen Raster: XS eine, S zwei (darunter „Was koch ich daraus?“) */
+export const HOUSE_TILE_MAX: Record<"XS" | "S", number> = { XS: 1, S: 2 };
 
 /** Kachel auf Heute: „Bald aufbrauchen“ (höchstens `max`), sonst die zuletzt eingekauften */
-export function houseTile(items: PantryItem[], today: string, max = HOUSE_TILE_MAX.S): { soon: boolean; items: { item: PantryItem; badge: ReturnType<typeof soonBadge> }[] } {
+export function houseTile(items: PantryItem[], today: string, max = 3): { soon: boolean; items: { item: PantryItem; badge: ReturnType<typeof soonBadge> }[] } {
   const active = activePantry(items, today);
   const soon = order(active.filter((p) => isSoon(p, today)));
   const shown = soon.length ? soon : sortBy(active, ...PANTRY_RECENT);

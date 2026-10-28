@@ -15,17 +15,17 @@ async function load(local: Record<string, string> = {}) {
 afterEach(() => noBrowser());
 
 describe("Beispiel-Tag: Speicher", () => {
-  it("startet mit allen Kacheln und 'App kennenlernen' abgehakt", async () => {
+  it("startet mit allen Kacheln, nichts abgehakt (Tafel 119)", async () => {
     const demo = await load();
     demo.startDemo();
-    expect(state()).toEqual({ version: 1, since: "2026-10-20", cleared: [], done: ["beispiel:a1"], gone: [], asked: false });
-    expect(demo.demoTiles(state(), "2026-10-20")).toEqual(["termine", "aufgaben", "pinnwand", "einkauf", "essen"]);
+    expect(state()).toEqual({ version: 1, since: "2026-10-20", cleared: [], done: [], gone: [], asked: false });
+    expect(demo.demoTiles(state(), "2026-10-20")).toEqual(["termine", "aufgaben", "pinnwand", "einkauf", "essen", "notizen", "sport", "vorrat"]);
   });
 
   it("verschwindet nach 3 Tagen", async () => {
     const demo = await load();
     demo.startDemo();
-    expect(demo.demoTiles(state(), "2026-10-22")).toHaveLength(5);
+    expect(demo.demoTiles(state(), "2026-10-22")).toHaveLength(8);
     expect(demo.demoTiles(state(), "2026-10-23")).toEqual([]);
     expect(demo.demoTiles(null, "2026-10-20")).toEqual([]);
   });
@@ -45,9 +45,11 @@ describe("Beispiel-Tag: Speicher", () => {
     const demo = await load();
     demo.startDemo();
     demo.toggleDemoDone("beispiel:a3");
-    expect(state().done).toEqual(["beispiel:a1", "beispiel:a3"]);
-    demo.toggleDemoDone("beispiel:a1");
     expect(state().done).toEqual(["beispiel:a3"]);
+    demo.toggleDemoDone("beispiel:a1");
+    expect(state().done).toEqual(["beispiel:a3", "beispiel:a1"]);
+    demo.toggleDemoDone("beispiel:a3");
+    expect(state().done).toEqual(["beispiel:a1"]);
   });
 
   it("abgehakt verschwindet und lässt sich zurückholen", async () => {
@@ -114,17 +116,17 @@ describe("Beispiel-Tag: Speicher", () => {
 describe("Beispiel-Tag: Tagesplan", () => {
   it("nur, was heute noch kommt – sonst der Tag morgen ab dem Morgen", async () => {
     const demo = await load();
-    const morning = demo.demoEntries("2026-10-20", 9 * 60, "Mia");
+    const morning = demo.demoEntries("2026-10-20", 9 * 60);
     expect(morning.tomorrow).toBe(false);
     const termine = morning.entries.filter((e) => e.typ === "termin");
-    expect(termine[0].data.title).toBe("Telefonat Versicherung");
-    expect(morning.entries.find((e) => e.id === "beispiel:a2")!.data.title).toBe("Mia etwas fragen");
-    const late = demo.demoEntries("2026-10-20", 21 * 60, "Theo");
+    expect(termine[0].data.title).toBe("Mathis Fußball");
+    expect(morning.entries.find((e) => e.id === "beispiel:a2")).toMatchObject({ raum: "arbeit", data: { title: "Steuerberater anrufen" } });
+    const late = demo.demoEntries("2026-10-20", 21 * 60);
     expect(late.tomorrow).toBe(true);
     expect(late.date).toBe("2026-10-21");
-    expect(late.entries.filter((e) => e.typ === "termin")).toHaveLength(6);
-    // Wochen-Aufgaben am Montag dieser Woche
-    expect(late.entries.find((e) => e.id === "beispiel:a4")!.data).toMatchObject({ week: "2026-10-19" });
+    expect(late.entries.filter((e) => e.typ === "termin")).toHaveLength(3);
+    // Aufgaben werktags für den Tag des Beispiels
+    expect(late.entries.find((e) => e.id === "beispiel:a3")!.data).toMatchObject({ date: "2026-10-21" });
     expect(demo.DEMO_SHOPS.map((s) => s.shop)).toEqual(["Edeka", "Rewe", "Lidl", "Rossmann"]);
   });
 });

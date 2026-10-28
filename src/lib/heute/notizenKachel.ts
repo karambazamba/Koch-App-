@@ -1,5 +1,6 @@
-// Notizen-Kachel je Größe (rein): S = die neueste bzw. angeheftete Notiz
-// (Titel + Anfang), M = 3 Notizen als Zeilen, L = bis 5; angeheftete zuerst.
+// Notizen-Kachel je Größe im festen Raster (rein): XS = die neueste bzw.
+// angeheftete Notiz (eine Zeile), S und M = bis 3 Notizen als Zeilen;
+// angeheftete zuerst.
 // Listen zeigen, wie viel schon erledigt ist (nie, was fehlt).
 
 import { sortNotes, type Note } from "@/lib/notizen/model";
@@ -7,7 +8,7 @@ import type { TileSize } from "@/lib/core/homeLayout";
 
 export type NotizZeile = { id: string; title: string; line: string; pinned: boolean };
 
-const MAX: Record<TileSize, number> = { S: 1, M: 3, L: 5 };
+const MAX: Record<TileSize, number> = { XS: 1, S: 3, M: 3 };
 
 /** Zweite Zeile einer Notiz: Anfang des Texts bzw. „1 von 3 erledigt“ */
 export function notizAnfang(n: Note): string {

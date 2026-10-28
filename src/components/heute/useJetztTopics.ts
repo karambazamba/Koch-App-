@@ -61,6 +61,8 @@ export type JetztSource = {
   reminder: JetztInput["reminder"];
   pause: string | null;
   demo: boolean;
+  /** Beispiel-Tag: Thema des Tages je Haushalt */
+  demoThema?: JetztInput["demoThema"];
   kids: boolean;
   /** Woche für „Kurzer Wochencheck?“ (schon ohne Ruhe/Pause/Beispiel) – sonst null */
   weekCheck: string | null;
@@ -156,6 +158,7 @@ export function useJetztTopics(src: JetztSource) {
     weekCheck: src.weekCheck && state.weekOff !== src.weekCheck ? src.weekCheck : null,
     kuehlCheck: src.kuehlCheck ?? null,
     demo: src.demo,
+    demoThema: src.demoThema ?? null,
     tiles: src.tiles,
     evening: src.evening,
     solo: src.solo,
