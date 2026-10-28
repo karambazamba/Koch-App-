@@ -170,7 +170,7 @@ export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, t
                     <div className={marked(r.item.key) ? `${HL} pb-2` : ""}>
                     <button type="button" onClick={() => setMenu(r.item)} className="flex min-h-12 w-full flex-col justify-center px-1 text-left">
                       <span className={`flex items-center gap-3 ${r.past ? "text-muted" : ""}`}>
-                        <span className={`${spalte} shrink-0 whitespace-nowrap text-[15px] font-bold tabular-nums ${r.past ? "" : r.item.room === "arbeit" ? "text-work" : r.item.room === "ich" ? "text-ich" : "text-accent-strong"}`}>{r.item.time ? clock(r.item.time) : <GanztagMarke title={r.item.title} label={r.item.label} />}</span>
+                        <span className={`${spalte} shrink-0 whitespace-nowrap text-[15px] font-bold tabular-nums ${r.past ? "" : r.item.room === "arbeit" ? "text-work" : "text-accent-strong"}`}>{r.item.time ? clock(r.item.time) : <GanztagMarke title={r.item.title} label={r.item.label} />}</span>
                         <span className={`min-w-0 flex-1 truncate text-base font-semibold ${r.past ? "line-through decoration-1" : ""}`}>{r.item.title}</span>
                         {r.past && <Check className="h-4 w-4 shrink-0" strokeWidth={2.5} aria-label="vorbei" />}
                         {!r.past && <RaumSchild room={r.item.room} />}

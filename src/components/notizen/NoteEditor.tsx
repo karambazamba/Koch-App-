@@ -4,7 +4,7 @@
 // oben „‹ Notizen“ und „Fertig“, darunter großer Titel und Text mit Absätzen.
 // Listen: Return = neuer Eintrag, leerer Eintrag + Return = Liste zu Ende
 // (weiter im Text darunter). Werkzeugleiste über der Tastatur: Liste ·
-// Anheften · Familie/Arbeit · Teilen · Löschen. Sichert von selbst; „Fertig“
+// Anheften · Familie/Geschäftlich · Teilen · Löschen. Sichert von selbst; „Fertig“
 // schließt nur, eine leere Notiz fällt beim Schließen weg.
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -201,9 +201,9 @@ function Editor({ initial, isNew }: { initial: Note; isNew: boolean }) {
             {note.data.pinned ? "Angeheftet" : "Anheften"}
           </button>
           {work && (
-            <button type="button" onPointerDown={(e) => e.preventDefault()} onClick={() => change({ ...note, raum: note.raum === "arbeit" ? "familie" : "arbeit" })} aria-label={`Raum: ${note.raum === "arbeit" ? "Arbeit" : raum} – wechseln`} className={TOOL}>
+            <button type="button" onPointerDown={(e) => e.preventDefault()} onClick={() => change({ ...note, raum: note.raum === "arbeit" ? "familie" : "arbeit" })} aria-label={`Raum: ${note.raum === "arbeit" ? "Geschäftlich" : raum} – wechseln`} className={TOOL}>
               <span className={`mt-1 h-3 w-3 rounded-full ${note.raum === "arbeit" ? "bg-work" : "bg-accent"}`} aria-hidden />
-              {note.raum === "arbeit" ? "Arbeit" : raum}
+              {note.raum === "arbeit" ? "Geschäftlich" : raum}
             </button>
           )}
           <button type="button" onClick={share} className={TOOL}>

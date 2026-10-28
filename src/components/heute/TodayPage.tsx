@@ -311,7 +311,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const jetztUpcoming = demoDay.termine && !demoDay.label ? demoDay.termine : demoDay.termine ? [] : termine;
   // Abends steht die Startseite auf morgen: offene Aufgaben wandern still mit (kalender/mitwandern.ts)
   const mitwandern = { heute: data.todayIso, abends: aufMorgen(abendLage({ minutes, evening, cookingStep, upcoming: jetztUpcoming, dish: jetztDish })) };
-  // Die eine Liste wie auf der Aufgaben-Seite (dringend → neu → Erstellungszeit, ohne Geparktes aus Listen); nach Feierabend ohne Arbeit, dafür „Arbeit · 5 für morgen“
+  // Die eine Liste wie auf der Aufgaben-Seite (dringend → neu → Erstellungszeit, ohne Geparktes aus Listen); nach Feierabend ohne Arbeit, dafür „Geschäftlich · 5 für morgen“
   const tasksJetzt = listenAnsicht(aufgabenUebersicht(entries, mitwandern).heute).jetzt;
   const tasksAll = workless(tasksJetzt);
   const tasks = tasksAll;

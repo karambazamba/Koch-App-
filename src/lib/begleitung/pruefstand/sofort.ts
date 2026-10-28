@@ -5,6 +5,7 @@
 // Ziel ≥ 98 % richtig (Test `tests/begleitung/sofortPruefstand.test.ts`),
 // sonst gehört die Regel nicht in den Sofort-Weg.
 
+import type { Room } from "@/lib/core/entries";
 import type { Sofort, SofortArt } from "@/lib/begleitung/sofort/erkennen";
 
 export type SofortSatz = {
@@ -18,6 +19,8 @@ export type SofortSatz = {
   /** So viele Änderungen (Aufzählung) */
   anzahl?: number;
   laden?: string;
+  /** Raum des Termins bzw. der Aufgabe (Familie oder arbeit = Geschäftlich, A-021) */
+  raum?: Room;
 };
 
 const S = (text: string, art: SofortArt | null, extra: Omit<SofortSatz, "text" | "art"> = {}): SofortSatz => ({ text, art, ...extra });
@@ -52,6 +55,11 @@ export const SOFORT_SAETZE: SofortSatz[] = [
   S("Kinderarzt Montag 8:15", "termin", { datum: "2026-10-26", zeit: "08:15", name: "Kinderarzt" }),
   S("heute abend 20 uhr kino", "termin", { datum: "2026-10-21", zeit: "20:00" }),
   S("Physio Dienstag 17 Uhr", "termin", { datum: "2026-10-27", zeit: "17:00", name: "Physio" }),
+  // Raum aus dem Inhalt (A-021)
+  S("Lieferant Tohuus Freitag 9 Uhr", "termin", { datum: "2026-10-23", zeit: "09:00", raum: "arbeit" }),
+  S("Personalgespräch Montag 14 Uhr", "termin", { datum: "2026-10-26", zeit: "14:00", raum: "arbeit" }),
+  S("Elternabend Kita Dienstag 19 Uhr", "termin", { datum: "2026-10-27", zeit: "19:00", raum: "familie" }),
+  S("Kinder Tohuus Freitag 15 Uhr", null), // Familie und Geschäftlich zugleich → KI fragt
   // Termin, aber unklar → KI
   S("Zahnarzt Donnerstag 16 Uhr", null), // steht schon drin
   S("9 Uhr Bäcker", null), // heute schon vorbei
@@ -74,6 +82,8 @@ export const SOFORT_SAETZE: SofortSatz[] = [
   S("Erinner mich morgen um 8 an die Mülltonne", "aufgabe", { datum: "2026-10-22", zeit: "08:00", name: "Mülltonne" }),
   S("Dringend: Versicherung anrufen", "aufgabe", { name: "Versicherung anrufen" }),
   S("Ich muss noch die Steuer machen", "aufgabe", { name: "Steuer machen" }),
+  S("Großhandel anrufen", "aufgabe", { name: "Großhandel anrufen", raum: "arbeit" }),
+  S("Schulranzen bezahlen", "aufgabe", { name: "Schulranzen bezahlen", raum: "familie" }),
   // Aufgabe, aber unklar → KI
   S("Lisa soll die Geschenke besorgen", null),
   S("Sag Lisa, sie soll den Turnbeutel waschen", null),
@@ -124,5 +134,7 @@ export function bewerteSofort(s: SofortSatz, r: Sofort | null): { ok: boolean; g
   const data = entry?.type === "upsert_entry" ? (entry.entry.data as { date?: string; start?: string; time?: string }) : null;
   if (s.datum && data?.date !== s.datum) g.push(`Datum ${data?.date ?? "–"} statt ${s.datum}`);
   if (s.zeit && (data?.start ?? data?.time) !== s.zeit) g.push(`Zeit ${data?.start ?? data?.time ?? "–"} statt ${s.zeit}`);
+  const raum = entry?.type === "upsert_entry" ? entry.entry.raum : undefined;
+  if (s.raum && raum !== s.raum) g.push(`Raum ${raum ?? "–"} statt ${s.raum}`);
   return { ok: g.length === 0, gruende: g };
 }

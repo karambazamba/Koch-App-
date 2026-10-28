@@ -42,9 +42,6 @@
   --color-warn-ink: var(--app-warn-ink);
   --color-work: var(--app-work);
   --color-work-soft: var(--app-work-soft);
-  /* Raum „Ich“ (nur ich, nicht geteilt; Tafel 114) */
-  --color-ich: var(--app-ich);
-  --color-ich-soft: var(--app-ich-soft);
   --color-danger: var(--app-danger);
   --color-danger-soft: var(--app-danger-soft);
   --color-danger-line: var(--app-danger-line);
@@ -172,8 +169,6 @@
   --app-warn-ink: #6f5300;
   --app-work: #4c6fd9;
   --app-work-soft: #e8edfb;
-  --app-ich: #3e7a62;
-  --app-ich-soft: #e3f0ea;
   --app-danger: #c8372d;
   --app-danger-soft: #fdecea;
   --app-danger-line: #f2c3bd;
@@ -343,8 +338,6 @@
   --app-warn-ink: #f0d27a;
   --app-work: #7f9bf0;
   --app-work-soft: #232b40;
-  --app-ich: #7fcfab;
-  --app-ich-soft: #1f3129;
   --app-danger: #ff8f86;
   --app-danger-soft: #3a2022;
   --app-danger-line: #6e2f33;
@@ -492,8 +485,6 @@
     --app-warn-ink: #f0d27a;
     --app-work: #7f9bf0;
     --app-work-soft: #232b40;
-    --app-ich: #7fcfab;
-    --app-ich-soft: #1f3129;
     --app-danger: #ff8f86;
     --app-danger-soft: #3a2022;
     --app-danger-line: #6e2f33;

@@ -21,8 +21,11 @@ import { eintragAendern } from "@/lib/kalender/eintragen/oeffnen";
 const AboItemSheet = dynamic(() => import("@/components/kalender/AboItemSheet").then((m) => m.AboItemSheet), { ssr: false });
 
 
-/** Farbe des Strichs: Orange = Familie, Grün = Ich, Blau = Arbeit */
-const roomBar = (room: DayItem["room"]) => (room === "arbeit" ? "bg-work" : room === "ich" ? "bg-ich" : "bg-accent");
+/** Farbe des Strichs: Orange = Familie, Blau = Geschäftlich */
+const roomBar = (room: DayItem["room"]) => (room === "arbeit" ? "bg-work" : "bg-accent");
+
+/** Uhrzeit in Raumfarbe (A-021): Familie Orange, Geschäftlich Blau */
+export const zeitFarbe = (room: DayItem["room"]) => (room === "arbeit" ? "text-work" : "text-accent-strong");
 
 /** Strich bzw. Punkt: Raum-Farbe, bei Terminen aus verbundenen Kalendern deren Farbe */
 export function roomBarProps(item: Pick<DayItem, "room" | "entry">): { className: string; style?: CSSProperties } {

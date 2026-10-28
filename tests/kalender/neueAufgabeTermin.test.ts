@@ -1,4 +1,4 @@
-// Neue Aufgabe & Termin – ein Feld, Familie · Ich · Arbeit (Tafel 114).
+// Neue Aufgabe & Termin – ein Feld, Familie · Geschäftlich (Tafel 114, A-021).
 // Satz lesen (Tag-Erkennung „Freitag …“ → „Ab Freitag“, Raum aus dem Satz),
 // Glocke + Zeile „Erinnern heute 16:00“, „Mehr“ (Ab wann, Wiederholen, An
 // jemanden geben), Termin-Chips (Tag, Uhrzeit, Dauer) und „Uhrzeit?“, Raum
@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { at, atFresh, aufgabe, fakeWindow, noBrowser, termin } from "../helpers";
 import { aufgabeDaten, aufgabeHinweis, aufgabeLesen, erinnernText, erinnernVon, glockeVorschlaege, serie, wiederholenLabel, wiederholenVon } from "@/lib/kalender/eintragen/aufgabe";
 import { dauerAusText, dauerLabel, dauerVon, endeVon, terminBereit, terminDaten, terminLesen, vorherText } from "@/lib/kalender/eintragen/termin";
-import { raumZumSpeichern, schalterRaum, startRaum } from "@/lib/kalender/eintragen/raum";
+import { schalterRaum, startRaum } from "@/lib/kalender/eintragen/raum";
 import { tagKurz, tagWahl, tagWort, uhr } from "@/lib/kalender/eintragen/tage";
 import { migrateEintragRaum } from "@/lib/kalender/eintragen/raumStore";
 import type { AufgabeData, TerminData } from "@/lib/kalender/model";
@@ -27,9 +27,9 @@ describe("Neue Aufgabe: Satz lesen", () => {
     expect(aufgabeHinweis("2026-10-30", HEUTE)).toBe("Ab Freitag. Return = speichern.");
   });
 
-  it("Raum aus dem Satz: „nur für mich“/„privat“ → Ich, „für alle“/„Familie“ → Familie, Büro → Arbeit", () => {
-    expect(aufgabeLesen("Tim antworten nur für mich", HEUTE)).toMatchObject({ title: "Tim antworten", raum: "ich" });
-    expect(aufgabeLesen("Privat: Geschenk besorgen", HEUTE).raum).toBe("ich");
+  it("Raum aus dem Satz: „nur für mich“/„privat“ → Familie, „für alle“/„Familie“ → Familie, Büro → Geschäftlich", () => {
+    expect(aufgabeLesen("Tim antworten nur für mich", HEUTE)).toMatchObject({ title: "Tim antworten", raum: "familie" });
+    expect(aufgabeLesen("Privat: Geschenk besorgen", HEUTE)).toMatchObject({ title: "Geschenk besorgen", raum: "familie" });
     expect(aufgabeLesen("Für alle: Müll rausbringen", HEUTE)).toMatchObject({ raum: "familie" });
     expect(aufgabeLesen("Rechnung Steuerberater fürs Büro", HEUTE).raum).toBe("arbeit");
     // gelernte Arbeits-Stichworte (Laden, Café …)
@@ -94,7 +94,8 @@ describe("Aufgabe speichern: Daten", () => {
 describe("Neuer Termin: Tag, Uhrzeit, Dauer als Chips", () => {
   it("„Zahnarzt Freitag 13 Uhr“ → Fr 30. Okt · 13:00 · 1 Std (Standard)", () => {
     const r = terminLesen("Zahnarzt Freitag 13 Uhr", HEUTE);
-    expect(r).toMatchObject({ title: "Zahnarzt", date: "2026-10-30", time: "13:00", dauer: null, raum: null });
+    expect(r).toMatchObject({ title: "Zahnarzt", date: "2026-10-30", time: "13:00", dauer: null, raum: "familie" });
+    expect(terminLesen("Friseur Freitag 13 Uhr", HEUTE).raum).toBeNull();
     expect(tagKurz(r.date!)).toBe("Fr 30. Okt");
     expect(uhr(r.time!)).toBe("13:00");
     expect(dauerLabel(r.dauer ?? 60)).toBe("1 Std");
@@ -120,7 +121,8 @@ describe("Neuer Termin: Tag, Uhrzeit, Dauer als Chips", () => {
   });
 
   it("Raum aus dem Satz wie bei Aufgaben", () => {
-    expect(terminLesen("Therapie Donnerstag 17 Uhr nur für mich", HEUTE)).toMatchObject({ title: "Therapie", raum: "ich", time: "17:00" });
+    expect(terminLesen("Therapie Donnerstag 17 Uhr nur für mich", HEUTE)).toMatchObject({ title: "Therapie", raum: "familie", time: "17:00" });
+    expect(terminLesen("Lieferant Tohuus Freitag 9 Uhr", HEUTE)).toMatchObject({ raum: "arbeit", time: "09:00" });
     expect(terminLesen("Meeting mit dem Team Freitag 10 Uhr", HEUTE).raum).toBe("arbeit");
   });
 
@@ -153,33 +155,21 @@ describe("Tage für Chips und „Ab wann“", () => {
   });
 });
 
-describe("Schalter Familie | Ich | Arbeit", () => {
-  it("Start = letzte Wahl, nach Feierabend Familie (allein: Ich)", () => {
-    expect(startRaum({ letzte: null, feierabend: false, haushalt: "familie" })).toBe("familie");
-    expect(startRaum({ letzte: "ich", feierabend: false, haushalt: "familie" })).toBe("ich");
-    expect(startRaum({ letzte: "arbeit", feierabend: true, haushalt: "familie" })).toBe("familie");
-    expect(startRaum({ letzte: "ich", feierabend: true, haushalt: "paar" })).toBe("familie");
-    expect(startRaum({ letzte: "familie", feierabend: false, haushalt: "allein" })).toBe("ich");
-    expect(startRaum({ letzte: "arbeit", feierabend: false, haushalt: "allein" })).toBe("arbeit");
-    expect(startRaum({ letzte: "arbeit", feierabend: true, haushalt: "allein" })).toBe("ich");
+describe("Schalter Familie | Geschäftlich (A-021)", () => {
+  it("Start = letzte Wahl, nach Feierabend Familie", () => {
+    expect(startRaum({ letzte: null, feierabend: false })).toBe("familie");
+    expect(startRaum({ letzte: "arbeit", feierabend: false })).toBe("arbeit");
+    expect(startRaum({ letzte: "arbeit", feierabend: true })).toBe("familie");
   });
 
   it("von Hand geht vor dem Satz, der Satz vor dem Start", () => {
-    expect(schalterRaum({ hand: null, ausText: null, start: "ich", haushalt: "familie" })).toBe("ich");
-    expect(schalterRaum({ hand: null, ausText: "arbeit", start: "ich", haushalt: "familie" })).toBe("arbeit");
-    expect(schalterRaum({ hand: "familie", ausText: "arbeit", start: "ich", haushalt: "familie" })).toBe("familie");
-    expect(schalterRaum({ hand: null, ausText: "familie", start: "ich", haushalt: "allein" })).toBe("ich");
-  });
-
-  it("Bearbeiten allein: Familie von früher bleibt Familie, solange der Schalter nur „Ich“ zeigt", () => {
-    expect(raumZumSpeichern("ich", "familie", "allein")).toBe("familie");
-    expect(raumZumSpeichern("arbeit", "familie", "allein")).toBe("arbeit");
-    expect(raumZumSpeichern("ich", "familie", "familie")).toBe("ich");
-    expect(raumZumSpeichern("ich", null, "allein")).toBe("ich");
+    expect(schalterRaum({ hand: null, ausText: null, start: "arbeit" })).toBe("arbeit");
+    expect(schalterRaum({ hand: null, ausText: "familie", start: "arbeit" })).toBe("familie");
+    expect(schalterRaum({ hand: "familie", ausText: "arbeit", start: "arbeit" })).toBe("familie");
   });
 
   it("gemerkt pro Gerät (`wasgibts.eintragraum`), nicht in der Sicherung", async () => {
-    expect(migrateEintragRaum({ version: 1, raum: "ich" })).toEqual({ version: 1, raum: "ich" });
+    expect(migrateEintragRaum({ version: 1, raum: "ich" })).toEqual({ version: 1, raum: "arbeit" });
     expect(migrateEintragRaum({ version: 1, raum: "privat" })).toEqual({ version: 1, raum: "familie" });
     expect(migrateEintragRaum({ version: 2 })).toBeNull();
     vi.resetModules();
@@ -208,11 +198,11 @@ describe("Speichern: „Steht drin · Rückgängig“, Feld bleibt offen", () =>
     return { eintragSpeichern, loadEntries, undo, toast: () => shown };
   }
 
-  it("neu: speichert im Raum „ich“, Toast „Steht drin“, Rückgängig nimmt sie weg", async () => {
+  it("neu: speichert im Raum „arbeit“, Toast „Steht drin“, Rückgängig nimmt sie weg", async () => {
     const s = await setup();
-    const a = aufgabe({ title: "Tim antworten", date: HEUTE }, { raum: "familie" });
-    expect(s.eintragSpeichern([{ ...a, raum: "ich" }], true)).toBe(true);
-    expect(s.loadEntries()).toMatchObject([{ typ: "aufgabe", raum: "ich", data: { title: "Tim antworten" } }]);
+    const a = aufgabe({ title: "Lieferant anrufen", date: HEUTE }, { raum: "familie" });
+    expect(s.eintragSpeichern([{ ...a, raum: "arbeit" }], true)).toBe(true);
+    expect(s.loadEntries()).toMatchObject([{ typ: "aufgabe", raum: "arbeit", data: { title: "Lieferant anrufen" } }]);
     expect(s.toast()?.text).toBe("Steht drin");
     s.toast()!.undo!();
     expect(s.loadEntries()).toEqual([]);

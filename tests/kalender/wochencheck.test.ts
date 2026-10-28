@@ -39,9 +39,10 @@ describe("Wochencheck: verstehen", () => {
     expect(parseWeekTalk("nächste Woche Dienstag Kino 20 Uhr", "2026-10-26").items[0].date).toBe("2026-11-03");
   });
 
-  it("Raum: Arbeit, Ich (nur für mich, früher Privat), Familie (Standard)", () => {
+  it("Raum: Geschäftlich aus dem Inhalt, „nur für mich“/früher Privat = Familie (Standard)", () => {
     expect(talk("Mittwoch 9 Uhr Kunde anrufen Termin").items[0].raum).toBe("arbeit");
-    expect(talk("Donnerstag 8 Uhr Arzt, nur für mich").items[0].raum).toBe("ich");
+    expect(talk("Donnerstag 8 Uhr Arzt, nur für mich").items[0].raum).toBe("familie");
+    expect(talk("Freitag 9 Uhr Lieferant im Tohuus").items[0].raum).toBe("arbeit");
     expect(talk("Freitag 15 Uhr Kindergeburtstag").items[0].raum).toBe("familie");
   });
 

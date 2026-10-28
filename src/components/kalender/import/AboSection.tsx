@@ -39,7 +39,7 @@ function RoomChips({ value, onChange, label }: { value: Room; onChange: (r: Room
     <div className="flex gap-2" role="group" aria-label={label}>
       {(["familie", "arbeit"] as const).map((r) => (
         <button key={r} type="button" aria-pressed={value === r} onClick={() => onChange(r)} className={chipClass(value === r)}>
-          {r === "familie" ? raum : "Arbeit"}
+          {r === "familie" ? raum : "Geschäftlich"}
         </button>
       ))}
     </div>

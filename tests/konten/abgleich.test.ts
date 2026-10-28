@@ -20,7 +20,7 @@ function device(values: Record<string, Record<string, unknown>> = {}) {
 }
 
 const termin = (id: string, title: string, raum = "familie") => ({ id, typ: "termin", raum, besitzer: "lokal", erstellt: T0, geaendert: T0, data: { title, date: "2026-10-22", start: "08:00" } });
-const kalender = (...entries: ReturnType<typeof termin>[]) => ({ version: 3, entries, migratedTermine: true, seenReminders: ["x@2026-10-20"] });
+const kalender = (...entries: ReturnType<typeof termin>[]) => ({ version: 4, entries, migratedTermine: true, seenReminders: ["x@2026-10-20"] });
 
 const FULL = {
   "wasgibts.eintraege": kalender(termin("t1", "Kita"), { ...termin("a1", "Müll"), typ: "aufgabe" }),

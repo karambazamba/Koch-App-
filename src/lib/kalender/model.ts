@@ -16,7 +16,7 @@
 //   verschwinden leise.
 
 import { WEEKDAYS_MO, WEEKDAYS_SHORT_MO } from "@/lib/core/days";
-import { createEntry, roomOf, type Entry, type Room } from "@/lib/core/entries";
+import { createEntry, LOCAL_OWNER, roomOf, type Entry, type Room } from "@/lib/core/entries";
 import { addDays, berlinTime, fromIsoDate, now } from "@/lib/core/now";
 import { first, sortBy, TASKS, TASKS_DONE, TERMINE, timeThenCreated, via } from "@/lib/core/sort";
 import { abgehaktUm, erledigtFelder, nochErledigt, serienZeiten } from "@/lib/kalender/erledigt";
@@ -251,7 +251,7 @@ export function itemsForDay(entries: CalendarEntry[], date: string, today: strin
         time: first ? t.start || null : null,
         end: last ? t.end || null : null,
         title: t.title,
-        label: t.label || null,
+        label: etikettZeigen(t.label),
         room: entry.raum,
         reminder: t.reminder,
         done: Boolean(t.doneDates?.includes(date)),
@@ -284,7 +284,7 @@ export function itemsForDay(entries: CalendarEntry[], date: string, today: strin
       time: a.time || null,
       end: null,
       title: a.title,
-      label: a.label || null,
+      label: etikettZeigen(a.label),
       room: entry.raum,
       reminder: a.reminder,
       done,
@@ -342,7 +342,7 @@ function taskItem(entry: Aufgabe, date: string, extra: Partial<DayItem>): DayIte
     time: a.time || null,
     end: null,
     title: a.title,
-    label: a.label || null,
+    label: etikettZeigen(a.label),
     room: entry.raum,
     reminder: a.reminder,
     done: false,
@@ -586,4 +586,18 @@ export function terminToAufgabe(e: Termin, stamp: string, opts: { due?: string }
 export function aufgabeToTermin(e: Aufgabe, stamp: string, start: string, date?: string): Termin {
   const a = e.data;
   return { ...e, typ: "termin", geaendert: stamp, data: { title: a.title, date: date ?? a.date ?? a.due ?? stamp.slice(0, 10), start, label: a.label, repeat: a.repeat ?? null, reminder: a.reminder, doneDates: [], skipDates: a.skipDates ?? [] } };
+}
+
+/** Altes Etikett „Privat“ (Wochencheck bis A-020): bleibt gespeichert, wird nie gezeigt (A-021) */
+export const etikettZeigen = (label: string | undefined): string | null => (label && label !== "Privat" ? label : null);
+
+/**
+ * v3 → v4 (A-021): Einen Raum „Privat“ gibt es nicht mehr. „Privat“ aus dem
+ * Wochencheck lag als Arbeit (nur ich) mit Etikett „Privat“. Nur auf dem Gerät
+ * (nie geteilt, Besitzer „lokal“) wird es Familie – mit Konto bleibt es nur für
+ * den Besitzer sichtbar (Datenschutz: nie ungefragt für andere sichtbar
+ * machen), umstellen geht per Antippen. Das Etikett bleibt gespeichert.
+ */
+export function ohnePrivat(e: CalendarEntry): CalendarEntry {
+  return e.data.label === "Privat" && e.raum === "arbeit" && e.besitzer === LOCAL_OWNER ? { ...e, raum: "familie" } : e;
 }

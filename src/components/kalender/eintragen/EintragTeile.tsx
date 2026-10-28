@@ -2,19 +2,21 @@
 
 // Gemeinsame Teile der Fenster „Neue Aufgabe“ und „Neuer Termin“ (Tafel
 // 114): das EINE Feld mit dem orangen ↑, darunter EINE Zeile – Schalter
-// „Familie | Ich | Arbeit“ (genau einer, aktiv weiß mit Raumfarbe), Glocke
+// „Familie | Geschäftlich“ (für Aufgaben und Termine derselbe, A-021; genau
+// einer, aktiv weiß mit Raumfarbe, Punkt in Raumfarbe), Glocke
 // (42 px, an = Orange) und leise „Mehr ›“ – dazu die Zeile „Erinnern … ✕“,
 // die „Mehr“-Zeilen und Chips zum Antippen.
 
 import { forwardRef, type ReactNode } from "react";
 import { ArrowUp, Bell, ChevronRight, X } from "lucide-react";
 import type { Room } from "@/lib/core/entries";
-import { raumLabel, type Haushalt } from "@/lib/core/haushalt";
+import { RAUM_WAHL, raumLabel, type Haushalt } from "@/lib/core/haushalt";
 
 /** Feld nicht verlassen – die Tastatur bleibt auf */
 export const halten = (e: { preventDefault: () => void }) => e.preventDefault();
 
-const AKTIV: Record<Room, string> = { familie: "text-accent-strong", ich: "text-ich", arbeit: "text-work" };
+const AKTIV: Record<Room, string> = { familie: "text-accent-strong", arbeit: "text-work" };
+const PUNKT: Record<Room, string> = { familie: "bg-accent", arbeit: "bg-work" };
 
 /** Das eine Feld mit ↑ (Return = speichern) */
 export const EintragFeld = forwardRef<HTMLInputElement, { value: string; onChange: (v: string) => void; placeholder: string; label: string; bereit: boolean; onPaste?: (text: string) => boolean }>(function EintragFeld({ value, onChange, placeholder, label, bereit, onPaste }, ref) {
@@ -46,11 +48,11 @@ export const EintragFeld = forwardRef<HTMLInputElement, { value: string; onChang
 });
 
 /** Schalter, Glocke, „Mehr ›“ in EINER Zeile */
-export function EintragZeile(p: { raeume: Room[]; raum: Room; haushalt: Haushalt; onRaum: (r: Room) => void; glockeAn: boolean; glockeAuf: boolean; onGlocke: () => void; mehrAuf: boolean; onMehr: () => void }) {
+export function EintragZeile(p: { raum: Room; haushalt: Haushalt; onRaum: (r: Room) => void; glockeAn: boolean; glockeAuf: boolean; onGlocke: () => void; mehrAuf: boolean; onMehr: () => void }) {
   return (
     <div className="flex items-center gap-2">
       <div role="radiogroup" aria-label="Wer sieht es?" className="flex min-w-0 flex-1 rounded-field bg-segment p-1" data-raum-schalter>
-        {p.raeume.map((r) => (
+        {RAUM_WAHL.map((r) => (
           <button
             key={r}
             type="button"
@@ -59,9 +61,10 @@ export function EintragZeile(p: { raeume: Room[]; raum: Room; haushalt: Haushalt
             onPointerDown={halten}
             onClick={() => p.onRaum(r)}
             data-raum={r}
-            className={`hit h-9 min-w-0 flex-1 truncate rounded-field px-1 text-[15px] font-bold transition ${p.raum === r ? `bg-surface shadow-card ${AKTIV[r]}` : "text-muted"}`}
+            className={`hit flex h-9 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-field px-1 text-[15px] font-bold transition ${p.raum === r ? `bg-surface shadow-card ${AKTIV[r]}` : "text-muted"}`}
           >
-            {raumLabel(r, p.haushalt)}
+            <span className={`h-2 w-2 shrink-0 rounded-full ${PUNKT[r]}`} aria-hidden />
+            <span className="truncate">{raumLabel(r, p.haushalt)}</span>
           </button>
         ))}
       </div>

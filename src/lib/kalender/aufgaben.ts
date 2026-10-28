@@ -1,17 +1,17 @@
-// Aufgaben: alles ist heute, eine Liste, Ich und Arbeit nur als Schild (Tafel 103/104/114).
-// EINE Stelle für Aufgaben-Seite, Startseiten-Kachel und Mia:
+// Aufgaben: alles ist heute, eine Liste, Geschäftlich nur als Schild (Tafel 103/104/114, A-021).
+// EINE Stelle für Aufgaben-Seite, Startseiten-Kachel, Kalender-Filter und Mia:
 // - Kopfzeile „Heute · Mi 28. Okt“ (nach Feierabend „Heute Abend · Feierabend“).
-// - Filter „Alle · Familie · Ich · Arbeit“ nur, wenn es heute Ich- oder
-//   Arbeitsaufgaben gibt (Tafel 114); die Wahl merkt sich das Gerät
-//   (`aufgabenFilter.ts`). Gefiltert steht unten leise „Familie · 5 ausgeblendet“.
+// - Filter „Alle · Familie · Geschäftlich“ nur, wenn es geschäftliche
+//   Einträge gibt; die Wahl merkt sich das Gerät (`aufgabenFilter.ts`).
+//   Gefiltert steht unten leise „Familie · 5 ausgeblendet“.
 // - Nach Feierabend (bzw. an freien Tagen) ruht die Arbeit: unten leise
-//   „Arbeit · 5 für morgen“ – antippen blendet sie kurz ein. „Ich“ bleibt.
+//   „Geschäftlich · 5 für morgen“ – antippen blendet sie kurz ein.
 // - Mia: „Was steht heute an?“ nennt kurz die Zahl und die ersten drei.
 // Rein.
 
 import { headerDate } from "@/lib/heute/kopfDatum";
 import type { Room } from "@/lib/core/entries";
-import { raumLabel, raumWahl, sichtRaum, type Haushalt } from "@/lib/core/haushalt";
+import { GESCHAEFTLICH, RAUM_WAHL, raumLabel, type Haushalt } from "@/lib/core/haushalt";
 import type { DayItem } from "@/lib/kalender/model";
 
 export type AufgabenFilter = "alle" | Room;
@@ -24,54 +24,51 @@ export function aufgabenKopf(today: string, feierabend: boolean): string {
 export type AufgabenAnsicht = {
   /** Was in der einen Liste steht */
   items: DayItem[];
-  /** Chips „Alle · Familie · Ich · Arbeit“ (leer = keine) */
+  /** Chips „Alle · Familie · Geschäftlich“ (leer = keine) */
   chips: AufgabenFilter[];
   /** Wirksamer Filter (ohne Chips immer „alle“) */
   filter: AufgabenFilter;
   /** Durch den Filter ausgeblendet */
   ausgeblendet: number;
-  /** Nach Feierabend ausgeblendete Arbeitsaufgaben („Arbeit · n für morgen“) */
+  /** Nach Feierabend ausgeblendete Arbeitsaufgaben („Geschäftlich · n für morgen“) */
   arbeitMorgen: number;
 };
 
 /**
- * Welche Chips: nur, wenn es Ich- oder Arbeitseinträge gibt – dann „Alle“,
- * der gemeinsame Raum und was es gibt. Allein zählt Gemeinsames wie „Ich“
- * (`sichtRaum`), Chips also nur mit Arbeit.
+ * Welche Chips: nur, wenn es geschäftliche Einträge gibt – dann „Alle ·
+ * Familie · Geschäftlich“ (Aufgaben und Termine gleich). Wer nichts
+ * Geschäftliches hat (Lisa), sieht nie Chips.
  */
-export function raumChips(rooms: Room[], h: Haushalt = "familie"): AufgabenFilter[] {
-  const da = new Set(rooms.map((r) => sichtRaum(r, h)));
-  if (!da.has("arbeit") && (h === "allein" || !da.has("ich"))) return [];
-  return ["alle", ...raumWahl(h).filter((r) => r === "familie" || (r === "ich" && h === "allein") || da.has(r))];
+export function raumChips(rooms: Room[]): AufgabenFilter[] {
+  return rooms.includes("arbeit") ? ["alle", ...RAUM_WAHL] : [];
 }
 
-/** Name eines Chips: „Alle“, „Familie“/„Wir“, „Ich“, „Arbeit“ */
+/** Name eines Chips: „Alle“, „Familie“/„Wir“, „Geschäftlich“ */
 export const filterLabel = (f: AufgabenFilter, h: Haushalt = "familie") => (f === "alle" ? "Alle" : raumLabel(f, h));
 
 /**
  * Die eine Liste: gefiltert nach Raum (nur mit Chips), nach Feierabend ohne
- * Arbeit – außer man blendet sie kurz ein. „Ich“ bleibt abends sichtbar.
+ * Arbeit – außer man blendet sie kurz ein.
  */
-export function aufgabenAnsicht(items: DayItem[], o: { filter: AufgabenFilter; arbeitRuht: boolean; arbeitZeigen?: boolean; haushalt?: Haushalt }): AufgabenAnsicht {
-  const h = o.haushalt ?? "familie";
+export function aufgabenAnsicht(items: DayItem[], o: { filter: AufgabenFilter; arbeitRuht: boolean; arbeitZeigen?: boolean }): AufgabenAnsicht {
   const arbeit = items.filter((i) => i.room === "arbeit").length;
   const basis = o.arbeitRuht && !o.arbeitZeigen ? items.filter((i) => i.room !== "arbeit") : items;
   const arbeitMorgen = o.arbeitRuht ? arbeit : 0;
-  const chips = raumChips(basis.map((i) => i.room), h);
+  const chips = raumChips(basis.map((i) => i.room));
   if (!chips.length || o.filter === "alle" || !chips.includes(o.filter)) return { items: basis, chips, filter: "alle", ausgeblendet: 0, arbeitMorgen };
-  const shown = basis.filter((i) => sichtRaum(i.room, h) === o.filter);
+  const shown = basis.filter((i) => i.room === o.filter);
   return { items: shown, chips, filter: o.filter, ausgeblendet: basis.length - shown.length, arbeitMorgen };
 }
 
 /** Passt ein Eintrag zur Ansicht (für Geplant, Listen, Erledigt darunter)? */
-export function passtZurAnsicht(i: Pick<DayItem, "room">, a: Pick<AufgabenAnsicht, "filter">, o: { arbeitRuht: boolean; arbeitZeigen?: boolean; haushalt?: Haushalt }): boolean {
+export function passtZurAnsicht(i: Pick<DayItem, "room">, a: Pick<AufgabenAnsicht, "filter">, o: { arbeitRuht: boolean; arbeitZeigen?: boolean }): boolean {
   if (o.arbeitRuht && !o.arbeitZeigen && i.room === "arbeit") return false;
-  return a.filter === "alle" || sichtRaum(i.room, o.haushalt ?? "familie") === a.filter;
+  return a.filter === "alle" || i.room === a.filter;
 }
 
-/** Leise Zeilen unten: „Familie · 5 ausgeblendet“, „Arbeit · 5 für morgen“, „Geplant · 1“ */
+/** Leise Zeilen unten: „Familie · 5 ausgeblendet“, „Geschäftlich · 5 für morgen“, „Geplant · 1“ */
 export const ausgeblendetText = (name: string, n: number) => `${name} · ${n} ausgeblendet`;
-export const arbeitMorgenText = (n: number) => `Arbeit · ${n} für morgen`;
+export const arbeitMorgenText = (n: number) => `${GESCHAEFTLICH} · ${n} für morgen`;
 export const geplantText = (n: number) => `Geplant · ${n}`;
 
 const joinList = (parts: string[]) => (parts.length <= 1 ? parts.join("") : `${parts.slice(0, -1).join(", ")} und ${parts[parts.length - 1]}`);

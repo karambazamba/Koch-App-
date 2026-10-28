@@ -92,7 +92,7 @@ function householdOf(s: State, userId: string): HouseholdInfo | null {
 function removeMember(s: State, userId: string) {
   const mine = s.members.find((m) => m.userId === userId);
   s.members = s.members.filter((m) => m.userId !== userId);
-  // „Ich“ und „Arbeit“ gehen mit, Familie bleibt
+  // „Arbeit“ (Geschäftlich) geht mit, Familie bleibt
   const rows = mine && s.entries.get(mine.householdId);
   if (rows) for (const [k, d] of rows) if (nurBesitzer(d.raum) && d.besitzer === userId) rows.delete(k);
   if (mine && !s.members.some((m) => m.householdId === mine.householdId)) {

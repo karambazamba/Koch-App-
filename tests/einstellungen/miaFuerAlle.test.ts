@@ -15,7 +15,7 @@ beforeEach(() => {
 
 describe("Wörter je Haushaltsart", () => {
   it("Bereich, Einladen, Teilen-Satz", () => {
-    expect([raumName("allein"), raumName("paar"), raumName("familie")]).toEqual(["Ich", "Wir", "Familie"]);
+    expect([raumName("allein"), raumName("paar"), raumName("familie")]).toEqual(["Familie", "Wir", "Familie"]);
     expect([einladenKnopf("allein"), einladenKnopf("paar"), einladenKnopf("familie")]).toEqual(["Jemanden dazuholen", "Partner einladen", "Familie einladen"]);
     expect(teilenSatz("allein")).toBeNull();
     expect(teilenSatz("paar")).toBe("Ihr beide seht dasselbe.");

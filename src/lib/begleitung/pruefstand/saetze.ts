@@ -4,7 +4,7 @@
 // Familie Müller (Felix, Lisa, Mathis 8). `ops` = welche Vorschlags-Arten
 // richtig sind (eine genügt), leer = reine Antwort ohne Aktion; `datum`/`zeit`
 // prüfen die Daten des Termins bzw. der Aufgabe, `person` den Namen im Titel
-// oder bei „wer“, `raum` den Raum (Familie · Ich · Arbeit, Tafel 114). `lage` = passende Ausgangslage (haushalt.ts), `max` =
+// oder bei „wer“, `raum` den Raum (Familie · Geschäftlich, A-021). `lage` = passende Ausgangslage (haushalt.ts), `max` =
 // erlaubte Sätze (Aktion 2, Ratgeber/Zusammenfassung 3).
 
 import type { Room } from "@/lib/core/entries";
@@ -25,7 +25,7 @@ export type PruefSatz = {
   bis?: string;
   zeit?: string;
   person?: string;
-  /** Raum des Termins bzw. der Aufgabe (Tafel 114) */
+  /** Raum des Termins bzw. der Aufgabe (familie oder arbeit = Geschäftlich, A-021) */
   raum?: Room;
   lage?: Lage[];
   /** Höchstens so viele Sätze (Standard 2) */
@@ -152,14 +152,21 @@ export const PRUEFSAETZE: PruefSatz[] = [
   // „Bleibt hängen“ (A-024): geht nie von selbst ins Archiv
   S("Häng dauerhaft an die Pinnwand: Müll ist immer dienstags", ["add_pin"]),
   S("Merk dir für mich die PIN vom Fahrradschloss: 4711", ["upsert_note"]),
-  // Familie · Ich · Arbeit (Tafel 114): wer sieht es
-  S("Tim antworten, nur für mich", TERMIN, { raum: "ich" }),
-  S("Privat: Geschenk für Lisa besorgen", TERMIN, { raum: "ich" }),
-  S("Therapie Donnerstag 17 Uhr, nur für mich", TERMIN, { raum: "ich", datum: "2026-10-22", zeit: "17:00" }),
+  // Familie · Geschäftlich (A-021): Raum aus dem Inhalt, „privat“ ist Familie
+  S("Tim antworten, nur für mich", TERMIN, { raum: "familie" }),
+  S("Privat: Geschenk für Lisa besorgen", TERMIN, { raum: "familie" }),
+  S("Therapie Donnerstag 17 Uhr, nur für mich", TERMIN, { raum: "familie", datum: "2026-10-22", zeit: "17:00" }),
   S("Für alle: Sonntag 15 Uhr Kaffee bei Oma", TERMIN, { raum: "familie", datum: "2026-10-25", zeit: "15:00" }),
   S("Familie: Müll rausbringen", TERMIN, { raum: "familie" }),
   S("Rechnung Steuerberater fürs Büro bezahlen", TERMIN, { raum: "arbeit" }),
   S("Meeting mit dem Team Freitag 10 Uhr", TERMIN, { raum: "arbeit", datum: "2026-10-23", zeit: "10:00" }),
+  // Termine per Sprache mit Raum aus dem Inhalt (A-021)
+  S("Morgen um 9 Lieferant im Tohuus", TERMIN, { raum: "arbeit", datum: "2026-10-22", zeit: "09:00" }),
+  S("Freitag 14 Uhr Personalgespräch bei KARAMBA Eis", TERMIN, { raum: "arbeit", datum: "2026-10-23", zeit: "14:00" }),
+  S("Montag 8 Uhr Großhandel anrufen wegen Eisbechern", TERMIN, { raum: "arbeit", datum: "2026-10-26" }),
+  S("Kinderarzt mit Mathis Donnerstag 15 Uhr", TERMIN, { raum: "familie", datum: "2026-10-22", zeit: "15:00", person: "Mathis" }),
+  S("Elternabend in der Schule Dienstag halb acht abends", TERMIN, { raum: "familie", datum: "2026-10-27", zeit: "19:30" }),
+  S("Kita-Fest Samstag 11 Uhr", TERMIN, { raum: "familie", datum: "2026-10-24", zeit: "11:00" }),
   // Kochen und Essen (20)
   S("Was soll ich heute kochen?", ["app_command", "set_meal"]),
   S("Plan mir die Woche, vegetarisch bitte", ["set_meal", "add_recipe", "update_week"], { max: 3 }),

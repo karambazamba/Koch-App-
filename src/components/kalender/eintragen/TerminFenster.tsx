@@ -13,7 +13,6 @@ import { Sheet } from "@/components/ui/Sheet";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { CARD_LIST, INPUT_INLINE, buttonClass } from "@/components/ui/styles";
 import { createEntry, type Room } from "@/lib/core/entries";
-import { raumWahl } from "@/lib/core/haushalt";
 import { berlinTime, todayIso, useMinutes } from "@/lib/core/now";
 import { PERSONS, sortBy } from "@/lib/core/sort";
 import { useKeyboardInset } from "@/lib/core/useMobileKeyboard";
@@ -27,7 +26,7 @@ import { isPast, splitTermine } from "@/lib/kalender/sentence";
 import type { Reminder, Termin } from "@/lib/kalender/model";
 import { serie, WIEDERHOLEN, wiederholenLabel, wiederholenVon, type Wiederholen } from "@/lib/kalender/eintragen/aufgabe";
 import { DAUER_WAHL, STANDARD_DAUER, UHR_WAHL, VORHER_WAHL, dauerLabel, dauerVon, terminBereit, terminDaten, terminLesen, vorherText } from "@/lib/kalender/eintragen/termin";
-import { raumZumSpeichern, schalterRaum, startRaum } from "@/lib/kalender/eintragen/raum";
+import { schalterRaum, startRaum } from "@/lib/kalender/eintragen/raum";
 import { letzterRaum, raumMerken } from "@/lib/kalender/eintragen/raumStore";
 import { tagKurz, tagWahl, uhr } from "@/lib/kalender/eintragen/tage";
 import { REMINDERS, sourceLabel } from "@/lib/kalender/model";
@@ -75,8 +74,8 @@ export function TerminFenster({ entry, date, onClose }: { entry?: Termin; date?:
   const minuten = dauer !== undefined ? dauer : (gelesen?.dauer ?? null);
   const standard = notify?.defaultReminder ?? "30";
   const erinnern: Reminder = reminder ?? (time ? standard : "aus");
-  const start = startRaum({ letzte: letzterRaum(), feierabend: feierabend || ruht, haushalt });
-  const raum = schalterRaum({ hand, ausText: gelesen?.raum ?? null, start, haushalt });
+  const start = startRaum({ letzte: letzterRaum(), feierabend: feierabend || ruht });
+  const raum = schalterRaum({ hand, ausText: gelesen?.raum ?? null, start });
   const bereit = terminBereit({ title, time, ganztaegig });
   const zeigeChips = Boolean(entry || text.trim() || date);
 
@@ -102,7 +101,7 @@ export function TerminFenster({ entry, date, onClose }: { entry?: Termin; date?:
     if (!title) return;
     if (!bereit) return void (setAuf("uhr"), setHint("Wann geht’s los? Uhrzeit antippen."));
     if (!entry && isPast(datum, time, today, minutes)) return void setHint(`${uhr(time!)} ist heute schon vorbei.`);
-    const gespeichert = raumZumSpeichern(raum, entry?.raum ?? null, haushalt);
+    const gespeichert = raum;
     const daten = (t: string, dt: string, tm: string | null) => terminDaten({ title: t, date: dt, time: tm, ganztaegig, dauer: minuten, reminder: erinnern, repeat: serie(wieder, d?.repeat), place: ort, who, label: gelesen?.label, vorher: d });
     // Mehrere Termine in einem Satz („Montag Zahnarzt um 9 und Dienstag Friseur um 14 Uhr“): jeder wird ein eigener
     const teile = entry ? [] : splitTermine(text, today).map((t) => terminLesen(t, today, worte)).filter((t) => t.title && t.date);
@@ -146,7 +145,6 @@ export function TerminFenster({ entry, date, onClose }: { entry?: Termin; date?:
       >
         <EintragFeld ref={field} value={text} onChange={(v) => (setText(v), setHint(""))} placeholder="Zahnarzt Freitag 13 Uhr" label={entry ? "Termin" : "Neuer Termin"} bereit={bereit} />
         <EintragZeile
-          raeume={raumWahl(haushalt)}
           raum={raum}
           haushalt={haushalt}
           onRaum={setHand}

@@ -1,9 +1,7 @@
 // Mia für alle (allein, zu zweit, Familie): die Wörter je Haushaltsart an
-// EINER Stelle. Drei Räume, benannt nach „wer sieht es“ (Tafel 114): der
-// gemeinsame heißt intern immer „familie“, sichtbar „Familie“ bzw. „Wir“ (zu
-// zweit, WG); „Ich“ (nur ich) und „Arbeit“ (nur ich, nach Feierabend weg)
-// heißen überall so. Allein gibt es nur „Ich | Arbeit“ – Gemeinsames von
-// früher zählt dort wie „Ich“. Die Haushaltsart steht im Profil (`householdType`).
+// EINER Stelle. Zwei Räume (A-021): der gemeinsame heißt intern immer
+// „familie“, sichtbar „Familie“ (allein auch) bzw. „Wir“ (zu zweit, WG);
+// „arbeit“ heißt überall „Geschäftlich“ (nur ich, nach Feierabend weg). Die Haushaltsart steht im Profil (`householdType`).
 
 import type { Room } from "@/lib/core/entries";
 import type { HouseholdType } from "@/lib/einstellungen/profileHousehold";
@@ -16,17 +14,17 @@ export const haushaltOf = (type: HouseholdType | null | undefined): Haushalt => 
 /** Haushaltsart → Profil-Wert (Startfrage „Für wen soll ich sortieren?“) */
 export const HOUSEHOLD_FOR: Record<Haushalt, HouseholdType> = { allein: "single", paar: "paar", familie: "familie" };
 
-/** Sichtbarer Name des gemeinsamen Bereichs (allein: „Ich“ – es sieht ja nur einer) */
-export const raumName = (h: Haushalt) => (h === "allein" ? "Ich" : h === "paar" ? "Wir" : "Familie");
+/** Sichtbarer Name des gemeinsamen Bereichs: „Wir“ zu zweit, sonst „Familie“ */
+export const raumName = (h: Haushalt) => (h === "paar" ? "Wir" : "Familie");
 
-/** Sichtbarer Name eines Raums: „Familie“/„Wir“, „Ich“, „Arbeit“ */
-export const raumLabel = (r: Room, h: Haushalt) => (r === "arbeit" ? "Arbeit" : r === "ich" ? "Ich" : raumName(h));
+/** Sichtbarer Name von „arbeit“ (Schalter, Schild, Filter, Mia) */
+export const GESCHAEFTLICH = "Geschäftlich";
 
-/** Die Räume im Schalter „Familie | Ich | Arbeit“ (allein nur „Ich | Arbeit“) */
-export const raumWahl = (h: Haushalt): Room[] => (h === "allein" ? ["ich", "arbeit"] : ["familie", "ich", "arbeit"]);
+/** Sichtbarer Name eines Raums: „Familie“/„Wir“ bzw. „Geschäftlich“ */
+export const raumLabel = (r: Room, h: Haushalt) => (r === "arbeit" ? GESCHAEFTLICH : raumName(h));
 
-/** Wie ein Eintrag in Listen zählt: allein ist Gemeinsames von früher dasselbe wie „Ich“ */
-export const sichtRaum = (r: Room, h: Haushalt): Room => (h === "allein" && r === "familie" ? "ich" : r);
+/** Die Räume im Schalter „Familie | Geschäftlich“ – für Aufgaben und Termine gleich, auch allein */
+export const RAUM_WAHL: readonly Room[] = ["familie", "arbeit"];
 
 /** Knopf zum Einladen */
 export const einladenKnopf = (h: Haushalt) => (h === "allein" ? "Jemanden dazuholen" : h === "paar" ? "Partner einladen" : "Familie einladen");

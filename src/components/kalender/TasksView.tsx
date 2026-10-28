@@ -4,10 +4,10 @@
 // Liste – keine Abschnitte nach Raum oder Datum. Kopf „Aufgaben“, darunter
 // leise „Heute · Mi 28. Okt“ (nach Feierabend „Heute Abend · Feierabend“).
 // Reihenfolge dringend → neu → Erstellungszeit; Schilder nur „neu“ und
-// „Ich“/„Arbeit“, abgegebene „von Lisa“. Chips „Alle · Familie · Ich · Arbeit“
-// nur, wenn es Ich- oder Arbeitsaufgaben gibt (gemerkt, Tafel 114); nach
-// Feierabend ruht die Arbeit („Ich“ bleibt)
-// („Arbeit · 5 für morgen ›“ blendet sie kurz ein). Unten leise „Geplant · 1 ›“
+// „Geschäftlich“, abgegebene „von Lisa“. Chips „Alle · Familie · Geschäftlich“
+// nur, wenn es geschäftliche Aufgaben gibt (gemerkt, A-021); nach
+// Feierabend ruht die Arbeit
+// („Geschäftlich · 5 für morgen ›“ blendet sie kurz ein). Unten leise „Geplant · 1 ›“
 // (ab einem genannten Tag), eingeklappte Listen, „Abgegeben“ und „Erledigt ⌄“
 // (A-043: zugeklappt, ohne Anzahl, nur die letzten 12 Stunden, neueste oben;
 // Häkchen antippen = wieder offen; Regel in kalender/erledigt.ts). Logik in

@@ -15,7 +15,8 @@ import { CARD } from "@/components/ui/styles";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { loadNotify } from "@/lib/heute/mitteilungen/einstellungen";
 import { AddedBy } from "@/components/konten/AddedBy";
-import { ItemMenu } from "@/components/kalender/Items";
+import { ItemMenu, roomBarProps, zeitFarbe } from "@/components/kalender/Items";
+import { RaumSchild } from "@/components/kalender/AufgabeSchild";
 import { TipsDayList, useCalendarTips } from "@/components/tipps/CalendarTips";
 import { clockLabel } from "@/lib/kalender/answers";
 import { dayDistance, recurringSuggestions, termineOn, type Suggestion } from "@/lib/kalender/monat";
@@ -25,16 +26,14 @@ import { showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
 import { changeEntries } from "@/lib/kalender/store";
 import { useProfile } from "@/lib/einstellungen/useProfile";
-import { useHaushalt } from "@/lib/einstellungen/useHaushalt";
-import { sichtRaum } from "@/lib/core/haushalt";
 import type { Room } from "@/lib/core/entries";
 
 
-/** Filter im Kalender: Alle · Familie · Ich · Arbeit (Tafel 114) */
+/** Filter im Kalender: Alle · Familie · Geschäftlich (A-021, wie bei Aufgaben) */
 export type RoomFilter = "alles" | Room;
 
-/** Tipps aus der Region gehören zum gemeinsamen Teil – nicht bei „Ich“ oder „Arbeit“ */
-export const mitTipps = (f: RoomFilter) => f !== "arbeit" && f !== "ich";
+/** Tipps aus der Region gehören zum gemeinsamen Teil – nicht bei „Geschäftlich“ */
+export const mitTipps = (f: RoomFilter) => f !== "arbeit";
 
 const LONG = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
 
@@ -49,8 +48,7 @@ function addSuggestion(s: Suggestion, date: string) {
 export function DayPanel({ date, today, entries, filter = "alles", heading = true }: { date: string; today: string; entries: CalendarEntry[]; filter?: RoomFilter; heading?: boolean }) {
   const profile = useProfile();
   const persons = profile?.persons ?? [];
-  const haushalt = useHaushalt();
-  const items = termineOn(entries, date, today).filter((i) => filter === "alles" || sichtRaum(i.room, haushalt) === filter);
+  const items = termineOn(entries, date, today).filter((i) => filter === "alles" || i.room === filter);
   const tips = useCalendarTips(today).byDay.get(date) ?? [];
   const chips = date >= today ? recurringSuggestions(entries, date, today) : [];
   const [menu, setMenu] = useState<DayItem | null>(null);
@@ -70,8 +68,10 @@ export function DayPanel({ date, today, entries, filter = "alles", heading = tru
             return (
               <li key={i.key}>
                 <button type="button" onClick={() => setMenu(i)} className={`flex min-h-12 w-full items-center gap-3 text-left ${i.done ? "opacity-50" : ""}`} aria-label={`${i.title} – Möglichkeiten${i.time ? ` (${clockLabel(i.time)})` : ""}`}>
-                  <span className={`${zeitSpalte(items.some((x) => !x.time), "gross")} shrink-0 whitespace-nowrap text-[15px] font-bold tabular-nums text-work`}>{i.time ? clockLabel(i.time) : <GanztagMarke title={i.title} label={i.label} />}</span>
+                  <span className={`h-5 w-[3px] shrink-0 rounded-full ${roomBarProps(i).className}`} style={roomBarProps(i).style} aria-hidden />
+                  <span className={`${zeitSpalte(items.some((x) => !x.time), "gross")} shrink-0 whitespace-nowrap text-[15px] font-bold tabular-nums ${zeitFarbe(i.room)}`}>{i.time ? clockLabel(i.time) : <GanztagMarke title={i.title} label={i.label} />}</span>
                   <span className="min-w-0 flex-1 truncate text-base font-semibold">{i.title}</span>
+                  <RaumSchild room={i.room} />
                   {reminderFor(i) && <Bell className="h-[13px] w-[13px] shrink-0 text-muted" strokeWidth={2.25} aria-label="mit Erinnerung" />}
                   <AddedBy owner={i.entry.besitzer} />
                   {who && <PersonAvatar name={who.name} size={24} />}

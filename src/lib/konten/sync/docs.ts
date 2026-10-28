@@ -9,7 +9,7 @@ import type { StorageKey } from "@/lib/core/storage";
 import { cleanPantryItem, migratePantry } from "@/lib/vorrat/haltbar";
 import { migrateNotes } from "@/lib/notizen/model";
 import { migratePinStore } from "@/lib/pinnwand/migration";
-import { ohneZeitraum, type CalendarEntry } from "@/lib/kalender/model";
+import { ohnePrivat, ohneZeitraum, type CalendarEntry } from "@/lib/kalender/model";
 import { todayIso } from "@/lib/core/now";
 import { migrateStore } from "@/lib/einkauf/listMigration";
 
@@ -50,7 +50,7 @@ export type Adapter = {
 
 const isObj = (v: unknown): v is Value => Boolean(v) && typeof v === "object" && !Array.isArray(v);
 const list = (v: unknown): Value[] => (Array.isArray(v) ? v.filter(isObj) : []);
-// „ich“ und „arbeit“ sieht nur der Besitzer – nie als Familie hochladen
+// „arbeit“ (Geschäftlich) sieht nur der Besitzer – nie als Familie hochladen
 const room = roomOf;
 const ownerOf = (v: unknown): string | null => (typeof v === "string" && v !== "lokal" ? v : null);
 
@@ -72,14 +72,18 @@ function entryAdapter(name: Adapter["name"], key: StorageKey, version: number, f
   };
 }
 
-// v2 → v3: „Diese Woche“ still auf heute bzw. den genannten Tag (kalender/store.ts)
+// v2 → v3: „Diese Woche“ still auf heute bzw. den genannten Tag; v3 → v4:
+// Etikett „Privat“ nur auf dem Gerät → Familie (kalender/store.ts, A-021)
 const kalender = {
-  ...entryAdapter("kalender", "wasgibts.eintraege", 3, "entries", ["termin", "aufgabe"], (v) => ({
-    version: 3,
+  ...entryAdapter("kalender", "wasgibts.eintraege", 4, "entries", ["termin", "aufgabe"], (v) => ({
+    version: 4,
     migratedTermine: v?.migratedTermine === true,
     seenReminders: Array.isArray(v?.seenReminders) ? v.seenReminders : [],
   })),
-  upgrade: (v: Value): Value | null => (v.version === 2 ? { ...v, version: 3, entries: list(v.entries).map((e) => ohneZeitraum(e as unknown as CalendarEntry, todayIso())) } : null),
+  upgrade: (v: Value): Value | null =>
+    v.version === 2 || v.version === 3
+      ? { ...v, version: 4, entries: list(v.entries).map((e) => ohnePrivat(v.version === 2 ? ohneZeitraum(e as unknown as CalendarEntry, todayIso()) : (e as unknown as CalendarEntry)) as unknown as Value) }
+      : null,
 };
 
 // v1 → v2: die alte Sammel-Schnellnotiz kommt als einzelne Notizen an

@@ -9,7 +9,7 @@ export function useHaushalt(): Haushalt {
   return haushaltOf(useProfile()?.householdType);
 }
 
-/** Sichtbarer Name des gemeinsamen Bereichs: „Familie“, „Wir“ (allein „Ich“) */
+/** Sichtbarer Name des gemeinsamen Bereichs: „Familie“ bzw. „Wir“ (zu zweit) */
 export const useRaumName = () => raumName(useHaushalt());
 
 /** Knopf zum Einladen: „Jemanden dazuholen“, „Partner einladen“, „Familie einladen“ */

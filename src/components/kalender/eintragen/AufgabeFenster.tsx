@@ -3,7 +3,7 @@
 // Das EINE Fenster „Neue Aufgabe“ (Tafel 114, Bild 1–3) – auch zum Ändern
 // („Aufgabe“). EIN Feld („Was steht an?“, Tastatur sofort auf), Knopf ↑.
 // Return = speichern für heute, Feld leer und auf für die nächste („Steht
-// drin · Rückgängig“). Darunter EINE Zeile: Schalter „Familie | Ich | Arbeit“
+// drin · Rückgängig“). Darunter EINE Zeile: Schalter „Familie | Geschäftlich“
 // (Start = letzte Wahl, nach Feierabend Familie), Glocke (In 1 Std · 16:00 ·
 // 18:00 · Morgen früh → Zeile „Erinnern heute 16:00 ✕“) und leise „Mehr ›“
 // mit genau drei Zeilen: Ab wann, Wiederholen, An jemanden geben. „Freitag …“
@@ -14,7 +14,6 @@ import { useMemo, useRef, useState } from "react";
 import { Sheet } from "@/components/ui/Sheet";
 import { CARD_LIST, buttonClass } from "@/components/ui/styles";
 import { createEntry, type Room } from "@/lib/core/entries";
-import { raumWahl } from "@/lib/core/haushalt";
 import { berlinTime, todayIso, useMinutes } from "@/lib/core/now";
 import { useKeyboardInset } from "@/lib/core/useMobileKeyboard";
 import { useHaushalt } from "@/lib/einstellungen/useHaushalt";
@@ -25,7 +24,7 @@ import { arbeitsWorte } from "@/lib/kalender/parse";
 import type { Aufgabe } from "@/lib/kalender/model";
 import { looksLikeList, openListe } from "@/lib/kalender/liste/einfuegen";
 import { aufgabeDaten, aufgabeHinweis, aufgabeLesen, erinnernText, erinnernVon, glockeVorschlaege, serie, WIEDERHOLEN, wiederholenLabel, wiederholenVon, type Erinnern, type Wiederholen } from "@/lib/kalender/eintragen/aufgabe";
-import { raumZumSpeichern, schalterRaum, startRaum } from "@/lib/kalender/eintragen/raum";
+import { schalterRaum, startRaum } from "@/lib/kalender/eintragen/raum";
 import { letzterRaum, raumMerken } from "@/lib/kalender/eintragen/raumStore";
 import { tagWahl, tagWort } from "@/lib/kalender/eintragen/tage";
 import { useArbeitRuht } from "@/components/kalender/useArbeitRuht";
@@ -62,8 +61,8 @@ export function AufgabeFenster({ entry, date, onClose }: { entry?: Aufgabe; date
   const title = entry ? text.trim() : (gelesen?.title ?? "");
   const tag = ab ?? gelesen?.ab ?? null;
   const glocke = erinnern === undefined ? (gelesen?.erinnern ?? null) : erinnern;
-  const start = startRaum({ letzte: letzterRaum(), feierabend: feierabend || ruht, haushalt });
-  const raum = schalterRaum({ hand, ausText: gelesen?.raum ?? null, start, haushalt });
+  const start = startRaum({ letzte: letzterRaum(), feierabend: feierabend || ruht });
+  const raum = schalterRaum({ hand, ausText: gelesen?.raum ?? null, start });
   const bereit = Boolean(title);
 
   const reset = () => {
@@ -82,7 +81,7 @@ export function AufgabeFenster({ entry, date, onClose }: { entry?: Aufgabe; date
   const save = (schliessen: boolean) => {
     if (!bereit) return;
     const data = aufgabeDaten({ title, ab: tag, erinnern: glocke, repeat: serie(wieder, entry?.data.repeat), today, dringend: gelesen?.dringend, label: gelesen?.label, due: gelesen?.due, vorher: entry?.data });
-    const gespeichert = raumZumSpeichern(raum, entry?.raum ?? null, haushalt);
+    const gespeichert = raum;
     const mitAn = an ? giveTo(data, an) : data;
     const next = entry ? { ...entry, raum: gespeichert, data: mitAn } : createEntry("aufgabe", mitAn, { raum: gespeichert });
     if (!eintragSpeichern([next as Aufgabe], !entry)) return;
@@ -113,7 +112,6 @@ export function AufgabeFenster({ entry, date, onClose }: { entry?: Aufgabe; date
           bereit={bereit}
         />
         <EintragZeile
-          raeume={raumWahl(haushalt)}
           raum={raum}
           haushalt={haushalt}
           onRaum={setHand}

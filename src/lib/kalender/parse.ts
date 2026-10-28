@@ -162,7 +162,13 @@ function findReminder(text: string): { reminder: Reminder; match: string } | nul
   return null;
 }
 
-const ARBEIT = /\b(meeting|büro|kunden?|präsentation|call|projekt\w*|chef\w*|kolleg\w*|arbeit|dienstreise|abgabe|teams|zoom|besprechung|bewerbung|team)\b/i;
+/**
+ * Geschäftlich aus dem Inhalt (A-021): Job-Wörter und Felix’ Betriebe
+ * (Tohuus, KARAMBA Eis, Eisladen), Lieferanten, Personal, Großhandel. Café
+ * zählt erst, wenn es schon an Arbeits-Einträgen steht (`arbeitsWorte`).
+ * „karamba“ ist hier nur Stichwort – in Texten heißt es immer „KARAMBA Eis“.
+ */
+const ARBEIT = /(?<![a-zäöüß])(meeting|büro|kunden?|kundin\w*|präsentation|call|projekt\w*|chef\w*|kolleg\w*|arbeit|dienstreise|abgabe|teams|zoom|besprechung|bewerbung|team|tohuus|karamba|lieferant\w*|personal|personalgespräch\w*|personalplan\w*|schulung\w*|mitarbeiter\w*|großhandel\w*|grosshandel\w*|eisladen|eisdiele|geschäftlich\w*|firma|betrieb|schichtplan|vorstellungsgespräch\w*)(?![a-zäöüß])/i;
 
 const LABELS: [RegExp, string][] = [
   [/\bkita\b/i, "Kita"],
@@ -180,29 +186,42 @@ export function guessLabel(title: string): string | undefined {
   return LABELS.find(([re]) => re.test(title))?.[1];
 }
 
-/** „nur für mich“, „privat“ → Ich (Tafel 114) */
-const ICH = /(?<![a-zäöüß])(nur für mich|für mich allein|nur ich|privat|persönlich)(?![a-zäöüß])/i;
-/** „für alle“, „Familie“ → Familie */
+/** „für alle“, „Familie“ → Familie (sagt der Satz ausdrücklich) */
 const FUER_ALLE = /(?<![a-zäöüß])(für alle|für uns alle|alle zusammen|familie|gemeinsam)(?![a-zäöüß])/i;
+/**
+ * Familie aus dem Inhalt (A-021): Kinder, Arzt, Kita, Schule … – und
+ * „privat“/„nur für mich“ (dafür gibt es keinen eigenen Raum).
+ */
+const FAMILIE = /(?<![a-zäöüß])(kind|kinder\w*|kita|krippe|schul\w*|elternabend|elterngespräch|hort|(?:kinder|zahn|haus|augen|frauen)?arzt\w*|(?:zahn)?ärzt\w*|kinderarzt\w*|oma|opa|geburtstag\w*|privat|nur für mich|für mich allein|nur ich|persönlich)(?![a-zäöüß])/i;
+
+const gelernt = (text: string, arbeitWorte: readonly string[]) => {
+  const t = text.toLowerCase();
+  return arbeitWorte.some((w) => new RegExp(`(?<![a-zäöüß])${w}(?![a-zäöüß])`).test(t));
+};
 
 /**
- * Raum nur, wenn der Satz ihn sagt (sonst null): Ich vor Familie vor Arbeit.
- * `arbeitWorte` = gelernte Arbeits-Stichworte (Laden, Café …, `arbeitsWorte`).
+ * Raum nur, wenn der Satz ihn sagt oder der Inhalt ihn klar macht (sonst
+ * null): ausdrücklich „für alle/Familie“ › Geschäftlich-Wörter ›
+ * Familie-Wörter › gelernte Arbeits-Stichworte (`arbeitsWorte`, Laden …).
+ * Stehen Geschäftlich- und Familie-Wörter zugleich drin, ist es unklar
+ * (`raumUnklar`) – Mia fragt dann mit zwei Knöpfen, hier gilt Geschäftlich.
  */
 export function raumAusText(text: string, arbeitWorte: readonly string[] = []): Room | null {
-  if (ICH.test(text)) return "ich";
   if (FUER_ALLE.test(text)) return "familie";
   if (ARBEIT.test(text)) return "arbeit";
-  const t = text.toLowerCase();
-  return arbeitWorte.some((w) => new RegExp(`(?<![a-zäöüß])${w}(?![a-zäöüß])`).test(t)) ? "arbeit" : null;
+  if (FAMILIE.test(text)) return "familie";
+  return gelernt(text, arbeitWorte) ? "arbeit" : null;
 }
+
+/** Wirklich unklar: Geschäftliches und Familiäres zugleich, ohne „für alle/Familie“ („Kinder zum Tohuus bringen“) */
+export const raumUnklar = (text: string): boolean => !FUER_ALLE.test(text) && ARBEIT.test(text) && FAMILIE.test(text) && !/(?<![a-zäöüß])(privat|nur für mich|für mich allein|nur ich|persönlich)(?![a-zäöüß])/i.test(text);
 
 export function guessRoom(text: string, arbeitWorte: readonly string[] = []): Room {
   return raumAusText(text, arbeitWorte) ?? "familie";
 }
 
 /** Wörter, die je nach Mensch Arbeit sind (Eisladen, Café …) */
-const VIELLEICHT_ARBEIT = ["laden", "eisladen", "eisdiele", "café", "cafe", "werkstatt", "praxis", "schicht", "dienst", "baustelle"];
+const VIELLEICHT_ARBEIT = ["laden", "café", "cafe", "werkstatt", "praxis", "schicht", "dienst", "baustelle", "küche", "lager", "kasse", "inventur"];
 
 /** Gelernt aus früheren Entscheidungen: Stichworte, die schon an Arbeits-Einträgen stehen */
 export function arbeitsWorte(entries: readonly { raum: Room; data: { title: string; label?: string } }[]): string[] {
@@ -213,10 +232,10 @@ export function arbeitsWorte(entries: readonly { raum: Room; data: { title: stri
   return VIELLEICHT_ARBEIT.filter((w) => new RegExp(`(?<![a-zäöüß])${w}(?![a-zäöüß])`).test(text));
 }
 
-/** Raum-Wörter aus dem Titel nehmen („Tim antworten nur für mich“ → „Tim antworten“) */
+/** Raum-Wörter aus dem Titel nehmen („Tim antworten nur für mich“ → „Tim antworten“, „Privat: Geschenk“ → „Geschenk“) */
 export const ohneRaumWorte = (title: string) =>
   title
-    .replace(/[,\s]*(?<![a-zäöüß])(?:nur für mich|für mich allein|nur ich|privat|für alle|für uns alle|alle zusammen)(?![a-zäöüß])[,.]*/gi, " ")
+    .replace(/[,\s]*(?<![a-zäöüß])(?:nur für mich|für mich allein|nur ich|privat|geschäftlich|für alle|für uns alle|alle zusammen)(?![a-zäöüß])[,.:]*/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
 

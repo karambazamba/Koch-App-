@@ -15,11 +15,11 @@ import { BAUSTEINE, LAUNCH_AUS } from "@/lib/core/features";
 import { addDays, berlinInstant } from "@/lib/core/now";
 import { APP_NAME } from "@/lib/core/app";
 import { LOCKER, steckbrief, TON_LAENGE } from "@/lib/mia/persona";
-import { haushaltOf, raumLabel, raumWahl, type Haushalt } from "@/lib/core/haushalt";
+import { haushaltOf, RAUM_WAHL, raumLabel, type Haushalt } from "@/lib/core/haushalt";
 import type { Thema, Themen } from "@/lib/begleitung/kontextThemen";
 
-/** „Familie | Ich | Arbeit“ bzw. allein „Ich | Arbeit“ */
-const raeumeText = (h: Haushalt) => raumWahl(h).map((r) => raumLabel(r, h)).join(" | ");
+/** „Familie | Geschäftlich“ (zu zweit „Wir | Geschäftlich“) */
+const raeumeText = (h: Haushalt) => RAUM_WAHL.map((r) => raumLabel(r, h)).join(" | ");
 
 /** "Familie Müller" (ohne doppeltes "Familie"), ohne Namen "der Familie"; ohne Kinder "des Haushalts" */
 function familyLabel(profile: HouseholdProfile): string {
@@ -83,7 +83,7 @@ export const SYSTEM_PROMPT = `${TON_PROMPT}
 Beispiele (Nutzer → gut ✓ / schlecht ✗):
 ${TON_BEISPIELE.map((b) => `  „${b.sagt}“ ✓ „${b.gut}“ ✗ „${b.schlecht}“`).join("\n")}
 
-Räume (wer sieht es): "familie" = alle im Haushalt ("für alle", "Familie"), "ich" = nur ich, abends sichtbar ("nur für mich", "privat"), "arbeit" = nur ich, nach Feierabend weg (Meeting, Büro, Kunde, Chef, Kollegen; Laden/Café nur laut "Arbeits-Stichworte"). Ohne Angabe gehört etwas zur Familie. Etikett nur, wenn naheliegend (Kita, Schule, Arzt, Sport, Steuern, Geburtstag).
+Räume (nur zwei, für Termine und Aufgaben gleich): "familie" = alle im Haushalt sehen es (Kinder, Kita, Schule, Arzt; auch "privat"), "arbeit" = Geschäftlich, sieht nur die Person selbst, nach Feierabend weg (Tohuus, KARAMBA Eis, Lieferant, Personal, Großhandel, Büro, Kunde, Meeting; dazu "Arbeits-Stichworte"). Raum aus dem Inhalt erkennen, nur bei echter Unklarheit fragen. Ohne Angabe gehört etwas zur Familie. Geschäftliches anderer gibt es für dich nicht. Etikett nur, wenn naheliegend (Kita, Schule, Arzt, Sport, Steuern, Geburtstag).
 
 So arbeitest du:
 - Du legst Dinge auf Zuruf an und räumst sie wieder weg. Kleine, sichere Dinge (Einkauf, neuer Termin, Aufgabe, Notiz, Pinnwand, Im Haus, Timer) erledigt die App sofort mit „Rückgängig“, bestätige nur kurz. Große Dinge (Wochenplan, Rezept, Mail, Ändern, Löschen) sind ein Vorschlag mit "Übernehmen", sag in einem halben Satz, was bereitliegt.

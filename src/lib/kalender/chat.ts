@@ -30,7 +30,7 @@ export function draftSummary(draft: Draft): string {
         : draft.data.date
           ? shortDate(draft.data.date)
           : "für heute";
-  const extra = [repeatLabel(d.repeat, draft.typ === "termin" ? draft.data.date : draft.data.date), d.reminder !== "aus" ? `Erinnerung ${REMINDERS.find((r) => r.value === d.reminder)?.short}` : "", draft.raum === "arbeit" ? "Arbeit" : draft.raum === "ich" ? "Ich" : ""].filter(Boolean);
+  const extra = [repeatLabel(d.repeat, draft.typ === "termin" ? draft.data.date : draft.data.date), d.reminder !== "aus" ? `Erinnerung ${REMINDERS.find((r) => r.value === d.reminder)?.short}` : "", draft.raum === "arbeit" ? "Geschäftlich" : ""].filter(Boolean);
   return [when, d.title, ...extra].join(" · ");
 }
 

@@ -173,7 +173,7 @@ export function TermineSection({ rows, label, href, today, size = "M", half = fa
 
 /**
  * Aufgaben-Zeile der Seite: Kreis zum Abhaken, Titel bis 2 Zeilen (dann „…“),
- * darunter „von Lisa“; rechts nur „neu“ und die Schilder „Ich“ (grün) bzw. „Arbeit“ (blau) –
+ * darunter „von Lisa“; rechts nur „neu“ und das Schild „Geschäftlich“ (blau) –
  * kein „von gestern“, kein „heute“, kein Punkt. Geplantes zeigt seinen Tag.
  */
 export function TaskLine({ item, today, onOpen, onDone, leaving, entering }: { item: DayItem; today: string; onOpen: (i: DayItem) => void; onDone: (i: DayItem) => void; leaving?: boolean; entering?: boolean }) {
@@ -197,7 +197,7 @@ export function TaskLine({ item, today, onOpen, onDone, leaving, entering }: { i
   );
 }
 
-/** Aufgaben-Zeile der Kachel (30 px): Kreis 20 px (Tippfläche 44 × 30), Titel, „!“ bei dringend, rechts nur „von Lisa“ und „Arbeit“ */
+/** Aufgaben-Zeile der Kachel (30 px): Kreis 20 px (Tippfläche 44 × 30), Titel, „!“ bei dringend, rechts nur „von Lisa“ und „Geschäftlich“ */
 function TaskField({ item, leaving, entering, onOpen, onDone }: { item: DayItem; leaving: boolean; entering?: React.CSSProperties; onOpen: () => void; onDone: () => void }) {
   return (
     <li className="flex min-w-0 items-center" style={leaving ? TASK_FADE : entering} data-item={item.key} data-zeile>
@@ -220,7 +220,7 @@ function TaskField({ item, leaving, entering, onOpen, onDone }: { item: DayItem;
 /**
  * AUFGABEN – eine weiße Checkliste: S 2, M 4, L 6 Zeilen, „+N weitere“ im Kopf
  * neben dem Plus; abends „Morgen · Mi“ (`label`, Neues dann für `addOn`).
- * Nach Feierabend ohne Arbeit, dafür unten leise „Arbeit · 5 für morgen“.
+ * Nach Feierabend ohne Arbeit, dafür unten leise „Geschäftlich · 5 für morgen“.
  */
 export function AufgabenSection({ items, total, today, label, addOn = today, href = "/aufgaben", size = "M", half = false, arbeitMorgen = 0, demo }: { items: DayItem[]; total?: number; today: string; label?: string | null; addOn?: string; href?: string; size?: TileSize; half?: boolean; arbeitMorgen?: number; demo?: DemoProps }) {
   const { setMenu, check, before, overlays } = useSection();

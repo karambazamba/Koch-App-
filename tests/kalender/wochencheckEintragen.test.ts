@@ -37,8 +37,8 @@ describe("Werkzeug woche_eintragen", () => {
     expect(ops).toHaveLength(6);
     const [eltern, steuer, lauf, spiel, paket, fenster] = ops;
     expect(eltern.entry.data).toMatchObject({ start: "19:30", end: "21:30", reminder: "30" });
-    // „privat“ (ältere Antwort) = Raum Ich, ohne Etikett (Tafel 114)
-    expect(steuer.entry).toMatchObject({ raum: "ich" });
+    // „privat“ (ältere Antwort) = Familie, ohne Etikett (A-021)
+    expect(steuer.entry).toMatchObject({ raum: "familie" });
     expect(steuer.entry.data.label).toBeUndefined();
     expect(lauf.entry.data).toMatchObject({ label: "Sport", end: "18:45" });
     expect(lauf.hint).toBe("trocken");
@@ -50,7 +50,7 @@ describe("Werkzeug woche_eintragen", () => {
 
     // zurück in „Deine Woche“
     const items = ops.map((o, i) => itemFromEntry(o.entry, `k${i}`, o.hint));
-    expect(items.map((i) => [i.art, i.raum])).toEqual([["termin", "familie"], ["termin", "ich"], ["sport", "familie"], ["termin", "familie"], ["aufgabe", "familie"], ["aufgabe", "familie"]]);
+    expect(items.map((i) => [i.art, i.raum])).toEqual([["termin", "familie"], ["termin", "familie"], ["sport", "familie"], ["termin", "familie"], ["aufgabe", "familie"], ["aufgabe", "familie"]]);
     expect(items[0].minutes).toBe(120);
     expect(items[2].suggestion).toBe("trocken");
     expect(items[3].question).toEqual(["10:00", "14:00", "weiß noch nicht"]);
@@ -82,10 +82,10 @@ describe("Testmodus: Beispiel von Tafel 36", () => {
 });
 
 describe("Übernehmen: Punkte → Einträge", () => {
-  it("Ich = nur für mich (Raum „ich“), schon Eingetragenes bleibt weg, Aufgabe ohne Tag = Woche", () => {
+  it("Geschäftlich = Raum „arbeit“, schon Eingetragenes bleibt weg, Aufgabe ohne Tag = Woche", () => {
     const out = weekEntries(
       [
-        item({ title: "Arzt", raum: "ich", date: "2026-10-22", time: "08:30", minutes: 30 }),
+        item({ title: "Lieferant", raum: "arbeit", date: "2026-10-22", time: "08:30", minutes: 30 }),
         item({ title: "Doppelt", already: true, date: "2026-10-22" }),
         item({ title: "Spiel", date: "2026-10-24", who: ["p-mathis"] }),
         item({ art: "aufgabe", title: "Fenster" }),
@@ -95,7 +95,7 @@ describe("Übernehmen: Punkte → Einträge", () => {
       make,
     );
     expect(out.map((e) => [e.typ, e.raum, e.data.title, e.data.label ?? null])).toEqual([
-      ["termin", "ich", "Arzt", null],
+      ["termin", "arbeit", "Lieferant", null],
       ["termin", "familie", "Spiel", null],
       ["aufgabe", "familie", "Fenster", null],
       ["termin", "familie", "Laufen", "Sport"],

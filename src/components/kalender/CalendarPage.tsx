@@ -22,14 +22,13 @@ import { calendarDots, termineOn, type Dot } from "@/lib/kalender/monat";
 import { addDays } from "@/lib/core/now";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { avatarHex } from "@/lib/einstellungen/profileHelper";
-import { roomBarProps } from "@/components/kalender/Items";
+import { roomBarProps, zeitFarbe } from "@/components/kalender/Items";
 import { DayPanel, mitTipps, type RoomFilter } from "@/components/kalender/DayPanel";
 import { TipDot, TipsChip, useCalendarTips } from "@/components/tipps/CalendarTips";
 import { neuEintragen } from "@/lib/kalender/eintragen/oeffnen";
 import { isAboEntry } from "@/lib/kalender/abo/model";
 import { MitbringenKarte } from "@/components/kalender/mitbringen/KalenderMitbringen";
 import { useHaushalt } from "@/lib/einstellungen/useHaushalt";
-import { sichtRaum } from "@/lib/core/haushalt";
 import { filterLabel, raumChips } from "@/lib/kalender/aufgaben";
 
 
@@ -49,10 +48,10 @@ const monthStart = (iso: string, offset: number) => {
 
 const TONES = ["bg-accent", "bg-work", "bg-person-3", "bg-person-4"];
 
-/** Punkt unter einem Tag: Person, Familie (Orange), Raum Ich (Grün), Arbeit (Blau), ich = „Meine Farbe im Kalender“ */
+/** Punkt unter einem Tag: Person, Familie (Orange), Geschäftlich (Blau), ich = „Meine Farbe im Kalender“ */
 function DotMark({ dot, myHex }: { dot: Dot; myHex: string }) {
   if (dot.kind === "ich") return <span className="h-[5px] w-[5px] rounded-full" style={{ backgroundColor: myHex }} />;
-  const cls = dot.kind === "person" ? TONES[dot.tone] : dot.kind === "arbeit" ? "bg-work" : dot.kind === "nurIch" ? "bg-ich" : "bg-accent";
+  const cls = dot.kind === "person" ? TONES[dot.tone] : dot.kind === "arbeit" ? "bg-work" : "bg-accent";
   return <span className={`h-[5px] w-[5px] rounded-full ${cls}`} />;
 }
 
@@ -70,10 +69,10 @@ export function CalendarPage({ today, entries }: { today: string; entries: Calen
   const [filter, setFilter] = useState<RoomFilter>("alles");
   const [selected, setSelected] = useState(today);
   const day = selected;
-  // Filter „Alle · Familie · Ich · Arbeit“ nur, wenn es Ich- oder Arbeit-Termine gibt (Tafel 114)
-  const chips = raumChips(entries.filter((e) => e.typ === "termin").map((e) => e.raum), haushalt);
+  // Filter „Alle · Familie · Geschäftlich“ nur, wenn es geschäftliche Termine gibt (A-021, wie bei Aufgaben)
+  const chips = raumChips(entries.filter((e) => e.typ === "termin").map((e) => e.raum));
   const wirksam: RoomFilter = filter !== "alles" && chips.includes(filter) ? filter : "alles";
-  const pick = (list: DayItem[]) => list.filter((i) => wirksam === "alles" || sichtRaum(i.room, haushalt) === wirksam);
+  const pick = (list: DayItem[]) => list.filter((i) => wirksam === "alles" || i.room === wirksam);
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
@@ -207,7 +206,7 @@ function DayCard({ date, today, items, selected, onSelect, entries, filter }: { 
           {items.slice(0, 4).map((i) => (
             <span key={i.key} className="flex items-center gap-2 text-base">
               <span className={`h-2 w-2 shrink-0 rounded-full ${roomBarProps(i).className}`} style={roomBarProps(i).style} aria-hidden />
-              {i.time && <span className="shrink-0 text-sm font-bold tabular-nums text-work">{clockLabel(i.time)}</span>}
+              {i.time && <span className={`shrink-0 text-sm font-bold tabular-nums ${zeitFarbe(i.room)}`}>{clockLabel(i.time)}</span>}
               <span className="truncate">{i.title}</span>
             </span>
           ))}
