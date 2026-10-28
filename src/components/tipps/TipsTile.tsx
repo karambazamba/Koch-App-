@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { TileSize } from "@/lib/core/homeLayout";
 import { TILE, TILE_INNER, TILE_LABEL } from "@/components/ui/styles";
+import { tipTags } from "@/lib/tipps/categories";
 import { tileTips, tileTitle, type TipView } from "@/lib/tipps/model";
 import { useTipsWindow } from "@/lib/tipps/client";
 import { KarambaLine, TipIcon, tipWhen } from "@/components/tipps/TipBits";

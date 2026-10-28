@@ -8,12 +8,12 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { BookOpen, ChefHat, Lightbulb, Pin, PenLine, Refrigerator, ShoppingCart, Shuffle, StickyNote } from "lucide-react";
+import { ChefHat, Pin, PenLine, Refrigerator, ShoppingCart, Shuffle, StickyNote } from "lucide-react";
 import { TILE, TILE_LABEL } from "@/components/ui/styles";
 import { QuickButton } from "@/components/ui/QuickButton";
 import { QuickAddButton } from "@/components/einkauf/QuickAdd";
 import { clockLabel } from "@/lib/kalender/answers";
-import { tomorrowLabel } from "@/lib/kalender/model";
+import { weekdayShort } from "@/lib/kalender/model";
 import type { TileSize } from "@/lib/core/homeLayout";
 import { addDays, todayIso } from "@/lib/core/now";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
@@ -25,10 +25,10 @@ import { symbolFor } from "@/lib/einkauf/kacheln/symbols";
 import type { PlanDay } from "@/lib/essen/mealPlan";
 import { usePantry } from "@/lib/vorrat/pantry";
 import { takeDish } from "@/components/heute/takeDish";
-import { essenKnoepfe, essenUnterzeile, foodTileView, kachelBild, kochSchrittText, naechsteIdee, takeLabel } from "@/lib/heute/essenKachel";
+import { essenKopf, essenPille, essenTippen, essenUnterzeilen, foodTileView, kachelBild, kachelZustand, kochSchrittText, naechsteIdee } from "@/lib/heute/essenKachel";
+import { useVorschau } from "@/components/essen/vorschau/useVorschau";
 import { merkeGezeigt } from "@/lib/essen/ideenGezeigt";
 import type { Idea } from "@/lib/essen/ideas";
-import { GerichtSheet } from "@/components/essen/GerichtSheet";
 import { useTodayIdeas } from "@/lib/essen/useIdeas";
 import { useStock } from "@/lib/essen/useStock";
 import { findRecipe, recipeHref } from "@/lib/essen/baking";
@@ -47,40 +47,49 @@ import type { HomeData } from "@/components/heute/useHomeData";
 import { dishOf, useMeals } from "@/components/essen/useMeals";
 import { KochideeKnopf } from "@/components/essen/kochtipp/KochideeKnopf";
 import { DishTile } from "@/components/essen/DishTile";
+import { KachelPille } from "@/components/ui/KachelPille";
 import { helperName } from "@/lib/einstellungen/profile";
 import { KachelWasserzeichen } from "@/components/ui/KachelWasserzeichen";
+import { leuchtSchluessel } from "@/lib/heute/aufleuchten";
 
 const HALF = `${TILE} flex h-full flex-col overflow-hidden p-3`;
 /** XS: Kopf oben, EINE Zeile unten */
 const XS_BOX = `${TILE} flex h-full flex-col justify-between overflow-hidden px-3 py-2.5`;
-const XS_LINE = "block min-w-0 truncate text-[15px] font-bold leading-tight";
+/** XS: EINE Zeile; frei Eingegebenes darin kürzt sich selbst (`truncate` + `data-freitext`), alles andere ist so kurz, dass es passt (A-045) */
+const XS_LINE = "block min-w-0 overflow-hidden whitespace-nowrap text-[15px] font-bold leading-tight";
 const HALF_LABEL = `flex min-w-0 items-center gap-1.5 ${TILE_LABEL}`;
 
 /**
- * ESSEN (Tafel 122) – immer eine Bild-Kachel (`DishTile`): Name groß in der
- * Mitte, unten „Rezept“ (bzw. „Vorschlag“ ohne Gericht, „Weiter kochen“ beim
- * Kochen) und „Wochenplan“ (S: „Woche“). Rest antippen: geplant → Tagesansicht
- * (`TagFenster`), Vorschlag → `GerichtSheet`, frei → Essen-Seite.
- * `hat`: Kochidee-Knopf oben links – `null` = keiner, sonst ob sein Hinweis gerade still sein soll.
+ * ESSEN final (A-046, Tafel 134) – immer eine Bild-Kachel (`DishTile`) ohne
+ * große Knöpfe: oben links „Was anderes?“ (neuer Vorschlag bzw. Mias
+ * Kochidee), unten links Statuszeile, Name und Zeit/Zutaten, unten rechts
+ * „Wochenplan ›“ (beim Kochen „Weiter kochen ›“). Ohne Plan zeigt sie gleich
+ * einen Vorschlag; gibt es keinen, „Was gibt’s heute?“. Ganze Kachel
+ * antippen (`essenTippen`): Vorschlag → Rezept-Vorschau (A-038, „Nehmen“
+ * trägt ein), fest geplant → Rezeptseite, beim Kochen → Kochmodus am
+ * Schritt, frei → die Ideen des Tages.
+ * `hat`: Kochidee-Pille oben links – `null` = keine, sonst ob ihr Hinweis gerade still sein soll.
  */
 export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", hat = null }: { data: HomeData; dish: string | null; over: boolean; dishClock: string | null; onOpen: () => void; size?: TileSize; hat?: { quiet: boolean } | null }) {
   const ideas = useTodayIdeas([], { tomorrow: over });
   const stock = useStock();
   const session = useCooking(data.todayIso);
   const tage = useMeals(data.todayIso, 7);
+  const vorschau = useVorschau();
   const [alt, setAlt] = useState<number | null>(null);
-  const [chosen, setChosen] = useState<Idea | null>(null);
   const [tag, setTag] = useState(false);
   const [ohneRezept, setOhneRezept] = useState(false);
   const list = ideas?.ideas ?? [];
-  const idea = alt !== null && list.length ? list[alt % list.length] : null;
-  // Gezeigte Idee merken (rückt an den nächsten Tagen nach hinten, wenn sie nicht genommen wird)
-  const ideaTitle = idea?.title ?? null;
+  const day: PlanDay | undefined = over ? data.tomorrow : data.day;
+  const away = day?.away ? (day.paused ? "Pause" : "Kein Kochtag") : null;
+  const geplantTitel = over ? dishOf(data.tomorrow) : dish;
+  // Nichts geplant: gleich der erste Vorschlag; „Was anderes?“ blättert weiter
+  const idea = !list.length || away ? null : alt !== null ? list[alt % list.length] : geplantTitel ? null : list[0];
+  // Selbst weitergeblätterte Idee merken (rückt an den nächsten Tagen nach hinten, wenn sie nicht genommen wird)
+  const ideaTitle = alt !== null ? (idea?.title ?? null) : null;
   useEffect(() => {
     if (ideaTitle) merkeGezeigt([ideaTitle], todayIso());
   }, [ideaTitle]);
-  const day: PlanDay | undefined = over ? data.tomorrow : data.day;
-  const away = day?.away ? (day.paused ? "Pause" : "Kein Kochtag") : null;
   const view = foodTileView({ over, today: dish, tomorrow: dishOf(data.tomorrow), idea: idea?.title ?? null, away, ideas: away ? 0 : list.length });
   const entry = day && !day.away ? day.slot.entry : null;
   // Jedes Gericht hat ein Rezept: eigenes bzw. eingebautes über den Titel (auch Wochenkarten-Gerichte)
@@ -91,49 +100,37 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", hat 
   const needs = recipe && stock && realStock(stock).length ? matchStock(recipe.ingredients.map((i) => i.name), stock, todayIso()).needs : null;
   // Kocht gerade: Kochmodus heute geöffnet bzw. „Ich koche jetzt“ (nicht nach „Gegessen“)
   const at = recipe ? session?.at[recipe.id] : undefined;
-  const kocht = view.kind === "geplant" && view.when === "heute" && Boolean(recipe) && (at !== undefined || Boolean(session?.manualAt));
-  // Für „Was anderes?“ zählt nur ein heute geplantes Gericht (nach dem Abendessen: frei für morgen)
-  const planned = over ? null : dish;
-  /** Vorschlag nehmen – tagsüber für heute, nach dem Essen für morgen */
-  const take = (it: Idea) => {
-    if (!takeDish(data, it, over ? addDays(todayIso(), 1) : todayIso())) return;
-    setAlt(null);
-    setChosen(null);
-  };
-  const kopf = over ? tomorrowLabel(addDays(todayIso(), 1)) : `Essen${dish && dishClock ? ` · ${clockLabel(dishClock)}` : ""}`;
-  const corner = hat && <KochideeKnopf name={helperName(data.profile)} planned={planned} quiet={hat.quiet} />;
-  // „Was anderes?“ wechselt die Idee (nicht bei einem heute geplanten Gericht und nicht neben dem Kochidee-Knopf)
-  const swap = list.length > 0 && !hat && !(view.kind === "geplant" && view.when === "heute") && (
-    <button
-      type="button"
-      aria-label="Andere Idee"
-      onClick={(e) => {
-        e.stopPropagation();
-        setAlt((a) => naechsteIdee(list.map((i) => i.title), a, view.title) ?? a);
-      }}
-      className="hit absolute left-2.5 top-2.5 z-10 flex items-center active:scale-95"
-    >
-      <span className="flex h-[30px] items-center gap-1.5 rounded-full bg-on-color px-3 text-[12.5px] font-extrabold text-on-photo-ink shadow-float">
-        <Shuffle className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-        Was anderes?
-      </span>
-    </button>
-  );
-  const knoepfe = essenKnoepfe(view, { kocht, half: size === "S" });
   const kochHref = recipe ? `/kochbuch/kochen?id=${encodeURIComponent(recipe.id)}${persons ? `&personen=${persons}` : ""}` : null;
-  const vorschlag = idea ?? list[0] ?? null;
-  const links =
-    knoepfe.links === "rezept"
-      ? { label: "Rezept", icon: BookOpen, open: rezeptHref ?? (() => setOhneRezept(true)), data: "rezept" }
-      : knoepfe.links === "weiter" && kochHref
-        ? { label: "Weiter kochen", icon: ChefHat, open: kochHref, data: "weiter-kochen" }
-        : knoepfe.links === "vorschlag"
-          ? { label: "Vorschlag", icon: Lightbulb, open: vorschlag ? () => setChosen(vorschlag) : onOpen, data: "vorschlag" }
-          : null;
+  const kocht = view.kind === "geplant" && view.when === "heute" && Boolean(kochHref) && (at !== undefined || Boolean(session?.manualAt));
+  const zustand = kachelZustand(view, kocht);
+  const morgen = weekdayShort(addDays(todayIso(), 1));
+  const kopf = essenKopf(zustand, { over, clock: dish && dishClock ? clockLabel(dishClock) : null, morgen });
+  /** Vorschlag nehmen – tagsüber für heute, nach dem Essen für morgen (fehlende Zutaten kommen wie immer über den Plan auf die Liste) */
+  const take = (it: Idea, rezeptId?: string) => {
+    if (takeDish(data, rezeptId ? { ...it, recipeId: rezeptId } : it, over ? addDays(todayIso(), 1) : todayIso())) setAlt(null);
+  };
+  // Für „Was anderes?“ bei Mias Kochidee zählt nur ein heute geplantes Gericht (nach dem Abendessen: frei für morgen)
+  const corner = hat ? (
+    <KochideeKnopf name={helperName(data.profile)} planned={over ? null : dish} quiet={hat.quiet} />
+  ) : (
+    list.length > 0 && !away && <KachelPille label="Was anderes?" icon={Shuffle} aria="Andere Idee" onClick={() => setAlt((a) => naechsteIdee(list.map((i) => i.title), a, view.title) ?? a)} />
+  );
   const schritt = kocht && recipe && at !== undefined ? kochSchrittText(at, recipe.steps.length) : null;
-  const sub = view.kind === "vorschlag" ? "Vorschlag" : view.kind === "frei" ? (view.ideen ? `${Math.min(3, list.length)} Ideen ansehen` : undefined) : essenUnterzeile({ minutes: recipe?.prepMinutes ?? null, needs, schritt }) || undefined;
-  // Rest der Kachel: geplant → Tagesansicht, Vorschlag → Fenster, frei → Essen-Seite
-  const open = view.kind === "vorschlag" ? () => setChosen(idea) : view.kind === "geplant" && day ? () => setTag(true) : onOpen;
+  const groesse = size === "S" ? "S" : "M";
+  const sub =
+    view.kind === "vorschlag" && idea
+      ? essenUnterzeilen({ minutes: idea.minutes, needs: idea.needs }, groesse)
+      : view.kind === "geplant"
+        ? essenUnterzeilen({ minutes: recipe?.prepMinutes ?? null, needs, schritt }, groesse)
+        : undefined;
+  const tippen = essenTippen(zustand);
+  const zeigen = () => {
+    if (!idea) return;
+    vorschau.zeigen({ title: idea.title, category: idea.category, minutes: idea.minutes, recipeId: idea.recipeId, needs: idea.needs, unsure: idea.unsure, persons, kopf }, (rezeptId) => take(idea, rezeptId));
+  };
+  const open =
+    tippen === "vorschau" ? zeigen : tippen === "rezept" ? (rezeptHref ?? (() => setOhneRezept(true))) : tippen === "kochmodus" && kochHref ? kochHref : day && !day.away ? () => setTag(true) : onOpen;
+  const pille = essenPille(zustand);
   const picture = kachelBild(view, view.kind === "vorschlag" ? { category: idea?.category } : { ingredients: recipe?.ingredients.map((i) => i.name), category: recipe?.category ?? entry?.category });
   return (
     <>
@@ -145,11 +142,10 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", hat 
         open={open}
         half={size === "S"}
         label={`${kopf} · ${view.title}${view.kind === "vorschlag" ? " · Vorschlag" : ""}`}
-        corner={corner || swap}
-        links={links}
-        rechts={knoepfe.rechts}
+        corner={corner}
+        pille={{ label: pille, open: pille === "Weiter kochen ›" && kochHref ? kochHref : "/?seite=essen&zu=woche", data: pille === "Weiter kochen ›" ? "weiter-kochen" : "woche" }}
       />
-      {chosen && <GerichtSheet dish={chosen} take={takeLabel(over ? "morgen" : "heute")} onTake={() => take(chosen)} onClose={() => setChosen(null)} recipeHref={recipeHref(data.recipes, chosen.recipeId) ?? undefined} />}
+      {vorschau.fenster}
       {tag && day && <TagFenster data={data} day={day} tage={tage ? [...tage.values()] : [day]} onClose={() => setTag(false)} />}
       {ohneRezept && entry && <OhneRezeptSheet title={entry.title} category={entry.category} name={helperName(data.profile)} onClose={() => setOhneRezept(false)} />}
     </>
@@ -169,11 +165,13 @@ function ShopRow({ shop, label, names, count, href, products, demo }: { shop: st
         aria-label={`${label}: ${count} ${count === 1 ? "Sache" : "Sachen"}${demo ? " · Beispiel" : ""}`}
         data-zeile
         data-laden-zeile
+        data-leuchte={names.map((n) => leuchtSchluessel("einkauf", n)).join(" ")}
       >
         <span className="absolute inset-y-0 left-0 w-1" style={{ background: tone }} aria-hidden />
-        <span className="min-w-0 flex-1 truncate text-[14px] font-bold">{label}</span>
+        <span className="min-w-0 flex-1 break-words text-[14px] font-bold leading-tight">{label}</span>
+        {/* Ganz schmal (Board unter 320 px, iPhone SE 1): ohne Symbole, damit der Laden-Name ganz in eine Zeile passt (A-045) */}
         {names.slice(0, 2).map((n, i) => (
-          <ItemSymbol key={`${n}-${i}`} id={symbolFor(n, products)} name={n} className="h-5 w-5 shrink-0" />
+          <ItemSymbol key={`${n}-${i}`} id={symbolFor(n, products)} name={n} className="h-5 w-5 shrink-0 @max-[320px]:hidden" />
         ))}
         <span className={`min-w-[1.25rem] shrink-0 text-right text-[14px] font-extrabold ${shop ? "" : "text-muted"}`} style={shop ? { color: tone } : undefined}>
           {count}
@@ -201,7 +199,7 @@ function ShopRows({ rows, ohne, mine, products, demo = false }: TileRows & { min
         {!mine && ohne.length > 0 && <ShopRow shop={null} label="Liste" names={ohne} count={ohne.length} href="/einkaufsliste" products={products} demo={demo} />}
       </ul>
       {mine && ohne.length > 0 && (
-        <Link href="/einkaufsliste#ohne-laden" className="flex min-h-[30px] flex-wrap items-center gap-x-1 py-0.5 text-[12.5px] font-semibold leading-tight text-muted" data-zeile data-ohne-laden-zeile>
+        <Link href="/einkaufsliste#ohne-laden" className="flex min-h-[30px] flex-wrap items-center gap-x-1 py-0.5 text-[12.5px] font-semibold leading-tight text-muted" data-zeile data-ohne-laden-zeile data-leuchte={ohne.map((n) => leuchtSchluessel("einkauf", n)).join(" ")}>
           <span className="kachel-frei whitespace-nowrap">{ohneLadenZeile(ohne.length)} ·</span> <span className="kachel-frei whitespace-nowrap font-bold text-accent-strong">Sortieren ›</span>
         </Link>
       )}
@@ -285,7 +283,7 @@ function KleinKopf({ icon: Icon, label, href, more = 0, knopf }: { icon: typeof 
     <div className="flex h-[26px] items-center gap-2">
       <Link href={href} className={`hit flex h-[26px] min-w-0 items-center ${HALF_LABEL}`} aria-label={`${label} öffnen`}>
         <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-        <span className="truncate">{label}</span>
+        <span className="whitespace-nowrap">{label}</span>
       </Link>
       <span className="flex-1" />
       {more > 0 && (
@@ -300,7 +298,7 @@ function KleinKopf({ icon: Icon, label, href, more = 0, knopf }: { icon: typeof 
 
 /**
  * NOTIZEN je Größe (Raster): XS = EINE Zeile (neueste bzw. angeheftete Notiz,
- * sonst „Schnell was …“), S und M = bis 3 Zeilen „Titel · Anfang“
+ * sonst „Schnell notieren.“), S und M = bis 3 Zeilen „Titel · Anfang“
  * (angeheftete zuerst), der Rest als „+N“. Kopf = Notizen-Seite, Zeile =
  * genau diese Notiz, Stift = Schnellnotiz. Beispiel-Tag: „WLAN: Tohuus2026“.
  */
@@ -325,12 +323,12 @@ export function NotesTile({ size = "XS", demo = false }: { size?: TileSize; demo
         {top ? (
           <Link href={href(top.id)} className={`${XS_LINE} flex items-center gap-1`} data-zeile data-notiz-zeile>
             {top.pinned && <Pin className="h-3 w-3 shrink-0 text-tile-accent" strokeWidth={2.25} aria-hidden />}
-            <span className="truncate">{top.title}</span>
+            <span className="truncate" data-freitext>{top.title}</span>
           </Link>
         ) : (
           <button type="button" onClick={() => openQuick({ kind: "notiz" })} className={`${XS_LINE} flex items-center gap-1 text-left text-muted`} data-zeile>
             <PenLine className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-            <span className="truncate">Schnell was …</span>
+            <span className="whitespace-nowrap">Schnell notieren.</span>
           </button>
         )}
       </section>
@@ -346,7 +344,7 @@ export function NotesTile({ size = "XS", demo = false }: { size?: TileSize; demo
             <li key={r.id || "beispiel"}>
               <Link href={href(r.id)} className="flex min-h-[30px] items-center gap-1.5 text-[13.5px]" data-zeile data-notiz-zeile>
                 {r.pinned ? <Pin className="h-3.5 w-3.5 shrink-0 text-tile-accent" strokeWidth={2.25} aria-hidden /> : <StickyNote className="h-3.5 w-3.5 shrink-0 text-tile-accent" strokeWidth={2} aria-hidden />}
-                <span className="min-w-0 flex-1 truncate">
+                <span className="min-w-0 flex-1 truncate" data-freitext>
                   <span className="font-semibold">{r.title}</span>
                   {r.line && <span className="kachel-frei text-muted"> · {r.line}</span>}
                 </span>
@@ -356,7 +354,7 @@ export function NotesTile({ size = "XS", demo = false }: { size?: TileSize; demo
         </ul>
       ) : (
         <button type="button" onClick={() => openQuick({ kind: "notiz" })} className="flex min-h-11 items-center text-left text-[13.5px] text-muted">
-          <span className="kachel-frei">Schnell was aufschreiben …</span>
+          <span className="kachel-frei">Schnell was aufschreiben.</span>
         </button>
       )}
     </section>
@@ -382,12 +380,23 @@ export function PantryTile({ size = "XS", demo = false }: { size?: TileSize; dem
   const tile = houseTile(pantry, todayIso(), HOUSE_TILE_MAX[size === "XS" ? "XS" : "S"]);
   if (size === "XS") {
     const first = tile.items[0];
-    const text = showDemo ? `${DEMO_HAUS.name} · ${DEMO_HAUS.badge}` : first ? `${first.item.name}${first.badge ? ` · ${first.badge.text}` : ""}` : "Was ist da?";
+    // Name vor Schild (wie in S): der Name steht ganz, das Schild rutscht notfalls weg in die zweite Zeile
+    const name = showDemo ? DEMO_HAUS.name : first?.item.name;
+    const schild = showDemo ? DEMO_HAUS.badge : first?.badge?.text;
+    const warm = showDemo || first?.badge?.tone === "orange";
     return (
       <section className={XS_BOX} aria-label={showDemo ? "Im Haus · Beispiel" : "Im Haus"} data-groesse={size}>
         <KleinKopf icon={Refrigerator} label="Im Haus" href="/vorrat" />
-        <Link href="/vorrat" className={`${XS_LINE} ${first || showDemo ? "" : "text-muted"}`} data-zeile>
-          {text}
+        <Link href="/vorrat" className={`block min-w-0 overflow-hidden text-[15px] font-bold leading-tight ${name ? "flex flex-wrap items-center gap-x-1.5" : "text-muted"}`} data-zeile>
+          {name ? (
+            <>
+              <span className="min-w-0 break-words">{name}</span>
+              {/* Schild wie in S (10,5 px, Tafel 133) – braucht kaum Platz neben dem Namen */}
+              {schild && <span className={`whitespace-nowrap rounded-full px-1.5 text-[10.5px] font-bold leading-[16px] ${warm ? "bg-accent-soft text-accent-strong" : "bg-warn-soft text-warn-ink"}`}>{schild}</span>}
+            </>
+          ) : (
+            "Was ist da?"
+          )}
         </Link>
       </section>
     );

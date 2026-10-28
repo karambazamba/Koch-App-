@@ -38,8 +38,15 @@ describe("Raster: Größen (Tafel 118)", () => {
     for (const w of [375, 393, 412]) {
       const board = w - 32;
       const s = (board - 8) / 2;
-      expect(2 * grundZeile(board) + 8).toBeCloseTo(s);
+      expect(Math.abs(2 * grundZeile(board) + 8 - s)).toBeLessThanOrEqual(0.5);
     }
+  });
+
+  it("ganz schmal (iPhone SE 1, 320 px): S mindestens 168 px hoch, damit nichts abgeschnitten wird (A-045)", () => {
+    expect(grundZeile(320 - 32)).toBe(80);
+    expect(2 * grundZeile(320 - 32) + 8).toBe(168);
+    expect(readFileSync("src/lib/heute/raster.ts", "utf8")).toMatch(/max\(\$\{ZEILE_MIN\}px, calc/);    // Einkauf: Laden-Namen ganz, die Symbole weichen auf dem schmalen Board
+    expect(readFileSync("src/components/heute/HomeTiles.tsx", "utf8")).toMatch(/<ItemSymbol [^>]*@max-\[320px\]:hidden/);
   });
 });
 

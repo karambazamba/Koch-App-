@@ -15,6 +15,7 @@ import { addDays, todayIso } from "@/lib/core/now";
 import { weekdayIndex, type CalendarEntry } from "@/lib/kalender/model";
 import { istFeiertag } from "@/lib/core/feiertage";
 import type { Haushalt } from "@/lib/core/haushalt";
+import type { Room } from "@/lib/core/entries";
 
 export type DemoTile = "termine" | "aufgaben" | "pinnwand" | "einkauf" | "essen" | "notizen" | "sport" | "vorrat";
 const TILES: DemoTile[] = ["termine", "aufgaben", "pinnwand", "einkauf", "essen", "notizen", "sport", "vorrat"];
@@ -105,7 +106,7 @@ export function useDemo(): DemoState | null {
 
 const clock = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 
-const entry = (id: string, typ: "termin" | "aufgabe", data: Record<string, unknown>, raum: "familie" | "arbeit" = "familie"): CalendarEntry =>
+const entry = (id: string, typ: "termin" | "aufgabe", data: Record<string, unknown>, raum: Room = "familie"): CalendarEntry =>
   ({ id: `beispiel:${id}`, typ, raum, besitzer: "lokal", erstellt: `2000-01-01T00:0${id.slice(-1)}:00.000Z`, geaendert: "2000-01-01T00:00:00.000Z", data: { reminder: "aus", repeat: null, ...data } }) as CalendarEntry;
 
 /** Art des Beispiel-Tags: Werktag, Samstag oder Sonntag (Feiertage wie Sonntag) */
@@ -227,7 +228,8 @@ export function demoEntries(today: string, minutes: number, haushalt: Haushalt =
   const frei = demoArt(date) !== "werktag";
   const wann = frei ? { week: monday } : { date };
   const [a1, a2, a3] = DEMO_AUFGABEN[haushalt];
-  const aufgaben = [entry("a1", "aufgabe", { title: a1, ...wann }), entry("a2", "aufgabe", { title: a2, ...wann }, "arbeit"), entry("a3", "aufgabe", { title: a3, ...wann })];
+  // Tafel 119: eine Arbeit-Aufgabe, zu zweit dazu „Mama anrufen“ als „Ich“ (allein gibt es den Raum nicht)
+  const aufgaben = [entry("a1", "aufgabe", { title: a1, ...wann }), entry("a2", "aufgabe", { title: a2, ...wann }, "arbeit"), entry("a3", "aufgabe", { title: a3, ...wann }, haushalt === "paar" ? "ich" : "familie")];
   return { date, tomorrow, entries: [...termine, ...aufgaben] };
 }
 

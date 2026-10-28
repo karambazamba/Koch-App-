@@ -312,7 +312,7 @@ describe("Feste Fläche: S und M passen", () => {
   });
   it("M: Satz und Stunden eng genug für 168 px (iPhone SE)", async () => {
     const html = await tile("M", stormy(), 9 * 60);
-    expect(html).toMatch(/class="mt-0\.5 truncate[^"]*" data-wetter-zeile/);
+    expect(html).toMatch(/class="mt-0\.5 text-\[13px\][^"]*" data-wetter-zeile/);
     expect(html).toMatch(/wx-linie relative mt-auto grid grid-cols-4 border-t pt-1"/);
   });
 });

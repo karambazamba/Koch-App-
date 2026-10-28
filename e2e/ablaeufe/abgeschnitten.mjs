@@ -1,8 +1,8 @@
 // Nichts abgeschnitten (A-045, Tafel 133): Startseite mit Beispiel-Tag und
 // mit Familie (Gericht mit Zutaten für die Liste, Im Haus mit „Würstchen“,
 // langer Name „Gemüselasagne mit Béchamel“, abends „KOCHIDEE · MORGEN DO“) auf
-// iPhone SE (320 px), 15 Pro und Pixel 7, jede Kachel einmal in S, M und L
-// (wo es die Größe gibt). Kein sichtbarer Text in einer Kachel endet auf „…“
+// iPhone SE (320 px), 15 Pro und Pixel 7, jede Kachel einmal in XS, S und M
+// (wo es die Größe gibt, sonst die nächste erlaubte; Raster A-023). Kein sichtbarer Text in einer Kachel endet auf „…“
 // oder wird weggeschnitten (`abgeschnitteneTexte`); frei Eingegebenes
 // (`data-freitext`) zählt nicht. Dazu Tafel 134: Essen-Kachel ohne große
 // Knöpfe, „Was anderes?“ oben links, „Wochenplan ›“ unten rechts, kein
@@ -13,18 +13,20 @@ import { RECIPE_DATA } from "./essen.mjs";
 
 /** Kacheln der Startseite (ohne „bald“ und ohne die zum Launch ausgeblendeten) mit ihren Größen */
 const KACHELN = [
-  ["pinnwand", ["S", "M", "L"]],
-  ["wetter", ["S", "M", "L"]],
-  ["termine", ["S", "M", "L"]],
-  ["aufgaben", ["S", "M", "L"]],
-  ["essen", ["S", "M", "L"]],
-  ["einkauf", ["S", "M", "L"]],
-  ["timer", ["S", "M"]],
-  ["sport", ["S", "M", "L"]],
-  ["vorrat", ["S", "M"]],
-  ["notizen", ["S", "M", "L"]],
+  ["pinnwand", ["S", "M"]],
+  ["wetter", ["XS", "S", "M"]],
+  ["termine", ["S", "M"]],
+  ["aufgaben", ["S", "M"]],
+  ["essen", ["S", "M"]],
+  ["einkauf", ["S", "M"]],
+  ["timer", ["XS", "S"]],
+  ["sport", ["XS", "S"]],
+  ["vorrat", ["XS", "S"]],
+  ["notizen", ["XS", "S", "M"]],
 ];
-const layout = (size) => ({ version: 8, tipSeen: true, tiles: KACHELN.map(([id, sizes]) => ({ id, visible: true, size: sizes.includes(size) ? size : sizes[sizes.length - 1] })) });
+/** Nächste erlaubte Größe (wie die Migration der Startseite v9) */
+const naechste = (sizes, size) => (sizes.includes(size) ? size : size === "XS" ? sizes[0] : sizes[sizes.length - 1]);
+const layout = (size) => ({ version: 9, tipSeen: true, tiles: KACHELN.map(([id, sizes]) => ({ id, visible: true, size: naechste(sizes, size) })) });
 
 const WOCHE = "2026-10-19";
 const LANG = "Gemüselasagne mit Béchamel";
@@ -78,19 +80,21 @@ async function essenPillen(page, check, wo, size) {
 async function durchgehen(page, check, wo) {
   // Beispiel-Tag
   await hello(page);
-  for (const size of ["S", "M", "L"]) {
+  for (const size of ["XS", "S", "M"]) {
     await pruefen(page, check, `${wo} · Beispiel-Tag`, size);
     await essenPillen(page, check, `${wo} · Beispiel-Tag`, size);
   }
   // Familie mit Gericht, Vorrat und Kochidee
   await seedFamily(page, FAMILIE);
-  for (const size of ["S", "M", "L"]) {
+  for (const size of ["XS", "S", "M"]) {
     await pruefen(page, check, `${wo} · Familie`, size);
     await essenPillen(page, check, `${wo} · Familie`, size);
-    if (size !== "L") {
+    // Im Haus in S (bei M die nächste erlaubte: S) zeigt die Namen ganz; XS ist eine Zeile
+    if (size !== "XS") {
       const haus = page.locator("[role=tabpanel]:not([inert]) [data-tile~=vorrat]");
       const hausText = await haus.innerText();
-      check(/Würstchen/.test(hausText), `${wo} · ${size}: „Würstchen“ ganz in Im Haus (${hausText.replace(/\s+/g, " ")})`);
+      // Feste Fläche (Raster): zwei Sachen + „Was koch ich daraus?“; jede gezeigte steht ganz da, nie „Würstc…“
+      check(/Hähnchen/.test(hausText) && !/Würstc(?!hen)|…/.test(hausText), `${wo} · ${size}: Namen ganz in Im Haus (${hausText.replace(/\s+/g, " ")})`);
     }
   }
   // Langer Name (Tafel 134): „Gemüselasagne mit Béchamel“ ganz, in S und M

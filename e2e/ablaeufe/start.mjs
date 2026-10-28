@@ -513,5 +513,7 @@ export const nurFuerMich = async (page, check) => {
   // Tafel 119: Wetter, Sport, Notizen, Im Haus als XS oben; Beispiel-Inhalte allein
   for (const id of ["wetter", "sport", "notizen", "vorrat"]) check((await page.locator(`[data-unit="${id}"][data-groesse="XS"]`).count()) === 1, `${id} als XS`);
   check(await page.getByText("2 von 3 diese Woche").isVisible(), "Sport-Beispiel „2 von 3 diese Woche“");
-  check(await page.getByText("Hähnchen · heute").isVisible(), "Im-Haus-Beispiel „Hähnchen · heute“");
+  // Name vor Schild (Tafel 133): „Hähnchen“ und das Schild „heute“ (10,5 px)
+  const haus = (await page.locator('[data-unit="vorrat"]').innerText()).replace(/\s+/g, " ");
+  check(/Hähnchen heute/.test(haus), `Im-Haus-Beispiel „Hähnchen“ + Schild „heute“ (${haus})`);
 };

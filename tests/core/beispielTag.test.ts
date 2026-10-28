@@ -76,7 +76,7 @@ describe("Beispiel-Tag (erster Start)", () => {
     expect(d.date).toBe("2026-10-22");
   });
 
-  it("Aufgaben wie Tafel 119: Elternbrief, Steuerberater (Geschäftlich), Geschenk für Oma – nichts abgehakt", () => {
+  it("Aufgaben wie Tafel 119: Elternbrief, Steuerberater (Arbeit), Geschenk für Oma – nichts abgehakt", () => {
     const tasks = demoEntries(TODAY, 600).entries.filter((e) => e.typ === "aufgabe");
     expect(tasks.map((e) => [(e.data as { title: string }).title, e.raum])).toEqual([
       ["Elternbrief unterschreiben", "familie"],

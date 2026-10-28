@@ -55,10 +55,11 @@ const boxes = (page) =>
 
 const near = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
 
-/** Erwartete Maße aus der Breite: S = (Breite − 8) / 2, XS halb so hoch (minus Abstand), M = volle Breite × S */
+/** Erwartete Maße aus der Breite: S = (Breite − 8) / 2 (mindestens 168 hoch, `ZEILE_MIN`), XS halb so hoch (minus Abstand), M = volle Breite × S */
 const expected = (width, size) => {
   const s = (width - 8) / 2;
-  return size === "XS" ? { w: s, h: (s - 8) / 2 } : size === "S" ? { w: s, h: s } : { w: width, h: s };
+  const h = Math.max(168, s);
+  return size === "XS" ? { w: s, h: (h - 8) / 2 } : size === "S" ? { w: s, h } : { w: width, h };
 };
 
 /** Jede Kachel in jeder erlaubten Größe: feste Höhe, nichts quillt über – auf SE, 15 Pro und Pixel 7 */

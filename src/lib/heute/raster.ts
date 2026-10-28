@@ -19,11 +19,18 @@ export const SPAN: Record<TileSize, { w: 1 | 2; h: 1 | 2 }> = { XS: { w: 1, h: 1
 /** Abstand zwischen den Kacheln (px) – muss zu `gap-2` im Board passen */
 export const RASTER_GAP = 8;
 
-/** Höhe einer Grund-Zeile aus der Breite des Boards: zwei Zeilen + Abstand = S = (Breite − Abstand) / 2 */
-export const grundZeile = (breite: number) => (breite - 3 * RASTER_GAP) / 4;
+/**
+ * Mindesthöhe einer Grund-Zeile: auf ganz schmalen Geräten (iPhone SE 1,
+ * 320 px) wäre S nur 140 px hoch und der Inhalt passte nicht ganz hinein
+ * (A-045 „nichts abgeschnitten“) – dort wird S etwas höher als breit.
+ */
+const ZEILE_MIN = 80;
+
+/** Höhe einer Grund-Zeile aus der Breite des Boards: zwei Zeilen + Abstand = S = (Breite − Abstand) / 2, mindestens `ZEILE_MIN` */
+export const grundZeile = (breite: number) => Math.max(ZEILE_MIN, (breite - 3 * RASTER_GAP) / 4);
 
 /** CSS-Wert der Grund-Zeile (100cqw = Breite des Boards) */
-export const ZEILE_CSS = `calc((100cqw - ${3 * RASTER_GAP}px) / 4)`;
+export const ZEILE_CSS = `max(${ZEILE_MIN}px, calc((100cqw - ${3 * RASTER_GAP}px) / 4))`;
 
 export type Platz = { key: string; col: 0 | 1; row: number; w: 1 | 2; h: 1 | 2 };
 export type Luecke = { col: 0 | 1; row: number; h: 1 | 2 };

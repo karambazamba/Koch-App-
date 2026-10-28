@@ -58,7 +58,7 @@ export function SportTile({ size = "S", entries, today, minutes, me, demo = fals
   const showDemo = demo && !hasOwn;
   const leer = !karte.felder.some((f) => f.art === "stempel") && !next;
   const zustand = showDemo ? "beispiel" : karte.geschafft ? "geschafft" : leer ? "leer" : "normal";
-  const zeile = showDemo ? DEMO_SPORT : karte.geschafft ? "Woche geschafft" : next ? `${whenLabel(next, today)} · ${next.title}` : "Diese Woche frei";
+  const zeile = showDemo ? DEMO_SPORT : karte.geschafft ? "Woche geschafft" : next ? `${whenLabel(next, today)} · ` : "Diese Woche frei";
   return (
     <>
       <section
@@ -75,8 +75,13 @@ export function SportTile({ size = "S", entries, today, minutes, me, demo = fals
           <QuickButton icon={Plus} label="Training eintragen" onClick={() => setAdding(true)} />
         </span>
         {size === "XS" ? (
-          <p className="pointer-events-none relative truncate text-[15px] font-bold leading-tight" data-zeile>
-            {zeile}
+          <p className="pointer-events-none relative flex min-w-0 whitespace-nowrap text-[15px] font-bold leading-tight" data-zeile>
+            <span className="shrink-0">{zeile}</span>
+            {next && !showDemo && !karte.geschafft && (
+              <span className="min-w-0 truncate" data-freitext>
+                {next.title}
+              </span>
+            )}
           </p>
         ) : showDemo ? (
           <p className="pointer-events-none relative text-[15px] font-bold leading-snug">{DEMO_SPORT}</p>
@@ -120,8 +125,8 @@ function Unterzeile({ size, karte, next, leer, today, weather }: { size: TileSiz
     <p className="flex min-w-0 flex-col">
       {size === "M" && <span className="text-[11px] font-extrabold uppercase tracking-wide text-tile-accent">Als Nächstes</span>}
       <span className="text-[19px] font-extrabold leading-tight tabular-nums">{kachelWann(next, today)}</span>
-      <span className="flex items-center gap-1 truncate text-[13px] text-muted">
-        <span className="truncate">{next.title}</span>
+      <span className="flex min-w-0 items-center gap-1 whitespace-nowrap text-[13px] text-muted">
+        <span className="truncate" data-freitext>{next.title}</span>
         {size === "M" && weather && (
           <>
             <span aria-hidden>·</span>

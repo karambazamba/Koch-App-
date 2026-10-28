@@ -579,9 +579,11 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 ## Festes Raster XS · S · M, Standard je Haushalt, Wetter mit Himmel (Tafel 118–120, A-023)
 
 - Raster (`lib/heute/raster.ts`, rein): 2 Spalten, Grund-Zeile = halbe
-  S-Höhe aus der Board-Breite (`ZEILE_CSS` = `(100cqw − 24px) / 4`, Board mit
-  `container-type: inline-size`, Abstand 8 px) – S ist auf jedem Gerät
-  quadratisch. XS = 1 × 1, S = 1 × 2, M = 2 × 2, Essen + Einkauf (beide S) =
+  S-Höhe aus der Board-Breite (`ZEILE_CSS` = `max(80px, (100cqw − 24px) / 4)`,
+  Board mit `container-type: inline-size`, Abstand 8 px) – S ist ab 375 px
+  quadratisch; ganz schmal (iPhone SE 1, 320 px) mindestens 168 px hoch,
+  damit nichts abgeschnitten wird (A-045), die Einkauf-Kachel lässt dort die
+  Symbole weg. XS = 1 × 1, S = 1 × 2, M = 2 × 2, Essen + Einkauf (beide S) =
   EINE Einheit 2 × 2. `packe`: jede Einheit an den ersten freien Platz, an den
   sie passt (oben vor unten, links vor rechts). Zwei XS hintereinander sind
   ein Paar: übereinander (= ein S-Platz) – nebeneinander als halbe Zeile nur,

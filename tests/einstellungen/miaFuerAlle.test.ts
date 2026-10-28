@@ -64,12 +64,12 @@ describe("Beispiel-Tag je Haushaltsart", () => {
     expect(demoDay("2026-10-24", "paar").map((t) => t.title)).toEqual(["Frühstück", "Ausflug an die Ostsee", "Essen gehen"]);
   });
 
-  it("Familie ohne Angabe ebenso; Aufgaben je Haushalt wie Tafel 119 (Mitte = Geschäftlich)", () => {
+  it("Familie ohne Angabe ebenso; Aufgaben je Haushalt wie Tafel 119 (Mitte = Arbeit, zu zweit „Mama anrufen“ = Ich)", () => {
     expect(demoDay("2026-10-21")).toEqual(demoDay("2026-10-21", "familie"));
     expect(demoDay("2026-10-21").map((t) => t.title)).toContain("Laternelaufen");
     const tasks = (h: "allein" | "paar") => demoEntries("2026-10-21", 6 * 60, h).entries.filter((e) => e.typ === "aufgabe").map((e) => `${(e.data as { title: string }).title}:${e.raum}`);
     expect(tasks("allein")).toEqual(["Steuererklärung:familie", "Bericht schicken:arbeit", "Jana zurückrufen:familie"]);
-    expect(tasks("paar")).toEqual(["Urlaub buchen:familie", "Präsentation fertig:arbeit", "Mama anrufen:familie"]);
+    expect(tasks("paar")).toEqual(["Urlaub buchen:familie", "Präsentation fertig:arbeit", "Mama anrufen:ich"]);
     const titles = demoEntries("2026-10-21", 6 * 60, "allein").entries.map((e) => (e.data as { title: string }).title);
     expect(titles).toContain("Laufen");
   });

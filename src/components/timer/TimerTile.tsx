@@ -65,7 +65,7 @@ export function TimerTile({ size = "M" }: { size?: TileSize }) {
               Timer
             </span>
             <span className="flex w-full min-w-0 items-baseline gap-1.5 text-[15px] font-bold leading-tight" role={main ? "timer" : undefined}>
-              {main && <span className="min-w-0 truncate">{main.name} ·</span>}
+              {main && <span className="min-w-0 truncate" data-freitext>{main.name} ·</span>}
               <span className="shrink-0 tabular-nums">{left ?? "Timer starten"}</span>
             </span>
           </button>

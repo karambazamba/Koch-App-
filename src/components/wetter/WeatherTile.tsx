@@ -53,9 +53,9 @@ export function WeatherTile({
     return (
       <Link href="/wetter" className={`${BOX} ${PAD[size]}`} data-himmel={schlicht ? "schlicht" : "bewoelkt"} data-groesse={size} aria-label={label}>
         <span className={LABEL}>
-          <span className="truncate">{label}</span>
+          <span className="min-w-0 break-words">{label}</span>
         </span>
-        <span className="relative mt-auto line-clamp-2 text-[13px] font-semibold leading-snug text-muted">{failed ? "Gerade keine Wetterdaten." : "Wetter lädt …"}</span>
+        <span className="relative mt-auto text-[13px] font-semibold leading-snug text-muted">{failed ? "Gerade keine Wetterdaten." : "Wetter lädt …"}</span>
       </Link>
     );
   const next = forecast.days.find((d) => d.date > today);
@@ -67,13 +67,13 @@ export function WeatherTile({
       <Link href="/wetter?tag=morgen" className={`${BOX} ${PAD[size]}`} data-himmel={sky.key} data-ton={sky.ton ?? undefined} data-groesse={size} data-szene={szene} aria-label={`Wetter ${tomorrowLabel(next.date)} · ${place}: ${round(next.max)}°, ${satz} – öffnen`}>
         <WetterSzene szene={szene} size={size} schlicht={schlicht} />
         <span className={`${LABEL} ${FREI[size]}`}>
-          <span className="truncate">{tomorrowLabel(next.date)}</span>
+          <span className="min-w-0 break-words">{tomorrowLabel(next.date)}</span>
         </span>
         <span className={`relative mt-auto flex flex-col ${FREI[size]}`}>
           <span className={`${TEMP[size]} font-extrabold tabular-nums leading-none`}>
             {round(next.max)}°{size !== "XS" && <span className="wx-soft text-[15px] font-semibold"> / {round(next.min)}°</span>}
           </span>
-          <span className="mt-1 truncate text-[13px] font-semibold leading-snug" data-wetter-zeile>
+          <span className="mt-1 text-[13px] font-semibold leading-snug" data-wetter-zeile>
             {satz}
           </span>
         </span>
@@ -95,7 +95,7 @@ export function WeatherTile({
     <Link href="/wetter" className={`${BOX} ${PAD[size]}`} data-himmel={sky.key} data-ton={sky.ton ?? undefined} data-groesse={size} data-szene={szene} aria-label={`${label}: ${spoken} – öffnen`}>
       <WetterSzene szene={szene} size={size} schlicht={schlicht} />
       <span className={`${LABEL} ${FREI[size]}`}>
-        <span className="truncate">{size === "XS" ? "Wetter" : label}</span>
+        <span className="min-w-0 break-words">{size === "XS" ? "Wetter" : label}</span>
         {stale && <span className="shrink-0 font-semibold normal-case tracking-normal">· {shortClock(forecast.fetchedAt)}</span>}
       </span>
       {size === "S" ? (
@@ -103,7 +103,7 @@ export function WeatherTile({
         <>
           <span className={`relative mt-1 self-start ${TEMP.S} font-extrabold tabular-nums leading-none`}>{temp}°</span>
           <span className="relative mt-auto flex flex-col">
-            <span className="truncate text-[13px] font-semibold leading-snug" data-wetter-zeile>
+            <span className="text-[13px] font-semibold leading-snug" data-wetter-zeile>
               {satz}
             </span>
             {range && (
@@ -123,7 +123,7 @@ export function WeatherTile({
               </span>
             )}
           </span>
-          <span className="mt-0.5 truncate text-[13px] font-semibold leading-snug" data-wetter-zeile>
+          <span className="mt-0.5 text-[13px] font-semibold leading-snug" data-wetter-zeile>
             {satz}
           </span>
         </span>

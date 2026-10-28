@@ -223,7 +223,8 @@ describe("Sport-Kachel", () => {
 
   it("XS: eine Zeile", async () => {
     expect(await kachel(state([run(MO), run(TODAY)]), [], "XS")).toContain("Woche geschafft");
-    expect(await kachel(state([]), [plan("2026-10-22")], "XS")).toContain("Morgen · Do 8:00 · Laufen");
+    // Der Trainingsname ist frei eingegeben (eigenes <span data-freitext>, A-045)
+    expect((await kachel(state([]), [plan("2026-10-22")], "XS")).replace(/<[^>]+>/g, "")).toContain("Morgen · Do 8:00 · Laufen");
   });
 });
 
