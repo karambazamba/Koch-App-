@@ -24,20 +24,20 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 
 ## Launch „Mia 1.0“
 - **Bis zum Launch keine neuen Funktionen.** Nur Aufräumen, Fehler,
-  Einheitlichkeit.
+  Einheitlichkeit. Einzige Ausnahme (von Felix gewollt): Mias Wundertüte.
 - Drin: Mia (sprechen, tippen, erledigen), Startseite, Termine (inkl.
   Kalender mitbringen per Link), Aufgaben, Einkauf, Essen (heute, Ideen,
   Rezept, Kochmodus, Wochenkarte), Pinnwand als Kühlschranktür (allein aus),
   Notizen (Kachel standardmäßig an), Im Haus mit Spontan kochen (Baustein an,
   Bereich unter Essen mit „Was koch ich daraus?“, Kachel S/M nur über die
   Auswahl), Sport (Baustein, nur Wochen zählen), Wochenplan (Baustein),
-  Wetter, Timer (Baustein), Familie teilen per E-Mail-Code, Datenschutz.
-- Ausgeblendet (Baustein aus, nicht gelöscht, Daten bleiben; wer ihn schon
-  nutzt, behält ihn): Mails an Mia, Tipps aus der Region,
-  Spendentopf (ein Satz unter „Über Mia“
-  bleibt), Anmelden mit Apple/Google (nur E-Mail-Code), ElevenLabs (aus,
-  solange kein Schlüssel). Liste `LAUNCH_AUS` in `core/features.ts`,
-  `LAUNCH_NUR_EMAIL` in `konten/oauth.ts`; Mia schaltet nichts davon frei.
+  Wetter, Timer (Baustein), Familie teilen per E-Mail-Code, Datenschutz,
+  Mias Wundertüte (Baustein, neu an als S; `docs/bereiche/wundertuete.md`).
+- Ausgeblendet (Baustein aus, nicht gelöscht, Daten bleiben; wer ihn nutzt,
+  behält ihn): Mails an Mia, Tipps aus der Region, Spendentopf (ein Satz unter
+  „Über Mia“ bleibt), Apple/Google-Anmeldung (nur E-Mail-Code), ElevenLabs
+  (aus ohne Schlüssel). `LAUNCH_AUS` in `core/features.ts`, `LAUNCH_NUR_EMAIL`
+  in `konten/oauth.ts`; Mia schaltet nichts davon frei.
 
 ## 1. Ruhig und leer
 - Drei Seiten: Kalender · Heute · Essen (Heute ist die Startseite), Wechsel über
